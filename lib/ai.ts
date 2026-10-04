@@ -55,8 +55,8 @@ const WorksheetSchema = z.object({ tasks: z.array(TaskSchema) });
 
 export type AIGenerateRequest = {
   subject: string;
-  grade: number;
-  schoolType: string;
+  /** e.g. "2. Klasse Mittelschule" */
+  level: string;
   topic: string;
   skills: { id: string; name: string; area: string }[];
   difficulty: Difficulty;
@@ -68,16 +68,16 @@ export type AIGenerateRequest = {
 const GEN_SYSTEM = `Du bist eine erfahrene Nachhilfelehrerin im österreichischen Schulsystem und erstellst Übungsaufgaben für eine Nachhilfe-Software.
 Die Aufgaben werden automatisch korrigiert, daher müssen Lösungen eindeutig und fehlerfrei sein.
 Schreib auf Deutsch (bei Englisch-Übungen sind Aufgaben und Texte auf Englisch, Erklärungen dürfen Deutsch sein).
-Verwende österreichische Begriffe (Schulstufe, Hausübung, Schularbeit, Beistrich, Jänner).
+Verwende österreichische Begriffe (Klasse, Hausübung, Schularbeit, Beistrich, Jänner).
 Prüfe jede Lösung selbst nach, bevor du sie ausgibst. Bei Brüchen sind Ergebnisse vollständig gekürzt.
-Lösungswege sind kurz, Schritt für Schritt und so formuliert, dass ein Kind der angegebenen Schulstufe sie versteht.
+Lösungswege sind kurz, Schritt für Schritt und so formuliert, dass ein Kind der angegebenen Klasse und Schulform sie versteht.
 Die typischen Fehler beschreiben echte Denkfehler, die Schülerinnen und Schüler bei diesem Thema machen.`;
 
 export async function generateWithAI(req: AIGenerateRequest): Promise<TaskDraft[] | null> {
   const typeText = req.taskType === "mixed" ? "gemischt (Rechnung, Multiple Choice, Lückentext je nach Eignung)" : TASK_TYPES[req.taskType];
   const prompt = `Erstelle ${req.count} Aufgaben.
 Fach: ${req.subject}
-Schulstufe: ${req.grade}${req.schoolType ? ` (${req.schoolType})` : ""}
+Klasse: ${req.level}
 Thema: ${req.topic}
 Schwierigkeit: ${req.difficulty}
 Aufgabentyp: ${typeText}

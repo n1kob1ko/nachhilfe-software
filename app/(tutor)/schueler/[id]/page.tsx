@@ -17,6 +17,7 @@ import { Empty, LevelTag, MasteryBar, PageHeader, Pill, SectionTitle, TrendBadge
 import { aiEnabled } from "@/lib/ai";
 import { type Analysis, pct } from "@/lib/analysis";
 import * as repo from "@/lib/repo";
+import { klassenLabel } from "@/lib/school";
 import { analyzeStudent } from "@/lib/service";
 
 const TABS = [
@@ -29,13 +30,14 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
-export default async function StudentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; zugewiesen?: string }> }) {
+export default async function StudentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; zugewiesen?: string; art?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const student = repo.getStudent(Number(id));
   if (!student) notFound();
   const tab: Tab = (TABS.find(([k]) => k === sp.tab)?.[0] ?? "ueberblick") as Tab;
   const a = analyzeStudent(student.id)!;
+  const teacher = repo.getTeacher(student.teacher_id);
 
   return (
     <>
@@ -45,8 +47,9 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
         subtitle={
           <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span>
-              {student.grade}. Schulstufe · {student.school_type}
+              {klassenLabel(student.school_type, student.klasse)}
               {student.school && ` · ${student.school}`}
+              {teacher && ` · Lehrer: ${teacher.name}`}
             </span>
             <TrendBadge trend={a.overall.trend} delta={a.overall.delta} />
           </span>
@@ -79,7 +82,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
       {tab === "ueberblick" && <Overview student={student} a={a} />}
       {tab === "fortschritt" && <Progress a={a} />}
       {tab === "analyse" && <AnalysisTab student={student} a={a} assignedId={sp.zugewiesen} />}
-      {tab === "stunden" && <Lessons student={student} />}
+      {tab === "stunden" && <Lessons student={student} filter={sp.art} />}
       {tab === "schule" && <School student={student} a={a} />}
       {tab === "uebungen" && <Exercises student={student} />}
     </>
@@ -87,7 +90,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
 }
 
 function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
-  const lessons = repo.listLessons(student.id);
+  const lessons = repo.listLessons(student.id).filter((l) => l.kind === "stunde");
   const lastDone = lessons.find((l) => l.status === "abgeschlossen");
   const next = [...lessons].reverse().find((l) => l.status === "geplant" && l.starts_at >= new Date().toISOString().slice(0, 10));
   const tests = repo.listTests(student.id);
@@ -381,21 +384,31 @@ function AnalysisTab({ student, a, assignedId }: { student: repo.Student; a: Ana
 
 function LessonCard({ lesson, studentId }: { lesson: repo.Lesson; studentId: number }) {
   const skills = repo.listSkills();
+  const auto = lesson.kind === "selbststaendig";
+  const teacher = auto ? null : repo.getTeacher(lesson.teacher_id);
   return (
-    <article className="panel px-5 py-4">
+    <article className={`panel px-5 py-4 ${auto ? "border-dashed" : ""}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <div className="flex flex-wrap items-baseline gap-x-3">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className="font-semibold">{formatDate(lesson.starts_at, { weekday: "short", day: "numeric", month: "short", year: "numeric" })}</span>
+          {auto && <Pill>selbstständig geübt · automatisch</Pill>}
           <span className="text-ink-2">
             {lesson.subject}
             {lesson.topic && ` · ${lesson.topic}`} · {lesson.duration_min} min
+            {teacher && ` · ${teacher.name}`}
           </span>
         </div>
         <div className="flex items-center gap-3">
           {lesson.status === "geplant" ? <Pill tone="accent">geplant</Pill> : lesson.status === "abgesagt" ? <Pill>abgesagt</Pill> : lesson.understanding ? <Understanding value={lesson.understanding} /> : null}
-          <Link href={`/schueler/${studentId}/stunden/${lesson.id}`} className="btn btn-ghost btn-sm">
-            {lesson.status === "geplant" ? "Dokumentieren" : "Bearbeiten"}
-          </Link>
+          {auto && lesson.assignment_id ? (
+            <Link href={`/schueler/${studentId}/ergebnis/${lesson.assignment_id}`} className="btn btn-ghost btn-sm">
+              Ergebnis
+            </Link>
+          ) : (
+            <Link href={`/schueler/${studentId}/stunden/${lesson.id}`} className="btn btn-ghost btn-sm">
+              {lesson.status === "geplant" ? "Dokumentieren" : "Bearbeiten"}
+            </Link>
+          )}
         </div>
       </div>
       {lesson.status === "abgeschlossen" && (
@@ -403,7 +416,7 @@ function LessonCard({ lesson, studentId }: { lesson: repo.Lesson; studentId: num
           {[
             ["Gemacht", lesson.activities],
             ["Fehler", lesson.mistakes],
-            ["Notizen", lesson.tutor_notes],
+            ["Beobachtungen", lesson.tutor_notes],
             ["Nächstes Mal", lesson.next_steps],
             ["Fähigkeiten", lesson.skill_ids.map((id) => skills.find((s) => s.id === id)?.name ?? id).join(", ")],
           ]
@@ -434,10 +447,18 @@ function Understanding({ value }: { value: number }) {
   );
 }
 
-function Lessons({ student }: { student: repo.Student }) {
+const DOC_FILTERS = [
+  ["alle", "Alle"],
+  ["stunden", "Nachhilfestunden"],
+  ["selbststaendig", "Selbstständig geübt"],
+] as const;
+
+function Lessons({ student, filter }: { student: repo.Student; filter?: string }) {
   const lessons = repo.listLessons(student.id);
   const upcoming = lessons.filter((l) => l.status === "geplant").reverse();
-  const past = lessons.filter((l) => l.status !== "geplant");
+  const art = DOC_FILTERS.find(([k]) => k === filter)?.[0] ?? "alle";
+  const done = lessons.filter((l) => l.status !== "geplant");
+  const past = done.filter((l) => art === "alle" || (art === "stunden" ? l.kind === "stunde" : l.kind === "selbststaendig"));
   return (
     <div className="space-y-10">
       <section>
@@ -453,7 +474,23 @@ function Lessons({ student }: { student: repo.Student }) {
         {upcoming.length === 0 ? <p className="text-[14px] text-ink-3">Keine Stunde geplant.</p> : <div className="space-y-3">{upcoming.map((l) => <LessonCard key={l.id} lesson={l} studentId={student.id} />)}</div>}
       </section>
       <section>
-        <SectionTitle>Bisherige Stunden ({past.length})</SectionTitle>
+        <SectionTitle>Dokumentation ({past.length})</SectionTitle>
+        <p className="-mt-1 mb-4 max-w-[72ch] text-[14px] text-ink-2">
+          Sobald {student.name.split(" ")[0]} eine Übung bearbeitet, entsteht hier automatisch ein Eintrag mit Ergebnis, Fehlern und Beobachtungen. Für die Abrechnung zählen nur die Nachhilfestunden.
+        </p>
+        <nav className="mb-4 flex flex-wrap gap-1.5" aria-label="Einträge filtern">
+          {DOC_FILTERS.map(([k, label]) => (
+            <Link
+              key={k}
+              href={`/schueler/${student.id}?tab=stunden${k === "alle" ? "" : `&art=${k}`}`}
+              aria-current={art === k ? "true" : undefined}
+              className={`rounded-md px-2.5 py-1 text-[13px] font-medium ${art === k ? "bg-ink text-surface" : "bg-panel text-ink-2 hover:text-ink"}`}
+            >
+              {label}
+              <span className="num ml-1.5 opacity-70">{k === "alle" ? done.length : done.filter((l) => (k === "stunden" ? l.kind === "stunde" : l.kind === "selbststaendig")).length}</span>
+            </Link>
+          ))}
+        </nav>
         {past.length === 0 ? (
           <Empty title="Noch keine Stunde dokumentiert">Halte nach jeder Stunde fest, was gemacht wurde, welche Fehler passiert sind und was als Nächstes kommt. Daraus lernt die Analyse.</Empty>
         ) : (
