@@ -9,7 +9,7 @@ export default async function NewLesson({ params }: { params: Promise<{ id: stri
   if (!student) notFound();
   return (
     <>
-      <PageHeader title="Nachhilfestunde" subtitle={student.name} back={{ href: `/schueler/${student.id}?tab=stunden`, label: student.name }} />
+      <PageHeader title="Nachhilfestunde" subtitle={student.name} back={{ href: `/schueler/${student.id}?tab=lernverlauf`, label: student.name }} />
       <LessonForm student={student} />
     </>
   );

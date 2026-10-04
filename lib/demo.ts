@@ -1,7 +1,9 @@
 /** Demo data: four students with realistic history so every screen has something to show. */
 import { db } from "./db";
-import { generateBuiltIn } from "./generators";
+import { generateBuiltIn, hasBuiltInGenerator } from "./generators";
 import { documentAssignment } from "./autodoc";
+import { writeLearningDoc } from "./learning";
+import { getUnit } from "./units";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
 import type { Difficulty } from "./curriculum";
@@ -187,8 +189,53 @@ function seeded(seed: number) {
   };
 }
 
+function interpolate(range: [number, number] | undefined, progress: number) {
+  const [from, to] = range ?? [0.6, 0.7];
+  return from + (to - from) * progress;
+}
+
+/** Answers every task of an assignment with the given success probability per skill. Returns the end time. */
+function simulate(aid: number, sid: number, wid: number, probFor: (skill: string) => number, startMs: number, random: () => number, unitId: number | null = null) {
+  let t = startMs;
+  for (const task of repo.listTasks(wid)) {
+    const prob = probFor(task.skillId ?? "");
+    let attemptNo = 0;
+    let done = false;
+    const hints = random() > prob + 0.2 ? (random() > 0.6 ? 2 : 1) : 0;
+    while (!done && attemptNo < 3) {
+      attemptNo++;
+      const success = random() < (attemptNo === 1 ? prob : prob * 0.45 + (hints ? 0.25 : 0)) || task.type === "free";
+      const wrong = task.errorMap.length ? task.errorMap[Math.floor(random() * task.errorMap.length)] : null;
+      const seconds = Math.round(25 + random() * 60 + (1 - prob) * 80);
+      const pause = random() < 0.05 ? 150 : 0;
+      t += (seconds + pause) * 1000;
+      done = success || attemptNo === 3;
+      repo.recordAttempt({
+        assignment_id: aid,
+        task_id: task.id,
+        student_id: sid,
+        skill_id: task.skillId,
+        attempt_no: attemptNo,
+        answer: success ? "(richtig)" : (wrong?.answer ?? "(falsch)"),
+        correct: success ? 1 : 0,
+        final: done ? 1 : 0,
+        time_ms: (seconds + pause) * 1000,
+        active_ms: Math.round(seconds * (0.8 + random() * 0.2)) * 1000,
+        hints_used: hints,
+        solution_viewed: 0,
+        error_label: success ? null : (wrong?.label ?? null),
+        feedback: "",
+        unit_id: unitId,
+        created_at: sqlStamp(t),
+      });
+    }
+  }
+  return t;
+}
+
 export function seedDemo(random: () => number = seeded(7)) {
   const conn = db();
+  const unitsToDocument: number[] = [];
   const run = conn.transaction(() => {
     for (const p of PROFILES) {
       const teacherId = (conn.prepare("SELECT id FROM teachers WHERE name = ?").get(p.teacher) as { id: number } | undefined)?.id ?? null;
@@ -196,11 +243,21 @@ export function seedDemo(random: () => number = seeded(7)) {
       const sid = repo.createStudent({ ...p.student, grade, teacher_id: teacherId });
       const allSkills = repo.listSkills();
 
-      for (const l of p.lessons) {
+      // Past lessons were units: Basis-Dokumentation, practice on the device during the unit, Lern-Dokumentation.
+      p.lessons.forEach((l, i) => {
+        const start = at(l.daysAgo, p.todayAt[0], p.todayAt[1]).getTime();
+        const end = start + 60 * 60_000;
+        const unitId = Number(
+          conn
+            .prepare("INSERT INTO units (teacher_id, student_id, status, started_at, ended_at, last_activity_at) VALUES (?, ?, 'beendet', ?, ?, ?)")
+            .run(teacherId, sid, new Date(start).toISOString(), new Date(end).toISOString(), new Date(end).toISOString()).lastInsertRowid,
+        );
+        const latest = i === p.lessons.length - 1;
         repo.saveLesson({
           student_id: sid,
           teacher_id: teacherId,
-          starts_at: localStamp(at(l.daysAgo, p.todayAt[0], p.todayAt[1])),
+          unit_id: unitId,
+          starts_at: localStamp(new Date(start)),
           duration_min: 60,
           subject: p.subject,
           topic: l.topic,
@@ -211,8 +268,27 @@ export function seedDemo(random: () => number = seeded(7)) {
           tutor_notes: l.notes,
           next_steps: l.next,
           skill_ids: l.skills,
+          concentration: Math.min(5, l.understanding + 1),
+          motivation: 4,
+          participation: Math.min(5, l.understanding + 1),
+          // the most recent one is left for the teacher to complete
+          reviewed_at: latest ? null : new Date(end + 3600_000).toISOString(),
         });
-      }
+        const practiced = l.skills.filter((id) => hasBuiltInGenerator(id));
+        if (practiced.length) {
+          const skills = practiced.map((id) => allSkills.find((s) => s.id === id)!);
+          const progress = Math.max(0, Math.min(1, (56 - l.daysAgo) / 56));
+          const drafts = generateBuiltIn({ subject: p.subject, skills: skills.map((s) => ({ id: s.id, name: s.name })), difficulty: "leicht bis mittel", count: 8, taskType: "mixed", seed: sid * 1000 + i });
+          const wid = repo.createWorksheet(
+            { title: `Stunde: ${l.topic}`, subject: p.subject, grade, school_type: p.student.school_type, klasse: p.student.klasse, topic: [...new Set(skills.map((s) => s.area))].join(", "), difficulty: "leicht bis mittel", task_type: "mixed", kind: "uebung", source: "generator", skill_ids: practiced },
+            drafts,
+          );
+          const aid = repo.assignWorksheet(wid, sid);
+          const done = simulate(aid, sid, wid, (skill) => interpolate(p.skills[skill], progress), start + 15 * 60_000, random, unitId);
+          conn.prepare("UPDATE assignments SET assigned_at = ?, started_at = ?, completed_at = ? WHERE id = ?").run(sqlStamp(start), sqlStamp(start + 15 * 60_000), sqlStamp(done), aid);
+        }
+        unitsToDocument.push(unitId);
+      });
       repo.saveLesson({
         student_id: sid,
         teacher_id: teacherId,
@@ -277,41 +353,15 @@ export function seedDemo(random: () => number = seeded(7)) {
         );
         const aid = repo.assignWorksheet(wid, sid);
         const startMs = Date.now() - daysAgo * DAY + 16 * 3600_000;
-        let t = startMs;
-        for (const task of repo.listTasks(wid)) {
-          const [from, to] = p.skills[task.skillId ?? ""] ?? [0.6, 0.7];
-          const prob = from + (to - from) * progress;
-          let attemptNo = 0;
-          let done = false;
-          const hints = random() > prob + 0.2 ? 1 : 0;
-          while (!done && attemptNo < 3) {
-            attemptNo++;
-            const success = random() < (attemptNo === 1 ? prob : prob * 0.45) || task.type === "free";
-            const wrong = task.errorMap.length ? task.errorMap[Math.floor(random() * task.errorMap.length)] : null;
-            const seconds = Math.round(25 + random() * 60 + (1 - prob) * 80);
-            t += seconds * 1000;
-            done = success || attemptNo === 3;
-            repo.recordAttempt({
-              assignment_id: aid,
-              task_id: task.id,
-              student_id: sid,
-              skill_id: task.skillId,
-              attempt_no: attemptNo,
-              answer: success ? "(richtig)" : (wrong?.answer ?? "(falsch)"),
-              correct: success ? 1 : 0,
-              final: done ? 1 : 0,
-              time_ms: seconds * 1000,
-              hints_used: hints,
-              solution_viewed: 0,
-              error_label: success ? null : (wrong?.label ?? null),
-              feedback: "",
-              created_at: sqlStamp(t),
-            });
-          }
-        }
+        const t = simulate(aid, sid, wid, (skill) => interpolate(p.skills[skill], progress), startMs, random);
         conn.prepare("UPDATE assignments SET assigned_at = ?, started_at = ?, completed_at = ? WHERE id = ?").run(sqlStamp(startMs - 3 * DAY), sqlStamp(startMs), sqlStamp(t), aid);
         documentAssignment(aid);
       }
+    }
+    // Lern-Dokumentation of each unit, oldest first, once all evidence exists
+    for (const id of unitsToDocument) {
+      const u = getUnit(id)!;
+      writeLearningDoc(u, Date.parse(u.ended_at!));
     }
   });
   run();

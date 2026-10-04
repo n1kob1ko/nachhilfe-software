@@ -2,7 +2,8 @@ import crypto from "node:crypto";
 import { db, json } from "./db";
 import type { TaskDraft } from "./tasks";
 
-export type Teacher = { id: number; name: string; active: number };
+export type Teacher = { id: number; name: string; active: number; username: string; is_admin: number; must_change_password: number };
+const TEACHER_COLS = "id, name, active, username, is_admin, must_change_password";
 
 export type Student = {
   id: number;
@@ -32,6 +33,21 @@ export type Lesson = {
   /** 'stunde' = tutoring lesson, 'selbststaendig' = written automatically from the student's own practice. */
   kind: "stunde" | "selbststaendig";
   assignment_id: number | null;
+  /** Set when the lesson is the Lern-Dokumentation of a unit. */
+  unit_id: number | null;
+  /** Generated at the end of the unit. */
+  summary: string;
+  /** JSON of the generated UnitReport (lib/learning.ts). */
+  report: string | null;
+  concentration: number | null;
+  motivation: number | null;
+  participation: number | null;
+  difficulties: string;
+  positives: string;
+  review_topics: string;
+  homework_note: string;
+  /** When the teacher looked over and saved the generated documentation. */
+  reviewed_at: string | null;
   starts_at: string;
   duration_min: number;
   subject: string;
@@ -104,6 +120,9 @@ export type Attempt = {
   error_label: string | null;
   feedback: string;
   created_at: string;
+  unit_id: number | null;
+  /** Time with interaction on the page; null for older attempts. */
+  active_ms: number | null;
 };
 
 type Row = Record<string, unknown>;
@@ -129,11 +148,14 @@ const toTask = (r: Row): Task => ({
 
 // ---------- teachers ----------
 export function listTeachers(): Teacher[] {
-  return db().prepare("SELECT * FROM teachers WHERE active = 1 ORDER BY name COLLATE NOCASE").all() as Teacher[];
+  return db().prepare(`SELECT ${TEACHER_COLS} FROM teachers WHERE active = 1 ORDER BY name COLLATE NOCASE`).all() as Teacher[];
+}
+export function listAllTeachers(): Teacher[] {
+  return db().prepare(`SELECT ${TEACHER_COLS} FROM teachers ORDER BY active DESC, name COLLATE NOCASE`).all() as Teacher[];
 }
 export function getTeacher(id: number | null): Teacher | null {
   if (!id) return null;
-  return (db().prepare("SELECT * FROM teachers WHERE id = ?").get(id) as Teacher | undefined) ?? null;
+  return (db().prepare(`SELECT ${TEACHER_COLS} FROM teachers WHERE id = ?`).get(id) as Teacher | undefined) ?? null;
 }
 
 // ---------- students ----------
@@ -209,22 +231,44 @@ export function getLesson(id: number): Lesson | null {
   const r = db().prepare("SELECT * FROM lessons WHERE id = ?").get(id) as Row | undefined;
   return r ? toLesson(r) : null;
 }
-export type LessonInput = Omit<Lesson, "id" | "kind" | "assignment_id"> & Partial<Pick<Lesson, "kind" | "assignment_id">>;
+type LessonExtras = "kind" | "assignment_id" | "unit_id" | "summary" | "report" | "concentration" | "motivation" | "participation" | "difficulties" | "positives" | "review_topics" | "homework_note" | "reviewed_at";
+export type LessonInput = Omit<Lesson, "id" | LessonExtras> & Partial<Pick<Lesson, LessonExtras>>;
+const LESSON_DEFAULTS = {
+  kind: "stunde",
+  assignment_id: null,
+  unit_id: null,
+  summary: "",
+  report: null,
+  concentration: null,
+  motivation: null,
+  participation: null,
+  difficulties: "",
+  positives: "",
+  review_topics: "",
+  homework_note: "",
+  reviewed_at: null,
+};
 export function saveLesson(l: LessonInput, id?: number): number {
-  const params = { kind: "stunde", assignment_id: null, ...l, skill_ids: JSON.stringify(l.skill_ids) };
+  const existing = id ? getLesson(id) : null;
+  // fields the caller leaves out keep their stored value
+  const params = { ...LESSON_DEFAULTS, ...(existing ?? {}), ...l, skill_ids: JSON.stringify(l.skill_ids) };
   if (id) {
     db()
       .prepare(
         `UPDATE lessons SET teacher_id=@teacher_id, starts_at=@starts_at, duration_min=@duration_min, subject=@subject, topic=@topic, status=@status, activities=@activities,
-         mistakes=@mistakes, understanding=@understanding, tutor_notes=@tutor_notes, next_steps=@next_steps, skill_ids=@skill_ids WHERE id=@id`,
+         mistakes=@mistakes, understanding=@understanding, tutor_notes=@tutor_notes, next_steps=@next_steps, skill_ids=@skill_ids, unit_id=@unit_id,
+         summary=@summary, report=@report, concentration=@concentration, motivation=@motivation, participation=@participation, difficulties=@difficulties,
+         positives=@positives, review_topics=@review_topics, homework_note=@homework_note, reviewed_at=@reviewed_at WHERE id=@id`,
       )
       .run({ ...params, id });
     return id;
   }
   const res = db()
     .prepare(
-      `INSERT INTO lessons (student_id, teacher_id, kind, assignment_id, starts_at, duration_min, subject, topic, status, activities, mistakes, understanding, tutor_notes, next_steps, skill_ids)
-       VALUES (@student_id, @teacher_id, @kind, @assignment_id, @starts_at, @duration_min, @subject, @topic, @status, @activities, @mistakes, @understanding, @tutor_notes, @next_steps, @skill_ids)`,
+      `INSERT INTO lessons (student_id, teacher_id, kind, assignment_id, unit_id, starts_at, duration_min, subject, topic, status, activities, mistakes, understanding, tutor_notes, next_steps, skill_ids,
+         summary, report, concentration, motivation, participation, difficulties, positives, review_topics, homework_note, reviewed_at)
+       VALUES (@student_id, @teacher_id, @kind, @assignment_id, @unit_id, @starts_at, @duration_min, @subject, @topic, @status, @activities, @mistakes, @understanding, @tutor_notes, @next_steps, @skill_ids,
+         @summary, @report, @concentration, @motivation, @participation, @difficulties, @positives, @review_topics, @homework_note, @reviewed_at)`,
     )
     .run(params);
   return Number(res.lastInsertRowid);
@@ -232,19 +276,41 @@ export function saveLesson(l: LessonInput, id?: number): number {
 export function deleteLesson(id: number) {
   db().prepare("DELETE FROM lessons WHERE id = ?").run(id);
 }
+export function getLessonForUnit(unitId: number): Lesson | null {
+  const r = db().prepare("SELECT * FROM lessons WHERE unit_id = ?").get(unitId) as Row | undefined;
+  return r ? toLesson(r) : null;
+}
+export function listAttemptsForUnit(unitId: number): Attempt[] {
+  return db().prepare("SELECT * FROM attempts WHERE unit_id = ? ORDER BY created_at, id").all(unitId) as Attempt[];
+}
 export function getLessonForAssignment(assignmentId: number): Lesson | null {
   const r = db().prepare("SELECT * FROM lessons WHERE assignment_id = ?").get(assignmentId) as Row | undefined;
   return r ? toLesson(r) : null;
 }
 
 export type BillingFilter = { from: string; to: string; teacherId?: number | null; studentId?: number | null };
-export type BillingRow = { id: number; student_id: number; starts_at: string; duration_min: number; teacher_name: string | null; student_name: string; subject: string; topic: string; tutor_notes: string };
+export type BillingRow = {
+  id: number;
+  student_id: number;
+  starts_at: string;
+  duration_min: number;
+  teacher_name: string | null;
+  student_name: string;
+  subject: string;
+  topic: string;
+  tutor_notes: string;
+  /** From the Basis-Dokumentation, when the lesson was a unit. */
+  unit_id: number | null;
+  unit_start: string | null;
+  unit_end: string | null;
+};
 /** Completed tutoring lessons only; automatic practice entries are not billed. */
 export function billingEntries(f: BillingFilter): BillingRow[] {
   return db()
     .prepare(
-      `SELECT l.id, l.student_id, l.starts_at, l.duration_min, t.name AS teacher_name, s.name AS student_name, l.subject, l.topic, l.tutor_notes
-       FROM lessons l JOIN students s ON s.id = l.student_id LEFT JOIN teachers t ON t.id = l.teacher_id
+      `SELECT l.id, l.student_id, l.starts_at, l.duration_min, t.name AS teacher_name, s.name AS student_name, l.subject, l.topic, l.tutor_notes,
+              l.unit_id, u.started_at AS unit_start, u.ended_at AS unit_end
+       FROM lessons l JOIN students s ON s.id = l.student_id LEFT JOIN teachers t ON t.id = l.teacher_id LEFT JOIN units u ON u.id = l.unit_id
        WHERE l.kind = 'stunde' AND l.status = 'abgeschlossen' AND l.starts_at >= @from AND l.starts_at < @to
          AND (@teacherId IS NULL OR l.teacher_id = @teacherId) AND (@studentId IS NULL OR l.student_id = @studentId)
        ORDER BY l.starts_at, s.name COLLATE NOCASE`,
@@ -376,13 +442,13 @@ export function listAttemptsForAssignment(assignmentId: number): Attempt[] {
 export function listAttemptsForStudent(studentId: number): Attempt[] {
   return db().prepare("SELECT * FROM attempts WHERE student_id = ? ORDER BY created_at, id").all(studentId) as Attempt[];
 }
-export function recordAttempt(a: Omit<Attempt, "id" | "created_at"> & { created_at?: string }) {
+export function recordAttempt(a: Omit<Attempt, "id" | "created_at" | "unit_id" | "active_ms"> & { created_at?: string; unit_id?: number | null; active_ms?: number | null }) {
   const res = db()
     .prepare(
-      `INSERT INTO attempts (assignment_id, task_id, student_id, skill_id, attempt_no, answer, correct, final, time_ms, hints_used, solution_viewed, error_label, feedback, created_at)
-       VALUES (@assignment_id, @task_id, @student_id, @skill_id, @attempt_no, @answer, @correct, @final, @time_ms, @hints_used, @solution_viewed, @error_label, @feedback, COALESCE(@created_at, datetime('now')))`,
+      `INSERT INTO attempts (assignment_id, task_id, student_id, skill_id, attempt_no, answer, correct, final, time_ms, hints_used, solution_viewed, error_label, feedback, unit_id, active_ms, created_at)
+       VALUES (@assignment_id, @task_id, @student_id, @skill_id, @attempt_no, @answer, @correct, @final, @time_ms, @hints_used, @solution_viewed, @error_label, @feedback, @unit_id, @active_ms, COALESCE(@created_at, datetime('now')))`,
     )
-    .run({ created_at: null, ...a });
+    .run({ created_at: null, unit_id: null, active_ms: null, ...a });
   return Number(res.lastInsertRowid);
 }
 export function recentActivity(limit = 8) {

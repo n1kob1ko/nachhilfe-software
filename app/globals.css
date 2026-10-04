@@ -75,11 +75,13 @@ select {
 .num {
   font-variant-numeric: tabular-nums;
 }
-a.link {
+a.link,
+button.link {
   color: var(--accent);
   text-underline-offset: 3px;
 }
-a.link:hover {
+a.link:hover,
+button.link:hover {
   text-decoration: underline;
 }
 
