@@ -13,7 +13,7 @@ export default async function EditLesson({ params }: { params: Promise<{ id: str
       <PageHeader
         title={lesson.status === "geplant" ? "Stunde dokumentieren" : "Stunde bearbeiten"}
         subtitle={`${student.name} · ${formatDate(lesson.starts_at, { weekday: "long", day: "numeric", month: "long" })}`}
-        back={{ href: `/schueler/${student.id}?tab=stunden`, label: student.name }}
+        back={{ href: `/schueler/${student.id}?tab=lernverlauf`, label: student.name }}
       />
       <LessonForm student={student} lesson={lesson} />
     </>

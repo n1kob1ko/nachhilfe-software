@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { CalendarClock, ClipboardCheck, NotebookText, Plus } from "lucide-react";
+import { CalendarClock, ClipboardCheck, Plus } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
+import { UnitControl } from "@/components/UnitControl";
 import { Empty, MasteryBar, PageHeader, Pill, SectionTitle, TrendBadge, formatDate, formatTime } from "@/components/ui";
 import { pct } from "@/lib/analysis";
 import * as repo from "@/lib/repo";
@@ -96,10 +97,15 @@ export default function Dashboard() {
                           )}
                         </p>
                       </div>
-                      <Link href={`/schueler/${l.student_id}/stunden/${l.id}`} className={`btn btn-sm col-start-2 justify-self-start sm:col-start-3 ${done ? "btn-ghost" : "btn-secondary"}`}>
-                        {done ? <ClipboardCheck size={15} aria-hidden /> : <NotebookText size={15} aria-hidden />}
-                        {done ? "Dokumentiert" : "Dokumentieren"}
-                      </Link>
+                      <div className="col-start-2 justify-self-start sm:col-start-3">
+                        {done ? (
+                          <Link href={l.unit_id ? `/einheiten/${l.unit_id}` : `/schueler/${l.student_id}/stunden/${l.id}`} className="btn btn-ghost btn-sm">
+                            <ClipboardCheck size={15} aria-hidden /> Dokumentiert
+                          </Link>
+                        ) : r ? (
+                          <UnitControl student={r.s} compact />
+                        ) : null}
+                      </div>
                     </li>
                   );
                 })}

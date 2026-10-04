@@ -110,6 +110,7 @@ function TaskCard({
   const [feedback, setFeedback] = useState<Feedback | null>(task.finished ? { correct: task.finished.correct, text: "Diese Aufgabe hast du schon bearbeitet.", final: true, solution: task.finished.solution } : null);
   const [pending, start] = useTransition();
   const startedAt = useRef(Date.now());
+  const active = useActiveTime();
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const final = feedback?.final ?? false;
 
@@ -125,7 +126,8 @@ function TaskCard({
     start(async () => {
       const elapsed = Date.now() - startedAt.current;
       startedAt.current = Date.now();
-      const res = await submitAnswerAction({ token, assignmentId, taskId: task.id, answer, timeMs: elapsed, hintsUsed: hintsShown, ...extra });
+      const activeMs = active.take();
+      const res = await submitAnswerAction({ token, assignmentId, taskId: task.id, answer, timeMs: elapsed, activeMs, hintsUsed: hintsShown, ...extra });
       if (res.needsSelfAssessment) {
         setFeedback({ correct: null, text: res.feedback, final: false, sample: res.sample, selfAssess: true });
         return;
@@ -287,4 +289,38 @@ function TaskCard({
       </form>
     </article>
   );
+}
+
+/**
+ * Counts only the time the student is actually working: page visible and some input
+ * (typing, clicking, scrolling) within the last minute. Long pauses show up as the
+ * difference to the total time.
+ */
+function useActiveTime() {
+  const ms = useRef(0);
+  const lastInput = useRef(Date.now());
+  useEffect(() => {
+    const mark = () => {
+      lastInput.current = Date.now();
+    };
+    const events = ["keydown", "pointerdown", "pointermove", "scroll", "input", "focusin"] as const;
+    events.forEach((e) => window.addEventListener(e, mark, { passive: true }));
+    let last = Date.now();
+    const tick = window.setInterval(() => {
+      const now = Date.now();
+      if (document.visibilityState === "visible" && now - lastInput.current < 60_000) ms.current += now - last;
+      last = now;
+    }, 1000);
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, mark));
+      window.clearInterval(tick);
+    };
+  }, []);
+  return {
+    take() {
+      const v = ms.current;
+      ms.current = 0;
+      return v;
+    },
+  };
 }
