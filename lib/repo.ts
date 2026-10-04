@@ -2,10 +2,15 @@ import crypto from "node:crypto";
 import { db, json } from "./db";
 import type { TaskDraft } from "./tasks";
 
+export type Teacher = { id: number; name: string; active: number };
+
 export type Student = {
   id: number;
   name: string;
+  /** Internal Schulstufe (1–13), derived from school_type + klasse. */
   grade: number;
+  klasse: number | null;
+  teacher_id: number | null;
   school: string;
   school_type: string;
   subjects: string[];
@@ -23,6 +28,10 @@ export type Skill = { id: string; subject: string; area: string; name: string; g
 export type Lesson = {
   id: number;
   student_id: number;
+  teacher_id: number | null;
+  /** 'stunde' = tutoring lesson, 'selbststaendig' = written automatically from the student's own practice. */
+  kind: "stunde" | "selbststaendig";
+  assignment_id: number | null;
   starts_at: string;
   duration_min: number;
   subject: string;
@@ -56,6 +65,8 @@ export type Worksheet = {
   title: string;
   subject: string;
   grade: number;
+  school_type: string;
+  klasse: number | null;
   topic: string;
   difficulty: string;
   task_type: string;
@@ -116,6 +127,15 @@ const toTask = (r: Row): Task => ({
   errorMap: json(r.error_map as string, []),
 });
 
+// ---------- teachers ----------
+export function listTeachers(): Teacher[] {
+  return db().prepare("SELECT * FROM teachers WHERE active = 1 ORDER BY name COLLATE NOCASE").all() as Teacher[];
+}
+export function getTeacher(id: number | null): Teacher | null {
+  if (!id) return null;
+  return (db().prepare("SELECT * FROM teachers WHERE id = ?").get(id) as Teacher | undefined) ?? null;
+}
+
 // ---------- students ----------
 export function listStudents(): Student[] {
   return db().prepare("SELECT * FROM students ORDER BY name COLLATE NOCASE").all().map((r) => toStudent(r as Row));
@@ -133,8 +153,8 @@ export function createStudent(s: StudentInput): number {
   const token = crypto.randomBytes(9).toString("base64url");
   const res = db()
     .prepare(
-      `INSERT INTO students (name, grade, school, school_type, subjects, current_topics, strengths_note, weaknesses_note, goals, notes, access_token)
-       VALUES (@name, @grade, @school, @school_type, @subjects, @current_topics, @strengths_note, @weaknesses_note, @goals, @notes, @token)`,
+      `INSERT INTO students (name, grade, klasse, teacher_id, school, school_type, subjects, current_topics, strengths_note, weaknesses_note, goals, notes, access_token)
+       VALUES (@name, @grade, @klasse, @teacher_id, @school, @school_type, @subjects, @current_topics, @strengths_note, @weaknesses_note, @goals, @notes, @token)`,
     )
     .run({ ...s, subjects: JSON.stringify(s.subjects), token });
   return Number(res.lastInsertRowid);
@@ -142,7 +162,7 @@ export function createStudent(s: StudentInput): number {
 export function updateStudent(id: number, s: StudentInput) {
   db()
     .prepare(
-      `UPDATE students SET name=@name, grade=@grade, school=@school, school_type=@school_type, subjects=@subjects, current_topics=@current_topics,
+      `UPDATE students SET name=@name, grade=@grade, klasse=@klasse, teacher_id=@teacher_id, school=@school, school_type=@school_type, subjects=@subjects, current_topics=@current_topics,
        strengths_note=@strengths_note, weaknesses_note=@weaknesses_note, goals=@goals, notes=@notes WHERE id=@id`,
     )
     .run({ ...s, subjects: JSON.stringify(s.subjects), id });
@@ -176,23 +196,26 @@ export function createSkill(subject: string, area: string, name: string, gradeMi
 export function listLessons(studentId: number): Lesson[] {
   return db().prepare("SELECT * FROM lessons WHERE student_id = ? ORDER BY starts_at DESC").all(studentId).map((r) => toLesson(r as Row));
 }
-export function lessonsBetween(from: string, to: string): (Lesson & { student_name: string })[] {
+export function lessonsBetween(from: string, to: string): (Lesson & { student_name: string; teacher_name: string | null })[] {
   return db()
-    .prepare("SELECT l.*, s.name AS student_name FROM lessons l JOIN students s ON s.id = l.student_id WHERE starts_at >= ? AND starts_at < ? ORDER BY starts_at")
+    .prepare(
+      `SELECT l.*, s.name AS student_name, t.name AS teacher_name FROM lessons l JOIN students s ON s.id = l.student_id LEFT JOIN teachers t ON t.id = l.teacher_id
+       WHERE l.kind = 'stunde' AND starts_at >= ? AND starts_at < ? ORDER BY starts_at`,
+    )
     .all(from, to)
-    .map((r) => ({ ...toLesson(r as Row), student_name: (r as Row).student_name as string }));
+    .map((r) => ({ ...toLesson(r as Row), student_name: (r as Row).student_name as string, teacher_name: (r as Row).teacher_name as string | null }));
 }
 export function getLesson(id: number): Lesson | null {
   const r = db().prepare("SELECT * FROM lessons WHERE id = ?").get(id) as Row | undefined;
   return r ? toLesson(r) : null;
 }
-export type LessonInput = Omit<Lesson, "id">;
+export type LessonInput = Omit<Lesson, "id" | "kind" | "assignment_id"> & Partial<Pick<Lesson, "kind" | "assignment_id">>;
 export function saveLesson(l: LessonInput, id?: number): number {
-  const params = { ...l, skill_ids: JSON.stringify(l.skill_ids) };
+  const params = { kind: "stunde", assignment_id: null, ...l, skill_ids: JSON.stringify(l.skill_ids) };
   if (id) {
     db()
       .prepare(
-        `UPDATE lessons SET starts_at=@starts_at, duration_min=@duration_min, subject=@subject, topic=@topic, status=@status, activities=@activities,
+        `UPDATE lessons SET teacher_id=@teacher_id, starts_at=@starts_at, duration_min=@duration_min, subject=@subject, topic=@topic, status=@status, activities=@activities,
          mistakes=@mistakes, understanding=@understanding, tutor_notes=@tutor_notes, next_steps=@next_steps, skill_ids=@skill_ids WHERE id=@id`,
       )
       .run({ ...params, id });
@@ -200,14 +223,33 @@ export function saveLesson(l: LessonInput, id?: number): number {
   }
   const res = db()
     .prepare(
-      `INSERT INTO lessons (student_id, starts_at, duration_min, subject, topic, status, activities, mistakes, understanding, tutor_notes, next_steps, skill_ids)
-       VALUES (@student_id, @starts_at, @duration_min, @subject, @topic, @status, @activities, @mistakes, @understanding, @tutor_notes, @next_steps, @skill_ids)`,
+      `INSERT INTO lessons (student_id, teacher_id, kind, assignment_id, starts_at, duration_min, subject, topic, status, activities, mistakes, understanding, tutor_notes, next_steps, skill_ids)
+       VALUES (@student_id, @teacher_id, @kind, @assignment_id, @starts_at, @duration_min, @subject, @topic, @status, @activities, @mistakes, @understanding, @tutor_notes, @next_steps, @skill_ids)`,
     )
     .run(params);
   return Number(res.lastInsertRowid);
 }
 export function deleteLesson(id: number) {
   db().prepare("DELETE FROM lessons WHERE id = ?").run(id);
+}
+export function getLessonForAssignment(assignmentId: number): Lesson | null {
+  const r = db().prepare("SELECT * FROM lessons WHERE assignment_id = ?").get(assignmentId) as Row | undefined;
+  return r ? toLesson(r) : null;
+}
+
+export type BillingFilter = { from: string; to: string; teacherId?: number | null; studentId?: number | null };
+export type BillingRow = { id: number; student_id: number; starts_at: string; duration_min: number; teacher_name: string | null; student_name: string; subject: string; topic: string; tutor_notes: string };
+/** Completed tutoring lessons only; automatic practice entries are not billed. */
+export function billingEntries(f: BillingFilter): BillingRow[] {
+  return db()
+    .prepare(
+      `SELECT l.id, l.student_id, l.starts_at, l.duration_min, t.name AS teacher_name, s.name AS student_name, l.subject, l.topic, l.tutor_notes
+       FROM lessons l JOIN students s ON s.id = l.student_id LEFT JOIN teachers t ON t.id = l.teacher_id
+       WHERE l.kind = 'stunde' AND l.status = 'abgeschlossen' AND l.starts_at >= @from AND l.starts_at < @to
+         AND (@teacherId IS NULL OR l.teacher_id = @teacherId) AND (@studentId IS NULL OR l.student_id = @studentId)
+       ORDER BY l.starts_at, s.name COLLATE NOCASE`,
+    )
+    .all({ from: f.from, to: f.to, teacherId: f.teacherId || null, studentId: f.studentId || null }) as BillingRow[];
 }
 
 // ---------- homework & tests ----------
@@ -247,7 +289,7 @@ export function createWorksheet(w: Omit<Worksheet, "id" | "created_at">, tasks: 
   const conn = db();
   const tx = conn.transaction(() => {
     const res = conn
-      .prepare("INSERT INTO worksheets (title, subject, grade, topic, difficulty, task_type, kind, source, skill_ids) VALUES (@title, @subject, @grade, @topic, @difficulty, @task_type, @kind, @source, @skill_ids)")
+      .prepare("INSERT INTO worksheets (title, subject, grade, school_type, klasse, topic, difficulty, task_type, kind, source, skill_ids) VALUES (@title, @subject, @grade, @school_type, @klasse, @topic, @difficulty, @task_type, @kind, @source, @skill_ids)")
       .run({ ...w, skill_ids: JSON.stringify(w.skill_ids) });
     const wid = Number(res.lastInsertRowid);
     const ins = conn.prepare(

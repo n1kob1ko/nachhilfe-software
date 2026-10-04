@@ -17,7 +17,7 @@ export default async function NewWorksheet({ searchParams }: { searchParams: Pro
       />
       <BuilderForm
         skills={listSkills()}
-        students={listStudents().map(({ id, name, grade, school_type, subjects }) => ({ id, name, grade, school_type, subjects }))}
+        students={listStudents().map(({ id, name, klasse, school_type, subjects }) => ({ id, name, klasse, school_type, subjects }))}
         initialStudentId={sp.schueler ? Number(sp.schueler) : undefined}
         aiEnabled={ai}
         preset={sp.skill ? { skillIds: [sp.skill] } : undefined}

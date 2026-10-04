@@ -1,35 +1,37 @@
 import { saveStudentAction } from "@/app/actions";
-import { SCHOOL_TYPES, SUBJECTS } from "@/lib/curriculum";
-import type { Student } from "@/lib/repo";
+import { SchoolClassFields } from "@/components/SchoolClassFields";
+import { SUBJECTS } from "@/lib/curriculum";
+import { listTeachers, type Student } from "@/lib/repo";
 
 export function StudentForm({ student }: { student?: Student }) {
+  const teachers = listTeachers();
   const others = student?.subjects.filter((s) => !(SUBJECTS as readonly string[]).includes(s)) ?? [];
   return (
     <form action={saveStudentAction} className="grid max-w-[760px] gap-6">
       {student && <input type="hidden" name="id" value={student.id} />}
-      <div className="grid gap-4 sm:grid-cols-[1fr_140px]">
+      <div className="grid gap-4 sm:grid-cols-[1fr_200px]">
         <label className="field">
           <span className="label">Name</span>
           <input className="input" name="name" required defaultValue={student?.name} autoFocus={!student} />
         </label>
         <label className="field">
-          <span className="label">Schulstufe</span>
-          <input className="input num" name="grade" type="number" min={1} max={13} required defaultValue={student?.grade ?? 5} />
+          <span className="label">Lehrer</span>
+          <select className="input" name="teacher_id" defaultValue={student?.teacher_id ?? teachers[0]?.id ?? ""}>
+            <option value="">noch offen</option>
+            {teachers.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-[1fr_1fr_200px]">
         <label className="field">
           <span className="label">Schule</span>
           <input className="input" name="school" defaultValue={student?.school} placeholder="z. B. MS Graz-St. Peter" />
         </label>
-        <label className="field">
-          <span className="label">Schultyp</span>
-          <select className="input" name="school_type" defaultValue={student?.school_type || "Mittelschule"}>
-            {SCHOOL_TYPES.map((t) => (
-              <option key={t}>{t}</option>
-            ))}
-          </select>
-        </label>
+        <SchoolClassFields type={student?.school_type} klasse={student?.klasse} />
       </div>
       <fieldset className="field">
         <legend className="label mb-1.5">Fächer</legend>

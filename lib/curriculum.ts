@@ -9,16 +9,6 @@ export type CurriculumSkill = {
 
 export const SUBJECTS = ["Mathematik", "Deutsch", "Englisch"] as const;
 
-export const SCHOOL_TYPES = [
-  "Volksschule",
-  "Mittelschule",
-  "AHS-Unterstufe",
-  "AHS-Oberstufe",
-  "BHS (HAK, HTL, HLW …)",
-  "Polytechnische Schule",
-  "Berufsschule",
-  "Andere",
-];
 
 export const DIFFICULTIES = ["leicht", "leicht bis mittel", "mittel", "schwer"] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
