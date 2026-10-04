@@ -2,8 +2,15 @@ import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
 import { CURRICULUM } from "./curriculum";
+import { migrateLegacy } from "./school";
 
 const SCHEMA = `
+CREATE TABLE IF NOT EXISTS teachers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  active INTEGER NOT NULL DEFAULT 1
+);
+
 CREATE TABLE IF NOT EXISTS students (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
@@ -131,6 +138,20 @@ CREATE INDEX IF NOT EXISTS idx_attempts_student ON attempts(student_id, skill_id
 CREATE INDEX IF NOT EXISTS idx_lessons_student ON lessons(student_id, starts_at);
 `;
 
+/** Columns added after the first release. Added in place so existing databases keep their data. */
+const COLUMNS: [table: string, column: string, definition: string][] = [
+  ["students", "klasse", "INTEGER"],
+  ["students", "teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["lessons", "teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["lessons", "kind", "TEXT NOT NULL DEFAULT 'stunde'"],
+  ["lessons", "assignment_id", "INTEGER REFERENCES assignments(id) ON DELETE CASCADE"],
+  ["worksheets", "school_type", "TEXT NOT NULL DEFAULT ''"],
+  ["worksheets", "klasse", "INTEGER"],
+];
+
+/** Teachers to start with; more can be added later. */
+export const DEFAULT_TEACHERS = ["Niko", "Thomas"];
+
 let instance: Database.Database | null = null;
 
 function dbPath() {
@@ -145,9 +166,31 @@ export function db(): Database.Database {
   conn.pragma("journal_mode = WAL");
   conn.pragma("foreign_keys = ON");
   conn.exec(SCHEMA);
+  migrate(conn);
   seedCurriculum(conn);
   instance = conn;
   return conn;
+}
+
+function migrate(conn: Database.Database) {
+  const tx = conn.transaction(() => {
+    for (const [table, column, definition] of COLUMNS) {
+      const cols = conn.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+      if (!cols.some((c) => c.name === column)) conn.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    }
+    conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_lessons_assignment ON lessons(assignment_id) WHERE assignment_id IS NOT NULL");
+    // Old rows only had a Schulstufe: derive school type and class from it.
+    const legacy = conn.prepare("SELECT id, school_type, grade FROM students WHERE klasse IS NULL").all() as { id: number; school_type: string; grade: number }[];
+    const fix = conn.prepare("UPDATE students SET school_type = ?, klasse = ? WHERE id = ?");
+    for (const r of legacy) {
+      const m = migrateLegacy(r.school_type, r.grade);
+      fix.run(m.type, m.klasse, r.id);
+    }
+    const insertTeacher = conn.prepare("INSERT OR IGNORE INTO teachers (name) VALUES (?)");
+    const { n } = conn.prepare("SELECT COUNT(*) AS n FROM teachers").get() as { n: number };
+    if (n === 0) for (const name of DEFAULT_TEACHERS) insertTeacher.run(name);
+  });
+  tx();
 }
 
 /** Inserts the built-in skill tree. Existing skills (also custom ones) are left untouched. */

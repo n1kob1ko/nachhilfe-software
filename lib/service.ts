@@ -1,8 +1,10 @@
 import { aiEnabled, generateWithAI, gradeFreeText } from "./ai";
 import { computeAnalysis } from "./analysis";
+import { documentAssignment } from "./autodoc";
 import type { Difficulty, TaskType } from "./curriculum";
 import { TASK_TYPES } from "./curriculum";
 import { generateBuiltIn } from "./generators";
+import { klassenLabel, schulstufe } from "./school";
 import * as repo from "./repo";
 import { checkAnswer, type TaskDraft } from "./tasks";
 
@@ -22,8 +24,8 @@ export function analyzeStudent(studentId: number, now?: number) {
 
 export type BuildRequest = {
   subject: string;
-  grade: number;
-  schoolType?: string;
+  schoolType: string;
+  klasse: number;
   skillIds: string[];
   difficulty: Difficulty;
   count: number;
@@ -49,8 +51,7 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
     try {
       tasks = await generateWithAI({
         subject: req.subject,
-        grade: req.grade,
-        schoolType: req.schoolType ?? "",
+        level: klassenLabel(req.schoolType, req.klasse),
         topic,
         skills: skills.map((s) => ({ id: s.id, name: s.name, area: s.area })),
         difficulty: req.difficulty,
@@ -74,7 +75,9 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
     {
       title,
       subject: req.subject,
-      grade: req.grade,
+      grade: schulstufe(req.schoolType, req.klasse),
+      school_type: req.schoolType,
+      klasse: req.klasse,
       topic,
       difficulty: req.difficulty,
       task_type: req.taskType,
@@ -139,6 +142,7 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
   if (input.giveUp) {
     repo.recordAttempt({ ...base, answer: input.answer, correct: 0, final: 1, solution_viewed: 1, error_label: null, feedback: "Lösung angesehen" });
     repo.completeAssignmentIfDone(assignment.id);
+    documentAssignment(assignment.id);
     return { correct: false, final: true, feedback: "Hier ist der Lösungsweg. Schau ihn dir in Ruhe an.", attemptNo, solution: task.solution };
   }
 
@@ -172,6 +176,7 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
     feedback: result.feedback,
   });
   if (final) repo.completeAssignmentIfDone(assignment.id);
+  documentAssignment(assignment.id);
   const left = MAX_TRIES - attemptNo;
   return {
     correct: result.correct,

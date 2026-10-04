@@ -1,11 +1,13 @@
 import { Brand, Nav } from "@/components/Nav";
 import { aiEnabled } from "@/lib/ai";
+import { backfillAutoDocs } from "@/lib/autodoc";
 import { Sparkles } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default function TutorLayout({ children }: { children: React.ReactNode }) {
   const ai = aiEnabled();
+  backfillAutoDocs();
   return (
     <div className="md:grid md:min-h-screen md:grid-cols-[220px_1fr]">
       <aside className="no-print border-b border-line bg-panel px-3 py-3 md:sticky md:top-0 md:flex md:h-screen md:flex-col md:border-r md:border-b-0 md:py-5">
