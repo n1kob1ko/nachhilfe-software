@@ -19,7 +19,8 @@ export function describeAssignment(assignmentId: number): (AutoDoc & { student_i
   const assignment = repo.getAssignment(assignmentId);
   if (!assignment) return null;
   const worksheet = repo.getWorksheet(assignment.worksheet_id);
-  const attempts = repo.listAttemptsForAssignment(assignmentId);
+  // practice inside a tutoring unit is documented with that unit (lib/learning.ts)
+  const attempts = repo.listAttemptsForAssignment(assignmentId).filter((a) => !a.unit_id);
   if (!worksheet || attempts.length === 0) return null;
   const tasks = repo.listTasks(worksheet.id);
   const skills = repo.listSkills();

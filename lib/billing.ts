@@ -4,8 +4,8 @@ export type BillingParams = { monat?: string; lehrer?: string; schueler?: string
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** Resolves the query string of the billing page into a month range and filters. */
-export function resolveBilling(p: BillingParams, now = new Date()) {
+/** Month (YYYY-MM) and filters from a query string; defaults to the current month. */
+export function resolveMonth(p: BillingParams, now = new Date()) {
   const m = /^(\d{4})-(\d{2})$/.exec(p.monat ?? "");
   const year = m ? Number(m[1]) : now.getFullYear();
   const month = m ? Math.min(12, Math.max(1, Number(m[2]))) : now.getMonth() + 1;
@@ -14,9 +14,15 @@ export function resolveBilling(p: BillingParams, now = new Date()) {
   const prev = month === 1 ? key(year - 1, 12) : key(year, month - 1);
   const teacherId = Number(p.lehrer) || null;
   const studentId = Number(p.schueler) || null;
-  const rows = repo.billingEntries({ from: `${key(year, month)}-01T00:00`, to: `${next}-01T00:00`, teacherId, studentId });
   const label = new Date(year, month - 1, 1).toLocaleDateString("de-AT", { month: "long", year: "numeric" });
-  return { monat: key(year, month), prev, next, label, teacherId, studentId, rows };
+  return { monat: key(year, month), prev, next, label, teacherId, studentId };
+}
+
+/** Resolves the query string of the billing page into a month range, filters and rows. */
+export function resolveBilling(p: BillingParams, now = new Date()) {
+  const m = resolveMonth(p, now);
+  const rows = repo.billingEntries({ from: `${m.monat}-01T00:00`, to: `${m.next}-01T00:00`, teacherId: m.teacherId, studentId: m.studentId });
+  return { ...m, rows };
 }
 
 export function billingDay(startsAt: string) {

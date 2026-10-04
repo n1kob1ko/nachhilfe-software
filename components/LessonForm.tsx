@@ -1,6 +1,7 @@
 import { deleteLessonAction, saveLessonAction } from "@/app/actions";
 import { SkillPicker } from "@/components/SkillPicker";
 import { practiceOnDay } from "@/lib/autodoc";
+import { currentTeacher } from "@/lib/auth";
 import * as repo from "@/lib/repo";
 
 const UNDERSTANDING = ["nicht verstanden", "kaum", "teilweise", "gut", "sehr gut"];
@@ -12,12 +13,13 @@ function localNow() {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:00`;
 }
 
-export function LessonForm({ student, lesson }: { student: repo.Student; lesson?: repo.Lesson }) {
+export async function LessonForm({ student, lesson }: { student: repo.Student; lesson?: repo.Lesson }) {
   const subjects = student.subjects.length ? student.subjects : ["Mathematik"];
   const skills = repo.listSkills().filter((s) => subjects.includes(s.subject));
   const previous = repo.listLessons(student.id).find((l) => l.kind === "stunde" && l.status === "abgeschlossen" && l.id !== lesson?.id && l.next_steps);
   const documenting = !lesson || lesson.status === "geplant";
   const teachers = repo.listTeachers();
+  const me = await currentTeacher();
   // what the student practised on their own that day goes straight into the documentation
   const day = (lesson?.starts_at ?? localNow()).slice(0, 10);
   const practice = documenting ? practiceOnDay(student.id, day) : [];
@@ -62,7 +64,7 @@ export function LessonForm({ student, lesson }: { student: repo.Student; lesson?
           </label>
           <label className="field">
             <span className="label">Lehrer</span>
-            <select className="input" name="teacher_id" defaultValue={lesson?.teacher_id ?? student.teacher_id ?? ""}>
+            <select className="input" name="teacher_id" defaultValue={lesson?.teacher_id ?? me?.id ?? student.teacher_id ?? ""}>
               <option value="">noch offen</option>
               {teachers.map((t) => (
                 <option key={t.id} value={t.id}>

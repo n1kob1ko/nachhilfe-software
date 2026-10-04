@@ -6,6 +6,8 @@ import { aiEnabled, analyzeWithAI } from "@/lib/ai";
 import { RECOMMENDATION_NOTE, pct } from "@/lib/analysis";
 import type { Difficulty, TaskType } from "@/lib/curriculum";
 import { hasData, seedDemo } from "@/lib/demo";
+import { requireTeacher } from "@/lib/auth";
+import { noteActivity } from "@/lib/learning";
 import * as repo from "@/lib/repo";
 import { klassenLabel, schoolType, schulstufe } from "@/lib/school";
 import { analyzeStudent, buildWorksheet, submitAnswer, type SubmitInput } from "@/lib/service";
@@ -17,12 +19,14 @@ const int = (f: FormData, k: string) => {
 };
 
 export async function loadDemoData() {
+  await requireTeacher();
   if (!hasData()) seedDemo();
   revalidatePath("/", "layout");
 }
 
 // ---------- students ----------
 export async function saveStudentAction(formData: FormData) {
+  await requireTeacher();
   const id = int(formData, "id");
   const schoolTypeName = str(formData, "school_type");
   const klasse = Math.min(schoolType(schoolTypeName)?.classes ?? 13, Math.max(1, int(formData, "klasse") || 1));
@@ -51,6 +55,7 @@ export async function saveStudentAction(formData: FormData) {
 }
 
 export async function deleteStudentAction(id: number) {
+  await requireTeacher();
   repo.deleteStudent(id);
   revalidatePath("/", "layout");
   redirect("/schueler");
@@ -58,8 +63,10 @@ export async function deleteStudentAction(id: number) {
 
 // ---------- lessons ----------
 export async function saveLessonAction(formData: FormData) {
+  await requireTeacher();
   const id = int(formData, "id");
   const studentId = int(formData, "student_id");
+  noteActivity(studentId);
   const understanding = int(formData, "understanding");
   const lesson: repo.LessonInput = {
     student_id: studentId,
@@ -78,17 +85,19 @@ export async function saveLessonAction(formData: FormData) {
   };
   repo.saveLesson(lesson, id || undefined);
   revalidatePath("/", "layout");
-  redirect(`/schueler/${studentId}?tab=stunden`);
+  redirect(`/schueler/${studentId}?tab=lernverlauf`);
 }
 
 export async function deleteLessonAction(id: number, studentId: number) {
+  await requireTeacher();
   repo.deleteLesson(id);
   revalidatePath("/", "layout");
-  redirect(`/schueler/${studentId}?tab=stunden`);
+  redirect(`/schueler/${studentId}?tab=lernverlauf`);
 }
 
 // ---------- homework & tests ----------
 export async function addHomeworkAction(formData: FormData) {
+  await requireTeacher();
   const studentId = int(formData, "student_id");
   repo.addHomework({
     student_id: studentId,
@@ -101,15 +110,18 @@ export async function addHomeworkAction(formData: FormData) {
   revalidatePath(`/schueler/${studentId}`);
 }
 export async function setHomeworkStatusAction(id: number, studentId: number, status: string) {
+  await requireTeacher();
   repo.setHomeworkStatus(id, status);
   revalidatePath(`/schueler/${studentId}`);
   revalidatePath("/");
 }
 export async function deleteHomeworkAction(id: number, studentId: number) {
+  await requireTeacher();
   repo.deleteHomework(id);
   revalidatePath(`/schueler/${studentId}`);
 }
 export async function addTestAction(formData: FormData) {
+  await requireTeacher();
   const studentId = int(formData, "student_id");
   const num = (k: string) => (str(formData, k) === "" ? null : Number(str(formData, k).replace(",", ".")));
   repo.addTest({
@@ -127,6 +139,7 @@ export async function addTestAction(formData: FormData) {
   revalidatePath(`/schueler/${studentId}`);
 }
 export async function deleteTestAction(id: number, studentId: number) {
+  await requireTeacher();
   repo.deleteTest(id);
   revalidatePath(`/schueler/${studentId}`);
 }
@@ -135,6 +148,7 @@ export async function deleteTestAction(id: number, studentId: number) {
 export type BuildState = { error?: string } | null;
 
 export async function buildWorksheetAction(_prev: BuildState, formData: FormData): Promise<BuildState> {
+  await requireTeacher();
   const studentId = int(formData, "student_id");
   let result: Awaited<ReturnType<typeof buildWorksheet>>;
   try {
@@ -153,25 +167,34 @@ export async function buildWorksheetAction(_prev: BuildState, formData: FormData
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Die Übung konnte nicht erstellt werden." };
   }
-  if (studentId) repo.assignWorksheet(result.id, studentId);
+  if (studentId) {
+    repo.assignWorksheet(result.id, studentId);
+    noteActivity(studentId);
+  }
   revalidatePath("/", "layout");
   redirect(`/uebungen/${result.id}${result.aiError ? "?hinweis=ki" : ""}`);
 }
 
 export async function assignWorksheetAction(formData: FormData) {
+  await requireTeacher();
   const worksheetId = int(formData, "worksheet_id");
   const studentId = int(formData, "student_id");
-  if (studentId) repo.assignWorksheet(worksheetId, studentId);
+  if (studentId) {
+    repo.assignWorksheet(worksheetId, studentId);
+    noteActivity(studentId);
+  }
   revalidatePath("/", "layout");
 }
 
 export async function deleteWorksheetAction(id: number) {
+  await requireTeacher();
   repo.deleteWorksheet(id);
   revalidatePath("/", "layout");
   redirect("/uebungen");
 }
 
 export async function deleteAssignmentAction(id: number, studentId: number) {
+  await requireTeacher();
   repo.deleteAssignment(id);
   revalidatePath("/", "layout");
   redirect(`/schueler/${studentId}?tab=uebungen`);
@@ -179,6 +202,7 @@ export async function deleteAssignmentAction(id: number, studentId: number) {
 
 /** Turns a recommendation into a worksheet and assigns it right away. */
 export async function applyRecommendationAction(studentId: number, key: string) {
+  await requireTeacher();
   const student = repo.getStudent(studentId);
   const rec = analyzeStudent(studentId)?.recommendations.find((r) => r.key === key);
   if (!student || !rec) redirect(`/schueler/${studentId}?tab=analyse`);
@@ -195,6 +219,7 @@ export async function applyRecommendationAction(studentId: number, key: string) 
     title: rec.kind === "ueberpruefung" ? `Überprüfung: ${rec.skill.name}` : rec.kind === "wiederholung" ? `Wiederholung: ${rec.skill.name}` : `Training: ${rec.skill.area} › ${rec.skill.name}`,
     focusNote: rec.focusNote,
   });
+  noteActivity(studentId);
   repo.assignWorksheet(result.id, studentId, `${RECOMMENDATION_NOTE} (${rec.skill.area} › ${rec.skill.name}): ${rec.reason}`);
   revalidatePath("/", "layout");
   redirect(`/schueler/${studentId}?tab=analyse&zugewiesen=${result.id}`);
@@ -202,6 +227,7 @@ export async function applyRecommendationAction(studentId: number, key: string) 
 
 // ---------- skills ----------
 export async function createSkillAction(formData: FormData) {
+  await requireTeacher();
   const subject = str(formData, "subject");
   const area = str(formData, "area");
   const name = str(formData, "name");
@@ -221,6 +247,7 @@ export async function submitAnswerAction(input: SubmitInput) {
 export type InsightState = { summary: string; next_lesson_plan: string[]; parent_note: string } | { error: string } | null;
 
 export async function aiInsightAction(studentId: number): Promise<InsightState> {
+  await requireTeacher();
   if (!aiEnabled()) return { error: "Für die KI-Einschätzung wird ein ANTHROPIC_API_KEY benötigt." };
   const student = repo.getStudent(studentId);
   const a = analyzeStudent(studentId);
