@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpenCheck, GitBranch, LayoutDashboard, NotebookPen, ReceiptText, Users } from "lucide-react";
+import { BookOpenCheck, Clock3, GitBranch, LayoutDashboard, NotebookPen, ReceiptText, Users } from "lucide-react";
 
 const ITEMS = [
   { href: "/", label: "Übersicht", icon: LayoutDashboard },
   { href: "/schueler", label: "Schüler", icon: Users },
   { href: "/uebungen", label: "Übungen", icon: BookOpenCheck },
   { href: "/faehigkeiten", label: "Fähigkeiten", icon: GitBranch },
+  { href: "/einheiten", label: "Einheiten", icon: Clock3 },
   { href: "/abrechnung", label: "Abrechnung", icon: ReceiptText },
 ];
 

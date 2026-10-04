@@ -2,6 +2,7 @@ import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
 import { CURRICULUM } from "./curriculum";
+import { INITIAL_PASSWORD, hashPassword } from "./password";
 import { migrateLegacy } from "./school";
 
 const SCHEMA = `
@@ -134,7 +135,40 @@ CREATE TABLE IF NOT EXISTS attempts (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Basis-Dokumentation: who worked with whom, when. Written the moment a unit starts.
+CREATE TABLE IF NOT EXISTS units (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  teacher_id INTEGER NOT NULL REFERENCES teachers(id),
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'gestartet',
+  started_at TEXT NOT NULL,
+  ended_at TEXT,
+  last_activity_at TEXT NOT NULL,
+  end_reason TEXT NOT NULL DEFAULT ''
+);
+
+-- Mastery per skill at the end of each unit, so progress can be followed unit by unit.
+CREATE TABLE IF NOT EXISTS skill_snapshots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  unit_id INTEGER REFERENCES units(id) ON DELETE CASCADE,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  skill_id TEXT NOT NULL,
+  mastery REAL NOT NULL,
+  practiced INTEGER NOT NULL DEFAULT 0,
+  recorded_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS teacher_sessions (
+  token TEXT PRIMARY KEY,
+  teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_attempts_student ON attempts(student_id, skill_id);
+CREATE INDEX IF NOT EXISTS idx_units_student ON units(student_id, started_at);
+CREATE INDEX IF NOT EXISTS idx_units_teacher ON units(teacher_id, started_at);
+CREATE INDEX IF NOT EXISTS idx_snapshots ON skill_snapshots(student_id, skill_id, recorded_at);
 CREATE INDEX IF NOT EXISTS idx_lessons_student ON lessons(student_id, starts_at);
 `;
 
@@ -147,6 +181,26 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["lessons", "assignment_id", "INTEGER REFERENCES assignments(id) ON DELETE CASCADE"],
   ["worksheets", "school_type", "TEXT NOT NULL DEFAULT ''"],
   ["worksheets", "klasse", "INTEGER"],
+  // teacher accounts
+  ["teachers", "username", "TEXT"],
+  ["teachers", "password_hash", "TEXT"],
+  ["teachers", "is_admin", "INTEGER NOT NULL DEFAULT 0"],
+  ["teachers", "must_change_password", "INTEGER NOT NULL DEFAULT 1"],
+  // practice inside a unit
+  ["attempts", "unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
+  ["attempts", "active_ms", "INTEGER"],
+  // Lern-Dokumentation: the lesson row of a unit, generated at its end and completed by the teacher
+  ["lessons", "unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
+  ["lessons", "summary", "TEXT NOT NULL DEFAULT ''"],
+  ["lessons", "report", "TEXT"],
+  ["lessons", "concentration", "INTEGER"],
+  ["lessons", "motivation", "INTEGER"],
+  ["lessons", "participation", "INTEGER"],
+  ["lessons", "difficulties", "TEXT NOT NULL DEFAULT ''"],
+  ["lessons", "positives", "TEXT NOT NULL DEFAULT ''"],
+  ["lessons", "review_topics", "TEXT NOT NULL DEFAULT ''"],
+  ["lessons", "homework_note", "TEXT NOT NULL DEFAULT ''"],
+  ["lessons", "reviewed_at", "TEXT"],
 ];
 
 /** Teachers to start with; more can be added later. */
@@ -186,11 +240,27 @@ function migrate(conn: Database.Database) {
       const m = migrateLegacy(r.school_type, r.grade);
       fix.run(m.type, m.klasse, r.id);
     }
+    conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_lessons_unit ON lessons(unit_id) WHERE unit_id IS NOT NULL");
+    conn.exec("CREATE INDEX IF NOT EXISTS idx_attempts_unit ON attempts(unit_id)");
     const insertTeacher = conn.prepare("INSERT OR IGNORE INTO teachers (name) VALUES (?)");
     const { n } = conn.prepare("SELECT COUNT(*) AS n FROM teachers").get() as { n: number };
     if (n === 0) for (const name of DEFAULT_TEACHERS) insertTeacher.run(name);
+    // every teacher gets a login: username = lower-case name, initial password to be changed at first login
+    const noLogin = conn.prepare("SELECT id, name FROM teachers WHERE username IS NULL").all() as { id: number; name: string }[];
+    const setLogin = conn.prepare("UPDATE teachers SET username = ?, password_hash = ?, must_change_password = 1, is_admin = ? WHERE id = ?");
+    for (const t of noLogin) setLogin.run(usernameFor(t.name), hashPassword(INITIAL_PASSWORD), t.name === DEFAULT_TEACHERS[0] ? 1 : 0, t.id);
+    conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_teachers_username ON teachers(username)");
   });
   tx();
+}
+
+export function usernameFor(name: string) {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/^\.|\.$/g, "");
 }
 
 /** Inserts the built-in skill tree. Existing skills (also custom ones) are left untouched. */

@@ -24,7 +24,7 @@ export function PageHeader({ title, subtitle, actions, back }: { title: React.Re
 
 export function SectionTitle({ children, action, id }: { children: React.ReactNode; action?: React.ReactNode; id?: string }) {
   return (
-    <div className="mb-3 flex items-baseline justify-between gap-3" id={id}>
+    <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-2" id={id}>
       <h2 className="text-[17px] font-semibold tracking-[-0.01em]">{children}</h2>
       {action}
     </div>

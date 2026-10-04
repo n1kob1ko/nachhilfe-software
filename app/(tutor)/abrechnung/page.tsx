@@ -7,6 +7,8 @@ import { listStudents, listTeachers } from "@/lib/repo";
 
 export const metadata = { title: "Abrechnung" };
 
+const clock = (iso: string) => new Date(iso).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
+
 export default async function Billing({ searchParams }: { searchParams: Promise<BillingParams> }) {
   const sp = await searchParams;
   const b = resolveBilling(sp);
@@ -114,10 +116,15 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
               <tbody className="divide-y divide-line align-top">
                 {b.rows.map((r) => (
                   <tr key={r.id}>
-                    <td className="num px-5 py-3 whitespace-nowrap">{billingDay(r.starts_at)}</td>
+                    <td className="num px-5 py-3 whitespace-nowrap">
+                      {billingDay(r.starts_at)}
+                      <div className="text-[12px] text-ink-3">
+                        {r.unit_start && r.unit_end ? `${clock(r.unit_start)}–${clock(r.unit_end)}` : `${r.starts_at.slice(11, 16)} · ${r.duration_min} min`}
+                      </div>
+                    </td>
                     <td className="px-3 py-3 whitespace-nowrap">{r.teacher_name ?? <span className="text-red">offen</span>}</td>
                     <td className="px-3 py-3 whitespace-nowrap">
-                      <Link href={`/schueler/${r.student_id}/stunden/${r.id}`} className="hover:text-accent">
+                      <Link href={r.unit_id ? `/einheiten/${r.unit_id}` : `/schueler/${r.student_id}/stunden/${r.id}`} className="hover:text-accent">
                         {r.student_name}
                       </Link>
                     </td>

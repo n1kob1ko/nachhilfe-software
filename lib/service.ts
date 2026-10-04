@@ -5,6 +5,7 @@ import type { Difficulty, TaskType } from "./curriculum";
 import { TASK_TYPES } from "./curriculum";
 import { generateBuiltIn } from "./generators";
 import { klassenLabel, schulstufe } from "./school";
+import { runningUnitForStudent, touchUnit } from "./units";
 import * as repo from "./repo";
 import { checkAnswer, type TaskDraft } from "./tasks";
 
@@ -97,6 +98,8 @@ export type SubmitInput = {
   answer: string;
   timeMs: number;
   hintsUsed: number;
+  /** Time with interaction (typing, clicking) while the page was visible. */
+  activeMs?: number;
   /** Student gave up and opened the solution. */
   giveUp?: boolean;
   /** Free text without AI: student compares with the model answer and rates themselves. */
@@ -128,15 +131,21 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
     return { correct: Boolean(finished.correct), final: true, feedback: "Diese Aufgabe ist schon abgeschlossen.", attemptNo: finished.attempt_no, solution: task.solution };
   }
   repo.markAssignmentStarted(assignment.id);
+  // practice while a teacher has a unit running for this student belongs to that unit
+  const unit = runningUnitForStudent(student.id);
+  if (unit) touchUnit(unit.id);
   const attemptNo = previous.length + 1;
+  const timeMs = Math.max(0, Math.min(input.timeMs, 60 * 60 * 1000));
   const base = {
     assignment_id: assignment.id,
     task_id: task.id,
     student_id: student.id,
     skill_id: task.skillId,
     attempt_no: attemptNo,
-    time_ms: Math.max(0, Math.min(input.timeMs, 60 * 60 * 1000)),
+    time_ms: timeMs,
     hints_used: input.hintsUsed,
+    unit_id: unit?.id ?? null,
+    active_ms: input.activeMs === undefined ? null : Math.max(0, Math.min(input.activeMs, timeMs)),
   };
 
   if (input.giveUp) {
