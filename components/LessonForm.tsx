@@ -1,5 +1,6 @@
 import { deleteLessonAction, saveLessonAction } from "@/app/actions";
 import { SkillPicker } from "@/components/SkillPicker";
+import { practiceOnDay } from "@/lib/autodoc";
 import * as repo from "@/lib/repo";
 
 const UNDERSTANDING = ["nicht verstanden", "kaum", "teilweise", "gut", "sehr gut"];
@@ -14,8 +15,15 @@ function localNow() {
 export function LessonForm({ student, lesson }: { student: repo.Student; lesson?: repo.Lesson }) {
   const subjects = student.subjects.length ? student.subjects : ["Mathematik"];
   const skills = repo.listSkills().filter((s) => subjects.includes(s.subject));
-  const previous = repo.listLessons(student.id).find((l) => l.status === "abgeschlossen" && l.id !== lesson?.id && l.next_steps);
+  const previous = repo.listLessons(student.id).find((l) => l.kind === "stunde" && l.status === "abgeschlossen" && l.id !== lesson?.id && l.next_steps);
   const documenting = !lesson || lesson.status === "geplant";
+  const teachers = repo.listTeachers();
+  // what the student practised on their own that day goes straight into the documentation
+  const day = (lesson?.starts_at ?? localNow()).slice(0, 10);
+  const practice = documenting ? practiceOnDay(student.id, day) : [];
+  const prefill = (pick: (l: repo.Lesson) => string) => practice.map(pick).filter(Boolean).join("\n");
+  const activities = lesson?.activities || prefill((l) => l.activities);
+  const mistakes = lesson?.mistakes || prefill((l) => l.mistakes);
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
       <form action={saveLessonAction} className="grid gap-6">
@@ -39,7 +47,7 @@ export function LessonForm({ student, lesson }: { student: repo.Student; lesson?
             </select>
           </label>
         </div>
-        <div className="grid gap-4 sm:grid-cols-[1fr_200px]">
+        <div className="grid gap-4 sm:grid-cols-[1fr_160px_160px]">
           <label className="field">
             <span className="label">Thema</span>
             <input className="input" name="topic" defaultValue={lesson?.topic} placeholder="z. B. Division von Brüchen" />
@@ -52,14 +60,30 @@ export function LessonForm({ student, lesson }: { student: repo.Student; lesson?
               <option value="abgesagt">abgesagt</option>
             </select>
           </label>
+          <label className="field">
+            <span className="label">Lehrer</span>
+            <select className="input" name="teacher_id" defaultValue={lesson?.teacher_id ?? student.teacher_id ?? ""}>
+              <option value="">noch offen</option>
+              {teachers.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
+        {practice.length > 0 && (
+          <p className="-mt-2 rounded-lg bg-accent-wash px-3 py-2 text-[13px] text-accent">
+            {student.name.split(" ")[0]} hat an diesem Tag selbstständig geübt. Was dabei gemacht wurde und welche Fehler passiert sind, ist unten schon eingetragen.
+          </p>
+        )}
         <label className="field">
           <span className="label">Was wurde gemacht?</span>
-          <textarea className="input" name="activities" defaultValue={lesson?.activities} placeholder="Inhalte, Übungen, Methoden" />
+          <textarea className="input" name="activities" defaultValue={activities} placeholder="Inhalte, Übungen, Methoden" />
         </label>
         <label className="field">
           <span className="label">Welche Fehler sind passiert?</span>
-          <textarea className="input" name="mistakes" defaultValue={lesson?.mistakes} placeholder={"Ein Fehler pro Zeile, z. B.\nKehrwert vergessen\nVorzeichen beim Umformen"} />
+          <textarea className="input" name="mistakes" defaultValue={mistakes} placeholder={"Ein Fehler pro Zeile, z. B.\nKehrwert vergessen\nVorzeichen beim Umformen"} />
           <span className="text-[12px] text-ink-3">Jede Zeile wird in der Fehleranalyse mitgezählt.</span>
         </label>
         <fieldset className="field">
@@ -83,8 +107,9 @@ export function LessonForm({ student, lesson }: { student: repo.Student; lesson?
           <SkillPicker skills={skills} selected={lesson?.skill_ids} />
         </fieldset>
         <label className="field">
-          <span className="label">Notizen</span>
-          <textarea className="input" name="tutor_notes" defaultValue={lesson?.tutor_notes} placeholder="Beobachtungen, Stimmung, Absprachen" />
+          <span className="label">Beobachtungen</span>
+          <textarea className="input" name="tutor_notes" defaultValue={lesson?.tutor_notes} placeholder="Arbeitshaltung, Stimmung, Absprachen" />
+          <span className="text-[12px] text-ink-3">Steht zusammen mit Tag, Lehrer, Schüler und Thema in der Abrechnung.</span>
         </label>
         <label className="field">
           <span className="label">Was soll beim nächsten Mal gemacht werden?</span>

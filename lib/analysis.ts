@@ -83,7 +83,8 @@ export function collectEvidence(attempts: Attempt[], lessons: Lesson[], tests: T
     ev.push({ skillId: a.skill_id, score: taskScore(a), weight: 1, at: parseTime(a.created_at), source: "aufgabe" });
   }
   for (const l of lessons) {
-    if (l.status !== "abgeschlossen" || !l.understanding) continue;
+    // automatic entries summarise attempts that are already counted above
+    if (l.kind === "selbststaendig" || l.status !== "abgeschlossen" || !l.understanding) continue;
     for (const id of l.skill_ids) ev.push({ skillId: id, score: (l.understanding - 1) / 4, weight: 1.5, at: parseTime(l.starts_at), source: "stunde" });
   }
   for (const t of tests) {
@@ -200,7 +201,7 @@ export function computeAnalysis(input: {
     errMap.set(key, e);
   };
   for (const a of input.attempts) if (!a.correct && a.error_label) addErr(a.error_label, a.skill_id ? [a.skill_id] : [], parseTime(a.created_at));
-  for (const l of input.lessons) for (const m of splitMistakes(l.mistakes)) addErr(m, l.skill_ids, parseTime(l.starts_at));
+  for (const l of input.lessons) if (l.kind !== "selbststaendig") for (const m of splitMistakes(l.mistakes)) addErr(m, l.skill_ids, parseTime(l.starts_at));
   const errors = [...errMap.values()].sort((a, b) => b.count - a.count || b.lastSeen - a.lastSeen);
 
   const overallItems = evidence;

@@ -7,6 +7,7 @@ import { RECOMMENDATION_NOTE, pct } from "@/lib/analysis";
 import type { Difficulty, TaskType } from "@/lib/curriculum";
 import { hasData, seedDemo } from "@/lib/demo";
 import * as repo from "@/lib/repo";
+import { klassenLabel, schoolType, schulstufe } from "@/lib/school";
 import { analyzeStudent, buildWorksheet, submitAnswer, type SubmitInput } from "@/lib/service";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -23,11 +24,15 @@ export async function loadDemoData() {
 // ---------- students ----------
 export async function saveStudentAction(formData: FormData) {
   const id = int(formData, "id");
+  const schoolTypeName = str(formData, "school_type");
+  const klasse = Math.min(schoolType(schoolTypeName)?.classes ?? 13, Math.max(1, int(formData, "klasse") || 1));
   const data: repo.StudentInput = {
     name: str(formData, "name"),
-    grade: Math.min(13, Math.max(1, int(formData, "grade") || 1)),
+    grade: schulstufe(schoolTypeName, klasse),
+    klasse,
+    teacher_id: int(formData, "teacher_id") || null,
     school: str(formData, "school"),
-    school_type: str(formData, "school_type"),
+    school_type: schoolTypeName,
     subjects: formData.getAll("subjects").map(String).filter(Boolean),
     current_topics: str(formData, "current_topics"),
     strengths_note: str(formData, "strengths_note"),
@@ -58,6 +63,7 @@ export async function saveLessonAction(formData: FormData) {
   const understanding = int(formData, "understanding");
   const lesson: repo.LessonInput = {
     student_id: studentId,
+    teacher_id: int(formData, "teacher_id") || null,
     starts_at: str(formData, "starts_at"),
     duration_min: int(formData, "duration_min") || 60,
     subject: str(formData, "subject"),
@@ -134,8 +140,8 @@ export async function buildWorksheetAction(_prev: BuildState, formData: FormData
   try {
     result = await buildWorksheet({
       subject: str(formData, "subject"),
-      grade: int(formData, "grade") || 5,
-      schoolType: str(formData, "school_type"),
+      schoolType: str(formData, "school_type") || "Mittelschule",
+      klasse: int(formData, "klasse") || 1,
       skillIds: formData.getAll("skill_ids").map(String),
       difficulty: str(formData, "difficulty") as Difficulty,
       count: int(formData, "count") || 8,
@@ -179,8 +185,8 @@ export async function applyRecommendationAction(studentId: number, key: string) 
   const kind = rec.kind === "ueberpruefung" ? "ueberpruefung" : "uebung";
   const result = await buildWorksheet({
     subject: rec.skill.subject,
-    grade: student.grade,
     schoolType: student.school_type,
+    klasse: student.klasse ?? 1,
     skillIds: [rec.skill.id],
     difficulty: rec.difficulty,
     count: rec.count,
@@ -219,15 +225,15 @@ export async function aiInsightAction(studentId: number): Promise<InsightState> 
   const student = repo.getStudent(studentId);
   const a = analyzeStudent(studentId);
   if (!student || !a) return { error: "Schüler nicht gefunden." };
-  const lessons = repo.listLessons(studentId).filter((l) => l.status === "abgeschlossen").slice(0, 5);
+  const lessons = repo.listLessons(studentId).filter((l) => l.status === "abgeschlossen" && l.kind === "stunde").slice(0, 5);
   const context = [
-    `Schüler: ${student.name}, ${student.grade}. Schulstufe, ${student.school_type}`,
+    `Schüler: ${student.name}, ${klassenLabel(student.school_type, student.klasse)}`,
     `Lernziele: ${student.goals || "–"}`,
     `Fähigkeiten (Beherrschung, Trend):`,
     ...a.skills.filter((s) => s.mastery !== null).map((s) => `- ${s.skill.subject} › ${s.skill.area} › ${s.skill.name}: ${pct(s.mastery)}, Trend ${s.trend}${s.delta != null ? ` (${s.delta})` : ""}, Erstversuch-Quote ${pct(s.firstTryRate)}, Hilfen ${pct(s.hintRate)}`),
     `Häufige Fehler: ${a.errors.slice(0, 6).map((e) => `${e.label} (${e.count}×)`).join(", ") || "–"}`,
     `Letzte Stunden:`,
-    ...lessons.map((l) => `- ${l.starts_at.slice(0, 10)} ${l.topic}: Verständnis ${l.understanding ?? "–"}/5. Fehler: ${l.mistakes || "–"}. Notiz: ${l.tutor_notes || "–"}`),
+    ...lessons.map((l) => `- ${l.starts_at.slice(0, 10)} ${l.topic}: Verständnis ${l.understanding ?? "–"}/5. Fehler: ${l.mistakes || "–"}. Beobachtungen: ${l.tutor_notes || "–"}`),
   ].join("\n");
   try {
     const out = await analyzeWithAI(context);

@@ -7,6 +7,7 @@ import { TaskPreview } from "@/components/TaskPreview";
 import { PageHeader, Pill } from "@/components/ui";
 import { TASK_TYPES } from "@/lib/curriculum";
 import * as repo from "@/lib/repo";
+import { klassenLabel, stufeLabel } from "@/lib/school";
 
 export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string }> }) {
   const { id } = await params;
@@ -26,7 +27,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         title={w.title}
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
-            {w.subject} · {w.grade}. Schulstufe · {w.difficulty} · {TASK_TYPES[w.task_type as keyof typeof TASK_TYPES] ?? w.task_type} · {tasks.length} Aufgaben
+            {w.subject} · {w.klasse ? klassenLabel(w.school_type, w.klasse) : stufeLabel(w.grade)} · {w.difficulty} · {TASK_TYPES[w.task_type as keyof typeof TASK_TYPES] ?? w.task_type} · {tasks.length} Aufgaben
             {w.source === "ki" && (
               <Pill tone="accent">
                 <Sparkles size={11} aria-hidden /> mit Claude erstellt

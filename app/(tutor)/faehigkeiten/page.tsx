@@ -3,6 +3,9 @@ import { createSkillAction } from "@/app/actions";
 import { PageHeader } from "@/components/ui";
 import { hasBuiltInGenerator } from "@/lib/generators";
 import { listSkills } from "@/lib/repo";
+import { MAX_STUFE, rangeLabel, stufeLabel } from "@/lib/school";
+
+const STUFEN = Array.from({ length: MAX_STUFE }, (_, i) => i + 1);
 
 export const metadata = { title: "Fähigkeiten" };
 
@@ -38,7 +41,8 @@ export default function SkillsPage() {
                             </Link>
                           </span>
                           <span className="num shrink-0 text-[12px] text-ink-3">
-                            {s.grade_min}.–{s.grade_max}. Stufe{!hasBuiltInGenerator(s.id) && " · nur KI"}
+                            {rangeLabel(s.grade_min, s.grade_max)}
+                            {!hasBuiltInGenerator(s.id) && " · nur KI"}
                           </span>
                         </li>
                       ))}
@@ -69,16 +73,26 @@ export default function SkillsPage() {
               <span className="label">Fähigkeit</span>
               <input className="input" name="name" required placeholder="z. B. Flächeninhalt Dreieck" />
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="field">
-                <span className="label">Ab Stufe</span>
-                <input className="input num" name="grade_min" type="number" min={1} max={13} defaultValue={1} />
-              </label>
-              <label className="field">
-                <span className="label">Bis Stufe</span>
-                <input className="input num" name="grade_max" type="number" min={1} max={13} defaultValue={13} />
-              </label>
-            </div>
+            <label className="field">
+              <span className="label">Ab Klasse</span>
+              <select className="input" name="grade_min" defaultValue={1}>
+                {STUFEN.map((n) => (
+                  <option key={n} value={n}>
+                    {stufeLabel(n)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span className="label">Bis Klasse</span>
+              <select className="input" name="grade_max" defaultValue={MAX_STUFE}>
+                {STUFEN.map((n) => (
+                  <option key={n} value={n}>
+                    {stufeLabel(n)}
+                  </option>
+                ))}
+              </select>
+            </label>
             <button className="btn btn-primary">Hinzufügen</button>
             <p className="text-[12px] text-ink-3">Für neue Fähigkeiten erstellt Claude passende Aufgaben. Ohne KI gibt es Erklär- und Begründungsaufgaben.</p>
           </form>

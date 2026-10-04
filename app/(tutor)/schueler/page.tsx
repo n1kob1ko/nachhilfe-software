@@ -2,13 +2,15 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
 import { Empty, MasteryBar, PageHeader, TrendBadge } from "@/components/ui";
-import { listStudents } from "@/lib/repo";
+import { listStudents, listTeachers } from "@/lib/repo";
+import { klassenLabel } from "@/lib/school";
 import { analyzeStudent } from "@/lib/service";
 
 export const metadata = { title: "Schüler" };
 
 export default function Students() {
   const students = listStudents();
+  const teachers = new Map(listTeachers().map((t) => [t.id, t.name]));
   return (
     <>
       <PageHeader
@@ -43,7 +45,8 @@ export default function Students() {
                     <TrendBadge trend={a.overall.trend} compact />
                   </div>
                   <p className="mt-0.5 text-[13px] text-ink-2">
-                    {s.grade}. Schulstufe · {s.school_type || "Schultyp offen"}
+                    {klassenLabel(s.school_type, s.klasse)}
+                    {teachers.get(s.teacher_id ?? 0) && ` · ${teachers.get(s.teacher_id ?? 0)}`}
                   </p>
                   <p className="mt-3 text-[14px]">{s.subjects.join(", ") || "Keine Fächer"}</p>
                   <div className="mt-3">

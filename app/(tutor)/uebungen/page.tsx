@@ -3,6 +3,7 @@ import { Plus, Sparkles } from "lucide-react";
 import { Empty, PageHeader, Pill, formatDate } from "@/components/ui";
 import { TASK_TYPES } from "@/lib/curriculum";
 import { listWorksheets } from "@/lib/repo";
+import { klassenLabel, stufeLabel } from "@/lib/school";
 
 export const metadata = { title: "Übungen" };
 
@@ -21,7 +22,7 @@ export default function Worksheets() {
       />
       {list.length === 0 ? (
         <Empty title="Noch keine Übungen" action={<Link href="/uebungen/neu" className="btn btn-primary">Erste Übung erstellen</Link>}>
-          Wähle Fach, Schulstufe, Thema, Schwierigkeit, Anzahl und Aufgabentyp. Lösungswege werden automatisch mit erstellt.
+          Wähle Fach, Klasse, Thema, Schwierigkeit, Anzahl und Aufgabentyp. Lösungswege werden automatisch mit erstellt.
         </Empty>
       ) : (
         <div className="panel overflow-x-auto">
@@ -54,7 +55,8 @@ export default function Worksheets() {
                     </div>
                   </td>
                   <td className="px-3 py-3 text-ink-2">
-                    {w.subject}, {w.grade}. Stufe
+                    {w.subject}
+                    <div className="text-[12px] text-ink-3">{w.klasse ? klassenLabel(w.school_type, w.klasse, { short: true }) : stufeLabel(w.grade)}</div>
                   </td>
                   <td className="px-3 py-3 text-ink-2">{TASK_TYPES[w.task_type as keyof typeof TASK_TYPES] ?? w.task_type}</td>
                   <td className="px-3 py-3 text-ink-2">{w.difficulty}</td>

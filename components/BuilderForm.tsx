@@ -4,10 +4,12 @@ import { Sparkles } from "lucide-react";
 import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { buildWorksheetAction, type BuildState } from "@/app/actions";
+import { SchoolClassFields } from "@/components/SchoolClassFields";
 import { DIFFICULTIES, TASK_TYPES } from "@/lib/curriculum";
+import { schulstufe } from "@/lib/school";
 
 type Skill = { id: string; subject: string; area: string; name: string; grade_min: number; grade_max: number };
-type Student = { id: number; name: string; grade: number; school_type: string; subjects: string[] };
+type Student = { id: number; name: string; klasse: number | null; school_type: string; subjects: string[] };
 
 export function BuilderForm({ skills, students, initialStudentId, aiEnabled, preset }: {
   skills: Skill[];
@@ -24,7 +26,8 @@ export function BuilderForm({ skills, students, initialStudentId, aiEnabled, pre
   const [subject, setSubject] = useState(
     preset?.skillIds?.length ? skills.find((s) => s.id === preset.skillIds![0])?.subject ?? subjects[0] : initialStudent?.subjects.find((s) => subjects.includes(s)) ?? subjects[0],
   );
-  const [grade, setGrade] = useState(initialStudent?.grade ?? 6);
+  const [level, setLevel] = useState({ type: initialStudent?.school_type || "Mittelschule", klasse: initialStudent?.klasse ?? 2 });
+  const grade = schulstufe(level.type, level.klasse);
   const [selected, setSelected] = useState<string[]>(preset?.skillIds ?? []);
   const [type, setType] = useState<string>("mixed");
   const [useAI, setUseAI] = useState(aiEnabled);
@@ -43,7 +46,7 @@ export function BuilderForm({ skills, students, initialStudentId, aiEnabled, pre
 
   return (
     <form action={action} className="grid gap-8">
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <label className="field">
           <span className="label">Für Schüler (optional)</span>
           <select
@@ -55,7 +58,7 @@ export function BuilderForm({ skills, students, initialStudentId, aiEnabled, pre
               setStudentId(id);
               const s = students.find((x) => x.id === id);
               if (s) {
-                setGrade(s.grade);
+                setLevel({ type: s.school_type, klasse: s.klasse ?? 1 });
                 const subj = s.subjects.find((x) => subjects.includes(x));
                 if (subj && subj !== subject) {
                   setSubject(subj);
@@ -88,11 +91,7 @@ export function BuilderForm({ skills, students, initialStudentId, aiEnabled, pre
             ))}
           </select>
         </label>
-        <label className="field">
-          <span className="label">Schulstufe</span>
-          <input className="input num" type="number" name="grade" min={1} max={13} value={grade} onChange={(e) => setGrade(Number(e.target.value))} />
-        </label>
-        <input type="hidden" name="school_type" value={student?.school_type ?? ""} />
+        <SchoolClassFields key={String(studentId)} type={level.type} klasse={level.klasse} onChange={(type, klasse) => setLevel({ type, klasse })} />
       </section>
 
       <fieldset>

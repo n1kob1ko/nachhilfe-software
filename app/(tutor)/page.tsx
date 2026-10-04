@@ -4,6 +4,7 @@ import { loadDemoData } from "@/app/actions";
 import { Empty, MasteryBar, PageHeader, Pill, SectionTitle, TrendBadge, formatDate, formatTime } from "@/components/ui";
 import { pct } from "@/lib/analysis";
 import * as repo from "@/lib/repo";
+import { klassenLabel } from "@/lib/school";
 import { analyzeStudent } from "@/lib/service";
 
 function dayKey(d: Date) {
@@ -21,6 +22,7 @@ export default function Dashboard() {
   const activity = repo.recentActivity(6);
   const rows = students.map((s) => ({ s, a: analyzeStudent(s.id)! }));
   const byId = new Map(rows.map((r) => [r.s.id, r]));
+  const teachers = new Map(repo.listTeachers().map((t) => [t.id, t.name]));
   const dateText = now.toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long" });
 
   if (students.length === 0) {
@@ -78,7 +80,10 @@ export default function Dashboard() {
                           <Link href={`/schueler/${l.student_id}`} className="text-[16px] font-semibold hover:text-accent">
                             {l.student_name}
                           </Link>
-                          <span className="text-ink-2">{l.subject}</span>
+                          <span className="text-ink-2">
+                            {l.subject}
+                            {l.teacher_name && ` · bei ${l.teacher_name}`}
+                          </span>
                           {r && <TrendBadge trend={r.a.overall.trend} compact />}
                         </div>
                         <p className="mt-1 text-[14px] text-ink-2">
@@ -122,7 +127,10 @@ export default function Dashboard() {
                         <Link href={`/schueler/${s.id}`} className="font-semibold whitespace-nowrap group-hover:text-accent">
                           {s.name}
                         </Link>
-                        <div className="text-[12px] text-ink-3">{s.grade}. Schulstufe</div>
+                        <div className="text-[12px] whitespace-nowrap text-ink-3">
+                          {klassenLabel(s.school_type, s.klasse, { short: true })}
+                          {teachers.get(s.teacher_id ?? 0) && ` · ${teachers.get(s.teacher_id ?? 0)}`}
+                        </div>
                       </td>
                       <td className="px-3 py-3.5 text-ink-2">{s.subjects.join(", ") || "–"}</td>
                       <td className="px-3 py-3.5">
