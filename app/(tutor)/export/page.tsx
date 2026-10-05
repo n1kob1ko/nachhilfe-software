@@ -3,6 +3,7 @@ import { PageHeader, SectionTitle } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import { backupCounts, exportBackup } from "@/lib/backup";
 import { DATASETS } from "@/lib/exports";
+import { flushBoard } from "@/lib/whiteboard";
 
 export const metadata = { title: "Datenexport" };
 
@@ -23,6 +24,7 @@ const TABLE_LABEL: Record<string, string> = {
 
 export default async function ExportPage() {
   await requireAdmin();
+  flushBoard(); // whiteboard strokes are written to the database a moment after drawing
   const counts = backupCounts(exportBackup());
   return (
     <>

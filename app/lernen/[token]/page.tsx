@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { CheckCircle2, ChevronRight } from "lucide-react";
+import { CheckCircle2, ChevronRight, Presentation } from "lucide-react";
 import { notFound } from "next/navigation";
 import { MasteryBar, TrendBadge, formatDate } from "@/components/ui";
 import * as repo from "@/lib/repo";
 import { analyzeStudent } from "@/lib/service";
+import { runningUnitForStudent } from "@/lib/units";
 
 export default async function LearnHome({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -15,6 +16,7 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
   const a = analyzeStudent(student.id)!;
   const practiced = a.skills.filter((s) => s.tasksDone > 0).sort((x, y) => (y.lastPracticed ?? 0) - (x.lastPracticed ?? 0)).slice(0, 6);
   const first = student.name.split(" ")[0];
+  const unit = runningUnitForStudent(student.id);
 
   return (
     <>
@@ -22,6 +24,19 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
       <p className="mt-1 text-[17px] text-ink-2">
         {open.length === 0 ? "Gerade ist nichts offen. Gut gemacht!" : open.length === 1 ? "Eine Übung wartet auf dich." : `${open.length} Übungen warten auf dich.`}
       </p>
+
+      {unit && (
+        <Link href={`/lernen/${token}/tafel`} className="panel mt-8 flex items-center gap-4 border-accent/40 bg-accent-wash px-5 py-5 transition-colors hover:border-accent">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-white">
+            <Presentation size={24} aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[18px] font-semibold">Tafel öffnen</span>
+            <span className="block text-[14px] text-ink-2">Deine Einheit läuft. Schreib und rechne gemeinsam mit {unit.teacher_name}.</span>
+          </span>
+          <ChevronRight size={20} className="shrink-0 text-accent" aria-hidden />
+        </Link>
+      )}
 
       {open.length > 0 && (
         <ul className="mt-8 space-y-3">

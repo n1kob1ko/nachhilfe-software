@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Square } from "lucide-react";
+import { ArrowRight, Presentation, Square } from "lucide-react";
 import { endUnitAction } from "@/app/session-actions";
 import { Elapsed } from "@/components/Elapsed";
 import { formatTime } from "@/components/ui";
@@ -34,6 +34,9 @@ export function RunningUnits({ units }: { units: RunningUnit[] }) {
             </span>
           </span>
           <span className="flex flex-wrap gap-2">
+            <Link href={`/tafel/${u.id}`} className="btn btn-secondary btn-sm">
+              <Presentation size={13} aria-hidden /> Whiteboard
+            </Link>
             <Link href={`/einheiten/${u.id}`} className="btn btn-secondary btn-sm">
               Einheit öffnen <ArrowRight size={13} aria-hidden />
             </Link>

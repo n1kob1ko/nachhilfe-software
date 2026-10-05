@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Plus } from "lucide-react";
 import { LessonCard } from "@/components/LessonCard";
+import { BoardThumbs } from "@/components/BoardThumbs";
 import { UnitStatusPill } from "@/components/UnitControl";
 import { Empty, Pill, SectionTitle, formatDate } from "@/components/ui";
 import { pct } from "@/lib/analysis";
@@ -134,7 +135,12 @@ function UnitEntry({ unit, lesson }: { unit: UnitView; lesson: repo.Lesson | nul
     );
   }
   if (!lesson) {
-    return <article className="panel px-5 py-4">{head}</article>;
+    return (
+      <article className="panel px-5 py-4">
+        {head}
+        <BoardThumbs unitId={unit.id} />
+      </article>
+    );
   }
   const problems = r?.skills.filter((s) => s.state === "problem").map((s) => s.name) ?? [];
   const errs = r?.errors.slice(0, 3).map((e) => (e.count > 1 ? `${e.label} (${e.count}×)` : e.label)) ?? [];
@@ -169,6 +175,7 @@ function UnitEntry({ unit, lesson }: { unit: UnitView; lesson: repo.Lesson | nul
             </div>
           ))}
       </dl>
+      <BoardThumbs unitId={unit.id} />
     </article>
   );
 }

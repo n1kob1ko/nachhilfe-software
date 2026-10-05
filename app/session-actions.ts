@@ -21,6 +21,7 @@ import { db, usernameFor } from "@/lib/db";
 import { endUnit, expectedSubject, sweepIdleUnits } from "@/lib/learning";
 import { INITIAL_PASSWORD } from "@/lib/password";
 import * as repo from "@/lib/repo";
+import { ensureBoardForUnit, notifyUnitClosed } from "@/lib/whiteboard";
 import { canManageUnit, finishUnit, getUnit, runningUnits, startUnit } from "@/lib/units";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -124,6 +125,7 @@ export async function startUnitAction(studentId: number) {
   if (!repo.getStudent(studentId)) redirect("/schueler");
   sweepIdleUnits();
   const { unit, created } = startUnit(t.id, studentId, { subject: expectedSubject(studentId) });
+  if (created) ensureBoardForUnit(unit.id);
   revalidatePath("/", "layout");
   if (!created) redirect(`/einheiten/${unit.id}?bereits=1`);
 }
@@ -147,6 +149,7 @@ export async function endUnitAction(unitId: number) {
 export async function cancelUnitAction(unitId: number, formData: FormData) {
   const { t } = await manageableUnit(unitId);
   const u = finishUnit(unitId, "abgebrochen", { byTeacherId: t.id, reason: str(formData, "reason") || "abgebrochen" });
+  notifyUnitClosed(unitId);
   revalidatePath("/", "layout");
   redirect(u ? `/schueler/${u.student_id}?tab=lernverlauf` : "/einheiten");
 }

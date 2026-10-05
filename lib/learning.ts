@@ -11,6 +11,7 @@ import { localStamp } from "./autodoc";
 import { db } from "./db";
 import * as repo from "./repo";
 import { analyzeStudent } from "./service";
+import { notifyUnitClosed } from "./whiteboard";
 import { finishUnit, getUnit, touchUnit, unitDurationMs, type FinishOptions, type UnitView } from "./units";
 
 export type HelpLevel = "keine" | "hinweis" | "erklaerung" | "loesung";
@@ -319,6 +320,7 @@ export function endUnit(unitId: number, opts: FinishOptions = {}): number | null
   const at = opts.at ?? Date.now();
   const unit = finishUnit(unitId, "beendet", { ...opts, at });
   if (!unit || unit.status !== "beendet") return null;
+  notifyUnitClosed(unitId);
   return writeLearningDoc(unit, at);
 }
 
