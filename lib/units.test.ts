@@ -22,10 +22,13 @@ test("a unit writes the Basis-Dokumentation at once and the Lern-Dokumentation a
   });
   const student = repo.getStudent(sid)!;
   const t0 = Date.now() - 50 * 60_000;
-  const unit = units.startUnit(niko.id, sid, t0);
+  const { unit, created } = units.startUnit(niko.id, sid, { at: t0, subject: "Mathematik" });
+  assert.ok(created);
   assert.equal(unit.status, "gestartet");
   assert.equal(unit.teacher_name, "Niko");
-  assert.equal(units.startUnit(niko.id, sid).id, unit.id, "starting twice returns the running unit");
+  const again = units.startUnit(niko.id, sid);
+  assert.equal(again.unit.id, unit.id, "starting twice returns the running unit");
+  assert.equal(again.created, false);
 
   const { id: wid } = await buildWorksheet({ subject: "Mathematik", schoolType: "Mittelschule", klasse: 2, skillIds: ["mathe.brueche.dividieren", "mathe.brueche.multiplizieren"], difficulty: "leicht", count: 6, taskType: "calc", useAI: false });
   const aid = repo.assignWorksheet(wid, sid);
@@ -42,9 +45,12 @@ test("a unit writes the Basis-Dokumentation at once and the Lern-Dokumentation a
   assert.equal(repo.listAttemptsForUnit(unit.id).length, tasks.length + 1, "every attempt belongs to the unit");
   assert.equal(repo.getLessonForAssignment(aid), null, "practice inside a unit gets no separate self-study entry");
 
-  const lessonId = learning.endUnit(unit.id)!;
+  const lessonId = learning.endUnit(unit.id, { byTeacherId: niko.id })!;
   const ended = units.getUnit(unit.id)!;
   assert.equal(ended.status, "beendet");
+  assert.equal(ended.ended_by, "lehrer");
+  assert.equal(ended.end_estimated, 0);
+  assert.equal(ended.subject, "Mathematik");
   assert.ok(ended.ended_at);
   const lesson = repo.getLesson(lessonId)!;
   assert.equal(lesson.unit_id, unit.id);
@@ -69,16 +75,19 @@ test("a unit writes the Basis-Dokumentation at once and the Lern-Dokumentation a
   assert.equal(billed.length, 1);
 
   // a forgotten unit is ended automatically and still documented
-  const u2 = units.startUnit(niko.id, sid, Date.now() - 5 * 3600_000);
+  const { unit: u2 } = units.startUnit(niko.id, sid, { at: Date.now() - 5 * 3600_000 });
   learning.sweepIdleUnits();
   const swept = units.getUnit(u2.id)!;
   assert.equal(swept.status, "beendet");
-  assert.match(swept.end_reason, /automatisch/);
+  assert.match(swept.end_reason, /Automatisch beendet: 3 Stunden keine Aktivität/);
+  assert.equal(swept.ended_by, "automatisch");
+  assert.equal(swept.end_estimated, 1);
+  assert.equal(swept.ended_by_teacher_id, null);
   assert.ok(repo.getLessonForUnit(u2.id));
 
   // a cancelled unit stays in the protocol but is not billed
-  const u3 = units.startUnit(niko.id, sid);
-  units.finishUnit(u3.id, "abgebrochen", "Schüler nicht erschienen");
+  const { unit: u3 } = units.startUnit(niko.id, sid);
+  units.finishUnit(u3.id, "abgebrochen", { byTeacherId: niko.id, reason: "Schüler nicht erschienen" });
   assert.equal(repo.getLessonForUnit(u3.id), null);
   assert.equal(units.listUnits({ studentId: sid }).length, 3);
 });

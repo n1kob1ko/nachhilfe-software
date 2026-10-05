@@ -108,7 +108,7 @@ export default async function Units({ searchParams }: { searchParams: Promise<{ 
                     <tr key={u.id}>
                       <td className="num px-5 py-3 whitespace-nowrap">{billingDay(u.started_at)}</td>
                       <td className="num px-3 py-3 whitespace-nowrap">
-                        {time(u.started_at)}–{u.ended_at ? time(u.ended_at) : "…"}
+                        {time(u.started_at)}–{u.ended_at ? `${u.end_estimated ? "ca. " : ""}${time(u.ended_at)}` : "…"}
                       </td>
                       <td className="num px-3 py-3 text-right whitespace-nowrap">{Math.round(unitDurationMs(u) / 60_000)} min</td>
                       <td className="px-3 py-3">{u.teacher_name}</td>
@@ -119,7 +119,10 @@ export default async function Units({ searchParams }: { searchParams: Promise<{ 
                       </td>
                       <td className="px-3 py-3">
                         <UnitStatusPill status={u.status} />
-                        {u.end_reason && <div className="mt-0.5 text-[12px] text-ink-3">{u.end_reason}</div>}
+                        {u.ended_by === "automatisch" && u.status === "beendet" && (
+                          <div className="mt-0.5 text-[12px] text-amber">automatisch beendet, Endzeit geschätzt</div>
+                        )}
+                        {u.ended_by !== "automatisch" && u.end_reason && <div className="mt-0.5 text-[12px] text-ink-3">{u.end_reason}</div>}
                       </td>
                       <td className="px-5 py-3">
                         {u.status === "abgebrochen" ? (
