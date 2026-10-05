@@ -68,6 +68,21 @@ Im Produktionsmodus (`npm start`) wird das Login-Cookie nur über HTTPS gesendet
 - **Selbstständiges Üben:** Ohne laufende Einheit werden Antworten trotzdem gespeichert, als „selbstständig geübt“ dokumentiert und nie abgerechnet.
 - **Berechtigungen:** Eine Einheit beenden oder ihre Dokumentation ergänzen dürfen ihr Lehrer und die Verwaltung. Lehrer ohne Verwaltungsrecht sehen in der Abrechnung nur ihre eigenen Stunden. „Lehrer verwalten“ und „Datenexport“ sind nur für die Verwaltung.
 
+## Whiteboard
+
+Jede Einheit bekommt beim Starten automatisch eine Tafel (Tabelle `whiteboards`, eine Zeile pro Einheit, mit Schüler und Lehrer). Lehrer öffnen sie über „Whiteboard“ im Banner der laufenden Einheit, Schüler über die Karte „Tafel öffnen“ auf ihrer Seite.
+
+- **Beide schreiben gleichzeitig.** Striche erscheinen beim anderen schon während des Zeichnens (gemessen: unter 50 ms nach dem Senden im lokalen Netz).
+- **Touch und Stift:** Mit Finger schreibt man, solange kein Stift erkannt wurde. Sobald ein Stift benutzt wird, schreibt nur noch der Stift und der Finger verschiebt und zoomt.
+- **Schüler** sehen nur die große Werkzeugleiste: Stift (4 Farben, 3 Stärken), Marker, Radierer, Text, Verschieben, Rückgängig, Wiederholen, Alles zeigen. Nach dem Ende der Einheit ist ihre Tafel nur noch zum Ansehen.
+- **Lehrer** haben zusätzlich Auswählen, Linie, Pfeil, Rechteck, Kreis, Zeigen (Laserpointer), Seiten (neu, duplizieren, umbenennen, leeren, löschen, wechseln; der Schüler folgt) und „Einfügen“: Aufgaben aus den Übungen des Schülers, Lösungen, Text oder Erklärung im Kasten, Formel, Tabelle, Koordinatensystem, kariertes, liniertes oder leeres Blatt.
+- **„Auf Whiteboard senden“** in jeder Übung schickt einzelne oder alle Aufgaben als Text auf die Tafel einer laufenden Einheit, mit Platz zum Rechnen darunter. Beide Geräte scrollen dorthin.
+- **Nach der Einheit:** Die Tafel bleibt gespeichert. Im Lernverlauf und auf der Seite der Einheit stehen Vorschaubilder jeder Seite; ein Klick öffnet die Tafel wieder.
+
+**Technik:** [Excalidraw](https://github.com/excalidraw/excalidraw) 0.18 (MIT-Lizenz) zeichnet; es versioniert jedes Element und ist für gemeinsames Arbeiten gebaut. tldraw wäre ähnlich gut, braucht für den Betrieb aber eine kostenpflichtige Lizenz. Synchronisiert wird ohne zusätzlichen Server: Jedes Gerät hört über Server-Sent Events (`/tafel/[unitId]/events`, `/lernen/[token]/tafel/events`) mit und schickt Änderungen per POST (`…/sync`). Pro Element gewinnt die höhere Version (`lib/whiteboard.ts`). Seiten liegen als JSON in `whiteboard_pages`; Änderungen werden im Speicher gesammelt und nach 400 ms geschrieben. Bricht die Verbindung ab, verbindet sich das Gerät neu und gleicht ab, was in der Zwischenzeit gezeichnet wurde. Die Schriften liefert die App selbst aus (`public/excalidraw-assets`, wird bei `npm install` kopiert).
+
+Wichtig: Die Live-Verbindung setzt **einen** Server-Prozess voraus (so läuft `npm start`). Bei mehreren Instanzen hinter einem Load Balancer bräuchte es einen gemeinsamen Kanal, z. B. Redis.
+
 ## Datenexport
 
 Unter „Datenexport“ (nur Verwaltung):
@@ -101,6 +116,8 @@ lib/generators.ts   eingebaute Aufgabengeneratoren mit Lösungswegen und Fehlerb
 lib/ai.ts           Claude: Übungen, Freitext-Korrektur, Einschätzung
 lib/analysis.ts     Beherrschung, Trends, Fehler, Empfehlungen
 lib/service.ts      Übung bauen, Antwort prüfen und speichern
+lib/whiteboard*.ts  Tafel: Speicher, Live-Verbindung, Rechte, Vorlagen
+components/whiteboard/  Tafel im Browser (Excalidraw, Werkzeugleiste, Einfügen)
 app/(tutor)/…       Oberfläche für die Nachhilfelehrkraft
 app/lernen/…        Schüler-Modus
 ```
@@ -112,3 +129,4 @@ Tests: `npm test` (prüft u. a., dass jede generierte Aufgabe ihre eigene Lösun
 - Die Anmeldung ist für den Betrieb im eigenen Netz gedacht. Vor einem Betrieb im Internet: HTTPS und ein starkes Startpasswort. Nach 5 falschen Passwörtern ist ein Benutzername 10 Minuten gesperrt.
 - Die JSON-Sicherung wird heruntergeladen, nicht automatisch angelegt. Eine Wiederherstellung über die Oberfläche gibt es noch nicht (nur `restoreBackup()` im Code).
 - Schüler-Links sind geheime Links ohne Passwort.
+- Bilder und PDFs auf der Tafel sind noch nicht eingebaut.
