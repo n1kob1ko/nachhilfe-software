@@ -53,7 +53,7 @@ export const DATASETS: Dataset[] = [
   },
   {
     key: "einheiten",
-    label: "Einheiten (Basis-Dokumentation)",
+    label: "Einheiten (Datum, Zeiten, Lehrer)",
     description: "Jede Einheit mit Datum, Lehrer, Schüler, Fach, Start, Ende, Dauer, Status und wie sie beendet wurde.",
     build: () => ({
       headers: ["ID", "Datum", "Lehrer", "Schüler", "Fach", "Start", "Ende", "Dauer (min)", "Status", "Beendet durch", "Endzeit geschätzt", "Grund", "Letzte Aktivität"],
@@ -67,8 +67,8 @@ export const DATASETS: Dataset[] = [
   },
   {
     key: "nachhilfestunden",
-    label: "Nachhilfestunden",
-    description: "Geplante und gehaltene Stunden mit Thema, Beobachtungen, Einschätzungen und nächsten Schritten.",
+    label: "Einheiten (mit Dokumentation)",
+    description: "Geplante und gehaltene Einheiten mit Thema, Beobachtungen, Einschätzungen und nächsten Schritten.",
     build: () => {
       const names = skillNames();
       return {
@@ -83,7 +83,7 @@ export const DATASETS: Dataset[] = [
   },
   {
     key: "lern-dokumentationen",
-    label: "Lern-Dokumentationen",
+    label: "Dokumentationen der Einheiten",
     description: "Automatische Auswertung jeder Einheit: Aufgaben, Erfolgsquote, Hilfen, Zeiten, Zusammenfassung.",
     build: () => ({
       headers: ["Stunde", "Einheit", "Datum", "Lehrer", "Schüler", "Fach", "Themen", "Aufgaben", "Richtig", "Erfolgsquote %", "Beim 1. Versuch ohne Hilfe", "Mit Hilfe", "Hinweis gereicht", "Ausführliche Erklärung", "Lösung angesehen", "Dauer (min)", "Aktiv (min)", "Ø Sekunden pro Aufgabe", "Verlauf", "Sichere Fähigkeiten", "Unsichere Fähigkeiten", "Problem-Fähigkeiten", "Zusammenfassung"],
@@ -102,11 +102,11 @@ export const DATASETS: Dataset[] = [
   {
     key: "lernverlauf",
     label: "Lernverlauf",
-    description: "Alle Einträge chronologisch: Nachhilfestunden und selbstständiges Üben, mit Zusammenfassung.",
+    description: "Alle Einträge chronologisch: Einheiten und selbstständiges Üben, mit Zusammenfassung.",
     build: () => ({
       headers: ["Datum", "Art", "Schüler", "Lehrer", "Fach", "Thema", "Status", "Was gemacht", "Zusammenfassung", "Nächstes Lernziel"],
       rows: q(`${LESSON_SQL} ORDER BY s.name COLLATE NOCASE, l.starts_at`).map((r) => [
-        localTime(s(r.starts_at)), r.kind === "selbststaendig" ? "selbstständiges Üben" : r.unit_id ? "Einheit" : "Nachhilfestunde", s(r.student_name), s(r.teacher_name),
+        localTime(s(r.starts_at)), r.kind === "selbststaendig" ? "selbstständiges Üben" : "Einheit", s(r.student_name), s(r.teacher_name),
         s(r.subject), s(r.topic), s(r.status), s(r.activities), s(r.summary), s(r.next_steps),
       ]),
     }),
@@ -197,7 +197,7 @@ export const DATASETS: Dataset[] = [
   {
     key: "abrechnung",
     label: "Abrechnungsdaten (alle Monate)",
-    description: "Alle abrechenbaren Nachhilfestunden mit Zeiten aus der Basis-Dokumentation. Selbstständiges Üben ist nicht enthalten.",
+    description: "Alle abrechenbaren Einheiten mit Start- und Endzeit. Selbstständiges Üben ist nicht enthalten.",
     build: () => ({
       headers: ["Monat", "Tag", "Lehrer", "Schüler", "Fach", "Thema", "Start", "Ende", "Dauer (min)", "Endzeit geschätzt", "Beobachtungen"],
       rows: repo.billingEntries({ from: "0000", to: "9999" }).map((r) => {

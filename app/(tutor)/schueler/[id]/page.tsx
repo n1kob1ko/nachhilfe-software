@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Circle, ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, Circle, ExternalLink, History, Pencil, Plus, Trash2 } from "lucide-react";
+import { Avatar } from "@/components/Art";
 import {
   addHomeworkAction,
   addTestAction,
@@ -10,13 +11,12 @@ import {
   setHomeworkStatusAction,
 } from "@/app/actions";
 import { AIInsight } from "@/components/AIInsight";
-import { LessonCard } from "@/components/LessonCard";
 import { Lernverlauf } from "@/components/Lernverlauf";
 import { UnitControl } from "@/components/UnitControl";
 import { SkillPicker } from "@/components/SkillPicker";
 import { CopyLink } from "@/components/CopyLink";
 import { ProgressChart } from "@/components/ProgressChart";
-import { Empty, LevelTag, MasteryBar, PageHeader, Pill, SectionTitle, TrendBadge, formatDate, formatDuration, formatTime } from "@/components/ui";
+import { Empty, LevelTag, MasteryBar, Pill, SectionTitle, TrendBadge, formatDate, formatDuration, formatTime } from "@/components/ui";
 import { aiEnabled } from "@/lib/ai";
 import { type Analysis, pct } from "@/lib/analysis";
 import * as repo from "@/lib/repo";
@@ -25,11 +25,10 @@ import { analyzeStudent } from "@/lib/service";
 
 const TABS = [
   ["ueberblick", "Überblick"],
-  ["fortschritt", "Fortschritt"],
-  ["analyse", "Analyse & Empfehlungen"],
   ["lernverlauf", "Lernverlauf"],
-  ["schule", "Hausübungen & Tests"],
   ["uebungen", "Übungen"],
+  ["schule", "Hausübungen & Tests"],
+  ["fortschritt", "Fortschritt"],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
@@ -38,42 +37,44 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
   const sp = await searchParams;
   const student = repo.getStudent(Number(id));
   if (!student) notFound();
-  const requested = sp.tab === "stunden" ? "lernverlauf" : sp.tab;
+  // old addresses keep working: "stunden" is now the Lernverlauf, "analyse" is part of Fortschritt
+  const requested = sp.tab === "stunden" ? "lernverlauf" : sp.tab === "analyse" ? "fortschritt" : sp.tab;
   const tab: Tab = (TABS.find(([k]) => k === requested)?.[0] ?? "ueberblick") as Tab;
   const a = analyzeStudent(student.id)!;
   const teacher = repo.getTeacher(student.teacher_id);
 
   return (
     <>
-      <PageHeader
-        back={{ href: "/schueler", label: "Schüler" }}
-        title={student.name}
-        subtitle={
-          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span>
-              {klassenLabel(student.school_type, student.klasse)}
-              {student.school && ` · ${student.school}`}
-              {teacher && ` · Lehrer: ${teacher.name}`}
-            </span>
-            <TrendBadge trend={a.overall.trend} delta={a.overall.delta} />
-          </span>
-        }
-        actions={
-          <>
-            <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-secondary">
-              <Plus size={15} aria-hidden /> Übung erstellen
-            </Link>
-            <UnitControl student={student} />
-          </>
-        }
-      />
-      <nav className="no-print -mt-3 mb-8 flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-panel p-1" aria-label="Bereiche">
+      <Link href="/schueler" className="no-print mb-3 inline-flex min-h-[36px] items-center gap-1 text-[14px] font-medium text-ink-2 hover:text-ink">
+        ← Alle Schüler
+      </Link>
+      <header className="mb-6 flex flex-wrap items-center gap-4">
+        <Avatar name={student.name} size={56} />
+        <div className="min-w-0">
+          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">{student.name}</h1>
+          <p className="mt-0.5 text-[15px] text-ink-2">
+            {klassenLabel(student.school_type, student.klasse)}
+            {student.subjects.length > 0 && ` · ${student.subjects.join(", ")}`}
+            {teacher && ` · bei ${teacher.name}`}
+          </p>
+        </div>
+      </header>
+      <div className="no-print mb-8 flex flex-wrap gap-3">
+        <UnitControl student={student} />
+        <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-secondary btn-lg">
+          <Plus size={18} aria-hidden /> Übung erstellen
+        </Link>
+        <Link href={`/schueler/${student.id}?tab=lernverlauf`} className="btn btn-secondary btn-lg">
+          <History size={18} aria-hidden /> Lernverlauf ansehen
+        </Link>
+      </div>
+      <nav className="no-print mb-8 flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-panel p-1" aria-label="Bereiche">
         {TABS.map(([key, label]) => (
           <Link
             key={key}
             href={`/schueler/${student.id}?tab=${key}`}
             aria-current={tab === key ? "page" : undefined}
-            className={`rounded-full px-4 py-2 text-[14px] font-medium whitespace-nowrap transition-colors ${
+            className={`flex min-h-[44px] items-center rounded-full px-4 text-[14px] font-medium whitespace-nowrap transition-colors ${
               tab === key ? "bg-surface text-ink shadow-[var(--shadow-card)]" : "text-ink-2 hover:text-ink"
             }`}
           >
@@ -82,8 +83,12 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
         ))}
       </nav>
       {tab === "ueberblick" && <Overview student={student} a={a} />}
-      {tab === "fortschritt" && <Progress a={a} />}
-      {tab === "analyse" && <AnalysisTab student={student} a={a} assignedId={sp.zugewiesen} />}
+      {tab === "fortschritt" && (
+        <div className="space-y-14">
+          <Progress a={a} />
+          <AnalysisTab student={student} a={a} assignedId={sp.zugewiesen} />
+        </div>
+      )}
       {tab === "lernverlauf" && <Lessons student={student} filter={sp.art} />}
       {tab === "schule" && <School student={student} a={a} />}
       {tab === "uebungen" && <Exercises student={student} />}
@@ -91,97 +96,102 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
   );
 }
 
+/** Only what a teacher needs before a unit; everything else is one click away under "Weitere Angaben". */
 function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
   const lessons = repo.listLessons(student.id).filter((l) => l.kind === "stunde");
   const lastDone = lessons.find((l) => l.status === "abgeschlossen");
   const next = [...lessons].reverse().find((l) => l.status === "geplant" && l.starts_at >= new Date().toISOString().slice(0, 10));
   const tests = repo.listTests(student.id);
   const hw = repo.listHomework(student.id).filter((h) => h.status === "offen");
+  const first = student.name.split(" ")[0];
+  const skillList = (list: typeof a.strengths, cls: string, empty: string, note: string) =>
+    list.length ? (
+      <span className="flex flex-wrap gap-x-4 gap-y-1">
+        {list.slice(0, 3).map((s) => (
+          <span key={s.skill.id}>
+            {s.skill.name} <span className={`num font-semibold ${cls}`}>{pct(s.mastery)}</span>
+          </span>
+        ))}
+      </span>
+    ) : (
+      note || <span className="text-ink-3">{empty}</span>
+    );
+  const rows: [string, React.ReactNode][] = [
+    ["Fach und Themen", [student.subjects.join(", "), student.current_topics].filter(Boolean).join(" · ") || "–"],
+    ["Stärken", skillList(a.strengths, "text-green", "noch keine gesicherten Stärken", student.strengths_note)],
+    ["Schwierigkeiten", skillList(a.weaknesses, "text-red", "keine erkannt", student.weaknesses_note)],
+    [
+      "Letzte Einheit",
+      lastDone ? (
+        <span>
+          {formatDate(lastDone.starts_at, { weekday: "short", day: "numeric", month: "short" })}
+          {lastDone.topic && ` · ${lastDone.topic}`}{" "}
+          <Link href={lastDone.unit_id ? `/einheiten/${lastDone.unit_id}` : `/schueler/${student.id}?tab=lernverlauf`} className="link font-medium whitespace-nowrap">
+            ansehen
+          </Link>
+        </span>
+      ) : (
+        <span className="text-ink-3">noch keine</span>
+      ),
+    ],
+    ["Nächstes Lernziel", lastDone?.next_steps || student.goals || <span className="text-ink-3">noch nicht festgelegt</span>],
+  ];
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="space-y-10">
-        <section>
-          <SectionTitle>Auf einen Blick</SectionTitle>
-          <ul className="space-y-2">
-            {a.summary.map((s, i) => (
-              <li key={i} className="max-w-[72ch] text-[16px] leading-relaxed">
-                {s}
-              </li>
+    <div className="grid max-w-[860px] gap-8">
+      <dl className="panel grid gap-x-6 gap-y-4 px-5 py-5 text-[15px] sm:grid-cols-[170px_minmax(0,1fr)]">
+        {rows.map(([k, v]) => (
+          <div key={k} className="contents">
+            <dt className="font-medium text-ink-2">{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <details className="group rounded-2xl border border-line bg-surface px-5 py-1">
+        <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between text-[15px] font-semibold">
+          Weitere Angaben
+          <span className="text-[13px] font-normal text-ink-3 group-open:hidden">Einschätzung, Termine, Tests, Notizen, Link</span>
+        </summary>
+        <div className="grid gap-6 pt-2 pb-5">
+          {a.summary.length > 0 && (
+            <ul className="space-y-1.5">
+              {a.summary.map((s, i) => (
+                <li key={i} className="max-w-[72ch] text-[15px] leading-relaxed">
+                  {s}
+                </li>
+              ))}
+            </ul>
+          )}
+          <dl className="grid gap-x-6 gap-y-2 text-[14px] sm:grid-cols-[170px_minmax(0,1fr)]">
+            {(
+              [
+                ["Lernziele", student.goals || "–"],
+                ["Nächster Termin", next ? `${formatDate(next.starts_at, { weekday: "short", day: "numeric", month: "short" })}, ${formatTime(next.starts_at)}` : "nicht geplant"],
+                ["Einheiten bisher", String(lessons.filter((l) => l.status === "abgeschlossen").length)],
+                ["Offene Hausübungen", String(hw.length)],
+                ["Letzter Test", tests[0] ? `${tests[0].kind} ${tests[0].subject}: ${tests[0].grade ? `Note ${tests[0].grade}` : ""}${tests[0].points != null ? ` (${tests[0].points}/${tests[0].max_points})` : ""}` : "–"],
+                ["Schule", student.school || "–"],
+                ["Notizen", student.notes || "–"],
+              ] as [string, string][]
+            ).map(([k, v]) => (
+              <div key={k} className="contents">
+                <dt className="text-ink-2">{k}</dt>
+                <dd>{v}</dd>
+              </div>
             ))}
-          </ul>
-        </section>
-        <section className="grid gap-6 sm:grid-cols-2">
+          </dl>
           <div>
-            <SectionTitle>Stärken</SectionTitle>
-            {a.strengths.length > 0 ? (
-              <ul className="space-y-1.5">
-                {a.strengths.slice(0, 5).map((s) => (
-                  <li key={s.skill.id} className="flex justify-between gap-3 text-[14px]">
-                    <span>
-                      {s.skill.name} <span className="text-ink-3">· {s.skill.area}</span>
-                    </span>
-                    <span className="num font-semibold text-green">{pct(s.mastery)}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-[14px] text-ink-3">Noch keine gesicherten Stärken.</p>
-            )}
-            {student.strengths_note && <p className="mt-3 border-t border-line pt-3 text-[14px] text-ink-2">{student.strengths_note}</p>}
-          </div>
-          <div>
-            <SectionTitle>Schwächen</SectionTitle>
-            {a.weaknesses.length > 0 ? (
-              <ul className="space-y-1.5">
-                {a.weaknesses.slice(0, 5).map((s) => (
-                  <li key={s.skill.id} className="flex justify-between gap-3 text-[14px]">
-                    <span>
-                      {s.skill.name} <span className="text-ink-3">· {s.skill.area}</span>
-                    </span>
-                    <span className="num font-semibold text-red">{pct(s.mastery)}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-[14px] text-ink-3">Keine Schwäche erkannt.</p>
-            )}
-            {student.weaknesses_note && <p className="mt-3 border-t border-line pt-3 text-[14px] text-ink-2">{student.weaknesses_note}</p>}
-          </div>
-        </section>
-        {lastDone && (
-          <section>
-            <SectionTitle action={<Link className="link text-[13px] font-medium" href={`/schueler/${student.id}?tab=lernverlauf`}>Lernverlauf</Link>}>Letzte Stunde</SectionTitle>
-            <LessonCard lesson={lastDone} studentId={student.id} />
-          </section>
-        )}
-      </div>
-      <aside className="space-y-8">
-        <dl className="panel divide-y divide-line text-[14px]">
-          {[
-            ["Fächer", student.subjects.join(", ") || "–"],
-            ["Aktuelle Themen", student.current_topics || "–"],
-            ["Lernziele", student.goals || "–"],
-            ["Nächste Stunde", next ? `${formatDate(next.starts_at, { weekday: "short", day: "numeric", month: "short" })}, ${formatTime(next.starts_at)}` : "nicht geplant"],
-            ["Stunden bisher", String(lessons.filter((l) => l.status === "abgeschlossen").length)],
-            ["Offene Hausübungen", String(hw.length)],
-            ["Letzter Test", tests[0] ? `${tests[0].kind} ${tests[0].subject}: ${tests[0].grade ? `Note ${tests[0].grade}` : ""}${tests[0].points != null ? ` (${tests[0].points}/${tests[0].max_points})` : ""}` : "–"],
-            ["Notizen", student.notes || "–"],
-          ].map(([k, v]) => (
-            <div key={k} className="px-4 py-2.5">
-              <dt className="text-[12px] font-semibold text-ink-3">{k}</dt>
-              <dd className="mt-0.5">{v}</dd>
+            <h3 className="mb-2 text-[14px] font-semibold">Link für das Gerät von {first}</h3>
+            <div className="max-w-[520px]">
+              <CopyLink path={`/lernen/${student.access_token}`} />
             </div>
-          ))}
-        </dl>
-        <div>
-          <h3 className="mb-2 text-[13px] font-semibold text-ink-2">Zugang für {student.name.split(" ")[0]}</h3>
-          <CopyLink path={`/lernen/${student.access_token}`} />
-          <p className="mt-2 text-[12px] text-ink-3">Über diesen Link bearbeitet {student.name.split(" ")[0]} die zugewiesenen Übungen.</p>
+            <p className="mt-2 text-[13px] text-ink-2">Auf diesem Link sieht {first} die gesendeten Übungen.</p>
+          </div>
+          <Link href={`/schueler/${student.id}/bearbeiten`} className="btn btn-secondary w-fit">
+            <Pencil size={15} aria-hidden /> Profil bearbeiten
+          </Link>
         </div>
-        <Link href={`/schueler/${student.id}/bearbeiten`} className="btn btn-ghost btn-sm">
-          <Pencil size={14} aria-hidden /> Profil bearbeiten
-        </Link>
-      </aside>
+      </details>
     </div>
   );
 }
@@ -196,7 +206,7 @@ function Progress({ a }: { a: Analysis }) {
           <ProgressChart series={a.history} />
         </div>
       </section>
-      {subjects.length === 0 && <Empty title="Noch keine Fortschrittsdaten">Weise eine Übung zu oder dokumentiere eine Stunde mit verknüpften Fähigkeiten.</Empty>}
+      {subjects.length === 0 && <Empty title="Noch keine Fortschrittsdaten">Sende eine Übung oder dokumentiere eine Einheit mit verknüpften Fähigkeiten.</Empty>}
       {subjects.map((subj) => (
         <section key={subj.subject}>
           <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -246,7 +256,7 @@ function Progress({ a }: { a: Analysis }) {
                                 {s.tasksDone} Aufg. · {pct(s.firstTryRate)} im 1. Versuch · Ø {formatDuration(s.avgTimeSec)}/Aufg. · Hilfe {pct(s.hintRate)}
                               </span>
                             ) : s.mastery !== null ? (
-                              "aus Stunden/Tests"
+                              "aus Einheiten/Tests"
                             ) : (
                               "noch nicht geübt"
                             )}
@@ -261,7 +271,7 @@ function Progress({ a }: { a: Analysis }) {
         </section>
       ))}
       <p className="text-[13px] text-ink-3">
-        Beherrschung: gewichteter Schnitt aus Übungen (1. Versuch ohne Hilfe zählt voll, weitere Versuche und Hilfen weniger), dokumentiertem Verständnis in Stunden und Testergebnissen. Neuere Daten zählen stärker. Markierungen bei 60 % und 80 %.
+        Beherrschung: gewichteter Schnitt aus Übungen (1. Versuch ohne Hilfe zählt voll, weitere Versuche und Hilfen weniger), dokumentiertem Verständnis in Einheiten und Testergebnissen. Neuere Daten zählen stärker. Markierungen bei 60 % und 80 %.
       </p>
     </div>
   );
@@ -273,7 +283,7 @@ function AnalysisTab({ student, a, assignedId }: { student: repo.Student; a: Ana
     <div className="space-y-12">
       {assignedId && (
         <p className="flex items-center gap-2 rounded-lg bg-green-wash px-4 py-3 text-[14px] text-green">
-          <CheckCircle2 size={16} aria-hidden /> Übung erstellt und {first} zugewiesen.{" "}
+          <CheckCircle2 size={16} aria-hidden /> Übung erstellt und an {first} gesendet.{" "}
           <Link className="font-semibold underline underline-offset-2" href={`/uebungen/${assignedId}`}>
             Übung ansehen
           </Link>
@@ -308,14 +318,14 @@ function AnalysisTab({ student, a, assignedId }: { student: repo.Student; a: Ana
                 <div className="mt-4 flex flex-wrap items-center gap-2 pt-1">
                   {r.openAssignmentId ? (
                     <span className="text-[13px] text-ink-2">
-                      Bereits zugewiesen, wartet auf Bearbeitung.{" "}
+                      Schon gesendet, wartet auf Bearbeitung.{" "}
                       <Link href={`/schueler/${student.id}?tab=uebungen`} className="link font-semibold">
                         Übungen
                       </Link>
                     </span>
                   ) : (
                     <form action={applyRecommendationAction.bind(null, student.id, r.key)}>
-                      <button className="btn btn-primary btn-sm">Erstellen und {first} zuweisen</button>
+                      <button className="btn btn-primary btn-sm">Erstellen und an {first} senden</button>
                     </form>
                   )}
                 </div>
@@ -518,7 +528,7 @@ function Exercises({ student }: { student: repo.Student }) {
       <div className="panel flex flex-wrap items-center justify-between gap-4 px-5 py-4">
         <div className="min-w-0 flex-1">
           <p className="font-semibold">Zugang für {first}</p>
-          <p className="text-[13px] text-ink-2">Über diesen Link sieht {first} alle zugewiesenen Übungen und kann sie selbst bearbeiten.</p>
+          <p className="text-[13px] text-ink-2">Über diesen Link sieht {first} alle gesendeten Übungen und kann sie selbst bearbeiten.</p>
         </div>
         <div className="flex w-full items-center gap-2 sm:w-[440px]">
           <CopyLink path={`/lernen/${student.access_token}`} />
@@ -532,7 +542,7 @@ function Exercises({ student }: { student: repo.Student }) {
         if (!drafts.length) return null;
         return (
           <div className="mb-6 rounded-xl border border-dashed border-line-strong px-5 py-3">
-            <p className="text-[13px] font-semibold text-ink-2">Entwürfe für {first}, noch nicht freigegeben</p>
+            <p className="text-[13px] font-semibold text-ink-2">Entwürfe für {first}, noch nicht gesendet</p>
             <ul className="mt-1.5 flex flex-wrap gap-2">
               {drafts.map((w) => (
                 <li key={w.id}>
@@ -547,14 +557,14 @@ function Exercises({ student }: { student: repo.Student }) {
       })()}
       {list.length === 0 ? (
         <Empty
-          title="Noch keine Übungen zugewiesen"
+          title="Noch keine Übungen gesendet"
           action={
             <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-primary">
               Übung erstellen
             </Link>
           }
         >
-          Erstelle eine Übung oder übernimm eine Empfehlung aus der Analyse.
+          Erstelle eine Übung oder übernimm eine Empfehlung aus dem Bereich Fortschritt.
         </Empty>
       ) : (
         <div className="panel overflow-x-auto">

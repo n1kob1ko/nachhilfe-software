@@ -150,8 +150,8 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
             <span className="mx-1 h-5 w-px bg-line" aria-hidden />
           </>
         )}
-        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={panel === "send"} onClick={() => setPanel(panel === "send" ? "none" : "send")}>
-          <Send size={14} aria-hidden /> Senden
+        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={panel === "send"} onClick={() => setPanel(panel === "send" ? "none" : "send")} title="Nur diese eine Aufgabe an einen Schüler oder aufs Whiteboard senden">
+          <Send size={14} aria-hidden /> Einzeln senden
         </button>
       </div>
       {panel === "send" && <SendPanel {...p} run={run} pending={pending} />}
@@ -194,15 +194,15 @@ function SendPanel(p: Props & { task: Task; run: (fn: () => Promise<ActionResult
           <p className="text-[13px] text-ink-3">Möglich, sobald mit einem Schüler eine Einheit läuft.</p>
         ) : (
           <div className="flex gap-2">
-            <select className="input min-w-0 flex-1" value={unitId} onChange={(e) => setUnitId(Number(e.target.value))} aria-label="Tafel von">
+            <select className="input min-w-0 flex-1" value={unitId} onChange={(e) => setUnitId(Number(e.target.value))} aria-label="Whiteboard von">
               {p.units.map((u) => (
                 <option key={u.unit_id} value={u.unit_id}>
-                  Tafel von {u.student_name}
+                  Whiteboard von {u.student_name}
                 </option>
               ))}
             </select>
             <button type="button" className="btn btn-secondary btn-sm" disabled={p.pending} onClick={() => p.run(() => sendTaskToBoardAction(p.task.id, unitId))}>
-              <Presentation size={14} aria-hidden /> Auf Tafel
+              <Presentation size={14} aria-hidden /> Aufs Whiteboard
             </button>
           </div>
         )}

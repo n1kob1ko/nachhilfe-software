@@ -13,7 +13,7 @@ export function WaitForBoard({ name, backHref }: { name: string; backHref: strin
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-paper px-6 text-center">
       <p className="text-[22px] font-semibold">Hallo {name}!</p>
-      <p className="max-w-[40ch] text-[16px] text-ink-2">Die Tafel öffnet sich von selbst, sobald deine Nachhilfestunde beginnt.</p>
+      <p className="max-w-[40ch] text-[16px] text-ink-2">Das Whiteboard öffnet sich von selbst, sobald deine Einheit beginnt.</p>
       <span className="relative mt-2 flex h-3 w-3" aria-hidden>
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-40 motion-reduce:hidden" />
         <span className="relative inline-flex h-3 w-3 rounded-full bg-accent" />

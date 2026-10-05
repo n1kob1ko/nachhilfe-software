@@ -8,7 +8,7 @@ const jakarta = Plus_Jakarta_Sans({ subsets: ["latin", "latin-ext"], variable: "
 
 export const metadata: Metadata = {
   title: { default: "Lernheft", template: "%s · Lernheft" },
-  description: "Nachhilfe-Software: Schülerprofile, Stundendokumentation, Übungen, Fortschritt und Empfehlungen.",
+  description: "Nachhilfe-Software: Schülerprofile, Dokumentation jeder Einheit, Übungen, Fortschritt und Empfehlungen.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

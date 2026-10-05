@@ -231,7 +231,7 @@ export function computeAnalysis(input: {
     summary.push(`${first} ${word} (${overall.delta! > 0 ? "+" : ""}${overall.delta} Prozentpunkte in den letzten 4 Wochen).`);
   }
   if (errors[0] && errors[0].count >= 2) summary.push(`Häufigster Fehler: „${errors[0].label}“ (${errors[0].count}×).`);
-  if (summary.length === 0) summary.push("Noch zu wenig Daten. Sobald Übungen bearbeitet oder Stunden dokumentiert sind, erscheint hier die Auswertung.");
+  if (summary.length === 0) summary.push("Noch zu wenig Daten. Sobald Übungen bearbeitet oder Einheiten dokumentiert sind, erscheint hier die Auswertung.");
 
   // recommendations
   const recommendations: Recommendation[] = [];

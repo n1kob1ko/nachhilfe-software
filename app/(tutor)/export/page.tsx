@@ -15,7 +15,7 @@ const TABLE_LABEL: Record<string, string> = {
   tasks: "Aufgaben",
   assignments: "Zugewiesene Übungen",
   units: "Einheiten",
-  lessons: "Stunden und Dokumentationen",
+  lessons: "Einheiten und Dokumentationen",
   attempts: "Antworten",
   homework: "Hausübungen",
   tests: "Schularbeiten und Tests",

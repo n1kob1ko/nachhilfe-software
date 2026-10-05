@@ -336,7 +336,7 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
               {state.error}
             </p>
           )}
-          <p className="text-[12px] text-ink-3">Die Übung ist zuerst ein Entwurf. Du prüfst und bearbeitest die Aufgaben, bevor der Schüler sie sieht.</p>
+          <p className="text-[12px] text-ink-3">Die Übung ist zuerst ein Entwurf. Du siehst zuerst eine Vorschau und sendest sie dann an den Schüler.</p>
         </div>
       </aside>
     </form>
@@ -395,9 +395,9 @@ function Submit({ disabled, ai, count }: { disabled: boolean; ai: boolean; count
   const { pending, data } = useFormStatus();
   const mine = pending && data?.get("mode") !== "leer";
   return (
-    <button className="btn btn-primary" name="mode" value="generieren" disabled={disabled || pending}>
-      <Sparkles size={15} aria-hidden />
-      {mine ? (ai ? `Claude erstellt ${count} Aufgaben …` : "Wird erstellt …") : "Übungen generieren"}
+    <button className="btn btn-primary btn-lg" name="mode" value="generieren" disabled={disabled || pending}>
+      <Sparkles size={17} aria-hidden />
+      {mine ? (ai ? `Claude erstellt ${count} Aufgaben …` : "Wird erstellt …") : "Übung erstellen und Vorschau zeigen"}
     </button>
   );
 }
@@ -405,7 +405,7 @@ function Submit({ disabled, ai, count }: { disabled: boolean; ai: boolean; count
 function EmptyButton() {
   const { pending } = useFormStatus();
   return (
-    <button className="btn btn-secondary" name="mode" value="leer" disabled={pending} formNoValidate>
+    <button className="btn btn-ghost" name="mode" value="leer" disabled={pending} formNoValidate>
       Leer beginnen und selbst schreiben
     </button>
   );
