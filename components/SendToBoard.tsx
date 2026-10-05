@@ -21,7 +21,7 @@ export function SendToBoard({ worksheetId, tasks, units }: Props) {
     return (
       <div className="panel grid gap-2 px-4 py-4">
         <span className="label">Auf Whiteboard senden</span>
-        <p className="text-[13px] text-ink-3">Möglich, sobald mit einem Schüler eine Einheit läuft. Jede Einheit hat automatisch eine Tafel.</p>
+        <p className="text-[13px] text-ink-3">Möglich, sobald mit einem Schüler eine Einheit läuft. Jede Einheit hat automatisch ein Whiteboard.</p>
       </div>
     );
   }
@@ -33,17 +33,17 @@ export function SendToBoard({ worksheetId, tasks, units }: Props) {
         <Presentation size={14} aria-hidden /> Auf Whiteboard senden
       </span>
       {units.length > 1 ? (
-        <select className="input" name="unit_id" value={unitId} onChange={(e) => setUnitId(Number(e.target.value))} aria-label="Tafel von">
+        <select className="input" name="unit_id" value={unitId} onChange={(e) => setUnitId(Number(e.target.value))} aria-label="Whiteboard von">
           {units.map((u) => (
             <option key={u.unit_id} value={u.unit_id}>
-              Tafel von {u.student_name}
+              Whiteboard von {u.student_name}
             </option>
           ))}
         </select>
       ) : (
         <>
           <input type="hidden" name="unit_id" value={unitId} />
-          <p className="text-[13px] text-ink-2">An die Tafel von {units[0].student_name}</p>
+          <p className="text-[13px] text-ink-2">Aufs Whiteboard von {units[0].student_name}</p>
         </>
       )}
       <fieldset className="grid max-h-[260px] gap-1 overflow-y-auto">
@@ -64,7 +64,7 @@ export function SendToBoard({ worksheetId, tasks, units }: Props) {
         <p className="text-[13px] text-green" role="status">
           {state.ok}{" "}
           <Link href={`/tafel/${unitId}`} className="font-medium underline">
-            Tafel öffnen
+            Whiteboard öffnen
           </Link>
         </p>
       )}

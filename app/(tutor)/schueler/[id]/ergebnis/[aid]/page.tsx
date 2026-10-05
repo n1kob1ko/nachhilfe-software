@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, CircleDashed, Lightbulb, XCircle } from "lucide-react";
+import { runningUnitForStudent } from "@/lib/units";
+import { CheckCircle2, CircleDashed, Lightbulb, Plus, XCircle } from "lucide-react";
 import { deleteAssignmentAction } from "@/app/actions";
 import { answerText } from "@/components/TaskPreview";
 import { PageHeader, formatDate, formatDuration } from "@/components/ui";
@@ -41,14 +43,25 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   const correct = finals.filter((a) => a.correct).length;
   const totalSec = Math.round(attempts.reduce((s, a) => s + a.time_ms, 0) / 1000);
   const withHelp = finals.filter((a) => a.hints_used > 0 || a.solution_viewed).length;
+  const unit = runningUnitForStudent(student.id);
 
   return (
     <>
       <PageHeader
         back={{ href: `/schueler/${student.id}?tab=uebungen`, label: student.name }}
         title={w.title}
-        subtitle={`${student.name} · zugewiesen am ${formatDate(assignment.assigned_at)}${assignment.completed_at ? ` · abgeschlossen am ${formatDate(assignment.completed_at)}` : ""}`}
+        subtitle={`${student.name} · gesendet am ${formatDate(assignment.assigned_at)}${assignment.completed_at ? ` · fertig am ${formatDate(assignment.completed_at)}` : ""}`}
       />
+      <div className="no-print -mt-2 mb-8 flex flex-wrap gap-3">
+        <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-primary btn-lg">
+          <Plus size={18} aria-hidden /> Nächste Übung erstellen
+        </Link>
+        {unit && (
+          <Link href={`/einheiten/${unit.id}`} className="btn btn-secondary btn-lg">
+            Zurück zur Einheit
+          </Link>
+        )}
+      </div>
       {assignment.note && <p className="-mt-4 mb-6 text-[14px] text-ink-2">{assignment.note}</p>}
       <dl className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
@@ -117,7 +130,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
         })}
       </ol>
       <form action={deleteAssignmentAction.bind(null, assignment.id, student.id)} className="mt-8">
-        <button className="btn btn-danger btn-sm">Zuweisung und Ergebnisse löschen</button>
+        <button className="btn btn-danger btn-sm">Übung beim Schüler entfernen (mit Ergebnissen)</button>
       </form>
     </>
   );

@@ -158,7 +158,7 @@ textarea.input {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 40px;
+  min-height: 44px;
   padding: 0 18px;
   border-radius: 999px;
   font-size: 14px;
@@ -206,9 +206,21 @@ textarea.input {
   background: var(--red-wash);
 }
 .btn-sm {
-  height: 32px;
-  padding: 0 12px;
+  min-height: 36px;
+  padding: 0 14px;
   font-size: 13px;
+}
+.btn-lg {
+  min-height: 56px;
+  padding: 0 26px;
+  font-size: 16px;
+  font-weight: 600;
+}
+/* touch screens: small buttons still get a finger-sized target */
+@media (pointer: coarse) {
+  .btn-sm {
+    min-height: 44px;
+  }
 }
 
 .panel {
@@ -360,7 +372,7 @@ textarea.input {
 }
 .wb-tool {
   display: inline-flex;
-  width: 64px;
+  width: 74px;
   height: 56px;
   flex-direction: column;
   align-items: center;
@@ -376,8 +388,21 @@ textarea.input {
   background: var(--accent-wash);
   color: var(--accent);
 }
+.wb-more {
+  position: absolute;
+  bottom: 66px;
+  right: -6px;
+  display: grid;
+  grid-template-columns: repeat(4, 74px);
+  gap: 4px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 6px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.14);
+}
 .wb-tool-label {
-  font-size: 10px;
+  font-size: 11px;
   white-space: nowrap;
   font-weight: 600;
   line-height: 1;

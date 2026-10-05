@@ -250,7 +250,7 @@ export function summarize(r: UnitReport, studentName: string): string {
   const first = studentName.split(" ")[0];
   const minutes = Math.max(1, Math.round(r.durationMs / 60_000));
   if (r.tasksDone === 0) {
-    return `Einheit mit ${first} (${minutes} min). Am Gerät wurden keine Übungsaufgaben bearbeitet, die Inhalte stehen in den Beobachtungen der Lehrkraft.`;
+    return `Einheit mit ${first} (${minutes} min). Am Gerät wurden keine Übungsaufgaben bearbeitet, die Inhalte stehen in den Beobachtungen des Lehrers.`;
   }
   const out: string[] = [];
   const topic = r.topics.length ? `${list(r.topics)} (${list(r.subtopics)})` : list(r.subtopics);

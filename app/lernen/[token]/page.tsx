@@ -37,7 +37,7 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
             <Presentation size={24} aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[18px] font-semibold">Tafel öffnen</span>
+            <span className="block text-[18px] font-semibold">Whiteboard öffnen</span>
             <span className="block text-[14px] text-ink-2">Deine Einheit läuft. Schreib und rechne gemeinsam mit {unit.teacher_name}.</span>
           </span>
           <ChevronRight size={20} className="shrink-0 text-accent" aria-hidden />

@@ -98,7 +98,7 @@ export default async function Units({ searchParams }: { searchParams: Promise<{ 
                   <th className="px-3 py-3 font-semibold">Lehrer</th>
                   <th className="px-3 py-3 font-semibold">Schüler</th>
                   <th className="px-3 py-3 font-semibold">Status</th>
-                  <th className="px-5 py-3 font-semibold">Lern-Doku</th>
+                  <th className="px-5 py-3 font-semibold">Dokumentation</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -129,7 +129,7 @@ export default async function Units({ searchParams }: { searchParams: Promise<{ 
                           <span className="text-ink-3">–</span>
                         ) : (
                           <Link href={`/einheiten/${u.id}`} className="link text-[13px] font-medium">
-                            {u.status === "gestartet" ? "Live ansehen" : lesson?.reviewed_at ? "Ansehen" : "Ergänzen"}
+                            {u.status === "gestartet" ? "Öffnen" : lesson?.reviewed_at ? "Ansehen" : "Abschließen"}
                           </Link>
                         )}
                         {lesson && !lesson.reviewed_at && u.status === "beendet" && (

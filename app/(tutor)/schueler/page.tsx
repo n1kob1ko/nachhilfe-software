@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
-import { Empty, MasteryBar, PageHeader, TrendBadge } from "@/components/ui";
+import { Empty, PageHeader } from "@/components/ui";
 import { listStudents, listTeachers } from "@/lib/repo";
 import { klassenLabel } from "@/lib/school";
 import { Avatar } from "@/components/Art";
@@ -10,21 +10,36 @@ import { analyzeStudent } from "@/lib/service";
 
 export const metadata = { title: "Schüler" };
 
-export default function Students() {
-  const students = listStudents();
+export default async function Students({ searchParams }: { searchParams: Promise<{ suche?: string }> }) {
+  const q = ((await searchParams).suche ?? "").trim();
+  const all = listStudents();
+  const students = q ? all.filter((s) => s.name.toLowerCase().includes(q.toLowerCase())) : all;
   const teachers = new Map(listTeachers().map((t) => [t.id, t.name]));
   return (
     <>
       <PageHeader
         title="Schüler"
-        subtitle={`${students.length} ${students.length === 1 ? "Schüler" : "Schüler"} in Betreuung`}
+        subtitle={`${all.length} Schüler`}
         actions={
-          <Link href="/schueler/neu" className="btn btn-primary">
+          <Link href="/schueler/neu" className="btn btn-secondary">
             <Plus size={16} aria-hidden /> Neuer Schüler
           </Link>
         }
       />
-      {students.length === 0 ? (
+      {all.length > 0 && (
+        <form className="mb-6 flex max-w-[520px] gap-2" role="search">
+          <div className="relative flex-1">
+            <Search size={18} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-ink-3" aria-hidden />
+            <input className="input !min-h-[48px] !pl-11 text-[16px]" name="suche" defaultValue={q} placeholder="Schüler suchen" aria-label="Schüler suchen" autoComplete="off" />
+          </div>
+          <button className="btn btn-secondary !min-h-[48px]">Suchen</button>
+        </form>
+      )}
+      {q && students.length === 0 ? (
+        <p className="text-[15px] text-ink-2">
+          Kein Schüler heißt „{q}“. <Link href="/schueler" className="link">Alle anzeigen</Link>
+        </p>
+      ) : students.length === 0 ? (
         <Empty
           title="Noch keine Schüler"
           action={
@@ -33,7 +48,7 @@ export default function Students() {
             </form>
           }
         >
-          Ein Schülerprofil sammelt Stunden, Hausübungen, Tests und Übungsergebnisse und berechnet daraus den Lernstand pro Fähigkeit.
+          Ein Schülerprofil sammelt Einheiten, Hausübungen, Tests und Übungsergebnisse und berechnet daraus den Lernstand pro Fähigkeit.
         </Empty>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -51,7 +66,6 @@ export default function Students() {
                         {teachers.get(s.teacher_id ?? 0) && ` · ${teachers.get(s.teacher_id ?? 0)}`}
                       </span>
                     </div>
-                    <TrendBadge trend={a.overall.trend} compact />
                   </div>
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {s.subjects.length ? (
@@ -67,16 +81,13 @@ export default function Students() {
                       <span className="text-[13px] text-ink-3">Keine Fächer</span>
                     )}
                   </div>
-                  <div className="mt-3">
-                    <MasteryBar value={a.overall.mastery} size="sm" />
-                  </div>
-                  <p className="mt-2 text-[13px] text-ink-2">
+                  <p className="mt-3 text-[14px] text-ink-2">
                     {a.mainProblem ? (
                       <>
-                        Problem: <span className="font-medium text-red">{a.mainProblem.skill.name}</span> ({a.mainProblem.skill.area})
+                        Schwierigkeit: <span className="font-medium text-red">{a.mainProblem.skill.name}</span>
                       </>
                     ) : (
-                      "Kein Problem erkannt"
+                      "Keine Schwierigkeit erkannt"
                     )}
                   </p>
                 </Link>
