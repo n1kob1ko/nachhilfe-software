@@ -5,29 +5,99 @@ export type CurriculumSkill = {
   name: string;
   gradeMin: number;
   gradeMax: number;
+  /** Teilfähigkeit: the skill it belongs to (Fach › Thema › Fähigkeit › Teilfähigkeit). */
+  parentId?: string;
 };
 
 export const SUBJECTS = ["Mathematik", "Deutsch", "Englisch"] as const;
 
 
-export const DIFFICULTIES = ["leicht", "leicht bis mittel", "mittel", "schwer"] as const;
-export type Difficulty = (typeof DIFFICULTIES)[number];
+export const DIFFICULTIES = ["sehr leicht", "leicht", "mittel", "schwer", "sehr schwer"] as const;
+/** "leicht bis mittel" was used by earlier versions and still appears on older exercises. */
+export type Difficulty = (typeof DIFFICULTIES)[number] | "leicht bis mittel";
 
+/** Difficulty that fits a mastery estimate ("automatisch an Schüler anpassen"). */
+export function difficultyFor(mastery: number | null): Difficulty {
+  if (mastery === null) return "leicht";
+  if (mastery < 0.3) return "sehr leicht";
+  if (mastery < 0.5) return "leicht";
+  if (mastery < 0.7) return "mittel";
+  if (mastery < 0.85) return "schwer";
+  return "sehr schwer";
+}
+
+/**
+ * How a task is answered and checked (the "format"). Stored in tasks.type.
+ * calc = short answer compared as a number/fraction, grammar = short answer compared as text,
+ * order = put steps in the right order.
+ */
 export const TASK_TYPES = {
   mc: "Multiple Choice",
   calc: "Rechnung",
   free: "Freitext",
   cloze: "Lückentext",
-  grammar: "Grammatik",
+  grammar: "Kurzantwort",
   reading: "Textverständnis",
+  order: "Reihenfolge",
   mixed: "Gemischt",
 } as const;
 export type TaskType = Exclude<keyof typeof TASK_TYPES, "mixed">;
 
+/**
+ * Task types as teachers think of them, per subject (stored in tasks.category). Each one lists the
+ * answer formats it can use, the first being the usual one. A new subject only needs an entry here;
+ * subjects without one get DEFAULT_CATEGORIES.
+ */
+export type Category = { key: string; label: string; formats: TaskType[]; hint: string };
+const c = (key: string, label: string, formats: TaskType[], hint: string): Category => ({ key, label, formats, hint });
+
+export const CATEGORIES: Record<string, Category[]> = {
+  Mathematik: [
+    c("rechnung", "Direkte Rechnung", ["calc", "mc"], "Eine Rechnung mit eindeutigem Ergebnis."),
+    c("textaufgabe", "Textaufgabe", ["calc", "free"], "Kurze Sachsituation aus dem Alltag, Ergebnis als Zahl."),
+    c("lueckentext", "Lückentext", ["cloze"], "Rechenweg oder Merksatz mit Lücken."),
+    c("mc", "Multiple Choice", ["mc"], "3–4 Antworten, eine richtig; falsche Antworten sind typische Fehler."),
+    c("fehler", "Fehler finden", ["calc", "mc"], "Eine vorgerechnete Lösung mit einem typischen Fehler; der Schüler gibt das richtige Ergebnis an."),
+    c("ordnen", "Lösungsweg ordnen", ["order"], "Die Schritte eines Lösungswegs in die richtige Reihenfolge bringen."),
+    c("offen", "Offene Aufgabe", ["free"], "Erklären, begründen oder eigenes Beispiel finden."),
+  ],
+  Deutsch: [
+    c("rechtschreibung", "Rechtschreibung", ["cloze", "grammar", "mc"], "Richtige Schreibung eines Wortes oder einer Stelle."),
+    c("grammatik", "Grammatik", ["mc", "grammar"], "Fall, Zeit, Satzglied oder Ähnliches bestimmen."),
+    c("wortarten", "Wortarten", ["mc", "grammar"], "Wortart eines markierten Wortes bestimmen."),
+    c("lueckentext", "Lückentext", ["cloze"], "Satz oder Text mit Lücken."),
+    c("textverstaendnis", "Textverständnis", ["reading", "free"], "Kurzer Text mit Fragen dazu."),
+    c("schreiben", "Schreiben", ["free"], "Kurzen Text verfassen (z. B. Satz, Absatz, Nachricht)."),
+    c("satz", "Satz verbessern", ["grammar", "free"], "Einen fehlerhaften Satz richtig aufschreiben."),
+    c("fehler", "Fehler finden", ["mc", "grammar"], "In einem Satz den Fehler finden."),
+  ],
+  Englisch: [
+    c("vocabulary", "Vocabulary", ["grammar", "mc"], "Wort übersetzen oder passendes Wort finden."),
+    c("grammar", "Grammar", ["cloze", "mc", "grammar"], "Grammatikform richtig bilden."),
+    c("gap", "Gap filling", ["cloze"], "Sentence with gaps."),
+    c("mc", "Multiple Choice", ["mc"], "3–4 options, one correct."),
+    c("translation", "Translation", ["grammar", "free"], "Satz Deutsch → Englisch oder umgekehrt."),
+    c("reading", "Reading comprehension", ["reading", "free"], "Short text with questions."),
+    c("writing", "Writing", ["free"], "Short piece of writing."),
+  ],
+};
+export const DEFAULT_CATEGORIES: Category[] = [
+  c("kurz", "Kurzantwort", ["grammar"], "Kurze, eindeutige Antwort."),
+  c("lueckentext", "Lückentext", ["cloze"], "Text mit Lücken."),
+  c("mc", "Multiple Choice", ["mc"], "3–4 Antworten, eine richtig."),
+  c("offen", "Offene Aufgabe", ["free"], "Erklären oder begründen."),
+];
+export const categoriesFor = (subject: string) => CATEGORIES[subject] ?? DEFAULT_CATEGORIES;
+export const categoryLabel = (subject: string, key: string | null | undefined) =>
+  (key && [...categoriesFor(subject), ...Object.values(CATEGORIES).flat()].find((x) => x.key === key)?.label) || null;
+
 const s = (subject: string, area: string, gradeMin: number, gradeMax: number, items: [string, string][]) =>
   items.map(([id, name]) => ({ id, subject, area, name, gradeMin, gradeMax }));
+/** Teilfähigkeiten of one skill: ids are the parent id plus a suffix. */
+const sub = (parent: CurriculumSkill, items: [string, string][]): CurriculumSkill[] =>
+  items.map(([suffix, name]) => ({ id: `${parent.id}.${suffix}`, subject: parent.subject, area: parent.area, name, gradeMin: parent.gradeMin, gradeMax: parent.gradeMax, parentId: parent.id }));
 
-export const CURRICULUM: CurriculumSkill[] = [
+const BASE: CurriculumSkill[] = [
   ...s("Mathematik", "Bruchrechnung", 5, 9, [
     ["mathe.brueche.kuerzen", "Kürzen"],
     ["mathe.brueche.erweitern", "Erweitern"],
@@ -74,4 +144,49 @@ export const CURRICULUM: CurriculumSkill[] = [
   ...s("Englisch", "Vocabulary", 5, 10, [["englisch.vocab.irregular", "Irregular verbs"]]),
   ...s("Englisch", "Grammar", 5, 10, [["englisch.grammar.comparatives", "Comparatives"]]),
   ...s("Englisch", "Reading", 5, 12, [["englisch.reading.comprehension", "Reading comprehension"]]),
+  ...s("Deutsch", "Wortarten", 3, 8, [
+    ["deutsch.wortarten.bestimmen", "Wortarten bestimmen"],
+    ["deutsch.wortarten.nomen", "Nomen erkennen und großschreiben"],
+  ]),
+  ...s("Englisch", "Translation", 5, 12, [["englisch.translation.sentences", "Sätze übersetzen"]]),
 ];
+
+const byId = (id: string) => BASE.find((x) => x.id === id)!;
+
+/** Finer steps of some skills, so an exercise can target exactly what a student gets wrong. */
+const SUBSKILLS: CurriculumSkill[] = [
+  ...sub(byId("mathe.brueche.dividieren"), [
+    ["kehrwert", "Kehrwert korrekt bilden"],
+    ["ganzzahl", "Bruch durch ganze Zahl"],
+    ["kuerzen", "Vor dem Multiplizieren kürzen"],
+  ]),
+  ...sub(byId("mathe.brueche.addieren"), [
+    ["hauptnenner", "Gemeinsamen Nenner finden"],
+    ["gemischt", "Gemischte Zahlen addieren"],
+  ]),
+  ...sub(byId("mathe.brueche.multiplizieren"), [["kuerzen", "Über Kreuz kürzen"]]),
+  ...sub(byId("mathe.gleichungen.einfach"), [
+    ["umformen", "Äquivalenzumformungen"],
+    ["probe", "Probe machen"],
+  ]),
+  ...sub(byId("mathe.gleichungen.text"), [["aufstellen", "Gleichung aus Text aufstellen"]]),
+  ...sub(byId("mathe.prozent.prozentwert"), [["dreisatz", "Mit Dreisatz rechnen"]]),
+  ...sub(byId("deutsch.beistrich.nebensatz"), [["konjunktion", "Einleitende Konjunktion erkennen"]]),
+  ...sub(byId("deutsch.recht.dasdass"), [["ersatzprobe", "Ersatzprobe mit „dieses/welches“"]]),
+  ...sub(byId("englisch.tenses.presentsimple"), [
+    ["s", "3. Person -s"],
+    ["fragen", "Fragen und Verneinung mit do/does"],
+  ]),
+  ...sub(byId("englisch.tenses.pastsimple"), [["irregular", "Unregelmäßige Formen"]]),
+];
+
+export const CURRICULUM: CurriculumSkill[] = [...BASE, ...SUBSKILLS];
+
+/** "rechnung,fehler" → "Direkte Rechnung, Fehler finden"; older exercises store an answer format. */
+export function worksheetTypeLabel(subject: string, taskType: string): string {
+  if (taskType in TASK_TYPES) return TASK_TYPES[taskType as keyof typeof TASK_TYPES];
+  return taskType
+    .split(",")
+    .map((k) => categoryLabel(subject, k) ?? k)
+    .join(", ");
+}

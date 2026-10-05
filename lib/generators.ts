@@ -19,7 +19,8 @@ function shuffle<T>(rng: Rng, arr: T[]): T[] {
   return a;
 }
 
-const LEVEL: Record<Difficulty, number> = { leicht: 0, "leicht bis mittel": 1, mittel: 2, schwer: 3 };
+// The built-in generators know four number ranges; "sehr schwer" uses the hardest one.
+const LEVEL: Record<Difficulty, number> = { "sehr leicht": 0, leicht: 1, "leicht bis mittel": 1, mittel: 2, schwer: 3, "sehr schwer": 3 };
 
 // ---------- fractions ----------
 const gcd = (a: number, b: number): number => (b === 0 ? Math.abs(a) : gcd(b, a % b));
@@ -809,6 +810,95 @@ function toCloze(t: TaskDraft): TaskDraft {
   };
 }
 
+/** "Fehler finden": a worked answer with a typical mistake; the student gives the right result. */
+function toFindError(rng: Rng, t: TaskDraft): TaskDraft | null {
+  const wrong = t.errorMap.find((e) => !/^\d+$/.test(e.answer) || t.answer.mode === "value");
+  if (!wrong || !t.answer.accepted) return null;
+  const name = pick(rng, ["Lena", "Jonas", "Emma", "Paul", "Mia", "Elias"]);
+  return {
+    ...t,
+    type: t.type === "grammar" ? "grammar" : "calc",
+    category: "fehler",
+    prompt: `${t.prompt}\n${name} hat als Ergebnis ${wrong.answer} herausbekommen. Das stimmt nicht. Finde den Fehler und gib das richtige Ergebnis an.`,
+    hints: ["Rechne die Aufgabe selbst Schritt für Schritt und vergleiche.", `Typischer Fehler an dieser Stelle: ${wrong.label}.`, ...t.hints.slice(0, 1)],
+    errorMap: [{ answer: wrong.answer, label: `Fehler übernommen: ${wrong.label}` }, ...t.errorMap.filter((e) => e !== wrong)],
+  };
+}
+
+/** "Lösungsweg ordnen": the steps of the worked solution, shuffled. Needs at least three steps. */
+function toOrder(rng: Rng, t: TaskDraft): TaskDraft | null {
+  const steps = t.solution
+    .split("\n")
+    .flatMap((line) => {
+      // a chain "a : b = c = d" becomes one step per "="; lines listing several results stay whole
+      const parts = line.includes(",") ? [line] : line.split(/\s=\s/);
+      if (parts.length <= 2) return [line];
+      const first = parts[0].replace(/^[^\d=:]*[A-Za-zÄÖÜäöüß][^\d=:]*:\s+/, "");
+      // "W = G · p / 100 = …": a bare variable belongs to the formula
+      if (/^[A-Za-z]{1,2}$/.test(first.trim())) return [`${first} = ${parts[1]}`, ...parts.slice(2).map((x) => `= ${x}`)];
+      return [first, ...parts.slice(1).map((x) => `= ${x}`)];
+    })
+    .map((x) => x.trim())
+    .filter((x, i, arr) => x && arr.indexOf(x) === i);
+  if (steps.length < 3) return null;
+  let shown = shuffle(rng, [...steps]);
+  for (let i = 0; i < 5 && shown.every((x, j) => x === steps[j]); i++) shown = shuffle(rng, [...steps]);
+  return {
+    ...t,
+    type: "order",
+    category: "ordnen",
+    prompt: `Bring die Schritte des Lösungswegs in die richtige Reihenfolge.\n${t.prompt}`,
+    data: { steps: shown },
+    answer: { steps },
+    hints: ["Womit beginnt man bei dieser Aufgabe?", "Der letzte Schritt ist das Ergebnis."],
+    errorMap: [],
+  };
+}
+
+export type Slot = { skillId: string; skillName: string; generatorSkillId?: string; difficulty: Difficulty; category: string | null; subject: string };
+
+/**
+ * One task for one slot of the builder: skill, difficulty and task type. Sub-skills without a
+ * generator of their own use the generator of their parent (generatorSkillId). Returns an
+ * explanation task when nothing fits, so the builder always gets the number it asked for.
+ */
+export function generateForSlot(slot: Slot, rng: Rng = Math.random, variant = 0): TaskDraft {
+  const genId = GEN[slot.skillId] ? slot.skillId : slot.generatorSkillId && GEN[slot.generatorSkillId] ? slot.generatorSkillId : null;
+  const tag = (t: TaskDraft, category: string | null = slot.category): TaskDraft => ({
+    ...t,
+    skillId: slot.skillId,
+    skillIds: [...new Set([slot.skillId, ...(genId && genId !== slot.skillId ? [genId] : [])])],
+    category,
+    difficulty: slot.difficulty,
+  });
+  const free = () => tag(freeTask(slot.skillId, slot.skillName, slot.difficulty, variant), slot.category && ["offen", "schreiben", "writing"].includes(slot.category) ? slot.category : "offen");
+  const reading = slot.skillId.endsWith("reading.comprehension") || slot.skillId === "deutsch.text.verstehen" || slot.category === "textverstaendnis" || slot.category === "reading";
+  if (reading && (slot.skillId.endsWith("reading.comprehension") || slot.skillId === "deutsch.text.verstehen")) {
+    const t = readingTasks(rng, slot.subject, slot.skillId, slot.difficulty, variant + 1)[variant] ?? readingTasks(rng, slot.subject, slot.skillId, slot.difficulty, 1)[0];
+    return tag(t, slot.category ?? "textverstaendnis");
+  }
+  if (!genId || ["offen", "schreiben", "writing"].includes(slot.category ?? "")) return free();
+  const base = GEN[genId](rng, slot.difficulty);
+  switch (slot.category) {
+    case "mc":
+      return tag(toMC(rng, base));
+    case "lueckentext":
+    case "gap":
+      return tag(toCloze(base));
+    case "fehler":
+      return tag(toFindError(rng, base) ?? base, "fehler");
+    case "ordnen": {
+      const ordered = toOrder(rng, base);
+      return ordered ? tag(ordered, "ordnen") : tag(base, "rechnung");
+    }
+    case "textaufgabe":
+      // the built-in generators write bare calculations; stories come from the AI
+      return tag(base, genId === "mathe.gleichungen.text" ? "textaufgabe" : "rechnung");
+    default:
+      return tag(base);
+  }
+}
+
 export type GenerateRequest = {
   subject: string;
   skills: { id: string; name: string }[];
@@ -829,7 +919,10 @@ function mulberry32(seed: number): Rng {
   };
 }
 
-export function hasBuiltInGenerator(skillId: string) {
+export function hasBuiltInGenerator(skillId: string): boolean {
+  // Teilfähigkeiten (ids "parent.suffix") use the generator of their skill
+  const parent = skillId.split(".").slice(0, 3).join(".");
+  if (parent !== skillId && hasBuiltInGenerator(parent)) return true;
   return skillId in GEN || skillId.endsWith("reading.comprehension") || skillId === "deutsch.text.verstehen";
 }
 

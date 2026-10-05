@@ -4,13 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { aiEnabled, analyzeWithAI } from "@/lib/ai";
 import { RECOMMENDATION_NOTE, pct } from "@/lib/analysis";
-import type { Difficulty, TaskType } from "@/lib/curriculum";
 import { hasData, seedDemo } from "@/lib/demo";
 import { requireTeacher } from "@/lib/auth";
 import { noteActivity } from "@/lib/learning";
 import * as repo from "@/lib/repo";
 import { klassenLabel, schoolType, schulstufe } from "@/lib/school";
 import { analyzeStudent, buildWorksheet, submitAnswer, type SubmitInput } from "@/lib/service";
+import { runningUnitForStudent } from "@/lib/units";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const int = (f: FormData, k: string) => {
@@ -145,42 +145,12 @@ export async function deleteTestAction(id: number, studentId: number) {
 }
 
 // ---------- worksheets ----------
-export type BuildState = { error?: string } | null;
-
-export async function buildWorksheetAction(_prev: BuildState, formData: FormData): Promise<BuildState> {
-  await requireTeacher();
-  const studentId = int(formData, "student_id");
-  let result: Awaited<ReturnType<typeof buildWorksheet>>;
-  try {
-    result = await buildWorksheet({
-      subject: str(formData, "subject"),
-      schoolType: str(formData, "school_type") || "Mittelschule",
-      klasse: int(formData, "klasse") || 1,
-      skillIds: formData.getAll("skill_ids").map(String),
-      difficulty: str(formData, "difficulty") as Difficulty,
-      count: int(formData, "count") || 8,
-      taskType: str(formData, "task_type") as TaskType | "mixed",
-      title: str(formData, "title"),
-      focusNote: str(formData, "focus"),
-      useAI: formData.get("use_ai") === "on",
-    });
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : "Die Übung konnte nicht erstellt werden." };
-  }
-  if (studentId) {
-    repo.assignWorksheet(result.id, studentId);
-    noteActivity(studentId);
-  }
-  revalidatePath("/", "layout");
-  redirect(`/uebungen/${result.id}${result.aiError ? "?hinweis=ki" : ""}`);
-}
-
 export async function assignWorksheetAction(formData: FormData) {
   await requireTeacher();
   const worksheetId = int(formData, "worksheet_id");
   const studentId = int(formData, "student_id");
   if (studentId) {
-    repo.assignWorksheet(worksheetId, studentId);
+    repo.assignWorksheet(worksheetId, studentId, "", runningUnitForStudent(studentId)?.id ?? null);
     noteActivity(studentId);
   }
   revalidatePath("/", "layout");
@@ -220,7 +190,7 @@ export async function applyRecommendationAction(studentId: number, key: string) 
     focusNote: rec.focusNote,
   });
   noteActivity(studentId);
-  repo.assignWorksheet(result.id, studentId, `${RECOMMENDATION_NOTE} (${rec.skill.area} › ${rec.skill.name}): ${rec.reason}`);
+  repo.assignWorksheet(result.id, studentId, `${RECOMMENDATION_NOTE} (${rec.skill.area} › ${rec.skill.name}): ${rec.reason}`, runningUnitForStudent(studentId)?.id ?? null);
   revalidatePath("/", "layout");
   redirect(`/schueler/${studentId}?tab=analyse&zugewiesen=${result.id}`);
 }
@@ -228,11 +198,17 @@ export async function applyRecommendationAction(studentId: number, key: string) 
 // ---------- skills ----------
 export async function createSkillAction(formData: FormData) {
   await requireTeacher();
-  const subject = str(formData, "subject");
-  const area = str(formData, "area");
+  const parent = repo.getSkill(str(formData, "parent_id"));
   const name = str(formData, "name");
-  if (!subject || !area || !name) return;
-  repo.createSkill(subject, area, name, int(formData, "grade_min") || 1, int(formData, "grade_max") || 13);
+  if (parent && name) {
+    // a Teilfähigkeit belongs to its skill's subject and topic
+    repo.createSkill(parent.subject, parent.area, name, parent.grade_min, parent.grade_max, parent.parent_id ?? parent.id);
+  } else {
+    const subject = str(formData, "subject");
+    const area = str(formData, "area");
+    if (!subject || !area || !name) return;
+    repo.createSkill(subject, area, name, int(formData, "grade_min") || 1, int(formData, "grade_max") || 13);
+  }
   revalidatePath("/faehigkeiten");
 }
 

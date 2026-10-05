@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, ChevronRight, Lightbulb, XCircle } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, ChevronRight, Lightbulb, XCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { submitAnswerAction } from "@/app/actions";
+import { recordHintAction } from "@/app/builder-actions";
+import { hintLabel } from "@/lib/tasks";
 
 export type ClientTask = {
   id: number;
@@ -12,7 +14,13 @@ export type ClientTask = {
   options: string[] | null;
   passage: string | null;
   blanks: number;
+  /** Order tasks: the steps in the (shuffled) order they are shown. */
+  steps: string[] | null;
   hints: string[];
+  /** Hints already opened earlier (stored per hint). */
+  hintsOpened: number;
+  /** Set when the teacher has released the solutions for this exercise. */
+  released: { solution: string; answer: string | null } | null;
   triesUsed: number;
   finished: { correct: boolean; solution: string } | null;
 };
@@ -105,7 +113,8 @@ function TaskCard({
   const [choice, setChoice] = useState<number | null>(null);
   const [text, setText] = useState("");
   const [gaps, setGaps] = useState<string[]>(() => Array(task.blanks).fill(""));
-  const [hintsShown, setHintsShown] = useState(0);
+  const [hintsShown, setHintsShown] = useState(Math.min(task.hintsOpened, task.hints.length));
+  const [order, setOrder] = useState<number[]>(() => (task.steps ?? []).map((_, i) => i));
   const [tries, setTries] = useState(task.triesUsed);
   const [feedback, setFeedback] = useState<Feedback | null>(task.finished ? { correct: task.finished.correct, text: "Diese Aufgabe hast du schon bearbeitet.", final: true, solution: task.finished.solution } : null);
   const [pending, start] = useTransition();
@@ -119,8 +128,21 @@ function TaskCard({
     inputRef.current?.focus();
   }, []);
 
-  const answer = task.options ? (choice === null ? "" : String(choice)) : task.blanks > 0 ? JSON.stringify(gaps) : text;
-  const canSubmit = !pending && !final && (task.options ? choice !== null : task.blanks > 0 ? gaps.every((g) => g.trim()) : text.trim().length > 0);
+  const answer = task.options ? (choice === null ? "" : String(choice)) : task.steps ? JSON.stringify(order) : task.blanks > 0 ? JSON.stringify(gaps) : text;
+  const canSubmit = !pending && !final && (task.options ? choice !== null : task.steps ? true : task.blanks > 0 ? gaps.every((g) => g.trim()) : text.trim().length > 0);
+  const move = (pos: number, dir: -1 | 1) =>
+    setOrder((o) => {
+      const j = pos + dir;
+      if (j < 0 || j >= o.length) return o;
+      const next = [...o];
+      [next[pos], next[j]] = [next[j], next[pos]];
+      return next;
+    });
+  const openHint = () => {
+    const i = hintsShown;
+    setHintsShown(i + 1);
+    void recordHintAction(token, assignmentId, task.id, i);
+  };
 
   const send = (extra: { giveUp?: boolean; selfAssessed?: boolean } = {}) =>
     start(async () => {
@@ -190,7 +212,28 @@ function TaskCard({
           </div>
         )}
 
-        {!task.options && task.blanks === 0 &&
+        {task.steps && (
+          <ol className="mt-6 grid gap-2" aria-label="Schritte ordnen">
+            {order.map((stepIndex, pos) => (
+              <li key={stepIndex} className="flex items-center gap-3 rounded-xl border border-line-strong bg-surface px-4 py-2.5 text-[17px]">
+                <span className="num w-6 shrink-0 font-semibold text-ink-3">{pos + 1}.</span>
+                <span className="min-w-0 flex-1">{task.steps![stepIndex]}</span>
+                {!final && (
+                  <span className="flex shrink-0 gap-1">
+                    <button type="button" className="btn btn-ghost btn-sm h-10 w-10" disabled={pos === 0} onClick={() => move(pos, -1)} aria-label={`„${task.steps![stepIndex]}“ nach oben`}>
+                      <ArrowUp size={18} aria-hidden />
+                    </button>
+                    <button type="button" className="btn btn-ghost btn-sm h-10 w-10" disabled={pos === order.length - 1} onClick={() => move(pos, 1)} aria-label={`„${task.steps![stepIndex]}“ nach unten`}>
+                      <ArrowDown size={18} aria-hidden />
+                    </button>
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+        )}
+
+        {!task.options && !task.steps && task.blanks === 0 &&
           (task.type === "free" || task.type === "reading" ? (
             <textarea
               ref={(el) => void (inputRef.current = el)}
@@ -220,7 +263,10 @@ function TaskCard({
             {task.hints.slice(0, hintsShown).map((h, i) => (
               <li key={i} className="flex gap-2 rounded-lg bg-amber-wash px-4 py-2.5 text-[15px] text-[#5c3a00]">
                 <Lightbulb size={17} className="mt-0.5 shrink-0" aria-hidden />
-                {h}
+                <span>
+                  <span className="block text-[12.5px] font-semibold">{hintLabel(i)}</span>
+                  {h}
+                </span>
               </li>
             ))}
           </ul>
@@ -259,6 +305,14 @@ function TaskCard({
           </div>
         )}
 
+        {task.released && !final && (
+          <details className="mt-4 rounded-xl border border-line bg-surface px-5 py-3">
+            <summary className="cursor-pointer text-[14px] font-semibold text-ink-2">Lösung ansehen (von deiner Lehrkraft freigegeben)</summary>
+            {task.released.answer && <p className="mt-2 font-semibold">{task.released.answer}</p>}
+            <p className="mt-1 text-[16px] whitespace-pre-line">{task.released.solution}</p>
+          </details>
+        )}
+
         <div className="mt-8 flex flex-wrap items-center gap-3">
           {!final && !feedback?.selfAssess && (
             <>
@@ -266,13 +320,15 @@ function TaskCard({
                 {pending ? "Wird geprüft …" : "Prüfen"}
               </button>
               {hintsShown < task.hints.length && (
-                <button type="button" className="btn btn-secondary h-11" onClick={() => setHintsShown((h) => h + 1)}>
-                  <Lightbulb size={16} aria-hidden /> {hintsShown === 0 ? "Hilfe anzeigen" : "Noch eine Hilfe"}
+                <button type="button" className="btn btn-secondary h-11" onClick={openHint}>
+                  <Lightbulb size={16} aria-hidden /> {hintLabel(hintsShown)}
                 </button>
               )}
-              <button type="button" className="btn btn-ghost h-11" disabled={pending} onClick={() => send({ giveUp: true })}>
-                Lösung zeigen
-              </button>
+              {(tries > 0 || hintsShown >= task.hints.length) && (
+                <button type="button" className="btn btn-ghost h-11" disabled={pending} onClick={() => send({ giveUp: true })}>
+                  Ich komme nicht weiter
+                </button>
+              )}
               {tries > 0 && task.type !== "free" && (
                 <span className="num text-[14px] text-ink-3">
                   Versuch {tries + 1} von {maxTries}

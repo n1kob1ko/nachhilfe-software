@@ -4,12 +4,19 @@ import { deleteAssignmentAction } from "@/app/actions";
 import { answerText } from "@/components/TaskPreview";
 import { PageHeader, formatDate, formatDuration } from "@/components/ui";
 import * as repo from "@/lib/repo";
-import { GAP } from "@/lib/tasks";
+import { GAP, HINT_LABELS } from "@/lib/tasks";
 
 function shownAnswer(t: repo.Task, raw: string) {
   if (t.data.options) {
     const i = Number(raw);
     return Number.isInteger(i) && t.data.options[i] !== undefined ? `${String.fromCharCode(97 + i)}) ${t.data.options[i]}` : raw;
+  }
+  if (t.data.steps) {
+    try {
+      return (JSON.parse(raw) as number[]).map((i, n) => `${n + 1}. ${t.data.steps![i]}`).join("  ");
+    } catch {
+      return raw;
+    }
   }
   if (t.answer.blanks) {
     try {
@@ -30,6 +37,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   const tasks = repo.listTasks(w.id);
   const attempts = repo.listAttemptsForAssignment(assignment.id);
   const finals = attempts.filter((a) => a.final);
+  const hintUses = repo.hintUsesForAssignment(assignment.id);
   const correct = finals.filter((a) => a.correct).length;
   const totalSec = Math.round(attempts.reduce((s, a) => s + a.time_ms, 0) / 1000);
   const withHelp = finals.filter((a) => a.hints_used > 0 || a.solution_viewed).length;
@@ -90,16 +98,19 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
                 <p className={`inline-flex items-center gap-1.5 font-semibold ${status.cls}`}>
                   <Icon size={15} aria-hidden /> {status.text}
                 </p>
-                {fin && (
-                  <p className="num text-ink-2">
-                    {formatDuration(time)}
-                    {fin.hints_used > 0 && (
-                      <span className="ml-2 inline-flex items-center gap-1">
-                        <Lightbulb size={13} aria-hidden /> {fin.hints_used} {fin.hints_used === 1 ? "Hilfe" : "Hilfen"}
-                      </span>
-                    )}
-                  </p>
-                )}
+                {fin && <p className="num text-ink-2">{formatDuration(time)}</p>}
+                {(() => {
+                  // which hints were opened (stored per hint), older answers only have the count
+                  const used = [...new Set(hintUses.filter((h) => h.task_id === t.id).map((h) => h.hint_index))].sort();
+                  const n = used.length || fin?.hints_used || 0;
+                  if (!n) return null;
+                  return (
+                    <p className="inline-flex items-center gap-1 text-amber" title={used.map((h) => `Hilfe ${h + 1}: ${t.hints[h] ?? ""}`).join("\n")}>
+                      <Lightbulb size={13} aria-hidden />
+                      {used.length ? used.map((h) => `Hilfe ${h + 1}${HINT_LABELS[h] ? ` (${HINT_LABELS[h]})` : ""}`).join(", ") : `${n} ${n === 1 ? "Hilfe" : "Hilfen"}`}
+                    </p>
+                  );
+                })()}
               </div>
             </li>
           );

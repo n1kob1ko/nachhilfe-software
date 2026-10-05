@@ -309,8 +309,8 @@ export function notifyUnitClosed(unitId: number) {
 export function runningBoardsFor(teacherId: number) {
   return db()
     .prepare(
-      `SELECT u.id AS unit_id, s.name AS student_name, u.started_at FROM units u JOIN students s ON s.id = u.student_id
+      `SELECT u.id AS unit_id, u.student_id, s.name AS student_name, u.started_at FROM units u JOIN students s ON s.id = u.student_id
        WHERE u.status = 'gestartet' AND u.teacher_id = ? ORDER BY u.started_at`,
     )
-    .all(teacherId) as { unit_id: number; student_name: string; started_at: string }[];
+    .all(teacherId) as { unit_id: number; student_id: number; student_name: string; started_at: string }[];
 }
