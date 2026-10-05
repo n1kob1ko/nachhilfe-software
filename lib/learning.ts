@@ -11,7 +11,7 @@ import { localStamp } from "./autodoc";
 import { db } from "./db";
 import * as repo from "./repo";
 import { analyzeStudent } from "./service";
-import { finishUnit, getUnit, touchUnit, unitDurationMs, type UnitView } from "./units";
+import { finishUnit, getUnit, touchUnit, unitDurationMs, type FinishOptions, type UnitView } from "./units";
 
 export type HelpLevel = "keine" | "hinweis" | "erklaerung" | "loesung";
 export const HELP_LABEL: Record<HelpLevel, string> = {
@@ -300,18 +300,24 @@ function snapshotSkills(unit: UnitView, r: UnitReport, at: number) {
 }
 
 /** The planned lesson of that day, if the unit belongs to one. */
-function plannedLessonFor(unit: UnitView): repo.Lesson | null {
+function plannedLessonFor(unit: Pick<UnitView, "student_id" | "started_at">): repo.Lesson | null {
   const day = localStamp(Date.parse(unit.started_at)).slice(0, 10);
   return repo.listLessons(unit.student_id).find((l) => l.kind === "stunde" && l.status === "geplant" && !l.unit_id && l.starts_at.slice(0, 10) === day) ?? null;
+}
+
+/** Subject shown for a unit before any exercise was done: today's planned lesson, else the student's first subject. */
+export function expectedSubject(studentId: number, at = Date.now()): string {
+  const planned = plannedLessonFor({ student_id: studentId, started_at: new Date(at).toISOString() });
+  return planned?.subject || repo.getStudent(studentId)?.subjects[0] || "";
 }
 
 /**
  * Ends a unit and writes its Lern-Dokumentation. Works without any teacher input; the teacher
  * completes it afterwards on the unit page. Returns the lesson id.
  */
-export function endUnit(unitId: number, opts: { at?: number; reason?: string } = {}): number | null {
+export function endUnit(unitId: number, opts: FinishOptions = {}): number | null {
   const at = opts.at ?? Date.now();
-  const unit = finishUnit(unitId, "beendet", opts.reason ?? "", at);
+  const unit = finishUnit(unitId, "beendet", { ...opts, at });
   if (!unit || unit.status !== "beendet") return null;
   return writeLearningDoc(unit, at);
 }
@@ -343,6 +349,8 @@ export function writeLearningDoc(unit: UnitView, at = Date.now()): number {
     existing?.id,
   );
   snapshotSkills(unit, r, at);
+  const subject = repo.getLesson(lessonId)?.subject;
+  if (subject) db().prepare("UPDATE units SET subject = ? WHERE id = ?").run(subject, unit.id);
   return lessonId;
 }
 
@@ -357,15 +365,24 @@ export function readReport(lesson: Pick<repo.Lesson, "report">): UnitReport | nu
 }
 
 /** Units nobody ended: closed at their last activity (at least the planned length) and documented. */
-export function sweepIdleUnits(now = Date.now(), idleMs = 3 * 3600_000) {
+/** A running unit without any activity for this long is ended automatically. */
+export const UNIT_IDLE_MS = 3 * 3600_000;
+
+export function sweepIdleUnits(now = Date.now(), idleMs = UNIT_IDLE_MS) {
   const idle = db()
     .prepare("SELECT id FROM units WHERE status = 'gestartet' AND last_activity_at < ?")
     .all(new Date(now - idleMs).toISOString()) as { id: number }[];
   for (const { id } of idle) {
     const u = getUnit(id)!;
     const planned = plannedLessonFor(u);
-    const end = Math.max(Date.parse(u.last_activity_at), Date.parse(u.started_at) + (planned?.duration_min ?? 60) * 60_000);
-    endUnit(id, { at: Math.min(end, now), reason: "automatisch beendet, Endzeit geschätzt" });
+    const plannedMin = planned?.duration_min ?? 60;
+    const end = Math.max(Date.parse(u.last_activity_at), Date.parse(u.started_at) + plannedMin * 60_000);
+    const last = new Date(u.last_activity_at).toLocaleString("de-AT", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+    endUnit(id, {
+      at: Math.min(end, now),
+      estimated: true,
+      reason: `Automatisch beendet: ${Math.round(idleMs / 3600_000)} Stunden keine Aktivität (letzte Aktivität ${last}). Endzeit geschätzt aus der letzten Aktivität bzw. ${plannedMin} min ${planned ? "geplanter" : "üblicher"} Dauer.`,
+    });
   }
 }
 

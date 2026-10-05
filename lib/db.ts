@@ -201,6 +201,11 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["lessons", "review_topics", "TEXT NOT NULL DEFAULT ''"],
   ["lessons", "homework_note", "TEXT NOT NULL DEFAULT ''"],
   ["lessons", "reviewed_at", "TEXT"],
+  // Basis-Dokumentation: subject and how a unit ended
+  ["units", "subject", "TEXT NOT NULL DEFAULT ''"],
+  ["units", "ended_by", "TEXT NOT NULL DEFAULT ''"], // '' while running, 'lehrer' or 'automatisch'
+  ["units", "ended_by_teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["units", "end_estimated", "INTEGER NOT NULL DEFAULT 0"],
 ];
 
 /** Teachers to start with; more can be added later. */
@@ -214,7 +219,12 @@ function dbPath() {
 
 export function db(): Database.Database {
   if (instance) return instance;
-  const file = dbPath();
+  instance = openDatabase(dbPath());
+  return instance;
+}
+
+/** Opens (and creates or upgrades) a database file. db() uses it for the app's own database. */
+export function openDatabase(file: string): Database.Database {
   if (file !== ":memory:") fs.mkdirSync(path.dirname(file), { recursive: true });
   const conn = new Database(file);
   conn.pragma("journal_mode = WAL");
@@ -222,7 +232,6 @@ export function db(): Database.Database {
   conn.exec(SCHEMA);
   migrate(conn);
   seedCurriculum(conn);
-  instance = conn;
   return conn;
 }
 
@@ -242,6 +251,15 @@ function migrate(conn: Database.Database) {
     }
     conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_lessons_unit ON lessons(unit_id) WHERE unit_id IS NOT NULL");
     conn.exec("CREATE INDEX IF NOT EXISTS idx_attempts_unit ON attempts(unit_id)");
+    // Units ended before these columns existed: the automatic end was only noted in end_reason.
+    conn.exec(`UPDATE units SET ended_by = 'automatisch', end_estimated = 1 WHERE ended_by = '' AND status = 'beendet' AND end_reason LIKE 'automatisch%'`);
+    conn.exec(`UPDATE units SET ended_by = 'lehrer' WHERE ended_by = '' AND status <> 'gestartet'`);
+    conn.exec(`UPDATE units SET subject = COALESCE((SELECT l.subject FROM lessons l WHERE l.unit_id = units.id), '') WHERE subject = ''`);
+    // At most one running unit per student. Older duplicates (if any) are closed before the index is built.
+    conn.exec(`UPDATE units SET status = 'abgebrochen', ended_at = started_at, ended_by = 'automatisch',
+      end_reason = 'doppelt gestartet, automatisch geschlossen'
+      WHERE status = 'gestartet' AND id NOT IN (SELECT MIN(id) FROM units WHERE status = 'gestartet' GROUP BY student_id)`);
+    conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_units_running ON units(student_id) WHERE status = 'gestartet'");
     const insertTeacher = conn.prepare("INSERT OR IGNORE INTO teachers (name) VALUES (?)");
     const { n } = conn.prepare("SELECT COUNT(*) AS n FROM teachers").get() as { n: number };
     if (n === 0) for (const name of DEFAULT_TEACHERS) insertTeacher.run(name);

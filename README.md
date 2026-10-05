@@ -60,6 +60,21 @@ Im Produktionsmodus (`npm start`) wird das Login-Cookie nur über HTTPS gesendet
 - **Basis-Dokumentation** (Tabelle `units`): entsteht sofort beim Starten einer Einheit und hängt nicht davon ab, dass später jemand etwas einträgt. Wird eine Einheit vergessen, beendet die App sie nach 3 Stunden ohne Aktivität selbst (Endzeit geschätzt, so vermerkt). „Abgebrochen“ bleibt im Protokoll, wird aber nicht abgerechnet.
 - **Lern-Dokumentation** (Tabelle `lessons`, verknüpft über `unit_id`): Während der Einheit wird jede Antwort mit Versuchen, Hilfen, Zeit und aktiver Arbeitszeit der Einheit zugeordnet. Beim Beenden entsteht daraus ein Bericht (`lib/learning.ts`, als JSON mit Version gespeichert) und eine Zusammenfassung. Der Stand jeder Fähigkeit wird pro Einheit festgehalten (`skill_snapshots`), daraus entsteht der Verlauf „Einheit 1: 35 %, Einheit 2: 48 % …“.
 
+## Einheiten im Alltag
+
+- **Nie doppelt:** Pro Schüler läuft höchstens eine Einheit. Die Datenbank erzwingt das selbst (Index `idx_units_running`). Wer trotzdem „Einheit starten“ drückt (zweiter Tab, Doppelklick, Kollege), landet bei der laufenden Einheit und kann sie öffnen oder beenden.
+- **Reload, Browser zu, Abmelden:** Die Einheit steht nur in der Datenbank, nicht im Browser. Oben in der App steht sie bei jedem Laden wieder: Schüler, Fach, Startzeit, Dauer, offene Übungen. Beim Abmelden fragt die App, ob die Einheit weiterlaufen oder enden soll.
+- **Automatisch beendet:** Nach 3 Stunden ohne Aktivität. Gespeichert werden `ended_by = automatisch`, `end_estimated = 1` und der Grund mit der letzten Aktivität. Geprüft wird bei jedem Seitenaufruf, bei jeder Schülerantwort und alle 5 Minuten im Hintergrund (`instrumentation.ts`).
+- **Selbstständiges Üben:** Ohne laufende Einheit werden Antworten trotzdem gespeichert, als „selbstständig geübt“ dokumentiert und nie abgerechnet.
+- **Berechtigungen:** Eine Einheit beenden oder ihre Dokumentation ergänzen dürfen ihr Lehrer und die Verwaltung. Lehrer ohne Verwaltungsrecht sehen in der Abrechnung nur ihre eigenen Stunden. „Lehrer verwalten“ und „Datenexport“ sind nur für die Verwaltung.
+
+## Datenexport
+
+Unter „Datenexport“ (nur Verwaltung):
+
+- **Vollständige Sicherung als JSON:** jede Tabelle mit allen Spalten und Zeilen, auch Tabellen späterer Versionen. Format `lernheft-backup`, Version 1. `restoreBackup()` in `lib/backup.ts` spielt sie in eine leere Datenbank zurück; ein Test prüft, dass danach jede Tabelle identisch ist. Passwörter und Sitzungen sind absichtlich nicht enthalten. Nach einer Wiederherstellung gilt für alle Lehrer das Startpasswort.
+- **CSV für Excel** (Semikolon, UTF-8 mit BOM): Schüler und Profile, Lehrer, Einheiten, Nachhilfestunden, Lern-Dokumentationen, Lernverlauf, Beobachtungen und Lernziele, Fortschritt aktuell und pro Einheit, Fähigkeiten, alle Ergebnisse, Hausübungen und Schularbeiten, Abrechnungsdaten. Zellen, die Excel als Formel ausführen würde, werden entschärft.
+
 ## So rechnet die Analyse
 
 - **Beherrschung einer Fähigkeit**: gewichteter Schnitt aus Aufgaben (1. Versuch ohne Hilfe = 100 %, 2. Versuch 70 %, 3. Versuch 50 %, jede Hilfe −15 Punkte, Lösung angesehen = 0), dem Verständnis aus Stunden (Gewicht 1,5) und Testergebnissen (Gewicht 2). Neuere Daten zählen mehr (Halbwertszeit 45 Tage).
@@ -77,6 +92,8 @@ lib/curriculum.ts   Fächer, Themen und Fähigkeiten (erweiterbar unter „Fähi
 lib/school.ts       Schultypen, Klassen und Schulstufe
 lib/autodoc.ts      automatische Dokumentation aus der Schüleraktivität
 lib/billing.ts      Abrechnungsliste und CSV
+lib/backup.ts       vollständige JSON-Sicherung und Wiederherstellung
+lib/exports.ts      CSV-Tabellen für den Datenexport
 lib/auth.ts         Lehrer-Login und Sitzungen (proxy.ts leitet ohne Anmeldung zu /login)
 lib/units.ts        Einheiten = Basis-Dokumentation
 lib/learning.ts     Bericht, Zusammenfassung und Verlauf einer Einheit = Lern-Dokumentation
@@ -92,5 +109,6 @@ Tests: `npm test` (prüft u. a., dass jede generierte Aufgabe ihre eigene Lösun
 
 ## Noch offen
 
-- Die Anmeldung ist für den Betrieb im eigenen Netz gedacht. Vor einem Betrieb im Internet: HTTPS, ein starkes Startpasswort und regelmäßige Sicherung von `data/nachhilfe.db`.
+- Die Anmeldung ist für den Betrieb im eigenen Netz gedacht. Vor einem Betrieb im Internet: HTTPS und ein starkes Startpasswort. Nach 5 falschen Passwörtern ist ein Benutzername 10 Minuten gesperrt.
+- Die JSON-Sicherung wird heruntergeladen, nicht automatisch angelegt. Eine Wiederherstellung über die Oberfläche gibt es noch nicht (nur `restoreBackup()` im Code).
 - Schüler-Links sind geheime Links ohne Passwort.

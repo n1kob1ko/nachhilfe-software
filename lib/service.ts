@@ -131,7 +131,10 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
     return { correct: Boolean(finished.correct), final: true, feedback: "Diese Aufgabe ist schon abgeschlossen.", attemptNo: finished.attempt_no, solution: task.solution };
   }
   repo.markAssignmentStarted(assignment.id);
-  // practice while a teacher has a unit running for this student belongs to that unit
+  // Practice while a teacher has a unit running for this student belongs to that unit. A unit that
+  // has been idle too long is closed first, so later self-practice is not counted as tutoring.
+  const { sweepIdleUnits } = await import("./learning");
+  sweepIdleUnits();
   const unit = runningUnitForStudent(student.id);
   if (unit) touchUnit(unit.id);
   const attemptNo = previous.length + 1;

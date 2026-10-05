@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { PrintButton } from "@/components/PrintButton";
 import { Empty, PageHeader } from "@/components/ui";
-import { billingDay, resolveBilling, type BillingParams } from "@/lib/billing";
+import { requireTeacher } from "@/lib/auth";
+import { billingDay, resolveBilling, scopeToViewer, type BillingParams } from "@/lib/billing";
 import { listStudents, listTeachers } from "@/lib/repo";
 
 export const metadata = { title: "Abrechnung" };
@@ -10,7 +11,8 @@ export const metadata = { title: "Abrechnung" };
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
 
 export default async function Billing({ searchParams }: { searchParams: Promise<BillingParams> }) {
-  const sp = await searchParams;
+  const viewer = await requireTeacher();
+  const sp = scopeToViewer(await searchParams, viewer);
   const b = resolveBilling(sp);
   const teachers = listTeachers();
   const students = listStudents();
@@ -59,17 +61,19 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
             <ChevronRight size={16} aria-hidden />
           </Link>
         </div>
-        <label className="field">
-          <span className="label">Lehrer</span>
-          <select className="input" name="lehrer" defaultValue={b.teacherId ?? ""}>
-            <option value="">Alle</option>
-            {teachers.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        {viewer.is_admin ? (
+          <label className="field">
+            <span className="label">Lehrer</span>
+            <select className="input" name="lehrer" defaultValue={b.teacherId ?? ""}>
+              <option value="">Alle</option>
+              {teachers.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <label className="field">
           <span className="label">Schüler</span>
           <select className="input" name="schueler" defaultValue={b.studentId ?? ""}>
@@ -119,7 +123,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
                     <td className="num px-5 py-3 whitespace-nowrap">
                       {billingDay(r.starts_at)}
                       <div className="text-[12px] text-ink-3">
-                        {r.unit_start && r.unit_end ? `${clock(r.unit_start)}–${clock(r.unit_end)}` : `${r.starts_at.slice(11, 16)} · ${r.duration_min} min`}
+                        {r.unit_start && r.unit_end ? `${clock(r.unit_start)}–${r.unit_end_estimated ? "ca. " : ""}${clock(r.unit_end)}` : `${r.starts_at.slice(11, 16)} · ${r.duration_min} min`}
                       </div>
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap">{r.teacher_name ?? <span className="text-red">offen</span>}</td>
