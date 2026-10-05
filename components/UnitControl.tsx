@@ -3,11 +3,13 @@ import { ExternalLink, Play, Square } from "lucide-react";
 import { cancelUnitAction, endUnitAction, startUnitAction } from "@/app/session-actions";
 import { Pill, formatTime } from "@/components/ui";
 import type { Student } from "@/lib/repo";
-import { runningUnitForStudent } from "@/lib/units";
+import { currentTeacher } from "@/lib/auth";
+import { canManageUnit, runningUnitForStudent } from "@/lib/units";
 
 /** Start / end a unit for one student. Starting writes the Basis-Dokumentation immediately. */
-export function UnitControl({ student, compact }: { student: Student; compact?: boolean }) {
+export async function UnitControl({ student, compact, onUnitPage }: { student: Student; compact?: boolean; onUnitPage?: boolean }) {
   const unit = runningUnitForStudent(student.id);
+  const teacher = await currentTeacher();
   if (!unit) {
     return (
       <form action={startUnitAction.bind(null, student.id)}>
@@ -17,10 +19,12 @@ export function UnitControl({ student, compact }: { student: Student; compact?: 
       </form>
     );
   }
-  if (compact) {
+  const mine = teacher ? canManageUnit(teacher, unit) : false;
+  if (compact || !mine) {
     return (
       <Link href={`/einheiten/${unit.id}`} className="btn btn-secondary btn-sm">
         <span className="h-2 w-2 rounded-full bg-accent" aria-hidden /> läuft seit {formatTime(unit.started_at)}
+        {unit.teacher_id !== teacher?.id && ` (${unit.teacher_name})`}
       </Link>
     );
   }
@@ -29,9 +33,11 @@ export function UnitControl({ student, compact }: { student: Student; compact?: 
       <a href={`/lernen/${student.access_token}`} target="_blank" rel="noreferrer" className="btn btn-secondary">
         <ExternalLink size={14} aria-hidden /> Übungsmodus öffnen
       </a>
-      <Link href={`/einheiten/${unit.id}`} className="btn btn-secondary">
-        Live-Daten
-      </Link>
+      {!onUnitPage && (
+        <Link href={`/einheiten/${unit.id}`} className="btn btn-secondary">
+          Live-Daten
+        </Link>
+      )}
       <form action={endUnitAction.bind(null, unit.id)}>
         <button className="btn btn-primary">
           <Square size={13} aria-hidden /> Einheit beenden

@@ -303,13 +303,14 @@ export type BillingRow = {
   unit_id: number | null;
   unit_start: string | null;
   unit_end: string | null;
+  unit_end_estimated: number | null;
 };
 /** Completed tutoring lessons only; automatic practice entries are not billed. */
 export function billingEntries(f: BillingFilter): BillingRow[] {
   return db()
     .prepare(
       `SELECT l.id, l.student_id, l.starts_at, l.duration_min, t.name AS teacher_name, s.name AS student_name, l.subject, l.topic, l.tutor_notes,
-              l.unit_id, u.started_at AS unit_start, u.ended_at AS unit_end
+              l.unit_id, u.started_at AS unit_start, u.ended_at AS unit_end, u.end_estimated AS unit_end_estimated
        FROM lessons l JOIN students s ON s.id = l.student_id LEFT JOIN teachers t ON t.id = l.teacher_id LEFT JOIN units u ON u.id = l.unit_id
        WHERE l.kind = 'stunde' AND l.status = 'abgeschlossen' AND l.starts_at >= @from AND l.starts_at < @to
          AND (@teacherId IS NULL OR l.teacher_id = @teacherId) AND (@studentId IS NULL OR l.student_id = @studentId)
