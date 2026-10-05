@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CheckCircle2, ChevronRight, Presentation } from "lucide-react";
 import { notFound } from "next/navigation";
+import { SubjectArt } from "@/components/Art";
 import { MasteryBar, TrendBadge, formatDate } from "@/components/ui";
 import * as repo from "@/lib/repo";
 import { analyzeStudent } from "@/lib/service";
@@ -20,10 +21,15 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
 
   return (
     <>
-      <h1 className="text-[30px] font-semibold tracking-[-0.02em]">Hallo {first}!</h1>
-      <p className="mt-1 text-[17px] text-ink-2">
-        {open.length === 0 ? "Gerade ist nichts offen. Gut gemacht!" : open.length === 1 ? "Eine Übung wartet auf dich." : `${open.length} Übungen warten auf dich.`}
-      </p>
+      <section className="relative overflow-hidden rounded-[28px] bg-accent-wash px-6 py-7 md:px-8 md:py-9">
+        <div className="relative z-10 sm:pr-[170px]">
+          <h1 className="text-[30px] font-semibold tracking-[-0.02em] md:text-[34px]">Hallo {first}!</h1>
+          <p className="mt-1 text-[17px] text-ink-2">
+            {open.length === 0 ? "Gerade ist nichts offen. Gut gemacht!" : open.length === 1 ? "Eine Übung wartet auf dich." : `${open.length} Übungen warten auf dich.`}
+          </p>
+        </div>
+        <SubjectArt subject={student.subjects[0]} className="pointer-events-none absolute -right-4 -bottom-6 hidden h-[190px] w-[190px] sm:block" />
+      </section>
 
       {unit && (
         <Link href={`/lernen/${token}/tafel`} className="panel mt-8 flex items-center gap-4 border-accent/40 bg-accent-wash px-5 py-5 transition-colors hover:border-accent">

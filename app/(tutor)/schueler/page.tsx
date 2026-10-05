@@ -4,6 +4,8 @@ import { loadDemoData } from "@/app/actions";
 import { Empty, MasteryBar, PageHeader, TrendBadge } from "@/components/ui";
 import { listStudents, listTeachers } from "@/lib/repo";
 import { klassenLabel } from "@/lib/school";
+import { Avatar } from "@/components/Art";
+import { subjectTone } from "@/components/Calendar";
 import { analyzeStudent } from "@/lib/service";
 
 export const metadata = { title: "Schüler" };
@@ -39,16 +41,32 @@ export default function Students() {
             const a = analyzeStudent(s.id)!;
             return (
               <li key={s.id}>
-                <Link href={`/schueler/${s.id}`} className="panel block h-full px-5 py-4 transition-colors hover:border-line-strong">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-[16px] font-semibold">{s.name}</span>
+                <Link href={`/schueler/${s.id}`} className="panel block h-full px-5 py-4 transition-transform hover:-translate-y-0.5">
+                  <div className="flex items-center gap-3">
+                    <Avatar name={s.name} size={44} />
+                    <div className="min-w-0 flex-1">
+                      <span className="block truncate text-[16px] font-semibold">{s.name}</span>
+                      <span className="block truncate text-[13px] text-ink-2">
+                        {klassenLabel(s.school_type, s.klasse)}
+                        {teachers.get(s.teacher_id ?? 0) && ` · ${teachers.get(s.teacher_id ?? 0)}`}
+                      </span>
+                    </div>
                     <TrendBadge trend={a.overall.trend} compact />
                   </div>
-                  <p className="mt-0.5 text-[13px] text-ink-2">
-                    {klassenLabel(s.school_type, s.klasse)}
-                    {teachers.get(s.teacher_id ?? 0) && ` · ${teachers.get(s.teacher_id ?? 0)}`}
-                  </p>
-                  <p className="mt-3 text-[14px]">{s.subjects.join(", ") || "Keine Fächer"}</p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {s.subjects.length ? (
+                      s.subjects.map((sub) => {
+                        const t = subjectTone(sub);
+                        return (
+                          <span key={sub} className="rounded-full px-2.5 py-0.5 text-[12px] font-semibold" style={{ background: t.soft, color: t.fg }}>
+                            {sub}
+                          </span>
+                        );
+                      })
+                    ) : (
+                      <span className="text-[13px] text-ink-3">Keine Fächer</span>
+                    )}
+                  </div>
                   <div className="mt-3">
                     <MasteryBar value={a.overall.mastery} size="sm" />
                   </div>

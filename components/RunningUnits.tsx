@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Presentation, Square } from "lucide-react";
 import { endUnitAction } from "@/app/session-actions";
 import { Elapsed } from "@/components/Elapsed";
+import { HideOn } from "@/components/HideOn";
 import { formatTime } from "@/components/ui";
 import type { UnitView } from "@/lib/units";
 
@@ -13,13 +14,15 @@ export type RunningUnit = UnitView & { open_exercises: number };
  */
 export function RunningUnits({ units }: { units: RunningUnit[] }) {
   if (units.length === 0) return null;
+  // the overview shows the running unit in its large card instead
   return (
-    <div className="no-print sticky top-0 z-20 -mx-4 mb-6 grid gap-2 bg-paper/90 px-4 pt-2 pb-1 backdrop-blur md:-mx-10 md:px-10" role="region" aria-label="Aktive Einheiten">
+    <HideOn paths={["/"]}>
+    <div className="no-print sticky top-0 z-20 -mx-4 mb-6 grid gap-2 bg-paper/90 px-4 pt-2 pb-1 backdrop-blur md:-mx-8 md:px-8" role="region" aria-label="Aktive Einheiten">
       {units.map((u) => (
-        <div key={u.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-accent/30 bg-accent-wash px-4 py-2.5 text-[14px]">
+        <div key={u.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl bg-[linear-gradient(100deg,#fde3cf,#fbd2b4)] px-4 py-2.5 text-[14px] shadow-[var(--shadow-card)]">
           <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden>
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-40 motion-reduce:hidden" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-bright opacity-50 motion-reduce:hidden" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-accent-bright" />
           </span>
           <span className="min-w-0 flex-1">
             <span className="text-ink-2">Aktive Einheit: </span>
@@ -49,5 +52,6 @@ export function RunningUnits({ units }: { units: RunningUnit[] }) {
         </div>
       ))}
     </div>
+    </HideOn>
   );
 }
