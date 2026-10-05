@@ -4,3 +4,4 @@ data/*.db*
 .env*.local
 next-env.d.ts
 *.tsbuildinfo
+/public/excalidraw-assets
