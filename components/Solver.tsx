@@ -307,7 +307,7 @@ function TaskCard({
 
         {task.released && !final && (
           <details className="mt-4 rounded-xl border border-line bg-surface px-5 py-3">
-            <summary className="cursor-pointer text-[14px] font-semibold text-ink-2">Lösung ansehen (von deiner Lehrkraft freigegeben)</summary>
+            <summary className="cursor-pointer text-[14px] font-semibold text-ink-2">Lösung ansehen (von deinem Lehrer gezeigt)</summary>
             {task.released.answer && <p className="mt-2 font-semibold">{task.released.answer}</p>}
             <p className="mt-1 text-[16px] whitespace-pre-line">{task.released.solution}</p>
           </details>

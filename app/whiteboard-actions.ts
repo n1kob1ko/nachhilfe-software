@@ -13,14 +13,14 @@ export async function sendToBoardAction(_prev: SendState, form: FormData): Promi
   const teacher = await requireTeacher();
   const unit = getUnit(Number(form.get("unit_id")));
   if (!unit || unit.status !== "gestartet") return { error: "Diese Einheit läuft nicht mehr." };
-  if (!canManageUnit(teacher, unit)) return { error: "Nur die Lehrkraft der Einheit kann auf diese Tafel senden." };
+  if (!canManageUnit(teacher, unit)) return { error: "Nur der Lehrer dieser Einheit kann auf dieses Whiteboard senden." };
   const worksheet = repo.getWorksheet(Number(form.get("worksheet_id")));
   if (!worksheet) return { error: "Übung nicht gefunden." };
   const wanted = new Set(form.getAll("task_id").map(Number));
   const tasks = repo.listTasks(worksheet.id).filter((t) => wanted.size === 0 || wanted.has(t.id));
   if (!tasks.length) return { error: "Bitte mindestens eine Aufgabe wählen." };
   const board = ensureBoardForUnit(unit.id);
-  if (!board) return { error: "Die Tafel konnte nicht geöffnet werden." };
+  if (!board) return { error: "Das Whiteboard konnte nicht geöffnet werden." };
   queueInsert(board.id, { kind: "tasks", title: worksheet.title, tasks: tasks.map(boardTask) });
-  return { ok: `${tasks.length === 1 ? "Aufgabe" : `${tasks.length} Aufgaben`} an die Tafel von ${unit.student_name} gesendet.` };
+  return { ok: `${tasks.length === 1 ? "Aufgabe" : `${tasks.length} Aufgaben`} aufs Whiteboard von ${unit.student_name} gesendet.` };
 }

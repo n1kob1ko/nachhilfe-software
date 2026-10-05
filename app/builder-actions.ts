@@ -157,7 +157,9 @@ export async function releaseAction(_prev: ActionResult, form: FormData): Promis
   if (out.error) return { error: out.error };
   if (studentId) noteActivity(studentId);
   revalidatePath("/", "layout");
-  redirect(`/uebungen/${worksheetId}?freigegeben=${studentId ?? 0}`);
+  // during a unit the teacher goes back to it: that is where the results come in
+  const unit = studentId ? runningUnitForStudent(studentId) : null;
+  redirect(unit ? `/einheiten/${unit.id}?gesendet=${worksheetId}` : `/uebungen/${worksheetId}?gesendet=${studentId ?? 0}`);
 }
 
 export async function copyAsDraftAction(form: FormData) {
@@ -204,11 +206,11 @@ export async function sendTaskToBoardAction(taskId: number, unitId: number): Pro
   const unit = getUnit(unitId);
   if (!task) return { error: "Aufgabe nicht gefunden." };
   if (!unit || unit.status !== "gestartet") return { error: "Diese Einheit läuft nicht mehr." };
-  if (!canManageUnit(teacher, unit)) return { error: "Nur die Lehrkraft der Einheit kann auf diese Tafel senden." };
+  if (!canManageUnit(teacher, unit)) return { error: "Nur der Lehrer dieser Einheit kann auf dieses Whiteboard senden." };
   const board = ensureBoardForUnit(unit.id);
-  if (!board) return { error: "Die Tafel konnte nicht geöffnet werden." };
+  if (!board) return { error: "Das Whiteboard konnte nicht geöffnet werden." };
   queueInsert(board.id, { kind: "tasks", title: repo.getWorksheet(task.worksheet_id)?.title ?? "Aufgabe", tasks: [boardTask(task)] });
-  return { ok: `Auf der Tafel von ${unit.student_name}.` };
+  return { ok: `Auf dem Whiteboard von ${unit.student_name}.` };
 }
 
 // ---------- student side ----------

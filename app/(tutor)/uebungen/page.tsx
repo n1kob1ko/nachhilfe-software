@@ -14,7 +14,7 @@ export default function Worksheets() {
     <>
       <PageHeader
         title="Übungen"
-        subtitle="Alle Übungen mit Lösungen. Entwürfe sehen Schüler erst nach der Freigabe."
+        subtitle="Alle Übungen mit Lösungen. Entwürfe sehen Schüler erst, wenn du sie sendest."
         actions={
           <Link href="/uebungen/neu" className="btn btn-primary">
             <Plus size={16} aria-hidden /> Übung erstellen
@@ -53,7 +53,7 @@ export default function Worksheets() {
                         </Pill>
                       )}
                       {w.kind === "ueberpruefung" && <Pill tone="green">Überprüfung</Pill>}
-                      {w.assigned > 0 && <Pill>{w.assigned}× zugewiesen</Pill>}
+                      {w.assigned > 0 && <Pill>an {w.assigned} gesendet</Pill>}
                     </div>
                   </td>
                   <td className="px-3 py-3 text-ink-2">
