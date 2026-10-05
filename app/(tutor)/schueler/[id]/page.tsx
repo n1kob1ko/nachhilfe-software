@@ -67,14 +67,14 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
           </>
         }
       />
-      <nav className="no-print -mt-3 mb-8 flex gap-1 overflow-x-auto border-b border-line" aria-label="Bereiche">
+      <nav className="no-print -mt-3 mb-8 flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-panel p-1" aria-label="Bereiche">
         {TABS.map(([key, label]) => (
           <Link
             key={key}
             href={`/schueler/${student.id}?tab=${key}`}
             aria-current={tab === key ? "page" : undefined}
-            className={`-mb-px border-b-2 px-3 py-2.5 text-[14px] font-medium whitespace-nowrap transition-colors ${
-              tab === key ? "border-accent text-ink" : "border-transparent text-ink-2 hover:text-ink"
+            className={`rounded-full px-4 py-2 text-[14px] font-medium whitespace-nowrap transition-colors ${
+              tab === key ? "bg-surface text-ink shadow-[var(--shadow-card)]" : "text-ink-2 hover:text-ink"
             }`}
           >
             {label}

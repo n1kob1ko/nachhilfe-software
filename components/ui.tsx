@@ -112,7 +112,7 @@ export function Pill({ children, tone = "neutral" }: { children: React.ReactNode
     amber: "bg-amber-wash text-amber",
     green: "bg-green-wash text-green",
   }[tone];
-  return <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[12px] font-semibold ${cls}`}>{children}</span>;
+  return <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${cls}`}>{children}</span>;
 }
 
 export function formatDate(s: string | number, opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" }) {
