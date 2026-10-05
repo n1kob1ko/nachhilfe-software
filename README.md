@@ -37,7 +37,7 @@ Mit Schlüssel erstellt Claude (Modell `claude-opus-5-5`) Übungen zu jedem Them
 | Lernverlauf: alle Einheiten chronologisch, Gesamtauswertung (Stärken, Schwächen, größte Verbesserung, ohne Fortschritt, Fehler, Wiederholen) und Entwicklung pro Fähigkeit von Einheit zu Einheit | Profil › Lernverlauf |
 | Selbstständiges Üben außerhalb einer Einheit wird automatisch als eigener Eintrag dokumentiert | Profil › Lernverlauf |
 | Abrechnung: Tag, Lehrer, Schüler, Thema, Beobachtungen pro Monat, filterbar nach Lehrer und Schüler, Drucken und CSV für Excel. Nur stattgefundene Nachhilfestunden, keine selbstständigen Übungen | Abrechnung |
-| Übungs-Builder (Fach, Schultyp und Klasse, Thema/Fähigkeiten, Schwierigkeit, Anzahl, Aufgabentyp) mit Lösungen, Druckansicht | Übungen › Übung erstellen |
+| Übungs-Builder in 6 Schritten, aus dem Schülerprofil vorausgefüllt, mit Vorschlägen, Entwurf und Vorschau vor der Freigabe, Vorlagen (siehe unten) | Übungen › Übung erstellen, Profil › Übung erstellen |
 | Schüler-Modus: jeder Schüler hat einen persönlichen Link, bearbeitet Aufgaben, bis zu 3 Versuche, Hilfen, Lösungsweg | Profil › Übungen › Zugang |
 | Gespeichert pro Aufgabe: richtig/falsch, Versuche, Zeit, Hilfen, Lösung angesehen, erkannter Fehler | Profil › Übungen › Ergebnis |
 | Fortschritt pro Fähigkeit (Fach › Thema › Fähigkeit) mit Verlauf | Profil › Fortschritt |
@@ -67,6 +67,40 @@ Im Produktionsmodus (`npm start`) wird das Login-Cookie nur über HTTPS gesendet
 - **Automatisch beendet:** Nach 3 Stunden ohne Aktivität. Gespeichert werden `ended_by = automatisch`, `end_estimated = 1` und der Grund mit der letzten Aktivität. Geprüft wird bei jedem Seitenaufruf, bei jeder Schülerantwort und alle 5 Minuten im Hintergrund (`instrumentation.ts`).
 - **Selbstständiges Üben:** Ohne laufende Einheit werden Antworten trotzdem gespeichert, als „selbstständig geübt“ dokumentiert und nie abgerechnet.
 - **Berechtigungen:** Eine Einheit beenden oder ihre Dokumentation ergänzen dürfen ihr Lehrer und die Verwaltung. Lehrer ohne Verwaltungsrecht sehen in der Abrechnung nur ihre eigenen Stunden. „Lehrer verwalten“ und „Datenexport“ sind nur für die Verwaltung.
+
+## Übungs-Builder
+
+Aus einem Schülerprofil geöffnet („Übung erstellen“) ist alles vorausgefüllt: Schüler, Schultyp, Klasse, Fach, aktuelle Themen, bekannte Schwächen, Lernziele, Lernstand und häufige Fehler. Darunter stehen Vorschläge (z. B. „Dividieren › Kehrwert korrekt bilden, Fehler ‚Kehrwert vergessen‘ 37× gemacht“); der erste ist schon ausgewählt.
+
+1. **Schüler**: vorausgewählt, mit Kontext und Vorschlägen.
+2. **Fach**: Mathematik, Deutsch, Englisch. Ein neues Fach braucht nur Fähigkeiten und optional eine Liste von Aufgabentypen in `lib/curriculum.ts` (`CATEGORIES`).
+3. **Thema und Fähigkeit**: Fach › Thema › Fähigkeit › Teilfähigkeit, z. B. Mathematik › Bruchrechnung › Dividieren › Kehrwert korrekt bilden. Mit Suche und Lernstand pro Fähigkeit.
+4. **Schwierigkeit**: sehr leicht bis sehr schwer, oder „automatisch an Schüler anpassen“ (aus dem Lernstand pro Fähigkeit).
+5. **Anzahl**: 5, 10, 15, 20 oder benutzerdefiniert.
+6. **Aufgabentyp** je Fach (Mathematik: direkte Rechnung, Textaufgabe, Lückentext, Multiple Choice, Fehler finden, Lösungsweg ordnen, offene Aufgabe; Deutsch und Englisch entsprechend). Mehrere möglich, ohne Auswahl gemischt.
+
+„Übungen generieren“ schickt Claude den Kontext (nur den Vornamen) und bekommt strukturierte Aufgaben zurück: Aufgabenstellung, Aufgabentyp, Thema, Fähigkeiten, Schwierigkeit, Lösung, Lösungsweg, typische Fehler und 2–3 Hilfestufen (Denkanstoß, Regel, erster Schritt). Ohne API-Schlüssel kommen die Aufgaben aus den eingebauten Generatoren.
+
+Das Ergebnis ist ein **Entwurf**, den Schüler nicht sehen. In der Vorschau kann man jede Aufgabe bearbeiten, löschen, verschieben, neu erstellen lassen, in einer anderen Schwierigkeit neu erstellen, neue Aufgaben anlegen oder aus früheren Übungen übernehmen. „Freigeben und an Max senden“ prüft jede Aufgabe auf Vollständigkeit und weist die Übung zu (mit der laufenden Einheit verknüpft). Jede Aufgabe hat außerdem „An Schüler senden“ und „Auf Whiteboard senden“.
+
+Lösungen sind für den Schüler verborgen, bis er die Aufgabe abgeschlossen hat oder die Lehrkraft sie pro Zuweisung freigibt. Welche Hilfe ein Schüler geöffnet hat, wird pro Hilfe gespeichert und im Ergebnis angezeigt.
+
+Wiederverwenden: für einen anderen Schüler kopieren, „Anpassen“ (eine schon bearbeitete Übung bleibt unverändert, die Kopie ist ein neuer Entwurf), einzelne Aufgaben übernehmen, als **Vorlage** speichern (mit festen Aufgaben oder nur den Einstellungen) und mit einem Klick für einen Schüler verwenden.
+
+### Datenmodell
+
+```
+Fach › Thema › skills (parent_id = Teilfähigkeit)
+                 ▲ task_skills (eine Aufgabe trainiert 1–n Fähigkeiten; tasks.skill_id = wichtigste)
+worksheets (Übung: status entwurf|freigegeben, student_id, settings, source_worksheet_id)
+  └─ tasks (type = Antwortformat, category = Aufgabentyp, hints[], error_map[], solution)
+assignments (Übung → Schüler, unit_id = Nachhilfeeinheit, solutions_visible)
+  ├─ attempts (Schülerantwort: task, skill, unit, Versuch, Zeit, Fehler)
+  └─ hint_uses (welche Hilfe bei welcher Aufgabe, mit unit_id)
+units (Nachhilfeeinheit)   worksheet_templates (Vorlagen)
+```
+
+Antworten auf eine Teilfähigkeit zählen in der Analyse auch für die übergeordnete Fähigkeit.
 
 ## Whiteboard
 
@@ -115,7 +149,8 @@ lib/learning.ts     Bericht, Zusammenfassung und Verlauf einer Einheit = Lern-Do
 lib/generators.ts   eingebaute Aufgabengeneratoren mit Lösungswegen und Fehlerbildern
 lib/ai.ts           Claude: Übungen, Freitext-Korrektur, Einschätzung
 lib/analysis.ts     Beherrschung, Trends, Fehler, Empfehlungen
-lib/service.ts      Übung bauen, Antwort prüfen und speichern
+lib/service.ts      Antwort prüfen und speichern, Analyse laden
+lib/builder.ts      Übungs-Builder: Schülerkontext, Vorschläge, Entwurf, Prüfen, Freigeben, Vorlagen
 lib/whiteboard*.ts  Tafel: Speicher, Live-Verbindung, Rechte, Vorlagen
 components/whiteboard/  Tafel im Browser (Excalidraw, Werkzeugleiste, Einfügen)
 app/(tutor)/…       Oberfläche für die Nachhilfelehrkraft

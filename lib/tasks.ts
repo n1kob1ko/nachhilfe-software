@@ -11,14 +11,23 @@ export type AnswerSpec = {
   blanks?: string[][];
   /** Free text: sample answer used for grading. */
   sample?: string;
+  /** Order tasks: the steps in the right order. */
+  steps?: string[];
 };
 
 export type TaskDraft = {
+  /** Answer format: how the task is answered and checked. */
   type: TaskType;
+  /** Main skill; progress is tracked for it and for every id in skillIds. */
   skillId: string | null;
+  /** All skills the task trains (includes skillId). */
+  skillIds?: string[];
+  /** Task type as teachers call it, per subject ("textaufgabe", "fehler" …), see CATEGORIES. */
+  category?: string | null;
   difficulty: Difficulty;
   prompt: string;
-  data: { options?: string[]; passage?: string };
+  /** steps: order tasks show the steps in this (shuffled) order. */
+  data: { options?: string[]; passage?: string; steps?: string[] };
   answer: AnswerSpec;
   solution: string;
   hints: string[];
@@ -103,6 +112,23 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
       feedback: correct ? "Richtig!" : "Leider nicht richtig.",
     };
   }
+  if (a.steps && task.data.steps) {
+    // given: JSON array of indices into data.steps, in the order the student put them
+    let order: number[] = [];
+    try {
+      order = (JSON.parse(given) as unknown[]).map(Number);
+    } catch {
+      order = [];
+    }
+    const placed = order.map((i) => task.data.steps![i]);
+    const right = a.steps.filter((step, i) => placed[i] === step).length;
+    const correct = right === a.steps.length && placed.length === a.steps.length;
+    return {
+      correct,
+      errorLabel: correct ? null : labelFor(task, String(placed.findIndex((p, i) => p !== a.steps![i]) + 1)),
+      feedback: correct ? "Richtige Reihenfolge!" : `${right} von ${a.steps.length} Schritten stehen an der richtigen Stelle.`,
+    };
+  }
   if (a.blanks) {
     let values: string[] = [];
     try {
@@ -136,3 +162,7 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
 export function gapCount(prompt: string) {
   return prompt.split(GAP).length - 1;
 }
+
+/** Graded hints: a nudge, the rule, the first step. More than three are just numbered. */
+export const HINT_LABELS = ["Denkanstoß", "Regel", "Erster Schritt"];
+export const hintLabel = (i: number) => `Hilfe ${i + 1}${HINT_LABELS[i] ? ` · ${HINT_LABELS[i]}` : ""}`;

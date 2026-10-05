@@ -195,6 +195,36 @@ CREATE TABLE IF NOT EXISTS whiteboard_inserts (
   created_at TEXT NOT NULL,
   claimed_at TEXT
 );
+-- A task can train more than one skill. tasks.skill_id stays the main one; this table lists all of them.
+CREATE TABLE IF NOT EXISTS task_skills (
+  task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  skill_id TEXT NOT NULL,
+  PRIMARY KEY (task_id, skill_id)
+);
+-- Every hint a student opened (which task, which hint, in which assignment and unit).
+CREATE TABLE IF NOT EXISTS hint_uses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  assignment_id INTEGER NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
+  task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  hint_index INTEGER NOT NULL,
+  unit_id INTEGER REFERENCES units(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL,
+  UNIQUE (assignment_id, task_id, hint_index)
+);
+-- Saved builder settings ("Bruchrechnung – 15 Minuten Wiederholung"), optionally with fixed tasks.
+CREATE TABLE IF NOT EXISTS worksheet_templates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  settings TEXT NOT NULL,
+  source_worksheet_id INTEGER REFERENCES worksheets(id) ON DELETE SET NULL,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  used_count INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_task_skills_skill ON task_skills(skill_id);
+CREATE INDEX IF NOT EXISTS idx_hint_uses ON hint_uses(student_id, task_id);
 CREATE INDEX IF NOT EXISTS idx_wb_pages ON whiteboard_pages(board_id, position);
 CREATE INDEX IF NOT EXISTS idx_attempts_student ON attempts(student_id, skill_id);
 CREATE INDEX IF NOT EXISTS idx_units_student ON units(student_id, started_at);
@@ -237,6 +267,16 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["units", "ended_by", "TEXT NOT NULL DEFAULT ''"], // '' while running, 'lehrer' or 'automatisch'
   ["units", "ended_by_teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
   ["units", "end_estimated", "INTEGER NOT NULL DEFAULT 0"],
+  // exercise builder: sub-skills, task categories, drafts, reuse
+  ["skills", "parent_id", "TEXT"],
+  ["tasks", "category", "TEXT"],
+  ["worksheets", "student_id", "INTEGER REFERENCES students(id) ON DELETE SET NULL"],
+  ["worksheets", "status", "TEXT NOT NULL DEFAULT 'freigegeben'"], // 'entwurf' until the teacher releases it
+  ["worksheets", "teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["worksheets", "settings", "TEXT"], // builder settings it was made with (JSON)
+  ["worksheets", "source_worksheet_id", "INTEGER REFERENCES worksheets(id) ON DELETE SET NULL"],
+  ["assignments", "unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
+  ["assignments", "solutions_visible", "INTEGER NOT NULL DEFAULT 0"],
 ];
 
 /** Teachers to start with; more can be added later. */
@@ -299,6 +339,8 @@ function migrate(conn: Database.Database) {
     const setLogin = conn.prepare("UPDATE teachers SET username = ?, password_hash = ?, must_change_password = 1, is_admin = ? WHERE id = ?");
     for (const t of noLogin) setLogin.run(usernameFor(t.name), hashPassword(INITIAL_PASSWORD), t.name === DEFAULT_TEACHERS[0] ? 1 : 0, t.id);
     conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_teachers_username ON teachers(username)");
+    // every task is linked to its main skill in task_skills as well
+    conn.exec("INSERT OR IGNORE INTO task_skills (task_id, skill_id) SELECT id, skill_id FROM tasks WHERE skill_id IS NOT NULL");
   });
   tx();
 }
@@ -315,12 +357,12 @@ export function usernameFor(name: string) {
 /** Inserts the built-in skill tree. Existing skills (also custom ones) are left untouched. */
 function seedCurriculum(conn: Database.Database) {
   const insert = conn.prepare(
-    "INSERT OR IGNORE INTO skills (id, subject, area, name, grade_min, grade_max, sort) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    "INSERT OR IGNORE INTO skills (id, subject, area, name, grade_min, grade_max, sort, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
   );
   const tx = conn.transaction(() => {
     let sort = 0;
     for (const s of CURRICULUM) {
-      insert.run(s.id, s.subject, s.area, s.name, s.gradeMin, s.gradeMax, sort++);
+      insert.run(s.id, s.subject, s.area, s.name, s.gradeMin, s.gradeMax, sort++, s.parentId ?? null);
     }
   });
   tx();

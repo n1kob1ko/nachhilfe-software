@@ -3,7 +3,7 @@ import * as repo from "./repo";
 import type { TaskForBoard } from "./whiteboard-templates";
 
 export function boardTask(t: repo.Task): TaskForBoard {
-  return { number: t.position, prompt: t.prompt, options: t.data.options ?? null, solution: t.solution };
+  return { number: t.position, prompt: t.prompt, options: t.data.options ?? t.data.steps ?? null, solution: t.solution };
 }
 
 /** The student's most recent exercises, for the teacher's "Einfügen" panel. */

@@ -24,7 +24,7 @@ export type Student = {
   created_at: string;
 };
 
-export type Skill = { id: string; subject: string; area: string; name: string; grade_min: number; grade_max: number; sort: number };
+export type Skill = { id: string; subject: string; area: string; name: string; grade_min: number; grade_max: number; sort: number; parent_id: string | null };
 
 export type Lesson = {
   id: number;
@@ -87,12 +87,22 @@ export type Worksheet = {
   difficulty: string;
   task_type: string;
   kind: "uebung" | "ueberpruefung";
-  source: "ki" | "generator";
+  source: "ki" | "generator" | "manuell";
   skill_ids: string[];
   created_at: string;
+  /** Student it was made for (prefilled builder); assignments decide who actually works on it. */
+  student_id: number | null;
+  /** "entwurf" until the teacher has checked and released it; students never see drafts. */
+  status: "entwurf" | "freigegeben";
+  teacher_id: number | null;
+  /** Builder settings it was made with (JSON), used for templates and regenerating. */
+  settings: string | null;
+  source_worksheet_id: number | null;
 };
 
 export type Task = TaskDraft & { id: number; worksheet_id: number; position: number };
+export type WorksheetInput = Omit<Worksheet, "id" | "created_at" | "student_id" | "status" | "teacher_id" | "settings" | "source_worksheet_id"> &
+  Partial<Pick<Worksheet, "student_id" | "status" | "teacher_id" | "settings" | "source_worksheet_id">>;
 
 export type Assignment = {
   id: number;
@@ -102,6 +112,10 @@ export type Assignment = {
   started_at: string | null;
   completed_at: string | null;
   note: string;
+  /** Unit that was running when it was assigned. */
+  unit_id: number | null;
+  /** Teacher has opened the solutions for the student. */
+  solutions_visible: number;
 };
 
 export type Attempt = {
@@ -123,6 +137,8 @@ export type Attempt = {
   unit_id: number | null;
   /** Time with interaction on the page; null for older attempts. */
   active_ms: number | null;
+  /** All skills of the task, including parent skills (filled by listAttemptsForStudent). */
+  skill_ids?: string[];
 };
 
 type Row = Record<string, unknown>;
@@ -137,6 +153,8 @@ const toTask = (r: Row): Task => ({
   position: r.position as number,
   type: r.type as Task["type"],
   skillId: (r.skill_id as string) ?? null,
+  skillIds: r.skill_ids_json ? json<string[]>(r.skill_ids_json as string, []).filter(Boolean) : r.skill_id ? [r.skill_id as string] : [],
+  category: (r.category as string) ?? null,
   difficulty: r.difficulty as Task["difficulty"],
   prompt: r.prompt as string,
   data: json(r.data as string, {}),
@@ -200,7 +218,7 @@ export function listSkills(): Skill[] {
 export function getSkill(id: string): Skill | null {
   return (db().prepare("SELECT * FROM skills WHERE id = ?").get(id) as Skill | undefined) ?? null;
 }
-export function createSkill(subject: string, area: string, name: string, gradeMin: number, gradeMax: number) {
+export function createSkill(subject: string, area: string, name: string, gradeMin: number, gradeMax: number, parentId: string | null = null) {
   const slug = (x: string) =>
     x
       .toLowerCase()
@@ -210,7 +228,7 @@ export function createSkill(subject: string, area: string, name: string, gradeMi
   let id = `${slug(subject)}.${slug(area)}.${slug(name)}`;
   if (getSkill(id)) id += `.${Date.now().toString(36)}`;
   const sort = (db().prepare("SELECT COALESCE(MAX(sort), 0) + 1 AS s FROM skills").get() as { s: number }).s;
-  db().prepare("INSERT INTO skills (id, subject, area, name, grade_min, grade_max, sort) VALUES (?, ?, ?, ?, ?, ?, ?)").run(id, subject, area, name, gradeMin, gradeMax, sort);
+  db().prepare("INSERT INTO skills (id, subject, area, name, grade_min, grade_max, sort, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(id, subject, area, name, gradeMin, gradeMax, sort, parentId);
   return id;
 }
 
@@ -352,19 +370,44 @@ export function deleteTest(id: number) {
 }
 
 // ---------- worksheets ----------
-export function createWorksheet(w: Omit<Worksheet, "id" | "created_at">, tasks: TaskDraft[]): number {
+const TASK_SELECT = "SELECT t.*, (SELECT json_group_array(ts.skill_id) FROM task_skills ts WHERE ts.task_id = t.id) AS skill_ids_json FROM tasks t";
+
+function insertTask(worksheetId: number, position: number, t: TaskDraft): number {
+  const conn = db();
+  const id = Number(
+    conn
+      .prepare(
+        "INSERT INTO tasks (worksheet_id, position, type, category, skill_id, difficulty, prompt, data, answer, solution, hints, error_map) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      )
+      .run(worksheetId, position, t.type, t.category ?? null, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap)).lastInsertRowid,
+  );
+  writeTaskSkills(id, t);
+  return id;
+}
+function writeTaskSkills(taskId: number, t: Pick<TaskDraft, "skillId" | "skillIds">) {
+  const conn = db();
+  conn.prepare("DELETE FROM task_skills WHERE task_id = ?").run(taskId);
+  const ins = conn.prepare("INSERT OR IGNORE INTO task_skills (task_id, skill_id) VALUES (?, ?)");
+  for (const id of new Set([t.skillId, ...(t.skillIds ?? [])].filter((x): x is string => Boolean(x)))) ins.run(taskId, id);
+}
+/** Worksheet skill list = every skill of its tasks (kept in sync after edits). */
+function syncWorksheetSkills(worksheetId: number) {
+  const ids = (db().prepare("SELECT DISTINCT ts.skill_id FROM task_skills ts JOIN tasks t ON t.id = ts.task_id WHERE t.worksheet_id = ? ORDER BY t.position").all(worksheetId) as { skill_id: string }[]).map((r) => r.skill_id);
+  if (ids.length) db().prepare("UPDATE worksheets SET skill_ids = ? WHERE id = ?").run(JSON.stringify(ids), worksheetId);
+}
+
+export function createWorksheet(w: WorksheetInput, tasks: TaskDraft[]): number {
   const conn = db();
   const tx = conn.transaction(() => {
     const res = conn
-      .prepare("INSERT INTO worksheets (title, subject, grade, school_type, klasse, topic, difficulty, task_type, kind, source, skill_ids) VALUES (@title, @subject, @grade, @school_type, @klasse, @topic, @difficulty, @task_type, @kind, @source, @skill_ids)")
-      .run({ ...w, skill_ids: JSON.stringify(w.skill_ids) });
+      .prepare(
+        `INSERT INTO worksheets (title, subject, grade, school_type, klasse, topic, difficulty, task_type, kind, source, skill_ids, student_id, status, teacher_id, settings, source_worksheet_id)
+         VALUES (@title, @subject, @grade, @school_type, @klasse, @topic, @difficulty, @task_type, @kind, @source, @skill_ids, @student_id, @status, @teacher_id, @settings, @source_worksheet_id)`,
+      )
+      .run({ student_id: null, status: "freigegeben", teacher_id: null, settings: null, source_worksheet_id: null, ...w, skill_ids: JSON.stringify(w.skill_ids) });
     const wid = Number(res.lastInsertRowid);
-    const ins = conn.prepare(
-      "INSERT INTO tasks (worksheet_id, position, type, skill_id, difficulty, prompt, data, answer, solution, hints, error_map) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    );
-    tasks.forEach((t, i) =>
-      ins.run(wid, i + 1, t.type, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap)),
-    );
+    tasks.forEach((t, i) => insertTask(wid, i + 1, t));
+    if (tasks.length) syncWorksheetSkills(wid);
     return wid;
   });
   return tx();
@@ -387,17 +430,174 @@ export function deleteWorksheet(id: number) {
   db().prepare("DELETE FROM worksheets WHERE id = ?").run(id);
 }
 export function listTasks(worksheetId: number): Task[] {
-  return db().prepare("SELECT * FROM tasks WHERE worksheet_id = ? ORDER BY position").all(worksheetId).map((r) => toTask(r as Row));
+  return db().prepare(`${TASK_SELECT} WHERE t.worksheet_id = ? ORDER BY t.position, t.id`).all(worksheetId).map((r) => toTask(r as Row));
 }
 export function getTask(id: number): Task | null {
-  const r = db().prepare("SELECT * FROM tasks WHERE id = ?").get(id) as Row | undefined;
+  const r = db().prepare(`${TASK_SELECT} WHERE t.id = ?`).get(id) as Row | undefined;
   return r ? toTask(r) : null;
 }
 
+// ---------- editing exercises (preview before release) ----------
+export function updateWorksheetMeta(id: number, m: Partial<Pick<Worksheet, "title" | "difficulty" | "status" | "student_id" | "settings">>) {
+  const cur = getWorksheet(id);
+  if (!cur) return;
+  const next = { ...cur, ...m };
+  db().prepare("UPDATE worksheets SET title = ?, difficulty = ?, status = ?, student_id = ?, settings = ? WHERE id = ?").run(next.title, next.difficulty, next.status, next.student_id, next.settings, id);
+}
+/** Number of answers given to tasks of this worksheet; tasks with answers are not changed in place. */
+export function worksheetAttemptCount(worksheetId: number): number {
+  return (db().prepare("SELECT COUNT(*) AS n FROM attempts x JOIN tasks t ON t.id = x.task_id WHERE t.worksheet_id = ?").get(worksheetId) as { n: number }).n;
+}
+export function updateTask(id: number, t: TaskDraft) {
+  const cur = getTask(id);
+  if (!cur) return;
+  db()
+    .prepare("UPDATE tasks SET type = ?, category = ?, skill_id = ?, difficulty = ?, prompt = ?, data = ?, answer = ?, solution = ?, hints = ?, error_map = ? WHERE id = ?")
+    .run(t.type, t.category ?? null, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap), id);
+  writeTaskSkills(id, t);
+  syncWorksheetSkills(cur.worksheet_id);
+}
+export function addTask(worksheetId: number, t: TaskDraft, afterTaskId?: number): number {
+  const conn = db();
+  return conn.transaction(() => {
+    const tasks = listTasks(worksheetId);
+    const at = afterTaskId ? tasks.findIndex((x) => x.id === afterTaskId) + 1 : tasks.length;
+    const id = insertTask(worksheetId, at + 1, t);
+    const order = [...tasks.slice(0, at).map((x) => x.id), id, ...tasks.slice(at).map((x) => x.id)];
+    renumber(order);
+    syncWorksheetSkills(worksheetId);
+    return id;
+  })();
+}
+export function deleteTask(id: number) {
+  const t = getTask(id);
+  if (!t) return;
+  db().prepare("DELETE FROM tasks WHERE id = ?").run(id);
+  renumber(listTasks(t.worksheet_id).map((x) => x.id));
+  syncWorksheetSkills(t.worksheet_id);
+}
+/** Moves a task up (-1) or down (+1). */
+export function moveTask(id: number, dir: -1 | 1) {
+  const t = getTask(id);
+  if (!t) return;
+  const ids = listTasks(t.worksheet_id).map((x) => x.id);
+  const i = ids.indexOf(id);
+  const j = i + dir;
+  if (j < 0 || j >= ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  renumber(ids);
+}
+function renumber(ids: number[]) {
+  const up = db().prepare("UPDATE tasks SET position = ? WHERE id = ?");
+  ids.forEach((id, i) => up.run(i + 1, id));
+}
+/** Copy of an exercise as a new draft (for another student, or to adapt it). */
+export function duplicateWorksheet(id: number, o: { studentId?: number | null; teacherId?: number | null; title?: string; status?: Worksheet["status"]; taskIds?: number[] } = {}): number | null {
+  const w = getWorksheet(id);
+  if (!w) return null;
+  const tasks = listTasks(id).filter((t) => !o.taskIds || o.taskIds.includes(t.id));
+  return createWorksheet(
+    {
+      ...w,
+      title: o.title ?? w.title,
+      student_id: o.studentId === undefined ? w.student_id : o.studentId,
+      teacher_id: o.teacherId ?? w.teacher_id,
+      status: o.status ?? "entwurf",
+      source_worksheet_id: id,
+    },
+    tasks,
+  );
+}
+/** Tasks from other exercises to reuse, best matches for the given skills first. */
+export function searchTasks(q: { skillIds?: string[]; text?: string; subject?: string; excludeWorksheetId?: number; limit?: number }): (Task & { worksheet_title: string })[] {
+  const where: string[] = ["1 = 1"];
+  const params: unknown[] = [];
+  if (q.subject) {
+    where.push("w.subject = ?");
+    params.push(q.subject);
+  }
+  if (q.excludeWorksheetId) {
+    where.push("t.worksheet_id <> ?");
+    params.push(q.excludeWorksheetId);
+  }
+  if (q.text?.trim()) {
+    where.push("t.prompt LIKE ?");
+    params.push(`%${q.text.trim()}%`);
+  }
+  const skills = q.skillIds?.length ? q.skillIds : null;
+  const rows = db()
+    .prepare(
+      `SELECT t.*, w.title AS worksheet_title,
+        (SELECT json_group_array(ts.skill_id) FROM task_skills ts WHERE ts.task_id = t.id) AS skill_ids_json,
+        ${skills ? `(SELECT COUNT(*) FROM task_skills ts WHERE ts.task_id = t.id AND ts.skill_id IN (${skills.map(() => "?").join(",")}))` : "0"} AS matches
+       FROM tasks t JOIN worksheets w ON w.id = t.worksheet_id
+       WHERE ${where.join(" AND ")}
+       ORDER BY matches DESC, t.id DESC LIMIT ?`,
+    )
+    .all(...(skills ?? []), ...params, q.limit ?? 30) as Row[];
+  // drop exact duplicates (the same task copied into several exercises)
+  const seen = new Set<string>();
+  return rows
+    .map((r) => ({ ...toTask(r), worksheet_title: r.worksheet_title as string }))
+    .filter((t) => (seen.has(t.prompt) ? false : (seen.add(t.prompt), true)));
+}
+
+// ---------- templates ----------
+export type Template = { id: number; name: string; subject: string; settings: string; source_worksheet_id: number | null; teacher_id: number | null; used_count: number; created_at: string };
+export function listTemplates(): (Template & { task_count: number | null })[] {
+  return db()
+    .prepare(
+      `SELECT tp.*, (SELECT COUNT(*) FROM tasks t WHERE t.worksheet_id = tp.source_worksheet_id) AS task_count
+       FROM worksheet_templates tp ORDER BY tp.used_count DESC, tp.name`,
+    )
+    .all() as (Template & { task_count: number | null })[];
+}
+export function getTemplate(id: number): Template | null {
+  return (db().prepare("SELECT * FROM worksheet_templates WHERE id = ?").get(id) as Template | undefined) ?? null;
+}
+export function createTemplate(t: Omit<Template, "id" | "used_count" | "created_at">): number {
+  return Number(
+    db()
+      .prepare("INSERT INTO worksheet_templates (name, subject, settings, source_worksheet_id, teacher_id, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+      .run(t.name, t.subject, t.settings, t.source_worksheet_id, t.teacher_id, new Date().toISOString()).lastInsertRowid,
+  );
+}
+export function noteTemplateUsed(id: number) {
+  db().prepare("UPDATE worksheet_templates SET used_count = used_count + 1 WHERE id = ?").run(id);
+}
+export function deleteTemplate(id: number) {
+  db().prepare("DELETE FROM worksheet_templates WHERE id = ?").run(id);
+}
+
+// ---------- hints ----------
+export function recordHintUse(h: { assignment_id: number; task_id: number; student_id: number; hint_index: number; unit_id: number | null }) {
+  db()
+    .prepare("INSERT OR IGNORE INTO hint_uses (assignment_id, task_id, student_id, hint_index, unit_id, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+    .run(h.assignment_id, h.task_id, h.student_id, h.hint_index, h.unit_id, new Date().toISOString());
+}
+export function hintUsesForAssignment(assignmentId: number) {
+  return db().prepare("SELECT task_id, hint_index, created_at FROM hint_uses WHERE assignment_id = ? ORDER BY id").all(assignmentId) as { task_id: number; hint_index: number; created_at: string }[];
+}
+
 // ---------- assignments & attempts ----------
-export function assignWorksheet(worksheetId: number, studentId: number, note = ""): number {
-  const res = db().prepare("INSERT INTO assignments (worksheet_id, student_id, note) VALUES (?, ?, ?)").run(worksheetId, studentId, note);
+export function assignWorksheet(worksheetId: number, studentId: number, note = "", unitId: number | null = null): number {
+  const res = db().prepare("INSERT INTO assignments (worksheet_id, student_id, note, unit_id) VALUES (?, ?, ?, ?)").run(worksheetId, studentId, note, unitId);
+  // students only ever see released exercises
+  db().prepare("UPDATE worksheets SET status = 'freigegeben' WHERE id = ?").run(worksheetId);
   return Number(res.lastInsertRowid);
+}
+export function listAssignmentsForWorksheet(worksheetId: number) {
+  return db()
+    .prepare(
+      `SELECT a.*, s.name AS student_name,
+        (SELECT COUNT(DISTINCT task_id) FROM attempts x WHERE x.assignment_id = a.id AND x.final = 1) AS done_count,
+        (SELECT COUNT(*) FROM attempts x WHERE x.assignment_id = a.id AND x.final = 1 AND x.correct = 1) AS correct_count
+       FROM assignments a JOIN students s ON s.id = a.student_id WHERE a.worksheet_id = ? ORDER BY a.assigned_at DESC, a.id DESC`,
+    )
+    .all(worksheetId) as (Assignment & { student_name: string; done_count: number; correct_count: number })[];
+}
+export function setSolutionsVisible(assignmentId: number, visible: boolean) {
+  db().prepare("UPDATE assignments SET solutions_visible = ? WHERE id = ?").run(visible ? 1 : 0, assignmentId);
 }
 export type AssignmentView = Assignment & {
   title: string;
@@ -440,10 +640,29 @@ export function completeAssignmentIfDone(id: number) {
 export function listAttemptsForAssignment(assignmentId: number): Attempt[] {
   return db().prepare("SELECT * FROM attempts WHERE assignment_id = ? ORDER BY id").all(assignmentId) as Attempt[];
 }
+/**
+ * All answers of a student. skill_ids lists every skill the answer counts for: the task's skills
+ * and the skills they belong to (an answer on "Kehrwert korrekt bilden" also counts for "Dividieren").
+ */
 export function listAttemptsForStudent(studentId: number): Attempt[] {
-  return db().prepare("SELECT * FROM attempts WHERE student_id = ? ORDER BY created_at, id").all(studentId) as Attempt[];
+  const parents = new Map((db().prepare("SELECT id, parent_id FROM skills WHERE parent_id IS NOT NULL").all() as { id: string; parent_id: string }[]).map((r) => [r.id, r.parent_id]));
+  const withAncestors = (ids: string[]) => {
+    const out = new Set<string>();
+    for (let id of ids) {
+      for (let guard = 0; id && !out.has(id) && guard < 8; guard++) {
+        out.add(id);
+        id = parents.get(id) ?? "";
+      }
+    }
+    return [...out];
+  };
+  return (
+    db()
+      .prepare("SELECT a.*, (SELECT json_group_array(ts.skill_id) FROM task_skills ts WHERE ts.task_id = a.task_id) AS task_skill_ids FROM attempts a WHERE a.student_id = ? ORDER BY a.created_at, a.id")
+      .all(studentId) as (Attempt & { task_skill_ids: string })[]
+  ).map(({ task_skill_ids, ...a }) => ({ ...a, skill_ids: withAncestors([a.skill_id, ...json<(string | null)[]>(task_skill_ids, [])].filter((x): x is string => Boolean(x))) }));
 }
-export function recordAttempt(a: Omit<Attempt, "id" | "created_at" | "unit_id" | "active_ms"> & { created_at?: string; unit_id?: number | null; active_ms?: number | null }) {
+export function recordAttempt(a: Omit<Attempt, "id" | "created_at" | "unit_id" | "active_ms" | "skill_ids"> & { created_at?: string; unit_id?: number | null; active_ms?: number | null }) {
   const res = db()
     .prepare(
       `INSERT INTO attempts (assignment_id, task_id, student_id, skill_id, attempt_no, answer, correct, final, time_ms, hints_used, solution_viewed, error_label, feedback, unit_id, active_ms, created_at)
