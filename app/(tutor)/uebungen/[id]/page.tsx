@@ -3,15 +3,20 @@ import { notFound } from "next/navigation";
 import { Eye, EyeOff, Sparkles } from "lucide-react";
 import { assignWorksheetAction, deleteWorksheetAction } from "@/app/actions";
 import { PrintButton } from "@/components/PrintButton";
+import { SendToBoard } from "@/components/SendToBoard";
 import { TaskPreview } from "@/components/TaskPreview";
 import { PageHeader, Pill } from "@/components/ui";
 import { TASK_TYPES } from "@/lib/curriculum";
 import * as repo from "@/lib/repo";
+import { requireTeacher } from "@/lib/auth";
 import { klassenLabel, stufeLabel } from "@/lib/school";
+import { GAP } from "@/lib/tasks";
+import { runningBoardsFor } from "@/lib/whiteboard";
 
 export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
+  const teacher = await requireTeacher();
   const w = repo.getWorksheet(Number(id));
   if (!w) notFound();
   const tasks = repo.listTasks(w.id);
@@ -59,6 +64,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
           })}
         </ol>
         <aside className="no-print space-y-6">
+          <SendToBoard worksheetId={w.id} tasks={tasks.map((t) => ({ id: t.id, label: t.prompt.replaceAll(GAP, "…") }))} units={runningBoardsFor(teacher.id)} />
           <form action={assignWorksheetAction} className="panel grid gap-3 px-4 py-4">
             <input type="hidden" name="worksheet_id" value={w.id} />
             <label className="field">

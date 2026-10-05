@@ -1,4 +1,5 @@
 import { currentTeacher } from "@/lib/auth";
+import { flushBoard } from "@/lib/whiteboard";
 import { exportBackup } from "@/lib/backup";
 import { datasetCsv } from "@/lib/exports";
 
@@ -15,6 +16,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ dat
   const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 
   if (datei === "backup.json") {
+    flushBoard(); // whiteboard strokes are written to the database a moment after drawing
     const body = JSON.stringify(exportBackup(), null, 1);
     return new Response(body, {
       headers: { ...headers, "Content-Type": "application/json; charset=utf-8", "Content-Disposition": `attachment; filename="lernheft-sicherung-${stamp()}.json"` },

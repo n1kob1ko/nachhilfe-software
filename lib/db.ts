@@ -165,6 +165,37 @@ CREATE TABLE IF NOT EXISTS teacher_sessions (
   expires_at TEXT NOT NULL
 );
 
+-- Shared whiteboard of a unit (one per unit), with any number of pages.
+CREATE TABLE IF NOT EXISTS whiteboards (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  unit_id INTEGER NOT NULL UNIQUE REFERENCES units(id) ON DELETE CASCADE,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  current_page_id INTEGER,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+-- elements: JSON array of Excalidraw elements (including deleted ones, so edits merge correctly)
+CREATE TABLE IF NOT EXISTS whiteboard_pages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  board_id INTEGER NOT NULL REFERENCES whiteboards(id) ON DELETE CASCADE,
+  position REAL NOT NULL,
+  title TEXT NOT NULL DEFAULT '',
+  elements TEXT NOT NULL DEFAULT '[]',
+  preview_svg TEXT,
+  updated_at TEXT NOT NULL
+);
+-- Content sent from elsewhere in the app (e.g. tasks from the exercise builder). The first open
+-- board client claims it and turns it into whiteboard elements.
+CREATE TABLE IF NOT EXISTS whiteboard_inserts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  board_id INTEGER NOT NULL REFERENCES whiteboards(id) ON DELETE CASCADE,
+  page_id INTEGER REFERENCES whiteboard_pages(id) ON DELETE CASCADE,
+  payload TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  claimed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_wb_pages ON whiteboard_pages(board_id, position);
 CREATE INDEX IF NOT EXISTS idx_attempts_student ON attempts(student_id, skill_id);
 CREATE INDEX IF NOT EXISTS idx_units_student ON units(student_id, started_at);
 CREATE INDEX IF NOT EXISTS idx_units_teacher ON units(teacher_id, started_at);
