@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExternalLink, Play, Square } from "lucide-react";
+import { ExternalLink, Play, Presentation, Square } from "lucide-react";
 import { cancelUnitAction, endUnitAction, startUnitAction } from "@/app/session-actions";
 import { Pill, formatTime } from "@/components/ui";
 import type { Student } from "@/lib/repo";
@@ -30,6 +30,9 @@ export async function UnitControl({ student, compact, onUnitPage }: { student: S
   }
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <Link href={`/tafel/${unit.id}`} className="btn btn-secondary">
+        <Presentation size={14} aria-hidden /> Whiteboard
+      </Link>
       <a href={`/lernen/${student.access_token}`} target="_blank" rel="noreferrer" className="btn btn-secondary">
         <ExternalLink size={14} aria-hidden /> Übungsmodus öffnen
       </a>
