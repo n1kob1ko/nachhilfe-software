@@ -124,7 +124,7 @@ export async function LessonForm({ student, lesson }: { student: repo.Student; l
       <aside className="space-y-6">
         {previous && (
           <div className="panel px-4 py-4">
-            <h2 className="text-[13px] font-semibold text-ink-2">Vorgenommen in der letzten Stunde</h2>
+            <h2 className="text-[13px] font-semibold text-ink-2">Vorgenommen in der letzten Einheit</h2>
             <p className="mt-1 whitespace-pre-line">{previous.next_steps}</p>
             {previous.mistakes && (
               <>
@@ -136,7 +136,7 @@ export async function LessonForm({ student, lesson }: { student: repo.Student; l
         )}
         {lesson && (
           <form action={deleteLessonAction.bind(null, lesson.id, student.id)}>
-            <button className="btn btn-danger btn-sm">Stunde löschen</button>
+            <button className="btn btn-danger btn-sm">Einheit löschen</button>
           </form>
         )}
       </aside>

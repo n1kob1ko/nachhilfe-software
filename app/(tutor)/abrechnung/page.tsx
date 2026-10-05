@@ -33,7 +33,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
         title="Abrechnung"
         subtitle={
           <>
-            Nachhilfestunden im {b.label}
+            Einheiten im {b.label}
             {teacher && ` · ${teacher.name}`}
             {student && ` · ${student.name}`}
           </>
@@ -90,19 +90,19 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
 
       {b.rows.length === 0 ? (
         <Empty
-          title={`Keine Stunden im ${b.label}`}
+          title={`Keine Einheiten im ${b.label}`}
           action={
             <Link href={`/abrechnung?${query(b.prev)}`} className="btn btn-secondary">
               <ChevronLeft size={15} aria-hidden /> Voriger Monat
             </Link>
           }
         >
-          Hier erscheinen alle Nachhilfestunden, die als „stattgefunden“ dokumentiert sind. Selbstständige Übungen der Schüler werden nicht abgerechnet.
+          Hier erscheinen alle Einheiten, die als „stattgefunden“ dokumentiert sind. Selbstständige Übungen der Schüler werden nicht abgerechnet.
         </Empty>
       ) : (
         <>
           <p className="mb-3 text-[14px] text-ink-2">
-            <span className="num font-semibold text-ink">{b.rows.length}</span> {b.rows.length === 1 ? "Stunde" : "Stunden"}
+            <span className="num font-semibold text-ink">{b.rows.length}</span> {b.rows.length === 1 ? "Einheit" : "Einheiten"}
             {perTeacher.length > 1 && <> · {perTeacher.map((t) => `${t.name} ${t.n}`).join(" · ")}</>}
             {unassigned > 0 && <span className="text-red"> · {unassigned} ohne Lehrer</span>}
           </p>

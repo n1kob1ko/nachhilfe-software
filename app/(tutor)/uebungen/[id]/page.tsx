@@ -1,22 +1,23 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Copy, Eye, EyeOff, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Copy, Eye, EyeOff, Send, Sparkles } from "lucide-react";
+import { runningUnitForStudent } from "@/lib/units";
 import { assignWorksheetAction, deleteWorksheetAction } from "@/app/actions";
 import { copyAsDraftAction, setSolutionsVisibleAction } from "@/app/builder-actions";
 import { PrintButton } from "@/components/PrintButton";
 import { SendToBoard } from "@/components/SendToBoard";
+import { FlowSteps } from "@/components/FlowSteps";
 import { PageHeader, Pill } from "@/components/ui";
 import { WorksheetEditor } from "@/components/WorksheetEditor";
 import { ReleasePanel, SaveTemplatePanel } from "@/components/WorksheetPanels";
 import { aiEnabled } from "@/lib/ai";
-import { worksheetTypeLabel } from "@/lib/curriculum";
 import * as repo from "@/lib/repo";
 import { requireTeacher } from "@/lib/auth";
 import { klassenLabel, stufeLabel } from "@/lib/school";
 import { GAP } from "@/lib/tasks";
 import { runningBoardsFor } from "@/lib/whiteboard";
 
-export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string; freigegeben?: string }> }) {
+export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string; gesendet?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -35,6 +36,13 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
   const first = forStudent?.name.split(" ")[0];
   const baseTitle = first && w.title.startsWith(`${first} – `) ? w.title.slice(first.length + 3) : w.title;
 
+  const sentTo = sp.gesendet ? students.find((x) => x.id === Number(sp.gesendet)) : null;
+  // the next step, depending on where the exercise stands
+  const mainAssignment = assignments.find((x) => x.student_id === w.student_id) ?? assignments[0];
+  const unit = mainAssignment ? runningUnitForStudent(mainAssignment.student_id) : null;
+  const mainName = mainAssignment?.student_name.split(" ")[0];
+  const finished = mainAssignment ? mainAssignment.done_count >= tasks.length && tasks.length > 0 : false;
+
   return (
     <>
       <PageHeader
@@ -42,8 +50,8 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         title={w.title}
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
-            {draft ? <Pill tone="amber">Entwurf</Pill> : <Pill tone="green">Freigegeben</Pill>}
-            {w.subject} · {w.klasse ? klassenLabel(w.school_type, w.klasse) : stufeLabel(w.grade)} · {w.difficulty} · {worksheetTypeLabel(w.subject, w.task_type)} · {tasks.length} Aufgaben
+            {draft ? <Pill tone="amber">Entwurf</Pill> : <Pill tone="green">gesendet</Pill>}
+            {w.subject} · {w.klasse ? klassenLabel(w.school_type, w.klasse) : stufeLabel(w.grade)} · {w.difficulty} · {tasks.length} Aufgaben
             {w.source === "ki" && (
               <Pill tone="accent">
                 <Sparkles size={11} aria-hidden /> mit Claude erstellt
@@ -51,127 +59,185 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
             )}
           </span>
         }
-        actions={
-          <>
-            <Link href={`/uebungen/${w.id}?loesungen=${showSolutions ? "0" : "1"}`} className="btn btn-secondary">
-              {showSolutions ? <EyeOff size={15} aria-hidden /> : <Eye size={15} aria-hidden />}
-              {showSolutions ? "Lösungen ausblenden" : "Lösungen zeigen"}
-            </Link>
-            <PrintButton />
-          </>
-        }
       />
       {sp.hinweis === "ki" && (
-        <p className="no-print mb-6 rounded-lg bg-amber-wash px-4 py-3 text-[14px] text-amber">Claude war nicht erreichbar. Die Aufgaben stammen aus den eingebauten Generatoren.</p>
+        <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Claude war nicht erreichbar. Die Aufgaben stammen aus den eingebauten Generatoren.</p>
       )}
-      {sp.freigegeben !== undefined && !draft && (
-        <p className="no-print mb-6 rounded-lg bg-green-wash px-4 py-3 text-[14px] font-medium text-green" role="status">
-          {Number(sp.freigegeben) ? `Freigegeben und an ${students.find((s) => s.id === Number(sp.freigegeben))?.name ?? "den Schüler"} gesendet.` : "Freigegeben."} Lösungen bleiben verborgen, bis du sie freigibst.
-        </p>
-      )}
-      {draft && (
-        <p className="no-print mb-6 max-w-[80ch] text-[14px] text-ink-2">
-          Prüfe die Aufgaben: bearbeiten, löschen, verschieben, neu erstellen oder die Schwierigkeit ändern. {forStudent ? `${forStudent.name} sieht` : "Schüler sehen"} die Übung erst nach der Freigabe.
-        </p>
-      )}
-      {!editable && (
-        <p className="no-print mb-6 max-w-[80ch] rounded-lg bg-paper px-4 py-3 text-[14px] text-ink-2">
-          Diese Übung wurde schon bearbeitet, deshalb bleiben die Aufgaben unverändert (die Ergebnisse beziehen sich darauf). Mit „Anpassen“ entsteht eine Kopie, die du ändern kannst.
-        </p>
-      )}
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <WorksheetEditor
-          worksheetId={w.id}
-          subject={w.subject}
-          editable={editable}
-          tasks={tasks}
-          skills={skills.map(({ id, name, area, parent_id }) => ({ id, name, area, parent_id }))}
-          students={students}
-          defaultStudentId={w.student_id}
-          units={units}
-          showSolutions={showSolutions}
-          aiEnabled={aiEnabled()}
-        />
-        <aside className="no-print space-y-6">
-          {draft ? (
+
+      <FlowSteps current={draft ? 2 : !mainAssignment ? 3 : 4} />
+      <section className="no-print mb-10 rounded-[24px] bg-accent-wash px-5 py-5 md:px-6" aria-label="Nächster Schritt">
+        {draft ? (
+          <>
+            <h2 className="mb-1 text-[18px] font-semibold">Vorschau prüfen, dann senden</h2>
+            <p className="mb-4 max-w-[70ch] text-[14px] text-ink-2">
+              Unten kannst du jede Aufgabe ändern, löschen oder neu erstellen lassen. {forStudent ? forStudent.name.split(" ")[0] : "Der Schüler"} sieht die Übung erst, wenn du sie sendest.
+            </p>
             <ReleasePanel worksheetId={w.id} students={students} defaultStudentId={w.student_id} taskCount={tasks.length} />
-          ) : (
-            <div className="panel grid gap-3 px-4 py-4">
-              <span className="label">Zugewiesen</span>
-              {assignments.length === 0 && <p className="text-[13px] text-ink-3">Noch niemandem.</p>}
+          </>
+        ) : mainAssignment ? (
+          <>
+            {sentTo !== undefined && sp.gesendet !== undefined && (
+              <p className="mb-2 inline-flex items-center gap-1.5 text-[14px] font-semibold text-green" role="status">
+                <CheckCircle2 size={16} aria-hidden /> {sentTo ? `An ${sentTo.name} gesendet.` : "Fertiggestellt."}
+              </p>
+            )}
+            <h2 className="mb-1 text-[18px] font-semibold">
+              {finished ? `${mainName} ist fertig` : `${mainName} bearbeitet die Übung`}
+            </h2>
+            <p className="num mb-4 text-[15px] text-ink-2">
+              {mainAssignment.done_count} von {tasks.length} Aufgaben bearbeitet · {mainAssignment.correct_count} richtig
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {unit && !finished ? (
+                <Link href={`/einheiten/${unit.id}`} className="btn btn-primary btn-lg">
+                  Zurück zur Einheit <ArrowRight size={18} aria-hidden />
+                </Link>
+              ) : (
+                <Link href={`/schueler/${mainAssignment.student_id}/ergebnis/${mainAssignment.id}`} className="btn btn-primary btn-lg">
+                  Ergebnis ansehen <ArrowRight size={18} aria-hidden />
+                </Link>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="mb-1 text-[18px] font-semibold">Noch an niemanden gesendet</h2>
+            <p className="mb-4 text-[14px] text-ink-2">Wähle, wer die Übung bekommt.</p>
+            <form action={assignWorksheetAction} className="flex flex-wrap items-end gap-3">
+              <input type="hidden" name="worksheet_id" value={w.id} />
+              <label className="field min-w-[220px]">
+                <span className="label">An wen senden?</span>
+                <select className="input" name="student_id" required defaultValue="">
+                  <option value="" disabled>
+                    Schüler wählen
+                  </option>
+                  {students.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button className="btn btn-primary btn-lg">
+                <Send size={18} aria-hidden /> Senden
+              </button>
+            </form>
+          </>
+        )}
+      </section>
+
+      {!editable && (
+        <p className="no-print mb-6 max-w-[80ch] text-[14px] text-ink-2">
+          Diese Übung wurde schon bearbeitet, deshalb bleiben die Aufgaben unverändert. Unter „Weitere Aktionen“ kannst du eine Kopie zum Ändern anlegen.
+        </p>
+      )}
+
+      <WorksheetEditor
+        worksheetId={w.id}
+        subject={w.subject}
+        editable={editable}
+        tasks={tasks}
+        skills={skills.map(({ id, name, area, parent_id }) => ({ id, name, area, parent_id }))}
+        students={students}
+        defaultStudentId={w.student_id}
+        units={units}
+        showSolutions={showSolutions}
+        aiEnabled={aiEnabled()}
+      />
+
+      <details className="no-print group mt-12 rounded-2xl border border-line bg-surface px-5 py-1">
+        <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between text-[15px] font-semibold">
+          Weitere Aktionen
+          <span className="text-[13px] font-normal text-ink-3 group-open:hidden">Lösungen, Drucken, Whiteboard, Kopieren, Vorlage, Löschen</span>
+        </summary>
+        <div className="grid gap-8 pt-3 pb-6 lg:grid-cols-2">
+          <div className="grid content-start gap-3">
+            <span className="label">Ansicht</span>
+            <div className="flex flex-wrap gap-2">
+              <Link href={`/uebungen/${w.id}?loesungen=${showSolutions ? "0" : "1"}`} className="btn btn-secondary">
+                {showSolutions ? <EyeOff size={15} aria-hidden /> : <Eye size={15} aria-hidden />}
+                {showSolutions ? "Lösungen ausblenden" : "Lösungen zeigen"}
+              </Link>
+              <PrintButton />
+            </div>
+          </div>
+          {!draft && (
+            <div className="grid content-start gap-3">
+              <span className="label">Gesendet an</span>
+              {assignments.length === 0 && <p className="text-[13px] text-ink-3">Noch niemanden.</p>}
               <ul className="grid gap-2.5">
-                {assignments.map((a) => (
-                  <li key={a.id} className="grid gap-1">
+                {assignments.map((x) => (
+                  <li key={x.id} className="grid gap-1">
                     <div className="flex items-baseline justify-between gap-2 text-[14px]">
-                      <Link href={`/schueler/${a.student_id}/ergebnis/${a.id}`} className="font-medium hover:text-accent">
-                        {a.student_name}
+                      <Link href={`/schueler/${x.student_id}/ergebnis/${x.id}`} className="font-medium hover:text-accent">
+                        {x.student_name}
                       </Link>
                       <span className="num text-[12px] text-ink-3">
-                        {a.done_count}/{tasks.length} · {a.correct_count} richtig
+                        {x.done_count}/{tasks.length} · {x.correct_count} richtig
                       </span>
                     </div>
-                    <form action={setSolutionsVisibleAction.bind(null, a.id, !a.solutions_visible)}>
-                      <button className={`text-[12.5px] font-semibold hover:underline ${a.solutions_visible ? "text-green" : "text-accent"}`}>
-                        {a.solutions_visible ? "Lösungen sichtbar · wieder verbergen" : "Lösungen für Schüler freigeben"}
+                    <form action={setSolutionsVisibleAction.bind(null, x.id, !x.solutions_visible)}>
+                      <button className={`min-h-[36px] text-[13px] font-semibold hover:underline ${x.solutions_visible ? "text-green" : "text-accent"}`}>
+                        {x.solutions_visible ? "Lösungen sichtbar · wieder verbergen" : "Lösungen für den Schüler zeigen"}
                       </button>
                     </form>
                   </li>
                 ))}
               </ul>
-              <form action={assignWorksheetAction} className="grid gap-2 border-t border-line pt-3">
+              <form action={assignWorksheetAction} className="flex flex-wrap items-end gap-2">
                 <input type="hidden" name="worksheet_id" value={w.id} />
-                <label className="field">
-                  <span className="label">Weiterem Schüler zuweisen</span>
+                <label className="field min-w-[180px] flex-1">
+                  <span className="label">An weiteren Schüler senden</span>
                   <select className="input" name="student_id" required defaultValue="">
                     <option value="" disabled>
                       Schüler wählen
                     </option>
-                    {students.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
+                    {students.map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {x.name}
                       </option>
                     ))}
                   </select>
                 </label>
-                <button className="btn btn-secondary btn-sm justify-self-start">Zuweisen</button>
+                <button className="btn btn-secondary">Senden</button>
               </form>
             </div>
           )}
-          {tasks.length > 0 && <SendToBoard worksheetId={w.id} tasks={tasks.map((t) => ({ id: t.id, label: t.prompt.replaceAll(GAP, "…") }))} units={units} />}
-          <div className="panel grid gap-4 px-4 py-4">
+          {tasks.length > 0 && units.length > 0 && <SendToBoard worksheetId={w.id} tasks={tasks.map((t) => ({ id: t.id, label: t.prompt.replaceAll(GAP, "…") }))} units={units} />}
+          <div className="grid content-start gap-3">
             <span className="label flex items-center gap-1.5">
               <Copy size={14} aria-hidden /> Wiederverwenden
             </span>
-            <form action={copyAsDraftAction} className="grid gap-2">
+            <form action={copyAsDraftAction} className="flex flex-wrap items-end gap-2">
               <input type="hidden" name="worksheet_id" value={w.id} />
-              <select className="input" name="student_id" defaultValue="" aria-label="Für Schüler">
+              <select className="input min-w-[180px] flex-1" name="student_id" defaultValue="" aria-label="Für Schüler">
                 <option value="">Für Schüler wählen …</option>
                 {students
-                  .filter((s) => s.id !== w.student_id)
-                  .map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
+                  .filter((x) => x.id !== w.student_id)
+                  .map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.name}
                     </option>
                   ))}
               </select>
-              <button className="btn btn-secondary btn-sm justify-self-start">Für anderen Schüler kopieren</button>
+              <button className="btn btn-secondary">Kopie für anderen Schüler</button>
             </form>
             {!draft && (
               <form action={copyAsDraftAction}>
                 <input type="hidden" name="worksheet_id" value={w.id} />
                 {w.student_id && <input type="hidden" name="student_id" value={w.student_id} />}
-                <button className="btn btn-secondary btn-sm">Anpassen (Kopie als Entwurf)</button>
+                <button className="btn btn-secondary">Kopie zum Ändern anlegen</button>
               </form>
             )}
             <div className="border-t border-line pt-3">
               <SaveTemplatePanel worksheetId={w.id} suggestion={`${baseTitle} · ${tasks.length} Aufgaben`} />
             </div>
           </div>
-          <form action={deleteWorksheetAction.bind(null, w.id)}>
-            <button className="btn btn-danger btn-sm">Übung löschen</button>
+          <form action={deleteWorksheetAction.bind(null, w.id)} className="self-end">
+            <button className="btn btn-danger">Übung löschen</button>
           </form>
-        </aside>
-      </div>
+        </div>
+      </details>
     </>
   );
 }

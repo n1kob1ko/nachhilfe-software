@@ -59,7 +59,7 @@ export function InsertPanel(p: Props) {
 
         <section>
           <h3 className="wb-h">Aufgaben des Schülers</h3>
-          {p.worksheets.length === 0 && <p className="text-[13px] text-ink-2">Noch keine Übungen zugewiesen.</p>}
+          {p.worksheets.length === 0 && <p className="text-[13px] text-ink-2">Noch keine Übungen gesendet.</p>}
           <div className="grid gap-2">
             {p.worksheets.map((w) => (
               <div key={w.id} className="rounded-lg border border-line">

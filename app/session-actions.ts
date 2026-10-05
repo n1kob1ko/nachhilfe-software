@@ -127,7 +127,8 @@ export async function startUnitAction(studentId: number) {
   const { unit, created } = startUnit(t.id, studentId, { subject: expectedSubject(studentId) });
   if (created) ensureBoardForUnit(unit.id);
   revalidatePath("/", "layout");
-  if (!created) redirect(`/einheiten/${unit.id}?bereits=1`);
+  // the teacher goes straight into the unit, which is where everything for it lives
+  redirect(created ? `/einheiten/${unit.id}` : `/einheiten/${unit.id}?bereits=1`);
 }
 
 /** Loads a unit the logged-in teacher may end; others are sent to the unit page with a notice. */

@@ -12,7 +12,7 @@ import { listUnits, unitDurationMs, type UnitView } from "@/lib/units";
 
 const FILTERS = [
   ["alle", "Alle"],
-  ["einheiten", "Nachhilfeeinheiten"],
+  ["einheiten", "Einheiten"],
   ["selbststaendig", "Selbstständig geübt"],
 ] as const;
 
@@ -53,14 +53,14 @@ export function Lernverlauf({ student, filter }: { student: repo.Student; filter
         <SectionTitle
           action={
             <Link href={`/schueler/${student.id}/stunden/neu`} className="btn btn-ghost btn-sm">
-              <Plus size={14} aria-hidden /> Stunde nachtragen oder planen
+              <Plus size={14} aria-hidden /> Einheit nachtragen oder planen
             </Link>
           }
         >
           Dokumentation
         </SectionTitle>
         <p className="-mt-1 mb-4 max-w-[72ch] text-[14px] text-ink-2">
-          Jede Nachhilfeeinheit wird beim Starten automatisch protokolliert. Beim Beenden entsteht die Lern-Dokumentation aus den Übungsdaten, der Lehrer ergänzt seine Beobachtungen.
+          Jede Einheit wird beim Starten automatisch protokolliert. Beim Beenden entsteht die Dokumentation aus den Übungsdaten, der Lehrer ergänzt seine Beobachtungen.
         </p>
         <nav className="mb-4 flex flex-wrap gap-1.5" aria-label="Einträge filtern">
           {FILTERS.map(([k, label]) => (
@@ -120,7 +120,7 @@ function UnitEntry({ unit, lesson }: { unit: UnitView; lesson: repo.Lesson | nul
         {lesson && !lesson.reviewed_at && <Pill tone="amber">noch nicht ergänzt</Pill>}
         {unit.status !== "abgebrochen" && (
           <Link href={`/einheiten/${unit.id}`} className="btn btn-ghost btn-sm">
-            {unit.status === "gestartet" ? "Live" : lesson?.reviewed_at ? "Details" : "Ergänzen"}
+            {unit.status === "gestartet" ? "Öffnen" : lesson?.reviewed_at ? "Details" : "Abschließen"}
           </Link>
         )}
       </div>

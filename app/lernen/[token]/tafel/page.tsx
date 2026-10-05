@@ -6,7 +6,7 @@ import { runningUnitForStudent } from "@/lib/units";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Tafel", appleWebApp: { capable: true, title: "Tafel" } };
+export const metadata = { title: "Whiteboard", appleWebApp: { capable: true, title: "Whiteboard" } };
 export const viewport = { width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false, viewportFit: "cover" };
 
 /** The student's tablet view: the board of the running unit, or a wait screen until the teacher starts one. */

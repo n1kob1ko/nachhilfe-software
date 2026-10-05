@@ -351,7 +351,7 @@ export default function Whiteboard(props: WhiteboardProps) {
             void flush();
             void uploadPreview();
             setCanWrite(false);
-            setNotice("Die Einheit ist beendet. Deine Tafel ist gespeichert.");
+            setNotice("Die Einheit ist beendet. Dein Whiteboard ist gespeichert.");
           }
           break;
       }
@@ -467,12 +467,12 @@ export default function Whiteboard(props: WhiteboardProps) {
     <div ref={wrapRef} className={`wb-root fixed inset-0 z-50 flex flex-col bg-white ${teacher ? "wb-teacher" : "wb-student"}`}>
       <header className="wb-header flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-panel px-3 py-2">
         {props.backHref && (
-          <a href={props.backHref} className="wb-btn" aria-label="Zurück">
-            ←
+          <a href={props.backHref} className="wb-btn wb-btn-wide" title={teacher ? "Zurück zur Einheit (das Whiteboard bleibt gespeichert)" : "Zurück zu den Übungen"}>
+            <span aria-hidden>←</span> {teacher ? "Zur Einheit" : "Zurück"}
           </a>
         )}
         <div className="min-w-0">
-          <div className="truncate text-[15px] font-semibold leading-tight">{teacher ? `Whiteboard · ${props.studentName}` : "Tafel"}</div>
+          <div className="truncate text-[15px] font-semibold leading-tight">{teacher ? `Whiteboard · ${props.studentName}` : "Whiteboard"}</div>
           <div className="flex items-center gap-1.5 text-[12px] text-ink-2" role="status" aria-live="polite">
             <span className={`inline-block h-2 w-2 rounded-full ${status === "live" ? "bg-green" : status === "verbinde" ? "bg-amber" : "bg-red"}`} aria-hidden />
             {status === "live" ? "verbunden" : status === "verbinde" ? "verbinde …" : "Verbindung unterbrochen, versuche erneut"}
@@ -492,7 +492,7 @@ export default function Whiteboard(props: WhiteboardProps) {
                 </button>
               ))}
               {canWrite && (
-                <button className="wb-btn" onClick={() => void newPageWith("leer", `Seite ${pages.length + 1}`)} aria-label="Neue Seite">
+                <button className="wb-btn" onClick={() => void newPageWith("leer", `Seite ${pages.length + 1}`)} aria-label="Neue Seite" title="Neue leere Seite">
                   +
                 </button>
               )}
@@ -517,12 +517,12 @@ export default function Whiteboard(props: WhiteboardProps) {
         <div className="flex items-center gap-1.5">
           {teacher && canWrite && (
             <>
-              <button className={`wb-btn wb-btn-wide ${panel ? "wb-btn-on" : ""}`} onClick={() => setPanel((v) => !v)} aria-expanded={panel}>
-                Einfügen
+              <button className={`wb-btn wb-btn-wide ${panel ? "wb-btn-on" : ""}`} onClick={() => setPanel((v) => !v)} aria-expanded={panel} title="Aufgaben, Text, Formel, Tabelle oder kariertes Papier einfügen">
+                <span aria-hidden>+</span> Einfügen
               </button>
               <div className="relative">
-                <button className={`wb-btn wb-btn-wide ${pageMenu ? "wb-btn-on" : ""}`} onClick={() => setPageMenu((v) => !v)} aria-expanded={pageMenu}>
-                  Seite
+                <button className={`wb-btn wb-btn-wide ${pageMenu ? "wb-btn-on" : ""}`} onClick={() => setPageMenu((v) => !v)} aria-expanded={pageMenu} title="Seite duplizieren, umbenennen, leeren oder löschen">
+                  Seite <span aria-hidden>▾</span>
                 </button>
                 {pageMenu && (
                   <div className="wb-menu" role="menu" onClick={() => setPageMenu(false)}>
@@ -550,12 +550,13 @@ export default function Whiteboard(props: WhiteboardProps) {
               </div>
             </>
           )}
-          <button className="wb-btn" onClick={toggleFullscreen} aria-label={fullscreen ? "Vollbild beenden" : "Vollbild"} title="Vollbild">
+          <button className="wb-btn" onClick={toggleFullscreen} aria-label={fullscreen ? "Vollbild beenden" : "Vollbild"} title={fullscreen ? "Vollbild beenden" : "Vollbild: nur das Whiteboard zeigen"}>
             {fullscreen ? "⤡" : "⤢"}
           </button>
           {teacher && props.endUnit && running && canWrite && (
             <button
               className="wb-btn wb-btn-wide wb-btn-primary"
+              title="Einheit beenden und Dokumentation abschließen"
               onClick={async () => {
                 await flush();
                 await uploadPreview();
