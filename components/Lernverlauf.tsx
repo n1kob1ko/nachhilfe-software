@@ -104,7 +104,8 @@ function UnitEntry({ unit, lesson }: { unit: UnitView; lesson: repo.Lesson | nul
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="font-semibold">{formatDate(unit.started_at, { weekday: "short", day: "numeric", month: "short", year: "numeric" })}</span>
         <span className="num text-ink-2">
-          {clock(unit.started_at)}–{unit.ended_at ? clock(unit.ended_at) : "…"} · {minutes} min
+          {clock(unit.started_at)}–{unit.ended_at ? `${unit.end_estimated ? "ca. " : ""}${clock(unit.ended_at)}` : "…"} · {unit.end_estimated ? "ca. " : ""}
+          {minutes} min
         </span>
         <span className="text-ink-2">{unit.teacher_name}</span>
         {unit.status !== "beendet" && <UnitStatusPill status={unit.status} />}

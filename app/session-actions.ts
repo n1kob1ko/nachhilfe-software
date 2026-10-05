@@ -6,18 +6,22 @@ import { redirect } from "next/navigation";
 import {
   SESSION_COOKIE,
   checkLogin,
+  clearFailedLogins,
   createSession,
+  currentTeacher,
   deleteSession,
+  loginBlockedMinutes,
+  noteFailedLogin,
   passwordMatches,
   requireAdmin,
   requireTeacher,
   setPassword,
 } from "@/lib/auth";
 import { db, usernameFor } from "@/lib/db";
-import { endUnit } from "@/lib/learning";
+import { endUnit, expectedSubject, sweepIdleUnits } from "@/lib/learning";
 import { INITIAL_PASSWORD } from "@/lib/password";
 import * as repo from "@/lib/repo";
-import { finishUnit, getUnit, startUnit } from "@/lib/units";
+import { canManageUnit, finishUnit, getUnit, runningUnits, startUnit } from "@/lib/units";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const rating = (f: FormData, k: string) => {
@@ -36,17 +40,35 @@ export type FormState = { error?: string; ok?: string; values?: Record<string, s
 
 export async function loginAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const username = str(formData, "username");
+  const wait = loginBlockedMinutes(username);
+  if (wait) return { error: `Zu viele falsche Versuche. Bitte in ${wait} ${wait === 1 ? "Minute" : "Minuten"} erneut probieren.`, values: { username } };
   const teacher = checkLogin(username, String(formData.get("password") ?? ""));
-  if (!teacher) return { error: "Benutzername oder Passwort stimmt nicht.", values: { username } };
+  if (!teacher) {
+    noteFailedLogin(username);
+    return { error: "Benutzername oder Passwort stimmt nicht.", values: { username } };
+  }
+  clearFailedLogins(username);
   const { token, expires } = createSession(teacher.id);
   (await cookies()).set(SESSION_COOKIE, token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production" && process.env.INSECURE_COOKIES !== "1", path: "/", expires });
   redirect(teacher.must_change_password ? "/passwort" : safeNext(str(formData, "weiter")));
 }
 
-export async function logoutAction() {
+/**
+ * Logging out never touches a running unit unless the teacher chose to: with units running the
+ * teacher is first sent to /abmelden, which offers "weiterlaufen lassen", "beenden" or "abbrechen".
+ */
+export async function logoutAction(formData?: FormData) {
   const jar = await cookies();
+  const t = await currentTeacher();
+  const mode = formData ? str(formData, "mode") : "";
+  if (t) {
+    const running = runningUnits(t.id);
+    if (running.length && !mode) redirect("/abmelden");
+    if (mode === "beenden") for (const u of running) endUnit(u.id, { byTeacherId: t.id });
+  }
   deleteSession(jar.get(SESSION_COOKIE)?.value);
   jar.delete(SESSION_COOKIE);
+  revalidatePath("/", "layout");
   redirect("/login");
 }
 
@@ -59,6 +81,8 @@ export async function changePasswordAction(_prev: FormState, formData: FormData)
   if (next !== String(formData.get("repeat") ?? "")) return { error: "Die beiden neuen Passwörter sind verschieden." };
   if (next === INITIAL_PASSWORD) return { error: "Bitte ein anderes Passwort als das Startpasswort wählen." };
   setPassword(t.id, next);
+  // other devices that were logged in with the old password are logged out
+  db().prepare("DELETE FROM teacher_sessions WHERE teacher_id = ? AND token <> ?").run(t.id, (await cookies()).get(SESSION_COOKIE)?.value ?? "");
   redirect("/");
 }
 
@@ -91,22 +115,38 @@ export async function setTeacherActiveAction(teacherId: number, active: boolean)
 }
 
 // ---------- units ----------
+/**
+ * Starts a unit. If one is already running for this student (another tab, a double click, a
+ * colleague) nothing new is created; the teacher lands on that unit and can open or end it.
+ */
 export async function startUnitAction(studentId: number) {
   const t = await requireTeacher();
-  startUnit(t.id, studentId);
+  if (!repo.getStudent(studentId)) redirect("/schueler");
+  sweepIdleUnits();
+  const { unit, created } = startUnit(t.id, studentId, { subject: expectedSubject(studentId) });
   revalidatePath("/", "layout");
+  if (!created) redirect(`/einheiten/${unit.id}?bereits=1`);
+}
+
+/** Loads a unit the logged-in teacher may end; others are sent to the unit page with a notice. */
+async function manageableUnit(unitId: number) {
+  const t = await requireTeacher();
+  const u = getUnit(unitId);
+  if (!u) redirect("/einheiten");
+  if (!canManageUnit(t, u)) redirect(`/einheiten/${unitId}?fremd=1`);
+  return { t, u };
 }
 
 export async function endUnitAction(unitId: number) {
-  await requireTeacher();
-  const lessonId = endUnit(unitId);
+  const { t } = await manageableUnit(unitId);
+  endUnit(unitId, { byTeacherId: t.id });
   revalidatePath("/", "layout");
-  redirect(lessonId ? `/einheiten/${unitId}` : "/einheiten");
+  redirect(`/einheiten/${unitId}`);
 }
 
 export async function cancelUnitAction(unitId: number, formData: FormData) {
-  await requireTeacher();
-  const u = finishUnit(unitId, "abgebrochen", str(formData, "reason") || "abgebrochen");
+  const { t } = await manageableUnit(unitId);
+  const u = finishUnit(unitId, "abgebrochen", { byTeacherId: t.id, reason: str(formData, "reason") || "abgebrochen" });
   revalidatePath("/", "layout");
   redirect(u ? `/schueler/${u.student_id}?tab=lernverlauf` : "/einheiten");
 }
@@ -116,6 +156,8 @@ export async function saveUnitDocAction(lessonId: number, formData: FormData) {
   const t = await requireTeacher();
   const lesson = repo.getLesson(lessonId);
   if (!lesson) redirect("/einheiten");
+  const owner = lesson.unit_id ? getUnit(lesson.unit_id) : null;
+  if (owner && !canManageUnit(t, owner)) redirect(`/einheiten/${owner.id}?fremd=1`);
   const understanding = rating(formData, "understanding");
   const homework = str(formData, "homework_note");
   repo.saveLesson(
