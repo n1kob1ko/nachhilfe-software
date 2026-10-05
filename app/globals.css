@@ -213,3 +213,248 @@ textarea.input {
     animation: none !important;
   }
 }
+
+/* ---------- Whiteboard ---------- */
+.wb-root {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;
+}
+.wb-root .excalidraw {
+  --ui-font: inherit;
+}
+.wb-btn {
+  display: inline-flex;
+  min-width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 0 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.wb-btn:disabled {
+  opacity: 0.4;
+}
+.wb-btn-wide {
+  font-size: 15px;
+  padding: 0 14px;
+}
+.wb-btn-on {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+.wb-btn-primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.wb-tab {
+  display: inline-flex;
+  height: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.wb-tab-on {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.wb-menu {
+  position: absolute;
+  right: 0;
+  top: 50px;
+  z-index: 30;
+  display: grid;
+  min-width: 210px;
+  gap: 2px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 6px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.12);
+}
+.wb-menu button {
+  min-height: 44px;
+  border-radius: 8px;
+  padding: 0 12px;
+  text-align: left;
+  font-size: 15px;
+}
+.wb-menu button:hover {
+  background: var(--panel);
+}
+.wb-menu button:disabled {
+  opacity: 0.4;
+}
+.wb-quick {
+  position: absolute;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: 12px;
+  right: 12px;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  pointer-events: none;
+}
+.wb-quick-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgb(255 255 255 / 0.96);
+  padding: 5px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.1);
+  pointer-events: auto;
+}
+.wb-tool {
+  display: inline-flex;
+  width: 64px;
+  height: 56px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 12px;
+  color: var(--ink);
+}
+.wb-tool:active {
+  background: var(--panel);
+}
+.wb-tool-on {
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+.wb-tool-label {
+  font-size: 10px;
+  white-space: nowrap;
+  font-weight: 600;
+  line-height: 1;
+}
+.wb-ico {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.wb-swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.wb-swatch-on {
+  box-shadow: 0 0 0 3px var(--accent);
+}
+.wb-width {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+.wb-width span {
+  border-radius: 999px;
+  background: var(--ink);
+}
+.wb-width-on {
+  background: var(--accent-wash);
+}
+.wb-sep {
+  width: 1px;
+  height: 28px;
+  background: var(--line);
+}
+.wb-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  width: min(380px, 100%);
+  flex-direction: column;
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: -12px 0 32px rgb(0 0 0 / 0.08);
+  -webkit-user-select: text;
+  user-select: text;
+  touch-action: auto;
+}
+.wb-h {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.wb-chip {
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.wb-chip:disabled {
+  opacity: 0.45;
+}
+.wb-chip-primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+/* The student sees only the big tool bar: no menus, library or property panels of the drawing library. */
+.wb-student .excalidraw .App-toolbar,
+.wb-student .excalidraw .App-toolbar-content,
+.wb-student .excalidraw .App-menu_top .Stack_horizontal,
+.wb-student .excalidraw .main-menu-trigger,
+.wb-student .excalidraw .dropdown-menu-button,
+.wb-student .excalidraw .App-menu__left,
+.wb-student .excalidraw .layer-ui__wrapper__footer-left,
+.wb-student .excalidraw .layer-ui__wrapper__footer-right,
+.wb-student .excalidraw .sidebar-trigger,
+.wb-student .excalidraw .default-sidebar-trigger,
+.wb-student .excalidraw .App-bottom-bar,
+.wb-student .excalidraw .help-icon {
+  display: none !important;
+}
+/* Teachers keep the property panel and zoom of the drawing library; its tool bar would only repeat ours. */
+.wb-teacher .excalidraw .App-toolbar,
+.wb-teacher .excalidraw .App-menu_top .Stack_horizontal .Island:has(.App-toolbar-content),
+.wb-teacher .excalidraw .main-menu-trigger,
+.wb-teacher .excalidraw .default-sidebar-trigger,
+.wb-teacher .excalidraw .sidebar-trigger,
+.wb-teacher .excalidraw .App-toolbar__extra-tools-trigger {
+  display: none !important;
+}
+.wb-root .excalidraw .welcome-screen-center,
+.wb-root .excalidraw .welcome-screen-decor {
+  display: none !important;
+}
+.wb-root .excalidraw .HintViewer {
+  display: none !important;
+}

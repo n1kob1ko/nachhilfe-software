@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
+import { BoardThumbs } from "@/components/BoardThumbs";
 import { UnitDocForm } from "@/components/UnitDocForm";
 import { CancelUnit, UnitControl, UnitStatusPill } from "@/components/UnitControl";
 import { UnitReportView } from "@/components/UnitReportView";
@@ -90,6 +91,13 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
       </section>
 
       {running && <UnitExercises unit={unit} />}
+
+      {unit.status !== "abgebrochen" && (
+        <section className="mb-10">
+          <SectionTitle>Whiteboard</SectionTitle>
+          <BoardThumbs unitId={unit.id} max={8} alwaysLink />
+        </section>
+      )}
 
       <section className="mb-10">
         <SectionTitle>{running ? "Bisher gesammelt" : "Lern-Dokumentation"}</SectionTitle>
