@@ -53,12 +53,10 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
       tasks = await generateWithAI({
         subject: req.subject,
         level: klassenLabel(req.schoolType, req.klasse),
-        topic,
-        skills: skills.map((s) => ({ id: s.id, name: s.name, area: s.area })),
-        difficulty: req.difficulty,
+        skills: skills.map((s) => ({ id: s.id, name: s.name, area: s.area, difficulty: req.difficulty })),
         count,
-        taskType: req.taskType,
-        focusNote: req.focusNote,
+        categories: [],
+        focusNote: [req.taskType !== "mixed" ? `Aufgabenformat: ${TASK_TYPES[req.taskType]}` : "", req.focusNote ?? ""].filter(Boolean).join(". "),
       });
       if (tasks && tasks.length) source = "ki";
       else aiError = "Die KI hat keine Aufgaben geliefert.";

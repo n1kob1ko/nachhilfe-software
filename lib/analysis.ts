@@ -76,11 +76,14 @@ export function taskScore(final: Pick<Attempt, "correct" | "attempt_no" | "hints
 
 const GRADE_SCORE: Record<number, number> = { 1: 0.95, 2: 0.82, 3: 0.68, 4: 0.52, 5: 0.25 };
 
+/** Skills an answer counts for: all skills of its task and their parent skills, if known. */
+export const skillsOf = (a: Pick<Attempt, "skill_id" | "skill_ids">): string[] => (a.skill_ids?.length ? a.skill_ids : a.skill_id ? [a.skill_id] : []);
+
 export function collectEvidence(attempts: Attempt[], lessons: Lesson[], tests: TestResult[]): Evidence[] {
   const ev: Evidence[] = [];
   for (const a of attempts) {
-    if (!a.final || !a.skill_id) continue;
-    ev.push({ skillId: a.skill_id, score: taskScore(a), weight: 1, at: parseTime(a.created_at), source: "aufgabe" });
+    if (!a.final) continue;
+    for (const skillId of skillsOf(a)) ev.push({ skillId, score: taskScore(a), weight: 1, at: parseTime(a.created_at), source: "aufgabe" });
   }
   for (const l of lessons) {
     // automatic entries summarise attempts that are already counted above
@@ -155,7 +158,7 @@ export function computeAnalysis(input: {
     .filter((s) => relevantSubjects.has(s.subject))
     .map((skill) => {
       const items = bySkill.get(skill.id) ?? [];
-      const f = finals.filter((a) => a.skill_id === skill.id);
+      const f = finals.filter((a) => skillsOf(a).includes(skill.id));
       const { trend, delta } = trendOf(items, now);
       return {
         skill,
@@ -166,7 +169,7 @@ export function computeAnalysis(input: {
         lastPracticed: items.length ? items[items.length - 1].at : null,
         tasksDone: f.length,
         firstTryRate: f.length ? f.filter((a) => a.correct && a.attempt_no === 1 && !a.hints_used).length / f.length : null,
-        avgTimeSec: f.length ? Math.round(input.attempts.filter((a) => a.skill_id === skill.id).reduce((s, a) => s + a.time_ms, 0) / f.length / 1000) : null,
+        avgTimeSec: f.length ? Math.round(input.attempts.filter((a) => skillsOf(a).includes(skill.id)).reduce((s, a) => s + a.time_ms, 0) / f.length / 1000) : null,
         hintRate: f.length ? f.filter((a) => a.hints_used > 0 || a.solution_viewed).length / f.length : null,
       };
     });
@@ -200,7 +203,7 @@ export function computeAnalysis(input: {
     for (const id of skillIds) if (!e.skillIds.includes(id)) e.skillIds.push(id);
     errMap.set(key, e);
   };
-  for (const a of input.attempts) if (!a.correct && a.error_label) addErr(a.error_label, a.skill_id ? [a.skill_id] : [], parseTime(a.created_at));
+  for (const a of input.attempts) if (!a.correct && a.error_label) addErr(a.error_label, skillsOf(a), parseTime(a.created_at));
   for (const l of input.lessons) if (l.kind !== "selbststaendig") for (const m of splitMistakes(l.mistakes)) addErr(m, l.skill_ids, parseTime(l.starts_at));
   const errors = [...errMap.values()].sort((a, b) => b.count - a.count || b.lastSeen - a.lastSeen);
 
@@ -266,7 +269,7 @@ export function computeAnalysis(input: {
       skill: w.skill,
       mastery: w.mastery,
       count: m < 0.4 ? 10 : 8,
-      difficulty: m < 0.4 ? "leicht" : m < 0.5 ? "leicht bis mittel" : "mittel",
+      difficulty: m < 0.3 ? "sehr leicht" : m < 0.5 ? "leicht" : "mittel",
       title: `${w.skill.area}: ${w.skill.name}`,
       reason: `Liegt bei ${pct(w.mastery)}, unter der 60-%-Schwelle.${topError ? ` Typischer Fehler: „${topError.label}“.` : ""}`,
       then: "Erneute Überprüfung des Lernfortschritts (5 Aufgaben, mittel).",

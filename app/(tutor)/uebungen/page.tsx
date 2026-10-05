@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Plus, Sparkles } from "lucide-react";
 import { Empty, PageHeader, Pill, formatDate } from "@/components/ui";
-import { TASK_TYPES } from "@/lib/curriculum";
+import { worksheetTypeLabel } from "@/lib/curriculum";
 import { listWorksheets } from "@/lib/repo";
 import { klassenLabel, stufeLabel } from "@/lib/school";
 
@@ -13,7 +13,7 @@ export default function Worksheets() {
     <>
       <PageHeader
         title="Übungen"
-        subtitle="Alle erstellten Übungsblätter mit Lösungen"
+        subtitle="Alle Übungen mit Lösungen. Entwürfe sehen Schüler erst nach der Freigabe."
         actions={
           <Link href="/uebungen/neu" className="btn btn-primary">
             <Plus size={16} aria-hidden /> Übung erstellen
@@ -45,6 +45,7 @@ export default function Worksheets() {
                       {w.title}
                     </Link>
                     <div className="mt-0.5 flex gap-1.5">
+                      {w.status === "entwurf" && <Pill tone="amber">Entwurf</Pill>}
                       {w.source === "ki" && (
                         <Pill tone="accent">
                           <Sparkles size={11} aria-hidden /> KI
@@ -58,7 +59,7 @@ export default function Worksheets() {
                     {w.subject}
                     <div className="text-[12px] text-ink-3">{w.klasse ? klassenLabel(w.school_type, w.klasse, { short: true }) : stufeLabel(w.grade)}</div>
                   </td>
-                  <td className="px-3 py-3 text-ink-2">{TASK_TYPES[w.task_type as keyof typeof TASK_TYPES] ?? w.task_type}</td>
+                  <td className="px-3 py-3 text-ink-2">{worksheetTypeLabel(w.subject, w.task_type)}</td>
                   <td className="px-3 py-3 text-ink-2">{w.difficulty}</td>
                   <td className="num px-3 py-3 text-right">{w.task_count}</td>
                   <td className="num px-5 py-3 text-right text-ink-2">{formatDate(w.created_at, { day: "numeric", month: "short" })}</td>

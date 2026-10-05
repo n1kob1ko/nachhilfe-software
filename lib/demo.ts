@@ -278,9 +278,9 @@ export function seedDemo(random: () => number = seeded(7)) {
         if (practiced.length) {
           const skills = practiced.map((id) => allSkills.find((s) => s.id === id)!);
           const progress = Math.max(0, Math.min(1, (56 - l.daysAgo) / 56));
-          const drafts = generateBuiltIn({ subject: p.subject, skills: skills.map((s) => ({ id: s.id, name: s.name })), difficulty: "leicht bis mittel", count: 8, taskType: "mixed", seed: sid * 1000 + i });
+          const drafts = generateBuiltIn({ subject: p.subject, skills: skills.map((s) => ({ id: s.id, name: s.name })), difficulty: "leicht", count: 8, taskType: "mixed", seed: sid * 1000 + i });
           const wid = repo.createWorksheet(
-            { title: `Stunde: ${l.topic}`, subject: p.subject, grade, school_type: p.student.school_type, klasse: p.student.klasse, topic: [...new Set(skills.map((s) => s.area))].join(", "), difficulty: "leicht bis mittel", task_type: "mixed", kind: "uebung", source: "generator", skill_ids: practiced },
+            { title: `Stunde: ${l.topic}`, subject: p.subject, grade, school_type: p.student.school_type, klasse: p.student.klasse, topic: [...new Set(skills.map((s) => s.area))].join(", "), difficulty: "leicht", task_type: "mixed", kind: "uebung", source: "generator", skill_ids: practiced },
             drafts,
           );
           const aid = repo.assignWorksheet(wid, sid);
@@ -344,7 +344,7 @@ export function seedDemo(random: () => number = seeded(7)) {
         const daysAgo = 56 - w * 7 - 2;
         const progress = w / 7;
         const chosen = skillIds;
-        const difficulty: Difficulty = w < 3 ? "leicht" : w < 6 ? "leicht bis mittel" : "mittel";
+        const difficulty: Difficulty = w < 3 ? "sehr leicht" : w < 6 ? "leicht" : "mittel";
         const skills = chosen.map((id) => allSkills.find((s) => s.id === id)!).filter(Boolean);
         const drafts = generateBuiltIn({ subject: p.subject, skills: skills.map((s) => ({ id: s.id, name: s.name })), difficulty, count: chosen.length * 3, taskType: "mixed", seed: sid * 100 + w });
         const wid = repo.createWorksheet(
