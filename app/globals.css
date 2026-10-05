@@ -1,32 +1,44 @@
 @import "tailwindcss";
 
 /*
- * Lernheft: warm paper, Königsblau ink for action, Rotstift red only for mistakes.
+ * Lernheft: a warm, friendly study desk. Cream sheet on a peach backdrop, burnt orange for action,
+ * pastel tiles for the day's numbers, violet for progress, red only for mistakes.
  */
 :root {
-  --paper: #f8f6f1;
+  --backdrop: #f7cfb2;
+  --backdrop-2: #fbe3d0;
+  --paper: #fbf6f1;
   --surface: #ffffff;
-  --panel: #efece4;
-  --line: #e2ddd1;
-  --line-strong: #cfc8b8;
-  --ink: #1b1d23;
-  --ink-2: #4f535e;
-  --ink-3: #6f7380;
-  --accent: #1f4fd1;
-  --accent-hover: #173fa9;
-  --accent-wash: #e8eefc;
-  --red: #b8322b;
-  --red-wash: #fbebe9;
+  --panel: #f6eee6;
+  --line: #efe3d8;
+  --line-strong: #e2d0c1;
+  --ink: #231a15;
+  --ink-2: #5e4a3e;
+  --ink-3: #7a6a5f;
+  --accent: #c94f17;
+  --accent-hover: #ad4212;
+  --accent-bright: #ee7a45;
+  --accent-wash: #fde6d6;
+  --red: #b82f2a;
+  --red-wash: #fbe7e5;
   --amber: #8a5300;
-  --amber-wash: #fbf1de;
-  --green: #1d6d3a;
-  --green-wash: #e5f3ea;
-  --bar-track: #e6e2d8;
-  --bar: #2a78d6;
+  --amber-wash: #fcf0db;
+  --green: #1b6f3d;
+  --green-wash: #e1f3e8;
+  --violet: #6f5bd6;
+  --violet-wash: #ece9fd;
+  --tile-pink: #f9d2d0;
+  --tile-mint: #ccebd9;
+  --tile-lilac: #dcd6fb;
+  --tile-peach: #fcdcc3;
+  --bar-track: #f0e6dd;
+  --bar: #6f5bd6;
   --series-1: #2a78d6;
   --series-2: #eb6834;
   --series-3: #1baf7a;
   --series-4: #eda100;
+  --shadow-card: 0 1px 2px rgba(80, 45, 20, 0.05), 0 8px 24px -12px rgba(80, 45, 20, 0.14);
+  --shadow-pop: 0 2px 4px rgba(80, 45, 20, 0.06), 0 18px 40px -16px rgba(80, 45, 20, 0.28);
 }
 
 @theme inline {
@@ -40,6 +52,7 @@
   --color-ink-3: var(--ink-3);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-accent-bright: var(--accent-bright);
   --color-accent-wash: var(--accent-wash);
   --color-red: var(--red);
   --color-red-wash: var(--red-wash);
@@ -47,7 +60,16 @@
   --color-amber-wash: var(--amber-wash);
   --color-green: var(--green);
   --color-green-wash: var(--green-wash);
-  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  --color-violet: var(--violet);
+  --color-violet-wash: var(--violet-wash);
+  --color-tile-pink: var(--tile-pink);
+  --color-tile-mint: var(--tile-mint);
+  --color-tile-lilac: var(--tile-lilac);
+  --color-tile-peach: var(--tile-peach);
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-poppins), var(--font-jakarta), ui-sans-serif, sans-serif;
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
 }
 
 html {
@@ -58,9 +80,18 @@ html {
 body {
   background: var(--paper);
 }
+h1,
+h2,
+h3,
+.display {
+  font-family: var(--font-display);
+}
 ::selection {
-  background: #c9d7fb;
+  background: #fbcfb2;
   color: var(--ink);
+}
+* {
+  scrollbar-color: var(--line-strong) transparent;
 }
 :focus-visible {
   outline: 2px solid var(--accent);
@@ -99,7 +130,7 @@ button.link:hover {
   width: 100%;
   background: var(--surface);
   border: 1px solid var(--line-strong);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 8px 11px;
   font-size: 15px;
   line-height: 1.4;
@@ -110,7 +141,7 @@ button.link:hover {
   color: #8a8d96;
 }
 .input:hover {
-  border-color: #b5ad9a;
+  border-color: #cdb4a1;
 }
 .input:focus {
   outline: none;
@@ -127,9 +158,9 @@ textarea.input {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 38px;
-  padding: 0 16px;
-  border-radius: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
@@ -147,6 +178,7 @@ textarea.input {
 .btn-primary {
   background: var(--accent);
   color: #fff;
+  box-shadow: 0 6px 16px -8px rgba(201, 79, 23, 0.7);
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--accent-hover);
@@ -157,7 +189,8 @@ textarea.input {
   border: 1px solid var(--line-strong);
 }
 .btn-secondary:hover:not(:disabled) {
-  border-color: var(--ink-3);
+  border-color: var(--accent-bright);
+  color: var(--accent);
 }
 .btn-ghost {
   color: var(--ink-2);
@@ -173,20 +206,21 @@ textarea.input {
   background: var(--red-wash);
 }
 .btn-sm {
-  height: 30px;
-  padding: 0 10px;
+  height: 32px;
+  padding: 0 12px;
   font-size: 13px;
 }
 
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 20px;
+  box-shadow: var(--shadow-card);
 }
 
 /* lined paper for the documentation views */
 .ruled {
-  background-image: linear-gradient(to bottom, transparent 27px, #e9e4d8 27px, #e9e4d8 28px);
+  background-image: linear-gradient(to bottom, transparent 27px, #f0e4d9 27px, #f0e4d9 28px);
   background-size: 100% 28px;
   line-height: 28px;
 }
@@ -201,6 +235,7 @@ textarea.input {
   }
   .panel {
     border: none;
+    box-shadow: none;
   }
   .print-break {
     break-inside: avoid;

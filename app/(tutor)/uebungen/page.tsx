@@ -1,3 +1,4 @@
+import { subjectTone } from "@/components/Calendar";
 import Link from "next/link";
 import { Plus, Sparkles } from "lucide-react";
 import { Empty, PageHeader, Pill, formatDate } from "@/components/ui";
@@ -56,8 +57,10 @@ export default function Worksheets() {
                     </div>
                   </td>
                   <td className="px-3 py-3 text-ink-2">
-                    {w.subject}
-                    <div className="text-[12px] text-ink-3">{w.klasse ? klassenLabel(w.school_type, w.klasse, { short: true }) : stufeLabel(w.grade)}</div>
+                    <span className="rounded-full px-2.5 py-0.5 text-[12px] font-semibold" style={{ background: subjectTone(w.subject).soft, color: subjectTone(w.subject).fg }}>
+                      {w.subject}
+                    </span>
+                    <div className="mt-1 text-[12px] text-ink-3">{w.klasse ? klassenLabel(w.school_type, w.klasse, { short: true }) : stufeLabel(w.grade)}</div>
                   </td>
                   <td className="px-3 py-3 text-ink-2">{worksheetTypeLabel(w.subject, w.task_type)}</td>
                   <td className="px-3 py-3 text-ink-2">{w.difficulty}</td>
