@@ -527,6 +527,24 @@ function Exercises({ student }: { student: repo.Student }) {
           </Link>
         </div>
       </div>
+      {(() => {
+        const drafts = repo.listWorksheets().filter((w) => w.student_id === student.id && w.status === "entwurf");
+        if (!drafts.length) return null;
+        return (
+          <div className="mb-6 rounded-xl border border-dashed border-line-strong px-5 py-3">
+            <p className="text-[13px] font-semibold text-ink-2">Entwürfe für {first}, noch nicht freigegeben</p>
+            <ul className="mt-1.5 flex flex-wrap gap-2">
+              {drafts.map((w) => (
+                <li key={w.id}>
+                  <Link href={`/uebungen/${w.id}`} className="inline-flex items-center gap-1.5 rounded-md bg-amber-wash px-2.5 py-1 text-[13px] font-medium text-amber hover:underline">
+                    <Pencil size={12} aria-hidden /> {w.title} · {w.task_count} Aufgaben
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })()}
       {list.length === 0 ? (
         <Empty
           title="Noch keine Übungen zugewiesen"

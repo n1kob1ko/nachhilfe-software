@@ -1,6 +1,6 @@
-import { TASK_TYPES } from "@/lib/curriculum";
+import { categoryLabel, TASK_TYPES } from "@/lib/curriculum";
 import type { Task } from "@/lib/repo";
-import { GAP } from "@/lib/tasks";
+import { GAP, hintLabel, type TaskDraft } from "@/lib/tasks";
 
 function withGaps(text: string) {
   const parts = text.split(GAP);
@@ -12,54 +12,88 @@ function withGaps(text: string) {
   ));
 }
 
-export function answerText(t: Task) {
+export function answerText(t: Pick<TaskDraft, "data" | "answer">) {
   if (t.data.options && typeof t.answer.correct === "number") return `${String.fromCharCode(97 + t.answer.correct)}) ${t.data.options[t.answer.correct]}`;
+  if (t.answer.steps) return t.answer.steps.map((s, i) => `${i + 1}. ${s}`).join("  ");
   if (t.answer.blanks) return t.answer.blanks.map((b) => b[0]).join(" · ");
   if (t.answer.accepted) return t.answer.accepted[0];
   return null;
 }
 
-export function TaskPreview({ task, index, showSolution, skillName, passageShown }: { task: Task; index: number; showSolution: boolean; skillName?: string; passageShown?: boolean }) {
+/** The task as the student sees it, plus the solution block for the teacher. */
+export function TaskBody({ task, showSolution, skillName, subject, passageShown }: { task: TaskDraft; showSolution: boolean; skillName?: string; subject?: string; passageShown?: boolean }) {
+  const cat = subject ? categoryLabel(subject, task.category) : null;
+  return (
+    <div className="min-w-0">
+      {task.data.passage && !passageShown && <blockquote className="ruled mb-4 max-w-[70ch] rounded-lg bg-paper px-4 py-1 text-[15px]">{task.data.passage}</blockquote>}
+      <p className="max-w-[70ch] text-[16px] leading-relaxed whitespace-pre-line">{task.prompt ? withGaps(task.prompt) : <span className="text-ink-3 italic">Noch keine Aufgabenstellung</span>}</p>
+      {task.data.options && (
+        <ol className="mt-2 space-y-1">
+          {task.data.options.map((o, i) => (
+            <li key={i} className={`flex gap-2 ${showSolution && task.answer.correct === i ? "font-semibold text-green" : ""}`}>
+              <span className="text-ink-3">{String.fromCharCode(97 + i)})</span>
+              {o}
+            </li>
+          ))}
+        </ol>
+      )}
+      {task.data.steps && (
+        <ul className="mt-2 space-y-1">
+          {task.data.steps.map((s, i) => (
+            <li key={i} className="flex gap-2 rounded-md border border-line bg-surface px-3 py-1.5 text-[15px]">
+              <span className="num text-ink-3" aria-hidden>
+                ☐
+              </span>
+              {s}
+            </li>
+          ))}
+        </ul>
+      )}
+      {!task.data.options && !task.data.steps && !task.answer.blanks && !showSolution && <div className="mt-3 h-8 max-w-[360px] border-b border-dashed border-line-strong" aria-hidden />}
+      <p className="no-print mt-2 text-[12px] text-ink-3">
+        {cat ?? TASK_TYPES[task.type]}
+        {cat && cat !== TASK_TYPES[task.type] && ` (${TASK_TYPES[task.type]})`}
+        {skillName && ` · ${skillName}`}
+        {` · ${task.difficulty}`}
+      </p>
+      {showSolution && (
+        <div className="mt-3 rounded-lg border border-[#cfe3d6] bg-green-wash px-4 py-3 text-[14px]">
+          {answerText(task) && (
+            <p>
+              <span className="font-semibold">Lösung:</span> {answerText(task)}
+            </p>
+          )}
+          {task.answer.sample && !answerText(task) && (
+            <p>
+              <span className="font-semibold">Musterlösung:</span> {task.answer.sample}
+            </p>
+          )}
+          {task.solution && <p className="mt-1 whitespace-pre-line text-ink-2">{task.solution}</p>}
+          {task.hints.length > 0 && (
+            <ul className="mt-2 space-y-0.5 text-[13px] text-ink-2">
+              {task.hints.map((h, i) => (
+                <li key={i}>
+                  <span className="font-semibold text-ink-3">{hintLabel(i)}:</span> {h}
+                </li>
+              ))}
+            </ul>
+          )}
+          {task.errorMap.length > 0 && (
+            <p className="mt-1 text-[13px] text-ink-3">
+              Typische Fehler: {task.errorMap.map((e) => e.label).filter((v, i, a) => a.indexOf(v) === i).join(" · ")}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function TaskPreview({ task, index, showSolution, skillName, subject, passageShown }: { task: Task; index: number; showSolution: boolean; skillName?: string; subject?: string; passageShown?: boolean }) {
   return (
     <li className="print-break grid grid-cols-[32px_1fr] gap-3 py-5">
       <span className="num pt-0.5 text-[15px] font-semibold text-ink-3">{index}.</span>
-      <div className="min-w-0">
-        {task.data.passage && !passageShown && (
-          <blockquote className="ruled mb-4 max-w-[70ch] rounded-lg bg-paper px-4 py-1 text-[15px]">{task.data.passage}</blockquote>
-        )}
-        <p className="max-w-[70ch] text-[16px] leading-relaxed whitespace-pre-line">{withGaps(task.prompt)}</p>
-        {task.data.options && (
-          <ol className="mt-2 space-y-1">
-            {task.data.options.map((o, i) => (
-              <li key={i} className={`flex gap-2 ${showSolution && task.answer.correct === i ? "font-semibold text-green" : ""}`}>
-                <span className="text-ink-3">{String.fromCharCode(97 + i)})</span>
-                {o}
-              </li>
-            ))}
-          </ol>
-        )}
-        {!task.data.options && !task.answer.blanks && !showSolution && <div className="mt-3 h-8 max-w-[360px] border-b border-dashed border-line-strong" aria-hidden />}
-        <p className="no-print mt-2 text-[12px] text-ink-3">
-          {TASK_TYPES[task.type]}
-          {skillName && ` · ${skillName}`}
-        </p>
-        {showSolution && (
-          <div className="mt-3 rounded-lg border border-[#cfe3d6] bg-green-wash px-4 py-3 text-[14px]">
-            {answerText(task) && (
-              <p>
-                <span className="font-semibold">Lösung:</span> {answerText(task)}
-              </p>
-            )}
-            <p className="mt-1 whitespace-pre-line text-ink-2">{task.solution}</p>
-            {task.hints.length > 0 && <p className="mt-2 text-[13px] text-ink-3">Hilfen: {task.hints.join(" · ")}</p>}
-            {task.errorMap.length > 0 && (
-              <p className="mt-1 text-[13px] text-ink-3">
-                Typische Fehler: {task.errorMap.map((e) => e.label).filter((v, i, a) => a.indexOf(v) === i).join(" · ")}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
+      <TaskBody task={task} showSolution={showSolution} skillName={skillName} subject={subject} passageShown={passageShown} />
     </li>
   );
 }
