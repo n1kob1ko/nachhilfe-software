@@ -5,6 +5,8 @@
  * subject ends the old one, so the history stays readable. No AI involved.
  */
 import { db, json } from "./db";
+import { dayOf } from "./exams";
+import { matchSkills, splitTopics } from "./lehrplan";
 import * as repo from "./repo";
 
 export const MATERIAL_SOURCES = {
@@ -40,6 +42,29 @@ const toMaterial = (r: Record<string, unknown>): CurrentMaterial => ({ ...(r as 
 
 /** The short text the profile shows: "Gleichungen mit Klammern" (Unterthema, else Thema). */
 export const materialLabel = (m: Pick<CurrentMaterial, "topic" | "subtopic">) => m.subtopic || m.topic;
+/**
+ * Thema to prefill from the profile's free-text topics: the first one. "Bruchrechnen und Gleichungen"
+ * are two topics, so the second never becomes the Unterthema.
+ */
+export const profileTopic = (currentTopics: string) => splitTopics(currentTopics)[0] ?? "";
+
+/**
+ * The skills of an entry: the ones the teacher ticked, else the skill that best matches Thema and
+ * Unterthema, first within the student's level, then in every class (Gleichungen mit Klammern is
+ * Stoff from Schulstufe 7, also for a student a class below). A match is only a suggestion and is
+ * never stored.
+ */
+export function materialSkills(cm: Pick<CurrentMaterial, "topic" | "subtopic" | "subject" | "skill_ids">, student?: Pick<repo.Student, "school_type" | "klasse" | "grade"> | null): { ids: string[]; suggested: boolean } {
+  const known = new Set(repo.listSkills().map((s) => s.id));
+  const ids = cm.skill_ids.filter((id) => known.has(id));
+  if (ids.length) return { ids, suggested: false };
+  const best = (o: { student?: Pick<repo.Student, "school_type" | "klasse" | "grade"> }) =>
+    matchSkills(`${cm.topic} ${cm.subtopic}`, cm.subject, { ...o, limit: 1 })
+      .filter((x) => x.via === "faehigkeit")
+      .map((x) => x.skill.id);
+  const match = student ? best({ student }) : [];
+  return { ids: match.length ? match : best({}), suggested: true };
+}
 
 /** Active entries of a student: most important first, then the newest. */
 export function activeMaterial(studentId: number): CurrentMaterial[] {
@@ -60,7 +85,7 @@ export function getMaterial(id: number): CurrentMaterial | null {
   return r ? toMaterial(r) : null;
 }
 
-function clean(m: MaterialInput): MaterialInput {
+function clean(m: MaterialInput, at = new Date()): MaterialInput {
   const known = new Set(repo.listSkills().map((s) => s.id));
   return {
     ...m,
@@ -71,7 +96,8 @@ function clean(m: MaterialInput): MaterialInput {
     skill_ids: [...new Set(m.skill_ids)].filter((id) => known.has(id)),
     priority: [1, 2, 3].includes(m.priority) ? m.priority : 2,
     source: m.source in MATERIAL_SOURCES ? m.source : "unterricht",
-    since: /^\d{4}-\d{2}-\d{2}$/.test(m.since) ? m.since : new Date().toISOString().slice(0, 10),
+    // without a date: today, as a local day like everywhere else (not the UTC date)
+    since: /^\d{4}-\d{2}-\d{2}$/.test(m.since) ? m.since : dayOf(at),
   };
 }
 
@@ -80,7 +106,7 @@ function clean(m: MaterialInput): MaterialInput {
  * returns the new id. Thema is required, everything else optional.
  */
 export function setCurrentMaterial(input: MaterialInput, teacherId: number | null, at = new Date()): number {
-  const m = clean(input);
+  const m = clean(input, at);
   if (!m.subject || !m.topic) throw new Error("Fach und Thema angeben.");
   const conn = db();
   return conn.transaction(() => {

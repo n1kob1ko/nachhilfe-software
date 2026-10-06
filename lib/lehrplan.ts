@@ -360,6 +360,9 @@ export function getSetting(key: string, fallback: string): string {
 export function setSetting(key: string, value: string) {
   db().prepare("INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(key, value);
 }
+/** Setting under Mehr › Datenqualität: Flüchtigkeitsfehler marked by the teacher count milder (default on). */
+export const CARELESS_SETTING = "lernstand_fluechtig_milder";
+export const carelessCredit = (): boolean => getSetting(CARELESS_SETTING, "an") !== "aus";
 export const DEFAULT_EXAM_THRESHOLDS: [number, number, number] = [14, 7, 3];
 /** Days before an exam for "Vorbereitung beginnen", "höhere Priorität", "Prüfung bald". */
 export function examThresholds(): [number, number, number] {
