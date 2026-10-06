@@ -36,7 +36,7 @@ type Props = {
   active?: { unitId: number; student: string } | null;
   showSolutions: boolean;
   aiEnabled: boolean;
-  /** Aufgabenbibliothek: one task, no adding or reordering, no "In Bibliothek" */
+  /** Aufgabenbibliothek: one task, no adding, reordering or regenerating, no "In Bibliothek" */
   library?: boolean;
   /** task that opens in the editor right away (a new library task) */
   initialEditing?: number | null;
@@ -126,29 +126,30 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
             <button type="button" className="btn btn-ghost btn-sm" onClick={p.onEdit}>
               <Pencil size={14} aria-hidden /> Bearbeiten
             </button>
-            <button type="button" className="btn btn-ghost btn-sm" disabled={pending} onClick={() => run(() => regenerateTaskAction(t.id))} title={p.aiEnabled ? "Claude erstellt eine neue Aufgabe für dieselbe Fähigkeit" : "Der Generator erstellt eine neue Aufgabe für dieselbe Fähigkeit"}>
-              <RefreshCw size={14} aria-hidden /> Neu erstellen
-            </button>
-            <label className="flex items-center gap-1 text-[13px] text-ink-2">
-              <span className="sr-only">Schwierigkeit ändern</span>
-              <select
-                className="input h-8 py-0 text-[13px]"
-                value={(DIFFICULTIES as readonly string[]).includes(t.difficulty) ? t.difficulty : ""}
-                disabled={pending}
-                onChange={(e) => run(() => regenerateTaskAction(t.id, e.target.value as Difficulty))}
-                aria-label="Schwierigkeit ändern (erstellt die Aufgabe neu)"
-                title="Schwierigkeit ändern: die Aufgabe wird in dieser Schwierigkeit neu erstellt"
-              >
-                {!(DIFFICULTIES as readonly string[]).includes(t.difficulty) && <option value="">{t.difficulty}</option>}
-                {DIFFICULTIES.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {/* a library task is curated: it changes only in the editor (difficulty included), never replaced at a click */}
             {!p.library && (
               <>
+                <button type="button" className="btn btn-ghost btn-sm" disabled={pending} onClick={() => run(() => regenerateTaskAction(t.id))} title={p.aiEnabled ? "Claude erstellt eine neue Aufgabe für dieselbe Fähigkeit" : "Der Generator erstellt eine neue Aufgabe für dieselbe Fähigkeit"}>
+                  <RefreshCw size={14} aria-hidden /> Neu erstellen
+                </button>
+                <label className="flex items-center gap-1 text-[13px] text-ink-2">
+                  <span className="sr-only">Schwierigkeit ändern</span>
+                  <select
+                    className="input h-8 py-0 text-[13px]"
+                    value={(DIFFICULTIES as readonly string[]).includes(t.difficulty) ? t.difficulty : ""}
+                    disabled={pending}
+                    onChange={(e) => run(() => regenerateTaskAction(t.id, e.target.value as Difficulty))}
+                    aria-label="Schwierigkeit ändern (erstellt die Aufgabe neu)"
+                    title="Schwierigkeit ändern: die Aufgabe wird in dieser Schwierigkeit neu erstellt"
+                  >
+                    {!(DIFFICULTIES as readonly string[]).includes(t.difficulty) && <option value="">{t.difficulty}</option>}
+                    {DIFFICULTIES.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <span className="mx-1 h-5 w-px bg-line" aria-hidden />
                 <button type="button" className="btn btn-ghost btn-sm" disabled={pending || p.first} onClick={() => run(() => moveTaskAction(t.id, -1))} aria-label={`Aufgabe ${p.index} nach oben`} title="Nach oben">
                   <ArrowUp size={14} aria-hidden />

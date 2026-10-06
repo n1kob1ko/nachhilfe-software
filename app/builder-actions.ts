@@ -19,6 +19,7 @@ import {
 } from "@/lib/builder";
 import { DIFFICULTIES, type Difficulty, type TaskType, TASK_TYPES } from "@/lib/curriculum";
 import { noteActivity } from "@/lib/learning";
+import { titleFromTask } from "@/lib/library";
 import * as repo from "@/lib/repo";
 import type { TaskDraft } from "@/lib/tasks";
 import { canManageUnit, getUnit, runningUnitForStudent } from "@/lib/units";
@@ -77,6 +78,7 @@ export async function saveTaskAction(taskId: number, draft: TaskDraft): Promise<
   if (!(draft.type in TASK_TYPES) || draft.type === ("mixed" as TaskType)) return { error: "Unbekanntes Antwortformat." };
   const t = normalizeTask({ ...draft, prompt: String(draft.prompt ?? "").slice(0, 4000) });
   repo.updateTask(taskId, t);
+  titleFromTask(e.task.worksheet_id);
   refresh(e.task.worksheet_id);
   const problem = checkTask(t);
   return problem ? { warning: `Gespeichert. Vor dem Freigeben noch: ${problem}` } : { ok: "Gespeichert." };

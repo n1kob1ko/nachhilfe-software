@@ -4,7 +4,7 @@ import path from "node:path";
 import type { MaterialAnalysis } from "./ai";
 import { db } from "./db";
 import { getSource, matchSkills, saveSource, sourceById, taskBankAllowed, type ContentSource } from "./lehrplan";
-import { createLibraryTask, LIBRARY_KIND } from "./library";
+import { createLibraryTask, LIBRARY_KIND, titleFromPrompt } from "./library";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
 import type { TaskDraft } from "./tasks";
@@ -260,7 +260,7 @@ export function takeOverTask(materialId: number, t: TakeoverInput, teacherId: nu
     sourceId: rule.allowed && !t.ownWords ? rule.source.id : null,
   };
   const libraryId = createLibraryTask(
-    { subject: m.subject, schoolType: m.school_type, klasse: m.klasse, topic: skill?.area ?? m.topic, tags: [...(t.tags ?? []), "Material"], title: titleOf(draft.prompt), teacherId },
+    { subject: m.subject, schoolType: m.school_type, klasse: m.klasse, topic: skill?.area ?? m.topic, tags: [...(t.tags ?? []), "Material"], title: titleFromPrompt(draft.prompt), teacherId },
     draft,
   );
   // the material stays traceable as the task's model (source_items, one row per material)
@@ -271,10 +271,6 @@ export function takeOverTask(materialId: number, t: TakeoverInput, teacherId: nu
   db().prepare("UPDATE tasks SET source_item_id = ? WHERE worksheet_id = ?").run(item.id, libraryId);
   return { libraryId };
 }
-const titleOf = (prompt: string) => {
-  const line = prompt.split("\n").find((l) => l.trim())?.trim() ?? "Aufgabe";
-  return line.length > 80 ? `${line.slice(0, 77).trimEnd()} …` : line;
-};
 
 /** Library entries made from this material. */
 export function libraryTasksOf(materialId: number): { id: number; title: string; sourceType: string }[] {

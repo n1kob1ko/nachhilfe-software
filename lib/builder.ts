@@ -384,6 +384,8 @@ export async function regenerateTask(taskId: number, o: { difficulty?: Difficult
   const next = out.tasks[0];
   if (!next) return { ok: false, aiError: out.aiError };
   repo.updateTask(taskId, { ...next, difficulty });
+  // new content, new origin: the old source and licence (e.g. an imported OER task) do not apply any more
+  repo.setTaskOrigin(taskId, { sourceType: next.sourceType ?? "eigen" });
   return { ok: true, aiError: out.aiError };
 }
 

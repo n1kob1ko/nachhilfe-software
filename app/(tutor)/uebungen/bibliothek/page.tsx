@@ -39,7 +39,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
     skillId: sp.skill,
     difficulty: sp.schwierigkeit,
     type: sp.typ,
-    origin: sp.herkunft && sp.herkunft in LIBRARY_ORIGIN_LABEL ? (sp.herkunft as LibraryOrigin) : undefined,
+    origin: sp.herkunft && Object.hasOwn(LIBRARY_ORIGIN_LABEL, sp.herkunft) ? (sp.herkunft as LibraryOrigin) : undefined,
     tag: sp.tag,
   };
   const facets = libraryFacets(sp.fach);
@@ -56,7 +56,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
         : k === "typ"
           ? worksheetTypeLabel(sp.fach ?? "", v)
           : k === "herkunft"
-            ? LIBRARY_ORIGIN_LABEL[v as LibraryOrigin] ?? v
+            ? Object.hasOwn(LIBRARY_ORIGIN_LABEL, v) ? LIBRARY_ORIGIN_LABEL[v as LibraryOrigin] : v
             : k === "tag"
               ? `#${v}`
               : v;
@@ -243,8 +243,9 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
               })}
               {list.length === 0 && <li className="px-5 py-6 text-[14px] text-ink-3">Keine Aufgaben zu diesem Filter.</li>}
             </ul>
+            {/* below md the bar sits above the TabBar (60px, border and safe area) */}
             {list.length > 0 && (
-              <div className="sticky bottom-3 z-10 mt-4 flex flex-wrap items-end gap-3 rounded-2xl bg-surface/95 px-4 py-3 shadow-[var(--shadow-card)] backdrop-blur">
+              <div className="sticky bottom-[calc(72px+env(safe-area-inset-bottom))] z-10 mt-4 flex flex-wrap items-end gap-3 rounded-2xl md:bottom-3 bg-surface/95 px-4 py-3 shadow-[var(--shadow-card)] backdrop-blur">
                 <label className="field min-w-[200px] flex-1 sm:max-w-[280px]">
                   <span className="label">Für Schüler (optional)</span>
                   <select className="input" name="student_id" defaultValue="">

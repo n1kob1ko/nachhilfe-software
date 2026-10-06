@@ -119,6 +119,12 @@ Aufgabentext, Titel, Thema, Tags und Lösung; Filter für alles Genannte. Ausgew
 mit einem Klick eine neue Übung. Ein Eintrag ist intern eine Übung der Art `bibliothek` mit genau
 einer Aufgabe.
 
+Herkunft und Quelle setzt der Lehrer bei der Aufgabe (Quellen aus Mehr › Lehrplan › Quellen, auch die
+von Material). Es gilt dieselbe Regel wie beim Material: importiert nur aus einer Quelle, deren Lizenz
+das erlaubt, mit dieser Lizenz; aus Schulbuch, Verlag oder bei unklarer Lizenz nur in eigenen Worten,
+dann als eigene Aufgabe mit der Quelle als Vorlage (`tasks.source_item_id`). Eine neu geschriebene
+Aufgabe bekommt den Titel aus ihrem Text; „Neu erstellen“ gibt es in der Bibliothek nicht.
+
 ## Material
 
 Mehr › Material: Foto (JPG, PNG, WebP) oder PDF hochladen, höchstens 20 MB.
