@@ -28,7 +28,7 @@ export function Info({ children, label = "Mehr Infos", align = "left" }: { child
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-3 hover:bg-panel hover:text-ink"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-3 hover:bg-panel hover:text-ink pointer-coarse:-m-1.5 pointer-coarse:h-11 pointer-coarse:w-11"
       >
         <InfoIcon size={16} aria-hidden />
       </button>
