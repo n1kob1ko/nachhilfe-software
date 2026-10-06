@@ -4,6 +4,8 @@
  */
 import { parseTime, taskScore } from "./analysis";
 import { db } from "./db";
+import { errorTypeLabel } from "./error-types";
+import { carelessCredit } from "./lehrplan";
 import * as repo from "./repo";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -41,17 +43,31 @@ export function describeAssignment(assignmentId: number): (AutoDoc & { student_i
   const errors = new Map<string, number>();
   for (const a of attempts) if (a.error_label) errors.set(a.error_label, (errors.get(a.error_label) ?? 0) + 1);
   const mistakes = [...errors].sort((a, b) => b[1] - a[1]).map(([label, n]) => (n > 1 ? `${label} (${n}×)` : label));
+  // Fehlerarten of the wrong answers, the ones the teacher confirmed marked as such
+  const types = new Map<string, { n: number; confirmed: boolean }>();
+  for (const a of attempts) {
+    if (a.correct || a.solution_viewed || !a.error_type) continue;
+    const t = types.get(a.error_type) ?? { n: 0, confirmed: false };
+    types.set(a.error_type, { n: t.n + 1, confirmed: t.confirmed || a.error_type_source === "lehrer" });
+  }
+  const typeText = [...types]
+    .sort((a, b) => b[1].n - a[1].n)
+    .map(([type, t]) => {
+      const more = [t.n > 1 ? `${t.n}×` : "", t.confirmed ? "" : "Vorschlag"].filter(Boolean);
+      return `${errorTypeLabel(type)}${more.length ? ` (${more.join(", ")})` : ""}`;
+    });
 
-  // per skill: how well did it go?
+  // per skill: how well did it go? (Flüchtigkeitsfehler as set under Mehr › Datenqualität)
+  const careless = carelessCredit();
   const perSkill = skillIds
     .map((id) => {
       const f = finals.filter((a) => a.skill_id === id);
-      const score = f.length ? f.reduce((s, a) => s + taskScore(a), 0) / f.length : null;
+      const score = f.length ? f.reduce((s, a) => s + taskScore(a, { careless }), 0) / f.length : null;
       const firstRight = f.filter((a) => a.correct && a.attempt_no === 1 && !a.hints_used).length;
       return { id, name: skills.find((s) => s.id === id)?.name ?? id, done: f.length, firstRight, score };
     })
     .filter((x) => x.score !== null);
-  const avg = finals.length ? finals.reduce((s, a) => s + taskScore(a), 0) / finals.length : null;
+  const avg = finals.length ? finals.reduce((s, a) => s + taskScore(a, { careless }), 0) / finals.length : null;
   const weakest = [...perSkill].sort((a, b) => a.score! - b.score!)[0];
 
   const activities =
@@ -63,6 +79,7 @@ export function describeAssignment(assignmentId: number): (AutoDoc & { student_i
   if (finals.length && totalMs >= finals.length * 1000) notes.push(`Durchschnittlich ${Math.round(totalMs / finals.length / 1000)} s pro Aufgabe.`);
   notes.push(hints === 0 ? "Keine Hilfen genutzt." : `${hints} ${hints === 1 ? "Hilfe" : "Hilfen"} genutzt.`);
   if (solutions) notes.push(`${solutions}× Lösung angesehen statt selbst gelöst.`);
+  if (typeText.length) notes.push(`Fehlerarten: ${typeText.join(", ")}.`);
   if (perSkill.length > 1 && weakest && weakest.firstRight < weakest.done)
     notes.push(`Am schwierigsten: ${weakest.name} (${weakest.firstRight} von ${weakest.done} beim ersten Versuch richtig).`);
 

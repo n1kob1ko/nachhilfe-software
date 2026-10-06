@@ -4,6 +4,7 @@ import { runningUnitForStudent } from "@/lib/units";
 import { CheckCircle2, CircleDashed, Lightbulb, Plus, XCircle } from "lucide-react";
 import { deleteAssignmentAction } from "@/app/actions";
 import { answerText } from "@/components/TaskPreview";
+import { ErrorTypeSelect } from "@/components/ErrorTypeSelect";
 import { PageHeader, formatDate, formatDuration } from "@/components/ui";
 import * as repo from "@/lib/repo";
 import { GAP, HINT_LABELS } from "@/lib/tasks";
@@ -56,6 +57,11 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
         <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-primary btn-lg">
           <Plus size={18} aria-hidden /> Nächste Übung erstellen
         </Link>
+        {w.kind === "diagnose" && (
+          <Link href={`/diagnose/${assignment.id}`} className="btn btn-secondary btn-lg">
+            Diagnose-Auswertung
+          </Link>
+        )}
         {unit && (
           <Link href={`/einheiten/${unit.id}`} className="btn btn-secondary btn-lg">
             Zurück zur Einheit
@@ -97,10 +103,15 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
                 {tries.length > 0 && (
                   <ul className="mt-2 space-y-1 text-[14px]">
                     {tries.map((a) => (
-                      <li key={a.id} className="flex flex-wrap gap-x-2">
+                      <li key={a.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
                         <span className="text-ink-3">Versuch {a.attempt_no}:</span>
                         <span className={a.correct ? "text-green" : "text-red"}>{a.solution_viewed ? "aufgegeben" : shownAnswer(t, a.answer) || "–"}</span>
                         {a.error_label && <span className="text-ink-2">→ {a.error_label}</span>}
+                        {!a.correct && !a.solution_viewed && (
+                          <span className="no-print">
+                            <ErrorTypeSelect attemptId={a.id} type={a.error_type ?? null} source={a.error_type_source ?? null} suggested={a.error_type_suggested ?? null} suggestedSource={a.error_type_suggested_source ?? null} />
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>

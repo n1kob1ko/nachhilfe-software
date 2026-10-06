@@ -55,6 +55,10 @@ export type Skill = {
   valid_from?: string | null;
   valid_to?: string | null;
   status?: "aktiv" | "archiviert";
+  /** Own note from Mehr › Datenqualität: in practice usually taught earlier or later than the curriculum says. */
+  practice_shift?: "" | "frueher" | "spaeter";
+  /** Set when this skill was merged into another one as a duplicate. */
+  merged_into?: string | null;
 };
 
 export type Lesson = {
@@ -90,6 +94,9 @@ export type Lesson = {
   tutor_notes: string;
   next_steps: string;
   skill_ids: string[];
+  /** Note for parents or the student, written from the unit summary (lib/summary.ts): source fakten | ki | lehrer. */
+  family_note?: string;
+  family_note_source?: string;
 };
 
 export type Homework = { id: number; student_id: number; subject: string; description: string; due_date: string | null; status: string; notes: string };
@@ -125,7 +132,8 @@ export type Worksheet = {
   topic: string;
   difficulty: string;
   task_type: string;
-  kind: "uebung" | "ueberpruefung";
+  /** uebung, ueberpruefung (check after practice), diagnose (Diagnose-Modus), bibliothek (one saved task of the Aufgabenbibliothek). */
+  kind: "uebung" | "ueberpruefung" | "diagnose" | "bibliothek";
   source: "ki" | "generator" | "manuell";
   skill_ids: string[];
   created_at: string;
@@ -137,11 +145,13 @@ export type Worksheet = {
   /** Builder settings it was made with (JSON), used for templates and regenerating. */
   settings: string | null;
   source_worksheet_id: number | null;
+  /** Tags of a library entry (kind = bibliothek). */
+  tags: string[];
 };
 
 export type Task = TaskDraft & { id: number; worksheet_id: number; position: number; level: number | null };
-export type WorksheetInput = Omit<Worksheet, "id" | "created_at" | "student_id" | "status" | "teacher_id" | "settings" | "source_worksheet_id"> &
-  Partial<Pick<Worksheet, "student_id" | "status" | "teacher_id" | "settings" | "source_worksheet_id">>;
+export type WorksheetInput = Omit<Worksheet, "id" | "created_at" | "student_id" | "status" | "teacher_id" | "settings" | "source_worksheet_id" | "tags"> &
+  Partial<Pick<Worksheet, "student_id" | "status" | "teacher_id" | "settings" | "source_worksheet_id" | "tags">>;
 
 export type Assignment = {
   id: number;
@@ -184,6 +194,14 @@ export type Attempt = {
   teacher_id?: number | null;
   /** Difficulty 1–5 of the task at that moment. */
   level?: number | null;
+  /** Fehlerart (lib/error-types.ts) and where it came from: vorschlag | lehrer | ki. */
+  error_type?: string | null;
+  error_type_source?: string | null;
+  error_type_suggested?: string | null;
+  /** Who made error_type_suggested: vorschlag (the app) or ki (free-text grading). */
+  error_type_suggested_source?: string | null;
+  error_type_by?: number | null;
+  error_type_at?: string | null;
 };
 
 type Row = Record<string, unknown>;
@@ -191,7 +209,7 @@ type Row = Record<string, unknown>;
 const toStudent = (r: Row): Student => ({ ...(r as unknown as Student), subjects: json(r.subjects as string, []) });
 const toLesson = (r: Row): Lesson => ({ ...(r as unknown as Lesson), skill_ids: json(r.skill_ids as string, []) });
 const toTest = (r: Row): TestResult => ({ ...(r as unknown as TestResult), skill_ids: json(r.skill_ids as string, []), topics: json(r.topics as string, []) });
-const toWorksheet = (r: Row): Worksheet => ({ ...(r as unknown as Worksheet), skill_ids: json(r.skill_ids as string, []) });
+const toWorksheet = (r: Row): Worksheet => ({ ...(r as unknown as Worksheet), skill_ids: json(r.skill_ids as string, []), tags: json(r.tags as string, []) });
 const toTask = (r: Row): Task => ({
   id: r.id as number,
   worksheet_id: r.worksheet_id as number,
@@ -262,11 +280,34 @@ export function deleteStudent(id: number) {
 }
 
 // ---------- skills ----------
+/**
+ * Skills as the app works with them: own corrections from Mehr › Datenqualität (skill_overrides) are
+ * laid over the stored row. The row itself, with every imported or official value, is never changed.
+ */
+export const SKILL_SELECT = `SELECT s.id, s.subject, COALESCE(o.area, s.area) AS area, s.name, COALESCE(o.grade_min, s.grade_min) AS grade_min,
+  COALESCE(o.grade_max, s.grade_max) AS grade_max, s.sort, s.parent_id, s.code, COALESCE(o.subtopic, s.subtopic) AS subtopic, s.school_types,
+  s.learning_objective, s.description, s.competency_area, s.content_area, s.action_area, s.source_id, s.version, s.valid_from, s.valid_to,
+  s.status, COALESCE(o.practice_shift, '') AS practice_shift, o.merged_into
+  FROM skills s LEFT JOIN skill_overrides o ON o.skill_id = s.id`;
+/** Every skill except duplicates that were merged into another one (their answers count for the other). */
 export function listSkills(): Skill[] {
-  return db().prepare("SELECT * FROM skills ORDER BY sort, subject, area, name").all() as Skill[];
+  return db().prepare(`${SKILL_SELECT} WHERE o.merged_into IS NULL ORDER BY s.sort, s.subject, area, s.name`).all() as Skill[];
 }
+/** One skill, also a merged duplicate (old answers and exercises still show its name). */
 export function getSkill(id: string): Skill | null {
-  return (db().prepare("SELECT * FROM skills WHERE id = ?").get(id) as Skill | undefined) ?? null;
+  return (db().prepare(`${SKILL_SELECT} WHERE s.id = ?`).get(id) as Skill | undefined) ?? null;
+}
+/** Merged duplicate → the skill it was merged into (Mehr › Datenqualität). */
+export function skillAliases(): Map<string, string> {
+  const rows = db().prepare("SELECT skill_id, merged_into FROM skill_overrides WHERE merged_into IS NOT NULL").all() as { skill_id: string; merged_into: string }[];
+  const map = new Map(rows.map((r) => [r.skill_id, r.merged_into]));
+  // a chain a → b → c ends at c
+  for (const [k] of map) {
+    let to = map.get(k)!;
+    for (let guard = 0; map.has(to) && guard < 8; guard++) to = map.get(to)!;
+    map.set(k, to);
+  }
+  return map;
 }
 export function createSkill(subject: string, area: string, name: string, gradeMin: number, gradeMax: number, parentId: string | null = null) {
   const slug = (x: string) =>
@@ -340,6 +381,9 @@ export function saveLesson(l: LessonInput, id?: number): number {
     )
     .run(params);
   return Number(res.lastInsertRowid);
+}
+export function setFamilyNote(lessonId: number, text: string, source: "fakten" | "ki" | "lehrer" | "") {
+  db().prepare("UPDATE lessons SET family_note = ?, family_note_source = ? WHERE id = ?").run(text.slice(0, 4000), text.trim() ? source : "", lessonId);
 }
 export function deleteLesson(id: number) {
   db().prepare("DELETE FROM lessons WHERE id = ?").run(id);
@@ -473,12 +517,22 @@ function insertTask(worksheetId: number, position: number, t: TaskDraft): number
   writeTaskSkills(id, t);
   return id;
 }
+/** The built-in source of a task without one: Claude for AI tasks, otherwise the app's own content. */
+const builtinSourceId = (type: string) => (db().prepare("SELECT id FROM content_sources WHERE key = ?").get(type === "ki" ? "claude" : "lernheft") as { id: number } | undefined)?.id ?? null;
 /** Where a new task comes from: given by the draft (copies keep their origin) or derived from its exercise. */
 function taskOrigin(worksheetId: number, t: TaskDraft): [string, number | null] {
   const ws = db().prepare("SELECT source FROM worksheets WHERE id = ?").get(worksheetId) as { source: string } | undefined;
   const type = t.sourceType ?? (ws?.source === "ki" ? "ki" : "eigen");
-  const id = t.sourceId ?? ((db().prepare("SELECT id FROM content_sources WHERE key = ?").get(type === "ki" ? "claude" : "lernheft") as { id: number } | undefined)?.id ?? null);
-  return [type, id];
+  return [type, t.sourceId ?? builtinSourceId(type)];
+}
+/**
+ * Sets where a task comes from, e.g. after its content was replaced. Without a source it gets the
+ * built-in one (as a new task would). The model it was written after (source_item_id) is replaced too.
+ */
+export function setTaskOrigin(id: number, o: { sourceType: string; sourceId?: number | null; sourceItemId?: number | null }) {
+  db()
+    .prepare("UPDATE tasks SET source_type = ?, source_id = ?, source_item_id = ? WHERE id = ?")
+    .run(o.sourceType, o.sourceId ?? builtinSourceId(o.sourceType), o.sourceItemId ?? null, id);
 }
 function writeTaskSkills(taskId: number, t: Pick<TaskDraft, "skillId" | "skillIds">) {
   const conn = db();
@@ -497,10 +551,10 @@ export function createWorksheet(w: WorksheetInput, tasks: TaskDraft[]): number {
   const tx = conn.transaction(() => {
     const res = conn
       .prepare(
-        `INSERT INTO worksheets (title, subject, grade, school_type, klasse, topic, difficulty, task_type, kind, source, skill_ids, student_id, status, teacher_id, settings, source_worksheet_id)
-         VALUES (@title, @subject, @grade, @school_type, @klasse, @topic, @difficulty, @task_type, @kind, @source, @skill_ids, @student_id, @status, @teacher_id, @settings, @source_worksheet_id)`,
+        `INSERT INTO worksheets (title, subject, grade, school_type, klasse, topic, difficulty, task_type, kind, source, skill_ids, student_id, status, teacher_id, settings, source_worksheet_id, tags)
+         VALUES (@title, @subject, @grade, @school_type, @klasse, @topic, @difficulty, @task_type, @kind, @source, @skill_ids, @student_id, @status, @teacher_id, @settings, @source_worksheet_id, @tags)`,
       )
-      .run({ student_id: null, status: "freigegeben", teacher_id: null, settings: null, source_worksheet_id: null, ...w, skill_ids: JSON.stringify(w.skill_ids) });
+      .run({ student_id: null, status: "freigegeben", teacher_id: null, settings: null, source_worksheet_id: null, ...w, skill_ids: JSON.stringify(w.skill_ids), tags: JSON.stringify(w.tags ?? []) });
     const wid = Number(res.lastInsertRowid);
     tasks.forEach((t, i) => insertTask(wid, i + 1, t));
     if (tasks.length) syncWorksheetSkills(wid);
@@ -508,13 +562,14 @@ export function createWorksheet(w: WorksheetInput, tasks: TaskDraft[]): number {
   });
   return tx();
 }
+/** Exercises (and diagnoses); library entries are listed in the Aufgabenbibliothek (lib/library.ts). */
 export function listWorksheets(): (Worksheet & { task_count: number; assigned: number; recipients: string[] })[] {
   return db()
     .prepare(
       `SELECT w.*, (SELECT COUNT(*) FROM tasks t WHERE t.worksheet_id = w.id) AS task_count,
               (SELECT COUNT(*) FROM assignments a WHERE a.worksheet_id = w.id) AS assigned,
               (SELECT GROUP_CONCAT(s.name, '|') FROM assignments a JOIN students s ON s.id = a.student_id WHERE a.worksheet_id = w.id) AS recipients
-       FROM worksheets w ORDER BY w.created_at DESC, w.id DESC`,
+       FROM worksheets w WHERE w.kind <> 'bibliothek' ORDER BY w.created_at DESC, w.id DESC`,
     )
     .all()
     .map((r) => ({
@@ -597,14 +652,24 @@ function renumber(ids: number[]) {
   const up = db().prepare("UPDATE tasks SET position = ? WHERE id = ?");
   ids.forEach((id, i) => up.run(i + 1, id));
 }
-/** Copy of an exercise as a new draft (for another student, or to adapt it). */
-export function duplicateWorksheet(id: number, o: { studentId?: number | null; teacherId?: number | null; title?: string; status?: Worksheet["status"]; taskIds?: number[] } = {}): number | null {
+/**
+ * Copy of an exercise as a new draft (for another student, or to adapt it). A copy of a library entry
+ * or of a diagnosis is an ordinary exercise unless `kind` says otherwise (duplicating inside the
+ * library); a diagnosis only comes from the Diagnose-Modus, so single tasks of it are no new diagnoses.
+ */
+export function duplicateWorksheet(
+  id: number,
+  o: { studentId?: number | null; teacherId?: number | null; title?: string; status?: Worksheet["status"]; taskIds?: number[]; kind?: Worksheet["kind"] } = {},
+): number | null {
   const w = getWorksheet(id);
   if (!w) return null;
   const tasks = listTasks(id).filter((t) => !o.taskIds || o.taskIds.includes(t.id));
+  const kind = o.kind ?? (w.kind === "bibliothek" || w.kind === "diagnose" ? "uebung" : w.kind);
   return createWorksheet(
     {
       ...w,
+      kind,
+      tags: kind === "bibliothek" ? w.tags : [],
       title: o.title ?? w.title,
       student_id: o.studentId === undefined ? w.student_id : o.studentId,
       teacher_id: o.teacherId ?? w.teacher_id,
@@ -614,8 +679,8 @@ export function duplicateWorksheet(id: number, o: { studentId?: number | null; t
     tasks,
   );
 }
-/** Tasks from other exercises to reuse, best matches for the given skills first. */
-export function searchTasks(q: { skillIds?: string[]; text?: string; subject?: string; excludeWorksheetId?: number; limit?: number }): (Task & { worksheet_title: string })[] {
+/** Tasks from the library and other exercises to reuse: best matches for the given skills first, library entries before copies in exercises. */
+export function searchTasks(q: { skillIds?: string[]; text?: string; subject?: string; excludeWorksheetId?: number; limit?: number }): (Task & { worksheet_title: string; worksheet_kind: Worksheet["kind"] })[] {
   const where: string[] = ["1 = 1"];
   const params: unknown[] = [];
   if (q.subject) {
@@ -633,18 +698,18 @@ export function searchTasks(q: { skillIds?: string[]; text?: string; subject?: s
   const skills = q.skillIds?.length ? q.skillIds : null;
   const rows = db()
     .prepare(
-      `SELECT t.*, w.title AS worksheet_title,
+      `SELECT t.*, w.title AS worksheet_title, w.kind AS worksheet_kind,
         (SELECT json_group_array(ts.skill_id) FROM task_skills ts WHERE ts.task_id = t.id) AS skill_ids_json,
         ${skills ? `(SELECT COUNT(*) FROM task_skills ts WHERE ts.task_id = t.id AND ts.skill_id IN (${skills.map(() => "?").join(",")}))` : "0"} AS matches
        FROM tasks t JOIN worksheets w ON w.id = t.worksheet_id
        WHERE ${where.join(" AND ")}
-       ORDER BY matches DESC, t.id DESC LIMIT ?`,
+       ORDER BY matches DESC, w.kind = 'bibliothek' DESC, t.id DESC LIMIT ?`,
     )
     .all(...(skills ?? []), ...params, q.limit ?? 30) as Row[];
   // drop exact duplicates (the same task copied into several exercises)
   const seen = new Set<string>();
   return rows
-    .map((r) => ({ ...toTask(r), worksheet_title: r.worksheet_title as string }))
+    .map((r) => ({ ...toTask(r), worksheet_title: r.worksheet_title as string, worksheet_kind: r.worksheet_kind as Worksheet["kind"] }))
     .filter((t) => (seen.has(t.prompt) ? false : (seen.add(t.prompt), true)));
 }
 
@@ -778,21 +843,40 @@ export function listAttemptsForStudent(studentId: number): Attempt[] {
   }));
 }
 export function recordAttempt(
-  a: Omit<Attempt, "id" | "created_at" | "unit_id" | "active_ms" | "skill_ids" | "teacher_id" | "level"> & {
+  a: Omit<Attempt, "id" | "created_at" | "unit_id" | "active_ms" | "skill_ids" | "teacher_id" | "level" | "error_type" | "error_type_source" | "error_type_suggested" | "error_type_suggested_source" | "error_type_by" | "error_type_at"> & {
     created_at?: string;
     unit_id?: number | null;
     active_ms?: number | null;
     teacher_id?: number | null;
     level?: number | null;
+    error_type?: string | null;
+    error_type_source?: string | null;
   },
 ) {
   const res = db()
     .prepare(
-      `INSERT INTO attempts (assignment_id, task_id, student_id, skill_id, attempt_no, answer, correct, final, time_ms, hints_used, solution_viewed, error_label, feedback, unit_id, active_ms, teacher_id, level, created_at)
-       VALUES (@assignment_id, @task_id, @student_id, @skill_id, @attempt_no, @answer, @correct, @final, @time_ms, @hints_used, @solution_viewed, @error_label, @feedback, @unit_id, @active_ms, @teacher_id, @level, COALESCE(@created_at, datetime('now')))`,
+      `INSERT INTO attempts (assignment_id, task_id, student_id, skill_id, attempt_no, answer, correct, final, time_ms, hints_used, solution_viewed, error_label, feedback, unit_id, active_ms, teacher_id, level,
+         error_type, error_type_source, error_type_suggested, error_type_suggested_source, error_type_at, created_at)
+       VALUES (@assignment_id, @task_id, @student_id, @skill_id, @attempt_no, @answer, @correct, @final, @time_ms, @hints_used, @solution_viewed, @error_label, @feedback, @unit_id, @active_ms, @teacher_id, @level,
+         @error_type, @error_type_source,
+         CASE WHEN @error_type_source IN ('vorschlag', 'ki') THEN @error_type END, CASE WHEN @error_type IS NOT NULL AND @error_type_source IN ('vorschlag', 'ki') THEN @error_type_source END,
+         CASE WHEN @error_type IS NOT NULL THEN COALESCE(@created_at, datetime('now')) END,
+         COALESCE(@created_at, datetime('now')))`,
     )
-    .run({ created_at: null, unit_id: null, active_ms: null, teacher_id: null, level: null, ...a });
+    .run({ created_at: null, unit_id: null, active_ms: null, teacher_id: null, level: null, error_type: null, error_type_source: null, ...a });
   return Number(res.lastInsertRowid);
+}
+/**
+ * The teacher sets or confirms the Fehlerart of a wrong answer (null clears it). The automatic
+ * suggestion (the app's or the AI's) stays in error_type_suggested, so it is always visible what was changed.
+ */
+export function setAttemptErrorType(attemptId: number, type: string | null, teacherId: number | null, at = new Date()) {
+  db()
+    .prepare("UPDATE attempts SET error_type = ?, error_type_source = ?, error_type_by = ?, error_type_at = ? WHERE id = ? AND correct = 0")
+    .run(type, type ? "lehrer" : null, teacherId, at.toISOString(), attemptId);
+}
+export function getAttempt(id: number): Attempt | null {
+  return (db().prepare("SELECT * FROM attempts WHERE id = ?").get(id) as Attempt | undefined) ?? null;
 }
 export function recentActivity(limit = 8) {
   return db()

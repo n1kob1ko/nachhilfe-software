@@ -10,6 +10,11 @@ import { UnitDocForm } from "@/components/UnitDocForm";
 import { CancelUnit } from "@/components/UnitControl";
 import { UnitReportView } from "@/components/UnitReportView";
 import { UnitSummary } from "@/components/UnitSummary";
+import { UnitBriefView } from "@/components/UnitBriefView";
+import { FamilyNote } from "@/components/FamilyNote";
+import { Info } from "@/components/Info";
+import { aiEnabled } from "@/lib/ai";
+import { unitBrief } from "@/lib/summary";
 import { Pill, Reveal, SectionTitle, formatDate, formatTime } from "@/components/ui";
 import { LiveStatus } from "@/components/device/LiveStatus";
 import { liveSnapshot } from "@/lib/live";
@@ -111,6 +116,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
 
   // ended or cancelled
   const report = lesson ? readReport(lesson) : null;
+  const brief = lesson && unit.status === "beendet" ? unitBrief(lesson.id) : null;
   const minutes = Math.round(unitDurationMs(unit) / 60_000);
   const date = formatDate(unit.started_at, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const facts = (
@@ -153,6 +159,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
           {facts}
         </header>
         <div className="grid max-w-[820px] gap-10">
+          {brief && <BriefSection brief={brief} lesson={lesson} mayManage={mayManage} />}
           <section>
             <SectionTitle>Automatisch erfasst</SectionTitle>
             {report ? <UnitSummary r={report} /> : <p className="text-[15px] text-ink-2">Keine Daten.</p>}
@@ -184,6 +191,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         {facts}
       </header>
       <div className="grid max-w-[820px] gap-10">
+        {brief && lesson && <BriefSection brief={brief} lesson={lesson} mayManage={mayManage} />}
         {lesson ? (
           <section>
             <SectionTitle
@@ -232,6 +240,33 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         </section>
       </div>
     </>
+  );
+}
+
+/** The six questions after the unit, from the data, and the optional note for parents or the student. */
+function BriefSection({ brief, lesson, mayManage }: { brief: NonNullable<ReturnType<typeof unitBrief>>; lesson: repo.Lesson; mayManage: boolean }) {
+  return (
+    <section aria-label="Auf einen Blick">
+      <SectionTitle>
+        <span>
+          Auf einen Blick
+          <Info label="Woher kommen diese Angaben?">Aus den gespeicherten Daten der Einheit, ohne KI: Aufgaben, Fehlerarten, Empfehlung, Hausübungen und Prüfungstermine. Deine Notizen aus der Dokumentation sind markiert.</Info>
+        </span>
+      </SectionTitle>
+      <UnitBriefView brief={brief} />
+      {(mayManage || lesson.family_note) && (
+        <details className="reveal mt-4" open={Boolean(lesson.family_note) || undefined}>
+          <summary>Notiz für Eltern oder Schüler{lesson.family_note ? "" : " schreiben"}</summary>
+          <div className="pt-3">
+            {mayManage ? (
+              <FamilyNote lessonId={lesson.id} initial={lesson.family_note ?? ""} source={lesson.family_note_source ?? ""} ai={aiEnabled()} />
+            ) : (
+              <p className="whitespace-pre-line text-[15px]">{lesson.family_note}</p>
+            )}
+          </div>
+        </details>
+      )}
+    </section>
   );
 }
 

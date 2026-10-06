@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 
 process.env.DATABASE_PATH = ":memory:";
@@ -179,6 +182,52 @@ test("the preview editor: edit, reorder, delete, add, regenerate; release checks
   assert.equal(repo.getAssignment(asg.id)!.solutions_visible, 1);
   tasks = repo.listTasks(id);
   assert.equal(tasks.length, 3);
+});
+
+test("a regenerated task takes the origin of its new content, not the old source and licence", async () => {
+  const { repo, builder } = await setup();
+  const { saveSource, getSource } = await import("./lehrplan");
+  const { db } = await import("./db");
+  const oer = saveSource({ key: "oer-neu-erstellen", name: "OER-Blatt", source_type: "oer", license: "CC BY 4.0" });
+  const draft = (prompt: string, o: { sourceType: string; sourceId?: number }) =>
+    ({ type: "calc" as const, skillId: KEHRWERT, difficulty: "mittel" as const, prompt, data: {}, answer: { accepted: ["1"], mode: "value" as const }, solution: "", hints: [], errorMap: [], ...o });
+  // an exercise made with Claude, holding an imported OER task and a Claude task
+  const w = repo.createWorksheet(
+    { title: "Gemischt", subject: "Mathematik", grade: 7, school_type: "Gymnasium", klasse: 3, topic: "", difficulty: "mittel", task_type: "calc", kind: "uebung", source: "ki", skill_ids: [KEHRWERT] },
+    [draft("Kehrwert von 2/3?", { sourceType: "oer", sourceId: oer }), draft("Kehrwert von 4/5?", { sourceType: "ki" })],
+  );
+  const [imported, ki] = repo.listTasks(w);
+  const itemId = db().prepare("INSERT INTO source_items (source_id, item_id) VALUES (?, 'blatt-1')").run(oer).lastInsertRowid;
+  db().prepare("UPDATE tasks SET source_item_id = ? WHERE id = ?").run(itemId, imported.id);
+  for (const t of [imported, ki]) {
+    assert.equal((await builder.regenerateTask(t.id, { useAI: false })).ok, true);
+    const now = repo.getTask(t.id)!;
+    assert.deepEqual([now.sourceType, now.sourceId], ["eigen", getSource("lernheft")!.id], "generator content is the app's own");
+  }
+  const item = db().prepare("SELECT source_item_id FROM tasks WHERE id = ?").get(imported.id) as { source_item_id: number | null };
+  assert.equal(item.source_item_id, null, "and no longer an item of the OER source");
+});
+
+test("a task keeps its origin over a restart; only the upgrade that adds the column takes it from the exercise", async () => {
+  const { openDatabase } = await import("./db");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lernheft-herkunft-"));
+  const file = path.join(dir, "alt.db");
+  let conn = openDatabase(file);
+  const ws = conn.prepare("INSERT INTO worksheets (title, subject, grade, difficulty, task_type, source) VALUES ('Mit Claude', 'Mathematik', 7, 'mittel', 'calc', 'ki')").run().lastInsertRowid;
+  const id = conn.prepare("INSERT INTO tasks (worksheet_id, position, type, difficulty, prompt) VALUES (?, 1, 'calc', 'mittel', 'Kehrwert von 2/3?')").run(ws).lastInsertRowid;
+  // the state before tasks had an origin
+  conn.exec("ALTER TABLE tasks DROP COLUMN source_type");
+  conn.close();
+  conn = openDatabase(file);
+  const origin = () => (conn.prepare("SELECT source_type FROM tasks WHERE id = ?").get(id) as { source_type: string }).source_type;
+  assert.equal(origin(), "ki", "on the upgrade: a task of an exercise made with Claude");
+  // e.g. generator content after "Neu erstellen", or the teacher set it in the library
+  conn.prepare("UPDATE tasks SET source_type = 'eigen' WHERE id = ?").run(id);
+  conn.close();
+  conn = openDatabase(file);
+  assert.equal(origin(), "eigen", "a later start does not change it back");
+  conn.close();
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 test("hints used, sub-skill progress rolls up, unit link, reuse and templates", async () => {

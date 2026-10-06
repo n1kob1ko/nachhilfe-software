@@ -5,12 +5,13 @@ import { FlowSteps } from "@/components/FlowSteps";
 import { PageHeader } from "@/components/ui";
 import { aiEnabled } from "@/lib/ai";
 import { parseSettings, studentContext } from "@/lib/builder";
+import { getMaterial } from "@/lib/current-material";
 import { categoryLabel } from "@/lib/curriculum";
 import { getSkill, listSkills, listStudents, listTemplates } from "@/lib/repo";
 
 export const metadata = { title: "Übung erstellen" };
 
-export default async function NewWorksheet({ searchParams }: { searchParams: Promise<{ schueler?: string; skill?: string; skills?: string; anzahl?: string }> }) {
+export default async function NewWorksheet({ searchParams }: { searchParams: Promise<{ schueler?: string; skill?: string; skills?: string; anzahl?: string; stoff?: string }> }) {
   const sp = await searchParams;
   const ai = aiEnabled();
   const studentId = Number(sp.schueler) || null;
@@ -18,6 +19,9 @@ export default async function NewWorksheet({ searchParams }: { searchParams: Pro
   // ?skill=… (one) or ?skills=a,b (e.g. from the exam preparation), optional ?anzahl=
   const preSkills = [...(sp.skill ? [sp.skill] : []), ...(sp.skills ?? "").split(",")].map((id) => (id ? getSkill(id.trim()) : null)).filter((x): x is NonNullable<typeof x> => Boolean(x));
   const preCount = Math.max(1, Math.min(30, Number(sp.anzahl) || 0)) || undefined;
+  // ?stoff=<id>: opened from an Aktueller-Stoff card, so that material is preselected (not another subject's)
+  const material = sp.stoff ? getMaterial(Number(sp.stoff)) : null;
+  const stoff = material && material.student_id === studentId ? material : null;
   const templates = listTemplates();
   return (
     <>
@@ -60,12 +64,18 @@ export default async function NewWorksheet({ searchParams }: { searchParams: Pro
         </details>
       )}
       <BuilderForm
-        key={studentId ?? 0}
+        key={`${studentId ?? 0}:${stoff?.id ?? ""}`}
         skills={listSkills().filter((s) => (s.status ?? "aktiv") === "aktiv")}
         students={listStudents().map(({ id, name }) => ({ id, name }))}
         ctx={ctx}
         aiEnabled={ai}
-        preset={preSkills.length ? { skillIds: preSkills.map((x) => x.id), subject: preSkills[0].subject, count: preCount } : undefined}
+        preset={
+          preSkills.length
+            ? { skillIds: preSkills.map((x) => x.id), subject: preSkills[0].subject, count: preCount }
+            : stoff
+              ? { suggestion: `stoff:${stoff.id}`, subject: stoff.subject, count: preCount }
+              : undefined
+        }
       />
     </>
   );

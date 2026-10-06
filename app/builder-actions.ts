@@ -19,13 +19,14 @@ import {
 } from "@/lib/builder";
 import { DIFFICULTIES, type Difficulty, type TaskType, TASK_TYPES } from "@/lib/curriculum";
 import { noteActivity } from "@/lib/learning";
+import { titleFromTask } from "@/lib/library";
 import * as repo from "@/lib/repo";
 import type { TaskDraft } from "@/lib/tasks";
 import { canManageUnit, getUnit, runningUnitForStudent } from "@/lib/units";
 import { ensureBoardForUnit, queueInsert } from "@/lib/whiteboard";
 import { boardTask } from "@/lib/whiteboard-content";
 
-export type ActionResult = { ok?: string; error?: string; warning?: string } | null;
+export type ActionResult = { ok?: string; error?: string; warning?: string; link?: { href: string; label: string } } | null;
 
 const editable = (taskId: number) => {
   const t = repo.getTask(taskId);
@@ -33,7 +34,10 @@ const editable = (taskId: number) => {
   if (repo.worksheetAttemptCount(t.worksheet_id) > 0) return { error: "Diese Übung wurde schon bearbeitet. Mit „Anpassen“ entsteht eine Kopie, die du ändern kannst." } as const;
   return { task: t } as const;
 };
-const refresh = (worksheetId: number) => revalidatePath(`/uebungen/${worksheetId}`);
+const refresh = (worksheetId: number) => {
+  revalidatePath(`/uebungen/${worksheetId}`);
+  revalidatePath(`/uebungen/bibliothek/${worksheetId}`);
+};
 
 // ---------- builder ----------
 export async function createDraftAction(_prev: ActionResult, form: FormData): Promise<ActionResult> {
@@ -74,6 +78,7 @@ export async function saveTaskAction(taskId: number, draft: TaskDraft): Promise<
   if (!(draft.type in TASK_TYPES) || draft.type === ("mixed" as TaskType)) return { error: "Unbekanntes Antwortformat." };
   const t = normalizeTask({ ...draft, prompt: String(draft.prompt ?? "").slice(0, 4000) });
   repo.updateTask(taskId, t);
+  titleFromTask(e.task.worksheet_id);
   refresh(e.task.worksheet_id);
   const problem = checkTask(t);
   return problem ? { warning: `Gespeichert. Vor dem Freigeben noch: ${problem}` } : { ok: "Gespeichert." };
@@ -137,7 +142,7 @@ export async function searchTasksAction(worksheetId: number, text: string) {
   if (!w) return [];
   return repo
     .searchTasks({ skillIds: w.skill_ids, subject: w.subject, text, excludeWorksheetId: worksheetId, limit: 12 })
-    .map((t) => ({ id: t.id, prompt: t.prompt, type: t.type, difficulty: t.difficulty, skillId: t.skillId, worksheetTitle: t.worksheet_title }));
+    .map((t) => ({ id: t.id, prompt: t.prompt, type: t.type, difficulty: t.difficulty, skillId: t.skillId, worksheetTitle: t.worksheet_title, library: t.worksheet_kind === "bibliothek" }));
 }
 
 export async function renameWorksheetAction(worksheetId: number, title: string): Promise<ActionResult> {

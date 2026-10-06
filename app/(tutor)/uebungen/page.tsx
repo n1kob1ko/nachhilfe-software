@@ -1,8 +1,9 @@
 import { subjectTone } from "@/components/Calendar";
 import Link from "next/link";
-import { Plus, Sparkles } from "lucide-react";
+import { Library, Plus, Sparkles } from "lucide-react";
 import { Empty, PageHeader, Pill, formatDate } from "@/components/ui";
 import { worksheetTypeLabel } from "@/lib/curriculum";
+import { libraryCount } from "@/lib/library";
 import { listStudents, listWorksheets } from "@/lib/repo";
 import { klassenLabel, stufeLabel } from "@/lib/school";
 
@@ -11,6 +12,7 @@ export const metadata = { title: "Übungen" };
 export default async function Worksheets({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
   const { filter } = await searchParams;
   const all = listWorksheets();
+  const lib = libraryCount();
   const students = new Map(listStudents().map((s) => [s.id, s.name.split(" ")[0]]));
   const subjects = [...new Set(all.map((w) => w.subject))];
   const filters: [string, string, number][] = [
@@ -26,9 +28,15 @@ export default async function Worksheets({ searchParams }: { searchParams: Promi
         title="Übungen"
         info="Alle Übungen mit Lösungen. Entwürfe sehen Schüler erst, wenn du sie sendest."
         actions={
-          <Link href="/uebungen/neu" className="btn btn-primary">
-            <Plus size={16} aria-hidden /> Übung erstellen
-          </Link>
+          <>
+            <Link href="/uebungen/bibliothek" className="btn btn-secondary">
+              <Library size={16} aria-hidden /> Bibliothek
+              {lib > 0 && <span className="num text-ink-3">{lib}</span>}
+            </Link>
+            <Link href="/uebungen/neu" className="btn btn-primary">
+              <Plus size={16} aria-hidden /> Übung erstellen
+            </Link>
+          </>
         }
       />
       {all.length === 0 ? (
@@ -76,6 +84,7 @@ export default async function Worksheets({ searchParams }: { searchParams: Promi
                           </Pill>
                         ) : null}
                         {w.kind === "ueberpruefung" && <Pill tone="accent">Überprüfung</Pill>}
+                        {w.kind === "diagnose" && <Pill tone="accent">Diagnose</Pill>}
                         {w.source === "ki" && (
                           <Pill title="Von Claude erstellt">
                             <Sparkles size={11} aria-label="KI" />

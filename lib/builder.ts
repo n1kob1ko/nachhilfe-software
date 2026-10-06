@@ -8,7 +8,9 @@ import { DIFFICULTIES, categoriesFor, difficultyFor, type Category, type Difficu
 import { generateForSlot } from "./generators";
 import * as repo from "./repo";
 import { klassenLabel, schulstufe } from "./school";
+import { activeMaterial, materialLabel, materialSkills, MATERIAL_SOURCES } from "./current-material";
 import { daysUntil, dayOf } from "./exams";
+import { nextSteps } from "./recommend";
 import { masteryStatus } from "./mastery";
 import { analyzeStudent } from "./service";
 import { gapCount, GAP, type TaskDraft } from "./tasks";
@@ -79,6 +81,8 @@ export type StudentContext = {
   errors: { label: string; count: number; skillIds: string[] }[];
   mastery: Record<string, number | null>;
   suggestions: Suggestion[];
+  /** Aktueller Stoff per subject (lib/current-material.ts). */
+  current: { subject: string; label: string; skillIds: string[] }[];
   /** Planned Schularbeiten/tests in the next 30 days, soonest first. */
   exams: (repo.TestResult & { days: number })[];
 };
@@ -103,6 +107,8 @@ const CATEGORY_WORDS: [RegExp, string][] = [
   [/übersetz|translation/i, "translation"],
 ];
 
+const formatDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("de-AT", { day: "numeric", month: "short" });
+
 export function skillLabel(s: repo.Skill, all: repo.Skill[]): string {
   const parent = s.parent_id ? all.find((p) => p.id === s.parent_id) : null;
   return parent ? `${parent.name} › ${s.name}` : s.name;
@@ -120,6 +126,14 @@ export function studentContext(studentId: number): StudentContext | null {
   const add = (sg: Suggestion) => {
     if (!suggestions.some((x) => x.skillIds.join() === sg.skillIds.join())) suggestions.push(sg);
   };
+  // 0) the current material comes first and is preselected (Aktueller Stoff, per subject)
+  const current = activeMaterial(studentId);
+  for (const cm of current) {
+    // no skills chosen yet: the best match for the topic, also above the student's class, as a suggestion only
+    const { ids, suggested } = materialSkills(cm, student);
+    const reason = `Aktueller Stoff seit ${formatDay(cm.since)} · ${MATERIAL_SOURCES[cm.source] ?? cm.source}${suggested ? " · passende Fähigkeit vorgeschlagen" : ""}`;
+    if (ids.length) add({ key: `stoff:${cm.id}`, skillIds: ids, title: `Aktueller Stoff: ${materialLabel(cm)}`, reason, difficulty: AUTO, categories: [] });
+  }
   // 1) frequent errors that match a sub-skill ("Kehrwert vergessen" → "Kehrwert korrekt bilden")
   for (const e of analysis.errors.filter((x) => x.count >= 2).slice(0, 6)) {
     const ew = new Set(words(e.label));
@@ -132,8 +146,8 @@ export function studentContext(studentId: number): StudentContext | null {
       void parentMastery;
     }
   }
-  // 2) recommendations of the analysis (weak skills, things to repeat)
-  for (const r of analysis.recommendations.slice(0, 4)) {
+  // 2) the central recommendation (lib/recommend.ts): exam, current material, weak skills …
+  for (const r of nextSteps(studentId, { today: dayOf(new Date()), limit: 4 })) {
     add({ key: `empfehlung:${r.skill.id}`, skillIds: [r.skill.id], title: skillLabel(r.skill, all), reason: r.reason, difficulty: AUTO, categories: [] });
   }
   // 3) what the teacher wrote in the profile (current topics, weaknesses, goals)
@@ -161,6 +175,7 @@ export function studentContext(studentId: number): StudentContext | null {
     errors: analysis.errors.slice(0, 6).map((e) => ({ label: e.label, count: e.count, skillIds: e.skillIds })),
     mastery,
     suggestions: suggestions.slice(0, 6),
+    current: current.map((cm) => ({ subject: cm.subject, label: materialLabel(cm), skillIds: cm.skill_ids })),
     exams: repo
       .upcomingTests(dayOf(new Date()), studentId)
       .map((t) => ({ ...t, days: daysUntil(t.date, dayOf(new Date())) }))
@@ -184,6 +199,8 @@ export type AIStudentData = {
   common_errors: { label: string; count: number }[];
   exam_in_days: number | null;
   exam_topics: string[];
+  /** Aktueller Stoff in this subject (Thema/Unterthema only; the teacher's note is not sent). */
+  current_topic: string | null;
 };
 export function aiStudentData(ctx: StudentContext, skillIds: string[]): AIStudentData {
   const all = repo.listSkills();
@@ -203,6 +220,7 @@ export function aiStudentData(ctx: StudentContext, skillIds: string[]): AIStuden
     common_errors: ctx.errors.filter((e) => e.skillIds.some((id) => ids.has(id))).map((e) => ({ label: e.label, count: e.count })),
     exam_in_days: exam ? exam.days : null,
     exam_topics: exam ? (exam.topics?.length ? exam.topics : [exam.topic].filter(Boolean)) : [],
+    current_topic: ctx.current.find((c) => c.subject === subject)?.label ?? null,
   };
 }
 export function contextForAI(ctx: StudentContext, skillIds: string[]): string {
@@ -213,6 +231,7 @@ export function contextForAI(ctx: StudentContext, skillIds: string[]): string {
     `Lernstand (skill_id: Fähigkeit – Wert 0–1, Status):`,
     ...d.skills.map((s) => `- ${s.skill_id}: ${s.name} – ${s.student_skill_score ?? "keine Daten"}, ${s.status}`),
     d.common_errors.length ? `Typische Fehler: ${d.common_errors.map((e) => `${e.label} (${e.count}×)`).join(", ")}` : "",
+    d.current_topic ? `Aktueller Stoff in der Schule: ${d.current_topic}` : "",
     d.exam_in_days !== null ? `Prüfung in ${d.exam_in_days} Tagen${d.exam_topics.length ? `, Stoff: ${d.exam_topics.join(", ")}` : ""}` : "",
   ];
   return lines.filter(Boolean).join("\n");
@@ -340,7 +359,8 @@ export function settingsOf(w: repo.Worksheet): BuilderSettings {
     schoolType: w.school_type || "Mittelschule",
     klasse: w.klasse ?? 1,
     skillIds: w.skill_ids,
-    difficulty: (w.difficulty as DifficultyChoice) || "mittel",
+    // library and diagnosis exercises mix difficulties ("gemischt"): new tasks then come at "mittel"
+    difficulty: w.difficulty === AUTO || (DIFFICULTIES as readonly string[]).includes(w.difficulty) ? (w.difficulty as DifficultyChoice) : "mittel",
     count: 10,
     categories: [],
     focus: "",
@@ -364,6 +384,8 @@ export async function regenerateTask(taskId: number, o: { difficulty?: Difficult
   const next = out.tasks[0];
   if (!next) return { ok: false, aiError: out.aiError };
   repo.updateTask(taskId, { ...next, difficulty });
+  // new content, new origin: the old source and licence (e.g. an imported OER task) do not apply any more
+  repo.setTaskOrigin(taskId, { sourceType: next.sourceType ?? "eigen" });
   return { ok: true, aiError: out.aiError };
 }
 
