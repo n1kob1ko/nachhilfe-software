@@ -22,6 +22,6 @@ COPY --from=build /app/public ./public
 COPY --from=build /app/next.config.ts ./
 RUN mkdir -p /data && chown node:node /data
 USER node
-VOLUME /data
+# no VOLUME line: Railway rejects it; the host mounts the volume at /data (docker run -v ...:/data)
 EXPOSE 3000
 CMD ["sh", "-c", "exec node_modules/.bin/next start -p ${PORT:-3000}"]
