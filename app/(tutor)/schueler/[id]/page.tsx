@@ -25,6 +25,7 @@ import { klassenLabel } from "@/lib/school";
 import { analyzeStudent } from "@/lib/service";
 import { dayOf, daysUntil, examReminders, reminderStage, STAGE_LABEL, STAGE_TONE } from "@/lib/exams";
 import { examThresholds, splitTopics } from "@/lib/lehrplan";
+import { diagnosesOf } from "@/lib/diagnose";
 import { nextSteps, RULE_LABEL, RULE_TONE, type NextStep } from "@/lib/recommend";
 import { activeMaterial, materialHistory, materialLabel, MATERIAL_SOURCES, PRIORITY_LABEL } from "@/lib/current-material";
 import { errorTypeLabel } from "@/lib/error-types";
@@ -415,6 +416,49 @@ function Progress({ a }: { a: Analysis }) {
   );
 }
 
+/** Diagnoses of the student and the way to start one; for a student without data this is the first step. */
+function DiagnosisSection({ student, tested }: { student: repo.Student; tested: boolean }) {
+  const list = diagnosesOf(student.id).slice(0, 4);
+  const first = student.name.split(" ")[0];
+  const start = (
+    <Link href={`/diagnose?schueler=${student.id}`} className={`btn btn-sm ${tested ? "btn-secondary" : "btn-primary"}`}>
+      Diagnose starten
+    </Link>
+  );
+  if (!list.length && tested) {
+    return (
+      <p className="flex flex-wrap items-center gap-3 text-[14px] text-ink-2">
+        Neues Thema, Stand unklar? {start}
+      </p>
+    );
+  }
+  return (
+    <section aria-label="Diagnose">
+      <SectionTitle action={start}>
+        <span>
+          Diagnose
+          <Info label="Info zur Diagnose">Ein kurzer Test mit 5 bis 10 Aufgaben zu gewählten Themen. Die Antworten zählen normal zum Lernstand und sind als Diagnose markiert.</Info>
+        </span>
+      </SectionTitle>
+      {list.length === 0 ? (
+        <p className="text-[14px] text-ink-2">Zu {first} gibt es noch keinen Lernstand. Eine Diagnose zeigt in wenigen Minuten, was sitzt und wo Lücken sind.</p>
+      ) : (
+        <ul className="panel divide-y divide-line">
+          {list.map((d) => (
+            <li key={d.id}>
+              <Link href={`/diagnose/${d.id}`} className="flex min-h-[52px] items-center gap-3 px-4 py-2 hover:bg-panel/60">
+                <span className="min-w-0 flex-1 truncate font-medium">{d.title.replace(`${first} – `, "")}</span>
+                <span className="num text-[13px] text-ink-3">{formatDate(d.assigned_at, { day: "numeric", month: "short" })}</span>
+                {d.done_count >= d.task_count ? <Pill tone="green">fertig</Pill> : <Pill tone="amber">{d.done_count}/{d.task_count}</Pill>}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function AnalysisTab({ student, a, assignedId }: { student: repo.Student; a: Analysis; assignedId?: string }) {
   const first = student.name.split(" ")[0];
   const steps = nextSteps(student.id, { today: dayOf(new Date()), limit: 6 });
@@ -472,6 +516,8 @@ function AnalysisTab({ student, a, assignedId }: { student: repo.Student; a: Ana
           </ul>
         )}
       </section>
+
+      <DiagnosisSection student={student} tested={a.skills.some((x) => x.mastery !== null)} />
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-2">
         <section>
@@ -870,6 +916,14 @@ function Exercises({ student }: { student: repo.Student }) {
                     <div className="text-[12px] text-ink-3">
                       {x.task_count} Aufgaben · {x.difficulty}
                       {x.kind === "ueberpruefung" && " · Überprüfung"}
+                      {x.kind === "diagnose" && (
+                        <>
+                          {" · "}
+                          <Link href={`/diagnose/${x.id}`} className="font-semibold text-accent hover:underline">
+                            Diagnose-Auswertung
+                          </Link>
+                        </>
+                      )}
                     </div>
                   </td>
                   <td className="num px-3 py-3 text-ink-2">{formatDate(x.assigned_at, { day: "numeric", month: "short" })}</td>

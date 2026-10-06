@@ -129,7 +129,8 @@ export type Worksheet = {
   topic: string;
   difficulty: string;
   task_type: string;
-  kind: "uebung" | "ueberpruefung";
+  /** uebung, ueberpruefung (check after practice), diagnose (Diagnose-Modus), bibliothek (one saved task of the Aufgabenbibliothek). */
+  kind: "uebung" | "ueberpruefung" | "diagnose" | "bibliothek";
   source: "ki" | "generator" | "manuell";
   skill_ids: string[];
   created_at: string;
@@ -141,11 +142,13 @@ export type Worksheet = {
   /** Builder settings it was made with (JSON), used for templates and regenerating. */
   settings: string | null;
   source_worksheet_id: number | null;
+  /** Tags of a library entry (kind = bibliothek). */
+  tags: string[];
 };
 
 export type Task = TaskDraft & { id: number; worksheet_id: number; position: number; level: number | null };
-export type WorksheetInput = Omit<Worksheet, "id" | "created_at" | "student_id" | "status" | "teacher_id" | "settings" | "source_worksheet_id"> &
-  Partial<Pick<Worksheet, "student_id" | "status" | "teacher_id" | "settings" | "source_worksheet_id">>;
+export type WorksheetInput = Omit<Worksheet, "id" | "created_at" | "student_id" | "status" | "teacher_id" | "settings" | "source_worksheet_id" | "tags"> &
+  Partial<Pick<Worksheet, "student_id" | "status" | "teacher_id" | "settings" | "source_worksheet_id" | "tags">>;
 
 export type Assignment = {
   id: number;
@@ -201,7 +204,7 @@ type Row = Record<string, unknown>;
 const toStudent = (r: Row): Student => ({ ...(r as unknown as Student), subjects: json(r.subjects as string, []) });
 const toLesson = (r: Row): Lesson => ({ ...(r as unknown as Lesson), skill_ids: json(r.skill_ids as string, []) });
 const toTest = (r: Row): TestResult => ({ ...(r as unknown as TestResult), skill_ids: json(r.skill_ids as string, []), topics: json(r.topics as string, []) });
-const toWorksheet = (r: Row): Worksheet => ({ ...(r as unknown as Worksheet), skill_ids: json(r.skill_ids as string, []) });
+const toWorksheet = (r: Row): Worksheet => ({ ...(r as unknown as Worksheet), skill_ids: json(r.skill_ids as string, []), tags: json(r.tags as string, []) });
 const toTask = (r: Row): Task => ({
   id: r.id as number,
   worksheet_id: r.worksheet_id as number,
@@ -530,10 +533,10 @@ export function createWorksheet(w: WorksheetInput, tasks: TaskDraft[]): number {
   const tx = conn.transaction(() => {
     const res = conn
       .prepare(
-        `INSERT INTO worksheets (title, subject, grade, school_type, klasse, topic, difficulty, task_type, kind, source, skill_ids, student_id, status, teacher_id, settings, source_worksheet_id)
-         VALUES (@title, @subject, @grade, @school_type, @klasse, @topic, @difficulty, @task_type, @kind, @source, @skill_ids, @student_id, @status, @teacher_id, @settings, @source_worksheet_id)`,
+        `INSERT INTO worksheets (title, subject, grade, school_type, klasse, topic, difficulty, task_type, kind, source, skill_ids, student_id, status, teacher_id, settings, source_worksheet_id, tags)
+         VALUES (@title, @subject, @grade, @school_type, @klasse, @topic, @difficulty, @task_type, @kind, @source, @skill_ids, @student_id, @status, @teacher_id, @settings, @source_worksheet_id, @tags)`,
       )
-      .run({ student_id: null, status: "freigegeben", teacher_id: null, settings: null, source_worksheet_id: null, ...w, skill_ids: JSON.stringify(w.skill_ids) });
+      .run({ student_id: null, status: "freigegeben", teacher_id: null, settings: null, source_worksheet_id: null, ...w, skill_ids: JSON.stringify(w.skill_ids), tags: JSON.stringify(w.tags ?? []) });
     const wid = Number(res.lastInsertRowid);
     tasks.forEach((t, i) => insertTask(wid, i + 1, t));
     if (tasks.length) syncWorksheetSkills(wid);
@@ -541,13 +544,14 @@ export function createWorksheet(w: WorksheetInput, tasks: TaskDraft[]): number {
   });
   return tx();
 }
+/** Exercises (and diagnoses); library entries are listed in the Aufgabenbibliothek (lib/library.ts). */
 export function listWorksheets(): (Worksheet & { task_count: number; assigned: number; recipients: string[] })[] {
   return db()
     .prepare(
       `SELECT w.*, (SELECT COUNT(*) FROM tasks t WHERE t.worksheet_id = w.id) AS task_count,
               (SELECT COUNT(*) FROM assignments a WHERE a.worksheet_id = w.id) AS assigned,
               (SELECT GROUP_CONCAT(s.name, '|') FROM assignments a JOIN students s ON s.id = a.student_id WHERE a.worksheet_id = w.id) AS recipients
-       FROM worksheets w ORDER BY w.created_at DESC, w.id DESC`,
+       FROM worksheets w WHERE w.kind <> 'bibliothek' ORDER BY w.created_at DESC, w.id DESC`,
     )
     .all()
     .map((r) => ({
@@ -630,14 +634,23 @@ function renumber(ids: number[]) {
   const up = db().prepare("UPDATE tasks SET position = ? WHERE id = ?");
   ids.forEach((id, i) => up.run(i + 1, id));
 }
-/** Copy of an exercise as a new draft (for another student, or to adapt it). */
-export function duplicateWorksheet(id: number, o: { studentId?: number | null; teacherId?: number | null; title?: string; status?: Worksheet["status"]; taskIds?: number[] } = {}): number | null {
+/**
+ * Copy of an exercise as a new draft (for another student, or to adapt it). A copy of a library entry
+ * is an ordinary exercise unless `kind` says otherwise (duplicating inside the library).
+ */
+export function duplicateWorksheet(
+  id: number,
+  o: { studentId?: number | null; teacherId?: number | null; title?: string; status?: Worksheet["status"]; taskIds?: number[]; kind?: Worksheet["kind"] } = {},
+): number | null {
   const w = getWorksheet(id);
   if (!w) return null;
   const tasks = listTasks(id).filter((t) => !o.taskIds || o.taskIds.includes(t.id));
+  const kind = o.kind ?? (w.kind === "bibliothek" ? "uebung" : w.kind);
   return createWorksheet(
     {
       ...w,
+      kind,
+      tags: kind === "bibliothek" ? w.tags : [],
       title: o.title ?? w.title,
       student_id: o.studentId === undefined ? w.student_id : o.studentId,
       teacher_id: o.teacherId ?? w.teacher_id,
@@ -647,8 +660,8 @@ export function duplicateWorksheet(id: number, o: { studentId?: number | null; t
     tasks,
   );
 }
-/** Tasks from other exercises to reuse, best matches for the given skills first. */
-export function searchTasks(q: { skillIds?: string[]; text?: string; subject?: string; excludeWorksheetId?: number; limit?: number }): (Task & { worksheet_title: string })[] {
+/** Tasks from the library and other exercises to reuse: best matches for the given skills first, library entries before copies in exercises. */
+export function searchTasks(q: { skillIds?: string[]; text?: string; subject?: string; excludeWorksheetId?: number; limit?: number }): (Task & { worksheet_title: string; worksheet_kind: Worksheet["kind"] })[] {
   const where: string[] = ["1 = 1"];
   const params: unknown[] = [];
   if (q.subject) {
@@ -666,18 +679,18 @@ export function searchTasks(q: { skillIds?: string[]; text?: string; subject?: s
   const skills = q.skillIds?.length ? q.skillIds : null;
   const rows = db()
     .prepare(
-      `SELECT t.*, w.title AS worksheet_title,
+      `SELECT t.*, w.title AS worksheet_title, w.kind AS worksheet_kind,
         (SELECT json_group_array(ts.skill_id) FROM task_skills ts WHERE ts.task_id = t.id) AS skill_ids_json,
         ${skills ? `(SELECT COUNT(*) FROM task_skills ts WHERE ts.task_id = t.id AND ts.skill_id IN (${skills.map(() => "?").join(",")}))` : "0"} AS matches
        FROM tasks t JOIN worksheets w ON w.id = t.worksheet_id
        WHERE ${where.join(" AND ")}
-       ORDER BY matches DESC, t.id DESC LIMIT ?`,
+       ORDER BY matches DESC, w.kind = 'bibliothek' DESC, t.id DESC LIMIT ?`,
     )
     .all(...(skills ?? []), ...params, q.limit ?? 30) as Row[];
   // drop exact duplicates (the same task copied into several exercises)
   const seen = new Set<string>();
   return rows
-    .map((r) => ({ ...toTask(r), worksheet_title: r.worksheet_title as string }))
+    .map((r) => ({ ...toTask(r), worksheet_title: r.worksheet_title as string, worksheet_kind: r.worksheet_kind as Worksheet["kind"] }))
     .filter((t) => (seen.has(t.prompt) ? false : (seen.add(t.prompt), true)));
 }
 

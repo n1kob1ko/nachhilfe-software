@@ -366,7 +366,8 @@ export function settingsOf(w: repo.Worksheet): BuilderSettings {
     schoolType: w.school_type || "Mittelschule",
     klasse: w.klasse ?? 1,
     skillIds: w.skill_ids,
-    difficulty: (w.difficulty as DifficultyChoice) || "mittel",
+    // library and diagnosis exercises mix difficulties ("gemischt"): new tasks then come at "mittel"
+    difficulty: w.difficulty === AUTO || (DIFFICULTIES as readonly string[]).includes(w.difficulty) ? (w.difficulty as DifficultyChoice) : "mittel",
     count: 10,
     categories: [],
     focus: "",

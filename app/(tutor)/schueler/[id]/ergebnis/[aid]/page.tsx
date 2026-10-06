@@ -57,6 +57,11 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
         <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-primary btn-lg">
           <Plus size={18} aria-hidden /> Nächste Übung erstellen
         </Link>
+        {w.kind === "diagnose" && (
+          <Link href={`/diagnose/${assignment.id}`} className="btn btn-secondary btn-lg">
+            Diagnose-Auswertung
+          </Link>
+        )}
         {unit && (
           <Link href={`/einheiten/${unit.id}`} className="btn btn-secondary btn-lg">
             Zurück zur Einheit

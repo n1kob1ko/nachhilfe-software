@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowRight, CheckCircle2, Copy, Eye, EyeOff, Send, Sparkles } from "lucide-react";
 import { activeUnitForTeacher, runningUnitForStudent } from "@/lib/units";
 import { SendResult, TabletSend } from "@/components/device/TabletSend";
@@ -21,12 +21,13 @@ import { klassenLabel, stufeLabel } from "@/lib/school";
 import { GAP } from "@/lib/tasks";
 import { runningBoardsFor } from "@/lib/whiteboard";
 
-export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string; gesendet?: string }> }) {
+export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string; gesendet?: string; ausgelassen?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
   const w = repo.getWorksheet(Number(id));
   if (!w) notFound();
+  if (w.kind === "bibliothek") redirect(`/uebungen/bibliothek/${w.id}`);
   const tasks = repo.listTasks(w.id);
   const skills = repo.listSkills().filter((s) => s.subject === w.subject);
   const students = repo.listStudents().map(({ id, name }) => ({ id, name }));
@@ -69,6 +70,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
             {draft ? <Pill tone="amber">Entwurf</Pill> : <Pill tone="green">gesendet</Pill>}
+            {w.kind === "diagnose" && <Pill tone="accent">Diagnose</Pill>}
             {w.subject} · {w.klasse ? klassenLabel(w.school_type, w.klasse) : stufeLabel(w.grade)} · {w.difficulty} · {tasks.length} Aufgaben
             {w.source === "ki" && (
               <Pill tone="accent">
@@ -78,6 +80,11 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
           </span>
         }
       />
+      {sp.hinweis === "fach" && (
+        <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">
+          {Number(sp.ausgelassen) === 1 ? "Eine Aufgabe" : `${Number(sp.ausgelassen) || "Einige"} Aufgaben`} aus einem anderen Fach {Number(sp.ausgelassen) === 1 ? "wurde" : "wurden"} nicht übernommen.
+        </p>
+      )}
       {sp.hinweis === "ki" && (
         <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Claude war nicht erreichbar. Die Aufgaben stammen aus den eingebauten Generatoren.</p>
       )}
