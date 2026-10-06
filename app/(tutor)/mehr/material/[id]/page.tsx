@@ -136,8 +136,8 @@ export default async function MaterialPage({ params, searchParams }: { params: P
                 </select>
               </label>
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              <label className="field">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <label className="field col-span-2 sm:col-span-1">
                 <span className="label">Fach</span>
                 <select className="input" name="subject" defaultValue={values.subject}>
                   <option value="">–</option>
