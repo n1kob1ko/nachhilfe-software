@@ -12,12 +12,11 @@ als zweites System daneben.
 | RIS Mittelschule, Anlage 1 | BGBl. II Nr. 185/2012 idF BGBl. II Nr. 178/2025 | NOR40271471 | 01.09.2025 |
 | RIS AHS, Anlage A | BGBl. Nr. 88/1985 idF BGBl. II Nr. 204/2024 | NOR40264238 | 01.09.2026 |
 | RIS HTL, Anlage 1 | BGBl. II Nr. 262/2015 idF BGBl. II Nr. 383/2021 | NOR40237785 | 04.09.2021 |
-| HAK | **fehlt noch** (PDF nicht vorhanden) | – | – |
+| RIS HAK, Anlage A1 | BGBl. Nr. 895/1994 idF BGBl. II Nr. 250/2021 | NOR40234935 | 01.09.2021 |
 
 | Was | Status |
 |---|---|
-| Wortlaut der Lehrpläne Deutsch, Englisch (Lebende Fremdsprache), Mathematik für VS, MS, AHS (Unter- und Oberstufe), HTL | **importierbar**: 12 Pakete `curriculum/ris-*.json`, aus den RIS-PDFs von niko (06.10.2026) |
-| Lehrplan HAK | **fehlt**, Übersicht zeigt das offen an |
+| Wortlaut der Lehrpläne Deutsch, Englisch (Lebende Fremdsprache), Mathematik für VS, MS, AHS (Unter- und Oberstufe), HTL, HAK | **importierbar**: 15 Pakete `curriculum/ris-*.json`, aus den RIS-PDFs von niko (06.10.2026) |
 | Verknüpfung Lehrplan-Eintrag ↔ Fähigkeit (`scripts/lehrplan_mapping.json`) | **eigene didaktische Zuordnung**, nicht Teil des Lehrplans |
 | IQS (Kompetenzmodelle, iKM PLUS, Aufgabenpools) | nur als **Referenz** eingetragen, Inhalte werden nie übernommen |
 | Fähigkeiten Mathematik, Deutsch, Englisch (Schulstufe 3–13) | **eigene Struktur** von Lernheft (Quelle „Lernheft – eigene Inhalte“) |
@@ -28,10 +27,10 @@ als zweites System daneben.
 ### Lehrplantext: wie er entsteht
 
 `scripts/lehrplan_import.py` liest die Textfassungen der RIS-PDFs (VS, MS, AHS: RIS-Textexport;
-HTL: `pdftotext -layout`) und schreibt die Pakete:
+HTL: `pdftotext -layout`; HAK: RIS-Textexport mit gesperrt gesetzten Überschriften) und schreibt die Pakete:
 
 ```
-python3 scripts/lehrplan_import.py --vs vs.txt --ms ms.txt --ahs ahs.txt --htl htl-layout.txt [--dry]
+python3 scripts/lehrplan_import.py --vs vs.txt --ms ms.txt --ahs ahs.txt --htl htl-layout.txt --hak hak.txt [--dry]
 ```
 
 - Bereinigt werden nur Seitenköpfe, Zeilenumbrüche, Silbentrennung und Fußnotenziffern; sonst
@@ -43,6 +42,10 @@ python3 scripts/lehrplan_import.py --vs vs.txt --ms ms.txt --ahs ahs.txt --htl h
   beim Import eine Vorschau mit geänderten Einträgen.
 - Grenzen: Formeln aus dem PDF-Text (Hochzahlen, Brüche, Summen) sind teils verstümmelt, z. B.
   „zB 3 4 von a“ statt ¾ von a. Im Zweifel gilt der Originaltext; jede Ansicht verlinkt das RIS.
+- HAK: Überschriften wie „B e r e ic h Zu h ö r e n“ werden mit den Wörtern desselben Dokuments
+  wieder zu Wörtern zusammengesetzt (Liste aller Fälle beim Bau geprüft). Ein Spiegelstrich, der im
+  PDF mit der Sperrung verloren ging (II. Jahrgang Mathematik, „Sinus, Cosinus und Tangens …“),
+  wird wieder als Kompetenz geführt. Lehrstoff-Absätze bleiben als Absätze erhalten.
 - Volksschul-Verknüpfungen zeigen auf Fähigkeiten aus „Volksschule Mathematik und Deutsch“. Fehlen
   sie, werden sie übersprungen (Warnung) und können später per erneutem Import nachgetragen werden.
   Die Sammel-Vorschau importiert die eigene Struktur deshalb zuerst.

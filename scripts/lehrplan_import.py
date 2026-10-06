@@ -13,7 +13,9 @@ Usage (input: RIS "Text"-export of each Anlage, HTL as `pdftotext -layout`):
   python3 scripts/lehrplan_import.py --vs vs.txt --ms ms.txt --ahs ahs.txt --htl htl-layout.txt
 """
 import argparse
+import collections
 import json
+import math
 import os
 import re
 import sys
@@ -362,12 +364,13 @@ def read_layout(path: str, heading: str, until: str) -> list[str]:
     return out
 
 
-def parse_htl(lines: list[str], b: Builder) -> Builder:
+def parse_htl(lines: list[str], b: Builder, paragraphs: bool = False) -> Builder:
     """Jahrgang → (Semester) → Bildungs- und Lehraufgabe (Bereich → Kompetenzen) → Lehrstoff (Thema: Inhalt)."""
     klasse = sem = None
     bereich = None
     bereich_name = ""
     mode = None
+    closed = False
     item: list[str] | None = None
     topic: tuple[str, list[str]] | None = None
     lehrstoff = None
@@ -388,7 +391,8 @@ def parse_htl(lines: list[str], b: Builder) -> Builder:
         if topic:
             name, body = topic
             if body:
-                b.child(lehrstoff, "L", "lehrstoff", name, join(body), content_area=name, **meta())
+                text = "\n".join(join([p]) for p in body) if paragraphs else join(body)  # one paragraph per line where the source has them
+                b.child(lehrstoff, "L", "lehrstoff", name, text, content_area=name, **meta())
             else:
                 b.append_text(lehrstoff, name + ":")  # an introduction such as "Festigung aller Fertigkeiten in folgenden Bereichen:"
         topic = None
@@ -400,6 +404,7 @@ def parse_htl(lines: list[str], b: Builder) -> Builder:
         if m:
             flush()
             klasse = b.grade(ROMAN[m.group(1)], f"{m.group(1)}. Jahrgang")
+            closed = False
             sem = bereich = lehrstoff = None
             bereich_name = ""
             if m.group(2):
@@ -411,17 +416,18 @@ def parse_htl(lines: list[str], b: Builder) -> Builder:
         if t == "Schularbeiten:":
             flush()
             mode = None
-            klasse = None
+            closed = True  # until the next Jahrgang or Semester
             continue
         m = re.match(r"^(\d+)\. Semester(?: – Kompetenzmodul (\d+))?:$", t)
         if m:
             flush()
             sem = b.child(klasse, "S", "semester", t.rstrip(":"))
+            closed = False
             bereich = lehrstoff = None
             bereich_name = ""
             mode = None
             continue
-        if klasse is None:
+        if klasse is None or closed:
             continue
         if t == "Bildungs- und Lehraufgabe:":
             flush()
@@ -439,7 +445,7 @@ def parse_htl(lines: list[str], b: Builder) -> Builder:
                 continue
             if re.match(r"^Bereich ", t) and indent < 2:
                 flush()
-                bereich_name = t[len("Bereich "):].rstrip(":")
+                bereich_name = t[len("Bereich "):].rstrip(":").removeprefix("– ")
                 bereich = b.child(cont(), "B", "kompetenzbereich", bereich_name, competency_area=bereich_name, **meta())
                 continue
             if t.startswith(DASH):
@@ -459,6 +465,103 @@ def parse_htl(lines: list[str], b: Builder) -> Builder:
             continue
     flush()
     return b
+
+
+# ---------------------------------------------------------------- HAK (RIS text export with letter-spaced headings)
+
+# The RIS PDF of the HAK sets headings letter by letter ("B e r e ic h Zu h ö r e n"). Such lines are
+# put back together word by word using the words of the same document.
+WORD = re.compile(r"[A-Za-zÄÖÜäöüß]+")
+def is_spaced(l):
+    toks = l.split()
+    return len(toks) >= 4 and sum(len(t) <= 2 for t in toks) / len(toks) >= 0.6
+# compounds that occur in this text only letter-spaced
+EXTRA = ["folgender", "seitenverhältnisse", "umwandlungen", "wachstumsmodelle", "wahrscheinlichkeitsfunktion", "wahrscheinlichkeitsdichte", "polynom", "zentral", "korrelations", "koeffizient"]
+def spaced_vocab(lines):
+    c = collections.Counter({w: 1 for w in EXTRA})
+    for l in lines:
+        if l.strip() and not is_spaced(l):
+            for w in WORD.findall(l):
+                c[w.lower()] += 1
+    return c
+def segment_word(s, voc):
+    # s: letters only (no spaces); returns list of words
+    n = len(s); low = s.lower()
+    best = [(0.0, -1)] + [(math.inf, -1)] * n
+    for i in range(1, n + 1):
+        for j in range(max(0, i - 30), i):
+            w = low[j:i]
+            f = voc.get(w, 0)
+            if f:
+                cost = 1 + 0.1 / (1 + math.log(1 + f))
+            elif i - j == 1:
+                cost = 6
+            else:
+                continue
+            if best[j][0] + cost < best[i][0]:
+                best[i] = (best[j][0] + cost, j)
+    out, i = [], n
+    while i > 0:
+        j = best[i][1]; out.append(s[j:i]); i = j
+    return out[::-1]
+def despace(l, voc):
+    t = l.replace(" ", "")
+    # split into letter runs and other chars
+    parts = re.findall(r"[A-Za-zÄÖÜäöüß]+|[^A-Za-zÄÖÜäöüß]", t)
+    out = ""
+    for p in parts:
+        if WORD.fullmatch(p):
+            ws = segment_word(p, voc)
+            piece = " ".join(ws)
+            if out and not out.endswith((" ", "(", "-", "/")):
+                out += " "
+            elif out.endswith("-") and ws[0].lower() in ("und", "oder", "bzw"):
+                out += " "
+            out += piece
+        elif p.isdigit():
+            out += (" " if out and out[-1].isalpha() else "") + p
+        elif p in ",;:)":
+            out += p
+        elif p == "–":
+            out = out.rstrip() + " – "
+        elif p == "(":
+            out += (" " if out and not out.endswith(" ") else "") + "("
+        else:
+            out += p
+    return re.sub(r"\s+", " ", out).strip()
+
+
+def read_spaced(path: str, heading: str, until: str) -> list[str]:
+    with open(path, encoding="utf-8") as f:
+        lines = [l.rstrip("\n").replace("\r", "").replace("\f", "") for l in f]
+    voc = spaced_vocab(lines)
+    start = next(i for i, l in enumerate(lines) if l.strip() == heading)
+    end = next(i for i, l in enumerate(lines) if i > start and l.strip() == until)
+    out: list[str] = []
+    prev_spaced = wrapped = False
+    for l in lines[start + 1:end]:
+        t = l.strip()
+        if not t or HEADER.match(re.sub(r"\s+", " ", t)) or re.match(r"^www\.ris\.bka\.gv\.at\s+Seite", t):
+            continue
+        if not is_spaced(t):
+            if wrapped and out:
+                out[-1] = join([out[-1], t]) if out[-1].endswith("-") else f"{out[-1]} {t}"  # the text export ends wrapped lines with a space
+            else:
+                out.append(t)
+            prev_spaced = False
+            wrapped = l.endswith(" ")
+            continue
+        wrapped = False
+        d = despace(t, voc)
+        last = out[-1] if out else ""
+        if prev_spaced and not last.endswith((":", ",")) and not d.startswith(("Bereich", "–")) and not re.match(r"^[IV\d]+\.", d) and len(d) < 45:
+            out[-1] = f"{last} {d}"  # a heading that runs over two lines
+        elif prev_spaced and last.startswith("Bereich ") and not d.startswith("Bereich") and not d.endswith(":") and len(d) >= 45:
+            out.append(DASH + d)  # a Kompetenz whose dash got lost with the letter spacing
+        else:
+            out.append(d)
+        prev_spaced = True
+    return out
 
 
 # ---------------------------------------------------------------- packages
@@ -486,6 +589,11 @@ SOURCES = {
         "key": "ris-htl", "name": "RIS – Lehrpläne der HTL 2015, Anlage 1 (gemeinsame Unterrichtsgegenstände)", "doc": "NOR40237785",
         "school_type": "HTL", "version": "BGBl. II Nr. 383/2021", "valid_from": "2021-09-04",
         "attribution_text": "BGBl. II Nr. 262/2015 idF BGBl. II Nr. 383/2021", "gesetz": "20009288", "short": "HTL", "grade_word": "Jahrgang", "offset": 8,
+    },
+    "hak": {
+        "key": "ris-hak", "name": "RIS – Lehrpläne Handelsakademie und Handelsschule, Anlage A1 (Handelsakademie)", "doc": "NOR40234935",
+        "school_type": "HAK", "version": "BGBl. II Nr. 250/2021", "valid_from": "2021-09-01",
+        "attribution_text": "BGBl. Nr. 895/1994 idF BGBl. II Nr. 250/2021", "gesetz": "10008944", "short": "HAK", "grade_word": "Jahrgang", "offset": 8,
     },
 }
 
@@ -560,6 +668,11 @@ def build(args) -> dict[str, dict]:
         out["htl-deutsch"] = ("htl", "Deutsch", "Deutsch", parse_htl(read_layout(f, "DEUTSCH", "ENGLISCH"), builder("htl", "Deutsch", "Deutsch")), "")
         out["htl-englisch"] = ("htl", "Englisch", "Englisch", parse_htl(read_layout(f, "ENGLISCH", "GEOGRAFIE, GESCHICHTE UND POLITISCHE BILDUNG"), builder("htl", "Englisch", "Englisch")), "")
         out["htl-mathematik"] = ("htl", "Mathematik", "Angewandte Mathematik", parse_htl(read_layout(f, "ANGEWANDTE MATHEMATIK", "NATURWISSENSCHAFTEN"), builder("htl", "Mathematik", "Angewandte Mathematik")), "")
+    if args.hak:
+        f = args.hak
+        out["hak-deutsch"] = ("hak", "Deutsch", "Deutsch", parse_htl(read_spaced(f, "2.1 Deutsch", "2.2 Englisch einschließlich Wirtschaftssprache"), builder("hak", "Deutsch", "Deutsch"), paragraphs=True), "")
+        out["hak-englisch"] = ("hak", "Englisch", "Englisch einschließlich Wirtschaftssprache", parse_htl(read_spaced(f, "2.2 Englisch einschließlich Wirtschaftssprache", "2.3 Lebende Fremdsprache"), builder("hak", "Englisch", "Englisch einschließlich Wirtschaftssprache"), paragraphs=True), "")
+        out["hak-mathematik"] = ("hak", "Mathematik", "Mathematik und angewandte Mathematik", parse_htl(read_spaced(f, "5.1 Mathematik und angewandte Mathematik", "5.2 Naturwissenschaften"), builder("hak", "Mathematik", "Mathematik und angewandte Mathematik"), paragraphs=True), "")
 
     mapping = {}
     if args.mapping and os.path.exists(args.mapping):
@@ -600,6 +713,7 @@ def main():
     p.add_argument("--ahs-lf-start", default="Erste lebende Fremdsprache")
     p.add_argument("--ahs-lf-end", type=int, default=9965)
     p.add_argument("--htl")
+    p.add_argument("--hak")
     p.add_argument("--mapping", default=os.path.join(os.path.dirname(__file__), "lehrplan_mapping.json"))
     p.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "..", "curriculum"))
     p.add_argument("--dry", action="store_true")
