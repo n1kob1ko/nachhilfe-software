@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Library, Pencil, Plus, Presentation, RefreshCw, Send, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, BookmarkPlus, Library, Pencil, Plus, Presentation, RefreshCw, Send, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import {
   addTaskAction,
@@ -13,6 +14,7 @@ import {
   sendTaskToStudentAction,
   type ActionResult,
 } from "@/app/builder-actions";
+import { saveToLibraryAction } from "@/app/library-actions";
 import { TaskBody } from "@/components/TaskPreview";
 import { TabletSend } from "@/components/device/TabletSend";
 import { categoriesFor, DIFFICULTIES, TASK_TYPES, type Difficulty, type TaskType } from "@/lib/curriculum";
@@ -34,6 +36,10 @@ type Props = {
   active?: { unitId: number; student: string } | null;
   showSolutions: boolean;
   aiEnabled: boolean;
+  /** Aufgabenbibliothek: one task, no adding or reordering, no "In Bibliothek" */
+  library?: boolean;
+  /** task that opens in the editor right away (a new library task) */
+  initialEditing?: number | null;
 };
 
 const FORMATS = (Object.keys(TASK_TYPES) as (keyof typeof TASK_TYPES)[]).filter((k): k is TaskType => k !== "mixed");
@@ -45,12 +51,20 @@ function Note({ r }: { r: ActionResult }) {
   return (
     <p className={`text-[13px] ${cls}`} role={r.error ? "alert" : "status"}>
       {text}
+      {r.link && (
+        <>
+          {" "}
+          <Link href={r.link.href} className="link font-medium">
+            {r.link.label}
+          </Link>
+        </>
+      )}
     </p>
   );
 }
 
 export function WorksheetEditor(p: Props) {
-  const [editing, setEditing] = useState<number | null>(null);
+  const [editing, setEditing] = useState<number | null>(p.initialEditing ?? null);
   const passages = new Set<string>();
   const skillName = (id: string | null) => {
     const s = p.skills.find((x) => x.id === id);
@@ -85,7 +99,7 @@ export function WorksheetEditor(p: Props) {
           );
         })}
       </ol>
-      {p.editable && <AddTask {...p} afterId={p.tasks.at(-1)?.id} onAdded={(id) => setEditing(id)} />}
+      {p.editable && !p.library && <AddTask {...p} afterId={p.tasks.at(-1)?.id} onAdded={(id) => setEditing(id)} />}
     </div>
   );
 }
@@ -133,25 +147,34 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
                 ))}
               </select>
             </label>
-            <span className="mx-1 h-5 w-px bg-line" aria-hidden />
-            <button type="button" className="btn btn-ghost btn-sm" disabled={pending || p.first} onClick={() => run(() => moveTaskAction(t.id, -1))} aria-label={`Aufgabe ${p.index} nach oben`} title="Nach oben">
-              <ArrowUp size={14} aria-hidden />
-            </button>
-            <button type="button" className="btn btn-ghost btn-sm" disabled={pending || p.last} onClick={() => run(() => moveTaskAction(t.id, 1))} aria-label={`Aufgabe ${p.index} nach unten`} title="Nach unten">
-              <ArrowDown size={14} aria-hidden />
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm text-red"
-              disabled={pending}
-              onClick={() => confirm(`Aufgabe ${p.index} löschen?`) && run(() => deleteTaskAction(t.id))}
-              aria-label={`Aufgabe ${p.index} löschen`}
-              title="Löschen"
-            >
-              <Trash2 size={14} aria-hidden />
-            </button>
+            {!p.library && (
+              <>
+                <span className="mx-1 h-5 w-px bg-line" aria-hidden />
+                <button type="button" className="btn btn-ghost btn-sm" disabled={pending || p.first} onClick={() => run(() => moveTaskAction(t.id, -1))} aria-label={`Aufgabe ${p.index} nach oben`} title="Nach oben">
+                  <ArrowUp size={14} aria-hidden />
+                </button>
+                <button type="button" className="btn btn-ghost btn-sm" disabled={pending || p.last} onClick={() => run(() => moveTaskAction(t.id, 1))} aria-label={`Aufgabe ${p.index} nach unten`} title="Nach unten">
+                  <ArrowDown size={14} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm text-red"
+                  disabled={pending}
+                  onClick={() => confirm(`Aufgabe ${p.index} löschen?`) && run(() => deleteTaskAction(t.id))}
+                  aria-label={`Aufgabe ${p.index} löschen`}
+                  title="Löschen"
+                >
+                  <Trash2 size={14} aria-hidden />
+                </button>
+              </>
+            )}
             <span className="mx-1 h-5 w-px bg-line" aria-hidden />
           </>
+        )}
+        {!p.library && (
+          <button type="button" className="btn btn-ghost btn-sm" disabled={pending} onClick={() => run(() => saveToLibraryAction(t.id))} title="Eine Kopie dieser Aufgabe in der Aufgabenbibliothek speichern">
+            <BookmarkPlus size={14} aria-hidden /> In Bibliothek
+          </button>
         )}
         <button type="button" className="btn btn-ghost btn-sm" aria-expanded={panel === "send"} onClick={() => setPanel(panel === "send" ? "none" : "send")} title="Nur diese eine Aufgabe an einen Schüler oder aufs Whiteboard senden">
           <Send size={14} aria-hidden /> Einzeln senden
@@ -259,7 +282,7 @@ function AddTask(p: Props & { afterId?: number; onAdded: (id: number) => void })
             if (!found) search("");
           }}
         >
-          <Library size={14} aria-hidden /> Aus früheren Übungen
+          <Library size={14} aria-hidden /> Aus Bibliothek und früheren Übungen
         </button>
       </div>
       {open === "neu" && (
@@ -308,7 +331,7 @@ function AddTask(p: Props & { afterId?: number; onAdded: (id: number) => void })
               Suchen
             </button>
           </form>
-          <p className="text-[12px] text-ink-3">Aufgaben zu denselben Fähigkeiten stehen oben.</p>
+          <p className="text-[12px] text-ink-3">Aufgaben zu denselben Fähigkeiten stehen oben, Bibliotheksaufgaben zuerst.</p>
           {found && found.length === 0 && <p className="text-[14px] text-ink-3">Keine passenden Aufgaben gefunden.</p>}
           <ul className="grid max-h-[360px] gap-1.5 overflow-y-auto">
             {found?.map((t) => (
@@ -316,7 +339,7 @@ function AddTask(p: Props & { afterId?: number; onAdded: (id: number) => void })
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-2 text-[14px]">{t.prompt.replaceAll(GAP, "…")}</p>
                   <p className="mt-0.5 text-[12px] text-ink-3">
-                    {TASK_TYPES[t.type]} · {t.difficulty} · aus „{t.worksheetTitle}“
+                    {TASK_TYPES[t.type]} · {t.difficulty} · {t.library ? "aus der Bibliothek" : `aus „${t.worksheetTitle}“`}
                   </p>
                 </div>
                 <button type="button" className="btn btn-secondary btn-sm shrink-0" disabled={pending} onClick={() => add({ copyFrom: t.id })}>
