@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, ChevronDown, ClipboardPen, FileCheck2, NotebookPen, Play, Plus, Presentation } from "lucide-react";
+import { ArrowRight, CalendarClock, CheckCircle2, ChevronDown, ClipboardPen, FileCheck2, NotebookPen, Play, Plus, Presentation } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
 import { startUnitAction } from "@/app/session-actions";
 import { Avatar, SubjectArt } from "@/components/Art";
@@ -10,6 +10,7 @@ import { requireTeacher } from "@/lib/auth";
 import * as repo from "@/lib/repo";
 import { klassenLabel } from "@/lib/school";
 import { listUnits, runningUnits } from "@/lib/units";
+import { examReminders, STAGE_LABEL } from "@/lib/exams";
 
 const parseLocal = (s: string) => new Date(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s) && !/Z|[+-]\d{2}:?\d{2}$/.test(s) ? s.replace(" ", "T") : s);
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
@@ -60,8 +61,22 @@ export default async function StartPage() {
   const recentIds = [...new Set(myUnits.map((u) => u.student_id))].filter((id) => byId.has(id));
   const ordered = [...new Set([...(next ? [next.student_id] : []), ...todays.map((l) => l.student_id), ...recentIds, ...students.map((s) => s.id)])].map((id) => byId.get(id)!);
 
-  // to-dos: documentation not yet completed, fresh results, homework due
+  // to-dos: exams ahead (14/7/3 days, Mehr › Lehrplan), documentation not yet completed, fresh results, homework due
   const todos: TodoItem[] = [];
+  for (const e of examReminders(today, { teacherId: teacher.id })) {
+    todos.push({
+      key: `p${e.id}`,
+      href: `/schueler/${e.student_id}/pruefung/${e.id}`,
+      icon: CalendarClock,
+      text: (
+        <>
+          <span className={`font-semibold ${e.stage === "bald" ? "text-red" : e.stage === "prioritaet" ? "text-amber" : ""}`}>{STAGE_LABEL[e.stage]}:</span> {e.kind} {e.subject} von <b>{firstName(e.student_name)}</b>{" "}
+          {e.days === 0 ? "heute" : e.days === 1 ? "morgen" : `in ${e.days} Tagen`}
+        </>
+      ),
+      when: formatDate(e.date, { day: "numeric", month: "short" }),
+    });
+  }
   for (const u of myUnits.filter((u) => u.status === "beendet").slice(0, 30)) {
     const lesson = repo.getLessonForUnit(u.id);
     if (lesson && !lesson.reviewed_at) {

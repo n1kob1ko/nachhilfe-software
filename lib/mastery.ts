@@ -22,7 +22,6 @@
  * 4. Working time is NOT part of the score: slow can mean careful. It is shown separately.
  *
  * 5. Status words: ≥ 85 % sicher · ≥ 70 % gut · ≥ 50 % üben · below kritisch · no evidence: nicht getestet.
- *    With fewer than 3 finished tasks the status gets "(wenig Daten)".
  */
 
 export type EvidenceSource = "aufgabe" | "stunde" | "test";

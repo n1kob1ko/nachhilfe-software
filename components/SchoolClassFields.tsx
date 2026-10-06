@@ -8,10 +8,12 @@ type Props = {
   klasse?: number | null;
   /** Controlled mode (exercise builder); uncontrolled when omitted. */
   onChange?: (type: string, klasse: number) => void;
+  /** Student form: show the internal Schulstufe and flag an old, unclear school type. */
+  showStufe?: boolean;
 };
 
 /** Schultyp + Klasse, with the class list matching the school type (VS 1–4, Gymnasium 1–8, HTL/HAK 1–5 …). */
-export function SchoolClassFields({ type: initialType, klasse: initialKlasse, onChange }: Props) {
+export function SchoolClassFields({ type: initialType, klasse: initialKlasse, onChange, showStufe }: Props) {
   const [type, setType] = useState(schoolType(initialType ?? "")?.name ?? "Mittelschule");
   const [klasse, setKlasse] = useState(initialKlasse ?? 1);
   const t = schoolType(type)!;
@@ -43,7 +45,13 @@ export function SchoolClassFields({ type: initialType, klasse: initialKlasse, on
             </option>
           ))}
         </select>
+        {showStufe && <span className="num text-[12.5px] text-ink-3">= Schulstufe {t.offset + klasse}</span>}
       </label>
+      {showStufe && initialType && !schoolType(initialType) && (
+        <p className="text-[13px] text-amber sm:col-span-3">
+          Bisher gespeichert: „{initialType}“. Das war nicht eindeutig, bitte Schultyp und Klasse wählen und speichern.
+        </p>
+      )}
     </>
   );
 }

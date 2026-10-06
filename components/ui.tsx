@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, ChevronDown, CircleDashed, Minus } from "lucide-react";
 import { Info } from "@/components/Info";
 import type { Trend } from "@/lib/analysis";
-import { STRONG, WEAK } from "@/lib/analysis";
+import { masteryStatus, STATUS_THRESHOLDS, statusTone } from "@/lib/mastery";
 
 export function PageHeader({ title, subtitle, actions, back, info }: { title: React.ReactNode; subtitle?: React.ReactNode; actions?: React.ReactNode; back?: { href: string; label: string }; info?: React.ReactNode }) {
   return (
@@ -63,11 +63,28 @@ export function TrendBadge({ trend, delta, compact }: { trend: Trend; delta?: nu
   );
 }
 
+/** Status word of a Lernstand (lib/mastery.ts): sicher · gut · üben · kritisch · nicht getestet. */
 export function masteryLevel(m: number | null) {
-  if (m === null) return { label: "keine Daten", cls: "text-ink-3", icon: CircleDashed };
-  if (m < WEAK) return { label: "Schwäche", cls: "text-red", icon: AlertTriangle };
-  if (m < STRONG) return { label: "im Aufbau", cls: "text-amber", icon: CircleDashed };
-  return { label: "sicher", cls: "text-green", icon: CheckCircle2 };
+  const label = masteryStatus(m);
+  const look = {
+    sicher: { cls: "text-green", icon: CheckCircle2 },
+    gut: { cls: "text-ink-2", icon: CheckCircle2 },
+    "üben": { cls: "text-amber", icon: CircleDashed },
+    kritisch: { cls: "text-red", icon: AlertTriangle },
+    "nicht getestet": { cls: "text-ink-3", icon: CircleDashed },
+  }[label];
+  return { label, ...look };
+}
+
+/** "Kürzen 91 % · sicher" as a compact chip. */
+export function StatusChip({ mastery }: { mastery: number | null }) {
+  const label = masteryStatus(mastery);
+  return (
+    <Pill tone={statusTone(label)}>
+      {mastery !== null && <span className="num">{Math.round(mastery * 100)}&nbsp;% · </span>}
+      {label}
+    </Pill>
+  );
 }
 
 export function LevelTag({ mastery }: { mastery: number | null }) {
@@ -93,9 +110,9 @@ export function MasteryBar({ value, size = "md" }: { value: number | null; size?
             style={{ width: `${Math.max(2, Math.round(value * 100))}%`, borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
           />
         )}
-        {/* threshold ticks at 60 % and 80 % */}
-        <div className="absolute inset-y-0 w-px bg-[var(--surface)]" style={{ left: `${WEAK * 100}%` }} />
-        <div className="absolute inset-y-0 w-px bg-[var(--surface)]" style={{ left: `${STRONG * 100}%` }} />
+        {/* threshold ticks at "gut" (70 %) and "sicher" (85 %) */}
+        <div className="absolute inset-y-0 w-px bg-[var(--surface)]" style={{ left: `${STATUS_THRESHOLDS.gut * 100}%` }} />
+        <div className="absolute inset-y-0 w-px bg-[var(--surface)]" style={{ left: `${STATUS_THRESHOLDS.sicher * 100}%` }} />
       </div>
       <span className="num w-11 shrink-0 text-right text-[13px] font-semibold text-ink">{value === null ? "–" : `${Math.round(value * 100)}\u00a0%`}</span>
     </div>

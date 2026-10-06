@@ -434,6 +434,9 @@ export function setTestResult(id: number, r: { grade: number | null; points: num
     .prepare("UPDATE tests SET grade = @grade, points = @points, max_points = @max_points, notes = COALESCE(@notes, notes), status = 'geschrieben' WHERE id = @id")
     .run({ notes: null, ...r, id });
 }
+export function setTestSkills(id: number, skillIds: string[]) {
+  db().prepare("UPDATE tests SET skill_ids = ? WHERE id = ?").run(JSON.stringify(skillIds), id);
+}
 export function setTestStatus(id: number, status: "geplant" | "geschrieben" | "abgesagt") {
   db().prepare("UPDATE tests SET status = ? WHERE id = ?").run(status, id);
 }
