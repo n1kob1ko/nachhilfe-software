@@ -184,8 +184,13 @@ export function curriculumTree(id: number, klasse?: number | null): CurriculumTr
   const rows = db()
     .prepare("SELECT id, code, kind, name, text, klasse, schulstufe, parent_id FROM curriculum_nodes WHERE curriculum_id = ? ORDER BY sort, id")
     .all(id) as (Omit<CurriculumTreeNode, "skills" | "children"> & { parent_id: number | null })[];
+  // removed links and merged duplicates (Mehr › Datenqualität) are left out
   const links = db()
-    .prepare("SELECT sc.node_id, s.id, s.name FROM skill_curriculum sc JOIN skills s ON s.id = sc.skill_id JOIN curriculum_nodes n ON n.id = sc.node_id WHERE n.curriculum_id = ? AND sc.removed_at IS NULL ORDER BY s.sort, s.name")
+    .prepare(
+      `SELECT sc.node_id, s.id, s.name FROM skill_curriculum sc JOIN skills s ON s.id = sc.skill_id JOIN curriculum_nodes n ON n.id = sc.node_id
+       LEFT JOIN skill_overrides o ON o.skill_id = s.id
+       WHERE n.curriculum_id = ? AND sc.removed_at IS NULL AND o.merged_into IS NULL ORDER BY s.sort, s.name`,
+    )
     .all(id) as { node_id: number; id: string; name: string }[];
   const byId = new Map<number, CurriculumTreeNode>();
   for (const r of rows) byId.set(r.id, { id: r.id, code: r.code, kind: r.kind, name: r.name, text: r.text, klasse: r.klasse, schulstufe: r.schulstufe, skills: [], children: [] });
