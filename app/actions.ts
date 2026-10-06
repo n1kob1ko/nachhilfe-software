@@ -13,7 +13,7 @@ import { klassenLabel, schoolType, schulstufe } from "@/lib/school";
 import { analyzeStudent, buildWorksheet, submitAnswer, type SubmitInput } from "@/lib/service";
 import { runningUnitForStudent } from "@/lib/units";
 import { dayOf } from "@/lib/exams";
-import { nextSteps } from "@/lib/recommend";
+import { findNextStep } from "@/lib/recommend";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const int = (f: FormData, k: string) => {
@@ -174,12 +174,18 @@ export async function deleteAssignmentAction(id: number, studentId: number) {
   redirect(`/schueler/${studentId}?tab=uebungen`);
 }
 
-/** Turns a recommendation (lib/recommend.ts) into a worksheet and assigns it right away. */
-export async function applyRecommendationAction(studentId: number, key: string) {
+/**
+ * Turns a recommendation (lib/recommend.ts) into a worksheet and assigns it right away. From a
+ * diagnosis (diagnosisId) a recommendation that no longer applies is reported back there.
+ */
+export async function applyRecommendationAction(studentId: number, key: string, diagnosisId: number | null = null) {
   await requireTeacher();
   const student = repo.getStudent(studentId);
-  const rec = nextSteps(studentId, { today: dayOf(new Date()), limit: 20 }).find((r) => r.key === key);
-  if (!student || !rec) redirect(`/schueler/${studentId}?tab=fortschritt`);
+  const rec = student ? findNextStep(studentId, key, { today: dayOf(new Date()) }) : null;
+  if (!student || !rec) {
+    const back = diagnosisId ? `/diagnose/${diagnosisId}?` : `/schueler/${studentId}?tab=fortschritt&`;
+    redirect(`${back}fehler=${encodeURIComponent("Diese Empfehlung gilt nicht mehr, es wurde nichts gesendet. Die Liste ist jetzt aktuell.")}`);
+  }
   const result = await buildWorksheet({
     subject: rec.skill.subject,
     schoolType: student.school_type,

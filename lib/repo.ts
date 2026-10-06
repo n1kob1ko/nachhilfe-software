@@ -644,7 +644,8 @@ function renumber(ids: number[]) {
 }
 /**
  * Copy of an exercise as a new draft (for another student, or to adapt it). A copy of a library entry
- * is an ordinary exercise unless `kind` says otherwise (duplicating inside the library).
+ * or of a diagnosis is an ordinary exercise unless `kind` says otherwise (duplicating inside the
+ * library); a diagnosis only comes from the Diagnose-Modus, so single tasks of it are no new diagnoses.
  */
 export function duplicateWorksheet(
   id: number,
@@ -653,7 +654,7 @@ export function duplicateWorksheet(
   const w = getWorksheet(id);
   if (!w) return null;
   const tasks = listTasks(id).filter((t) => !o.taskIds || o.taskIds.includes(t.id));
-  const kind = o.kind ?? (w.kind === "bibliothek" ? "uebung" : w.kind);
+  const kind = o.kind ?? (w.kind === "bibliothek" || w.kind === "diagnose" ? "uebung" : w.kind);
   return createWorksheet(
     {
       ...w,

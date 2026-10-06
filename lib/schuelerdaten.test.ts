@@ -92,7 +92,7 @@ test("the exercise builder preselects the current material; the AI only gets The
 
 test("an exam comes before the current material, a weak skill is recommended with a weak prerequisite as cause", async () => {
   const { niko, sid, repo } = await setup("Paula Prio");
-  const { nextSteps } = await import("./recommend");
+  const { findNextStep, nextSteps } = await import("./recommend");
   const cm = await import("./current-material");
   const { dayOf } = await import("./exams");
   const today = dayOf(new Date());
@@ -114,6 +114,14 @@ test("an exam comes before the current material, a weak skill is recommended wit
   assert.equal(steps[0].skill.id, "mathe.brueche.dividieren");
   assert.equal(steps[0].reason, "Schularbeit in 8 Tagen · Lernstand 30 % · 3 Fehler zuletzt: Regel nicht verstanden · mögliche Ursache: Multiplizieren (62 %)");
   assert.equal(steps.filter((s) => s.skill.id === "mathe.brueche.dividieren").length, 1, "each skill once, with all its reasons");
+
+  // "Direkt an … senden" finds a recommendation by its key, whatever limit the page showed it under
+  const all = nextSteps(sid, { today, limit: Infinity });
+  const last = all[all.length - 1];
+  assert.ok(all.length > 1);
+  assert.ok(!nextSteps(sid, { today, limit: 1 }).some((s) => s.key === last.key));
+  assert.equal(findNextStep(sid, last.key, { today })?.skill.id, last.skill.id);
+  assert.equal(findNextStep(sid, "3:gibt.es.nicht", { today }), null, "a key that no longer applies gives nothing, the action reports it");
 });
 
 test("prerequisites: the teacher adds and removes them; a removed standard link stays removed after a restart", async () => {
@@ -363,6 +371,43 @@ test("a diagnosis lands in the normal tracking, marked as diagnosis, and updates
   // Dividieren needs Multiplizieren (unsure in the diagnosis); Multiplizieren needs Kürzen (sure) → one gap
   assert.deepEqual(r.gaps.map((g) => [g.skill.id, g.for.map((x) => x.id), g.reason]), [["mathe.brueche.multiplizieren", ["mathe.brueche.dividieren"], "in der Diagnose unsicher"]]);
   assert.ok(r.next.length > 0 && r.next.every((n) => ["mathe.brueche.multiplizieren", "mathe.brueche.dividieren"].includes(n.skill.id)), "next steps follow the diagnosis");
+  const { findNextStep } = await import("./recommend");
+  assert.ok(r.next.every((n) => findNextStep(sid, n.key, { today: dayOf(new Date()) })), "„Direkt an … senden“ finds each of them");
+
+  // one task of it sent on its own, or the diagnosis used as template, gives an ordinary exercise, no second diagnosis
+  const builder = await import("./builder");
+  const single = builder.sendSingleTask(tasks[0].id, sid, niko.id);
+  assert.equal(repo.getWorksheet(single.worksheetId!)!.kind, "uebung");
+  const drafted = await builder.draftFromTemplate(builder.saveTemplate(w.id, "Diagnose als Vorlage", true, niko.id)!, sid, niko.id);
+  assert.equal(repo.getWorksheet(drafted.id!)!.kind, "uebung");
+  assert.deepEqual(d.diagnosesOf(sid).map((a) => a.id), [out.assignmentId]);
+  assert.ok(!d.recentDiagnoses(50).some((x) => x.id === single.assignmentId));
+});
+
+test("a diagnosis never repeats a task; generator tasks stay own tasks next to Claude's", async () => {
+  const { repo, niko, sid } = await setup("Emil Wortarten");
+  const d = await import("./diagnose");
+  const { hasBuiltInGenerator } = await import("./generators");
+  const skill = "deutsch.wortarten.bestimmen";
+  assert.equal(hasBuiltInGenerator(skill), false, "only explanation tasks without Claude");
+  const out = await d.createDiagnosis({ studentId: sid, subject: "Deutsch", schoolType: "Mittelschule", klasse: 2, skillIds: [skill], topics: [], teacherId: niko.id, useAI: false, seed: 3 });
+  const tasks = repo.listTasks(out.worksheetId);
+  const keys = tasks.map((t) => `${t.prompt}\n${JSON.stringify(t.data)}`);
+  assert.equal(new Set(keys).size, tasks.length, "no task twice");
+  assert.ok(tasks.length >= 3 && tasks.length < d.planDiagnosis([skill]).length, "fewer tasks rather than the same one twice");
+  assert.ok(tasks.every((t) => t.skillId === skill && t.sourceType === "eigen"));
+
+  // Claude wrote one task: the generator tasks next to it are still stored as own tasks
+  const skills = new Map(repo.listSkills().map((s) => [s.id, s]));
+  const plan = d.planDiagnosis(["mathe.brueche.kuerzen", "mathe.brueche.dividieren"]);
+  const fromAI = { type: "calc" as const, skillId: plan[0].skillId, difficulty: plan[0].difficulty, prompt: "Von Claude", data: {}, answer: { accepted: ["1"], mode: "value" as const }, solution: "", hints: [], errorMap: [], sourceType: "ki" };
+  const filled = d.fillFromGenerators("Mathematik", plan, [fromAI, ...plan.slice(1).map(() => null)], skills, 5);
+  assert.equal(filled[0], fromAI);
+  assert.ok(filled.slice(1).every((t) => t?.sourceType === "eigen"));
+  const ws = repo.createWorksheet({ title: "Gemischt", subject: "Mathematik", grade: 6, school_type: "Mittelschule", klasse: 2, topic: "", difficulty: "gemischt", task_type: "mixed", kind: "diagnose", source: "ki", skill_ids: [] }, filled.filter((t) => t !== null));
+  const stored = repo.listTasks(ws);
+  assert.deepEqual(stored.map((t) => t.sourceType), ["ki", ...plan.slice(1).map(() => "eigen")]);
+  assert.notEqual(stored[1].sourceId, stored[0].sourceId, "not under the Claude source");
 });
 
 // ---------- Phase 4 ----------

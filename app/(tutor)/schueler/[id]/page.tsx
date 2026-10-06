@@ -46,7 +46,7 @@ type Tab = (typeof TABS)[number][0];
 /** Builder prefilled for a recommendation: student, skill, number of tasks. */
 const builderHref = (studentId: number, r: Pick<NextStep, "skill" | "count">) => `/uebungen/neu?schueler=${studentId}&skill=${encodeURIComponent(r.skill.id)}&anzahl=${r.count}`;
 
-export default async function StudentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; zugewiesen?: string; art?: string; bearbeiten?: string }> }) {
+export default async function StudentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; zugewiesen?: string; art?: string; bearbeiten?: string; fehler?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const student = repo.getStudent(Number(id));
@@ -108,7 +108,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
       {tab === "fortschritt" && (
         <div className="space-y-14">
           <Progress a={a} />
-          <AnalysisTab student={student} a={a} assignedId={sp.zugewiesen} />
+          <AnalysisTab student={student} a={a} assignedId={sp.zugewiesen} error={sp.fehler} />
         </div>
       )}
       {tab === "lernverlauf" && <Lessons student={student} filter={sp.art} />}
@@ -459,7 +459,7 @@ function DiagnosisSection({ student, tested }: { student: repo.Student; tested: 
   );
 }
 
-function AnalysisTab({ student, a, assignedId }: { student: repo.Student; a: Analysis; assignedId?: string }) {
+function AnalysisTab({ student, a, assignedId, error }: { student: repo.Student; a: Analysis; assignedId?: string; error?: string }) {
   const first = student.name.split(" ")[0];
   const steps = nextSteps(student.id, { today: dayOf(new Date()), limit: 6 });
   return (
@@ -470,6 +470,11 @@ function AnalysisTab({ student, a, assignedId }: { student: repo.Student; a: Ana
           <Link className="font-semibold underline underline-offset-2" href={`/uebungen/${assignedId}`}>
             Übung ansehen
           </Link>
+        </p>
+      )}
+      {error && (
+        <p className="rounded-lg bg-red-wash px-4 py-2.5 text-[14px] text-red" role="alert">
+          {error}
         </p>
       )}
       <section>
@@ -501,7 +506,7 @@ function AnalysisTab({ student, a, assignedId }: { student: repo.Student; a: Ana
                       Gesendet, offen
                     </Link>
                   ) : (
-                    <form action={applyRecommendationAction.bind(null, student.id, r.key)}>
+                    <form action={applyRecommendationAction.bind(null, student.id, r.key, null)}>
                       <button className="btn btn-secondary btn-sm" title={`${r.count} Aufgaben, ${r.difficulty}, sofort senden`}>
                         Direkt an {first} senden
                       </button>

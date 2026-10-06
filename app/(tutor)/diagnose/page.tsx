@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { startDiagnosisAction } from "@/app/diagnose-actions";
 import { Avatar } from "@/components/Art";
-import { PageHeader, Pill, Reveal, formatDate } from "@/components/ui";
+import { DiagnoseConfirm } from "@/components/DiagnoseConfirm";
+import { Empty, PageHeader, Pill, Reveal, formatDate } from "@/components/ui";
 import { aiEnabled } from "@/lib/ai";
 import { requireTeacher } from "@/lib/auth";
 import { activeMaterial } from "@/lib/current-material";
-import { DIAGNOSE_MAX, diagnosisSkills, planDiagnosis, recentDiagnoses } from "@/lib/diagnose";
+import { diagnosisSkills, recentDiagnoses } from "@/lib/diagnose";
 import { dayOf, daysUntil } from "@/lib/exams";
 import { hasBuiltInGenerator } from "@/lib/generators";
 import { branchesWithSkills, browseSkills } from "@/lib/lehrplan";
@@ -16,7 +17,7 @@ import { runningUnitForStudent } from "@/lib/units";
 
 export const metadata = { title: "Diagnose" };
 
-type Params = { schueler?: string; fach?: string; schulart?: string; klasse?: string; thema?: string | string[]; fehler?: string };
+type Params = { schueler?: string; fach?: string; schulart?: string; klasse?: string; thema?: string | string[]; alle?: string; fehler?: string };
 const href = (p: { schueler?: number | string; fach?: string; schulart?: string; klasse?: number | string; thema?: string[] }) => {
   const q = new URLSearchParams();
   for (const [k, v] of Object.entries(p)) {
@@ -45,7 +46,9 @@ export default async function DiagnosePage({ searchParams }: { searchParams: Pro
   const klasse = branch && branch.classes.includes(Number(sp.klasse)) ? Number(sp.klasse) : null;
   const scope = branch && klasse ? browseSkills({ subject: subject!, branch, klasse }).filter((s) => !s.parent_id) : [];
   const areas = [...new Set(scope.map((s) => s.area))];
-  const chosen = (Array.isArray(sp.thema) ? sp.thema : sp.thema ? [sp.thema] : []).filter((t) => areas.includes(t));
+  const ticked = (Array.isArray(sp.thema) ? sp.thema : sp.thema ? [sp.thema] : []).filter((t) => areas.includes(t));
+  // "Weiter" in the topic step without a tick (alle) means all topics
+  const chosen = ticked.length || !sp.alle ? ticked : areas;
   const step = !student ? 0 : !subject ? 1 : !klasse ? 2 : !chosen.length ? 3 : 4;
   const base = { schueler: student?.id, fach: subject ?? undefined, schulart: branch?.key, klasse: klasse ?? undefined };
   const first = student?.name.split(" ")[0] ?? "";
@@ -121,6 +124,20 @@ function Cards({ items }: { items: { key: string; label: string; note?: string; 
 
 function ChooseStudent({ students }: { students: repo.Student[] }) {
   const recent = recentDiagnoses(6);
+  if (!students.length) {
+    return (
+      <Empty
+        title="Noch keine Schüler"
+        action={
+          <Link href="/schueler/neu" className="btn btn-primary">
+            Schüler anlegen
+          </Link>
+        }
+      >
+        Eine Diagnose prüft den Stand eines Schülers. Lege zuerst einen an.
+      </Empty>
+    );
+  }
   return (
     <div className="grid gap-10">
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Schüler wählen">
@@ -215,6 +232,7 @@ function ChooseTopics({ student, subject, branch, klasse, areas, scope }: { stud
       <input type="hidden" name="fach" value={subject} />
       <input type="hidden" name="schulart" value={branch.key} />
       <input type="hidden" name="klasse" value={klasse} />
+      <input type="hidden" name="alle" value="1" />
       <fieldset>
         <legend className="mb-2 text-[15px] font-semibold">Welche Themen?</legend>
         {areas.length === 0 ? (
@@ -234,10 +252,11 @@ function ChooseTopics({ student, subject, branch, klasse, areas, scope }: { stud
           </ul>
         )}
       </fieldset>
-      <div>
+      <div className="flex flex-wrap items-center gap-3">
         <button className="btn btn-primary btn-lg" disabled={areas.length === 0}>
           Weiter
         </button>
+        {areas.length > 0 && <span className="text-[13px] text-ink-3">Ohne Auswahl: alle Themen</span>}
       </div>
     </form>
   );
@@ -245,13 +264,9 @@ function ChooseTopics({ student, subject, branch, klasse, areas, scope }: { stud
 
 function Confirm({ student, subject, branch, klasse, topics, scope, back }: { student: repo.Student; subject: string; branch: SchoolBranch; klasse: number; topics: string[]; scope: repo.Skill[]; back: string }) {
   const picked = diagnosisSkills({ subject, branch, klasse, topics });
-  const pickedIds = new Set(picked.map((s) => s.id));
   const candidates = scope.filter((s) => topics.includes(s.area));
-  const plan = planDiagnosis(picked.map((s) => s.id));
-  const count = (d: string) => plan.filter((p) => p.difficulty === d).length;
   const unit = runningUnitForStudent(student.id);
   const first = student.name.split(" ")[0];
-  const needsAI = picked.some((s) => !hasBuiltInGenerator(s.id));
   return (
     <form action={startDiagnosisAction} className="grid max-w-[720px] gap-5">
       <input type="hidden" name="student_id" value={student.id} />
@@ -262,37 +277,13 @@ function Confirm({ student, subject, branch, klasse, topics, scope, back }: { st
       {topics.map((t) => (
         <input key={t} type="hidden" name="topics" value={t} />
       ))}
-      <fieldset>
-        <legend className="mb-2 text-[15px] font-semibold">Geprüfte Fähigkeiten (höchstens {DIAGNOSE_MAX})</legend>
-        <ul className="panel divide-y divide-line">
-          {candidates.map((s) => (
-            <li key={s.id}>
-              <label className="flex min-h-[52px] cursor-pointer items-center gap-3 px-4 py-2 hover:bg-panel/60">
-                <input type="checkbox" name="skill_ids" value={s.id} defaultChecked={pickedIds.has(s.id)} className="h-5 w-5 accent-[var(--accent)]" />
-                <span className="min-w-0 flex-1">
-                  <span className="font-medium">{s.name}</span>
-                  {topics.length > 1 && <span className="ml-2 text-[13px] text-ink-3">{s.area}</span>}
-                </span>
-                {!hasBuiltInGenerator(s.id) && <Sparkles size={14} aria-label="Aufgaben aus der Bibliothek oder mit KI" className="shrink-0 text-ink-3" />}
-              </label>
-            </li>
-          ))}
-        </ul>
-      </fieldset>
-      <p className="text-[14px] text-ink-2">
-        <span className="num font-semibold text-ink">{plan.length}</span> Aufgaben: <span className="num">{count("leicht")}</span> leicht, <span className="num">{count("mittel")}</span> mittel, <span className="num">{count("schwer")}</span> schwer.
-        Aufgaben aus der Bibliothek werden zuerst verwendet.
-      </p>
-      {needsAI && aiEnabled() && (
-        <label className="flex min-h-[44px] items-center gap-3 text-[14px]">
-          <input type="checkbox" name="use_ai" value="1" defaultChecked className="h-5 w-5 accent-[var(--accent)]" />
-          Fehlende Aufgaben mit Claude erstellen (nur Fach, Klasse und Fähigkeiten werden übermittelt)
-        </label>
-      )}
-      <div className="flex flex-wrap items-center gap-3">
-        <button className="btn btn-primary btn-lg">Diagnose starten</button>
-        <span className="text-[13px] text-ink-3">{unit ? `Geht direkt auf ${first}s Tablet.` : `Wird an ${first} gesendet.`}</span>
-      </div>
+      <DiagnoseConfirm
+        skills={candidates.map((s) => ({ id: s.id, name: s.name, area: s.area, generator: hasBuiltInGenerator(s.id) }))}
+        picked={picked.map((s) => s.id)}
+        showArea={topics.length > 1}
+        ai={aiEnabled()}
+        note={unit ? `Geht direkt auf ${first}s Tablet.` : `Wird an ${first} gesendet.`}
+      />
     </form>
   );
 }
