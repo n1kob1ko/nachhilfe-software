@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { CheckCircle2, ExternalLink, FileJson, XCircle } from "lucide-react";
-import { applyImportAction, discardImportAction, previewImportAction, removeDemoAction, setThresholdsAction } from "@/app/curriculum-actions";
+import { applyImportAction, applyManyAction, discardImportAction, discardManyAction, previewImportAction, previewManyAction, removeDemoAction, setThresholdsAction } from "@/app/curriculum-actions";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, Reveal, SectionTitle, formatDate } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
-import { bundledPackages, getImport, listImports, type Diff } from "@/lib/curriculum-import";
+import { bundledPackages, getImport, listImports, type BundledPackage, type Diff } from "@/lib/curriculum-import";
 import { curriculumOverview, examThresholds, listSources, SOURCE_TYPE_LABEL, taskBankAllowed, type SourceType } from "@/lib/lehrplan";
-import { rangeLabel } from "@/lib/school";
+import { rangeLabel, SCHOOL_TYPES } from "@/lib/school";
 
 export const metadata = { title: "Lehrplan" };
 
@@ -17,6 +17,7 @@ const TABS = [
   ["lizenzen", "Lizenzen"],
   ["einstellungen", "Einstellungen"],
 ] as const;
+const ids = (v?: string) => (v ?? "").split(",").map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 30);
 const TYPE_TONE: Record<SourceType, "green" | "accent" | "neutral" | "amber" | "red"> = { lehrplan: "green", eigen: "accent", ki: "neutral", oer: "neutral", referenz: "amber", demo: "red" };
 
 /** Mehr › Lehrplan: curriculum versions per school type, sources, imports, licences, reminder settings. */
@@ -47,7 +48,7 @@ export default async function CurriculumPage({ searchParams }: { searchParams: P
       {sp.fehler && <p className="mb-6 rounded-lg bg-red-wash px-4 py-3 text-[14px] text-red">{sp.fehler}</p>}
       {tab === "uebersicht" && <Overview />}
       {tab === "quellen" && <Sources />}
-      {tab === "importe" && <Imports admin={admin} previewId={Number(sp.vorschau) || null} importedId={Number(sp.importiert) || null} />}
+      {tab === "importe" && <Imports admin={admin} previewIds={ids(sp.vorschau)} importedIds={ids(sp.importiert)} />}
       {tab === "lizenzen" && <Licences />}
       {tab === "einstellungen" && <Settings admin={admin} saved={Boolean(sp.gespeichert)} />}
     </>
@@ -83,11 +84,13 @@ function Overview() {
               <p className="text-ink-3">Offizielle Quelle noch nicht hinterlegt.</p>
             )}
             {r.curricula.length ? (
-              r.curricula.map((c) => (
-                <p key={c.key} className="text-ink-2">
-                  {c.subject}: {c.name} · Version {c.version} · <span className="num">{c.nodes}</span> Einträge
-                </p>
-              ))
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {r.curricula.map((c) => (
+                  <Link key={c.key} href={`/mehr/lehrplan/${encodeURIComponent(c.key)}`} title={`${c.name} · ${c.version}`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-green-wash px-4 text-[14px] font-medium text-green hover:underline">
+                    {c.subject} <span className="num text-[12.5px] opacity-80">{c.nodes}</span>
+                  </Link>
+                ))}
+              </div>
             ) : (
               <p className="text-amber">Lehrplantext noch nicht importiert.</p>
             )}
@@ -175,7 +178,7 @@ function DiffView({ d }: { d: Diff }) {
         {n(d.changedSkills.length, "Geänderte Fähigkeiten")}
         {n(d.unchanged, "Unverändert")}
         {n(d.newNodes, "Neue Lehrplan-Einträge")}
-        {n(d.newLinks, "Neue Voraussetzungen")}
+        {n(d.newLinks, "Neue Verknüpfungen")}
         {n(d.duplicates.length, "Dubletten (übersprungen)")}
         {n(d.conflicts.length, "Konflikte (übersprungen)")}
       </div>
@@ -222,48 +225,56 @@ function DiffView({ d }: { d: Diff }) {
   );
 }
 
-function Imports({ admin, previewId, importedId }: { admin: boolean; previewId: number | null; importedId: number | null }) {
+function Imports({ admin, previewIds, importedIds }: { admin: boolean; previewIds: number[]; importedIds: number[] }) {
   const packages = bundledPackages();
-  const preview = previewId ? getImport(previewId) : null;
-  const done = importedId ? getImport(importedId) : null;
+  const official = packages.filter((p) => p.sourceType === "lehrplan" && p.curriculum);
+  const others = packages.filter((p) => !official.includes(p));
+  const previews = previewIds.map(getImport).filter((x) => x !== null);
+  const done = importedIds.map(getImport).filter((x) => x !== null);
   const history = listImports(15);
   const demo = listSources().find((s) => s.source_type === "demo");
   return (
     <div className="grid max-w-[920px] gap-10">
-      {done && (
+      {done.length > 0 && (
         <p className="flex items-center gap-2 rounded-lg bg-green-wash px-4 py-3 text-[14px] text-green">
-          <CheckCircle2 size={16} aria-hidden /> „{done.label}“ importiert: {done.diff.newSkills.length} neue, {done.diff.changedSkills.length} geänderte Fähigkeiten.
+          <CheckCircle2 size={16} aria-hidden className="shrink-0" />
+          {done.length === 1
+            ? `„${done[0].label}“ importiert: ${done[0].diff.newSkills.length} neue, ${done[0].diff.changedSkills.length} geänderte Fähigkeiten, ${done[0].diff.newNodes} Lehrplan-Einträge, ${done[0].diff.newLinks} Verknüpfungen.`
+            : `${done.length} Pakete importiert: ${sum(done, (d) => d.diff.newNodes)} Lehrplan-Einträge, ${sum(done, (d) => d.diff.newSkills.length)} neue Fähigkeiten, ${sum(done, (d) => d.diff.newLinks)} Verknüpfungen.`}
         </p>
       )}
-      {preview && (
+      {previews.length === 1 && (
         <section className="panel px-5 py-5" aria-label="Vorschau">
-          <SectionTitle>Vorschau: {preview.label}</SectionTitle>
-          <DiffView d={preview.diff} />
-          {preview.status === "vorschau" && admin && !preview.diff.alreadyImported && preview.diff.errors.length === 0 && (
+          <SectionTitle>Vorschau: {previews[0].label}</SectionTitle>
+          <DiffView d={previews[0].diff} />
+          {previews[0].status === "vorschau" && admin && !previews[0].diff.alreadyImported && previews[0].diff.errors.length === 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
-              <form action={applyImportAction.bind(null, preview.id)}>
+              <form action={applyImportAction.bind(null, previews[0].id)}>
                 <button className="btn btn-primary">Importieren</button>
               </form>
-              <form action={discardImportAction.bind(null, preview.id)}>
+              <form action={discardImportAction.bind(null, previews[0].id)}>
                 <button className="btn btn-ghost">Verwerfen</button>
               </form>
             </div>
           )}
-          {preview.status !== "vorschau" && <p className="mt-3 text-[14px] text-ink-2">Status: {preview.status}</p>}
+          {previews[0].status !== "vorschau" && <p className="mt-3 text-[14px] text-ink-2">Status: {previews[0].status}</p>}
         </section>
       )}
+      {previews.length > 1 && <BatchPreview admin={admin} previews={previews} />}
+
+      <OfficialPackages admin={admin} packages={official} extra={others.filter((p) => p.sourceType === "eigen" && !p.imported)} />
 
       <section>
         <SectionTitle>
           <span>
-            Pakete
+            Weitere Pakete
             <Info label="Was ist ein Paket?">
               Eine JSON-Datei im Format „lernheft-curriculum/1“ mit Quelle, Lehrplan-Einträgen und Fähigkeiten. Vor dem Import siehst du immer eine Vorschau; nichts wird blind überschrieben, frühere Fassungen bleiben gespeichert.
             </Info>
           </span>
         </SectionTitle>
         <ul className="grid gap-3 md:grid-cols-2">
-          {packages.map((p) => (
+          {others.map((p) => (
             <li key={p.file} className="panel flex flex-col gap-2 px-4 py-4">
               <div className="flex items-start gap-2">
                 <FileJson size={17} className="mt-0.5 shrink-0 text-ink-2" aria-hidden />
@@ -284,7 +295,7 @@ function Imports({ admin, previewId, importedId }: { admin: boolean; previewId: 
               <Reveal label="Beschreibung">
                 <p className="text-[13.5px] text-ink-2">{p.description}</p>
               </Reveal>
-              {admin && !p.imported && (
+              {admin && (!p.imported || p.pendingLinks > 0) && (
                 <form action={previewImportAction} className="mt-auto">
                   <input type="hidden" name="bundled" value={p.file} />
                   <button className="btn btn-secondary">Vorschau</button>
@@ -336,6 +347,116 @@ function Imports({ admin, previewId, importedId }: { admin: boolean; previewId: 
         )}
       </section>
     </div>
+  );
+}
+
+const sum = <T,>(list: T[], f: (x: T) => number) => list.reduce((a, x) => a + f(x), 0);
+
+function BatchPreview({ admin, previews }: { admin: boolean; previews: NonNullable<ReturnType<typeof getImport>>[] }) {
+  const open = previews.filter((p) => p.status === "vorschau");
+  const ready = open.filter((p) => !p.diff.errors.length);
+  const n = (x: number, label: string) => (
+    <div className="rounded-xl bg-panel px-3 py-2">
+      <div className="num text-[22px] font-semibold">{x}</div>
+      <div className="text-[12.5px] text-ink-2">{label}</div>
+    </div>
+  );
+  return (
+    <section className="panel px-5 py-5" aria-label="Vorschau">
+      <SectionTitle>Vorschau: {previews.length} Pakete</SectionTitle>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {n(sum(previews, (p) => p.diff.newNodes), "Neue Lehrplan-Einträge")}
+        {n(sum(previews, (p) => p.diff.newSkills.length), "Neue Fähigkeiten")}
+        {n(sum(previews, (p) => p.diff.newLinks), "Neue Verknüpfungen")}
+        {n(sum(previews, (p) => p.diff.changedSkills.length + p.diff.changedNodes), "Änderungen")}
+      </div>
+      <ul className="mt-4 divide-y divide-line text-[14px]">
+        {previews.map((p) => (
+          <li key={p.id} className="py-2">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="min-w-0 flex-1 font-medium">{p.label}</span>
+              <span className="num text-[13px] text-ink-2">
+                {p.diff.newNodes} Einträge · {p.diff.newLinks} Verknüpfungen{p.diff.newSkills.length > 0 && ` · ${p.diff.newSkills.length} Fähigkeiten`}
+              </span>
+              {p.status !== "vorschau" && <Pill>{p.status}</Pill>}
+              {p.diff.alreadyImported && <Pill tone="amber">schon importiert</Pill>}
+            </div>
+            {[...p.diff.errors, ...p.diff.warnings].map((e) => (
+              <p key={e} className={`mt-0.5 text-[13px] ${p.diff.errors.includes(e) ? "text-red" : "text-amber"}`}>
+                {e}
+              </p>
+            ))}
+          </li>
+        ))}
+      </ul>
+      {admin && ready.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <form action={applyManyAction.bind(null, ready.map((p) => p.id))}>
+            <button className="btn btn-primary">Alle importieren ({ready.length})</button>
+          </form>
+          <form action={discardManyAction.bind(null, open.map((p) => p.id))}>
+            <button className="btn btn-ghost">Verwerfen</button>
+          </form>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** The official Lehrplan texts from the RIS, compact per school type: one chip per subject. */
+function OfficialPackages({ admin, packages, extra }: { admin: boolean; packages: BundledPackage[]; extra: BundledPackage[] }) {
+  const open = packages.filter((p) => !p.imported || p.pendingLinks > 0);
+  return (
+    <section>
+      <SectionTitle>
+        <span>
+          Lehrpläne aus dem RIS
+          <Info label="Was wird importiert?">
+            Der amtliche Wortlaut der Lehrpläne (Kompetenzbereiche, Kompetenzen, Anwendungsbereiche, Lehrstoff) je Klasse, dazu Verknüpfungen zu passenden Fähigkeiten. Nur Seitenköpfe, Zeilenumbrüche und Fußnotenziffern sind bereinigt; im Zweifel gilt der Originaltext im RIS.
+          </Info>
+        </span>
+      </SectionTitle>
+      <ul className="panel divide-y divide-line">
+        {SCHOOL_TYPES.map((t) => {
+          const list = packages.filter((p) => p.curriculum!.school_type === t.name);
+          return (
+            <li key={t.name} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+              <span className="w-[140px] shrink-0 font-semibold">
+                {t.short} <span className="text-[13px] font-normal text-ink-2">{t.name}</span>
+              </span>
+              <span className="flex flex-1 flex-wrap gap-1.5">
+                {list.map((p) =>
+                  p.imported ? (
+                    <Link
+                      key={p.file}
+                      href={`/mehr/lehrplan/${encodeURIComponent(p.curriculum!.key)}`}
+                      className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[14px] font-medium hover:underline ${p.pendingLinks ? "bg-amber-wash text-amber" : "bg-green-wash text-green"}`}
+                      title={p.pendingLinks ? `${p.pendingLinks} Verknüpfungen können nachgetragen werden` : "importiert"}
+                    >
+                      {p.pendingLinks ? <FileJson size={14} aria-hidden /> : <CheckCircle2 size={14} aria-hidden />}
+                      {p.curriculum!.subject}
+                    </Link>
+                  ) : (
+                    <span key={p.file} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-panel px-4 text-[14px] text-ink-2" title="noch nicht importiert">
+                      {p.curriculum!.subject} <span className="num text-[12.5px] text-ink-3">{p.nodes}</span>
+                    </span>
+                  ),
+                )}
+                {list.length === 0 && <span className="text-[13.5px] text-amber">Lehrplantext fehlt noch</span>}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      {admin && open.length > 0 && (
+        <form action={previewManyAction} className="mt-3">
+          {[...extra, ...open].map((p) => (
+            <input key={p.file} type="hidden" name="bundled" value={p.file} />
+          ))}
+          <button className="btn btn-primary">Vorschau für alle offenen ({open.length})</button>
+        </form>
+      )}
+    </section>
   );
 }
 

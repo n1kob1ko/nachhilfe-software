@@ -1,0 +1,1082 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "Lehrplan HTL – Angewandte Mathematik (RIS)",
+ "description": "Offizieller Lehrplantext aus dem RIS (NOR40237785), BGBl. II Nr. 262/2015 idF BGBl. II Nr. 383/2021.",
+ "source": {
+  "key": "ris-htl",
+  "name": "RIS – Lehrpläne der HTL 2015, Anlage 1 (gemeinsame Unterrichtsgegenstände)",
+  "source_type": "lehrplan",
+  "url": "https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Bundesnormen&Dokumentnummer=NOR40237785",
+  "publisher": "Republik Österreich (RIS)",
+  "license": "amtliches Werk (§ 7 UrhG)",
+  "attribution_text": "BGBl. II Nr. 262/2015 idF BGBl. II Nr. 383/2021",
+  "notes": "Gesetzesnummer 20009288, Dokumentnummer NOR40237785, in Kraft seit 04.09.2021. Wortlaut nur um Seitenköpfe, Zeilenumbrüche und Fußnotenziffern bereinigt."
+ },
+ "curriculum": {
+  "key": "ris-htl-mathematik",
+  "name": "Lehrplan HTL – Angewandte Mathematik",
+  "school_type": "HTL",
+  "subject": "Mathematik",
+  "version": "BGBl. II Nr. 383/2021",
+  "reference": "BGBl. II Nr. 262/2015 idF BGBl. II Nr. 383/2021, NOR40237785",
+  "valid_from": "2021-09-04"
+ },
+ "nodes": [
+  {
+   "code": "HTL-MAT",
+   "kind": "fach",
+   "name": "Angewandte Mathematik"
+  },
+  {
+   "code": "HTL-MAT-1",
+   "kind": "klasse",
+   "name": "I. Jahrgang",
+   "parent": "HTL-MAT",
+   "klasse": 1,
+   "schulstufe": 9,
+   "text": "1. und 2. Semester"
+  },
+  {
+   "code": "HTL-MAT-1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zahlen und Maße",
+   "parent": "HTL-MAT-1",
+   "competency_area": "Zahlen und Maße",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B1-K1",
+   "kind": "kompetenz",
+   "name": "den Mengenbegriff und die grundlegenden Mengenoperationen zur Darstellung von …",
+   "parent": "HTL-MAT-1-B1",
+   "text": "den Mengenbegriff und die grundlegenden Mengenoperationen zur Darstellung von mathematischen Sachverhalten einsetzen;",
+   "competency_area": "Zahlen und Maße",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B1-K2",
+   "kind": "kompetenz",
+   "name": "den Aufbau von Zahlensystemen wiedergeben und die Erweiterung der Zahlenbereiche …",
+   "parent": "HTL-MAT-1-B1",
+   "text": "den Aufbau von Zahlensystemen wiedergeben und die Erweiterung der Zahlenbereiche argumentieren;",
+   "competency_area": "Zahlen und Maße",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B1-K3",
+   "kind": "kompetenz",
+   "name": "Zahlen auf der Zahlengeraden veranschaulichen, im Dezimalsystem in Fest- und …",
+   "parent": "HTL-MAT-1-B1",
+   "text": "Zahlen auf der Zahlengeraden veranschaulichen, im Dezimalsystem in Fest- und Gleitkommadarstellung ausdrücken und damit grundlegende Rechenoperationen durchführen;",
+   "competency_area": "Zahlen und Maße",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B1-K4",
+   "kind": "kompetenz",
+   "name": "Zahlenangaben in Prozent verstehen, Ergebnisse in Prozentdarstellung kommunizieren und …",
+   "parent": "HTL-MAT-1-B1",
+   "text": "Zahlenangaben in Prozent verstehen, Ergebnisse in Prozentdarstellung kommunizieren und mit Grundwert, Prozentsatz und Prozentanteil arbeiten;",
+   "competency_area": "Zahlen und Maße",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B1-K5",
+   "kind": "kompetenz",
+   "name": "absolute und relative Fehler berechnen und interpretieren",
+   "parent": "HTL-MAT-1-B1",
+   "text": "absolute und relative Fehler berechnen und interpretieren;",
+   "competency_area": "Zahlen und Maße",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B1-K6",
+   "kind": "kompetenz",
+   "name": "Maßzahlen von Größen in verschiedene Einheiten umrechnen, Vielfache und Teile von …",
+   "parent": "HTL-MAT-1-B1",
+   "text": "Maßzahlen von Größen in verschiedene Einheiten umrechnen, Vielfache und Teile von Einheiten mit den entsprechenden Zehnerpotenzen darstellen und Formeln des Fachgebietes numerisch auswerten.",
+   "competency_area": "Zahlen und Maße",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Algebra und Geometrie",
+   "parent": "HTL-MAT-1",
+   "competency_area": "Algebra und Geometrie",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B2-K1",
+   "kind": "kompetenz",
+   "name": "die Potenzgesetze verstehen, sie begründen und durch Beispiele veranschaulichen",
+   "parent": "HTL-MAT-1-B2",
+   "text": "die Potenzgesetze verstehen, sie begründen und durch Beispiele veranschaulichen;",
+   "competency_area": "Algebra und Geometrie",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B2-K2",
+   "kind": "kompetenz",
+   "name": "Terme vereinfachen, Formeln aus dem Fachgebiet nach vorgegebenen Größen umformen und die …",
+   "parent": "HTL-MAT-1-B2",
+   "text": "Terme vereinfachen, Formeln aus dem Fachgebiet nach vorgegebenen Größen umformen und die grundlegenden Rechenoperationen für Zahlen und Funktionen anwenden;",
+   "competency_area": "Algebra und Geometrie",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B2-K3",
+   "kind": "kompetenz",
+   "name": "lineare Gleichungen und Ungleichungen nach einer Variablen auflösen",
+   "parent": "HTL-MAT-1-B2",
+   "text": "lineare Gleichungen und Ungleichungen nach einer Variablen auflösen;",
+   "competency_area": "Algebra und Geometrie",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B2-K4",
+   "kind": "kompetenz",
+   "name": "lineare Gleichungssysteme in Matrizenform angeben",
+   "parent": "HTL-MAT-1-B2",
+   "text": "lineare Gleichungssysteme in Matrizenform angeben;",
+   "competency_area": "Algebra und Geometrie",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B2-K5",
+   "kind": "kompetenz",
+   "name": "Vektoren in rechtwinkeligen Koordinatensystemen darstellen sowie Linearkombinationen …",
+   "parent": "HTL-MAT-1-B2",
+   "text": "Vektoren in rechtwinkeligen Koordinatensystemen darstellen sowie Linearkombinationen bestimmen und interpretieren.",
+   "competency_area": "Algebra und Geometrie",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Funktionale Zusammenhänge",
+   "parent": "HTL-MAT-1",
+   "competency_area": "Funktionale Zusammenhänge",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B3-K1",
+   "kind": "kompetenz",
+   "name": "grundlegende Berechnungen an geometrischen Objekten durchführen",
+   "parent": "HTL-MAT-1-B3",
+   "text": "grundlegende Berechnungen an geometrischen Objekten durchführen;",
+   "competency_area": "Funktionale Zusammenhänge",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B3-K2",
+   "kind": "kompetenz",
+   "name": "den Sinus, Cosinus und Tangens eines Winkels im rechtwinkeligen Dreieck als …",
+   "parent": "HTL-MAT-1-B3",
+   "text": "den Sinus, Cosinus und Tangens eines Winkels im rechtwinkeligen Dreieck als Seitenverhältnisse interpretieren, die entsprechenden Werte zu vorgegebenen Winkeln bestimmen und in facheinschlägigen Aufgabenstellungen anwenden;",
+   "competency_area": "Funktionale Zusammenhänge",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B3-K3",
+   "kind": "kompetenz",
+   "name": "Funktionen als Mittel zur Beschreibung von Zusammenhängen verstehen sowie Funktionen …",
+   "parent": "HTL-MAT-1-B3",
+   "text": "Funktionen als Mittel zur Beschreibung von Zusammenhängen verstehen sowie Funktionen durch Wertetabellen und grafisch im rechtwinkeligen Koordinatensystem, auch mit technischen Hilfsmitteln, darstellen;",
+   "competency_area": "Funktionale Zusammenhänge",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-B3-K4",
+   "kind": "kompetenz",
+   "name": "die Gleichung einer Geraden in expliziter und impliziter Form aufstellen, deren Parameter …",
+   "parent": "HTL-MAT-1-B3",
+   "text": "die Gleichung einer Geraden in expliziter und impliziter Form aufstellen, deren Parameter berechnen und interpretieren, lineare Gleichungssysteme aufstellen und lösen, die Lösbarkeit argumentieren und die Lösungsfälle anhand von Beispielen veranschaulichen.",
+   "competency_area": "Funktionale Zusammenhänge",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-MAT-1",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Reelle Zahlen",
+   "parent": "HTL-MAT-1-L1",
+   "text": "Mengenbegriff, Mengenoperationen; Zahlenbereiche; Dezimalsystem, Festkomma- und Gleitkommadarstellung; Potenzen und Wurzeln; Zahlensysteme.",
+   "content_area": "Reelle Zahlen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Rechnen mit Zahlen und Größen",
+   "parent": "HTL-MAT-1-L1",
+   "text": "Überschlagsrechnung; Prozentrechnung; Umrechnung von Maßeinheiten; absoluter und relativer Fehler.",
+   "content_area": "Rechnen mit Zahlen und Größen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Terme und Gleichungen",
+   "parent": "HTL-MAT-1-L1",
+   "text": "Rechnen mit Termen.",
+   "content_area": "Terme und Gleichungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Gleichungen und Ungleichungen",
+   "parent": "HTL-MAT-1-L1",
+   "text": "Äquivalenzumformungen, Formelumwandlung; lineare Gleichungssysteme (Lösbarkeit, Lösungsmethoden; Matrizenschreibweise).",
+   "content_area": "Gleichungen und Ungleichungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Elementare Geometrie",
+   "parent": "HTL-MAT-1-L1",
+   "text": "Ähnlichkeit, Dreieck, Viereck, Satz von Pythagoras, Kreis; elementare Körper.",
+   "content_area": "Elementare Geometrie",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-L1-L6",
+   "kind": "lehrstoff",
+   "name": "Trigonometrie",
+   "parent": "HTL-MAT-1-L1",
+   "text": "Trigonometrie des rechtwinkeligen Dreiecks.",
+   "content_area": "Trigonometrie",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-L1-L7",
+   "kind": "lehrstoff",
+   "name": "Vektoren",
+   "parent": "HTL-MAT-1-L1",
+   "text": "Darstellung, Ortsvektor; Betrag, Multiplikation mit Skalar; Addition und Subtraktion.",
+   "content_area": "Vektoren",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-L1-L8",
+   "kind": "lehrstoff",
+   "name": "Funktionen",
+   "parent": "HTL-MAT-1-L1",
+   "text": "Funktionsbegriff, Definitions- und Wertemenge; lineare Funktion, direkte und indirekte Proportionalität.",
+   "content_area": "Funktionen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-1-L1-L9",
+   "kind": "lehrstoff",
+   "name": "Interpolation",
+   "parent": "HTL-MAT-1-L1",
+   "text": "Lineare Interpolation.",
+   "content_area": "Interpolation",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-MAT-2",
+   "kind": "klasse",
+   "name": "II. Jahrgang",
+   "parent": "HTL-MAT",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S1",
+   "kind": "semester",
+   "name": "3. Semester – Kompetenzmodul 3",
+   "parent": "HTL-MAT-2"
+  },
+  {
+   "code": "HTL-MAT-2-S1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zahlen und Funktionen",
+   "parent": "HTL-MAT-2-S1",
+   "competency_area": "Zahlen und Funktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S1-B1-K1",
+   "kind": "kompetenz",
+   "name": "den Begriff der Funktion und der Umkehrfunktion erklären, Eigenschaften von Funktionen …",
+   "parent": "HTL-MAT-2-S1-B1",
+   "text": "den Begriff der Funktion und der Umkehrfunktion erklären, Eigenschaften von Funktionen erkennen und an Beispielen veranschaulichen;",
+   "competency_area": "Zahlen und Funktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S1-B1-K2",
+   "kind": "kompetenz",
+   "name": "die Gleichungen und Eigenschaften der elementaren Funktionen verstehen, die …",
+   "parent": "HTL-MAT-2-S1-B1",
+   "text": "die Gleichungen und Eigenschaften der elementaren Funktionen verstehen, die Funktionsparameter interpretieren und die Funktionsgraphen skizzieren;",
+   "competency_area": "Zahlen und Funktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S1-B1-K3",
+   "kind": "kompetenz",
+   "name": "Polynomfunktionen und Exponentialfunktionen aufstellen und Polynomfunktionen zur …",
+   "parent": "HTL-MAT-2-S1-B1",
+   "text": "Polynomfunktionen und Exponentialfunktionen aufstellen und Polynomfunktionen zur Interpolation verwenden;",
+   "competency_area": "Zahlen und Funktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S1-B1-K4",
+   "kind": "kompetenz",
+   "name": "die trigonometrischen Funktionen anhand des Einheitskreises erklären und die Parameter …",
+   "parent": "HTL-MAT-2-S1-B1",
+   "text": "die trigonometrischen Funktionen anhand des Einheitskreises erklären und die Parameter der allgemeinen Sinusfunktion interpretieren;",
+   "competency_area": "Zahlen und Funktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S1-B1-K5",
+   "kind": "kompetenz",
+   "name": "quadratische Gleichungen lösen und die verschiedenen Lösungsfälle unterscheiden sowie …",
+   "parent": "HTL-MAT-2-S1-B1",
+   "text": "quadratische Gleichungen lösen und die verschiedenen Lösungsfälle unterscheiden sowie Gleichungen mit trigonometrischen, Exponential- und Logarithmusfunktionen lösen;",
+   "competency_area": "Zahlen und Funktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S1-B1-K6",
+   "kind": "kompetenz",
+   "name": "die Rechengesetze für Potenzen und Logarithmen begründen und anwenden",
+   "parent": "HTL-MAT-2-S1-B1",
+   "text": "die Rechengesetze für Potenzen und Logarithmen begründen und anwenden.",
+   "competency_area": "Zahlen und Funktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-MAT-2-S1",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Funktionen, Umkehrfunktionen und entsprechende Gleichungen",
+   "parent": "HTL-MAT-2-S1-L1",
+   "text": "Quadratische Funktionen, Potenzfunktionen, Polynomfunktionen, Exponentialfunktionen, Logarithmusfunktionen, trigonometrische Funktionen.",
+   "content_area": "Funktionen, Umkehrfunktionen und entsprechende Gleichungen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Eigenschaften von Funktionen",
+   "parent": "HTL-MAT-2-S1-L1",
+   "text": "Monotonie, Symmetrie, Periodizität, Nullstellen, asymptotisches Verhalten, Polstellen.",
+   "content_area": "Eigenschaften von Funktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Rechnen mit Zahlen und Größen",
+   "parent": "HTL-MAT-2-S1-L1",
+   "text": "Potenzen mit rationalen Hochzahlen.",
+   "content_area": "Rechnen mit Zahlen und Größen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Interpolation",
+   "parent": "HTL-MAT-2-S1-L1",
+   "text": "Quadratische Interpolation.",
+   "content_area": "Interpolation",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S2",
+   "kind": "semester",
+   "name": "4. Semester – Kompetenzmodul 4",
+   "parent": "HTL-MAT-2"
+  },
+  {
+   "code": "HTL-MAT-2-S2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Komplexe Zahlen und Geometrie",
+   "parent": "HTL-MAT-2-S2",
+   "competency_area": "Komplexe Zahlen und Geometrie",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S2-B1-K1",
+   "kind": "kompetenz",
+   "name": "die Grundrechnungsarten mit komplexen Zahlen ausführen und die Ergebnisse in der …",
+   "parent": "HTL-MAT-2-S2-B1",
+   "text": "die Grundrechnungsarten mit komplexen Zahlen ausführen und die Ergebnisse in der Gauß'schen Zahlenebene interpretieren;",
+   "competency_area": "Komplexe Zahlen und Geometrie",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S2-B1-K2",
+   "kind": "kompetenz",
+   "name": "Vektoren in rechtwinkeligen Koordinatensystemen darstellen, Linearkombinationen und …",
+   "parent": "HTL-MAT-2-S2-B1",
+   "text": "Vektoren in rechtwinkeligen Koordinatensystemen darstellen, Linearkombinationen und Skalarprodukt bestimmen und interpretieren sowie das vektorielle Produkt von Vektoren im Raum bilden und es geometrisch interpretieren;",
+   "competency_area": "Komplexe Zahlen und Geometrie",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S2-B1-K3",
+   "kind": "kompetenz",
+   "name": "mit Hilfe der Vektorrechnung Geraden in R2 und R3 sowie Ebenen in R3 aufstellen",
+   "parent": "HTL-MAT-2-S2-B1",
+   "text": "mit Hilfe der Vektorrechnung Geraden in R2 und R3 sowie Ebenen in R3 aufstellen;",
+   "competency_area": "Komplexe Zahlen und Geometrie",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S2-B1-K4",
+   "kind": "kompetenz",
+   "name": "Problemstellungen mit Hilfe von allgemeinen Dreiecken modellieren und lösen (Längen …",
+   "parent": "HTL-MAT-2-S2-B1",
+   "text": "Problemstellungen mit Hilfe von allgemeinen Dreiecken modellieren und lösen (Längen, Winkel, Flächeninhalte);",
+   "competency_area": "Komplexe Zahlen und Geometrie",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S2-B1-K5",
+   "kind": "kompetenz",
+   "name": "aus Stichprobenwerten Häufigkeitsverteilungen tabellarisch und grafisch darstellen, Lage- …",
+   "parent": "HTL-MAT-2-S2-B1",
+   "text": "aus Stichprobenwerten Häufigkeitsverteilungen tabellarisch und grafisch darstellen, Lage- und Streuungsmaße bestimmen und interpretieren und ihre Auswahl argumentieren.",
+   "competency_area": "Komplexe Zahlen und Geometrie",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Zahlen und Funktionen",
+   "parent": "HTL-MAT-2-S2",
+   "competency_area": "Zahlen und Funktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S2-B2-K1",
+   "kind": "kompetenz",
+   "name": "Parameterdarstellungen in einfachen Fällen problembezogen anwenden",
+   "parent": "HTL-MAT-2-S2-B2",
+   "text": "Parameterdarstellungen in einfachen Fällen problembezogen anwenden.",
+   "competency_area": "Zahlen und Funktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-MAT-2-S2",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Komplexe Zahlen",
+   "parent": "HTL-MAT-2-S2-L1",
+   "text": "Darstellung; Addition, Subtraktion, Multiplikation, Division; Polarkoordinaten.",
+   "content_area": "Komplexe Zahlen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Vektoren",
+   "parent": "HTL-MAT-2-S2-L1",
+   "text": "Skalarprodukt; vektorielles Produkt; Geraden in R2 und R3 und Ebenen in R3.",
+   "content_area": "Vektoren",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Trigonometrie",
+   "parent": "HTL-MAT-2-S2-L1",
+   "text": "Trigonometrie des allgemeinen Dreiecks.",
+   "content_area": "Trigonometrie",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S2-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Eindimensionale Datenbeschreibung",
+   "parent": "HTL-MAT-2-S2-L1",
+   "text": "Häufigkeitsverteilung, Lage- und Streuungsmaße, Boxplot.",
+   "content_area": "Eindimensionale Datenbeschreibung",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-2-S2-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Funktionen",
+   "parent": "HTL-MAT-2-S2-L1",
+   "text": "Parameterdarstellung insbesondere mit elektronischen Hilfsmitteln.",
+   "content_area": "Funktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-MAT-3",
+   "kind": "klasse",
+   "name": "III. Jahrgang",
+   "parent": "HTL-MAT",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S1",
+   "kind": "semester",
+   "name": "5. Semester – Kompetenzmodul 5",
+   "parent": "HTL-MAT-3"
+  },
+  {
+   "code": "HTL-MAT-3-S1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Differenzialrechnung",
+   "parent": "HTL-MAT-3-S1",
+   "competency_area": "Differenzialrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S1-B1-K1",
+   "kind": "kompetenz",
+   "name": "die Bildungsgesetze von arithmetischen und geometrischen Folgen verstehen und anwenden",
+   "parent": "HTL-MAT-3-S1-B1",
+   "text": "die Bildungsgesetze von arithmetischen und geometrischen Folgen verstehen und anwenden;",
+   "competency_area": "Differenzialrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S1-B1-K2",
+   "kind": "kompetenz",
+   "name": "die Begriffe „Grenzwert“, „Konvergenz und Divergenz von Folgen“ verstehen",
+   "parent": "HTL-MAT-3-S1-B1",
+   "text": "die Begriffe „Grenzwert“, „Konvergenz und Divergenz von Folgen“ verstehen;",
+   "competency_area": "Differenzialrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S1-B1-K3",
+   "kind": "kompetenz",
+   "name": "die elementaren Funktionen differenzieren und die Ableitung von zusammengesetzten …",
+   "parent": "HTL-MAT-3-S1-B1",
+   "text": "die elementaren Funktionen differenzieren und die Ableitung von zusammengesetzten Funktionen bestimmen;",
+   "competency_area": "Differenzialrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S1-B1-K4",
+   "kind": "kompetenz",
+   "name": "mit Hilfe der Ableitungen lokale Extremwerte und Wendepunkte bestimmen, Funktionen lokal …",
+   "parent": "HTL-MAT-3-S1-B1",
+   "text": "mit Hilfe der Ableitungen lokale Extremwerte und Wendepunkte bestimmen, Funktionen lokal durch lineare Funktionen approximieren sowie Funktionsgraphen hinsichtlich Monotonie, Konvexität, Nullstellen, Extremwerte, Wendepunkte und Polstellen interpretieren und beschreiben;",
+   "competency_area": "Differenzialrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S1-B1-K5",
+   "kind": "kompetenz",
+   "name": "in Natur und Technik auftretende Änderungsraten mit dem Differenzialquotient darstellen …",
+   "parent": "HTL-MAT-3-S1-B1",
+   "text": "in Natur und Technik auftretende Änderungsraten mit dem Differenzialquotient darstellen und die Differenzialrechnung zur Lösung von Aufgaben des Fachgebietes einsetzen.",
+   "competency_area": "Differenzialrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-MAT-3-S1",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Folgen",
+   "parent": "HTL-MAT-3-S1-L1",
+   "text": "Allgemeiner Begriff, arithmetische und geometrische Folgen, rekursive Definition von Folgen.",
+   "content_area": "Folgen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Grenzwert und Stetigkeit",
+   "parent": "HTL-MAT-3-S1-L1",
+   "text": "Grenzwert, konvergente und divergente Folgen. Grenzwert von Funktionen, Stetigkeit, Unstetigkeitsstellen.",
+   "content_area": "Grenzwert und Stetigkeit",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Differenzialrechnung",
+   "parent": "HTL-MAT-3-S1-L1",
+   "text": "Differenzen- und Differenzialquotient, Differenzierbarkeit; Ableitungsfunktion, Ableitungsregeln, höhere Ableitungen.",
+   "content_area": "Differenzialrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S2",
+   "kind": "semester",
+   "name": "6. Semester – Kompetenzmodul 6",
+   "parent": "HTL-MAT-3"
+  },
+  {
+   "code": "HTL-MAT-3-S2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Differenzial- und Integralrechnung",
+   "parent": "HTL-MAT-3-S2",
+   "competency_area": "Differenzial- und Integralrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S2-B1-K1",
+   "kind": "kompetenz",
+   "name": "Stammfunktionen von grundlegenden und im Fachgebiet relevanten Funktionen ermitteln, das …",
+   "parent": "HTL-MAT-3-S2-B1",
+   "text": "Stammfunktionen von grundlegenden und im Fachgebiet relevanten Funktionen ermitteln, das bestimmte Integral berechnen und als orientierten Flächeninhalt interpretieren;",
+   "competency_area": "Differenzial- und Integralrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S2-B1-K2",
+   "kind": "kompetenz",
+   "name": "die Differenzial- und Integralrechnung zur Lösung von Aufgaben des Fachgebietes einsetzen",
+   "parent": "HTL-MAT-3-S2-B1",
+   "text": "die Differenzial- und Integralrechnung zur Lösung von Aufgaben des Fachgebietes einsetzen;",
+   "competency_area": "Differenzial- und Integralrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S2-B1-K3",
+   "kind": "kompetenz",
+   "name": "Methoden der numerischen Mathematik mit unterstützenden technischen Hilfsmitteln zur …",
+   "parent": "HTL-MAT-3-S2-B1",
+   "text": "Methoden der numerischen Mathematik mit unterstützenden technischen Hilfsmitteln zur näherungsweisen Bestimmung der Nullstellen von Funktionen und zur näherungsweisen Berechnung von bestimmten Integralen einsetzen.",
+   "competency_area": "Differenzial- und Integralrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-MAT-3-S2",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Differenzialrechnung",
+   "parent": "HTL-MAT-3-S2-L1",
+   "text": "Fachbezogene Anwendungen.",
+   "content_area": "Differenzialrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Integralrechnung",
+   "parent": "HTL-MAT-3-S2-L1",
+   "text": "Stammfunktion und bestimmtes Integral, Grundintegrale, Integrationsregeln und -methoden.",
+   "content_area": "Integralrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-3-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Numerische Verfahren",
+   "parent": "HTL-MAT-3-S2-L1",
+   "text": "Iterationsverfahren zur Bestimmung von Nullstellen; Numerische Integration.",
+   "content_area": "Numerische Verfahren",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-MAT-4",
+   "kind": "klasse",
+   "name": "IV. Jahrgang",
+   "parent": "HTL-MAT",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-MAT-4-S1",
+   "kind": "semester",
+   "name": "7. Semester – Kompetenzmodul 7",
+   "parent": "HTL-MAT-4"
+  },
+  {
+   "code": "HTL-MAT-4-S1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Fehlerrechnung",
+   "parent": "HTL-MAT-4-S1",
+   "competency_area": "Fehlerrechnung",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-MAT-4-S1-B1-K1",
+   "kind": "kompetenz",
+   "name": "die Grundlagen der Fehlerfortpflanzung verstehen und anwenden",
+   "parent": "HTL-MAT-4-S1-B1",
+   "text": "die Grundlagen der Fehlerfortpflanzung verstehen und anwenden.",
+   "competency_area": "Fehlerrechnung",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-MAT-4-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-MAT-4-S1",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-MAT-4-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Rechnen mit Zahlen und Größen",
+   "parent": "HTL-MAT-4-S1-L1",
+   "text": "Fehlerquellen, Fehlerfortpflanzung.",
+   "content_area": "Rechnen mit Zahlen und Größen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-MAT-4-S2",
+   "kind": "semester",
+   "name": "8. Semester – Kompetenzmodul 8",
+   "parent": "HTL-MAT-4"
+  },
+  {
+   "code": "HTL-MAT-4-S2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Stochastik",
+   "parent": "HTL-MAT-4-S2",
+   "competency_area": "Stochastik",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-MAT-4-S2-B1-K1",
+   "kind": "kompetenz",
+   "name": "den Begriff Zufallsexperiment verstehen, die Wahrscheinlichkeit zufälliger Ereignisse mit …",
+   "parent": "HTL-MAT-4-S2-B1",
+   "text": "den Begriff Zufallsexperiment verstehen, die Wahrscheinlichkeit zufälliger Ereignisse mit Hilfe der Definition für Wahrscheinlichkeiten nach Laplace bestimmen und die Additions- und Multiplikationsregel anwenden;",
+   "competency_area": "Stochastik",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-MAT-4-S2-B1-K2",
+   "kind": "kompetenz",
+   "name": "mehrstufige Zufallsexperimente mit Baumdiagrammen modellieren, diese interpretieren und …",
+   "parent": "HTL-MAT-4-S2-B1",
+   "text": "mehrstufige Zufallsexperimente mit Baumdiagrammen modellieren, diese interpretieren und damit argumentieren.",
+   "competency_area": "Stochastik",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-MAT-4-S2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Matrizen",
+   "parent": "HTL-MAT-4-S2",
+   "competency_area": "Matrizen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-MAT-4-S2-B2-K1",
+   "kind": "kompetenz",
+   "name": "Daten strukturiert in Vektoren und Matrizen zusammenfassen sowie Berechnungen im …",
+   "parent": "HTL-MAT-4-S2-B2",
+   "text": "Daten strukturiert in Vektoren und Matrizen zusammenfassen sowie Berechnungen im Fachgebiet durchführen und kennen den Begriff der Determinante und deren Bedeutung.",
+   "competency_area": "Matrizen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-MAT-4-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-MAT-4-S2",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-MAT-4-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Stochastik",
+   "parent": "HTL-MAT-4-S2-L1",
+   "text": "Zufallsexperimente, Laplace-Wahrscheinlichkeit, Additions- und Multiplikationssatz für einander ausschließende bzw. unabhängige Ereignisse; bedingte Wahrscheinlichkeit.",
+   "content_area": "Stochastik",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-MAT-4-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Matrizen",
+   "parent": "HTL-MAT-4-S2-L1",
+   "text": "Bezeichnungen, Addition, Multiplikation, Multiplikation mit einer Zahl; Rechenregeln, Determinante, lineare Gleichungssysteme in Matrizenform.",
+   "content_area": "Matrizen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-MAT-5",
+   "kind": "klasse",
+   "name": "V. Jahrgang",
+   "parent": "HTL-MAT",
+   "klasse": 5,
+   "schulstufe": 13,
+   "text": "Kompetenzmodul 9"
+  },
+  {
+   "code": "HTL-MAT-5-S1",
+   "kind": "semester",
+   "name": "9. Semester",
+   "parent": "HTL-MAT-5"
+  },
+  {
+   "code": "HTL-MAT-5-S1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Stochastik",
+   "parent": "HTL-MAT-5-S1",
+   "competency_area": "Stochastik",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-MAT-5-S1-B1-K1",
+   "kind": "kompetenz",
+   "name": "Zufallsexperimente mit Hilfe der Binomialverteilung modellieren",
+   "parent": "HTL-MAT-5-S1-B1",
+   "text": "Zufallsexperimente mit Hilfe der Binomialverteilung modellieren;",
+   "competency_area": "Stochastik",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-MAT-5-S1-B1-K2",
+   "kind": "kompetenz",
+   "name": "die Normalverteilung als Grundmodell zur Beschreibung der Variation von metrischen …",
+   "parent": "HTL-MAT-5-S1-B1",
+   "text": "die Normalverteilung als Grundmodell zur Beschreibung der Variation von metrischen Variablen ermitteln, Werte der Verteilungsfunktion bestimmen und zu vorgegebenen Verteilungsfunktionswerten die entsprechenden Quantile bestimmen;",
+   "competency_area": "Stochastik",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-MAT-5-S1-B1-K3",
+   "kind": "kompetenz",
+   "name": "Schätzwerte für Verteilungsparameter bestimmen und Konfidenzintervalle für den Mittelwert …",
+   "parent": "HTL-MAT-5-S1-B1",
+   "text": "Schätzwerte für Verteilungsparameter bestimmen und Konfidenzintervalle für den Mittelwert und die Standardabweichung einer normalverteilten Zufallsvariable berechnen und interpretieren.",
+   "competency_area": "Stochastik",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-MAT-5-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-MAT-5-S1",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-MAT-5-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Wahrscheinlichkeitsverteilungen",
+   "parent": "HTL-MAT-5-S1-L1",
+   "text": "Binomialverteilung, Normalverteilung.",
+   "content_area": "Wahrscheinlichkeitsverteilungen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-MAT-5-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beurteilende Statistik",
+   "parent": "HTL-MAT-5-S1-L1",
+   "text": "Konfidenzintervalle; Signifikanz.",
+   "content_area": "Beurteilende Statistik",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-MAT-5-S2",
+   "kind": "semester",
+   "name": "10. Semester",
+   "parent": "HTL-MAT-5"
+  },
+  {
+   "code": "HTL-MAT-5-S2-K1",
+   "kind": "kompetenz",
+   "name": "die bisher vermittelten mathematischen Methoden und Verfahren in verschiedenen Kontexten …",
+   "parent": "HTL-MAT-5-S2",
+   "text": "die bisher vermittelten mathematischen Methoden und Verfahren in verschiedenen Kontexten selbstständig anwenden und im",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-MAT-5-S2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Stochastik",
+   "parent": "HTL-MAT-5-S2",
+   "competency_area": "Stochastik",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-MAT-5-S2-B1-K1",
+   "kind": "kompetenz",
+   "name": "die Methode der kleinsten Quadrate verstehen und aus vorgegebenen Punkten eine passende …",
+   "parent": "HTL-MAT-5-S2-B1",
+   "text": "die Methode der kleinsten Quadrate verstehen und aus vorgegebenen Punkten eine passende Ausgleichsfunktion mittels Technologieeinsatz ermitteln und das Ergebnis interpretieren;",
+   "competency_area": "Stochastik",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-MAT-5-S2-B1-K2",
+   "kind": "kompetenz",
+   "name": "die Methode der linearen Regression anwenden",
+   "parent": "HTL-MAT-5-S2-B1",
+   "text": "die Methode der linearen Regression anwenden.",
+   "competency_area": "Stochastik",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-MAT-5-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-MAT-5-S2",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-MAT-5-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Ausgleichsrechnung",
+   "parent": "HTL-MAT-5-S2-L1",
+   "text": "Methode der kleinsten Quadrate; Ausgleichsfunktionen, lineare Regression, Korrelationskoeffizient.",
+   "content_area": "Ausgleichsrechnung",
+   "klasse": 5,
+   "schulstufe": 13
+  }
+ ],
+ "skills": [],
+ "skill_nodes": [
+  [
+   "mathe.gleichungen.einfach",
+   "HTL-MAT-1-B2-K3"
+  ],
+  [
+   "mathe.potenzen.regeln",
+   "HTL-MAT-1-B2-K1"
+  ],
+  [
+   "mathe.prozent.prozentwert",
+   "HTL-MAT-1-B1-K4"
+  ],
+  [
+   "mathe.prozent.prozentsatz",
+   "HTL-MAT-1-B1-K4"
+  ],
+  [
+   "mathe.prozent.grundwert",
+   "HTL-MAT-1-B1-K4"
+  ]
+ ]
+}

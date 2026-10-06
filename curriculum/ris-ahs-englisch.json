@@ -1,0 +1,1503 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "Lehrplan Gymnasium – Erste lebende Fremdsprache (RIS)",
+ "description": "Offizieller Lehrplantext aus dem RIS (NOR40264238), BGBl. Nr. 88/1985 idF BGBl. II Nr. 204/2024. Unterstufe (1.–4. Klasse) und Oberstufe (5.–8. Klasse).",
+ "source": {
+  "key": "ris-ahs",
+  "name": "RIS – Lehrpläne der allgemeinbildenden höheren Schulen, Anlage A",
+  "source_type": "lehrplan",
+  "url": "https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Bundesnormen&Dokumentnummer=NOR40264238",
+  "publisher": "Republik Österreich (RIS)",
+  "license": "amtliches Werk (§ 7 UrhG)",
+  "attribution_text": "BGBl. Nr. 88/1985 idF BGBl. II Nr. 204/2024",
+  "notes": "Gesetzesnummer 10008568, Dokumentnummer NOR40264238, in Kraft seit 01.09.2026. Wortlaut nur um Seitenköpfe, Zeilenumbrüche und Fußnotenziffern bereinigt."
+ },
+ "curriculum": {
+  "key": "ris-ahs-englisch",
+  "name": "Lehrplan Gymnasium – Erste lebende Fremdsprache",
+  "school_type": "Gymnasium",
+  "subject": "Englisch",
+  "version": "BGBl. II Nr. 204/2024",
+  "reference": "BGBl. Nr. 88/1985 idF BGBl. II Nr. 204/2024, NOR40264238",
+  "valid_from": "2026-09-01"
+ },
+ "nodes": [
+  {
+   "code": "AHS-ENG",
+   "kind": "fach",
+   "name": "Erste lebende Fremdsprache"
+  },
+  {
+   "code": "AHS-ENG-1",
+   "kind": "klasse",
+   "name": "1. Klasse",
+   "parent": "AHS-ENG",
+   "klasse": 1,
+   "schulstufe": 5,
+   "text": "In allen vier Kompetenzbereichen wird das Zielniveau A1/A2 angestrebt. Es ist zu beachten, dass auf diesem Zielniveau ein entsprechendes Spektrum an vertrauten sprachlichen Mitteln hinreichend korrekt erkannt und niveauadäquat angewendet wird. Hör- und Leseverstehen beziehen sich auf das globale Verständnis, das Verstehen wichtiger Details sowie die Fähigkeit, einfache Schlussfolgerungen zu ziehen."
+  },
+  {
+   "code": "AHS-ENG-1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Hören",
+   "parent": "AHS-ENG-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Hören",
+   "text": "Die Schülerinnen und Schüler können, wenn sehr langsam, klar und deutlich in Standardsprache gesprochen wird,"
+  },
+  {
+   "code": "AHS-ENG-1-B1-K1",
+   "kind": "kompetenz",
+   "name": "in kurzen Dialogen oder Monologen einfache Fragen und Sätze, die sich auf sie selbst und …",
+   "parent": "AHS-ENG-1-B1",
+   "text": "in kurzen Dialogen oder Monologen einfache Fragen und Sätze, die sich auf sie selbst und ihr persönliches Umfeld beziehen, verstehen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "AHS-ENG-1-B1-K2",
+   "kind": "kompetenz",
+   "name": "einfache alltägliche Kommunikation im Unterricht verstehen",
+   "parent": "AHS-ENG-1-B1",
+   "text": "einfache alltägliche Kommunikation im Unterricht verstehen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "AHS-ENG-1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "AHS-ENG-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-1-B2-K1",
+   "kind": "kompetenz",
+   "name": "einfache Arbeitsanweisungen und Mitteilungen verstehen",
+   "parent": "AHS-ENG-1-B2",
+   "text": "einfache Arbeitsanweisungen und Mitteilungen verstehen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-1-B2-K2",
+   "kind": "kompetenz",
+   "name": "sehr einfache Texte über vertraute Themen verstehen",
+   "parent": "AHS-ENG-1-B2",
+   "text": "sehr einfache Texte über vertraute Themen verstehen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)",
+   "parent": "AHS-ENG-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)",
+   "text": "Die Schülerinnen und Schüler können zu alltäglichen und persönlichen Themen"
+  },
+  {
+   "code": "AHS-ENG-1-B3-K1",
+   "kind": "kompetenz",
+   "name": "an Gesprächen teilnehmen und sich mit Hilfe des Gesprächspartners auf einfache Art …",
+   "parent": "AHS-ENG-1-B3",
+   "text": "an Gesprächen teilnehmen und sich mit Hilfe des Gesprächspartners auf einfache Art verständigen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "AHS-ENG-1-B3-K2",
+   "kind": "kompetenz",
+   "name": "einfache Fragen stellen und beantworten",
+   "parent": "AHS-ENG-1-B3",
+   "text": "einfache Fragen stellen und beantworten.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "AHS-ENG-1-B3-K3",
+   "kind": "kompetenz",
+   "name": "beim zusammenhängenden Sprechen in einfachen Sätzen über vertraute Themen (ua. Familie …",
+   "parent": "AHS-ENG-1-B3",
+   "text": "beim zusammenhängenden Sprechen in einfachen Sätzen über vertraute Themen (ua. Familie, Freunde, Tagesablauf, Hobbys, Schule) sprechen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "AHS-ENG-1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "AHS-ENG-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben",
+   "text": "Die Schülerinnen und Schüler können zu alltäglichen und persönlichen Themen."
+  },
+  {
+   "code": "AHS-ENG-1-B4-K1",
+   "kind": "kompetenz",
+   "name": "über sich selbst und vertraute Themen (ua. Familie, Freunde, Tagesablauf, Hobbys, Schule) …",
+   "parent": "AHS-ENG-1-B4",
+   "text": "über sich selbst und vertraute Themen (ua. Familie, Freunde, Tagesablauf, Hobbys, Schule) in einfachen Sätzen schreiben.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-1-B4-K2",
+   "kind": "kompetenz",
+   "name": "Informationen in geschriebener Form weitergeben (persönliche Mitteilungen)",
+   "parent": "AHS-ENG-1-B4",
+   "text": "Informationen in geschriebener Form weitergeben (persönliche Mitteilungen).",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-1-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-ENG-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "text": "Anwendungsbereiche haben repräsentativen Charakter und bezeichnen handlungsorientierte Themenfelder. Sie konkretisieren und präzisieren die Kompetenzbereiche und richten sich nach der aktuellen, tatsächlichen Lebenswelt und den Interessen der Schülerinnen und Schüler sowie nach den Möglichkeiten innerhalb des angestrebten Sprachniveaus. Im Sprachunterricht gilt allgemein das Prinzip der sukzessiven Erweiterung der Lebenswelt. Themen werden daher innerhalb der gesamten Sekundarstufe I wiederkehrend und vertiefend behandelt und im Sinne des Transferlernens auf ähnliche Situationen angewendet. Im Laufe der Sekundarstufe I wird der Blick von der persönlichen Lebenswelt um einzelne Aspekte der jeweiligen Kulturen erweitert, und die Wahrnehmung und Akzeptanz von kulturellen Unterschieden wird gefördert."
+  },
+  {
+   "code": "AHS-ENG-2",
+   "kind": "klasse",
+   "name": "2. Klasse",
+   "parent": "AHS-ENG",
+   "klasse": 2,
+   "schulstufe": 6,
+   "text": "In allen vier Kompetenzbereichen wird das Zielniveau A2 angestrebt. Es ist bei den sprachlichen Mitteln zu beachten, dass die Schülerinnen und Schüler auf dem Zielniveau A2 ein entsprechendes Spektrum an vertrauten sprachlichen Mitteln hinreichend korrekt erkennen und niveauadäquat anwenden können. Hör- und Leseverstehen beziehen sich auf das globale Verständnis, das Verstehen wichtiger Details sowie die Fähigkeit, einfache Schlussfolgerungen zu ziehen."
+  },
+  {
+   "code": "AHS-ENG-2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Hören",
+   "parent": "AHS-ENG-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Hören",
+   "text": "Die Schülerinnen und Schüler können, wenn langsam, klar und deutlich in Standardsprache gesprochen wird,"
+  },
+  {
+   "code": "AHS-ENG-2-B1-K1",
+   "kind": "kompetenz",
+   "name": "Anweisungen, Fragen und Auskünfte verstehen",
+   "parent": "AHS-ENG-2-B1",
+   "text": "Anweisungen, Fragen und Auskünfte verstehen.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "AHS-ENG-2-B1-K2",
+   "kind": "kompetenz",
+   "name": "kurze einfache Gespräche und Texte über vertraute Themen verstehen",
+   "parent": "AHS-ENG-2-B1",
+   "text": "kurze einfache Gespräche und Texte über vertraute Themen verstehen.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "AHS-ENG-2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "AHS-ENG-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-2-B2-K1",
+   "kind": "kompetenz",
+   "name": "kurze einfache Geschichten, Briefe, E-Mails oder bebilderte Sachtexte verstehen",
+   "parent": "AHS-ENG-2-B2",
+   "text": "kurze einfache Geschichten, Briefe, E-Mails oder bebilderte Sachtexte verstehen.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-2-B2-K2",
+   "kind": "kompetenz",
+   "name": "kurzen vertrauten Alltagstexten wichtige Informationen entnehmen",
+   "parent": "AHS-ENG-2-B2",
+   "text": "kurzen vertrauten Alltagstexten wichtige Informationen entnehmen.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-2-B3",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)",
+   "parent": "AHS-ENG-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)",
+   "text": "Die Schülerinnen und Schüler können in einfachen zusammenhängenden Sätzen"
+  },
+  {
+   "code": "AHS-ENG-2-B3-K1",
+   "kind": "kompetenz",
+   "name": "kurze Gespräche über vertraute Themen führen",
+   "parent": "AHS-ENG-2-B3",
+   "text": "kurze Gespräche über vertraute Themen führen.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "AHS-ENG-2-B3-K2",
+   "kind": "kompetenz",
+   "name": "in Alltagssituationen einfache Informationen geben, Fragen stellen und Vereinbarungen …",
+   "parent": "AHS-ENG-2-B3",
+   "text": "in Alltagssituationen einfache Informationen geben, Fragen stellen und Vereinbarungen treffen.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "AHS-ENG-2-B3-K3",
+   "kind": "kompetenz",
+   "name": "über vertraute Themen (ua. Dinge, Orte, Personen) sprechen und dabei auch Gefühle …",
+   "parent": "AHS-ENG-2-B3",
+   "text": "über vertraute Themen (ua. Dinge, Orte, Personen) sprechen und dabei auch Gefühle, Vorlieben, Stärken und Meinungen auf einfache Weise ausdrücken.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "AHS-ENG-2-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "AHS-ENG-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben",
+   "text": "Die Schülerinnen und Schüler können in einfachen zusammenhängenden Sätzen"
+  },
+  {
+   "code": "AHS-ENG-2-B4-K1",
+   "kind": "kompetenz",
+   "name": "Aspekte des persönlichen Lebensumfeldes beschreiben (ua. Personen, Orte, Pläne, Wünsche)",
+   "parent": "AHS-ENG-2-B4",
+   "text": "Aspekte des persönlichen Lebensumfeldes beschreiben (ua. Personen, Orte, Pläne, Wünsche).",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-2-B4-K2",
+   "kind": "kompetenz",
+   "name": "die eigene Meinung ausdrücken und begründen",
+   "parent": "AHS-ENG-2-B4",
+   "text": "die eigene Meinung ausdrücken und begründen.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-2-B4-K3",
+   "kind": "kompetenz",
+   "name": "einfache Geschichten und Gebrauchstexte (ua. E-Mails, Mitteilungen) schreiben und dabei …",
+   "parent": "AHS-ENG-2-B4",
+   "text": "einfache Geschichten und Gebrauchstexte (ua. E-Mails, Mitteilungen) schreiben und dabei auch über vergangene und zukünftige Ereignisse berichten.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-2-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-ENG-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "text": "Anwendungsbereiche haben repräsentativen Charakter und bezeichnen handlungsorientierte Themenfelder. Sie konkretisieren und präzisieren die Kompetenzbereiche und richten sich nach der aktuellen, tatsächlichen Lebenswelt und den Interessen der Schülerinnen und Schüler sowie nach den Möglichkeiten innerhalb des angestrebten Sprachniveaus. Im Sprachunterricht gilt allgemein das Prinzip der sukzessiven Erweiterung der Lebenswelt. Themen werden daher innerhalb der gesamten Sekundarstufe I wiederkehrend und vertiefend behandelt und im Sinne des Transferlernens auf ähnliche Situationen angewendet. Im Laufe der Sekundarstufe I wird der Blick von der persönlichen Lebenswelt um einzelne Aspekte der jeweiligen Kulturen erweitert, und die Wahrnehmung und Akzeptanz von kulturellen Unterschieden wird gefördert."
+  },
+  {
+   "code": "AHS-ENG-3",
+   "kind": "klasse",
+   "name": "3. Klasse",
+   "parent": "AHS-ENG",
+   "klasse": 3,
+   "schulstufe": 7,
+   "text": "In allen vier Kompetenzbereichen wird das Zielniveau A2+ angestrebt. Bei den sprachlichen Mitteln ist zu beachten, dass die Schülerinnen und Schüler auf dem Zielniveau A2+ ein entsprechendes Spektrum an vertrauten sprachlichen Mitteln hinreichend korrekt erkennen und niveauadäquat anwenden können. Hör- und Leseverstehen beziehen sich auf das globale Verständnis, das Verstehen wichtiger Details sowie die Fähigkeit, einfache Schlussfolgerungen zu ziehen."
+  },
+  {
+   "code": "AHS-ENG-3-B1",
+   "kind": "kompetenzbereich",
+   "name": "Hören",
+   "parent": "AHS-ENG-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Hören",
+   "text": "Die Schülerinnen und Schüler können, wenn klar und deutlich und nicht zu schnell in Standardsprache gesprochen wird,"
+  },
+  {
+   "code": "AHS-ENG-3-B1-K1",
+   "kind": "kompetenz",
+   "name": "einfache Gespräche, Erzählungen und kurze Medienbeiträge verstehen",
+   "parent": "AHS-ENG-3-B1",
+   "text": "einfache Gespräche, Erzählungen und kurze Medienbeiträge verstehen.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "AHS-ENG-3-B2",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "AHS-ENG-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-3-B2-K1",
+   "kind": "kompetenz",
+   "name": "einfache und konkrete Artikel in Magazinen und Jugendzeitschriften, altersadäquate …",
+   "parent": "AHS-ENG-3-B2",
+   "text": "einfache und konkrete Artikel in Magazinen und Jugendzeitschriften, altersadäquate Kinder\u0002und Jugendbücher, Geschichten und Sachtexte sowie persönliche Texte, die sich auf altersgerechte Aspekte der zielsprachlichen Kultur(en) beziehen, verstehen.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-3-B2-K2",
+   "kind": "kompetenz",
+   "name": "in einfachen Texten Wünsche und Gefühle verstehen",
+   "parent": "AHS-ENG-3-B2",
+   "text": "in einfachen Texten Wünsche und Gefühle verstehen.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-3-B3",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)",
+   "parent": "AHS-ENG-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)",
+   "text": "Die Schülerinnen und Schüler können in einfacher Sprache"
+  },
+  {
+   "code": "AHS-ENG-3-B3-K1",
+   "kind": "kompetenz",
+   "name": "ein Gespräch beginnen, weiterführen und beenden sowie einfache Sprecherwechsel durchführen",
+   "parent": "AHS-ENG-3-B3",
+   "text": "ein Gespräch beginnen, weiterführen und beenden sowie einfache Sprecherwechsel durchführen.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "AHS-ENG-3-B3-K2",
+   "kind": "kompetenz",
+   "name": "Vereinbarungen treffen, Ratschläge erbitten und geben, einfache Begründungen, Meinungen …",
+   "parent": "AHS-ENG-3-B3",
+   "text": "Vereinbarungen treffen, Ratschläge erbitten und geben, einfache Begründungen, Meinungen und Gefühle ausdrücken und darauf reagieren.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "AHS-ENG-3-B3-K3",
+   "kind": "kompetenz",
+   "name": "über vertraute Themenbereiche erzählen und einfache (Buch-)Präsentationen halten",
+   "parent": "AHS-ENG-3-B3",
+   "text": "über vertraute Themenbereiche erzählen und einfache (Buch-)Präsentationen halten.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "AHS-ENG-3-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "AHS-ENG-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben",
+   "text": "Die Schülerinnen und Schüler können auf einfache Art"
+  },
+  {
+   "code": "AHS-ENG-3-B4-K1",
+   "kind": "kompetenz",
+   "name": "kurze zusammenhängende Texte über alltägliche Aspekte des eigenen Umfelds sowie des …",
+   "parent": "AHS-ENG-3-B4",
+   "text": "kurze zusammenhängende Texte über alltägliche Aspekte des eigenen Umfelds sowie des Lebensalltags von Jugendlichen in verschiedenen Ländern schreiben.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-3-B4-K2",
+   "kind": "kompetenz",
+   "name": "kurze Beschreibungen von Ereignissen, vergangenen und zukünftigen Handlungen und …",
+   "parent": "AHS-ENG-3-B4",
+   "text": "kurze Beschreibungen von Ereignissen, vergangenen und zukünftigen Handlungen und persönlichen Erfahrungen verfassen und dabei auch Meinungen und Gefühle ausdrücken.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-3-B4-K3",
+   "kind": "kompetenz",
+   "name": "kurz über ihre Eindrücke und Meinungen zu altersadäquaten Geschichten sowie zu Kinder\u0002und …",
+   "parent": "AHS-ENG-3-B4",
+   "text": "kurz über ihre Eindrücke und Meinungen zu altersadäquaten Geschichten sowie zu Kinder\u0002und Jugendliteratur schreiben.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-3-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-ENG-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "text": "Anwendungsbereiche haben repräsentativen Charakter und bezeichnen handlungsorientierte Themenfelder. Sie konkretisieren und präzisieren die Kompetenzbereiche und richten sich nach der aktuellen, tatsächlichen Lebenswelt und den Interessen der Schülerinnen und Schüler sowie nach den Möglichkeiten innerhalb des angestrebten Sprachniveaus. Im Sprachunterricht gilt allgemein das Prinzip der sukzessiven Erweiterung der Lebenswelt. Themen werden daher innerhalb der gesamten Sekundarstufe I wiederkehrend und vertiefend behandelt und im Sinne des Transferlernens auf ähnliche Situationen angewendet. Im Laufe der Sekundarstufe I wird der Blick von der persönlichen Lebenswelt um einzelne Aspekte der jeweiligen Kulturen erweitert, und die Wahrnehmung und Akzeptanz von kulturellen Unterschieden wird gefördert."
+  },
+  {
+   "code": "AHS-ENG-4",
+   "kind": "klasse",
+   "name": "4. Klasse",
+   "parent": "AHS-ENG",
+   "klasse": 4,
+   "schulstufe": 8,
+   "text": "In allen vier Kompetenzbereichen wird das Zielniveau A2+ mit ausgewählten Deskriptoren aus B1 angestrebt. Bei den sprachlichen Mitteln ist zu beachten, dass die Schülerinnen und Schüler auf dem Zielniveau A2+ ein entsprechendes Spektrum an vertrauten sprachlichen Mitteln hinreichend korrekt erkennen und niveauadäquat anwenden können. Hör- und Leseverstehen beziehen sich auf das globale Verständnis, das Verstehen wichtiger Details sowie die Fähigkeit, einfache Schlussfolgerungen zu ziehen."
+  },
+  {
+   "code": "AHS-ENG-4-B1",
+   "kind": "kompetenzbereich",
+   "name": "Hören",
+   "parent": "AHS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Hören",
+   "text": "Die Schülerinnen und Schüler können, wenn in klarer und deutlicher Standardsprache gesprochen wird,"
+  },
+  {
+   "code": "AHS-ENG-4-B1-K1",
+   "kind": "kompetenz",
+   "name": "Gespräche, kurze Erzählungen, Präsentationen, Filme und kurze Medienbeiträge über …",
+   "parent": "AHS-ENG-4-B1",
+   "text": "Gespräche, kurze Erzählungen, Präsentationen, Filme und kurze Medienbeiträge über vertraute Themen verstehen.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "AHS-ENG-4-B2",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "AHS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-4-B2-K1",
+   "kind": "kompetenz",
+   "name": "einfache klar strukturierte Jugendliteratur oder Sachliteratur mit befriedigendem …",
+   "parent": "AHS-ENG-4-B2",
+   "text": "einfache klar strukturierte Jugendliteratur oder Sachliteratur mit befriedigendem Verständnis lesen und darin enthaltene Einstellungen (ua. der handelnden Personen oder Autoren) erkennen.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-4-B2-K2",
+   "kind": "kompetenz",
+   "name": "einfache altersadäquate Texte verstehen und spezifische Informationen entnehmen",
+   "parent": "AHS-ENG-4-B2",
+   "text": "einfache altersadäquate Texte verstehen und spezifische Informationen entnehmen.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-4-B3",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)",
+   "parent": "AHS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "AHS-ENG-4-B3-K1",
+   "kind": "kompetenz",
+   "name": "sich in routinemäßigen Situationen über vertraute Themen ohne große Mühe verständigen …",
+   "parent": "AHS-ENG-4-B3",
+   "text": "sich in routinemäßigen Situationen über vertraute Themen ohne große Mühe verständigen (ua. Zustimmung oder Ablehnung ausdrücken, Vorschläge machen, über Pläne reden, Rat erbitten und geben, einfache Begründungen vorbringen, die eigene Meinung und Vermutungen formulieren).",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "AHS-ENG-4-B3-K2",
+   "kind": "kompetenz",
+   "name": "über (Alltags-)Ereignisse und vergangene sowie zukünftige Aktivitäten berichten und dabei …",
+   "parent": "AHS-ENG-4-B3",
+   "text": "über (Alltags-)Ereignisse und vergangene sowie zukünftige Aktivitäten berichten und dabei auch Meinungen und Gefühle ausdrücken.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "AHS-ENG-4-B3-K3",
+   "kind": "kompetenz",
+   "name": "einfache Präsentationen zu vertrauten Themen, Büchern, Filmen oder zu Themen und Ideen …",
+   "parent": "AHS-ENG-4-B3",
+   "text": "einfache Präsentationen zu vertrauten Themen, Büchern, Filmen oder zu Themen und Ideen von persönlichem Interesse halten.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "AHS-ENG-4-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "AHS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-4-B4-K1",
+   "kind": "kompetenz",
+   "name": "unkomplizierte, strukturierte Texte (ua. Postings, E-Mails, Erfahrungsberichte) zu …",
+   "parent": "AHS-ENG-4-B4",
+   "text": "unkomplizierte, strukturierte Texte (ua. Postings, E-Mails, Erfahrungsberichte) zu vertrauten Themen schreiben.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-4-B4-K2",
+   "kind": "kompetenz",
+   "name": "in einfacher Sprache, Meinungen ausdrücken, Gefühle beschreiben und einfache Vermutungen …",
+   "parent": "AHS-ENG-4-B4",
+   "text": "in einfacher Sprache, Meinungen ausdrücken, Gefühle beschreiben und einfache Vermutungen anstellen (auch über Bücher und Filme).",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-4-B4-K3",
+   "kind": "kompetenz",
+   "name": "für Ansichten, Pläne oder Handlungen einfache Begründungen oder Erklärungen geben und …",
+   "parent": "AHS-ENG-4-B4",
+   "text": "für Ansichten, Pläne oder Handlungen einfache Begründungen oder Erklärungen geben und Ideen präsentieren.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-4-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "text": "Anwendungsbereiche haben repräsentativen Charakter und bezeichnen handlungsorientierte Themenfelder. Sie konkretisieren und präzisieren die Kompetenzbereiche und richten sich nach der aktuellen, tatsächlichen Lebenswelt und den Interessen der Schülerinnen und Schüler sowie nach den Möglichkeiten innerhalb des angestrebten Sprachniveaus. Im Sprachunterricht gilt allgemein das Prinzip der sukzessiven Erweiterung der Lebenswelt. Themen werden daher innerhalb der gesamten Sekundarstufe I wiederkehrend und vertiefend behandelt und im Sinne des Transferlernens auf ähnliche Situationen angewendet. Im Laufe der Sekundarstufe I wird der Blick von der persönlichen Lebenswelt um einzelne Aspekte der jeweiligen Kulturen erweitert, und die Wahrnehmung und Akzeptanz von kulturellen Unterschieden wird gefördert."
+  },
+  {
+   "code": "AHS-ENG-5",
+   "kind": "klasse",
+   "name": "5. Klasse",
+   "parent": "AHS-ENG",
+   "klasse": 5,
+   "schulstufe": 9,
+   "text": "1. und 2. Semester"
+  },
+  {
+   "code": "AHS-ENG-5-T1",
+   "kind": "thema",
+   "name": "Hören",
+   "parent": "AHS-ENG-5",
+   "klasse": 5,
+   "schulstufe": 9,
+   "content_area": "Hören"
+  },
+  {
+   "code": "AHS-ENG-5-T1-K1",
+   "kind": "kompetenz",
+   "name": "Hauptpunkte und wesentliche Informationen verstehen können, wenn in deutlich …",
+   "parent": "AHS-ENG-5-T1",
+   "text": "Hauptpunkte und wesentliche Informationen verstehen können, wenn in deutlich artikulierter Standardsprache über vertraute Dinge gesprochen wird, denen man normalerweise in der Ausbildung oder der Freizeit begegnet",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-ENG-5-T1-K2",
+   "kind": "kompetenz",
+   "name": "kurze Erzählungen verstehen können",
+   "parent": "AHS-ENG-5-T1",
+   "text": "kurze Erzählungen verstehen können",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-ENG-5-T2",
+   "kind": "thema",
+   "name": "Lesen",
+   "parent": "AHS-ENG-5",
+   "klasse": 5,
+   "schulstufe": 9,
+   "content_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-5-T2-K1",
+   "kind": "kompetenz",
+   "name": "konkrete, unkomplizierte Texte, auch Zeitungsartikel und einfache literarische Texte über …",
+   "parent": "AHS-ENG-5-T2",
+   "text": "konkrete, unkomplizierte Texte, auch Zeitungsartikel und einfache literarische Texte über vertraute Themen mit befriedigendem Verständnis lesen können, die wesentlichen Punkte erfassen und wichtige Informationen auffinden können",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-ENG-5-T2-K2",
+   "kind": "kompetenz",
+   "name": "einfache Beschreibungen von Ereignissen, Gefühlen und Wünschen verstehen können",
+   "parent": "AHS-ENG-5-T2",
+   "text": "einfache Beschreibungen von Ereignissen, Gefühlen und Wünschen verstehen können",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-ENG-5-T3",
+   "kind": "thema",
+   "name": "Sprechen – An Gesprächen teilnehmen und zusammenhängendes Sprechen",
+   "parent": "AHS-ENG-5",
+   "klasse": 5,
+   "schulstufe": 9,
+   "content_area": "Sprechen – An Gesprächen teilnehmen und zusammenhängendes Sprechen"
+  },
+  {
+   "code": "AHS-ENG-5-T3-K1",
+   "kind": "kompetenz",
+   "name": "ohne Vorbereitung an Gesprächen über vertraute Themen (zB Alltag, aktuelle Ereignisse …",
+   "parent": "AHS-ENG-5-T3",
+   "text": "ohne Vorbereitung an Gesprächen über vertraute Themen (zB Alltag, aktuelle Ereignisse, Reisen) teilnehmen und Informationen austauschen können",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-ENG-5-T3-K2",
+   "kind": "kompetenz",
+   "name": "die eigene Meinung und Gefühle (zB Überraschung, Freude, Interesse) sowie Träume …",
+   "parent": "AHS-ENG-5-T3",
+   "text": "die eigene Meinung und Gefühle (zB Überraschung, Freude, Interesse) sowie Träume, Hoffnungen und Ziele ausdrücken und darauf reagieren können",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-ENG-5-T3-K3",
+   "kind": "kompetenz",
+   "name": "relativ flüssig eine unkomplizierte zusammenhängende Beschreibung zu vertrauten Themen …",
+   "parent": "AHS-ENG-5-T3",
+   "text": "relativ flüssig eine unkomplizierte zusammenhängende Beschreibung zu vertrauten Themen (auch Filme und literarische Texte) geben können, wobei einzelne Punkte linear aneinandergereiht werden",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-ENG-5-T3-K4",
+   "kind": "kompetenz",
+   "name": "Vergleiche anstellen können",
+   "parent": "AHS-ENG-5-T3",
+   "text": "Vergleiche anstellen können",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-ENG-5-T3-K5",
+   "kind": "kompetenz",
+   "name": "für Ansichten, Pläne oder Handlungen Begründungen oder Erklärungen geben können",
+   "parent": "AHS-ENG-5-T3",
+   "text": "für Ansichten, Pläne oder Handlungen Begründungen oder Erklärungen geben können",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-ENG-5-T4",
+   "kind": "thema",
+   "name": "Schreiben",
+   "parent": "AHS-ENG-5",
+   "klasse": 5,
+   "schulstufe": 9,
+   "content_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-5-T4-K1",
+   "kind": "kompetenz",
+   "name": "unkomplizierte, zusammenhängende Texte, auch in Form von persönlichen Briefen und …",
+   "parent": "AHS-ENG-5-T4",
+   "text": "unkomplizierte, zusammenhängende Texte, auch in Form von persönlichen Briefen und elektronischen Mitteilungen (zB E-Mails, Blogs), zu vertrauten Themen verfassen können, wobei einzelne kürzere Teile in linearer Abfolge verbunden werden; Sachinformationen weitergeben sowie Gründe für Handlungen angeben können",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-ENG-5-T4-K2",
+   "kind": "kompetenz",
+   "name": "eine Beschreibung eines Ereignisses oder einer kürzlich unternommenen Reise verfassen …",
+   "parent": "AHS-ENG-5-T4",
+   "text": "eine Beschreibung eines Ereignisses oder einer kürzlich unternommenen Reise verfassen können",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-ENG-5-T4-K3",
+   "kind": "kompetenz",
+   "name": "über Erfahrungen, Gefühle und Ereignisse berichten können",
+   "parent": "AHS-ENG-5-T4",
+   "text": "über Erfahrungen, Gefühle und Ereignisse berichten können",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-ENG-5-T4-K4",
+   "kind": "kompetenz",
+   "name": "für Ansichten, Pläne oder Handlungen Begründungen oder Erklärungen geben können",
+   "parent": "AHS-ENG-5-T4",
+   "text": "für Ansichten, Pläne oder Handlungen Begründungen oder Erklärungen geben können",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-ENG-6",
+   "kind": "klasse",
+   "name": "6. Klasse",
+   "parent": "AHS-ENG",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S1",
+   "kind": "semester",
+   "name": "3. Semester – Kompetenzmodul 3",
+   "parent": "AHS-ENG-6"
+  },
+  {
+   "code": "AHS-ENG-6-S1-T1",
+   "kind": "thema",
+   "name": "Hören",
+   "parent": "AHS-ENG-6-S1",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Hören"
+  },
+  {
+   "code": "AHS-ENG-6-S1-T1-K1",
+   "kind": "kompetenz",
+   "name": "unkomplizierte Sachinformationen über gewöhnliche alltags-, berufs- oder …",
+   "parent": "AHS-ENG-6-S1-T1",
+   "text": "unkomplizierte Sachinformationen über gewöhnliche alltags-, berufs- oder ausbildungsbezogene Themen verstehen und dabei die Hauptaussagen und Einzelinformationen erkennen können, wenn klar artikuliert und mit vertrautem Akzent gesprochen wird",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S1-T2",
+   "kind": "thema",
+   "name": "Lesen",
+   "parent": "AHS-ENG-6-S1",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-6-S1-T2-K1",
+   "kind": "kompetenz",
+   "name": "unkomplizierte, auch literarische Texte über vertraute Themen mit befriedigendem …",
+   "parent": "AHS-ENG-6-S1-T2",
+   "text": "unkomplizierte, auch literarische Texte über vertraute Themen mit befriedigendem Verständnis lesen und wichtige Informationen auffinden können",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S1-T2-K2",
+   "kind": "kompetenz",
+   "name": "Beschreibungen von Ereignissen, Gefühlen und Wünschen verstehen können",
+   "parent": "AHS-ENG-6-S1-T2",
+   "text": "Beschreibungen von Ereignissen, Gefühlen und Wünschen verstehen können",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S1-T3",
+   "kind": "thema",
+   "name": "Sprechen – An Gesprächen teilnehmen und zusammenhängendes Sprechen",
+   "parent": "AHS-ENG-6-S1",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Sprechen – An Gesprächen teilnehmen und zusammenhängendes Sprechen"
+  },
+  {
+   "code": "AHS-ENG-6-S1-T3-K1",
+   "kind": "kompetenz",
+   "name": "ohne Vorbereitung an Gesprächen über vertraute Themen (zB Alltag, aktuelle Ereignisse …",
+   "parent": "AHS-ENG-6-S1-T3",
+   "text": "ohne Vorbereitung an Gesprächen über vertraute Themen (zB Alltag, aktuelle Ereignisse, Reisen) teilnehmen und Informationen austauschen können*",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S1-T3-K2",
+   "kind": "kompetenz",
+   "name": "die eigene Meinung und Gefühle (zB Überraschung, Freude, Interesse) sowie Träume …",
+   "parent": "AHS-ENG-6-S1-T3",
+   "text": "die eigene Meinung und Gefühle (zB Überraschung, Freude, Interesse) sowie Träume, Hoffnungen und Ziele ausdrücken und darauf reagieren können*",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S1-T3-K3",
+   "kind": "kompetenz",
+   "name": "relativ flüssig eine unkomplizierte, aber zusammenhängende Beschreibung, auch in Form …",
+   "parent": "AHS-ENG-6-S1-T3",
+   "text": "relativ flüssig eine unkomplizierte, aber zusammenhängende Beschreibung, auch in Form einer Präsentation, zu vertrauten Themen (auch Filme und literarische Texte) geben können, wobei einzelne Punkte linear aneinandergereiht werden*",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S1-T3-K4",
+   "kind": "kompetenz",
+   "name": "Vergleiche anstellen können*",
+   "parent": "AHS-ENG-6-S1-T3",
+   "text": "Vergleiche anstellen können*",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S1-T4",
+   "kind": "thema",
+   "name": "Schreiben",
+   "parent": "AHS-ENG-6-S1",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-6-S1-T4-K1",
+   "kind": "kompetenz",
+   "name": "unkomplizierte, detaillierte Beschreibungen zu einer Reihe verschiedener vertrauter …",
+   "parent": "AHS-ENG-6-S1-T4",
+   "text": "unkomplizierte, detaillierte Beschreibungen zu einer Reihe verschiedener vertrauter Themen verfassen können",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S1-T4-K2",
+   "kind": "kompetenz",
+   "name": "in persönlichen Briefen und elektronischen Mitteilungen (zB E-Mails, Blogs) Neuigkeiten …",
+   "parent": "AHS-ENG-6-S1-T4",
+   "text": "in persönlichen Briefen und elektronischen Mitteilungen (zB E-Mails, Blogs) Neuigkeiten übermitteln, die eigene Meinung dazu vertreten und Gedanken auch zu kulturellen Themen (zB Musik, Filme, literarische Texte) ausdrücken können",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S2",
+   "kind": "semester",
+   "name": "4. Semester – Kompetenzmodul 4",
+   "parent": "AHS-ENG-6"
+  },
+  {
+   "code": "AHS-ENG-6-S2-T1",
+   "kind": "thema",
+   "name": "Hören",
+   "parent": "AHS-ENG-6-S2",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Hören"
+  },
+  {
+   "code": "AHS-ENG-6-S2-T1-K1",
+   "kind": "kompetenz",
+   "name": "unkomplizierte Sachinformationen über gewöhnliche alltags-, berufs- oder …",
+   "parent": "AHS-ENG-6-S2-T1",
+   "text": "unkomplizierte Sachinformationen über gewöhnliche alltags-, berufs- oder ausbildungsbezogene Themen verstehen und dabei die Hauptaussagen und Einzelinformationen erkennen können, wenn klar artikuliert und mit vertrautem Akzent gesprochen wird*",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S2-T1-K2",
+   "kind": "kompetenz",
+   "name": "in Filmen und Radiosendungen zu Themen von persönlichem Interesse einen großen Teil …",
+   "parent": "AHS-ENG-6-S2-T1",
+   "text": "in Filmen und Radiosendungen zu Themen von persönlichem Interesse einen großen Teil verstehen, wenn relativ langsam und deutlich gesprochen wird",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S2-T2",
+   "kind": "thema",
+   "name": "Lesen",
+   "parent": "AHS-ENG-6-S2",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-6-S2-T2-K1",
+   "kind": "kompetenz",
+   "name": "längere, auch literarische Texte über vertraute Themen nach gewünschten Informationen …",
+   "parent": "AHS-ENG-6-S2-T2",
+   "text": "längere, auch literarische Texte über vertraute Themen nach gewünschten Informationen durchsuchen und Informationen aus verschiedenen Texten zusammentragen können",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S2-T2-K2",
+   "kind": "kompetenz",
+   "name": "in klar geschriebenen argumentativen Texten die wesentlichen Schlussfolgerungen erkennen …",
+   "parent": "AHS-ENG-6-S2-T2",
+   "text": "in klar geschriebenen argumentativen Texten die wesentlichen Schlussfolgerungen erkennen können",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S2-T3",
+   "kind": "thema",
+   "name": "Sprechen – An Gesprächen teilnehmen und zusammenhängendes Sprechen",
+   "parent": "AHS-ENG-6-S2",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Sprechen – An Gesprächen teilnehmen und zusammenhängendes Sprechen"
+  },
+  {
+   "code": "AHS-ENG-6-S2-T3-K1",
+   "kind": "kompetenz",
+   "name": "ohne Vorbereitung mit einiger Sicherheit an Gesprächen über vertraute Themen teilnehmen …",
+   "parent": "AHS-ENG-6-S2-T3",
+   "text": "ohne Vorbereitung mit einiger Sicherheit an Gesprächen über vertraute Themen teilnehmen können",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S2-T3-K2",
+   "kind": "kompetenz",
+   "name": "Gedanken zu eher abstrakten, auch kulturellen Themen ausdrücken und sich darüber …",
+   "parent": "AHS-ENG-6-S2-T3",
+   "text": "Gedanken zu eher abstrakten, auch kulturellen Themen ausdrücken und sich darüber austauschen können (zB zu Filmen, literarischen Texten, Musik)",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S2-T3-K3",
+   "kind": "kompetenz",
+   "name": "über eigene Erfahrungen berichten und dabei die eigenen Gefühle und Reaktionen …",
+   "parent": "AHS-ENG-6-S2-T3",
+   "text": "über eigene Erfahrungen berichten und dabei die eigenen Gefühle und Reaktionen beschreiben und sich darüber austauschen können",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S2-T4",
+   "kind": "thema",
+   "name": "Schreiben",
+   "parent": "AHS-ENG-6-S2",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-6-S2-T4-K1",
+   "kind": "kompetenz",
+   "name": "Erfahrungsberichte verfassen können, in denen Gefühle und Reaktionen in einem einfachen …",
+   "parent": "AHS-ENG-6-S2-T4",
+   "text": "Erfahrungsberichte verfassen können, in denen Gefühle und Reaktionen in einem einfachen zusammenhängenden Text beschrieben werden",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-6-S2-T4-K2",
+   "kind": "kompetenz",
+   "name": "Informationen und Gedanken zu konkreten wie abstrakten Themen, auch kulturellen (zB …",
+   "parent": "AHS-ENG-6-S2-T4",
+   "text": "Informationen und Gedanken zu konkreten wie abstrakten Themen, auch kulturellen (zB Musik, Filme, literarische Texte), mitteilen und einigermaßen präzise ein Problem erklären können",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-ENG-7",
+   "kind": "klasse",
+   "name": "7. Klasse",
+   "parent": "AHS-ENG",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S1",
+   "kind": "semester",
+   "name": "5. Semester – Kompetenzmodul 5",
+   "parent": "AHS-ENG-7"
+  },
+  {
+   "code": "AHS-ENG-7-S1-T1",
+   "kind": "thema",
+   "name": "Hören",
+   "parent": "AHS-ENG-7-S1",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Hören"
+  },
+  {
+   "code": "AHS-ENG-7-S1-T1-K1",
+   "kind": "kompetenz",
+   "name": "längeren Redebeiträgen und komplexer Argumentation folgen können, sofern die Thematik …",
+   "parent": "AHS-ENG-7-S1-T1",
+   "text": "längeren Redebeiträgen und komplexer Argumentation folgen können, sofern die Thematik einigermaßen vertraut und der Rede- oder Gesprächsverlauf durch explizite Signale gekennzeichnet ist",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S1-T1-K2",
+   "kind": "kompetenz",
+   "name": "die meisten Filme und Fernsehreportagen verstehen können, sofern Standardsprache …",
+   "parent": "AHS-ENG-7-S1-T1",
+   "text": "die meisten Filme und Fernsehreportagen verstehen können, sofern Standardsprache gesprochen wird",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S1-T2",
+   "kind": "thema",
+   "name": "Lesen",
+   "parent": "AHS-ENG-7-S1",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-7-S1-T2-K1",
+   "kind": "kompetenz",
+   "name": "längere Texte, auch Berichte und Artikel, zu aktuellen Fragen sowie literarische Texte …",
+   "parent": "AHS-ENG-7-S1-T2",
+   "text": "längere Texte, auch Berichte und Artikel, zu aktuellen Fragen sowie literarische Texte selbstständig lesen und verstehen können",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S1-T2-K2",
+   "kind": "kompetenz",
+   "name": "lange und komplexe Texte rasch durchsuchen und wichtige Einzelinformationen auffinden …",
+   "parent": "AHS-ENG-7-S1-T2",
+   "text": "lange und komplexe Texte rasch durchsuchen und wichtige Einzelinformationen auffinden können",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S1-T3",
+   "kind": "thema",
+   "name": "Sprechen – An Gesprächen teilnehmen und zusammenhängendes Sprechen",
+   "parent": "AHS-ENG-7-S1",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Sprechen – An Gesprächen teilnehmen und zusammenhängendes Sprechen"
+  },
+  {
+   "code": "AHS-ENG-7-S1-T3-K1",
+   "kind": "kompetenz",
+   "name": "ein Gespräch oder eine Diskussion aufrechterhalten und dabei kurz zu den Standpunkten …",
+   "parent": "AHS-ENG-7-S1-T3",
+   "text": "ein Gespräch oder eine Diskussion aufrechterhalten und dabei kurz zu den Standpunkten anderer Stellung nehmen, Vergleiche anstellen und verschiedene Möglichkeiten angeben können",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S1-T3-K2",
+   "kind": "kompetenz",
+   "name": "eine Argumentation, auch in Form einer Präsentation, gut genug ausführen können, um die …",
+   "parent": "AHS-ENG-7-S1-T3",
+   "text": "eine Argumentation, auch in Form einer Präsentation, gut genug ausführen können, um die meiste Zeit ohne Schwierigkeiten verstanden zu werden",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S1-T4",
+   "kind": "thema",
+   "name": "Schreiben",
+   "parent": "AHS-ENG-7-S1",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-7-S1-T4-K1",
+   "kind": "kompetenz",
+   "name": "mit einer gewissen Sicherheit größere Mengen von Sachinformationen über vertraute …",
+   "parent": "AHS-ENG-7-S1-T4",
+   "text": "mit einer gewissen Sicherheit größere Mengen von Sachinformationen über vertraute Routineangelegenheiten und über weniger routinemäßige Dinge zusammenfassen, darüber berichten und dazu Stellung nehmen können",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S1-T4-K2",
+   "kind": "kompetenz",
+   "name": "Informationen und Gedanken zu konkreten wie abstrakten Themen, auch kulturellen (zB …",
+   "parent": "AHS-ENG-7-S1-T4",
+   "text": "Informationen und Gedanken zu konkreten wie abstrakten Themen, auch kulturellen (zB Musik, Filme, literarische Texte), mitteilen und einigermaßen präzise ein Problem erklären können sowie die eigene Meinung dazu ausdrücken können",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S2",
+   "kind": "semester",
+   "name": "6. Semester – Kompetenzmodul 6",
+   "parent": "AHS-ENG-7"
+  },
+  {
+   "code": "AHS-ENG-7-S2-T1",
+   "kind": "thema",
+   "name": "Hören",
+   "parent": "AHS-ENG-7-S2",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Hören"
+  },
+  {
+   "code": "AHS-ENG-7-S2-T1-K1",
+   "kind": "kompetenz",
+   "name": "Hauptaussagen und spezifische Informationen von inhaltlich und sprachlich komplexen …",
+   "parent": "AHS-ENG-7-S2-T1",
+   "text": "Hauptaussagen und spezifische Informationen von inhaltlich und sprachlich komplexen Redebeiträgen zu konkreten und abstrakten Themen verstehen können, wenn Standardsprache gesprochen wird",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S2-T2",
+   "kind": "thema",
+   "name": "Lesen",
+   "parent": "AHS-ENG-7-S2",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-7-S2-T2-K1",
+   "kind": "kompetenz",
+   "name": "Hauptaussagen von inhaltlich und sprachlich komplexen Texten, auch literarischen, zu …",
+   "parent": "AHS-ENG-7-S2-T2",
+   "text": "Hauptaussagen von inhaltlich und sprachlich komplexen Texten, auch literarischen, zu konkreten und abstrakten Themen verstehen können",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S2-T2-K2",
+   "kind": "kompetenz",
+   "name": "Texte zu aktuellen Fragen verstehen können, in denen die Schreibenden eine bestimmte …",
+   "parent": "AHS-ENG-7-S2-T2",
+   "text": "Texte zu aktuellen Fragen verstehen können, in denen die Schreibenden eine bestimmte Haltung oder einen bestimmten Standpunkt vertreten",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S2-T3",
+   "kind": "thema",
+   "name": "Sprechen – An Gesprächen teilnehmen und zusammenhängendes Sprechen",
+   "parent": "AHS-ENG-7-S2",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Sprechen – An Gesprächen teilnehmen und zusammenhängendes Sprechen"
+  },
+  {
+   "code": "AHS-ENG-7-S2-T3-K1",
+   "kind": "kompetenz",
+   "name": "sich in vertrauten Situationen aktiv an informellen Diskussionen beteiligen können, indem …",
+   "parent": "AHS-ENG-7-S2-T3",
+   "text": "sich in vertrauten Situationen aktiv an informellen Diskussionen beteiligen können, indem man Stellung nimmt, einen Standpunkt darlegt, verschiedene Vorschläge beurteilt, Hypothesen aufstellt und auf Hypothesen reagiert",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S2-T3-K2",
+   "kind": "kompetenz",
+   "name": "zu einer großen Bandbreite von unterrichtsbezogenen Themen klare und detaillierte …",
+   "parent": "AHS-ENG-7-S2-T3",
+   "text": "zu einer großen Bandbreite von unterrichtsbezogenen Themen klare und detaillierte Beschreibungen und Darstellungen geben, Ideen ausführen und durch untergeordnete Punkte und relevante Beispiele abstützen können",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S2-T4",
+   "kind": "thema",
+   "name": "Schreiben",
+   "parent": "AHS-ENG-7-S2",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-7-S2-T4-K1",
+   "kind": "kompetenz",
+   "name": "klare, detaillierte Beschreibungen zu verschiedenen vertrauten Themen verfassen können",
+   "parent": "AHS-ENG-7-S2-T4",
+   "text": "klare, detaillierte Beschreibungen zu verschiedenen vertrauten Themen verfassen können",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-7-S2-T4-K2",
+   "kind": "kompetenz",
+   "name": "unterschiedliche Texte schreiben können, in denen Argumente für oder gegen einen …",
+   "parent": "AHS-ENG-7-S2-T4",
+   "text": "unterschiedliche Texte schreiben können, in denen Argumente für oder gegen einen bestimmten Standpunkt angegeben und die Vor- und Nachteile verschiedener Optionen erläutert werden",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-ENG-8",
+   "kind": "klasse",
+   "name": "8. Klasse",
+   "parent": "AHS-ENG",
+   "klasse": 8,
+   "schulstufe": 12,
+   "text": "Kompetenzmodul 7"
+  },
+  {
+   "code": "AHS-ENG-8-S1",
+   "kind": "semester",
+   "name": "7. Semester",
+   "parent": "AHS-ENG-8"
+  },
+  {
+   "code": "AHS-ENG-8-S1-T1",
+   "kind": "thema",
+   "name": "Hören",
+   "parent": "AHS-ENG-8-S1",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Hören"
+  },
+  {
+   "code": "AHS-ENG-8-S1-T1-K1",
+   "kind": "kompetenz",
+   "name": "im direkten Kontakt und in den Medien gesprochene Standardsprache verstehen können, wenn …",
+   "parent": "AHS-ENG-8-S1-T1",
+   "text": "im direkten Kontakt und in den Medien gesprochene Standardsprache verstehen können, wenn es um vertraute oder auch um weniger vertraute Themen geht, wie man ihnen normalerweise im privaten, gesellschaftlichen, beruflichen Leben oder in der Ausbildung begegnet; nur extreme Hintergrundgeräusche, unangemessene Diskursstrukturen oder starke Idiomatik können das Verständnis beeinträchtigen",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-ENG-8-S1-T2",
+   "kind": "thema",
+   "name": "Lesen",
+   "parent": "AHS-ENG-8-S1",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-8-S1-T2-K1",
+   "kind": "kompetenz",
+   "name": "ein breites Spektrum an Texten (auch literarischen) auch zu weniger vertrauten Themen …",
+   "parent": "AHS-ENG-8-S1-T2",
+   "text": "ein breites Spektrum an Texten (auch literarischen) auch zu weniger vertrauten Themen verstehen und die Hauptaussagen sowie spezifische Informationen und implizite Bedeutungen erfassen können",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-ENG-8-S1-T3",
+   "kind": "thema",
+   "name": "Sprechen – An Gesprächen teilnehmen und zusammenhängendes Sprechen",
+   "parent": "AHS-ENG-8-S1",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Sprechen – An Gesprächen teilnehmen und zusammenhängendes Sprechen"
+  },
+  {
+   "code": "AHS-ENG-8-S1-T3-K1",
+   "kind": "kompetenz",
+   "name": "flüssig, korrekt und wirkungsvoll über ein breites Spektrum allgemeiner Themen sprechen …",
+   "parent": "AHS-ENG-8-S1-T3",
+   "text": "flüssig, korrekt und wirkungsvoll über ein breites Spektrum allgemeiner Themen sprechen und dabei Zusammenhänge zwischen Ideen deutlich machen können",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-ENG-8-S1-T3-K2",
+   "kind": "kompetenz",
+   "name": "Gedanken und Meinungen präzise ausdrücken, überzeugend argumentieren und auf komplexe …",
+   "parent": "AHS-ENG-8-S1-T3",
+   "text": "Gedanken und Meinungen präzise ausdrücken, überzeugend argumentieren und auf komplexe Argumentationen anderer reagieren können",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-ENG-8-S1-T3-K3",
+   "kind": "kompetenz",
+   "name": "ein breites Themenspektrum systematisch darlegen und dabei entscheidende Punkte in …",
+   "parent": "AHS-ENG-8-S1-T3",
+   "text": "ein breites Themenspektrum systematisch darlegen und dabei entscheidende Punkte in angemessener Weise hervorheben und stützende Einzelheiten anführen können",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-ENG-8-S1-T4",
+   "kind": "thema",
+   "name": "Schreiben",
+   "parent": "AHS-ENG-8-S1",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-8-S1-T4-K1",
+   "kind": "kompetenz",
+   "name": "unterschiedliche Texte schreiben können, in denen etwas systematisch erörtert wird, wobei …",
+   "parent": "AHS-ENG-8-S1-T4",
+   "text": "unterschiedliche Texte schreiben können, in denen etwas systematisch erörtert wird, wobei entscheidende Punkte angemessen hervorgehoben und stützende Details angeführt werden; verschiedene Standpunkte gegeneinander abwägen können",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-ENG-8-S1-T4-K2",
+   "kind": "kompetenz",
+   "name": "klare detaillierte Texte zu einem breiten Spektrum an Themen verfassen, darin den …",
+   "parent": "AHS-ENG-8-S1-T4",
+   "text": "klare detaillierte Texte zu einem breiten Spektrum an Themen verfassen, darin den Zusammenhang zwischen verschiedenen Ideen deutlich machen und die für das betreffende Genre geltenden Konventionen beachten können",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-ENG-8-S2",
+   "kind": "semester",
+   "name": "8. Semester",
+   "parent": "AHS-ENG-8"
+  },
+  {
+   "code": "AHS-ENG-8-S2-T1",
+   "kind": "thema",
+   "name": "Hören",
+   "parent": "AHS-ENG-8-S2",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Hören"
+  },
+  {
+   "code": "AHS-ENG-8-S2-T1-K1",
+   "kind": "kompetenz",
+   "name": "im direkten Kontakt und in den Medien gesprochene Standardsprache verstehen können, wenn …",
+   "parent": "AHS-ENG-8-S2-T1",
+   "text": "im direkten Kontakt und in den Medien gesprochene Standardsprache verstehen können, wenn es um vertraute oder auch um weniger vertraute Themen geht, wie man ihnen normalerweise im privaten, gesellschaftlichen, beruflichen Leben oder in der Ausbildung begegnet; nur extreme Hintergrundgeräusche, unangemessene Diskursstrukturen oder starke Idiomatik können das Verständnis beeinträchtigen*",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-ENG-8-S2-T2",
+   "kind": "thema",
+   "name": "Lesen",
+   "parent": "AHS-ENG-8-S2",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Lesen"
+  },
+  {
+   "code": "AHS-ENG-8-S2-T2-K1",
+   "kind": "kompetenz",
+   "name": "ein breites Spektrum an Texten auch zu weniger vertrauten Themen verstehen und die …",
+   "parent": "AHS-ENG-8-S2-T2",
+   "text": "ein breites Spektrum an Texten auch zu weniger vertrauten Themen verstehen und die Hauptaussagen sowie spezifische Informationen und implizite Bedeutungen erfassen können*",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-ENG-8-S2-T3",
+   "kind": "thema",
+   "name": "Sprechen – An Gesprächen teilnehmen und zusammenhängendes Sprechen",
+   "parent": "AHS-ENG-8-S2",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Sprechen – An Gesprächen teilnehmen und zusammenhängendes Sprechen"
+  },
+  {
+   "code": "AHS-ENG-8-S2-T3-K1",
+   "kind": "kompetenz",
+   "name": "flüssig, korrekt und wirkungsvoll über ein breites Spektrum allgemeiner Themen sprechen …",
+   "parent": "AHS-ENG-8-S2-T3",
+   "text": "flüssig, korrekt und wirkungsvoll über ein breites Spektrum allgemeiner Themen sprechen und dabei Zusammenhänge zwischen Ideen deutlich machen können*",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-ENG-8-S2-T3-K2",
+   "kind": "kompetenz",
+   "name": "ein breites Themenspektrum systematisch darlegen und dabei entscheidende Punkte in …",
+   "parent": "AHS-ENG-8-S2-T3",
+   "text": "ein breites Themenspektrum systematisch darlegen und dabei entscheidende Punkte in angemessener Weise hervorheben und stützende Einzelheiten anführen können*",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-ENG-8-S2-T4",
+   "kind": "thema",
+   "name": "Schreiben",
+   "parent": "AHS-ENG-8-S2",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Schreiben"
+  },
+  {
+   "code": "AHS-ENG-8-S2-T4-K1",
+   "kind": "kompetenz",
+   "name": "unterschiedliche Texte schreiben können, in denen etwas systematisch erörtert wird, wobei …",
+   "parent": "AHS-ENG-8-S2-T4",
+   "text": "unterschiedliche Texte schreiben können, in denen etwas systematisch erörtert wird, wobei entscheidende Punkte angemessen hervorgehoben und stützende Details angeführt werden; verschiedene Standpunkte gegeneinander abwägen können*",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-ENG-8-S2-T4-K2",
+   "kind": "kompetenz",
+   "name": "klare detaillierte Texte zu einem breiten Spektrum an Themen verfassen können, darin den …",
+   "parent": "AHS-ENG-8-S2-T4",
+   "text": "klare detaillierte Texte zu einem breiten Spektrum an Themen verfassen können, darin den Zusammenhang zwischen verschiedenen Ideen deutlich machen und die für das betreffende Genre geltenden Konventionen beachten können*",
+   "klasse": 8,
+   "schulstufe": 12
+  }
+ ],
+ "skills": [],
+ "skill_nodes": [
+  [
+   "englisch.reading.comprehension",
+   "AHS-ENG-1-B2"
+  ],
+  [
+   "englisch.reading.comprehension",
+   "AHS-ENG-2-B2"
+  ],
+  [
+   "englisch.reading.comprehension",
+   "AHS-ENG-3-B2"
+  ],
+  [
+   "englisch.reading.comprehension",
+   "AHS-ENG-4-B2"
+  ],
+  [
+   "englisch.reading.comprehension",
+   "AHS-ENG-5-T2"
+  ]
+ ]
+}

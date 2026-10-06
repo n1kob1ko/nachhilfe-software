@@ -1,0 +1,1020 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "Lehrplan HTL – Englisch (RIS)",
+ "description": "Offizieller Lehrplantext aus dem RIS (NOR40237785), BGBl. II Nr. 262/2015 idF BGBl. II Nr. 383/2021.",
+ "source": {
+  "key": "ris-htl",
+  "name": "RIS – Lehrpläne der HTL 2015, Anlage 1 (gemeinsame Unterrichtsgegenstände)",
+  "source_type": "lehrplan",
+  "url": "https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Bundesnormen&Dokumentnummer=NOR40237785",
+  "publisher": "Republik Österreich (RIS)",
+  "license": "amtliches Werk (§ 7 UrhG)",
+  "attribution_text": "BGBl. II Nr. 262/2015 idF BGBl. II Nr. 383/2021",
+  "notes": "Gesetzesnummer 20009288, Dokumentnummer NOR40237785, in Kraft seit 04.09.2021. Wortlaut nur um Seitenköpfe, Zeilenumbrüche und Fußnotenziffern bereinigt."
+ },
+ "curriculum": {
+  "key": "ris-htl-englisch",
+  "name": "Lehrplan HTL – Englisch",
+  "school_type": "HTL",
+  "subject": "Englisch",
+  "version": "BGBl. II Nr. 383/2021",
+  "reference": "BGBl. II Nr. 262/2015 idF BGBl. II Nr. 383/2021, NOR40237785",
+  "valid_from": "2021-09-04"
+ },
+ "nodes": [
+  {
+   "code": "HTL-ENG",
+   "kind": "fach",
+   "name": "Englisch"
+  },
+  {
+   "code": "HTL-ENG-1",
+   "kind": "klasse",
+   "name": "I. Jahrgang",
+   "parent": "HTL-ENG",
+   "klasse": 1,
+   "schulstufe": 9,
+   "text": "1. und 2. Semester"
+  },
+  {
+   "code": "HTL-ENG-1-K1",
+   "kind": "kompetenz",
+   "name": "den Hauptinhalt von einfachen, kurzen Hör- und Lesetexten zu vertrauten Themen aus dem …",
+   "parent": "HTL-ENG-1",
+   "text": "den Hauptinhalt von einfachen, kurzen Hör- und Lesetexten zu vertrauten Themen aus dem Alltagsleben und berufsnahen Umfeld verstehen und konkrete, vorhersehbare Informationen herausfiltern;",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-ENG-1-K2",
+   "kind": "kompetenz",
+   "name": "einzelne Aussagen in Gesprächen und Hörtexten, wenn langsam und deutlich gesprochen wird …",
+   "parent": "HTL-ENG-1",
+   "text": "einzelne Aussagen in Gesprächen und Hörtexten, wenn langsam und deutlich gesprochen wird, verstehen;",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-ENG-1-K3",
+   "kind": "kompetenz",
+   "name": "mündlich und schriftlich einfache Beschreibungen von Menschen, Lebensbedingungen …",
+   "parent": "HTL-ENG-1",
+   "text": "mündlich und schriftlich einfache Beschreibungen von Menschen, Lebensbedingungen, Alltagssituationen, Vorlieben und Abneigungen geben, über Ereignisse, unmittelbare Erlebnisse und Erfahrungen berichten und ihre Meinung auf einfache Weise ausdrücken;",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-ENG-1-K4",
+   "kind": "kompetenz",
+   "name": "sehr einfache Texte zu vertrauten Themen verfassen und dabei die Sätze mit den häufigsten …",
+   "parent": "HTL-ENG-1",
+   "text": "sehr einfache Texte zu vertrauten Themen verfassen und dabei die Sätze mit den häufigsten Konnektoren verbinden.",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-ENG-1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-ENG-1",
+   "klasse": 1,
+   "schulstufe": 9,
+   "text": "Festigung aller Fertigkeiten in folgenden Bereichen:"
+  },
+  {
+   "code": "HTL-ENG-1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und öffentlicher Themenbereich",
+   "parent": "HTL-ENG-1-L1",
+   "text": "Vertraute Themen aus dem vertrauten Umfeld der Schülerinnen und Schüler (zB Kennenlernen, Familienleben, Tagesablauf, Wohnen, Sport, Hobbys und Freizeitaktivitäten, Schule, Urlaub und Reisen, Einkaufen).",
+   "content_area": "Privater und öffentlicher Themenbereich",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-ENG-1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Themenbereich",
+   "parent": "HTL-ENG-1-L1",
+   "text": "Einfache relevante naturwissenschaftliche und ausbildungsspezifische Themen (zB Berufe, Beschreibung einfacher Arbeitsvorgänge und -abläufe, Regeln und Vorschriften).",
+   "content_area": "Beruflicher Themenbereich",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-ENG-1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "parent": "HTL-ENG-1-L1",
+   "text": "Wiederholung und Erweiterung des bestehenden Wortschatzes sowie einfacher situationsbezogener Sprachstrukturen; Aufbau eines naturwissenschaftlichen und technischen Grundwortschatzes.",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-ENG-1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HTL-ENG-1-L1",
+   "text": "Monologische und dialogische Gesprächssituationen (zB Präsentieren von einfachen technischen und beruflichen Inhalten, Telefonieren, Diskutieren, Rollenspiel).",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-ENG-1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und -formate",
+   "parent": "HTL-ENG-1-L1",
+   "text": "Informeller Schriftverkehr (zB Nachricht, SMS, E-Mail, Brief); Blog; Beschreibung.",
+   "content_area": "Schriftliche Textsorten und -formate",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-ENG-2",
+   "kind": "klasse",
+   "name": "II. Jahrgang",
+   "parent": "HTL-ENG",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S1",
+   "kind": "semester",
+   "name": "3. Semester – Kompetenzmodul 3",
+   "parent": "HTL-ENG-2"
+  },
+  {
+   "code": "HTL-ENG-2-S1-K1",
+   "kind": "kompetenz",
+   "name": "den Hauptinhalt von einfachen, auch längeren Hör- und Lesetexten zu vertrauten Themen aus …",
+   "parent": "HTL-ENG-2-S1",
+   "text": "den Hauptinhalt von einfachen, auch längeren Hör- und Lesetexten zu vertrauten Themen aus dem Alltagsleben und berufsnahen Umfeld verstehen, wobei sie auch spezifische Informationen entnehmen können;",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S1-K2",
+   "kind": "kompetenz",
+   "name": "die Hauptpunkte in Gesprächen und Hörtexten verstehen, wenn relativ langsam und deutlich …",
+   "parent": "HTL-ENG-2-S1",
+   "text": "die Hauptpunkte in Gesprächen und Hörtexten verstehen, wenn relativ langsam und deutlich gesprochen wird;",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S1-K3",
+   "kind": "kompetenz",
+   "name": "mündlich und schriftlich einfache Beschreibungen von Lebens- und Arbeitsbedingungen …",
+   "parent": "HTL-ENG-2-S1",
+   "text": "mündlich und schriftlich einfache Beschreibungen von Lebens- und Arbeitsbedingungen, Alltags- und einfachen Berufssituationen, Vorlieben und Abneigungen geben, über Ereignisse, unmittelbare Erlebnisse und Erfahrungen berichten und ihre Meinung ausdrücken;",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S1-K4",
+   "kind": "kompetenz",
+   "name": "einfache, auch längere Texte zu vertrauten Themen verfassen und dabei die Sätze mit den …",
+   "parent": "HTL-ENG-2-S1",
+   "text": "einfache, auch längere Texte zu vertrauten Themen verfassen und dabei die Sätze mit den häufigsten Konnektoren verbinden.",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-ENG-2-S1",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und öffentlicher Themenbereich",
+   "parent": "HTL-ENG-2-S1-L1",
+   "text": "Einfache gesellschaftliche und vertraute Themen aus dem relevanten Umfeld der Schülerinnen und Schüler (zB zwischenmenschliche Beziehungen, Träume, Hoffnungen und Zukunftsperspektiven, Mode, Jugendkultur, Wohnen, Schule, öffentliche und private Verkehrsmittel); zeitgemäße Massenmedien und Kommunikationsformen (zB Mobiltelefone, soziale Netzwerke, Internet).",
+   "content_area": "Privater und öffentlicher Themenbereich",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Themenbereich",
+   "parent": "HTL-ENG-2-S1-L1",
+   "text": "Einfache Anwendungen aus Themen der fachtheoretischen und fachpraktischen Unterrichtsgegenstände (zB Beschreibung von Werkzeugen, Geräten und Abläufen und einfachen Diagrammen); einfache berufsbezogene Situationen (zB Terminvereinbarungen, Absagen, Reservierungen, einfache Produktpräsentationen).",
+   "content_area": "Beruflicher Themenbereich",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "parent": "HTL-ENG-2-S1-L1",
+   "text": "Erweiterung des allgemeinen, naturwissenschaftlichen und technischen Wortschatzes; Wiederholung und Erarbeitung der für die behandelten Themen erforderlichen Sprachstrukturen; Übungen zur Textorganisation.",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HTL-ENG-2-S1-L1",
+   "text": "Monologische und dialogische Gesprächssituationen (zB einfache Produktpräsentation, eigene Ansichten).",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und -formate",
+   "parent": "HTL-ENG-2-S1-L1",
+   "text": "Informeller Schriftverkehr (zB E-Mail, Brief); Blog; Beschreibung.",
+   "content_area": "Schriftliche Textsorten und -formate",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S2",
+   "kind": "semester",
+   "name": "4. Semester – Kompetenzmodul 4",
+   "parent": "HTL-ENG-2"
+  },
+  {
+   "code": "HTL-ENG-2-S2-K1",
+   "kind": "kompetenz",
+   "name": "die Hauptpunkte von Hör- und Lesetexten über vertraute Themen sowie einfache mündliche …",
+   "parent": "HTL-ENG-2-S2",
+   "text": "die Hauptpunkte von Hör- und Lesetexten über vertraute Themen sowie einfache mündliche und schriftliche Anleitungen und Vorschriften verstehen;",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S2-K2",
+   "kind": "kompetenz",
+   "name": "Aussagen in Gesprächen und Hörtexten verstehen, wenn in deutlich artikulierter …",
+   "parent": "HTL-ENG-2-S2",
+   "text": "Aussagen in Gesprächen und Hörtexten verstehen, wenn in deutlich artikulierter Standardsprache gesprochen wird;",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S2-K3",
+   "kind": "kompetenz",
+   "name": "unkomplizierte Beschreibungen von Lebens- und Arbeitsbedingungen, Alltags- und einfachen …",
+   "parent": "HTL-ENG-2-S2",
+   "text": "unkomplizierte Beschreibungen von Lebens- und Arbeitsbedingungen, Alltags- und einfachen Berufssituationen sowie Vorlieben und Abneigungen geben, detailliert über Ereignisse, unmittelbare Erlebnisse und Erfahrungen berichten und dabei ihre Meinung ausdrücken sowie einfache, eingeübte Präsentationen zu vertrauten Themen vortragen;",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S2-K4",
+   "kind": "kompetenz",
+   "name": "einfache Texte verschiedener Länge zu vertrauten Themen verfassen und dabei die Sätze mit …",
+   "parent": "HTL-ENG-2-S2",
+   "text": "einfache Texte verschiedener Länge zu vertrauten Themen verfassen und dabei die Sätze mit einer erweiterten Auswahl an Konnektoren verbinden.",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-ENG-2-S2",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und öffentlicher Themenbereich",
+   "parent": "HTL-ENG-2-S2-L1",
+   "text": "Einfache gesellschaftliche und vertraute Themen aus dem relevanten Umfeld der Schülerinnen und Schüler (zB Fremdenverkehr, Urlaub, Unterkunft, Unterhaltung, Fernsehen, Zeitungen und andere Medien, Gesundheit, Ernährung, Geldangelegenheiten).",
+   "content_area": "Privater und öffentlicher Themenbereich",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Themenbereich",
+   "parent": "HTL-ENG-2-S2-L1",
+   "text": "Einfache Anwendungen aus Themen der fachtheoretischen und fachpraktischen Unterrichtsgegenstände; einfache berufsbezogene Situationen; einfache naturwissenschaftliche Sachverhalte.",
+   "content_area": "Beruflicher Themenbereich",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "parent": "HTL-ENG-2-S2-L1",
+   "text": "Erweiterung des allgemeinen, naturwissenschaftlichen und technischen Wortschatzes; Wiederholung und Erarbeitung der für die behandelten Themen erforderlichen Sprachstrukturen; Übungen zur Textorganisation.",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S2-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HTL-ENG-2-S2-L1",
+   "text": "Monologische und dialogische Gesprächssituationen (zB Reisen, Telefonieren).",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-2-S2-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und -formate",
+   "parent": "HTL-ENG-2-S2-L1",
+   "text": "Informeller und formeller Schriftverkehr (zB Anfrage, Leserbrief, Forumsbeitrag); Bericht.",
+   "content_area": "Schriftliche Textsorten und -formate",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-ENG-3",
+   "kind": "klasse",
+   "name": "III. Jahrgang",
+   "parent": "HTL-ENG",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S1",
+   "kind": "semester",
+   "name": "5. Semester – Kompetenzmodul 5",
+   "parent": "HTL-ENG-3"
+  },
+  {
+   "code": "HTL-ENG-3-S1-K1",
+   "kind": "kompetenz",
+   "name": "Hör- und Lesetexte aus dem alltäglichen und vertrauten berufsrelevanten Umfeld sowie …",
+   "parent": "HTL-ENG-3-S1",
+   "text": "Hör- und Lesetexte aus dem alltäglichen und vertrauten berufsrelevanten Umfeld sowie mündliche und schriftliche Beschreibungen von Ereignissen, Gefühlen und Wünschen im unmittelbaren Umfeld verstehen;",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S1-K2",
+   "kind": "kompetenz",
+   "name": "Aussagen in Gesprächen und Hörtexten und einfache technische Informationen verstehen …",
+   "parent": "HTL-ENG-3-S1",
+   "text": "Aussagen in Gesprächen und Hörtexten und einfache technische Informationen verstehen, wenn in deutlich artikulierter Standardsprache gesprochen wird;",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S1-K3",
+   "kind": "kompetenz",
+   "name": "mündlich und schriftlich unkomplizierte, detaillierte Beschreibungen von Lebens- und …",
+   "parent": "HTL-ENG-3-S1",
+   "text": "mündlich und schriftlich unkomplizierte, detaillierte Beschreibungen von Lebens- und Arbeitsbedingungen, Alltags- und einfachen Berufssituationen, Vorlieben und Abneigungen geben, über Ereignisse, unmittelbare Erlebnisse und Erfahrungen berichten und ihre Meinung ausdrücken;",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S1-K4",
+   "kind": "kompetenz",
+   "name": "Texte verschiedener Länge zu vertrauten Themen – auch aus dem beruflichen Umfeld – …",
+   "parent": "HTL-ENG-3-S1",
+   "text": "Texte verschiedener Länge zu vertrauten Themen – auch aus dem beruflichen Umfeld – verfassen und dabei die Sätze mit einer erweiterten Auswahl an Konnektoren verbinden.",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-ENG-3-S1",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und öffentlicher Themenbereich",
+   "parent": "HTL-ENG-3-S1-L1",
+   "text": "Aktuelle Themen und Themen aus dem Interessengebiet Jugendlicher (zB Werbung, Umwelt und Ökologie, Lebenswirklichkeit Jugendlicher in verschiedenen Ländern, Verstehen der eigenen Kultur sowie anderer Kulturen).",
+   "content_area": "Privater und öffentlicher Themenbereich",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Themenbereich",
+   "parent": "HTL-ENG-3-S1-L1",
+   "text": "Produkte des eigenen Fachgebietes; einfache technische Zusammenhänge; erste Berufserfahrungen, Firmenstrukturen.",
+   "content_area": "Beruflicher Themenbereich",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "parent": "HTL-ENG-3-S1-L1",
+   "text": "Festigung, Erweiterung und Vertiefung des Wortschatzes und der Sprachstrukturen; Übungen zur Kohärenz und Kohäsion von Texten.",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HTL-ENG-3-S1-L1",
+   "text": "Monologische und dialogische Gesprächssituationen (zB Produkt- und Firmenpräsentation, Beschreibung von Diagrammen und Statistiken, informelles Gespräch, Diskutieren).",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und -formate",
+   "parent": "HTL-ENG-3-S1-L1",
+   "text": "Formeller Schriftverkehr (zB Memo, E-Mail, Brief); Artikel; Textzusammenfassung.",
+   "content_area": "Schriftliche Textsorten und -formate",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S2",
+   "kind": "semester",
+   "name": "6. Semester – Kompetenzmodul 6",
+   "parent": "HTL-ENG-3"
+  },
+  {
+   "code": "HTL-ENG-3-S2-K1",
+   "kind": "kompetenz",
+   "name": "längere unkomplizierte Sachinformationen über gewöhnliche alltagsbezogene Themen in Hör- …",
+   "parent": "HTL-ENG-3-S2",
+   "text": "längere unkomplizierte Sachinformationen über gewöhnliche alltagsbezogene Themen in Hör- und Lesetexten verstehen und dabei die Hauptaussagen und Einzelinformationen erkennen sowie berufsbezogene Standardsituationen aus dem eigenen Fachgebiet verstehen, wenn die Thematik vertraut und die Darstellung unkompliziert und klar strukturiert ist;",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S2-K2",
+   "kind": "kompetenz",
+   "name": "Aussagen in Gesprächen und Hörtexten und einfache technische Informationen verstehen …",
+   "parent": "HTL-ENG-3-S2",
+   "text": "Aussagen in Gesprächen und Hörtexten und einfache technische Informationen verstehen, sofern klar artikuliert und mit vertrautem Akzent gesprochen wird;",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S2-K3",
+   "kind": "kompetenz",
+   "name": "mündlich und schriftlich im eigenen Sachgebiet und in vertrauten Routinesituationen …",
+   "parent": "HTL-ENG-3-S2",
+   "text": "mündlich und schriftlich im eigenen Sachgebiet und in vertrauten Routinesituationen detailliert und ausführlich informieren, zusammenfassen und Stellung nehmen sowie vorbereitete Präsentationen zu Themen aus ihrem Alltag und ihrer Ausbildung abhalten, in denen die Hauptpunkte hinreichend präzise erläutert werden;",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S2-K4",
+   "kind": "kompetenz",
+   "name": "strukturierte Texte zu vertrauten Themen – auch aus dem beruflichen Umfeld – verfassen",
+   "parent": "HTL-ENG-3-S2",
+   "text": "strukturierte Texte zu vertrauten Themen – auch aus dem beruflichen Umfeld – verfassen.",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-ENG-3-S2",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und öffentlicher Themenbereich",
+   "parent": "HTL-ENG-3-S2-L1",
+   "text": "Aktuelle soziale und politische Themen (zB interkulturelle Beziehungen, Medien, Energie und Umwelt).",
+   "content_area": "Privater und öffentlicher Themenbereich",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Themenbereich",
+   "parent": "HTL-ENG-3-S2-L1",
+   "text": "Prozesse des eigenen Fachgebietes; berufsbezogene Situationen (zB Telefonieren, Geschäftskontakte).",
+   "content_area": "Beruflicher Themenbereich",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "parent": "HTL-ENG-3-S2-L1",
+   "text": "Festigung, Erweiterung und Vertiefung des Wortschatzes und der Sprachstrukturen; Übungen zur Kohärenz und Kohäsion von Texten.",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S2-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HTL-ENG-3-S2-L1",
+   "text": "Monologische und dialogische Gesprächssituationen (zB Beratungs- und Verkaufsgespräch, Beschwerde, Präsentation).",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-3-S2-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und -formate",
+   "parent": "HTL-ENG-3-S2-L1",
+   "text": "Formeller Schriftverkehr (zB Anfrage, Beschwerde, Bewerbung); Bericht (zB Arbeitsbericht, Unfallbericht); Artikel; Leaflet.",
+   "content_area": "Schriftliche Textsorten und -formate",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-ENG-4",
+   "kind": "klasse",
+   "name": "IV. Jahrgang",
+   "parent": "HTL-ENG",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S1",
+   "kind": "semester",
+   "name": "7. Semester – Kompetenzmodul 7",
+   "parent": "HTL-ENG-4"
+  },
+  {
+   "code": "HTL-ENG-4-S1-K1",
+   "kind": "kompetenz",
+   "name": "aus argumentativen Texten und Gesprächssituationen über gewöhnliche alltags- oder …",
+   "parent": "HTL-ENG-4-S1",
+   "text": "aus argumentativen Texten und Gesprächssituationen über gewöhnliche alltags- oder berufsbezogene Themen einige wesentliche Schlussfolgerungen ziehen sowie komplexere Sachtexte, die mit den eigenen Interessen und berufsrelevanten Themen in Zusammenhang stehen, verstehen;",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S1-K2",
+   "kind": "kompetenz",
+   "name": "Aussagen in Gesprächen und Hörtexten und technische Informationen verstehen, sofern klar …",
+   "parent": "HTL-ENG-4-S1",
+   "text": "Aussagen in Gesprächen und Hörtexten und technische Informationen verstehen, sofern klar artikuliert und mit vertrautem Akzent gesprochen wird;",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S1-K3",
+   "kind": "kompetenz",
+   "name": "mündlich und schriftlich im eigenen Fachgebiet und in vertrauten unmittelbaren und …",
+   "parent": "HTL-ENG-4-S1",
+   "text": "mündlich und schriftlich im eigenen Fachgebiet und in vertrauten unmittelbaren und gesellschaftlichen Situationen detailliert und ausführlich informieren, zusammenfassen, Stellung nehmen und Standpunkte begründen;",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S1-K4",
+   "kind": "kompetenz",
+   "name": "strukturierte Texte zu einer Vielzahl vertrauter Themen – auch aus dem beruflichen Umfeld …",
+   "parent": "HTL-ENG-4-S1",
+   "text": "strukturierte Texte zu einer Vielzahl vertrauter Themen – auch aus dem beruflichen Umfeld – verfassen.",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-ENG-4-S1",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und öffentlicher Themenbereich",
+   "parent": "HTL-ENG-4-S1-L1",
+   "text": "Vielfältige aktuelle Themen von nationalem und internationalem Interesse (zB Europäische Union, internationale Organisationen, interkulturelle Kommunikation).",
+   "content_area": "Privater und öffentlicher Themenbereich",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Themenbereich",
+   "parent": "HTL-ENG-4-S1-L1",
+   "text": "Arbeit und Arbeitsmarkt, Bildung, Wissenschaft und Forschung; technisch und wirtschaftlich relevante Themen der Berufspraxis (zB neue Medien, Verkehr, Energie, Umweltschutz).",
+   "content_area": "Beruflicher Themenbereich",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "parent": "HTL-ENG-4-S1-L1",
+   "text": "Festigung, Erweiterung und Vertiefung des Wortschatzes und der Sprachstrukturen; Übungen zur Kohärenz und Kohäsion von Texten; situations- und adressatenadäquate Anwendung der Sprache (Register).",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HTL-ENG-4-S1-L1",
+   "text": "Monologische und dialogische Gesprächssituationen (zB Besprechung und Diskussion, Verhandlungs- und Verkaufsgespräch).",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und -formate",
+   "parent": "HTL-ENG-4-S1-L1",
+   "text": "Beruflicher Schriftverkehr (zB Geschäftsbriefe, Bewerbungen, Berichte und Protokolle); Antrag (Proposal).",
+   "content_area": "Schriftliche Textsorten und -formate",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S2",
+   "kind": "semester",
+   "name": "8. Semester – Kompetenzmodul 8",
+   "parent": "HTL-ENG-4"
+  },
+  {
+   "code": "HTL-ENG-4-S2-K1",
+   "kind": "kompetenz",
+   "name": "Hör- und Lesetexte über aktuelle und berufsbezogene Themen in Standardsprache verstehen …",
+   "parent": "HTL-ENG-4-S2",
+   "text": "Hör- und Lesetexte über aktuelle und berufsbezogene Themen in Standardsprache verstehen, in denen eine bestimmte Haltung oder ein bestimmter Standpunkt vertreten wird, und können bei längeren und komplexen Texten geeignete Lesetechniken anwenden und entscheiden, welche Informationen für einen bestimmten Zweck relevant sind;",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S2-K2",
+   "kind": "kompetenz",
+   "name": "Aussagen in Gesprächen und Hörtexten und technische Informationen in normaler …",
+   "parent": "HTL-ENG-4-S2",
+   "text": "Aussagen in Gesprächen und Hörtexten und technische Informationen in normaler Geschwindigkeit in Standardsprache verstehen;",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S2-K3",
+   "kind": "kompetenz",
+   "name": "Gesprächen unter Muttersprachlerinnen und Muttersprachlern mit Einschränkungen folgen",
+   "parent": "HTL-ENG-4-S2",
+   "text": "Gesprächen unter Muttersprachlerinnen und Muttersprachlern mit Einschränkungen folgen;",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S2-K4",
+   "kind": "kompetenz",
+   "name": "mündlich und schriftlich im eigenen Fachgebiet und in vertrauten unmittelbaren und …",
+   "parent": "HTL-ENG-4-S2",
+   "text": "mündlich und schriftlich im eigenen Fachgebiet und in vertrauten unmittelbaren und gesellschaftlichen Situationen detailliert und ausführlich informieren, zusammenfassen, Stellung nehmen, Standpunkte abwägen und begründen sowie klar strukturierte Präsentationen halten;",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S2-K5",
+   "kind": "kompetenz",
+   "name": "strukturierte Texte zu einem breiten Spektrum vertrauter Themen aus Alltag und Berufswelt …",
+   "parent": "HTL-ENG-4-S2",
+   "text": "strukturierte Texte zu einem breiten Spektrum vertrauter Themen aus Alltag und Berufswelt verfassen und dabei die für die jeweilige Textsorte relevanten Kriterien anwenden.",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-ENG-4-S2",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und öffentlicher Themenbereich",
+   "parent": "HTL-ENG-4-S2-L1",
+   "text": "Vielfältige gesellschaftspolitische, soziale und wirtschaftliche Themen (zB Menschenrechte, Diskriminierung, Armut, Verteilungsgerechtigkeit).",
+   "content_area": "Privater und öffentlicher Themenbereich",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Themenbereich",
+   "parent": "HTL-ENG-4-S2-L1",
+   "text": "Arbeit und Arbeitsmarkt, Bildung, Wissenschaft und Forschung; technisch und wirtschaftlich relevante Themen der Berufspraxis (zB Projektmanagement, Zukunft der Technik).",
+   "content_area": "Beruflicher Themenbereich",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "parent": "HTL-ENG-4-S2-L1",
+   "text": "Festigung, Erweiterung und Vertiefung des Wortschatzes und der Sprachstrukturen; Übungen zur Kohärenz und Kohäsion von Texten; situations- und adressatenadäquate Anwendung der Sprache (Register).",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S2-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HTL-ENG-4-S2-L1",
+   "text": "Monologische und dialogische Gesprächssituationen (zB Präsentation, Konferenz, Bewerbungsgespräch).",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-4-S2-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und -formate",
+   "parent": "HTL-ENG-4-S2-L1",
+   "text": "Beruflicher Schriftverkehr (zB Geschäftsbriefe, Berichte und Protokolle, Bewerbungen); Antrag (Proposal).",
+   "content_area": "Schriftliche Textsorten und -formate",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-ENG-5",
+   "kind": "klasse",
+   "name": "V. Jahrgang",
+   "parent": "HTL-ENG",
+   "klasse": 5,
+   "schulstufe": 13,
+   "text": "Kompetenzmodul 9"
+  },
+  {
+   "code": "HTL-ENG-5-S1",
+   "kind": "semester",
+   "name": "9. Semester",
+   "parent": "HTL-ENG-5"
+  },
+  {
+   "code": "HTL-ENG-5-S1-K1",
+   "kind": "kompetenz",
+   "name": "anspruchsvollere Sachtexte verstehen und beim raschen Lesen entscheiden, welche …",
+   "parent": "HTL-ENG-5-S1",
+   "text": "anspruchsvollere Sachtexte verstehen und beim raschen Lesen entscheiden, welche Informationen für einen bestimmten Zweck relevant sind;",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S1-K2",
+   "kind": "kompetenz",
+   "name": "Hör- und Lesetexte über konkrete und abstrakte Themen verstehen, in denen ein bestimmter …",
+   "parent": "HTL-ENG-5-S1",
+   "text": "Hör- und Lesetexte über konkrete und abstrakte Themen verstehen, in denen ein bestimmter Standpunkt vertreten wird;",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S1-K3",
+   "kind": "kompetenz",
+   "name": "Fachartikel, die über das eigene Fachgebiet hinausgehen, unter Zuhilfenahme geeigneter …",
+   "parent": "HTL-ENG-5-S1",
+   "text": "Fachartikel, die über das eigene Fachgebiet hinausgehen, unter Zuhilfenahme geeigneter Nachschlagewerke lesen und verstehen;",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S1-K4",
+   "kind": "kompetenz",
+   "name": "im direkten Kontakt und in den Medien gesprochene Standardsprache zu einem breiten …",
+   "parent": "HTL-ENG-5-S1",
+   "text": "im direkten Kontakt und in den Medien gesprochene Standardsprache zu einem breiten Spektrum vertrauter Themen aus dem unmittelbaren, gesellschaftlichen und beruflichen Leben verstehen und dabei auch Stimmung und Ton der Sprechenden erkennen;",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S1-K5",
+   "kind": "kompetenz",
+   "name": "mündlich und schriftlich im eigenen Fachgebiet und in vertrauten unmittelbaren und …",
+   "parent": "HTL-ENG-5-S1",
+   "text": "mündlich und schriftlich im eigenen Fachgebiet und in vertrauten unmittelbaren und gesellschaftlichen Situationen detailliert und ausführlich informieren, zusammenfassen, Stellung nehmen, Standpunkte abwägen, begründen und verteidigen sowie längere, klar strukturierte Präsentationen halten und auf Fragen der Zuhörerinnen und Zuhörer spontan reagieren;",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S1-K6",
+   "kind": "kompetenz",
+   "name": "strukturierte, detaillierte Texte zu einem breiten Spektrum vertrauter Themen aus Alltag …",
+   "parent": "HTL-ENG-5-S1",
+   "text": "strukturierte, detaillierte Texte zu einem breiten Spektrum vertrauter Themen aus Alltag und Berufswelt verfassen und dabei die für die jeweilige Textsorte relevanten Kriterien adäquat anwenden.",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-ENG-5-S1",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und öffentlicher Themenbereich",
+   "parent": "HTL-ENG-5-S1-L1",
+   "text": "Vielfältige gesellschaftspolitische, kulturelle, ökologische, soziale und wirtschaftliche Themen.",
+   "content_area": "Privater und öffentlicher Themenbereich",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Themenbereich",
+   "parent": "HTL-ENG-5-S1-L1",
+   "text": "Gesellschaftlich relevante Technologiefragen, Zukunftstechnologien; fachspezifische und beruflich relevante Themen (zB betriebliche Organisation, Leben und Arbeiten im Ausland).",
+   "content_area": "Beruflicher Themenbereich",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "parent": "HTL-ENG-5-S1-L1",
+   "text": "Festigung, Erweiterung und Vertiefung des Wortschatzes und der Sprachstrukturen; Übungen zur Kohärenz und Kohäsion von Texten; situations- und adressatenadäquate Anwendung der Sprache (Register).",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HTL-ENG-5-S1-L1",
+   "text": "Monologische und dialogische Gesprächssituationen (zB Bewerbungsgespräch, Präsentation von Ideen, Produkten, Programmen und laufenden Diplomarbeiten, Beschreiben und Kommentieren von Grafiken).",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und -formate",
+   "parent": "HTL-ENG-5-S1-L1",
+   "text": "Privater und öffentlicher Schriftverkehr (Bewerbung, Motivationsschreiben, Beantwortung von Anfragen, Beschwerde und Reaktion); Bericht; Abstract.",
+   "content_area": "Schriftliche Textsorten und -formate",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S2",
+   "kind": "semester",
+   "name": "10. Semester",
+   "parent": "HTL-ENG-5"
+  },
+  {
+   "code": "HTL-ENG-5-S2-K1",
+   "kind": "kompetenz",
+   "name": "anspruchsvollere Sachtexte verstehen und beim raschen Lesen entscheiden, welche …",
+   "parent": "HTL-ENG-5-S2",
+   "text": "anspruchsvollere Sachtexte verstehen und beim raschen Lesen entscheiden, welche Informationen für einen bestimmten Zweck relevant sind;",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S2-K2",
+   "kind": "kompetenz",
+   "name": "Hör- und Lesetexte über konkrete und abstrakte Themen verstehen, in denen ein bestimmter …",
+   "parent": "HTL-ENG-5-S2",
+   "text": "Hör- und Lesetexte über konkrete und abstrakte Themen verstehen, in denen ein bestimmter Standpunkt vertreten wird;",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S2-K3",
+   "kind": "kompetenz",
+   "name": "Fachartikel, die über das eigene Fachgebiet hinausgehen, unter Zuhilfenahme geeigneter …",
+   "parent": "HTL-ENG-5-S2",
+   "text": "Fachartikel, die über das eigene Fachgebiet hinausgehen, unter Zuhilfenahme geeigneter Nachschlagewerke lesen und verstehen;",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S2-K4",
+   "kind": "kompetenz",
+   "name": "im direkten Kontakt und in den Medien gesprochene Standardsprache zu einem breiten …",
+   "parent": "HTL-ENG-5-S2",
+   "text": "im direkten Kontakt und in den Medien gesprochene Standardsprache zu einem breiten Spektrum vertrauter Themen aus dem unmittelbaren, gesellschaftlichen und beruflichen Leben verstehen und dabei auch Stimmung und Ton der Sprechenden erkennen;",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S2-K5",
+   "kind": "kompetenz",
+   "name": "mündlich und schriftlich im eigenen Fachgebiet und in vertrauten unmittelbaren und …",
+   "parent": "HTL-ENG-5-S2",
+   "text": "mündlich und schriftlich im eigenen Fachgebiet und in vertrauten unmittelbaren und gesellschaftlichen Situationen detailliert und ausführlich informieren, zusammenfassen, Stellung nehmen, Standpunkte abwägen, begründen und verteidigen sowie längere, klar strukturierte Präsentationen halten und auf Fragen der Zuhörerinnen und Zuhörer spontan reagieren;",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S2-K6",
+   "kind": "kompetenz",
+   "name": "strukturierte, detaillierte Texte zu einem breiten Spektrum vertrauter Themen aus Alltag …",
+   "parent": "HTL-ENG-5-S2",
+   "text": "strukturierte, detaillierte Texte zu einem breiten Spektrum vertrauter Themen aus Alltag und Berufswelt verfassen und dabei die für die jeweilige Textsorte relevanten Kriterien adäquat anwenden.",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-ENG-5-S2",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und öffentlicher Themenbereich",
+   "parent": "HTL-ENG-5-S2-L1",
+   "text": "Vielfältige gesellschaftspolitische, kulturelle, ökologische, soziale und wirtschaftliche Themen im regionalen und globalen Zusammenhang.",
+   "content_area": "Privater und öffentlicher Themenbereich",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Themenbereich",
+   "parent": "HTL-ENG-5-S2-L1",
+   "text": "Komplexe fachspezifische und beruflich relevante Themen.",
+   "content_area": "Beruflicher Themenbereich",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "parent": "HTL-ENG-5-S2-L1",
+   "text": "Festigung, Erweiterung und Vertiefung des Wortschatzes und der Sprachstrukturen; Übungen zur Kohärenz und Kohäsion von Texten; situations- und adressatenadäquate Anwendung der Sprache (Register).",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen und Wortschatz",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S2-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HTL-ENG-5-S2-L1",
+   "text": "Monologische und dialogische Gesprächssituationen.",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-ENG-5-S2-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und -formate",
+   "parent": "HTL-ENG-5-S2-L1",
+   "text": "Festigung der schriftlichen Textsorten und -formate.",
+   "content_area": "Schriftliche Textsorten und -formate",
+   "klasse": 5,
+   "schulstufe": 13
+  }
+ ],
+ "skills": [],
+ "skill_nodes": [
+  [
+   "englisch.reading.comprehension",
+   "HTL-ENG-1-K1"
+  ]
+ ]
+}
