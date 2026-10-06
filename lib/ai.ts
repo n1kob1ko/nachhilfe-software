@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { DIFFICULTIES, categoriesFor, type Category, type Difficulty } from "./curriculum";
+import { ERROR_TYPES, type ErrorType } from "./error-types";
 import type { TaskDraft } from "./tasks";
 import { GAP, gapCount } from "./tasks";
 
@@ -166,6 +167,7 @@ const GradeSchema = z.object({
   correct: z.boolean(),
   feedback: z.string().describe("1-2 Sätze Rückmeldung direkt an die Schülerin / den Schüler (du-Form)"),
   error_label: z.string().nullable().describe("Kurzes Fehler-Etikett, wenn falsch, sonst null"),
+  error_type: z.enum(ERROR_TYPES.map((e) => e.key) as [ErrorType, ...ErrorType[]]).nullable().describe(`Art des Fehlers, wenn falsch, sonst null: ${ERROR_TYPES.map((e) => `${e.key} = ${e.label}`).join(", ")}`),
 });
 
 export async function gradeFreeText(task: { prompt: string; passage?: string; sample: string }, answer: string) {

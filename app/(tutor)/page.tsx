@@ -5,6 +5,7 @@ import { startUnitAction } from "@/app/session-actions";
 import { Avatar, SubjectArt } from "@/components/Art";
 import { dayKey } from "@/components/Calendar";
 import { Elapsed } from "@/components/Elapsed";
+import { StudentFocus } from "@/components/StudentFocus";
 import { Empty, SectionTitle, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import * as repo from "@/lib/repo";
@@ -116,6 +117,7 @@ export default async function StartPage() {
                 <p className="mt-1 text-[16px] text-ink-2">
                   seit <span className="num">{formatTime(u.started_at)}</span> (<Elapsed since={u.started_at} />){u.subject && ` · ${u.subject}`}
                 </p>
+                <StudentFocus studentId={u.student_id} />
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link href={`/einheiten/${u.id}`} className="btn btn-primary btn-lg">
                     Zur Einheit <ArrowRight size={18} aria-hidden />
@@ -138,6 +140,7 @@ export default async function StartPage() {
                   </p>
                   <h2 className="mt-1 text-[28px] leading-tight font-semibold md:text-[32px]">{next.student_name}</h2>
                   <p className="mt-1 text-[16px] text-ink-2">{next.topic || next.subject}</p>
+                  <StudentFocus studentId={next.student_id} />
                   <div className="mt-6 flex flex-wrap items-start gap-3">
                     <form action={startUnitAction.bind(null, next.student_id)}>
                       <button className="btn btn-primary btn-lg">

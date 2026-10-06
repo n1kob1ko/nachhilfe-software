@@ -353,10 +353,70 @@ CREATE TABLE IF NOT EXISTS skill_history (
   before TEXT NOT NULL,
   changed_at TEXT NOT NULL
 );
+-- Aktueller Stoff: what a student is doing at school right now, per subject. The official curriculum
+-- stays as it is; this is the student's own layer on top. At most one active row per subject;
+-- replaced rows keep ended_at, so "seit wann" and the history stay readable.
+CREATE TABLE IF NOT EXISTS current_material (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  subject TEXT NOT NULL,
+  topic TEXT NOT NULL,
+  subtopic TEXT NOT NULL DEFAULT '',
+  skill_ids TEXT NOT NULL DEFAULT '[]',
+  since TEXT NOT NULL,
+  priority INTEGER NOT NULL DEFAULT 2,
+  note TEXT NOT NULL DEFAULT '',
+  source TEXT NOT NULL DEFAULT 'unterricht',
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL,
+  ended_at TEXT
+);
+-- Uploaded material (photo, PDF, worksheet). The file stays private; what is recognised in it is only
+-- a suggestion (analysis JSON) until the teacher has checked it. Origin and licence via content_sources.
+CREATE TABLE IF NOT EXISTS materials (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  student_id INTEGER REFERENCES students(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  file_name TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  sha256 TEXT NOT NULL,
+  stored_path TEXT NOT NULL,
+  source_id INTEGER REFERENCES content_sources(id) ON DELETE SET NULL,
+  subject TEXT NOT NULL DEFAULT '',
+  school_type TEXT NOT NULL DEFAULT '',
+  klasse INTEGER,
+  topic TEXT NOT NULL DEFAULT '',
+  skill_ids TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL DEFAULT 'hochgeladen',
+  analysis TEXT,
+  analysis_source TEXT NOT NULL DEFAULT '',
+  analyzed_at TEXT,
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL
+);
+-- Own corrections of a skill (Mehr › Datenqualität). The skill row itself (and with it every imported
+-- or official value) is never changed: these values are laid over it when skills are read.
+CREATE TABLE IF NOT EXISTS skill_overrides (
+  skill_id TEXT PRIMARY KEY REFERENCES skills(id) ON DELETE CASCADE,
+  area TEXT,
+  subtopic TEXT,
+  grade_min INTEGER,
+  grade_max INTEGER,
+  practice_shift TEXT NOT NULL DEFAULT '',
+  merged_into TEXT REFERENCES skills(id) ON DELETE SET NULL,
+  note TEXT NOT NULL DEFAULT '',
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  updated_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS app_settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_current_material ON current_material(student_id, ended_at);
+CREATE INDEX IF NOT EXISTS idx_materials_created ON materials(created_at);
 CREATE INDEX IF NOT EXISTS idx_nodes_curriculum ON curriculum_nodes(curriculum_id, parent_id, sort);
 CREATE INDEX IF NOT EXISTS idx_tests_student ON tests(student_id, date);
 CREATE INDEX IF NOT EXISTS idx_task_skills_skill ON task_skills(skill_id);
@@ -449,6 +509,29 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["tests", "status", "TEXT NOT NULL DEFAULT 'geschrieben'"], // 'geplant' | 'geschrieben' | 'abgesagt'
   ["tests", "teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
   ["tests", "created_at", "TEXT"],
+  // prerequisites and Lehrplan links: who made them, and removed ones stay as rows so a removed
+  // standard link does not come back with the next start or import
+  ["skill_links", "origin", "TEXT NOT NULL DEFAULT 'app'"], // app | import | lehrer
+  ["skill_links", "removed_at", "TEXT"],
+  ["skill_links", "changed_by", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["skill_curriculum", "origin", "TEXT NOT NULL DEFAULT 'import'"], // import | lehrer
+  ["skill_curriculum", "removed_at", "TEXT"],
+  ["skill_curriculum", "changed_by", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["skill_history", "kind", "TEXT NOT NULL DEFAULT 'import'"], // import | korrektur
+  ["skill_history", "teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  // Fehlerart of a wrong answer (lib/error-types.ts): the stored category, where it came from
+  // (vorschlag = suggested by the app, lehrer = set or confirmed by the teacher, ki = free-text grading),
+  // the app's original suggestion, and who set it when
+  ["attempts", "error_type", "TEXT"],
+  ["attempts", "error_type_source", "TEXT"],
+  ["attempts", "error_type_suggested", "TEXT"],
+  ["attempts", "error_type_by", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["attempts", "error_type_at", "TEXT"],
+  // Aufgabenbibliothek: tags of a library entry (worksheets.kind = 'bibliothek', one task each)
+  ["worksheets", "tags", "TEXT NOT NULL DEFAULT '[]'"],
+  // note for parents/student written from the summary of a unit (by the teacher or, on request, by Claude)
+  ["lessons", "family_note", "TEXT NOT NULL DEFAULT ''"],
+  ["lessons", "family_note_source", "TEXT NOT NULL DEFAULT ''"],
 ];
 
 /** Teachers to start with; more can be added later. */
@@ -523,6 +606,8 @@ function migrate(conn: Database.Database) {
     const setLogin = conn.prepare("UPDATE teachers SET username = ?, password_hash = ?, must_change_password = 1, is_admin = ? WHERE id = ?");
     for (const t of noLogin) setLogin.run(usernameFor(t.name), hashPassword(INITIAL_PASSWORD), t.name === DEFAULT_TEACHERS[0] ? 1 : 0, t.id);
     conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_teachers_username ON teachers(username)");
+    conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_current_material_active ON current_material(student_id, subject) WHERE ended_at IS NULL");
+    conn.exec("CREATE INDEX IF NOT EXISTS idx_attempts_error_type ON attempts(error_type) WHERE error_type IS NOT NULL");
     // every task is linked to its main skill in task_skills as well
     conn.exec("INSERT OR IGNORE INTO task_skills (task_id, skill_id) SELECT id, skill_id FROM tasks WHERE skill_id IS NOT NULL");
   });

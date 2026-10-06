@@ -12,6 +12,8 @@ import * as repo from "@/lib/repo";
 import { klassenLabel, schoolType, schulstufe } from "@/lib/school";
 import { analyzeStudent, buildWorksheet, submitAnswer, type SubmitInput } from "@/lib/service";
 import { runningUnitForStudent } from "@/lib/units";
+import { dayOf } from "@/lib/exams";
+import { nextSteps } from "@/lib/recommend";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const int = (f: FormData, k: string) => {
@@ -172,13 +174,12 @@ export async function deleteAssignmentAction(id: number, studentId: number) {
   redirect(`/schueler/${studentId}?tab=uebungen`);
 }
 
-/** Turns a recommendation into a worksheet and assigns it right away. */
+/** Turns a recommendation (lib/recommend.ts) into a worksheet and assigns it right away. */
 export async function applyRecommendationAction(studentId: number, key: string) {
   await requireTeacher();
   const student = repo.getStudent(studentId);
-  const rec = analyzeStudent(studentId)?.recommendations.find((r) => r.key === key);
-  if (!student || !rec) redirect(`/schueler/${studentId}?tab=analyse`);
-  const kind = rec.kind === "ueberpruefung" ? "ueberpruefung" : "uebung";
+  const rec = nextSteps(studentId, { today: dayOf(new Date()), limit: 20 }).find((r) => r.key === key);
+  if (!student || !rec) redirect(`/schueler/${studentId}?tab=fortschritt`);
   const result = await buildWorksheet({
     subject: rec.skill.subject,
     schoolType: student.school_type,
@@ -187,14 +188,14 @@ export async function applyRecommendationAction(studentId: number, key: string) 
     difficulty: rec.difficulty,
     count: rec.count,
     taskType: "mixed",
-    kind,
-    title: rec.kind === "ueberpruefung" ? `Überprüfung: ${rec.skill.name}` : rec.kind === "wiederholung" ? `Wiederholung: ${rec.skill.name}` : `Training: ${rec.skill.area} › ${rec.skill.name}`,
+    kind: rec.kind,
+    title: rec.kind === "ueberpruefung" ? `Überprüfung: ${rec.skill.name}` : rec.rule === 6 ? `Wiederholung: ${rec.skill.name}` : `Training: ${rec.skill.area} › ${rec.skill.name}`,
     focusNote: rec.focusNote,
   });
   noteActivity(studentId);
   repo.assignWorksheet(result.id, studentId, `${RECOMMENDATION_NOTE} (${rec.skill.area} › ${rec.skill.name}): ${rec.reason}`, runningUnitForStudent(studentId)?.id ?? null);
   revalidatePath("/", "layout");
-  redirect(`/schueler/${studentId}?tab=analyse&zugewiesen=${result.id}`);
+  redirect(`/schueler/${studentId}?tab=fortschritt&zugewiesen=${result.id}`);
 }
 
 // ---------- skills ----------

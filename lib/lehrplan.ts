@@ -4,7 +4,7 @@
  * Everything here is rule-based and works without AI. Architecture: docs/curriculum.md.
  */
 import { db } from "./db";
-import type { Skill, Student } from "./repo";
+import { SKILL_SELECT, type Skill, type Student } from "./repo";
 import { checkLevel, SCHOOL_BRANCHES, SCHOOL_TYPES, schulstufe, type SchoolBranch } from "./school";
 
 // ---------- sources and licences ----------
@@ -185,7 +185,7 @@ export function curriculumTree(id: number, klasse?: number | null): CurriculumTr
     .prepare("SELECT id, code, kind, name, text, klasse, schulstufe, parent_id FROM curriculum_nodes WHERE curriculum_id = ? ORDER BY sort, id")
     .all(id) as (Omit<CurriculumTreeNode, "skills" | "children"> & { parent_id: number | null })[];
   const links = db()
-    .prepare("SELECT sc.node_id, s.id, s.name FROM skill_curriculum sc JOIN skills s ON s.id = sc.skill_id JOIN curriculum_nodes n ON n.id = sc.node_id WHERE n.curriculum_id = ? ORDER BY s.sort, s.name")
+    .prepare("SELECT sc.node_id, s.id, s.name FROM skill_curriculum sc JOIN skills s ON s.id = sc.skill_id JOIN curriculum_nodes n ON n.id = sc.node_id WHERE n.curriculum_id = ? AND sc.removed_at IS NULL ORDER BY s.sort, s.name")
     .all(id) as { node_id: number; id: string; name: string }[];
   const byId = new Map<number, CurriculumTreeNode>();
   for (const r of rows) byId.set(r.id, { id: r.id, code: r.code, kind: r.kind, name: r.name, text: r.text, klasse: r.klasse, schulstufe: r.schulstufe, skills: [], children: [] });
@@ -206,7 +206,7 @@ export function curriculumTree(id: number, klasse?: number | null): CurriculumTr
 }
 
 // ---------- skills for a student ----------
-const activeSkills = () => db().prepare("SELECT * FROM skills WHERE COALESCE(status, 'aktiv') = 'aktiv' ORDER BY sort, subject, area, name").all() as Skill[];
+const activeSkills = () => db().prepare(`${SKILL_SELECT} WHERE COALESCE(s.status, 'aktiv') = 'aktiv' AND o.merged_into IS NULL ORDER BY s.sort, s.subject, area, s.name`).all() as Skill[];
 const fitsSchoolType = (s: Skill, type: string) => !s.school_types || s.school_types.split(",").map((x) => x.trim()).includes(type);
 
 /**
@@ -249,18 +249,61 @@ export function branchesWithSkills(subject: string): { branch: SchoolBranch; cou
 }
 
 // ---------- prerequisites and next skills ----------
+// Removed links stay in skill_links with removed_at, so a standard link the teacher removed does not
+// come back with the next start or import. Only the teacher adds or removes links; nothing is guessed.
 export function prerequisitesOf(skillId: string): string[] {
-  return (db().prepare("SELECT other_id FROM skill_links WHERE skill_id = ? AND kind = 'voraussetzung'").all(skillId) as { other_id: string }[]).map((r) => r.other_id);
+  return (db().prepare("SELECT other_id FROM skill_links WHERE skill_id = ? AND kind = 'voraussetzung' AND removed_at IS NULL").all(skillId) as { other_id: string }[]).map((r) => r.other_id);
 }
 /** Skills that build on this one: explicit "weiter" links and skills that list it as prerequisite. */
 export function nextSkillsOf(skillId: string): string[] {
   const rows = db()
-    .prepare("SELECT other_id AS id FROM skill_links WHERE skill_id = ? AND kind = 'weiter' UNION SELECT skill_id AS id FROM skill_links WHERE other_id = ? AND kind = 'voraussetzung'")
+    .prepare(
+      "SELECT other_id AS id FROM skill_links WHERE skill_id = ? AND kind = 'weiter' AND removed_at IS NULL UNION SELECT skill_id AS id FROM skill_links WHERE other_id = ? AND kind = 'voraussetzung' AND removed_at IS NULL",
+    )
     .all(skillId, skillId) as { id: string }[];
   return rows.map((r) => r.id);
 }
 export function allLinks(): { skill_id: string; other_id: string; kind: "voraussetzung" | "weiter" }[] {
-  return db().prepare("SELECT skill_id, other_id, kind FROM skill_links").all() as { skill_id: string; other_id: string; kind: "voraussetzung" | "weiter" }[];
+  return db().prepare("SELECT skill_id, other_id, kind FROM skill_links WHERE removed_at IS NULL").all() as { skill_id: string; other_id: string; kind: "voraussetzung" | "weiter" }[];
+}
+
+export type LinkOrigin = "app" | "import" | "lehrer";
+export const LINK_ORIGIN_LABEL: Record<LinkOrigin, string> = { app: "Standard", import: "aus Import", lehrer: "eigene" };
+export type SkillLink = { skill_id: string; other_id: string; kind: "voraussetzung" | "weiter"; origin: LinkOrigin; removed_at: string | null; changed_by: number | null };
+/** Every prerequisite link of a skill, removed ones included (they can be restored). */
+export function prerequisiteLinks(skillId: string): SkillLink[] {
+  return db().prepare("SELECT skill_id, other_id, kind, origin, removed_at, changed_by FROM skill_links WHERE skill_id = ? AND kind = 'voraussetzung' ORDER BY removed_at IS NOT NULL, rowid").all(skillId) as SkillLink[];
+}
+/** Would `before` → `skillId` close a circle (skillId is already needed for before)? */
+function createsCycle(skillId: string, before: string): boolean {
+  const seen = new Set<string>();
+  const stack = [before];
+  while (stack.length) {
+    const id = stack.pop()!;
+    if (id === skillId) return true;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    stack.push(...prerequisitesOf(id));
+  }
+  return false;
+}
+/** The teacher adds a prerequisite (or restores a removed one). */
+export function addPrerequisite(skillId: string, before: string, teacherId: number | null): { ok: true } | { error: string } {
+  if (skillId === before) return { error: "Eine Fähigkeit kann nicht ihre eigene Voraussetzung sein." };
+  const exists = db().prepare("SELECT 1 FROM skills WHERE id = ?");
+  if (!exists.get(skillId) || !exists.get(before)) return { error: "Fähigkeit nicht gefunden." };
+  if (createsCycle(skillId, before)) return { error: "Das ergäbe einen Kreis: diese Fähigkeit ist schon Voraussetzung der anderen." };
+  db()
+    .prepare(
+      `INSERT INTO skill_links (skill_id, other_id, kind, origin, changed_by) VALUES (?, ?, 'voraussetzung', 'lehrer', ?)
+       ON CONFLICT(skill_id, other_id, kind) DO UPDATE SET removed_at = NULL, changed_by = excluded.changed_by`,
+    )
+    .run(skillId, before, teacherId);
+  return { ok: true };
+}
+/** Removing keeps the row (removed_at), so the link stays removed after a restart or re-import. */
+export function removePrerequisite(skillId: string, before: string, teacherId: number | null) {
+  db().prepare("UPDATE skill_links SET removed_at = datetime('now'), changed_by = ? WHERE skill_id = ? AND other_id = ? AND kind = 'voraussetzung'").run(teacherId, skillId, before);
 }
 
 // ---------- exam topics → skill suggestions ----------

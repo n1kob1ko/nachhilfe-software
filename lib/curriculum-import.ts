@@ -317,7 +317,7 @@ export function applyImport(id: number): { ok: boolean; error?: string; diff?: D
         update.run({ ...row, id: s.id });
       }
     }
-    const link = conn.prepare("INSERT OR IGNORE INTO skill_links (skill_id, other_id, kind) VALUES (?, ?, ?)");
+    const link = conn.prepare("INSERT OR IGNORE INTO skill_links (skill_id, other_id, kind, origin) VALUES (?, ?, ?, 'import')");
     const toNode = conn.prepare("INSERT OR IGNORE INTO skill_curriculum (skill_id, node_id) VALUES (?, ?)");
     for (const s of pkg.skills ?? []) {
       if (skip.has(s.id)) continue;
