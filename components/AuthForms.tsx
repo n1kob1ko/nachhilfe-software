@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { changePasswordAction, createTeacherAction, loginAction, type FormState } from "@/app/session-actions";
+import { changePasswordAction, createTeacherAction, loginAction, resetTeacherPasswordAction, type FormState } from "@/app/session-actions";
 
 function Submit({ children }: { children: React.ReactNode }) {
   const { pending } = useFormStatus();
@@ -83,5 +83,30 @@ export function NewTeacherForm() {
         <Submit>Lehrer anlegen</Submit>
       </div>
     </form>
+  );
+}
+
+/** Gives a colleague a new one-time start password; it is shown once, right here. */
+export function ResetPasswordForm({ teacherId }: { teacherId: number }) {
+  const [state, action] = useActionState(resetTeacherPasswordAction.bind(null, teacherId), null);
+  return (
+    // "contents": the button sits in the account row, the message spans the row below it
+    <form action={action} className="contents">
+      <ResetButton />
+      {state && (
+        <div className="order-last basis-full">
+          <Message state={state} />
+        </div>
+      )}
+    </form>
+  );
+}
+
+function ResetButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button className="btn btn-ghost btn-sm" disabled={pending}>
+      Passwort zurücksetzen
+    </button>
   );
 }

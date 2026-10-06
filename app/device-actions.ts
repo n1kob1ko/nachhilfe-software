@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/lib/auth";
 import { sendSingleTask, releaseWorksheet } from "@/lib/builder";
+import { clientIp } from "@/lib/client-ip";
 import { deviceContext } from "@/lib/device-context";
 import { canManageDevice, createPairCode, getDevice, pairDevice, renameDevice, revokeDevice, setDeviceCookie } from "@/lib/devices";
 import { noteActivity } from "@/lib/learning";
@@ -21,9 +22,7 @@ export type PairState = { error?: string } | null;
 
 /** The tablet enters the code shown on the teacher's laptop. */
 export async function pairDeviceAction(_prev: PairState, form: FormData): Promise<PairState> {
-  const h = await headers();
-  const key = (h.get("x-forwarded-for") ?? h.get("x-real-ip") ?? "local").split(",")[0].trim();
-  const out = pairDevice(String(form.get("code") ?? ""), key);
+  const out = pairDevice(String(form.get("code") ?? ""), clientIp(await headers()));
   if ("error" in out) return { error: out.error };
   await setDeviceCookie(out.token);
   pushTabletPresence(out.device.teacher_id);
