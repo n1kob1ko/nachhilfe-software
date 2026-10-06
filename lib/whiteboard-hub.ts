@@ -65,14 +65,18 @@ type StreamOptions = {
   onPresence?: () => void;
 };
 
+const MAX_STREAM_MS = (Number(process.env.SSE_MAX_SECONDS) || 600) * 1000;
+
 /** The SSE response of one screen on a channel: first `hello`, then every event published there. */
 export function stream(channel: Channel, request: Request, o: StreamOptions): Response {
   const clientId = new URL(request.url).searchParams.get("client")?.slice(0, 40) || crypto.randomUUID();
   const enc = new TextEncoder();
-  let cleanup = () => {};
+  let cleanup: (reconnecting?: boolean) => void = () => {};
   const body = new ReadableStream({
     start(controller) {
       const send = (e: unknown) => controller.enqueue(enc.encode(`data: ${JSON.stringify(e)}\n\n`));
+      // reconnect after 2 s when the stream ends; the hello event then brings the screen up to date
+      controller.enqueue(enc.encode("retry: 2000\n\n"));
       send(o.hello());
       const unsubscribe = subscribe(channel, { clientId, role: o.role, name: o.name, pageId: null, send });
       o.onAlive?.();
@@ -86,11 +90,16 @@ export function stream(channel: Channel, request: Request, o: StreamOptions): Re
           cleanup();
         }
       }, 20_000);
-      cleanup = () => {
+      // Railway ends any request after 15 minutes: the server closes first and the browser reconnects at once.
+      // The "gone" notice waits a moment, so the teacher does not see the tablet flicker offline.
+      const lifetime = setTimeout(() => cleanup(true), MAX_STREAM_MS);
+      cleanup = (reconnecting = false) => {
         clearInterval(ping);
+        clearTimeout(lifetime);
         unsubscribe();
         cleanup = () => {};
-        o.onPresence?.();
+        if (reconnecting && o.onPresence) setTimeout(o.onPresence, 10_000).unref?.();
+        else o.onPresence?.();
         try {
           controller.close();
         } catch {

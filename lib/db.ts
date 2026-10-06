@@ -2,8 +2,9 @@ import Database from "better-sqlite3";
 import fs from "node:fs";
 import path from "node:path";
 import { CURRICULUM, PREREQUISITES } from "./curriculum";
-import { INITIAL_PASSWORD, hashPassword } from "./password";
+import { INITIAL_PASSWORD, PUBLIC_DEFAULT_PASSWORD, hashPassword, verifyPassword } from "./password";
 import { checkLevel, migrateLegacy } from "./school";
+import { applyPendingRestore } from "./sicherungen";
 import { skillCode } from "./skill-code";
 
 const SCHEMA = `
@@ -540,7 +541,7 @@ export const DEFAULT_TEACHERS = ["Niko", "Thomas"];
 
 let instance: Database.Database | null = null;
 
-function dbPath() {
+export function dbPath() {
   // Serverless hosts wipe files on every restart: fail loudly instead of losing data quietly.
   if (process.env.VERCEL && !process.env.DATABASE_PATH)
     throw new Error("Lernheft braucht einen Server mit dauerhaftem Speicher (siehe docs/betrieb.md). Auf Vercel gehen Datenbank und Uploads verloren.");
@@ -549,7 +550,10 @@ function dbPath() {
 
 export function db(): Database.Database {
   if (instance) return instance;
-  instance = openDatabase(dbPath());
+  const file = dbPath();
+  // a backup the admin chose to restore is swapped in before the database is opened
+  applyPendingRestore(file);
+  instance = openDatabase(file);
   return instance;
 }
 
@@ -637,6 +641,12 @@ function migrate(conn: Database.Database) {
     const noLogin = conn.prepare("SELECT id, name FROM teachers WHERE username IS NULL").all() as { id: number; name: string }[];
     const setLogin = conn.prepare("UPDATE teachers SET username = ?, password_hash = ?, must_change_password = 1, is_admin = ? WHERE id = ?");
     for (const t of noLogin) setLogin.run(usernameFor(t.name), hashPassword(INITIAL_PASSWORD), t.name === DEFAULT_TEACHERS[0] ? 1 : 0, t.id);
+    // With INITIAL_TEACHER_PASSWORD set on the server, accounts still waiting on the public demo password
+    // get that start password instead (it still has to be changed at the first login)
+    if (INITIAL_PASSWORD !== PUBLIC_DEFAULT_PASSWORD) {
+      const rehash = conn.prepare("UPDATE teachers SET password_hash = ? WHERE id = ?");
+      for (const t of accountsOnPublicDefault(conn)) rehash.run(hashPassword(INITIAL_PASSWORD), t.id);
+    }
     conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_teachers_username ON teachers(username)");
     conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_current_material_active ON current_material(student_id, subject) WHERE ended_at IS NULL");
     conn.exec("CREATE INDEX IF NOT EXISTS idx_attempts_error_type ON attempts(error_type) WHERE error_type IS NOT NULL");
@@ -644,6 +654,12 @@ function migrate(conn: Database.Database) {
     conn.exec("INSERT OR IGNORE INTO task_skills (task_id, skill_id) SELECT id, skill_id FROM tasks WHERE skill_id IS NOT NULL");
   });
   tx();
+}
+
+/** Accounts whose start password is still the public demo password "lernheft". */
+export function accountsOnPublicDefault(conn: Database.Database = db()) {
+  const rows = conn.prepare("SELECT id, username, password_hash FROM teachers WHERE must_change_password = 1").all() as { id: number; username: string; password_hash: string }[];
+  return rows.filter((r) => verifyPassword(PUBLIC_DEFAULT_PASSWORD, r.password_hash)).map(({ id, username }) => ({ id, username }));
 }
 
 export function usernameFor(name: string) {

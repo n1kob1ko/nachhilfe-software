@@ -51,7 +51,7 @@ Volksschule 1–4, Mittelschule 1–4, Gymnasium 1–8 (Unter- und Oberstufe), H
 
 ## Lehrer und Anmeldung
 
-Zum Testen sind Niko (Verwaltung) und Thomas angelegt, Benutzernamen `niko` und `thomas`, Startpasswort `lernheft` (über `INITIAL_TEACHER_PASSWORD` änderbar). Beim ersten Login muss jeder ein eigenes Passwort wählen. Weitere Lehrer legt Niko unter „Lehrer verwalten“ an. Schüler brauchen keinen Account, sie üben über ihren persönlichen Link.
+Zum Testen sind Niko (Verwaltung) und Thomas angelegt, Benutzernamen `niko` und `thomas`, Startpasswort `lernheft` (über `INITIAL_TEACHER_PASSWORD` änderbar; auf dem Server mit `NODE_ENV=production` gilt `lernheft` nie, siehe `docs/betrieb.md`). Beim ersten Login muss jeder ein eigenes Passwort wählen. Weitere Lehrer legt Niko unter „Lehrer verwalten“ an. Schüler brauchen keinen Account, sie üben über ihren persönlichen Link.
 
 Im Produktionsmodus (`npm start`) wird das Login-Cookie nur über HTTPS gesendet. Wer die App ohne HTTPS betreibt, z. B. lokal im Netzwerk, startet sie mit `INSECURE_COOKIES=1`.
 
@@ -121,7 +121,7 @@ Wichtig: Die Live-Verbindung setzt **einen** Server-Prozess voraus (so läuft `n
 
 Unter „Datenexport“ (nur Verwaltung):
 
-- **Vollständige Sicherung als JSON:** jede Tabelle mit allen Spalten und Zeilen, auch Tabellen späterer Versionen. Format `lernheft-backup`, Version 1. `restoreBackup()` in `lib/backup.ts` spielt sie in eine leere Datenbank zurück; ein Test prüft, dass danach jede Tabelle identisch ist. Passwörter und Sitzungen sind absichtlich nicht enthalten. Nach einer Wiederherstellung gilt für alle Lehrer das Startpasswort.
+- **Vollständige Sicherung als JSON:** jede Tabelle mit allen Spalten und Zeilen, auch Tabellen späterer Versionen. Format `lernheft-backup`, Version 1. `restoreBackup()` in `lib/backup.ts` spielt sie in eine leere Datenbank zurück; ein Test prüft, dass danach jede Tabelle identisch ist. Passwörter und Sitzungen sind absichtlich nicht enthalten. Nach einer Wiederherstellung gilt für alle Lehrer das Startpasswort (`INITIAL_TEACHER_PASSWORD`). Zusätzlich sichert die App täglich Datenbank und Material auf dem Server, siehe `docs/betrieb.md`.
 - **CSV für Excel** (Semikolon, UTF-8 mit BOM): Schüler und Profile, Lehrer, Einheiten, Nachhilfestunden, Lern-Dokumentationen, Lernverlauf, Beobachtungen und Lernziele, Fortschritt aktuell und pro Einheit, Fähigkeiten, alle Ergebnisse, Hausübungen und Schularbeiten, Abrechnungsdaten. Zellen, die Excel als Formel ausführen würde, werden entschärft.
 
 ## So rechnet die Analyse
@@ -161,7 +161,7 @@ Tests: `npm test` (prüft u. a., dass jede generierte Aufgabe ihre eigene Lösun
 
 ## Noch offen
 
-- Die Anmeldung ist für den Betrieb im eigenen Netz gedacht. Vor einem Betrieb im Internet: HTTPS und ein starkes Startpasswort. Nach 5 falschen Passwörtern ist ein Benutzername 10 Minuten gesperrt.
+- Anmeldung im Internet: nur über HTTPS, `lernheft` gilt auf dem Server nie, nach 5 falschen Passwörtern ist ein Benutzername 10 Minuten gesperrt, nach 20 Fehlversuchen einer Adresse diese 15 Minuten. Details in `docs/betrieb.md`.
 - Die JSON-Sicherung wird heruntergeladen, nicht automatisch angelegt. Eine Wiederherstellung über die Oberfläche gibt es noch nicht (nur `restoreBackup()` im Code).
 - Schüler-Links sind geheime Links ohne Passwort.
 - Bilder und PDFs auf der Tafel sind noch nicht eingebaut.
