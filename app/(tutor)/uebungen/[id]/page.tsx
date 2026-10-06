@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, CheckCircle2, Copy, Eye, EyeOff, Send, Sparkles } from "lucide-react";
-import { runningUnitForStudent } from "@/lib/units";
+import { activeUnitForTeacher, runningUnitForStudent } from "@/lib/units";
+import { SendResult, TabletSend } from "@/components/device/TabletSend";
+import type { SendState } from "@/app/device-actions";
+import { hasDevice } from "@/lib/devices";
+import { tabletOnline } from "@/lib/live";
 import { assignWorksheetAction, deleteWorksheetAction } from "@/app/actions";
 import { copyAsDraftAction, setSolutionsVisibleAction } from "@/app/builder-actions";
 import { PrintButton } from "@/components/PrintButton";
 import { SendToBoard } from "@/components/SendToBoard";
 import { FlowSteps } from "@/components/FlowSteps";
-import { PageHeader, Pill } from "@/components/ui";
+import { PageHeader, Pill, Reveal } from "@/components/ui";
 import { WorksheetEditor } from "@/components/WorksheetEditor";
 import { ReleasePanel, SaveTemplatePanel } from "@/components/WorksheetPanels";
 import { aiEnabled } from "@/lib/ai";
@@ -32,6 +36,20 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
   const showSolutions = sp.loesungen ? sp.loesungen !== "0" : true;
   const assignments = repo.listAssignmentsForWorksheet(w.id);
   const units = runningBoardsFor(teacher.id);
+  // during a unit everything goes to its student on the teacher's tablet: no student to choose
+  const active = activeUnitForTeacher(teacher.id);
+  const activeFirst = active?.student_name.split(" ")[0] ?? "";
+  const inActive = active ? assignments.find((x) => x.unit_id === active.id) : undefined;
+  // after "An Max senden": did it reach the tablet? (from the database, so a reload shows the same)
+  const delivery: SendState =
+    active && inActive
+      ? {
+          status: !hasDevice(active.teacher_id) ? "kein-geraet" : inActive.delivered_at || inActive.started_at || tabletOnline(active.teacher_id) ? "gesendet" : "offline",
+          assignmentId: inActive.id,
+          unitId: active.id,
+          student: activeFirst,
+        }
+      : null;
   const forStudent = w.student_id ? students.find((s) => s.id === w.student_id) : null;
   const first = forStudent?.name.split(" ")[0];
   const baseTitle = first && w.title.startsWith(`${first} – `) ? w.title.slice(first.length + 3) : w.title;
@@ -70,7 +88,16 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
           <>
             <h2 className="mb-1 text-[18px] font-semibold">Vorschau prüfen, dann senden</h2>
             <p className="mb-4 text-[14px] text-ink-2">Aufgaben unten bei Bedarf ändern.</p>
-            <ReleasePanel worksheetId={w.id} students={students} defaultStudentId={w.student_id} taskCount={tasks.length} />
+            {active ? (
+              <>
+                <TabletSend student={activeFirst} unitId={active.id} worksheetId={w.id} />
+                <Reveal label="An jemand anderen senden" className="mt-4">
+                  <ReleasePanel worksheetId={w.id} students={students} defaultStudentId={null} taskCount={tasks.length} />
+                </Reveal>
+              </>
+            ) : (
+              <ReleasePanel worksheetId={w.id} students={students} defaultStudentId={w.student_id} taskCount={tasks.length} />
+            )}
           </>
         ) : mainAssignment ? (
           <>
@@ -85,6 +112,11 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
             <p className="num mb-4 text-[15px] text-ink-2">
               {mainAssignment.done_count} von {tasks.length} Aufgaben bearbeitet · {mainAssignment.correct_count} richtig
             </p>
+            {active && (
+              <div className="mb-4">
+                {inActive ? <SendResult state={delivery} unitId={active.id} unitLink={false} /> : <TabletSend student={activeFirst} unitId={active.id} worksheetId={w.id} />}
+              </div>
+            )}
             <div className="flex flex-wrap gap-3">
               {unit && !finished ? (
                 <Link href={`/einheiten/${unit.id}`} className="btn btn-primary btn-lg">
@@ -100,7 +132,12 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         ) : (
           <>
             <h2 className="mb-1 text-[18px] font-semibold">Noch an niemanden gesendet</h2>
-            <p className="mb-4 text-[14px] text-ink-2">Wähle, wer die Übung bekommt.</p>
+            {active && (
+              <div className="mb-4">
+                <TabletSend student={activeFirst} unitId={active.id} worksheetId={w.id} />
+              </div>
+            )}
+            <p className="mb-4 text-[14px] text-ink-2">{active ? "Oder an jemand anderen:" : "Wähle, wer die Übung bekommt."}</p>
             <form action={assignWorksheetAction} className="flex flex-wrap items-end gap-3">
               <input type="hidden" name="worksheet_id" value={w.id} />
               <label className="field min-w-[220px]">
@@ -139,6 +176,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         students={students}
         defaultStudentId={w.student_id}
         units={units}
+        active={active ? { unitId: active.id, student: activeFirst } : null}
         showSolutions={showSolutions}
         aiEnabled={aiEnabled()}
       />

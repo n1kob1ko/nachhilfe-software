@@ -1,5 +1,6 @@
 "use server";
 
+import { unitChanged } from "@/lib/live";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -125,7 +126,11 @@ export async function startUnitAction(studentId: number) {
   if (!repo.getStudent(studentId)) redirect("/schueler");
   sweepIdleUnits();
   const { unit, created } = startUnit(t.id, studentId, { subject: expectedSubject(studentId) });
-  if (created) ensureBoardForUnit(unit.id);
+  if (created) {
+    ensureBoardForUnit(unit.id);
+    // the teacher's tablet switches to this student by itself
+    unitChanged(unit.teacher_id, unit.id);
+  }
   revalidatePath("/", "layout");
   // the teacher goes straight into the unit, which is where everything for it lives
   redirect(created ? `/einheiten/${unit.id}` : `/einheiten/${unit.id}?bereits=1`);
