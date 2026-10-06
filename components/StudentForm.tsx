@@ -31,7 +31,7 @@ export function StudentForm({ student }: { student?: Student }) {
           <span className="label">Schule</span>
           <input className="input" name="school" defaultValue={student?.school} placeholder="z. B. MS Graz-St. Peter" />
         </label>
-        <SchoolClassFields type={student?.school_type} klasse={student?.klasse} />
+        <SchoolClassFields type={student?.school_type} klasse={student?.klasse} showStufe />
       </div>
       <fieldset className="field">
         <legend className="label mb-1.5">Fächer</legend>

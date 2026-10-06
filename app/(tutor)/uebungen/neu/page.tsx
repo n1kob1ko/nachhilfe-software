@@ -10,12 +10,14 @@ import { getSkill, listSkills, listStudents, listTemplates } from "@/lib/repo";
 
 export const metadata = { title: "Übung erstellen" };
 
-export default async function NewWorksheet({ searchParams }: { searchParams: Promise<{ schueler?: string; skill?: string }> }) {
+export default async function NewWorksheet({ searchParams }: { searchParams: Promise<{ schueler?: string; skill?: string; skills?: string; anzahl?: string }> }) {
   const sp = await searchParams;
   const ai = aiEnabled();
   const studentId = Number(sp.schueler) || null;
   const ctx = studentId ? studentContext(studentId) : null;
-  const skill = sp.skill ? getSkill(sp.skill) : null;
+  // ?skill=… (one) or ?skills=a,b (e.g. from the exam preparation), optional ?anzahl=
+  const preSkills = [...(sp.skill ? [sp.skill] : []), ...(sp.skills ?? "").split(",")].map((id) => (id ? getSkill(id.trim()) : null)).filter((x): x is NonNullable<typeof x> => Boolean(x));
+  const preCount = Math.max(1, Math.min(30, Number(sp.anzahl) || 0)) || undefined;
   const templates = listTemplates();
   return (
     <>
@@ -59,11 +61,11 @@ export default async function NewWorksheet({ searchParams }: { searchParams: Pro
       )}
       <BuilderForm
         key={studentId ?? 0}
-        skills={listSkills()}
+        skills={listSkills().filter((s) => (s.status ?? "aktiv") === "aktiv")}
         students={listStudents().map(({ id, name }) => ({ id, name }))}
         ctx={ctx}
         aiEnabled={ai}
-        preset={skill ? { skillIds: [skill.id], subject: skill.subject } : undefined}
+        preset={preSkills.length ? { skillIds: preSkills.map((x) => x.id), subject: preSkills[0].subject, count: preCount } : undefined}
       />
     </>
   );
