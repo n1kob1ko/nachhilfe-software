@@ -1,9 +1,8 @@
 /**
  * Learning analytics: turns attempts, lesson notes and test results into a per-skill
- * mastery estimate, trends, frequent errors and concrete exercise recommendations.
- * Everything here is deterministic and works without AI.
+ * mastery estimate, trends and frequent errors. What to practise next is decided in one place,
+ * lib/recommend.ts, from this analysis. Everything here is deterministic and works without AI.
  */
-import type { Difficulty } from "./curriculum";
 import type { AssignmentView, Attempt, Lesson, Skill, Student, TestResult } from "./repo";
 
 import { levelWeight, masteryAt, SOURCE_WEIGHT, taskScore, type Evidence } from "./mastery";
@@ -26,20 +25,8 @@ export type SkillStat = {
 export type AreaStat = { subject: string; area: string; mastery: number | null; trend: Trend; delta: number | null; skills: SkillStat[] };
 export type SubjectStat = { subject: string; mastery: number | null; trend: Trend; delta: number | null; areas: AreaStat[] };
 export type ErrorStat = { label: string; count: number; skillIds: string[]; lastSeen: number };
-
-export type Recommendation = {
-  key: string;
-  kind: "uebung" | "ueberpruefung" | "wiederholung";
-  skill: Skill;
-  mastery: number | null;
-  count: number;
-  difficulty: Difficulty;
-  title: string;
-  reason: string;
-  then: string;
-  focusNote?: string;
-  openAssignmentId?: number;
-};
+/** Wrong answers per Fehlerart (lib/error-types.ts); `confirmed` = set or confirmed by the teacher. */
+export type ErrorTypeStat = { type: string; count: number; confirmed: number; skillIds: string[]; lastSeen: number };
 
 export type Analysis = {
   skills: SkillStat[];
@@ -48,15 +35,16 @@ export type Analysis = {
   weaknesses: SkillStat[];
   review: SkillStat[];
   errors: ErrorStat[];
+  errorTypes: ErrorTypeStat[];
   overall: { mastery: number | null; trend: Trend; delta: number | null };
   mainProblem: SkillStat | null;
   summary: string[];
-  recommendations: Recommendation[];
   history: { label: string; points: { at: number; mastery: number | null }[] }[];
 };
 
 const DAY = 86_400_000;
 export const WEAK = 0.6;
+/** Note on assignments made from a recommendation (lib/recommend.ts reads it back). */
 export const RECOMMENDATION_NOTE = "Empfehlung";
 export const STRONG = 0.8;
 
@@ -71,12 +59,12 @@ const GRADE_SCORE: Record<number, number> = { 1: 0.95, 2: 0.82, 3: 0.68, 4: 0.52
 /** Skills an answer counts for: all skills of its task and their parent skills, if known. */
 export const skillsOf = (a: Pick<Attempt, "skill_id" | "skill_ids">): string[] => (a.skill_ids?.length ? a.skill_ids : a.skill_id ? [a.skill_id] : []);
 
-export function collectEvidence(attempts: Attempt[], lessons: Lesson[], tests: TestResult[]): Evidence[] {
+export function collectEvidence(attempts: Attempt[], lessons: Lesson[], tests: TestResult[], o: { careless?: boolean } = {}): Evidence[] {
   const ev: Evidence[] = [];
   for (const a of attempts) {
     if (!a.final) continue;
     // harder tasks say more about a skill (lib/mastery.ts)
-    for (const skillId of skillsOf(a)) ev.push({ skillId, score: taskScore(a), weight: SOURCE_WEIGHT.aufgabe * levelWeight(a.level), at: parseTime(a.created_at), source: "aufgabe" });
+    for (const skillId of skillsOf(a)) ev.push({ skillId, score: taskScore(a, o), weight: SOURCE_WEIGHT.aufgabe * levelWeight(a.level), at: parseTime(a.created_at), source: "aufgabe" });
   }
   for (const l of lessons) {
     // automatic entries summarise attempts that are already counted above
@@ -124,9 +112,11 @@ export function computeAnalysis(input: {
   tests: TestResult[];
   assignments: AssignmentView[];
   now?: number;
+  /** Flüchtigkeitsfehler marked by the teacher count milder (lib/mastery.ts); default on. */
+  careless?: boolean;
 }): Analysis {
   const now = input.now ?? Date.now();
-  const evidence = collectEvidence(input.attempts, input.lessons, input.tests);
+  const evidence = collectEvidence(input.attempts, input.lessons, input.tests, { careless: input.careless });
   const bySkill = new Map<string, Evidence[]>();
   for (const e of evidence) bySkill.set(e.skillId, [...(bySkill.get(e.skillId) ?? []), e]);
 
@@ -185,6 +175,17 @@ export function computeAnalysis(input: {
   for (const a of input.attempts) if (!a.correct && a.error_label) addErr(a.error_label, skillsOf(a), parseTime(a.created_at));
   for (const l of input.lessons) if (l.kind !== "selbststaendig") for (const m of splitMistakes(l.mistakes)) addErr(m, l.skill_ids, parseTime(l.starts_at));
   const errors = [...errMap.values()].sort((a, b) => b.count - a.count || b.lastSeen - a.lastSeen);
+  const typeMap = new Map<string, ErrorTypeStat>();
+  for (const a of input.attempts) {
+    if (a.correct || a.solution_viewed || !a.error_type) continue;
+    const e = typeMap.get(a.error_type) ?? { type: a.error_type, count: 0, confirmed: 0, skillIds: [], lastSeen: 0 };
+    e.count++;
+    if (a.error_type_source === "lehrer") e.confirmed++;
+    e.lastSeen = Math.max(e.lastSeen, parseTime(a.created_at));
+    for (const id of skillsOf(a)) if (!e.skillIds.includes(id)) e.skillIds.push(id);
+    typeMap.set(a.error_type, e);
+  }
+  const errorTypes = [...typeMap.values()].sort((a, b) => b.count - a.count || b.lastSeen - a.lastSeen);
 
   const overallItems = evidence;
   const overall = { mastery: mean(subjects.filter((s) => s.mastery !== null).map((s) => s.mastery!)), ...trendOf(overallItems, now) };
@@ -212,68 +213,6 @@ export function computeAnalysis(input: {
   if (errors[0] && errors[0].count >= 2) summary.push(`Häufigster Fehler: „${errors[0].label}“ (${errors[0].count}×).`);
   if (summary.length === 0) summary.push("Noch zu wenig Daten. Sobald Übungen bearbeitet oder Einheiten dokumentiert sind, erscheint hier die Auswertung.");
 
-  // recommendations
-  const recommendations: Recommendation[] = [];
-  const openFor = (skillId: string) => input.assignments.find((a) => !a.completed_at && a.skill_ids.includes(skillId));
-  /** Completion time of the latest targeted sheet (created from a recommendation) for this skill. */
-  const lastDone = (skillId: string, kind: string) =>
-    input.assignments
-      .filter((a) => a.completed_at && a.kind === kind && a.note.startsWith(RECOMMENDATION_NOTE) && a.skill_ids.includes(skillId))
-      .map((a) => parseTime(a.completed_at!))
-      .sort((a, b) => b - a)[0];
-
-  for (const w of weaknesses.slice(0, 3)) {
-    const open = openFor(w.skill.id);
-    const practiced = lastDone(w.skill.id, "uebung");
-    const checked = lastDone(w.skill.id, "ueberpruefung");
-    const topError = errors.find((e) => e.skillIds.includes(w.skill.id));
-    if (!open && practiced && now - practiced < 14 * DAY && (!checked || checked < practiced)) {
-      recommendations.push({
-        key: `check-${w.skill.id}`,
-        kind: "ueberpruefung",
-        skill: w.skill,
-        mastery: w.mastery,
-        count: 5,
-        difficulty: "mittel",
-        title: `Lernfortschritt prüfen: ${w.skill.name}`,
-        reason: `Übung zu „${w.skill.name}“ ist erledigt. Jetzt prüfen, ob es sitzt.`,
-        then: "Bei ≥ 80 %: als gefestigt markieren, sonst eine weitere Übungsrunde.",
-      });
-      continue;
-    }
-    const m = w.mastery ?? 0;
-    recommendations.push({
-      key: `practice-${w.skill.id}`,
-      kind: "uebung",
-      skill: w.skill,
-      mastery: w.mastery,
-      count: m < 0.4 ? 10 : 8,
-      difficulty: m < 0.3 ? "sehr leicht" : m < 0.5 ? "leicht" : "mittel",
-      title: `${w.skill.area}: ${w.skill.name}`,
-      reason: `Liegt bei ${pct(w.mastery)}, unter der 60-%-Schwelle.${topError ? ` Typischer Fehler: „${topError.label}“.` : ""}`,
-      then: "Erneute Überprüfung des Lernfortschritts (5 Aufgaben, mittel).",
-      focusNote: topError ? `Der Schüler macht häufig diesen Fehler: ${topError.label}. Baue Aufgaben ein, die genau diesen Fehler sichtbar machen.` : undefined,
-      openAssignmentId: open?.id,
-    });
-  }
-  for (const r of review.slice(0, Math.max(0, 4 - recommendations.length))) {
-    recommendations.push({
-      key: `review-${r.skill.id}`,
-      kind: "wiederholung",
-      skill: r.skill,
-      mastery: r.mastery,
-      count: 6,
-      difficulty: "mittel",
-      title: `Wiederholen: ${r.skill.name}`,
-      reason:
-        r.trend === "down"
-          ? `„${r.skill.name}“ ist zuletzt um ${Math.abs(r.delta ?? 0)} Prozentpunkte gefallen.`
-          : `„${r.skill.name}“ wurde seit über drei Wochen nicht geübt (${pct(r.mastery)}).`,
-      then: "Kurze Wiederholung, damit es nicht wieder verloren geht.",
-      openAssignmentId: openFor(r.skill.id)?.id,
-    });
-  }
-
   // history per area (weekly), for the progress chart
   const topAreas = subjects
     .flatMap((s) => s.areas)
@@ -292,5 +231,5 @@ export function computeAnalysis(input: {
     }),
   }));
 
-  return { skills: skillStats, subjects, strengths, weaknesses, review, errors, overall, mainProblem, summary, recommendations, history };
+  return { skills: skillStats, subjects, strengths, weaknesses, review, errors, errorTypes, overall, mainProblem, summary, history };
 }

@@ -55,6 +55,10 @@ export type Skill = {
   valid_from?: string | null;
   valid_to?: string | null;
   status?: "aktiv" | "archiviert";
+  /** Own note from Mehr › Datenqualität: in practice usually taught earlier or later than the curriculum says. */
+  practice_shift?: "" | "frueher" | "spaeter";
+  /** Set when this skill was merged into another one as a duplicate. */
+  merged_into?: string | null;
 };
 
 export type Lesson = {
@@ -184,6 +188,12 @@ export type Attempt = {
   teacher_id?: number | null;
   /** Difficulty 1–5 of the task at that moment. */
   level?: number | null;
+  /** Fehlerart (lib/error-types.ts) and where it came from: vorschlag | lehrer | ki. */
+  error_type?: string | null;
+  error_type_source?: string | null;
+  error_type_suggested?: string | null;
+  error_type_by?: number | null;
+  error_type_at?: string | null;
 };
 
 type Row = Record<string, unknown>;
@@ -262,11 +272,34 @@ export function deleteStudent(id: number) {
 }
 
 // ---------- skills ----------
+/**
+ * Skills as the app works with them: own corrections from Mehr › Datenqualität (skill_overrides) are
+ * laid over the stored row. The row itself, with every imported or official value, is never changed.
+ */
+export const SKILL_SELECT = `SELECT s.id, s.subject, COALESCE(o.area, s.area) AS area, s.name, COALESCE(o.grade_min, s.grade_min) AS grade_min,
+  COALESCE(o.grade_max, s.grade_max) AS grade_max, s.sort, s.parent_id, s.code, COALESCE(o.subtopic, s.subtopic) AS subtopic, s.school_types,
+  s.learning_objective, s.description, s.competency_area, s.content_area, s.action_area, s.source_id, s.version, s.valid_from, s.valid_to,
+  s.status, COALESCE(o.practice_shift, '') AS practice_shift, o.merged_into
+  FROM skills s LEFT JOIN skill_overrides o ON o.skill_id = s.id`;
+/** Every skill except duplicates that were merged into another one (their answers count for the other). */
 export function listSkills(): Skill[] {
-  return db().prepare("SELECT * FROM skills ORDER BY sort, subject, area, name").all() as Skill[];
+  return db().prepare(`${SKILL_SELECT} WHERE o.merged_into IS NULL ORDER BY s.sort, s.subject, area, s.name`).all() as Skill[];
 }
+/** One skill, also a merged duplicate (old answers and exercises still show its name). */
 export function getSkill(id: string): Skill | null {
-  return (db().prepare("SELECT * FROM skills WHERE id = ?").get(id) as Skill | undefined) ?? null;
+  return (db().prepare(`${SKILL_SELECT} WHERE s.id = ?`).get(id) as Skill | undefined) ?? null;
+}
+/** Merged duplicate → the skill it was merged into (Mehr › Datenqualität). */
+export function skillAliases(): Map<string, string> {
+  const rows = db().prepare("SELECT skill_id, merged_into FROM skill_overrides WHERE merged_into IS NOT NULL").all() as { skill_id: string; merged_into: string }[];
+  const map = new Map(rows.map((r) => [r.skill_id, r.merged_into]));
+  // a chain a → b → c ends at c
+  for (const [k] of map) {
+    let to = map.get(k)!;
+    for (let guard = 0; map.has(to) && guard < 8; guard++) to = map.get(to)!;
+    map.set(k, to);
+  }
+  return map;
 }
 export function createSkill(subject: string, area: string, name: string, gradeMin: number, gradeMax: number, parentId: string | null = null) {
   const slug = (x: string) =>
@@ -778,21 +811,38 @@ export function listAttemptsForStudent(studentId: number): Attempt[] {
   }));
 }
 export function recordAttempt(
-  a: Omit<Attempt, "id" | "created_at" | "unit_id" | "active_ms" | "skill_ids" | "teacher_id" | "level"> & {
+  a: Omit<Attempt, "id" | "created_at" | "unit_id" | "active_ms" | "skill_ids" | "teacher_id" | "level" | "error_type" | "error_type_source" | "error_type_suggested" | "error_type_by" | "error_type_at"> & {
     created_at?: string;
     unit_id?: number | null;
     active_ms?: number | null;
     teacher_id?: number | null;
     level?: number | null;
+    error_type?: string | null;
+    error_type_source?: string | null;
   },
 ) {
   const res = db()
     .prepare(
-      `INSERT INTO attempts (assignment_id, task_id, student_id, skill_id, attempt_no, answer, correct, final, time_ms, hints_used, solution_viewed, error_label, feedback, unit_id, active_ms, teacher_id, level, created_at)
-       VALUES (@assignment_id, @task_id, @student_id, @skill_id, @attempt_no, @answer, @correct, @final, @time_ms, @hints_used, @solution_viewed, @error_label, @feedback, @unit_id, @active_ms, @teacher_id, @level, COALESCE(@created_at, datetime('now')))`,
+      `INSERT INTO attempts (assignment_id, task_id, student_id, skill_id, attempt_no, answer, correct, final, time_ms, hints_used, solution_viewed, error_label, feedback, unit_id, active_ms, teacher_id, level,
+         error_type, error_type_source, error_type_suggested, error_type_at, created_at)
+       VALUES (@assignment_id, @task_id, @student_id, @skill_id, @attempt_no, @answer, @correct, @final, @time_ms, @hints_used, @solution_viewed, @error_label, @feedback, @unit_id, @active_ms, @teacher_id, @level,
+         @error_type, @error_type_source, CASE WHEN @error_type_source = 'vorschlag' THEN @error_type END, CASE WHEN @error_type IS NOT NULL THEN COALESCE(@created_at, datetime('now')) END,
+         COALESCE(@created_at, datetime('now')))`,
     )
-    .run({ created_at: null, unit_id: null, active_ms: null, teacher_id: null, level: null, ...a });
+    .run({ created_at: null, unit_id: null, active_ms: null, teacher_id: null, level: null, error_type: null, error_type_source: null, ...a });
   return Number(res.lastInsertRowid);
+}
+/**
+ * The teacher sets or confirms the Fehlerart of a wrong answer (null clears it). The app's own
+ * suggestion stays in error_type_suggested, so it is always visible what was changed.
+ */
+export function setAttemptErrorType(attemptId: number, type: string | null, teacherId: number | null, at = new Date()) {
+  db()
+    .prepare("UPDATE attempts SET error_type = ?, error_type_source = ?, error_type_by = ?, error_type_at = ? WHERE id = ? AND correct = 0")
+    .run(type, type ? "lehrer" : null, teacherId, at.toISOString(), attemptId);
+}
+export function getAttempt(id: number): Attempt | null {
+  return (db().prepare("SELECT * FROM attempts WHERE id = ?").get(id) as Attempt | undefined) ?? null;
 }
 export function recentActivity(limit = 8) {
   return db()

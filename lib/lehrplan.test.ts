@@ -301,35 +301,48 @@ test("exams: quick entry, reminders after 14/7/3 days, configurable, preparation
   assert.equal(exams.examReminders(today, { teacherId: niko.id }).length, 0);
 });
 
-test("recommendations follow the rule order: exam, prerequisite, errors, long ago, next skill", async () => {
+test("recommendations follow the rule order: exam, current material, weak, errors, prerequisite, long ago, next skill", async () => {
   const repo = await import("./repo");
   const { nextSteps } = await import("./recommend");
+  const { setCurrentMaterial } = await import("./current-material");
   const { dayOf } = await import("./exams");
   const today = dayOf(new Date());
   const niko = repo.listTeachers().find((t) => t.name === "Niko")!;
   const sid = repo.createStudent(kid("Rita Regel", niko.id));
+  const ids = ["mathe.negativ.addieren", "mathe.negativ.multiplizieren", "mathe.brueche.addieren", "mathe.prozent.prozentwert", "mathe.brueche.erweitern"];
   const w = repo.createWorksheet({ title: "x", subject: "Mathematik", grade: 6, school_type: "Mittelschule", klasse: 2, topic: "", difficulty: "mittel", task_type: "calc", kind: "uebung", source: "generator", skill_ids: [] },
-    ["mathe.brueche.kuerzen", "mathe.brueche.multiplizieren", "mathe.negativ.addieren", "mathe.prozent.prozentwert", "mathe.brueche.erweitern"].map((skillId) => ({ type: "calc" as const, skillId, difficulty: "mittel" as const, prompt: skillId, data: {}, answer: { accepted: ["1"], mode: "value" as const }, solution: "", hints: [], errorMap: [] })));
+    ids.map((skillId) => ({ type: "calc" as const, skillId, difficulty: "mittel" as const, prompt: skillId, data: {}, answer: { accepted: ["1"], mode: "value" as const }, solution: "", hints: [], errorMap: [] })));
   const aid = repo.assignWorksheet(w, sid);
   const t = Object.fromEntries(repo.listTasks(w).map((x) => [x.skillId, x]));
-  const rec = (skill: string, correct: number, daysAgo: number, error: string | null = null) =>
-    repo.recordAttempt({ assignment_id: aid, task_id: t[skill].id, student_id: sid, skill_id: skill, answer: "x", correct, final: 1, attempt_no: 1, time_ms: 1, hints_used: 0, solution_viewed: 0, error_label: error, feedback: "", created_at: new Date(Date.now() - daysAgo * DAY).toISOString() });
-  for (let i = 0; i < 3; i++) rec("mathe.brueche.kuerzen", i ? 0 : 1, 1); // prerequisite of multiplying, weak
-  for (let i = 0; i < 3; i++) rec("mathe.negativ.addieren", 0, 2, "Vorzeichen vergessen"); // frequent recent error
+  const rec = (skill: string, correct: number, daysAgo: number, errorType: string | null = null) =>
+    repo.recordAttempt({ assignment_id: aid, task_id: t[skill].id, student_id: sid, skill_id: skill, answer: "x", correct, final: 1, attempt_no: 1, time_ms: 1, hints_used: 0, solution_viewed: 0, error_label: null, feedback: "", created_at: new Date(Date.now() - daysAgo * DAY).toISOString(), error_type: errorType, error_type_source: errorType ? "vorschlag" : null });
+  for (let i = 0; i < 3; i++) rec("mathe.negativ.addieren", i ? 1 : 0, 1); // 63 %: prerequisite, not weak, not secure
+  for (let i = 0; i < 3; i++) rec("mathe.negativ.multiplizieren", 0, 2); // weak
+  for (let i = 0; i < 6; i++) rec("mathe.brueche.addieren", 1, 3);
+  for (let i = 0; i < 2; i++) rec("mathe.brueche.addieren", 0, 2, "rechenfehler"); // the same kind of error twice
   for (let i = 0; i < 4; i++) rec("mathe.prozent.prozentwert", 1, 40); // long ago
   for (let i = 0; i < 8; i++) rec("mathe.brueche.erweitern", 1, 1); // sits → next skill
   repo.addTest({ student_id: sid, date: plusDays(today, 5), subject: "Mathematik", kind: "Schularbeit", topic: "", grade: null, points: null, max_points: null, notes: "", skill_ids: ["mathe.brueche.multiplizieren"] });
+  setCurrentMaterial({ student_id: sid, subject: "Mathematik", topic: "Gleichungen", subtopic: "Gleichungen mit Klammern", skill_ids: ["mathe.gleichungen.klammern"], since: today, priority: 2, note: "", source: "unterricht" }, niko.id);
 
   const steps = nextSteps(sid, { today, limit: 10 });
   const first = (rule: number) => steps.find((s) => s.rule === rule);
   assert.equal(steps[0].rule, 1);
   assert.equal(steps[0].skill.id, "mathe.brueche.multiplizieren");
-  assert.match(steps[0].reason, /in 5 Tagen/);
-  assert.equal(first(2)?.skill.id, "mathe.brueche.kuerzen");
-  assert.equal(first(3)?.skill.id, "mathe.negativ.addieren");
-  assert.equal(first(4)?.skill.id, "mathe.prozent.prozentwert");
-  assert.ok(first(5) && ["mathe.brueche.addieren", "mathe.brueche.subtrahieren"].includes(first(5)!.skill.id));
+  assert.equal(steps[0].reason, "Schularbeit in 5 Tagen · noch nicht getestet");
+  assert.equal(first(2)?.skill.id, "mathe.gleichungen.klammern");
+  assert.match(first(2)!.reason, /^Aktueller Stoff: Gleichungen mit Klammern/);
+  assert.equal(first(3)?.skill.id, "mathe.negativ.multiplizieren");
+  assert.equal(first(3)?.cause?.skill.id, "mathe.negativ.addieren", "a weak prerequisite is named as possible cause");
+  assert.match(first(3)!.reason, /^Lernstand \d+ % \(kritisch\) · 3 Fehler zuletzt · mögliche Ursache: Addieren und Subtrahieren \(6\d %\)$/);
+  assert.equal(first(4)?.skill.id, "mathe.brueche.addieren");
+  assert.match(first(4)!.reason, /^2× Rechenfehler/);
+  assert.equal(first(5)?.skill.id, "mathe.negativ.addieren");
+  assert.match(first(5)!.reason, /^Voraussetzung für Multiplizieren und Dividieren · Lernstand 6\d %/);
+  assert.equal(first(6)?.skill.id, "mathe.prozent.prozentwert");
+  assert.equal(first(7)?.skill.id, "mathe.brueche.subtrahieren");
   assert.deepEqual(steps.map((s) => s.rule), [...steps.map((s) => s.rule)].sort(), "sorted by rule");
+  assert.equal(new Set(steps.map((s) => s.skill.id)).size, steps.length, "each skill once");
 });
 
 test("tracking → skill: an answer stores teacher, difficulty and counts for the skill and its parent", async () => {

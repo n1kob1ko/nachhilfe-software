@@ -1,5 +1,6 @@
 import { aiEnabled, generateWithAI, gradeFreeText } from "./ai";
 import { computeAnalysis } from "./analysis";
+import { db } from "./db";
 import { documentAssignment } from "./autodoc";
 import type { Difficulty, TaskType } from "./curriculum";
 import { TASK_TYPES, levelOf } from "./curriculum";
@@ -7,19 +8,31 @@ import { generateBuiltIn } from "./generators";
 import { klassenLabel, schulstufe } from "./school";
 import { runningUnitForStudent, touchUnit } from "./units";
 import * as repo from "./repo";
+import { suggestErrorType } from "./error-types";
 import { checkAnswer, type TaskDraft } from "./tasks";
+
+/** Setting under Mehr › Datenqualität: Flüchtigkeitsfehler marked by the teacher count milder (default on). */
+export const CARELESS_SETTING = "lernstand_fluechtig_milder";
+export function carelessCredit(): boolean {
+  const row = db().prepare("SELECT value FROM app_settings WHERE key = ?").get(CARELESS_SETTING) as { value: string } | undefined;
+  return row?.value !== "aus";
+}
 
 export function analyzeStudent(studentId: number, now?: number) {
   const student = repo.getStudent(studentId);
   if (!student) return null;
+  // answers on a merged duplicate count for the skill it was merged into (Mehr › Datenqualität)
+  const alias = repo.skillAliases();
+  const map = (ids: string[]) => (alias.size ? [...new Set(ids.map((id) => alias.get(id) ?? id))] : ids);
   return computeAnalysis({
     student,
     skills: repo.listSkills(),
-    attempts: repo.listAttemptsForStudent(studentId),
-    lessons: repo.listLessons(studentId),
-    tests: repo.listTests(studentId),
+    attempts: repo.listAttemptsForStudent(studentId).map((a) => (alias.size ? { ...a, skill_id: a.skill_id ? (alias.get(a.skill_id) ?? a.skill_id) : null, skill_ids: map(a.skill_ids ?? []) } : a)),
+    lessons: repo.listLessons(studentId).map((l) => ({ ...l, skill_ids: map(l.skill_ids) })),
+    tests: repo.listTests(studentId).map((t) => ({ ...t, skill_ids: map(t.skill_ids) })),
     assignments: repo.listAssignments(studentId),
     now,
+    careless: carelessCredit(),
   });
 }
 
@@ -160,6 +173,8 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
   }
 
   let result = checkAnswer(task, input.answer);
+  // Fehlerart of a wrong answer: the app's rule-based suggestion, or the AI's for graded free text
+  let errorType: { type: string; source: "vorschlag" | "ki" } | null = null;
 
   if (result.correct === null) {
     // free text
@@ -168,7 +183,10 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
     } else if (aiEnabled() && task.answer.sample) {
       try {
         const g = await gradeFreeText({ prompt: task.prompt, passage: task.data.passage, sample: task.answer.sample }, input.answer);
-        if (g) result = { correct: g.correct, errorLabel: g.error_label, feedback: g.feedback };
+        if (g) {
+          result = { correct: g.correct, errorLabel: g.error_label, feedback: g.feedback };
+          if (!g.correct && g.error_type) errorType = { type: g.error_type, source: "ki" };
+        }
       } catch {
         // fall through to self-assessment
       }
@@ -179,6 +197,10 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
   }
 
   const final = result.correct === true || attemptNo >= MAX_TRIES;
+  if (!result.correct && !errorType) {
+    const suggested = suggestErrorType(task, input.answer, result.errorLabel, repo.getWorksheet(task.worksheet_id)?.subject ?? "");
+    if (suggested) errorType = { type: suggested, source: "vorschlag" };
+  }
   repo.recordAttempt({
     ...base,
     answer: input.answer,
@@ -187,6 +209,8 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
     solution_viewed: 0,
     error_label: result.errorLabel,
     feedback: result.feedback,
+    error_type: errorType?.type ?? null,
+    error_type_source: errorType?.source ?? null,
   });
   if (final) repo.completeAssignmentIfDone(assignment.id);
   documentAssignment(assignment.id);
