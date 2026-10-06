@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 import { requireTeacher } from "@/lib/auth";
 import { documentAssignment } from "@/lib/autodoc";
 import { endCurrentMaterial, getMaterial, setCurrentMaterial, updateCurrentMaterial, type MaterialSource } from "@/lib/current-material";
+import { addSkillPrerequisite, removeSkillPrerequisite } from "@/lib/datenqualitaet";
 import { isErrorType } from "@/lib/error-types";
-import { addPrerequisite, removePrerequisite } from "@/lib/lehrplan";
 import * as repo from "@/lib/repo";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -64,16 +64,17 @@ export async function setErrorTypeAction(attemptId: number, type: string) {
 }
 
 // ---------- Voraussetzungen ----------
+// through lib/datenqualitaet.ts, so they show up under Mehr › Datenqualität › Letzte Korrekturen
 export async function addPrerequisiteAction(skillId: string, f: FormData) {
   const teacher = await requireTeacher();
   const before = str(f, "before");
-  const res = addPrerequisite(skillId, before, teacher.id);
+  const res = addSkillPrerequisite(skillId, before, teacher.id);
   revalidatePath("/faehigkeiten", "layout");
   redirect(`/faehigkeiten/${encodeURIComponent(skillId)}${"error" in res ? `?fehler=${encodeURIComponent(res.error)}` : ""}`);
 }
 export async function removePrerequisiteAction(skillId: string, before: string) {
   const teacher = await requireTeacher();
-  removePrerequisite(skillId, before, teacher.id);
+  removeSkillPrerequisite(skillId, before, teacher.id);
   revalidatePath("/faehigkeiten", "layout");
   redirect(`/faehigkeiten/${encodeURIComponent(skillId)}`);
 }

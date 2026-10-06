@@ -1,6 +1,6 @@
 /**
  * Datenqualität: own corrections of the skill structure (Einordnung, verschieben, Dubletten,
- * zusammenführen, Lehrplan links) are stored separately, logged as 'korrektur' and can be reset.
+ * zusammenführen, Voraussetzungen, Lehrplan links) are stored separately, logged as 'korrektur' and can be reset.
  * The official tables skills, curricula and curriculum_nodes stay byte-identical.
  */
 import assert from "node:assert/strict";
@@ -259,6 +259,49 @@ test("Zusammenführen: the duplicate disappears, its answers count for the targe
   assert.equal(repo.getSkill(dupKuerzen)!.merged_into, null);
 });
 
+test("Voraussetzungen: adding and removing is logged as 'korrektur' with the other skill; rejected ones log nothing", async () => {
+  const dq = await import("./datenqualitaet");
+  const lp = await import("./lehrplan");
+  const me = await niko();
+  const link = (skill: string, before: string) => lp.prerequisiteLinks(skill).find((l) => l.other_id === before);
+  const latest = () => {
+    const [c] = dq.corrections(1);
+    return [c.skill_id, c.action, c.label, c.detail, c.teacher_name];
+  };
+
+  // an own prerequisite
+  const n0 = await korrekturen();
+  assert.equal(link("mathe.potenzen.regeln", "mathe.brueche.erweitern"), undefined);
+  assert.deepEqual(dq.addSkillPrerequisite("mathe.potenzen.regeln", "mathe.brueche.erweitern", me.id), { ok: true });
+  assert.deepEqual([link("mathe.potenzen.regeln", "mathe.brueche.erweitern")?.origin, link("mathe.potenzen.regeln", "mathe.brueche.erweitern")?.removed_at], ["lehrer", null]);
+  assert.equal(await korrekturen(), n0 + 1);
+  assert.deepEqual(latest(), ["mathe.potenzen.regeln", "voraussetzung_hinzugefuegt", "Voraussetzung hinzugefügt", "Erweitern", "Niko"]);
+  assert.deepEqual(dq.addSkillPrerequisite("mathe.potenzen.regeln", "mathe.brueche.erweitern", me.id), { ok: true });
+  assert.equal(await korrekturen(), n0 + 1, "already there: nothing logged");
+  // a circle, itself, an unknown skill: rejected, nothing written or logged
+  assert.match((dq.addSkillPrerequisite("mathe.brueche.erweitern", "mathe.potenzen.regeln", me.id) as { error: string }).error, /Kreis/);
+  assert.ok("error" in dq.addSkillPrerequisite("mathe.potenzen.regeln", "mathe.potenzen.regeln", me.id));
+  assert.ok("error" in dq.addSkillPrerequisite("mathe.potenzen.regeln", "gibt.es.nicht", me.id));
+  assert.equal(link("mathe.brueche.erweitern", "mathe.potenzen.regeln"), undefined);
+  assert.equal(await korrekturen(), n0 + 1);
+
+  // a built-in one removed: the row stays, the previous state is logged
+  assert.deepEqual(dq.removeSkillPrerequisite("mathe.gleichungen.text", "mathe.gleichungen.einfach", me.id), { ok: true });
+  assert.ok(link("mathe.gleichungen.text", "mathe.gleichungen.einfach")?.removed_at);
+  assert.ok(!lp.prerequisitesOf("mathe.gleichungen.text").includes("mathe.gleichungen.einfach"));
+  assert.deepEqual(latest(), ["mathe.gleichungen.text", "voraussetzung_entfernt", "Voraussetzung entfernt", "Einfache lineare Gleichungen", "Niko"]);
+  assert.deepEqual(dq.removeSkillPrerequisite("mathe.gleichungen.text", "mathe.gleichungen.einfach", me.id), { ok: true });
+  assert.ok("error" in dq.removeSkillPrerequisite("mathe.gleichungen.text", "mathe.brueche.kuerzen", me.id), "no such link");
+  assert.equal(await korrekturen(), n0 + 2, "removing twice logs once");
+
+  // taken back: active again, its origin kept
+  assert.deepEqual(dq.addSkillPrerequisite("mathe.gleichungen.text", "mathe.gleichungen.einfach", me.id), { ok: true });
+  assert.deepEqual([link("mathe.gleichungen.text", "mathe.gleichungen.einfach")?.origin, link("mathe.gleichungen.text", "mathe.gleichungen.einfach")?.removed_at], ["app", null]);
+  assert.equal(latest()[3], "wieder aufgenommen: Einfache lineare Gleichungen");
+  assert.equal(await korrekturen(), n0 + 3);
+  assert.deepEqual(await officialSnapshot(), official, "skills, curricula and curriculum_nodes are not written");
+});
+
 test("Lehrplan links: removed ones keep their row and can be taken back; only entries of the same subject can be added", async () => {
   const dq = await import("./datenqualitaet");
   const lp = await import("./lehrplan");
@@ -321,7 +364,7 @@ test("every correction is logged in skill_history as 'korrektur' with the previo
   const entries = rows.map((r) => ({ skill: r.skill_id, ...(JSON.parse(r.before) as { action: string; previous: unknown; detail: string }) }));
   assert.deepEqual(
     [...new Set(entries.map((e) => e.action))].sort(),
-    ["einordnung", "lehrplan_entfernt", "lehrplan_hinzugefuegt", "trennen", "verschieben", "zuruecksetzen", "zusammenfuehren"],
+    ["einordnung", "lehrplan_entfernt", "lehrplan_hinzugefuegt", "trennen", "verschieben", "voraussetzung_entfernt", "voraussetzung_hinzugefuegt", "zuruecksetzen", "zusammenfuehren"],
   );
   const first = entries.find((e) => e.skill === "mathe.potenzen.regeln")!;
   assert.equal(first.previous, null, "before the first correction there was no override");

@@ -150,11 +150,17 @@ export default async function DataQualityPage({ searchParams }: { searchParams: 
                   <Link href={skillHref(c.skill_id)} className="flex min-h-[44px] items-center font-medium hover:text-accent">
                     {c.name}
                   </Link>
-                  <span className="flex min-w-0 flex-1 flex-wrap gap-1">
+                  <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
                     {c.changes.map((x) => (
                       <Pill key={x}>{x}</Pill>
                     ))}
-                    {c.merged_into && <Pill tone="amber">zusammengeführt mit {c.merged_name ?? c.merged_into}</Pill>}
+                    {c.merged_into && (
+                      <Link href={skillHref(c.merged_into)} className="group inline-flex min-h-[44px] max-w-full items-center">
+                        <Pill tone="amber">
+                          zusammengeführt mit <span className="group-hover:underline">{c.merged_name ?? c.merged_into}</span>
+                        </Pill>
+                      </Link>
+                    )}
                   </span>
                   <details className="reveal">
                     <summary>Zurücksetzen</summary>
@@ -181,8 +187,8 @@ export default async function DataQualityPage({ searchParams }: { searchParams: 
             <>
               <nav aria-label="Thema" className="mb-3 flex flex-wrap gap-1.5">
                 {areas.map((a) => (
-                  <Link key={a} href={href({ ...base, thema: a }, "#verschieben")} aria-current={a === area ? "page" : undefined} className={navChip(a === area)}>
-                    {a} <span className="num opacity-70">{inSubject.filter((s) => s.area === a).length}</span>
+                  <Link key={a} href={href({ ...base, thema: a }, "#verschieben")} aria-current={a === area ? "page" : undefined} className={`${navChip(a === area)} max-w-full`} title={a}>
+                    <span className="truncate">{a}</span> <span className="num shrink-0 opacity-70">{inSubject.filter((s) => s.area === a).length}</span>
                   </Link>
                 ))}
               </nav>
@@ -240,7 +246,7 @@ export default async function DataQualityPage({ searchParams }: { searchParams: 
             items={log.map((c) => (
               <div key={c.id} className="flex flex-wrap items-center gap-x-2.5 gap-y-1 px-4 py-2 text-[14px]">
                 <span className="num w-[52px] shrink-0 text-[12.5px] text-ink-3">{formatDate(c.changed_at, { day: "numeric", month: "short" })}</span>
-                <Link href={skillHref(c.skill_id)} className="flex min-h-[40px] items-center font-medium hover:text-accent">
+                <Link href={skillHref(c.skill_id)} className="flex min-h-[44px] items-center font-medium hover:text-accent">
                   {c.skill_name}
                 </Link>
                 <Pill tone={c.action === "zusammenfuehren" ? "amber" : "neutral"}>{c.label}</Pill>
@@ -261,11 +267,16 @@ function DuplicateCell({ s }: { s: DuplicateSkill }) {
       <Link href={skillHref(s.id)} className="flex min-h-[44px] items-center font-semibold hover:text-accent">
         {s.name}
       </Link>
-      <div className="flex flex-wrap gap-1">
-        <Pill>
-          {s.area}
-          {s.parent_name ? ` › ${s.parent_name}` : ""}
-        </Pill>
+      <div className="flex flex-wrap items-center gap-1">
+        {s.parent_id ? (
+          <Link href={skillHref(s.parent_id)} className="group inline-flex min-h-[44px] max-w-full items-center">
+            <Pill>
+              {s.area} › <span className="group-hover:underline">{s.parent_name}</span>
+            </Pill>
+          </Link>
+        ) : (
+          <Pill>{s.area}</Pill>
+        )}
         <Pill>{rangeLabel(s.grade_min, s.grade_max)}</Pill>
         <Pill tone={s.answers ? "accent" : "neutral"}>
           <span className="num">{s.answers}</span> {s.answers === 1 ? "Antwort" : "Antworten"}

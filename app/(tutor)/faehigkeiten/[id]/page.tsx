@@ -144,7 +144,7 @@ export default async function SkillPage({ params, searchParams }: { params: Prom
                   </Link>
                   <Pill>{LINK_ORIGIN_LABEL[l.origin] ?? l.origin}</Pill>
                   <form action={removePrerequisiteAction.bind(null, skill.id, l.other_id)}>
-                    <button className="btn btn-ghost btn-sm !px-2" aria-label={`Voraussetzung ${label(l.other_id)} entfernen`} title="Entfernen">
+                    <button className="btn btn-ghost btn-sm min-w-[44px] !px-2" aria-label={`Voraussetzung ${label(l.other_id)} entfernen`} title="Entfernen">
                       <X size={15} aria-hidden />
                     </button>
                   </form>
@@ -306,14 +306,14 @@ export default async function SkillPage({ params, searchParams }: { params: Prom
                     <span className="block text-[14.5px] font-medium" title={l.text || l.name}>
                       {cut(l.name, 140)}
                     </span>
-                    <Link href={`/mehr/lehrplan/${encodeURIComponent(l.curriculum_key)}${l.klasse ? `?klasse=${l.klasse}` : ""}`} className="text-[12.5px] text-ink-3 hover:text-ink hover:underline">
+                    <Link href={`/mehr/lehrplan/${encodeURIComponent(l.curriculum_key)}${l.klasse ? `?klasse=${l.klasse}` : ""}`} className="inline-flex min-h-[44px] items-center text-[12.5px] text-ink-3 hover:text-ink hover:underline">
                       {l.short}
                       {l.klasse_name ? ` · ${l.klasse_name}` : ""} · {l.code}
                     </Link>
                   </span>
                   {l.origin === "lehrer" && <Pill>{LINK_ORIGIN_LABEL.lehrer}</Pill>}
                   <form action={removeCurriculumLinkAction.bind(null, skill.id, l.node_id)}>
-                    <button className="btn btn-ghost btn-sm !px-2" aria-label={`Lehrplan-Verknüpfung ${l.code} entfernen`} title="Entfernen">
+                    <button className="btn btn-ghost btn-sm min-w-[44px] !px-2" aria-label={`Lehrplan-Verknüpfung ${l.code} entfernen`} title="Entfernen">
                       <X size={15} aria-hidden />
                     </button>
                   </form>
