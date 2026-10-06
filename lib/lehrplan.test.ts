@@ -106,6 +106,36 @@ test("official Lehrplan packages: valid, complete per school type, links to miss
   assert.equal(imp.bundledPackages().find((p) => p.file === "ris-vs-mathematik.json")!.pendingLinks, 0, "nothing to add while the skills are missing");
 });
 
+test("browsing skills: Fach › Schulart › Klasse filters the skills that are there, a skill fits several classes", async () => {
+  const { browseSkills, branchesWithSkills } = await import("./lehrplan");
+  const { schoolBranch, klasseLabel, klassenRange, SCHOOL_BRANCHES } = await import("./school");
+  assert.deepEqual(SCHOOL_BRANCHES.map((b) => b.label), ["Volksschule", "Mittelschule", "AHS Unterstufe", "AHS Oberstufe", "HTL", "HAK"]);
+  const ms = schoolBranch("mittelschule")!;
+  const ahsO = schoolBranch("ahs-oberstufe")!;
+  const htl = schoolBranch("htl")!;
+  assert.equal(klasseLabel(ms, 3), "3. Klasse");
+  assert.equal(klasseLabel(htl, 3), "III. Jahrgang");
+  assert.equal(klassenRange(ahsO), "5.–8. Klasse");
+  assert.equal(klassenRange(htl), "I.–V. Jahrgang");
+
+  const ids = (o: Parameters<typeof browseSkills>[0]) => browseSkills(o).map((s) => s.id);
+  // Bruchrechnung starts in Schulstufe 5 = 1. Klasse MS
+  assert.ok(ids({ subject: "Mathematik", branch: ms, klasse: 1 }).includes("mathe.brueche.kuerzen"));
+  assert.ok(!ids({ subject: "Mathematik", branch: ms, klasse: 1 }).includes("mathe.potenzen.regeln"), "Potenzen start in Schulstufe 8");
+  assert.ok(ids({ subject: "Mathematik", branch: ms, klasse: 4 }).includes("mathe.potenzen.regeln"));
+  // the same skill belongs to several classes without being stored twice
+  const classes = ms.classes.filter((k) => ids({ subject: "Mathematik", branch: ms, klasse: k }).includes("mathe.brueche.kuerzen"));
+  assert.deepEqual(classes, [1, 2, 3, 4]);
+  assert.equal(ids({ subject: "Mathematik", branch: ms, klasse: 1 }).filter((id) => id === "mathe.brueche.kuerzen").length, 1, "once per view");
+  // AHS Oberstufe and HTL use the same Schulstufen as their class numbers say
+  assert.ok(ids({ subject: "Mathematik", branch: ahsO, klasse: 5 }).includes("mathe.potenzen.regeln"));
+  assert.equal(ids({ subject: "Deutsch", branch: ms }).filter((id) => id.startsWith("mathe.")).length, 0, "the subject filter holds");
+  // Volksschule only has its own skills, and only after that package is imported
+  assert.ok(ids({ subject: "Mathematik", branch: schoolBranch("volksschule")!, klasse: 3 }).every((id) => id.startsWith("mathe.vs.")));
+  assert.ok(branchesWithSkills("Mathematik").length >= 5);
+  assert.deepEqual(branchesWithSkills("Erdkunde"), []);
+});
+
 test("import: preview with counts, nothing changes before confirming, no duplicates, re-import is recognised", async () => {
   const imp = await import("./curriculum-import");
   const repo = await import("./repo");
