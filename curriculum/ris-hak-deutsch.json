@@ -1,0 +1,2592 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "Lehrplan HAK – Deutsch (RIS)",
+ "description": "Offizieller Lehrplantext aus dem RIS (NOR40234935), BGBl. Nr. 895/1994 idF BGBl. II Nr. 250/2021.",
+ "source": {
+  "key": "ris-hak",
+  "name": "RIS – Lehrpläne Handelsakademie und Handelsschule, Anlage A1 (Handelsakademie)",
+  "source_type": "lehrplan",
+  "url": "https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Bundesnormen&Dokumentnummer=NOR40234935",
+  "publisher": "Republik Österreich (RIS)",
+  "license": "amtliches Werk (§ 7 UrhG)",
+  "attribution_text": "BGBl. Nr. 895/1994 idF BGBl. II Nr. 250/2021",
+  "notes": "Gesetzesnummer 10008944, Dokumentnummer NOR40234935, in Kraft seit 01.09.2021. Wortlaut nur um Seitenköpfe, Zeilenumbrüche und Fußnotenziffern bereinigt."
+ },
+ "curriculum": {
+  "key": "ris-hak-deutsch",
+  "name": "Lehrplan HAK – Deutsch",
+  "school_type": "HAK",
+  "subject": "Deutsch",
+  "version": "BGBl. II Nr. 250/2021",
+  "reference": "BGBl. Nr. 895/1994 idF BGBl. II Nr. 250/2021, NOR40234935",
+  "valid_from": "2021-09-01"
+ },
+ "nodes": [
+  {
+   "code": "HAK-DEU",
+   "kind": "fach",
+   "name": "Deutsch"
+  },
+  {
+   "code": "HAK-DEU-1",
+   "kind": "klasse",
+   "name": "I. Jahrgang",
+   "parent": "HAK-DEU",
+   "klasse": 1,
+   "schulstufe": 9,
+   "text": "1. und 2. Semester"
+  },
+  {
+   "code": "HAK-DEU-1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören",
+   "parent": "HAK-DEU-1",
+   "competency_area": "Zuhören",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B1-K1",
+   "kind": "kompetenz",
+   "name": "mündlichen Darstellungen folgen und diese verstehen, indem sie aktiv zuhören",
+   "parent": "HAK-DEU-1-B1",
+   "text": "mündlichen Darstellungen folgen und diese verstehen, indem sie aktiv zuhören.",
+   "competency_area": "Zuhören",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen",
+   "parent": "HAK-DEU-1",
+   "competency_area": "Sprechen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B2-K1",
+   "kind": "kompetenz",
+   "name": "Sprache situationsangemessen gebrauchen",
+   "parent": "HAK-DEU-1-B2",
+   "text": "Sprache situationsangemessen gebrauchen,",
+   "competency_area": "Sprechen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B2-K2",
+   "kind": "kompetenz",
+   "name": "Gespräche führen, indem sie sich konstruktiv an Gesprächen und Diskussionen beteiligen …",
+   "parent": "HAK-DEU-1-B2",
+   "text": "Gespräche führen, indem sie sich konstruktiv an Gesprächen und Diskussionen beteiligen sowie passende Gesprächsformen in beruflichen Sprechsituationen anwenden.",
+   "competency_area": "Sprechen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "HAK-DEU-1",
+   "competency_area": "Lesen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B3-K1",
+   "kind": "kompetenz",
+   "name": "unterschiedliche Lesetechniken anwenden, indem sie sowohl still sinnerfassend als auch …",
+   "parent": "HAK-DEU-1-B3",
+   "text": "unterschiedliche Lesetechniken anwenden, indem sie sowohl still sinnerfassend als auch laut gestaltend lesen,",
+   "competency_area": "Lesen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B3-K2",
+   "kind": "kompetenz",
+   "name": "Texte formal und inhaltlich erschließen, indem sie Texten Informationen entnehmen und …",
+   "parent": "HAK-DEU-1-B3",
+   "text": "Texte formal und inhaltlich erschließen, indem sie Texten Informationen entnehmen und relevante von irrelevanten Informationen unterscheiden.",
+   "competency_area": "Lesen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-1",
+   "competency_area": "Schreiben",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B4-K1",
+   "kind": "kompetenz",
+   "name": "Texte mit unterschiedlicher Intention verfassen",
+   "parent": "HAK-DEU-1-B4",
+   "text": "Texte mit unterschiedlicher Intention verfassen,",
+   "competency_area": "Schreiben",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B4-K2",
+   "kind": "kompetenz",
+   "name": "Texte adressatenadäquat formulieren",
+   "parent": "HAK-DEU-1-B4",
+   "text": "Texte adressatenadäquat formulieren,",
+   "competency_area": "Schreiben",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B4-K3",
+   "kind": "kompetenz",
+   "name": "Texte redigieren, indem sie Texte formal überarbeiten",
+   "parent": "HAK-DEU-1-B4",
+   "text": "Texte redigieren, indem sie Texte formal überarbeiten,",
+   "competency_area": "Schreiben",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B4-K4",
+   "kind": "kompetenz",
+   "name": "Schreiben als Hilfsmittel einsetzen, indem sie relevante Informationen strukturiert …",
+   "parent": "HAK-DEU-1-B4",
+   "text": "Schreiben als Hilfsmittel einsetzen, indem sie relevante Informationen strukturiert schriftlich wiedergeben.",
+   "competency_area": "Schreiben",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B5",
+   "kind": "kompetenzbereich",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-1",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B5-K1",
+   "kind": "kompetenz",
+   "name": "Einblicke in unterschiedliche Kulturen und Lebenswelten gewinnen",
+   "parent": "HAK-DEU-1-B5",
+   "text": "Einblicke in unterschiedliche Kulturen und Lebenswelten gewinnen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B5-K2",
+   "kind": "kompetenz",
+   "name": "über Aspekte der eigenen Lebenswelt reflektieren",
+   "parent": "HAK-DEU-1-B5",
+   "text": "über Aspekte der eigenen Lebenswelt reflektieren.",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B6",
+   "kind": "kompetenzbereich",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-1",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B6-K1",
+   "kind": "kompetenz",
+   "name": "grundlegende Sprachnormen sowie grundlegende Regeln der Orthographie und Zeichensetzung …",
+   "parent": "HAK-DEU-1-B6",
+   "text": "grundlegende Sprachnormen sowie grundlegende Regeln der Orthographie und Zeichensetzung erkennen und anwenden,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B6-K2",
+   "kind": "kompetenz",
+   "name": "einen umfassenden Wortschatz anwenden und Begriffe definieren",
+   "parent": "HAK-DEU-1-B6",
+   "text": "einen umfassenden Wortschatz anwenden und Begriffe definieren,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-B6-K3",
+   "kind": "kompetenz",
+   "name": "mit Fehlern konstruktiv umgehen und häufige Fehlerquellen erkennen",
+   "parent": "HAK-DEU-1-B6",
+   "text": "mit Fehlern konstruktiv umgehen und häufige Fehlerquellen erkennen.",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-DEU-1",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Zuhören und Sprechen",
+   "parent": "HAK-DEU-1-L1",
+   "text": "Aktives Zuhören in Gesprächssituationen und bei der Rezeption von Medien\nGrundlagen der Kommunikation, Sprechen in der Standardsprache, Kommunizieren auf verschiedenen Sprachebenen, Darstellung von Sachverhalten, Gesprächsführung, praxisbezogene Gesprächssituationen (Bewerbungsgespräch, Telefonat, Rollenspiel, Kundengespräch), Feedbackkultur\nSprechhandlungen: Zusammenfassen, Präsentieren",
+   "content_area": "Zuhören und Sprechen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Lesen",
+   "parent": "HAK-DEU-1-L1",
+   "text": "Steigerung der Lesekompetenz und Lesemotivation, Lesetechniken und Lesestrategien (punktuelles Lesen, kursorisches Lesen, Querlesen und Parallellesen), sinnerfassendes, stilles und lautes, gestaltendes Lesen, Informationsbeschaffung und -auswertung",
+   "content_area": "Lesen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Bereich Schreiben",
+   "parent": "HAK-DEU-1-L1",
+   "text": "Prozessorientiertes Schreiben (Planen, Formulieren, Aufschreiben und Überprüfen), informierende und praxisbezogene Textsorten (Nacherzählung, Inhaltsangabe, Exzerpt, Zusammenfassung, Bericht, Präsentationen), kreative Textformen\nGestaltung der Texte mit informationstechnologischen Mitteln\nSchreibhandlungen: Zusammenfassen, Erzählen, Beschreiben, Berichten",
+   "content_area": "Bereich Schreiben",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-1-L1",
+   "text": "Sachliche Auseinandersetzung mit Problemen aus Gesellschaft und Arbeitswelt, Entwickeln von Medienkompetenz, unterschiedliche Lebenswelten und Kulturen, Kulturportfolio",
+   "content_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-1-L1",
+   "text": "Anwenden von Sprachstrukturen wie Wortarten, Satzglieder, Satzarten, Textgrammatik, Erweiterung des Wortschatzes, korrekte Anwendung häufiger Fremdwörter, Rechtschreibregeln und Zeichensetzung, Fehleranalyse, Gebrauch von Wörterbüchern, Lexika und elektronischen Rechtschreibprogrammen",
+   "content_area": "Sprachbewusstsein",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-DEU-2",
+   "kind": "klasse",
+   "name": "II. Jahrgang",
+   "parent": "HAK-DEU",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1",
+   "kind": "semester",
+   "name": "3. Semester – Kompetenzmodul 3",
+   "parent": "HAK-DEU-2"
+  },
+  {
+   "code": "HAK-DEU-2-S1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören",
+   "parent": "HAK-DEU-2-S1",
+   "competency_area": "Zuhören",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B1-K1",
+   "kind": "kompetenz",
+   "name": "mündlichen Darstellungen folgen und diese verstehen, indem sie Kerninformationen entnehmen",
+   "parent": "HAK-DEU-2-S1-B1",
+   "text": "mündlichen Darstellungen folgen und diese verstehen, indem sie Kerninformationen entnehmen.",
+   "competency_area": "Zuhören",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen",
+   "parent": "HAK-DEU-2-S1",
+   "competency_area": "Sprechen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B2-K1",
+   "kind": "kompetenz",
+   "name": "Sprache partnergerecht gebrauchen, indem sie sprachsensibel formulieren und …",
+   "parent": "HAK-DEU-2-S1-B2",
+   "text": "Sprache partnergerecht gebrauchen, indem sie sprachsensibel formulieren und Gestaltungsmittel angemessen einsetzen,",
+   "competency_area": "Sprechen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B2-K2",
+   "kind": "kompetenz",
+   "name": "Gespräche führen, indem sie praxisbezogene Informationen einholen und weitergeben, indem …",
+   "parent": "HAK-DEU-2-S1-B2",
+   "text": "Gespräche führen, indem sie praxisbezogene Informationen einholen und weitergeben, indem sie eigene Anliegen sprachlich differenziert vorbringen.",
+   "competency_area": "Sprechen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "HAK-DEU-2-S1",
+   "competency_area": "Lesen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B3-K1",
+   "kind": "kompetenz",
+   "name": "Texte formal und inhaltlich erschließen, indem sie verschiedene Techniken der …",
+   "parent": "HAK-DEU-2-S1-B3",
+   "text": "Texte formal und inhaltlich erschließen, indem sie verschiedene Techniken der Texterfassung einsetzen,",
+   "competency_area": "Lesen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B3-K2",
+   "kind": "kompetenz",
+   "name": "sich in der Medienlandschaft sowohl rezeptiv als auch produktiv orientieren, indem sie …",
+   "parent": "HAK-DEU-2-S1-B3",
+   "text": "sich in der Medienlandschaft sowohl rezeptiv als auch produktiv orientieren, indem sie Medienangebote nutzen.",
+   "competency_area": "Lesen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-2-S1",
+   "competency_area": "Schreiben",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B4-K1",
+   "kind": "kompetenz",
+   "name": "Texte mit unterschiedlicher Intention verfassen und die textsortenspezifischen Merkmale …",
+   "parent": "HAK-DEU-2-S1-B4",
+   "text": "Texte mit unterschiedlicher Intention verfassen und die textsortenspezifischen Merkmale gezielt einsetzen,",
+   "competency_area": "Schreiben",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B4-K2",
+   "kind": "kompetenz",
+   "name": "Texte situationsbezogen sowie sachlich richtig verfassen",
+   "parent": "HAK-DEU-2-S1-B4",
+   "text": "Texte situationsbezogen sowie sachlich richtig verfassen,",
+   "competency_area": "Schreiben",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B4-K3",
+   "kind": "kompetenz",
+   "name": "Texte redigieren, indem sie diese formal bearbeiten",
+   "parent": "HAK-DEU-2-S1-B4",
+   "text": "Texte redigieren, indem sie diese formal bearbeiten.",
+   "competency_area": "Schreiben",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B5",
+   "kind": "kompetenzbereich",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-2-S1",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B5-K1",
+   "kind": "kompetenz",
+   "name": "unterschiedliche Kulturen und Lebenswelten beschreiben",
+   "parent": "HAK-DEU-2-S1-B5",
+   "text": "unterschiedliche Kulturen und Lebenswelten beschreiben",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B5-K2",
+   "kind": "kompetenz",
+   "name": "über Aspekte der Berufs- und Arbeitswelt reflektieren",
+   "parent": "HAK-DEU-2-S1-B5",
+   "text": "über Aspekte der Berufs- und Arbeitswelt reflektieren,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B5-K3",
+   "kind": "kompetenz",
+   "name": "zu Problemen aus Gesellschaft, Politik und Wirtschaft Stellung nehmen",
+   "parent": "HAK-DEU-2-S1-B5",
+   "text": "zu Problemen aus Gesellschaft, Politik und Wirtschaft Stellung nehmen.",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B6",
+   "kind": "kompetenzbereich",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-2-S1",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B6-K1",
+   "kind": "kompetenz",
+   "name": "grundlegende Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- …",
+   "parent": "HAK-DEU-2-S1-B6",
+   "text": "grundlegende Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und Satzgrammatik sowie der Formenlehre zeigen, Wortarten und Wortbildungsmuster sowie grundlegende Regeln der Orthographie und Zeichensetzung anwenden,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B6-K2",
+   "kind": "kompetenz",
+   "name": "einen umfassenden Wortschatz anwenden und Begriffe definieren, Wörterbücher und andere …",
+   "parent": "HAK-DEU-2-S1-B6",
+   "text": "einen umfassenden Wortschatz anwenden und Begriffe definieren, Wörterbücher und andere Hilfsmittel verwenden,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-B6-K3",
+   "kind": "kompetenz",
+   "name": "Strategien zur Fehlervermeidung anwenden",
+   "parent": "HAK-DEU-2-S1-B6",
+   "text": "Strategien zur Fehlervermeidung anwenden.",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-DEU-2-S1",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Zuhören und Sprechen",
+   "parent": "HAK-DEU-2-S1-L1",
+   "text": "Aktives Zuhören in Gesprächssituationen und bei der Rezeption von Medien\nGrundlagen der Rhetorik wie Sprechtechnik, Aufbau und Inhalt einer Präsentation, Einsatz von Präsentationsmedien\nSprechhandlungen: Präsentieren, Referieren, Diskutieren",
+   "content_area": "Zuhören und Sprechen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Lesen",
+   "parent": "HAK-DEU-2-S1-L1",
+   "text": "Lesetraining, Steigerung des Textverständnisses, Rezeption von Sach- und Gebrauchstexten (lineare und nichtlineare Texte), Entwickeln eines Bewusstseins für Textsorten, Erkennen, Filtern, Sammeln, Festhalten und Strukturieren relevanter Inhalte und Kernaussagen",
+   "content_area": "Lesen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-2-S1-L1",
+   "text": "Prozessorientiertes Schreiben, informierende und meinungsbildende Textsorten wie Protokoll, Zusammenfassung, Textanalyse, Analyse von Infografiken, Blog, Posting; Redigieren von Texten\nSchreibhandlungen: Zusammenfassen, Informieren, Dokumentieren, Analysieren, Argumentieren",
+   "content_area": "Schreiben",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-2-S1-L1",
+   "text": "Entwicklung von Kulturbewusstsein, Auseinandersetzung mit Themen aus Gesellschaft, Politik und Arbeitswelt anhand von Sachtexten und ausgewählten literarischen Texten, Kulturportfolio",
+   "content_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-2-S1-L1",
+   "text": "Sprachstrukturen wie Wortarten, Satzglieder, Satzarten, Erweiterung des Wortschatzes, Verbesserung der Ausdrucksmöglichkeiten, Rechtschreibnormen und Zeichensetzung, Fehleranalyse, Gebrauch von Wörterbüchern, Lexika und elektronischen Rechtschreibprogrammen",
+   "content_area": "Sprachbewusstsein",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2",
+   "kind": "semester",
+   "name": "4. Semester – Kompetenzmodul 4",
+   "parent": "HAK-DEU-2"
+  },
+  {
+   "code": "HAK-DEU-2-S2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören",
+   "parent": "HAK-DEU-2-S2",
+   "competency_area": "Zuhören",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B1-K1",
+   "kind": "kompetenz",
+   "name": "mündlichen Darstellungen folgen und diese verstehen, indem sie Kerninformationen …",
+   "parent": "HAK-DEU-2-S2-B1",
+   "text": "mündlichen Darstellungen folgen und diese verstehen, indem sie Kerninformationen entnehmen und Redeabsichten erkennen.",
+   "competency_area": "Zuhören",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen",
+   "parent": "HAK-DEU-2-S2",
+   "competency_area": "Sprechen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B2-K1",
+   "kind": "kompetenz",
+   "name": "Sprache partnergerecht gebrauchen, indem sie Stil- und Sprachebenen erkennen …",
+   "parent": "HAK-DEU-2-S2-B2",
+   "text": "Sprache partnergerecht gebrauchen, indem sie Stil- und Sprachebenen erkennen, sprachsensibel formulieren, Gestaltungsmittel angemessen einsetzen und Feedback geben,",
+   "competency_area": "Sprechen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B2-K2",
+   "kind": "kompetenz",
+   "name": "Gespräche führen, indem sie praxisbezogene Informationen einholen und weitergeben, indem …",
+   "parent": "HAK-DEU-2-S2-B2",
+   "text": "Gespräche führen, indem sie praxisbezogene Informationen einholen und weitergeben, indem sie eigene Anliegen sprachlich differenziert vorbringen.",
+   "competency_area": "Sprechen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "HAK-DEU-2-S2",
+   "competency_area": "Lesen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B3-K1",
+   "kind": "kompetenz",
+   "name": "Texte formal und inhaltlich erschließen, indem sie verschiedene Techniken der …",
+   "parent": "HAK-DEU-2-S2-B3",
+   "text": "Texte formal und inhaltlich erschließen, indem sie verschiedene Techniken der Texterfassung einsetzen sowie Textsorten und deren strukturelle Merkmale erkennen,",
+   "competency_area": "Lesen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B3-K2",
+   "kind": "kompetenz",
+   "name": "sich in der Medienlandschaft sowohl rezeptiv als auch produktiv orientieren, indem sie …",
+   "parent": "HAK-DEU-2-S2-B3",
+   "text": "sich in der Medienlandschaft sowohl rezeptiv als auch produktiv orientieren, indem sie Medienangebote nutzen und eine bedürfnisgerechte Auswahl treffen.",
+   "competency_area": "Lesen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-2-S2",
+   "competency_area": "Schreiben",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B4-K1",
+   "kind": "kompetenz",
+   "name": "Texte mit unterschiedlicher Intention verfassen und die textsortenspezifischen Merkmale …",
+   "parent": "HAK-DEU-2-S2-B4",
+   "text": "Texte mit unterschiedlicher Intention verfassen und die textsortenspezifischen Merkmale gezielt einsetzen,",
+   "competency_area": "Schreiben",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B4-K2",
+   "kind": "kompetenz",
+   "name": "Texte situationsbezogen sowie sachlich richtig verfassen und geschlechtergerecht …",
+   "parent": "HAK-DEU-2-S2-B4",
+   "text": "Texte situationsbezogen sowie sachlich richtig verfassen und geschlechtergerecht formulieren,",
+   "competency_area": "Schreiben",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B4-K3",
+   "kind": "kompetenz",
+   "name": "Texte redigieren, indem sie diese formal bearbeiten",
+   "parent": "HAK-DEU-2-S2-B4",
+   "text": "Texte redigieren, indem sie diese formal bearbeiten.",
+   "competency_area": "Schreiben",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B5",
+   "kind": "kompetenzbereich",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-2-S2",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B5-K1",
+   "kind": "kompetenz",
+   "name": "Einblicke in unterschiedliche Kulturen und Lebenswelten beschreiben",
+   "parent": "HAK-DEU-2-S2-B5",
+   "text": "Einblicke in unterschiedliche Kulturen und Lebenswelten beschreiben,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B5-K2",
+   "kind": "kompetenz",
+   "name": "über Aspekte der Berufs- und Arbeitswelt reflektieren",
+   "parent": "HAK-DEU-2-S2-B5",
+   "text": "über Aspekte der Berufs- und Arbeitswelt reflektieren,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B5-K3",
+   "kind": "kompetenz",
+   "name": "zu Problemen aus Gesellschaft, Politik und Wirtschaft Stellung nehmen",
+   "parent": "HAK-DEU-2-S2-B5",
+   "text": "zu Problemen aus Gesellschaft, Politik und Wirtschaft Stellung nehmen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B5-K4",
+   "kind": "kompetenz",
+   "name": "den Einfluss von Medien in gesellschaftlicher, wirtschaftlicher und politischer Hinsicht …",
+   "parent": "HAK-DEU-2-S2-B5",
+   "text": "den Einfluss von Medien in gesellschaftlicher, wirtschaftlicher und politischer Hinsicht erkennen.",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B6",
+   "kind": "kompetenzbereich",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-2-S2",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B6-K1",
+   "kind": "kompetenz",
+   "name": "Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und …",
+   "parent": "HAK-DEU-2-S2-B6",
+   "text": "Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und Satzgrammatik sowie der Formenlehre zeigen, Wortarten und Wortbildungsmuster sowie grundlegende Regeln der Orthographie und Zeichensetzung anwenden,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B6-K2",
+   "kind": "kompetenz",
+   "name": "einen umfassenden Wortschatz einschließlich der relevanten Fachsprachen anwenden und …",
+   "parent": "HAK-DEU-2-S2-B6",
+   "text": "einen umfassenden Wortschatz einschließlich der relevanten Fachsprachen anwenden und Begriffe definieren; Wörterbücher und andere Hilfsmittel verwenden,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-B6-K3",
+   "kind": "kompetenz",
+   "name": "Strategien zur Fehlervermeidung einsetzen",
+   "parent": "HAK-DEU-2-S2-B6",
+   "text": "Strategien zur Fehlervermeidung einsetzen.",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-DEU-2-S2",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Zuhören und Sprechen",
+   "parent": "HAK-DEU-2-S2-L1",
+   "text": "Aktives Zuhören in Gesprächssituationen und bei der Rezeption von Medien, Erkennen von Redeabsichten, Fragetechniken\nSprechhandlungen: Argumentieren, Diskutieren",
+   "content_area": "Zuhören und Sprechen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Lesen",
+   "parent": "HAK-DEU-2-S2-L1",
+   "text": "Rezeption von literarischen Texten und Sachtexten, Wahrnehmen von Textintention und Textwirkung, Erkennen von Textsorten und Textgattungen, Sammeln und Verarbeiten von Informationen aus verschiedenen Medien",
+   "content_area": "Lesen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-2-S2-L1",
+   "text": "Prozessorientiertes Schreiben, informierende und meinungsbildende Textsorten wie Manuskript für Präsentation oder Referat, Handout, Leserbrief, kreative Textformen, Redigieren eigener und fremder Texte\nSchreibhandlungen: Zusammenfassen, Informieren, Analysieren, Kommentieren, Argumentieren, Appellieren",
+   "content_area": "Schreiben",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-2-S2-L1",
+   "text": "Erwerb interkultureller Kompetenz, Beschäftigung mit gesellschaftsrelevanten Themen anhand von Beispielen aus Literatur, Kunst und Medien, literarisches Lernen durch die Auseinandersetzung mit ausgewählten literarischen Texten, Kulturportfolio",
+   "content_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-2-S2-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-2-S2-L1",
+   "text": "Sprachstrukturen wie Satzarten und Textgrammatik, Erweiterung des Wortschatzes, Verbesserung der Ausdrucksmöglichkeiten, korrekte Anwendung von Fremdwörtern, Rechtschreibnormen und Zeichensetzung, Fehleranalyse, Gebrauch von Wörterbüchern, Lexika und elektronischen Rechtschreibprogrammen",
+   "content_area": "Sprachbewusstsein",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-DEU-3",
+   "kind": "klasse",
+   "name": "III. Jahrgang",
+   "parent": "HAK-DEU",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1",
+   "kind": "semester",
+   "name": "5. Semester – Kompetenzmodul 5",
+   "parent": "HAK-DEU-3"
+  },
+  {
+   "code": "HAK-DEU-3-S1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören",
+   "parent": "HAK-DEU-3-S1",
+   "competency_area": "Zuhören",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B1-K1",
+   "kind": "kompetenz",
+   "name": "mündlichen Darstellungen folgen und diese verstehen, indem sie Gestaltungsmittel und …",
+   "parent": "HAK-DEU-3-S1-B1",
+   "text": "mündlichen Darstellungen folgen und diese verstehen, indem sie Gestaltungsmittel und Redeabsichten erkennen.",
+   "competency_area": "Zuhören",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen",
+   "parent": "HAK-DEU-3-S1",
+   "competency_area": "Sprechen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B2-K1",
+   "kind": "kompetenz",
+   "name": "Sprache sozial verantwortlich gebrauchen, indem sie Stil- und Sprachebenen unterscheiden …",
+   "parent": "HAK-DEU-3-S1-B2",
+   "text": "Sprache sozial verantwortlich gebrauchen, indem sie Stil- und Sprachebenen unterscheiden, in unterschiedlichen Gesprächssituationen sachgerecht argumentieren,",
+   "competency_area": "Sprechen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B2-K2",
+   "kind": "kompetenz",
+   "name": "öffentlich sprechen, indem sie Inhalte mit Medienunterstützung präsentieren",
+   "parent": "HAK-DEU-3-S1-B2",
+   "text": "öffentlich sprechen, indem sie Inhalte mit Medienunterstützung präsentieren.",
+   "competency_area": "Sprechen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "HAK-DEU-3-S1",
+   "competency_area": "Lesen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B3-K1",
+   "kind": "kompetenz",
+   "name": "sich kritisch mit literarischen Texten und Sachtexten auseinandersetzen, indem sie diese …",
+   "parent": "HAK-DEU-3-S1-B3",
+   "text": "sich kritisch mit literarischen Texten und Sachtexten auseinandersetzen, indem sie diese auf ihre Intention hin analysieren,",
+   "competency_area": "Lesen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B3-K2",
+   "kind": "kompetenz",
+   "name": "Texte verstehen, indem sie Bezüge zu anderen Texten herstellen",
+   "parent": "HAK-DEU-3-S1-B3",
+   "text": "Texte verstehen, indem sie Bezüge zu anderen Texten herstellen.",
+   "competency_area": "Lesen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-3-S1",
+   "competency_area": "Schreiben",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B4-K1",
+   "kind": "kompetenz",
+   "name": "Texte mit unterschiedlicher Intention verfassen und die Schreibhandlungen im Sinne der …",
+   "parent": "HAK-DEU-3-S1-B4",
+   "text": "Texte mit unterschiedlicher Intention verfassen und die Schreibhandlungen im Sinne der textsortenspezifischen Merkmale erfüllen,",
+   "competency_area": "Schreiben",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B4-K2",
+   "kind": "kompetenz",
+   "name": "Texte gemäß ihrer Funktion verfassen",
+   "parent": "HAK-DEU-3-S1-B4",
+   "text": "Texte gemäß ihrer Funktion verfassen,",
+   "competency_area": "Schreiben",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B4-K3",
+   "kind": "kompetenz",
+   "name": "Texte redigieren, indem sie diese formal und inhaltlich bearbeiten",
+   "parent": "HAK-DEU-3-S1-B4",
+   "text": "Texte redigieren, indem sie diese formal und inhaltlich bearbeiten.",
+   "competency_area": "Schreiben",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B5",
+   "kind": "kompetenzbereich",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-3-S1",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B5-K1",
+   "kind": "kompetenz",
+   "name": "unterschiedlich Kulturen und Lebenswelten beschreiben",
+   "parent": "HAK-DEU-3-S1-B5",
+   "text": "unterschiedlich Kulturen und Lebenswelten beschreiben,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B5-K2",
+   "kind": "kompetenz",
+   "name": "über Aspekte der Berufs- und Arbeitswelt reflektieren",
+   "parent": "HAK-DEU-3-S1-B5",
+   "text": "über Aspekte der Berufs- und Arbeitswelt reflektieren,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B5-K3",
+   "kind": "kompetenz",
+   "name": "zu Problemen aus Gesellschaft, Politik und Wirtschaft Stellung nehmen",
+   "parent": "HAK-DEU-3-S1-B5",
+   "text": "zu Problemen aus Gesellschaft, Politik und Wirtschaft Stellung nehmen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B5-K4",
+   "kind": "kompetenz",
+   "name": "den Einfluss von Medien in gesellschaftlicher, wirtschaftlicher und politischer Hinsicht …",
+   "parent": "HAK-DEU-3-S1-B5",
+   "text": "den Einfluss von Medien in gesellschaftlicher, wirtschaftlicher und politischer Hinsicht bewerten.",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B6",
+   "kind": "kompetenzbereich",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-3-S1",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B6-K1",
+   "kind": "kompetenz",
+   "name": "Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und …",
+   "parent": "HAK-DEU-3-S1-B6",
+   "text": "Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und Satzgrammatik sowie der Formenlehre umsetzen, Wortarten und Wortbildungsmuster sowie Regeln der Orthographie und Zeichensetzung anwenden,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B6-K2",
+   "kind": "kompetenz",
+   "name": "Fachtermini text- und situationsadäquat einsetzen",
+   "parent": "HAK-DEU-3-S1-B6",
+   "text": "Fachtermini text- und situationsadäquat einsetzen,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-B6-K3",
+   "kind": "kompetenz",
+   "name": "Strategien zur Fehlervermeidung einsetzen",
+   "parent": "HAK-DEU-3-S1-B6",
+   "text": "Strategien zur Fehlervermeidung einsetzen.",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-DEU-3-S1",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Zuhören und Sprechen",
+   "parent": "HAK-DEU-3-S1-L1",
+   "text": "Aktives Zuhören in Gesprächssituationen und bei der Rezeption von Medien, Anwendung von rhetorischen Kenntnissen in Sprech- und Präsentationssituationen unter besonderer Berücksichtigung von para- und nonverbalen Äußerungen\nSprechhandlungen: Präsentieren, Referieren, Diskutieren, Moderieren",
+   "content_area": "Zuhören und Sprechen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Lesen",
+   "parent": "HAK-DEU-3-S1-L1",
+   "text": "Sicherung der Lesekompetenz und des Textsortenwissens, Lesestrategien",
+   "content_area": "Lesen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-3-S1-L1",
+   "text": "Prozessorientiertes Schreiben, informierende und meinungsbildende Textsorten wie Offener Brief, Kommentar, Textanalyse, Redigieren eigener und fremder Texte\nSchreibhandlungen: Informieren, Analysieren, Argumentieren, Kommentieren",
+   "content_area": "Schreiben",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-3-S1-L1",
+   "text": "Sachlich kritische Auseinandersetzung mit Themen aus Gesellschaft, Politik und Arbeitswelt mithilfe unterschiedlicher Medien, Entwickeln eines eigenen Standpunktes, literarisches Lernen anhand von ausgewählten literarischen Texten, Kulturportfolio",
+   "content_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-3-S1-L1",
+   "text": "Sicherung der grammatischen, orthographischen und stilistischen Kenntnisse, Beherrschung der grundlegenden Kommaregeln, Erweiterung des Wortschatzes unter Berücksichtigung der Fachsprache, sicherer Umgang mit Fremdwörtern, Fehleranalyse, Gebrauch von Wörterbüchern, Lexika und elektronischen Rechtschreibprogrammen",
+   "content_area": "Sprachbewusstsein",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2",
+   "kind": "semester",
+   "name": "6. Semester – Kompetenzmodul 6",
+   "parent": "HAK-DEU-3"
+  },
+  {
+   "code": "HAK-DEU-3-S2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören",
+   "parent": "HAK-DEU-3-S2",
+   "competency_area": "Zuhören",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B1-K1",
+   "kind": "kompetenz",
+   "name": "mündlichen Darstellungen folgen und diese verstehen, indem sie Gestaltungsmittel und …",
+   "parent": "HAK-DEU-3-S2-B1",
+   "text": "mündlichen Darstellungen folgen und diese verstehen, indem sie Gestaltungsmittel und Redeabsichten erkennen sowie Inhalte zuordnen.",
+   "competency_area": "Zuhören",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen",
+   "parent": "HAK-DEU-3-S2",
+   "competency_area": "Sprechen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B2-K1",
+   "kind": "kompetenz",
+   "name": "Sprache sozial verantwortlich gebrauchen, indem sie Stil- und Sprachebenen differenziert …",
+   "parent": "HAK-DEU-3-S2-B2",
+   "text": "Sprache sozial verantwortlich gebrauchen, indem sie Stil- und Sprachebenen differenziert einsetzen, in unterschiedlichen Gesprächssituationen sachgerecht argumentieren und zielgerichtet appellieren, Gestaltungsmittel angemessen einsetzen,",
+   "competency_area": "Sprechen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B2-K2",
+   "kind": "kompetenz",
+   "name": "öffentlich sprechen, indem sie Inhalte mit Medienunterstützung präsentieren und …",
+   "parent": "HAK-DEU-3-S2-B2",
+   "text": "öffentlich sprechen, indem sie Inhalte mit Medienunterstützung präsentieren und Kommunikationsmittel gezielt einsetzen.",
+   "competency_area": "Sprechen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "HAK-DEU-3-S2",
+   "competency_area": "Lesen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B3-K1",
+   "kind": "kompetenz",
+   "name": "sich kritisch mit literarischen Texten und Sachtexten auseinandersetzen, indem sie diese …",
+   "parent": "HAK-DEU-3-S2-B3",
+   "text": "sich kritisch mit literarischen Texten und Sachtexten auseinandersetzen, indem sie diese auf ihre Intention hin analysieren sowie Textaussagen bewerten,",
+   "competency_area": "Lesen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B3-K2",
+   "kind": "kompetenz",
+   "name": "Texte verstehen, indem sie Bezüge zu anderen Texten sowie zu ihren Erfahrungen herstellen",
+   "parent": "HAK-DEU-3-S2-B3",
+   "text": "Texte verstehen, indem sie Bezüge zu anderen Texten sowie zu ihren Erfahrungen herstellen.",
+   "competency_area": "Lesen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-3-S2",
+   "competency_area": "Schreiben",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B4-K1",
+   "kind": "kompetenz",
+   "name": "Texte mit unterschiedlicher Intention verfassen und die Schreibhandlungen im Sinne der …",
+   "parent": "HAK-DEU-3-S2-B4",
+   "text": "Texte mit unterschiedlicher Intention verfassen und die Schreibhandlungen im Sinne der textsortenspezifischen Merkmale erfüllen,",
+   "competency_area": "Schreiben",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B4-K2",
+   "kind": "kompetenz",
+   "name": "Texte gemäß ihrer Funktion verfassen und geschlechtergerecht formulieren",
+   "parent": "HAK-DEU-3-S2-B4",
+   "text": "Texte gemäß ihrer Funktion verfassen und geschlechtergerecht formulieren,",
+   "competency_area": "Schreiben",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B4-K3",
+   "kind": "kompetenz",
+   "name": "Texte redigieren, indem sie diese formal bearbeiten",
+   "parent": "HAK-DEU-3-S2-B4",
+   "text": "Texte redigieren, indem sie diese formal bearbeiten.",
+   "competency_area": "Schreiben",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B5",
+   "kind": "kompetenzbereich",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-3-S2",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B5-K1",
+   "kind": "kompetenz",
+   "name": "unterschiedliche Kulturen und Lebenswelten beschreiben und analysieren",
+   "parent": "HAK-DEU-3-S2-B5",
+   "text": "unterschiedliche Kulturen und Lebenswelten beschreiben und analysieren,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B5-K2",
+   "kind": "kompetenz",
+   "name": "über Aspekte der Berufs- und Arbeitswelt reflektieren",
+   "parent": "HAK-DEU-3-S2-B5",
+   "text": "über Aspekte der Berufs- und Arbeitswelt reflektieren,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B5-K3",
+   "kind": "kompetenz",
+   "name": "gesellschaftliche, politische und wirtschaftliche Phänomene zu Interessen und …",
+   "parent": "HAK-DEU-3-S2-B5",
+   "text": "gesellschaftliche, politische und wirtschaftliche Phänomene zu Interessen und Wertvorstellungen in Beziehung setzen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B5-K4",
+   "kind": "kompetenz",
+   "name": "den Informations-, Bildungs- und Unterhaltungswert von Medien erkennen",
+   "parent": "HAK-DEU-3-S2-B5",
+   "text": "den Informations-, Bildungs- und Unterhaltungswert von Medien erkennen.",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B6",
+   "kind": "kompetenzbereich",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-3-S2",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B6-K1",
+   "kind": "kompetenz",
+   "name": "Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und …",
+   "parent": "HAK-DEU-3-S2-B6",
+   "text": "Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und Satzgrammatik sowie der Formenlehre umsetzen, Wortarten und Wortbildungsmuster sowie Regeln der Orthographie und Zeichensetzung anwenden,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B6-K2",
+   "kind": "kompetenz",
+   "name": "Fachtermini text- und situationsadäquat einsetzen",
+   "parent": "HAK-DEU-3-S2-B6",
+   "text": "Fachtermini text- und situationsadäquat einsetzen,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-B6-K3",
+   "kind": "kompetenz",
+   "name": "Sprachmuster, Sprachklischees sowie Sprachwandelphänomene erkennen",
+   "parent": "HAK-DEU-3-S2-B6",
+   "text": "Sprachmuster, Sprachklischees sowie Sprachwandelphänomene erkennen.",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-DEU-3-S2",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Zuhören und Sprechen",
+   "parent": "HAK-DEU-3-S2-L1",
+   "text": "Gestaltungsmittel unterschiedlicher Stil- und Sprachebenen verstehen, auf Gesprächsbeiträge angemessen reagieren, Sach- und Beziehungsebene unterscheiden, gegensätzliche Standpunkte vorbringen und verteidigen\nSprechhandlungen: Argumentieren, Kommentieren, Gespräche moderieren",
+   "content_area": "Zuhören und Sprechen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Lesen",
+   "parent": "HAK-DEU-3-S2-L1",
+   "text": "Sicherung der Lese- und Textsortenkompetenz, Lesestrategien, produktorientierte Textarbeit (Texterschließung), Informationsbeschaffung",
+   "content_area": "Lesen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-3-S2-L1",
+   "text": "Prozessorientiertes Schreiben, informierende und meinungsbildende Textsorten wie Kommentar, offener Brief, kreative Textformen, Redigieren eigener und fremder Texte\nSchreibhandlungen: Kommentieren, Argumentieren, Appellieren",
+   "content_area": "Schreiben",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-3-S2-L1",
+   "text": "Sachlich kritische Auseinandersetzung mit Themen aus Gesellschaft, Politik und Arbeitswelt mit Hilfe unterschiedlicher Medien, Entwickeln eines eigenen Standpunktes, Beiträge für Medien gestalten, literarisches Lernen anhand von ausgewählten literarischen Texten, Kulturportfolio",
+   "content_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-3-S2-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-3-S2-L1",
+   "text": "Vertiefung der grammatischen, orthographischen und stilistischen Kenntnisse, Erkennen von Satzstrukturen, Beherrschung der Zeichensetzung, Einsatz des Wortschatzes unter Berücksichtigung der Fachsprache",
+   "content_area": "Sprachbewusstsein",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-DEU-4",
+   "kind": "klasse",
+   "name": "IV. Jahrgang",
+   "parent": "HAK-DEU",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1",
+   "kind": "semester",
+   "name": "7. Semester – Kompetenzmodul 7",
+   "parent": "HAK-DEU-4"
+  },
+  {
+   "code": "HAK-DEU-4-S1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören",
+   "parent": "HAK-DEU-4-S1",
+   "competency_area": "Zuhören",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B1-K1",
+   "kind": "kompetenz",
+   "name": "mündlichen Darstellungen folgen und diese verstehen, indem sie Gestaltungsmittel und …",
+   "parent": "HAK-DEU-4-S1-B1",
+   "text": "mündlichen Darstellungen folgen und diese verstehen, indem sie Gestaltungsmittel und Redeabsichten erkennen sowie Inhalte zuordnen und Zusammenhänge herstellen.",
+   "competency_area": "Zuhören",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen",
+   "parent": "HAK-DEU-4-S1",
+   "competency_area": "Sprechen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B2-K1",
+   "kind": "kompetenz",
+   "name": "Sprache sozial verantwortlich gebrauchen, indem sie geschlechter- und …",
+   "parent": "HAK-DEU-4-S1-B2",
+   "text": "Sprache sozial verantwortlich gebrauchen, indem sie geschlechter- und minderheitengerechte Formulierungen verwenden, Gestaltungsmittel angemessen einsetzen und sachliche Kritik äußern,",
+   "competency_area": "Sprechen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B2-K2",
+   "kind": "kompetenz",
+   "name": "öffentlich sprechen, indem sie Inhalte mit Medienunterstützung präsentieren und …",
+   "parent": "HAK-DEU-4-S1-B2",
+   "text": "öffentlich sprechen, indem sie Inhalte mit Medienunterstützung präsentieren und Kommunikationsmittel hinsichtlich Zielgruppenorientierung einsetzen.",
+   "competency_area": "Sprechen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "HAK-DEU-4-S1",
+   "competency_area": "Lesen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B3-K1",
+   "kind": "kompetenz",
+   "name": "sich kritisch mit literarischen Texten und Sachtexten auseinandersetzen, indem sie einen …",
+   "parent": "HAK-DEU-4-S1-B3",
+   "text": "sich kritisch mit literarischen Texten und Sachtexten auseinandersetzen, indem sie einen Zusammenhang zwischen formalen und inhaltlichen Aspekten erkennen, Texte auf ihre Intention hin analysieren sowie Textaussagen bewerten,",
+   "competency_area": "Lesen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B3-K2",
+   "kind": "kompetenz",
+   "name": "Texte verstehen, indem sie Bezüge zu anderen Texten, zum eigenen Weltwissen sowie zu …",
+   "parent": "HAK-DEU-4-S1-B3",
+   "text": "Texte verstehen, indem sie Bezüge zu anderen Texten, zum eigenen Weltwissen sowie zu ihren Erfahrungen herstellen.",
+   "competency_area": "Lesen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-4-S1",
+   "competency_area": "Schreiben",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B4-K1",
+   "kind": "kompetenz",
+   "name": "Texte mit unterschiedlicher Intention verfassen und die Schreibhandlungen im Sinne der …",
+   "parent": "HAK-DEU-4-S1-B4",
+   "text": "Texte mit unterschiedlicher Intention verfassen und die Schreibhandlungen im Sinne der textsortenspezifischen Merkmale erfüllen,",
+   "competency_area": "Schreiben",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B4-K2",
+   "kind": "kompetenz",
+   "name": "Texte gemäß ihrer Funktion verfassen und geschlechtergerecht formulieren",
+   "parent": "HAK-DEU-4-S1-B4",
+   "text": "Texte gemäß ihrer Funktion verfassen und geschlechtergerecht formulieren,",
+   "competency_area": "Schreiben",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B4-K3",
+   "kind": "kompetenz",
+   "name": "Texte redigieren, indem sie diese formal und inhaltlich bearbeiten",
+   "parent": "HAK-DEU-4-S1-B4",
+   "text": "Texte redigieren, indem sie diese formal und inhaltlich bearbeiten.",
+   "competency_area": "Schreiben",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B5",
+   "kind": "kompetenzbereich",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-4-S1",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B5-K1",
+   "kind": "kompetenz",
+   "name": "unterschiedliche Kulturen und Lebenswelten beschreiben und analysieren",
+   "parent": "HAK-DEU-4-S1-B5",
+   "text": "unterschiedliche Kulturen und Lebenswelten beschreiben und analysieren,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B5-K2",
+   "kind": "kompetenz",
+   "name": "gesellschaftliche, politische und wirtschaftliche Phänomene zu Interessen und …",
+   "parent": "HAK-DEU-4-S1-B5",
+   "text": "gesellschaftliche, politische und wirtschaftliche Phänomene zu Interessen und Wertvorstellungen in Beziehung setzen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B5-K3",
+   "kind": "kompetenz",
+   "name": "über den Informations-, Bildungs- und Unterhaltungswert von Medien reflektieren",
+   "parent": "HAK-DEU-4-S1-B5",
+   "text": "über den Informations-, Bildungs- und Unterhaltungswert von Medien reflektieren,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B5-K4",
+   "kind": "kompetenz",
+   "name": "typische Merkmale von Gattungen und Stilrichtungen anhand von exemplarischen Werken …",
+   "parent": "HAK-DEU-4-S1-B5",
+   "text": "typische Merkmale von Gattungen und Stilrichtungen anhand von exemplarischen Werken herausarbeiten.",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B6",
+   "kind": "kompetenzbereich",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-4-S1",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B6-K1",
+   "kind": "kompetenz",
+   "name": "Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und …",
+   "parent": "HAK-DEU-4-S1-B6",
+   "text": "Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und Satzgrammatik sowie der Formenlehre umsetzen, Wortarten und Wortbildungsmuster sowie Regeln der Orthographie und Zeichensetzung anwenden,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B6-K2",
+   "kind": "kompetenz",
+   "name": "Fachtermini text- und situationsadäquat einsetzen",
+   "parent": "HAK-DEU-4-S1-B6",
+   "text": "Fachtermini text- und situationsadäquat einsetzen,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-B6-K3",
+   "kind": "kompetenz",
+   "name": "Sprachmuster, Sprachklischees sowie Sprachwandelphänomene erkennen",
+   "parent": "HAK-DEU-4-S1-B6",
+   "text": "Sprachmuster, Sprachklischees sowie Sprachwandelphänomene erkennen.",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-DEU-4-S1",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Zuhören und Sprechen",
+   "parent": "HAK-DEU-4-S1-L1",
+   "text": "Aktives Zuhören in Gesprächssituationen und bei der Rezeption von Medien, Gestaltungsmittel unterschiedlicher Stil- und Sprachebenen einsetzen, sprachliche Register (Standard-, Umgangssprache, Dialekte, Soziolekte) nützen, Sach- und Beziehungsebene unterscheiden, Argumente abwägen, Argumentationsstrategien entwickeln\nSprechhandlungen: Argumentieren, Kommentieren, Interpretieren",
+   "content_area": "Zuhören und Sprechen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Lesen",
+   "parent": "HAK-DEU-4-S1-L1",
+   "text": "Sicherung der Lese- und Textsortenkompetenz, produktorientierte Textarbeit (Texterschließung), Informationsbeschaffung und -auswertung",
+   "content_area": "Lesen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-4-S1-L1",
+   "text": "Prozessorientiertes Schreiben, informierende und meinungsbildende Textsorten wie Textanalyse, Erörterung, offener Brief, kreative Textformen, Redigieren eigener und fremder Texte\nSchreibhandlungen: Analysieren, Erörtern, Argumentieren, Appellieren",
+   "content_area": "Schreiben",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-4-S1-L1",
+   "text": "Entwickeln eines eigenen Standpunktes, literarisches Lernen anhand von ausgewählten Texten unter besonderer Berücksichtigung der österreichischen Literatur, Kulturportfolio",
+   "content_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-4-S1-L1",
+   "text": "Beherrschung komplexer Satzstrukturen, Vertiefung von Ausdruck und Stil, sicherer Umgang mit verschiedenen Mitteln der Redewiedergabe, Fehleranalyse, Gebrauch von Wörterbüchern, Lexika und elektronischen Rechtschreibprogrammen",
+   "content_area": "Sprachbewusstsein",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2",
+   "kind": "semester",
+   "name": "8. Semester – Kompetenzmodul 8",
+   "parent": "HAK-DEU-4"
+  },
+  {
+   "code": "HAK-DEU-4-S2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören",
+   "parent": "HAK-DEU-4-S2",
+   "competency_area": "Zuhören",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B1-K1",
+   "kind": "kompetenz",
+   "name": "mündlichen Darstellungen folgen und diese verstehen, indem sie Gestaltungsmittel und …",
+   "parent": "HAK-DEU-4-S2-B1",
+   "text": "mündlichen Darstellungen folgen und diese verstehen, indem sie Gestaltungsmittel und Redeabsichten erkennen sowie Inhalte ihrem Weltwissen zuordnen und Zusammenhänge herstellen.",
+   "competency_area": "Zuhören",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen",
+   "parent": "HAK-DEU-4-S2",
+   "competency_area": "Sprechen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B2-K1",
+   "kind": "kompetenz",
+   "name": "Sprache sozial verantwortlich gebrauchen, indem sie mit belasteten Begriffen und …",
+   "parent": "HAK-DEU-4-S2-B2",
+   "text": "Sprache sozial verantwortlich gebrauchen, indem sie mit belasteten Begriffen und abwertenden Bezeichnungen kritisch umgehen, Stil- und Sprachebenen differenziert einsetzen, in unterschiedlichen Gesprächssituationen sachgerecht argumentieren und zielgerecht appellieren, Gestaltungsmittel angemessen einsetzen und sachliche Kritik äußern,",
+   "competency_area": "Sprechen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B2-K2",
+   "kind": "kompetenz",
+   "name": "öffentlich sprechen, indem sie Inhalte mit Medienunterstützung präsentieren und …",
+   "parent": "HAK-DEU-4-S2-B2",
+   "text": "öffentlich sprechen, indem sie Inhalte mit Medienunterstützung präsentieren und Kommunikationsmittel hinsichtlich Kundenorientierung gezielt einsetzen.",
+   "competency_area": "Sprechen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "HAK-DEU-4-S2",
+   "competency_area": "Lesen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B3-K1",
+   "kind": "kompetenz",
+   "name": "sich kritisch mit literarischen Texten und Sachtexten auseinandersetzen, indem sie einen …",
+   "parent": "HAK-DEU-4-S2-B3",
+   "text": "sich kritisch mit literarischen Texten und Sachtexten auseinandersetzen, indem sie einen Zusammenhang zwischen formalen, sprachlichen und inhaltlichen Aspekten erkennen, Texte auf ihre Intention hin analysieren sowie Textaussagen bewerten,",
+   "competency_area": "Lesen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B3-K2",
+   "kind": "kompetenz",
+   "name": "Texte verstehen, indem sie Bezüge zu anderen Texten, zum eigenen Welt-, Sach- und …",
+   "parent": "HAK-DEU-4-S2-B3",
+   "text": "Texte verstehen, indem sie Bezüge zu anderen Texten, zum eigenen Welt-, Sach- und Fachwissen sowie zu ihren Erfahrungen herstellen.",
+   "competency_area": "Lesen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-4-S2",
+   "competency_area": "Schreiben",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B4-K1",
+   "kind": "kompetenz",
+   "name": "Texte mit unterschiedlicher Intention verfassen und die Schreibhandlungen im Sinne der …",
+   "parent": "HAK-DEU-4-S2-B4",
+   "text": "Texte mit unterschiedlicher Intention verfassen und die Schreibhandlungen im Sinne der textsortenspezifischen Merkmale erfüllen,",
+   "competency_area": "Schreiben",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B4-K2",
+   "kind": "kompetenz",
+   "name": "Texte gemäß ihrer Funktion verfassen und geschlechtergerecht formulieren",
+   "parent": "HAK-DEU-4-S2-B4",
+   "text": "Texte gemäß ihrer Funktion verfassen und geschlechtergerecht formulieren,",
+   "competency_area": "Schreiben",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B4-K3",
+   "kind": "kompetenz",
+   "name": "Texte redigieren, indem sie diese formal und inhaltlich bearbeiten und dafür …",
+   "parent": "HAK-DEU-4-S2-B4",
+   "text": "Texte redigieren, indem sie diese formal und inhaltlich bearbeiten und dafür informationstechnologische Mittel einsetzen.",
+   "competency_area": "Schreiben",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B5",
+   "kind": "kompetenzbereich",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-4-S2",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B5-K1",
+   "kind": "kompetenz",
+   "name": "typische Merkmale von Gattungen und Stilrichtungen anhand von exemplarischen Werken …",
+   "parent": "HAK-DEU-4-S2-B5",
+   "text": "typische Merkmale von Gattungen und Stilrichtungen anhand von exemplarischen Werken herausarbeiten sowie die daraus erkennbaren Haltungen und Intentionen erfassen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B5-K2",
+   "kind": "kompetenz",
+   "name": "zu künstlerischen, insbesondere zu literarischen Werken und Erscheinungen sowie …",
+   "parent": "HAK-DEU-4-S2-B5",
+   "text": "zu künstlerischen, insbesondere zu literarischen Werken und Erscheinungen sowie Entwicklungen Stellung nehmen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B5-K3",
+   "kind": "kompetenz",
+   "name": "durch die Beschäftigung mit Kunstwerken Einblick in unterschiedliche Kunstformen gewinnen",
+   "parent": "HAK-DEU-4-S2-B5",
+   "text": "durch die Beschäftigung mit Kunstwerken Einblick in unterschiedliche Kunstformen gewinnen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B5-K4",
+   "kind": "kompetenz",
+   "name": "Medien, Kunst- und Literaturbetrieb als Institutionen und Wirtschaftsfaktoren verstehen",
+   "parent": "HAK-DEU-4-S2-B5",
+   "text": "Medien, Kunst- und Literaturbetrieb als Institutionen und Wirtschaftsfaktoren verstehen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B5-K5",
+   "kind": "kompetenz",
+   "name": "den Kunst- und Literaturbetrieb als Mittel der öffentlichen Meinungsbildung reflektieren",
+   "parent": "HAK-DEU-4-S2-B5",
+   "text": "den Kunst- und Literaturbetrieb als Mittel der öffentlichen Meinungsbildung reflektieren.",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B6",
+   "kind": "kompetenzbereich",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-4-S2",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B6-K1",
+   "kind": "kompetenz",
+   "name": "Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und …",
+   "parent": "HAK-DEU-4-S2-B6",
+   "text": "Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und Satzgrammatik sowie der Formenlehre umsetzen, Wortarten und Wortbildungsmuster sowie Regeln der Orthographie und Zeichensetzung anwenden,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B6-K2",
+   "kind": "kompetenz",
+   "name": "Fachtermini text- und situationsadäquat einsetzen",
+   "parent": "HAK-DEU-4-S2-B6",
+   "text": "Fachtermini text- und situationsadäquat einsetzen,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B6-K3",
+   "kind": "kompetenz",
+   "name": "Sprachmuster, Sprachklischees sowie Sprachwandelphänomene erkennen",
+   "parent": "HAK-DEU-4-S2-B6",
+   "text": "Sprachmuster, Sprachklischees sowie Sprachwandelphänomene erkennen,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B6-K4",
+   "kind": "kompetenz",
+   "name": "innere und äußere Mehrsprachigkeit in ihrer Bedeutung erfassen",
+   "parent": "HAK-DEU-4-S2-B6",
+   "text": "innere und äußere Mehrsprachigkeit in ihrer Bedeutung erfassen,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-B6-K5",
+   "kind": "kompetenz",
+   "name": "die deutsche Sprache und ihre Varietäten im Verhältnis zu anderen Sprachen betrachten",
+   "parent": "HAK-DEU-4-S2-B6",
+   "text": "die deutsche Sprache und ihre Varietäten im Verhältnis zu anderen Sprachen betrachten.",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-DEU-4-S2",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Zuhören und Sprechen",
+   "parent": "HAK-DEU-4-S2-L1",
+   "text": "Aktives Zuhören in Gesprächssituationen und bei der Rezeption von Medien, Gestaltungsmittel unterschiedlicher Stil- und Sprachebenen anwenden, sprachliche Register (Standard-, Umgangssprache, Dialekte, Soziolekte) gezielt einsetzen, Kommunikations- und Argumentationsstrategien anwenden\nSprechhandlungen: Argumentieren, Kommentieren, Appellieren",
+   "content_area": "Zuhören und Sprechen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Lesen",
+   "parent": "HAK-DEU-4-S2-L1",
+   "text": "Sicherung der Lese- und Textsortenkompetenz, produktorientierte Textarbeit (Texterschließung)",
+   "content_area": "Lesen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-4-S2-L1",
+   "text": "Prozessorientiertes Schreiben, informierende und meinungsbildende Textsorten wie Erörterung, Textinterpretation, Meinungsrede, kreative Textformen, Einführen in das wissenschaftliche Schreiben (Umgang mit Fachsprache, richtiges Zitieren, Anwenden elaborierter Schreibstrategien, Einsatz wissenschaftlicher Textsorten wie Exzerpt, wissenschaftliches Protokoll, Rezension, Mitschrift usw.), Redigieren eigener und fremder Texte\nSchreibhandlungen: Erörtern, Interpretieren, Argumentieren, Appellieren",
+   "content_area": "Schreiben",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-4-S2-L1",
+   "text": "Medienkompetenz, sachlich kritische Auseinandersetzung mit Themen aus Kunst und Kultur, literarisches Lernen anhand von ausgewählten Texten unter Berücksichtigung der deutschsprachigen Literatur des 20. Jahrhunderts, Kulturportfolio",
+   "content_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-4-S2-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-4-S2-L1",
+   "text": "Einsatz von Wissenschaftssprache, sicherer Umgang mit Ausdruck und Stil, Fehleranalyse, Gebrauch von Wörterbüchern, Lexika und elektronischen Rechtschreibprogrammen",
+   "content_area": "Sprachbewusstsein",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-DEU-5",
+   "kind": "klasse",
+   "name": "V. Jahrgang",
+   "parent": "HAK-DEU",
+   "klasse": 5,
+   "schulstufe": 13,
+   "text": "Kompetenzmodul 9"
+  },
+  {
+   "code": "HAK-DEU-5-S1",
+   "kind": "semester",
+   "name": "9. Semester",
+   "parent": "HAK-DEU-5"
+  },
+  {
+   "code": "HAK-DEU-5-S1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören",
+   "parent": "HAK-DEU-5-S1",
+   "competency_area": "Zuhören",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B1-K1",
+   "kind": "kompetenz",
+   "name": "mündlichen Darstellungen folgen und diese verstehen, indem sie Gestaltungsmittel und …",
+   "parent": "HAK-DEU-5-S1-B1",
+   "text": "mündlichen Darstellungen folgen und diese verstehen, indem sie Gestaltungsmittel und Redeabsichten erkennen sowie Inhalte ihrem Welt-, Sach- und Fachwissen zuordnen und Zusammenhänge herstellen.",
+   "competency_area": "Zuhören",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen",
+   "parent": "HAK-DEU-5-S1",
+   "competency_area": "Sprechen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B2-K1",
+   "kind": "kompetenz",
+   "name": "Sprache sozial verantwortlich gebrauchen, indem sie geschlechter- und …",
+   "parent": "HAK-DEU-5-S1-B2",
+   "text": "Sprache sozial verantwortlich gebrauchen, indem sie geschlechter- und minderheitengerechte Formulierungen verwenden, sie mit belasteten Begriffen und abwertenden Bezeichnungen kritisch umgehen, Stil- und Sprachebenen unterscheiden und differenziert einsetzen, in unterschiedlichen Gesprächssituationen sachgerecht argumentieren und zielgerichtet appellieren, Gestaltungsmittel angemessen einsetzen und sachliche Kritik äußern,",
+   "competency_area": "Sprechen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B2-K2",
+   "kind": "kompetenz",
+   "name": "öffentlich sprechen, indem sie Inhalte mit Medienunterstützung präsentieren und …",
+   "parent": "HAK-DEU-5-S1-B2",
+   "text": "öffentlich sprechen, indem sie Inhalte mit Medienunterstützung präsentieren und Kommunikationsmittel hinsichtlich Zielgruppen- und Kundenorientierung gezielt einsetzen.",
+   "competency_area": "Sprechen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "HAK-DEU-5-S1",
+   "competency_area": "Lesen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B3-K1",
+   "kind": "kompetenz",
+   "name": "sich kritisch mit literarischen Texten und Sachtexten auseinandersetzen, indem sie einen …",
+   "parent": "HAK-DEU-5-S1-B3",
+   "text": "sich kritisch mit literarischen Texten und Sachtexten auseinandersetzen, indem sie einen Zusammenhang zwischen formalen, sprachlichen und inhaltlichen Aspekten erkennen, Texte auf ihre Intention hin analysieren sowie Textaussagen bewerten,",
+   "competency_area": "Lesen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B3-K2",
+   "kind": "kompetenz",
+   "name": "Texte verstehen, indem sie Bezüge zu anderen Texten, zum eigenen Welt-, Sach- und …",
+   "parent": "HAK-DEU-5-S1-B3",
+   "text": "Texte verstehen, indem sie Bezüge zu anderen Texten, zum eigenen Welt-, Sach- und Fachwissen sowie zu ihren Erfahrungen herstellen.",
+   "competency_area": "Lesen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-5-S1",
+   "competency_area": "Schreiben",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B4-K1",
+   "kind": "kompetenz",
+   "name": "Texte mit unterschiedlicher Intention verfassen und die Schreibhandlungen im Sinne der …",
+   "parent": "HAK-DEU-5-S1-B4",
+   "text": "Texte mit unterschiedlicher Intention verfassen und die Schreibhandlungen im Sinne der textsortenspezifischen Merkmale erfüllen,",
+   "competency_area": "Schreiben",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B4-K2",
+   "kind": "kompetenz",
+   "name": "Texte gemäß ihrer Funktion verfassen und geschlechtergerecht formulieren",
+   "parent": "HAK-DEU-5-S1-B4",
+   "text": "Texte gemäß ihrer Funktion verfassen und geschlechtergerecht formulieren,",
+   "competency_area": "Schreiben",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B4-K3",
+   "kind": "kompetenz",
+   "name": "Texte redigieren, indem sie diese formal und inhaltlich bearbeiten und dafür …",
+   "parent": "HAK-DEU-5-S1-B4",
+   "text": "Texte redigieren, indem sie diese formal und inhaltlich bearbeiten und dafür informationstechnologische Mittel einsetzen.",
+   "competency_area": "Schreiben",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B5",
+   "kind": "kompetenzbereich",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-5-S1",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B5-K1",
+   "kind": "kompetenz",
+   "name": "typische Merkmale von Gattungen und Stilrichtungen anhand von exemplarischen Werken …",
+   "parent": "HAK-DEU-5-S1-B5",
+   "text": "typische Merkmale von Gattungen und Stilrichtungen anhand von exemplarischen Werken herausarbeiten sowie die daraus erkennbaren Haltungen und Intentionen erfassen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B5-K2",
+   "kind": "kompetenz",
+   "name": "zu künstlerischen, insbesondere zu literarischen Werken und Erscheinungen sowie …",
+   "parent": "HAK-DEU-5-S1-B5",
+   "text": "zu künstlerischen, insbesondere zu literarischen Werken und Erscheinungen sowie Entwicklungen Stellung nehmen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B5-K3",
+   "kind": "kompetenz",
+   "name": "durch die Beschäftigung mit Kunstwerken Einblick in unterschiedliche Kunstformen gewinnen",
+   "parent": "HAK-DEU-5-S1-B5",
+   "text": "durch die Beschäftigung mit Kunstwerken Einblick in unterschiedliche Kunstformen gewinnen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B5-K4",
+   "kind": "kompetenz",
+   "name": "Medien, Kunst- und Literaturbetrieb als Institutionen und Wirtschaftsfaktoren verstehen",
+   "parent": "HAK-DEU-5-S1-B5",
+   "text": "Medien, Kunst- und Literaturbetrieb als Institutionen und Wirtschaftsfaktoren verstehen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B5-K5",
+   "kind": "kompetenz",
+   "name": "den Kunst- und Literaturbetrieb als Mittel der öffentlichen Meinungsbildung reflektieren",
+   "parent": "HAK-DEU-5-S1-B5",
+   "text": "den Kunst- und Literaturbetrieb als Mittel der öffentlichen Meinungsbildung reflektieren.",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B6",
+   "kind": "kompetenzbereich",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-5-S1",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B6-K1",
+   "kind": "kompetenz",
+   "name": "Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und …",
+   "parent": "HAK-DEU-5-S1-B6",
+   "text": "Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und Satzgrammatik sowie der Formenlehre umsetzen, Wortarten und Wortbildungsmuster sowie Regeln der Orthographie und Zeichensetzung anwenden,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B6-K2",
+   "kind": "kompetenz",
+   "name": "Fachtermini text- und situationsadäquat einsetzen",
+   "parent": "HAK-DEU-5-S1-B6",
+   "text": "Fachtermini text- und situationsadäquat einsetzen,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B6-K3",
+   "kind": "kompetenz",
+   "name": "Sprachmuster, Sprachklischees sowie Sprachwandelphänomene erkennen",
+   "parent": "HAK-DEU-5-S1-B6",
+   "text": "Sprachmuster, Sprachklischees sowie Sprachwandelphänomene erkennen,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B6-K4",
+   "kind": "kompetenz",
+   "name": "innere und äußere Mehrsprachigkeit in ihrer Bedeutung erfassen",
+   "parent": "HAK-DEU-5-S1-B6",
+   "text": "innere und äußere Mehrsprachigkeit in ihrer Bedeutung erfassen,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-B6-K5",
+   "kind": "kompetenz",
+   "name": "die deutsche Sprache und ihre Varietäten im Verhältnis zu anderen Sprachen betrachten",
+   "parent": "HAK-DEU-5-S1-B6",
+   "text": "die deutsche Sprache und ihre Varietäten im Verhältnis zu anderen Sprachen betrachten.",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-DEU-5-S1",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Zuhören und Sprechen",
+   "parent": "HAK-DEU-5-S1-L1",
+   "text": "Aktives Zuhören in Gesprächssituationen und bei der Rezeption von Medien, Argumentationsstrategien gezielt einsetzen\nSprechhandlungen: Analysieren, Interpretieren, Kommentieren, Argumentieren",
+   "content_area": "Zuhören und Sprechen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Lesen",
+   "parent": "HAK-DEU-5-S1-L1",
+   "text": "Beherrschen von Lesestrategien, Sicherung der produktorientierten Textarbeit, Ausbildung und Anreicherung von Wissensstrukturen durch Leseprozesse, Wahrnehmung ästhetischer Textkomponenten",
+   "content_area": "Lesen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-5-S1-L1",
+   "text": "Prozessorientiertes Schreiben, informierende und meinungsbildende Textsorten wie Textanalyse, Textinterpretation, Leserbrief, Offener Brief, Zusammenfassung, Kommentar, Empfehlung, kreative Textformen, Redigieren eigener und fremder Texte\nSchreibhandlungen: Zusammenfassen, Analysieren, Interpretieren, Erörtern, Kommentieren, Argumentieren, Appellieren",
+   "content_area": "Schreiben",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-5-S1-L1",
+   "text": "Kritische Auseinandersetzung mit Themen aus Kunst und Kultur, literarisches Lernen anhand von ausgewählten Texten unter besonderer Berücksichtigung der österreichischen Literatur des 20. Jahrhunderts, Kulturportfolio",
+   "content_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-5-S1-L1",
+   "text": "Sicherung der grammatischen, orthographischen und stilistischen Kenntnisse sowie der Kommasetzung, sicherer Umgang mit Fachsprache, Anwendung von Strategien zur Fehlervermeidung, Gebrauch von Wörterbüchern, Lexika und elektronischen Rechtschreibprogrammen",
+   "content_area": "Sprachbewusstsein",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2",
+   "kind": "semester",
+   "name": "10. Semester",
+   "parent": "HAK-DEU-5"
+  },
+  {
+   "code": "HAK-DEU-5-S2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören",
+   "parent": "HAK-DEU-5-S2",
+   "competency_area": "Zuhören",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B1-K1",
+   "kind": "kompetenz",
+   "name": "mündlichen Darstellungen folgen und diese verstehen, indem sie Gestaltungsmittel und …",
+   "parent": "HAK-DEU-5-S2-B1",
+   "text": "mündlichen Darstellungen folgen und diese verstehen, indem sie Gestaltungsmittel und Redeabsichten erkennen sowie Inhalte ihrem Welt-, Sach- und Fachwissen zuordnen und Zusammenhänge herstellen.",
+   "competency_area": "Zuhören",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen",
+   "parent": "HAK-DEU-5-S2",
+   "competency_area": "Sprechen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B2-K1",
+   "kind": "kompetenz",
+   "name": "Sprache sozial verantwortlich gebrauchen, indem sie geschlechter- und …",
+   "parent": "HAK-DEU-5-S2-B2",
+   "text": "Sprache sozial verantwortlich gebrauchen, indem sie geschlechter- und minderheitengerechte Formulierungen verwenden, sie mit belasteten Begriffen und abwertenden Bezeichnungen kritisch umgehen, Stil- und Sprachebenen unterscheiden und differenziert einsetzen, in unterschiedlichen Gesprächssituationen sachgerecht argumentieren und zielgerichtet appellieren, Gestaltungsmittel angemessen einsetzen und sachliche Kritik äußern,",
+   "competency_area": "Sprechen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B2-K2",
+   "kind": "kompetenz",
+   "name": "öffentlich sprechen, indem sie Inhalte mit Medienunterstützung präsentieren und …",
+   "parent": "HAK-DEU-5-S2-B2",
+   "text": "öffentlich sprechen, indem sie Inhalte mit Medienunterstützung präsentieren und Kommunikationsmittel hinsichtlich Zielgruppen- und Kundenorientierung gezielt einsetzen.",
+   "competency_area": "Sprechen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "HAK-DEU-5-S2",
+   "competency_area": "Lesen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B3-K1",
+   "kind": "kompetenz",
+   "name": "sich kritisch mit literarischen Texten und Sachtexten auseinandersetzen, indem sie einen …",
+   "parent": "HAK-DEU-5-S2-B3",
+   "text": "sich kritisch mit literarischen Texten und Sachtexten auseinandersetzen, indem sie einen Zusammenhang zwischen formalen, sprachlichen und inhaltlichen Aspekten erkennen, Texte auf ihre Intention hin analysieren sowie Textaussagen bewerten,",
+   "competency_area": "Lesen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B3-K2",
+   "kind": "kompetenz",
+   "name": "Texte verstehen, indem sie Bezüge zu anderen Texten, zum eigenen Welt-, Sach- und …",
+   "parent": "HAK-DEU-5-S2-B3",
+   "text": "Texte verstehen, indem sie Bezüge zu anderen Texten, zum eigenen Welt-, Sach- und Fachwissen sowie zu ihren Erfahrungen herstellen.",
+   "competency_area": "Lesen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-5-S2",
+   "competency_area": "Schreiben",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B4-K1",
+   "kind": "kompetenz",
+   "name": "Texte mit unterschiedlicher Intention verfassen und die Schreibhandlungen im Sinne der …",
+   "parent": "HAK-DEU-5-S2-B4",
+   "text": "Texte mit unterschiedlicher Intention verfassen und die Schreibhandlungen im Sinne der textsortenspezifischen Merkmale erfüllen,",
+   "competency_area": "Schreiben",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B4-K2",
+   "kind": "kompetenz",
+   "name": "Texte gemäß ihrer Funktion verfassen und geschlechtergerecht formulieren",
+   "parent": "HAK-DEU-5-S2-B4",
+   "text": "Texte gemäß ihrer Funktion verfassen und geschlechtergerecht formulieren,",
+   "competency_area": "Schreiben",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B4-K3",
+   "kind": "kompetenz",
+   "name": "Texte redigieren, indem sie diese formal und inhaltlich bearbeiten und dafür …",
+   "parent": "HAK-DEU-5-S2-B4",
+   "text": "Texte redigieren, indem sie diese formal und inhaltlich bearbeiten und dafür informationstechnologische Mittel einsetzen.",
+   "competency_area": "Schreiben",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B5",
+   "kind": "kompetenzbereich",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-5-S2",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B5-K1",
+   "kind": "kompetenz",
+   "name": "typische Merkmale von Gattungen und Stilrichtungen anhand von exemplarischen Werken …",
+   "parent": "HAK-DEU-5-S2-B5",
+   "text": "typische Merkmale von Gattungen und Stilrichtungen anhand von exemplarischen Werken herausarbeiten sowie die daraus erkennbaren Haltungen und Intentionen erfassen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B5-K2",
+   "kind": "kompetenz",
+   "name": "zu künstlerischen, insbesondere zu literarischen Werken und Erscheinungen sowie …",
+   "parent": "HAK-DEU-5-S2-B5",
+   "text": "zu künstlerischen, insbesondere zu literarischen Werken und Erscheinungen sowie Entwicklungen Stellung nehmen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B5-K3",
+   "kind": "kompetenz",
+   "name": "durch die Beschäftigung mit Kunstwerken Einblick in unterschiedliche Kunstformen gewinnen",
+   "parent": "HAK-DEU-5-S2-B5",
+   "text": "durch die Beschäftigung mit Kunstwerken Einblick in unterschiedliche Kunstformen gewinnen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B5-K4",
+   "kind": "kompetenz",
+   "name": "Medien, Kunst- und Literaturbetrieb als Institutionen und Wirtschaftsfaktoren verstehen",
+   "parent": "HAK-DEU-5-S2-B5",
+   "text": "Medien, Kunst- und Literaturbetrieb als Institutionen und Wirtschaftsfaktoren verstehen,",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B5-K5",
+   "kind": "kompetenz",
+   "name": "den Kunst- und Literaturbetrieb als Mittel der öffentlichen Meinungsbildung reflektieren",
+   "parent": "HAK-DEU-5-S2-B5",
+   "text": "den Kunst- und Literaturbetrieb als Mittel der öffentlichen Meinungsbildung reflektieren.",
+   "competency_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B6",
+   "kind": "kompetenzbereich",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-5-S2",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B6-K1",
+   "kind": "kompetenz",
+   "name": "Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und …",
+   "parent": "HAK-DEU-5-S2-B6",
+   "text": "Sprachnormen anwenden, indem sie Fertigkeiten und Kenntnisse in der Text- und Satzgrammatik sowie der Formenlehre umsetzen, Wortarten und Wortbildungsmuster sowie Regeln der Orthographie und Zeichensetzung anwenden,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B6-K2",
+   "kind": "kompetenz",
+   "name": "Fachtermini text- und situationsadäquat einsetzen",
+   "parent": "HAK-DEU-5-S2-B6",
+   "text": "Fachtermini text- und situationsadäquat einsetzen,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B6-K3",
+   "kind": "kompetenz",
+   "name": "Sprachmuster, Sprachklischees sowie Sprachwandelphänomene erkennen",
+   "parent": "HAK-DEU-5-S2-B6",
+   "text": "Sprachmuster, Sprachklischees sowie Sprachwandelphänomene erkennen,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B6-K4",
+   "kind": "kompetenz",
+   "name": "innere und äußere Mehrsprachigkeit in ihrer Bedeutung erfassen",
+   "parent": "HAK-DEU-5-S2-B6",
+   "text": "innere und äußere Mehrsprachigkeit in ihrer Bedeutung erfassen,",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-B6-K5",
+   "kind": "kompetenz",
+   "name": "die deutsche Sprache und ihre Varietäten im Verhältnis zu anderen Sprachen betrachten",
+   "parent": "HAK-DEU-5-S2-B6",
+   "text": "die deutsche Sprache und ihre Varietäten im Verhältnis zu anderen Sprachen betrachten.",
+   "competency_area": "Sprachbewusstsein",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-DEU-5-S2",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Zuhören und Sprechen",
+   "parent": "HAK-DEU-5-S2-L1",
+   "text": "Aktives Zuhören in Gesprächssituationen und bei der Rezeption von Medien, gezielter Einsatz von Kommunikations- und Präsentationstechniken\nSprechhandlungen: Analysieren, Interpretieren, Kommentieren, Argumentieren, Präsentieren",
+   "content_area": "Zuhören und Sprechen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Lesen",
+   "parent": "HAK-DEU-5-S2-L1",
+   "text": "Sicherung der produktorientierten Textarbeit, Wahrnehmung ästhetischer Textkomponenten, Informationsbeschaffung und -auswertung",
+   "content_area": "Lesen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Schreiben",
+   "parent": "HAK-DEU-5-S2-L1",
+   "text": "Prozessorientiertes Schreiben, Wiederholung relevanter informierender und meinungsbildender Textsorten, Redigieren eigener und fremder Texte\nSchreibhandlungen: Erörtern, Kommentieren, Argumentieren, Appellieren",
+   "content_area": "Schreiben",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Reflexion über gesellschaftliche Realität",
+   "parent": "HAK-DEU-5-S2-L1",
+   "text": "Kritische Auseinandersetzung mit Themen aus Gesellschaft, Politik und Arbeitswelt sowie aus Kunst und Kultur, Kulturportfolio",
+   "content_area": "Reflexion über gesellschaftliche Realität",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-DEU-5-S2-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Sprachbewusstsein",
+   "parent": "HAK-DEU-5-S2-L1",
+   "text": "Sicherung der grammatischen, orthographischen und stilistischen Kenntnisse sowie der Kommasetzung, sicherer Umgang mit Fachsprache, Anwendung von Strategien zur Fehlervermeidung, Gebrauch von Wörterbüchern, Lexika und elektronischen Rechtschreibprogrammen",
+   "content_area": "Sprachbewusstsein",
+   "klasse": 5,
+   "schulstufe": 13
+  }
+ ],
+ "skills": [],
+ "skill_nodes": [
+  [
+   "deutsch.text.verstehen",
+   "HAK-DEU-1-B3-K2"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "HAK-DEU-2-S1-B3-K1"
+  ],
+  [
+   "deutsch.recht.gross",
+   "HAK-DEU-1-B6-K1"
+  ],
+  [
+   "deutsch.recht.sss",
+   "HAK-DEU-1-B6-K1"
+  ],
+  [
+   "deutsch.recht.dasdass",
+   "HAK-DEU-1-B6-K1"
+  ],
+  [
+   "deutsch.beistrich.aufzaehlung",
+   "HAK-DEU-1-B6-K1"
+  ],
+  [
+   "deutsch.beistrich.nebensatz",
+   "HAK-DEU-1-B6-K1"
+  ],
+  [
+   "deutsch.beistrich.infinitiv",
+   "HAK-DEU-1-B6-K1"
+  ],
+  [
+   "deutsch.wortarten.bestimmen",
+   "HAK-DEU-1-L1-L5"
+  ],
+  [
+   "deutsch.grammatik.faelle",
+   "HAK-DEU-1-L1-L5"
+  ]
+ ]
+}
