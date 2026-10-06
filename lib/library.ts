@@ -165,7 +165,7 @@ export function createLibraryTask(
       status: "freigegeben",
       tags: cleanTags(m.tags),
     },
-    [{ ...draft, sourceType: "eigen" }],
+    [{ ...draft, sourceType: draft.sourceType ?? "eigen" }],
   );
 }
 
