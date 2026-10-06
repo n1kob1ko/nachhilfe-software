@@ -139,6 +139,35 @@ Ebene ist anklickbar.
   (`curriculumFor()`), sofern der Lehrplantext importiert ist.
 - Fähigkeit antippen → Übungs-Builder. IDs, Lehrplan-Verknüpfungen und Tracking bleiben unberührt.
 
+## Datenqualität (eigene Korrekturen, `lib/datenqualitaet.ts`)
+
+Offizielle Daten werden nie überschrieben: Die Tabellen `skills`, `curricula` und `curriculum_nodes`
+schreibt nur der Import. Eigene Korrekturen liegen getrennt und lassen sich zurücksetzen:
+
+- `skill_overrides`: Thema, Unterthema, Schulstufen, „in der Praxis oft früher/später“, Notiz,
+  `merged_into`. Gespeichert wird nur, was vom Original abweicht; `SKILL_SELECT` legt es beim Lesen
+  darüber. Eine Zeile ohne Abweichung wird gelöscht.
+- `skill_curriculum`: Entfernen setzt `removed_at` (die Zeile bleibt, ein neuer Import mit
+  `INSERT OR IGNORE` bringt sie nicht zurück); eigene Verknüpfungen haben `origin = 'lehrer'`.
+- `skill_links`: Voraussetzungen nur über `addPrerequisite`/`removePrerequisite` (Kreisprüfung).
+- `skill_history` mit `kind = 'korrektur'`: jede Korrektur mit vorherigem Zustand
+  (`before` = `{ action, previous, detail }`) und Lehrer.
+
+Mehr › Datenqualität: Dubletten (gleicher Name im selben Fach, Groß-/Kleinschreibung, Umlaute und
+Satzzeichen egal; optional auch in anderen Themen), eigene Korrekturen mit „Zurücksetzen“,
+Fähigkeiten in ein anderes Thema verschieben (Teilfähigkeiten im selben Thema wandern mit), die
+Lernstand-Einstellung für Flüchtigkeitsfehler und die letzten Korrekturen. Auf der Seite einer
+Fähigkeit: Einordnung, Lehrplan-Verknüpfungen, Voraussetzungen und Zusammenführen.
+
+Zusammenführen ist immer eine Entscheidung der Lehrkraft, die App schlägt nur Paare vor. Die
+Dublette verschwindet aus den Listen, ihre Antworten zählen über `skillAliases()` für die bleibende
+Fähigkeit. Regeln gegen Ketten und Kreise: nicht in sich selbst, nur im selben Fach, nicht in eine
+schon zusammengeführte Fähigkeit, nicht wenn schon andere in die Dublette zusammengeführt sind, und
+erst wenn ihre Teilfähigkeiten zusammengeführt sind. Ihre aktiven Voraussetzungen (in beide
+Richtungen) und Lehrplan-Verknüpfungen werden mit `origin = 'lehrer'` übernommen; Kreise,
+vorhandene und von der Lehrkraft entfernte Verknüpfungen werden übersprungen. Rückgängig hebt nur die
+Zusammenführung auf; übernommene Verknüpfungen bleiben sichtbar und entfernbar.
+
 ## Lizenzen (`lib/lehrplan.ts`)
 
 `licenseTerms()` liest CC-Kurznamen, `taskBankAllowed()` entscheidet:
