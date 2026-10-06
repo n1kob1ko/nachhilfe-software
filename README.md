@@ -13,7 +13,7 @@ npm run dev          # http://localhost:3000
 
 Beim ersten Öffnen kannst du auf der Übersicht **„Mit Demo-Daten ausprobieren“** klicken (oder `npm run seed`). Dann gibt es vier Beispielschüler mit acht Wochen Verlauf.
 
-Für den Dauerbetrieb: `npm run build && npm start`.
+Für den Dauerbetrieb: `npm run build && npm start`. Online braucht die App einen Server mit festem Speicher (z. B. Docker auf Railway, Fly.io oder Render), nicht Vercel: siehe [docs/betrieb.md](docs/betrieb.md).
 
 ### KI (optional)
 
