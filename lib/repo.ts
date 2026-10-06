@@ -116,6 +116,8 @@ export type Assignment = {
   unit_id: number | null;
   /** Teacher has opened the solutions for the student. */
   solutions_visible: number;
+  /** When the exercise was shown on the student tablet; null while it has not arrived there. */
+  delivered_at: string | null;
 };
 
 export type Attempt = {
@@ -449,6 +451,10 @@ export function updateWorksheetMeta(id: number, m: Partial<Pick<Worksheet, "titl
   if (!cur) return;
   const next = { ...cur, ...m };
   db().prepare("UPDATE worksheets SET title = ?, difficulty = ?, status = ?, student_id = ?, settings = ? WHERE id = ?").run(next.title, next.difficulty, next.status, next.student_id, next.settings, id);
+}
+/** A one-task exercise remembers which task it was cut from, for "Nächste Aufgabe senden". */
+export function setSourceTask(worksheetId: number, taskId: number) {
+  db().prepare("UPDATE worksheets SET source_task_id = ? WHERE id = ?").run(taskId, worksheetId);
 }
 /** Number of answers given to tasks of this worksheet; tasks with answers are not changed in place. */
 export function worksheetAttemptCount(worksheetId: number): number {

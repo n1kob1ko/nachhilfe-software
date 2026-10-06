@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUp, CheckCircle2, ChevronRight, Lightbulb, XCircle } fr
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { submitAnswerAction } from "@/app/actions";
 import { recordHintAction } from "@/app/builder-actions";
+import { deviceRecordHintAction, deviceSubmitAnswerAction } from "@/app/device-actions";
 import { hintLabel } from "@/lib/tasks";
 
 export type ClientTask = {
@@ -29,10 +30,42 @@ type Feedback = { correct: boolean | null; text: string; final: boolean; solutio
 
 const GAP = "___";
 
-export function Solver({ token, assignmentId, title, tasks: initial, maxTries }: { token: string; assignmentId: number; title: string; tasks: ClientTask[]; maxTries: number }) {
+type Via = "link" | "geraet";
+
+export function Solver({
+  token,
+  assignmentId,
+  title,
+  tasks: initial,
+  maxTries,
+  via = "link",
+  homeHref,
+}: {
+  token: string;
+  assignmentId: number;
+  title: string;
+  tasks: ClientTask[];
+  maxTries: number;
+  /** "geraet": running on the teacher's student tablet, authorised by the tablet instead of the student link */
+  via?: Via;
+  homeHref?: string;
+}) {
   const [tasks, setTasks] = useState(initial);
   const firstOpen = initial.findIndex((t) => !t.finished);
   const [index, setIndex] = useState(firstOpen === -1 ? initial.length : firstOpen);
+  const home = homeHref ?? `/lernen/${token}`;
+  // on the tablet the teacher sees live which task is open and for how long
+  useEffect(() => {
+    if (via !== "geraet") return;
+    const t = tasks[Math.min(index, tasks.length - 1)];
+    if (!t) return;
+    void fetch("/geraet/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assignmentId, taskId: t.id, taskNo: Math.min(index + 1, tasks.length), total: tasks.length }),
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the open task changes
+  }, [index, via, assignmentId]);
   const done = tasks.filter((t) => t.finished).length;
   const correct = tasks.filter((t) => t.finished?.correct).length;
 
@@ -48,9 +81,9 @@ export function Solver({ token, assignmentId, title, tasks: initial, maxTries }:
           {correct} von {tasks.length} Aufgaben richtig
         </p>
         <p className="mx-auto mt-3 max-w-[48ch] text-ink-2">Deine Ergebnisse sind gespeichert. Deine Nachhilfelehrerin bzw. dein Nachhilfelehrer sieht, wo du schon sicher bist und was ihr noch übt.</p>
-        <Link href={`/lernen/${token}`} className="btn btn-primary mt-8">
+        <HomeLink href={home} plain={via === "geraet"} className="btn btn-primary mt-8">
           Zurück zur Übersicht
-        </Link>
+        </HomeLink>
       </div>
     );
   }
@@ -60,9 +93,9 @@ export function Solver({ token, assignmentId, title, tasks: initial, maxTries }:
     <div>
       <div className="mb-6">
         <div className="mb-2 flex items-baseline justify-between gap-4 text-[14px]">
-          <Link href={`/lernen/${token}`} className="font-medium text-ink-2 hover:text-ink">
+          <HomeLink href={home} plain={via === "geraet"} className="font-medium text-ink-2 hover:text-ink">
             ← {title}
-          </Link>
+          </HomeLink>
           <span className="num shrink-0 text-ink-2">
             Aufgabe {index + 1} von {tasks.length}
           </span>
@@ -83,6 +116,7 @@ export function Solver({ token, assignmentId, title, tasks: initial, maxTries }:
         key={task.id}
         task={task}
         token={token}
+        via={via}
         assignmentId={assignmentId}
         maxTries={maxTries}
         onFinished={(c, solution) => setTasks((all) => all.map((t) => (t.id === task.id ? { ...t, finished: { correct: c, solution } } : t)))}
@@ -96,6 +130,7 @@ export function Solver({ token, assignmentId, title, tasks: initial, maxTries }:
 function TaskCard({
   task,
   token,
+  via,
   assignmentId,
   maxTries,
   onFinished,
@@ -104,6 +139,7 @@ function TaskCard({
 }: {
   task: ClientTask;
   token: string;
+  via: Via;
   assignmentId: number;
   maxTries: number;
   onFinished: (correct: boolean, solution: string) => void;
@@ -141,7 +177,7 @@ function TaskCard({
   const openHint = () => {
     const i = hintsShown;
     setHintsShown(i + 1);
-    void recordHintAction(token, assignmentId, task.id, i);
+    void (via === "geraet" ? deviceRecordHintAction(assignmentId, task.id, i) : recordHintAction(token, assignmentId, task.id, i));
   };
 
   const send = (extra: { giveUp?: boolean; selfAssessed?: boolean } = {}) =>
@@ -149,7 +185,8 @@ function TaskCard({
       const elapsed = Date.now() - startedAt.current;
       startedAt.current = Date.now();
       const activeMs = active.take();
-      const res = await submitAnswerAction({ token, assignmentId, taskId: task.id, answer, timeMs: elapsed, activeMs, hintsUsed: hintsShown, ...extra });
+      const input = { assignmentId, taskId: task.id, answer, timeMs: elapsed, activeMs, hintsUsed: hintsShown, ...extra };
+      const res = via === "geraet" ? await deviceSubmitAnswerAction(input) : await submitAnswerAction({ token, ...input });
       if (res.needsSelfAssessment) {
         setFeedback({ correct: null, text: res.feedback, final: false, sample: res.sample, selfAssess: true });
         return;
@@ -379,4 +416,17 @@ function useActiveTime() {
       return v;
     },
   };
+}
+
+/** On the tablet the way back changes what it shows, so it must never be prefetched: a plain link there. */
+function HomeLink({ href, plain, className, children }: { href: string; plain: boolean; className: string; children: React.ReactNode }) {
+  return plain ? (
+    <a href={href} className={className}>
+      {children}
+    </a>
+  ) : (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
 }

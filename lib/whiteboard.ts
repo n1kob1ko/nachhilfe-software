@@ -11,6 +11,7 @@
  * so a fast pen stroke is not one database write per point.
  */
 import { db } from "./db";
+import { unitChanged } from "./live";
 import { publish } from "./whiteboard-hub";
 import { getUnit, touchUnit } from "./units";
 
@@ -299,6 +300,9 @@ export function noteBoardActivity(board: Board) {
 
 /** Tells open boards that the unit is over (students switch to "only look") and saves everything. */
 export function notifyUnitClosed(unitId: number) {
+  const unit = getUnit(unitId);
+  // the teacher's tablet drops this student and goes back to "Bereit für die nächste Einheit"
+  if (unit) unitChanged(unit.teacher_id, unit.id);
   const board = boardForUnit(unitId);
   if (!board) return;
   flushBoard(board.id);

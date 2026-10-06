@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Clock3, Download, GitBranch, KeyRound, LogOut, Sparkles, UserCog } from "lucide-react";
+import { ChevronRight, Clock3, Download, GitBranch, KeyRound, LogOut, Sparkles, TabletSmartphone, UserCog } from "lucide-react";
 import { logoutAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
 import { PageHeader } from "@/components/ui";
@@ -16,6 +16,7 @@ export default async function MorePage() {
       title: "Unterricht",
       items: [
         { href: "/einheiten", label: "Alle Einheiten", hint: "Wer hat wann mit wem gearbeitet, pro Monat", icon: Clock3 },
+        { href: "/mehr/geraete", label: "Schülergeräte", hint: "Schüler-Tablet verbinden oder trennen", icon: TabletSmartphone },
         { href: "/faehigkeiten", label: "Themen und Fähigkeiten", hint: "Woran der Lernstand gemessen wird; eigene Fähigkeiten anlegen", icon: GitBranch },
       ],
     },

@@ -411,7 +411,7 @@ export function releaseWorksheet(worksheetId: number, studentId: number | null):
 }
 
 /** "An Schüler senden" for one task: a small released exercise with just this task. */
-export function sendSingleTask(taskId: number, studentId: number, teacherId: number | null): { error?: string; worksheetId?: number } {
+export function sendSingleTask(taskId: number, studentId: number, teacherId: number | null): { error?: string; worksheetId?: number; assignmentId?: number } {
   const task = repo.getTask(taskId);
   const w = task ? repo.getWorksheet(task.worksheet_id) : null;
   if (!task || !w) return { error: "Aufgabe nicht gefunden." };
@@ -419,9 +419,9 @@ export function sendSingleTask(taskId: number, studentId: number, teacherId: num
   if (problem) return { error: problem };
   const id = repo.duplicateWorksheet(w.id, { taskIds: [taskId], studentId, teacherId, status: "freigegeben", title: `${w.title} · Aufgabe ${task.position}` });
   if (!id) return { error: "Aufgabe nicht gefunden." };
+  repo.setSourceTask(id, taskId);
   const unit = runningUnitForStudent(studentId);
-  repo.assignWorksheet(id, studentId, "", unit?.id ?? null);
-  return { worksheetId: id };
+  return { worksheetId: id, assignmentId: repo.assignWorksheet(id, studentId, "", unit?.id ?? null) };
 }
 
 // ---------- reuse ----------
