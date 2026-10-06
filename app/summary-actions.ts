@@ -47,7 +47,8 @@ export async function generateFamilyNoteAction(lessonId: number, mode: "fakten" 
   }
   repo.setFamilyNote(lesson.id, note, source);
   refresh(lesson);
-  return { note, source, ok: source === "ki" ? "Von Claude formuliert. Bitte lesen und bei Bedarf anpassen." : "Aus den Fakten erstellt." };
+  // the source label under the text says where it comes from; only Claude's text needs a word more
+  return { note, source, ok: source === "ki" ? "Bitte lesen und bei Bedarf anpassen." : undefined };
 }
 
 export async function saveFamilyNoteAction(lessonId: number, text: string): Promise<NoteState> {

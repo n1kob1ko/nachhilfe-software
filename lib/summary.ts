@@ -122,7 +122,8 @@ export function briefForAI(b: UnitBrief, studentName: string) {
 
 /** A note from the facts alone (no AI), for parents ("Ihr Kind") or the student ("du"). */
 export function noteFromFacts(b: UnitBrief, audience: "eltern" | "schueler"): string {
-  const t = (lines: BriefLine[]) => lines.map((l) => l.text).join("; ");
+  // a line may end with a date ("bis Mi., 7.10."): no second full stop after it
+  const t = (lines: BriefLine[]) => lines.map((l) => l.text).join("; ").replace(/\.$/, "");
   const parts: string[] = [];
   const you = audience === "schueler";
   if (b.done.length) parts.push(`${you ? "Heute hast du gearbeitet an" : "Heute haben wir gearbeitet an"}: ${t(b.done)}.`);

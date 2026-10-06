@@ -47,7 +47,8 @@ export function uploadsDir(): string {
   const dbFile = process.env.DATABASE_PATH;
   return dbFile && dbFile !== ":memory:" ? path.join(path.dirname(dbFile), "uploads") : path.join(process.cwd(), "data", "uploads");
 }
-export const materialFile = (m: Pick<Material, "stored_path">) => path.join(uploadsDir(), path.basename(m.stored_path));
+// the folder is only known at run time: kept out of the build's file tracing
+export const materialFile = (m: Pick<Material, "stored_path">) => path.join(/*turbopackIgnore: true*/ uploadsDir(), path.basename(m.stored_path));
 
 export type Material = {
   id: number;
@@ -118,9 +119,9 @@ export function saveUpload(
   const same = db().prepare("SELECT id FROM materials WHERE sha256 = ? ORDER BY id LIMIT 1").get(sha256) as { id: number } | undefined;
   if (same) return { id: same.id, existing: true };
   const stored = `${sha256}.${type.ext}`;
-  fs.mkdirSync(uploadsDir(), { recursive: true });
-  const target = path.join(uploadsDir(), stored);
-  if (!fs.existsSync(target)) fs.writeFileSync(target, file.data, { mode: 0o600 });
+  fs.mkdirSync(/*turbopackIgnore: true*/ uploadsDir(), { recursive: true });
+  const target = materialFile({ stored_path: stored });
+  if (!fs.existsSync(/*turbopackIgnore: true*/ target)) fs.writeFileSync(/*turbopackIgnore: true*/ target, file.data, { mode: 0o600 });
   const name = cleanName(file.name);
   const kind: MaterialKind = m.kind && m.kind in MATERIAL_KINDS ? m.kind : type.mime === "application/pdf" ? "pdf" : "foto";
   const student = m.studentId ? repo.getStudent(m.studentId) : null;
