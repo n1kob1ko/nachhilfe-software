@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, CircleDashed, Minus } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, ChevronDown, CircleDashed, Minus } from "lucide-react";
+import { Info } from "@/components/Info";
 import type { Trend } from "@/lib/analysis";
 import { STRONG, WEAK } from "@/lib/analysis";
 
-export function PageHeader({ title, subtitle, actions, back }: { title: React.ReactNode; subtitle?: React.ReactNode; actions?: React.ReactNode; back?: { href: string; label: string } }) {
+export function PageHeader({ title, subtitle, actions, back, info }: { title: React.ReactNode; subtitle?: React.ReactNode; actions?: React.ReactNode; back?: { href: string; label: string }; info?: React.ReactNode }) {
   return (
     <header className="mb-8">
       {back && (
@@ -13,7 +14,14 @@ export function PageHeader({ title, subtitle, actions, back }: { title: React.Re
       )}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] text-balance">{title}</h1>
+          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] text-balance">
+            {title}
+            {info && (
+              <span className="ml-1.5">
+                <Info label={`Info zu ${typeof title === "string" ? title : "dieser Seite"}`}>{info}</Info>
+              </span>
+            )}
+          </h1>
           {subtitle && <div className="mt-1.5 text-ink-2">{subtitle}</div>}
         </div>
         {actions && <div className="no-print flex flex-wrap gap-2">{actions}</div>}
@@ -104,7 +112,7 @@ export function Empty({ title, children, action }: { title: string; children?: R
   );
 }
 
-export function Pill({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "accent" | "red" | "amber" | "green" }) {
+export function Pill({ children, tone = "neutral", title }: { children: React.ReactNode; tone?: "neutral" | "accent" | "red" | "amber" | "green"; title?: string }) {
   const cls = {
     neutral: "bg-panel text-ink-2",
     accent: "bg-accent-wash text-accent",
@@ -112,7 +120,11 @@ export function Pill({ children, tone = "neutral" }: { children: React.ReactNode
     amber: "bg-amber-wash text-amber",
     green: "bg-green-wash text-green",
   }[tone];
-  return <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${cls}`}>{children}</span>;
+  return (
+    <span title={title} className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${cls}`}>
+      {children}
+    </span>
+  );
 }
 
 export function formatDate(s: string | number, opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" }) {
@@ -126,4 +138,41 @@ export function formatDuration(sec: number | null) {
   if (sec === null) return "–";
   if (sec < 60) return `${sec} s`;
   return `${Math.floor(sec / 60)} min ${String(sec % 60).padStart(2, "0")} s`;
+}
+
+/** Same disclosure everywhere: a quiet "Details anzeigen"-style toggle, content below on demand. */
+export function Reveal({ label, children, className = "" }: { label: React.ReactNode; children: React.ReactNode; className?: string }) {
+  return (
+    <details className={`reveal ${className}`}>
+      <summary>
+        <ChevronDown size={15} aria-hidden className="reveal-chevron" />
+        {label}
+      </summary>
+      <div className="pt-2">{children}</div>
+    </details>
+  );
+}
+
+/** Shows the first `limit` items; the rest sit behind "+n mehr". */
+export function More({ items, limit = 3, empty = "–", className = "space-y-1" }: { items: React.ReactNode[]; limit?: number; empty?: React.ReactNode; className?: string }) {
+  if (!items.length) return <p className="text-[14px] text-ink-3">{empty}</p>;
+  const rest = items.slice(limit);
+  return (
+    <div>
+      <ul className={className}>
+        {items.slice(0, limit).map((x, i) => (
+          <li key={i}>{x}</li>
+        ))}
+      </ul>
+      {rest.length > 0 && (
+        <Reveal label={`${rest.length} mehr`}>
+          <ul className={className}>
+            {rest.map((x, i) => (
+              <li key={i}>{x}</li>
+            ))}
+          </ul>
+        </Reveal>
+      )}
+    </div>
+  );
 }

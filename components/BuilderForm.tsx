@@ -319,7 +319,7 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
             <Sparkles size={15} className={useAI ? "text-accent" : ""} aria-hidden />
             Mit Claude erstellen
           </label>
-          {!aiEnabled && <p className="-mt-2 text-[12px] text-ink-3">Kein API-Schlüssel hinterlegt: Die Aufgaben kommen aus den eingebauten Generatoren.</p>}
+          {!aiEnabled && <p className="-mt-2 text-[12px] text-ink-3">Ohne KI: Aufgaben aus den eingebauten Generatoren.</p>}
           {request && (
             <div className="rounded-lg bg-paper px-3 py-2.5 text-[13px] text-ink-2">
               <p className="text-ink">{request}</p>
@@ -336,7 +336,6 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
               {state.error}
             </p>
           )}
-          <p className="text-[12px] text-ink-3">Die Übung ist zuerst ein Entwurf. Du siehst zuerst eine Vorschau und sendest sie dann an den Schüler.</p>
         </div>
       </aside>
     </form>

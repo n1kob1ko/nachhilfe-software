@@ -191,7 +191,7 @@ function SendPanel(p: Props & { task: Task; run: (fn: () => Promise<ActionResult
           <Presentation size={14} aria-hidden /> Auf Whiteboard senden
         </span>
         {p.units.length === 0 ? (
-          <p className="text-[13px] text-ink-3">Möglich, sobald mit einem Schüler eine Einheit läuft.</p>
+          <p className="text-[13px] text-ink-3">Nur während einer laufenden Einheit.</p>
         ) : (
           <div className="flex gap-2">
             <select className="input min-w-0 flex-1" value={unitId} onChange={(e) => setUnitId(Number(e.target.value))} aria-label="Whiteboard von">

@@ -69,9 +69,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         {draft ? (
           <>
             <h2 className="mb-1 text-[18px] font-semibold">Vorschau prüfen, dann senden</h2>
-            <p className="mb-4 max-w-[70ch] text-[14px] text-ink-2">
-              Unten kannst du jede Aufgabe ändern, löschen oder neu erstellen lassen. {forStudent ? forStudent.name.split(" ")[0] : "Der Schüler"} sieht die Übung erst, wenn du sie sendest.
-            </p>
+            <p className="mb-4 text-[14px] text-ink-2">Aufgaben unten bei Bedarf ändern.</p>
             <ReleasePanel worksheetId={w.id} students={students} defaultStudentId={w.student_id} taskCount={tasks.length} />
           </>
         ) : mainAssignment ? (
@@ -128,7 +126,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
 
       {!editable && (
         <p className="no-print mb-6 max-w-[80ch] text-[14px] text-ink-2">
-          Diese Übung wurde schon bearbeitet, deshalb bleiben die Aufgaben unverändert. Unter „Weitere Aktionen“ kannst du eine Kopie zum Ändern anlegen.
+          Schon bearbeitet, Aufgaben bleiben fix. Zum Ändern: „Weitere Aktionen“ › Kopie anlegen.
         </p>
       )}
 
