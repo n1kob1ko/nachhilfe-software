@@ -793,7 +793,7 @@ function School({ student }: { student: repo.Student }) {
                   )}
                 </span>
                 <form action={deleteTestAction.bind(null, t.id, student.id)}>
-                  <button className="btn btn-ghost btn-sm !px-2" aria-label="Löschen">
+                  <button className="btn btn-ghost btn-sm min-w-[44px] !px-2" aria-label="Löschen">
                     <Trash2 size={14} />
                   </button>
                 </form>
@@ -824,7 +824,7 @@ function School({ student }: { student: repo.Student }) {
                   </div>
                 </div>
                 <form action={deleteHomeworkAction.bind(null, h.id, student.id)}>
-                  <button className="btn btn-ghost btn-sm !px-2" aria-label="Löschen">
+                  <button className="btn btn-ghost btn-sm min-w-[44px] !px-2" aria-label="Löschen">
                     <Trash2 size={14} />
                   </button>
                 </form>
@@ -867,7 +867,7 @@ function Exercises({ student }: { student: repo.Student }) {
         </div>
         <div className="flex w-full items-center gap-2 sm:w-[440px]">
           <CopyLink path={`/lernen/${student.access_token}`} />
-          <Link href={`/lernen/${student.access_token}`} target="_blank" className="btn btn-ghost btn-sm !px-2" aria-label="Schüleransicht öffnen">
+          <Link href={`/lernen/${student.access_token}`} target="_blank" className="btn btn-ghost btn-sm min-w-[44px] !px-2" aria-label="Schüleransicht öffnen">
             <ExternalLink size={15} />
           </Link>
         </div>
