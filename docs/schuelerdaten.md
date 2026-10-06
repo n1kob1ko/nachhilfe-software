@@ -157,7 +157,9 @@ Schüler-IDs, kein Vergleich oder Ranking von Schülern. Reines SQL, keine KI (`
   Fehlerart sind
 - Durchschnittlicher Lernstand pro Fähigkeit
 - Aufgaben: Erfolgsquote, Hilfen und Zeit pro Aufgabe; ungewöhnlich leicht oder schwer gegenüber der
-  erwarteten Quote ihrer Schwierigkeit (ab 5 Antworten, 25 Prozentpunkte Abstand)
+  erwarteten Quote ihrer Schwierigkeit (ab 5 Antworten von mindestens 3 Schülern, 25 Prozentpunkte
+  Abstand). Kopien in mehreren Übungen zählen zusammen, wenn Text, Fähigkeit, Format, Optionen und
+  richtige Antwort gleich sind
 - Themen und Stichwörter aus Schularbeiten und Tests
 
 Filter: Fach, Zeitraum, Diagnosen mit/ohne/nur.

@@ -266,3 +266,72 @@ test("privacy: only counts, no names and no student ids in the result", async ()
     assert.doesNotMatch(out, /student_?id/i);
   }
 });
+
+// Englisch, added after the checks above so their totals stay; the tests below filter by the subject
+const E = "englisch.tenses.pastsimple";
+type Draft = Parameters<typeof import("./repo").createWorksheet>[1][number];
+async function englishSheet(tasks: Draft[]) {
+  const repo = await import("./repo");
+  const id = repo.createWorksheet(
+    { title: "Statistik", subject: "Englisch", grade: 6, school_type: "Mittelschule", klasse: 2, topic: "", difficulty: "mittel", task_type: "mc", kind: "uebung", source: "generator", skill_ids: [] },
+    tasks,
+  );
+  return { id, tasks: repo.listTasks(id) };
+}
+/** One final answer, in an assignment of its own. */
+async function answerOnce(worksheetId: number, studentId: number, taskId: number, correct: boolean) {
+  const repo = await import("./repo");
+  const aid = repo.assignWorksheet(worksheetId, studentId);
+  repo.recordAttempt({
+    assignment_id: aid, task_id: taskId, student_id: studentId, skill_id: E, answer: "", correct: correct ? 1 : 0, final: 1, attempt_no: 1,
+    time_ms: 10_000, hints_used: 0, solution_viewed: 0, error_label: null, feedback: "", created_at: at(1),
+  });
+}
+
+test("tasks: the same text with other options or another answer is another task; identical copies count together", async () => {
+  const lib = await import("./library");
+  const st = await import("./statistik");
+  const [A, B] = data.students;
+  const mc = (options: Draft["data"], correct: number): Draft => ({ type: "mc", skillId: E, difficulty: "mittel", prompt: "Which sentence is correct?", data: options, answer: { correct }, solution: "", hints: [], errorMap: [] });
+  const w1 = await englishSheet([
+    mc({ passage: "Yesterday …", options: ["She go home.", "She went home."] }, 1),
+    mc({ options: ["They was late.", "They were late."] }, 1),
+    mc({ passage: "Yesterday …", options: ["She go home.", "She went home."] }, 0),
+  ]);
+  // a copy of the first task in another exercise, its data written in another key order
+  const w2 = await englishSheet([mc({ options: ["She go home.", "She went home."], passage: "Yesterday …" }, 1)]);
+  const [first, other, otherAnswer] = w1.tasks;
+  for (const t of w1.tasks) await answerOnce(w1.id, A, t.id, true);
+  await answerOnce(w2.id, A, w2.tasks[0].id, true);
+  await answerOnce(w2.id, B, w2.tasks[0].id, false);
+  const saved = lib.saveToLibrary(other.id);
+  assert.ok("id" in saved);
+
+  const s = st.statistics({ now: NOW, subject: "Englisch" });
+  assert.equal(s.totals.tasks, 3, "same prompt, three tasks");
+  const row = (taskId: number) => s.tasks.find((t) => t.taskId === taskId)!;
+  const copies = row(w2.tasks[0].id);
+  assert.deepEqual([copies.worksheetId, copies.copies, copies.answers, copies.students, copies.libraryId], [w2.id, 2, 3, 2, null], "the copy counts with the first task");
+  assert.ok(!s.tasks.some((t) => t.taskId === first.id), "shown as its newest copy");
+  assert.deepEqual([row(other.id).copies, row(other.id).answers, row(other.id).libraryId], [1, 1, saved.id], "other options: its own row and its own library entry");
+  assert.deepEqual([row(otherAnswer.id).copies, row(otherAnswer.id).answers, row(otherAnswer.id).libraryId], [1, 1, null], "another answer: its own row");
+});
+
+test("tasks: one student answering a task in several copies is not enough to flag it, three students are", async () => {
+  const st = await import("./statistik");
+  assert.equal(st.UNUSUAL_MIN_STUDENTS, 3);
+  const [A, B, C] = data.students;
+  const task: Draft = { type: "grammar", skillId: E, difficulty: "leicht", prompt: "Past simple of „go“?", data: {}, answer: { accepted: ["went"], mode: "text" }, solution: "", hints: [], errorMap: [] };
+  const sheets = [];
+  for (let i = 0; i < 6; i++) sheets.push(await englishSheet([task]));
+  const flag = () => {
+    const row = st.statistics({ now: NOW, subject: "Englisch" }).tasks.find((t) => t.prompt === task.prompt)!;
+    return [row.copies, row.answers, row.students, row.deviation, row.unusual];
+  };
+  for (const w of sheets) await answerOnce(w.id, A, w.tasks[0].id, false);
+  assert.deepEqual(flag(), [6, 6, 1, -0.8, null], "one student, six copies");
+  await answerOnce(sheets[0].id, B, sheets[0].tasks[0].id, false);
+  assert.deepEqual(flag(), [6, 7, 2, -0.8, null]);
+  await answerOnce(sheets[1].id, C, sheets[1].tasks[0].id, false);
+  assert.deepEqual(flag(), [6, 8, 3, -0.8, "schwer"]);
+});
