@@ -4,7 +4,7 @@ import { PageHeader, Pill, Reveal, SectionTitle, formatDuration } from "@/compon
 import { requireTeacher } from "@/lib/auth";
 import { levelName } from "@/lib/curriculum";
 import { masteryStatus } from "@/lib/mastery";
-import { DIAGNOSIS_FILTERS, EXPECTED_SUCCESS, SKILL_MIN, statistics, TASK_MIN, UNUSUAL_DEVIATION, type DiagnosisFilter, type SkillRef, type TaskRow, type TopicRow } from "@/lib/statistik";
+import { DIAGNOSIS_FILTERS, EXPECTED_SUCCESS, SKILL_MIN, statistics, TASK_MIN, UNUSUAL_DEVIATION, UNUSUAL_MIN_STUDENTS, type DiagnosisFilter, type SkillRef, type TaskRow, type TopicRow } from "@/lib/statistik";
 
 export const metadata = { title: "Statistik" };
 
@@ -121,7 +121,7 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
 
         <section aria-label="Aufgaben">
           <Title
-            info={`Gleiche Aufgaben aus mehreren Übungen zählen zusammen. Auffällig ab ${TASK_MIN} Antworten, wenn der Erfolg um mindestens ${Math.round(UNUSUAL_DEVIATION * 100)} Prozentpunkte vom erwarteten abweicht (Strich im Balken). Erwartet: ${expected}.`}
+            info={`Gleiche Aufgaben aus mehreren Übungen zählen zusammen. Auffällig ab ${TASK_MIN} Antworten von mindestens ${UNUSUAL_MIN_STUDENTS} Schülern, wenn der Erfolg um mindestens ${Math.round(UNUSUAL_DEVIATION * 100)} Prozentpunkte vom erwarteten abweicht (Strich im Balken). Erwartet: ${expected}.`}
           >
             Aufgaben
           </Title>

@@ -40,6 +40,8 @@ const DAY = 86_400_000;
 export const SKILL_MIN = 5;
 /** A task is flagged as unusually easy or hard only from this many final answers on. */
 export const TASK_MIN = 5;
+/** … and only when this many students answered it: one student repeating it in several copies is not enough. */
+export const UNUSUAL_MIN_STUDENTS = 3;
 /**
  * Success rate a task of difficulty 1–5 should roughly reach: the middle of the bands that
  * lib/lehrplan.ts statsOf uses to suggest a level (≥ 90 % → 1, ≥ 75 % → 2, ≥ 55 % → 3, ≥ 35 % → 4).
@@ -84,7 +86,7 @@ export type ErrorTypeRow = { type: string; label: string; count: number; confirm
 /** c) average Lernstand of one skill over the students that have evidence for it. */
 export type SkillMastery = { skill: SkillRef; mean: number; students: number };
 
-/** d) one task, identical copies in several exercises counted together (same text, main skill and format). */
+/** d) one task, identical copies in several exercises counted together (same text, main skill, format, data and answer). */
 export type TaskRow = {
   /** Newest copy with answers, and the exercise it belongs to (link target /uebungen/<worksheetId>). */
   taskId: number;
@@ -112,7 +114,7 @@ export type TaskRow = {
   /** Expected success rate for its level (EXPECTED_SUCCESS) and the difference successRate − expected. */
   expected: number;
   deviation: number;
-  /** Only from TASK_MIN answers on and with |deviation| ≥ UNUSUAL_DEVIATION. */
+  /** Only from TASK_MIN answers by at least UNUSUAL_MIN_STUDENTS students and with |deviation| ≥ UNUSUAL_DEVIATION. */
   unusual: "leicht" | "schwer" | null;
   /** Level 1–5 the measured success rate points to; only from lehrplan.EMPIRICAL_MIN answers on. */
   suggestedLevel: number | null;
@@ -151,6 +153,8 @@ type AttemptRow = {
   worksheet_id: number;
   prompt: string;
   type: string;
+  data: string;
+  answer: string;
   task_skill_id: string | null;
   task_level: number | null;
   task_skill_ids: string | null;
@@ -180,6 +184,13 @@ const byKindList = (m: Map<string, number>): KindCount[] => [...m].map(([kind, t
 function promptLine(prompt: string): string {
   const line = (prompt.replaceAll(GAP, "…").split("\n").find((l) => l.trim()) ?? "").trim();
   return line.length > 120 ? `${line.slice(0, 117).trimEnd()} …` : line || "Aufgabe";
+}
+
+/** tasks.data or tasks.answer as JSON with sorted keys, so the same content always gives the same text. */
+function canonical(text: string): string {
+  const sorted = (v: unknown): unknown =>
+    Array.isArray(v) ? v.map(sorted) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, sorted((v as Record<string, unknown>)[k])])) : v;
+  return JSON.stringify(sorted(json<unknown>(text, text)));
 }
 
 /** Skill lookup that follows merged duplicates to the skill they were merged into. */
@@ -228,7 +239,7 @@ export function statistics(o: StatisticsFilter = {}): Statistics {
     .prepare(
       `SELECT a.assignment_id, a.task_id, a.student_id, a.skill_id, a.attempt_no, a.correct, a.final, a.time_ms, a.hints_used, a.solution_viewed,
               a.error_type, a.error_type_source, a.created_at,
-              t.worksheet_id, t.prompt, t.type, t.skill_id AS task_skill_id, t.level AS task_level,
+              t.worksheet_id, t.prompt, t.type, t.data, t.answer, t.skill_id AS task_skill_id, t.level AS task_level,
               (SELECT json_group_array(ts.skill_id) FROM task_skills ts WHERE ts.task_id = t.id) AS task_skill_ids,
               w.subject
        FROM attempts a JOIN tasks t ON t.id = a.task_id JOIN worksheets w ON w.id = t.worksheet_id
@@ -241,7 +252,10 @@ export function statistics(o: StatisticsFilter = {}): Statistics {
 
   const skillsOf = (r: AttemptRow) =>
     [...new Set([r.skill_id, r.task_skill_id, ...json<(string | null)[]>(r.task_skill_ids, [])].filter((x): x is string => Boolean(x)).map(canon))].filter((id) => ref(id) !== null);
-  const groupKey = (r: Pick<AttemptRow, "prompt" | "type"> & { skill: string | null }) => JSON.stringify([r.prompt.trim(), r.skill ?? "", r.type]);
+  // generators reuse one prompt ("Welcher Satz ist richtig geschrieben?") with other options and
+  // answers: only copies with the same data and answer are the same task
+  const groupKey = (r: Pick<AttemptRow, "prompt" | "type" | "data" | "answer"> & { skill: string | null }) =>
+    JSON.stringify([r.prompt.trim(), r.skill ?? "", r.type, canonical(r.data), canonical(r.answer)]);
 
   const outcomes: Outcome[] = [];
   const wrong: (AttemptRow & { skills: string[] })[] = [];
@@ -261,7 +275,7 @@ export function statistics(o: StatisticsFilter = {}): Statistics {
     if (!inWindow) continue;
     const mainSkill = r.task_skill_id ?? r.skill_id;
     const skill = mainSkill ? canon(mainSkill) : null;
-    const group = groupKey({ prompt: r.prompt, type: r.type, skill });
+    const group = groupKey({ ...r, skill });
     outcomes.push({
       student: r.student_id,
       taskId: r.task_id,
@@ -347,9 +361,9 @@ export function statistics(o: StatisticsFilter = {}): Statistics {
   // ---------- d) Aufgaben ----------
   const library = new Map<string, number>();
   for (const t of db()
-    .prepare("SELECT t.worksheet_id, t.prompt, t.type, t.skill_id FROM tasks t JOIN worksheets w ON w.id = t.worksheet_id WHERE w.kind = 'bibliothek' ORDER BY t.id")
-    .all() as { worksheet_id: number; prompt: string; type: string; skill_id: string | null }[]) {
-    library.set(groupKey({ prompt: t.prompt, type: t.type, skill: t.skill_id ? canon(t.skill_id) : null }), t.worksheet_id);
+    .prepare("SELECT t.worksheet_id, t.prompt, t.type, t.data, t.answer, t.skill_id FROM tasks t JOIN worksheets w ON w.id = t.worksheet_id WHERE w.kind = 'bibliothek' ORDER BY t.id")
+    .all() as { worksheet_id: number; prompt: string; type: string; data: string; answer: string; skill_id: string | null }[]) {
+    library.set(groupKey({ ...t, skill: t.skill_id ? canon(t.skill_id) : null }), t.worksheet_id);
   }
   const byGroup = new Map<string, Outcome[]>();
   for (const out of outcomes) {
@@ -361,7 +375,7 @@ export function statistics(o: StatisticsFilter = {}): Statistics {
     const r = rates(list);
     const expected = EXPECTED_SUCCESS[info.level];
     const deviation = round4(r.successRate - expected);
-    const unusual = r.answers >= TASK_MIN && Math.abs(deviation) >= UNUSUAL_DEVIATION ? (deviation > 0 ? "leicht" : "schwer") : null;
+    const unusual = r.answers >= TASK_MIN && r.students >= UNUSUAL_MIN_STUDENTS && Math.abs(deviation) >= UNUSUAL_DEVIATION ? (deviation > 0 ? "leicht" : "schwer") : null;
     return {
       taskId: info.taskId,
       worksheetId: info.worksheetId,
