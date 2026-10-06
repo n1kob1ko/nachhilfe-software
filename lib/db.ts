@@ -609,8 +609,9 @@ function migrate(conn: Database.Database) {
     for (const r of conn.prepare("SELECT id, school_type, klasse, grade FROM students").all() as { id: number; school_type: string; klasse: number | null; grade: number }[]) {
       setStatus.run(checkLevel(r.school_type, r.klasse, r.grade).status, r.id);
     }
-    // tasks: origin and difficulty 1–5 for rows written before these columns existed
-    conn.exec(`UPDATE tasks SET source_type = 'ki' WHERE source_type = 'eigen' AND worksheet_id IN (SELECT id FROM worksheets WHERE source = 'ki')`);
+    // tasks: origin and difficulty 1–5 for rows written before these columns existed. The origin only on
+    // that upgrade: later a task keeps the origin it was given (a copy, new content, set by the teacher)
+    if (added.has("tasks.source_type")) conn.exec(`UPDATE tasks SET source_type = 'ki' WHERE source_type = 'eigen' AND worksheet_id IN (SELECT id FROM worksheets WHERE source = 'ki')`);
     conn.exec(`UPDATE tasks SET level = CASE difficulty WHEN 'sehr leicht' THEN 1 WHEN 'leicht' THEN 2 WHEN 'leicht bis mittel' THEN 2 WHEN 'mittel' THEN 3 WHEN 'schwer' THEN 4 WHEN 'sehr schwer' THEN 5 ELSE 3 END WHERE level IS NULL`);
     // tests in the future without a result are planned ones
     conn.exec(`UPDATE tests SET status = 'geplant' WHERE status = 'geschrieben' AND grade IS NULL AND points IS NULL AND date > date('now')`);
