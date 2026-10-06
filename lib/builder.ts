@@ -8,6 +8,8 @@ import { DIFFICULTIES, categoriesFor, difficultyFor, type Category, type Difficu
 import { generateForSlot } from "./generators";
 import * as repo from "./repo";
 import { klassenLabel, schulstufe } from "./school";
+import { daysUntil, dayOf } from "./exams";
+import { masteryStatus } from "./mastery";
 import { analyzeStudent } from "./service";
 import { gapCount, GAP, type TaskDraft } from "./tasks";
 import { runningUnitForStudent } from "./units";
@@ -77,6 +79,8 @@ export type StudentContext = {
   errors: { label: string; count: number; skillIds: string[] }[];
   mastery: Record<string, number | null>;
   suggestions: Suggestion[];
+  /** Planned Schularbeiten/tests in the next 30 days, soonest first. */
+  exams: (repo.TestResult & { days: number })[];
 };
 
 /** Words too general to tie an error to a skill ("Bruch" is in every fraction skill). */
@@ -157,25 +161,59 @@ export function studentContext(studentId: number): StudentContext | null {
     errors: analysis.errors.slice(0, 6).map((e) => ({ label: e.label, count: e.count, skillIds: e.skillIds })),
     mastery,
     suggestions: suggestions.slice(0, 6),
+    exams: repo
+      .upcomingTests(dayOf(new Date()), studentId)
+      .map((t) => ({ ...t, days: daysUntil(t.date, dayOf(new Date())) }))
+      .filter((t) => t.days <= 30),
   };
 }
 
-const pct = (x: number | null | undefined) => (x == null ? "noch keine Daten" : `${Math.round(x * 100)} %`);
 
-/** What Claude learns about the student. Only the first name leaves the app. */
-export function contextForAI(ctx: StudentContext, skillIds: string[]): string {
+/**
+ * What Claude learns about the student: structured learning data only. No name, no free-text
+ * notes from the profile (they can hold personal details); the chosen skills with their
+ * Lernstand, typical errors and an upcoming exam are enough to fit the tasks.
+ */
+export type AIStudentData = {
+  school_type: string;
+  klasse: number;
+  official_grade: number;
+  subject: string;
+  topics: string[];
+  skills: { skill_id: string; name: string; student_skill_score: number | null; status: string }[];
+  common_errors: { label: string; count: number }[];
+  exam_in_days: number | null;
+  exam_topics: string[];
+};
+export function aiStudentData(ctx: StudentContext, skillIds: string[]): AIStudentData {
   const all = repo.listSkills();
   const chosen = all.filter((s) => skillIds.includes(s.id));
   // the chosen skills, their parents and their neighbours in the same topic
   const related = all.filter((s) => chosen.some((c) => c.area === s.area && c.subject === s.subject));
+  const subject = chosen[0]?.subject ?? ctx.subjects[0] ?? "";
+  const ids = new Set(related.map((s) => s.id));
+  const exam = ctx.exams.find((e) => e.subject === subject || e.skill_ids.some((id) => ids.has(id)));
+  return {
+    school_type: ctx.schoolType,
+    klasse: ctx.klasse,
+    official_grade: schulstufe(ctx.schoolType, ctx.klasse),
+    subject,
+    topics: [...new Set(chosen.map((s) => s.area))],
+    skills: related.map((s) => ({ skill_id: s.id, name: skillLabel(s, all), student_skill_score: ctx.mastery[s.id] == null ? null : Math.round(ctx.mastery[s.id]! * 100) / 100, status: masteryStatus(ctx.mastery[s.id] ?? null) })),
+    common_errors: ctx.errors.filter((e) => e.skillIds.some((id) => ids.has(id))).map((e) => ({ label: e.label, count: e.count })),
+    exam_in_days: exam ? exam.days : null,
+    exam_topics: exam ? (exam.topics?.length ? exam.topics : [exam.topic].filter(Boolean)) : [],
+  };
+}
+export function contextForAI(ctx: StudentContext, skillIds: string[]): string {
+  const d = aiStudentData(ctx, skillIds);
   const lines = [
-    `${ctx.first}, ${ctx.level}.`,
-    ctx.topics && `Aktuelle Themen in der Schule: ${ctx.topics}`,
-    ctx.weaknessesNote && `Bekannte Schwächen (Lehrkraft): ${ctx.weaknessesNote}`,
-    ctx.strengthsNote && `Stärken (Lehrkraft): ${ctx.strengthsNote}`,
-    ctx.goals && `Aktuelle Lernziele: ${ctx.goals}`,
-    `Lernstand im Thema: ${related.map((s) => `${skillLabel(s, all)} ${pct(ctx.mastery[s.id])}`).join(", ")}`,
-    ctx.errors.length ? `Häufige Fehler: ${ctx.errors.map((e) => `${e.label} (${e.count}×)`).join(", ")}` : "",
+    `Schulart: ${d.school_type}, ${d.klasse}. Klasse (Schulstufe ${d.official_grade})`,
+    `Fach: ${d.subject}${d.topics.length ? ` · Thema: ${d.topics.join(", ")}` : ""}`,
+    `Lernstand (skill_id: Fähigkeit – Wert 0–1, Status):`,
+    ...d.skills.map((s) => `- ${s.skill_id}: ${s.name} – ${s.student_skill_score ?? "keine Daten"}, ${s.status}`),
+    d.common_errors.length ? `Typische Fehler: ${d.common_errors.map((e) => `${e.label} (${e.count}×)`).join(", ")}` : "",
+    d.exam_in_days !== null ? `Prüfung in ${d.exam_in_days} Tagen${d.exam_topics.length ? `, Stoff: ${d.exam_topics.join(", ")}` : ""}` : "",
   ];
   return lines.filter(Boolean).join("\n");
 }

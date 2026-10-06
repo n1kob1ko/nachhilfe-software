@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
 import { db, json } from "./db";
 import type { TaskDraft } from "./tasks";
+import { checkLevel } from "./school";
+import { levelOf } from "./curriculum";
 
 export type Teacher = { id: number; name: string; active: number; username: string; is_admin: number; must_change_password: number };
 const TEACHER_COLS = "id, name, active, username, is_admin, must_change_password";
@@ -22,9 +24,38 @@ export type Student = {
   notes: string;
   access_token: string;
   created_at: string;
+  /** 'unklar' when school type, class and Schulstufe do not fit together; curriculum content is then not narrowed down. */
+  stufe_status?: "eindeutig" | "unklar";
 };
 
-export type Skill = { id: string; subject: string; area: string; name: string; grade_min: number; grade_max: number; sort: number; parent_id: string | null };
+export type Skill = {
+  id: string;
+  subject: string;
+  /** Thema, e.g. "Bruchrechnung" */
+  area: string;
+  name: string;
+  /** Schulstufen the skill is meant for (1–13). */
+  grade_min: number;
+  grade_max: number;
+  sort: number;
+  /** Teilfähigkeit of this skill. */
+  parent_id: string | null;
+  /** Stable code, e.g. AT-MAT-05-BRUCHRECHNUNG-DIVIDIEREN (lib/skill-code.ts). */
+  code?: string | null;
+  subtopic?: string;
+  /** '' = all school types, else a comma list ("Volksschule"). */
+  school_types?: string;
+  learning_objective?: string;
+  description?: string;
+  competency_area?: string;
+  content_area?: string;
+  action_area?: string;
+  source_id?: number | null;
+  version?: string;
+  valid_from?: string | null;
+  valid_to?: string | null;
+  status?: "aktiv" | "archiviert";
+};
 
 export type Lesson = {
   id: number;
@@ -74,6 +105,14 @@ export type TestResult = {
   max_points: number | null;
   notes: string;
   skill_ids: string[];
+  /** e.g. "2. Mathematik-Schularbeit"; empty for older rows */
+  title?: string;
+  /** Stoff as the teacher typed it ("Brüche", "Prozentrechnung" …) */
+  topics?: string[];
+  /** geplant → geschrieben (with result) or abgesagt */
+  status?: "geplant" | "geschrieben" | "abgesagt";
+  teacher_id?: number | null;
+  created_at?: string | null;
 };
 
 export type Worksheet = {
@@ -100,7 +139,7 @@ export type Worksheet = {
   source_worksheet_id: number | null;
 };
 
-export type Task = TaskDraft & { id: number; worksheet_id: number; position: number };
+export type Task = TaskDraft & { id: number; worksheet_id: number; position: number; level: number | null };
 export type WorksheetInput = Omit<Worksheet, "id" | "created_at" | "student_id" | "status" | "teacher_id" | "settings" | "source_worksheet_id"> &
   Partial<Pick<Worksheet, "student_id" | "status" | "teacher_id" | "settings" | "source_worksheet_id">>;
 
@@ -141,13 +180,17 @@ export type Attempt = {
   active_ms: number | null;
   /** All skills of the task, including parent skills (filled by listAttemptsForStudent). */
   skill_ids?: string[];
+  /** Teacher of the unit (or the student's teacher) when the answer was given. */
+  teacher_id?: number | null;
+  /** Difficulty 1–5 of the task at that moment. */
+  level?: number | null;
 };
 
 type Row = Record<string, unknown>;
 
 const toStudent = (r: Row): Student => ({ ...(r as unknown as Student), subjects: json(r.subjects as string, []) });
 const toLesson = (r: Row): Lesson => ({ ...(r as unknown as Lesson), skill_ids: json(r.skill_ids as string, []) });
-const toTest = (r: Row): TestResult => ({ ...(r as unknown as TestResult), skill_ids: json(r.skill_ids as string, []) });
+const toTest = (r: Row): TestResult => ({ ...(r as unknown as TestResult), skill_ids: json(r.skill_ids as string, []), topics: json(r.topics as string, []) });
 const toWorksheet = (r: Row): Worksheet => ({ ...(r as unknown as Worksheet), skill_ids: json(r.skill_ids as string, []) });
 const toTask = (r: Row): Task => ({
   id: r.id as number,
@@ -164,6 +207,11 @@ const toTask = (r: Row): Task => ({
   solution: r.solution as string,
   hints: json(r.hints as string, []),
   errorMap: json(r.error_map as string, []),
+  solutionSteps: json(r.solution_steps as string, []),
+  estimatedTimeSec: (r.estimated_time_sec as number | null) ?? null,
+  sourceType: (r.source_type as string) ?? "eigen",
+  sourceId: (r.source_id as number | null) ?? null,
+  level: (r.level as number | null) ?? null,
 });
 
 // ---------- teachers ----------
@@ -190,24 +238,24 @@ export function getStudentByToken(token: string): Student | null {
   const r = db().prepare("SELECT * FROM students WHERE access_token = ?").get(token) as Row | undefined;
   return r ? toStudent(r) : null;
 }
-export type StudentInput = Omit<Student, "id" | "access_token" | "created_at">;
+export type StudentInput = Omit<Student, "id" | "access_token" | "created_at" | "stufe_status">;
 export function createStudent(s: StudentInput): number {
   const token = crypto.randomBytes(9).toString("base64url");
   const res = db()
     .prepare(
-      `INSERT INTO students (name, grade, klasse, teacher_id, school, school_type, subjects, current_topics, strengths_note, weaknesses_note, goals, notes, access_token)
-       VALUES (@name, @grade, @klasse, @teacher_id, @school, @school_type, @subjects, @current_topics, @strengths_note, @weaknesses_note, @goals, @notes, @token)`,
+      `INSERT INTO students (name, grade, klasse, teacher_id, school, school_type, subjects, current_topics, strengths_note, weaknesses_note, goals, notes, access_token, stufe_status)
+       VALUES (@name, @grade, @klasse, @teacher_id, @school, @school_type, @subjects, @current_topics, @strengths_note, @weaknesses_note, @goals, @notes, @token, @stufe_status)`,
     )
-    .run({ ...s, subjects: JSON.stringify(s.subjects), token });
+    .run({ ...s, subjects: JSON.stringify(s.subjects), token, stufe_status: checkLevel(s.school_type, s.klasse, s.grade).status });
   return Number(res.lastInsertRowid);
 }
 export function updateStudent(id: number, s: StudentInput) {
   db()
     .prepare(
       `UPDATE students SET name=@name, grade=@grade, klasse=@klasse, teacher_id=@teacher_id, school=@school, school_type=@school_type, subjects=@subjects, current_topics=@current_topics,
-       strengths_note=@strengths_note, weaknesses_note=@weaknesses_note, goals=@goals, notes=@notes WHERE id=@id`,
+       strengths_note=@strengths_note, weaknesses_note=@weaknesses_note, goals=@goals, notes=@notes, stufe_status=@stufe_status WHERE id=@id`,
     )
-    .run({ ...s, subjects: JSON.stringify(s.subjects), id });
+    .run({ ...s, subjects: JSON.stringify(s.subjects), id, stufe_status: checkLevel(s.school_type, s.klasse, s.grade).status });
 }
 export function deleteStudent(id: number) {
   db().prepare("DELETE FROM students WHERE id = ?").run(id);
@@ -360,12 +408,44 @@ export function deleteHomework(id: number) {
 export function listTests(studentId: number): TestResult[] {
   return db().prepare("SELECT * FROM tests WHERE student_id = ? ORDER BY date DESC").all(studentId).map((r) => toTest(r as Row));
 }
-export function addTest(t: Omit<TestResult, "id">) {
-  db()
+export function addTest(t: Omit<TestResult, "id">): number {
+  const res = db()
     .prepare(
-      "INSERT INTO tests (student_id, date, subject, kind, topic, grade, points, max_points, notes, skill_ids) VALUES (@student_id, @date, @subject, @kind, @topic, @grade, @points, @max_points, @notes, @skill_ids)",
+      `INSERT INTO tests (student_id, date, subject, kind, topic, grade, points, max_points, notes, skill_ids, title, topics, status, teacher_id, created_at)
+       VALUES (@student_id, @date, @subject, @kind, @topic, @grade, @points, @max_points, @notes, @skill_ids, @title, @topics, @status, @teacher_id, datetime('now'))`,
     )
-    .run({ ...t, skill_ids: JSON.stringify(t.skill_ids) });
+    .run({
+      title: "",
+      teacher_id: null,
+      ...t,
+      status: t.status ?? (t.grade == null && t.points == null && t.date > new Date().toISOString().slice(0, 10) ? "geplant" : "geschrieben"),
+      skill_ids: JSON.stringify(t.skill_ids),
+      topics: JSON.stringify(t.topics ?? []),
+    });
+  return Number(res.lastInsertRowid);
+}
+export function getTest(id: number): TestResult | null {
+  const r = db().prepare("SELECT * FROM tests WHERE id = ?").get(id) as Row | undefined;
+  return r ? toTest(r) : null;
+}
+/** Result of a Schularbeit/Test after it was written. */
+export function setTestResult(id: number, r: { grade: number | null; points: number | null; max_points: number | null; notes?: string }) {
+  db()
+    .prepare("UPDATE tests SET grade = @grade, points = @points, max_points = @max_points, notes = COALESCE(@notes, notes), status = 'geschrieben' WHERE id = @id")
+    .run({ notes: null, ...r, id });
+}
+export function setTestStatus(id: number, status: "geplant" | "geschrieben" | "abgesagt") {
+  db().prepare("UPDATE tests SET status = ? WHERE id = ?").run(status, id);
+}
+/** Planned Schularbeiten and tests from `from` (YYYY-MM-DD) on, all students or one. */
+export function upcomingTests(from: string, studentId?: number): (TestResult & { student_name: string })[] {
+  return db()
+    .prepare(
+      `SELECT t.*, s.name AS student_name FROM tests t JOIN students s ON s.id = t.student_id
+       WHERE t.status = 'geplant' AND t.date >= @from AND (@sid IS NULL OR t.student_id = @sid) ORDER BY t.date, s.name`,
+    )
+    .all({ from, sid: studentId ?? null })
+    .map((r) => ({ ...toTest(r as Row), student_name: (r as Row).student_name as string }));
 }
 export function deleteTest(id: number) {
   db().prepare("DELETE FROM tests WHERE id = ?").run(id);
@@ -379,12 +459,23 @@ function insertTask(worksheetId: number, position: number, t: TaskDraft): number
   const id = Number(
     conn
       .prepare(
-        "INSERT INTO tasks (worksheet_id, position, type, category, skill_id, difficulty, prompt, data, answer, solution, hints, error_map) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        `INSERT INTO tasks (worksheet_id, position, type, category, skill_id, difficulty, prompt, data, answer, solution, hints, error_map, level, solution_steps, estimated_time_sec, source_type, source_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run(worksheetId, position, t.type, t.category ?? null, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap)).lastInsertRowid,
+      .run(
+        worksheetId, position, t.type, t.category ?? null, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap),
+        levelOf(t.difficulty), JSON.stringify(t.solutionSteps ?? []), t.estimatedTimeSec ?? null, ...taskOrigin(worksheetId, t),
+      ).lastInsertRowid,
   );
   writeTaskSkills(id, t);
   return id;
+}
+/** Where a new task comes from: given by the draft (copies keep their origin) or derived from its exercise. */
+function taskOrigin(worksheetId: number, t: TaskDraft): [string, number | null] {
+  const ws = db().prepare("SELECT source FROM worksheets WHERE id = ?").get(worksheetId) as { source: string } | undefined;
+  const type = t.sourceType ?? (ws?.source === "ki" ? "ki" : "eigen");
+  const id = t.sourceId ?? ((db().prepare("SELECT id FROM content_sources WHERE key = ?").get(type === "ki" ? "claude" : "lernheft") as { id: number } | undefined)?.id ?? null);
+  return [type, id];
 }
 function writeTaskSkills(taskId: number, t: Pick<TaskDraft, "skillId" | "skillIds">) {
   const conn = db();
@@ -464,8 +555,8 @@ export function updateTask(id: number, t: TaskDraft) {
   const cur = getTask(id);
   if (!cur) return;
   db()
-    .prepare("UPDATE tasks SET type = ?, category = ?, skill_id = ?, difficulty = ?, prompt = ?, data = ?, answer = ?, solution = ?, hints = ?, error_map = ? WHERE id = ?")
-    .run(t.type, t.category ?? null, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap), id);
+    .prepare("UPDATE tasks SET type = ?, category = ?, skill_id = ?, difficulty = ?, prompt = ?, data = ?, answer = ?, solution = ?, hints = ?, error_map = ?, level = ? WHERE id = ?")
+    .run(t.type, t.category ?? null, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap), levelOf(t.difficulty), id);
   writeTaskSkills(id, t);
   syncWorksheetSkills(cur.worksheet_id);
 }
@@ -670,17 +761,34 @@ export function listAttemptsForStudent(studentId: number): Attempt[] {
   };
   return (
     db()
-      .prepare("SELECT a.*, (SELECT json_group_array(ts.skill_id) FROM task_skills ts WHERE ts.task_id = a.task_id) AS task_skill_ids FROM attempts a WHERE a.student_id = ? ORDER BY a.created_at, a.id")
-      .all(studentId) as (Attempt & { task_skill_ids: string })[]
-  ).map(({ task_skill_ids, ...a }) => ({ ...a, skill_ids: withAncestors([a.skill_id, ...json<(string | null)[]>(task_skill_ids, [])].filter((x): x is string => Boolean(x))) }));
+      .prepare(
+        `SELECT a.*, (SELECT json_group_array(ts.skill_id) FROM task_skills ts WHERE ts.task_id = a.task_id) AS task_skill_ids,
+           (SELECT t.level FROM tasks t WHERE t.id = a.task_id) AS task_level
+         FROM attempts a WHERE a.student_id = ? ORDER BY a.created_at, a.id`,
+      )
+      .all(studentId) as (Attempt & { task_skill_ids: string; task_level: number | null })[]
+  ).map(({ task_skill_ids, task_level, ...a }) => ({
+    ...a,
+    // answers saved before attempts stored the difficulty take it from their task
+    level: a.level ?? task_level ?? null,
+    skill_ids: withAncestors([a.skill_id, ...json<(string | null)[]>(task_skill_ids, [])].filter((x): x is string => Boolean(x))),
+  }));
 }
-export function recordAttempt(a: Omit<Attempt, "id" | "created_at" | "unit_id" | "active_ms" | "skill_ids"> & { created_at?: string; unit_id?: number | null; active_ms?: number | null }) {
+export function recordAttempt(
+  a: Omit<Attempt, "id" | "created_at" | "unit_id" | "active_ms" | "skill_ids" | "teacher_id" | "level"> & {
+    created_at?: string;
+    unit_id?: number | null;
+    active_ms?: number | null;
+    teacher_id?: number | null;
+    level?: number | null;
+  },
+) {
   const res = db()
     .prepare(
-      `INSERT INTO attempts (assignment_id, task_id, student_id, skill_id, attempt_no, answer, correct, final, time_ms, hints_used, solution_viewed, error_label, feedback, unit_id, active_ms, created_at)
-       VALUES (@assignment_id, @task_id, @student_id, @skill_id, @attempt_no, @answer, @correct, @final, @time_ms, @hints_used, @solution_viewed, @error_label, @feedback, @unit_id, @active_ms, COALESCE(@created_at, datetime('now')))`,
+      `INSERT INTO attempts (assignment_id, task_id, student_id, skill_id, attempt_no, answer, correct, final, time_ms, hints_used, solution_viewed, error_label, feedback, unit_id, active_ms, teacher_id, level, created_at)
+       VALUES (@assignment_id, @task_id, @student_id, @skill_id, @attempt_no, @answer, @correct, @final, @time_ms, @hints_used, @solution_viewed, @error_label, @feedback, @unit_id, @active_ms, @teacher_id, @level, COALESCE(@created_at, datetime('now')))`,
     )
-    .run({ created_at: null, unit_id: null, active_ms: null, ...a });
+    .run({ created_at: null, unit_id: null, active_ms: null, teacher_id: null, level: null, ...a });
   return Number(res.lastInsertRowid);
 }
 export function recentActivity(limit = 8) {

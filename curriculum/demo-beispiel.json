@@ -1,0 +1,94 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "DEMO – Beispiel-Lehrplan Mittelschule Mathematik",
+ "description": "Nur zum Ausprobieren des Imports: erfundene Beispiel-Einträge, KEIN Lehrplantext. Mit „Demo entfernen“ wieder löschbar.",
+ "source": {
+  "key": "demo-lehrplan",
+  "name": "DEMO – Beispieldaten",
+  "source_type": "demo",
+  "license": "eigen",
+  "notes": "Erfundene Beispieldaten zum Testen des Imports. Kein offizieller Lehrplan."
+ },
+ "curriculum": {
+  "key": "demo-ms-mathematik",
+  "name": "DEMO – Lehrplan Mittelschule Mathematik (Beispiel)",
+  "school_type": "Mittelschule",
+  "subject": "Mathematik",
+  "version": "DEMO-1",
+  "reference": "DEMO – keine Rechtsquelle"
+ },
+ "nodes": [
+  {
+   "code": "DEMO-MS-MAT",
+   "kind": "fach",
+   "name": "DEMO Mathematik"
+  },
+  {
+   "code": "DEMO-MS-MAT-K2",
+   "parent": "DEMO-MS-MAT",
+   "kind": "klasse",
+   "name": "DEMO 2. Klasse",
+   "klasse": 2,
+   "schulstufe": 6
+  },
+  {
+   "code": "DEMO-MS-MAT-K2-ZAHLEN",
+   "parent": "DEMO-MS-MAT-K2",
+   "kind": "kompetenzbereich",
+   "name": "DEMO Zahlen und Maße",
+   "klasse": 2,
+   "schulstufe": 6
+  },
+  {
+   "code": "DEMO-MS-MAT-K2-ZAHLEN-1",
+   "parent": "DEMO-MS-MAT-K2-ZAHLEN",
+   "kind": "thema",
+   "name": "DEMO Bruchzahlen",
+   "text": "DEMO-Beispieltext (kein Lehrplanwortlaut).",
+   "klasse": 2,
+   "schulstufe": 6
+  },
+  {
+   "code": "DEMO-MS-MAT-K2-ZAHLEN-2",
+   "parent": "DEMO-MS-MAT-K2-ZAHLEN",
+   "kind": "thema",
+   "name": "DEMO Prozent",
+   "text": "DEMO-Beispieltext (kein Lehrplanwortlaut).",
+   "klasse": 2,
+   "schulstufe": 6
+  }
+ ],
+ "skill_nodes": [
+  [
+   "mathe.brueche.kuerzen",
+   "DEMO-MS-MAT-K2-ZAHLEN-1"
+  ],
+  [
+   "mathe.brueche.dividieren",
+   "DEMO-MS-MAT-K2-ZAHLEN-1"
+  ],
+  [
+   "mathe.prozent.prozentwert",
+   "DEMO-MS-MAT-K2-ZAHLEN-2"
+  ]
+ ],
+ "skills": [
+  {
+   "id": "mathe.demo.bruchvergleich",
+   "subject": "Mathematik",
+   "area": "Bruchrechnung",
+   "name": "DEMO Brüche vergleichen",
+   "grade_min": 6,
+   "grade_max": 6,
+   "school_types": [
+    "Mittelschule"
+   ],
+   "nodes": [
+    "DEMO-MS-MAT-K2-ZAHLEN-1"
+   ],
+   "prerequisites": [
+    "mathe.brueche.erweitern"
+   ]
+  }
+ ]
+}

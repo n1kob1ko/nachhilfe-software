@@ -16,6 +16,14 @@ export const DIFFICULTIES = ["sehr leicht", "leicht", "mittel", "schwer", "sehr 
 /** "leicht bis mittel" was used by earlier versions and still appears on older exercises. */
 export type Difficulty = (typeof DIFFICULTIES)[number] | "leicht bis mittel";
 
+/** Difficulty as a number: 1 = sehr leicht … 5 = sehr schwer. */
+export function levelOf(d: string | null | undefined): number {
+  if (d === "leicht bis mittel") return 2;
+  const i = (DIFFICULTIES as readonly string[]).indexOf(d ?? "");
+  return i === -1 ? 3 : i + 1;
+}
+export const levelName = (level: number) => DIFFICULTIES[Math.max(1, Math.min(5, Math.round(level))) - 1];
+
 /** Difficulty that fits a mastery estimate ("automatisch an Schüler anpassen"). */
 export function difficultyFor(mastery: number | null): Difficulty {
   if (mastery === null) return "leicht";
@@ -190,3 +198,27 @@ export function worksheetTypeLabel(subject: string, taskType: string): string {
     .map((k) => categoryLabel(subject, k) ?? k)
     .join(", ");
 }
+
+/**
+ * Order between skills of the app's own structure: [skill, skill that should sit before it].
+ * Used by the recommendations ("Voraussetzung fehlt") and shown next to a skill.
+ * Own didactic choices, not taken from a curriculum.
+ */
+export const PREREQUISITES: [string, string][] = [
+  ["mathe.brueche.addieren", "mathe.brueche.erweitern"],
+  ["mathe.brueche.subtrahieren", "mathe.brueche.erweitern"],
+  ["mathe.brueche.addieren", "mathe.brueche.kuerzen"],
+  ["mathe.brueche.multiplizieren", "mathe.brueche.kuerzen"],
+  ["mathe.brueche.dividieren", "mathe.brueche.multiplizieren"],
+  ["mathe.prozent.prozentsatz", "mathe.prozent.prozentwert"],
+  ["mathe.prozent.grundwert", "mathe.prozent.prozentwert"],
+  ["mathe.gleichungen.klammern", "mathe.gleichungen.einfach"],
+  ["mathe.gleichungen.text", "mathe.gleichungen.einfach"],
+  ["mathe.gleichungen.einfach", "mathe.negativ.addieren"],
+  ["mathe.negativ.multiplizieren", "mathe.negativ.addieren"],
+  ["deutsch.beistrich.nebensatz", "deutsch.beistrich.aufzaehlung"],
+  ["deutsch.beistrich.infinitiv", "deutsch.beistrich.nebensatz"],
+  ["deutsch.wortarten.nomen", "deutsch.wortarten.bestimmen"],
+  ["englisch.tenses.presentperfect", "englisch.tenses.pastsimple"],
+  ["englisch.tenses.pastsimple", "englisch.tenses.presentsimple"],
+];
