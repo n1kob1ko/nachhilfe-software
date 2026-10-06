@@ -1,0 +1,1156 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "Lehrplan Volksschule – Deutsch (RIS)",
+ "description": "Offizieller Lehrplantext aus dem RIS (NOR40271469), BGBl. Nr. 134/1963 idF BGBl. II Nr. 178/2025.",
+ "source": {
+  "key": "ris-vs",
+  "name": "RIS – Lehrplan der Volksschule, Anlage A",
+  "source_type": "lehrplan",
+  "url": "https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Bundesnormen&Dokumentnummer=NOR40271469",
+  "publisher": "Republik Österreich (RIS)",
+  "license": "amtliches Werk (§ 7 UrhG)",
+  "attribution_text": "BGBl. Nr. 134/1963 idF BGBl. II Nr. 178/2025",
+  "notes": "Gesetzesnummer 10009275, Dokumentnummer NOR40271469, in Kraft seit 01.09.2025. Wortlaut nur um Seitenköpfe, Zeilenumbrüche und Fußnotenziffern bereinigt."
+ },
+ "curriculum": {
+  "key": "ris-vs-deutsch",
+  "name": "Lehrplan Volksschule – Deutsch",
+  "school_type": "Volksschule",
+  "subject": "Deutsch",
+  "version": "BGBl. II Nr. 178/2025",
+  "reference": "BGBl. Nr. 134/1963 idF BGBl. II Nr. 178/2025, NOR40271469",
+  "valid_from": "2025-09-01"
+ },
+ "nodes": [
+  {
+   "code": "VS-DEU",
+   "kind": "fach",
+   "name": "Deutsch"
+  },
+  {
+   "code": "VS-DEU-1",
+   "kind": "klasse",
+   "name": "1. Schulstufe",
+   "parent": "VS-DEU",
+   "klasse": 1,
+   "schulstufe": 1
+  },
+  {
+   "code": "VS-DEU-1-B1",
+   "kind": "kompetenzbereich",
+   "name": "(Zu-)Hören und Sprechen",
+   "parent": "VS-DEU-1",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Zu-)Hören und Sprechen"
+  },
+  {
+   "code": "VS-DEU-1-B1-K1",
+   "kind": "kompetenz",
+   "name": "in verschiedenen Gesprächssituationen an unterschiedlichen Themen ihre …",
+   "parent": "VS-DEU-1-B1",
+   "text": "in verschiedenen Gesprächssituationen an unterschiedlichen Themen ihre Sprachhandlungsfähigkeit aufzeigen.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Zu-)Hören und Sprechen"
+  },
+  {
+   "code": "VS-DEU-1-B1-K2",
+   "kind": "kompetenz",
+   "name": "neue Kommunikationssituationen erkennen, unterscheiden und angemessen verbal und …",
+   "parent": "VS-DEU-1-B1",
+   "text": "neue Kommunikationssituationen erkennen, unterscheiden und angemessen verbal und nonverbal, auch kreativ, handeln.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Zu-)Hören und Sprechen"
+  },
+  {
+   "code": "VS-DEU-1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "VS-DEU-1",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-DEU-1-B2-K1",
+   "kind": "kompetenz",
+   "name": "durch Herstellen der Graphem-Phonem-Korrespondenz Buchstabenverbindungen, Wortbausteine …",
+   "parent": "VS-DEU-1-B2",
+   "text": "durch Herstellen der Graphem-Phonem-Korrespondenz Buchstabenverbindungen, Wortbausteine und Wörter erfassen und zunehmend richtig klanglich strukturieren, lesen und verstehen, die Blickspanne erweitern sowie einfache Texte mit Hilfe von Anleitung lesen und verstehen.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-DEU-1-B2-K2",
+   "kind": "kompetenz",
+   "name": "Handlungsverläufen von (vor-)gelesenen Texten über einen angemessenen Zeitraum folgen und …",
+   "parent": "VS-DEU-1-B2",
+   "text": "Handlungsverläufen von (vor-)gelesenen Texten über einen angemessenen Zeitraum folgen und wiedergeben sowie mit Unterstützung aus einem Textangebot in verschiedenen Medien wählen.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-DEU-1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Verfassen von Texten",
+   "parent": "VS-DEU-1",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Verfassen von Texten"
+  },
+  {
+   "code": "VS-DEU-1-B3-K1",
+   "kind": "kompetenz",
+   "name": "ausgehend vom mündlichen Erzählen das Mitteilungsbedürfnis und die Schreibmotivation …",
+   "parent": "VS-DEU-1-B3",
+   "text": "ausgehend vom mündlichen Erzählen das Mitteilungsbedürfnis und die Schreibmotivation bildlich oder schriftlich umsetzen sowie einfache Satzmuster sprachlich angemessen einsetzen.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Verfassen von Texten"
+  },
+  {
+   "code": "VS-DEU-1-B3-K2",
+   "kind": "kompetenz",
+   "name": "sich für das Planen von Texten beim mündlichen Erzählen verständlich ausdrücken und beim …",
+   "parent": "VS-DEU-1-B3",
+   "text": "sich für das Planen von Texten beim mündlichen Erzählen verständlich ausdrücken und beim Zuhören Unklarheiten erkennen und bei Bedarf angeleitet berichtigen und ergänzen.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Verfassen von Texten"
+  },
+  {
+   "code": "VS-DEU-1-B4",
+   "kind": "kompetenzbereich",
+   "name": "(Recht-)Schreiben und Sprachbetrachtung",
+   "parent": "VS-DEU-1",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-1-B4-K1",
+   "kind": "kompetenz",
+   "name": "erarbeitete Zeichen und Formen, Laute und Buchstaben wahrnehmen, differenzieren und …",
+   "parent": "VS-DEU-1-B4",
+   "text": "erarbeitete Zeichen und Formen, Laute und Buchstaben wahrnehmen, differenzieren und grafomotorisch umsetzen, Wörter in ihre Laute und Sprechsilben zerlegen sowie Wörter, Wortgruppen und kurze Sätze ab- und aufschreiben.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-1-B4-K2",
+   "kind": "kompetenz",
+   "name": "Wörter des erarbeiteten Wortschatzes akustisch, optisch und sprechmotorisch durchgliedern …",
+   "parent": "VS-DEU-1-B4",
+   "text": "Wörter des erarbeiteten Wortschatzes akustisch, optisch und sprechmotorisch durchgliedern und zunehmend richtig schreiben.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-1-B4-K3",
+   "kind": "kompetenz",
+   "name": "Ableitungen und Formveränderungen von Wörtern im mündlichen und schriftlichen …",
+   "parent": "VS-DEU-1-B4",
+   "text": "Ableitungen und Formveränderungen von Wörtern im mündlichen und schriftlichen Sprachgebrauch entdecken und zunehmend anwenden.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-1-B4-K4",
+   "kind": "kompetenz",
+   "name": "gesprochene und geschriebene Sprache (auch Fremdwörter) untersuchen und vergleichen sowie …",
+   "parent": "VS-DEU-1-B4",
+   "text": "gesprochene und geschriebene Sprache (auch Fremdwörter) untersuchen und vergleichen sowie Sätze als Sinneinheit erkennen.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-1-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "VS-DEU-1",
+   "klasse": 1,
+   "schulstufe": 1
+  },
+  {
+   "code": "VS-DEU-1-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "spielerisches Erproben von Sprechsituationen in Sprech-, Sprach- und Rollenspielen unter …",
+   "parent": "VS-DEU-1-A1",
+   "text": "spielerisches Erproben von Sprechsituationen in Sprech-, Sprach- und Rollenspielen unter Berücksichtigung von Mimik und Gestik",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-1-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "handlungs- und produktionsorientierter Umgang in unterschiedlichen …",
+   "parent": "VS-DEU-1-A1",
+   "text": "handlungs- und produktionsorientierter Umgang in unterschiedlichen Sprachwahrnehmungsbereichen",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-1-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Diskutieren, Finden und Reflektieren von Gruppenregeln und gewaltfreies Gestalten von …",
+   "parent": "VS-DEU-1-A1",
+   "text": "Diskutieren, Finden und Reflektieren von Gruppenregeln und gewaltfreies Gestalten von kommunikativem Handeln",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-1-A1-A4",
+   "kind": "anwendungsbereich",
+   "name": "Nutzen von schulstufenentsprechenden Sach- und Gebrauchstexten",
+   "parent": "VS-DEU-1-A1",
+   "text": "Nutzen von schulstufenentsprechenden Sach- und Gebrauchstexten",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-1-A1-A5",
+   "kind": "anwendungsbereich",
+   "name": "kreatives, handlungs- und produktionsorientiertes Bearbeiten von ausgewählten Texten der …",
+   "parent": "VS-DEU-1-A1",
+   "text": "kreatives, handlungs- und produktionsorientiertes Bearbeiten von ausgewählten Texten der Kinderliteratur aus Büchern und digitalen Medien durch praktisches, selbsttätiges Handeln und aktiven Gebrauch der Sinne",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-1-A1-A6",
+   "kind": "anwendungsbereich",
+   "name": "gemeinsames Reflektieren von konkreten Sprech-, Lese- und Schreibsituationen über …",
+   "parent": "VS-DEU-1-A1",
+   "text": "gemeinsames Reflektieren von konkreten Sprech-, Lese- und Schreibsituationen über sprachliche Phänomene",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-1-A1-A7",
+   "kind": "anwendungsbereich",
+   "name": "Nutzen von Schreibanlässen ausgehend von mündlichem Erzählen, bildlichem Darstellen und …",
+   "parent": "VS-DEU-1-A1",
+   "text": "Nutzen von Schreibanlässen ausgehend von mündlichem Erzählen, bildlichem Darstellen und ersten Wörtern unter Berücksichtigung der individuellen Schreibmotivation und Voraussetzung",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-1-A1-A8",
+   "kind": "anwendungsbereich",
+   "name": "mündliches und schriftliches Experimentieren im Bereich der phonologischen Bewusstheit",
+   "parent": "VS-DEU-1-A1",
+   "text": "mündliches und schriftliches Experimentieren im Bereich der phonologischen Bewusstheit",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2",
+   "kind": "klasse",
+   "name": "2. Schulstufe",
+   "parent": "VS-DEU",
+   "klasse": 2,
+   "schulstufe": 2
+  },
+  {
+   "code": "VS-DEU-2-B1",
+   "kind": "kompetenzbereich",
+   "name": "(Zu-)Hören und Sprechen",
+   "parent": "VS-DEU-2",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Zu-)Hören und Sprechen"
+  },
+  {
+   "code": "VS-DEU-2-B1-K1",
+   "kind": "kompetenz",
+   "name": "in verschiedenen Gesprächssituationen an unterschiedlichen Themen ihre …",
+   "parent": "VS-DEU-2-B1",
+   "text": "in verschiedenen Gesprächssituationen an unterschiedlichen Themen ihre Sprachhandlungsfähigkeit, unter Einhaltung einer Kommunikationskultur, aufzeigen.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Zu-)Hören und Sprechen"
+  },
+  {
+   "code": "VS-DEU-2-B1-K2",
+   "kind": "kompetenz",
+   "name": "mit zunehmender Sicherheit deutliches, ausdrucksvolles und an der Standardsprache …",
+   "parent": "VS-DEU-2-B1",
+   "text": "mit zunehmender Sicherheit deutliches, ausdrucksvolles und an der Standardsprache orientiertes Sprechen entwickeln.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Zu-)Hören und Sprechen"
+  },
+  {
+   "code": "VS-DEU-2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "VS-DEU-2",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-DEU-2-B2-K1",
+   "kind": "kompetenz",
+   "name": "ihre Leseflüssigkeit steigern, zunehmend klanglich strukturiert lesen sowie erste …",
+   "parent": "VS-DEU-2-B2",
+   "text": "ihre Leseflüssigkeit steigern, zunehmend klanglich strukturiert lesen sowie erste Lesestrategien in Texten für ein Textverständnis einsetzen.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-DEU-2-B2-K2",
+   "kind": "kompetenz",
+   "name": "mit Hilfestellung zu altersangemessenen Texten ihre Meinung äußern, zunehmend …",
+   "parent": "VS-DEU-2-B2",
+   "text": "mit Hilfestellung zu altersangemessenen Texten ihre Meinung äußern, zunehmend selbstständig auch nicht genannte Sachverhalte erfassen und deuten sowie Bücher und Medien zur Gewinnung von Information, zur Erweiterung ihres Wissens und zur Unterhaltung nutzen.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-DEU-2-B3",
+   "kind": "kompetenzbereich",
+   "name": "Verfassen von Texten",
+   "parent": "VS-DEU-2",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Verfassen von Texten"
+  },
+  {
+   "code": "VS-DEU-2-B3-K1",
+   "kind": "kompetenz",
+   "name": "ausgehend vom mündlichen Erzählen die Schreibmotivation umsetzen und einfache …",
+   "parent": "VS-DEU-2-B3",
+   "text": "ausgehend vom mündlichen Erzählen die Schreibmotivation umsetzen und einfache schriftliche Muster situationsbezogen und intentionsgeleitet anwenden.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Verfassen von Texten"
+  },
+  {
+   "code": "VS-DEU-2-B3-K2",
+   "kind": "kompetenz",
+   "name": "einfache, auch selbst geschriebene Texte inhaltlich und sprachlich überprüfen und bei …",
+   "parent": "VS-DEU-2-B3",
+   "text": "einfache, auch selbst geschriebene Texte inhaltlich und sprachlich überprüfen und bei Bedarf durch Einsatz erster Überarbeitungsstrategien berichtigen.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Verfassen von Texten"
+  },
+  {
+   "code": "VS-DEU-2-B4",
+   "kind": "kompetenzbereich",
+   "name": "(Recht-)Schreiben und Sprachbetrachtung",
+   "parent": "VS-DEU-2",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2-B4-K1",
+   "kind": "kompetenz",
+   "name": "Buchstaben und Zeichen in einer der österreichischen Schulschrift angenäherten Form ab- …",
+   "parent": "VS-DEU-2-B4",
+   "text": "Buchstaben und Zeichen in einer der österreichischen Schulschrift angenäherten Form ab- und aufschreiben sowie beim Schreiben einen erarbeiteten Wortschatz in orthografisch korrekter Schreibweise zunehmend anwenden.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2-B4-K2",
+   "kind": "kompetenz",
+   "name": "einfache Zusammensetzungen in Morpheme trennen, einfache Regelhaftigkeiten der …",
+   "parent": "VS-DEU-2-B4",
+   "text": "einfache Zusammensetzungen in Morpheme trennen, einfache Regelhaftigkeiten der Rechtschreibung erkennen, diese verbalisieren und in eigenen Texten zunehmend anwenden sowie erste alphabetische Ordnungs- und Suchübungen durchführen.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2-B4-K3",
+   "kind": "kompetenz",
+   "name": "Wörter mit Morphemen bilden, segmentieren, in ihrer Form verändern und so …",
+   "parent": "VS-DEU-2-B4",
+   "text": "Wörter mit Morphemen bilden, segmentieren, in ihrer Form verändern und so Bedeutungsunterschiede erkennen sowie zu einem Stamm-Morphem gehörende Wörter sammeln.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2-B4-K4",
+   "kind": "kompetenz",
+   "name": "die Interpunktion als Hinweis für die Stimmführung nutzen, aus Wörtern syntaktisch …",
+   "parent": "VS-DEU-2-B4",
+   "text": "die Interpunktion als Hinweis für die Stimmführung nutzen, aus Wörtern syntaktisch korrekte Sätze bauen und die wichtigsten Wortarten in ihrer Funktion verstehen.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "VS-DEU-2",
+   "klasse": 2,
+   "schulstufe": 2
+  },
+  {
+   "code": "VS-DEU-2-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "spielerisches Erproben von Sprechsituationen in Sprech-, Sprach- und Rollenspielen unter …",
+   "parent": "VS-DEU-2-A1",
+   "text": "spielerisches Erproben von Sprechsituationen in Sprech-, Sprach- und Rollenspielen unter Berücksichtigung von Mimik und Gestik",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "handlungs- und produktionsorientierter Umgang in den unterschiedlichen …",
+   "parent": "VS-DEU-2-A1",
+   "text": "handlungs- und produktionsorientierter Umgang in den unterschiedlichen Sprachwahrnehmungsbereichen",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Diskutieren, Finden und Reflektieren von Gruppenregeln und gewaltfreies Gestalten von …",
+   "parent": "VS-DEU-2-A1",
+   "text": "Diskutieren, Finden und Reflektieren von Gruppenregeln und gewaltfreies Gestalten von kommunikativem Handeln",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2-A1-A4",
+   "kind": "anwendungsbereich",
+   "name": "Nutzen von schulstufenentsprechenden Sach- und Gebrauchstexten",
+   "parent": "VS-DEU-2-A1",
+   "text": "Nutzen von schulstufenentsprechenden Sach- und Gebrauchstexten",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2-A1-A5",
+   "kind": "anwendungsbereich",
+   "name": "kreatives, handlungs- und produktionsorientiertes Bearbeiten von ausgewählten Texten der …",
+   "parent": "VS-DEU-2-A1",
+   "text": "kreatives, handlungs- und produktionsorientiertes Bearbeiten von ausgewählten Texten der Kinderliteratur aus Büchern und digitalen Medien durch praktisches, selbsttätiges Handeln und aktiven Gebrauch der Sinne",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2-A1-A6",
+   "kind": "anwendungsbereich",
+   "name": "Nutzen von Schreibanlässen unter Berücksichtigung der individuellen Schreibmotivation und …",
+   "parent": "VS-DEU-2-A1",
+   "text": "Nutzen von Schreibanlässen unter Berücksichtigung der individuellen Schreibmotivation und Voraussetzung",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2-A1-A7",
+   "kind": "anwendungsbereich",
+   "name": "kreatives Schreiben unter Berücksichtigung der Lebenswelt der Schülerinnen und Schüler …",
+   "parent": "VS-DEU-2-A1",
+   "text": "kreatives Schreiben unter Berücksichtigung der Lebenswelt der Schülerinnen und Schüler und der individuellen Schreibinteressen",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2-A1-A8",
+   "kind": "anwendungsbereich",
+   "name": "Durchgliedern/Segmentieren, Finden von Analogien, Zusammenbauen, Zerlegen, häufiges …",
+   "parent": "VS-DEU-2-A1",
+   "text": "Durchgliedern/Segmentieren, Finden von Analogien, Zusammenbauen, Zerlegen, häufiges Schreiben von Wörtern",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2-A1-A9",
+   "kind": "anwendungsbereich",
+   "name": "mündliches und schriftliches Experimentieren im Bereich der phonologischen Bewusstheit",
+   "parent": "VS-DEU-2-A1",
+   "text": "mündliches und schriftliches Experimentieren im Bereich der phonologischen Bewusstheit",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-2-A1-A10",
+   "kind": "anwendungsbereich",
+   "name": "gemeinsames Reflektieren von konkreten Sprech-, Lese- und Schreibsituationen über …",
+   "parent": "VS-DEU-2-A1",
+   "text": "gemeinsames Reflektieren von konkreten Sprech-, Lese- und Schreibsituationen über sprachliche Phänomene",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-3",
+   "kind": "klasse",
+   "name": "3. Schulstufe",
+   "parent": "VS-DEU",
+   "klasse": 3,
+   "schulstufe": 3
+  },
+  {
+   "code": "VS-DEU-3-B1",
+   "kind": "kompetenzbereich",
+   "name": "(Zu-)Hören und Sprechen",
+   "parent": "VS-DEU-3",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Zu-)Hören und Sprechen"
+  },
+  {
+   "code": "VS-DEU-3-B1-K1",
+   "kind": "kompetenz",
+   "name": "Strategien für das Hörverstehen entwickeln als auch zuhörerbezogen Sprech- und …",
+   "parent": "VS-DEU-3-B1",
+   "text": "Strategien für das Hörverstehen entwickeln als auch zuhörerbezogen Sprech- und Sprachformen unter Berücksichtigung von nonverbaler Kommunikation im Gespräch anwenden.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Zu-)Hören und Sprechen"
+  },
+  {
+   "code": "VS-DEU-3-B1-K2",
+   "kind": "kompetenz",
+   "name": "bewusst sprachliche Ausdrucksformen und einfache normierte Sprachmuster in konkreten …",
+   "parent": "VS-DEU-3-B1",
+   "text": "bewusst sprachliche Ausdrucksformen und einfache normierte Sprachmuster in konkreten monologischen wie dialogischen Sprechbeiträge richtig einsetzen und sich verschiedener Sprachregister der Situation angemessen bedienen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Zu-)Hören und Sprechen"
+  },
+  {
+   "code": "VS-DEU-3-B2",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "VS-DEU-3",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-DEU-3-B2-K1",
+   "kind": "kompetenz",
+   "name": "zunehmend ökonomisch lesen, Lesestrategien zunehmend bewusst nach Zielvorgabe einsetzen …",
+   "parent": "VS-DEU-3-B2",
+   "text": "zunehmend ökonomisch lesen, Lesestrategien zunehmend bewusst nach Zielvorgabe einsetzen, Texte durch adäquate Hilfestellungen verstehend und reflexiv lesen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-DEU-3-B2-K2",
+   "kind": "kompetenz",
+   "name": "ihre literarische Kompetenz zunehmend aufbauen, zur Wirkung gelesener Texte eigene …",
+   "parent": "VS-DEU-3-B2",
+   "text": "ihre literarische Kompetenz zunehmend aufbauen, zur Wirkung gelesener Texte eigene Gedanken entwickeln, Analogien bilden und in der Anschlusskommunikation, auch kritisch, Stellung nehmen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-DEU-3-B3",
+   "kind": "kompetenzbereich",
+   "name": "Verfassen von Texten",
+   "parent": "VS-DEU-3",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Verfassen von Texten"
+  },
+  {
+   "code": "VS-DEU-3-B3-K1",
+   "kind": "kompetenz",
+   "name": "unterschiedliche konzeptionell mündliche wie konzeptionell schriftliche Textmuster zu …",
+   "parent": "VS-DEU-3-B3",
+   "text": "unterschiedliche konzeptionell mündliche wie konzeptionell schriftliche Textmuster zu freien und vorgegebenen Themen bewusst nutzen und Texte entsprechend sinnvoll planen und verfassen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Verfassen von Texten"
+  },
+  {
+   "code": "VS-DEU-3-B3-K2",
+   "kind": "kompetenz",
+   "name": "adressatengerechte, situationsbezogene und intentionsgeleitete Texte nach bestimmten …",
+   "parent": "VS-DEU-3-B3",
+   "text": "adressatengerechte, situationsbezogene und intentionsgeleitete Texte nach bestimmten Aspekten überprüfen und mit Hilfsmitteln in analoger und digitaler Form überarbeiten und berichtigen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Verfassen von Texten"
+  },
+  {
+   "code": "VS-DEU-3-B4",
+   "kind": "kompetenzbereich",
+   "name": "(Recht-)Schreiben und Sprachbetrachtung",
+   "parent": "VS-DEU-3",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-3-B4-K1",
+   "kind": "kompetenz",
+   "name": "beim Ab- und Aufschreiben Regelbildungen bewusst erkennen, reflektieren und anwenden …",
+   "parent": "VS-DEU-3-B4",
+   "text": "beim Ab- und Aufschreiben Regelbildungen bewusst erkennen, reflektieren und anwenden sowie den erarbeiteten Wortschatz in verschiedenen Übungsformen einsetzen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-3-B4-K2",
+   "kind": "kompetenz",
+   "name": "zunehmend Einsicht in Wörter mit orthografischen Regel- und Merkelementen gewinnen …",
+   "parent": "VS-DEU-3-B4",
+   "text": "zunehmend Einsicht in Wörter mit orthografischen Regel- und Merkelementen gewinnen, Rechtschreibstrategien für das richtige Schreiben von Wörtern sowie unterschiedliche Medien als Rechtschreibhilfe einsetzen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-3-B4-K3",
+   "kind": "kompetenz",
+   "name": "formbildende Elemente für die Bildung neuer Wörter nutzen, aus verschiedenen Wortarten …",
+   "parent": "VS-DEU-3-B4",
+   "text": "formbildende Elemente für die Bildung neuer Wörter nutzen, aus verschiedenen Wortarten neue Wörter bilden sowie sinnverwandte Wörter erkennen und nach unterschiedlichen Kriterien strukturieren.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-3-B4-K4",
+   "kind": "kompetenz",
+   "name": "die Wortarten wie Nomen, Verb, Adjektiv in zunehmendem Maß mit den Fachbegriffen …",
+   "parent": "VS-DEU-3-B4",
+   "text": "die Wortarten wie Nomen, Verb, Adjektiv in zunehmendem Maß mit den Fachbegriffen benennen, den Zusammenhang zwischen Zeitstufen und Zeitformen erkennen sowie durch handlungsorientierte Verfahren Einsicht in die Syntax gewinnen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-3-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "VS-DEU-3",
+   "klasse": 3,
+   "schulstufe": 3
+  },
+  {
+   "code": "VS-DEU-3-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Besprechen, Bearbeiten und Klären von Themen aus dem Alltag der Schülerinnen und Schüler …",
+   "parent": "VS-DEU-3-A1",
+   "text": "Besprechen, Bearbeiten und Klären von Themen aus dem Alltag der Schülerinnen und Schüler im Klassenrat bzw. Klassenparlament oder im szenischen Spiel, Finden von Lösungen, Einnehmen eines Perspektivenwechsels und sprachlich angemessenes Verbalisieren und schriftliches Festhalten des Ergebnisses",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-3-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Führen von Gesprächen aus der Lebenswelt der Schülerinnen und Schüler in Bezug auf …",
+   "parent": "VS-DEU-3-A1",
+   "text": "Führen von Gesprächen aus der Lebenswelt der Schülerinnen und Schüler in Bezug auf Umweltschutz, natur- und umweltbewusste Werthaltung sowie Förderung einer empathischen Haltung für alle Lebewesen",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-3-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "spielerisches Erproben von Sprechsituationen in Sprech-, Sprach- und Rollenspielen und …",
+   "parent": "VS-DEU-3-A1",
+   "text": "spielerisches Erproben von Sprechsituationen in Sprech-, Sprach- und Rollenspielen und Präsentieren von Inhalten unter Berücksichtigung der Standardsprache sowie Mimik und Gestik",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-3-A1-A4",
+   "kind": "anwendungsbereich",
+   "name": "Nutzen von schulstufenentsprechenden Sach- und Gebrauchstexten",
+   "parent": "VS-DEU-3-A1",
+   "text": "Nutzen von schulstufenentsprechenden Sach- und Gebrauchstexten",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-3-A1-A5",
+   "kind": "anwendungsbereich",
+   "name": "handlungs- und produktionsorientiertes Aufarbeiten von ausgewählten Texten aus Büchern …",
+   "parent": "VS-DEU-3-A1",
+   "text": "handlungs- und produktionsorientiertes Aufarbeiten von ausgewählten Texten aus Büchern und digitalen Medien durch Literaturgespräche (Textverstehen, persönliches Textverständnis, Identifikation mit Figuren, Fremdverstehen, Empathie, …), sowie durch praktisches, selbsttätiges Handeln und aktiven Gebrauch der Sinne",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-3-A1-A6",
+   "kind": "anwendungsbereich",
+   "name": "Nutzen von Schreibanlässen und kreatives Schreiben unter Berücksichtigung der Lebenswelt …",
+   "parent": "VS-DEU-3-A1",
+   "text": "Nutzen von Schreibanlässen und kreatives Schreiben unter Berücksichtigung der Lebenswelt der Schülerinnen und Schüler und der individuellen Schreibinteressen",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-3-A1-A7",
+   "kind": "anwendungsbereich",
+   "name": "im Verlauf der Grundschule aufbauend: Erkennen und Benennen von Kriterien besonders …",
+   "parent": "VS-DEU-3-A1",
+   "text": "im Verlauf der Grundschule aufbauend: Erkennen und Benennen von Kriterien besonders gelungener Textstellen bzw. Texte, planvolles Untersuchen und Überarbeiten von Textstellen bzw. Texten nach bestimmten Kriterien",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-3-A1-A8",
+   "kind": "anwendungsbereich",
+   "name": "Durchgliedern/Segmentieren, Ableiten, Finden von Analogien, Zusammenbauen, Zerlegen …",
+   "parent": "VS-DEU-3-A1",
+   "text": "Durchgliedern/Segmentieren, Ableiten, Finden von Analogien, Zusammenbauen, Zerlegen, häufiges Schreiben von Wörtern",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-3-A1-A9",
+   "kind": "anwendungsbereich",
+   "name": "gemeinsames Reflektieren von konkreten Sprech-, Lese- und Schreibsituationen über …",
+   "parent": "VS-DEU-3-A1",
+   "text": "gemeinsames Reflektieren von konkreten Sprech-, Lese- und Schreibsituationen über sprachliche Phänomene unter Verwendung geeigneter Fachbegriffe",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4",
+   "kind": "klasse",
+   "name": "4. Schulstufe",
+   "parent": "VS-DEU",
+   "klasse": 4,
+   "schulstufe": 4
+  },
+  {
+   "code": "VS-DEU-4-B1",
+   "kind": "kompetenzbereich",
+   "name": "(Zu-)Hören und Sprechen",
+   "parent": "VS-DEU-4",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Zu-)Hören und Sprechen"
+  },
+  {
+   "code": "VS-DEU-4-B1-K1",
+   "kind": "kompetenz",
+   "name": "unter Berücksichtigung von Hörverstehen, Sprechhandlungen und sprachlichen …",
+   "parent": "VS-DEU-4-B1",
+   "text": "unter Berücksichtigung von Hörverstehen, Sprechhandlungen und sprachlichen Gestaltungsmitteln eine Kommunikationskultur anwenden und einfordern.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Zu-)Hören und Sprechen"
+  },
+  {
+   "code": "VS-DEU-4-B1-K2",
+   "kind": "kompetenz",
+   "name": "ausdrucksvoll und an der Standardsprache ausgerichtet über Beobachtungen und Sachverhalte …",
+   "parent": "VS-DEU-4-B1",
+   "text": "ausdrucksvoll und an der Standardsprache ausgerichtet über Beobachtungen und Sachverhalte in monologischen wie dialogischen Sprechbeiträgen adressatengerecht und situationsgerecht sprechen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Zu-)Hören und Sprechen"
+  },
+  {
+   "code": "VS-DEU-4-B2",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "VS-DEU-4",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-DEU-4-B2-K1",
+   "kind": "kompetenz",
+   "name": "ökonomisch lesen, Lesestrategien bewusst nach Zielvorgabe einsetzen sowie den Wortschatz …",
+   "parent": "VS-DEU-4-B2",
+   "text": "ökonomisch lesen, Lesestrategien bewusst nach Zielvorgabe einsetzen sowie den Wortschatz mit geeigneten analogen oder digitalen Hilfsmitteln ausdifferenzieren.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-DEU-4-B2-K2",
+   "kind": "kompetenz",
+   "name": "ihre literarische Kompetenz um die Auseinandersetzung mit Textgattungen, Beschaffenheit …",
+   "parent": "VS-DEU-4-B2",
+   "text": "ihre literarische Kompetenz um die Auseinandersetzung mit Textgattungen, Beschaffenheit und Merkmalen von Texten erweitern und sich in der Anschlusskommunikation über Leseinteressen bzw. Gelesenes selbstständig austauschen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-DEU-4-B3",
+   "kind": "kompetenzbereich",
+   "name": "Verfassen von Texten",
+   "parent": "VS-DEU-4",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Verfassen von Texten"
+  },
+  {
+   "code": "VS-DEU-4-B3-K1",
+   "kind": "kompetenz",
+   "name": "unterschiedliche Schreibabsichten (erzählen, informieren, notieren, appellieren) nutzen …",
+   "parent": "VS-DEU-4-B3",
+   "text": "unterschiedliche Schreibabsichten (erzählen, informieren, notieren, appellieren) nutzen, Texte sinnvoll planen und mit bewusstem Einsatz sprachlicher Mittel und unter Nutzung von unterschiedlichen Informationsquellen verfassen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Verfassen von Texten"
+  },
+  {
+   "code": "VS-DEU-4-B3-K2",
+   "kind": "kompetenz",
+   "name": "adressatengerechte Texte unter Einsatz von Überarbeitungsstrategien überprüfen, mit …",
+   "parent": "VS-DEU-4-B3",
+   "text": "adressatengerechte Texte unter Einsatz von Überarbeitungsstrategien überprüfen, mit Hilfsmitteln in analoger und digitaler Form berichtigen, besonders gut gelungene Textstellen erkennen und gewonnene Erkenntnisse adaptieren.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Verfassen von Texten"
+  },
+  {
+   "code": "VS-DEU-4-B4",
+   "kind": "kompetenzbereich",
+   "name": "(Recht-)Schreiben und Sprachbetrachtung",
+   "parent": "VS-DEU-4",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4-B4-K1",
+   "kind": "kompetenz",
+   "name": "beim Ab- und Aufschreiben auf erworbenes Regelwissen zurückgreifen sowie von …",
+   "parent": "VS-DEU-4-B4",
+   "text": "beim Ab- und Aufschreiben auf erworbenes Regelwissen zurückgreifen sowie von rechtschreibmäßig gesicherten Wörtern zur Schreibung anderer Wortformen gelangen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4-B4-K2",
+   "kind": "kompetenz",
+   "name": "erworbene Rechtschreibstrategien für normgerechtes Schreiben nutzen, ihre Schreibung von …",
+   "parent": "VS-DEU-4-B4",
+   "text": "erworbene Rechtschreibstrategien für normgerechtes Schreiben nutzen, ihre Schreibung von Wörtern begründen sowie unterschiedliche Medien als Rechtschreibhilfe einsetzen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4-B4-K3",
+   "kind": "kompetenz",
+   "name": "das Wissen über Wortzusammensetzungen nutzen sowie sinnverwandte Wörter in ihren …",
+   "parent": "VS-DEU-4-B4",
+   "text": "das Wissen über Wortzusammensetzungen nutzen sowie sinnverwandte Wörter in ihren unterschiedlichen Bedeutungen erkennen und begründet einsetzen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4-B4-K4",
+   "kind": "kompetenz",
+   "name": "die verschiedenen Zeitformen in Texten erkennen und adäquat anwenden, direkte Rede …",
+   "parent": "VS-DEU-4-B4",
+   "text": "die verschiedenen Zeitformen in Texten erkennen und adäquat anwenden, direkte Rede gebrauchen, Satzglieder unterscheiden und die wichtigsten bestimmen und richtig benennen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "VS-DEU-4",
+   "klasse": 4,
+   "schulstufe": 4
+  },
+  {
+   "code": "VS-DEU-4-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Besprechen, Bearbeiten und Klären von Themen aus dem Alltag der Schülerinnen und Schüler …",
+   "parent": "VS-DEU-4-A1",
+   "text": "Besprechen, Bearbeiten und Klären von Themen aus dem Alltag der Schülerinnen und Schüler im Klassenrat bzw. Klassenparlament oder im szenischen Spiel, Finden von Lösungen, Einnehmen eines Perspektivenwechsels und sprachlich angemessenes Verbalisieren und schriftliches Festhalten des Ergebnisses",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "spielerisches Erproben von Sprechsituationen in Sprech-, Sprach- und Rollenspielen und …",
+   "parent": "VS-DEU-4-A1",
+   "text": "spielerisches Erproben von Sprechsituationen in Sprech-, Sprach- und Rollenspielen und Präsentieren von Inhalten unter Berücksichtigung der Standardsprache sowie Mimik und Gestik",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Führen von Gesprächen aus der Lebenswelt der Schülerinnen und Schüler in Bezug auf …",
+   "parent": "VS-DEU-4-A1",
+   "text": "Führen von Gesprächen aus der Lebenswelt der Schülerinnen und Schüler in Bezug auf Umweltschutz, natur- und umweltbewusste Werthaltung sowie Förderung einer empathischen Haltung für alle Lebewesen",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4-A1-A4",
+   "kind": "anwendungsbereich",
+   "name": "Nutzen von schulstufenentsprechenden Sach- und Gebrauchstexten",
+   "parent": "VS-DEU-4-A1",
+   "text": "Nutzen von schulstufenentsprechenden Sach- und Gebrauchstexten",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4-A1-A5",
+   "kind": "anwendungsbereich",
+   "name": "handlungs- und produktionsorientiertes Aufarbeiten von ausgewählten Texten aus Büchern …",
+   "parent": "VS-DEU-4-A1",
+   "text": "handlungs- und produktionsorientiertes Aufarbeiten von ausgewählten Texten aus Büchern und digitalen Medien durch Literaturgespräche sowie durch praktisches, selbsttätiges Handeln und aktiven Gebrauch der Sinne",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4-A1-A6",
+   "kind": "anwendungsbereich",
+   "name": "Nutzen von Schreibanlässen und kreatives Schreiben unter Berücksichtigung der Lebenswelt …",
+   "parent": "VS-DEU-4-A1",
+   "text": "Nutzen von Schreibanlässen und kreatives Schreiben unter Berücksichtigung der Lebenswelt der Schülerinnen und Schüler und der individuellen Schreibinteressen",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4-A1-A7",
+   "kind": "anwendungsbereich",
+   "name": "Erkennen und Benennen von Kriterien besonders gelungener Textstellen bzw. Texte …",
+   "parent": "VS-DEU-4-A1",
+   "text": "Erkennen und Benennen von Kriterien besonders gelungener Textstellen bzw. Texte, planvolles Untersuchen und Überarbeiten von Textstellen bzw. Texten nach bestimmten Kriterien",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4-A1-A8",
+   "kind": "anwendungsbereich",
+   "name": "Durchgliedern/Segmentieren, Ableiten, Finden von Analogien, Zusammenbauen, Zerlegen …",
+   "parent": "VS-DEU-4-A1",
+   "text": "Durchgliedern/Segmentieren, Ableiten, Finden von Analogien, Zusammenbauen, Zerlegen, häufiges Schreiben von Wörtern",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4-A1-A9",
+   "kind": "anwendungsbereich",
+   "name": "Reflektieren von konkreten Sprech-, Lese- und Schreibsituationen über sprachliche …",
+   "parent": "VS-DEU-4-A1",
+   "text": "Reflektieren von konkreten Sprech-, Lese- und Schreibsituationen über sprachliche Phänomene unter Verwendung geeigneter Fachbegriffe",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  },
+  {
+   "code": "VS-DEU-4-A1-A10",
+   "kind": "anwendungsbereich",
+   "name": "Reflektieren von Medienerfahrungen in konkreten Sprech-, Schreib- bzw. …",
+   "parent": "VS-DEU-4-A1",
+   "text": "Reflektieren von Medienerfahrungen in konkreten Sprech-, Schreib- bzw. Gesprächssituationen, Vergleichen von Merkmalen und Wirkungen von Medien und Erkennen von Potenzial, Risiken und Gefahren im Umgang mit digitalen Medien",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "(Recht-)Schreiben und Sprachbetrachtung"
+  }
+ ],
+ "skills": [],
+ "skill_nodes": [
+  [
+   "deutsch.vs.lesen.buchstaben",
+   "VS-DEU-1-B2-K1"
+  ],
+  [
+   "deutsch.vs.lesen.silben",
+   "VS-DEU-1-B2-K1"
+  ],
+  [
+   "deutsch.vs.lesen.silben",
+   "VS-DEU-1-B4-K1"
+  ],
+  [
+   "deutsch.vs.lesen.fluessig",
+   "VS-DEU-2-B2-K1"
+  ],
+  [
+   "deutsch.vs.lesen.fluessig",
+   "VS-DEU-3-B2-K1"
+  ],
+  [
+   "deutsch.vs.lesen.verstehen",
+   "VS-DEU-2-B2-K2"
+  ],
+  [
+   "deutsch.vs.lesen.verstehen",
+   "VS-DEU-3-B2-K1"
+  ],
+  [
+   "deutsch.vs.lesen.verstehen",
+   "VS-DEU-4-B2-K1"
+  ],
+  [
+   "deutsch.vs.schreiben.saetze",
+   "VS-DEU-1-B3-K1"
+  ],
+  [
+   "deutsch.vs.schreiben.saetze",
+   "VS-DEU-2-B3-K1"
+  ],
+  [
+   "deutsch.vs.schreiben.erzaehlen",
+   "VS-DEU-2-B3-K1"
+  ],
+  [
+   "deutsch.vs.schreiben.erzaehlen",
+   "VS-DEU-4-B3-K1"
+  ],
+  [
+   "deutsch.vs.schreiben.beschreiben",
+   "VS-DEU-3-B3-K1"
+  ],
+  [
+   "deutsch.vs.schreiben.beschreiben",
+   "VS-DEU-4-B3-K1"
+  ],
+  [
+   "deutsch.vs.recht.lautgetreu",
+   "VS-DEU-1-B4-K1"
+  ],
+  [
+   "deutsch.vs.recht.lautgetreu",
+   "VS-DEU-1-B4-K2"
+  ],
+  [
+   "deutsch.vs.recht.satzanfang",
+   "VS-DEU-2-B4-K2"
+  ],
+  [
+   "deutsch.vs.recht.dehnung",
+   "VS-DEU-3-B4-K2"
+  ],
+  [
+   "deutsch.vs.recht.dehnung",
+   "VS-DEU-4-B4-K2"
+  ],
+  [
+   "deutsch.vs.recht.ableiten",
+   "VS-DEU-4-B4-K1"
+  ],
+  [
+   "deutsch.vs.recht.ableiten",
+   "VS-DEU-3-A1-A8"
+  ],
+  [
+   "deutsch.vs.sprache.satzarten",
+   "VS-DEU-2-B4-K4"
+  ],
+  [
+   "deutsch.vs.sprache.satzglieder",
+   "VS-DEU-3-B4-K4"
+  ],
+  [
+   "deutsch.vs.sprache.satzglieder",
+   "VS-DEU-4-B4-K4"
+  ],
+  [
+   "deutsch.vs.sprache.verbformen",
+   "VS-DEU-3-B4-K4"
+  ],
+  [
+   "deutsch.vs.sprache.verbformen",
+   "VS-DEU-4-B4-K4"
+  ],
+  [
+   "deutsch.vs.sprache.wortfamilie",
+   "VS-DEU-2-B4-K3"
+  ],
+  [
+   "deutsch.vs.sprache.wortfamilie",
+   "VS-DEU-3-B4-K3"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "VS-DEU-3-B2-K1"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "VS-DEU-4-B2-K1"
+  ],
+  [
+   "deutsch.wortarten.bestimmen",
+   "VS-DEU-3-B4-K4"
+  ],
+  [
+   "deutsch.wortarten.nomen",
+   "VS-DEU-3-B4-K4"
+  ],
+  [
+   "deutsch.recht.dasdass",
+   "VS-DEU-4-B4-K2"
+  ],
+  [
+   "deutsch.recht.gross",
+   "VS-DEU-4-B4-K2"
+  ],
+  [
+   "deutsch.recht.sss",
+   "VS-DEU-4-B4-K2"
+  ],
+  [
+   "deutsch.grammatik.zeiten",
+   "VS-DEU-4-B4-K4"
+  ]
+ ]
+}

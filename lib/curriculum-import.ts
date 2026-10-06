@@ -143,11 +143,11 @@ export function validate(pkg: CurriculumPackage): string[] {
 }
 
 /** Compares a valid package with the database. */
-export function diffPackage(pkg: CurriculumPackage): Diff {
+/** incoming: skill ids that an earlier package of the same batch brings along (their links count as new, not missing). */
+export function diffPackage(pkg: CurriculumPackage, incoming: ReadonlySet<string> = new Set()): Diff {
   const conn = db();
   const d: Diff = { newTopics: [], newSkills: [], changedSkills: [], unchanged: 0, duplicates: [], conflicts: [], newNodes: 0, changedNodes: 0, newLinks: 0, errors: validate(pkg), warnings: [], alreadyImported: false };
   if (d.errors.length) return d;
-  d.alreadyImported = Boolean(conn.prepare("SELECT 1 FROM curriculum_imports WHERE content_hash = ? AND status = 'importiert'").get(contentHash(pkg)));
 
   const existingSource = getSource(pkg.source.key);
   const terms = licenseTerms(pkg.source.license ?? "");
@@ -190,7 +190,16 @@ export function diffPackage(pkg: CurriculumPackage): Diff {
       if (!o) d.newNodes++;
       else if (o.name !== n.name || o.text !== (n.text ?? "") || o.kind !== n.kind) d.changedNodes++;
     }
-    for (const [skillId] of pkg.skill_nodes ?? []) if (!byId.has(skillId) && !pkgIds.has(skillId)) d.errors.push(`Verknüpfung: Fähigkeit ${skillId} gibt es nicht`);
+    // links to skills that are not (yet) in the database are skipped, e.g. Volksschule skills before their own package is imported
+    const linked = new Set(
+      cur ? (conn.prepare("SELECT sc.skill_id || '|' || n.code AS k FROM skill_curriculum sc JOIN curriculum_nodes n ON n.id = sc.node_id WHERE n.curriculum_id = ?").all(cur.id) as { k: string }[]).map((r) => r.k) : [],
+    );
+    const missing = new Set<string>();
+    for (const [skillId, code] of pkg.skill_nodes ?? []) {
+      if (!byId.has(skillId) && !pkgIds.has(skillId) && !incoming.has(skillId)) missing.add(skillId);
+      else if (!linked.has(`${skillId}|${code}`)) d.newLinks++;
+    }
+    if (missing.size) d.warnings.push(`${missing.size} Fähigkeiten gibt es noch nicht (z. B. ${[...missing][0]}); ihre Verknüpfungen werden übersprungen. Später erneut importieren, um sie nachzutragen.`);
   }
   const links = new Set((conn.prepare("SELECT skill_id || '|' || other_id || '|' || kind AS k FROM skill_links").all() as { k: string }[]).map((r) => r.k));
   for (const s of pkg.skills ?? []) {
@@ -198,6 +207,9 @@ export function diffPackage(pkg: CurriculumPackage): Diff {
     for (const p of s.prerequisites ?? []) if (!links.has(`${s.id}|${p}|voraussetzung`)) d.newLinks++;
     for (const p of s.next ?? []) if (!links.has(`${s.id}|${p}|weiter`)) d.newLinks++;
   }
+  // the same package again only counts as "schon importiert" when it would not add anything
+  const nothingNew = !d.newSkills.length && !d.changedSkills.length && !d.newNodes && !d.changedNodes && !d.newLinks;
+  d.alreadyImported = nothingNew && Boolean(conn.prepare("SELECT 1 FROM curriculum_imports WHERE content_hash = ? AND status = 'importiert'").get(contentHash(pkg)));
   return d;
 }
 
@@ -205,14 +217,14 @@ export type ImportRow = { id: number; source_key: string; curriculum_key: string
 const toImport = (r: Record<string, unknown>): ImportRow => ({ ...(r as unknown as ImportRow), diff: json<Diff>(r.diff as string, {} as Diff) });
 
 /** Parses and checks a package and stores the result as a preview. */
-export function preview(raw: string | CurriculumPackage, teacherId: number | null): { id: number | null; diff: Diff; label: string } {
+export function preview(raw: string | CurriculumPackage, teacherId: number | null, incoming?: ReadonlySet<string>): { id: number | null; diff: Diff; label: string } {
   let pkg: CurriculumPackage;
   try {
     pkg = typeof raw === "string" ? (JSON.parse(raw) as CurriculumPackage) : raw;
   } catch {
     return { id: null, label: "", diff: emptyDiff(["Kein gültiges JSON"]) };
   }
-  const diff = diffPackage(pkg);
+  const diff = diffPackage(pkg, incoming);
   if (validate(pkg).length) return { id: null, label: pkg?.label ?? "", diff };
   const res = db()
     .prepare("INSERT INTO curriculum_imports (source_key, curriculum_key, label, content_hash, payload, diff, status, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, 'vorschau', ?, datetime('now'))")
@@ -313,7 +325,8 @@ export function applyImport(id: number): { ok: boolean; error?: string; diff?: D
       for (const p of s.next ?? []) link.run(s.id, p, "weiter");
       for (const code of s.nodes ?? []) toNode.run(s.id, nodeIds.get(code));
     }
-    for (const [skillId, code] of pkg.skill_nodes ?? []) toNode.run(skillId, nodeIds.get(code));
+    const exists = conn.prepare("SELECT 1 FROM skills WHERE id = ?");
+    for (const [skillId, code] of pkg.skill_nodes ?? []) if (exists.get(skillId)) toNode.run(skillId, nodeIds.get(code));
     conn.prepare("UPDATE curriculum_imports SET status = 'importiert', applied_at = datetime('now'), diff = ? WHERE id = ?").run(JSON.stringify(diff), id);
   });
   tx();
@@ -339,7 +352,12 @@ export function removeDemo(sourceKey: string): boolean {
 }
 
 // ---------- bundled packages ----------
-export type BundledPackage = { file: string; label: string; description: string; sourceType: SourceType; skills: number; nodes: number; imported: boolean; allowed: boolean };
+export type BundledPackage = {
+  file: string; label: string; description: string; sourceType: SourceType; sourceKey: string; skills: number; nodes: number; imported: boolean; allowed: boolean;
+  curriculum: { key: string; school_type: string; subject: string } | null;
+  /** imported, but links to skills that only exist now (e.g. after the Volksschule structure) are still missing */
+  pendingLinks: number;
+};
 const PACKAGE_DIR = path.join(process.cwd(), "curriculum");
 
 /** Packages shipped with the app (curriculum/*.json). */
@@ -355,7 +373,13 @@ export function bundledPackages(): BundledPackage[] {
     if (!pkg) return [];
     const imported = Boolean(db().prepare("SELECT 1 FROM curriculum_imports WHERE content_hash = ? AND status = 'importiert'").get(contentHash(pkg)));
     const src = { source_type: pkg.source.source_type, commercial_use_allowed: licenseTerms(pkg.source.license ?? "").commercial, derivatives_allowed: licenseTerms(pkg.source.license ?? "").derivatives, copy_allowed: 1 };
-    return [{ file, label: pkg.label, description: pkg.description ?? "", sourceType: pkg.source.source_type, skills: pkg.skills?.length ?? 0, nodes: pkg.nodes?.length ?? 0, imported, allowed: taskBankAllowed(src).ok }];
+    const pendingLinks = imported && pkg.skill_nodes?.length ? diffPackage(pkg).newLinks : 0;
+    const c = pkg.curriculum;
+    return [{
+      file, label: pkg.label, description: pkg.description ?? "", sourceType: pkg.source.source_type, sourceKey: pkg.source.key, skills: pkg.skills?.length ?? 0, nodes: pkg.nodes?.length ?? 0, imported, allowed: taskBankAllowed(src).ok,
+      curriculum: c ? { key: c.key, school_type: c.school_type, subject: c.subject } : null,
+      pendingLinks,
+    }];
   });
 }
 export function readBundled(file: string): CurriculumPackage | null {

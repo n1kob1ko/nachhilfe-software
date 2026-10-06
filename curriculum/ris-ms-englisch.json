@@ -1,0 +1,646 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "Lehrplan Mittelschule – Erste lebende Fremdsprache (RIS)",
+ "description": "Offizieller Lehrplantext aus dem RIS (NOR40271471), BGBl. II Nr. 185/2012 idF BGBl. II Nr. 178/2025.",
+ "source": {
+  "key": "ris-ms",
+  "name": "RIS – Lehrpläne der Mittelschulen, Anlage 1",
+  "source_type": "lehrplan",
+  "url": "https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Bundesnormen&Dokumentnummer=NOR40271471",
+  "publisher": "Republik Österreich (RIS)",
+  "license": "amtliches Werk (§ 7 UrhG)",
+  "attribution_text": "BGBl. II Nr. 185/2012 idF BGBl. II Nr. 178/2025",
+  "notes": "Gesetzesnummer 20007850, Dokumentnummer NOR40271471, in Kraft seit 01.09.2025. Wortlaut nur um Seitenköpfe, Zeilenumbrüche und Fußnotenziffern bereinigt."
+ },
+ "curriculum": {
+  "key": "ris-ms-englisch",
+  "name": "Lehrplan Mittelschule – Erste lebende Fremdsprache",
+  "school_type": "Mittelschule",
+  "subject": "Englisch",
+  "version": "BGBl. II Nr. 178/2025",
+  "reference": "BGBl. II Nr. 185/2012 idF BGBl. II Nr. 178/2025, NOR40271471",
+  "valid_from": "2025-09-01"
+ },
+ "nodes": [
+  {
+   "code": "MS-ENG",
+   "kind": "fach",
+   "name": "Erste lebende Fremdsprache"
+  },
+  {
+   "code": "MS-ENG-1",
+   "kind": "klasse",
+   "name": "1. Klasse",
+   "parent": "MS-ENG",
+   "klasse": 1,
+   "schulstufe": 5,
+   "text": "In allen vier Kompetenzbereichen wird das Zielniveau A1/A2 angestrebt. Es ist zu beachten, dass auf diesem Zielniveau ein entsprechendes Spektrum an vertrauten sprachlichen Mitteln hinreichend korrekt erkannt und niveauadäquat angewendet wird. Hör- und Leseverstehen beziehen sich auf das globale Verständnis, das Verstehen wichtiger Details sowie die Fähigkeit, einfache Schlussfolgerungen zu ziehen."
+  },
+  {
+   "code": "MS-ENG-1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Hören",
+   "parent": "MS-ENG-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Hören",
+   "text": "Die Schülerinnen und Schüler können, wenn sehr langsam, klar und deutlich in Standardsprache gesprochen wird,"
+  },
+  {
+   "code": "MS-ENG-1-B1-K1",
+   "kind": "kompetenz",
+   "name": "in kurzen Dialogen oder Monologen einfache Fragen und Sätze, die sich auf sie selbst und …",
+   "parent": "MS-ENG-1-B1",
+   "text": "in kurzen Dialogen oder Monologen einfache Fragen und Sätze, die sich auf sie selbst und ihr persönliches Umfeld beziehen, verstehen;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "MS-ENG-1-B1-K2",
+   "kind": "kompetenz",
+   "name": "einfache alltägliche Kommunikation im Unterricht verstehen",
+   "parent": "MS-ENG-1-B1",
+   "text": "einfache alltägliche Kommunikation im Unterricht verstehen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "MS-ENG-1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "MS-ENG-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-ENG-1-B2-K1",
+   "kind": "kompetenz",
+   "name": "einfache Arbeitsanweisungen und Mitteilungen verstehen",
+   "parent": "MS-ENG-1-B2",
+   "text": "einfache Arbeitsanweisungen und Mitteilungen verstehen;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-ENG-1-B2-K2",
+   "kind": "kompetenz",
+   "name": "sehr einfache Texte über vertraute Themen verstehen",
+   "parent": "MS-ENG-1-B2",
+   "text": "sehr einfache Texte über vertraute Themen verstehen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-ENG-1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)",
+   "parent": "MS-ENG-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)",
+   "text": "Die Schülerinnen und Schüler können zu alltäglichen und persönlichen Themen"
+  },
+  {
+   "code": "MS-ENG-1-B3-K1",
+   "kind": "kompetenz",
+   "name": "an Gesprächen teilnehmen und sich mit Hilfe des Gesprächspartners auf einfache Art …",
+   "parent": "MS-ENG-1-B3",
+   "text": "an Gesprächen teilnehmen und sich mit Hilfe des Gesprächspartners auf einfache Art verständigen;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "MS-ENG-1-B3-K2",
+   "kind": "kompetenz",
+   "name": "einfache Fragen stellen und beantworten",
+   "parent": "MS-ENG-1-B3",
+   "text": "einfache Fragen stellen und beantworten;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "MS-ENG-1-B3-K3",
+   "kind": "kompetenz",
+   "name": "beim zusammenhängenden Sprechen in einfachen Sätzen über vertraute Themen (ua. Familie …",
+   "parent": "MS-ENG-1-B3",
+   "text": "beim zusammenhängenden Sprechen in einfachen Sätzen über vertraute Themen (ua. Familie, Freunde, Tagesablauf, Hobbys, Schule) sprechen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "MS-ENG-1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "MS-ENG-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben",
+   "text": "Die Schülerinnen und Schüler können zu alltäglichen und persönlichen Themen"
+  },
+  {
+   "code": "MS-ENG-1-B4-K1",
+   "kind": "kompetenz",
+   "name": "über sich selbst und vertraute Themen (ua. Familie, Freunde, Tagesablauf, Hobbys, Schule) …",
+   "parent": "MS-ENG-1-B4",
+   "text": "über sich selbst und vertraute Themen (ua. Familie, Freunde, Tagesablauf, Hobbys, Schule) in einfachen Sätzen schreiben;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-ENG-1-B4-K2",
+   "kind": "kompetenz",
+   "name": "Informationen in geschriebener Form weitergeben (persönliche Mitteilungen)",
+   "parent": "MS-ENG-1-B4",
+   "text": "Informationen in geschriebener Form weitergeben (persönliche Mitteilungen).",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-ENG-1-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-ENG-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "text": "Anwendungsbereiche haben repräsentativen Charakter und bezeichnen handlungsorientierte Themenfelder. Sie konkretisieren und präzisieren die Kompetenzbereiche und richten sich nach der aktuellen, tatsächlichen Lebenswelt und den Interessen der Schülerinnen und Schüler sowie nach den Möglichkeiten innerhalb des angestrebten Sprachniveaus. Im Sprachunterricht gilt allgemein das Prinzip der sukzessiven Erweiterung der Lebenswelt. Themen werden daher innerhalb der gesamten Sekundarstufe I wiederkehrend und vertiefend behandelt und im Sinne des Transferlernens auf ähnliche Situationen angewendet. Im Laufe der Sekundarstufe I wird der Blick von der persönlichen Lebenswelt um einzelne Aspekte der jeweiligen Kulturen erweitert, und die Wahrnehmung und Akzeptanz von kulturellen Unterschieden wird gefördert."
+  },
+  {
+   "code": "MS-ENG-2",
+   "kind": "klasse",
+   "name": "2. Klasse",
+   "parent": "MS-ENG",
+   "klasse": 2,
+   "schulstufe": 6,
+   "text": "In allen vier Kompetenzbereichen wird das Zielniveau A2 angestrebt. Es ist bei den sprachlichen Mitteln zu beachten, dass die Schülerinnen und Schüler auf dem Zielniveau A2 ein entsprechendes Spektrum an vertrauten sprachlichen Mitteln hinreichend korrekt erkennen und niveauadäquat anwenden können. Hör- und Leseverstehen beziehen sich auf das globale Verständnis, das Verstehen wichtiger Details sowie die Fähigkeit, einfache Schlussfolgerungen zu ziehen."
+  },
+  {
+   "code": "MS-ENG-2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Hören",
+   "parent": "MS-ENG-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Hören",
+   "text": "Die Schülerinnen und Schüler können, wenn langsam, klar und deutlich in Standardsprache gesprochen wird,"
+  },
+  {
+   "code": "MS-ENG-2-B1-K1",
+   "kind": "kompetenz",
+   "name": "Anweisungen, Fragen und Auskünfte verstehen",
+   "parent": "MS-ENG-2-B1",
+   "text": "Anweisungen, Fragen und Auskünfte verstehen;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "MS-ENG-2-B1-K2",
+   "kind": "kompetenz",
+   "name": "kurze einfache Gespräche und Texte über vertraute Themen verstehen",
+   "parent": "MS-ENG-2-B1",
+   "text": "kurze einfache Gespräche und Texte über vertraute Themen verstehen.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "MS-ENG-2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "MS-ENG-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-ENG-2-B2-K1",
+   "kind": "kompetenz",
+   "name": "kurze einfache Geschichten, Briefe, E-Mails oder bebilderte Sachtexte verstehen",
+   "parent": "MS-ENG-2-B2",
+   "text": "kurze einfache Geschichten, Briefe, E-Mails oder bebilderte Sachtexte verstehen;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-ENG-2-B2-K2",
+   "kind": "kompetenz",
+   "name": "kurzen vertrauten Alltagstexten wichtige Informationen entnehmen",
+   "parent": "MS-ENG-2-B2",
+   "text": "kurzen vertrauten Alltagstexten wichtige Informationen entnehmen.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-ENG-2-B3",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)",
+   "parent": "MS-ENG-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)",
+   "text": "Die Schülerinnen und Schüler können in einfachen zusammenhängenden Sätzen"
+  },
+  {
+   "code": "MS-ENG-2-B3-K1",
+   "kind": "kompetenz",
+   "name": "kurze Gespräche über vertraute Themen führen",
+   "parent": "MS-ENG-2-B3",
+   "text": "kurze Gespräche über vertraute Themen führen;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "MS-ENG-2-B3-K2",
+   "kind": "kompetenz",
+   "name": "in Alltagssituationen einfache Informationen geben, Fragen stellen und Vereinbarungen …",
+   "parent": "MS-ENG-2-B3",
+   "text": "in Alltagssituationen einfache Informationen geben, Fragen stellen und Vereinbarungen treffen;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "MS-ENG-2-B3-K3",
+   "kind": "kompetenz",
+   "name": "über vertraute Themen (ua. Dinge, Orte, Personen) sprechen und dabei auch Gefühle …",
+   "parent": "MS-ENG-2-B3",
+   "text": "über vertraute Themen (ua. Dinge, Orte, Personen) sprechen und dabei auch Gefühle, Vorlieben, Stärken und Meinungen auf einfache Weise ausdrücken.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "MS-ENG-2-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "MS-ENG-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben",
+   "text": "Die Schülerinnen und Schüler können in einfachen zusammenhängenden Sätzen"
+  },
+  {
+   "code": "MS-ENG-2-B4-K1",
+   "kind": "kompetenz",
+   "name": "Aspekte des persönlichen Lebensumfeldes beschreiben (ua. Personen, Orte, Pläne, Wünsche)",
+   "parent": "MS-ENG-2-B4",
+   "text": "Aspekte des persönlichen Lebensumfeldes beschreiben (ua. Personen, Orte, Pläne, Wünsche);",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-ENG-2-B4-K2",
+   "kind": "kompetenz",
+   "name": "die eigene Meinung ausdrücken und begründen",
+   "parent": "MS-ENG-2-B4",
+   "text": "die eigene Meinung ausdrücken und begründen;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-ENG-2-B4-K3",
+   "kind": "kompetenz",
+   "name": "einfache Geschichten und Gebrauchstexte (ua. E-Mails, Mitteilungen) schreiben und dabei …",
+   "parent": "MS-ENG-2-B4",
+   "text": "einfache Geschichten und Gebrauchstexte (ua. E-Mails, Mitteilungen) schreiben und dabei auch über vergangene und zukünftige Ereignisse berichten.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-ENG-2-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-ENG-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "text": "Anwendungsbereiche haben repräsentativen Charakter und bezeichnen handlungsorientierte Themenfelder. Sie konkretisieren und präzisieren die Kompetenzbereiche und richten sich nach der aktuellen, tatsächlichen Lebenswelt und den Interessen der Schülerinnen und Schüler sowie nach den Möglichkeiten innerhalb des angestrebten Sprachniveaus. Im Sprachunterricht gilt allgemein das Prinzip der sukzessiven Erweiterung der Lebenswelt. Themen werden daher innerhalb der gesamten Sekundarstufe I wiederkehrend und vertiefend behandelt und im Sinne des Transferlernens auf ähnliche Situationen angewendet. Im Laufe der Sekundarstufe I wird der Blick von der persönlichen Lebenswelt um einzelne Aspekte der jeweiligen Kulturen erweitert, und die Wahrnehmung und Akzeptanz von kulturellen Unterschieden wird gefördert."
+  },
+  {
+   "code": "MS-ENG-3",
+   "kind": "klasse",
+   "name": "3. Klasse",
+   "parent": "MS-ENG",
+   "klasse": 3,
+   "schulstufe": 7,
+   "text": "In allen vier Kompetenzbereichen wird das Zielniveau A2+ angestrebt. Bei den sprachlichen Mitteln ist zu beachten, dass die Schülerinnen und Schüler auf dem Zielniveau A2+ ein entsprechendes Spektrum an vertrauten sprachlichen Mitteln hinreichend korrekt erkennen und niveauadäquat anwenden können. Hör- und Leseverstehen beziehen sich auf das globale Verständnis, das Verstehen wichtiger Details sowie die Fähigkeit, einfache Schlussfolgerungen zu ziehen."
+  },
+  {
+   "code": "MS-ENG-3-B1",
+   "kind": "kompetenzbereich",
+   "name": "Hören",
+   "parent": "MS-ENG-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Hören",
+   "text": "Die Schülerinnen und Schüler können, wenn klar und deutlich und nicht zu schnell in Standardsprache gesprochen wird,"
+  },
+  {
+   "code": "MS-ENG-3-B1-K1",
+   "kind": "kompetenz",
+   "name": "einfache Gespräche, Erzählungen und kurze Medienbeiträge verstehen",
+   "parent": "MS-ENG-3-B1",
+   "text": "einfache Gespräche, Erzählungen und kurze Medienbeiträge verstehen.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "MS-ENG-3-B2",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "MS-ENG-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-ENG-3-B2-K1",
+   "kind": "kompetenz",
+   "name": "einfache und konkrete Artikel in Magazinen und Jugendzeitschriften, altersadäquate …",
+   "parent": "MS-ENG-3-B2",
+   "text": "einfache und konkrete Artikel in Magazinen und Jugendzeitschriften, altersadäquate Kinder- und Jugendbücher, Geschichten und Sachtexte sowie persönliche Texte, die sich auf altersgerechte Aspekte der zielsprachlichen Kultur(en) beziehen, verstehen;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-ENG-3-B2-K2",
+   "kind": "kompetenz",
+   "name": "in einfachen Texten Wünsche und Gefühle verstehen",
+   "parent": "MS-ENG-3-B2",
+   "text": "in einfachen Texten Wünsche und Gefühle verstehen.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-ENG-3-B3",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)",
+   "parent": "MS-ENG-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)",
+   "text": "Die Schülerinnen und Schüler können in einfacher Sprache"
+  },
+  {
+   "code": "MS-ENG-3-B3-K1",
+   "kind": "kompetenz",
+   "name": "ein Gespräch beginnen, weiterführen und beenden sowie einfache Sprecherwechsel durchführen",
+   "parent": "MS-ENG-3-B3",
+   "text": "ein Gespräch beginnen, weiterführen und beenden sowie einfache Sprecherwechsel durchführen;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "MS-ENG-3-B3-K2",
+   "kind": "kompetenz",
+   "name": "Vereinbarungen treffen, Ratschläge erbitten und geben, einfache Begründungen, Meinungen …",
+   "parent": "MS-ENG-3-B3",
+   "text": "Vereinbarungen treffen, Ratschläge erbitten und geben, einfache Begründungen, Meinungen und Gefühle ausdrücken und darauf reagieren;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "MS-ENG-3-B3-K3",
+   "kind": "kompetenz",
+   "name": "über vertraute Themenbereiche erzählen und einfache (Buch-)Präsentationen halten",
+   "parent": "MS-ENG-3-B3",
+   "text": "über vertraute Themenbereiche erzählen und einfache (Buch-)Präsentationen halten.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "MS-ENG-3-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "MS-ENG-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben",
+   "text": "Die Schülerinnen und Schüler können auf einfache Art"
+  },
+  {
+   "code": "MS-ENG-3-B4-K1",
+   "kind": "kompetenz",
+   "name": "kurze zusammenhängende Texte über alltägliche Aspekte des eigenen Umfelds sowie des …",
+   "parent": "MS-ENG-3-B4",
+   "text": "kurze zusammenhängende Texte über alltägliche Aspekte des eigenen Umfelds sowie des Lebensalltags von Jugendlichen in verschiedenen Ländern schreiben;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-ENG-3-B4-K2",
+   "kind": "kompetenz",
+   "name": "kurze Beschreibungen von Ereignissen, vergangenen und zukünftigen Handlungen und …",
+   "parent": "MS-ENG-3-B4",
+   "text": "kurze Beschreibungen von Ereignissen, vergangenen und zukünftigen Handlungen und persönlichen Erfahrungen verfassen und dabei auch Meinungen und Gefühle ausdrücken;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-ENG-3-B4-K3",
+   "kind": "kompetenz",
+   "name": "kurz über ihre Eindrücke und Meinungen zu altersadäquaten Geschichten sowie zu Kinder- …",
+   "parent": "MS-ENG-3-B4",
+   "text": "kurz über ihre Eindrücke und Meinungen zu altersadäquaten Geschichten sowie zu Kinder- und Jugendliteratur schreiben.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-ENG-3-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-ENG-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "text": "Anwendungsbereiche haben repräsentativen Charakter und bezeichnen handlungsorientierte Themenfelder. Sie konkretisieren und präzisieren die Kompetenzbereiche und richten sich nach der aktuellen, tatsächlichen Lebenswelt und den Interessen der Schülerinnen und Schüler sowie nach den Möglichkeiten innerhalb des angestrebten Sprachniveaus. Im Sprachunterricht gilt allgemein das Prinzip der sukzessiven Erweiterung der Lebenswelt. Themen werden daher innerhalb der gesamten Sekundarstufe I wiederkehrend und vertiefend behandelt und im Sinne des Transferlernens auf ähnliche Situationen angewendet. Im Laufe der Sekundarstufe I wird der Blick von der persönlichen Lebenswelt um einzelne Aspekte der jeweiligen Kulturen erweitert, und die Wahrnehmung und Akzeptanz von kulturellen Unterschieden wird gefördert."
+  },
+  {
+   "code": "MS-ENG-4",
+   "kind": "klasse",
+   "name": "4. Klasse",
+   "parent": "MS-ENG",
+   "klasse": 4,
+   "schulstufe": 8,
+   "text": "In allen vier Kompetenzbereichen wird das Zielniveau A2+ mit ausgewählten Deskriptoren aus B1 angestrebt. Bei den sprachlichen Mitteln ist zu beachten, dass die Schülerinnen und Schüler auf dem Zielniveau A2+ ein entsprechendes Spektrum an vertrauten sprachlichen Mitteln hinreichend korrekt erkennen und niveauadäquat anwenden können. Hör- und Leseverstehen beziehen sich auf das globale Verständnis, das Verstehen wichtiger Details sowie die Fähigkeit, einfache Schlussfolgerungen zu ziehen."
+  },
+  {
+   "code": "MS-ENG-4-B1",
+   "kind": "kompetenzbereich",
+   "name": "Hören",
+   "parent": "MS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Hören",
+   "text": "Die Schülerinnen und Schüler können, wenn in klarer und deutlicher Standardsprache gesprochen wird,"
+  },
+  {
+   "code": "MS-ENG-4-B1-K1",
+   "kind": "kompetenz",
+   "name": "Gespräche, kurze Erzählungen, Präsentationen, Filme und kurze Medienbeiträge über …",
+   "parent": "MS-ENG-4-B1",
+   "text": "Gespräche, kurze Erzählungen, Präsentationen, Filme und kurze Medienbeiträge über vertraute Themen verstehen.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "MS-ENG-4-B2",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "MS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-ENG-4-B2-K1",
+   "kind": "kompetenz",
+   "name": "einfache klar strukturierte Jugendliteratur oder Sachliteratur mit befriedigendem …",
+   "parent": "MS-ENG-4-B2",
+   "text": "einfache klar strukturierte Jugendliteratur oder Sachliteratur mit befriedigendem Verständnis lesen und darin enthaltene Einstellungen (ua. der handelnden Personen oder Autoren) erkennen;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-ENG-4-B2-K2",
+   "kind": "kompetenz",
+   "name": "einfache altersadäquate Texte verstehen und spezifische Informationen entnehmen",
+   "parent": "MS-ENG-4-B2",
+   "text": "einfache altersadäquate Texte verstehen und spezifische Informationen entnehmen.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-ENG-4-B3",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)",
+   "parent": "MS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "MS-ENG-4-B3-K1",
+   "kind": "kompetenz",
+   "name": "sich in routinemäßigen Situationen über vertraute Themen ohne große Mühe verständigen …",
+   "parent": "MS-ENG-4-B3",
+   "text": "sich in routinemäßigen Situationen über vertraute Themen ohne große Mühe verständigen (ua. Zustimmung oder Ablehnung ausdrücken, Vorschläge machen, über Pläne reden, Rat erbitten und geben, einfache Begründungen vorbringen, die eigene Meinung und Vermutungen formulieren);",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "MS-ENG-4-B3-K2",
+   "kind": "kompetenz",
+   "name": "über (Alltags-)Ereignisse und vergangene sowie zukünftige Aktivitäten berichten und dabei …",
+   "parent": "MS-ENG-4-B3",
+   "text": "über (Alltags-)Ereignisse und vergangene sowie zukünftige Aktivitäten berichten und dabei auch Meinungen und Gefühle ausdrücken;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "MS-ENG-4-B3-K3",
+   "kind": "kompetenz",
+   "name": "einfache Präsentationen zu vertrauten Themen, Büchern, Filmen oder zu Themen und Ideen …",
+   "parent": "MS-ENG-4-B3",
+   "text": "einfache Präsentationen zu vertrauten Themen, Büchern, Filmen oder zu Themen und Ideen von persönlichem Interesse halten.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprechen (an Gesprächen teilnehmen und zusammenhängend sprechen)"
+  },
+  {
+   "code": "MS-ENG-4-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "MS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-ENG-4-B4-K1",
+   "kind": "kompetenz",
+   "name": "unkomplizierte, strukturierte Texte (ua. Postings, E-Mails, Erfahrungsberichte) zu …",
+   "parent": "MS-ENG-4-B4",
+   "text": "unkomplizierte, strukturierte Texte (ua. Postings, E-Mails, Erfahrungsberichte) zu vertrauten Themen schreiben;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-ENG-4-B4-K2",
+   "kind": "kompetenz",
+   "name": "in einfacher Sprache, Meinungen ausdrücken, Gefühle beschreiben und einfache Vermutungen …",
+   "parent": "MS-ENG-4-B4",
+   "text": "in einfacher Sprache, Meinungen ausdrücken, Gefühle beschreiben und einfache Vermutungen anstellen (auch über Bücher und Filme);",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-ENG-4-B4-K3",
+   "kind": "kompetenz",
+   "name": "für Ansichten, Pläne oder Handlungen einfache Begründungen oder Erklärungen geben und …",
+   "parent": "MS-ENG-4-B4",
+   "text": "für Ansichten, Pläne oder Handlungen einfache Begründungen oder Erklärungen geben und Ideen präsentieren.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-ENG-4-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "text": "Anwendungsbereiche haben repräsentativen Charakter und bezeichnen handlungsorientierte Themenfelder. Sie konkretisieren und präzisieren die Kompetenzbereiche und richten sich nach der aktuellen, tatsächlichen Lebenswelt und den Interessen der Schülerinnen und Schüler sowie nach den Möglichkeiten innerhalb des angestrebten Sprachniveaus. Im Sprachunterricht gilt allgemein das Prinzip der sukzessiven Erweiterung der Lebenswelt. Themen werden daher innerhalb der gesamten Sekundarstufe I wiederkehrend und vertiefend behandelt und im Sinne des Transferlernens auf ähnliche Situationen angewendet. Im Laufe der Sekundarstufe I wird der Blick von der persönlichen Lebenswelt um einzelne Aspekte der jeweiligen Kulturen erweitert, und die Wahrnehmung und Akzeptanz von kulturellen Unterschieden wird gefördert."
+  }
+ ],
+ "skills": [],
+ "skill_nodes": [
+  [
+   "englisch.reading.comprehension",
+   "MS-ENG-1-B2"
+  ],
+  [
+   "englisch.reading.comprehension",
+   "MS-ENG-2-B2"
+  ],
+  [
+   "englisch.reading.comprehension",
+   "MS-ENG-3-B2"
+  ],
+  [
+   "englisch.reading.comprehension",
+   "MS-ENG-4-B2"
+  ]
+ ]
+}

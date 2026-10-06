@@ -1,0 +1,522 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "Lehrplan Volksschule – Lebende Fremdsprache (RIS)",
+ "description": "Offizieller Lehrplantext aus dem RIS (NOR40271469), BGBl. Nr. 134/1963 idF BGBl. II Nr. 178/2025. 1. und 2. Schulstufe verbindliche Übung, 3. und 4. Schulstufe Pflichtgegenstand.",
+ "source": {
+  "key": "ris-vs",
+  "name": "RIS – Lehrplan der Volksschule, Anlage A",
+  "source_type": "lehrplan",
+  "url": "https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Bundesnormen&Dokumentnummer=NOR40271469",
+  "publisher": "Republik Österreich (RIS)",
+  "license": "amtliches Werk (§ 7 UrhG)",
+  "attribution_text": "BGBl. Nr. 134/1963 idF BGBl. II Nr. 178/2025",
+  "notes": "Gesetzesnummer 10009275, Dokumentnummer NOR40271469, in Kraft seit 01.09.2025. Wortlaut nur um Seitenköpfe, Zeilenumbrüche und Fußnotenziffern bereinigt."
+ },
+ "curriculum": {
+  "key": "ris-vs-englisch",
+  "name": "Lehrplan Volksschule – Lebende Fremdsprache",
+  "school_type": "Volksschule",
+  "subject": "Englisch",
+  "version": "BGBl. II Nr. 178/2025",
+  "reference": "BGBl. Nr. 134/1963 idF BGBl. II Nr. 178/2025, NOR40271469",
+  "valid_from": "2025-09-01"
+ },
+ "nodes": [
+  {
+   "code": "VS-ENG",
+   "kind": "fach",
+   "name": "Lebende Fremdsprache"
+  },
+  {
+   "code": "VS-ENG-1",
+   "kind": "klasse",
+   "name": "1. Schulstufe",
+   "parent": "VS-ENG",
+   "klasse": 1,
+   "schulstufe": 1
+  },
+  {
+   "code": "VS-ENG-1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Hören",
+   "parent": "VS-ENG-1",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "VS-ENG-1-B1-K1",
+   "kind": "kompetenz",
+   "name": "Wörter und kurze Äußerungen (Fragen, Aussagen, Anweisungen) zu vertrauten Themen und …",
+   "parent": "VS-ENG-1-B1",
+   "text": "Wörter und kurze Äußerungen (Fragen, Aussagen, Anweisungen) zu vertrauten Themen und Inhalten erfassen und verstehen, wenn sehr langsam, klar und deutlich mit multisensorischer Unterstützung gesprochen wird (gegebenenfalls unter Nutzung audiovisueller und digitaler Medien).",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "VS-ENG-1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen",
+   "parent": "VS-ENG-1",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Sprechen",
+   "text": "(zusammenhängendes Sprechen und an Gesprächen teilnehmen)"
+  },
+  {
+   "code": "VS-ENG-1-B2-K1",
+   "kind": "kompetenz",
+   "name": "mit multisensorischer Unterstützung Laute und bereits erarbeitete Wörter und Phrasen bei …",
+   "parent": "VS-ENG-1-B2",
+   "text": "mit multisensorischer Unterstützung Laute und bereits erarbeitete Wörter und Phrasen bei möglichst verständlicher Aussprache und Intonation bewusst mit- und nachsprechen.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Sprechen"
+  },
+  {
+   "code": "VS-ENG-1-B2-K2",
+   "kind": "kompetenz",
+   "name": "und mit bereits erarbeiteten sprachlichen Mitteln sowie auf Basis ihrer bisherigen …",
+   "parent": "VS-ENG-1-B2",
+   "text": "und mit bereits erarbeiteten sprachlichen Mitteln sowie auf Basis ihrer bisherigen sprachlichen Erfahrungen zu vertrauten Themen und Inhalten interagieren.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Sprechen"
+  },
+  {
+   "code": "VS-ENG-1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "VS-ENG-1",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-ENG-1-B3-K1",
+   "kind": "kompetenz",
+   "name": "kurze Wörter und Phrasen ganzheitlich wiedererkennend mitlesen und verstehen, wenn Laut- …",
+   "parent": "VS-ENG-1-B3",
+   "text": "kurze Wörter und Phrasen ganzheitlich wiedererkennend mitlesen und verstehen, wenn Laut- und Schriftbild erarbeitet wurden.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-ENG-1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "VS-ENG-1",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "VS-ENG-1-B4-K1",
+   "kind": "kompetenz",
+   "name": "erste Wörter nach Vorbild schreiben, wenn Laut- und Schriftbild erarbeitet wurden",
+   "parent": "VS-ENG-1-B4",
+   "text": "erste Wörter nach Vorbild schreiben, wenn Laut- und Schriftbild erarbeitet wurden.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "VS-ENG-2",
+   "kind": "klasse",
+   "name": "2. Schulstufe",
+   "parent": "VS-ENG",
+   "klasse": 2,
+   "schulstufe": 2
+  },
+  {
+   "code": "VS-ENG-2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Hören",
+   "parent": "VS-ENG-2",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "VS-ENG-2-B1-K1",
+   "kind": "kompetenz",
+   "name": "Wörter und kurze Äußerungen (Fragen, Aussagen, Anweisungen) zu vertrauten Themen und …",
+   "parent": "VS-ENG-2-B1",
+   "text": "Wörter und kurze Äußerungen (Fragen, Aussagen, Anweisungen) zu vertrauten Themen und Inhalten erfassen und verstehen, wenn sehr langsam, klar und deutlich mit multisensorischer Unterstützung gesprochen wird (gegebenenfalls unter Nutzung audiovisueller und digitaler Medien).",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "VS-ENG-2-B1-K2",
+   "kind": "kompetenz",
+   "name": "aus kurzen Hörtexten mit geringem Wortschatz zu vertrauten Themen und Inhalten …",
+   "parent": "VS-ENG-2-B1",
+   "text": "aus kurzen Hörtexten mit geringem Wortschatz zu vertrauten Themen und Inhalten Informationen erfassen und verstehen, wenn sehr langsam, klar und deutlich mit multisensorischer Unterstützung gesprochen wird.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "VS-ENG-2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen",
+   "parent": "VS-ENG-2",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Sprechen",
+   "text": "(zusammenhängendes Sprechen und an Gesprächen teilnehmen)"
+  },
+  {
+   "code": "VS-ENG-2-B2-K1",
+   "kind": "kompetenz",
+   "name": "mit multisensorischer Unterstützung Laute und bereits erarbeitete Wörter und Phrasen bei …",
+   "parent": "VS-ENG-2-B2",
+   "text": "mit multisensorischer Unterstützung Laute und bereits erarbeitete Wörter und Phrasen bei möglichst verständlicher Aussprache und Intonation bewusst mit- und nachsprechen.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Sprechen"
+  },
+  {
+   "code": "VS-ENG-2-B2-K2",
+   "kind": "kompetenz",
+   "name": "mit bereits erarbeiteten Wörtern und Phrasen über vertraute Themen und Inhalte sehr kurze …",
+   "parent": "VS-ENG-2-B2",
+   "text": "mit bereits erarbeiteten Wörtern und Phrasen über vertraute Themen und Inhalte sehr kurze Informationen geben.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Sprechen"
+  },
+  {
+   "code": "VS-ENG-2-B2-K3",
+   "kind": "kompetenz",
+   "name": "mit bereits erarbeiteten sprachlichen Mitteln zu vertrauten Themen und Inhalten unter …",
+   "parent": "VS-ENG-2-B2",
+   "text": "mit bereits erarbeiteten sprachlichen Mitteln zu vertrauten Themen und Inhalten unter Einhaltung elementarer Gesprächsregeln kurze Dialoge führen.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Sprechen"
+  },
+  {
+   "code": "VS-ENG-2-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "VS-ENG-2",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-ENG-2-B3-K1",
+   "kind": "kompetenz",
+   "name": "kurze Wörter und Phrasen ganzheitlich wiedererkennend lesen, verstehen und mit einem …",
+   "parent": "VS-ENG-2-B3",
+   "text": "kurze Wörter und Phrasen ganzheitlich wiedererkennend lesen, verstehen und mit einem situativen Kontext in Verbindung bringen, wenn Laut- und Schriftbild erarbeitet wurden.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-ENG-2-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "VS-ENG-2",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "VS-ENG-2-B4-K1",
+   "kind": "kompetenz",
+   "name": "kurze Wörter und Phrasen nach Vorbild schreiben und Unterschiede zwischen Laut- und …",
+   "parent": "VS-ENG-2-B4",
+   "text": "kurze Wörter und Phrasen nach Vorbild schreiben und Unterschiede zwischen Laut- und Schriftbild wahrnehmen.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "VS-ENG-3",
+   "kind": "klasse",
+   "name": "3. Schulstufe",
+   "parent": "VS-ENG",
+   "klasse": 3,
+   "schulstufe": 3
+  },
+  {
+   "code": "VS-ENG-3-B1",
+   "kind": "kompetenzbereich",
+   "name": "Hören",
+   "parent": "VS-ENG-3",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "VS-ENG-3-B1-K1",
+   "kind": "kompetenz",
+   "name": "kurze Äußerungen (Fragen, Aussagen, Anweisungen) zu vertrauten Themen und Inhalten …",
+   "parent": "VS-ENG-3-B1",
+   "text": "kurze Äußerungen (Fragen, Aussagen, Anweisungen) zu vertrauten Themen und Inhalten erfassen und verstehen, wenn langsam und deutlich gesprochen und gegebenenfalls multisensorisch unterstützt wird (gegebenenfalls unter Nutzung audiovisueller und digitaler Medien).",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "VS-ENG-3-B1-K2",
+   "kind": "kompetenz",
+   "name": "aus kurzen Hörtexten mit geringem Wortschatz zu vertrauten Themen und Inhalten …",
+   "parent": "VS-ENG-3-B1",
+   "text": "aus kurzen Hörtexten mit geringem Wortschatz zu vertrauten Themen und Inhalten Informationen erfassen und verstehen, wenn langsam und deutlich gesprochen und gegebenenfalls multisensorisch unterstützt wird.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "VS-ENG-3-B2",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen",
+   "parent": "VS-ENG-3",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Sprechen",
+   "text": "(zusammenhängendes Sprechen und an Gesprächen teilnehmen)"
+  },
+  {
+   "code": "VS-ENG-3-B2-K1",
+   "kind": "kompetenz",
+   "name": "erarbeitete Wörter und kurze Äußerungen bei möglichst verständlicher Aussprache und …",
+   "parent": "VS-ENG-3-B2",
+   "text": "erarbeitete Wörter und kurze Äußerungen bei möglichst verständlicher Aussprache und Intonation bewusst mit- und nachsprechen, allenfalls mit multisensorischer Unterstützung.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Sprechen"
+  },
+  {
+   "code": "VS-ENG-3-B2-K2",
+   "kind": "kompetenz",
+   "name": "mit erarbeiteten Phrasen und Äußerungen über vertraute Themen und Inhalte kurze …",
+   "parent": "VS-ENG-3-B2",
+   "text": "mit erarbeiteten Phrasen und Äußerungen über vertraute Themen und Inhalte kurze Informationen geben, allenfalls mit multisensorischer Unterstützung.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Sprechen"
+  },
+  {
+   "code": "VS-ENG-3-B2-K3",
+   "kind": "kompetenz",
+   "name": "mit erarbeiteten sprachlichen Mitteln zu vertrauten Themen und Inhalten unter Einhaltung …",
+   "parent": "VS-ENG-3-B2",
+   "text": "mit erarbeiteten sprachlichen Mitteln zu vertrauten Themen und Inhalten unter Einhaltung von Gesprächsregeln kurze Dialoge führen, allenfalls mit multisensorischer Unterstützung.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Sprechen"
+  },
+  {
+   "code": "VS-ENG-3-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "VS-ENG-3",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-ENG-3-B3-K1",
+   "kind": "kompetenz",
+   "name": "kurze Wörter und Phrasen ganzheitlich wiedererkennend lesen, verstehen und mit einem …",
+   "parent": "VS-ENG-3-B3",
+   "text": "kurze Wörter und Phrasen ganzheitlich wiedererkennend lesen, verstehen und mit einem situativen Kontext in Verbindung bringen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-ENG-3-B3-K2",
+   "kind": "kompetenz",
+   "name": "kurze Texte in einfacher Sprache (Dialoge, Kinderbücher, Sach- und Gebrauchstexte ua.) zu …",
+   "parent": "VS-ENG-3-B3",
+   "text": "kurze Texte in einfacher Sprache (Dialoge, Kinderbücher, Sach- und Gebrauchstexte ua.) zu vertrauten Themen und Inhalten mitlesen sowie wesentliche Informationen erfassen und verstehen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-ENG-3-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "VS-ENG-3",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "VS-ENG-3-B4-K1",
+   "kind": "kompetenz",
+   "name": "Wörter und Phrasen nach Vorbild schreiben, das fremdsprachliche Schriftbild bewusst …",
+   "parent": "VS-ENG-3-B4",
+   "text": "Wörter und Phrasen nach Vorbild schreiben, das fremdsprachliche Schriftbild bewusst wahrnehmen und in Beziehung zu ihren eigenen Sprachen setzen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "VS-ENG-3-B4-K2",
+   "kind": "kompetenz",
+   "name": "kurze Texte zu vertrauten Themen und Inhalten mit einzelnen Wörtern ergänzen und verändern",
+   "parent": "VS-ENG-3-B4",
+   "text": "kurze Texte zu vertrauten Themen und Inhalten mit einzelnen Wörtern ergänzen und verändern.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "VS-ENG-4",
+   "kind": "klasse",
+   "name": "4. Schulstufe",
+   "parent": "VS-ENG",
+   "klasse": 4,
+   "schulstufe": 4
+  },
+  {
+   "code": "VS-ENG-4-B1",
+   "kind": "kompetenzbereich",
+   "name": "Hören",
+   "parent": "VS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "VS-ENG-4-B1-K1",
+   "kind": "kompetenz",
+   "name": "kurze Äußerungen (Fragen, Aussagen, Anweisungen) zu vertrauten Themen und Inhalten …",
+   "parent": "VS-ENG-4-B1",
+   "text": "kurze Äußerungen (Fragen, Aussagen, Anweisungen) zu vertrauten Themen und Inhalten erfassen und verstehen, wenn langsam und deutlich gesprochen und gegebenenfalls multisensorisch unterstützt wird (gegebenenfalls unter Nutzung audiovisueller und digitaler Medien).",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "VS-ENG-4-B1-K2",
+   "kind": "kompetenz",
+   "name": "aus kurzen Hörtexten in einfacher Sprache zu vertrauten Themen und Inhalten Informationen …",
+   "parent": "VS-ENG-4-B1",
+   "text": "aus kurzen Hörtexten in einfacher Sprache zu vertrauten Themen und Inhalten Informationen erfassen, Details verstehen und gegebenenfalls mit ihrem Weltwissen in Beziehung setzen, wenn langsam und deutlich gesprochen und gegebenenfalls multisensorisch unterstützt wird.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Hören"
+  },
+  {
+   "code": "VS-ENG-4-B2",
+   "kind": "kompetenzbereich",
+   "name": "Sprechen",
+   "parent": "VS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Sprechen",
+   "text": "(zusammenhängendes Sprechen und an Gesprächen teilnehmen)"
+  },
+  {
+   "code": "VS-ENG-4-B2-K1",
+   "kind": "kompetenz",
+   "name": "erarbeitete Wörter und alltägliche Äußerungen bei möglichst verständlicher Aussprache und …",
+   "parent": "VS-ENG-4-B2",
+   "text": "erarbeitete Wörter und alltägliche Äußerungen bei möglichst verständlicher Aussprache und Intonation mit- und nachsprechen, allenfalls mit multisensorischer Unterstützung.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Sprechen"
+  },
+  {
+   "code": "VS-ENG-4-B2-K2",
+   "kind": "kompetenz",
+   "name": "mit erarbeiteten alltäglichen Äußerungen über vertraute Themen und Inhalte kurze …",
+   "parent": "VS-ENG-4-B2",
+   "text": "mit erarbeiteten alltäglichen Äußerungen über vertraute Themen und Inhalte kurze Informationen geben, allenfalls mit multisensorischer Unterstützung.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Sprechen"
+  },
+  {
+   "code": "VS-ENG-4-B2-K3",
+   "kind": "kompetenz",
+   "name": "mit erarbeiteten sprachlichen Mitteln zu vertrauten Themen und Inhalten unter Einhaltung …",
+   "parent": "VS-ENG-4-B2",
+   "text": "mit erarbeiteten sprachlichen Mitteln zu vertrauten Themen und Inhalten unter Einhaltung von Gesprächsregeln kurze Gespräche führen, allenfalls mit multisensorischer Unterstützung.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Sprechen"
+  },
+  {
+   "code": "VS-ENG-4-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "VS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-ENG-4-B3-K1",
+   "kind": "kompetenz",
+   "name": "kurze Sätze lesen und verstehen",
+   "parent": "VS-ENG-4-B3",
+   "text": "kurze Sätze lesen und verstehen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-ENG-4-B3-K2",
+   "kind": "kompetenz",
+   "name": "Texte in einfacher Sprache (ua. Geschichten, Sach- und Gebrauchstexte.) zu vertrauten …",
+   "parent": "VS-ENG-4-B3",
+   "text": "Texte in einfacher Sprache (ua. Geschichten, Sach- und Gebrauchstexte.) zu vertrauten Themen und Inhalten lesen sowie wesentliche Informationen erfassen und Details verstehen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "VS-ENG-4-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "VS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "VS-ENG-4-B4-K1",
+   "kind": "kompetenz",
+   "name": "Wörter und Phrasen sowie sehr einfache Sätze nach Vorbild schreiben",
+   "parent": "VS-ENG-4-B4",
+   "text": "Wörter und Phrasen sowie sehr einfache Sätze nach Vorbild schreiben.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "VS-ENG-4-B4-K2",
+   "kind": "kompetenz",
+   "name": "kurze Texte in einfacher Sprache zu vertrauten Themen und Inhalten auf Basis ihrer …",
+   "parent": "VS-ENG-4-B4",
+   "text": "kurze Texte in einfacher Sprache zu vertrauten Themen und Inhalten auf Basis ihrer entwickelten Schreibbereitschaft mit einzelnen Wörtern und Phrasen ergänzen und verändern.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "VS-ENG-4-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "VS-ENG-4",
+   "klasse": 4,
+   "schulstufe": 4,
+   "text": "Anwendungsbereiche haben repräsentativen Charakter und bezeichnen handlungsorientierte Themenfelder. Sie konkretisieren und präzisieren die Kompetenzbereiche und richten sich nach der aktuellen, tatsächlichen Lebenswelt und den Interessen der Schülerinnen und Schüler sowie nach den Möglichkeiten innerhalb des angestrebten Sprachniveaus. Im Sprachunterricht gilt allgemein das Prinzip der sukzessiven Erweiterung der Lebenswelt. Themen werden daher innerhalb der gesamten Primarstufe wiederkehrend und vertiefend behandelt und im Sinne des Transferlernens auf ähnliche Situationen angewendet. Im Laufe der Primarstufe wird der Blick von der persönlichen Lebenswelt um einzelne Aspekte der fremdsprachlichen Kultur erweitert, und die Wahrnehmung und Akzeptanz von kulturellen Unterschieden wird gefördert."
+  }
+ ],
+ "skills": [],
+ "skill_nodes": []
+}

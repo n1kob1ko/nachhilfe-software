@@ -1,0 +1,806 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "Lehrplan Volksschule – Mathematik (RIS)",
+ "description": "Offizieller Lehrplantext aus dem RIS (NOR40271469), BGBl. Nr. 134/1963 idF BGBl. II Nr. 178/2025.",
+ "source": {
+  "key": "ris-vs",
+  "name": "RIS – Lehrplan der Volksschule, Anlage A",
+  "source_type": "lehrplan",
+  "url": "https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Bundesnormen&Dokumentnummer=NOR40271469",
+  "publisher": "Republik Österreich (RIS)",
+  "license": "amtliches Werk (§ 7 UrhG)",
+  "attribution_text": "BGBl. Nr. 134/1963 idF BGBl. II Nr. 178/2025",
+  "notes": "Gesetzesnummer 10009275, Dokumentnummer NOR40271469, in Kraft seit 01.09.2025. Wortlaut nur um Seitenköpfe, Zeilenumbrüche und Fußnotenziffern bereinigt."
+ },
+ "curriculum": {
+  "key": "ris-vs-mathematik",
+  "name": "Lehrplan Volksschule – Mathematik",
+  "school_type": "Volksschule",
+  "subject": "Mathematik",
+  "version": "BGBl. II Nr. 178/2025",
+  "reference": "BGBl. Nr. 134/1963 idF BGBl. II Nr. 178/2025, NOR40271469",
+  "valid_from": "2025-09-01"
+ },
+ "nodes": [
+  {
+   "code": "VS-MAT",
+   "kind": "fach",
+   "name": "Mathematik"
+  },
+  {
+   "code": "VS-MAT-1",
+   "kind": "klasse",
+   "name": "1. Schulstufe",
+   "parent": "VS-MAT",
+   "klasse": 1,
+   "schulstufe": 1
+  },
+  {
+   "code": "VS-MAT-1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zahlen und Daten",
+   "parent": "VS-MAT-1",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Zahlen und Daten"
+  },
+  {
+   "code": "VS-MAT-1-B1-K1",
+   "kind": "kompetenz",
+   "name": "die Zahlen bis mindestens 20 mit strukturiertem Material darstellen, lesen, schreiben …",
+   "parent": "VS-MAT-1-B1",
+   "text": "die Zahlen bis mindestens 20 mit strukturiertem Material darstellen, lesen, schreiben, zerlegen, vergleichen, ordnen und vielfältig nutzen; die Zahlen bis 100 mit strukturiertem Material darstellen, lesen und schreiben.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Zahlen und Daten"
+  },
+  {
+   "code": "VS-MAT-1-B1-K2",
+   "kind": "kompetenz",
+   "name": "Daten aus ihrer unmittelbaren Lebenswelt erheben und mit Strichlisten und Tabellen …",
+   "parent": "VS-MAT-1-B1",
+   "text": "Daten aus ihrer unmittelbaren Lebenswelt erheben und mit Strichlisten und Tabellen darstellen; Strichlisten und Tabellen interpretieren.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Zahlen und Daten"
+  },
+  {
+   "code": "VS-MAT-1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Operationen",
+   "parent": "VS-MAT-1",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-1-B2-K1",
+   "kind": "kompetenz",
+   "name": "Rechenoperationen im additiven Bereich im Zahlenraum bis mindestens 20 flexibel …",
+   "parent": "VS-MAT-1-B2",
+   "text": "Rechenoperationen im additiven Bereich im Zahlenraum bis mindestens 20 flexibel durchführen.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-1-B2-K2",
+   "kind": "kompetenz",
+   "name": "arithmetische Muster erkennen, beschreiben, fortsetzen und ergänzen",
+   "parent": "VS-MAT-1-B2",
+   "text": "arithmetische Muster erkennen, beschreiben, fortsetzen und ergänzen.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-1-B2-K3",
+   "kind": "kompetenz",
+   "name": "Sachsituationen aus ihrer Lebenswelt modellieren",
+   "parent": "VS-MAT-1-B2",
+   "text": "Sachsituationen aus ihrer Lebenswelt modellieren.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Größen",
+   "parent": "VS-MAT-1",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Größen"
+  },
+  {
+   "code": "VS-MAT-1-B3-K1",
+   "kind": "kompetenz",
+   "name": "Größen mit selbst gewählten und genormten Einheiten messen und die Ergebnisse notieren …",
+   "parent": "VS-MAT-1-B3",
+   "text": "Größen mit selbst gewählten und genormten Einheiten messen und die Ergebnisse notieren; mit genormten Maßeinheiten (kg, m, ℓ, h, €, c) Vorstellungen verbinden und Größenangaben interpretieren.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Größen"
+  },
+  {
+   "code": "VS-MAT-1-B3-K2",
+   "kind": "kompetenz",
+   "name": "Uhrzeiten mit vollen Stunden ablesen und darstellen; mit Größen in einfachen …",
+   "parent": "VS-MAT-1-B3",
+   "text": "Uhrzeiten mit vollen Stunden ablesen und darstellen; mit Größen in einfachen Sachsituationen arbeiten.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Größen"
+  },
+  {
+   "code": "VS-MAT-1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Ebene und Raum",
+   "parent": "VS-MAT-1",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-1-B4-K1",
+   "kind": "kompetenz",
+   "name": "einfache Lagebeziehungen und Richtungsangaben zur Orientierung und Beschreibung nutzen",
+   "parent": "VS-MAT-1-B4",
+   "text": "einfache Lagebeziehungen und Richtungsangaben zur Orientierung und Beschreibung nutzen,",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-1-B4-K2",
+   "kind": "kompetenz",
+   "name": "ebene Figuren und Körper anhand einfacher Merkmale unterscheiden, beschreiben und …",
+   "parent": "VS-MAT-1-B4",
+   "text": "ebene Figuren und Körper anhand einfacher Merkmale unterscheiden, beschreiben und vergleichen.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-1-B4-K3",
+   "kind": "kompetenz",
+   "name": "spielerisch mit ebenen Figuren, Mustern und Körpern arbeiten, insbesondere mit …",
+   "parent": "VS-MAT-1-B4",
+   "text": "spielerisch mit ebenen Figuren, Mustern und Körpern arbeiten, insbesondere mit symmetrischen Objekten.",
+   "klasse": 1,
+   "schulstufe": 1,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-2",
+   "kind": "klasse",
+   "name": "2. Schulstufe",
+   "parent": "VS-MAT",
+   "klasse": 2,
+   "schulstufe": 2
+  },
+  {
+   "code": "VS-MAT-2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zahlen und Daten",
+   "parent": "VS-MAT-2",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Zahlen und Daten"
+  },
+  {
+   "code": "VS-MAT-2-B1-K1",
+   "kind": "kompetenz",
+   "name": "die Zahlen bis 100 zerlegen, vergleichen, ordnen und vielfältig nutzen; die Zahlen bis …",
+   "parent": "VS-MAT-2-B1",
+   "text": "die Zahlen bis 100 zerlegen, vergleichen, ordnen und vielfältig nutzen; die Zahlen bis 1000 mit strukturiertem Material darstellen, lesen und schreiben.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Zahlen und Daten"
+  },
+  {
+   "code": "VS-MAT-2-B1-K2",
+   "kind": "kompetenz",
+   "name": "Daten aus ihrer Lebenswelt erheben und mit Säulen- und Balkendiagrammen darstellen …",
+   "parent": "VS-MAT-2-B1",
+   "text": "Daten aus ihrer Lebenswelt erheben und mit Säulen- und Balkendiagrammen darstellen; Säulen- und Balkendiagramme sowie Piktogramme interpretieren.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Zahlen und Daten"
+  },
+  {
+   "code": "VS-MAT-2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Operationen",
+   "parent": "VS-MAT-2",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-2-B2-K1",
+   "kind": "kompetenz",
+   "name": "Rechenoperationen im additiven und multiplikativen Bereich im Zahlenraum 100 flexibel …",
+   "parent": "VS-MAT-2-B2",
+   "text": "Rechenoperationen im additiven und multiplikativen Bereich im Zahlenraum 100 flexibel mündlich und halbschriftlich durchführen,",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-2-B2-K2",
+   "kind": "kompetenz",
+   "name": "arithmetische Muster erkennen, beschreiben, fortsetzen und ergänzen",
+   "parent": "VS-MAT-2-B2",
+   "text": "arithmetische Muster erkennen, beschreiben, fortsetzen und ergänzen,",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-2-B2-K3",
+   "kind": "kompetenz",
+   "name": "reale bzw. verbal oder bildlich dargestellte Sachsituationen modellieren",
+   "parent": "VS-MAT-2-B2",
+   "text": "reale bzw. verbal oder bildlich dargestellte Sachsituationen modellieren.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-2-B3",
+   "kind": "kompetenzbereich",
+   "name": "Größen",
+   "parent": "VS-MAT-2",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Größen"
+  },
+  {
+   "code": "VS-MAT-2-B3-K1",
+   "kind": "kompetenz",
+   "name": "mit genormten Maßeinheiten (kg, m, ℓ, h, €, c, neu: dag, dm, cm, min, s) Vorstellungen …",
+   "parent": "VS-MAT-2-B3",
+   "text": "mit genormten Maßeinheiten (kg, m, ℓ, h, €, c, neu: dag, dm, cm, min, s) Vorstellungen verbinden und Größenangaben interpretieren; Größen messen und Ergebnisse mit entsprechenden Maßeinheiten notieren; Beziehungen zwischen Maßeinheiten anwenden; Größen ein- und mehrnamig anschreiben.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Größen"
+  },
+  {
+   "code": "VS-MAT-2-B3-K2",
+   "kind": "kompetenz",
+   "name": "Uhrzeiten mit halben Stunden und Viertelstunden ablesen und darstellen; mit Größen in …",
+   "parent": "VS-MAT-2-B3",
+   "text": "Uhrzeiten mit halben Stunden und Viertelstunden ablesen und darstellen; mit Größen in einfachen Sachsituationen arbeiten.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Größen"
+  },
+  {
+   "code": "VS-MAT-2-B4",
+   "kind": "kompetenzbereich",
+   "name": "Ebene und Raum",
+   "parent": "VS-MAT-2",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-2-B4-K1",
+   "kind": "kompetenz",
+   "name": "Eigenschaften von ebenen Figuren und Körpern erkennen und benennen; spielerisch und …",
+   "parent": "VS-MAT-2-B4",
+   "text": "Eigenschaften von ebenen Figuren und Körpern erkennen und benennen; spielerisch und planvoll mit ebenen Figuren und Körpern arbeiten, insbesondere mit symmetrischen Objekten,",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-2-B4-K2",
+   "kind": "kompetenz",
+   "name": "das Lineal zum Zeichnen und Messen nutzen",
+   "parent": "VS-MAT-2-B4",
+   "text": "das Lineal zum Zeichnen und Messen nutzen,",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-2-B4-K3",
+   "kind": "kompetenz",
+   "name": "geometrische Muster erkennen, beschreiben, fortsetzen und ergänzen",
+   "parent": "VS-MAT-2-B4",
+   "text": "geometrische Muster erkennen, beschreiben, fortsetzen und ergänzen.",
+   "klasse": 2,
+   "schulstufe": 2,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-3",
+   "kind": "klasse",
+   "name": "3. Schulstufe",
+   "parent": "VS-MAT",
+   "klasse": 3,
+   "schulstufe": 3
+  },
+  {
+   "code": "VS-MAT-3-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zahlen und Daten",
+   "parent": "VS-MAT-3",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Zahlen und Daten"
+  },
+  {
+   "code": "VS-MAT-3-B1-K1",
+   "kind": "kompetenz",
+   "name": "die Zahlen bis 1000 zerlegen, vergleichen, ordnen, runden und vielfältig nutzen",
+   "parent": "VS-MAT-3-B1",
+   "text": "die Zahlen bis 1000 zerlegen, vergleichen, ordnen, runden und vielfältig nutzen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Zahlen und Daten"
+  },
+  {
+   "code": "VS-MAT-3-B1-K2",
+   "kind": "kompetenz",
+   "name": "einfache kombinatorische Abzählaufgaben darstellen und lösen; die Wahrscheinlichkeiten …",
+   "parent": "VS-MAT-3-B1",
+   "text": "einfache kombinatorische Abzählaufgaben darstellen und lösen; die Wahrscheinlichkeiten von Ereignissen ihrer Lebenswelt qualitativ beschreiben und vergleichen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Zahlen und Daten"
+  },
+  {
+   "code": "VS-MAT-3-B2",
+   "kind": "kompetenzbereich",
+   "name": "Operationen",
+   "parent": "VS-MAT-3",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-3-B2-K1",
+   "kind": "kompetenz",
+   "name": "Rechenoperationen im additiven und multiplikativen Bereich im Zahlenraum 1000 …",
+   "parent": "VS-MAT-3-B2",
+   "text": "Rechenoperationen im additiven und multiplikativen Bereich im Zahlenraum 1000 halbschriftlich flexibel durchführen; Ergebnisse durch Runden und durch Überschlagsrechnungen abschätzen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-3-B2-K2",
+   "kind": "kompetenz",
+   "name": "Additionen, Subtraktionen, Multiplikationen mit einstelligem Multiplikator sowie …",
+   "parent": "VS-MAT-3-B2",
+   "text": "Additionen, Subtraktionen, Multiplikationen mit einstelligem Multiplikator sowie Divisionen mit einstelligem Divisor im Zahlenraum 1000 schriftlich durchführen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-3-B2-K3",
+   "kind": "kompetenz",
+   "name": "vielfältige Sachsituationen modellieren",
+   "parent": "VS-MAT-3-B2",
+   "text": "vielfältige Sachsituationen modellieren.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-3-B3",
+   "kind": "kompetenzbereich",
+   "name": "Größen",
+   "parent": "VS-MAT-3",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Größen"
+  },
+  {
+   "code": "VS-MAT-3-B3-K1",
+   "kind": "kompetenz",
+   "name": "mit genormten Maßeinheiten (kg, dag, m, dm, cm, ℓ, h, min, s, €, c, neu: t, g, km, mm …",
+   "parent": "VS-MAT-3-B3",
+   "text": "mit genormten Maßeinheiten (kg, dag, m, dm, cm, ℓ, h, min, s, €, c, neu: t, g, km, mm, mℓ) Vorstellungen verbinden und Größenangaben interpretieren; Größen messen bzw. mithilfe von Stützpunktvorstellungen abschätzen und Ergebnisse mit entsprechenden Maßeinheiten notieren; Beziehungen zwischen Maßeinheiten anwenden; Größen ein- und mehrnamig anschreiben und Umrechnungen durchführen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Größen"
+  },
+  {
+   "code": "VS-MAT-3-B3-K2",
+   "kind": "kompetenz",
+   "name": "Uhrzeiten mit Stunden und Minuten ablesen und darstellen; mit Größen in Sachsituationen …",
+   "parent": "VS-MAT-3-B3",
+   "text": "Uhrzeiten mit Stunden und Minuten ablesen und darstellen; mit Größen in Sachsituationen arbeiten.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Größen"
+  },
+  {
+   "code": "VS-MAT-3-B4",
+   "kind": "kompetenzbereich",
+   "name": "Ebene und Raum",
+   "parent": "VS-MAT-3",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-3-B4-K1",
+   "kind": "kompetenz",
+   "name": "ebene Figuren und Körper auf ihre Eigenschaften hin untersuchen, beschreiben und …",
+   "parent": "VS-MAT-3-B4",
+   "text": "ebene Figuren und Körper auf ihre Eigenschaften hin untersuchen, beschreiben und vergleichen; spielerisch und planvoll mit ebenen Figuren und Körpern arbeiten, insbesondere mit symmetrischen Objekten.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-3-B4-K2",
+   "kind": "kompetenz",
+   "name": "Lagebeziehungen von Strecken in der Ebene beschreiben; rechte Winkel, Quadrate und …",
+   "parent": "VS-MAT-3-B4",
+   "text": "Lagebeziehungen von Strecken in der Ebene beschreiben; rechte Winkel, Quadrate und Rechtecke mit dem Geodreieck zeichnen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-3-B4-K3",
+   "kind": "kompetenz",
+   "name": "den Umfang ebener Figuren messen bzw. abschätzen; den Umfang von Quadraten und Rechtecken …",
+   "parent": "VS-MAT-3-B4",
+   "text": "den Umfang ebener Figuren messen bzw. abschätzen; den Umfang von Quadraten und Rechtecken berechnen.",
+   "klasse": 3,
+   "schulstufe": 3,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-4",
+   "kind": "klasse",
+   "name": "4. Schulstufe",
+   "parent": "VS-MAT",
+   "klasse": 4,
+   "schulstufe": 4
+  },
+  {
+   "code": "VS-MAT-4-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zahlen und Daten",
+   "parent": "VS-MAT-4",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Zahlen und Daten"
+  },
+  {
+   "code": "VS-MAT-4-B1-K1",
+   "kind": "kompetenz",
+   "name": "die Zahlen bis 1 000 000 lesen, schreiben, darstellen, zerlegen, vergleichen, ordnen …",
+   "parent": "VS-MAT-4-B1",
+   "text": "die Zahlen bis 1 000 000 lesen, schreiben, darstellen, zerlegen, vergleichen, ordnen, runden und vielfältig nutzen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Zahlen und Daten"
+  },
+  {
+   "code": "VS-MAT-4-B1-K2",
+   "kind": "kompetenz",
+   "name": "Brüche mit kleinen Nennern lesen und schreiben, insbesondere mit den Nennern 2, 4 und 8 …",
+   "parent": "VS-MAT-4-B1",
+   "text": "Brüche mit kleinen Nennern lesen und schreiben, insbesondere mit den Nennern 2, 4 und 8; Bruchteile konkreter Objekte bzw. Größen erkennen, darstellen, in Bruchschreibweise notieren, vergleichen, ordnen und in einfachen Fällen additiv zerlegen; Bruchteile ermitteln.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Zahlen und Daten"
+  },
+  {
+   "code": "VS-MAT-4-B1-K3",
+   "kind": "kompetenz",
+   "name": "einfache Zufallsexperimente durchführen und wiederholen; Ergebnisse und ihre absoluten …",
+   "parent": "VS-MAT-4-B1",
+   "text": "einfache Zufallsexperimente durchführen und wiederholen; Ergebnisse und ihre absoluten Häufigkeiten darstellen sowie Wahrscheinlichkeiten qualitativ vergleichen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Zahlen und Daten"
+  },
+  {
+   "code": "VS-MAT-4-B2",
+   "kind": "kompetenzbereich",
+   "name": "Operationen",
+   "parent": "VS-MAT-4",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-4-B2-K1",
+   "kind": "kompetenz",
+   "name": "Additionen, Subtraktionen, Multiplikationen mit ein- und zweistelligem Multiplikator …",
+   "parent": "VS-MAT-4-B2",
+   "text": "Additionen, Subtraktionen, Multiplikationen mit ein- und zweistelligem Multiplikator sowie Divisionen mit ein- und zweistelligem Divisor im Zahlenraum 1 000 000 schriftlich durchführen; Ergebnisse durch Runden und durch Überschlagsrechnungen abschätzen,",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-4-B2-K2",
+   "kind": "kompetenz",
+   "name": "vielfältige Sachsituationen modellieren; direkt proportionale Zusammenhänge erkennen …",
+   "parent": "VS-MAT-4-B2",
+   "text": "vielfältige Sachsituationen modellieren; direkt proportionale Zusammenhänge erkennen, tabellarisch darstellen und für Berechnungen nutzen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Operationen"
+  },
+  {
+   "code": "VS-MAT-4-B3",
+   "kind": "kompetenzbereich",
+   "name": "Größen",
+   "parent": "VS-MAT-4",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Größen"
+  },
+  {
+   "code": "VS-MAT-4-B3-K1",
+   "kind": "kompetenz",
+   "name": "mit genormten Maßeinheiten für Flächeninhalte (t, kg, dag, g, km, m, dm, cm, mm, ℓ, mℓ …",
+   "parent": "VS-MAT-4-B3",
+   "text": "mit genormten Maßeinheiten für Flächeninhalte (t, kg, dag, g, km, m, dm, cm, mm, ℓ, mℓ, h, min, s, €, c, neu: km², ha, a, m², dm², cm², mm²) Vorstellungen verbinden und Größenangaben interpretieren; Größen messen bzw. mithilfe von Stützpunktvorstellungen abschätzen und Ergebnisse mit entsprechenden Maßeinheiten notieren; Größen ein- und mehrnamig anschreiben und Umrechnungen durchführen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Größen"
+  },
+  {
+   "code": "VS-MAT-4-B3-K2",
+   "kind": "kompetenz",
+   "name": "mit Zeitpunkten und Zeitspannen arbeiten; mit Größen in Sachsituationen arbeiten",
+   "parent": "VS-MAT-4-B3",
+   "text": "mit Zeitpunkten und Zeitspannen arbeiten; mit Größen in Sachsituationen arbeiten.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Größen"
+  },
+  {
+   "code": "VS-MAT-4-B4",
+   "kind": "kompetenzbereich",
+   "name": "Ebene und Raum",
+   "parent": "VS-MAT-4",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-4-B4-K1",
+   "kind": "kompetenz",
+   "name": "einfache Körpermodelle und Netze untersuchen, zuordnen und erstellen",
+   "parent": "VS-MAT-4-B4",
+   "text": "einfache Körpermodelle und Netze untersuchen, zuordnen und erstellen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-4-B4-K2",
+   "kind": "kompetenz",
+   "name": "den Flächeninhalt ebener Figuren mithilfe geeigneter Einheitsflächen messen bzw. …",
+   "parent": "VS-MAT-4-B4",
+   "text": "den Flächeninhalt ebener Figuren mithilfe geeigneter Einheitsflächen messen bzw. abschätzen; Flächeninhalt und Umfang von Quadraten und Rechtecken bzw. von einfachen daraus zusammengesetzten Figuren berechnen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Ebene und Raum"
+  },
+  {
+   "code": "VS-MAT-4-B4-K3",
+   "kind": "kompetenz",
+   "name": "ebene Figuren verkleinern und vergrößern, insbesondere mithilfe von Rastern; einfache …",
+   "parent": "VS-MAT-4-B4",
+   "text": "ebene Figuren verkleinern und vergrößern, insbesondere mithilfe von Rastern; einfache Pläne interpretieren und anfertigen.",
+   "klasse": 4,
+   "schulstufe": 4,
+   "competency_area": "Ebene und Raum"
+  }
+ ],
+ "skills": [],
+ "skill_nodes": [
+  [
+   "mathe.vs.zahlen.zr10",
+   "VS-MAT-1-B1-K1"
+  ],
+  [
+   "mathe.vs.zahlen.zr20",
+   "VS-MAT-1-B1-K1"
+  ],
+  [
+   "mathe.vs.zahlen.zr100",
+   "VS-MAT-2-B1-K1"
+  ],
+  [
+   "mathe.vs.zahlen.zr1000",
+   "VS-MAT-3-B1-K1"
+  ],
+  [
+   "mathe.vs.zahlen.million",
+   "VS-MAT-4-B1-K1"
+  ],
+  [
+   "mathe.vs.zahlen.vergleichen",
+   "VS-MAT-1-B1-K1"
+  ],
+  [
+   "mathe.vs.zahlen.vergleichen",
+   "VS-MAT-2-B1-K1"
+  ],
+  [
+   "mathe.vs.zahlen.vergleichen",
+   "VS-MAT-3-B1-K1"
+  ],
+  [
+   "mathe.vs.zahlen.vergleichen",
+   "VS-MAT-4-B1-K1"
+  ],
+  [
+   "mathe.vs.zahlen.runden",
+   "VS-MAT-3-B1-K1"
+  ],
+  [
+   "mathe.vs.zahlen.runden",
+   "VS-MAT-4-B1-K1"
+  ],
+  [
+   "mathe.vs.addsub.zr10",
+   "VS-MAT-1-B2-K1"
+  ],
+  [
+   "mathe.vs.addsub.zehner",
+   "VS-MAT-1-B2-K1"
+  ],
+  [
+   "mathe.vs.addsub.zr100",
+   "VS-MAT-2-B2-K1"
+  ],
+  [
+   "mathe.vs.addsub.umkehr",
+   "VS-MAT-1-B2-K1"
+  ],
+  [
+   "mathe.vs.addsub.umkehr",
+   "VS-MAT-2-B2-K1"
+  ],
+  [
+   "mathe.vs.muldiv.einmaleins",
+   "VS-MAT-2-B2-K1"
+  ],
+  [
+   "mathe.vs.muldiv.geteilt",
+   "VS-MAT-2-B2-K1"
+  ],
+  [
+   "mathe.vs.muldiv.rest",
+   "VS-MAT-3-B2-K1"
+  ],
+  [
+   "mathe.vs.muldiv.zehner",
+   "VS-MAT-3-B2-K1"
+  ],
+  [
+   "mathe.vs.schriftlich.addieren",
+   "VS-MAT-3-B2-K2"
+  ],
+  [
+   "mathe.vs.schriftlich.addieren",
+   "VS-MAT-4-B2-K1"
+  ],
+  [
+   "mathe.vs.schriftlich.subtrahieren",
+   "VS-MAT-3-B2-K2"
+  ],
+  [
+   "mathe.vs.schriftlich.subtrahieren",
+   "VS-MAT-4-B2-K1"
+  ],
+  [
+   "mathe.vs.schriftlich.multiplizieren",
+   "VS-MAT-3-B2-K2"
+  ],
+  [
+   "mathe.vs.schriftlich.multiplizieren",
+   "VS-MAT-4-B2-K1"
+  ],
+  [
+   "mathe.vs.schriftlich.dividieren",
+   "VS-MAT-3-B2-K2"
+  ],
+  [
+   "mathe.vs.schriftlich.dividieren",
+   "VS-MAT-4-B2-K1"
+  ],
+  [
+   "mathe.vs.groessen.geld",
+   "VS-MAT-1-B3-K1"
+  ],
+  [
+   "mathe.vs.groessen.geld",
+   "VS-MAT-2-B3-K1"
+  ],
+  [
+   "mathe.vs.groessen.laenge",
+   "VS-MAT-2-B3-K1"
+  ],
+  [
+   "mathe.vs.groessen.laenge",
+   "VS-MAT-3-B3-K1"
+  ],
+  [
+   "mathe.vs.groessen.zeit",
+   "VS-MAT-1-B3-K2"
+  ],
+  [
+   "mathe.vs.groessen.zeit",
+   "VS-MAT-2-B3-K2"
+  ],
+  [
+   "mathe.vs.groessen.zeit",
+   "VS-MAT-3-B3-K2"
+  ],
+  [
+   "mathe.vs.groessen.zeit",
+   "VS-MAT-4-B3-K2"
+  ],
+  [
+   "mathe.vs.groessen.masse",
+   "VS-MAT-3-B3-K1"
+  ],
+  [
+   "mathe.vs.groessen.hohlmass",
+   "VS-MAT-3-B3-K1"
+  ],
+  [
+   "mathe.vs.geometrie.formen",
+   "VS-MAT-1-B4-K2"
+  ],
+  [
+   "mathe.vs.geometrie.formen",
+   "VS-MAT-3-B4-K1"
+  ],
+  [
+   "mathe.vs.geometrie.zeichnen",
+   "VS-MAT-2-B4-K2"
+  ],
+  [
+   "mathe.vs.geometrie.zeichnen",
+   "VS-MAT-3-B4-K2"
+  ],
+  [
+   "mathe.vs.geometrie.umfang",
+   "VS-MAT-3-B4-K3"
+  ],
+  [
+   "mathe.vs.geometrie.umfang",
+   "VS-MAT-4-B4-K2"
+  ],
+  [
+   "mathe.vs.geometrie.flaeche",
+   "VS-MAT-4-B4-K2"
+  ],
+  [
+   "mathe.vs.sach.einfach",
+   "VS-MAT-1-B2-K3"
+  ],
+  [
+   "mathe.vs.sach.einfach",
+   "VS-MAT-2-B2-K3"
+  ],
+  [
+   "mathe.vs.sach.mehrschritt",
+   "VS-MAT-3-B2-K3"
+  ],
+  [
+   "mathe.vs.sach.mehrschritt",
+   "VS-MAT-4-B2-K2"
+  ]
+ ]
+}

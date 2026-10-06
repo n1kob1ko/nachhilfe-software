@@ -129,9 +129,9 @@ export const commercialSources = () => listSources().filter((s) => taskBankAllow
 export const OFFICIAL_SOURCE_FOR: Record<string, string | null> = {
   Volksschule: "ris-vs",
   Mittelschule: "ris-ms",
-  Gymnasium: null,
-  HTL: null,
-  HAK: null,
+  Gymnasium: "ris-ahs",
+  HTL: "ris-htl",
+  HAK: null, // Lehrplan der HAK noch nicht vorhanden
 };
 
 export type CurriculumOverview = {
@@ -161,6 +161,48 @@ export function curriculumOverview(): CurriculumOverview[] {
       skills: subjects.map((subject) => ({ subject, count: fitting.filter((s) => s.subject === subject).length })),
     };
   });
+}
+
+// ---------- one curriculum as a tree ----------
+export type CurriculumInfo = { id: number; key: string; name: string; school_type: string; subject: string; version: string; reference: string; valid_from: string | null; source: ContentSource | null };
+export type CurriculumTreeNode = { id: number; code: string; kind: string; name: string; text: string; klasse: number | null; schulstufe: number | null; skills: { id: string; name: string }[]; children: CurriculumTreeNode[] };
+
+export function getCurriculum(key: string): CurriculumInfo | null {
+  const c = db().prepare("SELECT id, key, name, school_type, subject, version, reference, valid_from, source_id FROM curricula WHERE key = ?").get(key) as (Omit<CurriculumInfo, "source"> & { source_id: number | null }) | undefined;
+  if (!c) return null;
+  const { source_id, ...rest } = c;
+  return { ...rest, source: sourceById(source_id) };
+}
+
+/** The classes (Klassen, Schulstufen, Jahrgänge) of a curriculum, as the source names them. */
+export function curriculumClasses(id: number): { klasse: number; name: string }[] {
+  return db().prepare("SELECT klasse, MIN(name) AS name FROM curriculum_nodes WHERE curriculum_id = ? AND kind = 'klasse' GROUP BY klasse ORDER BY klasse").all(id) as { klasse: number; name: string }[];
+}
+
+/** All entries of a curriculum nested by parent, in source order, with the skills that practise each one; optionally one class only. */
+export function curriculumTree(id: number, klasse?: number | null): CurriculumTreeNode[] {
+  const rows = db()
+    .prepare("SELECT id, code, kind, name, text, klasse, schulstufe, parent_id FROM curriculum_nodes WHERE curriculum_id = ? ORDER BY sort, id")
+    .all(id) as (Omit<CurriculumTreeNode, "skills" | "children"> & { parent_id: number | null })[];
+  const links = db()
+    .prepare("SELECT sc.node_id, s.id, s.name FROM skill_curriculum sc JOIN skills s ON s.id = sc.skill_id JOIN curriculum_nodes n ON n.id = sc.node_id WHERE n.curriculum_id = ? ORDER BY s.sort, s.name")
+    .all(id) as { node_id: number; id: string; name: string }[];
+  const byId = new Map<number, CurriculumTreeNode>();
+  for (const r of rows) byId.set(r.id, { id: r.id, code: r.code, kind: r.kind, name: r.name, text: r.text, klasse: r.klasse, schulstufe: r.schulstufe, skills: [], children: [] });
+  for (const l of links) byId.get(l.node_id)?.skills.push({ id: l.id, name: l.name });
+  const roots: CurriculumTreeNode[] = [];
+  for (const r of rows) {
+    const node = byId.get(r.id)!;
+    const parent = r.parent_id ? byId.get(r.parent_id) : undefined;
+    (parent ? parent.children : roots).push(node);
+  }
+  if (klasse == null) return roots;
+  const keep = (n: CurriculumTreeNode): CurriculumTreeNode | null => {
+    if (n.klasse != null) return n.klasse === klasse ? n : null;
+    const children = n.children.map(keep).filter((c): c is CurriculumTreeNode => c !== null);
+    return children.length ? { ...n, children } : null;
+  };
+  return roots.map(keep).filter((c): c is CurriculumTreeNode => c !== null);
 }
 
 // ---------- skills for a student ----------

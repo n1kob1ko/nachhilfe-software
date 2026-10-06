@@ -1,0 +1,2820 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "Lehrplan Gymnasium – Deutsch (RIS)",
+ "description": "Offizieller Lehrplantext aus dem RIS (NOR40264238), BGBl. Nr. 88/1985 idF BGBl. II Nr. 204/2024. Unterstufe (1.–4. Klasse) und Oberstufe (5.–8. Klasse).",
+ "source": {
+  "key": "ris-ahs",
+  "name": "RIS – Lehrpläne der allgemeinbildenden höheren Schulen, Anlage A",
+  "source_type": "lehrplan",
+  "url": "https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Bundesnormen&Dokumentnummer=NOR40264238",
+  "publisher": "Republik Österreich (RIS)",
+  "license": "amtliches Werk (§ 7 UrhG)",
+  "attribution_text": "BGBl. Nr. 88/1985 idF BGBl. II Nr. 204/2024",
+  "notes": "Gesetzesnummer 10008568, Dokumentnummer NOR40264238, in Kraft seit 01.09.2026. Wortlaut nur um Seitenköpfe, Zeilenumbrüche und Fußnotenziffern bereinigt."
+ },
+ "curriculum": {
+  "key": "ris-ahs-deutsch",
+  "name": "Lehrplan Gymnasium – Deutsch",
+  "school_type": "Gymnasium",
+  "subject": "Deutsch",
+  "version": "BGBl. II Nr. 204/2024",
+  "reference": "BGBl. Nr. 88/1985 idF BGBl. II Nr. 204/2024, NOR40264238",
+  "valid_from": "2026-09-01"
+ },
+ "nodes": [
+  {
+   "code": "AHS-DEU",
+   "kind": "fach",
+   "name": "Deutsch"
+  },
+  {
+   "code": "AHS-DEU-1",
+   "kind": "klasse",
+   "name": "1. Klasse",
+   "parent": "AHS-DEU",
+   "klasse": 1,
+   "schulstufe": 5
+  },
+  {
+   "code": "AHS-DEU-1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Integrativer Kompetenzbereich Sprachbewusstsein und Sprachreflexion",
+   "parent": "AHS-DEU-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion",
+   "text": "Die Beschreibungen der zu erreichenden Kompetenzen werden in den Bereichen Zuhören und Sprechen, Lesen, Schreiben integrativ formuliert."
+  },
+  {
+   "code": "AHS-DEU-1-B1-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-1-B1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-1-B1-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Festigung von Rechtschreibfertigkeiten, die am Ende der 4. Schulstufe erworben sein …",
+   "parent": "AHS-DEU-1-B1-A1",
+   "text": "Festigung von Rechtschreibfertigkeiten, die am Ende der 4. Schulstufe erworben sein sollen, auch unter Nutzung von Rechtschreibhilfen in analoger (Wörterbuch) und digitaler Form",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-1-B1-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Basisfertigkeiten im Bereich von Wort-, Satz- und Textgrammatik",
+   "parent": "AHS-DEU-1-B1-A1",
+   "text": "Basisfertigkeiten im Bereich von Wort-, Satz- und Textgrammatik",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-1-B1-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Reflexion über die Verwendung von Sprache (Pragmatik/Semantik …",
+   "parent": "AHS-DEU-1-B1-A1",
+   "text": "Reflexion über die Verwendung von Sprache (Pragmatik/Semantik; Mündlichkeit/Schriftlichkeit; Dialekt, Umgangs-, Standardsprache; Varietäten des Deutschen; Mehrsprachigkeit, Sprachvergleiche).",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören und Sprechen",
+   "parent": "AHS-DEU-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-1-B2-K1",
+   "kind": "kompetenz",
+   "name": "mündliche Texte im direkten Kontakt oder über Medien vermittelt verstehen, erschließen …",
+   "parent": "AHS-DEU-1-B2",
+   "text": "mündliche Texte im direkten Kontakt oder über Medien vermittelt verstehen, erschließen, sichern und wiedergeben",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-1-B2-K2",
+   "kind": "kompetenz",
+   "name": "in vielfältigen standardisierten Sprech- bzw. Gesprächssituationen unter Einsatz …",
+   "parent": "AHS-DEU-1-B2",
+   "text": "in vielfältigen standardisierten Sprech- bzw. Gesprächssituationen unter Einsatz verschiedener Sprechhandlungen und sprachlicher Gestaltungsmittel sowie der Verwendung der Standardsprache kommunizieren",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-1-B2-K3",
+   "kind": "kompetenz",
+   "name": "monologisches und dialogisches Sprechen adressaten- und situationsgerecht anwenden",
+   "parent": "AHS-DEU-1-B2",
+   "text": "monologisches und dialogisches Sprechen adressaten- und situationsgerecht anwenden.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-1-B2-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-1-B2",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-1-B2-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Strategien des Zuhörens und der Gesprächsführung",
+   "parent": "AHS-DEU-1-B2-A1",
+   "text": "Strategien des Zuhörens und der Gesprächsführung",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-1-B2-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Wiedergabe von analogen und digitalen Texten (ua. literarische und pragmatische Texte …",
+   "parent": "AHS-DEU-1-B2-A1",
+   "text": "Wiedergabe von analogen und digitalen Texten (ua. literarische und pragmatische Texte, Filme, Hörbücher, Podcasts, Blogs)",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-1-B2-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Angeleitete Partner- und Gruppengespräche",
+   "parent": "AHS-DEU-1-B2-A1",
+   "text": "Angeleitete Partner- und Gruppengespräche",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-1-B2-A1-A4",
+   "kind": "anwendungsbereich",
+   "name": "Einfache Formen der Argumentation",
+   "parent": "AHS-DEU-1-B2-A1",
+   "text": "Einfache Formen der Argumentation.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "AHS-DEU-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-1-B3-K1",
+   "kind": "kompetenz",
+   "name": "sinnerfassend, mit zunehmender Leseflüssigkeit und unter Anwendung geeigneter …",
+   "parent": "AHS-DEU-1-B3",
+   "text": "sinnerfassend, mit zunehmender Leseflüssigkeit und unter Anwendung geeigneter Lesestrategien lesen und vorlesen, Inhalte entnehmen und darüber kommunizieren",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-1-B3-K2",
+   "kind": "kompetenz",
+   "name": "subjektive und kreative Zugänge zu literarischen Werken in unterschiedlichen …",
+   "parent": "AHS-DEU-1-B3",
+   "text": "subjektive und kreative Zugänge zu literarischen Werken in unterschiedlichen künstlerischen Erscheinungsformen (ua. Buch, Film, Theater) finden und zur Anschlusskommunikation nutzen",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-1-B3-K3",
+   "kind": "kompetenz",
+   "name": "die Art der Aufbereitung von Beiträgen in unterschiedlichen Mediensystemen erkennen und …",
+   "parent": "AHS-DEU-1-B3",
+   "text": "die Art der Aufbereitung von Beiträgen in unterschiedlichen Mediensystemen erkennen und darüber sprechen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-1-B3-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-1-B3",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-1-B3-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Übungen zur Förderung von Lesefertigkeiten, Vorlesen vorbereiteter Texte",
+   "parent": "AHS-DEU-1-B3-A1",
+   "text": "Übungen zur Förderung von Lesefertigkeiten, Vorlesen vorbereiteter Texte",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-1-B3-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Lektüre von literarischen und pragmatischen Texten unterschiedlicher Gattungen und …",
+   "parent": "AHS-DEU-1-B3-A1",
+   "text": "Lektüre von literarischen und pragmatischen Texten unterschiedlicher Gattungen und Darstellungsformen (auch zu übergreifenden Themen)",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-1-B3-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Einsatz von Lesestrategien und Auseinandersetzung mit persönlichen Leseerfahrungen",
+   "parent": "AHS-DEU-1-B3-A1",
+   "text": "Einsatz von Lesestrategien und Auseinandersetzung mit persönlichen Leseerfahrungen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "AHS-DEU-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-1-B4-K1",
+   "kind": "kompetenz",
+   "name": "Erlebnisse, Erfahrungen und Gedanken verschriftlichen sowie persönliche Beziehungen und …",
+   "parent": "AHS-DEU-1-B4",
+   "text": "Erlebnisse, Erfahrungen und Gedanken verschriftlichen sowie persönliche Beziehungen und Absichten ausdrücken, auch in kreativer Form",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-1-B4-K2",
+   "kind": "kompetenz",
+   "name": "schriftlich informieren und darstellen",
+   "parent": "AHS-DEU-1-B4",
+   "text": "schriftlich informieren und darstellen",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-1-B4-K3",
+   "kind": "kompetenz",
+   "name": "Textverarbeitungsprogramme zur digitalen Textproduktion einsetzen",
+   "parent": "AHS-DEU-1-B4",
+   "text": "Textverarbeitungsprogramme zur digitalen Textproduktion einsetzen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-1-B4-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-1-B4",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-1-B4-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Übungen zur Verbesserung der Schreibfertigkeit",
+   "parent": "AHS-DEU-1-B4-A1",
+   "text": "Übungen zur Verbesserung der Schreibfertigkeit",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-1-B4-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Einsatz unterschiedlicher Textmuster (ua. Erzählen, Beschreiben) zur Produktion analoger …",
+   "parent": "AHS-DEU-1-B4-A1",
+   "text": "Einsatz unterschiedlicher Textmuster (ua. Erzählen, Beschreiben) zur Produktion analoger und einfacher digitaler Texte",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-1-B4-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Kreativer Umgang mit Sprache und Schrift",
+   "parent": "AHS-DEU-1-B4-A1",
+   "text": "Kreativer Umgang mit Sprache und Schrift.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-2",
+   "kind": "klasse",
+   "name": "2. Klasse",
+   "parent": "AHS-DEU",
+   "klasse": 2,
+   "schulstufe": 6
+  },
+  {
+   "code": "AHS-DEU-2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Integrativer Kompetenzbereich Sprachbewusstsein und Sprachreflexion",
+   "parent": "AHS-DEU-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion",
+   "text": "Die Beschreibungen der zu erreichenden Kompetenzen werden in den Bereichen Zuhören und Sprechen, Lesen, Schreiben integrativ formuliert."
+  },
+  {
+   "code": "AHS-DEU-2-B1-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-2-B1",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-2-B1-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Einsatz von Methoden zur Fehlerkorrektur und Identifizierung individueller …",
+   "parent": "AHS-DEU-2-B1-A1",
+   "text": "Einsatz von Methoden zur Fehlerkorrektur und Identifizierung individueller Fehlerschwerpunkte (Anwendung von Rechtschreibstrategien)",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-2-B1-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Differenzierte Fertigkeiten im Bereich von Wort-, Satz- und Textgrammatik unter …",
+   "parent": "AHS-DEU-2-B1-A1",
+   "text": "Differenzierte Fertigkeiten im Bereich von Wort-, Satz- und Textgrammatik unter Berücksichtigung ihrer stilistischen Auswirkungen",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-2-B1-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Kennzeichen mündlicher, schriftlich-textueller und multimodaler Kommunikation (auch im …",
+   "parent": "AHS-DEU-2-B1-A1",
+   "text": "Kennzeichen mündlicher, schriftlich-textueller und multimodaler Kommunikation (auch im Kontext von Mehrsprachigkeit).",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören und Sprechen",
+   "parent": "AHS-DEU-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-2-B2-K1",
+   "kind": "kompetenz",
+   "name": "Inhalte aus unterschiedlichen medialen Beiträgen erschließen, Absichten und Emotionen …",
+   "parent": "AHS-DEU-2-B2",
+   "text": "Inhalte aus unterschiedlichen medialen Beiträgen erschließen, Absichten und Emotionen wahrnehmen, Wissen sichern, wiedergeben und der Situation angemessen reagieren",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-2-B2-K2",
+   "kind": "kompetenz",
+   "name": "bereits bekannte verbale und nonverbale Mittel variieren, monologische und dialogische …",
+   "parent": "AHS-DEU-2-B2",
+   "text": "bereits bekannte verbale und nonverbale Mittel variieren, monologische und dialogische Sprechbeiträge planen und ausführen, um adressaten- und situationsgerecht zu kommunizieren",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-2-B2-K3",
+   "kind": "kompetenz",
+   "name": "aus unterschiedlichen Quellen (ua. Bücher, Zeitungen, Zeitschriften, Internet) …",
+   "parent": "AHS-DEU-2-B2",
+   "text": "aus unterschiedlichen Quellen (ua. Bücher, Zeitungen, Zeitschriften, Internet) Informationen einholen, aufbereiten und mündlich präsentieren.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-2-B2-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-2-B2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-2-B2-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Partner- und Gruppengespräche sowie Moderation einfacher Gespräche unter Berücksichtigung …",
+   "parent": "AHS-DEU-2-B2-A1",
+   "text": "Partner- und Gruppengespräche sowie Moderation einfacher Gespräche unter Berücksichtigung der kommunikativen Grundregeln",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-2-B2-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Einfache Formen der Argumentation",
+   "parent": "AHS-DEU-2-B2-A1",
+   "text": "Einfache Formen der Argumentation",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-2-B2-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Unterschiedliche Präsentationsformen",
+   "parent": "AHS-DEU-2-B2-A1",
+   "text": "Unterschiedliche Präsentationsformen.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-2-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "AHS-DEU-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-2-B3-K1",
+   "kind": "kompetenz",
+   "name": "sinnerfassend und mit gesteigerter Leseflüssigkeit unterschiedliche Texte und Textformate …",
+   "parent": "AHS-DEU-2-B3",
+   "text": "sinnerfassend und mit gesteigerter Leseflüssigkeit unterschiedliche Texte und Textformate lesen und vorlesen, dabei mittels Lesestrategien Informationen erschließen und aufbereiten;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-2-B3-K2",
+   "kind": "kompetenz",
+   "name": "die gestalterischen und inhaltlichen Besonderheiten literarischer Texte und Medienformate …",
+   "parent": "AHS-DEU-2-B3",
+   "text": "die gestalterischen und inhaltlichen Besonderheiten literarischer Texte und Medienformate (ua. Buch, Film, Theater) erkennen, erschließen und über ihre subjektiven Lesarten mit anderen sprechen",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-2-B3-K3",
+   "kind": "kompetenz",
+   "name": "Beiträge aus unterschiedlichen medialen Quellen recherchieren, ihre Wirkung erkennen und …",
+   "parent": "AHS-DEU-2-B3",
+   "text": "Beiträge aus unterschiedlichen medialen Quellen recherchieren, ihre Wirkung erkennen und differenzieren, mit Internetquellen sorgsam und dem Datenschutz gemäß umgehen.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-2-B3-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-2-B3",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-2-B3-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Übungen zur Förderung von Lesefertigkeiten, auch unter Einsatz digitaler Lernhilfen",
+   "parent": "AHS-DEU-2-B3-A1",
+   "text": "Übungen zur Förderung von Lesefertigkeiten, auch unter Einsatz digitaler Lernhilfen",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-2-B3-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Auseinandersetzung mit literarischen und pragmatischen Texten unterschiedlicher Gattungen …",
+   "parent": "AHS-DEU-2-B3-A1",
+   "text": "Auseinandersetzung mit literarischen und pragmatischen Texten unterschiedlicher Gattungen und Darstellungsformen (auch zu übergreifenden Themen)",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-2-B3-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Beschäftigung mit multimedialen und multimodalen Texten (ua. Comics, Graphic Novels …",
+   "parent": "AHS-DEU-2-B3-A1",
+   "text": "Beschäftigung mit multimedialen und multimodalen Texten (ua. Comics, Graphic Novels, Film) sowie deren Gemachtheit und Wirkung",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-2-B3-A1-A4",
+   "kind": "anwendungsbereich",
+   "name": "Auseinandersetzung mit der eigenen Lesemotivation und Lesebiografie",
+   "parent": "AHS-DEU-2-B3-A1",
+   "text": "Auseinandersetzung mit der eigenen Lesemotivation und Lesebiografie.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-2-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "AHS-DEU-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-2-B4-K1",
+   "kind": "kompetenz",
+   "name": "Schreiben zur Gestaltung von persönlichen Beziehungen, als Mittel der Strukturierung von …",
+   "parent": "AHS-DEU-2-B4",
+   "text": "Schreiben zur Gestaltung von persönlichen Beziehungen, als Mittel der Strukturierung von Gedanken und Inhalten sowie als kreative Ausdrucksform nutzen",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-2-B4-K2",
+   "kind": "kompetenz",
+   "name": "schriftlich informieren und darstellen, auch auf materialgestützter Basis",
+   "parent": "AHS-DEU-2-B4",
+   "text": "schriftlich informieren und darstellen, auch auf materialgestützter Basis",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-2-B4-K3",
+   "kind": "kompetenz",
+   "name": "einfache Argumente schriftlich formulieren und auf Aussagen anderer sprachlich und …",
+   "parent": "AHS-DEU-2-B4",
+   "text": "einfache Argumente schriftlich formulieren und auf Aussagen anderer sprachlich und inhaltlich angemessen reagieren",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-2-B4-K4",
+   "kind": "kompetenz",
+   "name": "mit Hilfe von Textverarbeitungsprogrammen Texte gestalten und optimieren, zwischen …",
+   "parent": "AHS-DEU-2-B4",
+   "text": "mit Hilfe von Textverarbeitungsprogrammen Texte gestalten und optimieren, zwischen Möglichkeiten und Anforderungen manuellen und computergestützten Schreibens unterscheiden.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-2-B4-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-2-B4",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-2-B4-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "freies (auch kreatives) und materialgestütztes Schreiben unter Verwendung von …",
+   "parent": "AHS-DEU-2-B4-A1",
+   "text": "freies (auch kreatives) und materialgestütztes Schreiben unter Verwendung von Textbausteinen",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-2-B4-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Einsatz unterschiedlicher Textmuster (ua. Erzählen, Berichten, Darstellen)",
+   "parent": "AHS-DEU-2-B4-A1",
+   "text": "Einsatz unterschiedlicher Textmuster (ua. Erzählen, Berichten, Darstellen)",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-2-B4-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Berücksichtigung der Phasen eines Schreibprozesses (Planen, Verfassen, Überarbeiten)",
+   "parent": "AHS-DEU-2-B4-A1",
+   "text": "Berücksichtigung der Phasen eines Schreibprozesses (Planen, Verfassen, Überarbeiten).",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-3",
+   "kind": "klasse",
+   "name": "3. Klasse",
+   "parent": "AHS-DEU",
+   "klasse": 3,
+   "schulstufe": 7
+  },
+  {
+   "code": "AHS-DEU-3-B1",
+   "kind": "kompetenzbereich",
+   "name": "Integrativer Kompetenzbereich Sprachbewusstsein und Sprachreflexion",
+   "parent": "AHS-DEU-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion",
+   "text": "Die Beschreibungen der zu erreichenden Kompetenzen werden in den Bereichen Zuhören und Sprechen, Lesen, Schreiben integrativ formuliert."
+  },
+  {
+   "code": "AHS-DEU-3-B1-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-3-B1",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-3-B1-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Einsichten in Rechtschreibung und Grammatik hinsichtlich Gebrauch und Funktion",
+   "parent": "AHS-DEU-3-B1-A1",
+   "text": "Einsichten in Rechtschreibung und Grammatik hinsichtlich Gebrauch und Funktion;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-3-B1-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Ausdifferenzierte Verwendung von Textorganisatoren",
+   "parent": "AHS-DEU-3-B1-A1",
+   "text": "Ausdifferenzierte Verwendung von Textorganisatoren",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-3-B1-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Kennzeichen und Wirkungsweisen unterschiedlicher Sprachvarianten (im Kontext von innerer …",
+   "parent": "AHS-DEU-3-B1-A1",
+   "text": "Kennzeichen und Wirkungsweisen unterschiedlicher Sprachvarianten (im Kontext von innerer und äußerer Mehrsprachigkeit), Analyse sprachlicher Diskurse.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-3-B2",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören und Sprechen",
+   "parent": "AHS-DEU-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-3-B2-K1",
+   "kind": "kompetenz",
+   "name": "Inhalte aus multimedialen Beiträgen erschließen und analysieren, dabei Absichten und …",
+   "parent": "AHS-DEU-3-B2",
+   "text": "Inhalte aus multimedialen Beiträgen erschließen und analysieren, dabei Absichten und Emotionen reflektieren und Schlüsse daraus ziehen",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-3-B2-K2",
+   "kind": "kompetenz",
+   "name": "ihr Repertoire verbaler und nonverbaler Mittel unter Einsatz unterschiedlicher …",
+   "parent": "AHS-DEU-3-B2",
+   "text": "ihr Repertoire verbaler und nonverbaler Mittel unter Einsatz unterschiedlicher sprachlicher Register (Bildungs- und Standardsprache) erweitern und Sprechhandlungen bewusst einsetzen",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-3-B2-K3",
+   "kind": "kompetenz",
+   "name": "aus verschiedenen Quellen gezielt Informationen einholen, thematisch aufbereiten und …",
+   "parent": "AHS-DEU-3-B2",
+   "text": "aus verschiedenen Quellen gezielt Informationen einholen, thematisch aufbereiten und medial unterstützt mündlich präsentieren sowie diskutieren.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-3-B2-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-3-B2",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-3-B2-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Angeleitete Analyse, Reflexion und Präsentation von analogen, digitalen und multimedialen …",
+   "parent": "AHS-DEU-3-B2-A1",
+   "text": "Angeleitete Analyse, Reflexion und Präsentation von analogen, digitalen und multimedialen Texten",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-3-B2-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Selbstständig geführte Partner- und Gruppengespräche, auch im Hinblick auf die eigene …",
+   "parent": "AHS-DEU-3-B2-A1",
+   "text": "Selbstständig geführte Partner- und Gruppengespräche, auch im Hinblick auf die eigene Berufsbildung",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-3-B2-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Argumentation aus verschiedenen Rollen und Perspektiven",
+   "parent": "AHS-DEU-3-B2-A1",
+   "text": "Argumentation aus verschiedenen Rollen und Perspektiven.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-3-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "AHS-DEU-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-3-B3-K1",
+   "kind": "kompetenz",
+   "name": "wesentliche Informationen durch bewussten Einsatz geeigneter Strategien aus …",
+   "parent": "AHS-DEU-3-B3",
+   "text": "wesentliche Informationen durch bewussten Einsatz geeigneter Strategien aus unterschiedlichen Texten und Textformaten entnehmen, strukturieren und mit eigenem Wissen verknüpfen",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-3-B3-K2",
+   "kind": "kompetenz",
+   "name": "eigene Leseinteressen vertiefen, literarische Gattungen unterscheiden, literarästhetische …",
+   "parent": "AHS-DEU-3-B3",
+   "text": "eigene Leseinteressen vertiefen, literarische Gattungen unterscheiden, literarästhetische Produkte verstehen und im Hinblick auf die eigene Lebens- und Erfahrungswelt reflektieren",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-3-B3-K3",
+   "kind": "kompetenz",
+   "name": "Texte mit Hilfe szenischer Mittel vortragen und darstellen",
+   "parent": "AHS-DEU-3-B3",
+   "text": "Texte mit Hilfe szenischer Mittel vortragen und darstellen",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-3-B3-K4",
+   "kind": "kompetenz",
+   "name": "Absichten und Ziele in der Gestaltung von medialen Beiträgen erkennen und einschätzen …",
+   "parent": "AHS-DEU-3-B3",
+   "text": "Absichten und Ziele in der Gestaltung von medialen Beiträgen erkennen und einschätzen, Informationssysteme gezielt nutzen und mit digitalen Kommunikationsmedien und Gemeinschaftsforen kritisch umgehen.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-3-B3-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-3-B3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-3-B3-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Übungen zum vortragenden und szenischen Lesen",
+   "parent": "AHS-DEU-3-B3-A1",
+   "text": "Übungen zum vortragenden und szenischen Lesen",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-3-B3-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Reflexion literarischer und pragmatischer, linearer und nichtlinearer Texte (auch zu …",
+   "parent": "AHS-DEU-3-B3-A1",
+   "text": "Reflexion literarischer und pragmatischer, linearer und nichtlinearer Texte (auch zu übergreifenden Themen)",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-3-B3-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Analyse der Kennzeichen, Gemachtheit und Wirkung multimedialer und multimodaler Texte",
+   "parent": "AHS-DEU-3-B3-A1",
+   "text": "Analyse der Kennzeichen, Gemachtheit und Wirkung multimedialer und multimodaler Texte",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-3-B3-A1-A4",
+   "kind": "anwendungsbereich",
+   "name": "Auseinandersetzung mit der eigenen Lesemotivation und der Lese- und Medienbiografie",
+   "parent": "AHS-DEU-3-B3-A1",
+   "text": "Auseinandersetzung mit der eigenen Lesemotivation und der Lese- und Medienbiografie",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-3-B3-A1-A5",
+   "kind": "anwendungsbereich",
+   "name": "Vergleich von Informations- und Kommunikationssystemen (Quellenkritik)",
+   "parent": "AHS-DEU-3-B3-A1",
+   "text": "Vergleich von Informations- und Kommunikationssystemen (Quellenkritik).",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-3-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "AHS-DEU-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-3-B4-K1",
+   "kind": "kompetenz",
+   "name": "aus unterschiedlichen Perspektiven anhand konkreter Vorgaben erzählen und Sprache bewusst …",
+   "parent": "AHS-DEU-3-B4",
+   "text": "aus unterschiedlichen Perspektiven anhand konkreter Vorgaben erzählen und Sprache bewusst als gestaltend-kreatives Element einsetzen",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-3-B4-K2",
+   "kind": "kompetenz",
+   "name": "schriftlich informieren und argumentieren, auch auf materialgestützter Basis",
+   "parent": "AHS-DEU-3-B4",
+   "text": "schriftlich informieren und argumentieren, auch auf materialgestützter Basis",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-3-B4-K3",
+   "kind": "kompetenz",
+   "name": "mit Hilfe von Textverarbeitungsprogrammen und Formatvorgaben multimediale Texte gestalten …",
+   "parent": "AHS-DEU-3-B4",
+   "text": "mit Hilfe von Textverarbeitungsprogrammen und Formatvorgaben multimediale Texte gestalten und optimieren.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-3-B4-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-3-B4",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-3-B4-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Kreatives Schreiben auf der Basis literarischer und pragmatischer Texte",
+   "parent": "AHS-DEU-3-B4-A1",
+   "text": "Kreatives Schreiben auf der Basis literarischer und pragmatischer Texte",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-3-B4-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Argumentierendes Schreiben als Ausdruck persönlicher Meinungen und Haltungen",
+   "parent": "AHS-DEU-3-B4-A1",
+   "text": "Argumentierendes Schreiben als Ausdruck persönlicher Meinungen und Haltungen",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-3-B4-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Einsatz unterschiedlicher Methoden zur Überarbeitung eigener und fremder Texte …",
+   "parent": "AHS-DEU-3-B4-A1",
+   "text": "Einsatz unterschiedlicher Methoden zur Überarbeitung eigener und fremder Texte (Feedbackkultur).",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-4",
+   "kind": "klasse",
+   "name": "4. Klasse",
+   "parent": "AHS-DEU",
+   "klasse": 4,
+   "schulstufe": 8
+  },
+  {
+   "code": "AHS-DEU-4-B1",
+   "kind": "kompetenzbereich",
+   "name": "Integrativer Kompetenzbereich Sprachbewusstsein und Sprachreflexion",
+   "parent": "AHS-DEU-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion",
+   "text": "Die Beschreibungen der zu erreichenden Kompetenzen werden in den Bereichen Zuhören und Sprechen, Lesen, Schreiben integrativ formuliert."
+  },
+  {
+   "code": "AHS-DEU-4-B1-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-4-B1",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-4-B1-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Vertieftes Verständnis von sprachlichen Strukturen und Regeln (Variation und Vergleich)",
+   "parent": "AHS-DEU-4-B1-A1",
+   "text": "Vertieftes Verständnis von sprachlichen Strukturen und Regeln (Variation und Vergleich)",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-4-B1-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Auseinandersetzung mit Soziolekten, Dialekten, Fachsprachen, Idiolekten und deren …",
+   "parent": "AHS-DEU-4-B1-A1",
+   "text": "Auseinandersetzung mit Soziolekten, Dialekten, Fachsprachen, Idiolekten und deren Abweichungen von der Standardsprache",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-4-B1-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Einsicht in die Sprachverwendung im Kontext von Mehrsprachigkeit",
+   "parent": "AHS-DEU-4-B1-A1",
+   "text": "Einsicht in die Sprachverwendung im Kontext von Mehrsprachigkeit.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "AHS-DEU-4-B2",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören und Sprechen",
+   "parent": "AHS-DEU-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-4-B2-K1",
+   "kind": "kompetenz",
+   "name": "in unterschiedlichen Beiträgen, im direkten Kontakt oder über Medien vermittelt …",
+   "parent": "AHS-DEU-4-B2",
+   "text": "in unterschiedlichen Beiträgen, im direkten Kontakt oder über Medien vermittelt, Mehrdeutigkeiten und nicht explizit genannte Inhalte erschließen und interpretieren, dabei Absichten und Emotionen reflektieren und situationsbezogen Schlüsse daraus ziehen",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-4-B2-K2",
+   "kind": "kompetenz",
+   "name": "ihr Repertoire verbaler und nonverbaler Mittel erweitern und Sprache unter Verwendung …",
+   "parent": "AHS-DEU-4-B2",
+   "text": "ihr Repertoire verbaler und nonverbaler Mittel erweitern und Sprache unter Verwendung unterschiedlicher sprachlicher Register (Standard- und Bildungssprache) reflektiert und bewusst kreativ einsetzen",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-4-B2-K3",
+   "kind": "kompetenz",
+   "name": "aus bewusst gewählten Quellen Informationen gezielt herausfiltern, thematisch aufbereiten …",
+   "parent": "AHS-DEU-4-B2",
+   "text": "aus bewusst gewählten Quellen Informationen gezielt herausfiltern, thematisch aufbereiten und unter Anwendung entsprechender Visualisierungsmethoden mündlich präsentieren.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-4-B2-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-4-B2",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-4-B2-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Eigenständige Reflexion, Interpretation und Präsentation von analogen, digitalen und …",
+   "parent": "AHS-DEU-4-B2-A1",
+   "text": "Eigenständige Reflexion, Interpretation und Präsentation von analogen, digitalen und multimedialen Texten",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-4-B2-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Kollegial-wertschätzende Feedbackkultur in allen Gesprächsformen",
+   "parent": "AHS-DEU-4-B2-A1",
+   "text": "Kollegial-wertschätzende Feedbackkultur in allen Gesprächsformen",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-4-B2-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Zunehmend selbstständige Appelle, Argumentationen und Diskussionen in verschiedenen …",
+   "parent": "AHS-DEU-4-B2-A1",
+   "text": "Zunehmend selbstständige Appelle, Argumentationen und Diskussionen in verschiedenen Sozialformen",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "AHS-DEU-4-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "AHS-DEU-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-4-B3-K1",
+   "kind": "kompetenz",
+   "name": "pragmatische und literarische Texte und Medien in unterschiedlichen Darbietungsformen …",
+   "parent": "AHS-DEU-4-B3",
+   "text": "pragmatische und literarische Texte und Medien in unterschiedlichen Darbietungsformen rezipieren, deren Inhalt, Form und Sprache erschließen und ihre Entstehungszusammenhänge erfassen",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-4-B3-K2",
+   "kind": "kompetenz",
+   "name": "eigene Leseinteressen vertiefen, eine dynamische und vielfältige Lesebiografie entwickeln …",
+   "parent": "AHS-DEU-4-B3",
+   "text": "eigene Leseinteressen vertiefen, eine dynamische und vielfältige Lesebiografie entwickeln und sich differenziert mit anderen darüber austauschen",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-4-B3-K3",
+   "kind": "kompetenz",
+   "name": "Texte mit Hilfe szenischer Mittel vortragen, darstellen und mit anderen künstlerischen …",
+   "parent": "AHS-DEU-4-B3",
+   "text": "Texte mit Hilfe szenischer Mittel vortragen, darstellen und mit anderen künstlerischen Ausdrucksformen vergleichen",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-4-B3-K4",
+   "kind": "kompetenz",
+   "name": "die Aufbereitung und Gestaltung von Themen und Inhalten medialer Beiträge erkennen und …",
+   "parent": "AHS-DEU-4-B3",
+   "text": "die Aufbereitung und Gestaltung von Themen und Inhalten medialer Beiträge erkennen und vergleichen und dabei Informationssysteme differenziert und kritisch nutzen.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-4-B3-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-4-B3",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-4-B3-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Vergleich, Analyse und Interpretation der ästhetischen Gestaltung und stilistischen …",
+   "parent": "AHS-DEU-4-B3-A1",
+   "text": "Vergleich, Analyse und Interpretation der ästhetischen Gestaltung und stilistischen Ausdrucksformen literarischer Texte",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-4-B3-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Vergleich, Analyse und Reflexion komplexerer analoger und digitaler pragmatischer Texte …",
+   "parent": "AHS-DEU-4-B3-A1",
+   "text": "Vergleich, Analyse und Reflexion komplexerer analoger und digitaler pragmatischer Texte (auch zu übergreifenden Themen)",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-4-B3-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Kritische Auseinandersetzung mit den persönlichen Lese- und Mediengewohnheiten",
+   "parent": "AHS-DEU-4-B3-A1",
+   "text": "Kritische Auseinandersetzung mit den persönlichen Lese- und Mediengewohnheiten",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-4-B3-A1-A4",
+   "kind": "anwendungsbereich",
+   "name": "Selbstständige Recherche und Aufbereitung eines komplexen Themas unter Zuhilfenahme …",
+   "parent": "AHS-DEU-4-B3-A1",
+   "text": "Selbstständige Recherche und Aufbereitung eines komplexen Themas unter Zuhilfenahme vielfältiger Quellen (ua. Bücher, Zeitungen, Zeitschriften, Filme, Videos, digitale Texte)",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "AHS-DEU-4-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "AHS-DEU-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-4-B4-K1",
+   "kind": "kompetenz",
+   "name": "unterschiedliche Impulse und Vorlagen für eigene pragmatische und kreative …",
+   "parent": "AHS-DEU-4-B4",
+   "text": "unterschiedliche Impulse und Vorlagen für eigene pragmatische und kreative Schreibprozesse nutzen",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-4-B4-K2",
+   "kind": "kompetenz",
+   "name": "zu strittigen Sachverhalten, unter Einbeziehung differenzierter Quellen, argumentierend …",
+   "parent": "AHS-DEU-4-B4",
+   "text": "zu strittigen Sachverhalten, unter Einbeziehung differenzierter Quellen, argumentierend schreiben und auf Gegenargumente eingehen",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-4-B4-K3",
+   "kind": "kompetenz",
+   "name": "Textverarbeitungsprogramme zur Gestaltung umfangreicherer multimedialer Texte, auch im …",
+   "parent": "AHS-DEU-4-B4",
+   "text": "Textverarbeitungsprogramme zur Gestaltung umfangreicherer multimedialer Texte, auch im Team, nutzen",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-4-B4-K4",
+   "kind": "kompetenz",
+   "name": "Bedeutungswandel der Schrift und des Schreibens in analogen, digitalen und multimodalen …",
+   "parent": "AHS-DEU-4-B4",
+   "text": "Bedeutungswandel der Schrift und des Schreibens in analogen, digitalen und multimodalen Settings reflektieren.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-4-B4-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "AHS-DEU-4-B4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-4-B4-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Textproduktion unter gezieltem Einsatz von Vorgaben und Vorlagen",
+   "parent": "AHS-DEU-4-B4-A1",
+   "text": "Textproduktion unter gezieltem Einsatz von Vorgaben und Vorlagen",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-4-B4-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Argumentatives und analytisches Schreiben, auch auf materialgestützter Basis",
+   "parent": "AHS-DEU-4-B4-A1",
+   "text": "Argumentatives und analytisches Schreiben, auch auf materialgestützter Basis",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-4-B4-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Einschätzung von Textqualität, Einsatz von wertschätzendem Feedback",
+   "parent": "AHS-DEU-4-B4-A1",
+   "text": "Einschätzung von Textqualität, Einsatz von wertschätzendem Feedback",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-4-B4-A1-A4",
+   "kind": "anwendungsbereich",
+   "name": "Auseinandersetzung mit Funktion, Vielfalt und Gebrauch von Sprache und Schrift",
+   "parent": "AHS-DEU-4-B4-A1",
+   "text": "Auseinandersetzung mit Funktion, Vielfalt und Gebrauch von Sprache und Schrift",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "AHS-DEU-5",
+   "kind": "klasse",
+   "name": "5. Klasse",
+   "parent": "AHS-DEU",
+   "klasse": 5,
+   "schulstufe": 9,
+   "text": "1. und 2. Semester"
+  },
+  {
+   "code": "AHS-DEU-5-T1",
+   "kind": "thema",
+   "name": "Mündliche Kompetenz",
+   "parent": "AHS-DEU-5",
+   "klasse": 5,
+   "schulstufe": 9,
+   "content_area": "Mündliche Kompetenz"
+  },
+  {
+   "code": "AHS-DEU-5-T1-T1",
+   "kind": "thema",
+   "name": "Hörverständnis",
+   "parent": "AHS-DEU-5-T1",
+   "text": "monologischen und dialogischen Redebeiträgen folgen können, dabei Inhalts- und Beziehungsebene unterscheiden",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T1-T2",
+   "kind": "thema",
+   "name": "Sprechsituationen und Sprechanlässe",
+   "parent": "AHS-DEU-5-T1",
+   "text": "an verschiedenen Kommunikationssituationen teilnehmen; auf die Angemessenheit des sprachlichen Ausdrucks achten; Mittel der Gedächtnisunterstützung anwenden; Präsentationsformen kennenlernen und anwenden",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T1-T3",
+   "kind": "thema",
+   "name": "Kommunikatives Verhalten",
+   "parent": "AHS-DEU-5-T1",
+   "text": "Faktoren kommunikativer Prozesse verstehen und aktiv mitgestalten; Rollen innerhalb verschiedener Kommunikationsprozesse erkennen und anwenden; Anlass und Intention beachten",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T2",
+   "kind": "thema",
+   "name": "Schriftliche Kompetenz",
+   "parent": "AHS-DEU-5",
+   "klasse": 5,
+   "schulstufe": 9,
+   "content_area": "Schriftliche Kompetenz"
+  },
+  {
+   "code": "AHS-DEU-5-T2-T1",
+   "kind": "thema",
+   "name": "Schreibhaltungen und Textsorten",
+   "parent": "AHS-DEU-5-T2",
+   "text": "unterschiedliche Schreibhaltungen entwickeln; Textsorten aus dem privaten, öffentlichen, journalistischen Leben verfassen, insbesondere Zusammenfassung, Leserbrief, Erörterung",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T2-T2",
+   "kind": "thema",
+   "name": "Schreiben für sich",
+   "parent": "AHS-DEU-5-T2",
+   "text": "durch spielerisch-schöpferisches, kreatives Schreiben die eigene Identität entwickeln; Schreiben als Instrument der Wissensaneignung einsetzen; lernprozessunterstützende Textsorten verfassen, auch über Wege der digitalen Medien",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T2-T3",
+   "kind": "thema",
+   "name": "Schreiben für andere",
+   "parent": "AHS-DEU-5-T2",
+   "text": "unterschiedliche situative Kontexte beachten: Voraussetzungen und Erwartungen von Leserinnen und Lesern berücksichtigen, um verständlich zu schreiben, um zu überzeugen und zu unterhalten",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T3",
+   "kind": "thema",
+   "name": "Schreibprozess",
+   "parent": "AHS-DEU-5",
+   "klasse": 5,
+   "schulstufe": 9,
+   "content_area": "Schreibprozess"
+  },
+  {
+   "code": "AHS-DEU-5-T3-K1",
+   "kind": "kompetenz",
+   "name": "Planen: verschiedene Techniken der Ideensammlung kennen und gezielt anwenden; Textaufbau …",
+   "parent": "AHS-DEU-5-T3",
+   "text": "Planen: verschiedene Techniken der Ideensammlung kennen und gezielt anwenden; Textaufbau erarbeiten; Zeit einteilen",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T3-K2",
+   "kind": "kompetenz",
+   "name": "Formulieren: ein der Kommunikationssituation entsprechendes Format wählen und angemessene …",
+   "parent": "AHS-DEU-5-T3",
+   "text": "Formulieren: ein der Kommunikationssituation entsprechendes Format wählen und angemessene Sprach- und Schreibnormen einhalten",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T3-K3",
+   "kind": "kompetenz",
+   "name": "Überarbeiten: eigene Texte optimieren und dabei Schreibhaltung, Textsorte …",
+   "parent": "AHS-DEU-5-T3",
+   "text": "Überarbeiten: eigene Texte optimieren und dabei Schreibhaltung, Textsorte, Lesererwartungen, Verständlichkeit, Sprachrichtigkeit und Schreibrichtigkeit berücksichtigen",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T3-T1",
+   "kind": "thema",
+   "name": "Rechtschreiben",
+   "parent": "AHS-DEU-5-T3",
+   "text": "eigene Rechtschreibschwächen erkennen und abbauen",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T4",
+   "kind": "thema",
+   "name": "Textkompetenz",
+   "parent": "AHS-DEU-5",
+   "klasse": 5,
+   "schulstufe": 9,
+   "content_area": "Textkompetenz"
+  },
+  {
+   "code": "AHS-DEU-5-T4-T1",
+   "kind": "thema",
+   "name": "Informationen entnehmen/Textinhalt erfassen",
+   "parent": "AHS-DEU-5-T4",
+   "text": "lineare und nichtlineare Texte in unterschiedlichen Medien zu verschiedenen Themen auffinden und sie allgemeinen Problembereichen zuordnen; verschiedene Techniken der Texterfassung beherrschen, Merkmale von Textsorten erkennen; Techniken der raschen und zielgerichteten Informationsentnahme anwenden",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T4-T2",
+   "kind": "thema",
+   "name": "Texte interpretieren/Textsinn verstehen",
+   "parent": "AHS-DEU-5-T4",
+   "text": "äußere und innere Gliederung eines Textes erkennen und den gedanklichen Aufbau erfassen; Informationen themenorientiert entnehmen und verknüpfen",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T4-T3",
+   "kind": "thema",
+   "name": "Texte reflektieren und bewerten",
+   "parent": "AHS-DEU-5-T4",
+   "text": "den Text mit dem eigenen Wissens- und Erfahrungssystem verknüpfen; wichtige und unwichtige Informationen unterscheiden",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T5",
+   "kind": "thema",
+   "name": "Literarische Bildung",
+   "parent": "AHS-DEU-5",
+   "klasse": 5,
+   "schulstufe": 9,
+   "content_area": "Literarische Bildung"
+  },
+  {
+   "code": "AHS-DEU-5-T5-T1",
+   "kind": "thema",
+   "name": "Texte und Kontexte",
+   "parent": "AHS-DEU-5-T5",
+   "text": "persönliche Zugänge zu ästhetischen Texten finden und eigene Leseinteressen artikulieren; ästhetische Texte, insbesondere aus der Antike, im historischen und kulturellen Kontext erfassen, Bezüge zur Gegenwart herstellen",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T5-T2",
+   "kind": "thema",
+   "name": "Werkpoetik",
+   "parent": "AHS-DEU-5-T5",
+   "text": "Kennzeichen ästhetischer Texte kennenlernen; Merkmale von Textarten und Genres feststellen und als Mittel der Textintention verstehen; Ort, Figuren, Geschehen, Zeit als literarische Grundelemente benennen; Erzählerin bzw. Erzähler und lyrisches Ich in ihrer Funktion erfassen; grundlegende filmsprachliche Mittel erfassen",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T5-T3",
+   "kind": "thema",
+   "name": "Rezeption und Interpretation",
+   "parent": "AHS-DEU-5-T5",
+   "text": "den Leseprozess auf dem Hintergrund subjektiven Erlebens reflektieren; Inhalte ästhetischer Texte wiedergeben",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T6",
+   "kind": "thema",
+   "name": "Mediale Bildung",
+   "parent": "AHS-DEU-5",
+   "klasse": 5,
+   "schulstufe": 9,
+   "content_area": "Mediale Bildung"
+  },
+  {
+   "code": "AHS-DEU-5-T6-T1",
+   "kind": "thema",
+   "name": "Mediennutzungskompetenz",
+   "parent": "AHS-DEU-5-T6",
+   "text": "Wissen aus Medien erfassen; relevante Informationen aus verschiedenen Medienformaten entnehmen; Fertigkeiten des Informationslesens in den digitalen Medien anwenden können: Querlesen, Parallellesen, Hypertextlesen",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-5-T6-T2",
+   "kind": "thema",
+   "name": "Medienkulturkompetenz",
+   "parent": "AHS-DEU-5-T6",
+   "text": "unterschiedliche Medienproduktionsformen (Buch und andere Printmedien, Film, Fernsehen, Video, Rundfunk, digitale Medien) kennen und in ihrer Funktion und Wirkung unterscheiden",
+   "klasse": 5,
+   "schulstufe": 9
+  },
+  {
+   "code": "AHS-DEU-6",
+   "kind": "klasse",
+   "name": "6. Klasse",
+   "parent": "AHS-DEU",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1",
+   "kind": "semester",
+   "name": "3. Semester – Kompetenzmodul 3",
+   "parent": "AHS-DEU-6"
+  },
+  {
+   "code": "AHS-DEU-6-S1-T1",
+   "kind": "thema",
+   "name": "Mündliche Kompetenz",
+   "parent": "AHS-DEU-6-S1",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Mündliche Kompetenz"
+  },
+  {
+   "code": "AHS-DEU-6-S1-T1-T1",
+   "kind": "thema",
+   "name": "Hörverständnis",
+   "parent": "AHS-DEU-6-S1-T1",
+   "text": "Gesprächen folgen; öffentlichen Sprachgebrauch analysieren und kritisch kommentieren (SR)",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T1-T2",
+   "kind": "thema",
+   "name": "Sprechsituationen und Sprechanlässe",
+   "parent": "AHS-DEU-6-S1-T1",
+   "text": "in verschiedenen Kommunikationssituationen vorbereitet sprechen; auf die Angemessenheit des sprachlichen Ausdrucks achten; verantwortungsbewussten Umgang mit eigenen sprachlichen Äußerungen erlernen (SR); Einfachheit, Gliederung, Prägnanz und anregende Zusätze beachten; Rollen innerhalb des Kommunikationsprozesses erkennen und beschreiben; sprachliche Strategien in der Kommunikation reflektieren (SR)",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T1-T3",
+   "kind": "thema",
+   "name": "Kommunikatives Verhalten",
+   "parent": "AHS-DEU-6-S1-T1",
+   "text": "Faktoren kommunikativer Prozesse verstehen und aktiv mitgestalten: Redeumgebung erkennen; die sprachliche Herkunft von Gesprächsteilnehmern und Gesprächsteilnehmerinnen und deren unterschiedliche kulturelle Kontexte beachten",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T2",
+   "kind": "thema",
+   "name": "Schriftliche Kompetenz",
+   "parent": "AHS-DEU-6-S1",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Schriftliche Kompetenz"
+  },
+  {
+   "code": "AHS-DEU-6-S1-T2-T1",
+   "kind": "thema",
+   "name": "Schreibhaltungen und Textsorten",
+   "parent": "AHS-DEU-6-S1-T2",
+   "text": "verschiedene Schreibhaltungen beherrschen; Textsorten aus dem öffentlichen und journalistischen Leben verfassen, insbesondere Zusammenfassung, Erörterung, Kommentar",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T2-T2",
+   "kind": "thema",
+   "name": "Schreiben für sich",
+   "parent": "AHS-DEU-6-S1-T2",
+   "text": "Schreiben als Instrument der Wissensaneignung einsetzen; lernprozessunterstützende Texte verfassen, auch über Wege der digitalen Medien",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T2-T3",
+   "kind": "thema",
+   "name": "Schreiben für andere",
+   "parent": "AHS-DEU-6-S1-T2",
+   "text": "unterschiedliche situative Kontexte beachten: Voraussetzungen und Erwartungen von Leserinnen und Lesern berücksichtigen, um verständlich zu schreiben, um zu überzeugen und zu unterhalten; Texte auf die eigene Schreibabsicht hin ausrichten; rhetorische Mittel verwenden",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T3",
+   "kind": "thema",
+   "name": "Schreibprozess",
+   "parent": "AHS-DEU-6-S1",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Schreibprozess"
+  },
+  {
+   "code": "AHS-DEU-6-S1-T3-K1",
+   "kind": "kompetenz",
+   "name": "Planen: verschiedene Techniken der Ideensammlung kennen und gezielt anwenden; Textaufbau …",
+   "parent": "AHS-DEU-6-S1-T3",
+   "text": "Planen: verschiedene Techniken der Ideensammlung kennen und gezielt anwenden; Textaufbau erarbeiten",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T3-K2",
+   "kind": "kompetenz",
+   "name": "Formulieren: ein dem Text entsprechendes, der Schreibabsicht angemessenes Format wählen …",
+   "parent": "AHS-DEU-6-S1-T3",
+   "text": "Formulieren: ein dem Text entsprechendes, der Schreibabsicht angemessenes Format wählen und Sprach- und Schreibnormen einhalten",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T3-K3",
+   "kind": "kompetenz",
+   "name": "Überarbeiten: eigene Texte optimieren und dabei Schreibhaltung; Textsorte …",
+   "parent": "AHS-DEU-6-S1-T3",
+   "text": "Überarbeiten: eigene Texte optimieren und dabei Schreibhaltung; Textsorte, Lesererwartungen, Verständlichkeit, Sprachrichtigkeit und Schreibrichtigkeit berücksichtigen",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T3-T1",
+   "kind": "thema",
+   "name": "Rechtschreiben",
+   "parent": "AHS-DEU-6-S1-T3",
+   "text": "eigene Rechtschreibschwächen erkennen und abbauen",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T4",
+   "kind": "thema",
+   "name": "Textkompetenz",
+   "parent": "AHS-DEU-6-S1",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Textkompetenz"
+  },
+  {
+   "code": "AHS-DEU-6-S1-T4-T1",
+   "kind": "thema",
+   "name": "Informationen entnehmen/Textinhalt erfassen",
+   "parent": "AHS-DEU-6-S1-T4",
+   "text": "verschiedene Standpunkte zu einem Thema erkennen; Bezüge zwischen Texten, auch medienübergreifend, herstellen",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T4-T2",
+   "kind": "thema",
+   "name": "Texte interpretieren/Textsinn verstehen",
+   "parent": "AHS-DEU-6-S1-T4",
+   "text": "Mittel und Wirkungen schriftlicher Texte und verschiedener Text-Bild-Kombinationen vergleichen",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T4-T3",
+   "kind": "thema",
+   "name": "Texte reflektieren und bewerten",
+   "parent": "AHS-DEU-6-S1-T4",
+   "text": "die Beziehung von Sprache und außersprachlicher Wirklichkeit als Problem erkennen (SR); Auswirkungen grammatisch-stilistischer Erscheinungen und semantischer Beziehungen nachvollziehen (SR)",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T5",
+   "kind": "thema",
+   "name": "Literarische Bildung",
+   "parent": "AHS-DEU-6-S1",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Literarische Bildung"
+  },
+  {
+   "code": "AHS-DEU-6-S1-T5-T1",
+   "kind": "thema",
+   "name": "Texte und Kontexte",
+   "parent": "AHS-DEU-6-S1-T5",
+   "text": "ästhetische Texte, insbesondere aus dem Mittelalter, dem Humanismus und der Reformation, im historischen und kulturellen Kontext erfassen, Bezüge zur Gegenwart herstellen; historische Sprachentwicklung kennen (SR); Sprachwandel im Zusammenhang mit gesellschaftlichem Wandel verstehen (SR)",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T5-T2",
+   "kind": "thema",
+   "name": "Werkpoetik",
+   "parent": "AHS-DEU-6-S1-T5",
+   "text": "Themen, Stoffe, Motive, Symbole, Mythen erkennen; sprachliche Verfahren in ästhetischen Texten aufzeigen; sprachliche Strategien in der Kommunikation reflektieren (SR); Formen und Wandel literarischer Sprache erkennen und beschreiben (SR)",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T5-T3",
+   "kind": "thema",
+   "name": "Rezeption und Interpretation",
+   "parent": "AHS-DEU-6-S1-T5",
+   "text": "Textbeschreibung und Kontexte als Basis für Interpretationsversuche nutzen; Besonderheiten literarischer Sprache und ihre Verbindung zur Alltagssprache der jeweiligen Zeit erkennen (SR); sprachliche Besonderheiten ästhetischer Texte im Unterschied zu nicht-literarischen Texten analysieren können (SR)",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T6",
+   "kind": "thema",
+   "name": "Mediale Bildung",
+   "parent": "AHS-DEU-6-S1",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Mediale Bildung"
+  },
+  {
+   "code": "AHS-DEU-6-S1-T6-T1",
+   "kind": "thema",
+   "name": "Mediennutzungskompetenz",
+   "parent": "AHS-DEU-6-S1-T6",
+   "text": "neue Medienformate rezeptiv und produktiv nützen; Informationen aus komplexen Datenmengen sichten, beurteilen und auswählen",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S1-T6-T2",
+   "kind": "thema",
+   "name": "Medienkulturkompetenz",
+   "parent": "AHS-DEU-6-S1-T6",
+   "text": "Grundkenntnisse über die Entwicklung der Medien erwerben; sprachliche und mediale Kommunikationsmittel verantwortungsbewusst einsetzen",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2",
+   "kind": "semester",
+   "name": "4. Semester – Kompetenzmodul 4",
+   "parent": "AHS-DEU-6"
+  },
+  {
+   "code": "AHS-DEU-6-S2-T1",
+   "kind": "thema",
+   "name": "Mündliche Kompetenz",
+   "parent": "AHS-DEU-6-S2",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Mündliche Kompetenz"
+  },
+  {
+   "code": "AHS-DEU-6-S2-T1-T1",
+   "kind": "thema",
+   "name": "Hörverständnis",
+   "parent": "AHS-DEU-6-S2-T1",
+   "text": "Gesprächen folgen und in sie situationsangepasst eingreifen",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T1-T2",
+   "kind": "thema",
+   "name": "Sprechsituationen und Sprechanlässe",
+   "parent": "AHS-DEU-6-S2-T1",
+   "text": "in verschiedenen Kommunikationssituationen unvorbereitet sprechen; auf die Angemessenheit des sprachlichen Ausdrucks achten; Einfachheit, Gliederung, Prägnanz und anregende Zusätze beachten; Rollen innerhalb des Kommunikationsprozesses bewusst einnehmen; sprachliche Strategien in der persönlichen Kommunikation reflektieren (SR); verantwortungsbewussten Umgang mit eigenen sprachlichen Äußerungen erlernen (SR)",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T1-T3",
+   "kind": "thema",
+   "name": "Kommunikatives Verhalten",
+   "parent": "AHS-DEU-6-S2-T1",
+   "text": "sich mit innerer und äußerer Mehrsprachigkeit auseinandersetzen (SR); Faktoren kommunikativer Prozesse verstehen und aktiv mitgestalten: Thema und Inhalt eines Gespräches festlegen und erfassen, symmetrische und asymmetrische Gesprächssituationen erfassen",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T2",
+   "kind": "thema",
+   "name": "Schriftliche Kompetenz",
+   "parent": "AHS-DEU-6-S2",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Schriftliche Kompetenz"
+  },
+  {
+   "code": "AHS-DEU-6-S2-T2-T1",
+   "kind": "thema",
+   "name": "Schreibhaltungen und Textsorten",
+   "parent": "AHS-DEU-6-S2-T2",
+   "text": "verschiedene Schreibhaltungen beherrschen; Textsorten aus dem privaten, öffentlichen Leben verfassen, insbesondere offener Brief, Empfehlung",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T2-T2",
+   "kind": "thema",
+   "name": "Schreiben für sich",
+   "parent": "AHS-DEU-6-S2-T2",
+   "text": "durch spielerisch-schöpferisches, kreatives Schreiben die eigene Identität entwickeln; Schreiben als Instrument der Wissensaneignung einsetzen; lernprozessunterstützende Texte verfassen, auch über Interaktionswege der digitalen Medien",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T2-T3",
+   "kind": "thema",
+   "name": "Schreiben für andere",
+   "parent": "AHS-DEU-6-S2-T2",
+   "text": "unterschiedliche situative Kontexte beachten: Voraussetzungen und Erwartungen von Leserinnen und Lesern berücksichtigen, um verständlich zu schreiben, um zu überzeugen und zu unterhalten; Texte auf die eigene Schreibabsicht hin ausrichten; rhetorische Mittel verwenden",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T3",
+   "kind": "thema",
+   "name": "Schreibprozess",
+   "parent": "AHS-DEU-6-S2",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Schreibprozess"
+  },
+  {
+   "code": "AHS-DEU-6-S2-T3-K1",
+   "kind": "kompetenz",
+   "name": "Planen: verschiedene Techniken der Ideensammlung kennen und gezielt anwenden; Textaufbau …",
+   "parent": "AHS-DEU-6-S2-T3",
+   "text": "Planen: verschiedene Techniken der Ideensammlung kennen und gezielt anwenden; Textaufbau erarbeiten",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T3-K2",
+   "kind": "kompetenz",
+   "name": "Formulieren: ein dem Text entsprechendes, der Schreibabsicht angemessenes Format wählen …",
+   "parent": "AHS-DEU-6-S2-T3",
+   "text": "Formulieren: ein dem Text entsprechendes, der Schreibabsicht angemessenes Format wählen und Sprach- und Schreibnormen einhalten",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T3-K3",
+   "kind": "kompetenz",
+   "name": "Überarbeiten: eigene Texte optimieren und dabei Schreibhaltung, Textsorte …",
+   "parent": "AHS-DEU-6-S2-T3",
+   "text": "Überarbeiten: eigene Texte optimieren und dabei Schreibhaltung, Textsorte, Lesererwartungen, Verständlichkeit, Sprachrichtigkeit und Schreibrichtigkeit berücksichtigen",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T3-T1",
+   "kind": "thema",
+   "name": "Rechtschreiben",
+   "parent": "AHS-DEU-6-S2-T3",
+   "text": "eigene Rechtschreibschwächen erkennen und abbauen",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T4",
+   "kind": "thema",
+   "name": "Textkompetenz",
+   "parent": "AHS-DEU-6-S2",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Textkompetenz"
+  },
+  {
+   "code": "AHS-DEU-6-S2-T4-T1",
+   "kind": "thema",
+   "name": "Texte interpretieren/Textsinn verstehen",
+   "parent": "AHS-DEU-6-S2-T4",
+   "text": "sprachliche Besonderheiten nicht-literarischer Texte im Unterschied zu ästhetischen Texten erfassen und nachvollziehbar beschreiben können (SR); Intention sowie sach- und medienspezifische, sprachliche, visuelle und auditive Mittel und deren Wirkung erkennen; die syntaktische, semantische und pragmatische Dimension von sprachlichen Zeichen erfassen (SR)",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T4-T2",
+   "kind": "thema",
+   "name": "Texte reflektieren und bewerten",
+   "parent": "AHS-DEU-6-S2-T4",
+   "text": "sprachliche Strategien in der Kommunikation reflektieren (SR); subjektive Bedingungen der Textrezeption reflektieren; fremde Weltsichten und Denkmodelle erfassen und empathisch aufnehmen und einer kritischen Betrachtung unterziehen; eigenes Leseinteresse artikulieren und begründen",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T5",
+   "kind": "thema",
+   "name": "Literarische Bildung",
+   "parent": "AHS-DEU-6-S2",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Literarische Bildung"
+  },
+  {
+   "code": "AHS-DEU-6-S2-T5-T1",
+   "kind": "thema",
+   "name": "Texte und Kontexte",
+   "parent": "AHS-DEU-6-S2-T5",
+   "text": "ästhetische Texte, insbesondere des Barock und der Aufklärung, im historischen und kulturellen Kontext erfassen, Bezüge zur Gegenwart herstellen; historische Sprachentwicklung: Sprachwandel im Zusammenhang mit gesellschaftlichem Wandel erkennen (SR); Kennzeichen ästhetischer Texte erarbeiten können; Merkmale ästhetischer Sprache erkennen (SR)",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T5-T2",
+   "kind": "thema",
+   "name": "Werkpoetik",
+   "parent": "AHS-DEU-6-S2-T5",
+   "text": "Themen, Stoffe, Motive, Symbole, Mythen erkennen",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T5-T3",
+   "kind": "thema",
+   "name": "Rezeption und Interpretation",
+   "parent": "AHS-DEU-6-S2-T5",
+   "text": "Textbeschreibung und Textanalyse in kultureller und sprachlicher Hinsicht als Basis für Interpretationen nutzen können; Formen und Wandel literarischer Sprache erkennen und beschreiben (SR)",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T6",
+   "kind": "thema",
+   "name": "Mediale Bildung",
+   "parent": "AHS-DEU-6-S2",
+   "klasse": 6,
+   "schulstufe": 10,
+   "content_area": "Mediale Bildung"
+  },
+  {
+   "code": "AHS-DEU-6-S2-T6-T1",
+   "kind": "thema",
+   "name": "Mediennutzungskompetenz",
+   "parent": "AHS-DEU-6-S2-T6",
+   "text": "Informationen aus komplexen Datenmengen strukturieren; Informationsquellen überprüfen und kritisch würdigen",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-6-S2-T6-T2",
+   "kind": "thema",
+   "name": "Medienkulturkompetenz",
+   "parent": "AHS-DEU-6-S2-T6",
+   "text": "Grundkenntnisse über die Entwicklung der Medien erwerben",
+   "klasse": 6,
+   "schulstufe": 10
+  },
+  {
+   "code": "AHS-DEU-7",
+   "kind": "klasse",
+   "name": "7. Klasse",
+   "parent": "AHS-DEU",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1",
+   "kind": "semester",
+   "name": "5. Semester – Kompetenzmodul 5",
+   "parent": "AHS-DEU-7"
+  },
+  {
+   "code": "AHS-DEU-7-S1-T1",
+   "kind": "thema",
+   "name": "Mündliche Kompetenz",
+   "parent": "AHS-DEU-7-S1",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Mündliche Kompetenz"
+  },
+  {
+   "code": "AHS-DEU-7-S1-T1-T1",
+   "kind": "thema",
+   "name": "Hörverständnis",
+   "parent": "AHS-DEU-7-S1-T1",
+   "text": "medial vermittelter mündlicher Kommunikation folgen: das Wesentliche erfassen, aktiv zuhören",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1-T1-T2",
+   "kind": "thema",
+   "name": "Sprechsituationen und Sprechanlässe",
+   "parent": "AHS-DEU-7-S1-T1",
+   "text": "in freien und formalisierten Situationen vorbereitet und spontan sprechen; nichtsprachliche Mittel und Techniken des Sprechens erkennen und nützen; Mittel der Rhetorik erkennen und einsetzen",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1-T2",
+   "kind": "thema",
+   "name": "Schriftliche Kompetenz",
+   "parent": "AHS-DEU-7-S1",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Schriftliche Kompetenz"
+  },
+  {
+   "code": "AHS-DEU-7-S1-T2-T1",
+   "kind": "thema",
+   "name": "Schreibhaltungen und Textsorten",
+   "parent": "AHS-DEU-7-S1-T2",
+   "text": "Schreibhaltungen weiterentwickeln; Textsorten aus dem beruflichen und wissenschaftlichen Leben verfassen, insbesondere Meinungsrede, Textanalyse",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1-T2-T2",
+   "kind": "thema",
+   "name": "Schreiben für sich",
+   "parent": "AHS-DEU-7-S1-T2",
+   "text": "poetisches Schreiben in engem Zusammenhang mit Lesen von und Umgang mit literarischen Texten erproben; Schreiben als Instrument der Erkenntnisgewinnung einsetzen; eigene und fremde Lernprozesse dokumentieren; Verantwortung für den eigenen Lernprozess mit Hilfe geeigneter Schreibformen (zB Mitschrift, Portfolio, Internetdossier) übernehmen",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1-T2-T3",
+   "kind": "thema",
+   "name": "Schreiben für andere",
+   "parent": "AHS-DEU-7-S1-T2",
+   "text": "Texte entsprechend der jeweiligen Kommunikationssituation, Absicht und Textsorte gestalten und stilistische Mittel gezielt einsetzen; zu sprachkritischen Diskursen (zB feministische Sprachkritik, politisch korrekte Sprache) Stellung nehmen (SR)",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1-T3",
+   "kind": "thema",
+   "name": "Schreibprozess",
+   "parent": "AHS-DEU-7-S1",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Schreibprozess"
+  },
+  {
+   "code": "AHS-DEU-7-S1-T3-K1",
+   "kind": "kompetenz",
+   "name": "Planen: Gedanken strukturieren",
+   "parent": "AHS-DEU-7-S1-T3",
+   "text": "Planen: Gedanken strukturieren",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1-T3-K2",
+   "kind": "kompetenz",
+   "name": "Formulieren: Sprachebene und Ausdruck an der Situation, an den Adressatinnen und …",
+   "parent": "AHS-DEU-7-S1-T3",
+   "text": "Formulieren: Sprachebene und Ausdruck an der Situation, an den Adressatinnen und Adressaten, am Thema, an Schreibhaltung und Textsorte und an Sprach- und Schreibnormen orientieren",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1-T3-K3",
+   "kind": "kompetenz",
+   "name": "Überarbeiten: eigene und fremde Texte optimieren und dabei Schreibhaltung, Textsorte …",
+   "parent": "AHS-DEU-7-S1-T3",
+   "text": "Überarbeiten: eigene und fremde Texte optimieren und dabei Schreibhaltung, Textsorte, Stil, Lesererwartungen, Verständlichkeit, Sprachrichtigkeit und Schreibrichtigkeit berücksichtigen",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1-T3-T1",
+   "kind": "thema",
+   "name": "Rechtschreiben",
+   "parent": "AHS-DEU-7-S1-T3",
+   "text": "bei orthografischen Problemen zielführende Lösungen finden; Einblicke in den Wandel der Schreibnormen gewinnen",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1-T4",
+   "kind": "thema",
+   "name": "Textkompetenz",
+   "parent": "AHS-DEU-7-S1",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Textkompetenz"
+  },
+  {
+   "code": "AHS-DEU-7-S1-T4-T1",
+   "kind": "thema",
+   "name": "Texte interpretieren/Textsinn verstehen",
+   "parent": "AHS-DEU-7-S1-T4",
+   "text": "den Einfluss von Entstehungsbedingungen auf die Gestaltung von Texten erkennen; Texte in sprachlicher Hinsicht analysieren, sprachliche Erscheinungen in Texten beschreiben und ihre Funktion erkennen; phonologische, lexikalische, semantische, syntaktische, rhetorische, stilistische Analysen durchführen",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1-T5",
+   "kind": "thema",
+   "name": "Literarische Bildung",
+   "parent": "AHS-DEU-7-S1",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Literarische Bildung"
+  },
+  {
+   "code": "AHS-DEU-7-S1-T5-T1",
+   "kind": "thema",
+   "name": "Texte und Kontexte",
+   "parent": "AHS-DEU-7-S1-T5",
+   "text": "ästhetische Texte im historischen, kulturellen und biographischen Kontext erfassen; deutschsprachige Literatur, insbesondere der Weimarer Klassik, der Romantik, des Biedermeier und des Vormärz, anhand ausgewählter Beispiele kennen und sie im Kontext der Weltliteratur sehen",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1-T5-T2",
+   "kind": "thema",
+   "name": "Werkpoetik",
+   "parent": "AHS-DEU-7-S1-T5",
+   "text": "Themen, Stoffe, Motive, Symbole, Mythen erkennen; das Spannungsfeld von Leserinnen und Lesern, Schriftstellerinnen und Schriftstellern, Markt, Gesellschaft und Politik erschließen; Beziehungen zwischen ästhetischer Welt und Realität problematisieren; Bezüge zwischen Form und Inhalt herstellen",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1-T5-T3",
+   "kind": "thema",
+   "name": "Rezeption und Interpretation",
+   "parent": "AHS-DEU-7-S1-T5",
+   "text": "unterschiedliche Ansätze der Textanalyse erproben; Formen und Wandel literarischer Sprache erkennen und beschreiben (SR)",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1-T6",
+   "kind": "thema",
+   "name": "Mediale Bildung",
+   "parent": "AHS-DEU-7-S1",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Mediale Bildung"
+  },
+  {
+   "code": "AHS-DEU-7-S1-T6-T1",
+   "kind": "thema",
+   "name": "Mediennutzungskompetenz",
+   "parent": "AHS-DEU-7-S1-T6",
+   "text": "Informationen aus komplexen Datenmengen erfassen",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S1-T6-T2",
+   "kind": "thema",
+   "name": "Medienkulturkompetenz",
+   "parent": "AHS-DEU-7-S1-T6",
+   "text": "Organisationsstrukturen und wechselseitige Durchdringung unterschied\u0002licher Medienproduktionsformen erfassen; Interessen und Absichten hinter (multi-) medialen Texten und Produkten analysieren und bewerten sowie manipulative Zielsetzungen erkennen",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2",
+   "kind": "semester",
+   "name": "6. Semester – Kompetenzmodul 6",
+   "parent": "AHS-DEU-7"
+  },
+  {
+   "code": "AHS-DEU-7-S2-T1",
+   "kind": "thema",
+   "name": "Mündliche Kompetenz",
+   "parent": "AHS-DEU-7-S2",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Mündliche Kompetenz"
+  },
+  {
+   "code": "AHS-DEU-7-S2-T1-T1",
+   "kind": "thema",
+   "name": "Sprechsituationen und Sprechanlässe",
+   "parent": "AHS-DEU-7-S2-T1",
+   "text": "Präsentationstechniken – allein und im Team zielorientiert einsetzen; frei vortragen",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T1-T2",
+   "kind": "thema",
+   "name": "Kommunikatives Verhalten",
+   "parent": "AHS-DEU-7-S2-T1",
+   "text": "Redeumgebung nützen; Kontextbezogenheit erkennen; Auswirkungen grammatisch-stilistischer Erscheinungen und semantischer Beziehungen nachvollziehen (SR); Fragen stellen und Feedback geben und annehmen können",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T2",
+   "kind": "thema",
+   "name": "Schriftliche Kompetenz",
+   "parent": "AHS-DEU-7-S2",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Schriftliche Kompetenz"
+  },
+  {
+   "code": "AHS-DEU-7-S2-T2-T1",
+   "kind": "thema",
+   "name": "Schreibhaltungen und Textsorten",
+   "parent": "AHS-DEU-7-S2-T2",
+   "text": "Schreibhaltungen weiterentwickeln; Textsorten aus dem literarisch-kulturellen Leben verfassen, insbesondere Textinterpretation",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T2-T2",
+   "kind": "thema",
+   "name": "Schreiben für sich",
+   "parent": "AHS-DEU-7-S2-T2",
+   "text": "poetisches Schreiben in engem Zusammenhang mit Lesen von und Umgang mit literarischen Texten erproben; Schreiben als Instrument der Erkenntnisgewinnung einsetzen; eigene und fremde Lernprozesse dokumentieren; Verantwortung für den eigenen Lernprozess mit Hilfe geeigneter Schreibformen (zB Mitschrift, Portfolio, Internetdossier) übernehmen",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T2-T3",
+   "kind": "thema",
+   "name": "Schreiben für andere",
+   "parent": "AHS-DEU-7-S2-T2",
+   "text": "Texte entsprechend der jeweiligen Kommunikationssituation, Absicht und Textsorte gestalten und stilistische Mittel gezielt einsetzen",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T3",
+   "kind": "thema",
+   "name": "Schreibprozess",
+   "parent": "AHS-DEU-7-S2",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Schreibprozess"
+  },
+  {
+   "code": "AHS-DEU-7-S2-T3-K1",
+   "kind": "kompetenz",
+   "name": "Planen: Gedanken strukturieren",
+   "parent": "AHS-DEU-7-S2-T3",
+   "text": "Planen: Gedanken strukturieren",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T3-K2",
+   "kind": "kompetenz",
+   "name": "Formulieren: Sprachebene und Ausdruck an der Situation, an den Adressatinnen und …",
+   "parent": "AHS-DEU-7-S2-T3",
+   "text": "Formulieren: Sprachebene und Ausdruck an der Situation, an den Adressatinnen und Adressaten, am Thema, an Schreibhaltung und Textsorte und an Sprach- und Schreibnormen orientieren",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T3-K3",
+   "kind": "kompetenz",
+   "name": "Überarbeiten: eigene und fremde Texte optimieren und dabei Schreibhaltung, Textsorte …",
+   "parent": "AHS-DEU-7-S2-T3",
+   "text": "Überarbeiten: eigene und fremde Texte optimieren und dabei Schreibhaltung, Textsorte, Stil, Lesererwartungen, Verständlichkeit, Sprachrichtigkeit und Schreibrichtigkeit berücksichtigen",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T3-T1",
+   "kind": "thema",
+   "name": "Rechtschreiben",
+   "parent": "AHS-DEU-7-S2-T3",
+   "text": "bei orthografischen Problemen zielführende Lösungen finden; Einblicke in den Wandel der Schreibnormen gewinnen",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T4",
+   "kind": "thema",
+   "name": "Textkompetenz",
+   "parent": "AHS-DEU-7-S2",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Textkompetenz"
+  },
+  {
+   "code": "AHS-DEU-7-S2-T4-T1",
+   "kind": "thema",
+   "name": "Texte interpretieren/Textsinn verstehen",
+   "parent": "AHS-DEU-7-S2-T4",
+   "text": "Wechselwirkung von Form und Inhalt aufzeigen; die syntaktische, semantische und pragmatische Dimension von sprachlichen Zeichen erfassen (SR)",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T4-T2",
+   "kind": "thema",
+   "name": "Texte reflektieren und bewerten",
+   "parent": "AHS-DEU-7-S2-T4",
+   "text": "den Einfluss persönlicher Wertvorstellungen auf das Urteil erfassen; nichtlineare und lineare Darstellung von Informationen unterscheiden und bewerten",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T5",
+   "kind": "thema",
+   "name": "Literarische Bildung",
+   "parent": "AHS-DEU-7-S2",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Literarische Bildung"
+  },
+  {
+   "code": "AHS-DEU-7-S2-T5-T1",
+   "kind": "thema",
+   "name": "Texte und Kontexte",
+   "parent": "AHS-DEU-7-S2-T5",
+   "text": "ästhetische Texte im historischen, kulturellen, biographischen und psychologischen Kontext erfassen; deutschsprachige Literatur, insbesondere des Realismus, des Naturalismus und des Expressionismus, kennen und sie im Kontext der Weltliteratur sehen; österreichische Literatur der Wiener Moderne anhand ausgewählter Beispiele kennen; interkulturelle Bezüge (Vielvölkerstaat) kennenlernen; Beispiele künstlerischer Filme kennen (auch Literaturverfilmungen); Merkmale ästhetischer Sprache erkennen (SR)",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T5-T2",
+   "kind": "thema",
+   "name": "Werkpoetik",
+   "parent": "AHS-DEU-7-S2-T5",
+   "text": "Themen, Stoffe, Motive, Symbole, Mythen in ihrer Aktualität erkennen; Literatur als Abbild der gesellschaftlichen Entwicklung erkennen; Bezüge zwischen Form und Inhalt herstellen; neue Formen der Epik, Lyrik und Dramatik als neue Formen des Weltverständnisses verstehen; Beziehungen zwischen ästhetischer Welt und Realität problematisieren; Sprachwandel im Zusammenhang mit gesellschaftlichem Wandel erkennen (SR); Sprache, Sprachreflexion und Erzählen als Thema der Literatur verstehen; den Zusammenhang zwischen Sprache und Denken reflektieren (SR)",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T5-T3",
+   "kind": "thema",
+   "name": "Rezeption und Interpretation",
+   "parent": "AHS-DEU-7-S2-T5",
+   "text": "unterschiedliche Ansätze der Textanalyse anwenden; Interpretationen auf Basis von Textbeschreibung, Kontexten und Sekundärliteratur vornehmen; Formen und Wandel literarischer Sprache erkennen und beschreiben (SR); sprachliche Varietäten erkennen (SR)",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T6",
+   "kind": "thema",
+   "name": "Mediale Bildung",
+   "parent": "AHS-DEU-7-S2",
+   "klasse": 7,
+   "schulstufe": 11,
+   "content_area": "Mediale Bildung"
+  },
+  {
+   "code": "AHS-DEU-7-S2-T6-T1",
+   "kind": "thema",
+   "name": "Mediennutzungskompetenz",
+   "parent": "AHS-DEU-7-S2-T6",
+   "text": "Medien zur Kommunikation nützen und als Basis transkultureller Kontakte fördern",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-7-S2-T6-T2",
+   "kind": "thema",
+   "name": "Medienkulturkompetenz",
+   "parent": "AHS-DEU-7-S2-T6",
+   "text": "gesellschaftliche Auswirkungen der Medien erkennen und ihre lebensgestaltenden Funktionen reflektieren",
+   "klasse": 7,
+   "schulstufe": 11
+  },
+  {
+   "code": "AHS-DEU-8",
+   "kind": "klasse",
+   "name": "8. Klasse",
+   "parent": "AHS-DEU",
+   "klasse": 8,
+   "schulstufe": 12,
+   "text": "Kompetenzmodul 7"
+  },
+  {
+   "code": "AHS-DEU-8-S1",
+   "kind": "semester",
+   "name": "7. Semester",
+   "parent": "AHS-DEU-8"
+  },
+  {
+   "code": "AHS-DEU-8-S1-T1",
+   "kind": "thema",
+   "name": "Mündliche Kompetenz",
+   "parent": "AHS-DEU-8-S1",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Mündliche Kompetenz"
+  },
+  {
+   "code": "AHS-DEU-8-S1-T1-T1",
+   "kind": "thema",
+   "name": "Sprechsituationen und Sprechanlässe",
+   "parent": "AHS-DEU-8-S1-T1",
+   "text": "verschiedene sprachliche Register einschließlich der – österreichischen – Standardsprache beherrschen",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T1-T2",
+   "kind": "thema",
+   "name": "Kommunikatives Verhalten",
+   "parent": "AHS-DEU-8-S1-T1",
+   "text": "Metakommunikation über geglücktes bzw. missglücktes Kommunikationsverhalten führen",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T2",
+   "kind": "thema",
+   "name": "Schriftliche Kompetenz",
+   "parent": "AHS-DEU-8-S1",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Schriftliche Kompetenz"
+  },
+  {
+   "code": "AHS-DEU-8-S1-T2-T1",
+   "kind": "thema",
+   "name": "Schreibhaltungen und Textsorten",
+   "parent": "AHS-DEU-8-S1-T2",
+   "text": "Textsorten aus dem beruflichen, wissenschaftlichen und literarisch-kulturellen Leben verfassen",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T2-T2",
+   "kind": "thema",
+   "name": "Schreiben für sich",
+   "parent": "AHS-DEU-8-S1-T2",
+   "text": "Schreiben als Instrument der Erkenntnisgewinnung einsetzen; eigene und fremde Lernprozesse dokumentieren",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T2-T3",
+   "kind": "thema",
+   "name": "Schreiben für andere",
+   "parent": "AHS-DEU-8-S1-T2",
+   "text": "Texte entsprechend der jeweiligen Kommunikationssituation, Absicht und Textsorte gestalten und stilistische Mittel gezielt einsetzen; die syntaktische, semantische und pragmatische Dimension von sprachlichen Zeichen erfassen (SR); Auswirkungen grammatisch\u0002stilistischer Erscheinungen und semantischer Beziehungen beachten (SR)",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T3",
+   "kind": "thema",
+   "name": "Schreibprozess",
+   "parent": "AHS-DEU-8-S1",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Schreibprozess"
+  },
+  {
+   "code": "AHS-DEU-8-S1-T3-K1",
+   "kind": "kompetenz",
+   "name": "Planen: Gedanken strukturieren",
+   "parent": "AHS-DEU-8-S1-T3",
+   "text": "Planen: Gedanken strukturieren",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T3-K2",
+   "kind": "kompetenz",
+   "name": "Formulieren: Sprachverwendung und Ausdruck an der Situation, an den Adressatinnen und …",
+   "parent": "AHS-DEU-8-S1-T3",
+   "text": "Formulieren: Sprachverwendung und Ausdruck an der Situation, an den Adressatinnen und Adressaten, am Thema, an Schreibhaltung und Textsorte und an Sprach- und Schreibnormen orientieren; Qualität eigener und fremder Texte beurteilen",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T3-K3",
+   "kind": "kompetenz",
+   "name": "Überarbeiten: eigene und fremde Texte optimieren und dabei Schreibhaltung, Textsorte …",
+   "parent": "AHS-DEU-8-S1-T3",
+   "text": "Überarbeiten: eigene und fremde Texte optimieren und dabei Schreibhaltung, Textsorte, Stil, Lesererwartungen, Verständlichkeit, Sprachrichtigkeit und Schreibrichtigkeit berücksichtigen",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T3-T1",
+   "kind": "thema",
+   "name": "Rechtschreiben",
+   "parent": "AHS-DEU-8-S1-T3",
+   "text": "bei orthografischen Problemen zielführende Lösungen finden; Einblicke in den Wandel der Schreibnormen gewinnen",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T4",
+   "kind": "thema",
+   "name": "Textkompetenz",
+   "parent": "AHS-DEU-8-S1",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Textkompetenz"
+  },
+  {
+   "code": "AHS-DEU-8-S1-T4-T1",
+   "kind": "thema",
+   "name": "Texte interpretieren/Textsinn verstehen",
+   "parent": "AHS-DEU-8-S1-T4",
+   "text": "Interpretationen entwickeln (besonders in nichtlinearen Texten Adressat, Intention und Situation analysieren und interpretieren)",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T4-T2",
+   "kind": "thema",
+   "name": "Texte reflektieren und bewerten",
+   "parent": "AHS-DEU-8-S1-T4",
+   "text": "durch das Erkennen von Strategien der Beeinflussung politische Mündigkeit erlangen; die Fähigkeit der Perspektivenübernahme und der kritischen Betrachtung von Perspektiven fördern",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T5",
+   "kind": "thema",
+   "name": "Literarische Bildung",
+   "parent": "AHS-DEU-8-S1",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Literarische Bildung"
+  },
+  {
+   "code": "AHS-DEU-8-S1-T5-T1",
+   "kind": "thema",
+   "name": "Texte und Kontexte",
+   "parent": "AHS-DEU-8-S1-T5",
+   "text": "ästhetische Texte, insbesondere der experimentellen Literatur, der Literatur der Zwischenkriegszeit und des Exils, im historischen und kulturellen Kontext erfassen; deutschsprachige, insbesondere österreichische Literatur vom 2. Weltkrieg bis zur Gegenwart anhand ausgewählter Beispiele kennen und sie im Kontext der Weltliteratur sehen; Kennzeichen ästhetischer Texte erarbeiten können; Merkmale ästhetischer Sprache erkennen (SR)",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T5-T2",
+   "kind": "thema",
+   "name": "Werkpoetik",
+   "parent": "AHS-DEU-8-S1-T5",
+   "text": "Themen, Stoffe, Motive, Symbole, Mythen in ihrer Aktualität erkennen; Wechselwirkungen literarischer und filmischer Erzählweisen deuten; unterschiedliche Wirkungen verbaler, visueller, akustischer Ausdrucksmöglichkeiten erfassen; neue Formen der Epik, Lyrik und Dramatik als neue Formen des Weltverständnisses verstehen; Sprachwandel im Zusammenhang mit gesellschaftlichen Wandel erkennen (SR); literarische Sprache, ihre Formen, ihren Wandel, ihre Besonderheiten und Verbindungen zur Alltagssprache beachten",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T5-T3",
+   "kind": "thema",
+   "name": "Rezeption und Interpretation",
+   "parent": "AHS-DEU-8-S1-T5",
+   "text": "verstehen, auf welche Weise Texten Bedeutung zugeschrieben wird: über unterschiedliche Ansätze der Textinterpretation verfügen; grammatisch-stilistische Erscheinungen und semantische Beziehungen beschreiben können (SR)",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T6",
+   "kind": "thema",
+   "name": "Mediale Bildung",
+   "parent": "AHS-DEU-8-S1",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Mediale Bildung"
+  },
+  {
+   "code": "AHS-DEU-8-S1-T6-T1",
+   "kind": "thema",
+   "name": "Mediennutzungskompetenz",
+   "parent": "AHS-DEU-8-S1-T6",
+   "text": "über Entscheidungskompetenz verfügen; Informationsquellen überprüfen und kritisch würdigen",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S1-T6-T2",
+   "kind": "thema",
+   "name": "Medienkulturkompetenz",
+   "parent": "AHS-DEU-8-S1-T6",
+   "text": "Mediensprachen als semiotische Systeme verstehen",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S2",
+   "kind": "semester",
+   "name": "8. Semester",
+   "parent": "AHS-DEU-8"
+  },
+  {
+   "code": "AHS-DEU-8-S2-T1",
+   "kind": "thema",
+   "name": "Mündliche Kompetenz",
+   "parent": "AHS-DEU-8-S2",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Mündliche Kompetenz"
+  },
+  {
+   "code": "AHS-DEU-8-S2-T1-T1",
+   "kind": "thema",
+   "name": "Sprechsituationen und Sprechanlässe",
+   "parent": "AHS-DEU-8-S2-T1",
+   "text": "Kommunikationsorganisation wahrnehmen – mit besonderer Berücksichtigung von Präsentationsformen",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S2-T1-T2",
+   "kind": "thema",
+   "name": "Kommunikatives Verhalten",
+   "parent": "AHS-DEU-8-S2-T1",
+   "text": "Bedingungen reflektieren, um sie kreativ mitgestalten zu können: Mediengerechtes Verhalten einschätzen und einnehmen",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S2-T2",
+   "kind": "thema",
+   "name": "Schriftliche Kompetenz",
+   "parent": "AHS-DEU-8-S2",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Schriftliche Kompetenz"
+  },
+  {
+   "code": "AHS-DEU-8-S2-T2-T1",
+   "kind": "thema",
+   "name": "Schreibhaltungen und Textsorten",
+   "parent": "AHS-DEU-8-S2-T2",
+   "text": "Schreibhaltungen in Hinblick auf Textsorten optimieren",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S2-T2-T2",
+   "kind": "thema",
+   "name": "Schreiben für andere",
+   "parent": "AHS-DEU-8-S2-T2",
+   "text": "Texte entsprechend der jeweiligen Kommunikationssituation, Absicht und Textsorte gestalten und stilistische Mittel gezielt einsetzen",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S2-T2-T3",
+   "kind": "thema",
+   "name": "Schreibprozess",
+   "parent": "AHS-DEU-8-S2-T2",
+   "text": "Qualität eigener und fremder Texte beurteilen",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S2-T2-T4",
+   "kind": "thema",
+   "name": "Rechtschreiben",
+   "parent": "AHS-DEU-8-S2-T2",
+   "text": "bei orthografischen Problemen zielführende Lösungen finden",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S2-T3",
+   "kind": "thema",
+   "name": "Textkompetenz",
+   "parent": "AHS-DEU-8-S2",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Textkompetenz"
+  },
+  {
+   "code": "AHS-DEU-8-S2-T3-T1",
+   "kind": "thema",
+   "name": "Texte reflektieren und bewerten",
+   "parent": "AHS-DEU-8-S2-T3",
+   "text": "moralische, ethische Fragen differenziert erfassen",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S2-T4",
+   "kind": "thema",
+   "name": "Literarische Bildung",
+   "parent": "AHS-DEU-8-S2",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Literarische Bildung"
+  },
+  {
+   "code": "AHS-DEU-8-S2-T4-T1",
+   "kind": "thema",
+   "name": "Texte und Kontexte",
+   "parent": "AHS-DEU-8-S2-T4",
+   "text": "interkulturelle Bezüge (Exil, ethnische Minderheiten, Migration) kennenlernen; Merkmale ästhetischer Sprache erkennen (SR)",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S2-T4-T2",
+   "kind": "thema",
+   "name": "Werkpoetik",
+   "parent": "AHS-DEU-8-S2-T4",
+   "text": "Beziehungen zwischen ästhetischer Welt und Realität problematisieren",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S2-T4-T3",
+   "kind": "thema",
+   "name": "Rezeption und Interpretation",
+   "parent": "AHS-DEU-8-S2-T4",
+   "text": "Phänomene des Sprachwandels in der Gegenwartssprache reflektieren (SR)",
+   "klasse": 8,
+   "schulstufe": 12
+  },
+  {
+   "code": "AHS-DEU-8-S2-T5",
+   "kind": "thema",
+   "name": "Mediale Bildung",
+   "parent": "AHS-DEU-8-S2",
+   "klasse": 8,
+   "schulstufe": 12,
+   "content_area": "Mediale Bildung"
+  },
+  {
+   "code": "AHS-DEU-8-S2-T5-T1",
+   "kind": "thema",
+   "name": "Medienkulturkompetenz",
+   "parent": "AHS-DEU-8-S2-T5",
+   "text": "künstlerische Ausdrucksformen in allen Medien rezipieren, vergleichen und zueinander in Beziehung setzen",
+   "klasse": 8,
+   "schulstufe": 12
+  }
+ ],
+ "skills": [],
+ "skill_nodes": [
+  [
+   "deutsch.recht.dasdass",
+   "AHS-DEU-1-B1-A1-A1"
+  ],
+  [
+   "deutsch.recht.gross",
+   "AHS-DEU-1-B1-A1-A1"
+  ],
+  [
+   "deutsch.recht.sss",
+   "AHS-DEU-1-B1-A1-A1"
+  ],
+  [
+   "deutsch.recht.dasdass",
+   "AHS-DEU-2-B1-A1-A1"
+  ],
+  [
+   "deutsch.recht.gross",
+   "AHS-DEU-2-B1-A1-A1"
+  ],
+  [
+   "deutsch.recht.sss",
+   "AHS-DEU-2-B1-A1-A1"
+  ],
+  [
+   "deutsch.beistrich.aufzaehlung",
+   "AHS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.beistrich.nebensatz",
+   "AHS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.beistrich.infinitiv",
+   "AHS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.faelle",
+   "AHS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.zeiten",
+   "AHS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.wortarten.bestimmen",
+   "AHS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.wortarten.nomen",
+   "AHS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.beistrich.nebensatz",
+   "AHS-DEU-2-B1-A1-A2"
+  ],
+  [
+   "deutsch.beistrich.infinitiv",
+   "AHS-DEU-2-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.faelle",
+   "AHS-DEU-2-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.zeiten",
+   "AHS-DEU-2-B1-A1-A2"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "AHS-DEU-1-B3-K1"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "AHS-DEU-2-B3-K1"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "AHS-DEU-3-B3-K1"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "AHS-DEU-5-T4-T1"
+  ]
+ ]
+}
