@@ -66,15 +66,42 @@ export function stufeLabel(stufe: number): string {
 
 export const MAX_STUFE = Math.max(...SCHOOL_TYPES.map((t) => t.offset + t.classes));
 
-/** Best guess for rows saved before school types and classes existed. */
-export function migrateLegacy(type: string, grade: number): { type: string; klasse: number } {
-  const g = Math.max(1, grade || 1);
-  if (/volksschule/i.test(type)) return { type: "Volksschule", klasse: Math.min(4, g) };
-  if (/mittelschule/i.test(type)) return { type: "Mittelschule", klasse: Math.min(4, Math.max(1, g - 4)) };
-  if (/ahs|gymnas/i.test(type)) return { type: "Gymnasium", klasse: Math.min(8, Math.max(1, g - 4)) };
-  if (/hak/i.test(type) && !/htl/i.test(type)) return { type: "HAK", klasse: Math.min(5, Math.max(1, g - 8)) };
-  if (/bhs|htl/i.test(type)) return { type: "HTL", klasse: Math.min(5, Math.max(1, g - 8)) };
-  if (g <= 4) return { type: "Volksschule", klasse: g };
-  if (g <= 8) return { type: "Mittelschule", klasse: g - 4 };
-  return { type: "Gymnasium", klasse: Math.min(8, g - 4) };
+/**
+ * Rows saved before school types and classes existed only had a Schulstufe and a free text.
+ * Mapped only when the text names exactly one school type; anything else stays open ("unklar")
+ * instead of being guessed.
+ */
+export function migrateLegacy(type: string, grade: number): { type: string; klasse: number } | null {
+  const named = SCHOOL_TYPES.filter((t) => new RegExp(LEGACY_NAMES[t.name], "i").test(type));
+  if (named.length !== 1) return null;
+  const t = named[0];
+  const klasse = Math.round(grade || 0) - t.offset;
+  return klasse >= 1 && klasse <= t.classes ? { type: t.name, klasse } : null;
+}
+const LEGACY_NAMES: Record<string, string> = {
+  Volksschule: "volksschule|\\bVS\\b",
+  Mittelschule: "mittelschule|\\bNMS\\b|\\bMS\\b",
+  Gymnasium: "gymnas|\\bAHS",
+  HTL: "\\bHTL\\b",
+  HAK: "\\bHAK\\b",
+};
+
+export type LevelCheck = { status: "eindeutig" | "unklar"; schulstufe: number | null; reason?: string };
+
+/**
+ * Is a student's level clear enough to pick curriculum content for it? School type and class
+ * must be known and in range; the stored Schulstufe (students.grade) must agree with them.
+ */
+export function checkLevel(type: string, klasse: number | null | undefined, grade?: number | null): LevelCheck {
+  const t = schoolType(type);
+  if (!t) return { status: "unklar", schulstufe: null, reason: type ? `Schulart „${type}“ unbekannt` : "Schulart fehlt" };
+  if (!klasse || klasse < 1 || klasse > t.classes) return { status: "unklar", schulstufe: null, reason: `Klasse fehlt oder passt nicht zu ${t.name}` };
+  const stufe = t.offset + klasse;
+  if (grade != null && grade !== stufe) return { status: "unklar", schulstufe: null, reason: `gespeicherte Schulstufe ${grade} passt nicht zu ${klasse}. Klasse ${t.name}` };
+  return { status: "eindeutig", schulstufe: stufe };
+}
+
+/** Unterstufe (Schulstufe 5–8) or Oberstufe (9–13); Volksschule is Primarstufe. */
+export function stufenbereich(schulstufe: number): "Primarstufe" | "Sekundarstufe I" | "Sekundarstufe II" {
+  return schulstufe <= 4 ? "Primarstufe" : schulstufe <= 8 ? "Sekundarstufe I" : "Sekundarstufe II";
 }

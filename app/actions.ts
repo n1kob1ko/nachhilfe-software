@@ -235,13 +235,13 @@ export async function aiInsightAction(studentId: number): Promise<InsightState> 
   if (!student || !a) return { error: "Schüler nicht gefunden." };
   const lessons = repo.listLessons(studentId).filter((l) => l.status === "abgeschlossen" && l.kind === "stunde").slice(0, 5);
   const context = [
-    `Schüler: ${student.name}, ${klassenLabel(student.school_type, student.klasse)}`,
-    `Lernziele: ${student.goals || "–"}`,
+    // no name and no free-text notes: only learning data leaves the app
+    `Schüler/in: ${klassenLabel(student.school_type, student.klasse)}`,
     `Fähigkeiten (Beherrschung, Trend):`,
     ...a.skills.filter((s) => s.mastery !== null).map((s) => `- ${s.skill.subject} › ${s.skill.area} › ${s.skill.name}: ${pct(s.mastery)}, Trend ${s.trend}${s.delta != null ? ` (${s.delta})` : ""}, Erstversuch-Quote ${pct(s.firstTryRate)}, Hilfen ${pct(s.hintRate)}`),
     `Häufige Fehler: ${a.errors.slice(0, 6).map((e) => `${e.label} (${e.count}×)`).join(", ") || "–"}`,
     `Letzte Stunden:`,
-    ...lessons.map((l) => `- ${l.starts_at.slice(0, 10)} ${l.topic}: Verständnis ${l.understanding ?? "–"}/5. Fehler: ${l.mistakes || "–"}. Beobachtungen: ${l.tutor_notes || "–"}`),
+    ...lessons.map((l) => `- ${l.starts_at.slice(0, 10)} ${l.topic}: Verständnis ${l.understanding ?? "–"}/5. Fehler: ${l.mistakes || "–"}`),
   ].join("\n");
   try {
     const out = await analyzeWithAI(context);

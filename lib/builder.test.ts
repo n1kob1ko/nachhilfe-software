@@ -57,13 +57,16 @@ test("structured AI tasks become app tasks; broken parts are repaired or dropped
   const base = {
     category: "rechnung", format: "calc" as const, skill_ids: [KEHRWERT, "erfunden.id"], topic: "Bruchrechnung", difficulty: "leicht" as const,
     prompt: "Berechne 3/4 : 1/2.", passage: null, options: null, correct_option: null, accepted_answers: null, numeric: true, blanks: null,
-    sample_answer: null, steps: null, solution: "3/4 · 2/1 = 6/4 = 3/2", hints: ["Dividieren heißt mit dem Kehrwert multiplizieren.", "Kehrwert: Zähler und Nenner tauschen.", ""],
+    sample_answer: null, steps: null, solution: "3/4 · 2/1 = 6/4 = 3/2", solution_steps: ["Kehrwert von 1/2 ist 2/1", "3/4 · 2/1 = 6/4", " 6/4 = 3/2 "], estimated_time_sec: 60, hints: ["Dividieren heißt mit dem Kehrwert multiplizieren.", "Kehrwert: Zähler und Nenner tauschen.", ""],
     common_errors: [{ answer: "3/8", label: "Kehrwert vergessen" }],
   };
   const calc = aiTaskToDraft({ ...base, accepted_answers: ["3/2", "1 1/2"] }, req)!;
   assert.equal(calc.type, "calc");
   assert.deepEqual(calc.skillIds, [KEHRWERT], "unknown skill ids are dropped");
   assert.equal(calc.hints.length, 2, "empty hints are dropped");
+  assert.deepEqual(calc.solutionSteps, ["Kehrwert von 1/2 ist 2/1", "3/4 · 2/1 = 6/4", "6/4 = 3/2"]);
+  assert.equal(calc.estimatedTimeSec, 60);
+  assert.equal(calc.sourceType, "ki");
   assert.equal(checkAnswer(calc, "1,5").correct, true);
   assert.equal(checkAnswer(calc, "3/8").errorLabel, "Kehrwert vergessen");
 
@@ -108,7 +111,11 @@ test("the builder makes a draft from settings: sub-skill, task types, automatic 
   assert.match(ctx.level, /^3\. Klasse Gymnasium/);
   assert.ok(ctx.suggestions.some((s) => s.skillIds[0] === KEHRWERT), "the frequent error points at the sub-skill Kehrwert");
   assert.ok(builder.contextForAI(ctx, [KEHRWERT]).includes("Kehrwert vergessen"));
-  assert.ok(!builder.contextForAI(ctx, [KEHRWERT]).includes("Muster"), "only the first name goes to the AI");
+  const forAI = builder.contextForAI(ctx, [KEHRWERT]);
+  assert.ok(!forAI.includes("Max") && !forAI.includes("Muster"), "no name goes to the AI");
+  assert.ok(!forAI.includes("Textaufgaben"), "no free-text profile notes go to the AI");
+  assert.match(forAI, /Schulstufe 7/);
+  assert.match(forAI, /mathe\.brueche\.dividieren: Dividieren – 0\.\d+, (kritisch|üben)/);
 
   const { id } = await builder.createDraft(settings({ studentId: sid, difficulty: "automatisch", categories: ["rechnung", "fehler", "ordnen"], count: 6 }), niko.id);
   const w = repo.getWorksheet(id)!;
