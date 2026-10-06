@@ -541,6 +541,9 @@ export const DEFAULT_TEACHERS = ["Niko", "Thomas"];
 let instance: Database.Database | null = null;
 
 function dbPath() {
+  // Serverless hosts wipe files on every restart: fail loudly instead of losing data quietly.
+  if (process.env.VERCEL && !process.env.DATABASE_PATH)
+    throw new Error("Lernheft braucht einen Server mit dauerhaftem Speicher (siehe docs/betrieb.md). Auf Vercel gehen Datenbank und Uploads verloren.");
   return process.env.DATABASE_PATH || path.join(process.cwd(), "data", "nachhilfe.db");
 }
 
