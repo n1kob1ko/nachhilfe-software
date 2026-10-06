@@ -21,7 +21,7 @@ export function SendToBoard({ worksheetId, tasks, units }: Props) {
     return (
       <div className="panel grid gap-2 px-4 py-4">
         <span className="label">Auf Whiteboard senden</span>
-        <p className="text-[13px] text-ink-3">Möglich, sobald mit einem Schüler eine Einheit läuft. Jede Einheit hat automatisch ein Whiteboard.</p>
+        <p className="text-[13px] text-ink-3">Nur während einer laufenden Einheit.</p>
       </div>
     );
   }

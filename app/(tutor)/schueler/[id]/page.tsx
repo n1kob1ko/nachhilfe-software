@@ -16,7 +16,8 @@ import { UnitControl } from "@/components/UnitControl";
 import { SkillPicker } from "@/components/SkillPicker";
 import { CopyLink } from "@/components/CopyLink";
 import { ProgressChart } from "@/components/ProgressChart";
-import { Empty, LevelTag, MasteryBar, Pill, SectionTitle, TrendBadge, formatDate, formatDuration, formatTime } from "@/components/ui";
+import { Empty, LevelTag, MasteryBar, More, Pill, Reveal, SectionTitle, TrendBadge, formatDate, formatDuration, formatTime } from "@/components/ui";
+import { Info } from "@/components/Info";
 import { aiEnabled } from "@/lib/ai";
 import { type Analysis, pct } from "@/lib/analysis";
 import * as repo from "@/lib/repo";
@@ -181,11 +182,13 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
             ))}
           </dl>
           <div>
-            <h3 className="mb-2 text-[14px] font-semibold">Link für das Gerät von {first}</h3>
+            <h3 className="mb-2 text-[14px] font-semibold">
+              Link für das Gerät von {first}
+              <Info label="Info zum Link">Auf diesem Link sieht {first} die gesendeten Übungen.</Info>
+            </h3>
             <div className="max-w-[520px]">
               <CopyLink path={`/lernen/${student.access_token}`} />
             </div>
-            <p className="mt-2 text-[13px] text-ink-2">Auf diesem Link sieht {first} die gesendeten Übungen.</p>
           </div>
           <Link href={`/schueler/${student.id}/bearbeiten`} className="btn btn-secondary w-fit">
             <Pencil size={15} aria-hidden /> Profil bearbeiten
@@ -199,88 +202,131 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
 function Progress({ a }: { a: Analysis }) {
   const subjects = a.subjects.filter((s) => s.areas.some((ar) => ar.mastery !== null));
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
       <section>
-        <SectionTitle>Verlauf nach Themen</SectionTitle>
+        <SectionTitle>
+          <span>
+            Verlauf nach Themen
+            <Info label="Wie wird die Beherrschung berechnet?">
+              Gewichteter Schnitt aus Übungen (1. Versuch ohne Hilfe zählt voll, weitere Versuche und Hilfen weniger), dokumentiertem Verständnis in Einheiten und Testergebnissen. Neuere Daten zählen stärker. Markierungen bei 60 % und 80 %.
+            </Info>
+          </span>
+        </SectionTitle>
         <div className="panel px-5 py-5">
           <ProgressChart series={a.history} />
         </div>
       </section>
-      {subjects.length === 0 && <Empty title="Noch keine Fortschrittsdaten">Sende eine Übung oder dokumentiere eine Einheit mit verknüpften Fähigkeiten.</Empty>}
+      {subjects.length === 0 && <Empty title="Noch keine Fortschrittsdaten">Sende eine Übung oder dokumentiere eine Einheit.</Empty>}
       {subjects.map((subj) => (
         <section key={subj.subject}>
-          <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <div className="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <h2 className="text-[20px] font-semibold tracking-[-0.01em]">{subj.subject}</h2>
             <span className="num text-ink-2">{pct(subj.mastery)}</span>
             <TrendBadge trend={subj.trend} delta={subj.delta} />
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4">
             {subj.areas
               .filter((ar) => ar.mastery !== null)
-              .map((area) => (
-                <div key={area.area} className="panel">
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3">
-                    <h3 className="font-semibold">{area.area}</h3>
-                    <div className="flex items-center gap-4">
-                      <TrendBadge trend={area.trend} delta={area.delta} />
-                      <span className="num w-11 text-right font-semibold">{pct(area.mastery)}</span>
+              .map((area) => {
+                const practiced = area.skills.filter((s) => s.mastery !== null);
+                const open = area.skills.filter((s) => s.mastery === null);
+                return (
+                  <div key={area.area} className="panel">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3">
+                      <h3 className="font-semibold">{area.area}</h3>
+                      <div className="flex items-center gap-4">
+                        <TrendBadge trend={area.trend} delta={area.delta} />
+                        <span className="num w-11 text-right font-semibold">{pct(area.mastery)}</span>
+                      </div>
+                    </div>
+                    <table className="w-full text-left text-[14px]">
+                      <thead className="sr-only">
+                        <tr>
+                          <th>Fähigkeit</th>
+                          <th>Beherrschung</th>
+                          <th>Stufe</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {practiced.map((s, i) => (
+                          <tr key={s.skill.id} className={i > 0 ? "border-t border-line" : ""}>
+                            <td className="w-[40%] py-2.5 pr-3 pl-5">{s.skill.name}</td>
+                            <td className="px-3 py-2.5">
+                              <MasteryBar value={s.mastery} />
+                            </td>
+                            <td className="hidden py-2.5 pr-5 pl-3 sm:table-cell">
+                              <LevelTag mastery={s.mastery} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="flex flex-wrap gap-x-6 border-t border-line px-5 py-1">
+                      {practiced.some((s) => s.tasksDone > 0) && (
+                        <Reveal label="Kennzahlen" className="open:basis-full">
+                          <div className="overflow-x-auto pb-3">
+                            <table className="num w-full min-w-[480px] text-left text-[13px]">
+                              <thead>
+                                <tr className="text-[12px] text-ink-3">
+                                  <th className="py-1.5 pr-3 font-sans font-semibold">Fähigkeit</th>
+                                  <th className="px-2 py-1.5 text-right font-semibold">Aufg.</th>
+                                  <th className="px-2 py-1.5 text-right font-semibold">1. Versuch</th>
+                                  <th className="px-2 py-1.5 text-right font-semibold">Ø Zeit</th>
+                                  <th className="py-1.5 pl-2 text-right font-semibold">Hilfe</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-line">
+                                {practiced.map((s) => (
+                                  <tr key={s.skill.id}>
+                                    <td className="py-1.5 pr-3 font-sans">{s.skill.name}</td>
+                                    {s.tasksDone > 0 ? (
+                                      <>
+                                        <td className="px-2 py-1.5 text-right">{s.tasksDone}</td>
+                                        <td className="px-2 py-1.5 text-right">{pct(s.firstTryRate)}</td>
+                                        <td className="px-2 py-1.5 text-right">{formatDuration(s.avgTimeSec)}</td>
+                                        <td className="py-1.5 pl-2 text-right">{pct(s.hintRate)}</td>
+                                      </>
+                                    ) : (
+                                      <td colSpan={4} className="py-1.5 pl-2 text-right font-sans text-ink-3">
+                                        aus Einheiten/Tests
+                                      </td>
+                                    )}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </Reveal>
+                      )}
+                      {open.length > 0 && (
+                        <Reveal label={`${open.length} noch nicht geübt`} className="open:basis-full">
+                          <div className="flex flex-wrap gap-1.5 pb-3">
+                            {open.map((s) => (
+                              <Pill key={s.skill.id}>{s.skill.name}</Pill>
+                            ))}
+                          </div>
+                        </Reveal>
+                      )}
                     </div>
                   </div>
-                  <table className="w-full text-left text-[14px]">
-                    <thead className="sr-only">
-                      <tr>
-                        <th>Fähigkeit</th>
-                        <th>Beherrschung</th>
-                        <th>Trend</th>
-                        <th>Details</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {area.skills.map((s, i) => (
-                        <tr key={s.skill.id} className={i > 0 ? "border-t border-line" : ""}>
-                          <td className="w-[34%] py-2.5 pr-3 pl-5">
-                            <span className="text-ink-3" aria-hidden>
-                              {i === area.skills.length - 1 ? "└─ " : "├─ "}
-                            </span>
-                            {s.skill.name}
-                          </td>
-                          <td className="w-[36%] px-3 py-2.5">
-                            <MasteryBar value={s.mastery} />
-                          </td>
-                          <td className="hidden px-3 py-2.5 sm:table-cell">
-                            <LevelTag mastery={s.mastery} />
-                          </td>
-                          <td className="hidden py-2.5 pr-5 pl-3 text-right text-[12px] whitespace-nowrap text-ink-3 xl:table-cell">
-                            {s.tasksDone > 0 ? (
-                              <span className="num">
-                                {s.tasksDone} Aufg. · {pct(s.firstTryRate)} im 1. Versuch · Ø {formatDuration(s.avgTimeSec)}/Aufg. · Hilfe {pct(s.hintRate)}
-                              </span>
-                            ) : s.mastery !== null ? (
-                              "aus Einheiten/Tests"
-                            ) : (
-                              "noch nicht geübt"
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ))}
+                );
+              })}
           </div>
         </section>
       ))}
-      <p className="text-[13px] text-ink-3">
-        Beherrschung: gewichteter Schnitt aus Übungen (1. Versuch ohne Hilfe zählt voll, weitere Versuche und Hilfen weniger), dokumentiertem Verständnis in Einheiten und Testergebnissen. Neuere Daten zählen stärker. Markierungen bei 60 % und 80 %.
-      </p>
     </div>
   );
 }
 
 function AnalysisTab({ student, a, assignedId }: { student: repo.Student; a: Analysis; assignedId?: string }) {
   const first = student.name.split(" ")[0];
+  const KIND = {
+    ueberpruefung: ["green", "Überprüfung"],
+    wiederholung: ["amber", "Wiederholung"],
+    schwaeche: ["red", "Schwäche"],
+  } as const;
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
       {assignedId && (
         <p className="flex items-center gap-2 rounded-lg bg-green-wash px-4 py-3 text-[14px] text-green">
           <CheckCircle2 size={16} aria-hidden /> Übung erstellt und an {first} gesendet.{" "}
@@ -290,47 +336,48 @@ function AnalysisTab({ student, a, assignedId }: { student: repo.Student; a: Ana
         </p>
       )}
       <section>
-        <SectionTitle>Empfehlungen</SectionTitle>
+        <SectionTitle>
+          <span>
+            Empfehlungen
+            <Info label="Wann gibt es Empfehlungen?">Sobald eine Fähigkeit unter 60 % fällt oder länger nicht wiederholt wurde, schlägt die Software passende Übungen vor.</Info>
+          </span>
+        </SectionTitle>
         {a.recommendations.length === 0 ? (
-          <Empty title="Keine Empfehlung offen">Sobald eine Fähigkeit unter 60 % fällt oder länger nicht wiederholt wurde, schlägt die Software hier passende Übungen vor.</Empty>
+          <p className="text-[14px] text-ink-3">Keine Empfehlung offen.</p>
         ) : (
-          <ul className="grid gap-4 md:grid-cols-2">
-            {a.recommendations.map((r) => (
-              <li key={r.key} className="panel flex flex-col px-5 py-4">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <Pill tone={r.kind === "ueberpruefung" ? "green" : r.kind === "wiederholung" ? "amber" : "red"}>
-                    {r.kind === "ueberpruefung" ? "Überprüfung" : r.kind === "wiederholung" ? "Wiederholung" : "Schwäche erkannt"}
-                  </Pill>
-                  <span className="num text-[13px] text-ink-2">aktuell {pct(r.mastery)}</span>
-                </div>
-                <h3 className="text-[16px] font-semibold">
-                  {r.skill.area} › {r.skill.name}
-                </h3>
-                <p className="mt-1 text-[14px] text-ink-2">{r.reason}</p>
-                <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[14px]">
-                  <dt className="text-ink-3">Empfehlung</dt>
-                  <dd>
-                    {r.count} Aufgaben, Schwierigkeit {r.difficulty}
-                  </dd>
-                  <dt className="text-ink-3">Danach</dt>
-                  <dd>{r.then}</dd>
-                </dl>
-                <div className="mt-4 flex flex-wrap items-center gap-2 pt-1">
-                  {r.openAssignmentId ? (
-                    <span className="text-[13px] text-ink-2">
-                      Schon gesendet, wartet auf Bearbeitung.{" "}
-                      <Link href={`/schueler/${student.id}?tab=uebungen`} className="link font-semibold">
-                        Übungen
+          <ul className="grid gap-3 md:grid-cols-2">
+            {a.recommendations.map((r) => {
+              const [tone, label] = KIND[r.kind as keyof typeof KIND] ?? KIND.schwaeche;
+              return (
+                <li key={r.key} className="panel px-5 py-4">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Pill tone={tone}>{label}</Pill>
+                    <span className="font-semibold">{r.skill.name}</span>
+                    <span className="num text-[14px] font-semibold text-ink-2">{pct(r.mastery)}</span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {r.openAssignmentId ? (
+                      <Link href={`/schueler/${student.id}?tab=uebungen`} className="btn btn-ghost btn-sm">
+                        Gesendet, offen
                       </Link>
+                    ) : (
+                      <form action={applyRecommendationAction.bind(null, student.id, r.key)}>
+                        <button className="btn btn-primary btn-sm">An {first} senden</button>
+                      </form>
+                    )}
+                    <span className="text-[13px] text-ink-2">
+                      <span className="num">{r.count}</span> Aufg. · {r.difficulty}
                     </span>
-                  ) : (
-                    <form action={applyRecommendationAction.bind(null, student.id, r.key)}>
-                      <button className="btn btn-primary btn-sm">Erstellen und an {first} senden</button>
-                    </form>
-                  )}
-                </div>
-              </li>
-            ))}
+                  </div>
+                  <Reveal label="Warum?" className="mt-1">
+                    <p className="text-[14px] text-ink-2">
+                      {r.skill.area} › {r.skill.name}: {r.reason}
+                    </p>
+                    <p className="mt-1 text-[14px] text-ink-2">Danach: {r.then}</p>
+                  </Reveal>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -338,57 +385,52 @@ function AnalysisTab({ student, a, assignedId }: { student: repo.Student; a: Ana
       <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-2">
         <section>
           <SectionTitle>Häufige Fehler</SectionTitle>
-          {a.errors.length === 0 ? (
-            <p className="text-[14px] text-ink-3">Noch keine Fehler erfasst.</p>
-          ) : (
-            <ol className="space-y-2">
-              {a.errors.slice(0, 8).map((e) => {
-                const skills = e.skillIds.map((id) => a.skills.find((s) => s.skill.id === id)?.skill.name).filter(Boolean);
-                return (
-                  <li key={e.label} className="flex items-baseline justify-between gap-4 border-b border-line pb-2 text-[14px]">
-                    <span>
-                      <span className="font-medium">{e.label}</span>
-                      {skills.length > 0 && <span className="text-ink-3"> · {skills.join(", ")}</span>}
-                    </span>
-                    <span className="num shrink-0 font-semibold">{e.count}×</span>
-                  </li>
-                );
-              })}
-            </ol>
-          )}
+          <More
+            className="divide-y divide-line"
+            empty="Noch keine Fehler erfasst."
+            items={a.errors.map((e) => {
+              const skills = e.skillIds.map((id) => a.skills.find((s) => s.skill.id === id)?.skill.name).filter(Boolean);
+              return (
+                <span key={e.label} className="flex items-baseline justify-between gap-4 py-2 text-[14px]" title={skills.length ? `Bei: ${skills.join(", ")}` : undefined}>
+                  <span className="font-medium">{e.label}</span>
+                  <span className="num shrink-0 font-semibold">{e.count}×</span>
+                </span>
+              );
+            })}
+          />
         </section>
         <section>
           <SectionTitle>Wiederholen</SectionTitle>
-          {a.review.length === 0 ? (
-            <p className="text-[14px] text-ink-3">Nichts, das gerade verloren zu gehen droht.</p>
-          ) : (
-            <ul className="space-y-2">
-              {a.review.map((s) => (
-                <li key={s.skill.id} className="flex items-center justify-between gap-4 border-b border-line pb-2 text-[14px]">
-                  <span>
-                    {s.skill.name} <span className="text-ink-3">· {s.skill.area}</span>
-                  </span>
-                  <span className="flex items-center gap-3">
-                    <TrendBadge trend={s.trend} compact />
-                    <span className="num font-semibold">{pct(s.mastery)}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <More
+            className="divide-y divide-line"
+            empty="Nichts Dringendes."
+            items={a.review.map((s) => (
+              <span key={s.skill.id} className="flex items-center justify-between gap-4 py-2 text-[14px]">
+                <span>{s.skill.name}</span>
+                <span className="flex items-center gap-3">
+                  <TrendBadge trend={s.trend} compact />
+                  <span className="num font-semibold">{pct(s.mastery)}</span>
+                </span>
+              </span>
+            ))}
+          />
         </section>
       </div>
 
       <section>
         <SectionTitle>Einschätzung</SectionTitle>
-        <ul className="mb-6 space-y-2">
-          {a.summary.map((s, i) => (
-            <li key={i} className="max-w-[72ch]">
-              {s}
-            </li>
-          ))}
-        </ul>
         <AIInsight studentId={student.id} enabled={aiEnabled()} />
+        {a.summary.length > 0 && (
+          <Reveal label="Einschätzung in Sätzen" className="mt-2">
+            <ul className="space-y-1.5">
+              {a.summary.map((s, i) => (
+                <li key={i} className="max-w-[72ch] text-[15px]">
+                  {s}
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+        )}
       </section>
     </div>
   );
@@ -510,7 +552,7 @@ function School({ student, a }: { student: repo.Student; a: Analysis }) {
             <input className="input num" name="max_points" inputMode="decimal" placeholder="von" />
           </div>
           <details>
-            <summary className="cursor-pointer text-[13px] text-ink-2">Mit Fähigkeiten verknüpfen (fließt in den Fortschritt ein)</summary>
+            <summary className="cursor-pointer text-[13px] text-ink-2">Mit Fähigkeiten verknüpfen</summary>
             <SkillPicker skills={skills} />
           </details>
           <button className="btn btn-secondary justify-self-start">Speichern</button>
@@ -527,8 +569,10 @@ function Exercises({ student }: { student: repo.Student }) {
     <div className="space-y-8">
       <div className="panel flex flex-wrap items-center justify-between gap-4 px-5 py-4">
         <div className="min-w-0 flex-1">
-          <p className="font-semibold">Zugang für {first}</p>
-          <p className="text-[13px] text-ink-2">Über diesen Link sieht {first} alle gesendeten Übungen und kann sie selbst bearbeiten.</p>
+          <p className="font-semibold">
+            Link für das Gerät von {first}
+            <Info label="Info zum Link">Über diesen Link sieht {first} alle gesendeten Übungen und kann sie selbst bearbeiten.</Info>
+          </p>
         </div>
         <div className="flex w-full items-center gap-2 sm:w-[440px]">
           <CopyLink path={`/lernen/${student.access_token}`} />
@@ -564,7 +608,7 @@ function Exercises({ student }: { student: repo.Student }) {
             </Link>
           }
         >
-          Erstelle eine Übung oder übernimm eine Empfehlung aus dem Bereich Fortschritt.
+          Oder übernimm eine Empfehlung unter Fortschritt.
         </Empty>
       ) : (
         <div className="panel overflow-x-auto">

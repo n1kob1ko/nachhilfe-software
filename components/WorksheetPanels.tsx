@@ -59,7 +59,7 @@ export function ReleasePanel({ worksheetId, students, defaultStudentId, taskCoun
           </Busy>
         </div>
       )}
-      <p className="text-[13px] text-ink-2">{taskCount} Aufgaben. Die Lösungen bleiben verborgen, bis du sie zeigst.</p>
+      <p className="text-[13px] text-ink-2">{taskCount} Aufgaben · Lösungen bleiben verborgen</p>
       <Msg r={state} />
     </form>
   );

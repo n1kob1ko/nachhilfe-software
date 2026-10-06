@@ -76,7 +76,7 @@ export async function LessonForm({ student, lesson }: { student: repo.Student; l
         </div>
         {practice.length > 0 && (
           <p className="-mt-2 rounded-lg bg-accent-wash px-3 py-2 text-[13px] text-accent">
-            {student.name.split(" ")[0]} hat an diesem Tag selbstständig geübt. Was dabei gemacht wurde und welche Fehler passiert sind, ist unten schon eingetragen.
+            {student.name.split(" ")[0]} hat selbstständig geübt. Inhalte und Fehler sind schon eingetragen.
           </p>
         )}
         <label className="field">

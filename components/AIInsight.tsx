@@ -3,17 +3,20 @@
 import { Sparkles } from "lucide-react";
 import { useState, useTransition } from "react";
 import { aiInsightAction, type InsightState } from "@/app/actions";
+import { Info } from "@/components/Info";
 
 export function AIInsight({ studentId, enabled }: { studentId: number; enabled: boolean }) {
   const [state, setState] = useState<InsightState>(null);
   const [pending, start] = useTransition();
   return (
     <div>
-      <button className="btn btn-secondary" disabled={!enabled || pending} onClick={() => start(async () => setState(await aiInsightAction(studentId)))}>
-        <Sparkles size={15} className="text-accent" aria-hidden />
-        {pending ? "Claude analysiert …" : "KI-Einschätzung erstellen"}
-      </button>
-      {!enabled && <p className="mt-2 text-[13px] text-ink-3">Benötigt einen ANTHROPIC_API_KEY (siehe README). Die Auswertung oben funktioniert auch ohne.</p>}
+      <span className="inline-flex items-center gap-1">
+        <button className="btn btn-secondary" disabled={!enabled || pending} onClick={() => start(async () => setState(await aiInsightAction(studentId)))}>
+          <Sparkles size={15} className="text-accent" aria-hidden />
+          {pending ? "Claude analysiert …" : "KI-Einschätzung erstellen"}
+        </button>
+        {!enabled && <Info label="Warum ist das ausgegraut?">Die KI-Einschätzung braucht einen ANTHROPIC_API_KEY (siehe README). Die übrige Auswertung funktioniert auch ohne.</Info>}
+      </span>
       {state && "error" in state && <p className="mt-3 text-[14px] text-red">{state.error}</p>}
       {state && "summary" in state && (
         <div className="mt-4 grid gap-5 md:grid-cols-2">
