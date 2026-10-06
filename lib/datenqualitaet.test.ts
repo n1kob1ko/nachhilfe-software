@@ -42,8 +42,10 @@ let official: Awaited<ReturnType<typeof officialSnapshot>>;
 let dupKuerzen = "";
 let dupErweitern = "";
 let deutschKuerzen = "";
+/** the same name as the Teilfähigkeit mathe.gleichungen.einfach.probe, but on its own */
+let dupProbe = "";
 
-test("setup: Lehrplan Mathematik and Deutsch imported, three skills with known names created, then the official tables are recorded", async () => {
+test("setup: Lehrplan Mathematik and Deutsch imported, four skills with known names created, then the official tables are recorded", async () => {
   const repo = await import("./repo");
   const { MAX_STUFE } = await import("./school");
   assert.equal(MAX_STUFE, 13);
@@ -52,6 +54,7 @@ test("setup: Lehrplan Mathematik and Deutsch imported, three skills with known n
   dupKuerzen = repo.createSkill("Mathematik", "Bruchrechnung", "kürzen.", 5, 9);
   dupErweitern = repo.createSkill("Mathematik", "Brüche", "Erweitern", 5, 9);
   deutschKuerzen = repo.createSkill("Deutsch", "Grammatik", "Kürzen", 5, 9);
+  dupProbe = repo.createSkill("Mathematik", "Gleichungen", "Probe machen", 5, 9);
   official = await officialSnapshot();
   assert.ok(official.skills.length > 50 && official.curricula.length === 2 && official.curriculum_nodes.length > 300);
 });
@@ -152,6 +155,12 @@ test("Dubletten: found by the normalized name within one subject, never merged b
   assert.ok(cross && !cross.sameArea && [cross.a.id, cross.b.id].includes("mathe.brueche.erweitern"));
   assert.ok(!dq.findDuplicates(null, { crossArea: true }).some((p) => [p.a.id, p.b.id].includes(deutschKuerzen)), "never across subjects");
   assert.ok(!dq.findDuplicates("Deutsch").some((p) => p.subject === "Mathematik"));
+  // a Teilfähigkeit names its skill and gives its id (the page links it)
+  const probe = pairs.find((p) => [p.a.id, p.b.id].includes(dupProbe));
+  assert.ok(probe, "„Probe machen“ is a duplicate of the Teilfähigkeit");
+  const parentOf = (id: string) => [probe.a, probe.b].filter((s) => s.id === id).map((s) => [s.parent_id, s.parent_name]);
+  assert.deepEqual(parentOf("mathe.gleichungen.einfach.probe"), [["mathe.gleichungen.einfach", "Einfache lineare Gleichungen"]]);
+  assert.deepEqual(parentOf(dupProbe), [[null, null]]);
 
   // finding changes nothing
   assert.equal(dq.skillOverride(dupKuerzen), null);
