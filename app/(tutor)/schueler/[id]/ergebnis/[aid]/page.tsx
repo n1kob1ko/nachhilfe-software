@@ -109,7 +109,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
                         {a.error_label && <span className="text-ink-2">→ {a.error_label}</span>}
                         {!a.correct && !a.solution_viewed && (
                           <span className="no-print">
-                            <ErrorTypeSelect attemptId={a.id} type={a.error_type ?? null} source={a.error_type_source ?? null} suggested={a.error_type_suggested ?? null} />
+                            <ErrorTypeSelect attemptId={a.id} type={a.error_type ?? null} source={a.error_type_source ?? null} suggested={a.error_type_suggested ?? null} suggestedSource={a.error_type_suggested_source ?? null} />
                           </span>
                         )}
                       </li>

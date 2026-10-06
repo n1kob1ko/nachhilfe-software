@@ -88,7 +88,7 @@ export function normalizeText(s: string, caseSensitive = false) {
   return out;
 }
 
-function sameAnswer(given: string, expected: string, mode: AnswerSpec["mode"]) {
+export function sameAnswer(given: string, expected: string, mode: AnswerSpec["mode"]) {
   if (mode === "value") {
     const a = parseNumber(given);
     const b = parseNumber(expected);

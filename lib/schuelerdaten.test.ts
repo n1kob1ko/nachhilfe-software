@@ -152,7 +152,8 @@ test("error types: suggested by rule, confirmed or changed by the teacher, trace
   const { submitAnswer, analyzeStudent } = await import("./service");
   const calc = (accepted: string) => ({ type: "calc" as const, data: {}, answer: { accepted: [accepted], mode: "value" as const }, category: null });
   assert.equal(suggestErrorType(calc("-12"), "12", null), "vorzeichen");
-  assert.equal(suggestErrorType(calc("3,5"), "35", null), "einheit");
+  assert.equal(suggestErrorType({ ...calc("3,5"), prompt: "Wie viele Meter sind 350 cm?" }, "35", null), "einheit");
+  assert.equal(suggestErrorType(calc("3,5"), "35", null), null, "×10 without any unit is no Einheitenfehler");
   assert.equal(suggestErrorType(calc("43"), "34", null), "rechenfehler");
   assert.equal(suggestErrorType(calc("43"), "7", null), null, "no rule fits: no guess");
   assert.equal(suggestErrorType(calc("3/4"), "4/3", "Kehrwert vergessen"), "regel", "a known misconception of the task");

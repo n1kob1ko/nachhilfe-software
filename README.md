@@ -130,7 +130,7 @@ Unter „Datenexport“ (nur Verwaltung):
 - **Schwäche** unter 60 %, **sicher** ab 80 %.
 - **Trend**: Veränderung gegenüber dem Stand vor 4 Wochen (±5 Punkte).
 - **Häufige Fehler**: erkannte Fehlerbilder aus Aufgaben (z. B. „Kehrwert vergessen“) und die Fehlerzeilen aus der Stundendokumentation.
-- **Empfehlung**: pro Schwäche 8–10 Aufgaben (leicht bis mittel je nach Stand). Ist die empfohlene Übung erledigt, schlägt die App eine Überprüfung mit 5 Aufgaben vor. Fähigkeiten, die sinken oder lange nicht geübt wurden, kommen zur Wiederholung.
+- **Empfehlung**: pro Schwäche 8–10 Aufgaben (leicht bis mittel je nach Stand). Ist eine Übung zu der Schwäche erledigt (auch eine aus dem Übungs-Builder), schlägt die App eine Überprüfung mit 5 Aufgaben vor. Fähigkeiten, die sinken oder lange nicht geübt wurden, kommen zur Wiederholung.
 
 ## Technik
 
