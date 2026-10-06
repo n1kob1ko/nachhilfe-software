@@ -68,7 +68,7 @@ export function StudentForm({ student }: { student?: Student }) {
         <textarea className="input" name="notes" defaultValue={student?.notes} placeholder="Interessen, Lerntyp, Kontakt zu Eltern …" />
       </label>
       <p className="-mt-2 text-[13px] text-ink-3">
-        Stärken und Schwächen ergänzt die Software automatisch aus Übungen, Einheiten und Tests.
+        Wird automatisch aus Übungen, Einheiten und Tests ergänzt.
       </p>
       <div className="flex gap-2">
         <button className="btn btn-primary">{student ? "Speichern" : "Schüler anlegen"}</button>

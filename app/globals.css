@@ -518,3 +518,22 @@ textarea.input {
 .wb-root .excalidraw .HintViewer {
   display: none !important;
 }
+
+/* one disclosure style for "Details anzeigen", "+n mehr" etc. */
+.reveal > summary {
+  display: inline-flex;
+  min-height: 36px;
+  cursor: pointer;
+  list-style: none;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+.reveal > summary::-webkit-details-marker { display: none; }
+.reveal > summary:hover { text-decoration: underline; text-underline-offset: 3px; }
+.reveal[open] > summary .reveal-chevron { transform: rotate(180deg); }
+.reveal-chevron { transition: transform 150ms ease; }
+@media (pointer: coarse) { .reveal > summary { min-height: 44px; } }
+.add-skill > summary::-webkit-details-marker { display: none; }

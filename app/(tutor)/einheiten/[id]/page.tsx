@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Info } from "@/components/Info";
 import { notFound } from "next/navigation";
 import { BookOpenCheck, CheckCircle2, ChartNoAxesColumn, ExternalLink, Plus, Presentation, Square } from "lucide-react";
 import { endUnitAction } from "@/app/session-actions";
@@ -131,7 +132,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         <h1 className="text-[28px] font-semibold tracking-[-0.02em]">Einheit mit {student.name} abgebrochen</h1>
         {facts}
         {unit.end_reason && <p className="mt-4 text-[15px]">Grund: {unit.end_reason}</p>}
-        <p className="mt-2 text-[14px] text-ink-2">Abgebrochene Einheiten werden nicht abgerechnet und haben keine Dokumentation.</p>
+        <p className="mt-2 text-[14px] text-ink-2">Wird nicht abgerechnet, keine Dokumentation.</p>
       </>
     );
   }
@@ -265,7 +266,7 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
           )}
         </div>
         {rows.length === 0 ? (
-          <p className="panel px-5 py-5 text-[15px] text-ink-2">Noch keine offene Übung. Erstelle eine Übung und sende sie an {name}. Die Ergebnisse erscheinen dann hier.</p>
+          <p className="panel px-5 py-5 text-[15px] text-ink-2">Noch keine Übung gesendet.</p>
         ) : (
           <ul className="panel divide-y divide-line">
             {rows.map((a) => {
@@ -290,8 +291,10 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
         )}
       </section>
       <section>
-        <h2 className="mb-1 text-[17px] font-semibold">Link für das Gerät von {name}</h2>
-        <p className="mb-3 text-[14px] text-ink-2">Auf diesem Link sieht {name} die gesendeten Übungen und das Whiteboard. Einmal am Tablet öffnen genügt.</p>
+        <h2 className="mb-2 text-[17px] font-semibold">
+          Link für das Gerät von {name}
+          <Info label="Info zum Link">Auf diesem Link sieht {name} die gesendeten Übungen und das Whiteboard. Einmal am Tablet öffnen genügt.</Info>
+        </h2>
         <div className="flex max-w-[620px] flex-wrap items-center gap-2">
           <div className="min-w-0 flex-1">
             <CopyLink path={`/lernen/${student.access_token}`} />

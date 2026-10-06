@@ -1,4 +1,5 @@
 import { resetTeacherPasswordAction, setTeacherActiveAction } from "@/app/session-actions";
+import { Info } from "@/components/Info";
 import { NewTeacherForm } from "@/components/AuthForms";
 import { PageHeader, Pill, SectionTitle } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
@@ -12,7 +13,7 @@ export default async function Teachers() {
   const teachers = listAllTeachers();
   return (
     <>
-      <PageHeader title="Lehrer" subtitle="Jeder Lehrer meldet sich mit einem eigenen Account an. Einheiten und Dokumentation werden auf den angemeldeten Lehrer gebucht." />
+      <PageHeader title="Lehrer" info="Jeder Lehrer meldet sich mit einem eigenen Account an. Einheiten und Dokumentation werden auf den angemeldeten Lehrer gebucht." />
       <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section>
           <SectionTitle>Accounts</SectionTitle>
@@ -41,8 +42,9 @@ export default async function Teachers() {
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-[13px] text-ink-3">
-            Neue und zurückgesetzte Accounts starten mit dem Passwort „{INITIAL_PASSWORD}“ und müssen es beim ersten Login ändern. Deaktivierte Lehrer bleiben in der Dokumentation erhalten.
+          <p className="mt-3 flex items-center gap-1 text-[13px] text-ink-3">
+            Startpasswort „{INITIAL_PASSWORD}“
+            <Info label="Info zu Passwörtern">Neue und zurückgesetzte Accounts starten mit dem Passwort „{INITIAL_PASSWORD}“ und müssen es beim ersten Login ändern. Deaktivierte Lehrer bleiben in der Dokumentation erhalten.</Info>
           </p>
         </section>
         <aside>
