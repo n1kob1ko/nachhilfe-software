@@ -94,6 +94,9 @@ export type Lesson = {
   tutor_notes: string;
   next_steps: string;
   skill_ids: string[];
+  /** Note for parents or the student, written from the unit summary (lib/summary.ts): source fakten | ki | lehrer. */
+  family_note?: string;
+  family_note_source?: string;
 };
 
 export type Homework = { id: number; student_id: number; subject: string; description: string; due_date: string | null; status: string; notes: string };
@@ -376,6 +379,9 @@ export function saveLesson(l: LessonInput, id?: number): number {
     )
     .run(params);
   return Number(res.lastInsertRowid);
+}
+export function setFamilyNote(lessonId: number, text: string, source: "fakten" | "ki" | "lehrer" | "") {
+  db().prepare("UPDATE lessons SET family_note = ?, family_note_source = ? WHERE id = ?").run(text.slice(0, 4000), text.trim() ? source : "", lessonId);
 }
 export function deleteLesson(id: number) {
   db().prepare("DELETE FROM lessons WHERE id = ?").run(id);

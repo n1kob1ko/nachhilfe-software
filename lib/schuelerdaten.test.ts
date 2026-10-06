@@ -363,3 +363,123 @@ test("a diagnosis lands in the normal tracking, marked as diagnosis, and updates
   assert.deepEqual(r.gaps.map((g) => [g.skill.id, g.for.map((x) => x.id), g.reason]), [["mathe.brueche.multiplizieren", ["mathe.brueche.dividieren"], "in der Diagnose unsicher"]]);
   assert.ok(r.next.length > 0 && r.next.every((n) => ["mathe.brueche.multiplizieren", "mathe.brueche.dividieren"].includes(n.skill.id)), "next steps follow the diagnosis");
 });
+
+// ---------- Phase 4 ----------
+test("material: upload checks the real file type, classification, source and licence decide what may be taken over", async () => {
+  const { repo, niko, sid } = await setup("Mia Material");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "material-"));
+  process.env.UPLOADS_PATH = dir;
+  const mat = await import("./materials");
+  const lib = await import("./library");
+  const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from("bild")]);
+
+  assert.throws(() => mat.saveUpload({ name: "x.png", data: Buffer.from("<html><script>alert(1)</script>") }, { teacherId: niko.id }), /Nur Fotos/, "the name does not decide the type");
+  assert.throws(() => mat.saveUpload({ name: "leer.pdf", data: Buffer.alloc(0) }, { teacherId: niko.id }), /leer/);
+  const up = mat.saveUpload({ name: "../../Arbeitsblatt Brüche.png", data: png }, { teacherId: niko.id, subject: "Mathematik", studentId: sid });
+  assert.equal(up.existing, false);
+  let m = mat.getMaterial(up.id)!;
+  assert.deepEqual([m.mime, m.kind, m.title, m.file_name, m.status, m.school_type, m.klasse], ["image/png", "foto", "Arbeitsblatt Brüche", "Arbeitsblatt Brüche.png", "hochgeladen", "Mittelschule", 2]);
+  assert.equal(path.dirname(mat.materialFile(m)), dir, "stored in the uploads folder, named by checksum");
+  assert.ok(fs.readFileSync(mat.materialFile(m)).equals(png));
+  assert.deepEqual(mat.saveUpload({ name: "nochmal.png", data: png }, { teacherId: niko.id }), { id: up.id, existing: true }, "the same file twice gives the existing material");
+
+  // classification: own values, unknown skills are dropped; suggestions without AI come from the topic
+  mat.classifyMaterial(up.id, { title: "Brüche AB", kind: "arbeitsblatt", subject: "Mathematik", schoolType: "Mittelschule", klasse: 2, topic: "Brüche dividieren", skillIds: ["mathe.brueche.dividieren", "gibt.es.nicht"], studentId: sid, notes: "" });
+  m = mat.getMaterial(up.id)!;
+  assert.deepEqual([m.status, m.skill_ids, m.kind], ["geprueft", ["mathe.brueche.dividieren"], "arbeitsblatt"]);
+  assert.ok(mat.suggestedSkills(m).some((s) => s.id === "mathe.brueche.dividieren"));
+
+  // an analysis stays a suggestion: unknown skills dropped, the classification is not touched
+  mat.setAnalysis(up.id, { subject: "Mathematik", topic: "Bruchrechnung", skill_ids: ["mathe.brueche.kuerzen", "erfunden"], tasks: [{ prompt: "Dividiere 3/4 : 1/2", answer: "3/2", solution: "", skill_id: "erfunden" }], notes: "" }, "ki");
+  m = mat.getMaterial(up.id)!;
+  assert.deepEqual(m.analysis!.skill_ids, ["mathe.brueche.kuerzen"]);
+  assert.equal(m.analysis!.tasks[0].skill_id, null);
+  assert.deepEqual([m.topic, m.skill_ids, m.status], ["Brüche dividieren", ["mathe.brueche.dividieren"], "geprueft"]);
+
+  const task = { prompt: "Dividiere 3/4 durch 1/2.", answers: ["3/2", "1,5"], solution: "3/4 · 2/1 = 3/2", skillId: "mathe.brueche.dividieren", difficulty: "mittel" as const, reviewed: true, ownWords: false };
+  assert.match((mat.takeOverTask(up.id, task, niko.id) as { error: string }).error, /Herkunft/, "nothing without origin and licence");
+
+  // school book: only in own words, then it counts as an own task with the material as its model
+  mat.setMaterialSource(up.id, { origin: "schule", name: "Mathe-Buch 2", author: "Verlag X", url: "javascript:alert(1)", license: "", attribution: "" });
+  m = mat.getMaterial(up.id)!;
+  assert.equal(mat.takeoverRule(m).allowed, false);
+  assert.equal(mat.takeoverRule(m).source!.url, "", "only http(s) links are kept");
+  assert.match((mat.takeOverTask(up.id, task, niko.id) as { error: string }).error, /eigenen Worten/);
+  assert.match((mat.takeOverTask(up.id, { ...task, ownWords: true, reviewed: false }, niko.id) as { error: string }).error, /geprüft/);
+  const own = mat.takeOverTask(up.id, { ...task, ownWords: true }, niko.id) as { libraryId: number };
+  const e = lib.getLibraryEntry(own.libraryId)!;
+  assert.deepEqual([e.origin, e.subject, e.topic, e.task.skillId, e.task.answer.accepted], ["eigen", "Mathematik", "Bruchrechnung", "mathe.brueche.dividieren", ["3/2", "1,5"]]);
+  assert.notEqual(e.task.sourceId, mat.takeoverRule(m).source!.id, "not under the book's licence");
+  assert.ok(e.tags.includes("Material"));
+  assert.deepEqual(mat.libraryTasksOf(up.id).map((x) => x.id), [own.libraryId], "the material stays traceable as the model");
+
+  // freely licensed: may be taken over as it is, with its licence on the task
+  mat.setMaterialSource(up.id, { origin: "frei", name: "OER-Blatt", author: "A. Autor", url: "https://example.org/blatt", license: "CC BY 4.0", attribution: "A. Autor, CC BY 4.0" });
+  m = mat.getMaterial(up.id)!;
+  assert.equal(mat.takeoverRule(m).allowed, true);
+  const oer = mat.takeOverTask(up.id, task, niko.id) as { libraryId: number };
+  const e2 = lib.getLibraryEntry(oer.libraryId)!;
+  assert.equal(e2.task.sourceType, "oer");
+  assert.equal(e2.source?.license, "CC BY 4.0");
+  assert.match((mat.takeOverTask(up.id, { ...task, skillId: "deutsch.beistrich.aufzaehlung" }, niko.id) as { error: string }).error ?? "", /Fach|passt/);
+
+  // deleting the material removes the file; tasks in the library and their licence stay
+  assert.ok(mat.deleteMaterial(up.id));
+  assert.equal(mat.getMaterial(up.id), null);
+  assert.equal(fs.existsSync(path.join(dir, path.basename(m.stored_path))), false);
+  assert.equal(lib.getLibraryEntry(oer.libraryId)!.source?.license, "CC BY 4.0");
+  assert.ok(repo.listStudents().some((s) => s.id === sid));
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test("unit summary: six questions from the data, teacher lines marked, nothing personal for Claude", async () => {
+  const { repo, niko, sid, student } = await setup("Lena Zusammenfassung");
+  const { buildWorksheet, submitAnswer } = await import("./service");
+  const units = await import("./units");
+  const learning = await import("./learning");
+  const sum = await import("./summary");
+  const { dayOf } = await import("./exams");
+  const today = dayOf(new Date());
+
+  const { unit } = units.startUnit(niko.id, sid, { at: Date.now() - 45 * 60_000, subject: "Mathematik" });
+  const { id: wid } = await buildWorksheet({ subject: "Mathematik", schoolType: "Mittelschule", klasse: 2, skillIds: ["mathe.brueche.kuerzen", "mathe.brueche.dividieren"], difficulty: "leicht", count: 4, taskType: "calc", useAI: false });
+  const aid = repo.assignWorksheet(wid, sid);
+  for (const t of repo.listTasks(wid)) {
+    const { right, wrong } = answers(t);
+    const ok = t.skillId === "mathe.brueche.kuerzen";
+    for (let i = 0; i < (ok ? 1 : 3); i++) await submitAnswer({ token: student.access_token, assignmentId: aid, taskId: t.id, answer: ok ? right : wrong, timeMs: 30_000, hintsUsed: ok ? 0 : 1 });
+  }
+  // the teacher marks one wrong answer as Vorzeichenfehler
+  const wrongOne = repo.listAttemptsForUnit(unit.id).find((a) => !a.correct)!;
+  repo.setAttemptErrorType(wrongOne.id, "vorzeichen", niko.id);
+  repo.addHomework({ student_id: sid, subject: "Mathematik", description: "Buch S. 42, Nr. 3", due_date: plusDays(today, 2), status: "offen", notes: "" });
+  repo.addTest({ student_id: sid, date: plusDays(today, 8), subject: "Mathematik", kind: "Schularbeit", topic: "", grade: null, points: null, max_points: null, notes: "", skill_ids: ["mathe.brueche.dividieren"], topics: ["Brüche"] });
+
+  const lessonId = learning.endUnit(unit.id, { byTeacherId: niko.id })!;
+  const lesson = repo.getLesson(lessonId)!;
+  repo.saveLesson({ ...lesson, positives: "Lena war heute sehr konzentriert." }, lessonId);
+
+  const b = sum.unitBrief(lessonId, { today })!;
+  for (const [key] of sum.BRIEF_QUESTIONS) assert.ok(b[key].length > 0, `${key} is answered`);
+  assert.ok(b.done.some((l) => /4 Aufgaben bearbeitet, 2 richtig/.test(l.text)));
+  assert.ok(b.good.some((l) => l.from === "daten" && /Kürzen/i.test(l.text)));
+  assert.ok(b.good.some((l) => l.from === "lehrer"), "the teacher's note is there, marked as such");
+  assert.ok(b.difficulties.some((l) => /Dividieren/i.test(l.text)));
+  assert.ok(b.errors.some((l) => /Vorzeichenfehler \(1×\)/.test(l.text)), "the stored Fehlerart is used");
+  assert.match(b.next[0].text, /dividieren \(Prüfung\)$/i, "the central recommendation: the Schularbeit first");
+  assert.ok(b.dates.some((l) => /Hausübung Mathematik: Buch S\. 42/.test(l.text)));
+  assert.ok(b.dates.some((l) => /Schularbeit Mathematik in 8 Tagen/.test(l.text)));
+
+  const forAI = JSON.stringify(sum.briefForAI(b, student.name));
+  assert.doesNotMatch(forAI, /Lena|Zusammenfassung/, "no names for Claude");
+  assert.doesNotMatch(forAI, /konzentriert/, "no teacher notes for Claude");
+  assert.match(forAI, /Vorzeichenfehler/);
+  assert.equal(sum.withoutNames("Lena Zusammenfassung übt mit Lenas Schwester", ["Lena Zusammenfassung"]), "… … übt mit Lenas Schwester");
+
+  const parents = sum.noteFromFacts(b, "eltern");
+  assert.match(parents, /^Heute haben wir gearbeitet an/);
+  assert.match(parents, /Bitte im Blick behalten: .*Schularbeit/);
+  assert.match(sum.noteFromFacts(b, "schueler"), /Als Nächstes übst du/);
+  repo.setFamilyNote(lessonId, parents, "fakten");
+  assert.deepEqual([repo.getLesson(lessonId)!.family_note, repo.getLesson(lessonId)!.family_note_source], [parents, "fakten"]);
+});

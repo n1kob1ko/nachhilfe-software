@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
         ],
       },
       { source: "/lernen/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+      // the preview of an uploaded PDF is a frame of this site
+      { source: "/material/:id/datei", headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }] },
     ];
   },
 };

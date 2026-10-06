@@ -5,3 +5,5 @@ data/*.db*
 next-env.d.ts
 *.tsbuildinfo
 /public/excalidraw-assets
+/data/uploads
+/.claude/worktrees
