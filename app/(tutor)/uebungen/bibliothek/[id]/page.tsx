@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CheckCircle2, Copy, Sparkles, Trash2 } from "lucide-react";
-import { deleteLibraryEntryAction, duplicateLibraryEntryAction, exerciseFromLibraryAction, updateLibraryEntryAction } from "@/app/library-actions";
+import { deleteLibraryEntryAction, duplicateLibraryEntryAction, exerciseFromLibraryAction, setLibraryOriginAction, updateLibraryEntryAction } from "@/app/library-actions";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, SectionTitle, formatDate } from "@/components/ui";
 import { WorksheetEditor } from "@/components/WorksheetEditor";
 import { aiEnabled } from "@/lib/ai";
 import { requireTeacher } from "@/lib/auth";
 import { worksheetTypeLabel } from "@/lib/curriculum";
-import { getLibraryEntry, LIBRARY_ORIGIN_LABEL } from "@/lib/library";
+import { SOURCE_TYPE_LABEL, type SourceType } from "@/lib/lehrplan";
+import { getLibraryEntry, LIBRARY_ORIGIN_LABEL, namedSourceOf, namedSources, SETTABLE_ORIGINS } from "@/lib/library";
 import * as repo from "@/lib/repo";
 import { klassenLabel, SCHOOL_TYPES } from "@/lib/school";
 import { activeUnitForTeacher } from "@/lib/units";
@@ -16,8 +17,10 @@ import { runningBoardsFor } from "@/lib/whiteboard";
 
 export const metadata = { title: "Bibliotheksaufgabe" };
 
+const chip = "flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-[13.5px] has-checked:border-accent has-checked:bg-accent-wash has-checked:text-accent";
+
 /** One task of the library: the task in the editor, where it belongs, where it comes from, and reuse. */
-export default async function LibraryEntryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bearbeiten?: string; gespeichert?: string; kopie?: string }> }) {
+export default async function LibraryEntryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bearbeiten?: string; gespeichert?: string; kopie?: string; fehler?: string }> }) {
   const teacher = await requireTeacher();
   const { id } = await params;
   const sp = await searchParams;
@@ -28,6 +31,9 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
   const active = activeUnitForTeacher(teacher.id);
   const topics = [...new Set(skills.map((s) => s.area))];
   const level = e.klasse ? klassenLabel(e.school_type, e.klasse) : e.school_type;
+  const sources = namedSources();
+  const sourceTypes = [...new Set(sources.map((s) => s.source_type))];
+  const named = namedSourceOf(e);
 
   return (
     <>
@@ -52,7 +58,7 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
           </span>
         }
       />
-      {(sp.gespeichert || sp.kopie) && (
+      {((sp.gespeichert && sp.gespeichert !== "herkunft") || sp.kopie) && (
         <p className="no-print mb-4 inline-flex items-center gap-1.5 text-[14px] font-semibold text-green" role="status">
           <CheckCircle2 size={16} aria-hidden /> {sp.kopie ? "Kopie angelegt. Du siehst jetzt die Kopie." : "Gespeichert."}
         </p>
@@ -144,11 +150,13 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
           </form>
         </section>
 
-        <section aria-label="Herkunft und Lizenz">
+        <section id="herkunft" aria-label="Herkunft und Lizenz" className="scroll-mt-24">
           <SectionTitle>
             <span>
               Herkunft und Lizenz
-              <Info label="Info zu Herkunft und Lizenz">Wo die Aufgabe herkommt, bleibt bei der Aufgabe gespeichert, auch in jeder Kopie. Quellen und Lizenzen pflegst du unter Mehr › Curriculum / Lehrplan › Quellen.</Info>
+              <Info label="Info zu Herkunft und Lizenz">
+                Herkunft und Lizenz bleiben bei der Aufgabe gespeichert, auch in jeder Kopie. Als Quelle wählbar sind die Quellen unter Mehr › Curriculum / Lehrplan › Quellen, auch die von hochgeladenem Material. Aus Schulbuch, Verlag oder bei unklarer Lizenz nur in eigenen Worten: dann ist es eine eigene Aufgabe mit der Quelle als Vorlage.
+              </Info>
             </span>
           </SectionTitle>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[14px]">
@@ -164,6 +172,12 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
                 <dd>{e.source.attribution}</dd>
               </>
             )}
+            {e.model && e.model.id !== e.source?.id && (
+              <>
+                <dt className="text-ink-3">Vorlage</dt>
+                <dd>{e.model.name} (in eigenen Worten)</dd>
+              </>
+            )}
             <dt className="text-ink-3">Gespeichert</dt>
             <dd>{formatDate(e.created_at)}</dd>
           </dl>
@@ -174,6 +188,57 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
                 Quellen
               </Link>{" "}
               ergänzen.
+            </p>
+          )}
+          <details className="reveal mt-4" open={Boolean(sp.fehler) || undefined}>
+            <summary>Herkunft ändern</summary>
+            <form action={setLibraryOriginAction.bind(null, e.id)} className="grid gap-3 pt-3">
+              <fieldset>
+                <legend className="label mb-1.5">Herkunft</legend>
+                <div className="flex flex-wrap gap-1.5">
+                  {SETTABLE_ORIGINS.map((o) => (
+                    <label key={o} className={chip}>
+                      <input type="radio" name="origin" value={o} defaultChecked={e.origin === o} required className="accent-[var(--accent)]" />
+                      {LIBRARY_ORIGIN_LABEL[o]}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <label className="field">
+                <span className="label">Quelle</span>
+                <select className="input" name="source_id" defaultValue={named ?? ""}>
+                  <option value="">keine (eigene Aufgabe oder KI)</option>
+                  {sourceTypes.map((type) => (
+                    <optgroup key={type} label={SOURCE_TYPE_LABEL[type as SourceType] ?? type}>
+                      {sources
+                        .filter((s) => s.source_type === type)
+                        .map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                            {s.license ? ` · ${s.license}` : ""}
+                          </option>
+                        ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </label>
+              <label className="flex min-h-[44px] items-start gap-2 text-[14px]">
+                <input type="checkbox" name="eigene_worte" value="1" defaultChecked={e.origin === "eigen" && Boolean(e.model)} className="mt-1 accent-[var(--accent)]" />
+                In eigenen Worten geschrieben (nötig bei Schulbuch, Verlag oder unklarer Lizenz)
+              </label>
+              <div className="flex flex-wrap items-center gap-3">
+                <button className="btn btn-secondary">Herkunft speichern</button>
+              </div>
+            </form>
+          </details>
+          {sp.fehler && (
+            <p className="mt-3 rounded-lg bg-red-wash px-3 py-2 text-[13px] text-red" role="alert">
+              {sp.fehler}
+            </p>
+          )}
+          {sp.gespeichert === "herkunft" && (
+            <p className="mt-3 inline-flex items-center gap-1.5 text-[14px] font-semibold text-green" role="status">
+              <CheckCircle2 size={16} aria-hidden /> Herkunft gespeichert.
             </p>
           )}
         </section>

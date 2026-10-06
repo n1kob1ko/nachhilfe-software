@@ -517,12 +517,22 @@ function insertTask(worksheetId: number, position: number, t: TaskDraft): number
   writeTaskSkills(id, t);
   return id;
 }
+/** The built-in source of a task without one: Claude for AI tasks, otherwise the app's own content. */
+const builtinSourceId = (type: string) => (db().prepare("SELECT id FROM content_sources WHERE key = ?").get(type === "ki" ? "claude" : "lernheft") as { id: number } | undefined)?.id ?? null;
 /** Where a new task comes from: given by the draft (copies keep their origin) or derived from its exercise. */
 function taskOrigin(worksheetId: number, t: TaskDraft): [string, number | null] {
   const ws = db().prepare("SELECT source FROM worksheets WHERE id = ?").get(worksheetId) as { source: string } | undefined;
   const type = t.sourceType ?? (ws?.source === "ki" ? "ki" : "eigen");
-  const id = t.sourceId ?? ((db().prepare("SELECT id FROM content_sources WHERE key = ?").get(type === "ki" ? "claude" : "lernheft") as { id: number } | undefined)?.id ?? null);
-  return [type, id];
+  return [type, t.sourceId ?? builtinSourceId(type)];
+}
+/**
+ * Sets where a task comes from, e.g. after its content was replaced. Without a source it gets the
+ * built-in one (as a new task would). The model it was written after (source_item_id) is replaced too.
+ */
+export function setTaskOrigin(id: number, o: { sourceType: string; sourceId?: number | null; sourceItemId?: number | null }) {
+  db()
+    .prepare("UPDATE tasks SET source_type = ?, source_id = ?, source_item_id = ? WHERE id = ?")
+    .run(o.sourceType, o.sourceId ?? builtinSourceId(o.sourceType), o.sourceItemId ?? null, id);
 }
 function writeTaskSkills(taskId: number, t: Pick<TaskDraft, "skillId" | "skillIds">) {
   const conn = db();

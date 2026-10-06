@@ -6,7 +6,17 @@ import type { ActionResult } from "@/app/builder-actions";
 import { requireTeacher } from "@/lib/auth";
 import { blankTask } from "@/lib/builder";
 import { DIFFICULTIES, TASK_TYPES, type Difficulty, type TaskType } from "@/lib/curriculum";
-import { cleanTags, createLibraryTask, deleteLibraryEntry, duplicateLibraryEntry, exerciseFromLibrary, saveToLibrary, updateLibraryEntry } from "@/lib/library";
+import {
+  cleanTags,
+  createLibraryTask,
+  deleteLibraryEntry,
+  duplicateLibraryEntry,
+  exerciseFromLibrary,
+  saveToLibrary,
+  setLibraryOrigin,
+  updateLibraryEntry,
+  type SettableOrigin,
+} from "@/lib/library";
 import * as repo from "@/lib/repo";
 import { schoolType } from "@/lib/school";
 
@@ -46,6 +56,14 @@ export async function updateLibraryEntryAction(id: number, f: FormData) {
   const ok = updateLibraryEntry(id, { title: str(f, "title"), schoolType: type, klasse: type ? Number(f.get("klasse")) || null : null, topic: str(f, "topic"), tags: cleanTags(str(f, "tags")) });
   revalidatePath(LIB, "layout");
   redirect(ok ? `${LIB}/${id}?gespeichert=1` : LIB);
+}
+
+/** Herkunft and Quelle, set by the teacher; the licence rule decides what is stored (see setLibraryOrigin). */
+export async function setLibraryOriginAction(id: number, f: FormData) {
+  await requireTeacher();
+  const out = setLibraryOrigin(id, { origin: str(f, "origin") as SettableOrigin, sourceId: Number(f.get("source_id")) || null, ownWords: f.get("eigene_worte") === "1" });
+  revalidatePath(LIB, "layout");
+  redirect(`${LIB}/${id}?${"error" in out ? `fehler=${encodeURIComponent(out.error)}` : "gespeichert=herkunft"}#herkunft`);
 }
 
 export async function duplicateLibraryEntryAction(id: number) {

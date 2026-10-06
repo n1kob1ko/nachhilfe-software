@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { sourceById } from "./lehrplan";
+import { listSources, sourceById, taskBankAllowed, type ContentSource } from "./lehrplan";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
 import { GAP, type TaskDraft } from "./tasks";
@@ -13,6 +13,11 @@ export const LIBRARY_KIND = "bibliothek";
 
 export type LibraryOrigin = "eigen" | "ki" | "importiert" | "demo";
 export const LIBRARY_ORIGIN_LABEL: Record<LibraryOrigin, string> = { eigen: "eigene Aufgabe", ki: "KI-generiert", importiert: "importiert", demo: "Demo" };
+/** What the teacher can set (Demo only comes with the demo data). */
+export const SETTABLE_ORIGINS = ["eigen", "ki", "importiert"] as const satisfies readonly LibraryOrigin[];
+export type SettableOrigin = (typeof SETTABLE_ORIGINS)[number];
+/** Title of a task written directly in the library until its text gives it one. */
+export const PLACEHOLDER_TITLE = "Neue Aufgabe";
 /** tasks.source_type → origin as the teacher sees it: OER, Lehrplan and uploaded material count as imported. */
 export function libraryOrigin(sourceType: string | null | undefined): LibraryOrigin {
   if (sourceType === "ki") return "ki";
@@ -39,7 +44,9 @@ export type LibraryEntry = {
   created_at: string;
   task: repo.Task;
   origin: LibraryOrigin;
-  source: { name: string; license: string; attribution: string; url: string } | null;
+  source: { id: number; key: string; name: string; license: string; attribution: string; url: string } | null;
+  /** the source the task was written after (material, school book …), also when it is not under its licence */
+  model: { id: number; name: string } | null;
 };
 
 export type LibraryFilter = {
@@ -68,6 +75,9 @@ export function titleFromPrompt(prompt: string): string {
 
 function toEntry(w: repo.Worksheet, task: repo.Task): LibraryEntry {
   const src = sourceById(task.sourceId);
+  const model = db()
+    .prepare("SELECT c.id, c.name FROM tasks t JOIN source_items si ON si.id = t.source_item_id JOIN content_sources c ON c.id = si.source_id WHERE t.id = ?")
+    .get(task.id) as { id: number; name: string } | undefined;
   return {
     id: w.id,
     title: w.title,
@@ -80,7 +90,8 @@ function toEntry(w: repo.Worksheet, task: repo.Task): LibraryEntry {
     created_at: w.created_at,
     task,
     origin: libraryOrigin(task.sourceType),
-    source: src ? { name: src.name, license: src.license, attribution: src.attribution_text, url: src.url } : null,
+    source: src ? { id: src.id, key: src.key, name: src.name, license: src.license, attribution: src.attribution_text, url: src.url } : null,
+    model: model ?? null,
   };
 }
 
@@ -150,7 +161,7 @@ export function createLibraryTask(
 ): number {
   return repo.createWorksheet(
     {
-      title: m.title?.trim() || "Neue Aufgabe",
+      title: m.title?.trim() || PLACEHOLDER_TITLE,
       subject: m.subject,
       grade: m.klasse && m.schoolType ? schulstufe(m.schoolType, m.klasse) : 0,
       school_type: m.schoolType,
@@ -167,6 +178,55 @@ export function createLibraryTask(
     },
     [{ ...draft, sourceType: draft.sourceType ?? "eigen" }],
   );
+}
+
+/** After its task is saved: an entry still called "Neue Aufgabe" takes its title from the task text. */
+export function titleFromTask(worksheetId: number) {
+  const w = repo.getWorksheet(worksheetId);
+  const task = w?.kind === LIBRARY_KIND && w.title === PLACEHOLDER_TITLE ? repo.listTasks(worksheetId)[0] : null;
+  if (!task || !/[\p{L}\p{N}]/u.test(task.prompt.replaceAll(GAP, ""))) return;
+  repo.updateWorksheetMeta(worksheetId, { title: titleFromPrompt(task.prompt) });
+}
+
+/** The app's own sources (own content, Claude) need not be named: in the form they are "keine Quelle". */
+const BUILTIN_SOURCES = ["lernheft", "claude"];
+/** Sources a teacher can name for a task: those of Mehr › Lehrplan › Quellen, material included. */
+export const namedSources = () => listSources().filter((s) => !BUILTIN_SOURCES.includes(s.key));
+/** The source the origin form starts with: the model, else the task's source unless it is built in. */
+export const namedSourceOf = (e: LibraryEntry) => e.model?.id ?? (e.source && !BUILTIN_SOURCES.includes(e.source.key) ? e.source.id : null);
+
+/** A source as the model of a task: one source_items row per source (for material the row its takeover uses). */
+function modelItem(src: ContentSource): number {
+  db()
+    .prepare("INSERT OR IGNORE INTO source_items (source_id, item_id, author, license, retrieved_at, content_hash) VALUES (?, ?, ?, ?, ?, ?)")
+    .run(src.id, src.key, src.author, src.license, src.retrieved_at, src.content_hash);
+  return (db().prepare("SELECT id FROM source_items WHERE source_id = ? AND item_id = ?").get(src.id, src.key) as { id: number }).id;
+}
+
+/**
+ * Herkunft and Quelle of an entry, set by the teacher (e.g. for a task typed in from a book). The rule
+ * is the one for material: as imported only from a source whose licence allows it, stored with that
+ * licence; from a school book or an unclear licence only in the teacher's own words, then as an own
+ * task with the source as its model. A named source always stays on the task as its model.
+ */
+export function setLibraryOrigin(id: number, o: { origin: SettableOrigin; sourceId: number | null; ownWords: boolean }): { ok: true } | { error: string } {
+  const e = getLibraryEntry(id);
+  if (!e) return { error: "Aufgabe nicht gefunden." };
+  if (!(SETTABLE_ORIGINS as readonly string[]).includes(o.origin)) return { error: "Bitte die Herkunft wählen." };
+  const src = o.sourceId ? sourceById(o.sourceId) : null;
+  if (o.sourceId && !src) return { error: "Quelle nicht gefunden." };
+  const set = (sourceType: string, sourceId?: number) => {
+    repo.setTaskOrigin(e.task.id, { sourceType, sourceId, sourceItemId: src ? modelItem(src) : null });
+    return { ok: true } as const;
+  };
+  if (o.origin === "ki") return src && src.source_type !== "ki" ? { error: "Zu „KI-generiert“ passt keine andere Quelle." } : set("ki", src?.id);
+  if (src?.source_type === "ki") return { error: "Diese Quelle passt nur zu „KI-generiert“." };
+  // own content (the app's or own material) brings no licence of its own
+  if (!src || src.source_type === "eigen") return !src && o.origin === "importiert" ? { error: "Bitte die Quelle wählen, aus der die Aufgabe stammt." } : set("eigen", src?.id);
+  const rule = taskBankAllowed(src);
+  if (o.origin === "importiert" && !o.ownWords) return rule.ok ? set(src.source_type, src.id) : { error: `${rule.reason}. Aufgaben nur in eigenen Worten.` };
+  if (!o.ownWords) return { error: "Nach einer Vorlage bitte bestätigen, dass du die Aufgabe in eigenen Worten geschrieben hast." };
+  return set("eigen");
 }
 
 /** Title, tags and where the entry belongs (Schulart, Klasse, Thema). The task itself is edited in the task editor. */
@@ -212,7 +272,7 @@ export function searchLibrary(f: LibraryFilter = {}, limit = 200): LibraryEntry[
   if (f.topic) add("w.topic = ?", f.topic);
   if (f.difficulty) add("t.difficulty = ?", f.difficulty);
   if (f.type) add("COALESCE(t.category, t.type) = ?", f.type);
-  if (f.origin && ORIGIN_SQL[f.origin]) where.push(ORIGIN_SQL[f.origin]);
+  if (f.origin && Object.hasOwn(ORIGIN_SQL, f.origin)) where.push(ORIGIN_SQL[f.origin]);
   if (f.tag) add("EXISTS (SELECT 1 FROM json_each(w.tags) j WHERE lower(j.value) = lower(?))", f.tag);
   if (f.skillId) add("EXISTS (SELECT 1 FROM task_skills ts LEFT JOIN skills s ON s.id = ts.skill_id WHERE ts.task_id = t.id AND (ts.skill_id = ? OR s.parent_id = ?))", f.skillId, f.skillId);
   if (f.q?.trim()) {

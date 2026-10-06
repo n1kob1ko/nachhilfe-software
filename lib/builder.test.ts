@@ -181,6 +181,30 @@ test("the preview editor: edit, reorder, delete, add, regenerate; release checks
   assert.equal(tasks.length, 3);
 });
 
+test("a regenerated task takes the origin of its new content, not the old source and licence", async () => {
+  const { repo, builder } = await setup();
+  const { saveSource, getSource } = await import("./lehrplan");
+  const { db } = await import("./db");
+  const oer = saveSource({ key: "oer-neu-erstellen", name: "OER-Blatt", source_type: "oer", license: "CC BY 4.0" });
+  const draft = (prompt: string, o: { sourceType: string; sourceId?: number }) =>
+    ({ type: "calc" as const, skillId: KEHRWERT, difficulty: "mittel" as const, prompt, data: {}, answer: { accepted: ["1"], mode: "value" as const }, solution: "", hints: [], errorMap: [], ...o });
+  // an exercise made with Claude, holding an imported OER task and a Claude task
+  const w = repo.createWorksheet(
+    { title: "Gemischt", subject: "Mathematik", grade: 7, school_type: "Gymnasium", klasse: 3, topic: "", difficulty: "mittel", task_type: "calc", kind: "uebung", source: "ki", skill_ids: [KEHRWERT] },
+    [draft("Kehrwert von 2/3?", { sourceType: "oer", sourceId: oer }), draft("Kehrwert von 4/5?", { sourceType: "ki" })],
+  );
+  const [imported, ki] = repo.listTasks(w);
+  const itemId = db().prepare("INSERT INTO source_items (source_id, item_id) VALUES (?, 'blatt-1')").run(oer).lastInsertRowid;
+  db().prepare("UPDATE tasks SET source_item_id = ? WHERE id = ?").run(itemId, imported.id);
+  for (const t of [imported, ki]) {
+    assert.equal((await builder.regenerateTask(t.id, { useAI: false })).ok, true);
+    const now = repo.getTask(t.id)!;
+    assert.deepEqual([now.sourceType, now.sourceId], ["eigen", getSource("lernheft")!.id], "generator content is the app's own");
+  }
+  const item = db().prepare("SELECT source_item_id FROM tasks WHERE id = ?").get(imported.id) as { source_item_id: number | null };
+  assert.equal(item.source_item_id, null, "and no longer an item of the OER source");
+});
+
 test("hints used, sub-skill progress rolls up, unit link, reuse and templates", async () => {
   const { repo, builder, niko, newStudent, settings } = await setup();
   const units = await import("./units");

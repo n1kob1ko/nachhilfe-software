@@ -467,6 +467,8 @@ test("material: upload checks the real file type, classification, source and lic
   const e = lib.getLibraryEntry(own.libraryId)!;
   assert.deepEqual([e.origin, e.subject, e.topic, e.task.skillId, e.task.answer.accepted], ["eigen", "Mathematik", "Bruchrechnung", "mathe.brueche.dividieren", ["3/2", "1,5"]]);
   assert.notEqual(e.task.sourceId, mat.takeoverRule(m).source!.id, "not under the book's licence");
+  assert.equal(e.model?.name, "Mathe-Buch 2", "the book stays as the model");
+  assert.equal(e.title, "Dividiere 3/4 durch 1/2.", "titled after the task text");
   assert.ok(e.tags.includes("Material"));
   assert.deepEqual(mat.libraryTasksOf(up.id).map((x) => x.id), [own.libraryId], "the material stays traceable as the model");
 
@@ -487,6 +489,63 @@ test("material: upload checks the real file type, classification, source and lic
   assert.equal(lib.getLibraryEntry(oer.libraryId)!.source?.license, "CC BY 4.0");
   assert.ok(repo.listStudents().some((s) => s.id === sid));
   fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test("a task written in the library is titled after its text; Herkunft and Quelle follow the licence rule", async () => {
+  const { repo, niko } = await setup("Tom Quelle");
+  const lib = await import("./library");
+  const { saveSource } = await import("./lehrplan");
+  const { blankTask } = await import("./builder");
+  const id = lib.createLibraryTask({ subject: "Mathematik", schoolType: "Mittelschule", klasse: 2, topic: "Bruchrechnung", tags: [], teacherId: niko.id }, blankTask("calc", "mathe.brueche.kuerzen", null, "mittel"));
+  const task = lib.getLibraryEntry(id)!.task;
+  const title = () => lib.getLibraryEntry(id)!.title;
+  lib.titleFromTask(id);
+  assert.equal(title(), lib.PLACEHOLDER_TITLE, "no text yet, no new title");
+  repo.updateTask(task.id, { ...task, prompt: "Kürze 12/18 so weit wie möglich.\nSchreib den Rechenweg auf." });
+  lib.titleFromTask(id);
+  assert.equal(title(), "Kürze 12/18 so weit wie möglich.");
+  repo.updateTask(task.id, { ...task, prompt: "Kürze 15/25." });
+  lib.titleFromTask(id);
+  assert.equal(title(), "Kürze 12/18 so weit wie möglich.", "a title once given stays");
+  const exercise = repo.createWorksheet({ title: lib.PLACEHOLDER_TITLE, subject: "Mathematik", grade: 6, school_type: "Mittelschule", klasse: 2, topic: "", difficulty: "mittel", task_type: "calc", kind: "uebung", source: "manuell", skill_ids: [] }, [{ ...task, prompt: "Kürze 4/6." }]);
+  lib.titleFromTask(exercise);
+  assert.equal(repo.getWorksheet(exercise)!.title, lib.PLACEHOLDER_TITLE, "only library entries");
+
+  // an unknown origin in the address is ignored, not put into the query
+  assert.ok(lib.searchLibrary({ origin: "toString" as never }).some((x) => x.id === id));
+
+  let e = lib.getLibraryEntry(id)!;
+  assert.deepEqual([e.origin, e.source?.key, e.model, lib.namedSourceOf(e)], ["eigen", "lernheft", null, null]);
+  const book = saveSource({ key: "buch-quelle", name: "Mathe-Buch 3", source_type: "referenz", license: "" });
+  const oer = saveSource({ key: "oer-quelle", name: "OER-Brüche", source_type: "oer", license: "CC BY 4.0", attribution_text: "B. Autorin, CC BY 4.0" });
+  assert.ok(lib.namedSources().some((s) => s.id === book) && !lib.namedSources().some((s) => s.key === "lernheft" || s.key === "claude"));
+  const fail = (o: Parameters<typeof lib.setLibraryOrigin>[1]) => (lib.setLibraryOrigin(id, o) as { error: string }).error;
+
+  // a school book: never as imported, only in own words; then an own task with the book as its model
+  assert.match(fail({ origin: "importiert", sourceId: book, ownWords: false }), /Nur als Referenz.*eigenen Worten/);
+  assert.match(fail({ origin: "eigen", sourceId: book, ownWords: false }), /eigenen Worten/);
+  assert.deepEqual(lib.setLibraryOrigin(id, { origin: "importiert", sourceId: book, ownWords: true }), { ok: true });
+  e = lib.getLibraryEntry(id)!;
+  assert.deepEqual([e.origin, e.task.sourceType, e.source?.key, e.model?.name, lib.namedSourceOf(e)], ["eigen", "eigen", "lernheft", "Mathe-Buch 3", book], "not under the book's licence");
+
+  // freely licensed: imported, with its licence on the task
+  assert.deepEqual(lib.setLibraryOrigin(id, { origin: "importiert", sourceId: oer, ownWords: false }), { ok: true });
+  e = lib.getLibraryEntry(id)!;
+  assert.deepEqual([e.origin, e.task.sourceType, e.source?.license, e.source?.attribution, lib.namedSourceOf(e)], ["importiert", "oer", "CC BY 4.0", "B. Autorin, CC BY 4.0", oer]);
+  assert.ok(lib.searchLibrary({ origin: "importiert" }).some((x) => x.id === id));
+  assert.equal(lib.getLibraryEntry(lib.duplicateLibraryEntry(id, niko.id)!)!.source?.license, "CC BY 4.0", "copies keep the licence");
+
+  // what does not fit is refused and changes nothing
+  assert.match(fail({ origin: "ki", sourceId: oer, ownWords: false }), /KI-generiert/);
+  assert.match(fail({ origin: "importiert", sourceId: null, ownWords: false }), /Quelle/);
+  assert.match(fail({ origin: "demo" as never, sourceId: null, ownWords: false }), /Herkunft/);
+  assert.equal(fail({ origin: "eigen", sourceId: 999_999, ownWords: false }), "Quelle nicht gefunden.");
+  assert.equal(lib.getLibraryEntry(id)!.task.sourceType, "oer");
+
+  // without a source: the built-in one, the model is gone
+  assert.deepEqual(lib.setLibraryOrigin(id, { origin: "ki", sourceId: null, ownWords: false }), { ok: true });
+  e = lib.getLibraryEntry(id)!;
+  assert.deepEqual([e.origin, e.source?.key, e.model, lib.namedSourceOf(e)], ["ki", "claude", null, null]);
 });
 
 test("unit summary: six questions from the data, teacher lines marked, nothing personal for Claude", async () => {
