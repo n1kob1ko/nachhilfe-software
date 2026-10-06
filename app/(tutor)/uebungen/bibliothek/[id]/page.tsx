@@ -223,7 +223,7 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
                 </select>
               </label>
               <label className="flex min-h-[44px] items-start gap-2 text-[14px]">
-                <input type="checkbox" name="eigene_worte" value="1" defaultChecked={e.origin === "eigen" && Boolean(e.model)} className="mt-1 accent-[var(--accent)]" />
+                <input type="checkbox" name="eigene_worte" value="1" defaultChecked={e.origin === "eigen" && Boolean(e.model && e.model.id !== e.source?.id)} className="mt-1 accent-[var(--accent)]" />
                 In eigenen Worten geschrieben (nötig bei Schulbuch, Verlag oder unklarer Lizenz)
               </label>
               <div className="flex flex-wrap items-center gap-3">

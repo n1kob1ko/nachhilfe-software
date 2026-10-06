@@ -527,6 +527,8 @@ test("a task written in the library is titled after its text; Herkunft and Quell
   assert.deepEqual(lib.setLibraryOrigin(id, { origin: "importiert", sourceId: book, ownWords: true }), { ok: true });
   e = lib.getLibraryEntry(id)!;
   assert.deepEqual([e.origin, e.task.sourceType, e.source?.key, e.model?.name, lib.namedSourceOf(e)], ["eigen", "eigen", "lernheft", "Mathe-Buch 3", book], "not under the book's licence");
+  const bookCopy = lib.getLibraryEntry(lib.duplicateLibraryEntry(id, niko.id)!)!;
+  assert.deepEqual([bookCopy.origin, bookCopy.model?.name], ["eigen", "Mathe-Buch 3"], "a copy keeps the book as its model");
 
   // freely licensed: imported, with its licence on the task
   assert.deepEqual(lib.setLibraryOrigin(id, { origin: "importiert", sourceId: oer, ownWords: false }), { ok: true });
@@ -539,6 +541,9 @@ test("a task written in the library is titled after its text; Herkunft and Quell
   assert.match(fail({ origin: "ki", sourceId: oer, ownWords: false }), /KI-generiert/);
   assert.match(fail({ origin: "importiert", sourceId: null, ownWords: false }), /Quelle/);
   assert.match(fail({ origin: "demo" as never, sourceId: null, ownWords: false }), /Herkunft/);
+  const demo = saveSource({ key: "demo-quelle", name: "Beispielquelle", source_type: "demo", license: "CC0 1.0" });
+  assert.match(fail({ origin: "importiert", sourceId: demo, ownWords: false }), /Beispieldaten/, "Demo only comes with the demo data");
+  assert.ok(!lib.namedSources().some((s) => s.id === demo));
   assert.equal(fail({ origin: "eigen", sourceId: 999_999, ownWords: false }), "Quelle nicht gefunden.");
   assert.equal(lib.getLibraryEntry(id)!.task.sourceType, "oer");
 

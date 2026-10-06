@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
 
 process.env.DATABASE_PATH = ":memory:";
@@ -203,6 +206,28 @@ test("a regenerated task takes the origin of its new content, not the old source
   }
   const item = db().prepare("SELECT source_item_id FROM tasks WHERE id = ?").get(imported.id) as { source_item_id: number | null };
   assert.equal(item.source_item_id, null, "and no longer an item of the OER source");
+});
+
+test("a task keeps its origin over a restart; only the upgrade that adds the column takes it from the exercise", async () => {
+  const { openDatabase } = await import("./db");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lernheft-herkunft-"));
+  const file = path.join(dir, "alt.db");
+  let conn = openDatabase(file);
+  const ws = conn.prepare("INSERT INTO worksheets (title, subject, grade, difficulty, task_type, source) VALUES ('Mit Claude', 'Mathematik', 7, 'mittel', 'calc', 'ki')").run().lastInsertRowid;
+  const id = conn.prepare("INSERT INTO tasks (worksheet_id, position, type, difficulty, prompt) VALUES (?, 1, 'calc', 'mittel', 'Kehrwert von 2/3?')").run(ws).lastInsertRowid;
+  // the state before tasks had an origin
+  conn.exec("ALTER TABLE tasks DROP COLUMN source_type");
+  conn.close();
+  conn = openDatabase(file);
+  const origin = () => (conn.prepare("SELECT source_type FROM tasks WHERE id = ?").get(id) as { source_type: string }).source_type;
+  assert.equal(origin(), "ki", "on the upgrade: a task of an exercise made with Claude");
+  // e.g. generator content after "Neu erstellen", or the teacher set it in the library
+  conn.prepare("UPDATE tasks SET source_type = 'eigen' WHERE id = ?").run(id);
+  conn.close();
+  conn = openDatabase(file);
+  assert.equal(origin(), "eigen", "a later start does not change it back");
+  conn.close();
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 test("hints used, sub-skill progress rolls up, unit link, reuse and templates", async () => {

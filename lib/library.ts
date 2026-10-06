@@ -190,8 +190,8 @@ export function titleFromTask(worksheetId: number) {
 
 /** The app's own sources (own content, Claude) need not be named: in the form they are "keine Quelle". */
 const BUILTIN_SOURCES = ["lernheft", "claude"];
-/** Sources a teacher can name for a task: those of Mehr › Lehrplan › Quellen, material included. */
-export const namedSources = () => listSources().filter((s) => !BUILTIN_SOURCES.includes(s.key));
+/** Sources a teacher can name for a task: those of Mehr › Lehrplan › Quellen, material included (demo sources only come with the demo data). */
+export const namedSources = () => listSources().filter((s) => !BUILTIN_SOURCES.includes(s.key) && s.source_type !== "demo");
 /** The source the origin form starts with: the model, else the task's source unless it is built in. */
 export const namedSourceOf = (e: LibraryEntry) => e.model?.id ?? (e.source && !BUILTIN_SOURCES.includes(e.source.key) ? e.source.id : null);
 
@@ -221,6 +221,7 @@ export function setLibraryOrigin(id: number, o: { origin: SettableOrigin; source
   };
   if (o.origin === "ki") return src && src.source_type !== "ki" ? { error: "Zu „KI-generiert“ passt keine andere Quelle." } : set("ki", src?.id);
   if (src?.source_type === "ki") return { error: "Diese Quelle passt nur zu „KI-generiert“." };
+  if (src?.source_type === "demo") return { error: "Demo-Quellen gehören nur zu den Beispieldaten." };
   // own content (the app's or own material) brings no licence of its own
   if (!src || src.source_type === "eigen") return !src && o.origin === "importiert" ? { error: "Bitte die Quelle wählen, aus der die Aufgabe stammt." } : set("eigen", src?.id);
   const rule = taskBankAllowed(src);
@@ -250,7 +251,10 @@ export function updateLibraryEntry(id: number, m: { title: string; schoolType: s
 export function duplicateLibraryEntry(id: number, teacherId: number | null): number | null {
   const w = repo.getWorksheet(id);
   if (!w || w.kind !== LIBRARY_KIND) return null;
-  return repo.duplicateWorksheet(id, { kind: LIBRARY_KIND, status: "freigegeben", teacherId, title: `${w.title} (Kopie)` });
+  const copy = repo.duplicateWorksheet(id, { kind: LIBRARY_KIND, status: "freigegeben", teacherId, title: `${w.title} (Kopie)` });
+  // the model (e.g. the book of a task in own words) goes with the copy, as origin and licence do
+  if (copy) db().prepare("UPDATE tasks SET source_item_id = (SELECT source_item_id FROM tasks WHERE worksheet_id = ?) WHERE worksheet_id = ?").run(id, copy);
+  return copy;
 }
 
 /** Deletes an entry. Exercises that used the task keep their own copy. */
