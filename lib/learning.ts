@@ -43,6 +43,8 @@ export type TaskLine = {
   timeMs: number;
   activeMs: number;
   errors: string[];
+  /** Fehlerarten of the wrong tries (lib/error-types.ts); missing in reports written before. */
+  errorTypes?: string[];
   at: number;
 };
 
@@ -83,6 +85,8 @@ export type UnitReport = {
   skills: SkillLine[];
   development: { firstHalf: number | null; secondHalf: number | null; direction: "besser" | "gleich" | "schlechter" | null };
   errors: { label: string; count: number; skills: string[] }[];
+  /** Wrong tries per Fehlerart; `confirmed` = set or confirmed by the teacher at the time of the report. */
+  errorTypes?: { type: string; count: number; confirmed: number }[];
   correction: { selbst: number; nachHilfe: number; nicht: number };
   help: { tasks: number; hinweis: number; erklaerung: number; loesung: number; solvedAfterHelp: number };
   speed: { avgMs: number | null; slow: number[]; fast: number[]; pauses: number; manyRetries: number };
@@ -140,6 +144,7 @@ export function buildUnitReport(unit: UnitView, now = Date.now()): UnitReport {
       timeMs: list.reduce((s, a) => s + a.time_ms, 0),
       activeMs: list.reduce((s, a) => s + (a.active_ms ?? a.time_ms), 0),
       errors: [...new Set(list.map((a) => a.error_label).filter((x): x is string => Boolean(x)))],
+      errorTypes: [...new Set(list.filter((a) => !a.correct && !a.solution_viewed).map((a) => a.error_type).filter((x): x is string => Boolean(x)))],
       at: parseTime(final?.created_at ?? list[list.length - 1].created_at),
     });
   }
@@ -192,6 +197,12 @@ export function buildUnitReport(unit: UnitView, now = Date.now()): UnitReport {
     e.skills.add(skillOf(a.skill_id)?.name ?? "");
     errorMap.set(a.error_label, e);
   }
+  const typeMap = new Map<string, { count: number; confirmed: number }>();
+  for (const a of attempts) {
+    if (a.correct || a.solution_viewed || !a.error_type) continue;
+    const e = typeMap.get(a.error_type) ?? { count: 0, confirmed: 0 };
+    typeMap.set(a.error_type, { count: e.count + 1, confirmed: e.confirmed + (a.error_type_source === "lehrer" ? 1 : 0) });
+  }
 
   const times = done.map((t) => t.activeMs).sort((a, b) => a - b);
   const median = times.length ? times[Math.floor(times.length / 2)] : 0;
@@ -218,6 +229,7 @@ export function buildUnitReport(unit: UnitView, now = Date.now()): UnitReport {
     skills: skillLines,
     development: { firstHalf, secondHalf, direction },
     errors: [...errorMap].map(([label, e]) => ({ label, count: e.count, skills: [...e.skills].filter(Boolean) })).sort((a, b) => b.count - a.count),
+    errorTypes: [...typeMap].map(([type, e]) => ({ type, ...e })).sort((a, b) => b.count - a.count),
     correction: {
       selbst: tasks.filter((t) => t.corrected === "selbst").length,
       nachHilfe: tasks.filter((t) => t.corrected === "nach-hilfe").length,

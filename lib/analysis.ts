@@ -44,7 +44,7 @@ export type Analysis = {
 
 const DAY = 86_400_000;
 export const WEAK = 0.6;
-/** Note on assignments made from a recommendation (lib/recommend.ts reads it back). */
+/** Note on assignments sent directly from a recommendation ("Direkt an … senden"). */
 export const RECOMMENDATION_NOTE = "Empfehlung";
 export const STRONG = 0.8;
 
@@ -95,7 +95,8 @@ function mean(values: number[]) {
   return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
 }
 
-function splitMistakes(text: string) {
+/** The mistakes a teacher documented for a lesson, one per line (lib/recommend.ts reads them too). */
+export function splitMistakes(text: string) {
   return text
     .split(/[\n;•]+/)
     .map((s) => s.replace(/^[-–*\s]+/, "").trim())

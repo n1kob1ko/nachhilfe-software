@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/lib/auth";
+import { documentAssignment } from "@/lib/autodoc";
 import { endCurrentMaterial, getMaterial, setCurrentMaterial, updateCurrentMaterial, type MaterialSource } from "@/lib/current-material";
 import { isErrorType } from "@/lib/error-types";
 import { addPrerequisite, removePrerequisite } from "@/lib/lehrplan";
@@ -56,6 +57,8 @@ export async function setErrorTypeAction(attemptId: number, type: string) {
   if (!attempt || attempt.correct) return { error: "Antwort nicht gefunden." };
   if (type && !isErrorType(type)) return { error: "Unbekannte Fehlerart." };
   repo.setAttemptErrorType(attemptId, type || null, teacher.id);
+  // the automatic Dokumentation of self-practice names the Fehlerarten and scores careless errors milder
+  documentAssignment(attempt.assignment_id);
   revalidatePath(`/schueler/${attempt.student_id}`, "layout");
   return { ok: true as const };
 }

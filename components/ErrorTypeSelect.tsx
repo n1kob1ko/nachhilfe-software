@@ -4,13 +4,25 @@ import { useState, useTransition } from "react";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { setErrorTypeAction } from "@/app/learning-actions";
-import { ERROR_TYPES, errorTypeLabel } from "@/lib/error-types";
+import { ERROR_TYPES, errorTypeLabel, suggestionBy } from "@/lib/error-types";
 
 /**
- * Fehlerart of one wrong answer. A suggestion of the app is shown as such and can be confirmed with
- * one tap or changed; what the teacher picks is stored as their decision (error_type_source = lehrer).
+ * Fehlerart of one wrong answer. A suggestion of the app or the AI is shown as such and can be confirmed
+ * with one tap or changed; what the teacher picks is stored as their decision (error_type_source = lehrer).
  */
-export function ErrorTypeSelect({ attemptId, type, source, suggested }: { attemptId: number; type: string | null; source: string | null; suggested: string | null }) {
+export function ErrorTypeSelect({
+  attemptId,
+  type,
+  source,
+  suggested,
+  suggestedSource,
+}: {
+  attemptId: number;
+  type: string | null;
+  source: string | null;
+  suggested: string | null;
+  suggestedSource?: string | null;
+}) {
   const router = useRouter();
   const [value, setValue] = useState(type ?? "");
   const [src, setSrc] = useState(source);
@@ -33,7 +45,7 @@ export function ErrorTypeSelect({ attemptId, type, source, suggested }: { attemp
         onChange={(e) => save(e.target.value)}
         disabled={pending}
         aria-label="Fehlerart"
-        title={src === "lehrer" && suggested && suggested !== value ? `Vorschlag der App war: ${errorTypeLabel(suggested)}` : undefined}
+        title={src === "lehrer" && suggested && suggested !== value ? `${suggestionBy(suggestedSource)} war: ${errorTypeLabel(suggested)}` : undefined}
       >
         <option value="">Fehlerart …</option>
         {ERROR_TYPES.map((e) => (
