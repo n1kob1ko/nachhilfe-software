@@ -1,0 +1,1053 @@
+{
+ "_hinweis": "Zuordnung Lernheft-Fähigkeit → Lehrplan-Eintrag (eigene didaktische Entscheidung). [Fähigkeit, Code oder Code-Anfang, Wortlaut-Stelle]; leere Stelle = genau dieser Eintrag.",
+ "ms-mathematik": [
+  [
+   "mathe.brueche.kuerzen",
+   "MS-MAT-1-B1-K1",
+   "Erweitern und Kürzen von Brüchen"
+  ],
+  [
+   "mathe.brueche.kuerzen",
+   "MS-MAT-2-B1-K2",
+   "Erweitern und Kürzen von Brüchen"
+  ],
+  [
+   "mathe.brueche.erweitern",
+   "MS-MAT-1-B1-K1",
+   "Erweitern und Kürzen von Brüchen"
+  ],
+  [
+   "mathe.brueche.erweitern",
+   "MS-MAT-2-B1-K2",
+   "Erweitern und Kürzen von Brüchen"
+  ],
+  [
+   "mathe.brueche.addieren",
+   "MS-MAT-2-B1-K3",
+   "Grundrechenoperationen mit Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.addieren",
+   "MS-MAT-2-B1-K3",
+   "Rechenregeln für Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.subtrahieren",
+   "MS-MAT-2-B1-K3",
+   "Grundrechenoperationen mit Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.subtrahieren",
+   "MS-MAT-2-B1-K3",
+   "Rechenregeln für Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.multiplizieren",
+   "MS-MAT-2-B1-K3",
+   "Deuten des Multiplizierens mit Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.multiplizieren",
+   "MS-MAT-2-B1-K3",
+   "Grundrechenoperationen mit Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.dividieren",
+   "MS-MAT-2-B1-K3",
+   "Deuten des Dividierens durch eine Bruchzahl"
+  ],
+  [
+   "mathe.brueche.dividieren",
+   "MS-MAT-2-B1-K3",
+   "Grundrechenoperationen mit Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.dividieren.kehrwert",
+   "MS-MAT-3-B1-K1",
+   "Multiplizieren mit dem Kehrwert"
+  ],
+  [
+   "mathe.negativ.addieren",
+   "MS-MAT-2-B1-K3",
+   "von einer ganzen Zahl als Bewegung auf der Zahlengeraden"
+  ],
+  [
+   "mathe.negativ.addieren",
+   "MS-MAT-3-B1-K1",
+   "Subtrahierens als Addieren der Gegenzahl"
+  ],
+  [
+   "mathe.negativ.addieren",
+   "MS-MAT-3-B1-K1",
+   "Bedeutungen des Minuszeichens"
+  ],
+  [
+   "mathe.negativ.multiplizieren",
+   "MS-MAT-3-B1-K1",
+   "Grundrechenoperationen"
+  ],
+  [
+   "mathe.prozent.prozentwert",
+   "MS-MAT-2-B1-K4",
+   "Rechnen mit Prozenten"
+  ],
+  [
+   "mathe.prozent.prozentwert",
+   "MS-MAT-3-B2-K4",
+   "Prozentrechnung in ein- und mehrstufigen"
+  ],
+  [
+   "mathe.prozent.prozentsatz",
+   "MS-MAT-2-B1-K4",
+   "Rechnen mit Prozenten"
+  ],
+  [
+   "mathe.prozent.grundwert",
+   "MS-MAT-2-B1-K4",
+   "Rechnen mit Prozenten"
+  ],
+  [
+   "mathe.prozent.grundwert",
+   "MS-MAT-2-B2-K2",
+   "Umformen von Formeln im Zusammenhang mit Prozenten"
+  ],
+  [
+   "mathe.gleichungen.einfach",
+   "MS-MAT-2-B2-K2",
+   "Lösen linearer Gleichungen durch Umkehren"
+  ],
+  [
+   "mathe.gleichungen.einfach",
+   "MS-MAT-3-B2-K3",
+   "Lösen von linearen Gleichungen durch Äquivalenzumformungen"
+  ],
+  [
+   "mathe.gleichungen.einfach.umformen",
+   "MS-MAT-3-B2-K3",
+   "Äquivalenzumformungen"
+  ],
+  [
+   "mathe.gleichungen.klammern",
+   "MS-MAT-3-B2-K3",
+   "auf lineare Gleichungen zurückführen"
+  ],
+  [
+   "mathe.gleichungen.klammern",
+   "MS-MAT-3-B2-K2",
+   "Ausmultiplizieren"
+  ],
+  [
+   "mathe.gleichungen.text",
+   "MS-MAT-2-B2-K2",
+   "Anwenden linearer Gleichungen in Sachsituationen"
+  ],
+  [
+   "mathe.gleichungen.text",
+   "MS-MAT-3-B2-K3",
+   "Anwenden von Gleichungen in Sachsituationen"
+  ],
+  [
+   "mathe.gleichungen.text.aufstellen",
+   "MS-MAT-2-B2-K1",
+   "Aufstellen von Gleichungen zu vorgegebenen Texten"
+  ],
+  [
+   "mathe.potenzen.regeln",
+   "MS-MAT-3-B2-K2",
+   "Rechenregeln für Potenzen"
+  ]
+ ],
+ "ms-deutsch": [
+  [
+   "deutsch.recht.dasdass",
+   "MS-DEU-1-B1",
+   "Festigung von Rechtschreibfertigkeiten"
+  ],
+  [
+   "deutsch.recht.gross",
+   "MS-DEU-1-B1",
+   "Festigung von Rechtschreibfertigkeiten"
+  ],
+  [
+   "deutsch.recht.sss",
+   "MS-DEU-1-B1",
+   "Festigung von Rechtschreibfertigkeiten"
+  ],
+  [
+   "deutsch.recht.dasdass",
+   "MS-DEU-2-B1",
+   "Rechtschreibstrategien"
+  ],
+  [
+   "deutsch.recht.gross",
+   "MS-DEU-2-B1",
+   "Rechtschreibstrategien"
+  ],
+  [
+   "deutsch.recht.sss",
+   "MS-DEU-2-B1",
+   "Rechtschreibstrategien"
+  ],
+  [
+   "deutsch.beistrich.aufzaehlung",
+   "MS-DEU-1-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.beistrich.nebensatz",
+   "MS-DEU-1-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.beistrich.infinitiv",
+   "MS-DEU-1-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.grammatik.faelle",
+   "MS-DEU-1-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.grammatik.zeiten",
+   "MS-DEU-1-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.wortarten.bestimmen",
+   "MS-DEU-1-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.wortarten.nomen",
+   "MS-DEU-1-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.beistrich.nebensatz",
+   "MS-DEU-2-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.beistrich.infinitiv",
+   "MS-DEU-2-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.grammatik.faelle",
+   "MS-DEU-2-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.grammatik.zeiten",
+   "MS-DEU-2-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "MS-DEU-1-B3",
+   "Inhalte entnehmen"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "MS-DEU-2-B3",
+   "Informationen erschließen"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "MS-DEU-3-B3",
+   "wesentliche Informationen"
+  ]
+ ],
+ "ms-englisch": [
+  [
+   "englisch.reading.comprehension",
+   "MS-ENG-1-B2",
+   ""
+  ],
+  [
+   "englisch.reading.comprehension",
+   "MS-ENG-2-B2",
+   ""
+  ],
+  [
+   "englisch.reading.comprehension",
+   "MS-ENG-3-B2",
+   ""
+  ],
+  [
+   "englisch.reading.comprehension",
+   "MS-ENG-4-B2",
+   ""
+  ]
+ ],
+ "ahs-mathematik": [
+  [
+   "mathe.brueche.kuerzen",
+   "AHS-MAT-1-B1-K1",
+   "Erweitern und Kürzen von Brüchen"
+  ],
+  [
+   "mathe.brueche.kuerzen",
+   "AHS-MAT-2-B1-K2",
+   "Erweitern und Kürzen von Brüchen"
+  ],
+  [
+   "mathe.brueche.erweitern",
+   "AHS-MAT-1-B1-K1",
+   "Erweitern und Kürzen von Brüchen"
+  ],
+  [
+   "mathe.brueche.erweitern",
+   "AHS-MAT-2-B1-K2",
+   "Erweitern und Kürzen von Brüchen"
+  ],
+  [
+   "mathe.brueche.addieren",
+   "AHS-MAT-2-B1-K3",
+   "Grundrechenoperationen mit Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.addieren",
+   "AHS-MAT-2-B1-K3",
+   "Rechenregeln für Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.subtrahieren",
+   "AHS-MAT-2-B1-K3",
+   "Grundrechenoperationen mit Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.subtrahieren",
+   "AHS-MAT-2-B1-K3",
+   "Rechenregeln für Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.multiplizieren",
+   "AHS-MAT-2-B1-K3",
+   "Deuten des Multiplizierens mit Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.multiplizieren",
+   "AHS-MAT-2-B1-K3",
+   "Grundrechenoperationen mit Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.dividieren",
+   "AHS-MAT-2-B1-K3",
+   "Deuten des Dividierens durch eine Bruchzahl"
+  ],
+  [
+   "mathe.brueche.dividieren",
+   "AHS-MAT-2-B1-K3",
+   "Grundrechenoperationen mit Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.dividieren.kehrwert",
+   "AHS-MAT-3-B1-K1",
+   "Multiplizieren mit dem Kehrwert"
+  ],
+  [
+   "mathe.negativ.addieren",
+   "AHS-MAT-2-B1-K3",
+   "von einer ganzen Zahl als Bewegung auf der Zahlengeraden"
+  ],
+  [
+   "mathe.negativ.addieren",
+   "AHS-MAT-3-B1-K1",
+   "Subtrahierens als Addieren der Gegenzahl"
+  ],
+  [
+   "mathe.negativ.addieren",
+   "AHS-MAT-3-B1-K1",
+   "Bedeutungen des Minuszeichens"
+  ],
+  [
+   "mathe.negativ.multiplizieren",
+   "AHS-MAT-3-B1-K1",
+   "Grundrechenoperationen"
+  ],
+  [
+   "mathe.prozent.prozentwert",
+   "AHS-MAT-2-B1-K4",
+   "Rechnen mit Prozenten"
+  ],
+  [
+   "mathe.prozent.prozentwert",
+   "AHS-MAT-3-B2-K4",
+   "Prozentrechnung in ein- und mehrstufigen"
+  ],
+  [
+   "mathe.prozent.prozentsatz",
+   "AHS-MAT-2-B1-K4",
+   "Rechnen mit Prozenten"
+  ],
+  [
+   "mathe.prozent.grundwert",
+   "AHS-MAT-2-B1-K4",
+   "Rechnen mit Prozenten"
+  ],
+  [
+   "mathe.prozent.grundwert",
+   "AHS-MAT-2-B2-K2",
+   "Umformen von Formeln im Zusammenhang mit Prozenten"
+  ],
+  [
+   "mathe.gleichungen.einfach",
+   "AHS-MAT-2-B2-K2",
+   "Lösen linearer Gleichungen durch Umkehren"
+  ],
+  [
+   "mathe.gleichungen.einfach",
+   "AHS-MAT-3-B2-K3",
+   "Lösen von linearen Gleichungen durch Äquivalenzumformungen"
+  ],
+  [
+   "mathe.gleichungen.einfach.umformen",
+   "AHS-MAT-3-B2-K3",
+   "Äquivalenzumformungen"
+  ],
+  [
+   "mathe.gleichungen.klammern",
+   "AHS-MAT-3-B2-K3",
+   "auf lineare Gleichungen zurückführen"
+  ],
+  [
+   "mathe.gleichungen.klammern",
+   "AHS-MAT-3-B2-K2",
+   "Ausmultiplizieren"
+  ],
+  [
+   "mathe.gleichungen.text",
+   "AHS-MAT-2-B2-K2",
+   "Anwenden linearer Gleichungen in Sachsituationen"
+  ],
+  [
+   "mathe.gleichungen.text",
+   "AHS-MAT-3-B2-K3",
+   "Anwenden von Gleichungen in Sachsituationen"
+  ],
+  [
+   "mathe.gleichungen.text.aufstellen",
+   "AHS-MAT-2-B2-K1",
+   "Aufstellen von Gleichungen zu vorgegebenen Texten"
+  ],
+  [
+   "mathe.potenzen.regeln",
+   "AHS-MAT-3-B2-K2",
+   "Rechenregeln für Potenzen"
+  ],
+  [
+   "mathe.gleichungen.einfach",
+   "AHS-MAT-5",
+   "Lineare und quadratische Gleichungen"
+  ],
+  [
+   "mathe.potenzen.regeln",
+   "AHS-MAT-5",
+   "Rechenregeln für Zehnerpotenzen"
+  ],
+  [
+   "mathe.potenzen.regeln",
+   "AHS-MAT-6",
+   "entsprechende Rechenregeln kennen und anwenden"
+  ]
+ ],
+ "ahs-deutsch": [
+  [
+   "deutsch.recht.dasdass",
+   "AHS-DEU-1-B1",
+   "Festigung von Rechtschreibfertigkeiten"
+  ],
+  [
+   "deutsch.recht.gross",
+   "AHS-DEU-1-B1",
+   "Festigung von Rechtschreibfertigkeiten"
+  ],
+  [
+   "deutsch.recht.sss",
+   "AHS-DEU-1-B1",
+   "Festigung von Rechtschreibfertigkeiten"
+  ],
+  [
+   "deutsch.recht.dasdass",
+   "AHS-DEU-2-B1",
+   "Rechtschreibstrategien"
+  ],
+  [
+   "deutsch.recht.gross",
+   "AHS-DEU-2-B1",
+   "Rechtschreibstrategien"
+  ],
+  [
+   "deutsch.recht.sss",
+   "AHS-DEU-2-B1",
+   "Rechtschreibstrategien"
+  ],
+  [
+   "deutsch.beistrich.aufzaehlung",
+   "AHS-DEU-1-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.beistrich.nebensatz",
+   "AHS-DEU-1-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.beistrich.infinitiv",
+   "AHS-DEU-1-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.grammatik.faelle",
+   "AHS-DEU-1-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.grammatik.zeiten",
+   "AHS-DEU-1-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.wortarten.bestimmen",
+   "AHS-DEU-1-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.wortarten.nomen",
+   "AHS-DEU-1-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.beistrich.nebensatz",
+   "AHS-DEU-2-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.beistrich.infinitiv",
+   "AHS-DEU-2-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.grammatik.faelle",
+   "AHS-DEU-2-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.grammatik.zeiten",
+   "AHS-DEU-2-B1",
+   "Wort-, Satz- und Textgrammatik"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "AHS-DEU-1-B3",
+   "Inhalte entnehmen"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "AHS-DEU-2-B3",
+   "Informationen erschließen"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "AHS-DEU-3-B3",
+   "wesentliche Informationen"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "AHS-DEU-5",
+   "Informationen entnehmen/Textinhalt erfassen"
+  ]
+ ],
+ "ahs-englisch": [
+  [
+   "englisch.reading.comprehension",
+   "AHS-ENG-1-B2",
+   ""
+  ],
+  [
+   "englisch.reading.comprehension",
+   "AHS-ENG-2-B2",
+   ""
+  ],
+  [
+   "englisch.reading.comprehension",
+   "AHS-ENG-3-B2",
+   ""
+  ],
+  [
+   "englisch.reading.comprehension",
+   "AHS-ENG-4-B2",
+   ""
+  ],
+  [
+   "englisch.reading.comprehension",
+   "AHS-ENG-5-T2",
+   ""
+  ]
+ ],
+ "htl-mathematik": [
+  [
+   "mathe.gleichungen.einfach",
+   "HTL-MAT-1",
+   "lineare Gleichungen und Ungleichungen nach einer Variablen auflösen"
+  ],
+  [
+   "mathe.potenzen.regeln",
+   "HTL-MAT-1",
+   "die Potenzgesetze verstehen"
+  ],
+  [
+   "mathe.prozent.prozentwert",
+   "HTL-MAT-1",
+   "Grundwert, Prozentsatz und Prozentanteil"
+  ],
+  [
+   "mathe.prozent.prozentsatz",
+   "HTL-MAT-1",
+   "Grundwert, Prozentsatz und Prozentanteil"
+  ],
+  [
+   "mathe.prozent.grundwert",
+   "HTL-MAT-1",
+   "Grundwert, Prozentsatz und Prozentanteil"
+  ]
+ ],
+ "htl-englisch": [
+  [
+   "englisch.reading.comprehension",
+   "HTL-ENG-1",
+   "Hör- und Lesetexten"
+  ]
+ ],
+ "vs-mathematik": [
+  [
+   "mathe.vs.zahlen.zr10",
+   "VS-MAT-1-B1-K1",
+   ""
+  ],
+  [
+   "mathe.vs.zahlen.zr20",
+   "VS-MAT-1-B1-K1",
+   ""
+  ],
+  [
+   "mathe.vs.zahlen.zr100",
+   "VS-MAT-2-B1-K1",
+   ""
+  ],
+  [
+   "mathe.vs.zahlen.zr1000",
+   "VS-MAT-3-B1-K1",
+   ""
+  ],
+  [
+   "mathe.vs.zahlen.million",
+   "VS-MAT-4-B1-K1",
+   ""
+  ],
+  [
+   "mathe.vs.zahlen.vergleichen",
+   "VS-MAT-1-B1-K1",
+   ""
+  ],
+  [
+   "mathe.vs.zahlen.vergleichen",
+   "VS-MAT-2-B1-K1",
+   ""
+  ],
+  [
+   "mathe.vs.zahlen.vergleichen",
+   "VS-MAT-3-B1-K1",
+   ""
+  ],
+  [
+   "mathe.vs.zahlen.vergleichen",
+   "VS-MAT-4-B1-K1",
+   ""
+  ],
+  [
+   "mathe.vs.zahlen.runden",
+   "VS-MAT-3-B1-K1",
+   ""
+  ],
+  [
+   "mathe.vs.zahlen.runden",
+   "VS-MAT-4-B1-K1",
+   ""
+  ],
+  [
+   "mathe.vs.addsub.zr10",
+   "VS-MAT-1-B2-K1",
+   ""
+  ],
+  [
+   "mathe.vs.addsub.zehner",
+   "VS-MAT-1-B2-K1",
+   ""
+  ],
+  [
+   "mathe.vs.addsub.zr100",
+   "VS-MAT-2-B2-K1",
+   ""
+  ],
+  [
+   "mathe.vs.addsub.umkehr",
+   "VS-MAT-1-B2-K1",
+   ""
+  ],
+  [
+   "mathe.vs.addsub.umkehr",
+   "VS-MAT-2-B2-K1",
+   ""
+  ],
+  [
+   "mathe.vs.muldiv.einmaleins",
+   "VS-MAT-2-B2-K1",
+   ""
+  ],
+  [
+   "mathe.vs.muldiv.geteilt",
+   "VS-MAT-2-B2-K1",
+   ""
+  ],
+  [
+   "mathe.vs.muldiv.rest",
+   "VS-MAT-3-B2-K1",
+   ""
+  ],
+  [
+   "mathe.vs.muldiv.zehner",
+   "VS-MAT-3-B2-K1",
+   ""
+  ],
+  [
+   "mathe.vs.schriftlich.addieren",
+   "VS-MAT-3-B2-K2",
+   ""
+  ],
+  [
+   "mathe.vs.schriftlich.addieren",
+   "VS-MAT-4-B2-K1",
+   ""
+  ],
+  [
+   "mathe.vs.schriftlich.subtrahieren",
+   "VS-MAT-3-B2-K2",
+   ""
+  ],
+  [
+   "mathe.vs.schriftlich.subtrahieren",
+   "VS-MAT-4-B2-K1",
+   ""
+  ],
+  [
+   "mathe.vs.schriftlich.multiplizieren",
+   "VS-MAT-3-B2-K2",
+   ""
+  ],
+  [
+   "mathe.vs.schriftlich.multiplizieren",
+   "VS-MAT-4-B2-K1",
+   ""
+  ],
+  [
+   "mathe.vs.schriftlich.dividieren",
+   "VS-MAT-3-B2-K2",
+   ""
+  ],
+  [
+   "mathe.vs.schriftlich.dividieren",
+   "VS-MAT-4-B2-K1",
+   ""
+  ],
+  [
+   "mathe.vs.groessen.geld",
+   "VS-MAT-1-B3-K1",
+   ""
+  ],
+  [
+   "mathe.vs.groessen.geld",
+   "VS-MAT-2-B3-K1",
+   ""
+  ],
+  [
+   "mathe.vs.groessen.laenge",
+   "VS-MAT-2-B3-K1",
+   ""
+  ],
+  [
+   "mathe.vs.groessen.laenge",
+   "VS-MAT-3-B3-K1",
+   ""
+  ],
+  [
+   "mathe.vs.groessen.zeit",
+   "VS-MAT-1-B3-K2",
+   ""
+  ],
+  [
+   "mathe.vs.groessen.zeit",
+   "VS-MAT-2-B3-K2",
+   ""
+  ],
+  [
+   "mathe.vs.groessen.zeit",
+   "VS-MAT-3-B3-K2",
+   ""
+  ],
+  [
+   "mathe.vs.groessen.zeit",
+   "VS-MAT-4-B3-K2",
+   ""
+  ],
+  [
+   "mathe.vs.groessen.masse",
+   "VS-MAT-3-B3-K1",
+   ""
+  ],
+  [
+   "mathe.vs.groessen.hohlmass",
+   "VS-MAT-3-B3-K1",
+   ""
+  ],
+  [
+   "mathe.vs.geometrie.formen",
+   "VS-MAT-1-B4-K2",
+   ""
+  ],
+  [
+   "mathe.vs.geometrie.formen",
+   "VS-MAT-3-B4-K1",
+   ""
+  ],
+  [
+   "mathe.vs.geometrie.zeichnen",
+   "VS-MAT-2-B4-K2",
+   ""
+  ],
+  [
+   "mathe.vs.geometrie.zeichnen",
+   "VS-MAT-3-B4-K2",
+   ""
+  ],
+  [
+   "mathe.vs.geometrie.umfang",
+   "VS-MAT-3-B4-K3",
+   ""
+  ],
+  [
+   "mathe.vs.geometrie.umfang",
+   "VS-MAT-4-B4-K2",
+   ""
+  ],
+  [
+   "mathe.vs.geometrie.flaeche",
+   "VS-MAT-4-B4-K2",
+   ""
+  ],
+  [
+   "mathe.vs.sach.einfach",
+   "VS-MAT-1-B2-K3",
+   ""
+  ],
+  [
+   "mathe.vs.sach.einfach",
+   "VS-MAT-2-B2-K3",
+   ""
+  ],
+  [
+   "mathe.vs.sach.mehrschritt",
+   "VS-MAT-3-B2-K3",
+   ""
+  ],
+  [
+   "mathe.vs.sach.mehrschritt",
+   "VS-MAT-4-B2-K2",
+   ""
+  ]
+ ],
+ "vs-deutsch": [
+  [
+   "deutsch.vs.lesen.buchstaben",
+   "VS-DEU-1-B2-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.lesen.silben",
+   "VS-DEU-1-B2-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.lesen.silben",
+   "VS-DEU-1-B4-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.lesen.fluessig",
+   "VS-DEU-2-B2-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.lesen.fluessig",
+   "VS-DEU-3-B2-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.lesen.verstehen",
+   "VS-DEU-2-B2-K2",
+   ""
+  ],
+  [
+   "deutsch.vs.lesen.verstehen",
+   "VS-DEU-3-B2-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.lesen.verstehen",
+   "VS-DEU-4-B2-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.schreiben.saetze",
+   "VS-DEU-1-B3-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.schreiben.saetze",
+   "VS-DEU-2-B3-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.schreiben.erzaehlen",
+   "VS-DEU-2-B3-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.schreiben.erzaehlen",
+   "VS-DEU-4-B3-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.schreiben.beschreiben",
+   "VS-DEU-3-B3-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.schreiben.beschreiben",
+   "VS-DEU-4-B3-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.recht.lautgetreu",
+   "VS-DEU-1-B4-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.recht.lautgetreu",
+   "VS-DEU-1-B4-K2",
+   ""
+  ],
+  [
+   "deutsch.vs.recht.satzanfang",
+   "VS-DEU-2-B4-K2",
+   ""
+  ],
+  [
+   "deutsch.vs.recht.dehnung",
+   "VS-DEU-3-B4-K2",
+   ""
+  ],
+  [
+   "deutsch.vs.recht.dehnung",
+   "VS-DEU-4-B4-K2",
+   ""
+  ],
+  [
+   "deutsch.vs.recht.ableiten",
+   "VS-DEU-4-B4-K1",
+   ""
+  ],
+  [
+   "deutsch.vs.recht.ableiten",
+   "VS-DEU-3-A1",
+   "Ableiten"
+  ],
+  [
+   "deutsch.vs.sprache.satzarten",
+   "VS-DEU-2-B4-K4",
+   ""
+  ],
+  [
+   "deutsch.vs.sprache.satzglieder",
+   "VS-DEU-3-B4-K4",
+   ""
+  ],
+  [
+   "deutsch.vs.sprache.satzglieder",
+   "VS-DEU-4-B4-K4",
+   ""
+  ],
+  [
+   "deutsch.vs.sprache.verbformen",
+   "VS-DEU-3-B4-K4",
+   ""
+  ],
+  [
+   "deutsch.vs.sprache.verbformen",
+   "VS-DEU-4-B4-K4",
+   ""
+  ],
+  [
+   "deutsch.vs.sprache.wortfamilie",
+   "VS-DEU-2-B4-K3",
+   ""
+  ],
+  [
+   "deutsch.vs.sprache.wortfamilie",
+   "VS-DEU-3-B4-K3",
+   ""
+  ],
+  [
+   "deutsch.text.verstehen",
+   "VS-DEU-3-B2-K1",
+   ""
+  ],
+  [
+   "deutsch.text.verstehen",
+   "VS-DEU-4-B2-K1",
+   ""
+  ],
+  [
+   "deutsch.wortarten.bestimmen",
+   "VS-DEU-3-B4-K4",
+   ""
+  ],
+  [
+   "deutsch.wortarten.nomen",
+   "VS-DEU-3-B4-K4",
+   ""
+  ],
+  [
+   "deutsch.recht.dasdass",
+   "VS-DEU-4-B4-K2",
+   ""
+  ],
+  [
+   "deutsch.recht.gross",
+   "VS-DEU-4-B4-K2",
+   ""
+  ],
+  [
+   "deutsch.recht.sss",
+   "VS-DEU-4-B4-K2",
+   ""
+  ],
+  [
+   "deutsch.grammatik.zeiten",
+   "VS-DEU-4-B4-K4",
+   ""
+  ]
+ ]
+}

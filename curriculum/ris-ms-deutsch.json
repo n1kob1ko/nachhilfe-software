@@ -1,0 +1,1378 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "Lehrplan Mittelschule – Deutsch (RIS)",
+ "description": "Offizieller Lehrplantext aus dem RIS (NOR40271471), BGBl. II Nr. 185/2012 idF BGBl. II Nr. 178/2025.",
+ "source": {
+  "key": "ris-ms",
+  "name": "RIS – Lehrpläne der Mittelschulen, Anlage 1",
+  "source_type": "lehrplan",
+  "url": "https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Bundesnormen&Dokumentnummer=NOR40271471",
+  "publisher": "Republik Österreich (RIS)",
+  "license": "amtliches Werk (§ 7 UrhG)",
+  "attribution_text": "BGBl. II Nr. 185/2012 idF BGBl. II Nr. 178/2025",
+  "notes": "Gesetzesnummer 20007850, Dokumentnummer NOR40271471, in Kraft seit 01.09.2025. Wortlaut nur um Seitenköpfe, Zeilenumbrüche und Fußnotenziffern bereinigt."
+ },
+ "curriculum": {
+  "key": "ris-ms-deutsch",
+  "name": "Lehrplan Mittelschule – Deutsch",
+  "school_type": "Mittelschule",
+  "subject": "Deutsch",
+  "version": "BGBl. II Nr. 178/2025",
+  "reference": "BGBl. II Nr. 185/2012 idF BGBl. II Nr. 178/2025, NOR40271471",
+  "valid_from": "2025-09-01"
+ },
+ "nodes": [
+  {
+   "code": "MS-DEU",
+   "kind": "fach",
+   "name": "Deutsch"
+  },
+  {
+   "code": "MS-DEU-1",
+   "kind": "klasse",
+   "name": "1. Klasse",
+   "parent": "MS-DEU",
+   "klasse": 1,
+   "schulstufe": 5
+  },
+  {
+   "code": "MS-DEU-1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Integrativer Kompetenzbereich Sprachbewusstsein und Sprachreflexion",
+   "parent": "MS-DEU-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion",
+   "text": "Die Beschreibungen der zu erreichenden Kompetenzen werden in den Bereichen Zuhören und Sprechen, Lesen, Schreiben integrativ formuliert."
+  },
+  {
+   "code": "MS-DEU-1-B1-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-1-B1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-1-B1-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Festigung von Rechtschreibfertigkeiten, die am Ende der 4. Schulstufe erworben sein …",
+   "parent": "MS-DEU-1-B1-A1",
+   "text": "Festigung von Rechtschreibfertigkeiten, die am Ende der 4. Schulstufe erworben sein sollen, auch unter Nutzung von Rechtschreibhilfen in analoger (Wörterbuch) und digitaler Form;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-1-B1-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Basisfertigkeiten im Bereich von Wort-, Satz- und Textgrammatik",
+   "parent": "MS-DEU-1-B1-A1",
+   "text": "Basisfertigkeiten im Bereich von Wort-, Satz- und Textgrammatik;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-1-B1-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Reflexion über die Verwendung von Sprache (Pragmatik/Semantik …",
+   "parent": "MS-DEU-1-B1-A1",
+   "text": "Reflexion über die Verwendung von Sprache (Pragmatik/Semantik; Mündlichkeit/Schriftlichkeit; Dialekt, Umgangs-, Standardsprache; Varietäten des Deutschen; Mehrsprachigkeit, Sprachvergleiche).",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören und Sprechen",
+   "parent": "MS-DEU-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-1-B2-K1",
+   "kind": "kompetenz",
+   "name": "mündliche Texte im direkten Kontakt oder über Medien vermittelt verstehen, erschließen …",
+   "parent": "MS-DEU-1-B2",
+   "text": "mündliche Texte im direkten Kontakt oder über Medien vermittelt verstehen, erschließen, sichern und wiedergeben;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-1-B2-K2",
+   "kind": "kompetenz",
+   "name": "in vielfältigen standardisierten Sprech- bzw. Gesprächssituationen unter Einsatz …",
+   "parent": "MS-DEU-1-B2",
+   "text": "in vielfältigen standardisierten Sprech- bzw. Gesprächssituationen unter Einsatz verschiedener Sprechhandlungen und sprachlicher Gestaltungsmittel sowie der Verwendung der Standardsprache kommunizieren;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-1-B2-K3",
+   "kind": "kompetenz",
+   "name": "monologisches und dialogisches Sprechen adressaten- und situationsgerecht anwenden",
+   "parent": "MS-DEU-1-B2",
+   "text": "monologisches und dialogisches Sprechen adressaten- und situationsgerecht anwenden.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-1-B2-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-1-B2",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-1-B2-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Strategien des Zuhörens und der Gesprächsführung",
+   "parent": "MS-DEU-1-B2-A1",
+   "text": "Strategien des Zuhörens und der Gesprächsführung;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-1-B2-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Wiedergabe von analogen und digitalen Texten (ua. literarische und pragmatische Texte …",
+   "parent": "MS-DEU-1-B2-A1",
+   "text": "Wiedergabe von analogen und digitalen Texten (ua. literarische und pragmatische Texte, Filme, Hörbücher, Podcasts, Blogs);",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-1-B2-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Angeleitete Partner- und Gruppengespräche",
+   "parent": "MS-DEU-1-B2-A1",
+   "text": "Angeleitete Partner- und Gruppengespräche;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-1-B2-A1-A4",
+   "kind": "anwendungsbereich",
+   "name": "Einfache Formen der Argumentation",
+   "parent": "MS-DEU-1-B2-A1",
+   "text": "Einfache Formen der Argumentation.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "MS-DEU-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-1-B3-K1",
+   "kind": "kompetenz",
+   "name": "sinnerfassend, mit zunehmender Leseflüssigkeit und unter Anwendung geeigneter …",
+   "parent": "MS-DEU-1-B3",
+   "text": "sinnerfassend, mit zunehmender Leseflüssigkeit und unter Anwendung geeigneter Lesestrategien lesen und vorlesen, Inhalte entnehmen und darüber kommunizieren;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-1-B3-K2",
+   "kind": "kompetenz",
+   "name": "subjektive und kreative Zugänge zu literarischen Werken in unterschiedlichen …",
+   "parent": "MS-DEU-1-B3",
+   "text": "subjektive und kreative Zugänge zu literarischen Werken in unterschiedlichen künstlerischen Erscheinungsformen (ua. Buch, Film, Theater) finden und zur Anschlusskommunikation nutzen;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-1-B3-K3",
+   "kind": "kompetenz",
+   "name": "die Art der Aufbereitung von Beiträgen in unterschiedlichen Mediensystemen erkennen und …",
+   "parent": "MS-DEU-1-B3",
+   "text": "die Art der Aufbereitung von Beiträgen in unterschiedlichen Mediensystemen erkennen und darüber sprechen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-1-B3-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-1-B3",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-1-B3-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Übungen zur Förderung von Lesefertigkeiten, Vorlesen vorbereiteter Texte",
+   "parent": "MS-DEU-1-B3-A1",
+   "text": "Übungen zur Förderung von Lesefertigkeiten, Vorlesen vorbereiteter Texte",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-1-B3-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Lektüre von literarischen und pragmatischen Texten unterschiedlicher Gattungen und …",
+   "parent": "MS-DEU-1-B3-A1",
+   "text": "Lektüre von literarischen und pragmatischen Texten unterschiedlicher Gattungen und Darstellungsformen (auch zu übergreifenden Themen)",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-1-B3-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Einsatz von Lesestrategien und Auseinandersetzung mit persönlichen Leseerfahrungen",
+   "parent": "MS-DEU-1-B3-A1",
+   "text": "Einsatz von Lesestrategien und Auseinandersetzung mit persönlichen Leseerfahrungen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "MS-DEU-1",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-1-B4-K1",
+   "kind": "kompetenz",
+   "name": "Erlebnisse, Erfahrungen und Gedanken verschriftlichen sowie persönliche Beziehungen und …",
+   "parent": "MS-DEU-1-B4",
+   "text": "Erlebnisse, Erfahrungen und Gedanken verschriftlichen sowie persönliche Beziehungen und Absichten ausdrücken, auch in kreativer Form;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-1-B4-K2",
+   "kind": "kompetenz",
+   "name": "schriftlich informieren und darstellen",
+   "parent": "MS-DEU-1-B4",
+   "text": "schriftlich informieren und darstellen;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-1-B4-K3",
+   "kind": "kompetenz",
+   "name": "Textverarbeitungsprogramme zur digitalen Textproduktion einsetzen",
+   "parent": "MS-DEU-1-B4",
+   "text": "Textverarbeitungsprogramme zur digitalen Textproduktion einsetzen.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-1-B4-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-1-B4",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-1-B4-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Übungen zur Verbesserung der Schreibfertigkeit",
+   "parent": "MS-DEU-1-B4-A1",
+   "text": "Übungen zur Verbesserung der Schreibfertigkeit;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-1-B4-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Einsatz unterschiedlicher Textmuster (ua. Erzählen, Beschreiben) zur Produktion analoger …",
+   "parent": "MS-DEU-1-B4-A1",
+   "text": "Einsatz unterschiedlicher Textmuster (ua. Erzählen, Beschreiben) zur Produktion analoger und einfacher digitaler Texte;",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-1-B4-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Kreativer Umgang mit Sprache und Schrift",
+   "parent": "MS-DEU-1-B4-A1",
+   "text": "Kreativer Umgang mit Sprache und Schrift.",
+   "klasse": 1,
+   "schulstufe": 5,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-2",
+   "kind": "klasse",
+   "name": "2. Klasse",
+   "parent": "MS-DEU",
+   "klasse": 2,
+   "schulstufe": 6
+  },
+  {
+   "code": "MS-DEU-2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Integrativer Kompetenzbereich Sprachbewusstsein und Sprachreflexion",
+   "parent": "MS-DEU-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion",
+   "text": "Die Beschreibungen der zu erreichenden Kompetenzen werden in den Bereichen Zuhören und Sprechen, Lesen, Schreiben integrativ formuliert."
+  },
+  {
+   "code": "MS-DEU-2-B1-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-2-B1",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-2-B1-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Einsatz von Methoden zur Fehlerkorrektur und Identifizierung individueller …",
+   "parent": "MS-DEU-2-B1-A1",
+   "text": "Einsatz von Methoden zur Fehlerkorrektur und Identifizierung individueller Fehlerschwerpunkte (Anwendung von Rechtschreibstrategien);",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-2-B1-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Differenzierte Fertigkeiten im Bereich von Wort-, Satz- und Textgrammatik unter …",
+   "parent": "MS-DEU-2-B1-A1",
+   "text": "Differenzierte Fertigkeiten im Bereich von Wort-, Satz- und Textgrammatik unter Berücksichtigung ihrer stilistischen Auswirkungen;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-2-B1-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Kennzeichen mündlicher, schriftlich-textueller und multimodaler Kommunikation (auch im …",
+   "parent": "MS-DEU-2-B1-A1",
+   "text": "Kennzeichen mündlicher, schriftlich-textueller und multimodaler Kommunikation (auch im Kontext von Mehrsprachigkeit).",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören und Sprechen",
+   "parent": "MS-DEU-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-2-B2-K1",
+   "kind": "kompetenz",
+   "name": "Inhalte aus unterschiedlichen medialen Beiträgen erschließen, Absichten und Emotionen …",
+   "parent": "MS-DEU-2-B2",
+   "text": "Inhalte aus unterschiedlichen medialen Beiträgen erschließen, Absichten und Emotionen wahrnehmen, Wissen sichern, wiedergeben und der Situation angemessen reagieren;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-2-B2-K2",
+   "kind": "kompetenz",
+   "name": "bereits bekannte verbale und nonverbale Mittel variieren, monologische und dialogische …",
+   "parent": "MS-DEU-2-B2",
+   "text": "bereits bekannte verbale und nonverbale Mittel variieren, monologische und dialogische Sprechbeiträge planen und ausführen, um adressaten- und situationsgerecht zu kommunizieren;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-2-B2-K3",
+   "kind": "kompetenz",
+   "name": "aus unterschiedlichen Quellen (ua. Bücher, Zeitungen, Zeitschriften, Internet) …",
+   "parent": "MS-DEU-2-B2",
+   "text": "aus unterschiedlichen Quellen (ua. Bücher, Zeitungen, Zeitschriften, Internet) Informationen einholen, aufbereiten und mündlich präsentieren.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-2-B2-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-2-B2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-2-B2-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Partner- und Gruppengespräche sowie Moderation einfacher Gespräche unter Berücksichtigung …",
+   "parent": "MS-DEU-2-B2-A1",
+   "text": "Partner- und Gruppengespräche sowie Moderation einfacher Gespräche unter Berücksichtigung der kommunikativen Grundregeln;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-2-B2-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Einfache Formen der Argumentation",
+   "parent": "MS-DEU-2-B2-A1",
+   "text": "Einfache Formen der Argumentation;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-2-B2-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Unterschiedliche Präsentationsformen",
+   "parent": "MS-DEU-2-B2-A1",
+   "text": "Unterschiedliche Präsentationsformen.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-2-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "MS-DEU-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-2-B3-K1",
+   "kind": "kompetenz",
+   "name": "sinnerfassend und mit gesteigerter Leseflüssigkeit unterschiedliche Texte und Textformate …",
+   "parent": "MS-DEU-2-B3",
+   "text": "sinnerfassend und mit gesteigerter Leseflüssigkeit unterschiedliche Texte und Textformate lesen und vorlesen, dabei mittels Lesestrategien Informationen erschließen und aufbereiten;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-2-B3-K2",
+   "kind": "kompetenz",
+   "name": "die gestalterischen und inhaltlichen Besonderheiten literarischer Texte und Medienformate …",
+   "parent": "MS-DEU-2-B3",
+   "text": "die gestalterischen und inhaltlichen Besonderheiten literarischer Texte und Medienformate (ua. Buch, Film, Theater) erkennen, erschließen und über ihre subjektiven Lesarten mit anderen sprechen;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-2-B3-K3",
+   "kind": "kompetenz",
+   "name": "Beiträge aus unterschiedlichen medialen Quellen recherchieren, ihre Wirkung erkennen und …",
+   "parent": "MS-DEU-2-B3",
+   "text": "Beiträge aus unterschiedlichen medialen Quellen recherchieren, ihre Wirkung erkennen und differenzieren, mit Internetquellen sorgsam und dem Datenschutz gemäß umgehen.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-2-B3-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-2-B3",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-2-B3-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Übungen zur Förderung von Lesefertigkeiten, auch unter Einsatz digitaler Lernhilfen",
+   "parent": "MS-DEU-2-B3-A1",
+   "text": "Übungen zur Förderung von Lesefertigkeiten, auch unter Einsatz digitaler Lernhilfen;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-2-B3-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Auseinandersetzung mit literarischen und pragmatischen Texten unterschiedlicher Gattungen …",
+   "parent": "MS-DEU-2-B3-A1",
+   "text": "Auseinandersetzung mit literarischen und pragmatischen Texten unterschiedlicher Gattungen und Darstellungsformen (auch zu übergreifenden Themen);",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-2-B3-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Beschäftigung mit multimedialen und multimodalen Texten (ua. Comics, Graphic Novels …",
+   "parent": "MS-DEU-2-B3-A1",
+   "text": "Beschäftigung mit multimedialen und multimodalen Texten (ua. Comics, Graphic Novels, Film) sowie deren Gemachtheit und Wirkung;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-2-B3-A1-A4",
+   "kind": "anwendungsbereich",
+   "name": "Auseinandersetzung mit der eigenen Lesemotivation und Lesebiografie",
+   "parent": "MS-DEU-2-B3-A1",
+   "text": "Auseinandersetzung mit der eigenen Lesemotivation und Lesebiografie.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-2-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "MS-DEU-2",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-2-B4-K1",
+   "kind": "kompetenz",
+   "name": "Schreiben zur Gestaltung von persönlichen Beziehungen, als Mittel der Strukturierung von …",
+   "parent": "MS-DEU-2-B4",
+   "text": "Schreiben zur Gestaltung von persönlichen Beziehungen, als Mittel der Strukturierung von Gedanken und Inhalten sowie als kreative Ausdrucksform nutzen;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-2-B4-K2",
+   "kind": "kompetenz",
+   "name": "schriftlich informieren und darstellen, auch auf materialgestützter Basis",
+   "parent": "MS-DEU-2-B4",
+   "text": "schriftlich informieren und darstellen, auch auf materialgestützter Basis;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-2-B4-K3",
+   "kind": "kompetenz",
+   "name": "einfache Argumente schriftlich formulieren und auf Aussagen anderer sprachlich und …",
+   "parent": "MS-DEU-2-B4",
+   "text": "einfache Argumente schriftlich formulieren und auf Aussagen anderer sprachlich und inhaltlich angemessen reagieren;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-2-B4-K4",
+   "kind": "kompetenz",
+   "name": "mit Hilfe von Textverarbeitungsprogrammen Texte gestalten und optimieren, zwischen …",
+   "parent": "MS-DEU-2-B4",
+   "text": "mit Hilfe von Textverarbeitungsprogrammen Texte gestalten und optimieren, zwischen Möglichkeiten und Anforderungen manuellen und computergestützten Schreibens unterscheiden.",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-2-B4-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-2-B4",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-2-B4-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "freies (auch kreatives) und materialgestütztes Schreiben unter Verwendung von …",
+   "parent": "MS-DEU-2-B4-A1",
+   "text": "freies (auch kreatives) und materialgestütztes Schreiben unter Verwendung von Textbausteinen;",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-2-B4-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Einsatz unterschiedlicher Textmuster (ua. Erzählen, Berichten, Darstellen)",
+   "parent": "MS-DEU-2-B4-A1",
+   "text": "Einsatz unterschiedlicher Textmuster (ua. Erzählen, Berichten, Darstellen);",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-2-B4-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Berücksichtigung der Phasen eines Schreibprozesses (Planen, Verfassen, Überarbeiten)",
+   "parent": "MS-DEU-2-B4-A1",
+   "text": "Berücksichtigung der Phasen eines Schreibprozesses (Planen, Verfassen, Überarbeiten).",
+   "klasse": 2,
+   "schulstufe": 6,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-3",
+   "kind": "klasse",
+   "name": "3. Klasse",
+   "parent": "MS-DEU",
+   "klasse": 3,
+   "schulstufe": 7
+  },
+  {
+   "code": "MS-DEU-3-B1",
+   "kind": "kompetenzbereich",
+   "name": "Integrativer Kompetenzbereich Sprachbewusstsein und Sprachreflexion",
+   "parent": "MS-DEU-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion",
+   "text": "Die Beschreibungen der zu erreichenden Kompetenzen werden in den Bereichen Zuhören und Sprechen, Lesen, Schreiben integrativ formuliert."
+  },
+  {
+   "code": "MS-DEU-3-B1-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-3-B1",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-3-B1-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Einsichten in Rechtschreibung und Grammatik hinsichtlich Gebrauch und Funktion",
+   "parent": "MS-DEU-3-B1-A1",
+   "text": "Einsichten in Rechtschreibung und Grammatik hinsichtlich Gebrauch und Funktion;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-3-B1-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Ausdifferenzierte Verwendung von Textorganisatoren",
+   "parent": "MS-DEU-3-B1-A1",
+   "text": "Ausdifferenzierte Verwendung von Textorganisatoren;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-3-B1-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Kennzeichen und Wirkungsweisen unterschiedlicher Sprachvarianten (im Kontext von innerer …",
+   "parent": "MS-DEU-3-B1-A1",
+   "text": "Kennzeichen und Wirkungsweisen unterschiedlicher Sprachvarianten (im Kontext von innerer und äußerer Mehrsprachigkeit), Analyse sprachlicher Diskurse.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-3-B2",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören und Sprechen",
+   "parent": "MS-DEU-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-3-B2-K1",
+   "kind": "kompetenz",
+   "name": "Inhalte aus multimedialen Beiträgen erschließen und analysieren, dabei Absichten und …",
+   "parent": "MS-DEU-3-B2",
+   "text": "Inhalte aus multimedialen Beiträgen erschließen und analysieren, dabei Absichten und Emotionen reflektieren und Schlüsse daraus ziehen;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-3-B2-K2",
+   "kind": "kompetenz",
+   "name": "ihr Repertoire verbaler und nonverbaler Mittel unter Einsatz unterschiedlicher …",
+   "parent": "MS-DEU-3-B2",
+   "text": "ihr Repertoire verbaler und nonverbaler Mittel unter Einsatz unterschiedlicher sprachlicher Register (Bildungs- und Standardsprache) erweitern und Sprechhandlungen bewusst einsetzen;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-3-B2-K3",
+   "kind": "kompetenz",
+   "name": "aus verschiedenen Quellen gezielt Informationen einholen, thematisch aufbereiten und …",
+   "parent": "MS-DEU-3-B2",
+   "text": "aus verschiedenen Quellen gezielt Informationen einholen, thematisch aufbereiten und medial unterstützt mündlich präsentieren sowie diskutieren.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-3-B2-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-3-B2",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-3-B2-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Angeleitete Analyse, Reflexion und Präsentation von analogen, digitalen und multimedialen …",
+   "parent": "MS-DEU-3-B2-A1",
+   "text": "Angeleitete Analyse, Reflexion und Präsentation von analogen, digitalen und multimedialen Texten;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-3-B2-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Selbstständig geführte Partner- und Gruppengespräche, auch im Hinblick auf die eigene …",
+   "parent": "MS-DEU-3-B2-A1",
+   "text": "Selbstständig geführte Partner- und Gruppengespräche, auch im Hinblick auf die eigene Berufsbildung;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-3-B2-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Argumentation aus verschiedenen Rollen und Perspektiven",
+   "parent": "MS-DEU-3-B2-A1",
+   "text": "Argumentation aus verschiedenen Rollen und Perspektiven.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-3-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "MS-DEU-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-3-B3-K1",
+   "kind": "kompetenz",
+   "name": "wesentliche Informationen durch bewussten Einsatz geeigneter Strategien aus …",
+   "parent": "MS-DEU-3-B3",
+   "text": "wesentliche Informationen durch bewussten Einsatz geeigneter Strategien aus unterschiedlichen Texten und Textformaten entnehmen, strukturieren und mit eigenem Wissen verknüpfen;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-3-B3-K2",
+   "kind": "kompetenz",
+   "name": "eigene Leseinteressen vertiefen, literarische Gattungen unterscheiden, literarästhetische …",
+   "parent": "MS-DEU-3-B3",
+   "text": "eigene Leseinteressen vertiefen, literarische Gattungen unterscheiden, literarästhetische Produkte verstehen und im Hinblick auf die eigene Lebens- und Erfahrungswelt reflektieren;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-3-B3-K3",
+   "kind": "kompetenz",
+   "name": "Texte mit Hilfe szenischer Mittel vortragen und darstellen",
+   "parent": "MS-DEU-3-B3",
+   "text": "Texte mit Hilfe szenischer Mittel vortragen und darstellen;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-3-B3-K4",
+   "kind": "kompetenz",
+   "name": "Absichten und Ziele in der Gestaltung von medialen Beiträgen erkennen und einschätzen …",
+   "parent": "MS-DEU-3-B3",
+   "text": "Absichten und Ziele in der Gestaltung von medialen Beiträgen erkennen und einschätzen, Informationssysteme gezielt nutzen und mit digitalen Kommunikationsmedien und Gemeinschaftsforen kritisch umgehen.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-3-B3-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-3-B3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-3-B3-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Übungen zum vortragenden und szenischen Lesen",
+   "parent": "MS-DEU-3-B3-A1",
+   "text": "Übungen zum vortragenden und szenischen Lesen;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-3-B3-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Reflexion literarischer und pragmatischer, linearer und nichtlinearer Texte (auch zu …",
+   "parent": "MS-DEU-3-B3-A1",
+   "text": "Reflexion literarischer und pragmatischer, linearer und nichtlinearer Texte (auch zu übergreifenden Themen);",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-3-B3-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Analyse der Kennzeichen, Gemachtheit und Wirkung multimedialer und multimodaler Texte",
+   "parent": "MS-DEU-3-B3-A1",
+   "text": "Analyse der Kennzeichen, Gemachtheit und Wirkung multimedialer und multimodaler Texte;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-3-B3-A1-A4",
+   "kind": "anwendungsbereich",
+   "name": "Auseinandersetzung mit der eigenen Lesemotivation und der Lese- und Medienbiografie",
+   "parent": "MS-DEU-3-B3-A1",
+   "text": "Auseinandersetzung mit der eigenen Lesemotivation und der Lese- und Medienbiografie;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-3-B3-A1-A5",
+   "kind": "anwendungsbereich",
+   "name": "Vergleich von Informations- und Kommunikationssystemen (Quellenkritik)",
+   "parent": "MS-DEU-3-B3-A1",
+   "text": "Vergleich von Informations- und Kommunikationssystemen (Quellenkritik).",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-3-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "MS-DEU-3",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-3-B4-K1",
+   "kind": "kompetenz",
+   "name": "aus unterschiedlichen Perspektiven anhand konkreter Vorgaben erzählen und Sprache bewusst …",
+   "parent": "MS-DEU-3-B4",
+   "text": "aus unterschiedlichen Perspektiven anhand konkreter Vorgaben erzählen und Sprache bewusst als gestaltend-kreatives Element einsetzen;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-3-B4-K2",
+   "kind": "kompetenz",
+   "name": "schriftlich informieren und argumentieren, auch auf materialgestützter Basis",
+   "parent": "MS-DEU-3-B4",
+   "text": "schriftlich informieren und argumentieren, auch auf materialgestützter Basis;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-3-B4-K3",
+   "kind": "kompetenz",
+   "name": "mit Hilfe von Textverarbeitungsprogrammen und Formatvorgaben multimediale Texte gestalten …",
+   "parent": "MS-DEU-3-B4",
+   "text": "mit Hilfe von Textverarbeitungsprogrammen und Formatvorgaben multimediale Texte gestalten und optimieren.",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-3-B4-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-3-B4",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-3-B4-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Kreatives Schreiben auf der Basis literarischer und pragmatischer Texte",
+   "parent": "MS-DEU-3-B4-A1",
+   "text": "Kreatives Schreiben auf der Basis literarischer und pragmatischer Texte;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-3-B4-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Argumentierendes Schreiben als Ausdruck persönlicher Meinungen und Haltungen",
+   "parent": "MS-DEU-3-B4-A1",
+   "text": "Argumentierendes Schreiben als Ausdruck persönlicher Meinungen und Haltungen;",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-3-B4-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Einsatz unterschiedlicher Methoden zur Überarbeitung eigener und fremder Texte …",
+   "parent": "MS-DEU-3-B4-A1",
+   "text": "Einsatz unterschiedlicher Methoden zur Überarbeitung eigener und fremder Texte (Feedbackkultur).",
+   "klasse": 3,
+   "schulstufe": 7,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-4",
+   "kind": "klasse",
+   "name": "4. Klasse",
+   "parent": "MS-DEU",
+   "klasse": 4,
+   "schulstufe": 8
+  },
+  {
+   "code": "MS-DEU-4-B1",
+   "kind": "kompetenzbereich",
+   "name": "Integrativer Kompetenzbereich Sprachbewusstsein und Sprachreflexion",
+   "parent": "MS-DEU-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion",
+   "text": "Die Beschreibungen der zu erreichenden Kompetenzen werden in den Bereichen Zuhören und Sprechen, Lesen, Schreiben integrativ formuliert."
+  },
+  {
+   "code": "MS-DEU-4-B1-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-4-B1",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-4-B1-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Vertieftes Verständnis von sprachlichen Strukturen und Regeln (Variation und Vergleich)",
+   "parent": "MS-DEU-4-B1-A1",
+   "text": "Vertieftes Verständnis von sprachlichen Strukturen und Regeln (Variation und Vergleich);",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-4-B1-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Auseinandersetzung mit Soziolekten, Dialekten, Fachsprachen, Idiolekten und deren …",
+   "parent": "MS-DEU-4-B1-A1",
+   "text": "Auseinandersetzung mit Soziolekten, Dialekten, Fachsprachen, Idiolekten und deren Abweichungen von der Standardsprache;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-4-B1-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Einsicht in die Sprachverwendung im Kontext von Mehrsprachigkeit",
+   "parent": "MS-DEU-4-B1-A1",
+   "text": "Einsicht in die Sprachverwendung im Kontext von Mehrsprachigkeit.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Sprachbewusstsein und Sprachreflexion"
+  },
+  {
+   "code": "MS-DEU-4-B2",
+   "kind": "kompetenzbereich",
+   "name": "Zuhören und Sprechen",
+   "parent": "MS-DEU-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-4-B2-K1",
+   "kind": "kompetenz",
+   "name": "in unterschiedlichen Beiträgen, im direkten Kontakt oder über Medien vermittelt …",
+   "parent": "MS-DEU-4-B2",
+   "text": "in unterschiedlichen Beiträgen, im direkten Kontakt oder über Medien vermittelt, Mehrdeutigkeiten und nicht explizit genannte Inhalte erschließen und interpretieren, dabei Absichten und Emotionen reflektieren und situationsbezogen Schlüsse daraus ziehen;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-4-B2-K2",
+   "kind": "kompetenz",
+   "name": "ihr Repertoire verbaler und nonverbaler Mittel erweitern und Sprache unter Verwendung …",
+   "parent": "MS-DEU-4-B2",
+   "text": "ihr Repertoire verbaler und nonverbaler Mittel erweitern und Sprache unter Verwendung unterschiedlicher sprachlicher Register (Standard- und Bildungssprache) reflektiert und bewusst kreativ einsetzen;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-4-B2-K3",
+   "kind": "kompetenz",
+   "name": "aus bewusst gewählten Quellen Informationen gezielt herausfiltern, thematisch aufbereiten …",
+   "parent": "MS-DEU-4-B2",
+   "text": "aus bewusst gewählten Quellen Informationen gezielt herausfiltern, thematisch aufbereiten und unter Anwendung entsprechender Visualisierungsmethoden mündlich präsentieren.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-4-B2-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-4-B2",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-4-B2-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Eigenständige Reflexion, Interpretation und Präsentation von analogen, digitalen und …",
+   "parent": "MS-DEU-4-B2-A1",
+   "text": "Eigenständige Reflexion, Interpretation und Präsentation von analogen, digitalen und multimedialen Texten;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-4-B2-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Kollegial-wertschätzende Feedbackkultur in allen Gesprächsformen",
+   "parent": "MS-DEU-4-B2-A1",
+   "text": "Kollegial-wertschätzende Feedbackkultur in allen Gesprächsformen;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-4-B2-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Zunehmend selbstständige Appelle, Argumentationen und Diskussionen in verschiedenen …",
+   "parent": "MS-DEU-4-B2-A1",
+   "text": "Zunehmend selbstständige Appelle, Argumentationen und Diskussionen in verschiedenen Sozialformen.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Zuhören und Sprechen"
+  },
+  {
+   "code": "MS-DEU-4-B3",
+   "kind": "kompetenzbereich",
+   "name": "Lesen",
+   "parent": "MS-DEU-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-4-B3-K1",
+   "kind": "kompetenz",
+   "name": "pragmatische und literarische Texte und Medien in unterschiedlichen Darbietungsformen …",
+   "parent": "MS-DEU-4-B3",
+   "text": "pragmatische und literarische Texte und Medien in unterschiedlichen Darbietungsformen rezipieren, deren Inhalt, Form und Sprache erschließen und ihre Entstehungszusammenhänge erfassen;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-4-B3-K2",
+   "kind": "kompetenz",
+   "name": "eigene Leseinteressen vertiefen, eine dynamische und vielfältige Lesebiografie entwickeln …",
+   "parent": "MS-DEU-4-B3",
+   "text": "eigene Leseinteressen vertiefen, eine dynamische und vielfältige Lesebiografie entwickeln und sich differenziert mit anderen darüber austauschen;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-4-B3-K3",
+   "kind": "kompetenz",
+   "name": "Texte mit Hilfe szenischer Mittel vortragen, darstellen und mit anderen künstlerischen …",
+   "parent": "MS-DEU-4-B3",
+   "text": "Texte mit Hilfe szenischer Mittel vortragen, darstellen und mit anderen künstlerischen Ausdrucksformen vergleichen;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-4-B3-K4",
+   "kind": "kompetenz",
+   "name": "die Aufbereitung und Gestaltung von Themen und Inhalten medialer Beiträge erkennen und …",
+   "parent": "MS-DEU-4-B3",
+   "text": "die Aufbereitung und Gestaltung von Themen und Inhalten medialer Beiträge erkennen und vergleichen und dabei Informationssysteme differenziert und kritisch nutzen.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-4-B3-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-4-B3",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-4-B3-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Vergleich, Analyse und Interpretation der ästhetischen Gestaltung und stilistischen …",
+   "parent": "MS-DEU-4-B3-A1",
+   "text": "Vergleich, Analyse und Interpretation der ästhetischen Gestaltung und stilistischen Ausdrucksformen literarischer Texte;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-4-B3-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Vergleich, Analyse und Reflexion komplexerer analoger und digitaler pragmatischer Texte …",
+   "parent": "MS-DEU-4-B3-A1",
+   "text": "Vergleich, Analyse und Reflexion komplexerer analoger und digitaler pragmatischer Texte (auch zu übergreifenden Themen);",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-4-B3-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Kritische Auseinandersetzung mit den persönlichen Lese- und Mediengewohnheiten",
+   "parent": "MS-DEU-4-B3-A1",
+   "text": "Kritische Auseinandersetzung mit den persönlichen Lese- und Mediengewohnheiten;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-4-B3-A1-A4",
+   "kind": "anwendungsbereich",
+   "name": "Selbstständige Recherche und Aufbereitung eines komplexen Themas unter Zuhilfenahme …",
+   "parent": "MS-DEU-4-B3-A1",
+   "text": "Selbstständige Recherche und Aufbereitung eines komplexen Themas unter Zuhilfenahme vielfältiger Quellen (ua. Bücher, Zeitungen, Zeitschriften, Filme, Videos. digitale Texte).",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Lesen"
+  },
+  {
+   "code": "MS-DEU-4-B4",
+   "kind": "kompetenzbereich",
+   "name": "Schreiben",
+   "parent": "MS-DEU-4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-4-B4-K1",
+   "kind": "kompetenz",
+   "name": "unterschiedliche Impulse und Vorlagen für eigene pragmatische und kreative …",
+   "parent": "MS-DEU-4-B4",
+   "text": "unterschiedliche Impulse und Vorlagen für eigene pragmatische und kreative Schreibprozesse nutzen;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-4-B4-K2",
+   "kind": "kompetenz",
+   "name": "zu strittigen Sachverhalten, unter Einbeziehung differenzierter Quellen, argumentierend …",
+   "parent": "MS-DEU-4-B4",
+   "text": "zu strittigen Sachverhalten, unter Einbeziehung differenzierter Quellen, argumentierend schreiben und auf Gegenargumente eingehen;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-4-B4-K3",
+   "kind": "kompetenz",
+   "name": "Textverarbeitungsprogramme zur Gestaltung umfangreicherer multimedialer Texte, auch im …",
+   "parent": "MS-DEU-4-B4",
+   "text": "Textverarbeitungsprogramme zur Gestaltung umfangreicherer multimedialer Texte, auch im Team, nutzen;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-4-B4-K4",
+   "kind": "kompetenz",
+   "name": "Bedeutungswandel der Schrift und des Schreibens in analogen, digitalen und multimodalen …",
+   "parent": "MS-DEU-4-B4",
+   "text": "Bedeutungswandel der Schrift und des Schreibens in analogen, digitalen und multimodalen Settings reflektieren.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-4-B4-A1",
+   "kind": "anwendungsbereiche",
+   "name": "Anwendungsbereiche",
+   "parent": "MS-DEU-4-B4",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-4-B4-A1-A1",
+   "kind": "anwendungsbereich",
+   "name": "Textproduktion unter gezieltem Einsatz von Vorgaben und Vorlagen",
+   "parent": "MS-DEU-4-B4-A1",
+   "text": "Textproduktion unter gezieltem Einsatz von Vorgaben und Vorlagen;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-4-B4-A1-A2",
+   "kind": "anwendungsbereich",
+   "name": "Argumentatives und analytisches Schreiben, auch auf materialgestützter Basis",
+   "parent": "MS-DEU-4-B4-A1",
+   "text": "Argumentatives und analytisches Schreiben, auch auf materialgestützter Basis;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-4-B4-A1-A3",
+   "kind": "anwendungsbereich",
+   "name": "Einschätzung von Textqualität, Einsatz von wertschätzendem Feedback",
+   "parent": "MS-DEU-4-B4-A1",
+   "text": "Einschätzung von Textqualität, Einsatz von wertschätzendem Feedback;",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  },
+  {
+   "code": "MS-DEU-4-B4-A1-A4",
+   "kind": "anwendungsbereich",
+   "name": "Auseinandersetzung mit Funktion, Vielfalt und Gebrauch von Sprache und Schrift",
+   "parent": "MS-DEU-4-B4-A1",
+   "text": "Auseinandersetzung mit Funktion, Vielfalt und Gebrauch von Sprache und Schrift.",
+   "klasse": 4,
+   "schulstufe": 8,
+   "competency_area": "Schreiben"
+  }
+ ],
+ "skills": [],
+ "skill_nodes": [
+  [
+   "deutsch.recht.dasdass",
+   "MS-DEU-1-B1-A1-A1"
+  ],
+  [
+   "deutsch.recht.gross",
+   "MS-DEU-1-B1-A1-A1"
+  ],
+  [
+   "deutsch.recht.sss",
+   "MS-DEU-1-B1-A1-A1"
+  ],
+  [
+   "deutsch.recht.dasdass",
+   "MS-DEU-2-B1-A1-A1"
+  ],
+  [
+   "deutsch.recht.gross",
+   "MS-DEU-2-B1-A1-A1"
+  ],
+  [
+   "deutsch.recht.sss",
+   "MS-DEU-2-B1-A1-A1"
+  ],
+  [
+   "deutsch.beistrich.aufzaehlung",
+   "MS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.beistrich.nebensatz",
+   "MS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.beistrich.infinitiv",
+   "MS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.faelle",
+   "MS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.zeiten",
+   "MS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.wortarten.bestimmen",
+   "MS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.wortarten.nomen",
+   "MS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.beistrich.nebensatz",
+   "MS-DEU-2-B1-A1-A2"
+  ],
+  [
+   "deutsch.beistrich.infinitiv",
+   "MS-DEU-2-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.faelle",
+   "MS-DEU-2-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.zeiten",
+   "MS-DEU-2-B1-A1-A2"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "MS-DEU-1-B3-K1"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "MS-DEU-2-B3-K1"
+  ],
+  [
+   "deutsch.text.verstehen",
+   "MS-DEU-3-B3-K1"
+  ]
+ ]
+}
