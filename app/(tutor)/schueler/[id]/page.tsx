@@ -25,19 +25,28 @@ import { klassenLabel } from "@/lib/school";
 import { analyzeStudent } from "@/lib/service";
 import { dayOf, daysUntil, examReminders, reminderStage, STAGE_LABEL, STAGE_TONE } from "@/lib/exams";
 import { examThresholds } from "@/lib/lehrplan";
-import { nextSteps, RULE_LABEL } from "@/lib/recommend";
+import { diagnosesOf } from "@/lib/diagnose";
+import { nextSteps, RULE_LABEL, RULE_TONE, type NextStep } from "@/lib/recommend";
+import { activeMaterial, materialHistory, materialLabel, MATERIAL_SOURCES, PRIORITY_LABEL, profileTopic } from "@/lib/current-material";
+import { errorTypeLabel } from "@/lib/error-types";
+import { MaterialForm } from "@/components/MaterialForm";
+import { endMaterialAction } from "@/app/learning-actions";
 import { checkLevel } from "@/lib/school";
 
 const TABS = [
   ["ueberblick", "Überblick"],
-  ["lernverlauf", "Lernverlauf"],
-  ["uebungen", "Übungen"],
-  ["schule", "Prüfungen"],
   ["fortschritt", "Lernstand"],
+  ["stoff", "Aktueller Stoff"],
+  ["schule", "Prüfungen"],
+  ["uebungen", "Übungen"],
+  ["lernverlauf", "Lernverlauf"],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
-export default async function StudentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; zugewiesen?: string; art?: string }> }) {
+/** Builder prefilled for a recommendation: student, skill, number of tasks. */
+const builderHref = (studentId: number, r: Pick<NextStep, "skill" | "count">) => `/uebungen/neu?schueler=${studentId}&skill=${encodeURIComponent(r.skill.id)}&anzahl=${r.count}`;
+
+export default async function StudentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; zugewiesen?: string; art?: string; bearbeiten?: string; fehler?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const student = repo.getStudent(Number(id));
@@ -99,11 +108,12 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
       {tab === "fortschritt" && (
         <div className="space-y-14">
           <Progress a={a} />
-          <AnalysisTab student={student} a={a} assignedId={sp.zugewiesen} />
+          <AnalysisTab student={student} a={a} assignedId={sp.zugewiesen} error={sp.fehler} />
         </div>
       )}
       {tab === "lernverlauf" && <Lessons student={student} filter={sp.art} />}
       {tab === "schule" && <School student={student} />}
+      {tab === "stoff" && <CurrentMaterialTab student={student} edit={Number(sp.bearbeiten) || null} />}
       {tab === "uebungen" && <Exercises student={student} />}
     </>
   );
@@ -129,8 +139,79 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
     ) : (
       note || <span className="text-ink-3">{empty}</span>
     );
-  const rows: [string, React.ReactNode][] = [
-    ["Fach und Themen", [student.subjects.join(", "), student.current_topics].filter(Boolean).join(" · ") || "–"],
+  const today = dayOf(new Date());
+  const material = activeMaterial(student.id);
+  const exam = examReminders(today, { studentId: student.id })[0] ?? repo.upcomingTests(today, student.id)[0];
+  const step = nextSteps(student.id, { today, limit: 1 })[0];
+  const dueHw = [...hw].sort((x, y) => (x.due_date ?? "9999").localeCompare(y.due_date ?? "9999"))[0];
+  // the most important first: what is going on at school now, the next exam, what to practise
+  const rows: [string, React.ReactNode][] = [];
+  if (material.length) {
+    for (const m of material) {
+      rows.push([
+        `Aktuell in ${m.subject}`,
+        <span key={m.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="font-medium">{materialLabel(m)}</span>
+          {m.subtopic && <span className="text-ink-2">({m.topic})</span>}
+          {m.priority === 1 && <Pill tone="accent">wichtig</Pill>}
+          <span className="text-[13px] text-ink-3">seit {formatDate(m.since, { day: "numeric", month: "short" })}</span>
+        </span>,
+      ]);
+    }
+  } else {
+    rows.push([
+      "Fach und Themen",
+      <span key="topics">
+        {[student.subjects.join(", "), student.current_topics].filter(Boolean).join(" · ") || "–"}{" "}
+        <Link href={`/schueler/${student.id}?tab=stoff`} className="link font-medium whitespace-nowrap">
+          Aktuellen Stoff festlegen ›
+        </Link>
+      </span>,
+    ]);
+  }
+  if (exam) {
+    const days = daysUntil(exam.date, today);
+    const stage = reminderStage(days);
+    rows.push([
+      "Nächste Prüfung",
+      <span key="exam" className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        {exam.title || `${exam.kind} ${exam.subject}`}
+        <span className="num text-ink-2">{days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`}</span>
+        {stage && <Pill tone={STAGE_TONE[stage]}>{STAGE_LABEL[stage]}</Pill>}
+        <Link href={`/schueler/${student.id}/pruefung/${exam.id}`} className="link font-medium whitespace-nowrap">
+          Vorbereitung ›
+        </Link>
+      </span>,
+    ]);
+  }
+  if (step) {
+    rows.push([
+      "Empfohlen",
+      <span key="next" className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="font-medium">{step.skill.name}</span>
+        <Pill tone={RULE_TONE[step.rule]}>{step.kind === "ueberpruefung" ? "Überprüfung" : RULE_LABEL[step.rule]}</Pill>
+        <Link href={builderHref(student.id, step)} className="link font-medium whitespace-nowrap">
+          Übung erstellen ›
+        </Link>
+        <span className="basis-full text-[13px] text-ink-2">Grund: {step.reason}</span>
+      </span>,
+    ]);
+  }
+  if (dueHw) {
+    rows.push([
+      "Offene Hausübung",
+      <span key="hw">
+        {dueHw.description}
+        <span className="text-[13px] text-ink-3">
+          {" "}
+          · {dueHw.subject}
+          {dueHw.due_date && `, fällig ${formatDate(dueHw.due_date, { day: "numeric", month: "short" })}`}
+          {hw.length > 1 && ` · ${hw.length} offen`}
+        </span>
+      </span>,
+    ]);
+  }
+  rows.push(
     ["Stärken", skillList(a.strengths, "text-green", "noch keine gesicherten Stärken", student.strengths_note)],
     ["Schwierigkeiten", skillList(a.weaknesses, "text-red", "keine erkannt", student.weaknesses_note)],
     [
@@ -148,38 +229,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
       ),
     ],
     ["Nächstes Lernziel", lastDone?.next_steps || student.goals || <span className="text-ink-3">noch nicht festgelegt</span>],
-  ];
-  const today = dayOf(new Date());
-  const exam = examReminders(today, { studentId: student.id })[0] ?? repo.upcomingTests(today, student.id)[0];
-  if (exam) {
-    const days = daysUntil(exam.date, today);
-    const stage = reminderStage(days);
-    rows.splice(3, 0, [
-      "Nächste Prüfung",
-      <span key="exam" className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        {exam.title || `${exam.kind} ${exam.subject}`}
-        <span className="num text-ink-2">{days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`}</span>
-        {stage && <Pill tone={STAGE_TONE[stage]}>{STAGE_LABEL[stage]}</Pill>}
-        <Link href={`/schueler/${student.id}/pruefung/${exam.id}`} className="link font-medium whitespace-nowrap">
-          Vorbereitung ›
-        </Link>
-      </span>,
-    ]);
-  }
-  const step = nextSteps(student.id, { today, limit: 1 })[0];
-  if (step) {
-    rows.splice(exam ? 4 : 3, 0, [
-      "Als Nächstes üben",
-      <span key="next" className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <Pill tone={step.rule === 1 ? "red" : step.rule === 2 || step.rule === 3 ? "amber" : "neutral"}>{RULE_LABEL[step.rule]}</Pill>
-        <span>{step.skill.name}</span>
-        <Link href={`/uebungen/neu?schueler=${student.id}&skill=${encodeURIComponent(step.skill.id)}&anzahl=${step.count}`} className="link font-medium whitespace-nowrap">
-          Übung erstellen ›
-        </Link>
-        <span className="basis-full text-[13px] text-ink-2">{step.reason}</span>
-      </span>,
-    ]);
-  }
+  );
   return (
     <div className="grid max-w-[860px] gap-8">
       <dl className="panel grid gap-x-6 gap-y-4 px-5 py-5 text-[15px] sm:grid-cols-[170px_minmax(0,1fr)]">
@@ -366,13 +416,52 @@ function Progress({ a }: { a: Analysis }) {
   );
 }
 
-function AnalysisTab({ student, a, assignedId }: { student: repo.Student; a: Analysis; assignedId?: string }) {
+/** Diagnoses of the student and the way to start one; for a student without data this is the first step. */
+function DiagnosisSection({ student, tested }: { student: repo.Student; tested: boolean }) {
+  const list = diagnosesOf(student.id).slice(0, 4);
   const first = student.name.split(" ")[0];
-  const KIND = {
-    ueberpruefung: ["green", "Überprüfung"],
-    wiederholung: ["amber", "Wiederholung"],
-    schwaeche: ["red", "Schwäche"],
-  } as const;
+  const start = (
+    <Link href={`/diagnose?schueler=${student.id}`} className={`btn btn-sm ${tested ? "btn-secondary" : "btn-primary"}`}>
+      Diagnose starten
+    </Link>
+  );
+  if (!list.length && tested) {
+    return (
+      <p className="flex flex-wrap items-center gap-3 text-[14px] text-ink-2">
+        Neues Thema, Stand unklar? {start}
+      </p>
+    );
+  }
+  return (
+    <section aria-label="Diagnose">
+      <SectionTitle action={start}>
+        <span>
+          Diagnose
+          <Info label="Info zur Diagnose">Ein kurzer Test mit 5 bis 10 Aufgaben zu gewählten Themen. Die Antworten zählen normal zum Lernstand und sind als Diagnose markiert.</Info>
+        </span>
+      </SectionTitle>
+      {list.length === 0 ? (
+        <p className="text-[14px] text-ink-2">Zu {first} gibt es noch keinen Lernstand. Eine Diagnose zeigt in wenigen Minuten, was sitzt und wo Lücken sind.</p>
+      ) : (
+        <ul className="panel divide-y divide-line">
+          {list.map((d) => (
+            <li key={d.id}>
+              <Link href={`/diagnose/${d.id}`} className="flex min-h-[52px] items-center gap-3 px-4 py-2 hover:bg-panel/60">
+                <span className="min-w-0 flex-1 truncate font-medium">{d.title.replace(`${first} – `, "")}</span>
+                <span className="num text-[13px] text-ink-3">{formatDate(d.assigned_at, { day: "numeric", month: "short" })}</span>
+                {d.done_count >= d.task_count ? <Pill tone="green">fertig</Pill> : <Pill tone="amber">{d.done_count}/{d.task_count}</Pill>}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function AnalysisTab({ student, a, assignedId, error }: { student: repo.Student; a: Analysis; assignedId?: string; error?: string }) {
+  const first = student.name.split(" ")[0];
+  const steps = nextSteps(student.id, { today: dayOf(new Date()), limit: 6 });
   return (
     <div className="space-y-10">
       {assignedId && (
@@ -383,56 +472,75 @@ function AnalysisTab({ student, a, assignedId }: { student: repo.Student; a: Ana
           </Link>
         </p>
       )}
+      {error && (
+        <p className="rounded-lg bg-red-wash px-4 py-2.5 text-[14px] text-red" role="alert">
+          {error}
+        </p>
+      )}
       <section>
         <SectionTitle>
           <span>
-            Empfehlungen
-            <Info label="Wann gibt es Empfehlungen?">Sobald eine Fähigkeit unter 60 % fällt oder länger nicht wiederholt wurde, schlägt die Software passende Übungen vor.</Info>
+            Empfohlene Übungen
+            <Info label="Wie entsteht die Empfehlung?">
+              Ohne KI, nach Priorität: 1. bevorstehende Prüfung, 2. aktueller Stoff, 3. schwache Fähigkeiten, 4. wiederholte Fehler, 5. fehlende Voraussetzungen, 6. lange nicht geübt, 7. nächster sinnvoller Schritt.
+            </Info>
           </span>
         </SectionTitle>
-        {a.recommendations.length === 0 ? (
+        {steps.length === 0 ? (
           <p className="text-[14px] text-ink-3">Keine Empfehlung offen.</p>
         ) : (
           <ul className="grid gap-3 md:grid-cols-2">
-            {a.recommendations.map((r) => {
-              const [tone, label] = KIND[r.kind as keyof typeof KIND] ?? KIND.schwaeche;
-              return (
-                <li key={r.key} className="panel px-5 py-4">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <Pill tone={tone}>{label}</Pill>
-                    <span className="font-semibold">{r.skill.name}</span>
-                    <span className="num text-[14px] font-semibold text-ink-2">{pct(r.mastery)}</span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {r.openAssignmentId ? (
-                      <Link href={`/schueler/${student.id}?tab=uebungen`} className="btn btn-ghost btn-sm">
-                        Gesendet, offen
-                      </Link>
-                    ) : (
-                      <form action={applyRecommendationAction.bind(null, student.id, r.key)}>
-                        <button className="btn btn-primary btn-sm">An {first} senden</button>
-                      </form>
-                    )}
-                    <span className="text-[13px] text-ink-2">
-                      <span className="num">{r.count}</span> Aufg. · {r.difficulty}
-                    </span>
-                  </div>
-                  <Reveal label="Warum?" className="mt-1">
-                    <p className="text-[14px] text-ink-2">
-                      {r.skill.area} › {r.skill.name}: {r.reason}
-                    </p>
-                    <p className="mt-1 text-[14px] text-ink-2">Danach: {r.then}</p>
-                  </Reveal>
-                </li>
-              );
-            })}
+            {steps.map((r) => (
+              <li key={r.key} className="panel px-5 py-4">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Pill tone={RULE_TONE[r.rule]}>{r.kind === "ueberpruefung" ? "Überprüfung" : RULE_LABEL[r.rule]}</Pill>
+                  <span className="font-semibold">{r.skill.name}</span>
+                </div>
+                <p className="mt-1.5 text-[13.5px] text-ink-2">{r.reason}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Link href={builderHref(student.id, r)} className="btn btn-primary btn-sm">
+                    Übung erstellen
+                  </Link>
+                  {r.openAssignmentId ? (
+                    <Link href={`/schueler/${student.id}/ergebnis/${r.openAssignmentId}`} className="btn btn-ghost btn-sm">
+                      Gesendet, offen
+                    </Link>
+                  ) : (
+                    <form action={applyRecommendationAction.bind(null, student.id, r.key, null)}>
+                      <button className="btn btn-secondary btn-sm" title={`${r.count} Aufgaben, ${r.difficulty}, sofort senden`}>
+                        Direkt an {first} senden
+                      </button>
+                    </form>
+                  )}
+                  <span className="text-[13px] text-ink-3">
+                    <span className="num">{r.count}</span> Aufg. · {r.difficulty}
+                  </span>
+                </div>
+              </li>
+            ))}
           </ul>
         )}
       </section>
 
+      <DiagnosisSection student={student} tested={a.skills.some((x) => x.mastery !== null)} />
+
       <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-2">
         <section>
-          <SectionTitle>Häufige Fehler</SectionTitle>
+          <SectionTitle>
+            <span>
+              Häufige Fehler
+              <Info label="Info zu Fehlerarten">Fehlerarten schlägt die App vor, wo eine Regel eindeutig ist. In jedem Ergebnis kannst du sie bestätigen oder ändern.</Info>
+            </span>
+          </SectionTitle>
+          {a.errorTypes.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-1.5" aria-label="Fehlerarten">
+              {a.errorTypes.slice(0, 6).map((e) => (
+                <Pill key={e.type} tone={e.confirmed ? "amber" : "neutral"} title={e.confirmed ? `${e.confirmed} vom Lehrer bestätigt` : "Vorschläge der App, noch nicht bestätigt"}>
+                  {errorTypeLabel(e.type)} <span className="num">{e.count}×</span>
+                </Pill>
+              ))}
+            </div>
+          )}
           <More
             className="divide-y divide-line"
             empty="Noch keine Fehler erfasst."
@@ -480,6 +588,110 @@ function AnalysisTab({ student, a, assignedId }: { student: repo.Student; a: Ana
           </Reveal>
         )}
       </section>
+    </div>
+  );
+}
+
+/** Aktueller Stoff per subject: what the school is doing now, on top of the official curriculum. */
+function CurrentMaterialTab({ student, edit }: { student: repo.Student; edit: number | null }) {
+  const active = activeMaterial(student.id);
+  const history = materialHistory(student.id);
+  const subjects = student.subjects.length ? student.subjects : ["Mathematik"];
+  const skills = repo.listSkills().map(({ id, name, area, subject }) => ({ id, name, area, subject }));
+  const a = analyzeStudent(student.id)!;
+  const m = (id: string) => a.skills.find((s) => s.skill.id === id)?.mastery ?? null;
+  const today = dayOf(new Date());
+  const editing = active.find((x) => x.id === edit);
+  const open = subjects.filter((s) => !active.some((x) => x.subject === s));
+  // the free-text topics of the profile prefill the Thema once (the teacher still saves it); a second
+  // topic is another topic, not the Unterthema, and the full text stays visible above the form
+  const pTopic = profileTopic(student.current_topics);
+  const fromProfile = active.length === 0 && pTopic ? { subject: open[0] ?? subjects[0], topic: pTopic, subtopic: "", skill_ids: [], since: today, priority: 2, note: "", source: "unterricht" } : undefined;
+  return (
+    <div className="grid max-w-[920px] gap-10">
+      <section aria-label="Aktueller Stoff">
+        <SectionTitle>
+          <span>
+            Aktueller Stoff
+            <Info label="Info zum aktuellen Stoff">Was in der Schule gerade dran ist, pro Fach. Der offizielle Lehrplan bleibt unverändert. Die Fähigkeiten werden im Übungs-Builder vorausgewählt und fließen in die Empfehlung ein.</Info>
+          </span>
+        </SectionTitle>
+        {active.length === 0 && <p className="text-[14px] text-ink-3">Noch kein aktueller Stoff festgelegt.{student.current_topics && ` Im Profil steht: „${student.current_topics}“.`}</p>}
+        <ul className="grid gap-3">
+          {active.map((cm) => (
+            <li key={cm.id} className="panel px-5 py-4">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <span className="text-[13px] font-semibold text-ink-2">Aktuell in {cm.subject}:</span>
+                <span className="text-[17px] font-semibold">{materialLabel(cm)}</span>
+                {cm.subtopic && <span className="text-ink-2">({cm.topic})</span>}
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[13px]">
+                <Pill>seit {formatDate(cm.since, { day: "numeric", month: "short" })}</Pill>
+                <Pill>{MATERIAL_SOURCES[cm.source] ?? cm.source}</Pill>
+                <Pill tone={cm.priority === 1 ? "accent" : "neutral"}>Priorität {PRIORITY_LABEL[cm.priority]}</Pill>
+              </div>
+              {cm.skill_ids.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+                  {cm.skill_ids.map((id) => {
+                    const sk = skills.find((x) => x.id === id);
+                    return sk ? (
+                      <span key={id} className="inline-flex items-center gap-1.5 text-[14px]">
+                        {sk.name} <StatusChip mastery={m(id)} />
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              )}
+              {cm.note && <p className="mt-2 text-[14px] text-ink-2">{cm.note}</p>}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Link href={`/uebungen/neu?schueler=${student.id}&stoff=${cm.id}`} className="btn btn-primary btn-sm">
+                  Übung dazu erstellen
+                </Link>
+                <Link href={`/schueler/${student.id}?tab=stoff&bearbeiten=${cm.id}`} className="btn btn-ghost btn-sm">
+                  <Pencil size={14} aria-hidden /> Bearbeiten
+                </Link>
+                <form action={endMaterialAction.bind(null, cm.id)} className="ml-auto">
+                  <button className="btn btn-ghost btn-sm" title="Kommt in den Verlauf">
+                    Abgeschlossen
+                  </button>
+                </form>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-label={editing ? "Stoff bearbeiten" : "Neuer Stoff"}>
+        <SectionTitle>{editing ? `${editing.subject}: Stoff bearbeiten` : active.length ? "Neuer Stoff" : "Stoff festlegen"}</SectionTitle>
+        {!editing && active.length > 0 && <p className="-mt-1 mb-3 text-[13.5px] text-ink-2">Ein neuer Stoff im selben Fach ersetzt den bisherigen; der kommt in den Verlauf.</p>}
+        <MaterialForm
+          key={editing?.id ?? "neu"}
+          studentId={student.id}
+          subjects={editing ? [editing.subject] : [...open, ...subjects.filter((x) => !open.includes(x))]}
+          skills={skills}
+          today={today}
+          initial={editing ? { ...editing } : fromProfile}
+        />
+      </section>
+
+      {history.length > 0 && (
+        <section aria-label="Verlauf">
+          <SectionTitle>Verlauf</SectionTitle>
+          <ul className="panel divide-y divide-line">
+            {history.map((h) => (
+              <li key={h.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-2.5 text-[14px]">
+                <span>
+                  <span className="text-ink-2">{h.subject}:</span> <span className="font-medium">{materialLabel(h)}</span>
+                  {h.subtopic && <span className="text-ink-3"> ({h.topic})</span>}
+                </span>
+                <span className="num text-[13px] text-ink-3">
+                  {formatDate(h.since, { day: "numeric", month: "short" })} – {formatDate(h.ended_at!, { day: "numeric", month: "short" })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
@@ -581,7 +793,7 @@ function School({ student }: { student: repo.Student }) {
                   )}
                 </span>
                 <form action={deleteTestAction.bind(null, t.id, student.id)}>
-                  <button className="btn btn-ghost btn-sm !px-2" aria-label="Löschen">
+                  <button className="btn btn-ghost btn-sm min-w-[44px] !px-2" aria-label="Löschen">
                     <Trash2 size={14} />
                   </button>
                 </form>
@@ -612,7 +824,7 @@ function School({ student }: { student: repo.Student }) {
                   </div>
                 </div>
                 <form action={deleteHomeworkAction.bind(null, h.id, student.id)}>
-                  <button className="btn btn-ghost btn-sm !px-2" aria-label="Löschen">
+                  <button className="btn btn-ghost btn-sm min-w-[44px] !px-2" aria-label="Löschen">
                     <Trash2 size={14} />
                   </button>
                 </form>
@@ -655,7 +867,7 @@ function Exercises({ student }: { student: repo.Student }) {
         </div>
         <div className="flex w-full items-center gap-2 sm:w-[440px]">
           <CopyLink path={`/lernen/${student.access_token}`} />
-          <Link href={`/lernen/${student.access_token}`} target="_blank" className="btn btn-ghost btn-sm !px-2" aria-label="Schüleransicht öffnen">
+          <Link href={`/lernen/${student.access_token}`} target="_blank" className="btn btn-ghost btn-sm min-w-[44px] !px-2" aria-label="Schüleransicht öffnen">
             <ExternalLink size={15} />
           </Link>
         </div>
@@ -710,6 +922,14 @@ function Exercises({ student }: { student: repo.Student }) {
                     <div className="text-[12px] text-ink-3">
                       {x.task_count} Aufgaben · {x.difficulty}
                       {x.kind === "ueberpruefung" && " · Überprüfung"}
+                      {x.kind === "diagnose" && (
+                        <>
+                          {" · "}
+                          <Link href={`/diagnose/${x.id}`} className="font-semibold text-accent hover:underline">
+                            Diagnose-Auswertung
+                          </Link>
+                        </>
+                      )}
                     </div>
                   </td>
                   <td className="num px-3 py-3 text-ink-2">{formatDate(x.assigned_at, { day: "numeric", month: "short" })}</td>

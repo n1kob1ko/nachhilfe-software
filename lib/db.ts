@@ -353,10 +353,70 @@ CREATE TABLE IF NOT EXISTS skill_history (
   before TEXT NOT NULL,
   changed_at TEXT NOT NULL
 );
+-- Aktueller Stoff: what a student is doing at school right now, per subject. The official curriculum
+-- stays as it is; this is the student's own layer on top. At most one active row per subject;
+-- replaced rows keep ended_at, so "seit wann" and the history stay readable.
+CREATE TABLE IF NOT EXISTS current_material (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  subject TEXT NOT NULL,
+  topic TEXT NOT NULL,
+  subtopic TEXT NOT NULL DEFAULT '',
+  skill_ids TEXT NOT NULL DEFAULT '[]',
+  since TEXT NOT NULL,
+  priority INTEGER NOT NULL DEFAULT 2,
+  note TEXT NOT NULL DEFAULT '',
+  source TEXT NOT NULL DEFAULT 'unterricht',
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL,
+  ended_at TEXT
+);
+-- Uploaded material (photo, PDF, worksheet). The file stays private; what is recognised in it is only
+-- a suggestion (analysis JSON) until the teacher has checked it. Origin and licence via content_sources.
+CREATE TABLE IF NOT EXISTS materials (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  student_id INTEGER REFERENCES students(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  file_name TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  sha256 TEXT NOT NULL,
+  stored_path TEXT NOT NULL,
+  source_id INTEGER REFERENCES content_sources(id) ON DELETE SET NULL,
+  subject TEXT NOT NULL DEFAULT '',
+  school_type TEXT NOT NULL DEFAULT '',
+  klasse INTEGER,
+  topic TEXT NOT NULL DEFAULT '',
+  skill_ids TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL DEFAULT 'hochgeladen',
+  analysis TEXT,
+  analysis_source TEXT NOT NULL DEFAULT '',
+  analyzed_at TEXT,
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL
+);
+-- Own corrections of a skill (Mehr › Datenqualität). The skill row itself (and with it every imported
+-- or official value) is never changed: these values are laid over it when skills are read.
+CREATE TABLE IF NOT EXISTS skill_overrides (
+  skill_id TEXT PRIMARY KEY REFERENCES skills(id) ON DELETE CASCADE,
+  area TEXT,
+  subtopic TEXT,
+  grade_min INTEGER,
+  grade_max INTEGER,
+  practice_shift TEXT NOT NULL DEFAULT '',
+  merged_into TEXT REFERENCES skills(id) ON DELETE SET NULL,
+  note TEXT NOT NULL DEFAULT '',
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  updated_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS app_settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_current_material ON current_material(student_id, ended_at);
+CREATE INDEX IF NOT EXISTS idx_materials_created ON materials(created_at);
 CREATE INDEX IF NOT EXISTS idx_nodes_curriculum ON curriculum_nodes(curriculum_id, parent_id, sort);
 CREATE INDEX IF NOT EXISTS idx_tests_student ON tests(student_id, date);
 CREATE INDEX IF NOT EXISTS idx_task_skills_skill ON task_skills(skill_id);
@@ -449,6 +509,30 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["tests", "status", "TEXT NOT NULL DEFAULT 'geschrieben'"], // 'geplant' | 'geschrieben' | 'abgesagt'
   ["tests", "teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
   ["tests", "created_at", "TEXT"],
+  // prerequisites and Lehrplan links: who made them, and removed ones stay as rows so a removed
+  // standard link does not come back with the next start or import
+  ["skill_links", "origin", "TEXT NOT NULL DEFAULT 'app'"], // app | import | lehrer
+  ["skill_links", "removed_at", "TEXT"],
+  ["skill_links", "changed_by", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["skill_curriculum", "origin", "TEXT NOT NULL DEFAULT 'import'"], // import | lehrer
+  ["skill_curriculum", "removed_at", "TEXT"],
+  ["skill_curriculum", "changed_by", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["skill_history", "kind", "TEXT NOT NULL DEFAULT 'import'"], // import | korrektur
+  ["skill_history", "teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  // Fehlerart of a wrong answer (lib/error-types.ts): the stored category, where it came from
+  // (vorschlag = suggested by the app, lehrer = set or confirmed by the teacher, ki = free-text grading),
+  // the app's original suggestion, and who set it when
+  ["attempts", "error_type", "TEXT"],
+  ["attempts", "error_type_source", "TEXT"],
+  ["attempts", "error_type_suggested", "TEXT"],
+  ["attempts", "error_type_by", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["attempts", "error_type_at", "TEXT"],
+  ["attempts", "error_type_suggested_source", "TEXT"], // who made error_type_suggested: vorschlag | ki
+  // Aufgabenbibliothek: tags of a library entry (worksheets.kind = 'bibliothek', one task each)
+  ["worksheets", "tags", "TEXT NOT NULL DEFAULT '[]'"],
+  // note for parents/student written from the summary of a unit (by the teacher or, on request, by Claude)
+  ["lessons", "family_note", "TEXT NOT NULL DEFAULT ''"],
+  ["lessons", "family_note_source", "TEXT NOT NULL DEFAULT ''"],
 ];
 
 /** Teachers to start with; more can be added later. */
@@ -480,9 +564,36 @@ export function openDatabase(file: string): Database.Database {
 
 function migrate(conn: Database.Database) {
   const tx = conn.transaction(() => {
+    const added = new Set<string>();
     for (const [table, column, definition] of COLUMNS) {
       const cols = conn.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
-      if (!cols.some((c) => c.name === column)) conn.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+      if (!cols.some((c) => c.name === column)) {
+        conn.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+        added.add(`${table}.${column}`);
+      }
+    }
+    // Links from before skill_links.origin: one that is no built-in prerequisite but is in the package
+    // of an applied curriculum import came from that import (only on this upgrade, never again)
+    if (added.has("skill_links.origin")) {
+      const builtin = new Set(PREREQUISITES.map(([skill, before]) => `${skill}|${before}|voraussetzung`));
+      const imported = new Set<string>();
+      for (const { payload } of conn.prepare("SELECT payload FROM curriculum_imports WHERE applied_at IS NOT NULL").all() as { payload: string }[]) {
+        for (const s of json<{ skills?: { id: string; prerequisites?: string[]; next?: string[] }[] }>(payload, {}).skills ?? []) {
+          for (const p of s.prerequisites ?? []) imported.add(`${s.id}|${p}|voraussetzung`);
+          for (const n of s.next ?? []) imported.add(`${s.id}|${n}|weiter`);
+        }
+      }
+      const mark = conn.prepare("UPDATE skill_links SET origin = 'import' WHERE skill_id = ? AND other_id = ? AND kind = ?");
+      for (const l of conn.prepare("SELECT skill_id, other_id, kind FROM skill_links").all() as { skill_id: string; other_id: string; kind: string }[]) {
+        const key = `${l.skill_id}|${l.other_id}|${l.kind}`;
+        if (!builtin.has(key) && imported.has(key)) mark.run(l.skill_id, l.other_id, l.kind);
+      }
+    }
+    // Fehlerart suggestions from before error_type_suggested_source were the app's; an AI category was
+    // not kept as suggestion, it is still in error_type while the teacher has not changed it
+    if (added.has("attempts.error_type_suggested_source")) {
+      conn.exec("UPDATE attempts SET error_type_suggested_source = 'vorschlag' WHERE error_type_suggested IS NOT NULL");
+      conn.exec("UPDATE attempts SET error_type_suggested = error_type, error_type_suggested_source = 'ki' WHERE error_type_source = 'ki' AND error_type IS NOT NULL AND error_type_suggested IS NULL");
     }
     conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_lessons_assignment ON lessons(assignment_id) WHERE assignment_id IS NOT NULL");
     // Old rows only had a Schulstufe: derive school type and class from it.
@@ -498,8 +609,9 @@ function migrate(conn: Database.Database) {
     for (const r of conn.prepare("SELECT id, school_type, klasse, grade FROM students").all() as { id: number; school_type: string; klasse: number | null; grade: number }[]) {
       setStatus.run(checkLevel(r.school_type, r.klasse, r.grade).status, r.id);
     }
-    // tasks: origin and difficulty 1–5 for rows written before these columns existed
-    conn.exec(`UPDATE tasks SET source_type = 'ki' WHERE source_type = 'eigen' AND worksheet_id IN (SELECT id FROM worksheets WHERE source = 'ki')`);
+    // tasks: origin and difficulty 1–5 for rows written before these columns existed. The origin only on
+    // that upgrade: later a task keeps the origin it was given (a copy, new content, set by the teacher)
+    if (added.has("tasks.source_type")) conn.exec(`UPDATE tasks SET source_type = 'ki' WHERE source_type = 'eigen' AND worksheet_id IN (SELECT id FROM worksheets WHERE source = 'ki')`);
     conn.exec(`UPDATE tasks SET level = CASE difficulty WHEN 'sehr leicht' THEN 1 WHEN 'leicht' THEN 2 WHEN 'leicht bis mittel' THEN 2 WHEN 'mittel' THEN 3 WHEN 'schwer' THEN 4 WHEN 'sehr schwer' THEN 5 ELSE 3 END WHERE level IS NULL`);
     // tests in the future without a result are planned ones
     conn.exec(`UPDATE tests SET status = 'geplant' WHERE status = 'geschrieben' AND grade IS NULL AND points IS NULL AND date > date('now')`);
@@ -523,6 +635,8 @@ function migrate(conn: Database.Database) {
     const setLogin = conn.prepare("UPDATE teachers SET username = ?, password_hash = ?, must_change_password = 1, is_admin = ? WHERE id = ?");
     for (const t of noLogin) setLogin.run(usernameFor(t.name), hashPassword(INITIAL_PASSWORD), t.name === DEFAULT_TEACHERS[0] ? 1 : 0, t.id);
     conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_teachers_username ON teachers(username)");
+    conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_current_material_active ON current_material(student_id, subject) WHERE ended_at IS NULL");
+    conn.exec("CREATE INDEX IF NOT EXISTS idx_attempts_error_type ON attempts(error_type) WHERE error_type IS NOT NULL");
     // every task is linked to its main skill in task_skills as well
     conn.exec("INSERT OR IGNORE INTO task_skills (task_id, skill_id) SELECT id, skill_id FROM tasks WHERE skill_id IS NOT NULL");
   });

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, ChevronRight, Plus, Sparkles } from "lucide-react";
+import { BookOpen, ChevronRight, GitBranch, Plus, Sparkles } from "lucide-react";
 import { Info } from "@/components/Info";
 import { createSkillAction } from "@/app/actions";
 import { PageHeader, Reveal } from "@/components/ui";
@@ -174,10 +174,16 @@ function SkillList({ list, all }: { list: Skill[]; all: Skill[] }) {
         const subs = all.filter((x) => x.parent_id === s.id);
         return (
           <li key={s.id} className="px-5 py-3">
-            <Link href={`/uebungen/neu?skill=${encodeURIComponent(s.id)}`} className="flex min-h-[44px] items-center gap-2 text-[16px] font-medium hover:text-accent">
-              {s.name}
-              {!hasBuiltInGenerator(s.id) && <Sparkles size={14} aria-label="Aufgaben nur mit KI" className="shrink-0 text-ink-3" />}
-            </Link>
+            <span className="flex items-center gap-2">
+              <Link href={`/uebungen/neu?skill=${encodeURIComponent(s.id)}`} className="flex min-h-[44px] flex-1 items-center gap-2 text-[16px] font-medium hover:text-accent">
+                {s.name}
+                {!hasBuiltInGenerator(s.id) && <Sparkles size={14} aria-label="Aufgaben nur mit KI" className="shrink-0 text-ink-3" />}
+                {s.practice_shift && <span className="rounded-full bg-amber-wash px-2 py-0.5 text-[12px] font-medium text-amber">oft {s.practice_shift === "frueher" ? "früher" : "später"}</span>}
+              </Link>
+              <Link href={`/faehigkeiten/${encodeURIComponent(s.id)}`} className="btn btn-ghost btn-sm min-w-[44px] !px-2.5" aria-label={`Details zu ${s.name}`} title="Voraussetzungen und Details">
+                <GitBranch size={15} aria-hidden />
+              </Link>
+            </span>
             {subs.length > 0 && (
               <span className="mb-1 flex flex-wrap gap-1.5">
                 {subs.map((x) => (
