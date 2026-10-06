@@ -1,0 +1,1821 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "Lehrplan HAK – Mathematik und angewandte Mathematik (RIS)",
+ "description": "Offizieller Lehrplantext aus dem RIS (NOR40234935), BGBl. Nr. 895/1994 idF BGBl. II Nr. 250/2021.",
+ "source": {
+  "key": "ris-hak",
+  "name": "RIS – Lehrpläne Handelsakademie und Handelsschule, Anlage A1 (Handelsakademie)",
+  "source_type": "lehrplan",
+  "url": "https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Bundesnormen&Dokumentnummer=NOR40234935",
+  "publisher": "Republik Österreich (RIS)",
+  "license": "amtliches Werk (§ 7 UrhG)",
+  "attribution_text": "BGBl. Nr. 895/1994 idF BGBl. II Nr. 250/2021",
+  "notes": "Gesetzesnummer 10008944, Dokumentnummer NOR40234935, in Kraft seit 01.09.2021. Wortlaut nur um Seitenköpfe, Zeilenumbrüche und Fußnotenziffern bereinigt."
+ },
+ "curriculum": {
+  "key": "ris-hak-mathematik",
+  "name": "Lehrplan HAK – Mathematik und angewandte Mathematik",
+  "school_type": "HAK",
+  "subject": "Mathematik",
+  "version": "BGBl. II Nr. 250/2021",
+  "reference": "BGBl. Nr. 895/1994 idF BGBl. II Nr. 250/2021, NOR40234935",
+  "valid_from": "2021-09-01"
+ },
+ "nodes": [
+  {
+   "code": "HAK-MAT",
+   "kind": "fach",
+   "name": "Mathematik und angewandte Mathematik"
+  },
+  {
+   "code": "HAK-MAT-1",
+   "kind": "klasse",
+   "name": "I. Jahrgang",
+   "parent": "HAK-MAT",
+   "klasse": 1,
+   "schulstufe": 9,
+   "text": "1. und 2. Semester"
+  },
+  {
+   "code": "HAK-MAT-1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zahlen und Maße – Zahlenbereiche und Zahlenmengen",
+   "parent": "HAK-MAT-1",
+   "competency_area": "Zahlen und Maße – Zahlenbereiche und Zahlenmengen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B1-K1",
+   "kind": "kompetenz",
+   "name": "die Zahlenbereiche der natürlichen, ganzen, rationalen und reellen Zahlen beschreiben und …",
+   "parent": "HAK-MAT-1-B1",
+   "text": "die Zahlenbereiche der natürlichen, ganzen, rationalen und reellen Zahlen beschreiben und damit rechnen,",
+   "competency_area": "Zahlen und Maße – Zahlenbereiche und Zahlenmengen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B1-K2",
+   "kind": "kompetenz",
+   "name": "die Zahlenmengen auf der Zahlengeraden veranschaulichen",
+   "parent": "HAK-MAT-1-B1",
+   "text": "die Zahlenmengen auf der Zahlengeraden veranschaulichen,",
+   "competency_area": "Zahlen und Maße – Zahlenbereiche und Zahlenmengen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B1-K3",
+   "kind": "kompetenz",
+   "name": "die Zahlenmengen mit Hilfe mathematischer Symbole beschreiben",
+   "parent": "HAK-MAT-1-B1",
+   "text": "die Zahlenmengen mit Hilfe mathematischer Symbole beschreiben,",
+   "competency_area": "Zahlen und Maße – Zahlenbereiche und Zahlenmengen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B1-K4",
+   "kind": "kompetenz",
+   "name": "die Beziehungen zwischen den Zahlenmengen herstellen und erklären",
+   "parent": "HAK-MAT-1-B1",
+   "text": "die Beziehungen zwischen den Zahlenmengen herstellen und erklären.",
+   "competency_area": "Zahlen und Maße – Zahlenbereiche und Zahlenmengen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Zahlen und Maße – Berechnungen und Umwandlungen",
+   "parent": "HAK-MAT-1",
+   "competency_area": "Zahlen und Maße – Berechnungen und Umwandlungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B2-K1",
+   "kind": "kompetenz",
+   "name": "Zahlen in Fest- und Gleitkommaschreibweise darstellen, die Darstellungsform wechseln und …",
+   "parent": "HAK-MAT-1-B2",
+   "text": "Zahlen in Fest- und Gleitkommaschreibweise darstellen, die Darstellungsform wechseln und damit rechnen,",
+   "competency_area": "Zahlen und Maße – Berechnungen und Umwandlungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B2-K2",
+   "kind": "kompetenz",
+   "name": "grundlegende Maßeinheiten (Längen-, Flächen-, Raum- und Hohlmaße, Zeit, Masse) …",
+   "parent": "HAK-MAT-1-B2",
+   "text": "grundlegende Maßeinheiten (Längen-, Flächen-, Raum- und Hohlmaße, Zeit, Masse) beschreiben, diese zueinander in Beziehung setzen und damit rechnen,",
+   "competency_area": "Zahlen und Maße – Berechnungen und Umwandlungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B2-K3",
+   "kind": "kompetenz",
+   "name": "beliebige Maßeinheiten nach vorgegebenen Kriterien umwandeln",
+   "parent": "HAK-MAT-1-B2",
+   "text": "beliebige Maßeinheiten nach vorgegebenen Kriterien umwandeln,",
+   "competency_area": "Zahlen und Maße – Berechnungen und Umwandlungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B2-K4",
+   "kind": "kompetenz",
+   "name": "Ergebnisse von Berechnungen abschätzen",
+   "parent": "HAK-MAT-1-B2",
+   "text": "Ergebnisse von Berechnungen abschätzen,",
+   "competency_area": "Zahlen und Maße – Berechnungen und Umwandlungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B2-K5",
+   "kind": "kompetenz",
+   "name": "Zahlenangaben in Prozent und Promille verstehen, Prozente bzw. Promille berechnen und mit …",
+   "parent": "HAK-MAT-1-B2",
+   "text": "Zahlenangaben in Prozent und Promille verstehen, Prozente bzw. Promille berechnen und mit Prozent- bzw. Promilleangaben in unterschiedlichem Kontext rechnen,",
+   "competency_area": "Zahlen und Maße – Berechnungen und Umwandlungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B2-K6",
+   "kind": "kompetenz",
+   "name": "Berechnungen mit sinnvoller Genauigkeit durchführen und Ergebnisse angemessen runden",
+   "parent": "HAK-MAT-1-B2",
+   "text": "Berechnungen mit sinnvoller Genauigkeit durchführen und Ergebnisse angemessen runden.",
+   "competency_area": "Zahlen und Maße – Berechnungen und Umwandlungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Algebra und Geometrie – Potenzen, Terme und lineare Gleichungen",
+   "parent": "HAK-MAT-1",
+   "competency_area": "Algebra und Geometrie – Potenzen, Terme und lineare Gleichungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B3-K1",
+   "kind": "kompetenz",
+   "name": "die Rechengesetze von Potenzen mit ganzzahligen Exponenten anwenden und begründen",
+   "parent": "HAK-MAT-1-B3",
+   "text": "die Rechengesetze von Potenzen mit ganzzahligen Exponenten anwenden und begründen,",
+   "competency_area": "Algebra und Geometrie – Potenzen, Terme und lineare Gleichungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B3-K2",
+   "kind": "kompetenz",
+   "name": "mit Termen rechnen, Terme umformen und dies durch Rechenregeln begründen",
+   "parent": "HAK-MAT-1-B3",
+   "text": "mit Termen rechnen, Terme umformen und dies durch Rechenregeln begründen,",
+   "competency_area": "Algebra und Geometrie – Potenzen, Terme und lineare Gleichungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B3-K3",
+   "kind": "kompetenz",
+   "name": "die Struktur eines Terms erkennen, um Terme mit der jeweiligen Technologie gezielt …",
+   "parent": "HAK-MAT-1-B3",
+   "text": "die Struktur eines Terms erkennen, um Terme mit der jeweiligen Technologie gezielt verarbeiten zu können,",
+   "competency_area": "Algebra und Geometrie – Potenzen, Terme und lineare Gleichungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B3-K4",
+   "kind": "kompetenz",
+   "name": "lineare Gleichungen für Aufgaben aus den Bereichen Prozentrechnung und Bewegung aufstellen",
+   "parent": "HAK-MAT-1-B3",
+   "text": "lineare Gleichungen für Aufgaben aus den Bereichen Prozentrechnung und Bewegung aufstellen,",
+   "competency_area": "Algebra und Geometrie – Potenzen, Terme und lineare Gleichungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B3-K5",
+   "kind": "kompetenz",
+   "name": "lineare Gleichungen in einer Variablen lösen",
+   "parent": "HAK-MAT-1-B3",
+   "text": "lineare Gleichungen in einer Variablen lösen,",
+   "competency_area": "Algebra und Geometrie – Potenzen, Terme und lineare Gleichungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B3-K6",
+   "kind": "kompetenz",
+   "name": "die Lösungsmenge einer linearen Gleichung in einer Variablen interpretieren …",
+   "parent": "HAK-MAT-1-B3",
+   "text": "die Lösungsmenge einer linearen Gleichung in einer Variablen interpretieren, dokumentieren und in Bezug auf die Aufgabenstellung argumentieren,",
+   "competency_area": "Algebra und Geometrie – Potenzen, Terme und lineare Gleichungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B3-K7",
+   "kind": "kompetenz",
+   "name": "lineare Gleichungen (Formeln) in mehreren Variablen nach einer variablen Größe …",
+   "parent": "HAK-MAT-1-B3",
+   "text": "lineare Gleichungen (Formeln) in mehreren Variablen nach einer variablen Größe explizieren, die gegenseitige Abhängigkeit der Größen interpretieren und erklären.",
+   "competency_area": "Algebra und Geometrie – Potenzen, Terme und lineare Gleichungen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Funktionale Zusammenhänge – Funktionsbegriff und lineare Funktionen",
+   "parent": "HAK-MAT-1",
+   "competency_area": "Funktionale Zusammenhänge – Funktionsbegriff und lineare Funktionen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B4-K1",
+   "kind": "kompetenz",
+   "name": "die Definition der Funktion als eindeutige Zuordnung beschreiben",
+   "parent": "HAK-MAT-1-B4",
+   "text": "die Definition der Funktion als eindeutige Zuordnung beschreiben,",
+   "competency_area": "Funktionale Zusammenhänge – Funktionsbegriff und lineare Funktionen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B4-K2",
+   "kind": "kompetenz",
+   "name": "Funktionen als Modelle zur Beschreibung von Zusammenhängen zwischen Größen verstehen und …",
+   "parent": "HAK-MAT-1-B4",
+   "text": "Funktionen als Modelle zur Beschreibung von Zusammenhängen zwischen Größen verstehen und erklären,",
+   "competency_area": "Funktionale Zusammenhänge – Funktionsbegriff und lineare Funktionen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B4-K3",
+   "kind": "kompetenz",
+   "name": "Funktionen in einer Variablen in einem kartesischen Koordinatensystem darstellen",
+   "parent": "HAK-MAT-1-B4",
+   "text": "Funktionen in einer Variablen in einem kartesischen Koordinatensystem darstellen,",
+   "competency_area": "Funktionale Zusammenhänge – Funktionsbegriff und lineare Funktionen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B4-K4",
+   "kind": "kompetenz",
+   "name": "das Modell der linearen Funktion in unterschiedlichen Kontexten, insbesondere mit …",
+   "parent": "HAK-MAT-1-B4",
+   "text": "das Modell der linearen Funktion in unterschiedlichen Kontexten, insbesondere mit Wirtschaftsbezug (Kostenfunktion, Erlös- bzw. Umsatzfunktion, Gewinnfunktion, Fixkosten, variable Kosten und Break Even Point) beschreiben und selbstständig lineare Modellfunktionen bilden,",
+   "competency_area": "Funktionale Zusammenhänge – Funktionsbegriff und lineare Funktionen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B4-K5",
+   "kind": "kompetenz",
+   "name": "lineare Funktionen implizit und explizit darstellen und zwischen diesen wechseln",
+   "parent": "HAK-MAT-1-B4",
+   "text": "lineare Funktionen implizit und explizit darstellen und zwischen diesen wechseln,",
+   "competency_area": "Funktionale Zusammenhänge – Funktionsbegriff und lineare Funktionen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B4-K6",
+   "kind": "kompetenz",
+   "name": "die Darstellungsformen linearer Funktionen interpretieren und erklären, insbesondere die …",
+   "parent": "HAK-MAT-1-B4",
+   "text": "die Darstellungsformen linearer Funktionen interpretieren und erklären, insbesondere die Bedeutung der Parameter „Steigung“ und „Achsenabschnitt“,",
+   "competency_area": "Funktionale Zusammenhänge – Funktionsbegriff und lineare Funktionen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-B4-K7",
+   "kind": "kompetenz",
+   "name": "den Begriff der Umkehrfunktion auf lineare Funktionen anwenden",
+   "parent": "HAK-MAT-1-B4",
+   "text": "den Begriff der Umkehrfunktion auf lineare Funktionen anwenden.",
+   "competency_area": "Funktionale Zusammenhänge – Funktionsbegriff und lineare Funktionen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-MAT-1",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Zahlen und Maße",
+   "parent": "HAK-MAT-1-L1",
+   "text": "Zahlenmengen N, Z, Q, R, Symbole der mathematischen Schreibweise, Rechnen mit Zahlen, Dezimal- und Gleitkommadarstellung, Prozentrechnung, Maßeinheiten",
+   "content_area": "Zahlen und Maße",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Algebra und Geometrie",
+   "parent": "HAK-MAT-1-L1",
+   "text": "Potenzen mit ganzzahligen Exponenten (inkl. Rechenregeln), Rechnen mit Termen, lineare Gleichungen",
+   "content_area": "Algebra und Geometrie",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Funktionale Zusammenhänge",
+   "parent": "HAK-MAT-1-L1",
+   "text": "Funktionsbegriff, Umkehrfunktion, lineare Funktionen",
+   "content_area": "Funktionale Zusammenhänge",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-MAT-2",
+   "kind": "klasse",
+   "name": "II. Jahrgang",
+   "parent": "HAK-MAT",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1",
+   "kind": "semester",
+   "name": "3. Semester – Kompetenzmodul 3",
+   "parent": "HAK-MAT-2"
+  },
+  {
+   "code": "HAK-MAT-2-S1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Algebra und Geometrie – Potenzen",
+   "parent": "HAK-MAT-2-S1",
+   "competency_area": "Algebra und Geometrie – Potenzen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B1-K1",
+   "kind": "kompetenz",
+   "name": "die Potenzschreibweise mit rationalen Exponenten beschreiben, die damit zusammenhängenden …",
+   "parent": "HAK-MAT-2-S1-B1",
+   "text": "die Potenzschreibweise mit rationalen Exponenten beschreiben, die damit zusammenhängenden Rechengesetze anwenden und begründen,",
+   "competency_area": "Algebra und Geometrie – Potenzen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B1-K2",
+   "kind": "kompetenz",
+   "name": "Potenz- und Wurzelschreibweise ineinander überführen",
+   "parent": "HAK-MAT-2-S1-B1",
+   "text": "Potenz- und Wurzelschreibweise ineinander überführen,",
+   "competency_area": "Algebra und Geometrie – Potenzen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B1-K3",
+   "kind": "kompetenz",
+   "name": "in Formeln, die auch Potenzen mit rationalen Exponenten enthalten, die gegenseitige …",
+   "parent": "HAK-MAT-2-S1-B1",
+   "text": "in Formeln, die auch Potenzen mit rationalen Exponenten enthalten, die gegenseitige Abhängigkeit der Größen interpretieren, erklären und nach einer variablen Größe explizieren.",
+   "competency_area": "Algebra und Geometrie – Potenzen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Algebra und Geometrie – Lineare Gleichungssysteme",
+   "parent": "HAK-MAT-2-S1",
+   "competency_area": "Algebra und Geometrie – Lineare Gleichungssysteme",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B2-K1",
+   "kind": "kompetenz",
+   "name": "lineare Gleichungssysteme in zwei Variablen für Aufgaben aus den Bereichen …",
+   "parent": "HAK-MAT-2-S1-B2",
+   "text": "lineare Gleichungssysteme in zwei Variablen für Aufgaben aus den Bereichen Prozentrechnung und Bewegung aufstellen,",
+   "competency_area": "Algebra und Geometrie – Lineare Gleichungssysteme",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B2-K2",
+   "kind": "kompetenz",
+   "name": "verschiedene Lösungsverfahren für lineare Gleichungssysteme in zwei Variablen anführen",
+   "parent": "HAK-MAT-2-S1-B2",
+   "text": "verschiedene Lösungsverfahren für lineare Gleichungssysteme in zwei Variablen anführen,",
+   "competency_area": "Algebra und Geometrie – Lineare Gleichungssysteme",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B2-K3",
+   "kind": "kompetenz",
+   "name": "lineare Gleichungssysteme in zwei Variablen lösen",
+   "parent": "HAK-MAT-2-S1-B2",
+   "text": "lineare Gleichungssysteme in zwei Variablen lösen,",
+   "competency_area": "Algebra und Geometrie – Lineare Gleichungssysteme",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B2-K4",
+   "kind": "kompetenz",
+   "name": "die Lösungsmenge linearer Gleichungssysteme interpretieren, dokumentieren (auch grafisch) …",
+   "parent": "HAK-MAT-2-S1-B2",
+   "text": "die Lösungsmenge linearer Gleichungssysteme interpretieren, dokumentieren (auch grafisch) und in Bezug auf die Aufgabenstellung argumentieren,",
+   "competency_area": "Algebra und Geometrie – Lineare Gleichungssysteme",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B2-K5",
+   "kind": "kompetenz",
+   "name": "Probleme aus verschiedenen Anwendungsbereichen in lineare Gleichungssysteme mit mehreren …",
+   "parent": "HAK-MAT-2-S1-B2",
+   "text": "Probleme aus verschiedenen Anwendungsbereichen in lineare Gleichungssysteme mit mehreren Variablen übersetzen, mit Hilfe von Technologieeinsatz lösen und das Ergebnis in Bezug auf die Problemstellung interpretieren und argumentieren.",
+   "competency_area": "Algebra und Geometrie – Lineare Gleichungssysteme",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Algebra und Geometrie – Matrizen",
+   "parent": "HAK-MAT-2-S1",
+   "competency_area": "Algebra und Geometrie – Matrizen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B3-K1",
+   "kind": "kompetenz",
+   "name": "die Matrizenschreibweise als Darstellungsform nennen, die Matrixelemente interpretieren …",
+   "parent": "HAK-MAT-2-S1-B3",
+   "text": "die Matrizenschreibweise als Darstellungsform nennen, die Matrixelemente interpretieren und deuten,",
+   "competency_area": "Algebra und Geometrie – Matrizen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B3-K2",
+   "kind": "kompetenz",
+   "name": "lineare Gleichungssysteme in Matrizenschreibweise darstellen, mit Hilfe der …",
+   "parent": "HAK-MAT-2-S1-B3",
+   "text": "lineare Gleichungssysteme in Matrizenschreibweise darstellen, mit Hilfe der Matrizenrechnung umformen und technologieunterstützt lösen,",
+   "competency_area": "Algebra und Geometrie – Matrizen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B3-K3",
+   "kind": "kompetenz",
+   "name": "Addition, Subtraktion, Multiplikation sowie die Berechnung der Inversen von Matrizen mit …",
+   "parent": "HAK-MAT-2-S1-B3",
+   "text": "Addition, Subtraktion, Multiplikation sowie die Berechnung der Inversen von Matrizen mit Hilfe der Technologie durchführen,",
+   "competency_area": "Algebra und Geometrie – Matrizen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B3-K4",
+   "kind": "kompetenz",
+   "name": "die Matrizenrechnung auf wirtschaftliche Aufgabenstellungen anwenden und Gozintographen …",
+   "parent": "HAK-MAT-2-S1-B3",
+   "text": "die Matrizenrechnung auf wirtschaftliche Aufgabenstellungen anwenden und Gozintographen deuten.",
+   "competency_area": "Algebra und Geometrie – Matrizen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Funktionale Zusammenhänge – Lineare Funktionen und lineare Gleichungen",
+   "parent": "HAK-MAT-2-S1",
+   "competency_area": "Funktionale Zusammenhänge – Lineare Funktionen und lineare Gleichungen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B4-K1",
+   "kind": "kompetenz",
+   "name": "den Zusammenhang zwischen linearer Funktion und linearer Gleichung in zwei Variablen …",
+   "parent": "HAK-MAT-2-S1-B4",
+   "text": "den Zusammenhang zwischen linearer Funktion und linearer Gleichung in zwei Variablen beschreiben,",
+   "competency_area": "Funktionale Zusammenhänge – Lineare Funktionen und lineare Gleichungen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-B4-K2",
+   "kind": "kompetenz",
+   "name": "die Lösungsmenge eines linearen Gleichungssystems in zwei Variablen als Schnittpunkt …",
+   "parent": "HAK-MAT-2-S1-B4",
+   "text": "die Lösungsmenge eines linearen Gleichungssystems in zwei Variablen als Schnittpunkt zweier Geraden interpretieren.",
+   "competency_area": "Funktionale Zusammenhänge – Lineare Funktionen und lineare Gleichungen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-MAT-2-S1",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Algebra und Geometrie",
+   "parent": "HAK-MAT-2-S1-L1",
+   "text": "Potenzen mit rationalen Exponenten, lineare Gleichungssysteme in zwei Variablen, Matrizen, lineare Gleichungssysteme in mehr als zwei Variablen",
+   "content_area": "Algebra und Geometrie",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Funktionale Zusammenhänge",
+   "parent": "HAK-MAT-2-S1-L1",
+   "text": "Lineare Funktionen",
+   "content_area": "Funktionale Zusammenhänge",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2",
+   "kind": "semester",
+   "name": "4. Semester – Kompetenzmodul 4",
+   "parent": "HAK-MAT-2"
+  },
+  {
+   "code": "HAK-MAT-2-S2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Zahlen und Maße – Winkelmaße",
+   "parent": "HAK-MAT-2-S2",
+   "competency_area": "Zahlen und Maße – Winkelmaße",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-B1-K1",
+   "kind": "kompetenz",
+   "name": "die verschiedenen Winkelmaße nennen und mit Altgrad und Bogenmaß rechnen",
+   "parent": "HAK-MAT-2-S2-B1",
+   "text": "die verschiedenen Winkelmaße nennen und mit Altgrad und Bogenmaß rechnen.",
+   "competency_area": "Zahlen und Maße – Winkelmaße",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Algebra und Geometrie – Quadratische Gleichungen",
+   "parent": "HAK-MAT-2-S2",
+   "competency_area": "Algebra und Geometrie – Quadratische Gleichungen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-B2-K1",
+   "kind": "kompetenz",
+   "name": "quadratische Gleichungen in einer Variablen lösen",
+   "parent": "HAK-MAT-2-S2-B2",
+   "text": "quadratische Gleichungen in einer Variablen lösen,",
+   "competency_area": "Algebra und Geometrie – Quadratische Gleichungen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-B2-K2",
+   "kind": "kompetenz",
+   "name": "die Lösungsmenge einer quadratischen Gleichung in einer Variablen über der Grundmenge R …",
+   "parent": "HAK-MAT-2-S2-B2",
+   "text": "die Lösungsmenge einer quadratischen Gleichung in einer Variablen über der Grundmenge R interpretieren, dokumentieren und in Bezug auf die Aufgabenstellung argumentieren.",
+   "competency_area": "Algebra und Geometrie – Quadratische Gleichungen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-B3",
+   "kind": "kompetenzbereich",
+   "name": "Algebra und Geometrie – Sinus, Cosinus, Tangens im rechtwinkeligen Dreieck",
+   "parent": "HAK-MAT-2-S2",
+   "competency_area": "Algebra und Geometrie – Sinus, Cosinus, Tangens im rechtwinkeligen Dreieck",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-B3-K1",
+   "kind": "kompetenz",
+   "name": "Sinus, Cosinus und Tangens eines Winkels als Seitenverhältnisse im rechtwinkeligen …",
+   "parent": "HAK-MAT-2-S2-B3",
+   "text": "Sinus, Cosinus und Tangens eines Winkels als Seitenverhältnisse im rechtwinkeligen Dreieck modellieren, interpretieren und argumentieren,",
+   "competency_area": "Algebra und Geometrie – Sinus, Cosinus, Tangens im rechtwinkeligen Dreieck",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-B3-K2",
+   "kind": "kompetenz",
+   "name": "zumindest rechtwinkelige Dreiecke mit Hilfe der Winkelfunktionen auflösen",
+   "parent": "HAK-MAT-2-S2-B3",
+   "text": "zumindest rechtwinkelige Dreiecke mit Hilfe der Winkelfunktionen auflösen.",
+   "competency_area": "Algebra und Geometrie – Sinus, Cosinus, Tangens im rechtwinkeligen Dreieck",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-B4",
+   "kind": "kompetenzbereich",
+   "name": "Funktionale Zusammenhänge – Potenz-, Polynom- und Winkelfunktionen",
+   "parent": "HAK-MAT-2-S2",
+   "competency_area": "Funktionale Zusammenhänge – Potenz-, Polynom- und Winkelfunktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-B4-K1",
+   "kind": "kompetenz",
+   "name": "Potenz- und Polynomfunktionen grafisch darstellen und ihre Eigenschaften interpretieren",
+   "parent": "HAK-MAT-2-S2-B4",
+   "text": "Potenz- und Polynomfunktionen grafisch darstellen und ihre Eigenschaften interpretieren,",
+   "competency_area": "Funktionale Zusammenhänge – Potenz-, Polynom- und Winkelfunktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-B4-K2",
+   "kind": "kompetenz",
+   "name": "quadratische Funktionen aus drei gegebenen Punkten bzw. aus dem Scheitel und einem …",
+   "parent": "HAK-MAT-2-S2-B4",
+   "text": "quadratische Funktionen aus drei gegebenen Punkten bzw. aus dem Scheitel und einem weiteren Punkt des Funktionsgraphen aufstellen,",
+   "competency_area": "Funktionale Zusammenhänge – Potenz-, Polynom- und Winkelfunktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-B4-K3",
+   "kind": "kompetenz",
+   "name": "die Bedeutung der Koeffizienten einer quadratischen Funktion f mit f(x)=ax^2+bx+c auf …",
+   "parent": "HAK-MAT-2-S2-B4",
+   "text": "die Bedeutung der Koeffizienten einer quadratischen Funktion f mit f(x)=ax^2+bx+c auf deren Verlauf ihres Graphen beschreiben und interpretieren,",
+   "competency_area": "Funktionale Zusammenhänge – Potenz-, Polynom- und Winkelfunktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-B4-K4",
+   "kind": "kompetenz",
+   "name": "den Zusammenhang zwischen der Lösungsmenge einer quadratischen Gleichung und den …",
+   "parent": "HAK-MAT-2-S2-B4",
+   "text": "den Zusammenhang zwischen der Lösungsmenge einer quadratischen Gleichung und den Nullstellen einer quadratischen Funktion interpretieren und damit argumentieren,",
+   "competency_area": "Funktionale Zusammenhänge – Potenz-, Polynom- und Winkelfunktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-B4-K5",
+   "kind": "kompetenz",
+   "name": "das Modell der quadratischen Funktion in unterschiedlichen Kontexten, insbesondere mit …",
+   "parent": "HAK-MAT-2-S2-B4",
+   "text": "das Modell der quadratischen Funktion in unterschiedlichen Kontexten, insbesondere mit Wirtschaftsbezug, anwenden,",
+   "competency_area": "Funktionale Zusammenhänge – Potenz-, Polynom- und Winkelfunktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-B4-K6",
+   "kind": "kompetenz",
+   "name": "mit Hilfe des Einheitskreises die Sinus-, Cosinus- und Tangensfunktion eines Winkels …",
+   "parent": "HAK-MAT-2-S2-B4",
+   "text": "mit Hilfe des Einheitskreises die Sinus-, Cosinus- und Tangensfunktion eines Winkels modellieren, interpretieren und grafisch darstellen.",
+   "competency_area": "Funktionale Zusammenhänge – Potenz-, Polynom- und Winkelfunktionen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-MAT-2-S2",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Zahlen und Maße",
+   "parent": "HAK-MAT-2-S2-L1",
+   "text": "Altgrad und Bogenmaß (rad)",
+   "content_area": "Zahlen und Maße",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Algebra und Geometrie",
+   "parent": "HAK-MAT-2-S2-L1",
+   "text": "Quadratische Gleichungen, Sinus, Cosinus, Tangens im rechtwinkeligen Dreieck",
+   "content_area": "Algebra und Geometrie",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-2-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Funktionale Zusammenhänge",
+   "parent": "HAK-MAT-2-S2-L1",
+   "text": "Potenzfunktionen, quadratische Funktionen und Polynomfunktionen höheren Grades, Sinus, Cosinus, Tangens im Einheitskreis",
+   "content_area": "Funktionale Zusammenhänge",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-MAT-3",
+   "kind": "klasse",
+   "name": "III. Jahrgang",
+   "parent": "HAK-MAT",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1",
+   "kind": "semester",
+   "name": "5. Semester – Kompetenzmodul 5",
+   "parent": "HAK-MAT-3"
+  },
+  {
+   "code": "HAK-MAT-3-S1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Algebra und Geometrie – Logarithmen und Exponentialgleichungen",
+   "parent": "HAK-MAT-3-S1",
+   "competency_area": "Algebra und Geometrie – Logarithmen und Exponentialgleichungen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B1-K1",
+   "kind": "kompetenz",
+   "name": "den Begriff des Logarithmus beschreiben",
+   "parent": "HAK-MAT-3-S1-B1",
+   "text": "den Begriff des Logarithmus beschreiben,",
+   "competency_area": "Algebra und Geometrie – Logarithmen und Exponentialgleichungen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B1-K2",
+   "kind": "kompetenz",
+   "name": "logarithmische Rechengesetze anwenden",
+   "parent": "HAK-MAT-3-S1-B1",
+   "text": "logarithmische Rechengesetze anwenden,",
+   "competency_area": "Algebra und Geometrie – Logarithmen und Exponentialgleichungen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B1-K3",
+   "kind": "kompetenz",
+   "name": "mit Hilfe des Logarithmus Exponentialgleichungen vom Typ a^(k*x)=b nach der Variablen x …",
+   "parent": "HAK-MAT-3-S1-B1",
+   "text": "mit Hilfe des Logarithmus Exponentialgleichungen vom Typ a^(k*x)=b nach der Variablen x auflösen,",
+   "competency_area": "Algebra und Geometrie – Logarithmen und Exponentialgleichungen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B1-K4",
+   "kind": "kompetenz",
+   "name": "komplexere Exponentialgleichungen mit Einsatz von Technologie lösen",
+   "parent": "HAK-MAT-3-S1-B1",
+   "text": "komplexere Exponentialgleichungen mit Einsatz von Technologie lösen.",
+   "competency_area": "Algebra und Geometrie – Logarithmen und Exponentialgleichungen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Funktionale Zusammenhänge – Wachstums- und Abnahmeprozesse",
+   "parent": "HAK-MAT-3-S1",
+   "competency_area": "Funktionale Zusammenhänge – Wachstums- und Abnahmeprozesse",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B2-K1",
+   "kind": "kompetenz",
+   "name": "den Begriff der Exponentialfunktion und deren Eigenschaften beschreiben",
+   "parent": "HAK-MAT-3-S1-B2",
+   "text": "den Begriff der Exponentialfunktion und deren Eigenschaften beschreiben,",
+   "competency_area": "Funktionale Zusammenhänge – Wachstums- und Abnahmeprozesse",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B2-K2",
+   "kind": "kompetenz",
+   "name": "den Begriff der Logarithmusfunktion als Umkehrfunktion der Exponentialfunktion und ihre …",
+   "parent": "HAK-MAT-3-S1-B2",
+   "text": "den Begriff der Logarithmusfunktion als Umkehrfunktion der Exponentialfunktion und ihre Eigenschaften beschreiben,",
+   "competency_area": "Funktionale Zusammenhänge – Wachstums- und Abnahmeprozesse",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B2-K3",
+   "kind": "kompetenz",
+   "name": "Exponentialfunktionen grafisch darstellen",
+   "parent": "HAK-MAT-3-S1-B2",
+   "text": "Exponentialfunktionen grafisch darstellen,",
+   "competency_area": "Funktionale Zusammenhänge – Wachstums- und Abnahmeprozesse",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B2-K4",
+   "kind": "kompetenz",
+   "name": "Exponentialfunktionen als Modelle für Zu- und Abnahmeprozesse interpretieren und damit …",
+   "parent": "HAK-MAT-3-S1-B2",
+   "text": "Exponentialfunktionen als Modelle für Zu- und Abnahmeprozesse interpretieren und damit Berechnungen durchführen,",
+   "competency_area": "Funktionale Zusammenhänge – Wachstums- und Abnahmeprozesse",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B2-K5",
+   "kind": "kompetenz",
+   "name": "die Bedeutung der einzelnen Parameter der Exponentialfunktionen der Form f(x)=a*b^x bzw. …",
+   "parent": "HAK-MAT-3-S1-B2",
+   "text": "die Bedeutung der einzelnen Parameter der Exponentialfunktionen der Form f(x)=a*b^x bzw. f(x)=a*e^(k*x) beschreiben, diese in unterschiedlichen Kontexten deuten und damit argumentieren,",
+   "competency_area": "Funktionale Zusammenhänge – Wachstums- und Abnahmeprozesse",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Funktionale Zusammenhänge – Wachstumsmodelle",
+   "parent": "HAK-MAT-3-S1",
+   "competency_area": "Funktionale Zusammenhänge – Wachstumsmodelle",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B3-K1",
+   "kind": "kompetenz",
+   "name": "die stetigen Modelle für lineares, exponentielles und logistisches Wachstum sowie das …",
+   "parent": "HAK-MAT-3-S1-B3",
+   "text": "die stetigen Modelle für lineares, exponentielles und logistisches Wachstum sowie das stetige Modell für beschränktes Wachstum der Form f(x)=S-a*e^(-lambda*x) bzw. f(x)=S+a*e^(-lambda*x) beschreiben,",
+   "competency_area": "Funktionale Zusammenhänge – Wachstumsmodelle",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B3-K2",
+   "kind": "kompetenz",
+   "name": "mit diesen Modellen rechnen, diese grafisch darstellen, interpretieren und im allgemeinen …",
+   "parent": "HAK-MAT-3-S1-B3",
+   "text": "mit diesen Modellen rechnen, diese grafisch darstellen, interpretieren und im allgemeinen und wirtschaftlichen Kontext deuten,",
+   "competency_area": "Funktionale Zusammenhänge – Wachstumsmodelle",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B3-K3",
+   "kind": "kompetenz",
+   "name": "die verschiedenen Modelle strukturell vergleichen und die Angemessenheit bewerten",
+   "parent": "HAK-MAT-3-S1-B3",
+   "text": "die verschiedenen Modelle strukturell vergleichen und die Angemessenheit bewerten",
+   "competency_area": "Funktionale Zusammenhänge – Wachstumsmodelle",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Funktionale Zusammenhänge – Zins- und Zinseszinsrechnung",
+   "parent": "HAK-MAT-3-S1",
+   "competency_area": "Funktionale Zusammenhänge – Zins- und Zinseszinsrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B4-K1",
+   "kind": "kompetenz",
+   "name": "die einfache dekursive Verzinsung und die dekursive Verzinsung mittels Zinseszins für …",
+   "parent": "HAK-MAT-3-S1-B4",
+   "text": "die einfache dekursive Verzinsung und die dekursive Verzinsung mittels Zinseszins für ganz\u0002und unterjährige Zinsperioden sowie die stetige Verzinsung beschreiben,",
+   "competency_area": "Funktionale Zusammenhänge – Zins- und Zinseszinsrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-B4-K2",
+   "kind": "kompetenz",
+   "name": "diese Verzinsungsmodelle kontextbezogen anwenden",
+   "parent": "HAK-MAT-3-S1-B4",
+   "text": "diese Verzinsungsmodelle kontextbezogen anwenden.",
+   "competency_area": "Funktionale Zusammenhänge – Zins- und Zinseszinsrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-MAT-3-S1",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Algebra und Geometrie",
+   "parent": "HAK-MAT-3-S1-L1",
+   "text": "Logarithmen und zugehörige Rechenregeln, Exponentialgleichungen",
+   "content_area": "Algebra und Geometrie",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Funktionale Zusammenhänge",
+   "parent": "HAK-MAT-3-S1-L1",
+   "text": "Wachstums- und Abnahmeprozesse (Exponentialfunktion, Logarithmusfunktion, lineares, exponentielles, beschränktes und logistisches Wachstum im stetigen Modell), Zins- und Zinseszinsrechnung (dekursive Verzinsung – ganzjährige und unterjährige Verzinsung, einfacher Zins, Zinseszins, stetige Verzinsung)",
+   "content_area": "Funktionale Zusammenhänge",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2",
+   "kind": "semester",
+   "name": "6. Semester – Kompetenzmodul 6",
+   "parent": "HAK-MAT-3"
+  },
+  {
+   "code": "HAK-MAT-3-S2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Funktionale Zusammenhänge – Rentenrechnung und Schuldtilgung",
+   "parent": "HAK-MAT-3-S2",
+   "competency_area": "Funktionale Zusammenhänge – Rentenrechnung und Schuldtilgung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2-B1-K1",
+   "kind": "kompetenz",
+   "name": "den Zusammenhang zwischen geometrischen Reihen und der Rentenrechnung beschreiben",
+   "parent": "HAK-MAT-3-S2-B1",
+   "text": "den Zusammenhang zwischen geometrischen Reihen und der Rentenrechnung beschreiben,",
+   "competency_area": "Funktionale Zusammenhänge – Rentenrechnung und Schuldtilgung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2-B1-K2",
+   "kind": "kompetenz",
+   "name": "die charakteristischen Größen der Rentenrechnung berechnen, interpretieren und im Kontext …",
+   "parent": "HAK-MAT-3-S2-B1",
+   "text": "die charakteristischen Größen der Rentenrechnung berechnen, interpretieren und im Kontext deuten,",
+   "competency_area": "Funktionale Zusammenhänge – Rentenrechnung und Schuldtilgung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2-B1-K3",
+   "kind": "kompetenz",
+   "name": "den Begriff des Effektivzinssatzes erklären, mittels Technologie berechnen und das …",
+   "parent": "HAK-MAT-3-S2-B1",
+   "text": "den Begriff des Effektivzinssatzes erklären, mittels Technologie berechnen und das Ergebnis interpretieren,",
+   "competency_area": "Funktionale Zusammenhänge – Rentenrechnung und Schuldtilgung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2-B1-K4",
+   "kind": "kompetenz",
+   "name": "Zahlungsströme grafisch darstellen und gegebene grafische Darstellungen des …",
+   "parent": "HAK-MAT-3-S2-B1",
+   "text": "Zahlungsströme grafisch darstellen und gegebene grafische Darstellungen des Zahlungsstroms interpretieren,",
+   "competency_area": "Funktionale Zusammenhänge – Rentenrechnung und Schuldtilgung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2-B1-K5",
+   "kind": "kompetenz",
+   "name": "die Annuitätenschuld als eine Möglichkeit der Schuldtilgung beschreiben und diese auf …",
+   "parent": "HAK-MAT-3-S2-B1",
+   "text": "die Annuitätenschuld als eine Möglichkeit der Schuldtilgung beschreiben und diese auf wirtschaftliche Aufgabenstellungen anwenden,",
+   "competency_area": "Funktionale Zusammenhänge – Rentenrechnung und Schuldtilgung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2-B1-K6",
+   "kind": "kompetenz",
+   "name": "Rentenumwandlungen und Schuldkonvertierungen durchführen und deren Ergebnisse …",
+   "parent": "HAK-MAT-3-S2-B1",
+   "text": "Rentenumwandlungen und Schuldkonvertierungen durchführen und deren Ergebnisse interpretieren,",
+   "competency_area": "Funktionale Zusammenhänge – Rentenrechnung und Schuldtilgung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Funktionale Zusammenhänge – Investitionsrechnung",
+   "parent": "HAK-MAT-3-S2",
+   "competency_area": "Funktionale Zusammenhänge – Investitionsrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2-B2-K1",
+   "kind": "kompetenz",
+   "name": "verschiedene Methoden der dynamischen Investitionsrechnung, zumindest Kapitalwertmethode …",
+   "parent": "HAK-MAT-3-S2-B2",
+   "text": "verschiedene Methoden der dynamischen Investitionsrechnung, zumindest Kapitalwertmethode, Methode des internen Zinssatzes und Methode des modifizierten internen Zinssatzes beschreiben,",
+   "competency_area": "Funktionale Zusammenhänge – Investitionsrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2-B2-K2",
+   "kind": "kompetenz",
+   "name": "mit diesen Methoden Investitionsanalysen durchführen und Investitionen bewerten",
+   "parent": "HAK-MAT-3-S2-B2",
+   "text": "mit diesen Methoden Investitionsanalysen durchführen und Investitionen bewerten,",
+   "competency_area": "Funktionale Zusammenhänge – Investitionsrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2-B3",
+   "kind": "kompetenzbereich",
+   "name": "Funktionale Zusammenhänge – Kurs- und Rentabilitätsrechnung",
+   "parent": "HAK-MAT-3-S2",
+   "competency_area": "Funktionale Zusammenhänge – Kurs- und Rentabilitätsrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2-B3-K1",
+   "kind": "kompetenz",
+   "name": "die Begriffe der Kurs- und Rentabilitätsrechnung erklären und damit argumentieren",
+   "parent": "HAK-MAT-3-S2-B3",
+   "text": "die Begriffe der Kurs- und Rentabilitätsrechnung erklären und damit argumentieren,",
+   "competency_area": "Funktionale Zusammenhänge – Kurs- und Rentabilitätsrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2-B3-K2",
+   "kind": "kompetenz",
+   "name": "Rendite, Barwert, Kauf- und Verkaufspreis (am Tag der Kuponzahlung), zumindest bei …",
+   "parent": "HAK-MAT-3-S2-B3",
+   "text": "Rendite, Barwert, Kauf- und Verkaufspreis (am Tag der Kuponzahlung), zumindest bei jährlicher Kuponzahlung, auf Basis festverzinslicher Wertpapiere berechnen, interpretieren und im Kontext deuten.",
+   "competency_area": "Funktionale Zusammenhänge – Kurs- und Rentabilitätsrechnung",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-MAT-3-S2",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-3-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Funktionale Zusammenhänge",
+   "parent": "HAK-MAT-3-S2-L1",
+   "text": "Rentenrechnung, Schuldentilgung, Investitionsrechnung, Kurs- und Rentabilitätsrechnung",
+   "content_area": "Funktionale Zusammenhänge",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-MAT-4",
+   "kind": "klasse",
+   "name": "IV. Jahrgang",
+   "parent": "HAK-MAT",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1",
+   "kind": "semester",
+   "name": "7. Semester – Kompetenzmodul 7",
+   "parent": "HAK-MAT-4"
+  },
+  {
+   "code": "HAK-MAT-4-S1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Analysis – Differenzen- und Differentialquotient",
+   "parent": "HAK-MAT-4-S1",
+   "competency_area": "Analysis – Differenzen- und Differentialquotient",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B1-K1",
+   "kind": "kompetenz",
+   "name": "die Begriffe Grenzwert und Stetigkeit von Funktionen intuitiv erfassen und damit …",
+   "parent": "HAK-MAT-4-S1-B1",
+   "text": "die Begriffe Grenzwert und Stetigkeit von Funktionen intuitiv erfassen und damit argumentieren,",
+   "competency_area": "Analysis – Differenzen- und Differentialquotient",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B1-K2",
+   "kind": "kompetenz",
+   "name": "den Zusammenhang zwischen Differenzen- und Differenzialquotienten beschreiben und diese …",
+   "parent": "HAK-MAT-4-S1-B1",
+   "text": "den Zusammenhang zwischen Differenzen- und Differenzialquotienten beschreiben und diese sowohl als mittlere/lokale Änderungsraten als auch als Sekanten-/Tangentensteigung interpretieren,",
+   "competency_area": "Analysis – Differenzen- und Differentialquotient",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B1-K3",
+   "kind": "kompetenz",
+   "name": "den Differenzenquotienten auf Problemstellungen anwenden, Berechnungen durchführen und …",
+   "parent": "HAK-MAT-4-S1-B1",
+   "text": "den Differenzenquotienten auf Problemstellungen anwenden, Berechnungen durchführen und die Ergebnisse interpretieren.",
+   "competency_area": "Analysis – Differenzen- und Differentialquotient",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Analysis – Ableitungsfunktionen und Ableitungsregeln",
+   "parent": "HAK-MAT-4-S1",
+   "competency_area": "Analysis – Ableitungsfunktionen und Ableitungsregeln",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B2-K1",
+   "kind": "kompetenz",
+   "name": "den Begriff der Ableitungsfunktion beschreiben, diese grafisch darstellen und deren …",
+   "parent": "HAK-MAT-4-S1-B2",
+   "text": "den Begriff der Ableitungsfunktion beschreiben, diese grafisch darstellen und deren Verlauf deuten,",
+   "competency_area": "Analysis – Ableitungsfunktionen und Ableitungsregeln",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B2-K2",
+   "kind": "kompetenz",
+   "name": "Ableitungsfunktionen zur Beschreibung von Sachverhalten aus unterschiedlichen …",
+   "parent": "HAK-MAT-4-S1-B2",
+   "text": "Ableitungsfunktionen zur Beschreibung von Sachverhalten aus unterschiedlichen Themengebieten einsetzen, damit lokale Änderungsraten berechnen und interpretieren,",
+   "competency_area": "Analysis – Ableitungsfunktionen und Ableitungsregeln",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B2-K3",
+   "kind": "kompetenz",
+   "name": "mit Hilfe der Summen-, Faktor-, Ketten-, Produkt- und Quotientenregel, Potenz- und …",
+   "parent": "HAK-MAT-4-S1-B2",
+   "text": "mit Hilfe der Summen-, Faktor-, Ketten-, Produkt- und Quotientenregel, Potenz- und Polynomfunktionen sowie Exponentialfunktionen zur Basis e und die natürlichen Logarithmusfunktionen ableiten,",
+   "competency_area": "Analysis – Ableitungsfunktionen und Ableitungsregeln",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B2-K4",
+   "kind": "kompetenz",
+   "name": "Eigenschaften von Funktionen, insbesondere Monotonie- und Krümmungsverhalten mit Hilfe …",
+   "parent": "HAK-MAT-4-S1-B2",
+   "text": "Eigenschaften von Funktionen, insbesondere Monotonie- und Krümmungsverhalten mit Hilfe der Ableitungsfunktionen erklären und berechnen.",
+   "competency_area": "Analysis – Ableitungsfunktionen und Ableitungsregeln",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B3",
+   "kind": "kompetenzbereich",
+   "name": "Analysis – Optimierung und Regressionsrechnung",
+   "parent": "HAK-MAT-4-S1",
+   "competency_area": "Analysis – Optimierung und Regressionsrechnung",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B3-K1",
+   "kind": "kompetenz",
+   "name": "die Idee der Optimierung unter einschränkenden Bedingungen erklären und anhand des …",
+   "parent": "HAK-MAT-4-S1-B3",
+   "text": "die Idee der Optimierung unter einschränkenden Bedingungen erklären und anhand des Modells: Hauptbedingung a*b unter Nebenbedingung a+b=konst. bzw. Hauptbedingung a+b unter Nebenbedingung a*b=konst., modellieren und berechnen,",
+   "competency_area": "Analysis – Optimierung und Regressionsrechnung",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B3-K2",
+   "kind": "kompetenz",
+   "name": "das Prinzip der Methode der kleinsten Quadrate und die zugrundeliegenden Ideen erläutern …",
+   "parent": "HAK-MAT-4-S1-B3",
+   "text": "das Prinzip der Methode der kleinsten Quadrate und die zugrundeliegenden Ideen erläutern und die Güte der Ergebnisse bewerten,",
+   "competency_area": "Analysis – Optimierung und Regressionsrechnung",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B3-K3",
+   "kind": "kompetenz",
+   "name": "mit Technologieeinsatz für vorgegebene Modellfunktionen mit Hilfe der Methode der …",
+   "parent": "HAK-MAT-4-S1-B3",
+   "text": "mit Technologieeinsatz für vorgegebene Modellfunktionen mit Hilfe der Methode der kleinsten Quadrate Funktionsgleichungen bestimmen.",
+   "competency_area": "Analysis – Optimierung und Regressionsrechnung",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B4",
+   "kind": "kompetenzbereich",
+   "name": "Analysis – Kosten- und Preistheorie",
+   "parent": "HAK-MAT-4-S1",
+   "competency_area": "Analysis – Kosten- und Preistheorie",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B4-K1",
+   "kind": "kompetenz",
+   "name": "Nachfrage- und Angebotsfunktionen bestimmen, deren Eigenschaften erklären und markante …",
+   "parent": "HAK-MAT-4-S1-B4",
+   "text": "Nachfrage- und Angebotsfunktionen bestimmen, deren Eigenschaften erklären und markante Punkte (Mindestpreis, Höchstpreis, Sättigungsmenge, Marktgleichgewicht) ermitteln, grafisch darstellen und interpretieren,",
+   "competency_area": "Analysis – Kosten- und Preistheorie",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B4-K2",
+   "kind": "kompetenz",
+   "name": "die Begriffe der (Punkt-)Elastizität und Bogenelastizität im wirtschaftlichen Kontext …",
+   "parent": "HAK-MAT-4-S1-B4",
+   "text": "die Begriffe der (Punkt-)Elastizität und Bogenelastizität im wirtschaftlichen Kontext erklären,",
+   "competency_area": "Analysis – Kosten- und Preistheorie",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B4-K3",
+   "kind": "kompetenz",
+   "name": "Elastizitäten berechnen und die Ergebnisse interpretieren",
+   "parent": "HAK-MAT-4-S1-B4",
+   "text": "Elastizitäten berechnen und die Ergebnisse interpretieren,",
+   "competency_area": "Analysis – Kosten- und Preistheorie",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B4-K4",
+   "kind": "kompetenz",
+   "name": "den Begriff und die Eigenschaften der ertragsgesetzlichen Kostenfunktion beschreiben und …",
+   "parent": "HAK-MAT-4-S1-B4",
+   "text": "den Begriff und die Eigenschaften der ertragsgesetzlichen Kostenfunktion beschreiben und diese als Polynomfunktion 3. Grades berechnen,",
+   "competency_area": "Analysis – Kosten- und Preistheorie",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B4-K5",
+   "kind": "kompetenz",
+   "name": "die typischen Kostenverläufe (degressiv, progressiv) beschreiben und interpretieren",
+   "parent": "HAK-MAT-4-S1-B4",
+   "text": "die typischen Kostenverläufe (degressiv, progressiv) beschreiben und interpretieren,",
+   "competency_area": "Analysis – Kosten- und Preistheorie",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B4-K6",
+   "kind": "kompetenz",
+   "name": "typische Begriffe der Kosten- und Preistheorie (insbesondere Kostenkehre …",
+   "parent": "HAK-MAT-4-S1-B4",
+   "text": "typische Begriffe der Kosten- und Preistheorie (insbesondere Kostenkehre, Betriebsoptimum, langfristige Preisuntergrenze, Betriebsminimum, kurzfristige Preisuntergrenze, Break Even Point, Gewinnzone, Cournot’scher Punkt, Deckungsbeitrag, Erlösmaximum) berechnen und interpretieren,",
+   "competency_area": "Analysis – Kosten- und Preistheorie",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-B4-K7",
+   "kind": "kompetenz",
+   "name": "den Begriff der Grenzfunktion beschreiben, diese im wirtschaftlichen Kontext erklären und …",
+   "parent": "HAK-MAT-4-S1-B4",
+   "text": "den Begriff der Grenzfunktion beschreiben, diese im wirtschaftlichen Kontext erklären und anwenden.",
+   "competency_area": "Analysis – Kosten- und Preistheorie",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-MAT-4-S1",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Analysis",
+   "parent": "HAK-MAT-4-S1-L1",
+   "text": "Intuitiver Grenzwertbegriff, Intuitiver Begriff der Stetigkeit, Differenzen- und Differentialquotient, Ableitungsregeln, Eigenschaften von Funktionen, Regressionsrechnung, Kosten- und Preistheorie",
+   "content_area": "Analysis",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2",
+   "kind": "semester",
+   "name": "8. Semester – Kompetenzmodul 8",
+   "parent": "HAK-MAT-4"
+  },
+  {
+   "code": "HAK-MAT-4-S2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Analysis – Stammfunktionen",
+   "parent": "HAK-MAT-4-S2",
+   "competency_area": "Analysis – Stammfunktionen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B1-K1",
+   "kind": "kompetenz",
+   "name": "den Begriff der Stammfunktion sowie den Zusammenhang zwischen Funktion, Stammfunktion und …",
+   "parent": "HAK-MAT-4-S2-B1",
+   "text": "den Begriff der Stammfunktion sowie den Zusammenhang zwischen Funktion, Stammfunktion und ihrer grafischen Darstellung beschreiben,",
+   "competency_area": "Analysis – Stammfunktionen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B1-K2",
+   "kind": "kompetenz",
+   "name": "den Begriff des unbestimmten Integrals und den Zusammenhang mit der Stammfunktion …",
+   "parent": "HAK-MAT-4-S2-B1",
+   "text": "den Begriff des unbestimmten Integrals und den Zusammenhang mit der Stammfunktion beschreiben,",
+   "competency_area": "Analysis – Stammfunktionen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B1-K3",
+   "kind": "kompetenz",
+   "name": "Stammfunktionen von Potenz- und Polynomfunktionen sowie der Funktionen f mit f(x)=1/x und …",
+   "parent": "HAK-MAT-4-S2-B1",
+   "text": "Stammfunktionen von Potenz- und Polynomfunktionen sowie der Funktionen f mit f(x)=1/x und g mit g(x)=a*e^(k*x) mit Hilfe der notwendigen Integrationsregeln berechnen.",
+   "competency_area": "Analysis – Stammfunktionen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B2",
+   "kind": "kompetenzbereich",
+   "name": "Analysis – Integral und Integralrechnung",
+   "parent": "HAK-MAT-4-S2",
+   "competency_area": "Analysis – Integral und Integralrechnung",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B2-K1",
+   "kind": "kompetenz",
+   "name": "den Begriff des bestimmten Integrals auf Grundlage des intuitiven Grenzwertbegriffes …",
+   "parent": "HAK-MAT-4-S2-B2",
+   "text": "den Begriff des bestimmten Integrals auf Grundlage des intuitiven Grenzwertbegriffes erläutern, diesen als Grenzwert einer Summe von Produkten deuten und beschreiben,",
+   "competency_area": "Analysis – Integral und Integralrechnung",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B2-K2",
+   "kind": "kompetenz",
+   "name": "das bestimmte Integral als orientierten Flächeninhalt deuten und damit Berechnungen …",
+   "parent": "HAK-MAT-4-S2-B2",
+   "text": "das bestimmte Integral als orientierten Flächeninhalt deuten und damit Berechnungen durchführen,",
+   "competency_area": "Analysis – Integral und Integralrechnung",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B2-K3",
+   "kind": "kompetenz",
+   "name": "die Integralrechnung auf wirtschaftliche Anwendungen, insbesondere auf Stammfunktionen …",
+   "parent": "HAK-MAT-4-S2-B2",
+   "text": "die Integralrechnung auf wirtschaftliche Anwendungen, insbesondere auf Stammfunktionen von Grenzfunktionen und kontinuierliche Zahlungsströme anwenden, Berechnungen durchführen sowie die Ergebnisse interpretieren und damit argumentieren.",
+   "competency_area": "Analysis – Integral und Integralrechnung",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B3",
+   "kind": "kompetenzbereich",
+   "name": "Stochastik – Daten und Darstellung von Daten",
+   "parent": "HAK-MAT-4-S2",
+   "competency_area": "Stochastik – Daten und Darstellung von Daten",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B3-K1",
+   "kind": "kompetenz",
+   "name": "die unterschiedlichen Datentypen (nominalskaliert, ordinalskaliert, metrisch) beschreiben …",
+   "parent": "HAK-MAT-4-S2-B3",
+   "text": "die unterschiedlichen Datentypen (nominalskaliert, ordinalskaliert, metrisch) beschreiben und erhobene Daten entsprechend zuordnen,",
+   "competency_area": "Stochastik – Daten und Darstellung von Daten",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B3-K2",
+   "kind": "kompetenz",
+   "name": "Daten erheben, Häufigkeitsverteilungen (absolute und relative Häufigkeiten) grafisch …",
+   "parent": "HAK-MAT-4-S2-B3",
+   "text": "Daten erheben, Häufigkeitsverteilungen (absolute und relative Häufigkeiten) grafisch darstellen und interpretieren,",
+   "competency_area": "Stochastik – Daten und Darstellung von Daten",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B3-K3",
+   "kind": "kompetenz",
+   "name": "die Auswahl einer bestimmten Darstellungsweise problembezogen argumentieren",
+   "parent": "HAK-MAT-4-S2-B3",
+   "text": "die Auswahl einer bestimmten Darstellungsweise problembezogen argumentieren.",
+   "competency_area": "Stochastik – Daten und Darstellung von Daten",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B4",
+   "kind": "kompetenzbereich",
+   "name": "Stochastik – Zentral- und Streumaße",
+   "parent": "HAK-MAT-4-S2",
+   "competency_area": "Stochastik – Zentral- und Streumaße",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B4-K1",
+   "kind": "kompetenz",
+   "name": "verschiedene Zentralmaße (arithmetisches Mittel, Median, Modus, geometrisches Mittel) …",
+   "parent": "HAK-MAT-4-S2-B4",
+   "text": "verschiedene Zentralmaße (arithmetisches Mittel, Median, Modus, geometrisches Mittel) berechnen, interpretieren und ihre Verwendung unter anderem in Bezug auf die verschiedenen Datentypen argumentieren,",
+   "competency_area": "Stochastik – Zentral- und Streumaße",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B4-K2",
+   "kind": "kompetenz",
+   "name": "unterschiedliche Streumaße (Standardabweichung und Varianz, Spannweite, Quartile) …",
+   "parent": "HAK-MAT-4-S2-B4",
+   "text": "unterschiedliche Streumaße (Standardabweichung und Varianz, Spannweite, Quartile) berechnen und interpretieren,",
+   "competency_area": "Stochastik – Zentral- und Streumaße",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B4-K3",
+   "kind": "kompetenz",
+   "name": "Median, Quartile und Spannweite in einem Boxplot darstellen und interpretieren",
+   "parent": "HAK-MAT-4-S2-B4",
+   "text": "Median, Quartile und Spannweite in einem Boxplot darstellen und interpretieren,",
+   "competency_area": "Stochastik – Zentral- und Streumaße",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B5",
+   "kind": "kompetenzbereich",
+   "name": "Stochastik – Korrelations- und Gini-Koeffizient",
+   "parent": "HAK-MAT-4-S2",
+   "competency_area": "Stochastik – Korrelations- und Gini-Koeffizient",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B5-K1",
+   "kind": "kompetenz",
+   "name": "den Korrelationskoeffizienten nach Pearson berechnen und interpretieren",
+   "parent": "HAK-MAT-4-S2-B5",
+   "text": "den Korrelationskoeffizienten nach Pearson berechnen und interpretieren,",
+   "competency_area": "Stochastik – Korrelations- und Gini-Koeffizient",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-B5-K2",
+   "kind": "kompetenz",
+   "name": "die Lorenzkurve und den Gini-Koeffizienten als Konzentrationsmaß nennen, die …",
+   "parent": "HAK-MAT-4-S2-B5",
+   "text": "die Lorenzkurve und den Gini-Koeffizienten als Konzentrationsmaß nennen, die zugrundeliegende Idee erklären, berechnen und die Ergebnisse im Kontext deuten.",
+   "competency_area": "Stochastik – Korrelations- und Gini-Koeffizient",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-MAT-4-S2",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Analysis",
+   "parent": "HAK-MAT-4-S2-L1",
+   "text": "Integralrechnung",
+   "content_area": "Analysis",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-4-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Stochastik",
+   "parent": "HAK-MAT-4-S2-L1",
+   "text": "Beschreibende Statistik",
+   "content_area": "Stochastik",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-MAT-5",
+   "kind": "klasse",
+   "name": "V. Jahrgang",
+   "parent": "HAK-MAT",
+   "klasse": 5,
+   "schulstufe": 13,
+   "text": "Kompetenzmodul 9"
+  },
+  {
+   "code": "HAK-MAT-5-S1",
+   "kind": "semester",
+   "name": "9. Semester",
+   "parent": "HAK-MAT-5"
+  },
+  {
+   "code": "HAK-MAT-5-S1-B1",
+   "kind": "kompetenzbereich",
+   "name": "Stochastik – Wahrscheinlichkeitsrechnung",
+   "parent": "HAK-MAT-5-S1",
+   "competency_area": "Stochastik – Wahrscheinlichkeitsrechnung",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S1-B1-K1",
+   "kind": "kompetenz",
+   "name": "den klassischen und statistischen Wahrscheinlichkeitsbegriff beschreiben, diesen …",
+   "parent": "HAK-MAT-5-S1-B1",
+   "text": "den klassischen und statistischen Wahrscheinlichkeitsbegriff beschreiben, diesen verwenden und deuten,",
+   "competency_area": "Stochastik – Wahrscheinlichkeitsrechnung",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S1-B1-K2",
+   "kind": "kompetenz",
+   "name": "die Additions- und Multiplikationsregel auf Ereignisse anwenden, die Ergebnisse …",
+   "parent": "HAK-MAT-5-S1-B1",
+   "text": "die Additions- und Multiplikationsregel auf Ereignisse anwenden, die Ergebnisse interpretieren und damit argumentieren,",
+   "competency_area": "Stochastik – Wahrscheinlichkeitsrechnung",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S1-B1-K3",
+   "kind": "kompetenz",
+   "name": "die Begriffe des Binomialkoeffizienten und der „Fakultät“ beschreiben, diese berechnen …",
+   "parent": "HAK-MAT-5-S1-B1",
+   "text": "die Begriffe des Binomialkoeffizienten und der „Fakultät“ beschreiben, diese berechnen und deuten.",
+   "competency_area": "Stochastik – Wahrscheinlichkeitsrechnung",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S1-B2",
+   "kind": "kompetenzbereich",
+   "name": "Stochastik – Wahrscheinlichkeitsfunktion, Wahrscheinlichkeitsdichte- und Verteilungsfunktion",
+   "parent": "HAK-MAT-5-S1",
+   "competency_area": "Stochastik – Wahrscheinlichkeitsfunktion, Wahrscheinlichkeitsdichte- und Verteilungsfunktion",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S1-B2-K1",
+   "kind": "kompetenz",
+   "name": "den Unterschied zwischen diskreten und kontinuierlichen Zufallsvariablen, die Begriffe …",
+   "parent": "HAK-MAT-5-S1-B2",
+   "text": "den Unterschied zwischen diskreten und kontinuierlichen Zufallsvariablen, die Begriffe Wahrscheinlichkeits- bzw. Wahrscheinlichkeitsdichtefunktion, Verteilungsfunktion sowie Erwartungswert, Varianz und Standardabweichung erklären,",
+   "competency_area": "Stochastik – Wahrscheinlichkeitsfunktion, Wahrscheinlichkeitsdichte- und Verteilungsfunktion",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S1-B2-K2",
+   "kind": "kompetenz",
+   "name": "die Modelle der Binomial- und Normalverteilung erklären, anwenden und interpretieren",
+   "parent": "HAK-MAT-5-S1-B2",
+   "text": "die Modelle der Binomial- und Normalverteilung erklären, anwenden und interpretieren,",
+   "competency_area": "Stochastik – Wahrscheinlichkeitsfunktion, Wahrscheinlichkeitsdichte- und Verteilungsfunktion",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S1-B2-K3",
+   "kind": "kompetenz",
+   "name": "die Normalverteilung als Näherung der Binomialverteilung beschreiben und die …",
+   "parent": "HAK-MAT-5-S1-B2",
+   "text": "die Normalverteilung als Näherung der Binomialverteilung beschreiben und die Binomialverteilung in die Normalverteilung überführen,",
+   "competency_area": "Stochastik – Wahrscheinlichkeitsfunktion, Wahrscheinlichkeitsdichte- und Verteilungsfunktion",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S1-B2-K4",
+   "kind": "kompetenz",
+   "name": "die Auswirkung von Erwartungswert und Standardabweichung auf die Normalverteilungskurve …",
+   "parent": "HAK-MAT-5-S1-B2",
+   "text": "die Auswirkung von Erwartungswert und Standardabweichung auf die Normalverteilungskurve erklären und damit argumentieren.",
+   "competency_area": "Stochastik – Wahrscheinlichkeitsfunktion, Wahrscheinlichkeitsdichte- und Verteilungsfunktion",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-MAT-5-S1",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Stochastik",
+   "parent": "HAK-MAT-5-S1-L1",
+   "text": "Wahrscheinlichkeitsrechnung\nWiederholende Aufgabenstellungen der vorhergehenden Jahrgänge entsprechend der festgelegten Kompetenzen",
+   "content_area": "Stochastik",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S2",
+   "kind": "semester",
+   "name": "10. Semester",
+   "parent": "HAK-MAT-5"
+  },
+  {
+   "code": "HAK-MAT-5-S2-B1",
+   "kind": "kompetenzbereich",
+   "name": "Wiederholung der vorhergehenden Jahrgänge entsprechend der festgelegten Kompetenzen",
+   "parent": "HAK-MAT-5-S2",
+   "competency_area": "Wiederholung der vorhergehenden Jahrgänge entsprechend der festgelegten Kompetenzen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S2-B1-K1",
+   "kind": "kompetenz",
+   "name": "einfache Sachverhalte, im Besonderen auch aus der Wirtschaft, mit mathematischen Modellen …",
+   "parent": "HAK-MAT-5-S2-B1",
+   "text": "einfache Sachverhalte, im Besonderen auch aus der Wirtschaft, mit mathematischen Modellen beschreiben, analysieren und interpretieren,",
+   "competency_area": "Wiederholung der vorhergehenden Jahrgänge entsprechend der festgelegten Kompetenzen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S2-B1-K2",
+   "kind": "kompetenz",
+   "name": "unter Verwendung einer exakten mathematischen Ausdrucksweise Sachverhalte kommunizieren …",
+   "parent": "HAK-MAT-5-S2-B1",
+   "text": "unter Verwendung einer exakten mathematischen Ausdrucksweise Sachverhalte kommunizieren, argumentieren, kritisieren und beurteilen,",
+   "competency_area": "Wiederholung der vorhergehenden Jahrgänge entsprechend der festgelegten Kompetenzen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S2-B1-K3",
+   "kind": "kompetenz",
+   "name": "die Ergebnisse mathematischer Analysen in Bezug auf die Ausgangssituation bewerten",
+   "parent": "HAK-MAT-5-S2-B1",
+   "text": "die Ergebnisse mathematischer Analysen in Bezug auf die Ausgangssituation bewerten,",
+   "competency_area": "Wiederholung der vorhergehenden Jahrgänge entsprechend der festgelegten Kompetenzen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S2-B1-K4",
+   "kind": "kompetenz",
+   "name": "allgemeine Rechenverfahren auf unterschiedliche Problemstellungen anwenden",
+   "parent": "HAK-MAT-5-S2-B1",
+   "text": "allgemeine Rechenverfahren auf unterschiedliche Problemstellungen anwenden,",
+   "competency_area": "Wiederholung der vorhergehenden Jahrgänge entsprechend der festgelegten Kompetenzen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S2-B1-K5",
+   "kind": "kompetenz",
+   "name": "zeitgemäße technische Hilfsmittel zielorientiert einsetzen",
+   "parent": "HAK-MAT-5-S2-B1",
+   "text": "zeitgemäße technische Hilfsmittel zielorientiert einsetzen.",
+   "competency_area": "Wiederholung der vorhergehenden Jahrgänge entsprechend der festgelegten Kompetenzen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-MAT-5-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-MAT-5-S2",
+   "klasse": 5,
+   "schulstufe": 13
+  }
+ ],
+ "skills": [],
+ "skill_nodes": [
+  [
+   "mathe.negativ.addieren",
+   "HAK-MAT-1-B1-K1"
+  ],
+  [
+   "mathe.negativ.multiplizieren",
+   "HAK-MAT-1-B1-K1"
+  ],
+  [
+   "mathe.prozent.prozentwert",
+   "HAK-MAT-1-B2-K5"
+  ],
+  [
+   "mathe.prozent.prozentsatz",
+   "HAK-MAT-1-B2-K5"
+  ],
+  [
+   "mathe.prozent.grundwert",
+   "HAK-MAT-1-B2-K5"
+  ],
+  [
+   "mathe.potenzen.regeln",
+   "HAK-MAT-1-B3-K1"
+  ],
+  [
+   "mathe.gleichungen.text",
+   "HAK-MAT-1-B3-K4"
+  ],
+  [
+   "mathe.gleichungen.einfach",
+   "HAK-MAT-1-B3-K5"
+  ],
+  [
+   "mathe.gleichungen.klammern",
+   "HAK-MAT-1-B3-K5"
+  ]
+ ]
+}

@@ -51,7 +51,7 @@ test("every skill has a stable code and its own source; official sources only ca
   assert.ok(skills.every((s) => s.source_id === getSource("lernheft")!.id), "built-in skills are the app's own structure");
   assert.match(getSource("ris-ms")!.attribution_text, /BGBl\. II Nr\. 185\/2012/);
   assert.match(getSource("ris-ms")!.notes, /NOR40271471/);
-  for (const key of ["ris-vs", "ris-ahs", "ris-htl"]) assert.equal(getSource(key)?.license, "amtliches Werk (§ 7 UrhG)");
+  for (const key of ["ris-vs", "ris-ahs", "ris-htl", "ris-hak"]) assert.equal(getSource(key)?.license, "amtliches Werk (§ 7 UrhG)");
 });
 
 test("school type and class → Schulstufe; skills are filtered for the student, unclear levels are not narrowed", async () => {
@@ -68,7 +68,7 @@ test("official Lehrplan packages: valid, complete per school type, links to miss
   const { db } = await import("./db");
   const { curriculumTree, getCurriculum, curriculumClasses } = await import("./lehrplan");
   const ris = imp.bundledPackages().filter((p) => p.file.startsWith("ris-"));
-  assert.deepEqual(ris.map((p) => p.file.replace(/^ris-|\.json$/g, "")).sort(), ["ahs-deutsch", "ahs-englisch", "ahs-mathematik", "htl-deutsch", "htl-englisch", "htl-mathematik", "ms-deutsch", "ms-englisch", "ms-mathematik", "vs-deutsch", "vs-englisch", "vs-mathematik"]);
+  assert.deepEqual(ris.map((p) => p.file.replace(/^ris-|\.json$/g, "")).sort(), ["ahs-deutsch", "ahs-englisch", "ahs-mathematik", "hak-deutsch", "hak-englisch", "hak-mathematik", "htl-deutsch", "htl-englisch", "htl-mathematik", "ms-deutsch", "ms-englisch", "ms-mathematik", "vs-deutsch", "vs-englisch", "vs-mathematik"]);
   for (const p of ris) {
     const pkg = imp.readBundled(p.file)!;
     assert.deepEqual(imp.validate(pkg), [], p.file);

@@ -138,7 +138,7 @@ function Entry({ node, boxed = false }: { node: CurriculumTreeNode; boxed?: bool
       )}
       <span className="min-w-0">
         {label && <span className="font-medium">{label}: </span>}
-        {body}
+        <span className="whitespace-pre-line">{body}</span>
         <SkillChips node={node} />
       </span>
     </Tag>
