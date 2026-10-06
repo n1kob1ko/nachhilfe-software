@@ -22,7 +22,7 @@ const builder = (studentId: number, skillId: string, count = 6) => `/uebungen/ne
  * Result of a diagnosis: sichere, unsichere and kritische Fähigkeiten, possible gaps and the next
  * exercises. While the student is still working it shows what is there so far.
  */
-export default async function DiagnosisResultPage({ params, searchParams }: { params: Promise<{ aid: string }>; searchParams: Promise<{ hinweis?: string }> }) {
+export default async function DiagnosisResultPage({ params, searchParams }: { params: Promise<{ aid: string }>; searchParams: Promise<{ hinweis?: string; fehler?: string }> }) {
   await requireTeacher();
   const { aid } = await params;
   const sp = await searchParams;
@@ -47,6 +47,11 @@ export default async function DiagnosisResultPage({ params, searchParams }: { pa
         }
       />
       {sp.hinweis === "ki" && <p className="mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Claude war nicht erreichbar. Fehlende Aufgaben kommen aus den eingebauten Generatoren.</p>}
+      {sp.fehler && (
+        <p className="mb-6 rounded-lg bg-red-wash px-4 py-2.5 text-[14px] text-red" role="alert">
+          {sp.fehler}
+        </p>
+      )}
 
       <section className="mb-10 rounded-[24px] bg-accent-wash px-5 py-5 md:px-6" aria-label="Stand">
         {r.finished ? (
@@ -144,7 +149,7 @@ export default async function DiagnosisResultPage({ params, searchParams }: { pa
                     Übung erstellen
                   </Link>
                   {!n.openAssignmentId && (
-                    <form action={applyRecommendationAction.bind(null, student.id, n.key)}>
+                    <form action={applyRecommendationAction.bind(null, student.id, n.key, r.assignment.id)}>
                       <button className="btn btn-secondary btn-sm">Direkt an {first} senden</button>
                     </form>
                   )}
@@ -170,10 +175,16 @@ function SkillRow({ s, studentId }: { s: DiagnosisSkillResult; studentId: number
           <span
             key={t.taskId}
             className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 ${t.correct === true ? "bg-green-wash text-green" : t.correct === false ? "bg-red-wash text-red" : "bg-panel text-ink-3"}`}
-            title={t.done ? `${t.difficulty}: ${t.correct ? "richtig" : "falsch"}${t.tries > 1 ? `, ${t.tries} Versuche` : ""}${t.hints ? `, ${t.hints} Hilfen` : ""}` : `${t.difficulty}: noch offen`}
           >
             {t.correct === true ? <Check size={11} aria-hidden /> : t.correct === false ? <X size={11} aria-hidden /> : <Minus size={11} aria-hidden />}
             {t.difficulty}
+            <span className="sr-only">: {t.correct === true ? "richtig" : t.correct === false ? "falsch" : "offen"}</span>
+            {t.tries > 1 && <span className="num">· {t.tries} Versuche</span>}
+            {t.hints > 0 && (
+              <span className="num">
+                · {t.hints} {t.hints === 1 ? "Hilfe" : "Hilfen"}
+              </span>
+            )}
           </span>
         ))}
       </div>

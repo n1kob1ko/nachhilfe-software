@@ -241,3 +241,11 @@ export function nextSteps(studentId: number, o: { today: string; now?: number; l
       };
     });
 }
+
+/**
+ * One recommendation by its key, for "Direkt an … senden": looked up in the whole list, so it is
+ * found whatever limit the page showed it under. null when it no longer applies.
+ */
+export function findNextStep(studentId: number, key: string, o: { today: string; now?: number }): NextStep | null {
+  return nextSteps(studentId, { ...o, limit: Infinity }).find((s) => s.key === key) ?? null;
+}
