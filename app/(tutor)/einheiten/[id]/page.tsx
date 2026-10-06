@@ -246,11 +246,11 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
 /** The six questions after the unit, from the data, and the optional note for parents or the student. */
 function BriefSection({ brief, lesson, mayManage }: { brief: NonNullable<ReturnType<typeof unitBrief>>; lesson: repo.Lesson; mayManage: boolean }) {
   return (
-    <section aria-label="Zusammenfassung">
+    <section aria-label="Auf einen Blick">
       <SectionTitle>
         <span>
-          Zusammenfassung
-          <Info label="Woher kommt die Zusammenfassung?">Aus den gespeicherten Daten der Einheit, ohne KI: Aufgaben, Fehlerarten, Empfehlung, Hausübungen und Prüfungstermine. Deine Notizen aus der Dokumentation sind markiert.</Info>
+          Auf einen Blick
+          <Info label="Woher kommen diese Angaben?">Aus den gespeicherten Daten der Einheit, ohne KI: Aufgaben, Fehlerarten, Empfehlung, Hausübungen und Prüfungstermine. Deine Notizen aus der Dokumentation sind markiert.</Info>
         </span>
       </SectionTitle>
       <UnitBriefView brief={brief} />
