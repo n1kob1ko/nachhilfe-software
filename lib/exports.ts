@@ -135,7 +135,7 @@ export const DATASETS: Dataset[] = [
         for (const k of a?.skills ?? []) {
           if (k.evidence === 0) continue;
           rows.push([
-            st.name, k.skill.subject, k.skill.area, k.skill.name, pct(k.mastery), { up: "steigt", down: "sinkt", flat: "gleich", none: "" }[k.trend], k.delta === null ? null : Math.round(k.delta * 100),
+            st.name, k.skill.subject, k.skill.area, k.skill.name, pct(k.mastery), { up: "steigt", down: "sinkt", flat: "gleich", none: "" }[k.trend], k.delta,
             k.tasksDone, pct(k.firstTryRate), k.avgTimeSec, pct(k.hintRate), k.lastPracticed ? localTime(new Date(k.lastPracticed).toISOString()) : "",
           ]);
         }
