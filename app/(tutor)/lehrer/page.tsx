@@ -1,9 +1,8 @@
-import { resetTeacherPasswordAction, setTeacherActiveAction } from "@/app/session-actions";
+import { setTeacherActiveAction } from "@/app/session-actions";
 import { Info } from "@/components/Info";
-import { NewTeacherForm } from "@/components/AuthForms";
+import { NewTeacherForm, ResetPasswordForm } from "@/components/AuthForms";
 import { PageHeader, Pill, SectionTitle } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
-import { INITIAL_PASSWORD } from "@/lib/password";
 import { listAllTeachers } from "@/lib/repo";
 
 export const metadata = { title: "Lehrer" };
@@ -30,21 +29,19 @@ export default async function Teachers() {
                   </div>
                 </div>
                 {t.id !== me.id && (
-                  <div className="flex gap-2">
-                    <form action={resetTeacherPasswordAction.bind(null, t.id)}>
-                      <button className="btn btn-ghost btn-sm">Passwort zurücksetzen</button>
-                    </form>
+                  <>
+                    <ResetPasswordForm teacherId={t.id} />
                     <form action={setTeacherActiveAction.bind(null, t.id, !t.active)}>
                       <button className="btn btn-ghost btn-sm">{t.active ? "Deaktivieren" : "Aktivieren"}</button>
                     </form>
-                  </div>
+                  </>
                 )}
               </li>
             ))}
           </ul>
           <p className="mt-3 flex items-center gap-1 text-[13px] text-ink-3">
-            Startpasswort „{INITIAL_PASSWORD}“
-            <Info label="Info zu Passwörtern">Neue und zurückgesetzte Accounts starten mit dem Passwort „{INITIAL_PASSWORD}“ und müssen es beim ersten Login ändern. Deaktivierte Lehrer bleiben in der Dokumentation erhalten.</Info>
+            Startpasswörter
+            <Info label="Info zu Passwörtern">Neue und zurückgesetzte Accounts bekommen ein eigenes Startpasswort. Es wird nur einmal angezeigt und muss beim ersten Login geändert werden. Deaktivierte Lehrer bleiben in der Dokumentation erhalten.</Info>
           </p>
         </section>
         <aside>

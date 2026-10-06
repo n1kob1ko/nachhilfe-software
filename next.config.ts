@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "no-referrer" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
+          // the public server is only reached over HTTPS; browsers ignore this header on plain http
+          ...(process.env.NODE_ENV === "production" ? [{ key: "Strict-Transport-Security", value: "max-age=31536000" }] : []),
         ],
       },
       { source: "/lernen/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
