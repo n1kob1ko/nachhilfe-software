@@ -39,7 +39,8 @@ Neue Tabellen:
 Neue Spalten:
 
 - `attempts.error_type`, `error_type_source` (vorschlag | lehrer | ki), `error_type_suggested`,
-  `error_type_by`, `error_type_at`: Fehlerart einer falschen Antwort, nachvollziehbar.
+  `error_type_suggested_source`, `error_type_by`, `error_type_at`: Fehlerart einer falschen Antwort,
+  nachvollziehbar (auch was App oder Claude ursprünglich vorgeschlagen hatten).
 - `skill_links.origin` (app | import | lehrer), `removed_at`, `changed_by`: Voraussetzungen mit
   Herkunft; entfernte Standard-Verknüpfungen bleiben entfernt.
 - `skill_curriculum.origin`, `removed_at`, `changed_by`: eigene Korrekturen der Lehrplan-Verknüpfung.
@@ -87,10 +88,13 @@ Rechenfehler, Vorzeichenfehler, Regel nicht verstanden, Flüchtigkeitsfehler, Au
 falsche Formel, Einheitenfehler, Grammatikfehler, Rechtschreibfehler, Wortschatzproblem, unbekannt.
 
 - Die App schlägt eine Fehlerart nur vor, wenn eine klare Regel passt (bekannter Fehler der Aufgabe,
-  Vorzeichen, Einheit, vertauschte Ziffern, in Sprachfächern Tippfehler). Sonst bleibt sie leer.
+  Vorzeichen, Einheit nur wenn eine Einheit vorkommt, vertauschte Ziffern; in Deutsch und Englisch
+  Tippfehler oder falsche Endung). Zahlen bekommen nie eine Sprach-Kategorie, Sprachregeln gelten
+  nur in Sprachfächern. Lieber kein Vorschlag als ein falscher.
 - Freitext bewertet Claude (nur, wenn ein KI-Schlüssel hinterlegt ist); seine Fehlerart gilt als „KI“.
 - Der Lehrer setzt oder ändert sie pro Antwort. Gespeichert werden Fehlerart, Quelle, der ursprüngliche
-  Vorschlag, wer und wann.
+  Vorschlag (von der App oder von Claude), wer und wann. Der Export „Ergebnisse“ enthält Fehler,
+  Fehlerart, Quelle und Vorschlag; Lernverlauf und Dokumentation der Einheit zeigen die Fehlerarten.
 - Fehlerarten erscheinen im Lernstand, zählen für die Empfehlung (Regel 4), und auf Wunsch zählt ein
   Flüchtigkeitsfehler im Lernstand milder. Die Statistik wertet sie aus.
 
@@ -142,6 +146,36 @@ Daraus entsteht auf Knopfdruck eine Notiz für Eltern oder Schüler, „Aus den 
 Claude formulieren“ (nur mit KI-Schlüssel) schickt nur die Datenzeilen: keine Namen (auch aus dem Text
 entfernt), keine Notizen des Lehrers, keine Profilangaben. Der Lehrer kann die Notiz ändern; gespeichert
 wird sie mit ihrer Quelle.
+
+## Statistik
+
+Mehr › Statistik, intern für Lehrer und Verwaltung. Nur Summen über alle Schüler: keine Namen, keine
+Schüler-IDs, kein Vergleich oder Ranking von Schülern. Reines SQL, keine KI (`lib/statistik.ts`).
+
+- Schwierige Fähigkeiten (ab 5 Antworten): Erfolg, 1. Versuch, Hilfen pro Aufgabe, Zeit (Median)
+- Häufige Fehlerarten, wie viele vom Lehrer bestätigt, und wie viele falsche Versuche noch ohne
+  Fehlerart sind
+- Durchschnittlicher Lernstand pro Fähigkeit
+- Aufgaben: Erfolgsquote, Hilfen und Zeit pro Aufgabe; ungewöhnlich leicht oder schwer gegenüber der
+  erwarteten Quote ihrer Schwierigkeit (ab 5 Antworten, 25 Prozentpunkte Abstand)
+- Themen und Stichwörter aus Schularbeiten und Tests
+
+Filter: Fach, Zeitraum, Diagnosen mit/ohne/nur.
+
+## Datenqualität
+
+Mehr › Datenqualität und die Seite jeder Fähigkeit. Offizielle Daten (`skills`, `curricula`,
+`curriculum_nodes`) schreibt nur der Import; eigene Korrekturen liegen getrennt und lassen sich
+zurücksetzen (Details in `docs/curriculum.md`):
+
+- Fähigkeit einer anderen Klasse oder einem anderen Thema zuordnen, verschieben, „in der Praxis oft
+  früher/später“ (`skill_overrides`)
+- Dubletten finden (nie automatisch) und zusammenführen; die Antworten der Dublette zählen dann für
+  die bleibende Fähigkeit; Rückgängig möglich
+- Voraussetzungen hinzufügen und entfernen
+- falsche Lehrplan-Verknüpfungen entfernen oder eigene hinzufügen; entfernte kommen mit einem neuen
+  Import nicht zurück
+- jede Korrektur steht mit vorherigem Zustand und Lehrer in der Änderungsgeschichte
 
 ## Ohne KI / mit Claude
 
