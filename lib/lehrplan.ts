@@ -131,7 +131,7 @@ export const OFFICIAL_SOURCE_FOR: Record<string, string | null> = {
   Mittelschule: "ris-ms",
   Gymnasium: "ris-ahs",
   HTL: "ris-htl",
-  HAK: null, // Lehrplan der HAK noch nicht vorhanden
+  HAK: "ris-hak",
 };
 
 export type CurriculumOverview = {

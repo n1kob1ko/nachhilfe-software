@@ -1,0 +1,1485 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "Lehrplan HAK – Englisch einschließlich Wirtschaftssprache (RIS)",
+ "description": "Offizieller Lehrplantext aus dem RIS (NOR40234935), BGBl. Nr. 895/1994 idF BGBl. II Nr. 250/2021.",
+ "source": {
+  "key": "ris-hak",
+  "name": "RIS – Lehrpläne Handelsakademie und Handelsschule, Anlage A1 (Handelsakademie)",
+  "source_type": "lehrplan",
+  "url": "https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Bundesnormen&Dokumentnummer=NOR40234935",
+  "publisher": "Republik Österreich (RIS)",
+  "license": "amtliches Werk (§ 7 UrhG)",
+  "attribution_text": "BGBl. Nr. 895/1994 idF BGBl. II Nr. 250/2021",
+  "notes": "Gesetzesnummer 10008944, Dokumentnummer NOR40234935, in Kraft seit 01.09.2021. Wortlaut nur um Seitenköpfe, Zeilenumbrüche und Fußnotenziffern bereinigt."
+ },
+ "curriculum": {
+  "key": "ris-hak-englisch",
+  "name": "Lehrplan HAK – Englisch einschließlich Wirtschaftssprache",
+  "school_type": "HAK",
+  "subject": "Englisch",
+  "version": "BGBl. II Nr. 250/2021",
+  "reference": "BGBl. Nr. 895/1994 idF BGBl. II Nr. 250/2021, NOR40234935",
+  "valid_from": "2021-09-01"
+ },
+ "nodes": [
+  {
+   "code": "HAK-ENG",
+   "kind": "fach",
+   "name": "Englisch einschließlich Wirtschaftssprache"
+  },
+  {
+   "code": "HAK-ENG-1",
+   "kind": "klasse",
+   "name": "I. Jahrgang",
+   "parent": "HAK-ENG",
+   "klasse": 1,
+   "schulstufe": 9,
+   "text": "1. und 2. Semester"
+  },
+  {
+   "code": "HAK-ENG-1-K1",
+   "kind": "kompetenz",
+   "name": "können einfache sprachliche Strukturen anwenden",
+   "parent": "HAK-ENG-1",
+   "text": "können einfache sprachliche Strukturen anwenden,",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-ENG-1-K2",
+   "kind": "kompetenz",
+   "name": "beherrschen einen begrenzten Wortschatz zur Bewältigung konkreter Alltagssituationen im …",
+   "parent": "HAK-ENG-1",
+   "text": "beherrschen einen begrenzten Wortschatz zur Bewältigung konkreter Alltagssituationen im Rahmen mündlicher und schriftlicher Kommunikation,",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-ENG-1-K3",
+   "kind": "kompetenz",
+   "name": "verstehen einfache, alltägliche und vertraute mündliche Kommunikation, wenn langsam, klar …",
+   "parent": "HAK-ENG-1",
+   "text": "verstehen einfache, alltägliche und vertraute mündliche Kommunikation, wenn langsam, klar und deutlich gesprochen wird,",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-ENG-1-K4",
+   "kind": "kompetenz",
+   "name": "verstehen einfache und kurze Alltagstexte",
+   "parent": "HAK-ENG-1",
+   "text": "verstehen einfache und kurze Alltagstexte,",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-ENG-1-K5",
+   "kind": "kompetenz",
+   "name": "können sich in einfachen routinemäßigen Sprachsituationen verständigen",
+   "parent": "HAK-ENG-1",
+   "text": "können sich in einfachen routinemäßigen Sprachsituationen verständigen,",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-ENG-1-K6",
+   "kind": "kompetenz",
+   "name": "können einfache Texte zu vertrauten Themen verfassen",
+   "parent": "HAK-ENG-1",
+   "text": "können einfache Texte zu vertrauten Themen verfassen,",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-ENG-1-K7",
+   "kind": "kompetenz",
+   "name": "können sowohl schriftlich als auch mündlich Menschen, Lebensbedingungen, Alltagsroutine …",
+   "parent": "HAK-ENG-1",
+   "text": "können sowohl schriftlich als auch mündlich Menschen, Lebensbedingungen, Alltagsroutine, Vorlieben oder Abneigungen usw. in einfachen Sätzen beschreiben sowie über Erlebnisse und Erfahrungen berichten.",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-ENG-1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-ENG-1",
+   "klasse": 1,
+   "schulstufe": 9,
+   "text": "Festigung aller Fertigkeiten anhand folgender Domänen:"
+  },
+  {
+   "code": "HAK-ENG-1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und Öffentlicher Bereich",
+   "parent": "HAK-ENG-1-L1",
+   "text": "Alltagsleben, Schule, Umfeld, Freizeit und Hobbys, Bekleidung, Wohnen, Essen und Trinken, Meinungen, Erfahrungen, Unterhaltung, Medien, interkulturelle Beziehungen, Einkaufen, Gewohnheiten, Gesundheit, Ferien und Feiertage, Leben in der Gesellschaft",
+   "content_area": "Privater und Öffentlicher Bereich",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-ENG-1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Bereich",
+   "parent": "HAK-ENG-1-L1",
+   "text": "Übungsfirmenbezug (Junior-, Miniübungs- sowie Übungsfirma)",
+   "content_area": "Beruflicher Bereich",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-ENG-1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HAK-ENG-1-L1",
+   "text": "Domänenbezogenes monologisches und dialogisches Sprechen",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-ENG-1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und –formate",
+   "parent": "HAK-ENG-1-L1",
+   "text": "Brief, E-Mail, Blog, Textmessage, Notiz, Leaflet, Erlebnisbericht, Ausfüllen eines Formulars, private Einladung, Beschreibung, einfache Präsentation",
+   "content_area": "Schriftliche Textsorten und –formate",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-ENG-1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante grammatische Strukturen",
+   "parent": "HAK-ENG-1-L1",
+   "text": "Present Tenses, Past Tenses, Present Perfect Tenses, Past Perfect Tenses, Future Tenses, Modalverben, Passiv, Wortarten (Pronomen, Nomen, Adjektiv, Adverb, Präpositionen), Syntax",
+   "content_area": "Kommunikationsrelevante grammatische Strukturen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HAK-ENG-2",
+   "kind": "klasse",
+   "name": "II. Jahrgang",
+   "parent": "HAK-ENG",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S1",
+   "kind": "semester",
+   "name": "3. Semester – Kompetenzmodul 3",
+   "parent": "HAK-ENG-2"
+  },
+  {
+   "code": "HAK-ENG-2-S1-K1",
+   "kind": "kompetenz",
+   "name": "können einfache sprachliche Strukturen anwenden",
+   "parent": "HAK-ENG-2-S1",
+   "text": "können einfache sprachliche Strukturen anwenden,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S1-K2",
+   "kind": "kompetenz",
+   "name": "beherrschen einen begrenzten Wortschatz zur Bewältigung konkreter Alltagssituationen im …",
+   "parent": "HAK-ENG-2-S1",
+   "text": "beherrschen einen begrenzten Wortschatz zur Bewältigung konkreter Alltagssituationen im Rahmen mündlicher und schriftlicher Kommunikation,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S1-K3",
+   "kind": "kompetenz",
+   "name": "verstehen einfache, alltägliche und vertraute berufsrelevante mündliche Kommunikation …",
+   "parent": "HAK-ENG-2-S1",
+   "text": "verstehen einfache, alltägliche und vertraute berufsrelevante mündliche Kommunikation, wenn langsam, klar und deutlich gesprochen wird,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S1-K4",
+   "kind": "kompetenz",
+   "name": "verstehen Texte, in denen vor allem einfache Alltags- oder Berufssprache vorkommt",
+   "parent": "HAK-ENG-2-S1",
+   "text": "verstehen Texte, in denen vor allem einfache Alltags- oder Berufssprache vorkommt,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S1-K5",
+   "kind": "kompetenz",
+   "name": "können sich in einfachen, routinemäßigen Situationen verständigen, in denen es um einen …",
+   "parent": "HAK-ENG-2-S1",
+   "text": "können sich in einfachen, routinemäßigen Situationen verständigen, in denen es um einen unkomplizierten und direkten Austausch von Informationen geht,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S1-K6",
+   "kind": "kompetenz",
+   "name": "können sich in einfachen routinemäßigen berufsrelevanten Sprachsituationen verständigen",
+   "parent": "HAK-ENG-2-S1",
+   "text": "können sich in einfachen routinemäßigen berufsrelevanten Sprachsituationen verständigen,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S1-K7",
+   "kind": "kompetenz",
+   "name": "können Texte zu vertrauten Themen verfassen",
+   "parent": "HAK-ENG-2-S1",
+   "text": "können Texte zu vertrauten Themen verfassen,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S1-K8",
+   "kind": "kompetenz",
+   "name": "können sowohl schriftlich als auch mündlich Menschen, Alltags- und einfache …",
+   "parent": "HAK-ENG-2-S1",
+   "text": "können sowohl schriftlich als auch mündlich Menschen, Alltags- und einfache Berufsroutine, Vorlieben oder Abneigungen usw. in einfachen Sätzen beschreiben sowie über Ereignisse, Erlebnisse und Erfahrungen berichten.",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-ENG-2-S1",
+   "klasse": 2,
+   "schulstufe": 10,
+   "text": "Festigung und kontinuierliche Progression in den Fertigkeiten anhand folgender Domänen:"
+  },
+  {
+   "code": "HAK-ENG-2-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und Öffentlicher Bereich",
+   "parent": "HAK-ENG-2-S1-L1",
+   "text": "Ernährung, soziale Netzwerke, Leben in der Gesellschaft, Ausbildung, Einkaufsmöglichkeiten, Unterhaltungsangebote, Freizeiteinrichtungen, interkulturelle Beziehungen",
+   "content_area": "Privater und Öffentlicher Bereich",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Bereich",
+   "parent": "HAK-ENG-2-S1-L1",
+   "text": "Erste Erfahrungen in der Arbeitswelt, routinemäßige Bürotätigkeiten, Büroausstattung, Übungsfirmenbezug",
+   "content_area": "Beruflicher Bereich",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HAK-ENG-2-S1-L1",
+   "text": "Domänenbezogenes monologisches und dialogisches Sprechen",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und –formate",
+   "parent": "HAK-ENG-2-S1-L1",
+   "text": "Brief, E-Mail, Blog, Textmessage, Memo, Notiz, Leaflet, einfache Präsentation, Erlebnisbericht, Ausfüllen eines Formulars, Beschreibung, Hand-out, Ausfüllen eines Fragebogens",
+   "content_area": "Schriftliche Textsorten und –formate",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante grammatische Strukturen",
+   "parent": "HAK-ENG-2-S1-L1",
+   "text": "Konditionalsätze, Infinitivkonstruktionen, indirekte Rede",
+   "content_area": "Kommunikationsrelevante grammatische Strukturen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S2",
+   "kind": "semester",
+   "name": "4. Semester – Kompetenzmodul 4",
+   "parent": "HAK-ENG-2"
+  },
+  {
+   "code": "HAK-ENG-2-S2-K1",
+   "kind": "kompetenz",
+   "name": "können grundlegende sprachliche Strukturen anwenden",
+   "parent": "HAK-ENG-2-S2",
+   "text": "können grundlegende sprachliche Strukturen anwenden,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S2-K2",
+   "kind": "kompetenz",
+   "name": "beherrschen einen ausreichenden Wortschatz zur Bewältigung von Alltagssituationen, zum …",
+   "parent": "HAK-ENG-2-S2",
+   "text": "beherrschen einen ausreichenden Wortschatz zur Bewältigung von Alltagssituationen, zum strukturierten Berichten und Beschreiben von Erfahrungen und Ereignissen, eigener Gefühle und Reaktionen,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S2-K3",
+   "kind": "kompetenz",
+   "name": "kommen mühelos in den meisten einfachen Routinegesprächen zurecht, können Fragen stellen …",
+   "parent": "HAK-ENG-2-S2",
+   "text": "kommen mühelos in den meisten einfachen Routinegesprächen zurecht, können Fragen stellen und beantworten und in vorhersehbaren Alltagssituationen Gedanken und Informationen austauschen,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S2-K4",
+   "kind": "kompetenz",
+   "name": "verstehen einfache, alltägliche und vertraute berufsrelevante mündliche Kommunikation …",
+   "parent": "HAK-ENG-2-S2",
+   "text": "verstehen einfache, alltägliche und vertraute berufsrelevante mündliche Kommunikation, wenn klar und deutlich gesprochen wird,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S2-K5",
+   "kind": "kompetenz",
+   "name": "verstehen Texte, in denen vor allem Alltags- oder einfache Berufssprache vorkommt und …",
+   "parent": "HAK-ENG-2-S2",
+   "text": "verstehen Texte, in denen vor allem Alltags- oder einfache Berufssprache vorkommt und erkennen die wesentlichen Informationen,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S2-K6",
+   "kind": "kompetenz",
+   "name": "verstehen einfache berufsrelevante Sachtexte",
+   "parent": "HAK-ENG-2-S2",
+   "text": "verstehen einfache berufsrelevante Sachtexte,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S2-K7",
+   "kind": "kompetenz",
+   "name": "verstehen einfache berufsbezogene Korrespondenz",
+   "parent": "HAK-ENG-2-S2",
+   "text": "verstehen einfache berufsbezogene Korrespondenz,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S2-K8",
+   "kind": "kompetenz",
+   "name": "können sowohl schriftlich als auch mündlich eine detaillierte Beschreibung von Menschen …",
+   "parent": "HAK-ENG-2-S2",
+   "text": "können sowohl schriftlich als auch mündlich eine detaillierte Beschreibung von Menschen, Lebens- und Arbeitsbedingungen, Alltags- und einfache Berufsroutine, Vorlieben oder Abneigungen usw. geben sowie über Ereignisse, Erlebnisse und Erfahrungen berichten,",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S2-K9",
+   "kind": "kompetenz",
+   "name": "können auf einfache berufsbezogene Korrespondenz situationsadäquat reagieren",
+   "parent": "HAK-ENG-2-S2",
+   "text": "können auf einfache berufsbezogene Korrespondenz situationsadäquat reagieren.",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-ENG-2-S2",
+   "klasse": 2,
+   "schulstufe": 10,
+   "text": "Festigung und kontinuierliche Progression in den Fertigkeiten anhand folgender Domänen:"
+  },
+  {
+   "code": "HAK-ENG-2-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und öffentlicher Bereich",
+   "parent": "HAK-ENG-2-S2-L1",
+   "text": "Soziale Netzwerke, Medien, Fremdenverkehr, Transportmittel, Ausbildung",
+   "content_area": "Privater und öffentlicher Bereich",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Bereich",
+   "parent": "HAK-ENG-2-S2-L1",
+   "text": "Erfahrungen in der Arbeitswelt, Berufe, einfache berufsbezogene schriftliche und mündliche Kommunikation in der Übungsfirma, Strukturen einer Übungsfirma",
+   "content_area": "Beruflicher Bereich",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HAK-ENG-2-S2-L1",
+   "text": "Domänenbezogenes monologisches und dialogisches Sprechen",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S2-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und –formate",
+   "parent": "HAK-ENG-2-S2-L1",
+   "text": "Aufbau und Layout eines Geschäftsbriefes, erste routinemäßige schriftliche Geschäftskommunikation (Anfrage und Angebot), E-Mail, Blog, Textmessage, Memo, Notiz, Leaflet, Präsentation, Erlebnisbericht, Ausfüllen eines Formulars, einfache Anweisung, Beschreibung, Hand-out, Ausfüllen eines Fragebogens",
+   "content_area": "Schriftliche Textsorten und –formate",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-2-S2-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante grammatische Strukturen",
+   "parent": "HAK-ENG-2-S2-L1",
+   "text": "Gerundium, Partizipialkonstruktionen",
+   "content_area": "Kommunikationsrelevante grammatische Strukturen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HAK-ENG-3",
+   "kind": "klasse",
+   "name": "III. Jahrgang",
+   "parent": "HAK-ENG",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1",
+   "kind": "semester",
+   "name": "5. Semester – Kompetenzmodul 5",
+   "parent": "HAK-ENG-3"
+  },
+  {
+   "code": "HAK-ENG-3-S1-K1",
+   "kind": "kompetenz",
+   "name": "beherrschen grundlegende sprachliche Strukturen gut",
+   "parent": "HAK-ENG-3-S1",
+   "text": "beherrschen grundlegende sprachliche Strukturen gut,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1-K2",
+   "kind": "kompetenz",
+   "name": "beherrschen einen ausreichend großen Wortschatz zur Bewältigung von Alltagssituationen …",
+   "parent": "HAK-ENG-3-S1",
+   "text": "beherrschen einen ausreichend großen Wortschatz zur Bewältigung von Alltagssituationen und routinemäßiger berufsrelevanter mündlicher und schriftlicher Kommunikation,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1-K3",
+   "kind": "kompetenz",
+   "name": "verstehen alltägliche und vertraute berufsrelevante Kommunikation, wenn klar und deutlich …",
+   "parent": "HAK-ENG-3-S1",
+   "text": "verstehen alltägliche und vertraute berufsrelevante Kommunikation, wenn klar und deutlich gesprochen wird,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1-K4",
+   "kind": "kompetenz",
+   "name": "verstehen Texte, in denen vor allem Alltags- oder einfache Berufssprache vorkommt und …",
+   "parent": "HAK-ENG-3-S1",
+   "text": "verstehen Texte, in denen vor allem Alltags- oder einfache Berufssprache vorkommt und können diese auf ihre Relevanz untersuchen,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1-K5",
+   "kind": "kompetenz",
+   "name": "verstehen einfache berufsrelevante Sachtexte, die Bilder und Infografiken enthalten und …",
+   "parent": "HAK-ENG-3-S1",
+   "text": "verstehen einfache berufsrelevante Sachtexte, die Bilder und Infografiken enthalten und können diesen die wesentlichen Informationen entnehmen,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1-K6",
+   "kind": "kompetenz",
+   "name": "verstehen einfache berufsbezogene Korrespondenz",
+   "parent": "HAK-ENG-3-S1",
+   "text": "verstehen einfache berufsbezogene Korrespondenz,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1-K7",
+   "kind": "kompetenz",
+   "name": "bewältigen einfache routinemäßige berufsrelevante mündliche und schriftliche Kommunikation",
+   "parent": "HAK-ENG-3-S1",
+   "text": "bewältigen einfache routinemäßige berufsrelevante mündliche und schriftliche Kommunikation,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1-K8",
+   "kind": "kompetenz",
+   "name": "können in einer kurzen und vorbereiteten Präsentation ein Thema aus ihrem Alltag und …",
+   "parent": "HAK-ENG-3-S1",
+   "text": "können in einer kurzen und vorbereiteten Präsentation ein Thema aus ihrem Alltag und ihrer Ausbildung vorstellen,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1-K9",
+   "kind": "kompetenz",
+   "name": "können sowohl schriftlich als auch mündlich eine detaillierte Beschreibung zu …",
+   "parent": "HAK-ENG-3-S1",
+   "text": "können sowohl schriftlich als auch mündlich eine detaillierte Beschreibung zu verschiedenen vertrauten Themen geben, detailliert über Lebens- und Arbeitsbedingungen, Alltags- und Berufsroutine, Vorlieben oder Abneigungen usw. berichten, Ereignisse, Erlebnisse und Erfahrungen detailliert beschreiben,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1-K10",
+   "kind": "kompetenz",
+   "name": "können auf einfache berufsbezogene Korrespondenz adressaten- und situationsadäquat …",
+   "parent": "HAK-ENG-3-S1",
+   "text": "können auf einfache berufsbezogene Korrespondenz adressaten- und situationsadäquat reagieren.",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-ENG-3-S1",
+   "klasse": 3,
+   "schulstufe": 11,
+   "text": "Festigung und kontinuierliche Progression in den Fertigkeiten anhand folgender Domänen:"
+  },
+  {
+   "code": "HAK-ENG-3-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und Öffentlicher Bereich",
+   "parent": "HAK-ENG-3-S1-L1",
+   "text": "Diversität in der Gesellschaft, Tourismus, Medien",
+   "content_area": "Privater und Öffentlicher Bereich",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Bereich",
+   "parent": "HAK-ENG-3-S1-L1",
+   "text": "Arbeitsabläufe in der Übungsfirma, einfache berufsbezogene schriftliche und mündliche Kommunikation, Unternehmensformen, Firmenprofile, Infografiken",
+   "content_area": "Beruflicher Bereich",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HAK-ENG-3-S1-L1",
+   "text": "Domänenbezogenes monologisches und dialogisches Sprechen",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und –formate",
+   "parent": "HAK-ENG-3-S1-L1",
+   "text": "Standardmäßige Geschäftskorrespondenz (Bestellung), E-Mail, Blog, Textmessage, Memo, Notiz, Leaflet, Präsentation, Rundschreiben, Hand-out, Ausfüllen eines Fragebogens, Bewerbungsschreiben, Lebenslauf",
+   "content_area": "Schriftliche Textsorten und –formate",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen",
+   "parent": "HAK-ENG-3-S1-L1",
+   "text": "Festigung und Erweiterung, situations- und adressatenadäquate registerspezifische Anwendung der Sprache",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2",
+   "kind": "semester",
+   "name": "6. Semester – Kompetenzmodul 6",
+   "parent": "HAK-ENG-3"
+  },
+  {
+   "code": "HAK-ENG-3-S2-K1",
+   "kind": "kompetenz",
+   "name": "beherrschen ein Repertoire an elementaren sprachlichen Mitteln, das es ihnen ermöglicht …",
+   "parent": "HAK-ENG-3-S2",
+   "text": "beherrschen ein Repertoire an elementaren sprachlichen Mitteln, das es ihnen ermöglicht, Alltagssituationen und berufliche Situationen mit voraussagbaren Inhalten zu bewältigen,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2-K2",
+   "kind": "kompetenz",
+   "name": "beherrschen einen ausreichend großen Wortschatz, um sich mit Hilfe von einigen …",
+   "parent": "HAK-ENG-3-S2",
+   "text": "beherrschen einen ausreichend großen Wortschatz, um sich mit Hilfe von einigen Umschreibungen über die meisten Themen des eigenen Alltagslebens äußern zu können,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2-K3",
+   "kind": "kompetenz",
+   "name": "können die grammatischen Strukturen anwenden, wobei Fehler vorkommen können, aber klar …",
+   "parent": "HAK-ENG-3-S2",
+   "text": "können die grammatischen Strukturen anwenden, wobei Fehler vorkommen können, aber klar bleibt, was ausgedrückt werden soll,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2-K4",
+   "kind": "kompetenz",
+   "name": "verstehen berufsrelevante Vorträge oder Reden, wenn die Thematik vertraut und die …",
+   "parent": "HAK-ENG-3-S2",
+   "text": "verstehen berufsrelevante Vorträge oder Reden, wenn die Thematik vertraut und die Darstellung unkompliziert und klar strukturiert ist,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2-K5",
+   "kind": "kompetenz",
+   "name": "verstehen die Hauptpunkte in einer Kommunikationssituation, wenn in deutlich …",
+   "parent": "HAK-ENG-3-S2",
+   "text": "verstehen die Hauptpunkte in einer Kommunikationssituation, wenn in deutlich artikulierter Standardsprache über vertraute Dinge gesprochen wird, denen man normalerweise im Berufsleben, in der Ausbildung oder der Freizeit begegnet,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2-K6",
+   "kind": "kompetenz",
+   "name": "verstehen unkomplizierte Sachtexte und Infografiken, die mit den eigenen Interessen und …",
+   "parent": "HAK-ENG-3-S2",
+   "text": "verstehen unkomplizierte Sachtexte und Infografiken, die mit den eigenen Interessen und berufsrelevanten Themen in Zusammenhang stehen,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2-K7",
+   "kind": "kompetenz",
+   "name": "verstehen berufsbezogene Standardsituationen und berufsbezogene Korrespondenz",
+   "parent": "HAK-ENG-3-S2",
+   "text": "verstehen berufsbezogene Standardsituationen und berufsbezogene Korrespondenz,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2-K8",
+   "kind": "kompetenz",
+   "name": "können eine vorbereitete Präsentation zu einem vertrauten berufsrelevanten oder …",
+   "parent": "HAK-ENG-3-S2",
+   "text": "können eine vorbereitete Präsentation zu einem vertrauten berufsrelevanten oder allgemeinen Thema, in der die Hauptpunkte hinreichend präzise erläutert werden, durchführen,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2-K9",
+   "kind": "kompetenz",
+   "name": "können auf einfache berufsbezogene Korrespondenz adressaten- und situationsadäquat …",
+   "parent": "HAK-ENG-3-S2",
+   "text": "können auf einfache berufsbezogene Korrespondenz adressaten- und situationsadäquat reagieren,",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2-K10",
+   "kind": "kompetenz",
+   "name": "können detaillierte Texte zu vertrauten Themen verfassen",
+   "parent": "HAK-ENG-3-S2",
+   "text": "können detaillierte Texte zu vertrauten Themen verfassen.",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-ENG-3-S2",
+   "klasse": 3,
+   "schulstufe": 11,
+   "text": "Festigung und kontinuierliche Progression in den Fertigkeiten anhand folgender Domänen:"
+  },
+  {
+   "code": "HAK-ENG-3-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und Öffentlicher Bereich",
+   "parent": "HAK-ENG-3-S2-L1",
+   "text": "Politik und Gesellschaft, EU, Werbung, Transportwesen, Umwelt, interkulturelle Beziehungen",
+   "content_area": "Privater und Öffentlicher Bereich",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Bereich",
+   "parent": "HAK-ENG-3-S2-L1",
+   "text": "Firmen, Dienstleistungen, Produkte, Business Etikette, Geschäftsreisen (Reservierung, Stornierung), berufsbezogene schriftliche und mündliche Kommunikation, Übungsfirmenbezug",
+   "content_area": "Beruflicher Bereich",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HAK-ENG-3-S2-L1",
+   "text": "Domänenbezogenes monologisches und dialogisches Sprechen",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und –formate",
+   "parent": "HAK-ENG-3-S2-L1",
+   "text": "Standardmäßige Geschäftskorrespondenz (Auftragsbestätigung), E-Mail, Memo, Notiz, Leaflet, Präsentation, Leserbrief, Hand-out, einfache Broschüre, Blog",
+   "content_area": "Schriftliche Textsorten und –formate",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-3-S2-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen",
+   "parent": "HAK-ENG-3-S2-L1",
+   "text": "Festigung und Erweiterung, situations- und adressatenadäquate registerspezifische Anwendung der Sprache",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HAK-ENG-4",
+   "kind": "klasse",
+   "name": "IV. Jahrgang",
+   "parent": "HAK-ENG",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1",
+   "kind": "semester",
+   "name": "7. Semester – Kompetenzmodul 7",
+   "parent": "HAK-ENG-4"
+  },
+  {
+   "code": "HAK-ENG-4-S1-K1",
+   "kind": "kompetenz",
+   "name": "können ein Repertoire an hinreichend sprachlichen Mitteln anwenden, das es ihnen …",
+   "parent": "HAK-ENG-4-S1",
+   "text": "können ein Repertoire an hinreichend sprachlichen Mitteln anwenden, das es ihnen ermöglicht, Alltagssituationen und berufliche Situationen mit voraussagbaren Inhalten zu bewältigen und setzen einige komplexe Satzstrukturen ein,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-K2",
+   "kind": "kompetenz",
+   "name": "beherrschen einen ausreichend großen allgemeinen und grundlegenden berufsrelevanten …",
+   "parent": "HAK-ENG-4-S1",
+   "text": "beherrschen einen ausreichend großen allgemeinen und grundlegenden berufsrelevanten Wortschatz, wobei Lücken im Wortschatz noch Umschreibungen notwendig machen,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-K3",
+   "kind": "kompetenz",
+   "name": "können die grammatischen Strukturen anwenden, wobei Fehler vorkommen können, aber klar …",
+   "parent": "HAK-ENG-4-S1",
+   "text": "können die grammatischen Strukturen anwenden, wobei Fehler vorkommen können, aber klar bleibt, was ausgedrückt werden soll,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-K4",
+   "kind": "kompetenz",
+   "name": "können routinemäßige berufsrelevante Sprachsituationen durchführen",
+   "parent": "HAK-ENG-4-S1",
+   "text": "können routinemäßige berufsrelevante Sprachsituationen durchführen,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-K5",
+   "kind": "kompetenz",
+   "name": "verstehen Standardsprache im direkten Kontakt und in den Medien, wenn es um vertraute …",
+   "parent": "HAK-ENG-4-S1",
+   "text": "verstehen Standardsprache im direkten Kontakt und in den Medien, wenn es um vertraute oder auch weniger vertraute Themen des gesellschaftlichen, beruflichen Lebens und der Ausbildung geht,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-K6",
+   "kind": "kompetenz",
+   "name": "verstehen Texte über aktuelle Themen, in denen eine bestimmte Haltung oder ein bestimmter …",
+   "parent": "HAK-ENG-4-S1",
+   "text": "verstehen Texte über aktuelle Themen, in denen eine bestimmte Haltung oder ein bestimmter Standpunkt vertreten wird,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-K7",
+   "kind": "kompetenz",
+   "name": "verstehen mühelos vertraute berufsbezogene Korrespondenz",
+   "parent": "HAK-ENG-4-S1",
+   "text": "verstehen mühelos vertraute berufsbezogene Korrespondenz,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-K8",
+   "kind": "kompetenz",
+   "name": "können sowohl schriftlich als auch mündlich zu einer Reihe von vertrauten Themen …",
+   "parent": "HAK-ENG-4-S1",
+   "text": "können sowohl schriftlich als auch mündlich zu einer Reihe von vertrauten Themen Standpunkte darlegen, diese durch relevante Erklärungen und Argumente begründen und adressatenadäquat appellieren und Empfehlungen abgeben,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-K9",
+   "kind": "kompetenz",
+   "name": "können vorbereitete Präsentationen durchführen und auf Fragen reagieren",
+   "parent": "HAK-ENG-4-S1",
+   "text": "können vorbereitete Präsentationen durchführen und auf Fragen reagieren,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-K10",
+   "kind": "kompetenz",
+   "name": "können detaillierte Texte zu vertrauten Themen aus Alltag und Berufswelt verfassen",
+   "parent": "HAK-ENG-4-S1",
+   "text": "können detaillierte Texte zu vertrauten Themen aus Alltag und Berufswelt verfassen,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-K11",
+   "kind": "kompetenz",
+   "name": "können auf vertraute berufsbezogene Korrespondenz adressaten- und situationsadäquat …",
+   "parent": "HAK-ENG-4-S1",
+   "text": "können auf vertraute berufsbezogene Korrespondenz adressaten- und situationsadäquat reagieren.",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-ENG-4-S1",
+   "klasse": 4,
+   "schulstufe": 12,
+   "text": "Festigung und kontinuierliche Progression in den Fertigkeiten anhand folgender Domänen:"
+  },
+  {
+   "code": "HAK-ENG-4-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und Öffentlicher Bereich",
+   "parent": "HAK-ENG-4-S1-L1",
+   "text": "Diversität in der Gesellschaft, nationale und internationale gesellschaftliche Zusammenhänge und Entwicklungen (NPOs, NGOs, Interessenvertretungen, humanitäre Organisationen)",
+   "content_area": "Privater und Öffentlicher Bereich",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Bereich",
+   "parent": "HAK-ENG-4-S1-L1",
+   "text": "Entrepreneurship, Nationale und internationale wirtschaftliche Organisationen, berufsbezogene schriftliche und mündliche Kommunikation, Beschreibung und Analyse von Infografiken, Messen und Ausstellungen",
+   "content_area": "Beruflicher Bereich",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HAK-ENG-4-S1-L1",
+   "text": "Domänenbezogenes monologisches und dialogisches Sprechen",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und –formate",
+   "parent": "HAK-ENG-4-S1-L1",
+   "text": "Standardmäßige Geschäftskorrespondenz (Lieferverzug, Versandanzeige), Memo, Notiz, Proposal, Präsentation, Erstellen einfacher Werbematerialien wie Leaflet, Hand-out, Erstellen eines Fragebogens, Blog",
+   "content_area": "Schriftliche Textsorten und –formate",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen",
+   "parent": "HAK-ENG-4-S1-L1",
+   "text": "Festigung und Erweiterung, situations- und adressatenadäquate registerspezifische Anwendung der Sprache",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2",
+   "kind": "semester",
+   "name": "8. Semester – Kompetenzmodul 8",
+   "parent": "HAK-ENG-4"
+  },
+  {
+   "code": "HAK-ENG-4-S2-K1",
+   "kind": "kompetenz",
+   "name": "können ein Repertoire an hinreichend sprachlichen Mitteln anwenden, das es ihnen …",
+   "parent": "HAK-ENG-4-S2",
+   "text": "können ein Repertoire an hinreichend sprachlichen Mitteln anwenden, das es ihnen ermöglicht, Alltagssituationen und berufliche Situationen zu bewältigen,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-K2",
+   "kind": "kompetenz",
+   "name": "verfügen über einen ausreichend großen allgemeinen und grundlegenden berufsrelevanten …",
+   "parent": "HAK-ENG-4-S2",
+   "text": "verfügen über einen ausreichend großen allgemeinen und grundlegenden berufsrelevanten Wortschatz,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-K3",
+   "kind": "kompetenz",
+   "name": "können komplexere grammatische Strukturen anwenden, wobei Fehler vorkommen dürfen, aber …",
+   "parent": "HAK-ENG-4-S2",
+   "text": "können komplexere grammatische Strukturen anwenden, wobei Fehler vorkommen dürfen, aber klar bleibt, was ausgedrückt werden soll,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-K4",
+   "kind": "kompetenz",
+   "name": "verstehen Standardsprache im direkten Kontakt und in den Medien, wenn es um vertraute …",
+   "parent": "HAK-ENG-4-S2",
+   "text": "verstehen Standardsprache im direkten Kontakt und in den Medien, wenn es um vertraute oder auch weniger vertraute Themen des gesellschaftlichen, beruflichen Lebens und der Ausbildung geht,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-K5",
+   "kind": "kompetenz",
+   "name": "verstehen Sachtexte und Texte zu allgemeinen Themen, in denen eine bestimmte Haltung oder …",
+   "parent": "HAK-ENG-4-S2",
+   "text": "verstehen Sachtexte und Texte zu allgemeinen Themen, in denen eine bestimmte Haltung oder ein bestimmter Standpunkt vertreten wird,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-K6",
+   "kind": "kompetenz",
+   "name": "verstehen mühelos vertraute berufsbezogene Korrespondenz",
+   "parent": "HAK-ENG-4-S2",
+   "text": "verstehen mühelos vertraute berufsbezogene Korrespondenz,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-K7",
+   "kind": "kompetenz",
+   "name": "können auf vertraute berufsbezogene Korrespondenz adressaten- und situationsadäquat …",
+   "parent": "HAK-ENG-4-S2",
+   "text": "können auf vertraute berufsbezogene Korrespondenz adressaten- und situationsadäquat reagieren,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-K8",
+   "kind": "kompetenz",
+   "name": "können routinemäßige berufsrelevante Sprachsituationen durchführen",
+   "parent": "HAK-ENG-4-S2",
+   "text": "können routinemäßige berufsrelevante Sprachsituationen durchführen,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-K9",
+   "kind": "kompetenz",
+   "name": "können sowohl schriftlich als auch mündlich zu einem breiten Spektrum an vertrauten …",
+   "parent": "HAK-ENG-4-S2",
+   "text": "können sowohl schriftlich als auch mündlich zu einem breiten Spektrum an vertrauten Themen Informationen austauschen, die eigenen Absichten erklären sowie Standpunkte durch relevante Erklärungen und Argumente darlegen, verteidigen, adressatenadäquat appellieren und Empfehlungen abgeben,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-K10",
+   "kind": "kompetenz",
+   "name": "können vorbereitete Präsentationen durchführen und spontan auf Fragen reagieren",
+   "parent": "HAK-ENG-4-S2",
+   "text": "können vorbereitete Präsentationen durchführen und spontan auf Fragen reagieren,",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-K11",
+   "kind": "kompetenz",
+   "name": "können klare und strukturierte Texte zu einem breiten Spektrum an vertrauten Themen aus …",
+   "parent": "HAK-ENG-4-S2",
+   "text": "können klare und strukturierte Texte zu einem breiten Spektrum an vertrauten Themen aus Alltag und Berufswelt verfassen und dabei die für die jeweilige Textsorte relevanten Kriterien anwenden.",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-ENG-4-S2",
+   "klasse": 4,
+   "schulstufe": 12,
+   "text": "Festigung und kontinuierliche Progression in den Fertigkeiten anhand folgender Domänen:"
+  },
+  {
+   "code": "HAK-ENG-4-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und Öffentlicher Bereich",
+   "parent": "HAK-ENG-4-S2-L1",
+   "text": "Gesellschaftliche Entwicklungen und Trends, Diversität in der Gesellschaft, Wirtschaft und Ökologie, Corporate Social Responsibility",
+   "content_area": "Privater und Öffentlicher Bereich",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Bereich",
+   "parent": "HAK-ENG-4-S2-L1",
+   "text": "Bankwesen, berufsbezogene schriftliche und mündliche Kommunikation zur Arbeit in der Übungsfirma, Übungsfirmenmesse, Karriere und Karriereplanung (Letter of Motivation), Corporate Blogs",
+   "content_area": "Beruflicher Bereich",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HAK-ENG-4-S2-L1",
+   "text": "Domänenbezogenes monologisches und dialogisches Sprechen",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und –formate",
+   "parent": "HAK-ENG-4-S2-L1",
+   "text": "Standardmäßige Geschäftskorrespondenz (Zahlungsverzug, Mängelrüge, Beschwerde), E-Mail, Memo, Notiz, Präsentation, Report, Artikel, Kommentar, Erstellen von Werbematerialien wie Leaflet",
+   "content_area": "Schriftliche Textsorten und –formate",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-4-S2-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen",
+   "parent": "HAK-ENG-4-S2-L1",
+   "text": "Festigung und Erweiterung, situations- und adressatenadäquate registerspezifische Anwendung der Sprache",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HAK-ENG-5",
+   "kind": "klasse",
+   "name": "V. Jahrgang",
+   "parent": "HAK-ENG",
+   "klasse": 5,
+   "schulstufe": 13,
+   "text": "Kompetenzmodul 9"
+  },
+  {
+   "code": "HAK-ENG-5-S1",
+   "kind": "semester",
+   "name": "9. Semester",
+   "parent": "HAK-ENG-5"
+  },
+  {
+   "code": "HAK-ENG-5-S1-K1",
+   "kind": "kompetenz",
+   "name": "beherrschen ein breites Repertoire an sprachlichen Mitteln und einige komplexe …",
+   "parent": "HAK-ENG-5-S1",
+   "text": "beherrschen ein breites Repertoire an sprachlichen Mitteln und einige komplexe Satzstrukturen, die es ihnen ermöglichen, klare Beschreibungen zu geben, Standpunkte auszudrücken und etwas zu erörtern,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-K2",
+   "kind": "kompetenz",
+   "name": "beherrschen einen großen Wortschatz in berufsrelevanten und in den meisten allgemeinen …",
+   "parent": "HAK-ENG-5-S1",
+   "text": "beherrschen einen großen Wortschatz in berufsrelevanten und in den meisten allgemeinen Themenbereichen, indem sie Formulierungen variieren, um häufige Wiederholungen zu vermeiden,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-K3",
+   "kind": "kompetenz",
+   "name": "beherrschen die Grammatik gut und machen keine Fehler, die zu Missverständnissen führen",
+   "parent": "HAK-ENG-5-S1",
+   "text": "beherrschen die Grammatik gut und machen keine Fehler, die zu Missverständnissen führen,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-K4",
+   "kind": "kompetenz",
+   "name": "verstehen einen Vortrag oder ein Gespräch zu einem berufsrelevanten Thema oder einer …",
+   "parent": "HAK-ENG-5-S1",
+   "text": "verstehen einen Vortrag oder ein Gespräch zu einem berufsrelevanten Thema oder einer beruflichen Situation, soweit der Beitrag klar vorgetragen wird,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-K5",
+   "kind": "kompetenz",
+   "name": "verstehen Texte über allgemeine und berufsrelevante Themen, in denen eine bestimmte …",
+   "parent": "HAK-ENG-5-S1",
+   "text": "verstehen Texte über allgemeine und berufsrelevante Themen, in denen eine bestimmte Haltung oder ein bestimmter Standpunkt vertreten wird,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-K6",
+   "kind": "kompetenz",
+   "name": "verstehen anspruchsvollere Sachtexte und entscheiden beim raschen Lesen, welche …",
+   "parent": "HAK-ENG-5-S1",
+   "text": "verstehen anspruchsvollere Sachtexte und entscheiden beim raschen Lesen, welche Informationen für einen bestimmten Zweck relevant sind,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-K7",
+   "kind": "kompetenz",
+   "name": "verstehen mühelos vertraute berufsbezogene Korrespondenz",
+   "parent": "HAK-ENG-5-S1",
+   "text": "verstehen mühelos vertraute berufsbezogene Korrespondenz,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-K8",
+   "kind": "kompetenz",
+   "name": "können routinemäßige berufsrelevante Sprachsituationen bewältigen",
+   "parent": "HAK-ENG-5-S1",
+   "text": "können routinemäßige berufsrelevante Sprachsituationen bewältigen,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-K9",
+   "kind": "kompetenz",
+   "name": "können eine klare und systematisch angelegte Präsentation verfassen und vortragen, indem …",
+   "parent": "HAK-ENG-5-S1",
+   "text": "können eine klare und systematisch angelegte Präsentation verfassen und vortragen, indem sie die wesentlichen Punkte hervorheben und spontan auf Nachfragen reagieren,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-K10",
+   "kind": "kompetenz",
+   "name": "können auf berufsbezogene Korrespondenz adressaten- und situationsadäquat reagieren",
+   "parent": "HAK-ENG-5-S1",
+   "text": "können auf berufsbezogene Korrespondenz adressaten- und situationsadäquat reagieren,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-K11",
+   "kind": "kompetenz",
+   "name": "können sowohl schriftlich als auch mündlich zu einem breiten Spektrum an vertrauten …",
+   "parent": "HAK-ENG-5-S1",
+   "text": "können sowohl schriftlich als auch mündlich zu einem breiten Spektrum an vertrauten Themen Informationen austauschen, die eigenen Absichten erklären sowie Standpunkte durch relevante Erklärungen und Argumente darlegen, verteidigen, adressatenadäquat appellieren und Empfehlungen abgeben,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-K12",
+   "kind": "kompetenz",
+   "name": "können klare und strukturierte Texte zu einem breiten Spektrum an vertrauten Themen aus …",
+   "parent": "HAK-ENG-5-S1",
+   "text": "können klare und strukturierte Texte zu einem breiten Spektrum an vertrauten Themen aus Alltag und Berufswelt verfassen und dabei die für die jeweilige Textsorte relevanten Kriterien adäquat anwenden.",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-ENG-5-S1",
+   "klasse": 5,
+   "schulstufe": 13,
+   "text": "Festigung und kontinuierliche Progression in den Fertigkeiten anhand folgender Domänen:"
+  },
+  {
+   "code": "HAK-ENG-5-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und Öffentlicher Bereich",
+   "parent": "HAK-ENG-5-S1-L1",
+   "text": "Werbemittel, Werbestrategien, Marketing, Public Relations",
+   "content_area": "Privater und Öffentlicher Bereich",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Bereich",
+   "parent": "HAK-ENG-5-S1-L1",
+   "text": "Internationale Wirtschaft, Global Players, Customer Relations, unregelmäßiger Geschäftsfall",
+   "content_area": "Beruflicher Bereich",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HAK-ENG-5-S1-L1",
+   "text": "Domänenbezogenes monologisches und dialogisches Sprechen",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und –formate",
+   "parent": "HAK-ENG-5-S1-L1",
+   "text": "Standardmäßige Geschäftskorrespondenz, Memo, Notiz, Leaflet, Präsentation, Presseaussendung, Kommentar, Report, Artikel, Rundschreiben, Werbetexte, Corporate Blogs",
+   "content_area": "Schriftliche Textsorten und –formate",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S1-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen",
+   "parent": "HAK-ENG-5-S1-L1",
+   "text": "Festigung und Erweiterung, situations- und adressatenadäquate registerspezifische Anwendung der Sprache",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2",
+   "kind": "semester",
+   "name": "10. Semester",
+   "parent": "HAK-ENG-5"
+  },
+  {
+   "code": "HAK-ENG-5-S2-K1",
+   "kind": "kompetenz",
+   "name": "beherrschen ein breites Repertoire an sprachlichen Mitteln und einige komplexe …",
+   "parent": "HAK-ENG-5-S2",
+   "text": "beherrschen ein breites Repertoire an sprachlichen Mitteln und einige komplexe Satzstrukturen, die es ihnen ermöglichen, klare Beschreibungen zu geben, Standpunkte auszudrücken und etwas zu erörtern,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-K2",
+   "kind": "kompetenz",
+   "name": "beherrschen einen großen Wortschatz in berufsrelevanten und in den meisten allgemeinen …",
+   "parent": "HAK-ENG-5-S2",
+   "text": "beherrschen einen großen Wortschatz in berufsrelevanten und in den meisten allgemeinen Themenbereichen, indem sie Formulierungen variieren, um häufige Wiederholungen zu vermeiden,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-K3",
+   "kind": "kompetenz",
+   "name": "beherrschen die Grammatik gut und machen keine Fehler, die zu Missverständnissen führen",
+   "parent": "HAK-ENG-5-S2",
+   "text": "beherrschen die Grammatik gut und machen keine Fehler, die zu Missverständnissen führen,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-K4",
+   "kind": "kompetenz",
+   "name": "verstehen einen Vortrag oder ein Gespräch zu einem berufsrelevanten Thema oder einer …",
+   "parent": "HAK-ENG-5-S2",
+   "text": "verstehen einen Vortrag oder ein Gespräch zu einem berufsrelevanten Thema oder einer beruflichen Situation, soweit der Beitrag klar vorgetragen wird,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-K5",
+   "kind": "kompetenz",
+   "name": "verstehen Texte über allgemeine und berufsrelevante Themen, in denen eine bestimmte …",
+   "parent": "HAK-ENG-5-S2",
+   "text": "verstehen Texte über allgemeine und berufsrelevante Themen, in denen eine bestimmte Haltung oder ein bestimmter Standpunkt vertreten wird,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-K6",
+   "kind": "kompetenz",
+   "name": "verstehen anspruchsvollere Sachtexte und entscheiden beim raschen Lesen, welche …",
+   "parent": "HAK-ENG-5-S2",
+   "text": "verstehen anspruchsvollere Sachtexte und entscheiden beim raschen Lesen, welche Informationen für einen bestimmten Zweck relevant sind,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-K7",
+   "kind": "kompetenz",
+   "name": "verstehen mühelos vertraute berufsbezogene Korrespondenz",
+   "parent": "HAK-ENG-5-S2",
+   "text": "verstehen mühelos vertraute berufsbezogene Korrespondenz,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-K8",
+   "kind": "kompetenz",
+   "name": "können routinemäßige berufsrelevante Sprachsituationen bewältigen",
+   "parent": "HAK-ENG-5-S2",
+   "text": "können routinemäßige berufsrelevante Sprachsituationen bewältigen,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-K9",
+   "kind": "kompetenz",
+   "name": "können eine klare und systematisch angelegte Präsentation verfassen und vortragen, indem …",
+   "parent": "HAK-ENG-5-S2",
+   "text": "können eine klare und systematisch angelegte Präsentation verfassen und vortragen, indem sie die wesentlichen Punkte hervorheben und spontan auf Nachfragen reagieren,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-K10",
+   "kind": "kompetenz",
+   "name": "können auf berufsbezogene Korrespondenz adressaten- und situationsadäquat reagieren",
+   "parent": "HAK-ENG-5-S2",
+   "text": "können auf berufsbezogene Korrespondenz adressaten- und situationsadäquat reagieren,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-K11",
+   "kind": "kompetenz",
+   "name": "können sowohl schriftlich als auch mündlich zu einem breiten Spektrum an vertrauten …",
+   "parent": "HAK-ENG-5-S2",
+   "text": "können sowohl schriftlich als auch mündlich zu einem breiten Spektrum an vertrauten Themen Informationen austauschen, die eigenen Absichten erklären sowie Standpunkte durch relevante Erklärungen und Argumente darlegen, verteidigen, adressatenadäquat appellieren und Empfehlungen abgeben,",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-K12",
+   "kind": "kompetenz",
+   "name": "können klare und strukturierte Texte zu einem breiten Spektrum an vertrauten Themen aus …",
+   "parent": "HAK-ENG-5-S2",
+   "text": "können klare und strukturierte Texte zu einem breiten Spektrum an vertrauten Themen aus Alltag und Berufswelt verfassen und dabei die für die jeweilige Textsorte relevanten Kriterien adäquat anwenden.",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HAK-ENG-5-S2",
+   "klasse": 5,
+   "schulstufe": 13,
+   "text": "Festigung der Fertigkeiten anhand folgender Domänen:"
+  },
+  {
+   "code": "HAK-ENG-5-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Privater und Öffentlicher Bereich",
+   "parent": "HAK-ENG-5-S2-L1",
+   "text": "Verantwortung des einzelnen Bürgers in der Gesellschaft auf nationaler und internationaler Ebene",
+   "content_area": "Privater und Öffentlicher Bereich",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Beruflicher Bereich",
+   "parent": "HAK-ENG-5-S2-L1",
+   "text": "Arbeitsmarkt, Weiterbildung, Leben und Arbeiten im Ausland",
+   "content_area": "Beruflicher Bereich",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Mündliche Kommunikation",
+   "parent": "HAK-ENG-5-S2-L1",
+   "text": "Domänenbezogenes monologisches und dialogisches Sprechen",
+   "content_area": "Mündliche Kommunikation",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-L1-L4",
+   "kind": "lehrstoff",
+   "name": "Schriftliche Textsorten und –formate",
+   "parent": "HAK-ENG-5-S2-L1",
+   "text": "Festigung der schriftlichen Textsorten und -formate",
+   "content_area": "Schriftliche Textsorten und –formate",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HAK-ENG-5-S2-L1-L5",
+   "kind": "lehrstoff",
+   "name": "Kommunikationsrelevante Sprachstrukturen",
+   "parent": "HAK-ENG-5-S2-L1",
+   "text": "Festigung und Erweiterung, situations- und adressatenadäquate registerspezifische Anwendung der Sprache",
+   "content_area": "Kommunikationsrelevante Sprachstrukturen",
+   "klasse": 5,
+   "schulstufe": 13
+  }
+ ],
+ "skills": [],
+ "skill_nodes": [
+  [
+   "englisch.reading.comprehension",
+   "HAK-ENG-1-K4"
+  ],
+  [
+   "englisch.reading.comprehension",
+   "HAK-ENG-2-S1-K4"
+  ],
+  [
+   "englisch.tenses.presentsimple",
+   "HAK-ENG-1-L1-L5"
+  ],
+  [
+   "englisch.tenses.pastsimple",
+   "HAK-ENG-1-L1-L5"
+  ],
+  [
+   "englisch.tenses.presentperfect",
+   "HAK-ENG-1-L1-L5"
+  ]
+ ]
+}
