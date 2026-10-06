@@ -158,6 +158,26 @@ CREATE TABLE IF NOT EXISTS skill_snapshots (
   recorded_at TEXT NOT NULL
 );
 
+-- Student tablets. A tablet belongs to a teacher, never to a student: the student it shows comes
+-- from the teacher's running unit. The tablet keeps a random secret in a cookie; only its hash is stored.
+CREATE TABLE IF NOT EXISTS student_devices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  paired_at TEXT NOT NULL,
+  last_seen_at TEXT,
+  revoked_at TEXT
+);
+
+-- One-time codes a teacher creates to connect a tablet; valid for a few minutes.
+CREATE TABLE IF NOT EXISTS device_pair_codes (
+  code TEXT PRIMARY KEY,
+  teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+  created_by INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  expires_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS teacher_sessions (
   token TEXT PRIMARY KEY,
   teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
@@ -275,6 +295,10 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["worksheets", "teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
   ["worksheets", "settings", "TEXT"], // builder settings it was made with (JSON)
   ["worksheets", "source_worksheet_id", "INTEGER REFERENCES worksheets(id) ON DELETE SET NULL"],
+  // student tablets: what the tablet shows ('' overview, 'tafel', 'aufgabe:<assignment id>'), when an exercise arrived there
+  ["units", "device_view", "TEXT NOT NULL DEFAULT ''"],
+  ["assignments", "delivered_at", "TEXT"],
+  ["worksheets", "source_task_id", "INTEGER REFERENCES tasks(id) ON DELETE SET NULL"],
   ["assignments", "unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
   ["assignments", "solutions_visible", "INTEGER NOT NULL DEFAULT 0"],
 ];

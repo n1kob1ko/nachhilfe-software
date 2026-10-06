@@ -5,6 +5,7 @@ import * as repo from "@/lib/repo";
 import { canManageUnit, getUnit } from "@/lib/units";
 import { ensureBoardForUnit, queueInsert } from "@/lib/whiteboard";
 import { boardTask } from "@/lib/whiteboard-content";
+import { showOnTablet } from "@/lib/live";
 
 export type SendState = { ok?: string; error?: string } | null;
 
@@ -22,5 +23,6 @@ export async function sendToBoardAction(_prev: SendState, form: FormData): Promi
   const board = ensureBoardForUnit(unit.id);
   if (!board) return { error: "Das Whiteboard konnte nicht geöffnet werden." };
   queueInsert(board.id, { kind: "tasks", title: worksheet.title, tasks: tasks.map(boardTask) });
+  showOnTablet(unit, { kind: "tafel" });
   return { ok: `${tasks.length === 1 ? "Aufgabe" : `${tasks.length} Aufgaben`} aufs Whiteboard von ${unit.student_name} gesendet.` };
 }
