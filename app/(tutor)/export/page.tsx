@@ -1,4 +1,5 @@
 import { DatabaseBackup, Download, FileSpreadsheet } from "lucide-react";
+import { Info } from "@/components/Info";
 import { PageHeader, SectionTitle } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import { backupCounts, exportBackup } from "@/lib/backup";
@@ -28,7 +29,7 @@ export default async function ExportPage() {
   const counts = backupCounts(exportBackup());
   return (
     <>
-      <PageHeader title="Datenexport" subtitle="Sicherung und Tabellen zum Weiterverarbeiten. Nur für die Verwaltung sichtbar." />
+      <PageHeader title="Datenexport" subtitle="Sicherung und Tabellen" info="Sicherung und Tabellen zum Weiterverarbeiten. Nur für die Verwaltung sichtbar." />
 
       <section className="mb-10">
         <SectionTitle>Vollständige Sicherung (JSON)</SectionTitle>
@@ -56,8 +57,12 @@ export default async function ExportPage() {
       </section>
 
       <section>
-        <SectionTitle>Tabellen (CSV für Excel)</SectionTitle>
-        <p className="-mt-1 mb-4 max-w-[72ch] text-[14px] text-ink-2">Mit Semikolon getrennt und mit Umlauten, damit Excel sie direkt richtig öffnet.</p>
+        <SectionTitle>
+          <span>
+            Tabellen (CSV für Excel)
+            <Info label="Info zum Format">Mit Semikolon getrennt und mit Umlauten, damit Excel sie direkt richtig öffnet.</Info>
+          </span>
+        </SectionTitle>
         <ul className="panel divide-y divide-line">
           {DATASETS.map((d) => (
             <li key={d.key} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 md:px-5">

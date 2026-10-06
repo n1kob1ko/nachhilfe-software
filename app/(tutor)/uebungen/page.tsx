@@ -3,74 +3,100 @@ import Link from "next/link";
 import { Plus, Sparkles } from "lucide-react";
 import { Empty, PageHeader, Pill, formatDate } from "@/components/ui";
 import { worksheetTypeLabel } from "@/lib/curriculum";
-import { listWorksheets } from "@/lib/repo";
+import { listStudents, listWorksheets } from "@/lib/repo";
 import { klassenLabel, stufeLabel } from "@/lib/school";
 
 export const metadata = { title: "Übungen" };
 
-export default function Worksheets() {
-  const list = listWorksheets();
+export default async function Worksheets({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
+  const { filter } = await searchParams;
+  const all = listWorksheets();
+  const students = new Map(listStudents().map((s) => [s.id, s.name.split(" ")[0]]));
+  const subjects = [...new Set(all.map((w) => w.subject))];
+  const filters: [string, string, number][] = [
+    ["", "Alle", all.length],
+    ["entwurf", "Entwürfe", all.filter((w) => w.status === "entwurf").length],
+    ...subjects.map((s) => [s, s, all.filter((w) => w.subject === s).length] as [string, string, number]),
+  ];
+  const active = filters.find(([k]) => k === filter)?.[0] ?? "";
+  const list = all.filter((w) => !active || (active === "entwurf" ? w.status === "entwurf" : w.subject === active));
   return (
     <>
       <PageHeader
         title="Übungen"
-        subtitle="Alle Übungen mit Lösungen. Entwürfe sehen Schüler erst, wenn du sie sendest."
+        info="Alle Übungen mit Lösungen. Entwürfe sehen Schüler erst, wenn du sie sendest."
         actions={
           <Link href="/uebungen/neu" className="btn btn-primary">
             <Plus size={16} aria-hidden /> Übung erstellen
           </Link>
         }
       />
-      {list.length === 0 ? (
+      {all.length === 0 ? (
         <Empty title="Noch keine Übungen" action={<Link href="/uebungen/neu" className="btn btn-primary">Erste Übung erstellen</Link>}>
-          Wähle Fach, Klasse, Thema, Schwierigkeit, Anzahl und Aufgabentyp. Lösungswege werden automatisch mit erstellt.
+          Lösungswege werden automatisch mit erstellt.
         </Empty>
       ) : (
-        <div className="panel overflow-x-auto">
-          <table className="w-full min-w-[680px] text-left text-[14px]">
-            <thead>
-              <tr className="border-b border-line text-[12px] text-ink-3">
-                <th className="px-5 py-3 font-semibold">Titel</th>
-                <th className="px-3 py-3 font-semibold">Fach</th>
-                <th className="px-3 py-3 font-semibold">Typ</th>
-                <th className="px-3 py-3 font-semibold">Schwierigkeit</th>
-                <th className="px-3 py-3 text-right font-semibold">Aufgaben</th>
-                <th className="px-5 py-3 text-right font-semibold">Erstellt</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {list.map((w) => (
-                <tr key={w.id} className="group">
-                  <td className="px-5 py-3">
-                    <Link href={`/uebungen/${w.id}`} className="font-medium group-hover:text-accent">
-                      {w.title}
-                    </Link>
-                    <div className="mt-0.5 flex gap-1.5">
-                      {w.status === "entwurf" && <Pill tone="amber">Entwurf</Pill>}
-                      {w.source === "ki" && (
-                        <Pill tone="accent">
-                          <Sparkles size={11} aria-hidden /> KI
-                        </Pill>
-                      )}
-                      {w.kind === "ueberpruefung" && <Pill tone="green">Überprüfung</Pill>}
-                      {w.assigned > 0 && <Pill>an {w.assigned} gesendet</Pill>}
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 text-ink-2">
-                    <span className="rounded-full px-2.5 py-0.5 text-[12px] font-semibold" style={{ background: subjectTone(w.subject).soft, color: subjectTone(w.subject).fg }}>
-                      {w.subject}
-                    </span>
-                    <div className="mt-1 text-[12px] text-ink-3">{w.klasse ? klassenLabel(w.school_type, w.klasse, { short: true }) : stufeLabel(w.grade)}</div>
-                  </td>
-                  <td className="px-3 py-3 text-ink-2">{worksheetTypeLabel(w.subject, w.task_type)}</td>
-                  <td className="px-3 py-3 text-ink-2">{w.difficulty}</td>
-                  <td className="num px-3 py-3 text-right">{w.task_count}</td>
-                  <td className="num px-5 py-3 text-right text-ink-2">{formatDate(w.created_at, { day: "numeric", month: "short" })}</td>
-                </tr>
+        <>
+          <nav className="mb-4 flex flex-wrap gap-1.5" aria-label="Übungen filtern">
+            {filters
+              .filter(([k, , n]) => !k || n > 0)
+              .map(([k, label, n]) => (
+                <Link
+                  key={k || "alle"}
+                  href={k ? `/uebungen?filter=${encodeURIComponent(k)}` : "/uebungen"}
+                  aria-current={active === k ? "true" : undefined}
+                  className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 text-[13px] font-medium ${active === k ? "bg-ink text-surface" : "bg-panel text-ink-2 hover:text-ink"}`}
+                >
+                  {label}
+                  <span className="num ml-1.5 opacity-70">{n}</span>
+                </Link>
               ))}
-            </tbody>
-          </table>
-        </div>
+          </nav>
+          <ul className="panel divide-y divide-line">
+            {list.map((w) => {
+              const tone = subjectTone(w.subject);
+              const type = worksheetTypeLabel(w.subject, w.task_type);
+              const to = w.recipients.map((n) => n.split(" ")[0]);
+              return (
+                <li key={w.id}>
+                  <Link href={`/uebungen/${w.id}`} className="group flex min-h-[60px] items-center gap-4 px-5 py-2.5 hover:bg-panel/60">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium group-hover:text-accent" title={w.title}>
+                        {w.title}
+                      </p>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[12px]">
+                        <span className="rounded-full px-2.5 py-0.5 font-semibold" style={{ background: tone.soft, color: tone.fg }}>
+                          {w.subject} · {w.klasse ? klassenLabel(w.school_type, w.klasse, { short: true }) : stufeLabel(w.grade)}
+                        </span>
+                        {w.status === "entwurf" ? (
+                          <Pill tone="amber">Entwurf{w.student_id && students.get(w.student_id) ? ` für ${students.get(w.student_id)}` : ""}</Pill>
+                        ) : to.length > 0 ? (
+                          <Pill tone="green" title={`Gesendet an ${w.recipients.join(", ")}`}>
+                            an {to.length > 2 ? `${to.slice(0, 2).join(", ")} +${to.length - 2}` : to.join(", ")}
+                          </Pill>
+                        ) : null}
+                        {w.kind === "ueberpruefung" && <Pill tone="accent">Überprüfung</Pill>}
+                        {w.source === "ki" && (
+                          <Pill title="Von Claude erstellt">
+                            <Sparkles size={11} aria-label="KI" />
+                          </Pill>
+                        )}
+                        <span className="text-ink-3">
+                          {w.difficulty} · <span className="num">{w.task_count}</span> Aufg.
+                          {w.task_type !== "mixed" && ` · ${type}`}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="num shrink-0 text-[13px] text-ink-3" title={formatDate(w.created_at)}>
+                      {formatDate(w.created_at, { day: "numeric", month: "numeric" })}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+            {list.length === 0 && <li className="px-5 py-6 text-[14px] text-ink-3">Keine Übungen in diesem Filter.</li>}
+          </ul>
+        </>
       )}
     </>
   );

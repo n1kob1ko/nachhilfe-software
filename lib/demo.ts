@@ -280,7 +280,7 @@ export function seedDemo(random: () => number = seeded(7)) {
           const progress = Math.max(0, Math.min(1, (56 - l.daysAgo) / 56));
           const drafts = generateBuiltIn({ subject: p.subject, skills: skills.map((s) => ({ id: s.id, name: s.name })), difficulty: "leicht", count: 8, taskType: "mixed", seed: sid * 1000 + i });
           const wid = repo.createWorksheet(
-            { title: `Stunde: ${l.topic}`, subject: p.subject, grade, school_type: p.student.school_type, klasse: p.student.klasse, topic: [...new Set(skills.map((s) => s.area))].join(", "), difficulty: "leicht", task_type: "mixed", kind: "uebung", source: "generator", skill_ids: practiced },
+            { title: `Einheit: ${l.topic}`, subject: p.subject, grade, school_type: p.student.school_type, klasse: p.student.klasse, topic: [...new Set(skills.map((s) => s.area))].join(", "), difficulty: "leicht", task_type: "mixed", kind: "uebung", source: "generator", skill_ids: practiced },
             drafts,
           );
           const aid = repo.assignWorksheet(wid, sid);

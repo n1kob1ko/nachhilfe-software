@@ -17,11 +17,11 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
           Lernheft
         </div>
         <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Anmelden</h1>
-        <p className="mt-1 mb-6 text-ink-2">Mit deinem Lehrer-Account. Jede Einheit wird auf dich dokumentiert.</p>
+        <p className="mt-1 mb-6 text-ink-2">Mit deinem Lehrer-Account.</p>
         <div className="panel px-5 py-5">
           <LoginForm next={weiter} />
         </div>
-        <p className="mt-4 text-[13px] text-ink-3">Schüler brauchen keinen Account, sie üben über ihren persönlichen Link.</p>
+        <p className="mt-4 text-[13px] text-ink-3">Schüler brauchen keinen Account.</p>
       </div>
     </main>
   );

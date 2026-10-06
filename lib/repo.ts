@@ -412,15 +412,21 @@ export function createWorksheet(w: WorksheetInput, tasks: TaskDraft[]): number {
   });
   return tx();
 }
-export function listWorksheets(): (Worksheet & { task_count: number; assigned: number })[] {
+export function listWorksheets(): (Worksheet & { task_count: number; assigned: number; recipients: string[] })[] {
   return db()
     .prepare(
       `SELECT w.*, (SELECT COUNT(*) FROM tasks t WHERE t.worksheet_id = w.id) AS task_count,
-              (SELECT COUNT(*) FROM assignments a WHERE a.worksheet_id = w.id) AS assigned
+              (SELECT COUNT(*) FROM assignments a WHERE a.worksheet_id = w.id) AS assigned,
+              (SELECT GROUP_CONCAT(s.name, '|') FROM assignments a JOIN students s ON s.id = a.student_id WHERE a.worksheet_id = w.id) AS recipients
        FROM worksheets w ORDER BY w.created_at DESC, w.id DESC`,
     )
     .all()
-    .map((r) => ({ ...toWorksheet(r as Row), task_count: (r as Row).task_count as number, assigned: (r as Row).assigned as number }));
+    .map((r) => ({
+      ...toWorksheet(r as Row),
+      task_count: (r as Row).task_count as number,
+      assigned: (r as Row).assigned as number,
+      recipients: (((r as Row).recipients as string | null) ?? "").split("|").filter(Boolean),
+    }));
 }
 export function getWorksheet(id: number): Worksheet | null {
   const r = db().prepare("SELECT * FROM worksheets WHERE id = ?").get(id) as Row | undefined;

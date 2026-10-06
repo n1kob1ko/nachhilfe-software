@@ -16,7 +16,7 @@ const STATE = {
 export function UnitReportView({ r }: { r: UnitReport }) {
   const task = (id: number) => r.tasks.find((t) => t.taskId === id)!;
   if (r.tasksDone === 0 && r.tasks.length === 0) {
-    return <p className="text-[14px] text-ink-2">In dieser Einheit wurden keine Übungsaufgaben am Gerät bearbeitet. Beobachtungen und Inhalte bitte unten ergänzen.</p>;
+    return <p className="text-[14px] text-ink-2">Keine Aufgaben am Gerät bearbeitet.</p>;
   }
   const facts: [string, string][] = [
     ["Fach", r.subjects.join(", ") || "–"],
