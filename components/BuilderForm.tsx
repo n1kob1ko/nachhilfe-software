@@ -12,7 +12,8 @@ import { klassenLabel, schulstufe } from "@/lib/school";
 
 type Skill = { id: string; subject: string; area: string; name: string; grade_min: number; grade_max: number; parent_id: string | null };
 type Student = { id: number; name: string };
-export type BuilderPreset = { skillIds?: string[]; subject?: string; difficulty?: string; count?: number; categories?: string[] };
+/** `suggestion`: key of the suggestion to preselect (e.g. stoff:<id> from an Aktueller-Stoff card). */
+export type BuilderPreset = { skillIds?: string[]; subject?: string; difficulty?: string; count?: number; categories?: string[]; suggestion?: string };
 
 const AUTO = "automatisch";
 const COUNTS = [5, 10, 15, 20];
@@ -24,8 +25,9 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
   const router = useRouter();
   const [state, action] = useActionState<ActionResult, FormData>(createDraftAction, null);
   const subjects = useMemo(() => [...new Set(skills.map((s) => s.subject))], [skills]);
-  // the first suggestion is preselected, unless the page was opened for a specific skill
-  const first = !preset?.skillIds?.length ? ctx?.suggestions[0] : undefined;
+  // the first suggestion is preselected, unless the page was opened for a specific skill or suggestion
+  // (a suggestion that is not there, e.g. a Stoff without a matching skill, preselects nothing else)
+  const first = preset?.skillIds?.length ? undefined : preset?.suggestion ? ctx?.suggestions.find((s) => s.key === preset.suggestion) : ctx?.suggestions[0];
   const firstSkill = skills.find((s) => s.id === (preset?.skillIds?.[0] ?? first?.skillIds[0]));
   const [subject, setSubject] = useState(preset?.subject ?? firstSkill?.subject ?? ctx?.subjects.find((x) => subjects.includes(x)) ?? subjects[0]);
   const [level, setLevel] = useState({ type: ctx?.schoolType || "Mittelschule", klasse: ctx?.klasse ?? 2 });

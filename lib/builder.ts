@@ -8,9 +8,8 @@ import { DIFFICULTIES, categoriesFor, difficultyFor, type Category, type Difficu
 import { generateForSlot } from "./generators";
 import * as repo from "./repo";
 import { klassenLabel, schulstufe } from "./school";
-import { activeMaterial, materialLabel, MATERIAL_SOURCES } from "./current-material";
+import { activeMaterial, materialLabel, materialSkills, MATERIAL_SOURCES } from "./current-material";
 import { daysUntil, dayOf } from "./exams";
-import { matchSkills } from "./lehrplan";
 import { nextSteps } from "./recommend";
 import { masteryStatus } from "./mastery";
 import { analyzeStudent } from "./service";
@@ -130,15 +129,9 @@ export function studentContext(studentId: number): StudentContext | null {
   // 0) the current material comes first and is preselected (Aktueller Stoff, per subject)
   const current = activeMaterial(studentId);
   for (const cm of current) {
-    let ids = cm.skill_ids.filter((id) => all.some((s) => s.id === id));
-    let reason = `Aktueller Stoff seit ${formatDay(cm.since)} · ${MATERIAL_SOURCES[cm.source] ?? cm.source}`;
-    if (!ids.length) {
-      // no skills chosen yet: offer the best match for the topic, as a suggestion only
-      ids = matchSkills(`${cm.topic} ${cm.subtopic}`, cm.subject, { student, limit: 1 })
-        .filter((x) => x.via === "faehigkeit")
-        .map((x) => x.skill.id);
-      reason += " · passende Fähigkeit vorgeschlagen";
-    }
+    // no skills chosen yet: the best match for the topic, also above the student's class, as a suggestion only
+    const { ids, suggested } = materialSkills(cm, student);
+    const reason = `Aktueller Stoff seit ${formatDay(cm.since)} · ${MATERIAL_SOURCES[cm.source] ?? cm.source}${suggested ? " · passende Fähigkeit vorgeschlagen" : ""}`;
     if (ids.length) add({ key: `stoff:${cm.id}`, skillIds: ids, title: `Aktueller Stoff: ${materialLabel(cm)}`, reason, difficulty: AUTO, categories: [] });
   }
   // 1) frequent errors that match a sub-skill ("Kehrwert vergessen" → "Kehrwert korrekt bilden")

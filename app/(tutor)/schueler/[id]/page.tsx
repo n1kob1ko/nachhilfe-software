@@ -24,10 +24,10 @@ import * as repo from "@/lib/repo";
 import { klassenLabel } from "@/lib/school";
 import { analyzeStudent } from "@/lib/service";
 import { dayOf, daysUntil, examReminders, reminderStage, STAGE_LABEL, STAGE_TONE } from "@/lib/exams";
-import { examThresholds, splitTopics } from "@/lib/lehrplan";
+import { examThresholds } from "@/lib/lehrplan";
 import { diagnosesOf } from "@/lib/diagnose";
 import { nextSteps, RULE_LABEL, RULE_TONE, type NextStep } from "@/lib/recommend";
-import { activeMaterial, materialHistory, materialLabel, MATERIAL_SOURCES, PRIORITY_LABEL } from "@/lib/current-material";
+import { activeMaterial, materialHistory, materialLabel, MATERIAL_SOURCES, PRIORITY_LABEL, profileTopic } from "@/lib/current-material";
 import { errorTypeLabel } from "@/lib/error-types";
 import { MaterialForm } from "@/components/MaterialForm";
 import { endMaterialAction } from "@/app/learning-actions";
@@ -189,7 +189,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
       "Empfohlen",
       <span key="next" className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="font-medium">{step.skill.name}</span>
-        <Pill tone={RULE_TONE[step.rule]}>{RULE_LABEL[step.rule]}</Pill>
+        <Pill tone={RULE_TONE[step.rule]}>{step.kind === "ueberpruefung" ? "Überprüfung" : RULE_LABEL[step.rule]}</Pill>
         <Link href={builderHref(student.id, step)} className="link font-medium whitespace-nowrap">
           Übung erstellen ›
         </Link>
@@ -598,9 +598,10 @@ function CurrentMaterialTab({ student, edit }: { student: repo.Student; edit: nu
   const today = dayOf(new Date());
   const editing = active.find((x) => x.id === edit);
   const open = subjects.filter((s) => !active.some((x) => x.subject === s));
-  // the free-text topics of the profile prefill the form once (the teacher still saves it)
-  const [pTopic, pSub] = splitTopics(student.current_topics);
-  const fromProfile = active.length === 0 && pTopic ? { subject: open[0] ?? subjects[0], topic: pTopic, subtopic: pSub ?? "", skill_ids: [], since: today, priority: 2, note: "", source: "unterricht" } : undefined;
+  // the free-text topics of the profile prefill the Thema once (the teacher still saves it); a second
+  // topic is another topic, not the Unterthema, and the full text stays visible above the form
+  const pTopic = profileTopic(student.current_topics);
+  const fromProfile = active.length === 0 && pTopic ? { subject: open[0] ?? subjects[0], topic: pTopic, subtopic: "", skill_ids: [], since: today, priority: 2, note: "", source: "unterricht" } : undefined;
   return (
     <div className="grid max-w-[920px] gap-10">
       <section aria-label="Aktueller Stoff">
@@ -638,7 +639,7 @@ function CurrentMaterialTab({ student, edit }: { student: repo.Student; edit: nu
               )}
               {cm.note && <p className="mt-2 text-[14px] text-ink-2">{cm.note}</p>}
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Link href={`/uebungen/neu?schueler=${student.id}${cm.skill_ids.length ? `&skills=${cm.skill_ids.map(encodeURIComponent).join(",")}` : ""}`} className="btn btn-primary btn-sm">
+                <Link href={`/uebungen/neu?schueler=${student.id}&stoff=${cm.id}`} className="btn btn-primary btn-sm">
                   Übung dazu erstellen
                 </Link>
                 <Link href={`/schueler/${student.id}?tab=stoff&bearbeiten=${cm.id}`} className="btn btn-ghost btn-sm">

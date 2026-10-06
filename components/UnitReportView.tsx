@@ -1,5 +1,6 @@
 import { CheckCircle2, XCircle } from "lucide-react";
 import { SectionTitle } from "@/components/ui";
+import { errorTypeLabel } from "@/lib/error-types";
 import { HELP_LABEL, type TaskLine, type UnitReport } from "@/lib/learning";
 
 const pct = (x: number | null) => (x === null ? "–" : `${Math.round(x * 100)} %`);
@@ -118,6 +119,17 @@ export function UnitReportView({ r }: { r: UnitReport }) {
               ))}
             </ul>
           )}
+          {r.errorTypes && r.errorTypes.length > 0 && (
+            <p className="mt-3 text-[14px] text-ink-2">
+              Fehlerarten:{" "}
+              {r.errorTypes
+                .map((e) => {
+                  const more = [e.count > 1 ? `${e.count}×` : "", e.confirmed ? "" : "Vorschlag"].filter(Boolean);
+                  return `${errorTypeLabel(e.type)}${more.length ? ` (${more.join(", ")})` : ""}`;
+                })
+                .join(", ")}
+            </p>
+          )}
           <p className="mt-3 text-[14px] text-ink-2">
             Fehler selbst korrigiert: <span className="num font-semibold text-ink">{r.correction.selbst}</span> nur mit der Rückmeldung,{" "}
             <span className="num font-semibold text-ink">{r.correction.nachHilfe}</span> nach einer Hilfe; nicht gelöst: <span className="num font-semibold text-ink">{r.correction.nicht}</span>.
@@ -221,6 +233,7 @@ function Result({ t }: { t: TaskLine }) {
         {t.correct ? (t.firstTry ? "richtig, 1. Versuch" : t.corrected === "nach-hilfe" ? "nach Hilfe korrigiert" : t.corrected === "selbst" ? "selbst korrigiert" : "richtig") : "falsch"}
       </span>
       {t.errors.length > 0 && <span className="text-[12px]">{t.errors.join(", ")}</span>}
+      {t.errors.length === 0 && t.errorTypes && t.errorTypes.length > 0 && <span className="text-[12px]">{t.errorTypes.map(errorTypeLabel).join(", ")}</span>}
     </span>
   );
 }

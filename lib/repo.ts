@@ -198,6 +198,8 @@ export type Attempt = {
   error_type?: string | null;
   error_type_source?: string | null;
   error_type_suggested?: string | null;
+  /** Who made error_type_suggested: vorschlag (the app) or ki (free-text grading). */
+  error_type_suggested_source?: string | null;
   error_type_by?: number | null;
   error_type_at?: string | null;
 };
@@ -830,7 +832,7 @@ export function listAttemptsForStudent(studentId: number): Attempt[] {
   }));
 }
 export function recordAttempt(
-  a: Omit<Attempt, "id" | "created_at" | "unit_id" | "active_ms" | "skill_ids" | "teacher_id" | "level" | "error_type" | "error_type_source" | "error_type_suggested" | "error_type_by" | "error_type_at"> & {
+  a: Omit<Attempt, "id" | "created_at" | "unit_id" | "active_ms" | "skill_ids" | "teacher_id" | "level" | "error_type" | "error_type_source" | "error_type_suggested" | "error_type_suggested_source" | "error_type_by" | "error_type_at"> & {
     created_at?: string;
     unit_id?: number | null;
     active_ms?: number | null;
@@ -843,17 +845,19 @@ export function recordAttempt(
   const res = db()
     .prepare(
       `INSERT INTO attempts (assignment_id, task_id, student_id, skill_id, attempt_no, answer, correct, final, time_ms, hints_used, solution_viewed, error_label, feedback, unit_id, active_ms, teacher_id, level,
-         error_type, error_type_source, error_type_suggested, error_type_at, created_at)
+         error_type, error_type_source, error_type_suggested, error_type_suggested_source, error_type_at, created_at)
        VALUES (@assignment_id, @task_id, @student_id, @skill_id, @attempt_no, @answer, @correct, @final, @time_ms, @hints_used, @solution_viewed, @error_label, @feedback, @unit_id, @active_ms, @teacher_id, @level,
-         @error_type, @error_type_source, CASE WHEN @error_type_source = 'vorschlag' THEN @error_type END, CASE WHEN @error_type IS NOT NULL THEN COALESCE(@created_at, datetime('now')) END,
+         @error_type, @error_type_source,
+         CASE WHEN @error_type_source IN ('vorschlag', 'ki') THEN @error_type END, CASE WHEN @error_type IS NOT NULL AND @error_type_source IN ('vorschlag', 'ki') THEN @error_type_source END,
+         CASE WHEN @error_type IS NOT NULL THEN COALESCE(@created_at, datetime('now')) END,
          COALESCE(@created_at, datetime('now')))`,
     )
     .run({ created_at: null, unit_id: null, active_ms: null, teacher_id: null, level: null, error_type: null, error_type_source: null, ...a });
   return Number(res.lastInsertRowid);
 }
 /**
- * The teacher sets or confirms the Fehlerart of a wrong answer (null clears it). The app's own
- * suggestion stays in error_type_suggested, so it is always visible what was changed.
+ * The teacher sets or confirms the Fehlerart of a wrong answer (null clears it). The automatic
+ * suggestion (the app's or the AI's) stays in error_type_suggested, so it is always visible what was changed.
  */
 export function setAttemptErrorType(attemptId: number, type: string | null, teacherId: number | null, at = new Date()) {
   db()

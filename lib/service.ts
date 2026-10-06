@@ -1,6 +1,5 @@
 import { aiEnabled, generateWithAI, gradeFreeText } from "./ai";
 import { computeAnalysis } from "./analysis";
-import { db } from "./db";
 import { documentAssignment } from "./autodoc";
 import type { Difficulty, TaskType } from "./curriculum";
 import { TASK_TYPES, levelOf } from "./curriculum";
@@ -10,13 +9,10 @@ import { runningUnitForStudent, touchUnit } from "./units";
 import * as repo from "./repo";
 import { suggestErrorType } from "./error-types";
 import { checkAnswer, type TaskDraft } from "./tasks";
+import { carelessCredit } from "./lehrplan";
 
-/** Setting under Mehr › Datenqualität: Flüchtigkeitsfehler marked by the teacher count milder (default on). */
-export const CARELESS_SETTING = "lernstand_fluechtig_milder";
-export function carelessCredit(): boolean {
-  const row = db().prepare("SELECT value FROM app_settings WHERE key = ?").get(CARELESS_SETTING) as { value: string } | undefined;
-  return row?.value !== "aus";
-}
+// the setting lives with the other settings in lib/lehrplan.ts (lib/autodoc.ts reads it too)
+export { CARELESS_SETTING, carelessCredit } from "./lehrplan";
 
 export function analyzeStudent(studentId: number, now?: number) {
   const student = repo.getStudent(studentId);

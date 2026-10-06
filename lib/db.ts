@@ -527,6 +527,7 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["attempts", "error_type_suggested", "TEXT"],
   ["attempts", "error_type_by", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
   ["attempts", "error_type_at", "TEXT"],
+  ["attempts", "error_type_suggested_source", "TEXT"], // who made error_type_suggested: vorschlag | ki
   // Aufgabenbibliothek: tags of a library entry (worksheets.kind = 'bibliothek', one task each)
   ["worksheets", "tags", "TEXT NOT NULL DEFAULT '[]'"],
   // note for parents/student written from the summary of a unit (by the teacher or, on request, by Claude)
@@ -563,9 +564,36 @@ export function openDatabase(file: string): Database.Database {
 
 function migrate(conn: Database.Database) {
   const tx = conn.transaction(() => {
+    const added = new Set<string>();
     for (const [table, column, definition] of COLUMNS) {
       const cols = conn.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
-      if (!cols.some((c) => c.name === column)) conn.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+      if (!cols.some((c) => c.name === column)) {
+        conn.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+        added.add(`${table}.${column}`);
+      }
+    }
+    // Links from before skill_links.origin: one that is no built-in prerequisite but is in the package
+    // of an applied curriculum import came from that import (only on this upgrade, never again)
+    if (added.has("skill_links.origin")) {
+      const builtin = new Set(PREREQUISITES.map(([skill, before]) => `${skill}|${before}|voraussetzung`));
+      const imported = new Set<string>();
+      for (const { payload } of conn.prepare("SELECT payload FROM curriculum_imports WHERE applied_at IS NOT NULL").all() as { payload: string }[]) {
+        for (const s of json<{ skills?: { id: string; prerequisites?: string[]; next?: string[] }[] }>(payload, {}).skills ?? []) {
+          for (const p of s.prerequisites ?? []) imported.add(`${s.id}|${p}|voraussetzung`);
+          for (const n of s.next ?? []) imported.add(`${s.id}|${n}|weiter`);
+        }
+      }
+      const mark = conn.prepare("UPDATE skill_links SET origin = 'import' WHERE skill_id = ? AND other_id = ? AND kind = ?");
+      for (const l of conn.prepare("SELECT skill_id, other_id, kind FROM skill_links").all() as { skill_id: string; other_id: string; kind: string }[]) {
+        const key = `${l.skill_id}|${l.other_id}|${l.kind}`;
+        if (!builtin.has(key) && imported.has(key)) mark.run(l.skill_id, l.other_id, l.kind);
+      }
+    }
+    // Fehlerart suggestions from before error_type_suggested_source were the app's; an AI category was
+    // not kept as suggestion, it is still in error_type while the teacher has not changed it
+    if (added.has("attempts.error_type_suggested_source")) {
+      conn.exec("UPDATE attempts SET error_type_suggested_source = 'vorschlag' WHERE error_type_suggested IS NOT NULL");
+      conn.exec("UPDATE attempts SET error_type_suggested = error_type, error_type_suggested_source = 'ki' WHERE error_type_source = 'ki' AND error_type IS NOT NULL AND error_type_suggested IS NULL");
     }
     conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_lessons_assignment ON lessons(assignment_id) WHERE assignment_id IS NOT NULL");
     // Old rows only had a Schulstufe: derive school type and class from it.
