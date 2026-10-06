@@ -2,7 +2,7 @@
 
 import { unitChanged } from "@/lib/live";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   SESSION_COOKIE,
@@ -18,9 +18,10 @@ import {
   requireTeacher,
   setPassword,
 } from "@/lib/auth";
+import { clientIp } from "@/lib/client-ip";
 import { db, usernameFor } from "@/lib/db";
 import { endUnit, expectedSubject, sweepIdleUnits } from "@/lib/learning";
-import { INITIAL_PASSWORD } from "@/lib/password";
+import { INITIAL_PASSWORD, PUBLIC_DEFAULT_PASSWORD, randomStartPassword } from "@/lib/password";
 import * as repo from "@/lib/repo";
 import { ensureBoardForUnit, notifyUnitClosed } from "@/lib/whiteboard";
 import { canManageUnit, finishUnit, getUnit, runningUnits, startUnit } from "@/lib/units";
@@ -42,11 +43,12 @@ export type FormState = { error?: string; ok?: string; values?: Record<string, s
 
 export async function loginAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const username = str(formData, "username");
-  const wait = loginBlockedMinutes(username);
+  const ip = clientIp(await headers());
+  const wait = loginBlockedMinutes(username, ip);
   if (wait) return { error: `Zu viele falsche Versuche. Bitte in ${wait} ${wait === 1 ? "Minute" : "Minuten"} erneut probieren.`, values: { username } };
   const teacher = checkLogin(username, String(formData.get("password") ?? ""));
   if (!teacher) {
-    noteFailedLogin(username);
+    noteFailedLogin(username, ip);
     return { error: "Benutzername oder Passwort stimmt nicht.", values: { username } };
   }
   clearFailedLogins(username);
@@ -81,7 +83,8 @@ export async function changePasswordAction(_prev: FormState, formData: FormData)
   if (!passwordMatches(t.id, current)) return { error: "Das bisherige Passwort stimmt nicht." };
   if (next.length < 8) return { error: "Das neue Passwort braucht mindestens 8 Zeichen." };
   if (next !== String(formData.get("repeat") ?? "")) return { error: "Die beiden neuen Passwörter sind verschieden." };
-  if (next === INITIAL_PASSWORD) return { error: "Bitte ein anderes Passwort als das Startpasswort wählen." };
+  if (next === INITIAL_PASSWORD || next === PUBLIC_DEFAULT_PASSWORD || passwordMatches(t.id, next))
+    return { error: "Bitte ein neues Passwort wählen, nicht das Startpasswort." };
   setPassword(t.id, next);
   // other devices that were logged in with the old password are logged out
   db().prepare("DELETE FROM teacher_sessions WHERE teacher_id = ? AND token <> ?").run(t.id, (await cookies()).get(SESSION_COOKIE)?.value ?? "");
@@ -96,16 +99,21 @@ export async function createTeacherAction(_prev: FormState, formData: FormData):
   const username = usernameFor(str(formData, "username") || name);
   if (db().prepare("SELECT 1 FROM teachers WHERE username = ? OR name = ?").get(username, name)) return { error: "Diesen Lehrer gibt es schon." };
   const res = db().prepare("INSERT INTO teachers (name, username) VALUES (?, ?)").run(name, username);
-  setPassword(Number(res.lastInsertRowid), INITIAL_PASSWORD, true);
+  // every account gets its own one-time start password; it is shown only here and never stored in clear
+  const start = randomStartPassword();
+  setPassword(Number(res.lastInsertRowid), start, true);
   revalidatePath("/lehrer");
-  return { ok: `${name} angelegt. Benutzername „${username}“, Startpasswort „${INITIAL_PASSWORD}“ (muss beim ersten Login geändert werden).` };
+  return { ok: `${name} angelegt. Benutzername „${username}“, Startpasswort „${start}“. Nur jetzt sichtbar, beim ersten Login muss es geändert werden.` };
 }
 
-export async function resetTeacherPasswordAction(teacherId: number) {
-  await requireAdmin();
-  setPassword(teacherId, INITIAL_PASSWORD, true);
+export async function resetTeacherPasswordAction(teacherId: number, _prev: FormState): Promise<FormState> {
+  const me = await requireAdmin();
+  if (teacherId === me.id) return { error: "Das eigene Passwort bitte unter „Passwort ändern“ ändern." };
+  const start = randomStartPassword();
+  setPassword(teacherId, start, true);
   db().prepare("DELETE FROM teacher_sessions WHERE teacher_id = ?").run(teacherId);
   revalidatePath("/lehrer");
+  return { ok: `Neues Startpasswort „${start}“. Nur jetzt sichtbar, beim ersten Login muss es geändert werden.` };
 }
 
 export async function setTeacherActiveAction(teacherId: number, active: boolean) {
