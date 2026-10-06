@@ -1,0 +1,647 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "Volksschule Mathematik und Deutsch – eigene Fähigkeitsstruktur",
+ "description": "45 feine Fähigkeiten für die 1.–4. Klasse Volksschule mit Voraussetzungen. Eigene didaktische Gliederung von Lernheft, nicht der Wortlaut des Lehrplans; nach dem Import des offiziellen Lehrplantexts mit dessen Einträgen verknüpfbar.",
+ "source": {
+  "key": "lernheft-vs",
+  "name": "Lernheft – Volksschule (eigene Struktur)",
+  "source_type": "eigen",
+  "license": "eigen",
+  "publisher": "Lernheft",
+  "notes": "Eigene Fähigkeitsstruktur, kein offizieller Lehrplantext."
+ },
+ "skills": [
+  {
+   "id": "mathe.vs.zahlen.zr10",
+   "subject": "Mathematik",
+   "area": "Zahlen und Zahlenraum",
+   "name": "Zahlen bis 10 lesen, schreiben, zählen",
+   "grade_min": 1,
+   "grade_max": 1,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Zahlen bis 10 sicher erfassen und darstellen"
+  },
+  {
+   "id": "mathe.vs.zahlen.zr20",
+   "subject": "Mathematik",
+   "area": "Zahlen und Zahlenraum",
+   "name": "Zahlenraum bis 20",
+   "grade_min": 1,
+   "grade_max": 2,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Zahlen bis 20 ordnen und vergleichen",
+   "prerequisites": [
+    "mathe.vs.zahlen.zr10"
+   ]
+  },
+  {
+   "id": "mathe.vs.zahlen.zr100",
+   "subject": "Mathematik",
+   "area": "Zahlen und Zahlenraum",
+   "name": "Zahlenraum bis 100",
+   "grade_min": 2,
+   "grade_max": 3,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Zehner und Einer unterscheiden, Zahlen bis 100 ordnen",
+   "prerequisites": [
+    "mathe.vs.zahlen.zr20"
+   ]
+  },
+  {
+   "id": "mathe.vs.zahlen.zr1000",
+   "subject": "Mathematik",
+   "area": "Zahlen und Zahlenraum",
+   "name": "Zahlenraum bis 1000",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Hunderter, Zehner, Einer; Zahlen bis 1000 ordnen",
+   "prerequisites": [
+    "mathe.vs.zahlen.zr100"
+   ]
+  },
+  {
+   "id": "mathe.vs.zahlen.million",
+   "subject": "Mathematik",
+   "area": "Zahlen und Zahlenraum",
+   "name": "Zahlenraum bis 1 000 000",
+   "grade_min": 4,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Große Zahlen lesen, schreiben, runden",
+   "prerequisites": [
+    "mathe.vs.zahlen.zr1000"
+   ]
+  },
+  {
+   "id": "mathe.vs.zahlen.vergleichen",
+   "subject": "Mathematik",
+   "area": "Zahlen und Zahlenraum",
+   "name": "Zahlen vergleichen (<, >, =)",
+   "grade_min": 1,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Zahlen mit Relationszeichen vergleichen"
+  },
+  {
+   "id": "mathe.vs.zahlen.runden",
+   "subject": "Mathematik",
+   "area": "Zahlen und Zahlenraum",
+   "name": "Runden",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Auf Zehner, Hunderter, Tausender runden",
+   "prerequisites": [
+    "mathe.vs.zahlen.zr1000"
+   ]
+  },
+  {
+   "id": "mathe.vs.addsub.zr10",
+   "subject": "Mathematik",
+   "area": "Addition und Subtraktion",
+   "name": "Plus und Minus bis 10",
+   "grade_min": 1,
+   "grade_max": 1,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Im Zahlenraum 10 addieren und subtrahieren",
+   "prerequisites": [
+    "mathe.vs.zahlen.zr10"
+   ]
+  },
+  {
+   "id": "mathe.vs.addsub.zehner",
+   "subject": "Mathematik",
+   "area": "Addition und Subtraktion",
+   "name": "Zehnerübergang",
+   "grade_min": 1,
+   "grade_max": 2,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Mit Zehnerübergang bis 20 rechnen",
+   "prerequisites": [
+    "mathe.vs.addsub.zr10",
+    "mathe.vs.zahlen.zr20"
+   ]
+  },
+  {
+   "id": "mathe.vs.addsub.zr100",
+   "subject": "Mathematik",
+   "area": "Addition und Subtraktion",
+   "name": "Plus und Minus bis 100",
+   "grade_min": 2,
+   "grade_max": 3,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Im Kopf bis 100 addieren und subtrahieren",
+   "prerequisites": [
+    "mathe.vs.addsub.zehner",
+    "mathe.vs.zahlen.zr100"
+   ]
+  },
+  {
+   "id": "mathe.vs.addsub.umkehr",
+   "subject": "Mathematik",
+   "area": "Addition und Subtraktion",
+   "name": "Umkehraufgaben und Ergänzen",
+   "grade_min": 1,
+   "grade_max": 3,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Plus und Minus als Umkehrung nutzen",
+   "prerequisites": [
+    "mathe.vs.addsub.zr10"
+   ]
+  },
+  {
+   "id": "mathe.vs.muldiv.einmaleins",
+   "subject": "Mathematik",
+   "area": "Multiplikation und Division",
+   "name": "Kleines Einmaleins",
+   "grade_min": 2,
+   "grade_max": 3,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Einmaleins-Reihen auswendig und verstehen",
+   "prerequisites": [
+    "mathe.vs.addsub.zr100"
+   ]
+  },
+  {
+   "id": "mathe.vs.muldiv.geteilt",
+   "subject": "Mathematik",
+   "area": "Multiplikation und Division",
+   "name": "Geteilt im Einmaleins",
+   "grade_min": 2,
+   "grade_max": 3,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Aufteilen und Verteilen; Division als Umkehrung",
+   "prerequisites": [
+    "mathe.vs.muldiv.einmaleins"
+   ]
+  },
+  {
+   "id": "mathe.vs.muldiv.rest",
+   "subject": "Mathematik",
+   "area": "Multiplikation und Division",
+   "name": "Division mit Rest",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Teilen mit Rest",
+   "prerequisites": [
+    "mathe.vs.muldiv.geteilt"
+   ]
+  },
+  {
+   "id": "mathe.vs.muldiv.zehner",
+   "subject": "Mathematik",
+   "area": "Multiplikation und Division",
+   "name": "Mit Zehnern und Hundertern multiplizieren",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "z. B. 30 · 4, 600 : 3",
+   "prerequisites": [
+    "mathe.vs.muldiv.einmaleins"
+   ]
+  },
+  {
+   "id": "mathe.vs.schriftlich.addieren",
+   "subject": "Mathematik",
+   "area": "Schriftliche Rechenverfahren",
+   "name": "Schriftlich addieren",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Stellengerecht untereinander addieren",
+   "prerequisites": [
+    "mathe.vs.addsub.zr100",
+    "mathe.vs.zahlen.zr1000"
+   ]
+  },
+  {
+   "id": "mathe.vs.schriftlich.subtrahieren",
+   "subject": "Mathematik",
+   "area": "Schriftliche Rechenverfahren",
+   "name": "Schriftlich subtrahieren",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Schriftlich subtrahieren mit Übertrag",
+   "prerequisites": [
+    "mathe.vs.schriftlich.addieren"
+   ]
+  },
+  {
+   "id": "mathe.vs.schriftlich.multiplizieren",
+   "subject": "Mathematik",
+   "area": "Schriftliche Rechenverfahren",
+   "name": "Schriftlich multiplizieren",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Mit ein- und zweistelligen Zahlen multiplizieren",
+   "prerequisites": [
+    "mathe.vs.muldiv.zehner"
+   ]
+  },
+  {
+   "id": "mathe.vs.schriftlich.dividieren",
+   "subject": "Mathematik",
+   "area": "Schriftliche Rechenverfahren",
+   "name": "Schriftlich dividieren",
+   "grade_min": 4,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Durch einstellige Zahlen dividieren",
+   "prerequisites": [
+    "mathe.vs.schriftlich.multiplizieren",
+    "mathe.vs.muldiv.rest"
+   ]
+  },
+  {
+   "id": "mathe.vs.groessen.geld",
+   "subject": "Mathematik",
+   "area": "Größen",
+   "name": "Geld (Euro und Cent)",
+   "grade_min": 1,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Mit Geldbeträgen rechnen"
+  },
+  {
+   "id": "mathe.vs.groessen.laenge",
+   "subject": "Mathematik",
+   "area": "Größen",
+   "name": "Längen (mm, cm, m, km)",
+   "grade_min": 2,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Längen messen und umwandeln"
+  },
+  {
+   "id": "mathe.vs.groessen.zeit",
+   "subject": "Mathematik",
+   "area": "Größen",
+   "name": "Zeit und Uhr",
+   "grade_min": 1,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Uhrzeit lesen, Zeitspannen berechnen"
+  },
+  {
+   "id": "mathe.vs.groessen.masse",
+   "subject": "Mathematik",
+   "area": "Größen",
+   "name": "Gewicht (g, dag, kg, t)",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Massen vergleichen und umwandeln"
+  },
+  {
+   "id": "mathe.vs.groessen.hohlmass",
+   "subject": "Mathematik",
+   "area": "Größen",
+   "name": "Hohlmaße (ml, l)",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Rauminhalte von Gefäßen vergleichen"
+  },
+  {
+   "id": "mathe.vs.geometrie.formen",
+   "subject": "Mathematik",
+   "area": "Geometrie",
+   "name": "Flächen und Körper erkennen",
+   "grade_min": 1,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Dreieck, Viereck, Kreis; Würfel, Quader, Kugel benennen"
+  },
+  {
+   "id": "mathe.vs.geometrie.zeichnen",
+   "subject": "Mathematik",
+   "area": "Geometrie",
+   "name": "Mit Lineal und Geodreieck zeichnen",
+   "grade_min": 2,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Strecken, rechte Winkel, Rechteck zeichnen"
+  },
+  {
+   "id": "mathe.vs.geometrie.umfang",
+   "subject": "Mathematik",
+   "area": "Geometrie",
+   "name": "Umfang von Rechteck und Quadrat",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Umfang berechnen",
+   "prerequisites": [
+    "mathe.vs.groessen.laenge"
+   ]
+  },
+  {
+   "id": "mathe.vs.geometrie.flaeche",
+   "subject": "Mathematik",
+   "area": "Geometrie",
+   "name": "Flächeninhalt von Rechteck und Quadrat",
+   "grade_min": 4,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Fläche mit Einheitsquadraten und rechnerisch bestimmen",
+   "prerequisites": [
+    "mathe.vs.geometrie.umfang",
+    "mathe.vs.muldiv.einmaleins"
+   ]
+  },
+  {
+   "id": "mathe.vs.sach.einfach",
+   "subject": "Mathematik",
+   "area": "Sachaufgaben",
+   "name": "Einfache Sachaufgaben",
+   "grade_min": 1,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Frage, Rechnung, Antwort aus einem Text finden"
+  },
+  {
+   "id": "mathe.vs.sach.mehrschritt",
+   "subject": "Mathematik",
+   "area": "Sachaufgaben",
+   "name": "Mehrschrittige Sachaufgaben",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Zwischenergebnisse planen und verwenden",
+   "prerequisites": [
+    "mathe.vs.sach.einfach"
+   ]
+  },
+  {
+   "id": "deutsch.vs.lesen.buchstaben",
+   "subject": "Deutsch",
+   "area": "Lesen",
+   "name": "Buchstaben und Laute",
+   "grade_min": 1,
+   "grade_max": 1,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Laute den Buchstaben zuordnen"
+  },
+  {
+   "id": "deutsch.vs.lesen.silben",
+   "subject": "Deutsch",
+   "area": "Lesen",
+   "name": "Silben und Wörter erlesen",
+   "grade_min": 1,
+   "grade_max": 2,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Wörter silbenweise erlesen",
+   "prerequisites": [
+    "deutsch.vs.lesen.buchstaben"
+   ]
+  },
+  {
+   "id": "deutsch.vs.lesen.fluessig",
+   "subject": "Deutsch",
+   "area": "Lesen",
+   "name": "Flüssig lesen",
+   "grade_min": 2,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Texte in angemessenem Tempo vorlesen",
+   "prerequisites": [
+    "deutsch.vs.lesen.silben"
+   ]
+  },
+  {
+   "id": "deutsch.vs.lesen.verstehen",
+   "subject": "Deutsch",
+   "area": "Lesen",
+   "name": "Kurze Texte verstehen",
+   "grade_min": 2,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Fragen zu einem gelesenen Text beantworten",
+   "prerequisites": [
+    "deutsch.vs.lesen.silben"
+   ]
+  },
+  {
+   "id": "deutsch.vs.schreiben.saetze",
+   "subject": "Deutsch",
+   "area": "Schreiben",
+   "name": "Sätze schreiben",
+   "grade_min": 1,
+   "grade_max": 2,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Vollständige Sätze mit Punkt schreiben"
+  },
+  {
+   "id": "deutsch.vs.schreiben.erzaehlen",
+   "subject": "Deutsch",
+   "area": "Schreiben",
+   "name": "Erzählen",
+   "grade_min": 2,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Eine Geschichte mit Anfang, Mitte, Ende schreiben",
+   "prerequisites": [
+    "deutsch.vs.schreiben.saetze"
+   ]
+  },
+  {
+   "id": "deutsch.vs.schreiben.beschreiben",
+   "subject": "Deutsch",
+   "area": "Schreiben",
+   "name": "Beschreiben",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Gegenstände, Wege, Vorgänge beschreiben",
+   "prerequisites": [
+    "deutsch.vs.schreiben.saetze"
+   ]
+  },
+  {
+   "id": "deutsch.vs.recht.lautgetreu",
+   "subject": "Deutsch",
+   "area": "Rechtschreibung",
+   "name": "Lautgetreu schreiben",
+   "grade_min": 1,
+   "grade_max": 2,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Wörter so schreiben, wie man sie spricht"
+  },
+  {
+   "id": "deutsch.vs.recht.satzanfang",
+   "subject": "Deutsch",
+   "area": "Rechtschreibung",
+   "name": "Satzanfang groß",
+   "grade_min": 1,
+   "grade_max": 2,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Satzanfänge großschreiben",
+   "prerequisites": [
+    "deutsch.vs.schreiben.saetze"
+   ]
+  },
+  {
+   "id": "deutsch.vs.recht.dehnung",
+   "subject": "Deutsch",
+   "area": "Rechtschreibung",
+   "name": "Dehnung und Schärfung",
+   "grade_min": 2,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "ie, h, Doppelkonsonanten richtig schreiben",
+   "prerequisites": [
+    "deutsch.vs.recht.lautgetreu"
+   ]
+  },
+  {
+   "id": "deutsch.vs.recht.ableiten",
+   "subject": "Deutsch",
+   "area": "Rechtschreibung",
+   "name": "Ableiten und Verlängern",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "ä/e, äu/eu, b/p, d/t, g/k durch Ableiten finden",
+   "prerequisites": [
+    "deutsch.vs.recht.lautgetreu"
+   ]
+  },
+  {
+   "id": "deutsch.vs.sprache.satzarten",
+   "subject": "Deutsch",
+   "area": "Sprachbetrachtung",
+   "name": "Satzarten und Satzzeichen",
+   "grade_min": 2,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Aussage-, Frage-, Ausrufesatz unterscheiden"
+  },
+  {
+   "id": "deutsch.vs.sprache.satzglieder",
+   "subject": "Deutsch",
+   "area": "Sprachbetrachtung",
+   "name": "Subjekt und Prädikat",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Satzglieder durch Umstellen und Fragen finden",
+   "prerequisites": [
+    "deutsch.vs.sprache.satzarten"
+   ]
+  },
+  {
+   "id": "deutsch.vs.sprache.verbformen",
+   "subject": "Deutsch",
+   "area": "Sprachbetrachtung",
+   "name": "Zeitformen der Verben",
+   "grade_min": 3,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Gegenwart, Vergangenheit, Zukunft bilden"
+  },
+  {
+   "id": "deutsch.vs.sprache.wortfamilie",
+   "subject": "Deutsch",
+   "area": "Sprachbetrachtung",
+   "name": "Wortfamilien und Wortfelder",
+   "grade_min": 2,
+   "grade_max": 4,
+   "school_types": [
+    "Volksschule"
+   ],
+   "learning_objective": "Verwandte Wörter sammeln"
+  }
+ ]
+}

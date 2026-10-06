@@ -6,7 +6,8 @@
 import type { Difficulty } from "./curriculum";
 import type { AssignmentView, Attempt, Lesson, Skill, Student, TestResult } from "./repo";
 
-export type Evidence = { skillId: string; score: number; weight: number; at: number; source: "aufgabe" | "stunde" | "test" };
+import { levelWeight, masteryAt, SOURCE_WEIGHT, taskScore, type Evidence } from "./mastery";
+export { masteryAt, taskScore, type Evidence };
 export type Trend = "up" | "flat" | "down" | "none";
 
 export type SkillStat = {
@@ -55,8 +56,6 @@ export type Analysis = {
 };
 
 const DAY = 86_400_000;
-const HALF_LIFE_DAYS = 45;
-const PRIOR = { score: 0.5, weight: 1 };
 export const WEAK = 0.6;
 export const RECOMMENDATION_NOTE = "Empfehlung";
 export const STRONG = 0.8;
@@ -65,13 +64,6 @@ export function parseTime(s: string): number {
   // SQLite datetime('now') is UTC without zone; ISO dates from forms are local.
   if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s)) return Date.parse(s.replace(" ", "T") + "Z");
   return Date.parse(s);
-}
-
-/** Score of one finished task: first try without help = 1, later tries and hints cost points. */
-export function taskScore(final: Pick<Attempt, "correct" | "attempt_no" | "hints_used" | "solution_viewed">) {
-  if (final.solution_viewed || !final.correct) return 0;
-  const base = final.attempt_no <= 1 ? 1 : final.attempt_no === 2 ? 0.7 : 0.5;
-  return Math.max(0.35, base - 0.15 * final.hints_used);
 }
 
 const GRADE_SCORE: Record<number, number> = { 1: 0.95, 2: 0.82, 3: 0.68, 4: 0.52, 5: 0.25 };
@@ -83,33 +75,20 @@ export function collectEvidence(attempts: Attempt[], lessons: Lesson[], tests: T
   const ev: Evidence[] = [];
   for (const a of attempts) {
     if (!a.final) continue;
-    for (const skillId of skillsOf(a)) ev.push({ skillId, score: taskScore(a), weight: 1, at: parseTime(a.created_at), source: "aufgabe" });
+    // harder tasks say more about a skill (lib/mastery.ts)
+    for (const skillId of skillsOf(a)) ev.push({ skillId, score: taskScore(a), weight: SOURCE_WEIGHT.aufgabe * levelWeight(a.level), at: parseTime(a.created_at), source: "aufgabe" });
   }
   for (const l of lessons) {
     // automatic entries summarise attempts that are already counted above
     if (l.kind === "selbststaendig" || l.status !== "abgeschlossen" || !l.understanding) continue;
-    for (const id of l.skill_ids) ev.push({ skillId: id, score: (l.understanding - 1) / 4, weight: 1.5, at: parseTime(l.starts_at), source: "stunde" });
+    for (const id of l.skill_ids) ev.push({ skillId: id, score: (l.understanding - 1) / 4, weight: SOURCE_WEIGHT.stunde, at: parseTime(l.starts_at), source: "stunde" });
   }
   for (const t of tests) {
     const score = t.points != null && t.max_points ? t.points / t.max_points : t.grade ? GRADE_SCORE[t.grade] : null;
     if (score == null) continue;
-    for (const id of t.skill_ids) ev.push({ skillId: id, score, weight: 2, at: parseTime(t.date), source: "test" });
+    for (const id of t.skill_ids) ev.push({ skillId: id, score, weight: SOURCE_WEIGHT.test, at: parseTime(t.date), source: "test" });
   }
   return ev.sort((a, b) => a.at - b.at);
-}
-
-/** Recency-weighted mastery with a weak prior so one lucky answer is not 100 %. */
-export function masteryAt(items: Evidence[], at: number): number | null {
-  const relevant = items.filter((e) => e.at <= at);
-  if (relevant.length === 0) return null;
-  let num = PRIOR.score * PRIOR.weight;
-  let den = PRIOR.weight;
-  for (const e of relevant) {
-    const w = e.weight * Math.pow(0.5, Math.max(0, at - e.at) / DAY / HALF_LIFE_DAYS);
-    num += w * e.score;
-    den += w;
-  }
-  return num / den;
 }
 
 function trendOf(items: Evidence[], now: number): { trend: Trend; delta: number | null } {

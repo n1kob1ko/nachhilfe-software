@@ -4,7 +4,6 @@ import { CheckCircle2, Circle, ExternalLink, History, Pencil, Plus, Trash2 } fro
 import { Avatar } from "@/components/Art";
 import {
   addHomeworkAction,
-  addTestAction,
   applyRecommendationAction,
   deleteHomeworkAction,
   deleteTestAction,
@@ -13,23 +12,28 @@ import {
 import { AIInsight } from "@/components/AIInsight";
 import { Lernverlauf } from "@/components/Lernverlauf";
 import { UnitControl } from "@/components/UnitControl";
-import { SkillPicker } from "@/components/SkillPicker";
+import { ExamForm } from "@/components/ExamForm";
+import { cancelExamAction, setExamResultAction } from "@/app/curriculum-actions";
 import { CopyLink } from "@/components/CopyLink";
 import { ProgressChart } from "@/components/ProgressChart";
-import { Empty, LevelTag, MasteryBar, More, Pill, Reveal, SectionTitle, TrendBadge, formatDate, formatDuration, formatTime } from "@/components/ui";
+import { Empty, LevelTag, MasteryBar, More, Pill, Reveal, SectionTitle, StatusChip, TrendBadge, formatDate, formatDuration, formatTime } from "@/components/ui";
 import { Info } from "@/components/Info";
 import { aiEnabled } from "@/lib/ai";
 import { type Analysis, pct } from "@/lib/analysis";
 import * as repo from "@/lib/repo";
 import { klassenLabel } from "@/lib/school";
 import { analyzeStudent } from "@/lib/service";
+import { dayOf, daysUntil, examReminders, reminderStage, STAGE_LABEL, STAGE_TONE } from "@/lib/exams";
+import { examThresholds } from "@/lib/lehrplan";
+import { nextSteps, RULE_LABEL } from "@/lib/recommend";
+import { checkLevel } from "@/lib/school";
 
 const TABS = [
   ["ueberblick", "Überblick"],
   ["lernverlauf", "Lernverlauf"],
   ["uebungen", "Übungen"],
-  ["schule", "Hausübungen & Tests"],
-  ["fortschritt", "Fortschritt"],
+  ["schule", "Prüfungen"],
+  ["fortschritt", "Lernstand"],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
@@ -58,6 +62,14 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
             {student.subjects.length > 0 && ` · ${student.subjects.join(", ")}`}
             {teacher && ` · bei ${teacher.name}`}
           </p>
+          {(() => {
+            const level = checkLevel(student.school_type, student.klasse, student.grade);
+            return level.status === "unklar" ? (
+              <Link href={`/schueler/${student.id}/bearbeiten`} className="mt-1.5 inline-flex" title={level.reason}>
+                <Pill tone="amber">Schulstufe unklar · bitte Schulart und Klasse prüfen</Pill>
+              </Link>
+            ) : null;
+          })()}
         </div>
       </header>
       <div className="no-print mb-8 flex flex-wrap gap-3">
@@ -91,7 +103,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
         </div>
       )}
       {tab === "lernverlauf" && <Lessons student={student} filter={sp.art} />}
-      {tab === "schule" && <School student={student} a={a} />}
+      {tab === "schule" && <School student={student} />}
       {tab === "uebungen" && <Exercises student={student} />}
     </>
   );
@@ -137,6 +149,37 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
     ],
     ["Nächstes Lernziel", lastDone?.next_steps || student.goals || <span className="text-ink-3">noch nicht festgelegt</span>],
   ];
+  const today = dayOf(new Date());
+  const exam = examReminders(today, { studentId: student.id })[0] ?? repo.upcomingTests(today, student.id)[0];
+  if (exam) {
+    const days = daysUntil(exam.date, today);
+    const stage = reminderStage(days);
+    rows.splice(3, 0, [
+      "Nächste Prüfung",
+      <span key="exam" className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        {exam.title || `${exam.kind} ${exam.subject}`}
+        <span className="num text-ink-2">{days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`}</span>
+        {stage && <Pill tone={STAGE_TONE[stage]}>{STAGE_LABEL[stage]}</Pill>}
+        <Link href={`/schueler/${student.id}/pruefung/${exam.id}`} className="link font-medium whitespace-nowrap">
+          Vorbereitung ›
+        </Link>
+      </span>,
+    ]);
+  }
+  const step = nextSteps(student.id, { today, limit: 1 })[0];
+  if (step) {
+    rows.splice(exam ? 4 : 3, 0, [
+      "Als Nächstes üben",
+      <span key="next" className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <Pill tone={step.rule === 1 ? "red" : step.rule === 2 || step.rule === 3 ? "amber" : "neutral"}>{RULE_LABEL[step.rule]}</Pill>
+        <span>{step.skill.name}</span>
+        <Link href={`/uebungen/neu?schueler=${student.id}&skill=${encodeURIComponent(step.skill.id)}&anzahl=${step.count}`} className="link font-medium whitespace-nowrap">
+          Übung erstellen ›
+        </Link>
+        <span className="basis-full text-[13px] text-ink-2">{step.reason}</span>
+      </span>,
+    ]);
+  }
   return (
     <div className="grid max-w-[860px] gap-8">
       <dl className="panel grid gap-x-6 gap-y-4 px-5 py-5 text-[15px] sm:grid-cols-[170px_minmax(0,1fr)]">
@@ -207,8 +250,8 @@ function Progress({ a }: { a: Analysis }) {
         <SectionTitle>
           <span>
             Verlauf nach Themen
-            <Info label="Wie wird die Beherrschung berechnet?">
-              Gewichteter Schnitt aus Übungen (1. Versuch ohne Hilfe zählt voll, weitere Versuche und Hilfen weniger), dokumentiertem Verständnis in Einheiten und Testergebnissen. Neuere Daten zählen stärker. Markierungen bei 60 % und 80 %.
+            <Info label="Wie wird der Lernstand berechnet?">
+              Gewichteter Schnitt aus Übungen (1. Versuch ohne Hilfe zählt voll, weitere Versuche und Hilfen weniger, schwere Aufgaben mehr), dokumentiertem Verständnis in Einheiten und Testergebnissen. Neuere Daten zählen stärker, die Arbeitszeit zählt nicht. Ab 85 % sicher, ab 70 % gut, ab 50 % üben, darunter kritisch.
             </Info>
           </span>
         </SectionTitle>
@@ -224,21 +267,26 @@ function Progress({ a }: { a: Analysis }) {
             <span className="num text-ink-2">{pct(subj.mastery)}</span>
             <TrendBadge trend={subj.trend} delta={subj.delta} />
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {subj.areas
               .filter((ar) => ar.mastery !== null)
               .map((area) => {
                 const practiced = area.skills.filter((s) => s.mastery !== null);
                 const open = area.skills.filter((s) => s.mastery === null);
                 return (
-                  <div key={area.area} className="panel">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3">
-                      <h3 className="font-semibold">{area.area}</h3>
+                  <details key={area.area} className="panel group">
+                    <summary className="flex min-h-[52px] cursor-pointer list-none flex-wrap items-center justify-between gap-3 px-5 py-3 group-open:border-b group-open:border-line">
+                      <h3 className="font-semibold">
+                        {area.area} <StatusChip mastery={area.mastery} />
+                      </h3>
                       <div className="flex items-center gap-4">
                         <TrendBadge trend={area.trend} delta={area.delta} />
-                        <span className="num w-11 text-right font-semibold">{pct(area.mastery)}</span>
+                        <span className="text-[13px] font-medium text-accent">
+                          <span className="group-open:hidden">Details ›</span>
+                          <span className="hidden group-open:inline">Weniger</span>
+                        </span>
                       </div>
-                    </div>
+                    </summary>
                     <table className="w-full text-left text-[14px]">
                       <thead className="sr-only">
                         <tr>
@@ -308,7 +356,7 @@ function Progress({ a }: { a: Analysis }) {
                         </Reveal>
                       )}
                     </div>
-                  </div>
+                  </details>
                 );
               })}
           </div>
@@ -440,14 +488,108 @@ function Lessons({ student, filter }: { student: repo.Student; filter?: string }
   return <Lernverlauf student={student} filter={filter} />;
 }
 
-function School({ student, a }: { student: repo.Student; a: Analysis }) {
+function School({ student }: { student: repo.Student }) {
   const homework = repo.listHomework(student.id);
   const tests = repo.listTests(student.id);
   const subjects = student.subjects.length ? student.subjects : ["Mathematik"];
-  const skills = a.skills.map((s) => s.skill);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dayOf(new Date());
+  const upcoming = tests.filter((t) => t.status === "geplant").sort((x, y) => x.date.localeCompare(y.date));
+  const written = tests.filter((t) => t.status !== "geplant" && t.status !== "abgesagt");
+  const a = analyzeStudent(student.id)!;
+  const m = (id: string) => a.skills.find((s) => s.skill.id === id)?.mastery ?? null;
   return (
-    <div className="grid gap-12 lg:grid-cols-2">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-2">
+      <section aria-label="Prüfungen">
+        <SectionTitle>
+          <span>
+            Schularbeiten und Tests
+            <Info label="Info zu Prüfungen">
+              Ab {examThresholds()[0]} Tagen vorher erinnert die Startseite an die Vorbereitung, ab {examThresholds()[1]} Tagen mit höherer Priorität, ab {examThresholds()[2]} Tagen als „Prüfung bald“.
+            </Info>
+          </span>
+        </SectionTitle>
+        <ul className="mb-5 grid gap-3">
+          {upcoming.length === 0 && <li className="text-[14px] text-ink-3">Keine Prüfung geplant.</li>}
+          {upcoming.map((t) => {
+            const days = daysUntil(t.date, today);
+            const stage = reminderStage(days);
+            const skills = t.skill_ids.map((id) => repo.getSkill(id)).filter((x): x is repo.Skill => Boolean(x));
+            return (
+              <li key={t.id} className="panel px-4 py-3.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold">
+                    {t.title || `${t.kind} ${t.subject}`}
+                  </span>
+                  <span className="num text-[14px] text-ink-2">
+                    {formatDate(t.date, { weekday: "short", day: "numeric", month: "short" })} · {days < 0 ? "vorbei" : days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`}
+                  </span>
+                  {stage && <Pill tone={STAGE_TONE[stage]}>{STAGE_LABEL[stage]}</Pill>}
+                </div>
+                {(t.topics?.length ?? 0) > 0 && <p className="mt-1 text-[13.5px] text-ink-2">Stoff: {t.topics!.join(", ")}</p>}
+                {skills.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {skills.map((sk) => (
+                      <span key={sk.id} className="inline-flex items-center gap-1 text-[13px]">
+                        {sk.name} <StatusChip mastery={m(sk.id)} />
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Link href={`/schueler/${student.id}/pruefung/${t.id}`} className="btn btn-primary btn-sm">
+                    Vorbereitung starten
+                  </Link>
+                  <Reveal label="Ergebnis eintragen">
+                    <form action={setExamResultAction.bind(null, t.id)} className="flex flex-wrap items-center gap-2">
+                      <input className="input num w-[84px]" name="grade" type="number" min={1} max={5} placeholder="Note" aria-label="Note" />
+                      <input className="input num w-[84px]" name="points" inputMode="decimal" placeholder="Punkte" aria-label="Punkte" />
+                      <input className="input num w-[84px]" name="max_points" inputMode="decimal" placeholder="von" aria-label="Höchstpunkte" />
+                      <button className="btn btn-secondary btn-sm">Speichern</button>
+                    </form>
+                  </Reveal>
+                  <form action={cancelExamAction.bind(null, t.id)} className="ml-auto">
+                    <button className="btn btn-ghost btn-sm">Absagen</button>
+                  </form>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        <ExamForm studentId={student.id} subjects={subjects} today={today} />
+        <h3 className="mt-8 mb-1 text-[15px] font-semibold">Ergebnisse</h3>
+        <ul className="divide-y divide-line">
+          {written.length === 0 && <li className="py-2 text-[14px] text-ink-3">Noch keine Ergebnisse eingetragen.</li>}
+          {written.map((t) => (
+            <li key={t.id} className="flex items-start justify-between gap-3 py-2.5 text-[14px]">
+              <div>
+                <span className="font-medium">
+                  {t.title || `${t.kind} ${t.subject}`}
+                </span>
+                {t.topic && <span className="text-ink-2"> · {t.topic}</span>}
+                <div className="text-[12px] text-ink-3">
+                  {formatDate(t.date)}
+                  {t.notes && ` · ${t.notes}`}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="num text-right">
+                  {t.grade && <span className="font-semibold">Note {t.grade}</span>}
+                  {t.points != null && (
+                    <span className="block text-[12px] text-ink-3">
+                      {t.points}/{t.max_points} P.
+                    </span>
+                  )}
+                </span>
+                <form action={deleteTestAction.bind(null, t.id, student.id)}>
+                  <button className="btn btn-ghost btn-sm !px-2" aria-label="Löschen">
+                    <Trash2 size={14} />
+                  </button>
+                </form>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
       <section>
         <SectionTitle>Hausübungen</SectionTitle>
         <ul className="mb-5 divide-y divide-line">
@@ -493,69 +635,6 @@ function School({ student, a }: { student: repo.Student; a: Analysis }) {
             <input className="input" type="date" name="due_date" aria-label="Fällig am" />
           </div>
           <button className="btn btn-secondary justify-self-start">Hinzufügen</button>
-        </form>
-      </section>
-      <section>
-        <SectionTitle>Testergebnisse</SectionTitle>
-        <ul className="mb-5 divide-y divide-line">
-          {tests.length === 0 && <li className="py-2 text-[14px] text-ink-3">Noch keine Tests eingetragen.</li>}
-          {tests.map((t) => (
-            <li key={t.id} className="flex items-start justify-between gap-3 py-2.5 text-[14px]">
-              <div>
-                <span className="font-medium">
-                  {t.kind} {t.subject}
-                </span>
-                {t.topic && <span className="text-ink-2"> · {t.topic}</span>}
-                <div className="text-[12px] text-ink-3">
-                  {formatDate(t.date)}
-                  {t.notes && ` · ${t.notes}`}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="num text-right">
-                  {t.grade && <span className="font-semibold">Note {t.grade}</span>}
-                  {t.points != null && (
-                    <span className="block text-[12px] text-ink-3">
-                      {t.points}/{t.max_points} P.
-                    </span>
-                  )}
-                </span>
-                <form action={deleteTestAction.bind(null, t.id, student.id)}>
-                  <button className="btn btn-ghost btn-sm !px-2" aria-label="Löschen">
-                    <Trash2 size={14} />
-                  </button>
-                </form>
-              </div>
-            </li>
-          ))}
-        </ul>
-        <form action={addTestAction} className="panel grid gap-3 px-4 py-4">
-          <input type="hidden" name="student_id" value={student.id} />
-          <span className="label">Neues Ergebnis</span>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <select className="input" name="kind" aria-label="Art">
-              {["Schularbeit", "Test", "Vokabeltest", "Mitarbeit", "Zeugnis"].map((k) => (
-                <option key={k}>{k}</option>
-              ))}
-            </select>
-            <select className="input" name="subject" aria-label="Fach">
-              {subjects.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
-            <input className="input" type="date" name="date" required defaultValue={today} aria-label="Datum" />
-          </div>
-          <input className="input" name="topic" placeholder="Stoff, z. B. Bruchrechnung" />
-          <div className="grid grid-cols-3 gap-3">
-            <input className="input num" name="grade" type="number" min={1} max={5} placeholder="Note" />
-            <input className="input num" name="points" inputMode="decimal" placeholder="Punkte" />
-            <input className="input num" name="max_points" inputMode="decimal" placeholder="von" />
-          </div>
-          <details>
-            <summary className="cursor-pointer text-[13px] text-ink-2">Mit Fähigkeiten verknüpfen</summary>
-            <SkillPicker skills={skills} />
-          </details>
-          <button className="btn btn-secondary justify-self-start">Speichern</button>
         </form>
       </section>
     </div>
