@@ -397,6 +397,17 @@ test("a diagnosis never repeats a task; generator tasks stay own tasks next to C
   assert.ok(tasks.length >= 3 && tasks.length < d.planDiagnosis([skill]).length, "fewer tasks rather than the same one twice");
   assert.ok(tasks.every((t) => t.skillId === skill && t.sourceType === "eigen"));
 
+  // a duplicated library entry is the same task: it comes in once, the other slot gets a new one
+  const lib = await import("./library");
+  const entry = lib.createLibraryTask({ subject: "Deutsch", schoolType: "Mittelschule", klasse: 2, topic: "", tags: [] }, { type: "calc", skillId: skill, difficulty: "mittel", prompt: "Welche Wortart ist „schnell“ in „Sie läuft schnell.“?", data: {}, answer: { accepted: ["Adjektiv"], mode: "text" }, solution: "Adjektiv", hints: [], errorMap: [] });
+  lib.duplicateLibraryEntry(entry, niko.id);
+  const other = (await setup("Ida Wortarten")).sid;
+  const withLib = await d.createDiagnosis({ studentId: other, subject: "Deutsch", schoolType: "Mittelschule", klasse: 2, skillIds: [skill], topics: [], teacherId: niko.id, useAI: false, seed: 3 });
+  const libTasks = repo.listTasks(withLib.worksheetId);
+  assert.equal(withLib.fromLibrary, 1);
+  assert.equal(new Set(libTasks.map((t) => t.prompt)).size, libTasks.length, "no task twice");
+  assert.equal(libTasks.filter((t) => t.difficulty === "mittel").length, 2);
+
   // Claude wrote one task: the generator tasks next to it are still stored as own tasks
   const skills = new Map(repo.listSkills().map((s) => [s.id, s]));
   const plan = d.planDiagnosis(["mathe.brueche.kuerzen", "mathe.brueche.dividieren"]);

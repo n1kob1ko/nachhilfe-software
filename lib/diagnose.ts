@@ -35,7 +35,10 @@ export function diagnosisSkills(o: { subject: string; branch: SchoolBranch | nul
   return out;
 }
 
-/** A complete library task for this skill and difficulty that the student has not seen yet. */
+/**
+ * A complete library task for this skill and difficulty that the student has not seen yet and the
+ * diagnosis does not have yet (a duplicated library entry has the same task).
+ */
 function libraryTask(subject: string, item: DiagnosisItem, used: Set<number>, seen: Set<string>): TaskDraft | null {
   const rows = db()
     .prepare(
@@ -50,6 +53,7 @@ function libraryTask(subject: string, item: DiagnosisItem, used: Set<number>, se
     const t = repo.getTask(id);
     if (!t || seen.has(t.prompt) || checkTask(t)) continue;
     used.add(id);
+    seen.add(t.prompt);
     const { id: _i, worksheet_id: _w, position: _p, level: _l, ...draft } = t;
     void _i, void _w, void _p, void _l;
     return { ...draft, skillId: item.skillId };
