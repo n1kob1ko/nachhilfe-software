@@ -1,5 +1,6 @@
 "use server";
 
+import { deliverIfRunning, pushLive, showOnTablet } from "@/lib/live";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/lib/auth";
@@ -155,7 +156,10 @@ export async function releaseAction(_prev: ActionResult, form: FormData): Promis
   const studentId = Number(form.get("student_id")) || null;
   const out = releaseWorksheet(worksheetId, studentId);
   if (out.error) return { error: out.error };
-  if (studentId) noteActivity(studentId);
+  if (studentId) {
+    noteActivity(studentId);
+    deliverIfRunning(studentId, out.assignmentId);
+  }
   revalidatePath("/", "layout");
   // during a unit the teacher goes back to it: that is where the results come in
   const unit = studentId ? runningUnitForStudent(studentId) : null;
@@ -195,6 +199,7 @@ export async function sendTaskToStudentAction(taskId: number, studentId: number)
   const out = sendSingleTask(taskId, studentId, teacher.id);
   if (out.error) return { error: out.error };
   noteActivity(studentId);
+  deliverIfRunning(studentId, out.assignmentId);
   revalidatePath("/", "layout");
   return { ok: `An ${repo.getStudent(studentId)?.name ?? "den Schüler"} gesendet.` };
 }
@@ -210,6 +215,7 @@ export async function sendTaskToBoardAction(taskId: number, unitId: number): Pro
   const board = ensureBoardForUnit(unit.id);
   if (!board) return { error: "Das Whiteboard konnte nicht geöffnet werden." };
   queueInsert(board.id, { kind: "tasks", title: repo.getWorksheet(task.worksheet_id)?.title ?? "Aufgabe", tasks: [boardTask(task)] });
+  showOnTablet(unit, { kind: "tafel" });
   return { ok: `Auf dem Whiteboard von ${unit.student_name}.` };
 }
 
@@ -221,5 +227,7 @@ export async function recordHintAction(token: string, assignmentId: number, task
   const t = repo.getTask(taskId);
   if (!student || !a || !t || a.student_id !== student.id || t.worksheet_id !== a.worksheet_id) return;
   if (!Number.isInteger(hintIndex) || hintIndex < 0 || hintIndex >= t.hints.length) return;
-  repo.recordHintUse({ assignment_id: a.id, task_id: t.id, student_id: student.id, hint_index: hintIndex, unit_id: runningUnitForStudent(student.id)?.id ?? a.unit_id });
+  const unit = runningUnitForStudent(student.id);
+  repo.recordHintUse({ assignment_id: a.id, task_id: t.id, student_id: student.id, hint_index: hintIndex, unit_id: unit?.id ?? a.unit_id });
+  if (unit) pushLive(unit.id);
 }

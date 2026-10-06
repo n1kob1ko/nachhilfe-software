@@ -3,7 +3,8 @@ import { endUnitAction } from "@/app/session-actions";
 import { WhiteboardLoader } from "@/components/whiteboard/WhiteboardLoader";
 import { requireTeacher } from "@/lib/auth";
 import { getStudent } from "@/lib/repo";
-import { getUnit } from "@/lib/units";
+import { canManageUnit, getUnit } from "@/lib/units";
+import { parseView, showOnTablet } from "@/lib/live";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
 import { worksheetsForBoard } from "@/lib/whiteboard-content";
 
@@ -12,9 +13,11 @@ export const viewport = { width: "device-width", initialScale: 1, maximumScale: 
 
 /** The teacher's view of the unit's whiteboard (full screen, without the app's side bar). */
 export default async function TeacherBoardPage({ params, searchParams }: { params: Promise<{ unitId: string }>; searchParams: Promise<{ seite?: string }> }) {
-  await requireTeacher();
+  const teacher = await requireTeacher();
   const unit = getUnit(Number((await params).unitId));
   if (!unit || !ensureBoardForUnit(unit.id)) notFound();
+  // the teacher works on the board: the tablet of this unit switches to it as well
+  if (unit.status === "gestartet" && canManageUnit(teacher, unit) && parseView(unit.device_view).kind !== "tafel") showOnTablet(unit, { kind: "tafel" });
   const student = getStudent(unit.student_id)!;
   return (
     <WhiteboardLoader

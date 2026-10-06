@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Info } from "@/components/Info";
 import { notFound } from "next/navigation";
 import { BookOpenCheck, CheckCircle2, ChartNoAxesColumn, ExternalLink, Plus, Presentation, Square } from "lucide-react";
 import { endUnitAction } from "@/app/session-actions";
@@ -11,7 +10,10 @@ import { UnitDocForm } from "@/components/UnitDocForm";
 import { CancelUnit } from "@/components/UnitControl";
 import { UnitReportView } from "@/components/UnitReportView";
 import { UnitSummary } from "@/components/UnitSummary";
-import { Pill, SectionTitle, formatDate, formatTime } from "@/components/ui";
+import { Pill, Reveal, SectionTitle, formatDate, formatTime } from "@/components/ui";
+import { LiveStatus } from "@/components/device/LiveStatus";
+import { liveSnapshot } from "@/lib/live";
+import { hasDevice } from "@/lib/devices";
 import { buildUnitReport, readReport } from "@/lib/learning";
 import * as repo from "@/lib/repo";
 import { requireTeacher } from "@/lib/auth";
@@ -64,7 +66,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
     const area = sp.bereich === "fortschritt" ? "fortschritt" : "uebungen";
     return (
       <>
-        <AutoRefresh seconds={10} />
+        <AutoRefresh seconds={30} />
         <header className="sticky top-0 z-20 -mx-4 mb-6 bg-paper/95 px-4 pt-1 pb-4 backdrop-blur md:-mx-8 md:px-8">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span className="relative flex h-3 w-3 shrink-0" aria-hidden>
@@ -96,6 +98,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
           )}
         </header>
         {notices}
+        {mayManage && <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} />}
         {area === "uebungen" ? <UnitExercisesArea unit={unit} student={student} mayManage={mayManage} /> : <UnitProgressArea unit={unit} studentName={student.name} />}
         {mayManage && (
           <div className="mt-14 border-t border-line pt-5">
@@ -254,6 +257,7 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
   for (const a of attempts) if (!lastBy.has(a.assignment_id) || a.created_at > lastBy.get(a.assignment_id)!) lastBy.set(a.assignment_id, a.created_at);
   const rows = repo.listAssignments(unit.student_id).filter((a) => !a.completed_at || lastBy.has(a.id));
   const name = first(student.name);
+  const paired = hasDevice(unit.teacher_id);
   return (
     <div className="grid gap-10">
       <section>
@@ -280,7 +284,7 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
                       {lastBy.has(a.id) ? ` · zuletzt ${formatTime(lastBy.get(a.id)!)}` : a.started_at ? "" : ` · ${name} hat noch nicht begonnen`}
                     </span>
                   </span>
-                  {done && <Pill tone="green">fertig</Pill>}
+                  {done ? <Pill tone="green">fertig</Pill> : !a.delivered_at && !a.started_at && a.unit_id === unit.id && paired && <Pill tone="red">nicht angekommen</Pill>}
                   <Link href={`/schueler/${student.id}/ergebnis/${a.id}`} className={`btn ${done ? "btn-primary" : "btn-secondary"}`}>
                     Ergebnis ansehen
                   </Link>
@@ -290,11 +294,8 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
           </ul>
         )}
       </section>
-      <section>
-        <h2 className="mb-2 text-[17px] font-semibold">
-          Link für das Gerät von {name}
-          <Info label="Info zum Link">Auf diesem Link sieht {name} die gesendeten Übungen und das Whiteboard. Einmal am Tablet öffnen genügt.</Info>
-        </h2>
+      <Reveal label={`Ohne Tablet: Link für das Gerät von ${name}`}>
+        <p className="mb-2 text-[14px] text-ink-2">Nur nötig, wenn {name} nicht am Schüler-Tablet arbeitet. Auf dem Link sieht {name} die gesendeten Übungen.</p>
         <div className="flex max-w-[620px] flex-wrap items-center gap-2">
           <div className="min-w-0 flex-1">
             <CopyLink path={`/lernen/${student.access_token}`} />
@@ -303,7 +304,7 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
             <ExternalLink size={14} aria-hidden /> Ansicht öffnen
           </a>
         </div>
-      </section>
+      </Reveal>
     </div>
   );
 }

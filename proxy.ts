@@ -11,6 +11,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // everything except the login page, the student area and static files
-  matcher: ["/((?!login|lernen|excalidraw-assets|_next/static|_next/image|favicon.ico|icon|.*\\.(?:png|svg|ico|webmanifest)$).*)"],
+  // everything except the login page, the student areas (link and tablet) and static files
+  matcher: ["/((?!login|lernen|geraet|excalidraw-assets|_next/static|_next/image|favicon.ico|icon|.*\\.(?:png|svg|ico|webmanifest)$).*)"],
 };

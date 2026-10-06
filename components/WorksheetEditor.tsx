@@ -14,6 +14,7 @@ import {
   type ActionResult,
 } from "@/app/builder-actions";
 import { TaskBody } from "@/components/TaskPreview";
+import { TabletSend } from "@/components/device/TabletSend";
 import { categoriesFor, DIFFICULTIES, TASK_TYPES, type Difficulty, type TaskType } from "@/lib/curriculum";
 import type { Task } from "@/lib/repo";
 import { GAP, gapCount, hintLabel, type TaskDraft } from "@/lib/tasks";
@@ -29,6 +30,8 @@ type Props = {
   students: { id: number; name: string }[];
   defaultStudentId: number | null;
   units: Unit[];
+  /** the teacher's running unit: single tasks go straight to its student's tablet */
+  active?: { unitId: number; student: string } | null;
   showSolutions: boolean;
   aiEnabled: boolean;
 };
@@ -165,10 +168,16 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
 /** "An Schüler senden" and "Auf Whiteboard senden" for one task. */
 function SendPanel(p: Props & { task: Task; run: (fn: () => Promise<ActionResult>) => void; pending: boolean }) {
   const [studentId, setStudentId] = useState<number | "">(p.defaultStudentId ?? "");
-  const preferred = p.units.find((u) => u.student_id === p.defaultStudentId) ?? p.units[0];
+  const preferred = p.units.find((u) => u.unit_id === p.active?.unitId) ?? p.units.find((u) => u.student_id === p.defaultStudentId) ?? p.units[0];
   const [unitId, setUnitId] = useState(preferred?.unit_id ?? 0);
   return (
     <div className="mt-3 ml-[44px] grid gap-3 rounded-lg bg-paper px-4 py-3 sm:grid-cols-2">
+      {p.active ? (
+        <div className="grid content-start gap-2">
+          <span className="label">An Schüler senden</span>
+          <TabletSend student={p.active.student} unitId={p.active.unitId} taskId={p.task.id} small />
+        </div>
+      ) : (
       <div className="grid gap-2">
         <span className="label">An Schüler senden</span>
         <div className="flex gap-2">
@@ -186,6 +195,7 @@ function SendPanel(p: Props & { task: Task; run: (fn: () => Promise<ActionResult
         </div>
         <p className="text-[12px] text-ink-3">Kommt als einzelne Aufgabe auf seinen Lernlink.</p>
       </div>
+      )}
       <div className="grid gap-2">
         <span className="label flex items-center gap-1.5">
           <Presentation size={14} aria-hidden /> Auf Whiteboard senden

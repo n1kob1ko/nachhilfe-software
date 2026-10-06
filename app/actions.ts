@@ -1,5 +1,6 @@
 "use server";
 
+import { deliverIfRunning, pushLive } from "@/lib/live";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { aiEnabled, analyzeWithAI } from "@/lib/ai";
@@ -150,8 +151,9 @@ export async function assignWorksheetAction(formData: FormData) {
   const worksheetId = int(formData, "worksheet_id");
   const studentId = int(formData, "student_id");
   if (studentId) {
-    repo.assignWorksheet(worksheetId, studentId, "", runningUnitForStudent(studentId)?.id ?? null);
+    const id = repo.assignWorksheet(worksheetId, studentId, "", runningUnitForStudent(studentId)?.id ?? null);
     noteActivity(studentId);
+    deliverIfRunning(studentId, id);
   }
   revalidatePath("/", "layout");
 }
@@ -216,6 +218,9 @@ export async function createSkillAction(formData: FormData) {
 export async function submitAnswerAction(input: SubmitInput) {
   const res = await submitAnswer(input);
   revalidatePath(`/lernen/${input.token}`);
+  const student = repo.getStudentByToken(input.token);
+  const unit = student ? runningUnitForStudent(student.id) : null;
+  if (unit) pushLive(unit.id);
   return res;
 }
 

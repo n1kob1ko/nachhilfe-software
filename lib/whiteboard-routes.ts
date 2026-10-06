@@ -4,7 +4,7 @@
  */
 import { getUnit } from "./units";
 import * as wb from "./whiteboard";
-import { notePage, presence, publish, subscribe } from "./whiteboard-hub";
+import { notePage, presence, publish, stream } from "./whiteboard-hub";
 
 export type Viewer = { role: wb.Role; name: string; canWrite: boolean };
 
@@ -12,47 +12,10 @@ const json = (data: unknown, status = 200) => Response.json(data, { status, head
 
 /** The live stream of one device: first the current state, then every change made elsewhere. */
 export function eventStream(board: wb.Board, viewer: Viewer, request: Request): Response {
-  const clientId = new URL(request.url).searchParams.get("client")?.slice(0, 40) || crypto.randomUUID();
-  const enc = new TextEncoder();
-  let cleanup = () => {};
-  const stream = new ReadableStream({
-    start(controller) {
-      const send = (e: unknown) => controller.enqueue(enc.encode(`data: ${JSON.stringify(e)}\n\n`));
-      const unit = getUnit(board.unit_id);
-      send({ type: "hello", ...wb.pagesState(board.id), running: unit?.status === "gestartet", canWrite: viewer.canWrite, people: presence(board.id) });
-      const unsubscribe = subscribe(board.id, { clientId, role: viewer.role, name: viewer.name, pageId: null, send });
-      // a comment line every 20 s keeps proxies and tablets from closing an idle connection
-      const ping = setInterval(() => {
-        try {
-          controller.enqueue(enc.encode(": ping\n\n"));
-        } catch {
-          cleanup();
-        }
-      }, 20_000);
-      cleanup = () => {
-        clearInterval(ping);
-        unsubscribe();
-        cleanup = () => {};
-        try {
-          controller.close();
-        } catch {
-          // already closed
-        }
-      };
-      request.signal.addEventListener("abort", () => cleanup());
-    },
-    cancel() {
-      cleanup();
-    },
-  });
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream; charset=utf-8",
-      // no-transform keeps the compression middleware from buffering the stream
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-      "X-Accel-Buffering": "no",
-    },
+  return stream(board.id, request, {
+    role: viewer.role,
+    name: viewer.name,
+    hello: () => ({ type: "hello", ...wb.pagesState(board.id), running: getUnit(board.unit_id)?.status === "gestartet", canWrite: viewer.canWrite, people: presence(board.id) }),
   });
 }
 

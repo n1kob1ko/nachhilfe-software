@@ -22,6 +22,8 @@ export type Unit = {
   ended_by_teacher_id: number | null;
   /** 1 when the end time was not observed but estimated (automatic end) */
   end_estimated: number;
+  /** what the teacher's student tablet shows: '' overview, 'tafel', 'aufgabe:<assignment id>' */
+  device_view: string;
 };
 export type UnitView = Unit & { teacher_name: string; student_name: string };
 
@@ -36,6 +38,11 @@ export function getUnit(id: number): UnitView | null {
 
 export function runningUnitForStudent(studentId: number): UnitView | null {
   return (db().prepare(`${VIEW} WHERE u.student_id = ? AND u.status = 'gestartet' ORDER BY u.started_at DESC LIMIT 1`).get(studentId) as UnitView | undefined) ?? null;
+}
+
+/** The unit a teacher is teaching right now (the latest one, should two be running). Their tablet shows it. */
+export function activeUnitForTeacher(teacherId: number): UnitView | null {
+  return (db().prepare(`${VIEW} WHERE u.teacher_id = ? AND u.status = 'gestartet' ORDER BY u.started_at DESC, u.id DESC LIMIT 1`).get(teacherId) as UnitView | undefined) ?? null;
 }
 
 /** Running units, with the number of exercises the student has not finished yet. */
