@@ -50,7 +50,8 @@ test("every skill has a stable code and its own source; official sources only ca
   assert.equal(repo.getSkill("mathe.brueche.dividieren")?.code, "AT-MAT-05-BRUCHRECHNUNG-DIVIDIEREN");
   assert.ok(skills.every((s) => s.source_id === getSource("lernheft")!.id), "built-in skills are the app's own structure");
   assert.match(getSource("ris-ms")!.attribution_text, /BGBl\. II Nr\. 185\/2012/);
-  assert.match(getSource("ris-ms")!.notes, /noch nicht importiert/);
+  assert.match(getSource("ris-ms")!.notes, /NOR40271471/);
+  for (const key of ["ris-vs", "ris-ahs", "ris-htl"]) assert.equal(getSource(key)?.license, "amtliches Werk (§ 7 UrhG)");
 });
 
 test("school type and class → Schulstufe; skills are filtered for the student, unclear levels are not narrowed", async () => {
@@ -60,6 +61,49 @@ test("school type and class → Schulstufe; skills are filtered for the student,
   assert.ok(!ms2.some((s) => s.id === "mathe.potenzen.regeln"), "Potenzen start in Schulstufe 8");
   const unclear = skillsForStudent({ school_type: "", klasse: 2, grade: 6 }, "Mathematik");
   assert.ok(unclear.some((s) => s.id === "mathe.potenzen.regeln"), "unclear level: every skill of the subject");
+});
+
+test("official Lehrplan packages: valid, complete per school type, links to missing skills are skipped with a warning", async () => {
+  const imp = await import("./curriculum-import");
+  const { db } = await import("./db");
+  const { curriculumTree, getCurriculum, curriculumClasses } = await import("./lehrplan");
+  const ris = imp.bundledPackages().filter((p) => p.file.startsWith("ris-"));
+  assert.deepEqual(ris.map((p) => p.file.replace(/^ris-|\.json$/g, "")).sort(), ["ahs-deutsch", "ahs-englisch", "ahs-mathematik", "htl-deutsch", "htl-englisch", "htl-mathematik", "ms-deutsch", "ms-englisch", "ms-mathematik", "vs-deutsch", "vs-englisch", "vs-mathematik"]);
+  for (const p of ris) {
+    const pkg = imp.readBundled(p.file)!;
+    assert.deepEqual(imp.validate(pkg), [], p.file);
+    assert.equal(p.sourceType, "lehrplan");
+    assert.ok(p.nodes > 40, `${p.file} has the wording`);
+    assert.equal(new Set(pkg.nodes!.map((n) => n.code)).size, pkg.nodes!.length, `${p.file}: codes are unique`);
+    assert.ok(pkg.nodes!.every((n) => !/\d[a-zäöü]{3,}\d|^\s|\s$/.test(n.name)), `${p.file}: no footnote digits or stray spaces in names`);
+  }
+
+  const ms = imp.readBundled("ris-ms-mathematik.json")!;
+  const p1 = imp.preview(ms, null);
+  assert.deepEqual(p1.diff.errors, []);
+  assert.equal(p1.diff.newNodes, ms.nodes!.length);
+  assert.equal(p1.diff.newLinks, ms.skill_nodes!.length, "all Mittelschule links point to existing skills");
+  assert.equal(imp.applyImport(p1.id!).ok, true);
+  const c = getCurriculum("ris-ms-mathematik")!;
+  assert.equal(c.source?.key, "ris-ms");
+  assert.deepEqual(curriculumClasses(c.id).map((k) => k.name), ["1. Klasse", "2. Klasse", "3. Klasse", "4. Klasse"]);
+  const k2 = curriculumTree(c.id, 2);
+  assert.equal(k2.length, 1);
+  assert.deepEqual(k2[0].children.map((k) => k.name), ["2. Klasse"], "the class filter keeps only that class");
+  const linked = db().prepare("SELECT COUNT(*) AS n FROM skill_curriculum sc JOIN curriculum_nodes n ON n.id = sc.node_id WHERE n.curriculum_id = ?").get(c.id) as { n: number };
+  assert.equal(linked.n, ms.skill_nodes!.length);
+  assert.equal(imp.preview(ms, null).diff.alreadyImported, true);
+
+  // Volksschule: the skills come with the own structure package; until then the links are skipped
+  const vs = imp.readBundled("ris-vs-mathematik.json")!;
+  const p2 = imp.preview(vs, null);
+  assert.ok(p2.diff.warnings.some((w) => /gibt es noch nicht/.test(w)));
+  const withVs = imp.preview(vs, null, new Set(imp.readBundled("volksschule-eigene-struktur.json")!.skills!.map((s) => s.id)));
+  assert.ok(!withVs.diff.warnings.some((w) => /gibt es noch nicht/.test(w)), "in a batch the own structure brings the skills along");
+  assert.ok(withVs.diff.newLinks > p2.diff.newLinks);
+  imp.discardImport(withVs.id!);
+  assert.equal(imp.applyImport(p2.id!).ok, true);
+  assert.equal(imp.bundledPackages().find((p) => p.file === "ris-vs-mathematik.json")!.pendingLinks, 0, "nothing to add while the skills are missing");
 });
 
 test("import: preview with counts, nothing changes before confirming, no duplicates, re-import is recognised", async () => {
@@ -116,6 +160,18 @@ test("import: preview with counts, nothing changes before confirming, no duplica
   assert.equal(repo.getSkill("mathe.brueche.kuerzen")?.name, "Kürzen", "skills of another source are never overwritten");
   const hist = db().prepare("SELECT before FROM skill_history WHERE skill_id = 'mathe.vs.zahlen.zr10'").get() as { before: string };
   assert.match(hist.before, /Zahlen bis 10 sicher erfassen/, "the earlier version is kept");
+});
+
+test("after the Volksschule structure is imported, the missing Lehrplan links can be added", async () => {
+  const imp = await import("./curriculum-import");
+  const pending = imp.bundledPackages().find((p) => p.file === "ris-vs-mathematik.json")!;
+  assert.equal(pending.imported, true);
+  assert.ok(pending.pendingLinks > 20);
+  const p = imp.preview(imp.readBundled(pending.file)!, null);
+  assert.equal(p.diff.alreadyImported, false);
+  assert.equal(p.diff.newNodes, 0);
+  assert.equal(imp.applyImport(p.id!).ok, true);
+  assert.equal(imp.bundledPackages().find((x) => x.file === pending.file)!.pendingLinks, 0);
 });
 
 test("import validation and the DEMO package", async () => {

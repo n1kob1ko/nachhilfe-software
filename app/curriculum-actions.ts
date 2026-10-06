@@ -97,6 +97,45 @@ export async function previewImportAction(formData: FormData) {
   if (!out.id) redirect(`/mehr/lehrplan?tab=importe&fehler=${encodeURIComponent(out.diff.errors.slice(0, 3).join(" · ") || "Ungültiges Paket")}`);
   redirect(`/mehr/lehrplan?tab=importe&vorschau=${out.id}`);
 }
+/** Previews for several bundled packages at once (own structures first, so their skills exist when the Lehrplan links are applied). */
+export async function previewManyAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const order = (f: string) => (imp.readBundled(f)?.source.source_type === "eigen" ? 0 : 1);
+  const files = [...new Set(formData.getAll("bundled").map(String))].sort((a, b) => order(a) - order(b) || a.localeCompare(b));
+  const ids: number[] = [];
+  const incoming = new Set<string>();
+  for (const f of files) {
+    const pkg = imp.readBundled(f);
+    if (!pkg) continue;
+    const out = imp.preview(pkg, admin.id, incoming);
+    if (out.id) ids.push(out.id);
+    pkg.skills?.forEach((s) => incoming.add(s.id));
+  }
+  if (!ids.length) redirect("/mehr/lehrplan?tab=importe&fehler=Keine%20Pakete%20ausgew%C3%A4hlt");
+  redirect(`/mehr/lehrplan?tab=importe&vorschau=${ids.join(",")}`);
+}
+/** Applies several previews in the order they were made; stops at the first error. */
+export async function applyManyAction(ids: number[]) {
+  await requireAdmin();
+  const done: number[] = [];
+  for (const id of [...ids].sort((a, b) => a - b)) {
+    const out = imp.applyImport(id);
+    if (!out.ok && out.error !== "Genau dieses Paket wurde schon importiert") {
+      revalidatePath("/mehr/lehrplan");
+      redirect(`/mehr/lehrplan?tab=importe&vorschau=${ids.join(",")}&fehler=${encodeURIComponent(`${imp.getImport(id)?.label ?? id}: ${out.error ?? ""}`)}`);
+    }
+    if (out.ok) done.push(id);
+    else imp.discardImport(id);
+  }
+  revalidatePath("/mehr/lehrplan");
+  revalidatePath("/faehigkeiten");
+  redirect(`/mehr/lehrplan?tab=importe&importiert=${done.join(",")}`);
+}
+export async function discardManyAction(ids: number[]) {
+  await requireAdmin();
+  ids.forEach((id) => imp.discardImport(id));
+  redirect("/mehr/lehrplan?tab=importe");
+}
 export async function applyImportAction(id: number) {
   await requireAdmin();
   const out = imp.applyImport(id);

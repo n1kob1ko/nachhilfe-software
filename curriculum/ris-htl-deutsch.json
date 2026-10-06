@@ -1,0 +1,735 @@
+{
+ "format": "lernheft-curriculum/1",
+ "label": "Lehrplan HTL – Deutsch (RIS)",
+ "description": "Offizieller Lehrplantext aus dem RIS (NOR40237785), BGBl. II Nr. 262/2015 idF BGBl. II Nr. 383/2021.",
+ "source": {
+  "key": "ris-htl",
+  "name": "RIS – Lehrpläne der HTL 2015, Anlage 1 (gemeinsame Unterrichtsgegenstände)",
+  "source_type": "lehrplan",
+  "url": "https://www.ris.bka.gv.at/Dokument.wxe?Abfrage=Bundesnormen&Dokumentnummer=NOR40237785",
+  "publisher": "Republik Österreich (RIS)",
+  "license": "amtliches Werk (§ 7 UrhG)",
+  "attribution_text": "BGBl. II Nr. 262/2015 idF BGBl. II Nr. 383/2021",
+  "notes": "Gesetzesnummer 20009288, Dokumentnummer NOR40237785, in Kraft seit 04.09.2021. Wortlaut nur um Seitenköpfe, Zeilenumbrüche und Fußnotenziffern bereinigt."
+ },
+ "curriculum": {
+  "key": "ris-htl-deutsch",
+  "name": "Lehrplan HTL – Deutsch",
+  "school_type": "HTL",
+  "subject": "Deutsch",
+  "version": "BGBl. II Nr. 383/2021",
+  "reference": "BGBl. II Nr. 262/2015 idF BGBl. II Nr. 383/2021, NOR40237785",
+  "valid_from": "2021-09-04"
+ },
+ "nodes": [
+  {
+   "code": "HTL-DEU",
+   "kind": "fach",
+   "name": "Deutsch"
+  },
+  {
+   "code": "HTL-DEU-1",
+   "kind": "klasse",
+   "name": "I. Jahrgang",
+   "parent": "HTL-DEU",
+   "klasse": 1,
+   "schulstufe": 9,
+   "text": "1. und 2. Semester"
+  },
+  {
+   "code": "HTL-DEU-1-K1",
+   "kind": "kompetenz",
+   "name": "einfachen mündlichen und schriftlichen Darstellungen in verschiedenen Medien folgen …",
+   "parent": "HTL-DEU-1",
+   "text": "einfachen mündlichen und schriftlichen Darstellungen in verschiedenen Medien folgen, diese erfassen und grundlegende Gestaltungsmittel von Sprache erkennen, Sprache aufmerksam verwenden und sind sensibel für gesellschaftliche Entwicklungen, Mehrsprachigkeit und Multikulturalität;",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-DEU-1-K2",
+   "kind": "kompetenz",
+   "name": "Sprache situationsangemessen gebrauchen, sich konstruktiv an Gesprächen beteiligen und …",
+   "parent": "HTL-DEU-1",
+   "text": "Sprache situationsangemessen gebrauchen, sich konstruktiv an Gesprächen beteiligen und Feedback geben; sie können einfache Sachverhalte darstellen und über ihre Lebenswelt reflektieren;",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-DEU-1-K3",
+   "kind": "kompetenz",
+   "name": "literarische Texte und Sachtexte in verschiedenen Medien in Grundzügen formal und …",
+   "parent": "HTL-DEU-1",
+   "text": "literarische Texte und Sachtexte in verschiedenen Medien in Grundzügen formal und inhaltlich erschließen, unterschiedliche Formen des Lesens anwenden sowie andere Kulturen und Lebenswelten zu ihrem eigenen Leben in Beziehung setzen;",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-DEU-1-K4",
+   "kind": "kompetenz",
+   "name": "einfache Texte intentionsgerecht und adressatenadäquat verfassen, redigieren sowie …",
+   "parent": "HTL-DEU-1",
+   "text": "einfache Texte intentionsgerecht und adressatenadäquat verfassen, redigieren sowie relevante Informationen strukturiert schriftlich wiedergeben und kreative Verfahren anwenden;",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-DEU-1-K5",
+   "kind": "kompetenz",
+   "name": "grundlegende Sprachnormen und Regeln der Orthografie und Zeichensetzung erkennen und …",
+   "parent": "HTL-DEU-1",
+   "text": "grundlegende Sprachnormen und Regeln der Orthografie und Zeichensetzung erkennen und anwenden, mit Fehlern konstruktiv umgehen sowie Sprache sensibel und gendergerecht verwenden.",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-DEU-1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-DEU-1",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-DEU-1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Bereich Zuhören und Sprechen",
+   "parent": "HTL-DEU-1-L1",
+   "text": "Hörverständnistraining; Grundlagen der verbalen und nonverbalen Kommunikation (aktives Zuhören, Feedbackkultur ua.); Darstellung von Sachverhalten in Standardsprache; einfache berufsbezogene Gespräche (Telefonieren ua.).",
+   "content_area": "Bereich Zuhören und Sprechen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-DEU-1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Bereich Lesen",
+   "parent": "HTL-DEU-1-L1",
+   "text": "Texte aus eigenen und anderen Kulturen und Lebenswelten; sinnerfassendes und empathisches Lesen; lautes, gestaltendes Lesen; Lesetraining in unterschiedlichen Medien; Informationsbeschaffung und Auswertung.",
+   "content_area": "Bereich Lesen",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-DEU-1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Bereich Schreiben",
+   "parent": "HTL-DEU-1-L1",
+   "text": "Beschreiben, Anleiten, Berichten; spielerisch-schöpferisches Schreiben und Erzählen; Informationen und Ideen strukturiert schriftlich wiedergeben, Arbeitstechniken; Exzerpt; Zusammenfassung; berufsbezogene Textsorten (Lebenslauf, Bewerbung ua.); Sprachnormen; Wortschatzarbeit.",
+   "content_area": "Bereich Schreiben",
+   "klasse": 1,
+   "schulstufe": 9
+  },
+  {
+   "code": "HTL-DEU-2",
+   "kind": "klasse",
+   "name": "II. Jahrgang",
+   "parent": "HTL-DEU",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S1",
+   "kind": "semester",
+   "name": "3. Semester – Kompetenzmodul 3",
+   "parent": "HTL-DEU-2"
+  },
+  {
+   "code": "HTL-DEU-2-S1-K1",
+   "kind": "kompetenz",
+   "name": "mündlichen und schriftlichen Darstellungen in verschiedenen Medien folgen und sie …",
+   "parent": "HTL-DEU-2-S1",
+   "text": "mündlichen und schriftlichen Darstellungen in verschiedenen Medien folgen und sie verstehen, Gestaltungsmittel gesprochener und geschriebener Sprache erkennen, einfache monologische oder dialogische Sprechsituationen bewältigen, sich an Gesprächen und Diskussionen beteiligen und auf Gesprächsbeiträge angemessen reagieren;",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S1-K2",
+   "kind": "kompetenz",
+   "name": "unterschiedliche Lesetechniken anwenden, sich in der Medienlandschaft orientieren …",
+   "parent": "HTL-DEU-2-S1",
+   "text": "unterschiedliche Lesetechniken anwenden, sich in der Medienlandschaft orientieren, Medienangebote nutzen und sich rezeptiv und kreativ mit Texten, Bildern, Filmen und anderen Medien auseinandersetzen;",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S1-K3",
+   "kind": "kompetenz",
+   "name": "schreibend über sich selbst nachdenken und den eigenen Schreibprozess reflektieren sowie …",
+   "parent": "HTL-DEU-2-S1",
+   "text": "schreibend über sich selbst nachdenken und den eigenen Schreibprozess reflektieren sowie Strategien zur Fehlervermeidung anwenden;",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S1-K4",
+   "kind": "kompetenz",
+   "name": "einfache klärend-argumentative und kommunikative Texte planen, verfassen und überarbeiten …",
+   "parent": "HTL-DEU-2-S1",
+   "text": "einfache klärend-argumentative und kommunikative Texte planen, verfassen und überarbeiten und verfügen über entsprechende Schreibstrategien.",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-DEU-2-S1",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Bereich Zuhören und Sprechen",
+   "parent": "HTL-DEU-2-S1-L1",
+   "text": "Hörbeispiele; einfache Stellungnahmen; Wege zum freien Sprechen; gestaltendes Lesen; Grundlagen der Gesprächsführung und Diskussion; Sprachvarietäten.",
+   "content_area": "Bereich Zuhören und Sprechen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Bereich Lesen",
+   "parent": "HTL-DEU-2-S1-L1",
+   "text": "Lesetraining und Leseförderung in verschiedenen Medien; literarisches und ästhetisches Lesen, Lesen zur Identitätsfindung.",
+   "content_area": "Bereich Lesen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Bereich Schreiben",
+   "parent": "HTL-DEU-2-S1-L1",
+   "text": "Personal-kreatives Schreiben; einfache Portfoliotechniken; einfache Formen des Argumentierens und Appellierens, einfache Begriffsdefinitionen; Stellung nehmen (Statement ua.); Übungen zu Ausdruck und Stil.",
+   "content_area": "Bereich Schreiben",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S2",
+   "kind": "semester",
+   "name": "4. Semester – Kompetenzmodul 4",
+   "parent": "HTL-DEU-2"
+  },
+  {
+   "code": "HTL-DEU-2-S2-K1",
+   "kind": "kompetenz",
+   "name": "mündliche und schriftliche Darstellungen in verschiedenen Medien verstehen und …",
+   "parent": "HTL-DEU-2-S2",
+   "text": "mündliche und schriftliche Darstellungen in verschiedenen Medien verstehen und analysieren, einfache Informationsgrafiken verbalisieren und die Grundlagen der Präsentation mit Medienunterstützung umsetzen;",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S2-K2",
+   "kind": "kompetenz",
+   "name": "aus linearen und nicht-linearen Texten eine bedürfnisgerechte Auswahl treffen, in …",
+   "parent": "HTL-DEU-2-S2",
+   "text": "aus linearen und nicht-linearen Texten eine bedürfnisgerechte Auswahl treffen, in Bibliotheken und im Internet recherchieren und Informationen kritisch auswerten, durch die Beschäftigung mit literarischen Texten Einblick in andere Kunstformen gewinnen und die ästhetischen Qualitäten von Texten erfassen;",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S2-K3",
+   "kind": "kompetenz",
+   "name": "kreative Techniken und einen umfassenden Wortschatz einschließlich der relevanten …",
+   "parent": "HTL-DEU-2-S2",
+   "text": "kreative Techniken und einen umfassenden Wortschatz einschließlich der relevanten Fachsprachen anwenden, über einfache Sachverhalte schriftlich informieren und Schreiben als Hilfsmittel zur Dokumentation einsetzen.",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-DEU-2-S2",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Bereich Zuhören und Sprechen",
+   "parent": "HTL-DEU-2-S2-L1",
+   "text": "Hörbeispiele; Grundlagen der Präsentation mit Medieneinsatz; mündliche Darstellung von komplexeren Sachverhalten und Abläufen.",
+   "content_area": "Bereich Zuhören und Sprechen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Bereich Lesen",
+   "parent": "HTL-DEU-2-S2-L1",
+   "text": "Erkennen und Filtern relevanter Inhalte, Erfassen von Textintentionen; literarische Textformen.",
+   "content_area": "Bereich Lesen",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-2-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Bereich Schreiben",
+   "parent": "HTL-DEU-2-S2-L1",
+   "text": "Visualisierung und Verbalisierung von Inhalten; Verbalisieren und Interpretieren nicht-linearer Texte; Kommentieren und Argumentieren, einfache Erörterung; einfache Portfoliotechniken; Protokollieren und Mitschriften verfassen.",
+   "content_area": "Bereich Schreiben",
+   "klasse": 2,
+   "schulstufe": 10
+  },
+  {
+   "code": "HTL-DEU-3",
+   "kind": "klasse",
+   "name": "III. Jahrgang",
+   "parent": "HTL-DEU",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-3-S1",
+   "kind": "semester",
+   "name": "5. Semester – Kompetenzmodul 5",
+   "parent": "HTL-DEU-3"
+  },
+  {
+   "code": "HTL-DEU-3-S1-K1",
+   "kind": "kompetenz",
+   "name": "Redeabsichten erkennen, in Grundzügen sachbezogen argumentieren, zielgerichtet …",
+   "parent": "HTL-DEU-3-S1",
+   "text": "Redeabsichten erkennen, in Grundzügen sachbezogen argumentieren, zielgerichtet appellieren und persönliche Standpunkte darlegen;",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-3-S1-K2",
+   "kind": "kompetenz",
+   "name": "Texte hinsichtlich ihrer Inhalte und Gedankenführung analysieren sowie im Kontext …",
+   "parent": "HTL-DEU-3-S1",
+   "text": "Texte hinsichtlich ihrer Inhalte und Gedankenführung analysieren sowie im Kontext verstehen, indem sie Bezüge zu anderen Texten oder Medien und zum eigenen Wissens- und Erfahrungssystem herstellen; sie können zu künstlerischen Werken und Entwicklungen, insbesondere zu literarischen Texten, Stellung nehmen und kreative Verfahren anwenden, literarisch-ästhetische Botschaften kognitiv verstehen und emotional aufnehmen;",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-3-S1-K3",
+   "kind": "kompetenz",
+   "name": "Schreiben als reflexive Praxis und zur Analyse von linearen und nicht-linearen Texten …",
+   "parent": "HTL-DEU-3-S1",
+   "text": "Schreiben als reflexive Praxis und zur Analyse von linearen und nicht-linearen Texten sowie von literarischen Texten und Sachtexten einsetzen und verfügen über einen erweiterten, auch fachsprachlichen Wortschatz.",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-3-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-DEU-3-S1",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-3-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Bereich Zuhören und Sprechen",
+   "parent": "HTL-DEU-3-S1-L1",
+   "text": "Hörbeispiele; argumentative und appellative Redeformen; freies Sprechen; rhetorische Mittel.",
+   "content_area": "Bereich Zuhören und Sprechen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-3-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Bereich Lesen",
+   "parent": "HTL-DEU-3-S1-L1",
+   "text": "Lesetechniken und Lesestrategien; Textbearbeitungsstrategien; Visualisierung von Textinhalten zur Texterschließung; kreative Verfahren; Erarbeitung von Themenschwerpunkten.",
+   "content_area": "Bereich Lesen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-3-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Bereich Schreiben",
+   "parent": "HTL-DEU-3-S1-L1",
+   "text": "Analysieren und Argumentieren von Sachverhalten aus dem beruflichen, gesellschaftlichen und kulturellen Umfeld (Leserbrief, Offener Brief); prozess- und produktorientierte Portfoliotechniken; Einführung in wissenschaftliche Arbeitstechniken; Schreibstrategien von der Textplanung bis zur Überarbeitung.",
+   "content_area": "Bereich Schreiben",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-3-S2",
+   "kind": "semester",
+   "name": "6. Semester – Kompetenzmodul 6",
+   "parent": "HTL-DEU-3"
+  },
+  {
+   "code": "HTL-DEU-3-S2-K1",
+   "kind": "kompetenz",
+   "name": "Hörbeispiele in verschiedenen Medien verstehen und Kontexte reflektieren, kreative …",
+   "parent": "HTL-DEU-3-S2",
+   "text": "Hörbeispiele in verschiedenen Medien verstehen und Kontexte reflektieren, kreative Verfahren zur Darstellung einsetzen und sich konstruktiv an Gesprächen und Diskussionen beteiligen und sie leiten;",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-3-S2-K2",
+   "kind": "kompetenz",
+   "name": "Informationen aus unterschiedlichen Medien prüfen und vergleichen sowie Texte, Bilder und …",
+   "parent": "HTL-DEU-3-S2",
+   "text": "Informationen aus unterschiedlichen Medien prüfen und vergleichen sowie Texte, Bilder und Filme interpretieren und deren ästhetische Qualitäten erkennen;",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-3-S2-K3",
+   "kind": "kompetenz",
+   "name": "elaborierte Formen des Schreibens – auch fächerverbindend – einsetzen, um den eigenen …",
+   "parent": "HTL-DEU-3-S2",
+   "text": "elaborierte Formen des Schreibens – auch fächerverbindend – einsetzen, um den eigenen Lernprozess zu dokumentieren und reflektieren sowie einfache Formen des Wissen schaffenden Schreibens zu bewältigen; sie erkennen, dass Sprache Veränderungen unterliegt- und sie erfassen die Bedeutung innerer und äußerer Mehrsprachigkeit.",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-3-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-DEU-3-S2",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-3-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Bereich Zuhören und Sprechen",
+   "parent": "HTL-DEU-3-S2-L1",
+   "text": "Literarische und gesellschaftsrelevante Hörbeispiele; Diskussion und Diskussionsführung; Meinungen und Interessen vertreten; freies Sprechen und freies Erzählen; Sprachvarietäten.",
+   "content_area": "Bereich Zuhören und Sprechen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-3-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Bereich Lesen",
+   "parent": "HTL-DEU-3-S2-L1",
+   "text": "Kennenlernen verschiedener Lebenswelten und Denkmodelle in historischem und gesellschaftlichem Zusammenhang; Buchkultur; ästhetische Merkmale von Texten; Erarbeitung von Themenbereichen.",
+   "content_area": "Bereich Lesen",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-3-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Bereich Schreiben",
+   "parent": "HTL-DEU-3-S2-L1",
+   "text": "Komplexere Formen des Analysierens und Argumentierens von Sachverhalten aus dem beruflichen, gesellschaftlichen und kulturellen Umfeld (Kommentar, textbezogene Erörterung); Formen der schriftlichen Dokumentation der eigenen Lernprozesse; kreative Schreibanlässe und Schreibarrangements.",
+   "content_area": "Bereich Schreiben",
+   "klasse": 3,
+   "schulstufe": 11
+  },
+  {
+   "code": "HTL-DEU-4",
+   "kind": "klasse",
+   "name": "IV. Jahrgang",
+   "parent": "HTL-DEU",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-4-S1",
+   "kind": "semester",
+   "name": "7. Semester – Kompetenzmodul 7",
+   "parent": "HTL-DEU-4"
+  },
+  {
+   "code": "HTL-DEU-4-S1-K1",
+   "kind": "kompetenz",
+   "name": "Kommunikationsstrategien sozial angemessen anwenden sowie komplexe Inhalte …",
+   "parent": "HTL-DEU-4-S1",
+   "text": "Kommunikationsstrategien sozial angemessen anwenden sowie komplexe Inhalte zielgruppenorientiert und mit Medienunterstützung präsentieren;",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-4-S1-K2",
+   "kind": "kompetenz",
+   "name": "den Einfluss gesellschaftspolitischer, technisch-wissenschaftlicher Entwicklungen auf den …",
+   "parent": "HTL-DEU-4-S1",
+   "text": "den Einfluss gesellschaftspolitischer, technisch-wissenschaftlicher Entwicklungen auf den Einzelnen und die Gesellschaft erkennen und reflektieren, Aspekte der Berufs- und Arbeitswelt diskutieren, Medien, Kunst und Literatur als gesellschaftliche Phänomene wahrnehmen und reflektieren, Informationen prüfen und verknüpfen, Korrelationen zwischen formalen Aspekten und Textinhalten erkennen, sowie Texte, Bilder und Filme interpretieren und in ihren ästhetischen Qualitäten bewerten;",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-4-S1-K3",
+   "kind": "kompetenz",
+   "name": "Schreiben als Form des Denkens begreifen und nutzen sowie eine an Erkenntnis und Klärung …",
+   "parent": "HTL-DEU-4-S1",
+   "text": "Schreiben als Form des Denkens begreifen und nutzen sowie eine an Erkenntnis und Klärung interessierte Haltung entwickeln, die sie zur Bewältigung von spezifischen und offenen Schreibaufgaben befähigt; sie können zwischen verschiedenen sprachlichen Ausdrucksmöglichkeiten wählen, diese differenzieren und in ihrer Wirkung bewerten und bewusst einsetzen.",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-4-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-DEU-4-S1",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-4-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Bereich Zuhören und Sprechen",
+   "parent": "HTL-DEU-4-S1-L1",
+   "text": "Präsentationen unter Berücksichtigung unterschiedlicher Zielgruppen.",
+   "content_area": "Bereich Zuhören und Sprechen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-4-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Bereich Lesen",
+   "parent": "HTL-DEU-4-S1-L1",
+   "text": "Methoden der Texterschließung (handlungs- und produktionsorientierte Verfahren); Auswahl und Bewertung von Texten in verschiedenen Medien; literarisches Lernen; Erarbeitung von Themenbereichen.",
+   "content_area": "Bereich Lesen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-4-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Bereich Schreiben",
+   "parent": "HTL-DEU-4-S1-L1",
+   "text": "Analyse und Interpretationen von Sachtexten und literarischen Texten (Textanalyse, literarische Interpretation) und medialen Ausdrucksformen; Formen des reflexiven und kreativ-personalen Schreibens.",
+   "content_area": "Bereich Schreiben",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-4-S2",
+   "kind": "semester",
+   "name": "8. Semester – Kompetenzmodul 8",
+   "parent": "HTL-DEU-4"
+  },
+  {
+   "code": "HTL-DEU-4-S2-K1",
+   "kind": "kompetenz",
+   "name": "rhetorische Gestaltungsmittel und Redeabsichten in schriftlichen und mündlichen …",
+   "parent": "HTL-DEU-4-S2",
+   "text": "rhetorische Gestaltungsmittel und Redeabsichten in schriftlichen und mündlichen Darstellungsformen erkennen, analysieren und verschiedene sprachliche Ausdrucksmöglichkeiten gezielt einsetzen;",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-4-S2-K2",
+   "kind": "kompetenz",
+   "name": "den Kulturbegriff diskutieren, Medien, Kunst- und Literaturbetrieb als Institutionen und …",
+   "parent": "HTL-DEU-4-S2",
+   "text": "den Kulturbegriff diskutieren, Medien, Kunst- und Literaturbetrieb als Institutionen und Wirtschaftsfaktoren verstehen, die durch Institutionen und Medien gesteuerten sprachlichen Entwicklungen erkennen, Texte, Bilder und Filme vergleichen, interpretieren und in ihren ästhetischen Qualitäten im Sinne poetischen Verstehens bewerten sowie Textsorten und deren strukturelle Merkmale differenzieren und analysieren;",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-4-S2-K3",
+   "kind": "kompetenz",
+   "name": "Methoden des wissenschaftlichen Schreibens in berufsbezogenen und kulturellen Kontexten …",
+   "parent": "HTL-DEU-4-S2",
+   "text": "Methoden des wissenschaftlichen Schreibens in berufsbezogenen und kulturellen Kontexten anwenden und das Schreiben als Chance zur Persönlichkeitsentwicklung und Selbstentfaltung sehen und nutzen.",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-4-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-DEU-4-S2",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-4-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Bereich Zuhören und Sprechen",
+   "parent": "HTL-DEU-4-S2-L1",
+   "text": "Rhetorik; auditive und audiovisuelle Beispiele.",
+   "content_area": "Bereich Zuhören und Sprechen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-4-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Bereich Lesen",
+   "parent": "HTL-DEU-4-S2-L1",
+   "text": "Erarbeitung von Themenschwerpunkten; vergleichendes Lesen; Verfahren der Textanalyse und Textinterpretation.",
+   "content_area": "Bereich Lesen",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-4-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Bereich Schreiben",
+   "parent": "HTL-DEU-4-S2-L1",
+   "text": "Anwendung wissenschaftlicher Arbeitstechniken; textbezogene und problembezogene Interpretationen von sachorientierten und künstlerischen Ausdrucksformen; appellative Texte (Meinungsrede, Empfehlung ua.); Formen des reflexiven und kreativ-personalen Schreibens.",
+   "content_area": "Bereich Schreiben",
+   "klasse": 4,
+   "schulstufe": 12
+  },
+  {
+   "code": "HTL-DEU-5",
+   "kind": "klasse",
+   "name": "V. Jahrgang",
+   "parent": "HTL-DEU",
+   "klasse": 5,
+   "schulstufe": 13,
+   "text": "Kompetenzmodul 9"
+  },
+  {
+   "code": "HTL-DEU-5-S1",
+   "kind": "semester",
+   "name": "9. Semester",
+   "parent": "HTL-DEU-5"
+  },
+  {
+   "code": "HTL-DEU-5-S1-K1",
+   "kind": "kompetenz",
+   "name": "unterschiedliche Sprechintentionen und Gestaltungsmittel gesprochener Sprache erkennen …",
+   "parent": "HTL-DEU-5-S1",
+   "text": "unterschiedliche Sprechintentionen und Gestaltungsmittel gesprochener Sprache erkennen, analysieren und differenziert, situationsangemessen sowie sprachsensibel anwenden und sind den Anforderungen berufsbezogener Kommunikation gewachsen;",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-DEU-5-S1-K2",
+   "kind": "kompetenz",
+   "name": "zu Problemen aus dem Spannungsfeld von Individuum, Gesellschaft, Technik und Wissenschaft …",
+   "parent": "HTL-DEU-5-S1",
+   "text": "zu Problemen aus dem Spannungsfeld von Individuum, Gesellschaft, Technik und Wissenschaft Stellung nehmen und zu Interessen und Wertvorstellungen in Beziehung setzen, unterschiedliche Weltansichten und Denkmodelle erkennen und sich kritisch mit diesen auseinandersetzen sowie Texte, Bilder und Filme in Kontexten verstehen und differenzierend bewerten;",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-DEU-5-S1-K3",
+   "kind": "kompetenz",
+   "name": "Schreiben als Wahrnehmungs- und Denkhilfe sehen und einsetzen sowie verschiedenste …",
+   "parent": "HTL-DEU-5-S1",
+   "text": "Schreiben als Wahrnehmungs- und Denkhilfe sehen und einsetzen sowie verschiedenste berufsbezogene und gesellschaftliche Realitäten, Konzepte von Realität und kreativen Ausdrucksformen bewerten und mit der eigenen Lebenspraxis verknüpfen.",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-DEU-5-S1-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-DEU-5-S1",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-DEU-5-S1-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Bereich Zuhören und Sprechen",
+   "parent": "HTL-DEU-5-S1-L1",
+   "text": "Auditive und audio-visuelle Vermittlung von beruflichen, gesellschaftlichen und literarischen Inhalten; berufsbezogene Kommunikation, Bewerbung.",
+   "content_area": "Bereich Zuhören und Sprechen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-DEU-5-S1-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Bereich Lesen",
+   "parent": "HTL-DEU-5-S1-L1",
+   "text": "Kennenlernen verschiedener Lebenswelten, Denkmodelle und Entwürfe literarischer und ästhetischer Denkwelten; Symbole und Metaphern verstehen; bedürfnisgerechte und kritische Medienauswahl.",
+   "content_area": "Bereich Lesen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-DEU-5-S1-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Bereich Schreiben",
+   "parent": "HTL-DEU-5-S1-L1",
+   "text": "Wissen schaffendes Schreiben; Analyse, Argumentation und Interpretation komplexer Sachverhalte anhand von linearen und nicht-linearen Ausgangstexten; kritische Auseinandersetzung, Wertung und Stellungnahme zu gesellschaftlichen, ökologischen und kulturellen Themen; Bewerbungsunterlagen.",
+   "content_area": "Bereich Schreiben",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-DEU-5-S2",
+   "kind": "semester",
+   "name": "10. Semester",
+   "parent": "HTL-DEU-5"
+  },
+  {
+   "code": "HTL-DEU-5-S2-K1",
+   "kind": "kompetenz",
+   "name": "unterschiedliche Sprechintentionen und Gestaltungsmittel gesprochener Sprache erkennen …",
+   "parent": "HTL-DEU-5-S2",
+   "text": "unterschiedliche Sprechintentionen und Gestaltungsmittel gesprochener Sprache erkennen, analysieren und differenziert, situationsangemessen sowie sprachsensibel anwenden und sind den Anforderungen berufsbezogener Kommunikation gewachsen;",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-DEU-5-S2-K2",
+   "kind": "kompetenz",
+   "name": "zu Problemen aus dem Spannungsfeld von Individuum, Gesellschaft, Technik und Wissenschaft …",
+   "parent": "HTL-DEU-5-S2",
+   "text": "zu Problemen aus dem Spannungsfeld von Individuum, Gesellschaft, Technik und Wissenschaft Stellung nehmen und zu Interessen und Wertvorstellungen in Beziehung setzen, unterschiedliche Weltansichten und Denkmodelle erkennen und sich kritisch mit diesen auseinandersetzen sowie Texte, Bilder und Filme in Kontexten verstehen und differenzierend bewerten;",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-DEU-5-S2-K3",
+   "kind": "kompetenz",
+   "name": "Schreiben als Wahrnehmungs- und Denkhilfe sehen und einsetzen sowie verschiedenste …",
+   "parent": "HTL-DEU-5-S2",
+   "text": "Schreiben als Wahrnehmungs- und Denkhilfe sehen und einsetzen sowie verschiedenste berufsbezogene und gesellschaftliche Realitäten, Konzepte von Realität und kreativen Ausdrucksformen bewerten und mit der eigenen Lebenspraxis verknüpfen.",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-DEU-5-S2-L1",
+   "kind": "lehrstoffbereich",
+   "name": "Lehrstoff",
+   "parent": "HTL-DEU-5-S2",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-DEU-5-S2-L1-L1",
+   "kind": "lehrstoff",
+   "name": "Bereich Zuhören und Sprechen",
+   "parent": "HTL-DEU-5-S2-L1",
+   "text": "Vertiefendes Präsentationstraining.",
+   "content_area": "Bereich Zuhören und Sprechen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-DEU-5-S2-L1-L2",
+   "kind": "lehrstoff",
+   "name": "Bereich Lesen",
+   "parent": "HTL-DEU-5-S2-L1",
+   "text": "Bewerten von Texten nach ästhetisch-künstlerischen Qualitäten; eigenverantwortliche, kritische Lesestoffauswahl; vertiefendes zielorientiertes Rezipieren von Texten in Verbindung mit Schreibprozessen.",
+   "content_area": "Bereich Lesen",
+   "klasse": 5,
+   "schulstufe": 13
+  },
+  {
+   "code": "HTL-DEU-5-S2-L1-L3",
+   "kind": "lehrstoff",
+   "name": "Bereich Schreiben",
+   "parent": "HTL-DEU-5-S2-L1",
+   "text": "Vertiefung relevanter Textsorten.",
+   "content_area": "Bereich Schreiben",
+   "klasse": 5,
+   "schulstufe": 13
+  }
+ ],
+ "skills": [],
+ "skill_nodes": []
+}

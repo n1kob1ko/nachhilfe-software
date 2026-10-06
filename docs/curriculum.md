@@ -6,23 +6,49 @@ als zweites System daneben.
 
 ## Stand der Daten (ehrlich)
 
+| Quelle | Fassung | Dokument | in Kraft |
+|---|---|---|---|
+| RIS Volksschule, Anlage A | BGBl. Nr. 134/1963 idF BGBl. II Nr. 178/2025 | NOR40271469 | 01.09.2025 |
+| RIS Mittelschule, Anlage 1 | BGBl. II Nr. 185/2012 idF BGBl. II Nr. 178/2025 | NOR40271471 | 01.09.2025 |
+| RIS AHS, Anlage A | BGBl. Nr. 88/1985 idF BGBl. II Nr. 204/2024 | NOR40264238 | 01.09.2026 |
+| RIS HTL, Anlage 1 | BGBl. II Nr. 262/2015 idF BGBl. II Nr. 383/2021 | NOR40237785 | 04.09.2021 |
+| HAK | **fehlt noch** (PDF nicht vorhanden) | – | – |
+
 | Was | Status |
 |---|---|
-| Quellen-Metadaten RIS Mittelschule (BGBl. II Nr. 185/2012 idF BGBl. II Nr. 178/2025, Anlage 1, NOR40271471, seit 01.09.2025) | **echt, geprüft** am 06.10.2026 auf ris.bka.gv.at |
-| Quellen-Metadaten RIS Volksschule (BGBl. Nr. 134/1963 idF BGBl. II Nr. 178/2025, Gesetzesnummer 10009275) | **echt, geprüft** |
+| Wortlaut der Lehrpläne Deutsch, Englisch (Lebende Fremdsprache), Mathematik für VS, MS, AHS (Unter- und Oberstufe), HTL | **importierbar**: 12 Pakete `curriculum/ris-*.json`, aus den RIS-PDFs von niko (06.10.2026) |
+| Lehrplan HAK | **fehlt**, Übersicht zeigt das offen an |
+| Verknüpfung Lehrplan-Eintrag ↔ Fähigkeit (`scripts/lehrplan_mapping.json`) | **eigene didaktische Zuordnung**, nicht Teil des Lehrplans |
 | IQS (Kompetenzmodelle, iKM PLUS, Aufgabenpools) | nur als **Referenz** eingetragen, Inhalte werden nie übernommen |
-| Wortlaut der Lehrpläne (Kompetenzbereiche, Kompetenzbeschreibungen je Klasse) | **noch nicht importiert** |
 | Fähigkeiten Mathematik, Deutsch, Englisch (Schulstufe 3–13) | **eigene Struktur** von Lernheft (Quelle „Lernheft – eigene Inhalte“) |
-| Paket „Volksschule Mathematik und Deutsch“ (45 Fähigkeiten) | **eigene Struktur**, nicht der Lehrplantext; Import mit Vorschau unter Mehr › Lehrplan |
+| Paket „Volksschule Mathematik und Deutsch“ (45 Fähigkeiten) | **eigene Struktur**, nicht der Lehrplantext |
 | Paket „DEMO – Beispiel-Lehrplan“ | **erfundene Demo-Daten**, überall mit „DEMO“ gekennzeichnet, mit einem Klick wieder entfernbar |
 | Voraussetzungen zwischen Fähigkeiten (`PREREQUISITES`) | eigene didaktische Entscheidung |
 
-Warum fehlt der Lehrplantext? Aus dieser Umgebung ist ris.bka.gv.at nur über ein Werkzeug
-erreichbar, das jede RIS-Fassung nach rund 85.000 Zeichen abschneidet; die Fachlehrpläne
-(Achter Teil) liegen dahinter. Erfunden wird nichts. Nächster Schritt: die RIS-PDFs ins Projekt
-legen (oder ris.bka.gv.at im Netzwerk freigeben). Dann wird der Text mit `pdftotext` in ein
-Paket „lernheft-curriculum/1“ übertragen, als Quelle `ris-ms` / `ris-vs`, und über die Vorschau
-importiert. Lehrpläne sind Verordnungen, also amtliche Werke (§ 7 UrhG) und frei verwendbar.
+### Lehrplantext: wie er entsteht
+
+`scripts/lehrplan_import.py` liest die Textfassungen der RIS-PDFs (VS, MS, AHS: RIS-Textexport;
+HTL: `pdftotext -layout`) und schreibt die Pakete:
+
+```
+python3 scripts/lehrplan_import.py --vs vs.txt --ms ms.txt --ahs ahs.txt --htl htl-layout.txt [--dry]
+```
+
+- Bereinigt werden nur Seitenköpfe, Zeilenumbrüche, Silbentrennung und Fußnotenziffern; sonst
+  bleibt der Wortlaut unverändert. Jeder Aufzählungspunkt der Quelle wird ein Eintrag (geprüft:
+  Anzahl der Spiegelstriche je Abschnitt = Anzahl der Einträge).
+- Gliederung: Fach › Klasse/Schulstufe/Jahrgang › (Semester) › Kompetenzbereich bzw. Thema ›
+  Kompetenz › Inhalt (Präzisierung MS/AHS Mathematik) bzw. Anwendungsbereich, HTL: Lehrstoff.
+- Codes sind stabil (z. B. `MS-MAT-2-B1-K3-I2`); ein neuer Lauf mit einer neuen Fassung ergibt
+  beim Import eine Vorschau mit geänderten Einträgen.
+- Grenzen: Formeln aus dem PDF-Text (Hochzahlen, Brüche, Summen) sind teils verstümmelt, z. B.
+  „zB 3 4 von a“ statt ¾ von a. Im Zweifel gilt der Originaltext; jede Ansicht verlinkt das RIS.
+- Volksschul-Verknüpfungen zeigen auf Fähigkeiten aus „Volksschule Mathematik und Deutsch“. Fehlen
+  sie, werden sie übersprungen (Warnung) und können später per erneutem Import nachgetragen werden.
+  Die Sammel-Vorschau importiert die eigene Struktur deshalb zuerst.
+
+Ansicht: Mehr › Lehrplan › Übersicht › Fach-Chip → `/mehr/lehrplan/<key>`, je Klasse aufklappbar,
+verknüpfte Fähigkeiten als Chips (öffnen den Übungs-Builder).
 
 ## Schulsystem
 
@@ -88,7 +114,8 @@ Ablauf (`lib/curriculum-import.ts`): Validierung → Vergleich mit der Datenbank
 - gleiche Fähigkeit unter anderer ID (Fach + Thema + Name + Elternfähigkeit) → Dublette, übersprungen
 - Fähigkeit einer anderen Quelle → Konflikt, nie überschrieben
 - Änderung → alte Fassung in `skill_history`
-- identisches Paket (content_hash) → „schon importiert“
+- identisches Paket (content_hash) → „schon importiert“, außer es kommen inzwischen neue Verknüpfungen dazu
+- „Vorschau für alle offenen“ erstellt mehrere Vorschauen auf einmal; „Alle importieren“ wendet sie in Reihenfolge an
 - Referenzquellen werden abgelehnt; nichts wird gelöscht (außer „Demo-Daten entfernen“)
 
 ## Lizenzen (`lib/lehrplan.ts`)
