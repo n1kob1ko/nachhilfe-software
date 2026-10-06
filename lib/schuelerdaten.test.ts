@@ -483,3 +483,74 @@ test("unit summary: six questions from the data, teacher lines marked, nothing p
   repo.setFamilyNote(lessonId, parents, "fakten");
   assert.deepEqual([repo.getLesson(lessonId)!.family_note, repo.getLesson(lessonId)!.family_note_source], [parents, "fakten"]);
 });
+
+// ---------- the existing flow with the new layer in it ----------
+test("Login → Schüler → Einheit → Übung → Tablet → Antwort → Tracking → Whiteboard → Ende → Dokumentation", async () => {
+  const repo = await import("./repo");
+  const auth = await import("./auth");
+  const { INITIAL_PASSWORD } = await import("./password");
+  const units = await import("./units");
+  const live = await import("./live");
+  const devices = await import("./devices");
+  const learning = await import("./learning");
+  const builder = await import("./builder");
+  const cm = await import("./current-material");
+  const wb = await import("./whiteboard");
+  const { sync } = await import("./whiteboard-routes");
+  const { buildWorksheet, submitAnswer, analyzeStudent } = await import("./service");
+  const { dayOf } = await import("./exams");
+  const sum = await import("./summary");
+
+  const niko = auth.checkLogin("niko", INITIAL_PASSWORD)!;
+  assert.ok(niko);
+  const sid = repo.createStudent(kid("Fritz Ablauf", niko.id));
+  const student = repo.getStudent(sid)!;
+  cm.setCurrentMaterial({ student_id: sid, subject: "Mathematik", topic: "Bruchrechnung", subtopic: "Brüche dividieren", skill_ids: ["mathe.brueche.dividieren"], since: dayOf(new Date()), priority: 1, note: "", source: "schularbeit" }, niko.id);
+
+  // the teacher's tablet, paired with a code
+  const { code } = devices.createPairCode(niko.id, niko.id);
+  const paired = devices.pairDevice(code, "ip") as { token: string; device: { teacher_id: number } };
+  assert.equal(devices.deviceForToken(paired.token)?.teacher_id, niko.id);
+
+  const { unit } = units.startUnit(niko.id, sid, { subject: "Mathematik" });
+  assert.equal(units.activeUnitForTeacher(paired.device.teacher_id)?.student_id, sid, "the tablet shows the student of the running unit");
+
+  // the builder takes over the current material; the exercise is sent within the unit
+  const ctx = builder.studentContext(sid)!;
+  assert.deepEqual(ctx.suggestions[0].skillIds, ["mathe.brueche.dividieren"]);
+  const { id: wid } = await buildWorksheet({ subject: "Mathematik", schoolType: "Mittelschule", klasse: 2, skillIds: ctx.suggestions[0].skillIds, difficulty: "leicht", count: 3, taskType: "calc", useAI: false });
+  const aid = repo.assignWorksheet(wid, sid, "", unit.id);
+  assert.deepEqual(live.unitAssignments(unit.id).map((x) => x.id), [aid]);
+  assert.ok(live.markDelivered(aid));
+
+  // answers from the tablet: one with the typical error, the rest right
+  const tasks = repo.listTasks(wid);
+  const typical = tasks.find((t) => t.errorMap.length)!;
+  await submitAnswer({ token: student.access_token, assignmentId: aid, taskId: typical.id, answer: typical.errorMap[0].answer, timeMs: 40_000, hintsUsed: 0 });
+  for (const t of tasks) await submitAnswer({ token: student.access_token, assignmentId: aid, taskId: t.id, answer: answers(t).right, timeMs: 20_000, hintsUsed: 0 });
+  const tracked = repo.listAttemptsForUnit(unit.id);
+  assert.equal(tracked.length, tasks.length + 1, "every answer is tracked with the unit");
+  const wrong = tracked.find((a) => !a.correct)!;
+  assert.equal(wrong.error_label, typical.errorMap[0].label, "the known error is recognised");
+  assert.ok(wrong.error_type && wrong.error_type_source === "vorschlag", `and gets a suggested Fehlerart (${wrong.error_type})`);
+  assert.ok(analyzeStudent(sid)!.skills.find((s) => s.skill.id === "mathe.brueche.dividieren")!.mastery! > 0.5);
+
+  // whiteboard of the unit: the student draws while it runs
+  const board = wb.ensureBoardForUnit(unit.id)!;
+  const page = board.current_page_id!;
+  const req = (body: unknown) => new Request("http://x/sync", { method: "POST", body: JSON.stringify(body) });
+  const drawn = { id: "f1", type: "freedraw", version: 1, versionNonce: 7, x: 0, y: 0, points: [[0, 0], [4, 4]], index: "a0" };
+  assert.equal((await sync(board, { role: "schueler", name: "Fritz", canWrite: true }, req({ op: "elements", pageId: page, elements: [drawn] }))).status, 200);
+  assert.equal(wb.pageElements(page).length, 1);
+
+  // end → Lern-Dokumentation with summary → the teacher's documentation
+  const lessonId = learning.endUnit(unit.id, { byTeacherId: niko.id })!;
+  assert.equal(units.activeUnitForTeacher(niko.id), null, "the tablet is ready for the next unit");
+  const lesson = repo.getLesson(lessonId)!;
+  assert.equal(learning.readReport(lesson)!.tasksDone, tasks.length);
+  const brief = sum.unitBrief(lessonId)!;
+  assert.ok(brief.done.length && brief.errors.length, "the summary has what was done and the error");
+  repo.saveLesson({ ...lesson, next_steps: "Dividieren ohne Hilfe", reviewed_at: new Date().toISOString() }, lessonId);
+  assert.equal(repo.getLesson(lessonId)!.next_steps, "Dividieren ohne Hilfe");
+  assert.ok(repo.getLesson(lessonId)!.reviewed_at, "documented");
+});
