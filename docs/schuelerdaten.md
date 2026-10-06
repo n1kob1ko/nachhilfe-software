@@ -103,8 +103,10 @@ falsche Formel, Einheitenfehler, Grammatikfehler, Rechtschreibfehler, Wortschatz
 Mehr › Diagnose: Schüler → Fach → Schulart/Klasse → ein oder mehrere Themen → Diagnose starten.
 Die App stellt 5 bis 10 Aufgaben zusammen, von leicht bis schwer, über die Fähigkeiten der Themen
 verteilt. Zuerst passen Aufgaben aus der Bibliothek, dann die eingebauten Generatoren; Claude nur auf
-Wunsch und nur für Fähigkeiten ohne Generator. Die Diagnose ist eine normale Übung der Art
-`diagnose`: die Antworten landen im normalen Tracking und sind darüber als Diagnose erkennbar.
+Wunsch und nur für Fähigkeiten ohne Generator. Keine Aufgabe kommt zweimal vor; ohne Claude bekommt
+eine Fähigkeit ohne Generator daher weniger Aufgaben („bis zu“). Ohne Themenauswahl gelten alle Themen.
+Die Diagnose ist eine normale Übung der Art `diagnose`: die Antworten landen im normalen Tracking und
+sind darüber als Diagnose erkennbar. Kopien und einzeln gesendete Aufgaben daraus sind normale Übungen.
 
 Ergebnis je Fähigkeit (schwere Aufgaben zählen mehr): sicher (ab 75 %), unsicher, kritisch (unter
 35 %), noch offen. Dazu mögliche Wissenslücken (schwache oder ungeprüfte Voraussetzungen der
