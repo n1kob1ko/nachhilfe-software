@@ -2,7 +2,7 @@ import { aiEnabled, generateWithAI, gradeFreeText } from "./ai";
 import { computeAnalysis } from "./analysis";
 import { documentAssignment } from "./autodoc";
 import type { Difficulty, TaskType } from "./curriculum";
-import { TASK_TYPES } from "./curriculum";
+import { TASK_TYPES, levelOf } from "./curriculum";
 import { generateBuiltIn } from "./generators";
 import { klassenLabel, schulstufe } from "./school";
 import { runningUnitForStudent, touchUnit } from "./units";
@@ -147,6 +147,9 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
     hints_used: input.hintsUsed,
     unit_id: unit?.id ?? null,
     active_ms: input.activeMs === undefined ? null : Math.max(0, Math.min(input.activeMs, timeMs)),
+    // tracking: who taught (the unit's teacher, else the student's own) and how hard the task was
+    teacher_id: unit?.teacher_id ?? student.teacher_id ?? null,
+    level: task.level ?? levelOf(task.difficulty),
   };
 
   if (input.giveUp) {

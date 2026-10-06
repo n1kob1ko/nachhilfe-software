@@ -33,6 +33,13 @@ export type TaskDraft = {
   hints: string[];
   /** Typical wrong answers and what they reveal (for MC: the option index as string). */
   errorMap: { answer: string; label: string }[];
+  /** Lösungsweg as separate steps (AI tasks); the text in `solution` stays the main form. */
+  solutionSteps?: string[];
+  /** Expected working time in seconds, if known. */
+  estimatedTimeSec?: number | null;
+  /** Origin: eigen (generators, teacher), ki, oer, lehrplan, demo. Licence data via sourceId (content_sources). */
+  sourceType?: string;
+  sourceId?: number | null;
 };
 
 export type CheckResult = {

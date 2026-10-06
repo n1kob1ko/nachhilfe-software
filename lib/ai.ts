@@ -50,6 +50,8 @@ const TaskSchema = z.object({
   sample_answer: z.string().nullable().describe("Bei free: Musterlösung bzw. Erwartungshorizont"),
   steps: z.array(z.string()).nullable().describe("Nur bei order: 3–6 Schritte des Lösungswegs in der RICHTIGEN Reihenfolge"),
   solution: z.string().describe("Vollständiger Lösungsweg Schritt für Schritt, schülergerecht"),
+  solution_steps: z.array(z.string()).describe("Derselbe Lösungsweg als 2–6 einzelne Schritte"),
+  estimated_time_sec: z.number().int().describe("Geschätzte Bearbeitungszeit in Sekunden für ein Kind dieser Klasse"),
   hints: z.array(z.string()).describe("2–3 gestufte Hilfen: 1. Denkanstoß (z. B. welche Rechenart), 2. Regel oder Strategie, 3. der erste Schritt vorgemacht. Keine verrät das Ergebnis."),
   common_errors: z
     .array(z.object({ answer: z.string(), label: z.string() }))
@@ -97,7 +99,7 @@ ${req.skills.map((s) => `- ${s.id}: ${s.area} › ${s.parentName ? `${s.parentNa
 
 Aufgabentypen (category):
 ${types}
-${req.studentContext ? `\nÜber den Schüler:\n${req.studentContext}\n` : ""}${req.focusNote ? `\nBesonderer Wunsch der Lehrkraft: ${req.focusNote}\n` : ""}${req.avoid?.length ? `\nDiese Aufgaben gibt es schon, mach andere:\n${req.avoid.slice(0, 30).map((p) => `- ${p.slice(0, 160)}`).join("\n")}\n` : ""}
+${req.studentContext ? `\nLerndaten des Schülers (ohne persönliche Daten):\n${req.studentContext}\n` : ""}${req.focusNote ? `\nBesonderer Wunsch der Lehrkraft: ${req.focusNote}\n` : ""}${req.avoid?.length ? `\nDiese Aufgaben gibt es schon, mach andere:\n${req.avoid.slice(0, 30).map((p) => `- ${p.slice(0, 160)}`).join("\n")}\n` : ""}
 Formate:
 - mc: options + correct_option
 - calc: accepted_answers, numeric=true bei Zahlen/Brüchen
@@ -123,6 +125,9 @@ export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" |
     difficulty: t.difficulty,
     prompt: t.prompt.trim(),
     solution: t.solution,
+    solutionSteps: (t.solution_steps ?? []).map((x) => x.trim()).filter(Boolean).slice(0, 8),
+    estimatedTimeSec: t.estimated_time_sec > 0 ? Math.min(3600, t.estimated_time_sec) : null,
+    sourceType: "ki" as const,
     hints: t.hints.filter((h) => h.trim()).slice(0, 4),
     errorMap: t.common_errors,
   };
