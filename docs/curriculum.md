@@ -121,6 +121,24 @@ Ablauf (`lib/curriculum-import.ts`): Validierung → Vergleich mit der Datenbank
 - „Vorschau für alle offenen“ erstellt mehrere Vorschauen auf einmal; „Alle importieren“ wendet sie in Reihenfolge an
 - Referenzquellen werden abgelehnt; nichts wird gelöscht (außer „Demo-Daten entfernen“)
 
+## Seite „Fähigkeiten“
+
+Eine Ebene nach der anderen: Fach › Schulart › Klasse/Jahrgang › Thema › Fähigkeiten, gesteuert über
+`?fach=&schulart=&klasse=&thema=` (Server-Komponente, kein Client-State). Oben steht der Pfad, jede
+Ebene ist anklickbar.
+
+- Die Schularten stehen in `SCHOOL_BRANCHES` (`lib/school.ts`): wie `SCHOOL_TYPES`, aber das
+  Gymnasium ist in AHS Unterstufe (1.–4.) und AHS Oberstufe (5.–8.) geteilt. HTL und HAK zählen in
+  Jahrgängen (`klasseLabel`).
+- Gefiltert wird mit den Daten, die es schon gibt: `browseSkills()` (`lib/lehrplan.ts`) prüft
+  `skills.school_types` und die Schulstufe (`grade_min`/`grade_max`) gegen die Klasse der Schulart.
+  Keine zweite Zuordnungstabelle, keine Dubletten: eine Fähigkeit erscheint in jeder Klasse, die ihr
+  Bereich abdeckt, und je Ansicht genau einmal.
+- Leere Ebenen werden weggelassen: nur Schularten, Klassen und Themen mit Fähigkeiten.
+- Auf der Themen- und Fähigkeitsebene führt ein Link zum Lehrplan derselben Klasse
+  (`curriculumFor()`), sofern der Lehrplantext importiert ist.
+- Fähigkeit antippen → Übungs-Builder. IDs, Lehrplan-Verknüpfungen und Tracking bleiben unberührt.
+
 ## Lizenzen (`lib/lehrplan.ts`)
 
 `licenseTerms()` liest CC-Kurznamen, `taskBankAllowed()` entscheidet:

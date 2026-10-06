@@ -64,6 +64,30 @@ export function stufeLabel(stufe: number): string {
   return [...byClass].map(([k, types]) => `${k}. Kl. ${types.join(", ")}`).join(" / ") || `${stufe}. Schulstufe`;
 }
 
+/**
+ * The branches tutors pick from when browsing skills: like SCHOOL_TYPES, but the Gymnasium is split
+ * into Unterstufe and Oberstufe, because its eight classes are two different stages for a tutor.
+ */
+export type SchoolBranch = { key: string; label: string; short: string; schoolType: string; classes: number[]; roman?: boolean };
+export const SCHOOL_BRANCHES: SchoolBranch[] = [
+  { key: "volksschule", label: "Volksschule", short: "VS", schoolType: "Volksschule", classes: [1, 2, 3, 4] },
+  { key: "mittelschule", label: "Mittelschule", short: "MS", schoolType: "Mittelschule", classes: [1, 2, 3, 4] },
+  { key: "ahs-unterstufe", label: "AHS Unterstufe", short: "AHS", schoolType: "Gymnasium", classes: [1, 2, 3, 4] },
+  { key: "ahs-oberstufe", label: "AHS Oberstufe", short: "AHS", schoolType: "Gymnasium", classes: [5, 6, 7, 8] },
+  { key: "htl", label: "HTL", short: "HTL", schoolType: "HTL", classes: [1, 2, 3, 4, 5], roman: true },
+  { key: "hak", label: "HAK", short: "HAK", schoolType: "HAK", classes: [1, 2, 3, 4, 5], roman: true },
+];
+export const schoolBranch = (key: string) => SCHOOL_BRANCHES.find((b) => b.key === key) ?? null;
+
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+/** "3. Klasse" in a school, "III. Jahrgang" in HTL and HAK. */
+export const klasseLabel = (b: SchoolBranch, klasse: number) => (b.roman ? `${ROMAN[klasse - 1]}. Jahrgang` : `${klasse}. Klasse`);
+/** "1.–4. Klasse", "I.–V. Jahrgang". */
+export const klassenRange = (b: SchoolBranch) => {
+  const [a, z] = [b.classes[0], b.classes[b.classes.length - 1]];
+  return a === z ? klasseLabel(b, a) : `${klasseLabel(b, a).split(" ")[0]}–${klasseLabel(b, z)}`;
+};
+
 export const MAX_STUFE = Math.max(...SCHOOL_TYPES.map((t) => t.offset + t.classes));
 
 /**

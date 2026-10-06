@@ -5,7 +5,7 @@
  */
 import { db } from "./db";
 import type { Skill, Student } from "./repo";
-import { checkLevel, SCHOOL_TYPES, schulstufe } from "./school";
+import { checkLevel, SCHOOL_BRANCHES, SCHOOL_TYPES, schulstufe, type SchoolBranch } from "./school";
 
 // ---------- sources and licences ----------
 export type SourceType = "lehrplan" | "eigen" | "ki" | "oer" | "referenz" | "demo";
@@ -223,6 +223,30 @@ export function skillsForStudent(student: Pick<Student, "school_type" | "klasse"
   });
 }
 export const stufeOf = (type: string, klasse: number) => schulstufe(type, klasse);
+
+// ---------- browsing skills by school branch ----------
+/**
+ * Skills of a subject that belong to a branch and, if given, to one of its classes. The filter uses
+ * the data that is already there: school_types on the skill and its Schulstufe range.
+ */
+export function browseSkills(o: { subject?: string; branch?: SchoolBranch | null; klasse?: number | null } = {}): Skill[] {
+  const stufen = o.branch ? (o.klasse ? [o.klasse] : o.branch.classes).map((k) => schulstufe(o.branch!.schoolType, k)) : [];
+  return activeSkills().filter((s) => {
+    if (o.subject && s.subject !== o.subject) return false;
+    if (!o.branch) return true;
+    return fitsSchoolType(s, o.branch.schoolType) && stufen.some((st) => s.grade_min <= st && s.grade_max >= st);
+  });
+}
+
+/** The official curriculum of a school type and subject, if its Lehrplan text is imported. */
+export function curriculumFor(schoolType: string, subject: string): { key: string; name: string } | null {
+  return (db().prepare("SELECT key, name FROM curricula WHERE school_type = ? AND subject = ? AND status = 'aktiv' ORDER BY version DESC").get(schoolType, subject) as { key: string; name: string } | undefined) ?? null;
+}
+
+/** The branches that have skills in this subject, and how many; a skill can appear in several. */
+export function branchesWithSkills(subject: string): { branch: SchoolBranch; count: number }[] {
+  return SCHOOL_BRANCHES.map((branch) => ({ branch, count: browseSkills({ subject, branch }).filter((s) => !s.parent_id).length })).filter((x) => x.count > 0);
+}
 
 // ---------- prerequisites and next skills ----------
 export function prerequisitesOf(skillId: string): string[] {
