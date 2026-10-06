@@ -180,7 +180,7 @@ function SkillList({ list, all }: { list: Skill[]; all: Skill[] }) {
                 {!hasBuiltInGenerator(s.id) && <Sparkles size={14} aria-label="Aufgaben nur mit KI" className="shrink-0 text-ink-3" />}
                 {s.practice_shift && <span className="rounded-full bg-amber-wash px-2 py-0.5 text-[12px] font-medium text-amber">oft {s.practice_shift === "frueher" ? "früher" : "später"}</span>}
               </Link>
-              <Link href={`/faehigkeiten/${encodeURIComponent(s.id)}`} className="btn btn-ghost btn-sm !px-2.5" aria-label={`Details zu ${s.name}`} title="Voraussetzungen und Details">
+              <Link href={`/faehigkeiten/${encodeURIComponent(s.id)}`} className="btn btn-ghost btn-sm min-w-[44px] !px-2.5" aria-label={`Details zu ${s.name}`} title="Voraussetzungen und Details">
                 <GitBranch size={15} aria-hidden />
               </Link>
             </span>

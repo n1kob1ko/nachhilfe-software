@@ -29,7 +29,10 @@ export function DiagnoseConfirm({ skills, picked, showArea, ai, note }: { skills
   const plan = planDiagnosis(ids);
   const count = (d: string) => plan.filter((p) => p.difficulty === d).length;
   const full = ids.length >= DIAGNOSE_MAX;
-  const needsAI = ai && skills.some((s) => ticked.has(s.id) && !s.generator);
+  const noGenerator = skills.some((s) => ticked.has(s.id) && !s.generator);
+  const needsAI = ai && noGenerator;
+  // without Claude, a skill without a generator only gets as many tasks as there are different ones
+  const maybeFewer = noGenerator && !(needsAI && useAI);
   const toggle = (id: string) =>
     setTicked((prev) => {
       const next = new Set(prev);
@@ -66,8 +69,10 @@ export function DiagnoseConfirm({ skills, picked, showArea, ai, note }: { skills
       <p className="text-[14px] text-ink-2" aria-live="polite">
         {plan.length ? (
           <>
+            {maybeFewer && "Bis zu "}
             <span className="num font-semibold text-ink">{plan.length}</span> Aufgaben: <span className="num">{count("leicht")}</span> leicht, <span className="num">{count("mittel")}</span> mittel,{" "}
             <span className="num">{count("schwer")}</span> schwer. Aufgaben aus der Bibliothek werden zuerst verwendet.
+            {maybeFewer && " Fähigkeiten ohne eigenen Aufgabengenerator bekommen ohne Claude weniger Aufgaben, damit sich keine wiederholt."}
           </>
         ) : (
           "Bitte mindestens eine Fähigkeit wählen."
