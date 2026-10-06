@@ -11,14 +11,15 @@
  *                     lays them over the skill when it is read.
  *   skill_curriculum  Lehrplan links. Removing keeps the row (removed_at), so an import (INSERT OR IGNORE)
  *                     cannot bring it back; own links have origin 'lehrer'.
- *   skill_links       prerequisites, only through lehrplan.addPrerequisite (cycle check, origin 'lehrer').
+ *   skill_links       prerequisites, only through lehrplan.addPrerequisite / removePrerequisite (cycle
+ *                     check, origin 'lehrer'); addSkillPrerequisite / removeSkillPrerequisite log them.
  *   skill_history     the correction log: kind 'korrektur', `before` = JSON { action, previous, detail }
  *                     with the previous state, and the teacher.
  *
  * findDuplicates() only lists candidate pairs; merging is always the teacher's decision.
  */
 import { db } from "./db";
-import { addPrerequisite, prerequisitesOf } from "./lehrplan";
+import { addPrerequisite, prerequisiteLinks, prerequisitesOf, removePrerequisite } from "./lehrplan";
 import { listSkills } from "./repo";
 import { MAX_STUFE, SCHOOL_TYPES } from "./school";
 
@@ -94,7 +95,7 @@ function store(skillId: string, f: Fields, teacherId: number | null) {
 }
 
 // ---------- correction log ----------
-export type CorrectionAction = "einordnung" | "verschieben" | "zuruecksetzen" | "zusammenfuehren" | "trennen" | "lehrplan_entfernt" | "lehrplan_hinzugefuegt";
+export type CorrectionAction = "einordnung" | "verschieben" | "zuruecksetzen" | "zusammenfuehren" | "trennen" | "lehrplan_entfernt" | "lehrplan_hinzugefuegt" | "voraussetzung_entfernt" | "voraussetzung_hinzugefuegt";
 export const CORRECTION_LABEL: Record<CorrectionAction, string> = {
   einordnung: "Einordnung",
   verschieben: "Verschoben",
@@ -103,6 +104,8 @@ export const CORRECTION_LABEL: Record<CorrectionAction, string> = {
   trennen: "Getrennt",
   lehrplan_entfernt: "Lehrplan entfernt",
   lehrplan_hinzugefuegt: "Lehrplan hinzugefügt",
+  voraussetzung_entfernt: "Voraussetzung entfernt",
+  voraussetzung_hinzugefuegt: "Voraussetzung hinzugefügt",
 };
 function log(skillId: string, teacherId: number | null, action: CorrectionAction, previous: unknown, detail: string) {
   db()
@@ -308,7 +311,7 @@ export function normalizeName(x: string): string {
     .trim();
 }
 
-export type DuplicateSkill = { id: string; name: string; area: string; subtopic: string; grade_min: number; grade_max: number; parent_name: string | null; answers: number; tasks: number };
+export type DuplicateSkill = { id: string; name: string; area: string; subtopic: string; grade_min: number; grade_max: number; parent_id: string | null; parent_name: string | null; answers: number; tasks: number };
 export type DuplicatePair = { subject: string; sameArea: boolean; a: DuplicateSkill; b: DuplicateSkill; /** suggestion which one stays: more answers, then more tasks, then the older one */ keep: string };
 
 /**
@@ -329,6 +332,7 @@ export function findDuplicates(subject?: string | null, o: { crossArea?: boolean
   }
   const view = (s: (typeof skills)[number]): DuplicateSkill => ({
     id: s.id, name: s.name, area: s.area, subtopic: s.subtopic ?? "", grade_min: s.grade_min, grade_max: s.grade_max,
+    parent_id: s.parent_id ?? null,
     parent_name: s.parent_id ? (names.get(s.parent_id) ?? nameOf(s.parent_id)) : null,
     answers: answers.get(s.id) ?? 0, tasks: tasks.get(s.id) ?? 0,
   });
@@ -429,6 +433,33 @@ export function unmergeSkills(fromId: string, teacherId: number | null): Result 
 /** Skills that were merged into this one. */
 export function mergedInto(skillId: string): { id: string; name: string }[] {
   return db().prepare("SELECT s.id, s.name FROM skill_overrides o JOIN skills s ON s.id = o.skill_id WHERE o.merged_into = ? ORDER BY s.sort, s.name").all(skillId) as { id: string; name: string }[];
+}
+
+// ---------- Voraussetzungen ----------
+const prerequisiteLink = (skillId: string, before: string) => prerequisiteLinks(skillId).find((l) => l.other_id === before) ?? null;
+
+/** The teacher adds a prerequisite (or takes a removed one back) through lehrplan.addPrerequisite; logged, the other skill named. */
+export function addSkillPrerequisite(skillId: string, before: string, teacherId: number | null): Result {
+  const prev = prerequisiteLink(skillId, before);
+  if (prev && !prev.removed_at) return { ok: true };
+  return db().transaction((): Result => {
+    const res = addPrerequisite(skillId, before, teacherId);
+    if ("error" in res) return res;
+    log(skillId, teacherId, "voraussetzung_hinzugefuegt", prev, `${prev ? "wieder aufgenommen: " : ""}${nameOf(before)}`);
+    return { ok: true };
+  })();
+}
+
+/** Removes a prerequisite through lehrplan.removePrerequisite (the row stays, removed_at); logged, the other skill named. */
+export function removeSkillPrerequisite(skillId: string, before: string, teacherId: number | null): Result {
+  const prev = prerequisiteLink(skillId, before);
+  if (!prev) return { error: "Voraussetzung nicht gefunden." };
+  if (prev.removed_at) return { ok: true };
+  db().transaction(() => {
+    removePrerequisite(skillId, before, teacherId);
+    log(skillId, teacherId, "voraussetzung_entfernt", prev, nameOf(before));
+  })();
+  return { ok: true };
 }
 
 // ---------- Lehrplan links ----------

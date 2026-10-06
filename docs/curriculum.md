@@ -149,7 +149,9 @@ schreibt nur der Import. Eigene Korrekturen liegen getrennt und lassen sich zur�
   darüber. Eine Zeile ohne Abweichung wird gelöscht.
 - `skill_curriculum`: Entfernen setzt `removed_at` (die Zeile bleibt, ein neuer Import mit
   `INSERT OR IGNORE` bringt sie nicht zurück); eigene Verknüpfungen haben `origin = 'lehrer'`.
-- `skill_links`: Voraussetzungen nur über `addPrerequisite`/`removePrerequisite` (Kreisprüfung).
+- `skill_links`: Voraussetzungen nur über `addPrerequisite`/`removePrerequisite` (Kreisprüfung); die
+  Seite einer Fähigkeit ruft sie über `addSkillPrerequisite`/`removeSkillPrerequisite` auf, die jede
+  Änderung als Korrektur protokollieren.
 - `skill_history` mit `kind = 'korrektur'`: jede Korrektur mit vorherigem Zustand
   (`before` = `{ action, previous, detail }`) und Lehrer.
 
