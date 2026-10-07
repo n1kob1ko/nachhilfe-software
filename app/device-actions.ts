@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { newExerciseForUnit, onHint } from "@/lib/ai/realtime";
 import { requireTeacher } from "@/lib/auth";
 import { sendSingleTask, releaseWorksheet } from "@/lib/builder";
 import { clientIp } from "@/lib/client-ip";
@@ -52,6 +53,7 @@ export async function deviceRecordHintAction(assignmentId: number, taskId: numbe
   if (!t || t.worksheet_id !== assignment.worksheet_id || !Number.isInteger(hintIndex) || hintIndex < 0 || hintIndex >= t.hints.length) return;
   repo.recordHintUse({ assignment_id: assignment.id, task_id: t.id, student_id: student.id, hint_index: hintIndex, unit_id: unit.id });
   pushLive(unit.id);
+  onHint({ unitId: unit.id, teacherId: unit.teacher_id, taskId: t.id, assignmentId: assignment.id, hintIndex });
 }
 
 // ---------- teacher side: devices ----------
@@ -184,4 +186,14 @@ export async function currentTaskToBoardAction(unitId: number) {
     if (open) queueInsert(board.id, { kind: "tasks", title: a.title, tasks: [boardTask(open)] });
   }
   showOnTablet(unit, { kind: "tafel" });
+}
+
+/** "Passende Aufgabe erstellen": two new tasks for what the KI saw last, sent to the tablet at once. */
+export async function newExerciseAction(unitId: number): Promise<{ ok?: string; error?: string }> {
+  const { t, unit } = await managedRunningUnit(unitId);
+  const out = await newExerciseForUnit(unit.id, t.id);
+  if (!out.ok) return { error: out.error };
+  noteActivity(unit.student_id);
+  revalidatePath(`/einheiten/${unit.id}`);
+  return { ok: out.source === "ki" ? "Neue Aufgaben gesendet." : "Neue Aufgaben aus dem Generator gesendet (KI gerade nicht verfügbar)." };
 }

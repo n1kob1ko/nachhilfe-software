@@ -14,6 +14,7 @@ import { UnitBriefView } from "@/components/UnitBriefView";
 import { FamilyNote } from "@/components/FamilyNote";
 import { Info } from "@/components/Info";
 import { aiEnabled } from "@/lib/ai";
+import { latestInsight } from "@/lib/ai/insights";
 import { unitBrief } from "@/lib/summary";
 import { Pill, Reveal, SectionTitle, formatDate, formatTime } from "@/components/ui";
 import { LiveStatus } from "@/components/device/LiveStatus";
@@ -254,6 +255,7 @@ function BriefSection({ brief, lesson, mayManage }: { brief: NonNullable<ReturnT
         </span>
       </SectionTitle>
       <UnitBriefView brief={brief} />
+      <UnitAISummary unitId={lesson.unit_id ?? null} />
       {(mayManage || lesson.family_note) && (
         <details className="reveal mt-4" open={Boolean(lesson.family_note) || undefined}>
           <summary>Notiz für Eltern oder Schüler{lesson.family_note ? "" : " schreiben"}</summary>
@@ -267,6 +269,26 @@ function BriefSection({ brief, lesson, mayManage }: { brief: NonNullable<ReturnT
         </details>
       )}
     </section>
+  );
+}
+
+/** The KI's view of the ended unit (written in the background when the unit ended). */
+function UnitAISummary({ unitId }: { unitId: number | null }) {
+  const s = unitId ? latestInsight(unitId, "einheit") : null;
+  if (!s) return null;
+  return (
+    <div className="mt-4 rounded-2xl bg-panel px-4 py-3">
+      <p className="text-[13px] font-semibold text-ink-2">KI-Einschätzung</p>
+      <p className="mt-1 text-[15px]">{s.data.summary}</p>
+      {s.data.next_steps.length > 0 && (
+        <ul className="mt-2 list-disc pl-5 text-[14px] text-ink-2">
+          {s.data.next_steps.map((x) => (
+            <li key={x}>{x}</li>
+          ))}
+        </ul>
+      )}
+      {s.data.homework && <p className="mt-2 text-[14px] text-ink-2">Hausübung: {s.data.homework}</p>}
+    </div>
   );
 }
 

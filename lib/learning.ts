@@ -6,6 +6,7 @@
  * The report is stored as JSON with a version so later analyses (statistics, AI recommendations)
  * can read old units without recomputing them.
  */
+import { onUnitEnd } from "./ai/realtime";
 import { WEAK, STRONG, parseTime } from "./analysis";
 import { localStamp } from "./autodoc";
 import { db } from "./db";
@@ -333,7 +334,10 @@ export function endUnit(unitId: number, opts: FinishOptions = {}): number | null
   const unit = finishUnit(unitId, "beendet", { ...opts, at });
   if (!unit || unit.status !== "beendet") return null;
   notifyUnitClosed(unitId);
-  return writeLearningDoc(unit, at);
+  const lessonId = writeLearningDoc(unit, at);
+  // one KI summary of the whole unit, in the background; pending live analyses are dropped
+  onUnitEnd({ unitId, teacherId: unit.teacher_id, lessonId });
+  return lessonId;
 }
 
 export function writeLearningDoc(unit: UnitView, at = Date.now()): number {

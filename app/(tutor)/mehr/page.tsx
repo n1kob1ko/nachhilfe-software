@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, ChevronRight, Clock3, Download, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, ShieldCheck, Sparkles, TabletSmartphone, UserCog } from "lucide-react";
+import { BarChart3, ChevronRight, Clock3, Coins, Download, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, ShieldCheck, Sparkles, TabletSmartphone, UserCog } from "lucide-react";
 import { logoutAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
 import { PageHeader } from "@/components/ui";
@@ -29,6 +29,7 @@ export default async function MorePage() {
       items: [
         { href: "/mehr/statistik", label: "Statistik", hint: "Schwierige Fähigkeiten, Fehlerarten, Aufgabenqualität", icon: BarChart3 },
         { href: "/mehr/datenqualitaet", label: "Datenqualität", hint: "Fähigkeiten zuordnen, Dubletten, Voraussetzungen korrigieren", icon: ShieldCheck },
+        { href: "/mehr/ki-kosten", label: "KI-Kosten", hint: "Aufrufe, Tokens und Kosten pro Tag, Monat, Lehrer und Funktion", icon: Coins },
       ],
     },
     {

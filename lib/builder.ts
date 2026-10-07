@@ -3,7 +3,7 @@
  * exercise the teacher checks, edits and releases. Works without AI; with a key, Claude gets the
  * student's context and returns structured tasks (lib/ai.ts).
  */
-import { aiEnabled, generateWithAI } from "./ai";
+import { aiEnabled, generateWithAI, type AIMeta } from "./ai";
 import { DIFFICULTIES, categoriesFor, difficultyFor, type Category, type Difficulty, type TaskType } from "./curriculum";
 import { generateForSlot } from "./generators";
 import * as repo from "./repo";
@@ -258,7 +258,7 @@ const MIXED_BUILTIN: Record<string, string[]> = { Mathematik: ["rechnung", "mc",
 export async function generateTasks(
   s: BuilderSettings,
   ctx: StudentContext | null,
-  o: { count?: number; avoid?: string[]; skillIds?: string[]; categories?: string[]; difficulty?: DifficultyChoice } = {},
+  o: { count?: number; avoid?: string[]; skillIds?: string[]; categories?: string[]; difficulty?: DifficultyChoice; meta?: AIMeta } = {},
 ): Promise<{ tasks: TaskDraft[]; source: "ki" | "generator"; aiError?: string }> {
   const settings = { ...s, skillIds: o.skillIds ?? s.skillIds, categories: o.categories ?? s.categories, difficulty: o.difficulty ?? s.difficulty };
   const skills = resolveSkills(settings, ctx);
@@ -278,7 +278,7 @@ export async function generateTasks(
         studentContext: ctx ? contextForAI(ctx, skills.map((r) => r.skill.id)) : null,
         focusNote: settings.focus,
         avoid: o.avoid,
-      });
+      }, o.meta);
       if (tasks?.length) {
         // parents count too, so the progress of "Dividieren" also moves when "Kehrwert" is practised
         const withParents = tasks.slice(0, count).map((t) => ({ ...t, skillIds: [...new Set([...(t.skillIds ?? []), ...(t.skillIds ?? []).map((id) => skills.find((r) => r.skill.id === id)?.parent?.id).filter((x): x is string => Boolean(x))])] }));
@@ -322,7 +322,7 @@ export async function createDraft(s: BuilderSettings, teacherId: number | null, 
   let source: repo.Worksheet["source"] = "manuell";
   let aiError: string | undefined;
   if (!o.empty) {
-    const out = await generateTasks(s, ctx);
+    const out = await generateTasks(s, ctx, { meta: { teacherId, trigger: "uebung" } });
     tasks = out.tasks;
     source = out.source;
     aiError = out.aiError;
@@ -371,7 +371,7 @@ export function settingsOf(w: repo.Worksheet): BuilderSettings {
 }
 
 /** Replaces one task by a new one for the same skill and type (optionally at another difficulty). */
-export async function regenerateTask(taskId: number, o: { difficulty?: Difficulty; useAI?: boolean } = {}): Promise<{ ok: boolean; aiError?: string }> {
+export async function regenerateTask(taskId: number, o: { difficulty?: Difficulty; useAI?: boolean; teacherId?: number | null } = {}): Promise<{ ok: boolean; aiError?: string }> {
   const task = repo.getTask(taskId);
   const w = task ? repo.getWorksheet(task.worksheet_id) : null;
   if (!task || !w) return { ok: false };
@@ -380,7 +380,7 @@ export async function regenerateTask(taskId: number, o: { difficulty?: Difficult
   const skillIds = task.skillId ? [task.skillId] : s.skillIds;
   const difficulty = o.difficulty ?? (task.difficulty as Difficulty);
   const others = repo.listTasks(w.id).map((t) => t.prompt);
-  const out = await generateTasks(s, ctx, { count: 1, avoid: others, skillIds, categories: task.category ? [task.category] : [], difficulty });
+  const out = await generateTasks(s, ctx, { count: 1, avoid: others, skillIds, categories: task.category ? [task.category] : [], difficulty, meta: { teacherId: o.teacherId ?? null, trigger: "neu_erstellen" } });
   const next = out.tasks[0];
   if (!next) return { ok: false, aiError: out.aiError };
   repo.updateTask(taskId, { ...next, difficulty });

@@ -130,7 +130,15 @@ Ohne Admin-Zugang geht Schritt 1 auch per `railway ssh`:
 | --- | --- |
 | `DATABASE_PATH` | Datenbankdatei, im Docker-Image `/data/nachhilfe.db` |
 | `UPLOADS_PATH` | Ordner für Material, sonst `uploads/` neben der Datenbank |
-| `ANTHROPIC_API_KEY` | optional: Claude für neue Aufgaben, Material-Erkennung, formulierte Notizen |
+| `ANTHROPIC_API_KEY` | optional: Claude für neue Aufgaben, Echtzeit-Hinweise, Material-Erkennung, formulierte Notizen |
+| `AI_MODEL_FAST` | Modell für die Echtzeit-Analyse, Standard `claude-haiku-4-5` |
+| `AI_MODEL_STANDARD` | Modell für Aufgaben, Freitext, Auswertungen, Material, Standard `claude-sonnet-5-5` |
+| `AI_MODEL_DEEP` | Modell für die Tiefenanalyse (nur auf Klick), Standard `claude-opus-5-5` |
+| `AI_MONTHLY_BUDGET_USD` | Monatsbudget für KI in US-Dollar, Standard 10. Ab 100 % keine Echtzeit-Analyse, ab 120 % gar kein KI-Aufruf |
+| `AI_BUDGET_WARN` | Warnschwelle als Anteil, Standard 0.8 |
+| `AI_REALTIME_MAX_PER_HOUR` | höchstens so viele Echtzeit-Analysen pro Einheit und Stunde, Standard 40 |
+| `AI_PRICES_JSON` | Preise überschreiben, z. B. `{"claude-neu":{"in":2,"out":10}}` (US-Dollar je 1 Mio. Tokens) |
+| `AI_DISABLED` | `1` schaltet alle KI-Aufrufe ab, die App läuft ohne KI weiter |
 | `PORT` | Port des Servers, Standard 3000 |
 | `INSECURE_COOKIES` | `1` erlaubt Anmeldung ohne HTTPS (nur lokal) |
 | `INITIAL_TEACHER_PASSWORD` | Startpasswort für die ersten Konten auf dem Server (geheim halten) |
