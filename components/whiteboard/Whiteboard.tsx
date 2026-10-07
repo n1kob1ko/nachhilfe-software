@@ -42,6 +42,18 @@ export type WhiteboardProps = {
 };
 
 type Status = "verbinde" | "live" | "getrennt";
+
+/** Text width in the board's font (Nunito), so fractions can be drawn with a bar beside the text. */
+let measureCanvas: CanvasRenderingContext2D | null = null;
+const measureBoardText: T.Measure = (text, fontSize) => {
+  measureCanvas ??= document.createElement("canvas").getContext("2d");
+  if (!measureCanvas) return text.length * fontSize * 0.55;
+  measureCanvas.font = `${fontSize}px Nunito, Segoe UI Emoji`;
+  return measureCanvas.measureText(text).width;
+};
+/** Waits until the board font is loaded, otherwise the first measurement uses a narrower fallback font. */
+const boardFontReady = (): Promise<unknown> =>
+  typeof document !== "undefined" && document.fonts ? Promise.race([document.fonts.load("30px Nunito").catch(() => null), new Promise((r) => setTimeout(r, 3000))]) : Promise.resolve();
 const SEND_EVERY_MS = 40;
 const POINTER_EVERY_MS = 70;
 const PREVIEW_AFTER_MS = 2500;
@@ -202,7 +214,7 @@ export default function Whiteboard(props: WhiteboardProps) {
   const materialize = useCallback(
     (payload: InsertPayload) => {
       const at = placeBelow();
-      if (payload.kind === "tasks") draw(T.tasksTemplate(payload.tasks, at, { title: payload.title }));
+      if (payload.kind === "tasks") void boardFontReady().then(() => draw(T.tasksTemplate(payload.tasks, at, { title: payload.title, measure: measureBoardText })));
       else draw(T.textTemplate(payload.text, at));
     },
     [draw, placeBelow],
@@ -608,8 +620,14 @@ export default function Whiteboard(props: WhiteboardProps) {
           <InsertPanel
             worksheets={props.worksheets ?? []}
             onClose={() => setPanel(false)}
-            onTasks={(title, tasks) => draw(T.tasksTemplate(tasks, placeBelow(), { title }))}
-            onSolution={(t) => draw(T.solutionTemplate(t, placeBelow()))}
+            onTasks={(title, tasks) => {
+              const at = placeBelow();
+              void boardFontReady().then(() => draw(T.tasksTemplate(tasks, at, { title, measure: measureBoardText })));
+            }}
+            onSolution={(t) => {
+              const at = placeBelow();
+              void boardFontReady().then(() => draw(T.solutionTemplate(t, at, measureBoardText)));
+            }}
             onText={(text, framed) => draw(T.textTemplate(text, placeBelow(), { framed }))}
             onFormula={(f) => draw(T.formulaTemplate(f, placeBelow()))}
             onTable={(r, c, h) => draw(T.tableTemplate(r, c, placeBelow(), h))}

@@ -5,6 +5,7 @@ import { requireTeacher } from "@/lib/auth";
 import { levelName } from "@/lib/curriculum";
 import { masteryStatus } from "@/lib/mastery";
 import { DIAGNOSIS_FILTERS, EXPECTED_SUCCESS, SKILL_MIN, statistics, TASK_MIN, UNUSUAL_DEVIATION, UNUSUAL_MIN_STUDENTS, type DiagnosisFilter, type SkillRef, type TaskRow, type TopicRow } from "@/lib/statistik";
+import { MathText } from "@/components/MathText";
 
 export const metadata = { title: "Statistik" };
 
@@ -235,7 +236,7 @@ function TaskLine({ t }: { t: TaskRow }) {
     <StatRow
       title={
         <Link href={`/uebungen/${t.worksheetId}`} className="-my-2.5 block py-2.5 font-medium hover:text-accent">
-          <span className="line-clamp-2">{t.prompt}</span>
+          <span className="line-clamp-2"><MathText text={t.prompt} /></span>
         </Link>
       }
       value={pct(t.successRate)}

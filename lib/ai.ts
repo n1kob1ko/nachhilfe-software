@@ -21,7 +21,8 @@ function anthropic() {
 
 /** One structured request with server-side fallback on refusals. Returns null when the model declines. */
 async function ask<T extends z.ZodType>(schema: T, system: string, prompt: string | BetaContentBlockParam[], maxTokens = 16000, effort: "low" | "medium" = "medium") {
-  const res = await anthropic().beta.messages.parse({
+  // streamed: a non-streamed request with a large max_tokens is refused by the SDK (10-minute rule)
+  const res = await anthropic().beta.messages.stream({
     model: MODEL,
     max_tokens: maxTokens,
     betas: ["server-side-fallback-2026-07-01"],
@@ -29,7 +30,7 @@ async function ask<T extends z.ZodType>(schema: T, system: string, prompt: strin
     system,
     output_config: { effort, format: betaZodOutputFormat(schema) },
     messages: [{ role: "user", content: prompt }],
-  });
+  }).finalMessage();
   if (res.stop_reason === "refusal" || !res.parsed_output) return null;
   return res.parsed_output as z.infer<T>;
 }
@@ -83,6 +84,7 @@ Die Aufgaben werden automatisch korrigiert, daher müssen Lösungen eindeutig un
 Schreib auf Deutsch (bei Englisch-Übungen sind Aufgaben und Texte auf Englisch, Erklärungen und Hilfen dürfen Deutsch sein).
 Verwende österreichische Begriffe (Klasse, Hausübung, Schularbeit, Beistrich, Jänner).
 Prüfe jede Lösung selbst nach, bevor du sie ausgibst. Bei Brüchen sind Ergebnisse vollständig gekürzt.
+Schreib Brüche als a/b ohne Leerzeichen (z. B. 3/4, -5/8, x/2, (x+1)/2), kein LaTeX. Die App zeigt sie mit Bruchstrich an.
 Lösungswege sind kurz, Schritt für Schritt und so formuliert, dass ein Kind der angegebenen Klasse und Schulform sie versteht.
 Die typischen Fehler beschreiben echte Denkfehler, die Schülerinnen und Schüler bei diesem Thema machen.
 Wenn du etwas über den Schüler erfährst, richte die Aufgaben gezielt darauf aus: übe, was er falsch macht, und baue auf dem auf, was er kann.`;

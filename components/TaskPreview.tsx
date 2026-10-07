@@ -1,12 +1,13 @@
 import { categoryLabel, TASK_TYPES } from "@/lib/curriculum";
 import type { Task } from "@/lib/repo";
 import { GAP, hintLabel, type TaskDraft } from "@/lib/tasks";
+import { MathText } from "./MathText";
 
 function withGaps(text: string) {
   const parts = text.split(GAP);
   return parts.map((p, i) => (
     <span key={i}>
-      {p}
+      <MathText text={p} />
       {i < parts.length - 1 && <span className="mx-1 inline-block w-20 border-b-2 border-ink-3 align-baseline" aria-label="Lücke" />}
     </span>
   ));
@@ -25,14 +26,16 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
   const cat = subject ? categoryLabel(subject, task.category) : null;
   return (
     <div className="min-w-0">
-      {task.data.passage && !passageShown && <blockquote className="ruled mb-4 max-w-[70ch] rounded-lg bg-paper px-4 py-1 text-[15px]">{task.data.passage}</blockquote>}
+      {task.data.passage && !passageShown && <blockquote className="ruled mb-4 max-w-[70ch] rounded-lg bg-paper px-4 py-1 text-[15px]"><MathText text={task.data.passage} /></blockquote>}
       <p className="max-w-[70ch] text-[16px] leading-relaxed whitespace-pre-line">{task.prompt ? withGaps(task.prompt) : <span className="text-ink-3 italic">Noch keine Aufgabenstellung</span>}</p>
       {task.data.options && (
         <ol className="mt-2 space-y-1">
           {task.data.options.map((o, i) => (
             <li key={i} className={`flex gap-2 ${showSolution && task.answer.correct === i ? "font-semibold text-green" : ""}`}>
               <span className="text-ink-3">{String.fromCharCode(97 + i)})</span>
-              {o}
+              <span>
+                <MathText text={o} />
+              </span>
             </li>
           ))}
         </ol>
@@ -44,7 +47,9 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
               <span className="num text-ink-3" aria-hidden>
                 ☐
               </span>
-              {s}
+              <span>
+                <MathText text={s} />
+              </span>
             </li>
           ))}
         </ul>
@@ -60,20 +65,20 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
         <div className="mt-3 rounded-lg border border-[#cfe3d6] bg-green-wash px-4 py-3 text-[14px]">
           {answerText(task) && (
             <p>
-              <span className="font-semibold">Lösung:</span> {answerText(task)}
+              <span className="font-semibold">Lösung:</span> <MathText text={answerText(task)} />
             </p>
           )}
           {task.answer.sample && !answerText(task) && (
             <p>
-              <span className="font-semibold">Musterlösung:</span> {task.answer.sample}
+              <span className="font-semibold">Musterlösung:</span> <MathText text={task.answer.sample} />
             </p>
           )}
-          {task.solution && <p className="mt-1 whitespace-pre-line text-ink-2">{task.solution}</p>}
+          {task.solution && <p className="mt-1 whitespace-pre-line text-ink-2"><MathText text={task.solution} /></p>}
           {task.hints.length > 0 && (
             <ul className="mt-2 space-y-0.5 text-[13px] text-ink-2">
               {task.hints.map((h, i) => (
                 <li key={i}>
-                  <span className="font-semibold text-ink-3">{hintLabel(i)}:</span> {h}
+                  <span className="font-semibold text-ink-3">{hintLabel(i)}:</span> <MathText text={h} />
                 </li>
               ))}
             </ul>

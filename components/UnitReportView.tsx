@@ -2,6 +2,7 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { SectionTitle } from "@/components/ui";
 import { errorTypeLabel } from "@/lib/error-types";
 import { HELP_LABEL, type TaskLine, type UnitReport } from "@/lib/learning";
+import { MathText } from "./MathText";
 
 const pct = (x: number | null) => (x === null ? "–" : `${Math.round(x * 100)} %`);
 const mins = (ms: number) => `${Math.max(0, Math.round(ms / 60_000))} min`;
@@ -203,7 +204,7 @@ export function UnitReportView({ r }: { r: UnitReport }) {
             <tbody className="divide-y divide-line">
               {r.tasks.map((t) => (
                 <tr key={`${t.assignmentId}-${t.taskId}`} className="align-top">
-                  <td className="max-w-[36ch] px-4 py-2">{t.prompt}</td>
+                  <td className="max-w-[36ch] px-4 py-2"><MathText text={t.prompt} /></td>
                   <td className="px-2 py-2 text-ink-2">
                     {t.skill}
                     <div className="text-[12px] text-ink-3">{t.difficulty}</div>
@@ -245,7 +246,7 @@ function TaskList({ title, tasks, showHelp }: { title: string; tasks: TaskLine[]
       <ul className="space-y-1 text-[13px]">
         {tasks.slice(0, 6).map((t) => (
           <li key={`${t.assignmentId}-${t.taskId}`} className="flex justify-between gap-3">
-            <span className="min-w-0 truncate">{t.prompt}</span>
+            <span className="min-w-0 truncate"><MathText text={t.prompt} /></span>
             <span className="shrink-0 text-ink-3">{showHelp ? `${HELP_LABEL[t.help]}${t.solvedAfterHelp ? ", dann gelöst" : ""}` : `${t.skill} · ${secs(t.activeMs)}`}</span>
           </li>
         ))}
