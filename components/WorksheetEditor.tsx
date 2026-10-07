@@ -20,6 +20,7 @@ import { TabletSend } from "@/components/device/TabletSend";
 import { categoriesFor, DIFFICULTIES, TASK_TYPES, type Difficulty, type TaskType } from "@/lib/curriculum";
 import type { Task } from "@/lib/repo";
 import { GAP, gapCount, hintLabel, type TaskDraft } from "@/lib/tasks";
+import { MathText } from "./MathText";
 
 type Skill = { id: string; name: string; area: string; parent_id: string | null };
 type Unit = { unit_id: number; student_id: number; student_name: string };
@@ -338,7 +339,7 @@ function AddTask(p: Props & { afterId?: number; onAdded: (id: number) => void })
             {found?.map((t) => (
               <li key={t.id} className="flex items-start gap-3 rounded-lg border border-line bg-surface px-3 py-2">
                 <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-[14px]">{t.prompt.replaceAll(GAP, "…")}</p>
+                  <p className="line-clamp-2 text-[14px]"><MathText text={t.prompt.replaceAll(GAP, "…")} /></p>
                   <p className="mt-0.5 text-[12px] text-ink-3">
                     {TASK_TYPES[t.type]} · {t.difficulty} · {t.library ? "aus der Bibliothek" : `aus „${t.worksheetTitle}“`}
                   </p>

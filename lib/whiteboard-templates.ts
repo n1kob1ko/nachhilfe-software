@@ -6,9 +6,13 @@
  * turns them into real elements with Excalidraw's convertToExcalidrawElements. Backgrounds such as
  * grids and task texts are locked, so a student cannot move or erase them by accident.
  */
+import { splitFractions } from "./math-text";
+
 export type Skeleton = Record<string, unknown> & { type: string; x: number; y: number };
 export type Point = { x: number; y: number };
 export type TaskForBoard = { number: number; prompt: string; options: string[] | null; solution?: string };
+/** Width of a text in the board's font, measured in the browser. Without it fractions stay as "3/4". */
+export type Measure = (text: string, fontSize: number) => number;
 
 const NUNITO = 6;
 const INK = "#1e1e1e";
@@ -30,6 +34,8 @@ const line = (x: number, y: number, dx: number, dy: number, extra: Partial<Skele
   type: "line",
   x,
   y,
+  width: Math.abs(dx),
+  height: Math.abs(dy),
   points: [
     [0, 0],
     [dx, dy],
@@ -58,9 +64,51 @@ function wrap(s: string, max = 58): string {
 }
 
 const lines = (s: string) => s.split("\n").length;
+const LINE = 1.35; // Excalidraw's line height for Nunito
+
+/**
+ * A wrapped text whose fractions ("3/4") are drawn as numerator, bar and denominator. Each line with a
+ * fraction becomes separate text pieces placed side by side, measured with the board's font.
+ */
+function mathText(s: string, x: number, y: number, fontSize: number, measure: Measure | undefined, extra: Partial<Skeleton> = {}): { elements: Skeleton[]; height: number } {
+  if (!measure || !splitFractions(s).some((p) => typeof p !== "string")) return { elements: [text(s, x, y, { fontSize, ...extra })], height: lines(s) * fontSize * LINE };
+  const small = Math.round(fontSize * 0.78);
+  const elements: Skeleton[] = [];
+  let top = y;
+  for (const row of s.split("\n")) {
+    const parts = splitFractions(row);
+    if (!parts.some((p) => typeof p !== "string")) {
+      if (row) elements.push(text(row, x, top, { fontSize, ...extra }));
+      top += fontSize * LINE;
+      continue;
+    }
+    const height = small * LINE * 2 + 6;
+    let cx = x;
+    for (const p of parts) {
+      if (typeof p === "string") {
+        if (p) elements.push(text(p, cx, top + (height - fontSize * LINE) / 2, { fontSize, ...extra }));
+        cx += measure(p, fontSize);
+        continue;
+      }
+      if (p.minus) {
+        elements.push(text("−", cx, top + (height - fontSize * LINE) / 2, { fontSize, ...extra }));
+        cx += measure("−", fontSize);
+      }
+      const wn = measure(p.num, small);
+      const wd = measure(p.den, small);
+      const w = Math.max(wn, wd) + 10;
+      elements.push(text(p.num, cx + (w - wn) / 2, top, { fontSize: small, ...extra }));
+      elements.push(line(cx + 2, top + small * LINE + 3, w - 4, 0, { strokeColor: (extra.strokeColor as string) ?? INK, strokeWidth: 2, locked: extra.locked ?? false }));
+      elements.push(text(p.den, cx + (w - wd) / 2, top + small * LINE + 6, { fontSize: small, ...extra }));
+      cx += w + 2;
+    }
+    top += height + 4;
+  }
+  return { elements, height: top - y };
+}
 
 /** One or more tasks, each with a dashed area underneath to calculate in. */
-export function tasksTemplate(tasks: TaskForBoard[], at: Point, opts: { title?: string; workHeight?: number } = {}): Skeleton[] {
+export function tasksTemplate(tasks: TaskForBoard[], at: Point, opts: { title?: string; workHeight?: number; measure?: Measure } = {}): Skeleton[] {
   const out: Skeleton[] = [];
   let y = at.y;
   if (opts.title) {
@@ -68,13 +116,13 @@ export function tasksTemplate(tasks: TaskForBoard[], at: Point, opts: { title?: 
     y += 40;
   }
   for (const t of tasks) {
-    const prompt = wrap(`${t.number}) ${t.prompt}`);
-    out.push(text(prompt, at.x, y, { fontSize: 30, locked: true }));
-    y += lines(prompt) * 38 + 10;
+    const prompt = mathText(wrap(`${t.number}) ${t.prompt}`), at.x, y, 30, opts.measure, { locked: true });
+    out.push(...prompt.elements);
+    y += prompt.height + 10;
     if (t.options?.length) {
-      const opts2 = t.options.map((o, i) => `${String.fromCharCode(65 + i)})  ${o}`).join("\n");
-      out.push(text(opts2, at.x + 24, y, { fontSize: 26, locked: true }));
-      y += t.options.length * 34 + 10;
+      const options = mathText(t.options.map((o, i) => `${String.fromCharCode(65 + i)})  ${o}`).join("\n"), at.x + 24, y, 26, opts.measure, { locked: true });
+      out.push(...options.elements);
+      y += options.height + 10;
     }
     const h = opts.workHeight ?? 220;
     out.push({ type: "rectangle", x: at.x, y, width: 900, height: h, strokeColor: SOFT, strokeStyle: "dashed", strokeWidth: 1, roughness: 0, backgroundColor: "transparent", locked: true, roundness: null });
@@ -84,8 +132,8 @@ export function tasksTemplate(tasks: TaskForBoard[], at: Point, opts: { title?: 
 }
 
 /** A solution shown by the teacher, in green. */
-export function solutionTemplate(t: TaskForBoard, at: Point): Skeleton[] {
-  return [text(wrap(`Lösung ${t.number}: ${t.solution ?? ""}`), at.x, at.y, { fontSize: 24, strokeColor: "#15803d" })];
+export function solutionTemplate(t: TaskForBoard, at: Point, measure?: Measure): Skeleton[] {
+  return mathText(wrap(`Lösung ${t.number}: ${t.solution ?? ""}`), at.x, at.y, 24, measure, { strokeColor: "#15803d" }).elements;
 }
 
 export function textTemplate(s: string, at: Point, opts: { size?: number; framed?: boolean } = {}): Skeleton[] {

@@ -8,6 +8,7 @@ import { ErrorTypeSelect } from "@/components/ErrorTypeSelect";
 import { PageHeader, formatDate, formatDuration } from "@/components/ui";
 import * as repo from "@/lib/repo";
 import { GAP, HINT_LABELS } from "@/lib/tasks";
+import { MathText } from "@/components/MathText";
 
 function shownAnswer(t: repo.Task, raw: string) {
   if (t.data.options) {
@@ -99,13 +100,13 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
             <li key={t.id} className="grid gap-3 px-5 py-4 md:grid-cols-[32px_1fr_220px]">
               <span className="num font-semibold text-ink-3">{i + 1}.</span>
               <div className="min-w-0">
-                <p className="max-w-[70ch] whitespace-pre-line">{t.prompt.split(GAP).join("____")}</p>
+                <p className="max-w-[70ch] whitespace-pre-line"><MathText text={t.prompt.split(GAP).join("____")} /></p>
                 {tries.length > 0 && (
                   <ul className="mt-2 space-y-1 text-[14px]">
                     {tries.map((a) => (
                       <li key={a.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
                         <span className="text-ink-3">Versuch {a.attempt_no}:</span>
-                        <span className={a.correct ? "text-green" : "text-red"}>{a.solution_viewed ? "aufgegeben" : shownAnswer(t, a.answer) || "–"}</span>
+                        <span className={a.correct ? "text-green" : "text-red"}>{a.solution_viewed ? "aufgegeben" : <MathText text={shownAnswer(t, a.answer) || "–"} />}</span>
                         {a.error_label && <span className="text-ink-2">→ {a.error_label}</span>}
                         {!a.correct && !a.solution_viewed && (
                           <span className="no-print">
@@ -116,7 +117,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
                     ))}
                   </ul>
                 )}
-                {answerText(t) && <p className="mt-1 text-[13px] text-ink-3">Richtige Lösung: {answerText(t)}</p>}
+                {answerText(t) && <p className="mt-1 text-[13px] text-ink-3">Richtige Lösung: <MathText text={answerText(t)} /></p>}
               </div>
               <div className="space-y-1 text-[13px] md:text-right">
                 <p className={`inline-flex items-center gap-1.5 font-semibold ${status.cls}`}>
