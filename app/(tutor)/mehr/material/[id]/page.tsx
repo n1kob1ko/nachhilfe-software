@@ -22,6 +22,7 @@ import {
 } from "@/lib/materials";
 import * as repo from "@/lib/repo";
 import { klassenLabel, SCHOOL_TYPES } from "@/lib/school";
+import { MathText } from "@/components/MathText";
 
 export const metadata = { title: "Material" };
 
@@ -393,11 +394,11 @@ function Suggestion({ m, names }: { m: Material; names: Map<string, repo.Skill> 
         <div className="grid gap-2">
           <p className="text-[13px] font-semibold text-ink-2">{a.tasks.length === 1 ? "1 erkannte Aufgabe" : `${a.tasks.length} erkannte Aufgaben`}</p>
           {a.tasks.map((t, i) => (
-            <Reveal key={i} label={<span className="line-clamp-1 text-left">{t.prompt}</span>}>
+            <Reveal key={i} label={<span className="line-clamp-1 text-left"><MathText text={t.prompt} /></span>}>
               {m.subject && rule.source ? (
                 <TakeoverForm m={m} allowed={rule.allowed} skills={skills} initial={{ prompt: t.prompt, answers: t.answer ?? "", solution: t.solution ?? "", skillId: t.skill_id ?? "" }} />
               ) : (
-                <p className="text-[13px] text-ink-2">{t.prompt}</p>
+                <p className="text-[13px] text-ink-2"><MathText text={t.prompt} /></p>
               )}
             </Reveal>
           ))}

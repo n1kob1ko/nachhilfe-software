@@ -7,6 +7,8 @@ import { submitAnswerAction } from "@/app/actions";
 import { recordHintAction } from "@/app/builder-actions";
 import { deviceRecordHintAction, deviceSubmitAnswerAction } from "@/app/device-actions";
 import { hintLabel } from "@/lib/tasks";
+import { splitFractions } from "@/lib/math-text";
+import { MathText } from "./MathText";
 
 export type ClientTask = {
   id: number;
@@ -200,7 +202,7 @@ function TaskCard({
 
   return (
     <article>
-      {task.passage && <div className="ruled mb-6 rounded-xl border border-line bg-surface px-5 py-1 text-[17px]">{task.passage}</div>}
+      {task.passage && <div className="ruled mb-6 rounded-xl border border-line bg-surface px-5 py-1 text-[17px]"><MathText text={task.passage} /></div>}
 
       <form
         onSubmit={(e) => {
@@ -212,7 +214,7 @@ function TaskCard({
           <p className="text-[21px] leading-[2.1] font-medium">
             {promptParts.map((p, i) => (
               <span key={i} className="whitespace-pre-line">
-                {p}
+                <MathText text={p} />
                 {i < promptParts.length - 1 && (
                   <input
                     ref={i === 0 ? (el) => void (inputRef.current = el) : undefined}
@@ -230,7 +232,7 @@ function TaskCard({
             ))}
           </p>
         ) : (
-          <p className="text-[21px] leading-snug font-medium whitespace-pre-line">{task.prompt}</p>
+          <p className="text-[21px] leading-snug font-medium whitespace-pre-line"><MathText text={task.prompt} /></p>
         )}
 
         {task.options && (
@@ -243,7 +245,7 @@ function TaskCard({
                 } ${final ? "cursor-default" : ""}`}
               >
                 <input type="radio" name="choice" className="mt-1.5 accent-[var(--accent)]" checked={choice === i} disabled={final} onChange={() => setChoice(i)} />
-                <span>{o}</span>
+                <span><MathText text={o} /></span>
               </label>
             ))}
           </div>
@@ -254,7 +256,7 @@ function TaskCard({
             {order.map((stepIndex, pos) => (
               <li key={stepIndex} className="flex items-center gap-3 rounded-xl border border-line-strong bg-surface px-4 py-2.5 text-[17px]">
                 <span className="num w-6 shrink-0 font-semibold text-ink-3">{pos + 1}.</span>
-                <span className="min-w-0 flex-1">{task.steps![stepIndex]}</span>
+                <span className="min-w-0 flex-1"><MathText text={task.steps![stepIndex]} /></span>
                 {!final && (
                   <span className="flex shrink-0 gap-1">
                     <button type="button" className="btn btn-ghost btn-sm h-10 w-10" disabled={pos === 0} onClick={() => move(pos, -1)} aria-label={`„${task.steps![stepIndex]}“ nach oben`}>
@@ -293,7 +295,17 @@ function TaskCard({
               aria-label="Antwort"
             />
           ))}
-        {task.type === "calc" && !task.options && task.blanks === 0 && <p className="mt-2 text-[13px] text-ink-3">Brüche schreibst du so: 3/4. Kommazahlen mit Beistrich: 0,75.</p>}
+        {task.type === "calc" && !task.options && task.blanks === 0 &&
+          (text.includes("/") && splitFractions(text).some((x) => typeof x !== "string") ? (
+            <p className="mt-2 text-[17px] text-ink-2" aria-live="polite">
+              <span className="text-[13px] text-ink-3">Deine Antwort: </span>
+              <MathText text={text} />
+            </p>
+          ) : (
+            <p className="mt-2 text-[13px] text-ink-3">
+              Brüche schreibst du so: 3/4, das wird zu <MathText text="3/4" />. Kommazahlen mit Beistrich: 0,75.
+            </p>
+          ))}
 
         {hintsShown > 0 && (
           <ul className="mt-6 space-y-2">
@@ -302,7 +314,7 @@ function TaskCard({
                 <Lightbulb size={17} className="mt-0.5 shrink-0" aria-hidden />
                 <span>
                   <span className="block text-[12.5px] font-semibold">{hintLabel(i)}</span>
-                  {h}
+                  <MathText text={h} />
                 </span>
               </li>
             ))}
@@ -315,14 +327,14 @@ function TaskCard({
             className={`mt-6 flex gap-3 rounded-xl px-4 py-3 text-[16px] ${feedback.correct ? "bg-green-wash text-green" : "bg-red-wash text-red"}`}
           >
             {feedback.correct ? <CheckCircle2 size={20} className="mt-0.5 shrink-0" aria-hidden /> : <XCircle size={20} className="mt-0.5 shrink-0" aria-hidden />}
-            <span className="font-medium">{feedback.text}</span>
+            <span className="font-medium"><MathText text={feedback.text} /></span>
           </div>
         )}
 
         {feedback?.selfAssess && (
           <div className="mt-6 rounded-xl border border-line bg-surface px-5 py-4">
             <p className="text-[14px] font-semibold text-ink-2">Musterlösung</p>
-            <p className="mt-1 whitespace-pre-line">{feedback.sample}</p>
+            <p className="mt-1 whitespace-pre-line"><MathText text={feedback.sample} /></p>
             <p className="mt-4 font-medium">{feedback.text}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" className="btn btn-primary" disabled={pending} onClick={() => send({ selfAssessed: true })}>
@@ -338,15 +350,15 @@ function TaskCard({
         {final && feedback?.solution && (
           <div className="mt-4 rounded-xl border border-line bg-surface px-5 py-4">
             <p className="text-[14px] font-semibold text-ink-2">Lösungsweg</p>
-            <p className="mt-1 text-[16px] whitespace-pre-line">{feedback.solution}</p>
+            <p className="mt-1 text-[16px] whitespace-pre-line"><MathText text={feedback.solution} /></p>
           </div>
         )}
 
         {task.released && !final && (
           <details className="mt-4 rounded-xl border border-line bg-surface px-5 py-3">
             <summary className="cursor-pointer text-[14px] font-semibold text-ink-2">Lösung ansehen (von deinem Lehrer gezeigt)</summary>
-            {task.released.answer && <p className="mt-2 font-semibold">{task.released.answer}</p>}
-            <p className="mt-1 text-[16px] whitespace-pre-line">{task.released.solution}</p>
+            {task.released.answer && <p className="mt-2 font-semibold"><MathText text={task.released.answer} /></p>}
+            <p className="mt-1 text-[16px] whitespace-pre-line"><MathText text={task.released.solution} /></p>
           </details>
         )}
 

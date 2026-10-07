@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { prettyFormula, type TaskForBoard } from "@/lib/whiteboard-templates";
+import { MathText } from "../MathText";
 
 export type WorksheetForBoard = { id: number; title: string; tasks: TaskForBoard[] };
 type Range = { xMin: number; xMax: number; yMin: number; yMax: number };
@@ -74,7 +75,7 @@ export function InsertPanel(p: Props) {
                         <label className="flex min-w-0 flex-1 items-start gap-2 text-[13px]">
                           <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0" checked={picked.has(keyOf(w.id, t.number))} onChange={() => toggle(keyOf(w.id, t.number))} />
                           <span>
-                            <span className="num font-semibold">{t.number})</span> {t.prompt}
+                            <span className="num font-semibold">{t.number})</span> <MathText text={t.prompt} />
                           </span>
                         </label>
                         {t.solution && (

@@ -325,7 +325,7 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
           {request && (
             <div className="rounded-lg bg-paper px-3 py-2.5 text-[13px] text-ink-2">
               <p className="text-ink">{request}</p>
-              {useAI && ctx && <p className="mt-1">Dazu bekommt Claude {ctx.first}s Lernstand, Schwächen, Ziele und häufigste Fehler (nur der Vorname).</p>}
+              {useAI && ctx && <p className="mt-1">Dazu bekommt Claude Lernstand, Schwächen, Ziele und häufigste Fehler, ohne Namen.</p>}
             </div>
           )}
           <div className="grid gap-2">

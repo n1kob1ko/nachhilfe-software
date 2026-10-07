@@ -10,6 +10,7 @@ import { LIBRARY_ORIGIN_LABEL, libraryFacets, searchLibrary, type LibraryFilter,
 import * as repo from "@/lib/repo";
 import { klassenLabel, SCHOOL_TYPES } from "@/lib/school";
 import { GAP } from "@/lib/tasks";
+import { MathText } from "@/components/MathText";
 
 export const metadata = { title: "Aufgabenbibliothek" };
 
@@ -221,7 +222,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
                     </label>
                     <Link href={`${LIB}/${e.id}`} className="group min-w-0 flex-1 py-1">
                       <p className="font-medium group-hover:text-accent">{e.title}</p>
-                      {e.title !== e.task.prompt.split("\n")[0] && <p className="mt-0.5 line-clamp-2 text-[14px] text-ink-2">{e.task.prompt.replaceAll(GAP, "…")}</p>}
+                      {e.title !== e.task.prompt.split("\n")[0] && <p className="mt-0.5 line-clamp-2 text-[14px] text-ink-2"><MathText text={e.task.prompt.replaceAll(GAP, "…")} /></p>}
                       <span className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[12px]">
                         <span className="rounded-full px-2.5 py-0.5 font-semibold" style={{ background: t.soft, color: t.fg }}>
                           {e.subject}
