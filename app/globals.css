@@ -537,3 +537,24 @@ textarea.input {
 .reveal-chevron { transition: transform 150ms ease; }
 @media (pointer: coarse) { .reveal > summary { min-height: 44px; } }
 .add-skill > summary::-webkit-details-marker { display: none; }
+
+/* Fractions in task texts (components/MathText.tsx): numerator over a fraction bar */
+.frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  vertical-align: middle;
+  margin: 0 0.12em;
+  font-size: 0.86em;
+  line-height: 1.15;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.frac-num {
+  padding: 0 0.18em 0.06em;
+  border-bottom: max(1.5px, 0.07em) solid currentColor;
+}
+.frac-den {
+  padding: 0.06em 0.18em 0;
+}
