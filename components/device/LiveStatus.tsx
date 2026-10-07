@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { CheckCircle2, Eye, ListChecks, Presentation, RotateCcw, SkipForward, TabletSmartphone, XCircle } from "lucide-react";
-import { currentTaskToBoardAction, resendAction, retryTaskAction, sendNextTaskAction, showSolutionAction, tabletViewAction } from "@/app/device-actions";
+import { ArrowDown, ArrowUp, CheckCircle2, Eye, ListChecks, Presentation, RotateCcw, SkipForward, Sparkles, TabletSmartphone, XCircle } from "lucide-react";
+import { currentTaskToBoardAction, newExerciseAction, resendAction, retryTaskAction, sendNextTaskAction, showSolutionAction, tabletViewAction } from "@/app/device-actions";
+import { ACTION_LABEL } from "@/lib/ai/labels";
+import type { AILive } from "@/lib/ai/realtime";
 import type { LiveSnapshot } from "@/lib/live";
 import { ConnectTablet } from "./TabletSend";
 
@@ -147,6 +149,7 @@ export function LiveStatus({ unitId, initial }: { unitId: number; initial: LiveS
       ) : (
         <p className="mt-3 text-[15px] text-ink-2">Noch nichts gesendet. Öffne eine Übung und tippe auf „An {s.student} senden“.</p>
       )}
+      {s.ai.on && s.running && <AIHint unitId={unitId} ai={s.ai} />}
     </section>
   );
 }
@@ -171,6 +174,59 @@ function Metric({ label, value, tone }: { label: string; value: React.ReactNode;
     <div className="rounded-xl bg-panel px-3 py-2">
       <dt className="text-[12px] text-ink-3">{label}</dt>
       <dd className={`num text-[17px] font-semibold ${tone ?? ""}`}>{value}</dd>
+    </div>
+  );
+}
+
+const AI_STATE: Record<AILive["state"], string> = {
+  bereit: "",
+  denkt: "schaut sich das an …",
+  budget: "Budget aufgebraucht, nur Messwerte",
+  pausiert: "Claude nicht erreichbar, pausiert",
+};
+
+/** What the KI noticed last, and the button for a fitting new exercise (only on click, it costs a request). */
+function AIHint({ unitId, ai }: { unitId: number; ai: AILive }) {
+  const [pending, start] = useTransition();
+  const [msg, setMsg] = useState<{ ok?: string; error?: string } | null>(null);
+  const h = ai.hint;
+  const wantsNew = Boolean(h?.needs_new_exercise || ai.block?.needs_new_exercise);
+  const step = (d: -1 | 0 | 1) => (d === 1 ? <ArrowUp size={14} aria-label="schwerer" /> : d === -1 ? <ArrowDown size={14} aria-label="leichter" /> : null);
+  return (
+    <div className="mt-4 rounded-2xl bg-panel px-4 py-3" aria-live="polite">
+      <p className="flex items-center gap-2 text-[13px] font-semibold text-ink-2">
+        <Sparkles size={16} aria-hidden /> KI-Hinweis
+        {AI_STATE[ai.state] && <span className="ml-auto font-normal text-ink-3">{AI_STATE[ai.state]}</span>}
+      </p>
+      {h ? (
+        <div className="mt-1">
+          <p className="inline-flex items-center gap-1 text-[15px] font-semibold">
+            {ACTION_LABEL[h.recommended_action]} {step(h.difficulty_adjustment)}
+          </p>
+          {h.misconception && <p className="text-[14px] text-ink-2">{h.misconception}</p>}
+          {h.hint && <p className="mt-1 text-[14px]">Denkanstoß: „{h.hint}“</p>}
+          {h.nextSkillName && <p className="mt-1 text-[13px] text-ink-3">Danach: {h.nextSkillName}</p>}
+        </div>
+      ) : (
+        <p className="mt-1 text-[14px] text-ink-2">Meldet sich, sobald Fehler oder Hilfen auftauchen.</p>
+      )}
+      {ai.block && (
+        <p className="mt-2 text-[13px] text-ink-2">
+          <span className="font-semibold">Letzte Übung:</span> {ai.block.summary}
+        </p>
+      )}
+      {(h || ai.block) && (
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <button
+            className={`btn ${wantsNew ? "btn-primary" : "btn-secondary"}`}
+            disabled={pending}
+            onClick={() => start(async () => setMsg(await newExerciseAction(unitId)))}
+          >
+            <Sparkles size={16} aria-hidden /> {pending ? "Wird erstellt …" : "Passende Aufgabe senden"}
+          </button>
+          {msg && <span className={`text-[13px] ${msg.error ? "text-red" : "text-ink-2"}`}>{msg.error ?? msg.ok}</span>}
+        </div>
+      )}
     </div>
   );
 }

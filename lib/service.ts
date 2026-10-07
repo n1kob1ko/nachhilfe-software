@@ -10,6 +10,7 @@ import * as repo from "./repo";
 import { suggestErrorType } from "./error-types";
 import { checkAnswer, type TaskDraft } from "./tasks";
 import { carelessCredit } from "./lehrplan";
+import { onAnswer } from "./ai/realtime";
 
 // the setting lives with the other settings in lib/lehrplan.ts (lib/autodoc.ts reads it too)
 export { CARELESS_SETTING, carelessCredit } from "./lehrplan";
@@ -44,6 +45,7 @@ export type BuildRequest = {
   title?: string;
   focusNote?: string;
   useAI?: boolean;
+  teacherId?: number | null;
 };
 
 export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; source: "ki" | "generator"; aiError?: string }> {
@@ -66,7 +68,7 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
         count,
         categories: [],
         focusNote: [req.taskType !== "mixed" ? `Aufgabenformat: ${TASK_TYPES[req.taskType]}` : "", req.focusNote ?? ""].filter(Boolean).join(". "),
-      });
+      }, { teacherId: req.teacherId ?? null, trigger: "empfehlung" });
       if (tasks && tasks.length) source = "ki";
       else aiError = "Die KI hat keine Aufgaben geliefert.";
     } catch (e) {
@@ -165,6 +167,7 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
     repo.recordAttempt({ ...base, answer: input.answer, correct: 0, final: 1, solution_viewed: 1, error_label: null, feedback: "Lösung angesehen" });
     repo.completeAssignmentIfDone(assignment.id);
     documentAssignment(assignment.id);
+    if (unit) onAnswer({ unitId: unit.id, teacherId: unit.teacher_id, taskId: task.id, assignmentId: assignment.id, correct: false, attemptNo, errorType: null, blockDone: Boolean(repo.getAssignment(assignment.id)?.completed_at) });
     return { correct: false, final: true, feedback: "Hier ist der Lösungsweg. Schau ihn dir in Ruhe an.", attemptNo, solution: task.solution };
   }
 
@@ -177,14 +180,15 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
     if (input.selfAssessed !== undefined && input.selfAssessed !== null) {
       result = { correct: input.selfAssessed, errorLabel: null, feedback: input.selfAssessed ? "Gut gemacht!" : "Danke für deine ehrliche Einschätzung." };
     } else if (aiEnabled() && task.answer.sample) {
-      try {
-        const g = await gradeFreeText({ prompt: task.prompt, passage: task.data.passage, sample: task.answer.sample }, input.answer);
-        if (g) {
-          result = { correct: g.correct, errorLabel: g.error_label, feedback: g.feedback };
-          if (!g.correct && g.error_type) errorType = { type: g.error_type, source: "ki" };
-        }
-      } catch {
-        // fall through to self-assessment
+      // short time limit: without an answer in time the student rates their answer themselves
+      const g = await gradeFreeText({ prompt: task.prompt, passage: task.data.passage, sample: task.answer.sample }, input.answer, {
+        teacherId: unit?.teacher_id ?? student.teacher_id ?? null,
+        unitId: unit?.id ?? null,
+        trigger: "freitext",
+      });
+      if (g.ok) {
+        result = { correct: g.data.correct, errorLabel: g.data.error_label, feedback: g.data.feedback };
+        if (!g.data.correct && g.data.error_type) errorType = { type: g.data.error_type, source: "ki" };
       }
     }
     if (result.correct === null) {
@@ -210,6 +214,18 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
   });
   if (final) repo.completeAssignmentIfDone(assignment.id);
   documentAssignment(assignment.id);
+  // the KI looks at it in the background (lib/ai/realtime.ts decides whether a request is worth it)
+  if (unit)
+    onAnswer({
+      unitId: unit.id,
+      teacherId: unit.teacher_id,
+      taskId: task.id,
+      assignmentId: assignment.id,
+      correct: Boolean(result.correct),
+      attemptNo,
+      errorType: errorType?.type ?? null,
+      blockDone: final && Boolean(repo.getAssignment(assignment.id)?.completed_at),
+    });
   const left = MAX_TRIES - attemptNo;
   return {
     correct: result.correct,

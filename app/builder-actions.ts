@@ -1,5 +1,6 @@
 "use server";
 
+import { onHint } from "@/lib/ai/realtime";
 import { deliverIfRunning, pushLive, showOnTablet } from "@/lib/live";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -126,11 +127,11 @@ export async function addTaskAction(worksheetId: number, what: NewTask, afterTas
 }
 
 export async function regenerateTaskAction(taskId: number, difficulty?: Difficulty): Promise<ActionResult> {
-  await requireTeacher();
+  const teacher = await requireTeacher();
   const e = editable(taskId);
   if ("error" in e) return { error: e.error };
   const d = difficulty && (DIFFICULTIES as readonly string[]).includes(difficulty) ? difficulty : undefined;
-  const out = await regenerateTask(taskId, { difficulty: d });
+  const out = await regenerateTask(taskId, { difficulty: d, teacherId: teacher.id });
   refresh(e.task.worksheet_id);
   if (!out.ok) return { error: out.aiError ?? "Für diese Fähigkeit konnte keine neue Aufgabe erstellt werden." };
   return out.aiError ? { warning: "Claude war nicht erreichbar, die neue Aufgabe kommt aus dem Generator." } : { ok: "Neue Aufgabe erstellt." };
@@ -234,5 +235,8 @@ export async function recordHintAction(token: string, assignmentId: number, task
   if (!Number.isInteger(hintIndex) || hintIndex < 0 || hintIndex >= t.hints.length) return;
   const unit = runningUnitForStudent(student.id);
   repo.recordHintUse({ assignment_id: a.id, task_id: t.id, student_id: student.id, hint_index: hintIndex, unit_id: unit?.id ?? a.unit_id });
-  if (unit) pushLive(unit.id);
+  if (unit) {
+    pushLive(unit.id);
+    onHint({ unitId: unit.id, teacherId: unit.teacher_id, taskId: t.id, assignmentId: a.id, hintIndex });
+  }
 }

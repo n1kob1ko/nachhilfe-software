@@ -416,6 +416,42 @@ CREATE TABLE IF NOT EXISTS app_settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+-- One row per KI request (lib/ai/router.ts): what it cost and how it went. No prompt, no answer, no
+-- student name; teacher and unit only as ids for the cost statistics.
+CREATE TABLE IF NOT EXISTS ai_calls (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  created_at TEXT NOT NULL,
+  fn TEXT NOT NULL,
+  tier TEXT NOT NULL,
+  model TEXT NOT NULL,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  unit_id INTEGER REFERENCES units(id) ON DELETE SET NULL,
+  trigger TEXT NOT NULL DEFAULT '',
+  input_tokens INTEGER NOT NULL DEFAULT 0,
+  output_tokens INTEGER NOT NULL DEFAULT 0,
+  cache_write_tokens INTEGER NOT NULL DEFAULT 0,
+  cache_read_tokens INTEGER NOT NULL DEFAULT 0,
+  duration_ms INTEGER NOT NULL DEFAULT 0,
+  cost_usd REAL NOT NULL DEFAULT 0,
+  -- ok | cache | abgelehnt | fehler | timeout | budget | pausiert
+  status TEXT NOT NULL,
+  error TEXT NOT NULL DEFAULT '',
+  test INTEGER NOT NULL DEFAULT 0
+);
+-- What the KI said during a unit (live hints, block and unit analysis). Shown to the teacher only.
+CREATE TABLE IF NOT EXISTS ai_insights (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,
+  task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
+  assignment_id INTEGER REFERENCES assignments(id) ON DELETE SET NULL,
+  triggers TEXT NOT NULL DEFAULT '[]',
+  data TEXT NOT NULL,
+  call_id INTEGER REFERENCES ai_calls(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ai_calls_created ON ai_calls(created_at);
+CREATE INDEX IF NOT EXISTS idx_ai_insights_unit ON ai_insights(unit_id, kind, id);
 CREATE INDEX IF NOT EXISTS idx_current_material ON current_material(student_id, ended_at);
 CREATE INDEX IF NOT EXISTS idx_materials_created ON materials(created_at);
 CREATE INDEX IF NOT EXISTS idx_nodes_curriculum ON curriculum_nodes(curriculum_id, parent_id, sort);
