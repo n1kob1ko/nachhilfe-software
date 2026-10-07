@@ -179,7 +179,7 @@ export async function deleteAssignmentAction(id: number, studentId: number) {
  * diagnosis (diagnosisId) a recommendation that no longer applies is reported back there.
  */
 export async function applyRecommendationAction(studentId: number, key: string, diagnosisId: number | null = null) {
-  await requireTeacher();
+  const teacher = await requireTeacher();
   const student = repo.getStudent(studentId);
   const rec = student ? findNextStep(studentId, key, { today: dayOf(new Date()) }) : null;
   if (!student || !rec) {
@@ -197,6 +197,7 @@ export async function applyRecommendationAction(studentId: number, key: string, 
     kind: rec.kind,
     title: rec.kind === "ueberpruefung" ? `Überprüfung: ${rec.skill.name}` : rec.rule === 6 ? `Wiederholung: ${rec.skill.name}` : `Training: ${rec.skill.area} › ${rec.skill.name}`,
     focusNote: rec.focusNote,
+    teacherId: teacher.id,
   });
   noteActivity(studentId);
   repo.assignWorksheet(result.id, studentId, `${RECOMMENDATION_NOTE} (${rec.skill.area} › ${rec.skill.name}): ${rec.reason}`, runningUnitForStudent(studentId)?.id ?? null);
@@ -234,8 +235,9 @@ export async function submitAnswerAction(input: SubmitInput) {
 // ---------- AI insight ----------
 export type InsightState = { summary: string; next_lesson_plan: string[]; parent_note: string } | { error: string } | null;
 
-export async function aiInsightAction(studentId: number): Promise<InsightState> {
-  await requireTeacher();
+/** deep: the Tiefenanalyse with the strong model, only on the teacher's click. */
+export async function aiInsightAction(studentId: number, deep = false): Promise<InsightState> {
+  const teacher = await requireTeacher();
   if (!aiEnabled()) return { error: "Für die KI-Einschätzung wird ein ANTHROPIC_API_KEY benötigt." };
   const student = repo.getStudent(studentId);
   const a = analyzeStudent(studentId);
@@ -251,7 +253,7 @@ export async function aiInsightAction(studentId: number): Promise<InsightState> 
     ...lessons.map((l) => `- ${l.starts_at.slice(0, 10)} ${l.topic}: Verständnis ${l.understanding ?? "–"}/5. Fehler: ${l.mistakes || "–"}`),
   ].join("\n");
   try {
-    const out = await analyzeWithAI(context);
+    const out = await analyzeWithAI(context, { teacherId: teacher.id, trigger: deep ? "tiefenanalyse" : "einschaetzung" }, deep);
     return out ?? { error: "Die KI hat keine Einschätzung geliefert." };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "KI-Anfrage fehlgeschlagen." };
