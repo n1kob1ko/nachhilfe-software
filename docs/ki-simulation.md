@@ -1,8 +1,8 @@
 # KI-Simulation: 60 Minuten Nachhilfe
 
-Probelauf ohne API-Schlüssel: der Router, die Auslöser, die Bündelung und das Log sind echt, Claude ist durch einen Platzhalter ersetzt. Die Tokens sind aus den echten Prompts geschätzt (etwa 3,2 Zeichen pro Token, Ausgabeschema zählt als Eingabe, Denken bei Aufgabenerstellung +80 %). Ein Echtlauf mit `npm run ai:simulate -- --echt` misst sie.
+Probelauf ohne API-Schlüssel: der Router, die Auslöser, die Bündelung und das Log sind echt, der KI-Anbieter ist durch einen Platzhalter ersetzt. Die Tokens sind aus den echten Prompts geschätzt (etwa 3,2 Zeichen pro Token, Ausgabeschema zählt als Eingabe, Denken bei Aufgabenerstellung +80 %). Ein Echtlauf mit `npm run ai:simulate -- --echt` misst sie.
 
-Modelle: schnell = `claude-haiku-4-5`, standard = `claude-sonnet-5-5`, tief = `claude-opus-5-5`.
+Anbieter und Modelle: Echtzeit = `anthropic: claude-haiku-4-5`, Aufgaben = `anthropic: claude-sonnet-5-5`, Auswertung = `anthropic: claude-sonnet-5-5`, Tiefenanalyse = `anthropic: claude-opus-5-5`, Material = `anthropic: claude-sonnet-5-5`.
 
 ## Ablauf
 

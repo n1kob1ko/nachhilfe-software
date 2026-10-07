@@ -1,61 +1,29 @@
 /**
- * The one door to Claude. Every KI function of the app asks here; the router decides whether a request
- * is needed at all (same question recently answered, budget used up, API down), picks the model of the
- * function's tier, enforces its token limit and timeout, and logs what the request cost.
+ * The one door to the KI. Every KI function of the app asks here; the router decides whether a request
+ * is needed at all (same question recently answered, budget used up, API down), picks provider and model
+ * of the function's area, enforces its token limit and timeout, and logs what the request cost.
+ * Which vendor answers is the business of the adapters in ./providers; nothing here is vendor-specific.
  * When anything fails the caller gets { ok: false } and carries on without KI.
  */
-import Anthropic from "@anthropic-ai/sdk";
-import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
-import type { BetaContentBlockParam, BetaTextBlockParam, BetaThinkingConfigParam } from "@anthropic-ai/sdk/resources/beta/messages/messages";
 import { createHash } from "node:crypto";
 import type { z } from "zod";
-import { FUNCTIONS, aiSwitchedOff, costOf, hasKey, modelFor, type AIFunction, type FunctionSpec, type Usage } from "./config";
+import { FUNCTIONS, PROVIDER_IDS, aiSwitchedOff, costOf, routeFor, type AIFunction } from "./config";
 import { budgetState, logCall, type CallStatus } from "./log";
+import { providerReady, providerTransport, unsupported, type Prompt, type Transport } from "./providers";
+
+export type { AIRequest, AIResult, Part, Prompt, Transport } from "./providers";
 
 export type AIMeta = { teacherId?: number | null; unitId?: number | null; trigger?: string };
 
-export type TransportParams = {
-  model: string;
-  max_tokens: number;
-  system: BetaTextBlockParam[];
-  messages: { role: "user"; content: string | BetaContentBlockParam[] }[];
-  thinking?: BetaThinkingConfigParam;
-  output_config: { effort?: "low" | "medium" | "high" };
-};
-export type TransportResult = { parsed: unknown; refusal: boolean; model: string; usage: Usage; simulatedMs?: number };
-export type Transport = (p: TransportParams, o: { fn: AIFunction; schema: z.ZodType; signal: AbortSignal; timeoutMs: number }) => Promise<TransportResult>;
-
-let client: Anthropic | null = null;
-const anthropicTransport: Transport = async (p, o) => {
-  client ??= new Anthropic();
-  // streamed: a non-streamed request with a large max_tokens is refused by the SDK (10-minute rule)
-  const res = await client.beta.messages
-    .stream({ ...p, output_config: { ...p.output_config, format: betaZodOutputFormat(o.schema) } }, { signal: o.signal, timeout: o.timeoutMs, maxRetries: 1 })
-    .finalMessage();
-  const u = res.usage;
-  return {
-    parsed: res.parsed_output ?? null,
-    refusal: res.stop_reason === "refusal",
-    model: res.model,
-    usage: {
-      input: u.input_tokens,
-      output: u.output_tokens,
-      cacheWrite: u.cache_creation ? u.cache_creation.ephemeral_5m_input_tokens : (u.cache_creation_input_tokens ?? 0),
-      cacheWrite1h: u.cache_creation?.ephemeral_1h_input_tokens ?? 0,
-      cacheRead: u.cache_read_input_tokens ?? 0,
-    },
-  };
-};
-
 // ---------- replaceable parts (tests and the 60-minute simulation) ----------
-let transport: Transport = anthropicTransport;
+let transport: Transport = providerTransport;
 let custom = false;
 let testRun = false;
 let now = () => Date.now();
 
-/** Replaces the API (null = the real one). A replaced transport counts as "KI on" without a key. */
+/** Replaces the providers (null = the real ones). A replaced transport counts as "KI on" without a key. */
 export function setTransport(t: Transport | null) {
-  transport = t ?? anthropicTransport;
+  transport = t ?? providerTransport;
   custom = t !== null;
 }
 /** Rows logged from now on are marked as test and do not count for the budget. */
@@ -69,8 +37,19 @@ export function clockNow() {
   return now();
 }
 
-export function aiEnabled() {
-  return !aiSwitchedOff() && (custom || hasKey());
+/** KI is on when it is not switched off and the provider of at least one area (or of `fn`) has a key and a model. */
+export function aiEnabled(fn?: AIFunction) {
+  if (aiSwitchedOff()) return false;
+  if (custom) return true;
+  return (fn ? [fn] : (Object.keys(FUNCTIONS) as AIFunction[])).some((f) => {
+    const r = routeFor(f);
+    return Boolean(r.model) && providerReady(r.provider);
+  });
+}
+
+/** For the cost page: whether any provider has a key at all. */
+export function anyProviderKey() {
+  return PROVIDER_IDS.some(providerReady);
 }
 
 // ---------- circuit breaker: after 3 failures in a row, 5 minutes without requests ----------
@@ -95,19 +74,8 @@ export function resetRouter() {
   breaker.until = 0;
 }
 
-function fingerprint(fn: AIFunction, model: string, system: string, prompt: string | BetaContentBlockParam[]) {
-  return createHash("sha256").update(JSON.stringify([fn, model, system, prompt])).digest("hex");
-}
-
-/** How a request is shaped for a model: no thinking where the answer is short, effort where supported. */
-export function requestShape(model: string, spec: FunctionSpec): Pick<TransportParams, "thinking" | "output_config"> {
-  // the small model answers directly and does not take an effort setting
-  if (/haiku/.test(model)) return { output_config: {} };
-  if (spec.thinking === "aus") {
-    // models with adaptive thinking that cannot switch it off: thinking only between tools = none here
-    return /sonnet-5-5/.test(model) ? { thinking: { type: "between_tools" }, output_config: { effort: spec.effort } } : { output_config: { effort: spec.effort } };
-  }
-  return { thinking: { type: "adaptive" }, output_config: { effort: spec.effort } };
+function fingerprint(fn: AIFunction, provider: string, model: string, system: string, prompt: Prompt) {
+  return createHash("sha256").update(JSON.stringify([fn, provider, model, system, prompt])).digest("hex");
 }
 
 export type Outcome<T> =
@@ -117,9 +85,9 @@ export type Outcome<T> =
 const MESSAGES = {
   aus: "Die KI ist ausgeschaltet oder es ist kein Schlüssel hinterlegt.",
   budget: "Das KI-Budget für diesen Monat ist aufgebraucht.",
-  pausiert: "Claude war zuletzt nicht erreichbar, die KI pausiert ein paar Minuten.",
-  timeout: "Claude hat nicht rechtzeitig geantwortet.",
-  abgelehnt: "Claude hat keine Antwort geliefert.",
+  pausiert: "Die KI war zuletzt nicht erreichbar und pausiert ein paar Minuten.",
+  timeout: "Die KI hat nicht rechtzeitig geantwortet.",
+  abgelehnt: "Die KI hat keine verwertbare Antwort geliefert.",
 };
 
 /**
@@ -130,12 +98,12 @@ export async function runAI<S extends z.ZodType>(
   fn: AIFunction,
   schema: S,
   system: string,
-  prompt: string | BetaContentBlockParam[],
+  prompt: Prompt,
   o: { maxTokens?: number; meta?: AIMeta } = {},
 ): Promise<Outcome<z.infer<S>>> {
-  if (!aiEnabled()) return { ok: false, status: "aus", message: MESSAGES.aus, callId: null };
+  if (!aiEnabled(fn)) return { ok: false, status: "aus", message: MESSAGES.aus, callId: null };
   const spec = FUNCTIONS[fn];
-  const model = modelFor(spec.tier);
+  const { provider, model } = routeFor(fn);
   const meta = o.meta ?? {};
   const log = (status: CallStatus, extra: Partial<Parameters<typeof logCall>[0]> = {}) =>
     logCall({
@@ -157,7 +125,7 @@ export async function runAI<S extends z.ZodType>(
       ...extra,
     });
 
-  const fp = fingerprint(fn, model, system, prompt);
+  const fp = fingerprint(fn, provider, model, system, prompt);
   const kept = spec.reuseMs > 0 ? done.get(fp) : undefined;
   if (kept && kept.at > now() - spec.reuseMs) return { ok: true, data: kept.data as z.infer<S>, reused: true, callId: log("cache") };
   const running = inflight.get(fp);
@@ -168,6 +136,9 @@ export async function runAI<S extends z.ZodType>(
   if (breaker.until > now()) return { ok: false, status: "pausiert", message: MESSAGES.pausiert, callId: log("pausiert") };
   const b = budgetState(now());
   if (b.level === "aus" || (b.level === "echtzeit-aus" && spec.realtime)) return { ok: false, status: "budget", message: MESSAGES.budget, callId: log("budget") };
+  // a photo or PDF the configured provider cannot read: a setting to change, not an outage
+  const cannot = custom ? null : unsupported(provider, prompt);
+  if (cannot) return { ok: false, status: "fehler", message: cannot, callId: log("fehler", { error: cannot }) };
 
   const call = (async (): Promise<Outcome<z.infer<S>>> => {
     const maxTokens = Math.max(1, Math.min(o.maxTokens ?? spec.maxTokens, spec.maxTokens));
@@ -175,18 +146,22 @@ export async function runAI<S extends z.ZodType>(
     const timer = setTimeout(() => ctrl.abort(), spec.timeoutMs);
     const started = Date.now();
     try {
-      const res = await transport(
-        {
-          model,
-          max_tokens: maxTokens,
-          // system prompt (and output schema) are the same for every request of a function: cached where it pays off
-          system: [spec.cache === "aus" ? { type: "text", text: system } : { type: "text", text: system, cache_control: { type: "ephemeral", ttl: spec.cache } }],
-          messages: [{ role: "user", content: prompt }],
-          ...requestShape(model, spec),
-        },
-        { fn, schema, signal: ctrl.signal, timeoutMs: spec.timeoutMs },
-      );
-      const cost = costOf(res.model || model, spec.tier, res.usage);
+      const res = await transport({
+        fn,
+        provider,
+        model,
+        maxTokens,
+        system,
+        cache: spec.cache,
+        content: prompt,
+        thinking: spec.thinking,
+        effort: spec.effort,
+        schema,
+        signal: ctrl.signal,
+        timeoutMs: spec.timeoutMs,
+      });
+      // the provider's own price when it reports one, else tokens × price table
+      const cost = res.costUsd ?? costOf(res.model || model, spec.tier, res.usage);
       const usage = { input: res.usage.input, output: res.usage.output, cacheWrite: res.usage.cacheWrite + (res.usage.cacheWrite1h ?? 0), cacheRead: res.usage.cacheRead, costUsd: cost, model: res.model || model };
       const durationMs = res.simulatedMs ?? Date.now() - started;
       breaker.failures = 0;
@@ -204,7 +179,7 @@ export async function runAI<S extends z.ZodType>(
         breaker.until = now() + BREAK_MS;
         breaker.failures = 0;
       }
-      const message = timedOut ? MESSAGES.timeout : `Claude war nicht erreichbar (${e instanceof Error ? e.message : String(e)}).`.slice(0, 300);
+      const message = timedOut ? MESSAGES.timeout : `Die KI war nicht erreichbar (${e instanceof Error ? e.message : String(e)}).`.slice(0, 300);
       return { ok: false, status: timedOut ? "timeout" : "fehler", message, callId: log(timedOut ? "timeout" : "fehler", { durationMs: Date.now() - started, error: message }) };
     } finally {
       clearTimeout(timer);
