@@ -238,7 +238,7 @@ export type InsightState = { summary: string; next_lesson_plan: string[]; parent
 /** deep: the Tiefenanalyse with the strong model, only on the teacher's click. */
 export async function aiInsightAction(studentId: number, deep = false): Promise<InsightState> {
   const teacher = await requireTeacher();
-  if (!aiEnabled()) return { error: "Für die KI-Einschätzung wird ein ANTHROPIC_API_KEY benötigt." };
+  if (!aiEnabled()) return { error: "Kein KI-Schlüssel hinterlegt." };
   const student = repo.getStudent(studentId);
   const a = analyzeStudent(studentId);
   if (!student || !a) return { error: "Schüler nicht gefunden." };

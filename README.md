@@ -25,7 +25,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 Mit Schlüssel erstellt Claude Übungen zu jedem Thema und jeder Fähigkeit, inklusive Lösungsweg, gestuften Hilfen und typischen Fehlern, korrigiert Freitext-Antworten, schaut während einer Einheit auf Fehler und Hilfen (Hinweis im Live-Status, „Passende Aufgabe senden“) und schreibt auf Wunsch eine Einschätzung samt Stundenplan und Elternnotiz.
 
-Alle KI-Aufrufe laufen über `lib/ai/router.ts`: drei Modellstufen (schnell, standard, tief, per Umgebungsvariable wählbar), Token-Limit und Zeitlimit je Funktion, Wiederverwendung gleicher Anfragen, Bündelung in der Einheit, Monatsbudget und ein Kostenlog ohne Namen (Mehr › KI-Kosten). Variablen: [docs/betrieb.md](docs/betrieb.md#umgebungsvariablen). Testlauf einer 60-Minuten-Einheit ohne Kosten: `npm run ai:simulate` (Bericht: [docs/ki-simulation.md](docs/ki-simulation.md)). Ohne Schlüssel funktioniert alles mit den eingebauten Generatoren (Mathematik prozedural, Deutsch und Englisch aus Aufgabenbanken); Freitext bewerten die Schüler dann selbst anhand der Musterlösung.
+Alle KI-Aufrufe laufen über `lib/ai/router.ts`, der Anbieter steckt in einem Adapter (`lib/ai/providers`: Anthropic, OpenRouter, DeepSeek, weitere OpenAI-kompatible APIs). Anbieter und Modell sind je Bereich per Umgebungsvariable wählbar (z. B. `AI_REALTIME_PROVIDER=openrouter`, `AI_REALTIME_MODEL=...`), dazu Token-Limit und Zeitlimit je Funktion, Wiederverwendung gleicher Anfragen, Bündelung in der Einheit, Monatsbudget und ein Kostenlog ohne Namen (Mehr › KI-Kosten). Variablen: [docs/betrieb.md](docs/betrieb.md#umgebungsvariablen). Testlauf einer 60-Minuten-Einheit ohne Kosten: `npm run ai:simulate` (Bericht: [docs/ki-simulation.md](docs/ki-simulation.md)). Ohne Schlüssel funktioniert alles mit den eingebauten Generatoren (Mathematik prozedural, Deutsch und Englisch aus Aufgabenbanken); Freitext bewerten die Schüler dann selbst anhand der Musterlösung.
 
 ## Was die App kann
 
@@ -136,7 +136,7 @@ Unter „Datenexport“ (nur Verwaltung):
 
 ## Technik
 
-Next.js 16 (App Router, Server Actions), TypeScript, Tailwind CSS 4, SQLite über `better-sqlite3` (Datei `data/nachhilfe.db`), Anthropic SDK.
+Next.js 16 (App Router, Server Actions), TypeScript, Tailwind CSS 4, SQLite über `better-sqlite3` (Datei `data/nachhilfe.db`), Anthropic SDK und OpenAI-kompatible APIs über `fetch`.
 
 ```
 lib/curriculum.ts   Fächer, Themen und Fähigkeiten (erweiterbar unter „Fähigkeiten“)

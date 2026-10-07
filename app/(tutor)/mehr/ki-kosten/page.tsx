@@ -1,8 +1,9 @@
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, SectionTitle } from "@/components/ui";
-import { FUNCTIONS, TIER_LABEL, aiSwitchedOff, budget, hasKey, modelFor, priceFor, type Tier } from "@/lib/ai/config";
+import { AREA_LABEL, FUNCTIONS, aiSwitchedOff, budget, priceFor, routeFor, type AIFunction, type Area } from "@/lib/ai/config";
 import { budgetState, costByDay, costByFunction, costByMonth, costByTeacher, recentCalls, type Sum } from "@/lib/ai/log";
-import { breakerState } from "@/lib/ai/router";
+import { PROVIDER_LABEL, providerReady } from "@/lib/ai/providers";
+import { anyProviderKey, breakerState } from "@/lib/ai/router";
 import { requireTeacher } from "@/lib/auth";
 
 export const metadata = { title: "KI-Kosten" };
@@ -24,7 +25,7 @@ export default async function AICostPage() {
   const b = budgetState();
   const conf = budget();
   const paused = breakerState();
-  const state = aiSwitchedOff() ? "ausgeschaltet (AI_DISABLED)" : !hasKey() ? "aus: kein Schlüssel hinterlegt" : paused.paused ? "pausiert: Claude war nicht erreichbar" : "an";
+  const state = aiSwitchedOff() ? "ausgeschaltet (AI_DISABLED)" : !anyProviderKey() ? "aus: kein Schlüssel hinterlegt" : paused.paused ? "pausiert: der Anbieter war nicht erreichbar" : "an";
   const byFn = costByFunction(month, f);
   const days = costByDay(14, f);
   const months = costByMonth(6, f);
@@ -59,45 +60,55 @@ export default async function AICostPage() {
       <section className="mb-10">
         <SectionTitle>
           <span>
-            Modelle
-            <Info label="Wie ändere ich ein Modell?">In Railway unter Variables: AI_MODEL_FAST, AI_MODEL_STANDARD, AI_MODEL_DEEP. Nach dem nächsten Start gilt das neue Modell, ohne Code-Änderung.</Info>
+            Anbieter und Modelle
+            <Info label="Wie ändere ich Anbieter oder Modell?">
+              In Railway unter Variables, je Bereich: AI_REALTIME_PROVIDER und AI_REALTIME_MODEL, ebenso EXERCISE, ANALYSIS, DEEP und MATERIAL. Anbieter: anthropic, openrouter, deepseek oder compatible. AI_PROVIDER gilt für alle Bereiche ohne eigenen Eintrag. Nach dem nächsten Start gilt die neue Einstellung, ohne Code-Änderung.
+            </Info>
           </span>
         </SectionTitle>
         <div className="panel overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-[14px]">
+          <table className="w-full min-w-[720px] text-left text-[14px]">
             <thead>
               <tr className="border-b border-line text-[12px] text-ink-3">
-                <th className="px-5 py-3 font-semibold">Stufe</th>
+                <th className="px-5 py-3 font-semibold">Bereich</th>
+                <th className="px-3 py-3 font-semibold">Anbieter</th>
                 <th className="px-3 py-3 font-semibold">Modell</th>
                 <th className="px-3 py-3 text-right font-semibold">Preis je 1 Mio. Tokens</th>
                 <th className="px-5 py-3 font-semibold">Wofür</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {(["fast", "standard", "deep"] as Tier[]).map((t) => {
-                const model = modelFor(t);
-                const p = priceFor(model, t);
+              {(Object.keys(AREA_LABEL) as Area[]).map((a) => {
+                const fns = (Object.keys(FUNCTIONS) as AIFunction[]).filter((f) => FUNCTIONS[f].area === a);
+                const route = routeFor(fns[0]);
+                const tier = FUNCTIONS[fns[0]].tier;
+                const p = priceFor(route.model, tier);
                 return (
-                  <tr key={t}>
-                    <td className="px-5 py-3 font-semibold">{TIER_LABEL[t]}</td>
-                    <td className="whitespace-nowrap px-3 py-3 font-mono text-[13px]">{model}</td>
+                  <tr key={a}>
+                    <td className="px-5 py-3 font-semibold">{AREA_LABEL[a]}</td>
+                    <td className="whitespace-nowrap px-3 py-3">
+                      {PROVIDER_LABEL[route.provider]}
+                      {!providerReady(route.provider) && <span className="block text-[12px] text-ink-3">kein Schlüssel</span>}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 font-mono text-[13px]">{route.model || <span className="font-sans text-ink-3">nicht eingestellt</span>}</td>
                     <td className="num px-3 py-3 text-right">
-                      {usd(p.price.in)} / {usd(p.price.out)}
-                      {!p.known && <span className="block text-[12px] text-ink-3">geschätzt</span>}
+                      {route.provider === "openrouter" && !p.known ? (
+                        <span className="text-ink-2">vom Anbieter gemeldet</span>
+                      ) : (
+                        <>
+                          {usd(p.price.in)} / {usd(p.price.out)}
+                          {!p.known && <span className="block text-[12px] text-ink-3">geschätzt</span>}
+                        </>
+                      )}
                     </td>
-                    <td className="px-5 py-3 text-ink-2">
-                      {Object.values(FUNCTIONS)
-                        .filter((x) => x.tier === t)
-                        .map((x) => x.label)
-                        .join(", ")}
-                    </td>
+                    <td className="px-5 py-3 text-ink-2">{fns.map((f) => FUNCTIONS[f].label).join(", ")}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-[13px] text-ink-3">Preise: Eingabe / Ausgabe. Wiederverwendete Teile (Cache) kosten 10&nbsp;% der Eingabe.</p>
+        <p className="mt-2 text-[13px] text-ink-3">Preise: Eingabe / Ausgabe. Wiederverwendete Teile (Cache) kosten 10&nbsp;% der Eingabe. Für Modelle ohne bekannten Preis gilt AI_PRICES_JSON oder eine Schätzung.</p>
       </section>
 
       <section className="mb-10">
