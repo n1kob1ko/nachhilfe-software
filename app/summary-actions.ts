@@ -15,7 +15,7 @@ async function editableLesson(lessonId: number) {
   const lesson = repo.getLesson(lessonId);
   if (!lesson) return null;
   const unit = lesson.unit_id ? getUnit(lesson.unit_id) : null;
-  return !unit || canManageUnit(teacher, unit) ? lesson : null;
+  return !unit || canManageUnit(teacher, unit) ? Object.assign(lesson, { editorId: teacher.id }) : null;
 }
 const refresh = (lesson: repo.Lesson) => {
   if (lesson.unit_id) revalidatePath(`/einheiten/${lesson.unit_id}`);
@@ -37,7 +37,7 @@ export async function generateFamilyNoteAction(lessonId: number, mode: "fakten" 
     if (!aiEnabled()) return { error: "Kein KI-Schlüssel hinterlegt." };
     const student = repo.getStudent(lesson.student_id);
     try {
-      const text = await writeFamilyNote(briefForAI(brief, student?.name ?? ""), audience);
+      const text = await writeFamilyNote(briefForAI(brief, student?.name ?? ""), audience, { teacherId: lesson.editorId, unitId: lesson.unit_id ?? null, trigger: "notiz" });
       if (!text) return { error: "Claude hat keine Notiz geliefert. Die Notiz aus den Fakten bleibt möglich." };
       note = text;
       source = "ki";

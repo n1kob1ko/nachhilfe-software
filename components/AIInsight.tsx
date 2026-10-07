@@ -10,12 +10,19 @@ export function AIInsight({ studentId, enabled }: { studentId: number; enabled: 
   const [pending, start] = useTransition();
   return (
     <div>
-      <span className="inline-flex items-center gap-1">
+      <span className="inline-flex flex-wrap items-center gap-2">
         <button className="btn btn-secondary" disabled={!enabled || pending} onClick={() => start(async () => setState(await aiInsightAction(studentId)))}>
           <Sparkles size={15} className="text-accent" aria-hidden />
           {pending ? "Claude analysiert …" : "KI-Einschätzung erstellen"}
         </button>
-        {!enabled && <Info label="Warum ist das ausgegraut?">Die KI-Einschätzung braucht einen ANTHROPIC_API_KEY (siehe README). Die übrige Auswertung funktioniert auch ohne.</Info>}
+        <button className="btn btn-ghost" disabled={!enabled || pending} onClick={() => start(async () => setState(await aiInsightAction(studentId, true)))}>
+          Tiefenanalyse
+        </button>
+        {enabled ? (
+          <Info label="Was ist der Unterschied?">Die Einschätzung nutzt das Standard-Modell. Die Tiefenanalyse nutzt das stärkste Modell und kostet deutlich mehr; sinnvoll vor Prüfungen oder wenn etwas unklar ist.</Info>
+        ) : (
+          <Info label="Warum ist das ausgegraut?">Die KI-Einschätzung braucht einen ANTHROPIC_API_KEY (siehe README). Die übrige Auswertung funktioniert auch ohne.</Info>
+        )}
       </span>
       {state && "error" in state && <p className="mt-3 text-[14px] text-red">{state.error}</p>}
       {state && "summary" in state && (

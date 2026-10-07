@@ -70,7 +70,7 @@ export async function setMaterialSourceAction(id: number, f: FormData) {
  * other personal data are on it. The result is only stored as a suggestion.
  */
 export async function analyzeMaterialAction(id: number, f: FormData) {
-  await requireTeacher();
+  const teacher = await requireTeacher();
   const m = getMaterial(id);
   if (!m) redirect("/mehr/material");
   if (!aiEnabled()) fail(id, "Kein KI-Schlüssel hinterlegt.", "#erkennung");
@@ -88,8 +88,14 @@ export async function analyzeMaterialAction(id: number, f: FormData) {
     .listSkills()
     .filter((s) => !subject || s.subject === subject)
     .map(({ id, name, area, subject }) => ({ id, name, area, subject }));
-  const a = await analyzeMaterialWithAI({ mime: m.mime, base64: data.toString("base64") }, { subject, skills });
-  if (!a) fail(id, "Claude war nicht erreichbar. Du kannst das Material auch selbst einordnen.", "#erkennung");
+  let a: Awaited<ReturnType<typeof analyzeMaterialWithAI>> = null;
+  let problem = "Claude hat nichts erkannt.";
+  try {
+    a = await analyzeMaterialWithAI({ mime: m.mime, base64: data.toString("base64") }, { subject, skills }, { teacherId: teacher.id, trigger: "material" });
+  } catch (e) {
+    problem = e instanceof Error ? e.message : String(e);
+  }
+  if (!a) fail(id, `${problem} Du kannst das Material auch selbst einordnen.`, "#erkennung");
   setAnalysis(id, a!, "ki");
   revalidatePath(page(id));
   redirect(`${page(id, "erkannt=1")}#erkennung`);

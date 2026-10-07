@@ -4,6 +4,7 @@
  *   "geraet:<teacher id>"  – the tablet(s) of a teacher; any event makes the tablet reload its view
  *   "einheit:<unit id>"    – the live status on the teacher's unit page
  */
+import { aiLiveState, type AILive } from "./ai/realtime";
 import { db } from "./db";
 import { hasDevice } from "./devices";
 import * as repo from "./repo";
@@ -122,6 +123,8 @@ export type LiveSnapshot = {
   };
   /** number of answers in this unit, so the page knows when to reload its result lists */
   answers: number;
+  /** what the KI noticed last (lib/ai/realtime.ts) */
+  ai: AILive;
 };
 
 export function liveSnapshot(unitId: number): LiveSnapshot | null {
@@ -169,6 +172,7 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
     view: view.kind,
     current,
     answers,
+    ai: aiLiveState(unit.id),
   };
 }
 

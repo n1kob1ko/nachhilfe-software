@@ -1,5 +1,6 @@
 "use server";
 
+import { forgetUnit } from "@/lib/ai/realtime";
 import { unitChanged } from "@/lib/live";
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
@@ -163,6 +164,7 @@ export async function endUnitAction(unitId: number) {
 export async function cancelUnitAction(unitId: number, formData: FormData) {
   const { t } = await manageableUnit(unitId);
   const u = finishUnit(unitId, "abgebrochen", { byTeacherId: t.id, reason: str(formData, "reason") || "abgebrochen" });
+  forgetUnit(unitId);
   notifyUnitClosed(unitId);
   revalidatePath("/", "layout");
   redirect(u ? `/schueler/${u.student_id}?tab=lernverlauf` : "/einheiten");

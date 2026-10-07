@@ -1,39 +1,10 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import type { BetaContentBlockParam } from "@anthropic-ai/sdk/resources/beta/messages/messages";
 import { z } from "zod";
-import { DIFFICULTIES, categoriesFor, type Category, type Difficulty } from "./curriculum";
-import { ERROR_TYPES, type ErrorType } from "./error-types";
-import type { TaskDraft } from "./tasks";
-import { GAP, gapCount } from "./tasks";
-
-const MODEL = "claude-opus-5-5";
-
-export function aiEnabled() {
-  return Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN);
-}
-
-let client: Anthropic | null = null;
-function anthropic() {
-  client ??= new Anthropic();
-  return client;
-}
-
-/** One structured request with server-side fallback on refusals. Returns null when the model declines. */
-async function ask<T extends z.ZodType>(schema: T, system: string, prompt: string | BetaContentBlockParam[], maxTokens = 16000, effort: "low" | "medium" = "medium") {
-  // streamed: a non-streamed request with a large max_tokens is refused by the SDK (10-minute rule)
-  const res = await anthropic().beta.messages.stream({
-    model: MODEL,
-    max_tokens: maxTokens,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    system,
-    output_config: { effort, format: betaZodOutputFormat(schema) },
-    messages: [{ role: "user", content: prompt }],
-  }).finalMessage();
-  if (res.stop_reason === "refusal" || !res.parsed_output) return null;
-  return res.parsed_output as z.infer<T>;
-}
+import { DIFFICULTIES, categoriesFor, type Category, type Difficulty } from "../curriculum";
+import { ERROR_TYPES, type ErrorType } from "../error-types";
+import type { TaskDraft } from "../tasks";
+import { GAP, gapCount } from "../tasks";
+import { runAI, unwrap, type AIMeta } from "./router";
 
 // ---------- exercise generation ----------
 const FORMATS = ["mc", "calc", "grammar", "cloze", "free", "reading", "order"] as const;
@@ -159,8 +130,9 @@ export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" |
   return { ...base, type: t.format === "reading" || t.passage ? "reading" : "free", data: { passage: t.passage ?? undefined }, answer: { sample } };
 }
 
-export async function generateWithAI(req: AIGenerateRequest): Promise<TaskDraft[] | null> {
-  const out = await ask(WorksheetSchema, GEN_SYSTEM, buildPrompt(req), Math.min(64000, 6000 + req.count * 2500));
+/** `fn` "neue_aufgabe" for the one or two tasks asked for during a unit (shorter limits, own line in the costs). */
+export async function generateWithAI(req: AIGenerateRequest, meta: AIMeta = {}, fn: "aufgaben" | "neue_aufgabe" = "aufgaben"): Promise<TaskDraft[] | null> {
+  const out = unwrap(await runAI(fn, WorksheetSchema, GEN_SYSTEM, buildPrompt(req), { maxTokens: 6000 + req.count * 2500, meta }));
   if (!out) return null;
   return out.tasks.map((t) => aiTaskToDraft(t, req)).filter((t): t is TaskDraft => t !== null);
 }
@@ -173,13 +145,13 @@ const GradeSchema = z.object({
   error_type: z.enum(ERROR_TYPES.map((e) => e.key) as [ErrorType, ...ErrorType[]]).nullable().describe(`Art des Fehlers, wenn falsch, sonst null: ${ERROR_TYPES.map((e) => `${e.key} = ${e.label}`).join(", ")}`),
 });
 
-export async function gradeFreeText(task: { prompt: string; passage?: string; sample: string }, answer: string) {
-  return ask(
+export async function gradeFreeText(task: { prompt: string; passage?: string; sample: string }, answer: string, meta: AIMeta = {}) {
+  return runAI(
+    "freitext",
     GradeSchema,
     "Du korrigierst Schülerantworten in einer Nachhilfe-Software. Sei fair: inhaltlich richtige Antworten in eigenen Worten zählen als richtig. Rechtschreibfehler nur bewerten, wenn die Aufgabe Rechtschreibung prüft.",
     `${task.passage ? `Text:\n${task.passage}\n\n` : ""}Aufgabe:\n${task.prompt}\n\nErwartungshorizont:\n${task.sample}\n\nAntwort der Schülerin / des Schülers:\n${answer}`,
-    2000,
-    "low",
+    { meta },
   );
 }
 
@@ -190,12 +162,16 @@ const InsightSchema = z.object({
   parent_note: z.string().describe("2-3 freundliche Sätze für die Eltern"),
 });
 
-export async function analyzeWithAI(studentContext: string) {
-  return ask(
-    InsightSchema,
-    "Du unterstützt eine Nachhilfelehrkraft in Österreich. Du bekommst Lerndaten einer Schülerin / eines Schülers und formulierst eine präzise, ehrliche, ermutigende Einschätzung. Stütze dich nur auf die Daten.",
-    studentContext,
-    4000,
+/** deep = the strong model, only when the teacher asks for a Tiefenanalyse. */
+export async function analyzeWithAI(studentContext: string, meta: AIMeta = {}, deep = false) {
+  return unwrap(
+    await runAI(
+      deep ? "tiefenanalyse" : "analyse",
+      InsightSchema,
+      "Du unterstützt eine Nachhilfelehrkraft in Österreich. Du bekommst Lerndaten einer Schülerin / eines Schülers und formulierst eine präzise, ehrliche, ermutigende Einschätzung. Stütze dich nur auf die Daten.",
+      studentContext,
+      { meta },
+    ),
   );
 }
 
@@ -205,14 +181,14 @@ const NoteSchema = z.object({ note: z.string().describe("Die fertige Notiz, 3–
  * Writes a friendly note from the facts of a unit (lib/summary.ts briefForAI: data lines only, names
  * removed). Claude only formulates; every fact comes from the database.
  */
-export async function writeFamilyNote(facts: Record<string, string[]>, audience: "eltern" | "schueler"): Promise<string | null> {
+export async function writeFamilyNote(facts: Record<string, string[]>, audience: "eltern" | "schueler", meta: AIMeta = {}): Promise<string | null> {
   const system = [
     "Du formulierst kurze Notizen nach einer Nachhilfe-Einheit in österreichischem Deutsch.",
     audience === "eltern" ? "Leserin/Leser sind die Eltern. Sprich sie mit „Sie“ an und schreibe über „Ihr Kind“." : "Leser ist die Schülerin/der Schüler. Sprich sie/ihn mit „du“ an.",
     "Verwende nur die gelieferten Fakten. Erfinde nichts dazu, keine Namen, keine Noten, keine Diagnosen.",
     "Ton: freundlich, ermutigend, konkret. Erst was gut ging, dann woran gearbeitet wird, dann Termine. Keine Aufzählungszeichen.",
   ].join(" ");
-  const out = await ask(NoteSchema, system, `Fakten der Einheit (JSON):\n${JSON.stringify(facts)}`, 2000, "low");
+  const out = unwrap(await runAI("notiz", NoteSchema, system, `Fakten der Einheit (JSON):\n${JSON.stringify(facts)}`, { meta }));
   return out?.note.trim() || null;
 }
 
@@ -238,7 +214,7 @@ export type MaterialAnalysis = z.infer<typeof MaterialSchema>;
  * Suggestions for an uploaded worksheet, photo or PDF: subject, topic, skills, tasks and possible
  * solutions. Everything is a proposal the teacher checks; nothing is stored as a task from here.
  */
-export async function analyzeMaterialWithAI(file: { mime: string; base64: string }, ctx: { subject?: string; skills: { id: string; name: string; area: string; subject: string }[] }): Promise<MaterialAnalysis | null> {
+export async function analyzeMaterialWithAI(file: { mime: string; base64: string }, ctx: { subject?: string; skills: { id: string; name: string; area: string; subject: string }[] }, meta: AIMeta = {}): Promise<MaterialAnalysis | null> {
   const block: BetaContentBlockParam =
     file.mime === "application/pdf"
       ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: file.base64 } }
@@ -250,5 +226,5 @@ export async function analyzeMaterialWithAI(file: { mime: string; base64: string
     "Ordne nur Skill-IDs aus der gelieferten Liste zu.",
   ].join(" ");
   const list = ctx.skills.map((s) => `${s.id} | ${s.subject} › ${s.area} › ${s.name}`).join("\n");
-  return ask(MaterialSchema, system, [block, { type: "text", text: `${ctx.subject ? `Vermutetes Fach: ${ctx.subject}\n` : ""}Verfügbare Fähigkeiten (ID | Fach › Thema › Fähigkeit):\n${list}` }], 8000, "low");
+  return unwrap(await runAI("material", MaterialSchema, system, [block, { type: "text", text: `${ctx.subject ? `Vermutetes Fach: ${ctx.subject}\n` : ""}Verfügbare Fähigkeiten (ID | Fach › Thema › Fähigkeit):\n${list}` }], { meta }));
 }
