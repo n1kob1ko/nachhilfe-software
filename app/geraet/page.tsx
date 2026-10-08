@@ -12,6 +12,7 @@ import { MAX_TRIES } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
 import { TextEditor } from "@/components/text/TextEditor";
 import { StudentCorrection } from "@/components/text/correction/StudentCorrection";
+import { storyForEditor } from "@/lib/picture-story";
 import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
 
@@ -65,6 +66,7 @@ export default async function DevicePage() {
       </div>
     );
   } else if (text) {
+    const story = storyForEditor(text.id, "/geraet/bild");
     content = (
       <>
         <a href="/geraet/ansicht?zu=start" className="mb-3 inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2">
@@ -80,6 +82,9 @@ export default async function DevicePage() {
           prompt={text.prompt}
           meta={[text.subject, text.topic].filter(Boolean).join(" · ")}
           large
+          pictures={story?.pictures}
+          targetWords={story?.targetWords}
+          handIn={story && text.status !== "fertig" ? { url: `/geraet/text/${text.id}/abgeben`, home: "/geraet/ansicht?zu=start" } : undefined}
         />
       </>
     );
@@ -144,7 +149,7 @@ export default async function DevicePage() {
   return (
     <DeviceLive unitId={unit.id}>
       {/* keyed by unit: a new student never sees anything left over from the previous one */}
-      <div key={unit.id} className="mx-auto max-w-[860px] px-4 py-5">
+      <div key={unit.id} className={`mx-auto px-4 py-5 ${text && storyForEditor(text.id, "") ? "max-w-[1240px]" : "max-w-[860px]"}`}>
         <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-[24px] leading-tight font-semibold">{first}</p>

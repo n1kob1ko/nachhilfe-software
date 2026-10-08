@@ -544,3 +544,84 @@
 .tx-k-overview p {
   margin: 0;
 }
+
+/* Bildgeschichte: the pictures in order, large enough for details; rows never split */
+.bg-pics {
+  display: grid;
+  gap: 3mm;
+  margin: 3mm 0 5mm;
+  padding: 0;
+  list-style: none;
+}
+.bg-pics-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.bg-pics-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.bg-pics-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.bg-pic {
+  position: relative;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  border: 0.3mm solid #9a9a9a;
+  border-radius: 1.5mm;
+  overflow: hidden;
+  background: #fff;
+}
+.bg-pic img {
+  display: block;
+  width: 100%;
+  height: 58mm;
+  object-fit: contain;
+}
+.bg-pics-3 .bg-pic img {
+  height: 44mm;
+}
+.bg-pics-4 .bg-pic img {
+  height: 34mm;
+}
+.bg-pic-num {
+  position: absolute;
+  top: 1.5mm;
+  left: 1.5mm;
+  min-width: 6mm;
+  height: 6mm;
+  padding: 0 1.4mm;
+  border-radius: 3mm;
+  background: #000;
+  color: #fff;
+  font-size: 9.5pt;
+  font-weight: 700;
+  line-height: 6mm;
+  text-align: center;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.bg-helps {
+  display: grid;
+  gap: 1mm;
+  margin-bottom: 4mm;
+  border: 0.25mm solid #bbb;
+  border-radius: 1.5mm;
+  padding: 2.5mm 3.5mm;
+  font-size: 11pt;
+  break-inside: avoid;
+}
+.bg-heading-line {
+  display: flex;
+  align-items: baseline;
+  gap: 2mm;
+  margin-bottom: 1mm;
+  font-size: 11.5pt;
+}
+.bg-heading-line .ab-field-line {
+  flex: 1;
+}
+.bg-source {
+  margin-top: 6mm;
+  font-size: 8pt;
+  color: #555;
+}

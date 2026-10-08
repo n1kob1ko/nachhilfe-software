@@ -563,6 +563,34 @@ CREATE TABLE IF NOT EXISTS text_correction_items (
   decided_at TEXT,
   created_at TEXT NOT NULL
 );
+-- Bildgeschichte (lib/picture-story.ts): a Textarbeit with a series of pictures. The story itself is the text;
+-- this row holds the settings, picture_story_images the pictures in their order (files under uploads/bildgeschichten).
+CREATE TABLE IF NOT EXISTS picture_stories (
+  text_id INTEGER PRIMARY KEY REFERENCES texts(id) ON DELETE CASCADE,
+  school_type TEXT NOT NULL DEFAULT '',
+  klasse INTEGER,
+  target_words INTEGER,
+  starters TEXT NOT NULL DEFAULT '[]',
+  hints TEXT NOT NULL DEFAULT '',
+  lines INTEGER NOT NULL DEFAULT 26,
+  source_kind TEXT NOT NULL DEFAULT '',
+  source_note TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS picture_story_images (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  text_id INTEGER NOT NULL REFERENCES picture_stories(text_id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,
+  file_name TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  sha256 TEXT NOT NULL,
+  stored_path TEXT NOT NULL,
+  caption TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_picture_story_images ON picture_story_images(text_id, position);
 CREATE INDEX IF NOT EXISTS idx_text_corrections_text ON text_corrections(text_id, version);
 CREATE INDEX IF NOT EXISTS idx_text_correction_items ON text_correction_items(correction_id, block, pos_start);
 CREATE INDEX IF NOT EXISTS idx_texts_student ON texts(student_id, updated_at);

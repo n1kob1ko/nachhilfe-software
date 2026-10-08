@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ArrowLeft, Printer } from "lucide-react";
-import { FASSUNG_LABEL, SPACING_LABEL, TEXT_PRINT_CHECKS, textPrintQuery, type Fassung, type Spacing, type TextPrintOptions } from "@/lib/text-print";
+import { BLATT_LABEL, FASSUNG_LABEL, SPACING_LABEL, TEXT_PRINT_CHECKS, textPrintQuery, type Blatt, type Fassung, type Spacing, type TextPrintOptions } from "@/lib/text-print";
 
-type Props = { options: TextPrintOptions; defaultTitle: string; path: string; back: { href: string; label: string }; words: number; withCorrection?: boolean };
+type Props = { options: TextPrintOptions; defaultTitle: string; path: string; back: { href: string; label: string }; words: number; withCorrection?: boolean; story?: boolean };
 
 /** Settings beside the A4 preview of a text (the same layout as the worksheet settings). */
-export function TextPrintSettings({ options, defaultTitle, path, back, words, withCorrection }: Props) {
+export function TextPrintSettings({ options, defaultTitle, path, back, words, withCorrection, story }: Props) {
   const router = useRouter();
   const [o, setO] = useState(options);
   const [pending, start] = useTransition();
@@ -24,7 +24,7 @@ export function TextPrintSettings({ options, defaultTitle, path, back, words, wi
       <Link href={back.href} className="inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-medium text-ink-2 hover:text-accent">
         <ArrowLeft size={16} aria-hidden /> {back.label}
       </Link>
-      <h1 className="mt-1 text-[20px] font-semibold">Text drucken</h1>
+      <h1 className="mt-1 text-[20px] font-semibold">{story ? "Bildgeschichte drucken" : "Text drucken"}</h1>
       <p className="mb-4 text-[13px] text-ink-3">
         A4 Hochformat · <span className="num">{words.toLocaleString("de-AT")}</span> {words === 1 ? "Wort" : "Wörter"}
       </p>
@@ -33,7 +33,19 @@ export function TextPrintSettings({ options, defaultTitle, path, back, words, wi
       </button>
       <p className="mt-2 mb-6 text-[12px] text-ink-3">Im Druckfenster „Als PDF speichern“ wählen, um eine PDF-Datei zu bekommen.</p>
       <div className="grid gap-4">
-        {withCorrection && (
+        {story && (
+          <label className="field">
+            <span className="label">Ausgabe</span>
+            <select className="input" value={o.blatt} onChange={(e) => set("blatt", e.target.value as Blatt)} data-testid="blatt">
+              {(Object.keys(BLATT_LABEL) as Blatt[]).map((k) => (
+                <option key={k} value={k}>
+                  {BLATT_LABEL[k]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {withCorrection && o.blatt !== "leer" && (
           <>
             <label className="field">
               <span className="label">Fassung</span>

@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, History, Laptop, Printer, RotateCcw, SpellCheck, Tablet } from "lucide-react";
+import { CheckCircle2, History, Images, Laptop, Printer, RotateCcw, SpellCheck, Tablet } from "lucide-react";
 import { restoreRevisionAction, setTextStatusAction, showTextOnTabletAction, updateTextInfoAction } from "@/app/text-actions";
 import { TextEditor } from "@/components/text/TextEditor";
 import { TextLive } from "@/components/text/TextLive";
 import { Pill, Reveal, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { SUBJECTS } from "@/lib/curriculum";
+import { storyForEditor } from "@/lib/picture-story";
 import { getText, listRevisions, textDoc, TEXT_KINDS, unitsOfText, wordsLabel } from "@/lib/texts";
 import { studentDevice } from "@/lib/live";
 import { correctionInfoForStudent } from "@/lib/text-correction";
@@ -33,6 +34,7 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
   const name = first(text.student_name);
   const meta = [text.subject, text.topic, text.student_name].filter(Boolean).join(" · ");
   const correction = correctionInfoForStudent(text.student_id).get(text.id);
+  const story = storyForEditor(text.id, "/material/bildgeschichte/bild");
 
   const actions = (
     <>
@@ -42,6 +44,11 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
             {device === "laptop" ? <Laptop size={16} aria-hidden /> : <Tablet size={16} aria-hidden />} Am {word} öffnen
           </button>
         </form>
+      )}
+      {story && (
+        <Link href={`/texte/${text.id}/bilder`} className="btn btn-secondary" data-testid="bilder-bearbeiten">
+          <Images size={16} aria-hidden /> Bilder und Aufgabe
+        </Link>
       )}
       <Link href={`/texte/${text.id}/korrektur`} className="btn btn-secondary" data-testid="korrigieren">
         <SpellCheck size={16} aria-hidden /> {correction ? `Korrektur${correction.open ? ` (${correction.open} offen)` : ""}` : "Korrigieren"}
@@ -95,6 +102,8 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
         prompt={text.prompt}
         meta={meta}
         actions={actions}
+        pictures={story?.pictures}
+        targetWords={story?.targetWords}
       />
 
       <div className="mt-8 grid max-w-[820px] gap-3">
@@ -120,6 +129,7 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
             ))}
           </p>
         )}
+        {!story && (
         <Reveal label="Titel und Aufgabe ändern">
           <form action={updateTextInfoAction.bind(null, text.id)} className="grid gap-4 pt-1">
             <label className="field">
@@ -155,6 +165,7 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
             </div>
           </form>
         </Reveal>
+        )}
         {revisions.length > 0 && (
           <Reveal
             label={
