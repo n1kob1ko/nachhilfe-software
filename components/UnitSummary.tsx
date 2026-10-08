@@ -16,6 +16,7 @@ export function UnitSummary({ r }: { r: UnitReport }) {
     ["Ergebnis", r.tasksDone === 0 ? "–" : `${r.correct} von ${r.tasksDone} richtig${r.successRate !== null ? ` (${Math.round(r.successRate * 100)} %)` : ""}`],
     ["Schwierigkeiten", r.errors.length ? r.errors.slice(0, 3).map((e) => `${e.label} (${e.count}×)`).join(", ") : "keine erkannt"],
     ["Hilfen", r.help.tasks ? `${r.help.tasks} ${r.help.tasks === 1 ? "Aufgabe" : "Aufgaben"} mit Hilfe${helps ? `: ${helps}` : ""}` : "keine"],
+    ...(r.texts?.length ? [["Textarbeiten", r.texts.map((t) => `${t.title} (${t.words} ${t.words === 1 ? "Wort" : "Wörter"}${t.startedHere ? "" : `, ${t.added >= 0 ? "+" : ""}${t.added}`})`).join(", ")] as [string, string]] : []),
     ["Fortschritt", progress.length ? progress.join(" · ") : r.development.direction ? { besser: "wurde im Lauf der Einheit besser", gleich: "gleichbleibend", schlechter: "ließ gegen Ende nach" }[r.development.direction] : "noch zu wenig Aufgaben"],
   ];
   return (

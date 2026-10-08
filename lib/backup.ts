@@ -20,7 +20,7 @@ const SKIP_TABLES = new Set(["teacher_sessions"]);
 const REDACTED: [string, string][] = [["teachers", "password_hash"]];
 
 /** Parents before children, so a restore never points at a row that is not there yet. Unknown tables follow. */
-const ORDER = ["teachers", "students", "skills", "worksheets", "tasks", "assignments", "units", "lessons", "attempts", "homework", "tests", "skill_snapshots", "whiteboards", "whiteboard_pages", "whiteboard_inserts", "ai_calls", "ai_insights"];
+const ORDER = ["teachers", "students", "skills", "worksheets", "tasks", "assignments", "units", "lessons", "attempts", "homework", "tests", "skill_snapshots", "whiteboards", "whiteboard_pages", "whiteboard_inserts", "ai_calls", "ai_insights", "texts", "text_units", "text_revisions"];
 
 type Row = Record<string, unknown>;
 export type Backup = {

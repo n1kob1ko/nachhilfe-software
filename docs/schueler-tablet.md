@@ -10,7 +10,8 @@
    - Aktionen: Nächste Aufgabe senden, Nochmal versuchen, Lösung zeigen, Auf Whiteboard.
    - Umschalter: Tablet zeigt Aufgaben oder Whiteboard.
 6. **Whiteboard.** „Auf Whiteboard“ oder das Öffnen des Whiteboards der Einheit schaltet das eigene Tablet auf das Board dieser Einheit.
-7. **Einheit beenden.** Die Dokumentation wird erstellt und das Tablet springt sofort auf Bereitschaft. Beim nächsten Schüler ist nichts vom vorherigen sichtbar. Seine Daten bleiben auf dem Server.
+7. **Textarbeit.** „Textarbeit starten“ öffnet am Tablet einen Schreibbereich für längere Texte (Ansicht `text:<id>`). Details in `docs/textarbeit.md`.
+8. **Einheit beenden.** Die Dokumentation wird erstellt und das Tablet springt sofort auf Bereitschaft. Beim nächsten Schüler ist nichts vom vorherigen sichtbar. Seine Daten bleiben auf dem Server.
 
 **Sonderfälle**
 

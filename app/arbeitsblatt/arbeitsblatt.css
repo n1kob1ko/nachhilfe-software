@@ -423,3 +423,57 @@
     box-shadow: none;
   }
 }
+
+/* ---------- Textarbeit (app/arbeitsblatt/text) ---------- */
+.tx-print-task {
+  margin: 0 0 7mm;
+  padding: 3mm 4mm;
+  border: 0.3mm solid #777;
+  border-radius: 1.5mm;
+  font-size: 11pt;
+  line-height: 1.45;
+  break-inside: avoid;
+}
+.tx-print-task-label {
+  margin: 0 0 1mm;
+  font-size: 9pt;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tx-print-task .ab-pre {
+  margin: 0;
+}
+.tx-print-body {
+  font-size: 12pt;
+  line-height: 1.6;
+  word-spacing: 0.05em;
+  hyphens: auto;
+  overflow-wrap: break-word;
+}
+.tx-print-wide .tx-print-body {
+  line-height: 2.1;
+}
+.tx-print-p {
+  margin: 0 0 3.2mm;
+  /* never one lonely line at the bottom or top of a page */
+  orphans: 3;
+  widows: 3;
+}
+.tx-print-empty {
+  min-height: 1.6em;
+}
+.tx-print-h {
+  margin: 6mm 0 2mm;
+  font-size: 13.5pt;
+  font-weight: 700;
+  line-height: 1.3;
+  break-after: avoid;
+  break-inside: avoid;
+}
+.tx-print-h:first-child {
+  margin-top: 0;
+}
+.tx-print u {
+  text-underline-offset: 0.15em;
+}
