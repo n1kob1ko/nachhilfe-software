@@ -18,7 +18,7 @@ export type BuilderPreset = { skillIds?: string[]; subject?: string; difficulty?
 const AUTO = "automatisch";
 const COUNTS = [5, 10, 15, 20];
 /** The formats that make students write themselves come first (reversed: the last one is shown first). */
-const PREFERRED = ["offen", "korrigieren", "gap", "lueckentext"];
+const PREFERRED = ["offen", "korrigieren", "gap", "lueckentext", "sachaufgabe", "rechenweg"];
 const chip =
   "cursor-pointer rounded-lg border border-line-strong bg-surface px-3 py-1.5 text-[14px] transition-colors hover:border-ink-3 has-checked:border-accent has-checked:bg-accent-wash has-checked:text-accent has-focus-visible:outline-2 has-focus-visible:outline-accent";
 const pct = (m: number | null | undefined) => (m == null ? null : `${Math.round(m * 100)} %`);

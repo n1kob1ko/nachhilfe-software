@@ -236,6 +236,13 @@ textarea.input {
   background-size: 100% 28px;
   line-height: 28px;
 }
+/* squared paper for calculations (Rechenweg) */
+.squared {
+  background-color: var(--surface);
+  background-image: linear-gradient(#f0e4d9 1px, transparent 1px), linear-gradient(90deg, #f0e4d9 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-position: -1px -1px;
+}
 
 @media print {
   .no-print {
@@ -557,6 +564,27 @@ textarea.input {
 }
 .frac-den {
   padding: 0.06em 0.18em 0;
+}
+/* Powers and roots, the same shapes as on the A4 sheet (arbeitsblatt.css .ab-sup / .ab-root) */
+.m-sup {
+  position: relative;
+  top: -0.5em;
+  font-size: 0.72em;
+  line-height: 1;
+  vertical-align: baseline;
+}
+.m-root {
+  display: inline-flex;
+  align-items: stretch;
+  white-space: nowrap;
+}
+.m-root-sign {
+  padding-right: 0.04em;
+}
+.m-root-body {
+  border-top: max(1px, 0.065em) solid currentColor;
+  padding: 0.08em 0.12em 0 0.06em;
+  margin-top: 0.12em;
 }
 
 /* Textarbeit (components/text/TextEditor.tsx): a calm sheet to write on, a light toolbar above it */
