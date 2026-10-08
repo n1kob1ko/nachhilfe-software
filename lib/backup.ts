@@ -15,7 +15,7 @@ export const BACKUP_FORMAT = "lernheft-backup";
 export const BACKUP_VERSION = 1;
 
 /** Tables whose rows are never exported. */
-const SKIP_TABLES = new Set(["teacher_sessions"]);
+const SKIP_TABLES = new Set(["teacher_sessions", "laptop_codes", "laptop_sessions"]);
 /** Columns emptied in the export: [table, column]. */
 const REDACTED: [string, string][] = [["teachers", "password_hash"]];
 

@@ -8,6 +8,7 @@ import { currentTaskToBoardAction, newExerciseAction, resendAction, retryTaskAct
 import { ACTION_LABEL } from "@/lib/ai/labels";
 import type { AILive } from "@/lib/ai/realtime";
 import type { LiveSnapshot } from "@/lib/live";
+import { LaptopAccess, type JoinInfo } from "./LaptopAccess";
 import { ConnectTablet } from "./TabletSend";
 
 function clock(ms: number) {
@@ -27,11 +28,28 @@ function Timer({ since }: { since: string }) {
   return <span suppressHydrationWarning>{clock(now - Date.parse(since))}</span>;
 }
 
+/** Saved within the last 20 seconds: the student is writing right now (the editor saves every few seconds while typing). */
+function Writing({ updatedAt }: { updatedAt: string }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 2000);
+    return () => clearInterval(id);
+  }, []);
+  const on = now - Date.parse(updatedAt) < 20_000;
+  return (
+    <span suppressHydrationWarning className={`inline-flex items-center gap-1.5 text-[13px] font-semibold ${on ? "text-green" : "text-ink-3"}`} data-testid="writing">
+      <span className={`h-2 w-2 rounded-full ${on ? "animate-pulse bg-green" : "bg-ink-3"}`} aria-hidden />
+      {on ? "schreibt gerade" : "schreibt gerade nicht"}
+    </span>
+  );
+}
+
 /**
- * What the student does on the tablet right now, live over the same stream hub as the whiteboard.
- * The teacher never chooses a device or a student: the unit knows both.
+ * What the student does on the tablet (or their own laptop) right now, live over the same stream hub
+ * as the whiteboard. The teacher never chooses a student: the unit knows it, and the device is the
+ * confirmed laptop of the unit, else the teacher's tablet.
  */
-export function LiveStatus({ unitId, initial }: { unitId: number; initial: LiveSnapshot }) {
+export function LiveStatus({ unitId, initial, join }: { unitId: number; initial: LiveSnapshot; join: JoinInfo }) {
   const [s, setS] = useState(initial);
   const [pending, start] = useTransition();
   const router = useRouter();
@@ -56,11 +74,14 @@ export function LiveStatus({ unitId, initial }: { unitId: number; initial: LiveS
   const run = (fn: () => Promise<unknown>) => start(async () => void (await fn()));
   const c = s.current;
   const tablet = !s.tablet.paired ? "kein" : s.tablet.online ? "online" : "offline";
+  const onLaptop = s.device === "laptop";
+  const dev = onLaptop ? "Laptop" : "Tablet";
+  const devOnline = onLaptop ? Boolean(s.laptop.active?.online) : tablet === "online";
 
   return (
     <section aria-label="Live-Status" className="panel mb-8 px-5 py-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        {tablet === "kein" ? (
+        {tablet === "kein" && onLaptop ? null : tablet === "kein" ? (
           <>
             <span className="inline-flex items-center gap-2 text-[15px] font-semibold">
               <TabletSmartphone size={18} aria-hidden /> Noch kein Schülergerät verbunden
@@ -73,20 +94,28 @@ export function LiveStatus({ unitId, initial }: { unitId: number; initial: LiveS
             {tablet === "online" ? "Tablet verbunden" : "Tablet offline"}
           </span>
         )}
-        {tablet !== "kein" && (
-          <div className="ml-auto flex gap-1 rounded-full bg-panel p-1" role="group" aria-label="Tablet zeigt">
+        {(tablet !== "kein" || onLaptop) && (
+          <div className="ml-auto flex gap-1 rounded-full bg-panel p-1" role="group" aria-label={`${dev} zeigt`}>
             {s.text && <ViewButton on={s.view === "text"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, `text:${s.text!.id}`))} icon={<PenLine size={16} aria-hidden />} label="Text" />}
             <ViewButton on={s.view !== "tafel" && s.view !== "text"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, c ? `aufgabe:${c.assignmentId}` : ""))} icon={<ListChecks size={16} aria-hidden />} label="Aufgaben" />
-            <ViewButton on={s.view === "tafel"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, "tafel"))} icon={<Presentation size={16} aria-hidden />} label="Whiteboard" />
+            {tablet !== "kein" && (
+              <ViewButton on={s.view === "tafel"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, "tafel"))} icon={<Presentation size={16} aria-hidden />} label="Whiteboard" />
+            )}
           </div>
         )}
       </div>
+      {s.running && <LaptopAccess unitId={unitId} student={s.student} laptop={s.laptop} join={join} />}
 
       {s.text ? (
         <div className="mt-4">
-          <p className="text-[13px] text-ink-3">{s.student} · Textarbeit</p>
-          <p className="truncate text-[17px] font-semibold" title={s.text.title}>
-            {s.text.title}
+          <p className="text-[13px] text-ink-3">
+            {s.student} · Textarbeit{onLaptop ? " · am eigenen Laptop" : ""}
+          </p>
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="truncate text-[17px] font-semibold" title={s.text.title}>
+              {s.text.title}
+            </span>
+            <Writing updatedAt={s.text.updatedAt} />
           </p>
           <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
             <Metric label="Wörter" value={s.text.words.toLocaleString("de-AT")} />
@@ -105,12 +134,14 @@ export function LiveStatus({ unitId, initial }: { unitId: number; initial: LiveS
         <div className="mt-4">
           <p className="text-[13px] text-ink-3">
             {s.student} · {c.single ? "Einzelaufgabe" : "Übung"}
+            {onLaptop ? " · am eigenen Laptop" : ""}
           </p>
           <p className="truncate text-[17px] font-semibold" title={c.title}>
             {c.title}
           </p>
-          <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+          <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-6">
             <Metric label="Aufgabe" value={`${Math.min(c.taskNo, c.total)} von ${c.total}`} />
+            <Metric label="Abgegeben" value={`${c.done} von ${c.total}`} />
             <Metric
               label="Status"
               value={c.state}
@@ -125,23 +156,29 @@ export function LiveStatus({ unitId, initial }: { unitId: number; initial: LiveS
               {c.last.correct ? <CheckCircle2 size={16} aria-hidden /> : <XCircle size={16} aria-hidden />}
               Letzte Antwort {c.last.correct ? "richtig" : "falsch"}
               {!c.last.correct && !c.last.final && " – versucht es nochmal"}
+              <span className="num font-normal text-ink-3" suppressHydrationWarning>
+                {" "}
+                · {new Date(c.last.at).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Vienna" })}
+              </span>
             </p>
           )}
 
           {c.state === "nicht angekommen" ? (
             <div role="alert" className="mt-4 rounded-2xl bg-red-wash px-4 py-3">
               <p className="text-[15px] font-semibold text-red">
-                {tablet === "online" ? "Noch nicht auf dem Tablet angekommen" : "Tablet offline – noch nicht angekommen"}
+                {devOnline ? `Noch nicht auf dem ${dev} angekommen` : `${dev} offline – noch nicht angekommen`}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button className="btn btn-primary btn-sm" disabled={pending} onClick={() => run(() => resendAction(c.assignmentId))}>
                   Erneut senden
                 </button>
-                <Link href="/mehr/geraete" className="btn btn-secondary btn-sm">
-                  Verbindung prüfen
-                </Link>
+                {!onLaptop && (
+                  <Link href="/mehr/geraete" className="btn btn-secondary btn-sm">
+                    Verbindung prüfen
+                  </Link>
+                )}
               </div>
-              <p className="mt-2 text-[13px] text-ink-2">Später senden: nichts tun. Die Übung erscheint, sobald das Tablet wieder verbunden ist.</p>
+              <p className="mt-2 text-[13px] text-ink-2">Später senden: nichts tun. Die Übung erscheint, sobald das {dev} wieder verbunden ist.</p>
             </div>
           ) : (
             <div className="mt-4 flex flex-wrap gap-2">

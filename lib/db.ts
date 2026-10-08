@@ -180,6 +180,33 @@ CREATE TABLE IF NOT EXISTS device_pair_codes (
   expires_at TEXT NOT NULL
 );
 
+-- Temporary access from a student's own laptop ("Eigenes Gerät verbinden"). Unlike a tablet it belongs
+-- to one unit only: a code the teacher shows (one per unit, a few minutes, single use), then a request
+-- the teacher confirms. It ends with the unit, when the teacher ends it or when the student signs out.
+-- The laptop keeps a random secret in a cookie; only its hash is stored.
+CREATE TABLE IF NOT EXISTS laptop_codes (
+  unit_id INTEGER PRIMARY KEY REFERENCES units(id) ON DELETE CASCADE,
+  code TEXT NOT NULL UNIQUE,
+  created_by INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  expires_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS laptop_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL UNIQUE,
+  -- two digits shown on the laptop and to the teacher, so the teacher confirms the right device
+  check_code TEXT NOT NULL,
+  label TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'wartet' CHECK (status IN ('wartet','aktiv','abgelehnt','beendet')),
+  -- why it ended: einheit, lehrer, abgemeldet, ersetzt, abgelaufen, abgelehnt
+  end_reason TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  approved_at TEXT,
+  ended_at TEXT,
+  last_seen_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_laptop_sessions_unit ON laptop_sessions(unit_id, status);
+
 CREATE TABLE IF NOT EXISTS teacher_sessions (
   token TEXT PRIMARY KEY,
   teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,

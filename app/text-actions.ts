@@ -3,9 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/lib/auth";
-import { hasDevice } from "@/lib/devices";
 import { noteActivity } from "@/lib/learning";
-import { pushLive, showOnTablet } from "@/lib/live";
+import { pushLive, showOnTablet, studentDevice } from "@/lib/live";
 import { textChannel } from "@/lib/text-routes";
 import { createText, getText, restoreRevision, setTextStatus, updateTextInfo } from "@/lib/texts";
 import { canManageUnit, getUnit, runningUnitForStudent } from "@/lib/units";
@@ -29,7 +28,8 @@ export async function startTextAction(unitId: number, _prev: StartTextState, f: 
   if (!title) return { error: "Bitte einen Titel eingeben." };
   const text = createText({ studentId: unit.student_id, teacherId: t.id, unitId: unit.id, subject: str(f, "subject", 60), topic: str(f, "topic", 80), title, prompt: str(f, "prompt", 4000) });
   noteActivity(unit.student_id);
-  const tablet = f.get("tablet") === "1" && hasDevice(unit.teacher_id);
+  // "tablet" means the student's device: the teacher's tablet or the student's confirmed laptop
+  const tablet = f.get("tablet") === "1" && studentDevice(unit) !== null;
   if (tablet) showOnTablet(unit, { kind: "text", textId: text.id });
   else pushLive(unit.id);
   revalidatePath(`/einheiten/${unit.id}`);

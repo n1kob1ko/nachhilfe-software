@@ -3,9 +3,9 @@ import { PageHeader } from "@/components/ui";
 import { StartTextForm } from "@/components/text/StartTextForm";
 import { requireTeacher } from "@/lib/auth";
 import { SUBJECTS } from "@/lib/curriculum";
-import { hasDevice } from "@/lib/devices";
 import { getStudent } from "@/lib/repo";
 import { TEXT_KINDS } from "@/lib/texts";
+import { studentDevice } from "@/lib/live";
 import { canManageUnit, getUnit } from "@/lib/units";
 
 export const metadata = { title: "Textarbeit starten" };
@@ -33,7 +33,7 @@ export default async function StartTextPage({ params }: { params: Promise<{ id: 
         info="Ein längerer Text, den der Schüler in der Einheit schreibt. Er wird laufend gespeichert und kann in späteren Einheiten weitergeschrieben werden."
         back={{ href: `/einheiten/${unit.id}`, label: "Zurück zur Einheit" }}
       />
-      <StartTextForm unitId={unit.id} subject={textSubject(unit.subject, student.subjects)} subjects={[...SUBJECTS]} kinds={TEXT_KINDS} paired={hasDevice(unit.teacher_id)} name={name} />
+      <StartTextForm unitId={unit.id} subject={textSubject(unit.subject, student.subjects)} subjects={[...SUBJECTS]} kinds={TEXT_KINDS} device={studentDevice(unit)} name={name} />
     </div>
   );
 }

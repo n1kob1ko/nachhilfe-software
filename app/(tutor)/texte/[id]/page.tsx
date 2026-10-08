@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, History, Printer, RotateCcw, Tablet } from "lucide-react";
+import { CheckCircle2, History, Laptop, Printer, RotateCcw, Tablet } from "lucide-react";
 import { restoreRevisionAction, setTextStatusAction, showTextOnTabletAction, updateTextInfoAction } from "@/app/text-actions";
 import { TextEditor } from "@/components/text/TextEditor";
 import { TextLive } from "@/components/text/TextLive";
 import { Pill, Reveal, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { SUBJECTS } from "@/lib/curriculum";
-import { hasDevice } from "@/lib/devices";
 import { getText, listRevisions, textDoc, TEXT_KINDS, unitsOfText, wordsLabel } from "@/lib/texts";
+import { studentDevice } from "@/lib/live";
 import { canManageUnit, runningUnitForStudent } from "@/lib/units";
 
 export const metadata = { title: "Textarbeit" };
@@ -23,8 +23,10 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
   if (!text) notFound();
   const unit = runningUnitForStudent(text.student_id);
   const ownUnit = unit && canManageUnit(teacher, unit) ? unit : null;
-  const onTablet = ownUnit?.device_view === `text:${text.id}`;
-  const canShow = ownUnit && !onTablet && hasDevice(ownUnit.teacher_id);
+  const device = ownUnit ? studentDevice(ownUnit) : null;
+  const word = device === "laptop" ? "Laptop" : "Tablet";
+  const onTablet = Boolean(device) && ownUnit?.device_view === `text:${text.id}`;
+  const canShow = ownUnit && !onTablet && device;
   const revisions = listRevisions(text.id);
   const units = unitsOfText(text.id);
   const name = first(text.student_name);
@@ -35,7 +37,7 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
       {canShow && (
         <form action={showTextOnTabletAction.bind(null, text.id)}>
           <button className="btn btn-secondary">
-            <Tablet size={16} aria-hidden /> Am Tablet öffnen
+            {device === "laptop" ? <Laptop size={16} aria-hidden /> : <Tablet size={16} aria-hidden />} Am {word} öffnen
           </button>
         </form>
       )}
@@ -73,7 +75,7 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
         )}
         {onTablet && (
           <Pill tone="green">
-            <Tablet size={12} aria-hidden /> {name} schreibt am Tablet
+            {device === "laptop" ? <Laptop size={12} aria-hidden /> : <Tablet size={12} aria-hidden />} {name} schreibt am {word}
           </Pill>
         )}
         {text.status === "fertig" ? <Pill tone="green">fertig</Pill> : <Pill tone="amber">in Arbeit</Pill>}
