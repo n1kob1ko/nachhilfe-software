@@ -4,8 +4,7 @@ import { ArrowRight, CheckCircle2, Copy, Eye, EyeOff, Printer, Send, Sparkles } 
 import { activeUnitForTeacher, runningUnitForStudent } from "@/lib/units";
 import { SendResult, TabletSend } from "@/components/device/TabletSend";
 import type { SendState } from "@/app/device-actions";
-import { hasDevice } from "@/lib/devices";
-import { tabletOnline } from "@/lib/live";
+import { studentDevice, studentDeviceOnline } from "@/lib/live";
 import { assignWorksheetAction, deleteWorksheetAction } from "@/app/actions";
 import { copyAsDraftAction, setSolutionsVisibleAction } from "@/app/builder-actions";
 import { SendToBoard } from "@/components/SendToBoard";
@@ -41,10 +40,12 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
   const activeFirst = active?.student_name.split(" ")[0] ?? "";
   const inActive = active ? assignments.find((x) => x.unit_id === active.id) : undefined;
   // after "An Max senden": did it reach the tablet? (from the database, so a reload shows the same)
+  const device = active ? studentDevice(active) : null;
   const delivery: SendState =
     active && inActive
       ? {
-          status: !hasDevice(active.teacher_id) ? "kein-geraet" : inActive.delivered_at || inActive.started_at || tabletOnline(active.teacher_id) ? "gesendet" : "offline",
+          status: !device ? "kein-geraet" : inActive.delivered_at || inActive.started_at || studentDeviceOnline(active) ? "gesendet" : "offline",
+          device: device ?? undefined,
           assignmentId: inActive.id,
           unitId: active.id,
           student: activeFirst,

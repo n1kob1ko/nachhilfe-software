@@ -41,6 +41,8 @@ type Props = {
   large?: boolean;
   /** links next to the title, e.g. "PDF / Drucken" (hidden in Vollbild) */
   actions?: React.ReactNode;
+  /** where the copy on this device is kept, plus the text id; the student laptop uses its own prefix so it can clean up */
+  backupPrefix?: string;
 };
 
 type Status =
@@ -65,20 +67,18 @@ const clock = (iso: string | number) =>
     minute: "2-digit",
     timeZone: "Europe/Vienna",
   });
-const backupKey = (id: number) => `lernheft-text-${id}`;
-
-function readBackup(id: number): Backup | null {
+function readBackup(key: string): Backup | null {
   try {
-    const raw = localStorage.getItem(backupKey(id));
+    const raw = localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as Backup) : null;
   } catch {
     return null;
   }
 }
-function writeBackup(id: number, b: Backup | null) {
+function writeBackup(key: string, b: Backup | null) {
   try {
-    if (b) localStorage.setItem(backupKey(id), JSON.stringify(b));
-    else localStorage.removeItem(backupKey(id));
+    if (b) localStorage.setItem(key, JSON.stringify(b));
+    else localStorage.removeItem(key);
   } catch {
     // private mode or storage full: saving to the server still works
   }
@@ -125,7 +125,9 @@ export function TextEditor({
   meta,
   large,
   actions,
+  backupPrefix = "lernheft-text-",
 }: Props) {
+  const store = `${backupPrefix}${textId}`;
   const editor = useRef<HTMLDivElement>(null);
   const shell = useRef<HTMLDivElement>(null);
   const version = useRef(initial.version);
@@ -196,7 +198,7 @@ export function TextEditor({
       if (key === savedKey.current && !o.force) {
         dirtySince.current = null;
         setStatus((s) => (s === "konflikt" ? s : "gespeichert"));
-        writeBackup(textId, null);
+        writeBackup(store, null);
         return;
       }
       inFlight.current = true;
@@ -224,7 +226,7 @@ export function TextEditor({
           setConflict(null);
           if (docKey(read()) === key) {
             dirtySince.current = null;
-            writeBackup(textId, null);
+            writeBackup(store, null);
             setStatus("gespeichert");
           } else {
             setStatus("geaendert");
@@ -261,7 +263,7 @@ export function TextEditor({
         }
       }
     },
-    [read, saveUrl, textId],
+    [read, saveUrl, store],
   );
 
   /** When the page goes away: hand the last changes to the browser so they arrive even without the page. */
@@ -269,7 +271,7 @@ export function TextEditor({
     const doc = editor.current ? read() : latest.current;
     const key = docKey(doc);
     if (key === savedKey.current) return;
-    writeBackup(textId, {
+    writeBackup(store, {
       base: version.current,
       key,
       body: doc,
@@ -287,7 +289,7 @@ export function TextEditor({
     } catch {
       // the copy on the device is enough
     }
-  }, [read, saveUrl, textId]);
+  }, [read, saveUrl, store]);
 
   const changed = useCallback(() => {
     const doc = read();
@@ -305,7 +307,7 @@ export function TextEditor({
     if (backupTimer.current) clearTimeout(backupTimer.current);
     backupTimer.current = setTimeout(
       () =>
-        writeBackup(textId, {
+        writeBackup(store, {
           base: version.current,
           key,
           body: doc,
@@ -325,7 +327,7 @@ export function TextEditor({
       () => void save(),
       waited >= SAVE_AT_LEAST_MS ? 0 : SAVE_AFTER_MS,
     );
-  }, [read, save, textId]);
+  }, [read, save, store]);
 
   // ---------- start: content, a copy left on this device, browser settings ----------
 
@@ -338,7 +340,7 @@ export function TextEditor({
     }
     show(initial.body);
     setReady(true);
-    const b = readBackup(textId);
+    const b = readBackup(store);
     if (b && b.key !== docKey(initial.body)) {
       if (b.base === initial.version) {
         // typed here, not yet saved, nothing changed elsewhere: continue with it
@@ -348,7 +350,7 @@ export function TextEditor({
         setStatus("geaendert");
         timer.current = setTimeout(() => void save(), 500);
       } else setOfferBackup(b);
-    } else if (b) writeBackup(textId, null);
+    } else if (b) writeBackup(store, null);
     // only once per text
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [textId]);
@@ -386,14 +388,20 @@ export function TextEditor({
     const leave = (e: BeforeUnloadEvent) => {
       if (docKey(read()) === savedKey.current) return;
       flush();
+      // the page itself leaves (the unit ended, the laptop signs out): the copy on the device is enough, no question
+      if (document.documentElement.dataset.leaving) return;
       e.preventDefault();
       e.returnValue = "";
     };
+    // "Abmelden" on the laptop: save now, without waiting for the pause after typing
+    const now = () => void save();
+    window.addEventListener("lernheft-save-now", now);
     window.addEventListener("online", online);
     window.addEventListener("pagehide", flush);
     window.addEventListener("beforeunload", leave);
     document.addEventListener("visibilitychange", hidden);
     return () => {
+      window.removeEventListener("lernheft-save-now", now);
       window.removeEventListener("online", online);
       window.removeEventListener("pagehide", flush);
       window.removeEventListener("beforeunload", leave);
@@ -524,7 +532,7 @@ export function TextEditor({
     version.current = conflict.version;
     savedKey.current = docKey(conflict.body);
     show(conflict.body);
-    writeBackup(textId, null);
+    writeBackup(store, null);
     setConflict(null);
     setSavedAt(conflict.updatedAt);
     setStatus("gespeichert");
@@ -536,7 +544,7 @@ export function TextEditor({
     void save({ force: true });
   };
   const dropBackup = () => {
-    writeBackup(textId, null);
+    writeBackup(store, null);
     setOfferBackup(null);
   };
 
@@ -588,6 +596,7 @@ export function TextEditor({
       ref={shell}
       className={focus ? "tx-focus" : "tx-shell"}
       data-testid="text-editor"
+      data-status={status}
     >
       <header className={focus ? "sr-only" : "mb-4"}>
         <div className="flex flex-wrap items-start justify-between gap-3">

@@ -1,9 +1,9 @@
 /**
  * Saving a Textarbeit over HTTP, shared by the teacher's route (/texte/<id>/speichern) and the
- * tablet's (/geraet/text/<id>). The browser sends { version, body, force? } as JSON and gets back the
+ * tablet's (/geraet/text/<id>) and the student laptop's (/mitmachen/text/<id>). The browser sends { version, body, force? } as JSON and gets back the
  * new version, or 409 with the stored text when it was changed elsewhere in the meantime.
  */
-import { notifyTablet, parseView, pushLive } from "./live";
+import { notifyStudent, parseView, pushLive } from "./live";
 import { validateDoc } from "./text-doc";
 import { getText, saveText, type TextView } from "./texts";
 import { runningUnitForStudent } from "./units";
@@ -47,7 +47,7 @@ function afterSave(text: TextView, version: number, by: "lehrer" | "schueler") {
   const unit = runningUnitForStudent(text.student_id);
   if (!unit) return;
   pushLive(unit.id);
-  // the teacher wrote: a tablet that shows this text loads it again
+  // the teacher wrote: the tablet or laptop that shows this text loads it again
   const view = parseView(unit.device_view);
-  if (by === "lehrer" && view.kind === "text" && view.textId === text.id) notifyTablet(unit.teacher_id, "text");
+  if (by === "lehrer" && view.kind === "text" && view.textId === text.id) notifyStudent(unit, "text");
 }

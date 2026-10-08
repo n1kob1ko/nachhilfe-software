@@ -88,7 +88,7 @@ test("tablet → teacher → running unit → student; two teachers never mix", 
 
   assert.deepEqual(live.showOnTablet(a, { kind: "aufgabe", assignmentId: forAnna }), { status: "kein-geraet" });
   // Thomas has a tablet but it is not connected right now
-  assert.deepEqual(live.showOnTablet(l, { kind: "aufgabe", assignmentId: forLea }), { status: "offline" });
+  assert.deepEqual(live.showOnTablet(l, { kind: "aufgabe", assignmentId: forLea }), { status: "offline", device: "tablet" });
   assert.equal(live.liveSnapshot(l.id)?.current?.state, "nicht angekommen", "offline: not counted as delivered");
   assert.equal(live.markDelivered(forLea), true);
   assert.equal(live.liveSnapshot(l.id)?.current?.state, "arbeitet");

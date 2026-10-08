@@ -74,7 +74,7 @@ Die Tabellen sind Teil der Sicherung (`lib/backup.ts`).
 
 **Allgemein**
 - Speichern nur von den eigenen Seiten (`Sec-Fetch-Site`).
-- Es gibt keinen neuen Zugang für private Schüler-Laptops.
+- Schüler-Laptops schreiben über `/mitmachen/text/<id>`, nur Texte ihres Schülers (siehe `schueler-laptop.md`).
 
 ## Wiederverwendet
 
@@ -89,6 +89,5 @@ Die Tabellen sind Teil der Sicherung (`lib/backup.ts`).
 ## Grenzen (bewusst nicht in Phase 1)
 
 - Keine KI-Korrektur.
-- Kein Zugang für Schüler-Laptops.
 - Keine Bildgeschichten oder neuen Aufgabenformate.
 - Kein gleichzeitiges Schreiben mehrerer Personen: Wenn zwei Geräte gleichzeitig ändern, wird nachgefragt (siehe oben).
