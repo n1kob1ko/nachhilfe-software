@@ -20,6 +20,8 @@ export type AIPreview = {
   masked: string[];
   /** whose names are replaced */
   hidden: string;
+  /** Bildgeschichte: the teacher's short descriptions of the pictures (sent instead of the pictures) */
+  pictures?: string[] | null;
 };
 
 function Submit({ disabled }: { disabled: boolean }) {
@@ -70,11 +72,12 @@ export function AIStartButton({ textId, preview, label = "Mit KI korrigieren", v
                   der Text dieser Fassung (<span className="num">{preview.words.toLocaleString("de-AT")}</span> Wörter); {preview.hidden} werden durch [Name] ersetzt
                 </li>
                 <li>Fach, Schulstufe, Textsorte und Aufgabenstellung</li>
+                {preview.pictures && <li>die kurzen Bildbeschreibungen ({preview.pictures.length} Bilder), nicht die Bilder selbst</li>}
               </ul>
             </div>
             <div>
               <p className="font-semibold">Nicht gesendet</p>
-              <p className="text-ink-2">Name des Schülers, Notizen, Lernverlauf, Noten.</p>
+              <p className="text-ink-2">Name des Schülers, Notizen, Lernverlauf, Noten{preview.pictures ? ", die Bilder" : ""}.</p>
             </div>
             <p className="rounded-xl bg-panel px-4 py-3 text-[14px]">
               Empfänger: <b>{preview.provider}</b> · Modell <span className="font-mono text-[13px]">{preview.model}</span> · etwa <span className="num">{cents}</span> US-Cent
@@ -91,6 +94,13 @@ export function AIStartButton({ textId, preview, label = "Mit KI korrigieren", v
                     {m}
                   </p>
                 ))}
+                {preview.pictures && (
+                  <div className="mt-3 border-t border-line pt-2 text-ink-2" data-testid="ki-vorschau-bilder">
+                    {preview.pictures.map((c, i) => (
+                      <p key={i}>{c}</p>
+                    ))}
+                  </div>
+                )}
               </div>
             </details>
             <label className="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-xl border border-line-strong px-4 py-2">

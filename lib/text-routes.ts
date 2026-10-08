@@ -4,6 +4,7 @@
  * new version, or 409 with the stored text when it was changed elsewhere in the meantime.
  */
 import { notifyStudent, parseView, pushLive } from "./live";
+import { getPictureStory, handIn } from "./picture-story";
 import { validateDoc } from "./text-doc";
 import { getText, saveText, type TextView } from "./texts";
 import { runningUnitForStudent } from "./units";
@@ -50,4 +51,29 @@ function afterSave(text: TextView, version: number, by: "lehrer" | "schueler") {
   // the teacher wrote: the tablet or laptop that shows this text loads it again
   const view = parseView(unit.device_view);
   if (by === "lehrer" && view.kind === "text" && view.textId === text.id) notifyStudent(unit, "text");
+}
+
+/**
+ * "Abgeben" from the student's device (Bildgeschichten): the browser sends the version it has saved; a
+ * newer one on the server means something is not saved here yet, so nothing is handed in.
+ */
+export async function handleHandIn(request: Request, textId: number, o: { mayWrite: (t: TextView) => boolean }): Promise<Response> {
+  const site = request.headers.get("sec-fetch-site");
+  if (site && site !== "same-origin") return json({ error: "Nicht erlaubt." }, 403);
+  const text = Number.isInteger(textId) ? getText(textId) : null;
+  if (!text || !getPictureStory(text.id)) return json({ error: "Diesen Text gibt es nicht." }, 404);
+  if (!o.mayWrite(text)) return json({ error: "Dieser Text kann hier gerade nicht abgegeben werden." }, 403);
+  let data: { version?: unknown };
+  try {
+    data = JSON.parse((await request.text()).slice(0, 1000));
+  } catch {
+    return json({ error: "Ungültige Anfrage." }, 400);
+  }
+  if (typeof data.version !== "number" || !Number.isInteger(data.version)) return json({ error: "Ungültige Anfrage." }, 400);
+  const r = handIn(text.id, data.version);
+  if (!r.ok) return r.reason === "fehlt" ? json({ error: "Diesen Text gibt es nicht." }, 404) : json({ error: "Der Text wurde inzwischen woanders geändert. Bitte kurz warten und noch einmal abgeben.", version: r.version }, 409);
+  publish(textChannel(text.id), { type: "info" });
+  const unit = runningUnitForStudent(text.student_id);
+  if (unit) pushLive(unit.id);
+  return json({ ok: true });
 }

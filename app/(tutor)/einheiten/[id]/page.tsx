@@ -2,7 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
-import { BookOpenCheck, CheckCircle2, ChartNoAxesColumn, ExternalLink, PenLine, Plus, Presentation, Square } from "lucide-react";
+import { BookOpenCheck, CheckCircle2, ChartNoAxesColumn, ExternalLink, Images, PenLine, Plus, Presentation, Square } from "lucide-react";
 import { endUnitAction } from "@/app/session-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { BoardThumbs } from "@/components/BoardThumbs";
@@ -340,6 +340,9 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
             <div className="flex flex-wrap gap-2">
               <Link href={`/einheiten/${unit.id}/text`} className="btn btn-secondary btn-lg">
                 <PenLine size={18} aria-hidden /> Textarbeit starten
+              </Link>
+              <Link href={`/einheiten/${unit.id}/bildgeschichte`} className="btn btn-secondary btn-lg" data-testid="bildgeschichte-erstellen">
+                <Images size={18} aria-hidden /> Bildgeschichte erstellen
               </Link>
               <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-primary btn-lg">
                 <Plus size={18} aria-hidden /> Neue Übung erstellen
