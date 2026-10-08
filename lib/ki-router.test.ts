@@ -11,12 +11,12 @@ type Call = { model: string; system: string; maxTokens: number; thinking?: strin
 
 /** A stand-in for Claude that records what it was asked. */
 function fakeTransport(calls: Call[], o: { fail?: boolean; slowMs?: number; data?: unknown } = {}) {
-  return async (p: import("./ai/router").TransportParams, x: { signal: AbortSignal }) => {
-    calls.push({ model: p.model, system: p.system[0].text, maxTokens: p.max_tokens, thinking: p.thinking?.type, effort: p.output_config.effort, cache: p.system[0].cache_control?.ttl });
+  return async (p: import("./ai/router").AIRequest) => {
+    calls.push({ model: p.model, system: p.system, maxTokens: p.maxTokens, thinking: p.thinking, effort: p.effort, cache: p.cache });
     if (o.slowMs)
       await new Promise((resolve, reject) => {
         const t = setTimeout(resolve, o.slowMs);
-        x.signal.addEventListener("abort", () => {
+        p.signal.addEventListener("abort", () => {
           clearTimeout(t);
           reject(new Error("aborted"));
         });
@@ -49,7 +49,7 @@ test("models come from environment variables, the defaults only when none is set
 });
 
 test("request shape: no thinking for short answers, no effort for the small model", async () => {
-  const { requestShape } = await import("./ai/router");
+  const { requestShape } = await import("./ai/providers/anthropic");
   const { FUNCTIONS } = await import("./ai/config");
   assert.deepEqual(requestShape("claude-haiku-4-5", FUNCTIONS.echtzeit), { output_config: {} });
   assert.deepEqual(requestShape("claude-sonnet-5-5", FUNCTIONS.freitext), { thinking: { type: "between_tools" }, output_config: { effort: "low" } });
@@ -199,7 +199,7 @@ test("live triggers: right answers cost nothing, wrong ones are bundled, a solve
   };
   const sent: unknown[] = [];
   r.setTransport(async (p) => {
-    sent.push(p.messages[0].content);
+    sent.push(p.content);
     return { parsed: { error_type: "vorzeichen", misconception: "Vorzeichen", confidence: 3, recommended_action: "quatsch", difficulty_adjustment: -4, hint: "Schau auf das Vorzeichen.", next_skill: "gibt-es-nicht", needs_new_exercise: true, teacher_note: "x" }, refusal: false, model: p.model, usage: { input: 10, output: 5, cacheWrite: 0, cacheRead: 0 } };
   });
   const answer = (i: number, a: string) => submitAnswer({ token: s.student.access_token, assignmentId: s.assignmentId, taskId: s.tasks[i].id, answer: a, timeMs: 1000, hintsUsed: 0 });

@@ -1,10 +1,21 @@
 /**
- * Everything about the KI that is a setting: which model each tier uses, what each function may spend,
- * prices and the monthly budget. Models and budget come from environment variables (Railway Variables);
- * the defaults below are the only place a model id is written down.
+ * Everything about the KI that is a setting: which provider and model each area uses, what each
+ * function may spend, prices and the monthly budget. Providers, models and budget come from environment
+ * variables (Railway Variables); the defaults below are the only place a model id is written down.
  */
 
 export type Tier = "fast" | "standard" | "deep";
+
+/** The providers the router can talk to (adapters in ./providers). */
+export const PROVIDER_IDS = ["anthropic", "openrouter", "deepseek", "compatible"] as const;
+export type ProviderId = (typeof PROVIDER_IDS)[number];
+
+/**
+ * Areas group the functions for configuration: AI_<AREA>_PROVIDER and AI_<AREA>_MODEL switch the
+ * provider and model of every function in that area.
+ */
+export type Area = "REALTIME" | "EXERCISE" | "ANALYSIS" | "DEEP" | "MATERIAL";
+export const AREA_LABEL: Record<Area, string> = { REALTIME: "Echtzeit", EXERCISE: "Aufgaben", ANALYSIS: "Auswertung", DEEP: "Tiefenanalyse", MATERIAL: "Material" };
 
 /** Defaults when no environment variable is set. Change the variable, not this list, to switch models. */
 const DEFAULT_MODELS: Record<Tier, string> = {
@@ -34,6 +45,9 @@ export type AIFunction =
 
 export type FunctionSpec = {
   label: string;
+  /** which AI_<AREA>_PROVIDER / AI_<AREA>_MODEL apply */
+  area: Area;
+  /** default model (AI_MODEL_FAST/STANDARD/DEEP) and price fallback when no area model is set */
   tier: Tier;
   /** upper limit of output tokens (a caller may ask for less, never for more) */
   maxTokens: number;
@@ -54,17 +68,37 @@ export type FunctionSpec = {
 
 const MIN = 60_000;
 export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
-  echtzeit: { label: "Echtzeit-Analyse", tier: "fast", maxTokens: 700, timeoutMs: 8_000, thinking: "aus", effort: "low", realtime: true, reuseMs: 30 * MIN, cache: "aus" },
-  freitext: { label: "Freitext bewerten", tier: "standard", maxTokens: 900, timeoutMs: 12_000, thinking: "aus", effort: "low", realtime: true, reuseMs: 24 * 60 * MIN, cache: "aus" },
-  block: { label: "Blockauswertung", tier: "standard", maxTokens: 1_200, timeoutMs: 30_000, thinking: "aus", effort: "low", realtime: true, reuseMs: 60 * MIN, cache: "1h" },
-  neue_aufgabe: { label: "Neue Aufgabe in der Einheit", tier: "standard", maxTokens: 12_000, timeoutMs: 60_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "1h" },
-  einheit: { label: "Zusammenfassung der Einheit", tier: "standard", maxTokens: 1_500, timeoutMs: 30_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
-  aufgaben: { label: "Aufgaben erstellen", tier: "standard", maxTokens: 64_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 0, cache: "5m" },
-  analyse: { label: "Schüler-Einschätzung", tier: "standard", maxTokens: 3_000, timeoutMs: 45_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 10 * MIN, cache: "aus" },
-  tiefenanalyse: { label: "Tiefenanalyse", tier: "deep", maxTokens: 8_000, timeoutMs: 120_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 10 * MIN, cache: "aus" },
-  notiz: { label: "Notiz für Eltern/Schüler", tier: "standard", maxTokens: 1_000, timeoutMs: 30_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
-  material: { label: "Material erkennen", tier: "standard", maxTokens: 8_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  echtzeit: { label: "Echtzeit-Analyse", area: "REALTIME", tier: "fast", maxTokens: 700, timeoutMs: 8_000, thinking: "aus", effort: "low", realtime: true, reuseMs: 30 * MIN, cache: "aus" },
+  freitext: { label: "Freitext bewerten", area: "ANALYSIS", tier: "standard", maxTokens: 900, timeoutMs: 12_000, thinking: "aus", effort: "low", realtime: true, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  block: { label: "Blockauswertung", area: "ANALYSIS", tier: "standard", maxTokens: 1_200, timeoutMs: 30_000, thinking: "aus", effort: "low", realtime: true, reuseMs: 60 * MIN, cache: "1h" },
+  neue_aufgabe: { label: "Neue Aufgabe in der Einheit", area: "EXERCISE", tier: "standard", maxTokens: 12_000, timeoutMs: 60_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "1h" },
+  einheit: { label: "Zusammenfassung der Einheit", area: "ANALYSIS", tier: "standard", maxTokens: 1_500, timeoutMs: 30_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  aufgaben: { label: "Aufgaben erstellen", area: "EXERCISE", tier: "standard", maxTokens: 64_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 0, cache: "5m" },
+  analyse: { label: "Schüler-Einschätzung", area: "ANALYSIS", tier: "standard", maxTokens: 3_000, timeoutMs: 45_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 10 * MIN, cache: "aus" },
+  tiefenanalyse: { label: "Tiefenanalyse", area: "DEEP", tier: "deep", maxTokens: 8_000, timeoutMs: 120_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 10 * MIN, cache: "aus" },
+  notiz: { label: "Notiz für Eltern/Schüler", area: "ANALYSIS", tier: "standard", maxTokens: 1_000, timeoutMs: 30_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
+  material: { label: "Material erkennen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
 };
+
+/** Which provider and model a function uses. model is "" when the provider has no default and none is set. */
+export type Route = { provider: ProviderId; model: string; area: Area };
+
+function providerFrom(v: string | undefined): ProviderId | null {
+  const id = v?.trim().toLowerCase();
+  return id && (PROVIDER_IDS as readonly string[]).includes(id) ? (id as ProviderId) : null;
+}
+
+/**
+ * Provider: AI_<AREA>_PROVIDER, else AI_PROVIDER, else anthropic.
+ * Model: AI_<AREA>_MODEL, else AI_MODEL_<TIER>, else the Anthropic default of the tier (only for anthropic:
+ * other providers need a model set explicitly, no id is guessed).
+ */
+export function routeFor(fn: AIFunction): Route {
+  const spec = FUNCTIONS[fn];
+  const provider = providerFrom(process.env[`AI_${spec.area}_PROVIDER`]) ?? providerFrom(process.env.AI_PROVIDER) ?? "anthropic";
+  const model = process.env[`AI_${spec.area}_MODEL`]?.trim() || process.env[MODEL_ENV[spec.tier]]?.trim() || (provider === "anthropic" ? DEFAULT_MODELS[spec.tier] : "");
+  return { provider, model, area: spec.area };
+}
 
 // ---------- prices ----------
 
@@ -134,6 +168,17 @@ export function aiSwitchedOff() {
   return ["1", "true", "ja"].includes((process.env.AI_DISABLED ?? "").trim().toLowerCase());
 }
 
-export function hasKey() {
-  return Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN);
+/** Whether an API key for the provider is set (the key itself never leaves the provider adapter). */
+export function hasKey(provider: ProviderId = "anthropic") {
+  const e = process.env;
+  switch (provider) {
+    case "anthropic":
+      return Boolean(e.ANTHROPIC_API_KEY || e.ANTHROPIC_AUTH_TOKEN);
+    case "openrouter":
+      return Boolean(e.OPENROUTER_API_KEY);
+    case "deepseek":
+      return Boolean(e.DEEPSEEK_API_KEY);
+    case "compatible":
+      return Boolean(e.AI_COMPATIBLE_API_KEY && e.AI_COMPATIBLE_BASE_URL);
+  }
 }

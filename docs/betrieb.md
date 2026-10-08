@@ -70,7 +70,7 @@ Neuer Web Service aus dem Repo (Runtime Docker), Disk mit Mount-Pfad `/data` anl
   Die Adresse kommt aus `X-Real-IP`, das der Railway-Proxy setzt.
 - Pairing-Codes für Tablets: 6 Ziffern, 10 Minuten gültig, einmal verwendbar, 8 Fehlversuche pro
   Adresse in 10 Minuten.
-- `ANTHROPIC_API_KEY` wird nur auf dem Server gelesen und geht nie an den Browser.
+- `ANTHROPIC_API_KEY` und die Schlüssel der anderen KI-Anbieter werden nur auf dem Server gelesen und gehen nie an den Browser oder ins KI-Log.
 - `/health` prüft Datenbank und Schreibrecht und antwortet nur `{"ok":true}` oder 503. In Railway
   unter Settings › Deploy › Healthcheck Path `/health` eintragen.
 - Live-Verbindungen (Whiteboard, Tablet) schließt der Server nach 10 Minuten selbst, der Browser
@@ -130,14 +130,19 @@ Ohne Admin-Zugang geht Schritt 1 auch per `railway ssh`:
 | --- | --- |
 | `DATABASE_PATH` | Datenbankdatei, im Docker-Image `/data/nachhilfe.db` |
 | `UPLOADS_PATH` | Ordner für Material, sonst `uploads/` neben der Datenbank |
-| `ANTHROPIC_API_KEY` | optional: Claude für neue Aufgaben, Echtzeit-Hinweise, Material-Erkennung, formulierte Notizen |
-| `AI_MODEL_FAST` | Modell für die Echtzeit-Analyse, Standard `claude-haiku-4-5` |
-| `AI_MODEL_STANDARD` | Modell für Aufgaben, Freitext, Auswertungen, Material, Standard `claude-sonnet-5-5` |
-| `AI_MODEL_DEEP` | Modell für die Tiefenanalyse (nur auf Klick), Standard `claude-opus-5-5` |
+| `ANTHROPIC_API_KEY` | optional: Schlüssel für Anthropic (Standard-Anbieter) für neue Aufgaben, Echtzeit-Hinweise, Material-Erkennung, formulierte Notizen |
+| `OPENROUTER_API_KEY` | optional: Schlüssel für OpenRouter (`OPENROUTER_BASE_URL` nur bei abweichender Adresse) |
+| `DEEPSEEK_API_KEY` | optional: Schlüssel für DeepSeek direkt (`DEEPSEEK_BASE_URL` nur bei abweichender Adresse); liest keine Bilder oder PDFs |
+| `AI_COMPATIBLE_BASE_URL`, `AI_COMPATIBLE_API_KEY` | optional: eine weitere OpenAI-kompatible API, z. B. `https://api.example.com/v1`. `AI_COMPATIBLE_JSON_SCHEMA=0`, wenn sie kein JSON-Schema als Antwortformat kennt |
+| `AI_PROVIDER` | Anbieter für alle Bereiche ohne eigenen Eintrag: `anthropic` (Standard), `openrouter`, `deepseek`, `compatible` |
+| `AI_<BEREICH>_PROVIDER`, `AI_<BEREICH>_MODEL` | Anbieter und Modell je Bereich. Bereiche: `REALTIME` (Echtzeit-Analyse), `EXERCISE` (Aufgaben erstellen, neue Aufgabe in der Einheit), `ANALYSIS` (Freitext, Blockauswertung, Zusammenfassung, Schüler-Einschätzung, Notiz), `DEEP` (Tiefenanalyse), `MATERIAL` (Material erkennen). Beispiel: `AI_REALTIME_PROVIDER=openrouter`, `AI_REALTIME_MODEL=deepseek/...`. Außer bei Anthropic muss das Modell gesetzt sein, sonst bleibt der Bereich ohne KI |
+| `AI_MODEL_FAST` | Modell für die Echtzeit-Analyse, wenn `AI_REALTIME_MODEL` fehlt, Standard `claude-haiku-4-5` |
+| `AI_MODEL_STANDARD` | Modell für Aufgaben, Auswertungen und Material, wenn kein Bereichsmodell gesetzt ist, Standard `claude-sonnet-5-5` |
+| `AI_MODEL_DEEP` | Modell für die Tiefenanalyse (nur auf Klick), wenn `AI_DEEP_MODEL` fehlt, Standard `claude-opus-5-5` |
 | `AI_MONTHLY_BUDGET_USD` | Monatsbudget für KI in US-Dollar, Standard 10. Ab 100 % keine Echtzeit-Analyse, ab 120 % gar kein KI-Aufruf |
 | `AI_BUDGET_WARN` | Warnschwelle als Anteil, Standard 0.8 |
 | `AI_REALTIME_MAX_PER_HOUR` | höchstens so viele Echtzeit-Analysen pro Einheit und Stunde, Standard 40 |
-| `AI_PRICES_JSON` | Preise überschreiben, z. B. `{"claude-neu":{"in":2,"out":10}}` (US-Dollar je 1 Mio. Tokens) |
+| `AI_PRICES_JSON` | Preise je Modell (Anfang des Namens) setzen oder überschreiben, z. B. `{"deepseek-chat":{"in":0.3,"out":1.2}}` (US-Dollar je 1 Mio. Tokens). OpenRouter meldet seinen Preis selbst, ohne Eintrag wird für andere Modelle mit dem Anthropic-Preis der Stufe geschätzt |
 | `AI_DISABLED` | `1` schaltet alle KI-Aufrufe ab, die App läuft ohne KI weiter |
 | `PORT` | Port des Servers, Standard 3000 |
 | `INSECURE_COOKIES` | `1` erlaubt Anmeldung ohne HTTPS (nur lokal) |

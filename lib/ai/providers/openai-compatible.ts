@@ -1,0 +1,151 @@
+/**
+ * Adapter for APIs that speak the OpenAI chat-completions format: OpenRouter, DeepSeek and any other
+ * compatible endpoint (AI_COMPATIBLE_BASE_URL). Plain fetch, no extra SDK. Another provider of this
+ * kind is one more entry in FLAVORS.
+ */
+import { z } from "zod";
+import type { ProviderId, Usage } from "../config";
+import type { AIRequest, Capabilities, Part, Transport } from "./types";
+
+type Flavor = Capabilities & {
+  label: string;
+  baseUrl: () => string;
+  key: () => string;
+  /** json_schema response format; otherwise json_object with the schema in the instructions */
+  jsonSchema: () => boolean;
+  /** extra request fields for this provider */
+  extra?: (req: AIRequest) => Record<string, unknown>;
+};
+
+const env = (name: string) => process.env[name]?.trim() ?? "";
+
+export const FLAVORS: Record<Exclude<ProviderId, "anthropic">, Flavor> = {
+  openrouter: {
+    label: "OpenRouter",
+    baseUrl: () => env("OPENROUTER_BASE_URL") || "https://openrouter.ai/api/v1",
+    key: () => env("OPENROUTER_API_KEY"),
+    jsonSchema: () => true,
+    images: true,
+    pdf: true,
+    // usage.include: OpenRouter reports the price it charged; reasoning only where the function may think
+    extra: (req) => ({ usage: { include: true }, ...(req.thinking === "adaptiv" ? { reasoning: { effort: req.effort } } : {}) }),
+  },
+  deepseek: {
+    label: "DeepSeek",
+    baseUrl: () => env("DEEPSEEK_BASE_URL") || "https://api.deepseek.com",
+    key: () => env("DEEPSEEK_API_KEY"),
+    jsonSchema: () => false,
+    images: false,
+    pdf: false,
+  },
+  compatible: {
+    label: "OpenAI-kompatibel",
+    baseUrl: () => env("AI_COMPATIBLE_BASE_URL"),
+    key: () => env("AI_COMPATIBLE_API_KEY"),
+    jsonSchema: () => env("AI_COMPATIBLE_JSON_SCHEMA") !== "0",
+    images: true,
+    pdf: false,
+  },
+};
+
+const schemaJson = new WeakMap<z.ZodType, Record<string, unknown>>();
+function jsonSchemaOf(schema: z.ZodType) {
+  let s = schemaJson.get(schema);
+  if (!s) {
+    const { $schema: _drop, ...rest } = z.toJSONSchema(schema, { io: "input", unrepresentable: "any" }) as Record<string, unknown>;
+    schemaJson.set(schema, (s = rest));
+  }
+  return s;
+}
+
+function part(p: Part, provider: string, model: string) {
+  if (p.type === "text") return { type: "text", text: p.text };
+  if (p.type === "image") return { type: "image_url", image_url: { url: `data:${p.mime};base64,${p.base64}` } };
+  if (provider === "openrouter") return { type: "file", file: { filename: "material.pdf", file_data: `data:application/pdf;base64,${p.base64}` } };
+  throw new Error(`PDF wird von ${model} nicht unterstützt.`);
+}
+
+/** The JSON object in a reply, also when the model wraps it in a code fence or adds a sentence. */
+export function jsonIn(text: string): unknown {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start < 0 || end <= start) return null;
+  try {
+    return JSON.parse(text.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+}
+
+type ChatResponse = {
+  model?: string;
+  choices?: { finish_reason?: string; message?: { content?: string | null; refusal?: string | null } }[];
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    cost?: number;
+    prompt_tokens_details?: { cached_tokens?: number; cache_write_tokens?: number };
+    prompt_cache_hit_tokens?: number;
+  };
+};
+
+/** Usage in the router's terms: input at full price, cache writes and reads apart. */
+export function usageOf(u: ChatResponse["usage"]): Usage {
+  const prompt = u?.prompt_tokens ?? 0;
+  const cacheRead = u?.prompt_tokens_details?.cached_tokens ?? u?.prompt_cache_hit_tokens ?? 0;
+  const cacheWrite = u?.prompt_tokens_details?.cache_write_tokens ?? 0;
+  return { input: Math.max(0, prompt - cacheRead - cacheWrite), output: u?.completion_tokens ?? 0, cacheWrite, cacheRead };
+}
+
+/** The request body for a provider (exported for tests: what leaves the app is visible there). */
+export function chatBody(req: AIRequest) {
+  const flavor = FLAVORS[req.provider as keyof typeof FLAVORS];
+  const structured = flavor.jsonSchema();
+  const schema = jsonSchemaOf(req.schema);
+  const system = structured ? req.system : `${req.system}\n\nAntworte ausschließlich mit einem JSON-Objekt nach diesem JSON-Schema:\n${JSON.stringify(schema)}`;
+  // OpenRouter passes cache_control on to Anthropic models; DeepSeek and most others cache by themselves
+  const cacheHere = req.cache !== "aus" && req.provider === "openrouter" && req.model.startsWith("anthropic/");
+  return {
+    model: req.model,
+    max_tokens: req.maxTokens,
+    messages: [
+      { role: "system", content: cacheHere ? [{ type: "text", text: system, cache_control: { type: "ephemeral" } }] : system },
+      { role: "user", content: typeof req.content === "string" ? req.content : req.content.map((p) => part(p, req.provider, req.model)) },
+    ],
+    response_format: structured ? { type: "json_schema", json_schema: { name: "antwort", strict: false, schema } } : { type: "json_object" },
+    ...(flavor.extra?.(req) ?? {}),
+  };
+}
+
+export const openAICompatibleTransport: Transport = async (req) => {
+  const flavor = FLAVORS[req.provider as keyof typeof FLAVORS];
+  const base = flavor.baseUrl().replace(/\/+$/, "");
+  if (!base) throw new Error(`Für ${flavor.label} ist keine Adresse eingestellt.`);
+  const body = JSON.stringify(chatBody(req));
+  let res: Response | null = null;
+  // one retry on overload or a server error, like the Anthropic adapter
+  for (let attempt = 0; attempt < 2; attempt++) {
+    res = await fetch(`${base}/chat/completions`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${flavor.key()}` },
+      body,
+      signal: req.signal,
+    });
+    if (res.ok || !(res.status === 429 || res.status >= 500) || attempt === 1) break;
+    await new Promise((r) => setTimeout(r, 800));
+  }
+  if (!res!.ok) throw new Error(`${flavor.label} antwortet mit ${res!.status}: ${(await res!.text()).slice(0, 200)}`);
+  const data = (await res!.json()) as ChatResponse;
+  const choice = data.choices?.[0];
+  const text = choice?.message?.content ?? "";
+  const refusal = choice?.finish_reason === "content_filter" || Boolean(choice?.message?.refusal);
+  const raw = refusal ? null : jsonIn(text);
+  const checked = raw == null ? null : req.schema.safeParse(raw);
+  return {
+    parsed: checked?.success ? checked.data : null,
+    refusal,
+    model: data.model || req.model,
+    usage: usageOf(data.usage),
+    ...(typeof data.usage?.cost === "number" ? { costUsd: data.usage.cost } : {}),
+  };
+};

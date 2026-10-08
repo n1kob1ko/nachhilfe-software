@@ -12,7 +12,7 @@ import { db } from "../db";
 import { ERROR_TYPES } from "../error-types";
 import * as repo from "../repo";
 import type { TaskDraft } from "../tasks";
-import { FUNCTIONS, modelFor, type AIFunction, type Usage } from "./config";
+import { AREA_LABEL, FUNCTIONS, routeFor, type AIFunction, type Area, type Usage } from "./config";
 import { latestInsight } from "./insights";
 import { liveStats, newExerciseForUnit, onHint, resetLiveStats, setScheduler, settle } from "./realtime";
 import { clockNow, resetRouter, setClock, setTestRun, setTransport, type Transport } from "./router";
@@ -106,20 +106,19 @@ function schemaOf(schema: z.ZodType) {
  */
 function standIn(random: () => number): Transport {
   const cached = new Map<string, number>();
-  return async (p, o) => {
-    const prompt = typeof p.messages[0].content === "string" ? p.messages[0].content : JSON.stringify(p.messages[0].content);
-    const system = p.system.map((b) => b.text).join("\n");
-    const parsed = fake(o.fn, prompt, random);
-    const prefix = tokens(system) + tokens(schemaOf(o.schema));
+  return async (p) => {
+    const prompt = typeof p.content === "string" ? p.content : JSON.stringify(p.content);
+    const parsed = fake(p.fn, prompt, random);
+    const prefix = tokens(p.system) + tokens(schemaOf(p.schema));
     let input = prefix + tokens(prompt) + 12;
     let cacheWrite = 0;
     let cacheWrite1h = 0;
     let cacheRead = 0;
     // with cache_control, a system prompt plus schema long enough for the model is cached (5 min or 1 h)
-    const ttl = p.system[0].cache_control?.ttl ?? (p.system[0].cache_control ? "5m" : null);
+    const ttl = p.cache === "aus" ? null : p.cache;
     const min = /haiku/.test(p.model) ? 4096 : 512;
     if (ttl && prefix >= min) {
-      const key = `${p.model}|${o.fn}`;
+      const key = `${p.model}|${p.fn}`;
       const last = cached.get(key);
       if (last !== undefined && clockNow() - last < (ttl === "1h" ? 60 : 5) * 60_000) cacheRead = prefix;
       else if (ttl === "1h") cacheWrite1h = prefix;
@@ -128,8 +127,8 @@ function standIn(random: () => number): Transport {
       cached.set(key, clockNow());
     }
     let output = tokens(JSON.stringify(parsed));
-    if (p.thinking?.type === "adaptive") output = Math.round(output * 1.8);
-    output = Math.min(output, p.max_tokens);
+    if (p.thinking === "adaptiv" && !/haiku/.test(p.model)) output = Math.round(output * 1.8);
+    output = Math.min(output, p.maxTokens);
     const usage: Usage = { input, output, cacheWrite, cacheWrite1h, cacheRead };
     const speed = /haiku/.test(p.model) ? [600, 6] : /opus/.test(p.model) ? [2000, 20] : [1200, 12];
     return { parsed, refusal: false, model: p.model, usage, simulatedMs: speed[0] + output * speed[1] };
@@ -428,6 +427,12 @@ const SAVINGS: Partial<Record<AIFunction, string>> = {
 const usd = (x: number) => `${x.toLocaleString("de-AT", { minimumFractionDigits: 4, maximumFractionDigits: 4 })} $`;
 const int = (x: number) => Math.round(x).toLocaleString("de-AT");
 
+function areaRoute(a: Area) {
+  const fn = (Object.keys(FUNCTIONS) as AIFunction[]).find((f) => FUNCTIONS[f].area === a)!;
+  const r = routeFor(fn);
+  return `${r.provider}: ${r.model || "kein Modell"}`;
+}
+
 export function reportMarkdown(r: SimReport, outage?: SimReport): string {
   const perMonth = r.total.usd * 40;
   const top = r.rows.filter((x) => x.usd > 0).slice(0, 3);
@@ -435,10 +440,10 @@ export function reportMarkdown(r: SimReport, outage?: SimReport): string {
     `# KI-Simulation: ${r.minutes} Minuten Nachhilfe`,
     "",
     r.real
-      ? "Echtlauf: alle Aufrufe gingen an Claude, Tokens und Kosten sind gemessen."
-      : "Probelauf ohne API-Schlüssel: der Router, die Auslöser, die Bündelung und das Log sind echt, Claude ist durch einen Platzhalter ersetzt. Die Tokens sind aus den echten Prompts geschätzt (etwa 3,2 Zeichen pro Token, Ausgabeschema zählt als Eingabe, Denken bei Aufgabenerstellung +80 %). Ein Echtlauf mit `npm run ai:simulate -- --echt` misst sie.",
+      ? "Echtlauf: alle Aufrufe gingen an die eingestellten Anbieter, Tokens und Kosten sind gemessen."
+      : "Probelauf ohne API-Schlüssel: der Router, die Auslöser, die Bündelung und das Log sind echt, der KI-Anbieter ist durch einen Platzhalter ersetzt. Die Tokens sind aus den echten Prompts geschätzt (etwa 3,2 Zeichen pro Token, Ausgabeschema zählt als Eingabe, Denken bei Aufgabenerstellung +80 %). Ein Echtlauf mit `npm run ai:simulate -- --echt` misst sie.",
     "",
-    `Modelle: schnell = \`${modelFor("fast")}\`, standard = \`${modelFor("standard")}\`, tief = \`${modelFor("deep")}\`.`,
+    `Anbieter und Modelle: ${(Object.keys(AREA_LABEL) as Area[]).map((a) => `${AREA_LABEL[a]} = \`${areaRoute(a)}\``).join(", ")}.`,
     "",
     "## Ablauf",
     "",
