@@ -7,6 +7,7 @@
  *      correct at the second try .................... 0.7
  *      correct at the third try or later ............ 0.5
  *      each hint opened ............................. −0.15 (a correct answer never drops below 0.35)
+ *      graded "teilweise richtig" by the teacher ...... 0.5 (−0.15 per hint, not below 0.25)
  *      wrong in the end, or solution looked at ...... 0
  *      wrong, and the teacher marked it as Flüchtigkeitsfehler or Aufgabe falsch gelesen ... 0.3
  *        (says little about the skill; only a teacher's mark counts, never the app's suggestion,
@@ -42,10 +43,11 @@ export const CARELESS_SCORE = 0.3;
 
 /** Score of one finished task (see 1. above). */
 export function taskScore(
-  final: { correct: number | boolean; attempt_no: number; hints_used: number; solution_viewed: number | boolean; error_type?: string | null; error_type_source?: string | null },
+  final: { correct: number | boolean; attempt_no: number; hints_used: number; solution_viewed: number | boolean; error_type?: string | null; error_type_source?: string | null; review?: string | null },
   o: { careless?: boolean } = {},
 ) {
   if (final.solution_viewed) return 0;
+  if (final.review === "teilweise") return Math.max(0.25, 0.5 - 0.15 * final.hints_used);
   if (!final.correct) return o.careless !== false && final.error_type_source === "lehrer" && CARELESS_TYPES.has(final.error_type ?? "") ? CARELESS_SCORE : 0;
   const base = final.attempt_no <= 1 ? 1 : final.attempt_no === 2 ? 0.7 : 0.5;
   return Math.max(0.35, base - 0.15 * final.hints_used);

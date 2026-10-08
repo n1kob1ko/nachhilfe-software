@@ -17,6 +17,8 @@ export type BuilderPreset = { skillIds?: string[]; subject?: string; difficulty?
 
 const AUTO = "automatisch";
 const COUNTS = [5, 10, 15, 20];
+/** The formats that make students write themselves come first (reversed: the last one is shown first). */
+const PREFERRED = ["offen", "korrigieren", "gap", "lueckentext"];
 const chip =
   "cursor-pointer rounded-lg border border-line-strong bg-surface px-3 py-1.5 text-[14px] transition-colors hover:border-ink-3 has-checked:border-accent has-checked:bg-accent-wash has-checked:text-accent has-focus-visible:outline-2 has-focus-visible:outline-accent";
 const pct = (m: number | null | undefined) => (m == null ? null : `${Math.round(m * 100)} %`);
@@ -271,9 +273,13 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
         </Step>
 
         {/* 6 · Aufgabentyp */}
-        <Step n={6} title="Aufgabentyp" note="Mehrere möglich. Ohne Auswahl wird gemischt.">
+        <Step n={6} title="Aufgabentyp" note="Mehrere möglich. Jede Aufgabe kommt genau in diesem Format.">
           <div className="flex flex-wrap gap-1.5">
-            {categories.map((c) => (
+            <label className={chip} title="Die App wählt für jede Fähigkeit passende Formate, wenig Multiple Choice.">
+              <input type="checkbox" checked={cats.length === 0} onChange={() => setCats([])} className="sr-only" data-testid="gemischt" />
+              Gemischte Aufgaben
+            </label>
+            {[...categories].sort((x, y) => PREFERRED.indexOf(y.key) - PREFERRED.indexOf(x.key)).map((c) => (
               <label key={c.key} className={chip} title={c.hint}>
                 <input
                   type="checkbox"
@@ -287,6 +293,7 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
               </label>
             ))}
           </div>
+          {cats.length === 0 && <p className="mt-2 text-[13px] text-ink-2">Gemischt: zu jeder Fähigkeit passende Formate, zum Beispiel Lückentext, Fehler korrigieren und freie Antwort.</p>}
           {cats.length > 0 && (
             <ul className="mt-2 grid gap-0.5 text-[13px] text-ink-2">
               {categories

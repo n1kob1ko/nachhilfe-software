@@ -324,7 +324,9 @@ function AreaLink({ href, on, icon, label }: { href: string; on?: boolean; icon:
 
 /** Exercises inside a running unit: the student's link, the exercises with live results, and one way to add a new one. */
 function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; student: repo.Student; mayManage: boolean }) {
-  const attempts = repo.listAttemptsForUnit(unit.id);
+  // answers waiting for the teacher's grade count nowhere yet, but the exercise is shown with them
+  const toReview = repo.pendingReviews({ unitId: unit.id });
+  const attempts = [...repo.listAttemptsForUnit(unit.id), ...toReview];
   const lastBy = new Map<number, string>();
   for (const a of attempts) if (!lastBy.has(a.assignment_id) || a.created_at > lastBy.get(a.assignment_id)!) lastBy.set(a.assignment_id, a.created_at);
   const rows = repo.listAssignments(unit.student_id).filter((a) => !a.completed_at || lastBy.has(a.id));
@@ -365,6 +367,7 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
                       {lastBy.has(a.id) ? ` · zuletzt ${formatTime(lastBy.get(a.id)!)}` : a.started_at ? "" : ` · ${name} hat noch nicht begonnen`}
                     </span>
                   </span>
+                  {toReview.some((x) => x.assignment_id === a.id) && <Pill tone="amber">{toReview.filter((x) => x.assignment_id === a.id).length} zu bewerten</Pill>}
                   {done ? <Pill tone="green">fertig</Pill> : !a.delivered_at && !a.started_at && a.unit_id === unit.id && paired && <Pill tone="red">nicht angekommen</Pill>}
                   <Link href={`/schueler/${student.id}/ergebnis/${a.id}`} className={`btn ${done ? "btn-primary" : "btn-secondary"}`}>
                     Ergebnis ansehen

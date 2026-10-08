@@ -37,7 +37,7 @@ export function difficultyFor(mastery: number | null): Difficulty {
 /**
  * How a task is answered and checked (the "format"). Stored in tasks.type.
  * calc = short answer compared as a number/fraction, grammar = short answer compared as text,
- * order = put steps in the right order.
+ * order = put steps in the right order, fix = correct a text with errors (lib/fix-text.ts).
  */
 export const TASK_TYPES = {
   mc: "Multiple Choice",
@@ -47,6 +47,7 @@ export const TASK_TYPES = {
   grammar: "Kurzantwort",
   reading: "Textverständnis",
   order: "Reihenfolge",
+  fix: "Fehler korrigieren",
   mixed: "Gemischt",
 } as const;
 export type TaskType = Exclude<keyof typeof TASK_TYPES, "mixed">;
@@ -67,7 +68,7 @@ export const CATEGORIES: Record<string, Category[]> = {
     c("mc", "Multiple Choice", ["mc"], "3–4 Antworten, eine richtig; falsche Antworten sind typische Fehler."),
     c("fehler", "Fehler finden", ["calc", "mc"], "Eine vorgerechnete Lösung mit einem typischen Fehler; der Schüler gibt das richtige Ergebnis an."),
     c("ordnen", "Lösungsweg ordnen", ["order"], "Die Schritte eines Lösungswegs in die richtige Reihenfolge bringen."),
-    c("offen", "Offene Aufgabe", ["free"], "Erklären, begründen oder eigenes Beispiel finden."),
+    c("offen", "Freie Antwort", ["free"], "Erklären, begründen oder eigenes Beispiel finden; der Lehrer bewertet."),
   ],
   Deutsch: [
     c("rechtschreibung", "Rechtschreibung", ["cloze", "grammar", "mc"], "Richtige Schreibung eines Wortes oder einer Stelle."),
@@ -78,6 +79,8 @@ export const CATEGORIES: Record<string, Category[]> = {
     c("schreiben", "Schreiben", ["free"], "Kurzen Text verfassen (z. B. Satz, Absatz, Nachricht)."),
     c("satz", "Satz verbessern", ["grammar", "free"], "Einen fehlerhaften Satz richtig aufschreiben."),
     c("fehler", "Fehler finden", ["mc", "grammar"], "In einem Satz den Fehler finden."),
+    c("korrigieren", "Fehler korrigieren", ["fix"], "Satz oder Absatz mit Fehlern; der Schüler schreibt ihn verbessert."),
+    c("offen", "Freie Antwort", ["free"], "Frage in eigenen Worten beantworten, erklären oder begründen; der Lehrer bewertet."),
   ],
   Englisch: [
     c("vocabulary", "Vocabulary", ["grammar", "mc"], "Wort übersetzen oder passendes Wort finden."),
@@ -87,15 +90,49 @@ export const CATEGORIES: Record<string, Category[]> = {
     c("translation", "Translation", ["grammar", "free"], "Satz Deutsch → Englisch oder umgekehrt."),
     c("reading", "Reading comprehension", ["reading", "free"], "Short text with questions."),
     c("writing", "Writing", ["free"], "Short piece of writing."),
+    c("korrigieren", "Fehler korrigieren", ["fix"], "Sentence or paragraph with mistakes; the student writes it correctly."),
+    c("offen", "Freie Antwort", ["free"], "Antwort in eigenen Worten; der Lehrer bewertet."),
   ],
 };
 export const DEFAULT_CATEGORIES: Category[] = [
   c("kurz", "Kurzantwort", ["grammar"], "Kurze, eindeutige Antwort."),
   c("lueckentext", "Lückentext", ["cloze"], "Text mit Lücken."),
   c("mc", "Multiple Choice", ["mc"], "3–4 Antworten, eine richtig."),
-  c("offen", "Offene Aufgabe", ["free"], "Erklären oder begründen."),
+  c("korrigieren", "Fehler korrigieren", ["fix"], "Text mit Fehlern; der Schüler schreibt ihn verbessert."),
+  c("offen", "Freie Antwort", ["free"], "Erklären oder begründen; der Lehrer bewertet."),
 ];
 export const categoriesFor = (subject: string) => CATEGORIES[subject] ?? DEFAULT_CATEGORIES;
+
+/**
+ * "Gemischte Aufgaben": the task types that fit a skill, the most useful first. The builder takes them
+ * in turn, so an exercise gets gap texts, corrections and free answers instead of mostly multiple choice.
+ * Own didactic choice; a type the subject does not have is skipped.
+ */
+const MIX_BY_SKILL: [RegExp, string[]][] = [
+  // formats where the student writes come first; multiple choice (fehler, grammatik, wortarten) once per round at most
+  [/^deutsch\.beistrich\./, ["korrigieren", "offen", "fehler"]],
+  [/^deutsch\.recht\./, ["lueckentext", "korrigieren", "offen", "rechtschreibung"]],
+  [/^deutsch\.grammatik\.zeiten/, ["lueckentext", "korrigieren", "offen", "grammatik"]],
+  [/^deutsch\.grammatik\./, ["korrigieren", "lueckentext", "offen", "grammatik"]],
+  [/^deutsch\.wortarten\./, ["lueckentext", "korrigieren", "wortarten", "offen"]],
+  [/^deutsch\.text\./, ["textverstaendnis", "offen"]],
+  [/^englisch\.(tenses|grammar)\./, ["gap", "korrigieren", "offen", "grammar"]],
+  [/^englisch\.vocab/, ["vocabulary", "gap", "translation"]],
+  [/^englisch\.reading/, ["reading", "offen"]],
+  [/^englisch\.translation/, ["translation", "korrigieren", "offen"]],
+  [/^mathe\./, ["rechnung", "mc", "lueckentext", "fehler"]],
+];
+const MIX_BY_SUBJECT: Record<string, string[]> = {
+  Deutsch: ["lueckentext", "korrigieren", "offen", "grammatik"],
+  Englisch: ["gap", "korrigieren", "offen", "grammar"],
+  Mathematik: ["rechnung", "mc", "lueckentext", "fehler"],
+};
+export function mixFor(subject: string, skillId: string | null): string[] {
+  const keys = new Set(categoriesFor(subject).map((c) => c.key));
+  const wanted = (skillId && MIX_BY_SKILL.find(([re]) => re.test(skillId))?.[1]) || MIX_BY_SUBJECT[subject] || ["lueckentext", "korrigieren", "offen", "kurz"];
+  const out = wanted.filter((k) => keys.has(k));
+  return out.length ? out : [...keys].slice(0, 3);
+}
 export const categoryLabel = (subject: string, key: string | null | undefined) =>
   (key && [...categoriesFor(subject), ...Object.values(CATEGORIES).flat()].find((x) => x.key === key)?.label) || null;
 

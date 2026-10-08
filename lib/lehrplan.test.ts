@@ -356,8 +356,11 @@ test("tracking → skill: an answer stores teacher, difficulty and counts for th
   const aid = repo.assignWorksheet(w, sid, "", u.id);
   const task = repo.listTasks(w)[0];
   assert.equal(task.level, 4);
-  // a free-text explanation task, rated by the student (no AI)
-  await submitAnswer({ token: repo.getStudent(sid)!.access_token, assignmentId: aid, taskId: task.id, answer: "Zähler und Nenner tauschen, 2/3 → 3/2", timeMs: 30_000, hintsUsed: 1, selfAssessed: true });
+  // a free-text explanation task: saved for the teacher, counted once the teacher grades it
+  await submitAnswer({ token: repo.getStudent(sid)!.access_token, assignmentId: aid, taskId: task.id, answer: "Zähler und Nenner tauschen, 2/3 → 3/2", timeMs: 30_000, hintsUsed: 1 });
+  assert.equal(repo.listAttemptsForStudent(sid).length, 0, "not counted before the teacher's grade");
+  const { reviewAnswer } = await import("./service");
+  assert.ok("ok" in reviewAnswer(repo.pendingReviews({ studentId: sid })[0].id, "richtig", thomas.id));
   const a = repo.listAttemptsForStudent(sid).at(-1)!;
   assert.equal(a.teacher_id, thomas.id, "the teacher of the unit");
   assert.equal(a.unit_id, u.id);

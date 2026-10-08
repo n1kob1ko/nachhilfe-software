@@ -1,4 +1,4 @@
-import { aiEnabled, generateWithAI, gradeFreeText } from "./ai";
+import { aiEnabled, generateWithAI } from "./ai";
 import { computeAnalysis } from "./analysis";
 import { documentAssignment } from "./autodoc";
 import { db } from "./db";
@@ -9,7 +9,8 @@ import { klassenLabel, schulstufe } from "./school";
 import { runningUnitForStudent, touchUnit } from "./units";
 import * as repo from "./repo";
 import { suggestErrorType } from "./error-types";
-import { checkAnswer, type TaskDraft } from "./tasks";
+import { checkAnswer, isReview, TEACHER_GRADED, type TaskDraft } from "./tasks";
+import { closestVersion } from "./fix-text";
 import { carelessCredit } from "./lehrplan";
 import { onAnswer } from "./ai/realtime";
 
@@ -112,7 +113,7 @@ export type SubmitInput = {
   activeMs?: number;
   /** Student gave up and opened the solution. */
   giveUp?: boolean;
-  /** Free text without AI: student compares with the model answer and rates themselves. */
+  /** Older devices: the student's own rating of a free answer. Free answers are graded by the teacher now; it is ignored. */
   selfAssessed?: boolean | null;
   /**
    * The device's id for this one submission (a click on "Abgeben"). Sent again unchanged when the
@@ -130,7 +131,12 @@ export type SubmitResult = {
   attemptNo: number;
   solution?: string;
   sample?: string;
-  needsSelfAssessment?: boolean;
+  /** Lückentext: the gaps (from 1) that are still wrong. */
+  wrongGaps?: number[];
+  /** The teacher grades this answer (free answers): saved, nothing is right or wrong yet. */
+  pendingReview?: boolean;
+  /** Fehler korrigieren, once finished: the corrected text, to compare with the student's own. */
+  expected?: string;
 };
 
 const SUBMISSION_ID = /^[A-Za-z0-9_-]{16,64}$/;
@@ -140,11 +146,13 @@ const g = globalThis as { __lernheftSubmissions?: Map<string, Promise<SubmitResu
 const grading = (g.__lernheftSubmissions ??= new Map());
 
 const GAVE_UP = "Hier ist der Lösungsweg. Schau ihn dir in Ruhe an.";
+const PENDING = "Deine Antwort ist gespeichert. Deine Lehrerin bzw. dein Lehrer schaut sie sich an.";
 
 /** What the student sees for a stored answer: the same text the first time and on a repeat. */
-function resultOf(a: Pick<repo.Attempt, "correct" | "final" | "attempt_no" | "feedback" | "solution_viewed">, solution: string): SubmitResult {
+function resultOf(a: Pick<repo.Attempt, "correct" | "final" | "attempt_no" | "feedback" | "solution_viewed" | "review">, solution: string, sample?: string): SubmitResult {
   const attemptNo = a.attempt_no;
   if (a.solution_viewed) return { correct: false, final: true, feedback: GAVE_UP, attemptNo, solution };
+  if (a.review === "offen") return { correct: null, final: true, feedback: a.feedback, attemptNo, solution, sample, pendingReview: true };
   const correct = Boolean(a.correct);
   const final = Boolean(a.final);
   const left = MAX_TRIES - attemptNo;
@@ -164,27 +172,29 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
   if (!student || !assignment || !task || assignment.student_id !== student.id || task.worksheet_id !== assignment.worksheet_id) {
     throw new Error("Aufgabe nicht gefunden.");
   }
-  if (input.submissionId === undefined) return evaluate(input, student, assignment, task, null);
+  const reveal = (r: SubmitResult): SubmitResult =>
+    task.type === "fix" && r.final ? { ...r, expected: closestVersion(task.answer.accepted ?? [], input.answer, task.answer.mode !== "text") ?? task.answer.accepted?.[0] } : r;
+  if (input.submissionId === undefined) return evaluate(input, student, assignment, task, null).then(reveal);
   const sid = input.submissionId;
   if (typeof sid !== "string" || !SUBMISSION_ID.test(sid)) throw new Error("Abgabe nicht erkannt.");
   const stored = repo.getAttemptBySubmission(student.id, sid);
   if (stored) {
     if (stored.assignment_id !== assignment.id || stored.task_id !== task.id) throw new Error("Abgabe nicht erkannt.");
-    return resultOf(stored, task.solution);
+    return reveal(resultOf(stored, task.solution, task.answer.sample));
   }
   const key = `${student.id}:${sid}`;
   const running = grading.get(key);
-  if (running) return running;
+  if (running) return running.then(reveal);
   const p = evaluate(input, student, assignment, task, sid).finally(() => grading.delete(key));
   grading.set(key, p);
-  return p;
+  return p.then(reveal);
 }
 
 async function evaluate(input: SubmitInput, student: repo.Student, assignment: repo.Assignment, task: repo.Task, sid: string | null): Promise<SubmitResult> {
   const previous = repo.listAttemptsForAssignment(assignment.id).filter((a) => a.task_id === task.id);
   const finished = previous.find((a) => a.final);
   if (finished) {
-    return { correct: Boolean(finished.correct), final: true, feedback: "Diese Aufgabe ist schon abgeschlossen.", attemptNo: finished.attempt_no, solution: task.solution };
+    return { ...resultOf(finished, task.solution, task.answer.sample), feedback: "Diese Aufgabe ist schon abgeschlossen." };
   }
   repo.markAssignmentStarted(assignment.id);
   // Practice while a teacher has a unit running for this student belongs to that unit. A unit that
@@ -214,7 +224,7 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
    * database already has (same id) is not stored again. Only a stored answer goes on to tracking,
    * documentation and the live view.
    */
-  const store = (r: { answer: string; correct: boolean; solutionViewed: boolean; errorLabel: string | null; feedback: string; errorType: { type: string; source: string } | null }) =>
+  const store = (r: { answer: string; correct: boolean; solutionViewed: boolean; errorLabel: string | null; feedback: string; errorType: { type: string; source: string } | null; review?: "offen" }) =>
     db().transaction(() => {
       if (sid) {
         const dup = repo.getAttemptBySubmission(student.id, sid);
@@ -224,7 +234,7 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
       const done = before.find((a) => a.final);
       if (done) return { fresh: false as const, attempt: done };
       const attemptNo = before.length + 1;
-      const final = r.solutionViewed || r.correct || attemptNo >= MAX_TRIES;
+      const final = r.solutionViewed || r.correct || r.review === "offen" || attemptNo >= MAX_TRIES;
       const row = {
         ...base,
         attempt_no: attemptNo,
@@ -236,16 +246,18 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
         feedback: r.feedback,
         error_type: r.errorType?.type ?? null,
         error_type_source: r.errorType?.source ?? null,
+        review: r.review ?? null,
       };
       repo.recordAttempt(row);
       if (final) repo.completeAssignmentIfDone(assignment.id);
       return { fresh: true as const, attempt: row };
     })();
 
-  const after = (attempt: { attempt_no: number; final: number; correct: number }, errorType: string | null) => {
+  const after = (attempt: { attempt_no: number; final: number; correct: number }, errorType: string | null, waitsForTeacher = false) => {
     documentAssignment(assignment.id);
     // the KI looks at it in the background (lib/ai/realtime.ts decides whether a request is worth it)
-    if (unit)
+    // a free answer waiting for the teacher's grade is neither right nor wrong for the live analysis
+    if (unit && !waitsForTeacher)
       onAnswer({
         unitId: unit.id,
         teacherId: unit.teacher_id,
@@ -260,7 +272,7 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
 
   // nothing stored: the same submission got there first (its result), or another answer finished the task
   const settled = (a: Parameters<typeof resultOf>[0] & { submission_id?: string | null }) =>
-    sid !== null && a.submission_id === sid ? resultOf(a, task.solution) : { ...resultOf(a, task.solution), feedback: "Diese Aufgabe ist schon abgeschlossen." };
+    sid !== null && a.submission_id === sid ? resultOf(a, task.solution, task.answer.sample) : { ...resultOf(a, task.solution, task.answer.sample), feedback: "Diese Aufgabe ist schon abgeschlossen." };
 
   if (input.giveUp) {
     const out = store({ answer: input.answer, correct: false, solutionViewed: true, errorLabel: null, feedback: "Lösung angesehen", errorType: null });
@@ -269,37 +281,40 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
     return resultOf(out.attempt, task.solution);
   }
 
-  let result = checkAnswer(task, input.answer);
-  // Fehlerart of a wrong answer: the app's rule-based suggestion, or the AI's for graded free text
-  let errorType: { type: string; source: "vorschlag" | "ki" } | null = null;
+  const result = checkAnswer(task, input.answer);
+  // Fehlerart of a wrong answer: the task's own (a described error of a correction task) or the app's rule-based suggestion
+  let errorType: { type: string; source: "vorschlag" | "ki" } | null = result.errorType ? { type: result.errorType, source: "vorschlag" } : null;
 
   if (result.correct === null) {
-    // free text
-    if (input.selfAssessed !== undefined && input.selfAssessed !== null) {
-      result = { correct: input.selfAssessed, errorLabel: null, feedback: input.selfAssessed ? "Gut gemacht!" : "Danke für deine ehrliche Einschätzung." };
-    } else if (aiEnabled() && task.answer.sample) {
-      // short time limit: without an answer in time the student rates their answer themselves
-      const g = await gradeFreeText({ prompt: task.prompt, passage: task.data.passage, sample: task.answer.sample }, input.answer, {
-        teacherId: unit?.teacher_id ?? student.teacher_id ?? null,
-        unitId: unit?.id ?? null,
-        trigger: "freitext",
-      });
-      if (g.ok) {
-        result = { correct: g.data.correct, errorLabel: g.data.error_label, feedback: g.data.feedback };
-        if (!g.data.correct && g.data.error_type) errorType = { type: g.data.error_type, source: "ki" };
-      }
-    }
-    if (result.correct === null) {
-      return { correct: null, final: false, feedback: "Vergleiche deine Antwort mit der Musterlösung: Hattest du es richtig?", attemptNo: previous.length + 1, sample: task.answer.sample ?? task.solution, needsSelfAssessment: true };
-    }
+    // a free answer: saved for the teacher's grade, never counted as wrong because it is worded differently
+    const out = store({ answer: input.answer, correct: false, solutionViewed: false, errorLabel: null, feedback: PENDING, errorType: null, review: "offen" });
+    if (!out.fresh) return settled(out.attempt);
+    after(out.attempt, null, true);
+    return resultOf(out.attempt, task.solution, task.answer.sample ?? task.solution);
   }
 
-  if (!result.correct && !errorType) {
+  if (!result.correct && !errorType && task.type !== "fix") {
     const suggested = suggestErrorType(task, input.answer, result.errorLabel, repo.getWorksheet(task.worksheet_id)?.subject ?? "");
     if (suggested) errorType = { type: suggested, source: "vorschlag" };
   }
   const out = store({ answer: input.answer, correct: Boolean(result.correct), solutionViewed: false, errorLabel: result.errorLabel, feedback: result.feedback, errorType });
   if (!out.fresh) return settled(out.attempt);
   after(out.attempt, errorType?.type ?? null);
-  return resultOf(out.attempt, task.solution);
+  const res = resultOf(out.attempt, task.solution);
+  return !out.attempt.final && result.wrongGaps?.length ? { ...res, wrongGaps: result.wrongGaps } : res;
+}
+
+/**
+ * Lehrerbewertung of a free answer or a correction (richtig, teilweise richtig, falsch). It replaces the app's
+ * check, counts for the Lernstand from then on and is written into the automatic Dokumentation.
+ */
+export function reviewAnswer(attemptId: number, review: string, teacherId: number): { ok: true; attempt: repo.Attempt } | { error: string } {
+  if (!isReview(review)) return { error: "Unbekannte Bewertung." };
+  const attempt = repo.getAttempt(attemptId);
+  const task = attempt ? repo.getTask(attempt.task_id) : null;
+  if (!attempt || !task) return { error: "Antwort nicht gefunden." };
+  if (!TEACHER_GRADED.has(task.type) && attempt.review !== "offen") return { error: "Diese Aufgabe prüft die App selbst." };
+  if (!repo.setAttemptReview(attemptId, review, teacherId)) return { error: "Nur eine abgeschlossene Antwort kann bewertet werden." };
+  documentAssignment(attempt.assignment_id);
+  return { ok: true, attempt: repo.getAttempt(attemptId)! };
 }

@@ -625,3 +625,21 @@
   font-size: 8pt;
   color: #555;
 }
+
+/* Fehler korrigieren: the text with errors, framed; the corrected text is written on the lines below */
+.ab-faulty {
+  margin: 1.5mm 0 2.5mm;
+  padding: 2.5mm 3.5mm;
+  border: 0.3mm dashed #777;
+  border-radius: 1.5mm;
+  line-height: 1.65;
+  white-space: pre-line;
+  break-inside: avoid;
+}
+.ab-faulty .fx-wrong {
+  background: none;
+  color: inherit;
+  box-shadow: none;
+  text-decoration: underline wavy #b82f2a;
+  text-underline-offset: 1mm;
+}

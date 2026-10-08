@@ -8,6 +8,7 @@ import { endCurrentMaterial, getMaterial, setCurrentMaterial, updateCurrentMater
 import { addSkillPrerequisite, removeSkillPrerequisite } from "@/lib/datenqualitaet";
 import { isErrorType } from "@/lib/error-types";
 import * as repo from "@/lib/repo";
+import { reviewAnswer } from "@/lib/service";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
@@ -60,6 +61,17 @@ export async function setErrorTypeAction(attemptId: number, type: string) {
   // the automatic Dokumentation of self-practice names the Fehlerarten and scores careless errors milder
   documentAssignment(attempt.assignment_id);
   revalidatePath(`/schueler/${attempt.student_id}`, "layout");
+  return { ok: true as const };
+}
+
+// ---------- Lehrerbewertung ----------
+/** The teacher grades a free answer or a correction: richtig, teilweise (richtig) or falsch. */
+export async function reviewAnswerAction(attemptId: number, review: string) {
+  const teacher = await requireTeacher();
+  const res = reviewAnswer(attemptId, review, teacher.id);
+  if ("error" in res) return res;
+  revalidatePath(`/schueler/${res.attempt.student_id}`, "layout");
+  if (res.attempt.unit_id) revalidatePath(`/einheiten/${res.attempt.unit_id}`);
   return { ok: true as const };
 }
 

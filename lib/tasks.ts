@@ -1,4 +1,5 @@
 import type { Difficulty, TaskType } from "./curriculum";
+import { checkFix, type FixLabel } from "./fix-text";
 
 export type AnswerSpec = {
   /** Multiple choice / reading: index of the correct option. */
@@ -13,6 +14,10 @@ export type AnswerSpec = {
   sample?: string;
   /** Order tasks: the steps in the right order. */
   steps?: string[];
+  /** Fehler korrigieren: the described errors ("meinen" → "meinem": Dativ nach „mit“); the corrected text is in `accepted`. */
+  fixes?: FixLabel[];
+  /** What a good answer must contain (Bewertungskriterien), for the teacher and the print. */
+  criteria?: string[];
 };
 
 export type TaskDraft = {
@@ -26,8 +31,11 @@ export type TaskDraft = {
   category?: string | null;
   difficulty: Difficulty;
   prompt: string;
-  /** steps: order tasks show the steps in this (shuffled) order. */
-  data: { options?: string[]; passage?: string; steps?: string[] };
+  /**
+   * steps: order tasks show the steps in this (shuffled) order. faulty: the text with errors of a
+   * "Fehler korrigieren" task. lines: size of the answer field of a free answer (1 = one line).
+   */
+  data: { options?: string[]; passage?: string; steps?: string[]; faulty?: string; lines?: number };
   answer: AnswerSpec;
   solution: string;
   hints: string[];
@@ -43,11 +51,22 @@ export type TaskDraft = {
 };
 
 export type CheckResult = {
-  /** null = cannot be decided automatically (free text without AI). */
+  /** null = cannot be decided automatically (free text: the teacher grades it). */
   correct: boolean | null;
   errorLabel: string | null;
   feedback: string;
+  /** Lückentext: numbers (from 1) of the gaps that are still wrong. */
+  wrongGaps?: number[];
+  /** Fehler korrigieren: the Fehlerart of the first error left, if the task names one. */
+  errorType?: string | null;
 };
+
+/** Teacher's grade of an answer the app cannot check (free answers) or that the teacher checks again. */
+export const REVIEWS = { richtig: "richtig", teilweise: "teilweise richtig", falsch: "falsch" } as const;
+export type Review = keyof typeof REVIEWS;
+export const isReview = (x: unknown): x is Review => typeof x === "string" && x in REVIEWS;
+/** Formats the teacher grades or may grade again after the app's check. */
+export const TEACHER_GRADED = new Set<string>(["free", "fix"]);
 
 export const GAP = "___";
 
@@ -89,7 +108,8 @@ export function normalizeText(s: string, caseSensitive = false) {
 }
 
 export function sameAnswer(given: string, expected: string, mode: AnswerSpec["mode"]) {
-  if (mode === "value") {
+  // a number in a gap or a short answer: 0,5 and 0.5 are the same
+  if (mode === "value" || (/^\s*-?\d+([.,]\d+)?\s*$/.test(given) && /^\s*-?\d+([.,]\d+)?\s*$/.test(expected))) {
     const a = parseNumber(given);
     const b = parseNumber(expected);
     if (a !== null && b !== null) return Math.abs(a - b) < 1e-6;
@@ -136,6 +156,17 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
       feedback: correct ? "Richtige Reihenfolge!" : `${right} von ${a.steps.length} Schritten stehen an der richtigen Stelle.`,
     };
   }
+  if (task.type === "fix" && task.data.faulty !== undefined) {
+    const r = checkFix(task.data.faulty, a.accepted ?? [], given, { caseSensitive: a.mode !== "text", labels: a.fixes });
+    if (r.correct) return { correct: true, errorLabel: null, feedback: r.total === 1 ? "Richtig verbessert!" : `Alle ${r.total} Fehler richtig verbessert!` };
+    const first = r.missed[0];
+    const parts = [
+      r.total ? `${r.fixed} von ${r.total} ${r.total === 1 ? "Fehler" : "Fehlern"} verbessert.` : "",
+      r.extra ? `${r.extra === 1 ? "Eine Stelle, die richtig war, hast" : `${r.extra} Stellen, die richtig waren, hast`} du verändert.` : "",
+      !given.trim() ? "Schreib den Text verbessert in das Feld." : r.fixed === r.total && !r.extra ? "Achte auf Satzzeichen sowie Groß- und Kleinschreibung." : "",
+    ];
+    return { correct: false, errorLabel: first?.label || null, errorType: first?.errorType ?? null, feedback: parts.filter(Boolean).join(" ") };
+  }
   if (a.blanks) {
     let values: string[] = [];
     try {
@@ -149,7 +180,8 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
     const correct = wrong.length === 0;
     return {
       correct,
-      errorLabel: correct ? null : labelFor(task, values.join(" | ")),
+      wrongGaps: correct ? undefined : wrong.map((i) => i + 1),
+      errorLabel: correct ? null : labelFor(task, values.join(" | ")) ?? wrong.map((i) => labelFor(task, values[i] ?? "")).find(Boolean) ?? null,
       feedback: correct
         ? "Alle Lücken richtig!"
         : `${wrong.length} von ${a.blanks.length} Lücken sind noch falsch (Lücke ${wrong.map((i) => i + 1).join(", ")}).`,

@@ -5,9 +5,12 @@ import { CheckCircle2, CircleDashed, Lightbulb, Plus, XCircle } from "lucide-rea
 import { deleteAssignmentAction } from "@/app/actions";
 import { answerText } from "@/components/TaskPreview";
 import { ErrorTypeSelect } from "@/components/ErrorTypeSelect";
+import { FixCompare } from "@/components/FixMarks";
+import { closestVersion } from "@/lib/fix-text";
+import { ReviewButtons } from "@/components/ReviewButtons";
 import { PageHeader, formatDate, formatDuration } from "@/components/ui";
 import * as repo from "@/lib/repo";
-import { GAP, HINT_LABELS } from "@/lib/tasks";
+import { GAP, HINT_LABELS, REVIEWS, TEACHER_GRADED, isReview } from "@/lib/tasks";
 import { MathText } from "@/components/MathText";
 
 function shownAnswer(t: repo.Task, raw: string) {
@@ -43,6 +46,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   const finals = attempts.filter((a) => a.final);
   const hintUses = repo.hintUsesForAssignment(assignment.id);
   const correct = finals.filter((a) => a.correct).length;
+  const toReview = finals.filter((a) => a.review === "offen").length;
   const totalSec = Math.round(attempts.reduce((s, a) => s + a.time_ms, 0) / 1000);
   const withHelp = finals.filter((a) => a.hints_used > 0 || a.solution_viewed).length;
   const unit = runningUnitForStudent(student.id);
@@ -70,9 +74,10 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
         )}
       </div>
       {assignment.note && <p className="-mt-4 mb-6 text-[14px] text-ink-2">{assignment.note}</p>}
-      <dl className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <dl className={`mb-8 grid grid-cols-2 gap-4 ${toReview ? "sm:grid-cols-5" : "sm:grid-cols-4"}`}>
         {[
           ["Richtig", `${correct} von ${tasks.length}`],
+          ...(toReview ? [["Zu bewerten", `${toReview}`]] : []),
           ["Bearbeitet", `${finals.length} von ${tasks.length}`],
           ["Zeit gesamt", formatDuration(totalSec)],
           ["Mit Hilfe gelöst", `${withHelp}`],
@@ -91,7 +96,11 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
             ? { icon: CircleDashed, cls: "text-ink-3", text: "nicht bearbeitet" }
             : fin.solution_viewed
               ? { icon: XCircle, cls: "text-red", text: "Lösung angesehen" }
-              : fin.correct
+              : fin.review === "offen"
+                ? { icon: CircleDashed, cls: "text-amber", text: "wartet auf deine Bewertung" }
+                : isReview(fin.review)
+                  ? { icon: fin.review === "richtig" ? CheckCircle2 : fin.review === "teilweise" ? CircleDashed : XCircle, cls: fin.review === "richtig" ? "text-green" : fin.review === "teilweise" ? "text-amber" : "text-red", text: `von dir bewertet: ${REVIEWS[fin.review]}` }
+                  : fin.correct
                 ? { icon: CheckCircle2, cls: "text-green", text: fin.attempt_no === 1 ? "im 1. Versuch richtig" : `richtig nach ${fin.attempt_no} Versuchen` }
                 : { icon: XCircle, cls: "text-red", text: "falsch" };
           const Icon = status.icon;
@@ -106,9 +115,9 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
                     {tries.map((a) => (
                       <li key={a.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
                         <span className="text-ink-3">Versuch {a.attempt_no}:</span>
-                        <span className={a.correct ? "text-green" : "text-red"}>{a.solution_viewed ? "aufgegeben" : <MathText text={shownAnswer(t, a.answer) || "–"} />}</span>
+                        <span className={a.review === "offen" ? "whitespace-pre-line text-ink" : a.review === "teilweise" ? "text-amber" : a.correct ? "text-green" : "text-red"}>{a.solution_viewed ? "aufgegeben" : <MathText text={shownAnswer(t, a.answer) || "–"} />}</span>
                         {a.error_label && <span className="text-ink-2">→ {a.error_label}</span>}
-                        {!a.correct && !a.solution_viewed && (
+                        {!a.correct && !a.solution_viewed && a.review !== "offen" && (
                           <span className="no-print">
                             <ErrorTypeSelect attemptId={a.id} type={a.error_type ?? null} source={a.error_type_source ?? null} suggested={a.error_type_suggested ?? null} suggestedSource={a.error_type_suggested_source ?? null} />
                           </span>
@@ -117,7 +126,34 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
                     ))}
                   </ul>
                 )}
-                {answerText(t) && <p className="mt-1 text-[13px] text-ink-3">Richtige Lösung: <MathText text={answerText(t)} /></p>}
+                {t.type === "fix" && fin && !fin.solution_viewed && t.data.faulty && t.answer.accepted?.[0] && (
+                  <FixCompare faulty={t.data.faulty} given={fin.answer} expected={closestVersion(t.answer.accepted, fin.answer, t.answer.mode !== "text") ?? t.answer.accepted[0]} caseSensitive={t.answer.mode !== "text"} className="mt-3 max-w-[90ch]" />
+                )}
+                {(t.type !== "fix" || !fin || Boolean(fin.solution_viewed)) && answerText(t) && <p className="mt-1 text-[13px] text-ink-3">Richtige Lösung: <MathText text={answerText(t)} /></p>}
+                {(t.answer.sample || t.answer.criteria?.length) && !answerText(t) ? (
+                  <div className="mt-2 max-w-[70ch] rounded-lg bg-paper px-3 py-2 text-[13px] text-ink-2">
+                    {t.answer.sample && (
+                      <p>
+                        <span className="font-semibold">Musterlösung:</span> <MathText text={t.answer.sample} />
+                      </p>
+                    )}
+                    {t.answer.criteria && t.answer.criteria.length > 0 && (
+                      <>
+                        <p className="mt-1 font-semibold">Darauf kommt es an:</p>
+                        <ul className="list-disc pl-5">
+                          {t.answer.criteria.map((c, k) => (
+                            <li key={k}>{c}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                ) : null}
+                {fin && !fin.solution_viewed && (TEACHER_GRADED.has(t.type) || fin.review) && (
+                  <div className="mt-3">
+                    <ReviewButtons attemptId={fin.id} review={fin.review ?? null} />
+                  </div>
+                )}
               </div>
               <div className="space-y-1 text-[13px] md:text-right">
                 <p className={`inline-flex items-center gap-1.5 font-semibold ${status.cls}`}>

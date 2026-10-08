@@ -349,7 +349,8 @@ export async function blockContext(unitId: number, assignmentId: number): Promis
           skill: skillLabel(t.skillId),
           stufe: t.level ?? levelOf(t.difficulty),
           format: t.type,
-          richtig: Boolean(last?.final && last.correct),
+          // a free answer the teacher has not graded yet is neither right nor wrong
+          richtig: last?.review === "offen" ? null : Boolean(last?.final && last.correct),
           versuche: tries.length,
           hilfen: new Set(hints.filter((h) => h.task_id === t.id).map((h) => h.hint_index)).size,
           fehlerart: tries.filter((x) => !x.correct).at(-1)?.error_type ?? null,
