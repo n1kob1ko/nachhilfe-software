@@ -332,7 +332,7 @@ export function Sheet({ doc, o }: { doc: SheetDoc; o: SheetOptions }) {
 }
 
 /** @page rules: A4 portrait, a wider left margin for punching, page numbers when chosen. */
-export function PageStyle({ o }: { o: SheetOptions }) {
+export function PageStyle({ o }: { o: Pick<SheetOptions, "pages" | "title"> }) {
   const esc = (s: string) =>
     s.replace(/[\\"]/g, "\\$&").replace(/\n/g, " ").slice(0, 80);
   const numbers = o.pages

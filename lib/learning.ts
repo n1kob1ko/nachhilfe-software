@@ -12,6 +12,7 @@ import { localStamp } from "./autodoc";
 import { db } from "./db";
 import * as repo from "./repo";
 import { analyzeStudent } from "./service";
+import { textsForUnit } from "./texts";
 import { notifyUnitClosed } from "./whiteboard";
 import { finishUnit, getUnit, touchUnit, unitDurationMs, type FinishOptions, type UnitView } from "./units";
 
@@ -93,7 +94,11 @@ export type UnitReport = {
   speed: { avgMs: number | null; slow: number[]; fast: number[]; pauses: number; manyRetries: number };
   problemTasks: number[];
   tasks: TaskLine[];
+  /** Textarbeiten written or continued in the unit (titles and counts only, never the text itself) */
+  texts?: ReportText[];
 };
+
+export type ReportText = { id: number; title: string; topic: string; subject: string; words: number; added: number; startedHere: boolean };
 
 const PAUSE_MS = 2 * 60_000;
 
@@ -252,17 +257,28 @@ export function buildUnitReport(unit: UnitView, now = Date.now()): UnitReport {
     },
     problemTasks: tasks.filter((t) => (t.finished && !t.correct) || t.help === "loesung" || t.tries >= 3).map((t) => t.taskId),
     tasks,
+    texts: textsForUnit(unit.id).map((t) => ({ id: t.id, title: t.title, topic: t.topic, subject: t.subject, words: t.words_after, added: t.words_after - t.words_before, startedHere: Boolean(t.started_here) })),
   };
 }
 
 const pctText = (x: number | null) => (x === null ? "–" : `${Math.round(x * 100)} %`);
 const list = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} und ${xs[xs.length - 1]}`);
 
+/** "Textarbeit „Mein Ausflug“ (Erlebniserzählung, 246 Wörter)" */
+export function textLine(t: ReportText) {
+  const words = `${t.words} ${t.words === 1 ? "Wort" : "Wörter"}`;
+  const more = t.startedHere ? words : `weitergeschrieben, jetzt ${words}`;
+  return `Textarbeit „${t.title}“ (${t.topic && t.topic !== t.title ? `${t.topic}, ` : ""}${more})`;
+}
+
 /** Readable German summary, e.g. "Max arbeitete heute an der Bruchrechnung (Dividieren und Multiplizieren). …" */
 export function summarize(r: UnitReport, studentName: string): string {
   const first = studentName.split(" ")[0];
   const minutes = Math.max(1, Math.round(r.durationMs / 60_000));
+  const texts = r.texts ?? [];
+  const textSentence = texts.length ? `${first} schrieb an ${list(texts.map((t) => `der ${textLine(t)}`))}.` : "";
   if (r.tasksDone === 0) {
+    if (texts.length) return `Einheit mit ${first} (${minutes} min). ${textSentence}`;
     return `Einheit mit ${first} (${minutes} min). Am Gerät wurden keine Übungsaufgaben bearbeitet, die Inhalte stehen in den Beobachtungen des Lehrers.`;
   }
   const out: string[] = [];
@@ -290,14 +306,16 @@ export function summarize(r: UnitReport, studentName: string): string {
   if (r.development.direction === "schlechter") out.push("Gegen Ende ließ die Sicherheit nach, eventuell Müdigkeit oder schwierigere Aufgaben.");
   const moved = r.skills.filter((s) => s.before !== null && s.after !== null && Math.abs(s.after - s.before) >= 0.05);
   if (moved.length) out.push(`Fortschritt: ${moved.map((s) => `${s.name} ${pctText(s.before)} → ${pctText(s.after)}`).join(", ")}.`);
+  if (textSentence) out.push(textSentence);
   return out.join(" ");
 }
 
 /** Short text for the lesson's "Was wurde gemacht" when the teacher has not written anything. */
 function activitiesText(r: UnitReport) {
-  if (!r.tasksDone) return "";
-  const sheets = r.worksheets.map((w) => `„${w.title}“`);
-  return `${r.tasksDone} Aufgaben bearbeitet (${list(sheets)}), ${r.correct} richtig.`;
+  const out: string[] = [];
+  if (r.tasksDone) out.push(`${r.tasksDone} Aufgaben bearbeitet (${list(r.worksheets.map((w) => `„${w.title}“`))}), ${r.correct} richtig.`);
+  for (const t of r.texts ?? []) out.push(`${textLine(t)}.`);
+  return out.join(" ");
 }
 
 /** Mastery of every skill with data, stored per unit so progress can be read unit by unit. */
@@ -352,8 +370,9 @@ export function writeLearningDoc(unit: UnitView, at = Date.now()): number {
       unit_id: unit.id,
       starts_at: localStamp(Date.parse(unit.started_at)),
       duration_min: Math.max(1, Math.round(r.durationMs / 60_000)),
-      subject: r.subjects[0] ?? existing?.subject ?? student.subjects[0] ?? "",
-      topic: existing?.topic || r.topics.join(", "),
+      // what was actually done decides: the exercises, else the Textarbeit, else what was planned
+      subject: r.subjects[0] ?? r.texts?.find((t) => t.subject)?.subject ?? existing?.subject ?? student.subjects[0] ?? "",
+      topic: existing?.topic || r.topics.join(", ") || [...new Set((r.texts ?? []).map((t) => t.topic).filter(Boolean))].join(", "),
       status: "abgeschlossen",
       activities: existing?.activities || activitiesText(r),
       mistakes: existing?.mistakes ?? "",

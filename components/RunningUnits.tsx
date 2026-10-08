@@ -9,12 +9,13 @@ export type RunningUnit = UnitView & { open_exercises: number };
 
 /**
  * While the teacher has a unit running, every page says so at the top, with one way back into it.
- * Hidden on the start page (its main card shows the unit) and inside the unit itself.
+ * Hidden on the start page (its main card shows the unit), inside the unit itself and on a Textarbeit
+ * (its writing toolbar sits at the top; the page links back to the unit).
  */
 export function RunningUnits({ units }: { units: RunningUnit[] }) {
   if (units.length === 0) return null;
   return (
-    <HideOn paths={["/", ...units.map((u) => `/einheiten/${u.id}`)]}>
+    <HideOn paths={["/", ...units.map((u) => `/einheiten/${u.id}`)]} prefixes={["/texte/"]}>
       <div className="no-print sticky top-0 z-20 -mx-4 mb-6 grid gap-2 bg-paper/90 px-4 pt-2 pb-1 backdrop-blur md:-mx-8 md:px-8" role="region" aria-label="Aktive Einheiten">
         {units.map((u) => (
           <Link
