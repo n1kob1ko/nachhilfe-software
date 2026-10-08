@@ -2,7 +2,7 @@
  * 60-minute test mode for the KI (lib/ai/simulation.ts). Uses its own throw-away database.
  *
  *   npm run ai:simulate                      probe run without key, costs nothing
- *   npm run ai:simulate -- --echt            real requests with ANTHROPIC_API_KEY (about 0.30 $ per run)
+ *   npm run ai:simulate -- --echt            real requests to the configured providers (about 0.30 $ per run with Anthropic)
  *   npm run ai:simulate -- --minuten 30 --seed 3 --bericht docs/ki-simulation.md
  */
 import fs from "node:fs";
@@ -20,11 +20,12 @@ async function main() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lernheft-sim-"));
   process.env.DATABASE_PATH = path.join(dir, "sim.db");
   const real = flag("echt");
-  if (real && !process.env.ANTHROPIC_API_KEY) {
-    console.error("Für --echt muss ANTHROPIC_API_KEY gesetzt sein.");
+  const { simulateLesson, reportMarkdown } = await import("../lib/ai/simulation");
+  const { aiEnabled } = await import("../lib/ai/router");
+  if (real && !aiEnabled()) {
+    console.error("Für --echt braucht es einen Schlüssel für den eingestellten Anbieter (z. B. ANTHROPIC_API_KEY, OPENROUTER_API_KEY oder DEEPSEEK_API_KEY).");
     process.exit(1);
   }
-  const { simulateLesson, reportMarkdown } = await import("../lib/ai/simulation");
   const minutes = Number(value("minuten") ?? 60);
   const seed = Number(value("seed") ?? 7);
   const run = await simulateLesson({ minutes, seed, real });
