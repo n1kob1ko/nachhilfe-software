@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { ArrowDown, ArrowUp, CheckCircle2, Eye, ListChecks, Presentation, RotateCcw, SkipForward, Sparkles, TabletSmartphone, XCircle } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, Eye, ListChecks, PenLine, Presentation, Printer, RotateCcw, SkipForward, Sparkles, TabletSmartphone, XCircle } from "lucide-react";
 import { currentTaskToBoardAction, newExerciseAction, resendAction, retryTaskAction, sendNextTaskAction, showSolutionAction, tabletViewAction } from "@/app/device-actions";
 import { ACTION_LABEL } from "@/lib/ai/labels";
 import type { AILive } from "@/lib/ai/realtime";
@@ -75,13 +75,33 @@ export function LiveStatus({ unitId, initial }: { unitId: number; initial: LiveS
         )}
         {tablet !== "kein" && (
           <div className="ml-auto flex gap-1 rounded-full bg-panel p-1" role="group" aria-label="Tablet zeigt">
-            <ViewButton on={s.view !== "tafel"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, c ? `aufgabe:${c.assignmentId}` : ""))} icon={<ListChecks size={16} aria-hidden />} label="Aufgaben" />
+            {s.text && <ViewButton on={s.view === "text"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, `text:${s.text!.id}`))} icon={<PenLine size={16} aria-hidden />} label="Text" />}
+            <ViewButton on={s.view !== "tafel" && s.view !== "text"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, c ? `aufgabe:${c.assignmentId}` : ""))} icon={<ListChecks size={16} aria-hidden />} label="Aufgaben" />
             <ViewButton on={s.view === "tafel"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, "tafel"))} icon={<Presentation size={16} aria-hidden />} label="Whiteboard" />
           </div>
         )}
       </div>
 
-      {c ? (
+      {s.text ? (
+        <div className="mt-4">
+          <p className="text-[13px] text-ink-3">{s.student} · Textarbeit</p>
+          <p className="truncate text-[17px] font-semibold" title={s.text.title}>
+            {s.text.title}
+          </p>
+          <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+            <Metric label="Wörter" value={s.text.words.toLocaleString("de-AT")} />
+            <Metric label="Zuletzt gespeichert" value={new Date(s.text.updatedAt).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Vienna" })} />
+          </dl>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href={`/texte/${s.text.id}`} className="btn btn-primary">
+              <Eye size={16} aria-hidden /> Mitlesen
+            </Link>
+            <Link href={`/arbeitsblatt/text/${s.text.id}`} target="_blank" className="btn btn-secondary">
+              <Printer size={16} aria-hidden /> PDF / Drucken
+            </Link>
+          </div>
+        </div>
+      ) : c ? (
         <div className="mt-4">
           <p className="text-[13px] text-ink-3">
             {s.student} · {c.single ? "Einzelaufgabe" : "Übung"}

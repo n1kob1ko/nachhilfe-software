@@ -8,20 +8,29 @@ import { aiLiveState, type AILive } from "./ai/realtime";
 import { db } from "./db";
 import { hasDevice } from "./devices";
 import * as repo from "./repo";
+import { getText, noteTextInUnit } from "./texts";
 import { activeUnitForTeacher, getUnit, runningUnitForStudent, type UnitView } from "./units";
 import { isOnline, publish } from "./whiteboard-hub";
 
 export const deviceChannel = (teacherId: number) => `geraet:${teacherId}`;
 export const unitChannel = (unitId: number) => `einheit:${unitId}`;
 
-export type View = { kind: "start" } | { kind: "tafel" } | { kind: "aufgabe"; assignmentId: number };
+export type View = { kind: "start" } | { kind: "tafel" } | { kind: "aufgabe"; assignmentId: number } | { kind: "text"; textId: number };
 
 export function parseView(raw: string): View {
   if (raw === "tafel") return { kind: "tafel" };
   const m = /^aufgabe:(\d+)$/.exec(raw);
-  return m ? { kind: "aufgabe", assignmentId: Number(m[1]) } : { kind: "start" };
+  if (m) return { kind: "aufgabe", assignmentId: Number(m[1]) };
+  const t = /^text:(\d+)$/.exec(raw);
+  return t ? { kind: "text", textId: Number(t[1]) } : { kind: "start" };
 }
-const viewText = (v: View) => (v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : "");
+const viewText = (v: View) => (v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : "");
+
+/** May the tablet of this unit show that text? Only texts of the unit's student. */
+export function unitText(unit: Pick<UnitView, "student_id">, textId: number) {
+  const t = getText(textId);
+  return t && t.student_id === unit.student_id ? t : null;
+}
 
 /** Exercises sent in this unit: the only ones the tablet may show. */
 export function unitAssignments(unitId: number) {
@@ -64,6 +73,7 @@ export function showOnTablet(unit: UnitView, view: View): Delivery {
   if (unit.status !== "gestartet") return { status: "offline" };
   db().prepare("UPDATE units SET device_view = ? WHERE id = ?").run(viewText(view), unit.id);
   if (view.kind !== "aufgabe") progress.delete(unit.id);
+  if (view.kind === "text") noteTextInUnit(view.textId, unit.id);
   notifyTablet(unit.teacher_id, view.kind);
   pushLive(unit.id);
   if (!hasDevice(unit.teacher_id)) return { status: "kein-geraet" };
@@ -121,6 +131,8 @@ export type LiveSnapshot = {
     solutionsVisible: boolean;
     hasNext: boolean;
   };
+  /** the Textarbeit the tablet shows */
+  text: null | { id: number; title: string; words: number; updatedAt: string; version: number };
   /** number of answers in this unit, so the page knows when to reload its result lists */
   answers: number;
   /** what the KI noticed last (lib/ai/realtime.ts) */
@@ -135,6 +147,8 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
   const a = (view.kind === "aufgabe" && list.find((x) => x.id === view.assignmentId)) || list.at(-1) || null;
   const { answers } = db().prepare("SELECT COUNT(*) AS answers FROM attempts WHERE unit_id = ?").get(unit.id) as { answers: number };
   const paired = hasDevice(unit.teacher_id);
+  const shownText = view.kind === "text" ? unitText(unit, view.textId) : null;
+  const textNow = shownText ? { id: shownText.id, title: shownText.title, words: shownText.words, updatedAt: shownText.updated_at, version: shownText.version } : null;
   let current: LiveSnapshot["current"] = null;
   if (a) {
     const tasks = repo.listTasks(a.worksheet_id);
@@ -171,6 +185,7 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
     tablet: { paired, online: tabletOnline(unit.teacher_id) },
     view: view.kind,
     current,
+    text: textNow,
     answers,
     ai: aiLiveState(unit.id),
   };

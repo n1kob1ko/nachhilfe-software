@@ -1,6 +1,6 @@
 import { errorTypeLabel } from "./error-types";
 import { dayOf, daysUntil } from "./exams";
-import { readReport } from "./learning";
+import { readReport, textLine } from "./learning";
 import { nextSteps, RULE_LABEL } from "./recommend";
 import * as repo from "./repo";
 
@@ -55,6 +55,8 @@ export function unitBrief(lessonId: number, o: { today?: string; now?: number } 
     done.push(data(`${r.tasksDone} ${r.tasksDone === 1 ? "Aufgabe" : "Aufgaben"} bearbeitet, ${r.correct} richtig${r.successRate !== null ? ` (${pct(r.successRate)})` : ""}`));
     if (r.worksheets.some((w) => w.kind === "diagnose")) done.push(data("Diagnose gemacht"));
   } else if (lesson.topic) done.push(data(lesson.topic));
+  // Textarbeiten (unless the activities already name them, e.g. the automatic text)
+  for (const t of r?.texts ?? []) if (!lesson.activities?.includes(`„${t.title}“`)) done.push(data(textLine(t)));
   done.push(...teacher(lesson.activities));
 
   // 2. and 3. by skill state of the unit report
