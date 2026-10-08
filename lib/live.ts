@@ -3,10 +3,15 @@
  * Uses the same realtime hub as the whiteboard, on two more channels:
  *   "geraet:<teacher id>"  – the tablet(s) of a teacher; any event makes the tablet reload its view
  *   "einheit:<unit id>"    – the live status on the teacher's unit page
+ *   "laptop:<session id>"  – a student's own laptop, connected for one unit (lib/laptop.ts)
+ *
+ * What the student sees is kept per unit (units.device_view). It is shown on the teacher's tablet, or,
+ * while a laptop is confirmed for the unit, on that laptop instead (the tablet then only offers the board).
  */
 import { aiLiveState, type AILive } from "./ai/realtime";
 import { db } from "./db";
 import { hasDevice } from "./devices";
+import { activeLaptop, endLaptopsOfUnit, laptopChannel, openLaptopCode, pendingLaptop } from "./laptop";
 import * as repo from "./repo";
 import { getText, noteTextInUnit } from "./texts";
 import { activeUnitForTeacher, getUnit, runningUnitForStudent, type UnitView } from "./units";
@@ -61,7 +66,36 @@ export function tabletOnline(teacherId: number) {
   return isOnline(deviceChannel(teacherId), "schueler");
 }
 
-export type Delivery = { status: "gesendet" } | { status: "offline" } | { status: "kein-geraet" };
+export type StudentDevice = "laptop" | "tablet";
+export type Delivery = ({ status: "gesendet" } | { status: "offline" } | { status: "kein-geraet" }) & { device?: StudentDevice };
+
+/** Where the student of this unit works: their confirmed laptop, else the teacher's tablet, else nowhere yet. */
+export function studentDevice(unit: Pick<UnitView, "id" | "teacher_id">): StudentDevice | null {
+  if (activeLaptop(unit.id)) return "laptop";
+  return hasDevice(unit.teacher_id) ? "tablet" : null;
+}
+
+/** Is the student's device of this unit connected right now? */
+export function studentDeviceOnline(unit: Pick<UnitView, "id" | "teacher_id">): boolean {
+  const l = activeLaptop(unit.id);
+  return l ? laptopOnline(l.id) : tabletOnline(unit.teacher_id);
+}
+
+export function laptopOnline(sessionId: number) {
+  return isOnline(laptopChannel(sessionId), "schueler");
+}
+
+/** Tells the confirmed laptop of a unit to load its view again. */
+export function notifyLaptop(unitId: number, reason: string) {
+  const l = activeLaptop(unitId);
+  if (l) publish(laptopChannel(l.id), { type: "refresh", reason });
+}
+
+/** Both student screens of a unit load again: the teacher's tablet and a confirmed laptop. */
+export function notifyStudent(unit: Pick<UnitView, "id" | "teacher_id">, reason: string) {
+  notifyTablet(unit.teacher_id, reason);
+  notifyLaptop(unit.id, reason);
+}
 
 /** Tells the teacher's tablet to load its view again (unit started or ended, new exercise, …). */
 export function notifyTablet(teacherId: number, reason: string) {
@@ -74,10 +108,12 @@ export function showOnTablet(unit: UnitView, view: View): Delivery {
   db().prepare("UPDATE units SET device_view = ? WHERE id = ?").run(viewText(view), unit.id);
   if (view.kind !== "aufgabe") progress.delete(unit.id);
   if (view.kind === "text") noteTextInUnit(view.textId, unit.id);
-  notifyTablet(unit.teacher_id, view.kind);
+  notifyStudent(unit, view.kind);
   pushLive(unit.id);
+  const laptop = activeLaptop(unit.id);
+  if (laptop) return { status: laptopOnline(laptop.id) ? "gesendet" : "offline", device: "laptop" };
   if (!hasDevice(unit.teacher_id)) return { status: "kein-geraet" };
-  return tabletOnline(unit.teacher_id) ? { status: "gesendet" } : { status: "offline" };
+  return { status: tabletOnline(unit.teacher_id) ? "gesendet" : "offline", device: "tablet" };
 }
 
 /** Something was sent to a student the classic way (student picked): if a unit with them runs, it also goes onto that teacher's tablet. */
@@ -86,9 +122,13 @@ export function deliverIfRunning(studentId: number, assignmentId: number | undef
   return unit && assignmentId ? showOnTablet(unit, { kind: "aufgabe", assignmentId }) : null;
 }
 
-/** A unit started or ended: the tablet switches to it or back to "Bereit für die nächste Einheit". */
+/**
+ * A unit started or ended: the tablet switches to it or back to "Bereit für die nächste Einheit".
+ * When it ended, every laptop of the unit loses its access at once and is told so.
+ */
 export function unitChanged(teacherId: number, unitId: number) {
   progress.delete(unitId);
+  if (getUnit(unitId)?.status !== "gestartet") for (const id of endLaptopsOfUnit(unitId)) publish(laptopChannel(id), { type: "ended", reason: "einheit" });
   notifyTablet(teacherId, "einheit");
   pushLive(unitId);
 }
@@ -113,6 +153,14 @@ export type LiveSnapshot = {
   running: boolean;
   student: string;
   tablet: { paired: boolean; online: boolean };
+  /** where the student works right now */
+  device: StudentDevice | null;
+  /** "Eigenes Gerät verbinden": the code on show, a request to confirm, the confirmed laptop */
+  laptop: {
+    code: { code: string; expiresAt: string } | null;
+    request: { id: number; check: string; label: string; at: string } | null;
+    active: { id: number; label: string; online: boolean; since: string } | null;
+  };
   view: View["kind"];
   current: null | {
     assignmentId: number;
@@ -125,7 +173,7 @@ export type LiveSnapshot = {
     since: string | null;
     tries: number;
     hints: number;
-    last: null | { correct: boolean; final: boolean };
+    last: null | { correct: boolean; final: boolean; at: string };
     done: number;
     correct: number;
     solutionsVisible: boolean;
@@ -139,6 +187,9 @@ export type LiveSnapshot = {
   ai: AILive;
 };
 
+/** SQLite's datetime('now') is UTC without a zone; browsers need it marked. */
+const asIso = (t: string) => (t.includes("T") ? t : `${t.replace(" ", "T")}Z`);
+
 export function liveSnapshot(unitId: number): LiveSnapshot | null {
   const unit = getUnit(unitId);
   if (!unit) return null;
@@ -147,6 +198,9 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
   const a = (view.kind === "aufgabe" && list.find((x) => x.id === view.assignmentId)) || list.at(-1) || null;
   const { answers } = db().prepare("SELECT COUNT(*) AS answers FROM attempts WHERE unit_id = ?").get(unit.id) as { answers: number };
   const paired = hasDevice(unit.teacher_id);
+  const device = studentDevice(unit);
+  const pending = pendingLaptop(unit.id);
+  const laptop = activeLaptop(unit.id);
   const shownText = view.kind === "text" ? unitText(unit, view.textId) : null;
   const textNow = shownText ? { id: shownText.id, title: shownText.title, words: shownText.words, updatedAt: shownText.updated_at, version: shownText.version } : null;
   let current: LiveSnapshot["current"] = null;
@@ -167,11 +221,11 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
       single: a.source_task_id !== null,
       taskNo,
       total: tasks.length,
-      state: a.completed_at ? "fertig" : a.delivered_at || attempts.length ? "arbeitet" : paired ? "nicht angekommen" : "bereit",
+      state: a.completed_at ? "fertig" : a.delivered_at || attempts.length ? "arbeitet" : device ? "nicht angekommen" : "bereit",
       since: live?.since ?? null,
       tries: tries.length,
       hints: task ? new Set(repo.hintUsesForAssignment(a.id).filter((h) => h.task_id === task.id).map((h) => h.hint_index)).size : 0,
-      last: lastTry ? { correct: Boolean(lastTry.correct), final: Boolean(lastTry.final) } : null,
+      last: lastTry ? { correct: Boolean(lastTry.correct), final: Boolean(lastTry.final), at: asIso(lastTry.created_at) } : null,
       done: a.done_count,
       correct: a.correct_count,
       solutionsVisible: Boolean(a.solutions_visible),
@@ -183,6 +237,12 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
     running: unit.status === "gestartet",
     student: unit.student_name.split(" ")[0],
     tablet: { paired, online: tabletOnline(unit.teacher_id) },
+    device,
+    laptop: {
+      code: unit.status === "gestartet" ? openLaptopCode(unit.id) : null,
+      request: pending ? { id: pending.id, check: pending.check_code, label: pending.label, at: pending.created_at } : null,
+      active: laptop ? { id: laptop.id, label: laptop.label, online: laptopOnline(laptop.id), since: laptop.approved_at ?? laptop.created_at } : null,
+    },
     view: view.kind,
     current,
     text: textNow,

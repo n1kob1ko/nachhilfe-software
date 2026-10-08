@@ -10,7 +10,7 @@ import { clientIp } from "@/lib/client-ip";
 import { deviceContext } from "@/lib/device-context";
 import { canManageDevice, createPairCode, getDevice, pairDevice, renameDevice, revokeDevice, setDeviceCookie } from "@/lib/devices";
 import { noteActivity } from "@/lib/learning";
-import { nextTaskAfter, notifyTablet, parseView, pushLive, pushTabletPresence, showOnTablet, unitAssignment, unitAssignments, unitText, type Delivery } from "@/lib/live";
+import { nextTaskAfter, notifyStudent, notifyTablet, parseView, pushLive, pushTabletPresence, showOnTablet, unitAssignment, unitAssignments, unitText, type Delivery } from "@/lib/live";
 import * as repo from "@/lib/repo";
 import { submitAnswer, type SubmitInput } from "@/lib/service";
 import { activeUnitForTeacher, canManageUnit, getUnit } from "@/lib/units";
@@ -171,7 +171,7 @@ export async function showSolutionAction(unitId: number) {
   const a = currentAssignment(unit.id, unit.device_view);
   if (!a) return;
   repo.setSolutionsVisible(a.id, true);
-  notifyTablet(unit.teacher_id, "loesung");
+  notifyStudent(unit, "loesung");
   pushLive(unit.id);
 }
 

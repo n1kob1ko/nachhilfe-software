@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import QRCode from "qrcode";
 import { BookOpenCheck, CheckCircle2, ChartNoAxesColumn, ExternalLink, PenLine, Plus, Presentation, Square } from "lucide-react";
 import { endUnitAction } from "@/app/session-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
@@ -20,8 +22,8 @@ import { latestInsight } from "@/lib/ai/insights";
 import { unitBrief } from "@/lib/summary";
 import { Pill, Reveal, SectionTitle, formatDate, formatTime } from "@/components/ui";
 import { LiveStatus } from "@/components/device/LiveStatus";
-import { liveSnapshot } from "@/lib/live";
-import { hasDevice } from "@/lib/devices";
+import { liveSnapshot, studentDevice } from "@/lib/live";
+import { baseUrl } from "@/lib/base-url";
 import { buildUnitReport, readReport } from "@/lib/learning";
 import * as repo from "@/lib/repo";
 import { requireTeacher } from "@/lib/auth";
@@ -59,7 +61,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
       )}
       {startedText && running && startedText.student_id === student.id && (
         <div role="status" className="mb-6 flex flex-wrap items-center gap-2 rounded-2xl bg-green-wash px-4 py-3 text-[15px] font-medium text-green">
-          <CheckCircle2 size={18} aria-hidden /> „{startedText.title}“ ist am Tablet von {first(student.name)} geöffnet.
+          <CheckCircle2 size={18} aria-hidden /> „{startedText.title}“ ist am {studentDevice(unit) === "laptop" ? "Laptop" : "Tablet"} von {first(student.name)} geöffnet.
           <Link href={`/texte/${startedText.id}`} className="ml-auto font-semibold underline underline-offset-2">
             Mitlesen
           </Link>
@@ -115,7 +117,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
           )}
         </header>
         {notices}
-        {mayManage && <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} />}
+        {mayManage && <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} join={await joinInfo()} />}
         {area === "uebungen" ? <UnitExercisesArea unit={unit} student={student} mayManage={mayManage} /> : <UnitProgressArea unit={unit} studentName={student.name} />}
         {mayManage && (
           <div className="mt-14 border-t border-line pt-5">
@@ -327,7 +329,8 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
   for (const a of attempts) if (!lastBy.has(a.assignment_id) || a.created_at > lastBy.get(a.assignment_id)!) lastBy.set(a.assignment_id, a.created_at);
   const rows = repo.listAssignments(unit.student_id).filter((a) => !a.completed_at || lastBy.has(a.id));
   const name = first(student.name);
-  const paired = hasDevice(unit.teacher_id);
+  const device = studentDevice(unit);
+  const paired = device !== null;
   return (
     <div className="grid gap-10">
       <section>
@@ -369,7 +372,7 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
           </ul>
         )}
       </section>
-      <RunningUnitTexts unitId={unit.id} studentId={student.id} deviceView={unit.device_view} paired={paired && mayManage} name={name} />
+      <RunningUnitTexts unitId={unit.id} studentId={student.id} deviceView={unit.device_view} device={mayManage ? device : null} name={name} />
       <Reveal label={`Ohne Tablet: Link für das Gerät von ${name}`}>
         <p className="mb-2 text-[14px] text-ink-2">Nur nötig, wenn {name} nicht am Schüler-Tablet arbeitet. Auf dem Link sieht {name} die gesendeten Übungen.</p>
         <div className="flex max-w-[620px] flex-wrap items-center gap-2">
@@ -427,4 +430,12 @@ function DocView({ lesson }: { lesson: repo.Lesson }) {
       ))}
     </dl>
   );
+}
+
+/** Address and QR code for "Eigenes Gerät verbinden". The QR code holds only the address, never the code. */
+async function joinInfo() {
+  const h = await headers();
+  const base = baseUrl({ host: h.get("x-forwarded-host") ?? h.get("host"), proto: h.get("x-forwarded-proto") });
+  const url = `${base.url}/mitmachen`;
+  return { url, qr: await QRCode.toString(url, { type: "svg", margin: 2, errorCorrectionLevel: "M" }) };
 }
