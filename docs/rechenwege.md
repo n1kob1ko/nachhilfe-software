@@ -13,7 +13,7 @@ Zwei Mathematik-Formate, bei denen der Schüler zeigt, **wie** er rechnet: **Rec
 - Geschrieben wird wie im Heft, ohne LaTeX: `3/4` für Brüche, `x^2` oder `x²` für Potenzen, `sqrt(2)` oder `√2` für Wurzeln, `·` oder `*` für mal, `:` für geteilt, Komma für Dezimalzahlen.
 - Eine Zeichenleiste bringt die Zeichen, die die Tablet-Tastatur versteckt (Bruchstrich, ², Hochzahl, √, ·, :, −, =, Klammern, %, bei Gleichungen die Unbekannte). Sie fügt dort ein, wo der Cursor steht.
 - Unter einer Zeile mit Bruch, Potenz oder Wurzel zeigt die App, wie sie die Zeile liest (echter Bruchstrich, hochgestellte Hochzahl, Wurzelzeichen).
-- Das Ergebnis steht in einem eigenen Feld, bei Gleichungen mit „x =“ davor. Fehlt es, gilt die letzte Zeile.
+- Das Ergebnis steht in einem eigenen Feld, bei Gleichungen mit „x =“ davor. Fehlt es, gilt die letzte Zeile (auch „L = {5}“, „Lösung: x = 5“ oder „5 = x“). Findet die App dort kein Ergebnis und die letzte Zeile ist Text, bewertet der Lehrer.
 - Nach „Prüfen“ bekommt jede Zeile ein Zeichen: ✓ stimmt, ✗ hier passt etwas nicht, ↳ mit dem Fehler davor richtig weitergerechnet, ? nicht sicher prüfbar. Die Rückmeldung nennt die erste falsche Zeile. Wer eine Zeile ändert, verliert dort die Markierung und kann neu prüfen (3 Versuche).
 - Läuft eine Einheit, kann der Schüler „Ich rechne am Whiteboard“ anhaken. Dann reicht das Ergebnis, den Rechenweg am Whiteboard bewertet der Lehrer.
 - Alles Getippte bleibt auf dem Gerät gespeichert, bis es gesendet ist (Neuladen, Verbindung weg). Eine Abgabe ohne Verbindung wird später genau einmal gesendet.
@@ -27,7 +27,7 @@ Die Prüfung steht in `lib/math-expr.ts` (Lesen der Ausdrücke) und `lib/math-ch
 | Aufgabe | Eine Zeile stimmt, wenn … |
 |---|---|
 | Gleichung (`3x + 7 = 22`) | sie für die Lösung der Gleichung gilt. Jede richtige Umformung zählt, auch in anderer Reihenfolge, mit Brüchen oder in mehr Schritten. |
-| Term (`3/4 + 1/6`, `3x^7 · 4x^7`) | jeder Teil gleich viel wert ist wie die Angabe (bei Termen mit x an mehreren Stellen geprüft). |
+| Term (`3/4 + 1/6`, `3x^7 · 4x^7`) | jeder Teil gleich viel wert ist wie die Angabe (bei Termen mit x an mehreren Stellen geprüft). Nebenrechnungen, die in sich stimmen (`√16 = 4`, `1/2 = 2/4`), sind auch richtig. |
 | Rechnung ohne Angabe (Prozent, Sachrechnen) | die Rechnung in sich stimmt (`480 : 100 = 4,8`). Eine Zeile mit „=“ am Anfang rechnet mit dem Wert davor weiter. |
 
 - Gerundete Zwischenergebnisse (`0,1667`, `≈`) gelten, wenn richtig gerundet.
@@ -58,7 +58,7 @@ Ein falsches Ergebnis mit teilweise richtigem Weg bleibt falsch. Der Lehrer kann
 ### Sachaufgaben
 
 - Jede Teilfrage wird einzeln geprüft: Zahlen wie ein Ergebnis oben, mit Rechenzeilen. Antworten in Worten bewertet immer der Lehrer.
-- **Folgefehler:** Zu einer Teilfrage kann stehen, wie sie aus den Teilfragen davor entsteht (`480 - a`). Rechnet der Schüler mit seinem falschen a) richtig weiter, zählt b) als richtig.
+- **Folgefehler:** Zu einer Teilfrage kann stehen, wie sie aus den Teilfragen davor entsteht (`480 - a`). Rechnet der Schüler mit seinem falschen a) richtig weiter, zählt b) als richtig. Kann die App a) nicht lesen, bewertet der Lehrer auch b).
 - Alle Zahlen richtig und keine Wort-Antwort: richtig. Alle Zahlen richtig mit Wort-Antwort: Lehrerbewertung. Eine Zahl falsch: noch ein Versuch, die falschen Teilfragen sind markiert. Beim letzten Versuch: einige richtig = teilweise richtig.
 
 ## Lernstand und Fehlerarten

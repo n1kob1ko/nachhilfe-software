@@ -138,6 +138,53 @@ test("6. other right ways count: no fixed order of steps", async () => {
     assert.equal(gradeMathTask(BRUCH, way(steps, "3/4")).check.correct, true, steps.join(" → "));
 });
 
+test("review before merge: no automatic 'falsch' for right working the app reads differently", async () => {
+  const { gradeMathTask } = await import("./math-task");
+  // side calculations in a term are right in themselves, not errors
+  const sqrt = { ...BRUCH, data: { start: "sqrt(16) + 3^2" }, answer: { accepted: ["13"], needWay: true } };
+  assert.deepEqual(gradeMathTask(sqrt, way(["sqrt(16) = 4", "3^2 = 9", "4 + 9 = 13"], "13")).view.steps!.map((s) => s.status), ["ok", "ok", "ok"]);
+  assert.equal(gradeMathTask(BRUCH, way(["1/2 = 2/4", "2/4 + 1/4 = 3/4"], "3/4")).check.correct, true);
+  assert.equal(gradeMathTask(BRUCH, way(["1/2 = 2/4", "2/4 + 1/4 = 3/8"], "3/8")).view.steps![1].status, "fehler", "a wrong line stays wrong");
+  // the result written in the last line in other ways
+  for (const last of ["L = {5}", "Lösung: x = 5", "5 = x"]) assert.equal(gradeMathTask(GLEICHUNG, way(["3x = 15", last])).check.correct, true, last);
+  // no result found and the last line is words: the teacher decides, not "falsch"
+  const words = gradeMathTask(GLEICHUNG, way(["3x = 15", "x ist dann fünf"]));
+  assert.equal(words.check.correct, null);
+  assert.equal(words.view.result!.status, "unklar");
+  // stopping half way is still reliably no result
+  assert.equal(gradeMathTask(GLEICHUNG, way(["3x = 15"])).check.correct, false);
+  // a) not readable: b) built on it is for the teacher as well
+  const two = { ...FAHRRAD, data: { parts: FAHRRAD.data.parts!.slice(0, 2) }, answer: { parts: FAHRRAD.answer.parts!.slice(0, 2) } };
+  const r = gradeMathTask(two, parts({ result: "siebzig" }, { result: "410 €" }));
+  assert.deepEqual(r.view.parts!.map((p) => p.status), ["offen", "offen"]);
+  assert.equal(r.check.correct, null);
+});
+
+test("review before merge: resending, two devices and a second teacher grade never count twice", async () => {
+  const { tasks, answer, repo, niko, sid, aid } = await setup("Rechenweg mehrfach", [GLEICHUNG, GLEICHUNG, GLEICHUNG]);
+  const { reviewAnswer } = await import("./service");
+  const counted = (taskId: number) => repo.listAttemptsForStudent(sid).filter((a) => a.task_id === taskId);
+  const rows = (taskId: number) => repo.listAttemptsForAssignment(aid).filter((a) => a.task_id === taskId);
+  await answer(tasks[0].id, way(["3x = 15", "x = 5"], "5"));
+  const again = await answer(tasks[0].id, way(["3x = 15", "x = 3"], "3"));
+  assert.match(again.feedback, /schon abgeschlossen/);
+  assert.equal(counted(tasks[0].id).length, 1);
+  // tablet and laptop send at the same time on the last tries
+  const wrong = way(["3x = 15", "x = 3"], "3");
+  await answer(tasks[1].id, wrong);
+  await Promise.all([answer(tasks[1].id, wrong), answer(tasks[1].id, wrong), answer(tasks[1].id, way(["3x = 15", "x = 5"], "5"))]);
+  assert.equal(rows(tasks[1].id).length, 3);
+  assert.equal(rows(tasks[1].id).filter((a) => a.final).length, 1);
+  // waiting for the teacher: a resend adds nothing, a second grade replaces the first
+  await answer(tasks[2].id, way(["3x = 29", "x = 5"], "5"));
+  await answer(tasks[2].id, way(["3x = 15", "x = 5"], "5"));
+  assert.equal(rows(tasks[2].id).length, 1);
+  const open = repo.pendingReviews({ studentId: sid })[0];
+  reviewAnswer(open.id, "richtig", niko.id);
+  reviewAnswer(open.id, "teilweise", niko.id);
+  assert.deepEqual(counted(tasks[2].id).map((a) => a.review), ["teilweise"]);
+});
+
 // ---------- 2: equivalent results ----------
 
 test("2. fractions: equivalent results are right, the form only counts when the task asks for it", async () => {
