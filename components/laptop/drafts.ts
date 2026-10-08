@@ -8,7 +8,7 @@ export const DRAFT_PREFIX = "lernheft-laptop-text-";
 /** set before signing out without saving: the next page removes every copy */
 export const DISCARD_FLAG = "lernheft-laptop-verwerfen";
 
-export type Draft = { textId: number; base: number; body: TextDoc; at: number; words: number };
+export type Draft = { textId: number; base: number; body: TextDoc; at: number; words: number; title: string };
 
 export function readDrafts(): Draft[] {
   const out: Draft[] = [];
@@ -18,10 +18,10 @@ export function readDrafts(): Draft[] {
       if (!key?.startsWith(DRAFT_PREFIX)) continue;
       const textId = Number(key.slice(DRAFT_PREFIX.length));
       try {
-        const b = JSON.parse(localStorage.getItem(key) ?? "") as { base: number; body: TextDoc; at: number };
-        out.push({ textId, base: b.base, body: b.body, at: b.at, words: Array.isArray(b.body) ? countWords(b.body) : 0 });
+        const b = JSON.parse(localStorage.getItem(key) ?? "") as { base: number; body: TextDoc; at: number; title?: string };
+        out.push({ textId, base: b.base, body: b.body, at: b.at, words: Array.isArray(b.body) ? countWords(b.body) : 0, title: b.title || "Text" });
       } catch {
-        out.push({ textId, base: 0, body: [], at: 0, words: 0 });
+        out.push({ textId, base: 0, body: [], at: 0, words: 0, title: "Text" });
       }
     }
   } catch {

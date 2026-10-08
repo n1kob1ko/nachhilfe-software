@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, CloudOff, Copy, Loader2, Trash2 } from "lucide-react";
+import { CheckCircle2, CloudOff, Copy, Download, Loader2, Trash2 } from "lucide-react";
+import { saveTextFile } from "@/components/text/save-file";
 import { plainText } from "@/lib/text-doc";
 import { DISCARD_FLAG, readDrafts, removeAllLaptopData, removeDraft, type Draft } from "./drafts";
 
@@ -102,14 +103,22 @@ export function EndedCleanup({ textIds }: { textIds: number[] }) {
       {rows.map((r) => (
         <li key={r.textId} role="alert" className="rounded-2xl bg-amber-wash px-4 py-3">
           {r.state === "offline" ? (
-            <p className="inline-flex items-start gap-2 text-[15px] font-semibold">
-              <CloudOff size={18} className="mt-0.5 shrink-0" aria-hidden /> Dein Text ({r.words} Wörter) ist noch nicht gespeichert. Bitte lass dieses Fenster offen, bis die
-              Verbindung wieder da ist.
-            </p>
+            <>
+              <p className="inline-flex items-start gap-2 text-[15px] font-semibold">
+                <CloudOff size={18} className="mt-0.5 shrink-0" aria-hidden /> Dein Text ({r.words} Wörter) ist noch nicht gespeichert. Bitte lass dieses Fenster offen, bis die
+                Verbindung wieder da ist, oder sichere ihn als Datei.
+              </p>
+              <button type="button" className="btn btn-secondary btn-sm mt-2" onClick={() => saveTextFile(r.title, r.body)}>
+                <Download size={14} aria-hidden /> Als Datei sichern
+              </button>
+            </>
           ) : (
             <>
               <p className="text-[15px] font-semibold">Ein Entwurf ({r.words} Wörter) konnte nicht mehr gespeichert werden.</p>
               <div className="mt-2 flex flex-wrap gap-2">
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => saveTextFile(r.title, r.body)}>
+                  <Download size={14} aria-hidden /> Als Datei sichern
+                </button>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => void copy(r)}>
                   <Copy size={14} aria-hidden /> {copied === r.textId ? "Kopiert" : "Als Text kopieren"}
                 </button>

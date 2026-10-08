@@ -633,6 +633,7 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["attempts", "error_type_by", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
   ["attempts", "error_type_at", "TEXT"],
   ["attempts", "error_type_suggested_source", "TEXT"], // who made error_type_suggested: vorschlag | ki
+  ["attempts", "submission_id", "TEXT"], // id the device gave this submission; repeats of it are stored once
   // Aufgabenbibliothek: tags of a library entry (worksheets.kind = 'bibliothek', one task each)
   ["worksheets", "tags", "TEXT NOT NULL DEFAULT '[]'"],
   // note for parents/student written from the summary of a unit (by the teacher or, on request, by Claude)
@@ -729,6 +730,8 @@ function migrate(conn: Database.Database) {
     conn.exec(`UPDATE tests SET created_at = date WHERE created_at IS NULL`);
     conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_lessons_unit ON lessons(unit_id) WHERE unit_id IS NOT NULL");
     conn.exec("CREATE INDEX IF NOT EXISTS idx_attempts_unit ON attempts(unit_id)");
+    // one submission = one answer, however often a lost connection makes the device send it
+    conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_attempts_submission ON attempts(student_id, submission_id) WHERE submission_id IS NOT NULL");
     // Units ended before these columns existed: the automatic end was only noted in end_reason.
     conn.exec(`UPDATE units SET ended_by = 'automatisch', end_estimated = 1 WHERE ended_by = '' AND status = 'beendet' AND end_reason LIKE 'automatisch%'`);
     conn.exec(`UPDATE units SET ended_by = 'lehrer' WHERE ended_by = '' AND status <> 'gestartet'`);

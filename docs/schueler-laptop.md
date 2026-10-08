@@ -42,6 +42,12 @@ Gemeinsam ist nur, was zur Einheit gehört: Was der Schüler gerade sieht (`unit
 - Antworten und Texte landen in denselben Tabellen wie vom Tablet (`attempts`, `texts`, `text_units`), mit der Einheit. Sie stehen damit in Lernverlauf und Dokumentation.
 - **Texte:** Der Editor speichert laufend und hält eine Kopie im Gerät (`localStorage`, Schlüssel `lernheft-laptop-text-<id>`), bis der Server sie hat. Ohne WLAN schreibt Max weiter; die Seite zeigt „Keine Verbindung – deine Arbeit bleibt auf diesem Gerät …“ und speichert, sobald die Verbindung wieder da ist.
 - **Antworten:** Geht eine Antwort ohne Verbindung nicht durch, bleibt sie stehen („Keine Verbindung. Deine Antwort ist noch da …“) und wird gesendet, sobald das Internet wieder geht.
+- **Keine doppelten Antworten:** Jeder Klick auf „Prüfen“ bekommt eine eigene Abgabe-ID. Wiederholt der Browser dieselbe Abgabe (Antwort kam beim Server an, die Rückmeldung aber nicht), speichert und bewertet der Server sie nur einmal und schickt das erste Ergebnis zurück.
+  - In der Datenbank verhindert ein eindeutiger Index (`attempts.student_id` + `submission_id`) eine zweite Zeile; Versuchsnummer und Speichern laufen in einer Transaktion.
+  - Kommt die Wiederholung, während die erste Abgabe noch bewertet wird, wartet sie auf deren Ergebnis.
+  - Lernverlauf, Lernstand, Dokumentation und Live-Status sehen die Antwort damit genau einmal. Ein neuer Klick zählt weiter als neuer Versuch.
+  - Gilt genauso für Lehrer-Tablet und Übungslink (`lib/service.ts` `submitAnswer`).
+- **Nicht gespeicherte Texte:** Fehlt die Verbindung, zeigt der Editor deutlich „Noch nicht gespeichert: Deine letzten Änderungen sind nur auf diesem Gerät.“ mit der letzten Speicherzeit. Mit „Als Datei sichern“ lädt der Schüler den Entwurf als Textdatei herunter, bevor er das Fenster schließt. Das geht auch im Abmelden-Dialog und auf der Ende-Seite.
 - **Ende während einer Unterbrechung:** Endet die Einheit, während der Laptop offline ist, darf er Texte bis 10 Minuten nach dem Einheitsende noch abgeben (nur Texte seines Schülers). Danach oder nach „Zugang beenden“ nicht mehr.
 
 ## Aufräumen am Laptop
