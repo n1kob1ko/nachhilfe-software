@@ -204,7 +204,14 @@ export type Attempt = {
   submission_id?: string | null;
   error_type_by?: number | null;
   error_type_at?: string | null;
+  /** Lehrerbewertung: offen (waits for the teacher), richtig, teilweise, falsch; null = checked by the app. */
+  review?: string | null;
+  review_by?: number | null;
+  review_at?: string | null;
 };
+
+/** Answers that wait for the teacher's grade do not count for the Lernstand, the statistics or the report yet. */
+export const COUNTED = "COALESCE(review, '') <> 'offen'";
 
 type Row = Record<string, unknown>;
 
@@ -395,7 +402,7 @@ export function getLessonForUnit(unitId: number): Lesson | null {
   return r ? toLesson(r) : null;
 }
 export function listAttemptsForUnit(unitId: number): Attempt[] {
-  return db().prepare("SELECT * FROM attempts WHERE unit_id = ? ORDER BY created_at, id").all(unitId) as Attempt[];
+  return db().prepare(`SELECT * FROM attempts WHERE unit_id = ? AND ${COUNTED} ORDER BY created_at, id`).all(unitId) as Attempt[];
 }
 export function getLessonForAssignment(assignmentId: number): Lesson | null {
   const r = db().prepare("SELECT * FROM lessons WHERE assignment_id = ?").get(assignmentId) as Row | undefined;
@@ -838,7 +845,7 @@ export function listAttemptsForStudent(studentId: number): Attempt[] {
       .prepare(
         `SELECT a.*, (SELECT json_group_array(ts.skill_id) FROM task_skills ts WHERE ts.task_id = a.task_id) AS task_skill_ids,
            (SELECT t.level FROM tasks t WHERE t.id = a.task_id) AS task_level
-         FROM attempts a WHERE a.student_id = ? ORDER BY a.created_at, a.id`,
+         FROM attempts a WHERE a.student_id = ? AND ${COUNTED.replace("review", "a.review")} ORDER BY a.created_at, a.id`,
       )
       .all(studentId) as (Attempt & { task_skill_ids: string; task_level: number | null })[]
   ).map(({ task_skill_ids, task_level, ...a }) => ({
@@ -849,7 +856,7 @@ export function listAttemptsForStudent(studentId: number): Attempt[] {
   }));
 }
 export function recordAttempt(
-  a: Omit<Attempt, "id" | "created_at" | "unit_id" | "active_ms" | "skill_ids" | "teacher_id" | "level" | "error_type" | "error_type_source" | "error_type_suggested" | "error_type_suggested_source" | "error_type_by" | "error_type_at"> & {
+  a: Omit<Attempt, "id" | "created_at" | "unit_id" | "active_ms" | "skill_ids" | "teacher_id" | "level" | "error_type" | "error_type_source" | "error_type_suggested" | "error_type_suggested_source" | "error_type_by" | "error_type_at" | "review" | "review_by" | "review_at"> & {
     created_at?: string;
     unit_id?: number | null;
     active_ms?: number | null;
@@ -858,19 +865,20 @@ export function recordAttempt(
     error_type?: string | null;
     error_type_source?: string | null;
     submission_id?: string | null;
+    review?: string | null;
   },
 ) {
   const res = db()
     .prepare(
       `INSERT INTO attempts (assignment_id, task_id, student_id, skill_id, attempt_no, answer, correct, final, time_ms, hints_used, solution_viewed, error_label, feedback, unit_id, active_ms, teacher_id, level,
-         error_type, error_type_source, error_type_suggested, error_type_suggested_source, error_type_at, created_at, submission_id)
+         error_type, error_type_source, error_type_suggested, error_type_suggested_source, error_type_at, created_at, submission_id, review)
        VALUES (@assignment_id, @task_id, @student_id, @skill_id, @attempt_no, @answer, @correct, @final, @time_ms, @hints_used, @solution_viewed, @error_label, @feedback, @unit_id, @active_ms, @teacher_id, @level,
          @error_type, @error_type_source,
          CASE WHEN @error_type_source IN ('vorschlag', 'ki') THEN @error_type END, CASE WHEN @error_type IS NOT NULL AND @error_type_source IN ('vorschlag', 'ki') THEN @error_type_source END,
          CASE WHEN @error_type IS NOT NULL THEN COALESCE(@created_at, datetime('now')) END,
-         COALESCE(@created_at, datetime('now')), @submission_id)`,
+         COALESCE(@created_at, datetime('now')), @submission_id, @review)`,
     )
-    .run({ created_at: null, unit_id: null, active_ms: null, teacher_id: null, level: null, error_type: null, error_type_source: null, submission_id: null, ...a });
+    .run({ created_at: null, unit_id: null, active_ms: null, teacher_id: null, level: null, error_type: null, error_type_source: null, submission_id: null, review: null, ...a });
   return Number(res.lastInsertRowid);
 }
 /**
@@ -881,6 +889,29 @@ export function setAttemptErrorType(attemptId: number, type: string | null, teac
   db()
     .prepare("UPDATE attempts SET error_type = ?, error_type_source = ?, error_type_by = ?, error_type_at = ? WHERE id = ? AND correct = 0")
     .run(type, type ? "lehrer" : null, teacherId, at.toISOString(), attemptId);
+}
+/**
+ * Lehrerbewertung of a finished answer: richtig counts as right, teilweise half (lib/mastery.ts), falsch
+ * as wrong. Only the last answer of a task (final) can be graded; a grade can be changed later.
+ */
+export function setAttemptReview(attemptId: number, review: "richtig" | "teilweise" | "falsch", teacherId: number | null, at = new Date()) {
+  const res = db()
+    .prepare(
+      `UPDATE attempts SET review = ?, correct = ?, review_by = ?, review_at = ?,
+         error_type = CASE WHEN ? = 'richtig' THEN NULL ELSE error_type END, error_type_source = CASE WHEN ? = 'richtig' THEN NULL ELSE error_type_source END
+       WHERE id = ? AND final = 1 AND solution_viewed = 0`,
+    )
+    .run(review, review === "richtig" ? 1 : 0, teacherId, at.toISOString(), review, review, attemptId);
+  return res.changes > 0;
+}
+/** Answers waiting for the teacher's grade, newest first: of one student, one unit or one assignment. */
+export function pendingReviews(o: { studentId?: number; unitId?: number; assignmentId?: number }): Attempt[] {
+  const where = ["review = 'offen'"];
+  const args: number[] = [];
+  if (o.studentId) (where.push("student_id = ?"), args.push(o.studentId));
+  if (o.unitId) (where.push("unit_id = ?"), args.push(o.unitId));
+  if (o.assignmentId) (where.push("assignment_id = ?"), args.push(o.assignmentId));
+  return db().prepare(`SELECT * FROM attempts WHERE ${where.join(" AND ")} ORDER BY id DESC`).all(...args) as Attempt[];
 }
 export function getAttempt(id: number): Attempt | null {
   return (db().prepare("SELECT * FROM attempts WHERE id = ?").get(id) as Attempt | undefined) ?? null;

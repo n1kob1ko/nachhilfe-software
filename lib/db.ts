@@ -712,6 +712,11 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["attempts", "error_type_at", "TEXT"],
   ["attempts", "error_type_suggested_source", "TEXT"], // who made error_type_suggested: vorschlag | ki
   ["attempts", "submission_id", "TEXT"], // id the device gave this submission; repeats of it are stored once
+  // Lehrerbewertung (lib/tasks.ts REVIEWS): offen = waits for the teacher (free answers), richtig | teilweise | falsch
+  // = the teacher's grade; null = checked by the app only. An answer waiting for the teacher does not count yet.
+  ["attempts", "review", "TEXT"],
+  ["attempts", "review_by", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["attempts", "review_at", "TEXT"],
   // Aufgabenbibliothek: tags of a library entry (worksheets.kind = 'bibliothek', one task each)
   ["worksheets", "tags", "TEXT NOT NULL DEFAULT '[]'"],
   // note for parents/student written from the summary of a unit (by the teacher or, on request, by Claude)

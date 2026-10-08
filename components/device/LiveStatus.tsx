@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { ArrowDown, ArrowUp, CheckCircle2, Eye, ListChecks, PenLine, Presentation, Printer, RotateCcw, SkipForward, Sparkles, TabletSmartphone, XCircle } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, CircleDashed, Eye, ListChecks, PenLine, Presentation, Printer, RotateCcw, SkipForward, Sparkles, TabletSmartphone, XCircle } from "lucide-react";
 import { currentTaskToBoardAction, newExerciseAction, resendAction, retryTaskAction, sendNextTaskAction, showSolutionAction, tabletViewAction } from "@/app/device-actions";
 import { ACTION_LABEL } from "@/lib/ai/labels";
 import type { AILive } from "@/lib/ai/realtime";
@@ -152,10 +152,10 @@ export function LiveStatus({ unitId, initial, join }: { unitId: number; initial:
             <Metric label="Hilfen" value={String(c.hints)} />
           </dl>
           {c.last && (
-            <p className={`mt-3 inline-flex items-center gap-1.5 text-[14px] font-semibold ${c.last.correct ? "text-green" : "text-red"}`} role="status">
-              {c.last.correct ? <CheckCircle2 size={16} aria-hidden /> : <XCircle size={16} aria-hidden />}
-              Letzte Antwort {c.last.correct ? "richtig" : "falsch"}
-              {!c.last.correct && !c.last.final && " – versucht es nochmal"}
+            <p className={`mt-3 inline-flex items-center gap-1.5 text-[14px] font-semibold ${c.last.pending ? "text-ink-2" : c.last.correct ? "text-green" : "text-red"}`} role="status">
+              {c.last.pending ? <CircleDashed size={16} aria-hidden /> : c.last.correct ? <CheckCircle2 size={16} aria-hidden /> : <XCircle size={16} aria-hidden />}
+              {c.last.pending ? "Letzte Antwort gespeichert, du bewertest sie" : `Letzte Antwort ${c.last.correct ? "richtig" : "falsch"}`}
+              {!c.last.pending && !c.last.correct && !c.last.final && " – versucht es nochmal"}
               <span className="num font-normal text-ink-3" suppressHydrationWarning>
                 {" "}
                 · {new Date(c.last.at).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Vienna" })}

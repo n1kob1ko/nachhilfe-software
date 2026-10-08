@@ -6,6 +6,7 @@
 import type { Difficulty, TaskType } from "./curriculum";
 import type { TaskDraft } from "./tasks";
 import { GAP, parseNumber } from "./tasks";
+import { expectedFixes } from "./fix-text";
 
 type Rng = () => number;
 const rint = (rng: Rng, min: number, max: number) => Math.floor(rng() * (max - min + 1)) + min;
@@ -765,20 +766,189 @@ const FREE_PROMPTS = [
   (n: string) => `Welcher Fehler passiert bei „${n}“ besonders oft? Beschreibe ihn und erkläre, wie man ihn vermeidet.`,
   (n: string) => `Erfinde eine eigene Aufgabe zu „${n}“ und löse sie Schritt für Schritt.`,
 ];
+/** Deutsch and Englisch: writing own sentences instead of solving a made-up task. */
+const LANG_PROMPT = (n: string) => `Schreibe drei eigene Sätze zu „${n}“. Erkläre bei einem Satz, warum er so richtig ist.`;
 
 function freeTask(skillId: string, skillName: string, diff: Difficulty, variant = 0): TaskDraft {
   const sample = EXPLAIN[skillId] ?? `Eine korrekte Erklärung zu „${skillName}“ mit einem passenden Beispiel.`;
+  const lang = /^(deutsch|englisch)\./.test(skillId);
   return {
     type: "free",
     skillId,
     difficulty: diff,
-    prompt: FREE_PROMPTS[variant % FREE_PROMPTS.length](skillName),
-    data: {},
-    answer: { sample },
+    prompt: lang && variant % FREE_PROMPTS.length === 2 ? LANG_PROMPT(skillName) : FREE_PROMPTS[variant % FREE_PROMPTS.length](skillName),
+    data: { lines: 5 },
+    answer: {
+      sample,
+      criteria:
+        lang && variant % FREE_PROMPTS.length === 2
+          ? ["Drei eigene, passende Sätze ohne Fehler an der geübten Stelle.", "Die Erklärung nennt die Regel."]
+          : ["Die Regel oder das Vorgehen ist richtig beschrieben.", "Ein eigenes, passendes Beispiel ist dabei."],
+    },
     solution: sample,
     hints: ["Schreib die Schritte der Reihe nach auf.", "Ein eigenes Beispiel zeigt, dass du es verstanden hast."],
     errorMap: [],
   };
+}
+
+// ---------- Fehler korrigieren, more gap texts ----------
+/** A sentence with an error and its correction, with what the error is. */
+type FixItem = { wrong: string; right: string; label: string; errorType: string };
+
+const ZEITEN_FIX: FixItem[] = [
+  ["Gestern gehe ich mit meiner Freundin ins Kino.", "Gestern ging ich mit meiner Freundin ins Kino.", "„gestern“ verlangt eine Vergangenheitsform"],
+  ["Letzte Woche haben wir einen Ausflug gemachen.", "Letzte Woche haben wir einen Ausflug gemacht.", "Partizip II von „machen“ ist „gemacht“"],
+  ["Morgen fuhr ich zu meiner Oma.", "Morgen fahre ich zu meiner Oma.", "„morgen“ verlangt Präsens oder Futur"],
+  ["Als ich nach Hause kam, hat meine Mutter schon gekocht gehabt.", "Als ich nach Hause kam, hatte meine Mutter schon gekocht.", "Vorzeitigkeit in der Vergangenheit: Plusquamperfekt"],
+  ["Wir haben gestern ins Schwimmbad gegangen.", "Wir sind gestern ins Schwimmbad gegangen.", "„gehen“ bildet das Perfekt mit „sein“"],
+  ["Er ist das Buch schon gelesen.", "Er hat das Buch schon gelesen.", "„lesen“ bildet das Perfekt mit „haben“"],
+  ["Nächstes Jahr werde ich in die dritte Klasse gegangen.", "Nächstes Jahr werde ich in die dritte Klasse gehen.", "Futur I: werden + Grundform"],
+  ["Früher spielt mein Vater oft Fußball.", "Früher spielte mein Vater oft Fußball.", "„früher“ verlangt eine Vergangenheitsform"],
+].map(([wrong, right, label]) => ({ wrong, right, label, errorType: "grammatik" }));
+
+const FAELLE_FIX: FixItem[] = [
+  ["Gestern bin ich mit meinen Freund in den Park gegangen.", "Gestern bin ich mit meinem Freund in den Park gegangen.", "Dativ nach „mit“"],
+  ["Ich helfe den alten Mann über die Straße.", "Ich helfe dem alten Mann über die Straße.", "„helfen“ verlangt den Dativ"],
+  ["Wegen dem Regen fällt das Spiel aus.", "Wegen des Regens fällt das Spiel aus.", "Genitiv nach „wegen“ (geschriebene Standardsprache)"],
+  ["Sie gibt ihrem Bruder den Ball und dem Hund einen Knochen und ihren Vater die Zeitung.", "Sie gibt ihrem Bruder den Ball und dem Hund einen Knochen und ihrem Vater die Zeitung.", "Wem gibt sie etwas? → Dativ"],
+  ["Ich sehe der Hund im Garten.", "Ich sehe den Hund im Garten.", "Wen sehe ich? → Akkusativ"],
+  ["Das ist das Fahrrad von mein Bruder.", "Das ist das Fahrrad von meinem Bruder.", "Dativ nach „von“"],
+  ["Er wartet auf seinem Freund.", "Er wartet auf seinen Freund.", "„warten auf“ verlangt den Akkusativ"],
+].map(([wrong, right, label]) => ({ wrong, right, label, errorType: "grammatik" }));
+
+const ZEITEN_CLOZE: ClozeItem[] = (
+  [
+    ["Gestern ___ ich mit meinen Freunden im Park. (spielen, Präteritum)", [["spielte"]], "spielen → ich spielte (Präteritum)"],
+    ["Letzten Sommer ___ wir nach Italien ___. (fahren, Perfekt)", [["sind"], ["gefahren"]], "fahren bildet das Perfekt mit „sein“: wir sind gefahren"],
+    ["Morgen ___ es bestimmt ___. (regnen, Futur I)", [["wird"], ["regnen"]], "Futur I: werden + Grundform → es wird regnen"],
+    ["Als wir ankamen, ___ der Film schon ___. (beginnen, Plusquamperfekt)", [["hatte"], ["begonnen"]], "Plusquamperfekt: hatte + Partizip II → hatte begonnen"],
+    ["Meine Schwester ___ jeden Tag Klavier. (üben, Präsens)", [["übt"]], "Präsens, 3. Person: sie übt"],
+    ["Wir ___ gestern lange ___. (lernen, Perfekt)", [["haben"], ["gelernt"]], "lernen bildet das Perfekt mit „haben“: wir haben gelernt"],
+    ["Früher ___ er jeden Tag mit dem Rad zur Schule. (fahren, Präteritum)", [["fuhr"]], "fahren – fuhr – gefahren"],
+  ] as [string, string[][], string][]
+).map(([q, blanks, solution]) => ({
+  q: `Setze das Verb in der angegebenen Zeitform ein: ${q}`,
+  blanks,
+  solution,
+  hint: "Welche Zeitform steht in der Klammer? Brauchst du ein Hilfsverb (haben, sein, werden)?",
+  errors: {},
+}));
+
+const FAELLE_CLOZE: ClozeItem[] = (
+  [
+    ["Ich gehe mit ___ Freund ins Kino. (mein)", [["meinem"]], "mit + Dativ → meinem Freund"],
+    ["Wir helfen ___ alten Frau. (die)", [["der"]], "helfen + Dativ → der alten Frau"],
+    ["Er wartet auf ___ Bus. (der)", [["den"]], "warten auf + Akkusativ → den Bus"],
+    ["Das ist das Auto ___ Vaters. (mein)", [["meines"]], "Wessen Auto? → Genitiv: meines Vaters"],
+    ["Sie schenkt ___ Bruder ___ Buch. (ihr, ein)", [["ihrem"], ["ein"]], "Wem? → ihrem Bruder (Dativ); Was? → ein Buch (Akkusativ, sächlich)"],
+  ] as [string, string[][], string][]
+).map(([q, blanks, solution]) => ({
+  q: `Setze das Wort in Klammern im richtigen Fall ein: ${q}`,
+  blanks,
+  solution,
+  hint: "Frag nach dem Satzglied: Wer/was? Wessen? Wem? Wen/was? Achte auf Wörter wie mit, von, auf.",
+  errors: {},
+}));
+
+/** Gap texts for skills whose own bank is multiple choice. */
+const EXTRA_CLOZE: Record<string, ClozeItem[]> = { "deutsch.grammatik.zeiten": ZEITEN_CLOZE, "deutsch.grammatik.faelle": FAELLE_CLOZE };
+
+/** One error per item, from the banks that hold sentences: a wrong and the right option, or a gap filled wrongly. */
+function fixItems(skillId: string): FixItem[] {
+  const fromMC = (bank: MCItem[], errorType: string) =>
+    bank.flatMap((it) =>
+      it.options
+        .map((o, i) => ({ o, i }))
+        .filter(({ i }) => i !== it.correct)
+        .slice(0, 1)
+        .map(({ o, i }) => ({ wrong: o, right: it.options[it.correct], label: it.errors?.[i] ?? "", errorType })),
+    );
+  const fromCloze = (bank: ClozeItem[], errorType: string) =>
+    bank.flatMap((it) => {
+      const sentence = it.q.replace(/^[^:]*:\s*/, "").replace(/\s*\([^)]*\)\s*$/, "");
+      const wrong = Object.entries(it.errors ?? {})[0];
+      if (it.blanks.length !== 1 || !wrong || !sentence.includes(GAP)) return [];
+      const fill = (x: string) => sentence.replace(GAP, x);
+      const start = sentence.trimStart().startsWith(GAP);
+      const cap = (x: string) => (start ? x.charAt(0).toUpperCase() + x.slice(1) : x);
+      return [{ wrong: fill(cap(wrong[0])), right: fill(it.blanks[0][0]), label: wrong[1], errorType }];
+    });
+  switch (skillId) {
+    case "deutsch.grammatik.zeiten":
+      return ZEITEN_FIX;
+    case "deutsch.grammatik.faelle":
+      return FAELLE_FIX;
+    case "deutsch.beistrich.aufzaehlung":
+      return fromMC(BEISTRICH_AUFZ, "grammatik");
+    case "deutsch.beistrich.nebensatz":
+      return fromMC(BEISTRICH_NS, "grammatik");
+    case "deutsch.beistrich.infinitiv":
+      return fromMC(BEISTRICH_INF, "grammatik");
+    case "deutsch.recht.dasdass":
+      return fromCloze(DAS_DASS, "rechtschreibung");
+    case "deutsch.recht.gross":
+      return fromCloze(GROSS, "rechtschreibung");
+    case "deutsch.recht.sss":
+      return fromCloze(SSS, "rechtschreibung");
+    case "englisch.tenses.presentsimple":
+      return fromCloze(PRESENT_SIMPLE, "grammatik");
+    case "englisch.tenses.pastsimple":
+      return fromCloze(PAST_SIMPLE, "grammatik");
+    case "englisch.grammar.comparatives":
+      return fromCloze(COMPARATIVES, "grammatik");
+    default:
+      return [];
+  }
+}
+
+const FIX_PROMPT: Record<string, string> = {
+  "deutsch.grammatik.zeiten": "Im Text stimmen Zeitformen nicht. Schreib ihn richtig.",
+  "deutsch.grammatik.faelle": "Im Text stehen Wörter im falschen Fall. Schreib ihn richtig.",
+  "deutsch.beistrich.aufzaehlung": "Im Text stimmen Beistriche nicht. Schreib ihn richtig.",
+  "deutsch.beistrich.nebensatz": "Im Text stimmen Beistriche nicht. Schreib ihn richtig.",
+  "deutsch.beistrich.infinitiv": "Im Text stimmen Beistriche nicht. Schreib ihn richtig.",
+  "deutsch.recht.dasdass": "Im Text ist „das“ und „dass“ verwechselt. Schreib ihn richtig.",
+  "deutsch.recht.gross": "Im Text stimmt die Groß- und Kleinschreibung nicht. Schreib ihn richtig.",
+  "deutsch.recht.sss": "Im Text stimmt die Schreibung von s, ss oder ß nicht. Schreib ihn richtig.",
+};
+
+/**
+ * "Fehler korrigieren" without AI: one to three sentences of a bank, each with one error. Harder tasks
+ * get more sentences, so the student has to find the errors in a short paragraph.
+ */
+export function correctionTask(skillId: string, diff: Difficulty, rng: Rng = Math.random): TaskDraft | null {
+  const items = fixItems(skillId);
+  if (!items.length) return null;
+  const n = Math.min(items.length, LEVEL[diff] >= 3 ? 3 : LEVEL[diff] >= 2 ? 2 : 1);
+  const chosen = shuffle(rng, items).slice(0, n);
+  const english = skillId.startsWith("englisch.");
+  const faulty = chosen.map((c) => c.wrong).join(" ");
+  const corrected = chosen.map((c) => c.right).join(" ");
+  return {
+    type: "fix",
+    skillId,
+    category: "korrigieren",
+    difficulty: diff,
+    prompt: FIX_PROMPT[skillId] ?? (english ? "Find the mistakes and write the text correctly." : "Im Text sind Fehler. Schreib ihn richtig."),
+    data: { faulty },
+    answer: {
+      accepted: [corrected],
+      mode: "exact",
+      // the words that differ, so the label can be found again for the student's answer
+      fixes: chosen.flatMap((c) => expectedFixes(c.wrong, c.right).map((f) => ({ ...f, label: c.label, errorType: c.errorType }))),
+      criteria: [n === 1 ? "Der Fehler ist verbessert." : `Alle ${n} Fehler sind verbessert.`, "Richtiges wurde nicht verändert."],
+    },
+    solution: chosen.map((c) => `${c.right}\n→ ${c.label}`).join("\n"),
+    hints: [english ? "Lies Satz für Satz. Passt jedes Wort?" : "Lies Satz für Satz langsam. Wo klingt etwas falsch?", n === 1 ? "Es ist genau ein Fehler." : `Es sind ${n} Fehler, in jedem Satz einer.`],
+    errorMap: [],
+  };
+}
+
+/** A gap text for a skill: its own bank if it has gaps, otherwise an extra bank (Zeitformen, Fälle). */
+export function clozeTask(skillId: string, diff: Difficulty, rng: Rng = Math.random): TaskDraft | null {
+  const bank = EXTRA_CLOZE[skillId];
+  if (!bank) return null;
+  return { ...bankCloze(skillId, () => bank, "exact")(rng, diff), category: "lueckentext" };
 }
 
 // ---------- conversions ----------
@@ -877,14 +1047,24 @@ export function generateForSlot(slot: Slot, rng: Rng = Math.random, variant = 0)
     const t = readingTasks(rng, slot.subject, slot.skillId, slot.difficulty, variant + 1)[variant] ?? readingTasks(rng, slot.subject, slot.skillId, slot.difficulty, 1)[0];
     return tag(t, slot.category ?? "textverstaendnis");
   }
+  // Fehler korrigieren: from the sentence banks; skills without one get a free answer, never another format
+  if (slot.category === "korrigieren") {
+    const fix = correctionTask(slot.skillId, slot.difficulty, rng) ?? (genId ? correctionTask(genId, slot.difficulty, rng) : null);
+    return fix ? tag(fix, "korrigieren") : free();
+  }
   if (!genId || ["offen", "schreiben", "writing"].includes(slot.category ?? "")) return free();
   const base = GEN[genId](rng, slot.difficulty);
   switch (slot.category) {
     case "mc":
       return tag(toMC(rng, base));
     case "lueckentext":
-    case "gap":
-      return tag(toCloze(base));
+    case "gap": {
+      // a gap text stays a gap text: a choice question becomes one only through a bank of gap texts
+      const cloze = toCloze(base);
+      if (cloze.type === "cloze") return tag(cloze);
+      const extra = clozeTask(slot.skillId, slot.difficulty, rng) ?? clozeTask(genId, slot.difficulty, rng);
+      return extra ? tag(extra) : free();
+    }
     case "fehler":
       return tag(toFindError(rng, base) ?? base, "fehler");
     case "ordnen": {

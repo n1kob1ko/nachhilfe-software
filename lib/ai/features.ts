@@ -3,10 +3,11 @@ import { DIFFICULTIES, categoriesFor, type Category, type Difficulty } from "../
 import { ERROR_TYPES, type ErrorType } from "../error-types";
 import type { TaskDraft } from "../tasks";
 import { GAP, gapCount } from "../tasks";
+import { expectedFixes } from "../fix-text";
 import { runAI, unwrap, type AIMeta, type Part } from "./router";
 
 // ---------- exercise generation ----------
-const FORMATS = ["mc", "calc", "grammar", "cloze", "free", "reading", "order"] as const;
+const FORMATS = ["mc", "calc", "grammar", "cloze", "free", "reading", "order", "fix"] as const;
 const TaskSchema = z.object({
   category: z.string().describe("Schlüssel des Aufgabentyps aus der vorgegebenen Liste"),
   format: z.enum(FORMATS).describe("Antwortformat, passend zum Aufgabentyp"),
@@ -22,6 +23,15 @@ const TaskSchema = z.object({
   blanks: z.array(z.array(z.string())).nullable().describe("Bei cloze: pro Lücke die akzeptierten Lösungen"),
   sample_answer: z.string().nullable().describe("Bei free: Musterlösung bzw. Erwartungshorizont"),
   steps: z.array(z.string()).nullable().describe("Nur bei order: 3–6 Schritte des Lösungswegs in der RICHTIGEN Reihenfolge"),
+  case_sensitive: z.boolean().nullable().describe("Bei cloze und fix: true, wenn Groß- und Kleinschreibung zählt (Deutsch fast immer true)"),
+  faulty_text: z.string().nullable().describe("Nur bei fix: der Satz oder Absatz MIT den Fehlern, so wie der Schüler ihn bekommt"),
+  corrected_text: z.string().nullable().describe("Nur bei fix: derselbe Text vollständig verbessert, sonst unverändert (gleiche Wörter, gleiche Reihenfolge)"),
+  text_errors: z
+    .array(z.object({ wrong: z.string().describe("das falsche Wort bzw. die falsche Stelle, genau wie im faulty_text"), right: z.string(), label: z.string().describe("kurzer Grund, z. B. „Dativ nach mit“"), error_type: z.enum(ERROR_TYPES.map((e) => e.key) as [ErrorType, ...ErrorType[]]).nullable() }))
+    .nullable()
+    .describe("Nur bei fix: jeder eingebaute Fehler einzeln"),
+  answer_lines: z.number().int().nullable().describe("Nur bei free: Zeilen für die Antwort (1 = ein Wort oder kurzer Satz, 3–4 = mehrere Sätze, 8 und mehr = längerer Text)"),
+  criteria: z.array(z.string()).describe("2–4 Bewertungskriterien: woran die Lehrkraft eine richtige Antwort erkennt (bei free der Erwartungshorizont in Stichpunkten)"),
   solution: z.string().describe("Vollständiger Lösungsweg Schritt für Schritt, schülergerecht"),
   solution_steps: z.array(z.string()).describe("Derselbe Lösungsweg als 2–6 einzelne Schritte"),
   estimated_time_sec: z.number().int().describe("Geschätzte Bearbeitungszeit in Sekunden für ein Kind dieser Klasse"),
@@ -42,6 +52,11 @@ export type AIGenerateRequest = {
   count: number;
   /** Task types to use; empty = choose what fits. */
   categories: Category[];
+  /**
+   * The type of each task, in order (the builder's plan, lib/builder.ts). With a plan every task must
+   * come in its type; a task in another format is dropped and made again.
+   */
+  plan?: { skillId: string; category: string }[];
   /** What the AI should know about the student (strengths, typical errors, goals …). */
   studentContext?: string | null;
   focusNote?: string;
@@ -57,13 +72,35 @@ Prüfe jede Lösung selbst nach, bevor du sie ausgibst. Bei Brüchen sind Ergebn
 Schreib Brüche als a/b ohne Leerzeichen (z. B. 3/4, -5/8, x/2, (x+1)/2), kein LaTeX. Die App zeigt sie mit Bruchstrich an.
 Lösungswege sind kurz, Schritt für Schritt und so formuliert, dass ein Kind der angegebenen Klasse und Schulform sie versteht.
 Die typischen Fehler beschreiben echte Denkfehler, die Schülerinnen und Schüler bei diesem Thema machen.
+Halte das verlangte Format jeder Aufgabe genau ein: ein Lückentext ist ein Text mit Lücken zum Selbst-Eintragen, keine Auswahlaufgabe; eine Korrekturaufgabe ist ein Text mit Fehlern, den der Schüler selbst verbessert.
 Wenn du etwas über den Schüler erfährst, richte die Aufgaben gezielt darauf aus: übe, was er falsch macht, und baue auf dem auf, was er kann.`;
+
+const FORMAT_RULES = `Formate:
+- mc: options + correct_option
+- calc: accepted_answers, numeric=true bei Zahlen/Brüchen
+- grammar: accepted_answers (kurzer Text)
+- cloze: zusammenhängender Satz oder kurzer Text mit ${GAP} pro Lücke (1–6 Lücken) + blanks (pro Lücke ALLE richtigen Schreibweisen) + case_sensitive; keine options
+- fix: faulty_text (1 bis 5 Sätze mit 1–4 eingebauten, typischen Fehlern zum Thema) + corrected_text (nur die Fehler verbessert, sonst gleich) + text_errors; prompt sagt, worauf der Schüler achten soll, ohne die Fehler zu verraten; keine options
+- free: sample_answer (Musterlösung bzw. Erwartungshorizont) + criteria + answer_lines; offene Frage, auf die es verschieden formulierte richtige Antworten gibt
+- reading: passage + options + correct_option (oder sample_answer für offene Fragen)
+- order: steps (richtige Reihenfolge); prompt sagt, was geordnet wird
+Jede Aufgabe hat criteria: woran man eine richtige Lösung erkennt.`;
 
 /** The prompt for the model; separate so it can be checked without calling the API. */
 export function buildPrompt(req: AIGenerateRequest): string {
+  const all = categoriesFor(req.subject);
+  const catOf = (key: string) => req.categories.find((c) => c.key === key) ?? all.find((c) => c.key === key);
   const types = req.categories.length
     ? req.categories.map((c) => `- ${c.key}: ${c.label} – ${c.hint} (Format: ${c.formats.join(" oder ")})`).join("\n")
-    : "frei wählen, was zu Fähigkeit und Schüler passt (gemischt)";
+    : "frei wählen, was zu Fähigkeit und Schüler passt (gemischt, möglichst verschiedene Formate, wenig Multiple Choice)";
+  const plan = req.plan?.length
+    ? `\nAufgabenplan (genau in dieser Reihenfolge, jede Aufgabe in ihrem Typ und Format):\n${req.plan
+        .map((p, i) => {
+          const c = catOf(p.category);
+          return `${i + 1}. category=${p.category}${c ? ` (${c.label}), format=${c.formats.join(" oder ")}` : ""}, skill_id=${p.skillId}`;
+        })
+        .join("\n")}\n`
+    : "";
   return `Erstelle genau ${req.count} ${req.count === 1 ? "Aufgabe" : "Aufgaben"}.
 Fach: ${req.subject}
 Klasse: ${req.level}
@@ -73,25 +110,25 @@ ${req.skills.map((s) => `- ${s.id}: ${s.area} › ${s.parentName ? `${s.parentNa
 
 Aufgabentypen (category):
 ${types}
-${req.studentContext ? `\nLerndaten des Schülers (ohne persönliche Daten):\n${req.studentContext}\n` : ""}${req.focusNote ? `\nBesonderer Wunsch der Lehrkraft: ${req.focusNote}\n` : ""}${req.avoid?.length ? `\nDiese Aufgaben gibt es schon, mach andere:\n${req.avoid.slice(0, 30).map((p) => `- ${p.slice(0, 160)}`).join("\n")}\n` : ""}
-Formate:
-- mc: options + correct_option
-- calc: accepted_answers, numeric=true bei Zahlen/Brüchen
-- grammar: accepted_answers (kurzer Text)
-- cloze: prompt mit ${GAP} pro Lücke + blanks
-- free: sample_answer
-- reading: passage + options + correct_option (oder sample_answer für offene Fragen)
-- order: steps (richtige Reihenfolge); prompt sagt, was geordnet wird`;
+${plan}${req.studentContext ? `\nLerndaten des Schülers (ohne persönliche Daten):\n${req.studentContext}\n` : ""}${req.focusNote ? `\nBesonderer Wunsch der Lehrkraft: ${req.focusNote}\n` : ""}${req.avoid?.length ? `\nDiese Aufgaben gibt es schon, mach andere:\n${req.avoid.slice(0, 30).map((p) => `- ${p.slice(0, 160)}`).join("\n")}\n` : ""}
+${FORMAT_RULES}`;
 }
 
-/** Turns one structured AI task into a task of the app; invalid parts are repaired or dropped. */
-export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" | "categories" | "subject">, rng: () => number = Math.random): TaskDraft | null {
+const clean = (xs: string[] | null | undefined) => (xs ?? []).map((x) => x.trim()).filter(Boolean);
+
+/**
+ * Turns one structured AI task into a task of the app; invalid parts are repaired or dropped.
+ * `wanted`: the task type the plan asked for. Then only its formats count, and a task that does not
+ * fit one of them is dropped (null), never turned into another format.
+ */
+export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" | "categories" | "subject">, rng: () => number = Math.random, wanted?: Category): TaskDraft | null {
   const valid = new Set(req.skills.map((s) => s.id));
   const skillIds = t.skill_ids.filter((id) => valid.has(id));
   const skillId = skillIds[0] ?? req.skills[0]?.id ?? null;
   const allowed = req.categories.length ? req.categories : categoriesFor(req.subject);
-  const category = allowed.some((c) => c.key === t.category) ? t.category : (allowed[0]?.key ?? null);
+  const category = wanted?.key ?? (allowed.some((c) => c.key === t.category) ? t.category : (allowed[0]?.key ?? null));
   if (!t.prompt.trim()) return null;
+  const criteria = clean(t.criteria).slice(0, 6);
   const base = {
     skillId,
     skillIds: skillIds.length ? skillIds : skillId ? [skillId] : [],
@@ -99,41 +136,122 @@ export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" |
     difficulty: t.difficulty,
     prompt: t.prompt.trim(),
     solution: t.solution,
-    solutionSteps: (t.solution_steps ?? []).map((x) => x.trim()).filter(Boolean).slice(0, 8),
+    solutionSteps: clean(t.solution_steps).slice(0, 8),
     estimatedTimeSec: t.estimated_time_sec > 0 ? Math.min(3600, t.estimated_time_sec) : null,
     sourceType: "ki" as const,
-    hints: t.hints.filter((h) => h.trim()).slice(0, 4),
+    hints: clean(t.hints).slice(0, 4),
     errorMap: t.common_errors,
   };
-  if (t.format === "order" && t.steps && t.steps.length >= 2) {
-    const steps = t.steps.map((x) => x.trim()).filter(Boolean);
-    const shown = [...steps];
-    for (let tries = 0; tries < 6 && shown.every((x, i) => x === steps[i]); tries++) {
-      for (let i = shown.length - 1; i > 0; i--) {
-        const j = Math.floor(rng() * (i + 1));
-        [shown[i], shown[j]] = [shown[j], shown[i]];
+  const withCriteria = <T extends TaskDraft>(d: T): T => (criteria.length ? { ...d, answer: { ...d.answer, criteria } } : d);
+  const caseMode = t.case_sensitive === false ? ("text" as const) : ("exact" as const);
+  const options = t.options && t.options.length >= 2 && t.correct_option !== null && t.correct_option >= 0 && t.correct_option < t.options.length ? t.options : null;
+
+  const as = (format: (typeof FORMATS)[number]): TaskDraft | null => {
+    switch (format) {
+      case "order": {
+        const steps = clean(t.steps);
+        if (steps.length < 2) return null;
+        const shown = [...steps];
+        for (let tries = 0; tries < 6 && shown.every((x, i) => x === steps[i]); tries++) {
+          for (let i = shown.length - 1; i > 0; i--) {
+            const j = Math.floor(rng() * (i + 1));
+            [shown[i], shown[j]] = [shown[j], shown[i]];
+          }
+        }
+        return { ...base, type: "order", data: { steps: shown }, answer: { steps }, errorMap: [] };
+      }
+      case "mc":
+      case "reading":
+        if (options) return { ...base, type: format === "reading" || t.passage ? "reading" : "mc", data: { options, passage: t.passage ?? undefined }, answer: { correct: t.correct_option! } };
+        if (format === "reading" && t.passage && (t.sample_answer ?? "").trim()) return { ...base, type: "reading", data: { passage: t.passage }, answer: { sample: t.sample_answer!.trim() } };
+        return null;
+      case "cloze": {
+        const blanks = (t.blanks ?? []).map((alts) => clean(alts));
+        if (!blanks.length || blanks.some((b) => !b.length) || gapCount(t.prompt) !== blanks.length) return null;
+        // a gap text in a language: upper and lower case count unless the AI says otherwise
+        const mode = blanks.flat().every((x) => /^-?\d+([.,/]\d+)?$/.test(x)) ? ("value" as const) : wanted ? caseMode : ("text" as const);
+        return { ...base, type: "cloze", data: {}, answer: { blanks, mode } };
+      }
+      case "fix": {
+        const faulty = (t.faulty_text ?? "").trim();
+        const corrected = (t.corrected_text ?? "").trim();
+        if (!faulty || !corrected || !expectedFixes(faulty, corrected, caseMode === "exact").length) return null;
+        const fixes = (t.text_errors ?? []).filter((e) => e.wrong.trim() || e.right.trim()).map((e) => ({ wrong: e.wrong.trim(), right: e.right.trim(), label: e.label.trim(), errorType: e.error_type }));
+        return { ...base, type: "fix", data: { faulty }, answer: { accepted: [corrected], mode: caseMode, fixes }, errorMap: [] };
+      }
+      case "calc":
+      case "grammar": {
+        const accepted = clean(t.accepted_answers);
+        if (!accepted.length) return null;
+        const numeric = format === "calc" || t.numeric;
+        return { ...base, type: numeric ? "calc" : "grammar", data: {}, answer: { accepted, mode: numeric ? "value" : "text" } };
+      }
+      case "free": {
+        // a choice question without its options is no open question
+        if (options && t.format !== "free") return null;
+        const sample = (t.sample_answer ?? t.solution ?? "").trim();
+        if (!sample) return null;
+        const lines = t.answer_lines && t.answer_lines > 0 ? Math.min(20, t.answer_lines) : undefined;
+        return { ...base, type: t.passage ? "reading" : "free", data: { passage: t.passage ?? undefined, ...(lines ? { lines } : {}) }, answer: { sample } };
       }
     }
-    return { ...base, type: "order", data: { steps: shown }, answer: { steps }, errorMap: [] };
+  };
+
+  if (wanted) {
+    // the format the AI named first, then the others of the type; nothing outside the type
+    const order = [...wanted.formats].sort((a, b) => Number(b === t.format) - Number(a === t.format));
+    for (const f of order) {
+      const d = as(f);
+      if (d && wanted.formats.includes(d.type)) return withCriteria(d);
+    }
+    return null;
   }
-  if (t.options && t.options.length >= 2 && t.correct_option !== null && t.correct_option >= 0 && t.correct_option < t.options.length) {
-    return { ...base, type: t.format === "reading" || t.passage ? "reading" : "mc", data: { options: t.options, passage: t.passage ?? undefined }, answer: { correct: t.correct_option } };
+  // without a plan: the named format if it is complete, else what the fields allow
+  for (const f of [t.format, "order", "mc", "cloze", "fix", "calc", "free"] as const) {
+    if (f === "order" && t.format !== "order") continue;
+    const d = as(f);
+    if (d) return withCriteria(d);
   }
-  if (t.blanks && t.blanks.length > 0 && gapCount(t.prompt) === t.blanks.length) {
-    return { ...base, type: "cloze", data: {}, answer: { blanks: t.blanks, mode: "text" } };
+  return null;
+}
+
+/**
+ * Puts the AI's tasks on the slots of the plan: each task goes to the first open slot of its type (the
+ * AI may return them in another order). Slots nothing fits stay null and are made again.
+ */
+export function fillPlan(tasks: AITask[], req: AIGenerateRequest & { plan: { skillId: string; category: string }[] }, rng: () => number = Math.random): (TaskDraft | null)[] {
+  const all = categoriesFor(req.subject);
+  const slots: (TaskDraft | null)[] = req.plan.map(() => null);
+  for (const t of tasks) {
+    const free = req.plan.map((p, i) => i).filter((i) => !slots[i]);
+    // its own slot by category first, then any open slot whose type the task fits
+    const order = [...free.filter((i) => req.plan[i].category === t.category), ...free.filter((i) => req.plan[i].category !== t.category)];
+    for (const i of order) {
+      const wanted = all.find((c) => c.key === req.plan[i].category);
+      if (!wanted) continue;
+      const d = aiTaskToDraft(t, req, rng, wanted);
+      if (d) {
+        slots[i] = d;
+        break;
+      }
+    }
   }
-  if (t.accepted_answers && t.accepted_answers.length > 0) {
-    return { ...base, type: t.numeric ? "calc" : "grammar", data: {}, answer: { accepted: t.accepted_answers, mode: t.numeric ? "value" : "text" } };
-  }
-  const sample = t.sample_answer ?? t.solution;
-  return { ...base, type: t.format === "reading" || t.passage ? "reading" : "free", data: { passage: t.passage ?? undefined }, answer: { sample } };
+  return slots;
 }
 
 /** `fn` "neue_aufgabe" for the one or two tasks asked for during a unit (shorter limits, own line in the costs). */
 export async function generateWithAI(req: AIGenerateRequest, meta: AIMeta = {}, fn: "aufgaben" | "neue_aufgabe" = "aufgaben"): Promise<TaskDraft[] | null> {
   const out = unwrap(await runAI(fn, WorksheetSchema, GEN_SYSTEM, buildPrompt(req), { maxTokens: 6000 + req.count * 2500, meta }));
   if (!out) return null;
+  if (req.plan?.length) return fillPlan(out.tasks, { ...req, plan: req.plan }).filter((t): t is TaskDraft => t !== null);
   return out.tasks.map((t) => aiTaskToDraft(t, req)).filter((t): t is TaskDraft => t !== null);
+}
+
+/** Like generateWithAI with a plan, but every slot keeps its place: null where no task in the wanted type came back. */
+export async function generatePlanWithAI(req: AIGenerateRequest & { plan: { skillId: string; category: string }[] }, meta: AIMeta = {}): Promise<(TaskDraft | null)[] | null> {
+  const out = unwrap(await runAI("aufgaben", WorksheetSchema, GEN_SYSTEM, buildPrompt({ ...req, count: req.plan.length }), { maxTokens: 6000 + req.plan.length * 2500, meta }));
+  if (!out) return null;
+  return fillPlan(out.tasks, req);
 }
 
 // ---------- free-text grading ----------

@@ -9,6 +9,8 @@ import {
 import { GAP } from "@/lib/tasks";
 import { MathLine, RichText } from "./MathLine";
 import { Lines, WorkField } from "./WorkArea";
+import { Marked } from "@/components/FixMarks";
+import { markFaultyText } from "@/lib/fix-text";
 
 const letter = (i: number) => String.fromCharCode(97 + i);
 
@@ -109,6 +111,7 @@ function StudentTask({ t, o }: { t: SheetTask; o: SheetOptions }) {
         ) : (
           <RichText text={task.prompt} gapsMm={plan.gapsMm} />
         )}
+        {task.type === "fix" && task.data.faulty && <p className="ab-faulty">{task.data.faulty}</p>}
         {task.data.options && (
           <ol
             className={
@@ -198,6 +201,9 @@ function TeacherTask({ t, o }: { t: SheetTask; o: SheetOptions }) {
             ))}
           </ol>
         )}
+        {task.type === "fix" && task.data.faulty && (
+          <Marked marks={markFaultyText(task.data.faulty, task.answer.accepted?.[0] ?? task.data.faulty, task.answer.mode !== "text")} className="ab-faulty" />
+        )}
         {task.data.steps && !task.answer.steps && (
           <ul className="ab-steps">
             {task.data.steps.map((s, i) => (
@@ -214,11 +220,47 @@ function TeacherTask({ t, o }: { t: SheetTask; o: SheetOptions }) {
               <b>Lösung:</b> <MathLine text={answer} />
             </p>
           )}
+          {task.type === "fix" && (task.answer.accepted?.length ?? 0) > 1 && (
+            <p>
+              <b>Auch richtig:</b> {task.answer.accepted!.slice(1).join(" · ")}
+            </p>
+          )}
+          {task.answer.blanks?.some((b) => b.length > 1) && (
+            <p>
+              <b>Auch richtig:</b>{" "}
+              {task.answer.blanks
+                .map((b, i) => (b.length > 1 ? `Lücke ${i + 1}: ${b.slice(1).join(", ")}` : ""))
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          )}
+          {task.type === "fix" && task.answer.fixes && task.answer.fixes.length > 0 && (
+            <div className="ab-solution-errors">
+              <b>Fehler im Text:</b>
+              <ul>
+                {task.answer.fixes.map((f, i) => (
+                  <li key={i}>
+                    „{f.wrong || "–"}“ → „{f.right || "–"}“{f.label ? `: ${f.label}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {task.answer.sample && (
             <p>
               <b>{answer ? "Musterantwort:" : "Lösung (Muster):"}</b>{" "}
               <MathLine text={task.answer.sample} />
             </p>
+          )}
+          {task.answer.criteria && task.answer.criteria.length > 0 && (
+            <div className="ab-solution-errors">
+              <b>Darauf kommt es an:</b>
+              <ul>
+                {task.answer.criteria.map((c, i) => (
+                  <li key={i}>{c}</li>
+                ))}
+              </ul>
+            </div>
           )}
           {(task.solution || steps) && (
             <div className="ab-solution-path">

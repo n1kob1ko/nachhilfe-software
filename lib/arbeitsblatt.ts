@@ -193,7 +193,8 @@ export function planTask(
   const gaps = task.prompt.split(GAP).length - 1;
   const gapsMm = Array.from({ length: gaps }, (_, i) =>
     gapWidth(
-      task.answer.blanks?.[i]?.[0] ??
+      // room for the longest right answer of the gap
+      [...(task.answer.blanks?.[i] ?? [])].sort((x, y) => y.length - x.length)[0] ??
         (gaps === 1 ? task.answer.accepted?.[0] : undefined),
     ),
   );
@@ -235,7 +236,20 @@ export function planTask(
   }
   if (task.data.steps) return plan;
   if (task.type === "free") {
-    plan.lines = writingLines(task, o.space);
+    // the teacher's choice of answer field wins (one line, a few sentences, a longer text); room for the sample answer at least
+    const sample = task.answer.sample ?? "";
+    plan.lines =
+      task.data.lines === 1
+        ? o.space === "gross" ? 2 : 1
+        : task.data.lines
+          ? Math.max(2, Math.min(20, Math.round(Math.max(task.data.lines, Math.ceil(sample.length / 55) + 1) * SCALE[o.space])))
+          : writingLines(task, o.space);
+    return plan;
+  }
+  if (task.type === "fix") {
+    // the whole text is written again, corrected: as many lines as it takes, plus one
+    const len = (task.data.faulty ?? "").length;
+    plan.lines = Math.max(2, Math.min(20, Math.round((Math.ceil(len / 55) + 1) * Math.max(1, SCALE[o.space]))));
     return plan;
   }
   if (task.answer.blanks && !(math && resultLine)) {

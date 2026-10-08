@@ -985,3 +985,32 @@ textarea.input {
   border-top: 1px solid var(--line);
   padding-top: 16px;
 }
+
+/* Fehler korrigieren: corrected words green, words that are still or newly wrong red */
+.fx-fixed {
+  background: var(--green-wash);
+  color: var(--green);
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--green) 55%, transparent);
+  border-radius: 3px;
+  font-weight: 600;
+}
+.fx-wrong {
+  background: var(--red-wash);
+  color: var(--red);
+  box-shadow: inset 0 -2px 0 var(--red);
+  border-radius: 3px;
+  font-weight: 600;
+}
+@media print {
+  .fx-fixed,
+  .fx-wrong {
+    background: none;
+    color: inherit;
+  }
+  .fx-wrong {
+    text-decoration: underline wavy;
+  }
+  .fx-fixed {
+    text-decoration: underline;
+  }
+}

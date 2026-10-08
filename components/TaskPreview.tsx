@@ -54,7 +54,14 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
           ))}
         </ul>
       )}
-      {!task.data.options && !task.data.steps && !task.answer.blanks && !showSolution && <div className="mt-3 h-8 max-w-[360px] border-b border-dashed border-line-strong" aria-hidden />}
+      {task.type === "fix" && task.data.faulty && <p className="ruled mt-2 max-w-[70ch] rounded-lg border border-line bg-paper px-4 py-1 text-[15px] whitespace-pre-line">{task.data.faulty}</p>}
+      {!task.data.options && !task.data.steps && !task.answer.blanks && task.type !== "fix" && !showSolution && (
+        <div className="mt-3 grid max-w-[520px] gap-3" aria-hidden>
+          {Array.from({ length: task.type === "free" ? Math.min(4, Math.max(1, task.data.lines ?? 2)) : 1 }, (_, i) => (
+            <div key={i} className={`h-6 border-b border-dashed border-line-strong ${task.type === "free" && task.data.lines !== 1 ? "" : "max-w-[360px]"}`} />
+          ))}
+        </div>
+      )}
       <p className="no-print mt-2 text-[12px] text-ink-3">
         {cat ?? TASK_TYPES[task.type]}
         {cat && cat !== TASK_TYPES[task.type] && ` (${TASK_TYPES[task.type]})`}
@@ -68,10 +75,40 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
               <span className="font-semibold">Lösung:</span> <MathText text={answerText(task)} />
             </p>
           )}
+          {task.answer.blanks?.some((b) => b.filter((x) => x.trim()).length > 1) && (
+            <p className="text-[13px] text-ink-2">
+              Auch richtig:{" "}
+              {task.answer.blanks
+                .map((b, i) => (b.length > 1 ? `Lücke ${i + 1}: ${b.slice(1).join(", ")}` : ""))
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          )}
+          {task.type === "fix" && (task.answer.accepted?.length ?? 0) > 1 && <p className="text-[13px] text-ink-2">Auch richtig: {task.answer.accepted!.slice(1).join(" · ")}</p>}
+          {task.type === "fix" && task.answer.fixes && task.answer.fixes.length > 0 && (
+            <ul className="mt-1 space-y-0.5 text-[13px]">
+              {task.answer.fixes.map((f, i) => (
+                <li key={i}>
+                  <span className="fx-wrong">{f.wrong || "(fehlt)"}</span> → <span className="fx-fixed">{f.right || "(weg)"}</span>
+                  {f.label && <span className="text-ink-2"> · {f.label}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
           {task.answer.sample && !answerText(task) && (
             <p>
               <span className="font-semibold">Musterlösung:</span> <MathText text={task.answer.sample} />
             </p>
+          )}
+          {task.answer.criteria && task.answer.criteria.length > 0 && (
+            <div className="mt-1 text-[13px]">
+              <span className="font-semibold">Darauf kommt es an:</span>
+              <ul className="list-disc pl-5 text-ink-2">
+                {task.answer.criteria.map((c, i) => (
+                  <li key={i}>{c}</li>
+                ))}
+              </ul>
+            </div>
           )}
           {task.solution && <p className="mt-1 whitespace-pre-line text-ink-2"><MathText text={task.solution} /></p>}
           {task.hints.length > 0 && (

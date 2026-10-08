@@ -47,6 +47,7 @@ Alle KI-Aufrufe laufen über `lib/ai/router.ts`, der Anbieter steckt in einem Ad
 | Empfehlungen mit einem Klick erstellen und zuweisen; nach erledigter Übung folgt automatisch die Überprüfung | Profil › Analyse, Übersicht |
 | Textkorrektur: abgegebene Texte selbst oder mit KI-Vorschlägen korrigieren (nur nach Freigabe, Namen werden ersetzt), Ansichten Original / Korrekturen / Endfassung, jede Stelle einzeln übernehmen oder ablehnen, Fehlerübersicht, A4-Druck ([docs/textkorrektur.md](docs/textkorrektur.md)) | Text › Korrigieren |
 | Bildgeschichten: Bilder hochladen und sortieren, Aufgabe, Wortziel, Satzanfänge; der Schüler schreibt am Tablet oder Laptop mit den Bildern daneben und gibt ab; A4 als fertige Geschichte oder leeres Arbeitsblatt mit Linien; KI-Korrektur mit kurzen Bildbeschreibungen statt Bildern ([docs/bildgeschichte.md](docs/bildgeschichte.md)) | Einheit › Bildgeschichte erstellen |
+| Abwechslungsreiche Übungen: Lückentext mit mehreren Lücken und weiteren richtigen Antworten, Fehler korrigieren (der Schüler schreibt den Text verbessert, die App vergleicht Wort für Wort), freie Antwort mit Lehrerbewertung (richtig, teilweise richtig, falsch); „Gemischte Aufgaben“ wählt passende Formate je Fähigkeit; KI hält das gewählte Format ein ([docs/uebungstypen.md](docs/uebungstypen.md)) | Übung erstellen › Aufgabentyp |
 | Dashboard: heutige Stunden, Trend und Problem je Schüler, fällige Hausübungen, zuletzt Bearbeitetes | Übersicht |
 
 ## Schultypen und Klassen
