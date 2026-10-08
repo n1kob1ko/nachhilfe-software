@@ -4,8 +4,15 @@
  */
 
 export type Spacing = "normal" | "weit";
+/** Which text of a correction is printed: the student's, the corrected one, or the student's with the corrections marked. */
+export type Fassung = "original" | "endfassung" | "korrektur";
 export type TextPrintOptions = {
   title: string;
+  /** a correction of the text (its id); without one the current text is printed as before */
+  correction: number | null;
+  fassung: Fassung;
+  /** a short overview of the accepted errors with explanations under the text */
+  overview: boolean;
   name: boolean;
   date: boolean;
   subject: boolean;
@@ -15,7 +22,7 @@ export type TextPrintOptions = {
   spacing: Spacing;
 };
 
-const DEFAULTS: Omit<TextPrintOptions, "title"> = { name: true, date: true, subject: true, prompt: true, words: false, pages: true, spacing: "normal" };
+const DEFAULTS: Omit<TextPrintOptions, "title"> = { correction: null, fassung: "original", overview: false, name: true, date: true, subject: true, prompt: true, words: false, pages: true, spacing: "normal" };
 
 type BoolKey = "name" | "date" | "subject" | "prompt" | "words" | "pages";
 export const TEXT_PRINT_CHECKS: [BoolKey, string, string][] = [
@@ -27,6 +34,7 @@ export const TEXT_PRINT_CHECKS: [BoolKey, string, string][] = [
   ["pages", "seiten", "Seitenzahlen"],
 ];
 export const SPACING_LABEL: Record<Spacing, string> = { normal: "normal", weit: "weit (Platz zum Korrigieren)" };
+export const FASSUNG_LABEL: Record<Fassung, string> = { original: "Original (wie geschrieben)", endfassung: "Korrigierte Endfassung", korrektur: "Mit sichtbaren Korrekturen" };
 
 type Params = Record<string, string | string[] | undefined>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
@@ -38,6 +46,11 @@ export function readTextPrintOptions(sp: Params, defaultTitle: string): TextPrin
     if (v === "1" || v === "0") o[k] = v === "1";
   }
   if (one(sp.abstand) === "weit") o.spacing = "weit";
+  const k = Number(one(sp.k));
+  if (Number.isInteger(k) && k > 0) o.correction = k;
+  const f = one(sp.fassung);
+  if (o.correction && (f === "endfassung" || f === "korrektur")) o.fassung = f;
+  o.overview = Boolean(o.correction) && one(sp.uebersicht) === "1";
   return o;
 }
 
@@ -47,5 +60,10 @@ export function textPrintQuery(o: TextPrintOptions, defaultTitle: string): strin
   if (o.title !== defaultTitle) q.set("titel", o.title);
   for (const [k, param] of TEXT_PRINT_CHECKS) if (o[k] !== DEFAULTS[k]) q.set(param, o[k] ? "1" : "0");
   if (o.spacing !== DEFAULTS.spacing) q.set("abstand", o.spacing);
+  if (o.correction) {
+    q.set("k", String(o.correction));
+    if (o.fassung !== "original") q.set("fassung", o.fassung);
+    if (o.overview) q.set("uebersicht", "1");
+  }
   return q.toString();
 }

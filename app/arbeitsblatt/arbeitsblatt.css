@@ -477,3 +477,70 @@
 .tx-print u {
   text-underline-offset: 0.15em;
 }
+
+/* Textkorrektur on paper: what was written struck through, the improvement next to it, a number per place */
+.tx-print-korrektur .tx-print-body {
+  line-height: 1.95;
+}
+.tx-k-del {
+  text-decoration: line-through;
+  text-decoration-color: #b02a24;
+  text-decoration-thickness: 0.35mm;
+}
+.tx-k-ins {
+  margin-left: 1.4mm;
+  font-weight: 700;
+  color: #145c32;
+  text-decoration: underline;
+  text-decoration-thickness: 0.25mm;
+  text-underline-offset: 0.15em;
+}
+.tx-k-num {
+  margin-left: 0.4mm;
+  font-size: 7.5pt;
+  font-weight: 700;
+  line-height: 0;
+  vertical-align: super;
+  color: #444;
+}
+.tx-k-section {
+  margin-top: 8mm;
+  break-before: auto;
+}
+.tx-k-title {
+  margin: 0 0 2.5mm;
+  font-size: 12.5pt;
+  font-weight: 700;
+  break-after: avoid;
+}
+.tx-k-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 10.5pt;
+  line-height: 1.45;
+}
+.tx-k-list li {
+  display: grid;
+  grid-template-columns: 9mm minmax(0, 1fr);
+  gap: 1mm;
+  padding: 1.6mm 0;
+  border-top: 0.2mm solid #d5d5d5;
+  break-inside: avoid;
+}
+.tx-k-cat {
+  font-size: 9pt;
+  font-weight: 700;
+  color: #444;
+}
+.tx-k-overview {
+  padding: 3mm 4mm;
+  border: 0.3mm solid #777;
+  border-radius: 1.5mm;
+  font-size: 10.5pt;
+  line-height: 1.5;
+  break-inside: avoid;
+}
+.tx-k-overview p {
+  margin: 0;
+}

@@ -45,6 +45,7 @@ Alle KI-Aufrufe laufen über `lib/ai/router.ts`, der Anbieter steckt in einem Ad
 | Fortschritt pro Fähigkeit (Fach › Thema › Fähigkeit) mit Verlauf | Profil › Fortschritt |
 | Analyse: Probleme, Stärken, Trend, häufige Fehler, Wiederholen | Profil › Analyse & Empfehlungen |
 | Empfehlungen mit einem Klick erstellen und zuweisen; nach erledigter Übung folgt automatisch die Überprüfung | Profil › Analyse, Übersicht |
+| Textkorrektur: abgegebene Texte selbst oder mit KI-Vorschlägen korrigieren (nur nach Freigabe, Namen werden ersetzt), Ansichten Original / Korrekturen / Endfassung, jede Stelle einzeln übernehmen oder ablehnen, Fehlerübersicht, A4-Druck ([docs/textkorrektur.md](docs/textkorrektur.md)) | Text › Korrigieren |
 | Dashboard: heutige Stunden, Trend und Problem je Schüler, fällige Hausübungen, zuletzt Bearbeitetes | Übersicht |
 
 ## Schultypen und Klassen
