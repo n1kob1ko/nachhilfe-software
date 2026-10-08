@@ -1,10 +1,13 @@
 import { headers } from "next/headers";
+import QRCode from "qrcode";
 import { TabletSmartphone } from "lucide-react";
 import { createPairCodeAction, renameDeviceAction, revokeDeviceAction } from "@/app/device-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
+import { PairQr } from "@/components/device/PairQr";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, Reveal } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
+import { baseUrl } from "@/lib/base-url";
 import { canManageDevice, listDevices, openPairCode } from "@/lib/devices";
 import { tabletOnline } from "@/lib/live";
 import { listTeachers } from "@/lib/repo";
@@ -29,7 +32,9 @@ export default async function DevicesPage({ searchParams }: { searchParams: Prom
   const codeFor = Number(sp.code) && (teacher.is_admin || Number(sp.code) === teacher.id) ? Number(sp.code) : null;
   const code = codeFor ? openPairCode(codeFor) : null;
   const h = await headers();
-  const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host") ?? "localhost"}`;
+  const base = baseUrl({ host: h.get("x-forwarded-host") ?? h.get("host"), proto: h.get("x-forwarded-proto") });
+  const deviceUrl = `${base.url}/geraet`;
+  const qr = code ? await QRCode.toString(deviceUrl, { type: "svg", margin: 2, errorCorrectionLevel: "M" }) : "";
   const minutesLeft = code ? Math.max(1, Math.round((Date.parse(code.expiresAt) - Date.now()) / 60_000)) : 0;
 
   return (
@@ -41,21 +46,29 @@ export default async function DevicesPage({ searchParams }: { searchParams: Prom
       />
 
       {code && codeFor && (
-        <section className="mb-8 max-w-[640px] rounded-[24px] bg-accent-wash px-6 py-6" aria-label="Verbindungscode">
+        <section className="mb-8 max-w-[760px] rounded-[24px] bg-accent-wash px-6 py-6" aria-label="Verbindungscode">
           <AutoRefresh seconds={4} />
-          <p className="text-[15px] font-semibold text-ink-2">
-            Verbindungscode{teachers.length > 1 && ` für ${teachers.find((t) => t.id === codeFor)?.name}`}
-          </p>
-          <p className="num mt-1 text-[48px] leading-none font-semibold tracking-[0.12em]" data-testid="pair-code">
-            {code.code}
-          </p>
-          <ol className="mt-4 list-decimal space-y-1 pl-5 text-[15px]">
-            <li>
-              Am Tablet <span className="font-semibold">{origin}/geraet</span> öffnen.
-            </li>
-            <li>Code eingeben. Fertig, das Tablet bleibt verbunden.</li>
-          </ol>
-          <p className="mt-3 text-[13px] text-ink-2">Gültig noch {minutesLeft} min, nur einmal verwendbar.</p>
+          <div className="grid gap-6 sm:grid-cols-[220px_minmax(0,1fr)] sm:gap-8">
+            <PairQr svg={qr} url={deviceUrl} code={code.code} />
+            <div>
+              <p className="text-[15px] font-semibold text-ink-2">
+                Verbindungscode{teachers.length > 1 && ` für ${teachers.find((t) => t.id === codeFor)?.name}`}
+              </p>
+              <p className="num mt-1 text-[48px] leading-none font-semibold tracking-[0.12em]" data-testid="pair-code">
+                {code.code}
+              </p>
+              <ol className="mt-4 list-decimal space-y-1 pl-5 text-[15px]">
+                <li>QR-Code mit der Tablet-Kamera scannen. Ohne Kamera am Tablet die Adresse unter dem QR-Code eingeben.</li>
+                <li>Code eingeben. Fertig, das Tablet bleibt verbunden.</li>
+              </ol>
+              <p className="mt-3 text-[13px] text-ink-2">Gültig noch {minutesLeft} min, nur einmal verwendbar.</p>
+              {base.localOnly && (
+                <p className="mt-3 text-[13px] text-ink-2" role="note">
+                  Diese Adresse funktioniert nur auf diesem Computer. Öffne die App über die Netzwerk-Adresse des Computers, dann passt auch der QR-Code.
+                </p>
+              )}
+            </div>
+          </div>
         </section>
       )}
 

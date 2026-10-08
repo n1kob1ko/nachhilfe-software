@@ -2,7 +2,7 @@
 
 ## Ablauf
 
-1. **Einmal koppeln.** Mehr › Schülergeräte › „Tablet verbinden“ erzeugt einen 6-stelligen Code (10 Minuten gültig, einmal verwendbar). Am Tablet `/geraet` öffnen und den Code eingeben. Das Tablet bleibt verbunden, bis der Lehrer oder ein Admin es trennt.
+1. **Einmal koppeln.** Mehr › Schülergeräte › „Tablet verbinden“ erzeugt einen 6-stelligen Code (10 Minuten gültig, einmal verwendbar). Daneben steht ein QR-Code auf `/geraet`: mit der Tablet-Kamera scannen (oder die Adresse darunter eingeben) und den Code eingeben. Das Tablet bleibt verbunden, bis der Lehrer oder ein Admin es trennt.
 2. **Bereitschaft.** Ohne laufende Einheit zeigt das Tablet nur „Bereit für die nächste Einheit · Verbunden mit Niko“.
 3. **Einheit starten.** Das Tablet wechselt ohne Neuladen auf „Max · Mathematik · Einheit läuft“.
 4. **An Max senden.** Ein Tipp auf der Übung (oder bei einer einzelnen Aufgabe unter „Einzeln senden“). Es gibt keine Schülerauswahl, weil die Einheit den Schüler kennt.
