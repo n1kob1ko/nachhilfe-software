@@ -243,7 +243,7 @@ export function statistics(o: StatisticsFilter = {}): Statistics {
               (SELECT json_group_array(ts.skill_id) FROM task_skills ts WHERE ts.task_id = t.id) AS task_skill_ids,
               w.subject
        FROM attempts a JOIN tasks t ON t.id = a.task_id JOIN worksheets w ON w.id = t.worksheet_id
-       WHERE w.kind <> 'bibliothek'
+       WHERE w.kind <> 'bibliothek' AND COALESCE(a.review, '') <> 'offen'
          AND (@subject IS NULL OR w.subject = @subject)
          AND (@diagnosis = 'mit' OR (@diagnosis = 'nur' AND w.kind = 'diagnose') OR (@diagnosis = 'ohne' AND w.kind <> 'diagnose'))
        ORDER BY a.assignment_id, a.task_id, a.id`,

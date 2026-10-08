@@ -173,7 +173,8 @@ export type LiveSnapshot = {
     since: string | null;
     tries: number;
     hints: number;
-    last: null | { correct: boolean; final: boolean; at: string };
+    /** pending: a free answer that waits for the teacher's grade */
+    last: null | { correct: boolean; final: boolean; at: string; pending?: boolean };
     done: number;
     correct: number;
     solutionsVisible: boolean;
@@ -225,7 +226,7 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
       since: live?.since ?? null,
       tries: tries.length,
       hints: task ? new Set(repo.hintUsesForAssignment(a.id).filter((h) => h.task_id === task.id).map((h) => h.hint_index)).size : 0,
-      last: lastTry ? { correct: Boolean(lastTry.correct), final: Boolean(lastTry.final), at: asIso(lastTry.created_at) } : null,
+      last: lastTry ? { correct: Boolean(lastTry.correct), final: Boolean(lastTry.final), at: asIso(lastTry.created_at), pending: lastTry.review === "offen" } : null,
       done: a.done_count,
       correct: a.correct_count,
       solutionsVisible: Boolean(a.solutions_visible),

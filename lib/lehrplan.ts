@@ -395,7 +395,7 @@ export const EMPIRICAL_MIN = 30;
  * (≥ 90 % → 1, ≥ 75 % → 2, ≥ 55 % → 3, ≥ 35 % → 4, below → 5). The stored level is not changed automatically.
  */
 export function taskStats(taskId: number): TaskStats {
-  const rows = db().prepare("SELECT correct, time_ms, hints_used, solution_viewed FROM attempts WHERE task_id = ? AND final = 1").all(taskId) as {
+  const rows = db().prepare("SELECT correct, time_ms, hints_used, solution_viewed FROM attempts WHERE task_id = ? AND final = 1 AND COALESCE(review, '') <> 'offen'").all(taskId) as {
     correct: number; time_ms: number; hints_used: number; solution_viewed: number;
   }[];
   return statsOf(rows);

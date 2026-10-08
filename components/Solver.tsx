@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowDown, ArrowUp, CheckCircle2, ChevronRight, CloudOff, Lightbulb, XCircle } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, ChevronRight, CircleDashed, CloudOff, Lightbulb, RotateCcw, XCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { submitAnswerAction } from "@/app/actions";
 import { recordHintAction } from "@/app/builder-actions";
 import { deviceRecordHintAction, deviceSubmitAnswerAction } from "@/app/device-actions";
 import { laptopRecordHintAction, laptopSubmitAnswerAction } from "@/app/laptop-actions";
-import { hintLabel } from "@/lib/tasks";
+import { hintLabel, isReview, REVIEWS } from "@/lib/tasks";
 import { splitFractions } from "@/lib/math-text";
 import { MathText } from "./MathText";
+import { FixCompare } from "./FixMarks";
 
 export type ClientTask = {
   id: number;
@@ -26,10 +27,18 @@ export type ClientTask = {
   /** Set when the teacher has released the solutions for this exercise. */
   released: { solution: string; answer: string | null } | null;
   triesUsed: number;
-  finished: { correct: boolean; solution: string } | null;
+  /** Fehler korrigieren: the text with errors the student corrects. */
+  faulty: string | null;
+  /** Freie Antwort: 1 = one line, more = a text field of about that many lines. */
+  lines: number | null;
+  /**
+   * correct null: waits for the teacher's grade. review: the teacher's grade (richtig, teilweise, falsch).
+   * given and expected: the student's corrected text and the right one (Fehler korrigieren).
+   */
+  finished: { correct: boolean | null; solution: string; review?: string | null; sample?: string | null; given?: string | null; expected?: string | null } | null;
 };
 
-type AnswerInput = { assignmentId: number; taskId: number; answer: string; timeMs: number; activeMs: number; hintsUsed: number; giveUp?: boolean; selfAssessed?: boolean; submissionId: string };
+type AnswerInput = { assignmentId: number; taskId: number; answer: string; timeMs: number; activeMs: number; hintsUsed: number; giveUp?: boolean; submissionId: string };
 
 /** One id per click on "Prüfen": a repeat after a lost connection carries the same id and is stored once. */
 function newSubmissionId() {
@@ -38,7 +47,32 @@ function newSubmissionId() {
   return Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-type Feedback = { correct: boolean | null; text: string; final: boolean; solution?: string; sample?: string; selfAssess?: boolean };
+type Feedback = { correct: boolean | null; text: string; final: boolean; partial?: boolean; solution?: string; sample?: string; pending?: boolean; expected?: string; given?: string };
+
+/**
+ * What the student typed but has not sent yet stays on the device (per exercise and task), so a reload or a
+ * lost connection does not lose it. On the laptop the keys start with the prefix the laptop clears on "Fertig".
+ */
+const draftKey = (via: Via, assignmentId: number, taskId: number) => `${via === "laptop" ? "lernheft-laptop-antwort-" : "lernheft-antwort-"}${assignmentId}-${taskId}`;
+type Draft = { choice?: number | null; text?: string; gaps?: string[]; order?: number[] };
+function readDraft(key: string): Draft | null {
+  try {
+    const v = localStorage.getItem(key);
+    return v ? (JSON.parse(v) as Draft) : null;
+  } catch {
+    return null;
+  }
+}
+function writeDraft(key: string, d: Draft | null) {
+  try {
+    if (d) localStorage.setItem(key, JSON.stringify(d));
+    else localStorage.removeItem(key);
+  } catch {
+    // private mode or full storage: the answer only lives on screen
+  }
+}
+
+const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
 
 const GAP = "___";
 
@@ -81,9 +115,11 @@ export function Solver({
   }, [index, via, assignmentId]);
   const done = tasks.filter((t) => t.finished).length;
   const correct = tasks.filter((t) => t.finished?.correct).length;
+  const waiting = tasks.filter((t) => t.finished && t.finished.correct === null).length;
 
   if (index >= tasks.length) {
-    const ratio = tasks.length ? correct / tasks.length : 0;
+    const graded = tasks.length - waiting;
+    const ratio = graded ? correct / graded : 1;
     return (
       <div className="py-6 text-center">
         <p className="text-[15px] font-medium text-ink-2">{title}</p>
@@ -93,6 +129,11 @@ export function Solver({
         <p className="num mt-2 text-[20px]">
           {correct} von {tasks.length} Aufgaben richtig
         </p>
+        {waiting > 0 && (
+          <p className="num mt-1 text-[16px] text-ink-2">
+            {waiting === 1 ? "1 Antwort wird" : `${waiting} Antworten werden`} noch von deiner Lehrerin bzw. deinem Lehrer bewertet.
+          </p>
+        )}
         <p className="mx-auto mt-3 max-w-[48ch] text-ink-2">Deine Ergebnisse sind gespeichert. Deine Nachhilfelehrerin bzw. dein Nachhilfelehrer sieht, wo du schon sicher bist und was ihr noch übt.</p>
         <HomeLink href={home} plain={via !== "link"} className="btn btn-primary mt-8">
           Zurück zur Übersicht
@@ -117,7 +158,17 @@ export function Solver({
           {tasks.map((t, i) => (
             <span
               key={t.id}
-              className={`h-1.5 flex-1 rounded-full ${t.finished ? (t.finished.correct ? "bg-green" : "bg-red") : i === index ? "bg-accent" : "bg-[var(--bar-track)]"}`}
+              className={`h-1.5 flex-1 rounded-full ${
+                t.finished
+                  ? t.finished.correct === null || t.finished.review === "teilweise"
+                    ? "bg-amber"
+                    : t.finished.correct
+                      ? "bg-green"
+                      : "bg-red"
+                  : i === index
+                    ? "bg-accent"
+                    : "bg-[var(--bar-track)]"
+              }`}
             />
           ))}
         </div>
@@ -132,7 +183,7 @@ export function Solver({
         via={via}
         assignmentId={assignmentId}
         maxTries={maxTries}
-        onFinished={(c, solution) => setTasks((all) => all.map((t) => (t.id === task.id ? { ...t, finished: { correct: c, solution } } : t)))}
+        onFinished={(f) => setTasks((all) => all.map((t) => (t.id === task.id ? { ...t, finished: f } : t)))}
         onNext={() => setIndex((i) => i + 1)}
         isLast={index === tasks.length - 1}
       />
@@ -155,30 +206,71 @@ function TaskCard({
   via: Via;
   assignmentId: number;
   maxTries: number;
-  onFinished: (correct: boolean, solution: string) => void;
+  onFinished: (f: NonNullable<ClientTask["finished"]>) => void;
   onNext: () => void;
   isLast: boolean;
 }) {
   const [choice, setChoice] = useState<number | null>(null);
-  const [text, setText] = useState("");
+  const [text, setText] = useState(task.faulty ?? "");
   const [gaps, setGaps] = useState<string[]>(() => Array(task.blanks).fill(""));
   const [hintsShown, setHintsShown] = useState(Math.min(task.hintsOpened, task.hints.length));
   const [order, setOrder] = useState<number[]>(() => (task.steps ?? []).map((_, i) => i));
   const [tries, setTries] = useState(task.triesUsed);
-  const [feedback, setFeedback] = useState<Feedback | null>(task.finished ? { correct: task.finished.correct, text: "Diese Aufgabe hast du schon bearbeitet.", final: true, solution: task.finished.solution } : null);
+  const [feedback, setFeedback] = useState<Feedback | null>(
+    task.finished
+      ? {
+          correct: task.finished.correct,
+          text:
+            task.finished.correct === null
+              ? "Deine Antwort ist gespeichert. Deine Lehrerin bzw. dein Lehrer schaut sie sich an."
+              : task.finished.review && isReview(task.finished.review)
+                ? `Bewertet: ${REVIEWS[task.finished.review]}.`
+                : "Diese Aufgabe hast du schon bearbeitet.",
+          partial: task.finished.review === "teilweise",
+          final: true,
+          solution: task.finished.solution,
+          sample: task.finished.sample ?? undefined,
+          pending: task.finished.correct === null,
+          given: task.finished.given ?? undefined,
+          expected: task.finished.expected ?? undefined,
+        }
+      : null,
+  );
+  const [wrongGaps, setWrongGaps] = useState<number[]>([]);
   const [pending, start] = useTransition();
   const startedAt = useRef(Date.now());
   const active = useActiveTime();
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const final = feedback?.final ?? false;
 
+  const key = draftKey(via, assignmentId, task.id);
+  const restored = useRef(false);
   useEffect(() => {
     startedAt.current = Date.now();
+    if (!task.finished) {
+      const d = readDraft(key);
+      if (d) {
+        if (typeof d.choice === "number" && task.options && d.choice < task.options.length) setChoice(d.choice);
+        if (typeof d.text === "string") setText(d.text);
+        if (Array.isArray(d.gaps) && d.gaps.length === task.blanks) setGaps(d.gaps.map(String));
+        if (Array.isArray(d.order) && d.order.length === (task.steps?.length ?? 0)) setOrder(d.order);
+      }
+    }
+    restored.current = true;
     inputRef.current?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per task
   }, []);
+  useEffect(() => {
+    if (!restored.current) return;
+    if (final) return writeDraft(key, null);
+    const changed = choice !== null || (task.faulty ? text !== task.faulty : text !== "") || gaps.some((g) => g) || order.some((o, i) => o !== i);
+    writeDraft(key, changed ? { choice, text, gaps, order } : null);
+  }, [key, final, choice, text, gaps, order, task.faulty]);
 
   const answer = task.options ? (choice === null ? "" : String(choice)) : task.steps ? JSON.stringify(order) : task.blanks > 0 ? JSON.stringify(gaps) : text;
-  const canSubmit = !pending && !final && (task.options ? choice !== null : task.steps ? true : task.blanks > 0 ? gaps.every((g) => g.trim()) : text.trim().length > 0);
+  // a correction task needs a changed text: the faulty one as it is is never the answer
+  const unchanged = task.faulty !== null && text.trim() === task.faulty.trim();
+  const canSubmit = !pending && !final && (task.options ? choice !== null : task.steps ? true : task.blanks > 0 ? gaps.every((g) => g.trim()) : text.trim().length > 0 && !unchanged);
   const move = (pos: number, dir: -1 | 1) =>
     setOrder((o) => {
       const j = pos + dir;
@@ -212,21 +304,22 @@ function TaskCard({
           return;
         }
         setUnsent(null);
-        if (res.needsSelfAssessment) {
-        setFeedback({ correct: null, text: res.feedback, final: false, sample: res.sample, selfAssess: true });
-        return;
-      }
         setTries(res.attemptNo);
-        setFeedback({ correct: res.correct, text: res.feedback, final: res.final, solution: res.solution });
-        if (res.final) onFinished(Boolean(res.correct), res.solution ?? "");
+        setWrongGaps(res.final ? [] : (res.wrongGaps ?? []));
+        const given = task.faulty !== null ? input.answer : undefined;
+        setFeedback({ correct: res.correct, text: res.feedback, final: res.final, solution: res.solution, sample: res.sample, pending: res.pendingReview, expected: res.expected, given });
+        if (res.final) {
+          writeDraft(draftKey(via, assignmentId, task.id), null);
+          onFinished({ correct: res.pendingReview ? null : Boolean(res.correct), solution: res.solution ?? "", sample: res.sample ?? null, given: given ?? null, expected: res.expected ?? null });
+        }
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- onFinished is a fresh arrow each render
     [via, token],
   );
 
-  const send = (extra: { giveUp?: boolean; selfAssessed?: boolean } = {}) => {
+  const send = (extra: { giveUp?: boolean } = {}) => {
     // still waiting to be sent: the same submission again, not a second attempt
-    if (unsent && unsent.input.answer === answer && Boolean(unsent.input.giveUp) === Boolean(extra.giveUp) && unsent.input.selfAssessed === extra.selfAssessed) {
+    if (unsent && unsent.input.answer === answer && Boolean(unsent.input.giveUp) === Boolean(extra.giveUp)) {
       deliver(unsent.input);
       return;
     }
@@ -270,12 +363,20 @@ function TaskCard({
                     ref={i === 0 ? (el) => void (inputRef.current = el) : undefined}
                     value={gaps[i]}
                     disabled={final}
-                    onChange={(e) => setGaps((g) => g.map((x, j) => (j === i ? e.target.value : x)))}
+                    onChange={(e) => {
+                      setGaps((g) => g.map((x, j) => (j === i ? e.target.value : x)));
+                      setWrongGaps((w) => w.filter((n) => n !== i + 1));
+                    }}
                     aria-label={`Lücke ${i + 1}`}
+                    aria-invalid={wrongGaps.includes(i + 1) || undefined}
                     autoComplete="off"
                     autoCapitalize="off"
                     spellCheck={false}
-                    className="mx-1 inline-block w-[150px] border-0 border-b-2 border-accent bg-accent-wash/60 px-2 py-0 text-center text-[19px] font-semibold text-accent outline-none focus:bg-accent-wash disabled:opacity-70"
+                    // grows with the answer: long words and several words fit, the line wraps around it
+                    style={{ width: `min(100%, ${Math.max(6, gaps[i].length + 2)}ch)` }}
+                    className={`mx-1 inline-block min-h-[44px] border-0 border-b-2 px-2 py-0 text-center text-[19px] font-semibold outline-none disabled:opacity-70 ${
+                      wrongGaps.includes(i + 1) ? "border-red bg-red-wash text-red" : "border-accent bg-accent-wash/60 text-accent focus:bg-accent-wash"
+                    }`}
                   />
                 )}
               </span>
@@ -322,16 +423,59 @@ function TaskCard({
           </ol>
         )}
 
-        {!task.options && !task.steps && task.blanks === 0 &&
-          (task.type === "free" || task.type === "reading" ? (
-            <textarea
-              ref={(el) => void (inputRef.current = el)}
-              className="input mt-6 min-h-[140px] text-[17px]"
-              value={text}
-              disabled={final || feedback?.selfAssess}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Deine Antwort"
-            />
+        {task.faulty !== null && (
+          <div className="mt-6">
+            <p className="text-[13px] font-semibold text-ink-2">Text mit Fehlern</p>
+            <p className="mt-1 rounded-xl border border-line bg-panel px-5 py-3 text-[17px] leading-relaxed whitespace-pre-line">{task.faulty}</p>
+            {final && feedback?.given && feedback.expected ? (
+              <FixCompare faulty={task.faulty} given={feedback.given} expected={feedback.expected} className="mt-4" />
+            ) : (
+              <>
+                <div className="mt-4 flex items-end justify-between gap-3">
+                  <label htmlFor={`fix-${task.id}`} className="text-[13px] font-semibold text-ink-2">
+                    Dein verbesserter Text
+                  </label>
+                  {!final && (
+                    <button type="button" className="btn btn-ghost btn-sm h-11" disabled={!text || unchanged} onClick={() => setText(task.faulty ?? "")}>
+                      <RotateCcw size={15} aria-hidden /> Zurücksetzen
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  id={`fix-${task.id}`}
+                  ref={(el) => void (inputRef.current = el)}
+                  className="input mt-1 text-[17px] leading-relaxed"
+                  rows={Math.min(14, Math.max(3, Math.ceil(task.faulty.length / 55) + 1))}
+                  value={text}
+                  disabled={final}
+                  onChange={(e) => setText(e.target.value)}
+                  spellCheck={false}
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                />
+                {unchanged && !final && <p className="mt-1 text-[13px] text-ink-3">Verbessere die Fehler direkt im Text.</p>}
+              </>
+            )}
+          </div>
+        )}
+
+        {!task.options && !task.steps && task.blanks === 0 && task.faulty === null &&
+          ((task.type === "free" || task.type === "reading") && task.lines !== 1 ? (
+            <div className="mt-6">
+              <textarea
+                ref={(el) => void (inputRef.current = el)}
+                className="input text-[17px] leading-relaxed"
+                rows={Math.min(16, Math.max(5, task.lines ?? 6))}
+                value={text}
+                disabled={final}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Deine Antwort"
+                aria-label="Deine Antwort"
+              />
+              <p className="num mt-1 text-right text-[13px] text-ink-3" aria-live="polite">
+                {words(text) === 1 ? "1 Wort" : `${words(text)} Wörter`}
+              </p>
+            </div>
           ) : (
             <input
               ref={(el) => void (inputRef.current = el)}
@@ -343,6 +487,7 @@ function TaskCard({
               autoComplete="off"
               inputMode={task.type === "calc" ? "text" : undefined}
               aria-label="Antwort"
+              style={task.type === "free" ? { maxWidth: "100%" } : undefined}
             />
           ))}
         {task.type === "calc" && !task.options && task.blanks === 0 &&
@@ -371,33 +516,32 @@ function TaskCard({
           </ul>
         )}
 
-        {feedback && !feedback.selfAssess && (
+        {feedback && !feedback.pending && (
           <div
             role="status"
-            className={`mt-6 flex gap-3 rounded-xl px-4 py-3 text-[16px] ${feedback.correct ? "bg-green-wash text-green" : "bg-red-wash text-red"}`}
+            className={`mt-6 flex gap-3 rounded-xl px-4 py-3 text-[16px] ${feedback.correct ? "bg-green-wash text-green" : feedback.partial ? "bg-amber-wash text-amber" : "bg-red-wash text-red"}`}
           >
             {feedback.correct ? <CheckCircle2 size={20} className="mt-0.5 shrink-0" aria-hidden /> : <XCircle size={20} className="mt-0.5 shrink-0" aria-hidden />}
             <span className="font-medium"><MathText text={feedback.text} /></span>
           </div>
         )}
 
-        {feedback?.selfAssess && (
-          <div className="mt-6 rounded-xl border border-line bg-surface px-5 py-4">
-            <p className="text-[14px] font-semibold text-ink-2">Musterlösung</p>
-            <p className="mt-1 whitespace-pre-line"><MathText text={feedback.sample} /></p>
-            <p className="mt-4 font-medium">{feedback.text}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" className="btn btn-primary" disabled={pending} onClick={() => send({ selfAssessed: true })}>
-                Ja, hatte ich richtig
-              </button>
-              <button type="button" className="btn btn-secondary" disabled={pending} onClick={() => send({ selfAssessed: false })}>
-                Nein, noch nicht
-              </button>
+        {feedback?.pending && (
+          <>
+            <div role="status" className="mt-6 flex gap-3 rounded-xl bg-accent-wash px-4 py-3 text-[16px] text-ink">
+              <CircleDashed size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+              <span className="font-medium">{feedback.text}</span>
             </div>
-          </div>
+            {feedback.sample && (
+              <div className="mt-4 rounded-xl border border-line bg-surface px-5 py-4">
+                <p className="text-[14px] font-semibold text-ink-2">So könnte eine Antwort aussehen</p>
+                <p className="mt-1 text-[16px] whitespace-pre-line"><MathText text={feedback.sample} /></p>
+              </div>
+            )}
+          </>
         )}
 
-        {final && feedback?.solution && (
+        {final && feedback?.solution && !feedback.pending && (
           <div className="mt-4 rounded-xl border border-line bg-surface px-5 py-4">
             <p className="text-[14px] font-semibold text-ink-2">Lösungsweg</p>
             <p className="mt-1 text-[16px] whitespace-pre-line"><MathText text={feedback.solution} /></p>
@@ -425,7 +569,7 @@ function TaskCard({
         )}
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
-          {!final && !feedback?.selfAssess && (
+          {!final && (
             <>
               <button className="btn btn-primary h-11 px-6 text-[15px]" disabled={!canSubmit}>
                 {pending ? "Wird geprüft …" : "Prüfen"}
@@ -440,7 +584,7 @@ function TaskCard({
                   Ich komme nicht weiter
                 </button>
               )}
-              {tries > 0 && task.type !== "free" && (
+              {tries > 0 && (
                 <span className="num text-[14px] text-ink-3">
                   Versuch {tries + 1} von {maxTries}
                 </span>

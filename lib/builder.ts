@@ -3,9 +3,10 @@
  * exercise the teacher checks, edits and releases. Works without AI; with a key, Claude gets the
  * student's context and returns structured tasks (lib/ai.ts).
  */
-import { aiEnabled, generateWithAI, type AIMeta } from "./ai";
-import { DIFFICULTIES, categoriesFor, difficultyFor, type Category, type Difficulty, type TaskType } from "./curriculum";
+import { aiEnabled, generatePlanWithAI, type AIMeta } from "./ai";
+import { DIFFICULTIES, categoriesFor, difficultyFor, mixFor, type Category, type Difficulty, type TaskType } from "./curriculum";
 import { generateForSlot } from "./generators";
+import { expectedFixes } from "./fix-text";
 import * as repo from "./repo";
 import { klassenLabel, schulstufe } from "./school";
 import { activeMaterial, materialLabel, materialSkills, MATERIAL_SOURCES } from "./current-material";
@@ -252,8 +253,26 @@ function resolveSkills(s: BuilderSettings, ctx: StudentContext | null): Resolved
     });
 }
 
-/** Mixed exercises without AI use what the generators do well for the subject. */
-const MIXED_BUILTIN: Record<string, string[]> = { Mathematik: ["rechnung", "mc", "lueckentext", "fehler"] };
+export type PlanSlot = { skill: ResolvedSkill; category: string | null };
+
+/**
+ * The type of each task before anything is generated. Chosen types take turns; "Gemischte Aufgaben"
+ * (no type chosen) takes the types that fit each skill in turn (lib/curriculum.ts mixFor), so the
+ * exercise gets gap texts, corrections and free answers instead of mostly multiple choice.
+ */
+export function planSlots(subject: string, skills: ResolvedSkill[], cats: Category[], count: number): PlanSlot[] {
+  return Array.from({ length: count }, (_, i) => {
+    const skill = skills[i % skills.length];
+    // the types rotate across the tasks and across the skills, so every type comes about equally often
+    // and every skill gets different types
+    const turn = Math.floor(i / skills.length) + (i % skills.length);
+    if (cats.length) return { skill, category: cats[turn % cats.length].key };
+    const mix = mixFor(subject, skill.skill.id);
+    return { skill, category: mix[turn % mix.length] ?? null };
+  });
+}
+
+const typeName = (subject: string, key: string | null) => (key ? (categoriesFor(subject).find((c) => c.key === key)?.label ?? key) : "");
 
 export async function generateTasks(
   s: BuilderSettings,
@@ -265,44 +284,66 @@ export async function generateTasks(
   if (!skills.length) throw new Error("Bitte mindestens eine Fähigkeit auswählen.");
   const count = Math.max(1, Math.min(30, o.count ?? settings.count));
   const cats: Category[] = categoriesFor(settings.subject).filter((c) => settings.categories.includes(c.key));
+  const plan = planSlots(settings.subject, skills, cats, count);
+  const slots: (TaskDraft | null)[] = plan.map(() => null);
   let aiError: string | undefined;
+  let fromAI = 0;
 
   if (settings.useAI && aiEnabled()) {
     try {
-      const tasks = await generateWithAI({
-        subject: settings.subject,
-        level: klassenLabel(settings.schoolType, settings.klasse),
-        skills: skills.map((r) => ({ id: r.skill.id, name: r.skill.name, area: r.skill.area, parentName: r.parent?.name, difficulty: r.difficulty })),
-        count,
-        categories: cats,
-        studentContext: ctx ? contextForAI(ctx, skills.map((r) => r.skill.id)) : null,
-        focusNote: settings.focus,
-        avoid: o.avoid,
-      }, o.meta);
-      if (tasks?.length) {
-        // parents count too, so the progress of "Dividieren" also moves when "Kehrwert" is practised
-        const withParents = tasks.slice(0, count).map((t) => ({ ...t, skillIds: [...new Set([...(t.skillIds ?? []), ...(t.skillIds ?? []).map((id) => skills.find((r) => r.skill.id === id)?.parent?.id).filter((x): x is string => Boolean(x))])] }));
-        return { tasks: withParents, source: "ki" };
+      // the AI gets the plan; what does not come back in its type is asked for once more
+      for (let round = 0; round < 2; round++) {
+        const open = plan.map((p, i) => i).filter((i) => !slots[i]);
+        if (!open.length) break;
+        const got = await generatePlanWithAI(
+          {
+            subject: settings.subject,
+            level: klassenLabel(settings.schoolType, settings.klasse),
+            skills: skills.map((r) => ({ id: r.skill.id, name: r.skill.name, area: r.skill.area, parentName: r.parent?.name, difficulty: r.difficulty })),
+            count: open.length,
+            categories: cats,
+            plan: open.map((i) => ({ skillId: plan[i].skill.skill.id, category: plan[i].category ?? categoriesFor(settings.subject)[0]?.key ?? "" })),
+            studentContext: ctx ? contextForAI(ctx, skills.map((r) => r.skill.id)) : null,
+            focusNote: settings.focus,
+            avoid: [...(o.avoid ?? []), ...slots.filter((t): t is TaskDraft => Boolean(t)).map((t) => t.prompt)],
+          },
+          o.meta,
+        );
+        if (!got) break;
+        got.forEach((t, k) => {
+          if (t) slots[open[k]] = t;
+        });
       }
-      aiError = "Die KI hat keine Aufgaben geliefert.";
+      fromAI = slots.filter(Boolean).length;
+      if (!fromAI) aiError = "Die KI hat keine Aufgaben geliefert.";
     } catch (e) {
       aiError = e instanceof Error ? e.message : String(e);
     }
   }
 
-  const mixed = MIXED_BUILTIN[settings.subject] ?? [null];
-  const avoid = new Set(o.avoid ?? []);
-  const tasks: TaskDraft[] = [];
-  for (let i = 0, guard = 0; tasks.length < count && guard < count * 12; guard++) {
-    const r = skills[i % skills.length];
-    const category = cats.length ? cats[i % cats.length].key : mixed[Math.floor(i / skills.length) % mixed.length];
-    const t = generateForSlot({ skillId: r.skill.id, skillName: r.skill.name, generatorSkillId: r.parent?.id, difficulty: r.difficulty, category, subject: settings.subject }, Math.random, Math.floor(i / skills.length));
-    if (avoid.has(t.prompt) && guard < count * 10) continue;
-    avoid.add(t.prompt);
-    tasks.push(t);
-    i++;
+  // the rest (or everything without AI) from the built-in generators, slot by slot
+  const avoid = new Set([...(o.avoid ?? []), ...slots.filter((t): t is TaskDraft => Boolean(t)).map((t) => t.prompt)]);
+  const missedType: string[] = [];
+  for (let i = 0; i < plan.length; i++) {
+    if (slots[i]) continue;
+    const { skill: r, category } = plan[i];
+    let t: TaskDraft | null = null;
+    for (let guard = 0; guard < 12; guard++) {
+      t = generateForSlot({ skillId: r.skill.id, skillName: r.skill.name, generatorSkillId: r.parent?.id, difficulty: r.difficulty, category, subject: settings.subject }, Math.random, Math.floor(i / skills.length) + guard);
+      if (!avoid.has(t.prompt) || guard >= 10) break;
+    }
+    avoid.add(t!.prompt);
+    if (category && t!.category !== category) missedType.push(typeName(settings.subject, category));
+    slots[i] = t;
   }
-  return { tasks, source: "generator", aiError };
+  // parents count too, so the progress of "Dividieren" also moves when "Kehrwert" is practised
+  const tasks = slots.map((t) => ({ ...t!, skillIds: [...new Set([...(t!.skillIds ?? []), ...(t!.skillIds ?? []).map((id) => skills.find((r) => r.skill.id === id)?.parent?.id).filter((x): x is string => Boolean(x))])] }));
+  const notes = [
+    aiError,
+    fromAI && fromAI < count ? `${count - fromAI} ${count - fromAI === 1 ? "Aufgabe kam" : "Aufgaben kamen"} von der KI nicht im gewünschten Typ und ${count - fromAI === 1 ? "wurde" : "wurden"} ohne KI erstellt.` : "",
+    missedType.length ? `Ohne KI gibt es ${[...new Set(missedType)].join(" und ")} für diese Fähigkeit nicht: ${missedType.length === 1 ? "eine Aufgabe ist" : `${missedType.length} Aufgaben sind`} stattdessen eine freie Antwort.` : "",
+  ].filter(Boolean);
+  return { tasks, source: fromAI ? "ki" : "generator", aiError: notes.length ? notes.join(" ") : undefined };
 }
 
 function autoTitle(s: BuilderSettings, ctx: StudentContext | null) {
@@ -400,7 +441,9 @@ export function blankTask(format: TaskType, skillId: string | null, category: st
     case "cloze":
       return { ...base, type: "cloze", prompt: `… ${GAP} …`, answer: { blanks: [[""]], mode: "text" } };
     case "free":
-      return { ...base, type: "free", answer: { sample: "" } };
+      return { ...base, type: "free", data: { lines: 5 }, answer: { sample: "", criteria: [] } };
+    case "fix":
+      return { ...base, type: "fix", prompt: "Im Text sind Fehler. Schreibe ihn richtig.", data: { faulty: "" }, answer: { accepted: [""], mode: "exact", fixes: [], criteria: [] } };
     case "order":
       return { ...base, type: "order", data: { steps: ["", "", ""] }, answer: { steps: ["", "", ""] } };
     case "grammar":
@@ -429,7 +472,13 @@ export function checkTask(t: TaskDraft): string | null {
     if (gaps === 0) return `Der Lückentext braucht mindestens eine Lücke (${GAP}).`;
     if (!t.answer.blanks || t.answer.blanks.length !== gaps || t.answer.blanks.some((b) => !b.some((x) => x.trim()))) return `Für jede der ${gaps} Lücken braucht es eine Lösung.`;
   }
-  if (t.type === "free" && !(t.answer.sample?.trim() || t.solution.trim())) return "Musterlösung oder Lösungsweg fehlt.";
+  if (t.type === "free" && !(t.answer.sample?.trim() || t.solution.trim() || t.answer.criteria?.some((c) => c.trim()))) return "Musterlösung, Erwartung oder Lösungsweg fehlt.";
+  if (t.type === "fix") {
+    if (!t.data.faulty?.trim()) return "Der Text mit Fehlern fehlt.";
+    const right = (t.answer.accepted ?? []).filter((a) => a.trim());
+    if (!right.length) return "Der verbesserte Text fehlt.";
+    if (right.some((a) => expectedFixes(t.data.faulty!, a, t.answer.mode !== "text").length === 0)) return "Der verbesserte Text ist gleich wie der Text mit Fehlern.";
+  }
   if (t.type === "order" && (!t.answer.steps || t.answer.steps.filter((x) => x.trim()).length < 2 || t.answer.steps.some((x) => !x.trim()))) return "Mindestens zwei Schritte, jeder mit Text.";
   return null;
 }
@@ -439,6 +488,17 @@ export function normalizeTask(t: TaskDraft): TaskDraft {
   const out: TaskDraft = { ...t, prompt: t.prompt.trim(), solution: t.solution.trim(), hints: t.hints.map((h) => h.trim()).filter(Boolean), errorMap: t.errorMap.filter((e) => e.answer.trim() && e.label.trim()) };
   out.skillIds = [...new Set([t.skillId, ...(t.skillIds ?? [])].filter((x): x is string => Boolean(x)))];
   if (out.type === "calc" || out.type === "grammar") out.answer = { ...out.answer, accepted: (out.answer.accepted ?? []).map((a) => a.trim()).filter(Boolean) };
+  if (out.answer.criteria) out.answer = { ...out.answer, criteria: out.answer.criteria.map((c) => c.trim()).filter(Boolean) };
+  if (out.type === "fix" && out.data.faulty) {
+    // the described errors follow the texts: one per difference, the teacher's labels kept
+    const faulty = out.data.faulty.trim();
+    const accepted = (out.answer.accepted ?? []).map((a) => a.trim()).filter(Boolean);
+    const cs = out.answer.mode !== "text";
+    const old = out.answer.fixes ?? [];
+    const fixes = accepted[0] ? expectedFixes(faulty, accepted[0], cs).map((f) => ({ ...f, label: old.find((o) => o.wrong === f.wrong && o.right === f.right)?.label?.trim() ?? "", errorType: old.find((o) => o.wrong === f.wrong && o.right === f.right)?.errorType ?? null })) : [];
+    out.data = { ...out.data, faulty };
+    out.answer = { ...out.answer, accepted, fixes };
+  }
   if (out.type === "order" && out.answer.steps) {
     const steps = out.answer.steps.map((x) => x.trim());
     const same = out.data.steps && out.data.steps.length === steps.length && [...out.data.steps].sort().join("\u0000") === [...steps].sort().join("\u0000");

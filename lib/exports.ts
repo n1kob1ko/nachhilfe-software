@@ -169,15 +169,17 @@ export const DATASETS: Dataset[] = [
     label: "Ergebnisse (alle Antworten)",
     description: "Jede Antwort auf jede Aufgabe: richtig/falsch, Versuch, Zeit, Hilfen, Fehler, Fehlerart mit Quelle und Vorschlag, Einheit oder selbstständig.",
     build: () => ({
-      headers: ["ID", "Zeitpunkt", "Schüler", "Übung", "Aufgabe", "Fähigkeit", "Versuch", "Antwort", "Richtig", "Abgeschlossen", "Zeit (s)", "Aktiv (s)", "Hinweise", "Lösung angesehen", "Fehler", "Fehlerart", "Fehlerart-Quelle", "Vorschlag", "Einheit", "Art"],
+      headers: ["ID", "Zeitpunkt", "Schüler", "Übung", "Aufgabe", "Fähigkeit", "Versuch", "Antwort", "Richtig", "Abgeschlossen", "Zeit (s)", "Aktiv (s)", "Hinweise", "Lösung angesehen", "Fehler", "Fehlerart", "Fehlerart-Quelle", "Vorschlag", "Einheit", "Art", "Lehrerbewertung"],
       rows: q(`SELECT x.*, s.name AS student_name, w.title, t.prompt, k.name AS skill_name FROM attempts x JOIN students s ON s.id = x.student_id
                JOIN assignments a ON a.id = x.assignment_id JOIN worksheets w ON w.id = a.worksheet_id JOIN tasks t ON t.id = x.task_id
                LEFT JOIN skills k ON k.id = x.skill_id ORDER BY x.created_at, x.id`).map((r) => [
-        n(r.id), localTime(s(r.created_at)), s(r.student_name), s(r.title), s(r.prompt), s(r.skill_name), n(r.attempt_no), s(r.answer), yes(r.correct), yes(r.final),
+        n(r.id), localTime(s(r.created_at)), s(r.student_name), s(r.title), s(r.prompt), s(r.skill_name), n(r.attempt_no), s(r.answer), r.review === "offen" ? "" : yes(r.correct), yes(r.final),
         Math.round(Number(r.time_ms) / 1000), r.active_ms === null ? null : Math.round(Number(r.active_ms) / 1000), n(r.hints_used), yes(r.solution_viewed), s(r.error_label),
         errorTypeLabel(s(r.error_type)), ERROR_TYPE_SOURCE_LABEL[s(r.error_type_source) as ErrorTypeSource] ?? s(r.error_type_source),
         r.error_type_suggested ? `${errorTypeLabel(s(r.error_type_suggested))} (${suggestionBy(s(r.error_type_suggested_source))})` : "",
         n(r.unit_id), r.unit_id ? "Einheit" : "selbstständig",
+        // freie Antworten: offen (noch nicht bewertet), richtig, teilweise, falsch
+        s(r.review),
       ]),
     }),
   },
