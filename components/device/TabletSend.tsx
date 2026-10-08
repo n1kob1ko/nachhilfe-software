@@ -54,7 +54,7 @@ export function SendResult({ state, unitId, unitLink = true }: { state: SendStat
     return (
       <div role="status" className="flex flex-wrap items-center gap-3">
         <span className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-green">
-          <CheckCircle2 size={17} aria-hidden /> Auf dem Tablet von {s.student}
+          <CheckCircle2 size={17} aria-hidden /> Auf dem {s.device === "laptop" ? "Laptop" : "Tablet"} von {s.student}
         </span>
         {toUnit}
       </div>
@@ -77,20 +77,22 @@ export function SendResult({ state, unitId, unitLink = true }: { state: SendStat
   return (
     <div role="alert" className="rounded-2xl bg-red-wash px-4 py-3">
       <p className="inline-flex items-center gap-2 text-[15px] font-semibold text-red">
-        <WifiOff size={17} aria-hidden /> Tablet offline – noch nicht angekommen
+        <WifiOff size={17} aria-hidden /> {s.device === "laptop" ? "Laptop" : "Tablet"} offline – noch nicht angekommen
       </p>
       <div className="mt-2 flex flex-wrap gap-2">
         <button type="button" className="btn btn-primary btn-sm" disabled={pending || !s.assignmentId} onClick={() => start(() => setAgain(s.assignmentId!))}>
           Erneut senden
         </button>
-        <Link href="/mehr/geraete" className="btn btn-secondary btn-sm">
-          Verbindung prüfen
-        </Link>
+        {s.device !== "laptop" && (
+          <Link href="/mehr/geraete" className="btn btn-secondary btn-sm">
+            Verbindung prüfen
+          </Link>
+        )}
         <Link href={`/einheiten/${unitId}`} className="btn btn-ghost btn-sm">
           Später senden
         </Link>
       </div>
-      <p className="mt-2 text-[13px] text-ink-2">Die Übung erscheint, sobald das Tablet wieder verbunden ist.</p>
+      <p className="mt-2 text-[13px] text-ink-2">Die Übung erscheint, sobald das {s.device === "laptop" ? "Laptop" : "Tablet"} wieder verbunden ist.</p>
     </div>
   );
 }

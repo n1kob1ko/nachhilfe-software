@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowDown, ArrowUp, CheckCircle2, ChevronRight, Lightbulb, XCircle } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { ArrowDown, ArrowUp, CheckCircle2, ChevronRight, CloudOff, Lightbulb, XCircle } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { submitAnswerAction } from "@/app/actions";
 import { recordHintAction } from "@/app/builder-actions";
 import { deviceRecordHintAction, deviceSubmitAnswerAction } from "@/app/device-actions";
+import { laptopRecordHintAction, laptopSubmitAnswerAction } from "@/app/laptop-actions";
 import { hintLabel } from "@/lib/tasks";
 import { splitFractions } from "@/lib/math-text";
 import { MathText } from "./MathText";
@@ -28,11 +29,13 @@ export type ClientTask = {
   finished: { correct: boolean; solution: string } | null;
 };
 
+type AnswerInput = { assignmentId: number; taskId: number; answer: string; timeMs: number; activeMs: number; hintsUsed: number; giveUp?: boolean; selfAssessed?: boolean };
+
 type Feedback = { correct: boolean | null; text: string; final: boolean; solution?: string; sample?: string; selfAssess?: boolean };
 
 const GAP = "___";
 
-type Via = "link" | "geraet";
+type Via = "link" | "geraet" | "laptop";
 
 export function Solver({
   token,
@@ -48,7 +51,8 @@ export function Solver({
   title: string;
   tasks: ClientTask[];
   maxTries: number;
-  /** "geraet": running on the teacher's student tablet, authorised by the tablet instead of the student link */
+  /** "geraet": on the teacher's student tablet, "laptop": on the student's own laptop for this unit; both authorised by
+   * their device instead of the student link */
   via?: Via;
   homeHref?: string;
 }) {
@@ -56,12 +60,12 @@ export function Solver({
   const firstOpen = initial.findIndex((t) => !t.finished);
   const [index, setIndex] = useState(firstOpen === -1 ? initial.length : firstOpen);
   const home = homeHref ?? `/lernen/${token}`;
-  // on the tablet the teacher sees live which task is open and for how long
+  // on the tablet and the laptop the teacher sees live which task is open and for how long
   useEffect(() => {
-    if (via !== "geraet") return;
+    if (via === "link") return;
     const t = tasks[Math.min(index, tasks.length - 1)];
     if (!t) return;
-    void fetch("/geraet/status", {
+    void fetch(via === "geraet" ? "/geraet/status" : "/mitmachen/status", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ assignmentId, taskId: t.id, taskNo: Math.min(index + 1, tasks.length), total: tasks.length }),
@@ -83,7 +87,7 @@ export function Solver({
           {correct} von {tasks.length} Aufgaben richtig
         </p>
         <p className="mx-auto mt-3 max-w-[48ch] text-ink-2">Deine Ergebnisse sind gespeichert. Deine Nachhilfelehrerin bzw. dein Nachhilfelehrer sieht, wo du schon sicher bist und was ihr noch übt.</p>
-        <HomeLink href={home} plain={via === "geraet"} className="btn btn-primary mt-8">
+        <HomeLink href={home} plain={via !== "link"} className="btn btn-primary mt-8">
           Zurück zur Übersicht
         </HomeLink>
       </div>
@@ -95,7 +99,7 @@ export function Solver({
     <div>
       <div className="mb-6">
         <div className="mb-2 flex items-baseline justify-between gap-4 text-[14px]">
-          <HomeLink href={home} plain={via === "geraet"} className="font-medium text-ink-2 hover:text-ink">
+          <HomeLink href={home} plain={via !== "link"} className="font-medium text-ink-2 hover:text-ink">
             ← {title}
           </HomeLink>
           <span className="num shrink-0 text-ink-2">
@@ -179,24 +183,58 @@ function TaskCard({
   const openHint = () => {
     const i = hintsShown;
     setHintsShown(i + 1);
-    void (via === "geraet" ? deviceRecordHintAction(assignmentId, task.id, i) : recordHintAction(token, assignmentId, task.id, i));
+    void (via === "geraet"
+      ? deviceRecordHintAction(assignmentId, task.id, i)
+      : via === "laptop"
+        ? laptopRecordHintAction(assignmentId, task.id, i)
+        : recordHintAction(token, assignmentId, task.id, i)
+    ).catch(() => {});
   };
 
-  const send = (extra: { giveUp?: boolean; selfAssessed?: boolean } = {}) =>
-    start(async () => {
-      const elapsed = Date.now() - startedAt.current;
-      startedAt.current = Date.now();
-      const activeMs = active.take();
-      const input = { assignmentId, taskId: task.id, answer, timeMs: elapsed, activeMs, hintsUsed: hintsShown, ...extra };
-      const res = via === "geraet" ? await deviceSubmitAnswerAction(input) : await submitAnswerAction({ token, ...input });
-      if (res.needsSelfAssessment) {
+  // an answer that did not reach the server stays here and is sent again, never typed twice
+  const [unsent, setUnsent] = useState<null | { input: AnswerInput; network: boolean }>(null);
+
+  const deliver = useCallback(
+    (input: AnswerInput) =>
+      start(async () => {
+        let res: Awaited<ReturnType<typeof submitAnswerAction>>;
+        try {
+          res = via === "geraet" ? await deviceSubmitAnswerAction(input) : via === "laptop" ? await laptopSubmitAnswerAction(input) : await submitAnswerAction({ token, ...input });
+        } catch (e) {
+          setUnsent({ input, network: e instanceof TypeError || !navigator.onLine });
+          return;
+        }
+        setUnsent(null);
+        if (res.needsSelfAssessment) {
         setFeedback({ correct: null, text: res.feedback, final: false, sample: res.sample, selfAssess: true });
         return;
       }
-      setTries(res.attemptNo);
-      setFeedback({ correct: res.correct, text: res.feedback, final: res.final, solution: res.solution });
-      if (res.final) onFinished(Boolean(res.correct), res.solution ?? "");
-    });
+        setTries(res.attemptNo);
+        setFeedback({ correct: res.correct, text: res.feedback, final: res.final, solution: res.solution });
+        if (res.final) onFinished(Boolean(res.correct), res.solution ?? "");
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onFinished is a fresh arrow each render
+    [via, token],
+  );
+
+  const send = (extra: { giveUp?: boolean; selfAssessed?: boolean } = {}) => {
+    const elapsed = Date.now() - startedAt.current;
+    startedAt.current = Date.now();
+    const activeMs = active.take();
+    deliver({ assignmentId, taskId: task.id, answer, timeMs: elapsed, activeMs, hintsUsed: hintsShown, ...extra });
+  };
+
+  // back online: send what is waiting
+  useEffect(() => {
+    if (!unsent?.network) return;
+    const again = () => deliver(unsent.input);
+    window.addEventListener("online", again);
+    const id = window.setInterval(() => navigator.onLine && again(), 15_000);
+    return () => {
+      window.removeEventListener("online", again);
+      window.clearInterval(id);
+    };
+  }, [unsent, deliver]);
 
   const promptParts = useMemo(() => task.prompt.split(GAP), [task.prompt]);
 
@@ -360,6 +398,18 @@ function TaskCard({
             {task.released.answer && <p className="mt-2 font-semibold"><MathText text={task.released.answer} /></p>}
             <p className="mt-1 text-[16px] whitespace-pre-line"><MathText text={task.released.solution} /></p>
           </details>
+        )}
+
+        {unsent && !pending && (
+          <div role="alert" className="mt-6 flex flex-wrap items-center gap-3 rounded-xl bg-amber-wash px-4 py-3 text-[15px]">
+            <CloudOff size={18} className="shrink-0" aria-hidden />
+            <span className="min-w-0 flex-1">
+              {unsent.network ? "Keine Verbindung. Deine Antwort ist noch da und wird gesendet, sobald das Internet wieder geht." : "Das Senden hat nicht geklappt."}
+            </span>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => deliver(unsent.input)}>
+              Nochmal senden
+            </button>
+          </div>
         )}
 
         <div className="mt-8 flex flex-wrap items-center gap-3">

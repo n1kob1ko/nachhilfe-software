@@ -126,10 +126,10 @@ test("export: the JSON backup holds every row and restores into an empty databas
 
   const b = exportBackup();
   const json = JSON.parse(JSON.stringify(b));
-  // every table except the login sessions, with every row
+  // every table except the login sessions and the temporary laptop accesses, with every row
   const tables = (db().prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[]).map((t) => t.name);
   for (const t of tables) {
-    if (t === "teacher_sessions") {
+    if (t === "teacher_sessions" || t === "laptop_codes" || t === "laptop_sessions") {
       assert.equal(json.tables[t], undefined, "sessions are not exported");
       continue;
     }

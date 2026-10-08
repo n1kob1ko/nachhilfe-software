@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, PenLine, Printer, Tablet } from "lucide-react";
+import { FileText, Laptop, PenLine, Printer, Tablet } from "lucide-react";
 import { showTextOnTabletAction } from "@/app/text-actions";
 import { Pill, SectionTitle, formatDate } from "@/components/ui";
 import { textsForStudent, textsForUnit, wordsLabel, type UnitText } from "@/lib/texts";
@@ -10,7 +10,8 @@ const label = (t: Pick<UnitText, "title" | "topic">) => (t.topic && t.topic !== 
  * Textarbeiten in a running unit: the ones of this unit (open on the tablet, read along) and earlier
  * unfinished texts of the student, to continue them.
  */
-export function RunningUnitTexts({ unitId, studentId, deviceView, paired, name }: { unitId: number; studentId: number; deviceView: string; paired: boolean; name: string }) {
+export function RunningUnitTexts({ unitId, studentId, deviceView, device, name }: { unitId: number; studentId: number; deviceView: string; device: "laptop" | "tablet" | null; name: string }) {
+  const word = device === "laptop" ? "Laptop" : "Tablet";
   const here = textsForUnit(unitId);
   const ids = new Set(here.map((t) => t.id));
   const earlier = textsForStudent(studentId).filter((t) => !ids.has(t.id) && t.status !== "fertig");
@@ -24,11 +25,11 @@ export function RunningUnitTexts({ unitId, studentId, deviceView, paired, name }
           <span className="block font-semibold">{label(t)}</span>
           <span className="num block text-[14px] text-ink-2">{sub}</span>
         </span>
-        {shown ? <Pill tone="green">am Tablet offen</Pill> : t.status === "fertig" && <Pill tone="green">fertig</Pill>}
-        {paired && !shown && (
+        {shown && device ? <Pill tone="green">am {word} offen</Pill> : t.status === "fertig" && <Pill tone="green">fertig</Pill>}
+        {device && !shown && (
           <form action={showTextOnTabletAction.bind(null, t.id)}>
             <button className="btn btn-secondary">
-              <Tablet size={16} aria-hidden /> Am Tablet öffnen
+              {device === "laptop" ? <Laptop size={16} aria-hidden /> : <Tablet size={16} aria-hidden />} Am {word} öffnen
             </button>
           </form>
         )}

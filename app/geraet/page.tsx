@@ -1,4 +1,4 @@
-import { NotebookPen, PenLine, Presentation } from "lucide-react";
+import { Laptop, NotebookPen, PenLine, Presentation } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import { DeviceLive } from "@/components/device/DeviceLive";
 import { PairForm } from "@/components/device/PairForm";
@@ -6,6 +6,7 @@ import { Solver } from "@/components/Solver";
 import { WhiteboardLoader } from "@/components/whiteboard/WhiteboardLoader";
 import { deviceContext } from "@/lib/device-context";
 import { touchDevice } from "@/lib/devices";
+import { activeLaptop } from "@/lib/laptop";
 import { markDelivered, parseView, pushLive, unitAssignments, unitText } from "@/lib/live";
 import { MAX_TRIES } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
@@ -42,17 +43,27 @@ export default async function DevicePage() {
   const first = student.name.split(" ")[0];
   const list = unitAssignments(unit.id);
   const view = parseView(unit.device_view);
-  const current = view.kind === "aufgabe" ? list.find((a) => a.id === view.assignmentId) : undefined;
+  // the student works on their own laptop in this unit: exercises and texts are there, the tablet only offers the board
+  const onLaptop = Boolean(activeLaptop(unit.id)) && view.kind !== "tafel";
+  const current = view.kind === "aufgabe" && !onLaptop ? list.find((a) => a.id === view.assignmentId) : undefined;
   // what is on the screen now has arrived; the teacher's status switches from "nicht angekommen"
   let arrived = false;
-  for (const a of current ? [current] : view.kind === "start" ? list : []) arrived = markDelivered(a.id) || arrived;
+  for (const a of onLaptop ? [] : current ? [current] : view.kind === "start" ? list : []) arrived = markDelivered(a.id) || arrived;
   if (arrived) pushLive(unit.id);
 
   // a Textarbeit of this student: written here, saved continuously
-  const text = view.kind === "text" ? unitText(unit, view.textId) : null;
+  const text = view.kind === "text" && !onLaptop ? unitText(unit, view.textId) : null;
 
   let content: React.ReactNode;
-  if (text) {
+  if (onLaptop) {
+    content = (
+      <div className="panel flex flex-col items-center px-6 py-12 text-center">
+        <Laptop size={36} strokeWidth={1.75} className="text-accent" aria-hidden />
+        <p className="mt-4 text-[20px] font-semibold">{first} arbeitet am eigenen Laptop</p>
+        <p className="mt-1 text-[15px] text-ink-2">Übungen und Texte erscheinen dort. Das Whiteboard geht weiterhin hier.</p>
+      </div>
+    );
+  } else if (text) {
     content = (
       <>
         <a href="/geraet/ansicht?zu=start" className="mb-3 inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2">
