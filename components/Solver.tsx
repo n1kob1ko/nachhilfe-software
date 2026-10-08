@@ -29,7 +29,14 @@ export type ClientTask = {
   finished: { correct: boolean; solution: string } | null;
 };
 
-type AnswerInput = { assignmentId: number; taskId: number; answer: string; timeMs: number; activeMs: number; hintsUsed: number; giveUp?: boolean; selfAssessed?: boolean };
+type AnswerInput = { assignmentId: number; taskId: number; answer: string; timeMs: number; activeMs: number; hintsUsed: number; giveUp?: boolean; selfAssessed?: boolean; submissionId: string };
+
+/** One id per click on "Prüfen": a repeat after a lost connection carries the same id and is stored once. */
+function newSubmissionId() {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  // plain http in the local network has no randomUUID
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 type Feedback = { correct: boolean | null; text: string; final: boolean; solution?: string; sample?: string; selfAssess?: boolean };
 
@@ -218,10 +225,15 @@ function TaskCard({
   );
 
   const send = (extra: { giveUp?: boolean; selfAssessed?: boolean } = {}) => {
+    // still waiting to be sent: the same submission again, not a second attempt
+    if (unsent && unsent.input.answer === answer && Boolean(unsent.input.giveUp) === Boolean(extra.giveUp) && unsent.input.selfAssessed === extra.selfAssessed) {
+      deliver(unsent.input);
+      return;
+    }
     const elapsed = Date.now() - startedAt.current;
     startedAt.current = Date.now();
     const activeMs = active.take();
-    deliver({ assignmentId, taskId: task.id, answer, timeMs: elapsed, activeMs, hintsUsed: hintsShown, ...extra });
+    deliver({ assignmentId, taskId: task.id, answer, timeMs: elapsed, activeMs, hintsUsed: hintsShown, ...extra, submissionId: newSubmissionId() });
   };
 
   // back online: send what is waiting

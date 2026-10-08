@@ -200,6 +200,8 @@ export type Attempt = {
   error_type_suggested?: string | null;
   /** Who made error_type_suggested: vorschlag (the app) or ki (free-text grading). */
   error_type_suggested_source?: string | null;
+  /** The device's id of this submission: a repeated request (lost connection) is stored only once. */
+  submission_id?: string | null;
   error_type_by?: number | null;
   error_type_at?: string | null;
 };
@@ -808,6 +810,10 @@ export function completeAssignmentIfDone(id: number) {
   const { done } = db().prepare("SELECT COUNT(DISTINCT task_id) AS done FROM attempts WHERE assignment_id = ? AND final = 1").get(id) as { done: number };
   if (done >= total) db().prepare("UPDATE assignments SET completed_at = datetime('now') WHERE id = ?").run(id);
 }
+/** The answer a student's device already submitted under this id, if any. */
+export function getAttemptBySubmission(studentId: number, submissionId: string): Attempt | undefined {
+  return db().prepare("SELECT * FROM attempts WHERE student_id = ? AND submission_id = ?").get(studentId, submissionId) as Attempt | undefined;
+}
 export function listAttemptsForAssignment(assignmentId: number): Attempt[] {
   return db().prepare("SELECT * FROM attempts WHERE assignment_id = ? ORDER BY id").all(assignmentId) as Attempt[];
 }
@@ -851,19 +857,20 @@ export function recordAttempt(
     level?: number | null;
     error_type?: string | null;
     error_type_source?: string | null;
+    submission_id?: string | null;
   },
 ) {
   const res = db()
     .prepare(
       `INSERT INTO attempts (assignment_id, task_id, student_id, skill_id, attempt_no, answer, correct, final, time_ms, hints_used, solution_viewed, error_label, feedback, unit_id, active_ms, teacher_id, level,
-         error_type, error_type_source, error_type_suggested, error_type_suggested_source, error_type_at, created_at)
+         error_type, error_type_source, error_type_suggested, error_type_suggested_source, error_type_at, created_at, submission_id)
        VALUES (@assignment_id, @task_id, @student_id, @skill_id, @attempt_no, @answer, @correct, @final, @time_ms, @hints_used, @solution_viewed, @error_label, @feedback, @unit_id, @active_ms, @teacher_id, @level,
          @error_type, @error_type_source,
          CASE WHEN @error_type_source IN ('vorschlag', 'ki') THEN @error_type END, CASE WHEN @error_type IS NOT NULL AND @error_type_source IN ('vorschlag', 'ki') THEN @error_type_source END,
          CASE WHEN @error_type IS NOT NULL THEN COALESCE(@created_at, datetime('now')) END,
-         COALESCE(@created_at, datetime('now')))`,
+         COALESCE(@created_at, datetime('now')), @submission_id)`,
     )
-    .run({ created_at: null, unit_id: null, active_ms: null, teacher_id: null, level: null, error_type: null, error_type_source: null, ...a });
+    .run({ created_at: null, unit_id: null, active_ms: null, teacher_id: null, level: null, error_type: null, error_type_source: null, submission_id: null, ...a });
   return Number(res.lastInsertRowid);
 }
 /**
