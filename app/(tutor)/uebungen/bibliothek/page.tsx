@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookmarkPlus, Plus, Search, X } from "lucide-react";
+import { BookmarkPlus, Plus, Printer, Search, X } from "lucide-react";
 import { createLibraryTaskAction, exerciseFromLibraryAction } from "@/app/library-actions";
 import { subjectTone } from "@/components/Calendar";
 import { Info } from "@/components/Info";
@@ -259,6 +259,9 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
                   </select>
                 </label>
                 <button className="btn btn-primary">Ausgewählte als neue Übung</button>
+                <button className="btn btn-secondary" formAction="/arbeitsblatt/bibliothek" formMethod="get" formNoValidate>
+                  <Printer size={16} aria-hidden /> Als Arbeitsblatt
+                </button>
                 <Info label="Info zu neuen Übungen aus der Bibliothek">Die Aufgaben werden kopiert und als Entwurf geöffnet. Dort prüfen und senden. Eine Übung hat ein Fach: Aufgaben anderer Fächer bleiben weg.</Info>
               </div>
             )}
