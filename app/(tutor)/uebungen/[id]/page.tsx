@@ -19,7 +19,7 @@ import { klassenLabel, stufeLabel } from "@/lib/school";
 import { GAP } from "@/lib/tasks";
 import { runningBoardsFor } from "@/lib/whiteboard";
 
-export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string; gesendet?: string; ausgelassen?: string }> }) {
+export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string; gesendet?: string; ausgelassen?: string; anzahl?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -87,6 +87,14 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
       )}
       {sp.hinweis === "ki" && (
         <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Claude war nicht erreichbar. Die Aufgaben stammen aus den eingebauten Generatoren.</p>
+      )}
+      {sp.hinweis === "lesenki" && (
+        <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Die KI hat keine passenden Fragen geliefert. Die Fragen stammen aus Vorlagen, bitte prüfen und anpassen.</p>
+      )}
+      {sp.hinweis === "lesenweniger" && (
+        <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">
+          Nur {Number(sp.anzahl) || "einige"} Fragen passten sicher zum Text. Weitere Fragen kannst du unten beim Text ergänzen.
+        </p>
       )}
 
       <FlowSteps current={draft ? 2 : !mainAssignment ? 3 : 4} />

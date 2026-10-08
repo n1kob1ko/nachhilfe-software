@@ -15,6 +15,7 @@ import {
   type ActionResult,
 } from "@/app/builder-actions";
 import { saveToLibraryAction } from "@/app/library-actions";
+import { AddReadingQuestion, ReadingIssues, ReadingQuestionFields, ReadingTextPanel } from "@/components/ReadingEditor";
 import { TaskBody } from "@/components/TaskPreview";
 import { TabletSend } from "@/components/device/TabletSend";
 import { categoriesFor, DIFFICULTIES, TASK_TYPES, type Difficulty, type TaskType } from "@/lib/curriculum";
@@ -23,6 +24,7 @@ import { expectedFixes } from "@/lib/fix-text";
 import { GAP, gapCount, hintLabel, type TaskDraft } from "@/lib/tasks";
 import { isResultForm, PART_KINDS, RESULT_FORMS, wayMode, type PartKind } from "@/lib/math-check";
 import { checkOwnSolution } from "@/lib/math-task";
+import { readingIssues, readingSet, type ReadingText } from "@/lib/lesen";
 import { MathText } from "./MathText";
 
 type Skill = { id: string; name: string; area: string; parent_id: string | null };
@@ -70,6 +72,8 @@ function Note({ r }: { r: ActionResult }) {
 export function WorksheetEditor(p: Props) {
   const [editing, setEditing] = useState<number | null>(p.initialEditing ?? null);
   const passages = new Set<string>();
+  // a Leseverständnis: one text for all questions, shown and edited once above them (lib/lesen.ts)
+  const reading = p.library ? null : readingSet(p.tasks);
   const skillName = (id: string | null) => {
     const s = p.skills.find((x) => x.id === id);
     if (!s) return undefined;
@@ -78,6 +82,7 @@ export function WorksheetEditor(p: Props) {
   };
   return (
     <div className="grid gap-3">
+      {reading && <ReadingTextPanel key={reading.title + reading.text} worksheetId={p.worksheetId} reading={reading} tasks={p.tasks} editable={p.editable} subject={p.subject} />}
       {p.tasks.length === 0 && <p className="panel px-5 py-6 text-[15px] text-ink-2">Noch keine Aufgaben. Leg unten die erste an oder übernimm eine aus der Aufgabensammlung.</p>}
       <ol className="grid gap-3" aria-label="Aufgaben">
         {p.tasks.map((t, i) => {
@@ -86,7 +91,7 @@ export function WorksheetEditor(p: Props) {
           return (
             <li key={t.id} id={`aufgabe-${t.id}`} className="panel scroll-mt-6 px-5 py-4">
               {editing === t.id ? (
-                <TaskForm task={t} index={i + 1} subject={p.subject} skills={p.skills} onDone={() => setEditing(null)} />
+                <TaskForm task={t} index={i + 1} subject={p.subject} skills={p.skills} reading={reading} onDone={() => setEditing(null)} />
               ) : (
                 <TaskCard
                   {...p}
@@ -95,7 +100,8 @@ export function WorksheetEditor(p: Props) {
                   first={i === 0}
                   last={i === p.tasks.length - 1}
                   skillName={skillName(t.skillId)}
-                  passageShown={shown}
+                  passageShown={shown || Boolean(reading)}
+                  issues={reading ? readingIssues(t, reading.text, p.tasks) : []}
                   onEdit={() => setEditing(t.id)}
                 />
               )}
@@ -103,12 +109,12 @@ export function WorksheetEditor(p: Props) {
           );
         })}
       </ol>
-      {p.editable && !p.library && <AddTask {...p} afterId={p.tasks.at(-1)?.id} onAdded={(id) => setEditing(id)} />}
+      {p.editable && !p.library && (reading ? <AddReadingQuestion worksheetId={p.worksheetId} afterId={p.tasks.at(-1)?.id} onAdded={(id) => setEditing(id)} /> : <AddTask {...p} afterId={p.tasks.at(-1)?.id} onAdded={(id) => setEditing(id)} />)}
     </div>
   );
 }
 
-function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: boolean; skillName?: string; passageShown: boolean; onEdit: () => void }) {
+function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: boolean; skillName?: string; passageShown: boolean; issues?: string[]; onEdit: () => void }) {
   const { task: t } = p;
   const [pending, start] = useTransition();
   const [note, setNote] = useState<ActionResult>(null);
@@ -122,7 +128,10 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
     <div className={pending ? "opacity-60 transition-opacity" : ""} aria-busy={pending}>
       <div className="grid grid-cols-[32px_minmax(0,1fr)] gap-3">
         <span className="num pt-0.5 text-[15px] font-semibold text-ink-3">{p.index}.</span>
-        <TaskBody task={t} showSolution={p.showSolutions} skillName={p.skillName} subject={p.subject} passageShown={p.passageShown} />
+        <div className="min-w-0">
+          <TaskBody task={t} showSolution={p.showSolutions} skillName={p.skillName} subject={p.subject} passageShown={p.passageShown} />
+          {p.editable && <ReadingIssues issues={p.issues ?? []} />}
+        </div>
       </div>
       <div className="no-print mt-3 flex flex-wrap items-center gap-1.5 border-t border-line pt-3 pl-[44px]">
         {p.editable && (
@@ -386,6 +395,12 @@ function SkillSelect({ skills, value, onChange }: { skills: Skill[]; value: stri
 // ---------- editing ----------
 /** Switches the answer format and keeps what still fits (prompt, solution, hints). */
 function reshape(t: TaskDraft, format: TaskType): TaskDraft {
+  const r = reshapeBase(t, format);
+  // a question about a shared reading text keeps the text, what it practises and its Beleg
+  if (t.data.aspect === undefined && t.data.passageTitle === undefined) return r;
+  return { ...r, data: { ...r.data, passage: t.data.passage, passageTitle: t.data.passageTitle, aspect: t.data.aspect }, answer: { ...r.answer, evidence: t.answer.evidence ?? [] } };
+}
+function reshapeBase(t: TaskDraft, format: TaskType): TaskDraft {
   const keep = { ...t, type: format };
   const opts = t.data.options ?? ["", "", ""];
   switch (format) {
@@ -425,7 +440,7 @@ function reshape(t: TaskDraft, format: TaskType): TaskDraft {
   }
 }
 
-function TaskForm({ task, index, subject, skills, onDone }: { task: Task; index: number; subject: string; skills: Skill[]; onDone: () => void }) {
+function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Task; index: number; subject: string; skills: Skill[]; reading?: ReadingText | null; onDone: () => void }) {
   const { id: _id, worksheet_id: _w, position: _p, ...initial } = task;
   void _id, void _w, void _p;
   const [t, setT] = useState<TaskDraft>({ ...initial, hints: initial.hints.length ? initial.hints : ["", "", ""] });
@@ -536,7 +551,8 @@ function TaskForm({ task, index, subject, skills, onDone }: { task: Task; index:
         </div>
       </details>
 
-      {(t.type === "reading" || (t.type === "free" && t.data.passage !== undefined)) && (
+      {reading && <ReadingQuestionFields t={t} setT={setT} subject={subject} text={reading.text} />}
+      {!reading && (t.type === "reading" || (t.type === "free" && t.data.passage !== undefined)) && (
         <label className="field">
           <span className="label">Lesetext</span>
           <textarea className="input min-h-[120px]" value={t.data.passage ?? ""} onChange={(e) => setData({ passage: e.target.value })} />

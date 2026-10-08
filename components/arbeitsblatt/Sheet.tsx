@@ -6,6 +6,7 @@ import {
   type SheetTask,
   type WorkArea as WorkAreaType,
 } from "@/lib/arbeitsblatt";
+import { isAspect, OPEN_ASPECTS, paragraphsOf, severalNoted } from "@/lib/lesen";
 import { GAP } from "@/lib/tasks";
 import { MathLine, RichText } from "./MathLine";
 import { Lines, WorkField } from "./WorkArea";
@@ -122,6 +123,22 @@ function Passage({ text }: { text: string }) {
     <div className="ab-passage">
       <RichText text={text} />
     </div>
+  );
+}
+
+/** Leseverständnis: the text once, with its title and numbered paragraphs; it may run over several pages. */
+function ReadingPassage({ title, text, teacher }: { title: string; text: string; teacher: boolean }) {
+  return (
+    <section className="ab-lesetext" aria-label="Lesetext">
+      {!teacher && <p className="ab-lese-hint">Lies den Text genau. Beantworte dann die Fragen. Die Zahlen am Rand nennen die Abschnitte.</p>}
+      {title && <h2 className="ab-lese-title">{title}</h2>}
+      {paragraphsOf(text).map((p, i) => (
+        <p key={i} className="ab-absatz">
+          <span className="ab-absatz-nr">{i + 1}</span>
+          {p}
+        </p>
+      ))}
+    </section>
   );
 }
 
@@ -313,9 +330,22 @@ function TeacherTask({ t, o }: { t: SheetTask; o: SheetOptions }) {
               <MathLine text={task.answer.sample} />
             </p>
           )}
+          {isAspect(task.data.aspect) && OPEN_ASPECTS.has(task.data.aspect) && !severalNoted(task.answer.criteria) && <p className="ab-muted">Mehrere Antworten sind richtig, wenn sie zum Text passen.</p>}
+          {(task.answer.evidence ?? []).length > 0 && (
+            <div className="ab-solution-errors">
+              <b>Beleg im Text:</b>
+              <ul>
+                {task.answer.evidence!.map((e, i) => (
+                  <li key={i}>
+                    Abschnitt {e.paragraph}: „{e.quote}“
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {task.answer.criteria && task.answer.criteria.length > 0 && (
             <div className="ab-solution-errors">
-              <b>Darauf kommt es an:</b>
+              <b>{isAspect(task.data.aspect) ? "Erwartungshorizont:" : "Darauf kommt es an:"}</b>
               <ul>
                 {task.answer.criteria.map((c, i) => (
                   <li key={i}>{c}</li>
@@ -417,6 +447,8 @@ export function Sheet({ doc, o }: { doc: SheetDoc; o: SheetOptions }) {
   return (
     <article className="ab-sheet" lang="de">
       <Header doc={doc} o={o} teacher={teacher} />
+      {doc.reading && <ReadingPassage title={doc.reading.title} text={doc.reading.text} teacher={teacher} />}
+      {doc.reading && <h2 className="ab-lese-fragen">Fragen zum Text</h2>}
       <div className="ab-tasks">
         {doc.tasks.map((t) => (
           <Fragment key={t.n}>

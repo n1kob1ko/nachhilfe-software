@@ -163,6 +163,54 @@
   margin-bottom: 2mm;
 }
 
+/* Leseverständnis: the text once, set like a school reader; long texts break between paragraphs */
+.ab-lesetext {
+  margin: 0 0 7mm;
+  padding: 4mm 5mm 2mm 5mm;
+  border: 0.3mm solid #888;
+  border-radius: 1.5mm;
+}
+.ab-lese-hint {
+  margin: 0 0 3mm;
+  font-size: 10pt;
+  color: #555;
+}
+.ab-lese-title {
+  margin: 0 0 3mm;
+  font-size: 14pt;
+  font-weight: 700;
+  break-after: avoid;
+}
+.ab-absatz {
+  position: relative;
+  margin: 0 0 2.6mm;
+  padding-left: 8mm;
+  font-size: 12pt;
+  line-height: 1.6;
+  orphans: 3;
+  widows: 3;
+  /* a paragraph stays on one page; only one longer than a page breaks */
+  break-inside: avoid;
+  text-align: left;
+  hyphens: auto;
+}
+.ab-absatz-nr {
+  position: absolute;
+  left: 0;
+  top: 0.4mm;
+  width: 5mm;
+  text-align: right;
+  font-size: 8.5pt;
+  font-weight: 700;
+  color: #666;
+}
+.ab-lese-fragen {
+  margin: 0 0 4mm;
+  font-size: 12.5pt;
+  font-weight: 700;
+  break-after: avoid;
+}
+
 .ab-table {
   border-collapse: collapse;
   margin: 1.5mm 0 2.5mm;
@@ -484,6 +532,8 @@
   /* never one lonely line at the bottom or top of a page */
   orphans: 3;
   widows: 3;
+  /* a paragraph stays on one page; only one longer than a page breaks */
+  break-inside: avoid;
 }
 .tx-print-empty {
   min-height: 1.6em;

@@ -15,6 +15,8 @@ import { MathText } from "@/components/MathText";
 import { MathWork } from "@/components/MathWork";
 import { readMathAnswer } from "@/lib/math-check";
 import { gradeMathTask } from "@/lib/math-task";
+import { ASPECT_SHORT, isAspect, OPEN_ASPECTS, readingSet, wordCount, severalNoted } from "@/lib/lesen";
+import { ReadingTextView } from "@/components/ReadingText";
 
 const isMath = (t: repo.Task) => t.type === "rechenweg" || t.type === "sachaufgabe";
 
@@ -62,6 +64,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   const totalSec = Math.round(attempts.reduce((s, a) => s + a.time_ms, 0) / 1000);
   const withHelp = finals.filter((a) => a.hints_used > 0 || a.solution_viewed).length;
   const unit = runningUnitForStudent(student.id);
+  const reading = readingSet(tasks);
 
   return (
     <>
@@ -100,6 +103,17 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
           </div>
         ))}
       </dl>
+      {reading && (
+        <details className="panel group mb-6 px-5 py-1">
+          <summary className="flex min-h-[48px] cursor-pointer list-none items-center justify-between gap-3 text-[15px] font-semibold">
+            Lesetext ansehen
+            <span className="num text-[13px] font-normal text-ink-3">{wordCount(reading.text)} Wörter</span>
+          </summary>
+          <div className="pt-2 pb-5">
+            <ReadingTextView title={reading.title} text={reading.text} lang={w.subject === "Englisch" ? "en" : "de"} />
+          </div>
+        </details>
+      )}
       <ol className="panel divide-y divide-line">
         {tasks.map((t, i) => {
           const tries = attempts.filter((a) => a.task_id === t.id);
@@ -121,6 +135,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
             <li key={t.id} className="grid gap-3 px-5 py-4 md:grid-cols-[32px_1fr_220px]">
               <span className="num font-semibold text-ink-3">{i + 1}.</span>
               <div className="min-w-0">
+                {isAspect(t.data.aspect) && <p className="mb-0.5 text-[12px] font-semibold text-ink-3">{ASPECT_SHORT[t.data.aspect]}</p>}
                 <p className="max-w-[70ch] whitespace-pre-line"><MathText text={t.prompt.split(GAP).join("____")} /></p>
                 {t.type === "rechenweg" && t.data.start && (
                   <p className="mt-1 text-[17px] font-semibold">
@@ -159,8 +174,9 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
                   <FixCompare faulty={t.data.faulty} given={fin.answer} expected={closestVersion(t.answer.accepted, fin.answer, t.answer.mode !== "text") ?? t.answer.accepted[0]} caseSensitive={t.answer.mode !== "text"} className="mt-3 max-w-[90ch]" />
                 )}
                 {(t.type !== "fix" || !fin || Boolean(fin.solution_viewed)) && answerText(t) && <p className="mt-1 text-[13px] text-ink-3">Richtige Lösung: <MathText text={answerText(t)} /></p>}
-                {(t.answer.sample || t.answer.criteria?.length) && !answerText(t) ? (
+                {(t.answer.sample || t.answer.criteria?.length || t.answer.evidence?.length) && (!answerText(t) || t.answer.evidence?.length) ? (
                   <div className="mt-2 max-w-[70ch] rounded-lg bg-paper px-3 py-2 text-[13px] text-ink-2">
+                    {isAspect(t.data.aspect) && OPEN_ASPECTS.has(t.data.aspect) && !severalNoted(t.answer.criteria) && <p className="mb-1">Mehrere Antworten sind richtig, wenn sie zum Text passen.</p>}
                     {t.answer.sample && (
                       <p>
                         <span className="font-semibold">Musterlösung:</span> <MathText text={t.answer.sample} />
@@ -168,10 +184,22 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
                     )}
                     {t.answer.criteria && t.answer.criteria.length > 0 && (
                       <>
-                        <p className="mt-1 font-semibold">Darauf kommt es an:</p>
+                        <p className="mt-1 font-semibold">{isAspect(t.data.aspect) ? "Erwartungshorizont:" : "Darauf kommt es an:"}</p>
                         <ul className="list-disc pl-5">
                           {t.answer.criteria.map((c, k) => (
                             <li key={k}>{c}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                    {t.answer.evidence && t.answer.evidence.length > 0 && (
+                      <>
+                        <p className="mt-1 font-semibold">Beleg im Text:</p>
+                        <ul className="list-disc pl-5">
+                          {t.answer.evidence.map((e, k) => (
+                            <li key={k}>
+                              <span className="num">Abschnitt {e.paragraph}:</span> „{e.quote}“
+                            </li>
                           ))}
                         </ul>
                       </>
