@@ -253,7 +253,7 @@ test("live triggers: right answers cost nothing, wrong ones are bundled, a solve
   live.forgetUnit(s.unit.id);
 });
 
-test("free text: without an answer from Claude the student rates the answer", async () => {
+test("free text: saved for the teacher's grade, with or without the AI, never graded by wording", async () => {
   const r = await import("./ai/router");
   const repo = await import("./repo");
   const { submitAnswer } = await import("./service");
@@ -264,14 +264,17 @@ test("free text: without an answer from Claude the student rates the answer", as
   const aid = repo.assignWorksheet(wid, s.student.id, "", s.unit.id);
   const task = repo.listTasks(wid)[0];
   r.resetRouter();
+  let calls = 0;
   r.setTransport(async () => {
+    calls++;
     throw new Error("weg");
   });
   const res = await submitAnswer({ token: s.student.access_token, assignmentId: aid, taskId: task.id, answer: "teilen", timeMs: 1000, hintsUsed: 0 });
-  assert.equal(res.needsSelfAssessment, true);
-  r.setTransport(async (p) => ({ parsed: { correct: true, feedback: "Gut.", error_label: null, error_type: null }, refusal: false, model: p.model, usage: { input: 1, output: 1, cacheWrite: 0, cacheRead: 0 } }));
-  const ok = await submitAnswer({ token: s.student.access_token, assignmentId: aid, taskId: task.id, answer: "teilen", timeMs: 1000, hintsUsed: 0 });
-  assert.equal(ok.correct, true);
+  assert.equal(res.pendingReview, true);
+  assert.equal(res.correct, null);
+  assert.equal(res.final, true);
+  assert.equal(res.sample, "Zähler und Nenner durch dieselbe Zahl teilen.");
+  assert.equal(calls, 0, "no AI call for a free answer");
   r.setTransport(null);
   r.resetRouter();
 });

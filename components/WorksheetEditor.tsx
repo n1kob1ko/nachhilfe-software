@@ -19,6 +19,7 @@ import { TaskBody } from "@/components/TaskPreview";
 import { TabletSend } from "@/components/device/TabletSend";
 import { categoriesFor, DIFFICULTIES, TASK_TYPES, type Difficulty, type TaskType } from "@/lib/curriculum";
 import type { Task } from "@/lib/repo";
+import { expectedFixes } from "@/lib/fix-text";
 import { GAP, gapCount, hintLabel, type TaskDraft } from "@/lib/tasks";
 import { MathText } from "./MathText";
 
@@ -393,7 +394,13 @@ function reshape(t: TaskDraft, format: TaskType): TaskDraft {
     case "cloze":
       return { ...keep, data: {}, prompt: t.prompt.includes(GAP) ? t.prompt : `${t.prompt} ${GAP}`.trim(), answer: { blanks: t.answer.blanks ?? [[t.answer.accepted?.[0] ?? ""]], mode: t.answer.mode ?? "text" } };
     case "free":
-      return { ...keep, data: { passage: t.data.passage }, answer: { sample: t.answer.sample ?? t.answer.accepted?.[0] ?? "" } };
+      return { ...keep, data: { passage: t.data.passage, lines: t.data.lines ?? 5 }, answer: { sample: t.answer.sample ?? t.answer.accepted?.[0] ?? "", criteria: t.answer.criteria ?? [] } };
+    case "fix":
+      return {
+        ...keep,
+        data: { faulty: t.data.faulty ?? "" },
+        answer: { accepted: t.type === "fix" ? (t.answer.accepted ?? [""]) : [""], mode: t.answer.mode === "text" ? "text" : "exact", fixes: t.answer.fixes ?? [], criteria: t.answer.criteria ?? [] },
+      };
     case "order":
       return { ...keep, data: {}, answer: { steps: t.answer.steps ?? ["", "", ""] } };
     case "grammar":
@@ -547,7 +554,7 @@ function TaskForm({ task, index, subject, skills, onDone }: { task: Task; index:
       )}
       {t.type === "cloze" && (
         <div className="grid gap-1.5">
-          <span className="label">Lösungen der Lücken (Alternativen mit | trennen)</span>
+          <span className="label">Lösungen der Lücken (weitere richtige Antworten mit | trennen)</span>
           {Array.from({ length: Math.max(gaps, blanks.length) }, (_, i) => (
             <label key={i} className={`flex items-center gap-2 ${i >= gaps ? "opacity-50" : ""}`}>
               <span className="num w-16 shrink-0 text-[13px] text-ink-3">Lücke {i + 1}</span>
@@ -562,13 +569,38 @@ function TaskForm({ task, index, subject, skills, onDone }: { task: Task; index:
               />
             </label>
           ))}
+          {t.answer.mode !== "value" && (
+            <label className="flex min-h-[44px] items-center gap-2 text-[13px] text-ink-2">
+              <input type="checkbox" checked={t.answer.mode === "exact"} onChange={(e) => setAnswer({ mode: e.target.checked ? "exact" : "text" })} className="accent-[var(--accent)]" />
+              Groß- und Kleinschreibung beachten
+            </label>
+          )}
         </div>
       )}
+      {t.type === "fix" && <FixFields t={t} setT={setT} />}
       {t.type === "free" && (
-        <label className="field">
-          <span className="label">Musterlösung</span>
-          <textarea className="input min-h-[72px]" value={t.answer.sample ?? ""} onChange={(e) => setAnswer({ sample: e.target.value })} />
-        </label>
+        <>
+          <label className="field">
+            <span className="label">Antwortfeld für den Schüler</span>
+            <select className="input max-w-[320px]" value={String(t.data.lines ?? 5)} onChange={(e) => setData({ lines: Number(e.target.value) })}>
+              <option value="1">Einzeilig (kurze Antwort)</option>
+              <option value="3">Ein paar Sätze</option>
+              <option value="5">Mehrere Sätze</option>
+              <option value="9">Längerer Text</option>
+            </select>
+          </label>
+          <label className="field">
+            <span className="label">Musterlösung</span>
+            <textarea className="input min-h-[72px]" value={t.answer.sample ?? ""} onChange={(e) => setAnswer({ sample: e.target.value })} />
+            <span className="text-[12px] text-ink-3">Der Schüler sieht sie nach dem Abgeben. Du bewertest die Antwort als richtig, teilweise richtig oder falsch.</span>
+          </label>
+        </>
+      )}
+      {(t.type === "free" || t.type === "fix") && (
+        <div className="grid gap-1.5">
+          <span className="label">Erwartung: darauf kommt es an</span>
+          {list(t.answer.criteria ?? [], (next) => setAnswer({ criteria: next }), (i) => `${i + 1}.`, { min: 0, addLabel: "Punkt" })}
+        </div>
       )}
       {t.type === "order" && (
         <div className="grid gap-1.5">
@@ -610,6 +642,71 @@ function TaskForm({ task, index, subject, skills, onDone }: { task: Task; index:
           Abbrechen
         </button>
         <Note r={note} />
+      </div>
+    </div>
+  );
+}
+
+/** Fehler korrigieren: the text with errors, the corrected text (and other right versions), the errors it finds. */
+function FixFields({ t, setT }: { t: TaskDraft; setT: (f: (cur: TaskDraft) => TaskDraft) => void }) {
+  const faulty = t.data.faulty ?? "";
+  const accepted = t.answer.accepted ?? [""];
+  const setAccepted = (next: string[]) => setT((cur) => ({ ...cur, answer: { ...cur.answer, accepted: next } }));
+  const cs = t.answer.mode !== "text";
+  const found = faulty.trim() && accepted[0]?.trim() ? expectedFixes(faulty, accepted[0], cs) : [];
+  const labelOf = (f: { wrong: string; right: string }) => t.answer.fixes?.find((x) => x.wrong === f.wrong && x.right === f.right)?.label ?? "";
+  const setLabel = (f: { wrong: string; right: string }, label: string) =>
+    setT((cur) => ({
+      ...cur,
+      answer: {
+        ...cur.answer,
+        fixes: found.map((x) => (x.wrong === f.wrong && x.right === f.right ? { ...x, label } : { ...x, label: labelOf(x), errorType: cur.answer.fixes?.find((o) => o.wrong === x.wrong && o.right === x.right)?.errorType ?? null })),
+      },
+    }));
+  return (
+    <div className="grid gap-3">
+      <label className="field">
+        <span className="label">Text mit Fehlern (das sieht der Schüler)</span>
+        <textarea className="input min-h-[96px]" value={faulty} onChange={(e) => setT((cur) => ({ ...cur, data: { ...cur.data, faulty: e.target.value }, answer: { ...cur.answer, accepted: cur.answer.accepted?.[0] ? cur.answer.accepted : [e.target.value] } }))} />
+      </label>
+      <div className="grid gap-1.5">
+        <span className="label">Verbesserter Text</span>
+        {accepted.map((v, i) => (
+          <div key={i} className="flex items-start gap-2">
+            <span className="w-10 shrink-0 pt-2.5 text-[13px] text-ink-3">{i === 0 ? "✓" : "oder"}</span>
+            <textarea
+              className="input min-h-[72px]"
+              value={v}
+              aria-label={i === 0 ? "Verbesserter Text" : `Weitere richtige Fassung ${i}`}
+              onChange={(e) => setAccepted(accepted.map((x, j) => (j === i ? e.target.value : x)))}
+            />
+            <button type="button" className="btn btn-ghost btn-sm" disabled={accepted.length <= 1} onClick={() => setAccepted(accepted.filter((_, j) => j !== i))} aria-label={`${i === 0 ? "Verbesserten Text" : `Fassung ${i}`} entfernen`}>
+              <X size={14} aria-hidden />
+            </button>
+          </div>
+        ))}
+        <button type="button" className="justify-self-start text-[13px] font-semibold text-accent hover:underline" onClick={() => setAccepted([...accepted, accepted[0] ?? ""])}>
+          + Weitere richtige Fassung
+        </button>
+        <label className="flex min-h-[44px] items-center gap-2 text-[13px] text-ink-2">
+          <input type="checkbox" checked={cs} onChange={(e) => setT((cur) => ({ ...cur, answer: { ...cur.answer, mode: e.target.checked ? "exact" : "text" } }))} className="accent-[var(--accent)]" />
+          Groß- und Kleinschreibung beachten
+        </label>
+      </div>
+      <div className="grid gap-1.5" aria-live="polite">
+        <span className="label">Gefundene Fehler ({found.length})</span>
+        {found.length === 0 ? (
+          <p className="text-[13px] text-ink-3">{faulty.trim() && accepted[0]?.trim() ? "Die beiden Texte sind gleich. Verbessere den Text oben." : "Schreib beide Texte, dann erscheinen hier die Fehler."}</p>
+        ) : (
+          found.map((f, i) => (
+            <div key={i} className="flex flex-wrap items-center gap-2">
+              <span className="min-w-[180px] text-[14px]">
+                <span className="fx-wrong">{f.wrong || "(fehlt)"}</span> → <span className="fx-fixed">{f.right || "(weg)"}</span>
+              </span>
+              <input className="input min-w-0 flex-1" placeholder="Was ist falsch? z. B. Dativ nach „mit“" value={labelOf(f)} onChange={(e) => setLabel(f, e.target.value)} aria-label={`Fehler ${i + 1}: was ist falsch`} />
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

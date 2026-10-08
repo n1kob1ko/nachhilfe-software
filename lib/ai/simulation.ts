@@ -40,7 +40,7 @@ export type SimReport = {
   total: { calls: number; reused: number; blocked: number; failed: number; input: number; output: number; cacheRead: number; cacheWrite: number; usd: number };
   /** what one request per answer and hint would have meant (no filter, no bundling) */
   naive: { calls: number; usd: number };
-  selfAssessed: number;
+  toReview: number;
   generatorFallbacks: number;
 };
 
@@ -296,7 +296,7 @@ export async function simulateLesson(o: SimOptions = {}): Promise<SimReport> {
   let answers = 0;
   let hints = 0;
   let tasksDone = 0;
-  let selfAssessed = 0;
+  let toReview = 0;
   let generatorFallbacks = 0;
   let clicks = 0;
   let lastClick = -Infinity;
@@ -325,11 +325,8 @@ export async function simulateLesson(o: SimOptions = {}): Promise<SimReport> {
         if (clockNow() >= end) return;
         const right = attempt === 1 ? !struggling : random() < 0.6;
         const answer = right ? rightAnswer(t) : wrongAnswer(t, plan.sign);
-        let res = await submitAnswer({ token: student.access_token, assignmentId: a.id, taskId: t.id, answer, timeMs: 40_000, hintsUsed: 0 });
-        if (res.needsSelfAssessment) {
-          selfAssessed++;
-          res = await submitAnswer({ token: student.access_token, assignmentId: a.id, taskId: t.id, answer, timeMs: 40_000, hintsUsed: 0, selfAssessed: right });
-        }
+        const res = await submitAnswer({ token: student.access_token, assignmentId: a.id, taskId: t.id, answer, timeMs: 40_000, hintsUsed: 0 });
+        if (res.pendingReview) toReview++;
         answers++;
         if (res.final) break;
       }
@@ -367,7 +364,7 @@ export async function simulateLesson(o: SimOptions = {}): Promise<SimReport> {
   await settle();
   await clock.advanceTo(clockNow() + 60_000);
 
-  const report = summarize(unit.id, { minutes, real: Boolean(o.real), outage: Boolean(o.outage), answers, hints, tasks: tasksDone, exercises: repo.listAssignments(studentId).length, selfAssessed, generatorFallbacks });
+  const report = summarize(unit.id, { minutes, real: Boolean(o.real), outage: Boolean(o.outage), answers, hints, tasks: tasksDone, exercises: repo.listAssignments(studentId).length, toReview, generatorFallbacks });
   setTransport(null);
   setTestRun(false);
   setClock(null);
@@ -480,7 +477,7 @@ export function reportMarkdown(r: SimReport, outage?: SimReport): string {
       "",
       "## Ausfalltest",
       "",
-      `Derselbe Ablauf, jeder KI-Aufruf schlägt fehl. Die Einheit lief bis zum Ende: ${int(outage.answers)} Antworten, ${int(outage.selfAssessed)} Freitexte per Selbsteinschätzung, ${int(outage.generatorFallbacks)} Mal neue Aufgaben aus dem Generator. ` +
+      `Derselbe Ablauf, jeder KI-Aufruf schlägt fehl. Die Einheit lief bis zum Ende: ${int(outage.answers)} Antworten, ${int(outage.toReview)} freie Antworten zur Lehrerbewertung, ${int(outage.generatorFallbacks)} Mal neue Aufgaben aus dem Generator. ` +
         `${int(outage.total.failed)} Aufrufe schlugen fehl, danach pausierte die KI und ${int(outage.total.blocked)} weitere wurden gar nicht erst versucht.`,
     );
   }

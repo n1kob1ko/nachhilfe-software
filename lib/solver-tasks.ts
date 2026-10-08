@@ -1,5 +1,6 @@
 import type { ClientTask } from "@/components/Solver";
 import { answerText } from "@/components/TaskPreview";
+import { closestVersion } from "./fix-text";
 import * as repo from "./repo";
 
 /**
@@ -25,7 +26,18 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
       hintsOpened: new Set(hintUses.filter((h) => h.task_id === t.id).map((h) => h.hint_index)).size,
       released: assignment.solutions_visible ? { solution: t.solution, answer: answerText(t) ?? t.answer.sample ?? null } : null,
       triesUsed: tries.length,
-      finished: fin ? { correct: Boolean(fin.correct), solution: t.solution } : null,
+      faulty: t.type === "fix" ? (t.data.faulty ?? "") : null,
+      lines: t.type === "free" ? (t.data.lines ?? null) : null,
+      finished: fin
+        ? {
+            correct: fin.review === "offen" ? null : Boolean(fin.correct),
+            solution: t.solution,
+            review: fin.review ?? null,
+            sample: t.answer.sample ?? null,
+            given: t.type === "fix" && !fin.solution_viewed ? fin.answer : null,
+            expected: t.type === "fix" ? (closestVersion(t.answer.accepted ?? [], fin.answer, t.answer.mode !== "text") ?? null) : null,
+          }
+        : null,
     };
   });
 }
