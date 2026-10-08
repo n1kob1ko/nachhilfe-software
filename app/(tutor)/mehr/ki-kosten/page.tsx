@@ -62,7 +62,7 @@ export default async function AICostPage() {
           <span>
             Anbieter und Modelle
             <Info label="Wie ändere ich Anbieter oder Modell?">
-              In Railway unter Variables, je Bereich: AI_REALTIME_PROVIDER und AI_REALTIME_MODEL, ebenso EXERCISE, ANALYSIS, DEEP und MATERIAL. Anbieter: anthropic, openrouter, deepseek oder compatible. AI_PROVIDER gilt für alle Bereiche ohne eigenen Eintrag. Nach dem nächsten Start gilt die neue Einstellung, ohne Code-Änderung.
+              In Railway unter Variables, je Bereich: AI_REALTIME_PROVIDER und AI_REALTIME_MODEL, ebenso EXERCISE, ANALYSIS, DEEP, MATERIAL und TEXT. Anbieter: anthropic, openrouter, deepseek oder compatible. AI_PROVIDER gilt für alle Bereiche ohne eigenen Eintrag. Nach dem nächsten Start gilt die neue Einstellung, ohne Code-Änderung.
             </Info>
           </span>
         </SectionTitle>

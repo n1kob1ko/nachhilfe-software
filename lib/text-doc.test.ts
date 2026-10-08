@@ -62,13 +62,19 @@ test("only well-formed documents of sensible size are accepted", () => {
 
 test("print settings live in the URL and only differences are written", () => {
   const o = readTextPrintOptions({}, "Mein Ausflug");
-  assert.deepEqual(o, { title: "Mein Ausflug", name: true, date: true, subject: true, prompt: true, words: false, pages: true, spacing: "normal" });
+  assert.deepEqual(o, { title: "Mein Ausflug", correction: null, fassung: "original", overview: false, name: true, date: true, subject: true, prompt: true, words: false, pages: true, spacing: "normal" });
   assert.equal(textPrintQuery(o, "Mein Ausflug"), "");
   const changed = { ...o, name: false, words: true, spacing: "weit" as const, title: "Ausflug" };
   const q = textPrintQuery(changed, "Mein Ausflug");
   assert.equal(q, "titel=Ausflug&name=0&woerter=1&abstand=weit");
   assert.deepEqual(readTextPrintOptions(Object.fromEntries(new URLSearchParams(q)), "Mein Ausflug"), changed);
   assert.equal(readTextPrintOptions({ abstand: "riesig", seiten: "vielleicht" }, "T").spacing, "normal");
+  // a correction: which version, with the overview; without a correction id there are no versions
+  const k = { ...o, correction: 7, fassung: "korrektur" as const, overview: true };
+  assert.equal(textPrintQuery(k, "Mein Ausflug"), "k=7&fassung=korrektur&uebersicht=1");
+  assert.deepEqual(readTextPrintOptions({ k: "7", fassung: "korrektur", uebersicht: "1" }, "Mein Ausflug"), k);
+  assert.equal(readTextPrintOptions({ fassung: "endfassung", uebersicht: "1" }, "T").fassung, "original");
+  assert.equal(readTextPrintOptions({ k: "x", fassung: "endfassung" }, "T").correction, null);
 });
 
 test("a line break at the end of a paragraph stays visible in the editor", () => {

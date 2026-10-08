@@ -11,6 +11,7 @@ import { markDelivered, parseView, pushLive, unitAssignments, unitText } from "@
 import { MAX_TRIES } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
 import { TextEditor } from "@/components/text/TextEditor";
+import { StudentCorrection } from "@/components/text/correction/StudentCorrection";
 import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
 
@@ -69,6 +70,7 @@ export default async function DevicePage() {
         <a href="/geraet/ansicht?zu=start" className="mb-3 inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2">
           ← Alle Aufgaben
         </a>
+        <StudentCorrection textId={text.id} large />
         <TextEditor
           key={text.id}
           textId={text.id}

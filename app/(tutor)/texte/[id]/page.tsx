@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, History, Laptop, Printer, RotateCcw, Tablet } from "lucide-react";
+import { CheckCircle2, History, Laptop, Printer, RotateCcw, SpellCheck, Tablet } from "lucide-react";
 import { restoreRevisionAction, setTextStatusAction, showTextOnTabletAction, updateTextInfoAction } from "@/app/text-actions";
 import { TextEditor } from "@/components/text/TextEditor";
 import { TextLive } from "@/components/text/TextLive";
@@ -9,6 +9,7 @@ import { requireTeacher } from "@/lib/auth";
 import { SUBJECTS } from "@/lib/curriculum";
 import { getText, listRevisions, textDoc, TEXT_KINDS, unitsOfText, wordsLabel } from "@/lib/texts";
 import { studentDevice } from "@/lib/live";
+import { correctionInfoForStudent } from "@/lib/text-correction";
 import { canManageUnit, runningUnitForStudent } from "@/lib/units";
 
 export const metadata = { title: "Textarbeit" };
@@ -31,6 +32,7 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
   const units = unitsOfText(text.id);
   const name = first(text.student_name);
   const meta = [text.subject, text.topic, text.student_name].filter(Boolean).join(" · ");
+  const correction = correctionInfoForStudent(text.student_id).get(text.id);
 
   const actions = (
     <>
@@ -41,6 +43,9 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
           </button>
         </form>
       )}
+      <Link href={`/texte/${text.id}/korrektur`} className="btn btn-secondary" data-testid="korrigieren">
+        <SpellCheck size={16} aria-hidden /> {correction ? `Korrektur${correction.open ? ` (${correction.open} offen)` : ""}` : "Korrigieren"}
+      </Link>
       <Link href={`/arbeitsblatt/text/${text.id}`} className="btn btn-secondary" target="_blank">
         <Printer size={16} aria-hidden /> PDF / Drucken
       </Link>
