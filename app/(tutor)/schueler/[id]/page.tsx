@@ -29,6 +29,7 @@ import { diagnosesOf } from "@/lib/diagnose";
 import { nextSteps, RULE_LABEL, RULE_TONE, type NextStep } from "@/lib/recommend";
 import { activeMaterial, materialHistory, materialLabel, MATERIAL_SOURCES, PRIORITY_LABEL, profileTopic } from "@/lib/current-material";
 import { errorTypeLabel } from "@/lib/error-types";
+import { textErrorsForStudent } from "@/lib/text-correction";
 import { MaterialForm } from "@/components/MaterialForm";
 import { endMaterialAction } from "@/app/learning-actions";
 import { checkLevel } from "@/lib/school";
@@ -462,6 +463,7 @@ function DiagnosisSection({ student, tested }: { student: repo.Student; tested: 
 function AnalysisTab({ student, a, assignedId, error }: { student: repo.Student; a: Analysis; assignedId?: string; error?: string }) {
   const first = student.name.split(" ")[0];
   const steps = nextSteps(student.id, { today: dayOf(new Date()), limit: 6 });
+  const textErrors = textErrorsForStudent(student.id);
   return (
     <div className="space-y-10">
       {assignedId && (
@@ -529,7 +531,7 @@ function AnalysisTab({ student, a, assignedId, error }: { student: repo.Student;
           <SectionTitle>
             <span>
               Häufige Fehler
-              <Info label="Info zu Fehlerarten">Fehlerarten schlägt die App vor, wo eine Regel eindeutig ist. In jedem Ergebnis kannst du sie bestätigen oder ändern.</Info>
+              <Info label="Info zu Fehlerarten">Fehlerarten schlägt die App vor, wo eine Regel eindeutig ist. In jedem Ergebnis kannst du sie bestätigen oder ändern. „In Texten“ zählt nur Korrekturen, die du in einer Textkorrektur übernommen hast; sie ändern den Lernstand nicht.</Info>
             </span>
           </SectionTitle>
           {a.errorTypes.length > 0 && (
@@ -537,6 +539,16 @@ function AnalysisTab({ student, a, assignedId, error }: { student: repo.Student;
               {a.errorTypes.slice(0, 6).map((e) => (
                 <Pill key={e.type} tone={e.confirmed ? "amber" : "neutral"} title={e.confirmed ? `${e.confirmed} vom Lehrer bestätigt` : "Vorschläge der App, noch nicht bestätigt"}>
                   {errorTypeLabel(e.type)} <span className="num">{e.count}×</span>
+                </Pill>
+              ))}
+            </div>
+          )}
+          {textErrors.length > 0 && (
+            <div className="mb-3 flex flex-wrap items-center gap-1.5" aria-label="Fehler in Texten" data-testid="textfehler">
+              <span className="text-[13px] font-semibold text-ink-2">In Texten:</span>
+              {textErrors.map((e) => (
+                <Pill key={e.category} tone="amber" title={`${e.count} bestätigte Fehler in ${e.texts === 1 ? "einem Text" : `${e.texts} Texten`} (Textkorrektur)`}>
+                  {e.label} <span className="num">{e.count}×</span>
                 </Pill>
               ))}
             </div>

@@ -515,6 +515,56 @@ CREATE TABLE IF NOT EXISTS text_revisions (
   words INTEGER NOT NULL,
   saved_at TEXT NOT NULL
 );
+-- Textkorrektur (lib/text-correction.ts): a correction of one frozen version of a text. The text itself is
+-- never changed; body is the snapshot the marks refer to. ai_* is the KI run (only after the teacher's
+-- consent), the items are the suggestions and the teacher's decision on each.
+CREATE TABLE IF NOT EXISTS text_corrections (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  text_id INTEGER NOT NULL REFERENCES texts(id) ON DELETE CASCADE,
+  version INTEGER NOT NULL,
+  body TEXT NOT NULL,
+  words INTEGER NOT NULL DEFAULT 0,
+  level TEXT NOT NULL DEFAULT '',
+  unit_id INTEGER REFERENCES units(id) ON DELETE SET NULL,
+  created_by INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  ai_status TEXT NOT NULL DEFAULT 'keine',
+  ai_error TEXT,
+  ai_model TEXT,
+  ai_call_id INTEGER,
+  ai_started_at TEXT,
+  ai_consent_by INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  ai_consent_at TEXT,
+  summary TEXT NOT NULL DEFAULT '',
+  main_issue TEXT NOT NULL DEFAULT '',
+  recommendation TEXT NOT NULL DEFAULT '',
+  recommendation_skill TEXT,
+  dropped INTEGER NOT NULL DEFAULT 0,
+  shared_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  UNIQUE (text_id, version)
+);
+CREATE TABLE IF NOT EXISTS text_correction_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  correction_id INTEGER NOT NULL REFERENCES text_corrections(id) ON DELETE CASCADE,
+  block INTEGER,
+  pos_start INTEGER,
+  pos_end INTEGER,
+  quote TEXT NOT NULL DEFAULT '',
+  replacement TEXT NOT NULL DEFAULT '',
+  category TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'fehler',
+  rule TEXT NOT NULL DEFAULT '',
+  explanation TEXT NOT NULL DEFAULT '',
+  skill_id TEXT,
+  status TEXT NOT NULL DEFAULT 'offen',
+  source TEXT NOT NULL DEFAULT 'ki',
+  decided_by INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  decided_at TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_text_corrections_text ON text_corrections(text_id, version);
+CREATE INDEX IF NOT EXISTS idx_text_correction_items ON text_correction_items(correction_id, block, pos_start);
 CREATE INDEX IF NOT EXISTS idx_texts_student ON texts(student_id, updated_at);
 CREATE INDEX IF NOT EXISTS idx_text_units_unit ON text_units(unit_id);
 CREATE INDEX IF NOT EXISTS idx_text_revisions ON text_revisions(text_id, id);

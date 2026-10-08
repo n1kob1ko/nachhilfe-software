@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, PenLine, Plus, Printer } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, PenLine, Plus, Printer, SpellCheck } from "lucide-react";
 import { LessonCard, rateTone } from "@/components/LessonCard";
 import { Info } from "@/components/Info";
 import { BoardThumbs } from "@/components/BoardThumbs";
@@ -10,6 +10,7 @@ import { progressOverview, readReport } from "@/lib/learning";
 import * as repo from "@/lib/repo";
 import { analyzeStudent } from "@/lib/service";
 import { textsForStudent, textsForUnit, wordsLabel } from "@/lib/texts";
+import { correctionInfoForStudent, type TextCorrectionInfo } from "@/lib/text-correction";
 import { listUnits, unitDurationMs, type UnitView } from "@/lib/units";
 
 const FILTERS = [
@@ -362,10 +363,21 @@ function UnitTextLinks({ unitId }: { unitId: number }) {
   );
 }
 
+/** The newest correction of a text in one link: confirmed errors, suggestions still open. */
+function CorrectionLink({ textId, info }: { textId: number; info: TextCorrectionInfo }) {
+  const parts = [info.fehler ? `${info.fehler} ${"Fehler"}` : "", info.stil ? `${info.stil} ${info.stil === 1 ? "Vorschlag" : "Vorschläge"}` : "", info.open ? `${info.open} offen` : ""].filter(Boolean);
+  return (
+    <Link href={`/texte/${textId}/korrektur?k=${info.correctionId}`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-panel px-3.5 text-[13px] font-semibold text-ink-2 hover:text-ink" title="Korrektur öffnen">
+      <SpellCheck size={14} aria-hidden /> Korrektur{parts.length ? `: ${parts.join(", ")}` : ""}
+    </Link>
+  );
+}
+
 /** All Textarbeiten of the student: unfinished first, then the newest. */
 function StudentTexts({ studentId }: { studentId: number }) {
   const texts = textsForStudent(studentId).sort((a, b) => (a.status === b.status ? 0 : a.status === "offen" ? -1 : 1));
   if (!texts.length) return null;
+  const corrections = correctionInfoForStudent(studentId);
   const VISIBLE = 5;
   const row = (t: (typeof texts)[number]) => (
     <li key={t.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
@@ -377,6 +389,7 @@ function StudentTexts({ studentId }: { studentId: number }) {
         </span>
       </span>
       {t.status === "fertig" ? <Pill tone="green">fertig</Pill> : <Pill tone="amber">in Arbeit</Pill>}
+      {corrections.has(t.id) && <CorrectionLink textId={t.id} info={corrections.get(t.id)!} />}
       <Link href={`/texte/${t.id}`} className="btn btn-secondary btn-sm">
         Öffnen
       </Link>

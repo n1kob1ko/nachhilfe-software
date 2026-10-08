@@ -14,8 +14,8 @@ export type ProviderId = (typeof PROVIDER_IDS)[number];
  * Areas group the functions for configuration: AI_<AREA>_PROVIDER and AI_<AREA>_MODEL switch the
  * provider and model of every function in that area.
  */
-export type Area = "REALTIME" | "EXERCISE" | "ANALYSIS" | "DEEP" | "MATERIAL";
-export const AREA_LABEL: Record<Area, string> = { REALTIME: "Echtzeit", EXERCISE: "Aufgaben", ANALYSIS: "Auswertung", DEEP: "Tiefenanalyse", MATERIAL: "Material" };
+export type Area = "REALTIME" | "EXERCISE" | "ANALYSIS" | "DEEP" | "MATERIAL" | "TEXT";
+export const AREA_LABEL: Record<Area, string> = { REALTIME: "Echtzeit", EXERCISE: "Aufgaben", ANALYSIS: "Auswertung", DEEP: "Tiefenanalyse", MATERIAL: "Material", TEXT: "Textkorrektur" };
 
 /** Defaults when no environment variable is set. Change the variable, not this list, to switch models. */
 const DEFAULT_MODELS: Record<Tier, string> = {
@@ -41,7 +41,8 @@ export type AIFunction =
   | "analyse"
   | "tiefenanalyse"
   | "notiz"
-  | "material";
+  | "material"
+  | "textkorrektur";
 
 export type FunctionSpec = {
   label: string;
@@ -78,6 +79,8 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   tiefenanalyse: { label: "Tiefenanalyse", area: "DEEP", tier: "deep", maxTokens: 8_000, timeoutMs: 120_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 10 * MIN, cache: "aus" },
   notiz: { label: "Notiz für Eltern/Schüler", area: "ANALYSIS", tier: "standard", maxTokens: 1_000, timeoutMs: 30_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   material: { label: "Material erkennen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  // only on the teacher's click, after consent; the same version of a text is never paid for twice
+  textkorrektur: { label: "Textkorrektur", area: "TEXT", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
 };
 
 /** Which provider and model a function uses. model is "" when the provider has no default and none is set. */

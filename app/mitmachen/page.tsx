@@ -6,6 +6,7 @@ import { LeaveButton } from "@/components/laptop/LeaveButton";
 import { EndedCleanup, JoinCleanup } from "@/components/laptop/LocalDrafts";
 import { Solver } from "@/components/Solver";
 import { TextEditor } from "@/components/text/TextEditor";
+import { StudentCorrection } from "@/components/text/correction/StudentCorrection";
 import { laptopEndReason, laptopState, type EndReason } from "@/lib/laptop";
 import { currentLaptop, laptopContext } from "@/lib/laptop-context";
 import { markDelivered, parseView, pushLive, unitAssignments, unitText } from "@/lib/live";
@@ -115,16 +116,19 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
   let content: React.ReactNode;
   if (text) {
     content = (
-      <TextEditor
-        key={text.id}
-        textId={text.id}
-        saveUrl={`/mitmachen/text/${text.id}`}
-        backupPrefix={DRAFT_PREFIX}
-        initial={{ body: textDoc(text), version: text.version, updatedAt: text.updated_at }}
-        title={text.title}
-        prompt={text.prompt}
-        meta={[text.subject, text.topic].filter(Boolean).join(" · ")}
-      />
+      <>
+        <StudentCorrection textId={text.id} />
+        <TextEditor
+          key={text.id}
+          textId={text.id}
+          saveUrl={`/mitmachen/text/${text.id}`}
+          backupPrefix={DRAFT_PREFIX}
+          initial={{ body: textDoc(text), version: text.version, updatedAt: text.updated_at }}
+          title={text.title}
+          prompt={text.prompt}
+          meta={[text.subject, text.topic].filter(Boolean).join(" · ")}
+        />
+      </>
     );
   } else if (current) {
     content = (

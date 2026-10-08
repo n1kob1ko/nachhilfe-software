@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ArrowLeft, Printer } from "lucide-react";
-import { SPACING_LABEL, TEXT_PRINT_CHECKS, textPrintQuery, type Spacing, type TextPrintOptions } from "@/lib/text-print";
+import { FASSUNG_LABEL, SPACING_LABEL, TEXT_PRINT_CHECKS, textPrintQuery, type Fassung, type Spacing, type TextPrintOptions } from "@/lib/text-print";
 
-type Props = { options: TextPrintOptions; defaultTitle: string; path: string; back: { href: string; label: string }; words: number };
+type Props = { options: TextPrintOptions; defaultTitle: string; path: string; back: { href: string; label: string }; words: number; withCorrection?: boolean };
 
 /** Settings beside the A4 preview of a text (the same layout as the worksheet settings). */
-export function TextPrintSettings({ options, defaultTitle, path, back, words }: Props) {
+export function TextPrintSettings({ options, defaultTitle, path, back, words, withCorrection }: Props) {
   const router = useRouter();
   const [o, setO] = useState(options);
   const [pending, start] = useTransition();
@@ -33,6 +33,24 @@ export function TextPrintSettings({ options, defaultTitle, path, back, words }: 
       </button>
       <p className="mt-2 mb-6 text-[12px] text-ink-3">Im Druckfenster „Als PDF speichern“ wählen, um eine PDF-Datei zu bekommen.</p>
       <div className="grid gap-4">
+        {withCorrection && (
+          <>
+            <label className="field">
+              <span className="label">Fassung</span>
+              <select className="input" value={o.fassung} onChange={(e) => set("fassung", e.target.value as Fassung)} data-testid="fassung">
+                {(Object.keys(FASSUNG_LABEL) as Fassung[]).map((k) => (
+                  <option key={k} value={k}>
+                    {FASSUNG_LABEL[k]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex min-h-[44px] cursor-pointer items-center gap-2 text-[14px]">
+              <input type="checkbox" className="h-5 w-5 shrink-0 accent-[var(--accent)]" checked={o.overview} onChange={(e) => set("overview", e.target.checked)} data-testid="uebersicht" />
+              Kurze Fehlerübersicht mit Erklärungen
+            </label>
+          </>
+        )}
         <label className="field">
           <span className="label">Titel</span>
           <input
