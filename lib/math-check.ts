@@ -432,6 +432,8 @@ export function analyzeWay(lines: string[], ctx: WayContext): WayVerdict {
       }
       const vals = lineValues(ns, envs);
       ok = vals.every((row, i) => row.every((v) => near(v, startValues[i], p.tol)));
+      // a side calculation that is true in itself ("√16 = 4", "1/2 = 2/4") is right, even though it is not the whole term
+      if (!ok && ns.length > 1 && vals.every((row) => allEqual(row))) ok = true;
       if (!ok && wrongValues) folge = vals.every((row, i) => row.every((v) => near(v, wrongValues![i], p.tol)));
       if (!ok && !folge && firstError === null) {
         const holds = (l: Node[]) => lineValues(l, envs).every((row, i) => row.every((v) => near(v, startValues[i], p.tol)));
@@ -493,10 +495,14 @@ export function startVariables(start: string | null | undefined): string[] {
 export function resultFromWay(lines: string[], ctx: WayContext): string {
   const list = lines.map((l) => l.trim()).filter(Boolean);
   for (let i = list.length - 1; i >= 0; i--) {
-    const line = list[i].replace(/\|.*$/, "").trim();
+    // "Lösung: x = 5", "⇒ x = 5": the label or arrow before it is not part of the result
+    const line = list[i].replace(/\|.*$/, "").replace(/^(?:⇒|=>|→|⇔|<=>)\s*/, "").replace(/^[\p{L}][\p{L} ]{2,}:\s*/u, "").trim();
     if (ctx.mode === "gleichung") {
-      const m = line.match(new RegExp(`^${ctx.variable || "x"}\\s*=\\s*([^=]+)$`));
+      const x = ctx.variable || "x";
+      const m = line.match(new RegExp(`^${x}\\s*=\\s*([^=]+)$`)) ?? line.match(new RegExp(`^([^=]+?)\\s*=\\s*${x}$`));
       if (m) return m[1].trim();
+      // the solution set "L = {5}" is read like a typed result
+      if (/^L\s*=\s*\{[^{}=]*\}$/.test(line)) return line;
       continue;
     }
     const segs = line.split("=").map((s) => s.trim()).filter(Boolean);
@@ -603,7 +609,11 @@ export function gradeRechenweg(spec: RechenwegSpec, answer: MathAnswer): Rechenw
   const given = typed || resultFromWay(lines, ctx);
   const termVars = ctx.mode === "term" ? startVariables(spec.start) : [];
   const valueSpec: ValueSpec = { accepted: spec.accepted, unit: spec.unit, form: spec.form, round: spec.round, vars: termVars };
-  const result = { ...checkValue(given, valueSpec), given, fromWay: !typed && Boolean(given) };
+  // no result typed and none found in the lines, but the last line is words or not readable: the result may be in there
+  const lastLine = way.steps[way.steps.length - 1];
+  const hidden = !given && lastLine && (lastLine.status === "notiz" || lastLine.status === "unklar");
+  const verdict: ValueVerdict = hidden ? { status: "unklar", issue: "unlesbar", feedback: "Ich finde dein Ergebnis nicht sicher." } : checkValue(given, valueSpec);
+  const result = { ...verdict, given, fromWay: !typed && Boolean(given) };
   const needWay = spec.needWay !== false;
   const step = way.firstError !== null ? way.firstError + 1 : null;
   const grade = (g: Omit<MathGrade, "onFinal"> & { onFinal?: Outcome }): RechenwegReport => ({ result, way, grade: { onFinal: g.onFinal ?? g.outcome, ...g } });
@@ -661,12 +671,14 @@ const partLetter = (label: string, i: number) => (label.match(/[a-z]/i)?.[0] ?? 
 export function gradeParts(views: PartView[], solutions: PartSolution[], answer: MathAnswer): { parts: PartReport[]; grade: MathGrade } {
   const given = answer.parts ?? [];
   const values: Record<string, number> = {};
+  const statusOf: Record<string, PartStatus> = {};
   const parts: PartReport[] = views.map((v, i) => {
     const sol = solutions[i] ?? {};
     const a = given[i] ?? {};
     const letter = partLetter(v.label, i);
     if (v.kind === "text") {
       const text = (a.text ?? "").trim();
+      statusOf[letter] = text ? "offen" : "falsch";
       return text ? { status: "offen", feedback: "Wird von deiner Lehrerin bzw. deinem Lehrer bewertet.", given: text } : { status: "falsch", feedback: "Hier fehlt noch deine Antwort.", given: "" };
     }
     const lines = (a.steps ?? []).map((l) => l.trim()).filter(Boolean);
@@ -684,6 +696,12 @@ export function gradeParts(views: PartView[], solutions: PartSolution[], answer:
     }
     let status: PartStatus = result.status === "richtig" ? "richtig" : result.status === "teilweise" ? "teilweise" : result.status === "unklar" ? "offen" : "falsch";
     let feedback = result.feedback;
+    // Folgefehler on a part the app could not read (offen): whether this part is right is for the teacher too
+    const before = (sol.follow?.match(/\p{L}/gu) ?? []).filter((l) => !(l in values));
+    if (status === "falsch" && before.some((l) => statusOf[l] === "offen")) {
+      status = "offen";
+      feedback = "Das hängt von einer Teilaufgabe davor ab, die ich nicht sicher lesen kann. Deine Lehrerin bzw. dein Lehrer schaut es sich an.";
+    }
     if (status === "falsch" && sol.follow?.trim()) {
       // Folgefehler: right with the student's own earlier results
       // (with the right earlier results this gives the right result again, so it only helps after an error)
@@ -706,6 +724,7 @@ export function gradeParts(views: PartView[], solutions: PartSolution[], answer:
     if (status === "falsch" && way.firstError !== null) feedback = `Das stimmt noch nicht. Schau dir Zeile ${way.firstError + 1} deiner Rechnung an.`;
     const label = status === "falsch" || status === "teilweise" ? (result.label ?? way.errorLabel ?? mapLabel(res, sol.errorMap, spec)) : null;
     const type = status === "falsch" || status === "teilweise" ? (way.errorType ?? result.errorType ?? mathErrorType(mapLabel(res, sol.errorMap, spec))) : null;
+    statusOf[letter] = status;
     return { status, feedback, given: res, result, way, errorLabel: label, errorType: type };
   });
 
