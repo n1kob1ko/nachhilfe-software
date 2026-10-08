@@ -8,7 +8,10 @@ import { recordHintAction } from "@/app/builder-actions";
 import { deviceRecordHintAction, deviceSubmitAnswerAction } from "@/app/device-actions";
 import { laptopRecordHintAction, laptopSubmitAnswerAction } from "@/app/laptop-actions";
 import { hintLabel, isReview, REVIEWS } from "@/lib/tasks";
+import type { MathAnswer as MathDraft } from "@/lib/math-check";
+import type { MathView } from "@/lib/math-task";
 import { splitFractions } from "@/lib/math-text";
+import { checkedMath, initialMath, markMath, MathAnswerInput, mathAnswer, mathReady, mathTouched, restoreMath, type MathState, type MathTaskView } from "./MathAnswer";
 import { MathText } from "./MathText";
 import { FixCompare } from "./FixMarks";
 
@@ -31,11 +34,13 @@ export type ClientTask = {
   faulty: string | null;
   /** Freie Antwort: 1 = one line, more = a text field of about that many lines. */
   lines: number | null;
+  /** Rechenweg and Sachaufgabe: the equation or term, the parts (components/MathAnswer.tsx). */
+  math: MathTaskView | null;
   /**
    * correct null: waits for the teacher's grade. review: the teacher's grade (richtig, teilweise, falsch).
    * given and expected: the student's corrected text and the right one (Fehler korrigieren).
    */
-  finished: { correct: boolean | null; solution: string; review?: string | null; sample?: string | null; given?: string | null; expected?: string | null } | null;
+  finished: { correct: boolean | null; solution: string; review?: string | null; sample?: string | null; given?: string | null; expected?: string | null; math?: MathView | null } | null;
 };
 
 type AnswerInput = { assignmentId: number; taskId: number; answer: string; timeMs: number; activeMs: number; hintsUsed: number; giveUp?: boolean; submissionId: string };
@@ -54,7 +59,7 @@ type Feedback = { correct: boolean | null; text: string; final: boolean; partial
  * lost connection does not lose it. On the laptop the keys start with the prefix the laptop clears on "Fertig".
  */
 const draftKey = (via: Via, assignmentId: number, taskId: number) => `${via === "laptop" ? "lernheft-laptop-antwort-" : "lernheft-antwort-"}${assignmentId}-${taskId}`;
-type Draft = { choice?: number | null; text?: string; gaps?: string[]; order?: number[] };
+type Draft = { choice?: number | null; text?: string; gaps?: string[]; order?: number[]; math?: MathDraft };
 function readDraft(key: string): Draft | null {
   try {
     const v = localStorage.getItem(key);
@@ -215,6 +220,8 @@ function TaskCard({
   const [gaps, setGaps] = useState<string[]>(() => Array(task.blanks).fill(""));
   const [hintsShown, setHintsShown] = useState(Math.min(task.hintsOpened, task.hints.length));
   const [order, setOrder] = useState<number[]>(() => (task.steps ?? []).map((_, i) => i));
+  const m = task.math;
+  const [math, setMath] = useState<MathState | null>(() => (m ? (task.finished?.math ? checkedMath(m, task.finished.math) : initialMath(m)) : null));
   const [tries, setTries] = useState(task.triesUsed);
   const [feedback, setFeedback] = useState<Feedback | null>(
     task.finished
@@ -254,6 +261,7 @@ function TaskCard({
         if (typeof d.text === "string") setText(d.text);
         if (Array.isArray(d.gaps) && d.gaps.length === task.blanks) setGaps(d.gaps.map(String));
         if (Array.isArray(d.order) && d.order.length === (task.steps?.length ?? 0)) setOrder(d.order);
+        if (m && d.math && typeof d.math === "object") setMath(restoreMath(m, d.math));
       }
     }
     restored.current = true;
@@ -263,14 +271,14 @@ function TaskCard({
   useEffect(() => {
     if (!restored.current) return;
     if (final) return writeDraft(key, null);
-    const changed = choice !== null || (task.faulty ? text !== task.faulty : text !== "") || gaps.some((g) => g) || order.some((o, i) => o !== i);
-    writeDraft(key, changed ? { choice, text, gaps, order } : null);
-  }, [key, final, choice, text, gaps, order, task.faulty]);
+    const changed = choice !== null || (task.faulty ? text !== task.faulty : text !== "") || gaps.some((g) => g) || order.some((o, i) => o !== i) || (math !== null && mathTouched(math));
+    writeDraft(key, changed ? { choice, text, gaps, order, ...(m && math ? { math: mathAnswer(m, math) } : {}) } : null);
+  }, [key, final, choice, text, gaps, order, math, m, task.faulty]);
 
-  const answer = task.options ? (choice === null ? "" : String(choice)) : task.steps ? JSON.stringify(order) : task.blanks > 0 ? JSON.stringify(gaps) : text;
+  const answer = m && math ? JSON.stringify(mathAnswer(m, math)) : task.options ? (choice === null ? "" : String(choice)) : task.steps ? JSON.stringify(order) : task.blanks > 0 ? JSON.stringify(gaps) : text;
   // a correction task needs a changed text: the faulty one as it is is never the answer
   const unchanged = task.faulty !== null && text.trim() === task.faulty.trim();
-  const canSubmit = !pending && !final && (task.options ? choice !== null : task.steps ? true : task.blanks > 0 ? gaps.every((g) => g.trim()) : text.trim().length > 0 && !unchanged);
+  const canSubmit = !pending && !final && (m && math ? mathReady(m, math) : task.options ? choice !== null : task.steps ? true : task.blanks > 0 ? gaps.every((g) => g.trim()) : text.trim().length > 0 && !unchanged);
   const move = (pos: number, dir: -1 | 1) =>
     setOrder((o) => {
       const j = pos + dir;
@@ -306,11 +314,12 @@ function TaskCard({
         setUnsent(null);
         setTries(res.attemptNo);
         setWrongGaps(res.final ? [] : (res.wrongGaps ?? []));
+        if (m && res.math) setMath((s) => s && markMath(m, s, res.math));
         const given = task.faulty !== null ? input.answer : undefined;
         setFeedback({ correct: res.correct, text: res.feedback, final: res.final, solution: res.solution, sample: res.sample, pending: res.pendingReview, expected: res.expected, given });
         if (res.final) {
           writeDraft(draftKey(via, assignmentId, task.id), null);
-          onFinished({ correct: res.pendingReview ? null : Boolean(res.correct), solution: res.solution ?? "", sample: res.sample ?? null, given: given ?? null, expected: res.expected ?? null });
+          onFinished({ correct: res.pendingReview ? null : Boolean(res.correct), solution: res.solution ?? "", sample: res.sample ?? null, given: given ?? null, expected: res.expected ?? null, math: res.math ?? null });
         }
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- onFinished is a fresh arrow each render
@@ -459,7 +468,18 @@ function TaskCard({
           </div>
         )}
 
-        {!task.options && !task.steps && task.blanks === 0 && task.faulty === null &&
+        {m && math && (
+          <MathAnswerInput
+            task={m}
+            taskId={task.id}
+            value={math}
+            onChange={setMath}
+            disabled={final || pending}
+            boardHref={via === "link" ? `/lernen/${token}/tafel` : via === "geraet" ? "/geraet/ansicht?zu=tafel" : null}
+          />
+        )}
+
+        {!task.options && !task.steps && task.blanks === 0 && task.faulty === null && !m &&
           ((task.type === "free" || task.type === "reading") && task.lines !== 1 ? (
             <div className="mt-6">
               <textarea
