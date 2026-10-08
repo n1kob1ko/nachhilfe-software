@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageStyle } from "@/components/arbeitsblatt/Sheet";
+import { Lines } from "@/components/arbeitsblatt/WorkArea";
 import { TextPrintSettings } from "@/components/text/TextPrintSettings";
 import { requireTeacher } from "@/lib/auth";
 import { recommendationOf, applyAccepted, countLabel, getCorrection, listItems, overview, segmentsOf, snapshotDoc, type CorrectionItem } from "@/lib/text-correction";
 import { categoryInfo } from "@/lib/text-correction-rules";
 import { blockText, type Block, type Run } from "@/lib/text-doc";
+import { getPictureStory, SOURCE_KINDS, storyImages, type StoryImage } from "@/lib/picture-story";
 import { readTextPrintOptions } from "@/lib/text-print";
 import { getText, textDoc, wordsLabel } from "@/lib/texts";
 
@@ -54,6 +56,23 @@ function Runs({ block, marks }: { block: Block; marks?: { item: CorrectionItem; 
   });
 }
 
+/** The series of pictures, numbered; as many per row as keeps them large enough to see details. */
+function Pictures({ images }: { images: StoryImage[] }) {
+  const n = images.length;
+  const cols = n <= 2 ? 2 : n === 4 ? 2 : n <= 9 ? 3 : 4;
+  return (
+    <ol className={`bg-pics bg-pics-${cols}`} data-testid="druck-bilder">
+      {images.map((img, i) => (
+        <li key={img.id} className="bg-pic">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`/material/bildgeschichte/bild/${img.id}`} alt={`Bild ${i + 1}`} />
+          <span className="bg-pic-num">{i + 1}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 const VERSION_LABEL = { original: "", endfassung: "Korrigierte Fassung", korrektur: "Mit Korrekturen" } as const;
 
 /** A Textarbeit as an A4 document for the Schulmappe: the worksheet's page setup, clean paragraphs, no cut-off lines. */
@@ -62,6 +81,14 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
   const text = getText(Number((await params).id));
   if (!text) notFound();
   const o = readTextPrintOptions(await searchParams, text.title);
+  const story = getPictureStory(text.id);
+  const images = story ? storyImages(text.id) : [];
+  // the empty worksheet: pictures, task and lines, nothing the student wrote
+  const blank = Boolean(story) && o.blatt === "leer";
+  if (blank) {
+    o.correction = null;
+    o.overview = false;
+  }
   // a correction of this text: its snapshot is the original; without one the current text, as before
   const c = o.correction ? getCorrection(o.correction) : null;
   const correction = c && c.text_id === text.id ? c : null;
@@ -78,7 +105,7 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
   const rec = correction && ov ? recommendationOf(correction, ov) : null;
   const meta = o.subject ? [text.subject, text.topic && text.topic !== text.title ? text.topic : ""].filter(Boolean) : [];
   if (VERSION_LABEL[fassung]) meta.push(VERSION_LABEL[fassung]);
-  if (o.words) meta.push(wordsLabel(correction ? correction.words : text.words));
+  if (o.words && !blank) meta.push(wordsLabel(correction ? correction.words : text.words));
   return (
     <div className="ab-screen">
       <PageStyle o={o} />
@@ -89,6 +116,7 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
         back={correction ? { href: `/texte/${text.id}/korrektur?k=${correction.id}`, label: "Zur Korrektur" } : { href: `/texte/${text.id}`, label: "Zum Text" }}
         words={correction ? correction.words : text.words}
         withCorrection={Boolean(correction)}
+        story={Boolean(story)}
       />
       <main className="ab-preview">
         <article className={`ab-sheet tx-print${o.spacing === "weit" ? " tx-print-wide" : ""}${fassung === "korrektur" ? " tx-print-korrektur" : ""}`} lang="de" data-fassung={fassung}>
@@ -108,7 +136,7 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
                 {o.date && (
                   <p className="ab-field">
                     <span>Datum:</span>
-                    <span className="ab-field-line">{longDate(correction ? correction.created_at : text.updated_at)}</span>
+                    <span className="ab-field-line">{blank ? "" : longDate(correction ? correction.created_at : text.updated_at)}</span>
                   </p>
                 )}
               </div>
@@ -120,6 +148,36 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
               <p className="ab-pre">{text.prompt}</p>
             </section>
           )}
+          {images.length > 0 && <Pictures images={images} />}
+          {blank && story && (
+            <section className="bg-blank" data-testid="druck-leer">
+              {(story.starters.length > 0 || story.hints || story.target_words) && (
+                <div className="bg-helps">
+                  {story.starters.length > 0 && (
+                    <p>
+                      <b>Satzanfänge:</b> {story.starters.join(" · ")}
+                    </p>
+                  )}
+                  {story.hints && (
+                    <p className="ab-pre">
+                      <b>Tipps:</b> {story.hints}
+                    </p>
+                  )}
+                  {story.target_words && (
+                    <p>
+                      <b>Länge:</b> etwa {story.target_words} Wörter
+                    </p>
+                  )}
+                </div>
+              )}
+              <p className="bg-heading-line">
+                <span>Überschrift:</span>
+                <span className="ab-field-line" />
+              </p>
+              <Lines count={story.lines} />
+            </section>
+          )}
+          {!blank && (
           <div className="tx-print-body">
             {doc.length === 0 ? (
               <p className="no-print ab-muted">Noch nichts geschrieben.</p>
@@ -140,6 +198,7 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
               })
             )}
           </div>
+          )}
           {fassung === "korrektur" && (numbered.length > 0 || notes.length > 0) && (
             <section className="tx-k-section" data-testid="druck-korrekturen">
               <h2 className="tx-k-title">Korrekturen</h2>
@@ -201,6 +260,12 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
                 )}
               </div>
             </section>
+          )}
+          {story?.source_note && (
+            <p className="bg-source">
+              Bilder: {story.source_kind ? `${SOURCE_KINDS[story.source_kind]}, ` : ""}
+              {story.source_note}
+            </p>
           )}
         </article>
         <p className="ab-hint no-print">Seitenumbrüche zeigt die Druckvorschau. Absätze werden nicht mitten in einer Zeile geteilt, Überschriften bleiben beim folgenden Text.</p>

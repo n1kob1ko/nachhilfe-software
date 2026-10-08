@@ -95,6 +95,7 @@ Neuer Web Service aus dem Repo (Runtime Docker), Disk mit Mount-Pfad `/data` anl
 | --- | --- | --- |
 | Datenbank | `/data/nachhilfe.db` (+ `-wal`, `-shm`) | bleibt |
 | Material | `/data/uploads` | bleibt |
+| Bilder von Bildgeschichten | `/data/uploads/bildgeschichten` | bleiben, in der Sicherung enthalten |
 | Anmeldungen | Tabelle `teacher_sessions` | bleiben, niemand muss sich neu anmelden |
 | Tablets | Tabelle `student_devices`, Cookie am Tablet | bleiben verbunden |
 | Was das Tablet zeigt | `units.device_view` | bleibt |

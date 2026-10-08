@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { AlertTriangle, History, PenLine } from "lucide-react";
 import { startManualCorrectionAction } from "@/app/correction-actions";
 import { AIStartButton } from "@/components/text/correction/AIStartButton";
+import { StoryStrip } from "@/components/text/story/StoryPictures";
+import { storyForEditor } from "@/lib/picture-story";
 import { CorrectionWorkspace, type View } from "@/components/text/correction/CorrectionWorkspace";
 import { Pill, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
@@ -36,6 +38,7 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
   const heading = [text.subject || "Deutsch", text.topic].filter(Boolean).join(" – ");
   const preview = aiPreview(text);
   const view = VIEWS.includes(sp.ansicht as View) ? (sp.ansicht as View) : "korrekturen";
+  const story = storyForEditor(text.id, "/material/bildgeschichte/bild");
 
   const head = (
     <div className="mb-5">
@@ -52,6 +55,11 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
           </>
         )}
       </p>
+      {story && story.pictures.images.length > 0 && (
+        <div className="mt-3 max-w-[900px]" data-testid="korrektur-bilder">
+          <StoryStrip p={{ ...story.pictures, starters: [], hints: "" }} />
+        </div>
+      )}
     </div>
   );
 
