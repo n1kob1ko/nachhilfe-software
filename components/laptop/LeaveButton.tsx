@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { LogOut } from "lucide-react";
+import { Download, LogOut } from "lucide-react";
+import { saveTextFile } from "@/components/text/save-file";
 import { DISCARD_FLAG, readDrafts, removeDraft } from "./drafts";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -34,6 +35,11 @@ export function LeaveButton({ textIds, label = "Abmelden" }: { textIds: number[]
     setState("offen");
   };
 
+  // before signing out without a connection: the unsaved texts as files on this laptop
+  const keepFiles = () => {
+    for (const d of readDrafts()) if (textIds.includes(d.textId)) saveTextFile(d.title, d.body);
+  };
+
   const drop = () => {
     try {
       sessionStorage.setItem(DISCARD_FLAG, "1");
@@ -54,10 +60,15 @@ export function LeaveButton({ textIds, label = "Abmelden" }: { textIds: number[]
       {state === "offen" && (
         <div role="alert" className="absolute right-0 z-30 mt-2 w-[min(90vw,360px)] rounded-2xl bg-surface p-4 shadow-[var(--shadow-card)]">
           <p className="text-[15px] font-semibold">Noch nicht alles gespeichert</p>
-          <p className="mt-1 text-[14px] text-ink-2">Gerade fehlt die Verbindung. Warte kurz, dann wird dein Text gespeichert.</p>
+          <p className="mt-1 text-[14px] text-ink-2">
+            Gerade fehlt die Verbindung. Warte kurz, dann wird dein Text gespeichert. Wenn du gehen musst, sichere ihn vorher als Datei.
+          </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button type="button" className="btn btn-primary btn-sm" onClick={() => void leave()}>
               Nochmal versuchen
+            </button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={keepFiles}>
+              <Download size={14} aria-hidden /> Als Datei sichern
             </button>
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => setState("bereit")}>
               Weiterarbeiten
