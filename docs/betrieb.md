@@ -28,6 +28,19 @@ docker run -d --name lernheft -p 3000:3000 -v lernheft-daten:/data \
 3. Variablen: `RAILWAY_RUN_UID=0` (Railway hängt Volumes als root ein, das Image läuft sonst als Benutzer `node` und dürfte nicht schreiben), optional `ANTHROPIC_API_KEY`.
 4. Settings → Networking → Domain erzeugen. Replicas auf 1 lassen, Region am besten in Europa (z. B. Amsterdam).
 
+### Adresse für das Schüler-Tablet (QR-Code)
+
+Mehr › Schülergeräte zeigt beim Verbinden einen QR-Code auf `<Adresse>/geraet`. Die Adresse kommt aus:
+
+1. `PUBLIC_URL`, wenn gesetzt (z. B. `https://lernheft.example.at` oder `http://192.168.1.20:3000`),
+2. sonst `RAILWAY_PUBLIC_DOMAIN` (setzt Railway selbst, sobald eine Domain erzeugt ist),
+3. sonst die Adresse, mit der die Seite gerade geöffnet ist. Steht dort `localhost`, nimmt die App die
+   Netzwerk-Adresse dieses Computers (z. B. `192.168.1.20`), denn `localhost` wäre am Tablet das Tablet selbst.
+
+Lokal im Netzwerk mit `npm run dev` braucht es nichts weiter. Mit `npm start` oder Docker über `http://`
+zusätzlich `INSECURE_COOKIES=1`, sonst kann das Tablet sein Verbindungs-Cookie nicht speichern. In Docker
+`PUBLIC_URL` setzen, weil der Container seine eigene interne Adresse sieht.
+
 ### Fly.io
 
 ```sh
