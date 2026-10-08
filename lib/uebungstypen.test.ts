@@ -212,7 +212,7 @@ test("with AI: five Lückentexte asked for are five real Lückentexte; multiple 
   const aiTask = (o: Record<string, unknown>) => ({
     category: "lueckentext", format: "cloze", skill_ids: [ZEITEN], topic: "Zeitformen", difficulty: "mittel", prompt: "", passage: null, options: null, correct_option: null,
     accepted_answers: null, numeric: false, blanks: null, sample_answer: null, steps: null, case_sensitive: true, faulty_text: null, corrected_text: null, text_errors: null,
-    answer_lines: null, criteria: ["Perfekt mit „sein“ bei Bewegung"], solution: "Perfekt: sein/haben + Partizip II.", solution_steps: [], estimated_time_sec: 60, hints: ["Welche Zeit verlangt die Klammer?"], common_errors: [],
+    answer_lines: null, math_start: null, variable: null, result_unit: null, result_form: null, round_to: null, parts: null, criteria: ["Perfekt mit „sein“ bei Bewegung"], solution: "Perfekt: sein/haben + Partizip II.", solution_steps: [], estimated_time_sec: 60, hints: ["Welche Zeit verlangt die Klammer?"], common_errors: [],
     ...o,
   });
   const requests: string[] = [];
@@ -259,7 +259,7 @@ test("with AI: a correction task keeps the faulty and the corrected text and the
       category: "korrigieren", format: "fix", skill_ids: ["deutsch.grammatik.faelle"], topic: "Fälle", difficulty: "mittel", prompt: "Verbessere den Satz.", passage: null, options: ["a", "b"], correct_option: 0,
       accepted_answers: null, numeric: false, blanks: null, sample_answer: null, steps: null, case_sensitive: true,
       faulty_text: "Gestern bin ich mit meinen Freund in den Park gegangen.", corrected_text: "Gestern bin ich mit meinem Freund in den Park gegangen.",
-      text_errors: [{ wrong: "meinen", right: "meinem", label: "Dativ nach „mit“", error_type: "grammatik" }], answer_lines: 2, criteria: ["Dativ nach „mit“"],
+      text_errors: [{ wrong: "meinen", right: "meinem", label: "Dativ nach „mit“", error_type: "grammatik" }], answer_lines: 2, math_start: null, variable: null, result_unit: null, result_form: null, round_to: null, parts: null, criteria: ["Dativ nach „mit“"],
       solution: "Nach „mit“ steht der Dativ.", solution_steps: [], estimated_time_sec: 60, hints: [], common_errors: [],
     },
     { subject: "Deutsch", skills: [{ id: "deutsch.grammatik.faelle", name: "Fälle", area: "Grammatik", difficulty: "mittel" }], categories: cats },
@@ -272,7 +272,7 @@ test("with AI: a correction task keeps the faulty and the corrected text and the
   assert.equal(t.answer.fixes?.[0].label, "Dativ nach „mit“");
   assert.equal(checkAnswer(t, "Gestern bin ich mit meinem Freund in den Park gegangen.").correct, true);
   // a "correction" without a corrected text is not a correction task
-  const broken = aiTaskToDraft({ category: "korrigieren", format: "mc", skill_ids: [], topic: "", difficulty: "mittel", prompt: "Was ist falsch?", passage: null, options: ["a", "b"], correct_option: 0, accepted_answers: null, numeric: false, blanks: null, sample_answer: null, steps: null, case_sensitive: null, faulty_text: null, corrected_text: null, text_errors: null, answer_lines: null, criteria: [], solution: "", solution_steps: [], estimated_time_sec: 30, hints: [], common_errors: [] }, { subject: "Deutsch", skills: [], categories: cats }, Math.random, wanted);
+  const broken = aiTaskToDraft({ category: "korrigieren", format: "mc", skill_ids: [], topic: "", difficulty: "mittel", prompt: "Was ist falsch?", passage: null, options: ["a", "b"], correct_option: 0, accepted_answers: null, numeric: false, blanks: null, sample_answer: null, steps: null, case_sensitive: null, faulty_text: null, corrected_text: null, text_errors: null, answer_lines: null, math_start: null, variable: null, result_unit: null, result_form: null, round_to: null, parts: null, criteria: [], solution: "", solution_steps: [], estimated_time_sec: 30, hints: [], common_errors: [] }, { subject: "Deutsch", skills: [], categories: cats }, Math.random, wanted);
   assert.equal(broken, null);
 });
 

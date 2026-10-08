@@ -7,6 +7,7 @@ import { aiEnabled, generatePlanWithAI, type AIMeta } from "./ai";
 import { DIFFICULTIES, categoriesFor, difficultyFor, mixFor, type Category, type Difficulty, type TaskType } from "./curriculum";
 import { generateForSlot } from "./generators";
 import { expectedFixes } from "./fix-text";
+import { checkOwnSolution } from "./math-task";
 import * as repo from "./repo";
 import { klassenLabel, schulstufe } from "./school";
 import { activeMaterial, materialLabel, materialSkills, MATERIAL_SOURCES } from "./current-material";
@@ -446,6 +447,15 @@ export function blankTask(format: TaskType, skillId: string | null, category: st
       return { ...base, type: "fix", prompt: "Im Text sind Fehler. Schreibe ihn richtig.", data: { faulty: "" }, answer: { accepted: [""], mode: "exact", fixes: [], criteria: [] } };
     case "order":
       return { ...base, type: "order", data: { steps: ["", "", ""] }, answer: { steps: ["", "", ""] } };
+    case "rechenweg":
+      return { ...base, type: "rechenweg", prompt: "Löse die Gleichung. Schreib jeden Rechenschritt in eine eigene Zeile.", data: { start: "" }, answer: { accepted: [""], needWay: true }, solutionSteps: [] };
+    case "sachaufgabe":
+      return {
+        ...base,
+        type: "sachaufgabe",
+        data: { parts: [{ label: "a)", prompt: "", kind: "zahl" }, { label: "b)", prompt: "", kind: "zahl" }, { label: "c)", prompt: "", kind: "text", lines: 3 }] },
+        answer: { parts: [{ accepted: [""] }, { accepted: [""] }, { sample: "" }] },
+      };
     case "grammar":
       return { ...base, type: "grammar", answer: { accepted: [""], mode: "text" } };
     default:
@@ -479,6 +489,10 @@ export function checkTask(t: TaskDraft): string | null {
     if (!right.length) return "Der verbesserte Text fehlt.";
     if (right.some((a) => expectedFixes(t.data.faulty!, a, t.answer.mode !== "text").length === 0)) return "Der verbesserte Text ist gleich wie der Text mit Fehlern.";
   }
+  if (t.type === "rechenweg" || t.type === "sachaufgabe") {
+    const problem = checkOwnSolution(t);
+    if (problem) return problem;
+  }
   if (t.type === "order" && (!t.answer.steps || t.answer.steps.filter((x) => x.trim()).length < 2 || t.answer.steps.some((x) => !x.trim()))) return "Mindestens zwei Schritte, jeder mit Text.";
   return null;
 }
@@ -498,6 +512,24 @@ export function normalizeTask(t: TaskDraft): TaskDraft {
     const fixes = accepted[0] ? expectedFixes(faulty, accepted[0], cs).map((f) => ({ ...f, label: old.find((o) => o.wrong === f.wrong && o.right === f.right)?.label?.trim() ?? "", errorType: old.find((o) => o.wrong === f.wrong && o.right === f.right)?.errorType ?? null })) : [];
     out.data = { ...out.data, faulty };
     out.answer = { ...out.answer, accepted, fixes };
+  }
+  if (out.type === "rechenweg") {
+    out.data = { ...(out.data.start?.trim() ? { start: out.data.start.trim() } : {}), ...(out.data.variable?.trim() ? { variable: out.data.variable.trim().slice(0, 1) } : {}) };
+    out.answer = { ...out.answer, accepted: (out.answer.accepted ?? []).map((a) => a.trim()).filter(Boolean), unit: out.answer.unit?.trim() || null };
+    out.solutionSteps = (out.solutionSteps ?? []).map((l) => l.trim()).filter(Boolean);
+  }
+  if (out.type === "sachaufgabe") {
+    const views = out.data.parts ?? [];
+    out.data = { ...out.data, parts: views.map((v, i) => ({ ...v, label: v.label.trim() || `${String.fromCharCode(97 + i)})`, prompt: v.prompt.trim() })) };
+    out.answer = {
+      ...out.answer,
+      parts: views.map((v, i) => {
+        const p = out.answer.parts?.[i] ?? {};
+        return v.kind === "text"
+          ? { sample: p.sample?.trim() ?? "", criteria: (p.criteria ?? []).map((c) => c.trim()).filter(Boolean), solution: p.solution?.trim() }
+          : { ...p, accepted: (p.accepted ?? []).map((a) => a.trim()).filter(Boolean), unit: p.unit?.trim() || null, follow: p.follow?.trim() || null, solution: p.solution?.trim() };
+      }),
+    };
   }
   if (out.type === "order" && out.answer.steps) {
     const steps = out.answer.steps.map((x) => x.trim());

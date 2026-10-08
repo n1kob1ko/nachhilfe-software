@@ -60,7 +60,7 @@ test("structured AI tasks become app tasks; broken parts are repaired or dropped
   const base = {
     category: "rechnung", format: "calc" as const, skill_ids: [KEHRWERT, "erfunden.id"], topic: "Bruchrechnung", difficulty: "leicht" as const,
     prompt: "Berechne 3/4 : 1/2.", passage: null, options: null, correct_option: null, accepted_answers: null, numeric: true, blanks: null,
-    sample_answer: null, steps: null, case_sensitive: null, faulty_text: null, corrected_text: null, text_errors: null, answer_lines: null, criteria: [], solution: "3/4 · 2/1 = 6/4 = 3/2", solution_steps: ["Kehrwert von 1/2 ist 2/1", "3/4 · 2/1 = 6/4", " 6/4 = 3/2 "], estimated_time_sec: 60, hints: ["Dividieren heißt mit dem Kehrwert multiplizieren.", "Kehrwert: Zähler und Nenner tauschen.", ""],
+    sample_answer: null, steps: null, case_sensitive: null, faulty_text: null, corrected_text: null, text_errors: null, answer_lines: null, math_start: null, variable: null, result_unit: null, result_form: null, round_to: null, parts: null, criteria: [], solution: "3/4 · 2/1 = 6/4 = 3/2", solution_steps: ["Kehrwert von 1/2 ist 2/1", "3/4 · 2/1 = 6/4", " 6/4 = 3/2 "], estimated_time_sec: 60, hints: ["Dividieren heißt mit dem Kehrwert multiplizieren.", "Kehrwert: Zähler und Nenner tauschen.", ""],
     common_errors: [{ answer: "3/8", label: "Kehrwert vergessen" }],
   };
   const calc = aiTaskToDraft({ ...base, accepted_answers: ["3/2", "1 1/2"] }, req)!;

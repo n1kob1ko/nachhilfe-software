@@ -219,14 +219,22 @@ const outageTransport: Transport = async () => {
 // ---------- the student ----------
 function rightAnswer(t: repo.Task): string {
   const a = t.answer;
+  // the maths formats: the sample working and result, a text part with its sample answer
+  if (t.type === "rechenweg") return JSON.stringify({ steps: t.solutionSteps ?? [], result: a.accepted?.[0] ?? "" });
+  if (t.type === "sachaufgabe")
+    return JSON.stringify({ parts: (t.data.parts ?? []).map((p, i) => (p.kind === "text" ? { text: a.parts?.[i]?.sample ?? t.solution } : { result: a.parts?.[i]?.accepted?.[0] ?? "" })) });
   if (t.data.options && typeof a.correct === "number") return String(a.correct);
   if (a.steps && t.data.steps) return JSON.stringify(a.steps.map((s) => t.data.steps!.indexOf(s)));
   if (a.blanks) return JSON.stringify(a.blanks.map((b) => b[0]));
   if (a.accepted?.length) return a.accepted[0];
   return a.sample ?? t.solution;
 }
+const wrongValue = (v: string, sign: boolean) => (sign ? (v.startsWith("-") ? v.slice(1) : `-${v}`) : v.replace(/\d+/, (d) => String(Number(d) + 1)));
 function wrongAnswer(t: repo.Task, sign: boolean): string {
   const a = t.answer;
+  if (t.type === "rechenweg") return JSON.stringify({ steps: [], result: wrongValue(a.accepted?.[0] ?? "1", sign) });
+  if (t.type === "sachaufgabe")
+    return JSON.stringify({ parts: (t.data.parts ?? []).map((p, i) => (p.kind === "text" ? { text: "Ich weiß nicht genau." } : { result: wrongValue(a.parts?.[i]?.accepted?.[0] ?? "1", sign) })) });
   if (t.data.options && typeof a.correct === "number") return String((a.correct + 1) % t.data.options.length);
   if (a.steps && t.data.steps) return JSON.stringify(a.steps.map((s) => t.data.steps!.indexOf(s)).reverse());
   if (a.blanks) return JSON.stringify(a.blanks.map(() => "x"));

@@ -12,8 +12,20 @@ import { PageHeader, formatDate, formatDuration } from "@/components/ui";
 import * as repo from "@/lib/repo";
 import { GAP, HINT_LABELS, REVIEWS, TEACHER_GRADED, isReview } from "@/lib/tasks";
 import { MathText } from "@/components/MathText";
+import { MathWork } from "@/components/MathWork";
+import { readMathAnswer } from "@/lib/math-check";
+import { gradeMathTask } from "@/lib/math-task";
+
+const isMath = (t: repo.Task) => t.type === "rechenweg" || t.type === "sachaufgabe";
 
 function shownAnswer(t: repo.Task, raw: string) {
+  if (isMath(t)) {
+    // the short form per try; the full working of the last try is shown below
+    const a = readMathAnswer(raw);
+    if (t.type === "sachaufgabe") return (t.data.parts ?? []).map((p, i) => `${p.label || `${String.fromCharCode(97 + i)})`} ${(p.kind === "text" ? a.parts?.[i]?.text : a.parts?.[i]?.result) || "–"}`).join("  ·  ");
+    const steps = a.steps?.filter((l) => l.trim()).length ?? 0;
+    return `${a.result?.trim() || "kein Ergebnis"}${steps ? ` (${steps} ${steps === 1 ? "Zeile" : "Zeilen"} Rechenweg)` : a.board ? " (Rechenweg am Whiteboard)" : ""}`;
+  }
   if (t.data.options) {
     const i = Number(raw);
     return Number.isInteger(i) && t.data.options[i] !== undefined ? `${String.fromCharCode(97 + i)}) ${t.data.options[i]}` : raw;
@@ -99,7 +111,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
               : fin.review === "offen"
                 ? { icon: CircleDashed, cls: "text-amber", text: "wartet auf deine Bewertung" }
                 : isReview(fin.review)
-                  ? { icon: fin.review === "richtig" ? CheckCircle2 : fin.review === "teilweise" ? CircleDashed : XCircle, cls: fin.review === "richtig" ? "text-green" : fin.review === "teilweise" ? "text-amber" : "text-red", text: `von dir bewertet: ${REVIEWS[fin.review]}` }
+                  ? { icon: fin.review === "richtig" ? CheckCircle2 : fin.review === "teilweise" ? CircleDashed : XCircle, cls: fin.review === "richtig" ? "text-green" : fin.review === "teilweise" ? "text-amber" : "text-red", text: `${fin.review_by ? "von dir bewertet" : "automatisch"}: ${REVIEWS[fin.review]}` }
                   : fin.correct
                 ? { icon: CheckCircle2, cls: "text-green", text: fin.attempt_no === 1 ? "im 1. Versuch richtig" : `richtig nach ${fin.attempt_no} Versuchen` }
                 : { icon: XCircle, cls: "text-red", text: "falsch" };
@@ -125,6 +137,18 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
                       </li>
                     ))}
                   </ul>
+                )}
+                {isMath(t) && tries.length > 0 && !(fin ?? tries[tries.length - 1]).solution_viewed && (() => {
+                  const last = fin ?? tries[tries.length - 1];
+                  return <MathWork task={t} view={gradeMathTask(t, last.answer).view} board={readMathAnswer(last.answer).board} />;
+                })()}
+                {isMath(t) && t.solution && (
+                  <details className="no-print mt-2 max-w-[70ch] text-[13px]">
+                    <summary className="cursor-pointer font-semibold text-ink-2">Lösungsweg</summary>
+                    <p className="mt-1 whitespace-pre-line text-ink-2">
+                      <MathText text={t.solution} />
+                    </p>
+                  </details>
                 )}
                 {t.type === "fix" && fin && !fin.solution_viewed && t.data.faulty && t.answer.accepted?.[0] && (
                   <FixCompare faulty={t.data.faulty} given={fin.answer} expected={closestVersion(t.answer.accepted, fin.answer, t.answer.mode !== "text") ?? t.answer.accepted[0]} caseSensitive={t.answer.mode !== "text"} className="mt-3 max-w-[90ch]" />

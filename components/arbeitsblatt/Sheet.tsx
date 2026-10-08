@@ -14,6 +14,63 @@ import { markFaultyText } from "@/lib/fix-text";
 
 const letter = (i: number) => String.fromCharCode(97 + i);
 
+/** Rechenweg: the equation or term to work on, set apart from the prompt. */
+function Start({ task }: { task: SheetTask["task"] }) {
+  return task.type === "rechenweg" && task.data.start ? (
+    <p className="ab-start">
+      <MathLine text={task.data.start} />
+    </p>
+  ) : null;
+}
+
+/** Sachaufgabe: the parts a), b), c), each with room to calculate and a line for the answer (student) or its solution (teacher). */
+function Parts({ t, teacher }: { t: SheetTask; teacher: boolean }) {
+  const views = t.task.data.parts ?? [];
+  return (
+    <ol className="ab-parts">
+      {views.map((p, i) => {
+        const room = t.plan.parts?.[i];
+        const sol = t.task.answer.parts?.[i];
+        return (
+          <li key={i} className="ab-part">
+            <span className="ab-part-label">{p.label || `${letter(i)})`}</span>
+            <div className="ab-body">
+              <RichText text={p.prompt} />
+              {teacher ? (
+                <p className="ab-part-solution">
+                  {p.kind === "text" ? (
+                    <>Muster: {sol?.sample || sol?.criteria?.join(" · ") || "–"}</>
+                  ) : (
+                    <>
+                      <b>
+                        <MathLine text={sol?.accepted?.[0] ?? "–"} />
+                      </b>
+                      {sol?.solution && (
+                        <>
+                          {" · "}
+                          <MathLine text={sol.solution} />
+                        </>
+                      )}
+                      {sol?.follow && <span className="ab-muted"> · Folgefehler zählt: {sol.follow}</span>}
+                    </>
+                  )}
+                </p>
+              ) : (
+                room && (
+                  <>
+                    {room.area && <WorkField area={room.area} />}
+                    {room.lines > 0 && <Lines count={room.lines} label={room.answerLabel} />}
+                  </>
+                )
+              )}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function Header({
   doc,
   o,
@@ -111,6 +168,8 @@ function StudentTask({ t, o }: { t: SheetTask; o: SheetOptions }) {
         ) : (
           <RichText text={task.prompt} gapsMm={plan.gapsMm} />
         )}
+        <Start task={task} />
+        {task.type === "sachaufgabe" && <Parts t={t} teacher={false} />}
         {task.type === "fix" && task.data.faulty && <p className="ab-faulty">{task.data.faulty}</p>}
         {task.data.options && (
           <ol
@@ -201,6 +260,8 @@ function TeacherTask({ t, o }: { t: SheetTask; o: SheetOptions }) {
             ))}
           </ol>
         )}
+        <Start task={task} />
+        {task.type === "sachaufgabe" && <Parts t={t} teacher />}
         {task.type === "fix" && task.data.faulty && (
           <Marked marks={markFaultyText(task.data.faulty, task.answer.accepted?.[0] ?? task.data.faulty, task.answer.mode !== "text")} className="ab-faulty" />
         )}
@@ -220,7 +281,7 @@ function TeacherTask({ t, o }: { t: SheetTask; o: SheetOptions }) {
               <b>Lösung:</b> <MathLine text={answer} />
             </p>
           )}
-          {task.type === "fix" && (task.answer.accepted?.length ?? 0) > 1 && (
+          {(task.type === "fix" || task.type === "rechenweg") && (task.answer.accepted?.length ?? 0) > 1 && (
             <p>
               <b>Auch richtig:</b> {task.answer.accepted!.slice(1).join(" · ")}
             </p>

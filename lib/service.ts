@@ -11,6 +11,7 @@ import * as repo from "./repo";
 import { suggestErrorType } from "./error-types";
 import { checkAnswer, isReview, TEACHER_GRADED, type TaskDraft } from "./tasks";
 import { closestVersion } from "./fix-text";
+import { gradeMathTask, type MathView } from "./math-task";
 import { carelessCredit } from "./lehrplan";
 import { onAnswer } from "./ai/realtime";
 
@@ -137,6 +138,10 @@ export type SubmitResult = {
   pendingReview?: boolean;
   /** Fehler korrigieren, once finished: the corrected text, to compare with the student's own. */
   expected?: string;
+  /** Teacher's or automatic grade of the finished answer (teilweise = half, e.g. 2 of 3 parts right). */
+  review?: string | null;
+  /** Rechenweg, Sachaufgabe: how each line, the result and each part of the answer sent was checked (lib/math-task.ts). */
+  math?: MathView;
 };
 
 const SUBMISSION_ID = /^[A-Za-z0-9_-]{16,64}$/;
@@ -162,6 +167,7 @@ function resultOf(a: Pick<repo.Attempt, "correct" | "final" | "attempt_no" | "fe
     feedback: correct ? a.feedback : final ? `${a.feedback} Schau dir den Lösungsweg an.` : `${a.feedback} Du hast noch ${left} ${left === 1 ? "Versuch" : "Versuche"}.`,
     attemptNo,
     solution: final ? solution : undefined,
+    ...(final && a.review ? { review: a.review } : {}),
   };
 }
 
@@ -172,8 +178,12 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
   if (!student || !assignment || !task || assignment.student_id !== student.id || task.worksheet_id !== assignment.worksheet_id) {
     throw new Error("Aufgabe nicht gefunden.");
   }
-  const reveal = (r: SubmitResult): SubmitResult =>
-    task.type === "fix" && r.final ? { ...r, expected: closestVersion(task.answer.accepted ?? [], input.answer, task.answer.mode !== "text") ?? task.answer.accepted?.[0] } : r;
+  const reveal = (r: SubmitResult): SubmitResult => {
+    if (task.type === "fix" && r.final) return { ...r, expected: closestVersion(task.answer.accepted ?? [], input.answer, task.answer.mode !== "text") ?? task.answer.accepted?.[0] };
+    // the marks on the student's lines and parts: worked out again from the answer sent, the same on a repeat
+    if ((task.type === "rechenweg" || task.type === "sachaufgabe") && !input.giveUp) return { ...r, math: gradeMathTask(task, input.answer).view };
+    return r;
+  };
   if (input.submissionId === undefined) return evaluate(input, student, assignment, task, null).then(reveal);
   const sid = input.submissionId;
   if (typeof sid !== "string" || !SUBMISSION_ID.test(sid)) throw new Error("Abgabe nicht erkannt.");
@@ -224,7 +234,7 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
    * database already has (same id) is not stored again. Only a stored answer goes on to tracking,
    * documentation and the live view.
    */
-  const store = (r: { answer: string; correct: boolean; solutionViewed: boolean; errorLabel: string | null; feedback: string; errorType: { type: string; source: string } | null; review?: "offen" }) =>
+  const store = (r: { answer: string; correct: boolean; solutionViewed: boolean; errorLabel: string | null; feedback: string; errorType: { type: string; source: string } | null; review?: "offen"; onFinal?: "teilweise" | "offen" | null }) =>
     db().transaction(() => {
       if (sid) {
         const dup = repo.getAttemptBySubmission(student.id, sid);
@@ -246,8 +256,10 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
         feedback: r.feedback,
         error_type: r.errorType?.type ?? null,
         error_type_source: r.errorType?.source ?? null,
-        review: r.review ?? null,
+        // the last try of a maths task: half right (teilweise) or for the teacher (offen), see lib/math-check.ts
+        review: r.review ?? (final && !r.correct && !r.solutionViewed && r.onFinal ? r.onFinal : null),
       };
+      if (row.review === "offen" && !r.review) row.feedback = `${r.feedback} Den Rest bewertet deine Lehrerin bzw. dein Lehrer.`;
       repo.recordAttempt(row);
       if (final) repo.completeAssignmentIfDone(assignment.id);
       return { fresh: true as const, attempt: row };
@@ -285,23 +297,29 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
   // Fehlerart of a wrong answer: the task's own (a described error of a correction task) or the app's rule-based suggestion
   let errorType: { type: string; source: "vorschlag" | "ki" } | null = result.errorType ? { type: result.errorType, source: "vorschlag" } : null;
 
+  const maths = task.type === "rechenweg" || task.type === "sachaufgabe";
   if (result.correct === null) {
-    // a free answer: saved for the teacher's grade, never counted as wrong because it is worded differently
-    const out = store({ answer: input.answer, correct: false, solutionViewed: false, errorLabel: null, feedback: PENDING, errorType: null, review: "offen" });
+    // a free answer: saved for the teacher's grade, never counted as wrong because it is worded differently;
+    // a maths answer the app cannot check safely (its note and suggested Fehlerart stay with it)
+    const out = maths
+      ? store({ answer: input.answer, correct: false, solutionViewed: false, errorLabel: result.errorLabel, feedback: result.feedback, errorType, review: "offen" })
+      : store({ answer: input.answer, correct: false, solutionViewed: false, errorLabel: null, feedback: PENDING, errorType: null, review: "offen" });
     if (!out.fresh) return settled(out.attempt);
     after(out.attempt, null, true);
-    return resultOf(out.attempt, task.solution, task.answer.sample ?? task.solution);
+    const res = resultOf(out.attempt, task.solution, task.answer.sample ?? task.solution);
+    return res;
   }
 
-  if (!result.correct && !errorType && task.type !== "fix") {
+  if (!result.correct && !errorType && task.type !== "fix" && !maths) {
     const suggested = suggestErrorType(task, input.answer, result.errorLabel, repo.getWorksheet(task.worksheet_id)?.subject ?? "");
     if (suggested) errorType = { type: suggested, source: "vorschlag" };
   }
-  const out = store({ answer: input.answer, correct: Boolean(result.correct), solutionViewed: false, errorLabel: result.errorLabel, feedback: result.feedback, errorType });
+  const out = store({ answer: input.answer, correct: Boolean(result.correct), solutionViewed: false, errorLabel: result.errorLabel, feedback: result.feedback, errorType, onFinal: result.onFinal });
   if (!out.fresh) return settled(out.attempt);
-  after(out.attempt, errorType?.type ?? null);
-  const res = resultOf(out.attempt, task.solution);
-  return !out.attempt.final && result.wrongGaps?.length ? { ...res, wrongGaps: result.wrongGaps } : res;
+  after(out.attempt, errorType?.type ?? null, out.attempt.review === "offen");
+  const res = resultOf(out.attempt, task.solution, task.answer.sample ?? undefined);
+  if (out.attempt.final) return res;
+  return { ...res, ...(result.wrongGaps?.length ? { wrongGaps: result.wrongGaps } : {}) };
 }
 
 /**

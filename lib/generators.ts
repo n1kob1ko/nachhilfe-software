@@ -7,6 +7,7 @@ import type { Difficulty, TaskType } from "./curriculum";
 import type { TaskDraft } from "./tasks";
 import { GAP, parseNumber } from "./tasks";
 import { expectedFixes } from "./fix-text";
+import { rechenwegTask, sachaufgabeTask } from "./generators-mathe";
 
 type Rng = () => number;
 const rint = (rng: Rng, min: number, max: number) => Math.floor(rng() * (max - min + 1)) + min;
@@ -1052,6 +1053,12 @@ export function generateForSlot(slot: Slot, rng: Rng = Math.random, variant = 0)
     const fix = correctionTask(slot.skillId, slot.difficulty, rng) ?? (genId ? correctionTask(genId, slot.difficulty, rng) : null);
     return fix ? tag(fix, "korrigieren") : free();
   }
+  // Rechenweg and Sachaufgabe: own maths generators (lib/generators-mathe.ts); skills without one get a free answer
+  if (slot.category === "rechenweg" || slot.category === "sachaufgabe") {
+    const make = slot.category === "rechenweg" ? rechenwegTask : sachaufgabeTask;
+    const t = make(slot.skillId, slot.difficulty, rng) ?? (genId ? make(genId, slot.difficulty, rng) : null);
+    return t ? tag(t, slot.category) : free();
+  }
   if (!genId || ["offen", "schreiben", "writing"].includes(slot.category ?? "")) return free();
   const base = GEN[genId](rng, slot.difficulty);
   switch (slot.category) {
@@ -1121,7 +1128,10 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
   while (out.length < req.count && guard++ < req.count * 20 && skills.length > 0) {
     const skill = skills[i++ % skills.length];
     let t: TaskDraft;
-    if (req.taskType === "free" || !GEN[skill.id]) {
+    const maths = req.taskType === "rechenweg" ? rechenwegTask(skill.id, req.difficulty, rng) : req.taskType === "sachaufgabe" ? sachaufgabeTask(skill.id, req.difficulty, rng) : null;
+    if (maths) {
+      t = maths;
+    } else if (req.taskType === "free" || req.taskType === "rechenweg" || req.taskType === "sachaufgabe" || !GEN[skill.id]) {
       t = freeTask(skill.id, skill.name, req.difficulty, Math.floor((i - 1) / skills.length));
       if (seen.has(t.prompt.split("\n")[0])) break;
     } else {

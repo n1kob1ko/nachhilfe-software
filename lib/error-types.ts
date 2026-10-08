@@ -12,9 +12,13 @@ import { normalizeText, parseNumber, sameAnswer, type TaskDraft } from "./tasks"
 export const ERROR_TYPES = [
   { key: "rechenfehler", label: "Rechenfehler" },
   { key: "vorzeichen", label: "Vorzeichenfehler" },
+  { key: "umformung", label: "Falsche Umformung" },
+  { key: "bruch", label: "Fehler beim Bruchrechnen" },
+  { key: "prozent", label: "Prozentrechnung falsch angewendet" },
   { key: "regel", label: "Regel nicht verstanden" },
   { key: "fluechtig", label: "Flüchtigkeitsfehler" },
   { key: "gelesen", label: "Aufgabe falsch gelesen" },
+  { key: "verstanden", label: "Aufgabe nicht verstanden" },
   { key: "formel", label: "Falsche Formel" },
   { key: "einheit", label: "Einheitenfehler" },
   { key: "grammatik", label: "Grammatikfehler" },

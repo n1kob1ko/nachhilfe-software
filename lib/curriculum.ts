@@ -37,7 +37,8 @@ export function difficultyFor(mastery: number | null): Difficulty {
 /**
  * How a task is answered and checked (the "format"). Stored in tasks.type.
  * calc = short answer compared as a number/fraction, grammar = short answer compared as text,
- * order = put steps in the right order, fix = correct a text with errors (lib/fix-text.ts).
+ * order = put steps in the right order, fix = correct a text with errors (lib/fix-text.ts), rechenweg =
+ * result with the working line by line, sachaufgabe = parts a), b), c) (both lib/math-check.ts).
  */
 export const TASK_TYPES = {
   mc: "Multiple Choice",
@@ -48,6 +49,8 @@ export const TASK_TYPES = {
   reading: "Textverständnis",
   order: "Reihenfolge",
   fix: "Fehler korrigieren",
+  rechenweg: "Rechenweg",
+  sachaufgabe: "Sachaufgabe mit Teilfragen",
   mixed: "Gemischt",
 } as const;
 export type TaskType = Exclude<keyof typeof TASK_TYPES, "mixed">;
@@ -63,6 +66,8 @@ const c = (key: string, label: string, formats: TaskType[], hint: string): Categ
 export const CATEGORIES: Record<string, Category[]> = {
   Mathematik: [
     c("rechnung", "Direkte Rechnung", ["calc", "mc"], "Eine Rechnung mit eindeutigem Ergebnis."),
+    c("rechenweg", "Rechenweg", ["rechenweg"], "Gleichung lösen oder Term berechnen: der Schüler schreibt jeden Schritt in eine eigene Zeile, die App prüft jede Zeile und das Ergebnis."),
+    c("sachaufgabe", "Mehrteilige Sachaufgabe", ["sachaufgabe"], "Alltagssituation mit Teilfragen a), b), c): Zahlen mit Rechenweg und Erklärungen in Worten, jede Teilfrage wird einzeln bewertet."),
     c("textaufgabe", "Textaufgabe", ["calc", "free"], "Kurze Sachsituation aus dem Alltag, Ergebnis als Zahl."),
     c("lueckentext", "Lückentext", ["cloze"], "Rechenweg oder Merksatz mit Lücken."),
     c("mc", "Multiple Choice", ["mc"], "3–4 Antworten, eine richtig; falsche Antworten sind typische Fehler."),
@@ -120,12 +125,17 @@ const MIX_BY_SKILL: [RegExp, string[]][] = [
   [/^englisch\.vocab/, ["vocabulary", "gap", "translation"]],
   [/^englisch\.reading/, ["reading", "offen"]],
   [/^englisch\.translation/, ["translation", "korrigieren", "offen"]],
-  [/^mathe\./, ["rechnung", "mc", "lueckentext", "fehler"]],
+  // Mathematik: the working counts, so Rechenweg and Sachaufgaben come first, multiple choice last
+  [/^mathe\.gleichungen\.text/, ["sachaufgabe", "rechenweg", "textaufgabe", "ordnen"]],
+  [/^mathe\.gleichungen\./, ["rechenweg", "rechnung", "lueckentext", "fehler"]],
+  [/^mathe\.prozent\./, ["sachaufgabe", "rechenweg", "rechnung", "mc"]],
+  [/^mathe\.brueche\./, ["rechenweg", "sachaufgabe", "rechnung", "mc"]],
+  [/^mathe\./, ["rechenweg", "rechnung", "lueckentext", "mc"]],
 ];
 const MIX_BY_SUBJECT: Record<string, string[]> = {
   Deutsch: ["lueckentext", "korrigieren", "offen", "grammatik"],
   Englisch: ["gap", "korrigieren", "offen", "grammar"],
-  Mathematik: ["rechnung", "mc", "lueckentext", "fehler"],
+  Mathematik: ["rechenweg", "sachaufgabe", "rechnung", "mc"],
 };
 export function mixFor(subject: string, skillId: string | null): string[] {
   const keys = new Set(categoriesFor(subject).map((c) => c.key));
