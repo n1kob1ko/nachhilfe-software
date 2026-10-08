@@ -12,6 +12,7 @@ import { currentLaptop, laptopContext } from "@/lib/laptop-context";
 import { markDelivered, parseView, pushLive, unitAssignments, unitText } from "@/lib/live";
 import { MAX_TRIES } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
+import { storyForEditor } from "@/lib/picture-story";
 import { textDoc, textsForStudent, textsForUnit, wordsLabel } from "@/lib/texts";
 
 const first = (n: string) => n.split(" ")[0];
@@ -115,6 +116,7 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
 
   let content: React.ReactNode;
   if (text) {
+    const story = storyForEditor(text.id, "/mitmachen/bild");
     content = (
       <>
         <StudentCorrection textId={text.id} />
@@ -127,6 +129,9 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
           title={text.title}
           prompt={text.prompt}
           meta={[text.subject, text.topic].filter(Boolean).join(" · ")}
+          pictures={story?.pictures}
+          targetWords={story?.targetWords}
+          handIn={story && text.status !== "fertig" ? { url: `/mitmachen/text/${text.id}/abgeben`, home: "/mitmachen/ansicht?zu=start" } : undefined}
         />
       </>
     );

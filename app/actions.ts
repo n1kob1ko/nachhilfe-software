@@ -9,6 +9,7 @@ import { hasData, seedDemo } from "@/lib/demo";
 import { requireTeacher } from "@/lib/auth";
 import { noteActivity } from "@/lib/learning";
 import * as repo from "@/lib/repo";
+import { dropFilesIfUnused, studentImageFiles } from "@/lib/picture-story";
 import { klassenLabel, schoolType, schulstufe } from "@/lib/school";
 import { analyzeStudent, buildWorksheet, submitAnswer, type SubmitInput } from "@/lib/service";
 import { runningUnitForStudent } from "@/lib/units";
@@ -59,7 +60,9 @@ export async function saveStudentAction(formData: FormData) {
 
 export async function deleteStudentAction(id: number) {
   await requireTeacher();
+  const pictures = studentImageFiles(id);
   repo.deleteStudent(id);
+  dropFilesIfUnused(pictures);
   revalidatePath("/", "layout");
   redirect("/schueler");
 }

@@ -62,7 +62,7 @@ test("only well-formed documents of sensible size are accepted", () => {
 
 test("print settings live in the URL and only differences are written", () => {
   const o = readTextPrintOptions({}, "Mein Ausflug");
-  assert.deepEqual(o, { title: "Mein Ausflug", correction: null, fassung: "original", overview: false, name: true, date: true, subject: true, prompt: true, words: false, pages: true, spacing: "normal" });
+  assert.deepEqual(o, { title: "Mein Ausflug", correction: null, fassung: "original", overview: false, blatt: "geschichte", name: true, date: true, subject: true, prompt: true, words: false, pages: true, spacing: "normal" });
   assert.equal(textPrintQuery(o, "Mein Ausflug"), "");
   const changed = { ...o, name: false, words: true, spacing: "weit" as const, title: "Ausflug" };
   const q = textPrintQuery(changed, "Mein Ausflug");

@@ -61,7 +61,22 @@ export type CorrectionRequest = {
   /** blocks of the text, names already masked; headings marked */
   blocks: { text: string; heading: boolean }[];
   skills: { id: string; name: string }[];
+  /** Bildgeschichte: number of pictures and the teacher's short descriptions (names masked); the pictures themselves are never sent */
+  pictures?: { count: number; captions: string[] } | null;
 };
+
+/** What the KI may say about the pictures: only what the descriptions say. */
+export function picturesLines(p: CorrectionRequest["pictures"]): string[] {
+  if (!p) return [];
+  const described = p.captions.filter((c) => c.trim()).length;
+  if (!described)
+    return [`Bilderfolge: ${p.count} Bilder. Die Bilder liegen dir nicht vor und es gibt keine Beschreibung: Beurteile den Zusammenhang mit den Bildern nicht und behaupte nichts über ihren Inhalt.`];
+  return [
+    `Bilderfolge: ${p.count} Bilder. Kurze Beschreibungen der Lehrkraft (die Bilder selbst liegen dir nicht vor):`,
+    ...p.captions.map((c, i) => `Bild ${i + 1}: ${c.trim() || "(keine Beschreibung)"}`),
+    "Beurteile Handlungsablauf und Bezug zu den Bildern nur anhand dieser Beschreibungen. Behaupte nichts über die Bilder, was dort nicht steht; zu Bildern ohne Beschreibung sage nichts über ihren Inhalt.",
+  ];
+}
 
 /** The user prompt: compact, numbered paragraphs, nothing about the student but the level. */
 export function correctionPrompt(r: CorrectionRequest): string {
@@ -73,6 +88,7 @@ export function correctionPrompt(r: CorrectionRequest): string {
     `Textsorte: ${r.kind || "nicht angegeben"}`,
     `Anforderungen der Textsorte: ${kindCriteria(r.kind)}`,
     r.task ? `Aufgabenstellung: ${r.task}` : "Aufgabenstellung: keine angegeben",
+    ...picturesLines(r.pictures),
     `Höchstens ${r.level.maxStyle} Stilvorschläge.`,
     english ? "Der Text ist englisch: quote und replacement auf Englisch, explanation auf Deutsch." : "",
     "",

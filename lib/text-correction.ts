@@ -36,6 +36,7 @@ import {
 } from "./text-correction-core";
 import { categoryInfo, isTextCategory, levelFor, normalizeCategory, type Level } from "./text-correction-rules";
 import { getText, type TextView } from "./texts";
+import { pictureContext, storyLevel } from "./picture-story";
 
 export * from "./text-correction-core";
 
@@ -72,7 +73,10 @@ export function aiState(c: CorrectionRow, now = Date.now()): AIStatus {
 }
 
 /** The level of the student the text belongs to. */
-export function levelOfText(text: Pick<TextView, "student_id">): Level {
+export function levelOfText(text: Pick<TextView, "student_id"> & { id?: number }): Level {
+  // a Bildgeschichte may name its own Schulart and Klasse
+  const own = text.id ? storyLevel(text.id) : null;
+  if (own) return levelFor(own.schoolType, own.klasse);
   const s = getStudent(text.student_id);
   return levelFor(s?.school_type ?? "", s?.klasse ?? null);
 }
@@ -140,6 +144,7 @@ export function aiPreview(text: TextView) {
     words: text.words,
     costUsd: costOf(route.model, FUNCTIONS.textkorrektur.tier, { input: t.input, output: t.output, cacheWrite: 0, cacheRead: 0 }),
     masked: req.blocks.filter((b) => b.text.trim()).map((b) => b.text),
+    pictures: req.pictures ? req.pictures.captions.map((c, i) => `Bild ${i + 1}: ${c || "(keine Beschreibung)"}`) : null,
     hidden: `die Namen von ${text.student_name} und den Lehrkräften`,
   };
 }
@@ -150,6 +155,12 @@ function teacherNames(): string[] {
 
 export function namesToHide(text: Pick<TextView, "student_name">): string[] {
   return [text.student_name, ...teacherNames()];
+}
+
+/** Bildgeschichte: the descriptions of the pictures, names masked like in the text. */
+function picturesFor(textId: number, pattern: RegExp | null) {
+  const p = pictureContext(textId);
+  return p ? { count: p.count, captions: p.captions.map((c) => maskText(c, pattern).masked) } : null;
 }
 
 /** The request for the KI: masked paragraphs, level, kind of text, task and the student's skills. */
@@ -165,6 +176,7 @@ export function correctionRequest(text: TextView, doc: TextDoc): CorrectionReque
     level: levelOfText(text),
     blocks: doc.map((b) => ({ text: maskText(blockText(b), pattern).masked.replace(/\n/g, " "), heading: b.t === "h" })),
     skills: skills.slice(0, 60).map((s) => ({ id: s.id, name: `${s.area} › ${s.name}` })),
+    pictures: picturesFor(text.id, pattern),
   };
 }
 

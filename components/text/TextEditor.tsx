@@ -15,6 +15,7 @@ import {
   Pilcrow,
   Redo2,
   Save,
+  Send,
   Underline,
   Undo2,
 } from "lucide-react";
@@ -26,6 +27,7 @@ import {
   type TextDoc,
 } from "@/lib/text-doc";
 import { readDom } from "./read-dom";
+import { StoryColumn, StoryStrip, type StoryPictures } from "./story/StoryPictures";
 import { saveTextFile } from "./save-file";
 
 export type TextState = { body: TextDoc; version: number; updatedAt: string };
@@ -45,6 +47,12 @@ type Props = {
   actions?: React.ReactNode;
   /** where the copy on this device is kept, plus the text id; the student laptop uses its own prefix so it can clean up */
   backupPrefix?: string;
+  /** Bildgeschichte: the pictures stay in view while writing (next to the text, or above it on a narrow screen) */
+  pictures?: StoryPictures;
+  /** the word count the teacher asked for, shown with the count */
+  targetWords?: number | null;
+  /** "Abgeben" on the student's device: POST endpoint, and where to go afterwards */
+  handIn?: { url: string; home: string };
 };
 
 type Status =
@@ -129,6 +137,9 @@ export function TextEditor({
   large,
   actions,
   backupPrefix = "lernheft-text-",
+  pictures,
+  targetWords,
+  handIn,
 }: Props) {
   const store = `${backupPrefix}${textId}`;
   const editor = useRef<HTMLDivElement>(null);
@@ -563,6 +574,36 @@ export function TextEditor({
     setOfferBackup(null);
   };
 
+  // ---------- Abgeben (student's device) ----------
+
+  const [handing, setHanding] = useState<null | "fragen" | "laeuft">(null);
+  const [handError, setHandError] = useState<string | null>(null);
+  /** Saves first and hands in only what the server has: nothing typed stays behind. */
+  const submitHandIn = async () => {
+    if (!handIn) return;
+    setHanding("laeuft");
+    setHandError(null);
+    await save();
+    for (let i = 0; i < 50 && (inFlight.current || timer.current); i++) await new Promise((r) => setTimeout(r, 200));
+    if (docKey(read()) !== savedKey.current) {
+      setHandError("Noch nicht gespeichert. Prüfe die Verbindung und tippe dann noch einmal auf „Abgeben“.");
+      setHanding(null);
+      return;
+    }
+    try {
+      const res = await fetch(handIn.url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ version: version.current }), cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        window.location.assign(handIn.home);
+        return;
+      }
+      setHandError(data.error ?? "Abgeben ging nicht. Bitte noch einmal versuchen.");
+    } catch {
+      setHandError("Keine Verbindung. Dein Text ist gespeichert, bitte gleich noch einmal abgeben.");
+    }
+    setHanding(null);
+  };
+
   const statusView = {
     gespeichert: {
       icon: <CheckCircle2 size={16} aria-hidden />,
@@ -611,10 +652,194 @@ export function TextEditor({
     status === "gesperrt" ||
     status === "fehler";
 
+  const main = (
+    <>
+
+        {unsynced && (
+          <div
+            role="alert"
+            className="mt-3 rounded-2xl border-2 border-amber bg-amber-wash px-4 py-3 text-[14px]"
+            data-testid="unsynced"
+          >
+            <p className="flex items-start gap-2 text-[15px] font-semibold">
+              <CloudOff size={18} className="mt-0.5 shrink-0" aria-hidden />
+              <span>
+                Noch nicht gespeichert: Deine letzten Änderungen sind nur auf
+                diesem Gerät.
+              </span>
+            </p>
+            <p className="mt-1 text-ink-2">
+              {status === "offline" && (
+                <>
+                  Keine Verbindung. Schreib ruhig weiter: Der Text wird
+                  gespeichert, sobald die Verbindung wieder da ist.
+                </>
+              )}
+              {status === "abgemeldet" && (
+                <>
+                  Die Anmeldung ist abgelaufen. Bitte in einem neuen Tab anmelden,
+                  dann hier „Speichern“ tippen.
+                </>
+              )}
+              {status === "gesperrt" && (
+                <>
+                  Dieser Text kann auf diesem Gerät nicht mehr gespeichert werden
+                  (die Einheit ist vorbei).
+                </>
+              )}
+              {status === "fehler" && (
+                <>Der Text ist zu lang oder enthält etwas Unerwartetes.</>
+              )}{" "}
+              Zuletzt gespeichert: {clock(savedAt)}. Schließe das Fenster erst,
+              wenn hier „Gespeichert“ steht, oder sichere den Text vorher als
+              Datei.
+            </p>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm mt-2"
+              onClick={() => saveTextFile(title, read())}
+            >
+              <Download size={14} aria-hidden /> Als Datei sichern
+            </button>
+          </div>
+        )}
+        {conflict && (
+          <div
+            role="alert"
+            className="mt-3 rounded-2xl bg-red-wash px-4 py-3 text-[14px]"
+          >
+            <p>
+              <b>Dieser Text wurde inzwischen auf einem anderen Gerät geändert</b>{" "}
+              ({clock(conflict.updatedAt)}, {countWords(conflict.body)} Wörter).
+              Welche Fassung soll gelten?
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={keepMine}
+              >
+                Meine Fassung behalten ({counts.words} Wörter)
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={takeTheirs}
+              >
+                Andere Fassung laden
+              </button>
+            </div>
+          </div>
+        )}
+        {offerBackup && (
+          <div
+            role="alert"
+            className="mt-3 rounded-2xl bg-amber-wash px-4 py-3 text-[14px]"
+          >
+            <p>
+              <b>Auf diesem Gerät gibt es eine nicht gespeicherte Fassung</b> von{" "}
+              {clock(offerBackup.at)} ({countWords(offerBackup.body)} Wörter).
+              Inzwischen wurde der Text woanders geändert.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={useBackup}
+              >
+                Diese Fassung verwenden
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={dropBackup}
+              >
+                Verwerfen
+              </button>
+            </div>
+          </div>
+        )}
+        {restored && status !== "offline" && (
+          <p role="status" className="mt-3 text-[13px] text-ink-2">
+            Nicht gespeicherte Änderungen von diesem Gerät wurden
+            wiederhergestellt.
+          </p>
+        )}
+
+        <div className="tx-paper">
+          <div
+            ref={editor}
+            className={`tx-editor ${large ? "tx-large" : ""}`}
+            contentEditable={ready}
+            suppressContentEditableWarning
+            dangerouslySetInnerHTML={{ __html: firstHtml }}
+            data-ready={ready}
+            role="textbox"
+            aria-multiline="true"
+            aria-label={`Text: ${title}`}
+            data-empty={empty}
+            data-testid="text-area"
+            spellCheck
+            lang="de"
+            onInput={onInput}
+            onKeyDown={onKeyDown}
+            onKeyUp={updateMarks}
+            onMouseUp={updateMarks}
+            onPaste={onPaste}
+            onDrop={(e) => e.preventDefault()}
+          />
+        </div>
+        <p className="tx-count" data-testid="text-count">
+          <span className="num">{counts.words.toLocaleString("de-AT")}</span>{" "}
+          {counts.words === 1 ? "Wort" : "Wörter"}
+          {targetWords ? (
+            <span data-testid="wortziel">
+              {" "}
+              (Ziel: ca. <span className="num">{targetWords.toLocaleString("de-AT")}</span>)
+            </span>
+          ) : null}{" "}
+          ·{" "}
+          <span className="num">{counts.chars.toLocaleString("de-AT")}</span>{" "}
+          Zeichen
+          <span
+            className={`ml-3 inline-flex items-center gap-1.5 md:hidden ${statusView.tone}`}
+          >
+            {statusView.icon} {statusView.text}
+          </span>
+        </p>
+        {handIn && (
+          <div className="tx-handin" data-testid="abgeben-bereich">
+            {handing === "fragen" ? (
+              <>
+                <p className="text-[15px] font-semibold">Bist du fertig? Dann gib deine Geschichte ab.</p>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className="btn btn-primary" onClick={() => void submitHandIn()} data-testid="abgeben-ja">
+                    <Send size={16} aria-hidden /> Ja, abgeben
+                  </button>
+                  <button type="button" className="btn btn-ghost" onClick={() => setHanding(null)}>
+                    Weiterschreiben
+                  </button>
+                </div>
+              </>
+            ) : (
+              <button type="button" className="btn btn-primary" disabled={handing === "laeuft" || empty} onClick={() => setHanding("fragen")} data-testid="abgeben">
+                <Send size={16} aria-hidden /> {handing === "laeuft" ? "Wird abgegeben …" : "Abgeben"}
+              </button>
+            )}
+            {handError && (
+              <p className="text-[14px] text-red" role="alert">
+                {handError}
+              </p>
+            )}
+          </div>
+        )}
+    </>
+  );
+
   return (
     <div
       ref={shell}
-      className={focus ? "tx-focus" : "tx-shell"}
+      className={`${focus ? "tx-focus" : "tx-shell"}${pictures ? " tx-story" : ""}`}
       data-testid="text-editor"
       data-status={status}
     >
@@ -641,228 +866,171 @@ export function TextEditor({
           </div>
         )}
       </header>
-
-      <div role="toolbar" aria-label="Text bearbeiten" className="tx-toolbar">
-        <div className="flex items-center gap-0.5">
-          <Tool
-            label="Absatz"
-            on={!marks.h}
-            onClick={() => exec("formatBlock", "<p>")}
-          >
-            <Pilcrow size={17} aria-hidden />{" "}
-            <span className="hidden sm:inline">Text</span>
-          </Tool>
-          <Tool
-            label="Überschrift"
-            on={marks.h}
-            onClick={() => exec("formatBlock", marks.h ? "<p>" : "<h2>")}
-          >
-            <Heading size={17} aria-hidden />{" "}
-            <span className="hidden sm:inline">Überschrift</span>
-          </Tool>
-        </div>
-        <span className="tx-sep" aria-hidden />
-        <div className="flex items-center gap-0.5">
-          <Tool label="Fett" on={marks.b} onClick={() => exec("bold")}>
-            <Bold size={18} aria-hidden />
-          </Tool>
-          <Tool label="Kursiv" on={marks.i} onClick={() => exec("italic")}>
-            <Italic size={18} aria-hidden />
-          </Tool>
-          <Tool
-            label="Unterstrichen"
-            on={marks.u}
-            onClick={() => exec("underline")}
-          >
-            <Underline size={18} aria-hidden />
-          </Tool>
-        </div>
-        <span className="tx-sep" aria-hidden />
-        <div className="flex items-center gap-0.5">
-          <Tool label="Rückgängig" onClick={() => exec("undo")}>
-            <Undo2 size={18} aria-hidden />
-          </Tool>
-          <Tool label="Wiederholen" onClick={() => exec("redo")}>
-            <Redo2 size={18} aria-hidden />
-          </Tool>
-        </div>
-        <div className="ml-auto flex items-center gap-1">
-          <span
-            className={`hidden items-center gap-1.5 px-2 text-[13px] font-medium md:inline-flex ${statusView.tone}`}
-            role="status"
-            aria-live="polite"
-            data-testid="save-status"
-            data-status={status}
-          >
-            {statusView.icon} {statusView.text}
-          </span>
-          <Tool
-            label={focus ? "Vollbild beenden" : "Vollbild"}
-            onClick={() => void toggleFocus()}
-          >
-            {focus ? (
-              <Minimize2 size={18} aria-hidden />
-            ) : (
-              <Maximize2 size={18} aria-hidden />
-            )}
-          </Tool>
-          <button
-            type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => void save()}
-            className="btn btn-primary h-11 min-h-11 px-4"
-            disabled={status === "speichert"}
-          >
-            <Save size={16} aria-hidden /> Speichern
-          </button>
-        </div>
-      </div>
-
-      {unsynced && (
-        <div
-          role="alert"
-          className="mt-3 rounded-2xl border-2 border-amber bg-amber-wash px-4 py-3 text-[14px]"
-          data-testid="unsynced"
-        >
-          <p className="flex items-start gap-2 text-[15px] font-semibold">
-            <CloudOff size={18} className="mt-0.5 shrink-0" aria-hidden />
-            <span>
-              Noch nicht gespeichert: Deine letzten Änderungen sind nur auf
-              diesem Gerät.
-            </span>
-          </p>
-          <p className="mt-1 text-ink-2">
-            {status === "offline" && (
-              <>
-                Keine Verbindung. Schreib ruhig weiter: Der Text wird
-                gespeichert, sobald die Verbindung wieder da ist.
-              </>
-            )}
-            {status === "abgemeldet" && (
-              <>
-                Die Anmeldung ist abgelaufen. Bitte in einem neuen Tab anmelden,
-                dann hier „Speichern“ tippen.
-              </>
-            )}
-            {status === "gesperrt" && (
-              <>
-                Dieser Text kann auf diesem Gerät nicht mehr gespeichert werden
-                (die Einheit ist vorbei).
-              </>
-            )}
-            {status === "fehler" && (
-              <>Der Text ist zu lang oder enthält etwas Unerwartetes.</>
-            )}{" "}
-            Zuletzt gespeichert: {clock(savedAt)}. Schließe das Fenster erst,
-            wenn hier „Gespeichert“ steht, oder sichere den Text vorher als
-            Datei.
-          </p>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm mt-2"
-            onClick={() => saveTextFile(title, read())}
-          >
-            <Download size={14} aria-hidden /> Als Datei sichern
-          </button>
-        </div>
-      )}
-      {conflict && (
-        <div
-          role="alert"
-          className="mt-3 rounded-2xl bg-red-wash px-4 py-3 text-[14px]"
-        >
-          <p>
-            <b>Dieser Text wurde inzwischen auf einem anderen Gerät geändert</b>{" "}
-            ({clock(conflict.updatedAt)}, {countWords(conflict.body)} Wörter).
-            Welche Fassung soll gelten?
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={keepMine}
-            >
-              Meine Fassung behalten ({counts.words} Wörter)
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={takeTheirs}
-            >
-              Andere Fassung laden
-            </button>
+      {pictures ? (
+        <div className="tx-story-grid">
+          <StoryColumn p={pictures} />
+          <div className="tx-story-main">
+            <div className="tx-sticky">
+              <StoryStrip p={pictures} />
+              <div role="toolbar" aria-label="Text bearbeiten" className="tx-toolbar">
+                <div className="flex items-center gap-0.5">
+                  <Tool
+                    label="Absatz"
+                    on={!marks.h}
+                    onClick={() => exec("formatBlock", "<p>")}
+                  >
+                    <Pilcrow size={17} aria-hidden />{" "}
+                    <span className="hidden sm:inline">Text</span>
+                  </Tool>
+                  <Tool
+                    label="Überschrift"
+                    on={marks.h}
+                    onClick={() => exec("formatBlock", marks.h ? "<p>" : "<h2>")}
+                  >
+                    <Heading size={17} aria-hidden />{" "}
+                    <span className="hidden sm:inline">Überschrift</span>
+                  </Tool>
+                </div>
+                <span className="tx-sep" aria-hidden />
+                <div className="flex items-center gap-0.5">
+                  <Tool label="Fett" on={marks.b} onClick={() => exec("bold")}>
+                    <Bold size={18} aria-hidden />
+                  </Tool>
+                  <Tool label="Kursiv" on={marks.i} onClick={() => exec("italic")}>
+                    <Italic size={18} aria-hidden />
+                  </Tool>
+                  <Tool
+                    label="Unterstrichen"
+                    on={marks.u}
+                    onClick={() => exec("underline")}
+                  >
+                    <Underline size={18} aria-hidden />
+                  </Tool>
+                </div>
+                <span className="tx-sep" aria-hidden />
+                <div className="flex items-center gap-0.5">
+                  <Tool label="Rückgängig" onClick={() => exec("undo")}>
+                    <Undo2 size={18} aria-hidden />
+                  </Tool>
+                  <Tool label="Wiederholen" onClick={() => exec("redo")}>
+                    <Redo2 size={18} aria-hidden />
+                  </Tool>
+                </div>
+                <div className="ml-auto flex items-center gap-1">
+                  <span
+                    className={`hidden items-center gap-1.5 px-2 text-[13px] font-medium md:inline-flex ${statusView.tone}`}
+                    role="status"
+                    aria-live="polite"
+                    data-testid="save-status"
+                    data-status={status}
+                  >
+                    {statusView.icon} {statusView.text}
+                  </span>
+                  <Tool
+                    label={focus ? "Vollbild beenden" : "Vollbild"}
+                    onClick={() => void toggleFocus()}
+                  >
+                    {focus ? (
+                      <Minimize2 size={18} aria-hidden />
+                    ) : (
+                      <Maximize2 size={18} aria-hidden />
+                    )}
+                  </Tool>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => void save()}
+                    className="btn btn-primary h-11 min-h-11 px-4"
+                    disabled={status === "speichert"}
+                  >
+                    <Save size={16} aria-hidden /> Speichern
+                  </button>
+                </div>
+              </div>
+            </div>
+            {main}
           </div>
         </div>
-      )}
-      {offerBackup && (
-        <div
-          role="alert"
-          className="mt-3 rounded-2xl bg-amber-wash px-4 py-3 text-[14px]"
-        >
-          <p>
-            <b>Auf diesem Gerät gibt es eine nicht gespeicherte Fassung</b> von{" "}
-            {clock(offerBackup.at)} ({countWords(offerBackup.body)} Wörter).
-            Inzwischen wurde der Text woanders geändert.
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={useBackup}
-            >
-              Diese Fassung verwenden
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={dropBackup}
-            >
-              Verwerfen
-            </button>
+      ) : (
+        <>
+          <div role="toolbar" aria-label="Text bearbeiten" className="tx-toolbar">
+            <div className="flex items-center gap-0.5">
+              <Tool
+                label="Absatz"
+                on={!marks.h}
+                onClick={() => exec("formatBlock", "<p>")}
+              >
+                <Pilcrow size={17} aria-hidden />{" "}
+                <span className="hidden sm:inline">Text</span>
+              </Tool>
+              <Tool
+                label="Überschrift"
+                on={marks.h}
+                onClick={() => exec("formatBlock", marks.h ? "<p>" : "<h2>")}
+              >
+                <Heading size={17} aria-hidden />{" "}
+                <span className="hidden sm:inline">Überschrift</span>
+              </Tool>
+            </div>
+            <span className="tx-sep" aria-hidden />
+            <div className="flex items-center gap-0.5">
+              <Tool label="Fett" on={marks.b} onClick={() => exec("bold")}>
+                <Bold size={18} aria-hidden />
+              </Tool>
+              <Tool label="Kursiv" on={marks.i} onClick={() => exec("italic")}>
+                <Italic size={18} aria-hidden />
+              </Tool>
+              <Tool
+                label="Unterstrichen"
+                on={marks.u}
+                onClick={() => exec("underline")}
+              >
+                <Underline size={18} aria-hidden />
+              </Tool>
+            </div>
+            <span className="tx-sep" aria-hidden />
+            <div className="flex items-center gap-0.5">
+              <Tool label="Rückgängig" onClick={() => exec("undo")}>
+                <Undo2 size={18} aria-hidden />
+              </Tool>
+              <Tool label="Wiederholen" onClick={() => exec("redo")}>
+                <Redo2 size={18} aria-hidden />
+              </Tool>
+            </div>
+            <div className="ml-auto flex items-center gap-1">
+              <span
+                className={`hidden items-center gap-1.5 px-2 text-[13px] font-medium md:inline-flex ${statusView.tone}`}
+                role="status"
+                aria-live="polite"
+                data-testid="save-status"
+                data-status={status}
+              >
+                {statusView.icon} {statusView.text}
+              </span>
+              <Tool
+                label={focus ? "Vollbild beenden" : "Vollbild"}
+                onClick={() => void toggleFocus()}
+              >
+                {focus ? (
+                  <Minimize2 size={18} aria-hidden />
+                ) : (
+                  <Maximize2 size={18} aria-hidden />
+                )}
+              </Tool>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => void save()}
+                className="btn btn-primary h-11 min-h-11 px-4"
+                disabled={status === "speichert"}
+              >
+                <Save size={16} aria-hidden /> Speichern
+              </button>
+            </div>
           </div>
-        </div>
+          {main}
+        </>
       )}
-      {restored && status !== "offline" && (
-        <p role="status" className="mt-3 text-[13px] text-ink-2">
-          Nicht gespeicherte Änderungen von diesem Gerät wurden
-          wiederhergestellt.
-        </p>
-      )}
-
-      <div className="tx-paper">
-        <div
-          ref={editor}
-          className={`tx-editor ${large ? "tx-large" : ""}`}
-          contentEditable={ready}
-          suppressContentEditableWarning
-          dangerouslySetInnerHTML={{ __html: firstHtml }}
-          data-ready={ready}
-          role="textbox"
-          aria-multiline="true"
-          aria-label={`Text: ${title}`}
-          data-empty={empty}
-          data-testid="text-area"
-          spellCheck
-          lang="de"
-          onInput={onInput}
-          onKeyDown={onKeyDown}
-          onKeyUp={updateMarks}
-          onMouseUp={updateMarks}
-          onPaste={onPaste}
-          onDrop={(e) => e.preventDefault()}
-        />
-      </div>
-      <p className="tx-count" data-testid="text-count">
-        <span className="num">{counts.words.toLocaleString("de-AT")}</span>{" "}
-        {counts.words === 1 ? "Wort" : "Wörter"} ·{" "}
-        <span className="num">{counts.chars.toLocaleString("de-AT")}</span>{" "}
-        Zeichen
-        <span
-          className={`ml-3 inline-flex items-center gap-1.5 md:hidden ${statusView.tone}`}
-        >
-          {statusView.icon} {statusView.text}
-        </span>
-      </p>
     </div>
   );
 }
