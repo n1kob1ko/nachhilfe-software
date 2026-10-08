@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowRight, CheckCircle2, Copy, Eye, EyeOff, Send, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Copy, Eye, EyeOff, Printer, Send, Sparkles } from "lucide-react";
 import { activeUnitForTeacher, runningUnitForStudent } from "@/lib/units";
 import { SendResult, TabletSend } from "@/components/device/TabletSend";
 import type { SendState } from "@/app/device-actions";
@@ -8,7 +8,6 @@ import { hasDevice } from "@/lib/devices";
 import { tabletOnline } from "@/lib/live";
 import { assignWorksheetAction, deleteWorksheetAction } from "@/app/actions";
 import { copyAsDraftAction, setSolutionsVisibleAction } from "@/app/builder-actions";
-import { PrintButton } from "@/components/PrintButton";
 import { SendToBoard } from "@/components/SendToBoard";
 import { FlowSteps } from "@/components/FlowSteps";
 import { PageHeader, Pill, Reveal } from "@/components/ui";
@@ -166,6 +165,14 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
             </form>
           </>
         )}
+        {tasks.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-accent/15 pt-4">
+            <Link href={`/arbeitsblatt/${w.id}`} className="btn btn-secondary">
+              <Printer size={15} aria-hidden /> PDF / Drucken
+            </Link>
+            <span className="text-[13px] text-ink-3">Als A4-Arbeitsblatt, mit oder ohne Lösungen</span>
+          </div>
+        )}
       </section>
 
       {!editable && (
@@ -191,7 +198,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
       <details className="no-print group mt-12 rounded-2xl border border-line bg-surface px-5 py-1">
         <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between text-[15px] font-semibold">
           Weitere Aktionen
-          <span className="text-[13px] font-normal text-ink-3 group-open:hidden">Lösungen, Drucken, Whiteboard, Kopieren, Vorlage, Löschen</span>
+          <span className="text-[13px] font-normal text-ink-3 group-open:hidden">Lösungen, PDF, Whiteboard, Kopieren, Vorlage, Löschen</span>
         </summary>
         <div className="grid gap-8 pt-3 pb-6 lg:grid-cols-2">
           <div className="grid content-start gap-3">
@@ -201,7 +208,9 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
                 {showSolutions ? <EyeOff size={15} aria-hidden /> : <Eye size={15} aria-hidden />}
                 {showSolutions ? "Lösungen ausblenden" : "Lösungen zeigen"}
               </Link>
-              <PrintButton />
+              <Link href={`/arbeitsblatt/${w.id}`} className="btn btn-secondary">
+                <Printer size={15} aria-hidden /> PDF / Drucken
+              </Link>
             </div>
           </div>
           {!draft && (

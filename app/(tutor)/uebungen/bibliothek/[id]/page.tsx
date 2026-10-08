@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Copy, Sparkles, Trash2 } from "lucide-react";
+import { CheckCircle2, Copy, Printer, Sparkles, Trash2 } from "lucide-react";
 import { deleteLibraryEntryAction, duplicateLibraryEntryAction, exerciseFromLibraryAction, setLibraryOriginAction, updateLibraryEntryAction } from "@/app/library-actions";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, SectionTitle, formatDate } from "@/components/ui";
@@ -81,6 +81,9 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
             </select>
           </label>
           <button className="btn btn-primary btn-lg">Als neue Übung</button>
+          <Link href={`/arbeitsblatt/bibliothek?eintrag=${e.id}`} className="btn btn-secondary btn-lg">
+            <Printer size={18} aria-hidden /> PDF / Drucken
+          </Link>
         </form>
         <p className="mt-3 text-[13px] text-ink-2">Nur diese eine Aufgabe sofort senden: unten „Einzeln senden“.</p>
       </section>
