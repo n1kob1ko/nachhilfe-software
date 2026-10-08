@@ -21,6 +21,8 @@ import { categoriesFor, DIFFICULTIES, TASK_TYPES, type Difficulty, type TaskType
 import type { Task } from "@/lib/repo";
 import { expectedFixes } from "@/lib/fix-text";
 import { GAP, gapCount, hintLabel, type TaskDraft } from "@/lib/tasks";
+import { isResultForm, PART_KINDS, RESULT_FORMS, wayMode, type PartKind } from "@/lib/math-check";
+import { checkOwnSolution } from "@/lib/math-task";
 import { MathText } from "./MathText";
 
 type Skill = { id: string; name: string; area: string; parent_id: string | null };
@@ -405,6 +407,19 @@ function reshape(t: TaskDraft, format: TaskType): TaskDraft {
       return { ...keep, data: {}, answer: { steps: t.answer.steps ?? ["", "", ""] } };
     case "grammar":
       return { ...keep, data: {}, answer: { accepted: t.answer.accepted ?? [""], mode: t.answer.mode === "exact" ? "exact" : "text" } };
+    case "rechenweg":
+      return {
+        ...keep,
+        data: { start: t.data.start ?? "", variable: t.data.variable },
+        answer: { accepted: t.answer.accepted ?? [""], unit: t.answer.unit ?? null, form: t.answer.form ?? null, round: t.answer.round ?? null, needWay: t.answer.needWay ?? true },
+        solutionSteps: t.solutionSteps ?? [],
+      };
+    case "sachaufgabe":
+      return {
+        ...keep,
+        data: { parts: t.data.parts ?? [{ label: "a)", prompt: "", kind: "zahl" }, { label: "b)", prompt: "", kind: "zahl" }] },
+        answer: { parts: t.answer.parts ?? [{ accepted: [""] }, { accepted: [""] }] },
+      };
     default:
       return { ...keep, data: {}, answer: { accepted: t.answer.accepted ?? [""], mode: "value" } };
   }
@@ -578,6 +593,9 @@ function TaskForm({ task, index, subject, skills, onDone }: { task: Task; index:
         </div>
       )}
       {t.type === "fix" && <FixFields t={t} setT={setT} />}
+      {t.type === "rechenweg" && <RechenwegFields t={t} setT={setT} list={list} />}
+      {t.type === "sachaufgabe" && <PartFields t={t} setT={setT} />}
+      {(t.type === "rechenweg" || t.type === "sachaufgabe") && <MathCheckNote t={t} />}
       {t.type === "free" && (
         <>
           <label className="field">
@@ -643,6 +661,165 @@ function TaskForm({ task, index, subject, skills, onDone }: { task: Task; index:
         </button>
         <Note r={note} />
       </div>
+    </div>
+  );
+}
+
+type SetT = (f: (cur: TaskDraft) => TaskDraft) => void;
+type ListFn = (items: string[], onChange: (next: string[]) => void, label: (i: number) => string, opts: { min?: number; movable?: boolean; addLabel: string }) => React.ReactNode;
+
+/** Whether the app can check the task as written: the same check the AI's tasks go through (lib/math-task.ts). */
+function MathCheckNote({ t }: { t: TaskDraft }) {
+  const problem = checkOwnSolution(t);
+  const mode = t.type === "rechenweg" ? wayMode(t.data.start, t.data.variable) : null;
+  return (
+    <p role="status" className={`rounded-lg px-3 py-2 text-[13px] ${problem ? "bg-amber-wash text-amber" : "bg-green-wash text-green"}`}>
+      {problem ??
+        (mode === "gleichung"
+          ? "Die App prüft jede Zeile: Sie muss für die Lösung stimmen. Auch andere richtige Wege zählen."
+          : mode === "term"
+            ? "Die App prüft jede Zeile: Sie muss gleich viel wert sein wie die Angabe. Auch andere richtige Wege zählen."
+            : "Die App prüft jede Rechnung für sich und das Ergebnis. Was sie nicht sicher prüfen kann, bewertest du.")}
+    </p>
+  );
+}
+
+/** Rechenweg: the equation or term, the result (with unit, form, rounding) and a sample working. */
+function RechenwegFields({ t, setT, list }: { t: TaskDraft; setT: SetT; list: ListFn }) {
+  const setAnswer = (patch: Partial<TaskDraft["answer"]>) => setT((cur) => ({ ...cur, answer: { ...cur.answer, ...patch } }));
+  return (
+    <div className="grid gap-3">
+      <label className="field">
+        <span className="label">Gleichung oder Term (Angabe)</span>
+        <input className="input text-[16px]" value={t.data.start ?? ""} placeholder="z. B. 3x + 7 = 22 oder 3/4 + 1/6" onChange={(e) => setT((cur) => ({ ...cur, data: { ...cur.data, start: e.target.value } }))} />
+        <span className="text-[12px] text-ink-3">
+          Leer lassen, wenn die Aufgabe nur aus Text besteht (z. B. „Berechne 15 % von 480 €“). So schreibst du: 3/4 für Brüche, x^2 oder x² für Potenzen, sqrt(2) oder √2 für Wurzeln.
+          {t.data.start && /[/^²√]|sqrt/.test(t.data.start) && (
+            <>
+              {" "}
+              Vorschau: <MathText text={t.data.start} />
+            </>
+          )}
+        </span>
+      </label>
+      <div className="grid gap-1.5">
+        <span className="label">Richtiges Ergebnis</span>
+        {list(t.answer.accepted ?? [""], (next) => setAnswer({ accepted: next }), (i) => (i === 0 ? "✓" : "oder"), { addLabel: "Weitere richtige Schreibweise" })}
+        <span className="text-[12px] text-ink-3">Zahl, Bruch, Prozent oder Term, z. B. 5, 3/4, 72 €, 2; 3 (zwei Lösungen). Gleichwertige Schreibweisen (1/2 = 0,5) erkennt die App selbst.</span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="field">
+          <span className="label">Einheit</span>
+          <input className="input" value={t.answer.unit ?? ""} placeholder="z. B. €, cm², %" onChange={(e) => setAnswer({ unit: e.target.value || null })} />
+        </label>
+        <label className="field">
+          <span className="label">Form des Ergebnisses</span>
+          <select className="input" value={t.answer.form ?? "beliebig"} onChange={(e) => setAnswer({ form: isResultForm(e.target.value) && e.target.value !== "beliebig" ? e.target.value : null })}>
+            {Object.entries(RESULT_FORMS).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span className="label">Runden</span>
+          <select className="input" value={t.answer.round ?? ""} onChange={(e) => setAnswer({ round: e.target.value === "" ? null : Number(e.target.value) })}>
+            <option value="">nicht nötig</option>
+            <option value="0">auf Ganze</option>
+            <option value="1">auf 1 Kommastelle</option>
+            <option value="2">auf 2 Kommastellen</option>
+          </select>
+        </label>
+      </div>
+      <label className="flex min-h-[44px] items-center gap-2 text-[14px] text-ink-2">
+        <input type="checkbox" checked={t.answer.needWay !== false} onChange={(e) => setAnswer({ needWay: e.target.checked })} className="h-4 w-4 accent-[var(--accent)]" />
+        Rechenweg verlangt (ohne Rechenweg bewertest du ein richtiges Ergebnis)
+      </label>
+      <div className="grid gap-1.5">
+        <span className="label">Musterlösung Zeile für Zeile</span>
+        {list(t.solutionSteps ?? [], (next) => setT((cur) => ({ ...cur, solutionSteps: next })), (i) => `${i + 1}.`, { min: 0, movable: true, addLabel: "Zeile" })}
+        <span className="text-[12px] text-ink-3">Für den Ausdruck mit Lösungen und zum Prüfen der Aufgabe. Schüler dürfen auch anders rechnen.</span>
+      </div>
+    </div>
+  );
+}
+
+/** Sachaufgabe: the parts a), b), c), each with a number answer or an answer in words. */
+function PartFields({ t, setT }: { t: TaskDraft; setT: SetT }) {
+  const views = t.data.parts ?? [];
+  const sols = t.answer.parts ?? [];
+  const setPart = (i: number, view: Partial<(typeof views)[number]>, sol: Partial<(typeof sols)[number]> = {}) =>
+    setT((cur) => {
+      const v = [...(cur.data.parts ?? [])];
+      const a = [...(cur.answer.parts ?? [])];
+      v[i] = { ...v[i], ...view };
+      a[i] = { ...(a[i] ?? {}), ...sol };
+      return { ...cur, data: { ...cur.data, parts: v }, answer: { ...cur.answer, parts: a } };
+    });
+  const add = () =>
+    setT((cur) => {
+      const n = cur.data.parts?.length ?? 0;
+      return { ...cur, data: { ...cur.data, parts: [...(cur.data.parts ?? []), { label: `${String.fromCharCode(97 + n)})`, prompt: "", kind: "zahl" }] }, answer: { ...cur.answer, parts: [...(cur.answer.parts ?? []), { accepted: [""] }] } };
+    });
+  const remove = (i: number) =>
+    setT((cur) => ({ ...cur, data: { ...cur.data, parts: (cur.data.parts ?? []).filter((_, j) => j !== i) }, answer: { ...cur.answer, parts: (cur.answer.parts ?? []).filter((_, j) => j !== i) } }));
+  const earlier = (i: number) => views.slice(0, i).filter((v) => v.kind === "zahl").map((v, k) => (v.label.match(/[a-z]/i)?.[0] ?? String.fromCharCode(97 + k)).toLowerCase());
+  return (
+    <div className="grid gap-3">
+      <span className="label">Teilfragen</span>
+      {views.map((v, i) => {
+        const sol = sols[i] ?? {};
+        const letters = earlier(i);
+        return (
+          <fieldset key={i} className="grid gap-2 rounded-lg border border-line bg-paper px-3 py-3">
+            <legend className="sr-only">Teilfrage {v.label}</legend>
+            <div className="flex flex-wrap items-center gap-2">
+              <input className="input w-16" value={v.label} onChange={(e) => setPart(i, { label: e.target.value })} aria-label="Bezeichnung" />
+              <input className="input min-w-0 flex-1" value={v.prompt} placeholder="Frage, z. B. Wie viel Euro beträgt der Rabatt?" onChange={(e) => setPart(i, { prompt: e.target.value })} aria-label={`Frage ${v.label}`} />
+              <select className="input w-auto" value={v.kind} onChange={(e) => setPart(i, { kind: e.target.value as PartKind, lines: e.target.value === "text" ? 3 : undefined })} aria-label={`Antwortart ${v.label}`}>
+                {Object.entries(PART_KINDS).map(([k, l]) => (
+                  <option key={k} value={k}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+              <button type="button" className="btn btn-ghost btn-sm min-h-[44px]" disabled={views.length <= 1} onClick={() => remove(i)} aria-label={`Teilfrage ${v.label} entfernen`}>
+                <X size={14} aria-hidden />
+              </button>
+            </div>
+            {v.kind === "text" ? (
+              <input className="input" value={sol.sample ?? ""} placeholder="Musterantwort (du bewertest die Antwort)" onChange={(e) => setPart(i, {}, { sample: e.target.value })} aria-label={`Musterantwort ${v.label}`} />
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-[1fr_120px_1fr]">
+                <input
+                  className="input"
+                  value={(sol.accepted ?? []).join(" | ")}
+                  placeholder="Ergebnis, z. B. 72 €"
+                  onChange={(e) => setPart(i, {}, { accepted: e.target.value.split("|").map((x) => x.trim()) })}
+                  aria-label={`Ergebnis ${v.label} (weitere mit | trennen)`}
+                />
+                <input className="input" value={sol.unit ?? ""} placeholder="Einheit" onChange={(e) => setPart(i, {}, { unit: e.target.value || null })} aria-label={`Einheit ${v.label}`} />
+                <input
+                  className="input"
+                  value={sol.follow ?? ""}
+                  disabled={!letters.length}
+                  placeholder={letters.length ? `Folgefehler: Rechnung mit ${letters.join(", ")}, z. B. 480 - ${letters[letters.length - 1]}` : "Folgefehler: erst ab der zweiten Teilfrage"}
+                  onChange={(e) => setPart(i, {}, { follow: e.target.value || null })}
+                  aria-label={`Rechnung für Folgefehler ${v.label}`}
+                />
+              </div>
+            )}
+            <input className="input" value={sol.solution ?? ""} placeholder="Lösungsweg dieser Teilfrage (für dich und den Ausdruck)" onChange={(e) => setPart(i, {}, { solution: e.target.value })} aria-label={`Lösungsweg ${v.label}`} />
+          </fieldset>
+        );
+      })}
+      <button type="button" className="justify-self-start text-[13px] font-semibold text-accent hover:underline" onClick={add} disabled={views.length >= 8}>
+        + Teilfrage
+      </button>
+      <span className="text-[12px] text-ink-3">
+        Folgefehler: Wer in a) falsch rechnet, aber in b) mit seinem eigenen Ergebnis richtig weiterrechnet, bekommt b) als richtig angerechnet. Dafür steht hier, wie b) aus a) entsteht.
+      </span>
     </div>
   );
 }

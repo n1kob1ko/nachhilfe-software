@@ -6,6 +6,7 @@
 import { categoryLabel, TASK_TYPES } from "./curriculum";
 import { textBlocks } from "./math-format";
 import { GAP, type TaskDraft } from "./tasks";
+import { mathAnswerText, unknownOf } from "./math-task";
 
 export type Space = "klein" | "mittel" | "gross";
 export type SolutionMode = "keine" | "seite" | "lehrer";
@@ -148,6 +149,8 @@ export type TaskPlan = {
   optionColumns: 1 | 2;
   /** the field goes above the last line of the prompt ("Ergebnis: ___"), so the result comes last */
   areaBeforeLastLine: boolean;
+  /** Sachaufgabe: room under each part a), b), c) */
+  parts: { area: WorkArea | null; lines: number; answerLabel: string | null }[] | null;
 };
 
 /** Height of one writing line in mm (school lines, room for handwriting). */
@@ -157,6 +160,9 @@ const SCALE: Record<Space, number> = { klein: 0.7, mittel: 1, gross: 1.4 };
 const CALC_MM: Record<Space, number> = { klein: 20, mittel: 35, gross: 60 };
 const SMALL_MM: Record<Space, number> = { klein: 0, mittel: 15, gross: 30 };
 const COORD_MM: Record<Space, number> = { klein: 50, mittel: 70, gross: 100 };
+/** Rechenweg: room for several lines of working; one part of a Sachaufgabe gets a smaller field. */
+const WAY_MM: Record<Space, number> = { klein: 40, mittel: 60, gross: 90 };
+const PART_MM: Record<Space, number> = { klein: 22, mittel: 35, gross: 50 };
 
 const COORDINATES =
   /koordinat|graph(en)?\b|zeichne[^.]*\b(gerade|funktion|parabel|punkt)|trage[^.]*\bpunkt|punkte?\s+[A-Z]\s*\(\s*[−-]?\d/i;
@@ -207,6 +213,7 @@ export function planTask(
     optionColumns:
       options.length >= 4 && options.every((x) => x.length <= 22) ? 2 : 1,
     areaBeforeLastLine: false,
+    parts: null,
   };
   const lastLine = task.prompt.trimEnd().split("\n").pop() ?? "";
   const resultLine =
@@ -229,6 +236,24 @@ export function planTask(
 
   if (math && o.field !== "keins" && COORDINATES.test(text))
     plan.area = { kind: "koordinaten", heightMm: COORD_MM[o.space] };
+
+  // the maths formats always get squared paper to calculate on, unless the teacher chose another field or none
+  const calcKind = o.field === "keins" ? null : o.field === "auto" ? "kariert" : o.field;
+  if (task.type === "rechenweg") {
+    if (calcKind) plan.area = { kind: calcKind, heightMm: WAY_MM[o.space] };
+    const x = unknownOf(task);
+    plan.lines = 1;
+    plan.answerLabel = x ? `Ergebnis: ${x} =` : "Ergebnis:";
+    return plan;
+  }
+  if (task.type === "sachaufgabe") {
+    plan.parts = (task.data.parts ?? []).map((p) =>
+      p.kind === "text"
+        ? { area: null, lines: Math.max(2, Math.round((p.lines ?? 3) * SCALE[o.space])), answerLabel: null }
+        : { area: calcKind ? { kind: calcKind, heightMm: PART_MM[o.space] } : null, lines: 1, answerLabel: "Antwort:" },
+    );
+    return plan;
+  }
 
   if (options.length) {
     if (math && !plan.area) plan.area = area(SMALL_MM[o.space]);
@@ -343,8 +368,9 @@ export function buildSheet(
 
 /** The answer of a task in one line (as on the solution page). */
 export function shortAnswer(
-  t: Pick<TaskDraft, "data" | "answer">,
+  t: Pick<TaskDraft, "type" | "data" | "answer">,
 ): string | null {
+  if (t.type === "rechenweg" || t.type === "sachaufgabe") return mathAnswerText(t);
   if (t.data.options && typeof t.answer.correct === "number")
     return `${String.fromCharCode(97 + t.answer.correct)}) ${t.data.options[t.answer.correct]}`;
   if (t.answer.steps)

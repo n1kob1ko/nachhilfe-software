@@ -1,5 +1,7 @@
 import type { Difficulty, TaskType } from "./curriculum";
 import { checkFix, type FixLabel } from "./fix-text";
+import type { PartSolution, PartView, ResultForm } from "./math-check";
+import { gradeMathTask } from "./math-task";
 
 export type AnswerSpec = {
   /** Multiple choice / reading: index of the correct option. */
@@ -18,6 +20,16 @@ export type AnswerSpec = {
   fixes?: FixLabel[];
   /** What a good answer must contain (Bewertungskriterien), for the teacher and the print. */
   criteria?: string[];
+  /** Rechenweg: unit the result needs ("€", "cm²", "%"). */
+  unit?: string | null;
+  /** Rechenweg: how the result has to be written (beliebig = every equal form, 1/2 = 0,5 = 50 %). */
+  form?: ResultForm | null;
+  /** Rechenweg: round the result to this many decimals. */
+  round?: number | null;
+  /** Rechenweg: false = only the result counts, the working is optional. */
+  needWay?: boolean;
+  /** Sachaufgabe: the solution of each part, in the order of data.parts. */
+  parts?: PartSolution[];
 };
 
 export type TaskDraft = {
@@ -35,7 +47,19 @@ export type TaskDraft = {
    * steps: order tasks show the steps in this (shuffled) order. faulty: the text with errors of a
    * "Fehler korrigieren" task. lines: size of the answer field of a free answer (1 = one line).
    */
-  data: { options?: string[]; passage?: string; steps?: string[]; faulty?: string; lines?: number };
+  data: {
+    options?: string[];
+    passage?: string;
+    steps?: string[];
+    faulty?: string;
+    lines?: number;
+    /** Rechenweg: the equation or term the student starts from ("3x + 7 = 22", "3/4 + 1/6"); empty = free calculation. */
+    start?: string;
+    /** Rechenweg: the unknown of an equation; also without a start (Gleichung aus einem Text aufstellen). */
+    variable?: string;
+    /** Sachaufgabe: the parts a), b), c) as the student sees them. */
+    parts?: PartView[];
+  };
   answer: AnswerSpec;
   solution: string;
   hints: string[];
@@ -57,8 +81,13 @@ export type CheckResult = {
   feedback: string;
   /** Lückentext: numbers (from 1) of the gaps that are still wrong. */
   wrongGaps?: number[];
-  /** Fehler korrigieren: the Fehlerart of the first error left, if the task names one. */
+  /** Fehler korrigieren, Rechenweg, Sachaufgabe: the Fehlerart the app suggests, if a rule fits. */
   errorType?: string | null;
+  /**
+   * Rechenweg, Sachaufgabe: what is stored when this answer is the last try: teilweise (half, e.g.
+   * 2 of 3 parts or the unit missing) or offen (the teacher grades it).
+   */
+  onFinal?: "teilweise" | "offen" | null;
 };
 
 /** Teacher's grade of an answer the app cannot check (free answers) or that the teacher checks again. */
@@ -66,7 +95,7 @@ export const REVIEWS = { richtig: "richtig", teilweise: "teilweise richtig", fal
 export type Review = keyof typeof REVIEWS;
 export const isReview = (x: unknown): x is Review => typeof x === "string" && x in REVIEWS;
 /** Formats the teacher grades or may grade again after the app's check. */
-export const TEACHER_GRADED = new Set<string>(["free", "fix"]);
+export const TEACHER_GRADED = new Set<string>(["free", "fix", "rechenweg", "sachaufgabe"]);
 
 export const GAP = "___";
 
@@ -156,6 +185,7 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
       feedback: correct ? "Richtige Reihenfolge!" : `${right} von ${a.steps.length} Schritten stehen an der richtigen Stelle.`,
     };
   }
+  if (task.type === "rechenweg" || task.type === "sachaufgabe") return gradeMathTask(task, given).check;
   if (task.type === "fix" && task.data.faulty !== undefined) {
     const r = checkFix(task.data.faulty, a.accepted ?? [], given, { caseSensitive: a.mode !== "text", labels: a.fixes });
     if (r.correct) return { correct: true, errorLabel: null, feedback: r.total === 1 ? "Richtig verbessert!" : `Alle ${r.total} Fehler richtig verbessert!` };

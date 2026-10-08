@@ -622,8 +622,8 @@ export function updateTask(id: number, t: TaskDraft) {
   const cur = getTask(id);
   if (!cur) return;
   db()
-    .prepare("UPDATE tasks SET type = ?, category = ?, skill_id = ?, difficulty = ?, prompt = ?, data = ?, answer = ?, solution = ?, hints = ?, error_map = ?, level = ? WHERE id = ?")
-    .run(t.type, t.category ?? null, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap), levelOf(t.difficulty), id);
+    .prepare("UPDATE tasks SET type = ?, category = ?, skill_id = ?, difficulty = ?, prompt = ?, data = ?, answer = ?, solution = ?, hints = ?, error_map = ?, level = ?, solution_steps = ? WHERE id = ?")
+    .run(t.type, t.category ?? null, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap), levelOf(t.difficulty), JSON.stringify(t.solutionSteps ?? cur.solutionSteps ?? []), id);
   writeTaskSkills(id, t);
   syncWorksheetSkills(cur.worksheet_id);
 }

@@ -4,10 +4,15 @@ import { ERROR_TYPES, type ErrorType } from "../error-types";
 import type { TaskDraft } from "../tasks";
 import { GAP, gapCount } from "../tasks";
 import { expectedFixes } from "../fix-text";
+import { isResultForm, RESULT_FORMS, type PartSolution, type PartView } from "../math-check";
+import { parseExpr, evaluate } from "../math-expr";
+import { checkOwnSolution } from "../math-task";
+import { checkValue } from "../math-check";
 import { runAI, unwrap, type AIMeta, type Part } from "./router";
 
 // ---------- exercise generation ----------
-const FORMATS = ["mc", "calc", "grammar", "cloze", "free", "reading", "order", "fix"] as const;
+const FORMATS = ["mc", "calc", "grammar", "cloze", "free", "reading", "order", "fix", "rechenweg", "sachaufgabe"] as const;
+const FORM_KEYS = Object.keys(RESULT_FORMS) as [keyof typeof RESULT_FORMS, ...(keyof typeof RESULT_FORMS)[]];
 const TaskSchema = z.object({
   category: z.string().describe("Schlüssel des Aufgabentyps aus der vorgegebenen Liste"),
   format: z.enum(FORMATS).describe("Antwortformat, passend zum Aufgabentyp"),
@@ -31,6 +36,26 @@ const TaskSchema = z.object({
     .nullable()
     .describe("Nur bei fix: jeder eingebaute Fehler einzeln"),
   answer_lines: z.number().int().nullable().describe("Nur bei free: Zeilen für die Antwort (1 = ein Wort oder kurzer Satz, 3–4 = mehrere Sätze, 8 und mehr = längerer Text)"),
+  math_start: z.string().nullable().describe("Nur bei rechenweg: die Gleichung oder der Term, mit dem der Schüler beginnt (z. B. 3x + 7 = 22 oder 3/4 + 1/6); null, wenn der Schüler aus einem Text rechnet"),
+  variable: z.string().nullable().describe("Nur bei rechenweg mit Gleichung: die Unbekannte (meist x), auch wenn der Schüler die Gleichung selbst aus dem Text aufstellt"),
+  result_unit: z.string().nullable().describe("Nur bei rechenweg: Einheit, die das Ergebnis braucht (€, cm², %, kg …), sonst null"),
+  result_form: z.enum(FORM_KEYS).nullable().describe(`Nur bei rechenweg: wie das Ergebnis geschrieben sein muss: ${Object.entries(RESULT_FORMS).map(([k, v]) => `${k} = ${v}`).join(", ")}`),
+  round_to: z.number().int().nullable().describe("Nur wenn gerundet werden soll: Anzahl der Nachkommastellen"),
+  parts: z
+    .array(
+      z.object({
+        label: z.string().describe("a), b), c) …"),
+        prompt: z.string().describe("die Teilfrage"),
+        kind: z.enum(["zahl", "text"]).describe("zahl = Ergebnis mit Rechenweg, text = Antwort in Worten (Erklärung, Begründung, Antwortsatz)"),
+        answers: z.array(z.string()).nullable().describe("bei zahl: das richtige Ergebnis mit Einheit, z. B. 72 €"),
+        unit: z.string().nullable().describe("bei zahl: die Einheit des Ergebnisses oder null"),
+        follow: z.string().nullable().describe("bei zahl, wenn das Ergebnis aus früheren Teilfragen folgt: der Rechenausdruck mit deren Buchstaben, z. B. 480 - a (für Folgefehler); sonst null"),
+        sample_answer: z.string().nullable().describe("bei text: Musterantwort"),
+        solution: z.string().describe("Lösungsweg dieser Teilfrage"),
+      }),
+    )
+    .nullable()
+    .describe("Nur bei sachaufgabe: 2–4 zusammenhängende Teilfragen"),
   criteria: z.array(z.string()).describe("2–4 Bewertungskriterien: woran die Lehrkraft eine richtige Antwort erkennt (bei free der Erwartungshorizont in Stichpunkten)"),
   solution: z.string().describe("Vollständiger Lösungsweg Schritt für Schritt, schülergerecht"),
   solution_steps: z.array(z.string()).describe("Derselbe Lösungsweg als 2–6 einzelne Schritte"),
@@ -69,7 +94,7 @@ Die Aufgaben werden automatisch korrigiert, daher müssen Lösungen eindeutig un
 Schreib auf Deutsch (bei Englisch-Übungen sind Aufgaben und Texte auf Englisch, Erklärungen und Hilfen dürfen Deutsch sein).
 Verwende österreichische Begriffe (Klasse, Hausübung, Schularbeit, Beistrich, Jänner).
 Prüfe jede Lösung selbst nach, bevor du sie ausgibst. Bei Brüchen sind Ergebnisse vollständig gekürzt.
-Schreib Brüche als a/b ohne Leerzeichen (z. B. 3/4, -5/8, x/2, (x+1)/2), kein LaTeX. Die App zeigt sie mit Bruchstrich an.
+Schreib Brüche als a/b ohne Leerzeichen (z. B. 3/4, -5/8, x/2, (x+1)/2), Potenzen als x^2, Wurzeln als sqrt(2), Malpunkt als ·, kein LaTeX. Die App zeigt sie richtig gesetzt an.
 Lösungswege sind kurz, Schritt für Schritt und so formuliert, dass ein Kind der angegebenen Klasse und Schulform sie versteht.
 Die typischen Fehler beschreiben echte Denkfehler, die Schülerinnen und Schüler bei diesem Thema machen.
 Halte das verlangte Format jeder Aufgabe genau ein: ein Lückentext ist ein Text mit Lücken zum Selbst-Eintragen, keine Auswahlaufgabe; eine Korrekturaufgabe ist ein Text mit Fehlern, den der Schüler selbst verbessert.
@@ -84,6 +109,8 @@ const FORMAT_RULES = `Formate:
 - free: sample_answer (Musterlösung bzw. Erwartungshorizont) + criteria + answer_lines; offene Frage, auf die es verschieden formulierte richtige Antworten gibt
 - reading: passage + options + correct_option (oder sample_answer für offene Fragen)
 - order: steps (richtige Reihenfolge); prompt sagt, was geordnet wird
+- rechenweg: prompt sagt, was zu tun ist und dass der Rechenweg Zeile für Zeile aufgeschrieben wird; math_start (Gleichung oder Term) oder bei Textaufgaben null (dann bei Gleichungen variable); accepted_answers = Endergebnis (Zahl, Bruch, ggf. mit Einheit, z. B. 5, 11/12, 72 €; mehrere Lösungen mit ; getrennt); result_unit, result_form; solution_steps = der Lösungsweg als reine Rechenzeilen ohne Wörter (z. B. "3x = 15", "x = 5"), jede Zeile mathematisch richtig – die App prüft jede Zeile
+- sachaufgabe: prompt = die Sachsituation (ohne Fragen); parts = 2–4 zusammenhängende Teilfragen a), b), c), mindestens eine mit kind zahl; spätere Teilfragen bauen auf früheren auf (follow); eine Teilfrage darf eine Erklärung in Worten verlangen (kind text)
 Jede Aufgabe hat criteria: woran man eine richtige Lösung erkennt.`;
 
 /** The prompt for the model; separate so it can be checked without calling the API. */
@@ -186,6 +213,49 @@ export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" |
         const numeric = format === "calc" || t.numeric;
         return { ...base, type: numeric ? "calc" : "grammar", data: {}, answer: { accepted, mode: numeric ? "value" : "text" } };
       }
+      case "rechenweg": {
+        const accepted = clean(t.accepted_answers);
+        if (!accepted.length) return null;
+        const start = (t.math_start ?? "").trim();
+        const variable = (t.variable ?? "").trim().slice(0, 1) || undefined;
+        const d: TaskDraft = {
+          ...base,
+          type: "rechenweg",
+          data: { ...(start ? { start } : {}), ...(variable && (!start || start.includes("=")) ? { variable } : {}) },
+          answer: { accepted, unit: t.result_unit?.trim() || null, form: isResultForm(t.result_form) ? t.result_form : null, round: t.round_to ?? null, needWay: true },
+        };
+        // the AI's own working must pass the app's check, else the task is not used
+        return checkOwnSolution(d) ? null : d;
+      }
+      case "sachaufgabe": {
+        const raw = (t.parts ?? []).filter((p) => p.prompt.trim());
+        if (raw.length < 2 || !raw.some((p) => p.kind === "zahl")) return null;
+        const views: PartView[] = [];
+        const sols: PartSolution[] = [];
+        const values: Record<string, number> = {};
+        for (const [i, p] of raw.entries()) {
+          const label = p.label.trim() || `${String.fromCharCode(97 + i)})`;
+          const letter = (label.match(/[a-z]/i)?.[0] ?? String.fromCharCode(97 + i)).toLowerCase();
+          if (p.kind === "text") {
+            const sample = (p.sample_answer ?? p.solution ?? "").trim();
+            if (!sample) return null;
+            views.push({ label, prompt: p.prompt.trim(), kind: "text", lines: 3 });
+            sols.push({ sample, solution: p.solution.trim() });
+            continue;
+          }
+          const answers = clean(p.answers);
+          if (!answers.length || checkValue(answers[0], { accepted: answers, unit: p.unit }).status !== "richtig") return null;
+          const unit = p.unit?.trim() || null;
+          // Folgefehler only with a formula that gives the right result from the right earlier results
+          const f = p.follow?.trim() ? parseExpr(p.follow, { vars: Object.keys(values) }) : null;
+          const ok = f && Number.isFinite(evaluate(f, values)) && checkValue(String(evaluate(f, values)).replace(".", ","), { accepted: answers, round: 2 }).status !== "falsch";
+          views.push({ label, prompt: p.prompt.trim(), kind: "zahl" });
+          sols.push({ accepted: answers, unit, follow: ok ? p.follow!.trim() : null, solution: p.solution.trim() });
+          const v = parseExpr(answers[0].replace(/[^\d.,/+\-−·*:() %]/g, "").replace(/%/, "").trim());
+          if (v) values[letter] = evaluate(v);
+        }
+        return { ...base, type: "sachaufgabe", data: { parts: views }, answer: { parts: sols }, errorMap: [] };
+      }
       case "free": {
         // a choice question without its options is no open question
         if (options && t.format !== "free") return null;
@@ -201,13 +271,14 @@ export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" |
     // the format the AI named first, then the others of the type; nothing outside the type
     const order = [...wanted.formats].sort((a, b) => Number(b === t.format) - Number(a === t.format));
     for (const f of order) {
-      const d = as(f);
+      const d = as(f as (typeof FORMATS)[number]);
       if (d && wanted.formats.includes(d.type)) return withCriteria(d);
     }
     return null;
   }
   // without a plan: the named format if it is complete, else what the fields allow
   for (const f of [t.format, "order", "mc", "cloze", "fix", "calc", "free"] as const) {
+    if ((f === "rechenweg" || f === "sachaufgabe") && t.format !== f) continue;
     if (f === "order" && t.format !== "order") continue;
     const d = as(f);
     if (d) return withCriteria(d);

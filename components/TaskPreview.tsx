@@ -1,7 +1,11 @@
 import { categoryLabel, TASK_TYPES } from "@/lib/curriculum";
 import type { Task } from "@/lib/repo";
+import { mathAnswerText } from "@/lib/math-task";
 import { GAP, hintLabel, type TaskDraft } from "@/lib/tasks";
 import { MathText } from "./MathText";
+
+const partName = (label: string, i: number) => label || `${String.fromCharCode(97 + i)})`;
+
 
 function withGaps(text: string) {
   const parts = text.split(GAP);
@@ -13,7 +17,8 @@ function withGaps(text: string) {
   ));
 }
 
-export function answerText(t: Pick<TaskDraft, "data" | "answer">) {
+export function answerText(t: Pick<TaskDraft, "type" | "data" | "answer">) {
+  if (t.type === "rechenweg" || t.type === "sachaufgabe") return mathAnswerText(t);
   if (t.data.options && typeof t.answer.correct === "number") return `${String.fromCharCode(97 + t.answer.correct)}) ${t.data.options[t.answer.correct]}`;
   if (t.answer.steps) return t.answer.steps.map((s, i) => `${i + 1}. ${s}`).join("  ");
   if (t.answer.blanks) return t.answer.blanks.map((b) => b[0]).join(" · ");
@@ -54,8 +59,42 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
           ))}
         </ul>
       )}
+      {task.type === "rechenweg" && task.data.start && (
+        <p className="mt-2 text-[18px] font-semibold">
+          <MathText text={task.data.start} />
+        </p>
+      )}
+      {task.type === "sachaufgabe" && (
+        <ol className="mt-2 max-w-[70ch] space-y-1.5">
+          {(task.data.parts ?? []).map((p, i) => {
+            const sol = task.answer.parts?.[i];
+            return (
+              <li key={i} className="flex gap-2">
+                <span className="w-6 shrink-0 font-semibold text-ink-2">{partName(p.label, i)}</span>
+                <span className="min-w-0">
+                  <MathText text={p.prompt} />
+                  {showSolution && sol && (
+                    <span className="mt-0.5 block text-[13px] text-green">
+                      {p.kind === "text" ? (
+                        <>Musterantwort: {sol.sample || sol.criteria?.join(" · ") || "–"}</>
+                      ) : (
+                        <>
+                          <MathText text={(sol.accepted ?? []).join(" · ") || "–"} />
+                          {sol.follow && <span className="text-ink-3"> · Folgefehler: <MathText text={sol.follow} /></span>}
+                          {sol.solution && <span className="text-ink-2"> · <MathText text={sol.solution} /></span>}
+                        </>
+                      )}
+                    </span>
+                  )}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      )}
       {task.type === "fix" && task.data.faulty && <p className="ruled mt-2 max-w-[70ch] rounded-lg border border-line bg-paper px-4 py-1 text-[15px] whitespace-pre-line">{task.data.faulty}</p>}
-      {!task.data.options && !task.data.steps && !task.answer.blanks && task.type !== "fix" && !showSolution && (
+      {(task.type === "rechenweg" || task.type === "sachaufgabe") && !showSolution && <div className="squared mt-3 h-24 max-w-[520px] rounded-md border border-line" aria-hidden />}
+      {!task.data.options && !task.data.steps && !task.answer.blanks && task.type !== "fix" && task.type !== "rechenweg" && task.type !== "sachaufgabe" && !showSolution && (
         <div className="mt-3 grid max-w-[520px] gap-3" aria-hidden>
           {Array.from({ length: task.type === "free" ? Math.min(4, Math.max(1, task.data.lines ?? 2)) : 1 }, (_, i) => (
             <div key={i} className={`h-6 border-b border-dashed border-line-strong ${task.type === "free" && task.data.lines !== 1 ? "" : "max-w-[360px]"}`} />
@@ -110,6 +149,7 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
               </ul>
             </div>
           )}
+          {task.type === "rechenweg" && (task.answer.accepted?.length ?? 0) > 1 && <p className="text-[13px] text-ink-2">Auch richtig: {task.answer.accepted!.slice(1).join(" · ")}</p>}
           {task.solution && <p className="mt-1 whitespace-pre-line text-ink-2"><MathText text={task.solution} /></p>}
           {task.hints.length > 0 && (
             <ul className="mt-2 space-y-0.5 text-[13px] text-ink-2">
