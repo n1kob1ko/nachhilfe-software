@@ -9,7 +9,9 @@ Eine zentrale Funktion: `masteryAt()` in `lib/mastery.ts`. Keine KI.
    - je geöffnete Hilfe −0,15 (richtig bleibt mindestens 0,35)
    - am Ende falsch oder Lösung angesehen: 0
    - vom Lehrer „teilweise richtig“ bewertet (freie Antwort, Korrektur): 0,5, je Hilfe −0,15, mindestens 0,25
-   - freie Antworten zählen erst, wenn der Lehrer sie bewertet hat
+   - freie Antworten zählen erst, wenn der Lehrer sie bewertet hat; ebenso Rechenwege und Sachaufgaben,
+     die die App nicht sicher prüfen kann ([rechenwege.md](rechenwege.md))
+   - automatisch „teilweise richtig“ (Rechenweg mit fehlender Einheit, Sachaufgabe mit einem Teil richtig): 0,5 wie oben
    - eine dokumentierte Einheit zählt mit dem Verständnis 1–5 (→ 0…1), ein Test mit Punkten oder Note
 2. **Gewicht**
    - Aufgabe nach Schwierigkeit 1–5: 0,6 / 0,8 / 1,0 / 1,25 / 1,5

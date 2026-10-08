@@ -4,10 +4,9 @@ import { ERROR_TYPES, type ErrorType } from "../error-types";
 import type { TaskDraft } from "../tasks";
 import { GAP, gapCount } from "../tasks";
 import { expectedFixes } from "../fix-text";
-import { isResultForm, RESULT_FORMS, type PartSolution, type PartView } from "../math-check";
+import { checkValue, isResultForm, parseResult, RESULT_FORMS, type PartSolution, type PartView } from "../math-check";
 import { parseExpr, evaluate } from "../math-expr";
 import { checkOwnSolution } from "../math-task";
-import { checkValue } from "../math-check";
 import { runAI, unwrap, type AIMeta, type Part } from "./router";
 
 // ---------- exercise generation ----------
@@ -251,8 +250,9 @@ export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" |
           const ok = f && Number.isFinite(evaluate(f, values)) && checkValue(String(evaluate(f, values)).replace(".", ","), { accepted: answers, round: 2 }).status !== "falsch";
           views.push({ label, prompt: p.prompt.trim(), kind: "zahl" });
           sols.push({ accepted: answers, unit, follow: ok ? p.follow!.trim() : null, solution: p.solution.trim() });
-          const v = parseExpr(answers[0].replace(/[^\d.,/+\-−·*:() %]/g, "").replace(/%/, "").trim());
-          if (v) values[letter] = evaluate(v);
+          // the value later parts build on, read the same way as when the student's answer is checked
+          const read = parseResult(answers[0]);
+          if (read?.length === 1) values[letter] = read[0].percent && unit !== "%" ? read[0].value / 100 : read[0].value;
         }
         return { ...base, type: "sachaufgabe", data: { parts: views }, answer: { parts: sols }, errorMap: [] };
       }
@@ -268,6 +268,8 @@ export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" |
   };
 
   if (wanted) {
+    // a maths task with working or parts is only that: as a bare calculation it would lose its equation or parts
+    if ((t.format === "rechenweg" || t.format === "sachaufgabe") && !wanted.formats.includes(t.format)) return null;
     // the format the AI named first, then the others of the type; nothing outside the type
     const order = [...wanted.formats].sort((a, b) => Number(b === t.format) - Number(a === t.format));
     for (const f of order) {

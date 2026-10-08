@@ -122,6 +122,11 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
               <span className="num font-semibold text-ink-3">{i + 1}.</span>
               <div className="min-w-0">
                 <p className="max-w-[70ch] whitespace-pre-line"><MathText text={t.prompt.split(GAP).join("____")} /></p>
+                {t.type === "rechenweg" && t.data.start && (
+                  <p className="mt-1 text-[17px] font-semibold">
+                    <MathText text={t.data.start} />
+                  </p>
+                )}
                 {tries.length > 0 && (
                   <ul className="mt-2 space-y-1 text-[14px]">
                     {tries.map((a) => (
