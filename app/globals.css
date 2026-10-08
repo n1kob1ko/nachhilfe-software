@@ -558,3 +558,87 @@ textarea.input {
 .frac-den {
   padding: 0.06em 0.18em 0;
 }
+
+/* Textarbeit (components/text/TextEditor.tsx): a calm sheet to write on, a light toolbar above it */
+.tx-shell {
+  max-width: 860px;
+}
+.tx-focus {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  overflow-y: auto;
+  background: var(--paper);
+  padding: 12px max(16px, calc((100vw - 860px) / 2)) 32px;
+}
+.tx-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-card);
+}
+.tx-sep {
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  background: var(--line-strong);
+}
+.tx-paper {
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+.tx-editor {
+  position: relative;
+  min-height: 52vh;
+  padding: 28px clamp(18px, 5vw, 56px) 40px;
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--ink);
+  word-spacing: 0.05em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  outline: none;
+  caret-color: var(--accent);
+}
+.tx-focus .tx-editor {
+  min-height: calc(100vh - 140px);
+}
+.tx-large {
+  font-size: 19px;
+}
+.tx-editor[data-empty="true"]::before {
+  content: "Hier schreiben …";
+  position: absolute;
+  color: var(--ink-3);
+  pointer-events: none;
+}
+.tx-editor p {
+  margin: 0 0 0.85em;
+}
+.tx-editor h2 {
+  margin: 1.1em 0 0.45em;
+  font-size: 1.3em;
+  line-height: 1.3;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.tx-editor > :first-child {
+  margin-top: 0;
+}
+.tx-count {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink-2);
+}

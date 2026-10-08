@@ -1,4 +1,4 @@
-import { NotebookPen, Presentation } from "lucide-react";
+import { NotebookPen, PenLine, Presentation } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import { DeviceLive } from "@/components/device/DeviceLive";
 import { PairForm } from "@/components/device/PairForm";
@@ -6,9 +6,11 @@ import { Solver } from "@/components/Solver";
 import { WhiteboardLoader } from "@/components/whiteboard/WhiteboardLoader";
 import { deviceContext } from "@/lib/device-context";
 import { touchDevice } from "@/lib/devices";
-import { markDelivered, parseView, pushLive, unitAssignments } from "@/lib/live";
+import { markDelivered, parseView, pushLive, unitAssignments, unitText } from "@/lib/live";
 import { MAX_TRIES } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
+import { TextEditor } from "@/components/text/TextEditor";
+import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
 
 /**
@@ -46,8 +48,29 @@ export default async function DevicePage() {
   for (const a of current ? [current] : view.kind === "start" ? list : []) arrived = markDelivered(a.id) || arrived;
   if (arrived) pushLive(unit.id);
 
+  // a Textarbeit of this student: written here, saved continuously
+  const text = view.kind === "text" ? unitText(unit, view.textId) : null;
+
   let content: React.ReactNode;
-  if (view.kind === "tafel") {
+  if (text) {
+    content = (
+      <>
+        <a href="/geraet/ansicht?zu=start" className="mb-3 inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2">
+          ← Alle Aufgaben
+        </a>
+        <TextEditor
+          key={text.id}
+          textId={text.id}
+          saveUrl={`/geraet/text/${text.id}`}
+          initial={{ body: textDoc(text), version: text.version, updatedAt: text.updated_at }}
+          title={text.title}
+          prompt={text.prompt}
+          meta={[text.subject, text.topic].filter(Boolean).join(" · ")}
+          large
+        />
+      </>
+    );
+  } else if (view.kind === "tafel") {
     ensureBoardForUnit(unit.id);
     content = <WhiteboardLoader role="schueler" endpoint="/geraet/tafel" query={`?einheit=${unit.id}`} studentName={student.name} backHref="/geraet/ansicht?zu=start" />;
   } else if (current) {
@@ -65,8 +88,25 @@ export default async function DevicePage() {
     );
   } else {
     const open = list.filter((a) => !a.completed_at);
-    content = open.length ? (
+    const texts = textsForUnit(unit.id).filter((t) => t.status !== "fertig");
+    content = open.length || texts.length ? (
       <ul className="space-y-3">
+        {texts.map((t) => (
+          <li key={`t${t.id}`}>
+            <a href={`/geraet/ansicht?zu=text:${t.id}`} className="panel flex min-h-[72px] items-center gap-4 px-5 py-4 transition-colors hover:border-accent">
+              <PenLine size={22} className="shrink-0 text-accent" aria-hidden />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[17px] font-semibold">{t.title}</span>
+                <span className="num block text-[14px] text-ink-2">
+                  {[t.topic, wordsLabel(t.words)].filter(Boolean).join(" · ")}
+                </span>
+              </span>
+              <span className="btn btn-primary">
+                {t.words > 0 ? "Weiterschreiben" : "Schreiben"} <ChevronRight size={16} aria-hidden />
+              </span>
+            </a>
+          </li>
+        ))}
         {open.map((x) => (
           <li key={x.id}>
             <a href={`/geraet/ansicht?zu=aufgabe:${x.id}`} className="panel flex min-h-[72px] items-center gap-4 px-5 py-4 transition-colors hover:border-accent">

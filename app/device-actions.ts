@@ -10,7 +10,7 @@ import { clientIp } from "@/lib/client-ip";
 import { deviceContext } from "@/lib/device-context";
 import { canManageDevice, createPairCode, getDevice, pairDevice, renameDevice, revokeDevice, setDeviceCookie } from "@/lib/devices";
 import { noteActivity } from "@/lib/learning";
-import { nextTaskAfter, notifyTablet, parseView, pushLive, pushTabletPresence, showOnTablet, unitAssignment, unitAssignments, type Delivery } from "@/lib/live";
+import { nextTaskAfter, notifyTablet, parseView, pushLive, pushTabletPresence, showOnTablet, unitAssignment, unitAssignments, unitText, type Delivery } from "@/lib/live";
 import * as repo from "@/lib/repo";
 import { submitAnswer, type SubmitInput } from "@/lib/service";
 import { activeUnitForTeacher, canManageUnit, getUnit } from "@/lib/units";
@@ -132,6 +132,7 @@ export async function tabletViewAction(unitId: number, view: string) {
   const { unit } = await managedRunningUnit(unitId);
   const v = parseView(view);
   if (v.kind === "aufgabe" && !unitAssignment(unit.id, v.assignmentId)) return;
+  if (v.kind === "text" && !unitText(unit, v.textId)) return;
   showOnTablet(unit, v);
 }
 

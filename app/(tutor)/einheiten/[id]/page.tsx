@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BookOpenCheck, CheckCircle2, ChartNoAxesColumn, ExternalLink, Plus, Presentation, Square } from "lucide-react";
+import { BookOpenCheck, CheckCircle2, ChartNoAxesColumn, ExternalLink, PenLine, Plus, Presentation, Square } from "lucide-react";
 import { endUnitAction } from "@/app/session-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { BoardThumbs } from "@/components/BoardThumbs";
@@ -11,6 +11,8 @@ import { CancelUnit } from "@/components/UnitControl";
 import { UnitReportView } from "@/components/UnitReportView";
 import { UnitSummary } from "@/components/UnitSummary";
 import { UnitBriefView } from "@/components/UnitBriefView";
+import { RunningUnitTexts, UnitDocuments } from "@/components/text/UnitTexts";
+import { getText } from "@/lib/texts";
 import { FamilyNote } from "@/components/FamilyNote";
 import { Info } from "@/components/Info";
 import { aiEnabled } from "@/lib/ai";
@@ -35,7 +37,7 @@ const first = (n: string) => n.split(" ")[0];
  * just ended → closing screen (recorded automatically + five fields to complete);
  * documented → the documentation, editable on request.
  */
-export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string }> }) {
+export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -47,11 +49,20 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   const running = unit.status === "gestartet";
 
   const sent = sp.gesendet ? repo.getWorksheet(Number(sp.gesendet)) : null;
+  const startedText = sp.text ? getText(Number(sp.text)) : null;
   const notices = (
     <>
       {sent && running && (
         <div role="status" className="mb-6 flex items-center gap-2 rounded-2xl bg-green-wash px-4 py-3 text-[15px] font-medium text-green">
           <CheckCircle2 size={18} aria-hidden /> „{sent.title}“ ist an {first(student.name)} gesendet. Die Ergebnisse erscheinen unten, sobald {first(student.name)} arbeitet.
+        </div>
+      )}
+      {startedText && running && startedText.student_id === student.id && (
+        <div role="status" className="mb-6 flex flex-wrap items-center gap-2 rounded-2xl bg-green-wash px-4 py-3 text-[15px] font-medium text-green">
+          <CheckCircle2 size={18} aria-hidden /> „{startedText.title}“ ist am Tablet von {first(student.name)} geöffnet.
+          <Link href={`/texte/${startedText.id}`} className="ml-auto font-semibold underline underline-offset-2">
+            Mitlesen
+          </Link>
         </div>
       )}
       {sp.bereits && running && (
@@ -174,6 +185,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
               </details>
             )}
           </section>
+          <UnitDocuments unitId={unit.id} />
           <section>
             <SectionTitle>Von dir ergänzen</SectionTitle>
             <UnitDocForm lesson={lesson} student={student} />
@@ -235,6 +247,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
             )}
           </section>
         )}
+        <UnitDocuments unitId={unit.id} />
         <section>
           <SectionTitle>Whiteboard</SectionTitle>
           <BoardThumbs unitId={unit.id} max={8} alwaysLink />
@@ -321,9 +334,14 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-[20px] font-semibold">Übungen für {name}</h2>
           {mayManage && (
-            <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-primary btn-lg">
-              <Plus size={18} aria-hidden /> Neue Übung erstellen
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link href={`/einheiten/${unit.id}/text`} className="btn btn-secondary btn-lg">
+                <PenLine size={18} aria-hidden /> Textarbeit starten
+              </Link>
+              <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-primary btn-lg">
+                <Plus size={18} aria-hidden /> Neue Übung erstellen
+              </Link>
+            </div>
           )}
         </div>
         {rows.length === 0 ? (
@@ -351,6 +369,7 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
           </ul>
         )}
       </section>
+      <RunningUnitTexts unitId={unit.id} studentId={student.id} deviceView={unit.device_view} paired={paired && mayManage} name={name} />
       <Reveal label={`Ohne Tablet: Link für das Gerät von ${name}`}>
         <p className="mb-2 text-[14px] text-ink-2">Nur nötig, wenn {name} nicht am Schüler-Tablet arbeitet. Auf dem Link sieht {name} die gesendeten Übungen.</p>
         <div className="flex max-w-[620px] flex-wrap items-center gap-2">

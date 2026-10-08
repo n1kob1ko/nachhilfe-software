@@ -450,6 +450,47 @@ CREATE TABLE IF NOT EXISTS ai_insights (
   call_id INTEGER REFERENCES ai_calls(id) ON DELETE SET NULL,
   created_at TEXT NOT NULL
 );
+-- Textarbeiten: longer texts a student writes (lib/texts.ts). body = JSON blocks (lib/text-doc.ts), never HTML.
+CREATE TABLE IF NOT EXISTS texts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  unit_id INTEGER REFERENCES units(id) ON DELETE SET NULL,
+  subject TEXT NOT NULL DEFAULT '',
+  topic TEXT NOT NULL DEFAULT '',
+  title TEXT NOT NULL,
+  prompt TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL DEFAULT '[]',
+  words INTEGER NOT NULL DEFAULT 0,
+  chars INTEGER NOT NULL DEFAULT 0,
+  version INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'offen',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  completed_at TEXT
+);
+-- Every unit in which a text was written or continued, with the word count before and after.
+CREATE TABLE IF NOT EXISTS text_units (
+  text_id INTEGER NOT NULL REFERENCES texts(id) ON DELETE CASCADE,
+  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  words_before INTEGER NOT NULL DEFAULT 0,
+  words_after INTEGER NOT NULL DEFAULT 0,
+  first_at TEXT NOT NULL,
+  last_at TEXT NOT NULL,
+  PRIMARY KEY (text_id, unit_id)
+);
+-- Earlier versions of a text (at most every few minutes, and before a large part was deleted).
+CREATE TABLE IF NOT EXISTS text_revisions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  text_id INTEGER NOT NULL REFERENCES texts(id) ON DELETE CASCADE,
+  version INTEGER NOT NULL,
+  body TEXT NOT NULL,
+  words INTEGER NOT NULL,
+  saved_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_texts_student ON texts(student_id, updated_at);
+CREATE INDEX IF NOT EXISTS idx_text_units_unit ON text_units(unit_id);
+CREATE INDEX IF NOT EXISTS idx_text_revisions ON text_revisions(text_id, id);
 CREATE INDEX IF NOT EXISTS idx_ai_calls_created ON ai_calls(created_at);
 CREATE INDEX IF NOT EXISTS idx_ai_insights_unit ON ai_insights(unit_id, kind, id);
 CREATE INDEX IF NOT EXISTS idx_current_material ON current_material(student_id, ended_at);

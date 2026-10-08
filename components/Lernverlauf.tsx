@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, Plus } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, PenLine, Plus, Printer } from "lucide-react";
 import { LessonCard, rateTone } from "@/components/LessonCard";
 import { Info } from "@/components/Info";
 import { BoardThumbs } from "@/components/BoardThumbs";
@@ -9,6 +9,7 @@ import { pct } from "@/lib/analysis";
 import { progressOverview, readReport } from "@/lib/learning";
 import * as repo from "@/lib/repo";
 import { analyzeStudent } from "@/lib/service";
+import { textsForStudent, textsForUnit, wordsLabel } from "@/lib/texts";
 import { listUnits, unitDurationMs, type UnitView } from "@/lib/units";
 
 const FILTERS = [
@@ -61,6 +62,8 @@ export function Lernverlauf({ student, filter }: { student: repo.Student; filter
           </div>
         </section>
       )}
+
+      <StudentTexts studentId={student.id} />
 
       <section>
         <SectionTitle
@@ -149,6 +152,7 @@ function UnitEntry({ unit, lesson }: { unit: UnitView; lesson: repo.Lesson | nul
     return (
       <article className="panel px-5 py-3.5">
         {head}
+        <UnitTextLinks unitId={unit.id} />
         <BoardThumbs unitId={unit.id} size="sm" />
       </article>
     );
@@ -217,6 +221,7 @@ function UnitEntry({ unit, lesson }: { unit: UnitView; lesson: repo.Lesson | nul
           {keyDifficulties.length > 3 && <span className="text-[12px] text-ink-3">+{keyDifficulties.length - 3}</span>}
         </div>
       )}
+      <UnitTextLinks unitId={unit.id} />
       {lesson.next_steps && (
         <p className="mt-1.5 truncate text-[14px]" title={lesson.next_steps}>
           <span className="text-ink-3">Nächstes:</span> {lesson.next_steps}
@@ -339,5 +344,61 @@ function Direction({ delta }: { delta: number | null }) {
       <span className="num">{d > 0 ? `+${d}` : d === 0 ? "±0" : d}</span>
       <span className="sr-only">{word}</span>
     </span>
+  );
+}
+
+/** Texts written or continued in a unit, as links. */
+function UnitTextLinks({ unitId }: { unitId: number }) {
+  const texts = textsForUnit(unitId);
+  if (!texts.length) return null;
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+      {texts.map((t) => (
+        <Link key={t.id} href={`/texte/${t.id}`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-accent-wash px-3.5 text-[13px] font-semibold text-accent hover:underline">
+          <PenLine size={13} aria-hidden /> {t.title} · <span className="num">{wordsLabel(t.words_after)}</span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+/** All Textarbeiten of the student: unfinished first, then the newest. */
+function StudentTexts({ studentId }: { studentId: number }) {
+  const texts = textsForStudent(studentId).sort((a, b) => (a.status === b.status ? 0 : a.status === "offen" ? -1 : 1));
+  if (!texts.length) return null;
+  const VISIBLE = 5;
+  const row = (t: (typeof texts)[number]) => (
+    <li key={t.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+      <PenLine size={18} className="shrink-0 text-accent" aria-hidden />
+      <span className="min-w-0 flex-1">
+        <span className="block font-semibold">{t.title}</span>
+        <span className="num block text-[14px] text-ink-2">
+          {[t.subject, t.topic, wordsLabel(t.words), `zuletzt ${formatDate(t.updated_at, { day: "numeric", month: "short" })}`].filter(Boolean).join(" · ")}
+        </span>
+      </span>
+      {t.status === "fertig" ? <Pill tone="green">fertig</Pill> : <Pill tone="amber">in Arbeit</Pill>}
+      <Link href={`/texte/${t.id}`} className="btn btn-secondary btn-sm">
+        Öffnen
+      </Link>
+      <Link href={`/arbeitsblatt/text/${t.id}`} target="_blank" className="btn btn-ghost btn-sm" aria-label={`${t.title}: PDF / Drucken`}>
+        <Printer size={14} aria-hidden /> PDF
+      </Link>
+    </li>
+  );
+  return (
+    <section>
+      <SectionTitle>
+        <span>
+          Texte
+          <Info label="Info zu Texten">Textarbeiten aus den Einheiten. Unfertige Texte stehen oben und können in der nächsten Einheit am Tablet weitergeschrieben werden.</Info>
+        </span>
+      </SectionTitle>
+      <ul className="panel divide-y divide-line">{texts.slice(0, VISIBLE).map(row)}</ul>
+      {texts.length > VISIBLE && (
+        <Reveal label={`Weitere Texte (${texts.length - VISIBLE})`} className="mt-3">
+          <ul className="panel divide-y divide-line">{texts.slice(VISIBLE).map(row)}</ul>
+        </Reveal>
+      )}
+    </section>
   );
 }
