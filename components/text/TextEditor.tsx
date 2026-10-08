@@ -6,6 +6,7 @@ import {
   Bold,
   CheckCircle2,
   CloudOff,
+  Download,
   Heading,
   Italic,
   Loader2,
@@ -25,6 +26,7 @@ import {
   type TextDoc,
 } from "@/lib/text-doc";
 import { readDom } from "./read-dom";
+import { saveTextFile } from "./save-file";
 
 export type TextState = { body: TextDoc; version: number; updatedAt: string };
 
@@ -54,7 +56,8 @@ type Status =
   | "abgemeldet"
   | "gesperrt"
   | "fehler";
-type Backup = { base: number; key: string; body: TextDoc; at: number };
+/** title too, so a copy can still be saved as a file after the page that knew the title is gone */
+type Backup = { base: number; key: string; body: TextDoc; at: number; title?: string };
 
 const SAVE_AFTER_MS = 1200;
 const SAVE_AT_LEAST_MS = 8000;
@@ -276,6 +279,7 @@ export function TextEditor({
       key,
       body: doc,
       at: Date.now(),
+      title,
     });
     const body = JSON.stringify({ version: version.current, body: doc });
     if (body.length > KEEPALIVE_MAX) return;
@@ -289,7 +293,7 @@ export function TextEditor({
     } catch {
       // the copy on the device is enough
     }
-  }, [read, saveUrl, store]);
+  }, [read, saveUrl, store, title]);
 
   const changed = useCallback(() => {
     const doc = read();
@@ -312,6 +316,7 @@ export function TextEditor({
           key,
           body: doc,
           at: Date.now(),
+          title,
         }),
       400,
     );
@@ -327,7 +332,7 @@ export function TextEditor({
       () => void save(),
       waited >= SAVE_AT_LEAST_MS ? 0 : SAVE_AFTER_MS,
     );
-  }, [read, save, store]);
+  }, [read, save, store, title]);
 
   // ---------- start: content, a copy left on this device, browser settings ----------
 
@@ -382,6 +387,14 @@ export function TextEditor({
     const online = () => {
       if (docKey(read()) !== savedKey.current) void save();
     };
+    // the connection is gone: say at once that the latest changes are only on this device
+    const offline = () => {
+      const doc = read();
+      const key = docKey(doc);
+      if (key === savedKey.current) return;
+      writeBackup(store, { base: version.current, key, body: doc, at: Date.now(), title });
+      if (statusRef.current === "geaendert" || statusRef.current === "speichert") setStatus("offline");
+    };
     const hidden = () => {
       if (document.visibilityState === "hidden") flush();
     };
@@ -397,17 +410,19 @@ export function TextEditor({
     const now = () => void save();
     window.addEventListener("lernheft-save-now", now);
     window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
     window.addEventListener("pagehide", flush);
     window.addEventListener("beforeunload", leave);
     document.addEventListener("visibilitychange", hidden);
     return () => {
       window.removeEventListener("lernheft-save-now", now);
       window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
       window.removeEventListener("pagehide", flush);
       window.removeEventListener("beforeunload", leave);
       document.removeEventListener("visibilitychange", hidden);
     };
-  }, [flush, read, save]);
+  }, [flush, read, save, store, title]);
 
   // leaving the text inside the app (tablet switches view, unit ends): send what is not saved yet
   useEffect(
@@ -566,7 +581,7 @@ export function TextEditor({
     },
     offline: {
       icon: <CloudOff size={16} aria-hidden />,
-      text: "Keine Verbindung",
+      text: "Nicht gespeichert · offline",
       tone: "text-red",
     },
     konflikt: {
@@ -590,6 +605,11 @@ export function TextEditor({
       tone: "text-red",
     },
   }[status];
+  const unsynced =
+    status === "offline" ||
+    status === "abgemeldet" ||
+    status === "gesperrt" ||
+    status === "fehler";
 
   return (
     <div
@@ -698,41 +718,52 @@ export function TextEditor({
         </div>
       </div>
 
-      {(status === "offline" ||
-        status === "abgemeldet" ||
-        status === "gesperrt" ||
-        status === "fehler") && (
+      {unsynced && (
         <div
           role="alert"
-          className="mt-3 rounded-2xl bg-amber-wash px-4 py-3 text-[14px]"
+          className="mt-3 rounded-2xl border-2 border-amber bg-amber-wash px-4 py-3 text-[14px]"
+          data-testid="unsynced"
         >
-          {status === "offline" && (
-            <>
-              <b>Keine Verbindung.</b> Weiterschreiben ist kein Problem: Der
-              Text ist auf diesem Gerät gesichert und wird gespeichert, sobald
-              die Verbindung wieder da ist.
-            </>
-          )}
-          {status === "abgemeldet" && (
-            <>
-              <b>Nicht gespeichert:</b> Die Anmeldung ist abgelaufen. Der Text
-              ist auf diesem Gerät gesichert. Bitte in einem neuen Tab anmelden,
-              dann hier „Speichern“ tippen.
-            </>
-          )}
-          {status === "gesperrt" && (
-            <>
-              <b>Nicht gespeichert:</b> Dieser Text kann auf diesem Gerät nicht
-              mehr gespeichert werden (die Einheit ist vorbei). Der Text ist auf
-              diesem Gerät gesichert.
-            </>
-          )}
-          {status === "fehler" && (
-            <>
-              <b>Nicht gespeichert:</b> Der Text ist zu lang oder enthält etwas
-              Unerwartetes. Er ist auf diesem Gerät gesichert.
-            </>
-          )}
+          <p className="flex items-start gap-2 text-[15px] font-semibold">
+            <CloudOff size={18} className="mt-0.5 shrink-0" aria-hidden />
+            <span>
+              Noch nicht gespeichert: Deine letzten Änderungen sind nur auf
+              diesem Gerät.
+            </span>
+          </p>
+          <p className="mt-1 text-ink-2">
+            {status === "offline" && (
+              <>
+                Keine Verbindung. Schreib ruhig weiter: Der Text wird
+                gespeichert, sobald die Verbindung wieder da ist.
+              </>
+            )}
+            {status === "abgemeldet" && (
+              <>
+                Die Anmeldung ist abgelaufen. Bitte in einem neuen Tab anmelden,
+                dann hier „Speichern“ tippen.
+              </>
+            )}
+            {status === "gesperrt" && (
+              <>
+                Dieser Text kann auf diesem Gerät nicht mehr gespeichert werden
+                (die Einheit ist vorbei).
+              </>
+            )}
+            {status === "fehler" && (
+              <>Der Text ist zu lang oder enthält etwas Unerwartetes.</>
+            )}{" "}
+            Zuletzt gespeichert: {clock(savedAt)}. Schließe das Fenster erst,
+            wenn hier „Gespeichert“ steht, oder sichere den Text vorher als
+            Datei.
+          </p>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm mt-2"
+            onClick={() => saveTextFile(title, read())}
+          >
+            <Download size={14} aria-hidden /> Als Datei sichern
+          </button>
         </div>
       )}
       {conflict && (
