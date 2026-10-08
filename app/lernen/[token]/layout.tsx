@@ -25,7 +25,7 @@ export default async function LearnLayout({ children, params }: { children: Reac
           </span>
         </div>
       </header>
-      <main className="mx-auto max-w-[860px] px-4 py-6 md:py-10">{children}</main>
+      <main className="mx-auto max-w-[860px] px-4 py-6 has-[.lesen-breit]:max-w-[1320px] md:py-10">{children}</main>
     </div>
   );
 }

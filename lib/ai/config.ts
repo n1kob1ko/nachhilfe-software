@@ -42,7 +42,8 @@ export type AIFunction =
   | "tiefenanalyse"
   | "notiz"
   | "material"
-  | "textkorrektur";
+  | "textkorrektur"
+  | "lesen";
 
 export type FunctionSpec = {
   label: string;
@@ -81,6 +82,8 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   material: { label: "Material erkennen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // only on the teacher's click, after consent; the same version of a text is never paid for twice
   textkorrektur: { label: "Textkorrektur", area: "TEXT", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  // Leseverständnis: one request for the reading text, one for the questions; only on the teacher's click
+  lesen: { label: "Leseverständnis erstellen", area: "EXERCISE", tier: "standard", maxTokens: 24_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
 };
 
 /** Which provider and model a function uses. model is "" when the provider has no default and none is set. */

@@ -182,7 +182,7 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
   return (
     <LaptopLive state="aktiv" view={unit.device_view}>
       {/* keyed by unit: nothing of another unit is ever kept on screen */}
-      <div key={unit.id} className="mx-auto max-w-[1240px] px-5 py-6 lg:px-8">
+      <div key={unit.id} className="mx-auto max-w-[1240px] px-5 py-6 has-[.lesen-breit]:max-w-[1360px] lg:px-8">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Mark small />
@@ -198,7 +198,8 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
           </div>
           <LeaveButton textIds={texts.map((t) => t.id)} />
         </header>
-        <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-10">
+        {/* a Leseverständnis needs the whole width for text and questions: the list waits behind "← Titel" */}
+        <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-10 has-[.lesen-breit]:lg:grid-cols-1 [&:has(.lesen-breit)>nav]:hidden">
           <nav aria-label="Deine Aufgaben" className="min-w-0 lg:sticky lg:top-6 lg:self-start">
             <p className="mb-2 flex items-center gap-2 px-3 text-[13px] font-semibold text-ink-3">
               <ListChecks size={15} aria-hidden /> Deine Aufgaben

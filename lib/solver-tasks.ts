@@ -1,6 +1,7 @@
 import type { ClientTask } from "@/components/Solver";
 import { answerText } from "@/components/TaskPreview";
 import { closestVersion } from "./fix-text";
+import { readingSet } from "./lesen";
 import { gradeMathTask, unknownOf } from "./math-task";
 import * as repo from "./repo";
 import { runningUnitForStudent } from "./units";
@@ -14,7 +15,10 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
   const attempts = repo.listAttemptsForAssignment(assignment.id);
   const hintUses = repo.hintUsesForAssignment(assignment.id);
   const board = Boolean(runningUnitForStudent(assignment.student_id));
-  return repo.listTasks(w.id).map((t) => {
+  const list = repo.listTasks(w.id);
+  // a Leseverständnis: the text is sent once (with the first question) and shown next to the questions
+  const reading = readingSet(list);
+  return list.map((t, i) => {
     const tries = attempts.filter((a) => a.task_id === t.id);
     const fin = tries.find((a) => a.final);
     return {
@@ -22,7 +26,8 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
       type: t.type,
       prompt: t.prompt,
       options: t.data.options ?? null,
-      passage: t.data.passage ?? null,
+      passage: reading ? null : (t.data.passage ?? null),
+      reading: reading && i === 0 ? { ...reading, lang: w.subject === "Englisch" ? "en" : "de" } : null,
       blanks: t.answer.blanks?.length ?? 0,
       steps: t.type === "order" ? (t.data.steps ?? null) : null,
       hints: t.hints,
