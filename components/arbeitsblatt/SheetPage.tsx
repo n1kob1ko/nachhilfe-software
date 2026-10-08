@@ -29,7 +29,8 @@ export function SheetPage(p: {
         )}
         <p className="ab-hint no-print">
           Seitenumbrüche zeigt die Druckvorschau. Keine Aufgabe wird zwischen
-          zwei Seiten geteilt.
+          zwei Seiten geteilt; lange Sachaufgaben höchstens zwischen zwei
+          Teilfragen.
         </p>
       </main>
     </div>

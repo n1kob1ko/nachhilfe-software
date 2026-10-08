@@ -2,6 +2,7 @@
 
 import { Check, CornerDownRight, HelpCircle, Plus, Presentation, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import type { MathAnswer, PartStatus, PartView, ValueVerdict } from "@/lib/math-check";
 import type { MathView, StepView } from "@/lib/math-task";
 import { MathText } from "./MathText";
@@ -129,7 +130,7 @@ const SIGNS: { label: ReactNode; insert: string; after?: string; name: string }[
 function SignBar({ target, unknown }: { target: React.RefObject<Target | null>; unknown: string | null }) {
   const put = (insert: string, after = "") => {
     const t = target.current;
-    if (!t || t.el.disabled) return;
+    if (!t || !t.el.isConnected || t.el.disabled) return;
     const v = t.el.value;
     const from = t.el.selectionStart ?? v.length;
     const to = t.el.selectionEnd ?? v.length;
@@ -138,12 +139,11 @@ function SignBar({ target, unknown }: { target: React.RefObject<Target | null>; 
     if (v.slice(0, from).endsWith(" ")) ins = ins.replace(/^ /, "");
     if (v.slice(to).startsWith(" ")) ins = ins.replace(/ $/, "");
     const next = v.slice(0, from) + ins + after + v.slice(to);
-    t.set(next);
+    // the new value is in the field at once, so the cursor can go right behind the sign before the next key
+    flushSync(() => t.set(next));
     const caret = from + ins.length;
-    requestAnimationFrame(() => {
-      t.el.focus();
-      t.el.setSelectionRange(caret, caret);
-    });
+    t.el.focus();
+    t.el.setSelectionRange(caret, caret);
   };
   const signs = unknown ? [{ label: unknown, insert: unknown, name: unknown }, ...SIGNS] : SIGNS;
   return (
@@ -225,6 +225,9 @@ function WayLines({
   }, [focus]);
 
   const set = (id: number, text: string) => onChange(lines.map((l) => (l.id === id ? { id: l.id, text } : l)));
+  // the sign bar writes through the latest lines, not the ones from when the field got the focus
+  const latest = useRef(set);
+  latest.current = set;
   const add = (after: number) => {
     const n = line();
     const i = lines.findIndex((l) => l.id === after);
@@ -267,7 +270,7 @@ function WayLines({
                 value={l.text}
                 disabled={disabled}
                 onChange={(e) => set(l.id, e.target.value)}
-                onFocus={(e) => void (target.current = { el: e.currentTarget, set: (v) => set(l.id, v) })}
+                onFocus={(e) => void (target.current = { el: e.currentTarget, set: (v) => latest.current(l.id, v) })}
                 onKeyDown={(e) => keys(e, l)}
                 placeholder={i === 0 ? first : ""}
                 aria-label={`Zeile ${i + 1}`}
@@ -287,7 +290,7 @@ function WayLines({
               {!disabled && (
                 <button
                   type="button"
-                  className="btn btn-ghost h-11 w-11 shrink-0 px-0 text-ink-3"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-3 hover:bg-panel hover:text-ink disabled:opacity-40"
                   onClick={() => remove(l.id)}
                   disabled={lines.length === 1 && !l.text}
                   aria-label={`Zeile ${i + 1} löschen`}
@@ -337,19 +340,21 @@ function ResultField({
   id: string;
   label?: string;
 }) {
+  const latest = useRef(onChange);
+  latest.current = onChange;
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
       <label htmlFor={id} className="text-[15px] font-semibold text-ink-2">
         {label}
       </label>
       <span className="flex items-center gap-2">
-        {prefix && <span className="text-[19px] font-semibold">{prefix} =</span>}
+        {prefix && <span className="text-[19px] font-semibold whitespace-nowrap">{prefix} =</span>}
         <input
           id={id}
           value={value}
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
-          onFocus={(e) => void (target.current = { el: e.currentTarget, set: onChange })}
+          onFocus={(e) => void (target.current = { el: e.currentTarget, set: (v) => latest.current(v) })}
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
@@ -421,7 +426,7 @@ export function MathAnswerInput({
                   <ResultField id={`r-${taskId}-${i}`} label="Antwort" value={part.result} onChange={(result) => setPart(i, { result })} disabled={disabled} target={target} prefix={null} status={part.check ? partTone(part.check.status) : undefined} />
                 </div>
               )}
-              {part.check && part.check.status !== "richtig" && <p className="mt-2 text-[15px] text-ink-2">{part.check.feedback}</p>}
+              {part.check && (part.check.status === "falsch" || part.check.status === "teilweise") && <p className="mt-2 text-[15px] text-ink-2">{part.check.feedback}</p>}
             </section>
           );
         })}
