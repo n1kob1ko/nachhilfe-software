@@ -147,3 +147,12 @@ test("Urteile der zweiten Prüfung: falsch mit derselben Verbesserung ist nur ei
   const better = check({ better_replacement: "fuhr", better_explanation: "Präteritum." });
   assert.deepEqual([better.replacement, better.explanation, better.review], ["fuhr", "Präteritum.", "lehrer"]);
 });
+
+test("Brief: nach der Anrede mit Beistrich beginnt der Absatz klein", () => {
+  const blocks = [
+    { text: "Sehr geehrte Damen und Herren,", heading: false },
+    { text: "am 3. Jänner habe ich bestellt. leider kam nichts.", heading: false },
+  ];
+  assert.deepEqual(ruleFindings(blocks, { english: false }).map((f) => f.quote), ["leider"]);
+  assert.deepEqual(ruleFindings([blocks[1]], { english: false }).map((f) => f.quote), ["am", "leider"]);
+});

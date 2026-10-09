@@ -171,11 +171,15 @@ const DOUBLE_OK = new Set("der die das den dem des sie er es wir ihr ihn ihm ihn
 const isLower = (c: string) => c !== c.toUpperCase() && c === c.toLowerCase();
 const capitalize = (w: string) => w[0].toUpperCase() + w.slice(1);
 
-/** Small letter at the start of a sentence: at the start of a paragraph or after . ! ? (not after an abbreviation, a number or „…“, not right after a closing quote). */
-function smallStarts(text: string): Span[] {
+/**
+ * Small letter at the start of a sentence: at the start of a paragraph or after . ! ? (not after an
+ * abbreviation, a number or „…“, not right after a closing quote). A paragraph after one that ends with a
+ * comma (the Anrede of a letter) starts small.
+ */
+function smallStarts(text: string, o: { afterComma?: boolean } = {}): Span[] {
   const out: Span[] = [];
   const first = text.match(/^\s*(\p{L}[\p{L}-]*)/u);
-  if (first && isLower(first[1][0])) {
+  if (first && isLower(first[1][0]) && !o.afterComma) {
     const at = text.indexOf(first[1]);
     out.push({ start: at, end: at + first[1].length });
   }
@@ -198,7 +202,7 @@ export function ruleFindings(blocks: { text: string; heading: boolean }[], o: { 
     if (b.heading || !b.text.trim()) return;
     const t = b.text;
     const para = i + 1;
-    for (const s of smallStarts(t)) {
+    for (const s of smallStarts(t, { afterComma: afterComma(blocks, i) })) {
       const word = t.slice(s.start, s.end);
       if (o.english && word === "i") continue; // handled below
       out.push({ para, ...s, quote: word, replacement: capitalize(word), category: "rechtschreibung", rule: o.english ? "Capital letter" : "Großschreibung am Satzanfang", explanation: o.english ? "Am Satzanfang schreibt man auch im Englischen groß." : "Am Satzanfang schreibt man groß." });
@@ -224,12 +228,18 @@ export function ruleFindings(blocks: { text: string; heading: boolean }[], o: { 
   return out;
 }
 
+/** Whether the paragraph before (the last one with text) ends with a comma, as the Anrede of a letter does. */
+function afterComma(blocks: { text: string }[], i: number): boolean {
+  for (let k = i - 1; k >= 0; k--) if (blocks[k].text.trim()) return /,\s*$/.test(blocks[k].text);
+  return false;
+}
+
 // ---------- the text after every proposal ----------
 
 /** Problems in a paragraph the way it reads after the changes: doubled words, small letters at a sentence start, a doubled or loose sign. */
-export function finalProblems(text: string, o: { english: boolean }): (Span & { what: string })[] {
+export function finalProblems(text: string, o: { english: boolean; afterComma?: boolean }): (Span & { what: string })[] {
   const out: (Span & { what: string })[] = [];
-  for (const s of smallStarts(text)) if (!(o.english && text.slice(s.start, s.end) === "i")) out.push({ ...s, what: "Kleinbuchstabe am Satzanfang" });
+  for (const s of smallStarts(text, o)) if (!(o.english && text.slice(s.start, s.end) === "i")) out.push({ ...s, what: "Kleinbuchstabe am Satzanfang" });
   for (const m of text.matchAll(/(?<![\p{L}\p{N}])([\p{L}]+)\s+\1(?![\p{L}\p{N}])/giu)) if (!DOUBLE_OK.has(m[1].toLowerCase())) out.push({ start: m.index!, end: m.index! + m[0].length, what: `„${m[1]}“ steht zweimal` });
   for (const m of text.matchAll(/,\s*,|(?<!\.)\.\.(?!\.)|\s+[,.;:!?](?![.\d])/g)) out.push({ start: m.index!, end: m.index! + m[0].length, what: "Satzzeichen doppelt oder mit Leerzeichen davor" });
   return out;
@@ -311,7 +321,7 @@ export function flagItems<T extends CheckItem>(blocks: string[], items: T[], o: 
       mine.map(({ it, k }) => ({ start: it.pos_start!, end: it.pos_end!, replacement: it.replacement, k })),
     );
     for (const s of r.skipped) out[s.k] = withNote(out[s.k], "Überschneidet sich mit einem anderen Vorschlag.");
-    for (const p of finalProblems(r.text, o)) {
+    for (const p of finalProblems(r.text, { ...o, afterComma: afterComma(blocks.map((text) => ({ text })), b) })) {
       // only what a change brought about or sits right next to
       for (const { change, at } of r.placed) if (at.start <= p.end + 1 && p.start <= at.end + 1) out[change.k] = withNote(out[change.k], `Nach allen Änderungen: ${p.what}.`);
     }
