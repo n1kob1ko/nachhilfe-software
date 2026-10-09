@@ -165,8 +165,9 @@ export async function runAI<S extends z.ZodType>(
       const usage = { input: res.usage.input, output: res.usage.output, cacheWrite: res.usage.cacheWrite + (res.usage.cacheWrite1h ?? 0), cacheRead: res.usage.cacheRead, costUsd: cost, model: res.model || model };
       const durationMs = res.simulatedMs ?? Date.now() - started;
       breaker.failures = 0;
-      if (res.refusal || res.parsed == null) return { ok: false, status: "abgelehnt", message: MESSAGES.abgelehnt, callId: log("abgelehnt", { ...usage, durationMs }) };
-      const callId = log("ok", { ...usage, durationMs });
+      const error = res.problem ?? "";
+      if (res.refusal || res.parsed == null) return { ok: false, status: "abgelehnt", message: MESSAGES.abgelehnt, callId: log("abgelehnt", { ...usage, durationMs, error }) };
+      const callId = log("ok", { ...usage, durationMs, error });
       if (spec.reuseMs > 0) {
         done.set(fp, { at: now(), data: res.parsed });
         if (done.size > MAX_REMEMBERED) done.delete(done.keys().next().value!);
