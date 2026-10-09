@@ -236,6 +236,30 @@ test("gründlich: Änderungen, die nicht zum eigenen Satz der KI passen, und Ver
   assert.equal(echoesNeighbours({ quote: "voll", before: "Die 2a gewann ", after: " knappe Siege." }, "voll knapp"), false, "only whole words");
 });
 
+test("gründlich: ein Platzhalter des Datenschutzfilters im Satz der KI steht für den Namen, die Notiz zeigt die Fassung der KI", async () => {
+  const { holds, offSentence, analysisFindings, sentencesFor } = await import("./ai/textkorrektur-gruendlich");
+  const { comparable } = await import("./text-correction-checks");
+  // test 2026-10-09: right changes next to a name were marked, because the KI saw „[PERSON_NAME]“ there
+  const s = "Our teacher, Mrs Berger, always say that trips are fun.";
+  const own = comparable("Our teacher, [PERSON_NAME], always says that trips are fun.");
+  assert.deepEqual([...offSentence(s, [{ quote: "always say", replacement: "always says" }], own)], []);
+  assert.equal(holds(comparable("Während die Mutter packt, findet [PERSON_NAME] in einer Dose den Schlüssel."), "packt, findet Lea in"), true);
+  assert.equal(holds(comparable("Am Ende erkennt [PERSON_NAME], dass sie loslassen muss."), "erkennt Lea"), true);
+  assert.equal(holds(comparable("Am Ende erkennt [PERSON_NAME], dass sie loslassen muss."), "erkennt Lea, dass"), true);
+  assert.equal(holds(comparable("Am Ende erkennt [PERSON_NAME], dass sie loslassen muss."), "erkannte Lea"), false);
+  assert.equal(holds(comparable("Am Ende erkennt [PERSON_NAME], dass sie loslassen muss."), "erkennt Lea dass sie loslassen"), false, "the comma after the placeholder still counts");
+  assert.equal(holds(comparable("Am Ende erkennt sie, dass sie loslassen muss."), "erkennt Lea"), false, "without a placeholder nothing is left open");
+  // the short-quote case of test 1 is still caught
+  const p = "Die Direktorin überreichte die Siegerklasse einen Pokal.";
+  assert.deepEqual([...offSentence(p, [{ quote: "Pokal", replacement: "der Siegerklasse den Pokal" }], comparable("Die Direktorin überreichte der Siegerklasse den Pokal."))], [0]);
+
+  const req = { subject: "Deutsch", schoolType: "Gymnasium", klasse: 4, textKind: "Bericht", task: "", level: { maxStyle: 2, maxMarks: 20 }, blocks: [{ text: p, heading: false }] } as unknown as Parameters<typeof sentencesFor>[0];
+  const sentences = sentencesFor(req);
+  const { findings } = analysisFindings(sentences, { sentences: [{ id: sentences[0].id, corrected: "Die [PERSON_NAME] überreichte der Siegerklasse den Pokal.", findings: [{ quote: "Pokal", replacement: "der Siegerklasse den Pokal", category: "grammatik", kind: "fehler", explanation: "Dativ.", sure: true }] }] } as never);
+  assert.equal(findings[0].review, "lehrer");
+  assert.equal(findings[0].review_note, "Die KI würde den ganzen Satz anders verbessern: „Die … überreichte der Siegerklasse den Pokal.“");
+});
+
 test("gründlich: Analyse und Prüfung bekommen das Antwortschema in den Anweisungen, damit Sonnet nachdenkt", async () => {
   const { chatBody } = await import("./ai/providers/openai-compatible");
   const { AnalysisSchema } = await import("./ai/textkorrektur-gruendlich");
