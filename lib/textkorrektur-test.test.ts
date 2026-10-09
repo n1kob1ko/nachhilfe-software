@@ -70,7 +70,7 @@ test("Textkorrektur-Test: drei Wege laufen mit der KI, sechs werden verglichen, 
   router.resetRouter();
   const calls: AIRequest[] = [];
   const cases = TEXT_CASES.slice(0, 2);
-  router.setTransport(async (req) => {
+  const standIn: Parameters<typeof router.setTransport>[0] = async (req) => {
     calls.push(req);
     const prompt = String(req.content);
     const c = cases.find((x) => prompt.includes(x.blocks[1].text.slice(0, 40)))!;
@@ -99,7 +99,8 @@ test("Textkorrektur-Test: drei Wege laufen mit der KI, sechs werden verglichen, 
     }
     const checks = [...prompt.matchAll(/^Vorschlag (\d+) /gm)].map((m) => ({ nr: Number(m[1]), verdict: "richtig", explanation_ok: true, better_replacement: null, better_explanation: "Erklärt von der Prüfung.", reason: "", category: "grammatik" }));
     return { parsed: { checks, missed: [] }, refusal: false, model: req.model, usage };
-  });
+  };
+  router.setTransport(standIn);
   const lines: string[] = [];
   const state = await runTextTest({ cases, capUsd: 5, log: (l) => lines.push(l) });
   router.setTransport(null);
@@ -130,6 +131,12 @@ test("Textkorrektur-Test: drei Wege laufen mit der KI, sechs werden verglichen, 
   assert.ok(lines.some((l) => l.startsWith("[KI-Textkorrektur-Test] ") && l.includes(" gruendlich_neu v1 ")), "every suggestion goes to the log");
   assert.ok(lines.some((l) => l.includes(" neu saetze ")), "the KI's versions of the sentences go to the log");
   assert.ok(lines.every((l) => !/sk-or-|OPENROUTER_API_KEY/.test(l)));
+
+  // two texts at once whose worst cases do not fit together: the second waits for the first instead of being skipped
+  const { reserveFor } = await import("./ai/textkorrektur-test");
+  router.setTransport(standIn);
+  const tight = await runTextTest({ cases, capUsd: reserveFor(cases[0]) + reserveFor(cases[1]) - 0.001, concurrency: 2, log: () => {} });
+  assert.deepEqual(tight.results.map((r) => r.status), ["fertig", "fertig"]);
 
   // a cap that one text could pass: nothing is sent
   calls.length = 0;
