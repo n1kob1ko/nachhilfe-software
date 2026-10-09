@@ -1,20 +1,22 @@
+import { AISelfTest } from "@/components/AISelfTest";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, SectionTitle } from "@/components/ui";
 import { AREA_LABEL, FUNCTIONS, aiSwitchedOff, budget, priceFor, routeFor, type AIFunction, type Area } from "@/lib/ai/config";
 import { budgetState, costByDay, costByFunction, costByMonth, costByTeacher, recentCalls, type Sum } from "@/lib/ai/log";
 import { PROVIDER_LABEL, providerReady } from "@/lib/ai/providers";
-import { anyProviderKey, breakerState } from "@/lib/ai/router";
+import { aiEnabled, anyProviderKey, breakerState } from "@/lib/ai/router";
 import { requireTeacher } from "@/lib/auth";
 
 export const metadata = { title: "KI-Kosten" };
 export const dynamic = "force-dynamic";
 
 const usd = (x: number) => `${x.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: x > 0 && x < 0.1 ? 4 : 2 })} $`;
+const eur = (x: number) => `${x.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 const n = (x: number) => Math.round(x).toLocaleString("de-AT");
 const STATUS_LABEL: Record<string, string> = { ok: "ok", cache: "aus Speicher", abgelehnt: "keine Antwort", fehler: "Fehler", timeout: "Zeit überschritten", budget: "Budget", pausiert: "pausiert" };
 
 /**
- * Mehr › KI-Kosten: every request to Claude with model, tokens, duration and estimated cost, per day,
+ * Mehr › KI-Kosten: every request to the KI with model, tokens, duration and estimated cost, per day,
  * month, teacher and function, against the monthly budget. Teachers see their own requests, the
  * administration sees all.
  */
@@ -43,26 +45,35 @@ export default async function AICostPage() {
             KI: <span className="font-semibold text-ink">{state}</span>
           </span>
           {b.level === "warnung" && <Pill tone="amber">Über {Math.round(conf.warnAt * 100)}&nbsp;% des Budgets</Pill>}
-          {b.level === "echtzeit-aus" && <Pill tone="red">Budget erreicht: Echtzeit-Analyse aus</Pill>}
-          {b.level === "aus" && <Pill tone="red">Budget weit überschritten: alle KI-Aufrufe aus</Pill>}
+          {b.level === "aus" && <Pill tone="red">Budget erreicht: KI-Aufrufe gestoppt</Pill>}
         </div>
         <p className="mt-3 text-[15px]">
-          <span className="num text-[22px] font-semibold">{usd(b.spent)}</span> <span className="text-ink-2">von {usd(b.budget)} in diesem Monat</span>
+          <span className="num text-[22px] font-semibold">{eur(b.spent / conf.usdPerEur)}</span> <span className="text-ink-2">von {eur(conf.monthlyEur)} in diesem Monat</span>
+          <span className="num ml-2 text-[13px] text-ink-3">
+            ({usd(b.spent)} von {usd(b.budget)})
+          </span>
         </p>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-panel" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)} aria-label="Anteil am Monatsbudget">
           <div className={`h-full rounded-full ${b.level === "ok" ? "bg-green" : b.level === "warnung" ? "bg-amber" : "bg-red"}`} style={{ width: `${share * 100}%` }} />
         </div>
         <p className="mt-2 text-[13px] text-ink-3">
-          Budget und Warnschwelle über AI_MONTHLY_BUDGET_USD und AI_BUDGET_WARN. Ab 100&nbsp;% läuft keine Echtzeit-Analyse mehr, ab {Math.round(conf.hardAt * 100)}&nbsp;% gar kein KI-Aufruf. Die App arbeitet dann mit Messwerten und Generatoren weiter.
+          Budget und Warnschwelle über AI_MONTHLY_BUDGET_EUR und AI_BUDGET_WARN. Warnung ab {Math.round(conf.warnAt * 100)}&nbsp;%, ab 100&nbsp;% läuft kein kostenpflichtiger KI-Aufruf mehr; die App arbeitet dann mit Messwerten und Generatoren weiter. Die Anbieter rechnen in US-Dollar ab (Kurs 1&nbsp;€ = {conf.usdPerEur.toLocaleString("de-AT")}&nbsp;$), die Tabellen unten zeigen US-Dollar.
         </p>
       </section>
+
+      {teacher.is_admin && (
+        <section className="mb-10">
+          <SectionTitle>KI testen</SectionTitle>
+          <AISelfTest enabled={aiEnabled()} />
+        </section>
+      )}
 
       <section className="mb-10">
         <SectionTitle>
           <span>
             Anbieter und Modelle
             <Info label="Wie ändere ich Anbieter oder Modell?">
-              In Railway unter Variables, je Bereich: AI_REALTIME_PROVIDER und AI_REALTIME_MODEL, ebenso EXERCISE, ANALYSIS, DEEP, MATERIAL und TEXT. Anbieter: anthropic, openrouter, deepseek oder compatible. AI_PROVIDER gilt für alle Bereiche ohne eigenen Eintrag. Nach dem nächsten Start gilt die neue Einstellung, ohne Code-Änderung.
+              In Railway unter Variables, je Bereich: AI_REALTIME_PROVIDER und AI_REALTIME_MODEL, ebenso EXERCISE, ANALYSIS, DEEP, MATERIAL und TEXT. Anbieter: anthropic, openrouter, deepseek oder compatible. AI_PROVIDER gilt für alle Bereiche ohne eigenen Eintrag; ohne AI_PROVIDER gilt der Anbieter, dessen Schlüssel hinterlegt ist. Nach dem nächsten Start gilt die neue Einstellung, ohne Code-Änderung.
             </Info>
           </span>
         </SectionTitle>

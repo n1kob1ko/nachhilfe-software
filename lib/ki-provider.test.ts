@@ -57,6 +57,27 @@ test("routing: provider and model per area from environment variables, Anthropic
   clean("AI_REALTIME_PROVIDER", "AI_REALTIME_MODEL", "AI_PROVIDER", "DEEPSEEK_API_KEY", "AI_ANALYSIS_MODEL");
 });
 
+test("OpenRouter: with only its key every area runs there, with the default models and their prices", async () => {
+  const { routeFor, priceFor, FUNCTIONS } = await import("./ai/config");
+  const { aiEnabled } = await import("./ai/router");
+  assert.equal(aiEnabled(), false, "no key: KI off");
+  process.env.OPENROUTER_API_KEY = "or-test";
+  for (const fn of Object.keys(FUNCTIONS) as (keyof typeof FUNCTIONS)[]) {
+    const r = routeFor(fn);
+    assert.equal(r.provider, "openrouter", fn);
+    assert.equal(r.model, fn === "tiefenanalyse" ? "anthropic/claude-sonnet-5.5" : "anthropic/claude-haiku-5.5", fn);
+    assert.equal(priceFor(r.model, FUNCTIONS[fn].tier).known, true, `${fn}: price known`);
+  }
+  assert.equal(aiEnabled("aufgaben"), true);
+  process.env.AI_TEXT_MODEL = "anthropic/claude-sonnet-5.5";
+  assert.equal(routeFor("textkorrektur").model, "anthropic/claude-sonnet-5.5", "a model per area still wins");
+  process.env.ANTHROPIC_API_KEY = "a-test";
+  assert.equal(routeFor("aufgaben").provider, "anthropic", "with both keys Anthropic stays the default");
+  process.env.AI_PROVIDER = "openrouter";
+  assert.equal(routeFor("aufgaben").provider, "openrouter", "AI_PROVIDER decides");
+  clean("OPENROUTER_API_KEY", "AI_TEXT_MODEL", "ANTHROPIC_API_KEY", "AI_PROVIDER");
+});
+
 test("compatible API: the app's free-text check runs unchanged through another provider", async () => {
   const api = await fakeApi(() => chat('{"correct":true,"feedback":"Passt.","error_label":null,"error_type":null}'));
   const r = await import("./ai/router");
