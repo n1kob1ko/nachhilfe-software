@@ -728,6 +728,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["text_corrections", "method", "TEXT NOT NULL DEFAULT 'einfach'"],
   ["text_corrections", "unchecked", "TEXT NOT NULL DEFAULT ''"],
   ["text_corrections", "verify_status", "TEXT NOT NULL DEFAULT ''"],
+  // words OpenRouter's privacy filter hid from the KI, as JSON [{para, text, grammar}] (shown to the teacher, 2026-10-09)
+  ["text_corrections", "hidden_words", "TEXT NOT NULL DEFAULT ''"],
   ["text_correction_items", "origin", "TEXT NOT NULL DEFAULT ''"],
   ["text_correction_items", "review", "TEXT NOT NULL DEFAULT ''"],
   ["text_correction_items", "review_note", "TEXT NOT NULL DEFAULT ''"],
