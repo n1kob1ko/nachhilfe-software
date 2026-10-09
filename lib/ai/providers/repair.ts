@@ -17,8 +17,13 @@ const nullable = (s: Json) => branchesOf(s).some((b) => typesOf(b).includes("nul
 export function repair(value: unknown, schema: unknown): unknown {
   if (!isObj(schema)) return value;
   const branches = branchesOf(schema).filter((b) => !typesOf(b).includes("null") || typesOf(b).length > 1);
-  if (value === null || value === undefined) return value;
   const s = branches[0] ?? schema;
+  if (value === null && !nullable(schema)) {
+    // null where the shape has no empty value: an empty list or "no"
+    if (typesOf(s).includes("array")) return [];
+    if (typesOf(s).includes("boolean")) return false;
+  }
+  if (value === null || value === undefined) return value;
   if (Array.isArray(s.enum)) {
     const options = s.enum as unknown[];
     if (options.includes(value)) return value;

@@ -177,6 +177,11 @@ test("7. wrong Adverb/Adjektiv assignments are rejected, doubtful ones go to the
   // a gap text and a solution line say the same
   const cloze: Draft = { type: "cloze", skillId: W, difficulty: "mittel", prompt: "Bestimme die Wortarten.\n„Sie singt laut.“\nsingt: ___\nlaut: ___", data: {}, answer: { blanks: [["Verb"], ["Adverb"]], mode: "text" }, solution: "singt = Verb, laut = Adverb", hints: [], errorMap: [] };
   assert.match(wa.checkWortartTask(cloze, all, "wortarten").reject.join(), /„laut“ ist ein Adjektiv/);
+  // live answer 2026-10-09: „Katze“ ein ___ asks for „Katze“, not for the article „ein“
+  const nva = wa.wortartenFor([W], 3)!;
+  const quoted: Draft = { type: "cloze", skillId: W, difficulty: "leicht", prompt: "Im Satz „Die Katze ist müde.“ ist das Wort „Katze“ ein ___, das Wort „ist“ ein ___ und das Wort „müde“ ein ___. Schreib in jede Lücke die Wortart: Nomen, Verb oder Adjektiv.", data: {}, answer: { blanks: [["Nomen"], ["Verb"], ["Adjektiv"]], mode: "text" }, solution: "Katze ist ein Nomen, ist ist ein Verb, müde ist ein Adjektiv.", hints: [], errorMap: [] };
+  assert.deepEqual(wa.checkWortartTask(quoted, nva, "wortarten"), { reject: [], review: [] });
+  assert.match(wa.checkWortartTask({ ...quoted, answer: { blanks: [["Verb"], ["Verb"], ["Adjektiv"]], mode: "text" } }, nva, "wortarten").reject.join() + wa.checkWortartTask({ ...quoted, answer: { blanks: [["Verb"], ["Verb"], ["Adjektiv"]], mode: "text" } }, nva, "wortarten").review.join(), /Katze/, "a wrong gap is still caught");
   // a word the app does not know called Adverb, or a known word with another Wortart: the teacher decides
   assert.match(wa.checkWortartTask(mc("Er antwortet flugs.", "flugs", opts, 1), all, "wortarten").review.join(), /„flugs“ ein Adverb oder ein adverbial gebrauchtes Adjektiv/);
   assert.match(wa.checkWortartTask(mc("Der kleine Hund bellt.", "kleine", opts, 3), all, "wortarten").review.join(), /Ist „kleine“ hier wirklich ein Nomen\?/);
