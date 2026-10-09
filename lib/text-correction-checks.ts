@@ -145,11 +145,15 @@ export function shapeOf(quote: string, replacement: string): Shape {
  */
 export function mismatchOf(f: { category: string; quote: string; replacement: string; explanation: string; rule?: string }): string | null {
   const s = shapeOf(f.quote, f.replacement);
-  const why = `${f.rule ?? ""} ${f.explanation}`;
+  // the explanation only: a rule is often a heading for both sides („Groß- und Kleinschreibung“, „s, ss oder ß“)
+  const why = f.explanation;
+  const upper = /großgeschrieben|großschreib|schreibt man groß|wird groß|groß geschrieben|großen anfangsbuchstaben|capital letter/i.test(why);
+  const lower = /kleingeschrieben|kleinschreib|schreibt man klein|wird klein|klein geschrieben/i.test(why);
   if (f.category === "zeichensetzung" && s.letters) return "Als Zeichensetzung bezeichnet, ändert aber Wörter.";
   if (f.category === "rechtschreibung" && !s.letters && !s.caseOnly && !s.spaces && s.punct) return "Als Rechtschreibung bezeichnet, ändert aber nur Satzzeichen.";
-  if (/großgeschrieben|großschreib|schreibt man groß|wird groß|groß geschrieben|großen anfangsbuchstaben|capital letter/i.test(why) && !s.toUpper) return "Die Erklärung spricht von Großschreibung, die Änderung schreibt aber nichts groß.";
-  if (/kleingeschrieben|kleinschreib|schreibt man klein|wird klein|klein geschrieben/i.test(why) && !s.toLower) return "Die Erklärung spricht von Kleinschreibung, die Änderung schreibt aber nichts klein.";
+  // „nicht klein-, sondern großgeschrieben“ names both
+  if (upper && !s.toUpper && !(lower && s.toLower)) return "Die Erklärung spricht von Großschreibung, die Änderung schreibt aber nichts groß.";
+  if (lower && !s.toLower && !(upper && s.toUpper)) return "Die Erklärung spricht von Kleinschreibung, die Änderung schreibt aber nichts klein.";
   if (/\b(beistrich|komma)\b/i.test(why) && !s.punct && f.category === "zeichensetzung") return "Die Erklärung spricht von einem Beistrich, die Änderung setzt aber keinen.";
   if (/(^|[^\p{L}])ß([^\p{L}]|$)/u.test(why) && !/ß/.test(f.quote + f.replacement) && f.category === "rechtschreibung") return "Die Erklärung spricht von ß, die Änderung hat aber kein ß.";
   return null;
@@ -245,9 +249,15 @@ export function finalProblems(text: string, o: { english: boolean; afterComma?: 
   return out;
 }
 
+/** Words that are right in one place and wrong in another: never carried over to another place. */
+const BOTH_WORDS = new Set(
+  ["das", "dass", "seid", "seit", "wieder", "wider", "wenn", "wen", "denn", "den", "dem", "man", "mann", "ihm", "im", "ihn", "in", "war", "wahr", "viel", "fiel", "statt", "stadt", "malen", "mahlen", "mal", "mahl", "end", "ent", "tod", "tot", "wiese", "weise", "waise", "fast", "fasst", "lehre", "leere", "its", "it's", "their", "there", "they're", "your", "you're", "to", "too", "then", "than", "were", "where", "we're"],
+);
+
 /**
  * The same spelling error at another place: the same wrong word with the same word before or after it
  * („spaß zu haben“ twice). Only then: the same word can be right elsewhere („beim essen“ vs. „wir essen“).
+ * Never for short words or pairs like das/dass: one neighbour word says too little there.
  */
 export function sameErrorElsewhere(
   blocks: string[],
@@ -259,7 +269,8 @@ export function sameErrorElsewhere(
   const near = (t: string, s: Span) => ({ before: t.slice(0, s.start).match(/([\p{L}]+)\W*$/u)?.[1] ?? "", after: t.slice(s.end).match(/^\W*([\p{L}]+)/u)?.[1] ?? "" });
   for (const f of fixes) {
     const word = f.quote.trim();
-    if (!/^[\p{L}]{3,}$/u.test(word) || !/^[\p{L}]+$/u.test(f.replacement.trim())) continue;
+    if (!/^[\p{L}]{4,}$/u.test(word) || !/^[\p{L}]+$/u.test(f.replacement.trim())) continue;
+    if (BOTH_WORDS.has(word.toLowerCase()) || BOTH_WORDS.has(f.replacement.trim().toLowerCase())) continue;
     const ctx = near(blocks[f.para - 1] ?? "", f);
     blocks.forEach((t, bi) => {
       for (const m of t.matchAll(new RegExp(`(?<![\\p{L}\\p{N}])${word}(?![\\p{L}\\p{N}])`, "gu"))) {

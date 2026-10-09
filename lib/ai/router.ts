@@ -175,6 +175,7 @@ export async function runAI<S extends z.ZodType>(
         thinking,
         effort,
         schema,
+        ...(spec.schemaInPrompt ? { schemaInPrompt: true } : {}),
         signal: ctrl.signal,
         timeoutMs: spec.timeoutMs,
       });

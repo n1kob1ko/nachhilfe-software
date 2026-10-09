@@ -623,11 +623,6 @@ export const TEXT_CASES: KorrekturFall[] = [
         "why": "Österreichisches Wort für Tüte/Beutel; korrekt."
       },
       {
-        "para": 5,
-        "text": "versucht den Reißverschluss",
-        "why": "Beistrich bei dieser Infinitivgruppe ist freigestellt (kein Pflichtfall)."
-      },
-      {
         "para": 7,
         "text": "Ich ersuche Sie",
         "why": "„ersuchen“ ist in Österreich übliche, korrekte Formulierung im formellen Brief; „Sie“ groß."
@@ -643,6 +638,11 @@ export const TEXT_CASES: KorrekturFall[] = [
         "para": 7,
         "text": "wie schlecht die Qualität ist",
         "why": "Präsens vertretbar, Qualität ist weiter schlecht"
+      },
+      {
+        "para": 5,
+        "text": "versucht den Reißverschluss",
+        "why": "Beistrich bei dieser Infinitivgruppe ist freigestellt (kein Pflichtfall)."
       }
     ]
   },
@@ -1927,9 +1927,11 @@ export const TEXT_CASES: KorrekturFall[] = [
       },
       {
         "para": 5,
-        "wrong": "gonna",
+        "wrong": "are not gonna",
         "right": [
-          "going to"
+          "are not going to",
+          "will not",
+          "won't"
         ],
         "category": "ausdruck",
         "what": "Register: „gonna“ ist gesprochene Umgangssprache und gehört nicht in einen Aufsatz; richtig ist „going to“."

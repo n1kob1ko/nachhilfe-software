@@ -80,6 +80,12 @@ export type FunctionSpec = {
    * again before the cache expires: a cache write costs 1.25× (5 min) or 2× (1 h) the input price, a read 0.1×.
    */
   cache: "aus" | "5m" | "1h";
+  /**
+   * The answer's shape goes into the instructions instead of as json_schema. Sonnet 5.5 behind
+   * OpenRouter does not think at all with json_schema (0 reasoning tokens in every Textkorrektur call,
+   * 2026-10-09), but does with the shape in the instructions; Haiku thinks either way.
+   */
+  schemaInPrompt?: boolean;
 };
 
 const MIN = 60_000;
@@ -97,8 +103,8 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // only on the teacher's click, after consent; the same version of a text is never paid for twice
   textkorrektur: { label: "Textkorrektur", area: "TEXT", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // Textkorrektur „gründlich“ (lib/ai/textkorrektur-gruendlich.ts): sentence-by-sentence analysis, then an independent check of every suggestion
-  textanalyse: { label: "Textkorrektur gründlich: Analyse", area: "TEXT", tier: "standard", maxTokens: 20_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
-  textpruefung: { label: "Textkorrektur gründlich: Prüfung", area: "TEXT", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  textanalyse: { label: "Textkorrektur gründlich: Analyse", area: "TEXT", tier: "standard", maxTokens: 20_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus", schemaInPrompt: true },
+  textpruefung: { label: "Textkorrektur gründlich: Prüfung", area: "TEXT", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus", schemaInPrompt: true },
   // Leseverständnis: one request for the reading text, one for the questions; only on the teacher's click
   lesen: { label: "Leseverständnis erstellen", area: "EXERCISE", tier: "standard", maxTokens: 24_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   // KI-Selbsttest on Mehr › KI-Kosten: one tiny request before the real test requests
