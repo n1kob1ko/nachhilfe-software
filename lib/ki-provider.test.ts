@@ -125,6 +125,8 @@ test("answers outside the shape: small slips repaired, a task that still does no
   const S = z.object({ tasks: z.array(z.object({ format: z.enum(["mc", "calc"]), n: z.number().int(), form: z.enum(["bruch", "dezimal"]).nullable(), note: z.string().nullable(), hints: z.array(z.string()), ok: z.boolean() })) });
   const json = z.toJSONSchema(S, { io: "input" });
   assert.deepEqual(repair({ tasks: [{ format: "MC", n: "3", form: "", ok: "true" }] }, json), { tasks: [{ format: "mc", n: 3, form: null, note: null, hints: [], ok: true }] });
+  // live answer 2026-10-09: numeric: null on a yes/no field cost both Mathematik tasks
+  assert.deepEqual(repair({ tasks: [{ format: "calc", n: 1, ok: null, hints: null }] }, json), { tasks: [{ format: "calc", n: 1, ok: false, hints: [], form: null, note: null }] });
   const r = parseLenient(S, { tasks: [{ format: "calc", n: 1 }, { format: "essay", n: 2 }, { format: "mc", n: 2.0 }] }, json);
   assert.equal(r.data?.tasks.length, 2, "the task in an unknown format is dropped, the others stay");
   assert.equal(r.dropped, 1);
