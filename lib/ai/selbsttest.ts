@@ -50,6 +50,8 @@ async function exercise(o: { subject: string; schoolType: string; klasse: number
   const before = lastCallOf(o.trigger)?.id ?? 0;
   let tasks: (TaskDraft | null)[] | null = null;
   let error = "";
+  // tasks the app's checks did not let through, and why
+  const rejected: string[] = [];
   try {
     tasks = await generatePlanWithAI(
       {
@@ -62,6 +64,7 @@ async function exercise(o: { subject: string; schoolType: string; klasse: number
         wortarten: wortartenFor(o.skills.map((s) => s.id), grade),
       },
       { ...meta, trigger: o.trigger },
+      rejected,
     );
   } catch (e) {
     error = e instanceof Error ? e.message : String(e);
@@ -69,7 +72,7 @@ async function exercise(o: { subject: string; schoolType: string; klasse: number
   const row = lastCallOf(o.trigger);
   const mine = row && row.id > before ? row : null;
   // what the provider's answer lacked (cut off, wrong shape …), from the cost log
-  return { tasks, error, call: mine?.id ?? null, problem: mine?.error ?? "" };
+  return { tasks, error, call: mine?.id ?? null, problem: mine?.error ?? "", rejected: rejected.map((r) => `Verworfen: ${r}`.slice(0, 700)) };
 }
 
 export async function runSelfTest(meta: AIMeta = {}): Promise<TestStep[]> {
@@ -109,7 +112,7 @@ export async function runSelfTest(meta: AIMeta = {}): Promise<TestStep[]> {
     ok: deTasks.length > 0 && !tooAdvanced.length && !placeholders.length,
     message: de.error || (de.tasks ? `${deTasks.length} von 2 Aufgaben bestehen die Prüfung der App${tooAdvanced.length ? `, ${tooAdvanced.length} fragen andere Wortarten ab` : ""}${placeholders.length ? `, ${placeholders.length} mit Platzhalter-Lösung` : ""}.` : "Keine verwertbare Antwort.") + (de.problem ? ` (${de.problem})` : ""),
     ...costOf(de.call),
-    details: taskLines(deTasks),
+    details: [...taskLines(deTasks), ...de.rejected],
   });
 
   // 3. Mathematik, 3. Klasse Mittelschule: the app recomputes every line of the AI's own working
@@ -134,7 +137,7 @@ export async function runSelfTest(meta: AIMeta = {}): Promise<TestStep[]> {
     ok: maTasks.length === 2,
     message: ma.error || (ma.tasks ? `${maTasks.length} von 2 Aufgaben bestehen die Nachrechnung der App.` : "Keine verwertbare Antwort.") + (ma.problem ? ` (${ma.problem})` : ""),
     ...costOf(ma.call),
-    details: taskLines(maTasks),
+    details: [...taskLines(maTasks), ...ma.rejected],
   });
 
   // 4. Textkorrektur, 4. Klasse Volksschule: four errors are known

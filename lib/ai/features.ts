@@ -151,25 +151,35 @@ const clean = (xs: string[] | null | undefined) => (xs ?? []).map((x) => x.trim(
  * `wanted`: the task type the plan asked for. Then only its formats count, and a task that does not
  * fit one of them is dropped (null), never turned into another format.
  */
-export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" | "categories" | "subject" | "wortarten">, rng: () => number = Math.random, wanted?: Category): TaskDraft | null {
-  const d = aiTaskToDraftRaw(t, req, rng, wanted);
+export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" | "categories" | "subject" | "wortarten">, rng: () => number = Math.random, wanted?: Category, why?: (reason: string) => void): TaskDraft | null {
+  const d = aiTaskToDraftRaw(t, req, rng, wanted, why);
   if (!d || !req.wortarten || !(d.category === "wortarten" || (d.skillIds ?? []).some(isWortartenSkill))) return d;
   // Wortarten: checked by the app whatever the AI provider; rejected tasks are made again or by the generator
   const check = checkWortartTask(d, req.wortarten, d.category ?? null);
-  if (check.reject.length) return null;
+  if (check.reject.length) {
+    why?.(`Wortarten: ${check.reject.join("; ")}`);
+    return null;
+  }
   const out = widenNames(d);
   out.skillIds = [...new Set([...(out.skillIds ?? []), ...wortartSkillsOf(out, req.wortarten)])];
   if (check.review.length) out.data = { ...out.data, pruefen: check.review };
   return out;
 }
 
-function aiTaskToDraftRaw(t: AITask, req: Pick<AIGenerateRequest, "skills" | "categories" | "subject">, rng: () => number, wanted?: Category): TaskDraft | null {
+function aiTaskToDraftRaw(t: AITask, req: Pick<AIGenerateRequest, "skills" | "categories" | "subject">, rng: () => number, wanted?: Category, why?: (reason: string) => void): TaskDraft | null {
+  // why a task is not used (for the KI-Selbsttest); the task is dropped all the same
+  let said = false;
+  const no = (reason: string) => {
+    said = true;
+    why?.(reason);
+    return null;
+  };
   const valid = new Set(req.skills.map((s) => s.id));
   const skillIds = t.skill_ids.filter((id) => valid.has(id));
   const skillId = skillIds[0] ?? req.skills[0]?.id ?? null;
   const allowed = req.categories.length ? req.categories : categoriesFor(req.subject);
   const category = wanted?.key ?? (allowed.some((c) => c.key === t.category) ? t.category : (allowed[0]?.key ?? null));
-  if (!t.prompt.trim()) return null;
+  if (!t.prompt.trim()) return no("Aufgabenstellung fehlt");
   const criteria = clean(t.criteria).slice(0, 6);
   const base = {
     skillId,
@@ -192,7 +202,7 @@ function aiTaskToDraftRaw(t: AITask, req: Pick<AIGenerateRequest, "skills" | "ca
     switch (format) {
       case "order": {
         const steps = clean(t.steps);
-        if (steps.length < 2) return null;
+        if (steps.length < 2) return no("order: weniger als 2 Schritte");
         const shown = [...steps];
         for (let tries = 0; tries < 6 && shown.every((x, i) => x === steps[i]); tries++) {
           for (let i = shown.length - 1; i > 0; i--) {
@@ -206,10 +216,10 @@ function aiTaskToDraftRaw(t: AITask, req: Pick<AIGenerateRequest, "skills" | "ca
       case "reading":
         if (options) return { ...base, type: format === "reading" || t.passage ? "reading" : "mc", data: { options, passage: t.passage ?? undefined }, answer: { correct: t.correct_option! } };
         if (format === "reading" && t.passage && (t.sample_answer ?? "").trim() && !isPlaceholder(t.sample_answer)) return { ...base, type: "reading", data: { passage: t.passage }, answer: { sample: t.sample_answer!.trim() } };
-        return null;
+        return no(`${format}: Antwortoptionen oder richtige Option fehlen`);
       case "cloze": {
         const blanks = (t.blanks ?? []).map((alts) => clean(alts));
-        if (!blanks.length || blanks.some((b) => !b.length) || gapCount(t.prompt) !== blanks.length) return null;
+        if (!blanks.length || blanks.some((b) => !b.length) || gapCount(t.prompt) !== blanks.length) return no(`cloze: ${gapCount(t.prompt)} Lücken im Text, ${blanks.length} Lösungen${blanks.some((b) => !b.length) ? ", eine Lösung leer" : ""}`);
         // a gap text in a language: upper and lower case count unless the AI says otherwise
         const mode = blanks.flat().every((x) => /^-?\d+([.,/]\d+)?$/.test(x)) ? ("value" as const) : wanted ? caseMode : ("text" as const);
         return { ...base, type: "cloze", data: {}, answer: { blanks, mode } };
@@ -217,20 +227,20 @@ function aiTaskToDraftRaw(t: AITask, req: Pick<AIGenerateRequest, "skills" | "ca
       case "fix": {
         const faulty = (t.faulty_text ?? "").trim();
         const corrected = (t.corrected_text ?? "").trim();
-        if (!faulty || !corrected || !expectedFixes(faulty, corrected, caseMode === "exact").length) return null;
+        if (!faulty || !corrected || !expectedFixes(faulty, corrected, caseMode === "exact").length) return no("fix: Text mit Fehlern oder verbesserter Text fehlt, oder beide sind gleich");
         const fixes = (t.text_errors ?? []).filter((e) => e.wrong.trim() || e.right.trim()).map((e) => ({ wrong: e.wrong.trim(), right: e.right.trim(), label: e.label.trim(), errorType: e.error_type }));
         return { ...base, type: "fix", data: { faulty }, answer: { accepted: [corrected], mode: caseMode, fixes }, errorMap: [] };
       }
       case "calc":
       case "grammar": {
         const accepted = clean(t.accepted_answers);
-        if (!accepted.length) return null;
+        if (!accepted.length) return no(`${format}: richtige Antwort fehlt`);
         const numeric = format === "calc" || t.numeric;
         return { ...base, type: numeric ? "calc" : "grammar", data: {}, answer: { accepted, mode: numeric ? "value" : "text" } };
       }
       case "rechenweg": {
         const accepted = clean(t.accepted_answers);
-        if (!accepted.length) return null;
+        if (!accepted.length) return no("rechenweg: Ergebnis fehlt");
         const start = (t.math_start ?? "").trim();
         const variable = (t.variable ?? "").trim().slice(0, 1) || undefined;
         const d: TaskDraft = {
@@ -240,11 +250,12 @@ function aiTaskToDraftRaw(t: AITask, req: Pick<AIGenerateRequest, "skills" | "ca
           answer: { accepted, unit: t.result_unit?.trim() || null, form: isResultForm(t.result_form) ? t.result_form : null, round: t.round_to ?? null, needWay: true },
         };
         // the AI's own working must pass the app's check, else the task is not used
-        return checkOwnSolution(d) ? null : d;
+        const wrong = checkOwnSolution(d);
+        return wrong ? no(`rechenweg: ${wrong} [Start ${start || "–"}, Ergebnis ${accepted.join("; ")}, Weg: ${clean(t.solution_steps).join(" | ")}]`) : d;
       }
       case "sachaufgabe": {
         const raw = (t.parts ?? []).filter((p) => p.prompt.trim());
-        if (raw.length < 2 || !raw.some((p) => p.kind === "zahl")) return null;
+        if (raw.length < 2 || !raw.some((p) => p.kind === "zahl")) return no(`sachaufgabe: ${raw.length} Teilfragen, ${raw.some((p) => p.kind === "zahl") ? "" : "keine mit Zahl"}`.replace(/, $/, ""));
         const views: PartView[] = [];
         const sols: PartSolution[] = [];
         const values: Record<string, number> = {};
@@ -253,14 +264,15 @@ function aiTaskToDraftRaw(t: AITask, req: Pick<AIGenerateRequest, "skills" | "ca
           const letter = (label.match(/[a-z]/i)?.[0] ?? String.fromCharCode(97 + i)).toLowerCase();
           if (p.kind === "text") {
             const sample = (p.sample_answer ?? p.solution ?? "").trim();
-            if (!sample) return null;
+            if (!sample) return no(`sachaufgabe ${label}: Musterantwort fehlt`);
             views.push({ label, prompt: p.prompt.trim(), kind: "text", lines: 3 });
             sols.push({ sample, solution: p.solution.trim() });
             continue;
           }
-          const answers = clean(p.answers);
-          if (!answers.length || checkValue(answers[0], { accepted: answers, unit: p.unit }).status !== "richtig") return null;
           const unit = p.unit?.trim() || null;
+          // "6" with unit "€": the AI put the unit only in its own field
+          const answers = clean(p.answers).map((a) => (unit && /^-?\d+([.,]\d+)?$/.test(a) ? `${a} ${unit}` : a));
+          if (!answers.length || checkValue(answers[0], { accepted: answers, unit }).status !== "richtig") return no(`sachaufgabe ${label}: Ergebnis ${answers.length ? `„${answers[0]}“ (Einheit ${p.unit ?? "–"}) kann die App nicht lesen` : "fehlt"}`);
           // Folgefehler only with a formula that gives the right result from the right earlier results
           const f = p.follow?.trim() ? parseExpr(p.follow, { vars: Object.keys(values) }) : null;
           const ok = f && Number.isFinite(evaluate(f, values)) && checkValue(String(evaluate(f, values)).replace(".", ","), { accepted: answers, round: 2 }).status !== "falsch";
@@ -274,10 +286,10 @@ function aiTaskToDraftRaw(t: AITask, req: Pick<AIGenerateRequest, "skills" | "ca
       }
       case "free": {
         // a choice question without its options is no open question
-        if (options && t.format !== "free") return null;
+        if (options && t.format !== "free") return no("free: ist eine Auswahlaufgabe");
         const sample = (t.sample_answer ?? t.solution ?? "").trim();
         // „Eine passende Antwort“ is no sample answer: the task is made again
-        if (!sample || isPlaceholder(sample)) return null;
+        if (!sample || isPlaceholder(sample)) return no(`free: ${sample ? "Platzhalter statt Musterlösung" : "Musterlösung fehlt"}`);
         const lines = t.answer_lines && t.answer_lines > 0 ? Math.min(20, t.answer_lines) : undefined;
         return { ...base, type: t.passage ? "reading" : "free", data: { passage: t.passage ?? undefined, ...(lines ? { lines } : {}) }, answer: { sample } };
       }
@@ -286,14 +298,14 @@ function aiTaskToDraftRaw(t: AITask, req: Pick<AIGenerateRequest, "skills" | "ca
 
   if (wanted) {
     // a maths task with working or parts is only that: as a bare calculation it would lose its equation or parts
-    if ((t.format === "rechenweg" || t.format === "sachaufgabe") && !wanted.formats.includes(t.format)) return null;
+    if ((t.format === "rechenweg" || t.format === "sachaufgabe") && !wanted.formats.includes(t.format)) return no(`${t.format} passt nicht zum Typ ${wanted.key}`);
     // the format the AI named first, then the others of the type; nothing outside the type
     const order = [...wanted.formats].sort((a, b) => Number(b === t.format) - Number(a === t.format));
     for (const f of order) {
       const d = as(f as (typeof FORMATS)[number]);
       if (d && wanted.formats.includes(d.type)) return withCriteria(d);
     }
-    return null;
+    return said ? null : no(`passt in keines der Formate von ${wanted.key} (${wanted.formats.join(", ")})`);
   }
   // without a plan: the named format if it is complete, else what the fields allow
   for (const f of [t.format, "order", "mc", "cloze", "fix", "calc", "free"] as const) {
@@ -309,22 +321,28 @@ function aiTaskToDraftRaw(t: AITask, req: Pick<AIGenerateRequest, "skills" | "ca
  * Puts the AI's tasks on the slots of the plan: each task goes to the first open slot of its type (the
  * AI may return them in another order). Slots nothing fits stay null and are made again.
  */
-export function fillPlan(tasks: AITask[], req: AIGenerateRequest & { plan: { skillId: string; category: string }[] }, rng: () => number = Math.random): (TaskDraft | null)[] {
+export function fillPlan(tasks: AITask[], req: AIGenerateRequest & { plan: { skillId: string; category: string }[] }, rng: () => number = Math.random, rejected?: string[]): (TaskDraft | null)[] {
   const all = categoriesFor(req.subject);
   const slots: (TaskDraft | null)[] = req.plan.map(() => null);
+  if (rejected && tasks.length < req.plan.length) rejected.push(`Die KI hat ${tasks.length} von ${req.plan.length} Aufgaben geliefert.`);
   for (const t of tasks) {
     const free = req.plan.map((p, i) => i).filter((i) => !slots[i]);
     // its own slot by category first, then any open slot whose type the task fits
     const order = [...free.filter((i) => req.plan[i].category === t.category), ...free.filter((i) => req.plan[i].category !== t.category)];
+    const reasons: string[] = [];
+    let placed = false;
     for (const i of order) {
       const wanted = all.find((c) => c.key === req.plan[i].category);
       if (!wanted) continue;
-      const d = aiTaskToDraft(t, req, rng, wanted);
+      // the reasons of the task's first try (its own type) say most
+      const d = aiTaskToDraft(t, req, rng, wanted, reasons.length ? undefined : (r) => reasons.push(r));
       if (d) {
         slots[i] = d;
+        placed = true;
         break;
       }
     }
+    if (!placed && rejected) rejected.push(`${t.category}/${t.format} „${t.prompt.replace(/\s+/g, " ").slice(0, 120)}“: ${reasons.join("; ") || "kein freier Platz im Plan"}`);
   }
   return slots;
 }
@@ -338,10 +356,10 @@ export async function generateWithAI(req: AIGenerateRequest, meta: AIMeta = {}, 
 }
 
 /** Like generateWithAI with a plan, but every slot keeps its place: null where no task in the wanted type came back. */
-export async function generatePlanWithAI(req: AIGenerateRequest & { plan: { skillId: string; category: string }[] }, meta: AIMeta = {}): Promise<(TaskDraft | null)[] | null> {
+export async function generatePlanWithAI(req: AIGenerateRequest & { plan: { skillId: string; category: string }[] }, meta: AIMeta = {}, rejected?: string[]): Promise<(TaskDraft | null)[] | null> {
   const out = unwrap(await runAI("aufgaben", WorksheetSchema, GEN_SYSTEM, buildPrompt({ ...req, count: req.plan.length }), { maxTokens: 6000 + req.plan.length * 2500, meta }));
   if (!out) return null;
-  return fillPlan(out.tasks, req);
+  return fillPlan(out.tasks, req, Math.random, rejected);
 }
 
 // ---------- free-text grading ----------

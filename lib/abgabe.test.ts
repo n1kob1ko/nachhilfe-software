@@ -107,7 +107,8 @@ test("submission ids are checked: no foreign results, no reuse for another task,
   const b = await setup("Ben Id");
   await a.answer(a.tasks[0].id, a.right(a.tasks[0]), id(8));
   // Ben's device happens to send the same id: it is Ben's own new answer, Anna's result stays hers
-  const ben = await b.answer(b.tasks[0].id, "7/9", id(8));
+  // a wrong answer for sure (the tasks are random; 7/9 can be right)
+  const ben = await b.answer(b.tasks[0].id, b.right(b.tasks[0]) === "7/9" ? "1/9" : "7/9", id(8));
   assert.equal(ben.correct, false);
   assert.equal(b.attempts().length, 1);
   assert.equal(a.attempts().length, 1);
