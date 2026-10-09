@@ -144,6 +144,9 @@ ${plan}${req.studentContext ? `\nLerndaten des Schülers (ohne persönliche Date
 ${FORMAT_RULES}${req.wortarten ? `\n\n${wortartenPromptRules(req.wortarten)}` : ""}`;
 }
 
+/** Gaps as models sometimes write them instead of ___ */
+const GAP_LIKE = /_{2,}|\.{3,}|…+|\[\s*\]|\(\s*\)/g;
+
 const clean = (xs: string[] | null | undefined) => (xs ?? []).map((x) => x.trim()).filter(Boolean);
 
 /**
@@ -219,10 +222,13 @@ function aiTaskToDraftRaw(t: AITask, req: Pick<AIGenerateRequest, "skills" | "ca
         return no(`${format}: Antwortoptionen oder richtige Option fehlen`);
       case "cloze": {
         const blanks = (t.blanks ?? []).map((alts) => clean(alts));
-        if (!blanks.length || blanks.some((b) => !b.length) || gapCount(t.prompt) !== blanks.length) return no(`cloze: ${gapCount(t.prompt)} Lücken im Text, ${blanks.length} Lösungen${blanks.some((b) => !b.length) ? ", eine Lösung leer" : ""}`);
+        // gaps written another way („__“, „…“, „[ ]“): taken as gaps only when there are exactly as many as solutions
+        const marks = gapCount(base.prompt) ? [] : (base.prompt.match(GAP_LIKE) ?? []);
+        const prompt = marks.length && marks.length === blanks.length ? base.prompt.replace(GAP_LIKE, GAP) : base.prompt;
+        if (!blanks.length || blanks.some((b) => !b.length) || gapCount(prompt) !== blanks.length) return no(`cloze: ${gapCount(prompt)} Lücken im Text, ${blanks.length} Lösungen${blanks.some((b) => !b.length) ? ", eine Lösung leer" : ""}`);
         // a gap text in a language: upper and lower case count unless the AI says otherwise
         const mode = blanks.flat().every((x) => /^-?\d+([.,/]\d+)?$/.test(x)) ? ("value" as const) : wanted ? caseMode : ("text" as const);
-        return { ...base, type: "cloze", data: {}, answer: { blanks, mode } };
+        return { ...base, prompt, type: "cloze", data: {}, answer: { blanks, mode } };
       }
       case "fix": {
         const faulty = (t.faulty_text ?? "").trim();
@@ -345,7 +351,7 @@ export function fillPlan(tasks: AITask[], req: AIGenerateRequest & { plan: { ski
         break;
       }
     }
-    if (!placed && rejected) rejected.push(`${t.category}/${t.format} „${t.prompt.replace(/\s+/g, " ").slice(0, 120)}“: ${reasons.join("; ") || "kein freier Platz im Plan"}`);
+    if (!placed && rejected) rejected.push(`${t.category}/${t.format} „${t.prompt.replace(/\s+/g, " ").slice(0, 240)}“: ${reasons.join("; ") || "kein freier Platz im Plan"}`);
   }
   return slots;
 }

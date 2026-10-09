@@ -25,7 +25,7 @@ const MA = [
 ];
 const TEXT = {
   findings: [
-    { para: 1, quote: "Hunt", replacement: "Hund", category: "rechtschreibung", kind: "fehler", rule: "Auslaut", explanation: "Hund schreibt man mit d.", skill_id: null },
+    { para: 1, quote: "Abent", replacement: "Abend", category: "rechtschreibung", kind: "fehler", rule: "Verlängern", explanation: "Abend schreibt man mit d, wie Abende.", skill_id: null },
     { para: 1, quote: "grosen", replacement: "großen", category: "rechtschreibung", kind: "fehler", rule: "ß", explanation: "Nach langem o steht ß.", skill_id: null },
     { para: 1, quote: "geholt dan", replacement: "geholt. Dann", category: "zeichensetzung", kind: "fehler", rule: "Satzende", explanation: "Hier endet ein Satz.", skill_id: null },
     { para: 1, quote: "nach hause", replacement: "nach Hause", category: "rechtschreibung", kind: "fehler", rule: "Großschreibung", explanation: "„nach Hause“ schreibt man groß.", skill_id: null },
@@ -132,4 +132,22 @@ test("Rechenweg from the KI: a result only in the last line of the working is ta
   const [bad] = fillPlan([{ ...t, solution_steps: ["5x = 35", "x = 8"] } as never], req, Math.random, rejected);
   assert.equal(bad, null);
   assert.match(rejected[0], /rechenweg: /);
+});
+
+test("Lückentext from the KI: gaps written as „…“ or „__“ count when there are as many as solutions", async () => {
+  const { fillPlan } = await import("./ai/features");
+  const { categoriesFor } = await import("./curriculum");
+  const req = {
+    subject: "Deutsch", level: "3. Klasse Volksschule", count: 1, categories: categoriesFor("Deutsch").filter((c) => c.key === "lueckentext"),
+    skills: [{ id: "deutsch.rechtschreibung", name: "Rechtschreibung", area: "Rechtschreibung", difficulty: "leicht" as const }],
+    plan: [{ skillId: "deutsch.rechtschreibung", category: "lueckentext" }],
+  };
+  const t = { ...DE[0], category: "lueckentext", skill_ids: ["deutsch.rechtschreibung"], prompt: "Ergänze: Der … bellt laut. Die Katze __ auf dem Sofa.", blanks: [["Hund"], ["schläft"]] };
+  const [ok] = fillPlan([t as never], req);
+  assert.equal(ok?.prompt, "Ergänze: Der ___ bellt laut. Die Katze ___ auf dem Sofa.");
+  // a count that does not fit stays rejected: „…“ may just be an ellipsis
+  const rejected: string[] = [];
+  const [bad] = fillPlan([{ ...t, prompt: "Ergänze … Der … bellt laut. Die Katze __ auf dem Sofa." } as never], req, Math.random, rejected);
+  assert.equal(bad, null);
+  assert.match(rejected[0], /cloze: 0 Lücken im Text, 2 Lösungen/);
 });
