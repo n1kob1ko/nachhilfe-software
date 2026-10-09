@@ -140,12 +140,12 @@ export async function runSelfTest(meta: AIMeta = {}): Promise<TestStep[]> {
     details: [...taskLines(maTasks), ...ma.rejected],
   });
 
-  // 4. Textkorrektur, 4. Klasse Volksschule: four errors are known
-  const text = "Am Samstag bin ich mit meinem Hunt in den Park gegangen. Dort haben wir einen grosen Ball gefunden. Mein Hund ist schnell gelaufen und hat den Ball geholt dan sind wir nach hause gegangen.";
+  // 4. Textkorrektur, 4. Klasse Volksschule: four errors are known (no misspelt word that could be a pet's name: the KI leaves names alone)
+  const text = "Am Samstag bin ich mit meinem Hund in den Park gegangen. Dort haben wir einen grosen Ball gefunden. Mein Hund ist schnell gelaufen und hat den Ball geholt dan sind wir am Abent nach hause gegangen.";
   const known: [wrong: string, right: string][] = [
-    ["Hunt", "Hund"],
     ["grosen", "großen"],
     ["dan", "dann"],
+    ["Abent", "Abend"],
     ["hause", "Hause"],
   ];
   const tk = await correctTextWithAI(
@@ -153,13 +153,15 @@ export async function runSelfTest(meta: AIMeta = {}): Promise<TestStep[]> {
     { ...meta, trigger: `${TRIGGER}-text` },
   );
   const findings = tk.ok ? tk.data.findings : [];
+  // entries the app had to drop (wrong shape), from the cost log
+  const tkProblem = (tk.callId ? callById(tk.callId)?.error : "") ?? "";
   // "dan" → "Dann" counts too: after the missing full stop it starts a sentence
   const found = known.filter(([w, r]) => findings.some((f) => f.quote.includes(w) && (w === "dan" ? f.replacement.toLowerCase() : f.replacement).includes(r)));
   steps.push({
     key: "text",
     label: "Textkorrektur, 4. Klasse Volksschule",
     ok: tk.ok && found.length >= 3,
-    message: tk.ok ? `${found.length} von ${known.length} eingebauten Fehlern gefunden, ${findings.length} Markierungen insgesamt.` : tk.message,
+    message: (tk.ok ? `${found.length} von ${known.length} eingebauten Fehlern gefunden, ${findings.length} Markierungen insgesamt.` : tk.message) + (tkProblem ? ` (${tkProblem})` : ""),
     ...costOf(tk.callId),
     details: findings.map((f) => `„${f.quote}“ → „${f.replacement}“ (${f.kind}): ${f.explanation}`),
   });
