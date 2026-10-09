@@ -303,9 +303,18 @@ export type CheckItem = {
   review_note: string;
 };
 
+/** At most max characters, cut between words with „…“ (a note cut in mid-word confused in the test, 2026-10-09). */
+export function clip(s: string, max: number): string {
+  const t = s.replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  const head = t.slice(0, max - 1);
+  const space = head.lastIndexOf(" ");
+  return `${(space > max / 2 ? head.slice(0, space) : head).replace(/[\s,;:–-]+$/, "")} …`;
+}
+
 /** The suggestion marked for the teacher, with one more reason (a sorted-out one stays sorted out). */
 export function withNote<T extends CheckItem>(it: T, note: string): T {
-  const review_note = it.review_note.includes(note) ? it.review_note : `${it.review_note} ${note}`.trim().slice(0, 300);
+  const review_note = it.review_note.includes(note) ? it.review_note : clip(`${it.review_note} ${note}`, 450);
   return { ...it, review: it.review === "verworfen" ? "verworfen" : "lehrer", review_note };
 }
 

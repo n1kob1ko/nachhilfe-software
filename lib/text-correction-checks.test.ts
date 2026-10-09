@@ -158,6 +158,17 @@ test("Urteile der zweiten Prüfung: falsch mit derselben Verbesserung ist nur ei
   assert.deepEqual([better.replacement, better.explanation, better.review], ["fuhr", "Präteritum.", "lehrer"]);
 });
 
+test("Notizen werden zwischen Wörtern gekürzt, nie mitten im Wort", async () => {
+  const { clip, withNote } = await import("./text-correction-checks");
+  assert.equal(clip("kurz genug", 20), "kurz genug");
+  assert.equal(clip("Die Erklärung passt nicht genau zur Änderung im Satz", 30), "Die Erklärung passt nicht …");
+  assert.ok(clip("Wort ".repeat(200), 450).length <= 450);
+  const it = { block: 0, pos_start: 0, pos_end: 1, quote: "a", replacement: "b", category: "", kind: "fehler", rule: "", explanation: "", review: "" as const, review_note: "x ".repeat(220).trim() };
+  const noted = withNote(it, "Die zweite Prüfung ist unsicher: Dieser Satz ist lang genug, um gekürzt zu werden.");
+  assert.equal(noted.review, "lehrer");
+  assert.ok(noted.review_note.endsWith(" …") && noted.review_note.length <= 450);
+});
+
 test("Brief: nach der Anrede mit Beistrich beginnt der Absatz klein", () => {
   const blocks = [
     { text: "Sehr geehrte Damen und Herren,", heading: false },
