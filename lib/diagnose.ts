@@ -4,6 +4,7 @@ import { checkTask } from "./builder";
 import { db } from "./db";
 import { DIAGNOSE_MAX, planDiagnosis, type DiagnosisItem } from "./diagnose-plan";
 import { generateBuiltIn, hasBuiltInGenerator } from "./generators";
+import { wortartenFor } from "./wortarten";
 import { browseSkills, prerequisitesOf } from "./lehrplan";
 import { levelWeight, STATUS_THRESHOLDS, taskScore } from "./mastery";
 import { nextSteps, type NextStep } from "./recommend";
@@ -71,7 +72,7 @@ const taskKey = (t: TaskDraft) => `${t.prompt}\n${JSON.stringify(t.data ?? {})}`
  * gets fewer tasks rather than the same one twice. Generator tasks are own tasks (source 'eigen'),
  * also in a diagnosis whose other tasks Claude wrote.
  */
-export function fillFromGenerators(subject: string, plan: DiagnosisItem[], drafts: (TaskDraft | null)[], skills: Map<string, { id: string; name: string }>, seed?: number): (TaskDraft | null)[] {
+export function fillFromGenerators(subject: string, plan: DiagnosisItem[], drafts: (TaskDraft | null)[], skills: Map<string, { id: string; name: string }>, seed?: number, grade?: number): (TaskDraft | null)[] {
   const out = [...drafts];
   const keys = new Set(out.filter((d): d is TaskDraft => Boolean(d)).map(taskKey));
   plan.forEach((item, i) => {
@@ -79,7 +80,7 @@ export function fillFromGenerators(subject: string, plan: DiagnosisItem[], draft
     if (out[i] || !skill) return;
     const count = plan.filter((p) => p.skillId === item.skillId).length;
     for (let k = 0; k < 6 && !out[i]; k++) {
-      const t = generateBuiltIn({ subject, skills: [{ id: skill.id, name: skill.name }], difficulty: item.difficulty, count, taskType: "calc", seed: seed === undefined ? undefined : seed + i * 7 + k }).find((c) => !keys.has(taskKey(c)));
+      const t = generateBuiltIn({ subject, skills: [{ id: skill.id, name: skill.name }], difficulty: item.difficulty, count, taskType: "calc", seed: seed === undefined ? undefined : seed + i * 7 + k, grade, wortarten: grade ? wortartenFor(plan.map((p) => p.skillId), grade) : null }).find((c) => !keys.has(taskKey(c)));
       if (!t) continue;
       out[i] = { ...t, sourceType: "eigen" };
       keys.add(taskKey(t));
@@ -135,7 +136,8 @@ export async function createDiagnosis(input: DiagnosisInput): Promise<{ workshee
         categories: [],
         focusNote: "Kurze Diagnose: je Fähigkeit genau eine Aufgabe in der angegebenen Schwierigkeit, eindeutig auswertbar, möglichst kein Freitext.",
       }, { teacherId: input.teacherId, trigger: "diagnose" });
-      for (const t of out ?? []) {
+      // a diagnosis goes to the student right away: tasks the app flagged for checking are not used
+      for (const t of (out ?? []).filter((x) => !x.data.pruefen?.length)) {
         const slot = forAI.find(({ item, i }) => !drafts[i] && item.skillId === t.skillId);
         if (slot) drafts[slot.i] = { ...t, difficulty: slot.item.difficulty };
       }
@@ -144,7 +146,7 @@ export async function createDiagnosis(input: DiagnosisInput): Promise<{ workshee
       aiError = e instanceof Error ? e.message : String(e);
     }
   }
-  const tasks = fillFromGenerators(input.subject, plan, drafts, all, input.seed).filter((d): d is TaskDraft => Boolean(d));
+  const tasks = fillFromGenerators(input.subject, plan, drafts, all, input.seed, schulstufe(input.schoolType, input.klasse)).filter((d): d is TaskDraft => Boolean(d));
   const topics = input.topics.length ? input.topics : [...new Set(skills.map((s) => s.area))];
   const first = student.name.split(" ")[0];
   const worksheetId = repo.createWorksheet(

@@ -8,6 +8,7 @@ import { checkValue, isResultForm, parseResult, RESULT_FORMS, type PartSolution,
 import { parseExpr, evaluate } from "../math-expr";
 import { checkOwnSolution } from "../math-task";
 import { runAI, unwrap, type AIMeta, type Part } from "./router";
+import { checkWortartTask, isPlaceholder, isWortartenSkill, widenNames, wortartenPromptRules, wortartSkillsOf, type WortartSetting } from "../wortarten";
 
 // ---------- exercise generation ----------
 const FORMATS = ["mc", "calc", "grammar", "cloze", "free", "reading", "order", "fix", "rechenweg", "sachaufgabe"] as const;
@@ -86,6 +87,8 @@ export type AIGenerateRequest = {
   focusNote?: string;
   /** Prompts of tasks that exist already; new ones must be different. */
   avoid?: string[];
+  /** Wortarten skills: the Wortarten the tasks may ask for; every task is checked against it (lib/wortarten.ts). */
+  wortarten?: WortartSetting | null;
 };
 
 const GEN_SYSTEM = `Du bist eine erfahrene Nachhilfelehrerin im österreichischen Schulsystem und erstellst Übungsaufgaben für eine Nachhilfe-Software.
@@ -110,7 +113,8 @@ const FORMAT_RULES = `Formate:
 - order: steps (richtige Reihenfolge); prompt sagt, was geordnet wird
 - rechenweg: prompt sagt, was zu tun ist und dass der Rechenweg Zeile für Zeile aufgeschrieben wird; math_start (Gleichung oder Term) oder bei Textaufgaben null (dann bei Gleichungen variable); accepted_answers = Endergebnis (Zahl, Bruch, ggf. mit Einheit, z. B. 5, 11/12, 72 €; mehrere Lösungen mit ; getrennt); result_unit, result_form; solution_steps = der Lösungsweg als reine Rechenzeilen ohne Wörter (z. B. "3x = 15", "x = 5"), jede Zeile mathematisch richtig – die App prüft jede Zeile
 - sachaufgabe: prompt = die Sachsituation (ohne Fragen); parts = 2–4 zusammenhängende Teilfragen a), b), c), mindestens eine mit kind zahl; spätere Teilfragen bauen auf früheren auf (follow); eine Teilfrage darf eine Erklärung in Worten verlangen (kind text)
-Jede Aufgabe hat criteria: woran man eine richtige Lösung erkennt.`;
+Jede Aufgabe hat criteria: woran man eine richtige Lösung erkennt.
+Musterlösungen und Lösungen sind konkret und vollständig, nie Platzhalter wie „Eine passende Antwort“, „Eine korrekte Erklärung“, „Ein eigenes Beispiel“ oder „Individuelle Schülerlösung“. Bei offenen Aufgaben: ein ausformuliertes Beispiel plus criteria.`;
 
 /** The prompt for the model; separate so it can be checked without calling the API. */
 export function buildPrompt(req: AIGenerateRequest): string {
@@ -137,7 +141,7 @@ ${req.skills.map((s) => `- ${s.id}: ${s.area} › ${s.parentName ? `${s.parentNa
 Aufgabentypen (category):
 ${types}
 ${plan}${req.studentContext ? `\nLerndaten des Schülers (ohne persönliche Daten):\n${req.studentContext}\n` : ""}${req.focusNote ? `\nBesonderer Wunsch der Lehrkraft: ${req.focusNote}\n` : ""}${req.avoid?.length ? `\nDiese Aufgaben gibt es schon, mach andere:\n${req.avoid.slice(0, 30).map((p) => `- ${p.slice(0, 160)}`).join("\n")}\n` : ""}
-${FORMAT_RULES}`;
+${FORMAT_RULES}${req.wortarten ? `\n\n${wortartenPromptRules(req.wortarten)}` : ""}`;
 }
 
 const clean = (xs: string[] | null | undefined) => (xs ?? []).map((x) => x.trim()).filter(Boolean);
@@ -147,7 +151,19 @@ const clean = (xs: string[] | null | undefined) => (xs ?? []).map((x) => x.trim(
  * `wanted`: the task type the plan asked for. Then only its formats count, and a task that does not
  * fit one of them is dropped (null), never turned into another format.
  */
-export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" | "categories" | "subject">, rng: () => number = Math.random, wanted?: Category): TaskDraft | null {
+export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" | "categories" | "subject" | "wortarten">, rng: () => number = Math.random, wanted?: Category): TaskDraft | null {
+  const d = aiTaskToDraftRaw(t, req, rng, wanted);
+  if (!d || !req.wortarten || !(d.category === "wortarten" || (d.skillIds ?? []).some(isWortartenSkill))) return d;
+  // Wortarten: checked by the app whatever the AI provider; rejected tasks are made again or by the generator
+  const check = checkWortartTask(d, req.wortarten, d.category ?? null);
+  if (check.reject.length) return null;
+  const out = widenNames(d);
+  out.skillIds = [...new Set([...(out.skillIds ?? []), ...wortartSkillsOf(out, req.wortarten)])];
+  if (check.review.length) out.data = { ...out.data, pruefen: check.review };
+  return out;
+}
+
+function aiTaskToDraftRaw(t: AITask, req: Pick<AIGenerateRequest, "skills" | "categories" | "subject">, rng: () => number, wanted?: Category): TaskDraft | null {
   const valid = new Set(req.skills.map((s) => s.id));
   const skillIds = t.skill_ids.filter((id) => valid.has(id));
   const skillId = skillIds[0] ?? req.skills[0]?.id ?? null;
@@ -189,7 +205,7 @@ export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" |
       case "mc":
       case "reading":
         if (options) return { ...base, type: format === "reading" || t.passage ? "reading" : "mc", data: { options, passage: t.passage ?? undefined }, answer: { correct: t.correct_option! } };
-        if (format === "reading" && t.passage && (t.sample_answer ?? "").trim()) return { ...base, type: "reading", data: { passage: t.passage }, answer: { sample: t.sample_answer!.trim() } };
+        if (format === "reading" && t.passage && (t.sample_answer ?? "").trim() && !isPlaceholder(t.sample_answer)) return { ...base, type: "reading", data: { passage: t.passage }, answer: { sample: t.sample_answer!.trim() } };
         return null;
       case "cloze": {
         const blanks = (t.blanks ?? []).map((alts) => clean(alts));
@@ -260,7 +276,8 @@ export function aiTaskToDraft(t: AITask, req: Pick<AIGenerateRequest, "skills" |
         // a choice question without its options is no open question
         if (options && t.format !== "free") return null;
         const sample = (t.sample_answer ?? t.solution ?? "").trim();
-        if (!sample) return null;
+        // „Eine passende Antwort“ is no sample answer: the task is made again
+        if (!sample || isPlaceholder(sample)) return null;
         const lines = t.answer_lines && t.answer_lines > 0 ? Math.min(20, t.answer_lines) : undefined;
         return { ...base, type: t.passage ? "reading" : "free", data: { passage: t.passage ?? undefined, ...(lines ? { lines } : {}) }, answer: { sample } };
       }
