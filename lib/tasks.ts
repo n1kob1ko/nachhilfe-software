@@ -65,6 +65,8 @@ export type TaskDraft = {
     passageTitle?: string;
     /** Leseverständnis: what the question practises (info, zusammenhang, schluss, wort, beleg, zusammenfassen, begruenden). */
     aspect?: string;
+    /** KI-Aufgaben: what the teacher has to check before the task can be sent (e.g. a doubtful Wortart); never shown to students. */
+    pruefen?: string[];
   };
   answer: AnswerSpec;
   solution: string;

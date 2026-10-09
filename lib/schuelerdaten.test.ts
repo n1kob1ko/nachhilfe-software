@@ -389,12 +389,13 @@ test("a diagnosis never repeats a task; generator tasks stay own tasks next to C
   const d = await import("./diagnose");
   const { hasBuiltInGenerator } = await import("./generators");
   const skill = "deutsch.wortarten.bestimmen";
-  assert.equal(hasBuiltInGenerator(skill), false, "only explanation tasks without Claude");
+  assert.equal(hasBuiltInGenerator(skill), true, "Wortarten tasks come from the generator (lib/wortarten.ts)");
   const out = await d.createDiagnosis({ studentId: sid, subject: "Deutsch", schoolType: "Mittelschule", klasse: 2, skillIds: [skill], topics: [], teacherId: niko.id, useAI: false, seed: 3 });
   const tasks = repo.listTasks(out.worksheetId);
   const keys = tasks.map((t) => `${t.prompt}\n${JSON.stringify(t.data)}`);
   assert.equal(new Set(keys).size, tasks.length, "no task twice");
-  assert.ok(tasks.length >= 3 && tasks.length < d.planDiagnosis([skill]).length, "fewer tasks rather than the same one twice");
+  assert.equal(tasks.length, d.planDiagnosis([skill]).length, "every slot gets a new task");
+  assert.ok(tasks.every((t) => t.type !== "free"), "determination tasks, no explanation questions");
   assert.ok(tasks.every((t) => t.skillId === skill && t.sourceType === "eigen"));
 
   // a duplicated library entry is the same task: it comes in once, the other slot gets a new one

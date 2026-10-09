@@ -5,6 +5,7 @@ import { db } from "./db";
 import type { Difficulty, TaskType } from "./curriculum";
 import { TASK_TYPES, levelOf } from "./curriculum";
 import { generateBuiltIn } from "./generators";
+import { wortartenFor } from "./wortarten";
 import { klassenLabel, schulstufe } from "./school";
 import { runningUnitForStudent, touchUnit } from "./units";
 import * as repo from "./repo";
@@ -62,6 +63,8 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
   let tasks: TaskDraft[] | null = null;
   let source: "ki" | "generator" = "generator";
   let aiError: string | undefined;
+  const grade = schulstufe(req.schoolType, req.klasse);
+  const wortarten = wortartenFor(req.skillIds, grade);
   if ((req.useAI ?? true) && aiEnabled()) {
     try {
       tasks = await generateWithAI({
@@ -71,6 +74,7 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
         count,
         categories: [],
         focusNote: [req.taskType !== "mixed" ? `Aufgabenformat: ${TASK_TYPES[req.taskType]}` : "", req.focusNote ?? ""].filter(Boolean).join(". "),
+        wortarten,
       }, { teacherId: req.teacherId ?? null, trigger: "empfehlung" });
       if (tasks && tasks.length) source = "ki";
       else aiError = "Die KI hat keine Aufgaben geliefert.";
@@ -80,7 +84,7 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
     }
   }
   if (!tasks || tasks.length === 0) {
-    tasks = generateBuiltIn({ subject: req.subject, skills: skills.map((s) => ({ id: s.id, name: s.name })), difficulty: req.difficulty, count, taskType: req.taskType });
+    tasks = generateBuiltIn({ subject: req.subject, skills: skills.map((s) => ({ id: s.id, name: s.name })), difficulty: req.difficulty, count, taskType: req.taskType, grade, wortarten });
   }
   const label = req.kind === "ueberpruefung" ? "Überprüfung" : TASK_TYPES[req.taskType];
   const title = req.title?.trim() || `${skills.length === 1 ? `${skills[0].area}: ${skills[0].name}` : topic} · ${label}`;

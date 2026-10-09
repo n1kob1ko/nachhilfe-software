@@ -78,12 +78,29 @@ export async function saveTaskAction(taskId: number, draft: TaskDraft): Promise<
   const e = editable(taskId);
   if ("error" in e) return { error: e.error };
   if (!(draft.type in TASK_TYPES) || draft.type === ("mixed" as TaskType)) return { error: "Unbekanntes Antwortformat." };
-  const t = normalizeTask({ ...draft, prompt: String(draft.prompt ?? "").slice(0, 4000) });
+  // saved by the teacher = checked: the KI's „Bitte prüfen“ notes are done
+  const { pruefen: _checked, ...data } = draft.data ?? {};
+  void _checked;
+  const t = normalizeTask({ ...draft, data, prompt: String(draft.prompt ?? "").slice(0, 4000) });
   repo.updateTask(taskId, t);
   titleFromTask(e.task.worksheet_id);
   refresh(e.task.worksheet_id);
   const problem = checkTask(t);
   return problem ? { warning: `Gespeichert. Vor dem Freigeben noch: ${problem}` } : { ok: "Gespeichert." };
+}
+
+/** „Geprüft“: the teacher looked at what the app flagged (e.g. a doubtful Wortart) and keeps the task as it is. */
+export async function confirmTaskAction(taskId: number): Promise<ActionResult> {
+  await requireTeacher();
+  const e = editable(taskId);
+  if ("error" in e) return { error: e.error };
+  const { id: _i, worksheet_id: _w, position: _p, level: _l, ...task } = e.task;
+  void _i, void _w, void _p, void _l;
+  const { pruefen: _checked, ...data } = task.data;
+  void _checked;
+  repo.updateTask(taskId, { ...task, data });
+  refresh(e.task.worksheet_id);
+  return { ok: "Als geprüft markiert." };
 }
 
 export async function deleteTaskAction(taskId: number): Promise<ActionResult> {

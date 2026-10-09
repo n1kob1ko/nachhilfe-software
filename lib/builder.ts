@@ -18,6 +18,7 @@ import { masteryStatus } from "./mastery";
 import { analyzeStudent } from "./service";
 import { gapCount, GAP, type TaskDraft } from "./tasks";
 import { runningUnitForStudent } from "./units";
+import { isPlaceholder, wortartenFor, type WortartSetting } from "./wortarten";
 
 export const AUTO = "automatisch";
 export type DifficultyChoice = Difficulty | typeof AUTO;
@@ -274,6 +275,16 @@ export function planSlots(subject: string, skills: ResolvedSkill[], cats: Catego
   });
 }
 
+/**
+ * Which Wortarten the Wortarten tasks may ask for: the Teilfähigkeiten the teacher chose, otherwise the
+ * Grundeinstellung of the Schulstufe plus the student's Aktueller Stoff and what was practised already.
+ */
+export function wortartenSetting(skillIds: string[], schoolType: string, klasse: number, ctx: StudentContext | null): WortartSetting | null {
+  const practised = ctx ? Object.keys(ctx.mastery).filter((id) => ctx.mastery[id] != null) : [];
+  const current = ctx ? ctx.current.flatMap((c) => c.skillIds) : [];
+  return wortartenFor(skillIds, schulstufe(schoolType, klasse), { practised, current });
+}
+
 const typeName = (subject: string, key: string | null) => (key ? (categoriesFor(subject).find((c) => c.key === key)?.label ?? key) : "");
 
 export async function generateTasks(
@@ -288,6 +299,9 @@ export async function generateTasks(
   const cats: Category[] = categoriesFor(settings.subject).filter((c) => settings.categories.includes(c.key));
   const plan = planSlots(settings.subject, skills, cats, count);
   const slots: (TaskDraft | null)[] = plan.map(() => null);
+  // Wortarten: from all skills of the exercise, also when only one task is made again
+  const wortarten = wortartenSetting([...new Set([...s.skillIds, ...settings.skillIds])], settings.schoolType, settings.klasse, ctx);
+  const grade = schulstufe(settings.schoolType, settings.klasse);
   let aiError: string | undefined;
   let fromAI = 0;
 
@@ -308,6 +322,7 @@ export async function generateTasks(
             studentContext: ctx ? contextForAI(ctx, skills.map((r) => r.skill.id)) : null,
             focusNote: settings.focus,
             avoid: [...(o.avoid ?? []), ...slots.filter((t): t is TaskDraft => Boolean(t)).map((t) => t.prompt)],
+            wortarten,
           },
           o.meta,
         );
@@ -331,7 +346,7 @@ export async function generateTasks(
     const { skill: r, category } = plan[i];
     let t: TaskDraft | null = null;
     for (let guard = 0; guard < 12; guard++) {
-      t = generateForSlot({ skillId: r.skill.id, skillName: r.skill.name, generatorSkillId: r.parent?.id, difficulty: r.difficulty, category, subject: settings.subject }, Math.random, Math.floor(i / skills.length) + guard);
+      t = generateForSlot({ skillId: r.skill.id, skillName: r.skill.name, generatorSkillId: r.parent?.id, difficulty: r.difficulty, category, subject: settings.subject, wortarten, grade }, Math.random, Math.floor(i / skills.length) + guard);
       if (!avoid.has(t.prompt) || guard >= 10) break;
     }
     avoid.add(t!.prompt);
@@ -487,6 +502,8 @@ export function checkTask(t: TaskDraft): string | null {
     if (!t.answer.blanks || t.answer.blanks.length !== gaps || t.answer.blanks.some((b) => !b.some((x) => x.trim()))) return `Für jede der ${gaps} Lücken braucht es eine Lösung.`;
   }
   if (t.type === "free" && !(t.answer.sample?.trim() || t.solution.trim() || t.answer.criteria?.some((c) => c.trim()))) return "Musterlösung, Erwartung oder Lösungsweg fehlt.";
+  if (isPlaceholder(t.answer.sample) || isPlaceholder(t.solution)) return "Die Musterlösung ist nur ein Platzhalter. Bitte eine konkrete Lösung eintragen.";
+  if (t.data.pruefen?.length) return `Bitte prüfen: ${t.data.pruefen[0]}`;
   if (t.type === "fix") {
     if (!t.data.faulty?.trim()) return "Der Text mit Fehlern fehlt.";
     const right = (t.answer.accepted ?? []).filter((a) => a.trim());
