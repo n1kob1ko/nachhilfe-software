@@ -163,7 +163,8 @@ export function priceFor(model: string, tier: Tier): { price: Price; known: bool
 }
 
 /** cacheWrite: 5-minute cache, cacheWrite1h: 1-hour cache (twice the input price). */
-export type Usage = { input: number; output: number; cacheWrite: number; cacheWrite1h?: number; cacheRead: number };
+/** reasoning: the part of output spent on thinking, where the provider reports it (OpenRouter); only for information, output already counts it. */
+export type Usage = { input: number; output: number; cacheWrite: number; cacheWrite1h?: number; cacheRead: number; reasoning?: number };
 
 export function costOf(model: string, tier: Tier, u: Usage): number {
   const { price } = priceFor(model, tier);

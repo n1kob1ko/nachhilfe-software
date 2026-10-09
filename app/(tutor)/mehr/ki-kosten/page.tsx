@@ -1,3 +1,4 @@
+import { AIQualityTest } from "@/components/AIQualityTest";
 import { AISelfTest } from "@/components/AISelfTest";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, SectionTitle } from "@/components/ui";
@@ -65,6 +66,13 @@ export default async function AICostPage() {
         <section className="mb-10">
           <SectionTitle>KI testen</SectionTitle>
           <AISelfTest enabled={aiEnabled()} />
+        </section>
+      )}
+
+      {teacher.is_admin && (
+        <section className="mb-10">
+          <SectionTitle>KI-Qualitätstest</SectionTitle>
+          <AIQualityTest enabled={aiEnabled()} />
         </section>
       )}
 

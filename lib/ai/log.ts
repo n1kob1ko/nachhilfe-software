@@ -138,3 +138,20 @@ export function callById(id: number) {
 export function lastCallOf(trigger: string) {
   return (db().prepare("SELECT id, created_at, fn, model, trigger, input_tokens, output_tokens, cache_read_tokens, duration_ms, cost_usd, status, error FROM ai_calls WHERE trigger = ? ORDER BY id DESC LIMIT 1").get(trigger) as CallLogRow | undefined) ?? null;
 }
+
+/** The highest id in the log (the KI-Qualitätstest counts its own requests from there). */
+export function lastCallId(): number {
+  return (db().prepare("SELECT COALESCE(MAX(id), 0) AS id FROM ai_calls").get() as { id: number }).id;
+}
+
+/** The requests with this trigger after `afterId`, oldest first. */
+export function callsOf(trigger: string, afterId = 0) {
+  return db()
+    .prepare("SELECT id, created_at, fn, model, trigger, input_tokens, output_tokens, cache_read_tokens, duration_ms, cost_usd, status, error FROM ai_calls WHERE trigger = ? AND id > ? ORDER BY id")
+    .all(trigger, afterId) as CallLogRow[];
+}
+
+/** What the requests whose trigger starts with `prefix` cost after `afterId`, in US dollars. */
+export function spentSince(prefix: string, afterId: number): number {
+  return (db().prepare("SELECT COALESCE(SUM(cost_usd), 0) AS usd FROM ai_calls WHERE id > ? AND trigger LIKE ?").get(afterId, `${prefix}%`) as { usd: number }).usd;
+}
