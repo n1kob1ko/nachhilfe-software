@@ -1,4 +1,5 @@
-import { BookmarkCheck, Trash2 } from "lucide-react";
+import { BookmarkCheck, BookOpenText, ChevronRight, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { deleteTemplateAction, useTemplateAction } from "@/app/builder-actions";
 import { BuilderForm } from "@/components/BuilderForm";
 import { FlowSteps } from "@/components/FlowSteps";
@@ -31,6 +32,17 @@ export default async function NewWorksheet({ searchParams }: { searchParams: Pro
         back={ctx ? { href: `/schueler/${ctx.studentId}`, label: ctx.name } : { href: "/uebungen", label: "Übungen" }}
       />
       <FlowSteps current={1} />
+      <Link
+        href={`/uebungen/neu/lesen${studentId ? `?schueler=${studentId}` : ""}`}
+        className="mb-6 flex min-h-[44px] items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3 transition-colors hover:border-ink-3"
+      >
+        <BookOpenText size={20} className="shrink-0 text-accent" aria-hidden />
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">Leseverständnis mit längerem Text</span>
+          <span className="block text-[13px] text-ink-2">Eigener Text oder Text von der KI, dazu mehrere Fragen. Deutsch und Englisch.</span>
+        </span>
+        <ChevronRight size={18} className="shrink-0 text-ink-3" aria-hidden />
+      </Link>
       {templates.length > 0 && (
         <details className="group mb-8" aria-label="Vorlagen">
           <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-semibold text-accent">

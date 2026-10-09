@@ -8,6 +8,7 @@ import { DIFFICULTIES, categoriesFor, difficultyFor, mixFor, type Category, type
 import { generateForSlot } from "./generators";
 import { expectedFixes } from "./fix-text";
 import { checkOwnSolution } from "./math-task";
+import { regenerateReadingQuestion } from "./lesen-draft";
 import * as repo from "./repo";
 import { klassenLabel, schulstufe } from "./school";
 import { activeMaterial, materialLabel, materialSkills, MATERIAL_SOURCES } from "./current-material";
@@ -414,6 +415,9 @@ export function settingsOf(w: repo.Worksheet): BuilderSettings {
 
 /** Replaces one task by a new one for the same skill and type (optionally at another difficulty). */
 export async function regenerateTask(taskId: number, o: { difficulty?: Difficulty; useAI?: boolean; teacherId?: number | null } = {}): Promise<{ ok: boolean; aiError?: string }> {
+  // a question about the shared reading text: another question about the same text (lib/lesen-draft.ts)
+  const reading = await regenerateReadingQuestion(taskId, o.teacherId ?? null, o.difficulty);
+  if (reading) return reading;
   const task = repo.getTask(taskId);
   const w = task ? repo.getWorksheet(task.worksheet_id) : null;
   if (!task || !w) return { ok: false };
@@ -503,6 +507,8 @@ export function normalizeTask(t: TaskDraft): TaskDraft {
   out.skillIds = [...new Set([t.skillId, ...(t.skillIds ?? [])].filter((x): x is string => Boolean(x)))];
   if (out.type === "calc" || out.type === "grammar") out.answer = { ...out.answer, accepted: (out.answer.accepted ?? []).map((a) => a.trim()).filter(Boolean) };
   if (out.answer.criteria) out.answer = { ...out.answer, criteria: out.answer.criteria.map((c) => c.trim()).filter(Boolean) };
+  // Leseverständnis: Belege without text are dropped, the paragraph is a number from 1
+  if (out.answer.evidence) out.answer = { ...out.answer, evidence: out.answer.evidence.map((e) => ({ paragraph: Math.max(1, Math.round(Number(e.paragraph)) || 1), quote: String(e.quote ?? "").trim().slice(0, 600) })).filter((e) => e.quote) };
   if (out.type === "fix" && out.data.faulty) {
     // the described errors follow the texts: one per difference, the teacher's labels kept
     const faulty = out.data.faulty.trim();

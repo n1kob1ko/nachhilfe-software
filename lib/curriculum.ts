@@ -190,7 +190,7 @@ const BASE: CurriculumSkill[] = [
     ["deutsch.grammatik.faelle", "Fälle bestimmen"],
     ["deutsch.grammatik.zeiten", "Zeitformen"],
   ]),
-  ...s("Deutsch", "Textverständnis", 3, 12, [["deutsch.text.verstehen", "Informationen entnehmen"]]),
+  ...s("Deutsch", "Textverständnis", 3, 12, [["deutsch.text.verstehen", "Leseverständnis"]]),
   ...s("Englisch", "Tenses", 5, 10, [
     ["englisch.tenses.presentsimple", "Present Simple"],
     ["englisch.tenses.pastsimple", "Past Simple"],
@@ -207,6 +207,15 @@ const BASE: CurriculumSkill[] = [
 ];
 
 const byId = (id: string) => BASE.find((x) => x.id === id)!;
+const READING_ASPECTS: [string, string][] = [
+  ["info", "Informationen aus Texten entnehmen"],
+  ["zusammenhang", "Zusammenhänge erkennen"],
+  ["schluss", "Schlussfolgerungen ziehen"],
+  ["wort", "Wortbedeutungen erschließen"],
+  ["beleg", "Textstellen als Beleg verwenden"],
+  ["zusammenfassen", "Inhalte zusammenfassen"],
+  ["begruenden", "Aussagen begründen"],
+];
 
 /** Finer steps of some skills, so an exercise can target exactly what a student gets wrong. */
 const SUBSKILLS: CurriculumSkill[] = [
@@ -233,6 +242,9 @@ const SUBSKILLS: CurriculumSkill[] = [
     ["fragen", "Fragen und Verneinung mit do/does"],
   ]),
   ...sub(byId("englisch.tenses.pastsimple"), [["irregular", "Unregelmäßige Formen"]]),
+  // Leseverständnis: what each question about a reading text practises (lib/lesen.ts ASPECTS)
+  ...sub(byId("deutsch.text.verstehen"), READING_ASPECTS),
+  ...sub(byId("englisch.reading.comprehension"), READING_ASPECTS),
 ];
 
 export const CURRICULUM: CurriculumSkill[] = [...BASE, ...SUBSKILLS];

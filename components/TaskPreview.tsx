@@ -1,5 +1,6 @@
 import { categoryLabel, TASK_TYPES } from "@/lib/curriculum";
 import type { Task } from "@/lib/repo";
+import { ASPECT_SHORT, isAspect, OPEN_ASPECTS, severalNoted } from "@/lib/lesen";
 import { mathAnswerText } from "@/lib/math-task";
 import { GAP, hintLabel, type TaskDraft } from "@/lib/tasks";
 import { MathText } from "./MathText";
@@ -28,7 +29,9 @@ export function answerText(t: Pick<TaskDraft, "type" | "data" | "answer">) {
 
 /** The task as the student sees it, plus the solution block for the teacher. */
 export function TaskBody({ task, showSolution, skillName, subject, passageShown }: { task: TaskDraft; showSolution: boolean; skillName?: string; subject?: string; passageShown?: boolean }) {
-  const cat = subject ? categoryLabel(subject, task.category) : null;
+  const aspect = isAspect(task.data.aspect) ? task.data.aspect : null;
+  const cat = aspect ? ASPECT_SHORT[aspect] : subject ? categoryLabel(subject, task.category) : null;
+  const evidence = (task.answer.evidence ?? []).filter((e) => e.quote.trim());
   return (
     <div className="min-w-0">
       {task.data.passage && !passageShown && <blockquote className="ruled mb-4 max-w-[70ch] rounded-lg bg-paper px-4 py-1 text-[15px]"><MathText text={task.data.passage} /></blockquote>}
@@ -139,9 +142,22 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
               <span className="font-semibold">Musterlösung:</span> <MathText text={task.answer.sample} />
             </p>
           )}
+          {aspect && OPEN_ASPECTS.has(aspect) && !severalNoted(task.answer.criteria) && <p className="text-[13px] text-ink-2">Mehrere Antworten sind richtig, wenn sie zum Text passen.</p>}
+          {evidence.length > 0 && (
+            <div className="mt-1 text-[13px]">
+              <span className="font-semibold">Beleg im Text:</span>
+              <ul className="text-ink-2">
+                {evidence.map((e, i) => (
+                  <li key={i}>
+                    <span className="num">Abschnitt {e.paragraph}:</span> „{e.quote}“
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {task.answer.criteria && task.answer.criteria.length > 0 && (
             <div className="mt-1 text-[13px]">
-              <span className="font-semibold">Darauf kommt es an:</span>
+              <span className="font-semibold">{aspect ? "Erwartungshorizont:" : "Darauf kommt es an:"}</span>
               <ul className="list-disc pl-5 text-ink-2">
                 {task.answer.criteria.map((c, i) => (
                   <li key={i}>{c}</li>

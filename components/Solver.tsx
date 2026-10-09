@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowDown, ArrowUp, CheckCircle2, ChevronRight, CircleDashed, CloudOff, Lightbulb, RotateCcw, XCircle } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpenText, Check, CheckCircle2, ChevronLeft, ChevronRight, CircleDashed, CloudOff, Lightbulb, ListChecks, RotateCcw, XCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { submitAnswerAction } from "@/app/actions";
 import { recordHintAction } from "@/app/builder-actions";
@@ -14,6 +14,7 @@ import { splitFractions } from "@/lib/math-text";
 import { checkedMath, initialMath, markMath, MathAnswerInput, mathAnswer, mathReady, mathTouched, restoreMath, type MathState, type MathTaskView } from "./MathAnswer";
 import { MathText } from "./MathText";
 import { FixCompare } from "./FixMarks";
+import { ReadingTextView } from "./ReadingText";
 
 export type ClientTask = {
   id: number;
@@ -21,6 +22,8 @@ export type ClientTask = {
   prompt: string;
   options: string[] | null;
   passage: string | null;
+  /** Leseverständnis: the shared text, on the first question only; every question is about it (lib/lesen.ts). */
+  reading?: { title: string; text: string; lang: string } | null;
   blanks: number;
   /** Order tasks: the steps in the (shuffled) order they are shown. */
   steps: string[] | null;
@@ -121,6 +124,18 @@ export function Solver({
   const done = tasks.filter((t) => t.finished).length;
   const correct = tasks.filter((t) => t.finished?.correct).length;
   const waiting = tasks.filter((t) => t.finished && t.finished.correct === null).length;
+  const reading = initial[0]?.reading ?? null;
+  // Leseverständnis: on a small screen either the text or the question, the student switches
+  const [view, setView] = useState<"text" | "frage">("text");
+  // the next question not answered yet (after the open one, then from the start); none left: the end
+  const nextOpen = (from: number) => {
+    for (let k = 1; k <= tasks.length; k++) {
+      const j = (from + k) % tasks.length;
+      if (!tasks[j].finished && j !== from) return j;
+    }
+    return tasks.length;
+  };
+  const noun = reading ? "Frage" : "Aufgabe";
 
   if (index >= tasks.length) {
     const graded = tasks.length - waiting;
@@ -132,7 +147,7 @@ export function Solver({
           {ratio >= 0.8 ? "Super gemacht!" : ratio >= 0.5 ? "Gut gearbeitet!" : "Geschafft – dranbleiben!"}
         </h1>
         <p className="num mt-2 text-[20px]">
-          {correct} von {tasks.length} Aufgaben richtig
+          {reading && waiting === tasks.length ? `Alle ${tasks.length} Antworten abgegeben` : `${correct} von ${tasks.length} ${reading ? "Fragen" : "Aufgaben"} richtig`}
         </p>
         {waiting > 0 && (
           <p className="num mt-1 text-[16px] text-ink-2">
@@ -140,14 +155,126 @@ export function Solver({
           </p>
         )}
         <p className="mx-auto mt-3 max-w-[48ch] text-ink-2">Deine Ergebnisse sind gespeichert. Deine Nachhilfelehrerin bzw. dein Nachhilfelehrer sieht, wo du schon sicher bist und was ihr noch übt.</p>
-        <HomeLink href={home} plain={via !== "link"} className="btn btn-primary mt-8">
-          Zurück zur Übersicht
-        </HomeLink>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          {reading && (
+            <button type="button" className="btn btn-secondary" onClick={() => setIndex(0)}>
+              Text und Antworten ansehen
+            </button>
+          )}
+          <HomeLink href={home} plain={via !== "link"} className="btn btn-primary">
+            Zurück zur Übersicht
+          </HomeLink>
+        </div>
       </div>
     );
   }
 
   const task = tasks[index];
+  const card = (
+    <TaskCard
+      key={task.id}
+      task={task}
+      token={token}
+      via={via}
+      assignmentId={assignmentId}
+      maxTries={maxTries}
+      reading={Boolean(reading)}
+      onFinished={(f) => setTasks((all) => all.map((t) => (t.id === task.id ? { ...t, finished: f } : t)))}
+      onNext={() => setIndex(reading ? nextOpen(index) : index + 1)}
+      isLast={reading ? nextOpen(index) === tasks.length : index === tasks.length - 1}
+    />
+  );
+  const tone = (t: ClientTask) =>
+    t.finished ? (t.finished.correct === null || t.finished.review === "teilweise" ? "amber" : t.finished.correct ? "green" : "red") : null;
+
+  if (reading) {
+    const go = (i: number) => {
+      setIndex(i);
+      setView("frage");
+    };
+    return (
+      <div className="lesen-breit">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          <HomeLink href={home} plain={via !== "link"} className="min-w-0 text-[14px] font-medium text-ink-2 hover:text-ink">
+            ← {title}
+          </HomeLink>
+          <nav className="flex flex-wrap items-center gap-1.5" aria-label="Fragen">
+            {tasks.map((t, i) => {
+              const c = tone(t);
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => go(i)}
+                  aria-current={i === index ? "step" : undefined}
+                  aria-label={`Frage ${i + 1}${t.finished ? (t.finished.correct === null ? ", abgegeben" : t.finished.correct ? ", richtig" : ", erledigt") : ""}`}
+                  className={`num flex h-11 w-11 items-center justify-center rounded-full border text-[15px] font-semibold transition-colors ${
+                    i === index
+                      ? "border-accent bg-accent text-white"
+                      : c === "green"
+                        ? "border-transparent bg-green-wash text-green"
+                        : c === "amber"
+                          ? "border-transparent bg-amber-wash text-amber"
+                          : c === "red"
+                            ? "border-transparent bg-red-wash text-red"
+                            : "border-line-strong bg-surface text-ink-2 hover:border-ink-3"
+                  }`}
+                >
+                  {t.finished && i !== index ? <Check size={16} aria-hidden /> : i + 1}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+        <div className="sticky top-0 z-10 -mx-1 mb-4 flex gap-1 rounded-full bg-panel p-1 lg:hidden" role="tablist" aria-label="Ansicht">
+          {(["text", "frage"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              role="tab"
+              aria-selected={view === v}
+              onClick={() => setView(v)}
+              className={`flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-full text-[15px] font-semibold ${view === v ? "bg-surface shadow-[var(--shadow-card)]" : "text-ink-2"}`}
+            >
+              {v === "text" ? <BookOpenText size={17} aria-hidden /> : <ListChecks size={17} aria-hidden />}
+              {v === "text" ? "Text" : `Frage ${index + 1} von ${tasks.length}`}
+            </button>
+          ))}
+        </div>
+        <div className="lg:grid lg:grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
+          <section
+            aria-label="Lesetext"
+            className={`${view === "frage" ? "hidden lg:block" : ""} rounded-2xl border border-line bg-surface px-5 py-6 md:px-8 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:overflow-y-auto`}
+          >
+            <ReadingTextView title={reading.title} text={reading.text} size="lg" lang={reading.lang} />
+            <button type="button" className="btn btn-primary mt-6 lg:hidden" onClick={() => setView("frage")}>
+              Zu Frage {index + 1} <ChevronRight size={17} aria-hidden />
+            </button>
+          </section>
+          <section aria-label={`Frage ${index + 1}`} className={view === "text" ? "hidden lg:block" : ""}>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <p className="num text-[15px] font-semibold text-ink-2" aria-live="polite">
+                Frage {index + 1} von {tasks.length}
+              </p>
+              <span className="flex gap-1">
+                <button type="button" className="flex h-11 w-11 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-panel disabled:opacity-30" disabled={index === 0} onClick={() => go(index - 1)} aria-label="Zur vorigen Frage">
+                  <ChevronLeft size={18} aria-hidden />
+                </button>
+                <button type="button" className="flex h-11 w-11 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-panel disabled:opacity-30" disabled={index === tasks.length - 1} onClick={() => go(index + 1)} aria-label="Zur nächsten Frage">
+                  <ChevronRight size={18} aria-hidden />
+                </button>
+              </span>
+            </div>
+            <div className="rounded-2xl border border-line bg-surface px-5 py-5 md:px-6">{card}</div>
+            <p className="num mt-3 text-[13px] text-ink-3">
+              {done} von {tasks.length} beantwortet
+            </p>
+          </section>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-6">
@@ -156,7 +283,7 @@ export function Solver({
             ← {title}
           </HomeLink>
           <span className="num shrink-0 text-ink-2">
-            Aufgabe {index + 1} von {tasks.length}
+            {noun} {index + 1} von {tasks.length}
           </span>
         </div>
         <div className="flex gap-1" aria-hidden>
@@ -181,17 +308,7 @@ export function Solver({
           {done} von {tasks.length} erledigt
         </p>
       </div>
-      <TaskCard
-        key={task.id}
-        task={task}
-        token={token}
-        via={via}
-        assignmentId={assignmentId}
-        maxTries={maxTries}
-        onFinished={(f) => setTasks((all) => all.map((t) => (t.id === task.id ? { ...t, finished: f } : t)))}
-        onNext={() => setIndex((i) => i + 1)}
-        isLast={index === tasks.length - 1}
-      />
+      {card}
     </div>
   );
 }
@@ -205,12 +322,15 @@ function TaskCard({
   onFinished,
   onNext,
   isLast,
+  reading = false,
 }: {
   task: ClientTask;
   token: string;
   via: Via;
   assignmentId: number;
   maxTries: number;
+  /** a question about the reading text next to it: smaller, "Abgeben" for answers the teacher grades */
+  reading?: boolean;
   onFinished: (f: NonNullable<ClientTask["finished"]>) => void;
   onNext: () => void;
   isLast: boolean;
@@ -252,6 +372,8 @@ function TaskCard({
 
   const key = draftKey(via, assignmentId, task.id);
   const restored = useRef(false);
+  // the answer is kept on this device while it is written (shown in a Leseverständnis)
+  const [kept, setKept] = useState(false);
   useEffect(() => {
     startedAt.current = Date.now();
     if (!task.finished) {
@@ -273,6 +395,7 @@ function TaskCard({
     if (final) return writeDraft(key, null);
     const changed = choice !== null || (task.faulty ? text !== task.faulty : text !== "") || gaps.some((g) => g) || order.some((o, i) => o !== i) || (math !== null && mathTouched(math));
     writeDraft(key, changed ? { choice, text, gaps, order, ...(m && math ? { math: mathAnswer(m, math) } : {}) } : null);
+    setKept(changed);
   }, [key, final, choice, text, gaps, order, math, m, task.faulty]);
 
   const answer = m && math ? JSON.stringify(mathAnswer(m, math)) : task.options ? (choice === null ? "" : String(choice)) : task.steps ? JSON.stringify(order) : task.blanks > 0 ? JSON.stringify(gaps) : text;
@@ -351,6 +474,8 @@ function TaskCard({
   }, [unsent, deliver]);
 
   const promptParts = useMemo(() => task.prompt.split(GAP), [task.prompt]);
+  // the teacher grades the answer: it is handed in, not checked
+  const handIn = reading && (task.type === "free" || (task.type === "reading" && !task.options));
 
   return (
     <article>
@@ -363,7 +488,7 @@ function TaskCard({
         }}
       >
         {task.blanks > 0 ? (
-          <p className="text-[21px] leading-[2.1] font-medium">
+          <p className={`${reading ? "text-[18px] leading-[2.2]" : "text-[21px] leading-[2.1]"} font-medium`}>
             {promptParts.map((p, i) => (
               <span key={i} className="whitespace-pre-line">
                 <MathText text={p} />
@@ -392,7 +517,7 @@ function TaskCard({
             ))}
           </p>
         ) : (
-          <p className="text-[21px] leading-snug font-medium whitespace-pre-line"><MathText text={task.prompt} /></p>
+          <p className={`${reading ? "text-[19px] leading-snug" : "text-[21px] leading-snug"} font-medium whitespace-pre-line`}>{reading ? task.prompt : <MathText text={task.prompt} />}</p>
         )}
 
         {task.options && (
@@ -485,15 +610,16 @@ function TaskCard({
               <textarea
                 ref={(el) => void (inputRef.current = el)}
                 className="input text-[17px] leading-relaxed"
-                rows={Math.min(16, Math.max(5, task.lines ?? 6))}
+                rows={Math.min(16, Math.max(reading ? 4 : 5, task.lines ?? 6))}
                 value={text}
                 disabled={final}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Deine Antwort"
                 aria-label="Deine Antwort"
               />
-              <p className="num mt-1 text-right text-[13px] text-ink-3" aria-live="polite">
-                {words(text) === 1 ? "1 Wort" : `${words(text)} Wörter`}
+              <p className="num mt-1 flex justify-between gap-3 text-[13px] text-ink-3">
+                <span>{reading && kept && !final ? "Entwurf auf diesem Gerät gespeichert" : ""}</span>
+                <span aria-live="polite">{words(text) === 1 ? "1 Wort" : `${words(text)} Wörter`}</span>
               </p>
             </div>
           ) : (
@@ -592,7 +718,7 @@ function TaskCard({
           {!final && (
             <>
               <button className="btn btn-primary h-11 px-6 text-[15px]" disabled={!canSubmit}>
-                {pending ? "Wird geprüft …" : "Prüfen"}
+                {pending ? (handIn ? "Wird gesendet …" : "Wird geprüft …") : handIn ? "Abgeben" : "Prüfen"}
               </button>
               {hintsShown < task.hints.length && (
                 <button type="button" className="btn btn-secondary h-11" onClick={openHint}>
@@ -613,7 +739,7 @@ function TaskCard({
           )}
           {final && (
             <button type="button" className="btn btn-primary h-11 px-6 text-[15px]" onClick={onNext} autoFocus>
-              {isLast ? "Fertig" : "Nächste Aufgabe"} <ChevronRight size={17} aria-hidden />
+              {isLast ? "Fertig" : reading ? "Nächste Frage" : "Nächste Aufgabe"} <ChevronRight size={17} aria-hidden />
             </button>
           )}
         </div>
