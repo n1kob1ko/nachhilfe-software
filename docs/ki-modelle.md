@@ -65,3 +65,11 @@ Mehr › KI-Kosten › KI testen (nur Administration). Zuerst eine winzige Anfra
 3. Textkorrektur eines kurzen Volksschultexts mit vier eingebauten Fehlern.
 
 Angezeigt werden Modell, Dauer, Kosten und die Aufgaben selbst. Aufgaben, die die Prüfung der App nicht bestehen, stehen mit dem Grund dabei („Verworfen: …“, bei Rechenwegen mit Angabe, Ergebnis und Lösungsweg der KI). Zusammen meist unter 5 Cent; die Kosten zählen zum Budget. Die Ergebnisse stehen auch im Server-Protokoll (`[KI-Selbsttest]`, ohne Schlüssel und ohne Schülerdaten).
+
+## KI-Qualitätstest
+
+Mehr › KI-Kosten › Qualitätstest starten (nur Administration). Prüft, wie gut die KI für den Unterricht ist, nicht nur, ob sie antwortet: 20 Unterrichtssituationen von der Volksschule bis zur Oberstufe (Fälle in `lib/ai/qualitaetstest-faelle.ts`), jede über dieselben Funktionen und Prüfungen wie in der App, nur mit erfundenen Daten. Dazu Vergleiche für Tempo (ohne Nachdenken, weniger Nachdenken, eine Anfrage je Aufgabe, „Passende Aufgabe senden“, 10 Aufgaben) und Modell (Sonnet statt Haiku bei schwierigen Mathe-Aufgaben, Haiku statt Sonnet bei der Textkorrektur). Diese Einstellungen gelten nur innerhalb des Tests (`withAIOverride` im Router); die App selbst ändert sich nicht.
+
+Für die Textkorrektur sind die eingebauten Fehler und richtige österreichische Formen (Jause, heuer, Jänner, Paradeiser …) hinterlegt; der Test zählt gefundene Fehler und fälschlich markierte richtige Stellen.
+
+Läuft im Hintergrund, meist 5 bis 10 Minuten. Höchstens 1 €: Vor jedem Fall rechnet der Test aus, was er im schlimmsten Fall kosten könnte, und überspringt ihn, wenn die Grenze sonst überschritten werden könnte. Die Kosten zählen zum Budget (Auslöser `qualitaet-<Nr>` in `ai_calls`). Jede Aufgabe, Frage und Markierung steht im Server-Protokoll als `[KI-Qualitaetstest] <Nr> <Teil> {json}`, lange Zeilen in nummerierten Teilen; dazu Modell, Dauer, Tokens, Denk-Tokens und Kosten jedes Aufrufs.

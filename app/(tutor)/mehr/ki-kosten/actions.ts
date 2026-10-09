@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { aiEnabled } from "@/lib/ai";
+import { qualityState, startQualityTest, type RunState } from "@/lib/ai/qualitaetstest";
 import { runSelfTest, type TestStep } from "@/lib/ai/selbsttest";
 import { requireTeacher } from "@/lib/auth";
 
@@ -27,4 +28,22 @@ export async function selfTestAction(): Promise<SelfTestState> {
     guard.running = false;
     guard.at = Date.now();
   }
+}
+
+export type QualityTestState = { state: RunState | null } | { error: string };
+
+/** Mehr › KI-Kosten › KI-Qualitätstest: 20 lessons with invented data, in the background; at most 1 €. */
+export async function startQualityTestAction(): Promise<QualityTestState> {
+  const teacher = await requireTeacher();
+  if (!teacher.is_admin) return { error: "Nur die Administration kann den Qualitätstest starten." };
+  if (!aiEnabled()) return { error: "Die KI ist aus: kein Schlüssel hinterlegt oder AI_DISABLED gesetzt." };
+  if (!startQualityTest({ teacherId: teacher.id })) return { error: "Der Qualitätstest läuft bereits." };
+  return { state: qualityState() };
+}
+
+/** The state of the running or last run (until the server restarts). */
+export async function qualityTestStateAction(): Promise<QualityTestState> {
+  const teacher = await requireTeacher();
+  if (!teacher.is_admin) return { error: "Nur die Administration sieht den Qualitätstest." };
+  return { state: qualityState() };
 }

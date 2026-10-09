@@ -5,9 +5,10 @@
  * Which vendor answers is the business of the adapters in ./providers; nothing here is vendor-specific.
  * When anything fails the caller gets { ok: false } and carries on without KI.
  */
+import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash } from "node:crypto";
 import type { z } from "zod";
-import { FUNCTIONS, PROVIDER_IDS, aiSwitchedOff, costOf, routeFor, type AIFunction } from "./config";
+import { FUNCTIONS, PROVIDER_IDS, aiSwitchedOff, costOf, routeFor, type AIFunction, type Usage } from "./config";
 import { budgetState, logCall, type CallStatus } from "./log";
 import { providerReady, providerTransport, unsupported, type Prompt, type Transport } from "./providers";
 
@@ -52,6 +53,18 @@ export function anyProviderKey() {
   return PROVIDER_IDS.some(providerReady);
 }
 
+// ---------- KI-Qualitätstest: other settings for the requests of one test run ----------
+/**
+ * Only the KI-Qualitätstest (Mehr › KI-Kosten) sets this, to compare speed and quality with another
+ * model, without thinking or with less effort. The app's own requests never run with one. `tag` keeps
+ * the requests of one run apart from everything else (no answer is reused across runs).
+ */
+export type AIOverride = { tag: string; model?: string; thinking?: "aus" | "adaptiv"; effort?: "low" | "medium" | "high"; onUsage?: (callId: number, usage: Usage) => void };
+const overrideStore = ((globalThis as unknown as { __aiOverride?: AsyncLocalStorage<AIOverride> }).__aiOverride ??= new AsyncLocalStorage<AIOverride>());
+export function withAIOverride<T>(o: AIOverride, run: () => Promise<T>): Promise<T> {
+  return overrideStore.run(o, run);
+}
+
 // ---------- circuit breaker: after 3 failures in a row, 5 minutes without requests ----------
 const BREAK_AFTER = 3;
 const BREAK_MS = 5 * 60_000;
@@ -74,8 +87,8 @@ export function resetRouter() {
   breaker.until = 0;
 }
 
-function fingerprint(fn: AIFunction, provider: string, model: string, system: string, prompt: Prompt) {
-  return createHash("sha256").update(JSON.stringify([fn, provider, model, system, prompt])).digest("hex");
+function fingerprint(fn: AIFunction, provider: string, model: string, system: string, prompt: Prompt, extra?: unknown) {
+  return createHash("sha256").update(JSON.stringify(extra === undefined ? [fn, provider, model, system, prompt] : [fn, provider, model, system, prompt, extra])).digest("hex");
 }
 
 export type Outcome<T> =
@@ -103,7 +116,12 @@ export async function runAI<S extends z.ZodType>(
 ): Promise<Outcome<z.infer<S>>> {
   if (!aiEnabled(fn)) return { ok: false, status: "aus", message: MESSAGES.aus, callId: null };
   const spec = FUNCTIONS[fn];
-  const { provider, model } = routeFor(fn);
+  const route = routeFor(fn);
+  const ov = overrideStore.getStore();
+  const provider = route.provider;
+  const model = ov?.model || route.model;
+  const thinking = ov?.thinking ?? spec.thinking;
+  const effort = ov?.effort ?? spec.effort;
   const meta = o.meta ?? {};
   const log = (status: CallStatus, extra: Partial<Parameters<typeof logCall>[0]> = {}) =>
     logCall({
@@ -125,7 +143,7 @@ export async function runAI<S extends z.ZodType>(
       ...extra,
     });
 
-  const fp = fingerprint(fn, provider, model, system, prompt);
+  const fp = fingerprint(fn, provider, model, system, prompt, ov ? [ov.tag, thinking, effort] : undefined);
   const kept = spec.reuseMs > 0 ? done.get(fp) : undefined;
   if (kept && kept.at > now() - spec.reuseMs) return { ok: true, data: kept.data as z.infer<S>, reused: true, callId: log("cache") };
   const running = inflight.get(fp);
@@ -154,8 +172,8 @@ export async function runAI<S extends z.ZodType>(
         system,
         cache: spec.cache,
         content: prompt,
-        thinking: spec.thinking,
-        effort: spec.effort,
+        thinking,
+        effort,
         schema,
         signal: ctrl.signal,
         timeoutMs: spec.timeoutMs,
@@ -166,8 +184,13 @@ export async function runAI<S extends z.ZodType>(
       const durationMs = res.simulatedMs ?? Date.now() - started;
       breaker.failures = 0;
       const error = res.problem ?? "";
-      if (res.refusal || res.parsed == null) return { ok: false, status: "abgelehnt", message: MESSAGES.abgelehnt, callId: log("abgelehnt", { ...usage, durationMs, error }) };
+      if (res.refusal || res.parsed == null) {
+        const refused = log("abgelehnt", { ...usage, durationMs, error });
+        ov?.onUsage?.(refused, res.usage);
+        return { ok: false, status: "abgelehnt", message: MESSAGES.abgelehnt, callId: refused };
+      }
       const callId = log("ok", { ...usage, durationMs, error });
+      ov?.onUsage?.(callId, res.usage);
       if (spec.reuseMs > 0) {
         done.set(fp, { at: now(), data: res.parsed });
         if (done.size > MAX_REMEMBERED) done.delete(done.keys().next().value!);
