@@ -21,7 +21,7 @@ export function AIInsight({ studentId, enabled }: { studentId: number; enabled: 
         {enabled ? (
           <Info label="Was ist der Unterschied?">Die Einschätzung nutzt das Standard-Modell. Die Tiefenanalyse nutzt das stärkste Modell und kostet deutlich mehr; sinnvoll vor Prüfungen oder wenn etwas unklar ist.</Info>
         ) : (
-          <Info label="Warum ist das ausgegraut?">Die KI-Einschätzung braucht einen ANTHROPIC_API_KEY (siehe README). Die übrige Auswertung funktioniert auch ohne.</Info>
+          <Info label="Warum ist das ausgegraut?">Die KI-Einschätzung braucht einen KI-Schlüssel (siehe Mehr › KI-Kosten). Die übrige Auswertung funktioniert auch ohne.</Info>
         )}
       </span>
       {state && "error" in state && <p className="mt-3 text-[14px] text-red">{state.error}</p>}

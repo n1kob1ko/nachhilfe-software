@@ -121,29 +121,40 @@ test("router: timeout and errors fall back, three failures pause the KI", async 
   r.resetRouter();
 });
 
-test("budget: above 100 % realtime stops, above 120 % everything; test rows do not count", async () => {
+test("budget: 10 € by default, warning at 80 %, every paid request stops at 100 %; test rows do not count", async () => {
   const r = await import("./ai/router");
   const log = await import("./ai/log");
+  const { budget } = await import("./ai/config");
   const { db } = await import("./db");
   db().exec("DELETE FROM ai_calls");
-  process.env.AI_MONTHLY_BUDGET_USD = "1";
+  assert.equal(budget().monthlyEur, 10);
+  assert.ok(Math.abs(budget().monthlyUsd - 11.2) < 1e-9, "10 € at 1.12 $ per €");
+  process.env.AI_USD_PER_EUR = "1.2";
+  assert.ok(Math.abs(budget().monthlyUsd - 12) < 1e-9);
+  delete process.env.AI_USD_PER_EUR;
+  process.env.AI_MONTHLY_BUDGET_EUR = "1";
   const calls: Call[] = [];
   r.setTransport(fakeTransport(calls));
   const add = (usd: number, test = false) => log.logCall({ fn: "aufgaben", tier: "standard", model: "m", teacherId: null, unitId: null, trigger: "", input: 0, output: 0, cacheWrite: 0, cacheRead: 0, durationMs: 0, costUsd: usd, status: "ok", test });
   add(5, true);
   assert.equal(log.budgetState().level, "ok", "a test run does not count");
   add(0.85);
+  assert.equal(log.budgetState().level, "ok", "0.85 $ of 1.12 $ is 76 %");
+  add(0.1);
   assert.equal(log.budgetState().level, "warnung");
-  add(0.2);
-  assert.equal(log.budgetState().level, "echtzeit-aus");
-  const live = await r.runAI("echtzeit", Answer, "sys", "x");
-  assert.equal(!live.ok && live.status, "budget");
-  assert.ok((await r.runAI("analyse", Answer, "sys", "y")).ok, "other functions still run");
+  assert.ok((await r.runAI("analyse", Answer, "sys", "y")).ok, "under 100 % requests still run");
   add(0.2);
   assert.equal(log.budgetState().level, "aus");
-  const blocked = await r.runAI("analyse", Answer, "sys", "z");
+  const n = calls.length;
+  const live = await r.runAI("echtzeit", Answer, "sys", "x");
+  assert.equal(!live.ok && live.status, "budget");
+  const blocked = await r.runAI("aufgaben", Answer, "sys", "z");
   assert.equal(!blocked.ok && blocked.status, "budget");
+  assert.equal(calls.length, n, "nothing is sent once the budget is used up");
+  process.env.AI_MONTHLY_BUDGET_USD = "5";
+  assert.equal(log.budgetState().level, "ok", "the older dollar setting still wins when set");
   delete process.env.AI_MONTHLY_BUDGET_USD;
+  delete process.env.AI_MONTHLY_BUDGET_EUR;
   db().exec("DELETE FROM ai_calls");
   r.setTransport(null);
   r.resetRouter();
