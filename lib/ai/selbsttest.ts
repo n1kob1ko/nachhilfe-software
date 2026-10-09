@@ -67,7 +67,9 @@ async function exercise(o: { subject: string; schoolType: string; klasse: number
     error = e instanceof Error ? e.message : String(e);
   }
   const row = lastCallOf(o.trigger);
-  return { tasks, error, call: row && row.id > before ? row.id : null };
+  const mine = row && row.id > before ? row : null;
+  // what the provider's answer lacked (cut off, wrong shape …), from the cost log
+  return { tasks, error, call: mine?.id ?? null, problem: mine?.error ?? "" };
 }
 
 export async function runSelfTest(meta: AIMeta = {}): Promise<TestStep[]> {
@@ -105,7 +107,7 @@ export async function runSelfTest(meta: AIMeta = {}): Promise<TestStep[]> {
     key: "deutsch",
     label: "Deutsch: Wortarten, 3. Klasse Volksschule",
     ok: deTasks.length > 0 && !tooAdvanced.length && !placeholders.length,
-    message: de.error || (de.tasks ? `${deTasks.length} von 2 Aufgaben bestehen die Prüfung der App${tooAdvanced.length ? `, ${tooAdvanced.length} fragen andere Wortarten ab` : ""}${placeholders.length ? `, ${placeholders.length} mit Platzhalter-Lösung` : ""}.` : "Keine Antwort."),
+    message: de.error || (de.tasks ? `${deTasks.length} von 2 Aufgaben bestehen die Prüfung der App${tooAdvanced.length ? `, ${tooAdvanced.length} fragen andere Wortarten ab` : ""}${placeholders.length ? `, ${placeholders.length} mit Platzhalter-Lösung` : ""}.` : "Keine verwertbare Antwort.") + (de.problem ? ` (${de.problem})` : ""),
     ...costOf(de.call),
     details: taskLines(deTasks),
   });
@@ -130,7 +132,7 @@ export async function runSelfTest(meta: AIMeta = {}): Promise<TestStep[]> {
     key: "mathe",
     label: "Mathematik: Gleichungen, 3. Klasse Mittelschule",
     ok: maTasks.length === 2,
-    message: ma.error || (ma.tasks ? `${maTasks.length} von 2 Aufgaben bestehen die Nachrechnung der App.` : "Keine Antwort."),
+    message: ma.error || (ma.tasks ? `${maTasks.length} von 2 Aufgaben bestehen die Nachrechnung der App.` : "Keine verwertbare Antwort.") + (ma.problem ? ` (${ma.problem})` : ""),
     ...costOf(ma.call),
     details: taskLines(maTasks),
   });

@@ -5,6 +5,7 @@
  */
 import { z } from "zod";
 import type { ProviderId, Usage } from "../config";
+import { parseLenient } from "./repair";
 import type { AIRequest, Capabilities, Part, Transport } from "./types";
 
 type Flavor = Capabilities & {
@@ -75,33 +76,6 @@ export function jsonIn(text: string): unknown {
   } catch {
     return null;
   }
-}
-
-const allowsNull = (s: Record<string, unknown>) =>
-  s.type === "null" || (Array.isArray(s.type) && s.type.includes("null")) || (Array.isArray(s.anyOf) && s.anyOf.some((x) => (x as Record<string, unknown>)?.type === "null"));
-
-/**
- * Fields the schema allows to be null but the answer left out, set to null (all the way down). Without
- * the schema as response format a model often skips empty fields; the content is still complete.
- */
-export function fillNulls(value: unknown, schema: unknown): unknown {
-  if (!schema || typeof schema !== "object" || value == null) return value;
-  const s = schema as Record<string, unknown>;
-  const branches = [s, ...((Array.isArray(s.anyOf) ? s.anyOf : []) as unknown[])].filter((b): b is Record<string, unknown> => Boolean(b) && typeof b === "object");
-  if (Array.isArray(value)) {
-    const items = branches.find((b) => b.items)?.items;
-    return items ? value.map((v) => fillNulls(v, items)) : value;
-  }
-  if (typeof value !== "object") return value;
-  const props = branches.find((b) => b.properties)?.properties as Record<string, Record<string, unknown>> | undefined;
-  if (!props) return value;
-  const out: Record<string, unknown> = { ...(value as Record<string, unknown>) };
-  for (const [k, ps] of Object.entries(props)) {
-    if (out[k] === undefined) {
-      if (allowsNull(ps)) out[k] = null;
-    } else out[k] = fillNulls(out[k], ps);
-  }
-  return out;
 }
 
 type ChatResponse = {
@@ -195,11 +169,13 @@ export const openAICompatibleTransport: Transport = async (req) => {
   const text = choice?.message?.content ?? "";
   const refusal = choice?.finish_reason === "content_filter" || Boolean(choice?.message?.refusal);
   const raw = refusal ? null : jsonIn(text);
-  let checked = raw == null ? null : req.schema.safeParse(raw);
-  if (raw != null && !checked!.success) checked = req.schema.safeParse(fillNulls(raw, jsonSchemaOf(req.schema)));
+  const checked = raw == null ? null : parseLenient(req.schema, raw, jsonSchemaOf(req.schema));
+  const problem =
+    choice?.finish_reason === "length" ? "Antwort abgeschnitten: Token-Grenze erreicht" : raw == null && !refusal ? "Antwort enthält kein JSON" : checked?.problem;
   return {
-    parsed: checked?.success ? checked.data : null,
+    parsed: checked?.data ?? null,
     refusal,
+    ...(problem ? { problem } : {}),
     model: data.model || req.model,
     usage: usageOf(data.usage),
     ...(typeof data.usage?.cost === "number" ? { costUsd: data.usage.cost } : {}),
