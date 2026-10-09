@@ -134,3 +134,16 @@ test("Gleicher Fehler an anderer Stelle nur mit gleichem Nachbarwort", () => {
   );
   assert.equal(more[0].start, blocks[1].indexOf("spaß zu"));
 });
+
+test("Urteile der zweiten Prüfung: falsch mit derselben Verbesserung ist nur ein Zweifel, „nicht richtig“ ist falsch", async () => {
+  const { applyVerdicts } = await import("./ai/textkorrektur-gruendlich");
+  const base = { block: 0, pos_start: 0, pos_end: 5, quote: "furen", replacement: "fuhren", category: "rechtschreibung", kind: "fehler", rule: "", explanation: "h", review: "" as const, review_note: "", origin: "analyse" as const };
+  const proposals = [{ k: 0, para: 1, start: 0, end: 5, quote: "furen", replacement: "fuhren" }];
+  const check = (o: Record<string, unknown>) => applyVerdicts([base], proposals, { checks: [{ nr: 1, verdict: "falsch", explanation_ok: true, better_replacement: null, better_explanation: null, reason: "x", ...o }], missed: [] }, null).items[0];
+  assert.equal(check({ better_replacement: "fuhren" }).review, "lehrer");
+  assert.equal(check({ better_replacement: "fuhren" }).replacement, "fuhren");
+  assert.equal(check({ better_replacement: "furen" }).review, "verworfen", "the original was right");
+  assert.equal(check({ verdict: "nicht richtig" }).review, "verworfen");
+  const better = check({ better_replacement: "fuhr", better_explanation: "Präteritum." });
+  assert.deepEqual([better.replacement, better.explanation, better.review], ["fuhr", "Präteritum.", "lehrer"]);
+});

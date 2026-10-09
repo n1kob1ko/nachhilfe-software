@@ -224,7 +224,7 @@ export function verifyText(r: CorrectionRequest, items: CheckItem[], proposals: 
 
 const verdictOf = (v: unknown): "richtig" | "falsch" | "unsicher" => {
   const s = String(v ?? "").toLowerCase();
-  if (/falsch|nein|wrong|incorrect/.test(s)) return "falsch";
+  if (/falsch|nein|wrong|incorrect|nicht (richtig|korrekt)/.test(s)) return "falsch";
   if (/richtig|ja|korrekt|ok|correct|true/.test(s)) return "richtig";
   return "unsicher";
 };
@@ -258,8 +258,13 @@ export function applyVerdicts<T extends CheckItem & { origin: ItemOrigin }>(item
     const verdict = verdictOf(c.verdict);
     const better = typeof c.better_replacement === "string" ? c.better_replacement.replace(/\s+/g, " ") : "";
     const betterExplanation = short(c.better_explanation, 300);
+    // „falsch“ with the same wording as before contradicts itself: a doubt, not a verdict
+    if (verdict === "falsch" && better.trim() && better.trim() === p.replacement.trim()) {
+      out[p.k] = withNote(it, `Die zweite Prüfung widerspricht sich${reason ? `: ${reason}` : "."}`);
+      return;
+    }
     if (verdict === "falsch") {
-      if (better.trim() && better.trim() !== p.quote.trim() && better.trim() !== p.replacement.trim()) {
+      if (better.trim() && better.trim() !== p.quote.trim()) {
         out[p.k] = withNote(
           { ...it, replacement: restoreNames(better, it.quote, pattern).slice(0, 200), explanation: betterExplanation || it.explanation },
           `Die zweite Prüfung hat „${short(it.replacement, 60)}“ verbessert${reason ? `: ${reason}` : "."}`,
