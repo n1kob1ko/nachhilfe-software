@@ -23,7 +23,7 @@ const TaskSchema = z.object({
   passage: z.string().nullable().describe("Nur bei Textverständnis: der Lesetext (bei allen Fragen zum selben Text identisch)"),
   options: z.array(z.string()).nullable().describe("Nur bei mc / reading mit Auswahl: 3–4 Antwortoptionen"),
   correct_option: z.number().int().nullable().describe("Index (0-basiert) der richtigen Option"),
-  accepted_answers: z.array(z.string()).nullable().describe("Bei calc/grammar: alle akzeptierten Kurzantworten"),
+  accepted_answers: z.array(z.string()).nullable().describe("Bei calc/grammar: alle akzeptierten Kurzantworten; bei rechenweg: das Endergebnis (Pflicht), z. B. 7 oder 72 €"),
   numeric: z.boolean().describe("true, wenn die Kurzantwort eine Zahl/ein Bruch ist und wertgleiche Antworten zählen"),
   blanks: z.array(z.array(z.string())).nullable().describe("Bei cloze: pro Lücke die akzeptierten Lösungen"),
   sample_answer: z.string().nullable().describe("Bei free: Musterlösung bzw. Erwartungshorizont"),
@@ -240,6 +240,9 @@ function aiTaskToDraftRaw(t: AITask, req: Pick<AIGenerateRequest, "skills" | "ca
       }
       case "rechenweg": {
         const accepted = clean(t.accepted_answers);
+        // the result only as the last line of the working („x = 7“): taken from there; the check below tests it
+        const last = clean(t.solution_steps).at(-1)?.replace(/^(?:[a-z]\s*)?=\s*/i, "") ?? "";
+        if (!accepted.length && last && checkValue(last, { accepted: [last] }).status === "richtig") accepted.push(last);
         if (!accepted.length) return no("rechenweg: Ergebnis fehlt");
         const start = (t.math_start ?? "").trim();
         const variable = (t.variable ?? "").trim().slice(0, 1) || undefined;
