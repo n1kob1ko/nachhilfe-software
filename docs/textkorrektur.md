@@ -73,7 +73,7 @@ Dazu kommen **Prüfregeln ohne KI** (`lib/text-correction-checks.ts`), bei Norma
 
 Gewählt in der Freigabe („Gründlich“) oder nachträglich mit „Gründlich nachprüfen“ in der Seitenleiste einer normalen KI-Korrektur (offene KI-Vorschläge werden ersetzt, Entscheidungen bleiben). Zwei Anfragen statt einer, beide über den Router (`lib/ai/textkorrektur-gruendlich.ts`):
 
-1. **Analyse** (Funktion `textanalyse`). Der Text geht Satz für Satz hinaus, nummeriert „Absatz.Satz“. Die KI muss zu jedem Satz antworten, schreibt den ganzen Satz richtig und listet jede Änderung einzeln, mit „sicher/unsicher“. Ein Satz ohne Antwort wird der Lehrkraft gemeldet („Die KI hat einen Satz nicht beantwortet“). Eine Änderung, die nicht zur Fassung des ganzen Satzes passt, oder eine unsichere wird markiert.
+1. **Analyse** (Funktion `textanalyse`). Der Text geht Satz für Satz hinaus, nummeriert „Absatz.Satz“. Die KI muss zu jedem Satz antworten, schreibt den ganzen Satz richtig und listet jede Änderung einzeln, mit „sicher/unsicher“. Ein Satz ohne Antwort wird der Lehrkraft gemeldet („Die KI hat einen Satz nicht beantwortet“). Eine unsichere Änderung wird markiert, ebenso eine, die nicht zur Fassung des ganzen Satzes passt: Das Programm wendet alle Änderungen des Satzes an und prüft, ob jede mit ihren Nachbarwörtern im ganzen Satz der KI steht („Pokal“ → „der Siegerklasse den Pokal“ ließe „die Siegerklasse einen“ davor stehen).
 2. **Regelfunde.** Das Programm ergänzt, was es selbst sieht: fehlender Beistrich vor dass/weil/wenn/ob …, Kleinbuchstabe am Satzanfang, englisches „i“, doppeltes Wort, derselbe Rechtschreibfehler an anderer Stelle mit demselben Nachbarwort.
 3. **Prüfung** (Funktion `textpruefung`). Jeder Vorschlag aus 1 und 2 wird einzeln geprüft: der ganze Satz vorher und nachher und die Erklärung. Danach liest die Prüfung den Text mit allen Vorschlägen (geänderte Stellen in ⟦ ⟧) und nennt, was noch falsch ist.
 
@@ -85,13 +85,14 @@ Was mit dem Urteil der Prüfung passiert:
 | richtig, Erklärung falsch | neue Erklärung, markiert |
 | unsicher | markiert, mit Grund |
 | falsch, mit besserer Verbesserung | neue Verbesserung, markiert |
-| falsch | aussortiert: zählt nicht, erscheint nirgends, steht unter „Von der zweiten Prüfung aussortiert“ und lässt sich zurückholen (dann markiert) |
+| falsch, die Stelle ist so richtig (Verbesserung gleich dem Original oder nur die Nachbarwörter wiederholt) | aussortiert: zählt nicht, erscheint nirgends, steht unter „Von der zweiten Prüfung aussortiert“ und lässt sich zurückholen (dann markiert) |
+| falsch, ohne Verbesserung | markiert, mit Grund. Im ersten echten Test (2026-10-09) waren 2 von 3 solchen Urteilen selbst falsch, deshalb wird nichts ausgeblendet |
 | noch ein Fehler im Text | neuer Vorschlag, markiert („von der zweiten Prüfung gefunden“) |
 | Prüfung fällt aus | alle Vorschläge markiert |
 
 Eine zweite KI-Prüfung ist kein Beweis. Deshalb bleibt jede Änderung ein Vorschlag, den die Lehrkraft übernimmt; was die Prüfung bezweifelt oder umschreibt, ist sichtbar markiert, und nichts davon zählt, bevor die Lehrkraft es übernimmt.
 
-**Kosten.** Beide Schritte denken mit Aufwand „medium“ (Normal: „low“). Die Freigabe zeigt die Schätzung beider Verfahren. Gemessen wird der Unterschied mit dem Textkorrektur-Test (Mehr › KI-Kosten, nur Administration): erfundene Texte mit eingebauten Fehlern und unabhängig geprüfter Musterkorrektur (`lib/ai/textkorrektur-test-faelle.ts`), jeder Text einmal normal und einmal gründlich, mit echten Anfragen, höchstens 2 €. Jeder Vorschlag steht mit Erklärung und Urteil im Server-Log (`[KI-Textkorrektur-Test]`).
+**Kosten.** Beide Schritte denken mit Aufwand „medium“ (Normal: „low“). Dafür geht das Antwortschema in die Anweisungen statt als `json_schema` (`schemaInPrompt` in `lib/ai/config.ts`): Mit `json_schema` hat Sonnet 5.5 über OpenRouter in keinem einzigen Aufruf nachgedacht (0 Denk-Tokens im Test am 2026-10-09), mit dem Schema in den Anweisungen schon (gemessen bei den Aufgaben). Die Freigabe zeigt die Schätzung beider Verfahren. Gemessen wird der Unterschied mit dem Textkorrektur-Test (Mehr › KI-Kosten, nur Administration): erfundene Texte mit eingebauten Fehlern und unabhängig geprüfter Musterkorrektur (`lib/ai/textkorrektur-test-faelle.ts`), jeder Text einmal normal und einmal gründlich, mit echten Anfragen, höchstens 2 €. Jeder Vorschlag steht mit Erklärung und Urteil im Server-Log (`[KI-Textkorrektur-Test]`).
 
 **Standard.** Ohne Wahl gilt `AI_TEXT_METHOD` (`einfach` oder `gruendlich`, Standard `einfach`).
 
@@ -145,6 +146,7 @@ Mit Denkzeit („adaptiv“, Aufwand niedrig) können es bis etwa 8 Cent werden.
 - **Was rausgeht.** Nur der Text, die Aufgabenstellung, Fach, Textsorte, Stufe und die Fähigkeitenliste. Kein Schülerprofil, keine Notizen, keine Noten.
 - **Namen.** Vor- und Nachname des Schülers und die Namen aller Lehrer werden vor dem Senden zu „[Name]“. In den Verbesserungen setzt der Server sie wieder ein.
 - **Andere Namen.** Namen von Freunden, Orten oder Schulen im Text werden **nicht** erkannt. Die Freigabe warnt davor und zeigt den gesendeten Text.
+- **Datenschutzfilter beim Anbieter.** Ein Guardrail bei OpenRouter (Workspaces › Guardrails, „Person name“) ersetzt erkannte Namen durch „[PERSON_NAME]“, bevor die KI den Text sieht. Er erkennt deutsche Wörter oft falsch („das Sie“, „sie nicht weiß“) und verändert so den Schülertext. Ein Vorschlag mit einem solchen fremden Platzhalter passt nicht zum Text und wird verworfen (gezählt, nie angezeigt).
 - **Kein Automatismus.** Beim Schreiben wird nie etwas gesendet. Jede Anfrage braucht einen Klick und den Freigabe-Haken. Wer freigegeben hat und wann, wird gespeichert.
 - **Ohne KI.** Ohne Schlüssel oder mit `AI_DISABLED=1` funktioniert alles außer dem KI-Knopf. Der Knopf zeigt dann den Grund.
 - **Vor dem Einsatz mit echten Texten klären:**

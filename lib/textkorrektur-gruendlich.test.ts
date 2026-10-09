@@ -73,7 +73,7 @@ function fakeKI(o: { calls: AIRequest[]; failCheck?: boolean; einfach?: boolean 
         const nr = Number(m[1]);
         const q = m[2];
         const base = { nr, explanation_ok: true, better_replacement: null, better_explanation: null, reason: "" };
-        if (q === "ins Wasser") checks.push({ ...base, verdict: "falsch", reason: "„ins“ ist richtig." });
+        if (q === "ins Wasser") checks.push({ ...base, verdict: "falsch", better_replacement: "ins Wasser", reason: "„ins“ ist richtig." });
         else if (q === "meinen Freund") checks.push({ ...base, verdict: "unsicher", reason: "Vielleicht ist der Akkusativ gemeint." });
         else if (q === "gehte") checks.push({ ...base, verdict: "richtig", explanation_ok: false, better_explanation: "Die Vergangenheit von „gehen“ heißt „ging“." });
         else checks.push({ ...base, verdict: "richtig" });
@@ -216,4 +216,51 @@ test("einfach: die Regelprüfungen markieren, was nicht zur Änderung passt", as
   assert.match(by(items, "Haus weil").review_note, /Satzzeichen/);
   assert.ok(!items.some((i) => i.origin === "regel"), "no extra suggestions without a check");
   s.router.setTransport(null);
+});
+
+test("gründlich: Änderungen, die nicht zum eigenen Satz der KI passen, und Verbesserungen, die nur Nachbarwörter wiederholen", async () => {
+  const { offSentence, echoesNeighbours } = await import("./ai/textkorrektur-gruendlich");
+  const { comparable } = await import("./text-correction-checks");
+  const s = "Die Direktorin überreichte die Siegerklasse einen Pokal.";
+  const corrected = comparable("Die Direktorin überreichte der Siegerklasse einen Pokal.");
+  // a short quote with a long replacement leaves the wrong words in front
+  assert.deepEqual([...offSentence(s, [{ quote: "Pokal", replacement: "der Siegerklasse den Pokal" }], corrected)], [0]);
+  assert.deepEqual([...offSentence(s, [{ quote: "die Siegerklasse", replacement: "der Siegerklasse" }], corrected)], []);
+  // a correct change next to one the model left out of the findings stays unmarked
+  const two = "Wir furen mit meine Oma zum See.";
+  assert.deepEqual([...offSentence(two, [{ quote: "furen", replacement: "fuhren" }], comparable("Wir fuhren mit meiner Oma an den See."))], []);
+
+  assert.equal(echoesNeighbours({ quote: "voll", before: "Die 2a gewann ", after: " knapp vor der 2c." }, "voll knapp"), true);
+  assert.equal(echoesNeighbours({ quote: "das", before: "behauptet, das Wirtshaus ist „", after: " Wohnzimmer des Dorfes“" }, "das Wohnzimmer"), true);
+  assert.equal(echoesNeighbours({ quote: "voll", before: "Die 2a gewann ", after: " knapp vor der 2c." }, "sehr"), false);
+  assert.equal(echoesNeighbours({ quote: "voll", before: "Die 2a gewann ", after: " knappe Siege." }, "voll knapp"), false, "only whole words");
+});
+
+test("gründlich: Analyse und Prüfung bekommen das Antwortschema in den Anweisungen, damit Sonnet nachdenkt", async () => {
+  const { chatBody } = await import("./ai/providers/openai-compatible");
+  const { AnalysisSchema } = await import("./ai/textkorrektur-gruendlich");
+  const req = { fn: "textanalyse" as const, provider: "openrouter" as const, model: "anthropic/claude-sonnet-5.5", maxTokens: 20_000, system: "S", cache: "aus" as const, content: "P", thinking: "adaptiv" as const, effort: "medium" as const, schema: AnalysisSchema, signal: new AbortController().signal, timeoutMs: 1000 };
+  const inPrompt = chatBody({ ...req, schemaInPrompt: true }) as Record<string, unknown>;
+  assert.equal(inPrompt.response_format, undefined);
+  assert.deepEqual(inPrompt.reasoning, { effort: "medium" });
+  assert.match((inPrompt.messages as { content: string }[])[0].content, /JSON-Schema/);
+  assert.equal(((chatBody(req) as Record<string, unknown>).response_format as { type: string }).type, "json_schema");
+});
+
+test("Vorschläge mit einem fremden Platzhalter wie [PERSON_NAME] passen nicht zum Text und fallen weg", async () => {
+  const { anchorFindings } = await import("./text-correction-core");
+  const doc = para("Ich glaube, das Sie für alle da ist.");
+  const finding = (quote: string, replacement: string) => ({ para: 1, quote, replacement, category: "rechtschreibung", kind: "fehler", rule: "", explanation: "Hier steht die Konjunktion „dass“.", skill_id: null });
+  const r = anchorFindings(doc, { findings: [finding("glaube, [PERSON_NAME] für", "glaube, dass Sie für"), finding("das Sie", "dass Sie")], hints: [] }, { pattern: null, level: { maxStyle: 5, maxMarks: 20 }, skills: new Set() });
+  assert.deepEqual(r.items.map((i) => i.quote), ["das Sie"]);
+  assert.equal(r.dropped, 1);
+});
+
+test("Stelle finden: ganze Wörter zuerst, ein einzelner Buchstabe nie mitten im Wort", async () => {
+  const { findQuote } = await import("./text-correction-core");
+  const t = "We had a great time, Lena and i went home.";
+  assert.equal(findQuote(t, "i", 0, [])?.start, t.indexOf(" i ") + 1);
+  assert.equal(findQuote("It was time to go.", "i", 0, []), null);
+  assert.equal(findQuote("Das Fahrrad und das Fahrradschloss", "Fahrrad", 10, [])?.start, 4, "a whole word before a part of a word");
+  assert.equal(findQuote("Die Fahrradschlösser", "Fahrrad", 0, [])?.start, 4, "longer quotes may be part of a word");
 });

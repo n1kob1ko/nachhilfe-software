@@ -74,6 +74,10 @@ test("Kategorie oder Erklärung passt nicht zur Änderung", () => {
   assert.equal(mismatchOf({ category: "rechtschreibung", quote: "beim essen", replacement: "beim Essen", explanation: "Nach „beim“ wird das Verb zum Nomen und großgeschrieben." }), null);
   assert.equal(mismatchOf({ category: "zeichensetzung", quote: "Haus weil", replacement: "Haus, weil", explanation: "Vor „weil“ steht ein Beistrich." }), null);
   assert.equal(mismatchOf({ category: "grammatik", quote: "eine Zeitverschwendung ist", replacement: "eine Zeitverschwendung sind", explanation: "Das Subjekt „Spiele“ steht im Plural." }), null);
+  // a rule names both sides; only the explanation counts
+  assert.equal(mismatchOf({ category: "rechtschreibung", quote: "Im folgenden", replacement: "Im Folgenden", rule: "Groß- und Kleinschreibung", explanation: "„Folgenden“ ist hier ein Nomen und wird großgeschrieben." }), null);
+  assert.equal(mismatchOf({ category: "rechtschreibung", quote: "Ergebniss", replacement: "Ergebnis", rule: "s, ss oder ß", explanation: "Ergebnis schreibt man mit einem s." }), null);
+  assert.equal(mismatchOf({ category: "rechtschreibung", quote: "im folgenden", replacement: "im Folgenden", explanation: "Nicht kleingeschrieben, sondern großgeschrieben, weil es ein Nomen ist." }), null);
 });
 
 test("Regeln: Beistrich vor dass/weil/wenn, aber nicht nach „und“, „so“, „ohne“ oder am Satzanfang", () => {
@@ -133,9 +137,13 @@ test("Gleicher Fehler an anderer Stelle nur mit gleichem Nachbarwort", () => {
     [[2, "spaß", "Spaß", 1]],
   );
   assert.equal(more[0].start, blocks[1].indexOf("spaß zu"));
+  // das/dass: one neighbour word says too little („ist, das ein Gasthaus“ / „ist „das Wohnzimmer“)
+  const t = ["Ihr Argument ist, das ein Gasthaus fehlt.", "Sie sagt, das Wirtshaus ist das Wohnzimmer des Dorfes."];
+  const dass = { para: 1, start: t[0].indexOf("das "), end: t[0].indexOf("das ") + 3, quote: "das", replacement: "dass" };
+  assert.deepEqual(sameErrorElsewhere(t, [dass], [dass]), []);
 });
 
-test("Urteile der zweiten Prüfung: falsch mit derselben Verbesserung ist nur ein Zweifel, „nicht richtig“ ist falsch", async () => {
+test("Urteile der zweiten Prüfung: falsch mit derselben Verbesserung ist nur ein Zweifel, „falsch“ ohne Verbesserung auch, „so lassen“ sortiert aus", async () => {
   const { applyVerdicts } = await import("./ai/textkorrektur-gruendlich");
   const base = { block: 0, pos_start: 0, pos_end: 5, quote: "furen", replacement: "fuhren", category: "rechtschreibung", kind: "fehler", rule: "", explanation: "h", review: "" as const, review_note: "", origin: "analyse" as const };
   const proposals = [{ k: 0, para: 1, start: 0, end: 5, quote: "furen", replacement: "fuhren" }];
@@ -143,7 +151,9 @@ test("Urteile der zweiten Prüfung: falsch mit derselben Verbesserung ist nur ei
   assert.equal(check({ better_replacement: "fuhren" }).review, "lehrer");
   assert.equal(check({ better_replacement: "fuhren" }).replacement, "fuhren");
   assert.equal(check({ better_replacement: "furen" }).review, "verworfen", "the original was right");
-  assert.equal(check({ verdict: "nicht richtig" }).review, "verworfen");
+  // „falsch“ without a better wording threw out right suggestions in the real test: marked, not sorted out
+  assert.deepEqual([check({ verdict: "nicht richtig" }).review, check({ verdict: "nicht richtig" }).replacement], ["lehrer", "fuhren"]);
+  assert.match(check({ verdict: "falsch" }).review_note, /hält das für falsch: x/);
   const better = check({ better_replacement: "fuhr", better_explanation: "Präteritum." });
   assert.deepEqual([better.replacement, better.explanation, better.review], ["fuhr", "Präteritum.", "lehrer"]);
 });

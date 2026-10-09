@@ -24,6 +24,8 @@ export type AIRequest = {
   effort: "low" | "medium" | "high";
   /** the answer must match this schema; adapters return null when it does not */
   schema: z.ZodType;
+  /** the schema goes into the instructions even where the model takes json_schema (see FunctionSpec) */
+  schemaInPrompt?: boolean;
   signal: AbortSignal;
   timeoutMs: number;
 };

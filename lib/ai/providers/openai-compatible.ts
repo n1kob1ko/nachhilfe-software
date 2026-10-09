@@ -120,7 +120,7 @@ export function chatBody(req: AIRequest, o: { schemaInPrompt?: boolean } = {}) {
   const flavor = FLAVORS[req.provider as keyof typeof FLAVORS];
   const schema = jsonSchemaOf(req.schema);
   const tooBig = req.provider === "openrouter" && req.model.startsWith("anthropic/") && unionCount(schema) > ANTHROPIC_MAX_UNIONS;
-  const structured = flavor.jsonSchema() && !tooBig && !o.schemaInPrompt;
+  const structured = flavor.jsonSchema() && !tooBig && !o.schemaInPrompt && !req.schemaInPrompt;
   const system = structured ? req.system : `${req.system}\n\nAntworte ausschließlich mit einem JSON-Objekt nach diesem JSON-Schema:\n${JSON.stringify(schema)}`;
   // OpenRouter passes cache_control on to Anthropic models; DeepSeek and most others cache by themselves
   const cacheHere = req.cache !== "aus" && req.provider === "openrouter" && req.model.startsWith("anthropic/");

@@ -157,7 +157,8 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
   const reasoning = new Map<number, number>();
   const onUsage = (id: number, u: Usage) => (u.reasoning != null ? void reasoning.set(id, u.reasoning) : undefined);
   const lines: string[] = [];
-  const ways: { way: WayKey; items: EvalItem[]; trigger: string }[] = [];
+  // only: the requests of a way when it is a part of a run („nur Schritt 1“ is the analysis alone)
+  const ways: { way: WayKey; items: EvalItem[]; trigger: string; only?: string }[] = [];
   const timing = new Map<string, number>();
   const anchorOpts = { pattern: null, level, skills: new Set<string>() };
 
@@ -181,7 +182,7 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
   const two = await withAIOverride({ tag: `${runTag}-${c.nr}-g`, onUsage }, () => correctThoroughly(req, doc, { ...anchorOpts, taken: new Map(), meta: { teacherId, trigger: t2 } }));
   timing.set(t2, Date.now() - started);
   if (two.ok) {
-    ways.push({ way: "schritt1", items: flagItems(texts, two.stages.analyse, { english }), trigger: t2 });
+    ways.push({ way: "schritt1", items: flagItems(texts, two.stages.analyse, { english }), trigger: t2, only: "textanalyse" });
     ways.push({ way: "gruendlich", items: two.items, trigger: t2 });
     if (two.unchecked.length) lines.push(`Gründlich: Sätze ohne Antwort: ${two.unchecked.join(", ")}`);
     if (two.verify === "fehler") lines.push("Gründlich: zweite Prüfung fehlgeschlagen");
@@ -189,13 +190,13 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
 
   const results: WayResult[] = [];
   for (const w of ways) {
-    const calls = callsOf(w.trigger, before1);
+    const calls = callsOf(w.trigger, before1).filter((k) => !w.only || k.fn === w.only);
     const ev = evaluate(c, w.items);
     results.push({
       way: w.way,
       score: ev.score,
       usd: calls.reduce((s, k) => s + k.cost_usd, 0),
-      ms: timing.get(w.trigger) ?? 0,
+      ms: w.only ? calls.reduce((s, k) => s + k.duration_ms, 0) : (timing.get(w.trigger) ?? 0),
       calls: calls.length,
       reasoning: calls.reduce((s, k) => s + (reasoning.get(k.id) ?? 0), 0),
       output: calls.reduce((s, k) => s + k.output_tokens, 0),
