@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
-import { Check, ChevronLeft, ChevronRight, Dumbbell, Eye, EyeOff, Loader2, Pencil, Plus, Printer, RotateCcw, Sparkles, Trash2, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Dumbbell, Eye, EyeOff, Loader2, Pencil, Plus, Printer, RotateCcw, Sparkles, Trash2, X } from "lucide-react";
 import { addItemAction, decideAllAction, decideItemAction, removeItemAction, shareCorrectionAction } from "@/app/correction-actions";
 import { Info } from "@/components/Info";
 import { applyAccepted, countLabel, overview, recommendationFrom, segmentsOf, type AIStatus, type CorrectionItem, type ItemKind, type ItemStatus } from "@/lib/text-correction-core";
@@ -22,6 +22,12 @@ export type WorkspaceCorrection = {
   recommendation: string;
   recommendationSkill: string | null;
   shared: boolean;
+  /** einfach = one KI request; gruendlich = sentence by sentence and a second check */
+  method: "einfach" | "gruendlich";
+  /** sentences („2.3“) the KI did not answer for */
+  unchecked: string[];
+  /** the second check of a „gründlich“ run failed: every suggestion is marked */
+  verifyFailed: boolean;
 };
 
 type Props = {
@@ -43,6 +49,11 @@ const CAT = new Map<string, (typeof TEXT_CATEGORIES)[number]>(TEXT_CATEGORIES.ma
 const KIND_LABEL: Record<ItemKind, string> = { fehler: "Fehler", stil: "Vorschlag", hinweis: "Hinweis" };
 const BADGE: Record<ItemKind, string> = { fehler: "bg-red-wash text-red", stil: "bg-violet-wash text-violet", hinweis: "bg-amber-wash text-amber" };
 const isPlaced = (i: CorrectionItem) => i.block !== null && i.pos_start !== null && i.pos_end !== null;
+/** sorted out by the second check: not in the text, listed apart, can be brought back */
+const sortedOut = (i: CorrectionItem) => i.status === "abgelehnt" && i.review === "verworfen";
+/** open and marked for a close look: never accepted in bulk */
+const toCheck = (i: CorrectionItem) => i.status === "offen" && i.review === "lehrer";
+const ORIGIN: Record<string, string> = { regel: "vom Programm gefunden", pruefung: "von der zweiten Prüfung gefunden" };
 const order = (a: CorrectionItem, b: CorrectionItem) => (a.block ?? -1) - (b.block ?? -1) || (a.pos_start ?? -1) - (b.pos_start ?? -1) || a.id - b.id;
 
 /** Runs with bold/italic/underline; line breaks stay characters (pre-wrap), so positions in the DOM match the text. */
@@ -134,13 +145,16 @@ export function CorrectionWorkspace(p: Props) {
 
   const visible = useCallback((i: CorrectionItem) => (filter === null || i.category === filter) && (showStyle || i.kind !== "stil"), [filter, showStyle]);
   const sorted = useMemo(() => [...items].sort(order), [items]);
-  const placedVisible = sorted.filter((i) => isPlaced(i) && visible(i));
+  const placedVisible = sorted.filter((i) => isPlaced(i) && visible(i) && !sortedOut(i));
   const openPlaced = placedVisible.filter((i) => i.status === "offen");
-  const general = sorted.filter((i) => !isPlaced(i));
+  const general = sorted.filter((i) => !isPlaced(i) && !sortedOut(i));
+  const out = sorted.filter(sortedOut);
   const ov = useMemo(() => overview(items), [items]);
   const rec = recommendationFrom({ recommendation: c.recommendation, recommendation_skill: c.recommendationSkill }, ov, (id) => p.skillNames[id] ?? null);
   const final = useMemo(() => applyAccepted(p.doc, items), [p.doc, items]);
   const openVisible = items.filter((i) => i.status === "offen" && visible(i));
+  const bulk = openVisible.filter((i) => !toCheck(i));
+  const flagged = items.filter(toCheck).length;
   const current = selected === null ? null : (items.find((i) => i.id === selected) ?? null);
 
   // place the card under the selected mark (a sheet at the bottom on phones)
@@ -247,9 +261,11 @@ export function CorrectionWorkspace(p: Props) {
   };
 
   const decideAll = (status: "uebernommen" | "abgelehnt") => {
-    const n = openVisible.length;
+    // accepting in bulk leaves out what is marked for a close look (the server does the same)
+    const these = status === "uebernommen" ? bulk : openVisible;
+    const n = these.length;
     if (!n || !window.confirm(`${n} offene ${n === 1 ? "Stelle" : "Stellen"} ${status === "uebernommen" ? "übernehmen" : "ablehnen"}?`)) return;
-    const ids = new Set(openVisible.map((i) => i.id));
+    const ids = new Set(these.map((i) => i.id));
     setItems((xs) => xs.map((x) => (ids.has(x.id) ? { ...x, status } : x)));
     setSelected(null);
     run(async () => {
@@ -290,7 +306,7 @@ export function CorrectionWorkspace(p: Props) {
     });
 
   // ---------- the text ----------
-  const markClass = (i: CorrectionItem) => `kx-mark kx-${i.kind} kx-${i.status}${selected === i.id ? " kx-sel" : ""}`;
+  const markClass = (i: CorrectionItem) => `kx-mark kx-${i.kind} kx-${i.status}${toCheck(i) ? " kx-check" : ""}${selected === i.id ? " kx-sel" : ""}`;
 
   const korrekturen = p.doc.map((b, bi) => {
     const mine = placedVisible.filter((i) => i.block === bi);
@@ -312,7 +328,7 @@ export function CorrectionWorkspace(p: Props) {
             data-cat={i.status === "offen" ? cat?.short : undefined}
             role="button"
             tabIndex={0}
-            aria-label={`${cat?.label ?? i.category}, ${KIND_LABEL[i.kind]}, ${i.status === "offen" ? "offen" : i.status}: ${i.quote}`}
+            aria-label={`${cat?.label ?? i.category}, ${KIND_LABEL[i.kind]}, ${i.status === "offen" ? "offen" : i.status}${toCheck(i) ? ", genau prüfen" : ""}: ${i.quote}`}
             onClick={open}
             onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), open())}
           >
@@ -371,6 +387,27 @@ export function CorrectionWorkspace(p: Props) {
             </span>
           </div>
         )}
+        {!running && (c.unchecked.length > 0 || c.verifyFailed || flagged > 0) && (
+          <div className="mb-4 flex items-start gap-3 rounded-2xl bg-amber-wash px-5 py-4 text-[15px]" role="status" data-testid="genau-pruefen">
+            <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber" aria-hidden />
+            <div className="grid gap-1">
+              {flagged > 0 && (
+                <p>
+                  <b>
+                    {flagged} {flagged === 1 ? "Vorschlag ist" : "Vorschläge sind"} gestrichelt markiert:
+                  </b>{" "}
+                  Bitte einzeln prüfen, der Grund steht beim Vorschlag. Sie werden bei „Alle übernehmen“ nicht mitgenommen.
+                </p>
+              )}
+              {c.verifyFailed && <p>Die zweite Prüfung der KI ist fehlgeschlagen. Kein Vorschlag wurde kontrolliert.</p>}
+              {c.unchecked.length > 0 && (
+                <p data-testid="ungeprueft">
+                  Die KI hat {c.unchecked.length === 1 ? "einen Satz" : `${c.unchecked.length} Sätze`} nicht beantwortet (Absatz {[...new Set(c.unchecked.map((u) => u.split(".")[0]))].join(", ")}). Diese Stellen bitte selbst durchsehen.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div className="kx-tabs" role="tablist" aria-label="Ansicht">
             {(
@@ -401,6 +438,11 @@ export function CorrectionWorkspace(p: Props) {
               <span className="inline-flex items-center gap-1.5">
                 <span className="inline-block h-3 w-5 rounded-sm bg-green-wash" aria-hidden /> übernommen
               </span>
+              {flagged > 0 && (
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-block h-3 w-5 rounded-sm outline-2 outline-offset-0 outline-amber outline-dashed" aria-hidden /> genau prüfen
+                </span>
+              )}
               <Info label="Wie korrigiere ich?" align="right">
                 Auf eine Markierung tippen: du siehst, was falsch ist und warum, und kannst übernehmen oder ablehnen. Danach springt die Ansicht zur nächsten offenen Stelle. Eigene Korrektur: ein Wort oder eine Stelle im Text markieren. Der Originaltext bleibt immer unverändert.
               </Info>
@@ -573,6 +615,32 @@ export function CorrectionWorkspace(p: Props) {
           )}
         </div>
 
+        {view === "korrekturen" && out.length > 0 && (
+          <details className="reveal mt-4 rounded-2xl border border-line bg-surface px-5 py-3" data-testid="aussortiert">
+            <summary className="text-[15px] font-semibold">
+              Von der zweiten Prüfung aussortiert <span className="num text-ink-2">({out.length})</span>
+            </summary>
+            <p className="mt-1 text-[13px] text-ink-2">Diese KI-Vorschläge hält die zweite Prüfung für falsch. Sie zählen nicht und erscheinen nirgends. Du kannst einen zurückholen.</p>
+            <ul className="mt-1 divide-y divide-line">
+              {out.map((i) => (
+                <li key={i.id} className="flex flex-wrap items-start gap-3 py-3">
+                  <Badge item={i} />
+                  <div className="min-w-0 flex-1 text-[15px]">
+                    <p>
+                      „{i.quote}“ → „{i.replacement || "(streichen)"}“
+                      {i.block !== null && <span className="text-[13px] text-ink-2"> · Absatz {i.block + 1}</span>}
+                    </p>
+                    <p className="text-ink-2">{i.explanation}</p>
+                    {i.review_note && <p className="mt-1 text-[13px] text-amber">{i.review_note}</p>}
+                  </div>
+                  <button type="button" className="btn btn-ghost" disabled={pending} onClick={() => decide(i, "offen")}>
+                    <RotateCcw size={16} aria-hidden /> Zurückholen
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
         {view === "endfassung" && ov.open > 0 && (
           <p className="mt-3 text-[14px] text-ink-2">
             Noch {ov.open} {ov.open === 1 ? "Vorschlag ist" : "Vorschläge sind"} offen und in der Endfassung nicht enthalten.
@@ -593,7 +661,8 @@ export function CorrectionWorkspace(p: Props) {
             <span className="num">{ov.open}</span> <span className="text-[17px] font-medium text-ink-2">offen</span>
           </p>
           <p className="num text-[14px] text-ink-2">
-            {items.filter((i) => i.status === "uebernommen").length} übernommen · {ov.rejected} abgelehnt
+            {items.filter((i) => i.status === "uebernommen").length} übernommen · {ov.rejected - out.length} abgelehnt
+            {out.length > 0 && <> · {out.length} aussortiert</>}
           </p>
           {items.length > 0 && (
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--bar-track)]" aria-hidden>
@@ -639,9 +708,10 @@ export function CorrectionWorkspace(p: Props) {
                 <ChevronRight size={16} aria-hidden /> Nächste offene Stelle
               </button>
             )}
-            <button type="button" className="btn btn-secondary" disabled={pending || !openVisible.length} onClick={() => decideAll("uebernommen")}>
-              <Check size={16} aria-hidden /> Alle übernehmen{openVisible.length ? ` (${openVisible.length})` : ""}
+            <button type="button" className="btn btn-secondary" disabled={pending || !bulk.length} onClick={() => decideAll("uebernommen")} data-testid="alle-uebernehmen">
+              <Check size={16} aria-hidden /> Alle übernehmen{bulk.length ? ` (${bulk.length})` : ""}
             </button>
+            {openVisible.length > bulk.length && <p className="text-[13px] text-ink-2">Ohne die {openVisible.length - bulk.length} gestrichelt markierten, die prüfst du einzeln.</p>}
             <button type="button" className="btn btn-ghost" disabled={pending || !openVisible.length} onClick={() => decideAll("abgelehnt")}>
               <X size={16} aria-hidden /> Alle ablehnen
             </button>
@@ -727,6 +797,7 @@ export function CorrectionWorkspace(p: Props) {
             <p className="mt-2 text-[12px] text-ink-3">
               <Sparkles size={12} className="mr-1 inline" aria-hidden />
               Vorschläge von {c.aiLabel}
+              {c.method === "gruendlich" && " (gründlich: Satz für Satz, jeder Vorschlag ein zweites Mal geprüft)"}
               {c.dropped > 0 && `. ${c.dropped} ${c.dropped === 1 ? "Vorschlag war" : "Vorschläge waren"} nicht prüfbar und ${c.dropped === 1 ? "wurde" : "wurden"} verworfen.`}
             </p>
           )}
@@ -786,6 +857,7 @@ function ItemCard(p: {
           {cat?.label ?? i.category}
           <span className={`rounded-full px-2 py-0.5 text-[12px] ${BADGE[i.kind]}`}>{i.kind === "stil" ? "Vorschlag (optional)" : KIND_LABEL[i.kind]}</span>
           {i.source === "lehrer" && <span className="text-[12px] font-medium text-ink-3">von dir</span>}
+          {i.source === "ki" && ORIGIN[i.origin] && <span className="text-[12px] font-medium text-ink-3">{ORIGIN[i.origin]}</span>}
         </p>
         <button type="button" className="btn btn-ghost -mt-2 -mr-3 !px-3" aria-label="Schließen" onClick={p.onClose}>
           <X size={16} aria-hidden />
@@ -813,6 +885,14 @@ function ItemCard(p: {
         </dd>
       </dl>
       {i.explanation && <p className="rounded-xl bg-panel px-3.5 py-2.5 text-[15px]" data-testid="erklaerung">{i.explanation}</p>}
+      {i.review === "lehrer" && i.review_note && (
+        <p className="flex gap-2 rounded-xl bg-amber-wash px-3.5 py-2.5 text-[14px]" data-testid="genau-pruefen-grund">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber" aria-hidden />
+          <span>
+            <b>Genau prüfen:</b> {i.review_note}
+          </span>
+        </p>
+      )}
       {(i.rule || p.skillName) && (
         <p className="text-[13px] text-ink-2">
           {i.rule && <>Regel: {i.rule}</>}

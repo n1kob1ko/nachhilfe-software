@@ -10,6 +10,11 @@ import { categoryInfo, normalizeCategory, TEXT_CATEGORIES, type Level } from "./
 export type ItemStatus = "offen" | "uebernommen" | "abgelehnt";
 export type ItemKind = "fehler" | "stil" | "hinweis";
 export type ItemSource = "ki" | "lehrer";
+/** Where a KI suggestion came from: '' = the one-step correction, analyse = step 1 of „gründlich“, pruefung = found by the second check, regel = found by the program */
+export type ItemOrigin = "" | "analyse" | "pruefung" | "regel";
+/** '' = nothing special; lehrer = the teacher must look closely (note says why); verworfen = the second check found it wrong (stored as abgelehnt) */
+export type ItemReview = "" | "lehrer" | "verworfen";
+export type CorrectionMethod = "einfach" | "gruendlich";
 export type AIStatus = "keine" | "laeuft" | "fertig" | "fehler";
 
 export type CorrectionItem = {
@@ -28,6 +33,9 @@ export type CorrectionItem = {
   skill_id: string | null;
   status: ItemStatus;
   source: ItemSource;
+  origin: ItemOrigin;
+  review: ItemReview;
+  review_note: string;
   decided_by: number | null;
   decided_at: string | null;
   created_at: string;
@@ -54,6 +62,11 @@ export type CorrectionRow = {
   recommendation: string;
   recommendation_skill: string | null;
   dropped: number;
+  method: CorrectionMethod;
+  /** sentences („2.3“, comma-separated) the KI did not answer for in a „gründlich“ run */
+  unchecked: string;
+  /** the second check of a „gründlich“ run: '' = not run, ok, fehler */
+  verify_status: "" | "ok" | "fehler";
   shared_at: string | null;
   created_at: string;
   updated_at: string;
@@ -156,6 +169,9 @@ const wordsIn = (s: string) => s.split(/\s+/).filter(Boolean).length;
 
 export type Anchored = { items: NewItem[]; dropped: number };
 
+/** A finding as the KI gave it, with what the „gründlich“ run adds: its sentence (masked positions), origin and review. */
+export type InFinding = AICorrection["findings"][number] & { from?: number; to?: number; origin?: ItemOrigin; review?: ItemReview; review_note?: string };
+
 /**
  * Turns the KI's findings into items with exact positions in the snapshot. A finding is dropped when its
  * category is unknown, its paragraph does not exist, it has no explanation, the replacement equals the
@@ -164,13 +180,14 @@ export type Anchored = { items: NewItem[]; dropped: number };
  */
 export function anchorFindings(
   doc: TextDoc,
-  ai: Pick<AICorrection, "findings" | "hints">,
+  ai: { findings: InFinding[]; hints: AICorrection["hints"] },
   o: { pattern: RegExp | null; level: Pick<Level, "maxStyle" | "maxMarks">; skills: Set<string>; taken?: Map<number, Range[]> },
 ): Anchored {
   const items: NewItem[] = [];
   let dropped = 0;
   const masks = doc.map((b) => maskText(blockText(b), o.pattern));
   const taken = new Map<number, Range[]>([...(o.taken ?? new Map())].map(([k, v]) => [k, [...v]]));
+  const decided = o.taken ?? new Map<number, Range[]>();
   const cursor = new Map<number, number>();
   let style = 0;
   let marks = 0;
@@ -191,17 +208,28 @@ export function anchorFindings(
     }
     const m = masks[block];
     const blockTaken = taken.get(block) ?? [];
-    const hit = findQuote(m.masked, quote, cursor.get(block) ?? 0, blockTaken.map((r) => ({ start: maskedIndex(m.toOrig, r.start), end: maskedIndex(m.toOrig, r.end) })));
+    const masked = (rs: Range[]) => rs.map((r) => ({ start: maskedIndex(m.toOrig, r.start), end: maskedIndex(m.toOrig, r.end) }));
+    // a finding of one sentence is looked for in that sentence only
+    const span = typeof f.from === "number" ? { start: f.from, end: f.to ?? m.masked.length } : null;
+    const inSpan = (r: Range | null) => (r && (!span || (r.start >= span.start && r.start < span.end)) ? r : null);
+    const from = span?.start ?? cursor.get(block) ?? 0;
+    const hit = inSpan(findQuote(m.masked, quote, from, masked(blockTaken)));
     const skill_id = typeof f.skill_id === "string" && o.skills.has(f.skill_id) ? f.skill_id : null;
     const rule = clip(f.rule, 60);
-    if (!hit && findQuote(m.masked, quote, 0, [])) continue; // only at places already decided: nothing new
+    const extra = { origin: f.origin ?? "", review: f.review ?? "", review_note: clip(f.review_note, 300) } satisfies Pick<NewItem, "origin" | "review" | "review_note">;
+    if (!hit && inSpan(findQuote(m.masked, quote, from, masked(decided.get(block) ?? [])))) {
+      // overlaps another new suggestion: counted, never silently lost
+      dropped++;
+      continue;
+    }
+    if (!hit && inSpan(findQuote(m.masked, quote, from, []))) continue; // only at places already decided: nothing new
     if (!hit) {
       // quoted wrongly: a note on the paragraph, never a mark at a guessed place
       if (items.some((i) => i.block === block && i.pos_start === null && i.quote === clip(quote, 200))) {
         dropped++;
         continue;
       }
-      items.push({ block, pos_start: null, pos_end: null, quote: clip(quote, 200), replacement: clip(replacement, 200), category, kind, rule, explanation, skill_id });
+      items.push({ block, pos_start: null, pos_end: null, quote: clip(quote, 200), replacement: clip(replacement, 200), category, kind, rule, explanation, skill_id, ...extra });
       marks++;
       if (kind === "stil") style++;
       continue;
@@ -217,7 +245,7 @@ export function anchorFindings(
       dropped++;
       continue;
     }
-    items.push({ block, pos_start: start, pos_end: end, quote: original, replacement: restored, category, kind, rule, explanation, skill_id });
+    items.push({ block, pos_start: start, pos_end: end, quote: original, replacement: restored, category, kind, rule, explanation, skill_id, ...extra });
     taken.set(block, [...blockTaken, { start, end }]);
     cursor.set(block, hit.end);
     marks++;
@@ -232,7 +260,7 @@ export function anchorFindings(
       continue;
     }
     const block = Number.isInteger(h.para) && h.para! >= 1 && h.para! <= doc.length ? h.para! - 1 : null;
-    items.push({ block, pos_start: null, pos_end: null, quote: "", replacement: "", category, kind: "hinweis", rule: "", explanation: text, skill_id: null });
+    items.push({ block, pos_start: null, pos_end: null, quote: "", replacement: "", category, kind: "hinweis", rule: "", explanation: text, skill_id: null, origin: "", review: "", review_note: "" });
     hints++;
   }
   return { items, dropped };

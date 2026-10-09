@@ -730,6 +730,10 @@ textarea.input {
   text-decoration: line-through;
   text-decoration-color: color-mix(in srgb, var(--red) 70%, transparent);
 }
+.kx-check.kx-offen {
+  outline: 2px dashed color-mix(in srgb, var(--amber) 75%, transparent);
+  outline-offset: 1px;
+}
 .kx-abgelehnt {
   text-decoration: underline dotted var(--line-strong) 1.5px;
   text-underline-offset: 5px;
