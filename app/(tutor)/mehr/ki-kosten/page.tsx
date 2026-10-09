@@ -1,5 +1,6 @@
 import { AIQualityTest } from "@/components/AIQualityTest";
 import { AISelfTest } from "@/components/AISelfTest";
+import { AITextTest } from "@/components/AITextTest";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, SectionTitle } from "@/components/ui";
 import { AREA_LABEL, FUNCTIONS, aiSwitchedOff, budget, priceFor, routeFor, type AIFunction, type Area } from "@/lib/ai/config";
@@ -73,6 +74,13 @@ export default async function AICostPage() {
         <section className="mb-10">
           <SectionTitle>KI-Qualitätstest</SectionTitle>
           <AIQualityTest enabled={aiEnabled()} />
+        </section>
+      )}
+
+      {teacher.is_admin && (
+        <section className="mb-10">
+          <SectionTitle>Textkorrektur-Test</SectionTitle>
+          <AITextTest enabled={aiEnabled()} />
         </section>
       )}
 
