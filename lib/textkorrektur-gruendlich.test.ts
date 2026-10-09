@@ -357,7 +357,10 @@ test("gründlich neu: ausgeblendete Wörter werden erkannt; fehlt ein Grammatikw
   const das = r.findings.find((x) => x.quote === "das")!;
   assert.equal(das.review, "lehrer");
   assert.match(das.review_note!, /Datenschutzfilter hat in diesem Satz „Sie“ ausgeblendet/);
-  assert.equal(r.findings.find((x) => x.quote === "erkannte")!.review, "", "a hidden name next to it is no reason for a mark");
+  // right next to what the filter hid: the KI did not see all of it (a name and a noun look the same to it)
+  const erkannte = r.findings.find((x) => x.quote === "erkannte")!;
+  assert.equal(erkannte.review, "lehrer");
+  assert.match(erkannte.review_note!, /Direkt neben Wörtern, die der Datenschutzfilter ausgeblendet hat/);
   // „bisher“ sees the hidden words in the sentences the KI wrote out
   assert.deepEqual(hiddenInVersions(sentences, data).map((h) => h.text), ["Sie", "Lea"]);
 });
@@ -373,4 +376,13 @@ test("gründlich neu: eine Änderung nur aus der Satzfassung verliert die Markie
   assert.equal(out[0].explanation, "„machen“ verlangt den Akkusativ: einen Fehler.");
   assert.equal(out[1].review, "lehrer", "no explanation: still marked");
   assert.equal(out[2].review, "lehrer", "list and version disagree: still marked");
+});
+
+test("gründlich neu: was die KI aus den Kennzeichnungen der Anweisung abschreibt, gehört nicht zur Satzfassung", async () => {
+  const { versionText } = await import("./ai/textkorrektur-gruendlich");
+  assert.equal(versionText("[3.3[PERSON_NAME] nennt sie hohe Kosten.", "Als Gründe nennt sie hohe Kosten."), "[PERSON_NAME] nennt sie hohe Kosten.");
+  assert.equal(versionText("[2.1] Das stimmt.", "Das stimmt."), "Das stimmt.");
+  assert.equal(versionText("(Überschrift) Beschwerde über einen Rucksack", "Beschwerde über einen Rucksack"), "Beschwerde über einen Rucksack");
+  assert.equal(versionText("[1] Punkt eins", "[1] Punkt eins"), "[1] Punkt eins", "the student's own bracket stays");
+  assert.equal(versionText(null, "Das stimmt."), "");
 });

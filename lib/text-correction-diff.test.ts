@@ -73,3 +73,22 @@ test("Fassungsvergleich: eine fremde Fassung ergibt nichts, ein umgeschriebener 
   assert.equal(r.changes.length, 1);
   roundTrip(s, c);
 });
+
+test("Fassungsvergleich: ein Platzhalter für eine ganze Wortgruppe ergibt keine Streichung (Test 2026-10-09)", () => {
+  const licht = compareVersions("Der Kommentar „Wenn im Wirtshaus das Licht ausgeht“ erschien gestern.", "Der Kommentar „Wenn im [PERSON_NAME] ausgeht“ erschien gestern.");
+  assert.deepEqual(licht.changes, []);
+  assert.deepEqual(licht.hidden.map((h) => h.text), ["Wirtshaus das Licht"]);
+  // the opening quote went with the group
+  assert.deepEqual(compareVersions("Sie sagte: „Ich bin sehr stolz auf euch alle!“", "Sie sagte: [PERSON_NAME] alle!“").changes, []);
+  // signs between the placeholder and the rest of the group
+  assert.deepEqual(compareVersions("Er erschien in der Tageszeitung „Donautaler Nachrichten“.", "Er erschien in der [PERSON_NAME]“.").changes, []);
+});
+
+test("Fassungsvergleich: eine Änderung direkt neben einer ausgeblendeten Gruppe behält nur so viele Wörter, wie die KI schreibt", () => {
+  const s = "Die Lehrerinnen achteten darauf, das alle Kinder genug Wasser tranken.";
+  const r = compareVersions(s, "Die Lehrerinnen achteten darauf, dass [PERSON_NAME] tranken.");
+  assert.deepEqual(r.changes.map((x) => [s.slice(x.start, x.end), x.replacement]), [["das", "dass"]]);
+  assert.deepEqual(r.hidden.map((h) => h.text), ["alle Kinder genug Wasser"]);
+  // a word that moves past a placeholder is still a move, not something the filter took
+  assert.deepEqual(changesOf("Deshalb die Lehrer müssten ständig schauen.", "Deshalb müssten die [PERSON_NAME] ständig schauen."), [["die Lehrer müssten", "müssten die Lehrer"]]);
+});

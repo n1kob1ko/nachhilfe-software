@@ -271,27 +271,40 @@ export async function runTextTest(o: { teacherId?: number | null; cases?: Korrek
   log(`${LOG_PREFIX} start ${JSON.stringify({ run: runTag, cases: cases.length, capUsd, models: { textkorrektur: routeFor("textkorrektur").model, textanalyse: routeFor("textanalyse").model, textpruefung: routeFor("textpruefung").model }, effort: { textkorrektur: FUNCTIONS.textkorrektur.effort, textanalyse: FUNCTIONS.textanalyse.effort, textpruefung: FUNCTIONS.textpruefung.effort } })}`);
   const order = new Map(cases.map((c, i) => [c.nr, i]));
   let next = 0;
+  // workers waiting for a running text to finish: its reserve was the worst case, its real cost is less
+  let waiting: (() => void)[] = [];
+  const finished = () => {
+    const w = waiting;
+    waiting = [];
+    for (const f of w) f();
+  };
   const worker = async () => {
     while (next < cases.length) {
       const c = cases[next++];
-      const need = perWord ? Math.min(reserveFor(c), perWord * words(c) * 1.5) : reserveFor(c);
-      const spent = spentSince(`${TRIGGER}-`, startId);
-      const inFlight = [...reserved.values()].reduce((s, v) => s + v, 0);
-      let r: CaseRun;
-      if (spent + inFlight + need > capUsd) {
-        r = { nr: c.nr, title: c.title, level: levelFor(c.schoolType, c.klasse).label, status: "übersprungen", summary: `übersprungen: bisher ${spent.toFixed(3)} $, dieser Text könnte bis ${need.toFixed(3)} $ kosten, Grenze ${capUsd.toFixed(2)} $`, ways: [], lines: [] };
-      } else {
-        reserved.set(c.nr, need);
-        state.active.push(c.nr);
-        try {
-          r = await runCase(c, log, runTag, o.teacherId ?? null);
-        } catch (e) {
-          r = { nr: c.nr, title: c.title, level: "", status: "fehler", summary: `Fehler: ${e instanceof Error ? e.message : String(e)}`.slice(0, 300), ways: [], lines: [] };
+      let r: CaseRun | null = null;
+      while (!r) {
+        const need = perWord ? Math.min(reserveFor(c), perWord * words(c) * 1.2) : reserveFor(c);
+        const spent = spentSince(`${TRIGGER}-`, startId);
+        const inFlight = [...reserved.values()].reduce((s, v) => s + v, 0);
+        if (spent + inFlight + need <= capUsd) {
+          reserved.set(c.nr, need);
+          state.active.push(c.nr);
+          try {
+            r = await runCase(c, log, runTag, o.teacherId ?? null);
+          } catch (e) {
+            r = { nr: c.nr, title: c.title, level: "", status: "fehler", summary: `Fehler: ${e instanceof Error ? e.message : String(e)}`.slice(0, 300), ways: [], lines: [] };
+          }
+          reserved.delete(c.nr);
+          const usd = r.ways.filter((w) => ["einfach", "gruendlich", "gruendlich_neu"].includes(w.way)).reduce((n, w) => n + w.usd, 0);
+          if (r.status === "fertig") perWord = Math.max(perWord, usd / Math.max(1, words(c)));
+          state.active = state.active.filter((n) => n !== c.nr);
+          finished();
+        } else if (inFlight > 0 && spent + need <= capUsd) {
+          // it fits once the texts still running have cost what they really cost (test 2026-10-09 skipped three texts after 1.01 of 2.24 $)
+          await new Promise<void>((resolve) => waiting.push(resolve));
+        } else {
+          r = { nr: c.nr, title: c.title, level: levelFor(c.schoolType, c.klasse).label, status: "übersprungen", summary: `übersprungen: bisher ${spent.toFixed(3)} $, dieser Text könnte bis ${need.toFixed(3)} $ kosten, Grenze ${capUsd.toFixed(2)} $`, ways: [], lines: [] };
         }
-        reserved.delete(c.nr);
-        const usd = r.ways.filter((w) => ["einfach", "gruendlich", "gruendlich_neu"].includes(w.way)).reduce((n, w) => n + w.usd, 0);
-        if (r.status === "fertig") perWord = Math.max(perWord, usd / Math.max(1, words(c)));
-        state.active = state.active.filter((n) => n !== c.nr);
       }
       for (const l of logLines(`${c.nr} ergebnis`, { ...r, lines: undefined })) log(l);
       state.results.push(r);
