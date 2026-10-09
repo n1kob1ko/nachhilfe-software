@@ -84,6 +84,7 @@ type ChatResponse = {
   usage?: {
     prompt_tokens?: number;
     completion_tokens?: number;
+    completion_tokens_details?: { reasoning_tokens?: number };
     cost?: number;
     prompt_tokens_details?: { cached_tokens?: number; cache_write_tokens?: number };
     prompt_cache_hit_tokens?: number;
@@ -95,7 +96,8 @@ export function usageOf(u: ChatResponse["usage"]): Usage {
   const prompt = u?.prompt_tokens ?? 0;
   const cacheRead = u?.prompt_tokens_details?.cached_tokens ?? u?.prompt_cache_hit_tokens ?? 0;
   const cacheWrite = u?.prompt_tokens_details?.cache_write_tokens ?? 0;
-  return { input: Math.max(0, prompt - cacheRead - cacheWrite), output: u?.completion_tokens ?? 0, cacheWrite, cacheRead };
+  const reasoning = u?.completion_tokens_details?.reasoning_tokens;
+  return { input: Math.max(0, prompt - cacheRead - cacheWrite), output: u?.completion_tokens ?? 0, cacheWrite, cacheRead, ...(typeof reasoning === "number" ? { reasoning } : {}) };
 }
 
 /** Properties that may hold more than one type (a nullable field is one), counted through the whole schema. */
