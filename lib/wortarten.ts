@@ -902,6 +902,6 @@ export function wortartenPromptRules(setting: WortartSetting): string {
     "- Jede Lösung ist konkret: jedes Wort mit seiner Wortart, z. B. „kleine = Adjektiv, Hund = Nomen, schläft = Verb“. Nie Platzhalter wie „Eine passende Antwort“ oder „Individuelle Schülerlösung“. Bei offenen Aufgaben ein vollständiges Beispiel und Bewertungskriterien.",
     "- Frag nur nach Wörtern mit eindeutiger Wortart. Adjektive, die sagen, wie etwas geschieht („Er läuft schnell.“), sind Adjektive (adverbial gebraucht), keine Adverbien. Adverbien sind z. B. heute, hier, dort, gern, oft, deshalb.",
     "- Schwierigkeit über die Grammatik, nicht nur über die Satzlänge: sehr leicht und leicht = kurze Sätze, typische Wörter; mittel = gebeugte Formen, zusammengesetzte Zeitformen, mehr Wörter; schwer und sehr schwer = Nominalisierungen (beim Lesen), adverbial gebrauchte Adjektive, „das“ als Artikel oder Relativpronomen.",
-    "- Im Lückentext steht in jeder Lücke der Fachbegriff (Nomen, Verb, Adjektiv …) oder das gesuchte Wort aus dem Satz.",
+    "- Im Lückentext steht in jeder Lücke der Fachbegriff (Nomen, Verb, Adjektiv …) oder das gesuchte Wort aus dem Satz. Keine Lücken, in die der Schüler selbst ein passendes Wort einsetzt („Setze ein passendes Verb ein: Der Hase ___ Karotten.“): Dafür gibt es viele richtige Antworten.",
   ].join("\n");
 }
