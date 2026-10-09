@@ -8,6 +8,7 @@ import type { TaskDraft } from "./tasks";
 import { GAP, parseNumber } from "./tasks";
 import { expectedFixes } from "./fix-text";
 import { rechenwegTask, sachaufgabeTask } from "./generators-mathe";
+import { isWortartenSkill, wortartenFor, wortartenTask, type WortartSetting } from "./wortarten";
 
 type Rng = () => number;
 const rint = (rng: Rng, min: number, max: number) => Math.floor(rng() * (max - min + 1)) + min;
@@ -771,22 +772,21 @@ const FREE_PROMPTS = [
 const LANG_PROMPT = (n: string) => `Schreibe drei eigene Sätze zu „${n}“. Erkläre bei einem Satz, warum er so richtig ist.`;
 
 function freeTask(skillId: string, skillName: string, diff: Difficulty, variant = 0): TaskDraft {
-  const sample = EXPLAIN[skillId] ?? `Eine korrekte Erklärung zu „${skillName}“ mit einem passenden Beispiel.`;
+  // a real sample answer or none: never a placeholder like „Eine korrekte Erklärung zu …“
+  const sample = EXPLAIN[skillId] ?? EXPLAIN[skillId.split(".").slice(0, 3).join(".")] ?? "";
   const lang = /^(deutsch|englisch)\./.test(skillId);
+  const criteria =
+    lang && variant % FREE_PROMPTS.length === 2
+      ? ["Drei eigene, passende Sätze ohne Fehler an der geübten Stelle.", "Die Erklärung nennt die Regel."]
+      : ["Die Regel oder das Vorgehen ist richtig beschrieben.", "Ein eigenes, passendes Beispiel ist dabei."];
   return {
     type: "free",
     skillId,
     difficulty: diff,
     prompt: lang && variant % FREE_PROMPTS.length === 2 ? LANG_PROMPT(skillName) : FREE_PROMPTS[variant % FREE_PROMPTS.length](skillName),
     data: { lines: 5 },
-    answer: {
-      sample,
-      criteria:
-        lang && variant % FREE_PROMPTS.length === 2
-          ? ["Drei eigene, passende Sätze ohne Fehler an der geübten Stelle.", "Die Erklärung nennt die Regel."]
-          : ["Die Regel oder das Vorgehen ist richtig beschrieben.", "Ein eigenes, passendes Beispiel ist dabei."],
-    },
-    solution: sample,
+    answer: { ...(sample ? { sample } : {}), criteria },
+    solution: sample || `Bewertet wird: ${criteria.join(" ")}`,
     hints: ["Schreib die Schritte der Reihe nach auf.", "Ein eigenes Beispiel zeigt, dass du es verstanden hast."],
     errorMap: [],
   };
@@ -1026,7 +1026,18 @@ function toOrder(rng: Rng, t: TaskDraft): TaskDraft | null {
   };
 }
 
-export type Slot = { skillId: string; skillName: string; generatorSkillId?: string; difficulty: Difficulty; category: string | null; subject: string };
+export type Slot = {
+  skillId: string;
+  skillName: string;
+  generatorSkillId?: string;
+  difficulty: Difficulty;
+  category: string | null;
+  subject: string;
+  /** Wortarten skills: the Wortarten the tasks may ask for (lib/wortarten.ts wortartenFor). */
+  wortarten?: WortartSetting | null;
+  /** Schulstufe 1–13, for the Grundeinstellung of the Wortarten when no setting is given. */
+  grade?: number;
+};
 
 /**
  * One task for one slot of the builder: skill, difficulty and task type. Sub-skills without a
@@ -1034,6 +1045,11 @@ export type Slot = { skillId: string; skillName: string; generatorSkillId?: stri
  * explanation task when nothing fits, so the builder always gets the number it asked for.
  */
 export function generateForSlot(slot: Slot, rng: Rng = Math.random, variant = 0): TaskDraft {
+  // Wortarten: real determination tasks with the chosen Wortarten (an explanation only for „Freie Antwort“)
+  if (isWortartenSkill(slot.skillId)) {
+    const setting = slot.wortarten ?? wortartenFor([slot.skillId], slot.grade ?? 5)!;
+    return wortartenTask({ skillId: slot.skillId, setting, difficulty: slot.difficulty, category: slot.category, variant }, rng);
+  }
   const genId = GEN[slot.skillId] ? slot.skillId : slot.generatorSkillId && GEN[slot.generatorSkillId] ? slot.generatorSkillId : null;
   const tag = (t: TaskDraft, category: string | null = slot.category): TaskDraft => ({
     ...t,
@@ -1093,7 +1109,14 @@ export type GenerateRequest = {
   count: number;
   taskType: TaskType | "mixed";
   seed?: number;
+  /** Schulstufe 1–13 (Wortarten: which Wortarten fit). */
+  grade?: number;
+  /** Wortarten skills: the chosen Wortarten; default from the skills and the grade. */
+  wortarten?: WortartSetting | null;
 };
+
+/** The task type of the builder that matches an answer format, for the Wortarten tasks. */
+const WORTART_CATEGORY: Partial<Record<TaskType | "mixed", string>> = { mc: "mc", cloze: "lueckentext", free: "offen", fix: "korrigieren" };
 
 function mulberry32(seed: number): Rng {
   let a = seed >>> 0;
@@ -1110,7 +1133,7 @@ export function hasBuiltInGenerator(skillId: string): boolean {
   // Teilfähigkeiten (ids "parent.suffix") use the generator of their skill
   const parent = skillId.split(".").slice(0, 3).join(".");
   if (parent !== skillId && hasBuiltInGenerator(parent)) return true;
-  return skillId in GEN || skillId.endsWith("reading.comprehension") || skillId === "deutsch.text.verstehen";
+  return skillId in GEN || skillId.endsWith("reading.comprehension") || skillId === "deutsch.text.verstehen" || isWortartenSkill(skillId);
 }
 
 /** Generates tasks without AI. Skills without a generator get explanation tasks. */
@@ -1129,7 +1152,10 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
     const skill = skills[i++ % skills.length];
     let t: TaskDraft;
     const maths = req.taskType === "rechenweg" ? rechenwegTask(skill.id, req.difficulty, rng) : req.taskType === "sachaufgabe" ? sachaufgabeTask(skill.id, req.difficulty, rng) : null;
-    if (maths) {
+    if (isWortartenSkill(skill.id)) {
+      const setting = req.wortarten ?? wortartenFor(req.skills.map((s) => s.id), req.grade ?? 5)!;
+      t = wortartenTask({ skillId: skill.id, setting, difficulty: req.difficulty, category: WORTART_CATEGORY[req.taskType] ?? null, variant: Math.floor((i - 1) / skills.length) + guard }, rng);
+    } else if (maths) {
       t = maths;
     } else if (req.taskType === "free" || req.taskType === "rechenweg" || req.taskType === "sachaufgabe" || !GEN[skill.id]) {
       t = freeTask(skill.id, skill.name, req.difficulty, Math.floor((i - 1) / skills.length));

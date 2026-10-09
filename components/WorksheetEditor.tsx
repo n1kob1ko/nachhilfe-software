@@ -1,12 +1,13 @@
 "use client";
 
-import { ArrowDown, ArrowUp, BookmarkPlus, Library, Pencil, Plus, Presentation, RefreshCw, Send, Trash2, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, BookmarkPlus, Check, Library, Pencil, Plus, Presentation, RefreshCw, Send, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import {
   addTaskAction,
   deleteTaskAction,
   moveTaskAction,
+  confirmTaskAction,
   regenerateTaskAction,
   saveTaskAction,
   searchTasksAction,
@@ -131,6 +132,26 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
         <div className="min-w-0">
           <TaskBody task={t} showSolution={p.showSolutions} skillName={p.skillName} subject={p.subject} passageShown={p.passageShown} />
           {p.editable && <ReadingIssues issues={p.issues ?? []} />}
+          {p.editable && (t.data.pruefen?.length ?? 0) > 0 && (
+            <div className="no-print mt-3 rounded-lg bg-amber-wash px-3 py-2 text-[13px] text-amber" role="note">
+              <p className="flex items-center gap-1.5 font-semibold">
+                <AlertTriangle size={14} aria-hidden /> Bitte prüfen, bevor du die Aufgabe sendest
+              </p>
+              <ul className="mt-0.5 list-disc pl-5">
+                {t.data.pruefen!.map((i) => (
+                  <li key={i}>{i}</li>
+                ))}
+              </ul>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <button type="button" className="btn btn-ghost btn-sm" disabled={pending} onClick={() => run(() => confirmTaskAction(t.id))}>
+                  <Check size={14} aria-hidden /> Geprüft, passt
+                </button>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={p.onEdit}>
+                  <Pencil size={14} aria-hidden /> Verbessern
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <div className="no-print mt-3 flex flex-wrap items-center gap-1.5 border-t border-line pt-3 pl-[44px]">
