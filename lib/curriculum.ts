@@ -78,7 +78,7 @@ export const CATEGORIES: Record<string, Category[]> = {
   Deutsch: [
     c("rechtschreibung", "Rechtschreibung", ["cloze", "grammar", "mc"], "Richtige Schreibung eines Wortes oder einer Stelle."),
     c("grammatik", "Grammatik", ["mc", "grammar"], "Fall, Zeit, Satzglied oder Ähnliches bestimmen."),
-    c("wortarten", "Wortarten", ["mc", "grammar"], "Wortart eines markierten Wortes bestimmen."),
+    c("wortarten", "Wortarten", ["cloze", "mc", "grammar"], "Echte Wörter bestimmen: Wortart eines markierten Wortes, die Wörter eines Satzes zuordnen, alle Nomen/Verben/Adjektive heraussuchen oder Wörter sortieren."),
     c("lueckentext", "Lückentext", ["cloze"], "Satz oder Text mit Lücken."),
     c("textverstaendnis", "Textverständnis", ["reading", "free"], "Kurzer Text mit Fragen dazu."),
     c("schreiben", "Schreiben", ["free"], "Kurzen Text verfassen (z. B. Satz, Absatz, Nachricht)."),
@@ -119,7 +119,8 @@ const MIX_BY_SKILL: [RegExp, string[]][] = [
   [/^deutsch\.recht\./, ["lueckentext", "korrigieren", "offen", "rechtschreibung"]],
   [/^deutsch\.grammatik\.zeiten/, ["lueckentext", "korrigieren", "offen", "grammatik"]],
   [/^deutsch\.grammatik\./, ["korrigieren", "lueckentext", "offen", "grammatik"]],
-  [/^deutsch\.wortarten\./, ["lueckentext", "korrigieren", "wortarten", "offen"]],
+  // Wortarten: real determination tasks; explanations only when the teacher picks „Freie Antwort“
+  [/^deutsch\.wortarten\./, ["wortarten", "lueckentext", "wortarten", "korrigieren"]],
   [/^deutsch\.text\./, ["textverstaendnis", "offen"]],
   [/^englisch\.(tenses|grammar)\./, ["gap", "korrigieren", "offen", "grammar"]],
   [/^englisch\.vocab/, ["vocabulary", "gap", "translation"]],
@@ -217,6 +218,8 @@ const READING_ASPECTS: [string, string][] = [
   ["begruenden", "Aussagen begründen"],
 ];
 
+const WORTART_FROM: Record<string, number> = { pronomen: 4, praeposition: 5, konjunktion: 5, adverb: 5, unterarten: 6 };
+
 /** Finer steps of some skills, so an exercise can target exactly what a student gets wrong. */
 const SUBSKILLS: CurriculumSkill[] = [
   ...sub(byId("mathe.brueche.dividieren"), [
@@ -245,6 +248,20 @@ const SUBSKILLS: CurriculumSkill[] = [
   // Leseverständnis: what each question about a reading text practises (lib/lesen.ts ASPECTS)
   ...sub(byId("deutsch.text.verstehen"), READING_ASPECTS),
   ...sub(byId("englisch.reading.comprehension"), READING_ASPECTS),
+  // Wortarten: the teacher chooses which Wortarten an exercise asks for (lib/wortarten.ts). The classes are
+  // our own steps: VS Nomen, Verb, Adjektiv (Lehrplan VS), Artikel and Pronomen from the 3./4. Schulstufe,
+  // the rest in the Unterstufe.
+  ...sub(byId("deutsch.wortarten.bestimmen"), [
+    ["nomen", "Nomen"],
+    ["verb", "Verben"],
+    ["adjektiv", "Adjektive"],
+    ["artikel", "Artikel"],
+    ["pronomen", "Pronomen"],
+    ["praeposition", "Präpositionen"],
+    ["konjunktion", "Konjunktionen"],
+    ["adverb", "Adverbien"],
+    ["unterarten", "Unterarten (z. B. Pronomenarten)"],
+  ]).map((x) => ({ ...x, gradeMin: WORTART_FROM[x.id.split(".").pop()!] ?? x.gradeMin })),
 ];
 
 export const CURRICULUM: CurriculumSkill[] = [...BASE, ...SUBSKILLS];

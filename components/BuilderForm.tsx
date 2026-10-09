@@ -9,6 +9,7 @@ import { SchoolClassFields } from "@/components/SchoolClassFields";
 import type { StudentContext, Suggestion } from "@/lib/builder";
 import { categoriesFor, DIFFICULTIES, difficultyFor } from "@/lib/curriculum";
 import { klassenLabel, schulstufe } from "@/lib/school";
+import { UNTERARTEN_SKILL, WORTARTEN, WORTARTEN_SKILL, WORTART_PLURAL, wortartenFor, wortartSkill, type Wortart } from "@/lib/wortarten";
 
 type Skill = { id: string; subject: string; area: string; name: string; grade_min: number; grade_max: number; parent_id: string | null };
 type Student = { id: number; name: string };
@@ -206,6 +207,7 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
             })}
             {areas.length === 0 && <p className="text-[14px] text-ink-3">Keine Fähigkeit passt zur Suche.</p>}
           </div>
+          <WortartenChoice selected={selected} setSelected={setSelected} known={new Set(skills.map((x) => x.id))} grade={grade} ctx={ctx} />
         </Step>
 
         {/* 4 · Schwierigkeit */}
@@ -348,6 +350,53 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
         </div>
       </aside>
     </form>
+  );
+}
+
+/**
+ * Wortarten bestimmen: which Wortarten the tasks ask for. Shows the Grundeinstellung of the Schulstufe
+ * (plus Aktueller Stoff); a tap turns it into the Teilfähigkeiten, which the tasks then keep to.
+ */
+function WortartenChoice({ selected, setSelected, known, grade, ctx }: { selected: string[]; setSelected: (f: (cur: string[]) => string[]) => void; known: Set<string>; grade: number; ctx: StudentContext | null }) {
+  const practised = ctx ? Object.keys(ctx.mastery).filter((id) => ctx.mastery[id] != null) : [];
+  const current = ctx?.current.flatMap((c) => c.skillIds) ?? [];
+  const wa = wortartenFor(selected, grade, { practised, current });
+  const fromStudent = [...practised, ...current].some((id) => id.startsWith(`${WORTARTEN_SKILL}.`));
+  if (!wa || wa.nomenOnly) return null;
+  const on = new Set([...wa.allowed.map(wortartSkill), ...(wa.unterarten ? [UNTERARTEN_SKILL] : [])]);
+  const items: { id: string; label: string }[] = [...WORTARTEN.map((w: Wortart) => ({ id: wortartSkill(w), label: WORTART_PLURAL[w] })), { id: UNTERARTEN_SKILL, label: "Unterarten" }].filter((x) => known.has(x.id));
+  const toggle = (id: string) => {
+    const next = new Set(on);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelected((cur) => {
+      const rest = cur.filter((x) => !x.startsWith(`${WORTARTEN_SKILL}.`));
+      const subs = [...next].filter((x) => known.has(x));
+      // without the skill itself and without a Wortart, nothing would be left to practise
+      return [...rest, ...(subs.length || rest.includes(WORTARTEN_SKILL) ? [] : [WORTARTEN_SKILL]), ...subs];
+    });
+  };
+  const words = wa.allowed.filter((w) => on.has(wortartSkill(w))).length;
+  return (
+    <div className="panel mt-4 px-4 py-3" data-testid="wortarten-wahl">
+      <p className="label mb-2">Welche Wortarten?</p>
+      <div className="flex flex-wrap gap-1.5">
+        {items.map((x) => {
+          const last = on.has(x.id) && x.id !== UNTERARTEN_SKILL && words <= 1;
+          return (
+            <label key={x.id} className={`${chip} ${last ? "opacity-70" : ""}`} title={last ? "Mindestens eine Wortart bleibt gewählt." : undefined}>
+              <input type="checkbox" checked={on.has(x.id)} disabled={last} onChange={() => toggle(x.id)} className="sr-only" />
+              {x.label}
+            </label>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[13px] text-ink-2">
+        {wa.chosen
+          ? "Nur diese Wortarten kommen in Aufgaben, Antworten und Lösungen vor."
+          : `Grundeinstellung für die ${grade}. Schulstufe${fromStudent ? ", dazu Wortarten aus dem aktuellen Stoff und dem Lernverlauf" : ""}. Tippe an, um Wortarten an- oder abzuwählen.`}
+      </p>
+    </div>
   );
 }
 

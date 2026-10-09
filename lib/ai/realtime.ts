@@ -13,6 +13,7 @@ import { db } from "../db";
 import { ERROR_TYPES, type ErrorType } from "../error-types";
 import * as repo from "../repo";
 import { klassenLabel } from "../school";
+import type { WortartSetting } from "../wortarten";
 import { getUnit } from "../units";
 import { realtimeCapPerHour } from "./config";
 import { generateWithAI } from "./features";
@@ -439,10 +440,12 @@ export async function newExerciseForUnit(unitId: number, teacherId: number): Pro
 
   let tasks = null as Awaited<ReturnType<typeof generateWithAI>>;
   let note: string | undefined;
+  let wortarten: WortartSetting | null = null;
   liveStats.newTasks++;
   try {
-    const { contextForAI, studentContext } = await import("../builder");
+    const { contextForAI, studentContext, wortartenSetting } = await import("../builder");
     const ctx = studentContext(student.id);
+    wortarten = wortartenSetting([skill.id], student.school_type, student.klasse ?? 1, ctx);
     tasks = await generateWithAI(
       {
         subject: skill.subject,
@@ -453,6 +456,7 @@ export async function newExerciseForUnit(unitId: number, teacherId: number): Pro
         studentContext: ctx ? contextForAI(ctx, [skill.id]) : null,
         focusNote: misconception ? `Gezielt üben: ${misconception}` : undefined,
         avoid: used.map((u) => u.prompt),
+        wortarten,
       },
       { teacherId, unitId, trigger: "neue_aufgabe" },
       "neue_aufgabe",
@@ -460,10 +464,13 @@ export async function newExerciseForUnit(unitId: number, teacherId: number): Pro
   } catch (e) {
     note = e instanceof Error ? e.message : String(e);
   }
+  // sent right away without the teacher's look: tasks the app flagged for checking are not used
+  tasks = tasks?.filter((t) => !t.data.pruefen?.length) ?? null;
   let source: "ki" | "generator" = "ki";
   if (!tasks?.length) {
     const { generateBuiltIn } = await import("../generators");
-    tasks = generateBuiltIn({ subject: skill.subject, skills: [{ id: skill.id, name: skill.name }], difficulty, count: 2, taskType: "mixed" });
+    const { schulstufe } = await import("../school");
+    tasks = generateBuiltIn({ subject: skill.subject, skills: [{ id: skill.id, name: skill.name }], difficulty, count: 2, taskType: "mixed", grade: schulstufe(student.school_type, student.klasse ?? 1), wortarten });
     source = "generator";
   }
   if (!tasks.length) return { ok: false, error: "Für diese Fähigkeit konnte keine Aufgabe erstellt werden." };
