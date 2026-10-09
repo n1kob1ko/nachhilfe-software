@@ -236,9 +236,23 @@ export function analysisFindings(sentences: Sentence[], data: Pick<Analysis, "se
 export const SILENT_EXPLANATION = "Die KI hat das in ihrer Fassung des Satzes geändert, ohne es zu erklären.";
 const SILENT_NOTE = "Nur in der Satzfassung der KI, nicht in ihrer Liste.";
 
+/**
+ * The KI's version of a sentence without what it copied from the prompt's labels: the number („[3.3]“, once
+ * „[3.3“ glued to a placeholder) and „(Überschrift)“ (test 2026-10-09). Never the student's own words.
+ */
+export function versionText(corrected: unknown, sentence: string): string {
+  let v = typeof corrected === "string" ? corrected : "";
+  if (!/^\s*\[\d/.test(sentence)) v = v.replace(/^\s*\[\d+(?:\.\d+)*\]?\s*/, "");
+  if (!/^\s*\(Überschrift\)/.test(sentence)) v = v.replace(/^\s*\(Überschrift\)\s*/, "");
+  return v;
+}
+
 /** Words an outside filter hid from the KI; grammar = a pronoun or other word of grammar, not a name. */
 export type HiddenWord = { para: number; sentence: string; text: string; grammar: boolean };
 
+const NEXT_TO_HIDDEN = "Direkt neben Wörtern, die der Datenschutzfilter ausgeblendet hat: Die KI hat nicht alles gesehen.";
+/** Whether a change touches what the filter hid, or stands right next to it with only signs or spaces between. */
+const besides = (text: string, h: At, g: At) => (h.start < g.end && g.start < h.end) || !/[\p{L}\p{N}]/u.test(text.slice(Math.min(h.end, g.end), Math.max(h.start, g.start)));
 const hiddenNote = (words: string[]) => `Der Datenschutzfilter hat in diesem Satz „${words.join("“, „")}“ ausgeblendet, die KI hat ihn nicht ganz gesehen.`;
 
 /** A first guess of the category of an unlisted change: signs only, letters only, else grammar (the second check may say better). */
@@ -284,7 +298,7 @@ export function comparedFindings(sentences: Sentence[], data: Pick<Analysis, "se
     }
     seen.add(id);
     const fs = (Array.isArray(a.findings) ? a.findings : []).filter((f) => f && typeof f === "object");
-    const own = typeof a.corrected === "string" ? a.corrected : "";
+    const own = versionText(a.corrected, s.text);
     const cmp = compareVersions(s.text, own);
     for (const h of cmp.hidden) hidden.push({ para: s.para, sentence: s.id, text: h.text, grammar: hidesGrammar(h.text) });
     const grammarHidden = cmp.hidden.filter((h) => hidesGrammar(h.text)).map((h) => h.text);
@@ -341,6 +355,7 @@ export function comparedFindings(sentences: Sentence[], data: Pick<Analysis, "se
       else if (!agree) notes.push(`In ihrer Liste schlägt die KI „${clip(part, 60)}“ → „${clip(listed, 60)}“ vor, in ihrer Satzfassung diese Lösung.`);
       if (g.fs.some(({ f }) => f.sure === false)) notes.unshift("Die KI war sich nicht sicher.");
       if (grammarHidden.length) notes.push(hiddenNote(grammarHidden));
+      else if (cmp.hidden.some((h) => besides(s.text, h, g))) notes.push(NEXT_TO_HIDDEN);
       const explanations = [...new Set(g.fs.map(({ f }) => (typeof f.explanation === "string" ? f.explanation.trim() : "")).filter(Boolean))];
       findings.push({
         para: s.para,
@@ -370,7 +385,7 @@ export function hiddenInVersions(sentences: Sentence[], data: Pick<Analysis, "se
   const byId = new Map(sentences.map((s) => [s.id, s]));
   return (Array.isArray(data.sentences) ? data.sentences : []).flatMap((a) => {
     const s = byId.get(String(a?.id ?? "").replace(/[[\]\s]/g, ""));
-    const own = typeof a?.corrected === "string" ? a.corrected : "";
+    const own = s ? versionText(a?.corrected, s.text) : "";
     return s && own.trim() ? compareVersions(s.text, own).hidden.map((h) => ({ para: s.para, sentence: s.id, text: h.text, grammar: hidesGrammar(h.text) })) : [];
   });
 }
