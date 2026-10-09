@@ -804,7 +804,9 @@ function answerPairs(d: TaskDraft): { word: string; wa: Wortart }[] {
     d.answer.blanks.forEach((alts, i) => {
       const wa = termOf(alts[0] ?? "");
       const before = parts[i]?.split("\n").pop() ?? "";
-      const word = before.match(/([A-Za-zÄÖÜäöüß]+)[“"]?\s*[:=–-]?\s*$/)?.[1];
+      // „Katze“ ein ___: the gap belongs to the quoted word, not to the article in front of it
+      const last = before.match(/([A-Za-zÄÖÜäöüß]+)[“"]?\s*[:=–-]?\s*$/)?.[1];
+      const word = last && /^(ein|eine|einer|ist|sind)$/i.test(last) ? (before.match(/„([A-Za-zÄÖÜäöüß]+)“[^„]*$/)?.[1] ?? null) : last;
       if (wa && word && !termOf(word)) out.push({ word, wa });
       // „Schreib alle Adjektive heraus“: the words in the gaps are of that Wortart
       else if (!wa && target.length === 1 && alts[0]) out.push({ word: alts[0], wa: target[0] });
