@@ -38,6 +38,8 @@ export type AIResult = {
   costUsd?: number;
   /** used by the simulation instead of measured time */
   simulatedMs?: number;
+  /** what was wrong with the answer (cut off, wrong shape, entries dropped), without its content */
+  problem?: string;
 };
 
 export type Transport = (req: AIRequest) => Promise<AIResult>;

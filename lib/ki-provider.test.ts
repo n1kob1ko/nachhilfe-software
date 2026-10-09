@@ -119,6 +119,42 @@ test("OpenRouter: a model that refuses the schema is asked once more with the sc
   clean("OPENROUTER_BASE_URL", "OPENROUTER_API_KEY");
 });
 
+test("answers outside the shape: small slips repaired, a task that still does not fit is dropped, the reason is logged without content", async () => {
+  const { z } = await import("zod");
+  const { parseLenient, repair } = await import("./ai/providers/repair");
+  const S = z.object({ tasks: z.array(z.object({ format: z.enum(["mc", "calc"]), n: z.number().int(), form: z.enum(["bruch", "dezimal"]).nullable(), note: z.string().nullable(), hints: z.array(z.string()), ok: z.boolean() })) });
+  const json = z.toJSONSchema(S, { io: "input" });
+  assert.deepEqual(repair({ tasks: [{ format: "MC", n: "3", form: "", ok: "true" }] }, json), { tasks: [{ format: "mc", n: 3, form: null, note: null, hints: [], ok: true }] });
+  const r = parseLenient(S, { tasks: [{ format: "calc", n: 1 }, { format: "essay", n: 2 }, { format: "mc", n: 2.0 }] }, json);
+  assert.equal(r.data?.tasks.length, 2, "the task in an unknown format is dropped, the others stay");
+  assert.equal(r.dropped, 1);
+  assert.match(r.problem!, /1 Eintrag verworfen: tasks\.1\.format/);
+  assert.equal(parseLenient(S, { tasks: "keine" }, json).data, null);
+
+  const task = { format: "calc", category: "rechnung", skill_ids: ["mathe.x"], topic: "t", difficulty: "leicht", prompt: "Rechne 2 + 3.", accepted_answers: ["5"], numeric: true, solution: "5", solution_steps: ["2 + 3 = 5"], estimated_time_sec: "30", hints: ["Zähl weiter."], criteria: ["5"], result_form: "" };
+  const api = await fakeApi(() => chat(JSON.stringify({ tasks: [task, { ...task, format: "aufsatz" }] }), { cost: 0.001 }));
+  const r2 = await import("./ai/router");
+  const { generateWithAI } = await import("./ai/features");
+  const { recentCalls } = await import("./ai/log");
+  r2.resetRouter();
+  Object.assign(process.env, { OPENROUTER_BASE_URL: api.url, OPENROUTER_API_KEY: "or-key" });
+  const out = await generateWithAI({ subject: "Mathematik", level: "2. Klasse Volksschule", skills: [{ id: "mathe.x", name: "Plus", area: "Rechnen", difficulty: "leicht" }], count: 2, categories: [] });
+  assert.equal(out?.length, 1, "one usable task instead of none");
+  const row = recentCalls(1)[0];
+  assert.equal(row.status, "ok");
+  assert.match(row.error, /verworfen: tasks\.1\.format/);
+  assert.doesNotMatch(row.error, /Rechne/, "no content in the log");
+  await api.close();
+
+  const cut = await fakeApi(() => ({ model: "m", choices: [{ finish_reason: "length", message: { content: '{"tasks":[{"format":"calc"' } }], usage: { prompt_tokens: 10, completion_tokens: 10, cost: 0.0001 } }));
+  r2.resetRouter();
+  process.env.OPENROUTER_BASE_URL = cut.url;
+  assert.equal(await generateWithAI({ subject: "Mathematik", level: "x", skills: [], count: 1, categories: [] }), null);
+  assert.equal(recentCalls(1)[0].error, "Antwort abgeschnitten: Token-Grenze erreicht");
+  await cut.close();
+  clean("OPENROUTER_BASE_URL", "OPENROUTER_API_KEY");
+});
+
 test("compatible API: the app's free-text check runs unchanged through another provider", async () => {
   const api = await fakeApi(() => chat('{"correct":true,"feedback":"Passt.","error_label":null,"error_type":null}'));
   const r = await import("./ai/router");
