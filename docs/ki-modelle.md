@@ -40,6 +40,16 @@ Verglichen, nicht gewählt:
 
 Gerechnet wird mit dem Preis, den OpenRouter für jede Anfrage meldet (`usage.cost`), nicht mit einer Schätzung.
 
+Gemessen im Live-Test am 9. Oktober 2026 (KI testen):
+
+| Anfrage | Modell | Dauer | Kosten |
+| --- | --- | --- | --- |
+| Verbindungstest | Haiku 5.5 | 1 s | unter 0,01 Cent |
+| Deutsch, 2 Aufgaben | Haiku 5.5 | 31 s | 0,4 Cent |
+| Mathematik, 2 Aufgaben | Haiku 5.5 | 21 s | 0,3 Cent |
+| Textkorrektur, 3 Sätze | Sonnet 5.5 (`AI_TEXT_MODEL`) | 6 s | 1,3 Cent |
+| Textkorrektur, 3 Sätze | Haiku 5.5 | 11 s | 0,1 Cent |
+
 ## Budget
 
 `AI_MONTHLY_BUDGET_EUR`, Standard 10 €. Umgerechnet mit `AI_USD_PER_EUR` (Standard 1,12, Kurs vom 8. Oktober 2026), weil die Anbieter in US-Dollar abrechnen. Ab 80 % (`AI_BUDGET_WARN`) zeigt Mehr › KI-Kosten eine Warnung, ab 100 % läuft kein kostenpflichtiger Aufruf mehr; die App arbeitet mit Generatoren und Messwerten weiter. Eine einzelne Anfrage, die kurz vor der Grenze startet, kann sie um wenige Cent überschreiten.
