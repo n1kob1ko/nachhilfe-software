@@ -66,12 +66,13 @@ export function monthSpend(now = Date.now()): number {
   return usd;
 }
 
-export type BudgetState = { spent: number; budget: number; share: number; level: "ok" | "warnung" | "echtzeit-aus" | "aus" };
+/** "aus": the budget is used up, no paid request runs this month. Amounts in US dollars. */
+export type BudgetState = { spent: number; budget: number; share: number; level: "ok" | "warnung" | "aus" };
 export function budgetState(now = Date.now()): BudgetState {
   const b = budget();
   const spent = monthSpend(now);
   const share = b.monthlyUsd > 0 ? spent / b.monthlyUsd : spent > 0 ? Infinity : 0;
-  const level = share >= b.hardAt ? "aus" : share >= 1 ? "echtzeit-aus" : share >= b.warnAt ? "warnung" : "ok";
+  const level = share >= 1 ? "aus" : share >= b.warnAt ? "warnung" : "ok";
   return { spent, budget: b.monthlyUsd, share, level };
 }
 
@@ -126,4 +127,14 @@ export function recentCalls(limit = 25, f: Filter = {}) {
   return db()
     .prepare(`SELECT id, created_at, fn, model, trigger, input_tokens, output_tokens, cache_read_tokens, duration_ms, cost_usd, status, error FROM ai_calls ${where(f)} ORDER BY id DESC LIMIT ?`)
     .all(limit) as CallLogRow[];
+}
+
+/** One logged request (the KI-Selbsttest shows model, duration and cost of its requests). */
+export function callById(id: number) {
+  return (db().prepare("SELECT id, created_at, fn, model, trigger, input_tokens, output_tokens, cache_read_tokens, duration_ms, cost_usd, status, error FROM ai_calls WHERE id = ?").get(id) as CallLogRow | undefined) ?? null;
+}
+
+/** The latest request with this trigger, or null. */
+export function lastCallOf(trigger: string) {
+  return (db().prepare("SELECT id, created_at, fn, model, trigger, input_tokens, output_tokens, cache_read_tokens, duration_ms, cost_usd, status, error FROM ai_calls WHERE trigger = ? ORDER BY id DESC LIMIT 1").get(trigger) as CallLogRow | undefined) ?? null;
 }

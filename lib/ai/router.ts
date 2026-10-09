@@ -135,7 +135,7 @@ export async function runAI<S extends z.ZodType>(
   }
   if (breaker.until > now()) return { ok: false, status: "pausiert", message: MESSAGES.pausiert, callId: log("pausiert") };
   const b = budgetState(now());
-  if (b.level === "aus" || (b.level === "echtzeit-aus" && spec.realtime)) return { ok: false, status: "budget", message: MESSAGES.budget, callId: log("budget") };
+  if (b.level === "aus") return { ok: false, status: "budget", message: MESSAGES.budget, callId: log("budget") };
   // a photo or PDF the configured provider cannot read: a setting to change, not an outage
   const cannot = custom ? null : unsupported(provider, prompt);
   if (cannot) return { ok: false, status: "fehler", message: cannot, callId: log("fehler", { error: cannot }) };

@@ -25,6 +25,17 @@ const DEFAULT_MODELS: Record<Tier, string> = {
 };
 const MODEL_ENV: Record<Tier, string> = { fast: "AI_MODEL_FAST", standard: "AI_MODEL_STANDARD", deep: "AI_MODEL_DEEP" };
 
+/**
+ * Defaults on OpenRouter (prices checked 2026-10-09 on openrouter.ai): the small Claude model for
+ * everyday work, the mid-size one for the rare deep analysis. Both read photos and PDFs and answer in
+ * the app's JSON schema. Switch with AI_<AREA>_MODEL or AI_MODEL_<TIER>, no code change.
+ */
+const OPENROUTER_MODELS: Record<Tier, string> = {
+  fast: "anthropic/claude-haiku-5.5",
+  standard: "anthropic/claude-haiku-5.5",
+  deep: "anthropic/claude-sonnet-5.5",
+};
+
 export function modelFor(tier: Tier): string {
   return process.env[MODEL_ENV[tier]]?.trim() || DEFAULT_MODELS[tier];
 }
@@ -43,7 +54,8 @@ export type AIFunction =
   | "notiz"
   | "material"
   | "textkorrektur"
-  | "lesen";
+  | "lesen"
+  | "verbindungstest";
 
 export type FunctionSpec = {
   label: string;
@@ -84,6 +96,8 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   textkorrektur: { label: "Textkorrektur", area: "TEXT", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // Leseverständnis: one request for the reading text, one for the questions; only on the teacher's click
   lesen: { label: "Leseverständnis erstellen", area: "EXERCISE", tier: "standard", maxTokens: 24_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
+  // KI-Selbsttest on Mehr › KI-Kosten: one tiny request before the real test requests
+  verbindungstest: { label: "Verbindungstest", area: "ANALYSIS", tier: "fast", maxTokens: 50, timeoutMs: 20_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
 };
 
 /** Which provider and model a function uses. model is "" when the provider has no default and none is set. */
@@ -95,14 +109,16 @@ function providerFrom(v: string | undefined): ProviderId | null {
 }
 
 /**
- * Provider: AI_<AREA>_PROVIDER, else AI_PROVIDER, else anthropic.
- * Model: AI_<AREA>_MODEL, else AI_MODEL_<TIER>, else the Anthropic default of the tier (only for anthropic:
- * other providers need a model set explicitly, no id is guessed).
+ * Provider: AI_<AREA>_PROVIDER, else AI_PROVIDER, else the provider whose key is set (Anthropic first,
+ * then OpenRouter), else anthropic.
+ * Model: AI_<AREA>_MODEL, else AI_MODEL_<TIER>, else the default of the tier for anthropic and openrouter
+ * (other providers need a model set explicitly, no id is guessed).
  */
 export function routeFor(fn: AIFunction): Route {
   const spec = FUNCTIONS[fn];
-  const provider = providerFrom(process.env[`AI_${spec.area}_PROVIDER`]) ?? providerFrom(process.env.AI_PROVIDER) ?? "anthropic";
-  const model = process.env[`AI_${spec.area}_MODEL`]?.trim() || process.env[MODEL_ENV[spec.tier]]?.trim() || (provider === "anthropic" ? DEFAULT_MODELS[spec.tier] : "");
+  const provider = providerFrom(process.env[`AI_${spec.area}_PROVIDER`]) ?? providerFrom(process.env.AI_PROVIDER) ?? (!hasKey("anthropic") && hasKey("openrouter") ? "openrouter" : "anthropic");
+  const fallback = provider === "anthropic" ? DEFAULT_MODELS[spec.tier] : provider === "openrouter" ? OPENROUTER_MODELS[spec.tier] : "";
+  const model = process.env[`AI_${spec.area}_MODEL`]?.trim() || process.env[MODEL_ENV[spec.tier]]?.trim() || fallback;
   return { provider, model, area: spec.area };
 }
 
@@ -111,11 +127,17 @@ export function routeFor(fn: AIFunction): Route {
 /** US dollars per million tokens. cacheWrite = 5-minute cache. */
 export type Price = { in: number; out: number; cacheWrite: number; cacheRead: number };
 
-/** List prices of the Anthropic price page (checked 2026-10-07). Override with AI_PRICES_JSON. */
+/**
+ * List prices of the Anthropic price page (checked 2026-10-07) and of OpenRouter (checked 2026-10-09).
+ * On OpenRouter the cost logged is the price OpenRouter reports for each request; this table only shows
+ * the price on Mehr › KI-Kosten and stands in when a request reports none. Override with AI_PRICES_JSON.
+ */
 const PRICES: [prefix: string, price: Price][] = [
   ["claude-haiku-4-5", { in: 1, out: 5, cacheWrite: 1.25, cacheRead: 0.1 }],
   ["claude-sonnet-5-5", { in: 2, out: 10, cacheWrite: 2.5, cacheRead: 0.2 }],
   ["claude-opus-5-5", { in: 4, out: 20, cacheWrite: 5, cacheRead: 0.2 }],
+  ["anthropic/claude-haiku-5.5", { in: 0.1, out: 0.5, cacheWrite: 0.125, cacheRead: 0.01 }],
+  ["anthropic/claude-sonnet-5.5", { in: 2, out: 10, cacheWrite: 2.5, cacheRead: 0.2 }],
 ];
 /** For a model without a known price: the price of the default model of its tier. */
 const TIER_PRICE: Record<Tier, Price> = { fast: PRICES[0][1], standard: PRICES[1][1], deep: PRICES[2][1] };
@@ -155,13 +177,23 @@ function num(name: string, fallback: number) {
   return Number.isFinite(v) && v >= 0 && process.env[name]?.trim() ? v : fallback;
 }
 
-/** Monthly budget in USD and the share at which the page warns. */
+/** Euro rate of 2026-10-08 (1 € = 1.12 $). Providers bill in US dollars; AI_USD_PER_EUR updates it. */
+const USD_PER_EUR = 1.12;
+
+/**
+ * Monthly budget and the share at which the page warns. Set in euros (AI_MONTHLY_BUDGET_EUR, default 10 €);
+ * the older AI_MONTHLY_BUDGET_USD still wins when set. Costs are logged in US dollars, as billed.
+ * When the budget is used up, every paid request stops; the app carries on without KI.
+ */
 export function budget() {
+  const usdPerEur = num("AI_USD_PER_EUR", USD_PER_EUR) || USD_PER_EUR;
+  const usd = process.env.AI_MONTHLY_BUDGET_USD?.trim() ? num("AI_MONTHLY_BUDGET_USD", 10 * usdPerEur) : null;
+  const monthlyUsd = usd ?? num("AI_MONTHLY_BUDGET_EUR", 10) * usdPerEur;
   return {
-    monthlyUsd: num("AI_MONTHLY_BUDGET_USD", 10),
+    monthlyUsd,
+    monthlyEur: monthlyUsd / usdPerEur,
+    usdPerEur,
     warnAt: Math.min(1, num("AI_BUDGET_WARN", 0.8)),
-    /** above the budget only realtime stops; at this share everything stops */
-    hardAt: 1.2,
   };
 }
 
