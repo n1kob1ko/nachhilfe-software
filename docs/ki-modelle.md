@@ -54,4 +54,4 @@ Mehr › KI-Kosten › KI testen (nur Administration). Zuerst eine winzige Anfra
 2. Mathematik, Gleichungen, 3. Klasse Mittelschule: eine Gleichung mit Rechenweg und eine Sachaufgabe; die App rechnet beide nach.
 3. Textkorrektur eines kurzen Volksschultexts mit vier eingebauten Fehlern.
 
-Angezeigt werden Modell, Dauer, Kosten und die Aufgaben selbst. Zusammen meist unter 5 Cent; die Kosten zählen zum Budget. Die Ergebnisse stehen auch im Server-Protokoll (`[KI-Selbsttest]`, ohne Schlüssel und ohne Schülerdaten).
+Angezeigt werden Modell, Dauer, Kosten und die Aufgaben selbst. Aufgaben, die die Prüfung der App nicht bestehen, stehen mit dem Grund dabei („Verworfen: …“, bei Rechenwegen mit Angabe, Ergebnis und Lösungsweg der KI). Zusammen meist unter 5 Cent; die Kosten zählen zum Budget. Die Ergebnisse stehen auch im Server-Protokoll (`[KI-Selbsttest]`, ohne Schlüssel und ohne Schülerdaten).

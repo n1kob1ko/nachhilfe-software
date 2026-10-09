@@ -93,3 +93,25 @@ test("KI-Selbsttest: a Wortarten task beyond the Volksschule level fails the Deu
   r.setTransport(null);
   r.resetRouter();
 });
+
+test("KI-Selbsttest: a task the app does not let through is shown with the reason", async () => {
+  const r = await import("./ai/router");
+  const { runSelfTest } = await import("./ai/selbsttest");
+  // a wrong line in the working, and a part result whose unit is only in its own field (that one is kept)
+  const wrongWay = { ...MA[0], solution_steps: ["3x = 29", "x = 5"] };
+  const bareUnit = { ...MA[1], parts: MA[1].parts!.map((p) => ({ ...p, answers: [p.answers![0].replace(" €", "")] })) };
+  r.setTransport(async (p) => {
+    const prompt = typeof p.content === "string" ? p.content : "";
+    const parsed = p.fn === "verbindungstest" ? { ok: true } : p.fn === "textkorrektur" ? TEXT : { tasks: prompt.includes("Fach: Deutsch") ? DE : [wrongWay, bareUnit] };
+    return { parsed: p.schema.parse(parsed), refusal: false, model: "m", usage: { input: 1, output: 1, cacheWrite: 0, cacheRead: 0 }, costUsd: 0 };
+  });
+  const ma = (await runSelfTest()).find((s) => s.key === "mathe")!;
+  assert.equal(ma.ok, false);
+  assert.match(ma.message, /1 von 2/);
+  const rejected = ma.details.filter((d) => d.startsWith("Verworfen:"));
+  assert.equal(rejected.length, 1);
+  assert.match(rejected[0], /rechenweg: Im Lösungsweg passt Zeile 1 nicht .*Weg: 3x = 29 \| x = 5/);
+  assert.ok(ma.details.some((d) => d.includes("a) Was kosten die Hefte?")), "the Sachaufgabe with „6“ and unit € is kept");
+  r.setTransport(null);
+  r.resetRouter();
+});
