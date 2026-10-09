@@ -18,6 +18,8 @@ Wer ein anderes Modell will, setzt `AI_<BEREICH>_MODEL` (z. B. `AI_TEXT_MODEL=an
 | Material (Fotos, PDFs) | `anthropic/claude-haiku-5.5` | 0,10 / 0,50 | Liest Bilder und PDFs; viele günstige Modelle lesen keine PDFs. |
 | Tiefenanalyse (nur auf Klick) | `anthropic/claude-sonnet-5.5` | 2 / 10 | Selten, braucht gründliches Abwägen; etwa 5 Cent pro Analyse. |
 
+Antwortformat: Die App schickt die erwartete JSON-Form als `json_schema` mit. Anthropic-Modelle lehnen Formen mit mehr als 16 Feldern ab, die leer sein dürfen (das Aufgabenformat hat 23). Diese Form steht dann in der Anleitung; die App prüft jede Antwort trotzdem gegen die Form und ergänzt fehlende leere Felder. Lehnt ein anderes Modell die Form ab, fragt die App einmal mit der Form in der Anleitung nach.
+
 Verglichen, nicht gewählt:
 
 | Modell | Preis | Grund |
