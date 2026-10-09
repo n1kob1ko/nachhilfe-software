@@ -9,7 +9,7 @@ import { CorrectionWorkspace, type View } from "@/components/text/correction/Cor
 import { Pill, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { getSkill } from "@/lib/repo";
-import { aiPreview, aiState, correctionsOfText, levelOfText, listItems, snapshotDoc } from "@/lib/text-correction";
+import { aiPreview, aiState, correctionsOfText, hiddenWords, levelOfText, listItems, snapshotDoc } from "@/lib/text-correction";
 import { getText, wordsLabel } from "@/lib/texts";
 
 export const metadata = { title: "Korrektur" };
@@ -156,6 +156,7 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
           method: c.method,
           unchecked: c.unchecked ? c.unchecked.split(",") : [],
           verifyFailed: c.verify_status === "fehler",
+          hidden: hiddenWords(c.hidden_words),
         }}
         doc={snapshotDoc(c)}
         items={items}

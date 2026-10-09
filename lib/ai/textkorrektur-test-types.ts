@@ -1,11 +1,12 @@
 /** What the Textkorrektur-Test reports (lib/ai/textkorrektur-test.ts), without server code, for the page. */
 
 export const WAYS = [
-  { key: "einfach", label: "Einfach (bisher)" },
-  { key: "einfach_marken", label: "Einfach + Prüfregeln" },
-  { key: "einfach_regeln", label: "Einfach + Regelfunde" },
-  { key: "schritt1", label: "Gründlich, nur Schritt 1" },
-  { key: "gruendlich", label: "Gründlich komplett" },
+  { key: "einfach", label: "Normal (ein Schritt)" },
+  { key: "schritt1", label: "Gründlich bisher, nur Schritt 1" },
+  { key: "gruendlich", label: "Gründlich bisher" },
+  { key: "schritt1_neu", label: "Gründlich neu, Schritt 1, nur Liste" },
+  { key: "fassung_neu", label: "Gründlich neu, Schritt 1 mit Fassungsvergleich" },
+  { key: "gruendlich_neu", label: "Gründlich neu" },
 ] as const;
 export type WayKey = (typeof WAYS)[number]["key"];
 

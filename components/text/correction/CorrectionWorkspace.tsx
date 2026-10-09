@@ -28,6 +28,8 @@ export type WorkspaceCorrection = {
   unchecked: string[];
   /** the second check of a „gründlich“ run failed: every suggestion is marked */
   verifyFailed: boolean;
+  /** words OpenRouter's privacy filter hid from the KI (grammar = not a name, e.g. „Sie“) */
+  hidden: { para: number; text: string; grammar: boolean }[];
 };
 
 type Props = {
@@ -53,7 +55,13 @@ const isPlaced = (i: CorrectionItem) => i.block !== null && i.pos_start !== null
 const sortedOut = (i: CorrectionItem) => i.status === "abgelehnt" && i.review === "verworfen";
 /** open and marked for a close look: never accepted in bulk */
 const toCheck = (i: CorrectionItem) => i.status === "offen" && i.review === "lehrer";
-const ORIGIN: Record<string, string> = { regel: "vom Programm gefunden", pruefung: "von der zweiten Prüfung gefunden" };
+/** „Sie“ (Absatz 3), „Lea“ (Absatz 5, 6) */
+function hiddenList(hidden: WorkspaceCorrection["hidden"]) {
+  const by = new Map<string, number[]>();
+  for (const h of hidden) by.set(h.text, [...new Set([...(by.get(h.text) ?? []), h.para])]);
+  return [...by].map(([text, paras]) => `„${text}“ (Absatz ${paras.join(", ")})`).join(", ");
+}
+const ORIGIN: Record<string, string> = { regel: "vom Programm gefunden", pruefung: "von der zweiten Prüfung gefunden", fassung: "aus der Satzfassung der KI" };
 const order = (a: CorrectionItem, b: CorrectionItem) => (a.block ?? -1) - (b.block ?? -1) || (a.pos_start ?? -1) - (b.pos_start ?? -1) || a.id - b.id;
 
 /** Runs with bold/italic/underline; line breaks stay characters (pre-wrap), so positions in the DOM match the text. */
@@ -387,7 +395,7 @@ export function CorrectionWorkspace(p: Props) {
             </span>
           </div>
         )}
-        {!running && (c.unchecked.length > 0 || c.verifyFailed || flagged > 0) && (
+        {!running && (c.unchecked.length > 0 || c.verifyFailed || flagged > 0 || c.hidden.length > 0) && (
           <div className="mb-4 flex items-start gap-3 rounded-2xl bg-amber-wash px-5 py-4 text-[15px]" role="status" data-testid="genau-pruefen">
             <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber" aria-hidden />
             <div className="grid gap-1">
@@ -400,6 +408,11 @@ export function CorrectionWorkspace(p: Props) {
                 </p>
               )}
               {c.verifyFailed && <p>Die zweite Prüfung der KI ist fehlgeschlagen. Kein Vorschlag wurde kontrolliert.</p>}
+              {c.hidden.length > 0 && (
+                <p data-testid="ausgeblendet">
+                  Der Datenschutzfilter von OpenRouter hat Wörter ausgeblendet, bevor die KI den Text sah: {hiddenList(c.hidden)}. Dort konnte die KI nicht prüfen; diese Stellen bitte selbst durchsehen.
+                </p>
+              )}
               {c.unchecked.length > 0 && (
                 <p data-testid="ungeprueft">
                   Die KI hat {c.unchecked.length === 1 ? "einen Satz" : `${c.unchecked.length} Sätze`} nicht beantwortet (Absatz {[...new Set(c.unchecked.map((u) => u.split(".")[0]))].join(", ")}). Diese Stellen bitte selbst durchsehen.

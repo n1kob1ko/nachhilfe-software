@@ -288,3 +288,89 @@ test("Stelle finden: ganze Wörter zuerst, ein einzelner Buchstabe nie mitten im
   assert.equal(findQuote("Das Fahrrad und das Fahrradschloss", "Fahrrad", 10, [])?.start, 4, "a whole word before a part of a word");
   assert.equal(findQuote("Die Fahrradschlösser", "Fahrrad", 0, [])?.start, 4, "longer quotes may be part of a word");
 });
+
+test("gründlich neu: Vorschläge aus dem Fassungsvergleich, die Liste der KI liefert die Erklärungen", async () => {
+  const { comparedFindings, sentencesFor, SILENT_EXPLANATION } = await import("./ai/textkorrektur-gruendlich");
+  const text = [
+    "Im folgenden Text wird über dem Thema erörtert.",
+    "Man probiert es, wenn man im Spiel ein Fehler macht.",
+    "Deshalb die Lehrer müssten ständig schauen.",
+    "Ich blieb im Haus weil es regnete.",
+    "Die Rede war kurtz.",
+    "Ich weiß, das das stimmt.",
+  ].join(" ");
+  const req = { subject: "Deutsch", blocks: [{ text, heading: false }] } as unknown as Parameters<typeof sentencesFor>[0];
+  const sentences = sentencesFor(req);
+  const id = (k: number) => sentences[k].id;
+  const { findings } = comparedFindings(sentences, {
+    sentences: [
+      // the list says „über das“, the KI's own sentence drops the preposition: the version wins, marked, both shown
+      { id: id(0), corrected: "Im folgenden Text wird das Thema erörtert.", findings: [f("über dem", "über das", "grammatik", "Nach „über“ steht der Akkusativ.", { sure: false })] },
+      // fixed in the sentence, never listed
+      { id: id(1), corrected: "Man probiert es, wenn man im Spiel einen Fehler macht.", findings: [] },
+      // list and version agree on the moved verb
+      { id: id(2), corrected: "Deshalb müssten die Lehrer ständig schauen.", findings: [f("Deshalb die Lehrer müssten", "Deshalb müssten die Lehrer", "satzbau", "Nach „deshalb“ steht das Verb an zweiter Stelle.")] },
+      // listed, but the KI's own sentence leaves the place as it is
+      { id: id(3), corrected: "Ich blieb im Haus weil es regnete.", findings: [f("Haus weil", "Haus, weil", "zeichensetzung", "Vor „weil“ steht ein Beistrich.")] },
+      // fehlerfrei bis auf kurtz, listed and written the same way
+      { id: id(4), corrected: "Die Rede war kurz.", findings: [f("kurtz", "kurz", "rechtschreibung", "„kurz“ ohne t.")] },
+      // the quote stands twice in the sentence: it belongs where the version changes it
+      { id: id(5), corrected: "Ich weiß, dass das stimmt.", findings: [f("das", "dass", "rechtschreibung", "Das Bindewort „dass“ schreibt man mit ss.")] },
+    ],
+  } as never);
+  const by = (q: string) => findings.find((x) => x.quote === q)!;
+  assert.equal(by("über dem").replacement, "das");
+  assert.equal(by("über dem").origin, "fassung");
+  assert.equal(by("über dem").explanation, SILENT_EXPLANATION, "the list's explanation belongs to another change");
+  assert.match(by("über dem").review_note!, /nicht sicher.*„über dem“ → „über das“/);
+  assert.equal(by("ein").replacement, "einen");
+  assert.equal(by("ein").review, "lehrer");
+  assert.equal(by("ein").category, "grammatik");
+  assert.equal(by("Deshalb die Lehrer müssten").replacement, "Deshalb müssten die Lehrer");
+  assert.equal(by("Deshalb die Lehrer müssten").review, "", "list and version agree");
+  assert.equal(by("Deshalb die Lehrer müssten").explanation, "Nach „deshalb“ steht das Verb an zweiter Stelle.");
+  assert.equal(by("Haus weil").review, "lehrer");
+  assert.match(by("Haus weil").review_note!, /lässt die KI diese Stelle unverändert/);
+  assert.equal(by("kurtz").review, "");
+  assert.equal(by("kurtz").origin, "analyse");
+  assert.equal(by("das").replacement, "dass");
+  assert.equal(by("das").review, "");
+  assert.equal(by("das").from, text.indexOf("das das"));
+  assert.equal(findings.filter((x) => x.quote === "das").length, 1);
+  // every change sits exactly where the sentence has it
+  for (const x of findings) assert.equal(text.slice(x.from!, x.from! + x.quote.length), x.quote);
+});
+
+test("gründlich neu: ausgeblendete Wörter werden erkannt; fehlt ein Grammatikwort wie „Sie“, ist der Satz markiert", async () => {
+  const { comparedFindings, hiddenInVersions, sentencesFor } = await import("./ai/textkorrektur-gruendlich");
+  const text = "Ich bin froh, das Sie mir geholfen haben. Am Ende erkannte Lea, dass sie loslassen muss.";
+  const req = { subject: "Deutsch", blocks: [{ text, heading: false }] } as unknown as Parameters<typeof sentencesFor>[0];
+  const sentences = sentencesFor(req);
+  const data = {
+    sentences: [
+      { id: sentences[0].id, corrected: "Ich bin froh, dass [PERSON_NAME] mir geholfen haben.", findings: [f("das", "dass", "rechtschreibung", "Bindewort dass.")] },
+      { id: sentences[1].id, corrected: "Am Ende erkennt [PERSON_NAME], dass sie loslassen muss.", findings: [f("erkannte", "erkennt", "grammatik", "Präsens.")] },
+    ],
+  } as never;
+  const r = comparedFindings(sentences, data);
+  assert.deepEqual(r.hidden.map((h) => [h.text, h.grammar]), [["Sie", true], ["Lea", false]]);
+  const das = r.findings.find((x) => x.quote === "das")!;
+  assert.equal(das.review, "lehrer");
+  assert.match(das.review_note!, /Datenschutzfilter hat in diesem Satz „Sie“ ausgeblendet/);
+  assert.equal(r.findings.find((x) => x.quote === "erkannte")!.review, "", "a hidden name next to it is no reason for a mark");
+  // „bisher“ sees the hidden words in the sentences the KI wrote out
+  assert.deepEqual(hiddenInVersions(sentences, data).map((h) => h.text), ["Sie", "Lea"]);
+});
+
+test("gründlich neu: eine Änderung nur aus der Satzfassung verliert die Markierung, wenn die zweite Prüfung sie bestätigt und erklärt", async () => {
+  const { applyVerdicts, SILENT_EXPLANATION } = await import("./ai/textkorrektur-gruendlich");
+  const it = (review_note: string) => ({ block: 0, pos_start: 0, pos_end: 3, quote: "ein", replacement: "einen", category: "grammatik", kind: "fehler", rule: "", explanation: SILENT_EXPLANATION, review: "lehrer" as const, review_note, origin: "fassung" as const });
+  const items = [it("Nur in der Satzfassung der KI, nicht in ihrer Liste."), it("Nur in der Satzfassung der KI, nicht in ihrer Liste."), it("In ihrer Liste schlägt die KI „ein“ → „eine“ vor, in ihrer Satzfassung diese Lösung.")];
+  const proposals = items.map((_, k) => ({ k, para: 1, start: 0, end: 3, quote: "ein", replacement: "einen" }));
+  const check = (nr: number, better: string | null) => ({ nr, verdict: "richtig", explanation_ok: true, better_replacement: null, better_explanation: better, reason: "Akkusativ nach machen.", category: "grammatik" });
+  const out = applyVerdicts(items, proposals, { checks: [check(1, "„machen“ verlangt den Akkusativ: einen Fehler."), check(2, null), check(3, "Akkusativ.")], missed: [] }, null).items;
+  assert.equal(out[0].review, "");
+  assert.equal(out[0].explanation, "„machen“ verlangt den Akkusativ: einen Fehler.");
+  assert.equal(out[1].review, "lehrer", "no explanation: still marked");
+  assert.equal(out[2].review, "lehrer", "list and version disagree: still marked");
+});
