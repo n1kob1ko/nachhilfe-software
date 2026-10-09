@@ -78,6 +78,12 @@ const MAX_HINTS = 4;
 // ---------- names: replaced before the text leaves the app ----------
 
 export const NAME_PLACEHOLDER = "[Name]";
+
+/**
+ * A placeholder the app never writes („[PERSON_NAME]“ from a privacy filter on the provider's side, e.g.
+ * OpenRouter guardrails): the model saw other words than the student wrote, so the suggestion cannot fit.
+ */
+export const FOREIGN_PLACEHOLDER = /\[[A-Z][A-Z_]{2,}\]/;
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Name parts of at least 3 letters, as whole words, longest first. */
@@ -144,12 +150,18 @@ function normalized(s: string): { text: string; map: number[] } {
  */
 export function findQuote(hay: string, quote: string, from: number, taken: Range[]): Range | null {
   if (!quote) return null;
+  const letter = (c: string | undefined) => !!c && /[\p{L}\p{N}]/u.test(c);
   const search = (h: string, q: string, map: (i: number) => number): Range | null => {
-    const hits: Range[] = [];
+    const whole: Range[] = [];
+    const part: Range[] = [];
     for (let i = h.indexOf(q); i >= 0; i = h.indexOf(q, i + 1)) {
       const r = { start: map(i), end: map(i + q.length) };
-      if (!taken.some((t) => overlaps(t, r))) hits.push(r);
+      if (taken.some((t) => overlaps(t, r))) continue;
+      // „i“ is the English word, not the letter in „time“: whole words first, a part of a word only for longer quotes
+      const cut = (letter(q[0]) && letter(h[i - 1])) || (letter(q[q.length - 1]) && letter(h[i + q.length]));
+      (cut ? part : whole).push(r);
     }
+    const hits = whole.length || q.trim().length < 4 ? whole : part;
     return hits.find((r) => r.start >= from) ?? hits[0] ?? null;
   };
   const exact = search(hay, quote, (i) => i);
@@ -198,7 +210,7 @@ export function anchorFindings(
     const replacement = typeof f?.replacement === "string" ? f.replacement.replace(/\s+/g, " ") : "";
     const explanation = clip(f?.explanation, 300);
     const kind = kindOf(f?.kind);
-    if (!category || block < 0 || block >= doc.length || !quote.trim() || wordsIn(quote) > MAX_QUOTE_WORDS || !explanation || replacement.trim() === quote.trim()) {
+    if (!category || block < 0 || block >= doc.length || !quote.trim() || wordsIn(quote) > MAX_QUOTE_WORDS || !explanation || replacement.trim() === quote.trim() || FOREIGN_PLACEHOLDER.test(quote + replacement)) {
       dropped++;
       continue;
     }

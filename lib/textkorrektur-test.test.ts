@@ -108,6 +108,10 @@ test("Textkorrektur-Test: beide Wege laufen mit der KI, fünf Arten werden vergl
   assert.equal(t.einfach.score.missed, 2, "the stand-in misses the last error of each text");
   assert.ok(t.gruendlich.score.fixed >= errors - 2, JSON.stringify(t.gruendlich.score));
   assert.ok(t.gruendlich.calls === 4 && t.einfach.calls === 2);
+  assert.equal(t.schritt1.calls, 2, "step 1 alone is the analysis request");
+  assert.ok(t.schritt1.usd < t.gruendlich.usd);
+  assert.ok(calls.filter((r) => r.fn !== "textkorrektur").every((r) => r.schemaInPrompt), "analysis and check get the schema in the instructions");
+  assert.ok(calls.filter((r) => r.fn === "textkorrektur").every((r) => !r.schemaInPrompt), "the one-step correction stays as it was");
   assert.ok(t.gruendlich.usd > t.einfach.usd, "cost of each way from the logged requests");
   assert.ok(lines.some((l) => l.startsWith("[KI-Textkorrektur-Test] ") && l.includes(" gruendlich v1 ")), "every suggestion goes to the log");
   assert.ok(lines.every((l) => !/sk-or-|OPENROUTER_API_KEY/.test(l)));
