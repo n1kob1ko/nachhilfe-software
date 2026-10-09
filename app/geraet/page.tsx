@@ -149,7 +149,7 @@ export default async function DevicePage() {
   return (
     <DeviceLive unitId={unit.id}>
       {/* keyed by unit: a new student never sees anything left over from the previous one */}
-      <div key={unit.id} className={`mx-auto px-4 py-5 ${text && storyForEditor(text.id, "") ? "max-w-[1240px]" : "max-w-[860px]"}`}>
+      <div key={unit.id} className={`mx-auto px-4 py-5 has-[.lesen-breit]:max-w-[1320px] ${text && storyForEditor(text.id, "") ? "max-w-[1240px]" : "max-w-[860px]"}`}>
         <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-[24px] leading-tight font-semibold">{first}</p>

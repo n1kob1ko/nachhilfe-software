@@ -30,6 +30,8 @@ export type AnswerSpec = {
   needWay?: boolean;
   /** Sachaufgabe: the solution of each part, in the order of data.parts. */
   parts?: PartSolution[];
+  /** Leseverständnis: where in the reading text the answer stands (paragraph from 1, quoted word for word). */
+  evidence?: { paragraph: number; quote: string }[];
 };
 
 export type TaskDraft = {
@@ -59,6 +61,10 @@ export type TaskDraft = {
     variable?: string;
     /** Sachaufgabe: the parts a), b), c) as the student sees them. */
     parts?: PartView[];
+    /** Leseverständnis: the title of the reading text in passage (lib/lesen.ts). */
+    passageTitle?: string;
+    /** Leseverständnis: what the question practises (info, zusammenhang, schluss, wort, beleg, zusammenfassen, begruenden). */
+    aspect?: string;
   };
   answer: AnswerSpec;
   solution: string;

@@ -20,6 +20,7 @@ import {
 } from "@/lib/builder";
 import { DIFFICULTIES, type Difficulty, type TaskType, TASK_TYPES } from "@/lib/curriculum";
 import { noteActivity } from "@/lib/learning";
+import { readingSet, withText } from "@/lib/lesen";
 import { titleFromTask } from "@/lib/library";
 import * as repo from "@/lib/repo";
 import type { TaskDraft } from "@/lib/tasks";
@@ -120,6 +121,9 @@ export async function addTaskAction(worksheetId: number, what: NewTask, afterTas
   } else {
     if (!(what.format in TASK_TYPES)) return { error: "Unbekanntes Antwortformat." };
     draft = blankTask(what.format, what.skillId, what.category, (DIFFICULTIES as readonly string[]).includes(what.difficulty) ? what.difficulty : "mittel");
+    // in a reading exercise a new task is about the same text
+    const shared = readingSet(repo.listTasks(worksheetId));
+    if (shared) draft = withText([draft], shared)[0];
   }
   const id = repo.addTask(worksheetId, draft, afterTaskId);
   refresh(worksheetId);

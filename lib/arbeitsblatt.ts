@@ -5,6 +5,7 @@
  */
 import { categoryLabel, TASK_TYPES } from "./curriculum";
 import { textBlocks } from "./math-format";
+import { ASPECT_SHORT, isAspect, readingSet, type ReadingText } from "./lesen";
 import { GAP, type TaskDraft } from "./tasks";
 import { mathAnswerText, unknownOf } from "./math-task";
 
@@ -317,6 +318,8 @@ export type SheetDoc = {
   skills: string[];
   studentName: string | null;
   tasks: SheetTask[];
+  /** Leseverständnis: the text all questions are about, printed once before them */
+  reading: ReadingText | null;
 };
 
 export function buildSheet(
@@ -333,10 +336,11 @@ export function buildSheet(
   o: Pick<SheetOptions, "space" | "field">,
 ): SheetDoc {
   const seen = new Set<string>();
+  const reading = readingSet(src.tasks);
   const tasks = src.tasks.map((task, i): SheetTask => {
     const subject = src.subjectOf?.(i) ?? src.subject;
     const passage =
-      task.data.passage && !seen.has(task.data.passage)
+      !reading && task.data.passage && !seen.has(task.data.passage)
         ? task.data.passage
         : null;
     if (task.data.passage) seen.add(task.data.passage);
@@ -346,7 +350,7 @@ export function buildSheet(
       task,
       passage,
       skillName: task.skillId ? skillName(task.skillId) : null,
-      typeLabel: cat ?? TASK_TYPES[task.type],
+      typeLabel: isAspect(task.data.aspect) ? ASPECT_SHORT[task.data.aspect] : (cat ?? TASK_TYPES[task.type]),
       plan: planTask(task, subject, o),
     };
   });
@@ -363,6 +367,7 @@ export function buildSheet(
     skills,
     studentName: src.studentName,
     tasks,
+    reading,
   };
 }
 
