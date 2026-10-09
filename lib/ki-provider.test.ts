@@ -17,8 +17,10 @@ async function fakeApi(reply: (body: Record<string, unknown>) => unknown) {
     req.on("end", () => {
       const body = JSON.parse(raw);
       seen.push({ path: req.url ?? "", auth: String(req.headers.authorization ?? ""), body });
+      const out = reply(body) as { status?: number; error?: string };
       res.setHeader("content-type", "application/json");
-      res.end(JSON.stringify(reply(body)));
+      if (out?.status) res.statusCode = out.status;
+      res.end(out?.status ? (out.error ?? "") : JSON.stringify(out));
     });
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
@@ -76,6 +78,45 @@ test("OpenRouter: with only its key every area runs there, with the default mode
   process.env.AI_PROVIDER = "openrouter";
   assert.equal(routeFor("aufgaben").provider, "openrouter", "AI_PROVIDER decides");
   clean("OPENROUTER_API_KEY", "AI_TEXT_MODEL", "ANTHROPIC_API_KEY", "AI_PROVIDER");
+});
+
+test("OpenRouter: the large task schema goes into the instructions for Claude models, missing null fields are filled in", async () => {
+  // Anthropic refuses output schemas with more than 16 nullable fields (live error 2026-10-09: "Schemas contains too many parameters with union types")
+  const task = { format: "calc", category: "rechnung", skill_ids: ["mathe.x"], topic: "t", difficulty: "leicht", prompt: "Rechne 2 + 3.", accepted_answers: ["5"], numeric: true, solution: "5", solution_steps: ["2 + 3 = 5"], estimated_time_sec: 30, hints: ["Zähl weiter."], common_errors: [], criteria: ["5"] };
+  const api = await fakeApi(() => chat(JSON.stringify({ tasks: [task] }), { cost: 0.001 }));
+  const r = await import("./ai/router");
+  const { generateWithAI } = await import("./ai/features");
+  r.resetRouter();
+  Object.assign(process.env, { OPENROUTER_BASE_URL: api.url, OPENROUTER_API_KEY: "or-key" });
+  const out = await generateWithAI({ subject: "Mathematik", level: "2. Klasse Volksschule", skills: [{ id: "mathe.x", name: "Plus", area: "Rechnen", difficulty: "leicht" }], count: 1, categories: [] });
+  assert.equal(out?.length, 1, "the answer without the empty fields is used");
+  assert.equal(out![0].answer.accepted?.[0], "5");
+  const body = api.seen[0].body;
+  assert.equal(body.model, "anthropic/claude-haiku-5.5");
+  assert.equal(body.response_format, undefined, "no json_schema for this schema");
+  assert.match(JSON.stringify(body.messages), /JSON-Schema/);
+
+  // small schemas still go as json_schema
+  const { gradeFreeText } = await import("./ai/features");
+  await gradeFreeText({ prompt: "a", sample: "b" }, "c");
+  assert.equal((api.seen[1].body.response_format as { type: string }).type, "json_schema");
+  await api.close();
+  clean("OPENROUTER_BASE_URL", "OPENROUTER_API_KEY");
+});
+
+test("OpenRouter: a model that refuses the schema is asked once more with the schema in the instructions", async () => {
+  let n = 0;
+  const api = await fakeApi((body) => (n++ === 0 && body.response_format ? { status: 400, error: '{"error":{"message":"Provider returned error: output schema is not supported"}}' } : chat('{"correct":true,"feedback":"Passt.","error_label":null,"error_type":null}')));
+  const r = await import("./ai/router");
+  const { gradeFreeText } = await import("./ai/features");
+  r.resetRouter();
+  Object.assign(process.env, { OPENROUTER_BASE_URL: api.url, OPENROUTER_API_KEY: "or-key" });
+  const out = await gradeFreeText({ prompt: "a", sample: "b" }, "c");
+  assert.ok(out.ok);
+  assert.equal(api.seen.length, 2, "one more request, not more");
+  assert.equal(api.seen[1].body.response_format, undefined);
+  await api.close();
+  clean("OPENROUTER_BASE_URL", "OPENROUTER_API_KEY");
 });
 
 test("compatible API: the app's free-text check runs unchanged through another provider", async () => {
