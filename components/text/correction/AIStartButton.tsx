@@ -3,7 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ShieldCheck, Sparkles, X } from "lucide-react";
-import { startAICorrectionAction, type StartState } from "@/app/correction-actions";
+import { startAICorrectionAction, startThoroughRecheckAction, type StartState } from "@/app/correction-actions";
 import { Info } from "@/components/Info";
 
 export type AIPreview = {
@@ -14,8 +14,11 @@ export type AIPreview = {
   /** why the KI cannot run (no key, too short, too long) */
   blocked: string | null;
   words: number;
-  /** estimated cost in US dollars */
+  /** estimated cost in US dollars: one request, and the two of „gründlich“ */
   costUsd: number;
+  costThoroughUsd: number;
+  /** what is preselected (AI_TEXT_METHOD) */
+  method: "einfach" | "gruendlich";
   /** the paragraphs exactly as they are sent, names replaced */
   masked: string[];
   /** whose names are replaced */
@@ -37,12 +40,27 @@ function Submit({ disabled }: { disabled: boolean }) {
  * „Mit KI korrigieren“: nothing is sent before the teacher has seen what goes out, to whom, and ticked
  * the box. Without a key (or for a text that is too short or long) the button explains why it is off.
  */
-export function AIStartButton({ textId, preview, label = "Mit KI korrigieren", variant = "primary" }: { textId: number; preview: AIPreview; label?: string; variant?: "primary" | "secondary" }) {
+export function AIStartButton({
+  textId,
+  preview,
+  label = "Mit KI korrigieren",
+  variant = "primary",
+  recheck,
+}: {
+  textId: number;
+  preview: AIPreview;
+  label?: string;
+  variant?: "primary" | "secondary";
+  /** „Gründlich nachprüfen“ of this correction instead of a new start */
+  recheck?: number;
+}) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [ok, setOk] = useState(false);
-  const [state, action] = useActionState<StartState, FormData>(startAICorrectionAction.bind(null, textId), null);
+  const [method, setMethod] = useState(recheck ? "gruendlich" : preview.method);
+  const [state, action] = useActionState<StartState, FormData>(recheck ? startThoroughRecheckAction.bind(null, recheck) : startAICorrectionAction.bind(null, textId), null);
   const off = !preview.enabled || Boolean(preview.blocked);
-  const cents = Math.max(1, Math.round(preview.costUsd * 100));
+  const centsOf = (usd: number) => Math.max(1, Math.round(usd * 100));
+  const cents = centsOf(method === "gruendlich" ? preview.costThoroughUsd : preview.costUsd);
   return (
     <>
       <button type="button" className={`btn ${variant === "primary" ? "btn-primary" : "btn-secondary"} w-full sm:w-auto`} disabled={off} onClick={() => dialog.current?.showModal()} data-testid="ki-korrigieren">
@@ -85,6 +103,28 @@ export function AIStartButton({ textId, preview, label = "Mit KI korrigieren", v
                 Der Anbieter verarbeitet den Text, um die Korrektur zu erstellen. Vor dem Einsatz mit echten Schülertexten müssen Auftragsverarbeitung, Bedingungen des Anbieters und die Einwilligung (bzw. Rechtsgrundlage) geklärt sein. Ohne KI kannst du jederzeit selbst korrigieren.
               </Info>
             </p>
+            {recheck ? (
+              <p className="text-[14px] text-ink-2">
+                Die KI prüft den Text Satz für Satz, eine zweite Anfrage kontrolliert jeden Vorschlag. Offene KI-Vorschläge werden ersetzt, deine Entscheidungen bleiben.
+              </p>
+            ) : (
+              <fieldset className="grid gap-2" data-testid="ki-verfahren">
+                <legend className="mb-1 font-semibold">Prüfung</legend>
+                {(
+                  [
+                    ["einfach", "Normal", "eine Anfrage", preview.costUsd],
+                    ["gruendlich", "Gründlich", "Satz für Satz, dann prüft eine zweite Anfrage jeden Vorschlag", preview.costThoroughUsd],
+                  ] as const
+                ).map(([v, name, what, usd]) => (
+                  <label key={v} className="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-xl border border-line px-4 py-2">
+                    <input type="radio" name="method" value={v} checked={method === v} onChange={() => setMethod(v)} className="h-5 w-5 shrink-0 accent-[var(--accent)]" />
+                    <span>
+                      <b>{name}</b> <span className="text-ink-2">· {what} · etwa <span className="num">{centsOf(usd)}</span> US-Cent</span>
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+            )}
             <p className="text-[14px] text-amber">Andere Namen, Orte oder persönliche Angaben im Text (Freunde, Familie, Adressen) erkennt die App nicht. Bitte vorher durchsehen.</p>
             <details className="reveal">
               <summary>Gesendeten Text ansehen</summary>

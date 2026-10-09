@@ -13,6 +13,7 @@ import {
   removeTeacherItem,
   setShared,
   startAICorrection,
+  startThoroughRecheck,
   type ItemKind,
   type ItemStatus,
   type TeacherItemInput,
@@ -38,10 +39,19 @@ export async function startAICorrectionAction(textId: number, _prev: StartState,
   const text = getText(textId);
   if (!text) redirect("/");
   const unit = runningUnitForStudent(text.student_id);
-  const res = await startAICorrection(textId, t.id, { consent: f.get("consent") === "1", unitId: unit?.id ?? null });
+  const res = await startAICorrection(textId, t.id, { consent: f.get("consent") === "1", unitId: unit?.id ?? null, method: f.get("method") === "gruendlich" ? "gruendlich" : "einfach" });
   if (!res.ok) return { error: res.error };
   revalidatePath(page(textId));
   redirect(page(textId));
+}
+
+/** „Gründlich nachprüfen“: the open KI suggestions are replaced by a „gründlich“ run, decisions stay. */
+export async function startThoroughRecheckAction(correctionId: number, _prev: StartState, f: FormData): Promise<StartState> {
+  const { t, c } = await teacherCorrection(correctionId);
+  const res = await startThoroughRecheck(c.id, t.id, { consent: f.get("consent") === "1" });
+  if (!res.ok) return { error: res.error };
+  revalidatePath(page(c.text_id));
+  redirect(page(c.text_id));
 }
 
 /** „Selbst korrigieren“: a correction of the current version without KI. */

@@ -12,7 +12,7 @@ import { runAI, type AIMeta, type Outcome } from "./router";
  * Plain types where the model might slip (category, kind as strings): one unknown word must not cost the
  * whole correction; the server sorts such entries out one by one.
  */
-const Finding = z.object({
+export const Finding = z.object({
   para: z.number().int().describe("Nummer des Absatzes in eckigen Klammern"),
   quote: z.string().describe("Die fehlerhafte Stelle wörtlich und buchstabengenau aus dem Absatz kopiert, so kurz wie möglich (meist 1–6 Wörter)"),
   replacement: z.string().describe("Die verbesserte Fassung genau dieser Stelle (ersetzt quote im Text); leer = streichen"),
@@ -23,7 +23,7 @@ const Finding = z.object({
   skill_id: z.string().nullable().describe("ID einer passenden Fähigkeit aus der Liste, sonst null"),
 });
 
-const Hint = z.object({
+export const Hint = z.object({
   category: z.string().describe("struktur, inhalt, textsorte oder aufgabe"),
   para: z.number().int().nullable().describe("Absatz, auf den sich der Hinweis bezieht, sonst null"),
   text: z.string().describe("Ein bis zwei Sätze in du-Form: was fehlt oder besser aufgebaut werden kann"),
@@ -78,10 +78,10 @@ export function picturesLines(p: CorrectionRequest["pictures"]): string[] {
   ];
 }
 
-/** The user prompt: compact, numbered paragraphs, nothing about the student but the level. */
-export function correctionPrompt(r: CorrectionRequest): string {
+/** What the KI knows about the text besides the text itself: subject, level, kind, task, pictures, skills. */
+export function headerLines(r: CorrectionRequest): string[] {
   const english = isEnglish(r.subject);
-  const lines = [
+  return [
     `Fach: ${r.subject || "Deutsch"}`,
     `Schulstufe: ${r.level.label} (${r.level.schulstufe}. Schulstufe)`,
     `Maßstab: ${r.level.standard}`,
@@ -93,11 +93,21 @@ export function correctionPrompt(r: CorrectionRequest): string {
     english ? "Der Text ist englisch: quote und replacement auf Englisch, explanation auf Deutsch." : "",
     "",
     r.skills.length ? `Fähigkeiten (ID | Name):\n${r.skills.map((s) => `${s.id} | ${s.name}`).join("\n")}` : "Fähigkeiten: keine",
+  ];
+}
+
+/** Empty lines only one at a time. */
+export const joinLines = (lines: string[]) => lines.filter((l, i, a) => l !== "" || a[i - 1] !== "").join("\n");
+
+/** The user prompt: compact, numbered paragraphs, nothing about the student but the level. */
+export function correctionPrompt(r: CorrectionRequest): string {
+  const lines = [
+    ...headerLines(r),
     "",
     "Schülertext:",
     ...r.blocks.flatMap((b, i) => (b.text.trim() ? [`[${i + 1}]${b.heading ? " (Überschrift)" : ""} ${b.text}`] : [])),
   ];
-  return lines.filter((l, i, a) => l !== "" || a[i - 1] !== "").join("\n");
+  return joinLines(lines);
 }
 
 export function correctTextWithAI(r: CorrectionRequest, meta: AIMeta): Promise<Outcome<AICorrection>> {

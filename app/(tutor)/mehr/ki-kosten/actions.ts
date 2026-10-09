@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { aiEnabled } from "@/lib/ai";
 import { qualityState, startQualityTest, type RunState } from "@/lib/ai/qualitaetstest";
 import { runSelfTest, type TestStep } from "@/lib/ai/selbsttest";
+import { startTextTest, textTestState } from "@/lib/ai/textkorrektur-test";
+import type { TextTestState } from "@/lib/ai/textkorrektur-test-types";
 import { requireTeacher } from "@/lib/auth";
 
 export type SelfTestState = { steps: TestStep[] } | { error: string } | null;
@@ -46,4 +48,21 @@ export async function qualityTestStateAction(): Promise<QualityTestState> {
   const teacher = await requireTeacher();
   if (!teacher.is_admin) return { error: "Nur die Administration sieht den Qualitätstest." };
   return { state: qualityState() };
+}
+
+export type TextTestResult = { state: TextTestState | null } | { error: string };
+
+/** Mehr › KI-Kosten › Textkorrektur-Test: the synthetic texts with their key, one-step against „gründlich“; at most 2 €. */
+export async function startTextTestAction(): Promise<TextTestResult> {
+  const teacher = await requireTeacher();
+  if (!teacher.is_admin) return { error: "Nur die Administration kann den Textkorrektur-Test starten." };
+  if (!aiEnabled()) return { error: "Die KI ist aus: kein Schlüssel hinterlegt oder AI_DISABLED gesetzt." };
+  if (!startTextTest(teacher.id)) return { error: "Der Textkorrektur-Test läuft bereits." };
+  return { state: textTestState() };
+}
+
+export async function textTestStateAction(): Promise<TextTestResult> {
+  const teacher = await requireTeacher();
+  if (!teacher.is_admin) return { error: "Nur die Administration sieht den Textkorrektur-Test." };
+  return { state: textTestState() };
 }
