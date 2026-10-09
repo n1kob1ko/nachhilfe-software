@@ -72,10 +72,23 @@ export type CorrectionRow = {
   verify_status: "" | "ok" | "fehler";
   /** words OpenRouter's privacy filter hid from the KI, JSON [{para, text, grammar}], '' = none seen */
   hidden_words: string;
+  /** names replaced besides the known ones, as the teacher confirmed them, JSON array; '' = not chosen (detected) */
+  masked_names: string;
   shared_at: string | null;
   created_at: string;
   updated_at: string;
 };
+
+/** The names the teacher confirmed for a correction (text_corrections.masked_names); null = not chosen or unreadable. */
+export function maskedNames(json: string | null | undefined): string[] | null {
+  if (!json) return null;
+  try {
+    const v: unknown = JSON.parse(json);
+    return Array.isArray(v) ? v.filter((n): n is string => typeof n === "string" && /\p{L}/u.test(n)) : null;
+  } catch {
+    return null;
+  }
+}
 
 /** The words a privacy filter hid, as stored in text_corrections.hidden_words; anything unreadable counts as none. */
 export function hiddenWords(json: string | null | undefined): { para: number; text: string; grammar: boolean }[] {
