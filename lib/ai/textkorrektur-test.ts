@@ -14,7 +14,8 @@
  * The run stops before it could cost more than 2 €.
  */
 import { applyChanges, comparable, flagItems } from "../text-correction-checks";
-import { anchorFindings, type NewItem } from "../text-correction-core";
+import { detectNames } from "../name-detection";
+import { anchorFindings, maskText, namePattern, type NewItem } from "../text-correction-core";
 import { levelFor } from "../text-correction-rules";
 import type { TextDoc } from "../text-doc";
 import { FUNCTIONS, budget, priceFor, routeFor, type AIFunction, type Usage } from "./config";
@@ -152,7 +153,19 @@ const short = (s: string, max = 300) => s.replace(/\s+/g, " ").trim().slice(0, m
 
 async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: string, teacherId: number | null): Promise<CaseRun> {
   const level = levelFor(c.schoolType, c.klasse);
-  const req: CorrectionRequest = { subject: c.subject, kind: c.textKind, task: c.task, level, blocks: c.blocks, skills: [], pictures: null };
+  // names replaced as in the app: the test texts know no student, so only what the app finds itself
+  const names = detectNames([c.task, ...c.blocks.map((b) => b.text)]);
+  const pattern = namePattern(names);
+  for (const l of logLines(`${c.nr} namen`, names)) log(l);
+  const req: CorrectionRequest = {
+    subject: c.subject,
+    kind: c.textKind,
+    task: maskText(c.task, pattern).masked,
+    level,
+    blocks: c.blocks.map((b) => ({ ...b, text: maskText(b.text, pattern).masked })),
+    skills: [],
+    pictures: null,
+  };
   const doc: TextDoc = c.blocks.map((b) => ({ t: b.heading ? "h" : "p", r: [{ x: b.text }] }));
   const texts = c.blocks.map((b) => b.text);
   const english = /englisch|english/i.test(c.subject);
@@ -162,7 +175,7 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
   // only: the requests of a way when it is a part of a run („nur Schritt 1“ is the analysis alone)
   const ways: { way: WayKey; items: EvalItem[]; trigger: string; only?: string }[] = [];
   const timing = new Map<string, number>();
-  const anchorOpts = { pattern: null, level, skills: new Set<string>() };
+  const anchorOpts = { pattern, level, skills: new Set<string>() };
 
   // the one-step correction, as in the app until now
   const t1 = `${TRIGGER}-${c.nr}-einfach`;

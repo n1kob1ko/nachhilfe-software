@@ -19,11 +19,14 @@ import { aiEnabled } from "./ai/router";
 import { db } from "./db";
 import { skillsForStudent } from "./lehrplan";
 import { getSkill, getStudent } from "./repo";
+import { detectNames } from "./name-detection";
 import { blockText, parseDoc, type TextDoc } from "./text-doc";
 import {
   anchorFindings,
   clip,
+  maskedNames,
   maskText,
+  NAME_PLACEHOLDER,
   namePattern,
   overlaps,
   placed,
@@ -143,10 +146,15 @@ function carryOver(previous: CorrectionRow, toId: number, doc: TextDoc) {
 
 // ---------- the KI run ----------
 
-/** What the teacher sees before agreeing: what goes out, to whom, about what it costs. */
-export function aiPreview(text: TextView) {
+/**
+ * What the teacher sees before agreeing: what goes out, to whom, about what it costs. kept: the further names
+ * she confirmed for this correction before („Gründlich nachprüfen“), else all the app finds.
+ */
+export function aiPreview(text: TextView, kept: string[] | null = null) {
   const route = routeFor("textkorrektur");
-  const req = correctionRequest(text, parseDoc(text.body));
+  const doc = parseDoc(text.body);
+  // the known names replaced; the dialog replaces the found ones the teacher keeps (lib/name-detection.ts)
+  const req = correctionRequest(text, doc, []);
   const t = estimateTokens(text.words);
   const g = estimateTokensThorough(text.words);
   const blocked = text.words < AI_MIN_WORDS ? `Für die KI-Korrektur braucht der Text mindestens ${AI_MIN_WORDS} Wörter.` : text.words > AI_MAX_WORDS ? `Für die KI-Korrektur ist der Text zu lang (höchstens ${AI_MAX_WORDS.toLocaleString("de-AT")} Wörter).` : null;
@@ -162,6 +170,8 @@ export function aiPreview(text: TextView) {
     masked: req.blocks.filter((b) => b.text.trim()).map((b) => b.text),
     pictures: req.pictures ? req.pictures.captions.map((c, i) => `Bild ${i + 1}: ${c || "(keine Beschreibung)"}`) : null,
     hidden: `die Namen von ${text.student_name} und den Lehrkräften`,
+    names: [...new Set([...foundNames(text, doc), ...(kept ?? [])])],
+    kept: kept ?? foundNames(text, doc),
   };
 }
 
@@ -173,15 +183,25 @@ export function namesToHide(text: Pick<TextView, "student_name">): string[] {
   return [text.student_name, ...teacherNames()];
 }
 
+/** Further names the app finds in the text, the task and the picture descriptions (lib/name-detection.ts), without the known ones. */
+export function foundNames(text: TextView, doc: TextDoc): string[] {
+  const known = namePattern(namesToHide(text));
+  const pictures = pictureContext(text.id)?.captions ?? [];
+  return detectNames([text.prompt, ...doc.map(blockText), ...pictures]).filter((n) => maskText(n, known).masked !== NAME_PLACEHOLDER);
+}
+
 /** Bildgeschichte: the descriptions of the pictures, names masked like in the text. */
 function picturesFor(textId: number, pattern: RegExp | null) {
   const p = pictureContext(textId);
   return p ? { count: p.count, captions: p.captions.map((c) => maskText(c, pattern).masked) } : null;
 }
 
-/** The request for the KI: masked paragraphs, level, kind of text, task and the student's skills. */
-export function correctionRequest(text: TextView, doc: TextDoc): CorrectionRequest {
-  const pattern = namePattern(namesToHide(text));
+/**
+ * The request for the KI: masked paragraphs, level, kind of text, task and the student's skills. Replaced are
+ * the names of the student and the teachers and the further names (by default those the app finds).
+ */
+export function correctionRequest(text: TextView, doc: TextDoc, names: string[] = foundNames(text, doc)): CorrectionRequest {
+  const pattern = namePattern([...namesToHide(text), ...names]);
   const student = getStudent(text.student_id);
   const subject = text.subject || "Deutsch";
   const skills = student ? skillsForStudent(student, subject, { earlier: true }) : [];
@@ -206,7 +226,7 @@ export type StartResult = { ok: true; correctionId: number; reused: boolean } | 
 export function startAICorrection(
   textId: number,
   teacherId: number,
-  o: { consent: boolean; unitId?: number | null; wait?: boolean; method?: CorrectionMethod },
+  o: { consent: boolean; unitId?: number | null; wait?: boolean; method?: CorrectionMethod; names?: string[] },
 ): StartResult | Promise<StartResult> {
   if (!o.consent) return { ok: false, error: "Bitte zuerst bestätigen, dass der Text an die KI gesendet werden darf." };
   if (!aiEnabled("textkorrektur")) return { ok: false, error: "Die KI ist nicht eingerichtet. Du kannst den Text selbst korrigieren." };
@@ -221,10 +241,11 @@ export function startAICorrection(
   const now = iso();
   const claimed = db()
     .prepare(
-      `UPDATE text_corrections SET ai_status = 'laeuft', ai_error = NULL, ai_started_at = ?, ai_consent_by = ?, ai_consent_at = ?, method = ?, updated_at = ?
+      `UPDATE text_corrections SET ai_status = 'laeuft', ai_error = NULL, ai_started_at = ?, ai_consent_by = ?, ai_consent_at = ?, method = ?,
+       masked_names = COALESCE(?, masked_names), updated_at = ?
        WHERE id = ? AND (ai_status IN ('keine', 'fehler') OR (ai_status = 'laeuft' AND ai_started_at < ?))`,
     )
-    .run(now, teacherId, now, method, now, c.id, iso(Date.now() - runLimitMs(methodOf(c.method))));
+    .run(now, teacherId, now, method, o.names ? JSON.stringify(o.names) : null, now, c.id, iso(Date.now() - runLimitMs(methodOf(c.method))));
   if (!claimed.changes) return { ok: true, correctionId: c.id, reused: true };
   return launch(c.id, teacherId, o.wait);
 }
@@ -244,7 +265,7 @@ function launch(correctionId: number, teacherId: number, wait?: boolean): StartR
  * „Gründlich nachprüfen“: the open KI suggestions of a finished correction (and those the check sorted
  * out) are replaced by a „gründlich“ run; everything the teacher decided stays and is not suggested again.
  */
-export function startThoroughRecheck(correctionId: number, teacherId: number, o: { consent: boolean; wait?: boolean }): StartResult | Promise<StartResult> {
+export function startThoroughRecheck(correctionId: number, teacherId: number, o: { consent: boolean; wait?: boolean; names?: string[] }): StartResult | Promise<StartResult> {
   if (!o.consent) return { ok: false, error: "Bitte zuerst bestätigen, dass der Text an die KI gesendet werden darf." };
   if (!aiEnabled("textanalyse")) return { ok: false, error: "Die KI ist nicht eingerichtet." };
   const c = getCorrection(correctionId);
@@ -256,10 +277,11 @@ export function startThoroughRecheck(correctionId: number, teacherId: number, o:
   const claimed = conn.transaction(() => {
     const r = conn
       .prepare(
-        `UPDATE text_corrections SET ai_status = 'laeuft', ai_error = NULL, ai_started_at = ?, ai_consent_by = ?, ai_consent_at = ?, method = 'gruendlich', updated_at = ?
+        `UPDATE text_corrections SET ai_status = 'laeuft', ai_error = NULL, ai_started_at = ?, ai_consent_by = ?, ai_consent_at = ?, method = 'gruendlich',
+         masked_names = COALESCE(?, masked_names), updated_at = ?
          WHERE id = ? AND ai_status IN ('keine', 'fertig', 'fehler')`,
       )
-      .run(now, teacherId, now, now, correctionId);
+      .run(now, teacherId, now, o.names ? JSON.stringify(o.names) : null, now, correctionId);
     if (!r.changes) return false;
     conn
       .prepare("DELETE FROM text_correction_items WHERE correction_id = ? AND source = 'ki' AND (status = 'offen' OR (status = 'abgelehnt' AND review = 'verworfen' AND decided_by IS NULL))")
@@ -280,13 +302,16 @@ export async function runCorrection(correctionId: number, teacherId: number | nu
     db().prepare("UPDATE text_corrections SET ai_status = 'fehler', ai_error = ?, updated_at = ? WHERE id = ?").run(message.slice(0, 300), iso(), correctionId);
   try {
     // the snapshot, not the live text: the student may write on in the meantime
-    const req = correctionRequest({ ...text, body: c.body }, doc);
+    const snapshot = { ...text, body: c.body };
+    // the further names as the teacher confirmed them in the consent dialog, else what the app finds
+    const names = maskedNames(c.masked_names) ?? foundNames(snapshot, doc);
+    const req = correctionRequest(snapshot, doc, names);
     const method = methodOf(c.method);
     const meta = { teacherId, unitId: c.unit_id };
     const taken = new Map<number, Range[]>();
     for (const i of listItems(correctionId)) if (placed(i) && i.status !== "abgelehnt") taken.set(i.block, [...(taken.get(i.block) ?? []), { start: i.pos_start, end: i.pos_end }]);
     const skills = new Set(req.skills.map((s) => s.id));
-    const pattern = namePattern(namesToHide(text));
+    const pattern = namePattern([...namesToHide(text), ...names]);
     let result: { items: NewItem[]; data: Pick<AICorrection, "strengths" | "main_issue" | "recommendation" | "recommendation_skill_id">; dropped: number; callId: number | null; unchecked: string[]; hidden: HiddenWord[]; verify: "" | "ok" | "fehler" };
     if (method === "gruendlich") {
       const out = await correctThoroughly(req, doc, { pattern, level: req.level, skills, taken, meta, version: thoroughVersion() });

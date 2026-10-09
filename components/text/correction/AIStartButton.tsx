@@ -1,10 +1,12 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ShieldCheck, Sparkles, X } from "lucide-react";
 import { startAICorrectionAction, startThoroughRecheckAction, type StartState } from "@/app/correction-actions";
 import { Info } from "@/components/Info";
+import { parseNames } from "@/lib/name-detection";
+import { maskText, namePattern } from "@/lib/text-correction-core";
 
 export type AIPreview = {
   /** "Anthropic" */
@@ -19,10 +21,14 @@ export type AIPreview = {
   costThoroughUsd: number;
   /** what is preselected (AI_TEXT_METHOD) */
   method: "einfach" | "gruendlich";
-  /** the paragraphs exactly as they are sent, names replaced */
+  /** the paragraphs as they are sent, the names of the student and the teachers replaced (the further names are replaced here) */
   masked: string[];
   /** whose names are replaced */
   hidden: string;
+  /** further names: those the app found in the text (and those the teacher added before) */
+  names: string[];
+  /** the ones ticked at first */
+  kept: string[];
   /** Bildgeschichte: the teacher's short descriptions of the pictures (sent instead of the pictures) */
   pictures?: string[] | null;
 };
@@ -57,6 +63,12 @@ export function AIStartButton({
   const dialog = useRef<HTMLDialogElement>(null);
   const [ok, setOk] = useState(false);
   const [method, setMethod] = useState(recheck ? "gruendlich" : preview.method);
+  const [kept, setKept] = useState(preview.kept);
+  const [extra, setExtra] = useState("");
+  // the text exactly as it goes out: the further names the teacher keeps and adds replaced as on the server
+  const pattern = useMemo(() => namePattern([...kept, ...parseNames(extra)]), [kept, extra]);
+  const shown = useMemo(() => preview.masked.map((m) => maskText(m, pattern).masked), [preview.masked, pattern]);
+  const shownPictures = useMemo(() => preview.pictures?.map((c) => maskText(c, pattern).masked) ?? null, [preview.pictures, pattern]);
   const [state, action] = useActionState<StartState, FormData>(recheck ? startThoroughRecheckAction.bind(null, recheck) : startAICorrectionAction.bind(null, textId), null);
   const off = !preview.enabled || Boolean(preview.blocked);
   const centsOf = (usd: number) => Math.max(1, Math.round(usd * 100));
@@ -125,18 +137,53 @@ export function AIStartButton({
                 ))}
               </fieldset>
             )}
-            <p className="text-[14px] text-amber">Andere Namen, Orte oder persönliche Angaben im Text (Freunde, Familie, Adressen) erkennt die App nicht. Bitte vorher durchsehen.</p>
+            <div data-testid="ki-namen">
+              <input type="hidden" name="names" value="1" />
+              <p className="font-semibold">Weitere Namen</p>
+              {preview.names.length ? (
+                <>
+                  <p className="text-[14px] text-ink-2">Werden auch durch [Name] ersetzt. Ist ein Wort kein Name, nimm das Häkchen weg.</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {preview.names.map((n) => (
+                      <label key={n} className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-full border border-line px-3 text-[14px]">
+                        <input
+                          type="checkbox"
+                          name="name"
+                          value={n}
+                          checked={kept.includes(n)}
+                          onChange={(e) => setKept((k) => (e.target.checked ? [...k, n] : k.filter((x) => x !== n)))}
+                          className="h-4 w-4 accent-[var(--accent)]"
+                        />
+                        {n}
+                      </label>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-[14px] text-ink-2">Die App hat keine weiteren Namen gefunden.</p>
+              )}
+              <input
+                name="extra"
+                value={extra}
+                onChange={(e) => setExtra(e.target.value)}
+                className="input mt-2"
+                placeholder="Fehlt ein Name? Hier eintragen, mit Komma getrennt"
+                aria-label="Weitere Namen eintragen"
+                data-testid="ki-namen-extra"
+              />
+              <p className="mt-1.5 text-[14px] text-amber">Die App kann Namen übersehen und erkennt keine Orte oder Adressen. Bitte den gesendeten Text durchsehen.</p>
+            </div>
             <details className="reveal">
               <summary>Gesendeten Text ansehen</summary>
               <div className="mt-2 max-h-[240px] overflow-y-auto rounded-xl border border-line px-4 py-3 text-[14px] whitespace-pre-wrap" data-testid="ki-vorschau">
-                {preview.masked.map((m, i) => (
+                {shown.map((m, i) => (
                   <p key={i} className="mb-2">
                     {m}
                   </p>
                 ))}
-                {preview.pictures && (
+                {shownPictures && (
                   <div className="mt-3 border-t border-line pt-2 text-ink-2" data-testid="ki-vorschau-bilder">
-                    {preview.pictures.map((c, i) => (
+                    {shownPictures.map((c, i) => (
                       <p key={i}>{c}</p>
                     ))}
                   </div>

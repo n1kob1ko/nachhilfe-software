@@ -10,6 +10,7 @@ import { Pill, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { getSkill } from "@/lib/repo";
 import { aiPreview, aiState, correctionsOfText, hiddenWords, levelOfText, listItems, snapshotDoc } from "@/lib/text-correction";
+import { maskedNames } from "@/lib/text-correction-core";
 import { getText, wordsLabel } from "@/lib/texts";
 
 export const metadata = { title: "Korrektur" };
@@ -170,7 +171,7 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
           mayRunAI ? (
             <AIStartButton textId={text.id} preview={preview} label={state === "fehler" ? "Nochmal mit KI versuchen" : "Zusätzlich mit KI prüfen"} variant="secondary" />
           ) : mayRecheck ? (
-            <AIStartButton textId={text.id} preview={preview} label="Gründlich nachprüfen" variant="secondary" recheck={c.id} />
+            <AIStartButton textId={text.id} preview={aiPreview(text, maskedNames(c.masked_names))} label="Gründlich nachprüfen" variant="secondary" recheck={c.id} />
           ) : undefined
         }
       />
