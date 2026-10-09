@@ -38,7 +38,10 @@ function tokensOf(s: string): Token[] {
   });
 }
 
-/** A placeholder in the KI's text stands for any one word of ours. */
+/** At most so many of our words for one placeholder (the longest in the test: five, „„Ich bin sehr stolz auf euch“). */
+const MAX_HIDDEN = 6;
+
+/** A placeholder in the KI's text stands for any one word of ours (and the words next to it, see below). */
 const same = (a: Token, b: Token) => a.key === b.key || (b.placeholder && a.word && !a.placeholder);
 
 type Op = { kind: "eq" | "del" | "ins"; i: number; j: number };
@@ -96,24 +99,57 @@ export function compareVersions(sentence: string, corrected: string): Comparison
 
   const ours = (h: Hunk) => a.slice(h.i0, h.i1);
   const theirs = (h: Hunk) => b.slice(h.j0, h.j1);
-  const nextToHidden = (h: Hunk) => hidden.some((x) => x.i1 === h.i0 || h.i1 === x.i0);
-  const changes = hunks.filter((h) => {
+  const wordsOf = (ts: Token[]) => ts.filter((t) => t.word).length;
+  /** only signs (or nothing) of ours between i and j */
+  const noWords = (i: number, j: number) => a.slice(Math.min(i, j), Math.max(i, j)).every((t) => !t.word);
+  /** a hidden span right before the hunk („before“) or right after it, with at most signs between */
+  const hiddenBefore = (h: Hunk) => hidden.some((x) => x.i1 <= h.i0 && noWords(x.i1, h.i0));
+  const hiddenAfter = (h: Hunk) => hidden.some((x) => x.i0 >= h.i1 && noWords(h.i1, x.i0));
+  /** a word the KI wrote elsewhere in the sentence: it moved, the filter did not take it */
+  const added = new Set(hunks.flatMap((h) => theirs(h).filter((t) => t.word && !t.placeholder).map((t) => t.key.toLowerCase())));
+  const moves = (ts: Token[]) => ts.some((t) => t.word && added.has(t.key.toLowerCase()));
+
+  // what the filter took: a placeholder for several of our words, signs between them included
+  const rest = hunks.filter((h) => {
     const gone = ours(h);
-    const added = theirs(h);
-    const placeholders = added.filter((t) => t.placeholder).length;
-    // what the filter took: a placeholder for up to three of our words …
-    if (placeholders && placeholders === added.length && gone.length && gone.every((t) => t.word) && gone.length <= placeholders * 3) {
+    const put = theirs(h);
+    const placeholders = put.filter((t) => t.placeholder).length;
+    if (placeholders && placeholders === put.length && wordsOf(gone) && wordsOf(gone) <= placeholders * MAX_HIDDEN) {
       hidden.push({ i0: h.i0, i1: h.i1 });
       return false;
     }
-    // … or the rest of a name next to a placeholder („Mrs Berger“ → „[PERSON_NAME]“)
-    if (!added.length && gone.length <= 2 && gone.every((t) => t.word && /^\p{Lu}/u.test(t.text)) && nextToHidden(h)) {
-      hidden.push({ i0: h.i0, i1: h.i1 });
-      return false;
+    return true;
+  });
+  // One placeholder often covers a whole group („Wirtshaus das Licht“, „„Ich bin sehr stolz auf euch“, „Mrs Berger“;
+  // test 2026-10-09) and stands for one of its words: the rest is gone next to it. Next to a hidden span that is
+  // more of what the filter took, not a change; when the KI also changed a word there („das alle Kinder genug“ →
+  // „dass“), the change keeps as many of our words as the KI wrote, on the side away from the hidden span.
+  const changes = rest.flatMap((h): Hunk[] => {
+    const gone = ours(h);
+    const put = theirs(h);
+    const before = hiddenBefore(h);
+    const after = hiddenAfter(h);
+    const near = before || after;
+    if (!put.length && near && wordsOf(gone) <= MAX_HIDDEN && !moves(gone)) {
+      if (wordsOf(gone)) hidden.push({ i0: h.i0, i1: h.i1 });
+      return [];
+    }
+    const keep = wordsOf(put);
+    if (near && !(before && after) && keep && put.every((t) => !t.placeholder) && wordsOf(gone) > keep && wordsOf(gone) - keep <= MAX_HIDDEN && !moves(gone)) {
+      // the index in ours after the keep-th word from the start (or before the keep-th word from the end)
+      const idx = gone.map((t, k) => (t.word ? k : -1)).filter((k) => k >= 0);
+      if (after) {
+        const cut = h.i0 + idx[keep - 1] + 1;
+        hidden.push({ i0: cut, i1: h.i1 });
+        return [{ ...h, i1: cut }];
+      }
+      const cut = h.i0 + idx[idx.length - keep];
+      hidden.push({ i0: h.i0, i1: cut });
+      return [{ ...h, i0: cut }];
     }
     // a final sign the KI left off is no change
-    if (!added.length && h.i1 === a.length && gone.every((t) => !t.word)) return false;
-    return true;
+    if (!put.length && h.i1 === a.length && gone.every((t) => !t.word)) return [];
+    return [h];
   });
 
   // a word that only moves: one change from where it leaves to where it lands
