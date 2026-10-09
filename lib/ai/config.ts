@@ -54,6 +54,8 @@ export type AIFunction =
   | "notiz"
   | "material"
   | "textkorrektur"
+  | "textanalyse"
+  | "textpruefung"
   | "lesen"
   | "verbindungstest";
 
@@ -94,6 +96,9 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   material: { label: "Material erkennen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // only on the teacher's click, after consent; the same version of a text is never paid for twice
   textkorrektur: { label: "Textkorrektur", area: "TEXT", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  // Textkorrektur „gründlich“ (lib/ai/textkorrektur-gruendlich.ts): sentence-by-sentence analysis, then an independent check of every suggestion
+  textanalyse: { label: "Textkorrektur gründlich: Analyse", area: "TEXT", tier: "standard", maxTokens: 20_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  textpruefung: { label: "Textkorrektur gründlich: Prüfung", area: "TEXT", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // Leseverständnis: one request for the reading text, one for the questions; only on the teacher's click
   lesen: { label: "Leseverständnis erstellen", area: "EXERCISE", tier: "standard", maxTokens: 24_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   // KI-Selbsttest on Mehr › KI-Kosten: one tiny request before the real test requests

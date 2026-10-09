@@ -97,6 +97,8 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
   const skillNames = Object.fromEntries(skillIds.map((s) => [s, getSkill(s)?.name ?? s]));
   const outdated = c.version !== text.version;
   const mayRunAI = !outdated && (state === "keine" || state === "fehler");
+  // a one-step KI correction can be checked once more „gründlich“
+  const mayRecheck = !outdated && state === "fertig" && c.method !== "gruendlich" && c.ai_call_id !== null;
 
   return (
     <>
@@ -151,6 +153,9 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
           recommendation: c.recommendation,
           recommendationSkill: c.recommendation_skill,
           shared: Boolean(c.shared_at),
+          method: c.method,
+          unchecked: c.unchecked ? c.unchecked.split(",") : [],
+          verifyFailed: c.verify_status === "fehler",
         }}
         doc={snapshotDoc(c)}
         items={items}
@@ -160,7 +165,13 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
         textId={text.id}
         heading={heading}
         initialView={view}
-        aiStart={mayRunAI ? <AIStartButton textId={text.id} preview={preview} label={state === "fehler" ? "Nochmal mit KI versuchen" : "Zusätzlich mit KI prüfen"} variant="secondary" /> : undefined}
+        aiStart={
+          mayRunAI ? (
+            <AIStartButton textId={text.id} preview={preview} label={state === "fehler" ? "Nochmal mit KI versuchen" : "Zusätzlich mit KI prüfen"} variant="secondary" />
+          ) : mayRecheck ? (
+            <AIStartButton textId={text.id} preview={preview} label="Gründlich nachprüfen" variant="secondary" recheck={c.id} />
+          ) : undefined
+        }
       />
     </>
   );

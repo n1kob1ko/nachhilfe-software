@@ -10,8 +10,10 @@
  * or kept as a note without a place, never shown at a guessed position.
  */
 import { after } from "next/server";
-import { correctTextWithAI, estimateTokens, type CorrectionRequest } from "./ai/textkorrektur";
+import { correctTextWithAI, estimateTokens, type AICorrection, type CorrectionRequest } from "./ai/textkorrektur";
+import { correctThoroughly, englishText, estimateTokensThorough } from "./ai/textkorrektur-gruendlich";
 import { costOf, FUNCTIONS, routeFor } from "./ai/config";
+import { flagItems } from "./text-correction-checks";
 import { PROVIDER_LABEL } from "./ai/providers";
 import { aiEnabled } from "./ai/router";
 import { db } from "./db";
@@ -27,6 +29,8 @@ import {
   placed,
   type AIStatus,
   type CorrectionItem,
+  type CorrectionMethod,
+  type NewItem,
   type CorrectionRow,
   type ItemKind,
   type ItemStatus,
@@ -45,6 +49,15 @@ const iso = (ms = Date.now()) => new Date(ms).toISOString();
 /** At most this many words go to the KI in one correction (about four A4 pages). */
 export const AI_MAX_WORDS = 2_500;
 export const AI_MIN_WORDS = 10;
+
+/** How the KI checks when the teacher does not choose: AI_TEXT_METHOD = einfach (one request, default) or gruendlich. */
+export function defaultMethod(): CorrectionMethod {
+  return process.env.AI_TEXT_METHOD?.trim().toLowerCase() === "gruendlich" ? "gruendlich" : "einfach";
+}
+const methodOf = (v: unknown): CorrectionMethod => (v === "gruendlich" ? "gruendlich" : "einfach");
+
+/** How long a run may take before it counts as interrupted: one request, or the two of „gründlich“. */
+const runLimitMs = (m: CorrectionMethod) => (m === "gruendlich" ? FUNCTIONS.textanalyse.timeoutMs + FUNCTIONS.textpruefung.timeoutMs : FUNCTIONS.textkorrektur.timeoutMs) + 60_000;
 
 // ---------- storage ----------
 
@@ -68,7 +81,7 @@ export const snapshotDoc = (c: Pick<CorrectionRow, "body">) => parseDoc(c.body);
 
 /** A KI run that has been "running" for longer than its timeout was interrupted (e.g. a restart). */
 export function aiState(c: CorrectionRow, now = Date.now()): AIStatus {
-  if (c.ai_status === "laeuft" && c.ai_started_at && now - Date.parse(c.ai_started_at) > FUNCTIONS.textkorrektur.timeoutMs + 60_000) return "fehler";
+  if (c.ai_status === "laeuft" && c.ai_started_at && now - Date.parse(c.ai_started_at) > runLimitMs(methodOf(c.method))) return "fehler";
   return c.ai_status;
 }
 
@@ -119,12 +132,12 @@ function carryOver(previous: CorrectionRow, toId: number, doc: TextDoc) {
     }
   });
   const insert = db().prepare(
-    `INSERT INTO text_correction_items (correction_id, block, pos_start, pos_end, quote, replacement, category, kind, rule, explanation, skill_id, status, source, decided_by, decided_at, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO text_correction_items (correction_id, block, pos_start, pos_end, quote, replacement, category, kind, rule, explanation, skill_id, status, source, origin, review, review_note, decided_by, decided_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   for (const it of listItems(previous.id)) {
     if (!placed(it) || !moved.has(it.block)) continue;
-    insert.run(toId, moved.get(it.block)!, it.pos_start, it.pos_end, it.quote, it.replacement, it.category, it.kind, it.rule, it.explanation, it.skill_id, it.status, it.source, it.decided_by, it.decided_at, it.created_at);
+    insert.run(toId, moved.get(it.block)!, it.pos_start, it.pos_end, it.quote, it.replacement, it.category, it.kind, it.rule, it.explanation, it.skill_id, it.status, it.source, it.origin, it.review, it.review_note, it.decided_by, it.decided_at, it.created_at);
   }
 }
 
@@ -135,6 +148,7 @@ export function aiPreview(text: TextView) {
   const route = routeFor("textkorrektur");
   const req = correctionRequest(text, parseDoc(text.body));
   const t = estimateTokens(text.words);
+  const g = estimateTokensThorough(text.words);
   const blocked = text.words < AI_MIN_WORDS ? `Für die KI-Korrektur braucht der Text mindestens ${AI_MIN_WORDS} Wörter.` : text.words > AI_MAX_WORDS ? `Für die KI-Korrektur ist der Text zu lang (höchstens ${AI_MAX_WORDS.toLocaleString("de-AT")} Wörter).` : null;
   return {
     provider: PROVIDER_LABEL[route.provider],
@@ -143,6 +157,8 @@ export function aiPreview(text: TextView) {
     blocked,
     words: text.words,
     costUsd: costOf(route.model, FUNCTIONS.textkorrektur.tier, { input: t.input, output: t.output, cacheWrite: 0, cacheRead: 0 }),
+    costThoroughUsd: costOf(routeFor("textanalyse").model, FUNCTIONS.textanalyse.tier, { input: g.input, output: g.output, cacheWrite: 0, cacheRead: 0 }),
+    method: defaultMethod(),
     masked: req.blocks.filter((b) => b.text.trim()).map((b) => b.text),
     pictures: req.pictures ? req.pictures.captions.map((c, i) => `Bild ${i + 1}: ${c || "(keine Beschreibung)"}`) : null,
     hidden: `die Namen von ${text.student_name} und den Lehrkräften`,
@@ -187,7 +203,11 @@ export type StartResult = { ok: true; correctionId: number; reused: boolean } | 
  * result arrives in the background (the page asks again). A version the KI already checked is not
  * sent again.
  */
-export function startAICorrection(textId: number, teacherId: number, o: { consent: boolean; unitId?: number | null; wait?: boolean }): StartResult | Promise<StartResult> {
+export function startAICorrection(
+  textId: number,
+  teacherId: number,
+  o: { consent: boolean; unitId?: number | null; wait?: boolean; method?: CorrectionMethod },
+): StartResult | Promise<StartResult> {
   if (!o.consent) return { ok: false, error: "Bitte zuerst bestätigen, dass der Text an die KI gesendet werden darf." };
   if (!aiEnabled("textkorrektur")) return { ok: false, error: "Die KI ist nicht eingerichtet. Du kannst den Text selbst korrigieren." };
   const text = getText(textId);
@@ -197,22 +217,57 @@ export function startAICorrection(textId: number, teacherId: number, o: { consen
   const c = ensureCorrection(textId, teacherId, o.unitId ?? null);
   const state = aiState(c);
   if (state === "fertig" || state === "laeuft") return { ok: true, correctionId: c.id, reused: true };
+  const method = o.method ? methodOf(o.method) : defaultMethod();
   const now = iso();
   const claimed = db()
     .prepare(
-      `UPDATE text_corrections SET ai_status = 'laeuft', ai_error = NULL, ai_started_at = ?, ai_consent_by = ?, ai_consent_at = ?, updated_at = ?
+      `UPDATE text_corrections SET ai_status = 'laeuft', ai_error = NULL, ai_started_at = ?, ai_consent_by = ?, ai_consent_at = ?, method = ?, updated_at = ?
        WHERE id = ? AND (ai_status IN ('keine', 'fehler') OR (ai_status = 'laeuft' AND ai_started_at < ?))`,
     )
-    .run(now, teacherId, now, now, c.id, iso(Date.now() - FUNCTIONS.textkorrektur.timeoutMs - 60_000));
+    .run(now, teacherId, now, method, now, c.id, iso(Date.now() - runLimitMs(methodOf(c.method))));
   if (!claimed.changes) return { ok: true, correctionId: c.id, reused: true };
-  const run = runCorrection(c.id, teacherId).then(() => ({ ok: true as const, correctionId: c.id, reused: false }));
-  if (o.wait) return run;
+  return launch(c.id, teacherId, o.wait);
+}
+
+function launch(correctionId: number, teacherId: number, wait?: boolean): StartResult | Promise<StartResult> {
+  const run = runCorrection(correctionId, teacherId).then(() => ({ ok: true as const, correctionId, reused: false }));
+  if (wait) return run;
   try {
     after(() => run);
   } catch {
     // outside a request (tests, scripts): the promise runs on by itself
   }
-  return { ok: true, correctionId: c.id, reused: false };
+  return { ok: true, correctionId, reused: false };
+}
+
+/**
+ * „Gründlich nachprüfen“: the open KI suggestions of a finished correction (and those the check sorted
+ * out) are replaced by a „gründlich“ run; everything the teacher decided stays and is not suggested again.
+ */
+export function startThoroughRecheck(correctionId: number, teacherId: number, o: { consent: boolean; wait?: boolean }): StartResult | Promise<StartResult> {
+  if (!o.consent) return { ok: false, error: "Bitte zuerst bestätigen, dass der Text an die KI gesendet werden darf." };
+  if (!aiEnabled("textanalyse")) return { ok: false, error: "Die KI ist nicht eingerichtet." };
+  const c = getCorrection(correctionId);
+  if (!c) return { ok: false, error: "Korrektur nicht gefunden." };
+  if (c.words > AI_MAX_WORDS || c.words < AI_MIN_WORDS) return { ok: false, error: "Diese Fassung kann die KI nicht korrigieren (Länge)." };
+  if (aiState(c) === "laeuft") return { ok: true, correctionId, reused: true };
+  const conn = db();
+  const now = iso();
+  const claimed = conn.transaction(() => {
+    const r = conn
+      .prepare(
+        `UPDATE text_corrections SET ai_status = 'laeuft', ai_error = NULL, ai_started_at = ?, ai_consent_by = ?, ai_consent_at = ?, method = 'gruendlich', updated_at = ?
+         WHERE id = ? AND ai_status IN ('keine', 'fertig', 'fehler')`,
+      )
+      .run(now, teacherId, now, now, correctionId);
+    if (!r.changes) return false;
+    conn
+      .prepare("DELETE FROM text_correction_items WHERE correction_id = ? AND source = 'ki' AND (status = 'offen' OR (status = 'abgelehnt' AND review = 'verworfen' AND decided_by IS NULL))")
+      .run(correctionId);
+    return true;
+  })();
+  if (!claimed) return { ok: true, correctionId, reused: true };
+  return launch(correctionId, teacherId, o.wait);
 }
 
 /** Asks the KI and stores the checked suggestions. Never throws; a failure is kept on the correction. */
@@ -226,35 +281,62 @@ export async function runCorrection(correctionId: number, teacherId: number | nu
   try {
     // the snapshot, not the live text: the student may write on in the meantime
     const req = correctionRequest({ ...text, body: c.body }, doc);
-    const out = await correctTextWithAI(req, { teacherId, unitId: c.unit_id });
-    if (!out.ok) {
-      fail(out.message);
-      return;
-    }
-    const items = listItems(correctionId);
+    const method = methodOf(c.method);
+    const meta = { teacherId, unitId: c.unit_id };
     const taken = new Map<number, Range[]>();
-    for (const i of items) if (placed(i) && i.status !== "abgelehnt") taken.set(i.block, [...(taken.get(i.block) ?? []), { start: i.pos_start, end: i.pos_end }]);
+    for (const i of listItems(correctionId)) if (placed(i) && i.status !== "abgelehnt") taken.set(i.block, [...(taken.get(i.block) ?? []), { start: i.pos_start, end: i.pos_end }]);
     const skills = new Set(req.skills.map((s) => s.id));
-    const anchored = anchorFindings(doc, out.data, { pattern: namePattern(namesToHide(text)), level: req.level, skills, taken });
+    const pattern = namePattern(namesToHide(text));
+    let result: { items: NewItem[]; data: Pick<AICorrection, "strengths" | "main_issue" | "recommendation" | "recommendation_skill_id">; dropped: number; callId: number | null; unchecked: string[]; verify: "" | "ok" | "fehler" };
+    if (method === "gruendlich") {
+      const out = await correctThoroughly(req, doc, { pattern, level: req.level, skills, taken, meta });
+      if (!out.ok) {
+        fail(out.message);
+        return;
+      }
+      result = { items: out.items, data: out.data, dropped: out.dropped, callId: out.callIds[0] ?? null, unchecked: out.unchecked, verify: out.verify };
+    } else {
+      const out = await correctTextWithAI(req, meta);
+      if (!out.ok) {
+        fail(out.message);
+        return;
+      }
+      const anchored = anchorFindings(doc, out.data, { pattern, level: req.level, skills, taken });
+      // the program's checks mark what does not fit, also here
+      result = { items: flagItems(doc.map(blockText), anchored.items, { english: englishText(req) }), data: out.data, dropped: anchored.dropped, callId: out.callId, unchecked: [], verify: "" };
+    }
     const conn = db();
     conn.transaction(() => {
       const now = iso();
       const insert = conn.prepare(
-        `INSERT INTO text_correction_items (correction_id, block, pos_start, pos_end, quote, replacement, category, kind, rule, explanation, skill_id, status, source, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'offen', 'ki', ?)`,
+        `INSERT INTO text_correction_items (correction_id, block, pos_start, pos_end, quote, replacement, category, kind, rule, explanation, skill_id, status, source, origin, review, review_note, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ki', ?, ?, ?, ?)`,
       );
-      for (const i of anchored.items) insert.run(correctionId, i.block, i.pos_start, i.pos_end, i.quote, i.replacement, i.category, i.kind, i.rule, i.explanation, i.skill_id, now);
-      const d = out.data;
+      for (const i of result.items)
+        insert.run(correctionId, i.block, i.pos_start, i.pos_end, i.quote, i.replacement, i.category, i.kind, i.rule, i.explanation, i.skill_id, i.review === "verworfen" ? "abgelehnt" : "offen", i.origin, i.review, i.review_note, now);
+      const d = result.data;
       const recSkill = typeof d.recommendation_skill_id === "string" && skills.has(d.recommendation_skill_id) ? d.recommendation_skill_id : null;
       // who answered, as the teacher reads it: "Anthropic · claude-…"
-      const route = routeFor("textkorrektur");
+      const route = routeFor(method === "gruendlich" ? "textanalyse" : "textkorrektur");
       const model = `${PROVIDER_LABEL[route.provider]} · ${route.model}`;
       conn
         .prepare(
           `UPDATE text_corrections SET ai_status = 'fertig', ai_error = NULL, ai_model = ?, ai_call_id = ?, summary = ?, main_issue = ?, recommendation = ?,
-           recommendation_skill = ?, dropped = ?, updated_at = ? WHERE id = ?`,
+           recommendation_skill = ?, dropped = ?, unchecked = ?, verify_status = ?, updated_at = ? WHERE id = ?`,
         )
-        .run(model, out.callId, (Array.isArray(d.strengths) ? d.strengths : []).map((s) => clip(s, 200)).filter(Boolean).slice(0, 3).join("\n"), clip(d.main_issue, 80), clip(d.recommendation, 200), recSkill, anchored.dropped, now, correctionId);
+        .run(
+          model,
+          result.callId,
+          (Array.isArray(d.strengths) ? d.strengths : []).map((s) => clip(s, 200)).filter(Boolean).slice(0, 3).join("\n"),
+          clip(d.main_issue, 80),
+          clip(d.recommendation, 200),
+          recSkill,
+          result.dropped,
+          result.unchecked.join(","),
+          result.verify,
+          now,
+          correctionId,
+        );
     })();
   } catch (e) {
     fail(`Die Korrektur konnte nicht gespeichert werden (${e instanceof Error ? e.message : String(e)}).`);
@@ -270,9 +352,11 @@ export function decideItem(correctionId: number, itemId: number, status: ItemSta
   if (!item) return null;
   const now = iso();
   const text = replacement !== undefined && status === "uebernommen" && placed(item) ? replacement.replace(/\s+/g, " ").slice(0, 200) : item.replacement;
+  // one the check sorted out and the teacher brings back stays marked for a close look
+  const review = item.review === "verworfen" && status !== "abgelehnt" ? "lehrer" : item.review;
   conn
-    .prepare("UPDATE text_correction_items SET status = ?, replacement = ?, decided_by = ?, decided_at = ? WHERE id = ?")
-    .run(status, text, status === "offen" ? null : teacherId, status === "offen" ? null : now, itemId);
+    .prepare("UPDATE text_correction_items SET status = ?, replacement = ?, review = ?, decided_by = ?, decided_at = ? WHERE id = ?")
+    .run(status, text, review, status === "offen" ? null : teacherId, status === "offen" ? null : now, itemId);
   conn.prepare("UPDATE text_corrections SET updated_at = ? WHERE id = ?").run(now, correctionId);
   return conn.prepare("SELECT * FROM text_correction_items WHERE id = ?").get(itemId) as CorrectionItem;
 }
@@ -289,6 +373,8 @@ export function decideAll(correctionId: number, status: "uebernommen" | "abgeleh
     where.push("kind = ?");
     args.push(filter.kind);
   }
+  // what the teacher must look at closely is never accepted in bulk
+  if (status === "uebernommen") where.push("review = ''");
   const now = iso();
   const res = db()
     .prepare(`UPDATE text_correction_items SET status = ?, decided_by = ?, decided_at = ? WHERE ${where.join(" AND ")}`)

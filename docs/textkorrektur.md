@@ -6,14 +6,14 @@ Ein Schüler schreibt eine Erlebniserzählung, einen Bericht, einen Beschwerdebr
 
 1. **Öffnen.** Text öffnen (`/texte/<id>`) und auf „Korrigieren“ klicken. Die Korrekturseite liegt unter `/texte/<id>/korrektur`.
 2. **Starten.** Es gibt zwei Wege:
-   - **„Mit KI korrigieren“** öffnet zuerst die Freigabe. Sie zeigt, was gesendet wird und was nicht, den Empfänger (Anbieter und Modell) und die geschätzten Kosten. Mit „Gesendeten Text ansehen“ sieht man den Text genau so, wie er rausgeht. Gesendet wird erst, wenn der Haken „Ich gebe diesen Text für die KI-Korrektur frei“ gesetzt ist.
+   - **„Mit KI korrigieren“** öffnet zuerst die Freigabe. Sie zeigt, was gesendet wird und was nicht, den Empfänger (Anbieter und Modell) und die geschätzten Kosten. Mit „Gesendeten Text ansehen“ sieht man den Text genau so, wie er rausgeht. Unter „Prüfung“ wählt man **Normal** (eine Anfrage) oder **Gründlich** (Satz für Satz, dann eine zweite Prüfung, siehe unten), jeweils mit geschätzten Kosten. Gesendet wird erst, wenn der Haken „Ich gebe diesen Text für die KI-Korrektur frei“ gesetzt ist.
    - **„Selbst korrigieren“** braucht keine KI und keinen Schlüssel.
 3. **Prüfen.** Die Seite hat drei Ansichten, umschaltbar ohne Seitenwechsel: **Original**, **Korrekturen** und **Endfassung**.
    - In „Korrekturen“ sind Fehler rot unterstrichen, freiwillige Vorschläge lila gepunktet. Neben jeder Stelle steht das Kürzel der Kategorie.
    - Ein Klick auf eine Stelle öffnet eine Karte mit „Geschrieben“, „Besser“, Kategorie, Fehler oder Vorschlag, einer kurzen Erklärung, Regel und Fähigkeit.
    - Die Karte hat „Übernehmen“ und „Ablehnen“ und springt danach zur nächsten offenen Stelle. Mit dem Stift lässt sich die Verbesserung vorher ändern („So übernehmen“).
 4. **Eigene Korrekturen.** Text markieren, dann „Korrektur hier“. Mit „+ Hinweis“ entsteht eine Anmerkung zum ganzen Text.
-5. **Alle auf einmal.** „Alle übernehmen“ und „Alle ablehnen“ fragen vorher nach. Sie betreffen nur offene Stellen, auf Wunsch gefiltert nach Kategorie.
+5. **Alle auf einmal.** „Alle übernehmen“ und „Alle ablehnen“ fragen vorher nach. Sie betreffen nur offene Stellen, auf Wunsch gefiltert nach Kategorie. Gestrichelt markierte Stellen („genau prüfen“) nimmt „Alle übernehmen“ nie mit.
 6. **Zeigen.** „Max zeigen“ gibt die übernommenen Korrekturen frei. Max sieht sie dann am Tablet oder Laptop über dem Editor, mit Erklärung, nur zum Lesen, und verbessert selbst.
 7. **Drucken.** Die Seitenleiste bietet „Mit Korrekturen“, „Endfassung“ und „Original“. Im Druckdialog kann man die Fehlerübersicht dazunehmen.
 
@@ -60,7 +60,40 @@ Die KI liefert JSON nach einem festen Schema. Der Server prüft jede Stelle einz
   - die Verbesserung gleich dem Original ist,
   - die Höchstzahl erreicht ist.
 - **Nicht gefunden.** Ein Zitat, das der Server nicht findet, wird zu einem Hinweis ohne Ort.
-- **Doppelt.** Eine Stelle, die schon korrigiert ist, wird übersprungen.
+- **Doppelt.** Eine Stelle, die schon entschieden ist, wird übersprungen. Überschneiden sich zwei neue Vorschläge, zählt der zweite als verworfen (früher ging er stillschweigend verloren).
+
+Dazu kommen **Prüfregeln ohne KI** (`lib/text-correction-checks.ts`), bei Normal und Gründlich. Sie entscheiden nichts, sie markieren eine Stelle gestrichelt mit „Genau prüfen“ und dem Grund:
+
+- Kategorie oder Erklärung passen nicht zur Änderung: „Zeichensetzung“, die Wörter ändert; „Rechtschreibung“, die nur einen Beistrich setzt; eine Erklärung über Großschreibung, obwohl nichts großgeschrieben wird; „ß“ ohne ß.
+- Die Stelle wurde im Text nicht gefunden.
+- Zwei Vorschläge betreffen dieselben Wörter.
+- Im Text nach allen Vorschlägen steht neben einer Änderung ein Wort doppelt, ein Kleinbuchstabe am Satzanfang oder ein doppeltes Satzzeichen.
+
+## Gründlich prüfen
+
+Gewählt in der Freigabe („Gründlich“) oder nachträglich mit „Gründlich nachprüfen“ in der Seitenleiste einer normalen KI-Korrektur (offene KI-Vorschläge werden ersetzt, Entscheidungen bleiben). Zwei Anfragen statt einer, beide über den Router (`lib/ai/textkorrektur-gruendlich.ts`):
+
+1. **Analyse** (Funktion `textanalyse`). Der Text geht Satz für Satz hinaus, nummeriert „Absatz.Satz“. Die KI muss zu jedem Satz antworten, schreibt den ganzen Satz richtig und listet jede Änderung einzeln, mit „sicher/unsicher“. Ein Satz ohne Antwort wird der Lehrkraft gemeldet („Die KI hat einen Satz nicht beantwortet“). Eine Änderung, die nicht zur Fassung des ganzen Satzes passt, oder eine unsichere wird markiert.
+2. **Regelfunde.** Das Programm ergänzt, was es selbst sieht: fehlender Beistrich vor dass/weil/wenn/ob …, Kleinbuchstabe am Satzanfang, englisches „i“, doppeltes Wort, derselbe Rechtschreibfehler an anderer Stelle mit demselben Nachbarwort.
+3. **Prüfung** (Funktion `textpruefung`). Jeder Vorschlag aus 1 und 2 wird einzeln geprüft: der ganze Satz vorher und nachher und die Erklärung. Danach liest die Prüfung den Text mit allen Vorschlägen (geänderte Stellen in ⟦ ⟧) und nennt, was noch falsch ist.
+
+Was mit dem Urteil der Prüfung passiert:
+
+| Prüfung sagt | Vorschlag |
+|---|---|
+| richtig | bleibt; ein Regelfund verliert seine Markierung, ein unsicherer aus der Analyse behält sie |
+| richtig, Erklärung falsch | neue Erklärung, markiert |
+| unsicher | markiert, mit Grund |
+| falsch, mit besserer Verbesserung | neue Verbesserung, markiert |
+| falsch | aussortiert: zählt nicht, erscheint nirgends, steht unter „Von der zweiten Prüfung aussortiert“ und lässt sich zurückholen (dann markiert) |
+| noch ein Fehler im Text | neuer Vorschlag, markiert („von der zweiten Prüfung gefunden“) |
+| Prüfung fällt aus | alle Vorschläge markiert |
+
+Eine zweite KI-Prüfung ist kein Beweis. Deshalb bleibt jede Änderung ein Vorschlag, den die Lehrkraft übernimmt; was die Prüfung bezweifelt oder umschreibt, ist sichtbar markiert, und nichts davon zählt, bevor die Lehrkraft es übernimmt.
+
+**Kosten.** Beide Schritte denken mit Aufwand „medium“ (Normal: „low“). Die Freigabe zeigt die Schätzung beider Verfahren. Gemessen wird der Unterschied mit dem Textkorrektur-Test (Mehr › KI-Kosten, nur Administration): erfundene Texte mit eingebauten Fehlern und unabhängig geprüfter Musterkorrektur (`lib/ai/textkorrektur-test-faelle.ts`), jeder Text einmal normal und einmal gründlich, mit echten Anfragen, höchstens 2 €. Jeder Vorschlag steht mit Erklärung und Urteil im Server-Log (`[KI-Textkorrektur-Test]`).
+
+**Standard.** Ohne Wahl gilt `AI_TEXT_METHOD` (`einfach` oder `gruendlich`, Standard `einfach`).
 
 Unbrauchbare Antworten speichern nichts. Die Seite meldet dann „Die KI-Korrektur hat nicht geklappt“ und bietet einen neuen Versuch an.
 
@@ -128,7 +161,7 @@ Mit Denkzeit („adaptiv“, Aufwand niedrig) können es bis etwa 8 Cent werden.
 
 ## Technik
 
-- Tabellen `text_corrections` (eine Zeile pro Text und Fassung, mit Kopie des Textes) und `text_correction_items` (Stellen mit Absatz, Position, Zitat, Verbesserung, Kategorie, Art, Status, Quelle).
-- Prüflogik, ohne Server: `lib/text-correction-core.ts`. Datenbank und KI-Ablauf: `lib/text-correction.ts`. Prompt und Schema: `lib/ai/textkorrektur.ts`. Regeln und Stufen: `lib/text-correction-rules.ts`.
+- Tabellen `text_corrections` (eine Zeile pro Text und Fassung, mit Kopie des Textes, Verfahren `method`, unbeantworteten Sätzen `unchecked` und `verify_status`) und `text_correction_items` (Stellen mit Absatz, Position, Zitat, Verbesserung, Kategorie, Art, Status, Quelle, Herkunft `origin`, Markierung `review` und Grund `review_note`).
+- Prüflogik, ohne Server: `lib/text-correction-core.ts`. Datenbank und KI-Ablauf: `lib/text-correction.ts`. Prompt und Schema: `lib/ai/textkorrektur.ts`, gründlich: `lib/ai/textkorrektur-gruendlich.ts`. Prüfregeln: `lib/text-correction-checks.ts`. Regeln und Stufen: `lib/text-correction-rules.ts`. Textkorrektur-Test: `lib/ai/textkorrektur-test.ts`.
 - Oberfläche: `app/(tutor)/texte/[id]/korrektur/page.tsx`, `components/text/correction/*`.
-- Tests: `lib/textkorrektur.test.ts`, 12 Tests für die 17 Prüffälle.
+- Tests: `lib/textkorrektur.test.ts` (12 Tests für die 17 Prüffälle), `lib/text-correction-checks.test.ts`, `lib/textkorrektur-gruendlich.test.ts`, `lib/textkorrektur-test.test.ts`.

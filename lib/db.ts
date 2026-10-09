@@ -722,6 +722,15 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // note for parents/student written from the summary of a unit (by the teacher or, on request, by Claude)
   ["lessons", "family_note", "TEXT NOT NULL DEFAULT ''"],
   ["lessons", "family_note_source", "TEXT NOT NULL DEFAULT ''"],
+  // Textkorrektur „gründlich“ (lib/ai/textkorrektur-gruendlich.ts): how the KI checked, which sentences it
+  // left out, whether the second check ran; per suggestion where it came from and whether the teacher must
+  // look closely ('lehrer') or the check sorted it out ('verworfen', stored as abgelehnt)
+  ["text_corrections", "method", "TEXT NOT NULL DEFAULT 'einfach'"],
+  ["text_corrections", "unchecked", "TEXT NOT NULL DEFAULT ''"],
+  ["text_corrections", "verify_status", "TEXT NOT NULL DEFAULT ''"],
+  ["text_correction_items", "origin", "TEXT NOT NULL DEFAULT ''"],
+  ["text_correction_items", "review", "TEXT NOT NULL DEFAULT ''"],
+  ["text_correction_items", "review_note", "TEXT NOT NULL DEFAULT ''"],
 ];
 
 /** Teachers to start with; more can be added later. */
