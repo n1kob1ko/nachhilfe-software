@@ -13,8 +13,8 @@
  * lib/text-correction-checks.ts come on top. Only masked text leaves the app, as in the one-step run.
  */
 import { z } from "zod";
-import { applyChanges, comparable, flagItems, ruleItems, sentencesOf, withNote, type CheckItem, type Sentence } from "../text-correction-checks";
-import { anchorFindings, maskText, NAME_PLACEHOLDER, type InFinding, type ItemOrigin, type NewItem, type Range } from "../text-correction-core";
+import { applyChanges, clip, comparable, flagItems, ruleItems, sentencesOf, withNote, type CheckItem, type Sentence } from "../text-correction-checks";
+import { anchorFindings, FOREIGN_PLACEHOLDER, maskText, NAME_PLACEHOLDER, type InFinding, type ItemOrigin, type NewItem, type Range } from "../text-correction-core";
 import { isEnglish, type Level } from "../text-correction-rules";
 import { blockText, type TextDoc } from "../text-doc";
 import { Finding, headerLines, Hint, joinLines, type CorrectionRequest } from "./textkorrektur";
@@ -88,16 +88,43 @@ export function analyseText(r: CorrectionRequest, sentences: Sentence[], meta: A
   return runAI("textanalyse", AnalysisSchema, SYSTEM_ANALYSE, analysisPrompt(r, sentences), { meta: { ...meta, trigger: meta.trigger ?? "lehrer" } });
 }
 
-/**
- * The findings of step 1 for the anchor, each tied to its sentence, and the sentences the KI did not
- * answer for. A finding whose replacement the KI's own version of the sentence does not contain is
- * marked for the teacher, as one the KI was not sure about.
- */
 /** The change with one word on each side, as it reads after all changes of the sentence. */
 function withNeighbours(t: string, a: number, b: number): string {
   const left = t.slice(0, a).match(/[\p{L}\p{N}]+[^\p{L}\p{N}]*$/u)?.[0].length ?? 0;
   const right = t.slice(b).match(/^[^\p{L}\p{N}]*[\p{L}\p{N}]+/u)?.[0].length ?? 0;
   return t.slice(a - left, b + right);
+}
+
+/**
+ * Whether the model's sentence holds this piece of ours. An outside filter (OpenRouter's guardrail, test
+ * 2026-10-09) may have put „[PERSON_NAME]“ for a name before the model saw the text: such a placeholder stands
+ * for one to three of our words. Both sides compared as comparable() leaves them.
+ */
+export function holds(corrected: string, piece: string): boolean {
+  if (corrected.includes(piece)) return true;
+  if (!FOREIGN_PLACEHOLDER.test(corrected) || !piece.trim()) return false;
+  const H = corrected.split(" ");
+  const P = piece.trim().split(" ");
+  // seen: at least one of our words matched for real, so a placeholder alone never holds a piece
+  const fits = (i: number, j: number, seen: boolean): boolean => {
+    if (i === P.length) return seen;
+    const h = H[j];
+    if (h === undefined) return false;
+    const m = h.match(FOREIGN_PLACEHOLDER);
+    if (m) {
+      const before = h.slice(0, m.index);
+      const after = h.slice((m.index ?? 0) + m[0].length);
+      if (i > 0 && !P[i].startsWith(before)) return false;
+      for (let k = 1; k <= 3 && i + k <= P.length; k++) if ((i + k === P.length || P[i + k - 1].endsWith(after)) && fits(i + k, j + 1, seen)) return true;
+      return false;
+    }
+    const p = P[i];
+    const first = i === 0;
+    const last = i === P.length - 1;
+    const same = first && last ? h.includes(p) : first ? h.endsWith(p) : last ? h.startsWith(p) : h === p;
+    return same && fits(i + 1, j + 1, true);
+  };
+  return H.some((_, j) => fits(0, j, false));
 }
 
 /**
@@ -116,10 +143,15 @@ export function offSentence(sentence: string, fs: { quote?: unknown; replacement
   const r = applyChanges(sentence, changes);
   const off = new Set<number>();
   if (comparable(r.text) === corrected) return off;
-  for (const p of r.placed) if (!corrected.includes(comparable(withNeighbours(r.text, p.at.start, p.at.end)))) off.add(p.change.k);
+  for (const p of r.placed) if (!holds(corrected, comparable(withNeighbours(r.text, p.at.start, p.at.end)))) off.add(p.change.k);
   return off;
 }
 
+/**
+ * The findings of step 1 for the anchor, each tied to its sentence, and the sentences the KI did not
+ * answer for. A finding whose replacement the KI's own version of the sentence does not contain is
+ * marked for the teacher with the KI's version, as one the KI was not sure about.
+ */
 export function analysisFindings(sentences: Sentence[], data: Pick<Analysis, "sentences">): { findings: InFinding[]; unchecked: string[]; unknown: number } {
   const byId = new Map(sentences.map((s) => [s.id, s]));
   const seen = new Set<string>();
@@ -133,14 +165,17 @@ export function analysisFindings(sentences: Sentence[], data: Pick<Analysis, "se
       continue;
     }
     seen.add(id);
-    const corrected = typeof a.corrected === "string" ? comparable(a.corrected) : "";
+    const own = typeof a.corrected === "string" ? a.corrected : "";
+    const corrected = comparable(own);
     const fs = Array.isArray(a.findings) ? a.findings : [];
     const off = corrected ? offSentence(s.text, fs, corrected) : new Set<number>();
+    // the model's own version, for the teacher to compare (an outside filter's placeholders as „…“)
+    const shown = clip(own.replace(new RegExp(FOREIGN_PLACEHOLDER.source, "g"), "…"), 180);
     fs.forEach((f, k) => {
       const notes: string[] = [];
       if (f?.sure === false) notes.push("Die KI war sich nicht sicher.");
       const rep = typeof f?.replacement === "string" ? comparable(f.replacement) : "";
-      if ((corrected && rep && !corrected.includes(rep)) || off.has(k)) notes.push("Die KI schreibt den ganzen Satz anders als in diesem Vorschlag.");
+      if ((corrected && rep && !holds(corrected, rep)) || off.has(k)) notes.push(`Die KI würde den ganzen Satz anders verbessern: „${shown}“`);
       findings.push({ ...f, para: s.para, from: s.start, to: s.end, origin: "analyse", review: notes.length ? "lehrer" : "", review_note: notes.join(" ") });
     });
   }
@@ -180,6 +215,7 @@ Für jeden Vorschlag:
 - War die Stelle vorher wirklich falsch, nach dem Maßstab der Schulstufe? Wahlfreie Beistriche und richtige, nur ungewöhnliche Formulierungen sind keine Fehler. Ein Stilvorschlag (stil) darf eine richtige Stelle ändern, wenn er klar verbessert.
 - Lies den ganzen Satz nachher. Ist er richtig: Rechtschreibung, Artikel, Fall und Geschlecht des Nomens, Einzahl/Mehrzahl, Übereinstimmung von Subjekt und Verb, Zeitform, Zeichensetzung, Satzbau? Bleibt der Sinn erhalten? Entsteht ein neuer Fehler?
 - Ist die Erklärung fachlich richtig und passt sie genau zu dieser Änderung (richtige Regel, richtige Wortart, richtiger Fall)?
+Beistrich-Pflicht, die oft übersehen wird: Infinitivgruppen mit „um“, „ohne“, „statt“, „anstatt“, „außer“ oder „als“ werden immer mit Beistrich abgetrennt (§ 75 der amtlichen Regelung).
 verdict: richtig = alles stimmt; falsch = die Stelle war richtig, oder der Satz nachher ist falsch, oder der Sinn ändert sich; unsicher = du bist nicht sicher. Ist die Änderung falsch, die Stelle aber trotzdem fehlerhaft, gib better_replacement an. Ist nur die Erklärung falsch: explanation_ok = false und better_explanation.
 
 Danach: Lies den Text mit allen Vorschlägen (geänderte Stellen in ⟦ ⟧). Ergeben zwei Änderungen zusammen einen Fehler, gib bei der betroffenen verdict falsch. Nenne unter missed nur eindeutige Fehler, die außerhalb der ⟦ ⟧ noch stehen, mit derselben Sorgfalt (fehler = Regelverstoß, stil = freiwillig).
@@ -258,7 +294,7 @@ const verdictOf = (v: unknown): "richtig" | "falsch" | "unsicher" => {
   if (/richtig|ja|korrekt|ok|correct|true/.test(s)) return "richtig";
   return "unsicher";
 };
-const short = (s: unknown, max = 160) => (typeof s === "string" ? s.replace(/\s+/g, " ").trim().slice(0, max) : "");
+const short = (s: unknown, max = 200) => (typeof s === "string" ? clip(s, max) : "");
 
 /** Names the KI wrote as [Name] get back the names that stood at the place. */
 function restoreNames(text: string, original: string, pattern: RegExp | null) {
@@ -318,7 +354,7 @@ export function applyVerdicts<T extends CheckItem & { origin: ItemOrigin }>(item
       const keep = better.trim() && (better.trim() === p.quote.trim() || echoesNeighbours(p, better));
       if (keep) {
         // the place is right as the student wrote it
-        out[p.k] = { ...it, review: "verworfen", review_note: `Von der zweiten Prüfung aussortiert${reason ? `: ${reason}` : "."}`.slice(0, 300) };
+        out[p.k] = { ...it, review: "verworfen", review_note: clip(`Von der zweiten Prüfung aussortiert${reason ? `: ${reason}` : "."}`, 300) };
       } else if (better.trim()) {
         out[p.k] = withNote(
           { ...it, replacement: restoreNames(better, it.quote, pattern).slice(0, 200), explanation: betterExplanation || it.explanation },
