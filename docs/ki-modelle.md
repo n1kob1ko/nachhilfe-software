@@ -47,8 +47,8 @@ Gemessen im Live-Test am 9. Oktober 2026 (KI testen):
 | Verbindungstest | Haiku 5.5 | 1 s | unter 0,01 Cent |
 | Deutsch, 2 Aufgaben | Haiku 5.5 | 31 s | 0,4 Cent |
 | Mathematik, 2 Aufgaben | Haiku 5.5 | 21 s | 0,3 Cent |
-| Textkorrektur, 3 Sätze | Sonnet 5.5 (`AI_TEXT_MODEL`) | 6 s | 1,3 Cent |
-| Textkorrektur, 3 Sätze | Haiku 5.5 | 11 s | 0,1 Cent |
+| Textkorrektur, 3 Sätze | Sonnet 5.5 (`AI_TEXT_MODEL`) | 7 s | 1,4 Cent, 4 von 4 Fehlern |
+| Textkorrektur, 3 Sätze (alter Testsatz mit „Hunt“) | Haiku 5.5 | 11 s | 0,1 Cent, 3 von 4 Fehlern wie Sonnet |
 
 ## Budget
 
