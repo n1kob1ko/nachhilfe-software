@@ -11,7 +11,7 @@
  */
 import { after } from "next/server";
 import { correctTextWithAI, estimateTokens, type AICorrection, type CorrectionRequest } from "./ai/textkorrektur";
-import { correctThoroughly, englishText, estimateTokensThorough } from "./ai/textkorrektur-gruendlich";
+import { correctThoroughly, englishText, estimateTokensThorough, thoroughVersion, type HiddenWord } from "./ai/textkorrektur-gruendlich";
 import { costOf, FUNCTIONS, routeFor } from "./ai/config";
 import { flagItems } from "./text-correction-checks";
 import { PROVIDER_LABEL } from "./ai/providers";
@@ -287,14 +287,14 @@ export async function runCorrection(correctionId: number, teacherId: number | nu
     for (const i of listItems(correctionId)) if (placed(i) && i.status !== "abgelehnt") taken.set(i.block, [...(taken.get(i.block) ?? []), { start: i.pos_start, end: i.pos_end }]);
     const skills = new Set(req.skills.map((s) => s.id));
     const pattern = namePattern(namesToHide(text));
-    let result: { items: NewItem[]; data: Pick<AICorrection, "strengths" | "main_issue" | "recommendation" | "recommendation_skill_id">; dropped: number; callId: number | null; unchecked: string[]; verify: "" | "ok" | "fehler" };
+    let result: { items: NewItem[]; data: Pick<AICorrection, "strengths" | "main_issue" | "recommendation" | "recommendation_skill_id">; dropped: number; callId: number | null; unchecked: string[]; hidden: HiddenWord[]; verify: "" | "ok" | "fehler" };
     if (method === "gruendlich") {
-      const out = await correctThoroughly(req, doc, { pattern, level: req.level, skills, taken, meta });
+      const out = await correctThoroughly(req, doc, { pattern, level: req.level, skills, taken, meta, version: thoroughVersion() });
       if (!out.ok) {
         fail(out.message);
         return;
       }
-      result = { items: out.items, data: out.data, dropped: out.dropped, callId: out.callIds[0] ?? null, unchecked: out.unchecked, verify: out.verify };
+      result = { items: out.items, data: out.data, dropped: out.dropped, callId: out.callIds[0] ?? null, unchecked: out.unchecked, hidden: out.hidden, verify: out.verify };
     } else {
       const out = await correctTextWithAI(req, meta);
       if (!out.ok) {
@@ -303,7 +303,7 @@ export async function runCorrection(correctionId: number, teacherId: number | nu
       }
       const anchored = anchorFindings(doc, out.data, { pattern, level: req.level, skills, taken });
       // the program's checks mark what does not fit, also here
-      result = { items: flagItems(doc.map(blockText), anchored.items, { english: englishText(req) }), data: out.data, dropped: anchored.dropped, callId: out.callId, unchecked: [], verify: "" };
+      result = { items: flagItems(doc.map(blockText), anchored.items, { english: englishText(req) }), data: out.data, dropped: anchored.dropped, callId: out.callId, unchecked: [], hidden: [], verify: "" };
     }
     const conn = db();
     conn.transaction(() => {
@@ -322,7 +322,7 @@ export async function runCorrection(correctionId: number, teacherId: number | nu
       conn
         .prepare(
           `UPDATE text_corrections SET ai_status = 'fertig', ai_error = NULL, ai_model = ?, ai_call_id = ?, summary = ?, main_issue = ?, recommendation = ?,
-           recommendation_skill = ?, dropped = ?, unchecked = ?, verify_status = ?, updated_at = ? WHERE id = ?`,
+           recommendation_skill = ?, dropped = ?, unchecked = ?, hidden_words = ?, verify_status = ?, updated_at = ? WHERE id = ?`,
         )
         .run(
           model,
@@ -333,6 +333,7 @@ export async function runCorrection(correctionId: number, teacherId: number | nu
           recSkill,
           result.dropped,
           result.unchecked.join(","),
+          result.hidden.length ? JSON.stringify(result.hidden.map((h) => ({ para: h.para, text: h.text, grammar: h.grammar }))) : "",
           result.verify,
           now,
           correctionId,

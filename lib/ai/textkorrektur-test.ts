@@ -1,18 +1,19 @@
 /**
  * Textkorrektur-Test (Mehr › KI-Kosten, nur Administration): the synthetic texts of
  * textkorrektur-test-faelle.ts with built-in errors, correct places that look wrong, and an
- * independently checked answer key. Every text runs twice with real requests: the one-step
- * correction as it is today, and „gründlich“. From the same answers the test also derives the one-step
- * correction with the program's marks, with the program's rules, and step 1 of „gründlich“ alone, so
- * five ways of correcting are compared at the cost of two.
+ * independently checked answer key. Every text runs three times with real requests: the one-step
+ * correction, „gründlich bisher“ and „gründlich neu“ (lib/ai/textkorrektur-gruendlich.ts). From the same
+ * answers the test also derives step 1 of each alone and, for „neu“, step 1 as the KI listed it against
+ * step 1 with the Fassungsvergleich, so six ways are compared at the cost of three.
  *
  * Measured per way: errors found and correctly fixed, fixes that are themselves wrong, correct places
  * changed, further marks (for checking by hand), what is marked for the teacher, what the second check
  * sorted out, cost and time. Every suggestion goes to the server log as `[KI-Textkorrektur-Test] …`
- * with its explanation, so explanations can be checked by hand. Nothing is saved but the cost rows.
+ * with its explanation, so explanations can be checked by hand, and so do the KI's versions of the
+ * sentences it changed and the words OpenRouter's privacy filter hid. Nothing is saved but the cost rows.
  * The run stops before it could cost more than 2 €.
  */
-import { applyChanges, comparable, flagItems, ruleItems } from "../text-correction-checks";
+import { applyChanges, comparable, flagItems } from "../text-correction-checks";
 import { anchorFindings, type NewItem } from "../text-correction-core";
 import { levelFor } from "../text-correction-rules";
 import type { TextDoc } from "../text-doc";
@@ -20,7 +21,7 @@ import { FUNCTIONS, budget, priceFor, routeFor, type AIFunction, type Usage } fr
 import { callsOf, lastCallId, spentSince } from "./log";
 import { withAIOverride } from "./router";
 import { correctTextWithAI, type CorrectionRequest } from "./textkorrektur";
-import { correctThoroughly } from "./textkorrektur-gruendlich";
+import { correctThoroughly, sentencesFor, type ThoroughVersion } from "./textkorrektur-gruendlich";
 import { TEXT_CASES, type KorrekturFall } from "./textkorrektur-test-faelle";
 import { WAYS, type CaseRun, type Score, type TextTestState, type WayKey, type WayResult } from "./textkorrektur-test-types";
 
@@ -140,10 +141,11 @@ function worst(fn: AIFunction, maxOut: number, input: number) {
   const { price } = priceFor(routeFor(fn).model, FUNCTIONS[fn].tier);
   return (input * price.in * 1.25 + Math.min(maxOut, FUNCTIONS[fn].maxTokens) * price.out) / 1_000_000;
 }
-/** What one text may cost at most: the one-step correction and both requests of „gründlich“. */
+/** What one text may cost at most: the one-step correction and both requests of each „gründlich“ („neu“ writes every sentence out). */
 export function reserveFor(c: KorrekturFall): number {
   const w = words(c);
-  return worst("textkorrektur", 3_000 + w * 10, 2_500 + w * 2) + worst("textanalyse", 4_000 + w * 20, 3_000 + w * 3) + worst("textpruefung", 3_000 + w * 12, 3_000 + w * 6);
+  const thorough = (extra: number) => worst("textanalyse", 4_000 + w * (20 + extra), 3_000 + w * 3) + worst("textpruefung", 3_000 + w * 12, 3_000 + w * 6);
+  return worst("textkorrektur", 3_000 + w * 10, 2_500 + w * 2) + thorough(0) + thorough(3);
 }
 
 const short = (s: string, max = 300) => s.replace(/\s+/g, " ").trim().slice(0, max);
@@ -168,25 +170,42 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
   let started = Date.now();
   const one = await withAIOverride({ tag: `${runTag}-${c.nr}-e`, onUsage }, () => correctTextWithAI(req, { teacherId, trigger: t1 }));
   timing.set(t1, Date.now() - started);
-  if (one.ok) {
-    const base = anchorFindings(doc, one.data, anchorOpts).items;
-    ways.push({ way: "einfach", items: base, trigger: t1 });
-    ways.push({ way: "einfach_marken", items: flagItems(texts, base, { english }), trigger: t1 });
-    const rules = ruleItems(c.blocks, base, { english }).map((r): NewItem => ({ ...r, kind: r.kind === "stil" ? "stil" : "fehler", skill_id: null }));
-    ways.push({ way: "einfach_regeln", items: flagItems(texts, [...base, ...rules], { english }), trigger: t1 });
-  } else lines.push(`Einfach: keine Antwort (${one.message})`);
+  // with the program's marks, as the teacher gets it
+  if (one.ok) ways.push({ way: "einfach", items: flagItems(texts, anchorFindings(doc, one.data, anchorOpts).items, { english }), trigger: t1 });
+  else lines.push(`Einfach: keine Antwort (${one.message})`);
 
-  // „gründlich“: step 1, rules, step 2
-  const t2 = `${TRIGGER}-${c.nr}-gruendlich`;
-  started = Date.now();
-  const two = await withAIOverride({ tag: `${runTag}-${c.nr}-g`, onUsage }, () => correctThoroughly(req, doc, { ...anchorOpts, taken: new Map(), meta: { teacherId, trigger: t2 } }));
-  timing.set(t2, Date.now() - started);
-  if (two.ok) {
-    ways.push({ way: "schritt1", items: flagItems(texts, two.stages.analyse, { english }), trigger: t2, only: "textanalyse" });
-    ways.push({ way: "gruendlich", items: two.items, trigger: t2 });
-    if (two.unchecked.length) lines.push(`Gründlich: Sätze ohne Antwort: ${two.unchecked.join(", ")}`);
-    if (two.verify === "fehler") lines.push("Gründlich: zweite Prüfung fehlgeschlagen");
-  } else lines.push(`Gründlich: keine Antwort (${two.message})`);
+  // „gründlich“ as it is and as it would be: step 1, rules, step 2
+  const sentences = sentencesFor(req);
+  let ok = one.ok;
+  for (const version of ["bisher", "neu"] as ThoroughVersion[]) {
+    const neu = version === "neu";
+    const t = `${TRIGGER}-${c.nr}-gruendlich${neu ? "-neu" : ""}`;
+    const label = neu ? "Gründlich neu" : "Gründlich bisher";
+    started = Date.now();
+    const two = await withAIOverride({ tag: `${runTag}-${c.nr}-${neu ? "n" : "g"}`, onUsage }, () => correctThoroughly(req, doc, { ...anchorOpts, taken: new Map(), meta: { teacherId, trigger: t }, version }));
+    timing.set(t, Date.now() - started);
+    if (!two.ok) {
+      ok = false;
+      lines.push(`${label}: keine Antwort (${two.message})`);
+      continue;
+    }
+    ways.push({ way: neu ? "schritt1_neu" : "schritt1", items: flagItems(texts, two.stages.analyse, { english }), trigger: t, only: "textanalyse" });
+    if (two.stages.fassung) ways.push({ way: "fassung_neu", items: flagItems(texts, two.stages.fassung, { english }), trigger: t, only: "textanalyse" });
+    ways.push({ way: neu ? "gruendlich_neu" : "gruendlich", items: two.items, trigger: t });
+    if (two.unchecked.length) lines.push(`${label}: Sätze ohne Antwort: ${two.unchecked.join(", ")}`);
+    if (two.verify === "fehler") lines.push(`${label}: zweite Prüfung fehlgeschlagen`);
+    if (two.hidden.length) lines.push(`${label}: vom Datenschutzfilter ausgeblendet: ${two.hidden.map((h) => `„${h.text}“ (${h.sentence})`).join(", ")}`);
+    // the KI's own version of every sentence it changed, and the words the filter hid, for checking by hand
+    const tag = neu ? "neu" : "bisher";
+    const byId = new Map(sentences.map((s) => [s.id, s.text]));
+    const versions = (Array.isArray(two.data.sentences) ? two.data.sentences : []).flatMap((x) => {
+      const own = typeof x?.corrected === "string" ? x.corrected : "";
+      const id = String(x?.id ?? "");
+      return own.trim() && comparable(own) !== comparable(byId.get(id) ?? "") ? [{ id, v: own }] : [];
+    });
+    for (const l of logLines(`${c.nr} ${tag} saetze`, versions)) log(l);
+    if (two.hidden.length) for (const l of logLines(`${c.nr} ${tag} ausgeblendet`, two.hidden)) log(l);
+  }
 
   const results: WayResult[] = [];
   for (const w of ways) {
@@ -225,12 +244,12 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
     for (const v of ev.verdicts.filter((x) => x.verdict !== "richtig" && x.verdict !== "neutral" && x.item.review !== "verworfen"))
       lines.push(`   ${v.verdict}: „${short(v.item.quote, 80)}“ → „${short(v.item.replacement, 80)}“ (${v.item.kind}${v.item.review === "lehrer" ? ", markiert" : ""}) ${short(v.item.explanation, 160)}`);
   }
-  const best = results.find((r) => r.way === "gruendlich") ?? results[0];
+  const best = results.find((r) => r.way === "gruendlich_neu") ?? results[0];
   return {
     nr: c.nr,
     title: c.title,
     level: level.label,
-    status: one.ok && two.ok ? "fertig" : "fehler",
+    status: ok && results.length === WAYS.length ? "fertig" : "fehler",
     summary: best ? `${best.score.errors} eingebaute Fehler, ${c.correct.length} richtige Stellen als Falle` : "keine Antwort",
     ways: results,
     lines,
@@ -247,13 +266,15 @@ export async function runTextTest(o: { teacherId?: number | null; cases?: Korrek
   const state: TextTestState = { running: true, startedAt: Date.now(), finishedAt: null, total: cases.length, capUsd, results: [], active: [], totals: null };
   shared.__aiTextTest = state;
   const reserved = new Map<string, number>();
+  // after the first texts: what a word really cost, so the worst case does not skip texts the cap allows
+  let perWord = 0;
   log(`${LOG_PREFIX} start ${JSON.stringify({ run: runTag, cases: cases.length, capUsd, models: { textkorrektur: routeFor("textkorrektur").model, textanalyse: routeFor("textanalyse").model, textpruefung: routeFor("textpruefung").model }, effort: { textkorrektur: FUNCTIONS.textkorrektur.effort, textanalyse: FUNCTIONS.textanalyse.effort, textpruefung: FUNCTIONS.textpruefung.effort } })}`);
   const order = new Map(cases.map((c, i) => [c.nr, i]));
   let next = 0;
   const worker = async () => {
     while (next < cases.length) {
       const c = cases[next++];
-      const need = reserveFor(c);
+      const need = perWord ? Math.min(reserveFor(c), perWord * words(c) * 1.5) : reserveFor(c);
       const spent = spentSince(`${TRIGGER}-`, startId);
       const inFlight = [...reserved.values()].reduce((s, v) => s + v, 0);
       let r: CaseRun;
@@ -268,6 +289,8 @@ export async function runTextTest(o: { teacherId?: number | null; cases?: Korrek
           r = { nr: c.nr, title: c.title, level: "", status: "fehler", summary: `Fehler: ${e instanceof Error ? e.message : String(e)}`.slice(0, 300), ways: [], lines: [] };
         }
         reserved.delete(c.nr);
+        const usd = r.ways.filter((w) => ["einfach", "gruendlich", "gruendlich_neu"].includes(w.way)).reduce((n, w) => n + w.usd, 0);
+        if (r.status === "fertig") perWord = Math.max(perWord, usd / Math.max(1, words(c)));
         state.active = state.active.filter((n) => n !== c.nr);
       }
       for (const l of logLines(`${c.nr} ergebnis`, { ...r, lines: undefined })) log(l);

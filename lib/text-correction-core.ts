@@ -10,8 +10,11 @@ import { categoryInfo, normalizeCategory, TEXT_CATEGORIES, type Level } from "./
 export type ItemStatus = "offen" | "uebernommen" | "abgelehnt";
 export type ItemKind = "fehler" | "stil" | "hinweis";
 export type ItemSource = "ki" | "lehrer";
-/** Where a KI suggestion came from: '' = the one-step correction, analyse = step 1 of „gründlich“, pruefung = found by the second check, regel = found by the program */
-export type ItemOrigin = "" | "analyse" | "pruefung" | "regel";
+/**
+ * Where a KI suggestion came from: '' = the one-step correction, analyse = step 1 of „gründlich“, fassung = only in
+ * the KI's version of the sentence („gründlich neu“), pruefung = found by the second check, regel = found by the program
+ */
+export type ItemOrigin = "" | "analyse" | "fassung" | "pruefung" | "regel";
 /** '' = nothing special; lehrer = the teacher must look closely (note says why); verworfen = the second check found it wrong (stored as abgelehnt) */
 export type ItemReview = "" | "lehrer" | "verworfen";
 export type CorrectionMethod = "einfach" | "gruendlich";
@@ -67,10 +70,22 @@ export type CorrectionRow = {
   unchecked: string;
   /** the second check of a „gründlich“ run: '' = not run, ok, fehler */
   verify_status: "" | "ok" | "fehler";
+  /** words OpenRouter's privacy filter hid from the KI, JSON [{para, text, grammar}], '' = none seen */
+  hidden_words: string;
   shared_at: string | null;
   created_at: string;
   updated_at: string;
 };
+
+/** The words a privacy filter hid, as stored in text_corrections.hidden_words; anything unreadable counts as none. */
+export function hiddenWords(json: string | null | undefined): { para: number; text: string; grammar: boolean }[] {
+  try {
+    const v: unknown = JSON.parse(json || "[]");
+    return Array.isArray(v) ? v.filter((h) => Number.isInteger(h?.para) && typeof h?.text === "string" && h.text.trim()).map((h) => ({ para: h.para, text: h.text, grammar: Boolean(h.grammar) })) : [];
+  } catch {
+    return [];
+  }
+}
 
 const MAX_QUOTE_WORDS = 30;
 const MAX_HINTS = 4;
