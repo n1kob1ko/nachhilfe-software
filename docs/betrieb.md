@@ -145,15 +145,17 @@ Ohne Admin-Zugang geht Schritt 1 auch per `railway ssh`:
 | `DATABASE_PATH` | Datenbankdatei, im Docker-Image `/data/nachhilfe.db` |
 | `UPLOADS_PATH` | Ordner für Material, sonst `uploads/` neben der Datenbank |
 | `ANTHROPIC_API_KEY` | optional: Schlüssel für Anthropic (Standard-Anbieter) für neue Aufgaben, Echtzeit-Hinweise, Material-Erkennung, formulierte Notizen |
-| `OPENROUTER_API_KEY` | optional: Schlüssel für OpenRouter (`OPENROUTER_BASE_URL` nur bei abweichender Adresse) |
+| `OPENROUTER_API_KEY` | optional: Schlüssel für OpenRouter (`OPENROUTER_BASE_URL` nur bei abweichender Adresse). Ist nur dieser Schlüssel gesetzt, laufen alle Bereiche über OpenRouter mit den Standardmodellen (siehe [ki-modelle.md](ki-modelle.md)) |
 | `DEEPSEEK_API_KEY` | optional: Schlüssel für DeepSeek direkt (`DEEPSEEK_BASE_URL` nur bei abweichender Adresse); liest keine Bilder oder PDFs |
 | `AI_COMPATIBLE_BASE_URL`, `AI_COMPATIBLE_API_KEY` | optional: eine weitere OpenAI-kompatible API, z. B. `https://api.example.com/v1`. `AI_COMPATIBLE_JSON_SCHEMA=0`, wenn sie kein JSON-Schema als Antwortformat kennt |
-| `AI_PROVIDER` | Anbieter für alle Bereiche ohne eigenen Eintrag: `anthropic` (Standard), `openrouter`, `deepseek`, `compatible` |
-| `AI_<BEREICH>_PROVIDER`, `AI_<BEREICH>_MODEL` | Anbieter und Modell je Bereich. Bereiche: `REALTIME` (Echtzeit-Analyse), `EXERCISE` (Aufgaben erstellen, neue Aufgabe in der Einheit), `ANALYSIS` (Freitext, Blockauswertung, Zusammenfassung, Schüler-Einschätzung, Notiz), `DEEP` (Tiefenanalyse), `MATERIAL` (Material erkennen), `TEXT` (KI-Textkorrektur, nur auf Klick mit Freigabe, siehe [textkorrektur.md](textkorrektur.md)). Beispiel: `AI_REALTIME_PROVIDER=openrouter`, `AI_REALTIME_MODEL=deepseek/...`. Außer bei Anthropic muss das Modell gesetzt sein, sonst bleibt der Bereich ohne KI |
+| `AI_PROVIDER` | Anbieter für alle Bereiche ohne eigenen Eintrag: `anthropic`, `openrouter`, `deepseek`, `compatible`. Ohne Eintrag: der Anbieter, dessen Schlüssel gesetzt ist (Anthropic vor OpenRouter) |
+| `AI_<BEREICH>_PROVIDER`, `AI_<BEREICH>_MODEL` | Anbieter und Modell je Bereich. Bereiche: `REALTIME` (Echtzeit-Analyse), `EXERCISE` (Aufgaben erstellen, neue Aufgabe in der Einheit), `ANALYSIS` (Freitext, Blockauswertung, Zusammenfassung, Schüler-Einschätzung, Notiz), `DEEP` (Tiefenanalyse), `MATERIAL` (Material erkennen), `TEXT` (KI-Textkorrektur, nur auf Klick mit Freigabe, siehe [textkorrektur.md](textkorrektur.md)). Beispiel: `AI_REALTIME_PROVIDER=openrouter`, `AI_REALTIME_MODEL=deepseek/...`. Außer bei Anthropic und OpenRouter muss das Modell gesetzt sein, sonst bleibt der Bereich ohne KI |
 | `AI_MODEL_FAST` | Modell für die Echtzeit-Analyse, wenn `AI_REALTIME_MODEL` fehlt, Standard `claude-haiku-4-5` |
 | `AI_MODEL_STANDARD` | Modell für Aufgaben, Auswertungen und Material, wenn kein Bereichsmodell gesetzt ist, Standard `claude-sonnet-5-5` |
 | `AI_MODEL_DEEP` | Modell für die Tiefenanalyse (nur auf Klick), wenn `AI_DEEP_MODEL` fehlt, Standard `claude-opus-5-5` |
-| `AI_MONTHLY_BUDGET_USD` | Monatsbudget für KI in US-Dollar, Standard 10. Ab 100 % keine Echtzeit-Analyse, ab 120 % gar kein KI-Aufruf |
+| `AI_MONTHLY_BUDGET_EUR` | Monatsbudget für KI in Euro, Standard 10. Ab 100 % läuft kein kostenpflichtiger KI-Aufruf mehr, die App arbeitet ohne KI weiter |
+| `AI_USD_PER_EUR` | Kurs für die Umrechnung (die Anbieter rechnen in US-Dollar ab), Standard 1.12 |
+| `AI_MONTHLY_BUDGET_USD` | älter: Monatsbudget in US-Dollar; wenn gesetzt, gilt es statt `AI_MONTHLY_BUDGET_EUR` |
 | `AI_BUDGET_WARN` | Warnschwelle als Anteil, Standard 0.8 |
 | `AI_REALTIME_MAX_PER_HOUR` | höchstens so viele Echtzeit-Analysen pro Einheit und Stunde, Standard 40 |
 | `AI_PRICES_JSON` | Preise je Modell (Anfang des Namens) setzen oder überschreiben, z. B. `{"deepseek-chat":{"in":0.3,"out":1.2}}` (US-Dollar je 1 Mio. Tokens). OpenRouter meldet seinen Preis selbst, ohne Eintrag wird für andere Modelle mit dem Anthropic-Preis der Stufe geschätzt |
