@@ -76,7 +76,7 @@ export function AITextTest({ enabled }: { enabled: boolean }) {
     return () => clearInterval(t);
   }, [running, take]);
   const results = state?.results ?? [];
-  const spent = results.reduce((s, r) => s + r.ways.filter((w) => w.way === "einfach" || w.way === "gruendlich").reduce((n, w) => n + w.usd, 0), 0);
+  const spent = results.reduce((s, r) => s + r.ways.filter((w) => ["einfach", "gruendlich", "gruendlich_neu"].includes(w.way)).reduce((n, w) => n + w.usd, 0), 0);
   const complete = results.filter((r) => r.ways.length === WAYS.length).length;
   return (
     <div>
@@ -86,7 +86,7 @@ export function AITextTest({ enabled }: { enabled: boolean }) {
           {running ? "Textkorrektur-Test läuft …" : "Textkorrektur-Test starten"}
         </button>
         <Info label="Was macht der Textkorrektur-Test?">
-          Erfundene Schülertexte (Volksschule bis Oberstufe, Deutsch und Englisch) mit eingebauten Fehlern und unabhängig geprüfter Musterkorrektur. Jeder Text wird einmal wie bisher und einmal gründlich korrigiert, mit echten Anfragen. Läuft im Hintergrund, meist 10 bis 15 Minuten, kostet höchstens 2 € (zählt zum Monatsbudget). Jeder Vorschlag mit Erklärung steht im Server-Log.
+          Erfundene Schülertexte (Volksschule bis Oberstufe, Deutsch und Englisch) mit eingebauten Fehlern und unabhängig geprüfter Musterkorrektur. Jeder Text wird dreimal korrigiert, mit echten Anfragen: normal, gründlich wie bisher und gründlich neu (Satzprüfung mit Fassungsvergleich). Läuft im Hintergrund, meist 10 bis 20 Minuten, kostet etwa 1,60 € und höchstens 2 € (zählt zum Monatsbudget). Jeder Vorschlag mit Erklärung steht im Server-Log.
         </Info>
       </span>
       {error && <p className="mt-3 text-[14px] text-red">{error}</p>}

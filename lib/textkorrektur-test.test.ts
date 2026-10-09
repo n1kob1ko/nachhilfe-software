@@ -62,9 +62,10 @@ test("Abgleich mit der Musterkorrektur: richtig, falsch korrigiert, Falle, zusä
   assert.equal(both.score.fixed, 2);
 });
 
-test("Textkorrektur-Test: beide Wege laufen mit der KI, fünf Arten werden verglichen, Kosten bleiben unter der Grenze", async () => {
+test("Textkorrektur-Test: drei Wege laufen mit der KI, sechs werden verglichen, der Fassungsvergleich findet Stilles, Kosten bleiben unter der Grenze", async () => {
   const { runTextTest, WAYS } = await import("./ai/textkorrektur-test");
   const { TEXT_CASES } = await import("./ai/textkorrektur-test-faelle");
+  const { applyChanges } = await import("./text-correction-checks");
   const router = await import("./ai/router");
   router.resetRouter();
   const calls: AIRequest[] = [];
@@ -80,15 +81,23 @@ test("Textkorrektur-Test: beide Wege laufen mit der KI, fünf Arten werden vergl
       return { parsed: { findings, hints: [], strengths: [], main_issue: null, recommendation: null, recommendation_skill_id: null }, refusal: false, model: req.model, usage };
     }
     if (req.fn === "textanalyse") {
+      const neu = String(req.system).includes("Satzkern");
+      const last = c.errors[c.errors.length - 1];
       const sentences = [...prompt.matchAll(/^\[(\d+)\.(\d+)\](?: \(Überschrift\))? (.*)$/gm)].map((m) => ({ id: `${m[1]}.${m[2]}`, para: Number(m[1]), text: m[3] }));
-      const out = sentences.map((s) => ({
-        id: s.id,
-        corrected: "",
-        findings: c.errors.filter((e) => e.para === s.para && s.text.includes(e.wrong)).map((e) => ({ quote: e.wrong, replacement: e.right[0], category: e.category, kind: "fehler", rule: "r", explanation: "e", skill_id: null, sure: true })),
-      }));
+      const out = sentences.map((s) => {
+        const here = c.errors.filter((e) => e.para === s.para && s.text.includes(e.wrong));
+        const fixed = applyChanges(s.text, here.map((e) => ({ start: s.text.indexOf(e.wrong), end: s.text.indexOf(e.wrong) + e.wrong.length, replacement: e.right[0] }))).text;
+        // „neu“ writes every sentence out and fixes the last error of the text without listing it
+        const listed = neu ? here.filter((e) => e !== last) : here;
+        return {
+          id: s.id,
+          corrected: neu ? fixed : "",
+          findings: listed.map((e) => ({ quote: e.wrong, replacement: e.right[0], category: e.category, kind: "fehler", rule: "r", explanation: "e", skill_id: null, sure: true })),
+        };
+      });
       return { parsed: { sentences: out, hints: [], strengths: [], main_issue: null, recommendation: null, recommendation_skill_id: null }, refusal: false, model: req.model, usage };
     }
-    const checks = [...prompt.matchAll(/^Vorschlag (\d+) /gm)].map((m) => ({ nr: Number(m[1]), verdict: "richtig", explanation_ok: true, better_replacement: null, better_explanation: null, reason: "" }));
+    const checks = [...prompt.matchAll(/^Vorschlag (\d+) /gm)].map((m) => ({ nr: Number(m[1]), verdict: "richtig", explanation_ok: true, better_replacement: null, better_explanation: "Erklärt von der Prüfung.", reason: "", category: "grammatik" }));
     return { parsed: { checks, missed: [] }, refusal: false, model: req.model, usage };
   });
   const lines: string[] = [];
@@ -98,8 +107,8 @@ test("Textkorrektur-Test: beide Wege laufen mit der KI, fünf Arten werden vergl
   assert.deepEqual(state.results.map((r) => r.status), ["fertig", "fertig"]);
   assert.deepEqual(
     calls.map((r) => r.fn).sort(),
-    ["textanalyse", "textanalyse", "textkorrektur", "textkorrektur", "textpruefung", "textpruefung"],
-    "two ways with real requests, the other three derived from the same answers",
+    ["textanalyse", "textanalyse", "textanalyse", "textanalyse", "textkorrektur", "textkorrektur", "textpruefung", "textpruefung", "textpruefung", "textpruefung"],
+    "three ways with real requests, the other three derived from the same answers",
   );
   const t = state.totals!;
   assert.deepEqual(Object.keys(t), WAYS.map((w) => w.key));
@@ -107,13 +116,19 @@ test("Textkorrektur-Test: beide Wege laufen mit der KI, fünf Arten werden vergl
   assert.equal(t.einfach.score.errors, errors);
   assert.equal(t.einfach.score.missed, 2, "the stand-in misses the last error of each text");
   assert.ok(t.gruendlich.score.fixed >= errors - 2, JSON.stringify(t.gruendlich.score));
-  assert.ok(t.gruendlich.calls === 4 && t.einfach.calls === 2);
+  assert.equal(t.schritt1_neu.score.missed, 2, "the list of „neu“ leaves out the change the KI only wrote");
+  assert.equal(t.fassung_neu.score.missed, 0, "the Fassungsvergleich finds it in the KI's version of the sentence");
+  assert.equal(t.fassung_neu.score.flaggedFixed, 2, "an unlisted change is marked until the check explains it");
+  assert.equal(t.gruendlich_neu.score.fixed, errors, JSON.stringify(t.gruendlich_neu.score));
+  assert.equal(t.gruendlich_neu.score.flaggedFixed, 0, "explained and confirmed by the check: no mark left");
+  assert.ok(t.gruendlich.calls === 4 && t.gruendlich_neu.calls === 4 && t.einfach.calls === 2);
   assert.equal(t.schritt1.calls, 2, "step 1 alone is the analysis request");
   assert.ok(t.schritt1.usd < t.gruendlich.usd);
   assert.ok(calls.filter((r) => r.fn !== "textkorrektur").every((r) => r.schemaInPrompt), "analysis and check get the schema in the instructions");
   assert.ok(calls.filter((r) => r.fn === "textkorrektur").every((r) => !r.schemaInPrompt), "the one-step correction stays as it was");
   assert.ok(t.gruendlich.usd > t.einfach.usd, "cost of each way from the logged requests");
-  assert.ok(lines.some((l) => l.startsWith("[KI-Textkorrektur-Test] ") && l.includes(" gruendlich v1 ")), "every suggestion goes to the log");
+  assert.ok(lines.some((l) => l.startsWith("[KI-Textkorrektur-Test] ") && l.includes(" gruendlich_neu v1 ")), "every suggestion goes to the log");
+  assert.ok(lines.some((l) => l.includes(" neu saetze ")), "the KI's versions of the sentences go to the log");
   assert.ok(lines.every((l) => !/sk-or-|OPENROUTER_API_KEY/.test(l)));
 
   // a cap that one text could pass: nothing is sent
