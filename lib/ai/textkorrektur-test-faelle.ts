@@ -647,6 +647,865 @@ export const TEXT_CASES: KorrekturFall[] = [
     ]
   },
   {
+    "nr": "K04",
+    "title": "Computerspiele im Unterricht",
+    "subject": "Deutsch",
+    "schoolType": "Gymnasium",
+    "klasse": 4,
+    "textKind": "Erörterung",
+    "task": "Verfasse eine Erörterung zum Thema „Zocken und Lernen – sollen Computerspiele im Unterricht erlaubt sein?“. Gliedere deinen Text in Einleitung, Hauptteil mit Pro- und Kontra-Argumenten und Schluss mit deiner eigenen Meinung. Schreibe 330 bis 380 Wörter.",
+    "blocks": [
+      {
+        "text": "Zocken und Lernen – sollen Computerspiele im Unterricht erlaubt sein?",
+        "heading": true
+      },
+      {
+        "text": "Viele Jugendliche sitzen jeden Tag stundenlang vor ihrem Bildschirmen und spielen Computerspiele. Bei Erwachsenen haben solche Spiele im Allgemeinen keinen guten Ruf. In meiner Klasse gibt es trotzdem kaum jemanden, der nicht regelmäßig spielt. Heuer arbeiten wir zum ersten Mal in einigen Fächern mit Tablets und deshalb hat uns unsere Deutschlehrerin gefragt, ob man Spiele nicht auch im Unterricht einsetzen könnte. Im folgenden Text wird über dem Thema „Zocken und Lernen“ erörtert.",
+        "heading": false
+      },
+      {
+        "text": "Für Computerspiele im Unterricht spricht vor allem, dass Schülerinnen und Schüler dadurch motivierter sind. Viele lernen lieber, wenn sie dabei spaß haben. Spiele sind spannend und man bleibt länger konzentriert. Manche Lernspiele, trainieren außerdem das logische Denken. Ein weiterer Vorteil ist, dass man keine Angst haben muss, wenn man im Spiel ein Fehler macht. Man probiert es einfach noch einmal, bis es klappt. In Englisch verwenden wir zum Beispiel seit Jänner eine Vokabel-App, die wie ein Spiel aufgebaut ist. Solche Programme helfen den Schüler, sich neue Wörter leichter zu merken. Wer so übt, bekommt bei den Schularbeiten vielleicht sogar besser Noten.",
+        "heading": false
+      },
+      {
+        "text": "Es gibt aber auch wichtige Gegenargumente. Viele Eltern meinen, dass Spiele eine Zeitverschwendung ist. Sie befürchten, dass wenn Kinder schon im Unterricht spielen dürfen, sie zu Hause gar nicht mehr aufhören wollen. Wenn sich auch in der Schule Computerspiele erlauben, sitzen Jugendliche noch länger vor dem Bildschirm. Das ist für die Gesundheit sicher nicht eine gute Entwicklung. Außerdem es schwer zu kontrollieren, ob wirklich alle das richtige Spiel spielen. Deshalb die Lehrer müssten ständig durch die Klasse gehen und auf jedes Tablet schauen. Gute Lernspiele kosten zudem oft viel Geld, das viele Schulen nicht haben.",
+        "heading": false
+      },
+      {
+        "text": "Zusammenfassend kann man sagen, dass es für beide Seiten gute Argumente gibt. Ich selbst spiele seit der Volksschule gerne Strategiespiele und habe dabei viel über Geschichte gelernt. Deshalb glaube ich, dass spaß beim Lernen sehr wichtig ist. Trotzdem sollte der normale Unterricht nicht verschwinden. Für mich wären eine Kombination aus Lernspielen und normalem Unterricht die beste Lösung. Man könnte zum Beispiel einmal pro Woche eine Stunde lang mit Lernspielen üben, sodass niemand zu viel Zeit vor dem Bildschirm verbringt. Ich bin also für Computerspiele im Unterricht, aber nur in Maßen.",
+        "heading": false
+      }
+    ],
+    "errors": [
+      {
+        "para": 2,
+        "wrong": "vor ihrem Bildschirmen",
+        "right": [
+          "vor ihren Bildschirmen",
+          "vor ihrem Bildschirm"
+        ],
+        "category": "grammatik",
+        "what": "Begleiter und Nomen müssen in Fall und Zahl übereinstimmen: Dativ Plural „vor ihren Bildschirmen“."
+      },
+      {
+        "para": 2,
+        "wrong": "wird über dem Thema",
+        "right": [
+          "wird das Thema"
+        ],
+        "category": "grammatik",
+        "what": "„erörtern“ verlangt ein Akkusativobjekt ohne Präposition (etwas erörtern); im Passiv wird es zum Subjekt: Das Thema wird erörtert."
+      },
+      {
+        "para": 3,
+        "wrong": "dabei spaß",
+        "right": [
+          "dabei Spaß"
+        ],
+        "category": "rechtschreibung",
+        "what": "„Spaß“ ist ein Nomen und wird großgeschrieben."
+      },
+      {
+        "para": 3,
+        "wrong": "Lernspiele, trainieren",
+        "right": [
+          "Lernspiele trainieren"
+        ],
+        "category": "zeichensetzung",
+        "what": "Zwischen Subjekt und Prädikat steht kein Beistrich."
+      },
+      {
+        "para": 3,
+        "wrong": "ein Fehler macht",
+        "right": [
+          "einen Fehler macht"
+        ],
+        "category": "grammatik",
+        "what": "Akkusativobjekt: Wen oder was macht man? – einen Fehler."
+      },
+      {
+        "para": 3,
+        "wrong": "helfen den Schüler",
+        "right": [
+          "helfen den Schülern",
+          "helfen den Schülerinnen und Schülern"
+        ],
+        "category": "grammatik",
+        "what": "„helfen“ verlangt den Dativ; im Dativ Plural bekommt das Nomen ein -n: den Schülern."
+      },
+      {
+        "para": 3,
+        "wrong": "besser Noten",
+        "right": [
+          "bessere Noten"
+        ],
+        "category": "grammatik",
+        "what": "Das Adjektiv vor dem Nomen muss gebeugt werden: bessere Noten."
+      },
+      {
+        "para": 4,
+        "wrong": "eine Zeitverschwendung ist",
+        "right": [
+          "eine Zeitverschwendung sind"
+        ],
+        "category": "grammatik",
+        "what": "Das Subjekt „Spiele“ steht im Plural, daher muss auch das Verb im Plural stehen: Spiele sind."
+      },
+      {
+        "para": 4,
+        "wrong": "dass wenn",
+        "right": [
+          "dass, wenn"
+        ],
+        "category": "zeichensetzung",
+        "what": "Der eingeschobene wenn-Satz wird auch direkt nach „dass“ mit Beistrich abgetrennt: dass, wenn …, sie …"
+      },
+      {
+        "para": 4,
+        "wrong": "Wenn sich auch in der Schule Computerspiele erlauben",
+        "right": [
+          "Wenn auch in der Schule Computerspiele erlaubt werden",
+          "Wenn Computerspiele auch in der Schule erlaubt werden",
+          "Wenn auch in der Schule Computerspiele erlaubt sind"
+        ],
+        "category": "grammatik",
+        "what": "Die Spiele erlauben sich nicht selbst etwas; gemeint ist das Passiv: Computerspiele werden erlaubt."
+      },
+      {
+        "para": 4,
+        "wrong": "nicht eine gute",
+        "right": [
+          "keine gute"
+        ],
+        "category": "ausdruck",
+        "what": "Vor einem Nomen verneint man mit „kein“: keine gute Entwicklung."
+      },
+      {
+        "para": 4,
+        "wrong": "Außerdem es schwer",
+        "right": [
+          "Außerdem ist es schwer"
+        ],
+        "category": "satzbau",
+        "what": "Dem Satz fehlt das Verb (Prädikat): Außerdem ist es schwer …"
+      },
+      {
+        "para": 4,
+        "wrong": "Deshalb die Lehrer müssten",
+        "right": [
+          "Deshalb müssten die Lehrer"
+        ],
+        "category": "satzbau",
+        "what": "Steht „deshalb“ am Satzanfang, folgt sofort das gebeugte Verb (Verb an zweiter Stelle)."
+      },
+      {
+        "para": 5,
+        "wrong": "dass spaß",
+        "right": [
+          "dass Spaß"
+        ],
+        "category": "rechtschreibung",
+        "what": "„Spaß“ ist ein Nomen und wird großgeschrieben (derselbe Fehler wie im ersten Hauptteil-Absatz)."
+      },
+      {
+        "para": 5,
+        "wrong": "wären eine Kombination",
+        "right": [
+          "wäre eine Kombination"
+        ],
+        "category": "grammatik",
+        "what": "Das Subjekt „eine Kombination“ steht im Singular, also: wäre."
+      }
+    ],
+    "correct": [
+      {
+        "para": 2,
+        "text": "im Allgemeinen",
+        "why": "Feste Wendung; „Allgemeinen“ wird großgeschrieben."
+      },
+      {
+        "para": 2,
+        "text": "Heuer",
+        "why": "Österreichisch für „in diesem Jahr“; korrekt."
+      },
+      {
+        "para": 2,
+        "text": "Tablets und deshalb hat",
+        "why": "Der Beistrich vor „und“ zwischen zwei Hauptsätzen ist freigestellt; nach „deshalb“ steht das Verb richtig an zweiter Stelle."
+      },
+      {
+        "para": 2,
+        "text": "Im folgenden Text",
+        "why": "„folgend“ ist hier ein Adjektiv vor dem Nomen „Text“ und wird kleingeschrieben."
+      },
+      {
+        "para": 3,
+        "text": "seit Jänner",
+        "why": "„Jänner“ ist die österreichische Monatsbezeichnung; „seit“ (zeitlich) richtig geschrieben."
+      },
+      {
+        "para": 4,
+        "text": "Geld, das viele Schulen",
+        "why": "„das“ ist Relativpronomen (bezogen auf „Geld“) und wird mit einem s geschrieben."
+      },
+      {
+        "para": 5,
+        "text": "Deshalb glaube ich",
+        "why": "Richtige Verbzweitstellung nach „deshalb“."
+      },
+      {
+        "para": 5,
+        "text": "sodass",
+        "why": "„sodass“ und „so dass“ sind beide richtig."
+      },
+      {
+        "para": 5,
+        "text": "in Maßen",
+        "why": "„in Maßen“ (= maßvoll) wird mit ß geschrieben; korrekt."
+      }
+    ],
+    "neutral": []
+  },
+  {
+    "nr": "K05",
+    "title": "Pflichtpraktikum in der Oberstufe",
+    "subject": "Deutsch",
+    "schoolType": "Gymnasium",
+    "klasse": 6,
+    "textKind": "Erörterung",
+    "task": "Verfasse eine Erörterung zur Frage, ob in der Oberstufe ein verpflichtendes Praktikum eingeführt werden soll. Wäge Pro- und Kontra-Argumente ab, beziehe Beispiele ein und formuliere am Ende eine begründete Stellungnahme. Umfang: 420 bis 480 Wörter.",
+    "blocks": [
+      {
+        "text": "Pflichtpraktikum in der Oberstufe – Chance oder Belastung?",
+        "heading": true
+      },
+      {
+        "text": "Nach der Matura stehen viele Jugendliche vor einer schwierigen Entscheidung: Studium, Lehre oder doch gleich ein Job? Laut einer Umfrage unserer Schulvertretung wissen nur wenige Schülerinnen und Schüler der sechsten Klassen genau, welchen Beruf sie später ergreifen möchten. Manche entscheiden sich sogar nur deshalb für ein bestimmtes Studium, weil ihre Freundinnen und Freunde dasselbe tun. Aus diesem Grund wird derzeit darüber diskutiert, ob in der Oberstufe ein verpflichtendes Praktikum eingeführt werden soll. Im Folgenden möchte ich mich über die Vor- und Nachteile eines solchen Pflichtpraktikums auseinandersetzen.",
+        "heading": false
+      },
+      {
+        "text": "Für ein Pflichtpraktikum spricht vor allem, dass Jugendliche die Arbeitswelt frühzeitig kennenlernen. Man erfährt dabei nicht nur, wie ein Betrieb funktioniert, aber man knüpft auch erste Kontakte zu möglichen Arbeitgebern. Die Erfahrungen, die man während eines solchen Praktikums sammelt, hilft später bei der Berufswahl. Viele merken nämlich erst im Arbeitsalltag, ob sie wirklich Interresse an einem Beruf haben. Mein Cousin, ein Lehrling in einem Elektrotechnikbetrieb erzählte mir, dass er erst durch ein Ferialpraktikum auf die Idee gekommen sei, diesen Beruf zu erlernen. Profitieren würden außerdem die Unternehmen, die wegen dem Fachkräftemangel dringend Nachwuchs suchen.",
+        "heading": false
+      },
+      {
+        "text": "Es gibt allerdings auch gewichtige Gegenargumente. Die Oberstufe ist schon jetzt voll anstrengend und viele Schülerinnen und Schüler haben neben Unterricht, Hausübungen und Schularbeiten kaum Freizeit. Ein Praktikum, dass mehrere Wochen dauert, würde die knappe Unterrichtszeit zusätzlich verkürzen. Findet es hingegen in den Sommerferien statt, fehlt die Zeit zur Erholung. Viele nutzen die Ferien außerdem um Geld zu verdienen oder ihre Familie zu unterstützen. Unsere Direktorin erklärte in einem Interview mit der Schülerzeitung, ein Praktikum ist zwar für viele sinnvoll, aber nicht für alle gleich geeignet. Nicht jeder finde einen passenden Platz in seiner Nähe, vor allem am Land. Die Schule werde den Vorschlag aber genau prüfen.",
+        "heading": false
+      },
+      {
+        "text": "Meiner Meinung nach lassen sich diese Probleme jedoch lösen. Die Betriebe, die Praktikantinnen und Praktikanten aufnehmen müssten dafür finanziell unterstützt werden. Außerdem könnte die Schule versuchen eine Liste mit geeigneten Praktikumsplätzen zusammenzustellen, sodass niemand lange suchen muss. Findet das Praktikum während des Schuljahres statt, bleiben auch die Ferien frei. Ein Praktikum wäre zudem für die persönliche Entwicklung wertvoll, weil man lernt in einem Betrieb Verantwortung und Pünktlichkeit. Gerade wer später studieren will, könnte so besser einschätzen, ob er mit dem Alltag in seinem Wunschberuf zurecht kommt.",
+        "heading": false
+      },
+      {
+        "text": "Zusammenfassend lässt sich sagen, dass die Vorteile eines Pflichtpraktikums überwiegen. Ein solches Praktikum darf halt nicht zu einer zusätzlichen Belastung für die Jugendlichen werden. Ideal wäre aus meiner Sicht ein zweiwöchiges Praktikum in der sechsten Klasse, das während der Schulzeit stattfindet und im Unterricht gut vor- und nachbereitet wird. Heuer startet an unserer Schule bereits ein Probelauf mit zwei Klassen. Ich bin gespannt, ob die Erfahrungen so positiv sein werden, wie viele hoffen.",
+        "heading": false
+      }
+    ],
+    "errors": [
+      {
+        "para": 2,
+        "wrong": "über die Vor- und Nachteile",
+        "right": [
+          "mit den Vor- und Nachteilen"
+        ],
+        "category": "grammatik",
+        "what": "Falsche Präposition: „sich auseinandersetzen“ verlangt „mit“ + Dativ (sich mit etwas auseinandersetzen)."
+      },
+      {
+        "para": 3,
+        "wrong": "aber man knüpft auch",
+        "right": [
+          "sondern man knüpft auch"
+        ],
+        "category": "satzbau",
+        "what": "Die zweiteilige Konjunktion lautet „nicht nur …, sondern auch …“; „aber“ zerstört die Verknüpfung."
+      },
+      {
+        "para": 3,
+        "wrong": "hilft später",
+        "right": [
+          "helfen später"
+        ],
+        "category": "grammatik",
+        "what": "Kongruenz: Subjekt ist „Die Erfahrungen“ (Plural); das Prädikat nach dem eingeschobenen Relativsatz muss „helfen“ lauten."
+      },
+      {
+        "para": 3,
+        "wrong": "Interresse",
+        "right": [
+          "Interesse"
+        ],
+        "category": "rechtschreibung",
+        "what": "Fremdwortschreibung: Interesse wird mit einem r geschrieben."
+      },
+      {
+        "para": 3,
+        "wrong": "Elektrotechnikbetrieb erzählte",
+        "right": [
+          "Elektrotechnikbetrieb, erzählte"
+        ],
+        "category": "zeichensetzung",
+        "what": "Die Apposition „ein Lehrling in einem Elektrotechnikbetrieb“ ist ein Einschub und muss auch am Ende mit Beistrich abgeschlossen werden."
+      },
+      {
+        "para": 3,
+        "wrong": "wegen dem Fachkräftemangel",
+        "right": [
+          "wegen des Fachkräftemangels",
+          "aufgrund des Fachkräftemangels"
+        ],
+        "category": "grammatik",
+        "what": "In der geschriebenen Standardsprache verlangt „wegen“ den Genitiv; „wegen dem“ ist umgangssprachlich."
+      },
+      {
+        "para": 4,
+        "wrong": "voll anstrengend",
+        "right": [
+          "sehr anstrengend",
+          "äußerst anstrengend",
+          "anstrengend"
+        ],
+        "category": "ausdruck",
+        "what": "Registerfehler: „voll“ im Sinne von „sehr“ ist Umgangssprache und passt nicht in eine Erörterung."
+      },
+      {
+        "para": 4,
+        "wrong": "Praktikum, dass",
+        "right": [
+          "Praktikum, das",
+          "Praktikum, welches"
+        ],
+        "category": "rechtschreibung",
+        "what": "Relativpronomen (bezogen auf „Praktikum“) wird mit einem s geschrieben; Probe: durch „welches“ ersetzbar."
+      },
+      {
+        "para": 4,
+        "wrong": "außerdem um",
+        "right": [
+          "außerdem, um"
+        ],
+        "category": "zeichensetzung",
+        "what": "Eine Infinitivgruppe mit „um … zu“ wird immer mit Beistrich abgetrennt."
+      },
+      {
+        "para": 4,
+        "wrong": "ein Praktikum ist",
+        "right": [
+          "ein Praktikum sei"
+        ],
+        "category": "grammatik",
+        "what": "Indirekte Rede ohne „dass“ steht im Konjunktiv I: ein Praktikum sei … (wie „finde“ und „werde“ in den folgenden Sätzen)."
+      },
+      {
+        "para": 5,
+        "wrong": "aufnehmen müssten",
+        "right": [
+          "aufnehmen, müssten"
+        ],
+        "category": "zeichensetzung",
+        "what": "Der eingeschobene Relativsatz „die … aufnehmen“ muss auch am Ende mit Beistrich abgeschlossen werden."
+      },
+      {
+        "para": 5,
+        "wrong": "weil man lernt in einem Betrieb Verantwortung und Pünktlichkeit",
+        "right": [
+          "weil man in einem Betrieb Verantwortung und Pünktlichkeit lernt",
+          "denn man lernt in einem Betrieb Verantwortung und Pünktlichkeit"
+        ],
+        "category": "satzbau",
+        "what": "Im weil-Satz (Nebensatz) steht das gebeugte Verb am Ende; Verbzweitstellung nach „weil“ ist nur mündlich üblich."
+      },
+      {
+        "para": 5,
+        "wrong": "zurecht kommt",
+        "right": [
+          "zurechtkommt"
+        ],
+        "category": "rechtschreibung",
+        "what": "„zurechtkommen“ wird zusammengeschrieben."
+      },
+      {
+        "para": 6,
+        "wrong": "darf halt nicht",
+        "right": [
+          "darf jedoch nicht",
+          "darf aber nicht",
+          "darf nicht"
+        ],
+        "category": "ausdruck",
+        "what": "Registerfehler: Die Partikel „halt“ ist umgangssprachlich und gehört nicht in eine Erörterung."
+      }
+    ],
+    "correct": [
+      {
+        "para": 2,
+        "text": "Studium, Lehre oder doch gleich ein Job?",
+        "why": "Verkürzte (elliptische) Frage als Einstieg; stilistisch zulässig und korrekt."
+      },
+      {
+        "para": 2,
+        "text": "Im Folgenden",
+        "why": "Nominalisierung (= weiter unten) wird großgeschrieben."
+      },
+      {
+        "para": 3,
+        "text": "kennenlernen",
+        "why": "Zusammenschreibung korrekt (Getrenntschreibung ebenfalls zulässig)."
+      },
+      {
+        "para": 3,
+        "text": "gekommen sei",
+        "why": "Konjunktiv I in der indirekten Rede ist auch nach „dass“ korrekt."
+      },
+      {
+        "para": 3,
+        "text": "Ferialpraktikum",
+        "why": "Österreichisch für ein Praktikum in den Ferien; korrekt."
+      },
+      {
+        "para": 4,
+        "text": "Hausübungen und Schularbeiten",
+        "why": "Österreichische Schulwörter (Hausaufgaben, Klassenarbeiten); korrekt."
+      },
+      {
+        "para": 4,
+        "text": "Nicht jeder finde einen passenden Platz",
+        "why": "Korrekter Konjunktiv I in fortgesetzter indirekter Rede."
+      },
+      {
+        "para": 4,
+        "text": "am Land",
+        "why": "Österreichisch für „auf dem Land“; korrekt."
+      },
+      {
+        "para": 5,
+        "text": "versuchen eine Liste",
+        "why": "Bei dieser Infinitivgruppe ist der Beistrich freigestellt (kein „um/ohne/statt“, kein Bezugswort)."
+      }
+    ],
+    "neutral": []
+  },
+  {
+    "nr": "K06",
+    "title": "Analyse eines Kommentars zum Wirtshaussterben",
+    "subject": "Deutsch",
+    "schoolType": "Gymnasium",
+    "klasse": 7,
+    "textKind": "Textanalyse",
+    "task": "Verfasse eine Textanalyse des Kommentars „Wenn im Wirtshaus das Licht ausgeht“ von Verena Hollauer (Donautaler Nachrichten, 17. Jänner 2026). Gehe auf Inhalt, Aufbau, Argumentation und sprachliche Mittel ein, belege deine Aussagen mit Zitaten und Zeilenangaben und arbeite die Intention der Autorin heraus. Umfang: 430 bis 480 Wörter.",
+    "blocks": [
+      {
+        "text": "Analyse des Kommentars „Wenn im Wirtshaus das Licht ausgeht“",
+        "heading": true
+      },
+      {
+        "text": "Der Kommentar „Wenn im Wirtshaus das Licht ausgeht“ von Verena Hollauer erschien am 17. Jänner 2026 in der Tageszeitung „Donautaler Nachrichten“. Darin setzt sich die Autorin mit dem sogenannten Wirtshaussterben in ländlichen Gemeinden auseinander. Im folgenden wird untersucht, wie Hollauer argumentiert und mit welchen sprachlichen Mitteln sie ihre Leserinnen und Leser zu überzeugen versucht.",
+        "heading": false
+      },
+      {
+        "text": "Zu Beginn schildert die Autorin ihre Erinnerungen an die Sonntage, die sie als Kind mit ihrem Großvater am Stammtisch des Dorfgasthauses verbracht hat. Danach erklärte sie, dass in Österreich jedes Jahr Hunderte Gasthäuser zusperren müssen. Als Gründe nennt sie hohe Energiekosten, fehlendes Personal und veränderte Freizeitgewohnheiten. Zwar räumt sie ein, dass viele junge Menschen lieber in Lokale in der Stadt fahren, doch das sei für sie kein Grund, das Wirtshaus aufzugeben. Hollauer behauptet, das Wirtshaus ist „das Wohnzimmer des Dorfes“ (Z. 14). Dort treffe man sich unabhängig von Alter, Beruf und Einkommen. Im letzten Absatz appelliert sie an den Lesern, das Gasthaus im eigenen Ort wieder öfter zu besuchen.",
+        "heading": false
+      },
+      {
+        "text": "Die Argumentation der Autorin ist überwiegend emotional. Statt Zahlen in den Vordergrund zu stellen, erzählt sie vom Geruch nach Schweinsbraten und vom Kartenspielen am Stammtisch. Dadurch weckt sie beim Publikum ein Gefühl von Heimat und Zugehörigkeit. Die Autorin zeigt dass mit jedem Wirtshaus auch ein Ort der Gemeinschaft verloren geht. Ihr stärkstes Argument ist, das ein Gasthaus durch keinen Supermarkt und kein Vereinslokal ersetzt werden kann. Eine Studie des Landes erwähnt sie nur am Rand, ohne genauere Zahlen zu nennen. Die zahlreichen Beispiele aus ihrem Heimatort macht den Text zwar anschaulich, wirken aber auch etwas einseitig, weil Gegenpositionen kaum berücksichtigt werden.",
+        "heading": false
+      },
+      {
+        "text": "Auch sprachlich ist der Kommentar sorgfältig gestaltet. Besonders auffällig ist die Methapher vom „Wohnzimmer des Dorfes“ (Z. 14), die Wärme und Geborgenheit vermittelt. Die Alliteration „Bier und Brettljause“ (Z. 19) sorgt für einen lockeren, fast humorvollen Ton. Mit der rethorischen Frage „Wo sollen wir uns dann noch treffen?“ (Z. 27) spricht die Autorin ihr Publikum direkt an. Der Satzbau, der überwiegend aus kurzen Hauptsätzen besteht wirkt eindringlich, sodass der Text stellenweise fast wie eine Rede klingt. Am Schluss verwendete sie eine Anapher: „Kein Wirt, kein Stammtisch, kein Dorf“ (Z. 41). Diese knappe Reihung ist echt stark und bleibt im Gedächtnis.",
+        "heading": false
+      },
+      {
+        "text": "Zusammenfassend lässt sich festhalten, dass Hollauer ihr Publikum vor allem auf der Gefühlsebene erreichen will. Ihre Intention ist es, die Menschen zum Handeln zu bewegen, damit die Gasthäuser in den Gemeinden erhalten bleiben. Inhaltlich bringt der Kommentar allerdings kaum etwas neues in die Debatte ein, da konkrete Lösungsvorschläge weitgehend fehlen. Trotzdem halte ich den Text für gelungen, weil er zum Nachdenken über die eigenen Freizeitgewohnheiten anregt. Für Leserinnen und Leser, die selbst in einem Dorf leben, dürfte er besonders überzeugend wirken.",
+        "heading": false
+      }
+    ],
+    "errors": [
+      {
+        "para": 2,
+        "wrong": "Im folgenden wird",
+        "right": [
+          "Im Folgenden wird"
+        ],
+        "category": "rechtschreibung",
+        "what": "„im Folgenden“ (= weiter unten) ist eine Nominalisierung und wird großgeschrieben."
+      },
+      {
+        "para": 3,
+        "wrong": "Danach erklärte sie",
+        "right": [
+          "Danach erklärt sie"
+        ],
+        "category": "grammatik",
+        "what": "Tempusfehler: In einer Textanalyse wird der Inhalt im Präsens wiedergegeben."
+      },
+      {
+        "para": 3,
+        "wrong": "das Wirtshaus ist",
+        "right": [
+          "das Wirtshaus sei"
+        ],
+        "category": "grammatik",
+        "what": "Indirekte Rede ohne „dass“ verlangt den Konjunktiv I: das Wirtshaus sei … (wie „sei“ und „treffe“ in den Nachbarsätzen)."
+      },
+      {
+        "para": 3,
+        "wrong": "an den Lesern",
+        "right": [
+          "an die Leser",
+          "an die Leserinnen und Leser",
+          "an die Leserschaft"
+        ],
+        "category": "grammatik",
+        "what": "„appellieren an“ verlangt den Akkusativ: an die Leser."
+      },
+      {
+        "para": 4,
+        "wrong": "zeigt dass",
+        "right": [
+          "zeigt, dass"
+        ],
+        "category": "zeichensetzung",
+        "what": "Der dass-Satz ist ein Nebensatz und wird mit Beistrich abgetrennt."
+      },
+      {
+        "para": 4,
+        "wrong": "das ein Gasthaus",
+        "right": [
+          "dass ein Gasthaus"
+        ],
+        "category": "rechtschreibung",
+        "what": "Hier leitet die Konjunktion „dass“ einen Nebensatz ein (nicht durch „welches“ ersetzbar) – daher mit ss."
+      },
+      {
+        "para": 4,
+        "wrong": "Heimatort macht",
+        "right": [
+          "Heimatort machen"
+        ],
+        "category": "grammatik",
+        "what": "Kongruenz: Subjekt ist „Die zahlreichen Beispiele“ (Plural), also „machen“ (vgl. „wirken“)."
+      },
+      {
+        "para": 5,
+        "wrong": "Methapher",
+        "right": [
+          "Metapher"
+        ],
+        "category": "rechtschreibung",
+        "what": "Fachbegriff: Metapher wird ohne h geschrieben."
+      },
+      {
+        "para": 5,
+        "wrong": "rethorischen",
+        "right": [
+          "rhetorischen"
+        ],
+        "category": "rechtschreibung",
+        "what": "Fachbegriff: rhetorisch (von Rhetorik) – das h steht nach dem r, nicht nach dem t."
+      },
+      {
+        "para": 5,
+        "wrong": "besteht wirkt",
+        "right": [
+          "besteht, wirkt"
+        ],
+        "category": "zeichensetzung",
+        "what": "Der eingeschobene Relativsatz muss auch am Ende mit Beistrich abgeschlossen werden."
+      },
+      {
+        "para": 5,
+        "wrong": "verwendete sie",
+        "right": [
+          "verwendet sie"
+        ],
+        "category": "grammatik",
+        "what": "Tempusfehler: In der Analyse steht das Präsens."
+      },
+      {
+        "para": 5,
+        "wrong": "ist echt stark",
+        "right": [
+          "ist sehr wirkungsvoll",
+          "wirkt besonders nachdrücklich"
+        ],
+        "category": "ausdruck",
+        "what": "„echt stark“ ist umgangssprachlich und subjektiv; in einer Analyse wird die Wirkung sachlich beschrieben."
+      },
+      {
+        "para": 6,
+        "wrong": "etwas neues",
+        "right": [
+          "etwas Neues"
+        ],
+        "category": "rechtschreibung",
+        "what": "Nach „etwas“ wird das nominalisierte Adjektiv großgeschrieben: etwas Neues."
+      }
+    ],
+    "correct": [
+      {
+        "para": 2,
+        "text": "erschien am 17. Jänner 2026",
+        "why": "Präteritum ist für das tatsächliche Erscheinen in der Vergangenheit korrekt; „Jänner“ ist österreichisch."
+      },
+      {
+        "para": 3,
+        "text": "verbracht hat",
+        "why": "Perfekt drückt die Vorzeitigkeit (Kindheit) aus; kein Tempusfehler."
+      },
+      {
+        "para": 3,
+        "text": "Hunderte Gasthäuser zusperren",
+        "why": "„Hunderte“ darf groß- oder kleingeschrieben werden; „zusperren“ ist österreichisch für „schließen“."
+      },
+      {
+        "para": 3,
+        "text": "Dort treffe man sich",
+        "why": "Korrekter Konjunktiv I in fortgesetzter indirekter Rede."
+      },
+      {
+        "para": 4,
+        "text": "Schweinsbraten",
+        "why": "Österreichische Form (statt „Schweinebraten“); korrekt."
+      },
+      {
+        "para": 4,
+        "text": "verloren geht",
+        "why": "Getrenntschreibung korrekt (Zusammenschreibung ebenfalls zulässig)."
+      },
+      {
+        "para": 5,
+        "text": "„Bier und Brettljause“ (Z. 19)",
+        "why": "Korrektes Zitat mit Zeilenangabe; „Brettljause“ ist österreichisch, die Alliteration richtig benannt."
+      },
+      {
+        "para": 5,
+        "text": "Anapher",
+        "why": "Fachbegriff richtig geschrieben und zutreffend verwendet (Wiederholung von „kein“ am Anfang)."
+      },
+      {
+        "para": 5,
+        "text": "„Kein Wirt, kein Stammtisch, kein Dorf“ (Z. 41)",
+        "why": "Wörtliches Zitat mit Zeilenangabe; die elliptische Form stammt aus dem Original und wird nicht korrigiert."
+      }
+    ],
+    "neutral": []
+  },
+  {
+    "nr": "K07",
+    "title": "Interpretation: „Der Schlüssel“",
+    "subject": "Deutsch",
+    "schoolType": "Gymnasium",
+    "klasse": 8,
+    "textKind": "Textinterpretation",
+    "task": "Interpretiere die Kurzgeschichte „Der Schlüssel“ von Miriam Holzknecht. Gehe auf Inhalt, Aufbau, Erzählweise, Figuren, Symbolik und Sprache ein und entwickle eine begründete Deutung. Belege deine Aussagen am Text. Umfang: 470 bis 530 Wörter.",
+    "blocks": [
+      {
+        "text": "Interpretation der Kurzgeschichte „Der Schlüssel“ von Miriam Holzknecht",
+        "heading": true
+      },
+      {
+        "text": "Die Kurzgeschichte „Der Schlüssel“ von Miriam Holzknecht ist 2019 im Erzählband „Kleine Abschiede“ erschienen. Sie handelt vom Umgang mit Verlust und Erinnerung. Lea, die sechzehnjährige Hauptfigur hilft ihrer Mutter beim Ausräumen der Wohnung ihres verstorbenen Großvaters. Dabei stößt sie auf einen alten Schlüssel, der zu keinem Schloss in der Wohnung passt. Im Folgenden soll gezeigt werden, wie die Autorin mit einfachen sprachlichen Mitteln die Trauer eines jungen Menschen darstellt.",
+        "heading": false
+      },
+      {
+        "text": "Die Geschichte beginnt unvermittelt mit dem Satz „Der Kasten roch nach Mottenkugeln“ (Z. 1), sodass der Leser sofort mitten in die Handlung versetzt wird. Während die Mutter die Sachen des Großvaters möglichst rasch in Kartons packt, fand Lea in einer Blechdose den Schlüssel. Sie probiert ihn an jeder Tür aus, sogar am Kellerabteil, doch er passt nirgends. Da sie den Schlüssel am Ende behält, obwohl sie nicht weiß, wozu er gehört. Die Geschichte schließt mit Leas Gedanken: „Manche Türen, dachte sie, muss man gar nicht aufsperren“ (Z. 58). Typisch für eine Kurzgeschichte sind neben dem unvermittelten Einstieg auch das offene Ende und die alltägliche Situation.",
+        "heading": false
+      },
+      {
+        "text": "Erzählt wird aus Leas Sicht, wobei ein personaler Erzähler nah an ihren Gedanken bleibt. Die Gefühle der Mutter erfährt der Leser hingegen nur indirekt. Die Mutter checkt nicht, wie sehr Lea unter dem Verlust leidet. Sie will die Wohnung so schnell wie möglich leer haben, weil diese bis Monatsende an die Hausverwaltung übergeben werden muss. Lea erinnert sich dagegen an den Sonntagnachmittagen, an denen sie mit ihrem Großvater Karten gespielt hat. Die Gegenstände, die sie beim Ausräumen in die Hand nimmt und die für ihre Mutter nur „alter Kram“ (Z. 23) sind, zeigt, wie unterschiedlich die beiden mit der Trauer umgehen. Trotzdem Lea ihre Mutter versteht, fühlt sie sich mit ihrem Schmerz allein.",
+        "heading": false
+      },
+      {
+        "text": "Der Schlüssel ist das zentrale Symbol der Geschichte. Er steht für die Erinnerung an den Großvater, aber auch für alles, was Lea über ihn nie erfahren hat. Auch das offene Ende, der keine Auflösung bietet, unterstreicht diese Deutung. Lea will den Großvater noch nicht los lassen. Wenn sie den Schlüssel wegwerfen würde, ist ihre letzte Verbindung zu ihm verloren. Die kurzen, parataktischen Sätze erzeugen eine nüchterne Athmosphäre, die im Gegensatz zu Leas Gefühlen steht. Nur in den Erinnerungsszenen wird der Rythmus ruhiger und die Sätze werden länger. Holzknecht verzichtet auf direkte Aussagen über Leas Trauer; stattdessen zeigt sie diese durch Gesten. Von ihren Erinnerungen überwältigt setzt sich Lea etwa auf den Boden des Vorzimmers und umklammert den Schlüssel (Z. 51).",
+        "heading": false
+      },
+      {
+        "text": "Meiner Meinung nach zeigt die Geschichte, dass Trauer kein Problem ist, das man rasch lösen kann. Am Ende erkannte Lea, dass nicht jede Frage beantwortet werden muss, um mit einem Verlust leben zu können. Die Erinnerung an ihren Großvater ist ihr wichtiger als die Frage welches Schloss der Schlüssel öffnet. Gerade weil die Autorin vieles unbeantwortet lässt, regt die Geschichte zum Nachdenken über den eigenen Umgang mit Abschieden an.",
+        "heading": false
+      }
+    ],
+    "errors": [
+      {
+        "para": 2,
+        "wrong": "Hauptfigur hilft",
+        "right": [
+          "Hauptfigur, hilft"
+        ],
+        "category": "zeichensetzung",
+        "what": "Die Apposition „die sechzehnjährige Hauptfigur“ ist ein Einschub und wird auch am Ende mit Beistrich abgeschlossen."
+      },
+      {
+        "para": 3,
+        "wrong": "fand Lea",
+        "right": [
+          "findet Lea"
+        ],
+        "category": "grammatik",
+        "what": "Tempusfehler: Inhaltswiedergabe und Interpretation stehen im Präsens (vgl. „packt“, „probiert“)."
+      },
+      {
+        "para": 3,
+        "wrong": "Da sie den Schlüssel am Ende behält",
+        "right": [
+          "Sie behält den Schlüssel am Ende",
+          "Am Ende behält sie den Schlüssel"
+        ],
+        "category": "satzbau",
+        "what": "Unvollständiger Satz: Er besteht nur aus Nebensätzen, der Hauptsatz fehlt."
+      },
+      {
+        "para": 4,
+        "wrong": "checkt nicht",
+        "right": [
+          "bemerkt nicht",
+          "erkennt nicht",
+          "versteht nicht"
+        ],
+        "category": "ausdruck",
+        "what": "„checken“ ist umgangssprachlich und passt nicht in eine Interpretation."
+      },
+      {
+        "para": 4,
+        "wrong": "an den Sonntagnachmittagen",
+        "right": [
+          "an die Sonntagnachmittage"
+        ],
+        "category": "grammatik",
+        "what": "„sich erinnern an“ verlangt den Akkusativ: an die Sonntagnachmittage."
+      },
+      {
+        "para": 4,
+        "wrong": "zeigt, wie unterschiedlich",
+        "right": [
+          "zeigen, wie unterschiedlich"
+        ],
+        "category": "grammatik",
+        "what": "Kongruenz: Subjekt ist „Die Gegenstände“ (Plural); trotz der eingeschobenen Relativsätze muss das Prädikat im Plural stehen."
+      },
+      {
+        "para": 4,
+        "wrong": "Trotzdem Lea",
+        "right": [
+          "Obwohl Lea",
+          "Obgleich Lea",
+          "Auch wenn Lea"
+        ],
+        "category": "grammatik",
+        "what": "„trotzdem“ ist ein Adverb und leitet in der Standardsprache keinen Nebensatz ein; richtig ist die Konjunktion „obwohl“."
+      },
+      {
+        "para": 5,
+        "wrong": "der keine Auflösung",
+        "right": [
+          "das keine Auflösung"
+        ],
+        "category": "grammatik",
+        "what": "Bezugsfehler: Das Relativpronomen bezieht sich auf „das Ende“ (Neutrum) und muss „das“ lauten."
+      },
+      {
+        "para": 5,
+        "wrong": "los lassen",
+        "right": [
+          "loslassen"
+        ],
+        "category": "rechtschreibung",
+        "what": "„loslassen“ wird zusammengeschrieben."
+      },
+      {
+        "para": 5,
+        "wrong": "ist ihre letzte Verbindung",
+        "right": [
+          "wäre ihre letzte Verbindung"
+        ],
+        "category": "grammatik",
+        "what": "Irrealer Bedingungssatz: Auch der Hauptsatz verlangt den Konjunktiv II (wäre … verloren)."
+      },
+      {
+        "para": 5,
+        "wrong": "Athmosphäre",
+        "right": [
+          "Atmosphäre"
+        ],
+        "category": "rechtschreibung",
+        "what": "Fremdwort (griech. atmós): Atmosphäre wird ohne h nach dem t geschrieben."
+      },
+      {
+        "para": 5,
+        "wrong": "Rythmus",
+        "right": [
+          "Rhythmus"
+        ],
+        "category": "rechtschreibung",
+        "what": "Fremdwort: Rhythmus wird mit zwei h geschrieben (Rh…th…)."
+      },
+      {
+        "para": 6,
+        "wrong": "erkannte Lea",
+        "right": [
+          "erkennt Lea"
+        ],
+        "category": "grammatik",
+        "what": "Tempusfehler: In der Interpretation steht das Präsens."
+      },
+      {
+        "para": 6,
+        "wrong": "Frage welches",
+        "right": [
+          "Frage, welches"
+        ],
+        "category": "zeichensetzung",
+        "what": "Der indirekte Fragesatz „welches Schloss …“ ist ein Nebensatz und wird mit Beistrich abgetrennt."
+      }
+    ],
+    "correct": [
+      {
+        "para": 2,
+        "text": "ist 2019 im Erzählband „Kleine Abschiede“ erschienen",
+        "why": "Perfekt für das Erscheinen (vergangenes Ereignis) ist korrekt; kein Tempusfehler."
+      },
+      {
+        "para": 2,
+        "text": "Im Folgenden",
+        "why": "Nominalisierung (= weiter unten) wird großgeschrieben."
+      },
+      {
+        "para": 3,
+        "text": "„Der Kasten roch nach Mottenkugeln“ (Z. 1)",
+        "why": "Wörtliches Zitat bleibt im Präteritum des Originals; „Kasten“ ist österreichisch für Schrank."
+      },
+      {
+        "para": 3,
+        "text": "Kellerabteil",
+        "why": "Österreichisch für den abgetrennten Kellerraum einer Wohnung; korrekt."
+      },
+      {
+        "para": 3,
+        "text": "„Manche Türen, dachte sie, muss man gar nicht aufsperren“ (Z. 58)",
+        "why": "Wörtliches Zitat mit Zeilenangabe; „aufsperren“ ist österreichisch für „aufschließen“."
+      },
+      {
+        "para": 3,
+        "text": "Typisch für eine Kurzgeschichte sind",
+        "why": "Plural korrekt: Das Subjekt „das offene Ende und die alltägliche Situation“ ist zweiteilig."
+      },
+      {
+        "para": 5,
+        "text": "stattdessen",
+        "why": "Das Adverb „stattdessen“ wird zusammengeschrieben; korrekt."
+      },
+      {
+        "para": 5,
+        "text": "überwältigt setzt",
+        "why": "Nach einer vorangestellten Partizipgruppe ist der Beistrich freigestellt."
+      },
+      {
+        "para": 5,
+        "text": "Vorzimmers",
+        "why": "Österreichisch für Flur/Diele; korrekt."
+      }
+    ],
+    "neutral": []
+  },
+  {
     "nr": "K08",
     "title": "E-Mail über den Schulausflug nach Salzburg",
     "subject": "Englisch",
