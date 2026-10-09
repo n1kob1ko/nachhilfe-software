@@ -728,7 +728,8 @@ export const TEXT_CASES: KorrekturFall[] = [
         "wrong": "helfen den Schüler",
         "right": [
           "helfen den Schülern",
-          "helfen den Schülerinnen und Schülern"
+          "helfen den Schülerinnen und Schülern",
+          "helfen dem Schüler"
         ],
         "category": "grammatik",
         "what": "„helfen“ verlangt den Dativ; im Dativ Plural bekommt das Nomen ein -n: den Schülern."
@@ -746,7 +747,8 @@ export const TEXT_CASES: KorrekturFall[] = [
         "para": 4,
         "wrong": "eine Zeitverschwendung ist",
         "right": [
-          "eine Zeitverschwendung sind"
+          "eine Zeitverschwendung sind",
+          "eine Zeitverschwendung seien"
         ],
         "category": "grammatik",
         "what": "Das Subjekt „Spiele“ steht im Plural, daher muss auch das Verb im Plural stehen: Spiele sind."
@@ -764,9 +766,11 @@ export const TEXT_CASES: KorrekturFall[] = [
         "para": 4,
         "wrong": "Wenn sich auch in der Schule Computerspiele erlauben",
         "right": [
-          "Wenn auch in der Schule Computerspiele erlaubt werden",
           "Wenn Computerspiele auch in der Schule erlaubt werden",
-          "Wenn auch in der Schule Computerspiele erlaubt sind"
+          "Wenn auch in der Schule Computerspiele erlaubt werden",
+          "Wenn auch in der Schule Computerspiele erlaubt sind",
+          "Wenn man auch in der Schule Computerspiele erlaubt",
+          "Wenn Computerspiele auch in der Schule erlaubt sind"
         ],
         "category": "grammatik",
         "what": "Die Spiele erlauben sich nicht selbst etwas; gemeint ist das Passiv: Computerspiele werden erlaubt."
@@ -793,7 +797,9 @@ export const TEXT_CASES: KorrekturFall[] = [
         "para": 4,
         "wrong": "Deshalb die Lehrer müssten",
         "right": [
-          "Deshalb müssten die Lehrer"
+          "Deshalb müssten die Lehrer",
+          "Deshalb müssten die Lehrerinnen und Lehrer",
+          "Deshalb müssten die Lehrpersonen"
         ],
         "category": "satzbau",
         "what": "Steht „deshalb“ am Satzanfang, folgt sofort das gebeugte Verb (Verb an zweiter Stelle)."
@@ -830,11 +836,6 @@ export const TEXT_CASES: KorrekturFall[] = [
       },
       {
         "para": 2,
-        "text": "Tablets und deshalb hat",
-        "why": "Der Beistrich vor „und“ zwischen zwei Hauptsätzen ist freigestellt; nach „deshalb“ steht das Verb richtig an zweiter Stelle."
-      },
-      {
-        "para": 2,
         "text": "Im folgenden Text",
         "why": "„folgend“ ist hier ein Adjektiv vor dem Nomen „Text“ und wird kleingeschrieben."
       },
@@ -864,7 +865,28 @@ export const TEXT_CASES: KorrekturFall[] = [
         "why": "„in Maßen“ (= maßvoll) wird mit ß geschrieben; korrekt."
       }
     ],
-    "neutral": []
+    "neutral": [
+      {
+        "para": 2,
+        "text": "Tablets und deshalb hat",
+        "why": "Beistrich zwischen Hauptsätzen mit „und“ freiwillig"
+      },
+      {
+        "para": 3,
+        "text": "bis es klappt",
+        "why": "Satz ist richtig, Umformulierung nur Stil"
+      },
+      {
+        "para": 3,
+        "text": "Spiele sind spannend und man bleibt",
+        "why": "Beistrich zwischen Hauptsätzen mit „und“ freiwillig"
+      },
+      {
+        "para": 3,
+        "text": "In Englisch verwenden wir",
+        "why": "auch „Im Englischunterricht“ möglich"
+      }
+    ]
   },
   {
     "nr": "K05",
@@ -914,7 +936,8 @@ export const TEXT_CASES: KorrekturFall[] = [
         "para": 3,
         "wrong": "aber man knüpft auch",
         "right": [
-          "sondern man knüpft auch"
+          "sondern man knüpft auch",
+          "sondern knüpft auch"
         ],
         "category": "satzbau",
         "what": "Die zweiteilige Konjunktion lautet „nicht nur …, sondern auch …“; „aber“ zerstört die Verknüpfung."
@@ -962,7 +985,9 @@ export const TEXT_CASES: KorrekturFall[] = [
         "right": [
           "sehr anstrengend",
           "äußerst anstrengend",
-          "anstrengend"
+          "anstrengend",
+          "besonders anstrengend",
+          "ziemlich anstrengend"
         ],
         "category": "ausdruck",
         "what": "Registerfehler: „voll“ im Sinne von „sehr“ ist Umgangssprache und passt nicht in eine Erörterung."
@@ -1029,18 +1054,14 @@ export const TEXT_CASES: KorrekturFall[] = [
         "right": [
           "darf jedoch nicht",
           "darf aber nicht",
-          "darf nicht"
+          "darf nicht",
+          "darf allerdings nicht"
         ],
         "category": "ausdruck",
         "what": "Registerfehler: Die Partikel „halt“ ist umgangssprachlich und gehört nicht in eine Erörterung."
       }
     ],
     "correct": [
-      {
-        "para": 2,
-        "text": "Studium, Lehre oder doch gleich ein Job?",
-        "why": "Verkürzte (elliptische) Frage als Einstieg; stilistisch zulässig und korrekt."
-      },
       {
         "para": 2,
         "text": "Im Folgenden",
@@ -1075,14 +1096,25 @@ export const TEXT_CASES: KorrekturFall[] = [
         "para": 4,
         "text": "am Land",
         "why": "Österreichisch für „auf dem Land“; korrekt."
-      },
+      }
+    ],
+    "neutral": [
       {
         "para": 5,
         "text": "versuchen eine Liste",
-        "why": "Bei dieser Infinitivgruppe ist der Beistrich freigestellt (kein „um/ohne/statt“, kein Bezugswort)."
+        "why": "Beistrich vor der Infinitivgruppe freiwillig"
+      },
+      {
+        "para": 2,
+        "text": "Studium, Lehre oder doch gleich ein Job?",
+        "why": "umgangssprachlich, aber vertretbar"
+      },
+      {
+        "para": 4,
+        "text": "und viele Schülerinnen",
+        "why": "Beistrich zwischen Hauptsätzen mit „und“ freiwillig"
       }
-    ],
-    "neutral": []
+    ]
   },
   {
     "nr": "K06",
@@ -1225,7 +1257,11 @@ export const TEXT_CASES: KorrekturFall[] = [
         "wrong": "ist echt stark",
         "right": [
           "ist sehr wirkungsvoll",
-          "wirkt besonders nachdrücklich"
+          "wirkt besonders nachdrücklich",
+          "ist sehr eindringlich",
+          "wirkt sehr eindringlich",
+          "ist besonders wirkungsvoll",
+          "ist sehr eindrucksvoll"
         ],
         "category": "ausdruck",
         "what": "„echt stark“ ist umgangssprachlich und subjektiv; in einer Analyse wird die Wirkung sachlich beschrieben."
@@ -1287,7 +1323,38 @@ export const TEXT_CASES: KorrekturFall[] = [
         "why": "Wörtliches Zitat mit Zeilenangabe; die elliptische Form stammt aus dem Original und wird nicht korrigiert."
       }
     ],
-    "neutral": []
+    "neutral": [
+      {
+        "para": 6,
+        "text": "Trotzdem halte ich den Text für gelungen",
+        "why": "Ich-Form in der Analyse vertretbar"
+      },
+      {
+        "para": 3,
+        "text": "dass in Österreich jedes Jahr Hunderte Gasthäuser zusperren müssen",
+        "why": "Konjunktiv gleich Indikativ"
+      },
+      {
+        "para": 3,
+        "text": "dass viele junge Menschen lieber in Lokale in der Stadt fahren",
+        "why": "Konjunktiv gleich Indikativ"
+      },
+      {
+        "para": 2,
+        "text": "sogenannten",
+        "why": "beide Schreibungen"
+      },
+      {
+        "para": 5,
+        "text": "sodass",
+        "why": "beide Schreibungen"
+      },
+      {
+        "para": 4,
+        "text": "am Rand",
+        "why": "auch am Rande"
+      }
+    ]
   },
   {
     "nr": "K07",
@@ -1347,7 +1414,9 @@ export const TEXT_CASES: KorrekturFall[] = [
         "wrong": "Da sie den Schlüssel am Ende behält",
         "right": [
           "Sie behält den Schlüssel am Ende",
-          "Am Ende behält sie den Schlüssel"
+          "Am Ende behält sie den Schlüssel",
+          "Dennoch behält sie den Schlüssel am Ende",
+          "Trotzdem behält sie den Schlüssel am Ende"
         ],
         "category": "satzbau",
         "what": "Unvollständiger Satz: Er besteht nur aus Nebensätzen, der Hauptsatz fehlt."
@@ -1358,7 +1427,9 @@ export const TEXT_CASES: KorrekturFall[] = [
         "right": [
           "bemerkt nicht",
           "erkennt nicht",
-          "versteht nicht"
+          "versteht nicht",
+          "begreift nicht",
+          "merkt nicht"
         ],
         "category": "ausdruck",
         "what": "„checken“ ist umgangssprachlich und passt nicht in eine Interpretation."
@@ -1412,9 +1483,11 @@ export const TEXT_CASES: KorrekturFall[] = [
       },
       {
         "para": 5,
-        "wrong": "ist ihre letzte Verbindung",
+        "wrong": "wegwerfen würde, ist ihre letzte Verbindung",
         "right": [
-          "wäre ihre letzte Verbindung"
+          "wegwerfen würde, wäre ihre letzte Verbindung",
+          "wegwirft, ist ihre letzte Verbindung",
+          "wegwürfe, wäre ihre letzte Verbindung"
         ],
         "category": "grammatik",
         "what": "Irrealer Bedingungssatz: Auch der Hauptsatz verlangt den Konjunktiv II (wäre … verloren)."
@@ -1503,7 +1576,33 @@ export const TEXT_CASES: KorrekturFall[] = [
         "why": "Österreichisch für Flur/Diele; korrekt."
       }
     ],
-    "neutral": []
+    "neutral": [
+      {
+        "para": 6,
+        "text": "Meiner Meinung nach",
+        "why": "persönliche Stellungnahme im Schluss"
+      },
+      {
+        "para": 4,
+        "text": "leer haben",
+        "why": "leicht umgangssprachlich"
+      },
+      {
+        "para": 3,
+        "text": "wozu er gehört",
+        "why": "vertretbar"
+      },
+      {
+        "para": 5,
+        "text": "ruhiger und die Sätze",
+        "why": "Beistrich vor und wahlfrei"
+      },
+      {
+        "para": 4,
+        "text": "nah an ihren Gedanken",
+        "why": "auch nahe"
+      }
+    ]
   },
   {
     "nr": "K08",
