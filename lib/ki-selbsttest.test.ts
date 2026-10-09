@@ -115,3 +115,21 @@ test("KI-Selbsttest: a task the app does not let through is shown with the reaso
   r.setTransport(null);
   r.resetRouter();
 });
+
+test("Rechenweg from the KI: a result only in the last line of the working is taken from there and checked", async () => {
+  const { fillPlan } = await import("./ai/features");
+  const { categoriesFor } = await import("./curriculum");
+  const req = {
+    subject: "Mathematik", level: "3. Klasse Mittelschule", count: 1, categories: categoriesFor("Mathematik").filter((c) => c.key === "rechenweg"),
+    skills: [{ id: "mathe.gleichungen.einfach", name: "Gleichungen", area: "Gleichungen", difficulty: "mittel" as const }],
+    plan: [{ skillId: "mathe.gleichungen.einfach", category: "rechenweg" }],
+  };
+  const t = { ...MA[0], math_start: "5x - 8 = 27", accepted_answers: null, solution_steps: ["5x = 35", "x = 7"] };
+  const [ok] = fillPlan([t as never], req);
+  assert.deepEqual(ok?.answer.accepted, ["7"]);
+  // a wrong last line is still caught by the check
+  const rejected: string[] = [];
+  const [bad] = fillPlan([{ ...t, solution_steps: ["5x = 35", "x = 8"] } as never], req, Math.random, rejected);
+  assert.equal(bad, null);
+  assert.match(rejected[0], /rechenweg: /);
+});
