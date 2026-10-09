@@ -237,6 +237,33 @@ test("names never leave the app: student and teacher names become [Name] and com
   s.router.setTransport(null);
 });
 
+test("further names: the app finds friends and others, the teacher unticks a word or adds one, and exactly that goes out", async () => {
+  const s = await setup("Jonas Beispiel");
+  const t = s.texts.getText(s.textId)!;
+  assert.ok(s.texts.saveText(s.textId, para("Ich ging mit Lena Hofer und Frau Novak zum See.", "Hofer lachte, weil Sie froh war. Mein Hund Bello bellte."), t.version).ok);
+  const text = s.texts.getText(s.textId)!;
+  const preview = s.tc.aiPreview(text);
+  assert.deepEqual(preview.names, ["Lena", "Hofer", "Novak"], "„Sie“ and „Mein Hund“ are no names; „Bello“ is not on the list");
+  assert.match(preview.masked[0], /Lena Hofer/, "the dialog replaces the found names itself, so they can be unticked");
+  // without the dialog: what the app finds
+  const req = s.tc.correctionRequest(text, s.texts.textDoc(text));
+  assert.equal(req.blocks[1].text, "[Name] lachte, weil Sie froh war. Mein Hund Bello bellte.");
+  // the teacher unticks „Hofer“ and adds „Bello“
+  const calls: AIRequest[] = [];
+  s.router.resetRouter();
+  s.router.setTransport(fakeKI({ calls }));
+  const res = await s.tc.startAICorrection(s.textId, s.niko.id, { consent: true, wait: true, names: ["Lena", "Novak", "Bello"] });
+  assert.ok(res.ok);
+  const sent = String(calls[0].content);
+  assert.match(sent, /\[1\] Ich ging mit \[Name\] Hofer und Frau \[Name\] zum See\./);
+  assert.match(sent, /\[2\] Hofer lachte, weil Sie froh war\. Mein Hund \[Name\] bellte\./);
+  assert.ok(!/Lena|Novak|Bello|Jonas/.test(sent));
+  assert.equal(s.tc.getCorrection(res.correctionId)!.masked_names, JSON.stringify(["Lena", "Novak", "Bello"]), "kept for a later „gründlich nachprüfen“");
+  const again = s.tc.aiPreview(text, ["Lena", "Novak", "Bello"]);
+  assert.deepEqual([again.names, again.kept], [["Lena", "Hofer", "Novak", "Bello"], ["Lena", "Novak", "Bello"]], "the dialog of „gründlich nachprüfen“ starts from that choice");
+  s.router.setTransport(null);
+});
+
 test("13: KI not reachable: the error is kept, nothing changes, the teacher can correct by hand", async () => {
   const s = await setup("Ida Ausfall");
   s.router.resetRouter();

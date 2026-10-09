@@ -18,6 +18,7 @@ import {
   type ItemStatus,
   type TeacherItemInput,
 } from "@/lib/text-correction";
+import { parseNames } from "@/lib/name-detection";
 import { getText } from "@/lib/texts";
 import { canManageUnit, runningUnitForStudent } from "@/lib/units";
 
@@ -33,13 +34,20 @@ const page = (textId: number) => `/texte/${textId}/korrektur`;
 
 export type StartState = { error?: string } | null;
 
+/** The further names the teacher keeps replaced in the consent dialog and those typed in; undefined = no such dialog. */
+function namesFrom(f: FormData): string[] | undefined {
+  if (f.get("names") !== "1") return undefined;
+  const kept = f.getAll("name").map((n) => String(n).trim().slice(0, 60)).filter((n) => /\p{L}/u.test(n));
+  return [...new Set([...kept, ...parseNames(String(f.get("extra") ?? ""))])].slice(0, 80);
+}
+
 /** „Mit KI korrigieren“ after the consent dialog: only with the box ticked, never automatically. */
 export async function startAICorrectionAction(textId: number, _prev: StartState, f: FormData): Promise<StartState> {
   const t = await requireTeacher();
   const text = getText(textId);
   if (!text) redirect("/");
   const unit = runningUnitForStudent(text.student_id);
-  const res = await startAICorrection(textId, t.id, { consent: f.get("consent") === "1", unitId: unit?.id ?? null, method: f.get("method") === "gruendlich" ? "gruendlich" : "einfach" });
+  const res = await startAICorrection(textId, t.id, { consent: f.get("consent") === "1", unitId: unit?.id ?? null, method: f.get("method") === "gruendlich" ? "gruendlich" : "einfach", names: namesFrom(f) });
   if (!res.ok) return { error: res.error };
   revalidatePath(page(textId));
   redirect(page(textId));
@@ -48,7 +56,7 @@ export async function startAICorrectionAction(textId: number, _prev: StartState,
 /** „Gründlich nachprüfen“: the open KI suggestions are replaced by a „gründlich“ run, decisions stay. */
 export async function startThoroughRecheckAction(correctionId: number, _prev: StartState, f: FormData): Promise<StartState> {
   const { t, c } = await teacherCorrection(correctionId);
-  const res = await startThoroughRecheck(c.id, t.id, { consent: f.get("consent") === "1" });
+  const res = await startThoroughRecheck(c.id, t.id, { consent: f.get("consent") === "1", names: namesFrom(f) });
   if (!res.ok) return { error: res.error };
   revalidatePath(page(c.text_id));
   redirect(page(c.text_id));

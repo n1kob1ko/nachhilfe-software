@@ -730,6 +730,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["text_corrections", "verify_status", "TEXT NOT NULL DEFAULT ''"],
   // words OpenRouter's privacy filter hid from the KI, as JSON [{para, text, grammar}] (shown to the teacher, 2026-10-09)
   ["text_corrections", "hidden_words", "TEXT NOT NULL DEFAULT ''"],
+  // names replaced by [Name] besides those of the student and the teachers, as the teacher confirmed them, JSON
+  // array; '' = not chosen, the app's own name detection decides (lib/name-detection.ts, 2026-10-10)
+  ["text_corrections", "masked_names", "TEXT NOT NULL DEFAULT ''"],
   ["text_correction_items", "origin", "TEXT NOT NULL DEFAULT ''"],
   ["text_correction_items", "review", "TEXT NOT NULL DEFAULT ''"],
   ["text_correction_items", "review_note", "TEXT NOT NULL DEFAULT ''"],
