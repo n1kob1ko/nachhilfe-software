@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { applyChanges, comparable, finalProblems, mismatchOf, ruleFindings, sameErrorElsewhere, sentencesOf, shapeOf, splitSentences } from "./text-correction-checks";
+import { applyChanges, comparable, finalProblems, flagItems, mismatchOf, newSubjectOf, ruleFindings, sameErrorElsewhere, sentencesOf, shapeOf, splitSentences } from "./text-correction-checks";
 
 const parts = (t: string) => splitSentences(t).map((s) => t.slice(s.start, s.end));
 
@@ -62,6 +62,22 @@ test("Form einer Änderung", () => {
   assert.equal(shapeOf("Spass", "Spaß").letters, true);
   assert.equal(shapeOf("Ich gehe nach hause und Spiele", "Ich gehe nach Hause und spiele").toUpper, true);
   assert.equal(shapeOf("Ich gehe nach hause und Spiele", "Ich gehe nach Hause und spiele").toLower, true);
+});
+
+test("Neues Subjekt im Vorschlag: zur Prüfung markiert, ein getauschtes Fürwort nicht", () => {
+  // the wrong suggestions of test 4 (2026-10-09), the last one unmarked in „Gründlich neu“
+  assert.match(newSubjectOf("Wenn sich auch in der Schule Computerspiele erlauben", "Wenn man sich auch in der Schule Computerspiele erlaubt")!, /„man“/);
+  assert.match(newSubjectOf("befürchten, dass wenn Kinder", "befürchten, dass Kinder, wenn sie")!, /„sie“/);
+  assert.match(newSubjectOf("wirken aber auch etwas einseitig", "wirkt er aber auch etwas einseitig")!, /„er“/);
+  // right ones of the same tests
+  assert.equal(newSubjectOf("Außerdem es schwer", "Außerdem ist es schwer"), null);
+  assert.equal(newSubjectOf("weil er stolperte über eine Bodenwelle", "weil er über eine Bodenwelle stolperte"), null);
+  assert.equal(newSubjectOf("ihnen", "Ihnen"), null);
+  assert.equal(newSubjectOf("Er ist sehr alt", "Es ist sehr alt"), null, "a pronoun swapped for another");
+  const item = { block: 0, pos_start: 0, pos_end: 51, quote: "Wenn sich auch in der Schule Computerspiele erlauben", replacement: "Wenn man sich auch in der Schule Computerspiele erlaubt", category: "grammatik", kind: "fehler", rule: "", explanation: "Hier fehlt das Subjekt.", review: "" as const, review_note: "" };
+  const text = "Wenn sich auch in der Schule Computerspiele erlauben, lernen alle.";
+  assert.equal(flagItems([text], [item], { english: false })[0].review, "lehrer");
+  assert.equal(flagItems([text], [item], { english: true })[0].review, "", "German only: „He is“ → „It is“ was right in the test");
 });
 
 test("Kategorie oder Erklärung passt nicht zur Änderung", () => {

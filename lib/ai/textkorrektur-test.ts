@@ -206,7 +206,7 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
     if (two.stages.fassung) ways.push({ way: "fassung_neu", items: flagItems(texts, two.stages.fassung, { english }), trigger: t, only: "textanalyse" });
     ways.push({ way: neu ? "gruendlich_neu" : "gruendlich", items: two.items, trigger: t });
     if (two.unchecked.length) lines.push(`${label}: Sätze ohne Antwort: ${two.unchecked.join(", ")}`);
-    if (two.verify === "fehler") lines.push(`${label}: zweite Prüfung fehlgeschlagen`);
+    if (two.verify === "fehler") lines.push(`${label}: zweite Prüfung fehlgeschlagen (${two.verifyMessage ?? "ohne Grund"})`);
     if (two.hidden.length) lines.push(`${label}: vom Datenschutzfilter ausgeblendet: ${two.hidden.map((h) => `„${h.text}“ (${h.sentence})`).join(", ")}`);
     // the KI's own version of every sentence it changed, and the words the filter hid, for checking by hand
     const tag = neu ? "neu" : "bisher";
@@ -217,6 +217,8 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
       return own.trim() && comparable(own) !== comparable(byId.get(id) ?? "") ? [{ id, v: own }] : [];
     });
     for (const l of logLines(`${c.nr} ${tag} saetze`, versions)) log(l);
+    // test 4 (2026-10-09): one failed step 2 left 10 right suggestions marked, and the log did not say why
+    if (two.verify === "fehler") for (const l of logLines(`${c.nr} ${tag} pruefung`, { fehler: two.verifyMessage ?? "" })) log(l);
     if (two.hidden.length) for (const l of logLines(`${c.nr} ${tag} ausgeblendet`, two.hidden)) log(l);
   }
 
