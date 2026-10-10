@@ -9,8 +9,15 @@ type AIRequest = import("./ai/router").AIRequest;
 
 test("Testtexte: jede Fehlerstelle eindeutig, jede Korrektur ergibt einen anderen Text, Fallen vorhanden", async () => {
   const { TEXT_CASES } = await import("./ai/textkorrektur-test-faelle");
+  const { HELD_OUT_CASES } = await import("./ai/textkorrektur-test-unabhaengig");
   assert.ok(TEXT_CASES.length >= 5);
-  for (const c of TEXT_CASES) {
+  assert.ok(HELD_OUT_CASES.length >= 12);
+  const nrs = [...TEXT_CASES, ...HELD_OUT_CASES].map((c) => c.nr);
+  assert.equal(new Set(nrs).size, nrs.length);
+  // the independent texts are new: no paragraph of the known texts again
+  const known = TEXT_CASES.flatMap((c) => c.blocks.map((b) => b.text));
+  for (const c of HELD_OUT_CASES) for (const b of c.blocks) if (b.text.length > 30) assert.ok(!known.some((k) => k.includes(b.text) || b.text.includes(k)), `${c.nr}: ${b.text.slice(0, 40)}`);
+  for (const c of [...TEXT_CASES, ...HELD_OUT_CASES]) {
     for (const e of c.errors) {
       const t = c.blocks[e.para - 1]?.text ?? "";
       assert.equal(t.split(e.wrong).length, 2, `${c.nr}: „${e.wrong}“ genau einmal in Absatz ${e.para}`);
@@ -111,7 +118,7 @@ test("Textkorrektur-Test: drei Wege laufen mit der KI, sechs werden verglichen, 
     ["textanalyse", "textanalyse", "textanalyse", "textanalyse", "textkorrektur", "textkorrektur", "textpruefung", "textpruefung", "textpruefung", "textpruefung"],
     "three ways with real requests, the other three derived from the same answers",
   );
-  const t = state.totals!;
+  const t = state.totals as Required<NonNullable<typeof state.totals>>;
   assert.deepEqual(Object.keys(t), WAYS.map((w) => w.key));
   const errors = cases.reduce((n, c) => n + c.errors.filter((e) => !e.optional).length, 0);
   assert.equal(t.einfach.score.errors, errors);
@@ -146,4 +153,44 @@ test("Textkorrektur-Test: drei Wege laufen mit der KI, sechs werden verglichen, 
   const capped = await runTextTest({ cases: cases.slice(0, 1), capUsd: 0.0001, log: () => {} });
   router.setTransport(null);
   assert.equal(capped.results[0].status, "übersprungen");
+});
+
+test("Unabhängiger Test: neue Texte, nur „gründlich neu“ wie im Unterricht, Bildbeschreibungen gehen mit", async () => {
+  const { runTextTest, reserveFor, SET_WAYS } = await import("./ai/textkorrektur-test");
+  const { HELD_OUT_CASES } = await import("./ai/textkorrektur-test-unabhaengig");
+  const router = await import("./ai/router");
+  router.resetRouter();
+  const calls: AIRequest[] = [];
+  const cases = HELD_OUT_CASES.slice(0, 2);
+  assert.ok(cases[1].pictures?.length, "the Bildgeschichte has its picture descriptions");
+  router.setTransport(async (req) => {
+    calls.push(req);
+    const prompt = String(req.content);
+    const usage = { input: 3000, output: 2000, cacheWrite: 0, cacheRead: 0 };
+    if (req.fn === "textanalyse") {
+      const sentences = [...prompt.matchAll(/^\[(\d+)\.(\d+)\](?: \(Überschrift\))? (.*)$/gm)].map((m) => ({ id: `${m[1]}.${m[2]}`, text: m[3] }));
+      // lists the first error of each text, fixed as the key says
+      const out = sentences.map((s) => {
+        const e = cases.map((c) => c.errors[0]).find((x) => s.text.includes(x.wrong));
+        return { id: s.id, corrected: e ? s.text.replace(e.wrong, e.right[0]) : s.text, findings: e ? [{ quote: e.wrong, replacement: e.right[0], category: e.category, kind: "fehler", rule: "r", explanation: "e", skill_id: null, sure: true }] : [] };
+      });
+      return { parsed: { sentences: out, hints: [], strengths: [], main_issue: null, recommendation: null, recommendation_skill_id: null }, refusal: false, model: req.model, usage };
+    }
+    const checks = [...prompt.matchAll(/^Vorschlag (\d+) /gm)].map((m) => ({ nr: Number(m[1]), verdict: "richtig", explanation_ok: true, better_replacement: null, better_explanation: null, reason: "", category: "rechtschreibung" }));
+    return { parsed: { checks, missed: [] }, refusal: false, model: req.model, usage };
+  });
+  const lines: string[] = [];
+  const state = await runTextTest({ set: "unabhaengig", capUsd: 5, cases, log: (l) => lines.push(l) });
+  router.setTransport(null);
+  assert.equal(state.set, "unabhaengig");
+  assert.deepEqual(state.results.map((r) => r.status), ["fertig", "fertig"]);
+  assert.deepEqual(calls.map((r) => r.fn).sort(), ["textanalyse", "textanalyse", "textpruefung", "textpruefung"], "no one-step correction, no „gründlich bisher“");
+  assert.deepEqual(Object.keys(state.totals!), [...SET_WAYS.unabhaengig]);
+  const neu = state.totals!.gruendlich_neu!.score;
+  assert.equal(neu.fixed, 2, JSON.stringify(neu));
+  assert.equal(neu.missed, cases.reduce((n, c) => n + c.errors.filter((e) => !e.optional).length, 0) - 2);
+  const analysis = calls.filter((r) => r.fn === "textanalyse").map((r) => String(r.content)).find((p) => p.includes("Drachen"))!;
+  assert.ok(analysis.includes(cases[1].pictures![0]), "the picture descriptions reach the KI as in the app");
+  assert.ok(lines[0].includes('"set":"unabhaengig"'));
+  for (const c of HELD_OUT_CASES) assert.ok(reserveFor(c, SET_WAYS.unabhaengig) < reserveFor(c) / 2, c.nr);
 });

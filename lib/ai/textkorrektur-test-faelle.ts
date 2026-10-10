@@ -16,6 +16,8 @@ export type KorrekturFall = {
   textKind: string;
   task: string;
   blocks: { text: string; heading: boolean }[];
+  /** Bildgeschichte: the teacher's short descriptions of the pictures, sent as in the app (names masked) */
+  pictures?: string[];
   errors: { para: number; wrong: string; right: string[]; category: string; what: string; optional?: boolean }[];
   correct: { para: number; text: string; why: string }[];
   neutral?: { para: number; text: string; why: string }[];
