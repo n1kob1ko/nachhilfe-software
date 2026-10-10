@@ -159,6 +159,29 @@ export function mismatchOf(f: { category: string; quote: string; replacement: st
   return null;
 }
 
+/** Pronouns that can be the subject of a German sentence. */
+const SUBJECTS = new Set("ich du er sie es wir ihr man".split(" "));
+
+/**
+ * A suggestion that brings in a new subject („sich … erlauben“ → „man sich … erlaubt“, „dass wenn Kinder“
+ * → „dass Kinder, wenn sie“) rebuilds the sentence around someone the student did not name. In tests 3 and 4
+ * (2026-10-09, about 1,250 suggestions) all 10 such suggestions were wrong or unasked for, and none of the
+ * right ones looked like this. A pronoun swapped for another („er“ → „es“) is no new subject.
+ */
+export function newSubjectOf(quote: string, replacement: string): string | null {
+  const count = (s: string) => {
+    const n = new Map<string, number>();
+    for (const w of s.toLowerCase().match(/\p{L}+/gu) ?? []) if (SUBJECTS.has(w)) n.set(w, (n.get(w) ?? 0) + 1);
+    return n;
+  };
+  const before = count(quote);
+  const after = count(replacement);
+  const total = (n: Map<string, number>) => [...n.values()].reduce((a, b) => a + b, 0);
+  if (total(after) <= total(before)) return null;
+  const added = [...after].find(([w, k]) => k > (before.get(w) ?? 0))?.[0];
+  return added ? `Der Vorschlag setzt „${added}“ neu ein. Bitte prüfen, ob der Satz noch dasselbe meint.` : null;
+}
+
 // ---------- what the program finds by itself ----------
 
 export type RuleFinding = { para: number; start: number; end: number; quote: string; replacement: string; category: "rechtschreibung" | "zeichensetzung" | "ausdruck"; rule: string; explanation: string };
@@ -322,7 +345,7 @@ const isPlaced = (i: CheckItem): i is CheckItem & { block: number; pos_start: nu
 
 /**
  * Marks for the teacher what the program can see is off: a category or explanation that does not fit
- * the change, a place that could not be found, two suggestions on the same words, and what is wrong in
+ * the change, a place that could not be found, a new subject in German, two suggestions on the same words, and what is wrong in
  * the text once every suggestion is applied (a doubled word, a small letter at a sentence start, a
  * doubled sign) next to a suggestion.
  */
@@ -331,7 +354,9 @@ export function flagItems<T extends CheckItem>(blocks: string[], items: T[], o: 
     if (it.kind === "hinweis" || it.review === "verworfen") return it;
     if (!isPlaced(it)) return withNote(it, "Die Stelle wurde im Text nicht gefunden.");
     const why = mismatchOf(it);
-    return why ? withNote(it, why) : it;
+    const marked = why ? withNote(it, why) : it;
+    const subject = o.english ? null : newSubjectOf(it.quote, it.replacement);
+    return subject ? withNote(marked, subject) : marked;
   });
   blocks.forEach((text, b) => {
     const mine = out.map((it, k) => ({ it, k })).filter(({ it }) => isPlaced(it) && it.block === b && it.review !== "verworfen" && it.kind !== "hinweis");

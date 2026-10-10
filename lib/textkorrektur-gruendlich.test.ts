@@ -280,6 +280,17 @@ test("Vorschläge mit einem fremden Platzhalter wie [PERSON_NAME] passen nicht z
   assert.equal(r.dropped, 1);
 });
 
+test("Genitiv-s eines Namens bleibt beim Text: kein „Leass“ nach dem Zurücksetzen", async () => {
+  const { anchorFindings, maskText, namePattern } = await import("./text-correction-core");
+  const pattern = namePattern(["Lea"]);
+  assert.equal(maskText("Leas Gedanken kreisen um Lea.", pattern).masked, "[Name]s Gedanken kreisen um [Name].");
+  // test 4 (2026-10-09): „Leas“ was hidden whole, the KI added the s („[Name]s“) and the text got „Leass“
+  const doc = para("Leas Gedanken kreisen. Lea weint.");
+  const finding = (quote: string, replacement: string) => ({ para: 1, quote, replacement, category: "grammatik", kind: "fehler", rule: "", explanation: "Zeitform.", skill_id: null });
+  const r = anchorFindings(doc, { findings: [finding("[Name]s Gedanken kreisen", "[Name]s Gedanken kreisten"), finding("[Name] weint", "[Name] weinte")], hints: [] }, { pattern, level: { maxStyle: 5, maxMarks: 20 }, skills: new Set() });
+  assert.deepEqual(r.items.map((i) => [i.quote, i.replacement]), [["Leas Gedanken kreisen", "Leas Gedanken kreisten"], ["Lea weint", "Lea weinte"]]);
+});
+
 test("Stelle finden: ganze Wörter zuerst, ein einzelner Buchstabe nie mitten im Wort", async () => {
   const { findQuote } = await import("./text-correction-core");
   const t = "We had a great time, Lena and i went home.";
