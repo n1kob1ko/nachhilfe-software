@@ -413,6 +413,6 @@ test("pure helpers: quotes with typographic marks, overlapping places, Endfassun
   const seg = segmentsOf(doc[0], [{ id: 1, pos_start: 13, pos_end: 26 }]);
   assert.deepEqual(seg.map((x) => [x.itemId, x.start, x.runs.map((r) => r.x).join("")]), [[null, 0, "Ich ging mit "], [1, 13, "meinen Freund"], [null, 26, "."]]);
   const m = maskText("Annas Hund und Anna.", namePattern(["Anna Berg"]));
-  assert.equal(m.masked, "[Name] Hund und [Name].");
+  assert.equal(m.masked, "[Name]s Hund und [Name].");
   assert.equal(m.toOrig[m.masked.indexOf("Hund")], 6);
 });

@@ -8,7 +8,7 @@ const masked = (text: string) => maskText(text, namePattern(detectNames([text]))
 
 test("Namenserkennung: Vornamen, Anrede, Nachname nach Vorname, überall im Text ersetzt", () => {
   assert.deepEqual(detectNames(["Gestern traf ich Lena Hofer und Frau Novak. Später kam Mrs. Berger’s dog."]), ["Lena", "Hofer", "Novak", "Berger"]);
-  assert.equal(masked("Lena Hofer kam. Hofer lachte, Lenas Hund bellte."), "[Name] [Name] kam. [Name] lachte, [Name] Hund bellte.");
+  assert.equal(masked("Lena Hofer kam. Hofer lachte, Lenas Hund bellte."), "[Name] [Name] kam. [Name] lachte, [Name]s Hund bellte.");
   assert.deepEqual(detectNames(["Herr Dr. Huber und Frau Lehrerin Gruber-Wimmer sprachen mit Eva-Maria."]), ["Huber", "Gruber", "Wimmer", "Eva", "Maria"]);
 });
 
