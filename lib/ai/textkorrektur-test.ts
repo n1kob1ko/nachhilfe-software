@@ -12,6 +12,10 @@
  * with its explanation, so explanations can be checked by hand, and so do the KI's versions of the
  * sentences it changed and the words OpenRouter's privacy filter hid. Nothing is saved but the cost rows.
  * The run stops before it could cost more than 2 €.
+ *
+ * The independent set (textkorrektur-test-unabhaengig.ts) are texts the prompts were never tuned on;
+ * it runs only „gründlich neu“ as the teachers get it, so the first step's list and the
+ * Fassungsvergleich are measured too at no extra cost.
  */
 import { applyChanges, comparable, flagItems } from "../text-correction-checks";
 import { detectNames } from "../name-detection";
@@ -24,9 +28,10 @@ import { withAIOverride } from "./router";
 import { correctTextWithAI, type CorrectionRequest } from "./textkorrektur";
 import { correctThoroughly, sentencesFor, type ThoroughVersion } from "./textkorrektur-gruendlich";
 import { TEXT_CASES, type KorrekturFall } from "./textkorrektur-test-faelle";
-import { WAYS, type CaseRun, type Score, type TextTestState, type WayKey, type WayResult } from "./textkorrektur-test-types";
+import { HELD_OUT_CASES } from "./textkorrektur-test-unabhaengig";
+import { SET_WAYS, WAYS, type CaseRun, type Score, type TestSet, type TextTestState, type WayKey, type WayResult } from "./textkorrektur-test-types";
 
-export { WAYS, type CaseRun, type Score, type TextTestState, type WayKey, type WayResult };
+export { SET_WAYS, WAYS, type CaseRun, type Score, type TestSet, type TextTestState, type WayKey, type WayResult };
 
 export const LOG_PREFIX = "[KI-Textkorrektur-Test]";
 const TRIGGER = "textkorrektur-test";
@@ -142,19 +147,23 @@ function worst(fn: AIFunction, maxOut: number, input: number) {
   const { price } = priceFor(routeFor(fn).model, FUNCTIONS[fn].tier);
   return (input * price.in * 1.25 + Math.min(maxOut, FUNCTIONS[fn].maxTokens) * price.out) / 1_000_000;
 }
-/** What one text may cost at most: the one-step correction and both requests of each „gründlich“ („neu“ writes every sentence out). */
-export function reserveFor(c: KorrekturFall): number {
+/** What one text may cost at most: the one-step correction and both requests of each „gründlich“ („neu“ writes every sentence out), as far as the run has them. */
+export function reserveFor(c: KorrekturFall, ways: readonly WayKey[] = SET_WAYS.bekannt): number {
   const w = words(c);
   const thorough = (extra: number) => worst("textanalyse", 4_000 + w * (20 + extra), 3_000 + w * 3) + worst("textpruefung", 3_000 + w * 12, 3_000 + w * 6);
-  return worst("textkorrektur", 3_000 + w * 10, 2_500 + w * 2) + thorough(0) + thorough(3);
+  return (
+    (ways.includes("einfach") ? worst("textkorrektur", 3_000 + w * 10, 2_500 + w * 2) : 0) +
+    (ways.includes("gruendlich") ? thorough(0) : 0) +
+    (ways.includes("gruendlich_neu") ? thorough(3) : 0)
+  );
 }
 
 const short = (s: string, max = 300) => s.replace(/\s+/g, " ").trim().slice(0, max);
 
-async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: string, teacherId: number | null): Promise<CaseRun> {
+async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: string, teacherId: number | null, wanted: readonly WayKey[]): Promise<CaseRun> {
   const level = levelFor(c.schoolType, c.klasse);
   // names replaced as in the app: the test texts know no student, so only what the app finds itself
-  const names = detectNames([c.task, ...c.blocks.map((b) => b.text)]);
+  const names = detectNames([c.task, ...c.blocks.map((b) => b.text), ...(c.pictures ?? [])]);
   const pattern = namePattern(names);
   for (const l of logLines(`${c.nr} namen`, names)) log(l);
   const req: CorrectionRequest = {
@@ -164,7 +173,7 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
     level,
     blocks: c.blocks.map((b) => ({ ...b, text: maskText(b.text, pattern).masked })),
     skills: [],
-    pictures: null,
+    pictures: c.pictures ? { count: c.pictures.length, captions: c.pictures.map((p) => maskText(p, pattern).masked) } : null,
   };
   const doc: TextDoc = c.blocks.map((b) => ({ t: b.heading ? "h" : "p", r: [{ x: b.text }] }));
   const texts = c.blocks.map((b) => b.text);
@@ -177,20 +186,24 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
   const timing = new Map<string, number>();
   const anchorOpts = { pattern, level, skills: new Set<string>() };
 
-  // the one-step correction, as in the app until now
-  const t1 = `${TRIGGER}-${c.nr}-einfach`;
   const before1 = lastCallId();
   let started = Date.now();
-  const one = await withAIOverride({ tag: `${runTag}-${c.nr}-e`, onUsage }, () => correctTextWithAI(req, { teacherId, trigger: t1 }));
-  timing.set(t1, Date.now() - started);
-  // with the program's marks, as the teacher gets it
-  if (one.ok) ways.push({ way: "einfach", items: flagItems(texts, anchorFindings(doc, one.data, anchorOpts).items, { english }), trigger: t1 });
-  else lines.push(`Einfach: keine Antwort (${one.message})`);
+  let ok = true;
+  if (wanted.includes("einfach")) {
+    // the one-step correction, as in the app until now
+    const t1 = `${TRIGGER}-${c.nr}-einfach`;
+    const one = await withAIOverride({ tag: `${runTag}-${c.nr}-e`, onUsage }, () => correctTextWithAI(req, { teacherId, trigger: t1 }));
+    timing.set(t1, Date.now() - started);
+    // with the program's marks, as the teacher gets it
+    if (one.ok) ways.push({ way: "einfach", items: flagItems(texts, anchorFindings(doc, one.data, anchorOpts).items, { english }), trigger: t1 });
+    else lines.push(`Einfach: keine Antwort (${one.message})`);
+    ok = one.ok;
+  }
 
   // „gründlich“ as it is and as it would be: step 1, rules, step 2
   const sentences = sentencesFor(req);
-  let ok = one.ok;
-  for (const version of ["bisher", "neu"] as ThoroughVersion[]) {
+  const versions = (["bisher", "neu"] as ThoroughVersion[]).filter((v) => wanted.includes(v === "neu" ? "gruendlich_neu" : "gruendlich"));
+  for (const version of versions) {
     const neu = version === "neu";
     const t = `${TRIGGER}-${c.nr}-gruendlich${neu ? "-neu" : ""}`;
     const label = neu ? "Gründlich neu" : "Gründlich bisher";
@@ -264,7 +277,7 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
     nr: c.nr,
     title: c.title,
     level: level.label,
-    status: ok && results.length === WAYS.length ? "fertig" : "fehler",
+    status: ok && results.length === wanted.length ? "fertig" : "fehler",
     summary: best ? `${best.score.errors} eingebaute Fehler, ${c.correct.length} richtige Stellen als Falle` : "keine Antwort",
     ways: results,
     lines,
@@ -272,18 +285,20 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
 }
 
 /** Runs the texts, a few at a time; a text that could push the spending over the cap is skipped and reported. */
-export async function runTextTest(o: { teacherId?: number | null; cases?: KorrekturFall[]; concurrency?: number; capUsd?: number; log?: (line: string) => void } = {}): Promise<TextTestState> {
-  const cases = o.cases ?? TEXT_CASES;
+export async function runTextTest(o: { teacherId?: number | null; set?: TestSet; cases?: KorrekturFall[]; concurrency?: number; capUsd?: number; log?: (line: string) => void } = {}): Promise<TextTestState> {
+  const set = o.set ?? "bekannt";
+  const wanted = SET_WAYS[set];
+  const cases = o.cases ?? (set === "unabhaengig" ? HELD_OUT_CASES : TEXT_CASES);
   const log = o.log ?? ((l: string) => console.info(l));
   const capUsd = o.capUsd ?? budget().usdPerEur * 2;
   const runTag = `kt${Date.now().toString(36)}`;
   const startId = lastCallId();
-  const state: TextTestState = { running: true, startedAt: Date.now(), finishedAt: null, total: cases.length, capUsd, results: [], active: [], totals: null };
+  const state: TextTestState = { set, ways: wanted, running: true, startedAt: Date.now(), finishedAt: null, total: cases.length, capUsd, results: [], active: [], totals: null };
   shared.__aiTextTest = state;
   const reserved = new Map<string, number>();
   // after the first texts: what a word really cost, so the worst case does not skip texts the cap allows
   let perWord = 0;
-  log(`${LOG_PREFIX} start ${JSON.stringify({ run: runTag, cases: cases.length, capUsd, models: { textkorrektur: routeFor("textkorrektur").model, textanalyse: routeFor("textanalyse").model, textpruefung: routeFor("textpruefung").model }, effort: { textkorrektur: FUNCTIONS.textkorrektur.effort, textanalyse: FUNCTIONS.textanalyse.effort, textpruefung: FUNCTIONS.textpruefung.effort } })}`);
+  log(`${LOG_PREFIX} start ${JSON.stringify({ run: runTag, set, cases: cases.length, capUsd, models: { textkorrektur: routeFor("textkorrektur").model, textanalyse: routeFor("textanalyse").model, textpruefung: routeFor("textpruefung").model }, effort: { textkorrektur: FUNCTIONS.textkorrektur.effort, textanalyse: FUNCTIONS.textanalyse.effort, textpruefung: FUNCTIONS.textpruefung.effort } })}`);
   const order = new Map(cases.map((c, i) => [c.nr, i]));
   let next = 0;
   // workers waiting for a running text to finish: its reserve was the worst case, its real cost is less
@@ -298,14 +313,14 @@ export async function runTextTest(o: { teacherId?: number | null; cases?: Korrek
       const c = cases[next++];
       let r: CaseRun | null = null;
       while (!r) {
-        const need = perWord ? Math.min(reserveFor(c), perWord * words(c) * 1.2) : reserveFor(c);
+        const need = perWord ? Math.min(reserveFor(c, wanted), perWord * words(c) * 1.2) : reserveFor(c, wanted);
         const spent = spentSince(`${TRIGGER}-`, startId);
         const inFlight = [...reserved.values()].reduce((s, v) => s + v, 0);
         if (spent + inFlight + need <= capUsd) {
           reserved.set(c.nr, need);
           state.active.push(c.nr);
           try {
-            r = await runCase(c, log, runTag, o.teacherId ?? null);
+            r = await runCase(c, log, runTag, o.teacherId ?? null, wanted);
           } catch (e) {
             r = { nr: c.nr, title: c.title, level: "", status: "fehler", summary: `Fehler: ${e instanceof Error ? e.message : String(e)}`.slice(0, 300), ways: [], lines: [] };
           }
@@ -331,27 +346,27 @@ export async function runTextTest(o: { teacherId?: number | null; cases?: Korrek
   } finally {
     state.running = false;
     state.finishedAt = Date.now();
-    state.totals = totalsOf(state.results);
+    state.totals = totalsOf(state.results, wanted);
     log(`${LOG_PREFIX} summe ${JSON.stringify(state.totals)}`);
     log(`${LOG_PREFIX} ende ${JSON.stringify({ run: runTag, usd: spentSince(`${TRIGGER}-`, startId), cases: state.results.filter((r) => r.status === "fertig").length, minutes: Math.round((state.finishedAt - state.startedAt) / 6_000) / 10 })}`);
   }
   return state;
 }
 
-/** Sums per way over the texts where every way ran (so the ways are compared on the same texts). */
-export function totalsOf(results: CaseRun[]): Record<WayKey, WayResult> {
-  const complete = results.filter((r) => r.ways.length === WAYS.length);
+/** Sums per way over the texts where every way of the run ran (so the ways are compared on the same texts). */
+export function totalsOf(results: CaseRun[], ways: readonly WayKey[] = SET_WAYS.bekannt): Partial<Record<WayKey, WayResult>> {
+  const complete = results.filter((r) => r.ways.length === ways.length);
   return Object.fromEntries(
-    WAYS.map((w) => {
-      const rs = complete.map((r) => r.ways.find((x) => x.way === w.key)!);
-      return [w.key, { way: w.key, score: rs.reduce((s, r) => addScores(s, r.score), emptyScore()), usd: rs.reduce((s, r) => s + r.usd, 0), ms: rs.reduce((s, r) => s + r.ms, 0), calls: rs.reduce((s, r) => s + r.calls, 0), reasoning: rs.reduce((s, r) => s + r.reasoning, 0), output: rs.reduce((s, r) => s + r.output, 0) }];
+    ways.map((key) => {
+      const rs = complete.map((r) => r.ways.find((x) => x.way === key)!);
+      return [key, { way: key, score: rs.reduce((s, r) => addScores(s, r.score), emptyScore()), usd: rs.reduce((s, r) => s + r.usd, 0), ms: rs.reduce((s, r) => s + r.ms, 0), calls: rs.reduce((s, r) => s + r.calls, 0), reasoning: rs.reduce((s, r) => s + r.reasoning, 0), output: rs.reduce((s, r) => s + r.output, 0) }];
     }),
-  ) as Record<WayKey, WayResult>;
+  );
 }
 
 /** Starts a run in the background (the page asks for the state); false when one is running. */
-export function startTextTest(teacherId: number | null): boolean {
+export function startTextTest(teacherId: number | null, set: TestSet = "bekannt"): boolean {
   if (shared.__aiTextTest?.running) return false;
-  void runTextTest({ teacherId }).catch((e) => console.error(`${LOG_PREFIX} abgebrochen: ${e instanceof Error ? e.message : String(e)}`));
+  void runTextTest({ teacherId, set }).catch((e) => console.error(`${LOG_PREFIX} abgebrochen: ${e instanceof Error ? e.message : String(e)}`));
   return true;
 }

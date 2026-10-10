@@ -10,6 +10,16 @@ export const WAYS = [
 ] as const;
 export type WayKey = (typeof WAYS)[number]["key"];
 
+/**
+ * bekannt: the texts the correction was improved on, all ways. unabhaengig: unseen texts
+ * (textkorrektur-test-unabhaengig.ts), only „gründlich neu“ as the teachers get it.
+ */
+export type TestSet = "bekannt" | "unabhaengig";
+export const SET_WAYS: Record<TestSet, readonly WayKey[]> = {
+  bekannt: WAYS.map((w) => w.key),
+  unabhaengig: ["schritt1_neu", "fassung_neu", "gruendlich_neu"],
+};
+
 export type Score = {
   /** built-in errors (optional ones not counted) */
   errors: number;
@@ -38,4 +48,15 @@ export type Score = {
 
 export type WayResult = { way: WayKey; score: Score; usd: number; ms: number; calls: number; reasoning: number; output: number };
 export type CaseRun = { nr: string; title: string; level: string; status: "fertig" | "fehler" | "übersprungen"; summary: string; ways: WayResult[]; lines: string[] };
-export type TextTestState = { running: boolean; startedAt: number; finishedAt: number | null; total: number; capUsd: number; results: CaseRun[]; active: string[]; totals: Record<WayKey, WayResult> | null };
+export type TextTestState = {
+  set: TestSet;
+  ways: readonly WayKey[];
+  running: boolean;
+  startedAt: number;
+  finishedAt: number | null;
+  total: number;
+  capUsd: number;
+  results: CaseRun[];
+  active: string[];
+  totals: Partial<Record<WayKey, WayResult>> | null;
+};
