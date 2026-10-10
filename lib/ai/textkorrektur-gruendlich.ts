@@ -652,6 +652,8 @@ export type ThoroughOutcome =
       /** words an outside filter hid from the KI, as far as its answer shows them */
       hidden: HiddenWord[];
       verify: "ok" | "fehler";
+      /** why step 2 failed, for the Textkorrektur-Test log */
+      verifyMessage?: string;
       callIds: number[];
     }
   | { ok: false; message: string; callIds: number[] };
@@ -701,8 +703,10 @@ export async function correctThoroughly(
   let verify: "ok" | "fehler" = "ok";
   const v = proposals.length ? await verifyText(req, items, proposals, o.meta, version) : null;
   if (v?.callId) callIds.push(v.callId);
+  let verifyMessage: string | undefined;
   if (v && !v.ok) {
     verify = "fehler";
+    verifyMessage = v.message;
     items = items.map((it) => (it.kind === "hinweis" ? it : withNote(it, "Die zweite Prüfung ist fehlgeschlagen.")));
   } else if (v?.ok) {
     const applied = applyVerdicts(items, proposals, v.data, o.pattern);
@@ -714,5 +718,5 @@ export async function correctThoroughly(
     items = [...items, ...more.items];
     dropped += more.dropped;
   }
-  return { ok: true, items: flagItems(texts, items, { english }), stages: { analyse: listedItems.items, fassung }, data: a.data, dropped, unchecked, hidden, verify, callIds };
+  return { ok: true, items: flagItems(texts, items, { english }), stages: { analyse: listedItems.items, fassung }, data: a.data, dropped, unchecked, hidden, verify, ...(verifyMessage ? { verifyMessage } : {}), callIds };
 }

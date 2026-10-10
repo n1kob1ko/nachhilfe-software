@@ -118,7 +118,8 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 export function namePattern(names: string[]): RegExp | null {
   const parts = [...new Set(names.flatMap((n) => n.split(/[\s-]+/)).map((p) => p.replace(/[^\p{L}]/gu, "")).filter((p) => p.length >= 3))].sort((a, b) => b.length - a.length);
   if (!parts.length) return null;
-  return new RegExp(`(?<![\\p{L}\\p{N}])(?:${parts.map(escapeRe).join("|")})(?:s)?(?![\\p{L}\\p{N}])`, "giu");
+  // a genitive s stays outside the placeholder („Leas“ → „[Name]s“): hidden inside it, the KI added it once more („Leass“, test 4, 2026-10-09)
+  return new RegExp(`(?<![\\p{L}\\p{N}])(?:${parts.map(escapeRe).join("|")})(?=s?(?![\\p{L}\\p{N}]))`, "giu");
 }
 
 /**
