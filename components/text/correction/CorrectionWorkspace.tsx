@@ -499,6 +499,7 @@ export function CorrectionWorkspace(p: Props) {
                         {CAT.get(i.category)?.label ?? i.category}
                         {i.block !== null && ` · Absatz ${i.block + 1}`}
                         {i.kind !== "hinweis" && " · Stelle nicht eindeutig gefunden"}
+                        {i.source === "ki" && ORIGIN[i.origin] && ` · ${ORIGIN[i.origin]}`}
                       </p>
                       {i.quote && (
                         <p>
@@ -506,6 +507,7 @@ export function CorrectionWorkspace(p: Props) {
                         </p>
                       )}
                       <p>{i.explanation}</p>
+                      {i.review === "lehrer" && i.review_note && <p className="mt-1 text-[13px] text-amber">{i.review_note}</p>}
                     </div>
                     <Decision item={i} pending={pending} onDecide={decide} onRemove={() => run(async () => void ((await removeItemAction(c.id, i.id)) && setItems((xs) => xs.filter((x) => x.id !== i.id))))} compact />
                   </li>
@@ -904,6 +906,11 @@ function ItemCard(p: {
           <span>
             <b>Genau prüfen:</b> {i.review_note}
           </span>
+        </p>
+      )}
+      {i.review !== "lehrer" && i.review_note && (
+        <p className="text-[13px] text-ink-2" data-testid="info-zur-pruefung">
+          {i.review_note}
         </p>
       )}
       {(i.rule || p.skillName) && (

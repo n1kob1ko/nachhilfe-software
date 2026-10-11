@@ -82,6 +82,31 @@ export function applyChanges<C extends Change>(text: string, changes: C[]): { te
   return { text: out + text.slice(at), placed, skipped };
 }
 
+/** Signs that never stand after a space. */
+const CLOSING = /^[,.;:!?)]/;
+
+/**
+ * A change with the spaces at its edges right once it stands in the text: no space before a sign („gesagt , dass“,
+ * „Jahr .“) and no two spaces where a word went. Repaired by taking in the word before the place, or only the space
+ * when that word is not free (`free`: whether a range of the text may become part of the place); the student's other
+ * words never change. In the test of 2026-10-10 the second check sorted out three right corrections for such a space.
+ */
+export function tidyEdges<C extends Change>(text: string, c: C, free: (s: Span) => boolean = () => true): C {
+  let end = c.end;
+  let rep = c.replacement;
+  const head = text.slice(0, c.start);
+  const after = text.slice(end);
+  const space = /\s+$/.exec(head)?.[0] ?? "";
+  if (/^\s/.test(rep) && (space || !head)) rep = rep.trimStart();
+  if (/\s$/.test(rep) && (/^\s/.test(after) || CLOSING.test(after) || !after)) rep = rep.trimEnd();
+  if (!rep && !space && /^\s/.test(after)) end += /^\s+/.exec(after)![0].length;
+  if (!space || !(CLOSING.test(rep) || (!rep && (CLOSING.test(after) || /^\s/.test(after) || !after)))) return { ...c, end, replacement: rep };
+  // the word before comes in and its space goes: „gesagt das“ → „gesagt, dass“, „Jahr gewesen“ → „Jahr“
+  const word = /(\S+)(\s+)$/.exec(head);
+  if (word && free({ start: c.start - word[0].length, end: c.start })) return { ...c, start: c.start - word[0].length, end, replacement: word[1] + rep };
+  return { ...c, start: c.start - space.length, end, replacement: rep };
+}
+
 /** For comparing two versions of a sentence: typographic quotes and dashes plain, spaces collapsed. */
 export function comparable(s: string): string {
   return s
@@ -138,6 +163,19 @@ export function shapeOf(quote: string, replacement: string): Shape {
   };
 }
 
+/** The signs of a text without apostrophes. */
+const signsOf = (s: string) => punctOf(s).replace(/['’]/g, "");
+/** Words that join two main clauses. */
+const JOINERS = new Set("und aber oder denn sondern doch and but or so".split(" "));
+/** The replacement only adds one joining word after a comma („a lot, it“ → „a lot, and it“). In the test of 2026-10-10 this was marked although right. */
+function joinerOnly(quote: string, replacement: string): boolean {
+  const q = wordsOf(quote).map((w) => w.toLowerCase());
+  const r = wordsOf(replacement).map((w) => w.toLowerCase());
+  if (r.length !== q.length + 1) return false;
+  const k = r.findIndex((w, i) => w !== q[i]);
+  return JOINERS.has(r[k]) && r.slice(k + 1).every((w, i) => w === q[k + i]) && new RegExp(`[,;]\\s*${r[k]}(?![\\p{L}])`, "iu").test(replacement);
+}
+
 /**
  * Why a proposal's category or explanation does not fit the change it makes, or null. Only clear cases:
  * a Beistrich rule that changes words, a spelling rule that only moves a comma, an explanation about
@@ -149,8 +187,10 @@ export function mismatchOf(f: { category: string; quote: string; replacement: st
   const why = f.explanation;
   const upper = /großgeschrieben|großschreib|schreibt man groß|wird groß|groß geschrieben|großen anfangsbuchstaben|capital letter/i.test(why);
   const lower = /kleingeschrieben|kleinschreib|schreibt man klein|wird klein|klein geschrieben/i.test(why);
-  if (f.category === "zeichensetzung" && s.letters) return "Als Zeichensetzung bezeichnet, ändert aber Wörter.";
-  if (f.category === "rechtschreibung" && !s.letters && !s.caseOnly && !s.spaces && s.punct) return "Als Rechtschreibung bezeichnet, ändert aber nur Satzzeichen.";
+  // two main clauses joined by a comma alone get a joining word („a lot, it was“ → „a lot, and it was“): still punctuation
+  if (f.category === "zeichensetzung" && s.letters && !joinerOnly(f.quote, f.replacement)) return "Als Zeichensetzung bezeichnet, ändert aber Wörter.";
+  // an apostrophe belongs to the spelling of a word („it's“ → „its“, „gibt's“)
+  if (f.category === "rechtschreibung" && !s.letters && !s.caseOnly && !s.spaces && s.punct && signsOf(f.quote) !== signsOf(f.replacement)) return "Als Rechtschreibung bezeichnet, ändert aber nur Satzzeichen.";
   // „nicht klein-, sondern großgeschrieben“ names both
   if (upper && !s.toUpper && !(lower && s.toLower)) return "Die Erklärung spricht von Großschreibung, die Änderung schreibt aber nichts groß.";
   if (lower && !s.toLower && !(upper && s.toUpper)) return "Die Erklärung spricht von Kleinschreibung, die Änderung schreibt aber nichts klein.";
@@ -335,6 +375,11 @@ export function clip(s: string, max: number): string {
   return `${(space > max / 2 ? head.slice(0, space) : head).replace(/[\s,;:–-]+$/, "")} …`;
 }
 
+/** One more note on the suggestion without marking it: information for the teacher, no reason to look twice. */
+export function withInfo<T extends CheckItem>(it: T, note: string): T {
+  return { ...it, review_note: it.review_note.includes(note) ? it.review_note : clip(`${it.review_note} ${note}`, 450) };
+}
+
 /** The suggestion marked for the teacher, with one more reason (a sorted-out one stays sorted out). */
 export function withNote<T extends CheckItem>(it: T, note: string): T {
   const review_note = it.review_note.includes(note) ? it.review_note : clip(`${it.review_note} ${note}`, 450);
@@ -342,6 +387,21 @@ export function withNote<T extends CheckItem>(it: T, note: string): T {
 }
 
 const isPlaced = (i: CheckItem): i is CheckItem & { block: number; pos_start: number; pos_end: number } => i.block !== null && i.pos_start !== null && i.pos_end !== null;
+
+/**
+ * tidyEdges for every placed suggestion (the second check's better wording included); the places of the others and
+ * the places already decided (`decided`, per paragraph) stay free.
+ */
+export function tidyItems<T extends CheckItem>(blocks: string[], items: T[], decided: Map<number, Span[]> = new Map()): T[] {
+  return items.map((it, k) => {
+    if (!isPlaced(it) || it.kind === "hinweis" || it.review === "verworfen") return it;
+    const text = blocks[it.block] ?? "";
+    const others: Span[] = [...items.filter((o, j) => j !== k && isPlaced(o) && o.block === it.block && o.review !== "verworfen").map((o) => ({ start: o.pos_start!, end: o.pos_end! })), ...(decided.get(it.block) ?? [])];
+    const t = tidyEdges(text, { start: it.pos_start, end: it.pos_end, replacement: it.replacement }, (r) => !others.some((o) => o.start < r.end && r.start < o.end));
+    if (t.start === it.pos_start && t.end === it.pos_end && t.replacement === it.replacement) return it;
+    return { ...it, pos_start: t.start, pos_end: t.end, quote: text.slice(t.start, t.end), replacement: t.replacement };
+  });
+}
 
 /**
  * Marks for the teacher what the program can see is off: a category or explanation that does not fit

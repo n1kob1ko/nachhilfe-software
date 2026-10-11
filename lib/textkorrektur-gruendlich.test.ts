@@ -131,14 +131,14 @@ test("gründlich: Satz für Satz, zweite Prüfung, Regeln; was zweifelhaft ist, 
   assert.match(by(items, "meinen Freund").review_note, /unsicher/);
   const tense = by(items, "gehte");
   assert.equal(tense.explanation, "Die Vergangenheit von „gehen“ heißt „ging“.", "a wrong explanation is replaced");
-  assert.equal(tense.review, "lehrer");
+  assert.deepEqual([tense.review, tense.review_note], ["", "Die Erklärung hat die zweite Prüfung neu geschrieben."], "confirmed with the check's own explanation: said, not marked");
   const wrong = by(items, "ins Wasser");
   assert.deepEqual([wrong.status, wrong.review, wrong.decided_by], ["abgelehnt", "verworfen", null], "a wrong suggestion is sorted out, not shown");
   const rule = by(items, "Haus weil");
   assert.deepEqual([rule.origin, rule.review, rule.replacement], ["regel", "", "Haus, weil"], "the program's rule, confirmed by the check");
   assert.equal(by(items, "sehr sehr schön").review, "lehrer", "the analysis was not sure: stays marked even when the check agrees");
   const missed = by(items, "lange");
-  assert.deepEqual([missed.origin, missed.review], ["pruefung", "lehrer"]);
+  assert.deepEqual([missed.origin, missed.kind, missed.pos_start, missed.replacement, missed.review], ["pruefung", "hinweis", null, "lang", "lehrer"], "a style idea of the check is a marked hint, not a change in the text");
   assert.ok(items.every((i) => i.status === "offen" || i.review === "verworfen"), "nothing is accepted without the teacher");
 
   // „Alle übernehmen“ leaves out what is marked
@@ -146,13 +146,14 @@ test("gründlich: Satz für Satz, zweite Prüfung, Regeln; was zweifelhaft ist, 
   const after = s.tc.listItems(c.id);
   assert.equal(by(after, "Fahrad").status, "uebernommen");
   assert.equal(by(after, "Haus weil").status, "uebernommen");
-  for (const q of ["meinen Freund", "gehte", "sehr sehr schön", "lange"]) assert.equal(by(after, q).status, "offen", q);
+  assert.equal(by(after, "gehte").status, "uebernommen");
+  for (const q of ["meinen Freund", "sehr sehr schön", "lange"]) assert.equal(by(after, q).status, "offen", q);
   assert.equal(by(after, "ins Wasser").status, "abgelehnt");
   // the teacher brings a sorted-out one back: open again, marked
   s.tc.decideItem(c.id, wrong.id, "offen", s.niko.id);
   assert.deepEqual([by(s.tc.listItems(c.id), "ins Wasser").status, by(s.tc.listItems(c.id), "ins Wasser").review], ["offen", "lehrer"]);
   // a sorted-out suggestion never counts
-  assert.equal(s.tc.overview(after.filter((i) => i.quote !== "ins Wasser")).fehler, 2);
+  assert.equal(s.tc.overview(after.filter((i) => i.quote !== "ins Wasser")).fehler, 3);
   s.router.setTransport(null);
 });
 
@@ -396,4 +397,57 @@ test("gründlich neu: was die KI aus den Kennzeichnungen der Anweisung abschreib
   assert.equal(versionText("(Überschrift) Beschwerde über einen Rucksack", "Beschwerde über einen Rucksack"), "Beschwerde über einen Rucksack");
   assert.equal(versionText("[1] Punkt eins", "[1] Punkt eins"), "[1] Punkt eins", "the student's own bracket stays");
   assert.equal(versionText(null, "Das stimmt."), "");
+});
+
+test("gründlich neu: eine richtige Verbesserung mit Satzzeichen oder Streichung steht ohne falsches Leerzeichen im Text (Test 2026-10-10)", async () => {
+  const { comparedFindings, sentencesFor } = await import("./ai/textkorrektur-gruendlich");
+  const { applyChanges } = await import("./text-correction-checks");
+  const text = ["Er hat gesagt das er kommt.", "Das ist schneller als letztes Jahr gewesen.", "Das Auto bog ab und hat Noah übersehen."].join(" ");
+  const versions = ["Er hat gesagt, dass er kommt.", "Das war schneller als letztes Jahr.", "Das Auto bog ab und übersah Noah."];
+  const req = { subject: "Deutsch", blocks: [{ text, heading: false }] } as unknown as Parameters<typeof sentencesFor>[0];
+  const sentences = sentencesFor(req);
+  const { findings } = comparedFindings(sentences, {
+    sentences: [
+      { id: sentences[0].id, corrected: versions[0], findings: [f("das", ", dass", "zeichensetzung", "Vor „dass“ steht ein Beistrich, und „dass“ schreibt man mit ss.")] },
+      { id: sentences[1].id, corrected: versions[1], findings: [f("ist", "war", "grammatik", "Vergangenheit."), f("Jahr gewesen", "Jahr", "grammatik", "„gewesen“ ist hier zu viel.")] },
+      { id: sentences[2].id, corrected: versions[2], findings: [f("hat Noah übersehen", "übersah Noah", "grammatik", "Präteritum wie im übrigen Text.")] },
+    ],
+  } as never);
+  // the student's text with every change applied is exactly the KI's version: „gesagt , dass“ and „Jahr .“ were what the second check sorted out
+  const after = applyChanges(text, findings.map((x) => ({ start: x.from!, end: x.from! + x.quote.length, replacement: x.replacement }))).text;
+  assert.equal(after, versions.join(" "));
+  assert.deepEqual(findings.filter((x) => x.quote.includes("das")).map((x) => [x.quote, x.replacement]), [["gesagt das", "gesagt, dass"]]);
+  assert.ok(findings.every((x) => !/^\s|\s$/.test(x.replacement) && !/ [,.]/.test(x.replacement)), JSON.stringify(findings.map((x) => x.replacement)));
+});
+
+test("gründlich: ein Vorschlag mit einem Formfehler am Rand wird repariert statt aussortiert", async () => {
+  const { anchorFindings } = await import("./text-correction-core");
+  const doc = para("Er hat gesagdt das er kommt. Das war schneller als letztes Jahr gewesen.");
+  const finding = (quote: string, replacement: string) => ({ para: 1, quote, replacement, category: "zeichensetzung", kind: "fehler", rule: "", explanation: "Erklärung.", skill_id: null });
+  const r = anchorFindings(doc, { findings: [finding("gesagdt", "gesagt"), finding("das", ", dass"), finding("Jahr gewesen", "Jahr ")], hints: [] }, { pattern: null, level: { maxStyle: 5, maxMarks: 20 }, skills: new Set() });
+  assert.deepEqual(r.items.map((i) => [i.quote, i.replacement]), [["gesagdt", "gesagt"], [" das", ", dass"], ["Jahr gewesen", "Jahr"]]);
+  assert.equal(r.dropped, 0);
+  // the word before belongs to a suggestion further down the list: it stays free, nothing is lost
+  const later = anchorFindings(doc, { findings: [finding("das", ", dass"), finding("gesagdt", "gesagt")], hints: [] }, { pattern: null, level: { maxStyle: 5, maxMarks: 20 }, skills: new Set() });
+  assert.deepEqual(later.items.map((i) => [i.quote, i.replacement]), [[" das", ", dass"], ["gesagdt", "gesagt"]]);
+  assert.equal(later.dropped, 0);
+});
+
+test("gründlich: eine Erklärung, die die zweite Prüfung neu schreibt, ist eine Information; eine fragliche ohne bessere bleibt markiert", async () => {
+  const { applyVerdicts } = await import("./ai/textkorrektur-gruendlich");
+  const it = { block: 0, pos_start: 0, pos_end: 7, quote: "Kristal", replacement: "Kristall", category: "rechtschreibung", kind: "fehler", rule: "", explanation: "Doppel-l.", review: "" as const, review_note: "", origin: "analyse" as const };
+  const proposals = [0, 1].map((k) => ({ k, para: 1, start: 0, end: 7, quote: "Kristal", replacement: "Kristall" }));
+  const check = (nr: number, better: string | null) => ({ nr, verdict: "richtig", explanation_ok: false, better_replacement: null, better_explanation: better, reason: "Die Erklärung ist zu knapp.", category: "rechtschreibung" });
+  const out = applyVerdicts([it, it], proposals, { checks: [check(1, "„Kristall“ schreibt man mit zwei l."), check(2, null)], missed: [] }, null).items;
+  assert.deepEqual([out[0].review, out[0].explanation, out[0].review_note], ["", "„Kristall“ schreibt man mit zwei l.", "Die Erklärung hat die zweite Prüfung neu geschrieben."]);
+  assert.equal(out[1].review, "lehrer");
+  assert.match(out[1].review_note, /fraglich/);
+});
+
+test("gründlich: eine Stilidee der zweiten Prüfung ist ein markierter Hinweis, ein übersehener Fehler bleibt ein markierter Vorschlag", async () => {
+  const { styleAsHint } = await import("./ai/textkorrektur-gruendlich");
+  const it = (kind: "stil" | "fehler") => ({ block: 0, pos_start: 4, pos_end: 9, quote: "lange", replacement: "lang", category: "ausdruck", kind, rule: "", explanation: "Kürzer.", skill_id: null, review: "lehrer" as const, review_note: "Von der zweiten Prüfung gefunden, nicht weiter geprüft.", origin: "pruefung" as const });
+  const hint = styleAsHint(it("stil"));
+  assert.deepEqual([hint.kind, hint.pos_start, hint.pos_end, hint.quote, hint.replacement, hint.review], ["hinweis", null, null, "lange", "lang", "lehrer"]);
+  assert.deepEqual(styleAsHint(it("fehler")), it("fehler"));
 });

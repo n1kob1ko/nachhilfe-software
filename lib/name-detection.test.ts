@@ -61,3 +61,33 @@ test("Namenserkennung auf den 9 erfundenen Testtexten: jeder Name gefunden, kein
 test("Weitere Namen der Lehrkraft: Komma, Strichpunkt oder Zeile, ohne Leeres und Doppeltes", () => {
   assert.deepEqual(parseNames(" Bello, Frau Huber;\n,Bello , 42 , Dr. Eva Gruber"), ["Bello", "Huber", "Eva Gruber"], "„Frau“ would be replaced everywhere");
 });
+
+const maskedWith = (names: string[], text: string) => maskText(text, namePattern(names)).masked;
+
+test("Namen, die auch Wörter sind: nur ersetzt, wo sie als Name stehen (Test 2026-10-10: „Niemand weiß“, „a young fox“)", () => {
+  // the two everyday words that were hidden in the test, and the KI could not correct them
+  assert.equal(masked("Herr Direktor Weiß kam. Niemand weiß, wo er war."), "Herr Direktor [Name] kam. Niemand weiß, wo er war.");
+  assert.equal(masked("The leader, Mrs Fox, showed us a young fox. The fox was hurt."), "The leader, Mrs [Name], showed us a young fox. The fox was hurt.");
+  // a noun after an article or a possessive stays, an adjective in lower case too
+  assert.equal(masked("Unsere Lehrerin, Frau Sommer, fuhr im Sommer weg. Frau Sommers Auto war alt."), "Unsere Lehrerin, Frau [Name], fuhr im Sommer weg. Frau [Name]s Auto war alt.");
+  assert.deepEqual(detectNames(["Frau Hofer kam. Frau Hofers Auto war alt."]), ["Hofer"], "the genitive is no second name");
+  assert.equal(masked("Elfriede Stern sah keinen Stern. Ein heller Stern fiel."), "[Name] [Name] sah keinen Stern. Ein heller Stern fiel.");
+  assert.equal(masked("Andrea Wolf heulte wie ein Wolf."), "[Name] [Name] heulte wie ein Wolf.");
+  assert.equal(masked("Laut Herrn Klein ist die Klasse zu klein."), "Laut Herrn [Name] ist die Klasse zu klein.");
+  // privacy first: before a surname in spoken German, or a capital in English, the name stays hidden
+  assert.equal(masked("Frau Sommer kam. Die Sommer hat gesagt, wir gehen zum Wolf."), "Frau [Name] kam. Die [Name] hat gesagt, wir gehen zum Wolf.");
+  assert.equal(masked("Herr Wolf kam. Die Sommer und der Wolf lachten, beim Wolf gab es Kuchen."), "Herr [Name] kam. Die Sommer und der [Name] lachten, beim [Name] gab es Kuchen.");
+  assert.equal(masked("Herr Müller kam. Der Müller war nett, beim Müller gab es Saft."), "Herr [Name] kam. Der [Name] war nett, beim [Name] gab es Saft.", "a frequent surname from a trade: hidden everywhere, as before");
+  assert.equal(masked("I met Mrs Fox. I think that Fox is nice."), "I met Mrs [Name]. I think that [Name] is nice.");
+  // „Dear“ is a form of address, „Sir“ is no name
+  assert.deepEqual(detectNames(["Dear Hope, I hope you are well. Dear Sir, thank you."]), ["Hope"]);
+  assert.equal(masked("Dear Hope, I hope you are well. Dear Sir, thank you."), "Dear [Name], I hope you are well. Dear Sir, thank you.");
+});
+
+test("Namen der Lehrkraft, die auch Wörter sind: groß geschrieben oder nach Anrede und Verwandtschaft ersetzt", () => {
+  assert.equal(maskedWith(["Ernst"], "Opa Ernst nahm das ernst. Ernst lachte. opa ernst kam."), "Opa [Name] nahm das ernst. [Name] lachte. opa [Name] kam.");
+  assert.equal(maskedWith(["Will", "Mark"], "I will play with Will and Mark. Uncle Mark got a good mark."), "I will play with [Name] and [Name]. Uncle [Name] got a good mark.");
+  assert.equal(maskedWith(["Weiß"], "frau weiß kam. Niemand weiß es."), "frau [Name] kam. Niemand weiß es.", "a student writing the name small after „frau“");
+  // a name that is no word stays hidden in every spelling, as before
+  assert.equal(maskedWith(["Lena"], "lena und LENA kamen. Lenas Hund bellte."), "[Name] und [Name] kamen. [Name]s Hund bellte.");
+});

@@ -92,3 +92,27 @@ test("Fassungsvergleich: eine Änderung direkt neben einer ausgeblendeten Gruppe
   // a word that moves past a placeholder is still a move, not something the filter took
   assert.deepEqual(changesOf("Deshalb die Lehrer müssten ständig schauen.", "Deshalb müssten die [PERSON_NAME] ständig schauen."), [["die Lehrer müssten", "müssten die Lehrer"]]);
 });
+
+/** with every change applied the sentence is exactly the KI's version, every space included */
+const exact = (s: string, c: string) => assert.equal(applyChanges(s, compareVersions(s, c).changes).text, c);
+
+test("Fassungsvergleich: kein Leerzeichen vor einem neuen Satzzeichen, keine zwei nach einem gestrichenen Wort (Test 2026-10-10)", () => {
+  // „gesagt , dass“ and „Jahr .“ in the text: the second check sorted out these right corrections for the space
+  const pairs = [
+    ["Er hat gesagt das er mich bald besuchen kommt.", "Er hat gesagt, dass er mich bald besuchen kommt."],
+    ["Das ist schneller als letztes Jahr gewesen.", "Das war schneller als letztes Jahr."],
+    ["Ein silbernes Auto bog nach rechts ab und hat Noah übersehen.", "Ein silbernes Auto bog nach rechts ab und übersah Noah."],
+    ["Wir haben gestern sehr lange gespielt.", "Wir haben gestern lange gespielt."],
+    ["Dann gingen wir nach Hause und dann aßen wir.", "Dann gingen wir nach Hause und aßen."],
+    ["Am Ende sagte er das es gut ist.", "Am Ende sagte er, dass es gut sei."],
+    ["Und dann gingen wir heim.", "Dann gingen wir heim."],
+    ["Er sagte gesten das er kommt.", "Er sagte gestern, dass er kommt."],
+  ];
+  for (const [s, c] of pairs) exact(s, c);
+  assert.deepEqual(changesOf(pairs[0][0], pairs[0][1]), [["gesagt das", "gesagt, dass"]]);
+  assert.deepEqual(changesOf(pairs[1][0], pairs[1][1]), [["ist", "war"], ["Jahr gewesen", "Jahr"]]);
+  assert.deepEqual(changesOf(pairs[2][0], pairs[2][1]), [["hat", "übersah"], ["Noah übersehen", "Noah"]]);
+  assert.deepEqual(changesOf(pairs[3][0], pairs[3][1]), [["gestern sehr", "gestern"]]);
+  // what was right before stays as it was
+  assert.deepEqual(changesOf("Ich habe mich für dieses Modell entschieden um darin meine Jause zu transportieren.", "Ich habe mich für dieses Modell entschieden, um darin meine Jause zu transportieren."), [["entschieden", "entschieden,"]]);
+});
