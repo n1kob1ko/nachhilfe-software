@@ -74,7 +74,7 @@ test("Neues Subjekt im Vorschlag: zur Prüfung markiert, ein getauschtes Fürwor
   assert.equal(newSubjectOf("weil er stolperte über eine Bodenwelle", "weil er über eine Bodenwelle stolperte"), null);
   assert.equal(newSubjectOf("ihnen", "Ihnen"), null);
   assert.equal(newSubjectOf("Er ist sehr alt", "Es ist sehr alt"), null, "a pronoun swapped for another");
-  const item = { block: 0, pos_start: 0, pos_end: 51, quote: "Wenn sich auch in der Schule Computerspiele erlauben", replacement: "Wenn man sich auch in der Schule Computerspiele erlaubt", category: "grammatik", kind: "fehler", rule: "", explanation: "Hier fehlt das Subjekt.", review: "" as const, review_note: "" };
+  const item = { block: 0, pos_start: 0, pos_end: 52, quote: "Wenn sich auch in der Schule Computerspiele erlauben", replacement: "Wenn man sich auch in der Schule Computerspiele erlaubt", category: "grammatik", kind: "fehler", rule: "", explanation: "Hier fehlt das Subjekt.", review: "" as const, review_note: "" };
   const text = "Wenn sich auch in der Schule Computerspiele erlauben, lernen alle.";
   assert.equal(flagItems([text], [item], { english: false })[0].review, "lehrer");
   assert.equal(flagItems([text], [item], { english: true })[0].review, "", "German only: „He is“ → „It is“ was right in the test");

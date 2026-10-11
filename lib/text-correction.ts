@@ -13,7 +13,7 @@ import { after } from "next/server";
 import { correctTextWithAI, estimateTokens, type AICorrection, type CorrectionRequest } from "./ai/textkorrektur";
 import { correctThoroughly, englishText, estimateTokensThorough, thoroughVersion, type HiddenWord } from "./ai/textkorrektur-gruendlich";
 import { costOf, FUNCTIONS, routeFor } from "./ai/config";
-import { flagItems } from "./text-correction-checks";
+import { acceptProblem, flagItems, notApplicable, setAside } from "./text-correction-checks";
 import { PROVIDER_LABEL } from "./ai/providers";
 import { aiEnabled } from "./ai/router";
 import { db } from "./db";
@@ -284,7 +284,7 @@ export function startThoroughRecheck(correctionId: number, teacherId: number, o:
       .run(now, teacherId, now, o.names ? JSON.stringify(o.names) : null, now, correctionId);
     if (!r.changes) return false;
     conn
-      .prepare("DELETE FROM text_correction_items WHERE correction_id = ? AND source = 'ki' AND (status = 'offen' OR (status = 'abgelehnt' AND review = 'verworfen' AND decided_by IS NULL))")
+      .prepare("DELETE FROM text_correction_items WHERE correction_id = ? AND source = 'ki' AND (status = 'offen' OR (status = 'abgelehnt' AND review IN ('verworfen', 'unpassend') AND decided_by IS NULL))")
       .run(correctionId);
     return true;
   })();
@@ -338,7 +338,7 @@ export async function runCorrection(correctionId: number, teacherId: number | nu
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ki', ?, ?, ?, ?)`,
       );
       for (const i of result.items)
-        insert.run(correctionId, i.block, i.pos_start, i.pos_end, i.quote, i.replacement, i.category, i.kind, i.rule, i.explanation, i.skill_id, i.review === "verworfen" ? "abgelehnt" : "offen", i.origin, i.review, i.review_note, now);
+        insert.run(correctionId, i.block, i.pos_start, i.pos_end, i.quote, i.replacement, i.category, i.kind, i.rule, i.explanation, i.skill_id, setAside(i) ? "abgelehnt" : "offen", i.origin, i.review, i.review_note, now);
       const d = result.data;
       const recSkill = typeof d.recommendation_skill_id === "string" && skills.has(d.recommendation_skill_id) ? d.recommendation_skill_id : null;
       // who answered, as the teacher reads it: "Anthropic · claude-…"
@@ -371,23 +371,67 @@ export async function runCorrection(correctionId: number, teacherId: number | nu
 
 // ---------- the teacher's decisions ----------
 
-/** Accept or reject one suggestion (or set it back to open). An accepted one may carry the teacher's own wording. */
-export function decideItem(correctionId: number, itemId: number, status: ItemStatus, teacherId: number, replacement?: string): CorrectionItem | null {
+/** What the teacher reads when a suggestion cannot be accepted. */
+export const NOT_APPLICABLE = "Dieser Vorschlag passt nicht an seine Stelle im Text und kann nicht übernommen werden. Du kannst die Stelle selbst korrigieren.";
+
+/**
+ * Whether the change of a placed suggestion can go into the Endfassung, checked once more right before it is accepted
+ * (lib/text-correction-checks.ts acceptProblem): the place in the snapshot still holds the quoted words, the replacement
+ * fits there and together with the changes already accepted in that paragraph (`accepted`, without the item itself).
+ */
+function acceptCheck(doc: TextDoc, item: CorrectionItem & { block: number; pos_start: number; pos_end: number }, replacement: string, accepted: CorrectionItem[]) {
+  const b = doc[item.block];
+  if (!b) return { why: "Die Stelle gibt es im Text nicht.", alone: true };
+  const others = accepted.filter((i) => i.id !== item.id && i.status === "uebernommen" && placed(i) && i.block === item.block).map((i) => ({ start: i.pos_start!, end: i.pos_end!, replacement: i.replacement }));
+  return acceptProblem(blockText(b), { start: item.pos_start, end: item.pos_end, replacement, quote: item.quote }, others);
+}
+
+/** A stored suggestion that does not fit its place (one from before this check, 2026-10-11) is set aside for good. */
+function setAsideUnfit(item: CorrectionItem, why: string) {
+  const it = notApplicable(item, why);
+  db().prepare("UPDATE text_correction_items SET status = 'abgelehnt', review = ?, review_note = ? WHERE id = ?").run(it.review, it.review_note, item.id);
+  return db().prepare("SELECT * FROM text_correction_items WHERE id = ?").get(item.id) as CorrectionItem;
+}
+
+export type DecideResult = { item: CorrectionItem } | { error: string; item?: CorrectionItem };
+
+/**
+ * Accept or reject one suggestion (or set it back to open). An accepted one may carry the teacher's own wording.
+ * Before a placed one is accepted its change is checked once more against the snapshot (acceptCheck); one that does
+ * not fit is not accepted and nothing else changes. A not applicable one (review „unpassend“) cannot be decided at all.
+ * null: no such suggestion in this correction.
+ */
+export function decideItem(correctionId: number, itemId: number, status: ItemStatus, teacherId: number, replacement?: string): DecideResult | null {
   const conn = db();
   const item = conn.prepare("SELECT * FROM text_correction_items WHERE id = ? AND correction_id = ?").get(itemId, correctionId) as CorrectionItem | undefined;
-  if (!item) return null;
+  const c = getCorrection(correctionId);
+  if (!item || !c) return null;
+  if (item.review === "unpassend") return { error: NOT_APPLICABLE, item };
   const now = iso();
-  const text = replacement !== undefined && status === "uebernommen" && placed(item) ? replacement.replace(/\s+/g, " ").slice(0, 200) : item.replacement;
+  const own = replacement !== undefined && status === "uebernommen" && placed(item) ? replacement.replace(/\s+/g, " ").slice(0, 200) : null;
+  const text = own ?? item.replacement;
+  if (status === "uebernommen" && placed(item)) {
+    const problem = acceptCheck(snapshotDoc(c), item, text, listItems(correctionId));
+    if (problem) {
+      // the stored suggestion itself does not fit: set aside; the teacher's own wording or a clash with an accepted one: only refused
+      if (problem.alone && own === null) return { error: `Nicht übernommen: ${problem.why} Der Vorschlag ist jetzt als nicht anwendbar markiert. Du kannst die Stelle selbst korrigieren.`, item: setAsideUnfit(item, problem.why) };
+      return { error: `Nicht übernommen: ${problem.why}` };
+    }
+  }
   // one the check sorted out and the teacher brings back stays marked for a close look
   const review = item.review === "verworfen" && status !== "abgelehnt" ? "lehrer" : item.review;
   conn
     .prepare("UPDATE text_correction_items SET status = ?, replacement = ?, review = ?, decided_by = ?, decided_at = ? WHERE id = ?")
     .run(status, text, review, status === "offen" ? null : teacherId, status === "offen" ? null : now, itemId);
   conn.prepare("UPDATE text_corrections SET updated_at = ? WHERE id = ?").run(now, correctionId);
-  return conn.prepare("SELECT * FROM text_correction_items WHERE id = ?").get(itemId) as CorrectionItem;
+  return { item: conn.prepare("SELECT * FROM text_correction_items WHERE id = ?").get(itemId) as CorrectionItem };
 }
 
-/** „Alle übernehmen“ / „Alle ablehnen“: every open suggestion, optionally of one category or kind. */
+/**
+ * „Alle übernehmen“ / „Alle ablehnen“: every open suggestion, optionally of one category or kind. Accepting checks
+ * every placed one as decideItem does, in the order of the text and with the ones accepted before it; what does not
+ * fit stays open (or is set aside when it does not fit by itself). The number of suggestions decided.
+ */
 export function decideAll(correctionId: number, status: "uebernommen" | "abgelehnt", teacherId: number, filter: { category?: string; kind?: ItemKind } = {}): number {
   const where = ["correction_id = ?", "status = 'offen'"];
   const args: (string | number)[] = [correctionId];
@@ -402,11 +446,32 @@ export function decideAll(correctionId: number, status: "uebernommen" | "abgeleh
   // what the teacher must look at closely is never accepted in bulk
   if (status === "uebernommen") where.push("review = ''");
   const now = iso();
-  const res = db()
-    .prepare(`UPDATE text_correction_items SET status = ?, decided_by = ?, decided_at = ? WHERE ${where.join(" AND ")}`)
-    .run(status, teacherId, now, ...args);
-  db().prepare("UPDATE text_corrections SET updated_at = ? WHERE id = ?").run(now, correctionId);
-  return res.changes;
+  const conn = db();
+  const c = getCorrection(correctionId);
+  if (!c) return 0;
+  const n = conn.transaction(() => {
+    const these = conn.prepare(`SELECT * FROM text_correction_items WHERE ${where.join(" AND ")} ORDER BY COALESCE(block, -1), COALESCE(pos_start, -1), id`).all(...args) as CorrectionItem[];
+    const all = listItems(correctionId);
+    const doc = snapshotDoc(c);
+    const decide = conn.prepare("UPDATE text_correction_items SET status = ?, decided_by = ?, decided_at = ? WHERE id = ?");
+    let done = 0;
+    for (const it of these) {
+      if (status === "uebernommen" && placed(it)) {
+        const problem = acceptCheck(doc, it, it.replacement, all);
+        if (problem) {
+          if (problem.alone) setAsideUnfit(it, problem.why);
+          continue;
+        }
+      }
+      decide.run(status, teacherId, now, it.id);
+      const at = all.findIndex((x) => x.id === it.id);
+      if (at >= 0) all[at] = { ...all[at], status };
+      done++;
+    }
+    return done;
+  })();
+  conn.prepare("UPDATE text_corrections SET updated_at = ? WHERE id = ?").run(now, correctionId);
+  return n;
 }
 
 export type TeacherItemInput = { block: number | null; start: number | null; end: number | null; category: string; kind: ItemKind; replacement: string; explanation: string; rule?: string };
@@ -432,8 +497,13 @@ export function addTeacherItem(correctionId: number, input: TeacherItemInput, te
     quote = t.slice(s, e);
     replacement = input.replacement.replace(/\s+/g, " ").slice(0, 200);
     if (replacement === quote) return { error: "Die Verbesserung ist gleich wie der Text." };
-    const clash = listItems(correctionId).some((i) => placed(i) && i.block === b && i.status !== "abgelehnt" && overlaps({ start: i.pos_start, end: i.pos_end }, { start: s, end: e }));
+    const all = listItems(correctionId);
+    const clash = all.some((i) => placed(i) && i.block === b && i.status !== "abgelehnt" && overlaps({ start: i.pos_start, end: i.pos_end }, { start: s, end: e }));
     if (clash) return { error: "An dieser Stelle gibt es schon eine Korrektur." };
+    // accepted at once: checked like every accepted suggestion
+    const accepted = all.filter((i) => placed(i) && i.block === b && i.status === "uebernommen").map((i) => ({ start: i.pos_start!, end: i.pos_end!, replacement: i.replacement }));
+    const problem = acceptProblem(t, { start: s, end: e, replacement }, accepted);
+    if (problem) return { error: `Nicht gespeichert: ${problem.why}` };
   } else if (!explanation) return { error: "Bitte einen Hinweis eingeben." };
   const now = iso();
   const res = db()

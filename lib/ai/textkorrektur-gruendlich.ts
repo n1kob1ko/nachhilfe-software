@@ -19,7 +19,7 @@
  * sentence with the KI's version (lib/text-correction-diff.ts), the KI's list giving the explanations.
  */
 import { z } from "zod";
-import { applyChanges, clip, comparable, flagItems, ruleItems, sentencesOf, tidyItems, withInfo, withNote, type CheckItem, type Sentence } from "../text-correction-checks";
+import { applyChanges, clip, comparable, flagItems, replacementProblem, ruleItems, sentencesOf, setAside, tidyItems, withInfo, withNote, type CheckItem, type Sentence } from "../text-correction-checks";
 import { anchorFindings, FOREIGN_PLACEHOLDER, maskText, NAME_PLACEHOLDER, type InFinding, type ItemOrigin, type NewItem, type Range } from "../text-correction-core";
 import { compareVersions, hidesGrammar } from "../text-correction-diff";
 import { isEnglish, normalizeCategory, TEXT_CATEGORIES, type Level } from "../text-correction-rules";
@@ -465,7 +465,7 @@ export function maskedProposals(blocks: string[], items: (CheckItem & { origin?:
   };
   const out: Proposal[] = [];
   items.forEach((it, k) => {
-    if (it.block === null || it.pos_start === null || it.pos_end === null || it.kind === "hinweis" || it.review === "verworfen") return;
+    if (it.block === null || it.pos_start === null || it.pos_end === null || it.kind === "hinweis" || setAside(it)) return;
     const m = masks[it.block];
     if (!m) return;
     const start = toMasked(m.toOrig, it.pos_start);
@@ -563,6 +563,33 @@ export function echoesNeighbours(p: Pick<Proposal, "quote" | "before" | "after">
   return false;
 }
 
+/**
+ * Why a better wording of the second check does not clearly fit the place it was asked about, or null; then the first
+ * suggestion stays. In the test of 2026-10-11 (N07) the check wrote „gieng dann allein“ for „alleine“ after „gieng dann“:
+ * taken over, the text would have read „gieng dann gieng dann allein“. Besides what would damage the text there
+ * (replacementProblem, on the masked text next to the place), the wording may not begin with the words just before the
+ * place or end with those just after it, unless the place does too: then it stands for more words than the place.
+ */
+export function betterMisfit(p: Pick<Proposal, "quote" | "before" | "after">, better: string): string | null {
+  const before = p.before ?? "";
+  const after = p.after ?? "";
+  const damage = replacementProblem(before + p.quote + after, { start: before.length, end: before.length + p.quote.length, replacement: better });
+  if (damage) return damage;
+  const words = (s: string) => s.match(/[\p{L}\p{N}]+(?:[-'’][\p{L}\p{N}]+)*/gu) ?? [];
+  const low = (ws: string[]) => ws.join(" ").toLowerCase();
+  const b = words(better);
+  const q = words(p.quote);
+  const left = words(before);
+  const right = words(after);
+  for (let n = Math.min(b.length, 6); n >= 1; n--) {
+    const head = low(b.slice(0, n));
+    if (n <= left.length && head === low(left.slice(-n)) && low(q.slice(0, n)) !== head) return `„${b.slice(0, n).join(" ")}“ steht schon direkt vor der Stelle.`;
+    const tail = low(b.slice(-n));
+    if (n <= right.length && tail === low(right.slice(0, n)) && low(q.slice(-n)) !== tail) return `„${b.slice(-n).join(" ")}“ steht schon direkt nach der Stelle.`;
+  }
+  return null;
+}
+
 export function applyVerdicts<T extends CheckItem & { origin: ItemOrigin }>(items: T[], proposals: Proposal[], data: Verify, pattern: RegExp | null): { items: T[]; missed: InFinding[] } {
   const out = [...items];
   const byNr = new Map<number, Verify["checks"][number]>();
@@ -589,10 +616,14 @@ export function applyVerdicts<T extends CheckItem & { origin: ItemOrigin }>(item
         // the place is right as the student wrote it
         out[p.k] = { ...it, review: "verworfen", review_note: clip(`Von der zweiten Prüfung aussortiert${reason ? `: ${reason}` : "."}`, 300) };
       } else if (better.trim()) {
-        out[p.k] = withNote(
-          { ...it, replacement: restoreNames(better, it.quote, pattern).slice(0, 200), explanation: betterExplanation || it.explanation },
-          `Die zweite Prüfung hat „${short(it.replacement, 60)}“ verbessert${reason ? `: ${reason}` : "."}`,
-        );
+        const misfit = betterMisfit(p, better);
+        out[p.k] = misfit
+          ? // the first suggestion stays, marked: the check's wording is meant for other words than the place
+            withNote(it, `Die zweite Prüfung hält das für falsch. Ihre Fassung „${short(restoreNames(better, it.quote, pattern), 60)}“ wurde nicht übernommen, weil sie nicht genau an diese Stelle passt: ${misfit}${reason ? ` Begründung der Prüfung: ${reason}` : ""}`)
+          : withNote(
+              { ...it, replacement: restoreNames(better, it.quote, pattern).slice(0, 200), explanation: betterExplanation || it.explanation },
+              `Die zweite Prüfung hat „${short(it.replacement, 60)}“ verbessert${reason ? `: ${reason}` : "."}`,
+            );
       } else {
         // „falsch“ alone threw out right suggestions in the test (2 of 3, 2026-10-09): a doubt for the teacher, not a decision
         out[p.k] = withNote(it, `Die zweite Prüfung hält das für falsch${reason ? `: ${reason}` : "."}`);
