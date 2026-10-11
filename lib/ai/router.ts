@@ -91,9 +91,23 @@ function fingerprint(fn: AIFunction, provider: string, model: string, system: st
   return createHash("sha256").update(JSON.stringify(extra === undefined ? [fn, provider, model, system, prompt] : [fn, provider, model, system, prompt, extra])).digest("hex");
 }
 
+/**
+ * Why a request brought no data, finer than status, for a plain message to the teacher: switched off, budget used up,
+ * paused after outages, no answer in time, no connection, an error of the provider (with its HTTP code, when there
+ * is one), an answer cut off, empty, without JSON, of the wrong shape or refused, a setting that does not fit
+ * (a photo for a provider that cannot read one), or an unusable answer without a known reason.
+ */
+export type FailCause = "aus" | "budget" | "pausiert" | "zeitlimit" | "nicht_erreichbar" | "anbieter" | "unvollstaendig" | "leer" | "json" | "schema" | "verweigert" | "einstellung" | "unbrauchbar";
+
 export type Outcome<T> =
   | { ok: true; data: T; reused: boolean; callId: number | null }
-  | { ok: false; status: "aus" | "budget" | "pausiert" | "timeout" | "fehler" | "abgelehnt"; message: string; callId: number | null };
+  | { ok: false; status: "aus" | "budget" | "pausiert" | "timeout" | "fehler" | "abgelehnt"; cause: FailCause; code?: number; message: string; callId: number | null };
+
+/** The HTTP status of a provider's error (ProviderHttpError, or the Anthropic SDK's API errors), if it has one. */
+function httpStatusOf(e: unknown): number | undefined {
+  const s = (e as { status?: unknown } | null)?.status;
+  return typeof s === "number" && s >= 400 ? s : undefined;
+}
 
 const MESSAGES = {
   aus: "Die KI ist ausgeschaltet oder es ist kein Schlüssel hinterlegt.",
@@ -114,7 +128,7 @@ export async function runAI<S extends z.ZodType>(
   prompt: Prompt,
   o: { maxTokens?: number; meta?: AIMeta } = {},
 ): Promise<Outcome<z.infer<S>>> {
-  if (!aiEnabled(fn)) return { ok: false, status: "aus", message: MESSAGES.aus, callId: null };
+  if (!aiEnabled(fn)) return { ok: false, status: "aus", cause: "aus", message: MESSAGES.aus, callId: null };
   const spec = FUNCTIONS[fn];
   const route = routeFor(fn);
   const ov = overrideStore.getStore();
@@ -151,12 +165,12 @@ export async function runAI<S extends z.ZodType>(
     const r = await running;
     return r.ok ? { ...r, data: r.data as z.infer<S>, reused: true, callId: log("cache") } : r;
   }
-  if (breaker.until > now()) return { ok: false, status: "pausiert", message: MESSAGES.pausiert, callId: log("pausiert") };
+  if (breaker.until > now()) return { ok: false, status: "pausiert", cause: "pausiert", message: MESSAGES.pausiert, callId: log("pausiert") };
   const b = budgetState(now());
-  if (b.level === "aus") return { ok: false, status: "budget", message: MESSAGES.budget, callId: log("budget") };
+  if (b.level === "aus") return { ok: false, status: "budget", cause: "budget", message: MESSAGES.budget, callId: log("budget") };
   // a photo or PDF the configured provider cannot read: a setting to change, not an outage
   const cannot = custom ? null : unsupported(provider, prompt);
-  if (cannot) return { ok: false, status: "fehler", message: cannot, callId: log("fehler", { error: cannot }) };
+  if (cannot) return { ok: false, status: "fehler", cause: "einstellung", message: cannot, callId: log("fehler", { error: cannot }) };
 
   const call = (async (): Promise<Outcome<z.infer<S>>> => {
     const maxTokens = Math.max(1, Math.min(o.maxTokens ?? spec.maxTokens, spec.maxTokens));
@@ -188,7 +202,7 @@ export async function runAI<S extends z.ZodType>(
       if (res.refusal || res.parsed == null) {
         const refused = log("abgelehnt", { ...usage, durationMs, error });
         ov?.onUsage?.(refused, res.usage);
-        return { ok: false, status: "abgelehnt", message: MESSAGES.abgelehnt, callId: refused };
+        return { ok: false, status: "abgelehnt", cause: res.refusal ? "verweigert" : (res.failure ?? "unbrauchbar"), message: MESSAGES.abgelehnt, callId: refused };
       }
       const callId = log("ok", { ...usage, durationMs, error });
       ov?.onUsage?.(callId, res.usage);
@@ -205,7 +219,9 @@ export async function runAI<S extends z.ZodType>(
         breaker.failures = 0;
       }
       const message = timedOut ? MESSAGES.timeout : `Die KI war nicht erreichbar (${e instanceof Error ? e.message : String(e)}).`.slice(0, 300);
-      return { ok: false, status: timedOut ? "timeout" : "fehler", message, callId: log(timedOut ? "timeout" : "fehler", { durationMs: Date.now() - started, error: message }) };
+      const code = timedOut ? undefined : httpStatusOf(e);
+      const cause: FailCause = timedOut ? "zeitlimit" : code ? "anbieter" : "nicht_erreichbar";
+      return { ok: false, status: timedOut ? "timeout" : "fehler", cause, ...(code ? { code } : {}), message, callId: log(timedOut ? "timeout" : "fehler", { durationMs: Date.now() - started, error: message }) };
     } finally {
       clearTimeout(timer);
     }

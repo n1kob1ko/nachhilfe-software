@@ -11,11 +11,12 @@
  */
 import { after } from "next/server";
 import { correctTextWithAI, estimateTokens, type AICorrection, type CorrectionRequest } from "./ai/textkorrektur";
-import { correctThoroughly, englishText, estimateTokensThorough, thoroughVersion, type HiddenWord } from "./ai/textkorrektur-gruendlich";
-import { costOf, FUNCTIONS, routeFor } from "./ai/config";
+import { correctThoroughly, englishText, estimateTokensThorough, thoroughVersion, type Analysis, type HiddenWord, type ThoroughVersion } from "./ai/textkorrektur-gruendlich";
+import { costOf, FUNCTIONS, routeFor, type AIFunction } from "./ai/config";
+import { budgetState } from "./ai/log";
 import { acceptProblem, flagItems, notApplicable, setAside } from "./text-correction-checks";
 import { PROVIDER_LABEL } from "./ai/providers";
-import { aiEnabled } from "./ai/router";
+import { aiEnabled, breakerState, clockNow } from "./ai/router";
 import { db } from "./db";
 import { skillsForStudent } from "./lehrplan";
 import { getSkill, getStudent } from "./repo";
@@ -24,6 +25,7 @@ import { blockText, parseDoc, type TextDoc } from "./text-doc";
 import {
   anchorFindings,
   clip,
+  failureText,
   maskedNames,
   maskText,
   NAME_PLACEHOLDER,
@@ -34,6 +36,7 @@ import {
   type CorrectionItem,
   type CorrectionMethod,
   type NewItem,
+  type VerifyStatus,
   type CorrectionRow,
   type ItemKind,
   type ItemStatus,
@@ -86,6 +89,51 @@ export const snapshotDoc = (c: Pick<CorrectionRow, "body">) => parseDoc(c.body);
 export function aiState(c: CorrectionRow, now = Date.now()): AIStatus {
   if (c.ai_status === "laeuft" && c.ai_started_at && now - Date.parse(c.ai_started_at) > runLimitMs(methodOf(c.method))) return "fehler";
   return c.ai_status;
+}
+
+/** How long „Erneut versuchen“ of the second check may take before it counts as interrupted. */
+const verifyLimitMs = () => FUNCTIONS.textpruefung.timeoutMs + 60_000;
+
+/** The second check of a „gründlich“ run; a repeat running longer than its timeout was interrupted (e.g. a restart). */
+export function verifyState(c: CorrectionRow, now = Date.now()): VerifyStatus {
+  if (c.verify_status === "laeuft" && (!c.ai_started_at || now - Date.parse(c.ai_started_at) > verifyLimitMs())) return "fehler";
+  return c.verify_status;
+}
+
+type StoredAnalysis = { version: ThoroughVersion; data: Analysis };
+
+/** Step 1's answer kept while the second check is owed (text_corrections.analysis); null when there is none or it is unreadable. */
+function storedAnalysis(c: Pick<CorrectionRow, "analysis">): StoredAnalysis | null {
+  if (!c.analysis) return null;
+  try {
+    const v = JSON.parse(c.analysis) as Partial<StoredAnalysis> | null;
+    return (v?.version === "neu" || v?.version === "bisher") && v.data && Array.isArray(v.data.sentences) ? (v as StoredAnalysis) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * What „Erneut versuchen“ repeats: pruefung = only the failed second check of a „gründlich“ run, with step 1's stored
+ * answer (step 1 is not paid again); ganz = the whole failed correction, as the teacher agreed to it. null = nothing to repeat.
+ */
+export type RetryKind = "pruefung" | "ganz";
+export function retryKind(c: CorrectionRow, now = Date.now()): RetryKind | null {
+  const state = aiState(c, now);
+  if (state === "fertig" && c.method === "gruendlich" && verifyState(c, now) === "fehler" && storedAnalysis(c)) return "pruefung";
+  if (state === "fehler" && c.ai_consent_at) return "ganz";
+  return null;
+}
+
+/**
+ * Why nothing should be sent to the KI right now: not set up, the month's budget used up, or paused after outages.
+ * Checked before a run is claimed, so a refused start sends nothing and leaves no row in the cost log.
+ */
+function sendBlocked(fn: AIFunction): string | null {
+  if (!aiEnabled(fn)) return "Die KI ist nicht eingerichtet. Du kannst den Text selbst korrigieren.";
+  if (budgetState(clockNow()).level === "aus") return "Das KI-Budget für diesen Monat ist aufgebraucht. Es wurde nichts an die KI gesendet.";
+  if (breakerState().paused) return "Die KI war zuletzt mehrmals nicht erreichbar und macht ein paar Minuten Pause. Es wurde nichts gesendet; bitte später nochmal versuchen.";
+  return null;
 }
 
 /** The level of the student the text belongs to. */
@@ -238,6 +286,8 @@ export function startAICorrection(
   const state = aiState(c);
   if (state === "fertig" || state === "laeuft") return { ok: true, correctionId: c.id, reused: true };
   const method = o.method ? methodOf(o.method) : defaultMethod();
+  const blocked = sendBlocked(method === "gruendlich" ? "textanalyse" : "textkorrektur");
+  if (blocked) return { ok: false, error: blocked };
   const now = iso();
   const claimed = db()
     .prepare(
@@ -250,8 +300,8 @@ export function startAICorrection(
   return launch(c.id, teacherId, o.wait);
 }
 
-function launch(correctionId: number, teacherId: number, wait?: boolean): StartResult | Promise<StartResult> {
-  const run = runCorrection(correctionId, teacherId).then(() => ({ ok: true as const, correctionId, reused: false }));
+function launch(correctionId: number, teacherId: number, wait?: boolean, o: { retry?: boolean } = {}): StartResult | Promise<StartResult> {
+  const run = runCorrection(correctionId, teacherId, o).then(() => ({ ok: true as const, correctionId, reused: false }));
   if (wait) return run;
   try {
     after(() => run);
@@ -271,7 +321,9 @@ export function startThoroughRecheck(correctionId: number, teacherId: number, o:
   const c = getCorrection(correctionId);
   if (!c) return { ok: false, error: "Korrektur nicht gefunden." };
   if (c.words > AI_MAX_WORDS || c.words < AI_MIN_WORDS) return { ok: false, error: "Diese Fassung kann die KI nicht korrigieren (Länge)." };
-  if (aiState(c) === "laeuft") return { ok: true, correctionId, reused: true };
+  if (aiState(c) === "laeuft" || verifyState(c) === "laeuft") return { ok: true, correctionId, reused: true };
+  const blocked = sendBlocked("textanalyse");
+  if (blocked) return { ok: false, error: blocked };
   const conn = db();
   const now = iso();
   const claimed = conn.transaction(() => {
@@ -292,14 +344,77 @@ export function startThoroughRecheck(correctionId: number, teacherId: number, o:
   return launch(correctionId, teacherId, o.wait);
 }
 
-/** Asks the KI and stores the checked suggestions. Never throws; a failure is kept on the correction. */
-export async function runCorrection(correctionId: number, teacherId: number | null): Promise<void> {
+/**
+ * „Erneut versuchen“ after a failure (never automatically): pruefung repeats only the second check with step 1's stored
+ * answer, ganz the whole correction with the method and names the teacher agreed to. Nothing is sent when the KI is off,
+ * the budget is used up or the KI pauses after outages; a second click while it runs sends nothing either (reused).
+ * The teacher's decisions stay; only the KI's undecided suggestions are replaced, and only when the repeat succeeds.
+ */
+export function retryAICorrection(correctionId: number, teacherId: number, o: { wait?: boolean } = {}): StartResult | Promise<StartResult> {
+  const c = getCorrection(correctionId);
+  if (!c) return { ok: false, error: "Korrektur nicht gefunden." };
+  if (aiState(c) === "laeuft" || verifyState(c) === "laeuft") return { ok: true, correctionId, reused: true };
+  const kind = retryKind(c);
+  if (!kind) return { ok: false, error: "Hier ist nichts fehlgeschlagen, das sich wiederholen lässt." };
+  const blocked = sendBlocked(kind === "pruefung" ? "textpruefung" : c.method === "gruendlich" ? "textanalyse" : "textkorrektur");
+  if (blocked) return { ok: false, error: blocked };
+  const now = iso();
+  const claimed =
+    kind === "pruefung"
+      ? db()
+          .prepare(
+            `UPDATE text_corrections SET verify_status = 'laeuft', verify_error = '', ai_started_at = ?, updated_at = ?
+             WHERE id = ? AND ai_status = 'fertig' AND analysis <> '' AND (verify_status = 'fehler' OR (verify_status = 'laeuft' AND ai_started_at < ?))`,
+          )
+          .run(now, now, correctionId, iso(Date.now() - verifyLimitMs()))
+      : db()
+          .prepare(
+            `UPDATE text_corrections SET ai_status = 'laeuft', ai_error = NULL, ai_started_at = ?, updated_at = ?
+             WHERE id = ? AND ai_consent_at IS NOT NULL AND (ai_status = 'fehler' OR (ai_status = 'laeuft' AND ai_started_at < ?))`,
+          )
+          .run(now, now, correctionId, iso(Date.now() - runLimitMs(methodOf(c.method))));
+  if (!claimed.changes) return { ok: true, correctionId, reused: true };
+  return launch(correctionId, teacherId, o.wait, { retry: kind === "pruefung" });
+}
+
+/**
+ * About what „Erneut versuchen“ costs, in US dollars, for the button. The second check alone is about 40 % of a
+ * „gründlich“ run (measured 2026-10-11 on 28 texts: 0.017–0.030 $ of 0.042–0.075 $).
+ */
+export function retryCostUsd(c: CorrectionRow, kind: RetryKind): number {
+  const fn = methodOf(c.method) === "gruendlich" ? "textanalyse" : "textkorrektur";
+  const t = fn === "textanalyse" ? estimateTokensThorough(c.words) : estimateTokens(c.words);
+  const whole = costOf(routeFor(fn).model, FUNCTIONS[fn].tier, { input: t.input, output: t.output, cacheWrite: 0, cacheRead: 0 });
+  return kind === "pruefung" ? whole * 0.4 : whole;
+}
+
+/** The KI's suggestions the teacher has not decided: what a repeat of the second check replaces. */
+const UNDECIDED_KI = "source = 'ki' AND decided_by IS NULL";
+const undecidedKI = (i: CorrectionItem) => i.source === "ki" && i.decided_by === null;
+
+/** A new suggestion of a repeat where one that stays already is: at an overlapping place, or the same note without a place. */
+function alreadyThere(i: NewItem, stays: CorrectionItem[]): boolean {
+  if (i.block !== null && i.pos_start !== null && i.pos_end !== null) {
+    const at = { start: i.pos_start, end: i.pos_end };
+    return stays.some((s) => placed(s) && s.block === i.block && overlaps({ start: s.pos_start, end: s.pos_end }, at));
+  }
+  return stays.some((s) => !placed(s) && s.kind === i.kind && s.category === i.category && s.explanation === i.explanation);
+}
+
+/**
+ * Asks the KI and stores the checked suggestions. Never throws; a failure is kept on the correction. retry: only the
+ * second check, with step 1's stored answer; when it fails again nothing but the reason changes.
+ */
+export async function runCorrection(correctionId: number, teacherId: number | null, o: { retry?: boolean } = {}): Promise<void> {
   const c = getCorrection(correctionId);
   const text = c && getText(c.text_id);
   if (!c || !text) return;
   const doc = parseDoc(c.body);
   const fail = (message: string) =>
     db().prepare("UPDATE text_corrections SET ai_status = 'fehler', ai_error = ?, updated_at = ? WHERE id = ?").run(message.slice(0, 300), iso(), correctionId);
+  // a repeated second check that fails: the suggestions of step 1 and every decision stay as they are
+  const checkFailed = (message: string) =>
+    db().prepare("UPDATE text_corrections SET verify_status = 'fehler', verify_error = ?, updated_at = ? WHERE id = ?").run(message.slice(0, 300), iso(), correctionId);
   try {
     // the snapshot, not the live text: the student may write on in the meantime
     const snapshot = { ...text, body: c.body };
@@ -308,37 +423,75 @@ export async function runCorrection(correctionId: number, teacherId: number | nu
     const req = correctionRequest(snapshot, doc, names);
     const method = methodOf(c.method);
     const meta = { teacherId, unitId: c.unit_id };
+    const stored = o.retry ? storedAnalysis(c) : null;
+    if (o.retry && !stored) {
+      checkFailed("Die erste Prüfung ist nicht mehr gespeichert. Bitte selbst durchsehen.");
+      return;
+    }
+    // a repeat replaces only the KI's undecided suggestions: every other place is taken, also one the teacher rejected
     const taken = new Map<number, Range[]>();
-    for (const i of listItems(correctionId)) if (placed(i) && i.status !== "abgelehnt") taken.set(i.block, [...(taken.get(i.block) ?? []), { start: i.pos_start, end: i.pos_end }]);
+    for (const i of listItems(correctionId)) if (placed(i) && (o.retry ? !undecidedKI(i) : i.status !== "abgelehnt")) taken.set(i.block, [...(taken.get(i.block) ?? []), { start: i.pos_start, end: i.pos_end }]);
     const skills = new Set(req.skills.map((s) => s.id));
     const pattern = namePattern([...namesToHide(text), ...names]);
-    let result: { items: NewItem[]; data: Pick<AICorrection, "strengths" | "main_issue" | "recommendation" | "recommendation_skill_id">; dropped: number; callId: number | null; unchecked: string[]; hidden: HiddenWord[]; verify: "" | "ok" | "fehler" };
+    let result: {
+      items: NewItem[];
+      data: Pick<AICorrection, "strengths" | "main_issue" | "recommendation" | "recommendation_skill_id">;
+      dropped: number;
+      callId: number | null;
+      unchecked: string[];
+      hidden: HiddenWord[];
+      verify: "" | "ok" | "fehler";
+      verifyError: string;
+      analysis: string;
+    };
     if (method === "gruendlich") {
-      const out = await correctThoroughly(req, doc, { pattern, level: req.level, skills, taken, meta, version: thoroughVersion() });
+      const out = await correctThoroughly(req, doc, { pattern, level: req.level, skills, taken, meta, version: stored?.version ?? thoroughVersion(), ...(stored ? { analysis: stored.data } : {}) });
       if (!out.ok) {
-        fail(out.message);
+        (o.retry ? checkFailed : fail)(failureText(out.cause, out.code));
         return;
       }
-      result = { items: out.items, data: out.data, dropped: out.dropped, callId: out.callIds[0] ?? null, unchecked: out.unchecked, hidden: out.hidden, verify: out.verify };
+      const verifyError = out.verify === "fehler" ? failureText(out.verifyCause ?? "unbrauchbar", out.verifyCode) : "";
+      if (o.retry && out.verify === "fehler") {
+        checkFailed(verifyError);
+        return;
+      }
+      result = {
+        items: out.items,
+        data: out.data,
+        dropped: out.dropped,
+        // a repeat keeps the first run's call: that is the one the correction rests on
+        callId: o.retry ? c.ai_call_id : (out.callIds[0] ?? null),
+        unchecked: out.unchecked,
+        hidden: out.hidden,
+        verify: out.verify,
+        verifyError,
+        // step 1's answer stays only while the second check is owed
+        analysis: out.verify === "fehler" ? JSON.stringify({ version: out.version, data: out.data } satisfies StoredAnalysis) : "",
+      };
     } else {
       const out = await correctTextWithAI(req, meta);
       if (!out.ok) {
-        fail(out.message);
+        fail(failureText(out.cause, out.code));
         return;
       }
       const anchored = anchorFindings(doc, out.data, { pattern, level: req.level, skills, taken });
       // the program's checks mark what does not fit, also here
-      result = { items: flagItems(doc.map(blockText), anchored.items, { english: englishText(req) }), data: out.data, dropped: anchored.dropped, callId: out.callId, unchecked: [], hidden: [], verify: "" };
+      result = { items: flagItems(doc.map(blockText), anchored.items, { english: englishText(req) }), data: out.data, dropped: anchored.dropped, callId: out.callId, unchecked: [], hidden: [], verify: "", verifyError: "", analysis: "" };
     }
     const conn = db();
     conn.transaction(() => {
       const now = iso();
+      // a repeat: the undecided suggestions of step 1 make way; what the teacher decided, also while it ran, stays
+      if (o.retry) conn.prepare(`DELETE FROM text_correction_items WHERE correction_id = ? AND ${UNDECIDED_KI}`).run(correctionId);
+      const stays = o.retry ? listItems(correctionId) : [];
       const insert = conn.prepare(
         `INSERT INTO text_correction_items (correction_id, block, pos_start, pos_end, quote, replacement, category, kind, rule, explanation, skill_id, status, source, origin, review, review_note, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ki', ?, ?, ?, ?)`,
       );
-      for (const i of result.items)
+      for (const i of result.items) {
+        if (o.retry && alreadyThere(i, stays)) continue;
         insert.run(correctionId, i.block, i.pos_start, i.pos_end, i.quote, i.replacement, i.category, i.kind, i.rule, i.explanation, i.skill_id, setAside(i) ? "abgelehnt" : "offen", i.origin, i.review, i.review_note, now);
+      }
       const d = result.data;
       const recSkill = typeof d.recommendation_skill_id === "string" && skills.has(d.recommendation_skill_id) ? d.recommendation_skill_id : null;
       // who answered, as the teacher reads it: "Anthropic · claude-…"
@@ -347,7 +500,7 @@ export async function runCorrection(correctionId: number, teacherId: number | nu
       conn
         .prepare(
           `UPDATE text_corrections SET ai_status = 'fertig', ai_error = NULL, ai_model = ?, ai_call_id = ?, summary = ?, main_issue = ?, recommendation = ?,
-           recommendation_skill = ?, dropped = ?, unchecked = ?, hidden_words = ?, verify_status = ?, updated_at = ? WHERE id = ?`,
+           recommendation_skill = ?, dropped = ?, unchecked = ?, hidden_words = ?, verify_status = ?, verify_error = ?, analysis = ?, updated_at = ? WHERE id = ?`,
         )
         .run(
           model,
@@ -360,12 +513,16 @@ export async function runCorrection(correctionId: number, teacherId: number | nu
           result.unchecked.join(","),
           result.hidden.length ? JSON.stringify(result.hidden.map((h) => ({ para: h.para, text: h.text, grammar: h.grammar }))) : "",
           result.verify,
+          result.verifyError,
+          result.analysis,
           now,
           correctionId,
         );
     })();
   } catch (e) {
-    fail(`Die Korrektur konnte nicht gespeichert werden (${e instanceof Error ? e.message : String(e)}).`);
+    // the reason in the server log only; the teacher reads a plain sentence
+    console.error(`[Textkorrektur] Speichern fehlgeschlagen (Korrektur ${correctionId}): ${e instanceof Error ? e.message : String(e)}`);
+    (o.retry ? checkFailed : fail)(failureText("speichern"));
   }
 }
 

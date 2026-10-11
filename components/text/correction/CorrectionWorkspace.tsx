@@ -28,6 +28,10 @@ export type WorkspaceCorrection = {
   unchecked: string[];
   /** the second check of a „gründlich“ run failed: every suggestion is marked */
   verifyFailed: boolean;
+  /** „Erneut versuchen“ of the second check is running; the suggestions of step 1 stay until its result is there */
+  verifyRunning: boolean;
+  /** why the second check failed, as the teacher reads it ('' = not known) */
+  verifyError: string;
   /** words OpenRouter's privacy filter hid from the KI (grammar = not a name, e.g. „Sie“) */
   hidden: { para: number; text: string; grammar: boolean }[];
 };
@@ -45,6 +49,8 @@ type Props = {
   initialView: View;
   /** the "Mit KI prüfen" button (with its consent dialog), when the KI may run on this correction */
   aiStart?: React.ReactNode;
+  /** „Erneut versuchen“ of the failed second check */
+  retry?: React.ReactNode;
 };
 
 const CAT = new Map<string, (typeof TEXT_CATEGORIES)[number]>(TEXT_CATEGORIES.map((c) => [c.key, c]));
@@ -133,18 +139,19 @@ export function CorrectionWorkspace(p: Props) {
   const pop = useRef<HTMLDivElement>(null);
   const c = p.correction;
 
-  // the KI is still working: ask the server again until the result is there
+  // the KI is still working (or repeats its second check): ask the server again until the result is there
+  const running = c.aiState === "laeuft" || c.verifyRunning;
   useEffect(() => {
-    if (c.aiState !== "laeuft") return;
+    if (!running) return;
     const t = setInterval(() => router.refresh(), 2500);
     return () => clearInterval(t);
-  }, [c.aiState, router]);
+  }, [running, router]);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (c.aiState !== "laeuft") return;
+    if (!running) return;
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
-  }, [c.aiState]);
+  }, [running]);
 
   // the view in the address, so a reload opens the same one
   const show = (v: View) => {
@@ -399,7 +406,8 @@ export function CorrectionWorkspace(p: Props) {
 
   const cats = TEXT_CATEGORIES.map((k) => ({ ...k, open: items.filter((i) => i.category === k.key && i.status === "offen").length, all: items.filter((i) => i.category === k.key && i.status !== "abgelehnt").length })).filter((k) => k.all > 0);
   const decided = items.filter((i) => i.status !== "offen").length;
-  const running = c.aiState === "laeuft";
+  // „teilweise“: the second check failed or the KI left sentences out; never shown as a text without errors
+  const partial = c.aiState === "fertig" && (c.verifyFailed || c.unchecked.length > 0);
   const seconds = running && c.aiStartedAt ? Math.max(0, Math.round((now - Date.parse(c.aiStartedAt)) / 1000)) : 0;
   const print = (q: string) => `/arbeitsblatt/text/${p.textId}?k=${c.id}&${q}`;
 
@@ -409,15 +417,43 @@ export function CorrectionWorkspace(p: Props) {
         {running && (
           <div className="mb-4 flex items-center gap-3 rounded-2xl bg-violet-wash px-5 py-4 text-[15px]" role="status" data-testid="ki-laeuft">
             <Loader2 size={18} className="shrink-0 animate-spin text-violet" aria-hidden />
-            <span>
-              <b>Die KI prüft den Text</b> <span className="num text-ink-2">({seconds} s)</span>. Du kannst inzwischen selbst korrigieren oder die Seite verlassen; das Ergebnis wird gespeichert.
-            </span>
+            {c.verifyRunning ? (
+              <span>
+                <b>Die KI wiederholt die zweite Prüfung</b> <span className="num text-ink-2">({seconds} s)</span>. Die Vorschläge der ersten Prüfung bleiben, bis das Ergebnis da ist; deine Entscheidungen bleiben in jedem Fall.
+              </span>
+            ) : (
+              <span>
+                <b>Die KI prüft den Text</b> <span className="num text-ink-2">({seconds} s)</span>. Du kannst inzwischen selbst korrigieren oder die Seite verlassen; das Ergebnis wird gespeichert.
+              </span>
+            )}
           </div>
         )}
-        {!running && (c.unchecked.length > 0 || c.verifyFailed || flagged > 0 || c.hidden.length > 0) && (
+        {!running && c.aiState === "fertig" && !partial && (
+          <p className="mb-3 flex items-center gap-2 text-[14px] text-ink-2" role="status" data-testid="ki-fertig">
+            <Check size={16} className="shrink-0 text-green" aria-hidden />
+            <span>
+              <b className="text-ink">KI-Korrektur abgeschlossen.</b>
+              {!items.some((i) => i.source === "ki" && i.kind !== "hinweis") && " Die KI hat in diesem Text keine Fehler gefunden. Bitte trotzdem kurz selbst durchlesen."}
+            </span>
+          </p>
+        )}
+        {!running && (partial || flagged > 0 || c.hidden.length > 0) && (
           <div className="mb-4 flex items-start gap-3 rounded-2xl bg-amber-wash px-5 py-4 text-[15px]" role="status" data-testid="genau-pruefen">
             <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber" aria-hidden />
             <div className="grid gap-1">
+              {partial && (
+                <p data-testid="ki-teilweise">
+                  <b>KI-Korrektur teilweise abgeschlossen.</b>
+                </p>
+              )}
+              {c.verifyFailed && (
+                <div data-testid="pruefung-fehlgeschlagen">
+                  <p>
+                    Die zweite Prüfung ist fehlgeschlagen{c.verifyError ? `: ${c.verifyError}` : "."} Die Vorschläge der ersten Prüfung sind da, aber nicht kontrolliert. Keiner wird automatisch übernommen.
+                  </p>
+                  {p.retry}
+                </div>
+              )}
               {flagged > 0 && (
                 <p>
                   <b>
@@ -426,7 +462,6 @@ export function CorrectionWorkspace(p: Props) {
                   Bitte einzeln prüfen, der Grund steht beim Vorschlag. Sie werden bei „Alle übernehmen“ nicht mitgenommen.
                 </p>
               )}
-              {c.verifyFailed && <p>Die zweite Prüfung der KI ist fehlgeschlagen. Kein Vorschlag wurde kontrolliert.</p>}
               {c.hidden.length > 0 && (
                 <p data-testid="ausgeblendet">
                   Der Datenschutzfilter von OpenRouter hat Wörter ausgeblendet, bevor die KI den Text sah: {hiddenList(c.hidden)}. Dort konnte die KI nicht prüfen; diese Stellen bitte selbst durchsehen.

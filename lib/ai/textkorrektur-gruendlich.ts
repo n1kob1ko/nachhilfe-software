@@ -21,12 +21,12 @@
  */
 import { z } from "zod";
 import { applyChanges, clip, comparable, flagItems, replacementProblem, ruleItems, sentencesOf, setAside, tidyItems, withInfo, withNote, type CheckItem, type Sentence } from "../text-correction-checks";
-import { anchorFindings, FOREIGN_PLACEHOLDER, maskText, NAME_PLACEHOLDER, type InFinding, type ItemOrigin, type NewItem, type Range } from "../text-correction-core";
+import { anchorFindings, FOREIGN_PLACEHOLDER, maskText, NAME_PLACEHOLDER, type CorrectionFailCause, type InFinding, type ItemOrigin, type NewItem, type Range } from "../text-correction-core";
 import { compareVersions, hidesGrammar } from "../text-correction-diff";
 import { isEnglish, normalizeCategory, TEXT_CATEGORIES, type Level } from "../text-correction-rules";
 import { blockText, type TextDoc } from "../text-doc";
 import { Finding, headerLines, Hint, joinLines, type CorrectionRequest } from "./textkorrektur";
-import { runAI, type AIMeta } from "./router";
+import { runAI, type AIMeta, type FailCause } from "./router";
 
 // ---------- step 1: Analyse ----------
 
@@ -704,27 +704,36 @@ export type ThoroughOutcome =
       verify: "ok" | "fehler";
       /** why step 2 failed, for the Textkorrektur-Test log */
       verifyMessage?: string;
+      /** why step 2 failed, for the teacher's message (lib/text-correction-core.ts failureText) */
+      verifyCause?: FailCause;
+      verifyCode?: number;
+      /** the version step 1 ran in, kept with its answer when step 2 failed */
+      version: ThoroughVersion;
       callIds: number[];
     }
-  | { ok: false; message: string; callIds: number[] };
+  | { ok: false; message: string; cause: CorrectionFailCause; code?: number; callIds: number[] };
+
+/** What a failed second check leaves on every suggestion it did not check. */
+export const NOT_CHECKED = "Nicht kontrolliert: Die zweite Prüfung ist fehlgeschlagen.";
 
 /**
  * Step 1, the program's rules, step 2 and the rule-based marks, for one snapshot. `taken` are the places
- * already decided (nothing new is suggested there). Never throws; fails only when step 1 fails, a failed
- * step 2 leaves every suggestion marked for the teacher.
+ * already decided (nothing new is suggested there). Never throws; fails only when step 1 fails or answers
+ * no sentence at all, a failed step 2 leaves every suggestion marked for the teacher. `analysis`: step 1's
+ * stored answer, when only step 2 is repeated („Erneut versuchen“); step 1 is then not asked again.
  */
 export async function correctThoroughly(
   req: CorrectionRequest,
   doc: TextDoc,
-  o: { pattern: RegExp | null; level: Pick<Level, "maxStyle" | "maxMarks">; skills: Set<string>; taken: Map<number, Range[]>; meta: AIMeta; version?: ThoroughVersion },
+  o: { pattern: RegExp | null; level: Pick<Level, "maxStyle" | "maxMarks">; skills: Set<string>; taken: Map<number, Range[]>; meta: AIMeta; version?: ThoroughVersion; analysis?: Analysis },
 ): Promise<ThoroughOutcome> {
   const version = o.version ?? "bisher";
   const english = englishText(req);
   const sentences = sentencesFor(req);
-  const a = await analyseText(req, sentences, o.meta, version);
+  const a = o.analysis ? { ok: true as const, data: o.analysis, callId: null } : await analyseText(req, sentences, o.meta, version);
   const callIds: number[] = [];
   if (a.callId) callIds.push(a.callId);
-  if (!a.ok) return { ok: false, message: a.message, callIds };
+  if (!a.ok) return { ok: false, message: a.message, cause: a.cause, ...(a.code ? { code: a.code } : {}), callIds };
   const listed = analysisFindings(sentences, a.data);
   const listedItems = anchorFindings(doc, { findings: listed.findings, hints: a.data.hints }, o);
   let stage1 = listedItems;
@@ -740,6 +749,8 @@ export async function correctThoroughly(
     unknown = compared.unknown;
     hidden = compared.hidden;
   }
+  // an answer for none of the sentences is no correction: it must never read as a text without errors
+  if (sentences.length > 0 && unchecked.length === sentences.length) return { ok: false, message: "Die KI hat keinen Satz beantwortet.", cause: "keine_saetze", callIds };
   const texts = doc.map(blockText);
   const decided: CheckItem[] = [...o.taken].flatMap(([block, rs]) => rs.map((r) => ({ block, pos_start: r.start, pos_end: r.end, quote: "", replacement: "", category: "", kind: "fehler", rule: "", explanation: "", review: "" as const, review_note: "" })));
   const rules = ruleItems(
@@ -754,10 +765,12 @@ export async function correctThoroughly(
   const v = proposals.length ? await verifyText(req, items, proposals, o.meta, version) : null;
   if (v?.callId) callIds.push(v.callId);
   let verifyMessage: string | undefined;
+  let failed: { verifyCause: FailCause; verifyCode?: number } | null = null;
   if (v && !v.ok) {
     verify = "fehler";
     verifyMessage = v.message;
-    items = items.map((it) => (it.kind === "hinweis" ? it : withNote(it, "Die zweite Prüfung ist fehlgeschlagen.")));
+    failed = { verifyCause: v.cause, ...(v.code ? { verifyCode: v.code } : {}) };
+    items = items.map((it) => (it.kind === "hinweis" ? it : withNote(it, NOT_CHECKED)));
   } else if (v?.ok) {
     const applied = applyVerdicts(items, proposals, v.data, o.pattern);
     // a better wording of the check with the spaces right, like every suggestion of step 1
@@ -769,5 +782,5 @@ export async function correctThoroughly(
     items = [...items, ...more.items.map(styleAsHint)];
     dropped += more.dropped;
   }
-  return { ok: true, items: flagItems(texts, items, { english }), stages: { analyse: listedItems.items, fassung }, data: a.data, dropped, unchecked, hidden, verify, ...(verifyMessage ? { verifyMessage } : {}), callIds };
+  return { ok: true, items: flagItems(texts, items, { english }), stages: { analyse: listedItems.items, fassung }, data: a.data, dropped, unchecked, hidden, verify, ...(verifyMessage ? { verifyMessage } : {}), ...failed, version, callIds };
 }

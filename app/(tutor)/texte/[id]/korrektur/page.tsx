@@ -6,11 +6,12 @@ import { AIStartButton } from "@/components/text/correction/AIStartButton";
 import { StoryStrip } from "@/components/text/story/StoryPictures";
 import { storyForEditor } from "@/lib/picture-story";
 import { CorrectionWorkspace, type View } from "@/components/text/correction/CorrectionWorkspace";
+import { RetryButton } from "@/components/text/correction/RetryButton";
 import { Pill, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { getSkill } from "@/lib/repo";
-import { aiPreview, aiState, correctionsOfText, hiddenWords, levelOfText, listItems, snapshotDoc } from "@/lib/text-correction";
-import { maskedNames } from "@/lib/text-correction-core";
+import { aiPreview, aiState, correctionsOfText, hiddenWords, levelOfText, listItems, retryCostUsd, retryKind, snapshotDoc, verifyState } from "@/lib/text-correction";
+import { maskedNames, shownFailure } from "@/lib/text-correction-core";
 import { getText, wordsLabel } from "@/lib/texts";
 
 export const metadata = { title: "Korrektur" };
@@ -97,7 +98,11 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
   const skillIds = [...new Set([...items.map((i) => i.skill_id), c.recommendation_skill].filter((x): x is string => Boolean(x)))];
   const skillNames = Object.fromEntries(skillIds.map((s) => [s, getSkill(s)?.name ?? s]));
   const outdated = c.version !== text.version;
-  const mayRunAI = !outdated && (state === "keine" || state === "fehler");
+  const verify = verifyState(c);
+  // „Erneut versuchen“: only what failed (the second check alone, or the whole run), as the teacher agreed to it
+  const retry = outdated ? null : retryKind(c);
+  const retryButton = retry && <RetryButton correctionId={c.id} kind={retry} cents={Math.max(1, Math.round(retryCostUsd(c, retry) * 100))} />;
+  const mayRunAI = !outdated && (state === "keine" || (state === "fehler" && retry !== "ganz"));
   // a one-step KI correction can be checked once more „gründlich“
   const mayRecheck = !outdated && state === "fertig" && c.method !== "gruendlich" && c.ai_call_id !== null;
 
@@ -124,11 +129,14 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
         </div>
       )}
       {state === "fehler" && !outdated && (
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl bg-red-wash px-5 py-4 text-[15px]" role="alert" data-testid="ki-fehler">
-          <AlertTriangle size={18} className="shrink-0 text-red" aria-hidden />
-          <span className="min-w-0 flex-1">
-            <b>Die KI-Korrektur hat nicht geklappt.</b> {c.ai_error ?? "Die Korrektur wurde unterbrochen."} Du kannst es nochmal versuchen oder selbst korrigieren.
-          </span>
+        <div className="mb-4 flex items-start gap-3 rounded-2xl bg-red-wash px-5 py-4 text-[15px]" role="alert" data-testid="ki-fehler">
+          <AlertTriangle size={18} className="mt-0.5 shrink-0 text-red" aria-hidden />
+          <div className="min-w-0 flex-1">
+            <p>
+              <b>KI-Prüfung fehlgeschlagen.</b> {shownFailure(c.ai_error) || "Die Korrektur wurde unterbrochen."} Die KI hat diesen Text nicht geprüft und keine neuen Vorschläge geliefert. Du kannst es erneut versuchen oder selbst korrigieren.
+            </p>
+            {retry === "ganz" && retryButton}
+          </div>
         </div>
       )}
       {all.length > 1 && (
@@ -156,7 +164,9 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
           shared: Boolean(c.shared_at),
           method: c.method,
           unchecked: c.unchecked ? c.unchecked.split(",") : [],
-          verifyFailed: c.verify_status === "fehler",
+          verifyFailed: verify === "fehler",
+          verifyRunning: verify === "laeuft",
+          verifyError: c.verify_error,
           hidden: hiddenWords(c.hidden_words),
         }}
         doc={snapshotDoc(c)}
@@ -167,6 +177,7 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
         textId={text.id}
         heading={heading}
         initialView={view}
+        retry={retry === "pruefung" ? retryButton : undefined}
         aiStart={
           mayRunAI ? (
             <AIStartButton textId={text.id} preview={preview} label={state === "fehler" ? "Nochmal mit KI versuchen" : "Zusätzlich mit KI prüfen"} variant="secondary" />
