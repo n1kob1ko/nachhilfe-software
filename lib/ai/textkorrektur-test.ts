@@ -13,9 +13,9 @@
  * sentences it changed and the words OpenRouter's privacy filter hid. Nothing is saved but the cost rows.
  * The run stops before it could cost more than 2 €.
  *
- * The independent set (textkorrektur-test-unabhaengig.ts) are texts the prompts were never tuned on;
- * it runs only „gründlich neu“ as the teachers get it, so the first step's list and the
- * Fassungsvergleich are measured too at no extra cost.
+ * The independent sets (textkorrektur-test-unabhaengig.ts, and textkorrektur-test-neu.ts written after the
+ * fixes the first one led to) are texts the prompts were never tuned on; they run only „gründlich neu“ as
+ * the teachers get it, so the first step's list and the Fassungsvergleich are measured too at no extra cost.
  */
 import { applyChanges, comparable, flagItems } from "../text-correction-checks";
 import { detectNames } from "../name-detection";
@@ -28,6 +28,7 @@ import { withAIOverride } from "./router";
 import { correctTextWithAI, type CorrectionRequest } from "./textkorrektur";
 import { correctThoroughly, sentencesFor, type ThoroughVersion } from "./textkorrektur-gruendlich";
 import { TEXT_CASES, type KorrekturFall } from "./textkorrektur-test-faelle";
+import { NEW_CASES } from "./textkorrektur-test-neu";
 import { HELD_OUT_CASES } from "./textkorrektur-test-unabhaengig";
 import { SET_WAYS, WAYS, type CaseRun, type Score, type TestSet, type TextTestState, type WayKey, type WayResult } from "./textkorrektur-test-types";
 
@@ -288,7 +289,7 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
 export async function runTextTest(o: { teacherId?: number | null; set?: TestSet; cases?: KorrekturFall[]; concurrency?: number; capUsd?: number; log?: (line: string) => void } = {}): Promise<TextTestState> {
   const set = o.set ?? "bekannt";
   const wanted = SET_WAYS[set];
-  const cases = o.cases ?? (set === "unabhaengig" ? HELD_OUT_CASES : TEXT_CASES);
+  const cases = o.cases ?? (set === "unabhaengig" ? HELD_OUT_CASES : set === "neu" ? NEW_CASES : TEXT_CASES);
   const log = o.log ?? ((l: string) => console.info(l));
   const capUsd = o.capUsd ?? budget().usdPerEur * 2;
   const runTag = `kt${Date.now().toString(36)}`;

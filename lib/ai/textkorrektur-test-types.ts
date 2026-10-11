@@ -12,13 +12,17 @@ export type WayKey = (typeof WAYS)[number]["key"];
 
 /**
  * bekannt: the texts the correction was improved on, all ways. unabhaengig: unseen texts
- * (textkorrektur-test-unabhaengig.ts), only „gründlich neu“ as the teachers get it.
+ * (textkorrektur-test-unabhaengig.ts), only „gründlich neu“ as the teachers get it. neu: a second unseen set
+ * (textkorrektur-test-neu.ts), written after the fixes the first one led to, the same way.
  */
-export type TestSet = "bekannt" | "unabhaengig";
+export type TestSet = "bekannt" | "unabhaengig" | "neu";
 export const SET_WAYS: Record<TestSet, readonly WayKey[]> = {
   bekannt: WAYS.map((w) => w.key),
   unabhaengig: ["schritt1_neu", "fassung_neu", "gruendlich_neu"],
+  neu: ["schritt1_neu", "fassung_neu", "gruendlich_neu"],
 };
+/** The set of a page request: anything unknown is the known texts. */
+export const testSetOf = (s: unknown): TestSet => (s === "unabhaengig" || s === "neu" ? s : "bekannt");
 
 export type Score = {
   /** built-in errors (optional ones not counted) */
