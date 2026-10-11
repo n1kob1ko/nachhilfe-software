@@ -99,12 +99,19 @@ export function AITextTest({ enabled }: { enabled: boolean }) {
         <Info label="Was macht der unabhängige Test?">
           14 neue erfundene Schülertexte, an denen die KI-Anweisungen nie verbessert wurden (Volksschule bis Matura, Deutsch und Englisch), mit eigener Musterkorrektur. Jeder Text wird einmal so korrigiert, wie Lehrer es bekommen: gründlich neu. Läuft im Hintergrund, etwa 10 Minuten, kostet etwa 1 € und höchstens 2 € (zählt zum Monatsbudget). Jeder Vorschlag mit Erklärung steht im Server-Log.
         </Info>
+        <button className="btn btn-secondary" disabled={!enabled || pending || running} onClick={() => run("neu")}>
+          <SpellCheck size={15} className="text-accent" aria-hidden />
+          {running && state?.set === "neu" ? "Test mit neuen Texten läuft …" : "Test mit neuen Texten starten"}
+        </button>
+        <Info label="Was macht der Test mit neuen Texten?">
+          Noch einmal 14 erfundene Schülertexte, geschrieben nach den letzten Verbesserungen, damit die Trefferquote nicht an bekannten Texten gemessen wird. Ablauf, Dauer und Kosten wie beim unabhängigen Test: etwa 1 €, höchstens 2 €.
+        </Info>
       </span>
       {error && <p className="mt-3 text-[14px] text-red">{error}</p>}
       {state && (
         <div className="mt-4">
           <p className="text-[14px] text-ink-2">
-            {state.set === "unabhaengig" ? "Unabhängiger Test. " : ""}
+            {state.set === "unabhaengig" ? "Unabhängiger Test. " : state.set === "neu" ? "Test mit neuen Texten. " : ""}
             {running ? `Läuft: ${results.length} von ${state.total} Texten fertig${state.active.length ? `, gerade ${state.active.join(", ")}` : ""}.` : `Fertig: ${complete} von ${state.total} Texten vollständig.`} Bisher {usd(spent)} (Grenze {usd(state.capUsd)}).
           </p>
           {state.totals && <Totals totals={state.totals} ways={state.ways} texts={complete} />}
