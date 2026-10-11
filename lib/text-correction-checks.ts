@@ -118,6 +118,87 @@ export function comparable(s: string): string {
     .trim();
 }
 
+// ---------- does a replacement fit its place? ----------
+
+/** Placeholders the app or a filter writes for the KI („[Name]“, „[PERSON_NAME]“) and the marks of the second check's text (⟦ ⟧): never part of a student's text. */
+const PLACEHOLDERS = /\[Name\]|\[[A-Z][A-Z_]{2,}\]|[⟦⟧]/g;
+/** A sign doubled or with a space before it („,,“ „Haus,.“ „usw..“ „Haus .“), not „...“ or „ .5“. */
+const LOOSE_SIGNS = /,\s*[,.;:!?]|(?<!\.)\.\.(?!\.)|\s+[,.;:!?](?![.\d])/g;
+const WORD = /[\p{L}\p{N}]+(?:[-'’][\p{L}\p{N}]+)*/gu;
+const WORD_CHAR = /[\p{L}\p{N}]/u;
+const touching = (a: Span, b: Span) => a.start <= b.end && b.start <= a.end;
+
+const within = (a: Span, b: Span) => b.start <= a.start && a.end <= b.end;
+
+/**
+ * Groups of up to 8 words that stand twice in a row with nothing but spaces between („gieng dann gieng dann“) and touch
+ * the range; with `inserted` (the range holds new words) only those with one of the two groups inside it: the new words
+ * repeat their neighbours. „und rannte und rante“ → „rannte“ makes „und rannte und rannte“, which is no such repetition.
+ */
+function doubledAt(text: string, r: Span, inserted = false): { key: string; shown: string; words: number }[] {
+  const w = [...text.matchAll(WORD)].map((m) => ({ s: m[0], low: m[0].toLowerCase(), start: m.index!, end: m.index! + m[0].length }));
+  const words = inserted && WORD_CHAR.test(text.slice(r.start, r.end));
+  const out: { key: string; shown: string; words: number }[] = [];
+  for (let i = 0; i < w.length; i++) {
+    for (let k = 1; k <= 8 && i + 2 * k <= w.length; k++) {
+      const first = { start: w[i].start, end: w[i + k - 1].end };
+      const second = { start: w[i + k].start, end: w[i + 2 * k - 1].end };
+      if (words ? !within(first, r) && !within(second, r) : !touching({ start: first.start, end: second.end }, r)) continue;
+      let same = true;
+      for (let j = 0; same && j < k; j++) same = w[i + j].low === w[i + k + j].low;
+      for (let j = i; same && j < i + 2 * k - 1; j++) same = /^\s+$/.test(text.slice(w[j].end, w[j + 1].start));
+      if (same) out.push({ key: w.slice(i, i + k).map((x) => x.low).join(" "), shown: w.slice(i, i + k).map((x) => x.s).join(" "), words: k });
+    }
+  }
+  return out;
+}
+
+/**
+ * Why a change cannot go into the paragraph as it stands, or null. The place must exist and (with `quote`) still hold
+ * the words the suggestion was made for. Once applied, nothing may come about next to the place that was not there
+ * before: new words that repeat the words right next to them („Ich gieng dann gieng dann allein“: the second check
+ * wrote „gieng dann allein“ for „alleine“, test of 2026-10-11), a doubled sign or a space before one, a placeholder of
+ * the KI. A doubled word that can be right („die die“, „dass sie sie“) does not count, as in finalProblems.
+ */
+export function replacementProblem(text: string, c: Change & { quote?: string }): string | null {
+  if (!Number.isInteger(c.start) || !Number.isInteger(c.end) || c.start < 0 || c.end < c.start || c.end > text.length) return "Die Stelle gibt es im Text nicht.";
+  const quote = text.slice(c.start, c.end);
+  if (c.quote !== undefined && quote !== c.quote) return "Der Text an dieser Stelle stimmt nicht mehr mit dem Vorschlag überein.";
+  const placeholder = (c.replacement.match(PLACEHOLDERS) ?? []).find((p) => !quote.includes(p));
+  if (placeholder) return `Der Vorschlag enthält den Platzhalter „${placeholder}“ statt eines Wortes aus dem Text.`;
+  const after = text.slice(0, c.start) + c.replacement + text.slice(c.end);
+  const was = { start: c.start, end: c.end };
+  const now = { start: c.start, end: c.start + c.replacement.length };
+  const doubled = new Set(doubledAt(text, was).map((d) => d.key));
+  for (const d of doubledAt(after, now, true)) {
+    if (doubled.has(d.key) || (d.words === 1 && DOUBLE_OK.has(d.key))) continue;
+    return `Danach stünde „${d.shown}“ zweimal hintereinander.`;
+  }
+  const signs = (t: string, r: Span) => [...t.matchAll(LOOSE_SIGNS)].filter((m) => touching({ start: m.index!, end: m.index! + m[0].length }, r)).map((m) => m[0].replace(/\s+/g, " "));
+  const had = signs(text, was);
+  for (const s of signs(after, now)) {
+    const i = had.indexOf(s);
+    if (i < 0) return "Danach stünde ein Satzzeichen doppelt oder mit einem Leerzeichen davor.";
+    had.splice(i, 1);
+  }
+  return null;
+}
+
+/**
+ * Why the teacher cannot accept a change into the paragraph, or null: replacementProblem on the paragraph as the
+ * student wrote it (`alone`: the suggestion itself does not fit), then together with the changes already accepted
+ * there (`accepted`): no overlap, and nothing that only comes about next to one of them.
+ */
+export function acceptProblem(text: string, c: Change & { quote?: string }, accepted: Change[]): { why: string; alone: boolean } | null {
+  const own = replacementProblem(text, c);
+  if (own) return { why: own, alone: true };
+  if (accepted.some((a) => a.start < c.end && c.start < a.end)) return { why: "Die Stelle überschneidet sich mit einer schon übernommenen Korrektur.", alone: false };
+  const r = applyChanges(text, accepted);
+  const shift = r.placed.filter((p) => p.change.end <= c.start).reduce((n, p) => n + p.change.replacement.length - (p.change.end - p.change.start), 0);
+  const together = replacementProblem(r.text, { start: c.start + shift, end: c.end + shift, replacement: c.replacement });
+  return together ? { why: `Zusammen mit den schon übernommenen Korrekturen: ${together}`, alone: false } : null;
+}
+
 // ---------- does a proposal fit what it changes? ----------
 
 const lettersOf = (s: string) => s.replace(/[^\p{L}\p{N}]/gu, "");
@@ -362,9 +443,12 @@ export type CheckItem = {
   kind: string;
   rule: string;
   explanation: string;
-  review: "" | "lehrer" | "verworfen";
+  review: "" | "lehrer" | "verworfen" | "unpassend";
   review_note: string;
 };
+
+/** Not in the text: sorted out by the second check („verworfen“) or not applicable at its place („unpassend“), both stored as abgelehnt. */
+export const setAside = (i: { review: string }) => i.review === "verworfen" || i.review === "unpassend";
 
 /** At most max characters, cut between words with „…“ (a note cut in mid-word confused in the test, 2026-10-09). */
 export function clip(s: string, max: number): string {
@@ -380,10 +464,15 @@ export function withInfo<T extends CheckItem>(it: T, note: string): T {
   return { ...it, review_note: it.review_note.includes(note) ? it.review_note : clip(`${it.review_note} ${note}`, 450) };
 }
 
-/** The suggestion marked for the teacher, with one more reason (a sorted-out one stays sorted out). */
+/** The suggestion marked for the teacher, with one more reason (a sorted-out or not applicable one stays so). */
 export function withNote<T extends CheckItem>(it: T, note: string): T {
   const review_note = it.review_note.includes(note) ? it.review_note : clip(`${it.review_note} ${note}`, 450);
-  return { ...it, review: it.review === "verworfen" ? "verworfen" : "lehrer", review_note };
+  return { ...it, review: setAside(it) ? it.review : "lehrer", review_note };
+}
+
+/** The suggestion set aside as not applicable (replacementProblem): the teacher sees it and why, but cannot accept it. */
+export function notApplicable<T extends CheckItem>(it: T, why: string): T {
+  return { ...it, review: "unpassend", review_note: clip(`Nicht anwendbar: ${why} ${it.review_note}`, 450) };
 }
 
 const isPlaced = (i: CheckItem): i is CheckItem & { block: number; pos_start: number; pos_end: number } => i.block !== null && i.pos_start !== null && i.pos_end !== null;
@@ -394,9 +483,9 @@ const isPlaced = (i: CheckItem): i is CheckItem & { block: number; pos_start: nu
  */
 export function tidyItems<T extends CheckItem>(blocks: string[], items: T[], decided: Map<number, Span[]> = new Map()): T[] {
   return items.map((it, k) => {
-    if (!isPlaced(it) || it.kind === "hinweis" || it.review === "verworfen") return it;
+    if (!isPlaced(it) || it.kind === "hinweis" || setAside(it)) return it;
     const text = blocks[it.block] ?? "";
-    const others: Span[] = [...items.filter((o, j) => j !== k && isPlaced(o) && o.block === it.block && o.review !== "verworfen").map((o) => ({ start: o.pos_start!, end: o.pos_end! })), ...(decided.get(it.block) ?? [])];
+    const others: Span[] = [...items.filter((o, j) => j !== k && isPlaced(o) && o.block === it.block && !setAside(o)).map((o) => ({ start: o.pos_start!, end: o.pos_end! })), ...(decided.get(it.block) ?? [])];
     const t = tidyEdges(text, { start: it.pos_start, end: it.pos_end, replacement: it.replacement }, (r) => !others.some((o) => o.start < r.end && r.start < o.end));
     if (t.start === it.pos_start && t.end === it.pos_end && t.replacement === it.replacement) return it;
     return { ...it, pos_start: t.start, pos_end: t.end, quote: text.slice(t.start, t.end), replacement: t.replacement };
@@ -407,11 +496,15 @@ export function tidyItems<T extends CheckItem>(blocks: string[], items: T[], dec
  * Marks for the teacher what the program can see is off: a category or explanation that does not fit
  * the change, a place that could not be found, a new subject in German, two suggestions on the same words, and what is wrong in
  * the text once every suggestion is applied (a doubled word, a small letter at a sentence start, a
- * doubled sign) next to a suggestion.
+ * doubled sign) next to a suggestion. A suggestion that would damage the text at its place (replacementProblem) is set
+ * aside as not applicable, also one the second check sorted out (it could be brought back).
  */
 export function flagItems<T extends CheckItem>(blocks: string[], items: T[], o: { english: boolean }): T[] {
   const out = items.map((it) => {
-    if (it.kind === "hinweis" || it.review === "verworfen") return it;
+    if (it.kind === "hinweis") return it;
+    const unfit = isPlaced(it) ? replacementProblem(blocks[it.block] ?? "", { start: it.pos_start, end: it.pos_end, replacement: it.replacement, quote: it.quote }) : null;
+    if (unfit) return notApplicable(it, unfit);
+    if (setAside(it)) return it;
     if (!isPlaced(it)) return withNote(it, "Die Stelle wurde im Text nicht gefunden.");
     const why = mismatchOf(it);
     const marked = why ? withNote(it, why) : it;
@@ -419,7 +512,7 @@ export function flagItems<T extends CheckItem>(blocks: string[], items: T[], o: 
     return subject ? withNote(marked, subject) : marked;
   });
   blocks.forEach((text, b) => {
-    const mine = out.map((it, k) => ({ it, k })).filter(({ it }) => isPlaced(it) && it.block === b && it.review !== "verworfen" && it.kind !== "hinweis");
+    const mine = out.map((it, k) => ({ it, k })).filter(({ it }) => isPlaced(it) && it.block === b && !setAside(it) && it.kind !== "hinweis");
     if (!mine.length) return;
     const r = applyChanges(
       text,
@@ -449,7 +542,7 @@ export function ruleItems(blocks: { text: string; heading: boolean }[], items: C
     taken.push({ para: f.para, start: f.start, end: f.end });
     out.push({ block: f.para - 1, pos_start: f.start, pos_end: f.end, quote: f.quote, replacement: f.replacement, category: f.category, kind: "fehler", rule: f.rule, explanation: f.explanation, review: "lehrer", review_note: "Vom Programm nach einer festen Regel gefunden.", origin: "regel" });
   }
-  const spelling = items.filter((i): i is CheckItem & { block: number; pos_start: number; pos_end: number } => isPlaced(i) && i.category === "rechtschreibung" && i.review !== "verworfen");
+  const spelling = items.filter((i): i is CheckItem & { block: number; pos_start: number; pos_end: number } => isPlaced(i) && i.category === "rechtschreibung" && !setAside(i));
   const same = sameErrorElsewhere(
     blocks.map((b) => b.text),
     spelling.map((i) => ({ para: i.block + 1, start: i.pos_start, end: i.pos_end, quote: i.quote, replacement: i.replacement })),

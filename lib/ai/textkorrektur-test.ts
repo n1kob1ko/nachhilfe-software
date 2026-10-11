@@ -17,7 +17,7 @@
  * fixes the first one led to) are texts the prompts were never tuned on; they run only „gründlich neu“ as
  * the teachers get it, so the first step's list and the Fassungsvergleich are measured too at no extra cost.
  */
-import { applyChanges, comparable, flagItems } from "../text-correction-checks";
+import { applyChanges, comparable, flagItems, setAside } from "../text-correction-checks";
 import { detectNames } from "../name-detection";
 import { anchorFindings, maskText, namePattern, type NewItem } from "../text-correction-core";
 import { levelFor } from "../text-correction-rules";
@@ -54,8 +54,8 @@ const placedIn = (i: EvalItem, b: number) => i.block === b && i.pos_start !== nu
 
 /** Every suggestion against the key: which error it fixes (rightly or wrongly), which correct place it changes, or none. */
 export function evaluate(c: KorrekturFall, items: EvalItem[]): { score: Score; verdicts: ItemVerdict[]; errors: { what: string; status: "richtig" | "falsch" | "verpasst"; optional: boolean; by: string }[] } {
-  const shown = items.filter((i) => i.kind !== "hinweis" && i.review !== "verworfen");
-  const out = items.filter((i) => i.kind !== "hinweis" && i.review === "verworfen");
+  const shown = items.filter((i) => i.kind !== "hinweis" && !setAside(i));
+  const out = items.filter((i) => i.kind !== "hinweis" && setAside(i));
   const errs = c.errors.map((e) => ({ ...e, at: span(c.blocks[e.para - 1].text, e.wrong)! }));
   const verdict = new Map<EvalItem, ItemVerdict>();
   /** the paragraph after these suggestions equals the key's correction of the errors they touch */
@@ -270,7 +270,7 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
     lines.push(
       `${WAYS.find((x) => x.key === w.way)!.label}: ${s.fixed}/${s.errors} richtig korrigiert, ${s.wrongFix} falsch korrigiert, ${s.missed} verpasst, ${s.traps} richtige Stellen geändert, ${s.extraFehler + s.extraStil} weitere (${s.extraStil} Stil); markiert: ${s.flaggedDoubtful} zweifelhafte, ${s.flaggedFixed} richtige; aussortiert: ${s.sortedOutDoubtful} zweifelhafte, ${s.sortedOutFixed} richtige`,
     );
-    for (const v of ev.verdicts.filter((x) => x.verdict !== "richtig" && x.verdict !== "neutral" && x.item.review !== "verworfen"))
+    for (const v of ev.verdicts.filter((x) => x.verdict !== "richtig" && x.verdict !== "neutral" && !setAside(x.item)))
       lines.push(`   ${v.verdict}: „${short(v.item.quote, 80)}“ → „${short(v.item.replacement, 80)}“ (${v.item.kind}${v.item.review === "lehrer" ? ", markiert" : ""}) ${short(v.item.explanation, 160)}`);
   }
   const best = results.find((r) => r.way === "gruendlich_neu") ?? results[0];
