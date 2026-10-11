@@ -162,6 +162,13 @@ test("2: ein fehlerfreier Text ist fertig ohne Vorschläge; eine Antwort ohne ei
   assert.deepEqual([n.ai_status, n.ai_error], ["fehler", "Die KI hat keinen Satz des Textes beantwortet."]);
   assert.equal(s.tc.listItems(n.id).length, 0);
   assert.equal(s.tc.retryKind(n), "ganz");
+  // „Erneut versuchen“ asks the KI again: the unusable answer is not remembered and reused (it would fail again for free)
+  api.s.analyse = "fehlerfrei";
+  const again = await s.tc.retryAICorrection(n.id, s.niko.id, { wait: true });
+  assert.deepEqual(again, { ok: true, correctionId: n.id, reused: false });
+  const after = s.tc.getCorrection(n.id)!;
+  assert.deepEqual([after.ai_status, after.verify_status, after.unchecked], ["fertig", "ok", ""]);
+  assert.deepEqual(s.calls().map((r) => [r.fn, r.status]), [["textanalyse", "ok"], ["textanalyse", "ok"]], "a new request, no cache row");
 });
 
 test("3: leere, abgeschnittene oder unlesbare Antworten und Fehler des Anbieters: eine klare Meldung ohne Text des Anbieters", async (t) => {
