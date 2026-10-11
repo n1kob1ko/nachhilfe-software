@@ -10,14 +10,18 @@ type AIRequest = import("./ai/router").AIRequest;
 test("Testtexte: jede Fehlerstelle eindeutig, jede Korrektur ergibt einen anderen Text, Fallen vorhanden", async () => {
   const { TEXT_CASES } = await import("./ai/textkorrektur-test-faelle");
   const { HELD_OUT_CASES } = await import("./ai/textkorrektur-test-unabhaengig");
+  const { NEW_CASES } = await import("./ai/textkorrektur-test-neu");
   assert.ok(TEXT_CASES.length >= 5);
   assert.ok(HELD_OUT_CASES.length >= 12);
-  const nrs = [...TEXT_CASES, ...HELD_OUT_CASES].map((c) => c.nr);
+  assert.ok(NEW_CASES.length >= 12);
+  const nrs = [...TEXT_CASES, ...HELD_OUT_CASES, ...NEW_CASES].map((c) => c.nr);
   assert.equal(new Set(nrs).size, nrs.length);
-  // the independent texts are new: no paragraph of the known texts again
+  // the independent texts are new: no paragraph of an earlier set again
   const known = TEXT_CASES.flatMap((c) => c.blocks.map((b) => b.text));
   for (const c of HELD_OUT_CASES) for (const b of c.blocks) if (b.text.length > 30) assert.ok(!known.some((k) => k.includes(b.text) || b.text.includes(k)), `${c.nr}: ${b.text.slice(0, 40)}`);
-  for (const c of [...TEXT_CASES, ...HELD_OUT_CASES]) {
+  const earlier = [...TEXT_CASES, ...HELD_OUT_CASES].flatMap((c) => c.blocks.map((b) => b.text)).filter((t) => t.length > 30);
+  for (const c of NEW_CASES) for (const b of c.blocks) if (b.text.length > 30) assert.ok(!earlier.some((k) => k.includes(b.text) || b.text.includes(k)), `${c.nr}: ${b.text.slice(0, 40)}`);
+  for (const c of [...TEXT_CASES, ...HELD_OUT_CASES, ...NEW_CASES]) {
     for (const e of c.errors) {
       const t = c.blocks[e.para - 1]?.text ?? "";
       assert.equal(t.split(e.wrong).length, 2, `${c.nr}: „${e.wrong}“ genau einmal in Absatz ${e.para}`);
@@ -193,4 +197,14 @@ test("Unabhängiger Test: neue Texte, nur „gründlich neu“ wie im Unterricht
   assert.ok(analysis.includes(cases[1].pictures![0]), "the picture descriptions reach the KI as in the app");
   assert.ok(lines[0].includes('"set":"unabhaengig"'));
   for (const c of HELD_OUT_CASES) assert.ok(reserveFor(c, SET_WAYS.unabhaengig) < reserveFor(c) / 2, c.nr);
+});
+
+test("Test mit neuen Texten: eigener Satz, nur „gründlich neu“, unbekannte Anfragen laufen mit den bekannten Texten", async () => {
+  const { SET_WAYS } = await import("./ai/textkorrektur-test");
+  const { testSetOf } = await import("./ai/textkorrektur-test-types");
+  const { NEW_CASES } = await import("./ai/textkorrektur-test-neu");
+  assert.deepEqual(SET_WAYS.neu, SET_WAYS.unabhaengig);
+  assert.deepEqual([testSetOf("neu"), testSetOf("unabhaengig"), testSetOf("bekannt"), testSetOf("x"), testSetOf(undefined)], ["neu", "unabhaengig", "bekannt", "bekannt", "bekannt"]);
+  assert.ok(NEW_CASES.every((c) => /^U\d\d$/.test(c.nr)));
+  assert.equal(NEW_CASES.filter((c) => c.pictures?.length).length, 1, "one Bildgeschichte with its picture descriptions");
 });
