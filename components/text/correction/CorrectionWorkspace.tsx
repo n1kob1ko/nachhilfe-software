@@ -53,6 +53,9 @@ const BADGE: Record<ItemKind, string> = { fehler: "bg-red-wash text-red", stil: 
 const isPlaced = (i: CorrectionItem) => i.block !== null && i.pos_start !== null && i.pos_end !== null;
 /** sorted out by the second check: not in the text, listed apart, can be brought back */
 const sortedOut = (i: CorrectionItem) => i.status === "abgelehnt" && i.review === "verworfen";
+/** does not fit its place (lib/text-correction-checks.ts replacementProblem): listed apart, cannot be accepted */
+const unfit = (i: CorrectionItem) => i.status === "abgelehnt" && i.review === "unpassend";
+const apart = (i: CorrectionItem) => sortedOut(i) || unfit(i);
 /** open and marked for a close look: never accepted in bulk */
 const toCheck = (i: CorrectionItem) => i.status === "offen" && i.review === "lehrer";
 /** „Sie“ (Absatz 3), „Lea“ (Absatz 5, 6) */
@@ -123,6 +126,8 @@ export function CorrectionWorkspace(p: Props) {
   const [adding, setAdding] = useState<Adding | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** why the server did not accept a suggestion, shown on its card */
+  const [refused, setRefused] = useState<{ id: number; text: string } | null>(null);
   const [pending, start] = useTransition();
   const paper = useRef<HTMLDivElement>(null);
   const pop = useRef<HTMLDivElement>(null);
@@ -153,10 +158,11 @@ export function CorrectionWorkspace(p: Props) {
 
   const visible = useCallback((i: CorrectionItem) => (filter === null || i.category === filter) && (showStyle || i.kind !== "stil"), [filter, showStyle]);
   const sorted = useMemo(() => [...items].sort(order), [items]);
-  const placedVisible = sorted.filter((i) => isPlaced(i) && visible(i) && !sortedOut(i));
+  const placedVisible = sorted.filter((i) => isPlaced(i) && visible(i) && !apart(i));
   const openPlaced = placedVisible.filter((i) => i.status === "offen");
-  const general = sorted.filter((i) => !isPlaced(i) && !sortedOut(i));
+  const general = sorted.filter((i) => !isPlaced(i) && !apart(i));
   const out = sorted.filter(sortedOut);
+  const notFitting = sorted.filter(unfit);
   const ov = useMemo(() => overview(items), [items]);
   const rec = recommendationFrom({ recommendation: c.recommendation, recommendation_skill: c.recommendationSkill }, ov, (id) => p.skillNames[id] ?? null);
   const final = useMemo(() => applyAccepted(p.doc, items), [p.doc, items]);
@@ -253,6 +259,7 @@ export function CorrectionWorkspace(p: Props) {
 
   const decide = (item: CorrectionItem, status: ItemStatus, replacement?: string) => {
     const wasOpen = item.status === "offen";
+    setRefused(null);
     setItems((xs) => xs.map((x) => (x.id === item.id ? { ...x, status, ...(replacement !== undefined ? { replacement } : {}) } : x)));
     setEditing(null);
     // straight on to the next open place: the whole text can be checked with two buttons
@@ -263,8 +270,19 @@ export function CorrectionWorkspace(p: Props) {
       setScrollTo(Boolean(next));
     }
     run(async () => {
-      const saved = await decideItemAction(c.id, item.id, status, replacement);
-      if (saved) setItems((xs) => xs.map((x) => (x.id === saved.id ? saved : x)));
+      const res = await decideItemAction(c.id, item.id, status, replacement);
+      if (!res) return;
+      // refused (the change does not fit the text): back as it was and the card shows why, or set aside as not applicable
+      if ("error" in res) {
+        if (res.item?.review === "unpassend") setError(res.error);
+        else {
+          setRefused({ id: item.id, text: res.error });
+          setSelected(item.id);
+          setScrollTo(true);
+        }
+      }
+      const saved = res.item ?? item;
+      setItems((xs) => xs.map((x) => (x.id === saved.id ? saved : x)));
     });
   };
 
@@ -277,7 +295,8 @@ export function CorrectionWorkspace(p: Props) {
     setItems((xs) => xs.map((x) => (ids.has(x.id) ? { ...x, status } : x)));
     setSelected(null);
     run(async () => {
-      await decideAllAction(c.id, status, { ...(filter ? { category: filter } : {}), ...(showStyle ? {} : { kind: "fehler" as const }) });
+      const done = await decideAllAction(c.id, status, { ...(filter ? { category: filter } : {}), ...(showStyle ? {} : { kind: "fehler" as const }) });
+      if (status === "uebernommen" && done < n) setError(`${n - done} ${n - done === 1 ? "Stelle wurde" : "Stellen wurden"} nicht übernommen, weil die Änderung nicht in den Text passt.`);
       router.refresh();
     });
   };
@@ -548,6 +567,11 @@ export function CorrectionWorkspace(p: Props) {
 
           {current && pos && view === "korrekturen" && (
             <div ref={pop} className="kx-pop" style={{ top: pos.top, left: pos.left }} role="dialog" aria-label="Korrektur" data-testid="korrektur-karte">
+              {refused?.id === current.id && (
+                <p className="mb-3 rounded-xl bg-red-wash px-3.5 py-2.5 text-[14px] text-red" role="alert" data-testid="nicht-uebernommen">
+                  {refused.text}
+                </p>
+              )}
               <ItemCard
                 item={current}
                 skillName={current.skill_id ? (p.skillNames[current.skill_id] ?? null) : null}
@@ -656,6 +680,29 @@ export function CorrectionWorkspace(p: Props) {
             </ul>
           </details>
         )}
+        {view === "korrekturen" && notFitting.length > 0 && (
+          <details className="reveal mt-4 rounded-2xl border border-line bg-surface px-5 py-3" data-testid="nicht-anwendbar">
+            <summary className="text-[15px] font-semibold">
+              Nicht anwendbar <span className="num text-ink-2">({notFitting.length})</span>
+            </summary>
+            <p className="mt-1 text-[13px] text-ink-2">Diese KI-Vorschläge passen nicht an ihre Stelle im Text und können nicht übernommen werden. Du kannst die Stelle selbst korrigieren.</p>
+            <ul className="mt-1 divide-y divide-line">
+              {notFitting.map((i) => (
+                <li key={i.id} className="flex flex-wrap items-start gap-3 py-3">
+                  <Badge item={i} />
+                  <div className="min-w-0 flex-1 text-[15px]">
+                    <p>
+                      „{i.quote}“ → „{i.replacement || "(streichen)"}“
+                      {i.block !== null && <span className="text-[13px] text-ink-2"> · Absatz {i.block + 1}</span>}
+                    </p>
+                    <p className="text-ink-2">{i.explanation}</p>
+                    {i.review_note && <p className="mt-1 text-[13px] text-amber">{i.review_note}</p>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
         {view === "endfassung" && ov.open > 0 && (
           <p className="mt-3 text-[14px] text-ink-2">
             Noch {ov.open} {ov.open === 1 ? "Vorschlag ist" : "Vorschläge sind"} offen und in der Endfassung nicht enthalten.
@@ -676,8 +723,9 @@ export function CorrectionWorkspace(p: Props) {
             <span className="num">{ov.open}</span> <span className="text-[17px] font-medium text-ink-2">offen</span>
           </p>
           <p className="num text-[14px] text-ink-2">
-            {items.filter((i) => i.status === "uebernommen").length} übernommen · {ov.rejected - out.length} abgelehnt
+            {items.filter((i) => i.status === "uebernommen").length} übernommen · {ov.rejected - out.length - notFitting.length} abgelehnt
             {out.length > 0 && <> · {out.length} aussortiert</>}
+            {notFitting.length > 0 && <> · {notFitting.length} nicht anwendbar</>}
           </p>
           {items.length > 0 && (
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--bar-track)]" aria-hidden>
