@@ -19,7 +19,7 @@
  * sentence with the KI's version (lib/text-correction-diff.ts), the KI's list giving the explanations.
  */
 import { z } from "zod";
-import { applyChanges, clip, comparable, flagItems, ruleItems, sentencesOf, withNote, type CheckItem, type Sentence } from "../text-correction-checks";
+import { applyChanges, clip, comparable, flagItems, ruleItems, sentencesOf, tidyItems, withInfo, withNote, type CheckItem, type Sentence } from "../text-correction-checks";
 import { anchorFindings, FOREIGN_PLACEHOLDER, maskText, NAME_PLACEHOLDER, type InFinding, type ItemOrigin, type NewItem, type Range } from "../text-correction-core";
 import { compareVersions, hidesGrammar } from "../text-correction-diff";
 import { isEnglish, normalizeCategory, TEXT_CATEGORIES, type Level } from "../text-correction-rules";
@@ -616,8 +616,9 @@ export function applyVerdicts<T extends CheckItem & { origin: ItemOrigin }>(item
       return;
     }
     if (c.explanation_ok === false) {
+      // the check confirmed the change and wrote the explanation itself: information, no mark (9 of 18 needless marks, test 2026-10-10)
       next = betterExplanation
-        ? withNote({ ...next, explanation: betterExplanation }, "Die Erklärung hat die zweite Prüfung neu geschrieben.")
+        ? withInfo({ ...next, explanation: betterExplanation }, "Die Erklärung hat die zweite Prüfung neu geschrieben.")
         : withNote(next, `Die Erklärung ist laut zweiter Prüfung fraglich${reason ? `: ${reason}` : "."}`);
     }
     out[p.k] = next;
@@ -629,6 +630,15 @@ export function applyVerdicts<T extends CheckItem & { origin: ItemOrigin }>(item
     missed.push({ ...f, quote, origin: "pruefung", review: "lehrer", review_note: "Von der zweiten Prüfung gefunden, nicht weiter geprüft." });
   }
   return { items: out, missed };
+}
+
+/**
+ * A style idea the second check adds on its own, that nobody checks again: a hint for the teacher with the wording,
+ * not a change in the text (test 2026-10-10: 3 of its 5 were needless, the other 2 debatable). It stays marked, so
+ * „Alle übernehmen“ never passes it on to the student. An error the check adds stays a suggestion, marked.
+ */
+export function styleAsHint<T extends NewItem>(it: T): T {
+  return it.kind === "stil" && it.pos_start !== null ? { ...it, kind: "hinweis", pos_start: null, pos_end: null } : it;
 }
 
 /** Rough tokens of a „gründlich“ correction: two requests, both with more thinking than the one-step run. */
@@ -710,12 +720,13 @@ export async function correctThoroughly(
     items = items.map((it) => (it.kind === "hinweis" ? it : withNote(it, "Die zweite Prüfung ist fehlgeschlagen.")));
   } else if (v?.ok) {
     const applied = applyVerdicts(items, proposals, v.data, o.pattern);
-    items = applied.items;
+    // a better wording of the check with the spaces right, like every suggestion of step 1
+    items = tidyItems(texts, applied.items, o.taken);
     // the check's own finds: never where a suggestion or a decision already is
     const taken = new Map<number, Range[]>([...o.taken].map(([k, rs]) => [k, [...rs]]));
     for (const it of items) if (it.block !== null && it.pos_start !== null && it.pos_end !== null) taken.set(it.block, [...(taken.get(it.block) ?? []), { start: it.pos_start, end: it.pos_end }]);
     const more = anchorFindings(doc, { findings: applied.missed, hints: [] }, { ...o, taken });
-    items = [...items, ...more.items];
+    items = [...items, ...more.items.map(styleAsHint)];
     dropped += more.dropped;
   }
   return { ok: true, items: flagItems(texts, items, { english }), stages: { analyse: listedItems.items, fassung }, data: a.data, dropped, unchecked, hidden, verify, ...(verifyMessage ? { verifyMessage } : {}), callIds };

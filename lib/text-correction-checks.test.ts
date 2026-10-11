@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { applyChanges, comparable, finalProblems, flagItems, mismatchOf, newSubjectOf, ruleFindings, sameErrorElsewhere, sentencesOf, shapeOf, splitSentences } from "./text-correction-checks";
+import { applyChanges, comparable, finalProblems, flagItems, mismatchOf, newSubjectOf, ruleFindings, sameErrorElsewhere, sentencesOf, shapeOf, splitSentences, tidyEdges, tidyItems, withInfo, withNote, type CheckItem } from "./text-correction-checks";
 
 const parts = (t: string) => splitSentences(t).map((s) => t.slice(s.start, s.end));
 
@@ -192,4 +192,62 @@ test("Brief: nach der Anrede mit Beistrich beginnt der Absatz klein", () => {
   ];
   assert.deepEqual(ruleFindings(blocks, { english: false }).map((f) => f.quote), ["leider"]);
   assert.deepEqual(ruleFindings([blocks[1]], { english: false }).map((f) => f.quote), ["am", "leider"]);
+});
+
+const applied = (text: string, c: { start: number; end: number; replacement: string }) => applyChanges(text, [c]).text;
+
+test("Leerzeichen am Rand einer Änderung: keines vor einem Satzzeichen, nicht zwei, wo ein Wort wegfällt (Test 2026-10-10)", () => {
+  const t = "Er hat gesagt das er kommt.";
+  const das = { start: t.indexOf("das"), end: t.indexOf("das") + 3 };
+  // „gesagt , dass“: the word before comes in, the space goes
+  assert.deepEqual(tidyEdges(t, { ...das, replacement: ", dass" }), { start: t.indexOf("gesagt"), end: das.end, replacement: "gesagt, dass" });
+  assert.equal(applied(t, tidyEdges(t, { ...das, replacement: ", dass" })), "Er hat gesagt, dass er kommt.");
+  // the word before belongs to another suggestion: only the space comes in
+  assert.deepEqual(tidyEdges(t, { ...das, replacement: ", dass" }, () => false), { start: das.start - 1, end: das.end, replacement: ", dass" });
+  // „Jahr .“ and „gestern  lange“
+  const j = "Das war schneller als letztes Jahr gewesen.";
+  assert.equal(applied(j, tidyEdges(j, { start: j.indexOf("gewesen"), end: j.indexOf("gewesen") + 7, replacement: "" })), "Das war schneller als letztes Jahr.");
+  assert.equal(applied(j, tidyEdges(j, { start: j.indexOf("Jahr"), end: j.indexOf("Jahr") + 12, replacement: "Jahr " })), "Das war schneller als letztes Jahr.");
+  const w = "Wir haben gestern sehr lange gespielt.";
+  assert.equal(applied(w, tidyEdges(w, { start: w.indexOf("sehr"), end: w.indexOf("sehr") + 4, replacement: "" })), "Wir haben gestern lange gespielt.");
+  assert.equal(applied("Sehr gut war es.", tidyEdges("Sehr gut war es.", { start: 0, end: 4, replacement: "" })), "gut war es.");
+  assert.deepEqual(tidyEdges("Wir gehen heim.", { start: 4, end: 9, replacement: " laufen " }), { start: 4, end: 9, replacement: "laufen" });
+  // a change with the spaces right stays exactly as it is
+  for (const c of [{ start: 7, end: 13, replacement: "gesagt," }, { ...das, replacement: "dass" }, { start: t.indexOf("er "), end: t.indexOf("er ") + 2, replacement: "sie" }]) assert.deepEqual(tidyEdges(t, c), c);
+});
+
+test("Vorschläge nach der zweiten Prüfung: Leerzeichen repariert, die Stelle eines anderen Vorschlags bleibt frei", () => {
+  const t = "Er hat gesagdt das er kommt.";
+  const item = (quote: string, replacement: string, o: Partial<CheckItem> = {}): CheckItem => ({ block: 0, pos_start: t.indexOf(quote), pos_end: t.indexOf(quote) + quote.length, quote, replacement, category: "zeichensetzung", kind: "fehler", rule: "", explanation: "Vor „dass“ steht ein Beistrich.", review: "", review_note: "", ...o });
+  const spelling = item("gesagdt", "gesagt", { category: "rechtschreibung" });
+  const both = tidyItems([t], [item("das", ", dass"), spelling]);
+  assert.deepEqual(both.map((i) => [i.quote, i.replacement]), [[" das", ", dass"], ["gesagdt", "gesagt"]]);
+  assert.equal(applyChanges(t, both.map((i) => ({ start: i.pos_start!, end: i.pos_end!, replacement: i.replacement }))).text, "Er hat gesagt, dass er kommt.");
+  assert.deepEqual(tidyItems([t], [item("das", ", dass")]).map((i) => [i.quote, i.replacement]), [["gesagdt das", "gesagdt, dass"]]);
+  // a place the teacher already decided stays free as well
+  assert.deepEqual(tidyItems([t], [item("das", ", dass")], new Map([[0, [{ start: 7, end: 14 }]]])).map((i) => [i.quote, i.replacement]), [[" das", ", dass"]]);
+  // a sorted-out suggestion does not block the word, a hint and a sorted-out one stay as they are
+  assert.deepEqual(tidyItems([t], [item("das", ", dass"), { ...spelling, review: "verworfen" }])[0].quote, "gesagdt das");
+  for (const it of [item("das", ", dass", { kind: "hinweis" }), item("das", ", dass", { review: "verworfen" }), spelling]) assert.equal(tidyItems([t], [it])[0], it);
+});
+
+test("Kategorie passt doch: ein Apostroph gehört zum Wort, ein Bindewort verbindet zwei Hauptsätze (Test 2026-10-10)", () => {
+  // all three right and needlessly marked in the test
+  assert.equal(mismatchOf({ category: "rechtschreibung", quote: "It's", replacement: "Its", explanation: "„its“ ohne Apostroph ist das besitzanzeigende Fürwort." }), null);
+  assert.equal(mismatchOf({ category: "rechtschreibung", quote: "it's leg", replacement: "its leg", explanation: "Possessive „its“ has no apostrophe." }), null);
+  assert.equal(mismatchOf({ category: "zeichensetzung", quote: "a lot, it", replacement: "a lot, and it", explanation: "Two main clauses need a joining word or a full stop." }), null);
+  // the clear cases stay
+  assert.match(mismatchOf({ category: "zeichensetzung", quote: "a lot, it", replacement: "a lot, and she", explanation: "Joining word." })!, /Zeichensetzung/);
+  assert.match(mismatchOf({ category: "zeichensetzung", quote: "Haus weil", replacement: "Haus und weil", explanation: "Bindewort." })!, /Zeichensetzung/, "a joining word without a comma is no comma rule");
+  assert.match(mismatchOf({ category: "rechtschreibung", quote: "Haus weil", replacement: "Haus, weil", explanation: "Beistrich vor weil." })!, /Satzzeichen/);
+  assert.match(mismatchOf({ category: "rechtschreibung", quote: "geht's", replacement: "geht's.", explanation: "Punkt." })!, /Satzzeichen/);
+});
+
+test("Eine Information zur Prüfung markiert nicht, ein Grund schon", () => {
+  const it: CheckItem = { block: 0, pos_start: 0, pos_end: 5, quote: "gehte", replacement: "ging", category: "grammatik", kind: "fehler", rule: "", explanation: "Vergangenheit.", review: "", review_note: "" };
+  const info = withInfo(it, "Die Erklärung hat die zweite Prüfung neu geschrieben.");
+  assert.deepEqual([info.review, info.review_note], ["", "Die Erklärung hat die zweite Prüfung neu geschrieben."]);
+  assert.equal(withInfo(info, "Die Erklärung hat die zweite Prüfung neu geschrieben.").review_note, info.review_note, "said once");
+  assert.equal(withInfo({ ...it, review: "lehrer" }, "Info.").review, "lehrer", "a mark stays");
+  assert.equal(withNote(info, "Die KI war sich nicht sicher.").review, "lehrer");
 });
