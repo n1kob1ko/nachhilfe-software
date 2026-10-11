@@ -4,7 +4,8 @@
  *
  * Three rules, nothing else: a first name from the list below; the word after a form of address („Frau
  * Novak“, „Mrs Berger“, „Herr Dr. Huber“); a surname right after a first name („Lena Hofer“). A surname
- * found once is replaced everywhere in the text, alone too (namePattern in lib/text-correction-core.ts).
+ * found once is replaced everywhere in the text, alone too (namePattern in lib/text-correction-core.ts); a name that is
+ * also an everyday word („Weiß“, „Sommer“, „Fox“) only where it stands as a name.
  * Pronouns, articles and other small words are never names: OpenRouter's „Person name“ guardrail hid
  * „Sie“, „dass“ or „Spiel ein“ and so changed the grammar the KI had to check (test 2026-10-09).
  *
@@ -45,8 +46,58 @@ const FIRST_NAMES = new Set(
   ).split(" "),
 );
 
-/** Forms of address before a name; a dot after them is allowed („Dr.“, „Mrs.“). */
-const ADDRESS = new Set(["Frau", "Herr", "Herrn", "Fräulein", "Mr", "Mrs", "Ms", "Miss", "Dr", "Prof", "Mag", "Ing", "DI"]);
+/** Forms of address before a name; a dot after them is allowed („Dr.“, „Mrs.“). „Dear“ opens an English letter („Dear Hope,“). */
+const ADDRESS = new Set(["Frau", "Herr", "Herrn", "Fräulein", "Mr", "Mrs", "Ms", "Miss", "Dr", "Prof", "Mag", "Ing", "DI", "Dear"]);
+
+/**
+ * Surnames that are also everyday nouns: after an article they are the noun („im Sommer“, „kein Stern“, „wie ein
+ * Wolf“), elsewhere the name. Test 2026-10-10: „Im Sommer“ became „Im [Name]“. Not the frequent surnames
+ * from trades and titles (Müller, Bauer, Koch, König, Smith): they stay hidden everywhere, as before.
+ */
+const NOUN_NAMES = new Set(
+  (
+    "Sommer Winter Herbst Lenz Wolf Fuchs Vogel Hahn Haas Hase Bär Adler Falk Falke Fink Specht Strauß Strauss Storch Kranich Hirsch Ochs " +
+    "Lamm Bock Stier Hecht Fisch Engel Berg Bach Stein Wald Busch Baum Feld Hof Holz Stern Sonne Mond Licht Glück Freund Kern Korn Dorn " +
+    "Salz Pfeffer Zucker Honig Eisen Stahl Kupfer Gold Silber Ring Krug Topf Hammer Nagel Brand Regen Schnee Sturm Blitz Donner Frost Horn " +
+    "Weiß Weiss Schwarz Braun Grün Fox Bird Swan Crane Drake Hawk Finch Lamb Bull Bush Wood Woods Hill Field Stone Brook Lake Marsh Star Moon"
+  ).split(" "),
+);
+
+/**
+ * Names that are also everyday words: written small they are the word („Niemand weiß“ next to Direktor Weiß, „zu
+ * klein“, „I will“, „I hope“, „a young fox“), unless right after a form of address („frau weiß“). Test 2026-10-10:
+ * „Niemand weiß“ became „Niemand [Name]“ and the KI explained a missing verb.
+ */
+const WORD_NAMES = new Set([
+  ...NOUN_NAMES,
+  ...(
+    "Klein Groß Gross Lang Kurz Jung Alt Neu Frisch Fröhlich Lustig Kühn Ernst Frei Fromm Gut Hell Hoch Kluge Klug Kraus Krause Lieb Reich " +
+    "Scharf Schön Schnell Stark Still Süß Wild Mild Rau Hart Wach Weise Fein Blank Bunt Froh Frank Stolz Treu Sauer Will Mark " +
+    "Brown Black White Green Gray Grey Young Long Short Little Small Strong Sharp Rich Wise Hope Faith Grace Joy May June April Rose " +
+    "Lily Daisy Ruby Pearl Holly Ivy Iris Violet Poppy Willow Hazel Olive Ginger Honey Sunny Penny Sandy Bill Pat Rob Sue Art Ray Guy " +
+    "Jack Dawn Summer Autumn Sky Storm River Chase Love Dean Major Cliff"
+  ).split(" "),
+]);
+
+/** The name in the spelling of the lists: first letter capital, the rest small („WOLF“, „wolf“ → „Wolf“). */
+const listed = (name: string) => name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+/** A name that is also an everyday word: replaced only where it stands as a name (namePattern in lib/text-correction-core.ts). */
+export const isWordName = (name: string) => WORD_NAMES.has(listed(name));
+/** A name that is also a noun: not replaced after an article. */
+export const isNounName = (name: string) => NOUN_NAMES.has(listed(name));
+
+/** Before a name written small: a form of address or a kinship word („frau weiß“, „opa ernst“), any case. */
+export const ADDRESS_BEFORE = ["frau", "herr", "herrn", "fräulein", "mr", "mrs", "ms", "miss", "dr", "prof", "dear", "opa", "oma", "onkel", "tante", "uncle", "aunt"];
+/**
+ * Before a German noun, never before a name: indefinite articles, im/am/ins, possessives, demonstratives. Not „der“,
+ * „die“, „beim“, „zum“ or „vom“, which come before a surname in spoken German („die Sommer hat gesagt“, „beim Wolf“):
+ * there the word stays hidden, as before. English nouns are small, so „Fox“ with a capital is the name anyway.
+ */
+export const ARTICLES = (
+  "ein eine einen einem einer eines kein keine keinen keinem keiner keines im am ins ans aufs " +
+  "mein meine meinen meinem meiner meines dein deine deinen deinem deiner deines sein seine seinen seinem seiner seines ihr ihre ihren ihrem ihrer ihres " +
+  "unser unsere unseren unserem unserer unseres euer eure euren eurem eurer eures dieser diese dieses diesen diesem jeder jede jedes jeden jedem"
+).split(" ");
 
 /**
  * A role after „Frau“ or „Herr“ („Frau Lehrerin“, „Herr Bürgermeister“, „Herr Dr.“) is no name; the name may
@@ -54,7 +105,7 @@ const ADDRESS = new Set(["Frau", "Herr", "Herrn", "Fräulein", "Mr", "Mrs", "Ms"
  */
 const ROLE = /(?:lehrer|direktor|doktor|professor|pfarrer|bürgermeister|nachbar|minister|präsident|kolleg|inspektor|kommissar|trainer|kapitän|anwalt|anwält|mama|papa)(?:e|in|innen|en|s)?$/i;
 
-/** Words that often follow a first name without being its surname („Lukas Mutter“, „Lena Hund“). */
+/** Words that often follow a first name or „Dear“ without being a name („Lukas Mutter“, „Lena Hund“, „Dear Sir“). */
 const NOT_SURNAME = new Set(
   (
     "Mutter Vater Mama Papa Mami Papi Eltern Bruder Brüder Schwester Schwestern Geschwister Oma Opa Omi Opi Großmutter Großvater " +
@@ -62,7 +113,9 @@ const NOT_SURNAME = new Set(
     "Hund Katze Hase Pferd Haus Wohnung Zimmer Garten Klasse Schule Lehrer Lehrerin Geburtstag Party Fest Fahrrad Rad Auto Handy " +
     "Idee Meinung Antwort Frage Name Namen Hilfe Angst Ball Buch Spiel Spiele Sachen Tasche Rucksack Jacke Mannschaft Team Problem " +
     "Plan Traum Leben Stimme Gesicht Hand Hände Kopf Augen Herz Mitschüler Mitschülerin Zeit Arbeit Aufgabe Heft Note Noten " +
-    "Mum Mom Dad Mother Father Brother Sister Friend Dog Cat House"
+    "Mum Mom Dad Mother Father Brother Sister Friend Dog Cat House Sir Madam Madame Diary Friends All Everyone Team Teacher Teachers Class " +
+    "Students Parents Editor Customer Manager Principal Headteacher Neighbour Neighbor Grandma Grandpa Granny Grandad Grandmother Grandfather " +
+    "Aunt Uncle Auntie Cousin Mummy Mommy Daddy Colleagues Members Readers Reader Guests Visitors"
   ).split(" "),
 );
 
@@ -74,8 +127,11 @@ const NEVER = new Set(
   ).split(" "),
 );
 
-/** Typical endings of German nouns: such a word after „Frau“ is the woman's flowers, not her name („der Frau Blumen“ aside). */
-const NOUN_ENDING = /(?:ung|heit|keit|schaft|chen|lein|tion|sion|tät|nis|tum|ismus)$/;
+/**
+ * Typical endings of German nouns: such a word after „Frau“ is the woman's flowers, not her name („der Frau Blumen“ aside).
+ * Three letters at least before the ending: „Klein“ is no „-lein“ noun (Herr Klein was not found, test 2026-10-10).
+ */
+const NOUN_ENDING = /\p{L}{3}(?:ung|heit|keit|schaft|chen|lein|tion|sion|tät|nis|tum|ismus)$/u;
 
 type Word = { text: string; start: number; end: number };
 
@@ -146,7 +202,10 @@ export function detectNames(texts: string[]): string[] {
       }
     }
   }
-  return found.filter((f) => !f.byPlace || !nouns.has(f.name)).map((f) => f.name);
+  const all = new Set(found.map((f) => f.name));
+  // a name that is also a noun stays: only its places as a name are replaced („Elfriede Stern“ next to „kein Stern“);
+  // „Frau Hofers“ next to „Frau Hofer“ is one name, its genitive s stays outside the placeholder (no „Hoferss“)
+  return found.filter((f) => (!f.byPlace || !nouns.has(f.name) || isNounName(f.name)) && !(f.name.endsWith("s") && all.has(f.name.slice(0, -1)))).map((f) => f.name);
 }
 
 /**

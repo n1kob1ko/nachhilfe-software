@@ -5,6 +5,8 @@
  */
 import type { AICorrection } from "./ai/textkorrektur";
 import { blockText, normalizeRuns, type Block, type Run, type TextDoc } from "./text-doc";
+import { ADDRESS_BEFORE, ARTICLES, isNounName, isWordName } from "./name-detection";
+import { tidyEdges } from "./text-correction-checks";
 import { categoryInfo, normalizeCategory, TEXT_CATEGORIES, type Level } from "./text-correction-rules";
 
 export type ItemStatus = "offen" | "uebernommen" | "abgelehnt";
@@ -114,12 +116,33 @@ export const NAME_PLACEHOLDER = "[Name]";
 export const FOREIGN_PLACEHOLDER = /\[[A-Z][A-Z_]{2,}\]/;
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** Name parts of at least 3 letters, as whole words, longest first. */
+/** Every letter in both cases („[lL][eE][aA]“): the pattern is case-sensitive for names that are also words. */
+const anyCase = (s: string) =>
+  [...s]
+    .map((ch) => {
+      const lo = ch.toLowerCase();
+      const up = ch.toUpperCase();
+      return lo !== up && lo.length === 1 && up.length === 1 ? `[${lo}${up}]` : escapeRe(ch);
+    })
+    .join("");
+/** Not right after an article („im Sommer“, „kein heller Stern“). */
+const NOT_AFTER_ARTICLE = `(?<!(?:^|[^\\p{L}\\p{N}])(?:${ARTICLES.map(anyCase).join("|")})\\s+(?:\\p{Ll}\\p{L}*\\s+)?)`;
+/** Right after a form of address or a kinship word („Frau“, „frau“, „Opa“, „Dear“). */
+const AFTER_ADDRESS = `(?<=(?:^|[^\\p{L}\\p{N}])(?:${ADDRESS_BEFORE.map(anyCase).join("|")})\\.?\\s+)`;
+
+/**
+ * Name parts of at least 3 letters, as whole words, longest first, in any case („lena“ too). A name that is also an
+ * everyday word („Weiß“, „Sommer“, „Fox“, „Will“) only where it stands as a name: with a capital letter, a noun not
+ * after an article, or right after a form of address; „Niemand weiß“, „im Sommer“ and „I will“ stay (test 2026-10-10).
+ */
 export function namePattern(names: string[]): RegExp | null {
   const parts = [...new Set(names.flatMap((n) => n.split(/[\s-]+/)).map((p) => p.replace(/[^\p{L}]/gu, "")).filter((p) => p.length >= 3))].sort((a, b) => b.length - a.length);
   if (!parts.length) return null;
+  const alternatives = parts.map((p) =>
+    isWordName(p) ? `(?:${isNounName(p) ? NOT_AFTER_ARTICLE : ""}${escapeRe(p.charAt(0).toUpperCase())}${anyCase(p.slice(1))}|${AFTER_ADDRESS}${anyCase(p)})` : anyCase(p),
+  );
   // a genitive s stays outside the placeholder („Leas“ → „[Name]s“): hidden inside it, the KI added it once more („Leass“, test 4, 2026-10-09)
-  return new RegExp(`(?<![\\p{L}\\p{N}])(?:${parts.map(escapeRe).join("|")})(?=s?(?![\\p{L}\\p{N}]))`, "giu");
+  return new RegExp(`(?<![\\p{L}\\p{N}])(?:${alternatives.join("|")})(?=s?(?![\\p{L}\\p{N}]))`, "gu");
 }
 
 /**
@@ -219,6 +242,9 @@ export type InFinding = AICorrection["findings"][number] & { from?: number; to?:
  * quote, or there are already too many; a finding whose quote is not in the paragraph becomes a note
  * without a place. `taken` are places already decided (carried over from the previous correction).
  */
+/** The words of a quote without the signs at their edges („gesagt,“ → „gesagt“, „[Name]“ stays). */
+const bareWords = (s: string) => s.split(/\s+/).map((w) => w.replace(/^[^\p{L}\p{N}[]+|[^\p{L}\p{N}\]]+$/gu, "")).filter(Boolean);
+
 export function anchorFindings(
   doc: TextDoc,
   ai: { findings: InFinding[]; hints: AICorrection["hints"] },
@@ -275,18 +301,23 @@ export function anchorFindings(
       if (kind === "stil") style++;
       continue;
     }
-    const start = m.toOrig[hit.start];
-    const end = m.toOrig[hit.end];
-    const original = blockText(doc[block]).slice(start, end);
+    const text = blockText(doc[block]);
+    const at = { start: m.toOrig[hit.start], end: m.toOrig[hit.end] };
     // a replacement that names someone gets the name back that stood there
-    const names = maskText(original, o.pattern).names;
+    const names = maskText(text.slice(at.start, at.end), o.pattern).names;
     let n = 0;
     const restored = replacement.split(NAME_PLACEHOLDER).reduce((acc, part, i) => (i === 0 ? part : acc + (names[n++] ?? names[0] ?? NAME_PLACEHOLDER) + part), "");
-    if (restored === original) {
+    // no space before a sign and no two spaces once it stands in the text („gesagt , dass“); the word before only comes
+    // in when no other suggestion has it, else just the space (that one may come later in the list)
+    const others = new Set(ai.findings.filter((g) => g !== f && g?.para === f.para && typeof g?.quote === "string").flatMap((g) => bareWords(g.quote)));
+    const free = (r: Range) => !blockTaken.some((t) => overlaps(t, r)) && !bareWords(maskText(text.slice(r.start, r.end), o.pattern).masked).some((w) => others.has(w));
+    const { start, end, replacement: tidy } = tidyEdges(text, { ...at, replacement: restored }, free);
+    const original = text.slice(start, end);
+    if (tidy === original) {
       dropped++;
       continue;
     }
-    items.push({ block, pos_start: start, pos_end: end, quote: original, replacement: restored, category, kind, rule, explanation, skill_id, ...extra });
+    items.push({ block, pos_start: start, pos_end: end, quote: original, replacement: tidy, category, kind, rule, explanation, skill_id, ...extra });
     taken.set(block, [...blockTaken, { start, end }]);
     cursor.set(block, hit.end);
     marks++;

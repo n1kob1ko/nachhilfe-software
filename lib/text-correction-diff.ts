@@ -178,7 +178,33 @@ export function compareVersions(sentence: string, corrected: string): Comparison
     return s;
   };
 
-  const out = final.map((h0): SentenceChange => {
+  /** Our neighbour token before (or after) the hunk stands for the KI's one there: both versions agree on it. */
+  const agreeBefore = (h: Hunk) => (h.i0 === 0 ? h.j0 === 0 : partner.get(h.i0 - 1) === h.j0 - 1);
+  const agreeAfter = (h: Hunk) => (h.i1 === a.length ? h.j1 === b.length : partner.get(h.i1) === h.j1);
+  /**
+   * Whether the change, put into our sentence, leaves the spaces between its neighbours as the KI wrote them. Replacing
+   * only „das“ by „, dass“ gave „gesagt , dass“, deleting only „gewesen“ gave „Jahr .“, and the second check then
+   * sorted the right correction out (test 2026-10-10).
+   */
+  const spacedLike = (h: Hunk) => {
+    if (h.i1 === h.i0 || !agreeBefore(h) || !agreeAfter(h)) return true;
+    const ourFrom = h.i0 > 0 ? a[h.i0 - 1].end : 0;
+    const ourTo = h.i1 < a.length ? a[h.i1].start : sentence.length;
+    const result = sentence.slice(ourFrom, a[h.i0].start) + theirText(h.j0, h.j1) + sentence.slice(a[h.i1 - 1].end, ourTo);
+    const theirFrom = h.j0 > 0 ? b[h.j0 - 1].end : 0;
+    const theirTo = h.j1 < b.length ? b[h.j1].start : corrected.length;
+    const kept = h.j1 > h.j0 ? corrected.slice(theirFrom, b[h.j0].start) + theirText(h.j0, h.j1) + corrected.slice(b[h.j1 - 1].end, theirTo) : corrected.slice(theirFrom, theirTo);
+    // every space counts (a deleted word between two spaces leaves two); the sentence's own start and end stay as the student wrote them
+    const spaces = (s: string) => {
+      const t = s.replace(/\s/g, " ");
+      return h.i0 === 0 && h.i1 === a.length ? t.trim() : h.i0 === 0 ? t.trimStart() : h.i1 === a.length ? t.trimEnd() : t;
+    };
+    return spaces(result) === spaces(kept);
+  };
+
+  const out: SentenceChange[] = [];
+  let lastEnd = 0;
+  for (const h0 of final) {
     const h = { ...h0 };
     // only signs, or nothing of ours: show the word before (at the start of the sentence: the word after)
     if (!ours(h).some((t) => t.word)) {
@@ -190,10 +216,20 @@ export function compareVersions(sentence: string, corrected: string): Comparison
         h.j1++;
       }
     }
+    // a sign that comes or a word that goes next to a sign takes the word before with it (or after, at the start), so the spaces come from the KI
+    if (!spacedLike(h) && h.i0 > lastEnd && partner.get(h.i0 - 1) === h.j0 - 1) {
+      h.i0--;
+      h.j0--;
+    }
+    if (!spacedLike(h) && h.i1 < a.length && partner.get(h.i1) === h.j1) {
+      h.i1++;
+      h.j1++;
+    }
+    lastEnd = h.i1;
     const start = h.i1 > h.i0 ? a[h.i0].start : (a[h.i0 - 1]?.end ?? 0);
     const end = h.i1 > h.i0 ? a[h.i1 - 1].end : start;
-    return { start, end, replacement: theirText(h.j0, h.j1) };
-  });
+    out.push({ start, end, replacement: theirText(h.j0, h.j1) });
+  }
 
   return {
     changes: out.filter((c) => c.end > c.start && comparable(sentence.slice(c.start, c.end)) !== comparable(c.replacement)),
