@@ -229,7 +229,11 @@ export function findQuote(hay: string, quote: string, from: number, taken: Range
 
 // ---------- checking what the KI answered ----------
 
-export type NewItem = Omit<CorrectionItem, "id" | "correction_id" | "status" | "source" | "decided_by" | "decided_at" | "created_at">;
+/**
+ * agreed: only while the „gründlich“ run decides, never stored. Step 1 made this change both in its list and in its own
+ * version of the sentence; the second check alone does not sort such a suggestion out (lib/ai/textkorrektur-gruendlich.ts).
+ */
+export type NewItem = Omit<CorrectionItem, "id" | "correction_id" | "status" | "source" | "decided_by" | "decided_at" | "created_at"> & { agreed?: boolean };
 
 export const clip = (s: unknown, max: number) => (typeof s === "string" ? s.replace(/\s+/g, " ").trim().slice(0, max) : "");
 const kindOf = (raw: unknown): "fehler" | "stil" => (typeof raw === "string" && /stil|style|vorschlag|optional|empfehl/i.test(raw) ? "stil" : "fehler");
@@ -238,7 +242,7 @@ const wordsIn = (s: string) => s.split(/\s+/).filter(Boolean).length;
 export type Anchored = { items: NewItem[]; dropped: number };
 
 /** A finding as the KI gave it, with what the „gründlich“ run adds: its sentence (masked positions), origin and review. */
-export type InFinding = AICorrection["findings"][number] & { from?: number; to?: number; origin?: ItemOrigin; review?: ItemReview; review_note?: string };
+export type InFinding = AICorrection["findings"][number] & { from?: number; to?: number; origin?: ItemOrigin; review?: ItemReview; review_note?: string; agreed?: boolean };
 
 /**
  * Turns the KI's findings into items with exact positions in the snapshot. A finding is dropped when its
@@ -287,7 +291,7 @@ export function anchorFindings(
     const hit = inSpan(findQuote(m.masked, quote, from, masked(blockTaken)));
     const skill_id = typeof f.skill_id === "string" && o.skills.has(f.skill_id) ? f.skill_id : null;
     const rule = clip(f.rule, 60);
-    const extra = { origin: f.origin ?? "", review: f.review ?? "", review_note: clip(f.review_note, 300) } satisfies Pick<NewItem, "origin" | "review" | "review_note">;
+    const extra = { origin: f.origin ?? "", review: f.review ?? "", review_note: clip(f.review_note, 300), ...(f.agreed ? { agreed: true } : {}) } satisfies Pick<NewItem, "origin" | "review" | "review_note" | "agreed">;
     if (!hit && inSpan(findQuote(m.masked, quote, from, masked(decided.get(block) ?? [])))) {
       // overlaps another new suggestion: counted, never silently lost
       dropped++;
