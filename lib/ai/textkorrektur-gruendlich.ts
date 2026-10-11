@@ -8,9 +8,10 @@
  *    the whole sentence before and after the change, with its explanation. Then the text with all
  *    suggestions applied is read once more for what is still wrong, also where two changes clash.
  *
- * A second KI check is no proof. What it doubts, rewrites or adds is marked for the teacher; what it
- * finds wrong is sorted out but kept (the teacher can bring it back). The rule-based checks of
- * lib/text-correction-checks.ts come on top. Only masked text leaves the app, as in the one-step run.
+ * A second KI check is no proof. What it doubts, rewrites or adds is marked for the teacher. What it
+ * wants left as the student wrote it is sorted out but kept (the teacher can bring it back), unless step 1
+ * made the change both in its list and in its own sentence: then it is marked too. The rule-based checks
+ * of lib/text-correction-checks.ts come on top. Only masked text leaves the app, as in the one-step run.
  *
  * Two versions (AI_TEXT_GRUENDLICH, the Textkorrektur-Test runs both): „bisher“ takes the suggestions from
  * the KI's list. „neu“ (2026-10-09, after the tests showed 20 of 118 errors missed every time) checks every
@@ -222,8 +223,9 @@ export function analysisFindings(sentences: Sentence[], data: Pick<Analysis, "se
       const notes: string[] = [];
       if (f?.sure === false) notes.push("Die KI war sich nicht sicher.");
       const rep = typeof f?.replacement === "string" ? comparable(f.replacement) : "";
-      if ((corrected && rep && !holds(corrected, rep)) || off.has(k)) notes.push(`Die KI würde den ganzen Satz anders verbessern: „${shown}“`);
-      findings.push({ ...f, para: s.para, from: s.start, to: s.end, origin: "analyse", review: notes.length ? "lehrer" : "", review_note: notes.join(" ") });
+      const otherwise = (corrected && rep && !holds(corrected, rep)) || off.has(k);
+      if (otherwise) notes.push(`Die KI würde den ganzen Satz anders verbessern: „${shown}“`);
+      findings.push({ ...f, para: s.para, from: s.start, to: s.end, origin: "analyse", review: notes.length ? "lehrer" : "", review_note: notes.join(" "), ...(corrected && !otherwise ? { agreed: true } : {}) });
     });
   }
   const unchecked = sentences.filter((s) => !seen.has(s.id)).map((s) => s.id);
@@ -371,6 +373,7 @@ export function comparedFindings(sentences: Sentence[], data: Pick<Analysis, "se
         origin: agree ? "analyse" : "fassung",
         review: notes.length ? "lehrer" : "",
         review_note: notes.join(" "),
+        ...(agree ? { agreed: true } : {}),
       });
     }
     for (const l of listOnly) findings.push({ ...base(l.f, ["In ihrer Satzfassung lässt die KI diese Stelle unverändert."]), from: s.start + l.at.start });
@@ -539,8 +542,9 @@ function restoreNames(text: string, original: string, pattern: RegExp | null) {
 /**
  * The suggestions after the check: confirmed ones as they were (a rule finding the KI confirms loses its
  * mark, one the analysis was unsure about keeps it), doubted ones marked, rewritten ones with the new
- * wording and marked, wrong ones sorted out. The errors the check found on top come back as findings
- * for the anchor, marked for the teacher.
+ * wording and marked. One the check wants left as the student wrote it is sorted out, unless step 1 made
+ * it in its list and in its own sentence (agreed): then it is marked. The errors the check found on top
+ * come back as findings for the anchor, marked for the teacher.
  */
 /**
  * A „better“ wording that is the old place plus the words already next to it („voll“ → „voll knapp“
@@ -590,7 +594,7 @@ export function betterMisfit(p: Pick<Proposal, "quote" | "before" | "after">, be
   return null;
 }
 
-export function applyVerdicts<T extends CheckItem & { origin: ItemOrigin }>(items: T[], proposals: Proposal[], data: Verify, pattern: RegExp | null): { items: T[]; missed: InFinding[] } {
+export function applyVerdicts<T extends CheckItem & { origin: ItemOrigin; agreed?: boolean }>(items: T[], proposals: Proposal[], data: Verify, pattern: RegExp | null): { items: T[]; missed: InFinding[] } {
   const out = [...items];
   const byNr = new Map<number, Verify["checks"][number]>();
   for (const c of Array.isArray(data.checks) ? data.checks : []) if (Number.isInteger(c?.nr) && !byNr.has(c.nr)) byNr.set(c.nr, c);
@@ -612,8 +616,13 @@ export function applyVerdicts<T extends CheckItem & { origin: ItemOrigin }>(item
     }
     if (verdict === "falsch") {
       const keep = better.trim() && (better.trim() === p.quote.trim() || echoesNeighbours(p, better));
-      if (keep) {
-        // the place is right as the student wrote it
+      if (keep && it.agreed) {
+        // the check against step 1's list and its sentence: a doubt for the teacher, not a decision. All 7 suggestions
+        // „neu“ sorted out this way in the tests of 2026-10-09 to 2026-10-11 were right; the same verdict without the
+        // student's words in better_replacement was only marked before.
+        out[p.k] = withNote(it, `Die zweite Prüfung würde die Stelle lassen, wie sie ist${reason ? `: ${reason}` : "."}`);
+      } else if (keep) {
+        // the place is right as the student wrote it, and step 1 did not make the change in both its list and its sentence
         out[p.k] = { ...it, review: "verworfen", review_note: clip(`Von der zweiten Prüfung aussortiert${reason ? `: ${reason}` : "."}`, 300) };
       } else if (better.trim()) {
         const misfit = betterMisfit(p, better);
