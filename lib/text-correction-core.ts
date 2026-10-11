@@ -17,8 +17,12 @@ export type ItemSource = "ki" | "lehrer";
  * the KI's version of the sentence („gründlich neu“), pruefung = found by the second check, regel = found by the program
  */
 export type ItemOrigin = "" | "analyse" | "fassung" | "pruefung" | "regel";
-/** '' = nothing special; lehrer = the teacher must look closely (note says why); verworfen = the second check found it wrong (stored as abgelehnt) */
-export type ItemReview = "" | "lehrer" | "verworfen";
+/**
+ * '' = nothing special; lehrer = the teacher must look closely (note says why); verworfen = the second check found it wrong;
+ * unpassend = the replacement does not fit its place and cannot be accepted (lib/text-correction-checks.ts replacementProblem).
+ * Both of the last are stored as abgelehnt.
+ */
+export type ItemReview = "" | "lehrer" | "verworfen" | "unpassend";
 export type CorrectionMethod = "einfach" | "gruendlich";
 export type AIStatus = "keine" | "laeuft" | "fertig" | "fehler";
 

@@ -724,7 +724,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["lessons", "family_note_source", "TEXT NOT NULL DEFAULT ''"],
   // Textkorrektur „gründlich“ (lib/ai/textkorrektur-gruendlich.ts): how the KI checked, which sentences it
   // left out, whether the second check ran; per suggestion where it came from and whether the teacher must
-  // look closely ('lehrer') or the check sorted it out ('verworfen', stored as abgelehnt)
+  // look closely ('lehrer'), the check sorted it out ('verworfen') or it does not fit its place ('unpassend', 2026-10-11),
+  // both of the last stored as abgelehnt
   ["text_corrections", "method", "TEXT NOT NULL DEFAULT 'einfach'"],
   ["text_corrections", "unchecked", "TEXT NOT NULL DEFAULT ''"],
   ["text_corrections", "verify_status", "TEXT NOT NULL DEFAULT ''"],
