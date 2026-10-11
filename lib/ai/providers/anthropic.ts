@@ -43,9 +43,14 @@ export const anthropicTransport: Transport = async (req) => {
     )
     .finalMessage();
   const u = res.usage;
+  const refusal = res.stop_reason === "refusal";
+  const parsed = res.parsed_output ?? null;
+  // no usable answer: cut off at the token limit, or text that does not fit the schema
+  const failure = parsed != null || refusal ? undefined : res.stop_reason === "max_tokens" ? ("unvollstaendig" as const) : ("schema" as const);
   return {
-    parsed: res.parsed_output ?? null,
-    refusal: res.stop_reason === "refusal",
+    parsed,
+    refusal,
+    ...(failure ? { failure, problem: failure === "unvollstaendig" ? "Antwort abgeschnitten: Token-Grenze erreicht" : "Antwort passt nicht zur Form" } : {}),
     model: res.model,
     usage: {
       input: u.input_tokens,

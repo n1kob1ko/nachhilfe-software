@@ -734,6 +734,10 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // names replaced by [Name] besides those of the student and the teachers, as the teacher confirmed them, JSON
   // array; '' = not chosen, the app's own name detection decides (lib/name-detection.ts, 2026-10-10)
   ["text_corrections", "masked_names", "TEXT NOT NULL DEFAULT ''"],
+  // when the second check of a „gründlich“ run failed (2026-10-11): why, as the teacher reads it, and step 1's answer
+  // (JSON {version, data}, masked text only) so „Erneut versuchen“ repeats only the check; both '' once it ran
+  ["text_corrections", "verify_error", "TEXT NOT NULL DEFAULT ''"],
+  ["text_corrections", "analysis", "TEXT NOT NULL DEFAULT ''"],
   ["text_correction_items", "origin", "TEXT NOT NULL DEFAULT ''"],
   ["text_correction_items", "review", "TEXT NOT NULL DEFAULT ''"],
   ["text_correction_items", "review_note", "TEXT NOT NULL DEFAULT ''"],

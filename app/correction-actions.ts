@@ -11,6 +11,7 @@ import {
   ensureCorrection,
   getCorrection,
   removeTeacherItem,
+  retryAICorrection,
   setShared,
   startAICorrection,
   startThoroughRecheck,
@@ -60,6 +61,14 @@ export async function startThoroughRecheckAction(correctionId: number, _prev: St
   if (!res.ok) return { error: res.error };
   revalidatePath(page(c.text_id));
   redirect(page(c.text_id));
+}
+
+/** „Erneut versuchen“ after a failed KI run: only on the teacher's click, only the failed part (lib/text-correction.ts retryAICorrection). */
+export async function retryAICorrectionAction(correctionId: number): Promise<StartState> {
+  const { t, c } = await teacherCorrection(correctionId);
+  const res = await retryAICorrection(c.id, t.id);
+  revalidatePath(page(c.text_id));
+  return res.ok ? null : { error: res.error };
 }
 
 /** „Selbst korrigieren“: a correction of the current version without KI. */

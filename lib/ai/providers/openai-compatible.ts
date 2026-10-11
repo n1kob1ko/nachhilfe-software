@@ -6,7 +6,7 @@
 import { z } from "zod";
 import type { ProviderId, Usage } from "../config";
 import { parseLenient } from "./repair";
-import type { AIRequest, Capabilities, Part, Transport } from "./types";
+import { ProviderHttpError, type AIRequest, type AnswerFailure, type Capabilities, type Part, type Transport } from "./types";
 
 type Flavor = Capabilities & {
   label: string;
@@ -78,9 +78,12 @@ export function jsonIn(text: string): unknown {
   }
 }
 
+type SentError = { code?: number | string; message?: string };
 type ChatResponse = {
   model?: string;
-  choices?: { finish_reason?: string; message?: { content?: string | null; refusal?: string | null } }[];
+  /** OpenRouter: the model behind it failed, sent with HTTP 200 */
+  error?: unknown;
+  choices?: { finish_reason?: string; message?: { content?: string | null; refusal?: string | null }; error?: unknown }[];
   usage?: {
     prompt_tokens?: number;
     completion_tokens?: number;
@@ -90,6 +93,12 @@ type ChatResponse = {
     prompt_cache_hit_tokens?: number;
   };
 };
+
+/** An error in the body, as an object or (some compatible APIs) a plain string. */
+function sentError(e: unknown): SentError | null {
+  if (e == null || e === false) return null;
+  return typeof e === "object" ? (e as SentError) : { message: String(e) };
+}
 
 /** Usage in the router's terms: input at full price, cache writes and reads apart. */
 export function usageOf(u: ChatResponse["usage"]): Usage {
@@ -165,21 +174,37 @@ export const openAICompatibleTransport: Transport = async (req) => {
     if (!(res.status === 429 || res.status >= 500) || attempt === 1) break;
     await new Promise((r) => setTimeout(r, 800));
   }
-  if (!res!.ok) throw new Error(`${flavor.label} antwortet mit ${res!.status}: ${error.slice(0, 200)}`);
-  const data = (await res!.json()) as ChatResponse;
-  const choice = data.choices?.[0];
+  if (!res!.ok) throw new ProviderHttpError(`${flavor.label} antwortet mit ${res!.status}: ${error.slice(0, 200)}`, res!.status);
+  // a body cut off by the timeout is the timeout's business; any other unreadable body is the provider's error
+  const data = (await res!.json().catch((e: unknown) => {
+    if (req.signal.aborted) throw e;
+    return null;
+  })) as ChatResponse | null;
+  const choice = data?.choices?.[0];
   const text = choice?.message?.content ?? "";
   const refusal = choice?.finish_reason === "content_filter" || Boolean(choice?.message?.refusal);
   const raw = refusal ? null : jsonIn(text);
   const checked = raw == null ? null : parseLenient(req.schema, raw, jsonSchemaOf(req.schema));
+  const sent: SentError | null = data == null ? { message: "Antwort nicht lesbar" } : (sentError(data.error) ?? (choice?.finish_reason === "error" ? (sentError(choice.error) ?? {}) : null));
+  const failure: AnswerFailure | undefined =
+    checked?.data != null || refusal ? undefined : sent ? "anbieter" : choice?.finish_reason === "length" ? "unvollstaendig" : !text.trim() ? "leer" : raw == null ? "json" : "schema";
   const problem =
-    choice?.finish_reason === "length" ? "Antwort abgeschnitten: Token-Grenze erreicht" : raw == null && !refusal ? "Antwort enthält kein JSON" : checked?.problem;
+    failure === "anbieter"
+      ? `${flavor.label} meldet einen Fehler${sent?.code != null ? ` (${sent.code})` : ""}: ${String(sent?.message ?? "ohne Text").slice(0, 150)}`
+      : choice?.finish_reason === "length"
+        ? "Antwort abgeschnitten: Token-Grenze erreicht"
+        : failure === "leer"
+          ? "Antwort ist leer"
+          : raw == null && !refusal
+            ? "Antwort enthält kein JSON"
+            : checked?.problem;
   return {
     parsed: checked?.data ?? null,
     refusal,
     ...(problem ? { problem } : {}),
-    model: data.model || req.model,
-    usage: usageOf(data.usage),
-    ...(typeof data.usage?.cost === "number" ? { costUsd: data.usage.cost } : {}),
+    ...(failure ? { failure } : {}),
+    model: data?.model || req.model,
+    usage: usageOf(data?.usage),
+    ...(typeof data?.usage?.cost === "number" ? { costUsd: data.usage.cost } : {}),
   };
 };
