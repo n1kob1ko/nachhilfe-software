@@ -214,6 +214,8 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
     if (!two.ok) {
       ok = false;
       lines.push(`${label}: keine Antwort (${two.message})`);
+      // N01 (2026-10-11): step 1 failed and the log did not say why
+      for (const l of logLines(`${c.nr} ${neu ? "neu" : "bisher"} analyse`, { fehler: two.message, ursache: two.cause, ...(two.code ? { code: two.code } : {}) })) log(l);
       continue;
     }
     ways.push({ way: neu ? "schritt1_neu" : "schritt1", items: flagItems(texts, two.stages.analyse, { english }), trigger: t, only: "textanalyse" });
@@ -232,7 +234,7 @@ async function runCase(c: KorrekturFall, log: (l: string) => void, runTag: strin
     });
     for (const l of logLines(`${c.nr} ${tag} saetze`, versions)) log(l);
     // test 4 (2026-10-09): one failed step 2 left 10 right suggestions marked, and the log did not say why
-    if (two.verify === "fehler") for (const l of logLines(`${c.nr} ${tag} pruefung`, { fehler: two.verifyMessage ?? "" })) log(l);
+    if (two.verify === "fehler") for (const l of logLines(`${c.nr} ${tag} pruefung`, { fehler: two.verifyMessage ?? "", ursache: two.verifyCause ?? "", ...(two.verifyCode ? { code: two.verifyCode } : {}) })) log(l);
     if (two.hidden.length) for (const l of logLines(`${c.nr} ${tag} ausgeblendet`, two.hidden)) log(l);
   }
 

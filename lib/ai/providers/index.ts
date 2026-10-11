@@ -4,7 +4,8 @@ import { anthropicTransport } from "./anthropic";
 import { FLAVORS, openAICompatibleTransport } from "./openai-compatible";
 import type { Capabilities, Prompt, Transport } from "./types";
 
-export type { AIRequest, AIResult, Part, Prompt, Transport } from "./types";
+export type { AIRequest, AIResult, AnswerFailure, Part, Prompt, Transport } from "./types";
+export { ProviderHttpError } from "./types";
 
 export const PROVIDER_LABEL: Record<ProviderId, string> = {
   anthropic: "Anthropic",

@@ -42,7 +42,26 @@ export type AIResult = {
   simulatedMs?: number;
   /** what was wrong with the answer (cut off, wrong shape, entries dropped), without its content */
   problem?: string;
+  /** why there is no usable answer (parsed is null), so the caller can say it plainly */
+  failure?: AnswerFailure;
 };
+
+/**
+ * An answer without usable data: cut off at the token limit, empty, no JSON in it, JSON of the wrong shape,
+ * or an error the provider sent inside an HTTP 200 (OpenRouter does so when the model behind it fails).
+ */
+export type AnswerFailure = "unvollstaendig" | "leer" | "json" | "schema" | "anbieter";
+
+/** The provider answered with an HTTP error; status tells overload (429), credit (402), access (401/403) and server errors apart. */
+export class ProviderHttpError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ProviderHttpError";
+  }
+}
 
 export type Transport = (req: AIRequest) => Promise<AIResult>;
 
