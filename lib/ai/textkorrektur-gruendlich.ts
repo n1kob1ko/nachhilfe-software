@@ -26,7 +26,7 @@ import { compareVersions, hidesGrammar } from "../text-correction-diff";
 import { isEnglish, normalizeCategory, TEXT_CATEGORIES, type Level } from "../text-correction-rules";
 import { blockText, type TextDoc } from "../text-doc";
 import { Finding, headerLines, Hint, joinLines, type CorrectionRequest } from "./textkorrektur";
-import { runAI, type AIMeta, type FailCause } from "./router";
+import { forgetAnswer, runAI, type AIMeta, type FailCause } from "./router";
 
 // ---------- step 1: Analyse ----------
 
@@ -749,8 +749,12 @@ export async function correctThoroughly(
     unknown = compared.unknown;
     hidden = compared.hidden;
   }
-  // an answer for none of the sentences is no correction: it must never read as a text without errors
-  if (sentences.length > 0 && unchecked.length === sentences.length) return { ok: false, message: "Die KI hat keinen Satz beantwortet.", cause: "keine_saetze", callIds };
+  // an answer for none of the sentences is no correction: it must never read as a text without errors, and
+  // „Erneut versuchen“ must ask the KI again rather than get the same answer back for free
+  if (sentences.length > 0 && unchecked.length === sentences.length) {
+    forgetAnswer(a.data);
+    return { ok: false, message: "Die KI hat keinen Satz beantwortet.", cause: "keine_saetze", callIds };
+  }
   const texts = doc.map(blockText);
   const decided: CheckItem[] = [...o.taken].flatMap(([block, rs]) => rs.map((r) => ({ block, pos_start: r.start, pos_end: r.end, quote: "", replacement: "", category: "", kind: "fehler", rule: "", explanation: "", review: "" as const, review_note: "" })));
   const rules = ruleItems(

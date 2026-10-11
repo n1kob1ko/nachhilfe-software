@@ -87,6 +87,11 @@ export function resetRouter() {
   breaker.until = 0;
 }
 
+/** An answer the caller found unusable although it had the right shape: the same request asks the KI again instead of reusing it. */
+export function forgetAnswer(data: unknown) {
+  for (const [fp, kept] of done) if (kept.data === data) done.delete(fp);
+}
+
 function fingerprint(fn: AIFunction, provider: string, model: string, system: string, prompt: Prompt, extra?: unknown) {
   return createHash("sha256").update(JSON.stringify(extra === undefined ? [fn, provider, model, system, prompt] : [fn, provider, model, system, prompt, extra])).digest("hex");
 }
