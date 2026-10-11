@@ -3,6 +3,7 @@
  * paragraph, hiding names, the three views (marks, Endfassung) and the overview of accepted errors.
  * Storage and the KI run are in lib/text-correction.ts.
  */
+import type { FailCause } from "./ai/router";
 import type { AICorrection } from "./ai/textkorrektur";
 import { blockText, normalizeRuns, type Block, type Run, type TextDoc } from "./text-doc";
 import { ADDRESS_BEFORE, ARTICLES, isNounName, isWordName } from "./name-detection";
@@ -25,6 +26,10 @@ export type ItemOrigin = "" | "analyse" | "fassung" | "pruefung" | "regel";
 export type ItemReview = "" | "lehrer" | "verworfen" | "unpassend";
 export type CorrectionMethod = "einfach" | "gruendlich";
 export type AIStatus = "keine" | "laeuft" | "fertig" | "fehler";
+/** The second check of a „gründlich“ run: '' = not run, laeuft = „Erneut versuchen“ is running */
+export type VerifyStatus = "" | "ok" | "fehler" | "laeuft";
+/** Why a KI correction or its second check failed: the router's causes, step 1 answered no sentence, the result could not be stored. */
+export type CorrectionFailCause = FailCause | "keine_saetze" | "speichern";
 
 export type CorrectionItem = {
   id: number;
@@ -74,8 +79,12 @@ export type CorrectionRow = {
   method: CorrectionMethod;
   /** sentences („2.3“, comma-separated) the KI did not answer for in a „gründlich“ run */
   unchecked: string;
-  /** the second check of a „gründlich“ run: '' = not run, ok, fehler */
-  verify_status: "" | "ok" | "fehler";
+  /** the second check of a „gründlich“ run: '' = not run, ok, fehler, laeuft (repeated by the teacher) */
+  verify_status: VerifyStatus;
+  /** why the second check failed, as the teacher reads it; '' when it did not */
+  verify_error: string;
+  /** step 1's answer while the second check is still owed (JSON {version, data}, masked text only), for „Erneut versuchen“; '' otherwise */
+  analysis: string;
   /** words OpenRouter's privacy filter hid from the KI, JSON [{para, text, grammar}], '' = none seen */
   hidden_words: string;
   /** names replaced besides the known ones, as the teacher confirmed them, JSON array; '' = not chosen (detected) */
@@ -84,6 +93,42 @@ export type CorrectionRow = {
   created_at: string;
   updated_at: string;
 };
+
+// ---------- when the KI fails ----------
+
+const FAILURE_TEXT: Record<CorrectionFailCause, string> = {
+  aus: "Die KI ist ausgeschaltet oder nicht eingerichtet.",
+  budget: "Das KI-Budget für diesen Monat ist aufgebraucht.",
+  pausiert: "Die KI war zuletzt mehrmals nicht erreichbar und macht ein paar Minuten Pause.",
+  zeitlimit: "Die KI hat nicht rechtzeitig geantwortet.",
+  nicht_erreichbar: "Die KI war nicht erreichbar.",
+  anbieter: "Der KI-Anbieter hat einen Fehler gemeldet.",
+  unvollstaendig: "Die Antwort der KI war unvollständig.",
+  leer: "Die KI hat eine leere Antwort geschickt.",
+  json: "Die Antwort der KI war nicht lesbar.",
+  schema: "Die Antwort der KI hatte nicht die erwartete Form.",
+  verweigert: "Die KI hat die Antwort verweigert.",
+  einstellung: "Die KI-Einstellung passt nicht zu dieser Anfrage.",
+  unbrauchbar: "Die KI hat keine verwertbare Antwort geliefert.",
+  keine_saetze: "Die KI hat keinen Satz des Textes beantwortet.",
+  speichern: "Das Ergebnis konnte nicht gespeichert werden.",
+};
+
+/**
+ * What the teacher reads when the KI failed: one plain sentence per cause, never the provider's own text (that goes
+ * only into the cost log, ai_calls.error). code: the provider's HTTP status, for overload, credit and access.
+ */
+export function failureText(cause: CorrectionFailCause, code?: number): string {
+  if (cause === "anbieter" && code === 429) return "Der KI-Anbieter ist gerade überlastet.";
+  if (cause === "anbieter" && code === 402) return "Beim KI-Anbieter ist das Guthaben aufgebraucht.";
+  if (cause === "anbieter" && (code === 401 || code === 403)) return "Der KI-Anbieter hat den Zugang abgelehnt. Der API-Schlüssel muss geprüft werden.";
+  return FAILURE_TEXT[cause] ?? FAILURE_TEXT.unbrauchbar;
+}
+
+/** A failure stored before 2026-10-11 may end in the provider's own text in brackets: shown without it. */
+export function shownFailure(stored: string | null | undefined): string {
+  return (stored ?? "").replace(/^(Die KI war nicht erreichbar|Die Korrektur konnte nicht gespeichert werden) \(.*\)\.?$/s, "$1.");
+}
 
 /** The names the teacher confirmed for a correction (text_corrections.masked_names); null = not chosen or unreadable. */
 export function maskedNames(json: string | null | undefined): string[] | null {
