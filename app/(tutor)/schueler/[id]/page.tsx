@@ -33,6 +33,8 @@ import { textErrorsForStudent } from "@/lib/text-correction";
 import { MaterialForm } from "@/components/MaterialForm";
 import { endMaterialAction } from "@/app/learning-actions";
 import { checkLevel } from "@/lib/school";
+import { einheitenFuerWoche, istNichtStattgefunden, mitNamen, slotDatum } from "@/lib/planung/repo";
+import { datumLabel, minutenLabel, wienerDatum, wienerWochenstart, wochenLabel } from "@/lib/planung/zeit";
 
 const TABS = [
   ["ueberblick", "Überblick"],
@@ -145,6 +147,27 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
   const exam = examReminders(today, { studentId: student.id })[0] ?? repo.upcomingTests(today, student.id)[0];
   const step = nextSteps(student.id, { today, limit: 1 })[0];
   const dueHw = [...hw].sort((x, y) => (x.due_date ?? "9999").localeCompare(y.due_date ?? "9999"))[0];
+
+  /**
+   * Die Termine dieser Woche aus dem **veröffentlichten** Wochenplan (D17). Ein vergangener Platz
+   * ohne Einheit heißt „nicht stattgefunden“ und hat **keine** Abrechnungsfolge: die Abrechnung liest
+   * nur die Dokumentation abgeschlossener Einheiten (`lib/billing.ts`, unverändert).
+   */
+  const jetzt = new Date();
+  const wochenstart = wienerWochenstart(jetzt);
+  const heute = wienerDatum(jetzt);
+  const termine = mitNamen(einheitenFuerWoche(wochenstart, { status: "veroeffentlicht" }).filter((z) => z.student_id === student.id)).map((z) => ({
+    id: z.id,
+    datum: slotDatum(z.week_start, z.weekday),
+    label: datumLabel(slotDatum(z.week_start, z.weekday)),
+    zeit: `${minutenLabel(z.start_min)}–${minutenLabel(z.start_min + z.geplante_dauer)}`,
+    dauer: z.geplante_dauer,
+    raum: z.room_name,
+    online: z.room_mode === "online",
+    nichtStattgefunden: istNichtStattgefunden(z, jetzt),
+  }));
+  const versaeumt = termine.filter((t) => t.nichtStattgefunden).length;
+  const naechsterTermin = termine.find((t) => !t.nichtStattgefunden && t.datum >= heute) ?? null;
   // the most important first: what is going on at school now, the next exam, what to practise
   const rows: [string, React.ReactNode][] = [];
   if (material.length) {
@@ -242,6 +265,28 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
         ))}
       </dl>
 
+      {termine.length > 0 && (
+        <section aria-label="Termine aus dem Wochenplan">
+          <SectionTitle action={versaeumt > 0 ? <Pill tone="red">{versaeumt} nicht stattgefunden</Pill> : <span className="text-[13px] text-ink-3">{wochenLabel(wochenstart)}</span>}>
+            Wochenplan-Termine
+          </SectionTitle>
+          <ul className="panel divide-y divide-line">
+            {termine.map((t) => (
+              <li key={t.id} className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-[15px] ${t.nichtStattgefunden ? "text-ink-3" : ""}`}>
+                <span className="num w-[104px] shrink-0 font-semibold">{t.label}</span>
+                <span className="num">{t.zeit}</span>
+                <span className="min-w-0 flex-1 truncate">
+                  {t.raum ?? (t.online ? "online" : "Raum noch offen")}
+                  {t.raum && t.online ? " · online" : ""}
+                </span>
+                <span className="num text-[13px] text-ink-3">{t.dauer} min geplant</span>
+                {t.nichtStattgefunden && <Pill tone="red">nicht stattgefunden</Pill>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <details className="group rounded-2xl border border-line bg-surface px-5 py-1">
         <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between text-[15px] font-semibold">
           Weitere Angaben
@@ -261,7 +306,14 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
             {(
               [
                 ["Lernziele", student.goals || "–"],
-                ["Nächster Termin", next ? `${formatDate(next.starts_at, { weekday: "short", day: "numeric", month: "short" })}, ${formatTime(next.starts_at)}` : "nicht geplant"],
+                [
+                  "Nächster Termin",
+                  naechsterTermin
+                    ? `${naechsterTermin.label}, ${naechsterTermin.zeit}${naechsterTermin.raum ? ` · ${naechsterTermin.raum}` : ""}`
+                    : next
+                      ? `${formatDate(next.starts_at, { weekday: "short", day: "numeric", month: "short" })}, ${formatTime(next.starts_at)}`
+                      : "nicht geplant",
+                ],
                 ["Einheiten bisher", String(lessons.filter((l) => l.status === "abgeschlossen").length)],
                 ["Offene Hausübungen", String(hw.length)],
                 ["Letzter Test", tests[0] ? `${tests[0].kind} ${tests[0].subject}: ${tests[0].grade ? `Note ${tests[0].grade}` : ""}${tests[0].points != null ? ` (${tests[0].points}/${tests[0].max_points})` : ""}` : "–"],

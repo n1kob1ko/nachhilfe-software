@@ -1,25 +1,36 @@
 import Link from "next/link";
-import { ArrowRight, CalendarClock, CheckCircle2, ChevronDown, ClipboardPen, FileCheck2, NotebookPen, Play, Plus, Presentation } from "lucide-react";
+import { ArrowRight, CalendarClock, ChevronDown, ClipboardPen, FileCheck2, NotebookPen, Play, Plus, Presentation } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
 import { startUnitAction } from "@/app/session-actions";
 import { Avatar, SubjectArt } from "@/components/Art";
-import { dayKey } from "@/components/Calendar";
+import { Tagesplan, dayKey, type TagesplanPunkt } from "@/components/Calendar";
 import { Elapsed } from "@/components/Elapsed";
 import { StudentFocus } from "@/components/StudentFocus";
 import { Wochenplan } from "@/components/planung/Wochenplan";
 import { Empty, SectionTitle, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import * as repo from "@/lib/repo";
+import { heutigeEinheiten } from "@/lib/planung/heute";
 import { leseRegeln } from "@/lib/planung/regeln";
 import { wochenUebersicht } from "@/lib/planung/uebersicht";
-import { wienerWochenstart } from "@/lib/planung/zeit";
+import { minutenLabel, wienerMinuten, wienerWochenstart } from "@/lib/planung/zeit";
 import { klassenLabel } from "@/lib/school";
-import { listUnits, runningUnits } from "@/lib/units";
+import { getUnit, listUnits, runningUnits } from "@/lib/units";
 import { examReminders, STAGE_LABEL } from "@/lib/exams";
 
 const parseLocal = (s: string) => new Date(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s) && !/Z|[+-]\d{2}:?\d{2}$/.test(s) ? s.replace(" ", "T") : s);
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 const firstName = (n: string) => n.split(" ")[0];
+
+/**
+ * Der Ort eines Platzes im Tagesplan: Raumname und Gebäude. „Online“ als Gebäudename wäre neben
+ * dem Hinweis „online“ nur doppelt und wird weggelassen; ohne Raum steht „Raum noch offen“.
+ */
+const ortLabel = (raum: string | null, gebaeude: string | null, online: boolean): string => {
+  if (!raum) return online ? "online" : "Raum noch offen";
+  const zusatz = gebaeude && gebaeude.toLowerCase() !== (online ? "online" : "vor ort") ? ` · ${gebaeude}` : "";
+  return `${raum}${zusatz}${online ? " · online" : ""}`;
+};
 
 type TodoItem = { key: string; href: string; icon: typeof ClipboardPen; text: React.ReactNode; when: string };
 
@@ -74,10 +85,83 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
   const todays = repo.lessonsBetween(`${today}T00:00`, `${dayKey(addDays(now, 1))}T00:00`).filter((l) => l.status !== "abgesagt" && (!l.teacher_id || l.teacher_id === teacher.id));
   const next = todays.find((l) => l.status !== "abgeschlossen" && parseLocal(l.starts_at).getTime() + l.duration_min * 60_000 > now.getTime());
 
+  /**
+   * Der **Tagesplan** (D17): was heute ansteht, in der Reihenfolge des Tages. Die Liste kommt aus
+   * den **veröffentlichten** Plätzen des Wochenplans (`geplante_einheiten`); dazu kommen die von
+   * Hand geplanten Einheiten, für die es keinen Platz gibt (`lessons.status = 'geplant'` bleibt
+   * dafür bestehen, siehe docs/planung.md) und was heute schon dokumentiert ist.
+   */
+  const slots = heutigeEinheiten(teacher.id);
+  const jetztMinuten = wienerMinuten(now);
+  const naechsterPlatz = slots.find((p) => p.unit_id === null && p.start_min + p.geplante_dauer > jetztMinuten) ?? null;
+  const schuelerMitPlatz = new Set(slots.map((p) => p.student_id));
+  const minutenVon = (s: string) => {
+    const d = parseLocal(s);
+    return d.getHours() * 60 + d.getMinutes();
+  };
+  const tagesplan: (TagesplanPunkt & { sort: number })[] = [
+    ...slots.map((p) => {
+      const unit = p.unit_id === null ? null : getUnit(p.unit_id);
+      return {
+        key: `platz-${p.id}`,
+        zeit: p.zeit_label,
+        studentId: p.student_id,
+        studentName: p.student_name,
+        ort: ortLabel(p.room_name, p.room_building, p.room_mode === "online"),
+        hinweis: `${p.geplante_dauer} min geplant`,
+        einheitId: p.unit_id,
+        einheitStatus: unit?.status ?? null,
+        nichtStattgefunden: p.nicht_stattgefunden,
+        ohnePlatz: false,
+        erledigt: unit?.status === "beendet",
+        sort: p.start_min,
+      };
+    }),
+    ...todays
+      .filter((l) => !schuelerMitPlatz.has(l.student_id))
+      .map((l) => ({
+        key: `lesson-${l.id}`,
+        zeit: formatTime(parseLocal(l.starts_at).toISOString()),
+        studentId: l.student_id,
+        studentName: l.student_name,
+        ort: l.subject || "",
+        hinweis: l.topic,
+        einheitId: l.unit_id,
+        einheitStatus: l.unit_id ? (getUnit(l.unit_id)?.status ?? null) : null,
+        nichtStattgefunden: false,
+        ohnePlatz: l.status === "geplant",
+        erledigt: l.status === "abgeschlossen",
+        sort: minutenVon(l.starts_at),
+      })),
+  ].sort((a, b) => a.sort - b.sort);
+
+  /**
+   * Was der große Knopf oben anbietet: der nächste offene Platz aus dem Wochenplan, sonst die
+   * nächste von Hand geplante Einheit. Beide Wege starten dieselbe Einheit — mit Platz verknüpft
+   * sie sich dabei (D17), ohne Platz läuft sie wie bisher.
+   */
+  const fokus = naechsterPlatz
+    ? {
+        studentId: naechsterPlatz.student_id,
+        name: naechsterPlatz.student_name,
+        zeit: naechsterPlatz.zeit_label,
+        zusatz: [naechsterPlatz.room_name, `${naechsterPlatz.geplante_dauer} min geplant`].filter(Boolean).join(" · "),
+        subject: byId.get(naechsterPlatz.student_id)?.subjects[0],
+      }
+    : next
+      ? {
+          studentId: next.student_id,
+          name: next.student_name,
+          zeit: formatTime(parseLocal(next.starts_at).toISOString()),
+          zusatz: next.topic || next.subject,
+          subject: next.subject,
+        }
+      : null;
+
   // recently used = the students of my latest units, then everyone else
   const myUnits = listUnits({ teacherId: teacher.id });
   const recentIds = [...new Set(myUnits.map((u) => u.student_id))].filter((id) => byId.has(id));
-  const ordered = [...new Set([...(next ? [next.student_id] : []), ...todays.map((l) => l.student_id), ...recentIds, ...students.map((s) => s.id)])].map((id) => byId.get(id)!);
+  const ordered = [...new Set([...(fokus ? [fokus.studentId] : []), ...slots.map((p) => p.student_id), ...todays.map((l) => l.student_id), ...recentIds, ...students.map((s) => s.id)])].map((id) => byId.get(id)!);
 
   // to-dos: exams ahead (14/7/3 days, Mehr › Lehrplan), documentation not yet completed, fresh results, homework due
   const todos: TodoItem[] = [];
@@ -151,22 +235,22 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         ) : (
           <section className="relative overflow-hidden rounded-[28px] bg-accent-wash px-6 py-7 md:px-8" aria-label="Einheit starten">
             <div className="relative z-10 md:pr-[220px]">
-              {next ? (
+              {fokus ? (
                 <>
                   <p className="text-[15px] font-semibold text-ink-2">
-                    Als Nächstes · <span className="num">{formatTime(parseLocal(next.starts_at).toISOString())}</span>
+                    Als Nächstes · <span className="num">{fokus.zeit}</span>
                   </p>
-                  <h2 className="mt-1 text-[28px] leading-tight font-semibold md:text-[32px]">{next.student_name}</h2>
-                  <p className="mt-1 text-[16px] text-ink-2">{next.topic || next.subject}</p>
-                  <StudentFocus studentId={next.student_id} />
+                  <h2 className="mt-1 text-[28px] leading-tight font-semibold md:text-[32px]">{fokus.name}</h2>
+                  <p className="mt-1 text-[16px] text-ink-2">{fokus.zusatz}</p>
+                  <StudentFocus studentId={fokus.studentId} />
                   <div className="mt-6 flex flex-wrap items-start gap-3">
-                    <form action={startUnitAction.bind(null, next.student_id)}>
+                    <form action={startUnitAction.bind(null, fokus.studentId)}>
                       <button className="btn btn-primary btn-lg">
-                        <Play size={18} aria-hidden /> Einheit mit {firstName(next.student_name)} starten
+                        <Play size={18} aria-hidden /> Einheit mit {firstName(fokus.name)} starten
                       </button>
                     </form>
                   </div>
-                  <StudentPicker students={ordered.filter((s) => s.id !== next.student_id)} label="Anderen Schüler wählen" />
+                  <StudentPicker students={ordered.filter((s) => s.id !== fokus.studentId)} label="Anderen Schüler wählen" />
                 </>
               ) : (
                 <>
@@ -176,38 +260,17 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
                 </>
               )}
             </div>
-            <SubjectArt subject={next?.subject ?? ordered[0]?.subjects[0]} className="pointer-events-none absolute -right-2 -bottom-6 hidden h-[220px] w-[220px] md:block" />
+            <SubjectArt subject={fokus?.subject ?? ordered[0]?.subjects[0]} className="pointer-events-none absolute -right-2 -bottom-6 hidden h-[220px] w-[220px] md:block" />
           </section>
         )}
 
         <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-2">
           <section>
             <SectionTitle>Heute</SectionTitle>
-            {todays.length === 0 ? (
+            {tagesplan.length === 0 ? (
               <p className="text-[15px] text-ink-2">Heute sind keine Einheiten eingeplant.</p>
             ) : (
-              <ul className="panel divide-y divide-line">
-                {todays.map((l) => {
-                  const done = l.status === "abgeschlossen";
-                  return (
-                    <li key={l.id}>
-                      <Link href={`/schueler/${l.student_id}`} className="flex min-h-[60px] items-center gap-3 px-4 py-2.5 hover:bg-panel/60">
-                        <span className="num w-12 shrink-0 text-[15px] font-semibold">{formatTime(parseLocal(l.starts_at).toISOString())}</span>
-                        <Avatar name={l.student_name} size={34} />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate font-semibold">{l.student_name}</span>
-                          <span className="block truncate text-[13px] text-ink-2">{l.topic || l.subject}</span>
-                        </span>
-                        {done && (
-                          <span className="inline-flex items-center gap-1 text-[13px] font-medium text-green">
-                            <CheckCircle2 size={15} aria-hidden /> erledigt
-                          </span>
-                        )}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+              <Tagesplan punkte={tagesplan.map(({ sort, ...punkt }) => punkt)} starten={startUnitAction} />
             )}
           </section>
 

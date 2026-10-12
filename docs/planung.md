@@ -3,8 +3,10 @@
 Phase 4 des Merges ([tommys-merge.md](../tommys-merge.md) §4). Die Logik kommt aus dem
 Wochenplan-Generator der *tutoring institute platform* (`src/lib/services/ScheduleGenerator.ts`,
 `config/scheduling-rules.json`, `docs/SCHEDULING-WORKFLOW.md`); Datenmodell, Zeitzone und Sprache
-sind die dieses Repos. Die Oberfläche (Wochenansicht, Ziehen, Dialoge, A4-Druck) baut auf dieser
-Schicht auf, steht aber nicht in diesem Dokument.
+sind die dieses Repos. Die Oberfläche (Wochenansicht mit Ziehen, Dialoge, A4-Druck) steht in
+`components/planung/` und `app/(tutor)/planung/`; wie der Plan die echten **Einheiten** antreibt,
+steht unten in *Einheiten verknüpfen*, *Was heute auf dem Dashboard steht* und
+*lessons.status = 'geplant'*. Beide Teile sind hier beschrieben.
 
 ## Die zwei Zustände einer Woche
 
@@ -202,18 +204,38 @@ laufen die Whiteboard-Verbindungen (SSE). Deshalb hat der Lauf ein **Zeitbudget*
 Suche ab und gibt den **bis dahin besten Stand** zurück; das Ergebnis meldet
 `zeitbudgetErreicht: true`, und die nicht eingeplanten Schüler stehen vollständig in `offen`.
 
-## Einheiten verknüpfen (D17)
+## Einheiten verknüpfen (D16, D17)
 
-- Startet der Lehrer eine Einheit, sucht die App den passenden heutigen **veröffentlichten** Platz
-  des Schülers (`lib/planung/heute.ts` → `offenePlaetzeHeute(studentId, { teacherId })`: ohne
-  `unit_id`, bevorzugt derselbe Lehrer, sonst die Startzeit, die „jetzt“ am nächsten liegt) und
-  setzt `geplante_einheiten.unit_id`. Findet sie keinen, läuft die Einheit wie bisher ungeplant.
-- `repo.verknuepfePlatz(id, unitId)` schreibt die Verknüpfung, `verknuepfePlatz(id, null)` löst sie.
-- Eine **vergangene veröffentlichte** Einheit ohne `unit_id` gilt als **„nicht stattgefunden“**
+- Startet der Lehrer eine Einheit (`lib/units.ts` → `startUnit`), verknüpft sie sich in derselben
+  Sekunde mit ihrem heutigen **veröffentlichten** Platz: `verknuepfeMitHeutigemPlatz(unit, at)`
+  sucht über `offenePlaetzeHeute(studentId, { teacherId, now })` (`lib/planung/heute.ts`).
+- **Die Regel**, in dieser Reihenfolge:
+  1. nur **veröffentlichte** Plätze von **heute** (Europe/Vienna) **ohne** `unit_id`;
+  2. zuerst ein Platz **desselben Lehrers**, der die Einheit startet;
+  3. gibt es keinen, ein Platz eines **anderen Lehrers**;
+  4. innerhalb dieser Auswahl der Platz, dessen **Startzeit** „jetzt“ am nächsten liegt
+     (bei Gleichstand die frühere, dann die kleinere Id).
+  Findet sich kein Platz, läuft die Einheit wie bisher **ungeplant** — es fehlt nur die Soll-Seite.
+- **Ein Platz wird einmal vergeben.** `verknuepfePlatz(id, unitId)` setzt `unit_id`; danach bietet
+  `offenePlaetzeHeute` ihn nicht mehr an. Ein zweiter Start (nach dem Beenden der ersten Einheit,
+  oder ein Doppelklick während sie läuft) verknüpft denselben Platz deshalb **nie** erneut: der
+  laufende Fall schreibt gar nichts (`created = false`), der zweite nimmt den nächsten offenen
+  Platz oder bleibt ungeplant.
+- `verknuepfePlatz(id, null)` löst eine Verknüpfung wieder.
+- Ein **vergangener veröffentlichter Platz** ohne `unit_id` gilt als **„nicht stattgefunden“**
   (`repo.istNichtStattgefunden` / `repo.nichtStattgefunden(weekStart, now)`): erst wenn die
-  geplante Zeit vorbei ist, nicht schon während sie läuft. Keine Abrechnungsfolge.
-- Die Abrechnung (`lib/billing.ts`) liest weiterhin nur `units` — der Wochenplan ändert daran
-  nichts.
+  geplante Zeit vorbei ist, nicht schon während sie läuft. Sie steht so auf dem Schülerprofil
+  (`app/(tutor)/schueler/[id]/page.tsx`), im Wochenplan (`components/planung/WochenplanGitter.tsx`,
+  `WochenplanPanels.tsx`), im A4-Druck und auf dem Schüler-Link (`app/lernen/[token]/page.tsx`) —
+  und hat **keine Abrechnungsfolge**.
+- **Die Abrechnung liest weiterhin nur die Dokumentation abgeschlossener Einheiten**
+  (`lib/billing.ts` → `repo.billingEntries`: `lessons.kind = 'stunde' AND status = 'abgeschlossen'`,
+  verknüpft über `lessons.unit_id`). Ein Platz im Wochenplan, ob verknüpft oder ausgefallen, kommt
+  in dieser Abfrage nicht vor; `lib/billing.ts` wurde in Phase 4 nicht angefasst.
+- Auf der **Einheitenseite** (`app/(tutor)/einheiten/[id]/page.tsx`) steht bei einer verknüpften
+  Einheit „geplant 100 min · tatsächlich 85 min“ (D16): die geplante Dauer kommt über
+  `units.platzFuerEinheit(unit)` aus dem Platz, die tatsächliche aus `units.started_at` →
+  `units.ended_at`. Ohne Platz steht nur die tatsächliche Dauer da.
 
 ## Was heute auf dem Dashboard steht
 
@@ -225,6 +247,61 @@ mit Namen von Lehrer, Schüler und Raum, einer fertigen Zeitangabe („14:00–1
 - `heutigeEinheitenFuerSchueler(studentId, now?)` — für den Schüler-Link und das Profil.
 - `offenePlaetzeHeute(studentId, { teacherId?, now? })` — die noch nicht verknüpften Plätze.
 - `heutigerWochentag(now?)`, `heutigerWochenstart(now?)`.
+
+### Der Tagesplan
+
+Der Abschnitt „Heute“ auf der Startseite (`app/(tutor)/page.tsx`) ist der **Tagesplan** und kommt
+aus den veröffentlichten Plätzen von heute (`heutigeEinheiten(teacher.id)`), in der Reihenfolge des
+Tages; gerendert wird er von `Tagesplan` in `components/Calendar.tsx`. Jede Zeile zeigt Zeit,
+Schüler, Raum (bzw. „online“ oder „Raum noch offen“) und „*n* min geplant“ und bietet:
+
+- **„Einheit starten“** (`startUnitAction`) — die Einheit entsteht und verknüpft sich mit ihrem
+  Platz (siehe oben); der große Knopf oben bietet dafür den nächsten **offenen** Platz von heute an,
+  sonst die nächste von Hand geplante Einheit;
+- **„Zur Einheit“** mit Zustand, wenn der Platz schon eine (laufende oder beendete) Einheit hat;
+- bei einem vergangenen Platz ohne Einheit den Vermerk **„nicht stattgefunden“** — startet der
+  Lehrer doch noch, nimmt die Einheit den nächstgelegenen offenen Platz des Tages (ist der
+  vergangene der einzige offene, genau diesen), und der Vermerk fällt weg.
+
+Dazu kommen zwei Zeilen aus der alten Planung, damit nichts verloren geht: eine von Hand geplante
+Einheit ohne Platz (`lessons.status = 'geplant'`) erscheint als Zeile **„ohne Wochenplan-Platz“**,
+und was heute schon dokumentiert ist, als **„erledigt“** mit Link zur Einheit. Beides nur, solange
+der Schüler heute **keinen** veröffentlichten Platz hat — sonst gilt der Platz, und die Zeile steht
+weiterhin im Lernverlauf des Schülers unter „Geplant“.
+
+## `lessons.status = 'geplant'` — Entscheidung (Phase 4)
+
+Der Plan ließ offen, ob `lessons.status = 'geplant'` nach `geplante_einheiten` noch gebraucht wird
+(tommys-merge.md §4, D17: „if not, migrate them … and stop creating them“). **Die Antwort lautet:
+ja, er wird noch gebraucht — es wird nichts migriert und nichts eingestellt.** Beide Wege bleiben
+nebeneinander bestehen. Die Gründe stehen im Code:
+
+- **Es wird weiterhin erzeugt.** `app/actions.ts:84` (`saveLessonAction`, Formular
+  `components/LessonForm.tsx`) schreibt `status = 'geplant'` als Vorgabe; erreichbar über
+  „Einheit nachtragen oder planen“ im Lernverlauf
+  (`components/Lernverlauf.tsx:72` → `app/(tutor)/schueler/[id]/stunden/neu`). Auch die Demo-Daten
+  legen je Schüler zwei solche Zeilen an (`lib/demo.ts:325`, `lib/demo.ts:340`).
+- **Es wird weiterhin gelesen.** `lib/learning.ts:335` (`plannedLessonFor`) nimmt die geplante Zeile
+  des Tages als **Dokumentationszeile** der Einheit (`writeLearningDoc`, `lib/learning.ts:364`):
+  die Einheit schreibt keine zweite Zeile, sondern füllt die vorhandene. `expectedSubject` nimmt
+  daraus das Fach für den Start, `sweepIdleUnits` die geschätzte Dauer
+  (`lib/learning.ts:341`, `lib/learning.ts:414`). `components/Lernverlauf.tsx:31` zeigt sie als
+  „Geplant“, `app/(tutor)/schueler/[id]/page.tsx` als „Nächster Termin“.
+- **Eine Migration würde Informationen verlieren und könnte lügen.** `geplante_einheiten` hat keine
+  Spalten für `subject`, `topic`, `skill_ids` oder `notes` einer geplanten Zeile; eine umgehängte
+  Zeile müsste die Dokumentationszeile löschen. Aus `starts_at` + `duration_min` entstünde ein
+  Platz mit erfundener `week_start`/`weekday`-Zuordnung, der in einer schon **veröffentlichten**
+  Woche entweder am Status scheitert oder als „nicht stattgefunden“ auftaucht — für Termine, die
+  nie im Wochenplan standen.
+
+Was stattdessen gilt: **Der Wochenplan ist die Quelle für den Tagesplan** (`geplante_einheiten`),
+und die von Hand geplante Zeile bleibt der Weg für alles, was nicht im Wochenplan steht (und die
+Dokumentationszeile der Einheit). Kommt eine Einheit mit beiden in Berührung, gewinnt keine von
+beiden: sie verknüpft sich mit dem Platz **und** füllt die Zeile (`lib/learning.ts`). Sollte der
+Alt-Weg später wirklich auslaufen, ist die Migration erst dann gefahrlos, wenn das Formular keine
+`geplant`-Zeilen mehr erzeugt und `plannedLessonFor` verschwunden ist; beides ist heute nicht der
+Fall. `lib/units-verknuepfung.test.ts` hält das fest: eine geplante Zeile wird von der Einheit
+übernommen, es entsteht keine zweite, und abgerechnet wird sie erst als abgeschlossene Einheit.
 
 ## Der Code
 
@@ -238,11 +315,41 @@ mit Namen von Lehrer, Schüler und Raum, einer fertigen Zeitangabe („14:00–1
 | `lib/planung/verfuegbarkeit.ts` | Verfügbarkeit als Wert und als JSON-Spalte |
 | `lib/planung/schema.ts` | zod-Schemata der Formulare (Phase 3) |
 | `lib/planung/berechtigungen.ts`, `lib/planung/aktionen.ts` | die Rechteprüfung (D23) |
+| `lib/planung/uebersicht.ts` | die Sicht auf eine Woche (`wochenUebersicht`): Plätze mit Namen, Lehrerkacheln, offener Bedarf, Kennzahlen — für Oberfläche und A4-Druck |
+
+Die Oberfläche dazu:
+
+| Datei | Inhalt |
+|---|---|
+| `app/(tutor)/planung/page.tsx` | die Wochenansicht der Verwaltung: Filter, Wochenwahl, Meldungen, Dialoge |
+| `app/(tutor)/planung/drucken/page.tsx` | A4-Druck der Woche |
+| `app/planung-actions.ts` | alle Server Actions der Planung (generieren, veröffentlichen, Platz anlegen/ändern/sperren/löschen, Regeln, Räume) mit Rechteprüfung |
+| `components/planung/Wochenplan.tsx`, `WochenplanGitter.tsx` | das Gitter (10-Minuten-Raster, Ziehen, gesperrte und ausgefallene Plätze) und sein Rahmen |
+| `components/planung/WochenplanPanels.tsx` | Seitenleiste (Lehrer und Schüler mit „x/y Einheiten geplant“), Schubfach der offenen Schüler, Fußzeile mit Kennzahlen |
+| `components/planung/PlatzDialog.tsx`, `RegelnDialog.tsx` | ein einzelner Platz (anlegen/ändern/sperren) und die Regeln |
+| `components/planung/VerfuegbarkeitEditor.tsx`, `VerfuegbarkeitFormular.tsx`, `VerfuegbarkeitTabelle.tsx`, `WochenAbweichung.tsx` | Verfügbarkeit und Wochenabweichung (Phase 3) |
+| `components/planung/RaumForm.tsx`, `RaumPraeferenzen.tsx`, `RaumAktionen.tsx` | Räume und Raumwünsche (Phase 3, D22) |
+| `components/planung/PlanungFormular.tsx` | der Abschnitt „Planung“ einer Schülerin/eines Schülers (Phase 3) |
+| `app/(tutor)/mehr/raeume/page.tsx`, `app/(tutor)/lehrer/page.tsx`, `app/(tutor)/schueler/[id]/bearbeiten/page.tsx` | die Seiten dazu |
+| `app/(tutor)/page.tsx` (`?tab=woche` = „Meine Woche“), `app/lernen/[token]/page.tsx` | die veröffentlichte Woche des Lehrers und „Deine Termine diese Woche“ des Schülers |
+
+Und die Verknüpfung mit den echten Einheiten (dieser Teil):
+
+| Datei | Inhalt |
+|---|---|
+| `lib/units.ts` | `startUnit` verknüpft beim Start (`verknuepfeMitHeutigemPlatz`, `platzFuerEinheit`) |
+| `app/(tutor)/page.tsx`, `components/Calendar.tsx` | der Tagesplan (`Tagesplan`) aus den veröffentlichten Plätzen, jede Zeile mit „Einheit starten“ |
+| `app/(tutor)/einheiten/[id]/page.tsx` | „geplant 100 min · tatsächlich 85 min“ (D16) |
+| `app/(tutor)/schueler/[id]/page.tsx` | „Wochenplan-Termine“ dieser Woche, vergangene ohne Einheit als „nicht stattgefunden“ |
+| `lib/billing.ts`, `lib/repo.ts` (`billingEntries`) | **unverändert**: Abrechnung nur aus abgeschlossenen Einheiten |
 
 Die Tests dazu: `lib/planung/generator.test.ts` (Port von `ScheduleGenerator.test.ts` des
 Quell-Repos plus variable Dauer, 10-Minuten-Raster, gesperrte Plätze, Zeitbudget),
-`lib/planung/regeln.test.ts`, `lib/planung/repo.test.ts`, `lib/planung/heute.test.ts` und die
-Sicherung in `lib/robust.test.ts`.
+`lib/planung/regeln.test.ts`, `lib/planung/repo.test.ts`, `lib/planung/heute.test.ts`,
+`lib/planung/verfuegbarkeit.test.ts`, `lib/planung/aktionen.test.ts`,
+`lib/planung/wochenplan-aktionen.test.ts`, `lib/planung/zeit.test.ts`,
+`lib/units-verknuepfung.test.ts` (Verknüpfung, „nicht stattgefunden“ ohne Abrechnungsfolge, die
+Entscheidung zu `lessons.status = 'geplant'`) und die Sicherung in `lib/robust.test.ts`.
 
 ## Was aus dem Quell-Repo nicht übernommen wurde
 

@@ -244,7 +244,7 @@ für einen Fehler hält und „aufräumt“.
 | Tabelle `lessons` | die Dokumentationszeile einer Einheit (Lern-Dokumentation), verknüpft über `lessons.unit_id` |
 | `lessons.kind = 'stunde'` | die Zeile gehört zu einer Einheit; Gegenstück ist `'selbststaendig'` (selbstständiges Üben) |
 | `lessons.kind` Vorgabe `'stunde'` | die Spalte selbst (`lib/db.ts`, `COLUMNS`) |
-| `lessons.status = 'geplant'` | eine geplante Einheit, die noch keine `units`-Zeile hat; Phase 4 entscheidet, ob das bleibt |
+| `lessons.status = 'geplant'` | eine von Hand eingetragene geplante Einheit, die noch keine `units`-Zeile hat. Bleibt (Entscheidung in Phase 4, siehe `docs/planung.md`): der Wochenplan ersetzt sie nicht, denn diese Zeile trägt Fach, Thema und Fähigkeiten und wird beim Start von der Einheit übernommen |
 | `lessons.assignment_id`, `lessons.unit_id`, `lessons.family_note` | Felder derselben Tabelle |
 | Route `/schueler/[id]/stunden/[id]` | die Adresse einer Dokumentationszeile (`components/LessonCard.tsx`, `Lernverlauf.tsx`, `app/(tutor)/abrechnung/page.tsx`) |
 | `?tab=stunden` | alte Tab-Adresse auf dem Schülerprofil, wird auf `lernverlauf` umgebogen |

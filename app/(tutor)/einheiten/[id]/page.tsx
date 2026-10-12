@@ -27,11 +27,22 @@ import { baseUrl } from "@/lib/base-url";
 import { buildUnitReport, readReport } from "@/lib/learning";
 import * as repo from "@/lib/repo";
 import { requireTeacher } from "@/lib/auth";
-import { canManageUnit, getUnit, unitDurationMs, type UnitView } from "@/lib/units";
+import { canManageUnit, getUnit, platzFuerEinheit, unitDurationMs, type UnitView } from "@/lib/units";
 
 export const metadata = { title: "Einheit" };
 
 const first = (n: string) => n.split(" ")[0];
+
+/**
+ * D16: „geplant 100 min · tatsächlich 85 min“. Die **geplante Dauer** kommt aus dem
+ * Wochenplan-Platz, mit dem sich die Einheit verknüpft hat (`platzFuerEinheit`, D17); die
+ * **Dauer** ist die echte Zeit von Start bis Ende. Ohne Platz steht nur die echte Dauer da —
+ * abgerechnet wird ohnehin nur sie (`lib/billing.ts`).
+ */
+function dauerLabel(geplanteDauer: number | null, minutes: number, estimated: boolean): string {
+  const echteDauer = `${estimated ? "ca. " : ""}${minutes} min`;
+  return geplanteDauer === null ? echteDauer : `geplant ${geplanteDauer} min · tatsächlich ${echteDauer}`;
+}
 
 /**
  * One page per unit, in three states:
@@ -49,6 +60,8 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   const student = repo.getStudent(unit.student_id)!;
   const lesson = repo.getLessonForUnit(unit.id);
   const running = unit.status === "gestartet";
+  // D16/D17: der Wochenplan-Platz dieser Einheit — er liefert die geplante Dauer
+  const platz = platzFuerEinheit(unit);
 
   const sent = sp.gesendet ? repo.getWorksheet(Number(sp.gesendet)) : null;
   const startedText = sp.text ? getText(Number(sp.text)) : null;
@@ -98,6 +111,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
             <span className="num text-[15px] text-ink-2">
               <Elapsed since={unit.started_at} />
               {unit.subject && ` · ${unit.subject}`}
+              {platz && ` · geplant ${platz.geplante_dauer} min`}
               {unit.teacher_id !== teacher.id && ` · ${unit.teacher_name}`}
             </span>
           </div>
@@ -136,8 +150,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   const facts = (
     <p className="mt-1 text-[15px] text-ink-2">
       {date} · <span className="num">{formatTime(unit.started_at)}</span>–<span className="num">{unit.ended_at ? formatTime(unit.ended_at) : "?"}</span> ·{" "}
-      {unit.end_estimated ? "ca. " : ""}
-      {minutes} min · {unit.teacher_name}
+      <span className="num">{dauerLabel(platz?.geplante_dauer ?? null, minutes, unit.end_estimated === 1)}</span> · {unit.teacher_name}
       {unit.ended_by === "automatisch" && " · automatisch beendet"}
       {unit.ended_by === "automatisch" && unit.end_reason && <span className="block text-[13px]">Grund: {unit.end_reason}</span>}
     </p>
