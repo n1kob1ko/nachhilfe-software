@@ -6,7 +6,23 @@
 import type { Difficulty, TaskType } from "./curriculum";
 import type { TaskDraft } from "./tasks";
 import { GAP, parseNumber } from "./tasks";
-import { adjektivdeklinationItems, artikelItems, dasDassItems, hauptsatzGliedsatzItems, perfektItems, praepositionenItems, praeteritumItems } from "./banks";
+import {
+  adjektivdeklinationItems,
+  artikelItems,
+  dasDassItems,
+  hauptsatzGliedsatzItems,
+  perfektItems,
+  praepositionenItems,
+  praeteritumItems,
+  type AdjektivdeklinationItem,
+  type ArtikelItem,
+  type BankId,
+  type BankItem,
+  type ClozeItem as BankClozeItem,
+  type DasDassItem,
+  type HauptsatzGliedsatzItem,
+  type PraepositionenItem,
+} from "./banks";
 import { expectedFixes } from "./fix-text";
 import { rechenwegTask, sachaufgabeTask } from "./generators-mathe";
 import { isWortartenSkill, wortartenFor, wortartenTask, type WortartSetting } from "./wortarten";
@@ -430,19 +446,20 @@ function bankMC(skillId: string, bank: () => MCItem[]): Gen {
   };
 }
 function bankCloze(skillId: string, bank: () => ClozeItem[], mode: "text" | "exact"): Gen {
-  return (rng, diff) => {
-    const item = pick(rng, bank());
-    return {
-      type: "cloze",
-      skillId,
-      difficulty: diff,
-      prompt: item.q,
-      data: {},
-      answer: { blanks: item.blanks, mode },
-      solution: item.solution,
-      hints: [item.hint],
-      errorMap: Object.entries(item.errors ?? {}).map(([answer, label]) => ({ answer, label })),
-    };
+  return (rng, diff) => clozeTaskFrom(skillId, pick(rng, bank()), diff, mode);
+}
+/** Ein Lückentext aus einem vorgegebenen Eintrag; `bankCloze` zieht den Eintrag nur zufällig. */
+function clozeTaskFrom(skillId: string, item: ClozeItem, diff: Difficulty, mode: "text" | "exact"): TaskDraft {
+  return {
+    type: "cloze",
+    skillId,
+    difficulty: diff,
+    prompt: item.q,
+    data: {},
+    answer: { blanks: item.blanks, mode },
+    solution: item.solution,
+    hints: [item.hint],
+    errorMap: Object.entries(item.errors ?? {}).map(([answer, label]) => ({ answer, label })),
   };
 }
 
@@ -477,9 +494,11 @@ const wrongOptions = (options: string[], correct: string, label: string) =>
 /**
  * Artikel bestimmen: „der/die/das“ als Auswahl. Das Genus steht in `data.genus`, damit die Oberfläche
  * den Buchstaben m/f/n zeigen und färben kann (D10); die Optionen werden je Aufgabe gemischt.
+ * `given` ist der Eintrag, aus dem die Aufgabe gebaut wird (KI-Einträge, Phase 1 Schritt 6); ohne ihn
+ * kommt er wie bisher zufällig aus der Bank.
  */
-function artikelTask(rng: Rng, diff: Difficulty): TaskDraft {
-  const item = pick(rng, artikelItems());
+function artikelTask(rng: Rng, diff: Difficulty, given?: ArtikelItem): TaskDraft {
+  const item = given ?? pick(rng, artikelItems());
   const options = shuffle(rng, ["der", "die", "das"]);
   const correct = options.indexOf(item.article);
   const genus = GENUS_OF_ARTICLE[item.article];
@@ -499,8 +518,8 @@ function artikelTask(rng: Rng, diff: Difficulty): TaskDraft {
 }
 
 /** Adjektivdeklination: zwei Lücken (Adjektivendung, Nomenendung), exakt geprüft. */
-function adjektivdeklinationTask(rng: Rng, diff: Difficulty): TaskDraft {
-  const item = pick(rng, adjektivdeklinationItems());
+function adjektivdeklinationTask(rng: Rng, diff: Difficulty, given?: AdjektivdeklinationItem): TaskDraft {
+  const item = given ?? pick(rng, adjektivdeklinationItems());
   return {
     type: "cloze",
     skillId: "deutsch.grammatik.adjektivdeklination",
@@ -515,8 +534,8 @@ function adjektivdeklinationTask(rng: Rng, diff: Difficulty): TaskDraft {
 }
 
 /** Präposition und Kasus: eine Lücke (der Artikel), der typische Fehler ist nach Kasus benannt. */
-function praepositionenTask(rng: Rng, diff: Difficulty): TaskDraft {
-  const item = pick(rng, praepositionenItems());
+function praepositionenTask(rng: Rng, diff: Difficulty, given?: PraepositionenItem): TaskDraft {
+  const item = given ?? pick(rng, praepositionenItems());
   return {
     type: "cloze",
     skillId: "deutsch.grammatik.praepositionen",
@@ -531,8 +550,8 @@ function praepositionenTask(rng: Rng, diff: Difficulty): TaskDraft {
 }
 
 /** Hauptsatz und Gliedsatz erkennen: die beiden Satzteile stehen zur Auswahl, genau einer ist der Gliedsatz. */
-function hauptsatzGliedsatzTask(rng: Rng, diff: Difficulty): TaskDraft {
-  const item = pick(rng, hauptsatzGliedsatzItems());
+function hauptsatzGliedsatzTask(rng: Rng, diff: Difficulty, given?: HauptsatzGliedsatzItem): TaskDraft {
+  const item = given ?? pick(rng, hauptsatzGliedsatzItems());
   const gs = item.parts.find((p) => p.type === "GS")!;
   const hs = item.parts.find((p) => p.type === "HS")!;
   const options = shuffle(rng, item.parts.map((p) => p.text));
@@ -550,6 +569,32 @@ function hauptsatzGliedsatzTask(rng: Rng, diff: Difficulty): TaskDraft {
       .map((_, i) => (i === correct ? null : { answer: String(i), label: "Hauptsatz statt Gliedsatz" }))
       .filter((e): e is { answer: string; label: string } => e !== null),
   };
+}
+
+/**
+ * Dieselbe Aufgabe, aber aus einem vorgegebenen Bankeintrag — für Einträge, die die KI in Bankform
+ * geliefert hat (`lib/ai/banken.ts`, Phase 1 Schritt 6). Damit entsteht genau die Aufgabe, die der
+ * eingebaute Generator aus demselben Eintrag gebaut hätte; es gibt keine zweite Umsetzung.
+ */
+export function bankItemTask<K extends BankId>(id: K, item: BankItem<K>, difficulty: Difficulty, rng: Rng = Math.random): TaskDraft | null {
+  switch (id) {
+    case "artikel":
+      return artikelTask(rng, difficulty, item as ArtikelItem);
+    case "adjektivdeklination":
+      return adjektivdeklinationTask(rng, difficulty, item as AdjektivdeklinationItem);
+    case "praepositionen":
+      return praepositionenTask(rng, difficulty, item as PraepositionenItem);
+    case "hauptsatz-gliedsatz":
+      return hauptsatzGliedsatzTask(rng, difficulty, item as HauptsatzGliedsatzItem);
+    case "praeteritum":
+      return clozeTaskFrom("deutsch.grammatik.praeteritum", item as BankClozeItem, difficulty, "exact");
+    case "perfekt":
+      return clozeTaskFrom("deutsch.grammatik.perfekt", item as BankClozeItem, difficulty, "exact");
+    case "das-dass":
+      return clozeTaskFrom("deutsch.recht.dasdass", item as DasDassItem, difficulty, "text");
+    default:
+      return null;
+  }
 }
 
 const NS_ERR = { 1: "Beistrich vor dem Nebensatz vergessen", 2: "Beistrich an falscher Stelle" };

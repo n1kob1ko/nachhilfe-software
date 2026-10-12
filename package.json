@@ -10,7 +10,8 @@
     "test": "tsx --test \"lib/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
     "postinstall": "node scripts/copy-excalidraw-fonts.mjs",
-    "ai:simulate": "tsx scripts/ai-simulate.ts"
+    "ai:simulate": "tsx scripts/ai-simulate.ts",
+    "banks:pruefung": "tsx scripts/banks-pruefung.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
