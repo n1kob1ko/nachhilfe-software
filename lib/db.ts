@@ -612,6 +612,32 @@ CREATE TABLE IF NOT EXISTS availability_overrides (
   UNIQUE(owner_type, owner_id, week_start)
 );
 CREATE INDEX IF NOT EXISTS idx_availability_overrides_owner ON availability_overrides(owner_type, owner_id);
+-- ---------- Planung (Phase 4 des Merges): Wochenplan ----------
+-- Ein Platz im Wochenplan (Glossar: **geplante Einheit**): wer, wo, an welchem Wochentag, zu welcher
+-- Startzeit und mit welcher geplanten Dauer. Der Platz wird erst wirklich, wenn eine Einheit sich mit
+-- ihm verknüpft (unit_id); ein vergangener veröffentlichter Platz ohne Einheit heißt „nicht stattgefunden“.
+-- Zeiten sind lokales Datum + Minuten ab Mitternacht (Europe/Vienna), nie UTC-Zeitstempel (§6);
+-- week_start ist immer ein Montag, weekday ISO 1 = Montag … 7 = Sonntag.
+-- Keine Eindeutigkeit auf Überlappungen: die geplante Dauer ist je Schüler verschieden, deshalb prüft
+-- lib/planung/repo.ts bei **jedem** Schreiben auf Überlappung von Lehrer, Schüler und Raum.
+CREATE TABLE IF NOT EXISTS geplante_einheiten (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  week_start TEXT NOT NULL,                 -- Montag YYYY-MM-DD (Europe/Vienna)
+  weekday INTEGER NOT NULL,                 -- 1 = Montag … 7 = Sonntag
+  start_min INTEGER NOT NULL,               -- Minuten ab Mitternacht, Vielfaches von 10
+  geplante_dauer INTEGER NOT NULL,          -- 1–300
+  teacher_id INTEGER NOT NULL REFERENCES teachers(id),
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  room_id INTEGER REFERENCES rooms(id),
+  status TEXT NOT NULL DEFAULT 'entwurf',   -- entwurf | veroeffentlicht
+  locked INTEGER NOT NULL DEFAULT 0,
+  unit_id INTEGER REFERENCES units(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ge_week ON geplante_einheiten(week_start, status);
+CREATE INDEX IF NOT EXISTS idx_ge_teacher ON geplante_einheiten(teacher_id, week_start);
+CREATE INDEX IF NOT EXISTS idx_ge_student ON geplante_einheiten(student_id, week_start);
 CREATE INDEX IF NOT EXISTS idx_text_corrections_text ON text_corrections(text_id, version);
 CREATE INDEX IF NOT EXISTS idx_text_correction_items ON text_correction_items(correction_id, block, pos_start);
 CREATE INDEX IF NOT EXISTS idx_texts_student ON texts(student_id, updated_at);
