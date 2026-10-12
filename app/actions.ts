@@ -252,7 +252,7 @@ export async function aiInsightAction(studentId: number, deep = false): Promise<
     `Fähigkeiten (Beherrschung, Trend):`,
     ...a.skills.filter((s) => s.mastery !== null).map((s) => `- ${s.skill.subject} › ${s.skill.area} › ${s.skill.name}: ${pct(s.mastery)}, Trend ${s.trend}${s.delta != null ? ` (${s.delta})` : ""}, Erstversuch-Quote ${pct(s.firstTryRate)}, Hilfen ${pct(s.hintRate)}`),
     `Häufige Fehler: ${a.errors.slice(0, 6).map((e) => `${e.label} (${e.count}×)`).join(", ") || "–"}`,
-    `Letzte Stunden:`,
+    `Letzte Einheiten:`,
     ...lessons.map((l) => `- ${l.starts_at.slice(0, 10)} ${l.topic}: Verständnis ${l.understanding ?? "–"}/5. Fehler: ${l.mistakes || "–"}`),
   ].join("\n");
   try {

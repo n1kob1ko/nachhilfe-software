@@ -72,8 +72,8 @@ test("backup, rotation and restore with test data", async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lernheft-sicherung-"));
   const dbFile = path.join(dir, "nachhilfe.db");
   const p = { dbFile, uploadsDir: path.join(dir, "uploads"), backupDir: path.join(dir, "backups") };
+  let conn = openDatabase(dbFile);
   try {
-    let conn = openDatabase(dbFile);
     const tid = (conn.prepare("SELECT id FROM teachers LIMIT 1").get() as { id: number }).id;
     conn.prepare("INSERT INTO students (name, grade, teacher_id, access_token) VALUES ('Testschülerin Anna', 6, ?, 'tok-anna')").run(tid);
     fs.mkdirSync(p.uploadsDir);
@@ -132,6 +132,11 @@ test("backup, rotation and restore with test data", async () => {
     );
     conn.close();
   } finally {
+    // an open SQLite handle blocks removing its folder on Windows (EPERM): close what this test
+    // opened, including the connection db() caches, before the temporary directory goes
+    if (conn.open) conn.close();
+    const { closeDatabase } = await import("./db");
+    closeDatabase();
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });

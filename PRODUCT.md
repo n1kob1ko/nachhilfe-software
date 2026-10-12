@@ -10,10 +10,10 @@ web
 delegated: Next.js + TypeScript + SQLite (lokal lauffähig, ein Prozess, keine Server-Infrastruktur nötig), Claude API optional.
 
 ## Users
-Primär: eine Nachhilfelehrkraft (niko) in Österreich, die mehrere Schüler in Mathematik, Deutsch und Englisch betreut, vor und nach Stunden am Laptop. Sekundär: die Schüler selbst, die zugewiesene Übungen über einen persönlichen Link bearbeiten (oft am Handy oder Tablet). *Abgeleitet aus dem Brief.*
+Primär: eine Nachhilfelehrkraft (niko) in Österreich, die mehrere Schüler in Mathematik, Deutsch und Englisch betreut, vor und nach Einheiten am Laptop. Sekundär: die Schüler selbst, die zugewiesene Übungen über einen persönlichen Link bearbeiten (oft am Handy oder Tablet). *Abgeleitet aus dem Brief.*
 
 ## Product Purpose
-Eine komplette Nachhilfe-Software statt einer Schülerliste: Profile, Stundendokumentation, Übungen mit Lösungen, Selbstbearbeitung mit Tracking, Fortschritt pro Fähigkeit, automatische Analyse und Empfehlungen, ein Dashboard für den Tag. Langfristig ein Lernkreislauf: Aufgabe → Ergebnis → Analyse → Profil → Empfehlung → neue Übung → Neubewertung.
+Eine komplette Nachhilfe-Software statt einer Schülerliste: Profile, Dokumentation der Einheiten, Übungen mit Lösungen, Selbstbearbeitung mit Tracking, Fortschritt pro Fähigkeit, automatische Analyse und Empfehlungen, ein Dashboard für den Tag. Langfristig ein Lernkreislauf: Aufgabe → Ergebnis → Analyse → Profil → Empfehlung → neue Übung → Neubewertung.
 
 ## Capabilities and Constraints
 Österreichische Begriffe (Klasse je Schultyp: VS, MS, Gymnasium, HTL, HAK; Hausübung, Schularbeit, Beistrich). Fortschritt muss pro einzelner Fähigkeit messbar sein (z. B. Bruchrechnung › Dividieren). Funktioniert ohne KI; mit ANTHROPIC_API_KEY erzeugt Claude Aufgaben und Einschätzungen.
