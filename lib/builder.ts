@@ -3,7 +3,8 @@
  * exercise the teacher checks, edits and releases. Works without AI; with a key, Claude gets the
  * student's context and returns structured tasks (lib/ai.ts).
  */
-import { aiEnabled, generatePlanWithAI, type AIMeta } from "./ai";
+import { aiEnabled, bankOfSkill, generateBankItemsWithAI, generatePlanWithAI, type AIMeta } from "./ai";
+import type { BankId } from "./banks";
 import { DIFFICULTIES, categoriesFor, difficultyFor, mixFor, type Category, type Difficulty, type TaskType } from "./curriculum";
 import { generateForSlot } from "./generators";
 import { expectedFixes } from "./fix-text";
@@ -287,6 +288,33 @@ export function wortartenSetting(skillIds: string[], schoolType: string, klasse:
 
 const typeName = (subject: string, key: string | null) => (key ? (categoriesFor(subject).find((c) => c.key === key)?.label ?? key) : "");
 
+/**
+ * Das Antwortformat jeder Bank (Phase 1 des Merges, Schritt 6). `bankItemTask` (lib/generators.ts) baut
+ * aus einem Bankeintrag genau eine Form: Artikel und Haupt-/Gliedsatz sind Multiple Choice, alle übrigen
+ * Banken Lückentext. Die Tabelle erlaubt die Prüfung gegen den Plan, bevor ein Eintrag geholt wird.
+ */
+const BANK_FORMAT: Record<BankId, TaskType> = {
+  artikel: "mc",
+  "hauptsatz-gliedsatz": "mc",
+  adjektivdeklination: "cloze",
+  praepositionen: "cloze",
+  praeteritum: "cloze",
+  perfekt: "cloze",
+  "das-dass": "cloze",
+};
+
+/**
+ * Ob für diesen Platz der Bankweg in Frage kommt: die Fähigkeit muss eine Bank haben **und** die im Plan
+ * gewählte Kategorie muss das Format dieser Bank zulassen (`Category.formats`, lib/curriculum.ts). Sonst
+ * entstünde eine Aufgabe, deren Typ dem Plan widerspricht — dann bleibt der Platz dem allgemeinen KI-Weg.
+ */
+function bankForSlot(subject: string, p: PlanSlot): BankId | null {
+  const bank = bankOfSkill(p.skill.skill.id);
+  if (!bank) return null;
+  const category = p.category ? categoriesFor(subject).find((c) => c.key === p.category) : null;
+  return category?.formats.includes(BANK_FORMAT[bank]) ? bank : null;
+}
+
 export async function generateTasks(
   s: BuilderSettings,
   ctx: StudentContext | null,
@@ -306,19 +334,55 @@ export async function generateTasks(
   let fromAI = 0;
 
   if (settings.useAI && aiEnabled()) {
+    // Warum der Bankweg nichts geliefert hat (Phase 1, Schritt 6) — nur für den Fall, dass am Ende gar
+    // keine KI-Aufgabe entstanden ist; sonst bleibt die Meldung wie bisher.
+    let bankError: string | undefined;
     try {
       // the AI gets the plan; what does not come back in its type is asked for once more
       for (let round = 0; round < 2; round++) {
         const open = plan.map((p, i) => i).filter((i) => !slots[i]);
         if (!open.length) break;
+        // Fähigkeiten mit Bank: die KI füllt die Bank in Bankform (eine Anfrage je Bank, dieselbe Form wie
+        // die Datei — lib/ai/banken.ts). Nur Plätze, deren geplante Kategorie das Format der Bank zulässt.
+        // Ein Fehler oder ein unbrauchbarer Eintrag lässt den Platz offen: er geht unten in den allgemeinen
+        // Auftrag und danach, wie bisher, an den eingebauten Generator.
+        const groups = new Map<BankId, number[]>();
+        for (const i of open) {
+          const bank = bankForSlot(settings.subject, plan[i]);
+          if (bank) groups.set(bank, [...(groups.get(bank) ?? []), i]);
+        }
+        for (const [bank, idx] of groups) {
+          const out = await generateBankItemsWithAI(bank, {
+            count: idx.length,
+            difficulty: plan[idx[0]].skill.difficulty,
+            topic: settings.focus.trim() || undefined,
+            avoid: [...(o.avoid ?? []), ...slots.filter((t): t is TaskDraft => Boolean(t)).map((t) => t.prompt)],
+            meta: o.meta,
+          });
+          if ("error" in out) {
+            bankError ??= out.error;
+            continue;
+          }
+          out.drafts.forEach((t, k) => {
+            const i = idx[k];
+            if (i === undefined) return;
+            // Der Bankeintrag bestimmt die Form; Fähigkeit und Aufgabentyp kommen aus dem Platz. Die
+            // vollständige skillIds-Liste wird wie beim eingebauten Weg gesetzt — ohne sie bewegte sich
+            // der Lernstand dieser Fähigkeit nicht.
+            slots[i] = { ...t, skillId: plan[i].skill.skill.id, skillIds: [...new Set([plan[i].skill.skill.id, ...(t.skillIds ?? [])])], category: plan[i].category };
+          });
+        }
+        // alles, was noch offen ist: ohne Bank, oder der Bankweg hat nichts Brauchbares geliefert
+        const rest = plan.map((p, i) => i).filter((i) => !slots[i]);
+        if (!rest.length) break;
         const got = await generatePlanWithAI(
           {
             subject: settings.subject,
             level: klassenLabel(settings.schoolType, settings.klasse),
             skills: skills.map((r) => ({ id: r.skill.id, name: r.skill.name, area: r.skill.area, parentName: r.parent?.name, difficulty: r.difficulty })),
-            count: open.length,
+            count: rest.length,
             categories: cats,
-            plan: open.map((i) => ({ skillId: plan[i].skill.skill.id, category: plan[i].category ?? categoriesFor(settings.subject)[0]?.key ?? "" })),
+            plan: rest.map((i) => ({ skillId: plan[i].skill.skill.id, category: plan[i].category ?? categoriesFor(settings.subject)[0]?.key ?? "" })),
             studentContext: ctx ? contextForAI(ctx, skills.map((r) => r.skill.id)) : null,
             focusNote: settings.focus,
             avoid: [...(o.avoid ?? []), ...slots.filter((t): t is TaskDraft => Boolean(t)).map((t) => t.prompt)],
@@ -328,11 +392,15 @@ export async function generateTasks(
         );
         if (!got) break;
         got.forEach((t, k) => {
-          if (t) slots[open[k]] = t;
+          if (t) slots[rest[k]] = t;
         });
       }
       fromAI = slots.filter(Boolean).length;
-      if (!fromAI) aiError = "Die KI hat keine Aufgaben geliefert.";
+      // Kam gar keine Aufgabe von der KI, ist der Grund des Bankwegs die genauere Meldung; füllt er nur
+      // einen Teil, steht er neben dem Hinweis auf die ohne KI erstellten Aufgaben. Ohne Bankweg bleibt
+      // die Meldung genau wie bisher.
+      if (!fromAI) aiError = bankError ?? "Die KI hat keine Aufgaben geliefert.";
+      else if (bankError && fromAI < count) aiError = bankError;
     } catch (e) {
       aiError = e instanceof Error ? e.message : String(e);
     }
