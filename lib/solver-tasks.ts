@@ -1,5 +1,6 @@
 import type { ClientTask } from "@/components/Solver";
 import { answerText } from "@/components/TaskPreview";
+import { isGenus } from "@/components/genus";
 import { closestVersion } from "./fix-text";
 import { readingSet } from "./lesen";
 import { gradeMathTask, unknownOf } from "./math-task";
@@ -36,6 +37,7 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
       triesUsed: tries.length,
       faulty: t.type === "fix" ? (t.data.faulty ?? "") : null,
       lines: t.type === "free" ? (t.data.lines ?? null) : null,
+      genus: isGenus(t.data.genus) ? t.data.genus : null,
       math:
         t.type === "rechenweg" || t.type === "sachaufgabe"
           ? {

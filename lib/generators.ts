@@ -6,7 +6,7 @@
 import type { Difficulty, TaskType } from "./curriculum";
 import type { TaskDraft } from "./tasks";
 import { GAP, parseNumber } from "./tasks";
-import { dasDassItems, perfektItems, praeteritumItems } from "./banks";
+import { adjektivdeklinationItems, artikelItems, dasDassItems, hauptsatzGliedsatzItems, perfektItems, praepositionenItems, praeteritumItems } from "./banks";
 import { expectedFixes } from "./fix-text";
 import { rechenwegTask, sachaufgabeTask } from "./generators-mathe";
 import { isWortartenSkill, wortartenFor, wortartenTask, type WortartSetting } from "./wortarten";
@@ -300,6 +300,11 @@ const GEN: Record<string, Gen> = {
   "deutsch.recht.sss": bankCloze("deutsch.recht.sss", () => SSS, "exact"),
   "deutsch.grammatik.faelle": bankMC("deutsch.grammatik.faelle", () => FAELLE),
   "deutsch.grammatik.zeiten": bankMC("deutsch.grammatik.zeiten", () => ZEITEN),
+  // Artikel, Adjektivdeklination, Präpositionen und Haupt-/Gliedsatz kommen aus data/banks/ (Phase 1).
+  "deutsch.grammatik.artikel": artikelTask,
+  "deutsch.grammatik.adjektivdeklination": adjektivdeklinationTask,
+  "deutsch.grammatik.praepositionen": praepositionenTask,
+  "deutsch.satz.hauptsatz-gliedsatz": hauptsatzGliedsatzTask,
   // Präteritum und Perfekt kommen aus data/banks/ (Phase 1); ihre Einträge standen früher in ZEITEN_CLOZE
   "deutsch.grammatik.praeteritum": bankCloze("deutsch.grammatik.praeteritum", praeteritumItems, "exact"),
   "deutsch.grammatik.perfekt": bankCloze("deutsch.grammatik.perfekt", perfektItems, "exact"),
@@ -438,6 +443,112 @@ function bankCloze(skillId: string, bank: () => ClozeItem[], mode: "text" | "exa
       hints: [item.hint],
       errorMap: Object.entries(item.errors ?? {}).map(([answer, label]) => ({ answer, label })),
     };
+  };
+}
+
+// ---------- Phase-1-Banken: Artikel, Adjektivdeklination, Präpositionen, Haupt-/Gliedsatz ----------
+/**
+ * Lückentext aus Satzteilen, genau wie ihn der Import (scripts/import-artikel-trainer.ts) gebaut hat:
+ * jeder Teil wird getrimmt, zwischen den Teilen steht eine Lücke, und das Leerzeichen vor einem
+ * Satzzeichen fällt weg. Die Leerzeichen der Quelle sind bedeutungstragend, deshalb wird nur außen
+ * getrimmt.
+ */
+function clozePrompt(segments: string[]): string {
+  return segments.map((s) => s.trim()).join(` ${GAP} `).replace(/ ([.,!?;:])/g, "$1");
+}
+
+/** Der falsche Artikel zum Genus; nur für die typischen Fehler, keine Aussage über das Wort. */
+const otherArticle = (article: "der" | "die" | "das") => (article === "der" ? "die" : "der");
+
+/** Lückensatz eines Präposition-Eintrags: die Lücke steht für den Artikel vor dem Nomen. */
+const praepositionenPrompt = (item: { prefix: string; noun: string; suffix: string }) => clozePrompt([item.prefix, `${item.noun}${item.suffix}`]);
+
+/** Bezeichnung des typischen Fehlers, wenn der falsche Kasus gewählt wurde. */
+const kasusError = (kasus: "Dativ" | "Akkusativ" | null) =>
+  kasus === "Dativ" ? "Akkusativ statt Dativ" : kasus === "Akkusativ" ? "Dativ statt Akkusativ" : "Falscher Fall nach der Präposition";
+
+const GENUS_OF_ARTICLE: Record<"der" | "die" | "das", "m" | "f" | "n"> = { der: "m", die: "f", das: "n" };
+const GENUS_WORT: Record<"m" | "f" | "n", string> = { m: "maskulin", f: "feminin", n: "neutral" };
+
+/** Die vier falschen Optionen eines Eintrags als typische Fehler, ohne Doppelungen. */
+const wrongOptions = (options: string[], correct: string, label: string) =>
+  [...new Set(options.filter((o) => o !== correct))].map((answer) => ({ answer, label }));
+
+/**
+ * Artikel bestimmen: „der/die/das“ als Auswahl. Das Genus steht in `data.genus`, damit die Oberfläche
+ * den Buchstaben m/f/n zeigen und färben kann (D10); die Optionen werden je Aufgabe gemischt.
+ */
+function artikelTask(rng: Rng, diff: Difficulty): TaskDraft {
+  const item = pick(rng, artikelItems());
+  const options = shuffle(rng, ["der", "die", "das"]);
+  const correct = options.indexOf(item.article);
+  const genus = GENUS_OF_ARTICLE[item.article];
+  return {
+    type: "mc",
+    skillId: "deutsch.grammatik.artikel",
+    difficulty: diff,
+    prompt: `Welchen Artikel hat das Nomen „${item.word}“?`,
+    data: { options, genus },
+    answer: { correct },
+    solution: `„${item.word}“ ist ${GENUS_WORT[genus]}: ${item.article} ${item.word}${item.translation ? ` (${item.translation})` : ""}.`,
+    hints: ["Sprich das Nomen mit „der“, „die“ und „das“ laut: Welche Form klingt richtig?", "Das Genus steht im Wörterbuch beim Wort."],
+    errorMap: options
+      .map((option, i) => (i === correct ? null : { answer: String(i), label: `Genus verwechselt (${item.article}↔${option})` }))
+      .filter((e): e is { answer: string; label: string } => e !== null),
+  };
+}
+
+/** Adjektivdeklination: zwei Lücken (Adjektivendung, Nomenendung), exakt geprüft. */
+function adjektivdeklinationTask(rng: Rng, diff: Difficulty): TaskDraft {
+  const item = pick(rng, adjektivdeklinationItems());
+  return {
+    type: "cloze",
+    skillId: "deutsch.grammatik.adjektivdeklination",
+    difficulty: diff,
+    prompt: clozePrompt([item.prefix, item.middle, item.suffix]),
+    data: {},
+    answer: { blanks: [[item.correct1], [item.correct2]], mode: "exact" },
+    solution: item.solution,
+    hints: ["Die Adjektivendung richtet sich nach Begleiter, Genus, Kasus und Numerus.", "Prüfe danach die Endung des Nomens (z. B. -s, -es oder -e)."],
+    errorMap: [...wrongOptions(item.options1, item.correct1, "Falsche Adjektivendung"), ...wrongOptions(item.options2, item.correct2, "Falsche Nomenendung")],
+  };
+}
+
+/** Präposition und Kasus: eine Lücke (der Artikel), der typische Fehler ist nach Kasus benannt. */
+function praepositionenTask(rng: Rng, diff: Difficulty): TaskDraft {
+  const item = pick(rng, praepositionenItems());
+  return {
+    type: "cloze",
+    skillId: "deutsch.grammatik.praepositionen",
+    difficulty: diff,
+    prompt: praepositionenPrompt(item),
+    data: {},
+    answer: { blanks: [[item.correct]], mode: "exact" },
+    solution: item.solution,
+    hints: ["Jede Präposition verlangt einen bestimmten Fall.", "Frage mit dem Nomen: Wem? (Dativ) oder Wen/was? (Akkusativ)."],
+    errorMap: wrongOptions(item.options, item.correct, kasusError(item.kasus)),
+  };
+}
+
+/** Hauptsatz und Gliedsatz erkennen: die beiden Satzteile stehen zur Auswahl, genau einer ist der Gliedsatz. */
+function hauptsatzGliedsatzTask(rng: Rng, diff: Difficulty): TaskDraft {
+  const item = pick(rng, hauptsatzGliedsatzItems());
+  const gs = item.parts.find((p) => p.type === "GS")!;
+  const hs = item.parts.find((p) => p.type === "HS")!;
+  const options = shuffle(rng, item.parts.map((p) => p.text));
+  const correct = options.indexOf(gs.text);
+  return {
+    type: "mc",
+    skillId: "deutsch.satz.hauptsatz-gliedsatz",
+    difficulty: diff,
+    prompt: `Welcher Teil ist der Gliedsatz? „${item.parts.map((p) => p.text).join(" ")}“`,
+    data: { options },
+    answer: { correct },
+    solution: `Der Gliedsatz ist „${gs.text}“ — er kann nicht allein stehen und hängt vom Hauptsatz ab.\nHauptsatz: „${hs.text}“`,
+    hints: ["Der Gliedsatz kann nicht allein stehen; oft leitet ihn eine Konjunktion wie weil, dass, wenn oder obwohl ein.", "Im Gliedsatz steht das gebeugte Verb am Ende."],
+    errorMap: options
+      .map((_, i) => (i === correct ? null : { answer: String(i), label: "Hauptsatz statt Gliedsatz" }))
+      .filter((e): e is { answer: string; label: string } => e !== null),
   };
 }
 
@@ -739,6 +850,12 @@ export const EXPLAIN: Record<string, string> = {
   "deutsch.recht.sss": "Nach kurzem Vokal ss, nach langem Vokal oder Zwielaut ß, bei stimmhaftem s nur s.",
   "deutsch.grammatik.faelle": "Mit der Frageprobe: Wer/was? (Nominativ), Wessen? (Genitiv), Wem? (Dativ), Wen/was? (Akkusativ).",
   "deutsch.grammatik.zeiten": "Zeitformen erkennt man an Hilfsverben und Verbformen: z. B. Perfekt = haben/sein (Präsens) + Partizip II.",
+  "deutsch.grammatik.artikel": "Der Artikel (der/die/das) gehört zum Genus des Nomens und wird am besten gleich mitgelernt. Merkhilfe: Farbton plus Buchstabe m/f/n.",
+  "deutsch.grammatik.adjektivdeklination": "Die Endung des Adjektivs hängt vom Begleiter (bestimmt oder unbestimmt), vom Genus, vom Kasus und vom Numerus ab: nach bestimmtem Artikel meist -e oder -en.",
+  "deutsch.grammatik.praepositionen": "Jede Präposition verlangt einen Fall: mit, nach, bei, von, zu, aus, seit den Dativ; durch, für, gegen, ohne, um den Akkusativ. Frageprobe: Wem? (Dativ) oder Wen/was? (Akkusativ).",
+  "deutsch.grammatik.praeteritum": "Das Präteritum ist die einfache Vergangenheitsform (ich ging, er fuhr). Starke Verben ändern den Vokal, schwache bilden -te.",
+  "deutsch.grammatik.perfekt": "Das Perfekt = haben oder sein im Präsens + Partizip II (ich habe gelernt, wir sind gefahren). Bewegungs- und Zustandsverben nehmen „sein“.",
+  "deutsch.satz.hauptsatz-gliedsatz": "Der Hauptsatz kann allein stehen (gebeugtes Verb an zweiter Stelle). Der Gliedsatz kann nicht allein stehen, wird oft von einer Konjunktion eingeleitet und hat das gebeugte Verb am Ende.",
   "deutsch.text.verstehen": "Text genau lesen, Schlüsselwörter markieren, die Antwort im Text belegen.",
   "englisch.tenses.presentsimple": "Für Gewohnheiten und Fakten. Bei he/she/it kommt -s ans Verb. Fragen mit do/does.",
   "englisch.tenses.pastsimple": "Für abgeschlossene Handlungen in der Vergangenheit (yesterday, last week, ago). Regelmäßig -ed, sonst 2. Form.",
@@ -835,7 +952,29 @@ const FAELLE_CLOZE: ClozeItem[] = (
 }));
 
 /** Gap texts for skills whose own bank is multiple choice. */
-const EXTRA_CLOZE: Record<string, ClozeItem[]> = { "deutsch.grammatik.zeiten": ZEITEN_CLOZE, "deutsch.grammatik.faelle": FAELLE_CLOZE };
+/** Artikel als Lückentext: derselbe Satz, aber ohne Auswahl (für „Lückentext“ und „Fehler korrigieren“). */
+const ARTIKEL_CLOZE: ClozeItem[] = artikelItems().map((i) => ({
+  q: `Setze den richtigen Artikel ein: ${GAP} ${i.word}`,
+  blanks: [[i.article]],
+  solution: `${i.article} ${i.word}`,
+  hint: "Sprich das Nomen mit dem Artikel laut.",
+  errors: { [otherArticle(i.article)]: `Genus verwechselt (${i.article}↔${otherArticle(i.article)})` },
+}));
+
+/** Präpositionen als Lückentext mit dem Kasus-Fehler; dieselbe Lücke wie im Generator. */
+const PRAEPOSITIONEN_CLOZE: ClozeItem[] = praepositionenItems().map((i) => ({
+  q: praepositionenPrompt(i),
+  blanks: [[i.correct]],
+  solution: i.solution,
+  hint: "Jede Präposition verlangt einen bestimmten Fall.",
+  errors: Object.fromEntries(wrongOptions(i.options, i.correct, kasusError(i.kasus)).map((e) => [e.answer, e.label])),
+}));
+
+const EXTRA_CLOZE: Record<string, ClozeItem[]> = {
+  "deutsch.grammatik.zeiten": ZEITEN_CLOZE,
+  "deutsch.grammatik.faelle": FAELLE_CLOZE,
+  "deutsch.grammatik.artikel": ARTIKEL_CLOZE,
+};
 
 /** One error per item, from the banks that hold sentences: a wrong and the right option, or a gap filled wrongly. */
 function fixItems(skillId: string): FixItem[] {
@@ -862,6 +1001,21 @@ function fixItems(skillId: string): FixItem[] {
       return ZEITEN_FIX;
     case "deutsch.grammatik.faelle":
       return FAELLE_FIX;
+    case "deutsch.grammatik.artikel":
+      return fromCloze(ARTIKEL_CLOZE, "grammatik");
+    case "deutsch.grammatik.adjektivdeklination":
+      return adjektivdeklinationItems().flatMap((i) => {
+        const wrong = i.options1.find((o) => o !== i.correct1);
+        if (!wrong) return [];
+        const build = (ending: string) => `${i.prefix}${ending}${i.middle}${i.correct2}${i.suffix}`;
+        return [{ wrong: build(wrong), right: build(i.correct1), label: "Falsche Adjektivendung", errorType: "grammatik" }];
+      });
+    case "deutsch.grammatik.praepositionen":
+      return fromCloze(PRAEPOSITIONEN_CLOZE, "grammatik");
+    case "deutsch.grammatik.praeteritum":
+      return fromCloze(praeteritumItems(), "grammatik");
+    case "deutsch.grammatik.perfekt":
+      return fromCloze(perfektItems(), "grammatik");
     case "deutsch.beistrich.aufzaehlung":
       return fromMC(BEISTRICH_AUFZ, "grammatik");
     case "deutsch.beistrich.nebensatz":
@@ -888,6 +1042,11 @@ function fixItems(skillId: string): FixItem[] {
 const FIX_PROMPT: Record<string, string> = {
   "deutsch.grammatik.zeiten": "Im Text stimmen Zeitformen nicht. Schreib ihn richtig.",
   "deutsch.grammatik.faelle": "Im Text stehen Wörter im falschen Fall. Schreib ihn richtig.",
+  "deutsch.grammatik.artikel": "Im Text steht der falsche Artikel. Schreib ihn richtig.",
+  "deutsch.grammatik.adjektivdeklination": "Im Text stimmen die Endungen nicht. Schreib ihn richtig.",
+  "deutsch.grammatik.praepositionen": "Im Text steht der Artikel im falschen Fall. Schreib ihn richtig.",
+  "deutsch.grammatik.praeteritum": "Im Text stimmen die Zeitformen nicht. Schreib ihn richtig.",
+  "deutsch.grammatik.perfekt": "Im Text stimmen die Zeitformen nicht. Schreib ihn richtig.",
   "deutsch.beistrich.aufzaehlung": "Im Text stimmen Beistriche nicht. Schreib ihn richtig.",
   "deutsch.beistrich.nebensatz": "Im Text stimmen Beistriche nicht. Schreib ihn richtig.",
   "deutsch.beistrich.infinitiv": "Im Text stimmen Beistriche nicht. Schreib ihn richtig.",

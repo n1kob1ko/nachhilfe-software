@@ -2815,6 +2815,38 @@
   [
    "deutsch.text.verstehen",
    "AHS-DEU-5-T4-T1"
+  ],
+  [
+   "deutsch.grammatik.praeteritum",
+   "AHS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.perfekt",
+   "AHS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.praeteritum",
+   "AHS-DEU-2-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.perfekt",
+   "AHS-DEU-2-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.praepositionen",
+   "AHS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.praepositionen",
+   "AHS-DEU-2-B1-A1-A2"
+  ],
+  [
+   "deutsch.satz.hauptsatz-gliedsatz",
+   "AHS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.satz.hauptsatz-gliedsatz",
+   "AHS-DEU-2-B1-A1-A2"
   ]
  ]
 }
