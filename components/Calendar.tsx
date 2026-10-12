@@ -57,7 +57,7 @@ export function MonthCalendar({ month, selected, today, busy, href }: { month: s
               scroll={false}
               role="gridcell"
               aria-selected={isSel}
-              aria-label={`${d.toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long" })}${has ? ", mit Stunden" : ""}`}
+              aria-label={`${d.toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long" })}${has ? ", mit Einheiten" : ""}`}
               className="group flex flex-col items-center py-0.5"
             >
               <span

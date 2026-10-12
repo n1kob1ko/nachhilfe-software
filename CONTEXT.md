@@ -1,0 +1,261 @@
+# Lernheft
+
+Nachhilfe-Software für ein Institut: Schülerprofile, Einheiten dokumentieren,
+Übungen erzeugen und zuweisen, Fortschritt je Fähigkeit, Blätter zum Drucken.
+
+Dieses Dokument ist ein **Glossar** — es legt fest, welches Wort für welchen
+Begriff gilt. Keine Architektur, keine Umsetzungsdetails, keine Entscheidungen;
+die kommen aus [tommys-merge.md](tommys-merge.md) und `docs/`.
+
+Die Begriffe mit dem Vermerk *kommt mit Phase …* gibt es noch nicht: sie sind
+mit dem Merge-Plan vereinbart und werden hier festgehalten, damit sie beim Bauen
+nicht anders heißen.
+
+## Personen
+
+**Lehrer**:
+Wer unterrichtet und mit dem Werkzeug arbeitet. **Die Person, nicht ihr Zugang** —
+eine Zeile in `teachers`, mit Anmeldename, Passwort und `is_admin`. Wo es um
+Anmelden, Passwort oder Rechte geht, heißt es Konto; wo es um Unterricht geht,
+Lehrer.
+_Avoid_: Lehrkraft, Nutzer, Benutzer, Account, Trainer
+
+**Schüler**:
+Wer unterrichtet wird. Eine Zeile in `students`, **ohne Konto**: er erreicht die
+App über seinen geheimen Link `/lernen/[token]` oder über ein gekoppeltes Gerät.
+_Avoid_: Kind, Klient, Teilnehmer, Schüleraccount, Nutzer
+
+## Unterricht und Planung
+
+**Einheit**:
+Ein Nachhilfetermin zwischen Lehrer und Schüler. Beim Starten entsteht sofort
+eine Zeile in `units` (Basis-Dokumentation); beendet wird sie von Hand oder nach
+Inaktivität automatisch. Ihre **Dauer** ist die echte Zeit von Start bis Ende.
+Abgerechnet werden nur Einheiten, nie das selbstständige Üben.
+_Avoid_: Stunde, Lektion, Sitzung, Termin
+
+**geplante Einheit**:
+Ein Platz im Wochenplan: wer (Lehrer, Schüler), wo (Raum), an welchem Wochentag,
+zu welcher Startzeit und mit welcher **geplanten Dauer**. Sie wird erst wirklich,
+wenn eine Einheit sich mit ihr verknüpft (`unit_id`); ein vergangener Platz ohne
+Einheit heißt „nicht stattgefunden“ und hat keine Abrechnungsfolge. *Kommt mit
+Phase 4.*
+_Avoid_: Termin, Slot, geplante Stunde, Lesson
+
+**geplante Dauer**:
+Wie lange eine **geplante Einheit** dauern soll — je Schüler eingestellt,
+Vorgabe 100 Minuten, erlaubt 1–300. Sie schreibt die echte Einheit nicht vor.
+*Kommt mit Phase 3/4.*
+_Avoid_: Dauer, Soll-Dauer, Termindauer
+
+**Dauer**:
+Die tatsächliche Länge einer **Einheit**, gerechnet von Start bis Ende. Nur sie
+zählt für die Abrechnung. Auf der Einheitenseite steht beides nebeneinander:
+„geplant 100 min · tatsächlich 85 min“.
+_Avoid_: geplante Dauer, Zeit, Länge
+
+**Wochenplan**:
+Der Plan einer Kalenderwoche (Montag bis Sonntag, Europe/Vienna): welche
+**geplanten Einheiten** es gibt, mit Lehrer, Schüler, Raum und Zeit. Eine Woche
+ist entweder Entwurf oder veröffentlicht. *Kommt mit Phase 4.*
+_Avoid_: Stundenplan, Zeitplan, Kalender, Schedule
+
+**Entwurf / veröffentlicht**:
+Die zwei Zustände eines **Wochenplans**. Ein Entwurf ist noch änderbar und nur
+für die Verwaltung sichtbar; veröffentlicht heißt: für diese Woche gilt er, und
+Lehrer und Schüler sehen ihre Termine. Beim Veröffentlichen wird niemand
+benachrichtigt. Nicht zu verwechseln mit dem Entwurf einer **Übung**: der wird
+**freigegeben** (siehe *Übung*).
+_Avoid_: Draft, freigegeben, aktiv, live
+
+**gesperrt**:
+Kennzeichen an einer **geplanten Einheit**: sie ist von Hand gesetzt und darf
+nicht verschoben werden. „Neu generieren“ lässt gesperrte Plätze stehen, sonst
+wäre die Handarbeit nach jedem Lauf weg. *Kommt mit Phase 4.*
+_Avoid_: fixiert, gepinnt, blockiert, locked
+
+**Raum**:
+Wo eine **geplante Einheit** stattfindet: Gebäude, Name, und ob vor Ort oder
+online. Ein Raum wird deaktiviert, nie gelöscht, sobald Plätze auf ihn zeigen.
+*Kommt mit Phase 3.*
+_Avoid_: Zimmer, Saal, Ort, Location
+
+**Verfügbarkeit**:
+Die Zeiten, in denen ein Lehrer oder Schüler eingeplant werden darf: je
+Wochentag eine oder mehrere Spannen (ISO: 1 = Montag … 7 = Sonntag). Dazu kann
+es für eine einzelne Woche eine **Abweichung** geben, die nur diese Woche gilt.
+*Kommt mit Phase 3.*
+_Avoid_: Zeitfenster, freie Zeiten, Availability, Kapazität
+
+## Üben und Aufgaben
+
+**Übung**:
+Ein Arbeitsblatt, das einem Schüler zugewiesen wird — eine Zeile in
+`worksheets`, zugewiesen über `assignments`. Sie ist zunächst **Entwurf**
+(Schüler sehen sie nie), nach der Prüfung **freigegeben**. Arten: `uebung`,
+`ueberpruefung` (Kontrolle nach dem Üben), `diagnose`, `bibliothek`.
+_Avoid_: Arbeitsblatt (das ist das gedruckte Blatt), Aufgabe, Exercise, Training
+
+**Aufgabe**:
+Eine einzelne Aufgabe **innerhalb** einer Übung — eine Zeile in `tasks`, mit
+Antwortformat, Schwierigkeit, Lösung, Hilfen und typischen Fehlern. Die Übung
+ist das Ganze, die Aufgabe der einzelne Schritt.
+_Avoid_: Übung, Frage, Item, Task
+
+**Fähigkeit**:
+Eine einzelne übbare Fertigkeit, geordnet als Fach › Thema › Fähigkeit ›
+Teilfähigkeit (`skills`, Teilfähigkeit über `parent_id`). Der Fortschritt wird je
+Fähigkeit gerechnet; eine Aufgabe kann mehrere trainieren. Die Fähigkeit trägt
+den Namen, unter dem sie im Lehrplan steht.
+_Avoid_: Kompetenz, Lernziel, Skill, Fertigkeit
+
+**Schnellrunde**:
+Eine Übung im Schülermodus, aber im Durchlauf: Multiple Choice mit höchstens vier
+Antworten, ein Tipp, kurze Rückmeldung, automatisch die nächste Aufgabe; Anfang
+und Ende als eigene Seite, große Flächen fürs Tablet. Versuche, Zeit und Hilfen
+werden genau wie sonst gespeichert. *Kommt mit Phase 2.*
+_Avoid_: Quiz, Blitzrunde, Schnelltest, Microlearning
+
+**Auswendig schreiben**:
+Eine Aufgabe, in der ein Text auswendig geschrieben wird: erst ist er zu lesen,
+dann verschwinden nach und nach Wörter und Buchstaben, bis das Feld leer ist; die
+App vergleicht Wort für Wort. Die falschen Wörter landen als Fehler im Versuch.
+*Kommt mit Phase 2.*
+_Avoid_: Memorize, Auswendiglernen, Diktat, Abfrage
+
+## Material, Bibliothek, Vorlage
+
+**Material**:
+Eine hochgeladene Datei, eingeordnet nach Fach, Thema und Fähigkeiten: Foto, PDF
+oder Arbeitsblatt. Sie bleibt privat; die App darf darin etwas erkennen, aber
+daraus wird erst eine Aufgabe, wenn der Lehrer es geprüft hat. Herkunft und
+Lizenz bleiben an jedem übernommenen Stück hängen.
+_Avoid_: Datei, Upload, Anhang, Ressource, Content
+
+**Bibliothek** (Aufgabenbibliothek):
+Die Sammlung einzelner, guter, wiederverwendbarer **Aufgaben**. Jeder Eintrag ist
+genau eine Aufgabe samt Herkunft und Lizenz; aus ausgewählten Einträgen entsteht
+mit einem Klick eine neue Übung.
+_Avoid_: Archiv, Sammlung, Pool, Katalog
+
+**Vorlage**:
+Ein gespeichertes Rezept für eine **Übung**: die Einstellungen des Builders und,
+wenn gewünscht, die festen Aufgaben — damit dieselbe Übung in einem Klick wieder
+entsteht. Nicht zu verwechseln mit der **Bibliothek** (dort liegen einzelne
+Aufgaben) und nicht mit dem „Vorlage“-Feld einer Bibliotheksaufgabe, das die
+Quelle meint, nach der sie geschrieben wurde.
+_Avoid_: Template, Muster, Blaupause, Schablone
+
+## Schule
+
+**Hausübung**:
+Was der Schüler zu Hause macht: Beschreibung, Fach, Fälligkeit, offen oder
+erledigt. Österreichisch für Hausaufgabe.
+_Avoid_: Hausaufgabe, Homework, Übung, Aufgabe
+
+**Schularbeit**:
+Ein schriftlicher Test in der Schule: Fach, Datum, Stoff, Ergebnis (Note oder
+Punkte), Zustand geplant, geschrieben oder abgesagt. Österreichisch für
+Klassenarbeit. Im Code und in der Oberfläche heißt sie oft noch „Test“ (Tabelle
+`tests`) — siehe *Altlasten im Code*.
+_Avoid_: Klassenarbeit, Prüfung, Examen, Schultest
+
+## Blätter erstellen
+
+**Blätter erstellen**:
+Der eigene Bereich für Blätter zum Ausdrucken: **Lesetabelle**,
+**Satzbaukasten**, **Nachmalblatt** und später weitere. Das Ergebnis eines
+Generators ist ein **Druckblatt**. Der bestehende A4-Druck einer **Übung** bleibt
+davon getrennt. *Kommt mit Phase 5.*
+_Avoid_: Worksheet-Generator, Druckzentrum, Blattgenerator, Druckbereich
+
+**Druckblatt**:
+Ein unter „Blätter erstellen“ erzeugtes Blatt. Seine Beschreibung ist eine
+**Definition** — was gedruckt werden soll, nicht wie es aussieht; aus ihr lässt
+es sich wieder öffnen. Gespeichert wird es als Material (`kind = druckblatt`):
+als Vorlage ohne Schüler oder als Kopie für einen Schüler. *Kommt mit Phase 5.*
+_Avoid_: Worksheet, Arbeitsblatt (das ist der A4-Druck einer Übung), PDF, Ausdruck
+
+**Lesetabelle**:
+Eine Blattart: Silben oder Wörter in einem gleichmäßigen Raster, laut zu lesen.
+_Avoid_: Silbentabelle, Leseblatt, Worksheet
+
+**Satzbaukasten**:
+Eine Blattart: Spalten mit Wörtern oder Satzteilen, aus denen Sätze
+zusammengesetzt werden. Ausdrücklich nicht die Satzbau-Aufgaben der
+**Schnellrunde** — das eine ist ein Blatt, das andere eine Übung am Bildschirm.
+_Avoid_: Satztabelle, Satzgenerator, Baukasten
+
+**Nachmalblatt**:
+Eine Blattart: Buchstaben, Silben oder Wörter zum Nachspuren, wobei die Hilfe von
+Zeile zu Zeile abnimmt.
+_Avoid_: Schreibblatt, Tracing, Spurbild, Schwungblatt
+
+**Lineatur**:
+Die Linienvorgabe für Handschrift, nach DIN 16552-1 nummeriert: Lineatur 0 (vier
+Linien, 6 mm) und Lineatur 1–4, jeweils passend zur Grundschulklasse. Ab
+Lineatur 3 gibt es zwei Linien, bei Lineatur 4 nur die Grundlinie.
+_Avoid_: Schreiblinien, Liniensystem, Raster, Linierung
+
+**Schulschrift**:
+Die Handschriftform, die ein Schüler lernt: Druckschrift oder eine der drei
+Ausgangsschriften (Vereinfachte, Schul- und Lateinische Ausgangsschrift). Beim
+Nachmalblatt ist sie Lerninhalt, nicht Gestaltung — deshalb wird eine fehlende
+Schriftdatei sichtbar gemeldet und nicht still durch eine andere ersetzt.
+_Avoid_: Font, Schriftart, Typeface, Handschrift
+
+## KI
+
+**KI-Hinweise**:
+Notizen je Schüler, wie die KI ihn behandeln soll („Legasthenie: kurze Sätze“).
+Sie hängen am Systemprompt jeder schülerbezogenen Anfrage und gehen nie mit dem
+Namen des Schülers hinaus. *Kommt mit Phase 6.*
+_Avoid_: Prompt, KI-Profil, Notizen, Anweisungen
+
+**manueller KI-Modus**:
+Ein Betrieb ohne Anfrage nach außen: die App zeigt den vollständigen Prompt zum
+Kopieren, der Lehrer fügt die Antwort ein, und die App prüft sie mit derselben
+Reparatur und Validierung wie eine Antwort über die API. Es entstehen keine
+Kosten. *Kommt mit Phase 6.*
+_Avoid_: Offline-Modus, ChatGPT-Modus, Copy-Paste-KI, Trockenlauf
+
+## Regel: „Stunde“ ist eine Uhrzeit
+
+**„Stunde“ wird hier nur für 60 Minuten gebraucht** — „eine Stunde später“, „nach
+3 Stunden ohne Aktivität“, „0,10 $ pro Stunde“. Ein Nachhilfetermin heißt immer
+**Einheit** (Entscheidung D12 in [tommys-merge.md](tommys-merge.md)). Das gilt
+auch zusammengesetzt: kein „Stundenplan“ (das ist der **Wochenplan**), keine
+„Stundendokumentation“ (das ist die Dokumentation der **Einheit**), keine
+„Nachhilfestunden“ (das sind **Einheiten**).
+
+Ausnahme ist allein der Wortlaut, den wir nicht ändern dürfen: der amtliche
+Lehrplan und die Kennungen unter *Altlasten im Code*.
+
+## Altlasten im Code
+
+Diese Bezeichner tragen das alte Wort weiter und werden **nicht** umbenannt:
+Daten, Adressen und Kennungen hängen daran. Sie stehen hier, damit sie niemand
+für einen Fehler hält und „aufräumt“.
+
+| Bezeichner | Was es ist |
+|---|---|
+| Tabelle `lessons` | die Dokumentationszeile einer Einheit (Lern-Dokumentation), verknüpft über `lessons.unit_id` |
+| `lessons.kind = 'stunde'` | die Zeile gehört zu einer Einheit; Gegenstück ist `'selbststaendig'` (selbstständiges Üben) |
+| `lessons.kind` Vorgabe `'stunde'` | die Spalte selbst (`lib/db.ts`, `COLUMNS`) |
+| `lessons.status = 'geplant'` | eine geplante Einheit, die noch keine `units`-Zeile hat; Phase 4 entscheidet, ob das bleibt |
+| `lessons.assignment_id`, `lessons.unit_id`, `lessons.family_note` | Felder derselben Tabelle |
+| Route `/schueler/[id]/stunden/[id]` | die Adresse einer Dokumentationszeile (`components/LessonCard.tsx`, `Lernverlauf.tsx`, `app/(tutor)/abrechnung/page.tsx`) |
+| `?tab=stunden` | alte Tab-Adresse auf dem Schülerprofil, wird auf `lernverlauf` umgebogen |
+| `lib/mastery.ts`: `EvidenceSource = "stunde"`, `SOURCE_WEIGHT.stunde` | Herkunft und Gewicht der Beobachtung aus einer Einheit |
+| `lib/analysis.ts`: `source: "stunde"` | dieselbe Herkunft, beim Rechnen |
+| `lib/exports.ts`: Schlüssel `nachhilfestunden` | Kennung des Datensatzes im Datenexport |
+| `lib/ai/features.ts`: `next_lesson_plan` | Feld der KI-Einschätzung |
+| Tabelle `tests`, Oberfläche „Tests“ | Schularbeiten und Tests |
+| `curriculum/ris-*.json`: „volle Stunden“, „halbe Stunden“, „Stunden und Minuten“ | amtlicher Lehrplanwortlaut (Uhrzeit) — darf nicht verändert werden |
+
+Und die Stellen, an denen „Stunde“ **richtig** steht und so bleiben muss, weil es
+wirklich 60 Minuten sind: `lib/math-expr.ts` (Einheiten `h`, `std`, `stunden`,
+`stunde`), `lib/learning.ts` („nach 3 Stunden ohne Aktivität“),
+`lib/units.test.ts`, `lib/text-doc.test.ts`, `docs/betrieb.md`,
+`docs/ki-simulation.md` sowie die Textproben in `lib/ai/textkorrektur-*.ts` und
+`lib/ai/qualitaetstest-faelle.ts`.

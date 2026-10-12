@@ -19,23 +19,31 @@ const value = (name: string) => {
 async function main() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lernheft-sim-"));
   process.env.DATABASE_PATH = path.join(dir, "sim.db");
-  const real = flag("echt");
-  const { simulateLesson, reportMarkdown } = await import("../lib/ai/simulation");
-  const { aiEnabled } = await import("../lib/ai/router");
-  if (real && !aiEnabled()) {
-    console.error("Für --echt braucht es einen Schlüssel für den eingestellten Anbieter (z. B. ANTHROPIC_API_KEY, OPENROUTER_API_KEY oder DEEPSEEK_API_KEY).");
-    process.exit(1);
+  try {
+    const real = flag("echt");
+    const { simulateLesson, reportMarkdown } = await import("../lib/ai/simulation");
+    const { aiEnabled } = await import("../lib/ai/router");
+    if (real && !aiEnabled()) {
+      console.error("Für --echt braucht es einen Schlüssel für den eingestellten Anbieter (z. B. ANTHROPIC_API_KEY, OPENROUTER_API_KEY oder DEEPSEEK_API_KEY).");
+      process.exitCode = 1;
+      return;
+    }
+    const minutes = Number(value("minuten") ?? 60);
+    const seed = Number(value("seed") ?? 7);
+    const run = await simulateLesson({ minutes, seed, real });
+    const outage = await simulateLesson({ minutes, seed, outage: true });
+    const md = reportMarkdown(run, outage);
+    const out = value("bericht");
+    if (out) fs.writeFileSync(out, md);
+    console.log(md);
+    if (out) console.log(`Bericht gespeichert: ${out}`);
+  } finally {
+    // db() keeps its connection open until the process ends; on Windows that blocks removing the
+    // throw-away folder (EPERM), so close it first.
+    const { closeDatabase } = await import("../lib/db");
+    closeDatabase();
+    fs.rmSync(dir, { recursive: true, force: true });
   }
-  const minutes = Number(value("minuten") ?? 60);
-  const seed = Number(value("seed") ?? 7);
-  const run = await simulateLesson({ minutes, seed, real });
-  const outage = await simulateLesson({ minutes, seed, outage: true });
-  const md = reportMarkdown(run, outage);
-  const out = value("bericht");
-  if (out) fs.writeFileSync(out, md);
-  console.log(md);
-  if (out) console.log(`Bericht gespeichert: ${out}`);
-  fs.rmSync(dir, { recursive: true, force: true });
 }
 
 main().catch((e) => {

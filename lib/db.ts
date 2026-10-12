@@ -764,6 +764,18 @@ export function db(): Database.Database {
   return instance;
 }
 
+/**
+ * Closes the connection db() caches and forgets it, so the next db() call opens the file again.
+ * Needed wherever the database file or its folder is removed while the process keeps running
+ * (tests, scripts): the cached handle would otherwise keep the file open, and on Windows that
+ * blocks deleting the folder (EPERM). openDatabase() connections the caller closed are not affected.
+ */
+export function closeDatabase() {
+  const conn = instance;
+  instance = null;
+  conn?.close();
+}
+
 /** Opens (and creates or upgrades) a database file. db() uses it for the app's own database. */
 export function openDatabase(file: string): Database.Database {
   if (file !== ":memory:") fs.mkdirSync(path.dirname(file), { recursive: true });

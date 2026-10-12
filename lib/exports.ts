@@ -87,7 +87,7 @@ export const DATASETS: Dataset[] = [
     label: "Dokumentationen der Einheiten",
     description: "Automatische Auswertung jeder Einheit: Aufgaben, Erfolgsquote, Hilfen, Zeiten, Zusammenfassung.",
     build: () => ({
-      headers: ["Stunde", "Einheit", "Datum", "Lehrer", "Schüler", "Fach", "Themen", "Aufgaben", "Richtig", "Erfolgsquote %", "Beim 1. Versuch ohne Hilfe", "Mit Hilfe", "Hinweis gereicht", "Ausführliche Erklärung", "Lösung angesehen", "Dauer (min)", "Aktiv (min)", "Ø Sekunden pro Aufgabe", "Verlauf", "Sichere Fähigkeiten", "Unsichere Fähigkeiten", "Problem-Fähigkeiten", "Zusammenfassung"],
+      headers: ["Dokumentation", "Einheit", "Datum", "Lehrer", "Schüler", "Fach", "Themen", "Aufgaben", "Richtig", "Erfolgsquote %", "Beim 1. Versuch ohne Hilfe", "Mit Hilfe", "Hinweis gereicht", "Ausführliche Erklärung", "Lösung angesehen", "Dauer (min)", "Aktiv (min)", "Ø Sekunden pro Aufgabe", "Verlauf", "Sichere Fähigkeiten", "Unsichere Fähigkeiten", "Problem-Fähigkeiten", "Zusammenfassung"],
       rows: q(`${LESSON_SQL} WHERE l.unit_id IS NOT NULL ORDER BY l.starts_at`).map((r) => {
         const rep = readReport({ report: (r.report as string | null) ?? null });
         const by = (st: string) => rep?.skills.filter((k) => k.state === st).map((k) => k.name).join(", ") ?? "";

@@ -180,9 +180,15 @@ export function applyPendingRestore(dbFile: string, uploadsDir = uploadsDirFor(d
   const dataDir = path.dirname(dbFile);
   try {
     const check = new Database(candidate, { readonly: true });
-    const result = check.pragma("integrity_check", { simple: true });
-    check.close();
-    if (result !== "ok") throw new Error(`integrity_check: ${String(result)}`);
+    // The connection must be closed even when the check throws (not a database at all): an open
+    // handle keeps nachhilfe.db locked, and on Windows that blocks renaming and deleting the
+    // folder it lies in (EPERM) — the copy could then never be set aside or cleaned up.
+    try {
+      const result = check.pragma("integrity_check", { simple: true });
+      if (result !== "ok") throw new Error(`integrity_check: ${String(result)}`);
+    } finally {
+      check.close();
+    }
   } catch (e) {
     move(pending, path.join(dataDir, `restore-fehlgeschlagen-${stamp(now)}`));
     console.error(`Wiederherstellung von ${source} abgebrochen, die Daten bleiben unverändert:`, e instanceof Error ? e.message : e);

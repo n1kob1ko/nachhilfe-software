@@ -392,7 +392,7 @@ export async function gradeFreeText(task: { prompt: string; passage?: string; sa
 // ---------- tutor-facing analysis ----------
 const InsightSchema = z.object({
   summary: z.string().describe("3-5 Sätze Gesamteinschätzung für die Nachhilfelehrkraft"),
-  next_lesson_plan: z.array(z.string()).describe("3-5 konkrete Schritte für die nächste Nachhilfestunde"),
+  next_lesson_plan: z.array(z.string()).describe("3-5 konkrete Schritte für die nächste Einheit"),
   parent_note: z.string().describe("2-3 freundliche Sätze für die Eltern"),
 });
 
