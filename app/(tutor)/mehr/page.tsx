@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, ChevronRight, Clock3, Coins, Download, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, ShieldCheck, Sparkles, TabletSmartphone, UserCog } from "lucide-react";
+import { BarChart3, CalendarClock, ChevronRight, Clock3, Coins, DoorOpen, Download, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, ShieldCheck, Sparkles, TabletSmartphone } from "lucide-react";
 import { logoutAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
 import { PageHeader } from "@/components/ui";
@@ -16,6 +16,8 @@ export default async function MorePage() {
       title: "Unterricht",
       items: [
         { href: "/einheiten", label: "Alle Einheiten", hint: "Wer hat wann mit wem gearbeitet, pro Monat", icon: Clock3 },
+        { href: "/lehrer", label: "Lehrer & Verfügbarkeit", hint: "Eigene Verfügbarkeit, Wochenziel und Raumwünsche; als Verwaltung auch Accounts", icon: CalendarClock },
+        { href: "/mehr/raeume", label: "Räume", hint: "Gebäude, Raumname, vor Ort oder online", icon: DoorOpen },
         { href: "/diagnose", label: "Diagnose", hint: "Stand eines Schülers mit 5 bis 10 Aufgaben prüfen", icon: ListChecks },
         { href: "/uebungen/bibliothek", label: "Aufgabenbibliothek", hint: "Gespeicherte Aufgaben suchen und wiederverwenden", icon: Library },
         { href: "/mehr/material", label: "Material", hint: "Fotos und PDFs hochladen, einordnen, Aufgaben übernehmen", icon: FolderUp },
@@ -41,7 +43,6 @@ export default async function MorePage() {
     groups.push({
       title: "Verwaltung",
       items: [
-        { href: "/lehrer", label: "Lehrer verwalten", hint: "Lehrer anlegen, Passwort zurücksetzen", icon: UserCog },
         { href: "/export", label: "Datenexport", hint: "Sicherung und Tabellen herunterladen", icon: Download },
       ],
     });

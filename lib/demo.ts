@@ -3,6 +3,9 @@ import { db } from "./db";
 import { generateBuiltIn, hasBuiltInGenerator } from "./generators";
 import { documentAssignment } from "./autodoc";
 import { writeLearningDoc } from "./learning";
+import * as planung from "./planung/repo";
+import { wienerWochenstart, type TagSchluessel } from "./planung/zeit";
+import type { Verfuegbarkeit } from "./planung/verfuegbarkeit";
 import { getUnit } from "./units";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
@@ -26,6 +29,8 @@ function at(daysAgo: number, hour: number, minute = 0) {
 type Profile = {
   student: Omit<repo.StudentInput, "grade" | "teacher_id">;
   teacher: string;
+  /** Planung (Phase 3): Einheiten pro Woche und ob lieber vor Ort oder online. */
+  planung: { einheitenProWoche: number; modus: "vor_ort" | "online" | "egal" };
   /** skill -> [mastery 8 weeks ago, mastery now] */
   skills: Record<string, [number, number]>;
   subject: string;
@@ -39,6 +44,7 @@ type Profile = {
 const PROFILES: Profile[] = [
   {
     teacher: "Niko",
+    planung: { einheitenProWoche: 2, modus: "vor_ort" },
     student: {
       name: "Max Huber",
       klasse: 2,
@@ -76,6 +82,7 @@ const PROFILES: Profile[] = [
   },
   {
     teacher: "Niko",
+    planung: { einheitenProWoche: 2, modus: "egal" },
     student: {
       name: "Anna Gruber",
       klasse: 3,
@@ -110,6 +117,7 @@ const PROFILES: Profile[] = [
   },
   {
     teacher: "Thomas",
+    planung: { einheitenProWoche: 2, modus: "vor_ort" },
     student: {
       name: "David Novak",
       klasse: 4,
@@ -142,6 +150,7 @@ const PROFILES: Profile[] = [
   },
   {
     teacher: "Thomas",
+    planung: { einheitenProWoche: 1, modus: "online" },
     student: {
       name: "Lena Berger",
       klasse: 5,
@@ -237,11 +246,31 @@ export function seedDemo(random: () => number = seeded(7)) {
   const conn = db();
   const unitsToDocument: number[] = [];
   const run = conn.transaction(() => {
+    // Planung (Phase 3): Räume, Verfügbarkeit und Wochenziel, damit Wochenplan und
+    // „Diese Woche abweichend“ von Anfang an etwas zeigen. Nur beim ersten Mal.
+    const raeume = seedRaeume();
+    seedLehrerPlanung(conn, raeume);
+    const planungSchueler: { id: number; von: number }[] = [];
     for (const p of PROFILES) {
       const teacherId = (conn.prepare("SELECT id FROM teachers WHERE name = ?").get(p.teacher) as { id: number } | undefined)?.id ?? null;
       const grade = schulstufe(p.student.school_type, p.student.klasse ?? 1);
       const sid = repo.createStudent({ ...p.student, grade, teacher_id: teacherId });
       const allSkills = repo.listSkills();
+
+      // Verfügbarkeit: Montag und Mittwoch zur gewohnten Zeit des Profils
+      const von = p.todayAt[0] * 60 + p.todayAt[1];
+      const verfuegbar: Verfuegbarkeit = {
+        "1": [{ start: von, end: von + 120 }],
+        "3": [{ start: von, end: von + 120 }],
+      };
+      planung.setSchuelerPlanung(sid, {
+        availability: verfuegbar,
+        einheiten_pro_woche: p.planung.einheitenProWoche,
+        geplante_dauer: 100,
+        modus_wunsch: p.planung.modus,
+        erlaubte_lehrer: teacherId ? [teacherId] : [],
+      });
+      planungSchueler.push({ id: sid, von });
 
       // Past lessons were units: Basis-Dokumentation, practice on the device during the unit, Lern-Dokumentation.
       p.lessons.forEach((l, i) => {
@@ -358,6 +387,12 @@ export function seedDemo(random: () => number = seeded(7)) {
         documentAssignment(aid);
       }
     }
+    // Eine Abweichung für die laufende Woche: der erste Schüler hat diese Woche andere Zeiten.
+    const erster = planungSchueler[0];
+    if (erster)
+      planung.setAbweichung("student", erster.id, wienerWochenstart(), {
+        "2": [{ start: erster.von + 60, end: erster.von + 180 }],
+      });
     // Lern-Dokumentation of each unit, oldest first, once all evidence exists
     for (const id of unitsToDocument) {
       const u = getUnit(id)!;
@@ -365,4 +400,28 @@ export function seedDemo(random: () => number = seeded(7)) {
     }
   });
   run();
+}
+
+/** Räume des Demo-Instituts; beim zweiten Aufruf bleiben die vorhandenen stehen. */
+function seedRaeume(): number[] {
+  const vorhanden = planung.listRaeume({ mitInaktiven: true });
+  if (vorhanden.length) return vorhanden.map((r) => r.id);
+  return [
+    planung.createRaum({ building: "Hauptgebäude", name: "Gruppe 1", mode: "vor_ort" }),
+    planung.createRaum({ building: "Hauptgebäude", name: "Gruppe 2", mode: "vor_ort" }),
+    planung.createRaum({ building: "Nebengebäude", name: "Bibliothek", mode: "vor_ort" }),
+    planung.createRaum({ building: "Online", name: "Videoraum", mode: "online" }),
+  ];
+}
+
+/** Verfügbarkeit und Wochenziel der Demo-Lehrer: nachmittags, Montag bis Donnerstag (Thomas auch Freitag). */
+function seedLehrerPlanung(conn: import("better-sqlite3").Database, raeume: number[]) {
+  for (const t of conn.prepare("SELECT id, name FROM teachers ORDER BY id").all() as { id: number; name: string }[]) {
+    const tage: TagSchluessel[] = t.name === "Thomas" ? ["1", "2", "3", "4", "5"] : ["1", "2", "3", "4"];
+    const verfuegbar: Verfuegbarkeit = {};
+    for (const tag of tage) verfuegbar[tag] = [{ start: 14 * 60, end: 19 * 60 }];
+    planung.setLehrerVerfuegbarkeit(t.id, verfuegbar);
+    planung.setLehrerWochenziel(t.id, tage.length * 5 * 60);
+    planung.setLehrerRaumPraeferenzen(t.id, raeume.slice(0, 2));
+  }
 }
