@@ -591,6 +591,27 @@ CREATE TABLE IF NOT EXISTS picture_story_images (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_picture_story_images ON picture_story_images(text_id, position);
+-- ---------- Planung (Phase 3 des Merges): Räume und Verfügbarkeit ----------
+-- Wo eine geplante Einheit stattfindet: Gebäude, Name und ob vor Ort oder online. Ein Raum wird
+-- deaktiviert statt gelöscht, sobald Plätze auf ihn zeigen (lib/planung/raeume.ts).
+CREATE TABLE IF NOT EXISTS rooms (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  building TEXT NOT NULL DEFAULT 'Hauptgebäude',
+  name TEXT NOT NULL,
+  mode TEXT NOT NULL DEFAULT 'vor_ort',          -- vor_ort | online
+  active INTEGER NOT NULL DEFAULT 1
+);
+-- Abweichung der Verfügbarkeit für eine einzelne Woche (Montag, YYYY-MM-DD, Europe/Vienna). Sie
+-- ersetzt für diese Woche die Regelverfügbarkeit aus teachers.availability / students.availability.
+CREATE TABLE IF NOT EXISTS availability_overrides (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner_type TEXT NOT NULL,                       -- teacher | student
+  owner_id INTEGER NOT NULL,
+  week_start TEXT NOT NULL,                       -- Montag, YYYY-MM-DD
+  availability TEXT NOT NULL,                     -- JSON wie teachers.availability
+  UNIQUE(owner_type, owner_id, week_start)
+);
+CREATE INDEX IF NOT EXISTS idx_availability_overrides_owner ON availability_overrides(owner_type, owner_id);
 CREATE INDEX IF NOT EXISTS idx_text_corrections_text ON text_corrections(text_id, version);
 CREATE INDEX IF NOT EXISTS idx_text_correction_items ON text_correction_items(correction_id, block, pos_start);
 CREATE INDEX IF NOT EXISTS idx_texts_student ON texts(student_id, updated_at);
@@ -745,6 +766,18 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["text_correction_items", "origin", "TEXT NOT NULL DEFAULT ''"],
   ["text_correction_items", "review", "TEXT NOT NULL DEFAULT ''"],
   ["text_correction_items", "review_note", "TEXT NOT NULL DEFAULT ''"],
+  // Planung (Phase 3 des Merges): Verfügbarkeit, Wochenziel und Raumwünsche.
+  // teachers.availability / students.availability: JSON { "1": [{ start, end }], … } in Minuten ab
+  // Mitternacht, ISO-Wochentag 1 = Montag … 7 = Sonntag (Umrechnung nur in lib/planung/zeit.ts).
+  ["teachers", "availability", "TEXT"],
+  ["teachers", "weekly_target_min", "INTEGER"],
+  ["teachers", "preferred_room_ids", "TEXT NOT NULL DEFAULT '[]'"],
+  ["students", "availability", "TEXT"],
+  ["students", "einheiten_pro_woche", "INTEGER NOT NULL DEFAULT 0"],
+  // geplante Dauer je Schüler: Vorgabe 100 min, erlaubt 1–300 (geprüft mit zod in der Server Action)
+  ["students", "geplante_dauer", "INTEGER NOT NULL DEFAULT 100"],
+  ["students", "modus_wunsch", "TEXT NOT NULL DEFAULT 'egal'"], // vor_ort | online | egal
+  ["students", "erlaubte_lehrer", "TEXT NOT NULL DEFAULT '[]'"],
 ];
 
 /** Teachers to start with; more can be added later. */
