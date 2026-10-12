@@ -47,6 +47,11 @@ function platzMitRaum(db: Awaited<ReturnType<typeof setup>>["db"], roomId: numbe
   if (!conn.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'geplante_einheiten'").get()) {
     conn.exec("CREATE TABLE geplante_einheiten (id INTEGER PRIMARY KEY AUTOINCREMENT, room_id INTEGER REFERENCES rooms(id))");
   }
+  // Auf die Fremdschlüssel (Lehrer, Schüler, Raum) muss es wirklich zeigen: der Test legt dafür
+  // einen Schüler an, wenn noch keiner da ist.
+  const schuelerId =
+    (conn.prepare("SELECT id FROM students ORDER BY id LIMIT 1").get() as { id: number } | undefined)?.id ??
+    Number(conn.prepare("INSERT INTO students (name, grade, access_token) VALUES ('Platzhalter', 6, 'tok-platzhalter')").run().lastInsertRowid);
   // Alle Pflichtspalten ohne Vorgabe mit einem passenden Wert füllen, damit der Test auch dann läuft,
   // wenn Phase 4 die Tabelle mit weiteren NOT-NULL-Spalten anlegt.
   const spalten = conn.prepare("PRAGMA table_info(geplante_einheiten)").all() as { name: string; type: string; notnull: number; dflt_value: unknown; pk: number }[];
@@ -55,9 +60,10 @@ function platzMitRaum(db: Awaited<ReturnType<typeof setup>>["db"], roomId: numbe
   for (const s of spalten) {
     if (s.pk || s.name === "room_id" || !s.notnull || s.dflt_value !== null) continue;
     namen.push(s.name);
-    werte.push(s.type.toUpperCase().includes("INT") ? 1 : "2026-10-12");
+    werte.push(s.name === "student_id" ? schuelerId : s.type.toUpperCase().includes("INT") ? 1 : "2026-10-12");
   }
   conn.prepare(`INSERT INTO geplante_einheiten (${namen.join(", ")}) VALUES (${namen.map(() => "?").join(", ")})`).run(...werte);
+  return schuelerId;
 }
 
 test("Verfügbarkeit eines Lehrers: schreiben, lesen, derselbe Wert", async () => {

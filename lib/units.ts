@@ -3,8 +3,15 @@
  * A row is written the moment a logged-in teacher starts working with a student and is closed
  * when the unit ends ("beendet") or is abandoned ("abgebrochen"). It never depends on the teacher
  * filling in anything later; the pedagogical documentation lives in `lessons` (see lib/learning.ts).
+ *
+ * Seit Phase 4 (D17) verknüpft sich eine gestartete Einheit mit dem passenden **Wochenplan-Platz**
+ * des Tages (`verknuepfeMitHeutigemPlatz`); der Platz bleibt die Soll-Seite, die Einheit die
+ * Ist-Seite. Eine Einheit ohne Platz läuft wie bisher ungeplant.
  */
 import { db } from "./db";
+import { offenePlaetzeHeute } from "./planung/heute";
+import { einheitenFuerWoche, verknuepfePlatz, type GeplanteEinheitZeile } from "./planung/repo";
+import { wienerDatum, wochenstartVon } from "./planung/zeit";
 
 export type UnitStatus = "gestartet" | "beendet" | "abgebrochen";
 export type Unit = {
@@ -58,9 +65,41 @@ export function runningUnits(teacherId?: number): (UnitView & { open_exercises: 
 export type StartResult = { unit: UnitView; created: boolean };
 
 /**
+ * D17: Die gestartete Einheit verknüpft sich mit ihrem heutigen **veröffentlichten** Wochenplan-Platz.
+ *
+ * Die Regel ist genau die des Plans: gesucht wird unter den offenen Plätzen des Tages
+ * (`offenePlaetzeHeute`, also ohne `unit_id`) zuerst beim **selben Lehrer**; gibt es dort keinen,
+ * kommt der Platz eines anderen Lehrers in Frage. Innerhalb der Auswahl gewinnt die Startzeit, die
+ * „jetzt“ am nächsten liegt (`lib/planung/heute.ts`, Europe/Vienna). Findet sich kein Platz, läuft
+ * die Einheit ungeplant wie bisher.
+ *
+ * Ein Platz wird **einmal** vergeben: sobald `unit_id` gesetzt ist, bietet `offenePlaetzeHeute` ihn
+ * nicht mehr an, ein zweiter Start verknüpft ihn also nie erneut.
+ *
+ * @returns die Id des verknüpften Platzes oder null, wenn keiner passte.
+ */
+export function verknuepfeMitHeutigemPlatz(unit: Pick<Unit, "id" | "student_id" | "teacher_id">, at = Date.now()): number | null {
+  const now = new Date(at);
+  const eigener = offenePlaetzeHeute(unit.student_id, { teacherId: unit.teacher_id, now })[0];
+  const platz = eigener ?? offenePlaetzeHeute(unit.student_id, { now })[0];
+  if (!platz) return null;
+  return verknuepfePlatz(platz.id, unit.id).ok ? platz.id : null;
+}
+
+/**
+ * Der Wochenplan-Platz, mit dem sich diese Einheit verknüpft hat — die **geplante Dauer** für
+ * „geplant 100 min · tatsächlich 85 min“ (D16) auf der Einheitenseite. Ohne Verknüpfung null.
+ */
+export function platzFuerEinheit(unit: Pick<Unit, "id" | "started_at">): GeplanteEinheitZeile | null {
+  const woche = wochenstartVon(wienerDatum(new Date(unit.started_at)));
+  return einheitenFuerWoche(woche, { status: "alle" }).find((z) => z.unit_id === unit.id) ?? null;
+}
+
+/**
  * Starts a unit. A student never has two running units: if one is already running (started by
  * this or another teacher, in another tab, or a moment ago by a double click) it is returned with
- * created = false and nothing is written. The partial unique index idx_units_running guarantees
+ * created = false and nothing is written — and nothing is linked either, so a second start can
+ * never take a second planned slot (D17). The partial unique index idx_units_running guarantees
  * this even for two requests arriving at the same time.
  */
 export function startUnit(teacherId: number, studentId: number, opts: { at?: number; subject?: string } = {}): StartResult {
@@ -71,7 +110,10 @@ export function startUnit(teacherId: number, studentId: number, opts: { at?: num
     const res = db()
       .prepare("INSERT INTO units (teacher_id, student_id, subject, status, started_at, last_activity_at) VALUES (?, ?, ?, 'gestartet', ?, ?)")
       .run(teacherId, studentId, opts.subject ?? "", iso(at), iso(at));
-    return { unit: getUnit(Number(res.lastInsertRowid))!, created: true };
+    const unit = getUnit(Number(res.lastInsertRowid))!;
+    // D17: die Einheit nimmt sich ihren heutigen Platz im Wochenplan, wenn es einen gibt
+    verknuepfeMitHeutigemPlatz(unit, at);
+    return { unit, created: true };
   } catch (e) {
     const again = (e as { code?: string }).code === "SQLITE_CONSTRAINT_UNIQUE" ? runningUnitForStudent(studentId) : null;
     if (again) return { unit: again, created: false };

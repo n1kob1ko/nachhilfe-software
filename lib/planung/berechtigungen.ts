@@ -8,6 +8,8 @@
  * | Planung der eigenen Schüler (`teacher_id`) | ja    | ja     |
  * | Planung fremder Schüler                    | ja    | **nein** |
  * | Räume anlegen/ändern/deaktivieren          | ja    | **nein** (nur sehen) |
+ * | Wochenplan: generieren, Plätze setzen, veröffentlichen | ja | **nein** |
+ * | veröffentlichte Woche sehen                | jede  | nur die **eigene** |
  *
  * Die Prüfungen stehen hier als reine Funktionen, damit Seiten und Server Actions dieselbe
  * Entscheidung treffen und Tests sie ohne Next.js aufrufen können. `is_admin` kommt aus der
@@ -42,4 +44,21 @@ export function darfRaeumeVerwalten(akteur: Akteur): boolean {
 /** Sehen darf sie jeder angemeldete Lehrer — er braucht sie für seine Raumwünsche. */
 export function darfRaeumeSehen(_akteur: Akteur): boolean {
   return true;
+}
+
+/**
+ * Den Wochenplan **ändern** (D23): generieren, neu generieren, Plätze setzen/verschieben/sperren,
+ * veröffentlichen, Entwurf verwerfen, Regeln schreiben. Das darf ausschließlich die Verwaltung;
+ * ein Lehrer liest nur seine eigene veröffentlichte Woche.
+ */
+export function darfWochenplanBearbeiten(akteur: Akteur): boolean {
+  return istAdmin(akteur);
+}
+
+/**
+ * Eine **Woche sehen**: die Verwaltung jede, ein Lehrer nur die eigene. `weekLehrerId` ist der
+ * Lehrer, dessen Woche betrachtet wird (`?lehrer=`), nicht der, der gerade schaut.
+ */
+export function darfWocheSehen(akteur: Akteur, weekLehrerId: number): boolean {
+  return istAdmin(akteur) || akteur.id === weekLehrerId;
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, CalendarClock, ChevronRight, Clock3, Coins, DoorOpen, Download, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, ShieldCheck, Sparkles, TabletSmartphone } from "lucide-react";
+import { BarChart3, CalendarClock, CalendarDays, ChevronRight, Clock3, Coins, DoorOpen, Download, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, ShieldCheck, Sparkles, TabletSmartphone } from "lucide-react";
 import { logoutAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
 import { PageHeader } from "@/components/ui";
@@ -15,6 +15,7 @@ export default async function MorePage() {
     {
       title: "Unterricht",
       items: [
+        { href: "/planung", label: "Planung", hint: "Wochenplan: generieren, verschieben, sperren, veröffentlichen und drucken", icon: CalendarDays },
         { href: "/einheiten", label: "Alle Einheiten", hint: "Wer hat wann mit wem gearbeitet, pro Monat", icon: Clock3 },
         { href: "/lehrer", label: "Lehrer & Verfügbarkeit", hint: "Eigene Verfügbarkeit, Wochenziel und Raumwünsche; als Verwaltung auch Accounts", icon: CalendarClock },
         { href: "/mehr/raeume", label: "Räume", hint: "Gebäude, Raumname, vor Ort oder online", icon: DoorOpen },

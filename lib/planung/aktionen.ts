@@ -8,9 +8,11 @@
  *
  * Jede Funktion prüft in dieser Reihenfolge: Berechtigung → Existenz → zod-Schema → schreiben.
  */
-import { darfLehrerPlanungBearbeiten, darfRaeumeVerwalten, darfSchuelerPlanungBearbeiten, type Akteur } from "./berechtigungen";
+import { darfLehrerPlanungBearbeiten, darfRaeumeVerwalten, darfSchuelerPlanungBearbeiten, darfWochenplanBearbeiten, type Akteur } from "./berechtigungen";
 import * as repo from "./repo";
+import { schreibeRegeln } from "./regeln";
 import { fehlerText, idListeSchema, raumSchema, schuelerPlanungSchema, wochenzielSchema } from "./schema";
+import { offeneFuerWoche } from "./uebersicht";
 import { istDatum } from "./zeit";
 import { parseVerfuegbarkeitStreng } from "./verfuegbarkeit";
 
@@ -168,4 +170,141 @@ export function loescheRaum(akteur: Akteur, roomId: number): Ergebnis {
       fehler: `${raum.name} wird von ${verweise} ${verweise === 1 ? "geplanter Einheit" : "geplanten Einheiten"} verwendet und kann deshalb nicht gelöscht werden. Bitte stattdessen deaktivieren.`,
     };
   return { ok: true, hinweis: "Raum gelöscht." };
+}
+
+// ---------- Wochenplan (Phase 4, D23: nur die Verwaltung) ----------
+
+const NUR_VERWALTUNG = "Den Wochenplan darf nur die Verwaltung ändern.";
+
+/** Was ein Generierlauf von außen mitbekommt: `seed` für ein wiederholbares Ergebnis, `zeitbudgetMs` gegen lange Rechenzeit (§6). */
+export type GenerierOptionen = { seed?: number; zeitbudgetMs?: number };
+
+/** Kurze Rückmeldung nach einem Generierlauf: wie viele Plätze entstanden sind und wer noch offen ist. */
+function generierHinweis(anzahl: number, offen: number, zeitbudgetErreicht: boolean): string {
+  const plaetze = `${anzahl} ${anzahl === 1 ? "Platz" : "Plätze"} geplant.`;
+  const rest = offen === 0 ? " Alle Schüler sind eingeplant." : ` ${offen} ${offen === 1 ? "Schüler ist" : "Schüler sind"} noch offen.`;
+  return zeitbudgetErreicht ? `${plaetze}${rest} Das Zeitbudget war aufgebraucht, der bis dahin beste Stand steht.` : `${plaetze}${rest}`;
+}
+
+function generiere(akteur: Akteur, weekStart: string, opts: GenerierOptionen, nurLeer: boolean): Ergebnis {
+  if (!darfWochenplanBearbeiten(akteur)) return { ok: false, fehler: NUR_VERWALTUNG };
+  if (!istDatum(weekStart)) return { ok: false, fehler: "Bitte eine Woche wählen." };
+  const status = repo.wochenStatus(weekStart);
+  if (status === "veroeffentlicht")
+    return { ok: false, fehler: "Für diese Woche ist der Plan schon veröffentlicht. Dort lassen sich nur einzelne Plätze ändern." };
+  if (nurLeer && status !== "leer")
+    return { ok: false, fehler: "In dieser Woche gibt es schon einen Entwurf. Bitte „Neu generieren“ verwenden." };
+  const ergebnis = repo.neuGenerieren(weekStart, opts);
+  if (!ergebnis.ok) return { ok: false, fehler: ergebnis.fehler };
+  return { ok: true, hinweis: generierHinweis(ergebnis.anzahl, offeneFuerWoche(weekStart).length, ergebnis.zeitbudgetErreicht) };
+}
+
+/** „Generieren“: nur in einer leeren Woche. Die Plätze entstehen als Entwurf (D24). */
+export function erstelleWochenplan(akteur: Akteur, weekStart: string, opts: GenerierOptionen = {}): Ergebnis {
+  return generiere(akteur, weekStart, opts, true);
+}
+
+/**
+ * „Neu generieren“ (D24): arbeitet auf dem Entwurf — gesperrte Plätze bleiben stehen, alle anderen
+ * Entwürfe werden ersetzt. In einer veröffentlichten Woche geht das nicht.
+ */
+export function generiereWocheNeu(akteur: Akteur, weekStart: string, opts: GenerierOptionen = {}): Ergebnis {
+  return generiere(akteur, weekStart, opts, false);
+}
+
+/** „Vorwoche übernehmen“ (D24): die Plätze der Vorwoche als Entwurf, ohne Sperre und ohne Einheit. */
+export function kopiereVorwoche(akteur: Akteur, weekStart: string): Ergebnis {
+  if (!darfWochenplanBearbeiten(akteur)) return { ok: false, fehler: NUR_VERWALTUNG };
+  if (!istDatum(weekStart)) return { ok: false, fehler: "Bitte eine Woche wählen." };
+  const ergebnis = repo.uebernimmVorwoche(weekStart);
+  if (!ergebnis.ok) return { ok: false, fehler: ergebnis.fehler };
+  return { ok: true, hinweis: `${ergebnis.anzahl} ${ergebnis.anzahl === 1 ? "Platz" : "Plätze"} aus der Vorwoche als Entwurf übernommen.` };
+}
+
+/** Veröffentlichen (D25: ohne Benachrichtigung) — danach sind nur noch einzelne Plätze änderbar. */
+export function veroeffentlicheWoche(akteur: Akteur, weekStart: string): Ergebnis {
+  if (!darfWochenplanBearbeiten(akteur)) return { ok: false, fehler: NUR_VERWALTUNG };
+  if (!istDatum(weekStart)) return { ok: false, fehler: "Bitte eine Woche wählen." };
+  const ergebnis = repo.veroeffentlicheWoche(weekStart);
+  if (!ergebnis.ok) return { ok: false, fehler: ergebnis.fehler };
+  return { ok: true, hinweis: `Woche veröffentlicht: ${ergebnis.anzahl} ${ergebnis.anzahl === 1 ? "Platz" : "Plätze"}.` };
+}
+
+/** Nur den Entwurf wegwerfen; veröffentlichte Plätze bleiben, wo sie sind. */
+export function verwerfeEntwurf(akteur: Akteur, weekStart: string): Ergebnis {
+  if (!darfWochenplanBearbeiten(akteur)) return { ok: false, fehler: NUR_VERWALTUNG };
+  if (!istDatum(weekStart)) return { ok: false, fehler: "Bitte eine Woche wählen." };
+  const { anzahl } = repo.verwerfeEntwurf(weekStart);
+  if (anzahl === 0) return { ok: false, fehler: "In dieser Woche gibt es keinen Entwurf." };
+  return { ok: true, hinweis: `Entwurf verworfen (${anzahl} ${anzahl === 1 ? "Platz" : "Plätze"}).` };
+}
+
+export type PlatzEingabe = Parameters<typeof repo.legePlatzAn>[0];
+
+/**
+ * Einen Platz von Hand setzen. Prüfen (Raster, Überlappung von Lehrer, Schüler und Raum) tut
+ * `repo.legePlatzAn` — hier steht nur die Berechtigung (D23) davor. In einer veröffentlichten
+ * Woche wird der neue Platz sofort mitveröffentlicht, damit er sichtbar ist.
+ */
+export function setzePlatz(akteur: Akteur, eingabe: PlatzEingabe): Ergebnis {
+  if (!darfWochenplanBearbeiten(akteur)) return { ok: false, fehler: NUR_VERWALTUNG };
+  const ergebnis = repo.legePlatzAn(eingabe);
+  if (!ergebnis.ok) return { ok: false, fehler: ergebnis.fehler };
+  return { ok: true, hinweis: "Platz angelegt." };
+}
+
+/** Einen Platz verschieben oder umbesetzen; dieselbe Überlappungsprüfung, nur ohne sich selbst. */
+export function aenderePlatz(akteur: Akteur, id: number, aenderung: Partial<PlatzEingabe>): Ergebnis {
+  if (!darfWochenplanBearbeiten(akteur)) return { ok: false, fehler: NUR_VERWALTUNG };
+  const ergebnis = repo.aenderePlatz(id, aenderung);
+  if (!ergebnis.ok) return { ok: false, fehler: ergebnis.fehler };
+  return { ok: true, hinweis: ergebnis.hinweis ?? "Platz gespeichert." };
+}
+
+/** Sperren oder entsperren: ein gesperrter Platz bleibt beim „Neu generieren“ stehen (Glossar: **gesperrt**). */
+export function setzeGesperrt(akteur: Akteur, id: number, gesperrt: boolean): Ergebnis {
+  if (!darfWochenplanBearbeiten(akteur)) return { ok: false, fehler: NUR_VERWALTUNG };
+  const ergebnis = repo.setzeGesperrt(id, gesperrt);
+  if (!ergebnis.ok) return { ok: false, fehler: ergebnis.fehler };
+  return { ok: true, hinweis: ergebnis.hinweis ?? "Platz geändert." };
+}
+
+export function loeschePlatz(akteur: Akteur, id: number): Ergebnis {
+  if (!darfWochenplanBearbeiten(akteur)) return { ok: false, fehler: NUR_VERWALTUNG };
+  const ergebnis = repo.loeschePlatz(id);
+  if (!ergebnis.ok) return { ok: false, fehler: ergebnis.fehler };
+  return { ok: true, hinweis: "Platz gelöscht." };
+}
+
+/**
+ * Das Ziel eines Ziehvorgangs prüfen, bevor etwas geschrieben wird: dieselbe Überlappungsprüfung wie
+ * beim Speichern (`repo.pruefeUeberlappung`, dem **einzigen** Ort dafür), nur als Frage. Die
+ * Wochenansicht färbt damit unzulässige Ziele aus, statt die Prüfung nachzubauen.
+ */
+export function pruefeZiel(akteur: Akteur, id: number, ziel: { teacherId?: number; studentId?: number; roomId?: number | null; weekday?: number; startMin?: number }): Ergebnis {
+  if (!darfWochenplanBearbeiten(akteur)) return { ok: false, fehler: NUR_VERWALTUNG };
+  const platz = repo.getGeplanteEinheit(id);
+  if (!platz) return { ok: false, fehler: "Geplante Einheit nicht gefunden." };
+  const ergebnis = repo.pruefeUeberlappung({
+    week_start: platz.week_start,
+    weekday: ziel.weekday ?? platz.weekday,
+    start_min: ziel.startMin ?? platz.start_min,
+    geplante_dauer: platz.geplante_dauer,
+    teacher_id: ziel.teacherId ?? platz.teacher_id,
+    student_id: ziel.studentId ?? platz.student_id,
+    room_id: ziel.roomId === undefined ? platz.room_id : ziel.roomId,
+    ausserId: id,
+  });
+  return ergebnis.ok ? { ok: true } : { ok: false, fehler: ergebnis.fehler };
+}
+
+/**
+ * Die Regeln des Wochenplans schreiben. Geprüft wird von `schreibeRegeln` (zod); ungültige Werte
+ * werden abgelehnt und **nicht** geglättet. Nur die Verwaltung (D23) — die Regeln gelten für alle.
+ */
+export function speichereRegeln(akteur: Akteur, roh: unknown): Ergebnis {
+  if (!darfWochenplanBearbeiten(akteur)) return { ok: false, fehler: NUR_VERWALTUNG };
+  const geprüft = schreibeRegeln(roh);
+  if (!geprüft.ok) return { ok: false, fehler: geprüft.fehler };
+  return { ok: true, hinweis: "Regeln gespeichert." };
 }

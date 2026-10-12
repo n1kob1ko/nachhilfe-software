@@ -4,7 +4,7 @@ import { generateBuiltIn, hasBuiltInGenerator } from "./generators";
 import { documentAssignment } from "./autodoc";
 import { writeLearningDoc } from "./learning";
 import * as planung from "./planung/repo";
-import { wienerWochenstart, type TagSchluessel } from "./planung/zeit";
+import { tagAddieren, wienerWochenstart, type TagSchluessel } from "./planung/zeit";
 import type { Verfuegbarkeit } from "./planung/verfuegbarkeit";
 import { getUnit } from "./units";
 import * as repo from "./repo";
@@ -29,8 +29,12 @@ function at(daysAgo: number, hour: number, minute = 0) {
 type Profile = {
   student: Omit<repo.StudentInput, "grade" | "teacher_id">;
   teacher: string;
-  /** Planung (Phase 3): Einheiten pro Woche und ob lieber vor Ort oder online. */
-  planung: { einheitenProWoche: number; modus: "vor_ort" | "online" | "egal" };
+  /**
+   * Planung (Phase 3/4): Einheiten pro Woche, geplante Dauer, vor Ort oder online und die Tage, an
+   * denen der Schüler verfügbar ist. Die Tage sind so verteilt, dass zwei Schüler desselben Lehrers
+   * nicht um dieselbe Zeit streiten und ein Lehrer nicht in zwei Gebäuden gleichzeitig sein müsste.
+   */
+  planung: { einheitenProWoche: number; geplanteDauer: number; modus: "vor_ort" | "online" | "egal"; tage: TagSchluessel[] };
   /** skill -> [mastery 8 weeks ago, mastery now] */
   skills: Record<string, [number, number]>;
   subject: string;
@@ -44,7 +48,7 @@ type Profile = {
 const PROFILES: Profile[] = [
   {
     teacher: "Niko",
-    planung: { einheitenProWoche: 2, modus: "vor_ort" },
+    planung: { einheitenProWoche: 2, geplanteDauer: 100, modus: "vor_ort", tage: ["1", "3"] },
     student: {
       name: "Max Huber",
       klasse: 2,
@@ -82,7 +86,7 @@ const PROFILES: Profile[] = [
   },
   {
     teacher: "Niko",
-    planung: { einheitenProWoche: 2, modus: "egal" },
+    planung: { einheitenProWoche: 2, geplanteDauer: 90, modus: "egal", tage: ["1", "3"] },
     student: {
       name: "Anna Gruber",
       klasse: 3,
@@ -117,7 +121,7 @@ const PROFILES: Profile[] = [
   },
   {
     teacher: "Thomas",
-    planung: { einheitenProWoche: 2, modus: "vor_ort" },
+    planung: { einheitenProWoche: 2, geplanteDauer: 100, modus: "vor_ort", tage: ["1", "3"] },
     student: {
       name: "David Novak",
       klasse: 4,
@@ -150,7 +154,7 @@ const PROFILES: Profile[] = [
   },
   {
     teacher: "Thomas",
-    planung: { einheitenProWoche: 1, modus: "online" },
+    planung: { einheitenProWoche: 1, geplanteDauer: 60, modus: "online", tage: ["2", "4"] },
     student: {
       name: "Lena Berger",
       klasse: 5,
@@ -257,16 +261,16 @@ export function seedDemo(random: () => number = seeded(7)) {
       const sid = repo.createStudent({ ...p.student, grade, teacher_id: teacherId });
       const allSkills = repo.listSkills();
 
-      // Verfügbarkeit: Montag und Mittwoch zur gewohnten Zeit des Profils
+      // Verfügbarkeit: an den gewohnten Tagen des Profils, sechs Stunden lang, damit die geplante
+      // Dauer (und ein zweiter Platz) wirklich hineinpasst. Der Generator kann daraus eine ganze
+      // Woche bauen.
       const von = p.todayAt[0] * 60 + p.todayAt[1];
-      const verfuegbar: Verfuegbarkeit = {
-        "1": [{ start: von, end: von + 120 }],
-        "3": [{ start: von, end: von + 120 }],
-      };
+      const verfuegbar: Verfuegbarkeit = {};
+      for (const tag of p.planung.tage) verfuegbar[tag] = [{ start: von, end: Math.min(24 * 60, von + 360) }];
       planung.setSchuelerPlanung(sid, {
         availability: verfuegbar,
         einheiten_pro_woche: p.planung.einheitenProWoche,
-        geplante_dauer: 100,
+        geplante_dauer: p.planung.geplanteDauer,
         modus_wunsch: p.planung.modus,
         erlaubte_lehrer: teacherId ? [teacherId] : [],
       });
@@ -387,12 +391,17 @@ export function seedDemo(random: () => number = seeded(7)) {
         documentAssignment(aid);
       }
     }
-    // Eine Abweichung für die laufende Woche: der erste Schüler hat diese Woche andere Zeiten.
+    // Eine Abweichung für die laufende Woche: der erste Schüler hat diese Woche an zwei anderen
+    // Tagen Zeit. Sie gilt nur für diese eine Woche und macht die Wochenansicht interessanter.
     const erster = planungSchueler[0];
     if (erster)
       planung.setAbweichung("student", erster.id, wienerWochenstart(), {
         "2": [{ start: erster.von + 60, end: erster.von + 180 }],
+        "4": [{ start: erster.von + 60, end: erster.von + 180 }],
       });
+    // Wochenplan (Phase 4): die Vorwoche wird einmal generiert und veröffentlicht, die laufende Woche
+    // bleibt leer zum Ausprobieren.
+    seedVorwoche();
     // Lern-Dokumentation of each unit, oldest first, once all evidence exists
     for (const id of unitsToDocument) {
       const u = getUnit(id)!;
@@ -414,14 +423,29 @@ function seedRaeume(): number[] {
   ];
 }
 
-/** Verfügbarkeit und Wochenziel der Demo-Lehrer: nachmittags, Montag bis Donnerstag (Thomas auch Freitag). */
+/** Verfügbarkeit und Wochenziel der Demo-Lehrer: nachmittags bis abends, Montag bis Freitag (Niko bis Donnerstag). */
 function seedLehrerPlanung(conn: import("better-sqlite3").Database, raeume: number[]) {
   for (const t of conn.prepare("SELECT id, name FROM teachers ORDER BY id").all() as { id: number; name: string }[]) {
     const tage: TagSchluessel[] = t.name === "Thomas" ? ["1", "2", "3", "4", "5"] : ["1", "2", "3", "4"];
     const verfuegbar: Verfuegbarkeit = {};
-    for (const tag of tage) verfuegbar[tag] = [{ start: 14 * 60, end: 19 * 60 }];
+    for (const tag of tage) verfuegbar[tag] = [{ start: 14 * 60, end: 20 * 60 }];
     planung.setLehrerVerfuegbarkeit(t.id, verfuegbar);
-    planung.setLehrerWochenziel(t.id, tage.length * 5 * 60);
-    planung.setLehrerRaumPraeferenzen(t.id, raeume.slice(0, 2));
+    planung.setLehrerWochenziel(t.id, tage.length * 6 * 60);
+    // Alle Räume stehen zur Wahl: die Reihenfolge ist der Wunsch, und ohne den Online-Raum könnte
+    // ein Schüler mit Modus „online“ gar nicht eingeplant werden.
+    planung.setLehrerRaumPraeferenzen(t.id, raeume);
   }
+}
+
+/**
+ * Eine fertige **veröffentlichte** Vorwoche, damit der Wochenplan, „Vorwoche übernehmen“ und
+ * „nicht stattgefunden“ von Anfang an etwas zeigen. Die laufende Woche bleibt leer: die soll die
+ * Verwaltung selbst generieren und veröffentlichen. Keine automatische Wiederholung (D24) — das ist
+ * einmalige Demo-Datenpflege.
+ */
+function seedVorwoche() {
+  const vorwoche = tagAddieren(wienerWochenstart(), -7);
+  const lauf = planung.neuGenerieren(vorwoche, { seed: 7 });
+  if (!lauf.ok) return;
+  planung.veroeffentlicheWoche(vorwoche);
 }
