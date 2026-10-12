@@ -6,9 +6,13 @@ import { Avatar, SubjectArt } from "@/components/Art";
 import { dayKey } from "@/components/Calendar";
 import { Elapsed } from "@/components/Elapsed";
 import { StudentFocus } from "@/components/StudentFocus";
+import { Wochenplan } from "@/components/planung/Wochenplan";
 import { Empty, SectionTitle, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import * as repo from "@/lib/repo";
+import { leseRegeln } from "@/lib/planung/regeln";
+import { wochenUebersicht } from "@/lib/planung/uebersicht";
+import { wienerWochenstart } from "@/lib/planung/zeit";
 import { klassenLabel } from "@/lib/school";
 import { listUnits, runningUnits } from "@/lib/units";
 import { examReminders, STAGE_LABEL } from "@/lib/exams";
@@ -22,9 +26,21 @@ type TodoItem = { key: string; href: string; icon: typeof ClipboardPen; text: Re
 /**
  * The start page answers one question: what do I do now? A running unit, or the big
  * "Einheit starten" button; below it only today, recently used students and open to-dos.
+ *
+ * Mit `?tab=woche` steht hier **Meine Woche**: die eigene **veröffentlichte** Woche des Lehrers,
+ * nur lesend (D23). Entwürfe und fremde Wochen sieht nur die Verwaltung unter /planung.
  */
-export default async function StartPage() {
+export default async function StartPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const teacher = await requireTeacher();
+  const sp = await searchParams;
+  if (sp.tab === "woche") {
+    return (
+      <>
+        <StartTabs aktiv="woche" />
+        <MeineWoche teacherId={teacher.id} name={teacher.name} />
+      </>
+    );
+  }
   const students = repo.listStudents();
   const now = new Date();
   const today = dayKey(now);
@@ -32,6 +48,7 @@ export default async function StartPage() {
   if (students.length === 0) {
     return (
       <>
+        <StartTabs aktiv="start" />
         <Greeting name={teacher.name} date={now} />
         <Empty
           title="Noch keine Schüler angelegt"
@@ -103,6 +120,7 @@ export default async function StartPage() {
 
   return (
     <>
+      <StartTabs aktiv="start" />
       <Greeting name={teacher.name} date={now} />
 
       <div className="space-y-10">
@@ -245,6 +263,61 @@ function Greeting({ name, date }: { name: string; date: Date }) {
       <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] md:text-[32px]">Hallo, {firstName(name)}</h1>
       <p className="mt-1 text-[15px] text-ink-2">{date.toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long" })}</p>
     </header>
+  );
+}
+
+/** Die zwei Tabs der Startseite: der Tagesablauf und „Meine Woche“ (die eigene veröffentlichte Woche). */
+function StartTabs({ aktiv }: { aktiv: "start" | "woche" }) {
+  const tabs = [
+    { key: "start" as const, href: "/", label: "Start" },
+    { key: "woche" as const, href: "/?tab=woche", label: "Meine Woche" },
+  ];
+  return (
+    <nav className="no-print mb-6 flex flex-wrap gap-2" aria-label="Startseite">
+      {tabs.map((t) => (
+        <Link key={t.key} href={t.href} aria-current={aktiv === t.key ? "page" : undefined} className={`btn btn-sm ${aktiv === t.key ? "btn-primary" : "btn-secondary"}`}>
+          {t.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+/**
+ * „Meine Woche“ (D23): die eigene Woche, **nur veröffentlichte** Plätze, nur zum Lesen. Gedacht als
+ * kurzer Blick vom Dashboard aus — geändert wird unter Mehr › Planung (Verwaltung).
+ */
+async function MeineWoche({ teacherId, name }: { teacherId: number; name: string }) {
+  const woche = wienerWochenstart();
+  const uebersicht = wochenUebersicht(woche, { status: "veroeffentlicht", nurLehrerId: teacherId });
+  return (
+    <>
+      <header className="mb-5">
+        <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] md:text-[32px]">Meine Woche</h1>
+        <p className="mt-1 text-[15px] text-ink-2">
+          {uebersicht.label} · {uebersicht.summen.einheiten} geplante Einheiten · {name} · nur veröffentlichte Plätze
+        </p>
+      </header>
+      {uebersicht.plaetze.length === 0 ? (
+        <p className="panel px-5 py-6 text-[15px] text-ink-2">
+          Für dich ist diese Woche nichts veröffentlicht. Sobald die Verwaltung den Plan veröffentlicht, steht er hier.
+        </p>
+      ) : (
+        <Wochenplan
+          uebersicht={uebersicht}
+          darfBearbeiten={false}
+          basisPfad="/?tab=woche"
+          druckHref={`/planung/drucken?woche=${woche}`}
+          aktuelleWoche={woche}
+          zurueck={`/?tab=woche&woche=${woche}`}
+          filter={{ lehrer: 0, raum: 0, schueler: 0 }}
+          meldung={{}}
+          regeln={leseRegeln()}
+          regelnGebrochen={false}
+          dialog={{ neu: false, platzId: 0, regeln: false }}
+        />
+      )}
+    </>
   );
 }
 

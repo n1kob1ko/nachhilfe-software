@@ -4,13 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookOpenCheck, House, Menu, NotebookPen, ReceiptText, Users } from "lucide-react";
 
-/** The whole main navigation. Everything rarely needed (skills, unit log, teachers, export) lives under "Mehr". */
+/**
+ * The whole main navigation. Everything rarely needed (skills, unit log, teachers, export) lives under "Mehr".
+ *
+ * "Planung" (der Wochenplan) steht bewusst **unter Mehr**: `TabBar` ist auf dem Telefon ein
+ * `grid-cols-5` mit genau diesen fünf Einträgen (fünf Daumenziele); ein sechster Eintrag würde die
+ * Tab-Leiste umbrechen. `/planung` ist deshalb im `match` von „Mehr“ enthalten.
+ */
 const ITEMS = [
   { href: "/", label: "Start", icon: House, match: ["/"] },
   { href: "/schueler", label: "Schüler", icon: Users, match: ["/schueler", "/einheiten/"] },
   { href: "/uebungen", label: "Übungen", icon: BookOpenCheck, match: ["/uebungen"] },
   { href: "/abrechnung", label: "Abrechnung", icon: ReceiptText, match: ["/abrechnung"] },
-  { href: "/mehr", label: "Mehr", icon: Menu, match: ["/mehr", "/faehigkeiten", "/lehrer", "/export"] },
+  { href: "/mehr", label: "Mehr", icon: Menu, match: ["/mehr", "/faehigkeiten", "/lehrer", "/export", "/planung"] },
 ];
 
 const isActive = (path: string, match: string[]) =>

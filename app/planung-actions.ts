@@ -1,16 +1,18 @@
 "use server";
 
 /**
- * Server Actions der Planung (Phase 3 des Merges). Sie sind bewusst dünn: angemeldeten Lehrer holen
- * (`lib/auth.ts`), an `lib/planung/aktionen.ts` weitergeben (dort stehen Rechteprüfung und zod),
- * Pfade neu auswerten und mit einer Rückmeldung zurückleiten. Nichts aus dem Formular wird geglaubt.
+ * Server Actions der Planung (Phase 3 und 4 des Merges). Sie sind bewusst dünn: angemeldeten Lehrer
+ * holen (`lib/auth.ts`), an `lib/planung/aktionen.ts` weitergeben (dort stehen Rechteprüfung und
+ * zod), Pfade neu auswerten und mit einer Rückmeldung zurückleiten. Nichts aus dem Formular wird
+ * geglaubt — auch die Berechtigung nicht: jede Aktion prüft sie neu (D23).
  */
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/lib/auth";
 import * as planung from "@/lib/planung/aktionen";
 import type { Ergebnis } from "@/lib/planung/aktionen";
-import type { OwnerTyp } from "@/lib/planung/repo";
+import type { OwnerTyp, PlatzEingabe } from "@/lib/planung/repo";
+import { istDatum, labelMinuten, wochenstartVon } from "@/lib/planung/zeit";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const zahl = (f: FormData, k: string) => {
@@ -135,5 +137,209 @@ export async function deleteRoomAction(roomId: number, formData: FormData) {
   const zurueck = pfadAus(formData, "/mehr/raeume");
   const ergebnis = planung.loescheRaum(me, roomId);
   aktualisiere("/mehr/raeume", "/lehrer");
+  redirect(mitMeldung(zurueck, ergebnis));
+}
+
+// ---------- Wochenplan (Phase 4) ----------
+
+/** Alles, was sich aus einer Woche ändert, neu auswerten: Verwaltung, Druck, Dashboard, Schüler-Link. */
+function aktualisiereWoche() {
+  aktualisiere("/planung", "/planung/drucken", "/");
+  revalidatePath("/lernen/[token]", "page");
+}
+
+/** Die Woche aus dem Formular — roh weitergegeben; geprüft wird sie in `lib/planung/aktionen.ts`. */
+function wocheAus(formData: FormData): string {
+  return str(formData, "woche");
+}
+
+function zurueckZurWoche(formData: FormData, woche: string): string {
+  const fallback = istDatum(woche) ? `/planung?woche=${wochenstartVon(woche)}` : "/planung";
+  return pfadAus(formData, fallback);
+}
+
+/** Die Uhrzeit eines Formularfeldes (`type="time"`, „14:30“) als Minuten ab Mitternacht. */
+function startMinuten(formData: FormData): number {
+  const roh = str(formData, "start");
+  const minuten = labelMinuten(roh);
+  return minuten === null ? Number.NaN : minuten;
+}
+
+/** Ein Platz aus einem Formular: Woche, Wochentag, Start, geplante Dauer, Lehrer, Schüler, Raum. */
+function platzAus(formData: FormData, woche: string): Parameters<typeof planung.setzePlatz>[1] {
+  const raum = zahl(formData, "room_id");
+  return {
+    week_start: woche,
+    weekday: zahl(formData, "weekday"),
+    start_min: startMinuten(formData),
+    geplante_dauer: zahl(formData, "geplante_dauer"),
+    teacher_id: zahl(formData, "teacher_id"),
+    student_id: zahl(formData, "student_id"),
+    room_id: Number.isInteger(raum) && raum > 0 ? raum : null,
+  };
+}
+
+// Generieren und Neu generieren (D23: nur die Verwaltung; eine veröffentlichte Woche wird nicht neu gerechnet)
+
+export async function generateWeekAction(formData: FormData) {
+  const me = await requireTeacher();
+  const woche = wocheAus(formData);
+  const zurueck = zurueckZurWoche(formData, woche);
+  const ergebnis = planung.erstelleWochenplan(me, woche);
+  aktualisiereWoche();
+  redirect(mitMeldung(zurueck, ergebnis));
+}
+
+export async function regenerateWeekAction(formData: FormData) {
+  const me = await requireTeacher();
+  const woche = wocheAus(formData);
+  const zurueck = zurueckZurWoche(formData, woche);
+  const ergebnis = planung.generiereWocheNeu(me, woche);
+  aktualisiereWoche();
+  redirect(mitMeldung(zurueck, ergebnis));
+}
+
+export async function copyPreviousWeekAction(formData: FormData) {
+  const me = await requireTeacher();
+  const woche = wocheAus(formData);
+  const zurueck = zurueckZurWoche(formData, woche);
+  const ergebnis = planung.kopiereVorwoche(me, woche);
+  aktualisiereWoche();
+  redirect(mitMeldung(zurueck, ergebnis));
+}
+
+export async function publishWeekAction(formData: FormData) {
+  const me = await requireTeacher();
+  const woche = wocheAus(formData);
+  const zurueck = zurueckZurWoche(formData, woche);
+  const ergebnis = planung.veroeffentlicheWoche(me, woche);
+  aktualisiereWoche();
+  redirect(mitMeldung(zurueck, ergebnis));
+}
+
+export async function discardDraftAction(formData: FormData) {
+  const me = await requireTeacher();
+  const woche = wocheAus(formData);
+  const zurueck = zurueckZurWoche(formData, woche);
+  const ergebnis = planung.verwerfeEntwurf(me, woche);
+  aktualisiereWoche();
+  redirect(mitMeldung(zurueck, ergebnis));
+}
+
+// Einzelne Plätze: anlegen, ändern, verschieben, sperren, löschen
+
+export async function createSlotAction(formData: FormData) {
+  const me = await requireTeacher();
+  const woche = wocheAus(formData);
+  const zurueck = zurueckZurWoche(formData, woche);
+  const ergebnis = planung.setzePlatz(me, platzAus(formData, woche));
+  aktualisiereWoche();
+  redirect(mitMeldung(zurueck, ergebnis));
+}
+
+export async function editSlotAction(formData: FormData) {
+  const me = await requireTeacher();
+  const woche = wocheAus(formData);
+  const zurueck = zurueckZurWoche(formData, woche);
+  const id = Number(str(formData, "id"));
+  const ergebnis = Number.isInteger(id) && id > 0 ? planung.aenderePlatz(me, id, platzAus(formData, woche)) : { ok: false as const, fehler: "Geplante Einheit nicht gefunden." };
+  aktualisiereWoche();
+  redirect(mitMeldung(zurueck, ergebnis));
+}
+
+/** Ein Platz landet auf einem anderen Tag, einer anderen Zeit oder bei einem anderen Lehrer (Ziehen). */
+export async function moveSlotAction(formData: FormData) {
+  const me = await requireTeacher();
+  const woche = wocheAus(formData);
+  const zurueck = zurueckZurWoche(formData, woche);
+  const id = Number(str(formData, "id"));
+  const aenderung: Partial<PlatzEingabe> = {
+    weekday: zahl(formData, "weekday"),
+    start_min: startMinuten(formData),
+  };
+  for (const feld of ["teacher_id", "student_id", "geplante_dauer"] as const) {
+    const wert = zahl(formData, feld);
+    if (Number.isFinite(wert)) aenderung[feld] = wert;
+  }
+  if (str(formData, "room_id") !== "") {
+    const raum = zahl(formData, "room_id");
+    aenderung.room_id = Number.isInteger(raum) && raum > 0 ? raum : null;
+  }
+  const ergebnis = Number.isInteger(id) && id > 0 ? planung.aenderePlatz(me, id, aenderung) : { ok: false as const, fehler: "Geplante Einheit nicht gefunden." };
+  aktualisiereWoche();
+  redirect(mitMeldung(zurueck, ergebnis));
+}
+
+export async function lockSlotAction(id: number, locked: boolean, formData: FormData) {
+  const me = await requireTeacher();
+  const woche = wocheAus(formData);
+  const zurueck = zurueckZurWoche(formData, woche);
+  const ergebnis = planung.setzeGesperrt(me, id, locked);
+  aktualisiereWoche();
+  redirect(mitMeldung(zurueck, ergebnis));
+}
+
+export async function deleteSlotAction(id: number, formData: FormData) {
+  const me = await requireTeacher();
+  const woche = wocheAus(formData);
+  const zurueck = zurueckZurWoche(formData, woche);
+  const ergebnis = planung.loeschePlatz(me, id);
+  aktualisiereWoche();
+  redirect(mitMeldung(zurueck, ergebnis));
+}
+
+/**
+ * Ist dieses Ziel beim Ziehen erlaubt? Bewusst **ohne** Rückleitung: die Wochenansicht fragt hier
+ * nur nach und färbt unzulässige Ziele aus. Geschrieben wird nichts; die Antwort kommt aus
+ * `repo.pruefeUeberlappung`, der einzigen Überlappungsprüfung der App.
+ */
+export async function checkSlotTargetAction(
+  id: number,
+  ziel: { teacherId?: number; studentId?: number; roomId?: number | null; weekday?: number; startMin?: number },
+): Promise<Ergebnis> {
+  const me = await requireTeacher();
+  return planung.pruefeZiel(me, id, ziel);
+}
+
+// Die Regeln des Wochenplans (nur die Verwaltung)
+
+export async function saveRulesAction(formData: FormData) {
+  const me = await requireTeacher();
+  const zurueck = pfadAus(formData, "/planung");
+  const wahr = (k: string) => str(formData, k) === "on" || str(formData, k) === "1";
+  let paare: unknown = [];
+  const paareRoh = str(formData, "studentPairTimingRules");
+  if (paareRoh) {
+    try {
+      paare = JSON.parse(paareRoh);
+    } catch {
+      paare = null;
+    }
+  }
+  const ergebnis =
+    paare === null
+      ? { ok: false as const, fehler: "Die Paarregeln konnten nicht gelesen werden (kein JSON)." }
+      : planung.speichereRegeln(me, {
+          snapMinutes: zahl(formData, "snapMinutes"),
+          gapUsefulMinutesThreshold: zahl(formData, "gapUsefulMinutesThreshold"),
+          pointsPreferredTeacher: zahl(formData, "pointsPreferredTeacher"),
+          pointsAdjacentTeacher: zahl(formData, "pointsAdjacentTeacher"),
+          penaltyPer30MinGap: zahl(formData, "penaltyPer30MinGap"),
+          penaltySingleLessonTeacherDay: zahl(formData, "penaltySingleLessonTeacherDay"),
+          penaltyLessPlannedLessonsOverall: zahl(formData, "penaltyLessPlannedLessonsOverall"),
+          pointsPerMinuteRemainingCapacity: zahl(formData, "pointsPerMinuteRemainingCapacity"),
+          pointsStudentPairShouldSameTime: zahl(formData, "pointsStudentPairShouldSameTime"),
+          penaltyStudentPairShouldntSameTime: zahl(formData, "penaltyStudentPairShouldntSameTime"),
+          prioritizeMaxPlannedLessons: wahr("prioritizeMaxPlannedLessons"),
+          enforceSingleLessonPerStudentPerDay: wahr("enforceSingleLessonPerStudentPerDay"),
+          enforceTeacherCapacity: wahr("enforceTeacherCapacity"),
+          enforceTeacherAvailability: wahr("enforceTeacherAvailability"),
+          enforceStudentAvailability: wahr("enforceStudentAvailability"),
+          enforceTeacherRoomPreference: wahr("enforceTeacherRoomPreference"),
+          enforceNoTeacherBreaks: wahr("enforceNoTeacherBreaks"),
+          enforceStudentWeekWeekendDistribution: wahr("enforceStudentWeekWeekendDistribution"),
+          studentPairTimingRules: paare,
+        });
+  aktualisiere("/planung");
   redirect(mitMeldung(zurueck, ergebnis));
 }
