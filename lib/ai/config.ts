@@ -53,6 +53,7 @@ export type AIFunction =
   | "tiefenanalyse"
   | "notiz"
   | "material"
+  | "druckblatt"
   | "textkorrektur"
   | "textanalyse"
   | "textpruefung"
@@ -100,6 +101,11 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   tiefenanalyse: { label: "Tiefenanalyse", area: "DEEP", tier: "deep", maxTokens: 8_000, timeoutMs: 120_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 10 * MIN, cache: "aus" },
   notiz: { label: "Notiz für Eltern/Schüler", area: "ANALYSIS", tier: "standard", maxTokens: 1_000, timeoutMs: 30_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   material: { label: "Material erkennen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  // Blätter erstellen (Phase 5, Schritt 6): Wortlisten und Spalten für die drei Druckblätter.
+  // Kleine, klar umrissene Listen — der schnelle Tarif reicht, der Standardtarif wäre Verschwendung.
+  // Nur auf Klick der Lehrkraft, nichts wird von selbst übernommen; reuseMs 0, weil jede Anfrage
+  // zu einem anderen Blatt gehören soll.
+  druckblatt: { label: "Vorschläge für Blätter", area: "EXERCISE", tier: "fast", maxTokens: 4_000, timeoutMs: 60_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   // only on the teacher's click, after consent; the same version of a text is never paid for twice
   textkorrektur: { label: "Textkorrektur", area: "TEXT", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // Textkorrektur „gründlich“ (lib/ai/textkorrektur-gruendlich.ts): sentence-by-sentence analysis, then an independent check of every suggestion

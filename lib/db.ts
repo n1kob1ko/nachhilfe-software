@@ -804,6 +804,12 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["students", "geplante_dauer", "INTEGER NOT NULL DEFAULT 100"],
   ["students", "modus_wunsch", "TEXT NOT NULL DEFAULT 'egal'"], // vor_ort | online | egal
   ["students", "erlaubte_lehrer", "TEXT NOT NULL DEFAULT '[]'"],
+  // Blätter erstellen (Phase 5 des Merges): Ein gespeichertes **Druckblatt** ist eine Zeile in
+  // `materials` (D21) mit `kind = 'druckblatt'` und der Blattdefinition als JSON in dieser Spalte.
+  // Die Dateispalten (file_name, mime, size, sha256, stored_path) bleiben für diese Art leer — ein
+  // Druckblatt ist seine Beschreibung, keine Datei (ADR 0010: „Gespeichert wird die Definition").
+  // Gelesen werden sie über `lib/materials.ts`; dort sind sie für kind = 'druckblatt' optional.
+  ["materials", "definition", "TEXT"],
 ];
 
 /** Teachers to start with; more can be added later. */

@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { DIFFICULTIES, categoriesFor, type Category, type Difficulty } from "../curriculum";
+import { parseWordList } from "../druckblatt/content/word-list";
+import { pruefeLesetabelle, pruefeSatzbaukasten } from "../druckblatt/definition/schemas";
+import type { SentenceBoxDefinition } from "../druckblatt/definition/sentence-box-types";
+import type { WorksheetDefinition } from "../druckblatt/definition/types";
+import { parseEntries } from "../druckblatt/state/sentence-state";
 import { ERROR_TYPES, type ErrorType } from "../error-types";
 import type { TaskDraft } from "../tasks";
 import { GAP, gapCount } from "../tasks";
@@ -458,4 +463,145 @@ export async function analyzeMaterialWithAI(file: { mime: string; base64: string
   ].join(" ");
   const list = ctx.skills.map((s) => `${s.id} | ${s.subject} › ${s.area} › ${s.name}`).join("\n");
   return unwrap(await runAI("material", MaterialSchema, system, [block, { type: "text", text: `${ctx.subject ? `Vermutetes Fach: ${ctx.subject}\n` : ""}Verfügbare Fähigkeiten (ID | Fach › Thema › Fähigkeit):\n${list}` }], { meta }));
+}
+
+// ---------- Vorschläge für Druckblätter (Phase 5 des Merges, Schritt 6) ----------
+/*
+ * Wortlisten (Lesetabelle) und Spalten (Satzbaukasten) kann die KI vorschlagen. Drei Festlegungen:
+ *
+ *   1. Es wird **nichts von selbst übernommen.** Der Vorschlag erscheint zur Ansicht, die Lehrkraft
+ *      entscheidet (wie in der Quelle, `AiSuggestPanel.tsx` / `SentenceAiPanel.tsx`).
+ *   2. Die Antwort wird **gegen das Blattschema geprüft**, bevor sie den Reducer erreicht: auf die
+ *      Wörter bzw. Spalten wird die vollständige Definition gebaut und mit `pruefeLesetabelle` /
+ *      `pruefeSatzbaukasten` geprüft. Was nicht durchkommt, wird mit einer deutschen Meldung
+ *      abgelehnt und nie angezeigt.
+ *   3. **Es geht auch ohne KI.** Ohne Schlüssel oder Budget kommt `{ ok: false, fehler }` zurück, die
+ *      Oberfläche erklärt das, und der Generator bleibt vollständig von Hand bedienbar.
+ *
+ * Der Anbieter-Aufruf läuft über `lib/ai/router.ts` mit dem eigenen Feature-Schlüssel `druckblatt`
+ * (Tarif `fast`, Bereich `EXERCISE`). `buildDruckblattPrompt` ist getrennt, damit der Auftrag ohne
+ * API-Aufruf prüfbar ist.
+ */
+
+/** Die Rolle einer Satzbaukasten-Spalte, für die es einen KI-Vorschlag gibt. */
+const DRUCKBLATT_ROLLEN = ["subjekt", "verb", "objekt"] as const;
+type DruckblattRolle = (typeof DRUCKBLATT_ROLLEN)[number];
+
+export const DRUCKBLATT_SYSTEM = `Du unterstützt eine Nachhilfelehrkraft in Österreich beim Erstellen von Arbeitsblättern für Leseanfänger.
+Du lieferst nur die Inhalte (Wörter, Satzteile), nie Gestaltung, Aufgabenstellungen oder Erklärungen.
+Verwende österreichische Begriffe und die österreichische Rechtschreibung.
+Alles ist alltagsnah, kindgerecht und eindeutig; erfinde keine Wörter.
+Antworte ausschließlich mit dem verlangten JSON-Objekt — kein Einleitungstext, keine Erklärungen, keine Markdown-Code-Blöcke, keine Kommentare.`;
+
+const DruckblattWoerterSchema = z.object({
+  woerter: z.array(z.string()).min(1).describe("Nur einzelne Wörter oder ganz kurze Wendungen — keine Nummerierung, keine Erklärung, keine doppelten Einträge"),
+});
+
+const DruckblattSpaltenSchema = z.object({
+  subjekte: z.array(z.string()).describe("Subjekte als Nomen mit bestimmtem Artikel im Nominativ, z. B. „der Hund“"),
+  verben: z.array(z.string()).describe("Verben in der Grundform (3. Person Singular), z. B. „läuft“, „liest“"),
+  objekte: z.array(z.string()).describe("Nomen für die Objektspalte, mit bestimmtem Artikel im Nominativ („der Ball“) — die App bildet daraus „den Ball“"),
+  hinweis: z.string().describe("Ein kurzer Satz an die Lehrkraft, was dieser Vorschlag übt"),
+});
+
+export type DruckblattWoerterAntwort = z.infer<typeof DruckblattWoerterSchema>;
+export type DruckblattSpaltenAntwort = z.infer<typeof DruckblattSpaltenSchema>;
+
+export type DruckblattPromptRequest = {
+  /** Wie viele Einträge das Modell liefern soll. */
+  anzahl: number;
+  /** Thema oder Schwerpunkt in wenigen Worten, z. B. „Tiere“ oder „Wörter mit ie“. */
+  thema?: string;
+  /** Einträge, die schon auf dem Blatt stehen; neue müssen andere sein. */
+  vorhandene?: string[];
+};
+
+/** Der Auftrag für die Wortliste; getrennt, damit er ohne API-Aufruf geprüft werden kann. */
+export function buildDruckblattWoerterPrompt(req: DruckblattPromptRequest): string {
+  const thema = req.thema?.trim();
+  return `Aufgabe: Schlage eine Wortliste für eine Lesetabelle vor.
+Die Wörter werden in einem Raster laut vorgelesen. Sie sind kurz genug für Leseanfänger und enthalten keine Satzzeichen.
+${thema ? `Thema oder Schwerpunkt: „${thema}“.\n` : ""}Liefere ${req.anzahl} verschiedene Wörter.${req.vorhandene?.length ? `\nDiese Wörter stehen schon auf dem Blatt, nimm andere:\n${req.vorhandene.slice(0, 40).map((w) => `- ${w.slice(0, 80)}`).join("\n")}` : ""}
+Antworte mit genau dieser Form:
+{ "woerter": ["Mama", "Oma", "Sofa"] }`;
+}
+
+/** Der Auftrag für die Satzbaukasten-Spalten. */
+export function buildDruckblattSpaltenPrompt(req: { verben: number; objekte: number; person?: string; thema?: string; vorhandene?: string[] }): string {
+  const thema = req.thema?.trim();
+  const person = req.person?.trim();
+  return `Aufgabe: Schlage Einträge für einen Satzbaukasten vor.
+Der Kasten hat Spalten für Subjekt, Verb und Objekt; daraus werden Sätze gebaut (z. B. „${person || "ich"} lese ein Buch“).
+Bei Subjekt und Objekt steht der bestimmte Artikel im Nominativ dabei („der Hund“, „die Blume“) — daraus bildet die App die übrigen Fälle.
+${person ? `Die Sätze werden in der ${person}-Form gebildet.\n` : ""}${thema ? `Thema oder Schwerpunkt: „${thema}“.\n` : ""}Liefere ${req.verben} Verben und ${req.objekte} Objekte sowie 6 Subjekte.${req.vorhandene?.length ? `\nDiese Einträge stehen schon auf dem Blatt, nimm andere:\n${req.vorhandene.slice(0, 40).map((e) => `- ${e.slice(0, 80)}`).join("\n")}` : ""}
+Antworte mit genau dieser Form:
+{ "subjekte": ["der Hund"], "verben": ["läuft"], "objekte": ["der Ball"], "hinweis": "Was der Vorschlag übt" }`;
+}
+
+/** Das Übrige aus Prosa-Antworten in eine deutsche Meldung. */
+const ersteStelle = (e: z.ZodError) => {
+  const first = e.issues[0];
+  return first?.path.length ? `${first.path.join(".")}: ${first.message}` : (first?.message ?? "unbekannter Fehler");
+};
+
+export type DruckblattVorschlag<T> = { readonly ok: true; readonly definition: T } | { readonly ok: false; readonly fehler: string };
+
+/**
+ * Prüft eine Wortliste der KI gegen das Blattschema, indem sie in die übergebene Lesetabelle
+ * eingesetzt wird. Nur ein Blatt, das `pruefeLesetabelle` annimmt, geht an den Generator.
+ */
+export function pruefeWoerterVorschlag(wert: unknown, grundlage: WorksheetDefinition): DruckblattVorschlag<WorksheetDefinition> & { woerter?: string[] } {
+  const gelesen = DruckblattWoerterSchema.safeParse(wert);
+  if (!gelesen.success) return { ok: false, fehler: `Die KI hat keine Wortliste geliefert (${ersteStelle(gelesen.error)}).` };
+  const woerter = parseWordList(gelesen.data.woerter.join("\n"));
+  if (!woerter.length) return { ok: false, fehler: "Die KI hat eine leere Wortliste geliefert." };
+  const definition: WorksheetDefinition = { ...grundlage, content: { kind: "wordList", words: woerter } };
+  const geprueft = pruefeLesetabelle(definition);
+  if (!geprueft.ok) return { ok: false, fehler: `Der Vorschlag passt nicht zum Blatt: ${geprueft.fehler.join(" ")}` };
+  return { ok: true, definition: geprueft.definition, woerter };
+}
+
+/**
+ * Prüft die Spalten der KI gegen das Blattschema: Die Einträge werden nach Rolle in die **vorhandenen**
+ * Spalten geschrieben (eine gelöschte Spalte kommt nicht zurück), dann entscheidet
+ * `pruefeSatzbaukasten`.
+ */
+export function pruefeSpaltenVorschlag(wert: unknown, grundlage: SentenceBoxDefinition): DruckblattVorschlag<SentenceBoxDefinition> & { eingetragen?: number } {
+  const gelesen = DruckblattSpaltenSchema.safeParse(wert);
+  if (!gelesen.success) return { ok: false, fehler: `Die KI hat keine Spalten geliefert (${ersteStelle(gelesen.error)}).` };
+  const nachRolle: Record<DruckblattRolle, string[]> = {
+    subjekt: gelesen.data.subjekte,
+    verb: gelesen.data.verben,
+    objekt: gelesen.data.objekte,
+  };
+  let eingetragen = 0;
+  const columns = grundlage.columns.map((spalte) => {
+    const liste = (DRUCKBLATT_ROLLEN as readonly string[]).includes(spalte.role) ? nachRolle[spalte.role as DruckblattRolle] : null;
+    const entries = liste ? parseEntries(liste.join("\n")) : [];
+    if (!entries.length) return spalte;
+    eingetragen += 1;
+    return { ...spalte, entries };
+  });
+  if (!eingetragen) return { ok: false, fehler: "Für die Spalten des Baukastens (Subjekt, Verb, Objekt) hat die KI nichts geliefert." };
+  const definition: SentenceBoxDefinition = { ...grundlage, columns };
+  const geprueft = pruefeSatzbaukasten(definition);
+  if (!geprueft.ok) return { ok: false, fehler: `Der Vorschlag passt nicht zum Blatt: ${geprueft.fehler.join(" ")}` };
+  return { ok: true, definition: geprueft.definition, eingetragen };
+}
+
+/**
+ * Holt eine Wortliste über `lib/ai/router.ts` und prüft sie gegen das Blattschema. Ohne Schlüssel,
+ * Budget oder Verbindung kommt der Grund zurück; die Lehrkraft arbeitet von Hand weiter.
+ */
+export async function vorschlagWoerterMitKI(o: { grundlage: WorksheetDefinition; anzahl: number; thema?: string; vorhandene?: string[]; meta?: AIMeta }): Promise<DruckblattVorschlag<WorksheetDefinition> & { woerter?: string[] }> {
+  const out = await runAI("druckblatt", DruckblattWoerterSchema, DRUCKBLATT_SYSTEM, buildDruckblattWoerterPrompt(o), { meta: o.meta });
+  if (!out.ok) return { ok: false, fehler: out.message };
+  return pruefeWoerterVorschlag(out.data, o.grundlage);
+}
+
+/** Dasselbe für die Spalten des Satzbaukastens. */
+export async function vorschlagSpaltenMitKI(o: { grundlage: SentenceBoxDefinition; verben: number; objekte: number; person?: string; thema?: string; vorhandene?: string[]; meta?: AIMeta }): Promise<DruckblattVorschlag<SentenceBoxDefinition> & { eingetragen?: number }> {
+  const out = await runAI("druckblatt", DruckblattSpaltenSchema, DRUCKBLATT_SYSTEM, buildDruckblattSpaltenPrompt(o), { meta: o.meta });
+  if (!out.ok) return { ok: false, fehler: out.message };
+  return pruefeSpaltenVorschlag(out.data, o.grundlage);
 }
