@@ -12,6 +12,7 @@ import type { MathAnswer as MathDraft } from "@/lib/math-check";
 import type { MathView } from "@/lib/math-task";
 import { splitFractions } from "@/lib/math-text";
 import { checkedMath, initialMath, markMath, MathAnswerInput, mathAnswer, mathReady, mathTouched, restoreMath, type MathState, type MathTaskView } from "./MathAnswer";
+import { GenusBadge } from "./TaskPreview";
 import { MathText } from "./MathText";
 import { FixCompare } from "./FixMarks";
 import { ReadingTextView } from "./ReadingText";
@@ -37,6 +38,8 @@ export type ClientTask = {
   faulty: string | null;
   /** Freie Antwort: 1 = one line, more = a text field of about that many lines. */
   lines: number | null;
+  /** Artikel-Aufgaben: das Genus des Nomens (m/f/n) für die Färbung nach D10; null, wenn keines gesetzt ist. */
+  genus: "m" | "f" | "n" | null;
   /** Rechenweg and Sachaufgabe: the equation or term, the parts (components/MathAnswer.tsx). */
   math: MathTaskView | null;
   /**
@@ -691,6 +694,11 @@ function TaskCard({
           <div className="mt-4 rounded-xl border border-line bg-surface px-5 py-4">
             <p className="text-[14px] font-semibold text-ink-2">Lösungsweg</p>
             <p className="mt-1 text-[16px] whitespace-pre-line"><MathText text={feedback.solution} /></p>
+            {task.genus && (
+              <p className="mt-2">
+                <GenusBadge genus={task.genus} />
+              </p>
+            )}
           </div>
         )}
 

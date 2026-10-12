@@ -3,9 +3,30 @@ import type { Task } from "@/lib/repo";
 import { ASPECT_SHORT, isAspect, OPEN_ASPECTS, severalNoted } from "@/lib/lesen";
 import { mathAnswerText } from "@/lib/math-task";
 import { GAP, hintLabel, type TaskDraft } from "@/lib/tasks";
+import { genderTone, genusBadge } from "./genus";
 import { MathText } from "./MathText";
 
 const partName = (label: string, i: number) => label || `${String.fromCharCode(97 + i)})`;
+
+/**
+ * Das Genus eines Nomens als kleines Zeichen (D10): Farbton plus Buchstabe m/f/n, damit die Farbe
+ * nie das einzige Signal ist. Ohne gesetztes Genus wird nichts gezeigt.
+ */
+export function GenusBadge({ genus, className = "" }: { genus: unknown; className?: string }) {
+  const badge = genusBadge(genus);
+  if (!badge) return null;
+  const tone = genderTone(genus);
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[12px] font-semibold ${className}`}
+      style={{ background: tone.bg, color: tone.fg }}
+      title={`Genus: ${badge.label}`}
+    >
+      <span aria-hidden>{badge.letter}</span>
+      <span className="sr-only">Genus: {badge.label}</span>
+    </span>
+  );
+}
 
 
 function withGaps(text: string) {
@@ -36,6 +57,11 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
     <div className="min-w-0">
       {task.data.passage && !passageShown && <blockquote className="ruled mb-4 max-w-[70ch] rounded-lg bg-paper px-4 py-1 text-[15px]"><MathText text={task.data.passage} /></blockquote>}
       <p className="max-w-[70ch] text-[16px] leading-relaxed whitespace-pre-line">{task.prompt ? withGaps(task.prompt) : <span className="text-ink-3 italic">Noch keine Aufgabenstellung</span>}</p>
+      {task.data.genus && (
+        <p className="mt-1.5">
+          <GenusBadge genus={task.data.genus} />
+        </p>
+      )}
       {task.data.options && (
         <ol className="mt-2 space-y-1">
           {task.data.options.map((o, i) => (

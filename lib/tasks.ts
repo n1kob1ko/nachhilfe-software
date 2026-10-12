@@ -67,6 +67,9 @@ export type TaskDraft = {
     aspect?: string;
     /** KI-Aufgaben: what the teacher has to check before the task can be sent (e.g. a doubtful Wortart); never shown to students. */
     pruefen?: string[];
+    /** Artikel-Aufgaben: das Genus des Nomens (m = maskulin, f = feminin, n = neutral), damit die Oberfläche
+     *  es färben kann (D10, components/genus.ts). Die Farbe ist nie das einzige Signal. */
+    genus?: "m" | "f" | "n";
   };
   answer: AnswerSpec;
   solution: string;

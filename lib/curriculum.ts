@@ -117,6 +117,8 @@ const MIX_BY_SKILL: [RegExp, string[]][] = [
   // formats where the student writes come first; multiple choice (fehler, grammatik, wortarten) once per round at most
   [/^deutsch\.beistrich\./, ["korrigieren", "offen", "fehler"]],
   [/^deutsch\.recht\./, ["lueckentext", "korrigieren", "offen", "rechtschreibung"]],
+  // Satzlehre: Haupt-/Gliedsatz erkennen ist eine Bestimmungsaufgabe (mc), dazu Erklären und Fehlersuche
+  [/^deutsch\.satz\./, ["grammatik", "fehler", "offen"]],
   [/^deutsch\.grammatik\.zeiten/, ["lueckentext", "korrigieren", "offen", "grammatik"]],
   [/^deutsch\.grammatik\./, ["korrigieren", "lueckentext", "offen", "grammatik"]],
   // Wortarten: real determination tasks; explanations only when the teacher picks „Freie Antwort“
@@ -191,6 +193,18 @@ const BASE: CurriculumSkill[] = [
     ["deutsch.grammatik.faelle", "Fälle bestimmen"],
     ["deutsch.grammatik.zeiten", "Zeitformen"],
   ]),
+  // Die sechs Fähigkeiten aus Phase 1 des Merges (tommys-merge.md §4). Ihre Kennungen stehen im Plan
+  // fest und sind schon an Generatoren gebunden (lib/generators.ts GEN) und an die Banken unter
+  // data/banks/. `sub()` kann sie deshalb nicht bilden: es leitet die Kennung aus der Elternfähigkeit
+  // ab (`deutsch.grammatik.zeiten.praeteritum`), während hier `deutsch.grammatik.praeteritum`
+  // verlangt ist. Wo eine neue Fähigkeit inhaltlich eine Teilfähigkeit einer bestehenden ist, wird
+  // die Verknüpfung darum direkt über `parentId` gesetzt.
+  { id: "deutsch.grammatik.artikel", subject: "Deutsch", area: "Grammatik", name: "Artikel bestimmen", gradeMin: 1, gradeMax: 6 },
+  { id: "deutsch.grammatik.adjektivdeklination", subject: "Deutsch", area: "Grammatik", name: "Adjektivdeklination", gradeMin: 5, gradeMax: 10 },
+  { id: "deutsch.grammatik.praepositionen", subject: "Deutsch", area: "Grammatik", name: "Präposition und Kasus", gradeMin: 5, gradeMax: 9, parentId: "deutsch.grammatik.faelle" },
+  { id: "deutsch.grammatik.praeteritum", subject: "Deutsch", area: "Grammatik", name: "Präteritum", gradeMin: 4, gradeMax: 9, parentId: "deutsch.grammatik.zeiten" },
+  { id: "deutsch.grammatik.perfekt", subject: "Deutsch", area: "Grammatik", name: "Perfekt", gradeMin: 4, gradeMax: 9, parentId: "deutsch.grammatik.zeiten" },
+  { id: "deutsch.satz.hauptsatz-gliedsatz", subject: "Deutsch", area: "Satzlehre", name: "Hauptsatz und Gliedsatz erkennen", gradeMin: 5, gradeMax: 10 },
   ...s("Deutsch", "Textverständnis", 3, 12, [["deutsch.text.verstehen", "Leseverständnis"]]),
   ...s("Englisch", "Tenses", 5, 10, [
     ["englisch.tenses.presentsimple", "Present Simple"],

@@ -1373,6 +1373,38 @@
   [
    "deutsch.text.verstehen",
    "MS-DEU-3-B3-K1"
+  ],
+  [
+   "deutsch.grammatik.praeteritum",
+   "MS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.perfekt",
+   "MS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.praeteritum",
+   "MS-DEU-2-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.perfekt",
+   "MS-DEU-2-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.praepositionen",
+   "MS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.grammatik.praepositionen",
+   "MS-DEU-2-B1-A1-A2"
+  ],
+  [
+   "deutsch.satz.hauptsatz-gliedsatz",
+   "MS-DEU-1-B1-A1-A2"
+  ],
+  [
+   "deutsch.satz.hauptsatz-gliedsatz",
+   "MS-DEU-2-B1-A1-A2"
   ]
  ]
 }
