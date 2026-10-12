@@ -6,6 +6,7 @@
 import type { Difficulty, TaskType } from "./curriculum";
 import type { TaskDraft } from "./tasks";
 import { GAP, parseNumber } from "./tasks";
+import { dasDassItems, perfektItems, praeteritumItems } from "./banks";
 import { expectedFixes } from "./fix-text";
 import { rechenwegTask, sachaufgabeTask } from "./generators-mathe";
 import { isWortartenSkill, wortartenFor, wortartenTask, type WortartSetting } from "./wortarten";
@@ -294,11 +295,14 @@ const GEN: Record<string, Gen> = {
   "deutsch.beistrich.aufzaehlung": bankMC("deutsch.beistrich.aufzaehlung", () => BEISTRICH_AUFZ),
   "deutsch.beistrich.nebensatz": bankMC("deutsch.beistrich.nebensatz", () => BEISTRICH_NS),
   "deutsch.beistrich.infinitiv": bankMC("deutsch.beistrich.infinitiv", () => BEISTRICH_INF),
-  "deutsch.recht.dasdass": bankCloze("deutsch.recht.dasdass", () => DAS_DASS, "text"),
+  "deutsch.recht.dasdass": bankCloze("deutsch.recht.dasdass", dasDassItems, "text"),
   "deutsch.recht.gross": bankCloze("deutsch.recht.gross", () => GROSS, "exact"),
   "deutsch.recht.sss": bankCloze("deutsch.recht.sss", () => SSS, "exact"),
   "deutsch.grammatik.faelle": bankMC("deutsch.grammatik.faelle", () => FAELLE),
   "deutsch.grammatik.zeiten": bankMC("deutsch.grammatik.zeiten", () => ZEITEN),
+  // Präteritum und Perfekt kommen aus data/banks/ (Phase 1); ihre Einträge standen früher in ZEITEN_CLOZE
+  "deutsch.grammatik.praeteritum": bankCloze("deutsch.grammatik.praeteritum", praeteritumItems, "exact"),
+  "deutsch.grammatik.perfekt": bankCloze("deutsch.grammatik.perfekt", perfektItems, "exact"),
   "englisch.tenses.presentsimple": bankCloze("englisch.tenses.presentsimple", () => PRESENT_SIMPLE, "text"),
   "englisch.tenses.pastsimple": bankCloze("englisch.tenses.pastsimple", () => PAST_SIMPLE, "text"),
   "englisch.tenses.presentperfect": bankCloze("englisch.tenses.presentperfect", () => PRESENT_PERFECT, "text"),
@@ -545,27 +549,8 @@ const ZEITEN: MCItem[] = (
   errors: (correct === 2 ? { 1: "Perfekt und Präteritum verwechselt", 3: "Perfekt und Plusquamperfekt verwechselt" } : correct === 1 ? { 2: "Perfekt und Präteritum verwechselt" } : correct === 3 ? { 2: "Perfekt und Plusquamperfekt verwechselt" } : {}) as Record<number, string>,
 }));
 
-const DAS_DASS: ClozeItem[] = (
-  [
-    ["Ich hoffe, ___ du morgen kommst.", "dass", "Konjunktion: Man kann nicht „welches“ einsetzen → dass"],
-    ["Das Buch, ___ auf dem Tisch liegt, gehört mir.", "das", "Relativpronomen: „welches“ passt → das"],
-    ["Er sagt, ___ er keine Zeit hat.", "dass", "Konjunktion nach „sagen“ → dass"],
-    ["___ Auto ist neu.", "Das", "Artikel → das"],
-    ["Ich weiß, ___ ___ stimmt.", ["dass", "das"], "Erstes: Konjunktion (dass). Zweites: Pronomen „dieses“ (das)."],
-    ["Das Kind, ___ dort spielt, ist mein Bruder.", "das", "Relativpronomen: „welches“ passt → das"],
-    ["Es ist wichtig, ___ wir pünktlich sind.", "dass", "Konjunktion → dass"],
-    ["___ ist mir egal.", "Das", "Demonstrativpronomen „dieses“ → das"],
-  ] as [string, string | string[], string][]
-).map(([q, ans, solution]) => {
-  const arr = Array.isArray(ans) ? ans : [ans];
-  return {
-    q: `Setze „das“ oder „dass“ ein: ${q}`,
-    blanks: arr.map((a) => [a]),
-    solution,
-    hint: "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
-    errors: arr.length === 1 ? { [arr[0].toLowerCase() === "dass" ? "das" : "dass"]: "das/dass verwechselt" } : {},
-  };
-});
+// DAS_DASS steht nicht mehr hier: die acht Einträge sind mit den 339 importierten in
+// data/banks/das-dass.json zusammengeführt (Phase 1), gelesen über lib/banks.ts.
 
 const GROSS: ClozeItem[] = (
   [
@@ -817,15 +802,13 @@ const FAELLE_FIX: FixItem[] = [
   ["Er wartet auf seinem Freund.", "Er wartet auf seinen Freund.", "„warten auf“ verlangt den Akkusativ"],
 ].map(([wrong, right, label]) => ({ wrong, right, label, errorType: "grammatik" }));
 
+// Präteritum und Perfekt stehen nicht mehr hier: ihre Einträge sind in data/banks/praeteritum.json
+// bzw. perfekt.json (Phase 1). Die übrigen Zeitformen bleiben in dieser Bank für „Zeitformen erkennen“.
 const ZEITEN_CLOZE: ClozeItem[] = (
   [
-    ["Gestern ___ ich mit meinen Freunden im Park. (spielen, Präteritum)", [["spielte"]], "spielen → ich spielte (Präteritum)"],
-    ["Letzten Sommer ___ wir nach Italien ___. (fahren, Perfekt)", [["sind"], ["gefahren"]], "fahren bildet das Perfekt mit „sein“: wir sind gefahren"],
     ["Morgen ___ es bestimmt ___. (regnen, Futur I)", [["wird"], ["regnen"]], "Futur I: werden + Grundform → es wird regnen"],
     ["Als wir ankamen, ___ der Film schon ___. (beginnen, Plusquamperfekt)", [["hatte"], ["begonnen"]], "Plusquamperfekt: hatte + Partizip II → hatte begonnen"],
     ["Meine Schwester ___ jeden Tag Klavier. (üben, Präsens)", [["übt"]], "Präsens, 3. Person: sie übt"],
-    ["Wir ___ gestern lange ___. (lernen, Perfekt)", [["haben"], ["gelernt"]], "lernen bildet das Perfekt mit „haben“: wir haben gelernt"],
-    ["Früher ___ er jeden Tag mit dem Rad zur Schule. (fahren, Präteritum)", [["fuhr"]], "fahren – fuhr – gefahren"],
   ] as [string, string[][], string][]
 ).map(([q, blanks, solution]) => ({
   q: `Setze das Verb in der angegebenen Zeitform ein: ${q}`,
@@ -886,7 +869,7 @@ function fixItems(skillId: string): FixItem[] {
     case "deutsch.beistrich.infinitiv":
       return fromMC(BEISTRICH_INF, "grammatik");
     case "deutsch.recht.dasdass":
-      return fromCloze(DAS_DASS, "rechtschreibung");
+      return fromCloze(dasDassItems(), "rechtschreibung");
     case "deutsch.recht.gross":
       return fromCloze(GROSS, "rechtschreibung");
     case "deutsch.recht.sss":

@@ -1,0 +1,1517 @@
+[
+  {
+    "q": "Früher ___ er jeden Tag mit dem Rad zur Schule. (fahren, Präteritum)",
+    "blanks": [
+      [
+        "fuhr"
+      ]
+    ],
+    "solution": "fahren – fuhr – gefahren",
+    "hint": "Welche Zeitform steht in der Klammer? Brauchst du ein Hilfsverb (haben, sein, werden)?",
+    "errors": {}
+  },
+  {
+    "q": "Gestern ___ ich mit meinen Freunden im Park. (spielen, Präteritum)",
+    "blanks": [
+      [
+        "spielte"
+      ]
+    ],
+    "solution": "spielen → ich spielte (Präteritum)",
+    "hint": "Welche Zeitform steht in der Klammer? Brauchst du ein Hilfsverb (haben, sein, werden)?",
+    "errors": {}
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ an der Haustür der Nachbarn. (klingeln)",
+    "blanks": [
+      [
+        "klingeltest"
+      ]
+    ],
+    "solution": "klingeln → klingeltest",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "klingeltet": "Falsche Präteritumform von „klingeln“",
+      "klingeltst": "Falsche Präteritumform von „klingeln“",
+      "klingelst": "Falsche Präteritumform von „klingeln“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ auf eine gute Nachricht. (hoffen)",
+    "blanks": [
+      [
+        "hofftest"
+      ]
+    ],
+    "solution": "hoffen → hofftest",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "hoffst": "Falsche Präteritumform von „hoffen“",
+      "hofft": "Falsche Präteritumform von „hoffen“",
+      "hoffe": "Falsche Präteritumform von „hoffen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ damals wirklich viel Glück. (haben)",
+    "blanks": [
+      [
+        "hattest"
+      ]
+    ],
+    "solution": "haben → hattest",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "hast": "Falsche Präteritumform von „haben“",
+      "hattet": "Falsche Präteritumform von „haben“",
+      "hastest": "Falsche Präteritumform von „haben“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ das Auto direkt vor der Tür. (parken)",
+    "blanks": [
+      [
+        "parktest"
+      ]
+    ],
+    "solution": "parken → parktest",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "parkst": "Falsche Präteritumform von „parken“",
+      "parkte": "Falsche Präteritumform von „parken“",
+      "parketst": "Falsche Präteritumform von „parken“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ den lauten Knall. (hören)",
+    "blanks": [
+      [
+        "hörtest"
+      ]
+    ],
+    "solution": "hören → hörtest",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "hörst": "Falsche Präteritumform von „hören“",
+      "hortest": "Falsche Präteritumform von „hören“",
+      "hörtet": "Falsche Präteritumform von „hören“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ den neuen Film bereits am Freitag. (sehen)",
+    "blanks": [
+      [
+        "sahst"
+      ]
+    ],
+    "solution": "sehen → sahst",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "siehst": "Falsche Präteritumform von „sehen“",
+      "sehtest": "Falsche Präteritumform von „sehen“",
+      "saht": "Falsche Präteritumform von „sehen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ die Antwort auf die schwere Frage. (wissen)",
+    "blanks": [
+      [
+        "wusstest"
+      ]
+    ],
+    "solution": "wissen → wusstest",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "wisst": "Falsche Präteritumform von „wissen“",
+      "wissest": "Falsche Präteritumform von „wissen“",
+      "wusstet": "Falsche Präteritumform von „wissen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ ein Lied unter der Dusche. (singen)",
+    "blanks": [
+      [
+        "sangst"
+      ]
+    ],
+    "solution": "singen → sangst",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "singte": "Falsche Präteritumform von „singen“",
+      "sangest": "Falsche Präteritumform von „singen“",
+      "sungst": "Falsche Präteritumform von „singen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ lange an der Bushaltestelle. (stehen)",
+    "blanks": [
+      [
+        "standest"
+      ]
+    ],
+    "solution": "stehen → standest",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "stehst": "Falsche Präteritumform von „stehen“",
+      "standst": "Falsche Präteritumform von „stehen“",
+      "stehtest": "Falsche Präteritumform von „stehen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ letzte Nacht sehr tief. (schlafen)",
+    "blanks": [
+      [
+        "schliefst"
+      ]
+    ],
+    "solution": "schlafen → schliefst",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "schläfst": "Falsche Präteritumform von „schlafen“",
+      "schlaftest": "Falsche Präteritumform von „schlafen“",
+      "schlieft": "Falsche Präteritumform von „schlafen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ letzten Monat in eine neue Stadt. (ziehen)",
+    "blanks": [
+      [
+        "zogst"
+      ]
+    ],
+    "solution": "ziehen → zogst",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "ziehst": "Falsche Präteritumform von „ziehen“",
+      "ziehte": "Falsche Präteritumform von „ziehen“",
+      "zugst": "Falsche Präteritumform von „ziehen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ mich gestern Abend an. (rufen)",
+    "blanks": [
+      [
+        "riefst"
+      ]
+    ],
+    "solution": "rufen → riefst",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "rufte": "Falsche Präteritumform von „rufen“",
+      "ruftest": "Falsche Präteritumform von „rufen“",
+      "rieft": "Falsche Präteritumform von „rufen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ mir ewige Treue. (versprechen)",
+    "blanks": [
+      [
+        "versprachst"
+      ]
+    ],
+    "solution": "versprechen → versprachst",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "versprochst": "Falsche Präteritumform von „versprechen“",
+      "versprichst": "Falsche Präteritumform von „versprechen“",
+      "versprechest": "Falsche Präteritumform von „versprechen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ mir kein einziges Wort. (glauben)",
+    "blanks": [
+      [
+        "glaubtest"
+      ]
+    ],
+    "solution": "glauben → glaubtest",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "glaubst": "Falsche Präteritumform von „glauben“",
+      "glaubt": "Falsche Präteritumform von „glauben“",
+      "gleubtest": "Falsche Präteritumform von „glauben“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ schon als Kind gerne Klavier. (spielen)",
+    "blanks": [
+      [
+        "spieltest"
+      ]
+    ],
+    "solution": "spielen → spieltest",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "spielte": "Falsche Präteritumform von „spielen“",
+      "spielt": "Falsche Präteritumform von „spielen“",
+      "spalst": "Falsche Präteritumform von „spielen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ sehr gut auf der Party. (tanzen)",
+    "blanks": [
+      [
+        "tanztest"
+      ]
+    ],
+    "solution": "tanzen → tanztest",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "tanzte": "Falsche Präteritumform von „tanzen“",
+      "tanzt": "Falsche Präteritumform von „tanzen“",
+      "tenztest": "Falsche Präteritumform von „tanzen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Du ___ zehn Kilometer beim Marathon. (laufen)",
+    "blanks": [
+      [
+        "liefst"
+      ]
+    ],
+    "solution": "laufen → liefst",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "lauftest": "Falsche Präteritumform von „laufen“",
+      "läufst": "Falsche Präteritumform von „laufen“",
+      "lieft": "Falsche Präteritumform von „laufen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ aus dem Bus aus. (steigen)",
+    "blanks": [
+      [
+        "stieg"
+      ]
+    ],
+    "solution": "steigen → stieg",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "steigt": "Falsche Präteritumform von „steigen“",
+      "stiegt": "Falsche Präteritumform von „steigen“",
+      "steigte": "Falsche Präteritumform von „steigen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ bis spät in die Nacht hinein. (arbeiten)",
+    "blanks": [
+      [
+        "arbeitete"
+      ]
+    ],
+    "solution": "arbeiten → arbeitete",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "arbeit": "Falsche Präteritumform von „arbeiten“",
+      "arbeitet": "Falsche Präteritumform von „arbeiten“",
+      "arbeiteten": "Falsche Präteritumform von „arbeiten“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ den ersten Preis beim Wettbewerb. (gewinnen)",
+    "blanks": [
+      [
+        "gewann"
+      ]
+    ],
+    "solution": "gewinnen → gewann",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "gewinnt": "Falsche Präteritumform von „gewinnen“",
+      "gewonn": "Falsche Präteritumform von „gewinnen“",
+      "gewinnte": "Falsche Präteritumform von „gewinnen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ den ganzen Tag am Strand. (liegen)",
+    "blanks": [
+      [
+        "lag"
+      ]
+    ],
+    "solution": "liegen → lag",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "liegt": "Falsche Präteritumform von „liegen“",
+      "log": "Falsche Präteritumform von „liegen“",
+      "legte": "Falsche Präteritumform von „liegen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ die Antwort leider nicht. (kennen)",
+    "blanks": [
+      [
+        "kannte"
+      ]
+    ],
+    "solution": "kennen → kannte",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "kannt": "Falsche Präteritumform von „kennen“",
+      "kennt": "Falsche Präteritumform von „kennen“",
+      "kennte": "Falsche Präteritumform von „kennen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ eine E-Mail an seinen Chef. (schreiben)",
+    "blanks": [
+      [
+        "schrieb"
+      ]
+    ],
+    "solution": "schreiben → schrieb",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "schreibt": "Falsche Präteritumform von „schreiben“",
+      "schreibe": "Falsche Präteritumform von „schreiben“",
+      "schriebte": "Falsche Präteritumform von „schreiben“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ letzte Woche leider krank. (sein)",
+    "blanks": [
+      [
+        "war"
+      ]
+    ],
+    "solution": "sein → war",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "sein": "Falsche Präteritumform von „sein“",
+      "ware": "Falsche Präteritumform von „sein“",
+      "wurde": "Falsche Präteritumform von „sein“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ letztes Jahr nach Spanien. (fliegen)",
+    "blanks": [
+      [
+        "flog"
+      ]
+    ],
+    "solution": "fliegen → flog",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "fliegt": "Falsche Präteritumform von „fliegen“",
+      "flag": "Falsche Präteritumform von „fliegen“",
+      "flogt": "Falsche Präteritumform von „fliegen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ mir ein schönes Geschenk. (geben)",
+    "blanks": [
+      [
+        "gab"
+      ]
+    ],
+    "solution": "geben → gab",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "gebt": "Falsche Präteritumform von „geben“",
+      "gibt": "Falsche Präteritumform von „geben“",
+      "gabt": "Falsche Präteritumform von „geben“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ mir ein sehr gutes Restaurant. (empfehlen)",
+    "blanks": [
+      [
+        "empfahl"
+      ]
+    ],
+    "solution": "empfehlen → empfahl",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "empfiehlt": "Falsche Präteritumform von „empfehlen“",
+      "empfehlte": "Falsche Präteritumform von „empfehlen“",
+      "empfohl": "Falsche Präteritumform von „empfehlen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ mit dem Fahrrad zur Arbeit. (fahren)",
+    "blanks": [
+      [
+        "fuhr"
+      ]
+    ],
+    "solution": "fahren → fuhr",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "fahrt": "Falsche Präteritumform von „fahren“",
+      "fuhrt": "Falsche Präteritumform von „fahren“",
+      "fahrte": "Falsche Präteritumform von „fahren“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ nicht auf meine Frage. (antworten)",
+    "blanks": [
+      [
+        "antwortete"
+      ]
+    ],
+    "solution": "antworten → antwortete",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "antwortet": "Falsche Präteritumform von „antworten“",
+      "antwort": "Falsche Präteritumform von „antworten“",
+      "antworte": "Falsche Präteritumform von „antworten“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ seiner Oma beim Einkaufen. (helfen)",
+    "blanks": [
+      [
+        "half"
+      ]
+    ],
+    "solution": "helfen → half",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "hilft": "Falsche Präteritumform von „helfen“",
+      "halft": "Falsche Präteritumform von „helfen“",
+      "helfte": "Falsche Präteritumform von „helfen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ stundenlang vor dem Computer. (sitzen)",
+    "blanks": [
+      [
+        "saß"
+      ]
+    ],
+    "solution": "sitzen → saß",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "sitzt": "Falsche Präteritumform von „sitzen“",
+      "sitzte": "Falsche Präteritumform von „sitzen“",
+      "saßt": "Falsche Präteritumform von „sitzen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ versehentlich die Vase. (zerbrechen)",
+    "blanks": [
+      [
+        "zerbrach"
+      ]
+    ],
+    "solution": "zerbrechen → zerbrach",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "zerbricht": "Falsche Präteritumform von „zerbrechen“",
+      "zerbroch": "Falsche Präteritumform von „zerbrechen“",
+      "zerbrechte": "Falsche Präteritumform von „zerbrechen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Er ___ von einer Weltreise. (träumen)",
+    "blanks": [
+      [
+        "träumte"
+      ]
+    ],
+    "solution": "träumen → träumte",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "träumt": "Falsche Präteritumform von „träumen“",
+      "traumte": "Falsche Präteritumform von „träumen“",
+      "treumte": "Falsche Präteritumform von „träumen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Es ___ den ganzen Nachmittag lang. (regnen)",
+    "blanks": [
+      [
+        "regnete"
+      ]
+    ],
+    "solution": "regnen → regnete",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "regne": "Falsche Präteritumform von „regnen“",
+      "regnet": "Falsche Präteritumform von „regnen“",
+      "regneten": "Falsche Präteritumform von „regnen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ beim Abschied am Flughafen. (weinen)",
+    "blanks": [
+      [
+        "weinte"
+      ]
+    ],
+    "solution": "weinen → weinte",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "weint": "Falsche Präteritumform von „weinen“",
+      "weinten": "Falsche Präteritumform von „weinen“",
+      "weine": "Falsche Präteritumform von „weinen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ das Fenster wegen der Kälte. (schließen)",
+    "blanks": [
+      [
+        "schloss"
+      ]
+    ],
+    "solution": "schließen → schloss",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "schließt": "Falsche Präteritumform von „schließen“",
+      "schloß": "Falsche Präteritumform von „schließen“",
+      "schließte": "Falsche Präteritumform von „schließen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ den Müll nach draußen. (bringen)",
+    "blanks": [
+      [
+        "brachte"
+      ]
+    ],
+    "solution": "bringen → brachte",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "bringte": "Falsche Präteritumform von „bringen“",
+      "brachten": "Falsche Präteritumform von „bringen“",
+      "brang": "Falsche Präteritumform von „bringen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ die Rechnung im Restaurant. (bezahlen)",
+    "blanks": [
+      [
+        "bezahlte"
+      ]
+    ],
+    "solution": "bezahlen → bezahlte",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "bezahlt": "Falsche Präteritumform von „bezahlen“",
+      "bezahlten": "Falsche Präteritumform von „bezahlen“",
+      "bezahle": "Falsche Präteritumform von „bezahlen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ ein schönes Bild für dich. (malen)",
+    "blanks": [
+      [
+        "malte"
+      ]
+    ],
+    "solution": "malen → malte",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "malt": "Falsche Präteritumform von „malen“",
+      "mältest": "Falsche Präteritumform von „malen“",
+      "malten": "Falsche Präteritumform von „malen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ eine Karte von der Umgebung. (zeichnen)",
+    "blanks": [
+      [
+        "zeichnete"
+      ]
+    ],
+    "solution": "zeichnen → zeichnete",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "zeichnet": "Falsche Präteritumform von „zeichnen“",
+      "zeichne": "Falsche Präteritumform von „zeichnen“",
+      "zeichneten": "Falsche Präteritumform von „zeichnen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ eine Suppe für meine Familie. (kochen)",
+    "blanks": [
+      [
+        "kochte"
+      ]
+    ],
+    "solution": "kochen → kochte",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "kocht": "Falsche Präteritumform von „kochen“",
+      "kochten": "Falsche Präteritumform von „kochen“",
+      "küche": "Falsche Präteritumform von „kochen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ einen leckeren Apfelkuchen. (essen)",
+    "blanks": [
+      [
+        "aß"
+      ]
+    ],
+    "solution": "essen → aß",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "as": "Falsche Präteritumform von „essen“",
+      "asst": "Falsche Präteritumform von „essen“",
+      "esste": "Falsche Präteritumform von „essen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ etwas Hilfe bei den Hausaufgaben. (brauchen)",
+    "blanks": [
+      [
+        "brauchte"
+      ]
+    ],
+    "solution": "brauchen → brauchte",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "brauch": "Falsche Präteritumform von „brauchen“",
+      "braucht": "Falsche Präteritumform von „brauchen“",
+      "bruchte": "Falsche Präteritumform von „brauchen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ frisches Gemüse auf dem Markt. (kaufen)",
+    "blanks": [
+      [
+        "kaufte"
+      ]
+    ],
+    "solution": "kaufen → kaufte",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "kauft": "Falsche Präteritumform von „kaufen“",
+      "kief": "Falsche Präteritumform von „kaufen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ gestern Abend alleine ins Kino. (gehen)",
+    "blanks": [
+      [
+        "ging"
+      ]
+    ],
+    "solution": "gehen → ging",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "gehte": "Falsche Präteritumform von „gehen“",
+      "gieng": "Falsche Präteritumform von „gehen“",
+      "gang": "Falsche Präteritumform von „gehen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ ihr die volle Wahrheit. (versprechen)",
+    "blanks": [
+      [
+        "versprach"
+      ]
+    ],
+    "solution": "versprechen → versprach",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "versproch": "Falsche Präteritumform von „versprechen“",
+      "versprechte": "Falsche Präteritumform von „versprechen“",
+      "verspricht": "Falsche Präteritumform von „versprechen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ meine Freunde im Park. (treffen)",
+    "blanks": [
+      [
+        "traf"
+      ]
+    ],
+    "solution": "treffen → traf",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "treffte": "Falsche Präteritumform von „treffen“",
+      "traff": "Falsche Präteritumform von „treffen“",
+      "troff": "Falsche Präteritumform von „treffen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ mich gestern nicht so gut. (fühlen)",
+    "blanks": [
+      [
+        "fühlte"
+      ]
+    ],
+    "solution": "fühlen → fühlte",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "fühlt": "Falsche Präteritumform von „fühlen“",
+      "fühlten": "Falsche Präteritumform von „fühlen“",
+      "fühltet": "Falsche Präteritumform von „fühlen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ nach dem Sport sehr lange. (duschen)",
+    "blanks": [
+      [
+        "duschte"
+      ]
+    ],
+    "solution": "duschen → duschte",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "duscht": "Falsche Präteritumform von „duschen“",
+      "duschten": "Falsche Präteritumform von „duschen“",
+      "dischte": "Falsche Präteritumform von „duschen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ oft an meinen letzten Urlaub. (denken)",
+    "blanks": [
+      [
+        "dachte"
+      ]
+    ],
+    "solution": "denken → dachte",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "denkte": "Falsche Präteritumform von „denken“",
+      "denkt": "Falsche Präteritumform von „denken“",
+      "dachtet": "Falsche Präteritumform von „denken“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ich ___ so schnell ich konnte. (rennen)",
+    "blanks": [
+      [
+        "rannte"
+      ]
+    ],
+    "solution": "rennen → rannte",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "rennte": "Falsche Präteritumform von „rennen“",
+      "rennt": "Falsche Präteritumform von „rennen“",
+      "rann": "Falsche Präteritumform von „rennen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ am Samstag das ganze Haus. (putzen)",
+    "blanks": [
+      [
+        "putztet"
+      ]
+    ],
+    "solution": "putzen → putztet",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "putzt": "Falsche Präteritumform von „putzen“",
+      "putzten": "Falsche Präteritumform von „putzen“",
+      "puztet": "Falsche Präteritumform von „putzen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ am Wochenende im Garten. (grillen)",
+    "blanks": [
+      [
+        "grilltet"
+      ]
+    ],
+    "solution": "grillen → grilltet",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "grillten": "Falsche Präteritumform von „grillen“",
+      "grillt": "Falsche Präteritumform von „grillen“",
+      "grilltete": "Falsche Präteritumform von „grillen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ den Schlüssel endlich im Auto. (finden)",
+    "blanks": [
+      [
+        "fandet"
+      ]
+    ],
+    "solution": "finden → fandet",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "fundet": "Falsche Präteritumform von „finden“",
+      "fand": "Falsche Präteritumform von „finden“",
+      "findetet": "Falsche Präteritumform von „finden“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ den Zug um acht Uhr. (nehmen)",
+    "blanks": [
+      [
+        "nahmt"
+      ]
+    ],
+    "solution": "nehmen → nahmt",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "nehmte": "Falsche Präteritumform von „nehmen“",
+      "nehmt": "Falsche Präteritumform von „nehmen“",
+      "namt": "Falsche Präteritumform von „nehmen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ die laute Musik der Nachbarn. (hören)",
+    "blanks": [
+      [
+        "hörtet"
+      ]
+    ],
+    "solution": "hören → hörtet",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "hört": "Falsche Präteritumform von „hören“",
+      "hortete": "Falsche Präteritumform von „hören“",
+      "hörten": "Falsche Präteritumform von „hören“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ eigentlich früher nach Hause. (wollen)",
+    "blanks": [
+      [
+        "wolltet"
+      ]
+    ],
+    "solution": "wollen → wolltet",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "wollt": "Falsche Präteritumform von „wollen“",
+      "willten": "Falsche Präteritumform von „wollen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ eine Pizza mit Salami. (bestellen)",
+    "blanks": [
+      [
+        "bestelltet"
+      ]
+    ],
+    "solution": "bestellen → bestelltet",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "bestellt": "Falsche Präteritumform von „bestellen“",
+      "bestellte": "Falsche Präteritumform von „bestellen“",
+      "bestellten": "Falsche Präteritumform von „bestellen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ einen Kuchen für die Party. (backen)",
+    "blanks": [
+      [
+        "backtet"
+      ]
+    ],
+    "solution": "backen → backtet",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "bäckt": "Falsche Präteritumform von „backen“",
+      "bukt": "Falsche Präteritumform von „backen“",
+      "backetet": "Falsche Präteritumform von „backen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ euch wegen einer Kleinigkeit. (streiten)",
+    "blanks": [
+      [
+        "strittet"
+      ]
+    ],
+    "solution": "streiten → strittet",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "streitet": "Falsche Präteritumform von „streiten“",
+      "streittete": "Falsche Präteritumform von „streiten“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ eure Meinung sehr deutlich. (sagen)",
+    "blanks": [
+      [
+        "sagtet"
+      ]
+    ],
+    "solution": "sagen → sagtet",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "sagt": "Falsche Präteritumform von „sagen“",
+      "sagen": "Falsche Präteritumform von „sagen“",
+      "sagtete": "Falsche Präteritumform von „sagen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ eure Regenschirme im Zug. (vergessen)",
+    "blanks": [
+      [
+        "vergaßt"
+      ]
+    ],
+    "solution": "vergessen → vergaßt",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "vergesst": "Falsche Präteritumform von „vergessen“",
+      "vergesset": "Falsche Präteritumform von „vergessen“",
+      "vergasst": "Falsche Präteritumform von „vergessen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ gerne in ferne Länder. (reisen)",
+    "blanks": [
+      [
+        "reistet"
+      ]
+    ],
+    "solution": "reisen → reistet",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "reisten": "Falsche Präteritumform von „reisen“",
+      "reist": "Falsche Präteritumform von „reisen“",
+      "reiste": "Falsche Präteritumform von „reisen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ ihm ein tolles Buch. (schenken)",
+    "blanks": [
+      [
+        "schenktet"
+      ]
+    ],
+    "solution": "schenken → schenktet",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "schenkt": "Falsche Präteritumform von „schenken“",
+      "schenkten": "Falsche Präteritumform von „schenken“",
+      "schunktet": "Falsche Präteritumform von „schenken“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ schwere Kisten in den Keller. (tragen)",
+    "blanks": [
+      [
+        "trugt"
+      ]
+    ],
+    "solution": "tragen → trugt",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "tragt": "Falsche Präteritumform von „tragen“",
+      "tragtet": "Falsche Präteritumform von „tragen“",
+      "traget": "Falsche Präteritumform von „tragen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ uns die Spielregeln. (erklären)",
+    "blanks": [
+      [
+        "erklärtet"
+      ]
+    ],
+    "solution": "erklären → erklärtet",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "erklärt": "Falsche Präteritumform von „erklären“",
+      "erklärten": "Falsche Präteritumform von „erklären“",
+      "erklärte": "Falsche Präteritumform von „erklären“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Ihr ___ über den lustigen Witz. (lachen)",
+    "blanks": [
+      [
+        "lachtet"
+      ]
+    ],
+    "solution": "lachen → lachtet",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "lachten": "Falsche Präteritumform von „lachen“",
+      "lacht": "Falsche Präteritumform von „lachen“",
+      "lüchtet": "Falsche Präteritumform von „lachen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ alle Fragen korrekt. (beantworten)",
+    "blanks": [
+      [
+        "beantworteten"
+      ]
+    ],
+    "solution": "beantworten → beantworteten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "beantwortet": "Falsche Präteritumform von „beantworten“",
+      "beantwortete": "Falsche Präteritumform von „beantworten“",
+      "beantworten": "Falsche Präteritumform von „beantworten“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ das Fußballspiel ganz knapp. (verlieren)",
+    "blanks": [
+      [
+        "verloren"
+      ]
+    ],
+    "solution": "verlieren → verloren",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "verlorten": "Falsche Präteritumform von „verlieren“",
+      "verlierte": "Falsche Präteritumform von „verlieren“",
+      "verlor": "Falsche Präteritumform von „verlieren“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ das Paket voller Vorfreude. (öffnen)",
+    "blanks": [
+      [
+        "öffneten"
+      ]
+    ],
+    "solution": "öffnen → öffneten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "öffnet": "Falsche Präteritumform von „öffnen“",
+      "öffnete": "Falsche Präteritumform von „öffnen“",
+      "öffne": "Falsche Präteritumform von „öffnen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ die Aufgabe sofort. (verstehen)",
+    "blanks": [
+      [
+        "verstanden"
+      ]
+    ],
+    "solution": "verstehen → verstanden",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "verstehten": "Falsche Präteritumform von „verstehen“",
+      "verstandet": "Falsche Präteritumform von „verstehen“",
+      "versteht": "Falsche Präteritumform von „verstehen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ durch den ganzen Park. (laufen)",
+    "blanks": [
+      [
+        "liefen"
+      ]
+    ],
+    "solution": "laufen → liefen",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "lauften": "Falsche Präteritumform von „laufen“",
+      "lief": "Falsche Präteritumform von „laufen“",
+      "laufte": "Falsche Präteritumform von „laufen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ ein spannendes Buch im Bett. (lesen)",
+    "blanks": [
+      [
+        "lasen"
+      ]
+    ],
+    "solution": "lesen → lasen",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "lesten": "Falsche Präteritumform von „lesen“",
+      "las": "Falsche Präteritumform von „lesen“",
+      "les": "Falsche Präteritumform von „lesen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ früher in einer kleinen Wohnung. (wohnen)",
+    "blanks": [
+      [
+        "wohnten"
+      ]
+    ],
+    "solution": "wohnen → wohnten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "wohnen": "Falsche Präteritumform von „wohnen“",
+      "wohntet": "Falsche Präteritumform von „wohnen“",
+      "wohne": "Falsche Präteritumform von „wohnen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ ihr altes Auto bei eBay. (verkaufen)",
+    "blanks": [
+      [
+        "verkauften"
+      ]
+    ],
+    "solution": "verkaufen → verkauften",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "verkauft": "Falsche Präteritumform von „verkaufen“",
+      "verkaufte": "Falsche Präteritumform von „verkaufen“",
+      "verkieften": "Falsche Präteritumform von „verkaufen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ ihre Verwandten in Hamburg. (besuchen)",
+    "blanks": [
+      [
+        "besuchten"
+      ]
+    ],
+    "solution": "besuchen → besuchten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "besuchen": "Falsche Präteritumform von „besuchen“",
+      "besucht": "Falsche Präteritumform von „besuchen“",
+      "besuch": "Falsche Präteritumform von „besuchen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ ihre schmutzige Kleidung. (waschen)",
+    "blanks": [
+      [
+        "wuschen"
+      ]
+    ],
+    "solution": "waschen → wuschen",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "waschten": "Falsche Präteritumform von „waschen“",
+      "wascht": "Falsche Präteritumform von „waschen“",
+      "wuscht": "Falsche Präteritumform von „waschen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ in einem kleinen Hotel. (übernachten)",
+    "blanks": [
+      [
+        "übernachteten"
+      ]
+    ],
+    "solution": "übernachten → übernachteten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "übernachtet": "Falsche Präteritumform von „übernachten“",
+      "übernachtete": "Falsche Präteritumform von „übernachten“",
+      "übernachten": "Falsche Präteritumform von „übernachten“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ lange auf den Arzt. (warten)",
+    "blanks": [
+      [
+        "warteten"
+      ]
+    ],
+    "solution": "warten → warteten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "wartet": "Falsche Präteritumform von „warten“",
+      "warten": "Falsche Präteritumform von „warten“",
+      "wartetet": "Falsche Präteritumform von „warten“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ schnell zur Bushaltestelle. (laufen)",
+    "blanks": [
+      [
+        "liefen"
+      ]
+    ],
+    "solution": "laufen → liefen",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "lauften": "Falsche Präteritumform von „laufen“",
+      "lief": "Falsche Präteritumform von „laufen“",
+      "laufte": "Falsche Präteritumform von „laufen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ viel zu spät zum Termin. (kommen)",
+    "blanks": [
+      [
+        "kamen"
+      ]
+    ],
+    "solution": "kommen → kamen",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "kommt": "Falsche Präteritumform von „kommen“",
+      "kommten": "Falsche Präteritumform von „kommen“",
+      "kammen": "Falsche Präteritumform von „kommen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ viele Gäste zum Fest ein. (laden)",
+    "blanks": [
+      [
+        "luden"
+      ]
+    ],
+    "solution": "laden → luden",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "ladeten": "Falsche Präteritumform von „laden“",
+      "ladet": "Falsche Präteritumform von „laden“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Sie ___ über das Wochenende in Berlin. (bleiben)",
+    "blanks": [
+      [
+        "blieben"
+      ]
+    ],
+    "solution": "bleiben → blieben",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "bleibten": "Falsche Präteritumform von „bleiben“",
+      "blieb": "Falsche Präteritumform von „bleiben“",
+      "bleiben": "Falsche Präteritumform von „bleiben“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ Geld für den Sommerurlaub. (sparen)",
+    "blanks": [
+      [
+        "sparten"
+      ]
+    ],
+    "solution": "sparen → sparten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "spart": "Falsche Präteritumform von „sparen“",
+      "sparte": "Falsche Präteritumform von „sparen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ bis in den frühen Morgen. (feiern)",
+    "blanks": [
+      [
+        "feierten"
+      ]
+    ],
+    "solution": "feiern → feierten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "feiert": "Falsche Präteritumform von „feiern“",
+      "feiern": "Falsche Präteritumform von „feiern“",
+      "feiertet": "Falsche Präteritumform von „feiern“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ den Lehrer nach dem Weg. (fragen)",
+    "blanks": [
+      [
+        "fragten"
+      ]
+    ],
+    "solution": "fragen → fragten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "fragt": "Falsche Präteritumform von „fragen“",
+      "frugt": "Falsche Präteritumform von „fragen“",
+      "frugten": "Falsche Präteritumform von „fragen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ die ganze Nacht auf der Hochzeit. (tanzen)",
+    "blanks": [
+      [
+        "tanzten"
+      ]
+    ],
+    "solution": "tanzen → tanzten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "tanzet": "Falsche Präteritumform von „tanzen“",
+      "tanzte": "Falsche Präteritumform von „tanzen“",
+      "tanzen": "Falsche Präteritumform von „tanzen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ eine Reise nach Italien. (buchen)",
+    "blanks": [
+      [
+        "buchten"
+      ]
+    ],
+    "solution": "buchen → buchten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "bucht": "Falsche Präteritumform von „buchen“",
+      "buchte": "Falsche Präteritumform von „buchen“",
+      "beuchten": "Falsche Präteritumform von „buchen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ einen Film auf Netflix. (schauen)",
+    "blanks": [
+      [
+        "schauten"
+      ]
+    ],
+    "solution": "schauen → schauten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "schaut": "Falsche Präteritumform von „schauen“",
+      "schieften": "Falsche Präteritumform von „schauen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ einen langen Spaziergang im Wald. (machen)",
+    "blanks": [
+      [
+        "machten"
+      ]
+    ],
+    "solution": "machen → machten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "macht": "Falsche Präteritumform von „machen“",
+      "machtete": "Falsche Präteritumform von „machen“",
+      "muchten": "Falsche Präteritumform von „machen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ fleißig für die Deutschprüfung. (lernen)",
+    "blanks": [
+      [
+        "lernten"
+      ]
+    ],
+    "solution": "lernen → lernten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "lernen": "Falsche Präteritumform von „lernen“",
+      "lernt": "Falsche Präteritumform von „lernen“",
+      "lerntet": "Falsche Präteritumform von „lernen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ gerne in den Alpen. (wandern)",
+    "blanks": [
+      [
+        "wanderten"
+      ]
+    ],
+    "solution": "wandern → wanderten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "wandert": "Falsche Präteritumform von „wandern“",
+      "wandern": "Falsche Präteritumform von „wandern“",
+      "wandertete": "Falsche Präteritumform von „wandern“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ im Café einen heißen Tee. (trinken)",
+    "blanks": [
+      [
+        "tranken"
+      ]
+    ],
+    "solution": "trinken → tranken",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "trinkten": "Falsche Präteritumform von „trinken“",
+      "trunkten": "Falsche Präteritumform von „trinken“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ jeden Morgen im See. (schwimmen)",
+    "blanks": [
+      [
+        "schwammen"
+      ]
+    ],
+    "solution": "schwimmen → schwammen",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "schwimmten": "Falsche Präteritumform von „schwimmen“",
+      "schwimmen": "Falsche Präteritumform von „schwimmen“",
+      "schwommt": "Falsche Präteritumform von „schwimmen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ lange über unsere Zukunftspläne. (sprechen)",
+    "blanks": [
+      [
+        "sprachen"
+      ]
+    ],
+    "solution": "sprechen → sprachen",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "sprochen": "Falsche Präteritumform von „sprechen“",
+      "sprechten": "Falsche Präteritumform von „sprechen“",
+      "spracht": "Falsche Präteritumform von „sprechen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ uns für das blaue Sofa. (entscheiden)",
+    "blanks": [
+      [
+        "entschieden"
+      ]
+    ],
+    "solution": "entscheiden → entschieden",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "entscheidet": "Falsche Präteritumform von „entscheiden“",
+      "entscheidten": "Falsche Präteritumform von „entscheiden“",
+      "entschiedet": "Falsche Präteritumform von „entscheiden“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ uns gegenseitig Geschichten. (erzählen)",
+    "blanks": [
+      [
+        "erzählten"
+      ]
+    ],
+    "solution": "erzählen → erzählten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "erzählen": "Falsche Präteritumform von „erzählen“",
+      "erzählt": "Falsche Präteritumform von „erzählen“",
+      "erzähltet": "Falsche Präteritumform von „erzählen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ unsere neuen Nachbarn. (grüßen)",
+    "blanks": [
+      [
+        "grüßten"
+      ]
+    ],
+    "solution": "grüßen → grüßten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "grüßt": "Falsche Präteritumform von „grüßen“",
+      "grüßen": "Falsche Präteritumform von „grüßen“",
+      "großten": "Falsche Präteritumform von „grüßen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ viele Tiere im Zoo. (sehen)",
+    "blanks": [
+      [
+        "sahen"
+      ]
+    ],
+    "solution": "sehen → sahen",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "sehten": "Falsche Präteritumform von „sehen“",
+      "seht": "Falsche Präteritumform von „sehen“",
+      "saht": "Falsche Präteritumform von „sehen“"
+    }
+  },
+  {
+    "q": "Setze das Verb im Präteritum ein: Wir ___ überall nach meinem Geldbeutel. (suchen)",
+    "blanks": [
+      [
+        "suchten"
+      ]
+    ],
+    "solution": "suchen → suchten",
+    "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
+    "errors": {
+      "sucht": "Falsche Präteritumform von „suchen“",
+      "suchte": "Falsche Präteritumform von „suchen“",
+      "suche": "Falsche Präteritumform von „suchen“"
+    }
+  }
+]
