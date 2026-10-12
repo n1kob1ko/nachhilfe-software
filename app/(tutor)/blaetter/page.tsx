@@ -1,6 +1,10 @@
 import Link from "next/link";
-import { ChevronRight, FileText, Info } from "lucide-react";
-import { PageHeader, Pill } from "@/components/ui";
+import { ChevronRight, FileText, Info, PenLine } from "lucide-react";
+import { loescheDruckblattAction } from "@/app/druckblatt-actions";
+import { PageHeader, Pill, formatDate } from "@/components/ui";
+import { BLATTART_LABEL } from "@/lib/druckblatt/definition/schemas";
+import { druckblattArt, listDruckblaetter } from "@/lib/materials";
+import * as repo from "@/lib/repo";
 import { GEPLANT, VERFUEGBAR, geplanteNachFach } from "./katalog";
 
 export const metadata = { title: "Blätter erstellen" };
@@ -15,8 +19,15 @@ export const metadata = { title: "Blätter erstellen" };
  *
  * Der bestehende A4-Druck einer **Übung** bleibt davon getrennt (D20): Dort wird
  * eine gestellte Übung gedruckt, hier ein Blatt erzeugt.
+ *
+ * **Gespeicherte Blätter** (D21) stehen darunter: Sie sind Zeilen in `materials` — dieselbe Ablage
+ * wie Fotos und PDFs, keine zweite Liste. Der Klick führt zurück in den Generator, in dem das Blatt
+ * entstanden ist, und lädt seine Definition.
  */
-export default function BlaetterPage() {
+export default async function BlaetterPage({ searchParams }: { searchParams: Promise<{ geloescht?: string }> }) {
+  const sp = await searchParams;
+  const gespeichert = listDruckblaetter();
+  const studenten = new Map(repo.listStudents().map((s) => [s.id, s.name]));
   return (
     <>
       <PageHeader
@@ -59,6 +70,50 @@ export default function BlaetterPage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      {sp.geloescht && (
+        <p className="mb-6 text-[14px] font-semibold text-ink-2" role="status">
+          Gespeichertes Blatt gelöscht.
+        </p>
+      )}
+
+      <section className="mb-10">
+        <h2 className="mb-3 text-[15px] font-semibold text-ink-2">Gespeicherte Blätter</h2>
+        {gespeichert.length === 0 ? (
+          <p className="text-[13px] text-ink-2">
+            Noch kein Blatt gespeichert. In jedem Generator unten links: „Als Vorlage speichern“ oder
+            „Einem Schüler zuweisen“.
+          </p>
+        ) : (
+          <ul className="panel max-w-[920px] divide-y divide-line">
+            {gespeichert.map((m) => {
+              const art = druckblattArt(m);
+              const schueler = m.student_id ? studenten.get(m.student_id) : null;
+              return (
+                <li key={m.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-line bg-paper text-ink-3">
+                    <PenLine size={18} aria-hidden />
+                  </span>
+                  <Link href={art ? `/blaetter/${art}?blatt=${m.id}` : "/blaetter"} className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">{m.title}</span>
+                    <span className="block truncate text-[13px] text-ink-2">
+                      {[art ? BLATTART_LABEL[art] : "Druckblatt", schueler ? `für ${schueler}` : "Vorlage", "zum Öffnen klicken"]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </Link>
+                  <span className="num shrink-0 text-[13px] text-ink-3">{formatDate(m.created_at, { day: "numeric", month: "short" })}</span>
+                  <form action={loescheDruckblattAction.bind(null, m.id)}>
+                    <button className="btn btn-ghost btn-sm text-red" type="submit">
+                      Löschen
+                    </button>
+                  </form>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       <section>

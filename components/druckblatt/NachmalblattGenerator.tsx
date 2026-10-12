@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useReducer, type Dispatch } from "react";
+import { useEffect, useMemo, useReducer, useRef, type Dispatch } from "react";
 import {
   ALPHABET_LOWER,
   ALPHABET_UPPER,
@@ -29,7 +29,19 @@ import {
 import { BlattFehler, BlattSeite } from "./BlattSeite";
 import { BlattPanel } from "./BlattPanel";
 import { Auswahl, Panel, Schalter, Textbereich, Warnung, Zahlenfeld } from "./Felder";
+import { SpeichernPanel } from "./SpeichernPanel";
 import { TracingView } from "./TracingView";
+
+/** Was die Seite an den Generator übergibt: ein geöffnetes Blatt, die Lage der KI, die Schülerliste. */
+export interface NachmalblattSeiteProps {
+  readonly blatt?: { readonly id: number; readonly definition: TracingDefinition; readonly hinweis: string | null };
+  readonly studenten: readonly { readonly id: number; readonly name: string }[];
+  /** Für das Nachmalblatt schlägt die KI nichts vor; die Blattart kennt trotzdem die Lage. */
+  readonly kiVerfuegbar: boolean;
+  readonly gespeichert?: "vorlage" | "zuweisen" | null;
+  readonly gespeichertFuer?: string | null;
+  readonly fehler?: string | null;
+}
 
 /**
  * Das Nachmalblatt: Buchstaben, Silben oder Wörter zum Nachspuren, mit von Zeile
@@ -42,10 +54,18 @@ import { TracingView } from "./TracingView";
  * Eine fehlende Schriftdatei wird gemeldet, nicht still ersetzt: Das Kind soll
  * genau diese Formen nachmalen (siehe `handwriting-scripts.ts`).
  */
-export function NachmalblattGenerator() {
+export function NachmalblattGenerator({ blatt, studenten, gespeichert, gespeichertFuer, fehler }: NachmalblattSeiteProps) {
   const [zustand, dispatch] = useReducer(nachmalblattReducer, NACHMALBLATT_START);
   const aufbau = useMemo(() => baueNachmalblatt(zustand.definition), [zustand.definition]);
   const { definition } = zustand;
+
+  /* Ein geöffnetes Druckblatt kommt über `laden` herein — dieselbe Grenze wie beim Drucken. */
+  const geladen = useRef<number | null>(null);
+  useEffect(() => {
+    if (!blatt || geladen.current === blatt.id) return;
+    geladen.current = blatt.id;
+    dispatch({ art: "laden", definition: blatt.definition });
+  }, [blatt]);
 
   return (
     <BlattSeite
@@ -58,7 +78,7 @@ export function NachmalblattGenerator() {
       zoom={zustand.zoom}
       onZoom={(faktor) => dispatch({ art: "zoom", faktor })}
       onZuruecksetzen={() => dispatch({ art: "zuruecksetzen" })}
-      fehler={zustand.fehler}
+      fehler={zustand.fehler ?? blatt?.hinweis ?? fehler ?? null}
       pruefen={() => {
         const geprueft = pruefeNachmalblatt(definition);
         return geprueft.ok ? null : geprueft.fehler.join(" ");
@@ -88,6 +108,16 @@ export function NachmalblattGenerator() {
                 onWert={(instruction) => dispatch({ art: "meta", patch: { instruction } })}
               />
             }
+          />
+          <SpeichernPanel
+            blattart="nachmalblatt"
+            definition={definition}
+            titel={definition.title}
+            studenten={studenten}
+            gespeichertId={blatt?.id ?? null}
+            gespeichertFuer={gespeichertFuer ?? null}
+            meldung={gespeichert ? (gespeichert === "zuweisen" ? "Gespeichert und dem Schüler zugewiesen." : "Als Vorlage gespeichert.") : null}
+            fehler={null}
           />
         </>
       }

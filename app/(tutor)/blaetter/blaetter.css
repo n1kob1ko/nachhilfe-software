@@ -55,16 +55,26 @@
 /* ---------- Schulschriften ---------- */
 
 /*
- * Die Schriften sind Lerninhalt, nicht Gestaltung. Grünewald VA, Bienchen SAS und die Lateinische
- * Ausgangsschrift liegen noch nicht im Projekt (Phase 5 Schritt 7: @font-face samt Lizenzdatei);
- * bis dahin steht überall die Druckschrift. Dass eine gewünschte Schrift fehlt, sagt die
- * Oberfläche — still durch eine andere zu ersetzen wäre hier besonders heikel.
+ * Die Schriften sind Lerninhalt, nicht Gestaltung.
+ *
+ * Grünewald VA und Bienchen SAS liegen NICHT im Projekt (public/fonts/README.md); die
+ * @font-face-Regeln stehen in app/globals.css. Jede Kette nennt die Schriftfamilie zuerst und
+ * dahinter die Druckschrift: Fehlt die Datei, lädt der Browser sie nicht und setzt sichtbar die
+ * Druckschrift — dazu sagt die Oberfläche, welche Schrift gemeint war (`fehlendeSchriftHinweis`).
+ * Still durch eine andere zu ersetzen wäre hier besonders heikel.
+ *
+ * Die Lateinische Ausgangsschrift hat keine frei lizenzierte Fassung; ihre Kette ist deshalb
+ * dieselbe wie die der Druckschrift, und der Hinweis im Generator erklärt warum.
  */
 .db-schrift-druckschrift {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
-.db-schrift-va,
-.db-schrift-sas,
+.db-schrift-va {
+  font-family: "Gruenewald VA", var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+.db-schrift-sas {
+  font-family: "Bienchen SAS", var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
 .db-schrift-la {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }

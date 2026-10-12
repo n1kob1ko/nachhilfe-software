@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useReducer, type Dispatch } from "react";
+import { useEffect, useMemo, useReducer, useRef, type Dispatch } from "react";
 import { formatWordList, parseWordList } from "@/lib/druckblatt/content/word-list";
 import type { SyllableMatrixConfig } from "@/lib/druckblatt/content/matrix";
 import { CONSTRAINTS } from "@/lib/druckblatt/definition/constraints";
@@ -16,7 +16,21 @@ import {
 import { BlattFehler, BlattSeite } from "./BlattSeite";
 import { BlattPanel } from "./BlattPanel";
 import { Auswahl, Panel, Schalter, Textbereich, Textfeld, Zahlenfeld } from "./Felder";
+import { WoerterVorschlagPanel } from "./KiVorschlag";
+import { SpeichernPanel } from "./SpeichernPanel";
 import { WorksheetView } from "./WorksheetView";
+
+/** Was die Seite an den Generator übergibt: ein geöffnetes Blatt, die KI-Lage, die Schülerliste. */
+export interface LesetabelleSeiteProps {
+  /** Ein gespeichertes Druckblatt, das geöffnet wurde (`?blatt=`). */
+  readonly blatt?: { readonly id: number; readonly definition: WorksheetDefinition; readonly hinweis: string | null };
+  readonly studenten: readonly { readonly id: number; readonly name: string }[];
+  /** Ob für `druckblatt` ein Anbieter bereitsteht (`aiEnabled("druckblatt")`). */
+  readonly kiVerfuegbar: boolean;
+  readonly gespeichert?: "vorlage" | "zuweisen" | null;
+  readonly gespeichertFuer?: string | null;
+  readonly fehler?: string | null;
+}
 
 /**
  * Die Lesetabelle: Silben oder Wörter in einem gleichmäßigen Raster.
@@ -28,10 +42,22 @@ import { WorksheetView } from "./WorksheetView";
  * Dieselbe Datei enthält die vier Panels: Sie greifen alle auf denselben Reducer
  * zu, und getrennte Dateien hätten nur Requisiten hin und her gereicht.
  */
-export function LesetabelleGenerator() {
+export function LesetabelleGenerator({ blatt, studenten, kiVerfuegbar, gespeichert, gespeichertFuer, fehler }: LesetabelleSeiteProps) {
   const [zustand, dispatch] = useReducer(lesetabelleReducer, LESETABELLE_START);
   const aufbau = useMemo(() => baueLesetabelle(zustand.definition), [zustand.definition]);
   const { definition } = zustand;
+
+  /*
+   * Ein geöffnetes Druckblatt kommt über die Aktion `laden` herein — dieselbe Grenze wie beim
+   * Drucken. Geprüft wurde es schon auf dem Server (`ladeDruckblatt`); der Reducer prüft es noch
+   * einmal und setzt bei einem ungültigen Stand seinen `fehler`, statt zu werfen.
+   */
+  const geladen = useRef<number | null>(null);
+  useEffect(() => {
+    if (!blatt || geladen.current === blatt.id) return;
+    geladen.current = blatt.id;
+    dispatch({ art: "laden", definition: blatt.definition });
+  }, [blatt]);
 
   return (
     <BlattSeite
@@ -44,7 +70,7 @@ export function LesetabelleGenerator() {
       zoom={zustand.zoom}
       onZoom={(faktor) => dispatch({ art: "zoom", faktor })}
       onZuruecksetzen={() => dispatch({ art: "zuruecksetzen" })}
-      fehler={zustand.fehler}
+      fehler={zustand.fehler ?? blatt?.hinweis ?? fehler ?? null}
       pruefen={() => {
         /* Grenze „Definition raus": gedruckt wird nur, was das Schema annimmt. */
         const geprueft = pruefeLesetabelle(definition);
@@ -55,6 +81,7 @@ export function LesetabelleGenerator() {
           <InhaltPanel definition={definition} dispatch={dispatch} />
           <RasterPanel definition={definition} dispatch={dispatch} />
           <SchriftPanel definition={definition} dispatch={dispatch} />
+          <WoerterVorschlagPanel definition={definition} dispatch={dispatch} kiVerfuegbar={kiVerfuegbar} />
           <BlattPanel
             titel={definition.title}
             showTitle={definition.showTitle}
@@ -72,6 +99,16 @@ export function LesetabelleGenerator() {
                 onWert={(subtitle) => dispatch({ art: "meta", patch: { subtitle } })}
               />
             }
+          />
+          <SpeichernPanel
+            blattart="lesetabelle"
+            definition={definition}
+            titel={definition.title}
+            studenten={studenten}
+            gespeichertId={blatt?.id ?? null}
+            gespeichertFuer={gespeichertFuer ?? null}
+            meldung={gespeichert ? (gespeichert === "zuweisen" ? "Gespeichert und dem Schüler zugewiesen." : "Als Vorlage gespeichert.") : null}
+            fehler={null}
           />
         </>
       }

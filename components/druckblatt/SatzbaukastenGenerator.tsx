@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useReducer, type Dispatch } from "react";
+import { useEffect, useMemo, useReducer, useRef, type Dispatch } from "react";
 import type { ArticleMode, Kasus } from "@/lib/german-nouns";
 import {
   ROLE_TAKES_ARTICLE,
@@ -23,7 +23,19 @@ import {
 import { BlattFehler, BlattSeite } from "./BlattSeite";
 import { BlattPanel } from "./BlattPanel";
 import { Auswahl, Panel, Schalter, Textbereich, Textfeld, Warnung, Zahlenfeld } from "./Felder";
+import { SpaltenVorschlagPanel } from "./KiVorschlag";
 import { SentenceBoxView } from "./SentenceBoxView";
+import { SpeichernPanel } from "./SpeichernPanel";
+
+/** Was die Seite an den Generator übergibt: ein geöffnetes Blatt, die KI-Lage, die Schülerliste. */
+export interface SatzbaukastenSeiteProps {
+  readonly blatt?: { readonly id: number; readonly definition: SentenceBoxDefinition; readonly hinweis: string | null };
+  readonly studenten: readonly { readonly id: number; readonly name: string }[];
+  readonly kiVerfuegbar: boolean;
+  readonly gespeichert?: "vorlage" | "zuweisen" | null;
+  readonly gespeichertFuer?: string | null;
+  readonly fehler?: string | null;
+}
 
 /**
  * Der Satzbaukasten: Spalten mit Wörtern oder Satzteilen, darunter Schreibzeilen.
@@ -35,10 +47,18 @@ import { SentenceBoxView } from "./SentenceBoxView";
  * Blume" sieht, findet den Fehler sofort — ohne alle Kombinationen im Kopf zu
  * bilden.
  */
-export function SatzbaukastenGenerator() {
+export function SatzbaukastenGenerator({ blatt, studenten, kiVerfuegbar, gespeichert, gespeichertFuer, fehler }: SatzbaukastenSeiteProps) {
   const [zustand, dispatch] = useReducer(satzbaukastenReducer, SATZBAUKASTEN_START);
   const aufbau = useMemo(() => baueSatzbaukasten(zustand.definition), [zustand.definition]);
   const { definition } = zustand;
+
+  /* Ein geöffnetes Druckblatt kommt über `laden` herein — dieselbe Grenze wie beim Drucken. */
+  const geladen = useRef<number | null>(null);
+  useEffect(() => {
+    if (!blatt || geladen.current === blatt.id) return;
+    geladen.current = blatt.id;
+    dispatch({ art: "laden", definition: blatt.definition });
+  }, [blatt]);
 
   const spalten = useMemo(() => resolveSentenceBox(definition.columns), [definition.columns]);
   const kombinationen = sentenceCombinations(spalten);
@@ -56,7 +76,7 @@ export function SatzbaukastenGenerator() {
       zoom={zustand.zoom}
       onZoom={(faktor) => dispatch({ art: "zoom", faktor })}
       onZuruecksetzen={() => dispatch({ art: "zuruecksetzen" })}
-      fehler={zustand.fehler}
+      fehler={zustand.fehler ?? blatt?.hinweis ?? fehler ?? null}
       pruefen={() => {
         const geprueft = pruefeSatzbaukasten(definition);
         return geprueft.ok ? null : geprueft.fehler.join(" ");
@@ -86,6 +106,7 @@ export function SatzbaukastenGenerator() {
             </div>
           )}
 
+          <SpaltenVorschlagPanel definition={definition} dispatch={dispatch} kiVerfuegbar={kiVerfuegbar} />
           <SpaltenPanel definition={definition} dispatch={dispatch} />
           <ZeilenPanel definition={definition} dispatch={dispatch} />
           <TabellePanel definition={definition} dispatch={dispatch} />
@@ -124,6 +145,16 @@ export function SatzbaukastenGenerator() {
                 </div>
               </>
             }
+          />
+          <SpeichernPanel
+            blattart="satzbaukasten"
+            definition={definition}
+            titel={definition.title}
+            studenten={studenten}
+            gespeichertId={blatt?.id ?? null}
+            gespeichertFuer={gespeichertFuer ?? null}
+            meldung={gespeichert ? (gespeichert === "zuweisen" ? "Gespeichert und dem Schüler zugewiesen." : "Als Vorlage gespeichert.") : null}
+            fehler={null}
           />
         </>
       }

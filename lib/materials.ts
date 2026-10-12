@@ -3,6 +3,13 @@ import fs from "node:fs";
 import path from "node:path";
 import type { MaterialAnalysis } from "./ai";
 import { db } from "./db";
+import { BLATTARTEN, BLATTART_LABEL, pruefeJson, type Blattart } from "./druckblatt/definition/schemas";
+import { mergeDefinition, type StoredDefinition } from "./druckblatt/state/worksheet-state";
+import { mergeSentenceBox, type StoredSentenceBox } from "./druckblatt/state/sentence-state";
+import { mergeTracing, type StoredTracing } from "./druckblatt/state/tracing-state";
+import type { SentenceBoxDefinition } from "./druckblatt/definition/sentence-box-types";
+import type { TracingDefinition } from "./druckblatt/definition/tracing-types";
+import type { WorksheetDefinition } from "./druckblatt/definition/types";
 import { getSource, matchSkills, saveSource, sourceById, taskBankAllowed, type ContentSource } from "./lehrplan";
 import { createLibraryTask, LIBRARY_KIND, titleFromPrompt } from "./library";
 import * as repo from "./repo";
@@ -15,8 +22,15 @@ import type { TaskDraft } from "./tasks";
  * (Fach, Thema, Fähigkeiten), its source and licence (content_sources) and, optionally, suggestions
  * from an analysis. Nothing from a material becomes a library task without the teacher checking it,
  * and content of a reference source only in the teacher's own words.
+ *
+ * DRUCKBLATT (D21, Phase 5 des Merges): Ein gespeichertes Blatt ist ebenfalls eine Zeile in
+ * `materials` — `kind = 'druckblatt'`, die Blattdefinition als JSON in `definition`, und **ohne
+ * Datei**. Die Dateispalten (file_name, mime, size, sha256, stored_path) sind in der Tabelle
+ * NOT NULL und werden für diese Art mit leeren Werten geschrieben; **gelesen** werden sie für ein
+ * Druckblatt als „nicht vorhanden" (`null`) — die Materialliste, die Datei-Route und das Löschen
+ * unterscheiden deshalb über `hatDatei()`.
  */
-export const MATERIAL_KINDS = { foto: "Foto", pdf: "PDF", arbeitsblatt: "Arbeitsblatt" } as const;
+export const MATERIAL_KINDS = { foto: "Foto", pdf: "PDF", arbeitsblatt: "Arbeitsblatt", druckblatt: "Druckblatt" } as const;
 export type MaterialKind = keyof typeof MATERIAL_KINDS;
 export const MATERIAL_STATUS = { hochgeladen: "neu", vorschlag: "Vorschlag da", geprueft: "eingeordnet" } as const;
 export type MaterialStatus = keyof typeof MATERIAL_STATUS;
@@ -48,7 +62,11 @@ export function uploadsDir(): string {
   return dbFile && dbFile !== ":memory:" ? path.join(path.dirname(dbFile), "uploads") : path.join(process.cwd(), "data", "uploads");
 }
 // the folder is only known at run time: kept out of the build's file tracing
-export const materialFile = (m: Pick<Material, "stored_path">) => path.join(/*turbopackIgnore: true*/ uploadsDir(), path.basename(m.stored_path));
+export const materialFile = (m: Pick<Material, "stored_path">) => {
+  // a Druckblatt has no file: without this the empty stored_path would name the uploads folder itself
+  if (!m.stored_path) throw new Error("Dieses Material hat keine Datei (Druckblatt).");
+  return path.join(/*turbopackIgnore: true*/ uploadsDir(), path.basename(m.stored_path));
+};
 
 export type Material = {
   id: number;
@@ -56,11 +74,17 @@ export type Material = {
   student_id: number | null;
   title: string;
   kind: MaterialKind;
-  file_name: string;
-  mime: string;
-  size: number;
-  sha256: string;
-  stored_path: string;
+  /**
+   * The uploaded file. `null` for `kind = 'druckblatt'` (D21): a Druckblatt is its definition, not a
+   * file. Everything that touches a file goes through `hatDatei()` first.
+   */
+  file_name: string | null;
+  mime: string | null;
+  size: number | null;
+  sha256: string | null;
+  stored_path: string | null;
+  /** JSON of a Druckblatt definition (`lib/druckblatt/definition/schemas.ts`); null for uploads. */
+  definition: string | null;
   source_id: number | null;
   subject: string;
   school_type: string;
@@ -88,8 +112,16 @@ const toMaterial = (r: Row): Material => {
   } catch {
     skills = [];
   }
-  return { ...(r as unknown as Material), skill_ids: skills, analysis };
+  const m: Material = { ...(r as unknown as Material), skill_ids: skills, analysis };
+  // A Druckblatt has no file: the columns hold empty placeholders (they are NOT NULL in the schema).
+  // Reads make that explicit, so no caller mistakes a Druckblatt for a half-filled upload.
+  if (m.kind === "druckblatt") return { ...m, file_name: null, mime: null, size: null, sha256: null, stored_path: null };
+  return m;
 };
+
+/** Whether this material has a file on disk. A Druckblatt (D21) does not: it is its definition. */
+export const hatDatei = (m: Pick<Material, "kind">): boolean => m.kind !== "druckblatt";
+export const istDruckblatt = (m: Pick<Material, "kind">): boolean => m.kind === "druckblatt";
 
 export function getMaterial(id: number): Material | null {
   const r = db().prepare("SELECT * FROM materials WHERE id = ?").get(id) as Row | undefined;
@@ -123,7 +155,9 @@ export function saveUpload(
   const target = materialFile({ stored_path: stored });
   if (!fs.existsSync(/*turbopackIgnore: true*/ target)) fs.writeFileSync(/*turbopackIgnore: true*/ target, file.data, { mode: 0o600 });
   const name = cleanName(file.name);
-  const kind: MaterialKind = m.kind && m.kind in MATERIAL_KINDS ? m.kind : type.mime === "application/pdf" ? "pdf" : "foto";
+  // A Druckblatt is not an upload: it is made in a generator and carries no file, so it can never be
+  // the kind of a stored file (D21).
+  const kind: MaterialKind = m.kind && m.kind in MATERIAL_KINDS && m.kind !== "druckblatt" ? m.kind : type.mime === "application/pdf" ? "pdf" : "foto";
   const student = m.studentId ? repo.getStudent(m.studentId) : null;
   const res = db()
     .prepare(
@@ -141,12 +175,14 @@ export function saveUpload(
 export function classifyMaterial(id: number, c: { title: string; kind: MaterialKind; subject: string; schoolType: string; klasse: number | null; topic: string; skillIds: string[]; studentId: number | null; notes: string }) {
   const m = getMaterial(id);
   if (!m) return false;
+  // a Druckblatt stays a Druckblatt: it belongs to its generator, not to the upload form
+  if (istDruckblatt(m)) return false;
   const known = new Set(repo.listSkills().filter((s) => !c.subject || s.subject === c.subject).map((s) => s.id));
   db()
     .prepare("UPDATE materials SET title = ?, kind = ?, subject = ?, school_type = ?, klasse = ?, topic = ?, skill_ids = ?, student_id = ?, notes = ?, status = 'geprueft' WHERE id = ?")
     .run(
       c.title.trim().slice(0, 120) || m.title,
-      c.kind in MATERIAL_KINDS ? c.kind : m.kind,
+      c.kind in MATERIAL_KINDS && c.kind !== "druckblatt" ? c.kind : m.kind,
       c.subject.trim(),
       c.schoolType,
       c.schoolType ? c.klasse : null,
@@ -162,7 +198,8 @@ export function classifyMaterial(id: number, c: { title: string; kind: MaterialK
 /** Source and licence of the material, kept as a content source of its own. */
 export function setMaterialSource(id: number, s: { origin: MaterialOrigin; name: string; author: string; url: string; license: string; attribution: string }): ContentSource | null {
   const m = getMaterial(id);
-  if (!m || !(s.origin in MATERIAL_ORIGINS)) return null;
+  // a Druckblatt is made here, not brought in: it has no origin or licence to record
+  if (!m || !hatDatei(m) || !(s.origin in MATERIAL_ORIGINS)) return null;
   const o = MATERIAL_ORIGINS[s.origin];
   const url = /^https?:\/\//i.test(s.url.trim()) ? s.url.trim().slice(0, 500) : "";
   const sourceId = saveSource({
@@ -174,9 +211,9 @@ export function setMaterialSource(id: number, s: { origin: MaterialOrigin; name:
     publisher: "",
     license: s.origin === "eigen" ? "eigen" : s.license.trim().slice(0, 80),
     attribution_text: s.attribution.trim().slice(0, 400),
-    content_hash: m.sha256,
+    content_hash: m.sha256 ?? "",
     retrieved_at: m.created_at,
-    notes: `Material „${m.title}“ (${m.file_name})`,
+    notes: `Material „${m.title}“ (${m.file_name ?? ""})`,
   });
   db().prepare("UPDATE materials SET source_id = ? WHERE id = ?").run(sourceId, id);
   return sourceById(sourceId);
@@ -266,7 +303,7 @@ export function takeOverTask(materialId: number, t: TakeoverInput, teacherId: nu
   // the material stays traceable as the task's model (source_items, one row per material)
   db()
     .prepare("INSERT OR IGNORE INTO source_items (source_id, item_id, author, license, retrieved_at, content_hash) VALUES (?, ?, ?, ?, ?, ?)")
-    .run(rule.source.id, `material-${m.id}`, rule.source.author, rule.source.license, m.created_at, m.sha256);
+    .run(rule.source.id, `material-${m.id}`, rule.source.author, rule.source.license, m.created_at, m.sha256 ?? "");
   const item = db().prepare("SELECT id FROM source_items WHERE source_id = ? AND item_id = ?").get(rule.source.id, `material-${m.id}`) as { id: number };
   db().prepare("UPDATE tasks SET source_item_id = ? WHERE worksheet_id = ?").run(item.id, libraryId);
   return { libraryId };
@@ -287,8 +324,11 @@ export function deleteMaterial(id: number): boolean {
   const m = getMaterial(id);
   if (!m) return false;
   db().prepare("DELETE FROM materials WHERE id = ?").run(id);
-  const others = db().prepare("SELECT COUNT(*) AS n FROM materials WHERE sha256 = ?").get(m.sha256) as { n: number };
-  if (!others.n) fs.rmSync(materialFile(m), { force: true });
+  // a Druckblatt has no file: the shared-file check and the removal only apply to uploads
+  if (hatDatei(m)) {
+    const others = db().prepare("SELECT COUNT(*) AS n FROM materials WHERE sha256 = ?").get(m.sha256 ?? "") as { n: number };
+    if (!others.n) fs.rmSync(materialFile(m), { force: true });
+  }
   const src = getSource(`material-${id}`);
   // the source row stays when tasks still point to it (their licence must stay readable)
   if (src) {
@@ -299,3 +339,129 @@ export function deleteMaterial(id: number): boolean {
 }
 
 export const materialLevel = (m: Pick<Material, "school_type" | "klasse">) => (m.school_type && m.klasse ? schulstufe(m.school_type, m.klasse) : null);
+
+/* ---------- Druckblätter (Phase 5 des Merges, D21) -------------------------- */
+
+/**
+ * Die Definition, die zu einer Blattart gehört. `Blattart` ist der Unterscheider
+ * (`lib/druckblatt/definition/schemas.ts`), nicht die Form des JSON.
+ */
+export type BlattDefinition<A extends Blattart> = A extends "lesetabelle"
+  ? WorksheetDefinition
+  : A extends "satzbaukasten"
+    ? SentenceBoxDefinition
+    : TracingDefinition;
+
+export type GeladenesBlatt<A extends Blattart> =
+  | {
+      readonly ok: true;
+      readonly material: Material;
+      readonly definition: BlattDefinition<A>;
+      /** Gesetzt, wenn der gespeicherte Stand ergänzt werden musste (alt oder unvollständig). */
+      readonly hinweis: string | null;
+    }
+  | { readonly ok: false; readonly fehler: string };
+
+/** Die Blattart eines gespeicherten Druckblatts; steht als Kennung in `materials.topic`. */
+export function druckblattArt(m: Pick<Material, "topic">): Blattart | null {
+  return (BLATTARTEN as readonly string[]).includes(m.topic) ? (m.topic as Blattart) : null;
+}
+
+/** Alle gespeicherten Druckblätter, neueste zuerst. Eine Sicht auf `materials`, keine zweite Ablage. */
+export function listDruckblaetter(): Material[] {
+  return (db().prepare("SELECT * FROM materials WHERE kind = 'druckblatt' ORDER BY created_at DESC, id DESC").all() as Row[]).map(toMaterial);
+}
+
+/**
+ * Speichert ein Druckblatt (D21). „Als Vorlage" lässt `studentId` leer, „Einem Schüler zuweisen"
+ * legt eine **Kopie** mit `student_id` an — die Vorlage bleibt bestehen.
+ *
+ * Die Definition kommt als JSON an und wird mit `pruefeJson(art, json)` gegen das Schema ihrer
+ * Blattart geprüft; ein ungültiger Stand wird nicht gespeichert, sondern mit einer deutschen
+ * Meldung abgelehnt. Die Dateispalten bleiben leer (siehe `hatDatei`).
+ */
+export function speichereDruckblatt(d: {
+  blattart: Blattart;
+  json: string;
+  title: string;
+  studentId?: number | null;
+  teacherId: number | null;
+  at?: Date;
+}): { id: number } | { error: string } {
+  if (!(BLATTARTEN as readonly string[]).includes(d.blattart)) return { error: "Unbekannte Blattart." };
+  const geprueft = pruefeJson(d.blattart, d.json);
+  if (!geprueft.ok) return { error: `Das Blatt ist nicht gültig: ${geprueft.fehler.join(" ")}` };
+  const student = d.studentId ? repo.getStudent(d.studentId) : null;
+  if (d.studentId && !student) return { error: "Der Schüler wurde nicht gefunden." };
+  const res = db()
+    .prepare(
+      `INSERT INTO materials (teacher_id, student_id, title, kind, file_name, mime, size, sha256, stored_path, subject, school_type, klasse, topic, skill_ids, status, definition, created_at)
+       VALUES (?, ?, ?, 'druckblatt', '', '', 0, '', '', '', ?, ?, ?, '[]', 'geprueft', ?, ?)`,
+    )
+    .run(
+      d.teacherId,
+      student?.id ?? null,
+      d.title.trim().slice(0, 120) || BLATTART_LABEL[d.blattart],
+      student?.school_type ?? "",
+      student?.klasse ?? null,
+      d.blattart,
+      JSON.stringify(geprueft.definition),
+      (d.at ?? new Date()).toISOString(),
+    );
+  return { id: Number(res.lastInsertRowid) };
+}
+
+/** Der weiche Weg für alte oder unvollständige Stände: ergänzen und begrenzen statt abweisen. */
+function mergeBlatt(art: Blattart, roh: unknown): BlattDefinition<Blattart> {
+  const wert = roh !== null && typeof roh === "object" ? roh : {};
+  switch (art) {
+    case "lesetabelle":
+      return mergeDefinition(wert as StoredDefinition);
+    case "satzbaukasten":
+      return mergeSentenceBox(wert as StoredSentenceBox);
+    case "nachmalblatt":
+      return mergeTracing(wert as StoredTracing);
+  }
+}
+
+/**
+ * Lädt ein gespeichertes Druckblatt zum Bearbeiten in den Generator.
+ *
+ * ZWEI STUFEN, wie die Grenze es vorsieht:
+ *   1. `pruefeJson(art, json)` — vollständig gültig? Dann unverändert übernehmen.
+ *   2. sonst `mergeDefinition`/`mergeSentenceBox`/`mergeTracing` — mit den Vorgaben ergänzen und
+ *      begrenzen, und mit `hinweis` sagen, dass der Stand alt oder unvollständig war.
+ *
+ * Nie ein Absturz: unlesbares JSON ergibt die Vorgaben der Blattart mit Hinweis. Eine falsche
+ * Blattart (ein Satzbaukasten über die Lesetabellen-Adresse) wird abgelehnt statt still umgebaut.
+ */
+export function ladeDruckblatt<A extends Blattart>(id: number, blattart: A): GeladenesBlatt<A> {
+  const m = getMaterial(id);
+  if (!m || !istDruckblatt(m)) return { ok: false, fehler: "Dieses Druckblatt wurde nicht gefunden." };
+  const art = druckblattArt(m);
+  if (art && art !== blattart) return { ok: false, fehler: `Das ist ein ${BLATTART_LABEL[art]} — bitte dort öffnen.` };
+  if (!m.definition) {
+    return {
+      ok: true,
+      material: m,
+      definition: mergeBlatt(blattart, {}) as unknown as BlattDefinition<A>,
+      hinweis: "Zu diesem Druckblatt ist kein Inhalt gespeichert — es öffnet mit den Vorgaben.",
+    };
+  }
+  const geprueft = pruefeJson(blattart, m.definition) as
+    | { readonly ok: true; readonly definition: BlattDefinition<A> }
+    | { readonly ok: false; readonly fehler: readonly string[] };
+  if (geprueft.ok) return { ok: true, material: m, definition: geprueft.definition, hinweis: null };
+  let roh: unknown = {};
+  try {
+    roh = JSON.parse(m.definition);
+  } catch {
+    roh = {};
+  }
+  return {
+    ok: true,
+    material: m,
+    definition: mergeBlatt(blattart, roh) as unknown as BlattDefinition<A>,
+    hinweis: "Der gespeicherte Stand war unvollständig oder älter und wurde mit den Vorgaben dieser Blattart ergänzt.",
+  };
+}
