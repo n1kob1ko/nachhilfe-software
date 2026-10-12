@@ -3,6 +3,7 @@ import { db, json } from "./db";
 import type { TaskDraft } from "./tasks";
 import { checkLevel } from "./school";
 import { levelOf } from "./curriculum";
+import type { AssignmentMode } from "./quick-round";
 
 export type Teacher = { id: number; name: string; active: number; username: string; is_admin: number; must_change_password: number };
 const TEACHER_COLS = "id, name, active, username, is_admin, must_change_password";
@@ -167,6 +168,8 @@ export type Assignment = {
   solutions_visible: number;
   /** When the exercise was shown on the student tablet; null while it has not arrived there. */
   delivered_at: string | null;
+  /** "normal" = the usual flow, "schnell" = Schnellrunde (lib/quick-round.ts); default for existing rows. */
+  mode: AssignmentMode;
 };
 
 export type Attempt = {
@@ -760,8 +763,8 @@ export function hintUsesForAssignment(assignmentId: number) {
 }
 
 // ---------- assignments & attempts ----------
-export function assignWorksheet(worksheetId: number, studentId: number, note = "", unitId: number | null = null): number {
-  const res = db().prepare("INSERT INTO assignments (worksheet_id, student_id, note, unit_id) VALUES (?, ?, ?, ?)").run(worksheetId, studentId, note, unitId);
+export function assignWorksheet(worksheetId: number, studentId: number, note = "", unitId: number | null = null, mode: AssignmentMode = "normal"): number {
+  const res = db().prepare("INSERT INTO assignments (worksheet_id, student_id, note, unit_id, mode) VALUES (?, ?, ?, ?, ?)").run(worksheetId, studentId, note, unitId, mode);
   // students only ever see released exercises
   db().prepare("UPDATE worksheets SET status = 'freigegeben' WHERE id = ?").run(worksheetId);
   return Number(res.lastInsertRowid);

@@ -314,7 +314,9 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
     return res;
   }
 
-  if (!result.correct && !errorType && task.type !== "fix" && !maths) {
+  // Auswendig schreiben: die falschen Wörter stehen schon als Etikett am Versuch; eine Fehlerart daraus
+  // abzuleiten wäre ein Ratespiel (jedes Etikett fiele auf „Regel nicht verstanden“), also bleibt sie offen.
+  if (!result.correct && !errorType && task.type !== "fix" && task.type !== "memorize" && !maths) {
     const suggested = suggestErrorType(task, input.answer, result.errorLabel, repo.getWorksheet(task.worksheet_id)?.subject ?? "");
     if (suggested) errorType = { type: suggested, source: "vorschlag" };
   }

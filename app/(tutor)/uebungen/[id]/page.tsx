@@ -7,12 +7,14 @@ import type { SendState } from "@/app/device-actions";
 import { studentDevice, studentDeviceOnline } from "@/lib/live";
 import { assignWorksheetAction, deleteWorksheetAction } from "@/app/actions";
 import { copyAsDraftAction, setSolutionsVisibleAction } from "@/app/builder-actions";
+import { quickRoundProblem } from "@/lib/quick-round";
 import { SendToBoard } from "@/components/SendToBoard";
 import { FlowSteps } from "@/components/FlowSteps";
 import { PageHeader, Pill, Reveal } from "@/components/ui";
 import { WorksheetEditor } from "@/components/WorksheetEditor";
-import { ReleasePanel, SaveTemplatePanel } from "@/components/WorksheetPanels";
+import { ReleasePanel, SaveTemplatePanel, type QuickRoundChoice } from "@/components/WorksheetPanels";
 import { aiEnabled } from "@/lib/ai";
+import { settingsOf } from "@/lib/builder";
 import * as repo from "@/lib/repo";
 import { requireTeacher } from "@/lib/auth";
 import { klassenLabel, stufeLabel } from "@/lib/school";
@@ -51,6 +53,12 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
           student: activeFirst,
         }
       : null;
+  // Schnellrunde: dieselbe Prüfung wie auf der Schülerseite, über die fertigen Aufgaben (lib/quick-round.ts).
+  // Der Haken im Builder (Schritt 6) ist nur der Wunsch; hier sieht der Lehrer, ob es wirklich geht.
+  const quickProblem = quickRoundProblem(tasks);
+  const quickRound: QuickRoundChoice = { eligible: quickProblem === null, reason: quickProblem, wished: settingsOf(w).quickRound === true };
+  const quickWished = quickRound.eligible && quickRound.wished;
+
   const forStudent = w.student_id ? students.find((s) => s.id === w.student_id) : null;
   const first = forStudent?.name.split(" ")[0];
   const baseTitle = first && w.title.startsWith(`${first} – `) ? w.title.slice(first.length + 3) : w.title;
@@ -77,6 +85,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
                 <Sparkles size={11} aria-hidden /> mit Claude erstellt
               </Pill>
             )}
+            {quickWished && <Pill tone="accent">Schnellrunde</Pill>}
           </span>
         }
       />
@@ -106,12 +115,13 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
             {active ? (
               <>
                 <TabletSend student={activeFirst} unitId={active.id} worksheetId={w.id} />
+                {quickWished && <p className="mt-1 text-[13px] text-ink-2">Wird als Schnellrunde gesendet: ein Tipp pro Aufgabe, automatisch weiter.</p>}
                 <Reveal label="An jemand anderen senden" className="mt-4">
-                  <ReleasePanel worksheetId={w.id} students={students} defaultStudentId={null} taskCount={tasks.length} />
+                  <ReleasePanel worksheetId={w.id} students={students} defaultStudentId={null} taskCount={tasks.length} quickRound={quickRound} />
                 </Reveal>
               </>
             ) : (
-              <ReleasePanel worksheetId={w.id} students={students} defaultStudentId={w.student_id} taskCount={tasks.length} />
+              <ReleasePanel worksheetId={w.id} students={students} defaultStudentId={w.student_id} taskCount={tasks.length} quickRound={quickRound} />
             )}
           </>
         ) : mainAssignment ? (

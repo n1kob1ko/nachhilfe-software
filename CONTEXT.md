@@ -113,14 +113,16 @@ _Avoid_: Kompetenz, Lernziel, Skill, Fertigkeit
 Eine Übung im Schülermodus, aber im Durchlauf: Multiple Choice mit höchstens vier
 Antworten, ein Tipp, kurze Rückmeldung, automatisch die nächste Aufgabe; Anfang
 und Ende als eigene Seite, große Flächen fürs Tablet. Versuche, Zeit und Hilfen
-werden genau wie sonst gespeichert. *Kommt mit Phase 2.*
+werden genau wie sonst gespeichert. Im Code `assignments.mode = 'schnell'`
+(`lib/quick-round.ts`).
 _Avoid_: Quiz, Blitzrunde, Schnelltest, Microlearning
 
 **Auswendig schreiben**:
 Eine Aufgabe, in der ein Text auswendig geschrieben wird: erst ist er zu lesen,
 dann verschwinden nach und nach Wörter und Buchstaben, bis das Feld leer ist; die
 App vergleicht Wort für Wort. Die falschen Wörter landen als Fehler im Versuch.
-*Kommt mit Phase 2.*
+Im Code der Aufgabentyp `memorize` (`lib/memorize.ts`), der Text steht in
+`data.passage`.
 _Avoid_: Memorize, Auswendiglernen, Diktat, Abfrage
 
 ## Material, Bibliothek, Vorlage

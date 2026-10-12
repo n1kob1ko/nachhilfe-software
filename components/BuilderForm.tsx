@@ -1,6 +1,6 @@
 "use client";
 
-import { Lightbulb, Search, Sparkles, Wand2 } from "lucide-react";
+import { Lightbulb, Search, Sparkles, Wand2, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
@@ -8,6 +8,7 @@ import { createDraftAction, type ActionResult } from "@/app/builder-actions";
 import { SchoolClassFields } from "@/components/SchoolClassFields";
 import type { StudentContext, Suggestion } from "@/lib/builder";
 import { categoriesFor, DIFFICULTIES, difficultyFor } from "@/lib/curriculum";
+import { categoriesFitQuickRound, QUICK_ROUND_CATEGORY_REASON } from "@/lib/quick-round";
 import { klassenLabel, schulstufe } from "@/lib/school";
 import { UNTERARTEN_SKILL, WORTARTEN, WORTARTEN_SKILL, WORTART_PLURAL, wortartenFor, wortartSkill, type Wortart } from "@/lib/wortarten";
 
@@ -41,9 +42,13 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
   const [customCount, setCustomCount] = useState(!COUNTS.includes(preset?.count ?? 10));
   const [cats, setCats] = useState<string[]>(preset?.categories ?? first?.categories ?? []);
   const [useAI, setUseAI] = useState(aiEnabled);
+  const [quick, setQuick] = useState(false);
   const [query, setQuery] = useState("");
   const grade = schulstufe(level.type, level.klasse);
   const categories = categoriesFor(subject);
+  // Schnellrunde: geht nur mit Multiple Choice (höchstens vier Antworten je Aufgabe). Ob es die fertigen
+  // Aufgaben wirklich hergeben, prüft beim Senden dieselbe Funktion (lib/quick-round.ts).
+  const quickOk = categoriesFitQuickRound(categories.filter((c) => cats.includes(c.key)));
 
   const byId = useMemo(() => new Map(skills.map((s) => [s.id, s])), [skills]);
   const mastery = (id: string) => {
@@ -307,6 +312,25 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
                 ))}
             </ul>
           )}
+          <div className="mt-3 rounded-lg border border-line bg-surface px-3 py-2.5" data-testid="schnellrunde">
+            <label className={`flex min-h-[44px] items-center gap-2 text-[14px] ${quickOk ? "cursor-pointer" : "text-ink-3"}`}>
+              <input
+                type="checkbox"
+                name="quick_round"
+                checked={quick && quickOk}
+                disabled={!quickOk}
+                onChange={(e) => setQuick(e.target.checked)}
+                className="h-4 w-4 accent-[var(--accent)]"
+              />
+              <Zap size={15} className={quick && quickOk ? "text-accent" : ""} aria-hidden />
+              Als Schnellrunde senden
+            </label>
+            <p className="text-[12.5px] text-ink-3">
+              {quickOk
+                ? "Ein Tipp pro Aufgabe, kurze Rückmeldung, automatisch die nächste. Beim Senden wird geprüft, ob jede Aufgabe Multiple Choice mit höchstens vier Antworten ist; sonst bleibt es der übliche Ablauf. Versuche, Zeit und Hilfen werden genau wie sonst gespeichert."
+                : QUICK_ROUND_CATEGORY_REASON}
+            </p>
+          </div>
         </Step>
       </ol>
 

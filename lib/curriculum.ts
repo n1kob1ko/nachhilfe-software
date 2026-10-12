@@ -38,7 +38,8 @@ export function difficultyFor(mastery: number | null): Difficulty {
  * How a task is answered and checked (the "format"). Stored in tasks.type.
  * calc = short answer compared as a number/fraction, grammar = short answer compared as text,
  * order = put steps in the right order, fix = correct a text with errors (lib/fix-text.ts), rechenweg =
- * result with the working line by line, sachaufgabe = parts a), b), c) (both lib/math-check.ts).
+ * result with the working line by line, sachaufgabe = parts a), b), c) (both lib/math-check.ts),
+ * memorize = write a text from memory (lib/memorize.ts).
  */
 export const TASK_TYPES = {
   mc: "Multiple Choice",
@@ -49,6 +50,7 @@ export const TASK_TYPES = {
   reading: "Textverständnis",
   order: "Reihenfolge",
   fix: "Fehler korrigieren",
+  memorize: "Auswendig schreiben",
   rechenweg: "Rechenweg",
   sachaufgabe: "Sachaufgabe mit Teilfragen",
   mixed: "Gemischt",
@@ -85,6 +87,7 @@ export const CATEGORIES: Record<string, Category[]> = {
     c("satz", "Satz verbessern", ["grammar", "free"], "Einen fehlerhaften Satz richtig aufschreiben."),
     c("fehler", "Fehler finden", ["mc", "grammar"], "In einem Satz den Fehler finden."),
     c("korrigieren", "Fehler korrigieren", ["fix"], "Satz oder Absatz mit Fehlern; der Schüler schreibt ihn verbessert."),
+    c("auswendig", "Auswendig schreiben", ["memorize"], "Einen kurzen Text auswendig schreiben: erst lesen, dann verschwinden nach und nach Wörter und Buchstaben, dann wird der Text aus dem Gedächtnis aufgeschrieben."),
     c("offen", "Freie Antwort", ["free"], "Frage in eigenen Worten beantworten, erklären oder begründen; der Lehrer bewertet."),
   ],
   Englisch: [
@@ -96,6 +99,7 @@ export const CATEGORIES: Record<string, Category[]> = {
     c("reading", "Reading comprehension", ["reading", "free"], "Short text with questions."),
     c("writing", "Writing", ["free"], "Short piece of writing."),
     c("korrigieren", "Fehler korrigieren", ["fix"], "Sentence or paragraph with mistakes; the student writes it correctly."),
+    c("auswendig", "Auswendig schreiben", ["memorize"], "Einen kurzen englischen Text auswendig schreiben: erst lesen, dann verschwinden nach und nach Wörter und Buchstaben, dann wird der Text aus dem Gedächtnis aufgeschrieben."),
     c("offen", "Freie Antwort", ["free"], "Antwort in eigenen Worten; der Lehrer bewertet."),
   ],
 };

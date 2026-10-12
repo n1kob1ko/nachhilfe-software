@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { Solver } from "@/components/Solver";
+import { StudentQuickRound } from "@/components/StudentQuickRound";
 import * as repo from "@/lib/repo";
+import { showsQuickRound } from "@/lib/quick-round";
 import { MAX_TRIES } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
 
@@ -10,5 +12,10 @@ export default async function SolvePage({ params }: { params: Promise<{ token: s
   const assignment = repo.getAssignment(Number(aid));
   if (!student || !assignment || assignment.student_id !== student.id) notFound();
   const w = repo.getWorksheet(assignment.worksheet_id)!;
-  return <Solver token={token} assignmentId={assignment.id} title={w.title} tasks={clientTasks(assignment)} maxTries={MAX_TRIES} />;
+  const tasks = clientTasks(assignment);
+  // Schnellrunde nur, wenn der Lehrer sie so gesendet hat und die Aufgaben es hergeben (lib/quick-round.ts);
+  // sonst der übliche Ablauf, unverändert.
+  if (showsQuickRound(assignment.mode, tasks))
+    return <StudentQuickRound token={token} assignmentId={assignment.id} title={w.title} tasks={tasks} />;
+  return <Solver token={token} assignmentId={assignment.id} title={w.title} tasks={tasks} maxTries={MAX_TRIES} />;
 }
