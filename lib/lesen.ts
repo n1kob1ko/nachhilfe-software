@@ -113,8 +113,11 @@ export type Evidence = { paragraph: number; quote: string };
 export type ReadingText = { title: string; text: string };
 
 /** The shared text of a worksheet whose tasks all use the same one (at least two tasks), else null. */
-export function readingSet(tasks: Pick<TaskDraft, "data">[]): ReadingText | null {
+export function readingSet(tasks: Pick<TaskDraft, "type" | "data">[]): ReadingText | null {
   if (tasks.length < 2) return null;
+  // Auswendig schreiben hat ebenfalls data.passage: das ist der Text zum Auswendiglernen, keine
+  // Lesefragen über einen gemeinsamen Text (lib/memorize.ts).
+  if (tasks.some((t) => t.type === "memorize")) return null;
   const text = tasks[0].data.passage?.trim();
   if (!text || !tasks.every((t) => t.data.passage?.trim() === text)) return null;
   return { title: tasks.find((t) => t.data.passageTitle?.trim())?.data.passageTitle?.trim() ?? "", text };

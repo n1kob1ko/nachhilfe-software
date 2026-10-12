@@ -5,11 +5,13 @@ import { LaptopLive } from "@/components/laptop/LaptopLive";
 import { LeaveButton } from "@/components/laptop/LeaveButton";
 import { EndedCleanup, JoinCleanup } from "@/components/laptop/LocalDrafts";
 import { Solver } from "@/components/Solver";
+import { StudentQuickRound } from "@/components/StudentQuickRound";
 import { TextEditor } from "@/components/text/TextEditor";
 import { StudentCorrection } from "@/components/text/correction/StudentCorrection";
 import { laptopEndReason, laptopState, type EndReason } from "@/lib/laptop";
 import { currentLaptop, laptopContext } from "@/lib/laptop-context";
 import { markDelivered, parseView, pushLive, unitAssignments, unitText } from "@/lib/live";
+import { showsQuickRound } from "@/lib/quick-round";
 import { MAX_TRIES } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
 import { storyForEditor } from "@/lib/picture-story";
@@ -136,7 +138,19 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
       </>
     );
   } else if (current) {
-    content = (
+    // Schnellrunde (lib/quick-round.ts): derselbe Abgabeweg wie sonst, nur der Ablauf ist ein anderer
+    const tasks = clientTasks(current);
+    content = showsQuickRound(current.mode, tasks) ? (
+      <StudentQuickRound
+        key={`${current.id}-schnell`}
+        token=""
+        via="laptop"
+        homeHref="/mitmachen/ansicht?zu=start"
+        assignmentId={current.id}
+        title={current.title}
+        tasks={tasks}
+      />
+    ) : (
       <Solver
         key={`${current.id}-${current.solutions_visible}`}
         token=""
@@ -144,7 +158,7 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
         homeHref="/mitmachen/ansicht?zu=start"
         assignmentId={current.id}
         title={current.title}
-        tasks={clientTasks(current)}
+        tasks={tasks}
         maxTries={MAX_TRIES}
       />
     );

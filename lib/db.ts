@@ -660,6 +660,10 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["worksheets", "source_task_id", "INTEGER REFERENCES tasks(id) ON DELETE SET NULL"],
   ["assignments", "unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
   ["assignments", "solutions_visible", "INTEGER NOT NULL DEFAULT 0"],
+  // Schnellrunde (Phase 2 des Merges): 'normal' = the usual flow, 'schnell' = one tap per task with a
+  // short feedback and automatic next task (components/StudentQuickRound.tsx). Attempts, time and hints
+  // are stored exactly as in normal mode; only the student's flow differs (lib/quick-round.ts).
+  ["assignments", "mode", "TEXT NOT NULL DEFAULT 'normal'"],
   // curriculum: skills get a stable code, the Lernziel, their origin and validity
   ["skills", "code", "TEXT"],
   ["skills", "subtopic", "TEXT NOT NULL DEFAULT ''"],

@@ -16,6 +16,8 @@ import { activeMaterial, materialLabel, materialSkills, MATERIAL_SOURCES } from 
 import { daysUntil, dayOf } from "./exams";
 import { nextSteps } from "./recommend";
 import { masteryStatus } from "./mastery";
+import { memorizeCategory, memorizeWords } from "./memorize";
+import { isQuickRound, type AssignmentMode } from "./quick-round";
 import { analyzeStudent } from "./service";
 import { gapCount, GAP, type TaskDraft } from "./tasks";
 import { runningUnitForStudent } from "./units";
@@ -38,6 +40,12 @@ export type BuilderSettings = {
   focus: string;
   useAI: boolean;
   title: string;
+  /**
+   * „Als Schnellrunde senden“ (Schritt 6): der Wunsch des Lehrers. Ob es wirklich eine wird, entscheidet
+   * `isQuickRound` über die fertigen Aufgaben (lib/quick-round.ts) — die Aufgaben entstehen erst nach dem
+   * Builder. Bleibt für ältere Übungen ohne den Haken leer.
+   */
+  quickRound?: boolean;
 };
 
 export function settingsFromForm(f: FormData): BuilderSettings {
@@ -55,6 +63,7 @@ export function settingsFromForm(f: FormData): BuilderSettings {
     focus: str("focus").slice(0, 500),
     useAI: f.get("use_ai") === "on",
     title: str("title").slice(0, 120),
+    quickRound: f.get("quick_round") === "on",
   };
 }
 
@@ -327,20 +336,28 @@ export async function generateTasks(
   const cats: Category[] = categoriesFor(settings.subject).filter((c) => settings.categories.includes(c.key));
   const plan = planSlots(settings.subject, skills, cats, count);
   const slots: (TaskDraft | null)[] = plan.map(() => null);
+  // „Auswendig schreiben“ kommt weder von der KI noch aus den Generatoren: den Text gibt die Lehrkraft
+  // ein. Die Aufgabe entsteht leer und wird im Editor ausgefüllt (checkTask verlangt den Text).
+  const memorize = plan.map((p) => memorizeCategory(settings.subject, p.category));
+  const aiCats = cats.filter((c) => !(c.formats.length === 1 && c.formats[0] === "memorize"));
+  // die Plätze, um die sich die KI kümmern soll (ohne die Auswendig-Aufgaben)
+  const aiSlots = () => plan.map((_, i) => i).filter((i) => !slots[i] && !memorize[i]);
   // Wortarten: from all skills of the exercise, also when only one task is made again
   const wortarten = wortartenSetting([...new Set([...s.skillIds, ...settings.skillIds])], settings.schoolType, settings.klasse, ctx);
   const grade = schulstufe(settings.schoolType, settings.klasse);
   let aiError: string | undefined;
   let fromAI = 0;
+  /** So viele Aufgaben soll die KI liefern (alle außer den Auswendig-Aufgaben). */
+  const aiCount = plan.length - memorize.filter(Boolean).length;
 
-  if (settings.useAI && aiEnabled()) {
+  if (settings.useAI && aiEnabled() && aiCount) {
     // Warum der Bankweg nichts geliefert hat (Phase 1, Schritt 6) — nur für den Fall, dass am Ende gar
     // keine KI-Aufgabe entstanden ist; sonst bleibt die Meldung wie bisher.
     let bankError: string | undefined;
     try {
       // the AI gets the plan; what does not come back in its type is asked for once more
       for (let round = 0; round < 2; round++) {
-        const open = plan.map((p, i) => i).filter((i) => !slots[i]);
+        const open = aiSlots();
         if (!open.length) break;
         // Fähigkeiten mit Bank: die KI füllt die Bank in Bankform (eine Anfrage je Bank, dieselbe Form wie
         // die Datei — lib/ai/banken.ts). Nur Plätze, deren geplante Kategorie das Format der Bank zulässt.
@@ -373,7 +390,7 @@ export async function generateTasks(
           });
         }
         // alles, was noch offen ist: ohne Bank, oder der Bankweg hat nichts Brauchbares geliefert
-        const rest = plan.map((p, i) => i).filter((i) => !slots[i]);
+        const rest = aiSlots();
         if (!rest.length) break;
         const got = await generatePlanWithAI(
           {
@@ -381,7 +398,7 @@ export async function generateTasks(
             level: klassenLabel(settings.schoolType, settings.klasse),
             skills: skills.map((r) => ({ id: r.skill.id, name: r.skill.name, area: r.skill.area, parentName: r.parent?.name, difficulty: r.difficulty })),
             count: rest.length,
-            categories: cats,
+            categories: aiCats,
             plan: rest.map((i) => ({ skillId: plan[i].skill.skill.id, category: plan[i].category ?? categoriesFor(settings.subject)[0]?.key ?? "" })),
             studentContext: ctx ? contextForAI(ctx, skills.map((r) => r.skill.id)) : null,
             focusNote: settings.focus,
@@ -398,9 +415,9 @@ export async function generateTasks(
       fromAI = slots.filter(Boolean).length;
       // Kam gar keine Aufgabe von der KI, ist der Grund des Bankwegs die genauere Meldung; füllt er nur
       // einen Teil, steht er neben dem Hinweis auf die ohne KI erstellten Aufgaben. Ohne Bankweg bleibt
-      // die Meldung genau wie bisher.
+      // die Meldung genau wie bisher. Auswendig-Aufgaben fragt die KI nie: sie zählen hier nicht mit.
       if (!fromAI) aiError = bankError ?? "Die KI hat keine Aufgaben geliefert.";
-      else if (bankError && fromAI < count) aiError = bankError;
+      else if (bankError && fromAI < aiCount) aiError = bankError;
     } catch (e) {
       aiError = e instanceof Error ? e.message : String(e);
     }
@@ -412,6 +429,11 @@ export async function generateTasks(
   for (let i = 0; i < plan.length; i++) {
     if (slots[i]) continue;
     const { skill: r, category } = plan[i];
+    // Auswendig schreiben: eine leere Aufgabe, den Text schreibt die Lehrkraft im Editor hinein
+    if (memorize[i]) {
+      slots[i] = { ...blankTask("memorize", r.skill.id, category, r.difficulty), skillIds: [...new Set([r.skill.id, ...(r.parent ? [r.parent.id] : [])])] };
+      continue;
+    }
     let t: TaskDraft | null = null;
     for (let guard = 0; guard < 12; guard++) {
       t = generateForSlot({ skillId: r.skill.id, skillName: r.skill.name, generatorSkillId: r.parent?.id, difficulty: r.difficulty, category, subject: settings.subject, wortarten, grade }, Math.random, Math.floor(i / skills.length) + guard);
@@ -425,7 +447,7 @@ export async function generateTasks(
   const tasks = slots.map((t) => ({ ...t!, skillIds: [...new Set([...(t!.skillIds ?? []), ...(t!.skillIds ?? []).map((id) => skills.find((r) => r.skill.id === id)?.parent?.id).filter((x): x is string => Boolean(x))])] }));
   const notes = [
     aiError,
-    fromAI && fromAI < count ? `${count - fromAI} ${count - fromAI === 1 ? "Aufgabe kam" : "Aufgaben kamen"} von der KI nicht im gewünschten Typ und ${count - fromAI === 1 ? "wurde" : "wurden"} ohne KI erstellt.` : "",
+    fromAI && fromAI < aiCount ? `${aiCount - fromAI} ${aiCount - fromAI === 1 ? "Aufgabe kam" : "Aufgaben kamen"} von der KI nicht im gewünschten Typ und ${aiCount - fromAI === 1 ? "wurde" : "wurden"} ohne KI erstellt.` : "",
     missedType.length ? `Ohne KI gibt es ${[...new Set(missedType)].join(" und ")} für diese Fähigkeit nicht: ${missedType.length === 1 ? "eine Aufgabe ist" : `${missedType.length} Aufgaben sind`} stattdessen eine freie Antwort.` : "",
   ].filter(Boolean);
   return { tasks, source: fromAI ? "ki" : "generator", aiError: notes.length ? notes.join(" ") : undefined };
@@ -504,6 +526,8 @@ export async function regenerateTask(taskId: number, o: { difficulty?: Difficult
   const task = repo.getTask(taskId);
   const w = task ? repo.getWorksheet(task.worksheet_id) : null;
   if (!task || !w) return { ok: false };
+  // Auswendig schreiben: den Text schreibt die Lehrkraft. „Neu erstellen“ würde ihn nur leeren.
+  if (task.type === "memorize") return { ok: false, aiError: "Auswendig schreiben: den Text schreibst du selbst — es gibt nichts neu zu erstellen." };
   const s = { ...settingsOf(w), useAI: o.useAI ?? settingsOf(w).useAI };
   const ctx = s.studentId ? studentContext(s.studentId) : null;
   const skillIds = task.skillId ? [task.skillId] : s.skillIds;
@@ -545,6 +569,9 @@ export function blankTask(format: TaskType, skillId: string | null, category: st
       };
     case "grammar":
       return { ...base, type: "grammar", answer: { accepted: [""], mode: "text" } };
+    // Auswendig schreiben: der Text steht in data.passage; die Lösung ist der Text selbst (lib/memorize.ts)
+    case "memorize":
+      return { ...base, type: "memorize", prompt: "Schreib den Text aus dem Gedächtnis auf.", data: { passage: "" }, answer: {} };
     default:
       return { ...base, type: "calc", answer: { accepted: [""], mode: "value" } };
   }
@@ -570,6 +597,8 @@ export function checkTask(t: TaskDraft): string | null {
     if (!t.answer.blanks || t.answer.blanks.length !== gaps || t.answer.blanks.some((b) => !b.some((x) => x.trim()))) return `Für jede der ${gaps} Lücken braucht es eine Lösung.`;
   }
   if (t.type === "free" && !(t.answer.sample?.trim() || t.solution.trim() || t.answer.criteria?.some((c) => c.trim()))) return "Musterlösung, Erwartung oder Lösungsweg fehlt.";
+  if (t.type === "memorize" && !t.data.passage?.trim()) return "Der Text zum Auswendiglernen fehlt.";
+  if (t.type === "memorize" && memorizeWords(t.data.passage ?? "").length < 3) return "Der Text zum Auswendiglernen ist zu kurz (mindestens drei Wörter).";
   if (isPlaceholder(t.answer.sample) || isPlaceholder(t.solution)) return "Die Musterlösung ist nur ein Platzhalter. Bitte eine konkrete Lösung eintragen.";
   if (t.data.pruefen?.length) return `Bitte prüfen: ${t.data.pruefen[0]}`;
   if (t.type === "fix") {
@@ -594,6 +623,8 @@ export function normalizeTask(t: TaskDraft): TaskDraft {
   if (out.answer.criteria) out.answer = { ...out.answer, criteria: out.answer.criteria.map((c) => c.trim()).filter(Boolean) };
   // Leseverständnis: Belege without text are dropped, the paragraph is a number from 1
   if (out.answer.evidence) out.answer = { ...out.answer, evidence: out.answer.evidence.map((e) => ({ paragraph: Math.max(1, Math.round(Number(e.paragraph)) || 1), quote: String(e.quote ?? "").trim().slice(0, 600) })).filter((e) => e.quote) };
+  // Auswendig schreiben: der Text ist die Lösung, Leerraum am Rand würde den Wortvergleich stören
+  if (out.type === "memorize") out.data = { ...out.data, passage: (out.data.passage ?? "").trim() };
   if (out.type === "fix" && out.data.faulty) {
     // the described errors follow the texts: one per difference, the teacher's labels kept
     const faulty = out.data.faulty.trim();
@@ -641,16 +672,26 @@ export function normalizeTask(t: TaskDraft): TaskDraft {
   return out;
 }
 
-/** Makes an exercise visible for students and, if a student is given, assigns it. */
-export function releaseWorksheet(worksheetId: number, studentId: number | null): { error?: string; assignmentId?: number } {
+/**
+ * Makes an exercise visible for students and, if a student is given, assigns it.
+ *
+ * `quickRound` (Schnellrunde, lib/quick-round.ts): ohne Angabe gilt der Wunsch aus dem Builder
+ * (`worksheets.settings.quickRound`, Schritt 6 — die Aufgaben gab es dort noch nicht). Gesendet wird als
+ * Schnellrunde nur, wenn die fertigen Aufgaben es hergeben; sonst bleibt es der übliche Ablauf, und
+ * niemand muss das nachprüfen: `isQuickRound` ist dieselbe Prüfung wie auf der Schülerseite.
+ */
+export function releaseWorksheet(worksheetId: number, studentId: number | null, o: { quickRound?: boolean } = {}): { error?: string; assignmentId?: number; mode?: AssignmentMode } {
   const tasks = repo.listTasks(worksheetId);
   if (!tasks.length) return { error: "Die Übung hat noch keine Aufgaben." };
   const bad = tasks.map((t, i) => [i + 1, checkTask(t)] as const).filter(([, e]) => e);
   if (bad.length) return { error: `Aufgabe ${bad[0][0]}: ${bad[0][1]}` };
+  const w = repo.getWorksheet(worksheetId);
+  const wish = o.quickRound ?? (w ? settingsOf(w).quickRound === true : false);
+  const mode: AssignmentMode = wish && isQuickRound(tasks) ? "schnell" : "normal";
   repo.updateWorksheetMeta(worksheetId, { status: "freigegeben" });
-  if (!studentId) return {};
+  if (!studentId) return { mode };
   const unit = runningUnitForStudent(studentId);
-  return { assignmentId: repo.assignWorksheet(worksheetId, studentId, "", unit?.id ?? null) };
+  return { assignmentId: repo.assignWorksheet(worksheetId, studentId, "", unit?.id ?? null, mode), mode };
 }
 
 /** "An Schüler senden" for one task: a small released exercise with just this task. */

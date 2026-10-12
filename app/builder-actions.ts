@@ -181,7 +181,9 @@ export async function releaseAction(_prev: ActionResult, form: FormData): Promis
   await requireTeacher();
   const worksheetId = Number(form.get("worksheet_id"));
   const studentId = Number(form.get("student_id")) || null;
-  const out = releaseWorksheet(worksheetId, studentId);
+  // Schnellrunde: ohne Angabe gilt der Wunsch aus dem Builder; „aus“ heißt aus (lib/quick-round.ts)
+  const quick = form.get("quick_round");
+  const out = releaseWorksheet(worksheetId, studentId, { quickRound: quick === null ? undefined : quick === "on" });
   if (out.error) return { error: out.error };
   if (studentId) {
     noteActivity(studentId);

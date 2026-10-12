@@ -41,6 +41,8 @@ function withGaps(text: string) {
 
 export function answerText(t: Pick<TaskDraft, "type" | "data" | "answer">) {
   if (t.type === "rechenweg" || t.type === "sachaufgabe") return mathAnswerText(t);
+  // Auswendig schreiben: die Lösung ist der Text selbst (lib/memorize.ts)
+  if (t.type === "memorize") return t.data.passage?.trim() || null;
   if (t.data.options && typeof t.answer.correct === "number") return `${String.fromCharCode(97 + t.answer.correct)}) ${t.data.options[t.answer.correct]}`;
   if (t.answer.steps) return t.answer.steps.map((s, i) => `${i + 1}. ${s}`).join("  ");
   if (t.answer.blanks) return t.answer.blanks.map((b) => b[0]).join(" · ");
@@ -125,7 +127,16 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
       {(task.type === "rechenweg" || task.type === "sachaufgabe") && !showSolution && <div className="squared mt-3 h-24 max-w-[520px] rounded-md border border-line" aria-hidden />}
       {!task.data.options && !task.data.steps && !task.answer.blanks && task.type !== "fix" && task.type !== "rechenweg" && task.type !== "sachaufgabe" && !showSolution && (
         <div className="mt-3 grid max-w-[520px] gap-3" aria-hidden>
-          {Array.from({ length: task.type === "free" ? Math.min(4, Math.max(1, task.data.lines ?? 2)) : 1 }, (_, i) => (
+          {Array.from(
+            {
+              length:
+                task.type === "free"
+                  ? Math.min(4, Math.max(1, task.data.lines ?? 2))
+                  : task.type === "memorize"
+                    ? Math.min(6, Math.max(2, Math.ceil((task.data.passage?.length ?? 0) / 60)))
+                    : 1,
+            },
+            (_, i) => (
             <div key={i} className={`h-6 border-b border-dashed border-line-strong ${task.type === "free" && task.data.lines !== 1 ? "" : "max-w-[360px]"}`} />
           ))}
         </div>

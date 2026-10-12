@@ -276,6 +276,223 @@ test("with AI: a correction task keeps the faulty and the corrected text and the
   assert.equal(broken, null);
 });
 
+// ---------- Auswendig schreiben (Phase 2 des Merges) ----------
+
+const PASSAGE = "Der kleine Hund läuft schnell nach Hause und bellt laut.";
+const MEMORIZE = draft({
+  type: "memorize",
+  category: "auswendig",
+  prompt: "Schreib den Text aus dem Gedächtnis auf.",
+  data: { passage: PASSAGE },
+  answer: {},
+});
+
+test("Auswendig schreiben: der richtige Text gilt, falsche Wörter stehen am Versuch", async () => {
+  const { checkAnswer } = await import("./tasks");
+  const { checkMemorize, mistakeLabel } = await import("./memorize");
+  assert.equal(checkAnswer(MEMORIZE, PASSAGE).correct, true);
+  assert.equal(checkAnswer(MEMORIZE, "Der kleine Hund läuft schnell nach Hause und bellt laut").correct, true, "der Schlusspunkt zählt nicht");
+  assert.equal(checkAnswer(MEMORIZE, "  Der kleine Hund läuft   schnell nach Hause und bellt laut.  ").correct, true, "Leerzeichen zählen nicht");
+  assert.equal(checkAnswer(MEMORIZE, PASSAGE.toLowerCase()).correct, false, "Groß- und Kleinschreibung gehört zum Text");
+  assert.equal(checkAnswer(MEMORIZE, "").correct, false, "ein leeres Feld ist nicht richtig");
+
+  const wrong = "Der kleine Hund rennt schnell nach Hause und bellt laut.";
+  const r = checkAnswer(MEMORIZE, wrong);
+  assert.equal(r.correct, false);
+  // gemeldet wird das Wort der Vorlage, nicht das, was der Schüler geschrieben hat
+  assert.equal(r.errorLabel, mistakeLabel(["läuft"]));
+  assert.match(r.errorLabel!, /läuft/);
+  assert.doesNotMatch(r.errorLabel!, /rennt/);
+  assert.match(r.feedback, /1 von 10 Wörtern stimmt noch nicht/);
+  assert.match(r.feedback, /„läuft“/);
+  // die Nachbarwörter bleiben ungeschoren
+  assert.doesNotMatch(r.errorLabel!, /Hund/);
+
+  // zwei vergessene Wörter: beide stehen im Etikett
+  const two = checkMemorize(PASSAGE, "Der kleine Hund läuft schnell nach Hause und laut.");
+  assert.equal(two.correct, false);
+  assert.ok(two.mistakes.includes("bellt"), two.mistakes.join(","));
+  assert.deepEqual(two.mistakes, ["bellt"]);
+
+  // ein zu viel geschriebenes Wort und ein fehlendes sind nicht richtig
+  assert.equal(checkMemorize(PASSAGE, "Der kleine große Hund läuft schnell nach Hause und bellt laut.").correct, false);
+  const short = checkMemorize(PASSAGE, "Der kleine Hund läuft schnell nach Hause und bellt");
+  assert.equal(short.correct, false);
+  assert.ok(short.mistakes.includes("laut"), short.mistakes.join(","));
+
+  // ein Text, der nichts mit der Vorlage zu tun hat, ist nicht richtig
+  const other = checkAnswer(MEMORIZE, "Heute scheint die Sonne über den Dächern der kleinen Stadt.");
+  assert.equal(other.correct, false);
+  assert.ok(other.errorLabel);
+});
+
+test("Auswendig schreiben: die Stufen ergeben den erwarteten Text", async () => {
+  const { maskPassage, MEMORIZE_LEVELS } = await import("./memorize");
+  assert.equal(MEMORIZE_LEVELS.length, 4, "vier Stufen wie im Plan: ganz, jedes 3. Wort, erste Buchstaben, leer");
+  assert.equal(maskPassage("Der Hund läuft", 0), "Der Hund läuft");
+  assert.equal(maskPassage("eins zwei drei vier fünf sechs", 1), "eins zwei ▁▁▁▁ vier fünf ▁▁▁▁▁", "jedes dritte Wort, so lang wie das Wort");
+  assert.equal(maskPassage("Der Hund läuft", 2), "D… H… l…");
+  assert.equal(maskPassage("„Der“ Hund, läuft!", 2), "„D… H… l…", "Satzzeichen zählen nicht als Anfang");
+  assert.equal(maskPassage("Der Hund läuft", 3), "", "die letzte Stufe ist leer");
+  // Zeilenumbrüche bleiben stehen
+  assert.equal(maskPassage("Der Hund\nbellt laut", 2), "D… H…\nb… l…");
+});
+
+test("Auswendig schreiben: geprüft wird mit dem gemeinsamen Fassungsvergleich", async () => {
+  const { checkMemorize, memorizeWords } = await import("./memorize");
+  const { compareVersions } = await import("./text-correction-diff");
+  // zwei vertauschte Wörter: genau das meldet der vorhandene Vergleich (kein zweiter Vergleich)
+  const given = "Der kleine Hund läuft nach Hause schnell und bellt laut.";
+  const ranges = compareVersions(PASSAGE, given).changes;
+  assert.ok(ranges.length > 0, "der gemeinsame Vergleich sieht die vertauschten Wörter");
+  const spanWords = ranges.flatMap((c) => memorizeWords(PASSAGE.slice(c.start, c.end)));
+  const { mistakes, correct } = checkMemorize(PASSAGE, given);
+  assert.equal(correct, false, "vertauscht ist nicht richtig");
+  assert.ok(mistakes.includes("nach") && mistakes.includes("Hause"), mistakes.join(","));
+  // jedes gemeldete Wort stammt aus einer Stelle, die der gemeinsame Vergleich meldet
+  for (const m of mistakes) assert.ok(spanWords.includes(m), `„${m}“ stammt nicht aus einer gemeldeten Stelle (${spanWords.join(",")})`);
+});
+
+test("Auswendig schreiben in der App: der Fehler des Versuchs ist die Wortliste und erreicht die Analyse", async () => {
+  const { tasks, answer, repo, sid, aid } = await setup("Memo Test", [MEMORIZE]);
+  const t = tasks[0];
+  const written = "Der kleine Hund rennt schnell nach Hause und bellt laut.";
+  const wrong = await answer(t.id, written);
+  assert.equal(wrong.correct, false);
+  assert.equal(wrong.final, false, "wie sonst: bis zu drei Versuche");
+  const a = repo.listAttemptsForAssignment(aid)[0];
+  assert.equal(a.answer, written, "der Text bleibt so gespeichert, wie er geschrieben wurde");
+  assert.match(a.error_label!, /läuft/);
+  assert.equal(a.error_type, null, "aus der Wortliste wird keine Fehlerart geraten");
+  const done = await answer(t.id, PASSAGE);
+  assert.equal(done.correct, true);
+  assert.equal(done.final, true);
+  const { analyzeStudent } = await import("./service");
+  assert.ok(
+    analyzeStudent(sid)!.errors.some((e) => e.label === a.error_label),
+    "die falschen Wörter stehen in der Analyse",
+  );
+});
+
+test("Auswendig schreiben ist im Builder erreichbar und der Text ist Pflicht", async () => {
+  const { categoriesFor, TASK_TYPES } = await import("./curriculum");
+  const { blankTask, checkTask } = await import("./builder");
+  const { memorizeCategory, MEMORIZE_CATEGORY } = await import("./memorize");
+  assert.equal(TASK_TYPES.memorize, "Auswendig schreiben");
+  for (const subject of ["Deutsch", "Englisch"]) {
+    const cat = categoriesFor(subject).find((c) => c.key === MEMORIZE_CATEGORY)!;
+    assert.deepEqual(cat.formats, ["memorize"], `${subject}: das Format ist memorize`);
+    assert.ok(memorizeCategory(subject, MEMORIZE_CATEGORY));
+  }
+  const blank = blankTask("memorize", ZEITEN, MEMORIZE_CATEGORY, "mittel");
+  assert.equal(blank.type, "memorize");
+  assert.ok(blank.prompt.trim(), "die Aufgabenstellung steht schon da");
+  assert.ok((checkTask(blank) ?? "").includes("Text zum Auswendiglernen"), "ohne Text lässt sich die Aufgabe nicht senden");
+  assert.equal(checkTask({ ...blank, data: { passage: PASSAGE } }), null);
+  assert.ok((checkTask({ ...blank, data: { passage: "Ja." } }) ?? "").includes("zu kurz"));
+});
+
+test("Auswendig schreiben: der A4-Plan gibt Schreibzeilen, die Lösung ist der Text", async () => {
+  const { planTask, shortAnswer } = await import("./arbeitsblatt");
+  const plan = planTask(MEMORIZE, "Deutsch", { space: "mittel", field: "auto" });
+  assert.ok(plan.lines >= 3, `so viele Zeilen, wie der Text braucht (${plan.lines})`);
+  assert.equal(shortAnswer(MEMORIZE), PASSAGE);
+});
+
+// ---------- Schnellrunde (Phase 2 des Merges) ----------
+
+const mc = (n: number, options = 3): import("./tasks").TaskDraft =>
+  draft({
+    type: "mc",
+    category: "mc",
+    prompt: `Frage ${n}?`,
+    data: { options: Array.from({ length: options }, (_, i) => `Antwort ${i + 1}`) },
+    answer: { correct: 0 },
+  });
+
+test("Schnellrunde: nur Multiple Choice mit höchstens vier Antworten ist geeignet", async () => {
+  const { isQuickRound, quickRoundProblem, QUICK_ROUND_MAX_OPTIONS } = await import("./quick-round");
+  assert.equal(QUICK_ROUND_MAX_OPTIONS, 4);
+  assert.equal(isQuickRound([mc(1), mc(2), mc(3)]), true);
+  assert.equal(isQuickRound([mc(1, 2)]), true, "zwei Antworten genügen");
+  assert.equal(isQuickRound([mc(1, 4)]), true, "vier Antworten sind die Grenze");
+  assert.equal(isQuickRound([mc(1, 5)]), false, "fünf Antworten sind zu viel");
+  assert.equal(isQuickRound([{ type: "mc", data: { options: ["a", "b", "c", "d", "e"] } }]), false, "auch in der Form der Datenbank");
+  assert.equal(isQuickRound([mc(1), CLOZE]), false, "ein Lückentext passt nicht");
+  assert.equal(isQuickRound([mc(1), FREE]), false);
+  assert.equal(isQuickRound([mc(1), MEMORIZE]), false);
+  assert.equal(isQuickRound([{ type: "reading", data: { options: ["a", "b"] } }]), false, "Textverständnis ist keine Schnellrunde");
+  assert.equal(isQuickRound([]), false, "eine leere Übung ist keine Schnellrunde");
+  assert.match(quickRoundProblem([mc(1), CLOZE])!, /Aufgabe 2 ist kein Multiple Choice/);
+  assert.match(quickRoundProblem([mc(1, 5)])!, /höchstens vier/);
+});
+
+test("Schnellrunde: Lehrerseite und Schülerseite urteilen gleich", async () => {
+  const { isQuickRound, showsQuickRound, categoriesFitQuickRound } = await import("./quick-round");
+  const { categoriesFor } = await import("./curriculum");
+  // der Lehrer schickt als Schnellrunde ab, die Schülerseite entscheidet mit derselben Prüfung
+  const eligible = [mc(1), mc(2)];
+  assert.equal(isQuickRound(eligible), true);
+  assert.equal(showsQuickRound("schnell", eligible), true);
+  assert.equal(showsQuickRound("normal", eligible), false, "ohne Schnellrunde bleibt es der übliche Ablauf");
+  // eine Aufgabe, die doch nicht passt (z. B. nach einer Änderung): beide Seiten sagen nein
+  const notEligible = [mc(1), CLOZE];
+  assert.equal(isQuickRound(notEligible), false);
+  assert.equal(showsQuickRound("schnell", notEligible), false, "die Schülerseite fällt auf den üblichen Ablauf zurück");
+  assert.equal(showsQuickRound(undefined, notEligible), false, "ältere Zeilen ohne mode sind normal");
+  // die Form der Schülerseite (ClientTask: options oben) und die des Lehrers (data.options) urteilen gleich
+  assert.equal(isQuickRound([{ type: "mc", options: ["a", "b", "c"] }]), true);
+  // Schritt 6 im Builder: nur Aufgabentypen, die Multiple Choice erlauben (Artikel-Aufgaben sind Multiple Choice)
+  const deutsch = categoriesFor("Deutsch");
+  const englisch = categoriesFor("Englisch");
+  assert.equal(categoriesFitQuickRound(englisch.filter((c) => c.key === "mc")), true);
+  assert.equal(categoriesFitQuickRound(deutsch.filter((c) => c.key === "grammatik")), true, "Grammatik erlaubt Multiple Choice");
+  assert.equal(categoriesFitQuickRound(deutsch.filter((c) => c.key === "fehler")), true);
+  assert.equal(categoriesFitQuickRound([]), false, "Gemischte Aufgaben sind keine Zusage");
+  assert.equal(categoriesFitQuickRound(deutsch.filter((c) => c.key === "lueckentext" || c.key === "fehler")), false, "ein Lückentext kann nie eine Schnellrunde werden");
+  assert.equal(categoriesFitQuickRound(deutsch.filter((c) => c.key === "auswendig")), false, "Auswendig schreiben ist kein Multiple Choice");
+});
+
+test("Schnellrunde: gesendet wird sie nur mit geeigneten Aufgaben, sonst normal", async () => {
+  const repo = await import("./repo");
+  const auth = await import("./auth");
+  const { INITIAL_PASSWORD } = await import("./password");
+  const { releaseWorksheet } = await import("./builder");
+  const niko = auth.checkLogin("niko", INITIAL_PASSWORD)!;
+  const sid = repo.createStudent({
+    name: "Schnell Test", grade: 7, klasse: 3, teacher_id: niko.id, school: "", school_type: "Gymnasium", subjects: ["Deutsch"],
+    current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "",
+  });
+  const save = (title: string, tasks: import("./tasks").TaskDraft[]) =>
+    repo.createWorksheet({ title, subject: "Deutsch", grade: 7, school_type: "Gymnasium", klasse: 3, topic: "Zeitformen", difficulty: "mittel", task_type: "mixed", kind: "uebung", source: "manuell", skill_ids: [ZEITEN] }, tasks);
+
+  const good = save("Schnell", [mc(1), mc(2), mc(3)]);
+  const sent = releaseWorksheet(good, sid, { quickRound: true });
+  assert.ok(sent.assignmentId);
+  assert.equal(sent.mode, "schnell");
+  const stored = repo.getAssignment(sent.assignmentId!)!;
+  assert.equal(stored.mode, "schnell", "die Spalte steht am Versand");
+  // die Schülerseite liest dieselbe Zeile und dieselbe Prüfung: sie zeigt die Schnellrunde
+  const { showsQuickRound } = await import("./quick-round");
+  assert.equal(showsQuickRound(stored.mode, repo.listTasks(good).map((t) => ({ type: t.type, options: t.data.options ?? null }))), true);
+
+  const mixed = save("Gemischt", [mc(1), CLOZE]);
+  const normal = releaseWorksheet(mixed, sid, { quickRound: true });
+  assert.equal(normal.mode, "normal", "ein Lückentext macht daraus den üblichen Ablauf");
+  assert.equal(repo.getAssignment(normal.assignmentId!)!.mode, "normal");
+
+  // ohne Angabe gilt der Wunsch aus dem Builder (worksheets.settings.quickRound)
+  const wished = save("Wunsch", [mc(1), mc(2)]);
+  repo.updateWorksheetMeta(wished, { settings: JSON.stringify({ quickRound: true }) });
+  const byWish = releaseWorksheet(wished, sid);
+  assert.equal(byWish.mode, "schnell");
+  // und eine Übung ohne Wunsch bleibt normal
+  const plain = save("Ohne", [mc(1)]);
+  assert.equal(releaseWorksheet(plain, sid).mode, "normal");
+  // die Vorgabe der Spalte ist 'normal'
+  assert.equal(repo.getAssignment(repo.assignWorksheet(plain, sid))!.mode, "normal");
+});
+
 test("A4: room to write for free answers and corrections, criteria only in the teacher version", async () => {
   const { planTask } = await import("./arbeitsblatt");
   const o = { space: "mittel" as const, field: "auto" as const };
