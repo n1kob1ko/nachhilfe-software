@@ -104,14 +104,14 @@ das Drag-and-Drop- und Multiple-Choice-Widget (D11), die Prisma-Migrationen,
 `C:\Users\niko\Desktop\diebstahl\aufgabensammlung` ist eine abgegriffene Kopie von
 aufgabensammlung.de (Lizenzgeber eG). Die Inhalte dürfen **nur mit einer
 unterschriebenen Lizenz** von Lizenzgeber eG verwendet werden. Diese Lizenz ist
-unterschrieben und liegt unter
-`docs/lizenzen/lizenzgeber-eg-lizenzvertrag.pdf` (digitale Signatur über
+unterschrieben und liegt **in privater Ablage**
+(`C:\Users\niko\Desktop\Lizenzen\lizenzgeber-eg-lizenzvertrag.pdf`; digitale Signatur über
 DigiSigner, 2026-10-13, je eine Signatur von Lizenzgeber eG und vom
-Lizenznehmer); die Einzelheiten und was daran geprüft wurde, stehen in
-`docs/lizenzen/README.md`.
+Lizenznehmer) — das Repository enthält das Dokument **nicht**, sondern nur den
+Nachweis darüber in `docs/lizenzen/README.md`.
 
 Damit durfte die Kopie gelesen werden. Phase 9 hat **25 376 Aufgaben** als
-Bibliothekseinträge übernommen; jede trägt die Aufgabensammlung-Kennung als
+Bibliothekseinträge übernommen; jede trägt die Frage-ID des Korpus als
 `source_ref`, sodass der Inhalt wieder entfernt werden kann, wenn die Lizenz
 endet. Alle Zahlen, Zuordnungen und das bewusst nicht Importierte stehen in
 `docs/aufgabensammlung-import.md`. Die Qualitätsprüfung der übernommenen Aufgaben hat

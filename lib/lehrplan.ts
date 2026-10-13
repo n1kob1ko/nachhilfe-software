@@ -330,8 +330,8 @@ const tokens = (text: string) =>
 /**
  * The words `matchSkills` compares with (stemmed, stop words dropped). Exported so a caller that
  * must judge a hit more strictly than the suggestion does can compare the same tokens instead of
- * inventing a second tokeniser — the aufgabensammlung import takes a skill automatically and therefore
- * has to be more careful than a suggestion the teacher still confirms.
+ * inventing a second tokeniser — the import of the licensed Aufgabensammlung takes a skill
+ * automatically and therefore has to be more careful than a suggestion the teacher still confirms.
  */
 export const topicTokens = tokens;
 

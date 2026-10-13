@@ -568,7 +568,7 @@ export async function runBankPruefung(o: { banks?: BankId[]; limit?: number; per
   return { ran: eineAntwort, message, model, banks, usd };
 }
 
-// ---------- Prüfung der aufgabensammlung-Aufgaben (Phase 9 des Merges, Schritt 6) ----------
+// ---------- Prüfung der importierten Aufgaben der lizenzierten Aufgabensammlung (Phase 9, Schritt 6) ----------
 /**
  * „Quality pass as in Phase 1 step 7 (sample-based: AI quality test on a stratified sample of
  * 2,000, full run only for tasks that are assigned)" (tommys-merge.md, Phase 9 step 6).
@@ -587,7 +587,7 @@ export async function runBankPruefung(o: { banks?: BankId[]; limit?: number; per
 export type AufgabensammlungPruefungTask = {
   /** id der Aufgabe in dieser Datenbank (`tasks.id`). */
   taskId: number;
-  /** aufgabensammlung-Frage-ID aus `source_items.item_id` — der source_ref. */
+  /** Frage-ID des Korpus aus `source_items.item_id` — der source_ref. */
   questionId: string;
   subject: string;
   type: string;

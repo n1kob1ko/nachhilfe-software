@@ -12,9 +12,9 @@
     "postinstall": "node scripts/copy-excalidraw-fonts.mjs",
     "ai:simulate": "tsx scripts/ai-simulate.ts",
     "banks:pruefung": "tsx scripts/banks-pruefung.ts",
-    "aufgabensammlung:cache": "tsx scripts/import-aufgabensammlung.ts",
-    "aufgabensammlung:import": "tsx scripts/import-aufgabensammlung.ts --apply",
-    "aufgabensammlung:pruefung": "tsx scripts/aufgabensammlung-pruefung.ts"
+    "aufgaben:cache": "tsx scripts/import-aufgabensammlung.ts",
+    "aufgaben:import": "tsx scripts/import-aufgabensammlung.ts --apply",
+    "aufgaben:pruefung": "tsx scripts/aufgabensammlung-pruefung.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

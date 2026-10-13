@@ -1,8 +1,10 @@
 node_modules
 .next
 data/*.db*
-# Phase 9 loader intermediate: licensed aufgabensammlung corpus, local only, never committed.
+# Phase 9 loader intermediate: local copy of the licensed corpus, never committed.
 data/aufgabensammlung-cache/
+# The signed licence agreement stays in private storage (C:\Users\niko\Desktop\Lizenzen\).
+docs/lizenzen/*.pdf
 .env*.local
 next-env.d.ts
 *.tsbuildinfo
