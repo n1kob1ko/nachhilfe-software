@@ -28,18 +28,27 @@ function skillNames() {
 const LESSON_SQL = `SELECT l.*, s.name AS student_name, t.name AS teacher_name FROM lessons l
   JOIN students s ON s.id = l.student_id LEFT JOIN teachers t ON t.id = l.teacher_id`;
 
+/** Modus-Wunsch eines Schülers so, wie ihn der Import wieder liest (`lib/csv-import.ts`). */
+const MODUS_LABEL: Record<string, string> = { vor_ort: "vor Ort", online: "online", egal: "egal" };
+
 export const DATASETS: Dataset[] = [
   {
     key: "schueler",
     label: "Schüler und Schülerprofile",
-    description: "Stammdaten, Schule, Klasse, Fächer, Themen, Stärken, Schwächen, Ziele, Notizen, KI-Hinweise, zuständiger Lehrer.",
+    description: "Stammdaten, Schule, Klasse, Fächer, Themen, Stärken, Schwächen, Ziele, Notizen, KI-Hinweise, zuständiger Lehrer, Planung.",
     build: () => ({
-      // „KI-Hinweise“ steht seit Phase 6 (Schritt 3) zwischen „Notizen“ und „Lehrer“: der Import (Phase 7)
-      // liest dieselbe Spaltenfolge.
-      headers: ["ID", "Name", "Schultyp", "Klasse", "Schulstufe", "Schule", "Fächer", "Aktuelle Themen", "Stärken", "Schwächen", "Ziele", "Notizen", "KI-Hinweise", "Lehrer", "Angelegt"],
-      rows: q(`SELECT s.*, t.name AS teacher_name FROM students s LEFT JOIN teachers t ON t.id = s.teacher_id ORDER BY s.name COLLATE NOCASE`).map((r) => [
+      // „KI-Hinweise“ steht seit Phase 6 (Schritt 3) zwischen „Notizen“ und „Lehrer“; „Lehrer“ ist seit
+      // Phase 7 der **Benutzername** (nur damit findet der Import den Lehrer wieder), und die
+      // Planungsspalten (Phase 3) stehen daneben. Der Import (`lib/csv-import.ts`) liest genau diese
+      // Spaltenfolge und verträgt es, wenn einzelne davon fehlen.
+      headers: [
+        "ID", "Name", "Schultyp", "Klasse", "Schulstufe", "Schule", "Fächer", "Aktuelle Themen", "Stärken", "Schwächen", "Ziele", "Notizen", "KI-Hinweise",
+        "Lehrer", "Einheiten pro Woche", "Geplante Dauer", "Modus", "Angelegt",
+      ],
+      rows: q(`SELECT s.*, t.name AS teacher_name, t.username AS teacher_username FROM students s LEFT JOIN teachers t ON t.id = s.teacher_id ORDER BY s.name COLLATE NOCASE`).map((r) => [
         n(r.id), s(r.name), s(r.school_type), n(r.klasse), n(r.grade), s(r.school), list(r.subjects), s(r.current_topics),
-        s(r.strengths_note), s(r.weaknesses_note), s(r.goals), s(r.notes), s(r.ki_hinweise), s(r.teacher_name), localTime(s(r.created_at)),
+        s(r.strengths_note), s(r.weaknesses_note), s(r.goals), s(r.notes), s(r.ki_hinweise), s(r.teacher_username),
+        n(r.einheiten_pro_woche), n(r.geplante_dauer), MODUS_LABEL[s(r.modus_wunsch)] ?? s(r.modus_wunsch), localTime(s(r.created_at)),
       ]),
     }),
   },

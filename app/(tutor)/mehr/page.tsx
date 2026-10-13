@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, CalendarClock, CalendarDays, ChevronRight, Clock3, Coins, DoorOpen, Download, FileText, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, ShieldCheck, Sparkles, TabletSmartphone } from "lucide-react";
+import { BarChart3, CalendarClock, CalendarDays, ChevronRight, Clock3, Coins, DoorOpen, Download, FileText, FileUp, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, ShieldCheck, Sparkles, TabletSmartphone } from "lucide-react";
 import { logoutAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
 import { PageHeader } from "@/components/ui";
@@ -46,6 +46,7 @@ export default async function MorePage() {
       title: "Verwaltung",
       items: [
         { href: "/export", label: "Datenexport", hint: "Sicherung und Tabellen herunterladen", icon: Download },
+        { href: "/mehr/import", label: "Import", hint: "Schüler und Lehrer aus einer CSV-Datei übernehmen, mit Vorschau vor dem Schreiben", icon: FileUp },
       ],
     });
   }
