@@ -20,7 +20,8 @@ type Flavor = Capabilities & {
 
 const env = (name: string) => process.env[name]?.trim() ?? "";
 
-export const FLAVORS: Record<Exclude<ProviderId, "anthropic">, Flavor> = {
+/** Only the providers that really speak this format: anthropic has its own adapter, manual has none. */
+export const FLAVORS: Record<Exclude<ProviderId, "anthropic" | "manual">, Flavor> = {
   openrouter: {
     label: "OpenRouter",
     baseUrl: () => env("OPENROUTER_BASE_URL") || "https://openrouter.ai/api/v1",

@@ -8,7 +8,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash } from "node:crypto";
 import type { z } from "zod";
-import { FUNCTIONS, PROVIDER_IDS, aiSwitchedOff, costOf, routeFor, type AIFunction, type Usage } from "./config";
+import { FUNCTIONS, MANUAL_TIMEOUT_MS, PROVIDER_IDS, aiSwitchedOff, costOf, routeFor, type AIFunction, type Usage } from "./config";
 import { budgetState, logCall, type CallStatus } from "./log";
 import { providerReady, providerTransport, unsupported, type Prompt, type Transport } from "./providers";
 
@@ -48,9 +48,9 @@ export function aiEnabled(fn?: AIFunction) {
   });
 }
 
-/** For the cost page: whether any provider has a key at all. */
+/** For the cost page: whether any provider has a key at all. The manual mode is no provider and needs none. */
 export function anyProviderKey() {
-  return PROVIDER_IDS.some(providerReady);
+  return PROVIDER_IDS.some((id) => id !== "manual" && providerReady(id));
 }
 
 // ---------- KI-Qualitätstest: other settings for the requests of one test run ----------
@@ -170,17 +170,22 @@ export async function runAI<S extends z.ZodType>(
     const r = await running;
     return r.ok ? { ...r, data: r.data as z.infer<S>, reused: true, callId: log("cache") } : r;
   }
-  if (breaker.until > now()) return { ok: false, status: "pausiert", cause: "pausiert", message: MESSAGES.pausiert, callId: log("pausiert") };
-  const b = budgetState(now());
-  if (b.level === "aus") return { ok: false, status: "budget", cause: "budget", message: MESSAGES.budget, callId: log("budget") };
+  // the manual mode costs nothing and talks to nobody: a used-up budget or a paused provider must not stop it
+  if (provider !== "manual") {
+    if (breaker.until > now()) return { ok: false, status: "pausiert", cause: "pausiert", message: MESSAGES.pausiert, callId: log("pausiert") };
+    const b = budgetState(now());
+    if (b.level === "aus") return { ok: false, status: "budget", cause: "budget", message: MESSAGES.budget, callId: log("budget") };
+  }
   // a photo or PDF the configured provider cannot read: a setting to change, not an outage
   const cannot = custom ? null : unsupported(provider, prompt);
   if (cannot) return { ok: false, status: "fehler", cause: "einstellung", message: cannot, callId: log("fehler", { error: cannot }) };
 
   const call = (async (): Promise<Outcome<z.infer<S>>> => {
     const maxTokens = Math.max(1, Math.min(o.maxTokens ?? spec.maxTokens, spec.maxTokens));
+    // a human needs minutes for copy/paste, not the seconds an API gets
+    const frist = provider === "manual" ? MANUAL_TIMEOUT_MS : spec.timeoutMs;
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), spec.timeoutMs);
+    const timer = setTimeout(() => ctrl.abort(), frist);
     const started = Date.now();
     try {
       const res = await transport({
@@ -196,7 +201,7 @@ export async function runAI<S extends z.ZodType>(
         schema,
         ...(spec.schemaInPrompt ? { schemaInPrompt: true } : {}),
         signal: ctrl.signal,
-        timeoutMs: spec.timeoutMs,
+        timeoutMs: frist,
       });
       // the provider's own price when it reports one, else tokens × price table
       const cost = res.costUsd ?? costOf(res.model || model, spec.tier, res.usage);

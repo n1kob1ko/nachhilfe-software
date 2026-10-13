@@ -4,11 +4,22 @@
  * variables (Railway Variables); the defaults below are the only place a model id is written down.
  */
 
+import { kiModus } from "./modus";
+
 export type Tier = "fast" | "standard" | "deep";
 
-/** The providers the router can talk to (adapters in ./providers). */
-export const PROVIDER_IDS = ["anthropic", "openrouter", "deepseek", "compatible"] as const;
+/** The providers the router can talk to (adapters in ./providers). `manual` talks to a person, not an API. */
+export const PROVIDER_IDS = ["anthropic", "openrouter", "deepseek", "compatible", "manual"] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
+
+/** The manual provider: the prompt is shown, the answer pasted in; it needs no key and no model id. */
+export const MANUAL_MODEL = "manuell";
+/**
+ * How long a manual request may wait for the teacher. The API timeouts (8–180 s) are for a server that
+ * answers; copying a prompt into a chat window and pasting the answer back takes minutes. `runAI` uses
+ * this instead of the function's timeoutMs while the manual provider is selected.
+ */
+export const MANUAL_TIMEOUT_MS = 30 * 60_000;
 
 /**
  * Areas group the functions for configuration: AI_<AREA>_PROVIDER and AI_<AREA>_MODEL switch the
@@ -133,8 +144,9 @@ function providerFrom(v: string | undefined): ProviderId | null {
  */
 export function routeFor(fn: AIFunction): Route {
   const spec = FUNCTIONS[fn];
-  const provider = providerFrom(process.env[`AI_${spec.area}_PROVIDER`]) ?? providerFrom(process.env.AI_PROVIDER) ?? (!hasKey("anthropic") && hasKey("openrouter") ? "openrouter" : "anthropic");
-  const fallback = provider === "anthropic" ? DEFAULT_MODELS[spec.tier] : provider === "openrouter" ? OPENROUTER_MODELS[spec.tier] : "";
+  // env wins; the toggle on Mehr › KI-Kosten (app_settings `ki_modus`) comes next; then the key-based default
+  const provider = providerFrom(process.env[`AI_${spec.area}_PROVIDER`]) ?? providerFrom(process.env.AI_PROVIDER) ?? (kiModus() === "manual" ? "manual" : null) ?? (!hasKey("anthropic") && hasKey("openrouter") ? "openrouter" : "anthropic");
+  const fallback = provider === "anthropic" ? DEFAULT_MODELS[spec.tier] : provider === "openrouter" ? OPENROUTER_MODELS[spec.tier] : provider === "manual" ? MANUAL_MODEL : "";
   const model = process.env[`AI_${spec.area}_MODEL`]?.trim() || process.env[MODEL_ENV[spec.tier]]?.trim() || fallback;
   return { provider, model, area: spec.area };
 }
@@ -236,5 +248,8 @@ export function hasKey(provider: ProviderId = "anthropic") {
       return Boolean(e.DEEPSEEK_API_KEY);
     case "compatible":
       return Boolean(e.AI_COMPATIBLE_API_KEY && e.AI_COMPATIBLE_BASE_URL);
+    case "manual":
+      // no key is needed and none can exist; `providerReady` counts manual as ready
+      return false;
   }
 }
