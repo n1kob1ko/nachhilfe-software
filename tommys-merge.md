@@ -1,10 +1,12 @@
 # Tommy's merge — consolidating the tutoring tools into nachhilfe-software
 
-Status: **umgesetzt am 2026-10-13.** Die Phasen 0–7 sind gebaut und in `main`. Dieses Dokument bleibt als Geschichte des Merges stehen (D15): es beschreibt weiterhin den Plan von 2026-10-12, nicht den heutigen Stand im Detail. **Phase 9 (aufgabensammlung) ist nicht umgesetzt** — sie bleibt gesperrt, bis die unterschriebene Lizenz von Lizenzgeber eG unter `docs/lizenzen/` liegt; bis dahin wird die Kopie nicht gelesen und es stammt kein Inhalt daraus in diesem Repository.
+Status: **umgesetzt am 2026-10-13.** Die Phasen 0–9 sind gebaut und in `main`. Dieses Dokument bleibt als Geschichte des Merges stehen (D15): es beschreibt weiterhin den Plan von 2026-10-12, nicht den heutigen Stand im Detail.
+
+**Phase 9 (aufgabensammlung) ist umgesetzt.** Die unterschriebene Lizenz von Lizenzgeber eG liegt unter `docs/lizenzen/lizenzgeber-eg-lizenzvertrag.pdf` (DigiSigner, 2026-10-13, zwei Signaturen); damit war der Riegel offen. Der Import hat 25 376 Aufgaben als Bibliothekseinträge angelegt und trägt je Aufgabe die Aufgabensammlung-Kennung als `source_ref` mit, sodass der Inhalt wieder entfernt werden kann, falls die Lizenz endet. Alle Zahlen, Zuordnungen und das bewusst nicht Importierte stehen in [docs/aufgabensammlung-import.md](docs/aufgabensammlung-import.md); die Qualitätsprüfung der importierten Aufgaben hat **noch nicht** stattgefunden (kein Schlüssel) und ist in [docs/aufgabensammlung-pruefung.md](docs/aufgabensammlung-pruefung.md) als offen vermerkt.
 
 **Target:** this repo (`nachhilfe-software`, "Lernheft"). Everything ends up here, on this repo's stack.
 **Sources:** `Artikel Trainer`, `aufgaben_webseite`, `tutoring institute platform` (all on the Desktop next to this repo).
-**Gated:** `diebstahl/aufgabensammlung` — a scraped copy of aufgabensammlung.de (Lizenzgeber eG). Its content may only be used under a **signed** licence from Lizenzgeber eG (draft reviewed 2026-10-12, see Phase 9). Until the signed licence is committed to `docs/lizenzen/`, **no question, text, image, audio or topic tree from it enters this repo.**
+**Gated:** `diebstahl/aufgabensammlung` — a scraped copy of aufgabensammlung.de (Lizenzgeber eG). Its content may only be used under a **signed** licence from Lizenzgeber eG. That licence is now signed and committed to `docs/lizenzen/`, so the import in Phase 9 is allowed; without it, **no question, text, image, audio or topic tree from it may enter this repo.**
 
 ---
 

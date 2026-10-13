@@ -99,16 +99,27 @@ das Drag-and-Drop- und Multiple-Choice-Widget (D11), die Prisma-Migrationen,
 `backups/*.dump`, `docker-compose.yml`, `.next`, `node_modules` und
 `tsconfig.tsbuildinfo` (D4).
 
-## Nicht dabei: `diebstahl/aufgabensammlung`
+## `diebstahl/aufgabensammlung` — mit Lizenz übernommen
 
 `C:\Users\niko\Desktop\diebstahl\aufgabensammlung` ist eine abgegriffene Kopie von
 aufgabensammlung.de (Lizenzgeber eG). Die Inhalte dürfen **nur mit einer
-unterschriebenen Lizenz** von Lizenzgeber eG verwendet werden; der Entwurf ist
-besprochen, unterschrieben ist nichts. Bis die Lizenz unter `docs/lizenzen/`
-liegt, wird die Kopie **nicht gelesen und nicht verwendet** — es stammt keine
-einzige Frage, kein Text, kein Bild, kein Ton und kein Themenbaum daraus in
-diesem Repository. Der Import ist Phase 9 und bleibt bis dahin gesperrt; er ist
-**nicht** umgesetzt.
+unterschriebenen Lizenz** von Lizenzgeber eG verwendet werden. Diese Lizenz ist
+unterschrieben und liegt unter
+`docs/lizenzen/lizenzgeber-eg-lizenzvertrag.pdf` (digitale Signatur über
+DigiSigner, 2026-10-13, je eine Signatur von Lizenzgeber eG und vom
+Lizenznehmer); die Einzelheiten und was daran geprüft wurde, stehen in
+`docs/lizenzen/README.md`.
+
+Damit durfte die Kopie gelesen werden. Phase 9 hat **25 376 Aufgaben** als
+Bibliothekseinträge übernommen; jede trägt die Aufgabensammlung-Kennung als
+`source_ref`, sodass der Inhalt wieder entfernt werden kann, wenn die Lizenz
+endet. Alle Zahlen, Zuordnungen und das bewusst nicht Importierte stehen in
+`docs/aufgabensammlung-import.md`. Die Qualitätsprüfung der übernommenen Aufgaben hat
+**noch nicht** stattgefunden — ohne Schlüssel läuft sie nicht — und ist in
+`docs/aufgabensammlung-pruefung.md` als offen vermerkt.
+
+Ohne diese Lizenz gilt weiterhin: es stammt keine einzige Frage, kein Text, kein
+Bild, kein Ton und kein Themenbaum daraus in dieses Repository.
 
 ## Einfrieren: was noch aussteht
 
