@@ -1,6 +1,6 @@
 # Tommy's merge — consolidating the tutoring tools into nachhilfe-software
 
-Status: plan, agreed 2026-10-12. Nothing in here is implemented yet.
+Status: **umgesetzt am 2026-10-13.** Die Phasen 0–7 sind gebaut und in `main`. Dieses Dokument bleibt als Geschichte des Merges stehen (D15): es beschreibt weiterhin den Plan von 2026-10-12, nicht den heutigen Stand im Detail. **Phase 9 (aufgabensammlung) ist nicht umgesetzt** — sie bleibt gesperrt, bis die unterschriebene Lizenz von Lizenzgeber eG unter `docs/lizenzen/` liegt; bis dahin wird die Kopie nicht gelesen und es stammt kein Inhalt daraus in diesem Repository.
 
 **Target:** this repo (`nachhilfe-software`, "Lernheft"). Everything ends up here, on this repo's stack.
 **Sources:** `Artikel Trainer`, `aufgaben_webseite`, `tutoring institute platform` (all on the Desktop next to this repo).

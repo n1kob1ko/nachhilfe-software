@@ -7,9 +7,15 @@ Repos umgeschrieben (Next.js 16, React 19, SQLite über `better-sqlite3`,
 Plan samt Begründung steht in [../tommys-merge.md](../tommys-merge.md); dieses
 Dokument ist die kurze Antwort auf „woher kommt das eigentlich?“.
 
-Die drei Quell-Repositories werden **eingefroren, nicht gelöscht**: Tag
-`merged-into-lernheft`, eine `MERGED.md` darin, danach ins Archiv (D15). Sie
-sind ab dem Merge **schreibgeschützt** — gelesen wird nur, geschrieben nie.
+Die drei Quellen werden **eingefroren, nicht gelöscht** (D15): je eine
+`MERGED.md` darin, danach **schreibgeschützt** — gelesen wird nur, geschrieben
+nie. Nur **Artikel Trainer** ist ein Git-Repository mit Remote; dort ist die
+`MERGED.md` committet und der Stand mit dem Tag `merged-into-lernheft`
+festgehalten. Die beiden anderen Ordner haben **kein `.git`** und ließen sich
+deshalb weder committen noch taggen noch archivieren; bei ihnen ist die
+`MERGED.md` ein reiner Marker im Dateisystem. **Gepusht und archiviert ist
+nichts** — diese Schritte sind remote und brauchen Zugang; die Befehle dafür
+stehen ganz unten und sind noch auszuführen.
 
 ## Artikel Trainer (Flask)
 
@@ -101,4 +107,22 @@ unterschriebenen Lizenz** von Lizenzgeber eG verwendet werden; der Entwurf ist
 besprochen, unterschrieben ist nichts. Bis die Lizenz unter `docs/lizenzen/`
 liegt, wird die Kopie **nicht gelesen und nicht verwendet** — es stammt keine
 einzige Frage, kein Text, kein Bild, kein Ton und kein Themenbaum daraus in
-diesem Repository. Der Import ist Phase 9 und bleibt bis dahin gesperrt.
+diesem Repository. Der Import ist Phase 9 und bleibt bis dahin gesperrt; er ist
+**nicht** umgesetzt.
+
+## Einfrieren: was noch aussteht
+
+Das Einfrieren ist bis auf die lokalen Schritte erledigt. Offen sind nur die
+remote-Aktionen, die dieses Repository nicht ausführen kann (kein `gh`-CLI, kein
+Push-Zugang). Die Befehle für **Artikel Trainer**
+(`mc-dream-education/mc-web-app`):
+
+```bash
+git -C "C:\Users\niko\Desktop\Artikel Trainer" push origin main
+git -C "C:\Users\niko\Desktop\Artikel Trainer" push origin merged-into-lernheft
+gh repo archive mc-dream-education/mc-web-app
+```
+
+`aufgaben_webseite` und `tutoring institute platform` haben kein Git-Repository.
+Für sie gibt es nichts zu pushen und nichts zu archivieren; ihre `MERGED.md`
+bleibt als schreibgeschützter Marker liegen.
