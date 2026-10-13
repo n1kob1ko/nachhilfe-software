@@ -2,6 +2,8 @@
  * CSV for Excel with Austrian/German settings: semicolon separated, UTF-8 with BOM, CRLF.
  * Text that a spreadsheet would run as a formula (=, +, -, @ at the start) gets a leading
  * apostrophe, so an exported note can never execute anything when the file is opened.
+ *
+ * `parseCsv` reads exactly that format back (Phase 7: the CSV import of students and teachers).
  */
 export type Cell = string | number | boolean | null | undefined;
 
@@ -16,6 +18,56 @@ function cell(v: Cell): string {
 
 export function toCsv(headers: string[], rows: Cell[][]): string {
   return "\uFEFF" + [headers, ...rows].map((r) => r.map(cell).join(";")).join("\r\n") + "\r\n";
+}
+
+/**
+ * Reads the format `toCsv` writes — and what Excel and Numbers produce with German settings:
+ * semicolon separated, fields in `"…"` with `""` for an embedded quote, `;` and line breaks
+ * allowed inside quotes, CRLF or LF line endings, UTF-8 with or without BOM. A trailing line
+ * break makes no empty row; every cell comes back as a string, never as a number.
+ */
+export function parseCsv(text: string): string[][] {
+  const src = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let zelle = "";
+  let inAnfuehrung = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (inAnfuehrung) {
+      if (c === '"') {
+        if (src[i + 1] === '"') {
+          zelle += '"';
+          i++;
+        } else inAnfuehrung = false;
+      } else zelle += c;
+      continue;
+    }
+    // a quote only opens a field at its very start; inside a field it stays a normal character
+    if (c === '"' && zelle === "") inAnfuehrung = true;
+    else if (c === ";") {
+      row.push(zelle);
+      zelle = "";
+    } else if (c === "\n" || c === "\r") {
+      if (c === "\r" && src[i + 1] === "\n") i++;
+      row.push(zelle);
+      rows.push(row);
+      row = [];
+      zelle = "";
+    } else zelle += c;
+  }
+  // the last line break does not make a row of its own
+  if (zelle !== "" || row.length) rows.push([...row, zelle]);
+  return rows;
+}
+
+/**
+ * The counterpart of the leading apostrophe `toCsv` writes before `=`, `+`, `-` and `@`: it is
+ * removed again on reading, so a cell stays the **text** it was. A cell is never turned into a
+ * number or a formula, on the way in or on the way out (Phase 7).
+ */
+export function unprotectCell(v: string): string {
+  return /^'[=+\-@\t\r]/.test(v) ? v.slice(1) : v;
 }
 
 /** "2026-10-04T13:03:00.000Z" → "2026-10-04 15:03" in server time; local stamps pass through. */
