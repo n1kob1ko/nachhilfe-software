@@ -18,7 +18,7 @@ const TABS = [
   ["einstellungen", "Einstellungen"],
 ] as const;
 const ids = (v?: string) => (v ?? "").split(",").map(Number).filter((n) => Number.isInteger(n) && n > 0).slice(0, 30);
-const TYPE_TONE: Record<SourceType, "green" | "accent" | "neutral" | "amber" | "red"> = { lehrplan: "green", eigen: "accent", ki: "neutral", oer: "neutral", referenz: "amber", demo: "red" };
+const TYPE_TONE: Record<SourceType, "green" | "accent" | "neutral" | "amber" | "red"> = { lehrplan: "green", eigen: "accent", ki: "neutral", oer: "neutral", lizenz: "green", referenz: "amber", demo: "red" };
 
 /** Mehr › Lehrplan: curriculum versions per school type, sources, imports, licences, reminder settings. */
 export default async function CurriculumPage({ searchParams }: { searchParams: Promise<{ tab?: string; vorschau?: string; importiert?: string; fehler?: string; gespeichert?: string }> }) {
