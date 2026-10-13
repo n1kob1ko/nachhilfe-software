@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import type { ActionResult } from "@/app/builder-actions";
 import { createReadingDraftAction } from "@/app/lesen-actions";
+import { ManualAustausch } from "@/components/ai/ManualAustausch";
 import { SchoolClassFields } from "@/components/SchoolClassFields";
 import { paragraphsOf, QUESTION_COUNTS, recommendedWords, TEXT_TYPES, wordCount } from "@/lib/lesen";
 import { schulstufe } from "@/lib/school";
@@ -195,6 +196,7 @@ export function ReadingBuilderForm({ students, studentId, aiEnabled }: { student
           </p>
           {(source === "ki" || questions === "ki") && <p className="text-[12.5px] text-ink-3">Die KI bekommt nur Fach, Klasse, Thema und Text, keine Namen.</p>}
           <Submit ai={source === "ki" || questions === "ki"} />
+          <ManuellWaehrendErstellung />
           {state?.error && (
             <p className="text-[14px] text-red" role="alert">
               {state.error}
@@ -214,6 +216,12 @@ function Submit({ ai }: { ai: boolean }) {
       {pending ? (ai ? "Die KI schreibt …" : "Wird erstellt …") : "Übung erstellen und Vorschau zeigen"}
     </button>
   );
+}
+
+/** Während die Übung entsteht: im manuellen Modus steht hier der Prompt zum Kopieren. */
+function ManuellWaehrendErstellung() {
+  const { pending } = useFormStatus();
+  return <ManualAustausch aktiv={pending} />;
 }
 
 function Step({ n, title, note, children }: { n: number; title: string; note?: string; children: React.ReactNode }) {

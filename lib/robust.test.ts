@@ -238,6 +238,23 @@ test("Sicherung: Räume, Verfügbarkeit, Wochenabweichungen und der Wochenplan s
   assert.ok(other.prepare("SELECT 1 FROM rooms WHERE name = 'Sicherungsraum' AND mode = 'online'").get(), "der Raum ist wieder da");
 });
 
+test("Sicherung: die KI-Hinweise eines Schülers sind dabei und kommen unverändert zurück", async () => {
+  const { repo } = await setup();
+  const { exportBackup, restoreBackup } = await import("./backup");
+  const { openDatabase } = await import("./db");
+  const sid = repo.createStudent({
+    name: "Kim Hinweis", grade: 6, klasse: 2, teacher_id: null, school: "", school_type: "Mittelschule", subjects: ["Deutsch"],
+    current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "", ki_hinweise: "Legasthenie: kurze Sätze, keine Großbuchstaben-Wörter als Fehler werten",
+  });
+  const b = exportBackup();
+  const json = JSON.parse(JSON.stringify(b)) as { tables: Record<string, { rows: Record<string, unknown>[] }> };
+  assert.equal(json.tables.students.rows.find((r) => r.id === sid)!.ki_hinweise, "Legasthenie: kurze Sätze, keine Großbuchstaben-Wörter als Fehler werten", "die Spalte steht in der Sicherung");
+  const other = openDatabase(":memory:");
+  restoreBackup(other, json);
+  const wieder = other.prepare("SELECT ki_hinweise FROM students WHERE id = ?").get(sid) as { ki_hinweise: string };
+  assert.equal(wieder.ki_hinweise, "Legasthenie: kurze Sätze, keine Großbuchstaben-Wörter als Fehler werten", "und kommt unverändert zurück");
+});
+
 test("export: every CSV dataset builds, and cells cannot run as spreadsheet formulas", async () => {
   await setup();
   const { DATASETS, datasetCsv } = await import("./exports");

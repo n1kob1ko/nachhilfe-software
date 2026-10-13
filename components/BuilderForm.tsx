@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { createDraftAction, type ActionResult } from "@/app/builder-actions";
+import { ManualAustausch } from "@/components/ai/ManualAustausch";
 import { SchoolClassFields } from "@/components/SchoolClassFields";
 import type { StudentContext, Suggestion } from "@/lib/builder";
 import { categoriesFor, DIFFICULTIES, difficultyFor } from "@/lib/curriculum";
@@ -365,6 +366,7 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
             <Submit disabled={selected.length === 0} ai={useAI && aiEnabled} count={count} />
             <EmptyButton />
           </div>
+          <ManuellWaehrendErstellung />
           {selected.length === 0 && <p className="text-[13px] text-ink-3">Wähle mindestens eine Fähigkeit.</p>}
           {state?.error && (
             <p className="text-[14px] text-red" role="alert">
@@ -490,4 +492,10 @@ function EmptyButton() {
       Leer beginnen und selbst schreiben
     </button>
   );
+}
+
+/** Während die Übung entsteht: im manuellen Modus steht hier der Prompt zum Kopieren. */
+function ManuellWaehrendErstellung() {
+  const { pending } = useFormStatus();
+  return <ManualAustausch aktiv={pending} />;
 }

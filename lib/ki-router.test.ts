@@ -160,6 +160,61 @@ test("budget: 10 € by default, warning at 80 %, every paid request stops at 10
   r.resetRouter();
 });
 
+test("lokale Modelle (Ollama): kein Schlüssel nötig, Preis null, das Budget bleibt unberührt", async () => {
+  const r = await import("./ai/router");
+  const log = await import("./ai/log");
+  const { costOf, hasKey, isLocalModel, priceFor } = await import("./ai/config");
+  const { db } = await import("./db");
+  const u = { input: 1_000_000, output: 1_000_000, cacheWrite: 0, cacheRead: 0 };
+  // die Preistabelle: ollama/* kostet nichts, ein anderer Name fällt weiter auf den Tarifpreis zurück
+  assert.deepEqual(priceFor("ollama/llama3.2", "standard"), { price: { in: 0, out: 0, cacheWrite: 0, cacheRead: 0 }, known: true });
+  assert.equal(costOf("ollama/llama3.2", "standard", u), 0);
+  assert.equal(priceFor("llama3.2", "standard").known, false);
+  // ohne Adresse kein lokales Modell — und damit auch kein Schlüssel
+  assert.equal(isLocalModel("compatible"), false);
+  assert.equal(hasKey("compatible"), false);
+  // nur OLLAMA_BASE_URL zählt als lokal: eine andere Adresse auf 127.0.0.1 kann ein bezahltes Gateway sein
+  process.env.AI_COMPATIBLE_BASE_URL = "http://127.0.0.1:11434/v1";
+  process.env.AI_COMPATIBLE_API_KEY = "x";
+  assert.equal(isLocalModel("compatible"), false);
+  assert.equal(hasKey("compatible"), true, "mit Schlüssel und Adresse ist der Anbieter eingerichtet");
+  delete process.env.AI_COMPATIBLE_BASE_URL;
+  delete process.env.AI_COMPATIBLE_API_KEY;
+
+  process.env.OLLAMA_BASE_URL = "http://127.0.0.1:11434/v1";
+  process.env.AI_PROVIDER = "compatible";
+  process.env.AI_MODEL_STANDARD = "llama3.2";
+  try {
+    assert.equal(isLocalModel("compatible"), true);
+    assert.equal(hasKey("compatible"), true, "Ollama braucht keinen Schlüssel");
+    assert.equal(r.aiEnabled("analyse"), true, "ein lokales Modell gilt als eingerichtet");
+    db().exec("DELETE FROM ai_calls");
+    const calls: Call[] = [];
+    r.setTransport(fakeTransport(calls));
+    assert.ok((await r.runAI("analyse", Answer, "sys", "lokal")).ok);
+    assert.equal(calls[0].model, "llama3.2", "der lokale Modellname geht an den Anbieter");
+    const row = db().prepare("SELECT model, cost_usd, input_tokens FROM ai_calls ORDER BY id DESC LIMIT 1").get() as { model: string; cost_usd: number; input_tokens: number };
+    assert.equal(row.model, "llama3.2");
+    assert.equal(row.input_tokens, 1000, "Tokens werden trotzdem gezählt");
+    assert.equal(row.cost_usd, 0, "ein lokales Modell kostet nichts");
+    assert.equal(log.monthSpend(), 0, "das Budget bleibt unberührt");
+
+    // ein aufgebrauchtes Budget hält ein lokales Modell nicht auf
+    process.env.AI_MONTHLY_BUDGET_EUR = "1";
+    log.logCall({ fn: "aufgaben", tier: "standard", model: "m", teacherId: null, unitId: null, trigger: "", input: 0, output: 0, cacheWrite: 0, cacheRead: 0, durationMs: 0, costUsd: 5, status: "ok" });
+    assert.equal(log.budgetState().level, "aus");
+    assert.ok((await r.runAI("analyse", Answer, "sys", "lokal weiter")).ok, "ein lokales Modell läuft auch ohne Budget weiter");
+  } finally {
+    delete process.env.OLLAMA_BASE_URL;
+    delete process.env.AI_PROVIDER;
+    delete process.env.AI_MODEL_STANDARD;
+    delete process.env.AI_MONTHLY_BUDGET_EUR;
+    r.setTransport(null);
+    r.resetRouter();
+    db().exec("DELETE FROM ai_calls");
+  }
+});
+
 async function setup(name: string) {
   const repo = await import("./repo");
   const { startUnit } = await import("./units");

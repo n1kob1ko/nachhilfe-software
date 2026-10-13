@@ -1,10 +1,12 @@
 import { AIQualityTest } from "@/components/AIQualityTest";
 import { AISelfTest } from "@/components/AISelfTest";
 import { AITextTest } from "@/components/AITextTest";
+import { KiModusSchalter } from "@/components/ai/KiModusSchalter";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, SectionTitle } from "@/components/ui";
 import { AREA_LABEL, FUNCTIONS, aiSwitchedOff, budget, priceFor, routeFor, type AIFunction, type Area } from "@/lib/ai/config";
 import { budgetState, costByDay, costByFunction, costByMonth, costByTeacher, recentCalls, type Sum } from "@/lib/ai/log";
+import { kiModus } from "@/lib/ai/modus";
 import { PROVIDER_LABEL, providerReady } from "@/lib/ai/providers";
 import { aiEnabled, anyProviderKey, breakerState } from "@/lib/ai/router";
 import { requireTeacher } from "@/lib/auth";
@@ -29,7 +31,20 @@ export default async function AICostPage() {
   const b = budgetState();
   const conf = budget();
   const paused = breakerState();
-  const state = aiSwitchedOff() ? "ausgeschaltet (AI_DISABLED)" : !anyProviderKey() ? "aus: kein Schlüssel hinterlegt" : paused.paused ? "pausiert: der Anbieter war nicht erreichbar" : "an";
+  const manuellEingestellt = kiModus() === "manual";
+  // der manuelle Modus kann je Bereich (AI_<AREA>_PROVIDER=manual) oder für alle (Schalter) gelten
+  const manuellAktiv = (Object.keys(FUNCTIONS) as AIFunction[]).some((fn) => routeFor(fn).provider === "manual");
+  const state = aiSwitchedOff()
+    ? "ausgeschaltet (AI_DISABLED)"
+    : manuellEingestellt
+      ? "an (manueller Modus: Prompt kopieren, Antwort einfügen)"
+      : !anyProviderKey()
+        ? "aus: kein Schlüssel hinterlegt"
+        : paused.paused
+          ? "pausiert: der Anbieter war nicht erreichbar"
+          : manuellAktiv
+            ? "an (teils manuell)"
+            : "an";
   const byFn = costByFunction(month, f);
   const days = costByDay(14, f);
   const months = costByMonth(6, f);
@@ -65,6 +80,20 @@ export default async function AICostPage() {
 
       {teacher.is_admin && (
         <section className="mb-10">
+          <SectionTitle>KI-Modus</SectionTitle>
+          <KiModusSchalter manuell={manuellEingestellt} />
+        </section>
+      )}
+
+      {!teacher.is_admin && manuellEingestellt && (
+        <section className="mb-10">
+          <SectionTitle>KI-Modus</SectionTitle>
+          <p className="panel px-5 py-4 text-[14px] text-ink-2">Der manuelle KI-Modus ist eingeschaltet: Die App zeigt den Prompt zum Kopieren und prüft die eingefügte Antwort. Es entstehen keine Kosten.</p>
+        </section>
+      )}
+
+      {teacher.is_admin && (
+        <section className="mb-10">
           <SectionTitle>KI testen</SectionTitle>
           <AISelfTest enabled={aiEnabled()} />
         </section>
@@ -89,7 +118,7 @@ export default async function AICostPage() {
           <span>
             Anbieter und Modelle
             <Info label="Wie ändere ich Anbieter oder Modell?">
-              In Railway unter Variables, je Bereich: AI_REALTIME_PROVIDER und AI_REALTIME_MODEL, ebenso EXERCISE, ANALYSIS, DEEP, MATERIAL und TEXT. Anbieter: anthropic, openrouter, deepseek oder compatible. AI_PROVIDER gilt für alle Bereiche ohne eigenen Eintrag; ohne AI_PROVIDER gilt der Anbieter, dessen Schlüssel hinterlegt ist. Nach dem nächsten Start gilt die neue Einstellung, ohne Code-Änderung.
+              In Railway unter Variables, je Bereich: AI_REALTIME_PROVIDER und AI_REALTIME_MODEL, ebenso EXERCISE, ANALYSIS, DEEP, MATERIAL und TEXT. Anbieter: anthropic, openrouter, deepseek, compatible oder manual. AI_PROVIDER gilt für alle Bereiche ohne eigenen Eintrag; ohne AI_PROVIDER gilt der Schalter auf dieser Seite, sonst der Anbieter, dessen Schlüssel hinterlegt ist. „manual" ist der manuelle KI-Modus (ADR 0009): Der Prompt wird zum Kopieren gezeigt, die eingefügte Antwort mit derselben Prüfung übernommen, ohne Kosten. Nach dem nächsten Start gilt die neue Einstellung, ohne Code-Änderung.
             </Info>
           </span>
         </SectionTitle>
@@ -119,7 +148,9 @@ export default async function AICostPage() {
                     </td>
                     <td className="whitespace-nowrap px-3 py-3 font-mono text-[13px]">{route.model || <span className="font-sans text-ink-3">nicht eingestellt</span>}</td>
                     <td className="num px-3 py-3 text-right">
-                      {route.provider === "openrouter" && !p.known ? (
+                      {route.provider === "manual" ? (
+                        <span className="text-ink-2">kostenlos</span>
+                      ) : route.provider === "openrouter" && !p.known ? (
                         <span className="text-ink-2">vom Anbieter gemeldet</span>
                       ) : (
                         <>

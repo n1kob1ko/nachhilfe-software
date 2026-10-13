@@ -20,7 +20,8 @@ type Flavor = Capabilities & {
 
 const env = (name: string) => process.env[name]?.trim() ?? "";
 
-export const FLAVORS: Record<Exclude<ProviderId, "anthropic">, Flavor> = {
+/** Only the providers that really speak this format: anthropic has its own adapter, manual has none. */
+export const FLAVORS: Record<Exclude<ProviderId, "anthropic" | "manual">, Flavor> = {
   openrouter: {
     label: "OpenRouter",
     baseUrl: () => env("OPENROUTER_BASE_URL") || "https://openrouter.ai/api/v1",
@@ -41,7 +42,9 @@ export const FLAVORS: Record<Exclude<ProviderId, "anthropic">, Flavor> = {
   },
   compatible: {
     label: "OpenAI-kompatibel",
-    baseUrl: () => env("AI_COMPATIBLE_BASE_URL"),
+    // Ein lokaler Ollama-Server (Phase 6 des Merges, Schritt 2) spricht dieselbe Schnittstelle und hat
+    // keinen Schlüssel; seine Adresse gewinnt, wenn sie gesetzt ist. Der Adapter selbst ändert sich nicht.
+    baseUrl: () => env("OLLAMA_BASE_URL") || env("AI_COMPATIBLE_BASE_URL"),
     key: () => env("AI_COMPATIBLE_API_KEY"),
     jsonSchema: () => env("AI_COMPATIBLE_JSON_SCHEMA") !== "0",
     images: true,

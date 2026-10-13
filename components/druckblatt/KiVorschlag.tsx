@@ -2,6 +2,7 @@
 
 import { useState, type Dispatch } from "react";
 import { vorschlagSpaltenAction, vorschlagWoerterAction } from "@/app/druckblatt-actions";
+import { ManualAustausch } from "@/components/ai/ManualAustausch";
 import type { SentenceBoxDefinition } from "@/lib/druckblatt/definition/sentence-box-types";
 import type { WorksheetDefinition } from "@/lib/druckblatt/definition/types";
 import type { LesetabelleAktion } from "@/lib/druckblatt/state/worksheet-state";
@@ -71,6 +72,9 @@ function VorschlagPanel({
           </div>
         </>
       )}
+
+      {/* Manueller KI-Modus: zeigt sich nur, wenn er eingestellt ist und ein Vorschlag läuft. */}
+      <ManualAustausch aktiv={laeuft} />
 
       {fehler && <Warnung>{fehler}</Warnung>}
 

@@ -470,7 +470,7 @@ export async function createDraft(s: BuilderSettings, teacherId: number | null, 
   let source: repo.Worksheet["source"] = "manuell";
   let aiError: string | undefined;
   if (!o.empty) {
-    const out = await generateTasks(s, ctx, { meta: { teacherId, trigger: "uebung" } });
+    const out = await generateTasks(s, ctx, { meta: { teacherId, studentId: s.studentId, trigger: "uebung" } });
     tasks = out.tasks;
     source = out.source;
     aiError = out.aiError;
@@ -533,7 +533,7 @@ export async function regenerateTask(taskId: number, o: { difficulty?: Difficult
   const skillIds = task.skillId ? [task.skillId] : s.skillIds;
   const difficulty = o.difficulty ?? (task.difficulty as Difficulty);
   const others = repo.listTasks(w.id).map((t) => t.prompt);
-  const out = await generateTasks(s, ctx, { count: 1, avoid: others, skillIds, categories: task.category ? [task.category] : [], difficulty, meta: { teacherId: o.teacherId ?? null, trigger: "neu_erstellen" } });
+  const out = await generateTasks(s, ctx, { count: 1, avoid: others, skillIds, categories: task.category ? [task.category] : [], difficulty, meta: { teacherId: o.teacherId ?? null, studentId: s.studentId, trigger: "neu_erstellen" } });
   const next = out.tasks[0];
   if (!next) return { ok: false, aiError: out.aiError };
   repo.updateTask(taskId, { ...next, difficulty });

@@ -8,13 +8,19 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash } from "node:crypto";
 import type { z } from "zod";
-import { FUNCTIONS, PROVIDER_IDS, aiSwitchedOff, costOf, routeFor, type AIFunction, type Usage } from "./config";
+import { FUNCTIONS, MANUAL_TIMEOUT_MS, PROVIDER_IDS, aiSwitchedOff, costOf, isLocalModel, routeFor, type AIFunction, type Usage } from "./config";
+import { schuelerDerAnfrage, systemMitHinweisen } from "./hinweise";
 import { budgetState, logCall, type CallStatus } from "./log";
 import { providerReady, providerTransport, unsupported, type Prompt, type Transport } from "./providers";
 
 export type { AIRequest, AIResult, Part, Prompt, Transport } from "./providers";
 
-export type AIMeta = { teacherId?: number | null; unitId?: number | null; trigger?: string };
+/**
+ * `studentId`: der Schüler, um den es geht. Dann kommen seine **KI-Hinweise** in den Systemprompt
+ * (lib/ai/hinweise.ts). Ohne ihn gilt der Schüler der Einheit (`unitId`); Anfragen ohne beides
+ * (Lesetext, Druckblatt, Aufgabenbanken, Verbindungstest) bleiben unverändert.
+ */
+export type AIMeta = { teacherId?: number | null; unitId?: number | null; studentId?: number | null; trigger?: string };
 
 // ---------- replaceable parts (tests and the 60-minute simulation) ----------
 let transport: Transport = providerTransport;
@@ -48,9 +54,9 @@ export function aiEnabled(fn?: AIFunction) {
   });
 }
 
-/** For the cost page: whether any provider has a key at all. */
+/** For the cost page: whether any provider has a key at all. The manual mode is no provider and needs none. */
 export function anyProviderKey() {
-  return PROVIDER_IDS.some(providerReady);
+  return PROVIDER_IDS.some((id) => id !== "manual" && providerReady(id));
 }
 
 // ---------- KI-Qualitätstest: other settings for the requests of one test run ----------
@@ -142,6 +148,13 @@ export async function runAI<S extends z.ZodType>(
   const thinking = ov?.thinking ?? spec.thinking;
   const effort = ov?.effort ?? spec.effort;
   const meta = o.meta ?? {};
+  // KI-Hinweise des Schülers (Phase 6, Schritt 3): sie gehören in den Systemprompt jeder
+  // schülerbezogenen Anfrage, nie zusammen mit seinem Namen. Ohne Schüler oder ohne Hinweise bleibt
+  // der Prompt unverändert. Der Fingerabdruck unten und der manuelle Modus rechnen damit mit dem
+  // vollständigen Prompt: ändern sich die Hinweise, wird nichts Altes wiederverwendet.
+  system = systemMitHinweisen(system, schuelerDerAnfrage(meta));
+  // ein lokales Modell (Ollama) kostet nichts und läuft auch mit aufgebrauchtem Budget weiter
+  const local = isLocalModel(provider);
   const log = (status: CallStatus, extra: Partial<Parameters<typeof logCall>[0]> = {}) =>
     logCall({
       fn,
@@ -170,17 +183,22 @@ export async function runAI<S extends z.ZodType>(
     const r = await running;
     return r.ok ? { ...r, data: r.data as z.infer<S>, reused: true, callId: log("cache") } : r;
   }
-  if (breaker.until > now()) return { ok: false, status: "pausiert", cause: "pausiert", message: MESSAGES.pausiert, callId: log("pausiert") };
-  const b = budgetState(now());
-  if (b.level === "aus") return { ok: false, status: "budget", cause: "budget", message: MESSAGES.budget, callId: log("budget") };
+  // the manual mode costs nothing and talks to nobody: a used-up budget or a paused provider must not stop it
+  if (provider !== "manual") {
+    if (breaker.until > now()) return { ok: false, status: "pausiert", cause: "pausiert", message: MESSAGES.pausiert, callId: log("pausiert") };
+    // a local model (Ollama) is free too: an empty budget does not stop it, the outage break above does
+    if (!local && budgetState(now()).level === "aus") return { ok: false, status: "budget", cause: "budget", message: MESSAGES.budget, callId: log("budget") };
+  }
   // a photo or PDF the configured provider cannot read: a setting to change, not an outage
   const cannot = custom ? null : unsupported(provider, prompt);
   if (cannot) return { ok: false, status: "fehler", cause: "einstellung", message: cannot, callId: log("fehler", { error: cannot }) };
 
   const call = (async (): Promise<Outcome<z.infer<S>>> => {
     const maxTokens = Math.max(1, Math.min(o.maxTokens ?? spec.maxTokens, spec.maxTokens));
+    // a human needs minutes for copy/paste, not the seconds an API gets
+    const frist = provider === "manual" ? MANUAL_TIMEOUT_MS : spec.timeoutMs;
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), spec.timeoutMs);
+    const timer = setTimeout(() => ctrl.abort(), frist);
     const started = Date.now();
     try {
       const res = await transport({
@@ -196,10 +214,10 @@ export async function runAI<S extends z.ZodType>(
         schema,
         ...(spec.schemaInPrompt ? { schemaInPrompt: true } : {}),
         signal: ctrl.signal,
-        timeoutMs: spec.timeoutMs,
+        timeoutMs: frist,
       });
-      // the provider's own price when it reports one, else tokens × price table
-      const cost = res.costUsd ?? costOf(res.model || model, spec.tier, res.usage);
+      // the provider's own price when it reports one, else tokens × price table; a local model: nothing
+      const cost = res.costUsd ?? (local ? 0 : costOf(res.model || model, spec.tier, res.usage));
       const usage = { input: res.usage.input, output: res.usage.output, cacheWrite: res.usage.cacheWrite + (res.usage.cacheWrite1h ?? 0), cacheRead: res.usage.cacheRead, costUsd: cost, model: res.model || model };
       const durationMs = res.simulatedMs ?? Date.now() - started;
       breaker.failures = 0;

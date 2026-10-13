@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { aiEnabled } from "@/lib/ai";
+import { kiModus, setKiModus } from "@/lib/ai/modus";
 import { qualityState, startQualityTest, type RunState } from "@/lib/ai/qualitaetstest";
 import { runSelfTest, type TestStep } from "@/lib/ai/selbsttest";
 import { startTextTest, textTestState } from "@/lib/ai/textkorrektur-test";
@@ -68,4 +69,23 @@ export async function textTestStateAction(): Promise<TextTestResult> {
   const teacher = await requireTeacher();
   if (!teacher.is_admin) return { error: "Nur die Administration sieht den Textkorrektur-Test." };
   return { state: textTestState() };
+}
+
+export type ModusAntwort = { manuell: boolean } | { error: string };
+
+/**
+ * Mehr › KI-Kosten: den manuellen KI-Modus ein- oder ausschalten (ADR 0009).
+ *
+ * Der Wert steht in `app_settings` (`ki_modus`) und gilt für alle Bereiche, deren Anbieter nicht per
+ * Umgebungsvariable gesetzt ist. Er ist eine Einstellung der ganzen Anwendung, deshalb nur für die
+ * Administration.
+ */
+export async function setManualModeAction(manuell: boolean): Promise<ModusAntwort> {
+  const teacher = await requireTeacher();
+  if (!teacher.is_admin) return { error: "Nur die Administration kann den KI-Modus umstellen." };
+  // AI_DISABLED schaltet die KI weiterhin ganz ab; der manuelle Modus braucht keinen Schlüssel
+  setKiModus(manuell ? "manual" : "api");
+  revalidatePath("/mehr/ki-kosten");
+  revalidatePath("/", "layout");
+  return { manuell: kiModus() === "manual" };
 }

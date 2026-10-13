@@ -37,7 +37,7 @@ export async function generateFamilyNoteAction(lessonId: number, mode: "fakten" 
     if (!aiEnabled()) return { error: "Kein KI-Schlüssel hinterlegt." };
     const student = repo.getStudent(lesson.student_id);
     try {
-      const text = await writeFamilyNote(briefForAI(brief, student?.name ?? ""), audience, { teacherId: lesson.editorId, unitId: lesson.unit_id ?? null, trigger: "notiz" });
+      const text = await writeFamilyNote(briefForAI(brief, student?.name ?? ""), audience, { teacherId: lesson.editorId, unitId: lesson.unit_id ?? null, studentId: lesson.student_id, trigger: "notiz" });
       if (!text) return { error: "Claude hat keine Notiz geliefert. Die Notiz aus den Fakten bleibt möglich." };
       note = text;
       source = "ki";

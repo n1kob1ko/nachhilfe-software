@@ -32,12 +32,14 @@ export const DATASETS: Dataset[] = [
   {
     key: "schueler",
     label: "Schüler und Schülerprofile",
-    description: "Stammdaten, Schule, Klasse, Fächer, Themen, Stärken, Schwächen, Ziele, Notizen, zuständiger Lehrer.",
+    description: "Stammdaten, Schule, Klasse, Fächer, Themen, Stärken, Schwächen, Ziele, Notizen, KI-Hinweise, zuständiger Lehrer.",
     build: () => ({
-      headers: ["ID", "Name", "Schultyp", "Klasse", "Schulstufe", "Schule", "Fächer", "Aktuelle Themen", "Stärken", "Schwächen", "Ziele", "Notizen", "Lehrer", "Angelegt"],
+      // „KI-Hinweise“ steht seit Phase 6 (Schritt 3) zwischen „Notizen“ und „Lehrer“: der Import (Phase 7)
+      // liest dieselbe Spaltenfolge.
+      headers: ["ID", "Name", "Schultyp", "Klasse", "Schulstufe", "Schule", "Fächer", "Aktuelle Themen", "Stärken", "Schwächen", "Ziele", "Notizen", "KI-Hinweise", "Lehrer", "Angelegt"],
       rows: q(`SELECT s.*, t.name AS teacher_name FROM students s LEFT JOIN teachers t ON t.id = s.teacher_id ORDER BY s.name COLLATE NOCASE`).map((r) => [
         n(r.id), s(r.name), s(r.school_type), n(r.klasse), n(r.grade), s(r.school), list(r.subjects), s(r.current_topics),
-        s(r.strengths_note), s(r.weaknesses_note), s(r.goals), s(r.notes), s(r.teacher_name), localTime(s(r.created_at)),
+        s(r.strengths_note), s(r.weaknesses_note), s(r.goals), s(r.notes), s(r.ki_hinweise), s(r.teacher_name), localTime(s(r.created_at)),
       ]),
     }),
   },
