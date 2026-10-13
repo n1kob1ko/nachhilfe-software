@@ -1,6 +1,8 @@
 node_modules
 .next
 data/*.db*
+# Phase 9 loader intermediate: licensed aufgabensammlung corpus, local only, never committed.
+data/aufgabensammlung-cache/
 .env*.local
 next-env.d.ts
 *.tsbuildinfo
