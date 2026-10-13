@@ -98,6 +98,8 @@ const PROFILES: Profile[] = [
       weaknesses_note: "Beistrichsetzung bei Nebensätzen.",
       goals: "Weniger Rechtschreibfehler in Aufsätzen.",
       notes: "",
+      // KI-Hinweise (Phase 6, Schritt 3): sie stehen im Systemprompt jeder Anfrage zu diesem Schüler
+      ki_hinweise: "Legasthenie: kurze Sätze, keine Großbuchstaben-Wörter als Fehler werten.",
     },
     subject: "Deutsch",
     skills: {

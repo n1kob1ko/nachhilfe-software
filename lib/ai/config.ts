@@ -167,6 +167,10 @@ const PRICES: [prefix: string, price: Price][] = [
   ["claude-opus-5-5", { in: 4, out: 20, cacheWrite: 5, cacheRead: 0.2 }],
   ["anthropic/claude-haiku-5.5", { in: 0.1, out: 0.5, cacheWrite: 0.125, cacheRead: 0.01 }],
   ["anthropic/claude-sonnet-5.5", { in: 2, out: 10, cacheWrite: 2.5, cacheRead: 0.2 }],
+  // Lokale Modelle (Ollama, Phase 6 des Merges, Schritt 2): sie kosten nichts. Der Eintrag hält
+  // `ollama/*` aus dem Tarif-Rückfall (TIER_PRICE) heraus, der sonst den Claude-Preis ansetzen würde;
+  // für einen Aufruf über OLLAMA_BASE_URL rechnet der Router ohnehin mit 0 (isLocalModel).
+  ["ollama/", { in: 0, out: 0, cacheWrite: 0, cacheRead: 0 }],
 ];
 /** For a model without a known price: the price of the default model of its tier. */
 const TIER_PRICE: Record<Tier, Price> = { fast: PRICES[0][1], standard: PRICES[1][1], deep: PRICES[2][1] };
@@ -236,6 +240,17 @@ export function aiSwitchedOff() {
   return ["1", "true", "ja"].includes((process.env.AI_DISABLED ?? "").trim().toLowerCase());
 }
 
+/**
+ * Ein Modellserver auf dem eigenen Rechner (Ollama, Phase 6 des Merges, Schritt 2) spricht dieselbe
+ * Schnittstelle wie ein OpenAI-kompatibler Anbieter, braucht aber keinen Schlüssel und kostet nichts.
+ * Als lokal zählt **nur** `OLLAMA_BASE_URL`: eine andere `AI_COMPATIBLE_BASE_URL` — auch eine auf
+ * 127.0.0.1 — kann ein bezahlter Dienst hinter einem eigenen Gateway sein, dort gilt weiter die
+ * Preistabelle.
+ */
+export function isLocalModel(provider: ProviderId): boolean {
+  return provider === "compatible" && Boolean(process.env.OLLAMA_BASE_URL?.trim());
+}
+
 /** Whether an API key for the provider is set (the key itself never leaves the provider adapter). */
 export function hasKey(provider: ProviderId = "anthropic") {
   const e = process.env;
@@ -247,7 +262,8 @@ export function hasKey(provider: ProviderId = "anthropic") {
     case "deepseek":
       return Boolean(e.DEEPSEEK_API_KEY);
     case "compatible":
-      return Boolean(e.AI_COMPATIBLE_API_KEY && e.AI_COMPATIBLE_BASE_URL);
+      // a local model server (Ollama) needs no key; anything else needs key and address
+      return isLocalModel("compatible") || Boolean(e.AI_COMPATIBLE_API_KEY && e.AI_COMPATIBLE_BASE_URL);
     case "manual":
       // no key is needed and none can exist; `providerReady` counts manual as ready
       return false;

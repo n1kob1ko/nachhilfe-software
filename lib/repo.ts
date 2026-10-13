@@ -23,6 +23,8 @@ export type Student = {
   weaknesses_note: string;
   goals: string;
   notes: string;
+  /** KI-Hinweise (CONTEXT.md): was die KI über diesen Schüler wissen soll, z. B. „Legasthenie: kurze Sätze“. */
+  ki_hinweise: string;
   access_token: string;
   created_at: string;
   /** 'unklar' when school type, class and Schulstufe do not fit together; curriculum content is then not narrowed down. */
@@ -268,24 +270,28 @@ export function getStudentByToken(token: string): Student | null {
   const r = db().prepare("SELECT * FROM students WHERE access_token = ?").get(token) as Row | undefined;
   return r ? toStudent(r) : null;
 }
-export type StudentInput = Omit<Student, "id" | "access_token" | "created_at" | "stufe_status">;
+/**
+ * Everything the student form saves. `ki_hinweise` is the only optional part: not sending it keeps the
+ * stored text (updateStudent) or leaves it empty (createStudent), so older callers stay valid.
+ */
+export type StudentInput = Omit<Student, "id" | "access_token" | "created_at" | "stufe_status" | "ki_hinweise"> & { ki_hinweise?: string };
 export function createStudent(s: StudentInput): number {
   const token = crypto.randomBytes(9).toString("base64url");
   const res = db()
     .prepare(
-      `INSERT INTO students (name, grade, klasse, teacher_id, school, school_type, subjects, current_topics, strengths_note, weaknesses_note, goals, notes, access_token, stufe_status)
-       VALUES (@name, @grade, @klasse, @teacher_id, @school, @school_type, @subjects, @current_topics, @strengths_note, @weaknesses_note, @goals, @notes, @token, @stufe_status)`,
+      `INSERT INTO students (name, grade, klasse, teacher_id, school, school_type, subjects, current_topics, strengths_note, weaknesses_note, goals, notes, ki_hinweise, access_token, stufe_status)
+       VALUES (@name, @grade, @klasse, @teacher_id, @school, @school_type, @subjects, @current_topics, @strengths_note, @weaknesses_note, @goals, @notes, @ki_hinweise, @token, @stufe_status)`,
     )
-    .run({ ...s, subjects: JSON.stringify(s.subjects), token, stufe_status: checkLevel(s.school_type, s.klasse, s.grade).status });
+    .run({ ...s, ki_hinweise: s.ki_hinweise ?? "", subjects: JSON.stringify(s.subjects), token, stufe_status: checkLevel(s.school_type, s.klasse, s.grade).status });
   return Number(res.lastInsertRowid);
 }
 export function updateStudent(id: number, s: StudentInput) {
   db()
     .prepare(
       `UPDATE students SET name=@name, grade=@grade, klasse=@klasse, teacher_id=@teacher_id, school=@school, school_type=@school_type, subjects=@subjects, current_topics=@current_topics,
-       strengths_note=@strengths_note, weaknesses_note=@weaknesses_note, goals=@goals, notes=@notes, stufe_status=@stufe_status WHERE id=@id`,
+       strengths_note=@strengths_note, weaknesses_note=@weaknesses_note, goals=@goals, notes=@notes, ki_hinweise=COALESCE(@ki_hinweise, ki_hinweise), stufe_status=@stufe_status WHERE id=@id`,
     )
-    .run({ ...s, subjects: JSON.stringify(s.subjects), id, stufe_status: checkLevel(s.school_type, s.klasse, s.grade).status });
+    .run({ ...s, ki_hinweise: s.ki_hinweise ?? null, subjects: JSON.stringify(s.subjects), id, stufe_status: checkLevel(s.school_type, s.klasse, s.grade).status });
 }
 export function deleteStudent(id: number) {
   db().prepare("DELETE FROM students WHERE id = ?").run(id);

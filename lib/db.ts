@@ -810,6 +810,10 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // Druckblatt ist seine Beschreibung, keine Datei (ADR 0010: „Gespeichert wird die Definition").
   // Gelesen werden sie über `lib/materials.ts`; dort sind sie für kind = 'druckblatt' optional.
   ["materials", "definition", "TEXT"],
+  // KI-Hinweise je Schüler (Phase 6 des Merges, Schritt 3): was die KI über diesen Schüler wissen
+  // soll, z. B. „Legasthenie: kurze Sätze“. Der Text steht im Systemprompt jeder schülerbezogenen
+  // Anfrage (lib/ai/hinweise.ts) und wird dort ohne den Namen des Schülers gesendet.
+  ["students", "ki_hinweise", "TEXT NOT NULL DEFAULT ''"],
 ];
 
 /** Teachers to start with; more can be added later. */

@@ -47,6 +47,7 @@ export async function saveStudentAction(formData: FormData) {
     weaknesses_note: str(formData, "weaknesses_note"),
     goals: str(formData, "goals"),
     notes: str(formData, "notes"),
+    ki_hinweise: str(formData, "ki_hinweise"),
   };
   const extra = str(formData, "subject_other");
   if (extra) data.subjects.push(...extra.split(",").map((s) => s.trim()).filter(Boolean));
@@ -201,6 +202,7 @@ export async function applyRecommendationAction(studentId: number, key: string, 
     title: rec.kind === "ueberpruefung" ? `Überprüfung: ${rec.skill.name}` : rec.rule === 6 ? `Wiederholung: ${rec.skill.name}` : `Training: ${rec.skill.area} › ${rec.skill.name}`,
     focusNote: rec.focusNote,
     teacherId: teacher.id,
+    studentId,
   });
   noteActivity(studentId);
   repo.assignWorksheet(result.id, studentId, `${RECOMMENDATION_NOTE} (${rec.skill.area} › ${rec.skill.name}): ${rec.reason}`, runningUnitForStudent(studentId)?.id ?? null);
@@ -256,7 +258,7 @@ export async function aiInsightAction(studentId: number, deep = false): Promise<
     ...lessons.map((l) => `- ${l.starts_at.slice(0, 10)} ${l.topic}: Verständnis ${l.understanding ?? "–"}/5. Fehler: ${l.mistakes || "–"}`),
   ].join("\n");
   try {
-    const out = await analyzeWithAI(context, { teacherId: teacher.id, trigger: deep ? "tiefenanalyse" : "einschaetzung" }, deep);
+    const out = await analyzeWithAI(context, { teacherId: teacher.id, studentId, trigger: deep ? "tiefenanalyse" : "einschaetzung" }, deep);
     return out ?? { error: "Die KI hat keine Einschätzung geliefert." };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "KI-Anfrage fehlgeschlagen." };
