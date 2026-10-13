@@ -1,6 +1,6 @@
 # Lernheft – Nachhilfe-Software
 
-Web-App für Nachhilfelehrer: Schülerprofile, Dokumentation jeder Einheit, Übungs-Builder mit automatischen Lösungswegen, ein Schüler-Modus zum selbstständigen Üben, Fortschritt pro Fähigkeit, automatische Analyse und Übungsempfehlungen.
+Web-App für Nachhilfeinstitute: Schülerprofile, Dokumentation jeder Einheit, Übungs-Builder mit automatischen Lösungswegen, ein Schüler-Modus zum selbstständigen Üben, Fortschritt pro Fähigkeit, automatische Analyse und Übungsempfehlungen — dazu der Wochenplan des Instituts, Blätter zum Ausdrucken und eingebaute Aufgabenbanken.
 
 ## Starten
 
@@ -51,6 +51,15 @@ Alle KI-Aufrufe laufen über `lib/ai/router.ts`, der Anbieter steckt in einem Ad
 | Mathematik mit Rechenwegen: der Schüler schreibt jeden Schritt in eine Zeile (Brüche, Potenzen, Wurzeln ohne LaTeX, Zeichenleiste), die App prüft jede Zeile und das Ergebnis sicher ohne Codeausführung, akzeptiert andere richtige Wege und gleichwertige Ergebnisse; mehrteilige Sachaufgaben mit Folgefehlern; Unsicheres bewertet der Lehrer; A4 mit kariertem Rechenfeld ([docs/rechenwege.md](docs/rechenwege.md)) | Übung erstellen › Aufgabentyp |
 | Leseverständnis mit längerem Text: eigener Text oder KI-Text, 7 Fragearten mit Musterlösung, Erwartungshorizont und Beleg, ungeeignete Fragen markiert; Text neben den Fragen am Laptop/iPad; offene Antworten bewertet der Lehrer; A4 Schüler/Lehrer ([docs/leseverstaendnis.md](docs/leseverstaendnis.md)) | Übung erstellen › Leseverständnis |
 | Wortarten bestimmen: echte Bestimmungsaufgaben ohne KI (zuordnen, markiertes Wort, heraussuchen, sortieren, verbessern), Wortarten nach Schulstufe wählbar, KI-Aufgaben von der App geprüft (falsche Wortarten, Platzhalter, Adverb/Adjektiv) ([docs/wortarten.md](docs/wortarten.md)) | Übung erstellen › Wortarten bestimmen |
+| Planung (Wochenplan): eine Woche aus Verfügbarkeit, Räumen und Regeln erzeugen, Plätze von Hand setzen, verschieben, sperren und veröffentlichen, A4 drucken; Entwurf und veröffentlichte Woche sind getrennt, gesperrte Plätze überstehen „Neu generieren“; beim Start verknüpft sich die Einheit mit ihrem Platz, ein vergangener Platz ohne Einheit gilt als „nicht stattgefunden“ ([docs/planung.md](docs/planung.md)) | Mehr › Planung, Übersicht › Meine Woche |
+| Räume und Verfügbarkeit: Räume (Gebäude, Name, vor Ort/online) anlegen und deaktivieren; je Lehrer Verfügbarkeit, Wochenziel und Raumwünsche; je Schüler Einheiten pro Woche, geplante Dauer, Modus, erlaubte Lehrer und Verfügbarkeit, dazu Abweichungen für eine einzelne Woche | Mehr › Räume, Mehr › Lehrer & Verfügbarkeit, Schüler › Bearbeiten |
+| Blätter erstellen: Lesetabelle, Satzbaukasten und Nachmalblatt einstellen, als A4-Vorschau ansehen und drucken; ein Blatt als **Druckblatt** speichern, wieder öffnen und einem Schüler zuweisen ([docs/druckblatt.md](docs/druckblatt.md)) | Mehr › Blätter erstellen |
+| Aufgabenbanken Deutsch: über 3 000 Aufgaben aus dem Artikel Trainer als eingebaute Generatoren (Artikel, Adjektivdeklination, Präposition und Kasus, Präteritum, Perfekt, das/dass, Hauptsatz/Gliedsatz) und sechs neue Fähigkeiten; das Geschlecht eines Nomens ist mit Farbe und Buchstabe m/f/n markiert ([docs/banks-pruefung.md](docs/banks-pruefung.md)) | Übung erstellen › Thema und Fähigkeit |
+| Schnellrunde: eine Multiple-Choice-Übung läuft im Durchlauf — ein Tipp, kurze Rückmeldung, automatisch die nächste Aufgabe, Anfang und Ende als eigene Seite, große Flächen fürs Tablet; Versuche, Zeit und Hilfen werden wie sonst gespeichert | Übung erstellen › „Als Schnellrunde senden“, Schüler-Link |
+| Auswendig schreiben: einen Text lesen, die Hilfe Stufe für Stufe ausblenden lassen und ihn aus dem Gedächtnis schreiben; die App vergleicht Wort für Wort und legt die falschen Wörter als Fehler ab ([docs/uebungstypen.md](docs/uebungstypen.md)) | Übung erstellen › Aufgabentyp |
+| Manueller KI-Modus: kein Aufruf nach außen — die App zeigt den vollständigen Prompt zum Kopieren, die eingefügte Antwort durchläuft dieselbe Prüfung wie eine Antwort über die API; es entstehen keine Kosten ([docs/ki-manuell.md](docs/ki-manuell.md)) | Mehr › KI-Kosten |
+| KI-Hinweise je Schüler: Notizen, wie die KI ihn behandeln soll; sie hängen am Systemprompt jeder schülerbezogenen Anfrage und gehen nie mit dem Namen hinaus | Schüler › Bearbeiten |
+| Import (CSV): Schüler und Lehrer aus einer Datei im Format des Datenexports übernehmen — zuerst die Vorschau mit Zeilenfehlern und Dubletten, geschrieben wird erst nach dem Bestätigen | Mehr › Import (Verwaltung) |
 | Dashboard: heutige Einheiten, Trend und Problem je Schüler, fällige Hausübungen, zuletzt Bearbeitetes | Übersicht |
 
 ## Schultypen und Klassen
@@ -159,6 +168,11 @@ lib/ai.ts           Claude: Übungen, Freitext-Korrektur, Einschätzung
 lib/analysis.ts     Beherrschung, Trends, Fehler, Empfehlungen
 lib/service.ts      Antwort prüfen und speichern, Analyse laden
 lib/builder.ts      Übungs-Builder: Schülerkontext, Vorschläge, Entwurf, Prüfen, Freigeben, Vorlagen
+lib/banks.ts        eingebaute Aufgabenbanken (Artikel, Adjektivdeklination, Präpositionen, Zeiten, das/dass, Satzbau)
+lib/planung/…       Wochenplan: Generator, Regeln, Speicher, „heute“, Verfügbarkeit
+lib/druckblatt/…    Blätter erstellen: Rendering, Inhalte, Blattdefinition
+lib/csv-import.ts   CSV-Import von Schülern und Lehrern
+lib/quick-round.ts  Schnellrunde, lib/memorize.ts Auswendig schreiben
 lib/whiteboard*.ts  Tafel: Speicher, Live-Verbindung, Rechte, Vorlagen
 components/whiteboard/  Tafel im Browser (Excalidraw, Werkzeugleiste, Einfügen)
 app/(tutor)/…       Oberfläche für die Nachhilfelehrkraft
@@ -173,3 +187,4 @@ Tests: `npm test` (prüft u. a., dass jede generierte Aufgabe ihre eigene Lösun
 - Die JSON-Sicherung wird heruntergeladen, nicht automatisch angelegt. Eine Wiederherstellung über die Oberfläche gibt es noch nicht (nur `restoreBackup()` im Code).
 - Schüler-Links sind geheime Links ohne Passwort.
 - Bilder und PDFs auf der Tafel sind noch nicht eingebaut.
+- Die Aufgabenbanken aus dem Merge sind eingebaut und nutzbar; der KI-Qualitätstest über alle Einträge läuft erst mit hinterlegtem Schlüssel (Stand: [docs/banks-pruefung.md](docs/banks-pruefung.md)).

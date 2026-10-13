@@ -7,9 +7,8 @@ Dieses Dokument ist ein **Glossar** — es legt fest, welches Wort für welchen
 Begriff gilt. Keine Architektur, keine Umsetzungsdetails, keine Entscheidungen;
 die kommen aus [tommys-merge.md](tommys-merge.md) und `docs/`.
 
-Die Begriffe mit dem Vermerk *kommt mit Phase …* gibt es noch nicht: sie sind
-mit dem Merge-Plan vereinbart und werden hier festgehalten, damit sie beim Bauen
-nicht anders heißen.
+Der Merge (Phasen 0–7) ist umgesetzt: alle hier festgelegten Begriffe gibt es im
+Code. Die Phasen und Entscheidungen stehen in [tommys-merge.md](tommys-merge.md).
 
 ## Personen
 
@@ -38,14 +37,12 @@ _Avoid_: Stunde, Lektion, Sitzung, Termin
 Ein Platz im Wochenplan: wer (Lehrer, Schüler), wo (Raum), an welchem Wochentag,
 zu welcher Startzeit und mit welcher **geplanten Dauer**. Sie wird erst wirklich,
 wenn eine Einheit sich mit ihr verknüpft (`unit_id`); ein vergangener Platz ohne
-Einheit heißt „nicht stattgefunden“ und hat keine Abrechnungsfolge. *Kommt mit
-Phase 4.*
+Einheit heißt „nicht stattgefunden“ und hat keine Abrechnungsfolge.
 _Avoid_: Termin, Slot, geplante Stunde, Lesson
 
 **geplante Dauer**:
 Wie lange eine **geplante Einheit** dauern soll — je Schüler eingestellt,
 Vorgabe 100 Minuten, erlaubt 1–300. Sie schreibt die echte Einheit nicht vor.
-*Kommt mit Phase 3/4.*
 _Avoid_: Dauer, Soll-Dauer, Termindauer
 
 **Dauer**:
@@ -57,7 +54,7 @@ _Avoid_: geplante Dauer, Zeit, Länge
 **Wochenplan**:
 Der Plan einer Kalenderwoche (Montag bis Sonntag, Europe/Vienna): welche
 **geplanten Einheiten** es gibt, mit Lehrer, Schüler, Raum und Zeit. Eine Woche
-ist entweder Entwurf oder veröffentlicht. *Kommt mit Phase 4.*
+ist entweder Entwurf oder veröffentlicht.
 _Avoid_: Stundenplan, Zeitplan, Kalender, Schedule
 
 **Entwurf / veröffentlicht**:
@@ -71,20 +68,18 @@ _Avoid_: Draft, freigegeben, aktiv, live
 **gesperrt**:
 Kennzeichen an einer **geplanten Einheit**: sie ist von Hand gesetzt und darf
 nicht verschoben werden. „Neu generieren“ lässt gesperrte Plätze stehen, sonst
-wäre die Handarbeit nach jedem Lauf weg. *Kommt mit Phase 4.*
+wäre die Handarbeit nach jedem Lauf weg.
 _Avoid_: fixiert, gepinnt, blockiert, locked
 
 **Raum**:
 Wo eine **geplante Einheit** stattfindet: Gebäude, Name, und ob vor Ort oder
 online. Ein Raum wird deaktiviert, nie gelöscht, sobald Plätze auf ihn zeigen.
-*Kommt mit Phase 3.*
 _Avoid_: Zimmer, Saal, Ort, Location
 
 **Verfügbarkeit**:
 Die Zeiten, in denen ein Lehrer oder Schüler eingeplant werden darf: je
 Wochentag eine oder mehrere Spannen (ISO: 1 = Montag … 7 = Sonntag). Dazu kann
 es für eine einzelne Woche eine **Abweichung** geben, die nur diese Woche gilt.
-*Kommt mit Phase 3.*
 _Avoid_: Zeitfenster, freie Zeiten, Availability, Kapazität
 
 ## Üben und Aufgaben
@@ -168,14 +163,14 @@ _Avoid_: Klassenarbeit, Prüfung, Examen, Schultest
 Der eigene Bereich für Blätter zum Ausdrucken: **Lesetabelle**,
 **Satzbaukasten**, **Nachmalblatt** und später weitere. Das Ergebnis eines
 Generators ist ein **Druckblatt**. Der bestehende A4-Druck einer **Übung** bleibt
-davon getrennt. *Kommt mit Phase 5.*
+davon getrennt.
 _Avoid_: Worksheet-Generator, Druckzentrum, Blattgenerator, Druckbereich
 
 **Druckblatt**:
 Ein unter „Blätter erstellen“ erzeugtes Blatt. Seine Beschreibung ist eine
 **Definition** — was gedruckt werden soll, nicht wie es aussieht; aus ihr lässt
 es sich wieder öffnen. Gespeichert wird es als Material (`kind = druckblatt`):
-als Vorlage ohne Schüler oder als Kopie für einen Schüler. *Kommt mit Phase 5.*
+als Vorlage ohne Schüler oder als Kopie für einen Schüler.
 _Avoid_: Worksheet, Arbeitsblatt (das ist der A4-Druck einer Übung), PDF, Ausdruck
 
 **Lesetabelle**:
@@ -211,14 +206,14 @@ _Avoid_: Font, Schriftart, Typeface, Handschrift
 **KI-Hinweise**:
 Notizen je Schüler, wie die KI ihn behandeln soll („Legasthenie: kurze Sätze“).
 Sie hängen am Systemprompt jeder schülerbezogenen Anfrage und gehen nie mit dem
-Namen des Schülers hinaus. *Kommt mit Phase 6.*
+Namen des Schülers hinaus.
 _Avoid_: Prompt, KI-Profil, Notizen, Anweisungen
 
 **manueller KI-Modus**:
 Ein Betrieb ohne Anfrage nach außen: die App zeigt den vollständigen Prompt zum
 Kopieren, der Lehrer fügt die Antwort ein, und die App prüft sie mit derselben
 Reparatur und Validierung wie eine Antwort über die API. Es entstehen keine
-Kosten. *Kommt mit Phase 6.*
+Kosten.
 _Avoid_: Offline-Modus, ChatGPT-Modus, Copy-Paste-KI, Trockenlauf
 
 ## Regel: „Stunde“ ist eine Uhrzeit
