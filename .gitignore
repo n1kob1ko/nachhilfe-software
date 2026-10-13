@@ -5,6 +5,8 @@ data/*.db*
 data/aufgabensammlung-cache/
 # The signed licence agreement stays in private storage (C:\Users\niko\Desktop\Lizenzen\).
 docs/lizenzen/*.pdf
+# Markenmuster des Lizenzgebers: nur die Vorlage (….example.json) ist im Repository.
+data/aufgabensammlung-marken.json
 .env*.local
 next-env.d.ts
 *.tsbuildinfo

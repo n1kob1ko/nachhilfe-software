@@ -99,14 +99,14 @@ das Drag-and-Drop- und Multiple-Choice-Widget (D11), die Prisma-Migrationen,
 `backups/*.dump`, `docker-compose.yml`, `.next`, `node_modules` und
 `tsconfig.tsbuildinfo` (D4).
 
-## `diebstahl/aufgabensammlung` — mit Lizenz übernommen
+## Die lizenzierte Aufgabensammlung — mit Lizenz übernommen
 
-`C:\Users\niko\Desktop\diebstahl\aufgabensammlung` ist eine abgegriffene Kopie von
-aufgabensammlung.de (Lizenzgeber eG). Die Inhalte dürfen **nur mit einer
-unterschriebenen Lizenz** von Lizenzgeber eG verwendet werden. Diese Lizenz ist
+Die lizenzierte Aufgabensammlung liegt als Kopie **außerhalb dieses
+Repositories**. Die Inhalte dürfen **nur mit einer
+unterschriebenen Lizenz** des Lizenzgebers verwendet werden. Diese Lizenz ist
 unterschrieben und liegt **in privater Ablage**
-(`C:\Users\niko\Desktop\Lizenzen\lizenzgeber-eg-lizenzvertrag.pdf`; digitale Signatur über
-DigiSigner, 2026-10-13, je eine Signatur von Lizenzgeber eG und vom
+(`C:\Users\niko\Desktop\Lizenzen\lizenzvertrag-2026-10-13.pdf`; digitale Signatur über
+DigiSigner, 2026-10-13, je eine Signatur des Lizenzgebers und vom
 Lizenznehmer) — das Repository enthält das Dokument **nicht**, sondern nur den
 Nachweis darüber in `docs/lizenzen/README.md`.
 
