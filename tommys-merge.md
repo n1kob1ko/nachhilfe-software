@@ -1,12 +1,9 @@
 # Tommy's merge — consolidating the tutoring tools into nachhilfe-software
 
-Status: **umgesetzt am 2026-10-13.** Die Phasen 0–9 sind gebaut und in `main`. Dieses Dokument bleibt als Geschichte des Merges stehen (D15): es beschreibt weiterhin den Plan von 2026-10-12, nicht den heutigen Stand im Detail.
-
-**Phase 9 (lizenzierte Aufgabensammlung) ist umgesetzt.** Die unterschriebene Lizenz des Lizenzgebers (DigiSigner, 2026-10-13, zwei Signaturen) liegt **in privater Ablage** (`C:\Users\niko\Desktop\Lizenzen\lizenzvertrag-2026-10-13.pdf`); im Repository steht nur der Nachweis darüber in `docs/lizenzen/README.md`. Damit war der Riegel offen. Der Import hat 25 376 Aufgaben als Bibliothekseinträge angelegt und trägt je Aufgabe die Frage-ID des Korpus als `source_ref` mit, sodass der Inhalt wieder entfernt werden kann, falls die Lizenz endet. Alle Zahlen, Zuordnungen und das bewusst nicht Importierte stehen in [docs/aufgabensammlung-import.md](docs/aufgabensammlung-import.md); die Qualitätsprüfung der importierten Aufgaben hat **noch nicht** stattgefunden (kein Schlüssel) und ist in [docs/aufgabensammlung-pruefung.md](docs/aufgabensammlung-pruefung.md) als offen vermerkt.
+Status: **umgesetzt am 2026-10-13.** Die Phasen 0–8 sind gebaut und in `main`. Dieses Dokument bleibt als Geschichte des Merges stehen (D15): es beschreibt weiterhin den Plan von 2026-10-12, nicht den heutigen Stand im Detail.
 
 **Target:** this repo (`nachhilfe-software`, "Lernheft"). Everything ends up here, on this repo's stack.
 **Sources:** `Artikel Trainer`, `aufgaben_webseite`, `tutoring institute platform` (all on the Desktop next to this repo).
-**Gated:** the licensed Aufgabensammlung — a copy **outside this repo**, the licensor's content. Its content may only be used under a **signed** licence of the licensor. That licence is now signed and recorded in `docs/lizenzen/README.md` (the signed PDF itself is kept out of the repo), so the import in Phase 9 is allowed; without it, **no question, text, image, audio or topic tree from it may enter this repo.**
 
 ---
 
@@ -307,21 +304,6 @@ Done when: the export file of the demo data re-imports cleanly into an empty dat
 1. Update `README.md` ("Was die App kann" table: Planung, Blätter erstellen, Schnellrunde, Auswendig schreiben, manueller KI-Modus, Import) and `PRODUCT.md`.
 2. Delete this file's "Status: plan" line → "Status: umgesetzt am …", keep the file as history.
 3. In each source repo: commit a `MERGED.md` ("Merged into nachhilfe-software on <date>, see tommys-merge.md there; read-only"), tag `merged-into-lernheft`, push, archive on GitHub (`gh repo archive`) where a remote exists (`Artikel Trainer` → `mc-dream-education/mc-web-app`). No deletion (D15). `aufgaben_webseite/.env` and `tutoring institute platform/.env` contain secrets — make sure they are not committed when tagging.
-4. The corpus folder (the licensed Aufgabensammlung copy, outside this repo) stays as is; it is only read by Phase 9.
-
-### Phase 9 — import of the licensed Aufgabensammlung (BLOCKED until licence gate passes)
-
-
-**Steps:**
-1. `scripts/import-aufgabensammlung.ts`: reads the corpus following the corpus' `DATA_ARCHITECTURE.md` (§0 "what to use", §6 reference loader — port to TS): source of truth `raw/api/question/<id>/question.json` → `payload.appJson`; hierarchy from `state/path-tree.jsonl`; dedupe topics by `payload.id`; skip the 96 corrupt files and the 34 self-contradicting questions (DATA_ARCHITECTURE §3.3, §9).
-2. Mapping of question types → this repo's `TaskType`: MultipleChoice → `mc`; CorrectWrong → `mc` (richtig/falsch); OrderedChoice → `order`; Associate → new format `match` (only if Phase 1/2 did not add one; otherwise drop); Vocabulary/KnowAWord → `grammar` with the answer as solution where present, else skip; Read → `reading` only with a usable text; Talk, MemorizePoints, ThinkAndReveal, CycleEnd, Sortable, MultiSelect → skip in the first import (report counts).
-3. Mapping of school system: grundschule → VS (Klasse 1–4); hauptschule/realschule/gesamtschule Klasse 5–8 → MS 1–4; gymnasium Klasse 5–12 → Gymnasium 1–8; ausbildung/studium/daf → skip or tag only. Subjects: only Mathematik, Deutsch, Englisch in the first import (the subjects this app has); others reported, not imported. German → Austrian terms on import (Komma → Beistrich in rules texts, Klassenarbeit → Schularbeit, Hausaufgabe → Hausübung, Sachunterricht → Sachunterricht stays) via a replacement table in the script, reviewed by hand.
-4. Target: tasks go into the existing Bibliothek as **Vorlagen** (`worksheets` with `status = 'vorlage'`, or the library tables used by `lib/library.ts`), one Vorlage per leaf topic, skills mapped via topic name → `skills` (unmapped topics get a new skill under the subject, flagged for review). Strip all source branding, URLs and HTML (stem is an HTML fragment); store a hidden `source_ref` (question id) per task for licence tracing and for removing content if Anlage 1 changes.
-5. Media: only files actually stored in the mirror; no hotlinking to a host of the licensor. Tasks whose media is missing are skipped.
-6. Quality pass as in Phase 1 step 7 (sample-based: AI quality test on a stratified sample of 2,000, full run only for tasks that are assigned).
-7. Tests: loader on fixtures copied from 20 real question files (all types), mapping table coverage, branding stripper (no brand string survives; the tests use synthetic patterns, the real ones are operator config), `source_ref` present on every imported task.
-
-Done when:  the import report is committed as `docs/aufgabensammlung-import.md`, and imported Vorlagen are usable in the Übungs-Builder.
 
 ---
 
@@ -354,4 +336,4 @@ Done when:  the import report is committed as `docs/aufgabensammlung-import.md`,
 - **Backup:** every new table/column must appear in `lib/backup.ts` restore test and, where useful, in `lib/exports.ts`.
 - **Permissions:** every new server action checks the teacher via `lib/auth.ts`; admin-only actions check `is_admin`.
 - **Secrets:** source repos contain `.env` files and a hardcoded Flask secret/password; nothing from them is copied.
-- **Copyright:** the licensed Aufgabensammlung copy (outside this repo) only after the Phase 9 licence gate (signed, signer authorised, recorded in `docs/lizenzen/README.md`). Fonts only under SIL OFL with licence file.
+- **Copyright:** Fonts only under SIL OFL with licence file.

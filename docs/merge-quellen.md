@@ -99,28 +99,6 @@ das Drag-and-Drop- und Multiple-Choice-Widget (D11), die Prisma-Migrationen,
 `backups/*.dump`, `docker-compose.yml`, `.next`, `node_modules` und
 `tsconfig.tsbuildinfo` (D4).
 
-## Die lizenzierte Aufgabensammlung — mit Lizenz übernommen
-
-Die lizenzierte Aufgabensammlung liegt als Kopie **außerhalb dieses
-Repositories**. Die Inhalte dürfen **nur mit einer
-unterschriebenen Lizenz** des Lizenzgebers verwendet werden. Diese Lizenz ist
-unterschrieben und liegt **in privater Ablage**
-(`C:\Users\niko\Desktop\Lizenzen\lizenzvertrag-2026-10-13.pdf`; digitale Signatur über
-DigiSigner, 2026-10-13, je eine Signatur des Lizenzgebers und vom
-Lizenznehmer) — das Repository enthält das Dokument **nicht**, sondern nur den
-Nachweis darüber in `docs/lizenzen/README.md`.
-
-Damit durfte die Kopie gelesen werden. Phase 9 hat **25 376 Aufgaben** als
-Bibliothekseinträge übernommen; jede trägt die Frage-ID des Korpus als
-`source_ref`, sodass der Inhalt wieder entfernt werden kann, wenn die Lizenz
-endet. Alle Zahlen, Zuordnungen und das bewusst nicht Importierte stehen in
-`docs/aufgabensammlung-import.md`. Die Qualitätsprüfung der übernommenen Aufgaben hat
-**noch nicht** stattgefunden — ohne Schlüssel läuft sie nicht — und ist in
-`docs/aufgabensammlung-pruefung.md` als offen vermerkt.
-
-Ohne diese Lizenz gilt weiterhin: es stammt keine einzige Frage, kein Text, kein
-Bild, kein Ton und kein Themenbaum daraus in dieses Repository.
-
 ## Einfrieren: was noch aussteht
 
 Das Einfrieren ist bis auf die lokalen Schritte erledigt. Offen sind nur die

@@ -84,7 +84,7 @@ export function WorksheetEditor(p: Props) {
   return (
     <div className="grid gap-3">
       {reading && <ReadingTextPanel key={reading.title + reading.text} worksheetId={p.worksheetId} reading={reading} tasks={p.tasks} editable={p.editable} subject={p.subject} />}
-      {p.tasks.length === 0 && <p className="panel px-5 py-6 text-[15px] text-ink-2">Noch keine Aufgaben. Leg unten die erste an oder übernimm eine aus der Aufgabensammlung.</p>}
+      {p.tasks.length === 0 && <p className="panel px-5 py-6 text-[15px] text-ink-2">Noch keine Aufgaben. Leg unten die erste an oder übernimm eine aus der Aufgabenbibliothek.</p>}
       <ol className="grid gap-3" aria-label="Aufgaben">
         {p.tasks.map((t, i) => {
           const shown = t.data.passage ? passages.has(t.data.passage) : false;
