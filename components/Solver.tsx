@@ -12,9 +12,13 @@ import type { MathAnswer as MathDraft } from "@/lib/math-check";
 import type { MathView } from "@/lib/math-task";
 import { splitFractions } from "@/lib/math-text";
 import { checkedMath, initialMath, markMath, MathAnswerInput, mathAnswer, mathReady, mathTouched, restoreMath, type MathState, type MathTaskView } from "./MathAnswer";
+import { GenusBadge } from "./TaskPreview";
 import { MathText } from "./MathText";
 import { FixCompare } from "./FixMarks";
 import { ReadingTextView } from "./ReadingText";
+import { MemorizeTextBox } from "./MemorizeText";
+import { UmlautBar, type TextTarget } from "./UmlautBar";
+import { isMemorizeLevel, type MemorizeLevel } from "@/lib/memorize";
 
 export type ClientTask = {
   id: number;
@@ -37,6 +41,8 @@ export type ClientTask = {
   faulty: string | null;
   /** Freie Antwort: 1 = one line, more = a text field of about that many lines. */
   lines: number | null;
+  /** Artikel-Aufgaben: das Genus des Nomens (m/f/n) für die Färbung nach D10; null, wenn keines gesetzt ist. */
+  genus: "m" | "f" | "n" | null;
   /** Rechenweg and Sachaufgabe: the equation or term, the parts (components/MathAnswer.tsx). */
   math: MathTaskView | null;
   /**
@@ -49,7 +55,7 @@ export type ClientTask = {
 type AnswerInput = { assignmentId: number; taskId: number; answer: string; timeMs: number; activeMs: number; hintsUsed: number; giveUp?: boolean; submissionId: string };
 
 /** One id per click on "Prüfen": a repeat after a lost connection carries the same id and is stored once. */
-function newSubmissionId() {
+export function newSubmissionId() {
   if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
   // plain http in the local network has no randomUUID
   return Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
@@ -62,7 +68,7 @@ type Feedback = { correct: boolean | null; text: string; final: boolean; partial
  * lost connection does not lose it. On the laptop the keys start with the prefix the laptop clears on "Fertig".
  */
 const draftKey = (via: Via, assignmentId: number, taskId: number) => `${via === "laptop" ? "lernheft-laptop-antwort-" : "lernheft-antwort-"}${assignmentId}-${taskId}`;
-type Draft = { choice?: number | null; text?: string; gaps?: string[]; order?: number[]; math?: MathDraft };
+type Draft = { choice?: number | null; text?: string; gaps?: string[]; order?: number[]; math?: MathDraft; /** Auswendig schreiben: die gewählte Stufe der Hilfe. */ level?: number };
 function readDraft(key: string): Draft | null {
   try {
     const v = localStorage.getItem(key);
@@ -338,6 +344,10 @@ function TaskCard({
   const [choice, setChoice] = useState<number | null>(null);
   const [text, setText] = useState(task.faulty ?? "");
   const [gaps, setGaps] = useState<string[]>(() => Array(task.blanks).fill(""));
+  // Auswendig schreiben: wie viel vom Text noch zu sehen ist (lib/memorize.ts)
+  const [level, setLevel] = useState<MemorizeLevel>(0);
+  // die Umlautleiste schreibt in das Textfeld, das zuletzt den Fokus hatte
+  const umlaut = useRef<TextTarget | null>(null);
   const [hintsShown, setHintsShown] = useState(Math.min(task.hintsOpened, task.hints.length));
   const [order, setOrder] = useState<number[]>(() => (task.steps ?? []).map((_, i) => i));
   const m = task.math;
@@ -383,6 +393,7 @@ function TaskCard({
         if (typeof d.text === "string") setText(d.text);
         if (Array.isArray(d.gaps) && d.gaps.length === task.blanks) setGaps(d.gaps.map(String));
         if (Array.isArray(d.order) && d.order.length === (task.steps?.length ?? 0)) setOrder(d.order);
+        if (isMemorizeLevel(d.level)) setLevel(d.level);
         if (m && d.math && typeof d.math === "object") setMath(restoreMath(m, d.math));
       }
     }
@@ -393,10 +404,10 @@ function TaskCard({
   useEffect(() => {
     if (!restored.current) return;
     if (final) return writeDraft(key, null);
-    const changed = choice !== null || (task.faulty ? text !== task.faulty : text !== "") || gaps.some((g) => g) || order.some((o, i) => o !== i) || (math !== null && mathTouched(math));
-    writeDraft(key, changed ? { choice, text, gaps, order, ...(m && math ? { math: mathAnswer(m, math) } : {}) } : null);
+    const changed = choice !== null || (task.faulty ? text !== task.faulty : text !== "") || gaps.some((g) => g) || order.some((o, i) => o !== i) || (math !== null && mathTouched(math)) || level > 0;
+    writeDraft(key, changed ? { choice, text, gaps, order, level, ...(m && math ? { math: mathAnswer(m, math) } : {}) } : null);
     setKept(changed);
-  }, [key, final, choice, text, gaps, order, math, m, task.faulty]);
+  }, [key, final, choice, text, gaps, order, math, m, task.faulty, level]);
 
   const answer = m && math ? JSON.stringify(mathAnswer(m, math)) : task.options ? (choice === null ? "" : String(choice)) : task.steps ? JSON.stringify(order) : task.blanks > 0 ? JSON.stringify(gaps) : text;
   // a correction task needs a changed text: the faulty one as it is is never the answer
@@ -479,7 +490,14 @@ function TaskCard({
 
   return (
     <article>
-      {task.passage && <div className="ruled mb-6 rounded-xl border border-line bg-surface px-5 py-1 text-[17px]"><MathText text={task.passage} /></div>}
+      {task.passage &&
+        (task.type === "memorize" ? (
+          // Auswendig schreiben: der Text mit der gewählten Hilfe-Stufe (lib/memorize.ts); fertig steht
+          // der ganze Text wieder da (dann sind die Stufen nur noch Anzeige)
+          <MemorizeTextBox passage={task.passage} level={final ? 0 : level} onChange={setLevel} disabled={final} />
+        ) : (
+          <div className="ruled mb-6 rounded-xl border border-line bg-surface px-5 py-1 text-[17px]"><MathText text={task.passage} /></div>
+        ))}
 
       <form
         onSubmit={(e) => {
@@ -501,6 +519,7 @@ function TaskCard({
                       setGaps((g) => g.map((x, j) => (j === i ? e.target.value : x)));
                       setWrongGaps((w) => w.filter((n) => n !== i + 1));
                     }}
+                    onFocus={(e) => void (umlaut.current = { el: e.currentTarget, set: (v) => setGaps((g) => g.map((x, j) => (j === i ? v : x))) })}
                     aria-label={`Lücke ${i + 1}`}
                     aria-invalid={wrongGaps.includes(i + 1) || undefined}
                     autoComplete="off"
@@ -519,6 +538,8 @@ function TaskCard({
         ) : (
           <p className={`${reading ? "text-[19px] leading-snug" : "text-[21px] leading-snug"} font-medium whitespace-pre-line`}>{reading ? task.prompt : <MathText text={task.prompt} />}</p>
         )}
+        {/* Umlaute für Lückentexte: eine Tablet-Tastatur gibt ä ö ü ß nicht immer her (components/UmlautBar.tsx) */}
+        {task.blanks > 0 && !final && <UmlautBar target={umlaut} className="mt-3" />}
 
         {task.options && (
           <div className="mt-6 grid gap-2" role="radiogroup" aria-label="Antwortmöglichkeiten">
@@ -583,10 +604,12 @@ function TaskCard({
                   value={text}
                   disabled={final}
                   onChange={(e) => setText(e.target.value)}
+                  onFocus={(e) => void (umlaut.current = { el: e.currentTarget, set: (v) => setText(v) })}
                   spellCheck={false}
                   autoCapitalize="off"
                   autoCorrect="off"
                 />
+                {!final && <UmlautBar target={umlaut} className="mt-2" />}
                 {unchanged && !final && <p className="mt-1 text-[13px] text-ink-3">Verbessere die Fehler direkt im Text.</p>}
               </>
             )}
@@ -604,7 +627,35 @@ function TaskCard({
           />
         )}
 
-        {!task.options && !task.steps && task.blanks === 0 && task.faulty === null && !m &&
+        {task.type === "memorize" && task.passage && (
+          <div className="mt-6">
+            <label htmlFor={`mem-${task.id}`} className="text-[13px] font-semibold text-ink-2">
+              Dein Text aus dem Gedächtnis
+            </label>
+            <textarea
+              id={`mem-${task.id}`}
+              ref={(el) => void (inputRef.current = el)}
+              className="input mt-1 text-[17px] leading-relaxed"
+              rows={Math.min(16, Math.max(3, Math.ceil(task.passage.length / 55) + 1))}
+              value={text}
+              disabled={final}
+              onChange={(e) => setText(e.target.value)}
+              onFocus={(e) => void (umlaut.current = { el: e.currentTarget, set: (v) => setText(v) })}
+              placeholder="Schreib den Text hier auf"
+              aria-label="Dein Text aus dem Gedächtnis"
+              autoComplete="off"
+              autoCapitalize="off"
+              spellCheck={false}
+            />
+            <p className="num mt-1 flex justify-between gap-3 text-[13px] text-ink-3">
+              <span>{kept && !final ? "Entwurf auf diesem Gerät gespeichert" : ""}</span>
+              <span aria-live="polite">{words(text) === 1 ? "1 Wort" : `${words(text)} Wörter`}</span>
+            </p>
+            {!final && <UmlautBar target={umlaut} className="mt-2" />}
+          </div>
+        )}
+
+        {task.type !== "memorize" && !task.options && !task.steps && task.blanks === 0 && task.faulty === null && !m &&
           ((task.type === "free" || task.type === "reading") && task.lines !== 1 ? (
             <div className="mt-6">
               <textarea
@@ -614,6 +665,7 @@ function TaskCard({
                 value={text}
                 disabled={final}
                 onChange={(e) => setText(e.target.value)}
+                onFocus={(e) => void (umlaut.current = { el: e.currentTarget, set: (v) => setText(v) })}
                 placeholder="Deine Antwort"
                 aria-label="Deine Antwort"
               />
@@ -621,20 +673,26 @@ function TaskCard({
                 <span>{reading && kept && !final ? "Entwurf auf diesem Gerät gespeichert" : ""}</span>
                 <span aria-live="polite">{words(text) === 1 ? "1 Wort" : `${words(text)} Wörter`}</span>
               </p>
+              {!final && <UmlautBar target={umlaut} className="mt-2" />}
             </div>
           ) : (
-            <input
-              ref={(el) => void (inputRef.current = el)}
-              className="input mt-6 max-w-[360px] text-[19px] font-semibold"
-              value={text}
-              disabled={final}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Deine Antwort"
-              autoComplete="off"
-              inputMode={task.type === "calc" ? "text" : undefined}
-              aria-label="Antwort"
-              style={task.type === "free" ? { maxWidth: "100%" } : undefined}
-            />
+            <>
+              <input
+                ref={(el) => void (inputRef.current = el)}
+                className="input mt-6 max-w-[360px] text-[19px] font-semibold"
+                value={text}
+                disabled={final}
+                onChange={(e) => setText(e.target.value)}
+                onFocus={(e) => void (umlaut.current = { el: e.currentTarget, set: (v) => setText(v) })}
+                placeholder="Deine Antwort"
+                autoComplete="off"
+                inputMode={task.type === "calc" ? "text" : undefined}
+                aria-label="Antwort"
+                style={task.type === "free" ? { maxWidth: "100%" } : undefined}
+              />
+              {/* Umlaute nur bei Textantworten; eine Rechnung braucht sie nicht */}
+              {!final && task.type !== "calc" && <UmlautBar target={umlaut} className="mt-2" />}
+            </>
           ))}
         {task.type === "calc" && !task.options && task.blanks === 0 &&
           (text.includes("/") && splitFractions(text).some((x) => typeof x !== "string") ? (
@@ -691,6 +749,11 @@ function TaskCard({
           <div className="mt-4 rounded-xl border border-line bg-surface px-5 py-4">
             <p className="text-[14px] font-semibold text-ink-2">Lösungsweg</p>
             <p className="mt-1 text-[16px] whitespace-pre-line"><MathText text={feedback.solution} /></p>
+            {task.genus && (
+              <p className="mt-2">
+                <GenusBadge genus={task.genus} />
+              </p>
+            )}
           </div>
         )}
 
@@ -751,9 +814,9 @@ function TaskCard({
 /**
  * Counts only the time the student is actually working: page visible and some input
  * (typing, clicking, scrolling) within the last minute. Long pauses show up as the
- * difference to the total time.
+ * difference to the total time. Exported so the Schnellrunde measures time the same way.
  */
-function useActiveTime() {
+export function useActiveTime() {
   const ms = useRef(0);
   const lastInput = useRef(Date.now());
   useEffect(() => {

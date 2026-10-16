@@ -1,8 +1,11 @@
 import Link from "next/link";
-import { CheckCircle2, ChevronRight, Presentation } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronRight, DoorOpen, Presentation } from "lucide-react";
 import { notFound } from "next/navigation";
 import { SubjectArt } from "@/components/Art";
-import { MasteryBar, TrendBadge, formatDate } from "@/components/ui";
+import { MasteryBar, Pill, TrendBadge, formatDate } from "@/components/ui";
+import { heutigeEinheitenFuerSchueler, heutigerWochentag } from "@/lib/planung/heute";
+import { einheitenFuerWoche, istNichtStattgefunden, mitNamen, slotDatum } from "@/lib/planung/repo";
+import { datumLabel, minutenLabel, wienerWochenstart, wochenLabel } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
 import { analyzeStudent } from "@/lib/service";
 import { runningUnitForStudent } from "@/lib/units";
@@ -18,6 +21,32 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
   const practiced = a.skills.filter((s) => s.tasksDone > 0).sort((x, y) => (y.lastPracticed ?? 0) - (x.lastPracticed ?? 0)).slice(0, 6);
   const first = student.name.split(" ")[0];
   const unit = runningUnitForStudent(student.id);
+
+  /**
+   * „Deine Termine diese Woche“ (Phase 4, D17/D23): **nur veröffentlichte** Plätze dieses Schülers.
+   * Bewusst ohne Namen — weder der Lehrer noch andere Schüler stehen hier; zu sehen sind Tag, Zeit,
+   * Raumname und ob die Einheit online oder vor Ort stattfindet.
+   */
+  const now = new Date();
+  const wochenstart = wienerWochenstart(now);
+  const heuteTag = heutigerWochentag(now);
+  const wochePlaetze = mitNamen(einheitenFuerWoche(wochenstart, { status: "veroeffentlicht" }).filter((z) => z.student_id === student.id)).map((z) => {
+    const online = z.room_mode === "online";
+    // Der Ort: Raumname und Gebäude — „Online“ als Gebäude wäre neben „online“ nur doppelt.
+    const gebaeude = z.room_building && z.room_building.toLowerCase() !== (online ? "online" : "vor ort") ? z.room_building : null;
+    return {
+      id: z.id,
+      datum: slotDatum(z.week_start, z.weekday),
+      label: datumLabel(slotDatum(z.week_start, z.weekday)),
+      zeit: `${minutenLabel(z.start_min)}–${minutenLabel(z.start_min + z.geplante_dauer)}`,
+      raum: z.room_name,
+      gebaeude,
+      online,
+      heute: z.weekday === heuteTag,
+      nichtStattgefunden: istNichtStattgefunden(z, now),
+    };
+  });
+  const heutePlaetze = heutigeEinheitenFuerSchueler(student.id, now);
 
   return (
     <>
@@ -43,6 +72,49 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
           <ChevronRight size={20} className="shrink-0 text-accent" aria-hidden />
         </Link>
       )}
+
+      <section className="panel mt-8 px-5 py-5" aria-label="Deine Termine diese Woche">
+        <h2 className="flex items-center gap-2 text-[18px] font-semibold">
+          <CalendarDays size={18} className="text-accent" aria-hidden /> Deine Termine diese Woche
+        </h2>
+        <p className="text-[13px] text-ink-2">{wochenLabel(wochenstart)}</p>
+
+        {heutePlaetze.length > 0 && (
+          <div className="mt-3 rounded-2xl bg-accent-wash px-4 py-3">
+            <p className="text-[13px] font-semibold text-accent">Heute</p>
+            <ul className="mt-1 space-y-1">
+              {heutePlaetze.map((p) => (
+                <li key={p.id} className="num flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px]">
+                  <span className="font-semibold">{p.zeit_label}</span>
+                  <span>{ortLabel(p.room_name, p.room_building, p.room_mode === "online")}</span>
+                  <Pill tone={p.room_mode === "online" ? "accent" : "neutral"}>{p.room_mode === "online" ? "online" : "vor Ort"}</Pill>
+                  {p.nicht_stattgefunden && <span className="text-[13px] text-ink-3">nicht stattgefunden</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {wochePlaetze.length === 0 ? (
+          <p className="mt-3 text-[15px] text-ink-2">Diese Woche ist nichts geplant.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-line">
+            {wochePlaetze.map((p) => (
+              <li key={p.id} className={`flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 text-[15px] ${p.nichtStattgefunden ? "text-ink-3" : ""}`}>
+                <span className="num w-[104px] shrink-0 font-semibold">{p.label}</span>
+                <span className="num">{p.zeit}</span>
+                <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                  <DoorOpen size={15} className="shrink-0 text-ink-3" aria-hidden />
+                  <span className="truncate">{ortLabel(p.raum, p.gebaeude, p.online)}</span>
+                </span>
+                <Pill tone={p.online ? "accent" : "neutral"}>{p.online ? "online" : "vor Ort"}</Pill>
+                {p.heute && <Pill tone="accent">heute</Pill>}
+                {p.nichtStattgefunden && <span className="text-[13px]">nicht stattgefunden</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {open.length > 0 && (
         <ul className="mt-8 space-y-3">
@@ -111,4 +183,14 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
       )}
     </>
   );
+}
+
+/**
+ * Der Ort eines Termins: Raumname und Gebäude. „Online“ als Gebäudename wäre neben dem Hinweis
+ * „online“ nur doppelt und wird weggelassen. Ohne Raum steht „Raum noch offen“.
+ */
+function ortLabel(raum: string | null, gebaeude: string | null, online: boolean): string {
+  if (!raum) return "Raum noch offen";
+  const zusatz = gebaeude && gebaeude.toLowerCase() !== (online ? "online" : "vor ort") ? ` · ${gebaeude}` : "";
+  return `${raum}${zusatz}`;
 }

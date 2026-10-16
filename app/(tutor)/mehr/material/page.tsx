@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { FileText, ImageIcon, Upload } from "lucide-react";
+import { FileText, ImageIcon, PenLine, Upload } from "lucide-react";
 import { Empty, PageHeader, Pill, formatDate } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { SUBJECTS } from "@/lib/curriculum";
-import { libraryTasksOf, listMaterials, MATERIAL_KINDS, MATERIAL_STATUS, MAX_UPLOAD_BYTES } from "@/lib/materials";
+import { BLATTART_LABEL } from "@/lib/druckblatt/definition/schemas";
+import { druckblattArt, libraryTasksOf, listMaterials, MATERIAL_KINDS, MATERIAL_STATUS, MAX_UPLOAD_BYTES } from "@/lib/materials";
 import { sourceById } from "@/lib/lehrplan";
 import * as repo from "@/lib/repo";
 
@@ -14,6 +15,10 @@ const statusTone = { hochgeladen: "amber", vorschlag: "accent", geprueft: "green
 /**
  * Material: photos and PDFs (worksheets, school book pages, tests) to keep with Fach and Thema, its
  * source and licence. Tasks from it go into the library only after the teacher has checked them.
+ *
+ * Druckblätter (D21) stehen in derselben Liste — sie sind Zeilen in `materials`, keine zweite Ablage.
+ * Sie haben keine Datei und keine Herkunft; ihre Zeile führt zurück in den Generator, in dem sie
+ * entstanden sind.
  */
 export default async function MaterialsPage({ searchParams }: { searchParams: Promise<{ fehler?: string; geloescht?: string; fach?: string }> }) {
   await requireTeacher();
@@ -52,7 +57,10 @@ export default async function MaterialsPage({ searchParams }: { searchParams: Pr
             <span className="label">Art</span>
             <select className="input" name="art" defaultValue="">
               <option value="">automatisch</option>
-              {Object.entries(MATERIAL_KINDS).map(([k, l]) => (
+              {/* Ein Druckblatt entsteht im Generator, nicht als Upload. */}
+              {Object.entries(MATERIAL_KINDS)
+                .filter(([k]) => k !== "druckblatt")
+                .map(([k, l]) => (
                 <option key={k} value={k}>
                   {l}
                 </option>
@@ -114,11 +122,16 @@ export default async function MaterialsPage({ searchParams }: { searchParams: Pr
             const src = sourceById(m.source_id);
             const taken = libraryTasksOf(m.id).length;
             const student = m.student_id ? students.find((s) => s.id === m.student_id) : null;
+            const blatt = druckblattArt(m);
+            // Ein Druckblatt führt zurück in seinen Generator; dort wird es wieder geöffnet (D21).
+            const ziel = blatt ? `/blaetter/${blatt}?blatt=${m.id}` : `/mehr/material/${m.id}`;
             return (
               <li key={m.id}>
-                <Link href={`/mehr/material/${m.id}`} className="flex min-h-[72px] items-center gap-4 px-4 py-3 hover:bg-panel/60">
+                <Link href={ziel} className="flex min-h-[72px] items-center gap-4 px-4 py-3 hover:bg-panel/60">
                   <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-line bg-paper text-ink-3">
-                    {m.mime.startsWith("image/") ? (
+                    {m.kind === "druckblatt" ? (
+                      <PenLine size={22} aria-hidden />
+                    ) : m.mime?.startsWith("image/") ? (
                       <img src={`/material/${m.id}/datei`} alt="" loading="lazy" className="size-full object-cover" />
                     ) : m.mime === "application/pdf" ? (
                       <FileText size={22} aria-hidden />
@@ -129,12 +142,20 @@ export default async function MaterialsPage({ searchParams }: { searchParams: Pr
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">{m.title}</span>
                     <span className="block truncate text-[13px] text-ink-2">
-                      {[m.subject || "Fach offen", m.topic, student?.name].filter(Boolean).join(" · ")}
+                      {[m.kind === "druckblatt" ? (blatt ? BLATTART_LABEL[blatt] : "Druckblatt") : m.subject || "Fach offen", m.kind === "druckblatt" ? null : m.topic, student?.name]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </span>
                   </span>
                   <span className="hidden flex-wrap items-center justify-end gap-1.5 sm:flex">
-                    <Pill tone={statusTone[m.status]}>{MATERIAL_STATUS[m.status]}</Pill>
-                    {!src && <Pill tone="amber">Herkunft fehlt</Pill>}
+                    {m.kind === "druckblatt" ? (
+                      <Pill tone="accent">Druckblatt</Pill>
+                    ) : (
+                      <>
+                        <Pill tone={statusTone[m.status]}>{MATERIAL_STATUS[m.status]}</Pill>
+                        {!src && <Pill tone="amber">Herkunft fehlt</Pill>}
+                      </>
+                    )}
                     {taken > 0 && <Pill>{taken === 1 ? "1 Aufgabe" : `${taken} Aufgaben`} in der Bibliothek</Pill>}
                   </span>
                   <span className="num shrink-0 text-[13px] text-ink-3">{formatDate(m.created_at, { day: "numeric", month: "short" })}</span>

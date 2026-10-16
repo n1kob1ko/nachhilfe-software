@@ -3,9 +3,30 @@ import type { Task } from "@/lib/repo";
 import { ASPECT_SHORT, isAspect, OPEN_ASPECTS, severalNoted } from "@/lib/lesen";
 import { mathAnswerText } from "@/lib/math-task";
 import { GAP, hintLabel, type TaskDraft } from "@/lib/tasks";
+import { genderTone, genusBadge } from "./genus";
 import { MathText } from "./MathText";
 
 const partName = (label: string, i: number) => label || `${String.fromCharCode(97 + i)})`;
+
+/**
+ * Das Genus eines Nomens als kleines Zeichen (D10): Farbton plus Buchstabe m/f/n, damit die Farbe
+ * nie das einzige Signal ist. Ohne gesetztes Genus wird nichts gezeigt.
+ */
+export function GenusBadge({ genus, className = "" }: { genus: unknown; className?: string }) {
+  const badge = genusBadge(genus);
+  if (!badge) return null;
+  const tone = genderTone(genus);
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[12px] font-semibold ${className}`}
+      style={{ background: tone.bg, color: tone.fg }}
+      title={`Genus: ${badge.label}`}
+    >
+      <span aria-hidden>{badge.letter}</span>
+      <span className="sr-only">Genus: {badge.label}</span>
+    </span>
+  );
+}
 
 
 function withGaps(text: string) {
@@ -20,6 +41,8 @@ function withGaps(text: string) {
 
 export function answerText(t: Pick<TaskDraft, "type" | "data" | "answer">) {
   if (t.type === "rechenweg" || t.type === "sachaufgabe") return mathAnswerText(t);
+  // Auswendig schreiben: die Lösung ist der Text selbst (lib/memorize.ts)
+  if (t.type === "memorize") return t.data.passage?.trim() || null;
   if (t.data.options && typeof t.answer.correct === "number") return `${String.fromCharCode(97 + t.answer.correct)}) ${t.data.options[t.answer.correct]}`;
   if (t.answer.steps) return t.answer.steps.map((s, i) => `${i + 1}. ${s}`).join("  ");
   if (t.answer.blanks) return t.answer.blanks.map((b) => b[0]).join(" · ");
@@ -36,6 +59,11 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
     <div className="min-w-0">
       {task.data.passage && !passageShown && <blockquote className="ruled mb-4 max-w-[70ch] rounded-lg bg-paper px-4 py-1 text-[15px]"><MathText text={task.data.passage} /></blockquote>}
       <p className="max-w-[70ch] text-[16px] leading-relaxed whitespace-pre-line">{task.prompt ? withGaps(task.prompt) : <span className="text-ink-3 italic">Noch keine Aufgabenstellung</span>}</p>
+      {task.data.genus && (
+        <p className="mt-1.5">
+          <GenusBadge genus={task.data.genus} />
+        </p>
+      )}
       {task.data.options && (
         <ol className="mt-2 space-y-1">
           {task.data.options.map((o, i) => (
@@ -99,7 +127,16 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
       {(task.type === "rechenweg" || task.type === "sachaufgabe") && !showSolution && <div className="squared mt-3 h-24 max-w-[520px] rounded-md border border-line" aria-hidden />}
       {!task.data.options && !task.data.steps && !task.answer.blanks && task.type !== "fix" && task.type !== "rechenweg" && task.type !== "sachaufgabe" && !showSolution && (
         <div className="mt-3 grid max-w-[520px] gap-3" aria-hidden>
-          {Array.from({ length: task.type === "free" ? Math.min(4, Math.max(1, task.data.lines ?? 2)) : 1 }, (_, i) => (
+          {Array.from(
+            {
+              length:
+                task.type === "free"
+                  ? Math.min(4, Math.max(1, task.data.lines ?? 2))
+                  : task.type === "memorize"
+                    ? Math.min(6, Math.max(2, Math.ceil((task.data.passage?.length ?? 0) / 60)))
+                    : 1,
+            },
+            (_, i) => (
             <div key={i} className={`h-6 border-b border-dashed border-line-strong ${task.type === "free" && task.data.lines !== 1 ? "" : "max-w-[360px]"}`} />
           ))}
         </div>

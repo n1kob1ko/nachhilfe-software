@@ -50,6 +50,8 @@ export type BuildRequest = {
   focusNote?: string;
   useAI?: boolean;
   teacherId?: number | null;
+  /** Der Schüler, für den die Übung gedacht ist: seine KI-Hinweise kommen in den Systemprompt. */
+  studentId?: number | null;
 };
 
 export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; source: "ki" | "generator"; aiError?: string }> {
@@ -75,7 +77,7 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
         categories: [],
         focusNote: [req.taskType !== "mixed" ? `Aufgabenformat: ${TASK_TYPES[req.taskType]}` : "", req.focusNote ?? ""].filter(Boolean).join(". "),
         wortarten,
-      }, { teacherId: req.teacherId ?? null, trigger: "empfehlung" });
+      }, { teacherId: req.teacherId ?? null, studentId: req.studentId ?? null, trigger: "empfehlung" });
       if (tasks && tasks.length) source = "ki";
       else aiError = "Die KI hat keine Aufgaben geliefert.";
     } catch (e) {
@@ -314,7 +316,9 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
     return res;
   }
 
-  if (!result.correct && !errorType && task.type !== "fix" && !maths) {
+  // Auswendig schreiben: die falschen Wörter stehen schon als Etikett am Versuch; eine Fehlerart daraus
+  // abzuleiten wäre ein Ratespiel (jedes Etikett fiele auf „Regel nicht verstanden“), also bleibt sie offen.
+  if (!result.correct && !errorType && task.type !== "fix" && task.type !== "memorize" && !maths) {
     const suggested = suggestErrorType(task, input.answer, result.errorLabel, repo.getWorksheet(task.worksheet_id)?.subject ?? "");
     if (suggested) errorType = { type: suggested, source: "vorschlag" };
   }

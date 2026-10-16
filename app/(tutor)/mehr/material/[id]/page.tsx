@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CheckCircle2, ExternalLink, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
 import { analyzeMaterialAction, classifyMaterialAction, deleteMaterialAction, setMaterialSourceAction, takeOverTaskAction } from "@/app/material-actions";
 import { Info } from "@/components/Info";
@@ -8,6 +8,7 @@ import { aiEnabled } from "@/lib/ai";
 import { requireTeacher } from "@/lib/auth";
 import { DIFFICULTIES, SUBJECTS } from "@/lib/curriculum";
 import {
+  druckblattArt,
   getMaterial,
   libraryTasksOf,
   MATERIAL_KINDS,
@@ -39,6 +40,12 @@ export default async function MaterialPage({ params, searchParams }: { params: P
   await requireTeacher();
   const m = getMaterial(Number((await params).id));
   if (!m) notFound();
+  // Ein Druckblatt hat keine Datei und keine Herkunft: Diese Seite ist für Uploads. Das Blatt öffnet
+  // sich dort, wo es entstanden ist (D21).
+  if (m.kind === "druckblatt") {
+    const art = druckblattArt(m);
+    redirect(art ? `/blaetter/${art}?blatt=${m.id}` : "/blaetter");
+  }
   const sp = await searchParams;
   const rule = takeoverRule(m);
   const origin = materialOrigin(rule.source);
@@ -61,7 +68,10 @@ export default async function MaterialPage({ params, searchParams }: { params: P
   const taken = libraryTasksOf(m.id);
   const students = repo.listStudents();
   const level = m.school_type ? klassenLabel(m.school_type, m.klasse) : "";
-  const tooBig = m.size > (m.mime === "application/pdf" ? MAX_ANALYSIS_PDF_BYTES : MAX_ANALYSIS_IMAGE_BYTES);
+  // This page only renders uploads (a Druckblatt redirects above): the file fields are present here.
+  const size = m.size ?? 0;
+  const mime = m.mime ?? "";
+  const tooBig = size > (mime === "application/pdf" ? MAX_ANALYSIS_PDF_BYTES : MAX_ANALYSIS_IMAGE_BYTES);
   const fileUrl = `/material/${m.id}/datei`;
 
   return (
@@ -72,7 +82,7 @@ export default async function MaterialPage({ params, searchParams }: { params: P
         subtitle={
           <span className="flex flex-wrap items-center gap-1.5">
             <Pill tone={statusTone[m.status]}>{MATERIAL_STATUS[m.status]}</Pill>
-            {MATERIAL_KINDS[m.kind]} · {[m.subject, level, m.topic].filter(Boolean).join(" · ") || "noch nicht eingeordnet"} · {mb(m.size)} · {formatDate(m.created_at)}
+            {MATERIAL_KINDS[m.kind]} · {[m.subject, level, m.topic].filter(Boolean).join(" · ") || "noch nicht eingeordnet"} · {mb(size)} · {formatDate(m.created_at)}
           </span>
         }
       />
@@ -96,7 +106,7 @@ export default async function MaterialPage({ params, searchParams }: { params: P
       <div className="mb-10 grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <section aria-label="Vorschau" className="min-w-0">
           <div className="overflow-hidden rounded-[20px] border border-line bg-paper">
-            {m.mime === "application/pdf" ? (
+            {mime === "application/pdf" ? (
               <iframe src={fileUrl} title={`Vorschau ${m.title}`} className="h-[70vh] min-h-[420px] w-full" />
             ) : (
               <img src={fileUrl} alt={`Vorschau ${m.title}`} className="max-h-[75vh] w-full object-contain" />
@@ -129,11 +139,14 @@ export default async function MaterialPage({ params, searchParams }: { params: P
               <label className="field">
                 <span className="label">Art</span>
                 <select className="input" name="kind" defaultValue={m.kind}>
-                  {Object.entries(MATERIAL_KINDS).map(([k, l]) => (
-                    <option key={k} value={k}>
-                      {l}
-                    </option>
-                  ))}
+                  {/* Ein Druckblatt entsteht im Generator, nicht durch Umbenennen eines Uploads. */}
+                  {Object.entries(MATERIAL_KINDS)
+                    .filter(([k]) => k !== "druckblatt")
+                    .map(([k, l]) => (
+                      <option key={k} value={k}>
+                        {l}
+                      </option>
+                    ))}
                 </select>
               </label>
             </div>

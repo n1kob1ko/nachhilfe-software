@@ -422,7 +422,7 @@ export async function runCorrection(correctionId: number, teacherId: number | nu
     const names = maskedNames(c.masked_names) ?? foundNames(snapshot, doc);
     const req = correctionRequest(snapshot, doc, names);
     const method = methodOf(c.method);
-    const meta = { teacherId, unitId: c.unit_id };
+    const meta = { teacherId, unitId: c.unit_id, studentId: text.student_id };
     const stored = o.retry ? storedAnalysis(c) : null;
     if (o.retry && !stored) {
       checkFailed("Die erste Prüfung ist nicht mehr gespeichert. Bitte selbst durchsehen.");

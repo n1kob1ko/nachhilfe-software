@@ -8,12 +8,13 @@ import { SKILL_SELECT, type Skill, type Student } from "./repo";
 import { checkLevel, SCHOOL_BRANCHES, SCHOOL_TYPES, schulstufe, type SchoolBranch } from "./school";
 
 // ---------- sources and licences ----------
-export type SourceType = "lehrplan" | "eigen" | "ki" | "oer" | "referenz" | "demo";
+export type SourceType = "lehrplan" | "eigen" | "ki" | "oer" | "lizenz" | "referenz" | "demo";
 export const SOURCE_TYPE_LABEL: Record<SourceType, string> = {
   lehrplan: "Offizieller Lehrplan",
   eigen: "Eigene Inhalte",
   ki: "KI-generiert",
   oer: "Offene Bildungsquelle (OER)",
+  lizenz: "Lizenzierte Inhalte",
   referenz: "Nur Referenz",
   demo: "Demo / Beispiel",
 };
@@ -325,6 +326,13 @@ const tokens = (text: string) =>
     .filter((w) => w.length >= 4 && !STOP.has(w.toLowerCase()))
     .map(stem)
     .filter((w) => w.length >= 3);
+
+/**
+ * The words `matchSkills` compares with (stemmed, stop words dropped). Exported so a caller that
+ * must judge a hit more strictly than the suggestion does can compare the same tokens instead of
+ * inventing a second tokeniser.
+ */
+export const topicTokens = tokens;
 
 /** Splits "Brüche, Prozent und Sachaufgaben" into topics. */
 export function splitTopics(text: string): string[] {

@@ -3,11 +3,13 @@ import { ChevronRight } from "lucide-react";
 import { DeviceLive } from "@/components/device/DeviceLive";
 import { PairForm } from "@/components/device/PairForm";
 import { Solver } from "@/components/Solver";
+import { StudentQuickRound } from "@/components/StudentQuickRound";
 import { WhiteboardLoader } from "@/components/whiteboard/WhiteboardLoader";
 import { deviceContext } from "@/lib/device-context";
 import { touchDevice } from "@/lib/devices";
 import { activeLaptop } from "@/lib/laptop";
 import { markDelivered, parseView, pushLive, unitAssignments, unitText } from "@/lib/live";
+import { showsQuickRound } from "@/lib/quick-round";
 import { MAX_TRIES } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
 import { TextEditor } from "@/components/text/TextEditor";
@@ -92,7 +94,19 @@ export default async function DevicePage() {
     ensureBoardForUnit(unit.id);
     content = <WhiteboardLoader role="schueler" endpoint="/geraet/tafel" query={`?einheit=${unit.id}`} studentName={student.name} backHref="/geraet/ansicht?zu=start" />;
   } else if (current) {
-    content = (
+    // Schnellrunde (lib/quick-round.ts): derselbe Abgabeweg wie sonst, nur der Ablauf ist ein anderer
+    const tasks = clientTasks(current);
+    content = showsQuickRound(current.mode, tasks) ? (
+      <StudentQuickRound
+        key={`${current.id}-schnell`}
+        token=""
+        via="geraet"
+        homeHref="/geraet/ansicht?zu=start"
+        assignmentId={current.id}
+        title={current.title}
+        tasks={tasks}
+      />
+    ) : (
       <Solver
         key={`${current.id}-${current.solutions_visible}`}
         token=""
@@ -100,7 +114,7 @@ export default async function DevicePage() {
         homeHref="/geraet/ansicht?zu=start"
         assignmentId={current.id}
         title={current.title}
-        tasks={clientTasks(current)}
+        tasks={tasks}
         maxTries={MAX_TRIES}
       />
     );

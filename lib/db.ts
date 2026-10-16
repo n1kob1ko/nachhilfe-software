@@ -591,6 +591,53 @@ CREATE TABLE IF NOT EXISTS picture_story_images (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_picture_story_images ON picture_story_images(text_id, position);
+-- ---------- Planung (Phase 3 des Merges): Räume und Verfügbarkeit ----------
+-- Wo eine geplante Einheit stattfindet: Gebäude, Name und ob vor Ort oder online. Ein Raum wird
+-- deaktiviert statt gelöscht, sobald Plätze auf ihn zeigen (lib/planung/raeume.ts).
+CREATE TABLE IF NOT EXISTS rooms (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  building TEXT NOT NULL DEFAULT 'Hauptgebäude',
+  name TEXT NOT NULL,
+  mode TEXT NOT NULL DEFAULT 'vor_ort',          -- vor_ort | online
+  active INTEGER NOT NULL DEFAULT 1
+);
+-- Abweichung der Verfügbarkeit für eine einzelne Woche (Montag, YYYY-MM-DD, Europe/Vienna). Sie
+-- ersetzt für diese Woche die Regelverfügbarkeit aus teachers.availability / students.availability.
+CREATE TABLE IF NOT EXISTS availability_overrides (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner_type TEXT NOT NULL,                       -- teacher | student
+  owner_id INTEGER NOT NULL,
+  week_start TEXT NOT NULL,                       -- Montag, YYYY-MM-DD
+  availability TEXT NOT NULL,                     -- JSON wie teachers.availability
+  UNIQUE(owner_type, owner_id, week_start)
+);
+CREATE INDEX IF NOT EXISTS idx_availability_overrides_owner ON availability_overrides(owner_type, owner_id);
+-- ---------- Planung (Phase 4 des Merges): Wochenplan ----------
+-- Ein Platz im Wochenplan (Glossar: **geplante Einheit**): wer, wo, an welchem Wochentag, zu welcher
+-- Startzeit und mit welcher geplanten Dauer. Der Platz wird erst wirklich, wenn eine Einheit sich mit
+-- ihm verknüpft (unit_id); ein vergangener veröffentlichter Platz ohne Einheit heißt „nicht stattgefunden“.
+-- Zeiten sind lokales Datum + Minuten ab Mitternacht (Europe/Vienna), nie UTC-Zeitstempel (§6);
+-- week_start ist immer ein Montag, weekday ISO 1 = Montag … 7 = Sonntag.
+-- Keine Eindeutigkeit auf Überlappungen: die geplante Dauer ist je Schüler verschieden, deshalb prüft
+-- lib/planung/repo.ts bei **jedem** Schreiben auf Überlappung von Lehrer, Schüler und Raum.
+CREATE TABLE IF NOT EXISTS geplante_einheiten (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  week_start TEXT NOT NULL,                 -- Montag YYYY-MM-DD (Europe/Vienna)
+  weekday INTEGER NOT NULL,                 -- 1 = Montag … 7 = Sonntag
+  start_min INTEGER NOT NULL,               -- Minuten ab Mitternacht, Vielfaches von 10
+  geplante_dauer INTEGER NOT NULL,          -- 1–300
+  teacher_id INTEGER NOT NULL REFERENCES teachers(id),
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  room_id INTEGER REFERENCES rooms(id),
+  status TEXT NOT NULL DEFAULT 'entwurf',   -- entwurf | veroeffentlicht
+  locked INTEGER NOT NULL DEFAULT 0,
+  unit_id INTEGER REFERENCES units(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ge_week ON geplante_einheiten(week_start, status);
+CREATE INDEX IF NOT EXISTS idx_ge_teacher ON geplante_einheiten(teacher_id, week_start);
+CREATE INDEX IF NOT EXISTS idx_ge_student ON geplante_einheiten(student_id, week_start);
 CREATE INDEX IF NOT EXISTS idx_text_corrections_text ON text_corrections(text_id, version);
 CREATE INDEX IF NOT EXISTS idx_text_correction_items ON text_correction_items(correction_id, block, pos_start);
 CREATE INDEX IF NOT EXISTS idx_texts_student ON texts(student_id, updated_at);
@@ -660,6 +707,10 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["worksheets", "source_task_id", "INTEGER REFERENCES tasks(id) ON DELETE SET NULL"],
   ["assignments", "unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
   ["assignments", "solutions_visible", "INTEGER NOT NULL DEFAULT 0"],
+  // Schnellrunde (Phase 2 des Merges): 'normal' = the usual flow, 'schnell' = one tap per task with a
+  // short feedback and automatic next task (components/StudentQuickRound.tsx). Attempts, time and hints
+  // are stored exactly as in normal mode; only the student's flow differs (lib/quick-round.ts).
+  ["assignments", "mode", "TEXT NOT NULL DEFAULT 'normal'"],
   // curriculum: skills get a stable code, the Lernziel, their origin and validity
   ["skills", "code", "TEXT"],
   ["skills", "subtopic", "TEXT NOT NULL DEFAULT ''"],
@@ -741,6 +792,28 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["text_correction_items", "origin", "TEXT NOT NULL DEFAULT ''"],
   ["text_correction_items", "review", "TEXT NOT NULL DEFAULT ''"],
   ["text_correction_items", "review_note", "TEXT NOT NULL DEFAULT ''"],
+  // Planung (Phase 3 des Merges): Verfügbarkeit, Wochenziel und Raumwünsche.
+  // teachers.availability / students.availability: JSON { "1": [{ start, end }], … } in Minuten ab
+  // Mitternacht, ISO-Wochentag 1 = Montag … 7 = Sonntag (Umrechnung nur in lib/planung/zeit.ts).
+  ["teachers", "availability", "TEXT"],
+  ["teachers", "weekly_target_min", "INTEGER"],
+  ["teachers", "preferred_room_ids", "TEXT NOT NULL DEFAULT '[]'"],
+  ["students", "availability", "TEXT"],
+  ["students", "einheiten_pro_woche", "INTEGER NOT NULL DEFAULT 0"],
+  // geplante Dauer je Schüler: Vorgabe 100 min, erlaubt 1–300 (geprüft mit zod in der Server Action)
+  ["students", "geplante_dauer", "INTEGER NOT NULL DEFAULT 100"],
+  ["students", "modus_wunsch", "TEXT NOT NULL DEFAULT 'egal'"], // vor_ort | online | egal
+  ["students", "erlaubte_lehrer", "TEXT NOT NULL DEFAULT '[]'"],
+  // Blätter erstellen (Phase 5 des Merges): Ein gespeichertes **Druckblatt** ist eine Zeile in
+  // `materials` (D21) mit `kind = 'druckblatt'` und der Blattdefinition als JSON in dieser Spalte.
+  // Die Dateispalten (file_name, mime, size, sha256, stored_path) bleiben für diese Art leer — ein
+  // Druckblatt ist seine Beschreibung, keine Datei (ADR 0010: „Gespeichert wird die Definition").
+  // Gelesen werden sie über `lib/materials.ts`; dort sind sie für kind = 'druckblatt' optional.
+  ["materials", "definition", "TEXT"],
+  // KI-Hinweise je Schüler (Phase 6 des Merges, Schritt 3): was die KI über diesen Schüler wissen
+  // soll, z. B. „Legasthenie: kurze Sätze“. Der Text steht im Systemprompt jeder schülerbezogenen
+  // Anfrage (lib/ai/hinweise.ts) und wird dort ohne den Namen des Schülers gesendet.
+  ["students", "ki_hinweise", "TEXT NOT NULL DEFAULT ''"],
 ];
 
 /** Teachers to start with; more can be added later. */
@@ -762,6 +835,18 @@ export function db(): Database.Database {
   applyPendingRestore(file);
   instance = openDatabase(file);
   return instance;
+}
+
+/**
+ * Closes the connection db() caches and forgets it, so the next db() call opens the file again.
+ * Needed wherever the database file or its folder is removed while the process keeps running
+ * (tests, scripts): the cached handle would otherwise keep the file open, and on Windows that
+ * blocks deleting the folder (EPERM). openDatabase() connections the caller closed are not affected.
+ */
+export function closeDatabase() {
+  const conn = instance;
+  instance = null;
+  conn?.close();
 }
 
 /** Opens (and creates or upgrades) a database file. db() uses it for the app's own database. */

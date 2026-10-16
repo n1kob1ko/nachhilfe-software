@@ -486,7 +486,8 @@ test("material: upload checks the real file type, classification, source and lic
   // deleting the material removes the file; tasks in the library and their licence stay
   assert.ok(mat.deleteMaterial(up.id));
   assert.equal(mat.getMaterial(up.id), null);
-  assert.equal(fs.existsSync(path.join(dir, path.basename(m.stored_path))), false);
+  // stored_path is null only for a Druckblatt (kind = 'druckblatt'); this material came from an upload
+  assert.equal(fs.existsSync(path.join(dir, path.basename(m.stored_path ?? ""))), false);
   assert.equal(lib.getLibraryEntry(oer.libraryId)!.source?.license, "CC BY 4.0");
   assert.ok(repo.listStudents().some((s) => s.id === sid));
   fs.rmSync(dir, { recursive: true, force: true });

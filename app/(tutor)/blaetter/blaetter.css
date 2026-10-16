@@ -1,0 +1,108 @@
+/*
+ * "Blätter erstellen" (app/(tutor)/blaetter): Einstellungen links, Vorschau rechts — und im Ausdruck
+ * nur das Blatt. Gedruckt wird über den Browser (ADR 0001); die `@page`-Regel setzt jedes Blatt
+ * selbst aus seiner Geometrie (components/druckblatt/PrintPageRule.tsx).
+ *
+ * HIER STEHEN NUR DREI SORTEN REGELN: Papier, Schulschriften, Ausdruck. Die Millimeter des Blattes
+ * stehen inline im Markup (Regel "Geometrie ist Datum"), Farben und Schriften kommen aus den Tokens
+ * in app/globals.css. Ein Klassensatz `db-mm-210` wäre genau die Übersetzung, die die Regel
+ * verbietet, und eine CSS-Variable je Maß wäre derselbe Umweg.
+ */
+
+/* ---------- das Blatt ---------- */
+
+.db-sheet {
+  position: relative;
+  box-sizing: border-box;
+  flex: none;
+  overflow: hidden;
+  /* Weißes Papier, nicht die cremefarbene Arbeitsfläche der App. */
+  background: #fff;
+  color: var(--ink);
+  box-shadow: var(--shadow-card);
+  outline: 1px solid var(--line);
+}
+
+/* Der Satzspiegel liegt absolut im Blatt; Position und Größe kommen aus der Geometrie. */
+.db-satzspiegel {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Vorschau ---------- */
+
+.db-preview {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.db-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/*
+ * Die Druckfassung (components/druckblatt/DruckFassung.tsx) liegt als direktes Kind von <body>
+ * bereit: nur so ist sie im Ausdruck von der Polsterung und der 220px-Seitenleiste der App
+ * unabhängig, die ein 210mm breites Blatt sonst über den Seitenrand schieben würden.
+ */
+.db-druck {
+  display: none;
+}
+
+/* ---------- Schulschriften ---------- */
+
+/*
+ * Die Schriften sind Lerninhalt, nicht Gestaltung.
+ *
+ * Grünewald VA und Bienchen SAS liegen NICHT im Projekt (public/fonts/README.md); die
+ * @font-face-Regeln stehen in app/globals.css. Jede Kette nennt die Schriftfamilie zuerst und
+ * dahinter die Druckschrift: Fehlt die Datei, lädt der Browser sie nicht und setzt sichtbar die
+ * Druckschrift — dazu sagt die Oberfläche, welche Schrift gemeint war (`fehlendeSchriftHinweis`).
+ * Still durch eine andere zu ersetzen wäre hier besonders heikel.
+ *
+ * Die Lateinische Ausgangsschrift hat keine frei lizenzierte Fassung; ihre Kette ist deshalb
+ * dieselbe wie die der Druckschrift, und der Hinweis im Generator erklärt warum.
+ */
+.db-schrift-druckschrift {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+.db-schrift-va {
+  font-family: "Gruenewald VA", var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+.db-schrift-sas {
+  font-family: "Bienchen SAS", var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+.db-schrift-la {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ---------- Ausdruck ---------- */
+
+@media print {
+  /*
+   * Nur die Druckfassung drucken. Vor der Hydration gibt es sie noch nicht — dann bleibt es beim
+   * normalen Ausdruck der Seite, statt ein leeres Blatt zu erzeugen.
+   */
+  body > *:not(.db-druck) {
+    display: none !important;
+  }
+  .db-druck {
+    display: block;
+  }
+  .db-druck .db-stack {
+    display: block;
+    gap: 0;
+  }
+  .db-druck .db-sheet {
+    box-shadow: none;
+    outline: none;
+    break-inside: avoid;
+  }
+  /* Jedes Blatt beginnt auf einer eigenen Seite. */
+  .db-druck .db-sheet:not(:last-child) {
+    break-after: page;
+  }
+}

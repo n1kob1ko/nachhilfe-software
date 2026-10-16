@@ -4,11 +4,22 @@
  * variables (Railway Variables); the defaults below are the only place a model id is written down.
  */
 
+import { kiModus } from "./modus";
+
 export type Tier = "fast" | "standard" | "deep";
 
-/** The providers the router can talk to (adapters in ./providers). */
-export const PROVIDER_IDS = ["anthropic", "openrouter", "deepseek", "compatible"] as const;
+/** The providers the router can talk to (adapters in ./providers). `manual` talks to a person, not an API. */
+export const PROVIDER_IDS = ["anthropic", "openrouter", "deepseek", "compatible", "manual"] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
+
+/** The manual provider: the prompt is shown, the answer pasted in; it needs no key and no model id. */
+export const MANUAL_MODEL = "manuell";
+/**
+ * How long a manual request may wait for the teacher. The API timeouts (8–180 s) are for a server that
+ * answers; copying a prompt into a chat window and pasting the answer back takes minutes. `runAI` uses
+ * this instead of the function's timeoutMs while the manual provider is selected.
+ */
+export const MANUAL_TIMEOUT_MS = 30 * 60_000;
 
 /**
  * Areas group the functions for configuration: AI_<AREA>_PROVIDER and AI_<AREA>_MODEL switch the
@@ -53,6 +64,7 @@ export type AIFunction =
   | "tiefenanalyse"
   | "notiz"
   | "material"
+  | "druckblatt"
   | "textkorrektur"
   | "textanalyse"
   | "textpruefung"
@@ -100,6 +112,11 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   tiefenanalyse: { label: "Tiefenanalyse", area: "DEEP", tier: "deep", maxTokens: 8_000, timeoutMs: 120_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 10 * MIN, cache: "aus" },
   notiz: { label: "Notiz für Eltern/Schüler", area: "ANALYSIS", tier: "standard", maxTokens: 1_000, timeoutMs: 30_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   material: { label: "Material erkennen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  // Blätter erstellen (Phase 5, Schritt 6): Wortlisten und Spalten für die drei Druckblätter.
+  // Kleine, klar umrissene Listen — der schnelle Tarif reicht, der Standardtarif wäre Verschwendung.
+  // Nur auf Klick der Lehrkraft, nichts wird von selbst übernommen; reuseMs 0, weil jede Anfrage
+  // zu einem anderen Blatt gehören soll.
+  druckblatt: { label: "Vorschläge für Blätter", area: "EXERCISE", tier: "fast", maxTokens: 4_000, timeoutMs: 60_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   // only on the teacher's click, after consent; the same version of a text is never paid for twice
   textkorrektur: { label: "Textkorrektur", area: "TEXT", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // Textkorrektur „gründlich“ (lib/ai/textkorrektur-gruendlich.ts): sentence-by-sentence analysis, then an independent check of every suggestion
@@ -127,8 +144,9 @@ function providerFrom(v: string | undefined): ProviderId | null {
  */
 export function routeFor(fn: AIFunction): Route {
   const spec = FUNCTIONS[fn];
-  const provider = providerFrom(process.env[`AI_${spec.area}_PROVIDER`]) ?? providerFrom(process.env.AI_PROVIDER) ?? (!hasKey("anthropic") && hasKey("openrouter") ? "openrouter" : "anthropic");
-  const fallback = provider === "anthropic" ? DEFAULT_MODELS[spec.tier] : provider === "openrouter" ? OPENROUTER_MODELS[spec.tier] : "";
+  // env wins; the toggle on Mehr › KI-Kosten (app_settings `ki_modus`) comes next; then the key-based default
+  const provider = providerFrom(process.env[`AI_${spec.area}_PROVIDER`]) ?? providerFrom(process.env.AI_PROVIDER) ?? (kiModus() === "manual" ? "manual" : null) ?? (!hasKey("anthropic") && hasKey("openrouter") ? "openrouter" : "anthropic");
+  const fallback = provider === "anthropic" ? DEFAULT_MODELS[spec.tier] : provider === "openrouter" ? OPENROUTER_MODELS[spec.tier] : provider === "manual" ? MANUAL_MODEL : "";
   const model = process.env[`AI_${spec.area}_MODEL`]?.trim() || process.env[MODEL_ENV[spec.tier]]?.trim() || fallback;
   return { provider, model, area: spec.area };
 }
@@ -149,6 +167,10 @@ const PRICES: [prefix: string, price: Price][] = [
   ["claude-opus-5-5", { in: 4, out: 20, cacheWrite: 5, cacheRead: 0.2 }],
   ["anthropic/claude-haiku-5.5", { in: 0.1, out: 0.5, cacheWrite: 0.125, cacheRead: 0.01 }],
   ["anthropic/claude-sonnet-5.5", { in: 2, out: 10, cacheWrite: 2.5, cacheRead: 0.2 }],
+  // Lokale Modelle (Ollama, Phase 6 des Merges, Schritt 2): sie kosten nichts. Der Eintrag hält
+  // `ollama/*` aus dem Tarif-Rückfall (TIER_PRICE) heraus, der sonst den Claude-Preis ansetzen würde;
+  // für einen Aufruf über OLLAMA_BASE_URL rechnet der Router ohnehin mit 0 (isLocalModel).
+  ["ollama/", { in: 0, out: 0, cacheWrite: 0, cacheRead: 0 }],
 ];
 /** For a model without a known price: the price of the default model of its tier. */
 const TIER_PRICE: Record<Tier, Price> = { fast: PRICES[0][1], standard: PRICES[1][1], deep: PRICES[2][1] };
@@ -218,6 +240,17 @@ export function aiSwitchedOff() {
   return ["1", "true", "ja"].includes((process.env.AI_DISABLED ?? "").trim().toLowerCase());
 }
 
+/**
+ * Ein Modellserver auf dem eigenen Rechner (Ollama, Phase 6 des Merges, Schritt 2) spricht dieselbe
+ * Schnittstelle wie ein OpenAI-kompatibler Anbieter, braucht aber keinen Schlüssel und kostet nichts.
+ * Als lokal zählt **nur** `OLLAMA_BASE_URL`: eine andere `AI_COMPATIBLE_BASE_URL` — auch eine auf
+ * 127.0.0.1 — kann ein bezahlter Dienst hinter einem eigenen Gateway sein, dort gilt weiter die
+ * Preistabelle.
+ */
+export function isLocalModel(provider: ProviderId): boolean {
+  return provider === "compatible" && Boolean(process.env.OLLAMA_BASE_URL?.trim());
+}
+
 /** Whether an API key for the provider is set (the key itself never leaves the provider adapter). */
 export function hasKey(provider: ProviderId = "anthropic") {
   const e = process.env;
@@ -229,6 +262,10 @@ export function hasKey(provider: ProviderId = "anthropic") {
     case "deepseek":
       return Boolean(e.DEEPSEEK_API_KEY);
     case "compatible":
-      return Boolean(e.AI_COMPATIBLE_API_KEY && e.AI_COMPATIBLE_BASE_URL);
+      // a local model server (Ollama) needs no key; anything else needs key and address
+      return isLocalModel("compatible") || Boolean(e.AI_COMPATIBLE_API_KEY && e.AI_COMPATIBLE_BASE_URL);
+    case "manual":
+      // no key is needed and none can exist; `providerReady` counts manual as ready
+      return false;
   }
 }

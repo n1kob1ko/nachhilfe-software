@@ -38,7 +38,8 @@ export function difficultyFor(mastery: number | null): Difficulty {
  * How a task is answered and checked (the "format"). Stored in tasks.type.
  * calc = short answer compared as a number/fraction, grammar = short answer compared as text,
  * order = put steps in the right order, fix = correct a text with errors (lib/fix-text.ts), rechenweg =
- * result with the working line by line, sachaufgabe = parts a), b), c) (both lib/math-check.ts).
+ * result with the working line by line, sachaufgabe = parts a), b), c) (both lib/math-check.ts),
+ * memorize = write a text from memory (lib/memorize.ts).
  */
 export const TASK_TYPES = {
   mc: "Multiple Choice",
@@ -49,6 +50,7 @@ export const TASK_TYPES = {
   reading: "Textverständnis",
   order: "Reihenfolge",
   fix: "Fehler korrigieren",
+  memorize: "Auswendig schreiben",
   rechenweg: "Rechenweg",
   sachaufgabe: "Sachaufgabe mit Teilfragen",
   mixed: "Gemischt",
@@ -85,6 +87,7 @@ export const CATEGORIES: Record<string, Category[]> = {
     c("satz", "Satz verbessern", ["grammar", "free"], "Einen fehlerhaften Satz richtig aufschreiben."),
     c("fehler", "Fehler finden", ["mc", "grammar"], "In einem Satz den Fehler finden."),
     c("korrigieren", "Fehler korrigieren", ["fix"], "Satz oder Absatz mit Fehlern; der Schüler schreibt ihn verbessert."),
+    c("auswendig", "Auswendig schreiben", ["memorize"], "Einen kurzen Text auswendig schreiben: erst lesen, dann verschwinden nach und nach Wörter und Buchstaben, dann wird der Text aus dem Gedächtnis aufgeschrieben."),
     c("offen", "Freie Antwort", ["free"], "Frage in eigenen Worten beantworten, erklären oder begründen; der Lehrer bewertet."),
   ],
   Englisch: [
@@ -96,6 +99,7 @@ export const CATEGORIES: Record<string, Category[]> = {
     c("reading", "Reading comprehension", ["reading", "free"], "Short text with questions."),
     c("writing", "Writing", ["free"], "Short piece of writing."),
     c("korrigieren", "Fehler korrigieren", ["fix"], "Sentence or paragraph with mistakes; the student writes it correctly."),
+    c("auswendig", "Auswendig schreiben", ["memorize"], "Einen kurzen englischen Text auswendig schreiben: erst lesen, dann verschwinden nach und nach Wörter und Buchstaben, dann wird der Text aus dem Gedächtnis aufgeschrieben."),
     c("offen", "Freie Antwort", ["free"], "Antwort in eigenen Worten; der Lehrer bewertet."),
   ],
 };
@@ -117,6 +121,8 @@ const MIX_BY_SKILL: [RegExp, string[]][] = [
   // formats where the student writes come first; multiple choice (fehler, grammatik, wortarten) once per round at most
   [/^deutsch\.beistrich\./, ["korrigieren", "offen", "fehler"]],
   [/^deutsch\.recht\./, ["lueckentext", "korrigieren", "offen", "rechtschreibung"]],
+  // Satzlehre: Haupt-/Gliedsatz erkennen ist eine Bestimmungsaufgabe (mc), dazu Erklären und Fehlersuche
+  [/^deutsch\.satz\./, ["grammatik", "fehler", "offen"]],
   [/^deutsch\.grammatik\.zeiten/, ["lueckentext", "korrigieren", "offen", "grammatik"]],
   [/^deutsch\.grammatik\./, ["korrigieren", "lueckentext", "offen", "grammatik"]],
   // Wortarten: real determination tasks; explanations only when the teacher picks „Freie Antwort“
@@ -191,6 +197,18 @@ const BASE: CurriculumSkill[] = [
     ["deutsch.grammatik.faelle", "Fälle bestimmen"],
     ["deutsch.grammatik.zeiten", "Zeitformen"],
   ]),
+  // Die sechs Fähigkeiten aus Phase 1 des Merges (tommys-merge.md §4). Ihre Kennungen stehen im Plan
+  // fest und sind schon an Generatoren gebunden (lib/generators.ts GEN) und an die Banken unter
+  // data/banks/. `sub()` kann sie deshalb nicht bilden: es leitet die Kennung aus der Elternfähigkeit
+  // ab (`deutsch.grammatik.zeiten.praeteritum`), während hier `deutsch.grammatik.praeteritum`
+  // verlangt ist. Wo eine neue Fähigkeit inhaltlich eine Teilfähigkeit einer bestehenden ist, wird
+  // die Verknüpfung darum direkt über `parentId` gesetzt.
+  { id: "deutsch.grammatik.artikel", subject: "Deutsch", area: "Grammatik", name: "Artikel bestimmen", gradeMin: 1, gradeMax: 6 },
+  { id: "deutsch.grammatik.adjektivdeklination", subject: "Deutsch", area: "Grammatik", name: "Adjektivdeklination", gradeMin: 5, gradeMax: 10 },
+  { id: "deutsch.grammatik.praepositionen", subject: "Deutsch", area: "Grammatik", name: "Präposition und Kasus", gradeMin: 5, gradeMax: 9, parentId: "deutsch.grammatik.faelle" },
+  { id: "deutsch.grammatik.praeteritum", subject: "Deutsch", area: "Grammatik", name: "Präteritum", gradeMin: 4, gradeMax: 9, parentId: "deutsch.grammatik.zeiten" },
+  { id: "deutsch.grammatik.perfekt", subject: "Deutsch", area: "Grammatik", name: "Perfekt", gradeMin: 4, gradeMax: 9, parentId: "deutsch.grammatik.zeiten" },
+  { id: "deutsch.satz.hauptsatz-gliedsatz", subject: "Deutsch", area: "Satzlehre", name: "Hauptsatz und Gliedsatz erkennen", gradeMin: 5, gradeMax: 10 },
   ...s("Deutsch", "Textverständnis", 3, 12, [["deutsch.text.verstehen", "Leseverständnis"]]),
   ...s("Englisch", "Tenses", 5, 10, [
     ["englisch.tenses.presentsimple", "Present Simple"],

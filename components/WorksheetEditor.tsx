@@ -84,7 +84,7 @@ export function WorksheetEditor(p: Props) {
   return (
     <div className="grid gap-3">
       {reading && <ReadingTextPanel key={reading.title + reading.text} worksheetId={p.worksheetId} reading={reading} tasks={p.tasks} editable={p.editable} subject={p.subject} />}
-      {p.tasks.length === 0 && <p className="panel px-5 py-6 text-[15px] text-ink-2">Noch keine Aufgaben. Leg unten die erste an oder übernimm eine aus der Aufgabensammlung.</p>}
+      {p.tasks.length === 0 && <p className="panel px-5 py-6 text-[15px] text-ink-2">Noch keine Aufgaben. Leg unten die erste an oder übernimm eine aus der Aufgabenbibliothek.</p>}
       <ol className="grid gap-3" aria-label="Aufgaben">
         {p.tasks.map((t, i) => {
           const shown = t.data.passage ? passages.has(t.data.passage) : false;
@@ -163,27 +163,32 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
             {/* a library task is curated: it changes only in the editor (difficulty included), never replaced at a click */}
             {!p.library && (
               <>
-                <button type="button" className="btn btn-ghost btn-sm" disabled={pending} onClick={() => run(() => regenerateTaskAction(t.id))} title={p.aiEnabled ? "Claude erstellt eine neue Aufgabe für dieselbe Fähigkeit" : "Der Generator erstellt eine neue Aufgabe für dieselbe Fähigkeit"}>
-                  <RefreshCw size={14} aria-hidden /> Neu erstellen
-                </button>
-                <label className="flex items-center gap-1 text-[13px] text-ink-2">
-                  <span className="sr-only">Schwierigkeit ändern</span>
-                  <select
-                    className="input h-8 py-0 text-[13px]"
-                    value={(DIFFICULTIES as readonly string[]).includes(t.difficulty) ? t.difficulty : ""}
-                    disabled={pending}
-                    onChange={(e) => run(() => regenerateTaskAction(t.id, e.target.value as Difficulty))}
-                    aria-label="Schwierigkeit ändern (erstellt die Aufgabe neu)"
-                    title="Schwierigkeit ändern: die Aufgabe wird in dieser Schwierigkeit neu erstellt"
-                  >
-                    {!(DIFFICULTIES as readonly string[]).includes(t.difficulty) && <option value="">{t.difficulty}</option>}
-                    {DIFFICULTIES.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                {/* Auswendig schreiben: den Text schreibt die Lehrkraft, „Neu erstellen“ würde ihn leeren */}
+                {t.type !== "memorize" && (
+                  <button type="button" className="btn btn-ghost btn-sm" disabled={pending} onClick={() => run(() => regenerateTaskAction(t.id))} title={p.aiEnabled ? "Claude erstellt eine neue Aufgabe für dieselbe Fähigkeit" : "Der Generator erstellt eine neue Aufgabe für dieselbe Fähigkeit"}>
+                    <RefreshCw size={14} aria-hidden /> Neu erstellen
+                  </button>
+                )}
+                {t.type !== "memorize" && (
+                  <label className="flex items-center gap-1 text-[13px] text-ink-2">
+                    <span className="sr-only">Schwierigkeit ändern</span>
+                    <select
+                      className="input h-8 py-0 text-[13px]"
+                      value={(DIFFICULTIES as readonly string[]).includes(t.difficulty) ? t.difficulty : ""}
+                      disabled={pending}
+                      onChange={(e) => run(() => regenerateTaskAction(t.id, e.target.value as Difficulty))}
+                      aria-label="Schwierigkeit ändern (erstellt die Aufgabe neu)"
+                      title="Schwierigkeit ändern: die Aufgabe wird in dieser Schwierigkeit neu erstellt"
+                    >
+                      {!(DIFFICULTIES as readonly string[]).includes(t.difficulty) && <option value="">{t.difficulty}</option>}
+                      {DIFFICULTIES.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <span className="mx-1 h-5 w-px bg-line" aria-hidden />
                 <button type="button" className="btn btn-ghost btn-sm" disabled={pending || p.first} onClick={() => run(() => moveTaskAction(t.id, -1))} aria-label={`Aufgabe ${p.index} nach oben`} title="Nach oben">
                   <ArrowUp size={14} aria-hidden />
@@ -441,6 +446,9 @@ function reshapeBase(t: TaskDraft, format: TaskType): TaskDraft {
       };
     case "order":
       return { ...keep, data: {}, answer: { steps: t.answer.steps ?? ["", "", ""] } };
+    // Auswendig schreiben: der Text steht in data.passage, geprüft wird Wort für Wort (lib/memorize.ts)
+    case "memorize":
+      return { ...keep, data: { passage: t.data.passage ?? "" }, answer: {} };
     case "grammar":
       return { ...keep, data: {}, answer: { accepted: t.answer.accepted ?? [""], mode: t.answer.mode === "exact" ? "exact" : "text" } };
     case "rechenweg":
@@ -573,10 +581,11 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
       </details>
 
       {reading && <ReadingQuestionFields t={t} setT={setT} subject={subject} text={reading.text} />}
-      {!reading && (t.type === "reading" || (t.type === "free" && t.data.passage !== undefined)) && (
+      {!reading && (t.type === "reading" || t.type === "memorize" || (t.type === "free" && t.data.passage !== undefined)) && (
         <label className="field">
-          <span className="label">Lesetext</span>
+          <span className="label">{t.type === "memorize" ? "Text zum Auswendiglernen (die Lösung ist dieser Text)" : "Lesetext"}</span>
           <textarea className="input min-h-[120px]" value={t.data.passage ?? ""} onChange={(e) => setData({ passage: e.target.value })} />
+          {t.type === "memorize" && <span className="text-[12px] text-ink-3">Der Schüler sieht den Text zuerst ganz, blendet ihn dann Stufe für Stufe aus und schreibt ihn aus dem Gedächtnis auf. Geprüft wird Wort für Wort.</span>}
         </label>
       )}
       <label className="field">

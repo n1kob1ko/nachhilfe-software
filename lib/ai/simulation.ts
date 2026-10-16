@@ -421,7 +421,7 @@ function summarize(unitId: number, base: Omit<SimReport, "events" | "rows" | "to
 // ---------- report ----------
 
 const SAVINGS: Partial<Record<AIFunction, string>> = {
-  aufgaben: "Aufgaben vor der Stunde über die Batch-API erzeugen (halber Preis) oder passende Aufgaben aus der Bibliothek wiederverwenden.",
+  aufgaben: "Aufgaben vor der Einheit über die Batch-API erzeugen (halber Preis) oder passende Aufgaben aus der Bibliothek wiederverwenden.",
   neue_aufgabe: "Erst in der Aufgabenbibliothek nach einer passenden Aufgabe suchen und nur ohne Treffer neu erzeugen; weniger Denkaufwand oder das schnelle Modell für einfache Rechenaufgaben.",
   echtzeit: "Erste Fehlversuche und erste Hilfen nur regelbasiert auswerten und die KI erst ab dem zweiten Fehlversuch oder der zweiten Hilfe fragen.",
   block: "Blockauswertung mit dem schnellen Modell statt dem Standard-Modell (eigene Stufe für diese Funktion).",

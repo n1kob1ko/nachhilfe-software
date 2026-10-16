@@ -67,6 +67,13 @@ export function StudentForm({ student }: { student?: Student }) {
         <span className="label">Notizen</span>
         <textarea className="input" name="notes" defaultValue={student?.notes} placeholder="Interessen, Lerntyp, Kontakt zu Eltern …" />
       </label>
+      <label className="field">
+        <span className="label">KI-Hinweise</span>
+        <textarea className="input" name="ki_hinweise" defaultValue={student?.ki_hinweise} placeholder="z. B. Legasthenie: kurze Sätze, keine Großbuchstaben-Wörter als Fehler werten" />
+      </label>
+      <p className="-mt-2 text-[13px] text-ink-3">
+        Geht an die KI, wenn für diesen Schüler Aufgaben, Einschätzungen oder Notizen entstehen — nie zusammen mit seinem Namen.
+      </p>
       <p className="-mt-2 text-[13px] text-ink-3">
         Wird automatisch aus Übungen, Einheiten und Tests ergänzt.
       </p>

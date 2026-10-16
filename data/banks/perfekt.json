@@ -1,0 +1,437 @@
+[
+  {
+    "q": "Letzten Sommer ___ wir nach Italien ___. (fahren, Perfekt)",
+    "blanks": [
+      [
+        "sind"
+      ],
+      [
+        "gefahren"
+      ]
+    ],
+    "solution": "fahren bildet das Perfekt mit „sein“: wir sind gefahren",
+    "hint": "Welche Zeitform steht in der Klammer? Brauchst du ein Hilfsverb (haben, sein, werden)?",
+    "errors": {}
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Das Messer ___ mir beim Schneiden aus der Hand ___.",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "gefallen"
+      ]
+    ],
+    "solution": "Das Messer ist mir beim Schneiden aus der Hand gefallen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "wurde": "Falsches Hilfsverb",
+      "war": "Falsches Hilfsverb",
+      "gefallt": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Das Restaurant ___ gestern wegen Renovierung ___.",
+    "blanks": [
+      [
+        "hat"
+      ],
+      [
+        "geschlossen"
+      ]
+    ],
+    "solution": "Das Restaurant hat gestern wegen Renovierung geschlossen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "ist": "Falsches Hilfsverb",
+      "war": "Falsches Hilfsverb",
+      "wurde": "Falsches Hilfsverb",
+      "geschließt": "Falsches Partizip II",
+      "geschließen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Das Wasser ___ im Topf schon seit zehn Minuten ___.",
+    "blanks": [
+      [
+        "hat"
+      ],
+      [
+        "gesiedet"
+      ]
+    ],
+    "solution": "Das Wasser hat im Topf schon seit zehn Minuten gesiedet.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "ist": "Falsches Hilfsverb",
+      "wurde": "Falsches Hilfsverb",
+      "war": "Falsches Hilfsverb",
+      "gesotten": "Falsches Partizip II",
+      "gesieden": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Der Gast ___ den Wein vorsichtig ___.",
+    "blanks": [
+      [
+        "hat"
+      ],
+      [
+        "probiert"
+      ]
+    ],
+    "solution": "Der Gast hat den Wein vorsichtig probiert.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "ist": "Falsches Hilfsverb",
+      "hätte": "Falsches Hilfsverb",
+      "war": "Falsches Hilfsverb",
+      "geprobiert": "Falsches Partizip II",
+      "probieren": "Falsches Partizip II",
+      "geprobt": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Der Koch ___ die Suppe bereits vor einer Stunde ___.",
+    "blanks": [
+      [
+        "hat"
+      ],
+      [
+        "gekocht"
+      ]
+    ],
+    "solution": "Der Koch hat die Suppe bereits vor einer Stunde gekocht.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "ist": "Falsches Hilfsverb",
+      "habe": "Falsches Hilfsverb",
+      "war": "Falsches Hilfsverb",
+      "gekochen": "Falsches Partizip II",
+      "gekochenen": "Falsches Partizip II",
+      "gekochte": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Der Kuchen ___ in der Mitte noch nicht ganz ___.",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "durchgebacken"
+      ]
+    ],
+    "solution": "Der Kuchen ist in der Mitte noch nicht ganz durchgebacken.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Falsches Hilfsverb",
+      "wird": "Falsches Hilfsverb",
+      "durchgebackt": "Falsches Partizip II",
+      "durchbacken": "Falsches Partizip II",
+      "gebacken": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Die Milch ___ über Nacht leider sauer ___.",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "geworden"
+      ]
+    ],
+    "solution": "Die Milch ist über Nacht leider sauer geworden.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Falsches Hilfsverb",
+      "wird": "Falsches Hilfsverb",
+      "gewordet": "Falsches Partizip II",
+      "gewordenen": "Falsches Partizip II",
+      "werden": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Die Sahne ___ leider nicht steif ___.",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "geworden"
+      ]
+    ],
+    "solution": "Die Sahne ist leider nicht steif geworden.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "wird": "Falsches Hilfsverb",
+      "war": "Falsches Hilfsverb",
+      "gewordet": "Falsches Partizip II",
+      "werden": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Du ___ den Braten viel zu lange im Ofen ___.",
+    "blanks": [
+      [
+        "hast"
+      ],
+      [
+        "gelassen"
+      ]
+    ],
+    "solution": "Du hast den Braten viel zu lange im Ofen gelassen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "bist": "Falsches Hilfsverb",
+      "hat": "Falsches Hilfsverb",
+      "hättest": "Falsches Hilfsverb",
+      "gelasst": "Falsches Partizip II",
+      "lassen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Franz ___ die Kartoffeln schon vorhin ___.",
+    "blanks": [
+      [
+        "hat"
+      ],
+      [
+        "geschält"
+      ]
+    ],
+    "solution": "Franz hat die Kartoffeln schon vorhin geschält.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "ist": "Falsches Hilfsverb",
+      "habe": "Falsches Hilfsverb",
+      "hatte": "Falsches Hilfsverb",
+      "geschälen": "Falsches Partizip II",
+      "gescheelt": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Gestern ___ wir den neuen Induktionsherd endlich ___.",
+    "blanks": [
+      [
+        "haben"
+      ],
+      [
+        "ausprobiert"
+      ]
+    ],
+    "solution": "Gestern haben wir den neuen Induktionsherd endlich ausprobiert.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "sind": "Falsches Hilfsverb",
+      "hatten": "Falsches Hilfsverb",
+      "waren": "Falsches Hilfsverb",
+      "ausprobieren": "Falsches Partizip II",
+      "ausgeprobiert": "Falsches Partizip II",
+      "ausgeprobieren": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Haben Sie die Zwiebeln schon fein ___  ___?",
+    "blanks": [
+      [
+        "-"
+      ],
+      [
+        "geschnitten"
+      ]
+    ],
+    "solution": "Haben Sie die Zwiebeln schon fein geschnitten?",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "geschnittet": "Falsches Partizip II",
+      "geschneidet": "Falsches Partizip II",
+      "geschnittenen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Ich ___ heute Morgen frischen Kaffee ___.",
+    "blanks": [
+      [
+        "habe"
+      ],
+      [
+        "gekocht"
+      ]
+    ],
+    "solution": "Ich habe heute Morgen frischen Kaffee gekocht.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "bin": "Falsches Hilfsverb",
+      "werde": "Falsches Hilfsverb",
+      "hätte": "Falsches Hilfsverb",
+      "gekochen": "Falsches Partizip II",
+      "kochen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Ich ___ leider das Salz im Teig komplett ___.",
+    "blanks": [
+      [
+        "habe"
+      ],
+      [
+        "vergessen"
+      ]
+    ],
+    "solution": "Ich habe leider das Salz im Teig komplett vergessen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "bin": "Falsches Hilfsverb",
+      "hatte": "Falsches Hilfsverb",
+      "werde": "Falsches Hilfsverb",
+      "vergesst": "Falsches Partizip II",
+      "vergessenes": "Falsches Partizip II",
+      "gevergessen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Maria ___ heute Morgen den ganzen Abwasch ___.",
+    "blanks": [
+      [
+        "hat"
+      ],
+      [
+        "erledigt"
+      ]
+    ],
+    "solution": "Maria hat heute Morgen den ganzen Abwasch erledigt.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "ist": "Falsches Hilfsverb",
+      "wird": "Falsches Hilfsverb",
+      "hätte": "Falsches Hilfsverb",
+      "erledigen": "Falsches Partizip II",
+      "erlediget": "Falsches Partizip II",
+      "geerledigt": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Wann ___ ihr das Geschirr in den Schrank ___?",
+    "blanks": [
+      [
+        "habt"
+      ],
+      [
+        "geräumt"
+      ]
+    ],
+    "solution": "Wann habt ihr das Geschirr in den Schrank geräumt?",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "seid": "Falsches Hilfsverb",
+      "hattet": "Falsches Hilfsverb",
+      "werdet": "Falsches Hilfsverb",
+      "geräumen": "Falsches Partizip II",
+      "geraumt": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Warum ___ du das Fleisch nicht rechtzeitig aus dem Kühlschrank ___?",
+    "blanks": [
+      [
+        "hast"
+      ],
+      [
+        "genommen"
+      ]
+    ],
+    "solution": "Warum hast du das Fleisch nicht rechtzeitig aus dem Kühlschrank genommen?",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "bist": "Falsches Hilfsverb",
+      "hat": "Falsches Hilfsverb",
+      "seid": "Falsches Hilfsverb",
+      "genommt": "Falsches Partizip II",
+      "genähmt": "Falsches Partizip II",
+      "genommenen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Wir ___ den ganzen Abend über Rezepte ___.",
+    "blanks": [
+      [
+        "haben"
+      ],
+      [
+        "gesprochen"
+      ]
+    ],
+    "solution": "Wir haben den ganzen Abend über Rezepte gesprochen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "sind": "Falsches Hilfsverb",
+      "hatten": "Falsches Hilfsverb",
+      "waren": "Falsches Hilfsverb",
+      "gesprecht": "Falsches Partizip II",
+      "sprechen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Wir ___ gestern gemeinsam einen Apfelkuchen ___.",
+    "blanks": [
+      [
+        "haben"
+      ],
+      [
+        "gebacken"
+      ]
+    ],
+    "solution": "Wir haben gestern gemeinsam einen Apfelkuchen gebacken.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "sind": "Falsches Hilfsverb",
+      "waren": "Falsches Hilfsverb",
+      "habt": "Falsches Hilfsverb",
+      "gebackt": "Falsches Partizip II",
+      "gebackten": "Falsches Partizip II",
+      "gebeckt": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Wir ___ nach dem Essen sofort die Küche ___.",
+    "blanks": [
+      [
+        "haben"
+      ],
+      [
+        "aufgeräumt"
+      ]
+    ],
+    "solution": "Wir haben nach dem Essen sofort die Küche aufgeräumt.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "sind": "Falsches Hilfsverb",
+      "hätten": "Falsches Hilfsverb",
+      "waren": "Falsches Hilfsverb",
+      "aufgeräumen": "Falsches Partizip II",
+      "geaufräumt": "Falsches Partizip II",
+      "aufraümt": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Wir ___ gestern lange ___. (lernen, Perfekt)",
+    "blanks": [
+      [
+        "haben"
+      ],
+      [
+        "gelernt"
+      ]
+    ],
+    "solution": "lernen bildet das Perfekt mit „haben“: wir haben gelernt",
+    "hint": "Welche Zeitform steht in der Klammer? Brauchst du ein Hilfsverb (haben, sein, werden)?",
+    "errors": {}
+  }
+]

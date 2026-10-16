@@ -278,6 +278,13 @@ export function planTask(
     plan.lines = Math.max(2, Math.min(20, Math.round((Math.ceil(len / 55) + 1) * Math.max(1, SCALE[o.space]))));
     return plan;
   }
+  if (task.type === "memorize") {
+    // Auswendig schreiben: der ganze Text wird aus dem Gedächtnis aufgeschrieben — so viele Zeilen,
+    // wie er braucht. Der Text selbst steht als passage über der Aufgabe.
+    const len = (task.data.passage ?? "").length;
+    plan.lines = Math.max(3, Math.min(20, Math.round((Math.ceil(len / 55) + 1) * Math.max(1, SCALE[o.space]))));
+    return plan;
+  }
   if (task.answer.blanks && !(math && resultLine)) {
     // gaps in a table (Wertetabelle) are filled in place, without a field for working
     if (
@@ -376,6 +383,8 @@ export function shortAnswer(
   t: Pick<TaskDraft, "type" | "data" | "answer">,
 ): string | null {
   if (t.type === "rechenweg" || t.type === "sachaufgabe") return mathAnswerText(t);
+  // Auswendig schreiben: die Lösung ist der Text selbst, er steht in data.passage
+  if (t.type === "memorize") return t.data.passage?.trim() || null;
   if (t.data.options && typeof t.answer.correct === "number")
     return `${String.fromCharCode(97 + t.answer.correct)}) ${t.data.options[t.answer.correct]}`;
   if (t.answer.steps)

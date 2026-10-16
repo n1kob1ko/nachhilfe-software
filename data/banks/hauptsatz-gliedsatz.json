@@ -1,0 +1,3614 @@
+[
+  {
+    "parts": [
+      {
+        "text": "Da das Auto kaputt ist,",
+        "type": "GS"
+      },
+      {
+        "text": "fahren wir heute mit dem Fahrrad.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da das Geschäft heute geschlossen ist,",
+        "type": "GS"
+      },
+      {
+        "text": "müssen wir unsere Einkäufe morgen erledigen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da das Internet im Moment nicht funktioniert,",
+        "type": "GS"
+      },
+      {
+        "text": "können wir die Informationen nicht online suchen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da das Wasser flach ist,",
+        "type": "GS"
+      },
+      {
+        "text": "können die Kinder hier gefahrlos spielen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da der Akku fast leer ist,",
+        "type": "GS"
+      },
+      {
+        "text": "muss ich das Handy jetzt an das Ladegerät anschließen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da der Akku leer ist,",
+        "type": "GS"
+      },
+      {
+        "text": "kann ich dich leider nicht anrufen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da der Film langweilig war,",
+        "type": "GS"
+      },
+      {
+        "text": "schaltete er den Fernseher einfach aus.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da der Film sehr traurig war,",
+        "type": "GS"
+      },
+      {
+        "text": "mussten einige Zuschauer im Kino weinen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da der Kaffee zu heiß war,",
+        "type": "GS"
+      },
+      {
+        "text": "musste er einen Moment lang warten.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da der Platz im Auto begrenzt ist,",
+        "type": "GS"
+      },
+      {
+        "text": "darf jeder nur einen kleinen Koffer mitnehmen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da der Schlüssel passte,",
+        "type": "GS"
+      },
+      {
+        "text": "konnten wir das alte Tor endlich öffnen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da der Vorrat reicht,",
+        "type": "GS"
+      },
+      {
+        "text": "müssen wir heute nicht einkaufen gehen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da der Weg sehr steil ist,",
+        "type": "GS"
+      },
+      {
+        "text": "brauchen wir für die Wanderung länger.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Batterie meiner Uhr leer ist,",
+        "type": "GS"
+      },
+      {
+        "text": "bleiben die Zeiger einfach auf zwölf stehen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Brötchen ganz frisch sind,",
+        "type": "GS"
+      },
+      {
+        "text": "duften sie im ganzen Haus wunderbar.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Heizung im Haus ausgefallen ist,",
+        "type": "GS"
+      },
+      {
+        "text": "müssen wir heute Nacht unter dicken Decken schlafen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Hose zu kurz ist,",
+        "type": "GS"
+      },
+      {
+        "text": "muss ich mir eine neue kaufen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Lampe im Flur flackert,",
+        "type": "GS"
+      },
+      {
+        "text": "muss Papa bald die Glühbirne auswechseln.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Milch leer ist,",
+        "type": "GS"
+      },
+      {
+        "text": "muss ich noch schnell zum Supermarkt.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Milch sauer ist,",
+        "type": "GS"
+      },
+      {
+        "text": "können wir sie nicht mehr trinken.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Schule ausfällt,",
+        "type": "GS"
+      },
+      {
+        "text": "schlafen die Kinder heute etwas länger.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Sonne hinter den Wolken verschwand,",
+        "type": "GS"
+      },
+      {
+        "text": "veränderte sich das Licht im Garten schlagartig.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Sonne scheint,",
+        "type": "GS"
+      },
+      {
+        "text": "gehen wir heute Nachmittag ins Freibad.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Sonne scheint,",
+        "type": "GS"
+      },
+      {
+        "text": "trocknen die nassen Straßen sehr schnell.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Sonne sehr stark brennt,",
+        "type": "GS"
+      },
+      {
+        "text": "cremen wir uns mit Sonnenmilch ein.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Sonne untergeht,",
+        "type": "GS"
+      },
+      {
+        "text": "wird es draußen langsam kühl.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Straße gesperrt ist,",
+        "type": "GS"
+      },
+      {
+        "text": "müssen wir einen Umweg fahren.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Taschen sehr schwer sind,",
+        "type": "GS"
+      },
+      {
+        "text": "hilft er seiner Oma beim Tragen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Uhr stehen blieb,",
+        "type": "GS"
+      },
+      {
+        "text": "wussten wir nicht genau wie spät es war.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Zeit knapp ist,",
+        "type": "GS"
+      },
+      {
+        "text": "müssen wir jetzt schnell eine Entscheidung treffen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da die Zeit wie im Flug vergeht,",
+        "type": "GS"
+      },
+      {
+        "text": "sollten wir jetzt mit dem Kochen beginnen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da er müde war,",
+        "type": "GS"
+      },
+      {
+        "text": "machte er am Nachmittag ein kurzes Nickerchen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da es draußen neblig ist,",
+        "type": "GS"
+      },
+      {
+        "text": "müssen die Autofahrer besonders vorsichtig sein.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da es sehr spät ist,",
+        "type": "GS"
+      },
+      {
+        "text": "sollten wir jetzt nach Hause gehen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da ich meinen Schlüssel vergessen habe,",
+        "type": "GS"
+      },
+      {
+        "text": "muss ich vor der Tür warten.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da sie ihre Hausaufgaben schon fertig hat,",
+        "type": "GS"
+      },
+      {
+        "text": "darf sie jetzt eine Stunde lang fernsehen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Da sie krank ist,",
+        "type": "GS"
+      },
+      {
+        "text": "kann sie heute nicht zur Schule gehen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Der Kapitän versprach den Passagieren,",
+        "type": "HS"
+      },
+      {
+        "text": "dass das Schiff sicher im Hafen ankommt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Der Lehrer sagt,",
+        "type": "HS"
+      },
+      {
+        "text": "dass wir die Aufgabe lösen sollen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Der Wetterbericht sagt voraus,",
+        "type": "HS"
+      },
+      {
+        "text": "dass es am Wochenende wieder wärmer wird.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Die Kinder wissen,",
+        "type": "HS"
+      },
+      {
+        "text": "dass man im Wald keinen Müll wegwirft.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Die Lehrerin sagte uns,",
+        "type": "HS"
+      },
+      {
+        "text": "dass wir die Aufgaben in Partnerarbeit lösen sollen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Die Zeitung berichtet,",
+        "type": "HS"
+      },
+      {
+        "text": "dass das Wetter am Wochenende schön wird.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Du merkst sofort,",
+        "type": "HS"
+      },
+      {
+        "text": "dass die Stimmung heute sehr gut ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Du musst leise sein,",
+        "type": "HS"
+      },
+      {
+        "text": "damit das Baby nicht aufwacht.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Du musst wissen,",
+        "type": "HS"
+      },
+      {
+        "text": "dass Ehrlichkeit im Leben wichtig ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er benutzt ein scharfes Messer,",
+        "type": "HS"
+      },
+      {
+        "text": "damit er das harte Brot schneiden kann.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er fährt mit dem Rad,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl er ein Bahnticket besitzt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er geht heute früher von der Arbeit weg,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl er eigentlich noch viel zu tun hätte.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er geht ins Bett,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl er noch nicht müde ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er geht jeden Morgen schwimmen,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl er eigentlich ein kleiner Langschläfer ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er geht joggen,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl es draußen sehr windig ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er geht joggen,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl es heute extrem heiß ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er geht ohne Jacke nach draußen,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl es ein sehr windiger Herbsttag ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er geht spazieren,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl es schon dunkel geworden ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er geht trotzdem nach draußen,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl es wie aus Eimern schüttet.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er geht zum Zahnarzt,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl er ein bisschen Angst hat.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er kaufte sich ein neues Handy,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl sein altes Gerät noch einwandfrei funktionierte.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er klebt ein Pflaster auf die Wunde,",
+        "type": "HS"
+      },
+      {
+        "text": "damit kein Dreck in den Kratzer gelangt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er lacht laut,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl die Situation eigentlich ernst ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er lernt Vokabeln,",
+        "type": "HS"
+      },
+      {
+        "text": "damit er die Englischarbeit besteht.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er lernt die Regeln,",
+        "type": "HS"
+      },
+      {
+        "text": "damit er beim nächsten Mal gewinnt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er lernt weiter,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl er schon alles verstanden hat.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er liest das Buch weiter,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl es an dieser Stelle sehr gruselig ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er merkt bald,",
+        "type": "HS"
+      },
+      {
+        "text": "dass die Aufgabe doch schwieriger ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er nutzt ein Wörterbuch,",
+        "type": "HS"
+      },
+      {
+        "text": "damit er die fremden Wörter versteht.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er schließt das Fenster,",
+        "type": "HS"
+      },
+      {
+        "text": "damit die lästigen Mücken nicht hineinkommen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er spart sein Taschengeld,",
+        "type": "HS"
+      },
+      {
+        "text": "damit er sich ein neues Spiel kauft.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er spart sein ganzes Geld,",
+        "type": "HS"
+      },
+      {
+        "text": "damit er sich ein neues Fahrrad kauft.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er spielt Fußball,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl sein Knie noch ein wenig wehtut.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er spricht heute besonders deutlich,",
+        "type": "HS"
+      },
+      {
+        "text": "damit ihn auch die hinteren Reihen verstehen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er spricht langsam,",
+        "type": "HS"
+      },
+      {
+        "text": "damit ihn alle im Raum verstehen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er stellt den Wecker auf sechs Uhr,",
+        "type": "HS"
+      },
+      {
+        "text": "damit er den frühen Bus nicht verpasst.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er trägt Handschuhe,",
+        "type": "HS"
+      },
+      {
+        "text": "damit seine Hände im Winter warm bleiben.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er trägt einen Helm,",
+        "type": "HS"
+      },
+      {
+        "text": "damit er beim Radfahren geschützt ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er verspricht,",
+        "type": "HS"
+      },
+      {
+        "text": "dass er pünktlich zum Abendessen kommt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Er übt fleißig,",
+        "type": "HS"
+      },
+      {
+        "text": "damit er bald in der ersten Mannschaft spielt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich beeile mich,",
+        "type": "HS"
+      },
+      {
+        "text": "damit ich den Zug noch erwische.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich beeile mich,",
+        "type": "HS"
+      },
+      {
+        "text": "damit wir den Film von Anfang an sehen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich bin mir absolut sicher,",
+        "type": "HS"
+      },
+      {
+        "text": "dass du diesen Weg alleine finden wirst.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich bin sicher,",
+        "type": "HS"
+      },
+      {
+        "text": "dass wir die Prüfung alle bestehen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich bleibe heute zu Hause,",
+        "type": "HS"
+      },
+      {
+        "text": "weil es draußen stark regnet.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich finde es gut,",
+        "type": "HS"
+      },
+      {
+        "text": "dass du deine Meinung offen sagst.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich finde es wirklich toll,",
+        "type": "HS"
+      },
+      {
+        "text": "dass du mir bei diesem Projekt hilfst.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich finde,",
+        "type": "HS"
+      },
+      {
+        "text": "dass dieser Film sehr spannend ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich freue mich darauf,",
+        "type": "HS"
+      },
+      {
+        "text": "dass wir nächste Woche endlich Ferien haben.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich freue mich sehr,",
+        "type": "HS"
+      },
+      {
+        "text": "dass du mich heute besuchst.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich glaube fest daran,",
+        "type": "HS"
+      },
+      {
+        "text": "dass wir morgen das wichtige Fußballspiel gewinnen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich glaube nicht,",
+        "type": "HS"
+      },
+      {
+        "text": "dass das heute noch aufhört zu regnen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich glaube,",
+        "type": "HS"
+      },
+      {
+        "text": "dass dieser Sommer sehr heiß wird.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich glaube,",
+        "type": "HS"
+      },
+      {
+        "text": "dass wir den Weg finden werden.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich habe deutlich gemerkt,",
+        "type": "HS"
+      },
+      {
+        "text": "dass du heute besonders gute Laune hast.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich habe leider völlig vergessen,",
+        "type": "HS"
+      },
+      {
+        "text": "dass wir heute eine Klassenarbeit schreiben.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich hoffe sehr,",
+        "type": "HS"
+      },
+      {
+        "text": "dass wir uns bald wiedersehen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich merke,",
+        "type": "HS"
+      },
+      {
+        "text": "dass der Frühling endlich beginnt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich nehme ein spannendes Buch mit,",
+        "type": "HS"
+      },
+      {
+        "text": "weil die lange Zugfahrt sehr langweilig ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich nehme einen Regenschirm mit,",
+        "type": "HS"
+      },
+      {
+        "text": "damit ich auf dem Weg nicht nass werde.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich sehe ein,",
+        "type": "HS"
+      },
+      {
+        "text": "dass ich einen Fehler gemacht habe.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich sehe,",
+        "type": "HS"
+      },
+      {
+        "text": "dass der Hund im Garten gräbt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich verspreche dir hiermit,",
+        "type": "HS"
+      },
+      {
+        "text": "dass ich dein Geheimnis niemandem verraten werde.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Ich weiß genau,",
+        "type": "HS"
+      },
+      {
+        "text": "dass du die Wahrheit sagst.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Man erkennt,",
+        "type": "HS"
+      },
+      {
+        "text": "dass der Winter bald einzieht.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Man kann deutlich erkennen,",
+        "type": "HS"
+      },
+      {
+        "text": "dass sich die Bäume im Wind biegen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Mutter hofft,",
+        "type": "HS"
+      },
+      {
+        "text": "dass die Gäste bald ankommen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem das Gewitter abgezogen war,",
+        "type": "GS"
+      },
+      {
+        "text": "wurde die Luft wieder viel frischer.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem der Brief angekommen war,",
+        "type": "GS"
+      },
+      {
+        "text": "las er ihn mehrmals aufmerksam durch.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem der Film endete,",
+        "type": "GS"
+      },
+      {
+        "text": "verließen wir schweigend das kleine Kino.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem der Film im Fernsehen vorbei war,",
+        "type": "GS"
+      },
+      {
+        "text": "gingen die Kinder ohne Widerrede ins Bett.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem der Film zu Ende war,",
+        "type": "GS"
+      },
+      {
+        "text": "gingen alle Zuschauer nach Hause.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem der Kampf vorbei war,",
+        "type": "GS"
+      },
+      {
+        "text": "reichten sich die Sportler die Hände.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem der Lehrer den Raum betrat,",
+        "type": "GS"
+      },
+      {
+        "text": "wurde es in der Klasse ganz still.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem der Regen aufgehört hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "kam die Sonne wieder hervor.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem der Schnee alles bedeckt hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "holten wir unsere Schlitten aus dem Keller.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem der Schnee geschmolzen war,",
+        "type": "GS"
+      },
+      {
+        "text": "kamen die grünen Wiesen wieder hervor.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem der Sturm endlich nachgelassen hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "räumten die Menschen die abgebrochenen Äste weg.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem der Vortrag beendet war,",
+        "type": "GS"
+      },
+      {
+        "text": "durften die Zuhörer viele Fragen stellen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem der Wecker endlich aufgehört hatte zu klingeln,",
+        "type": "GS"
+      },
+      {
+        "text": "drehte er sich noch einmal gemütlich um.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem der Wecker geklingelt hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "stand er sofort aus dem Bett auf.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem der Winter vorbei war,",
+        "type": "GS"
+      },
+      {
+        "text": "blühten die ersten Blumen im Garten.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem die Gäste gegangen waren,",
+        "type": "GS"
+      },
+      {
+        "text": "räumten wir das ganze Wohnzimmer auf.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem die Schule aus war,",
+        "type": "GS"
+      },
+      {
+        "text": "trafen wir uns auf dem Spielplatz.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem die Schule fertig war,",
+        "type": "GS"
+      },
+      {
+        "text": "machten wir eine lange Weltreise.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem die Sonne hinter den Bergen verschwand,",
+        "type": "GS"
+      },
+      {
+        "text": "wurde es im Tal augenblicklich ziemlich kalt.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem die Vorstellung im Zirkus beendet war,",
+        "type": "GS"
+      },
+      {
+        "text": "klatschten alle Kinder im Zelt begeistert Beifall.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem er das Buch gelesen hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "gab er es seiner Schwester zurück.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem er das Fenster öffnete,",
+        "type": "GS"
+      },
+      {
+        "text": "strömte frische Luft in das Zimmer.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem er das Rätsel gelöst hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "war er sehr stolz auf sich.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem er das Ziel erreichte,",
+        "type": "GS"
+      },
+      {
+        "text": "ließ er sich erschöpft ins Gras fallen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem er die Nachricht erhalten hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "packte er sofort seine Sachen zusammen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem er die Tür abgeschlossen hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "machte er sich auf den Weg.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem er die Zähne geputzt hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "legte er sich sofort ins Bett.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem er die schwere Tür geschlossen hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "fühlte er sich in seinem Zimmer endlich sicher.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem sie das Rätsel endlich gelöst hatten,",
+        "type": "GS"
+      },
+      {
+        "text": "fanden sie den versteckten Schlüssel zur Truhe.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem sie das alte Foto gefunden hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "erinnerte sie sich an ihren Urlaub.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem sie die Nachricht gelesen hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "rief sie sofort ihre Freundin an.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem sie die Prüfung bestanden hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "feierte sie mit ihren Freunden.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem wir den Gipfel erreichten,",
+        "type": "GS"
+      },
+      {
+        "text": "genossen wir die wunderschöne Aussicht.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem wir den ganzen Tag gewandert waren,",
+        "type": "GS"
+      },
+      {
+        "text": "fielen wir abends erschöpft in unsere Betten.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem wir die schwere Arbeit beendet hatten,",
+        "type": "GS"
+      },
+      {
+        "text": "gönnten wir uns eine richtig lange Pause.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem wir gegessen hatten,",
+        "type": "GS"
+      },
+      {
+        "text": "spülten wir gemeinsam das Geschirr ab.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Nachdem wir im Park waren,",
+        "type": "GS"
+      },
+      {
+        "text": "gingen wir noch ein leckeres Eis essen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Obwohl die Aufgabe sehr kompliziert aussah,",
+        "type": "GS"
+      },
+      {
+        "text": "konnte er sie in kurzer Zeit lösen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Obwohl er müde war,",
+        "type": "GS"
+      },
+      {
+        "text": "las er sein Buch bis zum Ende.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Obwohl er sehr hungrig war,",
+        "type": "GS"
+      },
+      {
+        "text": "wartete er höflich auf die anderen Gäste.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie geht heute nicht joggen,",
+        "type": "HS"
+      },
+      {
+        "text": "weil sie sich ein wenig erkältet hat.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie geht ins Kino,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl sie den Film schon kennt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie geht schwimmen,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl das Wasser im See noch eiskalt ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie geht schwimmen,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl das Wasser ziemlich kalt ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie geht wandern,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl ihre Füße ein bisschen wehtun.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie geht zur Arbeit,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl sie sich nicht gut fühlt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie hilft ihrem Bruder,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl sie selbst viel zu tun hat.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie isst den Apfel,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl er noch etwas sauer schmeckt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie isst den Keks,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl sie eigentlich eine Diät macht.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie isst den Salat,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl sie lieber Pizza hätte.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie isst den sauren Apfel,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl sie eigentlich lieber süße Birnen mag.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie kauft das Kleid,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl es eigentlich zu teuer ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie kauft den Apfel,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl sie eigentlich Birnen lieber mag.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie kauft sich ein Eis,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl sie eigentlich keinen Hunger hat.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie kaufte sich die teure Tasche,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl sie eigentlich Geld sparen wollte.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie lacht über den Witz,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl sie ihn schon hundertmal gehört hat.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie lacht,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl der Witz gar nicht lustig war.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie lacht,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl ihr eigentlich zum Weinen zumute ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie lernt fleißig,",
+        "type": "HS"
+      },
+      {
+        "text": "damit sie eine gute Note bekommt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie macht das Radio leiser,",
+        "type": "HS"
+      },
+      {
+        "text": "damit sie sich beim Lernen besser konzentriert.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie nutzt einen breiten Pinsel,",
+        "type": "HS"
+      },
+      {
+        "text": "damit sie die großen Flächen schnell ausmalt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie sagt mir,",
+        "type": "HS"
+      },
+      {
+        "text": "dass sie heute später nach Hause kommt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie sagt,",
+        "type": "HS"
+      },
+      {
+        "text": "dass sie morgen keine Zeit hat.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie schaltet das Radio ein,",
+        "type": "HS"
+      },
+      {
+        "text": "damit sie die aktuellen Nachrichten hört.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie schaltet das helle Licht aus,",
+        "type": "HS"
+      },
+      {
+        "text": "damit sie bei der Dunkelheit besser schlafen kann.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie schreibt alles auf,",
+        "type": "HS"
+      },
+      {
+        "text": "damit sie die Termine nicht vergisst.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie schreibt eine Einkaufsliste,",
+        "type": "HS"
+      },
+      {
+        "text": "damit sie im Supermarkt nichts Wichtiges vergisst.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie spart jeden Monat,",
+        "type": "HS"
+      },
+      {
+        "text": "damit sie sich ein Fahrrad kaufen kann.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie trinkt den Tee,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl er ihr eigentlich zu süß ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie trägt ein Sommerkleid,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl es heute Morgen noch ziemlich kühl ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie trägt eine Jacke,",
+        "type": "HS"
+      },
+      {
+        "text": "obwohl es eigentlich warm genug ist.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Sie übt jeden Tag,",
+        "type": "HS"
+      },
+      {
+        "text": "damit sie beim Konzert gut spielt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil das Fenster offen stand,",
+        "type": "GS"
+      },
+      {
+        "text": "flog ein kleiner Vogel in die Küche.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil der Bus Verspätung hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "kam er zu spät zum Training.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil der Hund bellte,",
+        "type": "GS"
+      },
+      {
+        "text": "wachte das kleine Kind plötzlich auf.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil der Hund bellte,",
+        "type": "GS"
+      },
+      {
+        "text": "wurde der Nachbar mitten in der Nacht wach.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil der Hund so laut bellte,",
+        "type": "GS"
+      },
+      {
+        "text": "erschrak das kleine Kind ganz furchtbar.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil der Koffer viel zu schwer war,",
+        "type": "GS"
+      },
+      {
+        "text": "musste er eine zusätzliche Gebühr bezahlen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil der Koffer zu schwer war,",
+        "type": "GS"
+      },
+      {
+        "text": "musste sie einige Sachen auspacken.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil der Strom ausfiel,",
+        "type": "GS"
+      },
+      {
+        "text": "mussten wir Kerzen im Haus anzünden.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil der Weg sehr steinig war,",
+        "type": "GS"
+      },
+      {
+        "text": "taten mir nach kurzer Zeit die Füße weh.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil die Ampel plötzlich auf Rot sprang,",
+        "type": "GS"
+      },
+      {
+        "text": "musste der Radfahrer eine Vollbremsung machen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil die Brücke baufällig war,",
+        "type": "GS"
+      },
+      {
+        "text": "wurde sie für alle Fahrzeuge komplett gesperrt.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil die Brücke gesperrt war,",
+        "type": "GS"
+      },
+      {
+        "text": "mussten wir einen weiten Umweg machen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil die Ferien bald beginnen,",
+        "type": "GS"
+      },
+      {
+        "text": "freuen sich alle Schüler riesig.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil die Heizung kaputt ist,",
+        "type": "GS"
+      },
+      {
+        "text": "tragen wir im Haus dicke Pullover.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil die Katze Hunger hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "miaute sie laut vor ihrer Schüssel.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil die Lampe kaputt ist,",
+        "type": "GS"
+      },
+      {
+        "text": "ist es in dieser Ecke sehr dunkel.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil die Milch leider sauer geworden ist,",
+        "type": "GS"
+      },
+      {
+        "text": "konnten wir den Pudding heute nicht kochen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil die Sonne scheint,",
+        "type": "GS"
+      },
+      {
+        "text": "gehen wir heute im Wald spazieren.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil die Straße heute Morgen sehr glatt war,",
+        "type": "GS"
+      },
+      {
+        "text": "fuhr das kleine Auto ganz besonders vorsichtig.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil er Hunger hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "machte er sich ein großes Sandwich.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil er die Adresse nicht finden konnte,",
+        "type": "GS"
+      },
+      {
+        "text": "irrte er eine Stunde lang in der Stadt umher.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil er die Adresse nicht wusste,",
+        "type": "GS"
+      },
+      {
+        "text": "fand er das Haus seiner Tante nicht.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil er die Karte verlor,",
+        "type": "GS"
+      },
+      {
+        "text": "musste er lange nach dem Weg fragen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil er fleißig geübt hat,",
+        "type": "GS"
+      },
+      {
+        "text": "spielt er das Klavierstück fehlerfrei.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil er kein Frühstück gegessen hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "hatte er in der Schule großen Hunger.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil er kein Geld dabei hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "konnte er sich nichts kaufen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil er kein Geld hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "musste er den ganzen Weg zu Fuß gehen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil er kein Geld mehr hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "konnte er sich leider kein Eis kaufen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil er kein Ticket hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "durfte er nicht ins Stadion gehen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil er seine Brille suchte,",
+        "type": "GS"
+      },
+      {
+        "text": "verpasste er den Anfang der Sendung.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil er seine Hausaufgaben vergessen hatte,",
+        "type": "GS"
+      },
+      {
+        "text": "bekam er Ärger mit dem Lehrer.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil er seinen Helm nicht trug,",
+        "type": "GS"
+      },
+      {
+        "text": "erlaubte ihm sein Vater das Radfahren nicht.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil er zu spät kam,",
+        "type": "GS"
+      },
+      {
+        "text": "musste er in der letzten Reihe sitzen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil sie Geburtstag hat,",
+        "type": "GS"
+      },
+      {
+        "text": "bringt sie heute einen Kuchen mit.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil sie die erste war,",
+        "type": "GS"
+      },
+      {
+        "text": "bekam sie den besten Platz im Saal.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Weil sie fleißig für das Turnier übt,",
+        "type": "GS"
+      },
+      {
+        "text": "verbessert sie ihre Technik von Tag zu Tag.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn das Wetter schön bleibt,",
+        "type": "GS"
+      },
+      {
+        "text": "grillen wir heute Nachmittag im Garten.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn die Ampel rot zeigt,",
+        "type": "GS"
+      },
+      {
+        "text": "müssen alle Fahrzeuge sofort anhalten.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn die Blätter fallen,",
+        "type": "GS"
+      },
+      {
+        "text": "beginnt die goldene Zeit des Herbstes.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn die Blätter im Herbst bunt werden,",
+        "type": "GS"
+      },
+      {
+        "text": "sieht der Wald wie ein Gemälde aus.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn die Ferien beginnen,",
+        "type": "GS"
+      },
+      {
+        "text": "fahren viele Familien ans Meer.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn die Ferienzeit endlich wieder beginnt,",
+        "type": "GS"
+      },
+      {
+        "text": "freuen sich alle Schüler und Lehrer riesig.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn die Glocke läutet,",
+        "type": "GS"
+      },
+      {
+        "text": "ist die Pause für alle Schüler zu Ende.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn die Sonne untergeht,",
+        "type": "GS"
+      },
+      {
+        "text": "erscheinen die ersten Sterne am Himmel.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn die Vögel zwitschern,",
+        "type": "GS"
+      },
+      {
+        "text": "wacht die Natur langsam wieder auf.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn du deine Hausaufgaben fertig hast,",
+        "type": "GS"
+      },
+      {
+        "text": "darfst du am Computer spielen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn du die Blumen gießt,",
+        "type": "GS"
+      },
+      {
+        "text": "werden sie im Sommer schön blühen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn du die Blumen regelmäßig gießt,",
+        "type": "GS"
+      },
+      {
+        "text": "wachsen sie in diesem Sommer besonders schnell.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn du die Hausaufgaben machst,",
+        "type": "GS"
+      },
+      {
+        "text": "kannst du später mit deinen Freunden spielen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn du die Musik lauter machst,",
+        "type": "GS"
+      },
+      {
+        "text": "kann ich dich nicht mehr verstehen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn du die Prüfung bestehst,",
+        "type": "GS"
+      },
+      {
+        "text": "feiern wir am Wochenende eine große Party.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn du die Tür schließt,",
+        "type": "GS"
+      },
+      {
+        "text": "bleibt die Wärme im Zimmer.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn du die Vokabeln lernst,",
+        "type": "GS"
+      },
+      {
+        "text": "wirst du im Test eine gute Note haben.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn du die Vokabeln täglich wiederholst,",
+        "type": "GS"
+      },
+      {
+        "text": "merkst du dir die Wörter viel einfacher.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn du die Wahrheit sagst,",
+        "type": "GS"
+      },
+      {
+        "text": "fühlen sich alle Beteiligten viel besser.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn du die Wahrheit sagst,",
+        "type": "GS"
+      },
+      {
+        "text": "wird man dir in Zukunft vertrauen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn du fleißig trainierst,",
+        "type": "GS"
+      },
+      {
+        "text": "wirst du bald in die erste Mannschaft kommen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn du mir hilfst,",
+        "type": "GS"
+      },
+      {
+        "text": "sind wir mit der Arbeit schneller fertig.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn es morgen schneit,",
+        "type": "GS"
+      },
+      {
+        "text": "bauen wir im Garten einen Schneemann.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn man die Augen schließt,",
+        "type": "GS"
+      },
+      {
+        "text": "kann man die Musik besser genießen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn man die Regeln nicht beachtet,",
+        "type": "GS"
+      },
+      {
+        "text": "kann es beim Spiel Probleme geben.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn man die Umwelt schützen möchte,",
+        "type": "GS"
+      },
+      {
+        "text": "sollte man öfter mit dem Fahrrad fahren.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn man genug schläft,",
+        "type": "GS"
+      },
+      {
+        "text": "fühlt man sich am nächsten Tag fit.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn man höflich fragt,",
+        "type": "GS"
+      },
+      {
+        "text": "bekommt man meistens eine nette Antwort.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn man höflich um Hilfe bittet,",
+        "type": "GS"
+      },
+      {
+        "text": "wird einem meistens sehr gerne geholfen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn man in den Bergen wandert,",
+        "type": "GS"
+      },
+      {
+        "text": "muss man immer auf das Wetter achten.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn man in der Schule gut aufpasst,",
+        "type": "GS"
+      },
+      {
+        "text": "muss man zu Hause weniger für Tests lernen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn man regelmäßig Sport treibt,",
+        "type": "GS"
+      },
+      {
+        "text": "fühlt man sich in seinem Körper wohler.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn man regelmäßig trainiert,",
+        "type": "GS"
+      },
+      {
+        "text": "wird man in dieser Sportart besser.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn man viel liest,",
+        "type": "GS"
+      },
+      {
+        "text": "erweitert man seinen eigenen Wortschatz enorm.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn wir Glück haben,",
+        "type": "GS"
+      },
+      {
+        "text": "gewinnen wir das Spiel heute Abend.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn wir die Natur respektieren,",
+        "type": "GS"
+      },
+      {
+        "text": "erhalten wir die Schönheit unserer Erde.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn wir morgen pünktlich losfahren,",
+        "type": "GS"
+      },
+      {
+        "text": "erreichen wir die Fähre noch rechtzeitig.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wenn wir zusammenarbeiten,",
+        "type": "GS"
+      },
+      {
+        "text": "können wir die Aufgabe viel schneller lösen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wir flüstern leise,",
+        "type": "HS"
+      },
+      {
+        "text": "damit niemand im Nebenzimmer gestört wird.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wir gießen die Blumen,",
+        "type": "HS"
+      },
+      {
+        "text": "damit sie in der Hitze nicht vertrocknen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wir haben gehört,",
+        "type": "HS"
+      },
+      {
+        "text": "dass es im Nachbardorf ein Fest gibt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wir hoffen alle sehr,",
+        "type": "HS"
+      },
+      {
+        "text": "dass das Wetter am Wochenende stabil bleibt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wir lernen die Grammatik,",
+        "type": "HS"
+      },
+      {
+        "text": "damit wir die Sprache besser beherrschen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wir machen das Fenster weit auf,",
+        "type": "HS"
+      },
+      {
+        "text": "damit frische Luft in das Klassenzimmer strömt.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wir machen das Licht an,",
+        "type": "HS"
+      },
+      {
+        "text": "damit wir beim Lesen besser sehen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wir machen eine Pause,",
+        "type": "HS"
+      },
+      {
+        "text": "damit wir neue Kraft tanken können.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wir nehmen eine Taschenlampe mit,",
+        "type": "HS"
+      },
+      {
+        "text": "damit wir den Pfad im dunklen Wald finden.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wir sparen Geld,",
+        "type": "HS"
+      },
+      {
+        "text": "damit wir im Sommer verreisen können.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wir stellen den Wecker,",
+        "type": "HS"
+      },
+      {
+        "text": "damit wir morgen nicht verschlafen.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wir wissen alle ganz genau,",
+        "type": "HS"
+      },
+      {
+        "text": "dass Übung am Ende den Meister macht.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wir wissen alle,",
+        "type": "HS"
+      },
+      {
+        "text": "dass Rauchen der Gesundheit schadet.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Wir ziehen dicke Socken an,",
+        "type": "HS"
+      },
+      {
+        "text": "damit unsere Füße beim Warten nicht einfrieren.",
+        "type": "GS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während der Film läuft,",
+        "type": "GS"
+      },
+      {
+        "text": "darf im Kinosaal niemand laut sprechen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während der Lehrer die Hefte einsammelt,",
+        "type": "GS"
+      },
+      {
+        "text": "räumen die Schüler ihre Schultaschen ein.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während der Lehrer die Vokabeln abfragt,",
+        "type": "GS"
+      },
+      {
+        "text": "melden sich fast alle Schüler der Klasse.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während der Regen fällt,",
+        "type": "GS"
+      },
+      {
+        "text": "bleiben die meisten Leute im Haus.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während der Regen gegen das Fenster peitscht,",
+        "type": "GS"
+      },
+      {
+        "text": "sitze ich gemütlich auf dem Sofa.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während der Regen ununterbrochen auf das Dach trommelt,",
+        "type": "GS"
+      },
+      {
+        "text": "hören wir im Haus ein Hörspiel.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während der Schiedsrichter die Pfeife benutzt,",
+        "type": "GS"
+      },
+      {
+        "text": "bleiben alle Spieler auf dem Feld stehen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während der Wind weht,",
+        "type": "GS"
+      },
+      {
+        "text": "bewegen sich die Äste der Bäume.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Blätter rascheln,",
+        "type": "GS"
+      },
+      {
+        "text": "läuft ein kleiner Igel über den Weg.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Katze draußen jagt,",
+        "type": "GS"
+      },
+      {
+        "text": "wartet der Hund geduldig im Haus.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Katze gemütlich auf dem Sofa schläft,",
+        "type": "GS"
+      },
+      {
+        "text": "schleicht die Maus leise durch die Küche.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Kinder fröhlich im Garten spielen,",
+        "type": "GS"
+      },
+      {
+        "text": "ruhen sich die Eltern auf der Terrasse aus.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Kinder spielen,",
+        "type": "GS"
+      },
+      {
+        "text": "kochen die Eltern das Mittagessen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Kinder spielen,",
+        "type": "GS"
+      },
+      {
+        "text": "unterhalten sich die Eltern ruhig.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Lehrerin etwas erklärt,",
+        "type": "GS"
+      },
+      {
+        "text": "hören die Schüler aufmerksam zu.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Musik im Radio spielt,",
+        "type": "GS"
+      },
+      {
+        "text": "putzt sie motiviert die ganze Wohnung.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Musik spielt,",
+        "type": "GS"
+      },
+      {
+        "text": "tanzen die Leute fröhlich im Kreis.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Mutter das Essen kocht,",
+        "type": "GS"
+      },
+      {
+        "text": "decken die Kinder schon fleißig den Tisch.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Pizza im Ofen backt,",
+        "type": "GS"
+      },
+      {
+        "text": "decken wir schon einmal den Tisch.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Schüler die Pause genießen,",
+        "type": "GS"
+      },
+      {
+        "text": "bereitet der Lehrer das nächste Experiment vor.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Schüler schreiben,",
+        "type": "GS"
+      },
+      {
+        "text": "geht der Lehrer leise durch die Reihen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Sonne am Horizont untergeht,",
+        "type": "GS"
+      },
+      {
+        "text": "färbt sich der ganze Himmel leuchtend rot.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Sonne scheint,",
+        "type": "GS"
+      },
+      {
+        "text": "trocknet die Wäsche auf der Leine.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Stadt schläft,",
+        "type": "GS"
+      },
+      {
+        "text": "arbeiten die Bäcker bereits in der Backstube.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Vögel im Garten zwitschern,",
+        "type": "GS"
+      },
+      {
+        "text": "trinkt mein Opa seinen ersten Kaffee.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die Wolken ziehen,",
+        "type": "GS"
+      },
+      {
+        "text": "verändert sich das Licht auf den Feldern.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während die kleine Maus im Gras raschelt,",
+        "type": "GS"
+      },
+      {
+        "text": "sitzt der Kater lauernd auf dem Zaun.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während er die Blumen pflückt,",
+        "type": "GS"
+      },
+      {
+        "text": "sieht er einen bunten Schmetterling.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während er die Suppe kocht,",
+        "type": "GS"
+      },
+      {
+        "text": "schneidet sie das frische Brot.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während er die Zeitung liest,",
+        "type": "GS"
+      },
+      {
+        "text": "hört er leise klassische Musik.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während mein Bruder schläft,",
+        "type": "GS"
+      },
+      {
+        "text": "spiele ich leise in meinem Zimmer.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während sie Klavier spielt,",
+        "type": "GS"
+      },
+      {
+        "text": "hört ihr Bruder ihr ganz leise zu.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während sie das Bild malt,",
+        "type": "GS"
+      },
+      {
+        "text": "vergisst sie völlig die Zeit.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während sie die Zeitung liest,",
+        "type": "GS"
+      },
+      {
+        "text": "trinkt sie eine Tasse Tee.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während wir entspannt am Strand lagen,",
+        "type": "GS"
+      },
+      {
+        "text": "beobachteten wir die extrem hohen Wellen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während wir im Kino saßen,",
+        "type": "GS"
+      },
+      {
+        "text": "fing es draußen heftig an zu stürmen.",
+        "type": "HS"
+      }
+    ]
+  },
+  {
+    "parts": [
+      {
+        "text": "Während wir im Urlaub waren,",
+        "type": "GS"
+      },
+      {
+        "text": "hat die Nachbarin die Blumen gegossen.",
+        "type": "HS"
+      }
+    ]
+  }
+]

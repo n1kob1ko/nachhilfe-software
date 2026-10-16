@@ -1,0 +1,4990 @@
+[
+  {
+    "q": "Setze „das“ oder „dass“ ein: Bist du sicher, ___ du die Tür abgeschlossen hast?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Bist du sicher, dass du die Tür abgeschlossen hast?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach einer Vergewisserung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Dank der neuen GPS-Daten wissen wir nun, ___ wir auf dem richtigen Weg sind.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Dank der neuen GPS-Daten wissen wir nun, dass wir auf dem richtigen Weg sind.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach einem Verb des Wissens."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Das Blatt, ___ vom Baum fällt, segelt langsam zu Boden.",
+    "blanks": [
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Blatt, das vom Baum fällt, segelt langsam zu Boden.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Das Buch, ___ auf dem Tisch liegt, gehört mir.",
+    "blanks": [
+      [
+        "das"
+      ]
+    ],
+    "solution": "Relativpronomen: „welches“ passt → das",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Relativpronomen: „welches“ passt → das"
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Das Kind hoffte, ___ der Nikolaus bald kommt.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Das Kind hoffte, dass der Nikolaus bald kommt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, die eine Hoffnung ausdrückt."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Das Kind, ___ dort spielt, ist mein Bruder.",
+    "blanks": [
+      [
+        "das"
+      ]
+    ],
+    "solution": "Relativpronomen: „welches“ passt → das",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Relativpronomen: „welches“ passt → das"
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Das Problem, ___ wir gestern besprochen haben, scheint gelöst zu sein.",
+    "blanks": [
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Problem, das wir gestern besprochen haben, scheint gelöst zu sein.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Relativpronomen, bezieht sich auf 'Problem' (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Das Werkzeug, ___ du mir gegeben hast, ist leider kaputt.",
+    "blanks": [
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Werkzeug, das du mir gegeben hast, ist leider kaputt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Das ist ___ Auto, ___ ich mir schon immer gewünscht habe.",
+    "blanks": [
+      [
+        "das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das ist das Auto, das ich mir schon immer gewünscht habe.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Das ist ___ Beste, ___ mir seit langem passiert ist.",
+    "blanks": [
+      [
+        "das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das ist das Beste, das mir seit langem passiert ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen nach dem substantivierten Superlativ 'Beste'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Das ist ___ Beste, was wir unter diesen Umständen tun können.",
+    "blanks": [
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das ist das Beste, was wir unter diesen Umständen tun können.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor dem substantivierten Superlativ 'Beste'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Das ist genau ___, was ich dir schon immer sagen wollte.",
+    "blanks": [
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das ist genau das, was ich dir schon immer sagen wollte.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Demonstrativpronomen (Ersatzprobe: dieses/jenes)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Der Geruch nach frischem Brot erinnert mich daran, ___ ich noch Hunger habe.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Der Geruch nach frischem Brot erinnert mich daran, dass ich noch Hunger habe.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, die einen durch 'daran' angekündigten Nebensatz einleitet."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Der Kellner bemerkte nicht, ___ der Gast die Rechnung schon bezahlt hatte.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Der Kellner bemerkte nicht, dass der Gast die Rechnung schon bezahlt hatte.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach einem Verb der Wahrnehmung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Der Lehrer betonte, ___ die Hausaufgaben essenziell für den Erfolg sind.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Der Lehrer betonte, dass die Hausaufgaben essenziell für den Erfolg sind.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach einem Verb der Mitteilung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Der Pilot bestätigte, ___ die Landung sicher verlaufen wird.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Der Pilot bestätigte, dass die Landung sicher verlaufen wird.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach einer Bestätigung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Der Professor erklärte, ___ die Theorie auf komplexen Berechnungen basiert.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Der Professor erklärte, dass die Theorie auf komplexen Berechnungen basiert.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach einem Verb der Erklärung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Der Wetterbericht sagt voraus, ___ es am Wochenende stürmisch wird.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Der Wetterbericht sagt voraus, dass es am Wochenende stürmisch wird.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Vorhersage."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Die Nachricht, ___ die Firma Insolvenz anmelden muss, schockierte die Belegschaft.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Die Nachricht, dass die Firma Insolvenz anmelden muss, schockierte die Belegschaft.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet einen Attributsatz zum Substantiv 'Nachricht' ein."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Die Polizei vermutet, ___ der Täter durch das Fenster eingestiegen ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Die Polizei vermutet, dass der Täter durch das Fenster eingestiegen ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Vermutung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Die Tatsache, ___ er die Wahrheit gesagt hat, änderte alles.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Die Tatsache, dass er die Wahrheit gesagt hat, änderte alles.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, die einen Appositionssatz zum Substantiv 'Tatsache' einleitet."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Die Ärztin riet dazu, ___ der Patient mehr Sport treibt.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Die Ärztin riet dazu, dass der Patient mehr Sport treibt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet eine Empfehlung als Nebensatz ein."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Die Ärztin versicherte mir, ___ die Wunde schnell verheilen wird.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Die Ärztin versicherte mir, dass die Wunde schnell verheilen wird.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach einem Verb der Versicherung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Er behauptet steif und fest, ___ er den Termin nicht vergessen hat.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Er behauptet steif und fest, dass er den Termin nicht vergessen hat.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung der indirekten Rede oder Behauptung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Er betonte mehrfach, ___ er an der Entscheidung nicht beteiligt war.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Er betonte mehrfach, dass er an der Entscheidung nicht beteiligt war.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Aussage oder Behauptung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Er hat mir versprochen, ___ er mich vom Flughafen abholt.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Er hat mir versprochen, dass er mich vom Flughafen abholt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet ein Versprechen als Nebensatz ein."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Er sagt, ___ er keine Zeit hat.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Konjunktion nach „sagen“ → dass",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach „sagen“ → dass"
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Er vergaß ganz, ___ er noch einen Termin beim Zahnarzt hatte.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Er vergaß ganz, dass er noch einen Termin beim Zahnarzt hatte.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach einem Verb des Vergessens."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Er ärgerte sich darüber, ___ er den Zug knapp verpasst hatte.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Er ärgerte sich darüber, dass er den Zug knapp verpasst hatte.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet einen mit 'darüber' angekündigten Kausalsatz ein."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Erinnerst du dich an ___ Versprechen, ___ du mir letzten Sommer gegeben hast?",
+    "blanks": [
+      [
+        "das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Erinnerst du dich an das Versprechen, das du mir letzten Sommer gegeben hast?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es freut mich sehr, ___ Sie die Einladung angenommen haben.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es freut mich sehr, dass Sie die Einladung angenommen haben.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, die einen Subjektsatz einleitet."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es freut uns zu hören, ___ es dir wieder besser geht.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es freut uns zu hören, dass es dir wieder besser geht.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer erfreulichen Nachricht."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist allgemein bekannt, ___ Bewegung die Konzentration fördert.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist allgemein bekannt, dass Bewegung die Konzentration fördert.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, die einen abhängigen Nebensatz (Objektsatz) einleitet."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist bedauerlich, ___ so viele historische Gebäude abgerissen werden.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist bedauerlich, dass so viele historische Gebäude abgerissen werden.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Bedauerns."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist bekannt, ___ Obst gesund ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist bekannt, dass Obst gesund ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Tatsache."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist bekannt, ___ Rauchen ungesund ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist bekannt, dass Rauchen ungesund ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Tatsache."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist bekannt, ___ Wasser bei 100 Grad kocht.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist bekannt, dass Wasser bei 100 Grad kocht.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer wissenschaftlichen Tatsache."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist bewiesen, ___ Lachen gesund ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist bewiesen, dass Lachen gesund ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Tatsache."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist bewiesen, ___ Pflanzen auf klassische Musik positiv reagieren.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist bewiesen, dass Pflanzen auf klassische Musik positiv reagieren.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, die einen Subjektsatz nach einer unpersönlichen Konstruktion einleitet."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist bewiesen, ___ Sport die Gesundheit fördert.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist bewiesen, dass Sport die Gesundheit fördert.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Tatsache."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist bewundernswert, ___ er die Sprache in so kurzer Zeit gelernt hat.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist bewundernswert, dass er die Sprache in so kurzer Zeit gelernt hat.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Bewunderung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist ein Jammer, ___ so viel Essen weggeworfen wird.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist ein Jammer, dass so viel Essen weggeworfen wird.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines bedauernden Nebensatzes."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist ein Skandal, ___ die Gelder für die Forschung gekürzt wurden.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist ein Skandal, dass die Gelder für die Forschung gekürzt wurden.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer empörten Aussage."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist ein Wunder, ___ bei dem schweren Unfall niemand verletzt wurde.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist ein Wunder, dass bei dem schweren Unfall niemand verletzt wurde.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines erläuternden Nebensatzes."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist eine Schande, ___ so viele Lebensmittel täglich im Müll landen.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist eine Schande, dass so viele Lebensmittel täglich im Müll landen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines bewertenden Nebensatzes."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist eine Tatsache, ___ Bienen für unser Ökosystem unverzichtbar sind.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist eine Tatsache, dass Bienen für unser Ökosystem unverzichtbar sind.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer wissenschaftlichen Tatsache."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist erstaunlich, ___ sich die Technik in den letzten zehn Jahren entwickelt hat.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist erstaunlich, dass sich die Technik in den letzten zehn Jahren entwickelt hat.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Erstaunens über eine Entwicklung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist faszinierend, ___ Zugvögel über Tausende Kilometer ihr Ziel finden.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist faszinierend, dass Zugvögel über Tausende Kilometer ihr Ziel finden.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer faszinierenden Tatsache."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist kaum zu glauben, ___ das Jahr schon wieder fast vorbei ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist kaum zu glauben, dass das Jahr schon wieder fast vorbei ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Erstaunens."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist logisch, ___ zwei plus zwei vier ergibt.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist logisch, dass zwei plus zwei vier ergibt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer logischen Schlussfolgerung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist mir wichtig, ___ wir uns regelmäßig über unsere Fortschritte austauschen.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist mir wichtig, dass wir uns regelmäßig über unsere Fortschritte austauschen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Subjektsatzes."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist möglich, ___ wir morgen früher gehen können.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist möglich, dass wir morgen früher gehen können.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Möglichkeit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist möglich, ___ wir morgen verreisen.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist möglich, dass wir morgen verreisen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Möglichkeit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist nicht zu leugnen, ___ digitale Medien unseren Alltag massiv verändert haben.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist nicht zu leugnen, dass digitale Medien unseren Alltag massiv verändert haben.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer feststehenden Tatsache."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist offensichtlich, ___ hier jemand eingebrochen ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist offensichtlich, dass hier jemand eingebrochen ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Feststellung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist schade, ___ das Wochenende schon vorbei ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist schade, dass das Wochenende schon vorbei ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Bedauerns."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist schade, ___ der Urlaub vorbei ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist schade, dass der Urlaub vorbei ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Bedauerns."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist schade, ___ die Party schon zu Ende ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist schade, dass die Party schon zu Ende ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Bedauerns."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist schade, ___ du nicht mitkommen kannst.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist schade, dass du nicht mitkommen kannst.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Bedauerns."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist schade, ___ viele Sprachen vom Aussterben bedroht sind.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist schade, dass viele Sprachen vom Aussterben bedroht sind.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet einen bewertenden Nebensatz ein."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist schön, ___ die Sonne scheint.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist schön, dass die Sonne scheint.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer positiven Feststellung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist schön, ___ du mich besucht hast.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist schön, dass du mich besucht hast.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Dankbarkeit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist schön, ___ du wieder da bist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist schön, dass du wieder da bist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Freude."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist sehr wahrscheinlich, ___ die Zinsen in den nächsten Monaten steigen.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist sehr wahrscheinlich, dass die Zinsen in den nächsten Monaten steigen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Wahrscheinlichkeit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist sicher, ___ der Bus bald kommt.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist sicher, dass der Bus bald kommt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Gewissheit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist sicher, ___ die Prüfung schwer wird.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist sicher, dass die Prüfung schwer wird.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Gewissheit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist sicher, ___ die Sonne morgen wieder aufgeht.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist sicher, dass die Sonne morgen wieder aufgeht.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Gewissheit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist sicher, ___ wir pünktlich kommen.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist sicher, dass wir pünktlich kommen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Gewissheit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist toll, ___ du heute Zeit hast.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist toll, dass du heute Zeit hast.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Freude."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist toll, ___ wir Freunde sind.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist toll, dass wir Freunde sind.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer positiven Feststellung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist toll, ___ wir uns heute getroffen haben.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist toll, dass wir uns heute getroffen haben.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer positiven Aussage."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist toll, ___ wir zusammenarbeiten.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist toll, dass wir zusammenarbeiten.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Freude."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist unbestreitbar, ___ der Klimawandel globale Auswirkungen hat.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist unbestreitbar, dass der Klimawandel globale Auswirkungen hat.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines feststellenden Nebensatzes."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist unklar, ___ die Veranstaltung wie geplant stattfinden kann.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist unklar, dass die Veranstaltung wie geplant stattfinden kann.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Unsicherheit (hier oft auch 'ob' möglich, aber 'dass' bei feststehenden Sätzen)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist unmöglich, ___ ein Mensch alle Sprachen der Welt beherrscht.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist unmöglich, dass ein Mensch alle Sprachen der Welt beherrscht.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Unmöglichkeit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist unwahrscheinlich, ___ es heute schneit.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist unwahrscheinlich, dass es heute schneit.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Unwahrscheinlichkeit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist unwahrscheinlich, ___ es morgen schneien wird.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist unwahrscheinlich, dass es morgen schneien wird.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Wahrscheinlichkeit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist verboten, ___ man hier im Park grillt.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist verboten, dass man hier im Park grillt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Verbotssatzes."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist verboten, ___ man hier im Wald Feuer macht.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist verboten, dass man hier im Wald Feuer macht.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Verbots."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist wichtig, ___ man bei dieser Arbeit Schutzkleidung trägt.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist wichtig, dass man bei dieser Arbeit Schutzkleidung trägt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines notwendigen Subjektsatzes."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist wichtig, ___ man genug Wasser trinkt.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist wichtig, dass man genug Wasser trinkt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Notwendigkeit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist wichtig, ___ man immer höflich bleibt.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist wichtig, dass man immer höflich bleibt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Notwendigkeit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist wichtig, ___ man immer pünktlich ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist wichtig, dass man immer pünktlich ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Regel."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist wichtig, ___ man seine Hausaufgaben macht.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist wichtig, dass man seine Hausaufgaben macht.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Pflicht."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist wichtig, ___ man seine Träume verfolgt.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist wichtig, dass man seine Träume verfolgt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Lebensratschlags."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist wichtig, ___ wir pünktlich sind.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Konjunktion → dass",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion → dass"
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist wunderbar, ___ du Zeit für mich hast.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist wunderbar, dass du Zeit für mich hast.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer positiven Aussage."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist wunderbar, ___ wir uns wiedersehen.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist wunderbar, dass wir uns wiedersehen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Freude."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es ist zwingend erforderlich, ___ alle Sicherheitsvorschriften eingehalten werden.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es ist zwingend erforderlich, dass alle Sicherheitsvorschriften eingehalten werden.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, die eine Notwendigkeit im Nebensatz ausdrückt."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es steht außer Frage, ___ Bildung der Schlüssel zur Zukunft ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es steht außer Frage, dass Bildung der Schlüssel zur Zukunft ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer unbestreitbaren Tatsache."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es steht fest, ___ die Steuern im nächsten Jahr erhöht werden.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es steht fest, dass die Steuern im nächsten Jahr erhöht werden.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer feststehenden Tatsache."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es war Schicksal, ___ wir uns an diesem Tag begegnet sind.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es war Schicksal, dass wir uns an diesem Tag begegnet sind.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet einen erklärenden Nebensatz ein."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es wurde angekündigt, ___ die Bahnstrecke für zwei Wochen gesperrt bleibt.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es wurde angekündigt, dass die Bahnstrecke für zwei Wochen gesperrt bleibt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer offiziellen Information."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Es überrascht mich nicht, ___ er wieder zu spät kommt.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Es überrascht mich nicht, dass er wieder zu spät kommt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Erwartung/Beobachtung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Glaubst du wirklich, ___ Geld allein glücklich macht?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Glaubst du wirklich, dass Geld allein glücklich macht?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Meinungsfrage."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Glaubst du wirklich, ___ es Geister gibt?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Glaubst du wirklich, dass es Geister gibt?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Glaubensfrage."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Hast du ___ Plakat gesehen, ___ an der Litfaßsäule klebt?",
+    "blanks": [
+      [
+        "das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Hast du das Plakat gesehen, das an der Litfaßsäule klebt?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf das sächliche Nomen 'Plakat'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Hast du bemerkt, ___ die Vögel in diesem Jahr früher nach Süden ziehen?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Hast du bemerkt, dass die Vögel in diesem Jahr früher nach Süden ziehen?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Beobachtung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Hast du gehört, ___ der berühmte Schauspieler in der Stadt ist?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Hast du gehört, dass der berühmte Schauspieler in der Stadt ist?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet eine indirekte Information ein."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Hast du gesehen, ___ der Postbote gerade ein Paket gebracht hat?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Hast du gesehen, dass der Postbote gerade ein Paket gebracht hat?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach einem Verb der Wahrnehmung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich befürchte, ___ die Vorräte für den Winter nicht ausreichen werden.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich befürchte, dass die Vorräte für den Winter nicht ausreichen werden.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Befürchtung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich befürchte, ___ wir den letzten Bus bereits verpasst haben.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich befürchte, dass wir den letzten Bus bereits verpasst haben.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach einem Verb der Befürchtung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich bemerke, ___ der Frühling kommt.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich bemerke, dass der Frühling kommt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Wahrnehmung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich bemerke, ___ du heute traurig bist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich bemerke, dass du heute traurig bist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Beobachtung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich bezweifle stark, ___ die Reparatur des Motors wirtschaftlich sinnvoll ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich bezweifle stark, dass die Reparatur des Motors wirtschaftlich sinnvoll ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach einem Verb des Zweifels."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich bezweifle, ___ die Ergebnisse der Studie repräsentativ sind.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich bezweifle, dass die Ergebnisse der Studie repräsentativ sind.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Dass-Satzes nach einem Verb des Zweifelns."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich bezweifle, ___ man diese alte Maschine noch reparieren kann.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich bezweifle, dass man diese alte Maschine noch reparieren kann.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Zweifels."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich bin froh, ___ alles gut gegangen ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich bin froh, dass alles gut gegangen ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Freude."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich denke, ___ wir bald losfahren sollten.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich denke, dass wir bald losfahren sollten.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Meinung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich denke, ___ wir das schaffen können.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich denke, dass wir das schaffen können.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Zuversicht."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich denke, ___ wir jetzt fertig sind.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich denke, dass wir jetzt fertig sind.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Abschlussgedankens."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich denke, ___ wir jetzt gehen sollten.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich denke, dass wir jetzt gehen sollten.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Absicht."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich erwarte von dir, ___ du die Wahrheit sagst.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich erwarte von dir, dass du die Wahrheit sagst.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Forderung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich erwarte, ___ du pünktlich zum Treffen erscheinst.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich erwarte, dass du pünktlich zum Treffen erscheinst.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Erwartung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich finde es bemerkenswert, ___ du trotz der Schwierigkeiten nicht aufgegeben hast.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich finde es bemerkenswert, dass du trotz der Schwierigkeiten nicht aufgegeben hast.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet einen Objektsatz ein; drückt eine Einschätzung aus."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich finde es bewundernswert, ___ du so viel Sport treibst.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich finde es bewundernswert, dass du so viel Sport treibst.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Anerkennung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich finde es erstaunlich, ___ Hummeln trotz ihrer Anatomie fliegen können.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich finde es erstaunlich, dass Hummeln trotz ihrer Anatomie fliegen können.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet einen Nebensatz ein; Ersatzprobe mit 'welches' nicht möglich."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich finde es schade, ___ du heute Abend nicht kommen kannst.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich finde es schade, dass du heute Abend nicht kommen kannst.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet einen Gliedsatz ein, der ein Gefühl ausdrückt."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich finde es schade, ___ wir uns so selten sehen.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich finde es schade, dass wir uns so selten sehen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Bewertung (Bedauern)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich finde es toll, ___ du dich ehrenamtlich engagierst.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich finde es toll, dass du dich ehrenamtlich engagierst.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines positiven Feedbacks."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich finde es wichtig, ___ man seine Meinung offen sagen darf.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich finde es wichtig, dass man seine Meinung offen sagen darf.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer persönlichen Überzeugung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich finde, ___ das Wetter heute gut ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich finde, dass das Wetter heute gut ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Meinung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich finde, ___ du recht hast.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich finde, dass du recht hast.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Meinung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich finde, ___ du sehr gut singst.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich finde, dass du sehr gut singst.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Kompliments."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich freue mich darüber, ___ das Projekt so erfolgreich abgeschlossen wurde.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich freue mich darüber, dass das Projekt so erfolgreich abgeschlossen wurde.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet einen mit 'darüber' angekündigten Nebensatz ein."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich freue mich, ___ du Erfolg hast.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich freue mich, dass du Erfolg hast.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Freude."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich freue mich, ___ du angerufen hast.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich freue mich, dass du angerufen hast.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Freude."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich freue mich, ___ du die Prüfung bestanden hast.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich freue mich, dass du die Prüfung bestanden hast.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet einen Nebensatz der Freude ein."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich freue mich, ___ du heute hier bist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich freue mich, dass du heute hier bist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Freude."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich freue mich, ___ du mitkommst.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich freue mich, dass du mitkommst.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Freude."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich glaube, ___ du recht hast.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich glaube, dass du recht hast.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Zustimmung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich glaube, ___ es heute noch regnen wird.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich glaube, dass es heute noch regnen wird.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Vermutung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich glaube, ___ wir bald am Ziel sind.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich glaube, dass wir bald am Ziel sind.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Vermutung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich habe gehört, ___ im Stadtpark ein neues Café eröffnet wurde.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich habe gehört, dass im Stadtpark ein neues Café eröffnet wurde.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach einem Verb der akustischen Wahrnehmung/Information."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich hoffe darauf, ___ wir uns bald wiedersehen.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich hoffe darauf, dass wir uns bald wiedersehen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines durch 'darauf' angekündigten Wunsches."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich hoffe, ___ das Paket heute ankommt.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich hoffe, dass das Paket heute ankommt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Erwartung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich hoffe, ___ die Sonne scheint.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich hoffe, dass die Sonne scheint.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Wunsches."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich hoffe, ___ du bald wieder gesund bist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich hoffe, dass du bald wieder gesund bist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Genesungswunsches."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich hoffe, ___ du gesund bleibst.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich hoffe, dass du gesund bleibst.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Wunsches."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich hoffe, ___ du heute einen schönen Tag hast.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich hoffe, dass du heute einen schönen Tag hast.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Wunsches."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich hoffe, ___ du morgen kommst.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Konjunktion: Man kann nicht „welches“ einsetzen → dass",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion: Man kann nicht „welches“ einsetzen → dass"
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich kann mir beim besten Willen nicht erklären, ___ hier passiert ist.",
+    "blanks": [
+      [
+        "das"
+      ]
+    ],
+    "solution": "Ich kann mir beim besten Willen nicht erklären, das hier passiert ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Relativpronomen oder Demonstrativpronomen, das sich auf ein unbestimmtes Ereignis bezieht."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich kann mir kaum vorstellen, ___ diese Methode wirklich funktioniert.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich kann mir kaum vorstellen, dass diese Methode wirklich funktioniert.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet einen abhängigen Begehrsatz oder Objektsatz ein."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich nehme an, ___ wir heute früher Schluss machen können.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich nehme an, dass wir heute früher Schluss machen können.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach einer Vermutung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich nehme doch an, ___ du die Einladung zum Abendessen annimmst.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich nehme doch an, dass du die Einladung zum Abendessen annimmst.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion nach einer Vermutung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich sehe ein, ___ ich einen Fehler gemacht habe.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich sehe ein, dass ich einen Fehler gemacht habe.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Einsichtssatzes."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich sehe, ___ du fleißig bist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich sehe, dass du fleißig bist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Beobachtung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich sehe, ___ du fleißig gelernt hast.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich sehe, dass du fleißig gelernt hast.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Wahrnehmung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich verspreche dir, ___ ich morgen pünktlich sein werde.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich verspreche dir, dass ich morgen pünktlich sein werde.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Versprechens."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich weiß, ___ ___ stimmt.",
+    "blanks": [
+      [
+        "dass"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Erstes: Konjunktion (dass). Zweites: Pronomen „dieses“ (das).",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Erstes: Konjunktion (dass). Zweites: Pronomen „dieses“ (das)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich weiß, ___ du das schaffst.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich weiß, dass du das schaffst.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Bestärkung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich weiß, ___ du die Wahrheit sagst.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich weiß, dass du die Wahrheit sagst.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Gewissheit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich weiß, ___ du immer ehrlich bist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich weiß, dass du immer ehrlich bist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Bestätigung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich wusste gar nicht, ___ man aus Brennnesseln Suppe kochen kann.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich wusste gar nicht, dass man aus Brennnesseln Suppe kochen kann.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer neuen Erkenntnis."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich wusste nicht, ___ du heute kommst.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich wusste nicht, dass du heute kommst.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Information."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich wusste, ___ du gewinnen würdest.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich wusste, dass du gewinnen würdest.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Vorahnung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich wünsche mir, ___ alle Menschen glücklich sind.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich wünsche mir, dass alle Menschen glücklich sind.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Wunsches."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich wünsche mir, ___ der Sommer ewig dauern würde.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich wünsche mir, dass der Sommer ewig dauern würde.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet einen Wunschsatz ein."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ich wünsche mir, ___ es bald schneit.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ich wünsche mir, dass es bald schneit.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Wunsches."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Ist es wahr, ___ du bald nach Australien auswanderst?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Ist es wahr, dass du bald nach Australien auswanderst?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Wissensfrage."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Kann es sein, ___ du dich im Tag geirrt hast?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Kann es sein, dass du dich im Tag geirrt hast?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Frage im Nebensatz."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Man darf nicht vergessen, ___ jeder Mensch Fehler macht.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Man darf nicht vergessen, dass jeder Mensch Fehler macht.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer allgemeinen Weisheit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Man sagt, ___ Hunde ihren Besitzern oft sehr ähnlich sehen.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Man sagt, dass Hunde ihren Besitzern oft sehr ähnlich sehen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Gerüchts oder einer allgemeinen Aussage."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Mir fiel auf, ___ du heute besonders gut gelaunt bist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Mir fiel auf, dass du heute besonders gut gelaunt bist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Beobachtung."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Mir ist aufgefallen, ___ die Tage im Winter deutlich kürzer sind.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Mir ist aufgefallen, dass die Tage im Winter deutlich kürzer sind.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet eine Wahrnehmung im Nebensatz ein."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Mir ist bewusst, ___ diese Entscheidung Konsequenzen haben wird.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Mir ist bewusst, dass diese Entscheidung Konsequenzen haben wird.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Einsicht."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Sie hofft darauf, ___ die Züge heute pünktlich kommen.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Sie hofft darauf, dass die Züge heute pünktlich kommen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, die einen mit dem Korrelat 'darauf' eingeleiteten Nebensatz füllt."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Sie meinte, ___ der Film ihr sehr gut gefallen habe.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Sie meinte, dass der Film ihr sehr gut gefallen habe.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung der indirekten Rede."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Sie wusste nicht einmal, ___ heute ein Feiertag ist.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Sie wusste nicht einmal, dass heute ein Feiertag ist.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet einen Objektsatz nach einem Verb des Wissens ein."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Sie wünscht sich, ___ die Welt ein Stück friedlicher wird.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Sie wünscht sich, dass die Welt ein Stück friedlicher wird.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Wunsches."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Wir hoffen sehr, ___ die Verhandlungen bald zu einem Ergebnis führen.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Wir hoffen sehr, dass die Verhandlungen bald zu einem Ergebnis führen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, leitet einen Objektsatz nach einem Verb der Hoffnung ein."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Wir sind uns sicher, ___ wir die Prüfung bestehen werden.",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Wir sind uns sicher, dass wir die Prüfung bestehen werden.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Gewissheit."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Wusstest du eigentlich, ___ Gold im Weltraum durch Supernovae entsteht?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Wusstest du eigentlich, dass Gold im Weltraum durch Supernovae entsteht?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer wissenschaftlichen Information."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Wusstest du schon, ___ Wale eigentlich Säugetiere sind?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Wusstest du schon, dass Wale eigentlich Säugetiere sind?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion, die einen Objektsatz nach einem Verb des Wissens einleitet."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Wusstest du schon, ___ der Mount Everest jedes Jahr ein paar Millimeter wächst?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Wusstest du schon, dass der Mount Everest jedes Jahr ein paar Millimeter wächst?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Information."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Wusstest du, ___ Elefanten sehr schlau sind?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Wusstest du, dass Elefanten sehr schlau sind?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Information."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Wusstest du, ___ Wale keine Fische sind?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Wusstest du, dass Wale keine Fische sind?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung einer Information."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Wusstest du, ___ die Erde kein perfekter Kreis ist?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Wusstest du, dass die Erde kein perfekter Kreis ist?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Faktums."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Wusstest du, ___ die Erde rund ist?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Wusstest du, dass die Erde rund ist?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Fakts."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: Wusstest du, ___ die Sonne ein Stern ist?",
+    "blanks": [
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Wusstest du, dass die Sonne ein Stern ist?",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "das": "das/dass verwechselt"
+    },
+    "explanation": "Konjunktion zur Einleitung eines Fakts."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Abenteuer begann in den dichten Wäldern des Nordens.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Abenteuer begann in den dichten Wäldern des Nordens.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Abenteuer'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Abkommen, ___ die beiden Staaten schlossen, beendete den Krieg.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Abkommen, das die beiden Staaten schlossen, beendete den Krieg.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Angebot, ___ er mir machte, war einfach zu gut, um es abzulehnen.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Angebot, das er mir machte, war einfach zu gut, um es abzulehnen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf 'Angebot'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Auto ist neu.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Artikel → das",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Artikel → das"
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Auto, ___ dort in der Parkverbotszone steht, wird gerade abgeschleppt.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Auto, das dort in der Parkverbotszone steht, wird gerade abgeschleppt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Auto, ___ dort parkt, gehört mir.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Auto, das dort parkt, gehört mir.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Auto, ___ dort steht, ist neu.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Auto, das dort steht, ist neu.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Auto, ___ er fährt, ist ein Elektroauto.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Auto, das er fährt, ist ein Elektroauto.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Auto, ___ er sich gekauft hat, ist teuer.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Auto, das er sich gekauft hat, ist teuer.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Auto, ___ mein Nachbar fährt, verbraucht sehr viel Benzin.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Auto, das mein Nachbar fährt, verbraucht sehr viel Benzin.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Auto, ___ vor der Tür parkt, ist blau.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Auto, das vor der Tür parkt, ist blau.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Auto, ___ vor uns fährt, bremst.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Auto, das vor uns fährt, bremst.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Baby, ___ im Kinderwagen schläft, sieht so friedlich aus.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Baby, das im Kinderwagen schläft, sieht so friedlich aus.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf das Neutrum 'Baby'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Beispiel zeigt deutlich die Auswirkungen der Inflation.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Beispiel zeigt deutlich die Auswirkungen der Inflation.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Beispiel'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Bild, ___ an der Wand hängt, ist alt.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Bild, das an der Wand hängt, ist alt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Bild, ___ du dort siehst, ist ein Original.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Bild, das du dort siehst, ist ein Original.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Bild, ___ du gemalt hast, ist schön.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Bild, das du gemalt hast, ist schön.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Bild, ___ im Flur hängt, ist von mir gemalt.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Bild, das im Flur hängt, ist von mir gemalt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Bild, ___ im Museum für moderne Kunst hängt, provoziert viele Besucher.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Bild, das im Museum für moderne Kunst hängt, provoziert viele Besucher.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, das sich auf das sächliche Nomen 'Bild' bezieht (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Brot, ___ auf dem Tisch liegt, ist frisch.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Brot, das auf dem Tisch liegt, ist frisch.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Brot, ___ direkt aus dem Ofen kommt, riecht einfach herrlich.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Brot, das direkt aus dem Ofen kommt, riecht einfach herrlich.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf 'Brot'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Brot, ___ ich gebacken habe, riecht gut.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Brot, das ich gebacken habe, riecht gut.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Brot, ___ ich gekauft habe, ist frisch.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Brot, das ich gekauft habe, ist frisch.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Brot, ___ ich heute Morgen gekauft habe, ist schon hart.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Brot, das ich heute Morgen gekauft habe, ist schon hart.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Brot, ___ ich heute esse, ist vom Biobäcker.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Brot, das ich heute esse, ist vom Biobäcker.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Brot, ___ wir beim Bäcker gekauft haben, schmeckt hervorragend.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Brot, das wir beim Bäcker gekauft haben, schmeckt hervorragend.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Brot, ___ wir essen, ist gesund.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Brot, das wir essen, ist gesund.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Buch ist so spannend, ___ ich es nicht weglegen kann.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Das Buch ist so spannend, dass ich es nicht weglegen kann.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Konjunktion (Konsekutivsatz) nach dem Korrelat 'so'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Buch, ___ auf dem Regal steht, ist staubig.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Buch, das auf dem Regal steht, ist staubig.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Buch, ___ auf dem Tisch liegt, gehört mir.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Buch, das auf dem Tisch liegt, gehört mir.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Buch, ___ du gerade liest, steht schon lange auf meiner Wunschliste.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Buch, das du gerade liest, steht schon lange auf meiner Wunschliste.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Buch, ___ du mir gegeben hast, ist spannend.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Buch, das du mir gegeben hast, ist spannend.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Buch, ___ ich geschenkt bekam, ist dick.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Buch, das ich geschenkt bekam, ist dick.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Buch, ___ ich lese, ist interessant.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Buch, das ich lese, ist interessant.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Buch, welches du mir geliehen hast, liegt noch auf dem Nachttisch.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Buch, welches du mir geliehen hast, liegt noch auf dem Nachttisch.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel, der das Substantiv 'Buch' bestimmt."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Buchcover, ___ du entworfen hast, sieht sehr professionell aus.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Buchcover, das du entworfen hast, sieht sehr professionell aus.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf 'Buchcover'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Denkmal, ___ an den Friedensvertrag erinnert, steht auf dem Marktplatz.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Denkmal, das an den Friedensvertrag erinnert, steht auf dem Marktplatz.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Dokument, ___ du suchst, befindet sich im obersten Schubfach.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Dokument, das du suchst, befindet sich im obersten Schubfach.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Dokument, ___ ich dir geschickt habe, enthält alle wichtigen Daten.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Dokument, das ich dir geschickt habe, enthält alle wichtigen Daten.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Dokumentarspiel, ___ wir gestern gesehen haben, war sehr lehrreich.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Dokumentarspiel, das wir gestern gesehen haben, war sehr lehrreich.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Dorf, ___ wir im Urlaub besuchten, hatte nur fünfzig Einwohner.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Dorf, das wir im Urlaub besuchten, hatte nur fünfzig Einwohner.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Dorf, in dem ich aufgewachsen bin, ist heute eine Kleinstadt.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Dorf, in dem ich aufgewachsen bin, ist heute eine Kleinstadt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel im Nominativ."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Dorf, in dem ich lebe, ist sehr ruhig.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Dorf, in dem ich lebe, ist sehr ruhig.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Dorf'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Dorffest findet jedes Jahr im August statt.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Dorffest findet jedes Jahr im August statt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Dorffest'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Ergebnis der Untersuchung wird morgen bekannt gegeben.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Ergebnis der Untersuchung wird morgen bekannt gegeben.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Ergebnis'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Experiment im Chemielabor verlief völlig anders als geplant.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Experiment im Chemielabor verlief völlig anders als geplant.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor dem Substantiv 'Experiment'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Experiment, ___ die Forscher durchführten, lieferte bahnbrechende Daten.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Experiment, das die Forscher durchführten, lieferte bahnbrechende Daten.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Fahrrad, ___ dort lehnt, ist blau.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Fahrrad, das dort lehnt, ist blau.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Fahrrad, ___ dort steht, ist abgeschlossen.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Fahrrad, das dort steht, ist abgeschlossen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Fahrrad, ___ du gestern repariert hast, fährt wieder einwandfrei.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Fahrrad, das du gestern repariert hast, fährt wieder einwandfrei.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, das sich auf das sächliche Nomen 'Fahrrad' bezieht."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Fahrrad, ___ ich benutze, ist alt.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Fahrrad, das ich benutze, ist alt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Fahrrad, ___ ich benutze, ist grün.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Fahrrad, das ich benutze, ist grün.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Fahrrad, ___ ich gestern sah, war rot.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Fahrrad, das ich gestern sah, war rot.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Fahrrad, ___ ich mir geliehen habe, ist kaputt.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Fahrrad, das ich mir geliehen habe, ist kaputt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Fahrradschloss ist leider verrostet und lässt sich nicht mehr öffnen.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Fahrradschloss ist leider verrostet und lässt sich nicht mehr öffnen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Fahrradschloss'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Fenster ist offen, obwohl es draußen regnet.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Fenster ist offen, obwohl es draußen regnet.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Fenster'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Fenster, ___ im Sturm zerbrach, muss schnell ersetzt werden.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Fenster, das im Sturm zerbrach, muss schnell ersetzt werden.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, rückbezüglich auf 'Fenster'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Fenster, ___ zum Hinterhof hinausgeht, klemmt beim Öffnen.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Fenster, das zum Hinterhof hinausgeht, klemmt beim Öffnen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Fensterbrett ist voller bunter Blumenkästen.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Fensterbrett ist voller bunter Blumenkästen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Fensterbrett'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Flugzeug, ___ dort fliegt, ist sehr laut.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Flugzeug, das dort fliegt, ist sehr laut.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Flugzeug, ___ gerade abhebt, fliegt nach Berlin.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Flugzeug, das gerade abhebt, fliegt nach Berlin.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Flugzeug, ___ gerade landet, kommt aus New York.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Flugzeug, das gerade landet, kommt aus New York.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Flugzeugmodell, ___ mein Opa gebaut hat, ist sehr detailliert.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Flugzeugmodell, das mein Opa gebaut hat, ist sehr detailliert.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf 'Flugzeugmodell'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Foto zeigt meine Großeltern an ihrem Hochzeitstag.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Foto zeigt meine Großeltern an ihrem Hochzeitstag.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Foto'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Frühstück ist die wichtigste Mahlzeit des Tages.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Frühstück ist die wichtigste Mahlzeit des Tages.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Frühstück'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Frühstücksbuffet im Hotel war reichhaltiger als erwartet.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Frühstücksbuffet im Hotel war reichhaltiger als erwartet.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Frühstücksbuffet'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Gebäude am Ende der Straße wurde im Barockstil erbaut.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Gebäude am Ende der Straße wurde im Barockstil erbaut.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel am Satzanfang (kleingeschrieben laut Vorgabe)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Gebäude, ___ früher eine Fabrik war, wird nun als Loft genutzt.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Gebäude, das früher eine Fabrik war, wird nun als Loft genutzt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Gedicht, ___ der Autor seiner Frau widmete, ist weltberühmt.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Gedicht, das der Autor seiner Frau widmete, ist weltberühmt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Gefühl, ___ ich beim Fliegen habe, ist unbeschreiblich.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Gefühl, das ich beim Fliegen habe, ist unbeschreiblich.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf 'Gefühl'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Geheimnis sollte man nicht leichtfertig ausplaudern.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Geheimnis sollte man nicht leichtfertig ausplaudern.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor dem Substantiv 'Geheimnis'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Geheimnis, ___ er mir anvertraute, werde ich niemandem verraten.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Geheimnis, das er mir anvertraute, werde ich niemandem verraten.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Geheimnis, ___ ich dir verrate, muss unter uns bleiben.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Geheimnis, das ich dir verrate, muss unter uns bleiben.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Gemälde, ___ im Foyer hängt, ist ein Geschenk der Stadt.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Gemälde, das im Foyer hängt, ist ein Geschenk der Stadt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf 'Gemälde'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Gericht schmeckte vorzüglich, obwohl es sehr scharf war.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Gericht schmeckte vorzüglich, obwohl es sehr scharf war.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel im Nominativ."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Geschenk, ___ ich erhalten habe, ist toll.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Geschenk, das ich erhalten habe, ist toll.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Gesetz tritt erst am ersten Januar nächsten Jahres in Kraft.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Gesetz tritt erst am ersten Januar nächsten Jahres in Kraft.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel, der das Substantiv 'Gesetz' begleitet."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Gewitter gestern Abend hat die schwüle Luft endlich vertrieben.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Gewitter gestern Abend hat die schwüle Luft endlich vertrieben.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Gewitter'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Glas, ___ auf dem Tisch steht, ist leer.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Glas, das auf dem Tisch steht, ist leer.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Glas, ___ auf dem Tisch steht, ist voll.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Glas, das auf dem Tisch steht, ist voll.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Glas, ___ zerbrochen ist, war teuer.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Glas, das zerbrochen ist, war teuer.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Handy, ___ auf dem Boden liegt, ist meins.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Handy, das auf dem Boden liegt, ist meins.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Handy, ___ auf dem Tisch liegt, gehört meiner Schwester.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Handy, das auf dem Tisch liegt, gehört meiner Schwester.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Handy, ___ auf dem Tisch liegt, klingelt.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Handy, das auf dem Tisch liegt, klingelt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Handy, ___ dort liegt, gehört mir.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Handy, das dort liegt, gehört mir.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Handy, ___ ich benutze, ist schnell.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Handy, das ich benutze, ist schnell.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Handy, ___ ich mir geliehen habe, ist leer.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Handy, das ich mir geliehen habe, ist leer.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Handy, ___ ich mir gestern gekauft habe, ist schon kaputt.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Handy, das ich mir gestern gekauft habe, ist schon kaputt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Handy, ___ ich verloren habe, war neu.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Handy, das ich verloren habe, war neu.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Handy, ___ ständig klingelt, nervt die anderen Fahrgäste.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Handy, das ständig klingelt, nervt die anderen Fahrgäste.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Haus, ___ am Hügel steht, gehört meinem Onkel.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Haus, das am Hügel steht, gehört meinem Onkel.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Haus, ___ am See liegt, ist traumhaft.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Haus, das am See liegt, ist traumhaft.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Haus, ___ am See liegt, wurde vor hundert Jahren gebaut.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Haus, das am See liegt, wurde vor hundert Jahren gebaut.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Haus, ___ dort drüben steht, ist modern.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Haus, das dort drüben steht, ist modern.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Haus, ___ dort steht, ist groß.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Haus, das dort steht, ist groß.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Haus, ___ wir kaufen wollen, ist alt.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Haus, das wir kaufen wollen, ist alt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Hemd, ___ er trägt, ist weiß.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Hemd, das er trägt, ist weiß.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Kind, ___ dort drüben spielt, ist mein Neffe.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Kind, das dort drüben spielt, ist mein Neffe.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Erstes Feld: Artikel; zweites Feld: Relativpronomen (bezieht sich auf Kind)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Kind, ___ dort weint, braucht Hilfe.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Kind, das dort weint, braucht Hilfe.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Kind, ___ im Garten spielt, ist meine Tochter.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Kind, das im Garten spielt, ist meine Tochter.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Kind, ___ im Garten spielt, lacht.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Kind, das im Garten spielt, lacht.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Kind, ___ im Sandkasten spielt, lacht laut.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Kind, das im Sandkasten spielt, lacht laut.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Kissen, ___ auf dem Sofa liegt, ist weich.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Kissen, das auf dem Sofa liegt, ist weich.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Kleid, ___ sie heute trägt, ist gelb.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Kleid, das sie heute trägt, ist gelb.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Kleid, ___ sie sich gekauft hat, ist blau.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Kleid, das sie sich gekauft hat, ist blau.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Kleid, ___ sie trägt, ist rot.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Kleid, das sie trägt, ist rot.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Kleid, ___ sie trägt, ist wunderschön.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Kleid, das sie trägt, ist wunderschön.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Klima der Erde unterliegt seit Jahrmillionen ständigen Schwankungen.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Klima der Erde unterliegt seit Jahrmillionen ständigen Schwankungen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel im Nominativ, der das Substantiv 'Klima' begleitet."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Konzert war restlos ausverkauft.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Konzert war restlos ausverkauft.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor dem Substantiv 'Konzert'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Konzert, ___ unter freiem Himmel stattfand, war ein voller Erfolg.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Konzert, das unter freiem Himmel stattfand, war ein voller Erfolg.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf 'Konzert'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Känguru, ___ im Zoo geboren wurde, ist die neue Attraktion.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Känguru, das im Zoo geboren wurde, ist die neue Attraktion.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Kätzchen, ___ so laut miaut, hat bestimmt Hunger.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Kätzchen, das so laut miaut, hat bestimmt Hunger.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf das Neutrum 'Kätzchen'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Kätzchen, ___ so laut miaut, sucht wahrscheinlich seine Mutter.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Kätzchen, das so laut miaut, sucht wahrscheinlich seine Mutter.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf 'Kätzchen'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Landhaus, ___ meine Eltern gekauft haben, braucht eine Kernsanierung.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Landhaus, das meine Eltern gekauft haben, braucht eine Kernsanierung.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Licht am Ende des Tunnels gibt den Bergleuten neue Hoffnung.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Licht am Ende des Tunnels gibt den Bergleuten neue Hoffnung.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Licht'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Licht, ___ durch das Prisma fällt, wird in Regenbogenfarben zerlegt.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Licht, das durch das Prisma fällt, wird in Regenbogenfarben zerlegt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches Licht/welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Lied, ___ sie singt, ist traurig.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Lied, das sie singt, ist traurig.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Lied, ___ wir im Radio gehört haben, geht mir nicht aus dem Kopf.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Lied, das wir im Radio gehört haben, geht mir nicht aus dem Kopf.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf 'Lied'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Manuskript, ___ der Autor verfasste, war über tausend Seiten lang.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Manuskript, das der Autor verfasste, war über tausend Seiten lang.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Medikament, ___ der Arzt verschrieben hat, wirkt sehr schnell.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Medikament, das der Arzt verschrieben hat, wirkt sehr schnell.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, das sich auf 'Medikament' bezieht."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Medikament, ___ der Patient einnimmt, hat leider starke Nebenwirkungen.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Medikament, das der Patient einnimmt, hat leider starke Nebenwirkungen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Meer glitzert in der Mittagssonne wie tausend Diamanten.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Meer glitzert in der Mittagssonne wie tausend Diamanten.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Meer'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Messer, ___ in der Küche liegt, ist sehr scharf.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Messer, das in der Küche liegt, ist sehr scharf.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Motorrad, ___ er sich geliehen hat, ist sehr schnell.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Motorrad, das er sich geliehen hat, ist sehr schnell.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Museum stellt Werke zeitgenössischer Kunst aus.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Museum stellt Werke zeitgenössischer Kunst aus.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Museum'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Museum, ___ wir besuchten, war sehr groß.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Museum, das wir besuchten, war sehr groß.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Museum, ___ wir morgen besuchen, ist berühmt.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Museum, das wir morgen besuchen, ist berühmt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Mädchen, ___ dort Gitarre spielt, ist sehr talentiert.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Mädchen, das dort Gitarre spielt, ist sehr talentiert.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Mädchen, ___ dort singt, ist sehr begabt.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Mädchen, das dort singt, ist sehr begabt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Mädchen, ___ dort steht, ist meine Schwester.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Mädchen, das dort steht, ist meine Schwester.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Mädchen, ___ dort tanzt, ist glücklich.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Mädchen, das dort tanzt, ist glücklich.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Pferd, ___ auf der Koppel steht, gehört dem Nachbarn.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Pferd, das auf der Koppel steht, gehört dem Nachbarn.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Pferd, ___ dort galoppiert, ist schnell.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Pferd, das dort galoppiert, ist schnell.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Plakat an der Wand wirbt für eine Veranstaltung im nächsten Monat.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Plakat an der Wand wirbt für eine Veranstaltung im nächsten Monat.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Plakat'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Problem, ___ am häufigsten auftritt, ist mangelnde Kommunikation.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Problem, das am häufigsten auftritt, ist mangelnde Kommunikation.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Problem, ___ wir lösen müssen, ist die mangelnde Effizienz.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Problem, das wir lösen müssen, ist die mangelnde Effizienz.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Rätsel, ___ wir gestern gelöst haben, war wirklich knifflig.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Rätsel, das wir gestern gelöst haben, war wirklich knifflig.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf 'Rätsel'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Schicksal der Passagiere ist bis heute ungeklärt.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Schicksal der Passagiere ist bis heute ungeklärt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Schicksal'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Schicksal meinte es in diesem Moment gut mit ihm.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Schicksal meinte es in diesem Moment gut mit ihm.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Schicksal'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Schiff, ___ dort am Horizont auftaucht, ist ein alter Öltanker.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Schiff, das dort am Horizont auftaucht, ist ein alter Öltanker.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf 'Schiff' (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Schloss an der Tür ist so veraltet, ___ es ersetzt werden muss.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "dass"
+      ]
+    ],
+    "solution": "Das Schloss an der Tür ist so veraltet, dass es ersetzt werden muss.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Konsekutiv-Konjunktion nach dem Korrelat 'so'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Schloss, ___ auf dem Berg thront, ist eine Touristenattraktion.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Schloss, das auf dem Berg thront, ist eine Touristenattraktion.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Schlossgespenst ist eine Legende, die schon seit Jahrhunderten erzählt wird.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Schlossgespenst ist eine Legende, die schon seit Jahrhunderten erzählt wird.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Schlossgespenst'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Spiel, ___ wir gestern gespielt haben, war lustig.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Spiel, das wir gestern gespielt haben, war lustig.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Spielzeug, ___ das Kind im Sandkasten vergessen hat, ist nun nass.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Spielzeug, das das Kind im Sandkasten vergessen hat, ist nun nass.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Sportstudio, ___ ich besuche, hat rund um die Uhr geöffnet.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Sportstudio, das ich besuche, hat rund um die Uhr geöffnet.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Tal liegt im Nebel versunken, während auf dem Gipfel die Sonne scheint.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Tal liegt im Nebel versunken, während auf dem Gipfel die Sonne scheint.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Tal'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Thermometer zeigt heute Morgen nur zwei Grad über Null an.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Thermometer zeigt heute Morgen nur zwei Grad über Null an.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Thermometer'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Tier, ___ dort im Schatten liegt, ist ein Löwe.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Tier, das dort im Schatten liegt, ist ein Löwe.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf 'Tier'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Tier, ___ dort läuft, ist ein Reh.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Tier, das dort läuft, ist ein Reh.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Tier, ___ ich sah, war ein Fuchs.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Tier, das ich sah, war ein Fuchs.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Tier, ___ im Wald lebt, ist scheu.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Tier, das im Wald lebt, ist scheu.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Training, ___ wir absolvierten, war extrem anstrengend.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Training, das wir absolvierten, war extrem anstrengend.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Versprechen, ___ er gab, hielt er nur für wenige Tage.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Versprechen, das er gab, hielt er nur für wenige Tage.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf 'Versprechen'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Werkzeug, ___ du mir geliehen hast, liegt im Schuppen.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das Werkzeug, das du mir geliehen hast, liegt im Schuppen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen (Ersatzprobe: welches)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Wetter in den Alpen kann sich innerhalb von Minuten ändern.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Wetter in den Alpen kann sich innerhalb von Minuten ändern.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel im Nominativ, der das Substantiv 'Wetter' begleitet."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ Ziel der Reise war es, die Kultur des Landes kennenzulernen.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das Ziel der Reise war es, die Kultur des Landes kennenzulernen.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor 'Ziel'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ alte Klavier im Wohnzimmer müsste dringend mal wieder gestimmt werden.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das alte Klavier im Wohnzimmer müsste dringend mal wieder gestimmt werden.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor dem Substantiv 'Klavier'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ alte Rathaus ist das Wahrzeichen unserer Stadt.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das alte Rathaus ist das Wahrzeichen unserer Stadt.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor dem Substantiv 'Rathaus'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ ist genau das Argument, welches mir in der Diskussion fehlte.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das ist genau das Argument, welches mir in der Diskussion fehlte.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Demonstrativpronomen, steht stellvertretend für einen Sachverhalt (Ersatzprobe: dies)."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ ist mir egal.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Demonstrativpronomen „dieses“ → das",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Demonstrativpronomen „dieses“ → das"
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ kleine Dorf liegt malerisch zwischen zwei grünen Hügeln.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das kleine Dorf liegt malerisch zwischen zwei grünen Hügeln.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor dem Adjektivattribut und Nomen."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ kleine Einmaleins lernt man normalerweise in der zweiten Klasse.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das kleine Einmaleins lernt man normalerweise in der zweiten Klasse.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor dem feststehenden Begriff 'Einmaleins'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ kleine Kind, ___ dort so fröhlich lacht, ist mein Patenkind.",
+    "blanks": [
+      [
+        "Das"
+      ],
+      [
+        "das"
+      ]
+    ],
+    "solution": "Das kleine Kind, das dort so fröhlich lacht, ist mein Patenkind.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {},
+    "explanation": "Relativpronomen, bezieht sich auf das sächliche Nomen 'Kind'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ neue Gesetz zum Datenschutz sorgt für viel Diskussionsstoff.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das neue Gesetz zum Datenschutz sorgt für viel Diskussionsstoff.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor dem Substantiv 'Gesetz'."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ schönste Erlebnis war die Wanderung durch die Schlucht.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das schönste Erlebnis war die Wanderung durch die Schlucht.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel vor einem Superlativ."
+  },
+  {
+    "q": "Setze „das“ oder „dass“ ein: ___ älteste Gebäude der Stadt wird derzeit aufwendig saniert.",
+    "blanks": [
+      [
+        "Das"
+      ]
+    ],
+    "solution": "Das älteste Gebäude der Stadt wird derzeit aufwendig saniert.",
+    "hint": "Ersatzprobe: Kannst du „welches“ oder „dieses“ einsetzen? Dann schreibt man „das“.",
+    "errors": {
+      "dass": "das/dass verwechselt"
+    },
+    "explanation": "Bestimmter Artikel zum substantivierten Adjektiv/Superlativ."
+  }
+]

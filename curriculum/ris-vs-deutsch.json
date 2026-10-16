@@ -1151,6 +1151,14 @@
   [
    "deutsch.grammatik.zeiten",
    "VS-DEU-4-B4-K4"
+  ],
+  [
+   "deutsch.grammatik.praeteritum",
+   "VS-DEU-4-B4-K4"
+  ],
+  [
+   "deutsch.grammatik.perfekt",
+   "VS-DEU-4-B4-K4"
   ]
  ]
 }

@@ -11,6 +11,7 @@ import {
   classifyMaterial,
   deleteMaterial,
   getMaterial,
+  hatDatei,
   MATERIAL_KINDS,
   MATERIAL_ORIGINS,
   materialFile,
@@ -73,10 +74,11 @@ export async function analyzeMaterialAction(id: number, f: FormData) {
   const teacher = await requireTeacher();
   const m = getMaterial(id);
   if (!m) redirect("/mehr/material");
+  if (!hatDatei(m)) return fail(id, "Ein Druckblatt hat keine Datei, die erkannt werden könnte.", "#erkennung");
   if (!aiEnabled()) fail(id, "Kein KI-Schlüssel hinterlegt.", "#erkennung");
   if (f.get("keine_namen") !== "1") fail(id, "Bitte bestätigen, dass auf dem Material keine Namen oder persönlichen Angaben stehen.", "#erkennung");
   const limit = m.mime === "application/pdf" ? MAX_ANALYSIS_PDF_BYTES : MAX_ANALYSIS_IMAGE_BYTES;
-  if (m.size > limit) fail(id, `Für die Erkennung ist die Datei zu groß (höchstens ${limit / 1024 / 1024} MB).`, "#erkennung");
+  if ((m.size ?? 0) > limit) fail(id, `Für die Erkennung ist die Datei zu groß (höchstens ${limit / 1024 / 1024} MB).`, "#erkennung");
   let data: Buffer;
   try {
     data = fs.readFileSync(materialFile(m));
@@ -91,7 +93,7 @@ export async function analyzeMaterialAction(id: number, f: FormData) {
   let a: Awaited<ReturnType<typeof analyzeMaterialWithAI>> = null;
   let problem = "Claude hat nichts erkannt.";
   try {
-    a = await analyzeMaterialWithAI({ mime: m.mime, base64: data.toString("base64") }, { subject, skills }, { teacherId: teacher.id, trigger: "material" });
+    a = await analyzeMaterialWithAI({ mime: m.mime ?? "", base64: data.toString("base64") }, { subject, skills }, { teacherId: teacher.id, trigger: "material" });
   } catch (e) {
     problem = e instanceof Error ? e.message : String(e);
   }

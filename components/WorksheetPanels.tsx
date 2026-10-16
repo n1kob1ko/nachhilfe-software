@@ -1,11 +1,18 @@
 "use client";
 
-import { BookmarkPlus, Send } from "lucide-react";
-import { useActionState } from "react";
+import { BookmarkPlus, Send, Zap } from "lucide-react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { releaseAction, saveTemplateAction, type ActionResult } from "@/app/builder-actions";
 
 type Student = { id: number; name: string };
+
+/**
+ * Schnellrunde (lib/quick-round.ts): `eligible` kommt aus derselben Prüfung, die die Schülerseite
+ * benutzt (`isQuickRound` über die fertigen Aufgaben), `wished` aus dem Builder-Haken. Ist die Übung
+ * nicht geeignet, steht der Grund daneben und der Haken lässt sich nicht setzen.
+ */
+export type QuickRoundChoice = { eligible: boolean; reason: string | null; wished: boolean };
 
 function Msg({ r }: { r: ActionResult }) {
   if (!r) return null;
@@ -26,12 +33,27 @@ function Busy({ children, label }: { children: React.ReactNode; label: string })
 }
 
 /** Draft → sent: checks every task, then sends it to the student (into the running unit, if any). */
-export function ReleasePanel({ worksheetId, students, defaultStudentId, taskCount }: { worksheetId: number; students: Student[]; defaultStudentId: number | null; taskCount: number }) {
+export function ReleasePanel({
+  worksheetId,
+  students,
+  defaultStudentId,
+  taskCount,
+  quickRound,
+}: {
+  worksheetId: number;
+  students: Student[];
+  defaultStudentId: number | null;
+  taskCount: number;
+  quickRound: QuickRoundChoice;
+}) {
   const [state, action] = useActionState<ActionResult, FormData>(releaseAction, null);
   const name = students.find((s) => s.id === defaultStudentId)?.name.split(" ")[0];
+  const [quick, setQuick] = useState(quickRound.eligible && quickRound.wished);
   return (
     <form action={action} className="grid gap-3">
       <input type="hidden" name="worksheet_id" value={worksheetId} />
+      {/* immer gesendet: „off“ heißt aus, auch wenn im Builder ein Haken stand */}
+      <input type="hidden" name="quick_round" value={quick ? "on" : "off"} />
       {name ? (
         <>
           <input type="hidden" name="student_id" value={defaultStudentId!} />
@@ -60,6 +82,18 @@ export function ReleasePanel({ worksheetId, students, defaultStudentId, taskCoun
         </div>
       )}
       <p className="text-[13px] text-ink-2">{taskCount} Aufgaben · Lösungen bleiben verborgen</p>
+      <div className="grid gap-1">
+        <label className={`flex min-h-[44px] items-center gap-2 text-[14px] ${quickRound.eligible ? "cursor-pointer" : "text-ink-3"}`}>
+          <input type="checkbox" checked={quick} disabled={!quickRound.eligible} onChange={(e) => setQuick(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
+          <Zap size={15} className={quick ? "text-accent" : ""} aria-hidden />
+          Als Schnellrunde senden
+        </label>
+        <p className="text-[12.5px] text-ink-3">
+          {quickRound.eligible
+            ? "Ein Tipp pro Aufgabe, kurze Rückmeldung, automatisch weiter. Versuche, Zeit und Hilfen werden wie sonst gespeichert."
+            : quickRound.reason ?? "Diese Übung passt nicht in eine Schnellrunde."}
+        </p>
+      </div>
       <Msg r={state} />
     </form>
   );

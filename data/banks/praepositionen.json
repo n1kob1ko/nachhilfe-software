@@ -1,0 +1,1502 @@
+[
+  {
+    "prefix": "Das Auto parkt vor ",
+    "noun": "Haus",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "das",
+      "den",
+      "der"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Das Auto parkt vor dem Haus."
+  },
+  {
+    "prefix": "Das Baby liegt in ",
+    "noun": "Kinderwagen",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Das Baby liegt in dem Kinderwagen."
+  },
+  {
+    "prefix": "Das Besteck ist in ",
+    "noun": "Kasten",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Das Besteck ist in dem Kasten."
+  },
+  {
+    "prefix": "Das Buch liegt auf ",
+    "noun": "Tisch",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "der",
+      "den",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Das Buch liegt auf dem Tisch."
+  },
+  {
+    "prefix": "Das Fahrrad lehnt an ",
+    "noun": "Mauer",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Das Fahrrad lehnt an der Mauer."
+  },
+  {
+    "prefix": "Das Flugzeug fliegt über ",
+    "noun": "Ozean",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Das Flugzeug fliegt über den Ozean."
+  },
+  {
+    "prefix": "Das Geld liegt in ",
+    "noun": "Schublade",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Das Geld liegt in der Schublade."
+  },
+  {
+    "prefix": "Das Handtuch hängt neben ",
+    "noun": "Dusche",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Das Handtuch hängt neben der Dusche."
+  },
+  {
+    "prefix": "Das Handtuch liegt in ",
+    "noun": "Badewanne",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Das Handtuch liegt in der Badewanne."
+  },
+  {
+    "prefix": "Das Handy liegt neben ",
+    "noun": "Laptop",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Das Handy liegt neben dem Laptop."
+  },
+  {
+    "prefix": "Das Kind versteckt sich hinter ",
+    "noun": "Baum",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Das Kind versteckt sich hinter dem Baum."
+  },
+  {
+    "prefix": "Das Kissen ist in ",
+    "noun": "Sessel",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Das Kissen ist in dem Sessel."
+  },
+  {
+    "prefix": "Das Kissen liegt auf ",
+    "noun": "Bett",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "das",
+      "den",
+      "der"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Das Kissen liegt auf dem Bett."
+  },
+  {
+    "prefix": "Das Poster klebt an ",
+    "noun": "Tür",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Das Poster klebt an der Tür."
+  },
+  {
+    "prefix": "Das Radio steht auf ",
+    "noun": "Küchenschrank",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Das Radio steht auf dem Küchenschrank."
+  },
+  {
+    "prefix": "Das Schiff fährt auf ",
+    "noun": "Fluss",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Das Schiff fährt auf dem Fluss."
+  },
+  {
+    "prefix": "Das Taxi hält vor ",
+    "noun": "Hotel",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "das",
+      "den",
+      "der"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Das Taxi hält vor dem Hotel."
+  },
+  {
+    "prefix": "Der Computer steht auf ",
+    "noun": "Schreibtisch",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Der Computer steht auf dem Schreibtisch."
+  },
+  {
+    "prefix": "Der Hund rennt in ",
+    "noun": "Park",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Der Hund rennt in den Park."
+  },
+  {
+    "prefix": "Der Hund schläft unter ",
+    "noun": "Tisch",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Der Hund schläft unter dem Tisch."
+  },
+  {
+    "prefix": "Der Koffer steht in ",
+    "noun": "Ecke",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Der Koffer steht in der Ecke."
+  },
+  {
+    "prefix": "Der Müll steht neben ",
+    "noun": "Tonne",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Der Müll steht neben der Tonne."
+  },
+  {
+    "prefix": "Der Spiegel hängt in ",
+    "noun": "Flur",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Der Spiegel hängt in dem Flur."
+  },
+  {
+    "prefix": "Der Teppich liegt unter ",
+    "noun": "Couch",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Der Teppich liegt unter der Couch."
+  },
+  {
+    "prefix": "Der Teppich passt gut in ",
+    "noun": "Wohnzimmer",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "das",
+      "dem",
+      "den",
+      "der"
+    ],
+    "correct": "das",
+    "kasus": "Akkusativ",
+    "solution": "Der Teppich passt gut in das Wohnzimmer."
+  },
+  {
+    "prefix": "Der Vogel fliegt gegen ",
+    "noun": "Fenster",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "das",
+      "dem",
+      "den",
+      "der"
+    ],
+    "correct": "das",
+    "kasus": "Akkusativ",
+    "solution": "Der Vogel fliegt gegen das Fenster."
+  },
+  {
+    "prefix": "Der Wein steht in ",
+    "noun": "Regal",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "das",
+      "den",
+      "der"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Der Wein steht in dem Regal."
+  },
+  {
+    "prefix": "Der Zug kommt auf ",
+    "noun": "Gleis",
+    "article": "das",
+    "suffix": " 4 an.",
+    "options": [
+      "dem",
+      "das",
+      "den",
+      "der"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Der Zug kommt auf dem Gleis 4 an."
+  },
+  {
+    "prefix": "Die Apotheke ist direkt an ",
+    "noun": "Ecke",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Die Apotheke ist direkt an der Ecke."
+  },
+  {
+    "prefix": "Die Brille liegt auf ",
+    "noun": "Nachttisch",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Die Brille liegt auf dem Nachttisch."
+  },
+  {
+    "prefix": "Die Brille liegt in ",
+    "noun": "Tasche",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Die Brille liegt in der Tasche."
+  },
+  {
+    "prefix": "Die Gabel liegt neben ",
+    "noun": "Teller",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Die Gabel liegt neben dem Teller."
+  },
+  {
+    "prefix": "Die Jacke hängt an ",
+    "noun": "Garderobe",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Die Jacke hängt an der Garderobe."
+  },
+  {
+    "prefix": "Die Katze klettert auf ",
+    "noun": "Dach",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "das",
+      "dem",
+      "den",
+      "der"
+    ],
+    "correct": "das",
+    "kasus": "Akkusativ",
+    "solution": "Die Katze klettert auf das Dach."
+  },
+  {
+    "prefix": "Die Katze schleicht um ",
+    "noun": "Haus",
+    "article": "das",
+    "suffix": " herum.",
+    "options": [
+      "das",
+      "dem",
+      "den",
+      "der"
+    ],
+    "correct": "das",
+    "kasus": "Akkusativ",
+    "solution": "Die Katze schleicht um das Haus herum."
+  },
+  {
+    "prefix": "Die Katze schläft auf ",
+    "noun": "Dach",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "das",
+      "den",
+      "der"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Die Katze schläft auf dem Dach."
+  },
+  {
+    "prefix": "Die Kinder rennen auf ",
+    "noun": "Spielplatz",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Die Kinder rennen auf den Spielplatz."
+  },
+  {
+    "prefix": "Die Kinder spielen in ",
+    "noun": "Garten",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Die Kinder spielen in dem Garten."
+  },
+  {
+    "prefix": "Die Lampe hängt über ",
+    "noun": "Esstisch",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Die Lampe hängt über dem Esstisch."
+  },
+  {
+    "prefix": "Die Lampe steht neben ",
+    "noun": "Sofa",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "das",
+      "den",
+      "der"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Die Lampe steht neben dem Sofa."
+  },
+  {
+    "prefix": "Die Lampe steht über ",
+    "noun": "Schreibtisch",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Die Lampe steht über dem Schreibtisch."
+  },
+  {
+    "prefix": "Die Maus rennt unter ",
+    "noun": "Schrank",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Die Maus rennt unter den Schrank."
+  },
+  {
+    "prefix": "Die Milch steht in ",
+    "noun": "Kühlschrank",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Die Milch steht in dem Kühlschrank."
+  },
+  {
+    "prefix": "Die Schuhe stehen unter ",
+    "noun": "Treppe",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Die Schuhe stehen unter der Treppe."
+  },
+  {
+    "prefix": "Die Vase steht zwischen ",
+    "noun": "Lampe",
+    "article": "die",
+    "suffix": " und dem Buch.",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Die Vase steht zwischen der Lampe und dem Buch."
+  },
+  {
+    "prefix": "Die Zeitung liegt unter ",
+    "noun": "Bank",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Die Zeitung liegt unter der Bank."
+  },
+  {
+    "prefix": "Er arbeitet in ",
+    "noun": "Büro",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "das",
+      "den",
+      "der"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Er arbeitet in dem Büro."
+  },
+  {
+    "prefix": "Er legt den Schlüssel auf ",
+    "noun": "Regal",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "das",
+      "dem",
+      "den",
+      "der"
+    ],
+    "correct": "das",
+    "kasus": "Akkusativ",
+    "solution": "Er legt den Schlüssel auf das Regal."
+  },
+  {
+    "prefix": "Er läuft schnell in ",
+    "noun": "Haus",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "das",
+      "dem",
+      "den",
+      "der"
+    ],
+    "correct": "das",
+    "kasus": "Akkusativ",
+    "solution": "Er läuft schnell in das Haus."
+  },
+  {
+    "prefix": "Er setzt sich auf ",
+    "noun": "Sessel",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Er setzt sich auf den Sessel."
+  },
+  {
+    "prefix": "Er springt über ",
+    "noun": "Bach",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Er springt über den Bach."
+  },
+  {
+    "prefix": "Er stellt das Glas auf ",
+    "noun": "Untersatz",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Er stellt das Glas auf den Untersatz."
+  },
+  {
+    "prefix": "Er wartet an ",
+    "noun": "Bushaltestelle",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Er wartet an der Bushaltestelle."
+  },
+  {
+    "prefix": "Häng deine Jacke bitte in ",
+    "noun": "Schrank",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Häng deine Jacke bitte in den Schrank."
+  },
+  {
+    "prefix": "Ich fahre mit dem Rad durch ",
+    "noun": "Wald",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Ich fahre mit dem Rad durch den Wald."
+  },
+  {
+    "prefix": "Ich gehe heute in ",
+    "noun": "Supermarkt",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Ich gehe heute in den Supermarkt."
+  },
+  {
+    "prefix": "Ich gehe jetzt in ",
+    "noun": "Bad",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "das",
+      "dem",
+      "den",
+      "der"
+    ],
+    "correct": "das",
+    "kasus": "Akkusativ",
+    "solution": "Ich gehe jetzt in das Bad."
+  },
+  {
+    "prefix": "Ich hänge das Bild an ",
+    "noun": "Wand",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "die",
+      "der",
+      "den",
+      "dem"
+    ],
+    "correct": "die",
+    "kasus": "Akkusativ",
+    "solution": "Ich hänge das Bild an die Wand."
+  },
+  {
+    "prefix": "Ich hänge den Kalender an ",
+    "noun": "Wand",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "die",
+      "der",
+      "den",
+      "dem"
+    ],
+    "correct": "die",
+    "kasus": "Akkusativ",
+    "solution": "Ich hänge den Kalender an die Wand."
+  },
+  {
+    "prefix": "Ich hänge die Lampe über ",
+    "noun": "Esstisch",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Ich hänge die Lampe über den Esstisch."
+  },
+  {
+    "prefix": "Ich hänge meine Tasche an ",
+    "noun": "Stuhl",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Ich hänge meine Tasche an den Stuhl."
+  },
+  {
+    "prefix": "Ich klebe das Foto in ",
+    "noun": "Album",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "das",
+      "dem",
+      "den",
+      "der"
+    ],
+    "correct": "das",
+    "kasus": "Akkusativ",
+    "solution": "Ich klebe das Foto in das Album."
+  },
+  {
+    "prefix": "Ich lege das Messer in ",
+    "noun": "Schublade",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "die",
+      "der",
+      "den",
+      "dem"
+    ],
+    "correct": "die",
+    "kasus": "Akkusativ",
+    "solution": "Ich lege das Messer in die Schublade."
+  },
+  {
+    "prefix": "Ich lege die Decke auf ",
+    "noun": "Boden",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Ich lege die Decke auf den Boden."
+  },
+  {
+    "prefix": "Ich lege mich kurz auf ",
+    "noun": "Sofa",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "das",
+      "dem",
+      "den",
+      "der"
+    ],
+    "correct": "das",
+    "kasus": "Akkusativ",
+    "solution": "Ich lege mich kurz auf das Sofa."
+  },
+  {
+    "prefix": "Ich parke mein Fahrrad vor ",
+    "noun": "Schule",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Ich parke mein Fahrrad vor der Schule."
+  },
+  {
+    "prefix": "Ich schreibe die Notiz auf ",
+    "noun": "Zettel",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Ich schreibe die Notiz auf den Zettel."
+  },
+  {
+    "prefix": "Ich setze mich in ",
+    "noun": "Garten",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Ich setze mich in den Garten."
+  },
+  {
+    "prefix": "Ich setze mich neben ",
+    "noun": "Freundin",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "die",
+      "der",
+      "den",
+      "dem"
+    ],
+    "correct": "die",
+    "kasus": "Akkusativ",
+    "solution": "Ich setze mich neben die Freundin."
+  },
+  {
+    "prefix": "Ich springe in ",
+    "noun": "Wasser",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "das",
+      "dem",
+      "den",
+      "der"
+    ],
+    "correct": "das",
+    "kasus": "Akkusativ",
+    "solution": "Ich springe in das Wasser."
+  },
+  {
+    "prefix": "Ich stelle das Auto in ",
+    "noun": "Garage",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "die",
+      "der",
+      "den",
+      "dem"
+    ],
+    "correct": "die",
+    "kasus": "Akkusativ",
+    "solution": "Ich stelle das Auto in die Garage."
+  },
+  {
+    "prefix": "Ich stelle die Schuhe hinter ",
+    "noun": "Tür",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "die",
+      "der",
+      "den",
+      "dem"
+    ],
+    "correct": "die",
+    "kasus": "Akkusativ",
+    "solution": "Ich stelle die Schuhe hinter die Tür."
+  },
+  {
+    "prefix": "Ich stelle die Tasche unter ",
+    "noun": "Tisch",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Ich stelle die Tasche unter den Tisch."
+  },
+  {
+    "prefix": "Ich stelle die Vase auf ",
+    "noun": "Kommode",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "die",
+      "der",
+      "den",
+      "dem"
+    ],
+    "correct": "die",
+    "kasus": "Akkusativ",
+    "solution": "Ich stelle die Vase auf die Kommode."
+  },
+  {
+    "prefix": "Ich werfe den Ball über ",
+    "noun": "Zaun",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Ich werfe den Ball über den Zaun."
+  },
+  {
+    "prefix": "Ich werfe den Brief in ",
+    "noun": "Briefkasten",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Ich werfe den Brief in den Briefkasten."
+  },
+  {
+    "prefix": "Leg die Fernbedienung neben ",
+    "noun": "Fernseher",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Leg die Fernbedienung neben den Fernseher."
+  },
+  {
+    "prefix": "Setz dich bitte an ",
+    "noun": "Tisch",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Setz dich bitte an den Tisch."
+  },
+  {
+    "prefix": "Stell den Besen hinter ",
+    "noun": "Schrank",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Stell den Besen hinter den Schrank."
+  },
+  {
+    "prefix": "Stell dich bitte neben ",
+    "noun": "Vater",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Stell dich bitte neben den Vater."
+  },
+  {
+    "prefix": "Stell die Blumen bitte auf ",
+    "noun": "Fensterbank",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "die",
+      "der",
+      "den",
+      "dem"
+    ],
+    "correct": "die",
+    "kasus": "Akkusativ",
+    "solution": "Stell die Blumen bitte auf die Fensterbank."
+  },
+  {
+    "prefix": "Wir fahren am Wochenende an ",
+    "noun": "See",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Wir fahren am Wochenende an den See."
+  },
+  {
+    "prefix": "Wir fliegen über ",
+    "noun": "Berge",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "die",
+      "der",
+      "den",
+      "dem"
+    ],
+    "correct": "die",
+    "kasus": "Akkusativ",
+    "solution": "Wir fliegen über die Berge."
+  },
+  {
+    "prefix": "Wir gehen auf ",
+    "noun": "Turm",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Wir gehen auf den Turm."
+  },
+  {
+    "prefix": "Wir gehen heute Abend in ",
+    "noun": "Restaurant",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "das",
+      "dem",
+      "den",
+      "der"
+    ],
+    "correct": "das",
+    "kasus": "Akkusativ",
+    "solution": "Wir gehen heute Abend in das Restaurant."
+  },
+  {
+    "prefix": "Wir gehen in ",
+    "noun": "Bäckerei",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "die",
+      "der",
+      "den",
+      "dem"
+    ],
+    "correct": "die",
+    "kasus": "Akkusativ",
+    "solution": "Wir gehen in die Bäckerei."
+  },
+  {
+    "prefix": "Wir gehen in ",
+    "noun": "Theater",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "das",
+      "dem",
+      "den",
+      "der"
+    ],
+    "correct": "das",
+    "kasus": "Akkusativ",
+    "solution": "Wir gehen in das Theater."
+  },
+  {
+    "prefix": "Wir gehen morgen in ",
+    "noun": "Museum",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "das",
+      "dem",
+      "den",
+      "der"
+    ],
+    "correct": "das",
+    "kasus": "Akkusativ",
+    "solution": "Wir gehen morgen in das Museum."
+  },
+  {
+    "prefix": "Wir hängen das Poster an ",
+    "noun": "Schrank",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Wir hängen das Poster an den Schrank."
+  },
+  {
+    "prefix": "Wir hängen die Wäsche auf ",
+    "noun": "Balkon",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "den",
+      "dem",
+      "der",
+      "das"
+    ],
+    "correct": "den",
+    "kasus": "Akkusativ",
+    "solution": "Wir hängen die Wäsche auf den Balkon."
+  },
+  {
+    "prefix": "Wir laufen über ",
+    "noun": "Brücke",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "die",
+      "der",
+      "den",
+      "dem"
+    ],
+    "correct": "die",
+    "kasus": "Akkusativ",
+    "solution": "Wir laufen über die Brücke."
+  },
+  {
+    "prefix": "Wir schwimmen in ",
+    "noun": "Meer",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "das",
+      "den",
+      "der"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Wir schwimmen in dem Meer."
+  },
+  {
+    "prefix": "Wir sitzen an ",
+    "noun": "Feuer",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "das",
+      "den",
+      "der"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Wir sitzen an dem Feuer."
+  },
+  {
+    "prefix": "Wir sitzen gemütlich auf ",
+    "noun": "Terrasse",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Wir sitzen gemütlich auf der Terrasse."
+  },
+  {
+    "prefix": "Wir sitzen in ",
+    "noun": "Küche",
+    "article": "die",
+    "suffix": " und trinken Kaffee.",
+    "options": [
+      "der",
+      "die",
+      "den",
+      "dem"
+    ],
+    "correct": "der",
+    "kasus": "Dativ",
+    "solution": "Wir sitzen in der Küche und trinken Kaffee."
+  },
+  {
+    "prefix": "Wir spazieren durch ",
+    "noun": "Stadtzentrum",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "das",
+      "dem",
+      "den",
+      "der"
+    ],
+    "correct": "das",
+    "kasus": "Akkusativ",
+    "solution": "Wir spazieren durch das Stadtzentrum."
+  },
+  {
+    "prefix": "Wir stellen das Sofa an ",
+    "noun": "Wand",
+    "article": "die",
+    "suffix": ".",
+    "options": [
+      "die",
+      "der",
+      "den",
+      "dem"
+    ],
+    "correct": "die",
+    "kasus": "Akkusativ",
+    "solution": "Wir stellen das Sofa an die Wand."
+  },
+  {
+    "prefix": "Wir treffen uns vor ",
+    "noun": "Kino",
+    "article": "das",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "das",
+      "der",
+      "den"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Wir treffen uns vor dem Kino."
+  },
+  {
+    "prefix": "Wir warten vor ",
+    "noun": "Eingang",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Wir warten vor dem Eingang."
+  },
+  {
+    "prefix": "Wir wohnen direkt an ",
+    "noun": "Park",
+    "article": "der",
+    "suffix": ".",
+    "options": [
+      "dem",
+      "den",
+      "der",
+      "das"
+    ],
+    "correct": "dem",
+    "kasus": "Dativ",
+    "solution": "Wir wohnen direkt an dem Park."
+  }
+]

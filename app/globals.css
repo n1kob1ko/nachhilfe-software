@@ -1046,3 +1046,32 @@ textarea.input {
     text-decoration: underline;
   }
 }
+
+/* ---------- Schulschriften (Blätter erstellen) ----------
+ *
+ * Grünewald VA und Bienchen SAS liegen NICHT im Projekt: public/fonts/README.md erklärt, welche
+ * Datei wohin kommt und unter welcher Lizenz (beide SIL OFL, Peter Wiegel). Die Regeln stehen
+ * trotzdem hier — legt jemand die Datei ab, wird sie sofort gesetzt.
+ *
+ * FEHLT DIE DATEI, fällt der Browser auf die nächste Familie der Kette zurück (in blaetter.css steht
+ * die Druckschrift dahinter), und der Generator schreibt dazu, welche Schrift gemeint war
+ * (`fehlendeSchriftHinweis`). Still durch eine andere Schrift zu ersetzen wäre hier besonders
+ * heikel: Das Kind soll genau diese Formen nachmalen.
+ *
+ * Die Lateinische Ausgangsschrift hat keine frei lizenzierte Fassung; für sie steht hier bewusst
+ * keine @font-face-Regel. Der Eintrag im Generator führt sichtbar auf die Druckschrift zurück.
+ */
+@font-face {
+  font-family: "Gruenewald VA";
+  src: url("/fonts/gruenewald-va.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Bienchen SAS";
+  src: url("/fonts/bienchen-sas.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 400;
+  font-style: normal;
+}

@@ -8,6 +8,26 @@ In Railway unter Variables reicht `OPENROUTER_API_KEY`. Ist nur dieser Schlüsse
 
 Wer ein anderes Modell will, setzt `AI_<BEREICH>_MODEL` (z. B. `AI_TEXT_MODEL=anthropic/claude-sonnet-5.5`). Keine Code-Änderung nötig.
 
+## Lokale Modelle (Ollama)
+
+Ein Modell auf dem eigenen Rechner braucht keinen Schlüssel und kostet nichts. Ollama spricht unter `http://127.0.0.1:11434/v1` dieselbe Schnittstelle wie ein OpenAI-kompatibler Anbieter, deshalb genügt der vorhandene Anbieter `compatible` (`lib/ai/providers/openai-compatible.ts`) — ein eigener Anbieter oder Adapter ist nicht nötig.
+
+```
+OLLAMA_BASE_URL=http://127.0.0.1:11434/v1
+AI_PROVIDER=compatible
+AI_MODEL_FAST=llama3.2
+AI_MODEL_STANDARD=llama3.2
+AI_MODEL_DEEP=llama3.2
+```
+
+- `OLLAMA_BASE_URL` ist die Adresse des Servers (mit `/v1`); die App ruft `<Adresse>/chat/completions` auf.
+- `AI_PROVIDER=compatible` gehört dazu: ohne diese Angabe wählt die App weiter Anthropic bzw. OpenRouter.
+- `AI_MODEL_*` nennt einen Modellnamen aus `ollama list` (z. B. `llama3.2`, `qwen2.5:7b`); für `compatible` gibt es keinen Standardnamen. Statt der drei Tarife geht auch `AI_<BEREICH>_MODEL`, z. B. `AI_EXERCISE_MODEL`.
+- Ein Schlüssel wird nicht verlangt: `hasKey("compatible")` gilt als erfüllt, sobald `OLLAMA_BASE_URL` gesetzt ist (`isLocalModel` in `lib/ai/config.ts`).
+- **Kosten:** Der Aufruf wird mit 0 $ verbucht und zählt nicht gegen das Budget; ein aufgebrauchtes Budget hält ein lokales Modell nicht auf. Ein Modell, das `ollama/…` heißt, steht mit Nullpreis auch in der Preistabelle (`AI_PRICES_JSON`-Vorgabe in `lib/ai/config.ts`).
+- Sagt ein älteres Ollama bei `response_format` einen Fehler, hilft `AI_COMPATIBLE_JSON_SCHEMA=0`: die App stellt die Antwortform dann in die Anleitung statt in die Anfrage.
+- Was ein lokales Modell kann, sagt der Qualitätstest (Mehr › KI-Kosten › Qualitätstest): kleine Modelle liefern das JSON-Schema der App oft nicht zuverlässig. Die App prüft jede Antwort weiterhin selbst und fällt ohne brauchbare Antwort auf die eingebauten Generatoren zurück.
+
 ## Standardmodelle
 
 | Bereich | Modell | Preis | Warum |

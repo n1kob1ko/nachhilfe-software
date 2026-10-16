@@ -1,5 +1,6 @@
 import type { Difficulty, TaskType } from "./curriculum";
 import { checkFix, type FixLabel } from "./fix-text";
+import { checkMemorize, mistakeLabel } from "./memorize";
 import type { PartSolution, PartView, ResultForm } from "./math-check";
 import { gradeMathTask } from "./math-task";
 
@@ -67,6 +68,9 @@ export type TaskDraft = {
     aspect?: string;
     /** KI-Aufgaben: what the teacher has to check before the task can be sent (e.g. a doubtful Wortart); never shown to students. */
     pruefen?: string[];
+    /** Artikel-Aufgaben: das Genus des Nomens (m = maskulin, f = feminin, n = neutral), damit die Oberfläche
+     *  es färben kann (D10, components/genus.ts). Die Farbe ist nie das einzige Signal. */
+    genus?: "m" | "f" | "n";
   };
   answer: AnswerSpec;
   solution: string;
@@ -167,6 +171,12 @@ function labelFor(task: Pick<TaskDraft, "errorMap" | "answer">, given: string) {
  */
 export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "errorMap">, given: string): CheckResult {
   const a = task.answer;
+  // Auswendig schreiben: der Text steht in data.passage, verglichen wird Wort für Wort (lib/memorize.ts).
+  // Die falschen Wörter sind das Fehler-Etikett des Versuchs — die einzige Spur, die der Lehrer sieht.
+  if (task.type === "memorize") {
+    const r = checkMemorize(task.data.passage ?? "", given);
+    return { correct: r.correct, errorLabel: r.correct ? null : mistakeLabel(r.mistakes), feedback: r.feedback };
+  }
   if (task.data.options && typeof a.correct === "number") {
     const idx = Number(given);
     const correct = idx === a.correct;

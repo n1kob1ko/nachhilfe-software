@@ -135,7 +135,7 @@ export async function createDiagnosis(input: DiagnosisInput): Promise<{ workshee
         count: forAI.length,
         categories: [],
         focusNote: "Kurze Diagnose: je Fähigkeit genau eine Aufgabe in der angegebenen Schwierigkeit, eindeutig auswertbar, möglichst kein Freitext.",
-      }, { teacherId: input.teacherId, trigger: "diagnose" });
+      }, { teacherId: input.teacherId, studentId: student.id, trigger: "diagnose" });
       // a diagnosis goes to the student right away: tasks the app flagged for checking are not used
       for (const t of (out ?? []).filter((x) => !x.data.pruefen?.length)) {
         const slot = forAI.find(({ item, i }) => !drafts[i] && item.skillId === t.skillId);

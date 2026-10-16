@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Play } from "lucide-react";
+import { Avatar } from "@/components/Art";
 
 export const pad = (n: number) => String(n).padStart(2, "0");
 export const dayKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -57,7 +58,7 @@ export function MonthCalendar({ month, selected, today, busy, href }: { month: s
               scroll={false}
               role="gridcell"
               aria-selected={isSel}
-              aria-label={`${d.toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long" })}${has ? ", mit Stunden" : ""}`}
+              aria-label={`${d.toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long" })}${has ? ", mit Einheiten" : ""}`}
               className="group flex flex-col items-center py-0.5"
             >
               <span
@@ -131,5 +132,79 @@ export function DayPlan({ items, now }: { items: PlanItem[]; now?: Date }) {
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Ein Punkt des **Tagesplans** auf der Startseite (D17). Die Zeile kommt entweder aus einem
+ * veröffentlichten Wochenplan-Platz (`geplante_einheiten`, mit geplanter Dauer und Raum) oder aus
+ * einer von Hand geplanten Einheit, für die es keinen Platz im Wochenplan gibt
+ * (`lessons.status = 'geplant'`, siehe docs/planung.md).
+ */
+export type TagesplanPunkt = {
+  /** stabiler React-Schlüssel (Platz- oder Dokumentationszeile) */
+  key: string;
+  /** "14:00–15:40" beim Platz, "14:00" bei einer Zeile ohne Platz */
+  zeit: string;
+  studentId: number;
+  studentName: string;
+  /** Raum · Gebäude, "online" oder "Raum noch offen"; bei einer Zeile ohne Platz das Fach */
+  ort: string;
+  /** "100 min geplant" oder das Thema der Dokumentationszeile */
+  hinweis: string;
+  /** die Einheit, die diesen Platz schon hat — dann führt die Zeile dorthin statt zu starten */
+  einheitId: number | null;
+  einheitStatus: "gestartet" | "beendet" | "abgebrochen" | null;
+  /** vergangener veröffentlichter Platz ohne Einheit (D17) */
+  nichtStattgefunden: boolean;
+  /** von Hand geplant, ohne Platz im Wochenplan */
+  ohnePlatz: boolean;
+  /** die Dokumentation ist fertig: nur noch ansehen */
+  erledigt: boolean;
+};
+
+/**
+ * Der **Tagesplan**: heute, in der Reihenfolge des Tages. Jede offene Zeile startet mit einem Klick
+ * die Einheit; sie verknüpft sich dabei mit ihrem Platz im Wochenplan (`lib/units.ts`, D17) und
+ * läuft ohne Platz wie bisher ungeplant.
+ *
+ * `starten` ist die Server Action der Startseite (als Eigenschaft übergeben, damit diese Datei
+ * nichts aus `app/` importieren muss).
+ */
+export function Tagesplan({ punkte, starten }: { punkte: TagesplanPunkt[]; starten: (studentId: number) => Promise<void> }) {
+  return (
+    <ul className="panel divide-y divide-line">
+      {punkte.map((p) => (
+        <li key={p.key} className={`flex min-h-[60px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 ${p.nichtStattgefunden ? "text-ink-3" : ""}`}>
+          <span className="num w-[92px] shrink-0 text-[15px] font-semibold">{p.zeit}</span>
+          <Avatar name={p.studentName} size={34} />
+          <Link href={`/schueler/${p.studentId}`} className="min-w-0 flex-1">
+            <span className="block truncate font-semibold">{p.studentName}</span>
+            <span className="block truncate text-[13px] text-ink-2">
+              {p.ort}
+              {p.hinweis && ` · ${p.hinweis}`}
+            </span>
+          </Link>
+          {p.nichtStattgefunden && <span className="text-[13px] text-ink-3">nicht stattgefunden</span>}
+          {p.ohnePlatz && !p.nichtStattgefunden && <span className="text-[13px] text-ink-3">ohne Wochenplan-Platz</span>}
+          {p.erledigt && (
+            <span className="inline-flex items-center gap-1 text-[13px] font-medium text-green">
+              <CheckCircle2 size={15} aria-hidden /> erledigt
+            </span>
+          )}
+          {p.einheitId !== null ? (
+            <Link href={`/einheiten/${p.einheitId}`} className="btn btn-secondary btn-sm">
+              {p.einheitStatus === "gestartet" ? "Zur laufenden Einheit" : "Zur Einheit"}
+            </Link>
+          ) : p.erledigt ? null : (
+            <form action={starten.bind(null, p.studentId)}>
+              <button className="btn btn-primary btn-sm">
+                <Play size={14} aria-hidden /> Einheit starten
+              </button>
+            </form>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }

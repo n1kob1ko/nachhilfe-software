@@ -150,6 +150,111 @@ test("export: the JSON backup holds every row and restores into an empty databas
   assert.throws(() => restoreBackup(other, { format: "etwas-anderes" }), /keine Lernheft-Sicherung/);
 });
 
+test("Sicherung: Räume, Verfügbarkeit, Wochenabweichungen und der Wochenplan sind dabei und kommen unverändert zurück", async () => {
+  const { db, niko } = await setup();
+  const { exportBackup, restoreBackup } = await import("./backup");
+  const { openDatabase } = await import("./db");
+  const planung = await import("./planung/repo");
+
+  // Planung schreiben: ein Raum, die Lehrerplanung, eine Abweichung für eine Woche
+  const raumId = planung.createRaum({ building: "Nebengebäude", name: "Sicherungsraum", mode: "online" });
+  planung.setLehrerVerfuegbarkeit(niko.id, { "2": [{ start: 600, end: 720 }] });
+  planung.setLehrerWochenziel(niko.id, 900);
+  planung.setLehrerRaumPraeferenzen(niko.id, [raumId]);
+  planung.setAbweichung("teacher", niko.id, "2026-10-12", { "5": [{ start: 900, end: 1020 }] });
+  const schuelerId = Number(db().prepare("INSERT INTO students (name, grade, access_token) VALUES ('Sicherungstest', 6, 'tok-sicherung')").run().lastInsertRowid);
+  planung.setSchuelerPlanung(schuelerId, { availability: { "1": [{ start: 840, end: 960 }] }, einheiten_pro_woche: 3, geplante_dauer: 120, modus_wunsch: "online", erlaubte_lehrer: [niko.id] });
+  // und ein veröffentlichter Platz im Wochenplan (Phase 4)
+  const platz = planung.legePlatzAn({
+    week_start: "2026-10-12",
+    weekday: 2,
+    start_min: 605,
+    geplante_dauer: 120,
+    teacher_id: niko.id,
+    student_id: schuelerId,
+    room_id: raumId,
+  });
+  assert.equal(platz.ok, true);
+  const platzId = platz.ok ? platz.id : 0;
+  assert.equal(planung.setzeGesperrt(platzId, true).ok, true);
+  assert.equal(planung.veroeffentlicheWoche("2026-10-12").ok, true);
+
+  const b = exportBackup();
+  const json = JSON.parse(JSON.stringify(b)) as { tables: Record<string, { rows: Record<string, unknown>[] }> };
+  const zeilen = (tabelle: string) => json.tables[tabelle].rows;
+  // alle neuen Tabellen sind vollständig dabei (nicht nur leer)
+  assert.ok(zeilen("rooms").some((r) => r.name === "Sicherungsraum"), "der Raum ist in der Sicherung");
+  assert.ok(
+    zeilen("availability_overrides").some((r) => r.owner_type === "teacher" && r.owner_id === niko.id && r.week_start === "2026-10-12"),
+    "die Wochenabweichung ist in der Sicherung",
+  );
+  const platzZeile = zeilen("geplante_einheiten").find((r) => r.id === platzId)!;
+  assert.ok(platzZeile, "der geplante Platz ist in der Sicherung");
+  assert.equal(platzZeile.week_start, "2026-10-12");
+  assert.equal(platzZeile.weekday, 2);
+  assert.equal(platzZeile.start_min, 610, "der Start wurde beim Anlegen auf 10 Minuten gerastet");
+  assert.equal(platzZeile.geplante_dauer, 120);
+  assert.equal(platzZeile.teacher_id, niko.id);
+  assert.equal(platzZeile.student_id, schuelerId);
+  assert.equal(platzZeile.room_id, raumId);
+  assert.equal(platzZeile.status, "veroeffentlicht");
+  assert.equal(platzZeile.locked, 1);
+  assert.equal(platzZeile.unit_id, null);
+  // die neuen Spalten stehen in denselben Tabellen wie bisher
+  const lehrerZeile = zeilen("teachers").find((r) => r.id === niko.id)!;
+  assert.deepEqual(JSON.parse(lehrerZeile.availability as string), { "2": [{ start: 600, end: 720 }] });
+  assert.equal(lehrerZeile.weekly_target_min, 900);
+  assert.deepEqual(JSON.parse(lehrerZeile.preferred_room_ids as string), [raumId]);
+  const schuelerZeile = zeilen("students").find((r) => r.id === schuelerId)!;
+  assert.equal(schuelerZeile.einheiten_pro_woche, 3);
+  assert.equal(schuelerZeile.geplante_dauer, 120);
+  assert.equal(schuelerZeile.modus_wunsch, "online");
+
+  // Wiederherstellung in eine leere Datenbank: dieselben Zeilen, dieselben Werte
+  const other = openDatabase(":memory:");
+  restoreBackup(other, json);
+  const wieder = exportBackup(other);
+  assert.deepEqual(wieder.tables.rooms.rows, b.tables.rooms.rows, "Räume kommen unverändert zurück");
+  assert.deepEqual(wieder.tables.availability_overrides.rows, b.tables.availability_overrides.rows, "Wochenabweichungen kommen unverändert zurück");
+  assert.deepEqual(wieder.tables.geplante_einheiten.rows, b.tables.geplante_einheiten.rows, "geplante Einheiten kommen unverändert zurück");
+  assert.deepEqual(wieder.tables.teachers.rows.find((r) => r.id === niko.id), lehrerZeile);
+  assert.deepEqual(wieder.tables.students.rows.find((r) => r.id === schuelerId), schuelerZeile);
+  // und die Werte sind in der wiederhergestellten Datenbank wieder lesbar
+  const abweichung = other.prepare("SELECT availability FROM availability_overrides WHERE owner_type = 'teacher' AND owner_id = ? AND week_start = '2026-10-12'").get(niko.id) as { availability: string };
+  assert.deepEqual(JSON.parse(abweichung.availability), { "5": [{ start: 900, end: 1020 }] });
+  const wiederPlatz = other
+    .prepare("SELECT week_start, weekday, start_min, geplante_dauer, status, locked FROM geplante_einheiten WHERE id = ?")
+    .get(platzId) as Record<string, unknown>;
+  assert.equal(wiederPlatz.start_min, 610);
+  assert.equal(wiederPlatz.geplante_dauer, 120);
+  assert.equal(wiederPlatz.status, "veroeffentlicht");
+  assert.equal(wiederPlatz.locked, 1);
+  const wiederSchueler = other.prepare("SELECT availability, einheiten_pro_woche, geplante_dauer, modus_wunsch, erlaubte_lehrer FROM students WHERE id = ?").get(schuelerId) as Record<string, unknown>;
+  assert.deepEqual(JSON.parse(wiederSchueler.availability as string), { "1": [{ start: 840, end: 960 }] });
+  assert.equal(wiederSchueler.einheiten_pro_woche, 3);
+  assert.equal(wiederSchueler.geplante_dauer, 120);
+  assert.equal(wiederSchueler.modus_wunsch, "online");
+  assert.deepEqual(JSON.parse(wiederSchueler.erlaubte_lehrer as string), [niko.id]);
+  assert.ok(other.prepare("SELECT 1 FROM rooms WHERE name = 'Sicherungsraum' AND mode = 'online'").get(), "der Raum ist wieder da");
+});
+
+test("Sicherung: die KI-Hinweise eines Schülers sind dabei und kommen unverändert zurück", async () => {
+  const { repo } = await setup();
+  const { exportBackup, restoreBackup } = await import("./backup");
+  const { openDatabase } = await import("./db");
+  const sid = repo.createStudent({
+    name: "Kim Hinweis", grade: 6, klasse: 2, teacher_id: null, school: "", school_type: "Mittelschule", subjects: ["Deutsch"],
+    current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "", ki_hinweise: "Legasthenie: kurze Sätze, keine Großbuchstaben-Wörter als Fehler werten",
+  });
+  const b = exportBackup();
+  const json = JSON.parse(JSON.stringify(b)) as { tables: Record<string, { rows: Record<string, unknown>[] }> };
+  assert.equal(json.tables.students.rows.find((r) => r.id === sid)!.ki_hinweise, "Legasthenie: kurze Sätze, keine Großbuchstaben-Wörter als Fehler werten", "die Spalte steht in der Sicherung");
+  const other = openDatabase(":memory:");
+  restoreBackup(other, json);
+  const wieder = other.prepare("SELECT ki_hinweise FROM students WHERE id = ?").get(sid) as { ki_hinweise: string };
+  assert.equal(wieder.ki_hinweise, "Legasthenie: kurze Sätze, keine Großbuchstaben-Wörter als Fehler werten", "und kommt unverändert zurück");
+});
+
 test("export: every CSV dataset builds, and cells cannot run as spreadsheet formulas", async () => {
   await setup();
   const { DATASETS, datasetCsv } = await import("./exports");
