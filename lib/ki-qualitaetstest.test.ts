@@ -5,6 +5,8 @@ process.env.DATABASE_PATH = ":memory:";
 for (const k of ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "OPENROUTER_API_KEY", "AI_PROVIDER"]) delete process.env[k];
 // as on Railway: OpenRouter with its default models, Textkorrektur on Sonnet (the key is a dummy, the transport is replaced)
 process.env.OPENROUTER_API_KEY = "test-ohne-wert";
+// the test cases were written for OpenRouter (its model ids and prices); since 2026-10-18 the provider is chosen, not taken from the key
+process.env.AI_PROVIDER = "openrouter";
 process.env.AI_TEXT_MODEL = "anthropic/claude-sonnet-5.5";
 
 const base = {

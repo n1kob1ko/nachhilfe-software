@@ -3,13 +3,15 @@
  * Only numbers and ids: no prompt, no answer, no name.
  */
 import { db } from "../db";
-import { FUNCTIONS, budget, type AIFunction, type Tier } from "./config";
+import { FUNCTIONS, budget, type AIFunction, type BudgetPool, type ProviderId, type Tier } from "./config";
 
 export type CallStatus = "ok" | "cache" | "abgelehnt" | "fehler" | "timeout" | "budget" | "pausiert";
 
 export type CallRow = {
   fn: AIFunction;
   tier: Tier;
+  /** which provider was asked; decides the budget the cost counts against */
+  provider?: ProviderId | "";
   model: string;
   teacherId: number | null;
   unitId: number | null;
@@ -18,6 +20,8 @@ export type CallRow = {
   output: number;
   cacheWrite: number;
   cacheRead: number;
+  /** the part of output spent on thinking, where the provider reports it (output already counts it) */
+  thinking?: number | null;
   durationMs: number;
   costUsd: number;
   status: CallStatus;
@@ -32,13 +36,14 @@ export function logCall(r: CallRow): number {
   const at = r.at ?? Date.now();
   const res = db()
     .prepare(
-      `INSERT INTO ai_calls (created_at, fn, tier, model, teacher_id, unit_id, trigger, input_tokens, output_tokens, cache_write_tokens, cache_read_tokens, duration_ms, cost_usd, status, error, test)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO ai_calls (created_at, fn, tier, provider, model, teacher_id, unit_id, trigger, input_tokens, output_tokens, cache_write_tokens, cache_read_tokens, thinking_tokens, duration_ms, cost_usd, status, error, test)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       new Date(at).toISOString(),
       r.fn,
       r.tier,
+      r.provider ?? "",
       r.model,
       r.teacherId,
       r.unitId,
@@ -47,6 +52,7 @@ export function logCall(r: CallRow): number {
       Math.round(r.output),
       Math.round(r.cacheWrite),
       Math.round(r.cacheRead),
+      r.thinking == null ? null : Math.round(r.thinking),
       Math.round(r.durationMs),
       r.costUsd,
       r.status,
@@ -56,24 +62,29 @@ export function logCall(r: CallRow): number {
   return Number(res.lastInsertRowid);
 }
 
+/** Rows of a budget pool: Anthropic's own, or every other provider's (rows from before the provider column count there). */
+const POOL_WHERE: Record<BudgetPool, string> = { anthropic: "provider = 'anthropic'", allgemein: "provider <> 'anthropic'" };
+
 /**
- * Spent this month (test runs do not count). Read from the table every time: pages and actions may run
- * in separate copies of this module, a remembered sum could be out of date.
+ * Spent this month (test runs do not count), in one budget pool or in all. Read from the table every time:
+ * pages and actions may run in separate copies of this module, a remembered sum could be out of date.
  */
-export function monthSpend(now = Date.now()): number {
+export function monthSpend(now = Date.now(), pool?: BudgetPool): number {
   const from = `${monthOf(now)}-01T00:00:00.000Z`;
-  const { usd } = db().prepare("SELECT COALESCE(SUM(cost_usd), 0) AS usd FROM ai_calls WHERE test = 0 AND created_at >= ?").get(from) as { usd: number };
+  const { usd } = db()
+    .prepare(`SELECT COALESCE(SUM(cost_usd), 0) AS usd FROM ai_calls WHERE test = 0 AND created_at >= ?${pool ? ` AND ${POOL_WHERE[pool]}` : ""}`)
+    .get(from) as { usd: number };
   return usd;
 }
 
-/** "aus": the budget is used up, no paid request runs this month. Amounts in US dollars. */
-export type BudgetState = { spent: number; budget: number; share: number; level: "ok" | "warnung" | "aus" };
-export function budgetState(now = Date.now()): BudgetState {
-  const b = budget();
-  const spent = monthSpend(now);
+/** "aus": the budget is used up, no paid request of its providers runs this month. Amounts in US dollars. */
+export type BudgetState = { pool: BudgetPool; spent: number; budget: number; share: number; level: "ok" | "warnung" | "aus" };
+export function budgetState(now = Date.now(), pool: BudgetPool = "allgemein"): BudgetState {
+  const b = budget(pool);
+  const spent = monthSpend(now, pool);
   const share = b.monthlyUsd > 0 ? spent / b.monthlyUsd : spent > 0 ? Infinity : 0;
   const level = share >= 1 ? "aus" : share >= b.warnAt ? "warnung" : "ok";
-  return { spent, budget: b.monthlyUsd, share, level };
+  return { pool, spent, budget: b.monthlyUsd, share, level };
 }
 
 // ---------- statistics ----------
@@ -122,21 +133,42 @@ export function costByFunction(month: string, f: Filter = {}) {
   return rows.map((r) => ({ ...r, label: FUNCTIONS[r.key]?.label ?? r.key, models: (r.models ?? "").split(",").filter(Boolean) }));
 }
 
-export type CallLogRow = { id: number; created_at: string; fn: AIFunction; model: string; trigger: string; input_tokens: number; output_tokens: number; cache_read_tokens: number; duration_ms: number; cost_usd: number; status: CallStatus; error: string };
+/**
+ * One logged request as the provider reported it: input at full price, cache writes and reads apart,
+ * output (thinking included; thinking_tokens says how much of it, null where not reported).
+ */
+export type CallLogRow = {
+  id: number;
+  created_at: string;
+  fn: AIFunction;
+  provider: ProviderId | "";
+  model: string;
+  trigger: string;
+  input_tokens: number;
+  output_tokens: number;
+  cache_write_tokens: number;
+  cache_read_tokens: number;
+  thinking_tokens: number | null;
+  duration_ms: number;
+  cost_usd: number;
+  status: CallStatus;
+  error: string;
+};
+const CALL_COLUMNS = "id, created_at, fn, provider, model, trigger, input_tokens, output_tokens, cache_write_tokens, cache_read_tokens, thinking_tokens, duration_ms, cost_usd, status, error";
 export function recentCalls(limit = 25, f: Filter = {}) {
   return db()
-    .prepare(`SELECT id, created_at, fn, model, trigger, input_tokens, output_tokens, cache_read_tokens, duration_ms, cost_usd, status, error FROM ai_calls ${where(f)} ORDER BY id DESC LIMIT ?`)
+    .prepare(`SELECT ${CALL_COLUMNS} FROM ai_calls ${where(f)} ORDER BY id DESC LIMIT ?`)
     .all(limit) as CallLogRow[];
 }
 
 /** One logged request (the KI-Selbsttest shows model, duration and cost of its requests). */
 export function callById(id: number) {
-  return (db().prepare("SELECT id, created_at, fn, model, trigger, input_tokens, output_tokens, cache_read_tokens, duration_ms, cost_usd, status, error FROM ai_calls WHERE id = ?").get(id) as CallLogRow | undefined) ?? null;
+  return (db().prepare(`SELECT ${CALL_COLUMNS} FROM ai_calls WHERE id = ?`).get(id) as CallLogRow | undefined) ?? null;
 }
 
 /** The latest request with this trigger, or null. */
 export function lastCallOf(trigger: string) {
-  return (db().prepare("SELECT id, created_at, fn, model, trigger, input_tokens, output_tokens, cache_read_tokens, duration_ms, cost_usd, status, error FROM ai_calls WHERE trigger = ? ORDER BY id DESC LIMIT 1").get(trigger) as CallLogRow | undefined) ?? null;
+  return (db().prepare(`SELECT ${CALL_COLUMNS} FROM ai_calls WHERE trigger = ? ORDER BY id DESC LIMIT 1`).get(trigger) as CallLogRow | undefined) ?? null;
 }
 
 /** The highest id in the log (the KI-Qualitätstest counts its own requests from there). */
@@ -147,7 +179,7 @@ export function lastCallId(): number {
 /** The requests with this trigger after `afterId`, oldest first. */
 export function callsOf(trigger: string, afterId = 0) {
   return db()
-    .prepare("SELECT id, created_at, fn, model, trigger, input_tokens, output_tokens, cache_read_tokens, duration_ms, cost_usd, status, error FROM ai_calls WHERE trigger = ? AND id > ? ORDER BY id")
+    .prepare(`SELECT ${CALL_COLUMNS} FROM ai_calls WHERE trigger = ? AND id > ? ORDER BY id`)
     .all(trigger, afterId) as CallLogRow[];
 }
 

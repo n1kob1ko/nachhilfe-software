@@ -1,14 +1,14 @@
 import { AIQualityTest } from "@/components/AIQualityTest";
 import { AISelfTest } from "@/components/AISelfTest";
 import { AITextTest } from "@/components/AITextTest";
-import { KiModusSchalter } from "@/components/ai/KiModusSchalter";
+import { KiAnbieterWahl, type AnbieterOption } from "@/components/ai/KiAnbieterWahl";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, SectionTitle } from "@/components/ui";
-import { AREA_LABEL, FUNCTIONS, aiSwitchedOff, budget, priceFor, routeFor, type AIFunction, type Area } from "@/lib/ai/config";
+import { AREA_LABEL, FUNCTIONS, aiSwitchedOff, budget, mainProvider, poolOf, priceFor, routeFor, type AIFunction, type Area, type BudgetPool } from "@/lib/ai/config";
 import { budgetState, costByDay, costByFunction, costByMonth, costByTeacher, recentCalls, type Sum } from "@/lib/ai/log";
-import { kiModus } from "@/lib/ai/modus";
+import { KI_MODUS_LABEL, kiModus } from "@/lib/ai/modus";
 import { PROVIDER_LABEL, providerReady } from "@/lib/ai/providers";
-import { aiEnabled, anyProviderKey, breakerState } from "@/lib/ai/router";
+import { aiEnabled, breakerState } from "@/lib/ai/router";
 import { requireTeacher } from "@/lib/auth";
 
 export const metadata = { title: "KI-Kosten" };
@@ -19,69 +19,112 @@ const eur = (x: number) => `${x.toLocaleString("de-AT", { minimumFractionDigits:
 const n = (x: number) => Math.round(x).toLocaleString("de-AT");
 const STATUS_LABEL: Record<string, string> = { ok: "ok", cache: "aus Speicher", abgelehnt: "keine Antwort", fehler: "Fehler", timeout: "Zeit überschritten", budget: "Budget", pausiert: "pausiert" };
 
+const POOL_LABEL: Record<BudgetPool, string> = { anthropic: "Anthropic", allgemein: "OpenRouter" };
+
 /**
- * Mehr › KI-Kosten: every request to the KI with model, tokens, duration and estimated cost, per day,
- * month, teacher and function, against the monthly budget. Teachers see their own requests, the
- * administration sees all.
+ * Mehr › KI-Kosten: every request to the KI with provider, model, tokens, duration and cost, per day,
+ * month, teacher and function, against the monthly budgets (Anthropic and the general one). Teachers
+ * see their own requests, the administration sees all.
  */
 export default async function AICostPage() {
   const teacher = await requireTeacher();
   const f = { teacherId: teacher.is_admin ? null : teacher.id };
   const month = new Date().toISOString().slice(0, 7);
-  const b = budgetState();
-  const conf = budget();
   const paused = breakerState();
-  const manuellEingestellt = kiModus() === "manual";
-  // der manuelle Modus kann je Bereich (AI_<AREA>_PROVIDER=manual) oder für alle (Schalter) gelten
+  const modus = kiModus();
+  const aktiv = mainProvider();
+  const manuellEingestellt = aktiv === "manual";
+  // der manuelle Modus kann je Bereich (AI_<AREA>_PROVIDER=manual) oder für alle (Wahl) gelten
   const manuellAktiv = (Object.keys(FUNCTIONS) as AIFunction[]).some((fn) => routeFor(fn).provider === "manual");
   const state = aiSwitchedOff()
     ? "ausgeschaltet (AI_DISABLED)"
     : manuellEingestellt
       ? "an (manueller Modus: Prompt kopieren, Antwort einfügen)"
-      : !anyProviderKey()
-        ? "aus: kein Schlüssel hinterlegt"
+      : !providerReady(aktiv)
+        ? `aus: kein Schlüssel für ${PROVIDER_LABEL[aktiv]} hinterlegt`
         : paused.paused
           ? "pausiert: der Anbieter war nicht erreichbar"
           : manuellAktiv
-            ? "an (teils manuell)"
-            : "an";
+            ? `an (${PROVIDER_LABEL[aktiv]}, teils manuell)`
+            : `an (${PROVIDER_LABEL[aktiv]})`;
+  // das Budget des aktiven Anbieters zuerst; der manuelle Modus kostet nichts, dort steht Anthropic vorne
+  const ersterPool = aktiv === "manual" ? "anthropic" : poolOf(aktiv);
+  const pools = [ersterPool, ...(["anthropic", "allgemein"] as BudgetPool[]).filter((p) => p !== ersterPool)];
+  const budgets = pools.map((pool) => ({ pool, state: budgetState(Date.now(), pool), conf: budget(pool) }));
+  const vorrang = process.env.AI_PROVIDER?.trim()
+    ? `AI_PROVIDER=${process.env.AI_PROVIDER.trim()} ist in den Umgebungsvariablen gesetzt und hat Vorrang vor dieser Wahl.`
+    : (Object.keys(AREA_LABEL) as Area[]).some((a) => process.env[`AI_${a}_PROVIDER`]?.trim())
+      ? `Für ${(Object.keys(AREA_LABEL) as Area[])
+          .filter((a) => process.env[`AI_${a}_PROVIDER`]?.trim())
+          .map((a) => AREA_LABEL[a])
+          .join(", ")} gilt per Umgebungsvariable ein eigener Anbieter.`
+      : null;
+  const optionen: AnbieterOption[] = [
+    { modus: "anthropic", name: KI_MODUS_LABEL.anthropic, was: `Standard, Sonnet 5.5, eigenes Budget ${usd(budget("anthropic").monthlyUsd)} im Monat`, bereit: providerReady("anthropic"), fehlt: "Kein Schlüssel hinterlegt: ANTHROPIC_API_KEY in Railway eintragen." },
+    { modus: "openrouter", name: KI_MODUS_LABEL.openrouter, was: `Haiku 5.5 und Sonnet 5.5, Budget ${eur(budget("allgemein").monthlyEur)} im Monat`, bereit: providerReady("openrouter"), fehlt: "Kein Schlüssel hinterlegt: OPENROUTER_API_KEY in Railway eintragen." },
+    { modus: "manual", name: KI_MODUS_LABEL.manual, was: "Prompt kopieren, Antwort einfügen, keine Kosten", bereit: true },
+  ];
   const byFn = costByFunction(month, f);
   const days = costByDay(14, f);
   const months = costByMonth(6, f);
   const teachers = teacher.is_admin ? costByTeacher(month) : [];
   const calls = recentCalls(25, f);
-  const share = Math.min(1, b.share);
 
   return (
     <>
-      <PageHeader title="KI-Kosten" back={{ href: "/mehr", label: "Mehr" }} info="Jeder KI-Aufruf mit Modell, Tokens, Dauer und geschätzten Kosten. Ohne Namen und ohne Inhalte der Anfragen." />
+      <PageHeader
+        title="KI-Kosten"
+        back={{ href: "/mehr", label: "Mehr" }}
+        info="Jeder KI-Aufruf mit Anbieter, Modell, Tokens, Dauer und Kosten, ohne Namen und ohne Inhalte der Anfragen. Die Tokens meldet der Anbieter bei jedem Aufruf. Die Kosten sind bei Anthropic diese Tokens mal Preisliste (so rechnet Anthropic ab), bei OpenRouter der Preis, den OpenRouter meldet."
+      />
 
       <section aria-label="Budget" className="panel mb-10 px-5 py-4">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <span className="text-[14px] text-ink-2">
             KI: <span className="font-semibold text-ink">{state}</span>
           </span>
-          {b.level === "warnung" && <Pill tone="amber">Über {Math.round(conf.warnAt * 100)}&nbsp;% des Budgets</Pill>}
-          {b.level === "aus" && <Pill tone="red">Budget erreicht: KI-Aufrufe gestoppt</Pill>}
         </div>
-        <p className="mt-3 text-[15px]">
-          <span className="num text-[22px] font-semibold">{eur(b.spent / conf.usdPerEur)}</span> <span className="text-ink-2">von {eur(conf.monthlyEur)} in diesem Monat</span>
-          <span className="num ml-2 text-[13px] text-ink-3">
-            ({usd(b.spent)} von {usd(b.budget)})
-          </span>
-        </p>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-panel" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)} aria-label="Anteil am Monatsbudget">
-          <div className={`h-full rounded-full ${b.level === "ok" ? "bg-green" : b.level === "warnung" ? "bg-amber" : "bg-red"}`} style={{ width: `${share * 100}%` }} />
+        <div className="mt-3 grid gap-5 sm:grid-cols-2">
+          {budgets.map(({ pool, state: b, conf }) => {
+            const share = Math.min(1, b.share);
+            return (
+              <div key={pool} data-testid={`budget-${pool}`}>
+                <p className="flex flex-wrap items-center gap-2 text-[13px] font-semibold text-ink-2">
+                  Budget {POOL_LABEL[pool]}
+                  {b.level === "warnung" && <Pill tone="amber">Über {Math.round(conf.warnAt * 100)}&nbsp;%</Pill>}
+                  {b.level === "aus" && <Pill tone="red">Erreicht: KI-Aufrufe gestoppt</Pill>}
+                </p>
+                {conf.currency === "eur" ? (
+                  <p className="mt-1 text-[15px]">
+                    <span className="num text-[22px] font-semibold">{eur(b.spent / conf.usdPerEur)}</span> <span className="text-ink-2">von {eur(conf.monthlyEur)} in diesem Monat</span>
+                    <span className="num ml-2 text-[13px] text-ink-3">
+                      ({usd(b.spent)} von {usd(b.budget)})
+                    </span>
+                  </p>
+                ) : (
+                  <p className="mt-1 text-[15px]">
+                    <span className="num text-[22px] font-semibold">{usd(b.spent)}</span> <span className="text-ink-2">von {usd(b.budget)} in diesem Monat</span>
+                  </p>
+                )}
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-panel" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)} aria-label={`Anteil am Monatsbudget ${POOL_LABEL[pool]}`}>
+                  <div className={`h-full rounded-full ${b.level === "ok" ? "bg-green" : b.level === "warnung" ? "bg-amber" : "bg-red"}`} style={{ width: `${share * 100}%` }} />
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <p className="mt-2 text-[13px] text-ink-3">
-          Budget und Warnschwelle über AI_MONTHLY_BUDGET_EUR und AI_BUDGET_WARN. Warnung ab {Math.round(conf.warnAt * 100)}&nbsp;%, ab 100&nbsp;% läuft kein kostenpflichtiger KI-Aufruf mehr; die App arbeitet dann mit Messwerten und Generatoren weiter. Die Anbieter rechnen in US-Dollar ab (Kurs 1&nbsp;€ = {conf.usdPerEur.toLocaleString("de-AT")}&nbsp;$), die Tabellen unten zeigen US-Dollar.
+        <p className="mt-3 text-[13px] text-ink-3">
+          Jedes Budget beginnt am 1. des Monats neu. Anthropic hat ein eigenes Budget (ANTHROPIC_MONTHLY_BUDGET_USD, Standard 90&nbsp;$), weil die monatlichen Anthropic-Credits nicht in den nächsten Monat
+          übergehen. OpenRouter und andere Anbieter teilen sich das allgemeine Budget (AI_MONTHLY_BUDGET_EUR). Warnung ab {Math.round(budget().warnAt * 100)}&nbsp;% (AI_BUDGET_WARN), ab 100&nbsp;% läuft bei diesem
+          Anbieter kein kostenpflichtiger KI-Aufruf mehr; die App arbeitet dann mit Messwerten und Generatoren weiter. Die Anbieter rechnen in US-Dollar ab (Kurs 1&nbsp;€ ={" "}
+          {budget().usdPerEur.toLocaleString("de-AT")}&nbsp;$), die Tabellen unten zeigen US-Dollar.
         </p>
       </section>
 
       {teacher.is_admin && (
         <section className="mb-10">
-          <SectionTitle>KI-Modus</SectionTitle>
-          <KiModusSchalter manuell={manuellEingestellt} />
+          <SectionTitle>KI-Anbieter</SectionTitle>
+          <KiAnbieterWahl modus={modus} optionen={optionen} vorrang={vorrang} />
         </section>
       )}
 
@@ -118,7 +161,7 @@ export default async function AICostPage() {
           <span>
             Anbieter und Modelle
             <Info label="Wie ändere ich Anbieter oder Modell?">
-              In Railway unter Variables, je Bereich: AI_REALTIME_PROVIDER und AI_REALTIME_MODEL, ebenso EXERCISE, ANALYSIS, DEEP, MATERIAL und TEXT. Anbieter: anthropic, openrouter, deepseek, compatible oder manual. AI_PROVIDER gilt für alle Bereiche ohne eigenen Eintrag; ohne AI_PROVIDER gilt der Schalter auf dieser Seite, sonst der Anbieter, dessen Schlüssel hinterlegt ist. „manual" ist der manuelle KI-Modus (ADR 0009): Der Prompt wird zum Kopieren gezeigt, die eingefügte Antwort mit derselben Prüfung übernommen, ohne Kosten. Nach dem nächsten Start gilt die neue Einstellung, ohne Code-Änderung.
+              In Railway unter Variables, je Bereich: AI_REALTIME_PROVIDER und AI_REALTIME_MODEL, ebenso EXERCISE, ANALYSIS, DEEP, MATERIAL und TEXT. Anbieter: anthropic, openrouter, deepseek, compatible oder manual. AI_PROVIDER gilt für alle Bereiche ohne eigenen Eintrag; ohne AI_PROVIDER gilt die Anbieterwahl auf dieser Seite (Standard: Anthropic). Ein Modell aus AI_&lt;BEREICH&gt;_MODEL oder AI_MODEL_FAST/STANDARD/DEEP gilt nur beim Anbieter, zu dem es passt: ein OpenRouter-Name wie anthropic/claude-sonnet-5.5 wird bei Anthropic zu claude-sonnet-5-5, ein Name ohne Anbieter-Vorsatz gilt bei OpenRouter nicht. „manual" ist der manuelle KI-Modus (ADR 0009): Der Prompt wird zum Kopieren gezeigt, die eingefügte Antwort mit derselben Prüfung übernommen, ohne Kosten. Nach dem nächsten Start gilt die neue Einstellung, ohne Code-Änderung.
             </Info>
           </span>
         </SectionTitle>
@@ -171,7 +214,7 @@ export default async function AICostPage() {
 
       <section className="mb-10">
         <SectionTitle>Pro KI-Funktion, dieser Monat</SectionTitle>
-        {byFn.length ? <SumTable rows={byFn.map((r) => ({ ...r, key: r.label, sub: r.models.join(", ") }))} first="Funktion" /> : <p className="text-[14px] text-ink-2">In diesem Monat noch keine KI-Aufrufe.</p>}
+        {byFn.length ? <SumTable rows={byFn.map((r) => ({ ...r, key: r.label, sub: r.models.join(", ") }))} first="Funktion" perCall /> : <p className="text-[14px] text-ink-2">In diesem Monat noch keine KI-Aufrufe.</p>}
       </section>
 
       {teachers.length > 0 && (
@@ -202,8 +245,9 @@ export default async function AICostPage() {
                 <tr className="border-b border-line text-[12px] text-ink-3">
                   <th className="px-5 py-3 font-semibold">Zeit</th>
                   <th className="px-3 py-3 font-semibold">Funktion</th>
-                  <th className="px-3 py-3 font-semibold">Modell</th>
-                  <th className="px-3 py-3 text-right font-semibold">Tokens ein / aus</th>
+                  <th className="px-3 py-3 font-semibold">Anbieter, Modell</th>
+                  <th className="px-3 py-3 text-right font-semibold">Tokens ein</th>
+                  <th className="px-3 py-3 text-right font-semibold">Tokens aus</th>
                   <th className="px-3 py-3 text-right font-semibold">Dauer</th>
                   <th className="px-3 py-3 text-right font-semibold">Kosten</th>
                   <th className="px-5 py-3 font-semibold">Status</th>
@@ -216,9 +260,17 @@ export default async function AICostPage() {
                       {new Date(c.created_at).toLocaleString("de-AT", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </td>
                     <td className="px-3 py-2.5">{FUNCTIONS[c.fn]?.label ?? c.fn}</td>
-                    <td className="whitespace-nowrap px-3 py-2.5 font-mono text-[12px]">{c.model}</td>
+                    <td className="whitespace-nowrap px-3 py-2.5">
+                      {c.provider && <span className="block text-[12px] text-ink-3">{PROVIDER_LABEL[c.provider] ?? c.provider}</span>}
+                      <span className="font-mono text-[12px]">{c.model}</span>
+                    </td>
                     <td className="num px-3 py-2.5 text-right">
-                      {n(c.input_tokens)} / {n(c.output_tokens)}
+                      {n(c.input_tokens + c.cache_write_tokens + c.cache_read_tokens)}
+                      {c.cache_write_tokens + c.cache_read_tokens > 0 && <span className="block text-[12px] text-ink-3">davon {n(c.cache_write_tokens + c.cache_read_tokens)} Cache</span>}
+                    </td>
+                    <td className="num px-3 py-2.5 text-right">
+                      {n(c.output_tokens)}
+                      {c.thinking_tokens ? <span className="block text-[12px] text-ink-3">davon {n(c.thinking_tokens)} Denken</span> : null}
                     </td>
                     <td className="num px-3 py-2.5 text-right">{c.duration_ms ? `${(c.duration_ms / 1000).toLocaleString("de-AT", { maximumFractionDigits: 1 })} s` : "–"}</td>
                     <td className="num px-3 py-2.5 text-right">{usd(c.cost_usd)}</td>
@@ -236,7 +288,8 @@ export default async function AICostPage() {
   );
 }
 
-function SumTable({ rows, first }: { rows: (Sum & { key: string; sub?: string })[]; first: string }) {
+/** perCall: a column with the average cost of one paid request (what one Briefing, one Textkorrektur … costs). */
+function SumTable({ rows, first, perCall }: { rows: (Sum & { key: string; sub?: string })[]; first: string; perCall?: boolean }) {
   return (
     <div className="panel overflow-x-auto">
       <table className="w-full min-w-[760px] text-left text-[14px]">
@@ -249,6 +302,7 @@ function SumTable({ rows, first }: { rows: (Sum & { key: string; sub?: string })
             <th className="px-3 py-3 text-right font-semibold">Tokens aus</th>
             <th className="px-3 py-3 text-right font-semibold">Ø Dauer</th>
             <th className="px-3 py-3 text-right font-semibold">Fehler</th>
+            {perCall && <th className="px-3 py-3 text-right font-semibold">Ø je Aufruf</th>}
             <th className="px-5 py-3 text-right font-semibold">Kosten</th>
           </tr>
         </thead>
@@ -265,6 +319,7 @@ function SumTable({ rows, first }: { rows: (Sum & { key: string; sub?: string })
               <td className="num px-3 py-2.5 text-right">{n(r.output)}</td>
               <td className="num px-3 py-2.5 text-right">{r.avgMs ? `${(r.avgMs / 1000).toLocaleString("de-AT", { maximumFractionDigits: 1 })} s` : "–"}</td>
               <td className={`num px-3 py-2.5 text-right ${r.errors ? "text-red" : ""}`}>{n(r.errors)}</td>
+              {perCall && <td className="num px-3 py-2.5 text-right">{r.paid ? usd(r.usd / r.paid) : "–"}</td>}
               <td className="num px-5 py-2.5 text-right font-semibold">{usd(r.usd)}</td>
             </tr>
           ))}

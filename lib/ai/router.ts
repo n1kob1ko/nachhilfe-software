@@ -8,7 +8,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash } from "node:crypto";
 import type { z } from "zod";
-import { FUNCTIONS, MANUAL_TIMEOUT_MS, PROVIDER_IDS, aiSwitchedOff, costOf, isLocalModel, routeFor, type AIFunction, type Usage } from "./config";
+import { FUNCTIONS, MANUAL_TIMEOUT_MS, PROVIDER_IDS, aiSwitchedOff, costOf, fitModel, isLocalModel, poolOf, routeFor, type AIFunction, type Usage } from "./config";
 import { schuelerDerAnfrage, systemMitHinweisen } from "./hinweise";
 import { budgetState, logCall, type CallStatus } from "./log";
 import { providerReady, providerTransport, unsupported, type Prompt, type Transport } from "./providers";
@@ -52,6 +52,15 @@ export function aiEnabled(fn?: AIFunction) {
     const r = routeFor(f);
     return Boolean(r.model) && providerReady(r.provider);
   });
+}
+
+/**
+ * Whether the month's budget stops `fn` now: the budget of the provider its area uses (Anthropic has
+ * its own). The manual mode and a local model cost nothing, an empty budget does not stop them.
+ */
+export function budgetUsedUp(fn: AIFunction): boolean {
+  const { provider } = routeFor(fn);
+  return provider !== "manual" && !isLocalModel(provider) && budgetState(now(), poolOf(provider)).level === "aus";
 }
 
 /** For the cost page: whether any provider has a key at all. The manual mode is no provider and needs none. */
@@ -144,7 +153,8 @@ export async function runAI<S extends z.ZodType>(
   const route = routeFor(fn);
   const ov = overrideStore.getStore();
   const provider = route.provider;
-  const model = ov?.model || route.model;
+  // the KI-Qualitätstest names models as OpenRouter does; on Anthropic the same model by its API id, else as given
+  const model = ov?.model ? (fitModel(provider, ov.model) ?? ov.model) : route.model;
   const thinking = ov?.thinking ?? spec.thinking;
   const effort = ov?.effort ?? spec.effort;
   const meta = o.meta ?? {};
@@ -159,6 +169,7 @@ export async function runAI<S extends z.ZodType>(
     logCall({
       fn,
       tier: spec.tier,
+      provider,
       model,
       teacherId: meta.teacherId ?? null,
       unitId: meta.unitId ?? null,
@@ -187,7 +198,7 @@ export async function runAI<S extends z.ZodType>(
   if (provider !== "manual") {
     if (breaker.until > now()) return { ok: false, status: "pausiert", cause: "pausiert", message: MESSAGES.pausiert, callId: log("pausiert") };
     // a local model (Ollama) is free too: an empty budget does not stop it, the outage break above does
-    if (!local && budgetState(now()).level === "aus") return { ok: false, status: "budget", cause: "budget", message: MESSAGES.budget, callId: log("budget") };
+    if (!local && budgetState(now(), poolOf(provider)).level === "aus") return { ok: false, status: "budget", cause: "budget", message: MESSAGES.budget, callId: log("budget") };
   }
   // a photo or PDF the configured provider cannot read: a setting to change, not an outage
   const cannot = custom ? null : unsupported(provider, prompt);
@@ -218,7 +229,7 @@ export async function runAI<S extends z.ZodType>(
       });
       // the provider's own price when it reports one, else tokens × price table; a local model: nothing
       const cost = res.costUsd ?? (local ? 0 : costOf(res.model || model, spec.tier, res.usage));
-      const usage = { input: res.usage.input, output: res.usage.output, cacheWrite: res.usage.cacheWrite + (res.usage.cacheWrite1h ?? 0), cacheRead: res.usage.cacheRead, costUsd: cost, model: res.model || model };
+      const usage = { input: res.usage.input, output: res.usage.output, cacheWrite: res.usage.cacheWrite + (res.usage.cacheWrite1h ?? 0), cacheRead: res.usage.cacheRead, thinking: res.usage.reasoning ?? null, costUsd: cost, model: res.model || model };
       const durationMs = res.simulatedMs ?? Date.now() - started;
       breaker.failures = 0;
       const error = res.problem ?? "";

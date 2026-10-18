@@ -55,7 +55,7 @@ const ENV = [
 
 /**
  * Ein Testfall mit frischem Zustand: keine Umgebungsvorgaben, leeres Register, offener Notschalter,
- * Modus „api“. Nach dem Lauf dasselbe noch einmal, damit nichts in den nächsten Fall leckt.
+ * Modus „anthropic“. Nach dem Lauf dasselbe noch einmal, damit nichts in den nächsten Fall leckt.
  */
 function fall(name: string, run: () => Promise<void>) {
   test(name, async () => {
@@ -64,7 +64,7 @@ function fall(name: string, run: () => Promise<void>) {
       resetManualForTests();
       setTransport(null);
       resetRouter();
-      setKiModus("api");
+      setKiModus("anthropic");
       resetKiModusCache();
     };
     frisch();
