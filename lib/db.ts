@@ -814,6 +814,11 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // soll, z. B. „Legasthenie: kurze Sätze“. Der Text steht im Systemprompt jeder schülerbezogenen
   // Anfrage (lib/ai/hinweise.ts) und wird dort ohne den Namen des Schülers gesendet.
   ["students", "ki_hinweise", "TEXT NOT NULL DEFAULT ''"],
+  // KI-Anbieter je Aufruf (2026-10-18): Anthropic hat ein eigenes Monatsbudget, alle anderen teilen
+  // das allgemeine. Alte Zeilen bekommen ihn beim Upgrade aus dem Modellnamen (migrate).
+  ["ai_calls", "provider", "TEXT NOT NULL DEFAULT ''"],
+  // davon Denken: der Teil der Ausgabe-Tokens, den das Modell zum Nachdenken brauchte (null = nicht gemeldet)
+  ["ai_calls", "thinking_tokens", "INTEGER"],
 ];
 
 /** Teachers to start with; more can be added later. */
@@ -893,6 +898,13 @@ function migrate(conn: Database.Database) {
     if (added.has("attempts.error_type_suggested_source")) {
       conn.exec("UPDATE attempts SET error_type_suggested_source = 'vorschlag' WHERE error_type_suggested IS NOT NULL");
       conn.exec("UPDATE attempts SET error_type_suggested = error_type, error_type_suggested_source = 'ki' WHERE error_type_source = 'ki' AND error_type IS NOT NULL AND error_type_suggested IS NULL");
+    }
+    // KI calls from before ai_calls.provider: the model name says who answered (an OpenRouter id has a
+    // vendor prefix, the Anthropic API's has none); until then only OpenRouter ran with a key in production
+    if (added.has("ai_calls.provider")) {
+      conn.exec(
+        "UPDATE ai_calls SET provider = CASE WHEN model = 'manuell' THEN 'manual' WHEN model LIKE 'claude-%' THEN 'anthropic' WHEN model LIKE '%/%' THEN 'openrouter' ELSE '' END",
+      );
     }
     conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_lessons_assignment ON lessons(assignment_id) WHERE assignment_id IS NOT NULL");
     // Old rows only had a Schulstufe: derive school type and class from it.

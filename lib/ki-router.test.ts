@@ -34,15 +34,16 @@ test("prices: cost per model from the price table, unknown models get the price 
   assert.equal(costOf("claude-opus-5-5", "deep", u), 24);
   assert.equal(costOf("claude-sonnet-5-5", "standard", { input: 0, output: 0, cacheWrite: 1_000_000, cacheWrite1h: 1_000_000, cacheRead: 1_000_000 }), 2.5 + 4 + 0.2);
   assert.equal(priceFor("claude-neu-9", "fast").known, false);
-  assert.equal(costOf("claude-neu-9", "fast", u), 6, "unknown model: price of the default fast model");
+  assert.equal(costOf("claude-neu-9", "fast", u), 12, "unknown model: price of the default fast model (Sonnet 5.5)");
   process.env.AI_PRICES_JSON = JSON.stringify({ "claude-neu-9": { in: 3, out: 7 } });
   assert.equal(costOf("claude-neu-9", "fast", u), 10);
+  assert.equal(costOf("claude-haiku-5-5", "fast", u), 0.6);
   delete process.env.AI_PRICES_JSON;
 });
 
 test("models come from environment variables, the defaults only when none is set", async () => {
   const { modelFor } = await import("./ai/config");
-  assert.equal(modelFor("fast"), "claude-haiku-4-5");
+  assert.equal(modelFor("fast"), "claude-sonnet-5-5");
   process.env.AI_MODEL_FAST = "claude-haiku-9";
   assert.equal(modelFor("fast"), "claude-haiku-9");
   delete process.env.AI_MODEL_FAST;
@@ -133,6 +134,8 @@ test("budget: 10 € by default, warning at 80 %, every paid request stops at 10
   assert.ok(Math.abs(budget().monthlyUsd - 12) < 1e-9);
   delete process.env.AI_USD_PER_EUR;
   process.env.AI_MONTHLY_BUDGET_EUR = "1";
+  // the general budget is the one of OpenRouter and the other providers; Anthropic has its own (ki-anthropic.test.ts)
+  process.env.AI_PROVIDER = "openrouter";
   const calls: Call[] = [];
   r.setTransport(fakeTransport(calls));
   const add = (usd: number, test = false) => log.logCall({ fn: "aufgaben", tier: "standard", model: "m", teacherId: null, unitId: null, trigger: "", input: 0, output: 0, cacheWrite: 0, cacheRead: 0, durationMs: 0, costUsd: usd, status: "ok", test });
@@ -155,6 +158,7 @@ test("budget: 10 € by default, warning at 80 %, every paid request stops at 10
   assert.equal(log.budgetState().level, "ok", "the older dollar setting still wins when set");
   delete process.env.AI_MONTHLY_BUDGET_USD;
   delete process.env.AI_MONTHLY_BUDGET_EUR;
+  delete process.env.AI_PROVIDER;
   db().exec("DELETE FROM ai_calls");
   r.setTransport(null);
   r.resetRouter();
@@ -369,7 +373,7 @@ test("60-minute test mode: runs through, counts calls and costs, survives an out
   assert.ok(run.answers > 10);
   assert.ok(run.total.calls > 0 && run.total.calls < run.naive.calls, "fewer calls than one per answer");
   assert.ok(run.total.usd > 0);
-  assert.ok(run.rows.some((x) => x.fn === "echtzeit" && x.model === "claude-haiku-4-5"));
+  assert.ok(run.rows.some((x) => x.fn === "echtzeit" && x.model === "claude-sonnet-5-5"));
   const outage = await simulateLesson({ minutes: 20, seed: 2, outage: true });
   assert.ok(outage.answers > 10, "the unit runs on without KI");
   assert.equal(outage.total.calls, 0);

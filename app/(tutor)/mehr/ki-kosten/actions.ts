@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { aiEnabled } from "@/lib/ai";
-import { kiModus, setKiModus } from "@/lib/ai/modus";
+import { KI_MODI, kiModus, setKiModus, type KiModus } from "@/lib/ai/modus";
 import { qualityState, startQualityTest, type RunState } from "@/lib/ai/qualitaetstest";
 import { runSelfTest, type TestStep } from "@/lib/ai/selbsttest";
 import { startTextTest, textTestState } from "@/lib/ai/textkorrektur-test";
@@ -71,21 +71,23 @@ export async function textTestStateAction(): Promise<TextTestResult> {
   return { state: textTestState() };
 }
 
-export type ModusAntwort = { manuell: boolean } | { error: string };
+export type ModusAntwort = { modus: KiModus } | { error: string };
 
 /**
- * Mehr › KI-Kosten: den manuellen KI-Modus ein- oder ausschalten (ADR 0009).
+ * Mehr › KI-Kosten: den KI-Anbieter wählen — Anthropic (Standard), OpenRouter oder der manuelle
+ * KI-Modus (ADR 0009).
  *
  * Der Wert steht in `app_settings` (`ki_modus`) und gilt für alle Bereiche, deren Anbieter nicht per
  * Umgebungsvariable gesetzt ist. Er ist eine Einstellung der ganzen Anwendung, deshalb nur für die
  * Administration.
  */
-export async function setManualModeAction(manuell: boolean): Promise<ModusAntwort> {
+export async function setKiModusAction(modus: KiModus): Promise<ModusAntwort> {
   const teacher = await requireTeacher();
-  if (!teacher.is_admin) return { error: "Nur die Administration kann den KI-Modus umstellen." };
+  if (!teacher.is_admin) return { error: "Nur die Administration kann den KI-Anbieter umstellen." };
+  if (!(KI_MODI as readonly string[]).includes(modus)) return { error: "Diesen Anbieter gibt es nicht." };
   // AI_DISABLED schaltet die KI weiterhin ganz ab; der manuelle Modus braucht keinen Schlüssel
-  setKiModus(manuell ? "manual" : "api");
+  setKiModus(modus);
   revalidatePath("/mehr/ki-kosten");
   revalidatePath("/", "layout");
-  return { manuell: kiModus() === "manual" };
+  return { modus: kiModus() };
 }

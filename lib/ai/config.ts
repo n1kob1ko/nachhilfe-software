@@ -28,11 +28,14 @@ export const MANUAL_TIMEOUT_MS = 30 * 60_000;
 export type Area = "REALTIME" | "EXERCISE" | "ANALYSIS" | "DEEP" | "MATERIAL" | "TEXT";
 export const AREA_LABEL: Record<Area, string> = { REALTIME: "Echtzeit", EXERCISE: "Aufgaben", ANALYSIS: "Auswertung", DEEP: "Tiefenanalyse", MATERIAL: "Material", TEXT: "Textkorrektur" };
 
-/** Defaults when no environment variable is set. Change the variable, not this list, to switch models. */
+/**
+ * Defaults on Anthropic when no environment variable is set: Sonnet 5.5 for every tier (niko,
+ * 2026-10-18; the monthly Anthropic credits pay for it). Change the variable, not this list, to switch models.
+ */
 const DEFAULT_MODELS: Record<Tier, string> = {
-  fast: "claude-haiku-4-5",
+  fast: "claude-sonnet-5-5",
   standard: "claude-sonnet-5-5",
-  deep: "claude-opus-5-5",
+  deep: "claude-sonnet-5-5",
 };
 const MODEL_ENV: Record<Tier, string> = { fast: "AI_MODEL_FAST", standard: "AI_MODEL_STANDARD", deep: "AI_MODEL_DEEP" };
 
@@ -49,6 +52,23 @@ const OPENROUTER_MODELS: Record<Tier, string> = {
 
 export function modelFor(tier: Tier): string {
   return process.env[MODEL_ENV[tier]]?.trim() || DEFAULT_MODELS[tier];
+}
+
+/**
+ * A model id as the provider names it, or null when it belongs to another provider. The same variable
+ * (AI_TEXT_MODEL=anthropic/claude-sonnet-5.5, set for OpenRouter) must not break the other provider:
+ * on Anthropic an OpenRouter id of a Claude model becomes the API id (claude-sonnet-5-5), an id of
+ * another vendor does not fit; on OpenRouter an id without a vendor prefix does not fit.
+ */
+export function fitModel(provider: ProviderId, id: string): string | null {
+  if (!id) return null;
+  if (provider === "anthropic") {
+    if (!id.includes("/")) return id;
+    const m = /^anthropic\/(claude-[a-z]+)-(\d+)(?:\.(\d+))?$/.exec(id);
+    return m ? `${m[1]}-${m[2]}${m[3] ? `-${m[3]}` : ""}` : null;
+  }
+  if (provider === "openrouter") return id.includes("/") ? id : null;
+  return id;
 }
 
 export const TIER_LABEL: Record<Tier, string> = { fast: "schnell", standard: "standard", deep: "tief" };
@@ -137,18 +157,23 @@ function providerFrom(v: string | undefined): ProviderId | null {
 }
 
 /**
- * Provider: AI_<AREA>_PROVIDER, else AI_PROVIDER, else the provider whose key is set (Anthropic first,
- * then OpenRouter), else anthropic.
- * Model: AI_<AREA>_MODEL, else AI_MODEL_<TIER>, else the default of the tier for anthropic and openrouter
- * (other providers need a model set explicitly, no id is guessed).
+ * Provider: AI_<AREA>_PROVIDER, else AI_PROVIDER, else the choice on Mehr › KI-Kosten (app_settings
+ * `ki_modus`: Anthropic, OpenRouter or manual; Anthropic when nothing is chosen). A provider without key
+ * means: KI off. Nothing switches to another provider by itself.
+ * Model: AI_<AREA>_MODEL, else AI_MODEL_<TIER>, each only where it fits the provider (fitModel), else the
+ * default of the tier for anthropic and openrouter (other providers need a model set explicitly, no id is guessed).
  */
+/** The provider for every area without its own AI_<AREA>_PROVIDER: AI_PROVIDER, else the choice on Mehr › KI-Kosten. */
+export function mainProvider(): ProviderId {
+  return providerFrom(process.env.AI_PROVIDER) ?? kiModus();
+}
+
 export function routeFor(fn: AIFunction): Route {
   const spec = FUNCTIONS[fn];
-  // env wins; the toggle on Mehr › KI-Kosten (app_settings `ki_modus`) comes next; then the key-based default
-  const provider = providerFrom(process.env[`AI_${spec.area}_PROVIDER`]) ?? providerFrom(process.env.AI_PROVIDER) ?? (kiModus() === "manual" ? "manual" : null) ?? (!hasKey("anthropic") && hasKey("openrouter") ? "openrouter" : "anthropic");
+  const provider = providerFrom(process.env[`AI_${spec.area}_PROVIDER`]) ?? providerFrom(process.env.AI_PROVIDER) ?? kiModus();
   const fallback = provider === "anthropic" ? DEFAULT_MODELS[spec.tier] : provider === "openrouter" ? OPENROUTER_MODELS[spec.tier] : provider === "manual" ? MANUAL_MODEL : "";
-  const model = process.env[`AI_${spec.area}_MODEL`]?.trim() || process.env[MODEL_ENV[spec.tier]]?.trim() || fallback;
-  return { provider, model, area: spec.area };
+  const fromEnv = [process.env[`AI_${spec.area}_MODEL`], process.env[MODEL_ENV[spec.tier]]].map((v) => fitModel(provider, v?.trim() ?? "")).find(Boolean);
+  return { provider, model: fromEnv || fallback, area: spec.area };
 }
 
 // ---------- prices ----------
@@ -165,15 +190,17 @@ const PRICES: [prefix: string, price: Price][] = [
   ["claude-haiku-4-5", { in: 1, out: 5, cacheWrite: 1.25, cacheRead: 0.1 }],
   ["claude-sonnet-5-5", { in: 2, out: 10, cacheWrite: 2.5, cacheRead: 0.2 }],
   ["claude-opus-5-5", { in: 4, out: 20, cacheWrite: 5, cacheRead: 0.2 }],
+  // prompts up to 100k tokens (all of this app's); above that Anthropic charges $0.50 / $2.50
+  ["claude-haiku-5-5", { in: 0.1, out: 0.5, cacheWrite: 0.125, cacheRead: 0.01 }],
   ["anthropic/claude-haiku-5.5", { in: 0.1, out: 0.5, cacheWrite: 0.125, cacheRead: 0.01 }],
   ["anthropic/claude-sonnet-5.5", { in: 2, out: 10, cacheWrite: 2.5, cacheRead: 0.2 }],
   // Lokale Modelle (Ollama, Phase 6 des Merges, Schritt 2): sie kosten nichts. Der Eintrag hält
-  // `ollama/*` aus dem Tarif-Rückfall (TIER_PRICE) heraus, der sonst den Claude-Preis ansetzen würde;
+  // `ollama/*` aus dem Tarif-Rückfall (tierPrice) heraus, der sonst den Claude-Preis ansetzen würde;
   // für einen Aufruf über OLLAMA_BASE_URL rechnet der Router ohnehin mit 0 (isLocalModel).
   ["ollama/", { in: 0, out: 0, cacheWrite: 0, cacheRead: 0 }],
 ];
 /** For a model without a known price: the price of the default model of its tier. */
-const TIER_PRICE: Record<Tier, Price> = { fast: PRICES[0][1], standard: PRICES[1][1], deep: PRICES[2][1] };
+const tierPrice = (tier: Tier): Price => PRICES.find(([prefix]) => DEFAULT_MODELS[tier].startsWith(prefix))![1];
 
 function priceOverrides(): [string, Price][] {
   const raw = process.env.AI_PRICES_JSON;
@@ -192,7 +219,7 @@ function priceOverrides(): [string, Price][] {
 
 export function priceFor(model: string, tier: Tier): { price: Price; known: boolean } {
   const hit = [...priceOverrides(), ...PRICES].find(([prefix]) => model.startsWith(prefix));
-  return hit ? { price: hit[1], known: true } : { price: TIER_PRICE[tier], known: false };
+  return hit ? { price: hit[1], known: true } : { price: tierPrice(tier), known: false };
 }
 
 /** cacheWrite: 5-minute cache, cacheWrite1h: 1-hour cache (twice the input price). */
@@ -215,20 +242,36 @@ function num(name: string, fallback: number) {
 const USD_PER_EUR = 1.12;
 
 /**
- * Monthly budget and the share at which the page warns. Set in euros (AI_MONTHLY_BUDGET_EUR, default 10 €);
- * the older AI_MONTHLY_BUDGET_USD still wins when set. Costs are logged in US dollars, as billed.
- * When the budget is used up, every paid request stops; the app carries on without KI.
+ * Which monthly budget a provider's requests count against. Anthropic has its own, because niko's
+ * monthly Anthropic credits pay for it (they do not carry over to the next month); every other paid
+ * provider (OpenRouter, DeepSeek, compatible) shares the general one.
  */
-export function budget() {
+export type BudgetPool = "anthropic" | "allgemein";
+export const BUDGET_POOLS: BudgetPool[] = ["anthropic", "allgemein"];
+export function poolOf(provider: ProviderId): BudgetPool {
+  return provider === "anthropic" ? "anthropic" : "allgemein";
+}
+
+/** Anthropic: 90 $ of the 100 $ monthly credits, so some is left over (niko, 2026-10-18). */
+const ANTHROPIC_BUDGET_USD = 90;
+
+/**
+ * Monthly budget of a pool and the share at which the page warns. The general budget is set in euros
+ * (AI_MONTHLY_BUDGET_EUR, default 10 €; the older AI_MONTHLY_BUDGET_USD still wins when set), the
+ * Anthropic budget in US dollars like the credits (ANTHROPIC_MONTHLY_BUDGET_USD, default 90 $). Costs are
+ * logged in US dollars, as billed. Each budget starts again on the 1st of the month. When it is used up,
+ * every paid request of its providers stops; the app carries on without KI.
+ */
+export function budget(pool: BudgetPool = "allgemein") {
   const usdPerEur = num("AI_USD_PER_EUR", USD_PER_EUR) || USD_PER_EUR;
+  const warnAt = Math.min(1, num("AI_BUDGET_WARN", 0.8));
+  if (pool === "anthropic") {
+    const monthlyUsd = num("ANTHROPIC_MONTHLY_BUDGET_USD", ANTHROPIC_BUDGET_USD);
+    return { pool, currency: "usd" as const, monthlyUsd, monthlyEur: monthlyUsd / usdPerEur, usdPerEur, warnAt };
+  }
   const usd = process.env.AI_MONTHLY_BUDGET_USD?.trim() ? num("AI_MONTHLY_BUDGET_USD", 10 * usdPerEur) : null;
   const monthlyUsd = usd ?? num("AI_MONTHLY_BUDGET_EUR", 10) * usdPerEur;
-  return {
-    monthlyUsd,
-    monthlyEur: monthlyUsd / usdPerEur,
-    usdPerEur,
-    warnAt: Math.min(1, num("AI_BUDGET_WARN", 0.8)),
-  };
+  return { pool, currency: usd == null ? ("eur" as const) : ("usd" as const), monthlyUsd, monthlyEur: monthlyUsd / usdPerEur, usdPerEur, warnAt };
 }
 
 /** Max. realtime analyses per unit and hour, a safety net against loops. */

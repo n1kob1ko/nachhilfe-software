@@ -37,7 +37,7 @@ function clean(...keys: string[]) {
 test("routing: provider and model per area from environment variables, Anthropic by default", async () => {
   const { routeFor } = await import("./ai/config");
   const { aiEnabled } = await import("./ai/router");
-  assert.deepEqual(routeFor("echtzeit"), { provider: "anthropic", model: "claude-haiku-4-5", area: "REALTIME" });
+  assert.deepEqual(routeFor("echtzeit"), { provider: "anthropic", model: "claude-sonnet-5-5", area: "REALTIME" });
   assert.deepEqual(routeFor("neue_aufgabe"), { provider: "anthropic", model: "claude-sonnet-5-5", area: "EXERCISE" });
 
   process.env.AI_REALTIME_PROVIDER = "openrouter";
@@ -59,11 +59,15 @@ test("routing: provider and model per area from environment variables, Anthropic
   clean("AI_REALTIME_PROVIDER", "AI_REALTIME_MODEL", "AI_PROVIDER", "DEEPSEEK_API_KEY", "AI_ANALYSIS_MODEL");
 });
 
-test("OpenRouter: with only its key every area runs there, with the default models and their prices", async () => {
+test("OpenRouter: chosen on Mehr › KI-Kosten, every area runs there, with the default models and their prices", async () => {
   const { routeFor, priceFor, FUNCTIONS } = await import("./ai/config");
   const { aiEnabled } = await import("./ai/router");
+  const { setKiModus, resetKiModusCache } = await import("./ai/modus");
   assert.equal(aiEnabled(), false, "no key: KI off");
   process.env.OPENROUTER_API_KEY = "or-test";
+  assert.equal(routeFor("aufgaben").provider, "anthropic", "a key alone does not switch the provider");
+  assert.equal(aiEnabled(), false, "Anthropic is the default and has no key: KI off, nothing switches by itself");
+  setKiModus("openrouter");
   for (const fn of Object.keys(FUNCTIONS) as (keyof typeof FUNCTIONS)[]) {
     const r = routeFor(fn);
     assert.equal(r.provider, "openrouter", fn);
@@ -74,10 +78,19 @@ test("OpenRouter: with only its key every area runs there, with the default mode
   process.env.AI_TEXT_MODEL = "anthropic/claude-sonnet-5.5";
   assert.equal(routeFor("textkorrektur").model, "anthropic/claude-sonnet-5.5", "a model per area still wins");
   process.env.ANTHROPIC_API_KEY = "a-test";
-  assert.equal(routeFor("aufgaben").provider, "anthropic", "with both keys Anthropic stays the default");
+  assert.equal(routeFor("aufgaben").provider, "openrouter", "with both keys the choice decides");
+  setKiModus("anthropic");
+  assert.equal(routeFor("aufgaben").provider, "anthropic");
+  assert.equal(routeFor("textkorrektur").model, "claude-sonnet-5-5", "the OpenRouter id of AI_TEXT_MODEL becomes the API id on Anthropic");
+  process.env.AI_TEXT_MODEL = "deepseek/deepseek-chat";
+  assert.equal(routeFor("textkorrektur").model, "claude-sonnet-5-5", "a model of another vendor does not fit Anthropic: its default");
   process.env.AI_PROVIDER = "openrouter";
   assert.equal(routeFor("aufgaben").provider, "openrouter", "AI_PROVIDER decides");
-  clean("OPENROUTER_API_KEY", "AI_TEXT_MODEL", "ANTHROPIC_API_KEY", "AI_PROVIDER");
+  process.env.AI_MODEL_STANDARD = "claude-sonnet-5-5";
+  assert.equal(routeFor("aufgaben").model, "anthropic/claude-haiku-5.5", "an id without vendor does not fit OpenRouter: its default");
+  clean("OPENROUTER_API_KEY", "AI_TEXT_MODEL", "ANTHROPIC_API_KEY", "AI_PROVIDER", "AI_MODEL_STANDARD");
+  setKiModus("anthropic");
+  resetKiModusCache();
 });
 
 test("OpenRouter: the large task schema goes into the instructions for Claude models, missing null fields are filled in", async () => {
@@ -87,7 +100,7 @@ test("OpenRouter: the large task schema goes into the instructions for Claude mo
   const r = await import("./ai/router");
   const { generateWithAI } = await import("./ai/features");
   r.resetRouter();
-  Object.assign(process.env, { OPENROUTER_BASE_URL: api.url, OPENROUTER_API_KEY: "or-key" });
+  Object.assign(process.env, { OPENROUTER_BASE_URL: api.url, OPENROUTER_API_KEY: "or-key", AI_PROVIDER: "openrouter" });
   const out = await generateWithAI({ subject: "Mathematik", level: "2. Klasse Volksschule", skills: [{ id: "mathe.x", name: "Plus", area: "Rechnen", difficulty: "leicht" }], count: 1, categories: [] });
   assert.equal(out?.length, 1, "the answer without the empty fields is used");
   assert.equal(out![0].answer.accepted?.[0], "5");
@@ -101,7 +114,7 @@ test("OpenRouter: the large task schema goes into the instructions for Claude mo
   await gradeFreeText({ prompt: "a", sample: "b" }, "c");
   assert.equal((api.seen[1].body.response_format as { type: string }).type, "json_schema");
   await api.close();
-  clean("OPENROUTER_BASE_URL", "OPENROUTER_API_KEY");
+  clean("OPENROUTER_BASE_URL", "OPENROUTER_API_KEY", "AI_PROVIDER");
 });
 
 test("OpenRouter: a model that refuses the schema is asked once more with the schema in the instructions", async () => {
@@ -110,13 +123,13 @@ test("OpenRouter: a model that refuses the schema is asked once more with the sc
   const r = await import("./ai/router");
   const { gradeFreeText } = await import("./ai/features");
   r.resetRouter();
-  Object.assign(process.env, { OPENROUTER_BASE_URL: api.url, OPENROUTER_API_KEY: "or-key" });
+  Object.assign(process.env, { OPENROUTER_BASE_URL: api.url, OPENROUTER_API_KEY: "or-key", AI_PROVIDER: "openrouter" });
   const out = await gradeFreeText({ prompt: "a", sample: "b" }, "c");
   assert.ok(out.ok);
   assert.equal(api.seen.length, 2, "one more request, not more");
   assert.equal(api.seen[1].body.response_format, undefined);
   await api.close();
-  clean("OPENROUTER_BASE_URL", "OPENROUTER_API_KEY");
+  clean("OPENROUTER_BASE_URL", "OPENROUTER_API_KEY", "AI_PROVIDER");
 });
 
 test("answers outside the shape: small slips repaired, a task that still does not fit is dropped, the reason is logged without content", async () => {
@@ -139,7 +152,7 @@ test("answers outside the shape: small slips repaired, a task that still does no
   const { generateWithAI } = await import("./ai/features");
   const { recentCalls } = await import("./ai/log");
   r2.resetRouter();
-  Object.assign(process.env, { OPENROUTER_BASE_URL: api.url, OPENROUTER_API_KEY: "or-key" });
+  Object.assign(process.env, { OPENROUTER_BASE_URL: api.url, OPENROUTER_API_KEY: "or-key", AI_PROVIDER: "openrouter" });
   const out = await generateWithAI({ subject: "Mathematik", level: "2. Klasse Volksschule", skills: [{ id: "mathe.x", name: "Plus", area: "Rechnen", difficulty: "leicht" }], count: 2, categories: [] });
   assert.equal(out?.length, 1, "one usable task instead of none");
   const row = recentCalls(1)[0];
@@ -154,7 +167,7 @@ test("answers outside the shape: small slips repaired, a task that still does no
   assert.equal(await generateWithAI({ subject: "Mathematik", level: "x", skills: [], count: 1, categories: [] }), null);
   assert.equal(recentCalls(1)[0].error, "Antwort abgeschnitten: Token-Grenze erreicht");
   await cut.close();
-  clean("OPENROUTER_BASE_URL", "OPENROUTER_API_KEY");
+  clean("OPENROUTER_BASE_URL", "OPENROUTER_API_KEY", "AI_PROVIDER");
 });
 
 test("compatible API: the app's free-text check runs unchanged through another provider", async () => {

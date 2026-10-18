@@ -15,7 +15,7 @@ import * as repo from "../repo";
 import { klassenLabel } from "../school";
 import type { WortartSetting } from "../wortarten";
 import { getUnit } from "../units";
-import { realtimeCapPerHour } from "./config";
+import { poolOf, realtimeCapPerHour, routeFor } from "./config";
 import { generateWithAI } from "./features";
 import { ACTIONS, hasBlockInsight, latestInsight, saveInsight, type Action, type BlockInsight, type LiveInsight, type UnitInsight } from "./insights";
 import { budgetState } from "./log";
@@ -511,7 +511,7 @@ export type AILive = {
 export function aiLiveState(unitId: number): AILive {
   const on = aiEnabled();
   const s = units.get(unitId);
-  const b = budgetState(clockNow());
+  const b = budgetState(clockNow(), poolOf(routeFor("echtzeit").provider));
   const state: AILive["state"] = b.level === "aus" ? "budget" : breakerState().paused ? "pausiert" : s?.running || s?.events.length ? "denkt" : "bereit";
   const live = latestInsight(unitId, "echtzeit");
   const block = latestInsight(unitId, "block");

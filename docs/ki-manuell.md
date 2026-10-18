@@ -16,7 +16,7 @@ eine Antwort über die API — für den Rest der App ist sie von einer echten ni
 | Auswahl und Frist | `lib/ai/config.ts` (`MANUAL_MODEL`, `MANUAL_TIMEOUT_MS`, `routeFor`) |
 | Ausschluss von Budget und Notschalter | `lib/ai/router.ts` (`runAI`) |
 | Einstellung `ki_modus` | `lib/ai/modus.ts`, `app_settings` |
-| Bedienung | `components/ai/ManualAustausch.tsx`, `components/ai/KiModusSchalter.tsx` |
+| Bedienung | `components/ai/ManualAustausch.tsx`, `components/ai/KiAnbieterWahl.tsx` |
 | Kleine Schnittstelle zum Nachfragen | `app/api/ki-manuell/route.ts` (GET, POST, DELETE) |
 | Prüfung | `lib/ai-manuell.test.ts` |
 
@@ -28,12 +28,13 @@ Drei Wege, in dieser Reihenfolge gilt der erste, der etwas sagt:
 | --- | --- |
 | `AI_PROVIDER=manual` (Railway, Variables) | alle Bereiche ohne eigenen Eintrag |
 | `AI_<BEREICH>_PROVIDER=manual`, z. B. `AI_EXERCISE_PROVIDER=manual` | nur dieser Bereich (REALTIME, EXERCISE, ANALYSIS, DEEP, MATERIAL, TEXT) |
-| Schalter „Manueller KI-Modus“ auf **Mehr › KI-Kosten** | alle Bereiche ohne Vorgabe in den Umgebungsvariablen |
+| Anbieterwahl „Manuell“ auf **Mehr › KI-Kosten** | alle Bereiche ohne Vorgabe in den Umgebungsvariablen |
 
-Der Schalter schreibt `ki_modus` in `app_settings` (Wert `manual` oder `api`) und ist nur für die
-Administration sichtbar und bedienbar. Umgebungsvariablen haben immer Vorrang: Steht
-`AI_EXERCISE_PROVIDER=anthropic`, bleibt der Bereich „Aufgaben“ bei Anthropic, auch wenn der Schalter an
-ist. `AI_DISABLED` schaltet die KI weiterhin ganz ab, auch den manuellen Modus.
+Die Anbieterwahl (seit 18. Oktober 2026: Anthropic, OpenRouter oder Manuell, `docs/ki-modelle.md`)
+schreibt `ki_modus` in `app_settings` (Wert `anthropic`, `openrouter` oder `manual`; ein altes `api`
+gilt als `anthropic`) und ist nur für die Administration sichtbar und bedienbar. Umgebungsvariablen
+haben immer Vorrang: Steht `AI_EXERCISE_PROVIDER=anthropic`, bleibt der Bereich „Aufgaben“ bei
+Anthropic, auch wenn „Manuell“ gewählt ist. `AI_DISABLED` schaltet die KI weiterhin ganz ab, auch den manuellen Modus.
 
 Ein Schlüssel ist nicht nötig: `providerReady("manual")` ist ohne jeden Schlüssel `true`, als Modell
 steht `manuell` im Protokoll. Die Seite Mehr › KI-Kosten zeigt dann „an (manueller Modus: Prompt

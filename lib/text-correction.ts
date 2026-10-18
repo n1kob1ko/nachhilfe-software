@@ -13,10 +13,9 @@ import { after } from "next/server";
 import { correctTextWithAI, estimateTokens, type AICorrection, type CorrectionRequest } from "./ai/textkorrektur";
 import { correctThoroughly, englishText, estimateTokensThorough, thoroughVersion, type Analysis, type HiddenWord, type ThoroughVersion } from "./ai/textkorrektur-gruendlich";
 import { costOf, FUNCTIONS, routeFor, type AIFunction } from "./ai/config";
-import { budgetState } from "./ai/log";
 import { acceptProblem, flagItems, notApplicable, setAside } from "./text-correction-checks";
 import { PROVIDER_LABEL } from "./ai/providers";
-import { aiEnabled, breakerState, clockNow } from "./ai/router";
+import { aiEnabled, breakerState, budgetUsedUp } from "./ai/router";
 import { db } from "./db";
 import { skillsForStudent } from "./lehrplan";
 import { getSkill, getStudent } from "./repo";
@@ -131,7 +130,7 @@ export function retryKind(c: CorrectionRow, now = Date.now()): RetryKind | null 
  */
 function sendBlocked(fn: AIFunction): string | null {
   if (!aiEnabled(fn)) return "Die KI ist nicht eingerichtet. Du kannst den Text selbst korrigieren.";
-  if (budgetState(clockNow()).level === "aus") return "Das KI-Budget für diesen Monat ist aufgebraucht. Es wurde nichts an die KI gesendet.";
+  if (budgetUsedUp(fn)) return "Das KI-Budget für diesen Monat ist aufgebraucht. Es wurde nichts an die KI gesendet.";
   if (breakerState().paused) return "Die KI war zuletzt mehrmals nicht erreichbar und macht ein paar Minuten Pause. Es wurde nichts gesendet; bitte später nochmal versuchen.";
   return null;
 }

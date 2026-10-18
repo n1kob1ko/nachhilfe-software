@@ -1,10 +1,23 @@
-# KI über OpenRouter: Modelle, Kosten, Test
+# KI-Anbieter: Anthropic, OpenRouter, Modelle, Kosten, Test
+
+## Anbieterwahl (seit 18. Oktober 2026)
+
+Auf Mehr › KI-Kosten wählt die Administration, wer die KI-Anfragen beantwortet: **Anthropic** (Claude direkt, Standard), **OpenRouter** oder **Manuell** (`docs/ki-manuell.md`). Die Wahl steht in `app_settings` (`ki_modus`, `lib/ai/modus.ts`) und gilt für alle Bereiche. `AI_PROVIDER` und `AI_<BEREICH>_PROVIDER` haben weiter Vorrang.
+
+- Fehlt dem gewählten Anbieter der Schlüssel, ist die KI aus. Es wird nie von selbst auf einen anderen Anbieter umgeschaltet.
+- Anthropic: Schlüssel `ANTHROPIC_API_KEY` in Railway. Alle Bereiche laufen auf `claude-sonnet-5-5` (2 $ / 10 $ je 1 Mio. Tokens). Der Schlüssel bleibt im Adapter `lib/ai/providers/anthropic.ts` (SDK), nie im Browser, nie im Protokoll.
+- Ein Modell aus `AI_<BEREICH>_MODEL` oder `AI_MODEL_FAST/STANDARD/DEEP` gilt nur beim Anbieter, zu dem es passt (`fitModel` in `lib/ai/config.ts`): `AI_TEXT_MODEL=anthropic/claude-sonnet-5.5` gilt bei OpenRouter so und wird bei Anthropic zu `claude-sonnet-5-5`.
+- Budget: Anthropic hat ein eigenes Monatsbudget von 90 $ (`ANTHROPIC_MONTHLY_BUDGET_USD`), weil die monatlichen 100 $ Anthropic-Credits nicht in den nächsten Monat übergehen; 10 $ bleiben Puffer. OpenRouter und alle anderen Anbieter teilen das allgemeine Budget von 10 € (`AI_MONTHLY_BUDGET_EUR`). Beide beginnen am 1. des Monats neu, warnen ab 80 % und stoppen bei 100 % nur ihre eigenen Anbieter.
+- Protokoll: Jede Zeile in `ai_calls` hat den Anbieter, die Tokens, wie der Anbieter sie meldet (Eingabe, Cache schreiben, Cache lesen, Ausgabe und davon Denken), und die Kosten. Bei Anthropic sind das die gemeldeten Tokens mal Preisliste (so rechnet Anthropic ab), bei OpenRouter der gemeldete Preis. Auch eine Antwort, die nicht passt oder abgeschnitten ist, wird mit ihren Tokens gezählt. Mehr › KI-Kosten zeigt je KI-Funktion die Kosten „Ø je Aufruf“.
+- Der Anthropic-Adapter behandelt Antworten wie der OpenRouter-Adapter: Ein Antwortformat mit mehr als 16 Feldern, die leer sein dürfen, steht in der Anleitung statt als Structured Output; kleine Abweichungen repariert `parseLenient`; lehnt die API das Format ab (400), fragt er einmal mit dem Format in der Anleitung nach.
+
+## OpenRouter
 
 Stand: 9. Oktober 2026. Preise von openrouter.ai, in US-Dollar je 1 Million Tokens (Eingabe / Ausgabe).
 
-## Einrichtung
+### Einrichtung
 
-In Railway unter Variables reicht `OPENROUTER_API_KEY`. Ist nur dieser Schlüssel gesetzt (kein `ANTHROPIC_API_KEY`), laufen alle KI-Bereiche über OpenRouter mit den Standardmodellen unten. Der Schlüssel bleibt auf dem Server: Er wird nur im Adapter `lib/ai/providers/openai-compatible.ts` als `Authorization`-Kopfzeile gesendet, nie an den Browser, nie ins Protokoll (`ai_calls` speichert nur Zahlen, Fehlertexte enthalten nur die Antwort des Anbieters).
+In Railway unter Variables `OPENROUTER_API_KEY` setzen und auf Mehr › KI-Kosten „OpenRouter“ wählen. Dann laufen alle KI-Bereiche über OpenRouter mit den Standardmodellen unten. Der Schlüssel bleibt auf dem Server: Er wird nur im Adapter `lib/ai/providers/openai-compatible.ts` als `Authorization`-Kopfzeile gesendet, nie an den Browser, nie ins Protokoll (`ai_calls` speichert nur Zahlen, Fehlertexte enthalten nur die Antwort des Anbieters).
 
 Wer ein anderes Modell will, setzt `AI_<BEREICH>_MODEL` (z. B. `AI_TEXT_MODEL=anthropic/claude-sonnet-5.5`). Keine Code-Änderung nötig.
 
@@ -72,7 +85,7 @@ Gemessen im Live-Test am 9. Oktober 2026 (KI testen):
 
 ## Budget
 
-`AI_MONTHLY_BUDGET_EUR`, Standard 10 €. Umgerechnet mit `AI_USD_PER_EUR` (Standard 1,12, Kurs vom 8. Oktober 2026), weil die Anbieter in US-Dollar abrechnen. Ab 80 % (`AI_BUDGET_WARN`) zeigt Mehr › KI-Kosten eine Warnung, ab 100 % läuft kein kostenpflichtiger Aufruf mehr; die App arbeitet mit Generatoren und Messwerten weiter. Eine einzelne Anfrage, die kurz vor der Grenze startet, kann sie um wenige Cent überschreiten.
+Anthropic: eigenes Budget `ANTHROPIC_MONTHLY_BUDGET_USD`, Standard 90 $ (siehe Anbieterwahl oben). OpenRouter und die anderen Anbieter: `AI_MONTHLY_BUDGET_EUR`, Standard 10 €. Umgerechnet mit `AI_USD_PER_EUR` (Standard 1,12, Kurs vom 8. Oktober 2026), weil die Anbieter in US-Dollar abrechnen. Ab 80 % (`AI_BUDGET_WARN`) zeigt Mehr › KI-Kosten eine Warnung, ab 100 % läuft kein kostenpflichtiger Aufruf mehr; die App arbeitet mit Generatoren und Messwerten weiter. Eine einzelne Anfrage, die kurz vor der Grenze startet, kann sie um wenige Cent überschreiten.
 
 Gegen doppelte Aufrufe: gleiche Anfragen kommen aus dem Speicher, laufende werden nicht doppelt gestellt, nach drei Fehlern pausiert die KI fünf Minuten, Aufgaben nur auf Klick.
 

@@ -3,9 +3,9 @@
  * compatible endpoint (AI_COMPATIBLE_BASE_URL). Plain fetch, no extra SDK. Another provider of this
  * kind is one more entry in FLAVORS.
  */
-import { z } from "zod";
 import type { ProviderId, Usage } from "../config";
 import { parseLenient } from "./repair";
+import { ANTHROPIC_MAX_UNIONS, jsonIn, jsonSchemaOf, unionCount, withSchemaInstruction } from "./schema";
 import { ProviderHttpError, type AIRequest, type AnswerFailure, type Capabilities, type Part, type Transport } from "./types";
 
 type Flavor = Capabilities & {
@@ -52,33 +52,11 @@ export const FLAVORS: Record<Exclude<ProviderId, "anthropic" | "manual">, Flavor
   },
 };
 
-const schemaJson = new WeakMap<z.ZodType, Record<string, unknown>>();
-function jsonSchemaOf(schema: z.ZodType) {
-  let s = schemaJson.get(schema);
-  if (!s) {
-    const { $schema: _drop, ...rest } = z.toJSONSchema(schema, { io: "input", unrepresentable: "any" }) as Record<string, unknown>;
-    schemaJson.set(schema, (s = rest));
-  }
-  return s;
-}
-
 function part(p: Part, provider: string, model: string) {
   if (p.type === "text") return { type: "text", text: p.text };
   if (p.type === "image") return { type: "image_url", image_url: { url: `data:${p.mime};base64,${p.base64}` } };
   if (provider === "openrouter") return { type: "file", file: { filename: "material.pdf", file_data: `data:application/pdf;base64,${p.base64}` } };
   throw new Error(`PDF wird von ${model} nicht unterstützt.`);
-}
-
-/** The JSON object in a reply, also when the model wraps it in a code fence or adds a sentence. */
-export function jsonIn(text: string): unknown {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start < 0 || end <= start) return null;
-  try {
-    return JSON.parse(text.slice(start, end + 1));
-  } catch {
-    return null;
-  }
 }
 
 type SentError = { code?: number | string; message?: string };
@@ -112,17 +90,6 @@ export function usageOf(u: ChatResponse["usage"]): Usage {
   return { input: Math.max(0, prompt - cacheRead - cacheWrite), output: u?.completion_tokens ?? 0, cacheWrite, cacheRead, ...(typeof reasoning === "number" ? { reasoning } : {}) };
 }
 
-/** Properties that may hold more than one type (a nullable field is one), counted through the whole schema. */
-export function unionCount(s: unknown): number {
-  if (!s || typeof s !== "object") return 0;
-  if (Array.isArray(s)) return s.reduce((n: number, x) => n + unionCount(x), 0);
-  const o = s as Record<string, unknown>;
-  const own = Array.isArray(o.anyOf) || Array.isArray(o.oneOf) || (Array.isArray(o.type) && o.type.length > 1) ? 1 : 0;
-  return own + Object.values(o).reduce((n: number, v) => n + unionCount(v), 0);
-}
-/** Anthropic refuses an output schema with more nullable fields than this ("too many parameters with union types"). */
-const ANTHROPIC_MAX_UNIONS = 16;
-
 /**
  * The request body for a provider (exported for tests: what leaves the app is visible there).
  * The answer's shape goes as json_schema where the model takes it, else into the instructions; the
@@ -133,7 +100,7 @@ export function chatBody(req: AIRequest, o: { schemaInPrompt?: boolean } = {}) {
   const schema = jsonSchemaOf(req.schema);
   const tooBig = req.provider === "openrouter" && req.model.startsWith("anthropic/") && unionCount(schema) > ANTHROPIC_MAX_UNIONS;
   const structured = flavor.jsonSchema() && !tooBig && !o.schemaInPrompt && !req.schemaInPrompt;
-  const system = structured ? req.system : `${req.system}\n\nAntworte ausschließlich mit einem JSON-Objekt nach diesem JSON-Schema:\n${JSON.stringify(schema)}`;
+  const system = structured ? req.system : withSchemaInstruction(req.system, req.schema);
   // OpenRouter passes cache_control on to Anthropic models; DeepSeek and most others cache by themselves
   const cacheHere = req.cache !== "aus" && req.provider === "openrouter" && req.model.startsWith("anthropic/");
   return {
