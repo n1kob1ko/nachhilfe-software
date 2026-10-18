@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Circle, ExternalLink, History, Pencil, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, Circle, ExternalLink, History, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/Art";
 import {
   addHomeworkAction,
@@ -91,6 +91,9 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
         </Link>
         <Link href={`/schueler/${student.id}?tab=lernverlauf`} className="btn btn-secondary btn-lg">
           <History size={18} aria-hidden /> Lernverlauf ansehen
+        </Link>
+        <Link href={`/schueler/${student.id}/briefing`} className="btn btn-secondary btn-lg">
+          <Sparkles size={18} aria-hidden /> Briefing für heute
         </Link>
       </div>
       <nav className="no-print mb-8 flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-panel p-1" aria-label="Bereiche">

@@ -209,6 +209,13 @@ Sie hängen am Systemprompt jeder schülerbezogenen Anfrage und gehen nie mit de
 Namen des Schülers hinaus.
 _Avoid_: Prompt, KI-Profil, Notizen, Anweisungen
 
+**Tagesbriefing**:
+Die Vorbereitung auf die heutige **Einheit** eines Schülers: letzter Stand, wo es
+hakt, ein Plan mit Minuten für die **geplante Dauer** und passende Übungen aus dem
+Bestand. Die Fassung aus den Daten ist immer da; die KI-Fassung nur auf Klick, eine
+pro Schüler und Tag gespeichert. Sie ändert nie den Lernstand.
+_Avoid_: Stundenvorbereitung, Unterrichtsplan, Tagesplan (das ist die Liste „Heute“ auf der Startseite)
+
 **manueller KI-Modus**:
 Ein Betrieb ohne Anfrage nach außen: die App zeigt den vollständigen Prompt zum
 Kopieren, der Lehrer fügt die Antwort ein, und die App prüft sie mit derselben

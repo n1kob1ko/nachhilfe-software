@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, ChevronLeft, ChevronRight, Play } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Play, Sparkles } from "lucide-react";
 import { Avatar } from "@/components/Art";
 
 export const pad = (n: number) => String(n).padStart(2, "0");
@@ -161,6 +161,8 @@ export type TagesplanPunkt = {
   ohnePlatz: boolean;
   /** die Dokumentation ist fertig: nur noch ansehen */
   erledigt: boolean;
+  /** das Tagesbriefing dieses Schülers (lib/briefing.ts); null, wo es nicht mehr hilft */
+  briefingHref?: string | null;
 };
 
 /**
@@ -178,31 +180,39 @@ export function Tagesplan({ punkte, starten }: { punkte: TagesplanPunkt[]; start
         <li key={p.key} className={`flex min-h-[60px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 ${p.nichtStattgefunden ? "text-ink-3" : ""}`}>
           <span className="num w-[92px] shrink-0 text-[15px] font-semibold">{p.zeit}</span>
           <Avatar name={p.studentName} size={34} />
-          <Link href={`/schueler/${p.studentId}`} className="min-w-0 flex-1">
+          {/* the name keeps room; the actions move to their own line when the row gets narrow */}
+          <Link href={`/schueler/${p.studentId}`} className="min-w-[8.5rem] flex-1">
             <span className="block truncate font-semibold">{p.studentName}</span>
             <span className="block truncate text-[13px] text-ink-2">
               {p.ort}
               {p.hinweis && ` · ${p.hinweis}`}
             </span>
           </Link>
-          {p.nichtStattgefunden && <span className="text-[13px] text-ink-3">nicht stattgefunden</span>}
-          {p.ohnePlatz && !p.nichtStattgefunden && <span className="text-[13px] text-ink-3">ohne Wochenplan-Platz</span>}
-          {p.erledigt && (
-            <span className="inline-flex items-center gap-1 text-[13px] font-medium text-green">
-              <CheckCircle2 size={15} aria-hidden /> erledigt
-            </span>
-          )}
-          {p.einheitId !== null ? (
-            <Link href={`/einheiten/${p.einheitId}`} className="btn btn-secondary btn-sm">
-              {p.einheitStatus === "gestartet" ? "Zur laufenden Einheit" : "Zur Einheit"}
-            </Link>
-          ) : p.erledigt ? null : (
-            <form action={starten.bind(null, p.studentId)}>
-              <button className="btn btn-primary btn-sm">
-                <Play size={14} aria-hidden /> Einheit starten
-              </button>
-            </form>
-          )}
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
+            {p.nichtStattgefunden && <span className="text-[13px] text-ink-3">nicht stattgefunden</span>}
+            {p.ohnePlatz && !p.nichtStattgefunden && <span className="text-[13px] text-ink-3">ohne Wochenplan-Platz</span>}
+            {p.erledigt && (
+              <span className="inline-flex items-center gap-1 text-[13px] font-medium text-green">
+                <CheckCircle2 size={15} aria-hidden /> erledigt
+              </span>
+            )}
+            {p.briefingHref && (
+              <Link href={p.briefingHref} className="btn btn-secondary btn-sm">
+                <Sparkles size={14} aria-hidden /> Briefing
+              </Link>
+            )}
+            {p.einheitId !== null ? (
+              <Link href={`/einheiten/${p.einheitId}`} className="btn btn-secondary btn-sm">
+                {p.einheitStatus === "gestartet" ? "Zur laufenden Einheit" : "Zur Einheit"}
+              </Link>
+            ) : p.erledigt ? null : (
+              <form action={starten.bind(null, p.studentId)}>
+                <button className="btn btn-primary btn-sm">
+                  <Play size={14} aria-hidden /> Einheit starten
+                </button>
+              </form>
+            )}
+          </div>
         </li>
       ))}
     </ul>
