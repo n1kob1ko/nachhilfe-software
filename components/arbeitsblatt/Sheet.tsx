@@ -16,7 +16,7 @@ import { markFaultyText } from "@/lib/fix-text";
 const letter = (i: number) => String.fromCharCode(97 + i);
 
 /** Rechenweg: the equation or term to work on, set apart from the prompt. */
-function Start({ task }: { task: SheetTask["task"] }) {
+export function Start({ task }: { task: SheetTask["task"] }) {
   return task.type === "rechenweg" && task.data.start ? (
     <p className="ab-start">
       <MathLine text={task.data.start} />
@@ -118,7 +118,7 @@ function Header({
   );
 }
 
-function Passage({ text }: { text: string }) {
+export function Passage({ text }: { text: string }) {
   return (
     <div className="ab-passage">
       <RichText text={text} />
@@ -127,7 +127,7 @@ function Passage({ text }: { text: string }) {
 }
 
 /** Leseverständnis: the text once, with its title and numbered paragraphs; it may run over several pages. */
-function ReadingPassage({ title, text, teacher }: { title: string; text: string; teacher: boolean }) {
+export function ReadingPassage({ title, text, teacher }: { title: string; text: string; teacher: boolean }) {
   return (
     <section className="ab-lesetext" aria-label="Lesetext">
       {!teacher && <p className="ab-lese-hint">Lies den Text genau. Beantworte dann die Fragen. Die Zahlen am Rand nennen die Abschnitte.</p>}
@@ -170,7 +170,7 @@ function PromptAroundArea({
 }
 
 /** One task as the student gets it: prompt, choices, room to work and write. */
-function StudentTask({ t, o }: { t: SheetTask; o: SheetOptions }) {
+export function StudentTask({ t, o }: { t: SheetTask; o: SheetOptions }) {
   const { task, plan } = t;
   return (
     <div className={o.numbers ? "ab-task" : "ab-task ab-task-plain"}>

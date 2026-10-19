@@ -47,6 +47,14 @@ und Mitarbeit. Erst ab 4 Aufgaben am Gerät gibt es Werte. Damit ist die Einheit
 dokumentiert, ohne dass der Lehrer etwas einträgt; was er ändert, bleibt.
 _Avoid_: Bewertung, Note, Beurteilung
 
+**Mappe**:
+Alles, was der Schüler in einer **Einheit** gemacht hat, als A4-PDF für seine
+Schulmappe (`/arbeitsblatt/einheit/[id]`, `lib/mappe.ts`): jede **Übung** mit
+seinen Antworten, Häkchen und Kreuz am Rand und bei Fehlern der richtigen Lösung,
+dazu die Textarbeiten und die Seiten des Whiteboards. Nichts wird gespeichert, das
+PDF macht der Druckdialog des Browsers.
+_Avoid_: Mappe als Ordner von Materialien, Portfolio
+
 **geplante Einheit**:
 Ein Platz im Wochenplan: wer (Lehrer, Schüler), wo (Raum), an welchem Wochentag,
 zu welcher Startzeit und mit welcher **geplanten Dauer**. Sie wird erst wirklich,

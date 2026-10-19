@@ -137,6 +137,11 @@ function UnitEntry({ unit, lesson }: { unit: UnitView; lesson: repo.Lesson | nul
             <CheckCircle2 size={12} aria-hidden /> dokumentiert
           </Pill>
         ) : null}
+        {unit.status === "beendet" && (r?.tasks.length || r?.texts?.length) ? (
+          <Link href={`/arbeitsblatt/einheit/${unit.id}`} className="btn btn-ghost btn-sm" aria-label="Mappe drucken">
+            <Printer size={14} aria-hidden /> Mappe
+          </Link>
+        ) : null}
         {unit.status !== "abgebrochen" && (
           <Link href={`/einheiten/${unit.id}`} className="btn btn-ghost btn-sm">
             Öffnen

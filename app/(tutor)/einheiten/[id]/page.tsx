@@ -2,7 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
-import { BookOpenCheck, CheckCircle2, ChartNoAxesColumn, ExternalLink, Images, PenLine, Plus, Presentation, Square } from "lucide-react";
+import { BookOpenCheck, CheckCircle2, ChartNoAxesColumn, ExternalLink, Images, PenLine, Plus, Presentation, Printer, Square } from "lucide-react";
 import { endUnitAction } from "@/app/session-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { BoardThumbs } from "@/components/BoardThumbs";
@@ -27,6 +27,7 @@ import { liveSnapshot, studentDevice } from "@/lib/live";
 import { baseUrl } from "@/lib/base-url";
 import { autoFelderVon, leseEinschaetzung } from "@/lib/einschaetzung";
 import { buildUnitReport, readReport } from "@/lib/learning";
+import { mappeFuerEinheit, mappeHatInhalt } from "@/lib/mappe";
 import * as repo from "@/lib/repo";
 import { requireTeacher } from "@/lib/auth";
 import { canManageUnit, getUnit, platzFuerEinheit, unitDurationMs, type UnitView } from "@/lib/units";
@@ -177,6 +178,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   const einschaetzung = lesson ? leseEinschaetzung(lesson) : null;
   const auto = lesson ? autoFelderVon(lesson) : new Set<string>();
   const frisch = lesson && !lesson.reviewed_at;
+  const mappe = mappeFuerEinheit(unit.id);
   return (
     <>
       {notices}
@@ -190,6 +192,14 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">Einheit mit {student.name}</h1>
         {facts}
         {frisch && mayManage && <p className="mt-2 text-[14px] text-ink-2">Du musst nichts eintragen. Wenn dir etwas auffällt, kannst du die Dokumentation unten ändern.</p>}
+        {mappe && mappeHatInhalt(mappe) && (
+          <div className="no-print mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <Link href={`/arbeitsblatt/einheit/${unit.id}`} className="btn btn-secondary btn-lg" data-testid="mappe-link">
+              <Printer size={18} aria-hidden /> Mappe drucken
+            </Link>
+            <span className="text-[14px] text-ink-3">Alles aus der Einheit mit den Antworten, als PDF für die Schulmappe</span>
+          </div>
+        )}
       </header>
       <div className="grid max-w-[820px] gap-10">
         {lesson && <EinschaetzungKarte e={einschaetzung} lesson={lesson} auto={auto} />}

@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageStyle } from "@/components/arbeitsblatt/Sheet";
 import { Lines } from "@/components/arbeitsblatt/WorkArea";
+import { Pictures, RunList } from "@/components/arbeitsblatt/TextPrint";
 import { TextPrintSettings } from "@/components/text/TextPrintSettings";
 import { requireTeacher } from "@/lib/auth";
 import { recommendationOf, applyAccepted, countLabel, getCorrection, listItems, overview, segmentsOf, snapshotDoc, type CorrectionItem } from "@/lib/text-correction";
 import { categoryInfo } from "@/lib/text-correction-rules";
-import { blockText, type Block, type Run } from "@/lib/text-doc";
-import { getPictureStory, SOURCE_KINDS, storyImages, type StoryImage } from "@/lib/picture-story";
+import { blockText, type Block } from "@/lib/text-doc";
+import { getPictureStory, SOURCE_KINDS, storyImages } from "@/lib/picture-story";
 import { readTextPrintOptions } from "@/lib/text-print";
 import { getText, textDoc, wordsLabel } from "@/lib/texts";
 
@@ -20,23 +21,6 @@ export async function generateMetadata({ params, searchParams }: Params): Promis
 }
 
 const longDate = (iso: string) => new Date(iso).toLocaleDateString("de-AT", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Vienna" });
-
-/** Runs with bold/italic/underline and line breaks, never HTML from the text. */
-function RunList({ runs }: { runs: Run[] }) {
-  return runs.map((r, i) => {
-    const parts = r.x.split("\n");
-    let el: React.ReactNode = parts.map((x, j) => (
-      <span key={j}>
-        {j > 0 && <br />}
-        {x}
-      </span>
-    ));
-    if (r.u) el = <u>{el}</u>;
-    if (r.i) el = <i>{el}</i>;
-    if (r.b) el = <b>{el}</b>;
-    return <span key={i}>{el}</span>;
-  });
-}
 
 /** One block; with `marks`, the accepted corrections: struck through, the improvement next to it, the number of the place. */
 function Runs({ block, marks }: { block: Block; marks?: { item: CorrectionItem; n: number }[] }) {
@@ -54,23 +38,6 @@ function Runs({ block, marks }: { block: Block; marks?: { item: CorrectionItem; 
       </span>
     );
   });
-}
-
-/** The series of pictures, numbered; as many per row as keeps them large enough to see details. */
-function Pictures({ images }: { images: StoryImage[] }) {
-  const n = images.length;
-  const cols = n <= 2 ? 2 : n === 4 ? 2 : n <= 9 ? 3 : 4;
-  return (
-    <ol className={`bg-pics bg-pics-${cols}`} data-testid="druck-bilder">
-      {images.map((img, i) => (
-        <li key={img.id} className="bg-pic">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/material/bildgeschichte/bild/${img.id}`} alt={`Bild ${i + 1}`} />
-          <span className="bg-pic-num">{i + 1}</span>
-        </li>
-      ))}
-    </ol>
-  );
 }
 
 const VERSION_LABEL = { original: "", endfassung: "Korrigierte Fassung", korrektur: "Mit Korrekturen" } as const;
