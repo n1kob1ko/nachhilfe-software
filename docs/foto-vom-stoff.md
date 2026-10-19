@@ -50,6 +50,6 @@ machen könnten. Und ähm, dann tut die AI zum Beispiel bei ChatGPT oder Cloud, 
 
 ## Kosten
 
-Zwei Anfragen pro Foto: das Lesen (Foto plus Liste der Fähigkeiten) und das Erstellen der
-Aufgaben. Mit den Standardmodellen sind das ein paar Cent. Beide stehen auf Mehr › KI-Kosten,
-als „Material erkennen“ und „Aufgaben erstellen“.
+Zwei Anfragen pro Foto: das Lesen (Foto plus Liste der Fähigkeiten, ohne Nachdenken, kurze
+Antwort) und das Erstellen der Aufgaben, das genau so viel kostet wie „Neue Übung erstellen“ mit
+KI. Beide stehen auf Mehr › KI-Kosten, als „Material erkennen“ und „Aufgaben erstellen“.

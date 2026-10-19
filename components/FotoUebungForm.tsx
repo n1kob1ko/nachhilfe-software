@@ -185,7 +185,7 @@ export function FotoUebungForm({ unitId, name }: { unitId: number; name: string 
           {busy === "senden" ? (
             <span className="num">Die KI liest das Foto und erstellt die Aufgaben. Das dauert meist unter einer Minute ({seit} s).</span>
           ) : (
-            `Kostet ein paar Cent. Das Foto bleibt bei ${name} unter Material.`
+            `Das Foto bleibt bei ${name} unter Material.`
           )}
         </p>
       </div>
