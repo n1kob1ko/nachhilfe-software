@@ -51,7 +51,8 @@ export const profileTopic = (currentTopics: string) => splitTopics(currentTopics
 /**
  * The skills of an entry: the ones the teacher ticked, else the skill that best matches Thema and
  * Unterthema, first within the student's level, then in every class (Gleichungen mit Klammern is
- * Stoff from Schulstufe 7, also for a student a class below). A match is only a suggestion and is
+ * Stoff from Schulstufe 7, also for a student a class below). A hit above the student's class wins
+ * only when it fits clearly better than the one at their level. A match is only a suggestion and is
  * never stored.
  */
 export function materialSkills(cm: Pick<CurrentMaterial, "topic" | "subtopic" | "subject" | "skill_ids">, student?: Pick<repo.Student, "school_type" | "klasse" | "grade"> | null): { ids: string[]; suggested: boolean } {
@@ -59,11 +60,11 @@ export function materialSkills(cm: Pick<CurrentMaterial, "topic" | "subtopic" | 
   const ids = cm.skill_ids.filter((id) => known.has(id));
   if (ids.length) return { ids, suggested: false };
   const best = (o: { student?: Pick<repo.Student, "school_type" | "klasse" | "grade"> }) =>
-    matchSkills(`${cm.topic} ${cm.subtopic}`, cm.subject, { ...o, limit: 1 })
-      .filter((x) => x.via === "faehigkeit")
-      .map((x) => x.skill.id);
-  const match = student ? best({ student }) : [];
-  return { ids: match.length ? match : best({}), suggested: true };
+    matchSkills(`${cm.topic} ${cm.subtopic}`, cm.subject, { ...o, limit: 1 }).filter((x) => x.via === "faehigkeit");
+  const level = student ? best({ student }) : [];
+  const all = best({});
+  const pick = level.length && !(all.length && all[0].score > level[0].score) ? level : all;
+  return { ids: pick.map((x) => x.skill.id), suggested: true };
 }
 
 /** Active entries of a student: most important first, then the newest. */

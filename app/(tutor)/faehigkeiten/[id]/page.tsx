@@ -12,6 +12,7 @@ import {
 import { addPrerequisiteAction, removePrerequisiteAction } from "@/app/learning-actions";
 import { PageHeader, Pill, Reveal, SectionTitle } from "@/components/ui";
 import { Info } from "@/components/Info";
+import { MathText } from "@/components/MathText";
 import { requireTeacher } from "@/lib/auth";
 import {
   candidateNodes,
@@ -24,7 +25,9 @@ import {
   PRACTICE_SHIFTS,
   skillOverride,
 } from "@/lib/datenqualitaet";
+import { EXPLAIN } from "@/lib/generators";
 import { LINK_ORIGIN_LABEL, nextSkillsOf, prerequisiteLinks } from "@/lib/lehrplan";
+import { typischeFehler } from "@/lib/mathe-themen";
 import * as repo from "@/lib/repo";
 import { MAX_STUFE, rangeLabel, stufeLabel } from "@/lib/school";
 
@@ -69,6 +72,9 @@ export default async function SkillPage({ params, searchParams }: { params: Prom
   const removed = links.filter((l) => l.removed_at);
   const next = nextSkillsOf(skill.id).filter((x) => byId.has(x));
   const parent = skill.parent_id ? repo.getSkill(skill.parent_id) : null;
+  // explanation and typical errors (lib/mathe-themen.ts); a Teilfähigkeit without its own shows its skill's
+  const erklaerung = EXPLAIN[skill.id] ?? (skill.parent_id ? EXPLAIN[skill.parent_id] : undefined) ?? null;
+  const fehler = typischeFehler(skill.id);
   const candidates = all.filter((s) => s.subject === skill.subject && s.id !== skill.id && !active.some((l) => l.other_id === s.id));
   const areas = [...new Set(candidates.map((s) => s.area))];
 
@@ -123,6 +129,43 @@ export default async function SkillPage({ params, searchParams }: { params: Prom
       </div>
 
       <div className="grid max-w-[920px] gap-10">
+        {(erklaerung || fehler.length > 0) && (
+          <section aria-label="So geht’s">
+            <SectionTitle>
+              <span>
+                So geht’s
+                <Info label="Info zu So geht’s">
+                  Kurze Erklärung mit Beispiel und die Fehler, die bei diesem Thema oft passieren. Beim Erstellen von Übungen bekommt die KI die typischen Fehler mit: für falsche Antworten, „Fehler finden“ und Hilfen.
+                </Info>
+              </span>
+            </SectionTitle>
+            <div className="panel grid gap-4 px-4 py-4">
+              {erklaerung && (
+                <p className="text-[15px] leading-relaxed">
+                  <MathText text={erklaerung} />
+                </p>
+              )}
+              {fehler.length > 0 && (
+                <div>
+                  <p className="mb-1.5 text-[13px] font-semibold text-ink-2">Typische Fehler</p>
+                  <ul className="grid gap-1.5 text-[14px] text-ink-2">
+                    {fehler.map((f) => (
+                      <li key={f} className="flex gap-2">
+                        <span aria-hidden className="text-red">
+                          ✗
+                        </span>
+                        <span>
+                          <MathText text={f} />
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         <section aria-label="Voraussetzungen">
           <SectionTitle>
             <span>

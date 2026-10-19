@@ -1,0 +1,1365 @@
+import type { CurriculumSkill } from "./curriculum";
+
+/**
+ * Maths topics of the Unterstufe (5. to 8. Schulstufe, Mittelschule and AHS): skills with a short
+ * explanation and the typical errors students make.
+ *
+ * Own structure and own wording. The topics follow the Lehrplan (curriculum/ris-ms-mathematik.json,
+ * the AHS Unterstufe has the same items) and were checked against the tables of contents of common
+ * Austrian maths books, topic names only: no task or text is taken from a book. The links to the
+ * Lehrplan are in scripts/lehrplan_mapping.json.
+ *
+ * Used by: the skill list (lib/curriculum.ts), the sample answer of „Erkläre …“ tasks (EXPLAIN in
+ * lib/generators.ts), the KI exercise prompt (lib/ai/features.ts) and the skill page.
+ */
+type Teil = { id: string; name: string; erklaerung: string };
+type Thema = { id: string; name: string; stufen: [number, number]; erklaerung: string; fehler: string[]; teile?: Teil[] };
+
+const BEREICHE: { area: string; themen: Thema[] }[] = [
+  {
+    area: "Natürliche Zahlen",
+    themen: [
+      {
+        id: "mathe.zahlen.gross",
+        name: "Große Zahlen lesen, schreiben und am Zahlenstrahl darstellen",
+        stufen: [5, 6],
+        erklaerung: "Von rechts in Dreiergruppen teilen: Einer, Tausender, Millionen, Milliarden. Jede Stelle ist zehnmal so viel wert wie die Stelle rechts daneben. Beispiel: 4 030 205 sind 4 Millionen 30 Tausend 205.",
+        fehler: [
+          "Null als Platzhalter vergessen („vier Millionen dreißigtausend“ als 430 000)",
+          "Dreiergruppen von links statt von rechts gebildet",
+          "Einteilung am Zahlenstrahl nicht geprüft (ein Teilstrich als 1 statt als 1 000 gezählt)",
+        ],
+      },
+      {
+        id: "mathe.zahlen.roemisch",
+        name: "Römische Zahlen lesen und schreiben",
+        stufen: [5, 6],
+        erklaerung: "I = 1, V = 5, X = 10, L = 50, C = 100, D = 500, M = 1 000. Steht ein kleineres Zeichen vor einem größeren, wird es abgezogen. Beispiel: XIV = 14, MCMXC = 1 000 + 900 + 90 = 1 990.",
+        fehler: [
+          "Vorangestelltes kleineres Zeichen addiert statt abgezogen (IX als 11)",
+          "Ein Zeichen viermal hintereinander geschrieben (IIII statt IV)",
+          "Unerlaubt abgezogen (IC statt XCIX für 99)",
+        ],
+      },
+      {
+        id: "mathe.zahlen.runden",
+        name: "Runden und Überschlagen",
+        stufen: [5, 6],
+        erklaerung: "Auf die Ziffer rechts von der Rundungsstelle schauen: bei 0 bis 4 abrunden, bei 5 bis 9 aufrunden. Für einen Überschlag rundet man vorher, damit man im Kopf rechnen kann. Beispiel: 3 486 auf Hunderter gerundet ist 3 500; 48 · 21 ist ungefähr 50 · 20 = 1 000.",
+        fehler: [
+          "An der falschen Stelle gerundet (3 486 auf Hunderter als 3 490)",
+          "Schrittweise gerundet (3 448 erst auf 3 450, dann auf 3 500 statt 3 400)",
+          "Stellen hinter der Rundungsstelle weggelassen statt durch Nullen ersetzt (3 486 als 35)",
+        ],
+      },
+      {
+        id: "mathe.zahlen.addieren",
+        name: "Schriftlich addieren und subtrahieren",
+        stufen: [5, 6],
+        erklaerung: "Stellengerecht untereinander schreiben, Einer unter Einer. Von rechts nach links rechnen und den Übertrag in die nächste Stelle mitnehmen. Beispiel: 4 052 − 1 378 = 2 674.",
+        fehler: [
+          "Verschieden lange Zahlen links statt stellengerecht untereinander geschrieben",
+          "Übertrag vergessen",
+          "Bei jeder Stelle die kleinere von der größeren Ziffer abgezogen (52 − 38 = 26 statt 14)",
+        ],
+      },
+      {
+        id: "mathe.zahlen.multiplizieren",
+        name: "Schriftlich multiplizieren",
+        stufen: [5, 6],
+        erklaerung: "Mit jeder Ziffer des zweiten Faktors einzeln multiplizieren, jede neue Zeile um eine Stelle weiter nach rechts rücken und am Ende addieren. Beispiel: 324 · 23 = 6 480 + 972 = 7 452.",
+        fehler: [
+          "Zeilen nicht versetzt (324 · 23 als 648 + 972 = 1 620)",
+          "Übertrag vor dem Multiplizieren statt danach dazugezählt",
+          "Null im Faktor ausgelassen (305 · 4 als 35 · 4 = 140 statt 1 220)",
+        ],
+      },
+      {
+        id: "mathe.zahlen.dividieren",
+        name: "Schriftlich dividieren (durch ein- und zweistellige Zahlen)",
+        stufen: [5, 6],
+        erklaerung: "Von links Stelle für Stelle: Wie oft passt der Divisor hinein? Mal nehmen, abziehen, nächste Ziffer herunterholen. Probe mit Multiplizieren. Beispiel: 1 512 : 6 = 252, Probe 252 · 6 = 1 512.",
+        fehler: [
+          "Null im Ergebnis vergessen, wenn der Divisor nicht hineinpasst (1 236 : 6 = 26 statt 206)",
+          "Rest stehen gelassen, der größer als der Divisor ist",
+          "Bei der Probe den Rest nicht dazugezählt (17 : 5 = 3 Rest 2, Probe 3 · 5 + 2 = 17)",
+        ],
+      },
+      {
+        id: "mathe.zahlen.zehner",
+        name: "Mit 10, 100 und 1 000 multiplizieren und dividieren",
+        stufen: [5, 6],
+        erklaerung: "Mal 10, 100, 1 000: das Komma rückt um 1, 2 oder 3 Stellen nach rechts. Durch 10, 100, 1 000: nach links. Fehlende Stellen füllt man mit Nullen. Beispiel: 3,7 · 100 = 370; 45 : 1 000 = 0,045.",
+        fehler: [
+          "Bei Dezimalzahlen einfach eine Null angehängt (3,7 · 10 = 3,70)",
+          "Komma in die falsche Richtung verschoben (45 : 100 = 4 500)",
+          "Zu wenige Nullen ergänzt (45 : 1 000 = 0,45)",
+        ],
+      },
+      {
+        id: "mathe.zahlen.vorrang",
+        name: "Punkt vor Strich und Klammern",
+        stufen: [5, 6],
+        erklaerung: "Zuerst was in Klammern steht, dann Punktrechnungen (mal, durch), zuletzt Strichrechnungen (plus, minus). Gleichrangiges von links nach rechts. Beispiel: 20 − 3 · 4 = 20 − 12 = 8, aber (20 − 3) · 4 = 68.",
+        fehler: [
+          "Einfach von links nach rechts gerechnet (20 − 3 · 4 = 68)",
+          "Gleichrangige Rechnungen von rechts begonnen (24 : 4 · 2 = 3 statt 12)",
+          "Klammer weggelassen (2 · (5 + 3) als 2 · 5 + 3 = 13)",
+        ],
+      },
+      {
+        id: "mathe.zahlen.rechengesetze",
+        name: "Rechengesetze: Vertauschen, Verbinden und Verteilen",
+        stufen: [5, 6],
+        erklaerung: "Beim Addieren und Multiplizieren darf man vertauschen und anders zusammenfassen (Kommutativ- und Assoziativgesetz). Verteilungsgesetz: a · (b + c) = a · b + a · c. Beispiel: 25 · 7 · 4 = 25 · 4 · 7 = 700; 6 · 98 = 6 · 100 − 6 · 2 = 588.",
+        fehler: [
+          "Auch beim Subtrahieren oder Dividieren vertauscht (10 − 4 als 4 − 10)",
+          "Beim Verteilen nur das erste Glied multipliziert (3 · (4 + 5) = 12 + 5)",
+          "Beim Subtrahieren anders zusammengefasst ((20 − 8) − 2 als 20 − (8 − 2))",
+        ],
+      },
+      {
+        id: "mathe.zahlen.sachaufgaben",
+        name: "Sachaufgaben mit natürlichen Zahlen",
+        stufen: [5, 6],
+        erklaerung: "Text genau lesen, wichtige Angaben herausschreiben, die Frage klären, Rechnung aufstellen, rechnen und einen Antwortsatz mit Einheit schreiben. Ein Überschlag zeigt, ob das Ergebnis stimmen kann.",
+        fehler: [
+          "Alle Zahlen aus dem Text verrechnet, auch die, die man nicht braucht",
+          "Rechenart nach einem Signalwort geraten (zum Beispiel „weniger“ immer als Minus)",
+          "Antwortsatz oder Einheit vergessen",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Dezimalzahlen",
+    themen: [
+      {
+        id: "mathe.dezimal.vergleichen",
+        name: "Dezimalzahlen vergleichen und ordnen",
+        stufen: [5, 6],
+        erklaerung: "Stelle für Stelle von links vergleichen, fehlende Stellen nach dem Komma mit Nullen auffüllen. Beispiel: 0,7 und 0,65 → 0,70 > 0,65.",
+        fehler: [
+          "Die Zahl mit mehr Stellen für größer gehalten (0,65 > 0,7)",
+          "Nachkommastellen wie ganze Zahlen verglichen (0,12 > 0,9, weil 12 > 9)",
+          "Am Zahlenstrahl Zehntel und Hundertstel verwechselt",
+        ],
+      },
+      {
+        id: "mathe.dezimal.addieren",
+        name: "Dezimalzahlen addieren und subtrahieren",
+        stufen: [5, 6],
+        erklaerung: "Komma unter Komma schreiben, fehlende Stellen mit Nullen auffüllen, dann rechnen wie mit natürlichen Zahlen. Beispiel: 12,5 + 3,75 = 12,50 + 3,75 = 16,25.",
+        fehler: [
+          "Ziffern rechtsbündig statt Komma unter Komma geschrieben",
+          "Fehlende Nullen nicht ergänzt (7 − 2,4 = 5,4 statt 4,6)",
+          "Komma im Ergebnis vergessen oder an die falsche Stelle gesetzt",
+        ],
+      },
+      {
+        id: "mathe.dezimal.multiplizieren",
+        name: "Dezimalzahlen multiplizieren und dividieren",
+        stufen: [5, 6],
+        erklaerung: "Multiplizieren: ohne Komma rechnen, das Ergebnis bekommt so viele Nachkommastellen wie beide Faktoren zusammen. Dividieren: das Komma bei beiden Zahlen gleich weit verschieben, bis der Divisor keine Nachkommastellen mehr hat. Beispiel: 1,2 · 0,3 = 0,36; 4,8 : 0,6 = 48 : 6 = 8.",
+        fehler: [
+          "Komma wie beim Addieren gesetzt (1,2 · 0,3 = 3,6)",
+          "Beim Dividieren das Komma nur beim Divisor verschoben (4,8 : 0,6 = 0,8)",
+          "Geglaubt, Multiplizieren macht immer größer (0,5 · 8 > 8)",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Größen und Maße",
+    themen: [
+      {
+        id: "mathe.masse.geld",
+        name: "Mit Geld rechnen (Euro und Cent)",
+        stufen: [5, 6],
+        erklaerung: "1 € = 100 c. Beträge mit Komma haben immer zwei Nachkommastellen: 3,05 € sind 3 € und 5 c. Zum Rechnen alles in dieselbe Einheit bringen. Beispiel: 4,50 € + 75 c = 4,50 € + 0,75 € = 5,25 €.",
+        fehler: [
+          "3 € und 5 c als 3,5 € geschrieben (richtig 3,05 €)",
+          "Euro und Cent zusammengerechnet (4,50 € + 75 c = 79,50)",
+          "Beim Herausgeben falsch ergänzt (20 € − 13,45 € = 7,55 € statt 6,55 €)",
+        ],
+      },
+      {
+        id: "mathe.masse.laengen",
+        name: "Längenmaße umrechnen",
+        stufen: [5, 6],
+        erklaerung: "Zwischen mm, cm, dm und m ist die Umrechnungszahl 10, zwischen m und km 1 000. Beispiel: 3,25 m = 325 cm; 4 km 50 m = 4 050 m = 4,05 km.",
+        fehler: [
+          "Überall mit 10 umgerechnet, auch zwischen km und m (2 km = 20 m)",
+          "In die falsche Richtung umgerechnet (300 cm = 30 000 m statt 3 m)",
+          "Bei mehrnamigen Angaben die Null vergessen (4 km 50 m = 4,5 km statt 4,05 km)",
+        ],
+      },
+      {
+        id: "mathe.masse.massen",
+        name: "Massenmaße umrechnen (t, kg, dag, g)",
+        stufen: [5, 6],
+        erklaerung: "1 t = 1 000 kg, 1 kg = 100 dag, 1 dag = 10 g. Beispiel: 2,5 kg = 250 dag = 2 500 g; 35 dag = 0,35 kg.",
+        fehler: [
+          "1 kg = 1 000 dag gerechnet (richtig 100 dag)",
+          "1 dag = 100 g gerechnet (richtig 10 g)",
+          "Komma falsch gesetzt (35 dag = 3,5 kg)",
+        ],
+      },
+      {
+        id: "mathe.masse.zeit",
+        name: "Zeitmaße und Zeitspannen",
+        stufen: [5, 6],
+        erklaerung: "1 h = 60 min, 1 min = 60 s, 1 d = 24 h. Zeitspannen rechnet man am besten in Schritten bis zur vollen Stunde. Beispiel: von 8:45 bis 10:20 sind 15 min + 1 h + 20 min = 1 h 35 min.",
+        fehler: [
+          "Mit 100 statt 60 umgerechnet (1,5 h = 1 h 50 min)",
+          "Uhrzeiten wie Dezimalzahlen subtrahiert (10:20 − 8:45 = 1:75)",
+          "Zeitpunkt und Zeitspanne verwechselt",
+        ],
+      },
+      {
+        id: "mathe.masse.flaechen",
+        name: "Flächenmaße umrechnen",
+        stufen: [5, 6],
+        erklaerung: "Zwischen benachbarten Flächenmaßen ist die Umrechnungszahl 100: mm², cm², dm², m², a, ha, km². Beispiel: 3 m² = 300 dm² = 30 000 cm²; 1 ha = 100 a = 10 000 m².",
+        fehler: [
+          "Mit 10 statt 100 umgerechnet (1 m² = 10 dm²)",
+          "Längen- und Flächenmaße verwechselt (Flächeninhalt in m angegeben)",
+          "Zwischen m² und ha eine Stufe ausgelassen (1 ha = 100 m²)",
+        ],
+      },
+      {
+        id: "mathe.masse.volumen",
+        name: "Raummaße und Liter umrechnen",
+        stufen: [5, 7],
+        erklaerung: "Zwischen benachbarten Raummaßen ist die Umrechnungszahl 1 000: mm³, cm³, dm³, m³. 1 dm³ = 1 l, 1 l = 10 dl = 100 cl = 1 000 ml, 1 hl = 100 l. Beispiel: 2,5 m³ = 2 500 dm³ = 2 500 l.",
+        fehler: [
+          "Mit 10 oder 100 statt 1 000 umgerechnet (1 m³ = 100 dm³)",
+          "Liter und m³ gleichgesetzt (1 m³ = 1 l statt 1 000 l)",
+          "1 cm³ für 1 l gehalten (richtig: 1 cm³ = 1 ml)",
+        ],
+      },
+      {
+        id: "mathe.masse.massstab",
+        name: "Mit dem Maßstab rechnen",
+        stufen: [5, 6],
+        erklaerung: "Maßstab 1 : 1 000 heißt: 1 cm im Plan sind 1 000 cm in Wirklichkeit. Wirklichkeit = Länge im Plan · 1 000, Länge im Plan = Wirklichkeit : 1 000. Danach in eine passende Einheit umrechnen. Beispiel: 4,5 cm im Plan sind 4 500 cm = 45 m.",
+        fehler: [
+          "Mal und durch vertauscht",
+          "Einheit nicht umgerechnet (4,5 cm · 1 000 = 4 500 m statt 45 m)",
+          "Flächen wie Längen umgerechnet (bei 1 : 100 nur mal 100 statt mal 10 000)",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Teilbarkeit",
+    themen: [
+      {
+        id: "mathe.teilbarkeit.teiler",
+        name: "Teiler und Vielfache",
+        stufen: [5, 6],
+        erklaerung: "Teiler von 12 sind alle Zahlen, durch die 12 ohne Rest teilbar ist: 1, 2, 3, 4, 6, 12. Vielfache von 4 sind 4, 8, 12, 16 … Teiler sucht man am besten paarweise: 1 · 12, 2 · 6, 3 · 4.",
+        fehler: [
+          "1 und die Zahl selbst bei den Teilern vergessen",
+          "Teiler und Vielfache verwechselt",
+          "Beim paarweisen Suchen einen Teiler übersehen (Teiler von 36 ohne 6)",
+        ],
+      },
+      {
+        id: "mathe.teilbarkeit.regeln",
+        name: "Teilbarkeitsregeln",
+        stufen: [6, 7],
+        erklaerung: "Durch 2: letzte Ziffer gerade. Durch 5: letzte Ziffer 0 oder 5. Durch 10: letzte Ziffer 0. Durch 4: die letzten zwei Ziffern bilden eine Zahl, die durch 4 teilbar ist. Durch 3 oder 9: die Ziffernsumme ist durch 3 oder 9 teilbar. Beispiel: 348 hat die Ziffernsumme 15, ist also durch 3 teilbar, aber nicht durch 9.",
+        fehler: [
+          "Bei 3 und 9 auf die letzte Ziffer statt auf die Ziffernsumme geschaut (19 ist durch 9 teilbar)",
+          "Bei 4 nur die letzte Ziffer geprüft (34 ist durch 4 teilbar, weil 4 durch 4 teilbar ist)",
+          "Gedacht, durch 6 teilbar heißt durch 2 oder durch 3 teilbar (richtig: durch 2 und durch 3)",
+        ],
+      },
+      {
+        id: "mathe.teilbarkeit.primzahlen",
+        name: "Primzahlen und Primfaktorzerlegung",
+        stufen: [6, 7],
+        erklaerung: "Eine Primzahl hat genau zwei Teiler, 1 und sich selbst: 2, 3, 5, 7, 11, 13 … Bei der Primfaktorzerlegung teilt man so lange durch Primzahlen, bis 1 übrig bleibt. Beispiel: 60 = 2 · 2 · 3 · 5 = 2² · 3 · 5.",
+        fehler: [
+          "1 als Primzahl gezählt",
+          "Alle ungeraden Zahlen für Primzahlen gehalten (9, 15, 21)",
+          "Zerlegung mit Faktoren beendet, die keine Primzahlen sind (60 = 4 · 15)",
+        ],
+      },
+      {
+        id: "mathe.teilbarkeit.ggt-kgv",
+        name: "ggT und kgV bestimmen",
+        stufen: [6, 7],
+        erklaerung: "ggT: der größte Teiler, den beide Zahlen haben. kgV: das kleinste Vielfache, das beide Zahlen haben. Mit Primfaktoren: ggT = die gemeinsamen Faktoren, kgV = alle Faktoren in der höchsten Anzahl. Beispiel: 12 = 2² · 3 und 18 = 2 · 3², also ggT = 6 und kgV = 36.",
+        fehler: [
+          "ggT und kgV verwechselt",
+          "Als kgV einfach das Produkt genommen (kgV von 12 und 18 = 216 statt 36)",
+          "Einen gemeinsamen Teiler gefunden, aber nicht den größten (ggT von 12 und 18 = 3)",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Bruchrechnung",
+    themen: [
+      {
+        id: "mathe.brueche.anteile",
+        name: "Brüche als Anteile darstellen und ablesen",
+        stufen: [5, 6],
+        erklaerung: "Der Nenner sagt, in wie viele gleich große Teile das Ganze geteilt ist, der Zähler, wie viele Teile man nimmt. Beispiel: 3/8 einer Pizza heißt: in 8 gleiche Stücke teilen und 3 davon nehmen.",
+        fehler: [
+          "Teile gezählt, die nicht gleich groß sind",
+          "Zähler und Nenner vertauscht (3 von 8 Teilen als 8/3)",
+          "Gefärbte mit ungefärbten Teilen verglichen statt mit allen Teilen (3 gefärbt, 5 weiß als 3/5 statt 3/8)",
+        ],
+      },
+      {
+        id: "mathe.brueche.gemischt",
+        name: "Unechte Brüche und gemischte Zahlen umwandeln",
+        stufen: [5, 6],
+        erklaerung: "Unechter Bruch in gemischte Zahl: Zähler durch Nenner dividieren, das Ergebnis sind die Ganzen, der Rest ist der neue Zähler. Umgekehrt: Ganze mal Nenner plus Zähler. Beispiel: 11/4 = 2 3/4, denn 11 : 4 = 2 Rest 3.",
+        fehler: [
+          "Ganze und Zähler nur addiert (2 3/4 = 5/4)",
+          "Ganze mal Zähler statt mal Nenner gerechnet (2 3/4 = 9/4 statt 11/4)",
+          "Rest als Nenner geschrieben (11/4 = 2 4/3)",
+        ],
+      },
+      {
+        id: "mathe.brueche.vonzahlen",
+        name: "Bruchteile von Zahlen und Größen berechnen",
+        stufen: [5, 6],
+        erklaerung: "„3/4 von 20“ heißt: durch den Nenner dividieren und mit dem Zähler multiplizieren. Beispiel: 3/4 von 20 € = 20 € : 4 · 3 = 15 €.",
+        fehler: [
+          "Nur durch den Nenner dividiert (3/4 von 20 = 5)",
+          "Durch den Zähler statt durch den Nenner dividiert",
+          "Bei Zeit wie mit Dezimalzahlen gerechnet (3/4 h = 75 min statt 45 min)",
+        ],
+      },
+      {
+        id: "mathe.brueche.vergleichen",
+        name: "Brüche vergleichen und ordnen",
+        stufen: [5, 6],
+        erklaerung: "Gleicher Nenner: der größere Zähler ist größer. Gleicher Zähler: der kleinere Nenner ist größer. Sonst auf einen gemeinsamen Nenner erweitern oder in Dezimalzahlen umwandeln. Beispiel: 3/4 und 5/6 → 9/12 < 10/12.",
+        fehler: [
+          "Den Bruch mit dem größeren Nenner für größer gehalten (1/8 > 1/5)",
+          "Nur die Zähler verglichen, obwohl die Nenner verschieden sind (3/7 > 2/3)",
+          "Gleich viel fehlt bis zum Ganzen, also gleich groß gedacht (5/6 = 6/7)",
+        ],
+      },
+      {
+        id: "mathe.brueche.dezimal",
+        name: "Brüche, Dezimalzahlen und Prozent umwandeln",
+        stufen: [5, 7],
+        erklaerung: "Bruch in Dezimalzahl: Zähler durch Nenner dividieren. Dezimalzahl in Bruch: als Zehntel, Hundertstel oder Tausendstel schreiben und kürzen. Prozent heißt Hundertstel. Beispiel: 3/4 = 0,75 = 75 %; 0,4 = 4/10 = 2/5.",
+        fehler: [
+          "Zähler und Nenner hintereinander geschrieben (3/4 = 3,4)",
+          "Prozent falsch umgerechnet (5 % = 0,5 statt 0,05)",
+          "Periode nicht erkannt (1/3 als genau 0,33 angegeben)",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Negative Zahlen",
+    themen: [
+      {
+        id: "mathe.negativ.zahlengerade",
+        name: "Ganze Zahlen ordnen und auf der Zahlengeraden darstellen",
+        stufen: [6, 7],
+        erklaerung: "Links von 0 liegen die negativen Zahlen. Je weiter rechts eine Zahl liegt, desto größer ist sie. Der Betrag ist der Abstand von 0. Beispiel: −7 < −2 und |−7| = 7.",
+        fehler: [
+          "Bei negativen Zahlen die mit dem größeren Betrag für größer gehalten (−7 > −2)",
+          "Auf der Zahlengeraden in die falsche Richtung gezählt",
+          "Betrag und Gegenzahl verwechselt (|−7| = −7)",
+        ],
+      },
+      {
+        id: "mathe.negativ.rational",
+        name: "Rationale Zahlen: Brüche und Dezimalzahlen mit Vorzeichen",
+        stufen: [7, 8],
+        erklaerung: "Mit negativen Brüchen und Dezimalzahlen rechnet man nach denselben Vorzeichenregeln wie mit ganzen Zahlen. Beispiel: −1/2 + 3/4 = −2/4 + 3/4 = 1/4; (−0,5) · (−4) = 2.",
+        fehler: [
+          "Vorzeichen nur beim Ergebnis geraten",
+          "Beim Erweitern das Minus verloren (−1/2 = 2/4)",
+          "Vorzeichenregel der Multiplikation beim Addieren verwendet (−3 + (−5) = 8)",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Proportionalität",
+    themen: [
+      {
+        id: "mathe.proportional.direkt",
+        name: "Direkte Proportionalität (Schlussrechnung)",
+        stufen: [6, 7],
+        erklaerung: "Je mehr, desto mehr, und zwar im gleichen Verhältnis: doppelt so viel Ware kostet doppelt so viel. Schlussrechnung: zuerst auf 1 schließen, dann auf die gesuchte Menge. Beispiel: 3 kg kosten 7,50 €, 1 kg kostet 2,50 €, 5 kg kosten 12,50 €.",
+        fehler: [
+          "Jede „je mehr, desto mehr“-Situation für direkt proportional gehalten (Alter und Körpergröße)",
+          "Beim Schluss auf 1 mal statt durch gerechnet",
+          "Einheiten in der Tabelle vermischt (kg und dag in derselben Spalte)",
+        ],
+      },
+      {
+        id: "mathe.proportional.indirekt",
+        name: "Indirekte Proportionalität",
+        stufen: [6, 7],
+        erklaerung: "Je mehr, desto weniger, und zwar so, dass das Produkt gleich bleibt: doppelt so viele Pumpen brauchen halb so lange. Beispiel: 4 Pumpen brauchen 6 h, 1 Pumpe braucht 24 h, 3 Pumpen brauchen 8 h.",
+        fehler: [
+          "Wie direkt proportional gerechnet (3 Pumpen brauchen 4,5 h)",
+          "Beim Schluss auf 1 durch statt mal gerechnet",
+          "Nicht geprüft, ob das Produkt wirklich gleich bleibt",
+        ],
+      },
+      {
+        id: "mathe.proportional.verhaeltnisse",
+        name: "Verhältnisse und Proportionen",
+        stufen: [7, 8],
+        erklaerung: "Ein Verhältnis a : b vergleicht zwei Größen. In einer Proportion a : b = c : d gilt a · d = b · c. Beispiel: Saft und Wasser im Verhältnis 2 : 5, zu 6 dl Saft gehören 15 dl Wasser, denn 2 : 5 = 6 : 15.",
+        fehler: [
+          "Teil und Ganzes verwechselt (2 : 5 als 2 von 5 Teilen statt 2 von 7)",
+          "Reihenfolge im Verhältnis vertauscht",
+          "Beim Auflösen die falschen Glieder miteinander multipliziert",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Prozentrechnung",
+    themen: [
+      {
+        id: "mathe.prozent.aenderung",
+        name: "Prozentuelle Erhöhung und Verminderung (Änderungsfaktor)",
+        stufen: [6, 8],
+        erklaerung: "Erhöhung um 20 %: mal 1,2. Verminderung um 20 %: mal 0,8. Mehrere Änderungen multipliziert man nacheinander. Beispiel: 80 € um 20 % erhöht ergibt 80 · 1,2 = 96 €, danach um 20 % vermindert 96 · 0,8 = 76,80 €.",
+        fehler: [
+          "Prozentsätze einfach addiert (plus 20 % und minus 20 % ergibt wieder den Anfangswert)",
+          "Faktor falsch gebildet (Erhöhung um 5 % als mal 1,5 statt mal 1,05)",
+          "Vom neuen statt vom alten Wert zurückgerechnet (Preis vor der Erhöhung als 96 € minus 20 %)",
+        ],
+      },
+      {
+        id: "mathe.prozent.promille",
+        name: "Promille",
+        stufen: [6, 7],
+        erklaerung: "Promille heißt Tausendstel: 1 ‰ = 0,001 = 0,1 %. Man rechnet wie mit Prozent, nur mit 1 000 statt 100. Beispiel: 3 ‰ von 2 000 € = 2 000 · 3 : 1 000 = 6 €.",
+        fehler: [
+          "Mit 100 statt 1 000 gerechnet (3 ‰ von 2 000 € = 60 €)",
+          "Promille und Prozent gleichgesetzt",
+          "Beim Umrechnen in Prozent mal 10 statt durch 10 gerechnet (5 ‰ = 50 % statt 0,5 %)",
+        ],
+      },
+      {
+        id: "mathe.prozent.zinsen",
+        name: "Zinsen berechnen",
+        stufen: [7, 8],
+        erklaerung: "Zinsen sind ein Prozentwert: Zinsen = Kapital · Zinssatz : 100 für ein Jahr, bei kürzerer Zeit anteilig. Mit Zinseszinsen wächst das Kapital jedes Jahr um denselben Faktor. Beispiel: 2 000 € zu 3 % bringen in einem Jahr 60 € Zinsen; nach zwei Jahren mit Zinseszinsen sind es 2 000 · 1,03² = 2 121,80 €.",
+        fehler: [
+          "Bei Zinseszinsen jedes Jahr dieselben Zinsen addiert",
+          "Laufzeit unter einem Jahr nicht anteilig gerechnet (6 Monate wie ein Jahr)",
+          "KESt vergessen, wenn nach dem Betrag nach Abzug der Steuer gefragt ist",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Terme",
+    themen: [
+      {
+        id: "mathe.terme.aufstellen",
+        name: "Terme aufstellen und Werte einsetzen",
+        stufen: [5, 7],
+        erklaerung: "Für eine unbekannte Zahl schreibt man eine Variable, zum Beispiel x. „Das Doppelte einer Zahl, vermindert um 3“ ist 2 · x − 3. Beim Einsetzen ersetzt man x durch die Zahl, am besten in Klammern. Beispiel: für x = 5 ist 2 · 5 − 3 = 7.",
+        fehler: [
+          "Reihenfolge vertauscht („um 3 weniger als das Doppelte“ als 3 − 2x)",
+          "2x beim Einsetzen als Ziffern hintereinander gelesen (2x für x = 5 als 25)",
+          "Negative Zahl ohne Klammer eingesetzt (x² für x = −3 als −3² = −9)",
+        ],
+      },
+      {
+        id: "mathe.terme.zusammenfassen",
+        name: "Terme zusammenfassen",
+        stufen: [7, 8],
+        erklaerung: "Nur gleichartige Glieder lassen sich zusammenfassen: x mit x, x² mit x², Zahlen mit Zahlen. Beispiel: 3x + 5 + 2x − 1 = 5x + 4; 4a · 3b = 12ab.",
+        fehler: [
+          "Verschiedenartige Glieder zusammengefasst (3x + 2 = 5x)",
+          "x und x² zusammengefasst (x² + x = x³)",
+          "Vorzeichen vor einem Glied nicht mitgenommen (5x − 2 + 3x = 8x + 2)",
+        ],
+      },
+      {
+        id: "mathe.terme.klammern",
+        name: "Klammern auflösen und ausmultiplizieren",
+        stufen: [7, 8],
+        erklaerung: "Plus vor der Klammer: Klammer weglassen. Minus vor der Klammer: alle Vorzeichen in der Klammer umdrehen. Zahl vor der Klammer: jedes Glied multiplizieren. Zwei Klammern: jedes Glied mit jedem. Beispiel: 10 − (3x − 4) = 14 − 3x; (x + 2) · (x + 5) = x² + 7x + 10.",
+        fehler: [
+          "Bei Minus vor der Klammer nur das erste Vorzeichen umgedreht (−(3x − 4) = −3x − 4)",
+          "Nur das erste Glied multipliziert (2 · (x + 5) = 2x + 5)",
+          "Bei zwei Klammern nur Erstes mit Erstem und Letztes mit Letztem multipliziert ((x + 2) · (x + 5) = x² + 10)",
+        ],
+      },
+      {
+        id: "mathe.terme.herausheben",
+        name: "Herausheben",
+        stufen: [7, 8],
+        erklaerung: "Einen gemeinsamen Faktor aller Glieder vor die Klammer schreiben, in der Klammer bleibt, was übrig ist. Probe durch Ausmultiplizieren. Beispiel: 6x + 9 = 3 · (2x + 3); 4a² − 2a = 2a · (2a − 1).",
+        fehler: [
+          "Nicht den größten gemeinsamen Faktor herausgehoben (12x + 18 = 2 · (6x + 9))",
+          "Faktor nur aus einem Glied herausgehoben (6x + 9 = 3 · (2x + 9))",
+          "Die 1 vergessen, wenn ein Glied ganz herausgehoben wird (4a² − 2a = 2a · 2a)",
+        ],
+      },
+      {
+        id: "mathe.terme.binomisch",
+        name: "Binomische Formeln",
+        stufen: [7, 9],
+        erklaerung: "(a + b)² = a² + 2ab + b², (a − b)² = a² − 2ab + b², (a + b) · (a − b) = a² − b². Beispiel: (x + 3)² = x² + 6x + 9; (2x − 5) · (2x + 5) = 4x² − 25.",
+        fehler: [
+          "Das Mittelglied vergessen ((x + 3)² = x² + 9)",
+          "Das Mittelglied nicht verdoppelt ((x + 3)² = x² + 3x + 9)",
+          "Den Faktor nicht mitquadriert ((2x)² = 2x²)",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Gleichungen",
+    themen: [
+      {
+        id: "mathe.gleichungen.probieren",
+        name: "Einfache Gleichungen durch Probieren und Umkehren lösen",
+        stufen: [5, 6],
+        erklaerung: "Eine Gleichung ist wie eine Waage. Die gesuchte Zahl findet man durch Probieren oder durch Rückwärtsrechnen mit der Umkehrrechnung. Beispiel: x · 4 + 3 = 23 → 23 − 3 = 20 → 20 : 4 = 5. Probe: 5 · 4 + 3 = 23.",
+        fehler: [
+          "Beim Rückwärtsrechnen die Reihenfolge nicht umgedreht (23 : 4 − 3)",
+          "Nicht die Umkehrrechnung verwendet (plus statt minus)",
+          "Keine Probe gemacht",
+        ],
+      },
+      {
+        id: "mathe.gleichungen.formeln",
+        name: "Formeln umformen",
+        stufen: [6, 9],
+        erklaerung: "Eine Formel formt man um wie eine Gleichung: auf beiden Seiten dasselbe rechnen, bis die gesuchte Größe allein steht. Beispiel: A = a · b nach b umgeformt ist b = A : a. Aus A = c · h : 2 wird h = 2 · A : c.",
+        fehler: [
+          "Auf einer Seite dividiert, auf der anderen multipliziert",
+          "Den Faktor 2 vergessen (aus A = c · h : 2 wird h = A : c)",
+          "Klammer vergessen (u = 2a + 2b → b = u − 2a : 2 statt (u − 2a) : 2)",
+        ],
+      },
+      {
+        id: "mathe.gleichungen.brueche",
+        name: "Gleichungen mit Brüchen",
+        stufen: [7, 9],
+        erklaerung: "Zuerst jedes Glied auf beiden Seiten mit dem Hauptnenner multiplizieren, damit die Brüche verschwinden, dann wie gewohnt lösen. Beispiel: x/2 + x/3 = 10, mal 6: 3x + 2x = 60, also x = 12.",
+        fehler: [
+          "Nur die Brüche mit dem Hauptnenner multipliziert (x/2 + 1 = 5 → x + 1 = 10)",
+          "Minus vor dem Bruchstrich nur auf das erste Glied angewendet (−(x − 2)/3 mal 3 als −x − 2 statt −x + 2)",
+          "Durch den Hauptnenner dividiert statt multipliziert",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Potenzen",
+    themen: [
+      {
+        id: "mathe.potenzen.schreibweise",
+        name: "Potenzen und Zehnerpotenzen",
+        stufen: [7, 8],
+        erklaerung: "Eine Potenz ist eine kurze Schreibweise für wiederholtes Multiplizieren: 2^5 = 2 · 2 · 2 · 2 · 2 = 32. Große Zahlen schreibt man mit Zehnerpotenzen: 4 500 000 = 4,5 · 10^6.",
+        fehler: [
+          "Basis mal Hochzahl gerechnet (2^5 = 10)",
+          "Bei Zehnerpotenzen die Stellen falsch gezählt (4 500 000 = 4,5 · 10^5)",
+          "Minus vor der Potenz mitpotenziert (−3^2 = 9 statt −9)",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Wurzeln",
+    themen: [
+      {
+        id: "mathe.wurzeln.quadratwurzel",
+        name: "Quadratwurzeln berechnen und schätzen",
+        stufen: [8, 9],
+        erklaerung: "Die Quadratwurzel von a ist die nicht negative Zahl, die mit sich selbst multipliziert a ergibt: sqrt(49) = 7. Andere Wurzeln schätzt man zwischen zwei Quadratzahlen ein: sqrt(30) liegt zwischen 5 und 6, nahe bei 5,5.",
+        fehler: [
+          "Durch 2 dividiert statt die Wurzel gezogen (sqrt(36) = 18)",
+          "Beim Schätzen die falschen Quadratzahlen als Nachbarn gewählt",
+          "Wurzel aus Dezimalzahlen falsch (sqrt(0,9) = 0,3, richtig etwa 0,95)",
+        ],
+      },
+      {
+        id: "mathe.wurzeln.regeln",
+        name: "Rechenregeln für Wurzeln",
+        stufen: [8, 9],
+        erklaerung: "sqrt(a · b) = sqrt(a) · sqrt(b) und sqrt(a : b) = sqrt(a) : sqrt(b). Bei Plus und Minus gilt das nicht. Beispiel: sqrt(50) = sqrt(25 · 2) = 5 · sqrt(2), aber sqrt(9 + 16) = 5 und nicht 3 + 4.",
+        fehler: [
+          "Wurzel aus einer Summe gliedweise gezogen (sqrt(9 + 16) = 7)",
+          "Beim teilweisen Wurzelziehen den Faktor nicht gezogen (sqrt(50) = 25 · sqrt(2))",
+          "Wurzeln verschiedener Zahlen addiert (sqrt(2) + sqrt(3) = sqrt(5))",
+        ],
+      },
+      {
+        id: "mathe.wurzeln.reell",
+        name: "Rationale und irrationale Zahlen",
+        stufen: [8, 9],
+        erklaerung: "Rationale Zahlen lassen sich als Bruch schreiben, ihre Dezimaldarstellung bricht ab oder ist periodisch. Irrationale Zahlen wie sqrt(2) oder π haben unendlich viele Nachkommastellen ohne Periode. Mit gerundeten Werten rechnet man nur ungefähr: 1,41² = 1,9881 und nicht 2.",
+        fehler: [
+          "Periodische Dezimalzahlen für irrational gehalten (0,333…)",
+          "Gerundete Werte als genau behandelt (sqrt(2) = 1,41)",
+          "Jede Wurzel für irrational gehalten (sqrt(16) = 4 ist rational)",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Funktionen",
+    themen: [
+      {
+        id: "mathe.funktionen.wachstum",
+        name: "Lineares Wachstum und lineare Abnahme",
+        stufen: [7, 8],
+        erklaerung: "Bei linearem Wachstum kommt in jedem Zeitschritt derselbe Betrag dazu, bei linearer Abnahme fällt er weg. Beispiel: Ein Becken enthält 200 l, pro Minute fließen 15 l dazu, nach t Minuten sind es 200 + 15 · t Liter.",
+        fehler: [
+          "Mit Prozent gerechnet, obwohl pro Schritt ein fester Betrag dazukommt",
+          "Den Anfangswert vergessen (nach 4 min nur 15 · 4 = 60 l)",
+          "Zeitschritte falsch gezählt (von Minute 2 bis Minute 6 als 6 Schritte)",
+        ],
+      },
+      {
+        id: "mathe.funktionen.graphen",
+        name: "Graphen in Sachsituationen lesen",
+        stufen: [8, 9],
+        erklaerung: "Zuerst die Achsen lesen: was steht waagrecht, was senkrecht, in welchen Einheiten. Steigt der Graph, nimmt die Größe zu, ist er waagrecht, bleibt sie gleich. Beispiel: Im Zeit-Weg-Diagramm heißt ein waagrechtes Stück, dass die Person steht.",
+        fehler: [
+          "Den Graphen als Bild des Weges gelesen (steigt der Graph, geht es bergauf)",
+          "Achsen vertauscht oder die Einheiten nicht beachtet",
+          "Ein waagrechtes Stück als gleichmäßige Bewegung gedeutet",
+        ],
+      },
+      {
+        id: "mathe.funktionen.darstellungen",
+        name: "Funktionen: Wertetabelle, Graph und Funktionsgleichung",
+        stufen: [8, 9],
+        erklaerung: "Eine Funktion ordnet jedem x genau einen Wert f(x) zu. Aus der Gleichung macht man eine Wertetabelle und zeichnet die Punkte ins Koordinatensystem. Beispiel: f(x) = 2x − 1 ergibt f(0) = −1, f(1) = 1, f(2) = 3.",
+        fehler: [
+          "Gedacht, eine Funktion darf einem x mehrere Werte zuordnen",
+          "x und y beim Einzeichnen vertauscht",
+          "Punkt vor Strich beim Einsetzen missachtet (f(2) bei f(x) = 2x − 1 als 2 · (2 − 1) = 2)",
+        ],
+      },
+      {
+        id: "mathe.funktionen.linear",
+        name: "Lineare Funktionen zeichnen und ablesen (k und d)",
+        stufen: [8, 9],
+        erklaerung: "f(x) = k · x + d: d ist der Schnittpunkt mit der y-Achse, k die Steigung, also um wie viel y wächst, wenn x um 1 größer wird. Zeichnen: bei (0 | d) beginnen, dann mit dem Steigungsdreieck 1 nach rechts und k nach oben. Beispiel: f(x) = 2x − 1 beginnt bei (0 | −1) und steigt pro Schritt um 2.",
+        fehler: [
+          "k und d vertauscht",
+          "Bei negativem k nach oben statt nach unten gezeichnet",
+          "Steigung aus zwei Punkten verkehrt berechnet (Unterschied in x durch Unterschied in y)",
+        ],
+      },
+      {
+        id: "mathe.funktionen.linear-sach",
+        name: "Lineare Funktionen in Sachaufgaben",
+        stufen: [8, 9],
+        erklaerung: "In Sachaufgaben ist d der feste Betrag oder Anfangswert und k der Betrag pro Einheit. Beispiel: Ein Taxi kostet 4 € Grundgebühr und 1,80 € pro km, also K(x) = 1,8 · x + 4; für 10 km zahlt man K(10) = 22 €.",
+        fehler: [
+          "Grundgebühr und Preis pro Einheit vertauscht (K(x) = 4x + 1,8)",
+          "Grundgebühr für jede Einheit neu dazugezählt",
+          "Ergebnis ohne Einheit oder Antwortsatz",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Gleichungssysteme",
+    themen: [
+      {
+        id: "mathe.gleichungssysteme.rechnerisch",
+        name: "Lineare Gleichungssysteme rechnerisch lösen",
+        stufen: [8, 9],
+        erklaerung: "Zwei Gleichungen mit zwei Variablen: Die Lösung ist das Zahlenpaar, das beide Gleichungen erfüllt. Man bringt eine Variable zum Verschwinden (einsetzen, gleichsetzen oder addieren), rechnet die andere aus und setzt zurück ein. Probe in beiden Gleichungen.",
+        fehler: [
+          "Nach der ersten Variablen aufgehört und die zweite nicht ausgerechnet",
+          "Beim Multiplizieren einer Gleichung nur eine Seite oder nur ein Glied multipliziert",
+          "Probe nur in einer der beiden Gleichungen gemacht",
+        ],
+        teile: [
+          {
+            id: "einsetzen",
+            name: "Einsetzungsverfahren",
+            erklaerung: "Eine Gleichung nach einer Variablen auflösen und in die andere einsetzen. Beispiel: y = 2x und x + y = 9 → x + 2x = 9 → x = 3 und y = 6.",
+          },
+          {
+            id: "gleichsetzen",
+            name: "Gleichsetzungsverfahren",
+            erklaerung: "Beide Gleichungen nach derselben Variablen auflösen und die anderen Seiten gleichsetzen. Beispiel: y = 2x + 1 und y = 4x − 3 → 2x + 1 = 4x − 3 → x = 2 und y = 5.",
+          },
+          {
+            id: "addition",
+            name: "Additionsverfahren (Eliminationsverfahren)",
+            erklaerung: "Die Gleichungen so mit Zahlen multiplizieren, dass eine Variable beim Addieren wegfällt. Beispiel: x + y = 10 und x − y = 4 ergeben addiert 2x = 14, also x = 7 und y = 3.",
+          },
+        ],
+      },
+      {
+        id: "mathe.gleichungssysteme.grafisch",
+        name: "Lineare Gleichungssysteme grafisch lösen",
+        stufen: [8, 9],
+        erklaerung: "Jede Gleichung nach y auflösen und als Gerade zeichnen. Der Schnittpunkt ist die Lösung. Parallele Geraden: keine Lösung. Dieselbe Gerade: unendlich viele Lösungen.",
+        fehler: [
+          "Nicht nach y aufgelöst und k falsch abgelesen (2x + y = 5 mit k = 2 statt −2)",
+          "Schnittpunkt ungenau abgelesen und nicht durch Einsetzen geprüft",
+          "Bei parallelen Geraden trotzdem eine Lösung angegeben",
+        ],
+      },
+      {
+        id: "mathe.gleichungssysteme.text",
+        name: "Textaufgaben mit Gleichungssystemen",
+        stufen: [8, 9],
+        erklaerung: "Die zwei gesuchten Größen benennen (x und y), aus dem Text zwei Gleichungen aufstellen, lösen, am Text prüfen und einen Antwortsatz schreiben. Beispiel: 12 Hühner und Hasen haben zusammen 34 Beine: x + y = 12 und 2x + 4y = 34, also 7 Hühner und 5 Hasen.",
+        fehler: [
+          "Nur eine Gleichung aufgestellt",
+          "Nicht festgelegt, wofür x und y stehen, und am Ende vertauscht",
+          "Beide Angaben in eine Gleichung gepackt (Tiere und Beine zusammengezählt)",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Geometrische Grundbegriffe",
+    themen: [
+      {
+        id: "mathe.geometrie.grundbegriffe",
+        name: "Strecke, Strahl, Gerade: parallel und normal",
+        stufen: [5, 6],
+        erklaerung: "Eine Strecke hat zwei Endpunkte, ein Strahl einen Anfangspunkt, eine Gerade keinen. Parallele Geraden haben überall denselben Abstand, normale Geraden schneiden einander im rechten Winkel. Abstand heißt immer kürzester Weg, also normal gemessen.",
+        fehler: [
+          "Strecke, Strahl und Gerade verwechselt",
+          "Abstand schräg statt normal gemessen",
+          "Geodreieck beim Zeichnen einer Normalen an der falschen Linie angelegt",
+        ],
+      },
+      {
+        id: "mathe.geometrie.kreis",
+        name: "Kreis und Kreisteile zeichnen und benennen",
+        stufen: [5, 6],
+        erklaerung: "Alle Punkte der Kreislinie haben denselben Abstand r vom Mittelpunkt. Der Durchmesser ist doppelt so lang wie der Radius. Kreisteile: Kreisbogen, Kreissektor (wie ein Tortenstück) und Kreissegment (von einer Sehne abgeschnitten). Eine Tangente berührt den Kreis in einem Punkt und steht dort normal auf den Radius.",
+        fehler: [
+          "Radius und Durchmesser verwechselt (Zirkel auf den Durchmesser eingestellt)",
+          "Kreissektor und Kreissegment verwechselt",
+          "Tangente nicht normal auf den Radius gezeichnet",
+        ],
+      },
+      {
+        id: "mathe.geometrie.koordinaten",
+        name: "Koordinatensystem: Punkte eintragen und ablesen",
+        stufen: [6, 7],
+        erklaerung: "Ein Punkt P(x | y): zuerst x waagrecht, dann y senkrecht. Negative Werte gehen nach links oder nach unten. Beispiel: A(3 | −2) liegt 3 nach rechts und 2 nach unten.",
+        fehler: [
+          "x und y vertauscht",
+          "Bei negativen Werten in die falsche Richtung gegangen",
+          "Kästchen gezählt statt die Einteilung der Achse gelesen",
+        ],
+      },
+      {
+        id: "mathe.geometrie.symmetrie",
+        name: "Achsensymmetrie und Kongruenz",
+        stufen: [6, 7],
+        erklaerung: "Eine Figur ist achsensymmetrisch, wenn sie beim Falten entlang der Achse genau aufeinander passt. Ein Punkt und sein Spiegelpunkt liegen auf einer Normalen zur Achse, gleich weit von ihr entfernt. Kongruente Figuren sind deckungsgleich: alle Seiten und Winkel stimmen überein.",
+        fehler: [
+          "Beim Spiegeln nicht normal zur Achse gemessen",
+          "Die Diagonalen eines Rechtecks für Symmetrieachsen gehalten",
+          "Gleich große Flächen für kongruent gehalten",
+        ],
+      },
+      {
+        id: "mathe.geometrie.symmetralen",
+        name: "Streckensymmetrale und Winkelsymmetrale konstruieren",
+        stufen: [6, 7],
+        erklaerung: "Die Streckensymmetrale steht normal auf die Strecke und geht durch ihren Mittelpunkt, jeder Punkt auf ihr ist von beiden Endpunkten gleich weit entfernt. Die Winkelsymmetrale teilt den Winkel in zwei gleiche Hälften. Konstruiert wird mit dem Zirkel: zwei Kreisbögen mit gleichem Radius.",
+        fehler: [
+          "Zirkel mit zu kleinem Radius, die Bögen schneiden einander nicht",
+          "Zirkel zwischen den beiden Bögen verstellt",
+          "Symmetrale nach Augenmaß in die Mitte gezeichnet",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Winkel",
+    themen: [
+      {
+        id: "mathe.winkel.messen",
+        name: "Winkel messen, zeichnen und benennen",
+        stufen: [5, 6],
+        erklaerung: "Winkel misst man in Grad. Spitz: unter 90°, recht: genau 90°, stumpf: zwischen 90° und 180°, gestreckt: 180°, erhaben: über 180°, voll: 360°. Messen: Nullpunkt des Geodreiecks auf den Scheitel, Nulllinie auf einen Schenkel.",
+        fehler: [
+          "Auf der falschen Skala abgelesen (130° statt 50°)",
+          "Geodreieck nicht beim Scheitel angelegt",
+          "Erhabene Winkel nicht als 360° minus den kleineren Winkel bestimmt",
+        ],
+      },
+      {
+        id: "mathe.winkel.beziehungen",
+        name: "Winkelsumme und Winkelbeziehungen",
+        stufen: [6, 7],
+        erklaerung: "Im Dreieck ist die Winkelsumme 180°, im Viereck 360°. Nebenwinkel ergänzen einander auf 180°, Scheitelwinkel sind gleich groß, ebenso Parallelwinkel an parallelen Geraden. Beispiel: α = 50° und β = 70° → γ = 60°.",
+        fehler: [
+          "Winkelsumme im Viereck mit 180° gerechnet",
+          "Nebenwinkel und Scheitelwinkel verwechselt",
+          "Parallelwinkel verwendet, obwohl die Geraden nicht parallel sind",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Dreiecke und Vierecke",
+    themen: [
+      {
+        id: "mathe.dreiecke.arten",
+        name: "Dreiecke und Vierecke: Arten und Eigenschaften",
+        stufen: [6, 7],
+        erklaerung: "Dreiecke nach Winkeln: spitzwinkelig, rechtwinkelig, stumpfwinkelig; nach Seiten: unregelmäßig, gleichschenkelig, gleichseitig. Vierecke: Quadrat, Rechteck, Raute (Rhombus), Parallelogramm, Deltoid (Drachenviereck), Trapez. Jedes Quadrat ist auch ein Rechteck und eine Raute.",
+        fehler: [
+          "Das Quadrat nicht als besonderes Rechteck erkannt",
+          "Raute und Deltoid verwechselt",
+          "Gedacht, ein Dreieck kann zwei rechte Winkel haben",
+        ],
+      },
+      {
+        id: "mathe.dreiecke.konstruieren",
+        name: "Dreiecke und Vierecke konstruieren",
+        stufen: [6, 7],
+        erklaerung: "Zuerst eine Planfigur skizzieren und die gegebenen Stücke markieren. Dann mit einer Seite beginnen und die weiteren Punkte mit dem Zirkel (Längen) oder dem Geodreieck (Winkel) festlegen. Beschriftung gegen den Uhrzeigersinn: A, B, C; die Seite a liegt gegenüber von A.",
+        fehler: [
+          "Ohne Planfigur begonnen und Stücke an die falsche Stelle gesetzt",
+          "Im Uhrzeigersinn beschriftet, dadurch Seiten vertauscht",
+          "Nicht geprüft, ob es das Dreieck überhaupt gibt (3 cm, 4 cm und 8 cm geht nicht)",
+        ],
+      },
+      {
+        id: "mathe.dreiecke.punkte",
+        name: "Besondere Punkte im Dreieck",
+        stufen: [6, 7],
+        erklaerung: "Umkreismittelpunkt: Schnittpunkt der Seitensymmetralen. Inkreismittelpunkt: Schnittpunkt der Winkelsymmetralen. Schwerpunkt: Schnittpunkt der Schwerlinien (von einer Ecke zur Mitte der gegenüberliegenden Seite). Höhenschnittpunkt: Schnittpunkt der Höhen.",
+        fehler: [
+          "Seitensymmetralen und Winkelsymmetralen verwechselt",
+          "Höhe nicht normal auf die Seite gezeichnet",
+          "Schwerlinie zur Mitte der falschen Seite gezogen",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Flächeninhalt und Umfang",
+    themen: [
+      {
+        id: "mathe.flaechen.rechteck",
+        name: "Umfang und Flächeninhalt von Rechteck und Quadrat",
+        stufen: [5, 6],
+        erklaerung: "Umfang: alle Seiten zusammen, u = 2 · a + 2 · b. Flächeninhalt: A = a · b, beim Quadrat A = a · a. Beide Seiten brauchen dieselbe Einheit. Beispiel: a = 6 cm und b = 4 cm → u = 20 cm, A = 24 cm².",
+        fehler: [
+          "Umfang und Flächeninhalt verwechselt",
+          "Beim Umfang nur a + b gerechnet",
+          "Seiten in verschiedenen Einheiten multipliziert (5 m · 30 cm = 150 m²)",
+        ],
+      },
+      {
+        id: "mathe.flaechen.zusammengesetzt",
+        name: "Zusammengesetzte Figuren",
+        stufen: [5, 7],
+        erklaerung: "Die Figur in Rechtecke (später auch Dreiecke) zerlegen oder zu einem großen Rechteck ergänzen und das Fehlende abziehen. Fehlende Seitenlängen aus den gegebenen ausrechnen.",
+        fehler: [
+          "Teilflächen doppelt gezählt, weil sie einander überlappen",
+          "Fehlende Seitenlänge falsch erschlossen",
+          "Beim Umfang innere Linien mitgezählt",
+        ],
+      },
+      {
+        id: "mathe.flaechen.umkehr",
+        name: "Umkehraufgaben: Seite oder Höhe gesucht",
+        stufen: [5, 8],
+        erklaerung: "Ist der Flächeninhalt bekannt, rechnet man rückwärts: b = A : a. Beim Umfang: b = (u − 2 · a) : 2. Beim Dreieck: h = 2 · A : c. Beispiel: A = 48 cm² und a = 8 cm → b = 6 cm.",
+        fehler: [
+          "Mit dem Umfang statt mit dem Flächeninhalt gerechnet",
+          "Beim Dreieck den Faktor 2 vergessen (h = A : c)",
+          "Einheit falsch übernommen (b = 6 cm² statt 6 cm)",
+        ],
+      },
+      {
+        id: "mathe.flaechen.dreieck",
+        name: "Flächeninhalt von Dreiecken",
+        stufen: [6, 7],
+        erklaerung: "A = c · h : 2, also Grundlinie mal zugehörige Höhe durch 2. Die Höhe steht normal auf die Grundlinie. Im rechtwinkeligen Dreieck sind die beiden Katheten Grundlinie und Höhe: A = a · b : 2.",
+        fehler: [
+          "Durch 2 vergessen",
+          "Eine schräge Seite statt der Höhe genommen",
+          "Grundlinie und Höhe passen nicht zusammen (Höhe auf eine andere Seite)",
+        ],
+      },
+      {
+        id: "mathe.flaechen.vierecke",
+        name: "Flächeninhalt von Parallelogramm, Raute, Deltoid und Trapez",
+        stufen: [6, 7],
+        erklaerung: "Parallelogramm: A = a · h. Raute und Deltoid: A = e · f : 2 (die Diagonalen). Trapez: A = (a + c) · h : 2. Die Höhe ist immer der normale Abstand, nicht die schräge Seite. Beispiel: Trapez mit a = 8 cm, c = 4 cm und h = 5 cm → A = 30 cm².",
+        fehler: [
+          "Beim Parallelogramm die schräge Seite statt der Höhe genommen (A = a · b)",
+          "Beim Trapez die Klammer oder das Durch 2 vergessen",
+          "Bei Raute und Deltoid die Diagonalen nicht durch 2 dividiert",
+        ],
+      },
+      {
+        id: "mathe.flaechen.vielecke",
+        name: "Flächeninhalt von Vielecken",
+        stufen: [6, 8],
+        erklaerung: "Ein Vieleck zerlegt man in Dreiecke und Vierecke, berechnet jede Teilfläche und addiert. Ein regelmäßiges Sechseck besteht aus 6 gleichseitigen Dreiecken. Im Koordinatensystem hilft ein umschließendes Rechteck, von dem man Dreiecke abzieht.",
+        fehler: [
+          "Teilflächen übersehen oder doppelt gezählt",
+          "Höhe eines Teildreiecks falsch gewählt",
+          "Beim regelmäßigen Sechseck die Seite auch als Höhe der Dreiecke verwendet",
+        ],
+      },
+      {
+        id: "mathe.flaechen.kreis",
+        name: "Umfang und Flächeninhalt von Kreisen",
+        stufen: [8, 9],
+        erklaerung: "u = 2 · r · π = d · π und A = r² · π, π ist ungefähr 3,14. Beispiel: r = 5 cm → u ≈ 31,4 cm und A ≈ 78,5 cm².",
+        fehler: [
+          "Mit dem Durchmesser statt dem Radius in A = r² · π gerechnet",
+          "r² als 2 · r gerechnet",
+          "Umfang und Flächeninhalt verwechselt",
+        ],
+      },
+      {
+        id: "mathe.flaechen.kreisteile",
+        name: "Kreisteile: Halbkreis, Viertelkreis und Kreissektor",
+        stufen: [8, 9],
+        erklaerung: "Ein Kreissektor mit dem Winkel α ist der Anteil α : 360° vom ganzen Kreis: A = r² · π · α : 360° und Bogen b = 2 · r · π · α : 360°. Beim Umfang eines Halbkreises gehört der Durchmesser dazu.",
+        fehler: [
+          "Beim Umfang des Halbkreises den Durchmesser vergessen",
+          "Anteil verkehrt gebildet (360° : α statt α : 360°)",
+          "Bogenlänge und Flächeninhalt verwechselt",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Körper",
+    themen: [
+      {
+        id: "mathe.koerper.formen",
+        name: "Körper erkennen und beschreiben",
+        stufen: [5, 6],
+        erklaerung: "Würfel, Quader, Prisma, Pyramide, Zylinder, Kegel und Kugel unterscheidet man an Flächen, Kanten und Ecken. Beispiel: Ein Quader hat 6 Flächen, 12 Kanten und 8 Ecken.",
+        fehler: [
+          "Flächen, Kanten und Ecken verwechselt oder doppelt gezählt",
+          "Den Würfel nicht als besonderen Quader erkannt",
+          "Ebene Figur und Körper verwechselt (Quadrat statt Würfel)",
+        ],
+      },
+      {
+        id: "mathe.koerper.netze",
+        name: "Netze und Schrägrisse",
+        stufen: [5, 7],
+        erklaerung: "Ein Netz ist der aufgeklappte Körper: beim Würfel 6 Quadrate, die sich zusammenfalten lassen, ohne dass zwei Flächen übereinanderliegen. Im Schrägriss zeichnet man die vordere Fläche in wahrer Größe und die nach hinten laufenden Kanten schräg und verkürzt.",
+        fehler: [
+          "Netz, bei dem beim Falten zwei Flächen übereinanderliegen",
+          "Im Schrägriss die nach hinten laufenden Kanten nicht parallel gezeichnet",
+          "Verdeckte Kanten nicht strichliert",
+        ],
+      },
+      {
+        id: "mathe.koerper.quader",
+        name: "Oberfläche und Volumen von Quader und Würfel",
+        stufen: [5, 6],
+        erklaerung: "Volumen: V = a · b · h. Oberfläche: O = 2 · (a · b + a · h + b · h), beim Würfel O = 6 · a². Beispiel: a = 5 cm, b = 3 cm und h = 2 cm → V = 30 cm³ und O = 2 · (15 + 10 + 6) = 62 cm².",
+        fehler: [
+          "Oberfläche und Volumen verwechselt",
+          "Bei der Oberfläche nur drei statt sechs Flächen gezählt",
+          "Falsche Einheit (Volumen in cm²)",
+        ],
+      },
+      {
+        id: "mathe.koerper.prisma",
+        name: "Oberfläche und Volumen von Prismen",
+        stufen: [6, 8],
+        erklaerung: "Volumen: V = G · h, also Grundfläche mal Höhe des Prismas. Oberfläche: O = 2 · G + M, der Mantel M ist der Umfang der Grundfläche mal die Höhe. Beispiel: dreieckige Grundfläche G = 6 cm² und h = 10 cm → V = 60 cm³.",
+        fehler: [
+          "Höhe des Grunddreiecks mit der Höhe des Prismas verwechselt",
+          "Grundfläche nur einmal statt zweimal zur Oberfläche gezählt",
+          "Mantel falsch berechnet (nur eine Seitenfläche)",
+        ],
+      },
+      {
+        id: "mathe.koerper.pyramide",
+        name: "Volumen und Oberfläche von Pyramiden",
+        stufen: [7, 9],
+        erklaerung: "V = G · h : 3. Die Oberfläche ist die Grundfläche plus alle Dreiecke des Mantels, für deren Höhe braucht man oft den Satz des Pythagoras. Beispiel: quadratische Grundfläche mit a = 6 cm und h = 4 cm → V = 36 · 4 : 3 = 48 cm³.",
+        fehler: [
+          "Durch 3 vergessen",
+          "Körperhöhe und Höhe der Seitenfläche verwechselt",
+          "Grundfläche bei der Oberfläche vergessen",
+        ],
+      },
+      {
+        id: "mathe.koerper.zylinder",
+        name: "Zylinder: Oberfläche und Volumen",
+        stufen: [8, 9],
+        erklaerung: "V = r² · π · h. Oberfläche: O = 2 · r² · π + 2 · r · π · h, also zwei Kreise und der Mantel. Beispiel: r = 3 cm und h = 10 cm → V = 90 · π ≈ 282,7 cm³.",
+        fehler: [
+          "Mit dem Durchmesser statt dem Radius gerechnet",
+          "Mantel vergessen oder nur einen Kreis gezählt",
+          "Volumen in cm² angegeben",
+        ],
+      },
+      {
+        id: "mathe.koerper.kegel",
+        name: "Kegel: Oberfläche und Volumen",
+        stufen: [8, 9],
+        erklaerung: "V = r² · π · h : 3. Oberfläche: O = r² · π + r · π · s, dabei ist s die Mantellinie mit s² = r² + h². Beispiel: r = 3 cm und h = 4 cm → s = 5 cm und V ≈ 37,7 cm³.",
+        fehler: [
+          "Durch 3 vergessen",
+          "Höhe und Mantellinie verwechselt",
+          "Grundkreis bei der Oberfläche vergessen",
+        ],
+      },
+      {
+        id: "mathe.koerper.dichte",
+        name: "Masse und Dichte von Körpern",
+        stufen: [7, 9],
+        erklaerung: "Masse = Volumen · Dichte. Die Einheiten müssen zusammenpassen: Ist die Dichte in g pro cm³ angegeben, braucht man das Volumen in cm³. Beispiel: Ein Eisenstück mit 10 cm³ und der Dichte 7,9 g pro cm³ wiegt 79 g.",
+        fehler: [
+          "Durch die Dichte dividiert statt multipliziert",
+          "Einheiten nicht angepasst (Volumen in dm³, Dichte in g pro cm³)",
+          "Ergebnis nicht in die gefragte Einheit umgerechnet (kg oder t)",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Satz des Pythagoras",
+    themen: [
+      {
+        id: "mathe.pythagoras.seite",
+        name: "Satz des Pythagoras: fehlende Seite berechnen",
+        stufen: [8, 9],
+        erklaerung: "Im rechtwinkeligen Dreieck gilt: Kathete² + Kathete² = Hypotenuse². Die Hypotenuse liegt dem rechten Winkel gegenüber und ist die längste Seite. Beispiel: a = 6 cm und b = 8 cm → c = sqrt(36 + 64) = 10 cm. Ist eine Kathete gesucht: b = sqrt(c² − a²).",
+        fehler: [
+          "Die Wurzel am Ende vergessen (c = 100 cm)",
+          "Bei gesuchter Kathete addiert statt subtrahiert",
+          "Die Hypotenuse nicht erkannt, wenn das Dreieck anders beschriftet ist",
+        ],
+      },
+      {
+        id: "mathe.pythagoras.figuren",
+        name: "Pythagoras in ebenen Figuren",
+        stufen: [8, 9],
+        erklaerung: "Man sucht ein passendes rechtwinkeliges Dreieck: Diagonale im Rechteck d = sqrt(a² + b²), Diagonale im Quadrat d = a · sqrt(2), Höhe im gleichseitigen Dreieck h = a · sqrt(3) : 2, Höhe im gleichschenkeligen Dreieck mit der halben Basis.",
+        fehler: [
+          "Im gleichschenkeligen Dreieck die ganze statt der halben Basis verwendet",
+          "Ein Dreieck verwendet, das gar nicht rechtwinkelig ist",
+          "Beim gleichschenkeligen Trapez den Unterschied der Parallelseiten nicht halbiert",
+        ],
+      },
+      {
+        id: "mathe.pythagoras.koerper",
+        name: "Pythagoras in Körpern",
+        stufen: [8, 9],
+        erklaerung: "Zuerst ein rechtwinkeliges Dreieck im Körper suchen und herauszeichnen. Raumdiagonale im Quader: d = sqrt(a² + b² + h²). Bei der Pyramide: Höhe der Seitenfläche aus der Körperhöhe und der halben Grundkante.",
+        fehler: [
+          "Flächendiagonale und Raumdiagonale verwechselt",
+          "Die ganze statt der halben Grundkante verwendet",
+          "Das Dreieck nicht herausgezeichnet und Seiten vertauscht",
+        ],
+      },
+      {
+        id: "mathe.pythagoras.umkehrung",
+        name: "Prüfen, ob ein Dreieck rechtwinkelig ist (Umkehrung des Pythagoras)",
+        stufen: [8, 9],
+        erklaerung: "Die längste Seite kommt allein auf eine Seite der Gleichung. Gilt a² + b² = c², ist das Dreieck rechtwinkelig, sonst nicht. Beispiel: 5, 12 und 13 → 25 + 144 = 169 = 13², also rechtwinkelig.",
+        fehler: [
+          "Nicht die längste Seite als c genommen",
+          "Mit gerundeten Werten geprüft und daraus rechtwinkelig geschlossen",
+          "Seiten nicht quadriert (5 + 12 ist nicht 13, also angeblich nicht rechtwinkelig)",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Ähnlichkeit",
+    themen: [
+      {
+        id: "mathe.aehnlichkeit.figuren",
+        name: "Ähnliche Figuren und Ähnlichkeitsfaktor",
+        stufen: [7, 8],
+        erklaerung: "Ähnliche Figuren haben gleich große Winkel, alle Längen sind mit demselben Faktor k vergrößert oder verkleinert. Der Flächeninhalt ändert sich mit k². Beispiel: k = 3 → Seiten dreimal so lang, Fläche neunmal so groß.",
+        fehler: [
+          "Flächeninhalt nur mit k statt mit k² multipliziert",
+          "Seiten ins Verhältnis gesetzt, die einander nicht entsprechen",
+          "Zu allen Seiten dieselbe Zahl addiert statt mit k multipliziert",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Statistik",
+    themen: [
+      {
+        id: "mathe.statistik.diagramme",
+        name: "Diagramme lesen und zeichnen",
+        stufen: [5, 8],
+        erklaerung: "Säulen- und Balkendiagramme vergleichen Anzahlen, Kreisdiagramme und Prozentstreifen zeigen Anteile, Liniendiagramme zeigen Entwicklungen. Zuerst Titel, Achsen und Einteilung lesen. Eine Achse, die nicht bei 0 beginnt, lässt Unterschiede größer aussehen.",
+        fehler: [
+          "Einteilung der Achse nicht beachtet (ein Kästchen als 1 statt als 5 gezählt)",
+          "Abgeschnittene Achse übersehen und Unterschiede überschätzt",
+          "Beim Kreisdiagramm Prozent nicht in Grad umgerechnet (25 % als 25° statt 90°)",
+        ],
+      },
+      {
+        id: "mathe.statistik.kennzahlen",
+        name: "Mittelwert, Median und Spannweite",
+        stufen: [5, 8],
+        erklaerung: "Mittelwert: alle Werte addieren und durch ihre Anzahl dividieren. Median: Werte der Größe nach ordnen und den mittleren nehmen, bei gerader Anzahl den Mittelwert der beiden mittleren. Spannweite: größter minus kleinster Wert. Beispiel: 2, 3, 3, 5, 12 → Mittelwert 5, Median 3, Spannweite 10.",
+        fehler: [
+          "Median gesucht, ohne die Werte vorher zu ordnen",
+          "Durch die falsche Anzahl dividiert (Werte mit 0 nicht mitgezählt)",
+          "Bei gerader Anzahl nur einen der beiden mittleren Werte genommen",
+        ],
+      },
+      {
+        id: "mathe.statistik.haeufigkeiten",
+        name: "Absolute und relative Häufigkeiten",
+        stufen: [5, 7],
+        erklaerung: "Absolute Häufigkeit: wie oft etwas vorkommt. Relative Häufigkeit: absolute Häufigkeit durch die Gesamtzahl, als Bruch, Dezimalzahl oder Prozent. Beispiel: 6 von 24 Kindern → 6/24 = 1/4 = 25 %. Alle relativen Häufigkeiten zusammen ergeben 100 %.",
+        fehler: [
+          "Durch die falsche Gesamtzahl dividiert",
+          "Absolute und relative Häufigkeit verwechselt",
+          "Nicht kontrolliert, ob alle Anteile zusammen 100 % ergeben",
+        ],
+      },
+      {
+        id: "mathe.statistik.kreuztabellen",
+        name: "Kreuztabellen und Vierfeldertafeln",
+        stufen: [8, 9],
+        erklaerung: "Eine Vierfeldertafel zählt zwei Merkmale gleichzeitig, zum Beispiel Klasse und Lieblingssport. Zeilen- und Spaltensummen stehen am Rand, rechts unten steht die Gesamtzahl. Fehlende Felder ergänzt man über die Summen.",
+        fehler: [
+          "Zeilen- und Spaltensummen verwechselt",
+          "Anteil auf die falsche Gesamtheit bezogen (auf alle statt auf eine Zeile)",
+          "Gesamtzahl nicht kontrolliert",
+        ],
+      },
+      {
+        id: "mathe.statistik.abzaehlen",
+        name: "Abzählen mit Baumdiagrammen",
+        stufen: [5, 6],
+        erklaerung: "Bei jeder Auswahl verzweigt sich das Baumdiagramm. Die Anzahl der Möglichkeiten ist das Produkt der Möglichkeiten auf jeder Stufe. Beispiel: 3 Vorspeisen und 2 Hauptspeisen ergeben 3 · 2 = 6 Menüs.",
+        fehler: [
+          "Möglichkeiten addiert statt multipliziert (3 + 2 = 5)",
+          "Im Baumdiagramm Äste vergessen",
+          "Dieselbe Möglichkeit doppelt gezählt",
+        ],
+      },
+    ],
+  },
+  {
+    area: "Wahrscheinlichkeit",
+    themen: [
+      {
+        id: "mathe.wahrscheinlichkeit.laplace",
+        name: "Wahrscheinlichkeit bei Münze und Würfel",
+        stufen: [7, 8],
+        erklaerung: "Wenn alle Ergebnisse gleich wahrscheinlich sind: Wahrscheinlichkeit = günstige Ergebnisse durch mögliche Ergebnisse. Beispiel: gerade Augenzahl beim Würfeln: 3/6 = 1/2 = 50 %. Eine Wahrscheinlichkeit liegt immer zwischen 0 und 1.",
+        fehler: [
+          "Günstige und mögliche Ergebnisse vertauscht (6/3)",
+          "Ergebnisse für gleich wahrscheinlich gehalten, die es nicht sind",
+          "Geglaubt, nach dreimal Kopf kommt eher Zahl",
+        ],
+      },
+      {
+        id: "mathe.wahrscheinlichkeit.zweistufig",
+        name: "Zweistufige Zufallsexperimente mit Baumdiagramm",
+        stufen: [8, 9],
+        erklaerung: "Entlang eines Pfades multipliziert man die Wahrscheinlichkeiten. Gehören mehrere Pfade zum Ereignis, addiert man ihre Ergebnisse. Beispiel: zweimal eine Münze werfen, mindestens einmal Kopf: 1 − 1/2 · 1/2 = 3/4.",
+        fehler: [
+          "Entlang eines Pfades addiert statt multipliziert",
+          "Beim Ziehen ohne Zurücklegen die Wahrscheinlichkeiten der zweiten Stufe nicht angepasst",
+          "Pfade vergessen, die auch zum Ereignis gehören",
+        ],
+      },
+    ],
+  },
+];
+
+/** The new skills, in the order of BEREICHE; Teilfähigkeiten directly after their skill. */
+export const MATHE_THEMEN: CurriculumSkill[] = BEREICHE.flatMap(({ area, themen }) =>
+  themen.flatMap((t) => {
+    const skill: CurriculumSkill = { id: t.id, subject: "Mathematik", area, name: t.name, gradeMin: t.stufen[0], gradeMax: t.stufen[1] };
+    return [skill, ...(t.teile ?? []).map((p) => ({ ...skill, id: `${t.id}.${p.id}`, name: p.name, parentId: t.id }))];
+  }),
+);
+
+/** Short explanation with an example, per skill (also used as the sample answer of „Erkläre …“ tasks). */
+export const MATHE_ERKLAERUNG: Record<string, string> = Object.fromEntries(
+  BEREICHE.flatMap(({ themen }) => themen.flatMap((t) => [[t.id, t.erklaerung], ...(t.teile ?? []).map((p) => [`${t.id}.${p.id}`, p.erklaerung])])),
+);
+
+/** Typical errors of the maths skills that were there before (lib/curriculum.ts BASE). */
+const FEHLER_BISHER: Record<string, string[]> = {
+  "mathe.brueche.kuerzen": [
+    "Nur den Zähler oder nur den Nenner dividiert (6/8 = 3/8)",
+    "Nicht vollständig gekürzt (12/18 = 6/9)",
+    "Aus einer Summe gekürzt ((2 + 6)/2 = 6 statt 4)",
+  ],
+  "mathe.brueche.erweitern": [
+    "Nur den Nenner multipliziert (3/4 = 3/12)",
+    "Zähler und Nenner mit verschiedenen Zahlen multipliziert",
+    "Zu Zähler und Nenner dieselbe Zahl addiert statt multipliziert (3/4 = 5/6)",
+  ],
+  "mathe.brueche.addieren": [
+    "Zähler und Nenner einzeln addiert (1/2 + 1/3 = 2/5)",
+    "Beim Erweitern nur den Nenner geändert (1/2 + 1/3 = 1/6 + 1/6)",
+    "Ergebnis nicht gekürzt",
+  ],
+  "mathe.brueche.subtrahieren": [
+    "Zähler und Nenner einzeln subtrahiert (3/4 − 1/2 = 2/2)",
+    "Bei gemischten Zahlen nicht entbündelt (3 1/4 − 1 3/4 = 2 2/4 statt 1 1/2)",
+    "Ergebnis nicht gekürzt",
+  ],
+  "mathe.brueche.multiplizieren": [
+    "Den Nenner wie beim Addieren behalten (2/5 · 3/5 = 6/5)",
+    "Eine ganze Zahl mit Zähler und Nenner multipliziert (3 · 2/5 = 6/15)",
+    "Gemischte Zahlen nicht zuerst in unechte Brüche umgewandelt",
+  ],
+  "mathe.brueche.dividieren": [
+    "Den ersten statt den zweiten Bruch umgedreht",
+    "Kehrwert gebildet, dann aber dividiert statt multipliziert",
+    "Gemischte Zahlen nicht zuerst in unechte Brüche umgewandelt",
+  ],
+  "mathe.negativ.addieren": [
+    "„Minus mal minus gibt plus“ beim Addieren verwendet (−3 − 5 = 8 statt −8)",
+    "Bei verschiedenen Vorzeichen addiert statt subtrahiert (−7 + 3 = −10)",
+    "Vorzeichen des Ergebnisses von der falschen Zahl genommen (−2 + 9 = −7)",
+  ],
+  "mathe.negativ.multiplizieren": [
+    "Vorzeichenregel falsch (−4 · (−3) = −12)",
+    "Bei mehreren Faktoren die Minuszeichen nicht gezählt",
+    "Vorzeichen bei Potenzen falsch ((−2)^3 = 8 statt −8)",
+  ],
+  "mathe.prozent.prozentwert": [
+    "Den Prozentsatz als ganze Zahl statt als Hundertstel genommen (20 % von 80 = 1 600)",
+    "Grundwert und Prozentwert verwechselt",
+    "Beim Rabatt den Rabatt statt des neuen Preises angegeben",
+  ],
+  "mathe.prozent.prozentsatz": [
+    "Grundwert durch Prozentwert dividiert (60 : 15 = 4 %)",
+    "Mal 100 vergessen (15 : 60 = 0,25 %)",
+    "Den Unterschied auf den neuen statt auf den alten Wert bezogen",
+  ],
+  "mathe.prozent.grundwert": [
+    "Prozentwert mal Prozentsatz gerechnet (12 · 30 : 100)",
+    "Den Prozentwert für den Grundwert gehalten",
+    "Nach einer Erhöhung vom neuen Wert aus zurückgerechnet",
+  ],
+  "mathe.gleichungen.einfach": [
+    "Nur auf einer Seite umgeformt",
+    "Beim Hinüberbringen das Vorzeichen nicht umgedreht (x + 4 = 10 → x = 14)",
+    "Nur einen Teil einer Seite dividiert (3x + 6 = 15 → x + 6 = 5)",
+  ],
+  "mathe.gleichungen.klammern": [
+    "Nur das erste Glied in der Klammer multipliziert (2 · (x + 3) = 2x + 3)",
+    "Minus vor der Klammer nur beim ersten Glied beachtet",
+    "Klammer auf einer Seite aufgelöst und auf der anderen vergessen",
+  ],
+  "mathe.gleichungen.text": [
+    "Nicht festgelegt, wofür x steht",
+    "Beziehung umgedreht („um 5 mehr als x“ als x − 5)",
+    "Nur x angegeben, obwohl nach etwas anderem gefragt ist",
+  ],
+  "mathe.potenzen.regeln": [
+    "Hochzahlen multipliziert statt addiert (x^2 · x^3 = x^6)",
+    "Basen multipliziert (2^3 · 2^4 = 4^7)",
+    "Summe gliedweise potenziert ((x + y)^2 = x^2 + y^2)",
+  ],
+};
+
+/** Typical errors per skill: what students often get wrong, each with a short example. */
+export const TYPISCHE_FEHLER: Record<string, string[]> = {
+  ...FEHLER_BISHER,
+  ...Object.fromEntries(BEREICHE.flatMap(({ themen }) => themen.map((t) => [t.id, t.fehler]))),
+};
+
+/** Typical errors of a skill; a Teilfähigkeit without its own gets those of its skill. */
+export function typischeFehler(skillId: string): string[] {
+  for (let id = skillId; id.split(".").length >= 3; id = id.slice(0, id.lastIndexOf("."))) {
+    if (TYPISCHE_FEHLER[id]) return TYPISCHE_FEHLER[id];
+  }
+  return [];
+}
+
+/**
+ * Order between the maths skills: [skill, skill that should sit before it]. Own didactic choices,
+ * like PREREQUISITES in lib/curriculum.ts.
+ */
+export const MATHE_VORAUSSETZUNGEN: [string, string][] = [
+  ["mathe.zahlen.multiplizieren", "mathe.zahlen.addieren"],
+  ["mathe.zahlen.dividieren", "mathe.zahlen.multiplizieren"],
+  ["mathe.dezimal.addieren", "mathe.zahlen.addieren"],
+  ["mathe.dezimal.multiplizieren", "mathe.zahlen.zehner"],
+  ["mathe.masse.laengen", "mathe.zahlen.zehner"],
+  ["mathe.teilbarkeit.primzahlen", "mathe.teilbarkeit.teiler"],
+  ["mathe.teilbarkeit.ggt-kgv", "mathe.teilbarkeit.teiler"],
+  ["mathe.brueche.kuerzen", "mathe.teilbarkeit.teiler"],
+  ["mathe.brueche.addieren.hauptnenner", "mathe.teilbarkeit.ggt-kgv"],
+  ["mathe.brueche.vonzahlen", "mathe.brueche.anteile"],
+  ["mathe.brueche.vergleichen", "mathe.brueche.erweitern"],
+  ["mathe.proportional.indirekt", "mathe.proportional.direkt"],
+  ["mathe.proportional.verhaeltnisse", "mathe.proportional.direkt"],
+  ["mathe.prozent.aenderung", "mathe.prozent.prozentwert"],
+  ["mathe.prozent.promille", "mathe.prozent.prozentwert"],
+  ["mathe.prozent.zinsen", "mathe.prozent.prozentwert"],
+  ["mathe.terme.zusammenfassen", "mathe.terme.aufstellen"],
+  ["mathe.terme.klammern", "mathe.terme.zusammenfassen"],
+  ["mathe.terme.herausheben", "mathe.terme.klammern"],
+  ["mathe.terme.binomisch", "mathe.terme.klammern"],
+  ["mathe.gleichungen.klammern", "mathe.terme.klammern"],
+  ["mathe.gleichungen.einfach", "mathe.gleichungen.probieren"],
+  ["mathe.gleichungen.formeln", "mathe.gleichungen.probieren"],
+  ["mathe.gleichungen.brueche", "mathe.gleichungen.einfach"],
+  ["mathe.gleichungen.brueche", "mathe.brueche.addieren"],
+  ["mathe.potenzen.regeln", "mathe.potenzen.schreibweise"],
+  ["mathe.wurzeln.quadratwurzel", "mathe.potenzen.schreibweise"],
+  ["mathe.wurzeln.regeln", "mathe.wurzeln.quadratwurzel"],
+  ["mathe.funktionen.darstellungen", "mathe.geometrie.koordinaten"],
+  ["mathe.funktionen.linear", "mathe.funktionen.darstellungen"],
+  ["mathe.funktionen.linear-sach", "mathe.funktionen.linear"],
+  ["mathe.gleichungssysteme.rechnerisch", "mathe.gleichungen.einfach"],
+  ["mathe.gleichungssysteme.grafisch", "mathe.funktionen.linear"],
+  ["mathe.gleichungssysteme.text", "mathe.gleichungssysteme.rechnerisch"],
+  ["mathe.winkel.beziehungen", "mathe.winkel.messen"],
+  ["mathe.dreiecke.konstruieren", "mathe.winkel.messen"],
+  ["mathe.dreiecke.punkte", "mathe.geometrie.symmetralen"],
+  ["mathe.flaechen.zusammengesetzt", "mathe.flaechen.rechteck"],
+  ["mathe.flaechen.umkehr", "mathe.flaechen.rechteck"],
+  ["mathe.flaechen.dreieck", "mathe.flaechen.rechteck"],
+  ["mathe.flaechen.vierecke", "mathe.flaechen.dreieck"],
+  ["mathe.flaechen.vielecke", "mathe.flaechen.vierecke"],
+  ["mathe.flaechen.kreisteile", "mathe.flaechen.kreis"],
+  ["mathe.koerper.quader", "mathe.flaechen.rechteck"],
+  ["mathe.koerper.prisma", "mathe.koerper.quader"],
+  ["mathe.koerper.pyramide", "mathe.koerper.prisma"],
+  ["mathe.koerper.zylinder", "mathe.flaechen.kreis"],
+  ["mathe.koerper.kegel", "mathe.koerper.zylinder"],
+  ["mathe.pythagoras.seite", "mathe.wurzeln.quadratwurzel"],
+  ["mathe.pythagoras.figuren", "mathe.pythagoras.seite"],
+  ["mathe.pythagoras.koerper", "mathe.pythagoras.figuren"],
+  ["mathe.pythagoras.umkehrung", "mathe.pythagoras.seite"],
+  ["mathe.statistik.haeufigkeiten", "mathe.brueche.dezimal"],
+  ["mathe.wahrscheinlichkeit.laplace", "mathe.statistik.haeufigkeiten"],
+  ["mathe.wahrscheinlichkeit.zweistufig", "mathe.wahrscheinlichkeit.laplace"],
+  ["mathe.wahrscheinlichkeit.zweistufig", "mathe.statistik.abzaehlen"],
+];

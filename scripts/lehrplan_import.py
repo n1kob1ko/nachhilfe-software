@@ -11,6 +11,10 @@ look broken; the RIS link of every package leads to the original.
 
 Usage (input: RIS "Text"-export of each Anlage, HTL as `pdftotext -layout`):
   python3 scripts/lehrplan_import.py --vs vs.txt --ms ms.txt --ahs ahs.txt --htl htl-layout.txt
+
+Only new skill links, after adding to lehrplan_mapping.json (no RIS files needed; the entries
+and the links already in the packages in curriculum/ stay as they are):
+  python3 scripts/lehrplan_import.py --relink
 """
 import argparse
 import collections
@@ -686,6 +690,26 @@ def build(args) -> dict[str, dict]:
     return pkgs
 
 
+def relink(args) -> dict:
+    """
+    The packages already in --out plus the mapping's links they do not have yet. Links already in a
+    package stay, also those that are not in the mapping (some packages got links by hand).
+    """
+    with open(args.mapping, encoding="utf-8") as fh:
+        mapping = json.load(fh)
+    pkgs = {}
+    for name in sorted(mapping):
+        path = os.path.join(args.out, f"ris-{name}.json")
+        if name.startswith("_") or not os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8") as fh:
+            pkg = json.load(fh)
+        links = pkg["skill_nodes"] + resolve_links(argparse.Namespace(nodes=pkg["nodes"]), mapping[name], name)
+        pkg["skill_nodes"] = [l for i, l in enumerate(links) if l not in links[:i]]
+        pkgs[name] = pkg
+    return pkgs
+
+
 def resolve_links(b: Builder, entries: list, name: str) -> list:
     """
     Mapping entries: [skill_id, node_code_or_prefix, phrase]. The phrase must occur in the text of a
@@ -717,8 +741,9 @@ def main():
     p.add_argument("--mapping", default=os.path.join(os.path.dirname(__file__), "lehrplan_mapping.json"))
     p.add_argument("--out", default=os.path.join(os.path.dirname(__file__), "..", "curriculum"))
     p.add_argument("--dry", action="store_true")
+    p.add_argument("--relink", action="store_true", help="only the skill links of the packages in --out")
     args = p.parse_args()
-    pkgs = build(args)
+    pkgs = relink(args) if args.relink else build(args)
     for name, pkg in pkgs.items():
         kinds: dict[str, int] = {}
         for n in pkg["nodes"]:

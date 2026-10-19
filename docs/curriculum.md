@@ -20,6 +20,7 @@ als zweites System daneben.
 | Verknüpfung Lehrplan-Eintrag ↔ Fähigkeit (`scripts/lehrplan_mapping.json`) | **eigene didaktische Zuordnung**, nicht Teil des Lehrplans |
 | IQS (Kompetenzmodelle, iKM PLUS, Aufgabenpools) | nur als **Referenz** eingetragen, Inhalte werden nie übernommen |
 | Fähigkeiten Mathematik, Deutsch, Englisch (Schulstufe 3–13) | **eigene Struktur** von Lernheft (Quelle „Lernheft – eigene Inhalte“) |
+| Mathe-Themen der 5. bis 8. Schulstufe (`lib/mathe-themen.ts`): 95 Fähigkeiten mit Erklärung und typischen Fehlern | **eigene Struktur und eigener Text**; Themen nach dem Lehrplan MS/AHS, mit den Inhaltsverzeichnissen gängiger Mathebücher abgeglichen (nur Themennamen, keine Aufgabe übernommen) |
 | Paket „Volksschule Mathematik und Deutsch“ (45 Fähigkeiten) | **eigene Struktur**, nicht der Lehrplantext |
 | Paket „DEMO – Beispiel-Lehrplan“ | **erfundene Demo-Daten**, überall mit „DEMO“ gekennzeichnet, mit einem Klick wieder entfernbar |
 | Voraussetzungen zwischen Fähigkeiten (`PREREQUISITES`) | eigene didaktische Entscheidung |
@@ -32,6 +33,11 @@ HTL: `pdftotext -layout`; HAK: RIS-Textexport mit gesperrt gesetzten Überschrif
 ```
 python3 scripts/lehrplan_import.py --vs vs.txt --ms ms.txt --ahs ahs.txt --htl htl-layout.txt --hak hak.txt [--dry]
 ```
+
+Nur neue Verknüpfungen nach einer Ergänzung von `scripts/lehrplan_mapping.json` (ohne RIS-Dateien):
+`python3 scripts/lehrplan_import.py --relink`. Einträge und vorhandene Verknüpfungen der Pakete
+bleiben, die neuen kommen dazu. Im Programm erscheinen sie nach dem Import des geänderten Pakets
+unter Mehr › Lehrplan.
 
 - Bereinigt werden nur Seitenköpfe, Zeilenumbrüche, Silbentrennung und Fußnotenziffern; sonst
   bleibt der Wortlaut unverändert. Jeder Aufzählungspunkt der Quelle wird ein Eintrag (geprüft:

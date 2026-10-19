@@ -155,6 +155,661 @@
    "mathe.potenzen.regeln",
    "MS-MAT-3-B2-K2",
    "Rechenregeln für Potenzen"
+  ],
+  [
+   "mathe.zahlen.gross",
+   "MS-MAT-1-B1-K1",
+   "Lesen großer Zahlen"
+  ],
+  [
+   "mathe.zahlen.gross",
+   "MS-MAT-1-B1-K1",
+   "dezimalen Stellenwertsystems"
+  ],
+  [
+   "mathe.zahlen.roemisch",
+   "MS-MAT-1-B1-K1",
+   "römischer Zahldarstellungen"
+  ],
+  [
+   "mathe.zahlen.runden",
+   "MS-MAT-1-B1-K2",
+   "Runden von Zahlen"
+  ],
+  [
+   "mathe.zahlen.addieren",
+   "MS-MAT-1-B1-K2",
+   "vier Grundrechenoperationen mit natürlichen Zahlen"
+  ],
+  [
+   "mathe.zahlen.multiplizieren",
+   "MS-MAT-1-B1-K2",
+   "vier Grundrechenoperationen mit natürlichen Zahlen"
+  ],
+  [
+   "mathe.zahlen.dividieren",
+   "MS-MAT-1-B1-K2",
+   "vier Grundrechenoperationen mit natürlichen Zahlen"
+  ],
+  [
+   "mathe.zahlen.zehner",
+   "MS-MAT-1-B1-K1",
+   "dezimalen Stellenwertsystems"
+  ],
+  [
+   "mathe.zahlen.vorrang",
+   "MS-MAT-1-B1-K2",
+   "Klammer- und Vorrangregeln"
+  ],
+  [
+   "mathe.zahlen.rechengesetze",
+   "MS-MAT-1-B1-K2",
+   "Rechengesetze"
+  ],
+  [
+   "mathe.zahlen.sachaufgaben",
+   "MS-MAT-1-B1-K2",
+   "Lösen von Aufgaben in Sachsituationen"
+  ],
+  [
+   "mathe.dezimal.vergleichen",
+   "MS-MAT-1-B1-K1",
+   "Vergleichen und Ordnen natürlicher Zahlen"
+  ],
+  [
+   "mathe.dezimal.addieren",
+   "MS-MAT-1-B1-K2",
+   "vier Grundrechenoperationen mit natürlichen Zahlen"
+  ],
+  [
+   "mathe.dezimal.addieren",
+   "MS-MAT-2-B1-K3",
+   "Rechenverfahren mit nichtnegativen Dezimalzahlen"
+  ],
+  [
+   "mathe.dezimal.multiplizieren",
+   "MS-MAT-1-B1-K2",
+   "vier Grundrechenoperationen mit natürlichen Zahlen"
+  ],
+  [
+   "mathe.dezimal.multiplizieren",
+   "MS-MAT-2-B1-K3",
+   "Rechenverfahren mit nichtnegativen Dezimalzahlen"
+  ],
+  [
+   "mathe.brueche.dezimal",
+   "MS-MAT-1-B1-K1",
+   "Wechseln zwischen Bruch- und Dezimaldarstellung"
+  ],
+  [
+   "mathe.brueche.dezimal",
+   "MS-MAT-2-B1-K2",
+   "Prozentdarstellung"
+  ],
+  [
+   "mathe.masse.geld",
+   "MS-MAT-1-B1-K3",
+   "Geldbeträge"
+  ],
+  [
+   "mathe.masse.laengen",
+   "MS-MAT-1-B1-K3",
+   "Maßumrechnungen"
+  ],
+  [
+   "mathe.masse.massen",
+   "MS-MAT-1-B1-K3",
+   "Maßumrechnungen"
+  ],
+  [
+   "mathe.masse.zeit",
+   "MS-MAT-1-B1-K3",
+   "Zeitspannen"
+  ],
+  [
+   "mathe.masse.flaechen",
+   "MS-MAT-1-B1-K3",
+   "Maßumrechnungen"
+  ],
+  [
+   "mathe.masse.volumen",
+   "MS-MAT-1-B1-K3",
+   "Maßumrechnungen"
+  ],
+  [
+   "mathe.masse.massstab",
+   "MS-MAT-1-B3-K2",
+   "maßstäbliches Zeichnen"
+  ],
+  [
+   "mathe.teilbarkeit.teiler",
+   "MS-MAT-2-B1-K1",
+   "Vielfaches, Teiler"
+  ],
+  [
+   "mathe.teilbarkeit.regeln",
+   "MS-MAT-2-B1-K1",
+   "Teilbarkeitsregeln"
+  ],
+  [
+   "mathe.teilbarkeit.primzahlen",
+   "MS-MAT-2-B1-K1",
+   "Primfaktorzerlegungen"
+  ],
+  [
+   "mathe.teilbarkeit.ggt-kgv",
+   "MS-MAT-2-B1-K1",
+   "kleinsten gemeinsamen Vielfachen"
+  ],
+  [
+   "mathe.brueche.anteile",
+   "MS-MAT-1-B1-K1",
+   "Deuten von Brüchen als Anteile"
+  ],
+  [
+   "mathe.brueche.gemischt",
+   "MS-MAT-1-B1-K1",
+   "Anteile von mehreren Ganzen"
+  ],
+  [
+   "mathe.brueche.vonzahlen",
+   "MS-MAT-2-B1-K3",
+   "Von-Deutung"
+  ],
+  [
+   "mathe.brueche.vergleichen",
+   "MS-MAT-1-B1-K1",
+   "nichtnegativer Dezimal- und Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.vergleichen",
+   "MS-MAT-2-B1-K2",
+   "Vergleichen und Ordnen nichtnegativer Dezimal- und Bruchzahlen"
+  ],
+  [
+   "mathe.negativ.zahlengerade",
+   "MS-MAT-2-B1-K2",
+   "ganzer Zahlen als Punkte auf der Zahlengeraden"
+  ],
+  [
+   "mathe.negativ.zahlengerade",
+   "MS-MAT-3-B1-K1",
+   "Betrages einer Zahl"
+  ],
+  [
+   "mathe.negativ.rational",
+   "MS-MAT-3-B1-K1",
+   "rationale Zahlen darstellen"
+  ],
+  [
+   "mathe.proportional.direkt",
+   "MS-MAT-2-B1-K4",
+   "direkter und indirekter Proportionalitäten"
+  ],
+  [
+   "mathe.proportional.direkt",
+   "MS-MAT-3-B2-K1",
+   "direkten und indirekten Proportionalitäten"
+  ],
+  [
+   "mathe.proportional.indirekt",
+   "MS-MAT-2-B1-K4",
+   "direkter und indirekter Proportionalitäten"
+  ],
+  [
+   "mathe.proportional.indirekt",
+   "MS-MAT-3-B2-K1",
+   "direkten und indirekten Proportionalitäten"
+  ],
+  [
+   "mathe.proportional.verhaeltnisse",
+   "MS-MAT-3-B2-K1",
+   "Umformen von Proportionen"
+  ],
+  [
+   "mathe.prozent.aenderung",
+   "MS-MAT-2-B1-K4",
+   "Erhöhung um"
+  ],
+  [
+   "mathe.prozent.aenderung",
+   "MS-MAT-3-B2-K4",
+   "Änderungsfaktoren"
+  ],
+  [
+   "mathe.prozent.promille",
+   "MS-MAT-2-B1-K4",
+   "Rechnen mit Prozenten"
+  ],
+  [
+   "mathe.prozent.zinsen",
+   "MS-MAT-3-B2-K4",
+   "Zinsen bzw. Zinseszinsen"
+  ],
+  [
+   "mathe.terme.aufstellen",
+   "MS-MAT-1-B2-K1",
+   "Aufstellen einfacher Terme"
+  ],
+  [
+   "mathe.terme.aufstellen",
+   "MS-MAT-3-B2-K1",
+   "Aufstellen von Termen"
+  ],
+  [
+   "mathe.terme.zusammenfassen",
+   "MS-MAT-3-B2-K2",
+   "Zusammenfassen"
+  ],
+  [
+   "mathe.terme.klammern",
+   "MS-MAT-3-B2-K2",
+   "Ausmultiplizieren"
+  ],
+  [
+   "mathe.terme.herausheben",
+   "MS-MAT-3-B2-K2",
+   "Herausheben"
+  ],
+  [
+   "mathe.terme.binomisch",
+   "MS-MAT-3-B2-K2",
+   "binomischen Formeln"
+  ],
+  [
+   "mathe.gleichungen.probieren",
+   "MS-MAT-1-B2-K2",
+   "systematisches Probieren"
+  ],
+  [
+   "mathe.gleichungen.probieren",
+   "MS-MAT-2-B2-K2",
+   "Umkehren von Rechenoperationen"
+  ],
+  [
+   "mathe.gleichungen.formeln",
+   "MS-MAT-2-B2-K2",
+   "Umformen von Formeln"
+  ],
+  [
+   "mathe.gleichungen.formeln",
+   "MS-MAT-3-B2-K3",
+   "Umformen einfacher Formeln"
+  ],
+  [
+   "mathe.gleichungen.brueche",
+   "MS-MAT-3-B2-K3",
+   "auf lineare Gleichungen zurückführen"
+  ],
+  [
+   "mathe.gleichungen.brueche",
+   "MS-MAT-4-B2-K1",
+   "auf lineare Gleichungen zurückführen"
+  ],
+  [
+   "mathe.potenzen.schreibweise",
+   "MS-MAT-3-B1-K1",
+   "Potenzierens"
+  ],
+  [
+   "mathe.potenzen.schreibweise",
+   "MS-MAT-3-B1-K1",
+   "Zehnerpotenzen"
+  ],
+  [
+   "mathe.potenzen.schreibweise",
+   "MS-MAT-3-B2-K2",
+   "Potenzdarstellung"
+  ],
+  [
+   "mathe.wurzeln.quadratwurzel",
+   "MS-MAT-4-B1-K1",
+   "Quadratwurzeln"
+  ],
+  [
+   "mathe.wurzeln.regeln",
+   "MS-MAT-4-B1-K1",
+   "Kennen und Anwenden der Regeln"
+  ],
+  [
+   "mathe.wurzeln.reell",
+   "MS-MAT-4-B1-K1",
+   "nicht rational"
+  ],
+  [
+   "mathe.wurzeln.reell",
+   "MS-MAT-4-B1-K1",
+   "Rechnens mit Näherungswerten"
+  ],
+  [
+   "mathe.funktionen.wachstum",
+   "MS-MAT-3-B2-K4",
+   "linearer Wachstums- und Abnahmeprozesse"
+  ],
+  [
+   "mathe.funktionen.graphen",
+   "MS-MAT-4-B2-K2",
+   "Interpretieren grafischer Darstellungen in Sachsituationen"
+  ],
+  [
+   "mathe.funktionen.darstellungen",
+   "MS-MAT-4-B2-K2",
+   "Darstellungsformen einfacher reeller Funktionen"
+  ],
+  [
+   "mathe.funktionen.darstellungen",
+   "MS-MAT-4-B2-K2",
+   "eindeutige Zuordnung"
+  ],
+  [
+   "mathe.funktionen.linear",
+   "MS-MAT-4-B2-K3",
+   "Eigenschaften einer linearen Funktion"
+  ],
+  [
+   "mathe.funktionen.linear",
+   "MS-MAT-4-B2-K3",
+   "Wechseln zwischen Funktionsgleichung und Funktionsgraph"
+  ],
+  [
+   "mathe.funktionen.linear-sach",
+   "MS-MAT-4-B2-K3",
+   "Deuten der Parameter"
+  ],
+  [
+   "mathe.funktionen.linear-sach",
+   "MS-MAT-4-B2-K3",
+   "Anwenden von linearen Funktionen in Sachsituationen"
+  ],
+  [
+   "mathe.gleichungssysteme.rechnerisch",
+   "MS-MAT-4-B2-K4",
+   "rechnerisches Lösen"
+  ],
+  [
+   "mathe.gleichungssysteme.grafisch",
+   "MS-MAT-4-B2-K4",
+   "grafisches und rechnerisches Lösen"
+  ],
+  [
+   "mathe.gleichungssysteme.text",
+   "MS-MAT-4-B2-K4",
+   "Bearbeiten von Aufgaben in inner- und außermathematischen Situationen"
+  ],
+  [
+   "mathe.geometrie.grundbegriffe",
+   "MS-MAT-1-B3-K1",
+   "Punkt, Strecke, Strahl, Gerade"
+  ],
+  [
+   "mathe.geometrie.grundbegriffe",
+   "MS-MAT-1-B3-K1",
+   "parallelen bzw. normalen Geraden"
+  ],
+  [
+   "mathe.geometrie.kreis",
+   "MS-MAT-1-B3-K1",
+   "Kreisteilen"
+  ],
+  [
+   "mathe.geometrie.koordinaten",
+   "MS-MAT-2-B3-K1",
+   "Ablesen der Koordinaten von Punkten"
+  ],
+  [
+   "mathe.geometrie.symmetrie",
+   "MS-MAT-2-B3-K2",
+   "achsensymmetrisch"
+  ],
+  [
+   "mathe.geometrie.symmetrie",
+   "MS-MAT-2-B3-K2",
+   "zueinander kongruent sind"
+  ],
+  [
+   "mathe.geometrie.symmetralen",
+   "MS-MAT-2-B3-K2",
+   "Strecken- und Winkelsymmetralen"
+  ],
+  [
+   "mathe.winkel.messen",
+   "MS-MAT-1-B3-K1",
+   "Gradmaßes für Winkel"
+  ],
+  [
+   "mathe.winkel.messen",
+   "MS-MAT-1-B3-K1",
+   "Zeichnen und Messen von Winkeln"
+  ],
+  [
+   "mathe.winkel.beziehungen",
+   "MS-MAT-2-B3-K3",
+   "Parallelwinkel"
+  ],
+  [
+   "mathe.winkel.beziehungen",
+   "MS-MAT-2-B3-K3",
+   "Winkelsumme im Dreieck"
+  ],
+  [
+   "mathe.dreiecke.arten",
+   "MS-MAT-2-B3-K3",
+   "Eigenschaften spitzwinkeliger"
+  ],
+  [
+   "mathe.dreiecke.konstruieren",
+   "MS-MAT-2-B3-K3",
+   "Konstruieren von Dreiecken"
+  ],
+  [
+   "mathe.dreiecke.punkte",
+   "MS-MAT-2-B3-K3",
+   "besonderer Punkte im Dreieck"
+  ],
+  [
+   "mathe.flaechen.rechteck",
+   "MS-MAT-1-B3-K2",
+   "Formel für den Umfang eines Rechtecks"
+  ],
+  [
+   "mathe.flaechen.rechteck",
+   "MS-MAT-1-B3-K2",
+   "Formel für den Flächeninhalt eines Rechtecks"
+  ],
+  [
+   "mathe.flaechen.zusammengesetzt",
+   "MS-MAT-1-B3-K2",
+   "Figuren, die aus Rechtecken bestehen"
+  ],
+  [
+   "mathe.flaechen.umkehr",
+   "MS-MAT-1-B3-K2",
+   "Umkehraufgaben"
+  ],
+  [
+   "mathe.flaechen.umkehr",
+   "MS-MAT-3-B3-K1",
+   "Umkehraufgaben zu Flächeninhalten"
+  ],
+  [
+   "mathe.flaechen.dreieck",
+   "MS-MAT-2-B3-K3",
+   "Flächeninhaltsformeln für Dreiecke"
+  ],
+  [
+   "mathe.flaechen.vierecke",
+   "MS-MAT-2-B3-K3",
+   "Flächeninhaltsformeln für Dreiecke und besondere Vierecke"
+  ],
+  [
+   "mathe.flaechen.vielecke",
+   "MS-MAT-3-B3-K1",
+   "Vielecken und ihren Flächeninhalten"
+  ],
+  [
+   "mathe.flaechen.vielecke",
+   "MS-MAT-3-B3-K1",
+   "regelmäßiger Sechsecke"
+  ],
+  [
+   "mathe.flaechen.kreis",
+   "MS-MAT-4-B3-K2",
+   "Umfangs und des Flächeninhalts eines Kreises"
+  ],
+  [
+   "mathe.flaechen.kreisteile",
+   "MS-MAT-4-B3-K2",
+   "Halbkreis, Viertelkreis"
+  ],
+  [
+   "mathe.flaechen.kreisteile",
+   "MS-MAT-4-B3-K2",
+   "Kreissektoren"
+  ],
+  [
+   "mathe.koerper.formen",
+   "MS-MAT-1-B3-K3",
+   "Beschreiben von Quadern"
+  ],
+  [
+   "mathe.koerper.netze",
+   "MS-MAT-1-B3-K3",
+   "Netz eines Quaders"
+  ],
+  [
+   "mathe.koerper.netze",
+   "MS-MAT-1-B3-K3",
+   "Schrägrissen von Quadern"
+  ],
+  [
+   "mathe.koerper.quader",
+   "MS-MAT-1-B3-K3",
+   "Oberflächeninhalt eines Quaders"
+  ],
+  [
+   "mathe.koerper.quader",
+   "MS-MAT-1-B3-K3",
+   "Volumen eines Quaders"
+  ],
+  [
+   "mathe.koerper.prisma",
+   "MS-MAT-3-B3-K3",
+   "Oberflächeninhalten gerader Prismen"
+  ],
+  [
+   "mathe.koerper.prisma",
+   "MS-MAT-3-B3-K3",
+   "Rauminhalt von geraden Prismen"
+  ],
+  [
+   "mathe.koerper.pyramide",
+   "MS-MAT-3-B3-K3",
+   "Rauminhalt von geraden Prismen und von Pyramiden"
+  ],
+  [
+   "mathe.koerper.pyramide",
+   "MS-MAT-4-B3-K1",
+   "Oberflächeninhalte von Pyramiden"
+  ],
+  [
+   "mathe.koerper.zylinder",
+   "MS-MAT-4-B3-K3",
+   "Rauminhalten von Drehzylindern"
+  ],
+  [
+   "mathe.koerper.kegel",
+   "MS-MAT-4-B3-K3",
+   "Rauminhalten von Drehzylindern und Drehkegeln"
+  ],
+  [
+   "mathe.koerper.dichte",
+   "MS-MAT-3-B3-K3",
+   "Massen und Dichten"
+  ],
+  [
+   "mathe.koerper.dichte",
+   "MS-MAT-4-B3-K3",
+   "Massen und Dichten"
+  ],
+  [
+   "mathe.pythagoras.seite",
+   "MS-MAT-4-B3-K1",
+   "Formulieren des pythagoräischen Lehrsatzes"
+  ],
+  [
+   "mathe.pythagoras.figuren",
+   "MS-MAT-4-B3-K1",
+   "Berechnungen in ebenen Figuren"
+  ],
+  [
+   "mathe.pythagoras.koerper",
+   "MS-MAT-4-B3-K1",
+   "Berechnungen in Körpern"
+  ],
+  [
+   "mathe.pythagoras.umkehrung",
+   "MS-MAT-4-B3-K1",
+   "Umkehrung des pythagoräischen Lehrsatzes"
+  ],
+  [
+   "mathe.aehnlichkeit.figuren",
+   "MS-MAT-3-B3-K2",
+   "zentrisches Vergrößern"
+  ],
+  [
+   "mathe.aehnlichkeit.figuren",
+   "MS-MAT-3-B3-K2",
+   "Ähnlichkeitsfaktors"
+  ],
+  [
+   "mathe.statistik.diagramme",
+   "MS-MAT-1-B4-K1",
+   "Säulen- oder Balkendiagramme"
+  ],
+  [
+   "mathe.statistik.diagramme",
+   "MS-MAT-3-B4-K1",
+   "Manipulationsmöglichkeiten"
+  ],
+  [
+   "mathe.statistik.kennzahlen",
+   "MS-MAT-1-B4-K2",
+   "arithmetischen Mittelwerts"
+  ],
+  [
+   "mathe.statistik.kennzahlen",
+   "MS-MAT-1-B4-K2",
+   "Spannweite"
+  ],
+  [
+   "mathe.statistik.haeufigkeiten",
+   "MS-MAT-1-B4-K1",
+   "absoluter Häufigkeiten"
+  ],
+  [
+   "mathe.statistik.haeufigkeiten",
+   "MS-MAT-2-B4-K1",
+   "Berechnen relativer Häufigkeiten"
+  ],
+  [
+   "mathe.statistik.kreuztabellen",
+   "MS-MAT-4-B4-K1",
+   "Vierfeldertafeln"
+  ],
+  [
+   "mathe.statistik.abzaehlen",
+   "MS-MAT-1-B4-K1",
+   "Abzählaufgaben"
+  ],
+  [
+   "mathe.wahrscheinlichkeit.laplace",
+   "MS-MAT-3-B4-K2",
+   "Laplace-Wahrscheinlichkeiten"
+  ],
+  [
+   "mathe.wahrscheinlichkeit.zweistufig",
+   "MS-MAT-4-B4-K2",
+   "zweistufigen Zufallsexperimenten"
   ]
  ],
  "ms-deutsch": [
@@ -451,6 +1106,661 @@
    "mathe.potenzen.regeln",
    "AHS-MAT-6",
    "entsprechende Rechenregeln kennen und anwenden"
+  ],
+  [
+   "mathe.zahlen.gross",
+   "AHS-MAT-1-B1-K1",
+   "Lesen großer Zahlen"
+  ],
+  [
+   "mathe.zahlen.gross",
+   "AHS-MAT-1-B1-K1",
+   "dezimalen Stellenwertsystems"
+  ],
+  [
+   "mathe.zahlen.roemisch",
+   "AHS-MAT-1-B1-K1",
+   "römischer Zahldarstellungen"
+  ],
+  [
+   "mathe.zahlen.runden",
+   "AHS-MAT-1-B1-K2",
+   "Runden von Zahlen"
+  ],
+  [
+   "mathe.zahlen.addieren",
+   "AHS-MAT-1-B1-K2",
+   "vier Grundrechenoperationen mit natürlichen Zahlen"
+  ],
+  [
+   "mathe.zahlen.multiplizieren",
+   "AHS-MAT-1-B1-K2",
+   "vier Grundrechenoperationen mit natürlichen Zahlen"
+  ],
+  [
+   "mathe.zahlen.dividieren",
+   "AHS-MAT-1-B1-K2",
+   "vier Grundrechenoperationen mit natürlichen Zahlen"
+  ],
+  [
+   "mathe.zahlen.zehner",
+   "AHS-MAT-1-B1-K1",
+   "dezimalen Stellenwertsystems"
+  ],
+  [
+   "mathe.zahlen.vorrang",
+   "AHS-MAT-1-B1-K2",
+   "Klammer- und Vorrangregeln"
+  ],
+  [
+   "mathe.zahlen.rechengesetze",
+   "AHS-MAT-1-B1-K2",
+   "Rechengesetze"
+  ],
+  [
+   "mathe.zahlen.sachaufgaben",
+   "AHS-MAT-1-B1-K2",
+   "Lösen von Aufgaben in Sachsituationen"
+  ],
+  [
+   "mathe.dezimal.vergleichen",
+   "AHS-MAT-1-B1-K1",
+   "Vergleichen und Ordnen natürlicher Zahlen"
+  ],
+  [
+   "mathe.dezimal.addieren",
+   "AHS-MAT-1-B1-K2",
+   "vier Grundrechenoperationen mit natürlichen Zahlen"
+  ],
+  [
+   "mathe.dezimal.addieren",
+   "AHS-MAT-2-B1-K3",
+   "Rechenverfahren mit nichtnegativen Dezimalzahlen"
+  ],
+  [
+   "mathe.dezimal.multiplizieren",
+   "AHS-MAT-1-B1-K2",
+   "vier Grundrechenoperationen mit natürlichen Zahlen"
+  ],
+  [
+   "mathe.dezimal.multiplizieren",
+   "AHS-MAT-2-B1-K3",
+   "Rechenverfahren mit nichtnegativen Dezimalzahlen"
+  ],
+  [
+   "mathe.brueche.dezimal",
+   "AHS-MAT-1-B1-K1",
+   "Wechseln zwischen Bruch- und Dezimaldarstellung"
+  ],
+  [
+   "mathe.brueche.dezimal",
+   "AHS-MAT-2-B1-K2",
+   "Prozentdarstellung"
+  ],
+  [
+   "mathe.masse.geld",
+   "AHS-MAT-1-B1-K3",
+   "Geldbeträge"
+  ],
+  [
+   "mathe.masse.laengen",
+   "AHS-MAT-1-B1-K3",
+   "Maßumrechnungen"
+  ],
+  [
+   "mathe.masse.massen",
+   "AHS-MAT-1-B1-K3",
+   "Maßumrechnungen"
+  ],
+  [
+   "mathe.masse.zeit",
+   "AHS-MAT-1-B1-K3",
+   "Zeitspannen"
+  ],
+  [
+   "mathe.masse.flaechen",
+   "AHS-MAT-1-B1-K3",
+   "Maßumrechnungen"
+  ],
+  [
+   "mathe.masse.volumen",
+   "AHS-MAT-1-B1-K3",
+   "Maßumrechnungen"
+  ],
+  [
+   "mathe.masse.massstab",
+   "AHS-MAT-1-B3-K2",
+   "maßstäbliches Zeichnen"
+  ],
+  [
+   "mathe.teilbarkeit.teiler",
+   "AHS-MAT-2-B1-K1",
+   "Vielfaches, Teiler"
+  ],
+  [
+   "mathe.teilbarkeit.regeln",
+   "AHS-MAT-2-B1-K1",
+   "Teilbarkeitsregeln"
+  ],
+  [
+   "mathe.teilbarkeit.primzahlen",
+   "AHS-MAT-2-B1-K1",
+   "Primfaktorzerlegungen"
+  ],
+  [
+   "mathe.teilbarkeit.ggt-kgv",
+   "AHS-MAT-2-B1-K1",
+   "kleinsten gemeinsamen Vielfachen"
+  ],
+  [
+   "mathe.brueche.anteile",
+   "AHS-MAT-1-B1-K1",
+   "Deuten von Brüchen als Anteile"
+  ],
+  [
+   "mathe.brueche.gemischt",
+   "AHS-MAT-1-B1-K1",
+   "Anteile von mehreren Ganzen"
+  ],
+  [
+   "mathe.brueche.vonzahlen",
+   "AHS-MAT-2-B1-K3",
+   "Von-Deutung"
+  ],
+  [
+   "mathe.brueche.vergleichen",
+   "AHS-MAT-1-B1-K1",
+   "nichtnegativer Dezimal- und Bruchzahlen"
+  ],
+  [
+   "mathe.brueche.vergleichen",
+   "AHS-MAT-2-B1-K2",
+   "Vergleichen und Ordnen nichtnegativer Dezimal- und Bruchzahlen"
+  ],
+  [
+   "mathe.negativ.zahlengerade",
+   "AHS-MAT-2-B1-K2",
+   "ganzer Zahlen als Punkte auf der Zahlengeraden"
+  ],
+  [
+   "mathe.negativ.zahlengerade",
+   "AHS-MAT-3-B1-K1",
+   "Betrages einer Zahl"
+  ],
+  [
+   "mathe.negativ.rational",
+   "AHS-MAT-3-B1-K1",
+   "rationale Zahlen darstellen"
+  ],
+  [
+   "mathe.proportional.direkt",
+   "AHS-MAT-2-B1-K4",
+   "direkter und indirekter Proportionalitäten"
+  ],
+  [
+   "mathe.proportional.direkt",
+   "AHS-MAT-3-B2-K1",
+   "direkten und indirekten Proportionalitäten"
+  ],
+  [
+   "mathe.proportional.indirekt",
+   "AHS-MAT-2-B1-K4",
+   "direkter und indirekter Proportionalitäten"
+  ],
+  [
+   "mathe.proportional.indirekt",
+   "AHS-MAT-3-B2-K1",
+   "direkten und indirekten Proportionalitäten"
+  ],
+  [
+   "mathe.proportional.verhaeltnisse",
+   "AHS-MAT-3-B2-K1",
+   "Umformen von Proportionen"
+  ],
+  [
+   "mathe.prozent.aenderung",
+   "AHS-MAT-2-B1-K4",
+   "Erhöhung um"
+  ],
+  [
+   "mathe.prozent.aenderung",
+   "AHS-MAT-3-B2-K4",
+   "Änderungsfaktoren"
+  ],
+  [
+   "mathe.prozent.promille",
+   "AHS-MAT-2-B1-K4",
+   "Rechnen mit Prozenten"
+  ],
+  [
+   "mathe.prozent.zinsen",
+   "AHS-MAT-3-B2-K4",
+   "Zinsen bzw. Zinseszinsen"
+  ],
+  [
+   "mathe.terme.aufstellen",
+   "AHS-MAT-1-B2-K1",
+   "Aufstellen einfacher Terme"
+  ],
+  [
+   "mathe.terme.aufstellen",
+   "AHS-MAT-3-B2-K1",
+   "Aufstellen von Termen"
+  ],
+  [
+   "mathe.terme.zusammenfassen",
+   "AHS-MAT-3-B2-K2",
+   "Zusammenfassen"
+  ],
+  [
+   "mathe.terme.klammern",
+   "AHS-MAT-3-B2-K2",
+   "Ausmultiplizieren"
+  ],
+  [
+   "mathe.terme.herausheben",
+   "AHS-MAT-3-B2-K2",
+   "Herausheben"
+  ],
+  [
+   "mathe.terme.binomisch",
+   "AHS-MAT-3-B2-K2",
+   "binomischen Formeln"
+  ],
+  [
+   "mathe.gleichungen.probieren",
+   "AHS-MAT-1-B2-K2",
+   "systematisches Probieren"
+  ],
+  [
+   "mathe.gleichungen.probieren",
+   "AHS-MAT-2-B2-K2",
+   "Umkehren von Rechenoperationen"
+  ],
+  [
+   "mathe.gleichungen.formeln",
+   "AHS-MAT-2-B2-K2",
+   "Umformen von Formeln"
+  ],
+  [
+   "mathe.gleichungen.formeln",
+   "AHS-MAT-3-B2-K3",
+   "Umformen einfacher Formeln"
+  ],
+  [
+   "mathe.gleichungen.brueche",
+   "AHS-MAT-3-B2-K3",
+   "auf lineare Gleichungen zurückführen"
+  ],
+  [
+   "mathe.gleichungen.brueche",
+   "AHS-MAT-4-B2-K1",
+   "auf lineare Gleichungen zurückführen"
+  ],
+  [
+   "mathe.potenzen.schreibweise",
+   "AHS-MAT-3-B1-K1",
+   "Potenzierens"
+  ],
+  [
+   "mathe.potenzen.schreibweise",
+   "AHS-MAT-3-B1-K1",
+   "Zehnerpotenzen"
+  ],
+  [
+   "mathe.potenzen.schreibweise",
+   "AHS-MAT-3-B2-K2",
+   "Potenzdarstellung"
+  ],
+  [
+   "mathe.wurzeln.quadratwurzel",
+   "AHS-MAT-4-B1-K1",
+   "Quadratwurzeln"
+  ],
+  [
+   "mathe.wurzeln.regeln",
+   "AHS-MAT-4-B1-K1",
+   "Kennen und Anwenden der Regeln"
+  ],
+  [
+   "mathe.wurzeln.reell",
+   "AHS-MAT-4-B1-K1",
+   "nicht rational"
+  ],
+  [
+   "mathe.wurzeln.reell",
+   "AHS-MAT-4-B1-K1",
+   "Rechnens mit Näherungswerten"
+  ],
+  [
+   "mathe.funktionen.wachstum",
+   "AHS-MAT-3-B2-K4",
+   "linearer Wachstums- und Abnahmeprozesse"
+  ],
+  [
+   "mathe.funktionen.graphen",
+   "AHS-MAT-4-B2-K2",
+   "Interpretieren grafischer Darstellungen in Sachsituationen"
+  ],
+  [
+   "mathe.funktionen.darstellungen",
+   "AHS-MAT-4-B2-K2",
+   "Darstellungsformen einfacher reeller Funktionen"
+  ],
+  [
+   "mathe.funktionen.darstellungen",
+   "AHS-MAT-4-B2-K2",
+   "eindeutige Zuordnung"
+  ],
+  [
+   "mathe.funktionen.linear",
+   "AHS-MAT-4-B2-K3",
+   "Eigenschaften einer linearen Funktion"
+  ],
+  [
+   "mathe.funktionen.linear",
+   "AHS-MAT-4-B2-K3",
+   "Wechseln zwischen Funktionsgleichung und Funktionsgraph"
+  ],
+  [
+   "mathe.funktionen.linear-sach",
+   "AHS-MAT-4-B2-K3",
+   "Deuten der Parameter"
+  ],
+  [
+   "mathe.funktionen.linear-sach",
+   "AHS-MAT-4-B2-K3",
+   "Anwenden von linearen Funktionen in Sachsituationen"
+  ],
+  [
+   "mathe.gleichungssysteme.rechnerisch",
+   "AHS-MAT-4-B2-K4",
+   "rechnerisches Lösen"
+  ],
+  [
+   "mathe.gleichungssysteme.grafisch",
+   "AHS-MAT-4-B2-K4",
+   "grafisches und rechnerisches Lösen"
+  ],
+  [
+   "mathe.gleichungssysteme.text",
+   "AHS-MAT-4-B2-K4",
+   "Bearbeiten von Aufgaben in inner- und außermathematischen Situationen"
+  ],
+  [
+   "mathe.geometrie.grundbegriffe",
+   "AHS-MAT-1-B3-K1",
+   "Punkt, Strecke, Strahl, Gerade"
+  ],
+  [
+   "mathe.geometrie.grundbegriffe",
+   "AHS-MAT-1-B3-K1",
+   "parallelen bzw. normalen Geraden"
+  ],
+  [
+   "mathe.geometrie.kreis",
+   "AHS-MAT-1-B3-K1",
+   "Kreisteilen"
+  ],
+  [
+   "mathe.geometrie.koordinaten",
+   "AHS-MAT-2-B3-K1",
+   "Ablesen der Koordinaten von Punkten"
+  ],
+  [
+   "mathe.geometrie.symmetrie",
+   "AHS-MAT-2-B3-K2",
+   "achsensymmetrisch"
+  ],
+  [
+   "mathe.geometrie.symmetrie",
+   "AHS-MAT-2-B3-K2",
+   "zueinander kongruent sind"
+  ],
+  [
+   "mathe.geometrie.symmetralen",
+   "AHS-MAT-2-B3-K2",
+   "Strecken- und Winkelsymmetralen"
+  ],
+  [
+   "mathe.winkel.messen",
+   "AHS-MAT-1-B3-K1",
+   "Gradmaßes für Winkel"
+  ],
+  [
+   "mathe.winkel.messen",
+   "AHS-MAT-1-B3-K1",
+   "Zeichnen und Messen von Winkeln"
+  ],
+  [
+   "mathe.winkel.beziehungen",
+   "AHS-MAT-2-B3-K3",
+   "Parallelwinkel"
+  ],
+  [
+   "mathe.winkel.beziehungen",
+   "AHS-MAT-2-B3-K3",
+   "Winkelsumme im Dreieck"
+  ],
+  [
+   "mathe.dreiecke.arten",
+   "AHS-MAT-2-B3-K3",
+   "Eigenschaften spitzwinkeliger"
+  ],
+  [
+   "mathe.dreiecke.konstruieren",
+   "AHS-MAT-2-B3-K3",
+   "Konstruieren von Dreiecken"
+  ],
+  [
+   "mathe.dreiecke.punkte",
+   "AHS-MAT-2-B3-K3",
+   "besonderer Punkte im Dreieck"
+  ],
+  [
+   "mathe.flaechen.rechteck",
+   "AHS-MAT-1-B3-K2",
+   "Formel für den Umfang eines Rechtecks"
+  ],
+  [
+   "mathe.flaechen.rechteck",
+   "AHS-MAT-1-B3-K2",
+   "Formel für den Flächeninhalt eines Rechtecks"
+  ],
+  [
+   "mathe.flaechen.zusammengesetzt",
+   "AHS-MAT-1-B3-K2",
+   "Figuren, die aus Rechtecken bestehen"
+  ],
+  [
+   "mathe.flaechen.umkehr",
+   "AHS-MAT-1-B3-K2",
+   "Umkehraufgaben"
+  ],
+  [
+   "mathe.flaechen.umkehr",
+   "AHS-MAT-3-B3-K1",
+   "Umkehraufgaben zu Flächeninhalten"
+  ],
+  [
+   "mathe.flaechen.dreieck",
+   "AHS-MAT-2-B3-K3",
+   "Flächeninhaltsformeln für Dreiecke"
+  ],
+  [
+   "mathe.flaechen.vierecke",
+   "AHS-MAT-2-B3-K3",
+   "Flächeninhaltsformeln für Dreiecke und besondere Vierecke"
+  ],
+  [
+   "mathe.flaechen.vielecke",
+   "AHS-MAT-3-B3-K1",
+   "Vielecken und ihren Flächeninhalten"
+  ],
+  [
+   "mathe.flaechen.vielecke",
+   "AHS-MAT-3-B3-K1",
+   "regelmäßiger Sechsecke"
+  ],
+  [
+   "mathe.flaechen.kreis",
+   "AHS-MAT-4-B3-K2",
+   "Umfangs und des Flächeninhalts eines Kreises"
+  ],
+  [
+   "mathe.flaechen.kreisteile",
+   "AHS-MAT-4-B3-K2",
+   "Halbkreis, Viertelkreis"
+  ],
+  [
+   "mathe.flaechen.kreisteile",
+   "AHS-MAT-4-B3-K2",
+   "Kreissektoren"
+  ],
+  [
+   "mathe.koerper.formen",
+   "AHS-MAT-1-B3-K3",
+   "Beschreiben von Quadern"
+  ],
+  [
+   "mathe.koerper.netze",
+   "AHS-MAT-1-B3-K3",
+   "Netz eines Quaders"
+  ],
+  [
+   "mathe.koerper.netze",
+   "AHS-MAT-1-B3-K3",
+   "Schrägrissen von Quadern"
+  ],
+  [
+   "mathe.koerper.quader",
+   "AHS-MAT-1-B3-K3",
+   "Oberflächeninhalt eines Quaders"
+  ],
+  [
+   "mathe.koerper.quader",
+   "AHS-MAT-1-B3-K3",
+   "Volumen eines Quaders"
+  ],
+  [
+   "mathe.koerper.prisma",
+   "AHS-MAT-3-B3-K3",
+   "Oberflächeninhalten gerader Prismen"
+  ],
+  [
+   "mathe.koerper.prisma",
+   "AHS-MAT-3-B3-K3",
+   "Rauminhalt von geraden Prismen"
+  ],
+  [
+   "mathe.koerper.pyramide",
+   "AHS-MAT-3-B3-K3",
+   "Rauminhalt von geraden Prismen und von Pyramiden"
+  ],
+  [
+   "mathe.koerper.pyramide",
+   "AHS-MAT-4-B3-K1",
+   "Oberflächeninhalte von Pyramiden"
+  ],
+  [
+   "mathe.koerper.zylinder",
+   "AHS-MAT-4-B3-K3",
+   "Rauminhalten von Drehzylindern"
+  ],
+  [
+   "mathe.koerper.kegel",
+   "AHS-MAT-4-B3-K3",
+   "Rauminhalten von Drehzylindern und Drehkegeln"
+  ],
+  [
+   "mathe.koerper.dichte",
+   "AHS-MAT-3-B3-K3",
+   "Massen und Dichten"
+  ],
+  [
+   "mathe.koerper.dichte",
+   "AHS-MAT-4-B3-K3",
+   "Massen und Dichten"
+  ],
+  [
+   "mathe.pythagoras.seite",
+   "AHS-MAT-4-B3-K1",
+   "Formulieren des pythagoräischen Lehrsatzes"
+  ],
+  [
+   "mathe.pythagoras.figuren",
+   "AHS-MAT-4-B3-K1",
+   "Berechnungen in ebenen Figuren"
+  ],
+  [
+   "mathe.pythagoras.koerper",
+   "AHS-MAT-4-B3-K1",
+   "Berechnungen in Körpern"
+  ],
+  [
+   "mathe.pythagoras.umkehrung",
+   "AHS-MAT-4-B3-K1",
+   "Umkehrung des pythagoräischen Lehrsatzes"
+  ],
+  [
+   "mathe.aehnlichkeit.figuren",
+   "AHS-MAT-3-B3-K2",
+   "zentrisches Vergrößern"
+  ],
+  [
+   "mathe.aehnlichkeit.figuren",
+   "AHS-MAT-3-B3-K2",
+   "Ähnlichkeitsfaktors"
+  ],
+  [
+   "mathe.statistik.diagramme",
+   "AHS-MAT-1-B4-K1",
+   "Säulen- oder Balkendiagramme"
+  ],
+  [
+   "mathe.statistik.diagramme",
+   "AHS-MAT-3-B4-K1",
+   "Manipulationsmöglichkeiten"
+  ],
+  [
+   "mathe.statistik.kennzahlen",
+   "AHS-MAT-1-B4-K2",
+   "arithmetischen Mittelwerts"
+  ],
+  [
+   "mathe.statistik.kennzahlen",
+   "AHS-MAT-1-B4-K2",
+   "Spannweite"
+  ],
+  [
+   "mathe.statistik.haeufigkeiten",
+   "AHS-MAT-1-B4-K1",
+   "absoluter Häufigkeiten"
+  ],
+  [
+   "mathe.statistik.haeufigkeiten",
+   "AHS-MAT-2-B4-K1",
+   "Berechnen relativer Häufigkeiten"
+  ],
+  [
+   "mathe.statistik.kreuztabellen",
+   "AHS-MAT-4-B4-K1",
+   "Vierfeldertafeln"
+  ],
+  [
+   "mathe.statistik.abzaehlen",
+   "AHS-MAT-1-B4-K1",
+   "Abzählaufgaben"
+  ],
+  [
+   "mathe.wahrscheinlichkeit.laplace",
+   "AHS-MAT-3-B4-K2",
+   "Laplace-Wahrscheinlichkeiten"
+  ],
+  [
+   "mathe.wahrscheinlichkeit.zweistufig",
+   "AHS-MAT-4-B4-K2",
+   "zweistufigen Zufallsexperimenten"
   ]
  ],
  "ahs-deutsch": [
