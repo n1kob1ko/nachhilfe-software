@@ -67,7 +67,8 @@ der Einheit wie eine kleine Schularbeit: ohne Tipps, ein Versuch je Aufgabe, ric
 oder falsch erst am Ende. Er soll Schülern die Nervosität vor Tests nehmen. Am
 Tablet `assignments.mode = 'test'`, gedruckt nur die Übung mit
 `worksheets.minitest_unit_id` (`lib/minitest.ts`). Die Aufgaben kommen ohne KI.
-_Avoid_: Probeschularbeit (so nennt ihn niko, im Programm heißt er Minitest), Quiz, **Diagnose**
+_Avoid_: Quiz, **Diagnose**. Nicht verwechseln mit der **Probeschularbeit** (ein ganzer Test zu einer
+Schularbeit, mit Punkten und Note)
 
 **Foto vom Stoff**:
 Eine **Übung** aus einem Foto der Buchseite oder des Arbeitsblatts, in der laufenden
@@ -255,12 +256,40 @@ Klassenarbeit. Im Code und in der Oberfläche heißt sie oft noch „Test“ (Ta
 `tests`) — siehe *Altlasten im Code*.
 _Avoid_: Klassenarbeit, Prüfung, Examen, Schultest
 
+**Probeschularbeit**:
+Ein ganzer Übungstest zu einer geplanten **Schularbeit**, aus ihrem Stoff: leichte Aufgaben zuerst, schwere
+am Ende, jede mit Punkten, darunter der **Notenschlüssel**. Entsteht auf der Vorbereitung der Schularbeit als
+Entwurf einer **Übung** (`worksheets.probe_test_id`, `lib/probeschularbeit.ts`), der Lehrer prüft ihn und
+druckt ihn oder sendet ihn. Am Gerät läuft sie wie ein **Minitest**; am Ende stehen Punkte und Note
+([docs/probeschularbeit.md](docs/probeschularbeit.md)).
+_Avoid_: Probetest, Übungsschularbeit, Testsimulation
+
+**Notenschlüssel**:
+Ab wie viel Prozent der Punkte es Sehr gut, Gut, Befriedigend und Genügend gibt. Einer für alle
+Probeschularbeiten, unter Mehr › Curriculum / Lehrplan › Einstellungen; der Vorschlag ist 87,5 / 75 / 62,5 /
+50 %. Auf dem Blatt steht er als Punkte von–bis je Note.
+_Avoid_: Notenskala, Bewertungsschlüssel, Punkteschlüssel
+
 **Stoffzettel**:
 Das Foto oder PDF, auf dem steht, was zu einer **Schularbeit** kommt: Fach, Termin, Stoff. Es bleibt als
 **Material** des Schülers und hängt an der Schularbeit (`tests.material_id`). Die KI kann es auf Klick
 lesen und das Formular vorfüllen; gespeichert wird erst, wenn der Lehrer einträgt
 ([docs/stoffzettel.md](docs/stoffzettel.md)). Nicht verwechseln mit **Foto vom Stoff** (daraus wird eine Übung).
 _Avoid_: Stoffangabe, Prüfungsstoff-Upload, Anhang
+
+**Stoff zuordnen**:
+Die Punkte des Stoffs einer **Schularbeit** mit **Fähigkeiten** verknüpfen; erst dann gibt es Plan und
+**Probeschularbeit**. Ohne KI vorgeschlagen (`stoffVorschlag` in `lib/lehrplan.ts`): angehakt ist nur, was
+eindeutig passt, auch über **Suchwörter** und die anderen Punkte derselben Schularbeit. Verknüpft wird erst,
+wenn der Lehrer „Eintragen“ oder „Zuordnen“ tippt. Was er anders wählt, merkt sich die App für dieselben
+Wörter (`stoff_zuordnungen`) ([docs/stoff-zuordnen.md](docs/stoff-zuordnen.md)).
+_Avoid_: Mapping, Verlinken, Auto-Zuordnung
+
+**Suchwörter**:
+Andere Bezeichnungen einer Fähigkeit oder eines Themas, wie sie auf Stoffzetteln und in Inhaltsverzeichnissen
+stehen („Stellenwerttafel“, „Kommasetzung“ für Beistrichsetzung). Sie stehen in `lib/themen/` und dienen nur
+dem **Stoff zuordnen**; angezeigt werden sie nicht.
+_Avoid_: Synonyme, Tags, Schlagwörter
 
 ## Blätter erstellen
 

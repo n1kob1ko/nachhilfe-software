@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowRight, CheckCircle2, Copy, ExternalLink, Eye, EyeOff, Printer, Send, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Copy, ExternalLink, Eye, EyeOff, FileCheck2, Printer, Send, Sparkles } from "lucide-react";
 import { activeUnitForTeacher, runningUnitForStudent } from "@/lib/units";
 import { SendResult, TabletSend } from "@/components/device/TabletSend";
 import type { SendState } from "@/app/device-actions";
@@ -16,6 +16,7 @@ import { ReleasePanel, SaveTemplatePanel, type QuickRoundChoice } from "@/compon
 import { aiEnabled } from "@/lib/ai";
 import { settingsOf } from "@/lib/builder";
 import { getMaterial } from "@/lib/materials";
+import { punkteDerAufgaben, punkteText } from "@/lib/probeschularbeit";
 import * as repo from "@/lib/repo";
 import { requireTeacher } from "@/lib/auth";
 import { klassenLabel, stufeLabel } from "@/lib/school";
@@ -58,10 +59,15 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
   // Der Haken im Builder (Schritt 6) ist nur der Wunsch; hier sieht der Lehrer, ob es wirklich geht.
   const quickProblem = quickRoundProblem(tasks);
   const quickRound: QuickRoundChoice = { eligible: quickProblem === null, reason: quickProblem, wished: settingsOf(w).quickRound === true };
-  const quickWished = quickRound.eligible && quickRound.wished;
+  const quickWished = !w.probe_test_id && quickRound.eligible && quickRound.wished;
   // „Foto vom Stoff“ (lib/foto-uebung.ts): the photo next to the preview, to compare the tasks with it
   const fotoId = settingsOf(w).materialId;
   const foto = draft && fotoId ? getMaterial(fotoId) : null;
+
+  // Probeschularbeit (lib/probeschularbeit.ts): Punkte je Aufgabe, zurück zur Vorbereitung der Schularbeit
+  const probe = w.probe_test_id ? repo.getTest(w.probe_test_id) : null;
+  const punkte = probe ? punkteDerAufgaben(w.id, tasks) : null;
+  const gesamt = punkte ? [...punkte.values()].reduce((s, p) => s + p, 0) : 0;
 
   const forStudent = w.student_id ? students.find((s) => s.id === w.student_id) : null;
   const first = forStudent?.name.split(" ")[0];
@@ -77,13 +83,25 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
   return (
     <>
       <PageHeader
-        back={forStudent ? { href: `/schueler/${forStudent.id}?tab=uebungen`, label: forStudent.name } : { href: "/uebungen", label: "Übungen" }}
+        back={
+          probe
+            ? { href: `/schueler/${probe.student_id}/pruefung/${probe.id}#probeschularbeit`, label: `Vorbereitung: ${probe.title || `${probe.kind} ${probe.subject}`}` }
+            : forStudent
+              ? { href: `/schueler/${forStudent.id}?tab=uebungen`, label: forStudent.name }
+              : { href: "/uebungen", label: "Übungen" }
+        }
         title={w.title}
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
             {draft ? <Pill tone="amber">Entwurf</Pill> : <Pill tone="green">gesendet</Pill>}
             {w.kind === "diagnose" && <Pill tone="accent">Diagnose</Pill>}
+            {probe && (
+              <Pill tone="accent">
+                <FileCheck2 size={11} aria-hidden /> Probeschularbeit
+              </Pill>
+            )}
             {w.subject} · {w.klasse ? klassenLabel(w.school_type, w.klasse) : stufeLabel(w.grade)} · {w.difficulty} · {tasks.length} Aufgaben
+            {punkte && <span className="num">· {punkteText(gesamt)} Punkte</span>}
             {w.source === "ki" && (
               <Pill tone="accent">
                 <Sparkles size={11} aria-hidden /> mit Claude erstellt
@@ -101,6 +119,11 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
       {sp.hinweis === "ki" && (
         <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Claude war nicht erreichbar. Die Aufgaben stammen aus den eingebauten Generatoren.</p>
       )}
+      {sp.hinweis === "erklaeren" && (
+        <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">
+          {Number(sp.anzahl) === 1 ? "Eine Aufgabe ist" : `${Number(sp.anzahl) || "Einige"} Aufgaben sind`} nur eine Erklär-Aufgabe, weil es zu diesem Thema keine eingebauten Aufgaben gibt. Ändere sie unten mit „Bearbeiten“.
+        </p>
+      )}
       {sp.hinweis === "lesenki" && (
         <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Die KI hat keine passenden Fragen geliefert. Die Fragen stammen aus Vorlagen, bitte prüfen und anpassen.</p>
       )}
@@ -114,8 +137,8 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
       <section className="no-print mb-10 rounded-[24px] bg-accent-wash px-5 py-5 md:px-6" aria-label="Nächster Schritt">
         {draft ? (
           <>
-            <h2 className="mb-1 text-[18px] font-semibold">Vorschau prüfen, dann senden</h2>
-            <p className="mb-4 text-[14px] text-ink-2">Aufgaben unten bei Bedarf ändern.</p>
+            <h2 className="mb-1 text-[18px] font-semibold">{probe ? "Vorschau prüfen, dann drucken oder senden" : "Vorschau prüfen, dann senden"}</h2>
+            <p className="mb-4 text-[14px] text-ink-2">{probe ? "Aufgaben und Punkte unten bei Bedarf ändern." : "Aufgaben unten bei Bedarf ändern."}</p>
             {foto && (
               <a
                 href={`/material/${foto.id}/datei`}
@@ -140,12 +163,13 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
                   {tasks.length > 0 && <BoardSendButton worksheetId={w.id} unitId={active.id} />}
                 </div>
                 {quickWished && <p className="mt-1 text-[13px] text-ink-2">Wird als Schnellrunde gesendet: ein Tipp pro Aufgabe, automatisch weiter.</p>}
+                {probe && <p className="mt-1 text-[13px] text-ink-2">Läuft wie eine Schularbeit: ohne Tipps, ein Versuch je Aufgabe.</p>}
                 <Reveal label="An jemand anderen senden" className="mt-4">
-                  <ReleasePanel worksheetId={w.id} students={students} defaultStudentId={null} taskCount={tasks.length} quickRound={quickRound} />
+                  <ReleasePanel worksheetId={w.id} students={students} defaultStudentId={null} taskCount={tasks.length} quickRound={quickRound} probe={Boolean(probe)} />
                 </Reveal>
               </>
             ) : (
-              <ReleasePanel worksheetId={w.id} students={students} defaultStudentId={w.student_id} taskCount={tasks.length} quickRound={quickRound} />
+              <ReleasePanel worksheetId={w.id} students={students} defaultStudentId={w.student_id} taskCount={tasks.length} quickRound={quickRound} probe={Boolean(probe)} />
             )}
           </>
         ) : mainAssignment ? (
@@ -217,7 +241,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
             <Link href={`/arbeitsblatt/${w.id}`} className="btn btn-secondary">
               <Printer size={15} aria-hidden /> PDF / Drucken
             </Link>
-            <span className="text-[13px] text-ink-3">Als A4-Arbeitsblatt, mit oder ohne Lösungen</span>
+            <span className="text-[13px] text-ink-3">{probe ? "Als A4 mit Punkten und Notenschlüssel" : "Als A4-Arbeitsblatt, mit oder ohne Lösungen"}</span>
           </div>
         )}
       </section>
@@ -240,6 +264,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         active={active ? { unitId: active.id, student: activeFirst } : null}
         showSolutions={showSolutions}
         aiEnabled={aiEnabled()}
+        punkte={punkte ? Object.fromEntries(punkte) : undefined}
       />
 
       <details className="no-print group mt-12 rounded-2xl border border-line bg-surface px-5 py-1">

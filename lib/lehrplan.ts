@@ -6,6 +6,7 @@
 import { db } from "./db";
 import { SKILL_SELECT, type Skill, type Student } from "./repo";
 import { checkLevel, SCHOOL_BRANCHES, SCHOOL_TYPES, schulstufe, type SchoolBranch } from "./school";
+import { BEREICH_SUCHWOERTER, SUCHWOERTER } from "./themen";
 
 // ---------- sources and licences ----------
 export type SourceType = "lehrplan" | "eigen" | "ki" | "oer" | "lizenz" | "referenz" | "demo";
@@ -358,30 +359,223 @@ export function splitTopics(text: string): string[] {
 }
 
 export type SkillMatch = { skill: Skill; score: number; via: "thema" | "faehigkeit" };
+type Treffer = SkillMatch & {
+  /** topic words found in the skill's name or Suchwörter */
+  woerter: string[];
+  /** those of them that do not just name its Thema („natürliche Zahlen“ in „Sachaufgaben mit natürlichen Zahlen“) */
+  eigeneWoerter: string[];
+  /** their weight */
+  eigen: number;
+};
+type SkillWoerter = { skill: Skill; own: string[]; area: string[] };
+type Woerterbuch = { entries: SkillWoerter[]; gewicht: (word: string) => number };
+
+/** A topic word that is only the start of a skill's word („Bruch“ in „Bruchzahlen“): the whole word beats it. */
+const TEIL = 0.8;
+/** A skill's word that is only the start of the topic word („Zahl“ in „Zahlenstrahl“): says little about the topic. */
+const ANFANG = 0.5;
+/** The words of a skill's Thema with its Suchwörter („Kommasetzung“ for Beistrichsetzung). */
+const bereichWoerter = (s: Pick<Skill, "subject" | "area">) => [...new Set(tokens(`${s.area} ${(BEREICH_SUCHWOERTER[`${s.subject}|${s.area}`] ?? []).join(" ")}`))];
+/**
+ * The words of the skills a topic is compared with: name, Suchwörter (lib/themen) and Thema. A word that
+ * stands at many skills of the pool („Zahlen“, „natürlich“) says little and counts less than one of a
+ * single skill („Stellenwerttafel“): 1 for one skill, 0.5 for two, about 0.2 for fifteen. A word stands at
+ * a skill when the skill has it or a longer word starting with it.
+ */
+function woerterbuch(pool: Skill[]): Woerterbuch {
+  const entries = pool.map((s) => ({
+    skill: s,
+    own: [...new Set(tokens(`${s.name} ${s.subtopic ?? ""} ${(SUCHWOERTER[s.id] ?? []).join(" ")}`))],
+    area: bereichWoerter(s),
+  }));
+  const memo = new Map<string, number>();
+  const gewicht = (w: string) => {
+    let g = memo.get(w);
+    if (g === undefined) {
+      const df = entries.filter((e) => e.own.some((x) => x.startsWith(w)) || e.area.some((x) => x.startsWith(w))).length;
+      g = 1 / (1 + Math.log2(Math.max(1, df)));
+      memo.set(w, g);
+    }
+    return g;
+  };
+  return { entries, gewicht };
+}
+/** The word names the topic word, as the Thema „Bruchrechnung“ names „Brüche“, but „Zahlen“ does not name „Zahlenstrahl“. */
+const nennt = (w: string, x: string) => x === w || x.startsWith(w);
+/** Points off for a skill outside the Thema the topic names: „Brüche addieren“ is not „Addieren und Subtrahieren“ of negative numbers. */
+const FREMD = 0.5;
+function treffer(w: string, words: string[], buch: Woerterbuch): number {
+  let best = 0;
+  for (const x of words) {
+    const v = x === w ? buch.gewicht(w) : x.startsWith(w) ? buch.gewicht(w) * TEIL : w.startsWith(x) ? buch.gewicht(x) * ANFANG : 0;
+    best = Math.max(best, v);
+  }
+  return best;
+}
+const nachPunkten = (a: SkillMatch, b: SkillMatch) => b.score - a.score || a.skill.sort - b.skill.sort;
+function bewerten(want: string[], buch: Woerterbuch): Treffer[] {
+  const out: Treffer[] = [];
+  const benannt = new Set(buch.entries.filter((e) => want.some((w) => e.area.some((x) => nennt(w, x)))).map((e) => e.skill.area));
+  for (const e of buch.entries) {
+    let own = 0;
+    let area = 0;
+    let eigen = 0;
+    const woerter: string[] = [];
+    const eigeneWoerter: string[] = [];
+    for (const w of want) {
+      const o = treffer(w, e.own, buch);
+      // a topic word counts once: "Brüche" in "Brüche als Anteile" does not count again for the Thema Bruchrechnung
+      if (o > 0) {
+        own += o;
+        woerter.push(w);
+        // „Bild“ in „Bildergeschichte“ is not a Bildergeschichte: only a word that names the topic word makes a pick
+        if (!e.area.some((x) => nennt(w, x)) && e.own.some((x) => nennt(w, x))) {
+          eigeneWoerter.push(w);
+          eigen += o;
+        }
+      } else area += treffer(w, e.area, buch);
+    }
+    if (!own && !area) continue;
+    // a topic naming the skill itself beats one naming only its Thema; Teilfähigkeiten only on a direct hit
+    if (e.skill.parent_id && !own) continue;
+    const fremd = benannt.size > 0 && !benannt.has(e.skill.area) ? FREMD : 0;
+    out.push({ skill: e.skill, score: own * 2 + area + (e.skill.parent_id ? 0 : 0.5) - fremd, via: own ? "faehigkeit" : "thema", woerter, eigeneWoerter, eigen });
+  }
+  return out.sort(nachPunkten);
+}
+const poolFor = (subject: string, student?: Pick<Student, "school_type" | "klasse" | "grade">) =>
+  student ? skillsForStudent(student, subject, { earlier: true }) : activeSkills().filter((s) => s.subject === subject);
+
 /**
  * Suggests skills for a free-text topic ("Bruchrechnung", "Prozent-Sachaufgaben"). Only suggestions:
- * nothing is linked until the teacher picks it. A topic that matches no word of a skill or Thema
- * returns nothing rather than something vague.
+ * nothing is linked until the teacher picks it. A topic that matches no word of a skill, its Suchwörter or
+ * its Thema returns nothing rather than something vague.
  */
 export function matchSkills(topic: string, subject: string, opts: { student?: Pick<Student, "school_type" | "klasse" | "grade">; limit?: number } = {}): SkillMatch[] {
   const want = tokens(topic);
   if (!want.length) return [];
-  const pool = opts.student ? skillsForStudent(opts.student, subject, { earlier: true }) : activeSkills().filter((s) => s.subject === subject);
-  const hits = (words: string[]) => want.filter((w) => words.some((x) => x.startsWith(w) || w.startsWith(x)));
-  const out: SkillMatch[] = [];
-  for (const s of pool) {
-    const words = tokens(`${s.name} ${s.subtopic ?? ""}`);
-    const own = hits(words);
-    // a topic word counts once: "Brüche" in "Brüche als Anteile" does not count again for the Thema Bruchrechnung
-    const area = hits(tokens(s.area)).filter((w) => !own.includes(w));
-    if (!own.length && !area.length) continue;
-    // a topic naming the skill itself beats one naming only its Thema; Teilfähigkeiten only on a direct hit
-    if (s.parent_id && !own.length) continue;
-    // the whole word beats a part of it: „Kurvendiskussion“ before „Kurven in Parameterform“
-    const exact = own.filter((w) => words.includes(w)).length * 0.25;
-    out.push({ skill: s, score: own.length * 2 + exact + area.length + (s.parent_id ? 0 : 0.5), via: own.length ? "faehigkeit" : "thema" });
+  return bewerten(want, woerterbuch(poolFor(subject, opts.student)))
+    .slice(0, opts.limit ?? 8)
+    .map(({ skill, score, via }) => ({ skill, score, via }));
+}
+
+// ---------- Stoff zuordnen: the suggestion for all topics of a Schularbeit ----------
+/** At most this many topics of a Stoff get suggestions (a Stoffzettel rarely has more). */
+export const STOFF_THEMEN_MAX = 15;
+/** Least weight of the words that name the skill itself, so a pick is not made on „Zahlen“ alone. */
+const SICHER = 0.3;
+/** How far a pick must be ahead of every skill that matches the same words. */
+const ABSTAND = 0.3;
+/** Extra points for a skill in the Thema the other topics of the Schularbeit surely mean. */
+const KONTEXT = 0.5;
+/** Extra points for a skill of the student's own Schulstufe: a Schularbeit is about this year's Stoff. */
+const STUFE = 0.3;
+/** At most this many skills are ticked for a topic that names a whole Thema. */
+const GANZES_THEMA = 8;
+
+/**
+ * The skills a topic surely means: each beats every other skill that matches the same words (besides the
+ * Thema) by ABSTAND. „Brüche addieren und subtrahieren“ gives two, „Vergleichen“ alone (decimals or fractions?) none.
+ */
+function sicher(ranked: Treffer[]): string[] {
+  const out: string[] = [];
+  for (const m of ranked) {
+    if (out.length >= 3) break;
+    if (m.via !== "faehigkeit" || m.eigen < SICHER) continue;
+    const rivals = ranked.filter((r) => r !== m && r.woerter.some((w) => m.eigeneWoerter.includes(w)));
+    if (rivals.every((r) => m.score - r.score >= ABSTAND)) out.push(m.skill.id);
   }
-  return out.sort((a, b) => b.score - a.score || a.skill.sort - b.skill.sort).slice(0, opts.limit ?? 8);
+  return out;
+}
+
+/** The key a topic is remembered under: its words without stop words and endings, so „Runden natürlicher Zahlen“ = „Runden von natürlichen Zahlen“. */
+export const stoffSchluessel = (topic: string) => tokens(topic).join(" ");
+/** Marks „nothing fits“ for a topic in stoff_zuordnungen. */
+const NICHTS = "";
+
+/** What teachers picked before for topics of this subject, where it was not the suggestion. */
+function gemerkt(subject: string): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  const rows = db().prepare("SELECT schluessel, skill_id FROM stoff_zuordnungen WHERE subject = ?").all(subject) as { schluessel: string; skill_id: string }[];
+  for (const r of rows) out.set(r.schluessel, [...(out.get(r.schluessel) ?? []), r.skill_id]);
+  return out;
+}
+
+/**
+ * Remembers what the teacher picked for a topic when it was not the suggestion (also „nothing“), so the next
+ * Stoffzettel with the same words gets it right away. The latest pick wins; it never links anything by itself.
+ */
+export function merkeZuordnung(subject: string, topic: string, skillIds: string[], teacherId: number | null) {
+  const key = stoffSchluessel(topic);
+  if (!key) return;
+  const known = new Set(skillIds.filter((id) => db().prepare("SELECT 1 FROM skills WHERE id = ?").get(id)));
+  db().transaction(() => {
+    db().prepare("DELETE FROM stoff_zuordnungen WHERE subject = ? AND schluessel = ?").run(subject, key);
+    const add = db().prepare("INSERT INTO stoff_zuordnungen (subject, schluessel, skill_id, teacher_id) VALUES (?, ?, ?, ?)");
+    for (const id of known.size ? known : [NICHTS]) add.run(subject, key, id, teacherId);
+  })();
+}
+
+export type StoffVorschlag = {
+  topic: string;
+  /** suggestions to show, the ticked ones first */
+  skills: Skill[];
+  /** ticked: what the topic surely means, or what was picked for these words before */
+  best: string[];
+  /** best comes from an earlier pick */
+  gemerkt: boolean;
+};
+/**
+ * Suggestions for every topic of a Schularbeit, with the ones to tick. Rule-based, without KI:
+ * - a skill is ticked only when it is clearly ahead (see `sicher`);
+ * - the other topics give the Thema: „Vergleichen“ next to „Runden natürlicher Zahlen“ means natural numbers;
+ * - a topic that names a whole Thema („Bruchrechnung“) ticks its skills of the student's Schulstufe, unless
+ *   another topic names a part of it;
+ * - what a teacher picked before for the same words comes first, unless it clearly belongs to another Thema.
+ * Nothing is linked until the teacher confirms.
+ */
+export function stoffVorschlag(topics: string[], subject: string, student: Pick<Student, "school_type" | "klasse" | "grade">): StoffVorschlag[] {
+  const pool = poolFor(subject, student);
+  const byId = new Map(pool.map((s) => [s.id, s]));
+  const buch = woerterbuch(pool);
+  const frueher = gemerkt(subject);
+  const level = checkLevel(student.school_type, student.klasse, student.grade);
+  const stufe = level.status === "eindeutig" ? level.schulstufe! : null;
+
+  const erste = topics.map((topic) => {
+    const want = tokens(topic);
+    const ranked = want.length ? bewerten(want, buch) : [];
+    const memo = frueher.get(stoffSchluessel(topic));
+    const memoIds = memo?.filter((id) => byId.has(id));
+    return { topic, want, ranked, memo: memo && (memoIds!.length || memo.includes(NICHTS)) ? memoIds! : null, pick: memoIds?.length ? memoIds : sicher(ranked) };
+  });
+
+  return erste.map((t, i) => {
+    // how many of the other topics surely mean a skill of each Thema
+    const ctx = new Map<string, number>();
+    erste.forEach((o, j) => {
+      if (j !== i) for (const a of new Set(o.pick.map((id) => byId.get(id)!.area))) ctx.set(a, (ctx.get(a) ?? 0) + 1);
+    });
+    const jetzt = (s: Skill) => stufe !== null && s.grade_min <= stufe && s.grade_max >= stufe;
+    const ranked = t.ranked.map((m) => ({ ...m, score: m.score + (ctx.has(m.skill.area) ? KONTEXT : 0) + (jetzt(m.skill) ? STUFE : 0) })).sort(nachPunkten);
+    // an earlier pick from another Thema („Vergleichen“ was natural numbers, now it is a fraction test) does not count
+    const memoPasst = t.memo && (!ctx.size || !t.memo.length || t.memo.some((id) => ctx.has(byId.get(id)!.area)) || !ranked.some((m) => ctx.has(m.skill.area)));
+    let best = memoPasst ? t.memo! : sicher(ranked);
+    if (!memoPasst && !best.length && stufe !== null) best = ganzesThema(t.want, ranked, ctx, pool, stufe);
+    const skills = [...new Map([...best.map((id) => byId.get(id)!), ...ranked.slice(0, 3).map((m) => m.skill)].map((s) => [s.id, s])).values()];
+    return { topic: t.topic, skills, best, gemerkt: !!memoPasst };
+  });
+}
+
+/** A topic that names a whole Thema („Bruchrechnung“, „Natürliche Zahlen“): its skills of the student's Schulstufe. */
+function ganzesThema(want: string[], ranked: Treffer[], ctx: Map<string, number>, pool: Skill[], stufe: number): string[] {
+  const area = ranked.map((m) => m.skill).find((s) => want.every((w) => bereichWoerter(s).some((x) => nennt(w, x))))?.area;
+  // two or more other topics of the Schularbeit name parts of it (a heading over its parts): those parts are the Stoff
+  if (!area || (ctx.get(area) ?? 0) >= 2) return [];
+  return pool
+    .filter((s) => s.area === area && !s.parent_id && s.grade_min <= stufe && s.grade_max >= stufe)
+    .slice(0, GANZES_THEMA)
+    .map((s) => s.id);
 }
 
 // ---------- settings ----------

@@ -39,12 +39,15 @@ export function ReleasePanel({
   defaultStudentId,
   taskCount,
   quickRound,
+  probe = false,
 }: {
   worksheetId: number;
   students: Student[];
   defaultStudentId: number | null;
   taskCount: number;
   quickRound: QuickRoundChoice;
+  /** Probeschularbeit: läuft immer wie ein Minitest, keine Schnellrunde */
+  probe?: boolean;
 }) {
   const [state, action] = useActionState<ActionResult, FormData>(releaseAction, null);
   const name = students.find((s) => s.id === defaultStudentId)?.name.split(" ")[0];
@@ -81,8 +84,10 @@ export function ReleasePanel({
           </Busy>
         </div>
       )}
-      <p className="text-[13px] text-ink-2">{taskCount} Aufgaben · Lösungen bleiben verborgen</p>
-      <div className="grid gap-1">
+      <p className="text-[13px] text-ink-2">
+        {taskCount} Aufgaben · {probe ? "wie eine Schularbeit: ohne Tipps, ein Versuch je Aufgabe" : "Lösungen bleiben verborgen"}
+      </p>
+      <div className={probe ? "hidden" : "grid gap-1"}>
         <label className={`flex min-h-[44px] items-center gap-2 text-[14px] ${quickRound.eligible ? "cursor-pointer" : "text-ink-3"}`}>
           <input type="checkbox" checked={quick} disabled={!quickRound.eligible} onChange={(e) => setQuick(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
           <Zap size={15} className={quick ? "text-accent" : ""} aria-hidden />

@@ -102,6 +102,7 @@ export function Solver({
   via = "link",
   homeHref,
   test = false,
+  probe = false,
 }: {
   token: string;
   assignmentId: number;
@@ -113,6 +114,8 @@ export function Solver({
    * je Aufgabe einmal abgeben, ohne Rückmeldung dazwischen; richtig oder falsch erst am Ende.
    */
   test?: boolean;
+  /** Probeschularbeit (lib/probeschularbeit.ts): läuft wie ein Minitest, nur Anfang und Ende sagen „Probeschularbeit“ */
+  probe?: boolean;
   /** "geraet": on the teacher's student tablet, "laptop": on the student's own laptop for this unit; both authorised by
    * their device instead of the student link */
   via?: Via;
@@ -158,7 +161,7 @@ export function Solver({
     return (
       <div className="py-6 text-center" data-testid="minitest-ende">
         <p className="text-[15px] font-medium text-ink-2">{title}</p>
-        <h1 className="mt-2 text-[34px] font-semibold tracking-[-0.02em]">Minitest geschafft</h1>
+        <h1 className="mt-2 text-[34px] font-semibold tracking-[-0.02em]">{probe ? "Probeschularbeit geschafft" : "Minitest geschafft"}</h1>
         <p className="num mt-2 text-[20px]">
           {correct} von {tasks.length} richtig
         </p>
@@ -184,7 +187,9 @@ export function Solver({
             );
           })}
         </ol>
-        <p className="mx-auto mt-6 max-w-[44ch] text-ink-2">Fehler sind hier gut: Sie zeigen, was ihr heute übt. Ihr schaut euch den Test gleich gemeinsam an.</p>
+        <p className="mx-auto mt-6 max-w-[44ch] text-ink-2">
+          {probe ? "Die Punkte und die Note bekommst du von deiner Lehrerin bzw. deinem Lehrer. Ihr schaut euch alles gemeinsam an." : "Fehler sind hier gut: Sie zeigen, was ihr heute übt. Ihr schaut euch den Test gleich gemeinsam an."}
+        </p>
         <div className="mt-8 flex justify-center">
           <HomeLink href={home} plain={via !== "link"} className="btn btn-primary">
             Zurück zur Übersicht
@@ -201,8 +206,8 @@ export function Solver({
           <ClipboardCheck size={28} strokeWidth={1.75} />
         </span>
         <p className="mt-4 text-[15px] font-medium text-ink-2">{title}</p>
-        <h1 className="mt-1 text-[34px] font-semibold tracking-[-0.02em]">Minitest</h1>
-        <p className="num mt-2 text-[20px]">{tasks.length} Aufgaben über den Stoff vom letzten Mal</p>
+        <h1 className="mt-1 text-[34px] font-semibold tracking-[-0.02em]">{probe ? "Probeschularbeit" : "Minitest"}</h1>
+        <p className="num mt-2 text-[20px]">{probe ? `${tasks.length} Aufgaben wie bei der Schularbeit` : `${tasks.length} Aufgaben über den Stoff vom letzten Mal`}</p>
         <ul className="mx-auto mt-6 grid max-w-[440px] gap-3 text-left text-[17px]">
           <li className="flex gap-3">
             <Check size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden /> Ohne Tipps, jede Aufgabe gibst du einmal ab.
@@ -211,7 +216,8 @@ export function Solver({
             <Check size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden /> Weißt du etwas nicht? Mach mit „Später“ weiter und komm am Schluss zurück.
           </li>
           <li className="flex gap-3">
-            <Check size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden /> Es gibt keine Note. Danach schaut ihr euch alles gemeinsam an.
+            <Check size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden />{" "}
+            {probe ? "Jede Aufgabe hat Punkte. Am Ende gibt es eine Note, wie bei der Schularbeit." : "Es gibt keine Note. Danach schaut ihr euch alles gemeinsam an."}
           </li>
         </ul>
         <button type="button" className="btn btn-primary btn-lg mt-8" onClick={() => setBegonnen(true)} autoFocus>

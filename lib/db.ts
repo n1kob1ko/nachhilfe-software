@@ -650,6 +650,16 @@ CREATE TABLE IF NOT EXISTS briefings (
   created_at TEXT NOT NULL,
   UNIQUE (student_id, datum)
 );
+-- Stoff zuordnen (lib/lehrplan.ts stoffVorschlag): what a teacher picked for a Stoff topic when it was not the
+-- suggestion, so the same words get it next time. skill_id '' = nothing fits. Never links anything by itself.
+CREATE TABLE IF NOT EXISTS stoff_zuordnungen (
+  subject TEXT NOT NULL,
+  schluessel TEXT NOT NULL,                 -- stoffSchluessel(topic): word stems without stop words
+  skill_id TEXT NOT NULL,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (subject, schluessel, skill_id)
+);
 CREATE INDEX IF NOT EXISTS idx_ge_week ON geplante_einheiten(week_start, status);
 CREATE INDEX IF NOT EXISTS idx_ge_teacher ON geplante_einheiten(teacher_id, week_start);
 CREATE INDEX IF NOT EXISTS idx_ge_student ON geplante_einheiten(student_id, week_start);
@@ -845,6 +855,10 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["ai_calls", "provider", "TEXT NOT NULL DEFAULT ''"],
   // davon Denken: der Teil der Ausgabe-Tokens, den das Modell zum Nachdenken brauchte (null = nicht gemeldet)
   ["ai_calls", "thinking_tokens", "INTEGER"],
+  // Probeschularbeit (lib/probeschularbeit.ts, 2026-10-19): die Schularbeit, für die die Übung gemacht wurde,
+  // und die Punkte je Aufgabe (null = Vorgabe nach Schwierigkeit)
+  ["worksheets", "probe_test_id", "INTEGER REFERENCES tests(id) ON DELETE SET NULL"],
+  ["tasks", "points", "REAL"],
 ];
 
 /** Teachers to start with; more can be added later. */
