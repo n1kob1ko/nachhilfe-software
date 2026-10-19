@@ -25,7 +25,8 @@ import { endUnit, expectedSubject, sweepIdleUnits } from "@/lib/learning";
 import { INITIAL_PASSWORD, PUBLIC_DEFAULT_PASSWORD, randomStartPassword } from "@/lib/password";
 import * as repo from "@/lib/repo";
 import { ensureBoardForUnit, notifyUnitClosed } from "@/lib/whiteboard";
-import { canManageUnit, finishUnit, getUnit, runningUnits, startUnit } from "@/lib/units";
+import { fachAus } from "@/lib/school";
+import { canManageUnit, finishUnit, getUnit, runningUnits, setUnitSubject, startUnit } from "@/lib/units";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const rating = (f: FormData, k: string) => {
@@ -179,9 +180,12 @@ export async function saveUnitDocAction(lessonId: number, formData: FormData) {
   if (owner && !canManageUnit(t, owner)) redirect(`/einheiten/${owner.id}?fremd=1`);
   const understanding = rating(formData, "understanding");
   const homework = str(formData, "homework_note");
+  // das Fach dieser Einheit, frei wählbar (ein Formular ohne das Feld behält das bisherige)
+  const subject = fachAus(str(formData, "subject"), repo.getStudent(lesson.student_id)?.subjects) || lesson.subject;
   repo.saveLesson(
     {
       ...lesson,
+      subject,
       topic: str(formData, "topic"),
       activities: str(formData, "activities"),
       mistakes: str(formData, "mistakes"),
@@ -202,8 +206,9 @@ export async function saveUnitDocAction(lessonId: number, formData: FormData) {
     },
     lesson.id,
   );
+  if (lesson.unit_id && subject !== lesson.subject) setUnitSubject(lesson.unit_id, subject);
   if (homework && formData.get("as_homework") === "on" && !lesson.homework_note) {
-    repo.addHomework({ student_id: lesson.student_id, subject: lesson.subject, description: homework, due_date: str(formData, "homework_due") || null, status: "offen", notes: "aus der Einheit" });
+    repo.addHomework({ student_id: lesson.student_id, subject, description: homework, due_date: str(formData, "homework_due") || null, status: "offen", notes: "aus der Einheit" });
   }
   revalidatePath("/", "layout");
   const unit = lesson.unit_id ? getUnit(lesson.unit_id) : null;

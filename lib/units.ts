@@ -43,6 +43,11 @@ export function getUnit(id: number): UnitView | null {
   return (db().prepare(`${VIEW} WHERE u.id = ?`).get(id) as UnitView | undefined) ?? null;
 }
 
+/** Das Fach der Einheit, wie der Lehrer es in der Dokumentation einträgt (jedes Fach, auch einmalig). */
+export function setUnitSubject(id: number, subject: string) {
+  db().prepare("UPDATE units SET subject = ? WHERE id = ?").run(subject, id);
+}
+
 export function runningUnitForStudent(studentId: number): UnitView | null {
   return (db().prepare(`${VIEW} WHERE u.student_id = ? AND u.status = 'gestartet' ORDER BY u.started_at DESC LIMIT 1`).get(studentId) as UnitView | undefined) ?? null;
 }

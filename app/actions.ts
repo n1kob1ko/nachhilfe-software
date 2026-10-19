@@ -10,7 +10,7 @@ import { requireTeacher } from "@/lib/auth";
 import { noteActivity } from "@/lib/learning";
 import * as repo from "@/lib/repo";
 import { dropFilesIfUnused, studentImageFiles } from "@/lib/picture-story";
-import { klassenLabel, schoolType, schulstufe } from "@/lib/school";
+import { fachAus, klassenLabel, schoolType, schulstufe } from "@/lib/school";
 import { analyzeStudent, buildWorksheet, submitAnswer, type SubmitInput } from "@/lib/service";
 import { runningUnitForStudent } from "@/lib/units";
 import { dayOf } from "@/lib/exams";
@@ -81,7 +81,8 @@ export async function saveLessonAction(formData: FormData) {
     teacher_id: int(formData, "teacher_id") || null,
     starts_at: str(formData, "starts_at"),
     duration_min: int(formData, "duration_min") || 60,
-    subject: str(formData, "subject"),
+    // jedes Fach, auch einmalig (z. B. Biologie vor einem Test); die Fächer im Profil bleiben
+    subject: fachAus(str(formData, "subject"), repo.getStudent(studentId)?.subjects),
     topic: str(formData, "topic"),
     status: (str(formData, "status") as repo.Lesson["status"]) || "geplant",
     activities: str(formData, "activities"),
@@ -109,7 +110,7 @@ export async function addHomeworkAction(formData: FormData) {
   const studentId = int(formData, "student_id");
   repo.addHomework({
     student_id: studentId,
-    subject: str(formData, "subject"),
+    subject: fachAus(str(formData, "subject"), repo.getStudent(studentId)?.subjects),
     description: str(formData, "description"),
     due_date: str(formData, "due_date") || null,
     status: "offen",

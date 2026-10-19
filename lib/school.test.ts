@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { checkLevel, klassenLabel, migrateLegacy, rangeLabel, schulstufe } from "./school";
+import { checkLevel, fachAus, fachVorschlaege, klassenLabel, migrateLegacy, rangeLabel, schulstufe } from "./school";
 
 test("Austrian classes map onto the continuous Schulstufe", () => {
   assert.equal(schulstufe("Volksschule", 3), 3);
@@ -34,4 +34,17 @@ test("a student's level is either clear or marked as unclear", () => {
   assert.equal(checkLevel("HAK", 6).status, "unklar");
   assert.equal(checkLevel("", 2).status, "unklar");
   assert.equal(checkLevel("Mittelschule", 2, 7).status, "unklar", "stored Schulstufe disagrees");
+});
+
+test("Fach einer Einheit: jedes Fach geht, bekannte in ihrer Schreibweise, die Fächer des Schülers zuerst", () => {
+  assert.equal(fachAus("biologie"), "Biologie");
+  assert.equal(fachAus("  Geschichte   "), "Geschichte");
+  assert.equal(fachAus("Darstellende  Geometrie"), "Darstellende Geometrie", "ein Fach ohne Vorschlag bleibt, wie es eingetippt ist");
+  assert.equal(fachAus("klavier", ["Klavier"]), "Klavier", "auch die eigenen Fächer des Schülers zählen");
+  assert.equal(fachAus("x".repeat(80)).length, 60);
+  assert.equal(fachAus(""), "");
+  const v = fachVorschlaege(["Chemie", "Klavier"]);
+  assert.deepEqual(v.slice(0, 3), ["Chemie", "Klavier", "Mathematik"]);
+  assert.equal(v.filter((f) => f === "Chemie").length, 1, "keine Doppelten");
+  assert.ok(v.includes("Biologie") && v.includes("Englisch"));
 });

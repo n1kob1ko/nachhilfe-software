@@ -10,6 +10,7 @@ import {
   setHomeworkStatusAction,
 } from "@/app/actions";
 import { AIInsight } from "@/components/AIInsight";
+import { FachFeld } from "@/components/FachFeld";
 import { Lernverlauf } from "@/components/Lernverlauf";
 import { UnitControl } from "@/components/UnitControl";
 import { ExamForm } from "@/components/ExamForm";
@@ -905,11 +906,7 @@ function School({ student }: { student: repo.Student }) {
             <input className="input" name="description" required placeholder="z. B. Buch S. 84, Nr. 3–7" />
           </label>
           <div className="grid grid-cols-2 gap-3">
-            <select className="input" name="subject" aria-label="Fach">
-              {subjects.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
+            <FachFeld id="hausuebung" eigene={subjects} wert={subjects[0]} ariaLabel="Fach" />
             <input className="input" type="date" name="due_date" aria-label="Fällig am" />
           </div>
           <button className="btn btn-secondary justify-self-start">Hinzufügen</button>

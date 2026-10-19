@@ -1,4 +1,5 @@
 import { deleteLessonAction, saveLessonAction } from "@/app/actions";
+import { FachFeld } from "@/components/FachFeld";
 import { SkillPicker } from "@/components/SkillPicker";
 import { practiceOnDay } from "@/lib/autodoc";
 import { currentTeacher } from "@/lib/auth";
@@ -42,11 +43,7 @@ export async function LessonForm({ student, lesson }: { student: repo.Student; l
           </label>
           <label className="field">
             <span className="label">Fach</span>
-            <select className="input" name="subject" defaultValue={lesson?.subject ?? subjects[0]}>
-              {subjects.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
+            <FachFeld id="einheit" eigene={student.subjects} wert={lesson?.subject ?? subjects[0]} />
           </label>
         </div>
         <div className="grid gap-4 sm:grid-cols-[1fr_160px_160px]">

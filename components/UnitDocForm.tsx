@@ -1,4 +1,5 @@
 import { saveUnitDocAction } from "@/app/session-actions";
+import { FachFeld } from "@/components/FachFeld";
 import { SkillPicker } from "@/components/SkillPicker";
 import * as repo from "@/lib/repo";
 
@@ -30,14 +31,25 @@ function Scale({ name, legend, value }: { name: keyof typeof SCALES; legend: str
 }
 
 /**
- * End-of-unit form. The five things only the teacher knows are in front; everything else is optional
- * and folded away (it is still submitted, so nothing written earlier gets lost).
+ * End-of-unit form. Fach and Thema first (any subject, e.g. a one-off Biologie unit), then the five
+ * things only the teacher knows; everything else is optional and folded away (it is still
+ * submitted, so nothing written earlier gets lost).
  */
 export function UnitDocForm({ lesson, student }: { lesson: repo.Lesson; student: repo.Student }) {
   const subjects = student.subjects.length ? student.subjects : [lesson.subject];
   const skills = repo.listSkills().filter((s) => subjects.includes(s.subject) || lesson.skill_ids.includes(s.id));
   return (
     <form action={saveUnitDocAction.bind(null, lesson.id)} className="grid gap-6">
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
+        <label className="field">
+          <span className="label">Fach</span>
+          <FachFeld id={`l${lesson.id}`} eigene={student.subjects} wert={lesson.subject} />
+        </label>
+        <label className="field">
+          <span className="label">Thema</span>
+          <input className="input" name="topic" defaultValue={lesson.topic} placeholder="z. B. Zellaufbau" />
+        </label>
+      </div>
       <label className="field">
         <span className="label">Beobachtungen</span>
         <textarea className="input min-h-[110px]" name="tutor_notes" defaultValue={lesson.tutor_notes} placeholder="Wie wurde gearbeitet, was ist aufgefallen?" />
@@ -76,16 +88,10 @@ export function UnitDocForm({ lesson, student }: { lesson: repo.Lesson; student:
             <textarea className="input min-h-[120px]" name="summary" defaultValue={lesson.summary} />
             <span className="text-[12px] text-ink-3">Automatisch aus den Übungen geschrieben. Steht im Lernverlauf.</span>
           </label>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="field">
-              <span className="label">Thema</span>
-              <input className="input" name="topic" defaultValue={lesson.topic} />
-            </label>
-            <label className="field">
-              <span className="label">Was wurde zusätzlich gemacht?</span>
-              <input className="input" name="activities" defaultValue={lesson.activities} placeholder="z. B. Kehrwert am Whiteboard erklärt" />
-            </label>
-          </div>
+          <label className="field">
+            <span className="label">Was wurde zusätzlich gemacht?</span>
+            <input className="input" name="activities" defaultValue={lesson.activities} placeholder="z. B. Kehrwert am Whiteboard erklärt" />
+          </label>
           <div className="grid gap-4 md:grid-cols-2">
             <Scale name="participation" legend="Mitarbeit" value={lesson.participation} />
             <Scale name="understanding" legend="Verständnis (deine Einschätzung)" value={lesson.understanding} />
