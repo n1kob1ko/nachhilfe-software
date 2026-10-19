@@ -368,7 +368,29 @@ export function sachaufgabeTask(skillId: string, difficulty: Difficulty, rng: Rn
       hints: ["Berechne zuerst den Rabatt in Euro.", `${zahl(p)} % von ${euro(G)} = ${geld(G)} · ${zahl(p)} : 100`],
     });
   }
-  if (base === "mathe.brueche.kuerzen" || base === "mathe.brueche.erweitern") {
+  if (base === "mathe.brueche.erweitern") {
+    // Blechkuchen: the share in pieces is the fraction erweitert to the number of pieces
+    const faelle = passende(`sach:blech:${lv}`, () =>
+      [[8, 10, 12], [12, 16, 20], [12, 18, 20, 24], [24, 30, 36], [24, 30, 36, 40]][lv].flatMap((D) =>
+        [2, 3, 4, 5, 6, 8, 10, 12]
+          .filter((d) => D % d === 0 && D / d >= 2 && D / d <= [4, 5, 6, 8, 10][lv])
+          .flatMap((d) => Array.from({ length: d - 1 }, (_, i) => i + 1).filter((n) => gcd(n, d) === 1).map((n) => ({ D, d, n }))),
+      ),
+    );
+    const { D, d, n } = pick(rng, faelle);
+    const k = D / d;
+    const stuecke = n * k;
+    return sach(skillId, difficulty, {
+      prompt: `Ein Blechkuchen wird in ${D} gleich große Stücke geschnitten. ${name} nimmt ${bruch({ n, d })} des Kuchens für das Klassenfest mit.`,
+      parts: [
+        { label: "a)", prompt: "Wie viele Stücke sind das?", kind: "zahl", accepted: [`${stuecke}`], solution: `${bruch({ n, d })} = ${stuecke}/${D}, also ${stuecke} Stücke`, errorMap: [{ answer: `${n}`, label: "Nur den Zähler abgelesen" }] },
+        { label: "b)", prompt: "Wie viele Stücke bleiben übrig? Rechne mit deinem Ergebnis aus a).", kind: "zahl", accepted: [`${D - stuecke}`], follow: `${D} - a`, solution: `${D} − ${stuecke} = ${D - stuecke}` },
+        { label: "c)", prompt: `Erkläre, warum ${bruch({ n, d })} und ${stuecke}/${D} gleich groß sind.`, kind: "text", lines: 3, sample: `Ich habe Zähler und Nenner mit derselben Zahl (${k}) multipliziert. Dabei ändert sich der Wert des Bruchs nicht.`, solution: "" },
+      ],
+      hints: [`Erweitere ${bruch({ n, d })} auf den Nenner ${D}.`, `Wie oft passt ${d} in ${D}? Mit dieser Zahl erweiterst du.`],
+    });
+  }
+  if (base === "mathe.brueche.kuerzen") {
     const N = pick(rng, [[20, 24], [24, 28, 30], [24, 27, 28, 30], [24, 27, 28, 30], [24, 27, 28, 30]][lv]);
     const ks = Array.from({ length: N - 1 }, (_, i) => i + 1).filter((k) => gcd(k, N) > 1 && N / gcd(k, N) <= [4, 6, 10, 15, 15][lv] && k > N / 4);
     const k = pick(rng, ks);
@@ -436,6 +458,26 @@ export function sachaufgabeTask(skillId: string, difficulty: Difficulty, rng: Rn
         { label: "c)", prompt: "Erkläre, warum beim Dividieren durch einen Bruch kleiner als 1 mehr herauskommt.", kind: "text", lines: 3, sample: `Man fragt, wie oft ${bruch(b)} in ${bruch(a)} passt. Weil ein Glas weniger als einen Liter fasst, passt es mehrmals hinein.`, solution: "" },
       ],
       hints: ["Wie oft passt der Inhalt eines Glases in die Flasche?", "Dividieren durch einen Bruch heißt: mit dem Kehrwert multiplizieren."],
+    });
+  }
+  if (base === "mathe.brueche.subtrahieren") {
+    // Krug: at most one litre of juice, some of it poured out (the harder levels have no two-fraction sums below 1)
+    const stufe = Math.max(1, Math.min(lv, 2)) as Stufe;
+    const faelle = passende(`sach:krug:${lv}`, () =>
+      bruchListe(stufe, "−", false).filter((r) => r.terms.length === 2 && wert(r.terms[0]) < 1 && wert(r.result) > 0 && r.terms.every((x) => (lv === 0 ? [2, 4, 8] : [2, 3, 4, 5, 6, 8, 10, 12]).includes(x.d))),
+    );
+    const r = pick(rng, faelle);
+    const [a, b] = r.terms;
+    const rest = kuerze({ n: r.result.d - r.result.n, d: r.result.d });
+    const falsch = a.d > b.d && a.n > b.n ? `${bruch(kuerze({ n: a.n - b.n, d: a.d - b.d }))} l` : null;
+    return sach(skillId, difficulty, {
+      prompt: `In einem Krug sind ${bruch(a)} Liter Saft. ${name} schenkt ${bruch(b)} Liter davon aus.`,
+      parts: [
+        { label: "a)", prompt: "Wie viel Liter Saft sind noch im Krug? Kürze das Ergebnis.", kind: "zahl", accepted: [`${bruch(r.result)} l`], unit: "l", solution: `${bruch(a)} − ${bruch(b)} = ${bruch(r.result)}`, errorMap: falsch && falsch !== `${bruch(r.result)} l` ? [{ answer: falsch, label: "Zähler und Nenner einzeln subtrahiert" }] : [] },
+        { label: "b)", prompt: "In den Krug passt genau 1 Liter. Wie viel Liter fehlen jetzt, bis er voll ist? Rechne mit deinem Ergebnis aus a).", kind: "zahl", accepted: [`${bruch(rest)} l`], unit: "l", follow: "1 - a", solution: `1 − ${bruch(r.result)} = ${bruch(rest)}` },
+        { label: "c)", prompt: "Erkläre, warum du in a) einen gemeinsamen Nenner brauchst.", kind: "text", lines: 3, sample: "Man kann nur gleich große Teile voneinander abziehen. Mit dem gleichen Nenner sind die Teile gleich groß, dann zieht man die Zähler ab.", solution: "" },
+      ],
+      hints: ["Bring die Brüche auf einen gemeinsamen Nenner.", "Der volle Krug ist 1 Liter."],
     });
   }
   if (base.startsWith("mathe.brueche.")) {
