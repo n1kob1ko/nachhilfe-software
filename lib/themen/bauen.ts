@@ -5,7 +5,7 @@ import type { CurriculumSkill } from "../curriculum";
  * explanation and the typical errors students make. Own structure and own wording; the links to the
  * Lehrplan are in scripts/lehrplan_mapping.json.
  */
-export type Teil = { id: string; name: string; erklaerung: string };
+export type Teil = { id: string; name: string; erklaerung: string; suchwoerter?: string[] };
 export type Thema = {
   id: string;
   name: string;
@@ -16,8 +16,18 @@ export type Thema = {
   erklaerung: string;
   fehler: string[];
   teile?: Teil[];
+  /**
+   * Other words for the same thing, as they stand on a Stoffzettel or in a book's table of contents
+   * („Stellenwerttafel“, „dekadisches Zahlensystem“). Only for matching the Stoff (matchSkills), never shown.
+   */
+  suchwoerter?: string[];
 };
-export type Bereich = { area: string; themen: Thema[] };
+export type Bereich = {
+  area: string;
+  /** other names of the whole Thema („Kommasetzung“ for Beistrichsetzung); only for matching the Stoff */
+  suchwoerter?: string[];
+  themen: Thema[];
+};
 export type Modul = {
   fach: "Mathematik" | "Deutsch" | "Englisch";
   bereiche: Bereich[];
@@ -25,6 +35,8 @@ export type Modul = {
   fehlerBisher?: Record<string, string[]>;
   /** explanations of skills that were there before and have none in EXPLAIN (lib/generators.ts) */
   erklaerungBisher?: Record<string, string>;
+  /** Suchwörter of skills that were there before (lib/curriculum.ts) */
+  suchwoerterBisher?: Record<string, string[]>;
   /** [skill, skill that should sit before it]: own didactic choices, like PREREQUISITES */
   voraussetzungen?: [string, string][];
 };
@@ -49,3 +61,17 @@ export const fehlerAus = (m: Modul): Record<string, string[]> => ({
   ...m.fehlerBisher,
   ...Object.fromEntries(m.bereiche.flatMap(({ themen }) => themen.map((t) => [t.id, t.fehler]))),
 });
+
+/** Suchwörter per skill (only for matching the Stoff to skills). */
+export const suchwoerterAus = (m: Modul): Record<string, string[]> => ({
+  ...m.suchwoerterBisher,
+  ...Object.fromEntries(
+    m.bereiche.flatMap(({ themen }) =>
+      themen.flatMap((t) => [...(t.suchwoerter ? [[t.id, t.suchwoerter]] : []), ...(t.teile ?? []).filter((p) => p.suchwoerter).map((p) => [`${t.id}.${p.id}`, p.suchwoerter!])]),
+    ),
+  ),
+});
+
+/** Suchwörter per Thema, keyed „Fach|Thema“, since lib/curriculum.ts uses the same Thema names. */
+export const bereichSuchwoerterAus = (m: Modul): Record<string, string[]> =>
+  Object.fromEntries(m.bereiche.filter((b) => b.suchwoerter).map((b) => [`${m.fach}|${b.area}`, b.suchwoerter!]));

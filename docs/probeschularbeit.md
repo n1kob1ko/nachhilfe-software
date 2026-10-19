@@ -19,7 +19,8 @@ Stoff der letzten Einheit, ohne Note).
 ## Ablauf
 
 1. Schülerprofil › Schule › bei der Schularbeit „Probeschularbeit“ (oder „Vorbereitung starten“ und dort
-   nach unten). Der Stoff muss Fähigkeiten zugeordnet sein; sonst sagt der Abschnitt das.
+   nach unten). Der Stoff muss Fähigkeiten zugeordnet sein. Ist er es noch nicht, führt der Knopf zur Karte
+   „Stoff zuordnen“ ([stoff-zuordnen.md](stoff-zuordnen.md)) und nach „Zuordnen“ zurück zur Probeschularbeit.
 2. Dauer wählen: 25, 50 oder 100 Minuten, das sind 5, 8 oder 12 Aufgaben. Mit KI (nur wenn verfügbar und
    angehakt) bekommen Themen ohne eingebaute Aufgaben echte Aufgaben, in einer Anfrage.
 3. Der Entwurf öffnet sich in der Vorschau. Aufgaben und Punkte lassen sich ändern wie bei jeder Übung.

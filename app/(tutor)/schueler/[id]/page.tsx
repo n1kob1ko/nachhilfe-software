@@ -826,7 +826,7 @@ function School({ student }: { student: repo.Student }) {
                   <Link href={`/schueler/${student.id}/pruefung/${t.id}`} className="btn btn-primary btn-sm">
                     Vorbereitung starten
                   </Link>
-                  <Link href={`/schueler/${student.id}/pruefung/${t.id}#probeschularbeit`} className="btn btn-secondary btn-sm">
+                  <Link href={`/schueler/${student.id}/pruefung/${t.id}${t.skill_ids.length ? "#probeschularbeit" : "?ziel=probe#stoff-zuordnen"}`} className="btn btn-secondary btn-sm">
                     Probeschularbeit
                   </Link>
                   <Reveal label="Ergebnis eintragen">

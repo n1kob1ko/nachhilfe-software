@@ -59,6 +59,7 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Rechtschreibung",
+    suchwoerter: ["Orthografie", "Diktat"],
     themen: [
       {
         id: "deutsch.vs.recht.silbentrennung",
@@ -275,6 +276,7 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Satzlehre",
+    suchwoerter: ["Satzbau"],
     themen: [
       {
         id: "deutsch.satz.satzglieder",
@@ -290,6 +292,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "deutsch.satz.objekte",
         name: "Objekte: Dativobjekt und Akkusativobjekt",
+        suchwoerter: ["Ergänzungen"],
         stufen: [4, 7],
         erklaerung: "Objekte (Ergänzungen) erfragt man mit dem ganzen Prädikat: „Wem?“ fragt nach dem Dativobjekt, „Wen oder was?“ nach dem Akkusativobjekt. Beispiel: Tom schenkt seiner Schwester einen Ball. Wem schenkt Tom einen Ball? Seiner Schwester (Dativobjekt). Wen oder was schenkt Tom? Einen Ball (Akkusativobjekt).",
         fehler: [
@@ -301,6 +304,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "deutsch.satz.adverbiale",
         name: "Adverbiale Bestimmungen: Zeit, Ort, Art und Weise, Grund",
+        suchwoerter: ["Umstandsbestimmungen"],
         stufen: [4, 8],
         erklaerung: "Adverbiale Bestimmungen (Umstandsergänzungen) nennen die Umstände: Zeit (Wann? Wie lange?), Ort (Wo? Wohin? Woher?), Art und Weise (Wie?) und Grund (Warum?). Sie bestehen aus einem Wort oder einer Wortgruppe. Beispiel: Wegen des Regens (Grund) spielten wir gestern (Zeit) im Turnsaal (Ort) leise (Art und Weise) Karten.",
         fehler: [
@@ -323,6 +327,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "deutsch.satz.satzreihe-gefuege",
         name: "Satzreihe und Satzgefüge",
+        suchwoerter: ["Hauptsatz und Nebensatz", "Gliedsätze"],
         stufen: [6, 8],
         erklaerung: "Eine Satzreihe besteht aus Hauptsätzen, oft verbunden mit und, oder, aber, denn. Ein Satzgefüge besteht aus Hauptsatz und Gliedsatz; der Gliedsatz beginnt oft mit weil, dass, wenn oder einem Relativpronomen und hat das gebeugte Verb am Ende. Beispiel: Es regnet, aber wir gehen hinaus (Satzreihe). Wir bleiben drinnen, weil es regnet (Satzgefüge).",
         fehler: [
@@ -335,10 +340,12 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Beistrichsetzung",
+    suchwoerter: ["Kommasetzung", "Komma", "Zeichensetzung", "Satzzeichen"],
     themen: [
       {
         id: "deutsch.beistrich.direkte-rede",
         name: "Satzzeichen bei der direkten Rede",
+        suchwoerter: ["wörtliche Rede", "Anführungszeichen"],
         stufen: [3, 6],
         erklaerung: "Die direkte (wörtliche) Rede steht zwischen Anführungszeichen. Steht der Begleitsatz vorne, folgt ein Doppelpunkt. Steht er hinten, trennt ihn ein Beistrich ab, der Punkt der Rede fällt weg. Frage- und Rufzeichen der Rede bleiben. Beispiel: Lea sagt: „Ich komme mit.“ „Ich komme mit“, sagt Lea. „Kommst du mit?“, fragt Tom.",
         fehler: [
@@ -484,6 +491,7 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Schreiben",
+    suchwoerter: ["Aufsatz", "Textsorten"],
     themen: [
       {
         id: "deutsch.vs.schreiben.bildgeschichte",
@@ -512,6 +520,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "deutsch.schreiben.erzaehlung",
         name: "Spannend erzählen: Einleitung, Höhepunkt, Schluss",
+        suchwoerter: ["Erlebniserzählung", "Fantasieerzählung"],
         stufen: [5, 7],
         erklaerung: "Die Einleitung stellt kurz Personen, Ort und Zeit vor. Im Hauptteil steigt die Spannung bis zum Höhepunkt, dazu helfen Gefühle, Gedanken, wörtliche Rede und treffende Verben. Der Schluss rundet kurz ab. Erzählt wird meist im Präteritum (Mitvergangenheit). Beispiel: Plötzlich hörte ich ein Knacken hinter mir. Mein Herz klopfte wie wild.",
         fehler: [
@@ -897,10 +906,18 @@ const VORAUSSETZUNGEN: [string, string][] = [
   ["deutsch.argumentieren.stellungnahme", "deutsch.argumentieren.argument"],
 ];
 
+/** Suchwörter of skills of lib/curriculum.ts: the names used in German books next to the Austrian ones. */
+const SUCHWOERTER_BISHER: Record<string, string[]> = {
+  "deutsch.grammatik.praeteritum": ["Mitvergangenheit"],
+  "deutsch.grammatik.perfekt": ["Vergangenheit"],
+  "deutsch.satz.hauptsatz-gliedsatz": ["Nebensatz"],
+};
+
 export const DEUTSCH_UNTERSTUFE: Modul = {
   fach: "Deutsch",
   bereiche: BEREICHE,
   fehlerBisher: FEHLER_BISHER,
   erklaerungBisher: ERKLAERUNG_BISHER,
+  suchwoerterBisher: SUCHWOERTER_BISHER,
   voraussetzungen: VORAUSSETZUNGEN,
 };

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Camera, FileText, Sparkles, X } from "lucide-react";
 import { addExamAction, suggestSkillsAction, type TopicSuggestion } from "@/app/curriculum-actions";
 import { shrinkImage } from "@/components/shrink-image";
+import { hauptThema, StoffChip, StoffWahl, StoffZeile } from "@/components/StoffZuordnung";
 import { Reveal } from "@/components/ui";
 import { PRUEFUNGSARTEN } from "@/lib/pruefungsarten";
 import type { StoffzettelVorschlag } from "@/lib/stoffzettel";
@@ -15,8 +16,9 @@ const TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 type Zettel = { file: File; url: string | null };
 
 /**
- * Quick entry of a Schularbeit/test: Art, Fach, Datum, Stoff. While the Stoff is typed, matching skills
- * appear as chips to tick; nothing is linked automatically. A result can be added right away.
+ * Quick entry of a Schularbeit/test: Art, Fach, Datum, Stoff. While the Stoff is typed (or read from the Stoffzettel),
+ * each topic gets its matching skills as chips, the sure ones ticked (lib/lehrplan.ts stoffVorschlag); they are linked
+ * with „Eintragen“, so the teacher sees and can change them first. A result can be added right away.
  *
  * Stoffzettel (lib/stoffzettel.ts): a photo or PDF of the sheet with the Stoff is stored as the student's material
  * and saved with the Schularbeit. With KI the teacher can have it read (after the tick „kein Name“): Art, Fach,
@@ -31,7 +33,8 @@ export function ExamForm({ studentId, subjects, today, kiLiest }: { studentId: n
   const [titleShown, setTitleShown] = useState(false);
   const [topics, setTopics] = useState("");
   const [suggestions, setSuggestions] = useState<TopicSuggestion[]>([]);
-  const [checked, setChecked] = useState<string[]>([]);
+  // ticks the teacher changed, per topic; the other topics keep the suggestion
+  const [wahl, setWahl] = useState<Record<string, string[]>>({});
   const [pending, start] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -62,9 +65,13 @@ export function ExamForm({ studentId, subjects, today, kiLiest }: { studentId: n
     return () => clearInterval(id);
   }, [busy]);
 
-  const toggle = (id: string) => setChecked((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
-  const shown = suggestions.flatMap((s) => s.skills);
-  const unmatched = suggestions.filter((s) => s.skills.length === 0).map((s) => s.topic);
+  const ticked = (s: TopicSuggestion) => wahl[s.topic] ?? s.best;
+  const toggle = (s: TopicSuggestion, id: string) => setWahl((w) => ({ ...w, [s.topic]: ticked(s).includes(id) ? ticked(s).filter((x) => x !== id) : [...ticked(s), id] }));
+  const anzahl = new Set(suggestions.flatMap(ticked)).size;
+  const thema = hauptThema(suggestions);
+  const chip = (sg: TopicSuggestion, i: number) => (s: TopicSuggestion["skills"][number]) => (
+    <StoffChip key={s.id} name={`stoff_${i}`} value={s.id} label={s.name} area={s.area === thema ? undefined : s.area} checked={ticked(sg).includes(s.id)} onChange={() => toggle(sg, s.id)} />
+  );
   const faecher = extraFach && !subjects.includes(extraFach) ? [...subjects, extraFach] : subjects;
 
   function entfernen() {
@@ -163,7 +170,7 @@ export function ExamForm({ studentId, subjects, today, kiLiest }: { studentId: n
     setTitle("");
     setTitleShown(false);
     setTopics("");
-    setChecked([]);
+    setWahl({});
     entfernen();
   }
 
@@ -296,29 +303,25 @@ export function ExamForm({ studentId, subjects, today, kiLiest }: { studentId: n
       </div>
       {titleShown && <input className="input" name="title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder="Bezeichnung, z. B. 2. Schularbeit" aria-label="Bezeichnung" autoComplete="off" />}
       <input className="input" name="topics" value={topics} onChange={(e) => setTopics(e.target.value)} placeholder="Stoff, z. B. Brüche, Prozent, Sachaufgaben" aria-label="Stoff" autoComplete="off" />
-      {checked.filter((id) => !shown.some((s) => s.id === id)).map((id) => (
-        <input key={id} type="hidden" name="skill_ids" value={id} />
-      ))}
-      {(shown.length > 0 || unmatched.length > 0) && (
-        <div className="grid gap-1.5" aria-live="polite">
+      {suggestions.length > 0 && (
+        <div className="grid" aria-live="polite" data-testid="stoff-vorschlaege">
           <p className="flex items-center gap-1.5 text-[12.5px] text-ink-2">
-            <Sparkles size={13} aria-hidden /> Passende Fähigkeiten antippen, um sie zu verknüpfen
+            <Sparkles size={13} aria-hidden /> Fähigkeiten zum Stoff: was passt, ist angehakt. Antippen zum Ändern.
           </p>
-          <div className="flex flex-wrap gap-1.5">
-            {shown
-              .filter((s, i) => shown.findIndex((x) => x.id === s.id) === i)
-              .map((s) => (
-                <label key={s.id} className="flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[13px] has-checked:border-accent has-checked:bg-accent-wash">
-                  <input type="checkbox" name="skill_ids" value={s.id} checked={checked.includes(s.id)} onChange={() => toggle(s.id)} className="accent-[var(--accent)]" />
-                  {s.name}
-                  <span className="text-ink-3">· {s.area}</span>
-                </label>
-              ))}
+          <div className="divide-y divide-line">
+            {suggestions.map((sg, i) => (
+              <StoffZeile key={`${i}-${sg.topic}`} topic={sg.topic} index={i} auto={sg.best}>
+                <StoffWahl sichtbar={sg.skills.filter((s) => sg.best.includes(s.id)).map(chip(sg, i))} weitere={sg.skills.filter((s) => !sg.best.includes(s.id)).map(chip(sg, i))} />
+                {sg.skills.length === 0 && <p className="text-[12.5px] text-ink-3 sm:pt-2">Kein Vorschlag. Bleibt als Stoff gespeichert, zuordnen kannst du ihn später in der Vorbereitung.</p>}
+              </StoffZeile>
+            ))}
           </div>
-          {unmatched.length > 0 && <p className="text-[12.5px] text-ink-3">Ohne Vorschlag: {unmatched.join(", ")}. Bleibt als Stoff gespeichert.</p>}
+          <p className="text-[12.5px] text-ink-3">
+            <span className="num">{anzahl}</span> {anzahl === 1 ? "Fähigkeit wird" : "Fähigkeiten werden"} mit „Eintragen“ verknüpft.
+          </p>
         </div>
       )}
-      {pending && shown.length === 0 && <p className="text-[12.5px] text-ink-3">Suche passende Fähigkeiten …</p>}
+      {pending && suggestions.length === 0 && <p className="text-[12.5px] text-ink-3">Suche passende Fähigkeiten …</p>}
       <Reveal label="Schon geschrieben? Ergebnis eintragen">
         <div className="grid grid-cols-3 gap-3">
           <input className="input num" name="grade" type="number" min={1} max={5} placeholder="Note" aria-label="Note" />
