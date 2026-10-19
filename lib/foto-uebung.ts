@@ -15,7 +15,7 @@
 import fs from "node:fs";
 import { aiEnabled, aiReadsImages, analyzeMaterialWithAI } from "./ai";
 import { AUTO, createDraft, studentContext } from "./builder";
-import { matchSkills, skillsForStudent } from "./lehrplan";
+import { matchSkills, skillsForPrompt } from "./lehrplan";
 import { getMaterial, hatDatei, materialFile, MAX_ANALYSIS_IMAGE_BYTES, setAnalysis, type Material } from "./materials";
 import * as repo from "./repo";
 import { getUnit } from "./units";
@@ -66,7 +66,7 @@ export async function uebungAusFoto(o: { unitId: number; teacherId: number; mate
   let analyse = m.analysis;
   if (!analyse) {
     if ((m.size ?? 0) > MAX_ANALYSIS_IMAGE_BYTES) throw new Error(`Das Foto ist zu groß für die KI (höchstens ${MAX_ANALYSIS_IMAGE_BYTES / 1024 / 1024} MB).`);
-    const pool = skillsForStudent(student, fach || undefined, { earlier: true });
+    const pool = skillsForPrompt(student, fach || undefined);
     let gelesen: Awaited<ReturnType<typeof analyzeMaterialWithAI>> = null;
     let problem = "";
     try {

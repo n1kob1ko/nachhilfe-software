@@ -283,7 +283,7 @@
    "subject": "Mathematik",
    "area": "Schriftliche Rechenverfahren",
    "name": "Schriftlich dividieren",
-   "grade_min": 4,
+   "grade_min": 3,
    "grade_max": 4,
    "school_types": [
     "Volksschule"

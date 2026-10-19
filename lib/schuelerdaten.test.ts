@@ -296,7 +296,7 @@ test("planning a diagnosis: 5–10 tasks, easy to hard, spread over the topics",
   const d = await import("./diagnose");
   const { schoolBranch } = await import("./school");
   const skills = d.diagnosisSkills({ subject: "Mathematik", branch: schoolBranch("mittelschule"), klasse: 2, topics: ["Bruchrechnung", "Negative Zahlen"] });
-  // the maths topics of lib/mathe-themen.ts come after the older skills of a Thema (they were seeded later)
+  // the maths topics of lib/themen/ come after the older skills of a Thema (they were seeded later)
   assert.deepEqual(skills.map((s) => s.id), [
     "mathe.brueche.kuerzen", "mathe.negativ.addieren", "mathe.brueche.erweitern", "mathe.negativ.multiplizieren",
     "mathe.brueche.addieren", "mathe.negativ.zahlengerade", "mathe.brueche.subtrahieren", "mathe.brueche.multiplizieren",

@@ -261,8 +261,8 @@ test("a placeholder sample answer is rejected for every skill, and the generic e
   for (const p of ["Eine passende Antwort.", "Eine korrekte Erklärung mit einem passenden Beispiel.", "Ein eigenes Beispiel", "Individuelle Schülerlösung", "Antworten können variieren."]) assert.equal(free(p), null, p);
   assert.ok(free("Man dividiert Zähler und Nenner durch dieselbe Zahl: 6/8 = 3/4 (beide durch 2)."));
   assert.match(builder.checkTask({ type: "free", skillId: "x", difficulty: "mittel", prompt: "Erkläre …", data: {}, answer: { sample: "Eine passende Antwort." }, solution: "", hints: [], errorMap: [] }) ?? "", /Platzhalter/);
-  // a skill without a stored explanation: criteria instead of an invented sample
-  const t = generateForSlot({ skillId: "englisch.translation.sentences", skillName: "Sätze übersetzen", difficulty: "mittel", category: "offen", subject: "Englisch" }, Math.random, 0);
+  // a skill without a stored explanation (one a teacher added): criteria instead of an invented sample
+  const t = generateForSlot({ skillId: "englisch.eigene.uebersetzen", skillName: "Sätze übersetzen", difficulty: "mittel", category: "offen", subject: "Englisch" }, Math.random, 0);
   assert.equal(t.answer.sample, undefined);
   assert.ok(t.answer.criteria!.length >= 2);
   assert.equal(builder.checkTask(t), null, "complete: the teacher grades by the criteria");

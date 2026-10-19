@@ -1121,12 +1121,12 @@ const OFFICIAL_SOURCES = [
 /** Inserts the built-in skill tree. Existing skills (also custom ones) are left untouched. */
 function seedCurriculum(conn: Database.Database) {
   const insert = conn.prepare(
-    "INSERT OR IGNORE INTO skills (id, subject, area, name, grade_min, grade_max, sort, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT OR IGNORE INTO skills (id, subject, area, name, grade_min, grade_max, sort, parent_id, school_types) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
   const tx = conn.transaction(() => {
     let sort = 0;
     for (const s of CURRICULUM) {
-      insert.run(s.id, s.subject, s.area, s.name, s.gradeMin, s.gradeMax, sort++, s.parentId ?? null);
+      insert.run(s.id, s.subject, s.area, s.name, s.gradeMin, s.gradeMax, sort++, s.parentId ?? null, s.schoolTypes?.join(",") ?? "");
     }
     for (const src of [...BUILTIN_SOURCES, ...OFFICIAL_SOURCES]) {
       conn

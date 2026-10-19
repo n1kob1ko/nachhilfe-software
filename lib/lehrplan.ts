@@ -230,6 +230,20 @@ export function skillsForStudent(student: Pick<Student, "school_type" | "klasse"
 }
 export const stufeOf = (type: string, klasse: number) => schulstufe(type, klasse);
 
+/** Schulstufen before the student's own whose skills a KI request still lists. */
+export const PROMPT_STUFEN_FRUEHER = 3;
+/**
+ * The skills a KI request lists for a student (Foto vom Stoff, material analysis): those of the
+ * student's level and of the three Schulstufen before it, so a 7. Klasse AHS does not send the whole
+ * Volksschule along and the request stays short. Matching a topic (matchSkills) still uses every
+ * earlier skill.
+ */
+export function skillsForPrompt(student: Pick<Student, "school_type" | "klasse" | "grade">, subject?: string): Skill[] {
+  const all = skillsForStudent(student, subject, { earlier: true });
+  const level = checkLevel(student.school_type, student.klasse, student.grade);
+  return level.status === "eindeutig" ? all.filter((s) => s.grade_max >= level.schulstufe! - PROMPT_STUFEN_FRUEHER) : all;
+}
+
 // ---------- browsing skills by school branch ----------
 /**
  * Skills of a subject that belong to a branch and, if given, to one of its classes. The filter uses
@@ -356,13 +370,16 @@ export function matchSkills(topic: string, subject: string, opts: { student?: Pi
   const hits = (words: string[]) => want.filter((w) => words.some((x) => x.startsWith(w) || w.startsWith(x)));
   const out: SkillMatch[] = [];
   for (const s of pool) {
-    const own = hits(tokens(`${s.name} ${s.subtopic ?? ""}`));
+    const words = tokens(`${s.name} ${s.subtopic ?? ""}`);
+    const own = hits(words);
     // a topic word counts once: "Brüche" in "Brüche als Anteile" does not count again for the Thema Bruchrechnung
     const area = hits(tokens(s.area)).filter((w) => !own.includes(w));
     if (!own.length && !area.length) continue;
     // a topic naming the skill itself beats one naming only its Thema; Teilfähigkeiten only on a direct hit
     if (s.parent_id && !own.length) continue;
-    out.push({ skill: s, score: own.length * 2 + area.length + (s.parent_id ? 0 : 0.5), via: own.length ? "faehigkeit" : "thema" });
+    // the whole word beats a part of it: „Kurvendiskussion“ before „Kurven in Parameterform“
+    const exact = own.filter((w) => words.includes(w)).length * 0.25;
+    out.push({ skill: s, score: own.length * 2 + exact + area.length + (s.parent_id ? 0 : 0.5), via: own.length ? "faehigkeit" : "thema" });
   }
   return out.sort((a, b) => b.score - a.score || a.skill.sort - b.skill.sort).slice(0, opts.limit ?? 8);
 }

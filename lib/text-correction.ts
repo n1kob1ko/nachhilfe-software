@@ -17,7 +17,7 @@ import { acceptProblem, flagItems, notApplicable, setAside } from "./text-correc
 import { PROVIDER_LABEL } from "./ai/providers";
 import { aiEnabled, breakerState, budgetUsedUp } from "./ai/router";
 import { db } from "./db";
-import { skillsForStudent } from "./lehrplan";
+import { skillsForPrompt } from "./lehrplan";
 import { getSkill, getStudent } from "./repo";
 import { detectNames } from "./name-detection";
 import { blockText, parseDoc, type TextDoc } from "./text-doc";
@@ -251,7 +251,7 @@ export function correctionRequest(text: TextView, doc: TextDoc, names: string[] 
   const pattern = namePattern([...namesToHide(text), ...names]);
   const student = getStudent(text.student_id);
   const subject = text.subject || "Deutsch";
-  const skills = student ? skillsForStudent(student, subject, { earlier: true }) : [];
+  const skills = student ? skillsForPrompt(student, subject) : [];
   return {
     subject,
     kind: text.topic,
