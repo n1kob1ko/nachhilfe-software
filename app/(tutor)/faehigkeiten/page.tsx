@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { BookOpen, ChevronRight, GitBranch, Plus, Sparkles } from "lucide-react";
+import { BookOpen, ChevronRight, GitBranch, Lightbulb, Plus, Sparkles } from "lucide-react";
 import { Info } from "@/components/Info";
 import { createSkillAction } from "@/app/actions";
 import { PageHeader, Reveal } from "@/components/ui";
-import { hasBuiltInGenerator } from "@/lib/generators";
+import { EXPLAIN, hasBuiltInGenerator } from "@/lib/generators";
 import { branchesWithSkills, browseSkills, curriculumFor } from "@/lib/lehrplan";
 import { listSkills, type Skill } from "@/lib/repo";
 import { klasseLabel, klassenRange, MAX_STUFE, stufeLabel } from "@/lib/school";
+import { typischeFehler } from "@/lib/themen";
 
 const STUFEN = Array.from({ length: MAX_STUFE }, (_, i) => i + 1);
 
@@ -48,7 +49,7 @@ export default async function SkillsPage({ searchParams }: { searchParams: Promi
       <PageHeader
         title={crumbs[crumbs.length - 1].label === "Fächer" ? "Fähigkeiten" : crumbs[crumbs.length - 1].label}
         back={back ? { href: back.href, label: back.label } : { href: "/mehr", label: "Mehr" }}
-        info="Der Lernstand wird pro Fähigkeit gemessen. Wähle Fach, Schulart und Klasse, um nur die passenden Themen zu sehen. Tippe auf eine Fähigkeit, um dazu eine Übung zu erstellen."
+        info="Der Lernstand wird pro Fähigkeit gemessen. Wähle Fach, Schulart und Klasse, um nur die passenden Themen zu sehen. Tippe auf eine Fähigkeit, um dazu eine Übung zu erstellen. „So geht’s“ zeigt die Erklärung und die typischen Fehler."
       />
 
       {crumbs.length > 1 && (
@@ -172,6 +173,8 @@ function SkillList({ list, all }: { list: Skill[]; all: Skill[] }) {
     <ul className="panel divide-y divide-line">
       {list.map((s) => {
         const subs = all.filter((x) => x.parent_id === s.id);
+        // the name opens „Übung erstellen“; explanation and typical errors live on the details page, so say so
+        const soGehts = Boolean(EXPLAIN[s.id]) || typischeFehler(s.id).length > 0;
         return (
           <li key={s.id} className="px-5 py-3">
             <span className="flex items-center gap-2">
@@ -180,9 +183,16 @@ function SkillList({ list, all }: { list: Skill[]; all: Skill[] }) {
                 {!hasBuiltInGenerator(s.id) && <Sparkles size={14} aria-label="Aufgaben nur mit KI" className="shrink-0 text-ink-3" />}
                 {s.practice_shift && <span className="rounded-full bg-amber-wash px-2 py-0.5 text-[12px] font-medium text-amber">oft {s.practice_shift === "frueher" ? "früher" : "später"}</span>}
               </Link>
-              <Link href={`/faehigkeiten/${encodeURIComponent(s.id)}`} className="btn btn-ghost btn-sm min-w-[44px] !px-2.5" aria-label={`Details zu ${s.name}`} title="Voraussetzungen und Details">
-                <GitBranch size={15} aria-hidden />
-              </Link>
+              {soGehts ? (
+                <Link href={`/faehigkeiten/${encodeURIComponent(s.id)}`} className="btn btn-secondary btn-sm shrink-0 gap-1.5" aria-label={`So geht’s: ${s.name}`} title="Erklärung, typische Fehler, Voraussetzungen">
+                  <Lightbulb size={15} aria-hidden />
+                  So geht’s
+                </Link>
+              ) : (
+                <Link href={`/faehigkeiten/${encodeURIComponent(s.id)}`} className="btn btn-ghost btn-sm min-w-[44px] shrink-0 !px-2.5" aria-label={`Details zu ${s.name}`} title="Voraussetzungen und Details">
+                  <GitBranch size={15} aria-hidden />
+                </Link>
+              )}
             </span>
             {subs.length > 0 && (
               <span className="mb-1 flex flex-wrap gap-1.5">
