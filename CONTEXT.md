@@ -157,6 +157,15 @@ _Avoid_: Template, Muster, Blaupause, Schablone
 
 ## Schule
 
+**Fach**:
+Steht an zwei Stellen. Die **Fächer im Profil** sind die, die ein Schüler
+regelmäßig bei uns hat. Das **Fach einer Einheit** (auch einer Hausübung) ist
+frei: jedes Schulfach, auch einmalig, z. B. Biologie vor einem Test, ohne dass
+sich das Profil ändert. Lehrplan, Übungen und Lernstand je Fähigkeit gibt es nur
+für Mathematik, Deutsch und Englisch; eine Einheit in einem anderen Fach wird
+dokumentiert, aber nicht ausgewertet.
+_Avoid_: Gegenstand, Unterrichtsgegenstand, Kurs
+
 **Hausübung**:
 Was der Schüler zu Hause macht: Beschreibung, Fach, Fälligkeit, offen oder
 erledigt. Österreichisch für Hausaufgabe.

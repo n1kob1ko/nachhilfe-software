@@ -12,6 +12,30 @@ export const SCHOOL_TYPES: SchoolType[] = [
   { name: "HAK", short: "HAK", classes: 5, offset: 8 },
 ];
 
+/**
+ * Vorschläge für das **Fach einer Einheit**. Unterrichtet wird jedes Fach; das Feld bleibt frei.
+ * Lehrplan, Übungen und Lernstand je Fähigkeit gibt es nur für Mathematik, Deutsch und Englisch
+ * (`SUBJECTS` in lib/curriculum.ts). Eine Einheit in einem anderen Fach wird nur dokumentiert.
+ */
+export const SCHULFAECHER = [
+  "Mathematik", "Deutsch", "Englisch", "Französisch", "Spanisch", "Italienisch", "Latein", "Biologie", "Chemie", "Physik",
+  "Geographie", "Geschichte", "Informatik", "Rechnungswesen", "Betriebswirtschaft", "Volkswirtschaft", "Psychologie und Philosophie", "Musik",
+];
+
+/** Die Fächer des Schülers zuerst, dann die übrigen Schulfächer, ohne Doppelte. */
+export function fachVorschlaege(eigene: string[] = []): string[] {
+  return [...new Set([...eigene, ...SCHULFAECHER])];
+}
+
+/**
+ * Ein eingetipptes Fach: Leerzeichen bereinigt, höchstens 60 Zeichen, und in der Schreibweise eines
+ * bekannten Fachs („biologie“ → „Biologie“), damit Lernverlauf und Abrechnung einheitlich bleiben.
+ */
+export function fachAus(roh: string, eigene: string[] = []): string {
+  const v = roh.trim().replace(/\s+/g, " ").slice(0, 60);
+  return fachVorschlaege(eigene).find((f) => f.toLowerCase() === v.toLowerCase()) ?? v;
+}
+
 export function schoolType(name: string): SchoolType | null {
   return SCHOOL_TYPES.find((t) => t.name === name) ?? null;
 }
