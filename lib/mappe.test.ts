@@ -47,6 +47,26 @@ test("a short answer goes into the only gap of the task, not under it", async ()
   assert.equal(inDieLuecke(zwei, leseAntwort(zwei, "2 + 3")), false);
 });
 
+test("gaps in the Mappe: each wrong gap is marked on its own, with the right answer only when asked", async () => {
+  const { lueckenFuerMappe, leseAntwort } = await import("./mappe");
+  const t = aufgabe({ type: "cloze", prompt: "They ___ ___ here since 2020. (live)", answer: { blanks: [["have", "'ve"], ["lived"]], mode: "text" } });
+  const alles = { markieren: true, loesung: true };
+  assert.deepEqual(lueckenFuerMappe(t, leseAntwort(t, '["has"," lived "]'), alles), [{ text: "has", falsch: true, richtig: "have" }, { text: "lived" }]);
+  assert.deepEqual(lueckenFuerMappe(t, leseAntwort(t, '["has","lived"]'), { markieren: true, loesung: false }), [{ text: "has", falsch: true }, { text: "lived" }]);
+  assert.deepEqual(lueckenFuerMappe(t, leseAntwort(t, '["has","lived"]'), { markieren: false, loesung: false }), [{ text: "has" }, { text: "lived" }], "without marks only the answers");
+  assert.deepEqual(lueckenFuerMappe(t, leseAntwort(t, '["HAVE"]'), alles), [{ text: "HAVE" }, { text: "", falsch: true, richtig: "lived" }], "graded like the solver: case does not count, an empty gap is wrong");
+  assert.deepEqual(lueckenFuerMappe(t, null, alles), [
+    { text: "", falsch: true, richtig: "have" },
+    { text: "", falsch: true, richtig: "lived" },
+  ], "solution looked at without an answer");
+
+  const eine = aufgabe({ prompt: "1/4 + 1/2 = ___", answer: { accepted: ["3/4"], mode: "value" } });
+  assert.deepEqual(lueckenFuerMappe(eine, leseAntwort(eine, "0,75"), alles), [{ text: "0,75" }], "the same value is right");
+  assert.deepEqual(lueckenFuerMappe(eine, leseAntwort(eine, "2/6"), alles), [{ text: "2/6", falsch: true, richtig: "3/4" }]);
+  assert.equal(lueckenFuerMappe(eine, null, alles), undefined, "no answer to a single gap: the line „Richtig:“ stays");
+  assert.equal(lueckenFuerMappe(aufgabe({ prompt: "Kürze 4/8.", answer: { accepted: ["1/2"] } }), leseAntwort(eine, "1/2"), alles), undefined, "no gap in the task");
+});
+
 test("print settings live in the address; only changes are written", async () => {
   const { leseMappeOptionen, mappeQuery } = await import("./mappe-druck");
   const o = leseMappeOptionen({}, "Einheit vom 19. Oktober 2026");

@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { BrandLogo } from "@/components/Brand";
 import { DEFAULTS, buildSheet, shortAnswer, type SheetOptions, type SheetTask } from "@/lib/arbeitsblatt";
-import { inDieLuecke, type Antwort, type Bewertung, type Mappe, type MappeAufgabe, type MappeUebung } from "@/lib/mappe";
+import { inDieLuecke, lueckenFuerMappe, type Antwort, type Bewertung, type Mappe, type MappeAufgabe, type MappeUebung } from "@/lib/mappe";
 import type { MappeOptionen } from "@/lib/mappe-druck";
 import * as repo from "@/lib/repo";
 import { wordsLabel } from "@/lib/texts";
@@ -146,13 +146,15 @@ function MappeTask({ t, a, o }: { t: SheetTask; a: MappeAufgabe; o: MappeOptione
   // ohne Häkchen und Kreuze ein sauberes Blatt nur mit den Antworten: dann auch ohne Lösungen und Hinweise
   const zeigeLoesung = o.marks && o.solutions && fehler;
   const loesung = zeigeLoesung ? (shortAnswer(task) ?? task.answer.sample ?? null) : null;
-  const luecken = antwort?.art === "luecken" ? antwort.werte : antwort && inDieLuecke(task, antwort) && antwort.art === "text" ? [antwort.text] : undefined;
+  // falsche Lücken einzeln markiert; steht die richtige Antwort schon in der Lücke, entfällt die Zeile „Richtig:“
+  const luecken = lueckenFuerMappe(task, antwort, { markieren: Boolean(o.marks && fehler), loesung: zeigeLoesung });
+  const loesungInLuecke = Boolean(luecken?.some((l) => l.richtig));
   const zeichen = o.marks ? ZEICHEN[a.bewertung] : null;
   return (
     <div className="ab-task mp-task" data-bewertung={a.bewertung}>
       <span className="ab-num">{t.n}</span>
       <div className="ab-body">
-        <RichText text={task.prompt} gapsMm={t.plan.gapsMm} gapAnswers={luecken?.map((w) => w.trim() || null)} />
+        <RichText text={task.prompt} gapsMm={t.plan.gapsMm} gapAnswers={luecken?.map((l) => ({ text: l.text, wrong: l.falsch, correct: l.richtig }))} />
         <Start task={task} />
         {task.type === "fix" && task.data.faulty && <p className="ab-faulty">{task.data.faulty}</p>}
         {antwort ? (
@@ -161,7 +163,7 @@ function MappeTask({ t, a, o }: { t: SheetTask; a: MappeAufgabe; o: MappeOptione
           <p className="mp-antwort ab-muted">keine Antwort</p>
         )}
         {o.marks && <Hinweis a={a} />}
-        {loesung && task.data.options === undefined && (
+        {loesung && !loesungInLuecke && task.data.options === undefined && (
           <p className="mp-loesung">
             <span className="mp-label">Richtig:</span> <MathLine text={loesung} />
           </p>
