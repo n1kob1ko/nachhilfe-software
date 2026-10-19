@@ -343,6 +343,7 @@ Fall. `lib/units-verknuepfung.test.ts` hält das fest: eine geplante Zeile wird 
 | `lib/planung/regeln.ts` | Regelschema, Vorgaben, Lesen/Schreiben in `app_settings` |
 | `lib/planung/repo.ts` | alles Lesende und Schreibende am Wochenplan, inkl. der **einzigen** Überlappungsprüfung, plus `wochenEingaben` und `neuGenerieren` |
 | `lib/planung/heute.ts` | „heute“ für Dashboard, Schüler-Link und den Start einer Einheit |
+| `lib/planung/schueler-termine.ts` | die Termine der Schüler-App: nächster Termin, diese und die nächste Woche, nur veröffentlicht, ohne Namen |
 | `lib/planung/zeit.ts` | die einzige Stelle für Wochentag, Woche und Zeitzone |
 | `lib/planung/verfuegbarkeit.ts` | Verfügbarkeit als Wert und als JSON-Spalte |
 | `lib/planung/schema.ts` | zod-Schemata der Formulare (Phase 3) |
@@ -366,7 +367,7 @@ Die Oberfläche dazu:
 | `components/planung/RaumForm.tsx`, `RaumPraeferenzen.tsx`, `RaumAktionen.tsx` | Räume und Raumwünsche (Phase 3, D22) |
 | `components/planung/PlanungFormular.tsx` | der Abschnitt „Planung“ einer Schülerin/eines Schülers (Phase 3) |
 | `app/(tutor)/mehr/raeume/page.tsx`, `app/(tutor)/lehrer/page.tsx`, `app/(tutor)/schueler/[id]/bearbeiten/page.tsx` | die Seiten dazu |
-| `app/(tutor)/page.tsx` (`?tab=woche` = „Meine Woche“), `app/lernen/[token]/page.tsx` | die veröffentlichte Woche des Lehrers und „Deine Termine diese Woche“ des Schülers |
+| `app/(tutor)/page.tsx` (`?tab=woche` = „Meine Woche“), `app/lernen/[token]/page.tsx` | die veröffentlichte Woche des Lehrers und „Deine Termine“ des Schülers (diese und die nächste Woche, `lib/planung/schueler-termine.ts`, [schueler-app.md](schueler-app.md)) |
 
 Und die Verknüpfung mit den echten Einheiten (dieser Teil):
 

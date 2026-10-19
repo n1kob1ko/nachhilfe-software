@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Circle, ExternalLink, History, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { CheckCircle2, Circle, History, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/Art";
 import {
   addHomeworkAction,
@@ -15,7 +15,7 @@ import { Lernverlauf } from "@/components/Lernverlauf";
 import { UnitControl } from "@/components/UnitControl";
 import { ExamForm } from "@/components/ExamForm";
 import { cancelExamAction, setExamResultAction } from "@/app/curriculum-actions";
-import { CopyLink } from "@/components/CopyLink";
+import { SchuelerAppLink } from "@/components/SchuelerAppLink";
 import { ProgressChart } from "@/components/ProgressChart";
 import { Empty, LevelTag, MasteryBar, More, Pill, Reveal, SectionTitle, StatusChip, TrendBadge, formatDate, formatDuration, formatTime } from "@/components/ui";
 import { Info } from "@/components/Info";
@@ -293,7 +293,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
       <details className="group rounded-2xl border border-line bg-surface px-5 py-1">
         <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between text-[15px] font-semibold">
           Weitere Angaben
-          <span className="text-[13px] font-normal text-ink-3 group-open:hidden">Einschätzung, Termine, Tests, Notizen, Link</span>
+          <span className="text-[13px] font-normal text-ink-3 group-open:hidden">Einschätzung, Termine, Tests, Notizen, Schüler-App</span>
         </summary>
         <div className="grid gap-6 pt-2 pb-5">
           {a.summary.length > 0 && (
@@ -330,15 +330,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
               </div>
             ))}
           </dl>
-          <div>
-            <h3 className="mb-2 text-[14px] font-semibold">
-              Link für das Gerät von {first}
-              <Info label="Info zum Link">Auf diesem Link sieht {first} die gesendeten Übungen.</Info>
-            </h3>
-            <div className="max-w-[520px]">
-              <CopyLink path={`/lernen/${student.access_token}`} />
-            </div>
-          </div>
+          <SchuelerAppLink token={student.access_token} first={first} />
           <Link href={`/schueler/${student.id}/bearbeiten`} className="btn btn-secondary w-fit">
             <Pencil size={15} aria-hidden /> Profil bearbeiten
           </Link>
@@ -921,19 +913,8 @@ function Exercises({ student }: { student: repo.Student }) {
   const first = student.name.split(" ")[0];
   return (
     <div className="space-y-8">
-      <div className="panel flex flex-wrap items-center justify-between gap-4 px-5 py-4">
-        <div className="min-w-0 flex-1">
-          <p className="font-semibold">
-            Link für das Gerät von {first}
-            <Info label="Info zum Link">Über diesen Link sieht {first} alle gesendeten Übungen und kann sie selbst bearbeiten.</Info>
-          </p>
-        </div>
-        <div className="flex w-full items-center gap-2 sm:w-[440px]">
-          <CopyLink path={`/lernen/${student.access_token}`} />
-          <Link href={`/lernen/${student.access_token}`} target="_blank" className="btn btn-ghost btn-sm min-w-[44px] !px-2" aria-label="Schüleransicht öffnen">
-            <ExternalLink size={15} />
-          </Link>
-        </div>
+      <div className="panel px-5 py-4">
+        <SchuelerAppLink token={student.access_token} first={first} />
       </div>
       {(() => {
         const drafts = repo.listWorksheets().filter((w) => w.student_id === student.id && w.status === "entwurf");
