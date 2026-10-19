@@ -133,7 +133,7 @@ export function LiveStatus({ unitId, initial, join }: { unitId: number; initial:
       ) : c ? (
         <div className="mt-4">
           <p className="text-[13px] text-ink-3">
-            {s.student} · {c.test ? "Minitest" : c.single ? "Einzelaufgabe" : "Übung"}
+            {s.student} · {c.probe ? "Probeschularbeit" : c.test ? "Minitest" : c.single ? "Einzelaufgabe" : "Übung"}
             {onLaptop ? " · am eigenen Laptop" : ""}
           </p>
           <p className="truncate text-[17px] font-semibold" title={c.title}>

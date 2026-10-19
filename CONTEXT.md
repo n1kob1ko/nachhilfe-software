@@ -67,7 +67,8 @@ der Einheit wie eine kleine Schularbeit: ohne Tipps, ein Versuch je Aufgabe, ric
 oder falsch erst am Ende. Er soll Schülern die Nervosität vor Tests nehmen. Am
 Tablet `assignments.mode = 'test'`, gedruckt nur die Übung mit
 `worksheets.minitest_unit_id` (`lib/minitest.ts`). Die Aufgaben kommen ohne KI.
-_Avoid_: Probeschularbeit (so nennt ihn niko, im Programm heißt er Minitest), Quiz, **Diagnose**
+_Avoid_: Quiz, **Diagnose**. Nicht verwechseln mit der **Probeschularbeit** (ein ganzer Test zu einer
+Schularbeit, mit Punkten und Note)
 
 **Foto vom Stoff**:
 Eine **Übung** aus einem Foto der Buchseite oder des Arbeitsblatts, in der laufenden
@@ -254,6 +255,20 @@ Punkte), Zustand geplant, geschrieben oder abgesagt. Österreichisch für
 Klassenarbeit. Im Code und in der Oberfläche heißt sie oft noch „Test“ (Tabelle
 `tests`) — siehe *Altlasten im Code*.
 _Avoid_: Klassenarbeit, Prüfung, Examen, Schultest
+
+**Probeschularbeit**:
+Ein ganzer Übungstest zu einer geplanten **Schularbeit**, aus ihrem Stoff: leichte Aufgaben zuerst, schwere
+am Ende, jede mit Punkten, darunter der **Notenschlüssel**. Entsteht auf der Vorbereitung der Schularbeit als
+Entwurf einer **Übung** (`worksheets.probe_test_id`, `lib/probeschularbeit.ts`), der Lehrer prüft ihn und
+druckt ihn oder sendet ihn. Am Gerät läuft sie wie ein **Minitest**; am Ende stehen Punkte und Note
+([docs/probeschularbeit.md](docs/probeschularbeit.md)).
+_Avoid_: Probetest, Übungsschularbeit, Testsimulation
+
+**Notenschlüssel**:
+Ab wie viel Prozent der Punkte es Sehr gut, Gut, Befriedigend und Genügend gibt. Einer für alle
+Probeschularbeiten, unter Mehr › Curriculum / Lehrplan › Einstellungen; der Vorschlag ist 87,5 / 75 / 62,5 /
+50 %. Auf dem Blatt steht er als Punkte von–bis je Note.
+_Avoid_: Notenskala, Bewertungsschlüssel, Punkteschlüssel
 
 **Stoffzettel**:
 Das Foto oder PDF, auf dem steht, was zu einer **Schularbeit** kommt: Fach, Termin, Stoff. Es bleibt als

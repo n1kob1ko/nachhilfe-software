@@ -13,6 +13,7 @@ import { laptopEndReason, laptopState, type EndReason } from "@/lib/laptop";
 import { currentLaptop, laptopContext } from "@/lib/laptop-context";
 import { markDelivered, parseView, pushLive, unitAssignments, unitText } from "@/lib/live";
 import { isMinitest, showsQuickRound } from "@/lib/quick-round";
+import * as repo from "@/lib/repo";
 import { triesFor } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
 import { storyForEditor } from "@/lib/picture-story";
@@ -162,6 +163,7 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
         tasks={tasks}
         maxTries={triesFor(current.mode)}
         test={isMinitest(current.mode)}
+        probe={Boolean(repo.getWorksheet(current.worksheet_id)?.probe_test_id)}
       />
     );
   } else {

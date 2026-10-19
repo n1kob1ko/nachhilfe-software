@@ -156,6 +156,8 @@ export type Worksheet = {
   source_worksheet_id: number | null;
   /** Tags of a library entry (kind = bibliothek). */
   tags: string[];
+  /** The Schularbeit a Probeschularbeit was made for (lib/probeschularbeit.ts); null for every other exercise. */
+  probe_test_id?: number | null;
 };
 
 export type Task = TaskDraft & { id: number; worksheet_id: number; position: number; level: number | null };
@@ -777,6 +779,10 @@ export function hintUsesForAssignment(assignmentId: number) {
 
 // ---------- assignments & attempts ----------
 export function assignWorksheet(worksheetId: number, studentId: number, note = "", unitId: number | null = null, mode: AssignmentMode = "normal"): number {
+  // a Probeschularbeit (lib/probeschularbeit.ts) is written like a Schularbeit, whichever way it is sent:
+  // no hints, one try per task, the result at the end (mode 'test', like a Minitest)
+  const probe = db().prepare("SELECT probe_test_id FROM worksheets WHERE id = ?").get(worksheetId) as { probe_test_id: number | null } | undefined;
+  if (probe?.probe_test_id) mode = "test";
   const res = db().prepare("INSERT INTO assignments (worksheet_id, student_id, note, unit_id, mode) VALUES (?, ?, ?, ?, ?)").run(worksheetId, studentId, note, unitId, mode);
   // students only ever see released exercises
   db().prepare("UPDATE worksheets SET status = 'freigegeben' WHERE id = ?").run(worksheetId);
@@ -799,6 +805,8 @@ export type AssignmentView = Assignment & {
   title: string;
   subject: string;
   kind: string;
+  /** the Schularbeit of a Probeschularbeit (lib/probeschularbeit.ts), else null */
+  probe_test_id: number | null;
   difficulty: string;
   skill_ids: string[];
   task_count: number;
@@ -808,7 +816,7 @@ export type AssignmentView = Assignment & {
 export function listAssignments(studentId: number): AssignmentView[] {
   return db()
     .prepare(
-      `SELECT a.*, w.title, w.subject, w.kind, w.difficulty, w.skill_ids,
+      `SELECT a.*, w.title, w.subject, w.kind, w.difficulty, w.skill_ids, w.probe_test_id,
         (SELECT COUNT(*) FROM tasks t WHERE t.worksheet_id = w.id) AS task_count,
         (SELECT COUNT(DISTINCT task_id) FROM attempts x WHERE x.assignment_id = a.id AND x.final = 1) AS done_count,
         (SELECT COUNT(*) FROM attempts x WHERE x.assignment_id = a.id AND x.final = 1 AND x.correct = 1) AS correct_count

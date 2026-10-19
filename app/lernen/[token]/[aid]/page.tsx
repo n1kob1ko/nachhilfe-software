@@ -17,5 +17,5 @@ export default async function SolvePage({ params }: { params: Promise<{ token: s
   // sonst der übliche Ablauf, unverändert.
   if (showsQuickRound(assignment.mode, tasks))
     return <StudentQuickRound token={token} assignmentId={assignment.id} title={w.title} tasks={tasks} />;
-  return <Solver token={token} assignmentId={assignment.id} title={w.title} tasks={tasks} maxTries={triesFor(assignment.mode)} test={isMinitest(assignment.mode)} />;
+  return <Solver token={token} assignmentId={assignment.id} title={w.title} tasks={tasks} maxTries={triesFor(assignment.mode)} test={isMinitest(assignment.mode)} probe={Boolean(w.probe_test_id)} />;
 }
