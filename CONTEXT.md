@@ -230,6 +230,13 @@ Klassenarbeit. Im Code und in der Oberfläche heißt sie oft noch „Test“ (Ta
 `tests`) — siehe *Altlasten im Code*.
 _Avoid_: Klassenarbeit, Prüfung, Examen, Schultest
 
+**Stoffzettel**:
+Das Foto oder PDF, auf dem steht, was zu einer **Schularbeit** kommt: Fach, Termin, Stoff. Es bleibt als
+**Material** des Schülers und hängt an der Schularbeit (`tests.material_id`). Die KI kann es auf Klick
+lesen und das Formular vorfüllen; gespeichert wird erst, wenn der Lehrer einträgt
+([docs/stoffzettel.md](docs/stoffzettel.md)). Nicht verwechseln mit **Foto vom Stoff** (daraus wird eine Übung).
+_Avoid_: Stoffangabe, Prüfungsstoff-Upload, Anhang
+
 ## Blätter erstellen
 
 **Blätter erstellen**:

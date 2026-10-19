@@ -127,6 +127,8 @@ export type TestResult = {
   status?: "geplant" | "geschrieben" | "abgesagt";
   teacher_id?: number | null;
   created_at?: string | null;
+  /** the Stoffzettel as material (photo or PDF, lib/stoffzettel.ts) */
+  material_id?: number | null;
 };
 
 export type Worksheet = {
@@ -477,12 +479,13 @@ export function listTests(studentId: number): TestResult[] {
 export function addTest(t: Omit<TestResult, "id">): number {
   const res = db()
     .prepare(
-      `INSERT INTO tests (student_id, date, subject, kind, topic, grade, points, max_points, notes, skill_ids, title, topics, status, teacher_id, created_at)
-       VALUES (@student_id, @date, @subject, @kind, @topic, @grade, @points, @max_points, @notes, @skill_ids, @title, @topics, @status, @teacher_id, datetime('now'))`,
+      `INSERT INTO tests (student_id, date, subject, kind, topic, grade, points, max_points, notes, skill_ids, title, topics, status, teacher_id, material_id, created_at)
+       VALUES (@student_id, @date, @subject, @kind, @topic, @grade, @points, @max_points, @notes, @skill_ids, @title, @topics, @status, @teacher_id, @material_id, datetime('now'))`,
     )
     .run({
       title: "",
       teacher_id: null,
+      material_id: null,
       ...t,
       status: t.status ?? (t.grade == null && t.points == null && t.date > new Date().toISOString().slice(0, 10) ? "geplant" : "geschrieben"),
       skill_ids: JSON.stringify(t.skill_ids),

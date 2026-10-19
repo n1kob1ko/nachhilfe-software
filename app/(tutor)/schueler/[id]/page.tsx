@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Circle, History, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { CheckCircle2, Circle, FileText, History, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/Art";
 import {
   addHomeworkAction,
@@ -34,6 +34,7 @@ import { textErrorsForStudent } from "@/lib/text-correction";
 import { MaterialForm } from "@/components/MaterialForm";
 import { endMaterialAction } from "@/app/learning-actions";
 import { checkLevel } from "@/lib/school";
+import { stoffzettelLesbar } from "@/lib/stoffzettel";
 import { einheitenFuerWoche, istNichtStattgefunden, mitNamen, slotDatum } from "@/lib/planung/repo";
 import { datumLabel, minutenLabel, wienerDatum, wienerWochenstart, wochenLabel } from "@/lib/planung/zeit";
 
@@ -759,6 +760,15 @@ function Lessons({ student, filter }: { student: repo.Student; filter?: string }
   return <Lernverlauf student={student} filter={filter} />;
 }
 
+/** The Stoffzettel of a Schularbeit (photo or PDF), opened in a new tab. */
+function StoffzettelLink({ id }: { id: number }) {
+  return (
+    <a href={`/material/${id}/datei`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-accent hover:underline">
+      <FileText size={13} aria-hidden /> Stoffzettel
+    </a>
+  );
+}
+
 function School({ student }: { student: repo.Student }) {
   const homework = repo.listHomework(student.id);
   const tests = repo.listTests(student.id);
@@ -796,7 +806,13 @@ function School({ student }: { student: repo.Student }) {
                   </span>
                   {stage && <Pill tone={STAGE_TONE[stage]}>{STAGE_LABEL[stage]}</Pill>}
                 </div>
-                {(t.topics?.length ?? 0) > 0 && <p className="mt-1 text-[13.5px] text-ink-2">Stoff: {t.topics!.join(", ")}</p>}
+                {((t.topics?.length ?? 0) > 0 || t.material_id) && (
+                  <p className="mt-1 text-[13.5px] text-ink-2">
+                    {(t.topics?.length ?? 0) > 0 && `Stoff: ${t.topics!.join(", ")}`}
+                    {(t.topics?.length ?? 0) > 0 && t.material_id && " · "}
+                    {t.material_id && <StoffzettelLink id={t.material_id} />}
+                  </p>
+                )}
                 {skills.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {skills.map((sk) => (
@@ -826,7 +842,7 @@ function School({ student }: { student: repo.Student }) {
             );
           })}
         </ul>
-        <ExamForm studentId={student.id} subjects={subjects} today={today} />
+        <ExamForm studentId={student.id} subjects={subjects} today={today} kiLiest={stoffzettelLesbar().ok} />
         <h3 className="mt-8 mb-1 text-[15px] font-semibold">Ergebnisse</h3>
         <ul className="divide-y divide-line">
           {written.length === 0 && <li className="py-2 text-[14px] text-ink-3">Noch keine Ergebnisse eingetragen.</li>}
@@ -840,6 +856,12 @@ function School({ student }: { student: repo.Student }) {
                 <div className="text-[12px] text-ink-3">
                   {formatDate(t.date)}
                   {t.notes && ` · ${t.notes}`}
+                  {t.material_id && (
+                    <>
+                      {" · "}
+                      <StoffzettelLink id={t.material_id} />
+                    </>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
