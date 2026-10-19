@@ -78,11 +78,11 @@ export function Nav() {
 /** Logo-Zeichen von MC Dream Education, darunter der Name der App und des Instituts. */
 export function Brand() {
   return (
-    <Link href="/" className="flex items-center gap-2.5 rounded-2xl">
-      <BrandMark height={42} />
+    <Link href="/" className="flex items-center gap-2 rounded-2xl">
+      <BrandMark height={38} />
       <span className="leading-tight">
         <span className="display block text-[18px] font-semibold tracking-[-0.01em]">Lernheft</span>
-        <span className="block text-[11.5px] font-medium tracking-[0.01em] text-ink-3">MC Dream Education</span>
+        <span className="block text-[11.5px] font-medium whitespace-nowrap text-ink-3">MC Dream Education</span>
       </span>
     </Link>
   );

@@ -35,7 +35,7 @@ export default async function DevicePage() {
     return (
       <DeviceLive unitId={null}>
         <Centered>
-          <BrandMark height={64} />
+          <BrandMark height={80} />
           <h1 className="mt-6 text-[30px] font-semibold tracking-[-0.02em]">Bereit für die nächste Einheit</h1>
           <p className="mt-2 text-[16px] text-ink-2">Verbunden mit {teacherFirst}</p>
         </Centered>
@@ -200,7 +200,7 @@ function Centered({ children }: { children: React.ReactNode }) {
 function Pairing() {
   return (
     <main className="mx-auto flex min-h-screen max-w-[440px] flex-col justify-center px-6 py-10">
-      <BrandMark height={56} />
+      <BrandMark height={72} />
       <h1 className="mt-6 text-[28px] leading-tight font-semibold tracking-[-0.02em]">Dieses Tablet mit einem Lehrer verbinden</h1>
       <p className="mt-2 mb-6 text-[15px] text-ink-2">Am Lehrergerät: Mehr › Schülergeräte › „Neues Tablet verbinden“. Den Code hier eingeben.</p>
       <PairForm />

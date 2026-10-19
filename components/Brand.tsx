@@ -1,12 +1,13 @@
 /**
- * Das Zeichen von MC Dream Education: der Doktorhut über dem goldenen „m“ (`public/brand/mark.png`,
- * aus dem Logo ausgeschnitten) und das ganze Logo mit Schriftzug (`public/brand/logo.png`).
+ * Das Zeichen von MC Dream Education: Doktorhut, goldenes „m“ und das offene Buch darunter, ohne Schrift
+ * (`public/brand/mark.png`, aus dem Logo ausgeschnitten), und das ganze Logo mit Schriftzug
+ * (`public/brand/logo.png`). Das Buch gehört immer dazu (niko).
  * Bilder statt Icons, weil es das echte Logo des Instituts ist; das App-Symbol im Browser kommt aus
  * `app/icon.png` und `app/apple-icon.png`.
  */
 
 /** Seitenverhältnis des Zeichens (Breite : Höhe). */
-const ZEICHEN_VERHAELTNIS = 3404 / 4354;
+const ZEICHEN_VERHAELTNIS = 8000 / 4993;
 /** Seitenverhältnis des ganzen Logos (Breite : Höhe). */
 const LOGO_VERHAELTNIS = 8000 / 7222;
 
