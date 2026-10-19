@@ -11,6 +11,7 @@ import { WEAK, STRONG, parseTime } from "./analysis";
 import { localStamp } from "./autodoc";
 import { db } from "./db";
 import { dokumentiereAutomatisch } from "./einschaetzung";
+import { isMinitest } from "./quick-round";
 import * as repo from "./repo";
 import { analyzeStudent } from "./service";
 import { textsForUnit } from "./texts";
@@ -97,6 +98,8 @@ export type UnitReport = {
   tasks: TaskLine[];
   /** Textarbeiten written or continued in the unit (titles and counts only, never the text itself) */
   texts?: ReportText[];
+  /** Minitest at the start of the unit (lib/minitest.ts): its tasks, handed in, right; skills with a wrong answer. Missing without one. */
+  minitest?: { von: number; erledigt: number; richtig: number; falsch: string[] };
 };
 
 export type ReportText = { id: number; title: string; topic: string; subject: string; words: number; added: number; startedHere: boolean };
@@ -117,12 +120,15 @@ export function buildUnitReport(unit: UnitView, now = Date.now()): UnitReport {
   }
   const worksheets = new Map<number, repo.Worksheet>();
   const tasks: TaskLine[] = [];
+  // the Minitest of the unit (assignment mode 'test'): assignment id → its worksheet
+  const tests = new Map<number, number>();
   for (const list of byTask.values()) {
     const first = list[0];
     const task = repo.getTask(first.task_id);
     const assignment = repo.getAssignment(first.assignment_id);
     if (!task || !assignment) continue;
     if (!worksheets.has(assignment.worksheet_id)) worksheets.set(assignment.worksheet_id, repo.getWorksheet(assignment.worksheet_id)!);
+    if (isMinitest(assignment.mode)) tests.set(assignment.id, assignment.worksheet_id);
     const ws = worksheets.get(assignment.worksheet_id)!;
     const final = list.find((a) => a.final) ?? null;
     const hints = Math.max(...list.map((a) => a.hints_used));
@@ -211,6 +217,16 @@ export function buildUnitReport(unit: UnitView, now = Date.now()): UnitReport {
     typeMap.set(a.error_type, { count: e.count + 1, confirmed: e.confirmed + (a.error_type_source === "lehrer" ? 1 : 0) });
   }
 
+  const testLines = tasks.filter((t) => tests.has(t.assignmentId) && t.finished);
+  const minitest = tests.size
+    ? {
+        von: [...new Set(tests.values())].reduce((n, wid) => n + repo.listTasks(wid).length, 0),
+        erledigt: testLines.length,
+        richtig: testLines.filter((t) => t.correct).length,
+        falsch: [...new Set(testLines.filter((t) => !t.correct && t.skillId).map((t) => t.skill))],
+      }
+    : undefined;
+
   const times = done.map((t) => t.activeMs).sort((a, b) => a - b);
   const median = times.length ? times[Math.floor(times.length / 2)] : 0;
   const help = tasks.filter((t) => t.help !== "keine");
@@ -258,6 +274,7 @@ export function buildUnitReport(unit: UnitView, now = Date.now()): UnitReport {
     },
     problemTasks: tasks.filter((t) => (t.finished && !t.correct) || t.help === "loesung" || t.tries >= 3).map((t) => t.taskId),
     tasks,
+    ...(minitest ? { minitest } : {}),
     texts: textsForUnit(unit.id).map((t) => ({ id: t.id, title: t.title, topic: t.topic, subject: t.subject, words: t.words_after, added: t.words_after - t.words_before, startedHere: Boolean(t.started_here) })),
   };
 }

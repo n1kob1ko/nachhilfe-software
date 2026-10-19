@@ -792,6 +792,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // die automatisch eingetragenen Werte (JSON {feld: wert}); ein Feld mit anderem Wert hat der Lehrer geändert
   ["lessons", "einschaetzung", "TEXT"],
   ["lessons", "auto_felder", "TEXT NOT NULL DEFAULT '{}'"],
+  // Minitest am Anfang der Einheit (lib/minitest.ts, 2026-10-19): die Einheit, für die die Übung erstellt wurde;
+  // auch ein nur gedruckter Minitest gehört so zu seiner Einheit
+  ["worksheets", "minitest_unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
   // Textkorrektur „gründlich“ (lib/ai/textkorrektur-gruendlich.ts): how the KI checked, which sentences it
   // left out, whether the second check ran; per suggestion where it came from and whether the teacher must
   // look closely ('lehrer'), the check sorted it out ('verworfen') or it does not fit its place ('unpassend', 2026-10-11),

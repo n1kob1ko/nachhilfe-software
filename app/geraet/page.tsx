@@ -10,8 +10,8 @@ import { deviceContext } from "@/lib/device-context";
 import { touchDevice } from "@/lib/devices";
 import { activeLaptop } from "@/lib/laptop";
 import { markDelivered, parseView, pushLive, unitAssignments, unitText } from "@/lib/live";
-import { showsQuickRound } from "@/lib/quick-round";
-import { MAX_TRIES } from "@/lib/service";
+import { isMinitest, showsQuickRound } from "@/lib/quick-round";
+import { triesFor } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
 import { TextEditor } from "@/components/text/TextEditor";
 import { StudentCorrection } from "@/components/text/correction/StudentCorrection";
@@ -114,7 +114,8 @@ export default async function DevicePage() {
         assignmentId={current.id}
         title={current.title}
         tasks={tasks}
-        maxTries={MAX_TRIES}
+        maxTries={triesFor(current.mode)}
+        test={isMinitest(current.mode)}
       />
     );
   } else {

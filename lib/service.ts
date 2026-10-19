@@ -14,6 +14,7 @@ import { checkAnswer, isReview, TEACHER_GRADED, type TaskDraft } from "./tasks";
 import { closestVersion } from "./fix-text";
 import { gradeMathTask, type MathView } from "./math-task";
 import { carelessCredit } from "./lehrplan";
+import { isMinitest } from "./quick-round";
 import { onAnswer } from "./ai/realtime";
 
 // the setting lives with the other settings in lib/lehrplan.ts (lib/autodoc.ts reads it too)
@@ -130,6 +131,8 @@ export type SubmitInput = {
 };
 
 export const MAX_TRIES = 3;
+/** Versuche je Aufgabe: im Minitest einer, wie bei einer Schularbeit (lib/minitest.ts). */
+export const triesFor = (mode: string | null | undefined) => (isMinitest(mode) ? 1 : MAX_TRIES);
 
 export type SubmitResult = {
   correct: boolean | null;
@@ -250,7 +253,7 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
       const done = before.find((a) => a.final);
       if (done) return { fresh: false as const, attempt: done };
       const attemptNo = before.length + 1;
-      const final = r.solutionViewed || r.correct || r.review === "offen" || attemptNo >= MAX_TRIES;
+      const final = r.solutionViewed || r.correct || r.review === "offen" || attemptNo >= triesFor(assignment.mode);
       const row = {
         ...base,
         attempt_no: attemptNo,

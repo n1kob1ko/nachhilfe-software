@@ -4,6 +4,7 @@ import { isGenus } from "@/components/genus";
 import { closestVersion } from "./fix-text";
 import { readingSet } from "./lesen";
 import { gradeMathTask, unknownOf } from "./math-task";
+import { isMinitest } from "./quick-round";
 import * as repo from "./repo";
 import { runningUnitForStudent } from "./units";
 
@@ -19,6 +20,8 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
   const list = repo.listTasks(w.id);
   // a Leseverständnis: the text is sent once (with the first question) and shown next to the questions
   const reading = readingSet(list);
+  // ein Minitest ist wie eine kleine Schularbeit: keine Tipps und keine freigegebenen Lösungen
+  const test = isMinitest(assignment.mode);
   return list.map((t, i) => {
     const tries = attempts.filter((a) => a.task_id === t.id);
     const fin = tries.find((a) => a.final);
@@ -31,9 +34,9 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
       reading: reading && i === 0 ? { ...reading, lang: w.subject === "Englisch" ? "en" : "de" } : null,
       blanks: t.answer.blanks?.length ?? 0,
       steps: t.type === "order" ? (t.data.steps ?? null) : null,
-      hints: t.hints,
+      hints: test ? [] : t.hints,
       hintsOpened: new Set(hintUses.filter((h) => h.task_id === t.id).map((h) => h.hint_index)).size,
-      released: assignment.solutions_visible ? { solution: t.solution, answer: answerText(t) ?? t.answer.sample ?? null } : null,
+      released: assignment.solutions_visible && !test ? { solution: t.solution, answer: answerText(t) ?? t.answer.sample ?? null } : null,
       triesUsed: tries.length,
       faulty: t.type === "fix" ? (t.data.faulty ?? "") : null,
       lines: t.type === "free" ? (t.data.lines ?? null) : null,

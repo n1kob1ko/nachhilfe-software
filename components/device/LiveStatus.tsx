@@ -133,13 +133,13 @@ export function LiveStatus({ unitId, initial, join }: { unitId: number; initial:
       ) : c ? (
         <div className="mt-4">
           <p className="text-[13px] text-ink-3">
-            {s.student} · {c.single ? "Einzelaufgabe" : "Übung"}
+            {s.student} · {c.test ? "Minitest" : c.single ? "Einzelaufgabe" : "Übung"}
             {onLaptop ? " · am eigenen Laptop" : ""}
           </p>
           <p className="truncate text-[17px] font-semibold" title={c.title}>
             {c.title}
           </p>
-          <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-6">
+          <dl className={`mt-3 grid grid-cols-2 gap-2 ${c.test ? "sm:grid-cols-5" : "sm:grid-cols-6"}`}>
             <Metric label="Aufgabe" value={`${Math.min(c.taskNo, c.total)} von ${c.total}`} />
             <Metric label="Abgegeben" value={`${c.done} von ${c.total}`} />
             <Metric
@@ -148,8 +148,15 @@ export function LiveStatus({ unitId, initial, join }: { unitId: number; initial:
               tone={c.state === "nicht angekommen" ? "text-red" : c.state === "fertig" ? "text-green" : undefined}
             />
             <Metric label="Zeit" value={c.since && c.state === "arbeitet" ? <Timer since={c.since} /> : "–"} />
-            <Metric label="Versuche" value={String(c.tries)} />
-            <Metric label="Hilfen" value={String(c.hints)} />
+            {c.test ? (
+              // ein Versuch, keine Tipps: im Minitest zählt nur, was schon richtig ist
+              <Metric label="Richtig" value={`${c.correct} von ${c.done}`} />
+            ) : (
+              <>
+                <Metric label="Versuche" value={String(c.tries)} />
+                <Metric label="Hilfen" value={String(c.hints)} />
+              </>
+            )}
           </dl>
           {c.last && (
             <p className={`mt-3 inline-flex items-center gap-1.5 text-[14px] font-semibold ${c.last.pending ? "text-ink-2" : c.last.correct ? "text-green" : "text-red"}`} role="status">
@@ -192,7 +199,7 @@ export function LiveStatus({ unitId, initial, join }: { unitId: number; initial:
                   <RotateCcw size={16} aria-hidden /> Nochmal versuchen
                 </button>
               )}
-              {!c.solutionsVisible && (
+              {!c.solutionsVisible && !c.test && (
                 <button className="btn btn-secondary" disabled={pending} onClick={() => run(() => showSolutionAction(unitId))}>
                   <Eye size={16} aria-hidden /> Lösung zeigen
                 </button>

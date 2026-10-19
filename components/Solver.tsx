@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowDown, ArrowUp, BookOpenText, Check, CheckCircle2, ChevronLeft, ChevronRight, CircleDashed, CloudOff, Lightbulb, ListChecks, RotateCcw, XCircle } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpenText, Check, CheckCircle2, ChevronLeft, ChevronRight, CircleDashed, ClipboardCheck, CloudOff, Lightbulb, ListChecks, RotateCcw, X, XCircle } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { submitAnswerAction } from "@/app/actions";
 import { recordHintAction } from "@/app/builder-actions";
@@ -100,12 +100,18 @@ export function Solver({
   maxTries,
   via = "link",
   homeHref,
+  test = false,
 }: {
   token: string;
   assignmentId: number;
   title: string;
   tasks: ClientTask[];
   maxTries: number;
+  /**
+   * Minitest (lib/minitest.ts): erst ein Startbildschirm, dann ohne Tipps und ohne „Ich komme nicht weiter“,
+   * je Aufgabe einmal abgeben, ohne Rückmeldung dazwischen; richtig oder falsch erst am Ende.
+   */
+  test?: boolean;
   /** "geraet": on the teacher's student tablet, "laptop": on the student's own laptop for this unit; both authorised by
    * their device instead of the student link */
   via?: Via;
@@ -114,6 +120,8 @@ export function Solver({
   const [tasks, setTasks] = useState(initial);
   const firstOpen = initial.findIndex((t) => !t.finished);
   const [index, setIndex] = useState(firstOpen === -1 ? initial.length : firstOpen);
+  // Minitest: der Startbildschirm, solange noch keine Aufgabe abgegeben ist
+  const [begonnen, setBegonnen] = useState(!test || initial.some((t) => t.finished));
   const home = homeHref ?? `/lernen/${token}`;
   // on the tablet and the laptop the teacher sees live which task is open and for how long
   useEffect(() => {
@@ -142,6 +150,75 @@ export function Solver({
     return tasks.length;
   };
   const noun = reading ? "Frage" : "Aufgabe";
+  const tone = (t: ClientTask) =>
+    t.finished ? (t.finished.correct === null || t.finished.review === "teilweise" ? "amber" : t.finished.correct ? "green" : "red") : null;
+
+  if (test && index >= tasks.length) {
+    return (
+      <div className="py-6 text-center" data-testid="minitest-ende">
+        <p className="text-[15px] font-medium text-ink-2">{title}</p>
+        <h1 className="mt-2 text-[34px] font-semibold tracking-[-0.02em]">Minitest geschafft</h1>
+        <p className="num mt-2 text-[20px]">
+          {correct} von {tasks.length} richtig
+        </p>
+        {waiting > 0 && (
+          <p className="num mt-1 text-[16px] text-ink-2">
+            {waiting === 1 ? "1 Antwort wird" : `${waiting} Antworten werden`} noch von deiner Lehrerin bzw. deinem Lehrer bewertet.
+          </p>
+        )}
+        <ol className="mx-auto mt-6 flex max-w-[480px] flex-wrap justify-center gap-2" aria-label="Deine Aufgaben">
+          {tasks.map((t, i) => {
+            const c = tone(t);
+            return (
+              <li
+                key={t.id}
+                aria-label={`Aufgabe ${i + 1}: ${c === "green" ? "richtig" : c === "amber" ? "wird bewertet" : "falsch"}`}
+                className={`num flex h-12 w-12 flex-col items-center justify-center rounded-full text-[13px] leading-none font-semibold ${
+                  c === "green" ? "bg-green-wash text-green" : c === "amber" ? "bg-amber-wash text-amber" : "bg-red-wash text-red"
+                }`}
+              >
+                <span>{i + 1}</span>
+                {c === "green" ? <Check size={14} aria-hidden /> : c === "amber" ? <CircleDashed size={14} aria-hidden /> : <X size={14} aria-hidden />}
+              </li>
+            );
+          })}
+        </ol>
+        <p className="mx-auto mt-6 max-w-[44ch] text-ink-2">Fehler sind hier gut: Sie zeigen, was ihr heute übt. Ihr schaut euch den Test gleich gemeinsam an.</p>
+        <div className="mt-8 flex justify-center">
+          <HomeLink href={home} plain={via !== "link"} className="btn btn-primary">
+            Zurück zur Übersicht
+          </HomeLink>
+        </div>
+      </div>
+    );
+  }
+
+  if (test && !begonnen) {
+    return (
+      <div className="mx-auto max-w-[560px] py-6 text-center" data-testid="minitest-start">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-wash text-accent" aria-hidden>
+          <ClipboardCheck size={28} strokeWidth={1.75} />
+        </span>
+        <p className="mt-4 text-[15px] font-medium text-ink-2">{title}</p>
+        <h1 className="mt-1 text-[34px] font-semibold tracking-[-0.02em]">Minitest</h1>
+        <p className="num mt-2 text-[20px]">{tasks.length} Aufgaben über den Stoff vom letzten Mal</p>
+        <ul className="mx-auto mt-6 grid max-w-[440px] gap-3 text-left text-[17px]">
+          <li className="flex gap-3">
+            <Check size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden /> Ohne Tipps, jede Aufgabe gibst du einmal ab.
+          </li>
+          <li className="flex gap-3">
+            <Check size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden /> Weißt du etwas nicht? Mach mit „Später“ weiter und komm am Schluss zurück.
+          </li>
+          <li className="flex gap-3">
+            <Check size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden /> Es gibt keine Note. Danach schaut ihr euch alles gemeinsam an.
+          </li>
+        </ul>
+        <button type="button" className="btn btn-primary btn-lg mt-8" onClick={() => setBegonnen(true)} autoFocus>
+          Los geht&apos;s <ChevronRight size={18} aria-hidden />
+        </button>
+      </div>
+    );
+  }
 
   if (index >= tasks.length) {
     const graded = tasks.length - waiting;
@@ -186,13 +263,12 @@ export function Solver({
       maxTries={maxTries}
       reading={Boolean(reading)}
       onFinished={(f) => setTasks((all) => all.map((t) => (t.id === task.id ? { ...t, finished: f } : t)))}
-      onNext={() => setIndex(reading ? nextOpen(index) : index + 1)}
-      isLast={reading ? nextOpen(index) === tasks.length : index === tasks.length - 1}
+      onNext={() => setIndex(reading || test ? nextOpen(index) : index + 1)}
+      isLast={reading || test ? nextOpen(index) === tasks.length : index === tasks.length - 1}
+      test={test}
+      onSkip={test && nextOpen(index) !== tasks.length ? () => setIndex(nextOpen(index)) : undefined}
     />
   );
-  const tone = (t: ClientTask) =>
-    t.finished ? (t.finished.correct === null || t.finished.review === "teilweise" ? "amber" : t.finished.correct ? "green" : "red") : null;
-
   if (reading) {
     const go = (i: number) => {
       setIndex(i);
@@ -297,7 +373,9 @@ export function Solver({
             <span
               key={t.id}
               className={`h-1.5 flex-1 rounded-full ${
-                t.finished
+                t.finished && test
+                  ? "bg-ink-3"
+                  : t.finished
                   ? t.finished.correct === null || t.finished.review === "teilweise"
                     ? "bg-amber"
                     : t.finished.correct
@@ -311,7 +389,7 @@ export function Solver({
           ))}
         </div>
         <p className="sr-only">
-          {done} von {tasks.length} erledigt
+          {done} von {tasks.length} {test ? "abgegeben" : "erledigt"}
         </p>
       </div>
       {card}
@@ -329,6 +407,8 @@ function TaskCard({
   onNext,
   isLast,
   reading = false,
+  test = false,
+  onSkip,
 }: {
   task: ClientTask;
   token: string;
@@ -340,6 +420,10 @@ function TaskCard({
   onFinished: (f: NonNullable<ClientTask["finished"]>) => void;
   onNext: () => void;
   isLast: boolean;
+  /** Minitest: „Abgeben“ statt „Prüfen“, keine Rückmeldung, danach gleich die nächste offene Aufgabe */
+  test?: boolean;
+  /** Minitest: die Aufgabe für später lassen (nur, wenn es noch eine andere offene gibt) */
+  onSkip?: () => void;
 }) {
   const [choice, setChoice] = useState<number | null>(null);
   const [text, setText] = useState(task.faulty ?? "");
@@ -432,6 +516,10 @@ function TaskCard({
     ).catch(() => {});
   };
 
+  // the newest onNext: deliver is made once, the Minitest moves on with it
+  const next = useRef(onNext);
+  next.current = onNext;
+
   // an answer that did not reach the server stays here and is sent again, never typed twice
   const [unsent, setUnsent] = useState<null | { input: AnswerInput; network: boolean }>(null);
 
@@ -448,16 +536,18 @@ function TaskCard({
         setUnsent(null);
         setTries(res.attemptNo);
         setWrongGaps(res.final ? [] : (res.wrongGaps ?? []));
-        if (m && res.math) setMath((s) => s && markMath(m, s, res.math));
+        if (m && res.math && !test) setMath((s) => s && markMath(m, s, res.math));
         const given = task.faulty !== null ? input.answer : undefined;
         setFeedback({ correct: res.correct, text: res.feedback, final: res.final, solution: res.solution, sample: res.sample, pending: res.pendingReview, expected: res.expected, given });
         if (res.final) {
           writeDraft(draftKey(via, assignmentId, task.id), null);
           onFinished({ correct: res.pendingReview ? null : Boolean(res.correct), solution: res.solution ?? "", sample: res.sample ?? null, given: given ?? null, expected: res.expected ?? null, math: res.math ?? null });
+          // Minitest: keine Rückmeldung zur einzelnen Aufgabe, gleich weiter
+          if (test) next.current();
         }
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- onFinished is a fresh arrow each render
-    [via, token],
+    [via, token, test],
   );
 
   const send = (extra: { giveUp?: boolean } = {}) => {
@@ -486,7 +576,7 @@ function TaskCard({
 
   const promptParts = useMemo(() => task.prompt.split(GAP), [task.prompt]);
   // the teacher grades the answer: it is handed in, not checked
-  const handIn = reading && (task.type === "free" || (task.type === "reading" && !task.options));
+  const handIn = test || (reading && (task.type === "free" || (task.type === "reading" && !task.options)));
 
   return (
     <article>
@@ -582,7 +672,7 @@ function TaskCard({
           <div className="mt-6">
             <p className="text-[13px] font-semibold text-ink-2">Text mit Fehlern</p>
             <p className="mt-1 rounded-xl border border-line bg-panel px-5 py-3 text-[17px] leading-relaxed whitespace-pre-line">{task.faulty}</p>
-            {final && feedback?.given && feedback.expected ? (
+            {final && !test && feedback?.given && feedback.expected ? (
               <FixCompare faulty={task.faulty} given={feedback.given} expected={feedback.expected} className="mt-4" />
             ) : (
               <>
@@ -720,7 +810,7 @@ function TaskCard({
           </ul>
         )}
 
-        {feedback && !feedback.pending && (
+        {feedback && !feedback.pending && !test && (
           <div
             role="status"
             className={`mt-6 flex gap-3 rounded-xl px-4 py-3 text-[16px] ${feedback.correct ? "bg-green-wash text-green" : feedback.partial ? "bg-amber-wash text-amber" : "bg-red-wash text-red"}`}
@@ -730,7 +820,7 @@ function TaskCard({
           </div>
         )}
 
-        {feedback?.pending && (
+        {feedback?.pending && !test && (
           <>
             <div role="status" className="mt-6 flex gap-3 rounded-xl bg-accent-wash px-4 py-3 text-[16px] text-ink">
               <CircleDashed size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden />
@@ -745,7 +835,7 @@ function TaskCard({
           </>
         )}
 
-        {final && feedback?.solution && !feedback.pending && (
+        {final && feedback?.solution && !feedback.pending && !test && (
           <div className="mt-4 rounded-xl border border-line bg-surface px-5 py-4">
             <p className="text-[14px] font-semibold text-ink-2">Lösungsweg</p>
             <p className="mt-1 text-[16px] whitespace-pre-line"><MathText text={feedback.solution} /></p>
@@ -783,24 +873,29 @@ function TaskCard({
               <button className="btn btn-primary h-11 px-6 text-[15px]" disabled={!canSubmit}>
                 {pending ? (handIn ? "Wird gesendet …" : "Wird geprüft …") : handIn ? "Abgeben" : "Prüfen"}
               </button>
-              {hintsShown < task.hints.length && (
+              {test && onSkip && (
+                <button type="button" className="btn btn-ghost h-11" disabled={pending} onClick={onSkip}>
+                  Später <ChevronRight size={16} aria-hidden />
+                </button>
+              )}
+              {!test && hintsShown < task.hints.length && (
                 <button type="button" className="btn btn-secondary h-11" onClick={openHint}>
                   <Lightbulb size={16} aria-hidden /> {hintLabel(hintsShown)}
                 </button>
               )}
-              {(tries > 0 || hintsShown >= task.hints.length) && (
+              {!test && (tries > 0 || hintsShown >= task.hints.length) && (
                 <button type="button" className="btn btn-ghost h-11" disabled={pending} onClick={() => send({ giveUp: true })}>
                   Ich komme nicht weiter
                 </button>
               )}
-              {tries > 0 && (
+              {tries > 0 && !test && (
                 <span className="num text-[14px] text-ink-3">
                   Versuch {tries + 1} von {maxTries}
                 </span>
               )}
             </>
           )}
-          {final && (
+          {final && !test && (
             <button type="button" className="btn btn-primary h-11 px-6 text-[15px]" onClick={onNext} autoFocus>
               {isLast ? "Fertig" : reading ? "Nächste Frage" : "Nächste Aufgabe"} <ChevronRight size={17} aria-hidden />
             </button>

@@ -40,7 +40,7 @@ export function diagnosisSkills(o: { subject: string; branch: SchoolBranch | nul
  * A complete library task for this skill and difficulty that the student has not seen yet and the
  * diagnosis does not have yet (a duplicated library entry has the same task).
  */
-function libraryTask(subject: string, item: DiagnosisItem, used: Set<number>, seen: Set<string>): TaskDraft | null {
+export function libraryTask(subject: string, item: DiagnosisItem, used: Set<number>, seen: Set<string>): TaskDraft | null {
   const rows = db()
     .prepare(
       `SELECT t.id FROM tasks t JOIN worksheets w ON w.id = t.worksheet_id
@@ -63,7 +63,7 @@ function libraryTask(subject: string, item: DiagnosisItem, used: Set<number>, se
 }
 
 /** The same task twice: same prompt and same data (options, text …). */
-const taskKey = (t: TaskDraft) => `${t.prompt}\n${JSON.stringify(t.data ?? {})}`;
+export const taskKey = (t: Pick<TaskDraft, "prompt" | "data">) => `${t.prompt}\n${JSON.stringify(t.data ?? {})}`;
 
 /**
  * Fills the open slots of the plan from the built-in generators, never with a task the diagnosis

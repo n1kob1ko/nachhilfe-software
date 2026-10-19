@@ -12,10 +12,16 @@
  */
 import type { Category } from "./curriculum";
 
-/** Wie eine Übung einem Schüler gezeigt wird: der übliche Ablauf oder als Schnellrunde. */
-export type AssignmentMode = "normal" | "schnell";
+/**
+ * Wie eine Übung einem Schüler gezeigt wird: der übliche Ablauf, als Schnellrunde oder als Minitest
+ * (lib/minitest.ts: ohne Tipps, ein Versuch je Aufgabe, das Ergebnis erst am Ende).
+ */
+export type AssignmentMode = "normal" | "schnell" | "test";
 
-export const isAssignmentMode = (x: unknown): x is AssignmentMode => x === "normal" || x === "schnell";
+export const isAssignmentMode = (x: unknown): x is AssignmentMode => x === "normal" || x === "schnell" || x === "test";
+
+/** Ein Minitest: ohne Tipps, ohne „Ich komme nicht weiter“ und mit einem Versuch je Aufgabe. */
+export const isMinitest = (mode: string | null | undefined): boolean => mode === "test";
 
 /** Höchstens so viele Antworten hat eine Aufgabe, die in eine Schnellrunde passt. */
 export const QUICK_ROUND_MAX_OPTIONS = 4;

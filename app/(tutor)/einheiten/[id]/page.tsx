@@ -28,6 +28,8 @@ import { baseUrl } from "@/lib/base-url";
 import { autoFelderVon, leseEinschaetzung } from "@/lib/einschaetzung";
 import { buildUnitReport, readReport } from "@/lib/learning";
 import { mappeFuerEinheit, mappeHatInhalt } from "@/lib/mappe";
+import { letzterStoff, minitestDerEinheit } from "@/lib/minitest";
+import { MinitestKarte } from "@/components/MinitestKarte";
 import * as repo from "@/lib/repo";
 import { requireTeacher } from "@/lib/auth";
 import { canManageUnit, getUnit, platzFuerEinheit, unitDurationMs, type UnitView } from "@/lib/units";
@@ -52,7 +54,7 @@ function dauerLabel(geplanteDauer: number | null, minutes: number, estimated: bo
  * running → everything for the unit in one place (Übungen, Whiteboard, Fortschritt, Einheit beenden);
  * ended → the documentation, written automatically (lib/einschaetzung.ts), changeable on request.
  */
-export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string }> }) {
+export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -86,6 +88,11 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         <div role="alert" className="mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[15px]">
           Mit {student.name} läuft schon seit <span className="num">{formatTime(unit.started_at)}</span> eine Einheit
           {unit.teacher_id !== teacher.id ? ` (von ${unit.teacher_name})` : ""}. Es wurde keine zweite gestartet.
+        </div>
+      )}
+      {sp.minitest && running && (
+        <div role="alert" className="mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[15px]">
+          Minitest: {sp.minitest}
         </div>
       )}
       {sp.fremd && (
@@ -330,8 +337,13 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
   const name = first(student.name);
   const device = studentDevice(unit);
   const paired = device !== null;
+  // Minitest zum Start: solange noch nichts beantwortet ist, oder als Zeile, wenn er nur gedruckt wurde
+  const minitest = mayManage ? minitestDerEinheit(unit.id) : null;
+  const stoff = mayManage && !minitest && attempts.length === 0 ? letzterStoff(student.id, unit.id) : null;
+  const gedruckt = minitest && !minitest.assignment ? { worksheet: minitest.worksheet, tasks: repo.listTasks(minitest.worksheet.id).length } : null;
   return (
     <div className="grid gap-10">
+      {(stoff || gedruckt) && <MinitestKarte unitId={unit.id} name={name} geraet={device} stoff={stoff} gedruckt={gedruckt} />}
       <section>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-[20px] font-semibold">Übungen für {name}</h2>
@@ -358,7 +370,14 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
               return (
                 <li key={a.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
                   <span className="min-w-0 flex-1">
-                    <span className="block font-semibold">{a.title}</span>
+                    <span className="block font-semibold">
+                      {a.title}
+                      {a.mode === "test" && (
+                        <span className="ml-2 align-middle">
+                          <Pill tone="accent">Minitest</Pill>
+                        </span>
+                      )}
+                    </span>
                     <span className="num block text-[14px] text-ink-2">
                       {a.done_count} von {a.task_count} Aufgaben bearbeitet
                       {lastBy.has(a.id) ? ` · zuletzt ${formatTime(lastBy.get(a.id)!)}` : a.started_at ? "" : ` · ${name} hat noch nicht begonnen`}
