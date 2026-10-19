@@ -57,7 +57,14 @@ test("topics of all modules: every skill has an explanation and typical errors, 
   assert.deepEqual(typischeFehler("mathe.gleichungssysteme.rechnerisch.einsetzen"), TYPISCHE_FEHLER["mathe.gleichungssysteme.rechnerisch"]);
   assert.deepEqual(typischeFehler("deutsch.eigene.fahigkeit"), []);
   const known = new Set([...CURRICULUM.map((s) => s.id), ...vs.map((s) => s.id)]);
-  for (const m of MODULE) for (const id of [...Object.keys(m.fehlerBisher ?? {}), ...Object.keys(m.erklaerungBisher ?? {})]) assert.ok(known.has(id), `${m.fach}: ${id}`);
+  for (const m of MODULE) for (const id of [...Object.keys(m.fehlerBisher ?? {}), ...Object.keys(m.erklaerungBisher ?? {}), ...Object.keys(m.suchwoerterBisher ?? {})]) assert.ok(known.has(id), `${m.fach}: ${id}`);
+  // Suchwörter belong to a skill or Thema that exists and follow the copy rules
+  const { SUCHWOERTER, BEREICH_SUCHWOERTER } = await import("./themen");
+  const ids = new Set([...known, ...THEMEN.map((s) => s.id)]);
+  const areas = new Set([...CURRICULUM, ...vs, ...THEMEN].map((s) => `${s.subject}|${s.area}`));
+  for (const id of Object.keys(SUCHWOERTER)) assert.ok(ids.has(id), `Suchwörter: ${id}`);
+  for (const key of Object.keys(BEREICH_SUCHWOERTER)) assert.ok(areas.has(key), `Suchwörter: ${key}`);
+  for (const w of [...Object.values(SUCHWOERTER), ...Object.values(BEREICH_SUCHWOERTER)].flat()) assert.ok(w.trim() === w && w.length >= 4 && !w.includes("—") && !w.includes(" – "), w);
 
   // plain copy rules: no dash between words, no placeholder, short enough for the skill page
   for (const text of [...Object.values(ERKLAERUNG), ...Object.values(TYPISCHE_FEHLER).flat()] as string[]) {

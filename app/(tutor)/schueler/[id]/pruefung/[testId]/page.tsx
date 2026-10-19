@@ -1,20 +1,28 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarClock, FileText, Plus, Printer } from "lucide-react";
+import { CalendarClock, Check, FileText, Plus, Printer } from "lucide-react";
 import { setExamSkillsAction } from "@/app/curriculum-actions";
 import { probeschularbeitAction } from "@/app/probeschularbeit-actions";
 import { Info } from "@/components/Info";
 import { ProbeschularbeitForm } from "@/components/ProbeschularbeitForm";
+import { FaehigkeitWaehlen, hauptThema, StoffChip, StoffWahl, StoffZeile } from "@/components/StoffZuordnung";
 import { PageHeader, Pill, Reveal, SectionTitle, StatusChip, formatDate } from "@/components/ui";
 import { dayOf, examPrep, PLAN_COUNTS, STAGE_LABEL, STAGE_TONE } from "@/lib/exams";
 import { aiEnabled } from "@/lib/ai";
-import { matchSkills } from "@/lib/lehrplan";
+import { matchSkills, skillsForStudent, stoffVorschlag } from "@/lib/lehrplan";
 import { probeschularbeitenZu, punkteText } from "@/lib/probeschularbeit";
+import type { Skill } from "@/lib/repo";
 
 export const metadata = { title: "Vorbereitung" };
 
 /** "Vorbereitung starten": days left, Stoff, Lernstand per skill, untested skills and a rule-based plan. */
-export default async function ExamPrepPage({ params, searchParams }: { params: Promise<{ id: string; testId: string }>; searchParams: Promise<{ fehler?: string }> }) {
+export default async function ExamPrepPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string; testId: string }>;
+  searchParams: Promise<{ fehler?: string; ziel?: string; zugeordnet?: string }>;
+}) {
   const { id, testId } = await params;
   const sp = await searchParams;
   const prep = examPrep(Number(testId), dayOf(new Date()));
@@ -22,12 +30,20 @@ export default async function ExamPrepPage({ params, searchParams }: { params: P
   const { test, student, days, stage, skills, untested, plan, totalTasks } = prep;
   const first = student.name.split(" ")[0];
   const when = days < 0 ? "vorbei" : days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`;
-  // topics of the exam that are not linked to a skill yet: suggestions to tick
-  const suggestions = (test.topics?.length ? test.topics : [test.topic].filter(Boolean)).map((topic) => ({
-    topic,
-    skills: matchSkills(topic, test.subject, { student, limit: 6 }).map((m) => m.skill),
-  }));
-  const offered = [...new Map([...skills.map((s) => s.skill), ...suggestions.flatMap((s) => s.skills)].map((s) => [s.id, s])).values()];
+  const topics = test.topics?.length ? test.topics : [test.topic].filter(Boolean);
+  const pool = skillsForStudent(student, test.subject, { earlier: true });
+  const names = new Map(pool.map((s) => [s.id, s.name]));
+  const label = (s: { name: string; parent_id: string | null }) => (s.parent_id ? `${names.get(s.parent_id) ?? ""} › ${s.name}` : s.name);
+  // nothing linked yet (a Stoffzettel saved without ticks): per topic the suggestions, the sure ones ticked
+  const zuordnen = test.skill_ids.length === 0;
+  const vorschlag = zuordnen ? stoffVorschlag(topics, test.subject, student) : [];
+  const thema = hauptThema(vorschlag);
+  const chip = (i: number, ticked: boolean) => (s: Skill) => (
+    <StoffChip key={s.id} name={`stoff_${i}`} value={s.id} label={label(s)} area={s.area === thema ? undefined : s.area} defaultChecked={ticked} />
+  );
+  // linked already: the linked skills and the suggestions for the topics, to change
+  const offered = zuordnen ? [] : [...new Map([...skills.map((s) => s.skill), ...topics.flatMap((t) => matchSkills(t, test.subject, { student, limit: 6 }).map((m) => m.skill))].map((s) => [s.id, s])).values()];
+  const zugeordnet = sp.zugeordnet !== undefined ? Number(sp.zugeordnet) : null;
   const proben = probeschularbeitenZu(test.id);
   const builder = `/uebungen/neu?schueler=${student.id}&skills=${plan.map((p) => encodeURIComponent(p.skill.id)).join(",")}&anzahl=${Math.min(30, totalTasks)}`;
 
@@ -59,6 +75,45 @@ export default async function ExamPrepPage({ params, searchParams }: { params: P
           </p>
         )}
 
+        {zugeordnet !== null && !zuordnen && (
+          <p role="status" className="-mt-4 flex items-center gap-2 rounded-lg bg-green-wash px-3 py-2 text-[14px] text-green" data-testid="zugeordnet">
+            <Check size={16} aria-hidden /> {zugeordnet === 1 ? "1 Fähigkeit" : `${zugeordnet} Fähigkeiten`} verknüpft. Plan und Probeschularbeit sind bereit.
+          </p>
+        )}
+
+        {zuordnen && (
+          <section id="stoff-zuordnen" aria-label="Stoff zuordnen" className="scroll-mt-24">
+            <SectionTitle>
+              <span>
+                Stoff zuordnen
+                <Info label="Wie entstehen die Vorschläge?">
+                  Ohne KI, aus den Wörtern des Stoffs: Name und andere Bezeichnungen der Fähigkeiten (z. B. Stellenwerttafel), das Thema und die anderen Punkte der Schularbeit. Angehakt ist nur, was eindeutig passt. Was du anders wählst, merkt sich die App für den nächsten Stoffzettel mit denselben Wörtern.
+                </Info>
+              </span>
+            </SectionTitle>
+            <form action={setExamSkillsAction.bind(null, test.id)} className="panel grid px-4 pt-3" data-testid="stoff-zuordnen">
+              {sp.ziel === "probe" && <input type="hidden" name="ziel" value="probe" />}
+              <p className="text-[14px] text-ink-2">Plan und Probeschularbeit brauchen Fähigkeiten. Was passt, ist angehakt. Prüf es kurz und tippe auf „Zuordnen“.</p>
+              {vorschlag.length > 0 && (
+                <div className="mt-1 divide-y divide-line">
+                  {vorschlag.map((v, i) => (
+                    <StoffZeile key={`${i}-${v.topic}`} topic={v.topic} index={i} auto={v.best}>
+                      <StoffWahl sichtbar={v.skills.filter((s) => v.best.includes(s.id)).map(chip(i, true))} weitere={v.skills.filter((s) => !v.best.includes(s.id)).map(chip(i, false))} />
+                      {v.skills.length === 0 && <FaehigkeitWaehlen name={`stoff_${i}`} pool={pool} label={`Fähigkeit für ${v.topic}`} placeholder="Kein Vorschlag. Fähigkeit wählen …" />}
+                    </StoffZeile>
+                  ))}
+                </div>
+              )}
+              <div className="flex flex-wrap items-center gap-3 border-t border-line py-3">
+                <button className="btn btn-primary" data-testid="stoff-zuordnen-speichern">
+                  Zuordnen
+                </button>
+                <FaehigkeitWaehlen name="skill_ids" pool={pool} label="Weitere Fähigkeit" placeholder={vorschlag.length ? "Weitere Fähigkeit …" : "Fähigkeit wählen …"} />
+              </div>
+            </form>
+          </section>
+        )}
+
         <section aria-label="Plan">
           <SectionTitle
             action={
@@ -77,7 +132,7 @@ export default async function ExamPrepPage({ params, searchParams }: { params: P
             </span>
           </SectionTitle>
           {plan.length === 0 ? (
-            <p className="text-[14px] text-ink-3">Noch keine Fähigkeiten verknüpft. Unten den Stoff zuordnen, dann entsteht der Plan.</p>
+            <p className="text-[14px] text-ink-3">Noch keine Fähigkeiten verknüpft. Oben den Stoff zuordnen, dann entsteht der Plan.</p>
           ) : (
             <ol className="panel divide-y divide-line">
               {plan.map((p) => (
@@ -143,8 +198,13 @@ export default async function ExamPrepPage({ params, searchParams }: { params: P
               ))}
             </ul>
           )}
-          {skills.length === 0 && test.skill_ids.length === 0 ? (
-            <p className="text-[14px] text-ink-3">Ordne zuerst unten den Stoff Fähigkeiten zu, dann kannst du eine Probeschularbeit erstellen.</p>
+          {zuordnen ? (
+            <p className="text-[14px] text-ink-3">
+              Ordne zuerst den Stoff Fähigkeiten zu, dann kannst du eine Probeschularbeit erstellen.{" "}
+              <a href="#stoff-zuordnen" className="font-semibold text-accent hover:underline">
+                Zum Zuordnen
+              </a>
+            </p>
           ) : (
             <div className="panel px-4 py-4">
               <ProbeschularbeitForm action={probeschularbeitAction.bind(null, test.id)} ai={aiEnabled()} again={proben.length > 0} />
@@ -172,24 +232,21 @@ export default async function ExamPrepPage({ params, searchParams }: { params: P
           )}
         </section>
 
-        <Reveal label={skills.length ? "Fähigkeiten der Prüfung ändern" : "Stoff zu Fähigkeiten zuordnen"}>
-          <form action={setExamSkillsAction.bind(null, test.id)} className="panel grid gap-3 px-4 py-4">
-            {suggestions.some((s) => s.skills.length === 0) && (
-              <p className="text-[13px] text-ink-3">Ohne Vorschlag: {suggestions.filter((s) => s.skills.length === 0).map((s) => s.topic).join(", ")}</p>
-            )}
-            <div className="flex flex-wrap gap-1.5">
-              {offered.map((s) => (
-                <label key={s.id} className="flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[13.5px] has-checked:border-accent has-checked:bg-accent-wash">
-                  <input type="checkbox" name="skill_ids" value={s.id} defaultChecked={test.skill_ids.includes(s.id)} className="accent-[var(--accent)]" />
-                  {s.name}
-                  <span className="text-ink-3">· {s.area}</span>
-                </label>
-              ))}
-              {offered.length === 0 && <p className="text-[13px] text-ink-3">Keine passenden Fähigkeiten gefunden. Unter Mehr › Themen und Fähigkeiten lassen sich eigene anlegen.</p>}
-            </div>
-            <button className="btn btn-secondary justify-self-start">Speichern</button>
-          </form>
-        </Reveal>
+        {!zuordnen && (
+          <Reveal label="Fähigkeiten der Prüfung ändern">
+            <form action={setExamSkillsAction.bind(null, test.id)} className="panel grid gap-3 px-4 py-4" data-testid="faehigkeiten-aendern">
+              <div className="flex flex-wrap gap-1.5">
+                {offered.map((s) => (
+                  <StoffChip key={s.id} name="skill_ids" value={s.id} label={label(s)} area={s.area} defaultChecked={test.skill_ids.includes(s.id)} />
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <button className="btn btn-secondary">Speichern</button>
+                <FaehigkeitWaehlen name="skill_ids" pool={pool} label="Weitere Fähigkeit" placeholder="Weitere Fähigkeit …" />
+              </div>
+            </form>
+          </Reveal>
+        )}
         <p className="text-[13px] text-ink-3">Vorschläge kommen aus dem Stoff, den du eingetragen hast. Verknüpft wird nur, was du für {first} anhakst.</p>
       </div>
     </>

@@ -14,6 +14,7 @@ import type { Bereich, Modul } from "./bauen";
 const BEREICHE: Bereich[] = [
   {
     area: "Tenses",
+    suchwoerter: ["Zeiten", "Zeitformen"],
     themen: [
       {
         id: "englisch.tenses.presentprogressive",
@@ -141,6 +142,7 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Grammar",
+    suchwoerter: ["Grammatik"],
     themen: [
       {
         id: "englisch.grammar.tobe",
@@ -473,6 +475,7 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Vocabulary",
+    suchwoerter: ["Vokabeln", "Wortschatz"],
     themen: [
       {
         id: "englisch.vs.vocab.zahlen-farben",

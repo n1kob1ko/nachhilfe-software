@@ -277,6 +277,20 @@ lesen und das Formular vorfüllen; gespeichert wird erst, wenn der Lehrer eintr�
 ([docs/stoffzettel.md](docs/stoffzettel.md)). Nicht verwechseln mit **Foto vom Stoff** (daraus wird eine Übung).
 _Avoid_: Stoffangabe, Prüfungsstoff-Upload, Anhang
 
+**Stoff zuordnen**:
+Die Punkte des Stoffs einer **Schularbeit** mit **Fähigkeiten** verknüpfen; erst dann gibt es Plan und
+**Probeschularbeit**. Ohne KI vorgeschlagen (`stoffVorschlag` in `lib/lehrplan.ts`): angehakt ist nur, was
+eindeutig passt, auch über **Suchwörter** und die anderen Punkte derselben Schularbeit. Verknüpft wird erst,
+wenn der Lehrer „Eintragen“ oder „Zuordnen“ tippt. Was er anders wählt, merkt sich die App für dieselben
+Wörter (`stoff_zuordnungen`) ([docs/stoff-zuordnen.md](docs/stoff-zuordnen.md)).
+_Avoid_: Mapping, Verlinken, Auto-Zuordnung
+
+**Suchwörter**:
+Andere Bezeichnungen einer Fähigkeit oder eines Themas, wie sie auf Stoffzetteln und in Inhaltsverzeichnissen
+stehen („Stellenwerttafel“, „Kommasetzung“ für Beistrichsetzung). Sie stehen in `lib/themen/` und dienen nur
+dem **Stoff zuordnen**; angezeigt werden sie nicht.
+_Avoid_: Synonyme, Tags, Schlagwörter
+
 ## Blätter erstellen
 
 **Blätter erstellen**:
