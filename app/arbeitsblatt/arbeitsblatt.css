@@ -144,9 +144,37 @@
   border-bottom: 0.3mm solid #000;
   vertical-align: -0.25em;
 }
+/* a filled gap: the answer on the line of the text, underlined below the descenders; long answers wrap */
 .ab-gap-filled {
-  padding: 0 1.5mm;
+  margin: 0 0.6mm;
+  padding: 0 1.2mm 0.5mm;
+  border-bottom: 0.3mm solid #000;
   font-weight: 600;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+/* with a fraction: one box, underlined below the whole fraction */
+.ab-gap-tall {
+  display: inline-block;
+  line-height: 1.25;
+  vertical-align: baseline;
+}
+/* Mappe: a wrong gap struck through like a teacher would, the right answer next to it */
+.ab-gap-wrong {
+  color: #333;
+  text-decoration: line-through;
+  text-decoration-color: #b02a24;
+  text-decoration-thickness: 0.35mm;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.ab-gap-wrong + .ab-gap-correct {
+  margin-left: 1.5mm;
+}
+.ab-gap-correct {
+  color: #145c32;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
 }
 
 .ab-passage {

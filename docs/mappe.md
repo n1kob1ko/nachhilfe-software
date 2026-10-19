@@ -22,6 +22,11 @@ kann.“ Der Begriff steht in [CONTEXT.md](../CONTEXT.md): **Mappe**.
   Reihenfolge, der geschriebene Text. Am Rand ✓, ✗, (✓) für teilweise und „–“, wenn er die Lösung
   angesehen hat. Bei Fehlern steht darunter die richtige Lösung. Antworten, die noch auf die
   Bewertung des Lehrers warten, stehen ohne Zeichen da („noch nicht bewertet“).
+- **Lücken**: die Antwort steht auf der Zeile des Textes, unterstrichen wie eine Lücke; lange
+  Antworten brechen um. Bei einer Aufgabe mit Fehler wird jede Lücke einzeln verglichen (wie beim
+  Bewerten, `lueckenFuerMappe` in lib/mappe.ts): eine falsche ist rot durchgestrichen, die richtige
+  steht grün daneben, und die Zeile „Richtig:“ entfällt. Ohne „Richtige Lösung bei Fehlern“ nur
+  durchgestrichen, ohne Häkchen und Kreuze nur die Antworten.
 - Nicht bearbeitete Aufgaben fallen weg, eine Zeile nennt sie („Nicht bearbeitet: Aufgabe 6.“). Mit
   „Nicht bearbeitete Aufgaben zum Weiterüben“ kommen sie wie auf dem Arbeitsblatt mit Platz zum
   Schreiben dazu, ebenso Übungen, die in der Einheit gesendet, aber nicht begonnen wurden.

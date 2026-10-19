@@ -38,6 +38,29 @@ export function MathLine({ text }: { text: string }) {
   return <>{nodes(parseMath(text))}</>;
 }
 
+/** A written gap: the answer, or (Mappe) a wrong one struck through with the right one next to it. */
+export type GapFill = string | { text: string; wrong?: boolean; correct?: string } | null;
+
+function FilledGap({ fill }: { fill: Exclude<GapFill, null> }) {
+  const f = typeof fill === "string" ? { text: fill } : fill;
+  // a fraction is taller than the line: then the underline goes below the whole box
+  const tall = [f.text, f.correct].some((x) => x && parseMath(x).some((n) => typeof n !== "string"));
+  return (
+    <span className={tall ? "ab-gap-filled ab-gap-tall" : "ab-gap-filled"}>
+      {f.text && (
+        <span className={f.wrong ? "ab-gap-wrong" : undefined}>
+          <MathLine text={f.text} />
+        </span>
+      )}
+      {f.correct && (
+        <span className="ab-gap-correct">
+          <MathLine text={f.correct} />
+        </span>
+      )}
+    </span>
+  );
+}
+
 /**
  * Task text as printed: paragraphs with line breaks, Markdown tables as tables, maths typeset and
  * every ___ as a writing gap (widths in mm, from the expected answer).
@@ -49,20 +72,19 @@ export function RichText({
 }: {
   text: string;
   gapsMm?: number[];
-  gapAnswers?: (string | null)[];
+  gapAnswers?: GapFill[];
 }) {
   let gap = 0;
   const withGaps = (s: string) =>
     s.split(GAP).map((part, i, all) => {
       const g = i < all.length - 1 ? gap++ : -1;
+      const fill = g >= 0 ? gapAnswers?.[g] : null;
       return (
         <Fragment key={i}>
           <MathLine text={part} />
           {g >= 0 &&
-            (gapAnswers?.[g] ? (
-              <span className="ab-gap ab-gap-filled">
-                <MathLine text={gapAnswers[g]!} />
-              </span>
+            (fill && (typeof fill === "string" || fill.text || fill.correct) ? (
+              <FilledGap fill={fill} />
             ) : (
               <span
                 className="ab-gap"

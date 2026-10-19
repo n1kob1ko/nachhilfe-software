@@ -11,7 +11,7 @@
 import { readMathAnswer } from "./math-check";
 import * as repo from "./repo";
 import { klassenLabel, stufeLabel } from "./school";
-import { GAP } from "./tasks";
+import { GAP, sameAnswer } from "./tasks";
 import { textsForUnit, getText, textDoc, type TextView } from "./texts";
 import type { TextDoc } from "./text-doc";
 import { getPictureStory, storyImages, type PictureStory, type StoryImage } from "./picture-story";
@@ -75,6 +75,30 @@ export function leseAntwort(t: Pick<repo.Task, "type" | "data" | "answer">, raw:
 /** Eine Textantwort, die in die einzige Lücke der Aufgabe gehört („3 + 4 = ___“), statt darunter zu stehen. */
 export function inDieLuecke(t: Pick<repo.Task, "prompt" | "data" | "answer">, a: Antwort): boolean {
   return a.art === "text" && !t.data.options && !t.answer.blanks && t.prompt.split(GAP).length === 2;
+}
+
+/** Was in einer Lücke der Mappe steht: die Antwort des Schülers, eine falsche markiert und auf Wunsch die richtige daneben. */
+export type LueckenEintrag = { text: string; falsch?: boolean; richtig?: string };
+
+/**
+ * Die Einträge für die Lücken einer Aufgabe, oder undefined, wenn die Antwort nicht in Lücken gehört.
+ * `markieren` (nur bei einer Aufgabe mit Fehler): jede Lücke einzeln mit der Lösung vergleichen, wie beim
+ * Bewerten (lib/tasks.ts); `loesung`: bei einer falschen Lücke die richtige Antwort dazuschreiben.
+ */
+export function lueckenFuerMappe(
+  t: Pick<repo.Task, "prompt" | "data" | "answer">,
+  a: Antwort | null,
+  o: { markieren: boolean; loesung: boolean },
+): LueckenEintrag[] | undefined {
+  const werte = a?.art === "luecken" ? a.werte : a && inDieLuecke(t, a) && a.art === "text" ? [a.text] : !a && t.answer.blanks ? [] : undefined;
+  if (!werte) return undefined;
+  const erwartet = t.answer.blanks ?? [t.answer.accepted ?? []];
+  return Array.from({ length: Math.max(werte.length, erwartet.length) }, (_, i) => {
+    const text = (werte[i] ?? "").trim();
+    const moeglich = erwartet[i] ?? [];
+    if (!o.markieren || !moeglich.length || moeglich.some((m) => sameAnswer(text, m, t.answer.mode ?? "text"))) return { text };
+    return { text, falsch: true, ...(o.loesung ? { richtig: moeglich[0] } : {}) };
+  });
 }
 
 // ---------- die Mappe ----------
