@@ -39,6 +39,9 @@
   --series-4: #eda100;
   --shadow-card: 0 1px 2px rgba(80, 45, 20, 0.05), 0 8px 24px -12px rgba(80, 45, 20, 0.14);
   --shadow-pop: 0 2px 4px rgba(80, 45, 20, 0.06), 0 18px 40px -16px rgba(80, 45, 20, 0.28);
+  /* motion: strong ease-out for feedback, the iOS-like curve for drawers */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @theme inline {
@@ -164,11 +167,16 @@ textarea.input {
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
-  transition: background-color 150ms, border-color 150ms, color 150ms, transform 100ms;
+  transition: background-color 150ms, border-color 150ms, color 150ms, transform 160ms var(--ease-out);
   cursor: pointer;
 }
-.btn:active {
-  transform: translateY(1px);
+/* pressing gives way a little, like a real button */
+.btn:active,
+.drueck:active {
+  transform: scale(0.97);
+}
+.drueck {
+  transition: transform 160ms var(--ease-out), filter 150ms, background-color 150ms, border-color 150ms;
 }
 .btn:disabled {
   opacity: 0.5;
@@ -259,6 +267,41 @@ textarea.input {
   .print-break {
     break-inside: avoid;
   }
+}
+
+/* side drawer (Offen-Schubfach): slides in from the right, the veil fades */
+.schubfach {
+  animation: schubfach-rein 300ms var(--ease-drawer);
+}
+.schleier {
+  animation: schleier-rein 200ms ease-out;
+}
+@keyframes schubfach-rein {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes schleier-rein {
+  from {
+    opacity: 0;
+  }
+}
+/* dialogs open with a short rise, never from nothing */
+.dialog-karte {
+  animation: dialog-rein 200ms var(--ease-out);
+}
+@keyframes dialog-rein {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+/* horizontal chip rows scroll without a visible bar */
+.ohne-leiste {
+  scrollbar-width: none;
+}
+.ohne-leiste::-webkit-scrollbar {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

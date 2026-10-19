@@ -1,18 +1,26 @@
 "use client";
 
 /**
- * Das Gitter der Wochenansicht: Zeilen = Lehrer, Spalten = die sieben Tage, Höhe = Zeit auf einem
- * 10-Minuten-Raster (D19). Es zeichnet nur; gerechnet wird im Server (`lib/planung/uebersicht.ts`).
+ * Das Gitter der Wochenansicht (ab Laptop-Breite; darunter `WochenplanTage.tsx`): je Lehrer ein Band
+ * mit seinen Kennzahlen und darunter seine Zeile, Spalten = die Tage, Höhe = Zeit. Jeder Lehrer zeigt
+ * nur seine Arbeitszeit (Verfügbarkeit und Plätze), Samstag/Sonntag erscheinen nur, wenn dort jemand
+ * kann oder etwas steht, und die Tageszeile bleibt beim Scrollen oben stehen. Volle Stunden sind
+ * Linien, das 10-Minuten-Raster (D19) erscheint erst beim Ziehen. Es zeichnet nur; gerechnet wird im
+ * Server (`lib/planung/uebersicht.ts`).
+ *
+ * Für die Verwaltung: Ein Klick auf einen Platz öffnet ihn, ein Klick auf freie Zeit legt dort einen
+ * neuen an (der Umriss unter dem Zeiger zeigt, wo), das Schloss erscheint beim Darüberfahren.
  *
  * Ziehen und Ablegen: Ein Platz wird gezogen, die Zelle unter dem Zeiger meldet ihre Position
  * (`onDragOverZelle`), die Seite fragt damit `checkSlotTargetAction` — und die antwortet über
  * `repo.pruefeUeberlappung`, der **einzigen** Überlappungsprüfung der App. Ein unzulässiges Ziel
  * wird rot ausgeblendet und nimmt nichts an; ein zulässiges zeigt den Platz als Umriss.
  */
-import { Fragment } from "react";
-import { Lock, Pencil, Users } from "lucide-react";
-import { deleteSlotAction, lockSlotAction } from "@/app/planung-actions";
+import { Fragment, useState } from "react";
+import { Lock, LockOpen, Plus, Users } from "lucide-react";
+import { lockSlotAction } from "@/app/planung-actions";
 import { subjectTone } from "@/components/Calendar";
+import { anzeigeBereich } from "@/lib/planung/ansicht";
 import type { UebersichtLehrer, UebersichtLuecke, UebersichtPlatz, UebersichtSchueler, UebersichtTage } from "@/lib/planung/uebersicht";
 import type { Verfuegbarkeit } from "@/lib/planung/verfuegbarkeit";
 import { auf10, minutenLabel, type Wochentag } from "@/lib/planung/zeit";
@@ -22,30 +30,12 @@ export const MINUTEN_HOEHE = 0.8;
 /** Raster der Startzeiten in Minuten (D19: Vielfache von 10). */
 export const RASTER = 10;
 
-const SPALTE_ZEIT = 46;
-const SPALTE_LEHRER = 132;
-const SPALTE_TAG = 104;
+const SPALTE_ZEIT = 52;
 
 export type Ziel = { teacherId: number; weekday: Wochentag; startMin: number };
 export type Urteil = { ziel: Ziel; ok: boolean; fehler?: string };
 
 export const zielSchluessel = (z: Ziel) => `${z.teacherId}|${z.weekday}|${z.startMin}`;
-
-/** Der sichtbare Zeitbereich: mindestens 08:00–18:00, sonst alles, was Plätze oder Verfügbarkeit brauchen. */
-export function anzeigeBereich(plaetze: { startMin: number; dauer: number }[], lehrer: { verfuegbarkeit: Verfuegbarkeit }[]): { von: number; bis: number } {
-  let von = 8 * 60;
-  let bis = 18 * 60;
-  const merken = (start: number, ende: number) => {
-    von = Math.min(von, start);
-    bis = Math.max(bis, ende);
-  };
-  for (const p of plaetze) merken(p.startMin, p.startMin + p.dauer);
-  for (const l of lehrer)
-    for (const spannen of Object.values(l.verfuegbarkeit)) for (const spanne of spannen ?? []) merken(spanne.start, spanne.end);
-  von = Math.max(0, Math.floor(von / 60) * 60);
-  bis = Math.min(1440, Math.ceil(bis / 60) * 60);
-  return { von, bis: Math.max(bis, von + 240) };
-}
 
 /**
  * Zwei Schüler gleichzeitig (D26): Plätze einer Zelle, die sich überschneiden, stehen nebeneinander,
@@ -86,15 +76,18 @@ export function startAusY(clientY: number, obenImDokument: number, bereich: { vo
   return Math.max(0, Math.min(1430, auf10(roh)));
 }
 
+/** Nicht verfügbare Zeit: feine Schraffur auf dem Papierton, damit freie Zeit weiß hervortritt. */
+export const SCHRAFFUR = "repeating-linear-gradient(135deg, var(--paper) 0 7px, var(--panel) 7px 8px)";
+
 type Props = {
   tage: UebersichtTage[];
-  heute: Wochentag;
+  /** Heutiger Wochentag, nur wenn die gezeigte Woche läuft. */
+  heute: Wochentag | null;
   lehrer: UebersichtLehrer[];
   plaetze: UebersichtPlatz[];
   schueler: UebersichtSchueler[];
   luecken: UebersichtLuecke[];
-  bereich: { von: number; bis: number };
-  /** Verwaltung: ziehen, sperren, öffnen. Ein Lehrer sieht nur zu. */
+  /** Verwaltung: ziehen, sperren, öffnen, anlegen. Ein Lehrer sieht nur zu. */
   interaktiv: boolean;
   ziehPlatz: UebersichtPlatz | null;
   ziel: Ziel | null;
@@ -107,15 +100,23 @@ type Props = {
   onZellenVerlassen: () => void;
   onAblegen: (z: Ziel) => void;
   onBearbeiten: (p: UebersichtPlatz) => void;
+  /** Ein Klick auf freie Zeit: einen neuen Platz an dieser Stelle anlegen. */
+  onNeu: (z: Ziel) => void;
 };
 
+/** Gehört das Ereignis zu einem Platz (oder seinem Schloss)? Dann legt ein Klick keinen neuen an. */
+const aufPlatz = (ziel: EventTarget | null) => !!(ziel as HTMLElement | null)?.closest?.("[data-platz]");
+
 export function WochenplanGitter(props: Props) {
-  const { tage, heute, lehrer, plaetze, schueler, luecken, bereich, interaktiv, ziehPlatz, ziel, urteil, woche, zurueck, onZiehen, onZiehenEnde, onZellenZiel, onZellenVerlassen, onAblegen, onBearbeiten } = props;
-  const hoehe = (bereich.bis - bereich.von) * MINUTEN_HOEHE;
-  const rasterPx = RASTER * MINUTEN_HOEHE;
+  const { tage, heute, lehrer, plaetze, schueler, luecken, interaktiv, ziehPlatz, ziel, urteil, woche, zurueck, onZiehen, onZiehenEnde, onZellenZiel, onZellenVerlassen, onAblegen, onBearbeiten, onNeu } = props;
+  // wo ein Klick einen neuen Platz anlegen würde: ein gestrichelter Umriss unter dem Zeiger
+  const [vorschau, setVorschau] = useState<Ziel | null>(null);
   const stundePx = 60 * MINUTEN_HOEHE;
-  const stunden: number[] = [];
-  for (let m = Math.ceil(bereich.von / 60) * 60; m <= bereich.bis; m += 60) stunden.push(m);
+  // volle Stunden als Linie; beim Ziehen zusätzlich das 10-Minuten-Raster, auf das abgelegt wird
+  const linien = [
+    `repeating-linear-gradient(to bottom, var(--line-strong) 0 1px, transparent 1px ${stundePx}px)`,
+    ...(ziehPlatz ? [`repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px ${RASTER * MINUTEN_HOEHE}px)`] : []),
+  ].join(", ");
 
   if (!lehrer.length)
     return (
@@ -125,43 +126,61 @@ export function WochenplanGitter(props: Props) {
     );
 
   return (
-    <div className="overflow-x-auto rounded-[20px] border border-line bg-surface shadow-[var(--shadow-card)]">
-      <div style={{ minWidth: SPALTE_ZEIT + SPALTE_LEHRER + 7 * SPALTE_TAG }}>
-        <div className="grid" style={{ gridTemplateColumns: `${SPALTE_ZEIT}px ${SPALTE_LEHRER}px repeat(7, minmax(${SPALTE_TAG}px, 1fr))` }}>
-          <div className="sticky top-0 left-0 z-30 border-r border-b border-line bg-surface" aria-hidden />
-          <div className="sticky top-0 z-20 border-r border-b border-line bg-surface px-2 py-2 text-[12px] font-semibold text-ink-2">Lehrer</div>
-          {tage.map((t) => (
-            <div
-              key={t.tag}
-              className={`sticky top-0 z-20 border-r border-b border-line px-1.5 py-2 text-center last:border-r-0 ${t.tag === heute ? "bg-accent-wash" : "bg-surface"}`}
-            >
-              <div className={`text-[12px] font-semibold ${t.tag === heute ? "text-accent" : "text-ink"}`}>{t.label}</div>
+    // `overflow-clip` statt `overflow-auto`: Die Tageszeile kann so am oberen Rand kleben bleiben.
+    <div className="overflow-clip rounded-[20px] border border-line bg-surface shadow-[var(--shadow-card)]">
+      <div className="grid" style={{ gridTemplateColumns: `${SPALTE_ZEIT}px repeat(${tage.length}, minmax(0, 1fr))` }}>
+        <div className="sticky top-0 z-30 border-b border-line bg-surface" aria-hidden />
+        {tage.map((t) => {
+          const [kurz, datum] = t.label.split(", ");
+          const istHeute = t.tag === heute;
+          return (
+            <div key={t.tag} className={`sticky top-0 z-30 border-b border-l border-line px-2 py-2.5 text-center ${istHeute ? "bg-accent-wash" : "bg-surface"}`}>
+              <div className={`text-[13px] font-semibold ${istHeute ? "text-accent" : "text-ink"}`}>
+                {kurz}
+                {istHeute && <span className="sr-only">, heute</span>}
+              </div>
+              <div className={`num text-[11.5px] ${istHeute ? "text-accent" : "text-ink-3"}`}>{datum}</div>
             </div>
-          ))}
+          );
+        })}
 
-          {lehrer.map((l) => (
+        {lehrer.map((l) => {
+          // jeder Lehrer bekommt seinen eigenen Zeitbereich: wer nur nachmittags kann, kostet keinen Vormittag
+          const bereich = anzeigeBereich(
+            plaetze.filter((p) => p.teacherId === l.id),
+            [l],
+          );
+          const hoehe = (bereich.bis - bereich.von) * MINUTEN_HOEHE;
+          const stunden: number[] = [];
+          for (let m = Math.ceil(bereich.von / 60) * 60; m < bereich.bis; m += 60) stunden.push(m);
+          return (
             <Fragment key={l.id}>
-              {/* Zeitleiste dieser Zeile */}
-              <div className="relative border-r border-b border-line bg-panel/40" style={{ height: hoehe }}>
+              {/* Band des Lehrers: Name und Kennzahlen */}
+              <div className="col-span-full flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-line bg-panel/70 px-4 py-2">
+                <span className="text-[14px] font-semibold text-ink">{l.name}</span>
+                <span className="num text-[12.5px] text-ink-2">
+                  {l.einheiten} {l.einheiten === 1 ? "Einheit" : "Einheiten"} · {l.minuten} min
+                </span>
+                {l.zielMin ? (
+                  <span className="flex items-center gap-2 text-[12.5px] text-ink-2" title={`Ziel: ${l.zielMin} min in der Woche`}>
+                    <span className="relative h-1.5 w-16 overflow-hidden rounded-full bg-[var(--bar-track)]" aria-hidden>
+                      <span className="absolute inset-y-0 left-0 rounded-full bg-[var(--bar)]" style={{ width: `${Math.min(100, (l.minuten / l.zielMin) * 100)}%` }} />
+                    </span>
+                    <span className="num">
+                      {Math.round((l.minuten / l.zielMin) * 100)} % vom Ziel {l.zielMin} min
+                    </span>
+                  </span>
+                ) : null}
+                {l.lueckenMinuten > 0 ? <span className="num text-[12.5px] font-medium text-amber">Lücken {l.lueckenMinuten} min</span> : null}
+              </div>
+
+              {/* Zeitleiste dieser Zeile: die Uhrzeit steht unter ihrer Linie */}
+              <div className="relative border-b border-line bg-surface" style={{ height: hoehe }} aria-hidden>
                 {stunden.map((m) => (
-                  <span key={m} className="num absolute right-1.5 -translate-y-1/2 text-[10px] text-ink-3" style={{ top: (m - bereich.von) * MINUTEN_HOEHE }}>
+                  <span key={m} className="num absolute right-2 text-[11px] leading-none text-ink-3" style={{ top: (m - bereich.von) * MINUTEN_HOEHE + 4 }}>
                     {minutenLabel(m)}
                   </span>
                 ))}
-              </div>
-
-              {/* Lehrername und Kennzahlen */}
-              <div className="sticky left-0 z-10 border-r border-b border-line bg-surface px-2 py-2" style={{ height: hoehe }}>
-                <div className="text-[13px] font-semibold text-ink">{l.name}</div>
-                <div className="num text-[11px] text-ink-3">
-                  {l.einheiten} {l.einheiten === 1 ? "Einheit" : "Einheiten"} · {l.minuten} min
-                </div>
-                {l.zielMin ? (
-                  <div className="num text-[11px] text-ink-3">
-                    Ziel {l.zielMin} min ({Math.round((l.minuten / l.zielMin) * 100)} %)
-                  </div>
-                ) : null}
-                {l.lueckenMinuten > 0 ? <div className="num text-[11px] text-amber">Lücken {l.lueckenMinuten} min</div> : null}
               </div>
 
               {tage.map((t) => {
@@ -173,16 +192,29 @@ export function WochenplanGitter(props: Props) {
                 const urteilHier = zielHier && urteil && zielSchluessel(urteil.ziel) === zielSchluessel(zielHier) ? urteil : null;
                 const ungueltig = urteilHier?.ok === false;
                 const ziehDauer = ziehPlatz?.dauer ?? 100;
+                const vorschauHier = !ziehPlatz && vorschau && vorschau.teacherId === l.id && vorschau.weekday === t.tag ? vorschau : null;
+                const zeitUnterZeiger = (e: React.MouseEvent<HTMLDivElement>) => startAusY(e.clientY, e.currentTarget.getBoundingClientRect().top, bereich);
 
                 return (
                   <div
                     key={`${l.id}-${t.tag}`}
-                    className={`relative border-r border-b border-line ${ungueltig ? "cursor-not-allowed ring-1 ring-inset ring-red" : interaktiv && ziehPlatz ? "cursor-copy" : ""}`}
-                    style={{
-                      height: hoehe,
-                      backgroundImage: `repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px ${rasterPx}px), repeating-linear-gradient(to bottom, var(--line-strong) 0 1px, transparent 1px ${stundePx}px)`,
-                    }}
+                    className={`relative border-b border-l border-line ${ungueltig ? "cursor-not-allowed ring-1 ring-red ring-inset" : interaktiv && ziehPlatz ? "cursor-copy" : interaktiv ? "cursor-pointer" : ""}`}
+                    style={{ height: hoehe, background: SCHRAFFUR }}
                     title={ungueltig ? urteilHier?.fehler : undefined}
+                    onMouseMove={(e) => {
+                      if (!interaktiv || ziehPlatz) return;
+                      if (aufPlatz(e.target)) {
+                        if (vorschau) setVorschau(null);
+                        return;
+                      }
+                      const neu: Ziel = { teacherId: l.id, weekday: t.tag, startMin: zeitUnterZeiger(e) };
+                      setVorschau((alt) => (alt && zielSchluessel(alt) === zielSchluessel(neu) ? alt : neu));
+                    }}
+                    onMouseLeave={() => setVorschau(null)}
+                    onClick={(e) => {
+                      if (!interaktiv || ziehPlatz || aufPlatz(e.target)) return;
+                      onNeu({ teacherId: l.id, weekday: t.tag, startMin: zeitUnterZeiger(e) });
+                    }}
                     onDragOver={(e) => {
                       if (!interaktiv || !ziehPlatz) return;
                       e.preventDefault();
@@ -200,110 +232,130 @@ export function WochenplanGitter(props: Props) {
                       onAblegen({ teacherId: l.id, weekday: t.tag, startMin: startAusY(e.clientY, e.currentTarget.getBoundingClientRect().top, bereich) });
                     }}
                   >
-                    {/* Verfügbarkeit des Lehrers */}
+                    {/* Verfügbarkeit des Lehrers: weiß, der Rest bleibt schraffiert */}
                     {spannen.map((s, i) => (
                       <div
                         key={`v${i}`}
-                        className="absolute inset-x-0"
-                        style={{ top: (Math.max(s.start, bereich.von) - bereich.von) * MINUTEN_HOEHE, height: (Math.min(s.end, bereich.bis) - Math.max(s.start, bereich.von)) * MINUTEN_HOEHE, background: "var(--green-wash)", opacity: 0.5 }}
+                        className="absolute inset-x-0 bg-surface"
+                        style={{ top: (Math.max(s.start, bereich.von) - bereich.von) * MINUTEN_HOEHE, height: (Math.min(s.end, bereich.bis) - Math.max(s.start, bereich.von)) * MINUTEN_HOEHE }}
                         aria-hidden
                       />
                     ))}
+
+                    {/* Stundenlinien über allem Flächigen, unter den Plätzen */}
+                    <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: linien }} aria-hidden />
 
                     {/* Lücken, die als unnütz gelten */}
                     {meineLuecken.map((x, i) => (
                       <div
                         key={`l${i}`}
-                        className="absolute inset-x-0 flex items-center justify-center"
-                        style={{ top: (x.start - bereich.von) * MINUTEN_HOEHE, height: (x.end - x.start) * MINUTEN_HOEHE, background: "var(--amber-wash)", opacity: 0.85 }}
+                        className="absolute inset-x-1 flex items-center justify-center rounded-md"
+                        style={{ top: (x.start - bereich.von) * MINUTEN_HOEHE, height: (x.end - x.start) * MINUTEN_HOEHE, background: "var(--amber-wash)" }}
                         title={`Lücke ${x.end - x.start} min`}
                       >
-                        <span className="num text-[9px] text-amber">{x.end - x.start}′</span>
+                        <span className="num text-[10.5px] font-semibold text-amber">Lücke {x.end - x.start}′</span>
                       </div>
                     ))}
+
+                    {/* Wo ein Klick einen neuen Platz anlegt; außerhalb der Verfügbarkeit gedämpft */}
+                    {vorschauHier &&
+                      (() => {
+                        const kann = spannen.some((s) => s.start <= vorschauHier.startMin && vorschauHier.startMin < s.end);
+                        return (
+                          <div
+                            className={`pointer-events-none absolute right-1 left-1 z-[5] rounded-[10px] border border-dashed px-2 py-1 ${kann ? "border-accent-bright bg-accent-wash/60" : "border-ink-3 bg-surface/70"}`}
+                            style={{ top: (vorschauHier.startMin - bereich.von) * MINUTEN_HOEHE, height: 60 * MINUTEN_HOEHE }}
+                            aria-hidden
+                          >
+                            <span className={`num flex items-center gap-1 text-[11.5px] font-semibold ${kann ? "text-accent" : "text-ink-3"}`}>
+                              <Plus size={12} strokeWidth={2.6} /> {minutenLabel(vorschauHier.startMin)}
+                              {!kann && <span className="font-medium">· kann nicht</span>}
+                            </span>
+                          </div>
+                        );
+                      })()}
 
                     {/* Geplante Einheiten; zwei Schüler gleichzeitig (D26) stehen nebeneinander */}
                     <div className={ungueltig ? "opacity-50" : ""}>
                       {meine.map((p) => {
                         const tone = subjectTone(schueler.find((s) => s.id === p.studentId)?.subjects[0]);
-                        const blockHoehe = Math.max(16, p.dauer * MINUTEN_HOEHE);
-                        const kompakt = blockHoehe < 46;
+                        const blockHoehe = Math.max(22, p.dauer * MINUTEN_HOEHE);
+                        // so viele Textzeilen passen in den Block; der Name steht immer da
+                        const zeilen = Math.floor((blockHoehe - 10) / 15);
                         const { spur, spuren } = spurNach.get(p.id) ?? { spur: 0, spuren: 1 };
                         const zugleich = p.zugleichMit.length ? ` · gleichzeitig mit ${p.zugleichMit.join(", ")}` : "";
+                        const aus = p.nichtStattgefunden;
+                        const oben = (p.startMin - bereich.von) * MINUTEN_HOEHE + 1;
+                        const links = `calc(${(spur / spuren) * 100}% + ${spur ? 2 : 4}px)`;
+                        const breite = `calc(${100 / spuren}% - ${spuren > 1 ? 6 : 8}px)`;
+                        const zeit = `${minutenLabel(p.startMin)}–${minutenLabel(p.startMin + p.dauer)}`;
                         return (
-                          <div
-                            key={p.id}
-                            draggable={interaktiv}
-                            onDragStart={(e) => {
-                              if ((e.target as HTMLElement).closest("button, a")) {
-                                e.preventDefault();
-                                return;
+                          // je Platz ein eigener Rahmen, damit `peer-hover` nur das eigene Schloss zeigt
+                          <div key={p.id} className="contents">
+                            <div
+                              data-platz
+                              draggable={interaktiv}
+                              role={interaktiv ? "button" : undefined}
+                              tabIndex={interaktiv ? 0 : undefined}
+                              aria-label={interaktiv ? `${p.studentName}, ${zeit}${p.locked ? ", gesperrt" : ""}. Öffnen` : undefined}
+                              onClick={interaktiv ? () => onBearbeiten(p) : undefined}
+                              onKeyDown={
+                                interaktiv
+                                  ? (e) => {
+                                      if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        onBearbeiten(p);
+                                      }
+                                    }
+                                  : undefined
                               }
-                              e.dataTransfer.setData("text/plain", String(p.id));
-                              e.dataTransfer.effectAllowed = "move";
-                              onZiehen(p);
-                            }}
-                            onDragEnd={onZiehenEnde}
-                            className={`group absolute z-10 overflow-hidden rounded-[10px] border px-1.5 py-0.5 text-left text-[11px] leading-tight ${interaktiv ? "cursor-grab" : ""} ${p.locked ? "ring-1 ring-accent" : ""} ${p.status === "entwurf" ? "border-dashed" : "border-solid"} ${p.nichtStattgefunden ? "opacity-60" : ""}`}
-                            style={{
-                              top: (p.startMin - bereich.von) * MINUTEN_HOEHE,
-                              height: blockHoehe,
-                              left: `calc(${(spur / spuren) * 100}% + ${spur ? 2 : 4}px)`,
-                              width: `calc(${100 / spuren}% - ${spuren > 1 ? 6 : 8}px)`,
-                              background: tone.soft,
-                              borderColor: tone.bg,
-                              color: tone.fg,
-                            }}
-                            title={`${p.studentName} · ${minutenLabel(p.startMin)}–${minutenLabel(p.startMin + p.dauer)}${p.roomName ? ` · ${p.roomName}` : ""}${p.locked ? " · gesperrt" : ""}${zugleich}${p.nichtStattgefunden ? " · nicht stattgefunden" : ""}`}
-                          >
-                            {/* in a half-width lane the name keeps the first line, the marks move below it */}
-                            <div className={spuren > 1 ? "flex flex-col items-start gap-0.5" : "flex items-center gap-1"}>
-                              <span className="max-w-full min-w-0 truncate font-semibold">{p.studentName}</span>
-                              {(p.locked || zugleich) && (
-                                <span
-                                  className={`flex shrink-0 items-center gap-0.5 rounded-full px-1 text-[9px] font-semibold ${spuren > 1 ? "" : "ml-auto"}`}
-                                  style={{ background: "var(--surface)" }}
-                                >
-                                  {zugleich && (
-                                    <span title={`Gleichzeitig mit ${p.zugleichMit.join(", ")}`} className="flex items-center">
-                                      <Users size={9} strokeWidth={2.6} aria-label="gleichzeitig" />
-                                    </span>
-                                  )}
-                                  {p.locked && (
-                                    <span title="Gesperrt: bleibt bei „Neu generieren“ stehen" className="flex items-center gap-0.5">
-                                      <Lock size={9} strokeWidth={2.6} aria-hidden />
-                                      {spuren === 1 && "gesperrt"}
-                                    </span>
-                                  )}
-                                </span>
-                              )}
-                            </div>
-                            {!kompakt && (
-                              <div className="num truncate">
-                                {spuren > 1 ? (
-                                  minutenLabel(p.startMin)
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData("text/plain", String(p.id));
+                                e.dataTransfer.effectAllowed = "move";
+                                setVorschau(null);
+                                onZiehen(p);
+                              }}
+                              onDragEnd={onZiehenEnde}
+                              className={`peer absolute z-10 overflow-hidden rounded-[10px] border px-2 py-1 text-left leading-tight shadow-[0_1px_2px_rgba(80,45,20,0.08)] transition-shadow duration-150 ${
+                                interaktiv ? "cursor-grab hover:shadow-[var(--shadow-pop)] active:cursor-grabbing" : ""
+                              } ${p.status === "entwurf" ? "border-dashed" : "border-solid"}`}
+                              style={{
+                                top: oben,
+                                height: blockHoehe - 2,
+                                left: links,
+                                width: breite,
+                                background: aus ? "var(--paper)" : tone.bg,
+                                borderColor: aus ? "var(--line-strong)" : `color-mix(in srgb, ${tone.fg} 35%, transparent)`,
+                              }}
+                              title={`${p.studentName} · ${zeit}${p.roomName ? ` · ${p.roomName}` : ""}${p.locked ? " · gesperrt" : ""}${zugleich}${aus ? " · nicht stattgefunden" : ""}`}
+                            >
+                              <div className="flex items-start gap-1 pr-0.5">
+                                <span className={`min-w-0 flex-1 truncate text-[12.5px] font-semibold ${aus ? "text-ink-3 line-through" : "text-ink"}`}>{p.studentName}</span>
+                                {zugleich && <Users size={11} strokeWidth={2.4} className="mt-0.5 shrink-0 text-ink-2" aria-label="gleichzeitig" />}
+                                {p.locked && <Lock size={11} strokeWidth={2.4} className="mt-0.5 shrink-0 text-ink-2" aria-label="gesperrt" />}
+                              </div>
+                              {zeilen >= 2 && <div className="num truncate text-[11.5px] text-ink-2">{spuren > 1 ? minutenLabel(p.startMin) : zeit}</div>}
+                              {zeilen >= 3 &&
+                                (aus ? (
+                                  <div className="truncate text-[10.5px] font-semibold text-red">nicht stattgefunden</div>
                                 ) : (
-                                  <>
-                                    {minutenLabel(p.startMin)}–{minutenLabel(p.startMin + p.dauer)}
-                                    {p.roomName ? ` · ${p.roomName}` : ""}
-                                  </>
-                                )}
-                              </div>
-                            )}
-                            {p.nichtStattgefunden && !kompakt && <div className="truncate font-semibold">nicht stattgefunden</div>}
+                                  p.roomName && spuren === 1 && <div className="truncate text-[11.5px] text-ink-3">{p.roomName}</div>
+                                ))}
+                            </div>
                             {interaktiv && (
-                              <div className="absolute top-0 right-0 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-                                <button type="button" className="rounded bg-surface/90 p-0.5 text-ink-2 hover:text-accent" aria-label={`${p.studentName} bearbeiten`} onClick={() => onBearbeiten(p)}>
-                                  <Pencil size={11} aria-hidden />
+                              // das Schloss liegt über der rechten oberen Ecke des Platzes und erscheint beim Darüberfahren
+                              <form
+                                data-platz
+                                action={lockSlotAction.bind(null, p.id, !p.locked)}
+                                className="absolute z-20 opacity-0 transition-opacity duration-150 peer-hover:opacity-100 peer-focus-visible:opacity-100 focus-within:opacity-100 hover:opacity-100"
+                                style={{ top: oben + 3, left: `calc(${links} + ${breite} - 27px)` }}
+                              >
+                                <input type="hidden" name="woche" value={woche} />
+                                <input type="hidden" name="zurueck" value={zurueck} />
+                                <button type="submit" className="drueck flex h-6 w-6 items-center justify-center rounded-md bg-surface text-ink-2 shadow-sm hover:text-accent" aria-label={p.locked ? `${p.studentName} entsperren` : `${p.studentName} sperren`} title={p.locked ? "Entsperren" : "Sperren: bleibt bei „Neu generieren“ stehen"}>
+                                  {p.locked ? <LockOpen size={12} aria-hidden /> : <Lock size={12} aria-hidden />}
                                 </button>
-                                <form action={lockSlotAction.bind(null, p.id, !p.locked)}>
-                                  <input type="hidden" name="woche" value={woche} />
-                                  <input type="hidden" name="zurueck" value={zurueck} />
-                                  <button type="submit" className="rounded bg-surface/90 p-0.5 text-ink-2 hover:text-accent" aria-label={p.locked ? `${p.studentName} entsperren` : `${p.studentName} sperren`}>
-                                    <Lock size={11} aria-hidden />
-                                  </button>
-                                </form>
-                              </div>
+                              </form>
                             )}
                           </div>
                         );
@@ -318,8 +370,8 @@ export function WochenplanGitter(props: Props) {
                         </div>
                       ) : (
                         <div
-                          className="pointer-events-none absolute left-1 right-1 z-20 rounded-[10px] border-2 border-dashed border-accent bg-accent-wash/70 px-1.5 py-0.5 text-[11px]"
-                          style={{ top: (zielHier.startMin - bereich.von) * MINUTEN_HOEHE, height: Math.max(16, ziehDauer * MINUTEN_HOEHE) }}
+                          className="pointer-events-none absolute right-1 left-1 z-20 rounded-[10px] border-2 border-dashed border-accent bg-accent-wash/70 px-1.5 py-0.5 text-[11px]"
+                          style={{ top: (zielHier.startMin - bereich.von) * MINUTEN_HOEHE, height: Math.max(22, ziehDauer * MINUTEN_HOEHE) }}
                         >
                           <span className="num font-semibold text-accent">{minutenLabel(zielHier.startMin)}</span>
                           <span className="truncate"> {ziehPlatz.studentName}</span>
@@ -330,22 +382,9 @@ export function WochenplanGitter(props: Props) {
                 );
               })}
             </Fragment>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </div>
-  );
-}
-
-/** Die Lösch-Aktion eines Platzes als eigenes Formular — im Bearbeiten-Dialog benutzt. */
-export function LoeschenFormular({ id, woche, zurueck }: { id: number; woche: string; zurueck: string }) {
-  return (
-    <form action={deleteSlotAction.bind(null, id)}>
-      <input type="hidden" name="woche" value={woche} />
-      <input type="hidden" name="zurueck" value={zurueck} />
-      <button type="submit" className="btn btn-danger btn-sm">
-        Platz löschen
-      </button>
-    </form>
   );
 }

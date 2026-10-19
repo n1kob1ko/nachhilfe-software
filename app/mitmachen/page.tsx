@@ -1,4 +1,5 @@
 import { CheckCircle2, ChevronRight, Laptop, ListChecks, NotebookPen, PenLine, ShieldCheck } from "lucide-react";
+import { BrandMark } from "@/components/Brand";
 import { JoinForm } from "@/components/laptop/JoinForm";
 import { DRAFT_PREFIX } from "@/components/laptop/drafts";
 import { LaptopLive } from "@/components/laptop/LaptopLive";
@@ -239,9 +240,7 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
 
 function Mark({ small }: { small?: boolean }) {
   return (
-    <span className={`flex shrink-0 items-center justify-center rounded-2xl bg-surface shadow-[var(--shadow-card)] ${small ? "h-11 w-11" : "h-14 w-14"}`}>
-      <NotebookPen size={small ? 20 : 26} strokeWidth={1.75} className="text-accent" aria-hidden />
-    </span>
+    <BrandMark height={small ? 40 : 54} />
   );
 }
 

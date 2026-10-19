@@ -1,5 +1,6 @@
-import { Laptop, NotebookPen, PenLine, Presentation } from "lucide-react";
+import { Laptop, PenLine, Presentation } from "lucide-react";
 import { ChevronRight } from "lucide-react";
+import { BrandMark } from "@/components/Brand";
 import { DeviceLive } from "@/components/device/DeviceLive";
 import { PairForm } from "@/components/device/PairForm";
 import { Solver } from "@/components/Solver";
@@ -34,9 +35,7 @@ export default async function DevicePage() {
     return (
       <DeviceLive unitId={null}>
         <Centered>
-          <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface shadow-[var(--shadow-card)]">
-            <NotebookPen size={30} strokeWidth={1.75} className="text-accent" aria-hidden />
-          </span>
+          <BrandMark height={64} />
           <h1 className="mt-6 text-[30px] font-semibold tracking-[-0.02em]">Bereit für die nächste Einheit</h1>
           <p className="mt-2 text-[16px] text-ink-2">Verbunden mit {teacherFirst}</p>
         </Centered>
@@ -200,9 +199,7 @@ function Centered({ children }: { children: React.ReactNode }) {
 function Pairing() {
   return (
     <main className="mx-auto flex min-h-screen max-w-[440px] flex-col justify-center px-6 py-10">
-      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface shadow-[var(--shadow-card)]">
-        <NotebookPen size={26} strokeWidth={1.75} className="text-accent" aria-hidden />
-      </span>
+      <BrandMark height={56} />
       <h1 className="mt-6 text-[28px] leading-tight font-semibold tracking-[-0.02em]">Dieses Tablet mit einem Lehrer verbinden</h1>
       <p className="mt-2 mb-6 text-[15px] text-ink-2">Am Lehrergerät: Mehr › Schülergeräte › „Neues Tablet verbinden“. Den Code hier eingeben.</p>
       <PairForm />

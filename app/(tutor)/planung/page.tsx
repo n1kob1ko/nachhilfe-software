@@ -1,17 +1,17 @@
-import { CalendarDays } from "lucide-react";
-import { Wochenplan, type PlanungFilterWerte } from "@/components/planung/Wochenplan";
+import { Wochenplan, type PlanungFilterWerte, type Vorgabe } from "@/components/planung/Wochenplan";
 import { PageHeader } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { darfWocheSehen, darfWochenplanBearbeiten } from "@/lib/planung/berechtigungen";
 import { leseRegeln, pruefeRegeln, regelnJson } from "@/lib/planung/regeln";
 import { wochenUebersicht } from "@/lib/planung/uebersicht";
-import { istDatum, wochenstartVon, wienerWochenstart } from "@/lib/planung/zeit";
+import { istDatum, wochenstartVon, wienerWochenstart, type Wochentag } from "@/lib/planung/zeit";
 
 export const metadata = { title: "Planung" };
 
 /**
- * Die Wochenansicht (Phase 4): **eine** Seite für alles — Zeilen = Lehrer, Spalten = Tage, Filter
- * nach Lehrer, Raum und Schüler, Seitenleiste, Offen-Schubfach, Summenfuß und die Werkzeuge.
+ * Die Wochenansicht (Phase 4): **eine** Seite für alles. Statuskarte mit dem nächsten Schritt,
+ * Filter nach Lehrer, Raum und Schüler, Offen-Schubfach und die Werkzeuge; am Laptop das Gitter
+ * (Zeilen = Lehrer, Spalten = Tage), auf Telefon und Tablet ein Tag als Liste.
  *
  * Die Sicht hängt an der Rolle (D23): die Verwaltung sieht Entwurf **und** veröffentlichte Woche
  * und darf alles ändern; ein Lehrer sieht ausschließlich seine **eigene veröffentlichte** Woche und
@@ -21,7 +21,7 @@ export const metadata = { title: "Planung" };
 export default async function PlanungPage({
   searchParams,
 }: {
-  searchParams: Promise<{ woche?: string; lehrer?: string; raum?: string; schueler?: string; neu?: string; platz?: string; regeln?: string; ok?: string; fehler?: string }>;
+  searchParams: Promise<{ woche?: string; lehrer?: string; raum?: string; schueler?: string; neu?: string; bei?: string; tag?: string; um?: string; platz?: string; regeln?: string; ok?: string; fehler?: string }>;
 }) {
   const me = await requireTeacher();
   const sp = await searchParams;
@@ -45,6 +45,15 @@ export default async function PlanungPage({
   if (filter.schueler) teile.push(`schueler=${filter.schueler}`);
   const zurueck = `/planung?${teile.join("&")}`;
 
+  // Vorgaben für einen neuen Platz (Klick auf freie Zeit): nur, was es in dieser Woche gibt
+  const tag = Number(sp.tag);
+  const um = Number(sp.um);
+  const vorgabe: Vorgabe = {
+    teacherId: uebersicht.lehrer.some((l) => l.id === Number(sp.bei)) ? Number(sp.bei) : undefined,
+    weekday: uebersicht.tage.some((t) => t.tag === tag) ? (tag as Wochentag) : undefined,
+    startMin: sp.um && Number.isInteger(um) && um >= 0 && um < 1440 ? um : undefined,
+  };
+
   const regelnRoh = regelnJson();
   const regelnGebrochen = !!regelnRoh && !pruefeRegeln(regelnRoh).ok;
 
@@ -52,19 +61,16 @@ export default async function PlanungPage({
     <>
       <PageHeader
         title="Planung"
-        subtitle={darfBearbeiten ? "Wochenplan: generieren, verschieben, sperren, veröffentlichen" : "Deine veröffentlichte Woche (nur lesen)"}
+        subtitle={darfBearbeiten ? "Wochenplan aller Lehrer" : "Deine veröffentlichte Woche"}
         back={{ href: "/mehr", label: "Mehr" }}
         info={
           <>
             Eine Woche ist entweder <b>Entwurf</b> oder <b>veröffentlicht</b>. Die Verwaltung generiert, verschiebt und veröffentlicht; ein Lehrer sieht nur seine eigene veröffentlichte Woche.
-            Ziehen verschiebt einen Platz auf einen anderen Tag, eine andere Zeit oder einen anderen Lehrer — unzulässige Ziele werden geprüft (Lehrer, Schüler, Raum) und ausgeblendet. Gesperrte Plätze bleiben bei „Neu generieren“ stehen.
+            Am Laptop verschiebt Ziehen einen Platz auf einen anderen Tag, eine andere Zeit oder einen anderen Lehrer; unzulässige Ziele werden geprüft (Lehrer, Schüler, Raum) und rot markiert. Ein Klick auf freie Zeit legt dort einen Platz an. Auf Telefon und Tablet steht ein Tag als Liste; antippen öffnet den Platz.
+            Gesperrte Plätze bleiben bei „Neu generieren“ stehen. Weiß ist die Zeit, in der ein Lehrer kann, schraffiert die übrige. Zeiten sind lokale Zeiten (Europe/Vienna). Die geplante Dauer (1–300 Minuten) ist der Vorschlag; abgerechnet wird nur die echte Einheit.
           </>
         }
       />
-      <p className="mb-4 flex items-start gap-2 text-[13px] text-ink-2">
-        <CalendarDays size={15} className="mt-0.5 shrink-0" aria-hidden />
-        Zeiten sind lokale Zeiten (Europe/Vienna). Die geplante Dauer (1–300 Minuten) ist der Vorschlag; abgerechnet wird nur die echte Einheit.
-      </p>
 
       {fremdeWoche && (
         <p className="mb-4 rounded-2xl px-4 py-3 text-[14px] text-amber" role="status" style={{ background: "var(--amber-wash)" }}>
@@ -83,7 +89,7 @@ export default async function PlanungPage({
         meldung={{ ok: sp.ok, fehler: sp.fehler }}
         regeln={leseRegeln()}
         regelnGebrochen={regelnGebrochen}
-        dialog={{ neu: sp.neu === "1", platzId: Number(sp.platz) || 0, regeln: sp.regeln === "1" }}
+        dialog={{ neu: sp.neu === "1", platzId: Number(sp.platz) || 0, regeln: sp.regeln === "1", vorgabe }}
       />
     </>
   );

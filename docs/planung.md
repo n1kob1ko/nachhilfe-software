@@ -356,9 +356,12 @@ Die Oberfläche dazu:
 | `app/(tutor)/planung/page.tsx` | die Wochenansicht der Verwaltung: Filter, Wochenwahl, Meldungen, Dialoge |
 | `app/(tutor)/planung/drucken/page.tsx` | A4-Druck der Woche |
 | `app/planung-actions.ts` | alle Server Actions der Planung (generieren, veröffentlichen, Platz anlegen/ändern/sperren/löschen, Regeln, Räume) mit Rechteprüfung |
-| `components/planung/Wochenplan.tsx`, `WochenplanGitter.tsx` | das Gitter (10-Minuten-Raster, Ziehen, gesperrte und ausgefallene Plätze) und sein Rahmen |
-| `components/planung/WochenplanPanels.tsx` | Seitenleiste (Lehrer und Schüler mit „x/y Einheiten geplant“), Schubfach der offenen Schüler, Fußzeile mit Kennzahlen |
-| `components/planung/PlatzDialog.tsx`, `RegelnDialog.tsx` | ein einzelner Platz (anlegen/ändern/sperren) und die Regeln |
+| `components/planung/Wochenplan.tsx` | der Rahmen: Wochenwahl und Werkzeuge, die Statuskarte mit den Knöpfen, die im Zustand gehen, Lehrer-Chips und Filter; ab 1024 px das Gitter mit Legende, darunter die Tagesliste |
+| `components/planung/WochenplanGitter.tsx` | das Gitter (Computer): je Lehrer ein Band mit Kennzahlen, Spalten = Tage, der Tageskopf bleibt beim Scrollen oben, schraffiert = nicht verfügbar, Stundenlinien, das 10-Minuten-Raster erst beim Ziehen. Anklicken öffnet einen Platz, ziehen verschiebt, das Schloss erscheint beim Darüberfahren; ein Klick auf freie Zeit öffnet „Platz anlegen“ mit Lehrer, Tag und Uhrzeit vorbelegt |
+| `components/planung/WochenplanTage.tsx` | die Ansicht für Telefon und Tablet (unter 1024 px): Tage zum Antippen (bleiben oben), darunter ein Tag als Liste je Lehrer mit Plätzen und Lücken; ein Tipp öffnet den Platz. Kein Ziehen, kein seitliches Scrollen |
+| `components/planung/WochenplanPanels.tsx` | die Statuskarte (`WochenStatus`: Zustand, nächster Schritt, Kennzahlen; „… Schüler noch offen“ öffnet das Schubfach) und das Schubfach der offenen Schüler |
+| `lib/planung/ansicht.ts` | was gezeigt wird: nur die Arbeitszeit (`anzeigeBereich`), Samstag/Sonntag nur mit Platz oder Verfügbarkeit (`sichtbareTage`), welcher Tag auf dem Telefon zuerst offen ist (`startTag`) und die Reihenfolge der Tagesliste (`tagesListe`) |
+| `components/planung/PlatzDialog.tsx`, `RegelnDialog.tsx` | ein einzelner Platz (anlegen mit Vorgabe aus `?bei=&tag=&um=`, ändern, sperren, löschen; Escape schließt) und die Regeln |
 | `components/planung/VerfuegbarkeitEditor.tsx`, `VerfuegbarkeitFormular.tsx`, `VerfuegbarkeitTabelle.tsx`, `WochenAbweichung.tsx` | Verfügbarkeit und Wochenabweichung (Phase 3) |
 | `components/planung/RaumForm.tsx`, `RaumPraeferenzen.tsx`, `RaumAktionen.tsx` | Räume und Raumwünsche (Phase 3, D22) |
 | `components/planung/PlanungFormular.tsx` | der Abschnitt „Planung“ einer Schülerin/eines Schülers (Phase 3) |
