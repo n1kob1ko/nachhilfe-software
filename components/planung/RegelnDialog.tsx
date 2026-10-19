@@ -35,12 +35,12 @@ const SCHALTER: { name: keyof PlanungsRegeln; label: string; hinweis: string }[]
 export function RegelnDialog({ regeln, gebrochen, schliessenHref, zurueck, woche }: { regeln: PlanungsRegeln; gebrochen: boolean; schliessenHref: string; zurueck: string; woche: string }) {
   return (
     <div className="no-print fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/20 px-4 py-8" role="dialog" aria-modal="true" aria-label="Planungsregeln">
-      <div className="w-full max-w-[720px] rounded-[20px] bg-surface px-5 py-5 shadow-[var(--shadow-card)]">
+      <div className="dialog-karte w-full max-w-[720px] rounded-[20px] bg-surface px-5 py-5 shadow-[var(--shadow-pop)]">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h2 className="text-[18px] font-semibold">Regeln des Wochenplans</h2>
             <p className="mt-1 max-w-[62ch] text-[13px] text-ink-2">
-              Diese Werte steuern den Generator. Sie gelten für alle; eine kaputte Einstellung lässt die Planung nie scheitern — dann gelten die Vorgaben.
+              Diese Werte steuern den Generator. Sie gelten für alle; eine kaputte Einstellung lässt die Planung nie scheitern, dann gelten die Vorgaben.
             </p>
             {gebrochen && (
               <p className="mt-2 rounded-xl px-3 py-2 text-[13px] text-red" role="status" style={{ background: "var(--red-wash)" }}>
@@ -48,7 +48,7 @@ export function RegelnDialog({ regeln, gebrochen, schliessenHref, zurueck, woche
               </p>
             )}
           </div>
-          <Link href={schliessenHref} className="btn btn-ghost btn-sm" aria-label="Schließen">
+          <Link href={schliessenHref} scroll={false} className="btn btn-ghost btn-sm" aria-label="Schließen">
             <X size={16} aria-hidden />
           </Link>
         </div>
@@ -110,7 +110,7 @@ export function RegelnDialog({ regeln, gebrochen, schliessenHref, zurueck, woche
             <button type="submit" className="btn btn-primary">
               Regeln speichern
             </button>
-            <Link href={schliessenHref} className="btn btn-secondary">
+            <Link href={schliessenHref} scroll={false} className="btn btn-secondary">
               Abbrechen
             </Link>
           </div>

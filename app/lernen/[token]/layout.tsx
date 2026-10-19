@@ -1,7 +1,7 @@
-import { NotebookPen } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getStudentByToken } from "@/lib/repo";
 import { Avatar } from "@/components/Art";
+import { BrandMark } from "@/components/Brand";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +14,7 @@ export default async function LearnLayout({ children, params }: { children: Reac
       <header>
         <div className="mx-auto flex max-w-[860px] items-center justify-between px-4 py-3">
           <a href={`/lernen/${token}`} className="display flex items-center gap-2.5 text-[17px] font-semibold">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-surface shadow-[var(--shadow-card)]">
-              <NotebookPen size={18} strokeWidth={1.75} className="text-accent" aria-hidden />
-            </span>
+            <BrandMark height={36} />
             Lernheft
           </a>
           <span className="flex items-center gap-2 rounded-full bg-surface py-1 pr-3 pl-1 text-[14px] font-medium shadow-[var(--shadow-card)]">

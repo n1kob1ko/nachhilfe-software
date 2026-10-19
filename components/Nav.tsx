@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpenCheck, House, Menu, NotebookPen, ReceiptText, Users } from "lucide-react";
+import { BookOpenCheck, House, Menu, ReceiptText, Users } from "lucide-react";
+import { BrandMark } from "@/components/Brand";
 
 /**
  * The whole main navigation. Everything rarely needed (skills, unit log, teachers, export) lives under "Mehr".
@@ -74,13 +75,15 @@ export function Nav() {
   );
 }
 
+/** Logo-Zeichen von MC Dream Education, darunter der Name der App und des Instituts. */
 export function Brand() {
   return (
-    <Link href="/" className="flex items-center gap-2.5 text-[18px] font-semibold tracking-[-0.01em]">
-      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-surface shadow-[var(--shadow-card)]">
-        <NotebookPen size={20} strokeWidth={2} className="text-accent-bright" aria-hidden />
+    <Link href="/" className="flex items-center gap-2.5 rounded-2xl">
+      <BrandMark height={42} />
+      <span className="leading-tight">
+        <span className="display block text-[18px] font-semibold tracking-[-0.01em]">Lernheft</span>
+        <span className="block text-[11.5px] font-medium tracking-[0.01em] text-ink-3">MC Dream Education</span>
       </span>
-      <span className="display">Lernheft</span>
     </Link>
   );
 }

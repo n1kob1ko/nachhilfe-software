@@ -35,3 +35,26 @@ export function sichtbareTage<T extends { tag: Wochentag }>(tage: T[], plaetze: 
     (t) => t.tag <= 5 || plaetze.some((p) => p.weekday === t.tag) || lehrer.some((l) => (l.verfuegbarkeit[String(t.tag) as keyof Verfuegbarkeit] ?? []).length > 0),
   );
 }
+
+/**
+ * Welcher Tag in der Tagesansicht (Telefon, Tablet) zuerst offen ist: heute, wenn die Woche läuft
+ * und der Tag sichtbar ist, sonst der erste Tag mit einem Platz, sonst der erste sichtbare Tag.
+ */
+export function startTag(tage: { tag: Wochentag }[], plaetze: { weekday: Wochentag }[], heute: Wochentag | null): Wochentag {
+  if (heute && tage.some((t) => t.tag === heute)) return heute;
+  return tage.find((t) => plaetze.some((p) => p.weekday === t.tag))?.tag ?? tage[0]?.tag ?? 1;
+}
+
+/**
+ * Ein Tag als Liste: die Plätze eines Lehrers und seine unnützen Lücken, nach Startzeit sortiert.
+ * Bei gleicher Zeit kommt der Platz vor der Lücke, zwei Plätze ordnet die Id.
+ */
+export function tagesListe<P extends { id: number; startMin: number }, L extends { start: number; end: number }>(
+  plaetze: P[],
+  luecken: L[],
+): ({ art: "platz"; platz: P; start: number } | { art: "luecke"; luecke: L; start: number })[] {
+  return [
+    ...plaetze.map((platz) => ({ art: "platz" as const, platz, start: platz.startMin })),
+    ...luecken.map((luecke) => ({ art: "luecke" as const, luecke, start: luecke.start })),
+  ].sort((a, b) => a.start - b.start || (a.art === b.art ? (a.art === "platz" && b.art === "platz" ? a.platz.id - b.platz.id : 0) : a.art === "platz" ? -1 : 1));
+}

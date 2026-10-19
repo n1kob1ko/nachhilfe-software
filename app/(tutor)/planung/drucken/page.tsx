@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/Brand";
 import { PrintButton } from "@/components/PrintButton";
 import { PageHeader, Pill } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
@@ -69,11 +70,16 @@ export default async function PlanungDruckenPage({ searchParams }: { searchParam
       </div>
 
       <section className="panel px-5 py-5 print:border-0 print:shadow-none">
-        <h2 className="text-[17px] font-semibold">Wochenplan · {uebersicht.label}</h2>
-        <p className="mb-3 text-[13px] text-ink-2">
-          {uebersicht.status === "veroeffentlicht" ? "Veröffentlichter Plan" : "Stand dieser Woche (Entwurf)"}
-          {nurLehrer ? ` · nur ${lehrer[0]?.name ?? ""}` : ""} · gedruckt aus Lernheft
-        </p>
+        <div className="mb-3 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-[17px] font-semibold">Wochenplan · {uebersicht.label}</h2>
+            <p className="text-[13px] text-ink-2">
+              {uebersicht.status === "veroeffentlicht" ? "Veröffentlichter Plan" : "Stand dieser Woche (Entwurf)"}
+              {nurLehrer ? ` · nur ${lehrer[0]?.name ?? ""}` : ""} · gedruckt aus Lernheft
+            </p>
+          </div>
+          <BrandLogo width={92} className="h-auto shrink-0" />
+        </div>
 
         {plaetze.length === 0 ? (
           <p className="text-[14px] text-ink-2">Für diese Woche ist nichts geplant.</p>
@@ -115,9 +121,12 @@ export default async function PlanungDruckenPage({ searchParams }: { searchParam
         const minuten = meine.reduce((summe, p) => summe + p.dauer, 0);
         return (
           <section key={l.id} className="wp-neue-seite panel mt-6 px-5 py-5 print:mt-0 print:border-0 print:shadow-none">
-            <h2 className="text-[16px] font-semibold">
-              {l.name} <span className="num font-normal text-ink-2">· {meine.length} Einheiten · {minuten} min</span>
-            </h2>
+            <div className="flex items-start justify-between gap-4">
+              <h2 className="text-[16px] font-semibold">
+                {l.name} <span className="num font-normal text-ink-2">· {meine.length} Einheiten · {minuten} min</span>
+              </h2>
+              <BrandLogo width={72} className="hidden h-auto shrink-0 print:block" />
+            </div>
             {meine.length === 0 ? (
               <p className="mt-2 text-[13px] text-ink-2">Keine Einheiten in dieser Woche.</p>
             ) : (
