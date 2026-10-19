@@ -435,7 +435,7 @@ export type BillingRow = {
   unit_end: string | null;
   unit_end_estimated: number | null;
 };
-/** Completed tutoring lessons only; automatic practice entries are not billed. */
+/** Completed tutoring lessons only; automatic practice entries are not billed. Newest first. */
 export function billingEntries(f: BillingFilter): BillingRow[] {
   return db()
     .prepare(
@@ -444,7 +444,7 @@ export function billingEntries(f: BillingFilter): BillingRow[] {
        FROM lessons l JOIN students s ON s.id = l.student_id LEFT JOIN teachers t ON t.id = l.teacher_id LEFT JOIN units u ON u.id = l.unit_id
        WHERE l.kind = 'stunde' AND l.status = 'abgeschlossen' AND l.starts_at >= @from AND l.starts_at < @to
          AND (@teacherId IS NULL OR l.teacher_id = @teacherId) AND (@studentId IS NULL OR l.student_id = @studentId)
-       ORDER BY l.starts_at, s.name COLLATE NOCASE`,
+       ORDER BY l.starts_at DESC, s.name COLLATE NOCASE, l.id DESC`,
     )
     .all({ from: f.from, to: f.to, teacherId: f.teacherId || null, studentId: f.studentId || null }) as BillingRow[];
 }

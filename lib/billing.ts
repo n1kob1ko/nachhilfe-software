@@ -1,5 +1,7 @@
 import { toCsv } from "./csv";
+import { db } from "./db";
 import * as repo from "./repo";
+import { getUnit } from "./units";
 
 export type BillingParams = { monat?: string; lehrer?: string; schueler?: string };
 
@@ -22,6 +24,29 @@ export function resolveMonth(p: BillingParams, now = new Date()) {
 /** Teachers without admin rights only ever see their own lessons, whatever the query string says. */
 export function scopeToViewer(p: BillingParams, viewer: { id: number; is_admin: number | boolean }): BillingParams {
   return viewer.is_admin ? p : { ...p, lehrer: String(viewer.id) };
+}
+
+/** Why an Einheit could not be deleted from the billing; the page shows the matching text. */
+export type DeleteRefusal = "weg" | "fremd" | "laeuft";
+
+/**
+ * Deletes an Einheit from the billing for good: its documentation and, if it was started in the app,
+ * the unit with its whiteboard, laptop codes and progress snapshots. Solved tasks stay in the
+ * Lernstand (their unit_id becomes NULL), and a past Wochenplan slot turns „nicht stattgefunden“.
+ * Teachers may delete only their own Einheiten, the Verwaltung any.
+ */
+export function deleteBillingEntry(lessonId: number, viewer: { id: number; is_admin: number | boolean }): { ok: true } | { ok: false; error: DeleteRefusal } {
+  const lesson = repo.getLesson(lessonId);
+  if (!lesson || lesson.kind !== "stunde" || lesson.status !== "abgeschlossen") return { ok: false, error: "weg" };
+  if (!viewer.is_admin && lesson.teacher_id !== viewer.id) return { ok: false, error: "fremd" };
+  const unit = lesson.unit_id ? getUnit(lesson.unit_id) : null;
+  if (unit?.status === "gestartet") return { ok: false, error: "laeuft" };
+  const conn = db();
+  conn.transaction(() => {
+    repo.deleteLesson(lesson.id);
+    if (unit) conn.prepare("DELETE FROM units WHERE id = ?").run(unit.id);
+  })();
+  return { ok: true };
 }
 
 /** Resolves the query string of the billing page into a month range, filters and rows. */
