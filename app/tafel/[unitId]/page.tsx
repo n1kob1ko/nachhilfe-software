@@ -6,6 +6,7 @@ import { getStudent } from "@/lib/repo";
 import { canManageUnit, getUnit } from "@/lib/units";
 import { parseView, showOnTablet } from "@/lib/live";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
+import { boardCheckAvailable } from "@/lib/whiteboard-check";
 import { worksheetsForBoard } from "@/lib/whiteboard-content";
 
 export const metadata = { title: "Whiteboard" };
@@ -28,6 +29,7 @@ export default async function TeacherBoardPage({ params, searchParams }: { param
       backHref={`/einheiten/${unit.id}`}
       initialPageId={Number((await searchParams).seite) || undefined}
       worksheets={worksheetsForBoard(student.id)}
+      kiCheck={boardCheckAvailable()}
       endUnit={unit.status === "gestartet" ? endUnitAction.bind(null, unit.id) : undefined}
     />
   );
