@@ -1,6 +1,8 @@
 node_modules
 .next
 data
+# the task banks belong to the app, the rest of data/ is local data
+!data/banks
 .git
 .claude
 public/excalidraw-assets

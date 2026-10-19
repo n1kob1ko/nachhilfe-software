@@ -140,3 +140,16 @@ test("backup, rotation and restore with test data", async () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("the Docker image carries the files the server reads at runtime: Lehrplan packages and task banks", () => {
+  const docker = fs.readFileSync(path.join(process.cwd(), "Dockerfile"), "utf8");
+  const runtime = docker.slice(docker.lastIndexOf("\nFROM "));
+  for (const dir of ["curriculum", "data/banks"]) {
+    assert.ok(runtime.includes(`COPY --from=build /app/${dir} ./${dir}`), `Dockerfile copies ${dir} into the image that runs`);
+    assert.ok(fs.readdirSync(path.join(process.cwd(), dir)).some((f) => f.endsWith(".json")), `${dir} has its files in the repo`);
+  }
+  // data/ stays out of the build (local database), only the banks come along
+  const ignore = fs.readFileSync(path.join(process.cwd(), ".dockerignore"), "utf8").split("\n").map((l) => l.trim());
+  assert.ok(ignore.includes("data") && ignore.indexOf("!data/banks") > ignore.indexOf("data"));
+  assert.ok(!ignore.some((l) => /^curriculum/.test(l)));
+});
