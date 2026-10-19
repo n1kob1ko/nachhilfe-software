@@ -216,3 +216,28 @@ export function parseNames(input: string): string[] {
   const names = input.split(/[,;\n]+/).map((s) => s.trim().split(/\s+/).filter((w) => !ADDRESS.has(w.replace(/\.$/, ""))).join(" ").slice(0, 60));
   return [...new Set(names.filter((s) => /\p{L}/u.test(s)))].slice(0, 40);
 }
+
+/**
+ * Family and school roles before a name, also a name missing from the list above („Mutter Gerlinde“,
+ * „Schwester: Ilvy“, „Klassenlehrerin Novak“). Used for the notes of a Dokumentation (Tagesbriefing,
+ * niko 2026-10-18: parents, siblings and teachers are hidden too); the Textkorrektur keeps its three rules.
+ */
+const RELATION =
+  /^(?:mutter|vater|mama|papa|mami|papi|mum|mom|dad|oma|opa|omi|opi|großmutter|großvater|bruder|schwester|halbbruder|halbschwester|stiefbruder|stiefschwester|stiefvater|stiefmutter|tante|onkel|cousin|cousine|freund|freundin|nachbar|nachbarin|(?:klassen|mathe|mathematik|deutsch|englisch|nachhilfe)?lehrer(?:in)?|klassenvorstand|klassenvorständin|direktor(?:in)?|betreuer(?:in)?|therapeut(?:in)?|logopäde|logopädin)$/iu;
+
+/** The word after a family or school role („Mutter Gerlinde“, „Vater (Ahmet)“), each once, in the order found. */
+export function namesAfterRelation(texts: string[]): string[] {
+  const found: string[] = [];
+  for (const text of texts) {
+    const words: Word[] = [...text.matchAll(WORD)].map((m) => ({ text: m[0], start: m.index!, end: m.index! + m[0].length }));
+    for (let i = 0; i + 1 < words.length; i++) {
+      if (!RELATION.test(words[i].text)) continue;
+      // only spaces, a colon or an opening bracket between role and name
+      if (!/^(?:\s+|\s*[:(]\s*)$/.test(text.slice(words[i].end, words[i + 1].start))) continue;
+      const w = base(words[i + 1].text);
+      if (!capital(w) || NOT_SURNAME.has(w) || NOUN_ENDING.test(w) || ROLE.test(w) || ADDRESS.has(w) || RELATION.test(w)) continue;
+      if (w.length >= 3 && !found.includes(w)) found.push(w);
+    }
+  }
+  return found;
+}

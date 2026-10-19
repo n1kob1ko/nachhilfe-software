@@ -114,6 +114,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         nichtStattgefunden: p.nicht_stattgefunden,
         ohnePlatz: false,
         erledigt: unit?.status === "beendet",
+        briefingHref: p.nicht_stattgefunden || unit?.status === "beendet" ? null : `/schueler/${p.student_id}/briefing?start=1&platz=${p.id}`,
         sort: p.start_min,
       };
     }),
@@ -131,9 +132,11 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         nichtStattgefunden: false,
         ohnePlatz: l.status === "geplant",
         erledigt: l.status === "abgeschlossen",
+        briefingHref: l.status === "abgeschlossen" ? null : `/schueler/${l.student_id}/briefing?start=1`,
         sort: minutenVon(l.starts_at),
       })),
   ].sort((a, b) => a.sort - b.sort);
+  const schuelerHeute = new Set(tagesplan.map((p) => p.studentId)).size;
 
   /**
    * Was der große Knopf oben anbietet: der nächste offene Platz aus dem Wochenplan, sonst die
@@ -266,7 +269,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
 
         <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-2">
           <section>
-            <SectionTitle>Heute</SectionTitle>
+            <SectionTitle>{schuelerHeute > 0 ? `Heute: ${schuelerHeute} Schüler` : "Heute"}</SectionTitle>
             {tagesplan.length === 0 ? (
               <p className="text-[15px] text-ink-2">Heute sind keine Einheiten eingeplant.</p>
             ) : (

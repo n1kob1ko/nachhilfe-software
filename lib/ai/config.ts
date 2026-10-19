@@ -89,6 +89,7 @@ export type AIFunction =
   | "textanalyse"
   | "textpruefung"
   | "lesen"
+  | "briefing"
   | "verbindungstest";
 
 export type FunctionSpec = {
@@ -144,6 +145,8 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   textpruefung: { label: "Textkorrektur gründlich: Prüfung", area: "TEXT", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus", schemaInPrompt: true },
   // Leseverständnis: one request for the reading text, one for the questions; only on the teacher's click
   lesen: { label: "Leseverständnis erstellen", area: "EXERCISE", tier: "standard", maxTokens: 24_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
+  // Tagesbriefing (lib/briefing.ts): only on the teacher's click, saved per student and day, so nothing is reused here
+  briefing: { label: "Tagesbriefing", area: "ANALYSIS", tier: "standard", maxTokens: 8_000, timeoutMs: 120_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   // KI-Selbsttest on Mehr › KI-Kosten: one tiny request before the real test requests
   verbindungstest: { label: "Verbindungstest", area: "ANALYSIS", tier: "fast", maxTokens: 50, timeoutMs: 20_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
 };

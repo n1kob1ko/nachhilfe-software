@@ -635,6 +635,21 @@ CREATE TABLE IF NOT EXISTS geplante_einheiten (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+-- Tagesbriefing (lib/briefing.ts): the KI version, one per student and Vienna day; it never changes the Lernstand
+CREATE TABLE IF NOT EXISTS briefings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  datum TEXT NOT NULL,                      -- YYYY-MM-DD, Europe/Vienna
+  platz_id INTEGER,                         -- geplante_einheiten.id of the day, if any
+  minuten INTEGER NOT NULL,                 -- planned duration the plan was made for
+  stand TEXT NOT NULL,                      -- data state at creation (lib/briefing.ts datenStand)
+  inhalt TEXT NOT NULL,                     -- JSON { inhalt: BriefingInhalt, links }
+  verworfen INTEGER NOT NULL DEFAULT 0,     -- KI suggestions dropped (exercise not in stock)
+  call_id INTEGER,                          -- ai_calls.id: tokens and cost
+  created_at TEXT NOT NULL,
+  UNIQUE (student_id, datum)
+);
 CREATE INDEX IF NOT EXISTS idx_ge_week ON geplante_einheiten(week_start, status);
 CREATE INDEX IF NOT EXISTS idx_ge_teacher ON geplante_einheiten(teacher_id, week_start);
 CREATE INDEX IF NOT EXISTS idx_ge_student ON geplante_einheiten(student_id, week_start);

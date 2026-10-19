@@ -1,0 +1,513 @@
+/**
+ * Das **Tagesbriefing** (niko, 18.10.2026): für jeden Schüler, der heute dran ist, auf einen Blick der
+ * letzte Stand, wo es hakt, ein Plan für die heutige Einheit mit Minuten und passende Übungen aus dem
+ * Bestand.
+ *
+ * Es gibt zwei Fassungen:
+ * - die **einfache**, nur aus den Daten der App (`einfachesBriefing`), immer da und kostenlos;
+ * - die **KI-Fassung** (lib/ai/briefing.ts), nur auf Klick. Sie bekommt die Daten ohne Namen, darf
+ *   Übungen nur aus der mitgeschickten Liste wählen, und ihre Minuten werden auf die geplante Dauer
+ *   gebracht. Pro Schüler und Tag wird eine KI-Fassung gespeichert (Tabelle `briefings`): ein zweiter
+ *   Klick zeigt sie wieder und kostet nichts, neu gefragt wird nur über „Neu erstellen“.
+ *
+ * Das Briefing liest nur. Es schreibt nie in Lernstand, Versuche oder Dokumentationen; seine einzige
+ * Tabelle ist `briefings`.
+ */
+import crypto from "node:crypto";
+import { WEAK } from "./analysis";
+import { BANK_LABEL } from "./banks";
+import { bankOfSkill } from "./ai/banken";
+import type { AIMeta } from "./ai/router";
+import { parseSettings } from "./builder";
+import { db } from "./db";
+import { daysUntil } from "./exams";
+import { masteryStatus } from "./mastery";
+import { listMaterials } from "./materials";
+import { heutigeEinheitenFuerSchueler } from "./planung/heute";
+import { getSchuelerPlanung } from "./planung/repo";
+import { tagAddieren, wienerDatum } from "./planung/zeit";
+import { nextSteps, RULE_LABEL, type NextStep } from "./recommend";
+import * as repo from "./repo";
+import { klassenLabel } from "./school";
+import { analyzeStudent } from "./service";
+
+// ---------- what a briefing looks like ----------
+
+export type KandidatArt = "uebung" | "ueberpruefung" | "diagnose" | "bibliothek" | "vorlage" | "material" | "druckblatt" | "zugewiesen" | "bank";
+export const KANDIDAT_LABEL: Record<KandidatArt, string> = {
+  uebung: "Übung",
+  ueberpruefung: "Überprüfung",
+  diagnose: "Diagnose",
+  bibliothek: "Bibliothek",
+  vorlage: "Vorlage",
+  material: "Material",
+  druckblatt: "Druckblatt",
+  zugewiesen: "schon zugewiesen",
+  bank: "Aufgabenbank",
+};
+
+/** Eine Übung aus dem Bestand, die zum Schüler passt. `id` ist das, was die KI zurückgeben darf. */
+export type Kandidat = {
+  id: string;
+  art: KandidatArt;
+  titel: string;
+  href: string;
+  /** Namen der Fähigkeiten, zu denen sie passt */
+  skills: string[];
+  /** z. B. „10 Aufgaben · zuletzt 6/10 richtig am 14. Okt.“ */
+  info: string;
+  score: number;
+};
+
+/** Wie eine Übung auf der Seite verlinkt wird. */
+export type UebungLink = { titel: string; href: string; art: string; info: string };
+export const uebungLinks = (ks: Kandidat[]): Record<string, UebungLink> => Object.fromEntries(ks.map((k) => [k.id, { titel: k.titel, href: k.href, art: KANDIDAT_LABEL[k.art], info: k.info }]));
+
+export type PlanSchritt = { minuten: number; titel: string; beschreibung: string; uebung: string | null };
+
+export type BriefingInhalt = {
+  letzterStand: string[];
+  woEsHakt: string[];
+  schularbeit: string | null;
+  plan: PlanSchritt[];
+  uebungen: { id: string; warum: string }[];
+  hinweis: string | null;
+};
+
+export type BriefingDaten = {
+  student: repo.Student;
+  /** heute in Europe/Vienna, YYYY-MM-DD */
+  datum: string;
+  /** die geplante Dauer der heutigen Einheit */
+  minuten: number;
+  platzId: number | null;
+  /** „14:00–15:40“, wenn es einen Platz gibt */
+  zeit: string | null;
+  analysis: NonNullable<ReturnType<typeof analyzeStudent>>;
+  schritte: NextStep[];
+  /** die letzten drei Dokumentationen von Einheiten, neueste zuerst */
+  doku: repo.Lesson[];
+  /** Lernverlauf: die letzten acht Einträge (Einheiten und selbstständig geübt), neueste zuerst */
+  verlauf: repo.Lesson[];
+  /** die nächste geplante Schularbeit in den nächsten 60 Tagen */
+  schularbeit: (repo.TestResult & { days: number }) | null;
+  /** offene Hausübungen */
+  hausuebungen: repo.Homework[];
+  kandidaten: Kandidat[];
+  /** Stand der Daten: ändert er sich, ist ein gespeichertes Briefing nicht mehr aktuell */
+  stand: string;
+};
+
+const clip = (s: string, n = 300) => {
+  // one line per entry: separate lines become "; "
+  const t = s.trim().replace(/\s*\n\s*/g, "; ").replace(/\s+/g, " ");
+  return t.length > n ? `${t.slice(0, n - 1)}…` : t;
+};
+const pctText = (m: number | null) => (m === null ? "noch nicht getestet" : `${Math.round(m * 100)} %`);
+/** „15. Okt.“ aus „2026-10-15…“ */
+export const datumKurz = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString("de-AT", { day: "numeric", month: "short", timeZone: "UTC" });
+const wann = (days: number) => (days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`);
+
+// ---------- the data ----------
+
+/**
+ * Der Stand der Daten, aus denen ein Briefing entsteht: Dokumentationen, Schularbeiten und Antworten
+ * (der Lernstand kommt aus ihnen). Nur Zählungen und Zeitpunkte, kein Inhalt.
+ */
+export function datenStand(studentId: number): string {
+  const one = (sql: string) => JSON.stringify(db().prepare(sql).get(studentId));
+  const teile = [
+    one("SELECT COUNT(*) AS n, MAX(id) AS id, MAX(COALESCE(reviewed_at, '')) AS r FROM lessons WHERE student_id = ? AND status = 'abgeschlossen'"),
+    one("SELECT COUNT(*) AS n, MAX(id) AS id, GROUP_CONCAT(status || date, ',') AS s FROM tests WHERE student_id = ?"),
+    one("SELECT COUNT(*) AS n, MAX(id) AS id FROM attempts WHERE student_id = ?"),
+  ];
+  return crypto.createHash("sha1").update(teile.join("|")).digest("hex").slice(0, 16);
+}
+
+/** Die geplante Dauer heute: der Platz im Wochenplan, sonst die von Hand geplante Einheit, sonst die Vorgabe des Schülers. */
+function heute(studentId: number, now: Date, platzId: number | null): { minuten: number; platzId: number | null; zeit: string | null } {
+  const plaetze = heutigeEinheitenFuerSchueler(studentId, now);
+  const platz = plaetze.find((p) => p.id === platzId) ?? plaetze.find((p) => p.unit_id === null) ?? plaetze[0];
+  if (platz) return { minuten: platz.geplante_dauer, platzId: platz.id, zeit: platz.zeit_label };
+  const datum = wienerDatum(now);
+  const hand = repo.lessonsBetween(`${datum}T00:00`, `${tagAddieren(datum, 1)}T00:00`).find((l) => l.student_id === studentId && l.status === "geplant");
+  if (hand) return { minuten: hand.duration_min, platzId: null, zeit: hand.starts_at.slice(11, 16) || null };
+  return { minuten: getSchuelerPlanung(studentId)?.geplante_dauer ?? 100, platzId: null, zeit: null };
+}
+
+/**
+ * Die Fähigkeiten, um die es heute gehen sollte, mit Gewicht: die Empfehlungen der App zuerst, dann die
+ * Fähigkeiten der nächsten Schularbeit, die schwächsten Fähigkeiten und was zuletzt dran war.
+ */
+function fokus(d: Pick<BriefingDaten, "schritte" | "schularbeit" | "analysis" | "doku">): Map<string, number> {
+  const w = new Map<string, number>();
+  const add = (id: string, g: number) => w.set(id, Math.max(w.get(id) ?? 0, g));
+  d.schritte.forEach((s, i) => add(s.skill.id, 10 - i));
+  if (d.schularbeit && d.schularbeit.days <= 30) for (const id of d.schularbeit.skill_ids) add(id, 9);
+  d.analysis.weaknesses.slice(0, 5).forEach((s, i) => add(s.skill.id, 6 - i));
+  for (const id of d.doku[0]?.skill_ids ?? []) add(id, 3);
+  return w;
+}
+
+/**
+ * Passende Übungen aus dem Bestand: freigegebene Übungen und Einträge der Bibliothek, Vorlagen, Material
+ * und Druckblätter, schon zugewiesene offene Übungen und die Aufgabenbanken. „Passend“ heißt: eine
+ * ihrer Fähigkeiten ist eine Fokus-Fähigkeit, deren Teilfähigkeit oder deren Oberfähigkeit.
+ */
+function kandidaten(student: repo.Student, gewicht: Map<string, number>, limit = 15): Kandidat[] {
+  if (!gewicht.size) return [];
+  const skills = new Map(repo.listSkills().map((s) => [s.id, s]));
+  const name = (id: string) => skills.get(id)?.name ?? id;
+  /** das Gewicht einer Fähigkeit: sie selbst, ihre Oberfähigkeit oder eine Teilfähigkeit im Fokus */
+  const score = (id: string) => {
+    const s = skills.get(id);
+    let g = gewicht.get(id) ?? 0;
+    if (s?.parent_id) g = Math.max(g, (gewicht.get(s.parent_id) ?? 0) - 1);
+    for (const [fid, fg] of gewicht) if (skills.get(fid)?.parent_id === id) g = Math.max(g, fg - 1);
+    return g;
+  };
+  const passend = (ids: string[]) => {
+    const treffer = ids.filter((id) => score(id) > 0);
+    return { treffer, score: Math.max(0, ...treffer.map(score)) };
+  };
+  const faecher = student.subjects;
+  const fachPasst = (f: string) => !faecher.length || !f || faecher.includes(f);
+  const out: Kandidat[] = [];
+
+  const zuweisungen = repo.listAssignments(student.id);
+  const offen = new Set(zuweisungen.filter((a) => !a.completed_at).map((a) => a.worksheet_id));
+  const zuletzt = new Map<number, (typeof zuweisungen)[number]>();
+  for (const a of zuweisungen) if (a.completed_at && !zuletzt.has(a.worksheet_id)) zuletzt.set(a.worksheet_id, a);
+
+  for (const a of zuweisungen.filter((x) => !x.completed_at)) {
+    const p = passend(a.skill_ids);
+    if (!p.treffer.length) continue;
+    out.push({
+      id: `Z${a.id}`,
+      art: "zugewiesen",
+      titel: a.title,
+      href: `/schueler/${student.id}/ergebnis/${a.id}`,
+      skills: p.treffer.map(name),
+      info: `${a.task_count} Aufgaben · zugewiesen am ${datumKurz(a.assigned_at)}, ${a.done_count} bearbeitet`,
+      score: p.score + 2,
+    });
+  }
+  for (const w of repo.listWorksheets()) {
+    if (w.status !== "freigegeben" || offen.has(w.id) || !fachPasst(w.subject)) continue;
+    const p = passend(w.skill_ids);
+    if (!p.treffer.length) continue;
+    const vorher = zuletzt.get(w.id);
+    out.push({
+      id: `U${w.id}`,
+      art: w.kind,
+      titel: w.title,
+      href: `/uebungen/${w.id}`,
+      skills: p.treffer.map(name),
+      info: [`${w.task_count} ${w.task_count === 1 ? "Aufgabe" : "Aufgaben"}`, w.difficulty, vorher ? `schon bearbeitet am ${datumKurz(vorher.completed_at!)}: ${vorher.correct_count}/${vorher.task_count} richtig` : ""].filter(Boolean).join(" · "),
+      // für diesen Schüler gemacht: zuerst; schon bearbeitet: weiter hinten
+      score: p.score + (w.student_id === student.id ? 1 : 0) - (vorher ? 2 : 0),
+    });
+  }
+  // the Aufgabenbibliothek: single saved tasks, after whole exercises
+  const bibliothek = db().prepare("SELECT id, title, subject, skill_ids, difficulty FROM worksheets WHERE kind = 'bibliothek' AND status = 'freigegeben'").all() as { id: number; title: string; subject: string; skill_ids: string; difficulty: string }[];
+  for (const b of bibliothek) {
+    if (!fachPasst(b.subject)) continue;
+    let ids: string[] = [];
+    try {
+      ids = JSON.parse(b.skill_ids || "[]") as string[];
+    } catch {
+      ids = [];
+    }
+    const p = passend(ids);
+    if (!p.treffer.length) continue;
+    out.push({ id: `B${b.id}`, art: "bibliothek", titel: b.title, href: `/uebungen/bibliothek/${b.id}`, skills: p.treffer.map(name), info: ["eine Aufgabe aus der Bibliothek", b.difficulty].filter(Boolean).join(" · "), score: p.score - 1 });
+  }
+  for (const t of repo.listTemplates()) {
+    if (!fachPasst(t.subject)) continue;
+    const p = passend(parseSettings(t.settings).skillIds ?? []);
+    if (!p.treffer.length) continue;
+    out.push({ id: `V${t.id}`, art: "vorlage", titel: t.name, href: `/uebungen/neu?schueler=${student.id}`, skills: p.treffer.map(name), info: `Vorlage · ${t.used_count}× verwendet`, score: p.score - 1 });
+  }
+  for (const m of listMaterials()) {
+    if ((m.student_id !== null && m.student_id !== student.id) || !fachPasst(m.subject)) continue;
+    const p = passend(m.skill_ids);
+    if (!p.treffer.length) continue;
+    out.push({
+      id: `M${m.id}`,
+      art: m.kind === "druckblatt" ? "druckblatt" : "material",
+      titel: m.title,
+      href: `/mehr/material/${m.id}`,
+      skills: p.treffer.map(name),
+      info: [m.kind === "druckblatt" ? "Druckblatt" : "Material", m.topic].filter(Boolean).join(" · "),
+      score: p.score + (m.student_id === student.id ? 1 : 0) - 1,
+    });
+  }
+  const banken = new Set<string>();
+  for (const [id, g] of gewicht) {
+    const bank = bankOfSkill(id);
+    if (!bank || banken.has(bank)) continue;
+    banken.add(bank);
+    out.push({ id: `A-${bank}`, art: "bank", titel: BANK_LABEL[bank], href: `/uebungen/neu?schueler=${student.id}&skill=${encodeURIComponent(id)}`, skills: [name(id)], info: "neue Aufgaben aus der Bank", score: g - 1 });
+  }
+  return out.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).slice(0, limit);
+}
+
+/** Alles, was ein Briefing braucht; null, wenn es den Schüler nicht gibt. Liest nur. */
+export function briefingDaten(studentId: number, o: { now?: Date; platzId?: number | null } = {}): BriefingDaten | null {
+  const now = o.now ?? new Date();
+  const student = repo.getStudent(studentId);
+  const analysis = student ? analyzeStudent(studentId, now.getTime()) : null;
+  if (!student || !analysis) return null;
+  const datum = wienerDatum(now);
+  const lessons = repo.listLessons(studentId).filter((l) => l.status === "abgeschlossen");
+  const doku = lessons.filter((l) => l.kind === "stunde").slice(0, 3);
+  const schularbeit =
+    repo
+      .upcomingTests(datum, studentId)
+      .map((t) => ({ ...t, days: daysUntil(t.date, datum) }))
+      .find((t) => t.days <= 60) ?? null;
+  const schritte = nextSteps(studentId, { today: datum, now: now.getTime(), limit: 5 });
+  const hausuebungen = (db().prepare("SELECT * FROM homework WHERE student_id = ? AND status = 'offen' ORDER BY due_date IS NULL, due_date").all(studentId) as repo.Homework[]).slice(0, 3);
+  const basis = { schritte, schularbeit, analysis, doku };
+  return {
+    student,
+    datum,
+    ...heute(studentId, now, o.platzId ?? null),
+    analysis,
+    schritte,
+    doku,
+    verlauf: lessons.slice(0, 8),
+    schularbeit,
+    hausuebungen,
+    kandidaten: kandidaten(student, fokus(basis)),
+    stand: datenStand(studentId),
+  };
+}
+
+// ---------- minutes ----------
+
+/**
+ * Teilt `gesamt` Minuten im Verhältnis von `werte` auf. Jeder Schritt bekommt mindestens einen Teil;
+ * gerundet wird auf 5 Minuten, wenn es aufgeht, sonst auf ganze Minuten. Die Summe ist immer `gesamt`.
+ */
+export function verteileMinuten(werte: number[], gesamt: number): number[] {
+  const n = werte.length;
+  if (!n || gesamt <= 0) return werte.map(() => 0);
+  const schritt = gesamt % 5 === 0 && gesamt >= 5 * n ? 5 : 1;
+  const teile = Math.floor(gesamt / schritt);
+  if (teile < n) return werte.map((_, i) => (i < gesamt ? 1 : 0));
+  const sicher = werte.map((w) => (Number.isFinite(w) && w > 0 ? w : 0));
+  // without a single usable value every step gets the same
+  const basis = sicher.some((w) => w > 0) ? sicher : sicher.map(() => 1);
+  const summe = basis.reduce((a, b) => a + b, 0);
+  const roh = basis.map((w) => (w / summe) * teile);
+  const ganz = roh.map((r) => Math.max(1, Math.round(r)));
+  // the rest goes to (or comes from) the largest steps
+  let rest = teile - ganz.reduce((a, b) => a + b, 0);
+  const reihenfolge = ganz.map((_, i) => i).sort((a, b) => roh[b] - roh[a]);
+  for (let k = 0; rest !== 0 && k < 10 * n; k++) {
+    const i = reihenfolge[k % n];
+    if (rest > 0) {
+      ganz[i]++;
+      rest--;
+    } else if (ganz[i] > 1) {
+      ganz[i]--;
+      rest++;
+    }
+  }
+  return ganz.map((g) => g * schritt);
+}
+
+// ---------- the simple version, from the data alone ----------
+
+/** Die beste Übung aus dem Bestand für diese Fähigkeiten, oder null. */
+function uebungFuer(d: BriefingDaten, skillNamen: string[], schon: Set<string>): string | null {
+  const k = d.kandidaten.find((c) => !schon.has(c.id) && c.skills.some((s) => skillNamen.includes(s)));
+  if (!k) return null;
+  schon.add(k.id);
+  return k.id;
+}
+
+export function schularbeitText(d: Pick<BriefingDaten, "schularbeit">): string | null {
+  const t = d.schularbeit;
+  if (!t) return null;
+  const stoff = t.topics?.length ? t.topics.join(", ") : t.topic;
+  return `${t.title || `${t.kind} ${t.subject}`} am ${datumKurz(t.date)} (${wann(t.days)})${stoff ? `, Stoff: ${stoff}` : ""}`;
+}
+
+/** Das Briefing ohne KI: nur, was in den Daten steht. */
+export function einfachesBriefing(d: BriefingDaten): BriefingInhalt {
+  const letzte = d.doku[0];
+  const letzterStand: string[] = [];
+  if (letzte) {
+    letzterStand.push(`${datumKurz(letzte.starts_at)} · ${[letzte.subject, letzte.topic].filter(Boolean).join(": ")}${letzte.understanding ? ` · Verständnis ${letzte.understanding}/5` : ""}`);
+    if (letzte.activities.trim()) letzterStand.push(`Gemacht: ${clip(letzte.activities, 200)}`);
+    if (letzte.positives.trim()) letzterStand.push(`Gut: ${clip(letzte.positives, 200)}`);
+    if (letzte.tutor_notes.trim()) letzterStand.push(`Beobachtungen: ${clip(letzte.tutor_notes, 200)}`);
+    if (letzte.next_steps.trim()) letzterStand.push(`Nächstes Mal: ${clip(letzte.next_steps, 200)}`);
+    const selbst = d.verlauf.filter((l) => l.kind === "selbststaendig" && l.starts_at > letzte.starts_at).length;
+    if (selbst) letzterStand.push(`Seitdem selbstständig geübt: ${selbst} ${selbst === 1 ? "Übung" : "Übungen"}`);
+  } else letzterStand.push("Noch keine Dokumentation einer Einheit.");
+
+  // the app's weaknesses; with little evidence yet, the skills below the weak mark
+  const schwach = d.analysis.weaknesses.length ? d.analysis.weaknesses : d.analysis.skills.filter((s) => s.mastery !== null && s.mastery < WEAK).sort((a, b) => a.mastery! - b.mastery!);
+  const woEsHakt: string[] = [
+    ...schwach.slice(0, 3).map((s) => `${s.skill.name}: ${pctText(s.mastery)} (${masteryStatus(s.mastery)})`),
+    ...d.analysis.errors.slice(0, 3).map((e) => `Fehler „${e.label}“ ${e.count}×`),
+    ...(letzte?.difficulties.trim() ? [`Zuletzt schwierig: ${clip(letzte.difficulties, 200)}`] : []),
+  ];
+  if (!woEsHakt.length) woEsHakt.push("In den Daten ist keine Schwachstelle zu sehen.");
+
+  const schon = new Set<string>();
+  const bloecke: { gewicht: number; titel: string; beschreibung: string; uebung: string | null }[] = [];
+  bloecke.push({
+    gewicht: 1,
+    titel: "Einstieg und Wiederholung",
+    beschreibung: clip(letzte?.next_steps || letzte?.review_topics || (letzte?.topic ? `Kurz wiederholen: ${letzte.topic}` : "Kurz wiederholen, was zuletzt geübt wurde."), 200),
+    uebung: null,
+  });
+  const hu = d.hausuebungen[0];
+  if (hu) bloecke.push({ gewicht: 0.5, titel: "Hausübung kontrollieren", beschreibung: clip(hu.description, 160), uebung: null });
+  const t = d.schularbeit;
+  if (t && t.days <= 14) {
+    const namen = t.skill_ids.map((id) => d.analysis.skills.find((s) => s.skill.id === id)?.skill.name ?? "").filter(Boolean);
+    bloecke.push({ gewicht: 2.5, titel: "Schularbeit vorbereiten", beschreibung: schularbeitText(d)!, uebung: uebungFuer(d, namen, schon) });
+  }
+  for (const s of d.schritte.filter((x) => !(t && t.days <= 14 && x.rule === 1)).slice(0, 2)) {
+    bloecke.push({ gewicht: 2, titel: `Üben: ${s.skill.name}`, beschreibung: `${RULE_LABEL[s.rule]}: ${s.reason}`, uebung: uebungFuer(d, [s.skill.name], schon) });
+  }
+  if (bloecke.length === 1) bloecke.push({ gewicht: 2, titel: "Üben", beschreibung: "Weiter am aktuellen Stoff.", uebung: d.kandidaten[0]?.id ?? null });
+  bloecke.push({ gewicht: 0.5, titel: "Abschluss", beschreibung: "Kurz zusammenfassen, Hausübung festlegen, dokumentieren.", uebung: null });
+  const minuten = verteileMinuten(
+    bloecke.map((b) => b.gewicht),
+    d.minuten,
+  );
+
+  return {
+    letzterStand,
+    woEsHakt,
+    schularbeit: schularbeitText(d),
+    plan: bloecke.map((b, i) => ({ minuten: minuten[i], titel: b.titel, beschreibung: b.beschreibung, uebung: b.uebung })),
+    uebungen: d.kandidaten.slice(0, 5).map((k) => ({ id: k.id, warum: `passt zu ${k.skills.join(", ")}` })),
+    hinweis: null,
+  };
+}
+
+// ---------- stored KI briefings ----------
+
+export type GespeichertesBriefing = {
+  id: number;
+  studentId: number;
+  datum: string;
+  minuten: number;
+  stand: string;
+  inhalt: BriefingInhalt;
+  /** wie viele Vorschläge der KI verworfen wurden (Übung nicht im Bestand) */
+  verworfen: number;
+  /** die Übungen, auf die es sich bezieht, wie sie beim Erstellen hießen (der Bestand kann sich seither ändern) */
+  links: Record<string, UebungLink>;
+  createdAt: string;
+  /** was der Aufruf laut Protokoll gekostet hat */
+  kosten: { usd: number; tokensEin: number; tokensAus: number; denken: number | null; modell: string; anbieter: string } | null;
+};
+
+type Zeile = { id: number; student_id: number; datum: string; minuten: number; stand: string; inhalt: string; verworfen: number; call_id: number | null; created_at: string };
+
+function alsBriefing(z: Zeile): GespeichertesBriefing {
+  const gespeichert = JSON.parse(z.inhalt) as { inhalt: BriefingInhalt; links?: Record<string, UebungLink> };
+  const call = z.call_id
+    ? (db().prepare("SELECT cost_usd, input_tokens, cache_write_tokens, cache_read_tokens, output_tokens, thinking_tokens, model, provider FROM ai_calls WHERE id = ?").get(z.call_id) as
+        | { cost_usd: number; input_tokens: number; cache_write_tokens: number; cache_read_tokens: number; output_tokens: number; thinking_tokens: number | null; model: string; provider: string }
+        | undefined)
+    : undefined;
+  return {
+    id: z.id,
+    studentId: z.student_id,
+    datum: z.datum,
+    minuten: z.minuten,
+    stand: z.stand,
+    inhalt: gespeichert.inhalt,
+    verworfen: z.verworfen,
+    links: gespeichert.links ?? {},
+    createdAt: z.created_at,
+    kosten: call
+      ? { usd: call.cost_usd, tokensEin: call.input_tokens + call.cache_write_tokens + call.cache_read_tokens, tokensAus: call.output_tokens, denken: call.thinking_tokens, modell: call.model, anbieter: call.provider }
+      : null,
+  };
+}
+
+/** Das gespeicherte KI-Briefing dieses Schülers für diesen Tag, oder null. */
+export function gespeichertesBriefing(studentId: number, datum: string): GespeichertesBriefing | null {
+  const z = db().prepare("SELECT * FROM briefings WHERE student_id = ? AND datum = ?").get(studentId, datum) as Zeile | undefined;
+  return z ? alsBriefing(z) : null;
+}
+
+function speichern(d: BriefingDaten, teacherId: number | null, inhalt: BriefingInhalt, verworfen: number, callId: number | null, now: Date): GespeichertesBriefing {
+  // one per student and day: a new one replaces the old
+  db()
+    .prepare(
+      `INSERT INTO briefings (student_id, teacher_id, datum, platz_id, minuten, stand, inhalt, verworfen, call_id, created_at)
+       VALUES (@student_id, @teacher_id, @datum, @platz_id, @minuten, @stand, @inhalt, @verworfen, @call_id, @created_at)
+       ON CONFLICT(student_id, datum) DO UPDATE SET teacher_id = excluded.teacher_id, platz_id = excluded.platz_id, minuten = excluded.minuten, stand = excluded.stand,
+         inhalt = excluded.inhalt, verworfen = excluded.verworfen, call_id = excluded.call_id, created_at = excluded.created_at`,
+    )
+    .run({
+      student_id: d.student.id,
+      teacher_id: teacherId,
+      datum: d.datum,
+      platz_id: d.platzId,
+      minuten: d.minuten,
+      stand: d.stand,
+      inhalt: JSON.stringify({ inhalt, links: uebungLinks(d.kandidaten.filter((k) => inhalt.uebungen.some((u) => u.id === k.id) || inhalt.plan.some((p) => p.uebung === k.id))) }),
+      verworfen,
+      call_id: callId,
+      created_at: now.toISOString(),
+    });
+  return gespeichertesBriefing(d.student.id, d.datum)!;
+}
+
+// ---------- asking the KI ----------
+
+export type BriefingErgebnis = { ok: true; briefing: GespeichertesBriefing; neu: boolean } | { ok: false; error: string };
+
+/** One request per student and day at a time: a double click waits for the running one instead of paying twice. */
+const laufend = ((globalThis as unknown as { __briefingLaufend?: Map<string, Promise<BriefingErgebnis>> }).__briefingLaufend ??= new Map());
+
+/**
+ * Das KI-Briefing: das gespeicherte von heute, wenn es eins gibt (kostet nichts), sonst eine neue
+ * Anfrage. `neu` fragt auch dann neu („Neu erstellen“). Läuft für diesen Schüler schon eine Anfrage,
+ * wird auf sie gewartet. Ohne KI, mit leerem Budget oder bei einem Fehler kommt eine Meldung zurück;
+ * die einfache Fassung bleibt dann stehen.
+ */
+export async function erstelleBriefing(studentId: number, teacherId: number | null, o: { neu?: boolean; platzId?: number | null; now?: Date } = {}): Promise<BriefingErgebnis> {
+  const now = o.now ?? new Date();
+  const datum = wienerDatum(now);
+  const key = `${studentId}:${datum}`;
+  const running = laufend.get(key);
+  if (running) return running;
+  if (!o.neu) {
+    const da = gespeichertesBriefing(studentId, datum);
+    if (da) return { ok: true, briefing: da, neu: false };
+  }
+  const job = (async (): Promise<BriefingErgebnis> => {
+    try {
+      const d = briefingDaten(studentId, { now, platzId: o.platzId });
+      if (!d) return { ok: false, error: "Schüler nicht gefunden." };
+      const { kiBriefing } = await import("./ai/briefing");
+      const meta: AIMeta = { teacherId, studentId, trigger: "briefing" };
+      const out = await kiBriefing(d, meta);
+      if (!out.ok) return { ok: false, error: out.error };
+      return { ok: true, briefing: speichern(d, teacherId, out.inhalt, out.verworfen, out.callId, now), neu: true };
+    } catch (e) {
+      console.error("[Briefing]", e instanceof Error ? e.message : e);
+      return { ok: false, error: "Das Briefing konnte nicht erstellt werden." };
+    }
+  })().finally(() => laufend.delete(key));
+  laufend.set(key, job);
+  return job;
+}
+
+/** Für die Anzeige: die Kurzbeschreibung des Schülers ohne Namen (Schulart, Klasse, Schulstufe, Fächer). */
+export function schuelerZeile(s: repo.Student): string {
+  return [klassenLabel(s.school_type, s.klasse), s.grade ? `Schulstufe ${s.grade}` : "", s.subjects.join(", ")].filter(Boolean).join(" · ");
+}
