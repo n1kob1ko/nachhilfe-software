@@ -10,7 +10,7 @@
  * wird rot ausgeblendet und nimmt nichts an; ein zulässiges zeigt den Platz als Umriss.
  */
 import { Fragment } from "react";
-import { Lock, Pencil } from "lucide-react";
+import { Lock, Pencil, Users } from "lucide-react";
 import { deleteSlotAction, lockSlotAction } from "@/app/planung-actions";
 import { subjectTone } from "@/components/Calendar";
 import type { UebersichtLehrer, UebersichtLuecke, UebersichtPlatz, UebersichtSchueler, UebersichtTage } from "@/lib/planung/uebersicht";
@@ -45,6 +45,39 @@ export function anzeigeBereich(plaetze: { startMin: number; dauer: number }[], l
   von = Math.max(0, Math.floor(von / 60) * 60);
   bis = Math.min(1440, Math.ceil(bis / 60) * 60);
   return { von, bis: Math.max(bis, von + 240) };
+}
+
+/**
+ * Zwei Schüler gleichzeitig (D26): Plätze einer Zelle, die sich überschneiden, stehen nebeneinander,
+ * jeder in seiner Spur. `spuren` ist die Zahl der Spuren seiner Gruppe (1 = volle Breite).
+ */
+export function spurenFuer(plaetze: { id: number; startMin: number; dauer: number }[]): Map<number, { spur: number; spuren: number }> {
+  const out = new Map<number, { spur: number; spuren: number }>();
+  const sortiert = [...plaetze].sort((a, b) => a.startMin - b.startMin || a.id - b.id);
+  let gruppe: typeof sortiert = [];
+  let gruppenEnde = -1;
+  const abschliessen = () => {
+    const enden: number[] = [];
+    const spur = new Map<number, number>();
+    for (const p of gruppe) {
+      let i = enden.findIndex((ende) => ende <= p.startMin);
+      if (i === -1) i = enden.push(0) - 1;
+      enden[i] = p.startMin + p.dauer;
+      spur.set(p.id, i);
+    }
+    for (const p of gruppe) out.set(p.id, { spur: spur.get(p.id) ?? 0, spuren: enden.length });
+  };
+  for (const p of sortiert) {
+    if (gruppe.length && p.startMin >= gruppenEnde) {
+      abschliessen();
+      gruppe = [];
+      gruppenEnde = -1;
+    }
+    gruppe.push(p);
+    gruppenEnde = Math.max(gruppenEnde, p.startMin + p.dauer);
+  }
+  if (gruppe.length) abschliessen();
+  return out;
 }
 
 /** Die Startzeit unter dem Zeiger, auf das 10-Minuten-Raster gezogen (`auf10`, D19). */
@@ -133,6 +166,7 @@ export function WochenplanGitter(props: Props) {
 
               {tage.map((t) => {
                 const meine = plaetze.filter((p) => p.teacherId === l.id && p.weekday === t.tag);
+                const spurNach = spurenFuer(meine);
                 const meineLuecken = luecken.filter((x) => x.teacherId === l.id && x.weekday === t.tag);
                 const spannen = l.verfuegbarkeit[String(t.tag) as keyof Verfuegbarkeit] ?? [];
                 const zielHier = ziel && ziel.teacherId === l.id && ziel.weekday === t.tag ? ziel : null;
@@ -188,12 +222,14 @@ export function WochenplanGitter(props: Props) {
                       </div>
                     ))}
 
-                    {/* Geplante Einheiten */}
+                    {/* Geplante Einheiten; zwei Schüler gleichzeitig (D26) stehen nebeneinander */}
                     <div className={ungueltig ? "opacity-50" : ""}>
                       {meine.map((p) => {
                         const tone = subjectTone(schueler.find((s) => s.id === p.studentId)?.subjects[0]);
                         const blockHoehe = Math.max(16, p.dauer * MINUTEN_HOEHE);
                         const kompakt = blockHoehe < 46;
+                        const { spur, spuren } = spurNach.get(p.id) ?? { spur: 0, spuren: 1 };
+                        const zugleich = p.zugleichMit.length ? ` · gleichzeitig mit ${p.zugleichMit.join(", ")}` : "";
                         return (
                           <div
                             key={p.id}
@@ -208,26 +244,50 @@ export function WochenplanGitter(props: Props) {
                               onZiehen(p);
                             }}
                             onDragEnd={onZiehenEnde}
-                            className={`group absolute left-1 right-1 z-10 overflow-hidden rounded-[10px] border px-1.5 py-0.5 text-left text-[11px] leading-tight ${interaktiv ? "cursor-grab" : ""} ${p.locked ? "ring-1 ring-accent" : ""} ${p.status === "entwurf" ? "border-dashed" : "border-solid"} ${p.nichtStattgefunden ? "opacity-60" : ""}`}
-                            style={{ top: (p.startMin - bereich.von) * MINUTEN_HOEHE, height: blockHoehe, background: tone.soft, borderColor: tone.bg, color: tone.fg }}
-                            title={`${p.studentName} · ${minutenLabel(p.startMin)}–${minutenLabel(p.startMin + p.dauer)}${p.roomName ? ` · ${p.roomName}` : ""}${p.locked ? " · gesperrt" : ""}${p.nichtStattgefunden ? " · nicht stattgefunden" : ""}`}
+                            className={`group absolute z-10 overflow-hidden rounded-[10px] border px-1.5 py-0.5 text-left text-[11px] leading-tight ${interaktiv ? "cursor-grab" : ""} ${p.locked ? "ring-1 ring-accent" : ""} ${p.status === "entwurf" ? "border-dashed" : "border-solid"} ${p.nichtStattgefunden ? "opacity-60" : ""}`}
+                            style={{
+                              top: (p.startMin - bereich.von) * MINUTEN_HOEHE,
+                              height: blockHoehe,
+                              left: `calc(${(spur / spuren) * 100}% + ${spur ? 2 : 4}px)`,
+                              width: `calc(${100 / spuren}% - ${spuren > 1 ? 6 : 8}px)`,
+                              background: tone.soft,
+                              borderColor: tone.bg,
+                              color: tone.fg,
+                            }}
+                            title={`${p.studentName} · ${minutenLabel(p.startMin)}–${minutenLabel(p.startMin + p.dauer)}${p.roomName ? ` · ${p.roomName}` : ""}${p.locked ? " · gesperrt" : ""}${zugleich}${p.nichtStattgefunden ? " · nicht stattgefunden" : ""}`}
                           >
-                            <div className="flex items-center gap-1">
-                              <span className="min-w-0 truncate font-semibold">{p.studentName}</span>
-                              {p.locked && (
+                            {/* in a half-width lane the name keeps the first line, the marks move below it */}
+                            <div className={spuren > 1 ? "flex flex-col items-start gap-0.5" : "flex items-center gap-1"}>
+                              <span className="max-w-full min-w-0 truncate font-semibold">{p.studentName}</span>
+                              {(p.locked || zugleich) && (
                                 <span
-                                  className="ml-auto flex shrink-0 items-center gap-0.5 rounded-full px-1 text-[9px] font-semibold"
+                                  className={`flex shrink-0 items-center gap-0.5 rounded-full px-1 text-[9px] font-semibold ${spuren > 1 ? "" : "ml-auto"}`}
                                   style={{ background: "var(--surface)" }}
-                                  title="Gesperrt: bleibt bei „Neu generieren“ stehen"
                                 >
-                                  <Lock size={9} strokeWidth={2.6} aria-hidden /> gesperrt
+                                  {zugleich && (
+                                    <span title={`Gleichzeitig mit ${p.zugleichMit.join(", ")}`} className="flex items-center">
+                                      <Users size={9} strokeWidth={2.6} aria-label="gleichzeitig" />
+                                    </span>
+                                  )}
+                                  {p.locked && (
+                                    <span title="Gesperrt: bleibt bei „Neu generieren“ stehen" className="flex items-center gap-0.5">
+                                      <Lock size={9} strokeWidth={2.6} aria-hidden />
+                                      {spuren === 1 && "gesperrt"}
+                                    </span>
+                                  )}
                                 </span>
                               )}
                             </div>
                             {!kompakt && (
                               <div className="num truncate">
-                                {minutenLabel(p.startMin)}–{minutenLabel(p.startMin + p.dauer)}
-                                {p.roomName ? ` · ${p.roomName}` : ""}
+                                {spuren > 1 ? (
+                                  minutenLabel(p.startMin)
+                                ) : (
+                                  <>
+                                    {minutenLabel(p.startMin)}–{minutenLabel(p.startMin + p.dauer)}
+                                    {p.roomName ? ` · ${p.roomName}` : ""}
+                                  </>
+                                )}
                               </div>
                             )}
                             {p.nichtStattgefunden && !kompakt && <div className="truncate font-semibold">nicht stattgefunden</div>}

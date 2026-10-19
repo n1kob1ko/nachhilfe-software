@@ -8,6 +8,9 @@
  *
  * Die geplante Dauer (D3) wird beim Schülerwechsel auf dessen eingestellte Dauer gesetzt; gefüllt
  * wird sie vom Server (`students.geplante_dauer`).
+ *
+ * Der Haken „Gleichzeitig mit einem anderen Schüler“ (D26) erlaubt dem Lehrer zu dieser Zeit einen
+ * zweiten Schüler; geprüft wird das nur im Server (`lib/planung/repo.ts`).
  */
 import { useState } from "react";
 import Link from "next/link";
@@ -133,6 +136,19 @@ export function PlatzDialog({
           <p className="num text-[12px] text-ink-3">
             Geplant: {start}–{minutenLabel(startMinuten + dauer)} ({dauer} min)
           </p>
+
+          <label className="flex min-h-[44px] items-start gap-2 text-[14px]">
+            <input type="checkbox" name="gleichzeitig" defaultChecked={platz?.gleichzeitig ?? false} className="mt-[3px] h-4 w-4 shrink-0 accent-[var(--accent)]" />
+            <span>
+              Gleichzeitig mit einem anderen Schüler
+              <span className="block text-[12.5px] text-ink-2">
+                {platz?.zugleichMit.length
+                  ? `Zur selben Zeit beim selben Lehrer: ${platz.zugleichMit.join(", ")}.`
+                  : "Der Lehrer darf zu dieser Zeit einen zweiten Schüler haben, auch im selben Raum. Mehr als zwei gehen nicht."}{" "}
+                Beide Plätze werden gesperrt.
+              </span>
+            </span>
+          </label>
 
           <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
             <div className="flex gap-2">

@@ -14,7 +14,8 @@
  *    geplante Dauer ist je Schüler verschieden (D3), das kann die Datenbank nicht ausdrücken.
  *    Jeder Schreibweg (anlegen, ändern, Entwurf speichern, Vorwoche übernehmen) geht durch diese
  *    eine Prüfung und wird mit einem deutschen Grund abgelehnt, wenn Lehrer, Schüler oder Raum
- *    schon belegt sind.
+ *    schon belegt sind. Die einzige Ausnahme: ein Platz mit Haken **gleichzeitig** (D26) — dann
+ *    darf ein Lehrer zwei Schüler zugleich haben, auch im selben Raum, aber nie drei.
  */
 import { db, json } from "../db";
 import {
@@ -257,11 +258,14 @@ export type GeplanteEinheitZeile = {
   locked: number;
   /** Die Einheit, die sich mit diesem Platz verknüpft hat (D17); null = noch keine. */
   unit_id: number | null;
+  /** 1 = darf sich mit einem anderen Platz desselben Lehrers überschneiden (zwei Schüler gleichzeitig, D26). */
+  gleichzeitig: number;
   created_at: string;
   updated_at: string;
 };
 
-const GE_SPALTEN = "id, week_start, weekday, start_min, geplante_dauer, teacher_id, student_id, room_id, status, locked, unit_id, created_at, updated_at";
+const GE_SPALTEN =
+  "id, week_start, weekday, start_min, geplante_dauer, teacher_id, student_id, room_id, status, locked, unit_id, gleichzeitig, created_at, updated_at";
 
 /** Die Felder, die eine Überlappung ausmachen. */
 type PlatzKern = {
@@ -272,6 +276,8 @@ type PlatzKern = {
   teacher_id: number;
   student_id: number;
   room_id: number | null;
+  /** 1 = Haken „gleichzeitig“ (D26); fehlt bei Plätzen aus dem Generator, der nie doppelt plant. */
+  gleichzeitig?: number;
 };
 
 /** Was ein Schreibweg entgegennimmt; `start_min` wird auf das 10-Minuten-Raster gezogen (D19). */
@@ -285,11 +291,13 @@ export type PlatzEingabe = {
   room_id?: number | null;
   locked?: boolean | number;
   status?: PlatzStatus;
+  /** Haken „gleichzeitig“ (D26): der Lehrer darf zu dieser Zeit noch einen zweiten Schüler haben. */
+  gleichzeitig?: boolean | number;
 };
 
 export type KonfliktArt = "lehrer" | "schueler" | "raum";
 export type PruefErgebnis = { ok: true } | { ok: false; fehler: string; art?: KonfliktArt };
-export type PlatzErgebnis = { ok: true; id: number } | { ok: false; fehler: string };
+export type PlatzErgebnis = { ok: true; id: number; hinweis?: string } | { ok: false; fehler: string };
 export type VorgangsErgebnis = { ok: true; hinweis?: string } | { ok: false; fehler: string };
 
 function lehrerName(id: number): string {
@@ -302,15 +310,24 @@ function raumName(id: number): string {
   return (db().prepare("SELECT name FROM rooms WHERE id = ?").get(id) as { name: string } | undefined)?.name ?? `Raum #${id}`;
 }
 
+/** Überschneiden sich zwei Zeiträume eines Tages? (Ende ausgeschlossen: 08:00–09:40 und 09:40–… nicht.) */
+function ueberlappt(a: { start: number; end: number }, b: { start: number; end: number }): boolean {
+  return a.start < b.end && a.end > b.start;
+}
+
 /**
  * **Die** Prüfung jedes Schreibwegs: Eingaben prüfen, Startzeit auf 10 Minuten rasten und
  * Überlappungen von Lehrer, Schüler und Raum gegen `gegen` finden. Gibt es keine, kommt der
  * normalisierte Platz zurück, sonst ein deutscher Grund und die Art des Konflikts.
+ *
+ * Zwei Schüler gleichzeitig (D26): Überschneiden sich zwei Plätze **desselben Lehrers**, ist das
+ * erlaubt, wenn einer der beiden den Haken `gleichzeitig` trägt. Sie dürfen dann auch im selben
+ * Raum sein. Drei zugleich gehen nie, derselbe Schüler zweimal auch nicht.
  */
 function pruefeUndNormiere(
   eingabe: PlatzEingabe,
   gegen: PlatzKern[],
-): { ok: true; platz: PlatzKern & { status: PlatzStatus; locked: number } } | { ok: false; fehler: string; art?: KonfliktArt } {
+): { ok: true; platz: PlatzKern & { status: PlatzStatus; locked: number; gleichzeitig: number } } | { ok: false; fehler: string; art?: KonfliktArt } {
   if (!istDatum(eingabe.week_start)) return { ok: false, fehler: "Bitte eine Woche wählen." };
   if (!istWochentag(Number(eingabe.weekday))) return { ok: false, fehler: "Bitte einen Wochentag wählen." };
   const start = auf10(Number(eingabe.start_min));
@@ -329,20 +346,90 @@ function pruefeUndNormiere(
   const woche = wochenstartVon(eingabe.week_start);
   const tag = Number(eingabe.weekday) as Wochentag;
   const ende = start + dauer;
+  const gleichzeitig = eingabe.gleichzeitig ? 1 : 0;
+  /** die Plätze desselben Lehrers, die sich erlaubt mit diesem überschneiden (D26) */
+  const zugleich: { start: number; end: number }[] = [];
   for (const andere of gegen) {
     if (andere.week_start !== woche || andere.weekday !== tag) continue;
     const anderesEnde = andere.start_min + andere.geplante_dauer;
-    if (!(start < anderesEnde && ende > andere.start_min)) continue;
+    if (!ueberlappt({ start, end: ende }, { start: andere.start_min, end: anderesEnde })) continue;
     const zeit = `${WOCHENTAG_LANG[tag]} ${minutenLabel(andere.start_min)}–${minutenLabel(anderesEnde)}`;
-    if (andere.teacher_id === teacherId) return { ok: false, art: "lehrer", fehler: `Lehrer ${lehrerName(teacherId)} ist am ${zeit} schon verplant.` };
+    if (andere.teacher_id === teacherId) {
+      if (!gleichzeitig && !andere.gleichzeitig)
+        return {
+          ok: false,
+          art: "lehrer",
+          fehler: `Lehrer ${lehrerName(teacherId)} ist am ${zeit} schon verplant. Sollen beide Schüler zugleich kommen, setz beim Platz den Haken „Gleichzeitig mit einem anderen Schüler“.`,
+        };
+      if (andere.student_id === studentId) return { ok: false, art: "schueler", fehler: `${schuelerName(studentId)} hat am ${zeit} schon eine geplante Einheit.` };
+      // derselbe Lehrer: dieselben zwei Schüler dürfen auch im selben Raum sitzen
+      zugleich.push({ start: andere.start_min, end: anderesEnde });
+      continue;
+    }
     if (andere.student_id === studentId) return { ok: false, art: "schueler", fehler: `${schuelerName(studentId)} hat am ${zeit} schon eine geplante Einheit.` };
     if (roomId !== null && andere.room_id === roomId) return { ok: false, art: "raum", fehler: `Raum ${raumName(roomId)} ist am ${zeit} schon belegt.` };
   }
+  // höchstens zwei zugleich: überschneiden sich zwei der anderen Plätze auch untereinander, innerhalb dieses Platzes, wären es drei
+  for (let i = 0; i < zugleich.length; i++)
+    for (let j = i + 1; j < zugleich.length; j++) {
+      const von = Math.max(start, zugleich[i].start, zugleich[j].start);
+      const bis = Math.min(ende, zugleich[i].end, zugleich[j].end);
+      if (von < bis)
+        return {
+          ok: false,
+          art: "lehrer",
+          fehler: `Lehrer ${lehrerName(teacherId)} hat am ${WOCHENTAG_LANG[tag]} ${minutenLabel(von)}–${minutenLabel(bis)} schon zwei Schüler gleichzeitig. Mehr als zwei gehen nicht.`,
+        };
+    }
 
   return {
     ok: true,
-    platz: { week_start: woche, weekday: tag, start_min: start, geplante_dauer: dauer, teacher_id: teacherId, student_id: studentId, room_id: roomId, status: eingabe.status ?? "entwurf", locked: eingabe.locked ? 1 : 0 },
+    platz: {
+      week_start: woche,
+      weekday: tag,
+      start_min: start,
+      geplante_dauer: dauer,
+      teacher_id: teacherId,
+      student_id: studentId,
+      room_id: roomId,
+      status: eingabe.status ?? "entwurf",
+      locked: eingabe.locked ? 1 : 0,
+      gleichzeitig,
+    },
   };
+}
+
+/**
+ * Die Plätze desselben Lehrers, die sich mit `platz` zeitlich überschneiden — das geht nur mit dem
+ * Haken „gleichzeitig“ (D26). Der Platz selbst (dasselbe Objekt oder dieselbe Id) zählt nicht mit.
+ */
+export function zugleichMit<T extends PlatzKern & { id?: number | null }>(platz: T, andere: T[]): T[] {
+  const ende = platz.start_min + platz.geplante_dauer;
+  return andere.filter(
+    (z) =>
+      z !== platz &&
+      (platz.id == null || z.id !== platz.id) &&
+      z.teacher_id === platz.teacher_id &&
+      z.week_start === platz.week_start &&
+      z.weekday === platz.weekday &&
+      ueberlappt({ start: platz.start_min, end: ende }, { start: z.start_min, end: z.start_min + z.geplante_dauer }),
+  );
+}
+
+/**
+ * Nach dem Schreiben: hat der Lehrer zu dieser Zeit zwei Schüler (D26), werden beide Plätze gesperrt,
+ * damit „Neu generieren“ das Paar stehen lässt — der Generator plant selbst nie zwei zugleich.
+ */
+function sperreZugleich(id: number): string | undefined {
+  const platz = getGeplanteEinheit(id);
+  if (!platz) return undefined;
+  const partner = zugleichMit(platz, einheitenFuerWoche(platz.week_start, { status: "alle" }));
+  if (!partner.length) return undefined;
+  const sperren = db().prepare("UPDATE geplante_einheiten SET locked = 1, updated_at = datetime('now') WHERE id = ? AND locked = 0");
+  for (const z of [platz, ...partner]) sperren.run(z.id);
+  const namen = partner.map((z) => schuelerName(z.student_id)).join(" und ");
+  // nacheinander versetzt kann ein Platz zwei Partner haben (A mit B, danach B mit C)
+  return `Gleichzeitig mit ${namen}. ${partner.length === 1 ? "Beide" : "Alle diese"} Plätze sind gesperrt, damit „Neu generieren“ sie stehen lässt.`;
 }
 
 /**
@@ -474,8 +561,8 @@ export function nichtStattgefunden(weekStart: string, now: Date = new Date()): G
 
 function insertPlatz() {
   return db().prepare(
-    `INSERT INTO geplante_einheiten (week_start, weekday, start_min, geplante_dauer, teacher_id, student_id, room_id, status, locked, created_at, updated_at)
-     VALUES (@week_start, @weekday, @start_min, @geplante_dauer, @teacher_id, @student_id, @room_id, @status, @locked, datetime('now'), datetime('now'))`,
+    `INSERT INTO geplante_einheiten (week_start, weekday, start_min, geplante_dauer, teacher_id, student_id, room_id, status, locked, gleichzeitig, created_at, updated_at)
+     VALUES (@week_start, @weekday, @start_min, @geplante_dauer, @teacher_id, @student_id, @room_id, @status, @locked, @gleichzeitig, datetime('now'), datetime('now'))`,
   );
 }
 
@@ -490,6 +577,7 @@ function platzWerte(p: PlatzKern & { status: PlatzStatus; locked: number }) {
     room_id: p.room_id,
     status: p.status,
     locked: p.locked,
+    gleichzeitig: p.gleichzeitig ? 1 : 0,
   };
 }
 
@@ -505,8 +593,8 @@ export function legePlatzAn(eingabe: PlatzEingabe): PlatzErgebnis {
   const gegen = woche ? einheitenFuerWoche(woche, { status: "alle" }) : [];
   const geprüft = pruefeUndNormiere({ ...eingabe, week_start: woche, status }, gegen);
   if (!geprüft.ok) return { ok: false, fehler: geprüft.fehler };
-  const res = insertPlatz().run(platzWerte(geprüft.platz));
-  return { ok: true, id: Number(res.lastInsertRowid) };
+  const id = Number(insertPlatz().run(platzWerte(geprüft.platz)).lastInsertRowid);
+  return { ok: true, id, hinweis: sperreZugleich(id) };
 }
 
 /** Einen Platz verschieben oder umbesetzen; prüft dieselbe Überlappung, nur ohne sich selbst. */
@@ -523,6 +611,7 @@ export function aenderePlatz(id: number, aenderung: Partial<PlatzEingabe>): Vorg
     room_id: aenderung.room_id === undefined ? vorhanden.room_id : aenderung.room_id,
     locked: aenderung.locked ?? vorhanden.locked === 1,
     status: aenderung.status ?? vorhanden.status,
+    gleichzeitig: aenderung.gleichzeitig ?? vorhanden.gleichzeitig === 1,
   };
   const woche = istDatum(zusammen.week_start) ? wochenstartVon(zusammen.week_start) : "";
   const gegen = (woche ? einheitenFuerWoche(woche, { status: "alle" }) : []).filter((z) => z.id !== id);
@@ -532,10 +621,12 @@ export function aenderePlatz(id: number, aenderung: Partial<PlatzEingabe>): Vorg
   db()
     .prepare(
       `UPDATE geplante_einheiten SET week_start = @week_start, weekday = @weekday, start_min = @start_min, geplante_dauer = @geplante_dauer,
-       teacher_id = @teacher_id, student_id = @student_id, room_id = @room_id, status = @status, locked = @locked, updated_at = datetime('now') WHERE id = @id`,
+       teacher_id = @teacher_id, student_id = @student_id, room_id = @room_id, status = @status, locked = @locked, gleichzeitig = @gleichzeitig,
+       updated_at = datetime('now') WHERE id = @id`,
     )
     .run({ ...platzWerte(p), id });
-  return { ok: true, hinweis: "Platz gespeichert." };
+  const zugleich = sperreZugleich(id);
+  return { ok: true, hinweis: zugleich ? `Platz gespeichert. ${zugleich}` : "Platz gespeichert." };
 }
 
 /** Sperren oder entsperren (Glossar: **gesperrt**). Gesperrte Plätze lässt „Neu generieren“ stehen. */
@@ -637,7 +728,8 @@ export function loescheWoche(weekStart: string): { anzahl: number } {
  * „Vorwoche als Entwurf übernehmen“ (D24, **keine** automatische Wiederholung): die Plätze der
  * Vorwoche werden zu neuen Entwürfen ohne Verknüpfung und **ohne** Sperre — sie sind ein Vorschlag,
  * den „Neu generieren“ noch umbauen darf. Gibt es in der Vorwoche einen veröffentlichten Plan, wird
- * der übernommen, sonst deren Entwurf. Die Zielwoche muss leer sein.
+ * der übernommen, sonst deren Entwurf. Die Zielwoche muss leer sein. Ausnahme: zwei Schüler
+ * gleichzeitig (D26) kommen samt Haken und **gesperrt** mit, sonst löste „Neu generieren“ das Paar auf.
  */
 export function uebernimmVorwoche(weekStart: string): { ok: true; anzahl: number } | { ok: false; fehler: string } {
   if (!istDatum(weekStart)) return { ok: false, fehler: "Bitte eine Woche wählen." };
@@ -652,7 +744,18 @@ export function uebernimmVorwoche(weekStart: string): { ok: true; anzahl: number
   const gegen: PlatzKern[] = [];
   for (const z of quelle) {
     const geprüft = pruefeUndNormiere(
-      { week_start: woche, weekday: z.weekday, start_min: z.start_min, geplante_dauer: z.geplante_dauer, teacher_id: z.teacher_id, student_id: z.student_id, room_id: z.room_id, locked: false, status: "entwurf" },
+      {
+        week_start: woche,
+        weekday: z.weekday,
+        start_min: z.start_min,
+        geplante_dauer: z.geplante_dauer,
+        teacher_id: z.teacher_id,
+        student_id: z.student_id,
+        room_id: z.room_id,
+        locked: false,
+        status: "entwurf",
+        gleichzeitig: z.gleichzeitig === 1,
+      },
       gegen,
     );
     if (!geprüft.ok) return { ok: false, fehler: geprüft.fehler };
@@ -661,7 +764,7 @@ export function uebernimmVorwoche(weekStart: string): { ok: true; anzahl: number
 
   const schreiben = db().transaction(() => {
     const insert = insertPlatz();
-    for (const p of gegen) insert.run(platzWerte({ ...p, status: "entwurf", locked: 0 }));
+    for (const p of gegen) insert.run(platzWerte({ ...p, status: "entwurf", locked: zugleichMit(p, gegen).length ? 1 : 0 }));
   });
   schreiben();
   return { ok: true, anzahl: gegen.length };

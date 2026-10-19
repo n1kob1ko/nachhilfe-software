@@ -71,6 +71,12 @@ nicht verschoben werden. „Neu generieren“ lässt gesperrte Plätze stehen, s
 wäre die Handarbeit nach jedem Lauf weg.
 _Avoid_: fixiert, gepinnt, blockiert, locked
 
+**gleichzeitig**:
+Haken an einer **geplanten Einheit**: der Lehrer darf zu dieser Zeit einen
+zweiten Schüler haben, auch im selben Raum, aber nie einen dritten. Beide Plätze
+werden dabei **gesperrt**. Die Lehrerzeit zählt dann einmal, nicht zweimal.
+_Avoid_: Gruppe, Doppelstunde, parallel
+
 **Raum**:
 Wo eine **geplante Einheit** stattfindet: Gebäude, Name, und ob vor Ort oder
 online. Ein Raum wird deaktiviert, nie gelöscht, sobald Plätze auf ihn zeigen.

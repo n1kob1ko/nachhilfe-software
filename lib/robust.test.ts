@@ -161,12 +161,14 @@ test("Sicherung: Räume, Verfügbarkeit, Wochenabweichungen und der Wochenplan s
   planung.setLehrerVerfuegbarkeit(niko.id, { "2": [{ start: 600, end: 720 }] });
   planung.setLehrerWochenziel(niko.id, 900);
   planung.setLehrerRaumPraeferenzen(niko.id, [raumId]);
-  planung.setAbweichung("teacher", niko.id, "2026-10-12", { "5": [{ start: 900, end: 1020 }] });
+  // eine Woche weit weg von heute: die Beispieldaten veröffentlichen die Vorwoche (lib/demo.ts), ein
+  // festes Datum nahe heute träfe irgendwann genau diese Woche
+  planung.setAbweichung("teacher", niko.id, "2031-03-03", { "5": [{ start: 900, end: 1020 }] });
   const schuelerId = Number(db().prepare("INSERT INTO students (name, grade, access_token) VALUES ('Sicherungstest', 6, 'tok-sicherung')").run().lastInsertRowid);
   planung.setSchuelerPlanung(schuelerId, { availability: { "1": [{ start: 840, end: 960 }] }, einheiten_pro_woche: 3, geplante_dauer: 120, modus_wunsch: "online", erlaubte_lehrer: [niko.id] });
   // und ein veröffentlichter Platz im Wochenplan (Phase 4)
   const platz = planung.legePlatzAn({
-    week_start: "2026-10-12",
+    week_start: "2031-03-03",
     weekday: 2,
     start_min: 605,
     geplante_dauer: 120,
@@ -177,7 +179,7 @@ test("Sicherung: Räume, Verfügbarkeit, Wochenabweichungen und der Wochenplan s
   assert.equal(platz.ok, true);
   const platzId = platz.ok ? platz.id : 0;
   assert.equal(planung.setzeGesperrt(platzId, true).ok, true);
-  assert.equal(planung.veroeffentlicheWoche("2026-10-12").ok, true);
+  assert.equal(planung.veroeffentlicheWoche("2031-03-03").ok, true);
 
   const b = exportBackup();
   const json = JSON.parse(JSON.stringify(b)) as { tables: Record<string, { rows: Record<string, unknown>[] }> };
@@ -185,12 +187,12 @@ test("Sicherung: Räume, Verfügbarkeit, Wochenabweichungen und der Wochenplan s
   // alle neuen Tabellen sind vollständig dabei (nicht nur leer)
   assert.ok(zeilen("rooms").some((r) => r.name === "Sicherungsraum"), "der Raum ist in der Sicherung");
   assert.ok(
-    zeilen("availability_overrides").some((r) => r.owner_type === "teacher" && r.owner_id === niko.id && r.week_start === "2026-10-12"),
+    zeilen("availability_overrides").some((r) => r.owner_type === "teacher" && r.owner_id === niko.id && r.week_start === "2031-03-03"),
     "die Wochenabweichung ist in der Sicherung",
   );
   const platzZeile = zeilen("geplante_einheiten").find((r) => r.id === platzId)!;
   assert.ok(platzZeile, "der geplante Platz ist in der Sicherung");
-  assert.equal(platzZeile.week_start, "2026-10-12");
+  assert.equal(platzZeile.week_start, "2031-03-03");
   assert.equal(platzZeile.weekday, 2);
   assert.equal(platzZeile.start_min, 610, "der Start wurde beim Anlegen auf 10 Minuten gerastet");
   assert.equal(platzZeile.geplante_dauer, 120);
@@ -220,7 +222,7 @@ test("Sicherung: Räume, Verfügbarkeit, Wochenabweichungen und der Wochenplan s
   assert.deepEqual(wieder.tables.teachers.rows.find((r) => r.id === niko.id), lehrerZeile);
   assert.deepEqual(wieder.tables.students.rows.find((r) => r.id === schuelerId), schuelerZeile);
   // und die Werte sind in der wiederhergestellten Datenbank wieder lesbar
-  const abweichung = other.prepare("SELECT availability FROM availability_overrides WHERE owner_type = 'teacher' AND owner_id = ? AND week_start = '2026-10-12'").get(niko.id) as { availability: string };
+  const abweichung = other.prepare("SELECT availability FROM availability_overrides WHERE owner_type = 'teacher' AND owner_id = ? AND week_start = '2031-03-03'").get(niko.id) as { availability: string };
   assert.deepEqual(JSON.parse(abweichung.availability), { "5": [{ start: 900, end: 1020 }] });
   const wiederPlatz = other
     .prepare("SELECT week_start, weekday, start_min, geplante_dauer, status, locked FROM geplante_einheiten WHERE id = ?")

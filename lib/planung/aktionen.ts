@@ -250,7 +250,7 @@ export function setzePlatz(akteur: Akteur, eingabe: PlatzEingabe): Ergebnis {
   if (!darfWochenplanBearbeiten(akteur)) return { ok: false, fehler: NUR_VERWALTUNG };
   const ergebnis = repo.legePlatzAn(eingabe);
   if (!ergebnis.ok) return { ok: false, fehler: ergebnis.fehler };
-  return { ok: true, hinweis: "Platz angelegt." };
+  return { ok: true, hinweis: ergebnis.hinweis ? `Platz angelegt. ${ergebnis.hinweis}` : "Platz angelegt." };
 }
 
 /** Einen Platz verschieben oder umbesetzen; dieselbe Überlappungsprüfung, nur ohne sich selbst. */
@@ -293,6 +293,7 @@ export function pruefeZiel(akteur: Akteur, id: number, ziel: { teacherId?: numbe
     teacher_id: ziel.teacherId ?? platz.teacher_id,
     student_id: ziel.studentId ?? platz.student_id,
     room_id: ziel.roomId === undefined ? platz.room_id : ziel.roomId,
+    gleichzeitig: platz.gleichzeitig === 1,
     ausserId: id,
   });
   return ergebnis.ok ? { ok: true } : { ok: false, fehler: ergebnis.fehler };

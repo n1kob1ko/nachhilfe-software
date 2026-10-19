@@ -176,6 +176,8 @@ function platzAus(formData: FormData, woche: string): Parameters<typeof planung.
     teacher_id: zahl(formData, "teacher_id"),
     student_id: zahl(formData, "student_id"),
     room_id: Number.isInteger(raum) && raum > 0 ? raum : null,
+    // Haken „Gleichzeitig mit einem anderen Schüler“ (D26); ohne Haken kommt das Feld nicht mit
+    gleichzeitig: str(formData, "gleichzeitig") === "on",
   };
 }
 

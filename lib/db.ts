@@ -819,6 +819,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["students", "geplante_dauer", "INTEGER NOT NULL DEFAULT 100"],
   ["students", "modus_wunsch", "TEXT NOT NULL DEFAULT 'egal'"], // vor_ort | online | egal
   ["students", "erlaubte_lehrer", "TEXT NOT NULL DEFAULT '[]'"],
+  // Zwei Schüler gleichzeitig (D26, docs/planung.md): 1 = dieser Platz darf sich mit einem anderen
+  // Platz desselben Lehrers überschneiden. Höchstens zwei zugleich; geprüft in lib/planung/repo.ts.
+  ["geplante_einheiten", "gleichzeitig", "INTEGER NOT NULL DEFAULT 0"],
   // Blätter erstellen (Phase 5 des Merges): Ein gespeichertes **Druckblatt** ist eine Zeile in
   // `materials` (D21) mit `kind = 'druckblatt'` und der Blattdefinition als JSON in dieser Spalte.
   // Die Dateispalten (file_name, mime, size, sha256, stored_path) bleiben für diese Art leer — ein
