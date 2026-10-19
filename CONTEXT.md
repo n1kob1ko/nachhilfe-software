@@ -128,6 +128,13 @@ zweiten Schüler haben, auch im selben Raum, aber nie einen dritten. Beide Plät
 werden dabei **gesperrt**. Die Lehrerzeit zählt dann einmal, nicht zweimal.
 _Avoid_: Gruppe, Doppelstunde, parallel
 
+**Stundenplan-Foto**:
+Das Foto vom Wochenplan **eines** Lehrers, wie das Institut ihn verteilt: oben links ein Buchstabe für
+den Lehrer, Stunden zu 50 Minuten ab 08:50, Felder mit Vornamen. Die KI liest es, die Verwaltung prüft
+jede Zeile, dann stehen die Plätze **gesperrt** im **Wochenplan** ([docs/stundenplan-fotos.md](docs/stundenplan-fotos.md)).
+Das Foto selbst wird nicht gespeichert. In der App heißt der Plan weiter **Wochenplan**.
+_Avoid_: Stundenplan-Import, Plan-Scan
+
 **Raum**:
 Wo eine **geplante Einheit** stattfindet: Gebäude, Name, und ob vor Ort oder
 online. Ein Raum wird deaktiviert, nie gelöscht, sobald Plätze auf ihn zeigen.

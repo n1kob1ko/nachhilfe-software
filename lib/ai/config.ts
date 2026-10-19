@@ -84,6 +84,7 @@ export type AIFunction =
   | "tiefenanalyse"
   | "notiz"
   | "material"
+  | "stundenplan"
   | "druckblatt"
   | "textkorrektur"
   | "textanalyse"
@@ -133,6 +134,9 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   tiefenanalyse: { label: "Tiefenanalyse", area: "DEEP", tier: "deep", maxTokens: 8_000, timeoutMs: 120_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 10 * MIN, cache: "aus" },
   notiz: { label: "Notiz für Eltern/Schüler", area: "ANALYSIS", tier: "standard", maxTokens: 1_000, timeoutMs: 30_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   material: { label: "Material erkennen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  // Stundenplan-Fotos (lib/planung/stundenplan-foto.ts): only on the admin's click, after the tick that first names
+  // may go to the KI; the answer holds first names, so it is never kept for reuse
+  stundenplan: { label: "Stundenplan-Foto lesen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   // Blätter erstellen (Phase 5, Schritt 6): Wortlisten und Spalten für die drei Druckblätter.
   // Kleine, klar umrissene Listen — der schnelle Tarif reicht, der Standardtarif wäre Verschwendung.
   // Nur auf Klick der Lehrkraft, nichts wird von selbst übernommen; reuseMs 0, weil jede Anfrage

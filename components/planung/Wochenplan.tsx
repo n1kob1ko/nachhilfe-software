@@ -16,7 +16,7 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Lock, MousePointerClick, Plus, Printer, Send, Settings2, Sparkles, Wand2 } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, Lock, MousePointerClick, Plus, Printer, Send, Settings2, Sparkles, Wand2 } from "lucide-react";
 import { checkSlotTargetAction, copyPreviousWeekAction, discardDraftAction, generateWeekAction, moveSlotAction, publishWeekAction, regenerateWeekAction } from "@/app/planung-actions";
 import type { WochenUebersicht } from "@/lib/planung/uebersicht";
 import { minutenLabel, tagAddieren, type Wochentag } from "@/lib/planung/zeit";
@@ -220,6 +220,9 @@ export function Wochenplan({ uebersicht, darfBearbeiten, basisPfad, druckHref, a
             <>
               <Link href={url({ neu: true })} scroll={false} className="btn btn-secondary btn-sm">
                 <Plus size={15} aria-hidden /> Platz anlegen
+              </Link>
+              <Link href={`/planung/stundenplan?woche=${woche}`} className="btn btn-ghost btn-sm" data-testid="stundenplan-fotos">
+                <Camera size={15} aria-hidden /> Stundenplan-Fotos
               </Link>
               <Link href={url({ regeln: true })} scroll={false} className="btn btn-ghost btn-sm">
                 <Settings2 size={15} aria-hidden /> Regeln
