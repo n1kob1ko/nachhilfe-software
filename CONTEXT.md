@@ -168,6 +168,14 @@ Fähigkeit gerechnet; eine Aufgabe kann mehrere trainieren. Die Fähigkeit träg
 den Namen, unter dem sie im Lehrplan steht.
 _Avoid_: Kompetenz, Lernziel, Skill, Fertigkeit
 
+**Typische Fehler**:
+Was bei einer **Fähigkeit** oft falsch gemacht wird, je mit kurzem Beispiel („Zähler und Nenner
+einzeln addiert (1/2 + 1/3 = 2/5)“). Stehen mit einer kurzen Erklärung auf der Fähigkeitsseite unter
+„So geht’s“ und gehen beim Erstellen einer Übung an die KI (`lib/mathe-themen.ts`, bisher nur
+Mathematik). Nicht dasselbe wie die Fehlerart, die bei einem falschen Versuch gespeichert wird
+(`lib/error-types.ts`).
+_Avoid_: Fehlerkatalog, Misconceptions, häufige Fehler
+
 **Schnellrunde**:
 Eine Übung im Schülermodus, aber im Durchlauf: Multiple Choice mit höchstens vier
 Antworten, ein Tipp, kurze Rückmeldung, automatisch die nächste Aufgabe; Anfang

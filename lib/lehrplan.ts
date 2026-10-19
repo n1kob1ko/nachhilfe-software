@@ -353,15 +353,16 @@ export function matchSkills(topic: string, subject: string, opts: { student?: Pi
   const want = tokens(topic);
   if (!want.length) return [];
   const pool = opts.student ? skillsForStudent(opts.student, subject, { earlier: true }) : activeSkills().filter((s) => s.subject === subject);
-  const hit = (words: string[]) => want.filter((w) => words.some((x) => x.startsWith(w) || w.startsWith(x))).length;
+  const hits = (words: string[]) => want.filter((w) => words.some((x) => x.startsWith(w) || w.startsWith(x)));
   const out: SkillMatch[] = [];
   for (const s of pool) {
-    const own = hit(tokens(`${s.name} ${s.subtopic ?? ""}`));
-    const area = hit(tokens(s.area));
-    if (!own && !area) continue;
+    const own = hits(tokens(`${s.name} ${s.subtopic ?? ""}`));
+    // a topic word counts once: "Brüche" in "Brüche als Anteile" does not count again for the Thema Bruchrechnung
+    const area = hits(tokens(s.area)).filter((w) => !own.includes(w));
+    if (!own.length && !area.length) continue;
     // a topic naming the skill itself beats one naming only its Thema; Teilfähigkeiten only on a direct hit
-    if (s.parent_id && !own) continue;
-    out.push({ skill: s, score: own * 2 + area + (s.parent_id ? 0 : 0.5), via: own ? "faehigkeit" : "thema" });
+    if (s.parent_id && !own.length) continue;
+    out.push({ skill: s, score: own.length * 2 + area.length + (s.parent_id ? 0 : 0.5), via: own.length ? "faehigkeit" : "thema" });
   }
   return out.sort((a, b) => b.score - a.score || a.skill.sort - b.skill.sort).slice(0, opts.limit ?? 8);
 }

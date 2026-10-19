@@ -296,13 +296,16 @@ test("planning a diagnosis: 5–10 tasks, easy to hard, spread over the topics",
   const d = await import("./diagnose");
   const { schoolBranch } = await import("./school");
   const skills = d.diagnosisSkills({ subject: "Mathematik", branch: schoolBranch("mittelschule"), klasse: 2, topics: ["Bruchrechnung", "Negative Zahlen"] });
+  // the maths topics of lib/mathe-themen.ts come after the older skills of a Thema (they were seeded later)
   assert.deepEqual(skills.map((s) => s.id), [
     "mathe.brueche.kuerzen", "mathe.negativ.addieren", "mathe.brueche.erweitern", "mathe.negativ.multiplizieren",
-    "mathe.brueche.addieren", "mathe.brueche.subtrahieren", "mathe.brueche.multiplizieren", "mathe.brueche.dividieren",
+    "mathe.brueche.addieren", "mathe.negativ.zahlengerade", "mathe.brueche.subtrahieren", "mathe.brueche.multiplizieren",
+    "mathe.brueche.dividieren", "mathe.brueche.anteile",
   ]);
   const plan = d.planDiagnosis(skills.map((s) => s.id));
-  assert.equal(plan.length, 8);
-  assert.deepEqual(plan.map((p) => p.difficulty), ["leicht", "leicht", "leicht", "mittel", "mittel", "mittel", "schwer", "schwer"]);
+  assert.equal(plan.length, 10);
+  assert.deepEqual(plan.map((p) => p.difficulty), ["leicht", "leicht", "leicht", "leicht", "mittel", "mittel", "mittel", "schwer", "schwer", "schwer"]);
+  assert.deepEqual(d.planDiagnosis(skills.slice(0, 8).map((s) => s.id)).map((p) => p.difficulty), ["leicht", "leicht", "leicht", "mittel", "mittel", "mittel", "schwer", "schwer"]);
   assert.deepEqual(d.planDiagnosis(["a"]).map((p) => p.difficulty), ["leicht", "mittel", "mittel", "schwer", "schwer"]);
   assert.equal(d.planDiagnosis(["a", "b"]).length, 6);
   assert.equal(d.planDiagnosis(["a", "b", "c", "d"]).length, 8);

@@ -25,6 +25,7 @@ import {
 } from "./banks";
 import { expectedFixes } from "./fix-text";
 import { rechenwegTask, sachaufgabeTask } from "./generators-mathe";
+import { MATHE_ERKLAERUNG } from "./mathe-themen";
 import { isWortartenSkill, wortartenFor, wortartenTask, type WortartSetting } from "./wortarten";
 
 type Rng = () => number;
@@ -908,6 +909,8 @@ export const EXPLAIN: Record<string, string> = {
   "englisch.vocab.irregular": "Unregelmäßige Verben haben eigene Formen, z. B. go – went – gone. Sie müssen gelernt werden.",
   "englisch.grammar.comparatives": "Kurze Adjektive: -er (taller), lange Adjektive: more (more interesting), Ausnahmen: good – better, bad – worse.",
   "englisch.reading.comprehension": "Read the text carefully, underline key words and find the sentence that answers the question.",
+  // the maths topics of the 5. to 8. Schulstufe
+  ...MATHE_ERKLAERUNG,
 };
 
 const FREE_PROMPTS = [
