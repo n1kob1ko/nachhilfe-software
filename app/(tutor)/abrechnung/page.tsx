@@ -5,7 +5,7 @@ import { PrintButton } from "@/components/PrintButton";
 import { Empty, PageHeader } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { billingDay, resolveBilling, scopeToViewer, type BillingParams, type DeleteRefusal } from "@/lib/billing";
-import { listStudents, listTeachers } from "@/lib/repo";
+import { listStudents, listTeachers, type BillingRow } from "@/lib/repo";
 
 export const metadata = { title: "Abrechnung" };
 
@@ -16,6 +16,13 @@ const REFUSED: Record<DeleteRefusal, string> = {
 };
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
+
+/** Uhrzeit einer Zeile: aus der Einheit, sonst Beginn und Dauer; `null`, wenn keine bekannt ist. */
+function zeit(r: BillingRow) {
+  if (r.unit_start && r.unit_end) return `${clock(r.unit_start)}–${r.unit_end_estimated ? "ca. " : ""}${clock(r.unit_end)}`;
+  if (r.duration_min > 0) return `${r.starts_at.slice(11, 16)} · ${r.duration_min} min`;
+  return null;
+}
 
 export default async function Billing({ searchParams }: { searchParams: Promise<BillingParams & { geloescht?: string; fehler?: string }> }) {
   const viewer = await requireTeacher();
@@ -35,6 +42,14 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
   };
   const perTeacher = teachers.map((t) => ({ name: t.name, n: b.rows.filter((r) => r.teacher_name === t.name).length })).filter((x) => x.n > 0);
   const unassigned = b.rows.filter((r) => !r.teacher_name).length;
+  // am Handy: nach Tag gruppiert, neueste zuerst wie die Tabelle
+  const tage: { tag: string; rows: typeof b.rows }[] = [];
+  for (const r of b.rows) {
+    const tag = billingDay(r.starts_at);
+    if (tage.at(-1)?.tag === tag) tage.at(-1)!.rows.push(r);
+    else tage.push({ tag, rows: [r] });
+  }
+  const zeigeLehrer = !b.teacherId;
 
   return (
     <>
@@ -57,21 +72,23 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
         }
       />
 
-      <form className="no-print mb-6 flex flex-wrap items-end gap-3">
-        <div className="flex items-center gap-1">
-          <Link href={`/abrechnung?${query(b.prev)}`} className="btn btn-ghost btn-sm" aria-label="Voriger Monat">
-            <ChevronLeft size={16} aria-hidden />
-          </Link>
-          <label className="field">
-            <span className="label">Monat</span>
-            <input className="input num" type="month" name="monat" defaultValue={b.monat} />
+      <form className="no-print mb-6 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-end" data-testid="abr-filter">
+        <div className="field col-span-2 sm:w-[290px]">
+          <label htmlFor="abr-monat" className="label">
+            Monat
           </label>
-          <Link href={`/abrechnung?${query(b.next)}`} className="btn btn-ghost btn-sm" aria-label="Nächster Monat">
-            <ChevronRight size={16} aria-hidden />
-          </Link>
+          <div className="flex items-center gap-1">
+            <Link href={`/abrechnung?${query(b.prev)}`} className="btn btn-ghost btn-sm shrink-0" aria-label="Voriger Monat">
+              <ChevronLeft size={16} aria-hidden />
+            </Link>
+            <input id="abr-monat" className="input num min-w-0 flex-1" type="month" name="monat" defaultValue={b.monat} />
+            <Link href={`/abrechnung?${query(b.next)}`} className="btn btn-ghost btn-sm shrink-0" aria-label="Nächster Monat">
+              <ChevronRight size={16} aria-hidden />
+            </Link>
+          </div>
         </div>
         {viewer.is_admin ? (
-          <label className="field">
+          <label className="field min-w-0 sm:w-[180px]">
             <span className="label">Lehrer</span>
             <select className="input" name="lehrer" defaultValue={b.teacherId ?? ""}>
               <option value="">Alle</option>
@@ -83,7 +100,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
             </select>
           </label>
         ) : null}
-        <label className="field">
+        <label className={`field min-w-0 sm:w-[220px] ${viewer.is_admin ? "" : "col-span-2"}`}>
           <span className="label">Schüler</span>
           <select className="input" name="schueler" defaultValue={b.studentId ?? ""}>
             <option value="">Alle</option>
@@ -94,7 +111,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
             ))}
           </select>
         </label>
-        <button className="btn btn-primary">Anzeigen</button>
+        <button className="btn btn-primary col-span-2">Anzeigen</button>
       </form>
 
       {raw.geloescht && (
@@ -126,7 +143,52 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
             {perTeacher.length > 1 && <> · {perTeacher.map((t) => `${t.name} ${t.n}`).join(" · ")}</>}
             {unassigned > 0 && <span className="text-red"> · {unassigned} ohne Lehrer</span>}
           </p>
-          <div className="panel overflow-x-auto">
+          <div className="grid gap-5 lg:hidden print:hidden" data-testid="abr-liste">
+            {tage.map(({ tag, rows }) => (
+              <section key={tag} aria-label={tag}>
+                <h2 className="mb-2 flex items-baseline justify-between gap-3 px-1 text-[13px] font-semibold text-ink-2">
+                  <span className="num">{tag}</span>
+                  <span className="font-medium text-ink-3">
+                    {rows.length} {rows.length === 1 ? "Einheit" : "Einheiten"}
+                  </span>
+                </h2>
+                <ul className="panel divide-y divide-line">
+                  {rows.map((r) => {
+                    const z = zeit(r);
+                    return (
+                      <li key={r.id} className="flex items-start gap-2 py-3 pr-2 pl-4" data-testid="abr-eintrag">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline justify-between gap-3">
+                            <Link
+                              href={r.unit_id ? `/einheiten/${r.unit_id}` : `/schueler/${r.student_id}/stunden/${r.id}`}
+                              className="min-w-0 truncate text-[16px] font-semibold hover:text-accent"
+                            >
+                              {r.student_name}
+                            </Link>
+                            {r.teacher_name ? (
+                              zeigeLehrer && <span className="shrink-0 text-[13px] text-ink-3">{r.teacher_name}</span>
+                            ) : (
+                              <span className="shrink-0 text-[13px] font-medium text-red">Lehrer offen</span>
+                            )}
+                          </div>
+                          <div className="mt-0.5 flex items-baseline justify-between gap-3 text-[14px]">
+                            <span className="min-w-0 text-ink-2">
+                              {r.subject}
+                              {r.topic && <span className="text-ink"> · {r.topic}</span>}
+                            </span>
+                            {z && <span className="num shrink-0 text-[13px] text-ink-3">{z}</span>}
+                          </div>
+                          {r.tutor_notes && <p className="mt-1 line-clamp-2 text-[13px] whitespace-pre-line text-ink-3">{r.tutor_notes}</p>}
+                        </div>
+                        <BillingDelete id={r.id} wer={`von ${r.student_name} am ${tag}`} zurueck={query(b.monat)} />
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
+          </div>
+          <div className="panel hidden overflow-x-auto lg:block print:block">
             <table className="w-full min-w-[720px] text-left text-[14px]">
               <thead>
                 <tr className="border-b border-line text-[12px] text-ink-3">
@@ -145,11 +207,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
                   <tr key={r.id}>
                     <td className="num px-5 py-3 whitespace-nowrap">
                       {billingDay(r.starts_at)}
-                      <div className="text-[12px] text-ink-3">
-                        {r.unit_start && r.unit_end ? `${clock(r.unit_start)}–${r.unit_end_estimated ? "ca. " : ""}${clock(r.unit_end)}` : r.duration_min > 0
-                            ? `${r.starts_at.slice(11, 16)} · ${r.duration_min} min`
-                            : "ohne Uhrzeit"}
-                      </div>
+                      <div className="text-[12px] text-ink-3">{zeit(r) ?? "ohne Uhrzeit"}</div>
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap">{r.teacher_name ?? <span className="text-red">offen</span>}</td>
                     <td className="px-3 py-3 whitespace-nowrap">
