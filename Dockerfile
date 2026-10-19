@@ -20,6 +20,9 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 COPY --from=build /app/next.config.ts ./
+# files the server reads at runtime: the Lehrplan packages (Mehr › Lehrplan) and the task banks
+COPY --from=build /app/curriculum ./curriculum
+COPY --from=build /app/data/banks ./data/banks
 RUN mkdir -p /data && chown node:node /data
 USER node
 # no VOLUME line: Railway rejects it; the host mounts the volume at /data (docker run -v ...:/data)
