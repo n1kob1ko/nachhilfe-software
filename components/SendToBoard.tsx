@@ -76,3 +76,33 @@ export function SendToBoard({ worksheetId, tasks, units }: Props) {
     </form>
   );
 }
+
+/**
+ * "Aufs Whiteboard" next to „An Max senden“ while a unit runs: all tasks at once onto the student's board, where
+ * maths is written with the pen and the teacher grades each task (docs/mathe-whiteboard.md).
+ */
+export function BoardSendButton({ worksheetId, unitId, small }: { worksheetId: number; unitId: number; small?: boolean }) {
+  const [state, action, busy] = useActionState<SendState, FormData>(sendToBoardAction, null);
+  return (
+    <form action={action} className="grid gap-2">
+      <input type="hidden" name="worksheet_id" value={worksheetId} />
+      <input type="hidden" name="unit_id" value={unitId} />
+      <button className={`btn btn-secondary w-fit ${small ? "" : "btn-lg"}`} disabled={busy} title="Alle Aufgaben aufs Whiteboard: der Schüler rechnet mit dem Stift, du bewertest jede Aufgabe dort">
+        <Presentation size={small ? 15 : 18} aria-hidden /> {busy ? "Wird gesendet …" : "Aufs Whiteboard"}
+      </button>
+      {state?.ok && (
+        <p className="text-[14px] text-green" role="status">
+          {state.ok}{" "}
+          <Link href={`/tafel/${unitId}`} className="font-medium underline">
+            Whiteboard öffnen
+          </Link>
+        </p>
+      )}
+      {state?.error && (
+        <p className="text-[14px] text-red" role="alert">
+          {state.error}
+        </p>
+      )}
+    </form>
+  );
+}

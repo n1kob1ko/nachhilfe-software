@@ -8,7 +8,7 @@ import { studentDevice, studentDeviceOnline } from "@/lib/live";
 import { assignWorksheetAction, deleteWorksheetAction } from "@/app/actions";
 import { copyAsDraftAction, setSolutionsVisibleAction } from "@/app/builder-actions";
 import { quickRoundProblem } from "@/lib/quick-round";
-import { SendToBoard } from "@/components/SendToBoard";
+import { BoardSendButton, SendToBoard } from "@/components/SendToBoard";
 import { FlowSteps } from "@/components/FlowSteps";
 import { PageHeader, Pill, Reveal } from "@/components/ui";
 import { WorksheetEditor } from "@/components/WorksheetEditor";
@@ -135,7 +135,10 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
             )}
             {active ? (
               <>
-                <TabletSend student={activeFirst} unitId={active.id} worksheetId={w.id} />
+                <div className="flex flex-wrap items-start gap-3">
+                  <TabletSend student={activeFirst} unitId={active.id} worksheetId={w.id} />
+                  {tasks.length > 0 && <BoardSendButton worksheetId={w.id} unitId={active.id} />}
+                </div>
                 {quickWished && <p className="mt-1 text-[13px] text-ink-2">Wird als Schnellrunde gesendet: ein Tipp pro Aufgabe, automatisch weiter.</p>}
                 <Reveal label="An jemand anderen senden" className="mt-4">
                   <ReleasePanel worksheetId={w.id} students={students} defaultStudentId={null} taskCount={tasks.length} quickRound={quickRound} />
@@ -160,7 +163,10 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
             </p>
             {active && (
               <div className="mb-4">
-                {inActive ? <SendResult state={delivery} unitId={active.id} unitLink={false} /> : <TabletSend student={activeFirst} unitId={active.id} worksheetId={w.id} />}
+                <div className="flex flex-wrap items-start gap-3">
+                  {inActive ? <SendResult state={delivery} unitId={active.id} unitLink={false} /> : <TabletSend student={activeFirst} unitId={active.id} worksheetId={w.id} />}
+                  {tasks.length > 0 && <BoardSendButton worksheetId={w.id} unitId={active.id} />}
+                </div>
               </div>
             )}
             <div className="flex flex-wrap gap-3">
@@ -179,8 +185,9 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
           <>
             <h2 className="mb-1 text-[18px] font-semibold">Noch an niemanden gesendet</h2>
             {active && (
-              <div className="mb-4">
+              <div className="mb-4 flex flex-wrap items-start gap-3">
                 <TabletSend student={activeFirst} unitId={active.id} worksheetId={w.id} />
+                {tasks.length > 0 && <BoardSendButton worksheetId={w.id} unitId={active.id} />}
               </div>
             )}
             <p className="mb-4 text-[14px] text-ink-2">{active ? "Oder an jemand anderen:" : "Wähle, wer die Übung bekommt."}</p>

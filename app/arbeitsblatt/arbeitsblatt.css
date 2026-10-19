@@ -144,6 +144,11 @@
   border-bottom: 0.3mm solid #000;
   vertical-align: -0.25em;
 }
+/* a gap in an exponent: the line sits where the exponent stands, short and clearly above the text */
+.ab-sup > .ab-gap {
+  height: 0.9em;
+  vertical-align: baseline;
+}
 /* a filled gap: the answer on the line of the text, underlined below the descenders; long answers wrap */
 .ab-gap-filled {
   margin: 0 0.6mm;

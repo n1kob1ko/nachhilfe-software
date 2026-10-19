@@ -4,7 +4,7 @@ import { requireTeacher } from "@/lib/auth";
 import * as repo from "@/lib/repo";
 import { canManageUnit, getUnit } from "@/lib/units";
 import { ensureBoardForUnit, queueInsert } from "@/lib/whiteboard";
-import { boardTask } from "@/lib/whiteboard-content";
+import { boardTaskForStudent } from "@/lib/whiteboard-content";
 import { showOnTablet } from "@/lib/live";
 
 export type SendState = { ok?: string; error?: string } | null;
@@ -22,7 +22,7 @@ export async function sendToBoardAction(_prev: SendState, form: FormData): Promi
   if (!tasks.length) return { error: "Bitte mindestens eine Aufgabe wählen." };
   const board = ensureBoardForUnit(unit.id);
   if (!board) return { error: "Das Whiteboard konnte nicht geöffnet werden." };
-  queueInsert(board.id, { kind: "tasks", title: worksheet.title, tasks: tasks.map(boardTask) });
+  queueInsert(board.id, { kind: "tasks", title: worksheet.title, worksheetId: worksheet.id, tasks: tasks.map(boardTaskForStudent) });
   showOnTablet(unit, { kind: "tafel" });
   return { ok: `${tasks.length === 1 ? "Aufgabe" : `${tasks.length} Aufgaben`} aufs Whiteboard von ${unit.student_name} gesendet.` };
 }

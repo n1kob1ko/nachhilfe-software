@@ -26,7 +26,7 @@ import * as repo from "@/lib/repo";
 import type { TaskDraft } from "@/lib/tasks";
 import { canManageUnit, getUnit, runningUnitForStudent } from "@/lib/units";
 import { ensureBoardForUnit, queueInsert } from "@/lib/whiteboard";
-import { boardTask } from "@/lib/whiteboard-content";
+import { boardTaskForStudent } from "@/lib/whiteboard-content";
 
 export type ActionResult = { ok?: string; error?: string; warning?: string; link?: { href: string; label: string } } | null;
 
@@ -243,7 +243,7 @@ export async function sendTaskToBoardAction(taskId: number, unitId: number): Pro
   if (!canManageUnit(teacher, unit)) return { error: "Nur der Lehrer dieser Einheit kann auf dieses Whiteboard senden." };
   const board = ensureBoardForUnit(unit.id);
   if (!board) return { error: "Das Whiteboard konnte nicht geöffnet werden." };
-  queueInsert(board.id, { kind: "tasks", title: repo.getWorksheet(task.worksheet_id)?.title ?? "Aufgabe", tasks: [boardTask(task)] });
+  queueInsert(board.id, { kind: "tasks", title: repo.getWorksheet(task.worksheet_id)?.title ?? "Aufgabe", worksheetId: task.worksheet_id, tasks: [boardTaskForStudent(task)] });
   showOnTablet(unit, { kind: "tafel" });
   return { ok: `Auf dem Whiteboard von ${unit.student_name}.` };
 }

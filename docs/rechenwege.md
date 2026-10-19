@@ -16,6 +16,7 @@ Zwei Mathematik-Formate, bei denen der Schüler zeigt, **wie** er rechnet: **Rec
 - Das Ergebnis steht in einem eigenen Feld, bei Gleichungen mit „x =“ davor. Fehlt es, gilt die letzte Zeile (auch „L = {5}“, „Lösung: x = 5“ oder „5 = x“). Findet die App dort kein Ergebnis und die letzte Zeile ist Text, bewertet der Lehrer.
 - Nach „Prüfen“ bekommt jede Zeile ein Zeichen: ✓ stimmt, ✗ hier passt etwas nicht, ↳ mit dem Fehler davor richtig weitergerechnet, ? nicht sicher prüfbar. Die Rückmeldung nennt die erste falsche Zeile. Wer eine Zeile ändert, verliert dort die Markierung und kann neu prüfen (3 Versuche).
 - Läuft eine Einheit, kann der Schüler „Ich rechne am Whiteboard“ anhaken. Dann reicht das Ergebnis, den Rechenweg am Whiteboard bewertet der Lehrer.
+- Ganz ohne Tippen: der Lehrer sendet die Aufgaben aufs Whiteboard und bewertet dort jede mit Richtig, Teilweise oder Falsch ([mathe-whiteboard.md](mathe-whiteboard.md)).
 - Alles Getippte bleibt auf dem Gerät gespeichert, bis es gesendet ist (Neuladen, Verbindung weg). Eine Abgabe ohne Verbindung wird später genau einmal gesendet.
 
 ## So prüft die App

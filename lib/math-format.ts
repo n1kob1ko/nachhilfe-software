@@ -25,8 +25,8 @@ export function mathSigns(text: string): string {
 
 // √(…) with one level of nested brackets, or √ followed by a number or a letter
 const ROOT = String.raw`√\(((?:[^()]|\([^()]*\))*)\)|√(\d+(?:[.,]\d+)?|\p{L})`;
-// ^ followed by (…), a signed number, a letter or "?" (as in x^? when the exponent is asked for)
-const POW = String.raw`\^(?:\(([^()]+)\)|([−-]?\d+(?:[.,]\d+)?|[\p{L}?]))`;
+// ^ followed by (…), a signed number, a letter, "?" (as in x^? when the exponent is asked for) or a gap ("3^___")
+const POW = String.raw`\^(?:\(([^()]+)\)|([−-]?\d+(?:[.,]\d+)?|[\p{L}?])|\s*(_{3,}))`;
 const INLINE = new RegExp(`${ROOT}|${POW}`, "gu");
 
 function inline(text: string): MathNode[] {
@@ -38,7 +38,7 @@ function inline(text: string): MathNode[] {
     if (m[0].startsWith("√"))
       out.push({ t: "root", body: inline(m[1] ?? m[2]) });
     else
-      out.push({ t: "sup", body: inline((m[3] ?? m[4]).replace(/^-/, "−")) });
+      out.push({ t: "sup", body: inline((m[3] ?? m[4] ?? m[5]).replace(/^-/, "−")) });
     last = at + m[0].length;
   }
   if (last < text.length) out.push(text.slice(last));
@@ -52,6 +52,18 @@ export function parseMath(text: string): MathNode[] {
       ? inline(p)
       : [{ t: "frac", minus: p.minus, num: inline(p.num), den: inline(p.den) }],
   );
+}
+
+/**
+ * A Lückentext split at its gaps ("___"). `raised` says that the gap after this piece is an exponent
+ * ("3^___", "x^ ___"): it is drawn raised and the "^" goes, so the student never sees a caret.
+ */
+export function clozeParts(text: string, gap = "___"): { text: string; raised: boolean }[] {
+  const parts = text.split(gap);
+  return parts.map((p, i) => {
+    const raised = i < parts.length - 1 && /\^\s*$/.test(p);
+    return { text: raised ? p.replace(/\^\s*$/, "") : p, raised };
+  });
 }
 
 /** Text blocks of a task: plain paragraphs and tables written as Markdown pipe tables. */

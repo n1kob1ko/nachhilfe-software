@@ -13,8 +13,10 @@ import {
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as T from "@/lib/whiteboard-templates";
+import type { BoardGrade } from "@/lib/whiteboard-grades";
 import { InsertPanel, type WorksheetForBoard } from "./InsertPanel";
 import { QuickTools, type QuickTool } from "./QuickTools";
+import { TaskBar, type BoardTask } from "./TaskBar";
 
 // Fonts come from this server (copied by scripts/copy-excalidraw-fonts.mjs), not from a CDN.
 if (typeof window !== "undefined") (window as unknown as { EXCALIDRAW_ASSET_PATH: string }).EXCALIDRAW_ASSET_PATH = "/excalidraw-assets/";
@@ -23,7 +25,7 @@ type El = { id: string; version: number; isDeleted?: boolean; [k: string]: unkno
 export type PageInfo = { id: number; position: number; title: string; element_count: number };
 type Person = { clientId: string; role: "lehrer" | "schueler"; name: string; pageId: number | null };
 type InsertPayload =
-  | { kind: "tasks"; title: string; tasks: T.TaskForBoard[] }
+  | { kind: "tasks"; title: string; worksheetId?: number; tasks: T.TaskForBoard[] }
   | { kind: "text"; text: string };
 type Pending = { id: number; page_id: number | null; payload: InsertPayload };
 
@@ -54,6 +56,24 @@ const measureBoardText: T.Measure = (text, fontSize) => {
 /** Waits until the board font is loaded, otherwise the first measurement uses a narrower fallback font. */
 const boardFontReady = (): Promise<unknown> =>
   typeof document !== "undefined" && document.fonts ? Promise.race([document.fonts.load("30px Nunito").catch(() => null), new Promise((r) => setTimeout(r, 3000))]) : Promise.resolve();
+/** A fresh name for the tasks of one insert (TaskTag.set). */
+const newSet = () => Math.random().toString(36).slice(2, 10);
+const tagOf = (e: object) => ((e as { customData?: { aufgabe?: T.TaskTag } }).customData?.aufgabe ?? null);
+
+/** The tasks on the page, top to bottom: every element of a task carries its tag (lib/whiteboard-templates.ts). */
+function tasksOnPage(elements: readonly El[]): BoardTask[] {
+  const found = new Map<string, BoardTask>();
+  for (const e of elements) {
+    const tag = e.isDeleted ? null : tagOf(e);
+    if (!tag) continue;
+    const key = `${tag.set}:${tag.n}`;
+    const y = Number(e.y) || 0;
+    const t = found.get(key);
+    if (!t) found.set(key, { key, set: tag.set, n: tag.n, taskId: tag.task ?? null, top: y });
+    else t.top = Math.min(t.top, y);
+  }
+  return [...found.values()].sort((a, b) => a.top - b.top);
+}
 const SEND_EVERY_MS = 40;
 const POINTER_EVERY_MS = 70;
 const PREVIEW_AFTER_MS = 2500;
@@ -74,6 +94,9 @@ export default function Whiteboard(props: WhiteboardProps) {
   const [tool, setTool] = useState<QuickTool>("stift");
   const [fullscreen, setFullscreen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [boardTasks, setBoardTasks] = useState<BoardTask[]>([]);
+  const [currentTask, setCurrentTask] = useState<string | null>(null);
+  const [grades, setGrades] = useState<Record<number, BoardGrade>>({});
 
   const clientId = useMemo(() => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Math.random())).slice(0, 36), []);
   const known = useRef(new Map<string, number>()); // element id -> version the server has
@@ -87,6 +110,10 @@ export default function Whiteboard(props: WhiteboardProps) {
   const collaborators = useRef(new Map<string, Record<string, unknown>>());
   const firstHello = useRef(true);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const tasksKey = useRef("");
+  /** Height of the task bar (and the teacher's grading row below it): revealed tasks start below it. */
+  const barGap = useRef(76);
+  const currentRef = useRef<string | null>(null);
 
   const url = (path: string) => `${endpoint}/${path}${query}`;
   const post = useCallback(
@@ -143,8 +170,26 @@ export default function Whiteboard(props: WhiteboardProps) {
     previewTimer.current = setTimeout(() => void uploadPreview(), PREVIEW_AFTER_MS);
   }, [uploadPreview]);
 
+  /** Keeps the task bar up to date: which tasks the page has and which one is on screen. */
+  const followTasks = useCallback((elements: readonly El[], app: { scrollY: number; height: number; zoom: { value: number } }) => {
+    const list = tasksOnPage(elements);
+    const key = list.map((t) => `${t.key}@${Math.round(t.top)}#${t.taskId ?? ""}`).join(",");
+    if (key !== tasksKey.current) {
+      tasksKey.current = key;
+      setBoardTasks(list);
+    }
+    // the task whose top is above a line a third down the screen is the one being worked on
+    const line = -app.scrollY + (app.height * 0.35) / app.zoom.value;
+    const on = list.length ? (list.filter((t) => t.top <= line).at(-1) ?? list[0]).key : null;
+    if (on !== currentRef.current) {
+      currentRef.current = on;
+      setCurrentTask(on);
+    }
+  }, []);
+
   const onChange = useCallback(
-    (elements: readonly El[]) => {
+    (elements: readonly El[], app: { scrollY: number; height: number; zoom: { value: number } }) => {
+      followTasks(elements, app);
       if (loading.current) return;
       let changed = false;
       for (const e of elements) {
@@ -157,7 +202,7 @@ export default function Whiteboard(props: WhiteboardProps) {
       sendTimer.current ??= setTimeout(() => void flush(), SEND_EVERY_MS);
       schedulePreview();
     },
-    [flush, schedulePreview],
+    [flush, schedulePreview, followTasks],
   );
 
   // ---------- receiving ----------
@@ -187,22 +232,28 @@ export default function Whiteboard(props: WhiteboardProps) {
     if (!found.length) return false;
     const [minX, minY, maxX] = getCommonBounds(found);
     const s = a.getAppState();
+    // the pen settings on the teacher's left would hide the start of a task: begin right of them
+    const panel = wrapRef.current?.querySelector(".App-menu__left")?.getBoundingClientRect();
+    const left = panel && panel.width > 0 && panel.right - s.offsetLeft < s.width / 3 ? panel.right - s.offsetLeft + 16 : 48;
     // readable size: as wide as the content allows, never tiny and never bigger than 1:1
-    const zoom = Math.max(0.6, Math.min(1, (s.width - 96) / Math.max(1, maxX - minX)));
-    a.updateScene({ appState: { zoom: { value: zoom as never }, scrollX: 48 / zoom - minX, scrollY: 32 / zoom - minY } });
+    const zoom = Math.max(0.6, Math.min(1, (s.width - left - 48) / Math.max(1, maxX - minX)));
+    // tasks get the task bar at the top: they start below it
+    const gap = tasksKey.current || found.some((e) => tagOf(e)) ? barGap.current : 32;
+    a.updateScene({ appState: { zoom: { value: zoom as never }, scrollX: left / zoom - minX, scrollY: gap / zoom - minY } });
     return true;
   }, []);
 
   /** Draws template elements on the current page; they are then synced like anything drawn by hand. */
   const draw = useCallback(
-    (skeletons: T.Skeleton[], opts: { behind?: boolean; scroll?: boolean } = {}) => {
+    (skeletons: T.Skeleton[], opts: { behind?: boolean; scroll?: boolean; withIds?: string[] } = {}) => {
       const a = apiRef.current;
       if (!a || !skeletons.length) return;
       const fresh = convertToExcalidrawElements(skeletons as never, { regenerateIds: true });
       const scene = a.getSceneElementsIncludingDeleted();
       a.updateScene({ elements: opts.behind ? [...fresh, ...scene] : [...scene, ...fresh], captureUpdate: CaptureUpdateAction.IMMEDIATELY });
       if (opts.scroll !== false) {
-        const ids = fresh.map((e) => e.id);
+        // withIds: elements to keep in sight together with the new ones (a task next to its solution)
+        const ids = [...(opts.withIds ?? []), ...fresh.map((e) => e.id)];
         reveal(ids);
         // the other device scrolls there too, so new tasks never land out of sight
         if (viewRef.current) void post("focus", { pageId: viewRef.current, ids: ids.slice(0, 50) }).catch(() => {});
@@ -211,13 +262,20 @@ export default function Whiteboard(props: WhiteboardProps) {
     [reveal, post],
   );
 
-  const materialize = useCallback(
-    (payload: InsertPayload) => {
+  const drawTasks = useCallback(
+    (title: string, tasks: T.TaskForBoard[], worksheetId?: number) => {
       const at = placeBelow();
-      if (payload.kind === "tasks") void boardFontReady().then(() => draw(T.tasksTemplate(payload.tasks, at, { title: payload.title, measure: measureBoardText })));
-      else draw(T.textTemplate(payload.text, at));
+      void boardFontReady().then(() => draw(T.tasksTemplate(tasks, at, { title, measure: measureBoardText, set: newSet(), worksheetId })));
     },
     [draw, placeBelow],
+  );
+
+  const materialize = useCallback(
+    (payload: InsertPayload) => {
+      if (payload.kind === "tasks") drawTasks(payload.title, payload.tasks, payload.worksheetId);
+      else draw(T.textTemplate(payload.text, placeBelow()));
+    },
+    [draw, drawTasks, placeBelow],
   );
 
   const tryClaim = useCallback(
@@ -347,12 +405,19 @@ export default function Whiteboard(props: WhiteboardProps) {
         case "insert":
           void tryClaim(ev.insert);
           break;
+        case "grades":
+          setGrades((g) => ({ ...g, ...ev.grades }));
+          break;
         case "focus": {
           if (ev.pageId !== viewRef.current) break;
-          // the elements may arrive a moment after the hint
+          // the elements may arrive a moment after the hint: wait for all of them, so the zoom fits them all
+          // (a task and the solution beside it)
           let tries = 0;
           const attempt = () => {
-            if (!reveal(ev.ids) && ++tries < 30) setTimeout(attempt, 50);
+            tries++;
+            const have = new Set(apiRef.current?.getSceneElements().map((e) => e.id) ?? []);
+            if ((tries >= 30 || ev.ids.every((id: string) => have.has(id))) && reveal(ev.ids)) return;
+            if (tries < 30) setTimeout(attempt, 50);
           };
           attempt();
           break;
@@ -408,6 +473,68 @@ export default function Whiteboard(props: WhiteboardProps) {
     const target = wrapRef.current?.querySelector(".excalidraw") ?? document;
     target.dispatchEvent(new KeyboardEvent("keydown", { key: "z", code: "KeyZ", ctrlKey: true, metaKey: true, shiftKey: k === "redo", bubbles: true, cancelable: true }));
   }, []);
+
+  // ---------- tasks on the page (task bar) ----------
+  const taskElements = useCallback((key: string) => {
+    const a = apiRef.current;
+    return a ? a.getSceneElements().filter((e) => {
+      const tag = tagOf(e);
+      return tag !== null && `${tag.set}:${tag.n}` === key;
+    }) : [];
+  }, []);
+
+  const goToTask = useCallback((key: string) => void reveal(taskElements(key).map((e) => e.id)), [reveal, taskElements]);
+
+  useEffect(() => {
+    barGap.current = teacher && canWrite ? 136 : 76;
+  }, [teacher, canWrite]);
+
+  // how the tasks stand: asked for when the tasks on the page change, then kept up to date by "grades" events
+  const taskIdsKey = [...new Set(boardTasks.map((t) => t.taskId).filter((x): x is number => x !== null))].join(",");
+  useEffect(() => {
+    if (!api || !taskIdsKey) return;
+    post("grades", { taskIds: taskIdsKey.split(",").map(Number) })
+      .then((r: { grades?: Record<number, BoardGrade> }) => r.grades && setGrades((g) => ({ ...g, ...r.grades })))
+      .catch(() => {});
+  }, [api, taskIdsKey, post]);
+
+  const gradeTask = useCallback(
+    async (taskId: number, review: "richtig" | "teilweise" | "falsch") => {
+      try {
+        const r = await post("grade", { taskId, review });
+        if (r.grades) setGrades((g) => ({ ...g, ...r.grades }));
+      } catch {
+        setNotice("Die Bewertung wurde nicht gespeichert. Bitte noch einmal tippen.");
+      }
+    },
+    [post],
+  );
+
+  /** Shows the solution right of the task's area to calculate in, on both devices. */
+  const showSolution = useCallback(
+    async (key: string, taskId: number) => {
+      let r: { number?: number; solution?: string };
+      try {
+        r = await post("solution", { taskId });
+      } catch {
+        setNotice("Die Lösung konnte nicht geladen werden.");
+        return;
+      }
+      if (!r.solution) {
+        setNotice("Zu dieser Aufgabe ist keine Lösung gespeichert.");
+        return;
+      }
+      const els = taskElements(key);
+      if (!els.length) return;
+      const [, minY, maxX] = getCommonBounds(els);
+      // both devices then show the task and its solution side by side: its top line and its area to calculate in
+      const top = els.reduce((a, e) => (e.y < a.y ? e : a));
+      const area = els.find((e) => e.type === "rectangle");
+      const withIds = [top.id, ...(area ? [area.id] : [])];
+      void boardFontReady().then(() => draw(T.solutionTemplate({ number: r.number ?? 0, prompt: "", options: null, solution: r.solution }, { x: Math.round(maxX + 40), y: Math.round(minY) }, measureBoardText), { withIds }));
+    },
+    [post, taskElements, draw],
+  );
 
   // ---------- pages (teacher) ----------
   const pageOp = useCallback(
@@ -616,14 +743,22 @@ export default function Whiteboard(props: WhiteboardProps) {
             onFit={() => apiRef.current?.scrollToContent(undefined, { fitToViewport: true, viewportZoomFactor: 0.9, minZoom: 0.35, animate: true })}
           />
         )}
+        {boardTasks.length > 0 && (
+          <TaskBar
+            tasks={boardTasks}
+            current={currentTask}
+            grades={grades}
+            canGrade={teacher && canWrite}
+            onGo={goToTask}
+            onGrade={(taskId, review) => void gradeTask(taskId, review)}
+            onSolution={(key, taskId) => void showSolution(key, taskId)}
+          />
+        )}
         {teacher && panel && canWrite && (
           <InsertPanel
             worksheets={props.worksheets ?? []}
             onClose={() => setPanel(false)}
-            onTasks={(title, tasks) => {
-              const at = placeBelow();
-              void boardFontReady().then(() => draw(T.tasksTemplate(tasks, at, { title, measure: measureBoardText })));
-            }}
+            onTasks={drawTasks}
             onSolution={(t) => {
               const at = placeBelow();
               void boardFontReady().then(() => draw(T.solutionTemplate(t, at, measureBoardText)));

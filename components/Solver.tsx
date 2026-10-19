@@ -10,6 +10,7 @@ import { laptopRecordHintAction, laptopSubmitAnswerAction } from "@/app/laptop-a
 import { hintLabel, isReview, REVIEWS } from "@/lib/tasks";
 import type { MathAnswer as MathDraft } from "@/lib/math-check";
 import type { MathView } from "@/lib/math-task";
+import { clozeParts } from "@/lib/math-format";
 import { splitFractions } from "@/lib/math-text";
 import { checkedMath, initialMath, markMath, MathAnswerInput, mathAnswer, mathReady, mathTouched, restoreMath, type MathState, type MathTaskView } from "./MathAnswer";
 import { GenusBadge } from "./TaskPreview";
@@ -574,7 +575,7 @@ function TaskCard({
     };
   }, [unsent, deliver]);
 
-  const promptParts = useMemo(() => task.prompt.split(GAP), [task.prompt]);
+  const promptParts = useMemo(() => clozeParts(task.prompt, GAP), [task.prompt]);
   // the teacher grades the answer: it is handed in, not checked
   const handIn = test || (reading && (task.type === "free" || (task.type === "reading" && !task.options)));
 
@@ -599,7 +600,7 @@ function TaskCard({
           <p className={`${reading ? "text-[18px] leading-[2.2]" : "text-[21px] leading-[2.1]"} font-medium`}>
             {promptParts.map((p, i) => (
               <span key={i} className="whitespace-pre-line">
-                <MathText text={p} />
+                <MathText text={p.text} />
                 {i < promptParts.length - 1 && (
                   <input
                     ref={i === 0 ? (el) => void (inputRef.current = el) : undefined}
@@ -610,14 +611,17 @@ function TaskCard({
                       setWrongGaps((w) => w.filter((n) => n !== i + 1));
                     }}
                     onFocus={(e) => void (umlaut.current = { el: e.currentTarget, set: (v) => setGaps((g) => g.map((x, j) => (j === i ? v : x))) })}
-                    aria-label={`Lücke ${i + 1}`}
+                    aria-label={p.raised ? `Lücke ${i + 1}, Hochzahl` : `Lücke ${i + 1}`}
                     aria-invalid={wrongGaps.includes(i + 1) || undefined}
                     autoComplete="off"
                     autoCapitalize="off"
                     spellCheck={false}
                     // grows with the answer: long words and several words fit, the line wraps around it
-                    style={{ width: `min(100%, ${Math.max(6, gaps[i].length + 2)}ch)` }}
-                    className={`mx-1 inline-block min-h-[44px] border-0 border-b-2 px-2 py-0 text-center text-[19px] font-semibold outline-none disabled:opacity-70 ${
+                    // a gap in an exponent ("3^___") sits raised and smaller, like the power it stands for
+                    style={{ width: `min(100%, ${Math.max(p.raised ? 3 : 6, gaps[i].length + 2)}ch)` }}
+                    className={`inline-block border-0 border-b-2 py-0 text-center font-semibold outline-none disabled:opacity-70 ${
+                      p.raised ? "relative -top-[0.7em] mx-0.5 min-h-[36px] px-1 text-[15px]" : "mx-1 min-h-[44px] px-2 text-[19px]"
+                    } ${
                       wrongGaps.includes(i + 1) ? "border-red bg-red-wash text-red" : "border-accent bg-accent-wash/60 text-accent focus:bg-accent-wash"
                     }`}
                   />
