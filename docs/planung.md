@@ -343,6 +343,7 @@ Fall. `lib/units-verknuepfung.test.ts` hält das fest: eine geplante Zeile wird 
 | `lib/planung/regeln.ts` | Regelschema, Vorgaben, Lesen/Schreiben in `app_settings` |
 | `lib/planung/repo.ts` | alles Lesende und Schreibende am Wochenplan, inkl. der **einzigen** Überlappungsprüfung, plus `wochenEingaben` und `neuGenerieren` |
 | `lib/planung/heute.ts` | „heute“ für Dashboard, Schüler-Link und den Start einer Einheit |
+| `lib/planung/stundenplan-foto.ts` | Stundenplan-Fotos: die KI liest den Wochenplan eines Lehrers vom Foto, die Verwaltung prüft jede Zeile und trägt sie gesperrt ein ([stundenplan-fotos.md](stundenplan-fotos.md)) |
 | `lib/planung/zeit.ts` | die einzige Stelle für Wochentag, Woche und Zeitzone |
 | `lib/planung/verfuegbarkeit.ts` | Verfügbarkeit als Wert und als JSON-Spalte |
 | `lib/planung/schema.ts` | zod-Schemata der Formulare (Phase 3) |
@@ -355,6 +356,7 @@ Die Oberfläche dazu:
 |---|---|
 | `app/(tutor)/planung/page.tsx` | die Wochenansicht der Verwaltung: Filter, Wochenwahl, Meldungen, Dialoge |
 | `app/(tutor)/planung/drucken/page.tsx` | A4-Druck der Woche |
+| `app/(tutor)/planung/stundenplan/page.tsx`, `components/planung/StundenplanImport.tsx` | Stundenplan-Fotos: Fotos lesen, Vorschau, eintragen |
 | `app/planung-actions.ts` | alle Server Actions der Planung (generieren, veröffentlichen, Platz anlegen/ändern/sperren/löschen, Regeln, Räume) mit Rechteprüfung |
 | `components/planung/Wochenplan.tsx` | der Rahmen: Wochenwahl und Werkzeuge, die Statuskarte mit den Knöpfen, die im Zustand gehen, Lehrer-Chips und Filter; ab 1024 px das Gitter mit Legende, darunter die Tagesliste |
 | `components/planung/WochenplanGitter.tsx` | das Gitter (Computer): je Lehrer ein Band mit Kennzahlen, Spalten = Tage, der Tageskopf bleibt beim Scrollen oben, schraffiert = nicht verfügbar, Stundenlinien, das 10-Minuten-Raster erst beim Ziehen. Anklicken öffnet einen Platz, ziehen verschiebt, das Schloss erscheint beim Darüberfahren; ein Klick auf freie Zeit öffnet „Platz anlegen“ mit Lehrer, Tag und Uhrzeit vorbelegt |

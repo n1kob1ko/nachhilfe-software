@@ -13,6 +13,8 @@ import * as planung from "@/lib/planung/aktionen";
 import type { Ergebnis } from "@/lib/planung/aktionen";
 import type { OwnerTyp, PlatzEingabe } from "@/lib/planung/repo";
 import { istDatum, labelMinuten, wochenstartVon } from "@/lib/planung/zeit";
+import { leseImportZeilen, speichereBuchstaben, stundenplanEintragen, wocheFuerImport, type ImportErgebnis } from "@/lib/planung/stundenplan-foto";
+import { listTeachers } from "@/lib/repo";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const zahl = (f: FormData, k: string) => {
@@ -344,4 +346,46 @@ export async function saveRulesAction(formData: FormData) {
         });
   aktualisiere("/planung");
   redirect(mitMeldung(zurueck, ergebnis));
+}
+
+// ---------- Stundenplan-Fotos (lib/planung/stundenplan-foto.ts) ----------
+
+type StundenplanEingabe = { woche: string; zeilen: unknown; ersetzen: boolean };
+const ganzeZahlen = (roh: unknown) => (Array.isArray(roh) ? roh.filter((x): x is number => typeof x === "number" && Number.isInteger(x)) : []);
+type StundenplanPruefung = { ergebnis: ImportErgebnis; status: "leer" | "entwurf" | "veroeffentlicht"; vorhanden: number };
+
+/** Die Vorschau prüft die gewählten Zeilen gegen die Woche, ohne etwas zu speichern. */
+export async function stundenplanPruefenAction(eingabe: StundenplanEingabe & { lehrer: unknown }): Promise<StundenplanPruefung> {
+  const me = await requireTeacher();
+  const zeilen = leseImportZeilen(eingabe.zeilen);
+  const woche = String(eingabe.woche ?? "");
+  // die Lehrer der Fotos, auch wenn noch keine Zeile ausgewählt ist
+  const info = wocheFuerImport(woche, [...ganzeZahlen(eingabe.lehrer), ...(zeilen ?? []).map((z) => z.teacherId)]);
+  if (!zeilen) return { ergebnis: { ok: false, fehler: "Die Zeilen sind nicht lesbar. Bitte die Seite neu laden." }, ...info };
+  const ergebnis = zeilen.length
+    ? stundenplanEintragen(me, woche, zeilen, { ersetzen: Boolean(eingabe.ersetzen) && info.status !== "veroeffentlicht", nurPruefen: true })
+    : { ok: true as const, status: info.status, zeilen: [], eingetragen: 0, geloescht: 0 };
+  return { ergebnis, ...info };
+}
+
+/**
+ * Trägt die bestätigten Zeilen ein und merkt sich, welcher Buchstabe welcher Lehrer ist. Danach geht es zurück
+ * in den Wochenplan dieser Woche, mit einer Meldung.
+ */
+export async function stundenplanEintragenAction(eingabe: StundenplanEingabe & { buchstaben: unknown }): Promise<{ ok: true; weiter: string } | { ok: false; fehler: string }> {
+  const me = await requireTeacher();
+  const zeilen = leseImportZeilen(eingabe.zeilen);
+  if (!zeilen) return { ok: false, fehler: "Die Zeilen sind nicht lesbar. Bitte die Seite neu laden." };
+  const woche = String(eingabe.woche ?? "");
+  const ergebnis = stundenplanEintragen(me, woche, zeilen, { ersetzen: Boolean(eingabe.ersetzen) });
+  if (!ergebnis.ok) return ergebnis;
+  const lehrer = new Set(listTeachers().map((t) => t.id));
+  const buchstaben = eingabe.buchstaben && typeof eingabe.buchstaben === "object" ? (eingabe.buchstaben as Record<string, unknown>) : {};
+  speichereBuchstaben(Object.fromEntries(Object.entries(buchstaben).filter(([, id]) => typeof id === "number" && lehrer.has(id))) as Record<string, number>);
+  aktualisiere("/planung");
+  const nicht = ergebnis.zeilen.length - ergebnis.eingetragen;
+  const hinweis = `${ergebnis.eingetragen === 1 ? "1 Platz" : `${ergebnis.eingetragen} Plätze`} aus den Fotos eingetragen${
+    nicht ? `, ${nicht} nicht (Überschneidung)` : ""
+  }.${ergebnis.status === "veroeffentlicht" ? " Die Woche ist veröffentlicht: die Schüler sehen sie schon." : ""}`;
+  return { ok: true, weiter: mitMeldung(`/planung?woche=${wochenstartVon(woche)}`, { ok: true, hinweis }) };
 }
