@@ -9,6 +9,7 @@ import { BoardThumbs } from "@/components/BoardThumbs";
 import { CopyLink } from "@/components/CopyLink";
 import { Elapsed } from "@/components/Elapsed";
 import { UnitDocForm } from "@/components/UnitDocForm";
+import { EinschaetzungKarte } from "@/components/Einschaetzung";
 import { CancelUnit } from "@/components/UnitControl";
 import { UnitReportView } from "@/components/UnitReportView";
 import { UnitSummary } from "@/components/UnitSummary";
@@ -24,6 +25,7 @@ import { Pill, Reveal, SectionTitle, formatDate, formatTime } from "@/components
 import { LiveStatus } from "@/components/device/LiveStatus";
 import { liveSnapshot, studentDevice } from "@/lib/live";
 import { baseUrl } from "@/lib/base-url";
+import { autoFelderVon, leseEinschaetzung } from "@/lib/einschaetzung";
 import { buildUnitReport, readReport } from "@/lib/learning";
 import * as repo from "@/lib/repo";
 import { requireTeacher } from "@/lib/auth";
@@ -45,10 +47,9 @@ function dauerLabel(geplanteDauer: number | null, minutes: number, estimated: bo
 }
 
 /**
- * One page per unit, in three states:
+ * One page per unit, in two states:
  * running → everything for the unit in one place (Übungen, Whiteboard, Fortschritt, Einheit beenden);
- * just ended → closing screen (recorded automatically + five fields to complete);
- * documented → the documentation, editable on request.
+ * ended → the documentation, written automatically (lib/einschaetzung.ts), changeable on request.
  */
 export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string }> }) {
   const { id } = await params;
@@ -173,52 +174,25 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
     );
   }
 
-  const toComplete = lesson && !lesson.reviewed_at && mayManage;
-  if (toComplete) {
-    return (
-      <>
-        {notices}
-        <header className="mb-8">
-          <p className="inline-flex items-center gap-2 text-[15px] font-semibold text-green">
-            <CheckCircle2 size={18} aria-hidden /> Einheit beendet
-          </p>
-          <h1 className="mt-1 text-[28px] leading-tight font-semibold tracking-[-0.02em]">Einheit mit {student.name} abschließen</h1>
-          {facts}
-        </header>
-        <div className="grid max-w-[820px] gap-10">
-          {brief && <BriefSection brief={brief} lesson={lesson} mayManage={mayManage} />}
-          <section>
-            <SectionTitle>Automatisch erfasst</SectionTitle>
-            {report ? <UnitSummary r={report} /> : <p className="text-[15px] text-ink-2">Keine Daten.</p>}
-            <BoardThumbs unitId={unit.id} max={4} />
-            {report && report.tasks.length > 0 && (
-              <details className="mt-3">
-                <summary className="inline-flex min-h-[44px] cursor-pointer items-center text-[14px] font-semibold text-accent">Alle Aufgaben und Fähigkeiten anzeigen</summary>
-                <div className="mt-3">
-                  <UnitReportView r={report} />
-                </div>
-              </details>
-            )}
-          </section>
-          <UnitDocuments unitId={unit.id} />
-          <section>
-            <SectionTitle>Von dir ergänzen</SectionTitle>
-            <UnitDocForm lesson={lesson} student={student} />
-          </section>
-        </div>
-      </>
-    );
-  }
-
+  const einschaetzung = lesson ? leseEinschaetzung(lesson) : null;
+  const auto = lesson ? autoFelderVon(lesson) : new Set<string>();
+  const frisch = lesson && !lesson.reviewed_at;
   return (
     <>
       {notices}
       {back}
       <header className="mb-8">
+        {frisch && (
+          <p className="inline-flex items-center gap-2 text-[15px] font-semibold text-green">
+            <CheckCircle2 size={18} aria-hidden /> Einheit beendet und automatisch dokumentiert
+          </p>
+        )}
         <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">Einheit mit {student.name}</h1>
         {facts}
+        {frisch && mayManage && <p className="mt-2 text-[14px] text-ink-2">Du musst nichts eintragen. Wenn dir etwas auffällt, kannst du die Dokumentation unten ändern.</p>}
       </header>
       <div className="grid max-w-[820px] gap-10">
+        {lesson && <EinschaetzungKarte e={einschaetzung} lesson={lesson} auto={auto} />}
         {brief && lesson && <BriefSection brief={brief} lesson={lesson} mayManage={mayManage} />}
         {lesson ? (
           <section>
@@ -226,19 +200,19 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
               action={
                 lesson.reviewed_at ? (
                   <span className="inline-flex items-center gap-1 text-[13px] font-medium text-green">
-                    <CheckCircle2 size={14} aria-hidden /> abgeschlossen am {formatDate(lesson.reviewed_at, { day: "numeric", month: "short" })}
+                    <CheckCircle2 size={14} aria-hidden /> von dir ergänzt am {formatDate(lesson.reviewed_at, { day: "numeric", month: "short" })}
                   </span>
                 ) : (
-                  <Pill tone="amber">noch nicht abgeschlossen</Pill>
+                  <Pill>automatisch</Pill>
                 )
               }
             >
               Dokumentation
             </SectionTitle>
-            <DocView lesson={lesson} />
+            <DocView lesson={lesson} auto={auto} />
             {mayManage && (
               <details className="mt-4">
-                <summary className="inline-flex min-h-[44px] cursor-pointer items-center text-[14px] font-semibold text-accent">Dokumentation bearbeiten</summary>
+                <summary className="inline-flex min-h-[44px] cursor-pointer items-center text-[14px] font-semibold text-accent">Ändern oder ergänzen</summary>
                 <div className="mt-4">
                   <UnitDocForm lesson={lesson} student={student} />
                 </div>
@@ -429,21 +403,23 @@ function UnitProgressArea({ unit, studentName }: { unit: UnitView; studentName: 
   );
 }
 
-function DocView({ lesson }: { lesson: repo.Lesson }) {
-  const scale = (v: number | null) => (v ? `${v} von 5` : "–");
-  const rows: [string, string][] = [
-    ["Zusammenfassung", lesson.summary],
-    ["Beobachtungen", lesson.tutor_notes],
-    ["Konzentration", scale(lesson.concentration)],
-    ["Motivation", scale(lesson.motivation)],
-    ["Nächstes Lernziel", lesson.next_steps],
-    ["Hausübung", lesson.homework_note],
+/** The documentation as the teacher would have written it; the scales stand in the Einschätzung above. */
+function DocView({ lesson, auto }: { lesson: repo.Lesson; auto: Set<string> }) {
+  const rows: [string, string, string | null][] = [
+    ["Zusammenfassung", lesson.summary, null],
+    ["Nächstes Lernziel", lesson.next_steps, "next_steps"],
+    ["Wiederholen", lesson.review_topics, "review_topics"],
+    ["Beobachtungen", lesson.tutor_notes, null],
+    ["Hausübung", lesson.homework_note, null],
   ];
   return (
     <dl className="panel grid gap-x-6 gap-y-3 px-5 py-4 text-[15px] sm:grid-cols-[180px_minmax(0,1fr)]">
-      {rows.map(([k, v]) => (
+      {rows.map(([k, v, feld]) => (
         <div key={k} className="contents">
-          <dt className="text-ink-2">{k}</dt>
+          <dt className="text-ink-2">
+            {k}
+            {feld && v && auto.has(feld) && <span className="ml-1.5 rounded-full bg-panel px-1.5 text-[11px] font-medium text-ink-3">automatisch</span>}
+          </dt>
           <dd className="whitespace-pre-line">{v || "–"}</dd>
         </div>
       ))}

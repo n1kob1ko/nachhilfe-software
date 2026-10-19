@@ -1,3 +1,4 @@
+import { autoFelderVon } from "./einschaetzung";
 import { errorTypeLabel } from "./error-types";
 import { dayOf, daysUntil } from "./exams";
 import { readReport, textLine } from "./learning";
@@ -44,6 +45,9 @@ export function unitBrief(lessonId: number, o: { today?: string; now?: number } 
   if (!lesson) return null;
   const today = o.today ?? dayOf(new Date(o.now ?? Date.now()));
   const r = readReport(lesson);
+  // fields the app filled in at the end come from the same data as the lines below: not twice
+  const auto = autoFelderVon(lesson);
+  const vomLehrer = (feld: "positives" | "difficulties" | "next_steps" | "review_topics") => (auto.has(feld) ? [] : teacher(lesson[feld]));
   const subjects = r?.subjects.length ? r.subjects : lesson.subject ? [lesson.subject] : [];
 
   // 1. what was done: topics with their skills, how many tasks, diagnosis
@@ -56,16 +60,16 @@ export function unitBrief(lessonId: number, o: { today?: string; now?: number } 
     if (r.worksheets.some((w) => w.kind === "diagnose")) done.push(data("Diagnose gemacht"));
   } else if (lesson.topic) done.push(data(lesson.topic));
   // Textarbeiten (unless the activities already name them, e.g. the automatic text)
-  for (const t of r?.texts ?? []) if (!lesson.activities?.includes(`„${t.title}“`)) done.push(data(textLine(t)));
-  done.push(...teacher(lesson.activities));
+  for (const t of r?.texts ?? []) if (auto.has("activities") || !lesson.activities?.includes(`„${t.title}“`)) done.push(data(textLine(t)));
+  if (!auto.has("activities")) done.push(...teacher(lesson.activities));
 
   // 2. and 3. by skill state of the unit report
   const good: BriefLine[] = (r?.skills ?? []).filter((s) => s.state === "sicher").map((s) => data(`${s.name} (${s.correct} von ${s.done} richtig)`));
-  good.push(...teacher(lesson.positives));
+  good.push(...vomLehrer("positives"));
   const difficulties: BriefLine[] = (r?.skills ?? [])
     .filter((s) => s.state !== "sicher")
     .map((s) => data(`${s.name}: ${s.correct} von ${s.done} richtig${s.withHelp ? `, ${s.withHelp}× mit Hilfe` : ""}`));
-  difficulties.push(...teacher(lesson.difficulties));
+  difficulties.push(...vomLehrer("difficulties"));
 
   // 4. errors: the stored Fehlerart (also when the teacher changed it later), else the concrete error
   const wrong = lesson.unit_id ? repo.listAttemptsForUnit(lesson.unit_id).filter((a) => !a.correct && !a.solution_viewed) : [];
@@ -81,7 +85,7 @@ export function unitBrief(lessonId: number, o: { today?: string; now?: number } 
   // 5. next: the central recommendation, for the subjects of this unit
   const steps = nextSteps(lesson.student_id, { today, now: o.now, limit: 12 }).filter((s) => !subjects.length || subjects.includes(s.skill.subject));
   const next: BriefLine[] = steps.slice(0, 3).map((s) => data(`${s.skill.name} (${s.kind === "ueberpruefung" ? "Überprüfung" : RULE_LABEL[s.rule]})`));
-  next.push(...teacher(lesson.next_steps), ...teacher(lesson.review_topics));
+  next.push(...vomLehrer("next_steps"), ...vomLehrer("review_topics"));
 
   // 6. homework and the next tests
   const dates: BriefLine[] = repo

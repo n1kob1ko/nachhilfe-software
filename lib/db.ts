@@ -788,6 +788,10 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // note for parents/student written from the summary of a unit (by the teacher or, on request, by Claude)
   ["lessons", "family_note", "TEXT NOT NULL DEFAULT ''"],
   ["lessons", "family_note_source", "TEXT NOT NULL DEFAULT ''"],
+  // automatische Dokumentation (lib/einschaetzung.ts, 2026-10-19): wie der Schüler sich getan hat (JSON) und
+  // die automatisch eingetragenen Werte (JSON {feld: wert}); ein Feld mit anderem Wert hat der Lehrer geändert
+  ["lessons", "einschaetzung", "TEXT"],
+  ["lessons", "auto_felder", "TEXT NOT NULL DEFAULT '{}'"],
   // Textkorrektur „gründlich“ (lib/ai/textkorrektur-gruendlich.ts): how the KI checked, which sentences it
   // left out, whether the second check ran; per suggestion where it came from and whether the teacher must
   // look closely ('lehrer'), the check sorted it out ('verworfen') or it does not fit its place ('unpassend', 2026-10-11),

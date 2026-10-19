@@ -1,14 +1,10 @@
 import { saveUnitDocAction } from "@/app/session-actions";
 import { FachFeld } from "@/components/FachFeld";
 import { SkillPicker } from "@/components/SkillPicker";
+import { SKALEN_TEXT } from "@/lib/einschaetzung";
 import * as repo from "@/lib/repo";
 
-const SCALES = {
-  understanding: ["nicht verstanden", "kaum", "teilweise", "gut", "sehr gut"],
-  concentration: ["sehr abgelenkt", "oft abgelenkt", "wechselnd", "konzentriert", "sehr konzentriert"],
-  motivation: ["sehr gering", "gering", "mittel", "hoch", "sehr hoch"],
-  participation: ["kaum", "wenig", "teilweise", "aktiv", "sehr aktiv"],
-} as const;
+const SCALES = SKALEN_TEXT;
 
 function Scale({ name, legend, value }: { name: keyof typeof SCALES; legend: string; value: number | null }) {
   return (
@@ -31,15 +27,17 @@ function Scale({ name, legend, value }: { name: keyof typeof SCALES; legend: str
 }
 
 /**
- * End-of-unit form. Fach and Thema first (any subject, e.g. a one-off Biologie unit), then the five
- * things only the teacher knows; everything else is optional and folded away (it is still
- * submitted, so nothing written earlier gets lost).
+ * Changing the documentation of a unit. Nothing here is required: at the end of the unit the app has
+ * filled the fields from the data (lib/einschaetzung.ts). Fach and Thema first (any subject, e.g. a
+ * one-off Biologie unit), then what a teacher most often adds; everything else is folded away (it
+ * is still submitted, so nothing written earlier gets lost).
  */
 export function UnitDocForm({ lesson, student }: { lesson: repo.Lesson; student: repo.Student }) {
   const subjects = student.subjects.length ? student.subjects : [lesson.subject];
   const skills = repo.listSkills().filter((s) => subjects.includes(s.subject) || lesson.skill_ids.includes(s.id));
   return (
     <form action={saveUnitDocAction.bind(null, lesson.id)} className="grid gap-6">
+      <p className="text-[14px] text-ink-2">Die Felder sind aus den Daten der Einheit ausgefüllt. Was du änderst, bleibt so.</p>
       <div className="grid gap-4 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
         <label className="field">
           <span className="label">Fach</span>
@@ -122,7 +120,7 @@ export function UnitDocForm({ lesson, student }: { lesson: repo.Lesson; student:
         </div>
       </details>
       <div>
-        <button className="btn btn-primary btn-lg">Dokumentation speichern</button>
+        <button className="btn btn-primary btn-lg">Änderungen speichern</button>
       </div>
     </form>
   );

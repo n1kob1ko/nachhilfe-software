@@ -2,10 +2,12 @@ import Link from "next/link";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, PenLine, Plus, Printer, SpellCheck } from "lucide-react";
 import { LessonCard, rateTone } from "@/components/LessonCard";
 import { Info } from "@/components/Info";
+import { EinschaetzungPill } from "@/components/Einschaetzung";
 import { BoardThumbs } from "@/components/BoardThumbs";
 import { UnitStatusPill } from "@/components/UnitControl";
 import { Empty, More, Pill, Reveal, SectionTitle, formatDate } from "@/components/ui";
 import { pct } from "@/lib/analysis";
+import { autoFelderVon, leseEinschaetzung } from "@/lib/einschaetzung";
 import { progressOverview, readReport } from "@/lib/learning";
 import * as repo from "@/lib/repo";
 import { analyzeStudent } from "@/lib/service";
@@ -76,7 +78,7 @@ export function Lernverlauf({ student, filter }: { student: repo.Student; filter
         >
           <span>
             Dokumentation
-            <Info label="Info zur Dokumentation">Jede Einheit wird beim Starten automatisch protokolliert. Beim Beenden entsteht die Dokumentation aus den Übungsdaten, der Lehrer ergänzt seine Beobachtungen.</Info>
+            <Info label="Info zur Dokumentation">Jede Einheit wird beim Starten automatisch protokolliert. Beim Beenden schreibt die App die Dokumentation aus den Übungsdaten, mit einer Einschätzung im Vergleich zu den letzten Einheiten. Der Lehrer muss nichts eintragen, kann aber ändern.</Info>
           </span>
         </SectionTitle>
         <nav className="mb-4 flex flex-wrap gap-1.5" aria-label="Einträge filtern">
@@ -111,6 +113,8 @@ export function Lernverlauf({ student, filter }: { student: repo.Student; filter
 
 function UnitEntry({ unit, lesson }: { unit: UnitView; lesson: repo.Lesson | null }) {
   const r = lesson ? readReport(lesson) : null;
+  const einschaetzung = lesson ? leseEinschaetzung(lesson) : null;
+  const auto = lesson ? autoFelderVon(lesson) : new Set<string>();
   const minutes = Math.round(unitDurationMs(unit) / 60_000);
   const topic = lesson ? [lesson.subject, lesson.topic].filter(Boolean).join(" · ") : unit.subject;
   const head = (
@@ -126,16 +130,16 @@ function UnitEntry({ unit, lesson }: { unit: UnitView; lesson: repo.Lesson | nul
       <div className="flex items-center gap-2">
         {unit.status !== "beendet" ? (
           <UnitStatusPill status={unit.status} />
-        ) : lesson && !lesson.reviewed_at ? (
-          <Pill tone="amber">noch ergänzen</Pill>
+        ) : einschaetzung?.stufe ? (
+          <EinschaetzungPill e={einschaetzung} />
         ) : lesson ? (
-          <Pill tone="green" title="Dokumentation abgeschlossen">
+          <Pill tone="green" title={lesson.reviewed_at ? "Vom Lehrer ergänzt" : "Automatisch dokumentiert"}>
             <CheckCircle2 size={12} aria-hidden /> dokumentiert
           </Pill>
         ) : null}
         {unit.status !== "abgebrochen" && (
           <Link href={`/einheiten/${unit.id}`} className="btn btn-ghost btn-sm">
-            {unit.status === "gestartet" ? "Öffnen" : lesson?.reviewed_at ? "Öffnen" : "Abschließen"}
+            Öffnen
           </Link>
         )}
       </div>
@@ -164,14 +168,22 @@ function UnitEntry({ unit, lesson }: { unit: UnitView; lesson: repo.Lesson | nul
   const moved = r?.skills.filter((s) => s.before !== null && s.after !== null) ?? [];
   const gain = moved.length ? Math.round((moved.reduce((sum, s) => sum + (s.after! - s.before!), 0) / moved.length) * 100) : null;
   const ratings = [
+    lesson.understanding && `Verständnis ${lesson.understanding}/5`,
     lesson.concentration && `Konz. ${lesson.concentration}/5`,
     lesson.motivation && `Motiv. ${lesson.motivation}/5`,
     lesson.participation && `Mitarbeit ${lesson.participation}/5`,
   ].filter(Boolean) as string[];
   const progress = moved.map((s) => `${s.name} ${pct(s.before)} → ${pct(s.after)}`).join(", ");
   const rows: [string, string][] = [
+    ["Einschätzung", einschaetzung?.stufe ? `${einschaetzung.titel}. ${einschaetzung.saetze.join(" ")}` : ""],
     ["Zusammenfassung", lesson.summary],
-    ["Schwierigkeiten", [problems.length ? `Schwierig: ${problems.join(", ")}` : "", r?.errors.length ? `Fehler: ${r.errors.map((e) => (e.count > 1 ? `${e.label} (${e.count}×)` : e.label)).join(", ")}` : "", lesson.difficulties].filter(Boolean).join("\n")],
+    [
+      "Schwierigkeiten",
+      // the automatic text already says this from the same data
+      auto.has("difficulties")
+        ? lesson.difficulties
+        : [problems.length ? `Schwierig: ${problems.join(", ")}` : "", r?.errors.length ? `Fehler: ${r.errors.map((e) => (e.count > 1 ? `${e.label} (${e.count}×)` : e.label)).join(", ")}` : "", lesson.difficulties].filter(Boolean).join("\n"),
+    ],
     ["Fortschritt", progress],
     ["Beobachtungen", [lesson.tutor_notes, ratings.join(" · "), lesson.positives && `Positiv: ${lesson.positives}`].filter(Boolean).join("\n")],
     ["Nächste Lernziele", [lesson.next_steps, lesson.review_topics && `Wiederholen: ${lesson.review_topics}`, lesson.homework_note && `Hausübung: ${lesson.homework_note}`].filter(Boolean).join("\n")],

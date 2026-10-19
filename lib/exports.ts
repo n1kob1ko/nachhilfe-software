@@ -4,6 +4,7 @@
  */
 import { localTime, toCsv, type Cell } from "./csv";
 import { db, json } from "./db";
+import { leseEinschaetzung } from "./einschaetzung";
 import { ERROR_TYPE_SOURCE_LABEL, errorTypeLabel, suggestionBy, type ErrorTypeSource } from "./error-types";
 import { readReport } from "./learning";
 import * as repo from "./repo";
@@ -16,6 +17,11 @@ type R = Record<string, unknown>;
 const q = (sql: string) => db().prepare(sql).all() as R[];
 const s = (v: unknown) => (v === null || v === undefined ? "" : String(v));
 const n = (v: unknown) => (v === null || v === undefined || v === "" ? null : Number(v));
+/** „Gut gelaufen. 8 von 10 Aufgaben richtig …“ from the stored assessment of a unit. */
+const einschaetzungText = (v: unknown) => {
+  const e = leseEinschaetzung({ einschaetzung: typeof v === "string" ? v : null });
+  return e ? `${e.titel}. ${e.saetze.join(" ")}` : "";
+};
 const yes = (v: unknown) => Boolean(v);
 const list = (v: unknown) => json<string[]>(s(v), []).join(", ");
 const pct = (v: number | null | undefined) => (v === null || v === undefined ? null : Math.round(v * 100));
@@ -84,12 +90,12 @@ export const DATASETS: Dataset[] = [
     build: () => {
       const names = skillNames();
       return {
-        headers: ["ID", "Einheit", "Beginn", "Dauer (min)", "Status", "Lehrer", "Schüler", "Fach", "Thema", "Was gemacht", "Fehler", "Verständnis (1–5)", "Konzentration (1–5)", "Motivation (1–5)", "Mitarbeit (1–5)", "Beobachtungen", "Schwierigkeiten", "Positive Entwicklungen", "Wiederholungen", "Nächstes Lernziel", "Hausübung", "Fähigkeiten", "Ergänzt am"],
+        headers: ["ID", "Einheit", "Beginn", "Dauer (min)", "Status", "Lehrer", "Schüler", "Fach", "Thema", "Was gemacht", "Fehler", "Verständnis (1–5)", "Konzentration (1–5)", "Motivation (1–5)", "Mitarbeit (1–5)", "Beobachtungen", "Schwierigkeiten", "Positive Entwicklungen", "Wiederholungen", "Nächstes Lernziel", "Hausübung", "Fähigkeiten", "Einschätzung (automatisch)", "Ergänzt am"],
         rows: q(`${LESSON_SQL} WHERE l.kind = 'stunde' ORDER BY l.starts_at`).map((r) => [
           // Dauer 0 = Uhrzeit und Dauer nicht erfasst (Import der Dokumentation): nur das Datum
           n(r.id), n(r.unit_id), r.duration_min ? localTime(s(r.starts_at)) : s(r.starts_at).slice(0, 10), n(r.duration_min || null), s(r.status), s(r.teacher_name), s(r.student_name), s(r.subject), s(r.topic),
           s(r.activities), s(r.mistakes), n(r.understanding), n(r.concentration), n(r.motivation), n(r.participation), s(r.tutor_notes), s(r.difficulties),
-          s(r.positives), s(r.review_topics), s(r.next_steps), s(r.homework_note), names(r.skill_ids), localTime(s(r.reviewed_at)),
+          s(r.positives), s(r.review_topics), s(r.next_steps), s(r.homework_note), names(r.skill_ids), einschaetzungText(r.einschaetzung), localTime(s(r.reviewed_at)),
         ]),
       };
     },

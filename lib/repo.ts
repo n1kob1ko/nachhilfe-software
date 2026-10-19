@@ -100,6 +100,10 @@ export type Lesson = {
   /** Note for parents or the student, written from the unit summary (lib/summary.ts): source fakten | ki | lehrer. */
   family_note?: string;
   family_note_source?: string;
+  /** How the student did, from the data (lib/einschaetzung.ts), as JSON. */
+  einschaetzung?: string | null;
+  /** JSON {field: value} of what the app filled in automatically (lib/einschaetzung.ts). */
+  auto_felder?: string;
 };
 
 export type Homework = { id: number; student_id: number; subject: string; description: string; due_date: string | null; status: string; notes: string };
