@@ -169,6 +169,8 @@ export type LiveSnapshot = {
     single: boolean;
     /** a Minitest (lib/minitest.ts): no hints, one try, no solutions to show */
     test: boolean;
+    /** a Probeschularbeit (lib/probeschularbeit.ts): runs like a Minitest, named as such */
+    probe?: boolean;
     taskNo: number;
     total: number;
     /** "bereit": sent while no tablet is paired (the student uses the link) */
@@ -224,6 +226,7 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
       title: a.title,
       single: a.source_task_id !== null,
       test: isMinitest(a.mode),
+      probe: Boolean(repo.getWorksheet(a.worksheet_id)?.probe_test_id),
       taskNo,
       total: tasks.length,
       state: a.completed_at ? "fertig" : a.delivered_at || attempts.length ? "arbeitet" : device ? "nicht angekommen" : "bereit",

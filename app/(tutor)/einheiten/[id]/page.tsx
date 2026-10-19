@@ -378,7 +378,7 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
                       {a.title}
                       {a.mode === "test" && (
                         <span className="ml-2 align-middle">
-                          <Pill tone="accent">Minitest</Pill>
+                          <Pill tone="accent">{a.probe_test_id ? "Probeschularbeit" : "Minitest"}</Pill>
                         </span>
                       )}
                     </span>

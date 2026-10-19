@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { CheckCircle2, ExternalLink, FileJson, XCircle } from "lucide-react";
 import { applyImportAction, applyManyAction, discardImportAction, discardManyAction, previewImportAction, previewManyAction, removeDemoAction, setThresholdsAction } from "@/app/curriculum-actions";
+import { setNotenschluesselAction } from "@/app/probeschularbeit-actions";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, Reveal, SectionTitle, formatDate } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { bundledPackages, getImport, listImports, type BundledPackage, type Diff } from "@/lib/curriculum-import";
 import { curriculumOverview, examThresholds, listSources, SOURCE_TYPE_LABEL, taskBankAllowed, type SourceType } from "@/lib/lehrplan";
+import { NOTEN, notenschluessel, punkteText, schluesselTabelle, SCHLUESSEL_STANDARD } from "@/lib/probeschularbeit";
 import { rangeLabel, SCHOOL_TYPES } from "@/lib/school";
 
 export const metadata = { title: "Lehrplan" };
@@ -45,12 +47,18 @@ export default async function CurriculumPage({ searchParams }: { searchParams: P
           </Link>
         ))}
       </nav>
-      {sp.fehler && <p className="mb-6 rounded-lg bg-red-wash px-4 py-3 text-[14px] text-red">{sp.fehler}</p>}
+      {/* Einstellungen zeigt den Fehler beim Notenschlüssel, wo er entstand */}
+      {sp.fehler && tab !== "einstellungen" && <p className="mb-6 rounded-lg bg-red-wash px-4 py-3 text-[14px] text-red">{sp.fehler}</p>}
       {tab === "uebersicht" && <Overview />}
       {tab === "quellen" && <Sources />}
       {tab === "importe" && <Imports admin={admin} previewIds={ids(sp.vorschau)} importedIds={ids(sp.importiert)} />}
       {tab === "lizenzen" && <Licences />}
-      {tab === "einstellungen" && <Settings admin={admin} saved={Boolean(sp.gespeichert)} />}
+      {tab === "einstellungen" && (
+        <div className="grid gap-6">
+          <Settings admin={admin} saved={Boolean(sp.gespeichert) && sp.gespeichert !== "notenschluessel"} />
+          <Notenschluessel admin={admin} saved={sp.gespeichert === "notenschluessel"} fehler={sp.fehler} />
+        </div>
+      )}
     </>
   );
 }
@@ -496,6 +504,39 @@ function Licences() {
         </ul>
       </section>
     </div>
+  );
+}
+
+/** Notenschlüssel der Probeschularbeit (lib/probeschularbeit.ts): ab wie viel Prozent der Punkte welche Note. */
+function Notenschluessel({ admin, saved, fehler }: { admin: boolean; saved: boolean; fehler?: string }) {
+  const grenzen = notenschluessel();
+  const beispiel = schluesselTabelle(24, grenzen).filter((z) => z.ab !== null);
+  return (
+    <form action={setNotenschluesselAction} className="panel grid max-w-[560px] gap-4 px-5 py-5" id="notenschluessel">
+      <p className="font-semibold">Notenschlüssel für Probeschularbeiten</p>
+      <p className="-mt-2 text-[13.5px] text-ink-2">
+        Ab wie viel Prozent der Punkte es welche Note gibt. Vorschlag: {SCHLUESSEL_STANDARD.map((x) => punkteText(x)).join(", ")} %. Nimm den Schlüssel der Schule, wenn du ihn kennst.
+      </p>
+      {NOTEN.slice(0, 4).map((n, i) => (
+        <label key={n.note} className="flex items-center justify-between gap-4 text-[15px]">
+          {n.label} ab
+          <span className="flex items-center gap-2">
+            <input className="input num w-[84px]" inputMode="decimal" name={`n${i + 1}`} defaultValue={punkteText(grenzen[i])} disabled={!admin} required />
+            <span className="text-ink-2">%</span>
+          </span>
+        </label>
+      ))}
+      <p className="text-[13px] text-ink-3">
+        Bei 24 Punkten: {beispiel.map((z) => `${z.note.label} ab ${punkteText(z.ab!)}`).join(", ")}.
+      </p>
+      {fehler && (
+        <p role="alert" className="rounded-lg bg-red-wash px-3 py-2 text-[14px] text-red">
+          {fehler}
+        </p>
+      )}
+      {admin ? <button className="btn btn-primary justify-self-start">Speichern</button> : <p className="text-[13px] text-ink-3">Nur die Verwaltung kann das ändern.</p>}
+      {saved && <p className="text-[14px] text-green">Gespeichert.</p>}
+    </form>
   );
 }
 

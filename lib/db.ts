@@ -845,6 +845,10 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["ai_calls", "provider", "TEXT NOT NULL DEFAULT ''"],
   // davon Denken: der Teil der Ausgabe-Tokens, den das Modell zum Nachdenken brauchte (null = nicht gemeldet)
   ["ai_calls", "thinking_tokens", "INTEGER"],
+  // Probeschularbeit (lib/probeschularbeit.ts, 2026-10-19): die Schularbeit, für die die Übung gemacht wurde,
+  // und die Punkte je Aufgabe (null = Vorgabe nach Schwierigkeit)
+  ["worksheets", "probe_test_id", "INTEGER REFERENCES tests(id) ON DELETE SET NULL"],
+  ["tasks", "points", "REAL"],
 ];
 
 /** Teachers to start with; more can be added later. */

@@ -694,7 +694,8 @@ export function releaseWorksheet(worksheetId: number, studentId: number | null, 
   if (bad.length) return { error: `Aufgabe ${bad[0][0]}: ${bad[0][1]}` };
   const w = repo.getWorksheet(worksheetId);
   const wish = o.quickRound ?? (w ? settingsOf(w).quickRound === true : false);
-  const mode: AssignmentMode = wish && isQuickRound(tasks) ? "schnell" : "normal";
+  // eine Probeschularbeit läuft immer wie ein Minitest (repo.assignWorksheet)
+  const mode: AssignmentMode = w?.probe_test_id ? "test" : wish && isQuickRound(tasks) ? "schnell" : "normal";
   repo.updateWorksheetMeta(worksheetId, { status: "freigegeben" });
   if (!studentId) return { mode };
   const unit = runningUnitForStudent(studentId);

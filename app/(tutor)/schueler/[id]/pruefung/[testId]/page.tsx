@@ -1,17 +1,22 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarClock, FileText, Plus } from "lucide-react";
+import { CalendarClock, FileText, Plus, Printer } from "lucide-react";
 import { setExamSkillsAction } from "@/app/curriculum-actions";
+import { probeschularbeitAction } from "@/app/probeschularbeit-actions";
 import { Info } from "@/components/Info";
+import { ProbeschularbeitForm } from "@/components/ProbeschularbeitForm";
 import { PageHeader, Pill, Reveal, SectionTitle, StatusChip, formatDate } from "@/components/ui";
 import { dayOf, examPrep, PLAN_COUNTS, STAGE_LABEL, STAGE_TONE } from "@/lib/exams";
+import { aiEnabled } from "@/lib/ai";
 import { matchSkills } from "@/lib/lehrplan";
+import { probeschularbeitenZu, punkteText } from "@/lib/probeschularbeit";
 
 export const metadata = { title: "Vorbereitung" };
 
 /** "Vorbereitung starten": days left, Stoff, Lernstand per skill, untested skills and a rule-based plan. */
-export default async function ExamPrepPage({ params }: { params: Promise<{ id: string; testId: string }> }) {
+export default async function ExamPrepPage({ params, searchParams }: { params: Promise<{ id: string; testId: string }>; searchParams: Promise<{ fehler?: string }> }) {
   const { id, testId } = await params;
+  const sp = await searchParams;
   const prep = examPrep(Number(testId), dayOf(new Date()));
   if (!prep || prep.student.id !== Number(id)) notFound();
   const { test, student, days, stage, skills, untested, plan, totalTasks } = prep;
@@ -23,6 +28,7 @@ export default async function ExamPrepPage({ params }: { params: Promise<{ id: s
     skills: matchSkills(topic, test.subject, { student, limit: 6 }).map((m) => m.skill),
   }));
   const offered = [...new Map([...skills.map((s) => s.skill), ...suggestions.flatMap((s) => s.skills)].map((s) => [s.id, s])).values()];
+  const proben = probeschularbeitenZu(test.id);
   const builder = `/uebungen/neu?schueler=${student.id}&skills=${plan.map((p) => encodeURIComponent(p.skill.id)).join(",")}&anzahl=${Math.min(30, totalTasks)}`;
 
   return (
@@ -89,6 +95,60 @@ export default async function ExamPrepPage({ params }: { params: Promise<{ id: s
                 </li>
               ))}
             </ol>
+          )}
+        </section>
+
+        <section id="probeschularbeit" aria-label="Probeschularbeit" className="scroll-mt-24">
+          <SectionTitle>
+            <span>
+              Probeschularbeit
+              <Info label="Was ist eine Probeschularbeit?">
+                Ein ganzer Test zum Stoff, wie eine echte Schularbeit: leichte Aufgaben zuerst, schwere am Ende, jede mit Punkten, dazu der Notenschlüssel. Sie entsteht als Entwurf. Du prüfst sie, dann druckst du sie oder sendest sie aufs Gerät. Dort läuft sie wie ein Minitest: ohne Tipps, ein Versuch je Aufgabe.
+              </Info>
+            </span>
+          </SectionTitle>
+          {sp.fehler && (
+            <p role="alert" className="mb-3 rounded-lg bg-red-wash px-3 py-2 text-[14px] text-red">
+              {sp.fehler}
+            </p>
+          )}
+          {proben.length > 0 && (
+            <ul className="panel mb-4 divide-y divide-line">
+              {proben.map(({ worksheet: w, punkte, assignment: a, ergebnis: e }) => (
+                <li key={w.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
+                  <span className="min-w-0 flex-1">
+                    <Link href={`/uebungen/${w.id}`} className="block font-medium hover:underline">
+                      Probeschularbeit vom {formatDate(w.created_at, { day: "numeric", month: "short" })}
+                    </Link>
+                    <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[13px] text-ink-2">
+                      {w.status === "entwurf" ? <Pill tone="amber">Entwurf</Pill> : a ? <Pill tone="green">gesendet</Pill> : <Pill>freigegeben</Pill>}
+                      <span className="num">{punkteText(punkte)} Punkte</span>
+                      {e && e.bearbeitet > 0 && (
+                        <span className="num">
+                          · {punkteText(e.erreicht)} von {punkteText(e.gesamt)} Punkten
+                          {e.note ? ` · Note ${e.note.note} (${e.note.label})` : e.offen ? ` · noch ${e.offen} zu bewerten` : e.bearbeitet < e.aufgaben ? ` · ${e.bearbeitet} von ${e.aufgaben} Aufgaben` : ""}
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                  {a && e && e.bearbeitet > 0 && (
+                    <Link href={`/schueler/${student.id}/ergebnis/${a.id}`} className="btn btn-ghost btn-sm">
+                      Ergebnis
+                    </Link>
+                  )}
+                  <Link href={`/arbeitsblatt/${w.id}`} className="btn btn-secondary btn-sm">
+                    <Printer size={15} aria-hidden /> Drucken
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          {skills.length === 0 && test.skill_ids.length === 0 ? (
+            <p className="text-[14px] text-ink-3">Ordne zuerst unten den Stoff Fähigkeiten zu, dann kannst du eine Probeschularbeit erstellen.</p>
+          ) : (
+            <div className="panel px-4 py-4">
+              <ProbeschularbeitForm action={probeschularbeitAction.bind(null, test.id)} ai={aiEnabled()} again={proben.length > 0} />
+            </div>
           )}
         </section>
 

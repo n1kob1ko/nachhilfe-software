@@ -928,3 +928,66 @@
     flex-wrap: wrap;
   }
 }
+
+/* ---------- Probeschularbeit (lib/probeschularbeit.ts): Punkte je Aufgabe, Notenschlüssel ---------- */
+.ab-task-probe {
+  grid-template-columns: 9mm minmax(0, 1fr) 21mm;
+}
+.ab-task-probe.ab-task-plain {
+  grid-template-columns: minmax(0, 1fr) 21mm;
+}
+.ab-punkte {
+  align-self: start;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1.2mm;
+  font-size: 10pt;
+  white-space: nowrap;
+}
+.ab-punkte-box {
+  display: inline-block;
+  width: 8mm;
+  height: 6.5mm;
+  border: 0.3mm solid #000;
+  border-radius: 0.8mm;
+}
+.ab-bewertung {
+  margin-top: 4mm;
+  padding-top: 4mm;
+  border-top: 0.4mm solid #000;
+  break-inside: avoid;
+}
+.ab-gesamt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2mm;
+  margin: 0 0 5mm;
+  font-size: 11pt;
+}
+.ab-field-line.ab-field-short {
+  min-width: 18mm;
+}
+.ab-gesamt-note {
+  margin-left: 10mm;
+}
+.ab-schluessel {
+  border-collapse: collapse;
+  font-size: 10pt;
+}
+.ab-schluessel caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 700;
+  margin-bottom: 1.5mm;
+}
+.ab-schluessel th,
+.ab-schluessel td {
+  border: 0.3mm solid #000;
+  padding: 1.2mm 3mm;
+  text-align: center;
+}
+.ab-schluessel th {
+  font-weight: 600;
+}
