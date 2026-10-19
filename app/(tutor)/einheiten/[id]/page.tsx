@@ -2,7 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
-import { BookOpenCheck, CheckCircle2, ChartNoAxesColumn, ExternalLink, Images, PenLine, Plus, Presentation, Printer, Square } from "lucide-react";
+import { BookOpenCheck, Camera, CheckCircle2, ChartNoAxesColumn, ExternalLink, Images, PenLine, Plus, Presentation, Printer, Square } from "lucide-react";
 import { endUnitAction } from "@/app/session-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { BoardThumbs } from "@/components/BoardThumbs";
@@ -345,18 +345,22 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
     <div className="grid gap-10">
       {(stoff || gedruckt) && <MinitestKarte unitId={unit.id} name={name} geraet={device} stoff={stoff} gedruckt={gedruckt} />}
       <section>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-4 grid gap-3">
           <h2 className="text-[20px] font-semibold">Übungen für {name}</h2>
           {mayManage && (
-            <div className="flex flex-wrap gap-2">
+            // the main way first; on the phone one under the other, all the same width
+            <div className="btn-reihe grid gap-2 sm:flex sm:flex-wrap">
+              <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-primary btn-lg">
+                <Plus size={18} aria-hidden /> Neue Übung erstellen
+              </Link>
+              <Link href={`/einheiten/${unit.id}/foto`} className="btn btn-secondary btn-lg" data-testid="foto-vom-stoff">
+                <Camera size={18} aria-hidden /> Foto vom Stoff
+              </Link>
               <Link href={`/einheiten/${unit.id}/text`} className="btn btn-secondary btn-lg">
                 <PenLine size={18} aria-hidden /> Textarbeit starten
               </Link>
               <Link href={`/einheiten/${unit.id}/bildgeschichte`} className="btn btn-secondary btn-lg" data-testid="bildgeschichte-erstellen">
                 <Images size={18} aria-hidden /> Bildgeschichte erstellen
-              </Link>
-              <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-primary btn-lg">
-                <Plus size={18} aria-hidden /> Neue Übung erstellen
               </Link>
             </div>
           )}

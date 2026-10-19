@@ -46,6 +46,12 @@ export type BuilderSettings = {
    * Builder. Bleibt für ältere Übungen ohne den Haken leer.
    */
   quickRound?: boolean;
+  /**
+   * „Foto vom Stoff“ (lib/foto-uebung.ts): the photo, stored as material, and the tasks the KI read on it,
+   * a model for new tasks. Kept with the exercise, so a task made again stays on the same material.
+   */
+  materialId?: number;
+  examples?: string[];
 };
 
 export function settingsFromForm(f: FormData): BuilderSettings {
@@ -402,6 +408,7 @@ export async function generateTasks(
             plan: rest.map((i) => ({ skillId: plan[i].skill.skill.id, category: plan[i].category ?? categoriesFor(settings.subject)[0]?.key ?? "" })),
             studentContext: ctx ? contextForAI(ctx, skills.map((r) => r.skill.id)) : null,
             focusNote: settings.focus,
+            examples: settings.examples,
             avoid: [...(o.avoid ?? []), ...slots.filter((t): t is TaskDraft => Boolean(t)).map((t) => t.prompt)],
             wortarten,
           },

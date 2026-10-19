@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowRight, CheckCircle2, Copy, Eye, EyeOff, Printer, Send, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Copy, ExternalLink, Eye, EyeOff, Printer, Send, Sparkles } from "lucide-react";
 import { activeUnitForTeacher, runningUnitForStudent } from "@/lib/units";
 import { SendResult, TabletSend } from "@/components/device/TabletSend";
 import type { SendState } from "@/app/device-actions";
@@ -15,6 +15,7 @@ import { WorksheetEditor } from "@/components/WorksheetEditor";
 import { ReleasePanel, SaveTemplatePanel, type QuickRoundChoice } from "@/components/WorksheetPanels";
 import { aiEnabled } from "@/lib/ai";
 import { settingsOf } from "@/lib/builder";
+import { getMaterial } from "@/lib/materials";
 import * as repo from "@/lib/repo";
 import { requireTeacher } from "@/lib/auth";
 import { klassenLabel, stufeLabel } from "@/lib/school";
@@ -58,6 +59,9 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
   const quickProblem = quickRoundProblem(tasks);
   const quickRound: QuickRoundChoice = { eligible: quickProblem === null, reason: quickProblem, wished: settingsOf(w).quickRound === true };
   const quickWished = quickRound.eligible && quickRound.wished;
+  // „Foto vom Stoff“ (lib/foto-uebung.ts): the photo next to the preview, to compare the tasks with it
+  const fotoId = settingsOf(w).materialId;
+  const foto = draft && fotoId ? getMaterial(fotoId) : null;
 
   const forStudent = w.student_id ? students.find((s) => s.id === w.student_id) : null;
   const first = forStudent?.name.split(" ")[0];
@@ -112,6 +116,23 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
           <>
             <h2 className="mb-1 text-[18px] font-semibold">Vorschau prüfen, dann senden</h2>
             <p className="mb-4 text-[14px] text-ink-2">Aufgaben unten bei Bedarf ändern.</p>
+            {foto && (
+              <a
+                href={`/material/${foto.id}/datei`}
+                target="_blank"
+                rel="noreferrer"
+                className="mb-4 flex max-w-[520px] items-center gap-3 rounded-xl bg-surface px-3 py-2 shadow-[var(--shadow-card)] transition-colors hover:bg-panel"
+                data-testid="aus-foto"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- the teacher's own photo, served by our own route */}
+                <img src={`/material/${foto.id}/datei`} alt="" className="h-14 w-14 shrink-0 rounded-lg bg-panel object-cover" />
+                <span className="min-w-0 flex-1 text-[14px]">
+                  <span className="block font-semibold">Aus dem Foto vom Stoff</span>
+                  <span className="block truncate text-ink-2">{foto.analysis?.topic || "Foto ansehen"}</span>
+                </span>
+                <ExternalLink size={16} className="shrink-0 text-ink-3" aria-label="Foto groß ansehen" />
+              </a>
+            )}
             {active ? (
               <>
                 <TabletSend student={activeFirst} unitId={active.id} worksheetId={w.id} />

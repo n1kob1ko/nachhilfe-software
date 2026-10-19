@@ -2,4 +2,4 @@
 export * from "./features";
 // Banken: die Anweisungen aus Artikel Trainer/AI_prompts.md in Bankform (Phase 1, Schritt 6).
 export * from "./banken";
-export { aiEnabled, type AIMeta } from "./router";
+export { aiEnabled, aiReadsImages, type AIMeta } from "./router";

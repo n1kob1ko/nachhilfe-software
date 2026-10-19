@@ -63,6 +63,14 @@ Tablet `assignments.mode = 'test'`, gedruckt nur die Übung mit
 `worksheets.minitest_unit_id` (`lib/minitest.ts`). Die Aufgaben kommen ohne KI.
 _Avoid_: Probeschularbeit (so nennt ihn niko, im Programm heißt er Minitest), Quiz, **Diagnose**
 
+**Foto vom Stoff**:
+Eine **Übung** aus einem Foto der Buchseite oder des Arbeitsblatts, in der laufenden
+**Einheit** (`/einheiten/[id]/foto`, `lib/foto-uebung.ts`). Die KI liest das Foto
+(Thema, Fähigkeiten, die Aufgaben darauf), dann entsteht mit dem Builder ein Entwurf
+mit neuen Aufgaben in derselben Art. Der Lehrer prüft ihn in der Vorschau und sendet
+ihn. Das Foto bleibt als Material des Schülers; ohne KI gibt es das nicht.
+_Avoid_: Foto-Upload, Scan
+
 **geplante Einheit**:
 Ein Platz im Wochenplan: wer (Lehrer, Schüler), wo (Raum), an welchem Wochentag,
 zu welcher Startzeit und mit welcher **geplanten Dauer**. Sie wird erst wirklich,
