@@ -21,13 +21,34 @@ export function toCsv(headers: string[], rows: Cell[][]): string {
 }
 
 /**
+ * The separator of a file, read from its first line (outside quotes): a comma when the line has
+ * more commas than semicolons — what Google Sheets writes („Datei › Herunterladen › CSV“) —
+ * otherwise the semicolon of `toCsv`, Excel and Numbers with German settings.
+ */
+export function separatorOf(text: string): ";" | "," {
+  let inQuotes = false;
+  let semicolons = 0;
+  let commas = 0;
+  for (const c of text) {
+    if (c === '"') inQuotes = !inQuotes;
+    else if (inQuotes) continue;
+    else if (c === "\n" || c === "\r") break;
+    else if (c === ";") semicolons++;
+    else if (c === ",") commas++;
+  }
+  return commas > semicolons ? "," : ";";
+}
+
+/**
  * Reads the format `toCsv` writes — and what Excel and Numbers produce with German settings:
  * semicolon separated, fields in `"…"` with `""` for an embedded quote, `;` and line breaks
  * allowed inside quotes, CRLF or LF line endings, UTF-8 with or without BOM. A trailing line
- * break makes no empty row; every cell comes back as a string, never as a number.
+ * break makes no empty row; every cell comes back as a string, never as a number. A file whose
+ * first line is comma separated (Google Sheets) is read with the comma (`separatorOf`).
  */
 export function parseCsv(text: string): string[][] {
   const src = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+  const sep = separatorOf(src);
   const rows: string[][] = [];
   let row: string[] = [];
   let zelle = "";
@@ -45,7 +66,7 @@ export function parseCsv(text: string): string[][] {
     }
     // a quote only opens a field at its very start; inside a field it stays a normal character
     if (c === '"' && zelle === "") inAnfuehrung = true;
-    else if (c === ";") {
+    else if (c === sep) {
       row.push(zelle);
       zelle = "";
     } else if (c === "\n" || c === "\r") {

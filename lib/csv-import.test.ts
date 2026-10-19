@@ -115,15 +115,17 @@ test("Vorschau: Zeilenfehler nach zod, Dubletten nach Name und Klasse — und ni
   const v = imp.vorschauImport(niko, "schueler", csv);
   assert.equal(v.fehler, undefined);
   assert.equal(v.gesamt, 8);
-  assert.equal(v.fehlerhaft, 5, "fünf Zeilen haben Fehler");
+  assert.equal(v.fehlerhaft, 4, "vier Zeilen haben Fehler");
   assert.equal(v.dubletten, 2, "eine Dublette in der Datei, eine in der Datenbank");
-  assert.equal(v.gueltig, 1, "genau eine Zeile würde angelegt");
+  assert.equal(v.gueltig, 2, "zwei Zeilen würden angelegt, eine davon ohne Schultyp");
+  assert.equal(v.stufeOffen, 1, "die ohne Schultyp hat noch keine eindeutige Schulstufe");
   assert.ok(v.spalten.includes("Name") && v.spalten.includes("Geplante Dauer"), "die erkannten Spalten stehen in der Vorschau");
 
   const zeile = (nr: number) => v.zeilen.find((z) => z.zeile === nr)!;
   assert.match(zeile(3).fehler.join(" "), /Klasse fehlt oder passt nicht zu Mittelschule/);
   assert.match(zeile(4).fehler.join(" "), /Name fehlt/);
-  assert.match(zeile(5).fehler.join(" "), /Schultyp fehlt/);
+  assert.deepEqual(zeile(5).fehler, [], "ein leerer Schultyp ist kein Fehler mehr");
+  assert.equal(zeile(5).hinweis, "Schulart fehlt");
   assert.match(zeile(6).fehler.join(" "), /Geplante Dauer: bitte eine ganze Zahl zwischen 1 und 300 angeben/);
   assert.match(zeile(7).fehler.join(" "), /Lehrer „gibtsnicht“ ist unbekannt/);
   assert.equal(zeile(8).dublette, "datei", "die zweite Zeile mit demselben Namen und derselben Klasse");
@@ -239,10 +241,10 @@ test("eine Datei ohne Planungsspalten bekommt die Vorgaben der Datenbank", async
 test("leere Datei und fehlende Pflichtspalte werden als Dateifehler gemeldet", async () => {
   const { imp, niko, anzahl } = await setup();
   assert.match(imp.vorschauImport(niko, "schueler", "").fehler ?? "", /leer/);
-  const ohneKlasse = imp.vorschauImport(niko, "schueler", "Name;Schultyp\nMax;Mittelschule\n");
-  assert.match(ohneKlasse.fehler ?? "", /fehlen die Spalten: Klasse/);
-  assert.equal(ohneKlasse.zeilen.length, 0);
-  const ergebnis = imp.importiere(niko, "schueler", "Name;Schultyp\nMax;Mittelschule\n");
+  const ohneName = imp.vorschauImport(niko, "schueler", "Vorname;Schultyp\nMax;Mittelschule\n");
+  assert.match(ohneName.fehler ?? "", /fehlen die Spalten: Name/);
+  assert.equal(ohneName.zeilen.length, 0);
+  const ergebnis = imp.importiere(niko, "schueler", "Vorname;Schultyp\nMax;Mittelschule\n");
   assert.equal(ergebnis.ok, false);
   assert.equal(anzahl(), 0);
 });
@@ -261,4 +263,40 @@ test("ohne Verwaltungsrechte wird weder geprüft noch geschrieben", async () => 
   assert.equal(imp.importiere(thomas, "lehrer", "Name;Benutzername\nEva;eva\n").ok, false);
   assert.equal(anzahl(), 0, "kein Schüler geschrieben");
   assert.equal(lehrer(), lehrerVorher, "und kein Lehrer");
+});
+
+test("Klasse und Schultyp dürfen fehlen: Schulstufe unklar, Dubletten dann nur nach dem Namen", async () => {
+  const { dbm, repo, imp, niko, anzahl } = await setup();
+  repo.createStudent({
+    name: "Mit Klasse", grade: 7, klasse: 3, teacher_id: null, school: "", school_type: "Mittelschule",
+    subjects: [], current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "",
+  });
+  // nur Name und Fächer, durch Komma getrennt wie aus Google Tabellen
+  const csv = ["Name,Fächer", "Ohne Klasse,\"Deutsch, Englisch\"", "mit  klasse,Mathematik", "OHNE KLASSE,Deutsch"].join("\n");
+  const v = imp.vorschauImport(niko, "schueler", csv);
+  assert.equal(v.fehler, undefined);
+  assert.deepEqual(v.spalten, ["Name", "Fächer"]);
+  assert.equal(v.gueltig, 1);
+  assert.equal(v.stufeOffen, 1);
+  const zeile = (nr: number) => v.zeilen.find((z) => z.zeile === nr)!;
+  assert.equal(zeile(2).hinweis, "Schulart und Klasse fehlen");
+  assert.equal(zeile(2).beschriftung, "Ohne Klasse", "kein leeres „· “ hinter dem Namen");
+  assert.equal(zeile(3).dublette, "datenbank", "ohne Klasse reicht der Name, Groß- und Kleinschreibung und Leerzeichen egal");
+  assert.equal(zeile(4).dublette, "datei");
+
+  const ergebnis = imp.importiere(niko, "schueler", csv);
+  assert.equal(ergebnis.ok && ergebnis.angelegt, 1);
+  assert.equal(anzahl(), 2);
+  const neu = repo.listStudents().find((s) => s.name === "Ohne Klasse")!;
+  assert.equal(neu.klasse, null);
+  assert.equal(neu.school_type, "");
+  assert.equal(neu.grade, 0, "0 = Schulstufe nicht bekannt");
+  assert.deepEqual(neu.subjects, ["Deutsch", "Englisch"]);
+  const status = dbm.db().prepare("SELECT stufe_status FROM students WHERE id = ?").get(neu.id) as { stufe_status: string };
+  assert.equal(status.stufe_status, "unklar");
+
+  // mit Klasse: nur gleicher Name *und* gleiche Klasse ist eine Dublette; ohne Klasse in der App reicht der Name
+  const zweite = imp.vorschauImport(niko, "schueler", ["Name;Schultyp;Klasse", "Mit Klasse;Mittelschule;4", "Ohne Klasse;Mittelschule;2"].join("\n"));
+  assert.equal(zweite.zeilen[0].dublette, "", "andere Klasse: ein anderer Schüler");
+  assert.equal(zweite.zeilen[1].dublette, "datenbank", "den gibt es schon, nur noch ohne Klasse");
 });

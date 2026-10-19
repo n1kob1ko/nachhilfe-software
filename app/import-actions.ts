@@ -15,7 +15,7 @@ import { artAus, importiere, vorschauImport, type ImportArt, type ImportErgebnis
 /** Next nimmt für eine Server Action höchstens 1 MB entgegen — mehr wird gar nicht erst gelesen. */
 const MAX_BYTES = 1_000_000;
 
-const leereVorschau = (art: ImportArt, fehler: string): ImportVorschau => ({ art, spalten: [], zeilen: [], gesamt: 0, gueltig: 0, fehlerhaft: 0, dubletten: 0, fehler });
+const leereVorschau = (art: ImportArt, fehler: string): ImportVorschau => ({ art, spalten: [], zeilen: [], gesamt: 0, gueltig: 0, stufeOffen: 0, fehlerhaft: 0, dubletten: 0, fehler });
 
 async function lies(formData: FormData): Promise<{ art: ImportArt; text: string } | { art: ImportArt; fehler: string }> {
   const art = artAus(formData.get("art"));
@@ -37,10 +37,7 @@ export async function confirmImportAction(formData: FormData): Promise<ImportErg
   const gelesen = await lies(formData);
   if ("fehler" in gelesen) return { ok: false, fehler: gelesen.fehler };
   const ergebnis = importiere(me, gelesen.art, gelesen.text);
-  if (ergebnis.ok) {
-    revalidatePath("/schueler");
-    revalidatePath("/lehrer");
-    revalidatePath("/mehr");
-  }
+  // die Dokumentation landet in Profilen, Lernverlauf, Abrechnung und Briefing: alles neu laden
+  if (ergebnis.ok) revalidatePath("/", "layout");
   return ergebnis;
 }

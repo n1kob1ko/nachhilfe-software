@@ -37,6 +37,18 @@ test("parseCsv: LF ohne BOM, kein Zeilenumbruch am Ende, leere Datei", () => {
   assert.deepEqual(parseCsv('"";x'), [["", "x"]]);
 });
 
+test("parseCsv liest auch Komma-Dateien aus Google Tabellen; das Trennzeichen steht in der ersten Zeile", async () => {
+  const { separatorOf } = await import("./csv");
+  assert.deepEqual(parseCsv('Datum,Schüler,Thema\r\n11.09.2026,Mia,"Brüche, Kürzen; Erweitern"\r\n'), [
+    ["Datum", "Schüler", "Thema"],
+    ["11.09.2026", "Mia", "Brüche, Kürzen; Erweitern"],
+  ]);
+  assert.equal(separatorOf("a;b;c\n1,5;2,5;3"), ";", "Kommazahlen in den Daten ändern nichts");
+  assert.equal(separatorOf('"a,b";c\n'), ";", "ein Komma in Anführungszeichen zählt nicht");
+  assert.equal(separatorOf("Name\nMax"), ";", "eine einzige Spalte bleibt beim Semikolon");
+  assert.equal(separatorOf("a,b\n"), ",");
+});
+
 test("parseCsv und toCsv sind ein Umlauf: der Export liest sich unverändert zurück", () => {
   const headers = ["Name", "Notiz", "Zahl"];
   const rows = [
