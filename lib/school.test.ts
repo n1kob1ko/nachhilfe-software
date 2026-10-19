@@ -17,6 +17,11 @@ test("labels read the way tutors talk", () => {
   assert.equal(klassenLabel("Gymnasium", 6), "6. Klasse Gymnasium (Oberstufe)");
   assert.equal(klassenLabel("HAK", 1, { short: true }), "1. Kl. HAK");
   assert.equal(rangeLabel(5, 9), "MS 1–4 · AHS 1–5 · HTL/HAK 1");
+  // a skill of only some school types names only those
+  assert.equal(rangeLabel(11, 12, "HAK"), "HAK 3–4");
+  assert.equal(rangeLabel(10, 12, "Gymnasium,HTL"), "AHS 6–8 · HTL 2–4");
+  assert.equal(rangeLabel(2, 4, "Volksschule"), "VS 2–4");
+  assert.equal(rangeLabel(11, 12, ""), "AHS 7–8 · HTL/HAK 3–4");
 });
 
 test("old Schulstufe rows are migrated to school type and class", () => {

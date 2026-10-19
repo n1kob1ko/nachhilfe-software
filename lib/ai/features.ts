@@ -6,7 +6,7 @@ import type { SentenceBoxDefinition } from "../druckblatt/definition/sentence-bo
 import type { WorksheetDefinition } from "../druckblatt/definition/types";
 import { parseEntries } from "../druckblatt/state/sentence-state";
 import { ERROR_TYPES, type ErrorType } from "../error-types";
-import { typischeFehler } from "../mathe-themen";
+import { typischeFehler } from "../themen";
 import type { TaskDraft } from "../tasks";
 import { GAP, gapCount } from "../tasks";
 import { expectedFixes } from "../fix-text";
@@ -142,7 +142,7 @@ export function buildPrompt(req: AIGenerateRequest): string {
         })
         .join("\n")}\n`
     : "";
-  // typical errors of the skills (lib/mathe-themen.ts): what wrong answers, hints and "Fehler finden" build on
+  // typical errors of the skills (lib/themen/): what wrong answers, hints and "Fehler finden" build on
   const fehler = req.skills.map((s) => ({ id: s.id, list: typischeFehler(s.id) })).filter((x) => x.list.length);
   return `Erstelle genau ${req.count} ${req.count === 1 ? "Aufgabe" : "Aufgaben"}.
 Fach: ${req.subject}

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { aiEnabled, analyzeMaterialWithAI } from "@/lib/ai";
 import { requireTeacher } from "@/lib/auth";
 import { DIFFICULTIES, type Difficulty } from "@/lib/curriculum";
+import { skillsForPrompt, stufeOf } from "@/lib/lehrplan";
 import { cleanTags } from "@/lib/library";
 import {
   classifyMaterial,
@@ -86,9 +87,8 @@ export async function analyzeMaterialAction(id: number, f: FormData) {
     return fail(id, "Die Datei fehlt auf dem Server.", "#erkennung");
   }
   const subject = m.subject || undefined;
-  const skills = repo
-    .listSkills()
-    .filter((s) => !subject || s.subject === subject)
+  // with Schulart and Klasse of the material only the skills around that level go along (shorter, cheaper)
+  const skills = (m.school_type && m.klasse ? skillsForPrompt({ school_type: m.school_type, klasse: m.klasse, grade: stufeOf(m.school_type, m.klasse) }, subject) : repo.listSkills().filter((s) => !subject || s.subject === subject))
     .map(({ id, name, area, subject }) => ({ id, name, area, subject }));
   let a: Awaited<ReturnType<typeof analyzeMaterialWithAI>> = null;
   let problem = "Claude hat nichts erkannt.";

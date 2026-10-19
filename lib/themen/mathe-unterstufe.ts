@@ -1,4 +1,4 @@
-import type { CurriculumSkill } from "./curriculum";
+import type { Bereich, Modul } from "./bauen";
 
 /**
  * Maths topics of the Unterstufe (5. to 8. Schulstufe, Mittelschule and AHS): skills with a short
@@ -8,14 +8,8 @@ import type { CurriculumSkill } from "./curriculum";
  * the AHS Unterstufe has the same items) and were checked against the tables of contents of common
  * Austrian maths books, topic names only: no task or text is taken from a book. The links to the
  * Lehrplan are in scripts/lehrplan_mapping.json.
- *
- * Used by: the skill list (lib/curriculum.ts), the sample answer of „Erkläre …“ tasks (EXPLAIN in
- * lib/generators.ts), the KI exercise prompt (lib/ai/features.ts) and the skill page.
  */
-type Teil = { id: string; name: string; erklaerung: string };
-type Thema = { id: string; name: string; stufen: [number, number]; erklaerung: string; fehler: string[]; teile?: Teil[] };
-
-const BEREICHE: { area: string; themen: Thema[] }[] = [
+const BEREICHE: Bereich[] = [
   {
     area: "Natürliche Zahlen",
     themen: [
@@ -1195,19 +1189,6 @@ const BEREICHE: { area: string; themen: Thema[] }[] = [
   },
 ];
 
-/** The new skills, in the order of BEREICHE; Teilfähigkeiten directly after their skill. */
-export const MATHE_THEMEN: CurriculumSkill[] = BEREICHE.flatMap(({ area, themen }) =>
-  themen.flatMap((t) => {
-    const skill: CurriculumSkill = { id: t.id, subject: "Mathematik", area, name: t.name, gradeMin: t.stufen[0], gradeMax: t.stufen[1] };
-    return [skill, ...(t.teile ?? []).map((p) => ({ ...skill, id: `${t.id}.${p.id}`, name: p.name, parentId: t.id }))];
-  }),
-);
-
-/** Short explanation with an example, per skill (also used as the sample answer of „Erkläre …“ tasks). */
-export const MATHE_ERKLAERUNG: Record<string, string> = Object.fromEntries(
-  BEREICHE.flatMap(({ themen }) => themen.flatMap((t) => [[t.id, t.erklaerung], ...(t.teile ?? []).map((p) => [`${t.id}.${p.id}`, p.erklaerung])])),
-);
-
 /** Typical errors of the maths skills that were there before (lib/curriculum.ts BASE). */
 const FEHLER_BISHER: Record<string, string[]> = {
   "mathe.brueche.kuerzen": [
@@ -1287,25 +1268,11 @@ const FEHLER_BISHER: Record<string, string[]> = {
   ],
 };
 
-/** Typical errors per skill: what students often get wrong, each with a short example. */
-export const TYPISCHE_FEHLER: Record<string, string[]> = {
-  ...FEHLER_BISHER,
-  ...Object.fromEntries(BEREICHE.flatMap(({ themen }) => themen.map((t) => [t.id, t.fehler]))),
-};
-
-/** Typical errors of a skill; a Teilfähigkeit without its own gets those of its skill. */
-export function typischeFehler(skillId: string): string[] {
-  for (let id = skillId; id.split(".").length >= 3; id = id.slice(0, id.lastIndexOf("."))) {
-    if (TYPISCHE_FEHLER[id]) return TYPISCHE_FEHLER[id];
-  }
-  return [];
-}
-
 /**
  * Order between the maths skills: [skill, skill that should sit before it]. Own didactic choices,
  * like PREREQUISITES in lib/curriculum.ts.
  */
-export const MATHE_VORAUSSETZUNGEN: [string, string][] = [
+const VORAUSSETZUNGEN: [string, string][] = [
   ["mathe.zahlen.multiplizieren", "mathe.zahlen.addieren"],
   ["mathe.zahlen.dividieren", "mathe.zahlen.multiplizieren"],
   ["mathe.dezimal.addieren", "mathe.zahlen.addieren"],
@@ -1363,3 +1330,5 @@ export const MATHE_VORAUSSETZUNGEN: [string, string][] = [
   ["mathe.wahrscheinlichkeit.zweistufig", "mathe.wahrscheinlichkeit.laplace"],
   ["mathe.wahrscheinlichkeit.zweistufig", "mathe.statistik.abzaehlen"],
 ];
+
+export const MATHE_UNTERSTUFE: Modul = { fach: "Mathematik", bereiche: BEREICHE, fehlerBisher: FEHLER_BISHER, voraussetzungen: VORAUSSETZUNGEN };

@@ -151,7 +151,7 @@ test("import: preview with counts, nothing changes before confirming, no duplica
   const p1 = imp.preview(pkg, null);
   assert.deepEqual(p1.diff.errors, []);
   assert.equal(p1.diff.newSkills.length, 45);
-  assert.ok(p1.diff.newTopics.includes("Mathematik › Zahlen und Zahlenraum"));
+  assert.ok(!p1.diff.newTopics.includes("Mathematik › Zahlen und Zahlenraum"), "the app's own Volksschule topics (lib/themen/mathe-vs.ts) use the same names");
   assert.ok(!p1.diff.newTopics.some((t) => t.endsWith("Rechtschreibung")), "Rechtschreibung exists already");
   assert.ok(p1.diff.newLinks > 30);
   assert.equal(repo.listSkills().length, before, "a preview changes nothing");
@@ -160,7 +160,7 @@ test("import: preview with counts, nothing changes before confirming, no duplica
   assert.equal(repo.listSkills().length, before + 45);
   const s = repo.getSkill("mathe.vs.schriftlich.dividieren")!;
   assert.equal(s.school_types, "Volksschule");
-  assert.equal(s.code, "AT-MAT-04-SCHRIFTLICHE-RECHENVERFAHREN-SCHRIFTLICH-DIVIDIEREN");
+  assert.equal(s.code, "AT-MAT-03-SCHRIFTLICHE-RECHENVERFAHREN-SCHRIFTLICH-DIVIDIEREN");
   const { prerequisitesOf } = await import("./lehrplan");
   assert.deepEqual(prerequisitesOf("mathe.vs.schriftlich.dividieren").sort(), ["mathe.vs.muldiv.rest", "mathe.vs.schriftlich.multiplizieren"]);
 

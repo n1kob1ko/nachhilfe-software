@@ -171,8 +171,8 @@ _Avoid_: Kompetenz, Lernziel, Skill, Fertigkeit
 **Typische Fehler**:
 Was bei einer **Fähigkeit** oft falsch gemacht wird, je mit kurzem Beispiel („Zähler und Nenner
 einzeln addiert (1/2 + 1/3 = 2/5)“). Stehen mit einer kurzen Erklärung auf der Fähigkeitsseite unter
-„So geht’s“ und gehen beim Erstellen einer Übung an die KI (`lib/mathe-themen.ts`, bisher nur
-Mathematik). Nicht dasselbe wie die Fehlerart, die bei einem falschen Versuch gespeichert wird
+„So geht’s“ und gehen beim Erstellen einer Übung an die KI (`lib/themen/`, Mathematik, Deutsch
+und Englisch von der Volksschule bis zur Oberstufe). Nicht dasselbe wie die Fehlerart, die bei einem falschen Versuch gespeichert wird
 (`lib/error-types.ts`).
 _Avoid_: Fehlerkatalog, Misconceptions, häufige Fehler
 

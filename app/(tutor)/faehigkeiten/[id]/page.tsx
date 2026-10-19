@@ -27,7 +27,7 @@ import {
 } from "@/lib/datenqualitaet";
 import { EXPLAIN } from "@/lib/generators";
 import { LINK_ORIGIN_LABEL, nextSkillsOf, prerequisiteLinks } from "@/lib/lehrplan";
-import { typischeFehler } from "@/lib/mathe-themen";
+import { typischeFehler } from "@/lib/themen";
 import * as repo from "@/lib/repo";
 import { MAX_STUFE, rangeLabel, stufeLabel } from "@/lib/school";
 
@@ -72,9 +72,11 @@ export default async function SkillPage({ params, searchParams }: { params: Prom
   const removed = links.filter((l) => l.removed_at);
   const next = nextSkillsOf(skill.id).filter((x) => byId.has(x));
   const parent = skill.parent_id ? repo.getSkill(skill.parent_id) : null;
-  // explanation and typical errors (lib/mathe-themen.ts); a Teilfähigkeit without its own shows its skill's
+  // explanation and typical errors (lib/themen/); a Teilfähigkeit without its own shows its skill's
   const erklaerung = EXPLAIN[skill.id] ?? (skill.parent_id ? EXPLAIN[skill.parent_id] : undefined) ?? null;
   const fehler = typischeFehler(skill.id);
+  // fractions and powers are typeset in maths only; „he/she/it“ stays plain text
+  const show = (text: string) => (skill.subject === "Mathematik" ? <MathText text={text} /> : text);
   const candidates = all.filter((s) => s.subject === skill.subject && s.id !== skill.id && !active.some((l) => l.other_id === s.id));
   const areas = [...new Set(candidates.map((s) => s.area))];
 
@@ -121,7 +123,7 @@ export default async function SkillPage({ params, searchParams }: { params: Prom
         }
       />
       <div className="-mt-4 mb-8 flex flex-wrap gap-1.5">
-        <Pill>{rangeLabel(skill.grade_min, skill.grade_max)}</Pill>
+        <Pill>{rangeLabel(skill.grade_min, skill.grade_max, skill.school_types ?? "")}</Pill>
         {skill.code && <Pill>{skill.code}</Pill>}
         {skill.practice_shift && <Pill tone="amber">in der Praxis oft {skill.practice_shift === "frueher" ? "früher" : "später"}</Pill>}
         {skill.merged_into && <Pill tone="amber">zusammengeführt mit {label(skill.merged_into)}</Pill>}
@@ -141,9 +143,7 @@ export default async function SkillPage({ params, searchParams }: { params: Prom
             </SectionTitle>
             <div className="panel grid gap-4 px-4 py-4">
               {erklaerung && (
-                <p className="text-[15px] leading-relaxed">
-                  <MathText text={erklaerung} />
-                </p>
+                <p className="text-[15px] leading-relaxed">{show(erklaerung)}</p>
               )}
               {fehler.length > 0 && (
                 <div>
@@ -154,9 +154,7 @@ export default async function SkillPage({ params, searchParams }: { params: Prom
                         <span aria-hidden className="text-red">
                           ✗
                         </span>
-                        <span>
-                          <MathText text={f} />
-                        </span>
+                        <span>{show(f)}</span>
                       </li>
                     ))}
                   </ul>

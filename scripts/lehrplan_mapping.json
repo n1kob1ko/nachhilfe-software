@@ -912,6 +912,546 @@
    "deutsch.text.verstehen",
    "MS-DEU-3-B3",
    "wesentliche Informationen"
+  ],
+  [
+   "deutsch.recht.woerterbuch",
+   "MS-DEU-1-B1",
+   "Rechtschreibhilfen in analoger (Wörterbuch)"
+  ],
+  [
+   "deutsch.recht.gleichklang",
+   "MS-DEU-1-B1",
+   "Festigung von Rechtschreibfertigkeiten"
+  ],
+  [
+   "deutsch.recht.gleichklang",
+   "MS-DEU-2-B1",
+   "Anwendung von Rechtschreibstrategien"
+  ],
+  [
+   "deutsch.recht.gleichklang",
+   "MS-DEU-3-B1",
+   "Einsichten in Rechtschreibung"
+  ],
+  [
+   "deutsch.recht.fremdwoerter",
+   "MS-DEU-2-B1",
+   "Anwendung von Rechtschreibstrategien"
+  ],
+  [
+   "deutsch.recht.fremdwoerter",
+   "MS-DEU-3-B1",
+   "Einsichten in Rechtschreibung"
+  ],
+  [
+   "deutsch.recht.getrennt-zusammen",
+   "MS-DEU-2-B1",
+   "Anwendung von Rechtschreibstrategien"
+  ],
+  [
+   "deutsch.recht.getrennt-zusammen",
+   "MS-DEU-3-B1",
+   "Einsichten in Rechtschreibung"
+  ],
+  [
+   "deutsch.recht.getrennt-zusammen",
+   "MS-DEU-4-B1",
+   "Vertieftes Verständnis von sprachlichen Strukturen und Regeln"
+  ],
+  [
+   "deutsch.wortarten.steigerung",
+   "MS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.wortarten.steigerung",
+   "MS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.wortschatz.zusammensetzung",
+   "MS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.wortschatz.zusammensetzung",
+   "MS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.wortschatz.ableitung",
+   "MS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.wortschatz.ableitung",
+   "MS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.wortschatz.wortfelder",
+   "MS-DEU-1-B1",
+   "Pragmatik/Semantik"
+  ],
+  [
+   "deutsch.wortschatz.wortfelder",
+   "MS-DEU-3-B4-K1",
+   "Sprache bewusst als gestaltend-kreatives Element einsetzen"
+  ],
+  [
+   "deutsch.wortschatz.redewendungen",
+   "MS-DEU-1-B1",
+   "Pragmatik/Semantik"
+  ],
+  [
+   "deutsch.wortschatz.sprachebenen",
+   "MS-DEU-1-B1",
+   "Dialekt, Umgangs-, Standardsprache"
+  ],
+  [
+   "deutsch.wortschatz.sprachebenen",
+   "MS-DEU-3-B2-K2",
+   "unterschiedlicher sprachlicher Register"
+  ],
+  [
+   "deutsch.wortschatz.sprachebenen",
+   "MS-DEU-4-B1",
+   "Soziolekten, Dialekten, Fachsprachen"
+  ],
+  [
+   "deutsch.grammatik.imperativ",
+   "MS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.grammatik.imperativ",
+   "MS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.grammatik.plusquamperfekt",
+   "MS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.grammatik.plusquamperfekt",
+   "MS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.grammatik.futur",
+   "MS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.grammatik.futur",
+   "MS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.grammatik.aktiv-passiv",
+   "MS-DEU-2-B1",
+   "unter Berücksichtigung ihrer stilistischen Auswirkungen"
+  ],
+  [
+   "deutsch.grammatik.aktiv-passiv",
+   "MS-DEU-3-B1",
+   "Grammatik hinsichtlich Gebrauch und Funktion"
+  ],
+  [
+   "deutsch.grammatik.aktiv-passiv",
+   "MS-DEU-4-B1",
+   "Vertieftes Verständnis von sprachlichen Strukturen und Regeln"
+  ],
+  [
+   "deutsch.grammatik.konjunktiv2",
+   "MS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.grammatik.konjunktiv2",
+   "MS-DEU-3-B1",
+   "Grammatik hinsichtlich Gebrauch und Funktion"
+  ],
+  [
+   "deutsch.grammatik.konjunktiv2",
+   "MS-DEU-4-B1",
+   "Vertieftes Verständnis von sprachlichen Strukturen und Regeln"
+  ],
+  [
+   "deutsch.grammatik.indirekte-rede",
+   "MS-DEU-3-B1",
+   "Grammatik hinsichtlich Gebrauch und Funktion"
+  ],
+  [
+   "deutsch.grammatik.indirekte-rede",
+   "MS-DEU-4-B1",
+   "Vertieftes Verständnis von sprachlichen Strukturen und Regeln"
+  ],
+  [
+   "deutsch.satz.satzglieder",
+   "MS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.satzglieder",
+   "MS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.objekte",
+   "MS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.objekte",
+   "MS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.adverbiale",
+   "MS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.adverbiale",
+   "MS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.attribute",
+   "MS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.attribute",
+   "MS-DEU-3-B1",
+   "Grammatik hinsichtlich Gebrauch und Funktion"
+  ],
+  [
+   "deutsch.satz.satzreihe-gefuege",
+   "MS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.satzreihe-gefuege",
+   "MS-DEU-3-B1",
+   "Grammatik hinsichtlich Gebrauch und Funktion"
+  ],
+  [
+   "deutsch.beistrich.direkte-rede",
+   "MS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.beistrich.direkte-rede",
+   "MS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.text.lesestrategien",
+   "MS-DEU-1-B3",
+   "Einsatz von Lesestrategien"
+  ],
+  [
+   "deutsch.text.lesestrategien",
+   "MS-DEU-2-B3-K1",
+   "mittels Lesestrategien Informationen erschließen"
+  ],
+  [
+   "deutsch.text.lesestrategien",
+   "MS-DEU-3-B3-K1",
+   "durch bewussten Einsatz geeigneter Strategien"
+  ],
+  [
+   "deutsch.text.sachtexte",
+   "MS-DEU-1-B3",
+   "Lektüre von literarischen und pragmatischen Texten"
+  ],
+  [
+   "deutsch.text.sachtexte",
+   "MS-DEU-2-B3-K1",
+   "unterschiedliche Texte und Textformate"
+  ],
+  [
+   "deutsch.text.sachtexte",
+   "MS-DEU-3-B3",
+   "linearer und nichtlinearer Texte"
+  ],
+  [
+   "deutsch.text.sachtexte",
+   "MS-DEU-4-B3",
+   "komplexerer analoger und digitaler pragmatischer Texte"
+  ],
+  [
+   "deutsch.text.fakt-meinung",
+   "MS-DEU-2-B3-K3",
+   "ihre Wirkung erkennen und differenzieren"
+  ],
+  [
+   "deutsch.text.fakt-meinung",
+   "MS-DEU-3-B3-K4",
+   "Absichten und Ziele in der Gestaltung von medialen Beiträgen erkennen"
+  ],
+  [
+   "deutsch.text.fakt-meinung",
+   "MS-DEU-3-B3",
+   "Quellenkritik"
+  ],
+  [
+   "deutsch.text.fakt-meinung",
+   "MS-DEU-4-B3-K4",
+   "Informationssysteme differenziert und kritisch nutzen"
+  ],
+  [
+   "deutsch.literatur.maerchen",
+   "MS-DEU-1-B3",
+   "Texten unterschiedlicher Gattungen"
+  ],
+  [
+   "deutsch.literatur.maerchen",
+   "MS-DEU-2-B3",
+   "Texten unterschiedlicher Gattungen"
+  ],
+  [
+   "deutsch.literatur.sage",
+   "MS-DEU-1-B3",
+   "Texten unterschiedlicher Gattungen"
+  ],
+  [
+   "deutsch.literatur.sage",
+   "MS-DEU-2-B3",
+   "Texten unterschiedlicher Gattungen"
+  ],
+  [
+   "deutsch.literatur.fabel",
+   "MS-DEU-1-B3",
+   "Texten unterschiedlicher Gattungen"
+  ],
+  [
+   "deutsch.literatur.fabel",
+   "MS-DEU-2-B3",
+   "Texten unterschiedlicher Gattungen"
+  ],
+  [
+   "deutsch.literatur.gedicht",
+   "MS-DEU-1-B3",
+   "Texten unterschiedlicher Gattungen"
+  ],
+  [
+   "deutsch.literatur.gedicht",
+   "MS-DEU-2-B3-K2",
+   "gestalterischen und inhaltlichen Besonderheiten literarischer Texte"
+  ],
+  [
+   "deutsch.literatur.sprachbilder",
+   "MS-DEU-2-B3-K2",
+   "gestalterischen und inhaltlichen Besonderheiten literarischer Texte"
+  ],
+  [
+   "deutsch.literatur.sprachbilder",
+   "MS-DEU-4-B3",
+   "stilistischen Ausdrucksformen literarischer Texte"
+  ],
+  [
+   "deutsch.literatur.gattungen",
+   "MS-DEU-3-B3-K2",
+   "literarische Gattungen unterscheiden"
+  ],
+  [
+   "deutsch.literatur.ballade",
+   "MS-DEU-3-B3-K2",
+   "literarische Gattungen unterscheiden"
+  ],
+  [
+   "deutsch.literatur.ballade",
+   "MS-DEU-4-B3",
+   "ästhetischen Gestaltung und stilistischen Ausdrucksformen"
+  ],
+  [
+   "deutsch.literatur.kurzgeschichte",
+   "MS-DEU-3-B3-K2",
+   "literarische Gattungen unterscheiden"
+  ],
+  [
+   "deutsch.literatur.kurzgeschichte",
+   "MS-DEU-4-B3",
+   "Analyse und Interpretation der ästhetischen Gestaltung"
+  ],
+  [
+   "deutsch.schreiben.erzaehlung",
+   "MS-DEU-1-B4-K1",
+   "Erlebnisse, Erfahrungen und Gedanken verschriftlichen"
+  ],
+  [
+   "deutsch.schreiben.erzaehlung",
+   "MS-DEU-2-B4",
+   "(ua. Erzählen, Berichten, Darstellen)"
+  ],
+  [
+   "deutsch.schreiben.erzaehlung",
+   "MS-DEU-3-B4-K1",
+   "aus unterschiedlichen Perspektiven anhand konkreter Vorgaben erzählen"
+  ],
+  [
+   "deutsch.schreiben.nacherzaehlung",
+   "MS-DEU-1-B2",
+   "Wiedergabe von analogen und digitalen Texten"
+  ],
+  [
+   "deutsch.schreiben.nacherzaehlung",
+   "MS-DEU-2-B4",
+   "(ua. Erzählen, Berichten, Darstellen)"
+  ],
+  [
+   "deutsch.schreiben.inhaltsangabe",
+   "MS-DEU-3-B3-K1",
+   "wesentliche Informationen"
+  ],
+  [
+   "deutsch.schreiben.inhaltsangabe",
+   "MS-DEU-4-B4",
+   "analytisches Schreiben"
+  ],
+  [
+   "deutsch.schreiben.brief",
+   "MS-DEU-3-B4-K2",
+   "schriftlich informieren und argumentieren"
+  ],
+  [
+   "deutsch.schreiben.brief",
+   "MS-DEU-4-B4",
+   "Textproduktion unter gezieltem Einsatz von Vorgaben und Vorlagen"
+  ],
+  [
+   "deutsch.schreiben.ueberarbeiten",
+   "MS-DEU-1-B4",
+   "Übungen zur Verbesserung der Schreibfertigkeit"
+  ],
+  [
+   "deutsch.schreiben.ueberarbeiten",
+   "MS-DEU-2-B4",
+   "Planen, Verfassen, Überarbeiten"
+  ],
+  [
+   "deutsch.schreiben.ueberarbeiten",
+   "MS-DEU-3-B4",
+   "Überarbeitung eigener und fremder Texte"
+  ],
+  [
+   "deutsch.schreiben.ueberarbeiten",
+   "MS-DEU-4-B4",
+   "Einschätzung von Textqualität"
+  ],
+  [
+   "deutsch.beschreiben.gegenstand",
+   "MS-DEU-1-B4",
+   "(ua. Erzählen, Beschreiben)"
+  ],
+  [
+   "deutsch.beschreiben.gegenstand",
+   "MS-DEU-2-B4-K2",
+   "schriftlich informieren und darstellen"
+  ],
+  [
+   "deutsch.beschreiben.person",
+   "MS-DEU-1-B4",
+   "(ua. Erzählen, Beschreiben)"
+  ],
+  [
+   "deutsch.beschreiben.person",
+   "MS-DEU-2-B4-K2",
+   "schriftlich informieren und darstellen"
+  ],
+  [
+   "deutsch.beschreiben.person",
+   "MS-DEU-3-B4-K2",
+   "schriftlich informieren"
+  ],
+  [
+   "deutsch.beschreiben.weg",
+   "MS-DEU-1-B4",
+   "(ua. Erzählen, Beschreiben)"
+  ],
+  [
+   "deutsch.beschreiben.weg",
+   "MS-DEU-2-B4-K2",
+   "schriftlich informieren und darstellen"
+  ],
+  [
+   "deutsch.beschreiben.vorgang",
+   "MS-DEU-1-B4",
+   "(ua. Erzählen, Beschreiben)"
+  ],
+  [
+   "deutsch.beschreiben.vorgang",
+   "MS-DEU-2-B4-K2",
+   "schriftlich informieren und darstellen"
+  ],
+  [
+   "deutsch.beschreiben.vorgang",
+   "MS-DEU-3-B4-K2",
+   "schriftlich informieren"
+  ],
+  [
+   "deutsch.beschreiben.bericht",
+   "MS-DEU-2-B4",
+   "(ua. Erzählen, Berichten, Darstellen)"
+  ],
+  [
+   "deutsch.beschreiben.bericht",
+   "MS-DEU-3-B4-K2",
+   "schriftlich informieren"
+  ],
+  [
+   "deutsch.argumentieren.argument",
+   "MS-DEU-1-B2",
+   "Einfache Formen der Argumentation"
+  ],
+  [
+   "deutsch.argumentieren.argument",
+   "MS-DEU-2-B4-K3",
+   "einfache Argumente schriftlich formulieren"
+  ],
+  [
+   "deutsch.argumentieren.argument",
+   "MS-DEU-3-B2",
+   "Argumentation aus verschiedenen Rollen und Perspektiven"
+  ],
+  [
+   "deutsch.argumentieren.argument",
+   "MS-DEU-4-B2",
+   "Argumentationen und Diskussionen"
+  ],
+  [
+   "deutsch.argumentieren.stellungnahme",
+   "MS-DEU-3-B4",
+   "Argumentierendes Schreiben als Ausdruck persönlicher Meinungen"
+  ],
+  [
+   "deutsch.argumentieren.stellungnahme",
+   "MS-DEU-4-B4-K2",
+   "auf Gegenargumente eingehen"
+  ],
+  [
+   "deutsch.praesentieren.referat",
+   "MS-DEU-1-B2-K3",
+   "monologisches und dialogisches Sprechen"
+  ],
+  [
+   "deutsch.praesentieren.referat",
+   "MS-DEU-2-B2-K3",
+   "mündlich präsentieren"
+  ],
+  [
+   "deutsch.praesentieren.referat",
+   "MS-DEU-3-B2-K3",
+   "medial unterstützt mündlich präsentieren"
+  ],
+  [
+   "deutsch.praesentieren.referat",
+   "MS-DEU-4-B2-K3",
+   "Visualisierungsmethoden"
   ]
  ],
  "ms-englisch": [
@@ -934,6 +1474,421 @@
    "englisch.reading.comprehension",
    "MS-ENG-4-B2",
    ""
+  ],
+  [
+   "englisch.tenses.presentsimple",
+   "MS-ENG-1-B3-K3",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.tenses.pastsimple",
+   "MS-ENG-2-B4-K3",
+   "vergangene und zukünftige Ereignisse"
+  ],
+  [
+   "englisch.tenses.presentperfect",
+   "MS-ENG-3-B4-K2",
+   "persönlichen Erfahrungen"
+  ],
+  [
+   "englisch.grammar.comparatives",
+   "MS-ENG-2-B3-K3",
+   "Dinge, Orte, Personen"
+  ],
+  [
+   "englisch.tenses.simple-progressive",
+   "MS-ENG-1-B3-K3",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.tenses.simple-progressive",
+   "MS-ENG-1-B4-K1",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.tenses.pastprogressive",
+   "MS-ENG-2-B4-K3",
+   "einfache Geschichten"
+  ],
+  [
+   "englisch.tenses.past-simple-progressive",
+   "MS-ENG-3-B4-K2",
+   "kurze Beschreibungen von Ereignissen"
+  ],
+  [
+   "englisch.tenses.past-simple-progressive",
+   "MS-ENG-3-B3-K3",
+   "über vertraute Themenbereiche erzählen"
+  ],
+  [
+   "englisch.tenses.future",
+   "MS-ENG-2-B4-K3",
+   "zukünftige Ereignisse"
+  ],
+  [
+   "englisch.tenses.future",
+   "MS-ENG-4-B3-K1",
+   "über Pläne reden"
+  ],
+  [
+   "englisch.tenses.future-present",
+   "MS-ENG-3-B3-K2",
+   "Vereinbarungen treffen"
+  ],
+  [
+   "englisch.tenses.future-present",
+   "MS-ENG-4-B3-K1",
+   "über Pläne reden"
+  ],
+  [
+   "englisch.tenses.perfect-past",
+   "MS-ENG-3-B4-K2",
+   "persönlichen Erfahrungen"
+  ],
+  [
+   "englisch.tenses.perfect-past",
+   "MS-ENG-4-B3-K2",
+   "vergangene sowie zukünftige Aktivitäten"
+  ],
+  [
+   "englisch.tenses.perfectprogressive",
+   "MS-ENG-3-B4-K2",
+   "persönlichen Erfahrungen"
+  ],
+  [
+   "englisch.tenses.pastperfect",
+   "MS-ENG-4-B3-K2",
+   "(Alltags-)Ereignisse"
+  ],
+  [
+   "englisch.tenses.usedto",
+   "MS-ENG-4-B3-K2",
+   "vergangene sowie zukünftige Aktivitäten"
+  ],
+  [
+   "englisch.tenses.mixed",
+   "MS-ENG-2-B4-K3",
+   "vergangene und zukünftige Ereignisse"
+  ],
+  [
+   "englisch.tenses.mixed",
+   "MS-ENG-4-B3-K2",
+   "vergangene sowie zukünftige Aktivitäten"
+  ],
+  [
+   "englisch.grammar.tobe",
+   "MS-ENG-1-B3-K2",
+   "einfache Fragen stellen und beantworten"
+  ],
+  [
+   "englisch.grammar.tobe",
+   "MS-ENG-1-B4-K1",
+   "in einfachen Sätzen schreiben"
+  ],
+  [
+   "englisch.grammar.havegot",
+   "MS-ENG-1-B3-K2",
+   "einfache Fragen stellen und beantworten"
+  ],
+  [
+   "englisch.grammar.havegot",
+   "MS-ENG-1-B4-K1",
+   "Familie, Freunde"
+  ],
+  [
+   "englisch.grammar.praep-ort",
+   "MS-ENG-2-B4-K1",
+   "Personen, Orte"
+  ],
+  [
+   "englisch.grammar.praep-zeit",
+   "MS-ENG-1-B3-K3",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.grammar.praep-zeit",
+   "MS-ENG-2-B3-K2",
+   "Vereinbarungen treffen"
+  ],
+  [
+   "englisch.grammar.haeufigkeit",
+   "MS-ENG-1-B3-K3",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.grammar.haeufigkeit",
+   "MS-ENG-1-B4-K1",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.grammar.fragen",
+   "MS-ENG-1-B3-K2",
+   "einfache Fragen stellen und beantworten"
+  ],
+  [
+   "englisch.grammar.fragen",
+   "MS-ENG-2-B3-K2",
+   "Fragen stellen"
+  ],
+  [
+   "englisch.grammar.modal-basics",
+   "MS-ENG-2-B3-K3",
+   "Stärken"
+  ],
+  [
+   "englisch.grammar.modal-must",
+   "MS-ENG-2-B1-K1",
+   "Anweisungen"
+  ],
+  [
+   "englisch.grammar.gerund",
+   "MS-ENG-2-B3-K3",
+   "Vorlieben"
+  ],
+  [
+   "englisch.grammar.adverbs",
+   "MS-ENG-3-B4-K2",
+   "kurze Beschreibungen von Ereignissen"
+  ],
+  [
+   "englisch.grammar.questiontags",
+   "MS-ENG-3-B3-K1",
+   "ein Gespräch beginnen, weiterführen und beenden"
+  ],
+  [
+   "englisch.grammar.modal-substitutes",
+   "MS-ENG-3-B4-K2",
+   "vergangenen und zukünftigen Handlungen"
+  ],
+  [
+   "englisch.grammar.modal-substitutes",
+   "MS-ENG-4-B3-K2",
+   "vergangene sowie zukünftige Aktivitäten"
+  ],
+  [
+   "englisch.grammar.if1",
+   "MS-ENG-3-B4-K2",
+   "zukünftigen Handlungen"
+  ],
+  [
+   "englisch.grammar.if1",
+   "MS-ENG-4-B3-K1",
+   "über Pläne reden"
+  ],
+  [
+   "englisch.grammar.if2",
+   "MS-ENG-3-B3-K2",
+   "Ratschläge erbitten und geben"
+  ],
+  [
+   "englisch.grammar.if2",
+   "MS-ENG-4-B4-K2",
+   "einfache Vermutungen anstellen"
+  ],
+  [
+   "englisch.grammar.passive",
+   "MS-ENG-3-B2-K1",
+   "Sachtexte"
+  ],
+  [
+   "englisch.grammar.modal-possibility",
+   "MS-ENG-4-B3-K1",
+   "Vermutungen formulieren"
+  ],
+  [
+   "englisch.grammar.modal-possibility",
+   "MS-ENG-4-B4-K2",
+   "einfache Vermutungen anstellen"
+  ],
+  [
+   "englisch.grammar.reported",
+   "MS-ENG-4-B3-K2",
+   "berichten"
+  ],
+  [
+   "englisch.grammar.reported-questions",
+   "MS-ENG-4-B3-K2",
+   "berichten"
+  ],
+  [
+   "englisch.grammar.if3",
+   "MS-ENG-4-B4-K2",
+   "einfache Vermutungen anstellen"
+  ],
+  [
+   "englisch.vocab.uhrzeit-datum",
+   "MS-ENG-1-B3-K3",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.vocab.uhrzeit-datum",
+   "MS-ENG-2-B3-K2",
+   "Vereinbarungen treffen"
+  ],
+  [
+   "englisch.reading.skimming-scanning",
+   "MS-ENG-2-B2-K2",
+   "wichtige Informationen entnehmen"
+  ],
+  [
+   "englisch.reading.skimming-scanning",
+   "MS-ENG-4-B2-K2",
+   "spezifische Informationen entnehmen"
+  ],
+  [
+   "englisch.listening.strategies",
+   "MS-ENG-1-B1-K1",
+   "in kurzen Dialogen oder Monologen"
+  ],
+  [
+   "englisch.listening.strategies",
+   "MS-ENG-2-B1-K2",
+   "kurze einfache Gespräche"
+  ],
+  [
+   "englisch.listening.strategies",
+   "MS-ENG-3-B1-K1",
+   "Medienbeiträge"
+  ],
+  [
+   "englisch.listening.strategies",
+   "MS-ENG-4-B1-K1",
+   "Medienbeiträge"
+  ],
+  [
+   "englisch.writing.email",
+   "MS-ENG-1-B4-K2",
+   "persönliche Mitteilungen"
+  ],
+  [
+   "englisch.writing.email",
+   "MS-ENG-2-B4-K3",
+   "E-Mails"
+  ],
+  [
+   "englisch.writing.email",
+   "MS-ENG-4-B4-K1",
+   "E-Mails"
+  ],
+  [
+   "englisch.writing.description",
+   "MS-ENG-1-B4-K1",
+   "über sich selbst und vertraute Themen"
+  ],
+  [
+   "englisch.writing.description",
+   "MS-ENG-2-B4-K1",
+   "Personen, Orte"
+  ],
+  [
+   "englisch.writing.linking",
+   "MS-ENG-2-B4",
+   "zusammenhängenden Sätzen"
+  ],
+  [
+   "englisch.writing.linking",
+   "MS-ENG-3-B4-K1",
+   "kurze zusammenhängende Texte"
+  ],
+  [
+   "englisch.writing.linking",
+   "MS-ENG-4-B4-K1",
+   "strukturierte Texte"
+  ],
+  [
+   "englisch.writing.story",
+   "MS-ENG-2-B4-K3",
+   "einfache Geschichten"
+  ],
+  [
+   "englisch.writing.story",
+   "MS-ENG-3-B4-K2",
+   "kurze Beschreibungen von Ereignissen"
+  ],
+  [
+   "englisch.writing.opinion",
+   "MS-ENG-2-B4-K2",
+   "die eigene Meinung ausdrücken und begründen"
+  ],
+  [
+   "englisch.writing.opinion",
+   "MS-ENG-3-B4-K3",
+   "Eindrücke und Meinungen"
+  ],
+  [
+   "englisch.writing.opinion",
+   "MS-ENG-4-B4-K3",
+   "einfache Begründungen"
+  ],
+  [
+   "englisch.writing.blog",
+   "MS-ENG-4-B4-K1",
+   "Postings"
+  ],
+  [
+   "englisch.writing.blog",
+   "MS-ENG-3-B4-K2",
+   "persönlichen Erfahrungen"
+  ],
+  [
+   "englisch.writing.article",
+   "MS-ENG-4-B4-K1",
+   "strukturierte Texte"
+  ],
+  [
+   "englisch.writing.article",
+   "MS-ENG-4-B4-K3",
+   "Ideen präsentieren"
+  ],
+  [
+   "englisch.speaking.about-me",
+   "MS-ENG-1-B3-K3",
+   "Familie, Freunde, Tagesablauf, Hobbys, Schule"
+  ],
+  [
+   "englisch.speaking.about-me",
+   "MS-ENG-2-B3-K3",
+   "Vorlieben, Stärken"
+  ],
+  [
+   "englisch.speaking.directions",
+   "MS-ENG-2-B1-K1",
+   "Auskünfte"
+  ],
+  [
+   "englisch.speaking.directions",
+   "MS-ENG-2-B3-K2",
+   "in Alltagssituationen"
+  ],
+  [
+   "englisch.speaking.shopping",
+   "MS-ENG-2-B3-K2",
+   "in Alltagssituationen"
+  ],
+  [
+   "englisch.speaking.suggestions",
+   "MS-ENG-2-B3-K2",
+   "Vereinbarungen treffen"
+  ],
+  [
+   "englisch.speaking.suggestions",
+   "MS-ENG-3-B3-K2",
+   "Vereinbarungen treffen"
+  ],
+  [
+   "englisch.speaking.suggestions",
+   "MS-ENG-4-B3-K1",
+   "Vorschläge machen"
+  ],
+  [
+   "englisch.speaking.presentation",
+   "MS-ENG-3-B3-K3",
+   "Präsentationen"
+  ],
+  [
+   "englisch.speaking.presentation",
+   "MS-ENG-4-B3-K3",
+   "einfache Präsentationen"
   ]
  ],
  "ahs-mathematik": [
@@ -1761,6 +2716,786 @@
    "mathe.wahrscheinlichkeit.zweistufig",
    "AHS-MAT-4-B4-K2",
    "zweistufigen Zufallsexperimenten"
+  ],
+  [
+   "mathe.os.zahlen.mengen",
+   "AHS-MAT-5-T1-K1",
+   "Mengen"
+  ],
+  [
+   "mathe.os.zahlen.zahlenmengen",
+   "AHS-MAT-5-T1-K2",
+   "Zahlenmengen"
+  ],
+  [
+   "mathe.os.zahlen.intervalle",
+   "AHS-MAT-5-T1-K3",
+   "Intervalle"
+  ],
+  [
+   "mathe.os.zahlen.zahlensysteme",
+   "AHS-MAT-5-T1-K4",
+   "nichtdekadischen Zahlensystem"
+  ],
+  [
+   "mathe.os.zahlen.gleitkomma",
+   "AHS-MAT-5-T1-K5",
+   "Zehnerpotenzen"
+  ],
+  [
+   "mathe.os.zahlen.fehler",
+   "AHS-MAT-5-T1-K6",
+   "Näherungswerten"
+  ],
+  [
+   "mathe.os.terme.faktorisieren",
+   "AHS-MAT-5-T1-K7",
+   "Umformungsschritte"
+  ],
+  [
+   "mathe.os.terme.bruchterme-kuerzen",
+   "AHS-MAT-5-T1-K7",
+   "Umformungsschritte"
+  ],
+  [
+   "mathe.os.terme.bruchterme-rechnen",
+   "AHS-MAT-5-T1-K7",
+   "Umformungsschritte"
+  ],
+  [
+   "mathe.os.potenzen.negativ",
+   "AHS-MAT-5-T1-K5",
+   "Rechenregeln für Zehnerpotenzen"
+  ],
+  [
+   "mathe.os.potenzen.negativ",
+   "AHS-MAT-6-S1-T2-K1",
+   "ganzen"
+  ],
+  [
+   "mathe.os.potenzen.rational",
+   "AHS-MAT-6-S1-T2-K1",
+   "rationalen"
+  ],
+  [
+   "mathe.os.potenzen.formeln",
+   "AHS-MAT-5-T1-K7",
+   "Formeln"
+  ],
+  [
+   "mathe.os.gleichungen.quadratisch-einfach",
+   "AHS-MAT-5-T2-K1",
+   "quadratische Gleichungen"
+  ],
+  [
+   "mathe.os.gleichungen.loesungsformel",
+   "AHS-MAT-5-T2-K1",
+   "quadratische Gleichungen"
+  ],
+  [
+   "mathe.os.gleichungen.vieta",
+   "AHS-MAT-5-T2-K1",
+   "quadratische Gleichungen"
+  ],
+  [
+   "mathe.os.gleichungen.loesungsfaelle",
+   "AHS-MAT-5-T2-K1",
+   "Lösungsfälle"
+  ],
+  [
+   "mathe.os.gleichungen.quadratisch-text",
+   "AHS-MAT-5-T2-K3",
+   "Probleme"
+  ],
+  [
+   "mathe.os.gleichungen.bruchgleichungen",
+   "AHS-MAT-5-T2-K1",
+   "Gleichungen in einer Variablen"
+  ],
+  [
+   "mathe.os.gleichungen.polynom",
+   "AHS-MAT-7-S1-T2-K1",
+   "Polynomgleichungen"
+  ],
+  [
+   "mathe.os.gleichungen.polynomdivision",
+   "AHS-MAT-7-S1-T2-K1",
+   "Polynomgleichungen"
+  ],
+  [
+   "mathe.os.ungleichungen.linear",
+   "AHS-MAT-6-S1-T2-K2",
+   "Ungleichungen"
+  ],
+  [
+   "mathe.os.ungleichungen.fall",
+   "AHS-MAT-6-S1-T2-K2",
+   "Ungleichungen"
+  ],
+  [
+   "mathe.os.gleichungssysteme.drei",
+   "AHS-MAT-6-S2-T3-K3",
+   "drei Variablen"
+  ],
+  [
+   "mathe.os.funktionen.definitionsmenge",
+   "AHS-MAT-6-S1-T3-K12",
+   "allgemeinen Funktionsbegriff"
+  ],
+  [
+   "mathe.os.funktionen.eigenschaften",
+   "AHS-MAT-6-S1-T3-K7",
+   "Monotonie"
+  ],
+  [
+   "mathe.os.funktionen.quadratisch",
+   "AHS-MAT-5-T3-K3",
+   "Quadratische Funktionen"
+  ],
+  [
+   "mathe.os.funktionen.scheitel",
+   "AHS-MAT-5-T3-K3",
+   "Quadratische Funktionen"
+  ],
+  [
+   "mathe.os.funktionen.quadratisch-aufstellen",
+   "AHS-MAT-5-T3-K3",
+   "Quadratische Funktionen"
+  ],
+  [
+   "mathe.os.funktionen.quadratisch-sach",
+   "AHS-MAT-5-T3-K6",
+   "anwendungsorientierten Bereichen"
+  ],
+  [
+   "mathe.os.funktionen.potenz",
+   "AHS-MAT-5-T3-K4",
+   "a/x"
+  ],
+  [
+   "mathe.os.funktionen.potenz",
+   "AHS-MAT-6-S1-T3-K2",
+   "Potenzfunktionen"
+  ],
+  [
+   "mathe.os.funktionen.abschnittsweise",
+   "AHS-MAT-5-T3-K4",
+   "abschnittweise definierte Funktionen"
+  ],
+  [
+   "mathe.os.funktionen.umkehr",
+   "AHS-MAT-6-S1-T3-K8",
+   "Umkehrfunktionen"
+  ],
+  [
+   "mathe.os.funktionen.symmetrie",
+   "AHS-MAT-6-S1-T3-K7",
+   "Symmetrie"
+  ],
+  [
+   "mathe.os.funktionen.polynom",
+   "AHS-MAT-6-S1-T3-K3",
+   "Polynomfunktionen"
+  ],
+  [
+   "mathe.os.funktionen.verschieben",
+   "AHS-MAT-6-S1-T3-K9",
+   "Veränderung des Graphen"
+  ],
+  [
+   "mathe.os.funktionen.verkettung",
+   "AHS-MAT-6-S1-T3-K8",
+   "Verkettungen"
+  ],
+  [
+   "mathe.os.trigo.rechtwinkelig",
+   "AHS-MAT-5-T4-K3",
+   "rechtwinkeligen"
+  ],
+  [
+   "mathe.os.trigo.vermessung",
+   "AHS-MAT-5-T4-K3",
+   "Figuren und Körpern"
+  ],
+  [
+   "mathe.os.trigo.einheitskreis",
+   "AHS-MAT-5-T4-K1",
+   "Einheitskreis"
+  ],
+  [
+   "mathe.os.trigo.gleichungen",
+   "AHS-MAT-5-T4-K2",
+   "nach α lösen"
+  ],
+  [
+   "mathe.os.trigo.sinussatz",
+   "AHS-MAT-5-T4-K3",
+   "Sinus- und Cosinussatz"
+  ],
+  [
+   "mathe.os.trigo.cosinussatz",
+   "AHS-MAT-5-T4-K3",
+   "Sinus- und Cosinussatz"
+  ],
+  [
+   "mathe.os.trigo.flaeche",
+   "AHS-MAT-5-T4-K3",
+   "Sinus- und Cosinussatz"
+  ],
+  [
+   "mathe.os.trigo.polarkoordinaten",
+   "AHS-MAT-5-T4-K4",
+   "Polarkoordinaten"
+  ],
+  [
+   "mathe.os.trigo.bogenmass",
+   "AHS-MAT-6-S1-T3-K6",
+   "Winkelfunktionen"
+  ],
+  [
+   "mathe.os.trigo.funktionen",
+   "AHS-MAT-6-S1-T3-K6",
+   "Winkelfunktionen"
+  ],
+  [
+   "mathe.os.trigo.allgemein",
+   "AHS-MAT-6-S1-T3-K6",
+   "Winkelfunktionen"
+  ],
+  [
+   "mathe.os.trigo.allgemein",
+   "AHS-MAT-6-S1-T3-K9",
+   "Veränderung des Graphen"
+  ],
+  [
+   "mathe.os.vektoren.rechnen",
+   "AHS-MAT-5-T5-K1",
+   "Vektoren addieren"
+  ],
+  [
+   "mathe.os.vektoren.betrag",
+   "AHS-MAT-5-T5-K5",
+   "Punkt-Punkt"
+  ],
+  [
+   "mathe.os.vektoren.normal",
+   "AHS-MAT-5-T5-K2",
+   "Normalvektoren"
+  ],
+  [
+   "mathe.os.vektoren.skalarprodukt",
+   "AHS-MAT-5-T5-K3",
+   "Skalarprodukt"
+  ],
+  [
+   "mathe.os.vektoren.gerade-parameter",
+   "AHS-MAT-5-T5-K4",
+   "Parameterdarstellungen"
+  ],
+  [
+   "mathe.os.vektoren.gerade-parameter",
+   "AHS-MAT-6-S2-T3-K1",
+   "Parameterdarstellungen"
+  ],
+  [
+   "mathe.os.vektoren.gerade-normal",
+   "AHS-MAT-5-T5-K4",
+   "Normalvektordarstellungen"
+  ],
+  [
+   "mathe.os.vektoren.lage",
+   "AHS-MAT-5-T5-K4",
+   "gegenseitige Lage"
+  ],
+  [
+   "mathe.os.vektoren.lage",
+   "AHS-MAT-6-S2-T3-K1",
+   "dreidimensionalen Fall"
+  ],
+  [
+   "mathe.os.vektoren.abstand",
+   "AHS-MAT-5-T5-K5",
+   "Punkt-Gerade"
+  ],
+  [
+   "mathe.os.vektoren.raum",
+   "AHS-MAT-6-S2-T3-K1",
+   "dreidimensionalen Fall"
+  ],
+  [
+   "mathe.os.vektoren.kreuzprodukt",
+   "AHS-MAT-6-S2-T3-K2",
+   "Normalvektoren ermitteln"
+  ],
+  [
+   "mathe.os.vektoren.ebene",
+   "AHS-MAT-6-S2-T3-K2",
+   "Ebenen"
+  ],
+  [
+   "mathe.os.vektoren.schnitt",
+   "AHS-MAT-6-S2-T3-K2",
+   "Ebenen"
+  ],
+  [
+   "mathe.os.vektoren.anwendungen",
+   "AHS-MAT-6-S2-T3-K4",
+   "Anwendungskontexten"
+  ],
+  [
+   "mathe.os.log.begriff",
+   "AHS-MAT-6-S1-T2-K1",
+   "Logarithmen"
+  ],
+  [
+   "mathe.os.log.regeln",
+   "AHS-MAT-6-S1-T2-K1",
+   "Rechenregeln"
+  ],
+  [
+   "mathe.os.log.exponentialgleichungen",
+   "AHS-MAT-6-S1-T2-K1",
+   "Logarithmen"
+  ],
+  [
+   "mathe.os.log.funktion",
+   "AHS-MAT-6-S1-T3-K5",
+   "Logarithmusfunktionen"
+  ],
+  [
+   "mathe.os.wachstum.exponentialfunktion",
+   "AHS-MAT-6-S1-T3-K4",
+   "Exponentialfunktionen"
+  ],
+  [
+   "mathe.os.wachstum.exponentiell",
+   "AHS-MAT-6-S1-T3-K10",
+   "Änderungsfaktor"
+  ],
+  [
+   "mathe.os.wachstum.exponentiell",
+   "AHS-MAT-6-S1-T3-K11",
+   "insbesondere Exponentialfunktionen"
+  ],
+  [
+   "mathe.os.wachstum.halbwertszeit",
+   "AHS-MAT-6-S1-T3-K11",
+   "außermathematischen Situationen"
+  ],
+  [
+   "mathe.os.wachstum.basis-e",
+   "AHS-MAT-6-S1-T3-K4",
+   "Exponentialfunktionen"
+  ],
+  [
+   "mathe.os.wachstum.vergleich",
+   "AHS-MAT-6-S1-T3-K11",
+   "Modelle vergleichen"
+  ],
+  [
+   "mathe.os.wachstum.beschraenkt",
+   "AHS-MAT-8-S1-T5-K2",
+   "Differentialgleichungen"
+  ],
+  [
+   "mathe.os.folgen.darstellung",
+   "AHS-MAT-6-S1-T4-K1",
+   "rekursive"
+  ],
+  [
+   "mathe.os.folgen.arithmetisch",
+   "AHS-MAT-6-S1-T4-K1",
+   "arithmetische Folgen"
+  ],
+  [
+   "mathe.os.folgen.geometrisch",
+   "AHS-MAT-6-S1-T4-K1",
+   "geometrische Folgen"
+  ],
+  [
+   "mathe.os.folgen.grenzwert",
+   "AHS-MAT-6-S1-T4-K2",
+   "Beschränktheit"
+  ],
+  [
+   "mathe.os.folgen.arithmetische-reihe",
+   "AHS-MAT-6-S2-T2-K1",
+   "arithmetischer"
+  ],
+  [
+   "mathe.os.folgen.geometrische-reihe",
+   "AHS-MAT-6-S2-T2-K1",
+   "geometrischer Reihen"
+  ],
+  [
+   "mathe.os.folgen.unendlich",
+   "AHS-MAT-6-S2-T2-K2",
+   "unendlicher Reihen"
+  ],
+  [
+   "mathe.funktionen.linear",
+   "AHS-MAT-5-T3-K2",
+   "Lineare Funktionen"
+  ],
+  [
+   "mathe.funktionen.darstellungen",
+   "AHS-MAT-5-T3-K1",
+   "Termen, Tabellen und Graphen"
+  ],
+  [
+   "mathe.gleichungssysteme.rechnerisch",
+   "AHS-MAT-5-T2-K2",
+   "zwei Variablen"
+  ],
+  [
+   "mathe.gleichungssysteme.text",
+   "AHS-MAT-5-T2-K3",
+   "Probleme"
+  ],
+  [
+   "mathe.os.vektoren.schnitt",
+   "AHS-MAT-6-S2-T3-K1",
+   "dreidimensionalen Fall"
+  ],
+  [
+   "mathe.os.funktionen.potenz",
+   "AHS-MAT-5-T3-K5",
+   "indirekte Proportionalitäten"
+  ],
+  [
+   "mathe.os.funktionen.eigenschaften",
+   "AHS-MAT-6-S1-T3-K1",
+   "charakteristische Eigenschaften"
+  ],
+  [
+   "mathe.os.komplex.rechnen",
+   "AHS-MAT-7-S2-T4-K2",
+   "mit ihnen rechnen"
+  ],
+  [
+   "mathe.os.komplex.division",
+   "AHS-MAT-7-S2-T4-K2",
+   "mit ihnen rechnen"
+  ],
+  [
+   "mathe.os.komplex.gleichungen",
+   "AHS-MAT-7-S2-T4-K2",
+   "Lösen von Gleichungen"
+  ],
+  [
+   "mathe.os.komplex.polarform",
+   "AHS-MAT-7-S2-T4-K4",
+   "Polarform"
+  ],
+  [
+   "mathe.os.kurven.kreis",
+   "AHS-MAT-7-S1-T3-K1",
+   "Kreise, Kugeln"
+  ],
+  [
+   "mathe.os.kurven.kreis-gerade",
+   "AHS-MAT-7-S1-T3-K2",
+   "Lage von Kreis und Gerade"
+  ],
+  [
+   "mathe.os.kurven.kegelschnitte",
+   "AHS-MAT-7-S1-T3-K1",
+   "Kegelschnittlinien"
+  ],
+  [
+   "mathe.os.kurven.parameter",
+   "AHS-MAT-7-S1-T3-K4",
+   "Parameterdarstellungen"
+  ],
+  [
+   "mathe.os.diff.aenderungsrate",
+   "AHS-MAT-6-S1-T3-K10",
+   "mittlere Änderungsrate"
+  ],
+  [
+   "mathe.os.diff.aenderungsrate",
+   "AHS-MAT-7-S1-T2-K2",
+   "Differenzenquotienten"
+  ],
+  [
+   "mathe.os.diff.differentialquotient",
+   "AHS-MAT-7-S1-T2-K2",
+   "Differentialquotienten"
+  ],
+  [
+   "mathe.os.diff.differentialquotient",
+   "AHS-MAT-7-S1-T2-K3",
+   "Tangentensteigung"
+  ],
+  [
+   "mathe.os.diff.grenzwert",
+   "AHS-MAT-7-S2-T2-K4",
+   "Stetigkeit"
+  ],
+  [
+   "mathe.os.diff.potenzregel",
+   "AHS-MAT-7-S1-T2-K5",
+   "Ableitungsregeln"
+  ],
+  [
+   "mathe.os.diff.elementar",
+   "AHS-MAT-7-S2-T2-K1",
+   "Exponential- und Logarithmusfunktionen"
+  ],
+  [
+   "mathe.os.diff.produktregel",
+   "AHS-MAT-7-S2-T2-K2",
+   "Weitere Ableitungsregeln"
+  ],
+  [
+   "mathe.os.diff.quotientenregel",
+   "AHS-MAT-7-S2-T2-K2",
+   "Weitere Ableitungsregeln"
+  ],
+  [
+   "mathe.os.diff.kettenregel",
+   "AHS-MAT-7-S2-T2-K2",
+   "Kettenregel"
+  ],
+  [
+   "mathe.os.diff.tangente",
+   "AHS-MAT-7-S1-T2-K3",
+   "Tangentensteigung"
+  ],
+  [
+   "mathe.os.diff.monotonie",
+   "AHS-MAT-7-S1-T2-K6",
+   "Monotonie"
+  ],
+  [
+   "mathe.os.diff.kruemmung",
+   "AHS-MAT-7-S1-T2-K6",
+   "Wendestellen"
+  ],
+  [
+   "mathe.os.diff.kurvendiskussion",
+   "AHS-MAT-7-S1-T2-K7",
+   "Untersuchungen von Polynomfunktionen"
+  ],
+  [
+   "mathe.os.diff.graphen",
+   "AHS-MAT-7-S1-T2-K4",
+   "Ableitungsfunktion"
+  ],
+  [
+   "mathe.os.diff.aufstellen",
+   "AHS-MAT-7-S1-T2-K7",
+   "Untersuchungen von Polynomfunktionen"
+  ],
+  [
+   "mathe.os.diff.extremwert",
+   "AHS-MAT-7-S1-T2-K7",
+   "Extremwertaufgaben"
+  ],
+  [
+   "mathe.os.diff.bewegung",
+   "AHS-MAT-7-S1-T2-K3",
+   "außermathematischen Bereichen"
+  ],
+  [
+   "mathe.os.diff.bewegung",
+   "AHS-MAT-7-S2-T2-K3",
+   "Naturwissenschaft"
+  ],
+  [
+   "mathe.os.integral.stammfunktion",
+   "AHS-MAT-8-S1-T2-K3",
+   "Stammfunktion"
+  ],
+  [
+   "mathe.os.integral.stammfunktion",
+   "AHS-MAT-8-S1-T3-K3",
+   "unbestimmte Integral"
+  ],
+  [
+   "mathe.os.integral.grundintegrale",
+   "AHS-MAT-8-S1-T2-K4",
+   "elementarer Integrationsregeln"
+  ],
+  [
+   "mathe.os.integral.summen",
+   "AHS-MAT-8-S1-T2-K1",
+   "Ober- und Untersummen"
+  ],
+  [
+   "mathe.os.integral.bestimmt",
+   "AHS-MAT-8-S1-T2-K4",
+   "mit Hilfe von Stammfunktionen"
+  ],
+  [
+   "mathe.os.integral.bestimmt",
+   "AHS-MAT-8-S1-T3-K2",
+   "Hauptsätze"
+  ],
+  [
+   "mathe.os.integral.flaeche",
+   "AHS-MAT-8-S1-T3-K1",
+   "Flächeninhalte"
+  ],
+  [
+   "mathe.os.integral.zwischen",
+   "AHS-MAT-8-S1-T3-K1",
+   "Flächeninhalte"
+  ],
+  [
+   "mathe.os.integral.anwendungen",
+   "AHS-MAT-8-S1-T2-K2",
+   "zurückgelegte Wege"
+  ],
+  [
+   "mathe.os.integral.anwendungen",
+   "AHS-MAT-8-S1-T3-K1",
+   "Weglängen"
+  ],
+  [
+   "mathe.os.integral.substitution",
+   "AHS-MAT-8-S1-T2-K4",
+   "elementarer Integrationsregeln"
+  ],
+  [
+   "mathe.os.integral.volumen",
+   "AHS-MAT-8-S1-T3-K1",
+   "Volumina"
+  ],
+  [
+   "mathe.os.dgl.differenzengleichung",
+   "AHS-MAT-8-S1-T5-K1",
+   "Differenzengleichungen"
+  ],
+  [
+   "mathe.os.dgl.differenzengleichung",
+   "AHS-MAT-8-S1-T5-K4",
+   "dynamische Systeme"
+  ],
+  [
+   "mathe.os.dgl.aufstellen",
+   "AHS-MAT-8-S1-T5-K2",
+   "Differentialgleichungen beschreiben"
+  ],
+  [
+   "mathe.os.dgl.loesen",
+   "AHS-MAT-8-S1-T5-K3",
+   "Einfache Differentialgleichungen lösen"
+  ],
+  [
+   "mathe.os.statistik.merkmale",
+   "AHS-MAT-6-S2-T4-K1",
+   "Darstellungen und Kennzahlen"
+  ],
+  [
+   "mathe.os.statistik.klassen",
+   "AHS-MAT-6-S2-T4-K1",
+   "Darstellungen"
+  ],
+  [
+   "mathe.os.statistik.streuung",
+   "AHS-MAT-6-S2-T4-K1",
+   "Kennzahlen"
+  ],
+  [
+   "mathe.os.statistik.boxplot",
+   "AHS-MAT-6-S2-T4-K1",
+   "Darstellungen"
+  ],
+  [
+   "mathe.os.statistik.mittelwerte",
+   "AHS-MAT-6-S2-T4-K1",
+   "Kennzahlen"
+  ],
+  [
+   "mathe.os.statistik.konfidenz-anteil",
+   "AHS-MAT-8-S1-T4-K4",
+   "Konfidenzintervalle"
+  ],
+  [
+   "mathe.os.statistik.hypothesentest",
+   "AHS-MAT-8-S1-T4-K5",
+   "Hypothesentests"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.regeln",
+   "AHS-MAT-6-S2-T4-K4",
+   "Additions- und Multiplikationsregel"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.mehrstufig",
+   "AHS-MAT-6-S2-T4-K4",
+   "Baumdiagramme"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.bedingt",
+   "AHS-MAT-6-S2-T4-K5",
+   "Bedingte Wahrscheinlichkeiten"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.bayes",
+   "AHS-MAT-6-S2-T4-K6",
+   "Satz von Bayes"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.kombinatorik",
+   "AHS-MAT-7-S2-T3-K4",
+   "Binomialkoeffizienten"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.zufallsvariable",
+   "AHS-MAT-7-S2-T3-K1",
+   "diskrete Zufallsvariable"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.zufallsvariable",
+   "AHS-MAT-7-S2-T3-K3",
+   "Erwartungswert"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.binomial",
+   "AHS-MAT-7-S2-T3-K5",
+   "Binomialverteilung"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.binomial-bereiche",
+   "AHS-MAT-7-S2-T3-K5",
+   "Binomialverteilung"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.dichte",
+   "AHS-MAT-8-S1-T4-K1",
+   "stetige Zufallsvariable"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.normal",
+   "AHS-MAT-8-S1-T4-K3",
+   "Normalverteilung"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.normal-umkehr",
+   "AHS-MAT-8-S1-T4-K3",
+   "Normalverteilung"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.glockenkurve",
+   "AHS-MAT-8-S1-T4-K3",
+   "Normalverteilung"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.approximation",
+   "AHS-MAT-8-S1-T4-K2",
+   "Approximation der Binomialverteilung"
+  ],
+  [
+   "mathe.os.kosten.grundbegriffe",
+   "AHS-MAT-5-T3-K6",
+   "anwendungsorientierten Bereichen"
+  ],
+  [
+   "mathe.os.komplex.gleichungen",
+   "AHS-MAT-7-S2-T4-K1",
+   "Erweiterung der reellen Zahlen"
   ]
  ],
  "ahs-deutsch": [
@@ -1868,6 +3603,1161 @@
    "deutsch.text.verstehen",
    "AHS-DEU-5",
    "Informationen entnehmen/Textinhalt erfassen"
+  ],
+  [
+   "deutsch.recht.woerterbuch",
+   "AHS-DEU-1-B1",
+   "Rechtschreibhilfen in analoger (Wörterbuch)"
+  ],
+  [
+   "deutsch.recht.gleichklang",
+   "AHS-DEU-1-B1",
+   "Festigung von Rechtschreibfertigkeiten"
+  ],
+  [
+   "deutsch.recht.gleichklang",
+   "AHS-DEU-2-B1",
+   "Anwendung von Rechtschreibstrategien"
+  ],
+  [
+   "deutsch.recht.gleichklang",
+   "AHS-DEU-3-B1",
+   "Einsichten in Rechtschreibung"
+  ],
+  [
+   "deutsch.recht.fremdwoerter",
+   "AHS-DEU-2-B1",
+   "Anwendung von Rechtschreibstrategien"
+  ],
+  [
+   "deutsch.recht.fremdwoerter",
+   "AHS-DEU-3-B1",
+   "Einsichten in Rechtschreibung"
+  ],
+  [
+   "deutsch.recht.getrennt-zusammen",
+   "AHS-DEU-2-B1",
+   "Anwendung von Rechtschreibstrategien"
+  ],
+  [
+   "deutsch.recht.getrennt-zusammen",
+   "AHS-DEU-3-B1",
+   "Einsichten in Rechtschreibung"
+  ],
+  [
+   "deutsch.recht.getrennt-zusammen",
+   "AHS-DEU-4-B1",
+   "Vertieftes Verständnis von sprachlichen Strukturen und Regeln"
+  ],
+  [
+   "deutsch.wortarten.steigerung",
+   "AHS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.wortarten.steigerung",
+   "AHS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.wortschatz.zusammensetzung",
+   "AHS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.wortschatz.zusammensetzung",
+   "AHS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.wortschatz.ableitung",
+   "AHS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.wortschatz.ableitung",
+   "AHS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.wortschatz.wortfelder",
+   "AHS-DEU-1-B1",
+   "Pragmatik/Semantik"
+  ],
+  [
+   "deutsch.wortschatz.wortfelder",
+   "AHS-DEU-3-B4-K1",
+   "Sprache bewusst als gestaltend-kreatives Element einsetzen"
+  ],
+  [
+   "deutsch.wortschatz.redewendungen",
+   "AHS-DEU-1-B1",
+   "Pragmatik/Semantik"
+  ],
+  [
+   "deutsch.wortschatz.sprachebenen",
+   "AHS-DEU-1-B1",
+   "Dialekt, Umgangs-, Standardsprache"
+  ],
+  [
+   "deutsch.wortschatz.sprachebenen",
+   "AHS-DEU-3-B2-K2",
+   "unterschiedlicher sprachlicher Register"
+  ],
+  [
+   "deutsch.wortschatz.sprachebenen",
+   "AHS-DEU-4-B1",
+   "Soziolekten, Dialekten, Fachsprachen"
+  ],
+  [
+   "deutsch.grammatik.imperativ",
+   "AHS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.grammatik.imperativ",
+   "AHS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.grammatik.plusquamperfekt",
+   "AHS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.grammatik.plusquamperfekt",
+   "AHS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.grammatik.futur",
+   "AHS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.grammatik.futur",
+   "AHS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.grammatik.aktiv-passiv",
+   "AHS-DEU-2-B1",
+   "unter Berücksichtigung ihrer stilistischen Auswirkungen"
+  ],
+  [
+   "deutsch.grammatik.aktiv-passiv",
+   "AHS-DEU-3-B1",
+   "Grammatik hinsichtlich Gebrauch und Funktion"
+  ],
+  [
+   "deutsch.grammatik.aktiv-passiv",
+   "AHS-DEU-4-B1",
+   "Vertieftes Verständnis von sprachlichen Strukturen und Regeln"
+  ],
+  [
+   "deutsch.grammatik.konjunktiv2",
+   "AHS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.grammatik.konjunktiv2",
+   "AHS-DEU-3-B1",
+   "Grammatik hinsichtlich Gebrauch und Funktion"
+  ],
+  [
+   "deutsch.grammatik.konjunktiv2",
+   "AHS-DEU-4-B1",
+   "Vertieftes Verständnis von sprachlichen Strukturen und Regeln"
+  ],
+  [
+   "deutsch.grammatik.indirekte-rede",
+   "AHS-DEU-3-B1",
+   "Grammatik hinsichtlich Gebrauch und Funktion"
+  ],
+  [
+   "deutsch.grammatik.indirekte-rede",
+   "AHS-DEU-4-B1",
+   "Vertieftes Verständnis von sprachlichen Strukturen und Regeln"
+  ],
+  [
+   "deutsch.satz.satzglieder",
+   "AHS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.satzglieder",
+   "AHS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.objekte",
+   "AHS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.objekte",
+   "AHS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.adverbiale",
+   "AHS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.adverbiale",
+   "AHS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.attribute",
+   "AHS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.attribute",
+   "AHS-DEU-3-B1",
+   "Grammatik hinsichtlich Gebrauch und Funktion"
+  ],
+  [
+   "deutsch.satz.satzreihe-gefuege",
+   "AHS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.satz.satzreihe-gefuege",
+   "AHS-DEU-3-B1",
+   "Grammatik hinsichtlich Gebrauch und Funktion"
+  ],
+  [
+   "deutsch.beistrich.direkte-rede",
+   "AHS-DEU-1-B1",
+   "Basisfertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.beistrich.direkte-rede",
+   "AHS-DEU-2-B1",
+   "Differenzierte Fertigkeiten im Bereich von Wort-"
+  ],
+  [
+   "deutsch.text.lesestrategien",
+   "AHS-DEU-1-B3",
+   "Einsatz von Lesestrategien"
+  ],
+  [
+   "deutsch.text.lesestrategien",
+   "AHS-DEU-2-B3-K1",
+   "mittels Lesestrategien Informationen erschließen"
+  ],
+  [
+   "deutsch.text.lesestrategien",
+   "AHS-DEU-3-B3-K1",
+   "durch bewussten Einsatz geeigneter Strategien"
+  ],
+  [
+   "deutsch.text.sachtexte",
+   "AHS-DEU-1-B3",
+   "Lektüre von literarischen und pragmatischen Texten"
+  ],
+  [
+   "deutsch.text.sachtexte",
+   "AHS-DEU-2-B3-K1",
+   "unterschiedliche Texte und Textformate"
+  ],
+  [
+   "deutsch.text.sachtexte",
+   "AHS-DEU-3-B3",
+   "linearer und nichtlinearer Texte"
+  ],
+  [
+   "deutsch.text.sachtexte",
+   "AHS-DEU-4-B3",
+   "komplexerer analoger und digitaler pragmatischer Texte"
+  ],
+  [
+   "deutsch.text.fakt-meinung",
+   "AHS-DEU-2-B3-K3",
+   "ihre Wirkung erkennen und differenzieren"
+  ],
+  [
+   "deutsch.text.fakt-meinung",
+   "AHS-DEU-3-B3-K4",
+   "Absichten und Ziele in der Gestaltung von medialen Beiträgen erkennen"
+  ],
+  [
+   "deutsch.text.fakt-meinung",
+   "AHS-DEU-3-B3",
+   "Quellenkritik"
+  ],
+  [
+   "deutsch.text.fakt-meinung",
+   "AHS-DEU-4-B3-K4",
+   "Informationssysteme differenziert und kritisch nutzen"
+  ],
+  [
+   "deutsch.literatur.maerchen",
+   "AHS-DEU-1-B3",
+   "Texten unterschiedlicher Gattungen"
+  ],
+  [
+   "deutsch.literatur.maerchen",
+   "AHS-DEU-2-B3",
+   "Texten unterschiedlicher Gattungen"
+  ],
+  [
+   "deutsch.literatur.sage",
+   "AHS-DEU-1-B3",
+   "Texten unterschiedlicher Gattungen"
+  ],
+  [
+   "deutsch.literatur.sage",
+   "AHS-DEU-2-B3",
+   "Texten unterschiedlicher Gattungen"
+  ],
+  [
+   "deutsch.literatur.fabel",
+   "AHS-DEU-1-B3",
+   "Texten unterschiedlicher Gattungen"
+  ],
+  [
+   "deutsch.literatur.fabel",
+   "AHS-DEU-2-B3",
+   "Texten unterschiedlicher Gattungen"
+  ],
+  [
+   "deutsch.literatur.gedicht",
+   "AHS-DEU-1-B3",
+   "Texten unterschiedlicher Gattungen"
+  ],
+  [
+   "deutsch.literatur.gedicht",
+   "AHS-DEU-2-B3-K2",
+   "gestalterischen und inhaltlichen Besonderheiten literarischer Texte"
+  ],
+  [
+   "deutsch.literatur.sprachbilder",
+   "AHS-DEU-2-B3-K2",
+   "gestalterischen und inhaltlichen Besonderheiten literarischer Texte"
+  ],
+  [
+   "deutsch.literatur.sprachbilder",
+   "AHS-DEU-4-B3",
+   "stilistischen Ausdrucksformen literarischer Texte"
+  ],
+  [
+   "deutsch.literatur.gattungen",
+   "AHS-DEU-3-B3-K2",
+   "literarische Gattungen unterscheiden"
+  ],
+  [
+   "deutsch.literatur.ballade",
+   "AHS-DEU-3-B3-K2",
+   "literarische Gattungen unterscheiden"
+  ],
+  [
+   "deutsch.literatur.ballade",
+   "AHS-DEU-4-B3",
+   "ästhetischen Gestaltung und stilistischen Ausdrucksformen"
+  ],
+  [
+   "deutsch.literatur.kurzgeschichte",
+   "AHS-DEU-3-B3-K2",
+   "literarische Gattungen unterscheiden"
+  ],
+  [
+   "deutsch.literatur.kurzgeschichte",
+   "AHS-DEU-4-B3",
+   "Analyse und Interpretation der ästhetischen Gestaltung"
+  ],
+  [
+   "deutsch.schreiben.erzaehlung",
+   "AHS-DEU-1-B4-K1",
+   "Erlebnisse, Erfahrungen und Gedanken verschriftlichen"
+  ],
+  [
+   "deutsch.schreiben.erzaehlung",
+   "AHS-DEU-2-B4",
+   "(ua. Erzählen, Berichten, Darstellen)"
+  ],
+  [
+   "deutsch.schreiben.erzaehlung",
+   "AHS-DEU-3-B4-K1",
+   "aus unterschiedlichen Perspektiven anhand konkreter Vorgaben erzählen"
+  ],
+  [
+   "deutsch.schreiben.nacherzaehlung",
+   "AHS-DEU-1-B2",
+   "Wiedergabe von analogen und digitalen Texten"
+  ],
+  [
+   "deutsch.schreiben.nacherzaehlung",
+   "AHS-DEU-2-B4",
+   "(ua. Erzählen, Berichten, Darstellen)"
+  ],
+  [
+   "deutsch.schreiben.inhaltsangabe",
+   "AHS-DEU-3-B3-K1",
+   "wesentliche Informationen"
+  ],
+  [
+   "deutsch.schreiben.inhaltsangabe",
+   "AHS-DEU-4-B4",
+   "analytisches Schreiben"
+  ],
+  [
+   "deutsch.schreiben.brief",
+   "AHS-DEU-3-B4-K2",
+   "schriftlich informieren und argumentieren"
+  ],
+  [
+   "deutsch.schreiben.brief",
+   "AHS-DEU-4-B4",
+   "Textproduktion unter gezieltem Einsatz von Vorgaben und Vorlagen"
+  ],
+  [
+   "deutsch.schreiben.ueberarbeiten",
+   "AHS-DEU-1-B4",
+   "Übungen zur Verbesserung der Schreibfertigkeit"
+  ],
+  [
+   "deutsch.schreiben.ueberarbeiten",
+   "AHS-DEU-2-B4",
+   "Planen, Verfassen, Überarbeiten"
+  ],
+  [
+   "deutsch.schreiben.ueberarbeiten",
+   "AHS-DEU-3-B4",
+   "Überarbeitung eigener und fremder Texte"
+  ],
+  [
+   "deutsch.schreiben.ueberarbeiten",
+   "AHS-DEU-4-B4",
+   "Einschätzung von Textqualität"
+  ],
+  [
+   "deutsch.beschreiben.gegenstand",
+   "AHS-DEU-1-B4",
+   "(ua. Erzählen, Beschreiben)"
+  ],
+  [
+   "deutsch.beschreiben.gegenstand",
+   "AHS-DEU-2-B4-K2",
+   "schriftlich informieren und darstellen"
+  ],
+  [
+   "deutsch.beschreiben.person",
+   "AHS-DEU-1-B4",
+   "(ua. Erzählen, Beschreiben)"
+  ],
+  [
+   "deutsch.beschreiben.person",
+   "AHS-DEU-2-B4-K2",
+   "schriftlich informieren und darstellen"
+  ],
+  [
+   "deutsch.beschreiben.person",
+   "AHS-DEU-3-B4-K2",
+   "schriftlich informieren"
+  ],
+  [
+   "deutsch.beschreiben.weg",
+   "AHS-DEU-1-B4",
+   "(ua. Erzählen, Beschreiben)"
+  ],
+  [
+   "deutsch.beschreiben.weg",
+   "AHS-DEU-2-B4-K2",
+   "schriftlich informieren und darstellen"
+  ],
+  [
+   "deutsch.beschreiben.vorgang",
+   "AHS-DEU-1-B4",
+   "(ua. Erzählen, Beschreiben)"
+  ],
+  [
+   "deutsch.beschreiben.vorgang",
+   "AHS-DEU-2-B4-K2",
+   "schriftlich informieren und darstellen"
+  ],
+  [
+   "deutsch.beschreiben.vorgang",
+   "AHS-DEU-3-B4-K2",
+   "schriftlich informieren"
+  ],
+  [
+   "deutsch.beschreiben.bericht",
+   "AHS-DEU-2-B4",
+   "(ua. Erzählen, Berichten, Darstellen)"
+  ],
+  [
+   "deutsch.beschreiben.bericht",
+   "AHS-DEU-3-B4-K2",
+   "schriftlich informieren"
+  ],
+  [
+   "deutsch.argumentieren.argument",
+   "AHS-DEU-1-B2",
+   "Einfache Formen der Argumentation"
+  ],
+  [
+   "deutsch.argumentieren.argument",
+   "AHS-DEU-2-B4-K3",
+   "einfache Argumente schriftlich formulieren"
+  ],
+  [
+   "deutsch.argumentieren.argument",
+   "AHS-DEU-3-B2",
+   "Argumentation aus verschiedenen Rollen und Perspektiven"
+  ],
+  [
+   "deutsch.argumentieren.argument",
+   "AHS-DEU-4-B2",
+   "Argumentationen und Diskussionen"
+  ],
+  [
+   "deutsch.argumentieren.stellungnahme",
+   "AHS-DEU-3-B4",
+   "Argumentierendes Schreiben als Ausdruck persönlicher Meinungen"
+  ],
+  [
+   "deutsch.argumentieren.stellungnahme",
+   "AHS-DEU-4-B4-K2",
+   "auf Gegenargumente eingehen"
+  ],
+  [
+   "deutsch.praesentieren.referat",
+   "AHS-DEU-1-B2-K3",
+   "monologisches und dialogisches Sprechen"
+  ],
+  [
+   "deutsch.praesentieren.referat",
+   "AHS-DEU-2-B2-K3",
+   "mündlich präsentieren"
+  ],
+  [
+   "deutsch.praesentieren.referat",
+   "AHS-DEU-3-B2-K3",
+   "medial unterstützt mündlich präsentieren"
+  ],
+  [
+   "deutsch.praesentieren.referat",
+   "AHS-DEU-4-B2-K3",
+   "Visualisierungsmethoden"
+  ],
+  [
+   "deutsch.os.matura.aufgabe",
+   "AHS-DEU-5-T3-K2",
+   "der Kommunikationssituation entsprechendes Format wählen"
+  ],
+  [
+   "deutsch.os.matura.aufgabe",
+   "AHS-DEU-8-S2-T2-T1",
+   "Schreibhaltungen in Hinblick auf Textsorten optimieren"
+  ],
+  [
+   "deutsch.os.matura.zusammenfassung",
+   "AHS-DEU-5-T2-T1",
+   "Zusammenfassung"
+  ],
+  [
+   "deutsch.os.matura.zusammenfassung",
+   "AHS-DEU-6-S1-T2-T1",
+   "Zusammenfassung"
+  ],
+  [
+   "deutsch.os.matura.leserbrief",
+   "AHS-DEU-5-T2-T1",
+   "Leserbrief"
+  ],
+  [
+   "deutsch.os.matura.eroerterung",
+   "AHS-DEU-5-T2-T1",
+   "Erörterung"
+  ],
+  [
+   "deutsch.os.matura.eroerterung",
+   "AHS-DEU-6-S1-T2-T1",
+   "Erörterung"
+  ],
+  [
+   "deutsch.os.matura.kommentar",
+   "AHS-DEU-6-S1-T2-T1",
+   "Kommentar"
+  ],
+  [
+   "deutsch.os.matura.offenerbrief",
+   "AHS-DEU-6-S2-T2-T1",
+   "offener Brief"
+  ],
+  [
+   "deutsch.os.matura.empfehlung",
+   "AHS-DEU-6-S2-T2-T1",
+   "Empfehlung"
+  ],
+  [
+   "deutsch.os.matura.meinungsrede",
+   "AHS-DEU-7-S1-T2-T1",
+   "Meinungsrede"
+  ],
+  [
+   "deutsch.os.matura.textanalyse",
+   "AHS-DEU-7-S1-T2-T1",
+   "Textanalyse"
+  ],
+  [
+   "deutsch.os.matura.textinterpretation",
+   "AHS-DEU-7-S2-T2-T1",
+   "Textinterpretation"
+  ],
+  [
+   "deutsch.os.argument.typen",
+   "AHS-DEU-5-T2-T3",
+   "um zu überzeugen"
+  ],
+  [
+   "deutsch.os.argument.gegen",
+   "AHS-DEU-6-S1-T4-T1",
+   "verschiedene Standpunkte zu einem Thema erkennen"
+  ],
+  [
+   "deutsch.os.argument.fehlschluss",
+   "AHS-DEU-6-S1-T1-T1",
+   "öffentlichen Sprachgebrauch analysieren und kritisch kommentieren"
+  ],
+  [
+   "deutsch.os.argument.fehlschluss",
+   "AHS-DEU-8-S1-T4-T2",
+   "Strategien der Beeinflussung"
+  ],
+  [
+   "deutsch.os.argument.gliederung",
+   "AHS-DEU-5-T3-K1",
+   "Textaufbau erarbeiten"
+  ],
+  [
+   "deutsch.os.argument.gliederung",
+   "AHS-DEU-7-S1-T3-K1",
+   "Gedanken strukturieren"
+  ],
+  [
+   "deutsch.os.stil.klang",
+   "AHS-DEU-6-S1-T2-T3",
+   "rhetorische Mittel verwenden"
+  ],
+  [
+   "deutsch.os.stil.klang",
+   "AHS-DEU-7-S1-T4-T1",
+   "rhetorische, stilistische Analysen"
+  ],
+  [
+   "deutsch.os.stil.satzfiguren",
+   "AHS-DEU-6-S1-T2-T3",
+   "rhetorische Mittel verwenden"
+  ],
+  [
+   "deutsch.os.stil.satzfiguren",
+   "AHS-DEU-7-S1-T4-T1",
+   "rhetorische, stilistische Analysen"
+  ],
+  [
+   "deutsch.os.stil.gedankenfiguren",
+   "AHS-DEU-6-S1-T2-T3",
+   "rhetorische Mittel verwenden"
+  ],
+  [
+   "deutsch.os.stil.gedankenfiguren",
+   "AHS-DEU-7-S1-T4-T1",
+   "rhetorische, stilistische Analysen"
+  ],
+  [
+   "deutsch.os.stil.bilder",
+   "AHS-DEU-6-S1-T5-T2",
+   "sprachliche Verfahren in ästhetischen Texten aufzeigen"
+  ],
+  [
+   "deutsch.os.stil.bilder",
+   "AHS-DEU-7-S1-T4-T1",
+   "rhetorische, stilistische Analysen"
+  ],
+  [
+   "deutsch.os.stil.wirkung",
+   "AHS-DEU-7-S1-T4-T1",
+   "sprachliche Erscheinungen in Texten beschreiben und ihre Funktion erkennen"
+  ],
+  [
+   "deutsch.os.stil.satzbau",
+   "AHS-DEU-6-S1-T4-T3",
+   "Auswirkungen grammatisch-stilistischer Erscheinungen"
+  ],
+  [
+   "deutsch.os.stil.satzbau",
+   "AHS-DEU-7-S1-T4-T1",
+   "syntaktische"
+  ],
+  [
+   "deutsch.os.stil.nominal",
+   "AHS-DEU-6-S1-T4-T3",
+   "Auswirkungen grammatisch-stilistischer Erscheinungen"
+  ],
+  [
+   "deutsch.os.stil.nominal",
+   "AHS-DEU-8-S1-T2-T3",
+   "stilistische Mittel gezielt einsetzen"
+  ],
+  [
+   "deutsch.os.stil.ausdruck",
+   "AHS-DEU-5-T1-T2",
+   "Angemessenheit des sprachlichen Ausdrucks"
+  ],
+  [
+   "deutsch.os.stil.ausdruck",
+   "AHS-DEU-7-S1-T3-K2",
+   "Sprachebene und Ausdruck"
+  ],
+  [
+   "deutsch.os.stil.ethos",
+   "AHS-DEU-7-S1-T1-T2",
+   "Mittel der Rhetorik erkennen und einsetzen"
+  ],
+  [
+   "deutsch.os.lyrik.metrum",
+   "AHS-DEU-5-T5-T2",
+   "Kennzeichen ästhetischer Texte kennenlernen"
+  ],
+  [
+   "deutsch.os.lyrik.metrum",
+   "AHS-DEU-7-S1-T5-T2",
+   "Bezüge zwischen Form und Inhalt herstellen"
+  ],
+  [
+   "deutsch.os.lyrik.vers",
+   "AHS-DEU-5-T5-T2",
+   "Kennzeichen ästhetischer Texte kennenlernen"
+  ],
+  [
+   "deutsch.os.lyrik.vers",
+   "AHS-DEU-7-S1-T5-T2",
+   "Bezüge zwischen Form und Inhalt herstellen"
+  ],
+  [
+   "deutsch.os.lyrik.formen",
+   "AHS-DEU-6-S2-T5-T1",
+   "Kennzeichen ästhetischer Texte erarbeiten"
+  ],
+  [
+   "deutsch.os.lyrik.formen",
+   "AHS-DEU-7-S1-T5-T2",
+   "Bezüge zwischen Form und Inhalt herstellen"
+  ],
+  [
+   "deutsch.os.lyrik.versmasse",
+   "AHS-DEU-6-S1-T5-T2",
+   "Formen und Wandel literarischer Sprache"
+  ],
+  [
+   "deutsch.os.lyrik.versmasse",
+   "AHS-DEU-6-S2-T5-T3",
+   "Textbeschreibung und Textanalyse"
+  ],
+  [
+   "deutsch.os.lyrik.analyse",
+   "AHS-DEU-5-T5-T2",
+   "lyrisches Ich"
+  ],
+  [
+   "deutsch.os.lyrik.analyse",
+   "AHS-DEU-6-S2-T5-T3",
+   "Textbeschreibung und Textanalyse"
+  ],
+  [
+   "deutsch.os.lyrik.analyse",
+   "AHS-DEU-7-S1-T5-T2",
+   "Bezüge zwischen Form und Inhalt herstellen"
+  ],
+  [
+   "deutsch.os.epik.erzaehler",
+   "AHS-DEU-5-T5-T2",
+   "Erzählerin bzw. Erzähler"
+  ],
+  [
+   "deutsch.os.epik.zeit",
+   "AHS-DEU-5-T5-T2",
+   "Ort, Figuren, Geschehen, Zeit"
+  ],
+  [
+   "deutsch.os.epik.rede",
+   "AHS-DEU-7-S2-T5-T2",
+   "neue Formen der Epik"
+  ],
+  [
+   "deutsch.os.epik.novelle",
+   "AHS-DEU-5-T5-T2",
+   "Merkmale von Textarten und Genres"
+  ],
+  [
+   "deutsch.os.epik.parabel",
+   "AHS-DEU-5-T5-T2",
+   "Merkmale von Textarten und Genres"
+  ],
+  [
+   "deutsch.os.drama.rede",
+   "AHS-DEU-6-S2-T5-T3",
+   "Textbeschreibung und Textanalyse"
+  ],
+  [
+   "deutsch.os.drama.aufbau",
+   "AHS-DEU-6-S2-T5-T3",
+   "Textbeschreibung und Textanalyse"
+  ],
+  [
+   "deutsch.os.drama.form",
+   "AHS-DEU-7-S1-T5-T2",
+   "Bezüge zwischen Form und Inhalt herstellen"
+  ],
+  [
+   "deutsch.os.drama.gattungen",
+   "AHS-DEU-6-S2-T5-T1",
+   "Kennzeichen ästhetischer Texte erarbeiten"
+  ],
+  [
+   "deutsch.os.drama.episch",
+   "AHS-DEU-7-S2-T5-T2",
+   "neue Formen der Epik, Lyrik und Dramatik"
+  ],
+  [
+   "deutsch.os.literatur.motiv",
+   "AHS-DEU-6-S1-T5-T2",
+   "Themen, Stoffe, Motive, Symbole"
+  ],
+  [
+   "deutsch.os.epochen.mittelalter",
+   "AHS-DEU-6-S1-T5-T1",
+   "Mittelalter"
+  ],
+  [
+   "deutsch.os.epochen.barock",
+   "AHS-DEU-6-S2-T5-T1",
+   "Barock"
+  ],
+  [
+   "deutsch.os.epochen.aufklaerung",
+   "AHS-DEU-6-S2-T5-T1",
+   "Aufklärung"
+  ],
+  [
+   "deutsch.os.epochen.sturmunddrang",
+   "AHS-DEU-6-S2-T5-T1",
+   "Aufklärung"
+  ],
+  [
+   "deutsch.os.epochen.klassik",
+   "AHS-DEU-7-S1-T5-T1",
+   "Weimarer Klassik"
+  ],
+  [
+   "deutsch.os.epochen.romantik",
+   "AHS-DEU-7-S1-T5-T1",
+   "Romantik"
+  ],
+  [
+   "deutsch.os.epochen.biedermeier",
+   "AHS-DEU-7-S1-T5-T1",
+   "des Biedermeier und des Vormärz"
+  ],
+  [
+   "deutsch.os.epochen.realismus",
+   "AHS-DEU-7-S2-T5-T1",
+   "Realismus"
+  ],
+  [
+   "deutsch.os.epochen.naturalismus",
+   "AHS-DEU-7-S2-T5-T1",
+   "Naturalismus"
+  ],
+  [
+   "deutsch.os.epochen.wienermoderne",
+   "AHS-DEU-7-S2-T5-T1",
+   "Wiener Moderne"
+  ],
+  [
+   "deutsch.os.epochen.expressionismus",
+   "AHS-DEU-7-S2-T5-T1",
+   "Expressionismus"
+  ],
+  [
+   "deutsch.os.epochen.zwischenkrieg",
+   "AHS-DEU-8-S1-T5-T1",
+   "Literatur der Zwischenkriegszeit"
+  ],
+  [
+   "deutsch.os.epochen.exil",
+   "AHS-DEU-8-S1-T5-T1",
+   "des Exils"
+  ],
+  [
+   "deutsch.os.epochen.exil",
+   "AHS-DEU-8-S2-T4-T1",
+   "Exil"
+  ],
+  [
+   "deutsch.os.epochen.nachkrieg",
+   "AHS-DEU-8-S1-T5-T1",
+   "Literatur vom 2. Weltkrieg bis zur Gegenwart"
+  ],
+  [
+   "deutsch.os.epochen.experimentell",
+   "AHS-DEU-8-S1-T5-T1",
+   "experimentellen Literatur"
+  ],
+  [
+   "deutsch.os.epochen.oesterreich1945",
+   "AHS-DEU-8-S1-T5-T1",
+   "insbesondere österreichische Literatur vom 2. Weltkrieg"
+  ],
+  [
+   "deutsch.os.epochen.gegenwart",
+   "AHS-DEU-8-S1-T5-T1",
+   "bis zur Gegenwart"
+  ],
+  [
+   "deutsch.os.medien.journalismus",
+   "AHS-DEU-5-T4-T1",
+   "Merkmale von Textsorten erkennen"
+  ],
+  [
+   "deutsch.os.medien.journalismus",
+   "AHS-DEU-6-S2-T4-T1",
+   "sprachliche Besonderheiten nicht-literarischer Texte"
+  ],
+  [
+   "deutsch.os.medien.infografik",
+   "AHS-DEU-5-T4-T1",
+   "lineare und nichtlineare Texte"
+  ],
+  [
+   "deutsch.os.medien.infografik",
+   "AHS-DEU-7-S2-T4-T2",
+   "nichtlineare und lineare Darstellung von Informationen"
+  ],
+  [
+   "deutsch.os.medien.werbung",
+   "AHS-DEU-6-S1-T4-T2",
+   "Text-Bild-Kombinationen"
+  ],
+  [
+   "deutsch.os.medien.manipulation",
+   "AHS-DEU-7-S1-T6-T2",
+   "manipulative Zielsetzungen erkennen"
+  ],
+  [
+   "deutsch.os.medien.manipulation",
+   "AHS-DEU-8-S1-T4-T2",
+   "Strategien der Beeinflussung"
+  ],
+  [
+   "deutsch.os.medien.film",
+   "AHS-DEU-5-T5-T2",
+   "filmsprachliche Mittel"
+  ],
+  [
+   "deutsch.os.wiss.quellen",
+   "AHS-DEU-6-S2-T6-T1",
+   "Informationsquellen überprüfen und kritisch würdigen"
+  ],
+  [
+   "deutsch.os.wiss.zitieren",
+   "AHS-DEU-7-S1-T2-T1",
+   "beruflichen und wissenschaftlichen Leben"
+  ],
+  [
+   "deutsch.os.wiss.verzeichnis",
+   "AHS-DEU-7-S1-T2-T1",
+   "beruflichen und wissenschaftlichen Leben"
+  ],
+  [
+   "deutsch.os.wiss.thema",
+   "AHS-DEU-7-S1-T2-T1",
+   "wissenschaftlichen Leben"
+  ],
+  [
+   "deutsch.os.wiss.aufbau",
+   "AHS-DEU-8-S1-T2-T1",
+   "beruflichen, wissenschaftlichen"
+  ],
+  [
+   "deutsch.os.praesentieren.wirkung",
+   "AHS-DEU-7-S1-T1-T2",
+   "nichtsprachliche Mittel und Techniken des Sprechens"
+  ],
+  [
+   "deutsch.os.praesentieren.folien",
+   "AHS-DEU-5-T1-T2",
+   "Präsentationsformen kennenlernen und anwenden"
+  ],
+  [
+   "deutsch.os.praesentieren.folien",
+   "AHS-DEU-7-S2-T1-T1",
+   "Präsentationstechniken"
+  ],
+  [
+   "deutsch.os.praesentieren.moderieren",
+   "AHS-DEU-6-S2-T1-T1",
+   "situationsangepasst eingreifen"
+  ],
+  [
+   "deutsch.os.praesentieren.moderieren",
+   "AHS-DEU-6-S2-T1-T3",
+   "Thema und Inhalt eines Gespräches festlegen"
+  ],
+  [
+   "deutsch.os.sprache.vierseiten",
+   "AHS-DEU-5-T1-T3",
+   "Faktoren kommunikativer Prozesse"
+  ],
+  [
+   "deutsch.os.sprache.vierseiten",
+   "AHS-DEU-8-S1-T1-T2",
+   "Metakommunikation"
+  ],
+  [
+   "deutsch.os.sprache.axiome",
+   "AHS-DEU-5-T1-T1",
+   "Inhalts- und Beziehungsebene"
+  ],
+  [
+   "deutsch.os.sprache.oesterreich",
+   "AHS-DEU-8-S1-T1-T1",
+   "österreichischen"
+  ],
+  [
+   "deutsch.os.sprache.varietaeten",
+   "AHS-DEU-7-S2-T5-T3",
+   "sprachliche Varietäten erkennen"
+  ],
+  [
+   "deutsch.os.sprache.varietaeten",
+   "AHS-DEU-8-S1-T1-T1",
+   "verschiedene sprachliche Register"
+  ],
+  [
+   "deutsch.os.sprache.geschichte",
+   "AHS-DEU-6-S1-T5-T1",
+   "historische Sprachentwicklung kennen"
+  ],
+  [
+   "deutsch.os.sprache.wandel",
+   "AHS-DEU-6-S1-T5-T1",
+   "Sprachwandel im Zusammenhang mit gesellschaftlichem Wandel"
+  ],
+  [
+   "deutsch.os.sprache.wandel",
+   "AHS-DEU-8-S2-T4-T3",
+   "Phänomene des Sprachwandels in der Gegenwartssprache"
+  ],
+  [
+   "deutsch.os.sprache.zeichen",
+   "AHS-DEU-6-S2-T4-T1",
+   "Dimension von sprachlichen Zeichen"
+  ],
+  [
+   "deutsch.os.sprache.zeichen",
+   "AHS-DEU-8-S1-T6-T2",
+   "semiotische Systeme"
+  ],
+  [
+   "deutsch.os.sprache.pragmatik",
+   "AHS-DEU-6-S2-T4-T1",
+   "syntaktische, semantische und pragmatische Dimension"
+  ],
+  [
+   "deutsch.os.sprache.gender",
+   "AHS-DEU-7-S1-T2-T3",
+   "feministische Sprachkritik"
+  ],
+  [
+   "deutsch.os.beistrich.zusatz",
+   "AHS-DEU-5-T3-K2",
+   "Sprach- und Schreibnormen einhalten"
+  ],
+  [
+   "deutsch.os.beistrich.zusatz",
+   "AHS-DEU-7-S1-T3-T1",
+   "bei orthografischen Problemen zielführende Lösungen finden"
+  ],
+  [
+   "deutsch.os.beistrich.vergleich",
+   "AHS-DEU-5-T3-K2",
+   "Sprach- und Schreibnormen einhalten"
+  ],
+  [
+   "deutsch.os.beistrich.vergleich",
+   "AHS-DEU-7-S1-T3-T1",
+   "bei orthografischen Problemen zielführende Lösungen finden"
+  ],
+  [
+   "deutsch.os.beistrich.strichpunkt",
+   "AHS-DEU-5-T3-K2",
+   "Sprach- und Schreibnormen einhalten"
+  ],
+  [
+   "deutsch.os.beistrich.strichpunkt",
+   "AHS-DEU-7-S1-T3-T1",
+   "bei orthografischen Problemen zielführende Lösungen finden"
+  ],
+  [
+   "deutsch.os.grammatik.daswas",
+   "AHS-DEU-5-T3-K3",
+   "Sprachrichtigkeit und Schreibrichtigkeit"
+  ],
+  [
+   "deutsch.os.bewerbung.lebenslauf",
+   "AHS-DEU-7-S1-T2-T1",
+   "beruflichen und wissenschaftlichen Leben"
+  ],
+  [
+   "deutsch.os.bewerbung.schreiben",
+   "AHS-DEU-7-S1-T2-T1",
+   "beruflichen und wissenschaftlichen Leben"
+  ],
+  [
+   "deutsch.os.bewerbung.gespraech",
+   "AHS-DEU-7-S1-T1-T2",
+   "in freien und formalisierten Situationen"
+  ],
+  [
+   "deutsch.os.lyrik.analyse",
+   "AHS-DEU-7-S2-T4-T1",
+   "Wechselwirkung von Form und Inhalt aufzeigen"
+  ],
+  [
+   "deutsch.os.medien.film",
+   "AHS-DEU-8-S1-T5-T2",
+   "Wechselwirkungen literarischer und filmischer Erzählweisen"
+  ],
+  [
+   "deutsch.os.wiss.quellen",
+   "AHS-DEU-8-S1-T6-T1",
+   "Informationsquellen überprüfen und kritisch würdigen"
+  ],
+  [
+   "deutsch.os.praesentieren.folien",
+   "AHS-DEU-8-S2-T1-T1",
+   "Präsentationsformen"
+  ],
+  [
+   "deutsch.os.matura.textinterpretation",
+   "AHS-DEU-8-S1-T5-T3",
+   "unterschiedliche Ansätze der Textinterpretation"
+  ],
+  [
+   "deutsch.os.literatur.motiv",
+   "AHS-DEU-8-S1-T5-T2",
+   "Themen, Stoffe, Motive, Symbole, Mythen in ihrer Aktualität"
+  ],
+  [
+   "deutsch.os.medien.infografik",
+   "AHS-DEU-8-S1-T4-T1",
+   "in nichtlinearen Texten Adressat, Intention und Situation analysieren"
   ]
  ],
  "ahs-englisch": [
@@ -1895,6 +4785,721 @@
    "englisch.reading.comprehension",
    "AHS-ENG-5-T2",
    ""
+  ],
+  [
+   "englisch.tenses.presentsimple",
+   "AHS-ENG-1-B3-K3",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.tenses.pastsimple",
+   "AHS-ENG-2-B4-K3",
+   "vergangene und zukünftige Ereignisse"
+  ],
+  [
+   "englisch.tenses.presentperfect",
+   "AHS-ENG-3-B4-K2",
+   "persönlichen Erfahrungen"
+  ],
+  [
+   "englisch.grammar.comparatives",
+   "AHS-ENG-2-B3-K3",
+   "Dinge, Orte, Personen"
+  ],
+  [
+   "englisch.tenses.simple-progressive",
+   "AHS-ENG-1-B3-K3",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.tenses.simple-progressive",
+   "AHS-ENG-1-B4-K1",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.tenses.pastprogressive",
+   "AHS-ENG-2-B4-K3",
+   "einfache Geschichten"
+  ],
+  [
+   "englisch.tenses.past-simple-progressive",
+   "AHS-ENG-3-B4-K2",
+   "kurze Beschreibungen von Ereignissen"
+  ],
+  [
+   "englisch.tenses.past-simple-progressive",
+   "AHS-ENG-3-B3-K3",
+   "über vertraute Themenbereiche erzählen"
+  ],
+  [
+   "englisch.tenses.future",
+   "AHS-ENG-2-B4-K3",
+   "zukünftige Ereignisse"
+  ],
+  [
+   "englisch.tenses.future",
+   "AHS-ENG-4-B3-K1",
+   "über Pläne reden"
+  ],
+  [
+   "englisch.tenses.future-present",
+   "AHS-ENG-3-B3-K2",
+   "Vereinbarungen treffen"
+  ],
+  [
+   "englisch.tenses.future-present",
+   "AHS-ENG-4-B3-K1",
+   "über Pläne reden"
+  ],
+  [
+   "englisch.tenses.perfect-past",
+   "AHS-ENG-3-B4-K2",
+   "persönlichen Erfahrungen"
+  ],
+  [
+   "englisch.tenses.perfect-past",
+   "AHS-ENG-4-B3-K2",
+   "vergangene sowie zukünftige Aktivitäten"
+  ],
+  [
+   "englisch.tenses.perfectprogressive",
+   "AHS-ENG-3-B4-K2",
+   "persönlichen Erfahrungen"
+  ],
+  [
+   "englisch.tenses.pastperfect",
+   "AHS-ENG-4-B3-K2",
+   "(Alltags-)Ereignisse"
+  ],
+  [
+   "englisch.tenses.usedto",
+   "AHS-ENG-4-B3-K2",
+   "vergangene sowie zukünftige Aktivitäten"
+  ],
+  [
+   "englisch.tenses.mixed",
+   "AHS-ENG-2-B4-K3",
+   "vergangene und zukünftige Ereignisse"
+  ],
+  [
+   "englisch.tenses.mixed",
+   "AHS-ENG-4-B3-K2",
+   "vergangene sowie zukünftige Aktivitäten"
+  ],
+  [
+   "englisch.grammar.tobe",
+   "AHS-ENG-1-B3-K2",
+   "einfache Fragen stellen und beantworten"
+  ],
+  [
+   "englisch.grammar.tobe",
+   "AHS-ENG-1-B4-K1",
+   "in einfachen Sätzen schreiben"
+  ],
+  [
+   "englisch.grammar.havegot",
+   "AHS-ENG-1-B3-K2",
+   "einfache Fragen stellen und beantworten"
+  ],
+  [
+   "englisch.grammar.havegot",
+   "AHS-ENG-1-B4-K1",
+   "Familie, Freunde"
+  ],
+  [
+   "englisch.grammar.praep-ort",
+   "AHS-ENG-2-B4-K1",
+   "Personen, Orte"
+  ],
+  [
+   "englisch.grammar.praep-zeit",
+   "AHS-ENG-1-B3-K3",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.grammar.praep-zeit",
+   "AHS-ENG-2-B3-K2",
+   "Vereinbarungen treffen"
+  ],
+  [
+   "englisch.grammar.haeufigkeit",
+   "AHS-ENG-1-B3-K3",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.grammar.haeufigkeit",
+   "AHS-ENG-1-B4-K1",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.grammar.fragen",
+   "AHS-ENG-1-B3-K2",
+   "einfache Fragen stellen und beantworten"
+  ],
+  [
+   "englisch.grammar.fragen",
+   "AHS-ENG-2-B3-K2",
+   "Fragen stellen"
+  ],
+  [
+   "englisch.grammar.modal-basics",
+   "AHS-ENG-2-B3-K3",
+   "Stärken"
+  ],
+  [
+   "englisch.grammar.modal-must",
+   "AHS-ENG-2-B1-K1",
+   "Anweisungen"
+  ],
+  [
+   "englisch.grammar.gerund",
+   "AHS-ENG-2-B3-K3",
+   "Vorlieben"
+  ],
+  [
+   "englisch.grammar.adverbs",
+   "AHS-ENG-3-B4-K2",
+   "kurze Beschreibungen von Ereignissen"
+  ],
+  [
+   "englisch.grammar.questiontags",
+   "AHS-ENG-3-B3-K1",
+   "ein Gespräch beginnen, weiterführen und beenden"
+  ],
+  [
+   "englisch.grammar.modal-substitutes",
+   "AHS-ENG-3-B4-K2",
+   "vergangenen und zukünftigen Handlungen"
+  ],
+  [
+   "englisch.grammar.modal-substitutes",
+   "AHS-ENG-4-B3-K2",
+   "vergangene sowie zukünftige Aktivitäten"
+  ],
+  [
+   "englisch.grammar.if1",
+   "AHS-ENG-3-B4-K2",
+   "zukünftigen Handlungen"
+  ],
+  [
+   "englisch.grammar.if1",
+   "AHS-ENG-4-B3-K1",
+   "über Pläne reden"
+  ],
+  [
+   "englisch.grammar.if2",
+   "AHS-ENG-3-B3-K2",
+   "Ratschläge erbitten und geben"
+  ],
+  [
+   "englisch.grammar.if2",
+   "AHS-ENG-4-B4-K2",
+   "einfache Vermutungen anstellen"
+  ],
+  [
+   "englisch.grammar.passive",
+   "AHS-ENG-3-B2-K1",
+   "Sachtexte"
+  ],
+  [
+   "englisch.grammar.modal-possibility",
+   "AHS-ENG-4-B3-K1",
+   "Vermutungen formulieren"
+  ],
+  [
+   "englisch.grammar.modal-possibility",
+   "AHS-ENG-4-B4-K2",
+   "einfache Vermutungen anstellen"
+  ],
+  [
+   "englisch.grammar.reported",
+   "AHS-ENG-4-B3-K2",
+   "berichten"
+  ],
+  [
+   "englisch.grammar.reported-questions",
+   "AHS-ENG-4-B3-K2",
+   "berichten"
+  ],
+  [
+   "englisch.grammar.if3",
+   "AHS-ENG-4-B4-K2",
+   "einfache Vermutungen anstellen"
+  ],
+  [
+   "englisch.vocab.uhrzeit-datum",
+   "AHS-ENG-1-B3-K3",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.vocab.uhrzeit-datum",
+   "AHS-ENG-2-B3-K2",
+   "Vereinbarungen treffen"
+  ],
+  [
+   "englisch.reading.skimming-scanning",
+   "AHS-ENG-2-B2-K2",
+   "wichtige Informationen entnehmen"
+  ],
+  [
+   "englisch.reading.skimming-scanning",
+   "AHS-ENG-4-B2-K2",
+   "spezifische Informationen entnehmen"
+  ],
+  [
+   "englisch.listening.strategies",
+   "AHS-ENG-1-B1-K1",
+   "in kurzen Dialogen oder Monologen"
+  ],
+  [
+   "englisch.listening.strategies",
+   "AHS-ENG-2-B1-K2",
+   "kurze einfache Gespräche"
+  ],
+  [
+   "englisch.listening.strategies",
+   "AHS-ENG-3-B1-K1",
+   "Medienbeiträge"
+  ],
+  [
+   "englisch.listening.strategies",
+   "AHS-ENG-4-B1-K1",
+   "Medienbeiträge"
+  ],
+  [
+   "englisch.writing.email",
+   "AHS-ENG-1-B4-K2",
+   "persönliche Mitteilungen"
+  ],
+  [
+   "englisch.writing.email",
+   "AHS-ENG-2-B4-K3",
+   "E-Mails"
+  ],
+  [
+   "englisch.writing.email",
+   "AHS-ENG-4-B4-K1",
+   "E-Mails"
+  ],
+  [
+   "englisch.writing.description",
+   "AHS-ENG-1-B4-K1",
+   "über sich selbst und vertraute Themen"
+  ],
+  [
+   "englisch.writing.description",
+   "AHS-ENG-2-B4-K1",
+   "Personen, Orte"
+  ],
+  [
+   "englisch.writing.linking",
+   "AHS-ENG-2-B4",
+   "zusammenhängenden Sätzen"
+  ],
+  [
+   "englisch.writing.linking",
+   "AHS-ENG-3-B4-K1",
+   "kurze zusammenhängende Texte"
+  ],
+  [
+   "englisch.writing.linking",
+   "AHS-ENG-4-B4-K1",
+   "strukturierte Texte"
+  ],
+  [
+   "englisch.writing.story",
+   "AHS-ENG-2-B4-K3",
+   "einfache Geschichten"
+  ],
+  [
+   "englisch.writing.story",
+   "AHS-ENG-3-B4-K2",
+   "kurze Beschreibungen von Ereignissen"
+  ],
+  [
+   "englisch.writing.opinion",
+   "AHS-ENG-2-B4-K2",
+   "die eigene Meinung ausdrücken und begründen"
+  ],
+  [
+   "englisch.writing.opinion",
+   "AHS-ENG-3-B4-K3",
+   "Eindrücke und Meinungen"
+  ],
+  [
+   "englisch.writing.opinion",
+   "AHS-ENG-4-B4-K3",
+   "einfache Begründungen"
+  ],
+  [
+   "englisch.writing.blog",
+   "AHS-ENG-4-B4-K1",
+   "Postings"
+  ],
+  [
+   "englisch.writing.blog",
+   "AHS-ENG-3-B4-K2",
+   "persönlichen Erfahrungen"
+  ],
+  [
+   "englisch.writing.article",
+   "AHS-ENG-4-B4-K1",
+   "strukturierte Texte"
+  ],
+  [
+   "englisch.writing.article",
+   "AHS-ENG-4-B4-K3",
+   "Ideen präsentieren"
+  ],
+  [
+   "englisch.speaking.about-me",
+   "AHS-ENG-1-B3-K3",
+   "Familie, Freunde, Tagesablauf, Hobbys, Schule"
+  ],
+  [
+   "englisch.speaking.about-me",
+   "AHS-ENG-2-B3-K3",
+   "Vorlieben, Stärken"
+  ],
+  [
+   "englisch.speaking.directions",
+   "AHS-ENG-2-B1-K1",
+   "Auskünfte"
+  ],
+  [
+   "englisch.speaking.directions",
+   "AHS-ENG-2-B3-K2",
+   "in Alltagssituationen"
+  ],
+  [
+   "englisch.speaking.shopping",
+   "AHS-ENG-2-B3-K2",
+   "in Alltagssituationen"
+  ],
+  [
+   "englisch.speaking.suggestions",
+   "AHS-ENG-2-B3-K2",
+   "Vereinbarungen treffen"
+  ],
+  [
+   "englisch.speaking.suggestions",
+   "AHS-ENG-3-B3-K2",
+   "Vereinbarungen treffen"
+  ],
+  [
+   "englisch.speaking.suggestions",
+   "AHS-ENG-4-B3-K1",
+   "Vorschläge machen"
+  ],
+  [
+   "englisch.speaking.presentation",
+   "AHS-ENG-3-B3-K3",
+   "Präsentationen"
+  ],
+  [
+   "englisch.speaking.presentation",
+   "AHS-ENG-4-B3-K3",
+   "einfache Präsentationen"
+  ],
+  [
+   "englisch.os.tenses.past-perfect-progressive",
+   "AHS-ENG-5-T4-K3",
+   "über Erfahrungen, Gefühle und Ereignisse berichten"
+  ],
+  [
+   "englisch.os.tenses.future-progressive",
+   "AHS-ENG-5-T3-K2",
+   "Träume, Hoffnungen und Ziele"
+  ],
+  [
+   "englisch.os.tenses.future-perfect",
+   "AHS-ENG-5-T3-K2",
+   "Träume, Hoffnungen und Ziele"
+  ],
+  [
+   "englisch.os.grammar.be-used-to",
+   "AHS-ENG-6-S2-T3-K3",
+   "über eigene Erfahrungen berichten"
+  ],
+  [
+   "englisch.os.grammar.non-defining",
+   "AHS-ENG-7-S2-T4-K1",
+   "klare, detaillierte Beschreibungen"
+  ],
+  [
+   "englisch.os.grammar.indirect-questions",
+   "AHS-ENG-5-T3-K1",
+   "Informationen austauschen"
+  ],
+  [
+   "englisch.os.grammar.wish",
+   "AHS-ENG-6-S1-T3-K2",
+   "Träume, Hoffnungen und Ziele"
+  ],
+  [
+   "englisch.os.grammar.mixed-conditionals",
+   "AHS-ENG-7-S2-T3-K1",
+   "Hypothesen aufstellt"
+  ],
+  [
+   "englisch.os.grammar.modal-deduction",
+   "AHS-ENG-7-S2-T3-K1",
+   "Hypothesen aufstellt"
+  ],
+  [
+   "englisch.os.grammar.passive-reporting",
+   "AHS-ENG-7-S1-T4-K1",
+   "darüber berichten"
+  ],
+  [
+   "englisch.os.grammar.reporting-verbs",
+   "AHS-ENG-7-S1-T4-K1",
+   "darüber berichten"
+  ],
+  [
+   "englisch.os.grammar.inversion",
+   "AHS-ENG-8-S1-T4-K1",
+   "entscheidende Punkte angemessen hervorgehoben"
+  ],
+  [
+   "englisch.os.grammar.cleft",
+   "AHS-ENG-8-S1-T3-K3",
+   "entscheidende Punkte in angemessener Weise hervorheben"
+  ],
+  [
+   "englisch.os.grammar.cleft",
+   "AHS-ENG-8-S1-T4-K1",
+   "entscheidende Punkte angemessen hervorgehoben"
+  ],
+  [
+   "englisch.os.reading.multiple-choice",
+   "AHS-ENG-5-T2-K1",
+   "die wesentlichen Punkte erfassen"
+  ],
+  [
+   "englisch.os.reading.multiple-choice",
+   "AHS-ENG-8-S1-T2-K1",
+   "Hauptaussagen sowie spezifische Informationen"
+  ],
+  [
+   "englisch.os.reading.multiple-matching",
+   "AHS-ENG-5-T2-K1",
+   "die wesentlichen Punkte erfassen"
+  ],
+  [
+   "englisch.os.reading.multiple-matching",
+   "AHS-ENG-7-S2-T2-K1",
+   "Hauptaussagen"
+  ],
+  [
+   "englisch.os.reading.gapped-text",
+   "AHS-ENG-7-S1-T2-K1",
+   "längere Texte"
+  ],
+  [
+   "englisch.os.reading.short-answers",
+   "AHS-ENG-5-T2-K1",
+   "wichtige Informationen auffinden"
+  ],
+  [
+   "englisch.os.reading.short-answers",
+   "AHS-ENG-7-S1-T2-K2",
+   "wichtige Einzelinformationen auffinden"
+  ],
+  [
+   "englisch.os.reading.true-false",
+   "AHS-ENG-6-S1-T2-K1",
+   "wichtige Informationen auffinden"
+  ],
+  [
+   "englisch.os.reading.true-false",
+   "AHS-ENG-8-S1-T2-K1",
+   "implizite Bedeutungen erfassen"
+  ],
+  [
+   "englisch.os.reading.literature",
+   "AHS-ENG-6-S1-T2-K1",
+   "auch literarische Texte"
+  ],
+  [
+   "englisch.os.reading.literature",
+   "AHS-ENG-7-S1-T2-K1",
+   "literarische Texte selbstständig lesen"
+  ],
+  [
+   "englisch.os.listening.multiple-choice",
+   "AHS-ENG-5-T1-K1",
+   "Hauptpunkte und wesentliche Informationen"
+  ],
+  [
+   "englisch.os.listening.multiple-choice",
+   "AHS-ENG-7-S2-T1-K1",
+   "Hauptaussagen und spezifische Informationen"
+  ],
+  [
+   "englisch.os.listening.note-completion",
+   "AHS-ENG-6-S1-T1-K1",
+   "Einzelinformationen erkennen"
+  ],
+  [
+   "englisch.os.listening.matching",
+   "AHS-ENG-7-S2-T1-K1",
+   "Hauptaussagen und spezifische Informationen"
+  ],
+  [
+   "englisch.os.writing.task",
+   "AHS-ENG-8-S1-T4-K2",
+   "für das betreffende Genre geltenden Konventionen"
+  ],
+  [
+   "englisch.os.writing.paragraphs",
+   "AHS-ENG-5-T4-K1",
+   "einzelne kürzere Teile in linearer Abfolge verbunden"
+  ],
+  [
+   "englisch.os.writing.paragraphs",
+   "AHS-ENG-8-S1-T4-K1",
+   "stützende Details angeführt"
+  ],
+  [
+   "englisch.os.writing.register",
+   "AHS-ENG-8-S1-T4-K2",
+   "für das betreffende Genre geltenden Konventionen"
+  ],
+  [
+   "englisch.os.writing.linking-contrast",
+   "AHS-ENG-7-S2-T4-K2",
+   "Vor- und Nachteile verschiedener Optionen"
+  ],
+  [
+   "englisch.os.writing.linking-contrast",
+   "AHS-ENG-8-S1-T4-K2",
+   "den Zusammenhang zwischen verschiedenen Ideen deutlich machen"
+  ],
+  [
+   "englisch.os.writing.linking-cause",
+   "AHS-ENG-5-T4-K1",
+   "Gründe für Handlungen angeben"
+  ],
+  [
+   "englisch.os.writing.linking-cause",
+   "AHS-ENG-8-S1-T4-K2",
+   "den Zusammenhang zwischen verschiedenen Ideen deutlich machen"
+  ],
+  [
+   "englisch.os.writing.informal-email",
+   "AHS-ENG-6-S1-T4-K2",
+   "in persönlichen Briefen und elektronischen Mitteilungen"
+  ],
+  [
+   "englisch.os.writing.formal-email",
+   "AHS-ENG-8-S1-T4-K2",
+   "für das betreffende Genre geltenden Konventionen"
+  ],
+  [
+   "englisch.os.writing.complaint",
+   "AHS-ENG-6-S2-T4-K2",
+   "einigermaßen präzise ein Problem erklären"
+  ],
+  [
+   "englisch.os.writing.essay",
+   "AHS-ENG-7-S2-T4-K2",
+   "Argumente für oder gegen einen bestimmten Standpunkt"
+  ],
+  [
+   "englisch.os.writing.essay",
+   "AHS-ENG-8-S1-T4-K1",
+   "verschiedene Standpunkte gegeneinander abwägen"
+  ],
+  [
+   "englisch.os.writing.article",
+   "AHS-ENG-7-S1-T4-K2",
+   "Informationen und Gedanken zu konkreten wie abstrakten Themen"
+  ],
+  [
+   "englisch.os.writing.article",
+   "AHS-ENG-8-S1-T4-K2",
+   "für das betreffende Genre geltenden Konventionen"
+  ],
+  [
+   "englisch.os.writing.blog-post",
+   "AHS-ENG-6-S1-T4-K2",
+   "Neuigkeiten übermitteln"
+  ],
+  [
+   "englisch.os.writing.blog-comment",
+   "AHS-ENG-6-S1-T4-K2",
+   "die eigene Meinung dazu vertreten"
+  ],
+  [
+   "englisch.os.writing.review",
+   "AHS-ENG-6-S1-T4-K2",
+   "Gedanken auch zu kulturellen Themen"
+  ],
+  [
+   "englisch.os.writing.review",
+   "AHS-ENG-6-S2-T4-K2",
+   "auch kulturellen (zB Musik, Filme, literarische Texte)"
+  ],
+  [
+   "englisch.os.writing.report",
+   "AHS-ENG-7-S1-T4-K1",
+   "zusammenfassen, darüber berichten und dazu Stellung nehmen"
+  ],
+  [
+   "englisch.os.writing.leaflet",
+   "AHS-ENG-8-S1-T4-K2",
+   "für das betreffende Genre geltenden Konventionen"
+  ],
+  [
+   "englisch.os.writing.application",
+   "AHS-ENG-8-S1-T4-K2",
+   "für das betreffende Genre geltenden Konventionen"
+  ],
+  [
+   "englisch.os.speaking.pictures",
+   "AHS-ENG-5-T3-K4",
+   "Vergleiche anstellen"
+  ],
+  [
+   "englisch.os.speaking.pictures",
+   "AHS-ENG-6-S1-T3-K4",
+   "Vergleiche anstellen"
+  ],
+  [
+   "englisch.os.speaking.presentation",
+   "AHS-ENG-6-S1-T3-K3",
+   "auch in Form einer Präsentation"
+  ],
+  [
+   "englisch.os.speaking.presentation",
+   "AHS-ENG-7-S1-T3-K2",
+   "auch in Form einer Präsentation"
+  ],
+  [
+   "englisch.os.speaking.graphs",
+   "AHS-ENG-7-S2-T3-K2",
+   "klare und detaillierte Beschreibungen und Darstellungen"
+  ],
+  [
+   "englisch.os.speaking.monologue",
+   "AHS-ENG-7-S2-T3-K2",
+   "Ideen ausführen und durch untergeordnete Punkte und relevante Beispiele abstützen"
+  ],
+  [
+   "englisch.os.speaking.monologue",
+   "AHS-ENG-8-S1-T3-K3",
+   "ein breites Themenspektrum systematisch darlegen"
+  ],
+  [
+   "englisch.os.speaking.dialogue",
+   "AHS-ENG-7-S1-T3-K1",
+   "ein Gespräch oder eine Diskussion aufrechterhalten"
+  ],
+  [
+   "englisch.os.speaking.dialogue",
+   "AHS-ENG-7-S2-T3-K1",
+   "an informellen Diskussionen beteiligen"
   ]
  ],
  "htl-mathematik": [
@@ -1922,6 +5527,821 @@
    "mathe.prozent.grundwert",
    "HTL-MAT-1",
    "Grundwert, Prozentsatz und Prozentanteil"
+  ],
+  [
+   "mathe.os.zahlen.mengen",
+   "HTL-MAT-1-B1-K1",
+   "Mengenoperationen"
+  ],
+  [
+   "mathe.os.zahlen.zahlenmengen",
+   "HTL-MAT-1-B1-K2",
+   "Erweiterung der Zahlenbereiche"
+  ],
+  [
+   "mathe.os.zahlen.intervalle",
+   "HTL-MAT-1-B1-K3",
+   "Zahlengeraden"
+  ],
+  [
+   "mathe.os.zahlen.zahlensysteme",
+   "HTL-MAT-1-B1-K2",
+   "Aufbau von Zahlensystemen"
+  ],
+  [
+   "mathe.os.zahlen.gleitkomma",
+   "HTL-MAT-1-B1-K3",
+   "Gleitkommadarstellung"
+  ],
+  [
+   "mathe.os.zahlen.gleitkomma",
+   "HTL-MAT-1-B1-K6",
+   "Zehnerpotenzen"
+  ],
+  [
+   "mathe.os.zahlen.fehler",
+   "HTL-MAT-1-B1-K5",
+   "absolute und relative Fehler"
+  ],
+  [
+   "mathe.os.zahlen.fehlerfortpflanzung",
+   "HTL-MAT-4-S1-B1-K1",
+   "Fehlerfortpflanzung"
+  ],
+  [
+   "mathe.os.terme.faktorisieren",
+   "HTL-MAT-1-B2-K2",
+   "Terme vereinfachen"
+  ],
+  [
+   "mathe.os.terme.bruchterme-kuerzen",
+   "HTL-MAT-1-B2-K2",
+   "Terme vereinfachen"
+  ],
+  [
+   "mathe.os.terme.bruchterme-rechnen",
+   "HTL-MAT-1-B2-K2",
+   "Terme vereinfachen"
+  ],
+  [
+   "mathe.os.potenzen.negativ",
+   "HTL-MAT-1-B2-K1",
+   "Potenzgesetze"
+  ],
+  [
+   "mathe.os.potenzen.rational",
+   "HTL-MAT-2-S1-L1-L3",
+   "rationalen Hochzahlen"
+  ],
+  [
+   "mathe.os.potenzen.formeln",
+   "HTL-MAT-1-B2-K2",
+   "Formeln aus dem Fachgebiet"
+  ],
+  [
+   "mathe.os.gleichungen.quadratisch-einfach",
+   "HTL-MAT-2-S1-B1-K5",
+   "quadratische Gleichungen"
+  ],
+  [
+   "mathe.os.gleichungen.loesungsformel",
+   "HTL-MAT-2-S1-B1-K5",
+   "quadratische Gleichungen"
+  ],
+  [
+   "mathe.os.gleichungen.vieta",
+   "HTL-MAT-2-S1-B1-K5",
+   "quadratische Gleichungen"
+  ],
+  [
+   "mathe.os.gleichungen.loesungsfaelle",
+   "HTL-MAT-2-S1-B1-K5",
+   "Lösungsfälle"
+  ],
+  [
+   "mathe.os.gleichungen.quadratisch-text",
+   "HTL-MAT-2-S1-B1-K5",
+   "quadratische Gleichungen"
+  ],
+  [
+   "mathe.os.gleichungen.bruchgleichungen",
+   "HTL-MAT-1-L1-L4",
+   "Äquivalenzumformungen"
+  ],
+  [
+   "mathe.os.gleichungen.polynom",
+   "HTL-MAT-2-S1-L1-L2",
+   "Nullstellen"
+  ],
+  [
+   "mathe.os.gleichungen.polynomdivision",
+   "HTL-MAT-2-S1-L1-L2",
+   "Nullstellen"
+  ],
+  [
+   "mathe.os.ungleichungen.linear",
+   "HTL-MAT-1-B2-K3",
+   "Ungleichungen"
+  ],
+  [
+   "mathe.os.gleichungssysteme.drei",
+   "HTL-MAT-1-B3-K4",
+   "lineare Gleichungssysteme aufstellen und lösen"
+  ],
+  [
+   "mathe.os.funktionen.definitionsmenge",
+   "HTL-MAT-1-L1-L8",
+   "Definitions- und Wertemenge"
+  ],
+  [
+   "mathe.os.funktionen.eigenschaften",
+   "HTL-MAT-2-S1-L1-L2",
+   "Monotonie"
+  ],
+  [
+   "mathe.os.funktionen.eigenschaften",
+   "HTL-MAT-2-S1-B1-K1",
+   "Eigenschaften von Funktionen"
+  ],
+  [
+   "mathe.os.funktionen.quadratisch",
+   "HTL-MAT-2-S1-B1-K2",
+   "Funktionsparameter"
+  ],
+  [
+   "mathe.os.funktionen.scheitel",
+   "HTL-MAT-2-S1-L1-L1",
+   "Quadratische Funktionen"
+  ],
+  [
+   "mathe.os.funktionen.quadratisch-aufstellen",
+   "HTL-MAT-2-S1-B1-K3",
+   "Polynomfunktionen"
+  ],
+  [
+   "mathe.os.funktionen.quadratisch-aufstellen",
+   "HTL-MAT-2-S1-L1-L4",
+   "Quadratische Interpolation"
+  ],
+  [
+   "mathe.os.funktionen.quadratisch-sach",
+   "HTL-MAT-2-S1-L1-L1",
+   "Quadratische Funktionen"
+  ],
+  [
+   "mathe.os.funktionen.potenz",
+   "HTL-MAT-2-S1-L1-L1",
+   "Potenzfunktionen"
+  ],
+  [
+   "mathe.os.funktionen.umkehr",
+   "HTL-MAT-2-S1-B1-K1",
+   "Umkehrfunktion"
+  ],
+  [
+   "mathe.os.funktionen.symmetrie",
+   "HTL-MAT-2-S1-L1-L2",
+   "Symmetrie"
+  ],
+  [
+   "mathe.os.funktionen.polynom",
+   "HTL-MAT-2-S1-L1-L1",
+   "Polynomfunktionen"
+  ],
+  [
+   "mathe.os.funktionen.verschieben",
+   "HTL-MAT-2-S1-B1-K2",
+   "Funktionsparameter"
+  ],
+  [
+   "mathe.os.funktionen.verkettung",
+   "HTL-MAT-3-S1-B1-K3",
+   "zusammengesetzten Funktionen"
+  ],
+  [
+   "mathe.os.trigo.rechtwinkelig",
+   "HTL-MAT-1-B3-K2",
+   "Seitenverhältnisse"
+  ],
+  [
+   "mathe.os.trigo.vermessung",
+   "HTL-MAT-1-B3-K2",
+   "facheinschlägigen Aufgabenstellungen"
+  ],
+  [
+   "mathe.os.trigo.einheitskreis",
+   "HTL-MAT-2-S1-B1-K4",
+   "Einheitskreises"
+  ],
+  [
+   "mathe.os.trigo.gleichungen",
+   "HTL-MAT-2-S1-B1-K5",
+   "trigonometrischen"
+  ],
+  [
+   "mathe.os.trigo.sinussatz",
+   "HTL-MAT-2-S2-B1-K4",
+   "allgemeinen Dreiecken"
+  ],
+  [
+   "mathe.os.trigo.cosinussatz",
+   "HTL-MAT-2-S2-B1-K4",
+   "allgemeinen Dreiecken"
+  ],
+  [
+   "mathe.os.trigo.flaeche",
+   "HTL-MAT-2-S2-B1-K4",
+   "allgemeinen Dreiecken"
+  ],
+  [
+   "mathe.os.trigo.polarkoordinaten",
+   "HTL-MAT-2-S2-L1-L1",
+   "Polarkoordinaten"
+  ],
+  [
+   "mathe.os.trigo.bogenmass",
+   "HTL-MAT-2-S1-B1-K4",
+   "trigonometrischen Funktionen"
+  ],
+  [
+   "mathe.os.trigo.funktionen",
+   "HTL-MAT-2-S1-B1-K4",
+   "trigonometrischen Funktionen"
+  ],
+  [
+   "mathe.os.trigo.allgemein",
+   "HTL-MAT-2-S1-B1-K4",
+   "allgemeinen Sinusfunktion"
+  ],
+  [
+   "mathe.os.vektoren.rechnen",
+   "HTL-MAT-1-B2-K5",
+   "Linearkombinationen"
+  ],
+  [
+   "mathe.os.vektoren.rechnen",
+   "HTL-MAT-1-L1-L7",
+   "Addition und Subtraktion"
+  ],
+  [
+   "mathe.os.vektoren.betrag",
+   "HTL-MAT-1-L1-L7",
+   "Betrag"
+  ],
+  [
+   "mathe.os.vektoren.normal",
+   "HTL-MAT-1-L1-L7",
+   "Betrag"
+  ],
+  [
+   "mathe.os.vektoren.skalarprodukt",
+   "HTL-MAT-2-S2-B1-K2",
+   "Skalarprodukt"
+  ],
+  [
+   "mathe.os.vektoren.gerade-parameter",
+   "HTL-MAT-2-S2-B1-K3",
+   "Geraden in R2 und R3"
+  ],
+  [
+   "mathe.os.vektoren.gerade-normal",
+   "HTL-MAT-2-S2-B1-K3",
+   "Geraden in R2"
+  ],
+  [
+   "mathe.os.vektoren.gerade-normal",
+   "HTL-MAT-1-B3-K4",
+   "impliziter Form"
+  ],
+  [
+   "mathe.os.vektoren.lage",
+   "HTL-MAT-2-S2-L1-L2",
+   "Geraden in R2 und R3"
+  ],
+  [
+   "mathe.os.vektoren.raum",
+   "HTL-MAT-2-S2-B1-K2",
+   "rechtwinkeligen Koordinatensystemen"
+  ],
+  [
+   "mathe.os.vektoren.kreuzprodukt",
+   "HTL-MAT-2-S2-B1-K2",
+   "vektorielle Produkt"
+  ],
+  [
+   "mathe.os.vektoren.ebene",
+   "HTL-MAT-2-S2-B1-K3",
+   "Ebenen in R3"
+  ],
+  [
+   "mathe.os.vektoren.anwendungen",
+   "HTL-MAT-4-S2-B2-K1",
+   "Daten strukturiert in Vektoren"
+  ],
+  [
+   "mathe.os.log.begriff",
+   "HTL-MAT-2-S1-B1-K6",
+   "Logarithmen"
+  ],
+  [
+   "mathe.os.log.regeln",
+   "HTL-MAT-2-S1-B1-K6",
+   "Rechengesetze für Potenzen und Logarithmen"
+  ],
+  [
+   "mathe.os.log.exponentialgleichungen",
+   "HTL-MAT-2-S1-B1-K5",
+   "Exponential- und Logarithmusfunktionen lösen"
+  ],
+  [
+   "mathe.os.log.funktion",
+   "HTL-MAT-2-S1-L1-L1",
+   "Logarithmusfunktionen"
+  ],
+  [
+   "mathe.os.wachstum.exponentialfunktion",
+   "HTL-MAT-2-S1-L1-L1",
+   "Exponentialfunktionen"
+  ],
+  [
+   "mathe.os.wachstum.exponentiell",
+   "HTL-MAT-2-S1-B1-K3",
+   "Exponentialfunktionen aufstellen"
+  ],
+  [
+   "mathe.os.wachstum.halbwertszeit",
+   "HTL-MAT-2-S1-B1-K5",
+   "Exponential- und Logarithmusfunktionen lösen"
+  ],
+  [
+   "mathe.os.wachstum.basis-e",
+   "HTL-MAT-2-S1-L1-L1",
+   "Exponentialfunktionen"
+  ],
+  [
+   "mathe.os.folgen.darstellung",
+   "HTL-MAT-3-S1-L1-L1",
+   "rekursive Definition"
+  ],
+  [
+   "mathe.os.folgen.arithmetisch",
+   "HTL-MAT-3-S1-B1-K1",
+   "arithmetischen"
+  ],
+  [
+   "mathe.os.folgen.geometrisch",
+   "HTL-MAT-3-S1-B1-K1",
+   "geometrischen Folgen"
+  ],
+  [
+   "mathe.os.folgen.grenzwert",
+   "HTL-MAT-3-S1-B1-K2",
+   "Konvergenz"
+  ],
+  [
+   "mathe.funktionen.linear",
+   "HTL-MAT-1-B3-K4",
+   "Gleichung einer Geraden"
+  ],
+  [
+   "mathe.funktionen.darstellungen",
+   "HTL-MAT-1-B3-K3",
+   "Wertetabellen"
+  ],
+  [
+   "mathe.gleichungssysteme.rechnerisch",
+   "HTL-MAT-1-L1-L4",
+   "Lösungsmethoden"
+  ],
+  [
+   "mathe.gleichungen.formeln",
+   "HTL-MAT-1-L1-L4",
+   "Formelumwandlung"
+  ],
+  [
+   "mathe.pythagoras.seite",
+   "HTL-MAT-1-L1-L5",
+   "Satz von Pythagoras"
+  ],
+  [
+   "mathe.os.zahlen.mengen",
+   "HTL-MAT-1-L1-L1",
+   "Mengenbegriff"
+  ],
+  [
+   "mathe.os.zahlen.zahlenmengen",
+   "HTL-MAT-1-L1-L1",
+   "Zahlenbereiche"
+  ],
+  [
+   "mathe.os.zahlen.zahlensysteme",
+   "HTL-MAT-1-L1-L1",
+   "Zahlensysteme"
+  ],
+  [
+   "mathe.os.zahlen.gleitkomma",
+   "HTL-MAT-1-L1-L1",
+   "Gleitkommadarstellung"
+  ],
+  [
+   "mathe.os.zahlen.fehler",
+   "HTL-MAT-1-L1-L2",
+   "relativer Fehler"
+  ],
+  [
+   "mathe.os.terme.faktorisieren",
+   "HTL-MAT-1-L1-L3",
+   "Rechnen mit Termen"
+  ],
+  [
+   "mathe.os.terme.bruchterme-rechnen",
+   "HTL-MAT-1-L1-L3",
+   "Rechnen mit Termen"
+  ],
+  [
+   "mathe.os.trigo.rechtwinkelig",
+   "HTL-MAT-1-L1-L6",
+   "rechtwinkeligen Dreiecks"
+  ],
+  [
+   "mathe.os.trigo.vermessung",
+   "HTL-MAT-1-L1-L6",
+   "rechtwinkeligen Dreiecks"
+  ],
+  [
+   "mathe.os.vektoren.skalarprodukt",
+   "HTL-MAT-2-S2-L1-L2",
+   "Skalarprodukt"
+  ],
+  [
+   "mathe.os.vektoren.kreuzprodukt",
+   "HTL-MAT-2-S2-L1-L2",
+   "vektorielles Produkt"
+  ],
+  [
+   "mathe.os.vektoren.gerade-parameter",
+   "HTL-MAT-2-S2-L1-L2",
+   "Geraden in R2 und R3"
+  ],
+  [
+   "mathe.os.vektoren.ebene",
+   "HTL-MAT-2-S2-L1-L2",
+   "Ebenen in R3"
+  ],
+  [
+   "mathe.os.trigo.sinussatz",
+   "HTL-MAT-2-S2-L1-L3",
+   "allgemeinen Dreiecks"
+  ],
+  [
+   "mathe.os.trigo.cosinussatz",
+   "HTL-MAT-2-S2-L1-L3",
+   "allgemeinen Dreiecks"
+  ],
+  [
+   "mathe.os.trigo.flaeche",
+   "HTL-MAT-2-S2-L1-L3",
+   "allgemeinen Dreiecks"
+  ],
+  [
+   "mathe.os.zahlen.fehlerfortpflanzung",
+   "HTL-MAT-4-S1-L1-L1",
+   "Fehlerfortpflanzung"
+  ],
+  [
+   "mathe.flaechen.kreis",
+   "HTL-MAT-1-B3-K1",
+   "geometrischen Objekten"
+  ],
+  [
+   "mathe.pythagoras.figuren",
+   "HTL-MAT-1-B3-K1",
+   "geometrischen Objekten"
+  ],
+  [
+   "mathe.os.matrizen.grundlagen",
+   "HTL-MAT-4-S2-L1-L2",
+   "Multiplikation mit einer Zahl"
+  ],
+  [
+   "mathe.os.matrizen.multiplizieren",
+   "HTL-MAT-4-S2-L1-L2",
+   "Multiplikation"
+  ],
+  [
+   "mathe.os.matrizen.gleichungssysteme",
+   "HTL-MAT-1-B2-K4",
+   "Matrizenform"
+  ],
+  [
+   "mathe.os.matrizen.gleichungssysteme",
+   "HTL-MAT-4-S2-L1-L2",
+   "lineare Gleichungssysteme in Matrizenform"
+  ],
+  [
+   "mathe.os.matrizen.inverse",
+   "HTL-MAT-4-S2-B2-K1",
+   "Determinante"
+  ],
+  [
+   "mathe.os.komplex.rechnen",
+   "HTL-MAT-2-S2-B1-K1",
+   "Grundrechnungsarten"
+  ],
+  [
+   "mathe.os.komplex.division",
+   "HTL-MAT-2-S2-L1-L1",
+   "Division"
+  ],
+  [
+   "mathe.os.komplex.gleichungen",
+   "HTL-MAT-2-S1-B1-K5",
+   "Lösungsfälle"
+  ],
+  [
+   "mathe.os.komplex.polarform",
+   "HTL-MAT-2-S2-B1-K1",
+   "Zahlenebene"
+  ],
+  [
+   "mathe.os.komplex.polarform",
+   "HTL-MAT-2-S2-L1-L1",
+   "Polarkoordinaten"
+  ],
+  [
+   "mathe.os.kurven.parameter",
+   "HTL-MAT-2-S2-B2-K1",
+   "Parameterdarstellungen"
+  ],
+  [
+   "mathe.os.diff.aenderungsrate",
+   "HTL-MAT-3-S1-L1-L3",
+   "Differenzen- und Differenzialquotient"
+  ],
+  [
+   "mathe.os.diff.differentialquotient",
+   "HTL-MAT-3-S1-B1-K5",
+   "Änderungsraten"
+  ],
+  [
+   "mathe.os.diff.grenzwert",
+   "HTL-MAT-3-S1-L1-L2",
+   "Stetigkeit"
+  ],
+  [
+   "mathe.os.diff.potenzregel",
+   "HTL-MAT-3-S1-B1-K3",
+   "elementaren Funktionen differenzieren"
+  ],
+  [
+   "mathe.os.diff.elementar",
+   "HTL-MAT-3-S1-B1-K3",
+   "elementaren Funktionen differenzieren"
+  ],
+  [
+   "mathe.os.diff.produktregel",
+   "HTL-MAT-3-S1-L1-L3",
+   "Ableitungsregeln"
+  ],
+  [
+   "mathe.os.diff.quotientenregel",
+   "HTL-MAT-3-S1-L1-L3",
+   "Ableitungsregeln"
+  ],
+  [
+   "mathe.os.diff.kettenregel",
+   "HTL-MAT-3-S1-B1-K3",
+   "zusammengesetzten Funktionen"
+  ],
+  [
+   "mathe.os.diff.tangente",
+   "HTL-MAT-3-S1-B1-K4",
+   "lokal durch lineare Funktionen approximieren"
+  ],
+  [
+   "mathe.os.diff.monotonie",
+   "HTL-MAT-3-S1-B1-K4",
+   "lokale Extremwerte"
+  ],
+  [
+   "mathe.os.diff.kruemmung",
+   "HTL-MAT-3-S1-B1-K4",
+   "Wendepunkte"
+  ],
+  [
+   "mathe.os.diff.kurvendiskussion",
+   "HTL-MAT-3-S1-B1-K4",
+   "Funktionsgraphen hinsichtlich Monotonie"
+  ],
+  [
+   "mathe.os.diff.graphen",
+   "HTL-MAT-3-S1-B1-K4",
+   "Funktionsgraphen"
+  ],
+  [
+   "mathe.os.diff.aufstellen",
+   "HTL-MAT-3-S1-B1-K5",
+   "Aufgaben des Fachgebietes"
+  ],
+  [
+   "mathe.os.diff.extremwert",
+   "HTL-MAT-3-S1-B1-K5",
+   "Aufgaben des Fachgebietes"
+  ],
+  [
+   "mathe.os.diff.bewegung",
+   "HTL-MAT-3-S1-B1-K5",
+   "Natur und Technik"
+  ],
+  [
+   "mathe.os.diff.newton",
+   "HTL-MAT-3-S2-B1-K3",
+   "Nullstellen"
+  ],
+  [
+   "mathe.os.diff.newton",
+   "HTL-MAT-3-S2-L1-L3",
+   "Iterationsverfahren"
+  ],
+  [
+   "mathe.os.integral.stammfunktion",
+   "HTL-MAT-3-S2-B1-K1",
+   "Stammfunktionen"
+  ],
+  [
+   "mathe.os.integral.grundintegrale",
+   "HTL-MAT-3-S2-L1-L2",
+   "Grundintegrale"
+  ],
+  [
+   "mathe.os.integral.summen",
+   "HTL-MAT-3-S2-L1-L3",
+   "Numerische Integration"
+  ],
+  [
+   "mathe.os.integral.bestimmt",
+   "HTL-MAT-3-S2-B1-K1",
+   "bestimmte Integral berechnen"
+  ],
+  [
+   "mathe.os.integral.flaeche",
+   "HTL-MAT-3-S2-B1-K1",
+   "orientierten Flächeninhalt"
+  ],
+  [
+   "mathe.os.integral.zwischen",
+   "HTL-MAT-3-S2-B1-K2",
+   "Aufgaben des Fachgebietes"
+  ],
+  [
+   "mathe.os.integral.anwendungen",
+   "HTL-MAT-3-S2-B1-K2",
+   "Aufgaben des Fachgebietes"
+  ],
+  [
+   "mathe.os.integral.substitution",
+   "HTL-MAT-3-S2-L1-L2",
+   "Integrationsregeln und -methoden"
+  ],
+  [
+   "mathe.os.integral.volumen",
+   "HTL-MAT-3-S2-B1-K2",
+   "Aufgaben des Fachgebietes"
+  ],
+  [
+   "mathe.os.integral.trapez",
+   "HTL-MAT-3-S2-B1-K3",
+   "näherungsweisen Berechnung von bestimmten Integralen"
+  ],
+  [
+   "mathe.os.integral.trapez",
+   "HTL-MAT-3-S2-L1-L3",
+   "Numerische Integration"
+  ],
+  [
+   "mathe.os.statistik.merkmale",
+   "HTL-MAT-2-S2-B1-K5",
+   "Auswahl argumentieren"
+  ],
+  [
+   "mathe.os.statistik.klassen",
+   "HTL-MAT-2-S2-B1-K5",
+   "tabellarisch und grafisch"
+  ],
+  [
+   "mathe.os.statistik.streuung",
+   "HTL-MAT-2-S2-B1-K5",
+   "Streuungsmaße"
+  ],
+  [
+   "mathe.os.statistik.boxplot",
+   "HTL-MAT-2-S2-L1-L4",
+   "Boxplot"
+  ],
+  [
+   "mathe.os.statistik.mittelwerte",
+   "HTL-MAT-2-S2-B1-K5",
+   "Lage- und Streuungsmaße"
+  ],
+  [
+   "mathe.os.statistik.regression",
+   "HTL-MAT-5-S2-B1-K1",
+   "kleinsten Quadrate"
+  ],
+  [
+   "mathe.os.statistik.regression",
+   "HTL-MAT-5-S2-B1-K2",
+   "linearen Regression"
+  ],
+  [
+   "mathe.os.statistik.korrelation",
+   "HTL-MAT-5-S2-L1-L1",
+   "Korrelationskoeffizient"
+  ],
+  [
+   "mathe.os.statistik.konfidenz-anteil",
+   "HTL-MAT-5-S1-L1-L2",
+   "Konfidenzintervalle"
+  ],
+  [
+   "mathe.os.statistik.konfidenz-mittelwert",
+   "HTL-MAT-5-S1-B1-K3",
+   "Konfidenzintervalle für den Mittelwert"
+  ],
+  [
+   "mathe.os.statistik.hypothesentest",
+   "HTL-MAT-5-S1-L1-L2",
+   "Signifikanz"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.regeln",
+   "HTL-MAT-4-S2-B1-K1",
+   "Additions- und Multiplikationsregel"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.mehrstufig",
+   "HTL-MAT-4-S2-B1-K2",
+   "mehrstufige Zufallsexperimente"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.bedingt",
+   "HTL-MAT-4-S2-L1-L1",
+   "bedingte Wahrscheinlichkeit"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.bayes",
+   "HTL-MAT-4-S2-L1-L1",
+   "bedingte Wahrscheinlichkeit"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.binomial",
+   "HTL-MAT-5-S1-B1-K1",
+   "Binomialverteilung"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.binomial-bereiche",
+   "HTL-MAT-5-S1-B1-K1",
+   "Binomialverteilung"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.dichte",
+   "HTL-MAT-5-S1-B1-K2",
+   "Verteilungsfunktion"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.normal",
+   "HTL-MAT-5-S1-B1-K2",
+   "Werte der Verteilungsfunktion"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.normal-umkehr",
+   "HTL-MAT-5-S1-B1-K2",
+   "Quantile"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.glockenkurve",
+   "HTL-MAT-5-S1-B1-K2",
+   "Grundmodell"
+  ],
+  [
+   "mathe.os.kurven.parameter",
+   "HTL-MAT-2-S2-L1-L5",
+   "Parameterdarstellung"
+  ],
+  [
+   "mathe.os.integral.anwendungen",
+   "HTL-MAT-3-S2-L1-L1",
+   "Fachbezogene Anwendungen"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.binomial",
+   "HTL-MAT-5-S1-L1-L1",
+   "Binomialverteilung"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.normal",
+   "HTL-MAT-5-S1-L1-L1",
+   "Normalverteilung"
   ]
  ],
  "htl-englisch": [
@@ -1929,6 +6349,441 @@
    "englisch.reading.comprehension",
    "HTL-ENG-1",
    "Hör- und Lesetexten"
+  ],
+  [
+   "englisch.os.tenses.past-perfect-progressive",
+   "HTL-ENG-2-S1",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.tenses.future-progressive",
+   "HTL-ENG-2-S1",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.tenses.future-perfect",
+   "HTL-ENG-2-S1",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.be-used-to",
+   "HTL-ENG-2-S1",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.causative",
+   "HTL-ENG-2-S1",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.non-defining",
+   "HTL-ENG-2-S1",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.gerund-infinitive",
+   "HTL-ENG-2-S2",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.indirect-questions",
+   "HTL-ENG-2-S2",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.passive-advanced",
+   "HTL-ENG-2-S2",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.wish",
+   "HTL-ENG-3-S1",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.mixed-conditionals",
+   "HTL-ENG-3-S1",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.modal-deduction",
+   "HTL-ENG-3-S1",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.modal-criticism",
+   "HTL-ENG-3-S2",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.passive-reporting",
+   "HTL-ENG-3-S2",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.reporting-verbs",
+   "HTL-ENG-3-S2",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.participle-clauses",
+   "HTL-ENG-4-S1",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.inversion",
+   "HTL-ENG-4-S1",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.grammar.cleft",
+   "HTL-ENG-4-S2",
+   "Sprachstrukturen"
+  ],
+  [
+   "englisch.os.vocab.word-formation",
+   "HTL-ENG-2-S1",
+   "Erweiterung des allgemeinen"
+  ],
+  [
+   "englisch.os.vocab.prefixes",
+   "HTL-ENG-2-S2",
+   "Erweiterung des allgemeinen"
+  ],
+  [
+   "englisch.os.vocab.collocations",
+   "HTL-ENG-3-S1",
+   "Erweiterung und Vertiefung des Wortschatzes"
+  ],
+  [
+   "englisch.os.vocab.dependent-prepositions",
+   "HTL-ENG-2-S1",
+   "Erweiterung des allgemeinen"
+  ],
+  [
+   "englisch.os.vocab.phrasal-verbs",
+   "HTL-ENG-3-S2",
+   "Erweiterung und Vertiefung des Wortschatzes"
+  ],
+  [
+   "englisch.os.vocab.idioms",
+   "HTL-ENG-4-S1",
+   "Erweiterung und Vertiefung des Wortschatzes"
+  ],
+  [
+   "englisch.os.vocab.confusables",
+   "HTL-ENG-3-S1",
+   "Erweiterung und Vertiefung des Wortschatzes"
+  ],
+  [
+   "englisch.os.reading.multiple-choice",
+   "HTL-ENG-4-S2-K1",
+   "Hör- und Lesetexte über aktuelle und berufsbezogene Themen"
+  ],
+  [
+   "englisch.os.reading.multiple-matching",
+   "HTL-ENG-3-S2-K1",
+   "die Hauptaussagen und Einzelinformationen erkennen"
+  ],
+  [
+   "englisch.os.reading.gapped-text",
+   "HTL-ENG-4-S1-K1",
+   "komplexere Sachtexte"
+  ],
+  [
+   "englisch.os.reading.short-answers",
+   "HTL-ENG-2-S1-K1",
+   "spezifische Informationen entnehmen"
+  ],
+  [
+   "englisch.os.reading.short-answers",
+   "HTL-ENG-5-S1-K1",
+   "beim raschen Lesen entscheiden"
+  ],
+  [
+   "englisch.os.reading.true-false",
+   "HTL-ENG-4-S1-K1",
+   "einige wesentliche Schlussfolgerungen ziehen"
+  ],
+  [
+   "englisch.os.listening.multiple-choice",
+   "HTL-ENG-4-S2-K2",
+   "in normaler Geschwindigkeit"
+  ],
+  [
+   "englisch.os.listening.note-completion",
+   "HTL-ENG-3-S2-K2",
+   "einfache technische Informationen verstehen"
+  ],
+  [
+   "englisch.os.listening.matching",
+   "HTL-ENG-5-S1-K4",
+   "Stimmung und Ton der Sprechenden erkennen"
+  ],
+  [
+   "englisch.os.writing.task",
+   "HTL-ENG-4-S2-K5",
+   "für die jeweilige Textsorte relevanten Kriterien anwenden"
+  ],
+  [
+   "englisch.os.writing.paragraphs",
+   "HTL-ENG-2-S1",
+   "Übungen zur Textorganisation"
+  ],
+  [
+   "englisch.os.writing.register",
+   "HTL-ENG-4-S1",
+   "Register"
+  ],
+  [
+   "englisch.os.writing.linking-contrast",
+   "HTL-ENG-2-S2-K4",
+   "erweiterten Auswahl an Konnektoren"
+  ],
+  [
+   "englisch.os.writing.linking-contrast",
+   "HTL-ENG-3-S1",
+   "Kohärenz und Kohäsion"
+  ],
+  [
+   "englisch.os.writing.linking-cause",
+   "HTL-ENG-3-S1-K4",
+   "erweiterten Auswahl an Konnektoren"
+  ],
+  [
+   "englisch.os.writing.informal-email",
+   "HTL-ENG-2-S1",
+   "Informeller Schriftverkehr"
+  ],
+  [
+   "englisch.os.writing.formal-email",
+   "HTL-ENG-2-S2",
+   "formeller Schriftverkehr"
+  ],
+  [
+   "englisch.os.writing.formal-email",
+   "HTL-ENG-3-S1",
+   "Formeller Schriftverkehr"
+  ],
+  [
+   "englisch.os.writing.complaint",
+   "HTL-ENG-3-S2-L1-L5",
+   "Beschwerde"
+  ],
+  [
+   "englisch.os.writing.essay",
+   "HTL-ENG-4-S1-K3",
+   "Standpunkte begründen"
+  ],
+  [
+   "englisch.os.writing.essay",
+   "HTL-ENG-4-S2-K4",
+   "Standpunkte abwägen und begründen"
+  ],
+  [
+   "englisch.os.writing.article",
+   "HTL-ENG-3-S1",
+   "Artikel"
+  ],
+  [
+   "englisch.os.writing.article",
+   "HTL-ENG-3-S2",
+   "Artikel"
+  ],
+  [
+   "englisch.os.writing.blog-post",
+   "HTL-ENG-2-S1",
+   "Blog"
+  ],
+  [
+   "englisch.os.writing.blog-comment",
+   "HTL-ENG-2-S2",
+   "Forumsbeitrag"
+  ],
+  [
+   "englisch.os.writing.report",
+   "HTL-ENG-2-S2-L1-L5",
+   "Bericht"
+  ],
+  [
+   "englisch.os.writing.report",
+   "HTL-ENG-3-S2",
+   "Bericht (zB Arbeitsbericht, Unfallbericht)"
+  ],
+  [
+   "englisch.os.writing.leaflet",
+   "HTL-ENG-3-S2",
+   "Leaflet"
+  ],
+  [
+   "englisch.os.writing.application",
+   "HTL-ENG-3-S2",
+   "Bewerbung"
+  ],
+  [
+   "englisch.os.writing.application",
+   "HTL-ENG-5-S1",
+   "Motivationsschreiben"
+  ],
+  [
+   "englisch.os.writing.cv",
+   "HTL-ENG-4-S1",
+   "Bewerbungen"
+  ],
+  [
+   "englisch.os.writing.proposal",
+   "HTL-ENG-4-S1",
+   "Antrag (Proposal)"
+  ],
+  [
+   "englisch.os.speaking.pictures",
+   "HTL-ENG-3-S1-K3",
+   "unkomplizierte, detaillierte Beschreibungen"
+  ],
+  [
+   "englisch.os.speaking.presentation",
+   "HTL-ENG-4-S2-K4",
+   "klar strukturierte Präsentationen halten"
+  ],
+  [
+   "englisch.os.speaking.presentation",
+   "HTL-ENG-5-S1-K5",
+   "längere, klar strukturierte Präsentationen"
+  ],
+  [
+   "englisch.os.speaking.graphs",
+   "HTL-ENG-3-S1",
+   "Beschreibung von Diagrammen und Statistiken"
+  ],
+  [
+   "englisch.os.speaking.graphs",
+   "HTL-ENG-5-S1",
+   "Beschreiben und Kommentieren von Grafiken"
+  ],
+  [
+   "englisch.os.speaking.monologue",
+   "HTL-ENG-4-S1-K3",
+   "informieren, zusammenfassen, Stellung nehmen"
+  ],
+  [
+   "englisch.os.speaking.monologue",
+   "HTL-ENG-5-S1-L1-L4",
+   "Monologische"
+  ],
+  [
+   "englisch.os.speaking.dialogue",
+   "HTL-ENG-3-S1",
+   "Diskutieren"
+  ],
+  [
+   "englisch.os.speaking.dialogue",
+   "HTL-ENG-4-S1",
+   "Besprechung und Diskussion"
+  ],
+  [
+   "englisch.os.speaking.job-interview",
+   "HTL-ENG-4-S2",
+   "Bewerbungsgespräch"
+  ],
+  [
+   "englisch.os.speaking.job-interview",
+   "HTL-ENG-5-S1",
+   "Bewerbungsgespräch"
+  ],
+  [
+   "englisch.os.business.phone",
+   "HTL-ENG-1",
+   "Telefonieren"
+  ],
+  [
+   "englisch.os.business.phone",
+   "HTL-ENG-3-S2",
+   "Telefonieren"
+  ],
+  [
+   "englisch.os.business.appointments",
+   "HTL-ENG-2-S1",
+   "Terminvereinbarungen, Absagen, Reservierungen"
+  ],
+  [
+   "englisch.os.business.layout",
+   "HTL-ENG-4-S1",
+   "Geschäftsbriefe"
+  ],
+  [
+   "englisch.os.business.memo",
+   "HTL-ENG-3-S1",
+   "Memo"
+  ],
+  [
+   "englisch.os.business.enquiry",
+   "HTL-ENG-2-S2",
+   "Anfrage"
+  ],
+  [
+   "englisch.os.business.offer",
+   "HTL-ENG-5-S1",
+   "Beantwortung von Anfragen"
+  ],
+  [
+   "englisch.os.business.adjustment",
+   "HTL-ENG-5-S1",
+   "Beschwerde und Reaktion"
+  ],
+  [
+   "englisch.os.business.meetings",
+   "HTL-ENG-4-S1",
+   "Besprechung und Diskussion"
+  ],
+  [
+   "englisch.os.business.meetings",
+   "HTL-ENG-4-S2",
+   "Konferenz"
+  ],
+  [
+   "englisch.os.business.negotiation",
+   "HTL-ENG-3-S2",
+   "Beratungs- und Verkaufsgespräch"
+  ],
+  [
+   "englisch.os.business.negotiation",
+   "HTL-ENG-4-S1",
+   "Verhandlungs- und Verkaufsgespräch"
+  ],
+  [
+   "englisch.os.business.minutes",
+   "HTL-ENG-4-S1",
+   "Protokolle"
+  ],
+  [
+   "englisch.os.tech.numbers",
+   "HTL-ENG-1",
+   "technischen Grundwortschatzes"
+  ],
+  [
+   "englisch.os.tech.objects",
+   "HTL-ENG-2-S1",
+   "Beschreibung von Werkzeugen, Geräten"
+  ],
+  [
+   "englisch.os.tech.instructions",
+   "HTL-ENG-1",
+   "Regeln und Vorschriften"
+  ],
+  [
+   "englisch.os.tech.instructions",
+   "HTL-ENG-2-S2-K1",
+   "Anleitungen und Vorschriften"
+  ],
+  [
+   "englisch.os.tech.process",
+   "HTL-ENG-3-S2",
+   "Prozesse des eigenen Fachgebietes"
+  ],
+  [
+   "englisch.os.tech.abstract",
+   "HTL-ENG-5-S1",
+   "Abstract"
   ]
  ],
  "vs-mathematik": [
@@ -2176,6 +7031,251 @@
    "mathe.vs.sach.mehrschritt",
    "VS-MAT-4-B2-K2",
    ""
+  ],
+  [
+   "mathe.vs.zahlen.zerlegen",
+   "VS-MAT-1-B1-K1",
+   "zerlegen"
+  ],
+  [
+   "mathe.vs.zahlen.gerade",
+   "VS-MAT-1-B1-K1",
+   "vielfältig nutzen"
+  ],
+  [
+   "mathe.vs.zahlen.gerade",
+   "VS-MAT-2-B1-K1",
+   "vielfältig nutzen"
+  ],
+  [
+   "mathe.vs.zahlen.zahlenstrahl",
+   "VS-MAT-1-B1-K1",
+   "ordnen"
+  ],
+  [
+   "mathe.vs.zahlen.zahlenstrahl",
+   "VS-MAT-2-B1-K1",
+   "ordnen"
+  ],
+  [
+   "mathe.vs.zahlen.zahlenstrahl",
+   "VS-MAT-3-B1-K1",
+   "ordnen"
+  ],
+  [
+   "mathe.vs.zahlen.zahlenstrahl",
+   "VS-MAT-4-B1-K1",
+   "darstellen"
+  ],
+  [
+   "mathe.vs.zahlen.folgen",
+   "VS-MAT-1-B2-K2",
+   "arithmetische Muster"
+  ],
+  [
+   "mathe.vs.zahlen.folgen",
+   "VS-MAT-2-B2-K2",
+   "arithmetische Muster"
+  ],
+  [
+   "mathe.vs.addsub.verdoppeln",
+   "VS-MAT-1-B2-K1",
+   "additiven Bereich"
+  ],
+  [
+   "mathe.vs.addsub.verdoppeln",
+   "VS-MAT-2-B2-K1",
+   "additiven und multiplikativen Bereich"
+  ],
+  [
+   "mathe.vs.addsub.ungleichungen",
+   "VS-MAT-2-B1-K1",
+   "vergleichen"
+  ],
+  [
+   "mathe.vs.addsub.ungleichungen",
+   "VS-MAT-3-B1-K1",
+   "vergleichen"
+  ],
+  [
+   "mathe.vs.addsub.vorteile",
+   "VS-MAT-2-B2-K1",
+   "flexibel"
+  ],
+  [
+   "mathe.vs.addsub.vorteile",
+   "VS-MAT-3-B2-K1",
+   "flexibel"
+  ],
+  [
+   "mathe.vs.addsub.zr1000",
+   "VS-MAT-3-B2-K1",
+   "im Zahlenraum 1000 halbschriftlich"
+  ],
+  [
+   "mathe.vs.muldiv.halbschriftlich",
+   "VS-MAT-3-B2-K1",
+   "multiplikativen Bereich im Zahlenraum 1000 halbschriftlich"
+  ],
+  [
+   "mathe.vs.schriftlich.ueberschlag",
+   "VS-MAT-3-B2-K1",
+   "Überschlagsrechnungen"
+  ],
+  [
+   "mathe.vs.schriftlich.ueberschlag",
+   "VS-MAT-4-B2-K1",
+   "Überschlagsrechnungen"
+  ],
+  [
+   "mathe.vs.schriftlich.zweistellig",
+   "VS-MAT-4-B2-K1",
+   "zweistelligem Divisor"
+  ],
+  [
+   "mathe.vs.groessen.schaetzen",
+   "VS-MAT-1-B3-K1",
+   "Vorstellungen verbinden"
+  ],
+  [
+   "mathe.vs.groessen.schaetzen",
+   "VS-MAT-2-B3-K1",
+   "Vorstellungen verbinden"
+  ],
+  [
+   "mathe.vs.groessen.schaetzen",
+   "VS-MAT-3-B3-K1",
+   "Stützpunktvorstellungen"
+  ],
+  [
+   "mathe.vs.groessen.schaetzen",
+   "VS-MAT-4-B3-K1",
+   "Stützpunktvorstellungen"
+  ],
+  [
+   "mathe.vs.groessen.flaechenmasse",
+   "VS-MAT-4-B3-K1",
+   "Maßeinheiten für Flächeninhalte"
+  ],
+  [
+   "mathe.vs.geometrie.lage",
+   "VS-MAT-1-B4-K1",
+   "Lagebeziehungen und Richtungsangaben"
+  ],
+  [
+   "mathe.vs.geometrie.muster",
+   "VS-MAT-1-B4-K3",
+   "Mustern"
+  ],
+  [
+   "mathe.vs.geometrie.muster",
+   "VS-MAT-2-B4-K3",
+   "geometrische Muster"
+  ],
+  [
+   "mathe.vs.geometrie.symmetrie",
+   "VS-MAT-1-B4-K3",
+   "symmetrischen Objekten"
+  ],
+  [
+   "mathe.vs.geometrie.symmetrie",
+   "VS-MAT-2-B4-K1",
+   "symmetrischen Objekten"
+  ],
+  [
+   "mathe.vs.geometrie.symmetrie",
+   "VS-MAT-3-B4-K1",
+   "symmetrischen Objekten"
+  ],
+  [
+   "mathe.vs.geometrie.wuerfelgebaeude",
+   "VS-MAT-2-B4-K1",
+   "planvoll mit ebenen Figuren und Körpern arbeiten"
+  ],
+  [
+   "mathe.vs.geometrie.wuerfelgebaeude",
+   "VS-MAT-3-B4-K1",
+   "planvoll mit ebenen Figuren und Körpern arbeiten"
+  ],
+  [
+   "mathe.vs.geometrie.wuerfelgebaeude",
+   "VS-MAT-4-B4-K1",
+   "Körpermodelle"
+  ],
+  [
+   "mathe.vs.geometrie.strecken",
+   "VS-MAT-3-B4-K2",
+   "Lagebeziehungen von Strecken"
+  ],
+  [
+   "mathe.vs.geometrie.plaene",
+   "VS-MAT-4-B4-K3",
+   "einfache Pläne interpretieren und anfertigen"
+  ],
+  [
+   "mathe.vs.geometrie.netze",
+   "VS-MAT-4-B4-K1",
+   "Netze"
+  ],
+  [
+   "mathe.vs.geometrie.zusammengesetzt",
+   "VS-MAT-4-B4-K2",
+   "zusammengesetzten Figuren"
+  ],
+  [
+   "mathe.vs.geometrie.raster",
+   "VS-MAT-4-B4-K3",
+   "verkleinern und vergrößern"
+  ],
+  [
+   "mathe.vs.sach.proportional",
+   "VS-MAT-4-B2-K2",
+   "direkt proportionale Zusammenhänge"
+  ],
+  [
+   "mathe.vs.daten.strichliste",
+   "VS-MAT-1-B1-K2",
+   "Strichlisten und Tabellen"
+  ],
+  [
+   "mathe.vs.daten.diagramme",
+   "VS-MAT-2-B1-K2",
+   "Säulen- und Balkendiagramme"
+  ],
+  [
+   "mathe.vs.daten.kombinatorik",
+   "VS-MAT-3-B1-K2",
+   "kombinatorische Abzählaufgaben"
+  ],
+  [
+   "mathe.vs.daten.wahrscheinlich",
+   "VS-MAT-3-B1-K2",
+   "Wahrscheinlichkeiten von Ereignissen"
+  ],
+  [
+   "mathe.vs.daten.wahrscheinlich",
+   "VS-MAT-4-B1-K3",
+   "Wahrscheinlichkeiten qualitativ vergleichen"
+  ],
+  [
+   "mathe.vs.daten.zufallsexperimente",
+   "VS-MAT-4-B1-K3",
+   "Zufallsexperimente durchführen"
+  ],
+  [
+   "mathe.vs.brueche.bruchteile",
+   "VS-MAT-4-B1-K2",
+   "Brüche mit kleinen Nennern lesen und schreiben"
+  ],
+  [
+   "mathe.vs.brueche.vergleichen",
+   "VS-MAT-4-B1-K2",
+   "vergleichen, ordnen"
+  ],
+  [
+   "mathe.vs.brueche.vongroessen",
+   "VS-MAT-4-B1-K2",
+   "Bruchteile ermitteln"
   ]
  ],
  "vs-deutsch": [
@@ -2358,6 +7458,146 @@
    "deutsch.grammatik.zeiten",
    "VS-DEU-4-B4-K4",
    ""
+  ],
+  [
+   "deutsch.vs.sprache.laute",
+   "VS-DEU-1-B4-K1",
+   "Laute und Buchstaben wahrnehmen, differenzieren"
+  ],
+  [
+   "deutsch.vs.sprache.laute",
+   "VS-DEU-2-A1-A9",
+   "phonologischen Bewusstheit"
+  ],
+  [
+   "deutsch.vs.sprache.mehrzahl",
+   "VS-DEU-1-B4-K3",
+   "Formveränderungen von Wörtern"
+  ],
+  [
+   "deutsch.vs.sprache.mehrzahl",
+   "VS-DEU-2-B4-K3",
+   "in ihrer Form verändern"
+  ],
+  [
+   "deutsch.vs.sprache.personalformen",
+   "VS-DEU-2-B4-K3",
+   "in ihrer Form verändern"
+  ],
+  [
+   "deutsch.vs.sprache.personalformen",
+   "VS-DEU-3-B4-K4",
+   "Wortarten wie Nomen, Verb, Adjektiv"
+  ],
+  [
+   "deutsch.vs.recht.silbentrennung",
+   "VS-DEU-2-B4-K2",
+   "einfache Regelhaftigkeiten der Rechtschreibung erkennen"
+  ],
+  [
+   "deutsch.vs.recht.silbentrennung",
+   "VS-DEU-3-A1-A8",
+   "Durchgliedern/Segmentieren"
+  ],
+  [
+   "deutsch.recht.woerterbuch",
+   "VS-DEU-2-B4-K2",
+   "alphabetische Ordnungs- und Suchübungen"
+  ],
+  [
+   "deutsch.recht.woerterbuch",
+   "VS-DEU-3-B4-K2",
+   "unterschiedliche Medien als Rechtschreibhilfe"
+  ],
+  [
+   "deutsch.recht.woerterbuch",
+   "VS-DEU-4-B4-K2",
+   "unterschiedliche Medien als Rechtschreibhilfe"
+  ],
+  [
+   "deutsch.wortarten.steigerung",
+   "VS-DEU-3-B4-K4",
+   "Wortarten wie Nomen, Verb, Adjektiv"
+  ],
+  [
+   "deutsch.wortschatz.zusammensetzung",
+   "VS-DEU-2-B4-K2",
+   "einfache Zusammensetzungen in Morpheme trennen"
+  ],
+  [
+   "deutsch.wortschatz.zusammensetzung",
+   "VS-DEU-4-B4-K3",
+   "Wissen über Wortzusammensetzungen"
+  ],
+  [
+   "deutsch.wortschatz.ableitung",
+   "VS-DEU-3-B4-K3",
+   "formbildende Elemente für die Bildung neuer Wörter"
+  ],
+  [
+   "deutsch.satz.objekte",
+   "VS-DEU-4-B4-K4",
+   "Satzglieder unterscheiden"
+  ],
+  [
+   "deutsch.satz.adverbiale",
+   "VS-DEU-4-B4-K4",
+   "Satzglieder unterscheiden"
+  ],
+  [
+   "deutsch.beistrich.direkte-rede",
+   "VS-DEU-4-B4-K4",
+   "direkte Rede gebrauchen"
+  ],
+  [
+   "deutsch.text.lesestrategien",
+   "VS-DEU-4-B2-K1",
+   "Lesestrategien bewusst nach Zielvorgabe einsetzen"
+  ],
+  [
+   "deutsch.literatur.maerchen",
+   "VS-DEU-4-B2-K2",
+   "Auseinandersetzung mit Textgattungen"
+  ],
+  [
+   "deutsch.literatur.fabel",
+   "VS-DEU-4-B2-K2",
+   "Auseinandersetzung mit Textgattungen"
+  ],
+  [
+   "deutsch.literatur.gedicht",
+   "VS-DEU-4-B2-K2",
+   "Beschaffenheit und Merkmalen von Texten"
+  ],
+  [
+   "deutsch.vs.schreiben.bildgeschichte",
+   "VS-DEU-2-A1-A6",
+   "Nutzen von Schreibanlässen"
+  ],
+  [
+   "deutsch.vs.schreiben.bildgeschichte",
+   "VS-DEU-3-A1-A6",
+   "Nutzen von Schreibanlässen"
+  ],
+  [
+   "deutsch.vs.schreiben.brief",
+   "VS-DEU-2-B3-K1",
+   "einfache schriftliche Muster situationsbezogen und intentionsgeleitet anwenden"
+  ],
+  [
+   "deutsch.vs.schreiben.brief",
+   "VS-DEU-4-B3-K1",
+   "unterschiedliche Schreibabsichten"
+  ],
+  [
+   "deutsch.schreiben.ueberarbeiten",
+   "VS-DEU-3-B3-K2",
+   "überarbeiten und berichtigen"
+  ],
+  [
+   "deutsch.schreiben.ueberarbeiten",
+   "VS-DEU-4-B3-K2",
+   "Überarbeitungsstrategien"
   ]
  ],
  "hak-mathematik": [
@@ -2405,6 +7645,846 @@
    "mathe.gleichungen.klammern",
    "HAK-MAT-1-B3-K5",
    ""
+  ],
+  [
+   "mathe.os.zahlen.zahlenmengen",
+   "HAK-MAT-1-B1-K1",
+   "Zahlenbereiche"
+  ],
+  [
+   "mathe.os.zahlen.zahlenmengen",
+   "HAK-MAT-1-B1-K4",
+   "Beziehungen zwischen den Zahlenmengen"
+  ],
+  [
+   "mathe.os.zahlen.intervalle",
+   "HAK-MAT-1-B1-K2",
+   "Zahlengeraden"
+  ],
+  [
+   "mathe.os.zahlen.intervalle",
+   "HAK-MAT-1-B1-K3",
+   "mathematischer Symbole"
+  ],
+  [
+   "mathe.os.zahlen.gleitkomma",
+   "HAK-MAT-1-B2-K1",
+   "Gleitkommaschreibweise"
+  ],
+  [
+   "mathe.os.zahlen.fehler",
+   "HAK-MAT-1-B2-K6",
+   "sinnvoller Genauigkeit"
+  ],
+  [
+   "mathe.os.terme.faktorisieren",
+   "HAK-MAT-1-B3-K2",
+   "Terme umformen"
+  ],
+  [
+   "mathe.os.terme.bruchterme-kuerzen",
+   "HAK-MAT-1-B3-K2",
+   "Terme umformen"
+  ],
+  [
+   "mathe.os.terme.bruchterme-rechnen",
+   "HAK-MAT-1-B3-K2",
+   "Terme umformen"
+  ],
+  [
+   "mathe.os.potenzen.negativ",
+   "HAK-MAT-1-B3-K1",
+   "ganzzahligen Exponenten"
+  ],
+  [
+   "mathe.os.potenzen.rational",
+   "HAK-MAT-2-S1-B1-K1",
+   "rationalen Exponenten"
+  ],
+  [
+   "mathe.os.potenzen.rational",
+   "HAK-MAT-2-S1-B1-K2",
+   "Potenz- und Wurzelschreibweise"
+  ],
+  [
+   "mathe.os.potenzen.formeln",
+   "HAK-MAT-2-S1-B1-K3",
+   "nach einer variablen Größe explizieren"
+  ],
+  [
+   "mathe.os.gleichungen.quadratisch-einfach",
+   "HAK-MAT-2-S2-B2-K1",
+   "quadratische Gleichungen"
+  ],
+  [
+   "mathe.os.gleichungen.loesungsformel",
+   "HAK-MAT-2-S2-B2-K1",
+   "quadratische Gleichungen"
+  ],
+  [
+   "mathe.os.gleichungen.vieta",
+   "HAK-MAT-2-S2-B2-K1",
+   "quadratische Gleichungen"
+  ],
+  [
+   "mathe.os.gleichungen.loesungsfaelle",
+   "HAK-MAT-2-S2-B2-K2",
+   "Lösungsmenge"
+  ],
+  [
+   "mathe.os.gleichungen.loesungsfaelle",
+   "HAK-MAT-2-S2-B4-K4",
+   "Nullstellen"
+  ],
+  [
+   "mathe.os.gleichungen.quadratisch-text",
+   "HAK-MAT-2-S2-B2-K2",
+   "Aufgabenstellung"
+  ],
+  [
+   "mathe.os.gleichungen.bruchgleichungen",
+   "HAK-MAT-1-B3-K5",
+   "lineare Gleichungen"
+  ],
+  [
+   "mathe.os.gleichungssysteme.drei",
+   "HAK-MAT-2-S1-B2-K5",
+   "mehreren Variablen"
+  ],
+  [
+   "mathe.os.funktionen.definitionsmenge",
+   "HAK-MAT-1-B4-K1",
+   "eindeutige Zuordnung"
+  ],
+  [
+   "mathe.os.funktionen.eigenschaften",
+   "HAK-MAT-2-S2-B4-K1",
+   "Eigenschaften"
+  ],
+  [
+   "mathe.os.funktionen.quadratisch",
+   "HAK-MAT-2-S2-B4-K3",
+   "Bedeutung der Koeffizienten"
+  ],
+  [
+   "mathe.os.funktionen.scheitel",
+   "HAK-MAT-2-S2-B4-K2",
+   "Scheitel"
+  ],
+  [
+   "mathe.os.funktionen.quadratisch-aufstellen",
+   "HAK-MAT-2-S2-B4-K2",
+   "aus drei gegebenen Punkten"
+  ],
+  [
+   "mathe.os.funktionen.quadratisch-sach",
+   "HAK-MAT-2-S2-B4-K5",
+   "quadratischen Funktion"
+  ],
+  [
+   "mathe.os.funktionen.potenz",
+   "HAK-MAT-2-S2-B4-K1",
+   "Potenz- und Polynomfunktionen"
+  ],
+  [
+   "mathe.os.funktionen.umkehr",
+   "HAK-MAT-1-B4-K7",
+   "Umkehrfunktion"
+  ],
+  [
+   "mathe.os.funktionen.polynom",
+   "HAK-MAT-2-S2-B4-K1",
+   "Polynomfunktionen"
+  ],
+  [
+   "mathe.os.funktionen.verkettung",
+   "HAK-MAT-4-S1-B2-K3",
+   "Ketten"
+  ],
+  [
+   "mathe.os.trigo.rechtwinkelig",
+   "HAK-MAT-2-S2-B3-K1",
+   "Seitenverhältnisse"
+  ],
+  [
+   "mathe.os.trigo.vermessung",
+   "HAK-MAT-2-S2-B3-K2",
+   "rechtwinkelige Dreiecke"
+  ],
+  [
+   "mathe.os.trigo.einheitskreis",
+   "HAK-MAT-2-S2-B4-K6",
+   "Einheitskreises"
+  ],
+  [
+   "mathe.os.trigo.bogenmass",
+   "HAK-MAT-2-S2-B1-K1",
+   "Bogenmaß"
+  ],
+  [
+   "mathe.os.trigo.funktionen",
+   "HAK-MAT-2-S2-B4-K6",
+   "grafisch darstellen"
+  ],
+  [
+   "mathe.os.log.begriff",
+   "HAK-MAT-3-S1-B1-K1",
+   "Begriff des Logarithmus"
+  ],
+  [
+   "mathe.os.log.regeln",
+   "HAK-MAT-3-S1-B1-K2",
+   "logarithmische Rechengesetze"
+  ],
+  [
+   "mathe.os.log.exponentialgleichungen",
+   "HAK-MAT-3-S1-B1-K3",
+   "Exponentialgleichungen vom Typ"
+  ],
+  [
+   "mathe.os.log.funktion",
+   "HAK-MAT-3-S1-B2-K2",
+   "Logarithmusfunktion"
+  ],
+  [
+   "mathe.os.wachstum.exponentialfunktion",
+   "HAK-MAT-3-S1-B2-K1",
+   "Begriff der Exponentialfunktion"
+  ],
+  [
+   "mathe.os.wachstum.exponentialfunktion",
+   "HAK-MAT-3-S1-B2-K3",
+   "grafisch darstellen"
+  ],
+  [
+   "mathe.os.wachstum.exponentiell",
+   "HAK-MAT-3-S1-B2-K4",
+   "Zu- und Abnahmeprozesse"
+  ],
+  [
+   "mathe.os.wachstum.halbwertszeit",
+   "HAK-MAT-3-S1-B2-K4",
+   "Zu- und Abnahmeprozesse"
+  ],
+  [
+   "mathe.os.wachstum.basis-e",
+   "HAK-MAT-3-S1-B2-K5",
+   "a*e^(k*x)"
+  ],
+  [
+   "mathe.os.wachstum.vergleich",
+   "HAK-MAT-3-S1-B3-K3",
+   "strukturell vergleichen"
+  ],
+  [
+   "mathe.os.wachstum.beschraenkt",
+   "HAK-MAT-3-S1-B3-K1",
+   "beschränktes Wachstum"
+  ],
+  [
+   "mathe.os.wachstum.beschraenkt",
+   "HAK-MAT-3-S1-B3-K2",
+   "mit diesen Modellen rechnen"
+  ],
+  [
+   "mathe.os.folgen.geometrisch",
+   "HAK-MAT-3-S2-B1-K1",
+   "geometrischen Reihen"
+  ],
+  [
+   "mathe.os.folgen.geometrische-reihe",
+   "HAK-MAT-3-S2-B1-K1",
+   "geometrischen Reihen"
+  ],
+  [
+   "mathe.funktionen.linear",
+   "HAK-MAT-1-B4-K6",
+   "Darstellungsformen linearer Funktionen"
+  ],
+  [
+   "mathe.funktionen.linear",
+   "HAK-MAT-1-B4-K5",
+   "implizit und explizit"
+  ],
+  [
+   "mathe.funktionen.linear-sach",
+   "HAK-MAT-1-B4-K2",
+   "Funktionen als Modelle"
+  ],
+  [
+   "mathe.funktionen.darstellungen",
+   "HAK-MAT-1-B4-K3",
+   "kartesischen Koordinatensystem"
+  ],
+  [
+   "mathe.gleichungen.formeln",
+   "HAK-MAT-1-B3-K7",
+   "explizieren"
+  ],
+  [
+   "mathe.terme.binomisch",
+   "HAK-MAT-1-B3-K2",
+   "mit Termen rechnen"
+  ],
+  [
+   "mathe.os.funktionen.umkehr",
+   "HAK-MAT-3-S1-B2-K2",
+   "Umkehrfunktion der Exponentialfunktion"
+  ],
+  [
+   "mathe.os.log.exponentialgleichungen",
+   "HAK-MAT-3-S1-B1-K4",
+   "komplexere Exponentialgleichungen"
+  ],
+  [
+   "mathe.os.zahlen.zahlenmengen",
+   "HAK-MAT-1-L1-L1",
+   "Zahlenmengen"
+  ],
+  [
+   "mathe.os.zahlen.gleitkomma",
+   "HAK-MAT-1-L1-L1",
+   "Gleitkommadarstellung"
+  ],
+  [
+   "mathe.os.potenzen.negativ",
+   "HAK-MAT-1-L1-L2",
+   "ganzzahligen Exponenten"
+  ],
+  [
+   "mathe.os.terme.bruchterme-rechnen",
+   "HAK-MAT-1-L1-L2",
+   "Rechnen mit Termen"
+  ],
+  [
+   "mathe.os.funktionen.definitionsmenge",
+   "HAK-MAT-1-L1-L3",
+   "Funktionsbegriff"
+  ],
+  [
+   "mathe.os.funktionen.umkehr",
+   "HAK-MAT-1-L1-L3",
+   "Umkehrfunktion"
+  ],
+  [
+   "mathe.os.potenzen.rational",
+   "HAK-MAT-2-S1-L1-L1",
+   "rationalen Exponenten"
+  ],
+  [
+   "mathe.os.gleichungssysteme.drei",
+   "HAK-MAT-2-S1-L1-L1",
+   "mehr als zwei Variablen"
+  ],
+  [
+   "mathe.os.trigo.bogenmass",
+   "HAK-MAT-2-S2-L1-L1",
+   "Bogenmaß"
+  ],
+  [
+   "mathe.os.gleichungen.loesungsformel",
+   "HAK-MAT-2-S2-L1-L2",
+   "Quadratische Gleichungen"
+  ],
+  [
+   "mathe.os.trigo.rechtwinkelig",
+   "HAK-MAT-2-S2-L1-L2",
+   "rechtwinkeligen Dreieck"
+  ],
+  [
+   "mathe.os.funktionen.potenz",
+   "HAK-MAT-2-S2-L1-L3",
+   "Potenzfunktionen"
+  ],
+  [
+   "mathe.os.funktionen.quadratisch",
+   "HAK-MAT-2-S2-L1-L3",
+   "quadratische Funktionen"
+  ],
+  [
+   "mathe.os.funktionen.polynom",
+   "HAK-MAT-2-S2-L1-L3",
+   "Polynomfunktionen höheren Grades"
+  ],
+  [
+   "mathe.os.trigo.einheitskreis",
+   "HAK-MAT-2-S2-L1-L3",
+   "Einheitskreis"
+  ],
+  [
+   "mathe.os.log.regeln",
+   "HAK-MAT-3-S1-L1-L1",
+   "Rechenregeln"
+  ],
+  [
+   "mathe.os.log.exponentialgleichungen",
+   "HAK-MAT-3-S1-L1-L1",
+   "Exponentialgleichungen"
+  ],
+  [
+   "mathe.os.wachstum.exponentiell",
+   "HAK-MAT-3-S1-L1-L2",
+   "Wachstums- und Abnahmeprozesse"
+  ],
+  [
+   "mathe.os.wachstum.beschraenkt",
+   "HAK-MAT-3-S1-L1-L2",
+   "logistisches Wachstum"
+  ],
+  [
+   "mathe.os.matrizen.grundlagen",
+   "HAK-MAT-2-S1-B3-K1",
+   "Matrizenschreibweise"
+  ],
+  [
+   "mathe.os.matrizen.grundlagen",
+   "HAK-MAT-2-S1-B3-K3",
+   "Addition, Subtraktion"
+  ],
+  [
+   "mathe.os.matrizen.multiplizieren",
+   "HAK-MAT-2-S1-B3-K3",
+   "Multiplikation"
+  ],
+  [
+   "mathe.os.matrizen.gleichungssysteme",
+   "HAK-MAT-2-S1-B3-K2",
+   "Matrizenschreibweise"
+  ],
+  [
+   "mathe.os.matrizen.inverse",
+   "HAK-MAT-2-S1-B3-K3",
+   "Inversen"
+  ],
+  [
+   "mathe.os.matrizen.bedarf",
+   "HAK-MAT-2-S1-B3-K4",
+   "Gozintographen"
+  ],
+  [
+   "mathe.os.finanz.zinseszins",
+   "HAK-MAT-3-S1-B4-K1",
+   "Zinseszins"
+  ],
+  [
+   "mathe.os.finanz.zinseszins",
+   "HAK-MAT-3-S1-B4-K2",
+   "Verzinsungsmodelle"
+  ],
+  [
+   "mathe.os.finanz.unterjaehrig",
+   "HAK-MAT-3-S1-B4-K1",
+   "unterjährige"
+  ],
+  [
+   "mathe.os.finanz.vergleich",
+   "HAK-MAT-3-S2-B1-K4",
+   "Zahlungsströme"
+  ],
+  [
+   "mathe.os.finanz.vergleich",
+   "HAK-MAT-3-S2-B1-K6",
+   "Rentenumwandlungen"
+  ],
+  [
+   "mathe.os.finanz.rente",
+   "HAK-MAT-3-S2-B1-K1",
+   "Rentenrechnung"
+  ],
+  [
+   "mathe.os.finanz.rente",
+   "HAK-MAT-3-S2-B1-K2",
+   "charakteristischen Größen"
+  ],
+  [
+   "mathe.os.finanz.rate",
+   "HAK-MAT-3-S2-B1-K2",
+   "charakteristischen Größen"
+  ],
+  [
+   "mathe.os.finanz.tilgung",
+   "HAK-MAT-3-S2-B1-K5",
+   "Annuitätenschuld"
+  ],
+  [
+   "mathe.os.finanz.effektivzins",
+   "HAK-MAT-3-S2-B1-K3",
+   "Effektivzinssatzes"
+  ],
+  [
+   "mathe.os.finanz.kapitalwert",
+   "HAK-MAT-3-S2-B2-K1",
+   "Kapitalwertmethode"
+  ],
+  [
+   "mathe.os.finanz.kapitalwert",
+   "HAK-MAT-3-S2-B2-K2",
+   "Investitionen bewerten"
+  ],
+  [
+   "mathe.os.finanz.interner-zinssatz",
+   "HAK-MAT-3-S2-B2-K1",
+   "modifizierten internen Zinssatzes"
+  ],
+  [
+   "mathe.os.finanz.kurs",
+   "HAK-MAT-3-S2-B3-K1",
+   "Kurs- und Rentabilitätsrechnung"
+  ],
+  [
+   "mathe.os.finanz.kurs",
+   "HAK-MAT-3-S2-B3-K2",
+   "Rendite"
+  ],
+  [
+   "mathe.os.diff.aenderungsrate",
+   "HAK-MAT-4-S1-B1-K3",
+   "Differenzenquotienten"
+  ],
+  [
+   "mathe.os.diff.differentialquotient",
+   "HAK-MAT-4-S1-B1-K2",
+   "Differenzialquotienten"
+  ],
+  [
+   "mathe.os.diff.grenzwert",
+   "HAK-MAT-4-S1-B1-K1",
+   "Grenzwert und Stetigkeit"
+  ],
+  [
+   "mathe.os.diff.potenzregel",
+   "HAK-MAT-4-S1-B2-K3",
+   "Polynomfunktionen"
+  ],
+  [
+   "mathe.os.diff.elementar",
+   "HAK-MAT-4-S1-B2-K3",
+   "Basis e"
+  ],
+  [
+   "mathe.os.diff.produktregel",
+   "HAK-MAT-4-S1-B2-K3",
+   "Produkt- und Quotientenregel"
+  ],
+  [
+   "mathe.os.diff.quotientenregel",
+   "HAK-MAT-4-S1-B2-K3",
+   "Produkt- und Quotientenregel"
+  ],
+  [
+   "mathe.os.diff.kettenregel",
+   "HAK-MAT-4-S1-B2-K3",
+   "Ketten"
+  ],
+  [
+   "mathe.os.diff.tangente",
+   "HAK-MAT-4-S1-B1-K2",
+   "Tangentensteigung"
+  ],
+  [
+   "mathe.os.diff.monotonie",
+   "HAK-MAT-4-S1-B2-K4",
+   "Monotonie"
+  ],
+  [
+   "mathe.os.diff.kruemmung",
+   "HAK-MAT-4-S1-B2-K4",
+   "Krümmungsverhalten"
+  ],
+  [
+   "mathe.os.diff.kurvendiskussion",
+   "HAK-MAT-4-S1-B2-K4",
+   "Eigenschaften von Funktionen"
+  ],
+  [
+   "mathe.os.diff.graphen",
+   "HAK-MAT-4-S1-B2-K1",
+   "grafisch darstellen"
+  ],
+  [
+   "mathe.os.diff.aufstellen",
+   "HAK-MAT-4-S1-B4-K4",
+   "Polynomfunktion 3. Grades"
+  ],
+  [
+   "mathe.os.diff.extremwert",
+   "HAK-MAT-4-S1-B3-K1",
+   "Optimierung"
+  ],
+  [
+   "mathe.os.diff.bewegung",
+   "HAK-MAT-4-S1-B2-K2",
+   "lokale Änderungsraten"
+  ],
+  [
+   "mathe.os.kosten.grundbegriffe",
+   "HAK-MAT-1-B4-K4",
+   "Break Even Point"
+  ],
+  [
+   "mathe.os.kosten.ertragsgesetzlich",
+   "HAK-MAT-4-S1-B4-K4",
+   "ertragsgesetzlichen Kostenfunktion"
+  ],
+  [
+   "mathe.os.kosten.ertragsgesetzlich",
+   "HAK-MAT-4-S1-B4-K5",
+   "degressiv, progressiv"
+  ],
+  [
+   "mathe.os.kosten.betriebsoptimum",
+   "HAK-MAT-4-S1-B4-K6",
+   "Betriebsoptimum"
+  ],
+  [
+   "mathe.os.kosten.betriebsminimum",
+   "HAK-MAT-4-S1-B4-K6",
+   "Betriebsminimum"
+  ],
+  [
+   "mathe.os.kosten.grenzfunktionen",
+   "HAK-MAT-4-S1-B4-K7",
+   "Grenzfunktion"
+  ],
+  [
+   "mathe.os.kosten.gewinnmaximum",
+   "HAK-MAT-4-S1-B4-K6",
+   "Cournot"
+  ],
+  [
+   "mathe.os.kosten.markt",
+   "HAK-MAT-4-S1-B4-K1",
+   "Marktgleichgewicht"
+  ],
+  [
+   "mathe.os.kosten.elastizitaet",
+   "HAK-MAT-4-S1-B4-K2",
+   "Elastizität"
+  ],
+  [
+   "mathe.os.kosten.elastizitaet",
+   "HAK-MAT-4-S1-B4-K3",
+   "Elastizitäten berechnen"
+  ],
+  [
+   "mathe.os.integral.stammfunktion",
+   "HAK-MAT-4-S2-B1-K1",
+   "Stammfunktion"
+  ],
+  [
+   "mathe.os.integral.stammfunktion",
+   "HAK-MAT-4-S2-B1-K2",
+   "unbestimmten Integrals"
+  ],
+  [
+   "mathe.os.integral.grundintegrale",
+   "HAK-MAT-4-S2-B1-K3",
+   "f(x)=1/x"
+  ],
+  [
+   "mathe.os.integral.summen",
+   "HAK-MAT-4-S2-B2-K1",
+   "Summe von Produkten"
+  ],
+  [
+   "mathe.os.integral.bestimmt",
+   "HAK-MAT-4-S2-B2-K1",
+   "bestimmten Integrals"
+  ],
+  [
+   "mathe.os.integral.flaeche",
+   "HAK-MAT-4-S2-B2-K2",
+   "orientierten Flächeninhalt"
+  ],
+  [
+   "mathe.os.integral.zwischen",
+   "HAK-MAT-4-S2-B2-K2",
+   "Berechnungen durchführen"
+  ],
+  [
+   "mathe.os.integral.anwendungen",
+   "HAK-MAT-4-S2-B2-K3",
+   "Stammfunktionen von Grenzfunktionen"
+  ],
+  [
+   "mathe.os.integral.substitution",
+   "HAK-MAT-4-S2-B1-K3",
+   "g(x)=a*e^(k*x)"
+  ],
+  [
+   "mathe.os.statistik.merkmale",
+   "HAK-MAT-4-S2-B3-K1",
+   "nominalskaliert"
+  ],
+  [
+   "mathe.os.statistik.klassen",
+   "HAK-MAT-4-S2-B3-K2",
+   "Häufigkeitsverteilungen"
+  ],
+  [
+   "mathe.os.statistik.streuung",
+   "HAK-MAT-4-S2-B4-K2",
+   "Standardabweichung und Varianz"
+  ],
+  [
+   "mathe.os.statistik.boxplot",
+   "HAK-MAT-4-S2-B4-K3",
+   "Boxplot"
+  ],
+  [
+   "mathe.os.statistik.mittelwerte",
+   "HAK-MAT-4-S2-B4-K1",
+   "geometrisches Mittel"
+  ],
+  [
+   "mathe.os.statistik.regression",
+   "HAK-MAT-4-S1-B3-K2",
+   "kleinsten Quadrate"
+  ],
+  [
+   "mathe.os.statistik.regression",
+   "HAK-MAT-4-S1-B3-K3",
+   "kleinsten Quadrate"
+  ],
+  [
+   "mathe.os.statistik.korrelation",
+   "HAK-MAT-4-S2-B5-K1",
+   "Korrelationskoeffizienten"
+  ],
+  [
+   "mathe.os.statistik.gini",
+   "HAK-MAT-4-S2-B5-K2",
+   "Gini-Koeffizienten"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.regeln",
+   "HAK-MAT-5-S1-B1-K2",
+   "Additions- und Multiplikationsregel"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.mehrstufig",
+   "HAK-MAT-5-S1-B1-K2",
+   "Multiplikationsregel"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.bedingt",
+   "HAK-MAT-5-S1-B1-K2",
+   "Multiplikationsregel"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.kombinatorik",
+   "HAK-MAT-5-S1-B1-K3",
+   "Binomialkoeffizienten"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.zufallsvariable",
+   "HAK-MAT-5-S1-B2-K1",
+   "Erwartungswert"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.binomial",
+   "HAK-MAT-5-S1-B2-K2",
+   "Binomial- und Normalverteilung"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.binomial-bereiche",
+   "HAK-MAT-5-S1-B2-K2",
+   "Binomial- und Normalverteilung"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.dichte",
+   "HAK-MAT-5-S1-B2-K1",
+   "Wahrscheinlichkeitsdichtefunktion"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.normal",
+   "HAK-MAT-5-S1-B2-K2",
+   "Binomial- und Normalverteilung"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.normal-umkehr",
+   "HAK-MAT-5-S1-B2-K2",
+   "Binomial- und Normalverteilung"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.glockenkurve",
+   "HAK-MAT-5-S1-B2-K4",
+   "Normalverteilungskurve"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.approximation",
+   "HAK-MAT-5-S1-B2-K3",
+   "Näherung der Binomialverteilung"
+  ],
+  [
+   "mathe.os.matrizen.grundlagen",
+   "HAK-MAT-2-S1-L1-L1",
+   "Matrizen"
+  ],
+  [
+   "mathe.os.finanz.zinseszins",
+   "HAK-MAT-3-S1-L1-L2",
+   "Zinseszinsrechnung"
+  ],
+  [
+   "mathe.os.finanz.rente",
+   "HAK-MAT-3-S2-L1-L1",
+   "Rentenrechnung"
+  ],
+  [
+   "mathe.os.finanz.tilgung",
+   "HAK-MAT-3-S2-L1-L1",
+   "Schuldentilgung"
+  ],
+  [
+   "mathe.os.finanz.kapitalwert",
+   "HAK-MAT-3-S2-L1-L1",
+   "Investitionsrechnung"
+  ],
+  [
+   "mathe.os.finanz.kurs",
+   "HAK-MAT-3-S2-L1-L1",
+   "Kurs- und Rentabilitätsrechnung"
+  ],
+  [
+   "mathe.os.diff.grenzwert",
+   "HAK-MAT-4-S1-L1-L1",
+   "Stetigkeit"
+  ],
+  [
+   "mathe.os.diff.differentialquotient",
+   "HAK-MAT-4-S1-L1-L1",
+   "Differentialquotient"
+  ],
+  [
+   "mathe.os.diff.potenzregel",
+   "HAK-MAT-4-S1-L1-L1",
+   "Ableitungsregeln"
+  ],
+  [
+   "mathe.os.statistik.regression",
+   "HAK-MAT-4-S1-L1-L1",
+   "Regressionsrechnung"
+  ],
+  [
+   "mathe.os.kosten.ertragsgesetzlich",
+   "HAK-MAT-4-S1-L1-L1",
+   "Kosten- und Preistheorie"
+  ],
+  [
+   "mathe.os.integral.bestimmt",
+   "HAK-MAT-4-S2-L1-L1",
+   "Integralrechnung"
+  ],
+  [
+   "mathe.os.statistik.streuung",
+   "HAK-MAT-4-S2-L1-L2",
+   "Beschreibende Statistik"
+  ],
+  [
+   "mathe.os.wahrscheinlichkeit.regeln",
+   "HAK-MAT-5-S1-L1-L1",
+   "Wahrscheinlichkeitsrechnung"
   ]
  ],
  "hak-englisch": [
@@ -2432,6 +8512,491 @@
    "englisch.tenses.presentperfect",
    "HAK-ENG-1-L1-L5",
    ""
+  ],
+  [
+   "englisch.tenses.future-present",
+   "HAK-ENG-1-L1-L5",
+   "Future Tenses"
+  ],
+  [
+   "englisch.tenses.perfect-past",
+   "HAK-ENG-1-L1-L5",
+   "Present Perfect Tenses"
+  ],
+  [
+   "englisch.tenses.perfectprogressive",
+   "HAK-ENG-1-L1-L5",
+   "Present Perfect Tenses"
+  ],
+  [
+   "englisch.tenses.pastperfect",
+   "HAK-ENG-1-L1-L5",
+   "Past Perfect Tenses"
+  ],
+  [
+   "englisch.tenses.mixed",
+   "HAK-ENG-1-L1-L5",
+   "Future Tenses"
+  ],
+  [
+   "englisch.grammar.modal-possibility",
+   "HAK-ENG-1-L1-L5",
+   "Modalverben"
+  ],
+  [
+   "englisch.grammar.passive-tenses",
+   "HAK-ENG-1-L1-L5",
+   "Passiv"
+  ],
+  [
+   "englisch.grammar.if3",
+   "HAK-ENG-2-S1-L1-L5",
+   "Konditionalsätze"
+  ],
+  [
+   "englisch.os.tenses.past-perfect-progressive",
+   "HAK-ENG-1-L1-L5",
+   "Past Perfect Tenses"
+  ],
+  [
+   "englisch.os.tenses.future-progressive",
+   "HAK-ENG-1-L1-L5",
+   "Future Tenses"
+  ],
+  [
+   "englisch.os.tenses.future-perfect",
+   "HAK-ENG-1-L1-L5",
+   "Future Tenses"
+  ],
+  [
+   "englisch.os.grammar.be-used-to",
+   "HAK-ENG-2-S2-L1-L5",
+   "Gerundium"
+  ],
+  [
+   "englisch.os.grammar.causative",
+   "HAK-ENG-1-L1-L5",
+   "Passiv"
+  ],
+  [
+   "englisch.os.grammar.non-defining",
+   "HAK-ENG-1-L1-L5",
+   "Syntax"
+  ],
+  [
+   "englisch.os.grammar.gerund-infinitive",
+   "HAK-ENG-2-S1-L1-L5",
+   "Infinitivkonstruktionen"
+  ],
+  [
+   "englisch.os.grammar.gerund-infinitive",
+   "HAK-ENG-2-S2-L1-L5",
+   "Gerundium"
+  ],
+  [
+   "englisch.os.grammar.indirect-questions",
+   "HAK-ENG-2-S1-L1-L5",
+   "indirekte Rede"
+  ],
+  [
+   "englisch.os.grammar.passive-advanced",
+   "HAK-ENG-1-L1-L5",
+   "Passiv"
+  ],
+  [
+   "englisch.os.grammar.passive-advanced",
+   "HAK-ENG-2-S1-L1-L5",
+   "Infinitivkonstruktionen"
+  ],
+  [
+   "englisch.os.grammar.wish",
+   "HAK-ENG-4-S2-K3",
+   "komplexere grammatische Strukturen"
+  ],
+  [
+   "englisch.os.grammar.mixed-conditionals",
+   "HAK-ENG-2-S1-L1-L5",
+   "Konditionalsätze"
+  ],
+  [
+   "englisch.os.grammar.modal-deduction",
+   "HAK-ENG-4-S2-K3",
+   "komplexere grammatische Strukturen"
+  ],
+  [
+   "englisch.os.grammar.modal-criticism",
+   "HAK-ENG-4-S2-K3",
+   "komplexere grammatische Strukturen"
+  ],
+  [
+   "englisch.os.grammar.passive-reporting",
+   "HAK-ENG-2-S1-L1-L5",
+   "Infinitivkonstruktionen"
+  ],
+  [
+   "englisch.os.grammar.reporting-verbs",
+   "HAK-ENG-2-S1-L1-L5",
+   "indirekte Rede"
+  ],
+  [
+   "englisch.os.grammar.participle-clauses",
+   "HAK-ENG-2-S2-L1-L5",
+   "Partizipialkonstruktionen"
+  ],
+  [
+   "englisch.os.grammar.inversion",
+   "HAK-ENG-4-S1-K1",
+   "einige komplexe Satzstrukturen"
+  ],
+  [
+   "englisch.os.grammar.inversion",
+   "HAK-ENG-5-S1-K1",
+   "einige komplexe Satzstrukturen"
+  ],
+  [
+   "englisch.os.grammar.cleft",
+   "HAK-ENG-4-S1-K1",
+   "einige komplexe Satzstrukturen"
+  ],
+  [
+   "englisch.os.grammar.cleft",
+   "HAK-ENG-5-S1-K1",
+   "einige komplexe Satzstrukturen"
+  ],
+  [
+   "englisch.os.vocab.word-formation",
+   "HAK-ENG-1-L1-L5",
+   "Wortarten"
+  ],
+  [
+   "englisch.os.vocab.prefixes",
+   "HAK-ENG-3-S1-K2",
+   "ausreichend großen Wortschatz"
+  ],
+  [
+   "englisch.os.vocab.collocations",
+   "HAK-ENG-3-S1-K2",
+   "ausreichend großen Wortschatz"
+  ],
+  [
+   "englisch.os.vocab.collocations",
+   "HAK-ENG-5-S1-K2",
+   "Formulierungen variieren"
+  ],
+  [
+   "englisch.os.vocab.dependent-prepositions",
+   "HAK-ENG-1-L1-L5",
+   "Präpositionen"
+  ],
+  [
+   "englisch.os.vocab.phrasal-verbs",
+   "HAK-ENG-3-S2-K2",
+   "ausreichend großen Wortschatz"
+  ],
+  [
+   "englisch.os.vocab.idioms",
+   "HAK-ENG-5-S1-K2",
+   "einen großen Wortschatz"
+  ],
+  [
+   "englisch.os.vocab.confusables",
+   "HAK-ENG-2-S2-K2",
+   "ausreichenden Wortschatz"
+  ],
+  [
+   "englisch.os.reading.multiple-choice",
+   "HAK-ENG-4-S2-K5",
+   "Sachtexte und Texte zu allgemeinen Themen"
+  ],
+  [
+   "englisch.os.reading.multiple-matching",
+   "HAK-ENG-4-S1-K6",
+   "Texte über aktuelle Themen"
+  ],
+  [
+   "englisch.os.reading.gapped-text",
+   "HAK-ENG-5-S1-K5",
+   "Texte über allgemeine und berufsrelevante Themen"
+  ],
+  [
+   "englisch.os.reading.short-answers",
+   "HAK-ENG-5-S1-K6",
+   "welche Informationen für einen bestimmten Zweck relevant sind"
+  ],
+  [
+   "englisch.os.reading.true-false",
+   "HAK-ENG-3-S2-K6",
+   "unkomplizierte Sachtexte"
+  ],
+  [
+   "englisch.os.listening.multiple-choice",
+   "HAK-ENG-4-S1-K5",
+   "Standardsprache im direkten Kontakt und in den Medien"
+  ],
+  [
+   "englisch.os.listening.note-completion",
+   "HAK-ENG-3-S2-K5",
+   "Hauptpunkte in einer Kommunikationssituation"
+  ],
+  [
+   "englisch.os.listening.matching",
+   "HAK-ENG-5-S1-K4",
+   "Vortrag oder ein Gespräch"
+  ],
+  [
+   "englisch.os.writing.task",
+   "HAK-ENG-4-S2-K11",
+   "für die jeweilige Textsorte relevanten Kriterien"
+  ],
+  [
+   "englisch.os.writing.task",
+   "HAK-ENG-5-S1-K12",
+   "relevanten Kriterien adäquat anwenden"
+  ],
+  [
+   "englisch.os.writing.paragraphs",
+   "HAK-ENG-4-S2-K11",
+   "klare und strukturierte Texte"
+  ],
+  [
+   "englisch.os.writing.register",
+   "HAK-ENG-3-S1-L1-L5",
+   "registerspezifische Anwendung"
+  ],
+  [
+   "englisch.os.writing.linking-contrast",
+   "HAK-ENG-4-S2-K11",
+   "klare und strukturierte Texte"
+  ],
+  [
+   "englisch.os.writing.linking-cause",
+   "HAK-ENG-4-S1-K8",
+   "durch relevante Erklärungen und Argumente begründen"
+  ],
+  [
+   "englisch.os.writing.informal-email",
+   "HAK-ENG-2-S1-L1-L4",
+   "Brief, E-Mail"
+  ],
+  [
+   "englisch.os.writing.formal-email",
+   "HAK-ENG-3-S2-L1-L4",
+   "E-Mail"
+  ],
+  [
+   "englisch.os.writing.complaint",
+   "HAK-ENG-4-S2-L1-L4",
+   "Beschwerde"
+  ],
+  [
+   "englisch.os.writing.essay",
+   "HAK-ENG-4-S1-K8",
+   "Standpunkte darlegen"
+  ],
+  [
+   "englisch.os.writing.essay",
+   "HAK-ENG-5-S1-K1",
+   "etwas zu erörtern"
+  ],
+  [
+   "englisch.os.writing.article",
+   "HAK-ENG-4-S2-L1-L4",
+   "Artikel"
+  ],
+  [
+   "englisch.os.writing.article",
+   "HAK-ENG-5-S1-L1-L4",
+   "Artikel"
+  ],
+  [
+   "englisch.os.writing.blog-post",
+   "HAK-ENG-3-S2-L1-L4",
+   "Blog"
+  ],
+  [
+   "englisch.os.writing.blog-post",
+   "HAK-ENG-4-S1-L1-L4",
+   "Blog"
+  ],
+  [
+   "englisch.os.writing.blog-comment",
+   "HAK-ENG-3-S2-L1-L4",
+   "Blog"
+  ],
+  [
+   "englisch.os.writing.report",
+   "HAK-ENG-4-S2-L1-L4",
+   "Report"
+  ],
+  [
+   "englisch.os.writing.report",
+   "HAK-ENG-5-S1-L1-L4",
+   "Report"
+  ],
+  [
+   "englisch.os.writing.leaflet",
+   "HAK-ENG-2-S2-L1-L4",
+   "Leaflet"
+  ],
+  [
+   "englisch.os.writing.leaflet",
+   "HAK-ENG-4-S2-L1-L4",
+   "Werbematerialien wie Leaflet"
+  ],
+  [
+   "englisch.os.writing.application",
+   "HAK-ENG-3-S1-L1-L4",
+   "Bewerbungsschreiben"
+  ],
+  [
+   "englisch.os.writing.application",
+   "HAK-ENG-4-S2-L1-L2",
+   "Letter of Motivation"
+  ],
+  [
+   "englisch.os.writing.cv",
+   "HAK-ENG-3-S1-L1-L4",
+   "Lebenslauf"
+  ],
+  [
+   "englisch.os.writing.proposal",
+   "HAK-ENG-4-S1-L1-L4",
+   "Proposal"
+  ],
+  [
+   "englisch.os.speaking.pictures",
+   "HAK-ENG-2-S2-K8",
+   "eine detaillierte Beschreibung"
+  ],
+  [
+   "englisch.os.speaking.presentation",
+   "HAK-ENG-3-S2-K8",
+   "vorbereitete Präsentation"
+  ],
+  [
+   "englisch.os.speaking.presentation",
+   "HAK-ENG-5-S1-K9",
+   "spontan auf Nachfragen reagieren"
+  ],
+  [
+   "englisch.os.speaking.graphs",
+   "HAK-ENG-3-S1-L1-L2",
+   "Infografiken"
+  ],
+  [
+   "englisch.os.speaking.graphs",
+   "HAK-ENG-4-S1-L1-L2",
+   "Beschreibung und Analyse von Infografiken"
+  ],
+  [
+   "englisch.os.speaking.monologue",
+   "HAK-ENG-4-S2-L1-L3",
+   "monologisches"
+  ],
+  [
+   "englisch.os.speaking.monologue",
+   "HAK-ENG-5-S1-L1-L3",
+   "monologisches"
+  ],
+  [
+   "englisch.os.speaking.dialogue",
+   "HAK-ENG-4-S2-L1-L3",
+   "dialogisches"
+  ],
+  [
+   "englisch.os.speaking.dialogue",
+   "HAK-ENG-5-S1-L1-L3",
+   "dialogisches"
+  ],
+  [
+   "englisch.os.speaking.job-interview",
+   "HAK-ENG-4-S2-L1-L2",
+   "Karriere und Karriereplanung"
+  ],
+  [
+   "englisch.os.business.phone",
+   "HAK-ENG-2-S2-L1-L2",
+   "berufsbezogene schriftliche und mündliche Kommunikation"
+  ],
+  [
+   "englisch.os.business.phone",
+   "HAK-ENG-4-S1-K4",
+   "routinemäßige berufsrelevante Sprachsituationen"
+  ],
+  [
+   "englisch.os.business.appointments",
+   "HAK-ENG-3-S2-L1-L2",
+   "Geschäftsreisen (Reservierung, Stornierung)"
+  ],
+  [
+   "englisch.os.business.layout",
+   "HAK-ENG-2-S2-L1-L4",
+   "Aufbau und Layout eines Geschäftsbriefes"
+  ],
+  [
+   "englisch.os.business.memo",
+   "HAK-ENG-2-S1-L1-L4",
+   "Memo"
+  ],
+  [
+   "englisch.os.business.memo",
+   "HAK-ENG-4-S2-L1-L4",
+   "Memo"
+  ],
+  [
+   "englisch.os.business.enquiry",
+   "HAK-ENG-2-S2-L1-L4",
+   "Anfrage und Angebot"
+  ],
+  [
+   "englisch.os.business.offer",
+   "HAK-ENG-2-S2-L1-L4",
+   "Anfrage und Angebot"
+  ],
+  [
+   "englisch.os.business.order",
+   "HAK-ENG-3-S1-L1-L4",
+   "Bestellung"
+  ],
+  [
+   "englisch.os.business.order",
+   "HAK-ENG-3-S2-L1-L4",
+   "Auftragsbestätigung"
+  ],
+  [
+   "englisch.os.business.delivery",
+   "HAK-ENG-4-S1-L1-L4",
+   "Lieferverzug, Versandanzeige"
+  ],
+  [
+   "englisch.os.business.adjustment",
+   "HAK-ENG-4-S2-L1-L4",
+   "Mängelrüge, Beschwerde"
+  ],
+  [
+   "englisch.os.business.reminder",
+   "HAK-ENG-4-S2-L1-L4",
+   "Zahlungsverzug"
+  ],
+  [
+   "englisch.os.business.meetings",
+   "HAK-ENG-4-S1-K4",
+   "routinemäßige berufsrelevante Sprachsituationen"
+  ],
+  [
+   "englisch.os.business.meetings",
+   "HAK-ENG-5-S1-K8",
+   "routinemäßige berufsrelevante Sprachsituationen"
+  ],
+  [
+   "englisch.os.business.negotiation",
+   "HAK-ENG-4-S1-K8",
+   "adressatenadäquat appellieren und Empfehlungen abgeben"
+  ],
+  [
+   "englisch.os.business.negotiation",
+   "HAK-ENG-5-S1-L1-L2",
+   "Customer Relations"
   ]
  ],
  "hak-deutsch": [
@@ -2484,6 +9049,1275 @@
    "deutsch.grammatik.faelle",
    "HAK-DEU-1-L1-L5",
    ""
+  ],
+  [
+   "deutsch.os.matura.aufgabe",
+   "HAK-DEU-3-S1-B4-K1",
+   "Schreibhandlungen im Sinne der textsortenspezifischen Merkmale erfüllen"
+  ],
+  [
+   "deutsch.os.matura.aufgabe",
+   "HAK-DEU-5-S2-L1-L3",
+   "Wiederholung relevanter informierender und meinungsbildender Textsorten"
+  ],
+  [
+   "deutsch.os.matura.zusammenfassung",
+   "HAK-DEU-1-L1-L3",
+   "Zusammenfassung"
+  ],
+  [
+   "deutsch.os.matura.zusammenfassung",
+   "HAK-DEU-2-S1-L1-L3",
+   "Zusammenfassung"
+  ],
+  [
+   "deutsch.os.matura.leserbrief",
+   "HAK-DEU-2-S2-L1-L3",
+   "Leserbrief"
+  ],
+  [
+   "deutsch.os.matura.leserbrief",
+   "HAK-DEU-5-S1-L1-L3",
+   "Leserbrief"
+  ],
+  [
+   "deutsch.os.matura.eroerterung",
+   "HAK-DEU-4-S1-L1-L3",
+   "Erörterung"
+  ],
+  [
+   "deutsch.os.matura.eroerterung",
+   "HAK-DEU-4-S2-L1-L3",
+   "Erörterung"
+  ],
+  [
+   "deutsch.os.matura.kommentar",
+   "HAK-DEU-3-S1-L1-L3",
+   "Kommentar"
+  ],
+  [
+   "deutsch.os.matura.kommentar",
+   "HAK-DEU-3-S2-L1-L3",
+   "Kommentar"
+  ],
+  [
+   "deutsch.os.matura.offenerbrief",
+   "HAK-DEU-3-S1-L1-L3",
+   "Offener Brief"
+  ],
+  [
+   "deutsch.os.matura.offenerbrief",
+   "HAK-DEU-4-S1-L1-L3",
+   "offener Brief"
+  ],
+  [
+   "deutsch.os.matura.empfehlung",
+   "HAK-DEU-5-S1-L1-L3",
+   "Empfehlung"
+  ],
+  [
+   "deutsch.os.matura.meinungsrede",
+   "HAK-DEU-4-S2-L1-L3",
+   "Meinungsrede"
+  ],
+  [
+   "deutsch.os.matura.textanalyse",
+   "HAK-DEU-2-S1-L1-L3",
+   "Textanalyse"
+  ],
+  [
+   "deutsch.os.matura.textanalyse",
+   "HAK-DEU-4-S1-L1-L3",
+   "Textanalyse"
+  ],
+  [
+   "deutsch.os.matura.textinterpretation",
+   "HAK-DEU-4-S2-L1-L3",
+   "Textinterpretation"
+  ],
+  [
+   "deutsch.os.matura.textinterpretation",
+   "HAK-DEU-5-S1-L1-L3",
+   "Textinterpretation"
+  ],
+  [
+   "deutsch.os.argument.typen",
+   "HAK-DEU-4-S1-L1-L1",
+   "Argumentationsstrategien entwickeln"
+  ],
+  [
+   "deutsch.os.argument.gegen",
+   "HAK-DEU-3-S2-L1-L1",
+   "gegensätzliche Standpunkte vorbringen und verteidigen"
+  ],
+  [
+   "deutsch.os.argument.fehlschluss",
+   "HAK-DEU-4-S1-L1-L1",
+   "Argumente abwägen"
+  ],
+  [
+   "deutsch.os.argument.gliederung",
+   "HAK-DEU-2-S1-L1-L3",
+   "Argumentieren"
+  ],
+  [
+   "deutsch.os.argument.gliederung",
+   "HAK-DEU-4-S1-L1-L3",
+   "Erörtern, Argumentieren"
+  ],
+  [
+   "deutsch.os.stil.klang",
+   "HAK-DEU-3-S1-L1-L1",
+   "Anwendung von rhetorischen Kenntnissen"
+  ],
+  [
+   "deutsch.os.stil.klang",
+   "HAK-DEU-3-S1-B1-K1",
+   "Gestaltungsmittel und Redeabsichten erkennen"
+  ],
+  [
+   "deutsch.os.stil.satzfiguren",
+   "HAK-DEU-3-S1-L1-L1",
+   "Anwendung von rhetorischen Kenntnissen"
+  ],
+  [
+   "deutsch.os.stil.satzfiguren",
+   "HAK-DEU-3-S1-B1-K1",
+   "Gestaltungsmittel und Redeabsichten erkennen"
+  ],
+  [
+   "deutsch.os.stil.gedankenfiguren",
+   "HAK-DEU-3-S1-L1-L1",
+   "Anwendung von rhetorischen Kenntnissen"
+  ],
+  [
+   "deutsch.os.stil.gedankenfiguren",
+   "HAK-DEU-3-S1-B1-K1",
+   "Gestaltungsmittel und Redeabsichten erkennen"
+  ],
+  [
+   "deutsch.os.stil.bilder",
+   "HAK-DEU-5-S1-L1-L2",
+   "Wahrnehmung ästhetischer Textkomponenten"
+  ],
+  [
+   "deutsch.os.stil.wirkung",
+   "HAK-DEU-2-S2-L1-L2",
+   "Wahrnehmen von Textintention und Textwirkung"
+  ],
+  [
+   "deutsch.os.stil.satzbau",
+   "HAK-DEU-3-S2-L1-L5",
+   "Erkennen von Satzstrukturen"
+  ],
+  [
+   "deutsch.os.stil.satzbau",
+   "HAK-DEU-4-S1-L1-L5",
+   "Beherrschung komplexer Satzstrukturen"
+  ],
+  [
+   "deutsch.os.stil.nominal",
+   "HAK-DEU-4-S1-L1-L5",
+   "Vertiefung von Ausdruck und Stil"
+  ],
+  [
+   "deutsch.os.stil.nominal",
+   "HAK-DEU-4-S2-L1-L5",
+   "Einsatz von Wissenschaftssprache"
+  ],
+  [
+   "deutsch.os.stil.ausdruck",
+   "HAK-DEU-2-S1-L1-L5",
+   "Verbesserung der Ausdrucksmöglichkeiten"
+  ],
+  [
+   "deutsch.os.stil.ethos",
+   "HAK-DEU-3-S1-L1-L1",
+   "Anwendung von rhetorischen Kenntnissen"
+  ],
+  [
+   "deutsch.os.stil.ethos",
+   "HAK-DEU-3-S2-B2-K1",
+   "zielgerichtet appellieren"
+  ],
+  [
+   "deutsch.os.lyrik.metrum",
+   "HAK-DEU-4-S1-B3-K1",
+   "Zusammenhang zwischen formalen und inhaltlichen Aspekten"
+  ],
+  [
+   "deutsch.os.lyrik.metrum",
+   "HAK-DEU-5-S1-L1-L2",
+   "Wahrnehmung ästhetischer Textkomponenten"
+  ],
+  [
+   "deutsch.os.lyrik.vers",
+   "HAK-DEU-4-S1-B3-K1",
+   "Zusammenhang zwischen formalen und inhaltlichen Aspekten"
+  ],
+  [
+   "deutsch.os.lyrik.vers",
+   "HAK-DEU-5-S1-L1-L2",
+   "Wahrnehmung ästhetischer Textkomponenten"
+  ],
+  [
+   "deutsch.os.lyrik.formen",
+   "HAK-DEU-2-S2-L1-L2",
+   "Textgattungen"
+  ],
+  [
+   "deutsch.os.lyrik.formen",
+   "HAK-DEU-4-S1-B5-K4",
+   "typische Merkmale von Gattungen"
+  ],
+  [
+   "deutsch.os.lyrik.versmasse",
+   "HAK-DEU-4-S1-B3-K1",
+   "Zusammenhang zwischen formalen und inhaltlichen Aspekten"
+  ],
+  [
+   "deutsch.os.lyrik.analyse",
+   "HAK-DEU-4-S1-B3-K1",
+   "Zusammenhang zwischen formalen und inhaltlichen Aspekten"
+  ],
+  [
+   "deutsch.os.epik.erzaehler",
+   "HAK-DEU-4-S1-B3-K1",
+   "Zusammenhang zwischen formalen und inhaltlichen Aspekten"
+  ],
+  [
+   "deutsch.os.epik.zeit",
+   "HAK-DEU-4-S1-B3-K1",
+   "Zusammenhang zwischen formalen und inhaltlichen Aspekten"
+  ],
+  [
+   "deutsch.os.epik.rede",
+   "HAK-DEU-4-S1-L1-L5",
+   "Mitteln der Redewiedergabe"
+  ],
+  [
+   "deutsch.os.epik.novelle",
+   "HAK-DEU-2-S2-L1-L2",
+   "Textgattungen"
+  ],
+  [
+   "deutsch.os.epik.novelle",
+   "HAK-DEU-4-S1-B5-K4",
+   "typische Merkmale von Gattungen"
+  ],
+  [
+   "deutsch.os.epik.parabel",
+   "HAK-DEU-2-S2-L1-L2",
+   "Textgattungen"
+  ],
+  [
+   "deutsch.os.drama.rede",
+   "HAK-DEU-4-S1-B3-K1",
+   "Zusammenhang zwischen formalen und inhaltlichen Aspekten"
+  ],
+  [
+   "deutsch.os.drama.aufbau",
+   "HAK-DEU-4-S1-B3-K1",
+   "Zusammenhang zwischen formalen und inhaltlichen Aspekten"
+  ],
+  [
+   "deutsch.os.drama.form",
+   "HAK-DEU-4-S1-B3-K1",
+   "Zusammenhang zwischen formalen und inhaltlichen Aspekten"
+  ],
+  [
+   "deutsch.os.drama.gattungen",
+   "HAK-DEU-2-S2-L1-L2",
+   "Textgattungen"
+  ],
+  [
+   "deutsch.os.drama.gattungen",
+   "HAK-DEU-4-S1-B5-K4",
+   "typische Merkmale von Gattungen"
+  ],
+  [
+   "deutsch.os.drama.episch",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen"
+  ],
+  [
+   "deutsch.os.literatur.motiv",
+   "HAK-DEU-3-S1-B3-K2",
+   "Bezüge zu anderen Texten herstellen"
+  ],
+  [
+   "deutsch.os.epochen.mittelalter",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.barock",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.aufklaerung",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.sturmunddrang",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.klassik",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.romantik",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.biedermeier",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.realismus",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.naturalismus",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.wienermoderne",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.expressionismus",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.zwischenkrieg",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.exil",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.nachkrieg",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.experimentell",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.oesterreich1945",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.gegenwart",
+   "HAK-DEU-4-S1-B5-K4",
+   "Gattungen und Stilrichtungen anhand von exemplarischen Werken"
+  ],
+  [
+   "deutsch.os.epochen.expressionismus",
+   "HAK-DEU-4-S2-L1-L4",
+   "deutschsprachigen Literatur des 20. Jahrhunderts"
+  ],
+  [
+   "deutsch.os.epochen.zwischenkrieg",
+   "HAK-DEU-4-S2-L1-L4",
+   "deutschsprachigen Literatur des 20. Jahrhunderts"
+  ],
+  [
+   "deutsch.os.epochen.exil",
+   "HAK-DEU-4-S2-L1-L4",
+   "deutschsprachigen Literatur des 20. Jahrhunderts"
+  ],
+  [
+   "deutsch.os.epochen.nachkrieg",
+   "HAK-DEU-4-S2-L1-L4",
+   "deutschsprachigen Literatur des 20. Jahrhunderts"
+  ],
+  [
+   "deutsch.os.epochen.experimentell",
+   "HAK-DEU-4-S2-L1-L4",
+   "deutschsprachigen Literatur des 20. Jahrhunderts"
+  ],
+  [
+   "deutsch.os.epochen.biedermeier",
+   "HAK-DEU-4-S1-L1-L4",
+   "österreichischen Literatur"
+  ],
+  [
+   "deutsch.os.epochen.wienermoderne",
+   "HAK-DEU-4-S1-L1-L4",
+   "österreichischen Literatur"
+  ],
+  [
+   "deutsch.os.epochen.oesterreich1945",
+   "HAK-DEU-5-S1-L1-L4",
+   "österreichischen Literatur des 20. Jahrhunderts"
+  ],
+  [
+   "deutsch.os.medien.journalismus",
+   "HAK-DEU-2-S1-L1-L2",
+   "Bewusstseins für Textsorten"
+  ],
+  [
+   "deutsch.os.medien.journalismus",
+   "HAK-DEU-3-S2-L1-L4",
+   "Beiträge für Medien gestalten"
+  ],
+  [
+   "deutsch.os.medien.infografik",
+   "HAK-DEU-2-S1-L1-L3",
+   "Analyse von Infografiken"
+  ],
+  [
+   "deutsch.os.medien.werbung",
+   "HAK-DEU-2-S2-L1-L2",
+   "Wahrnehmen von Textintention und Textwirkung"
+  ],
+  [
+   "deutsch.os.medien.manipulation",
+   "HAK-DEU-3-S1-B5-K4",
+   "den Einfluss von Medien"
+  ],
+  [
+   "deutsch.os.medien.manipulation",
+   "HAK-DEU-4-S2-B2-K1",
+   "belasteten Begriffen"
+  ],
+  [
+   "deutsch.os.medien.film",
+   "HAK-DEU-4-S2-B5-K3",
+   "Einblick in unterschiedliche Kunstformen gewinnen"
+  ],
+  [
+   "deutsch.os.wiss.quellen",
+   "HAK-DEU-4-S1-L1-L2",
+   "Informationsbeschaffung und -auswertung"
+  ],
+  [
+   "deutsch.os.wiss.zitieren",
+   "HAK-DEU-4-S2-L1-L3",
+   "richtiges Zitieren"
+  ],
+  [
+   "deutsch.os.wiss.verzeichnis",
+   "HAK-DEU-4-S2-L1-L3",
+   "richtiges Zitieren"
+  ],
+  [
+   "deutsch.os.wiss.thema",
+   "HAK-DEU-4-S2-L1-L3",
+   "Einführen in das wissenschaftliche Schreiben"
+  ],
+  [
+   "deutsch.os.wiss.aufbau",
+   "HAK-DEU-4-S2-L1-L3",
+   "Einführen in das wissenschaftliche Schreiben"
+  ],
+  [
+   "deutsch.os.praesentieren.wirkung",
+   "HAK-DEU-3-S1-L1-L1",
+   "para- und nonverbalen Äußerungen"
+  ],
+  [
+   "deutsch.os.praesentieren.folien",
+   "HAK-DEU-2-S1-L1-L1",
+   "Einsatz von Präsentationsmedien"
+  ],
+  [
+   "deutsch.os.praesentieren.folien",
+   "HAK-DEU-3-S1-B2-K2",
+   "Inhalte mit Medienunterstützung präsentieren"
+  ],
+  [
+   "deutsch.os.praesentieren.moderieren",
+   "HAK-DEU-3-S1-L1-L1",
+   "Moderieren"
+  ],
+  [
+   "deutsch.os.praesentieren.moderieren",
+   "HAK-DEU-3-S2-L1-L1",
+   "Gespräche moderieren"
+  ],
+  [
+   "deutsch.os.sprache.vierseiten",
+   "HAK-DEU-1-L1-L1",
+   "Grundlagen der Kommunikation"
+  ],
+  [
+   "deutsch.os.sprache.axiome",
+   "HAK-DEU-1-L1-L1",
+   "Grundlagen der Kommunikation"
+  ],
+  [
+   "deutsch.os.sprache.axiome",
+   "HAK-DEU-3-S2-L1-L1",
+   "Sach- und Beziehungsebene unterscheiden"
+  ],
+  [
+   "deutsch.os.sprache.oesterreich",
+   "HAK-DEU-1-L1-L1",
+   "Sprechen in der Standardsprache"
+  ],
+  [
+   "deutsch.os.sprache.oesterreich",
+   "HAK-DEU-4-S2-B6-K5",
+   "die deutsche Sprache und ihre Varietäten"
+  ],
+  [
+   "deutsch.os.sprache.varietaeten",
+   "HAK-DEU-4-S1-L1-L1",
+   "sprachliche Register"
+  ],
+  [
+   "deutsch.os.sprache.geschichte",
+   "HAK-DEU-3-S2-B6-K3",
+   "Sprachwandelphänomene erkennen"
+  ],
+  [
+   "deutsch.os.sprache.wandel",
+   "HAK-DEU-3-S2-B6-K3",
+   "Sprachwandelphänomene erkennen"
+  ],
+  [
+   "deutsch.os.sprache.pragmatik",
+   "HAK-DEU-2-S2-L1-L1",
+   "Erkennen von Redeabsichten"
+  ],
+  [
+   "deutsch.os.sprache.gender",
+   "HAK-DEU-2-S2-B4-K2",
+   "geschlechtergerecht formulieren"
+  ],
+  [
+   "deutsch.os.beistrich.zusatz",
+   "HAK-DEU-3-S1-L1-L5",
+   "grundlegenden Kommaregeln"
+  ],
+  [
+   "deutsch.os.beistrich.zusatz",
+   "HAK-DEU-3-S2-L1-L5",
+   "Beherrschung der Zeichensetzung"
+  ],
+  [
+   "deutsch.os.beistrich.vergleich",
+   "HAK-DEU-3-S1-L1-L5",
+   "grundlegenden Kommaregeln"
+  ],
+  [
+   "deutsch.os.beistrich.vergleich",
+   "HAK-DEU-3-S2-L1-L5",
+   "Beherrschung der Zeichensetzung"
+  ],
+  [
+   "deutsch.os.beistrich.strichpunkt",
+   "HAK-DEU-3-S2-L1-L5",
+   "Beherrschung der Zeichensetzung"
+  ],
+  [
+   "deutsch.os.grammatik.daswas",
+   "HAK-DEU-2-S1-B6-K1",
+   "Satzgrammatik"
+  ],
+  [
+   "deutsch.os.bewerbung.gespraech",
+   "HAK-DEU-1-L1-L1",
+   "Bewerbungsgespräch"
+  ]
+ ],
+ "htl-deutsch": [
+  [
+   "deutsch.os.matura.aufgabe",
+   "HTL-DEU-4-S1-K3",
+   "spezifischen und offenen Schreibaufgaben"
+  ],
+  [
+   "deutsch.os.matura.aufgabe",
+   "HTL-DEU-5-S2-L1-L3",
+   "Vertiefung relevanter Textsorten"
+  ],
+  [
+   "deutsch.os.matura.zusammenfassung",
+   "HTL-DEU-1-L1-L3",
+   "Zusammenfassung"
+  ],
+  [
+   "deutsch.os.matura.leserbrief",
+   "HTL-DEU-3-S1-L1-L3",
+   "Leserbrief"
+  ],
+  [
+   "deutsch.os.matura.eroerterung",
+   "HTL-DEU-2-S2-L1-L3",
+   "einfache Erörterung"
+  ],
+  [
+   "deutsch.os.matura.eroerterung",
+   "HTL-DEU-3-S2-L1-L3",
+   "textbezogene Erörterung"
+  ],
+  [
+   "deutsch.os.matura.kommentar",
+   "HTL-DEU-3-S2-L1-L3",
+   "Kommentar"
+  ],
+  [
+   "deutsch.os.matura.offenerbrief",
+   "HTL-DEU-3-S1-L1-L3",
+   "Offener Brief"
+  ],
+  [
+   "deutsch.os.matura.empfehlung",
+   "HTL-DEU-4-S2-L1-L3",
+   "Empfehlung"
+  ],
+  [
+   "deutsch.os.matura.meinungsrede",
+   "HTL-DEU-4-S2-L1-L3",
+   "Meinungsrede"
+  ],
+  [
+   "deutsch.os.matura.textanalyse",
+   "HTL-DEU-4-S1-L1-L3",
+   "Textanalyse"
+  ],
+  [
+   "deutsch.os.matura.textinterpretation",
+   "HTL-DEU-4-S1-L1-L3",
+   "literarische Interpretation"
+  ],
+  [
+   "deutsch.os.matura.textinterpretation",
+   "HTL-DEU-4-S2-L1-L2",
+   "Verfahren der Textanalyse und Textinterpretation"
+  ],
+  [
+   "deutsch.os.argument.typen",
+   "HTL-DEU-3-S1-K1",
+   "sachbezogen argumentieren"
+  ],
+  [
+   "deutsch.os.argument.gegen",
+   "HTL-DEU-3-S2-L1-L1",
+   "Meinungen und Interessen vertreten"
+  ],
+  [
+   "deutsch.os.argument.fehlschluss",
+   "HTL-DEU-3-S1-K1",
+   "Redeabsichten erkennen"
+  ],
+  [
+   "deutsch.os.argument.gliederung",
+   "HTL-DEU-2-S1-L1-L3",
+   "einfache Formen des Argumentierens"
+  ],
+  [
+   "deutsch.os.stil.klang",
+   "HTL-DEU-3-S1-L1-L1",
+   "rhetorische Mittel"
+  ],
+  [
+   "deutsch.os.stil.klang",
+   "HTL-DEU-4-S2-K1",
+   "rhetorische Gestaltungsmittel"
+  ],
+  [
+   "deutsch.os.stil.satzfiguren",
+   "HTL-DEU-3-S1-L1-L1",
+   "rhetorische Mittel"
+  ],
+  [
+   "deutsch.os.stil.satzfiguren",
+   "HTL-DEU-4-S2-K1",
+   "rhetorische Gestaltungsmittel"
+  ],
+  [
+   "deutsch.os.stil.gedankenfiguren",
+   "HTL-DEU-3-S1-L1-L1",
+   "rhetorische Mittel"
+  ],
+  [
+   "deutsch.os.stil.gedankenfiguren",
+   "HTL-DEU-4-S2-K1",
+   "rhetorische Gestaltungsmittel"
+  ],
+  [
+   "deutsch.os.stil.bilder",
+   "HTL-DEU-5-S1-L1-L2",
+   "Symbole und Metaphern verstehen"
+  ],
+  [
+   "deutsch.os.stil.wirkung",
+   "HTL-DEU-4-S1-K3",
+   "in ihrer Wirkung bewerten"
+  ],
+  [
+   "deutsch.os.stil.satzbau",
+   "HTL-DEU-4-S1-K3",
+   "in ihrer Wirkung bewerten"
+  ],
+  [
+   "deutsch.os.stil.nominal",
+   "HTL-DEU-2-S1-L1-L3",
+   "Übungen zu Ausdruck und Stil"
+  ],
+  [
+   "deutsch.os.stil.ausdruck",
+   "HTL-DEU-2-S1-L1-L3",
+   "Übungen zu Ausdruck und Stil"
+  ],
+  [
+   "deutsch.os.stil.ethos",
+   "HTL-DEU-3-S1-L1-L1",
+   "argumentative und appellative Redeformen"
+  ],
+  [
+   "deutsch.os.stil.ethos",
+   "HTL-DEU-4-S2-L1-L1",
+   "Rhetorik"
+  ],
+  [
+   "deutsch.os.lyrik.metrum",
+   "HTL-DEU-3-S2-L1-L2",
+   "ästhetische Merkmale von Texten"
+  ],
+  [
+   "deutsch.os.lyrik.metrum",
+   "HTL-DEU-4-S1-K2",
+   "Korrelationen zwischen formalen Aspekten und Textinhalten"
+  ],
+  [
+   "deutsch.os.lyrik.vers",
+   "HTL-DEU-3-S2-L1-L2",
+   "ästhetische Merkmale von Texten"
+  ],
+  [
+   "deutsch.os.lyrik.vers",
+   "HTL-DEU-4-S1-K2",
+   "Korrelationen zwischen formalen Aspekten und Textinhalten"
+  ],
+  [
+   "deutsch.os.lyrik.formen",
+   "HTL-DEU-2-S2-L1-L2",
+   "literarische Textformen"
+  ],
+  [
+   "deutsch.os.lyrik.versmasse",
+   "HTL-DEU-2-S2-L1-L2",
+   "literarische Textformen"
+  ],
+  [
+   "deutsch.os.lyrik.versmasse",
+   "HTL-DEU-3-S2-L1-L2",
+   "ästhetische Merkmale von Texten"
+  ],
+  [
+   "deutsch.os.lyrik.analyse",
+   "HTL-DEU-4-S1-K2",
+   "Korrelationen zwischen formalen Aspekten und Textinhalten"
+  ],
+  [
+   "deutsch.os.lyrik.analyse",
+   "HTL-DEU-4-S2-L1-L2",
+   "Verfahren der Textanalyse und Textinterpretation"
+  ],
+  [
+   "deutsch.os.epik.erzaehler",
+   "HTL-DEU-1-K3",
+   "in Grundzügen formal und inhaltlich erschließen"
+  ],
+  [
+   "deutsch.os.epik.erzaehler",
+   "HTL-DEU-4-S1-K2",
+   "Korrelationen zwischen formalen Aspekten und Textinhalten"
+  ],
+  [
+   "deutsch.os.epik.zeit",
+   "HTL-DEU-4-S1-K2",
+   "Korrelationen zwischen formalen Aspekten und Textinhalten"
+  ],
+  [
+   "deutsch.os.epik.rede",
+   "HTL-DEU-4-S1-K2",
+   "Korrelationen zwischen formalen Aspekten und Textinhalten"
+  ],
+  [
+   "deutsch.os.epik.novelle",
+   "HTL-DEU-2-S2-L1-L2",
+   "literarische Textformen"
+  ],
+  [
+   "deutsch.os.epik.parabel",
+   "HTL-DEU-2-S2-L1-L2",
+   "literarische Textformen"
+  ],
+  [
+   "deutsch.os.drama.rede",
+   "HTL-DEU-3-S2-L1-L2",
+   "ästhetische Merkmale von Texten"
+  ],
+  [
+   "deutsch.os.drama.aufbau",
+   "HTL-DEU-3-S2-L1-L2",
+   "ästhetische Merkmale von Texten"
+  ],
+  [
+   "deutsch.os.drama.form",
+   "HTL-DEU-3-S2-L1-L2",
+   "ästhetische Merkmale von Texten"
+  ],
+  [
+   "deutsch.os.drama.form",
+   "HTL-DEU-4-S1-K2",
+   "Korrelationen zwischen formalen Aspekten und Textinhalten"
+  ],
+  [
+   "deutsch.os.drama.gattungen",
+   "HTL-DEU-2-S2-L1-L2",
+   "literarische Textformen"
+  ],
+  [
+   "deutsch.os.drama.episch",
+   "HTL-DEU-4-S1-K2",
+   "Korrelationen zwischen formalen Aspekten und Textinhalten"
+  ],
+  [
+   "deutsch.os.literatur.motiv",
+   "HTL-DEU-3-S1-K2",
+   "Bezüge zu anderen Texten"
+  ],
+  [
+   "deutsch.os.literatur.motiv",
+   "HTL-DEU-5-S1-L1-L2",
+   "Symbole und Metaphern verstehen"
+  ],
+  [
+   "deutsch.os.medien.journalismus",
+   "HTL-DEU-2-S2-L1-L2",
+   "Erfassen von Textintentionen"
+  ],
+  [
+   "deutsch.os.medien.journalismus",
+   "HTL-DEU-4-S2-K2",
+   "Textsorten und deren strukturelle Merkmale"
+  ],
+  [
+   "deutsch.os.medien.infografik",
+   "HTL-DEU-2-S2-K1",
+   "einfache Informationsgrafiken verbalisieren"
+  ],
+  [
+   "deutsch.os.medien.infografik",
+   "HTL-DEU-2-S2-L1-L3",
+   "Verbalisieren und Interpretieren nicht-linearer Texte"
+  ],
+  [
+   "deutsch.os.medien.werbung",
+   "HTL-DEU-2-S2-L1-L2",
+   "Erfassen von Textintentionen"
+  ],
+  [
+   "deutsch.os.medien.werbung",
+   "HTL-DEU-3-S2-K2",
+   "Texte, Bilder und Filme interpretieren"
+  ],
+  [
+   "deutsch.os.medien.manipulation",
+   "HTL-DEU-4-S2-K1",
+   "rhetorische Gestaltungsmittel und Redeabsichten"
+  ],
+  [
+   "deutsch.os.medien.manipulation",
+   "HTL-DEU-4-S2-K2",
+   "durch Institutionen und Medien gesteuerten sprachlichen Entwicklungen"
+  ],
+  [
+   "deutsch.os.medien.film",
+   "HTL-DEU-2-S1-K2",
+   "Bildern, Filmen und anderen Medien"
+  ],
+  [
+   "deutsch.os.medien.film",
+   "HTL-DEU-3-S2-K2",
+   "Filme interpretieren"
+  ],
+  [
+   "deutsch.os.wiss.quellen",
+   "HTL-DEU-2-S2-K2",
+   "im Internet recherchieren und Informationen kritisch auswerten"
+  ],
+  [
+   "deutsch.os.wiss.zitieren",
+   "HTL-DEU-3-S1-L1-L3",
+   "Einführung in wissenschaftliche Arbeitstechniken"
+  ],
+  [
+   "deutsch.os.wiss.zitieren",
+   "HTL-DEU-4-S2-L1-L3",
+   "Anwendung wissenschaftlicher Arbeitstechniken"
+  ],
+  [
+   "deutsch.os.wiss.verzeichnis",
+   "HTL-DEU-3-S1-L1-L3",
+   "Einführung in wissenschaftliche Arbeitstechniken"
+  ],
+  [
+   "deutsch.os.wiss.verzeichnis",
+   "HTL-DEU-4-S2-L1-L3",
+   "Anwendung wissenschaftlicher Arbeitstechniken"
+  ],
+  [
+   "deutsch.os.wiss.thema",
+   "HTL-DEU-3-S1-L1-L3",
+   "Einführung in wissenschaftliche Arbeitstechniken"
+  ],
+  [
+   "deutsch.os.wiss.thema",
+   "HTL-DEU-4-S2-K3",
+   "Methoden des wissenschaftlichen Schreibens"
+  ],
+  [
+   "deutsch.os.wiss.aufbau",
+   "HTL-DEU-4-S2-K3",
+   "Methoden des wissenschaftlichen Schreibens"
+  ],
+  [
+   "deutsch.os.wiss.aufbau",
+   "HTL-DEU-5-S1-L1-L3",
+   "Wissen schaffendes Schreiben"
+  ],
+  [
+   "deutsch.os.praesentieren.wirkung",
+   "HTL-DEU-1-L1-L1",
+   "Grundlagen der verbalen und nonverbalen Kommunikation"
+  ],
+  [
+   "deutsch.os.praesentieren.folien",
+   "HTL-DEU-2-S2-L1-L1",
+   "Grundlagen der Präsentation mit Medieneinsatz"
+  ],
+  [
+   "deutsch.os.praesentieren.folien",
+   "HTL-DEU-4-S1-L1-L1",
+   "Präsentationen unter Berücksichtigung unterschiedlicher Zielgruppen"
+  ],
+  [
+   "deutsch.os.praesentieren.moderieren",
+   "HTL-DEU-3-S2-K1",
+   "Gesprächen und Diskussionen beteiligen und sie leiten"
+  ],
+  [
+   "deutsch.os.praesentieren.moderieren",
+   "HTL-DEU-3-S2-L1-L1",
+   "Diskussionsführung"
+  ],
+  [
+   "deutsch.os.sprache.vierseiten",
+   "HTL-DEU-1-L1-L1",
+   "Grundlagen der verbalen und nonverbalen Kommunikation"
+  ],
+  [
+   "deutsch.os.sprache.axiome",
+   "HTL-DEU-1-L1-L1",
+   "Grundlagen der verbalen und nonverbalen Kommunikation"
+  ],
+  [
+   "deutsch.os.sprache.oesterreich",
+   "HTL-DEU-1-L1-L1",
+   "Darstellung von Sachverhalten in Standardsprache"
+  ],
+  [
+   "deutsch.os.sprache.oesterreich",
+   "HTL-DEU-2-S1-L1-L1",
+   "Sprachvarietäten"
+  ],
+  [
+   "deutsch.os.sprache.varietaeten",
+   "HTL-DEU-2-S1-L1-L1",
+   "Sprachvarietäten"
+  ],
+  [
+   "deutsch.os.sprache.varietaeten",
+   "HTL-DEU-3-S2-L1-L1",
+   "Sprachvarietäten"
+  ],
+  [
+   "deutsch.os.sprache.geschichte",
+   "HTL-DEU-3-S2-K3",
+   "dass Sprache Veränderungen unterliegt"
+  ],
+  [
+   "deutsch.os.sprache.wandel",
+   "HTL-DEU-3-S2-K3",
+   "dass Sprache Veränderungen unterliegt"
+  ],
+  [
+   "deutsch.os.sprache.pragmatik",
+   "HTL-DEU-3-S1-K1",
+   "Redeabsichten erkennen"
+  ],
+  [
+   "deutsch.os.sprache.gender",
+   "HTL-DEU-1-K5",
+   "gendergerecht"
+  ],
+  [
+   "deutsch.os.beistrich.zusatz",
+   "HTL-DEU-1-K5",
+   "Regeln der Orthografie und Zeichensetzung"
+  ],
+  [
+   "deutsch.os.beistrich.vergleich",
+   "HTL-DEU-1-K5",
+   "Regeln der Orthografie und Zeichensetzung"
+  ],
+  [
+   "deutsch.os.beistrich.strichpunkt",
+   "HTL-DEU-1-K5",
+   "Regeln der Orthografie und Zeichensetzung"
+  ],
+  [
+   "deutsch.os.grammatik.daswas",
+   "HTL-DEU-1-K5",
+   "grundlegende Sprachnormen"
+  ],
+  [
+   "deutsch.os.bewerbung.lebenslauf",
+   "HTL-DEU-1-L1-L3",
+   "Lebenslauf"
+  ],
+  [
+   "deutsch.os.bewerbung.lebenslauf",
+   "HTL-DEU-5-S1-L1-L3",
+   "Bewerbungsunterlagen"
+  ],
+  [
+   "deutsch.os.bewerbung.schreiben",
+   "HTL-DEU-1-L1-L3",
+   "Bewerbung"
+  ],
+  [
+   "deutsch.os.bewerbung.schreiben",
+   "HTL-DEU-5-S1-L1-L3",
+   "Bewerbungsunterlagen"
+  ],
+  [
+   "deutsch.os.argument.gliederung",
+   "HTL-DEU-2-S1-K4",
+   "einfache klärend-argumentative und kommunikative Texte planen"
+  ],
+  [
+   "deutsch.os.praesentieren.folien",
+   "HTL-DEU-4-S1-K1",
+   "mit Medienunterstützung präsentieren"
+  ],
+  [
+   "deutsch.os.praesentieren.folien",
+   "HTL-DEU-5-S2-L1-L1",
+   "Vertiefendes Präsentationstraining"
+  ],
+  [
+   "deutsch.os.praesentieren.wirkung",
+   "HTL-DEU-5-S1-K1",
+   "Gestaltungsmittel gesprochener Sprache"
+  ],
+  [
+   "deutsch.os.bewerbung.gespraech",
+   "HTL-DEU-5-S1-L1-L1",
+   "berufsbezogene Kommunikation, Bewerbung"
+  ]
+ ],
+ "vs-englisch": [
+  [
+   "englisch.vs.speaking.vorstellen",
+   "VS-ENG-1-B2-K2",
+   "interagieren"
+  ],
+  [
+   "englisch.vs.speaking.vorstellen",
+   "VS-ENG-2-B2-K2",
+   "sehr kurze Informationen geben"
+  ],
+  [
+   "englisch.vs.speaking.vorstellen",
+   "VS-ENG-3-B2-K2",
+   "kurze Informationen geben"
+  ],
+  [
+   "englisch.vs.speaking.vorstellen",
+   "VS-ENG-4-B2-K2",
+   "kurze Informationen geben"
+  ],
+  [
+   "englisch.vs.speaking.fragen",
+   "VS-ENG-2-B2-K3",
+   "kurze Dialoge führen"
+  ],
+  [
+   "englisch.vs.speaking.fragen",
+   "VS-ENG-3-B2-K3",
+   "kurze Dialoge führen"
+  ],
+  [
+   "englisch.vs.speaking.fragen",
+   "VS-ENG-4-B2-K3",
+   "kurze Gespräche führen"
+  ],
+  [
+   "englisch.vs.speaking.fragen",
+   "VS-ENG-2-B1-K1",
+   "Fragen, Aussagen, Anweisungen"
+  ],
+  [
+   "englisch.vs.speaking.fragen",
+   "VS-ENG-4-B1-K1",
+   "Fragen, Aussagen, Anweisungen"
+  ],
+  [
+   "englisch.vs.vocab.zahlen-farben",
+   "VS-ENG-1-B1-K1",
+   "Wörter und kurze Äußerungen"
+  ],
+  [
+   "englisch.vs.vocab.zahlen-farben",
+   "VS-ENG-1-B2-K1",
+   "Wörter und Phrasen"
+  ],
+  [
+   "englisch.vs.vocab.zahlen-farben",
+   "VS-ENG-2-B2-K1",
+   "Aussprache"
+  ],
+  [
+   "englisch.vs.vocab.familie",
+   "VS-ENG-1-B1-K1",
+   "zu vertrauten Themen"
+  ],
+  [
+   "englisch.vs.vocab.familie",
+   "VS-ENG-2-B2-K2",
+   "sehr kurze Informationen geben"
+  ],
+  [
+   "englisch.vs.vocab.schule",
+   "VS-ENG-1-B1-K1",
+   "Anweisungen"
+  ],
+  [
+   "englisch.vs.vocab.schule",
+   "VS-ENG-3-B1-K1",
+   "Anweisungen"
+  ],
+  [
+   "englisch.vs.vocab.tiere",
+   "VS-ENG-1-B2-K1",
+   "Wörter und Phrasen"
+  ],
+  [
+   "englisch.vs.vocab.tiere",
+   "VS-ENG-3-B2-K2",
+   "kurze Informationen geben"
+  ],
+  [
+   "englisch.vs.vocab.tiere",
+   "VS-ENG-3-B2-K1",
+   "Aussprache"
+  ],
+  [
+   "englisch.vs.vocab.zeit",
+   "VS-ENG-2-B4-K1",
+   "Unterschiede zwischen Laut- und Schriftbild"
+  ],
+  [
+   "englisch.vs.vocab.zeit",
+   "VS-ENG-3-B4-K1",
+   "Schriftbild bewusst wahrnehmen"
+  ],
+  [
+   "englisch.vs.listening.verstehen",
+   "VS-ENG-1-B1-K1",
+   "verstehen"
+  ],
+  [
+   "englisch.vs.listening.verstehen",
+   "VS-ENG-2-B1-K2",
+   "aus kurzen Hörtexten"
+  ],
+  [
+   "englisch.vs.listening.verstehen",
+   "VS-ENG-3-B1-K2",
+   "aus kurzen Hörtexten"
+  ],
+  [
+   "englisch.vs.listening.verstehen",
+   "VS-ENG-4-B1-K2",
+   "aus kurzen Hörtexten"
+  ],
+  [
+   "englisch.vs.reading.lesen",
+   "VS-ENG-2-B3-K1",
+   "kurze Wörter und Phrasen"
+  ],
+  [
+   "englisch.vs.reading.lesen",
+   "VS-ENG-3-B3-K2",
+   "kurze Texte in einfacher Sprache"
+  ],
+  [
+   "englisch.vs.reading.lesen",
+   "VS-ENG-4-B3-K1",
+   "kurze Sätze lesen und verstehen"
+  ],
+  [
+   "englisch.vs.reading.lesen",
+   "VS-ENG-4-B3-K2",
+   "wesentliche Informationen erfassen"
+  ],
+  [
+   "englisch.vs.reading.lesen",
+   "VS-ENG-3-B3-K1",
+   "ganzheitlich wiedererkennend lesen"
+  ],
+  [
+   "englisch.vs.writing.woerter",
+   "VS-ENG-2-B4-K1",
+   "nach Vorbild schreiben"
+  ],
+  [
+   "englisch.vs.writing.woerter",
+   "VS-ENG-3-B4-K1",
+   "nach Vorbild schreiben"
+  ],
+  [
+   "englisch.vs.writing.woerter",
+   "VS-ENG-3-B4-K2",
+   "mit einzelnen Wörtern ergänzen"
+  ],
+  [
+   "englisch.vs.writing.woerter",
+   "VS-ENG-4-B4-K1",
+   "sehr einfache Sätze nach Vorbild schreiben"
+  ],
+  [
+   "englisch.vs.writing.woerter",
+   "VS-ENG-4-B4-K2",
+   "mit einzelnen Wörtern und Phrasen ergänzen"
   ]
  ]
 }

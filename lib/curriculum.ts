@@ -1,4 +1,4 @@
-import { MATHE_THEMEN, MATHE_VORAUSSETZUNGEN } from "./mathe-themen";
+import { THEMEN, VORAUSSETZUNGEN } from "./themen";
 
 export type CurriculumSkill = {
   id: string;
@@ -9,6 +9,8 @@ export type CurriculumSkill = {
   gradeMax: number;
   /** Teilfähigkeit: the skill it belongs to (Fach › Thema › Fähigkeit › Teilfähigkeit). */
   parentId?: string;
+  /** only these school types (lib/school.ts names); none = every school type of these Schulstufen */
+  schoolTypes?: string[];
 };
 
 export const SUBJECTS = ["Mathematik", "Deutsch", "Englisch"] as const;
@@ -288,7 +290,7 @@ const SUBSKILLS: CurriculumSkill[] = [
  * All skills of the app. New skills go at the end: the seed numbers them in this order once (skills.sort),
  * so a fresh database and an existing one show topics in the same order.
  */
-export const CURRICULUM: CurriculumSkill[] = [...BASE, ...SUBSKILLS, ...MATHE_THEMEN];
+export const CURRICULUM: CurriculumSkill[] = [...BASE, ...SUBSKILLS, ...THEMEN];
 
 /** "rechnung,fehler" → "Direkte Rechnung, Fehler finden"; older exercises store an answer format. */
 export function worksheetTypeLabel(subject: string, taskType: string): string {
@@ -321,5 +323,5 @@ export const PREREQUISITES: [string, string][] = [
   ["deutsch.wortarten.nomen", "deutsch.wortarten.bestimmen"],
   ["englisch.tenses.presentperfect", "englisch.tenses.pastsimple"],
   ["englisch.tenses.pastsimple", "englisch.tenses.presentsimple"],
-  ...MATHE_VORAUSSETZUNGEN,
+  ...VORAUSSETZUNGEN,
 ];

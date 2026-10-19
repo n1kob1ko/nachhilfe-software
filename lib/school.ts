@@ -56,10 +56,10 @@ export function klassenLabel(type: string, klasse: number | null | undefined, op
   return `${klasse}. Klasse ${t.name}${stufe}`;
 }
 
-/** School types with identical class ranges (HTL and HAK) are shown together. */
-function groups() {
+/** School types with identical class ranges (HTL and HAK) are shown together; `only` = these school types. */
+function groups(only?: string[]) {
   const out: { short: string; offset: number; classes: number }[] = [];
-  for (const t of SCHOOL_TYPES) {
+  for (const t of SCHOOL_TYPES.filter((x) => !only?.length || only.includes(x.name))) {
     const same = out.find((g) => g.offset === t.offset && g.classes === t.classes);
     if (same) same.short += `/${t.short}`;
     else out.push({ short: t.short, offset: t.offset, classes: t.classes });
@@ -67,9 +67,12 @@ function groups() {
   return out;
 }
 
-/** Which classes of which school types a Schulstufe range covers, e.g. "MS 1–4 · AHS 1–5 · HTL/HAK 1". */
-export function rangeLabel(min: number, max: number): string {
-  const parts = groups().flatMap((t) => {
+/**
+ * Which classes of which school types a Schulstufe range covers, e.g. "MS 1–4 · AHS 1–5 · HTL/HAK 1".
+ * With the skill's school types (comma list, empty = all) only those: Finanzmathematik → "HAK 3–4".
+ */
+export function rangeLabel(min: number, max: number, schoolTypes = ""): string {
+  const parts = groups(schoolTypes.split(",").map((x) => x.trim()).filter(Boolean)).flatMap((t) => {
     const from = Math.max(1, min - t.offset);
     const to = Math.min(t.classes, max - t.offset);
     if (from > to) return [];
