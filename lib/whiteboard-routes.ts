@@ -5,6 +5,7 @@
 import * as repo from "./repo";
 import { getUnit } from "./units";
 import * as wb from "./whiteboard";
+import { checkBoardTask } from "./whiteboard-check";
 import { boardGrades, gradeBoardTask } from "./whiteboard-grades";
 import { notePage, presence, publish, stream } from "./whiteboard-hub";
 
@@ -36,9 +37,10 @@ type Body = {
   taskId?: number;
   taskIds?: unknown[];
   review?: string;
+  image?: string;
 };
 
-const TEACHER_OPS = new Set(["page.add", "page.duplicate", "page.delete", "page.rename", "page.select", "page.clear", "grade", "solution"]);
+const TEACHER_OPS = new Set(["page.add", "page.duplicate", "page.delete", "page.rename", "page.select", "page.clear", "grade", "solution", "check"]);
 /** What a device that may only look can still ask for. */
 const READ_OPS = new Set(["load", "grades"]);
 
@@ -108,6 +110,13 @@ export async function sync(board: wb.Board, viewer: Viewer, request: Request): P
       const grades = { [taskId]: r.grade };
       publish(board.id, { type: "grades", grades, from: clientId }, clientId);
       return json({ ok: true, grades });
+    }
+    case "check": {
+      // KI prüfen (lib/whiteboard-check.ts): a suggestion for the teacher, nothing is stored and nobody else sees it
+      const unit = getUnit(board.unit_id);
+      if (!unit || !viewer.teacherId) return json({ error: "Einheit nicht gefunden." }, 404);
+      const r = await checkBoardTask({ studentId: board.student_id, unitId: unit.id, teacherId: viewer.teacherId, taskId: Number(body.taskId), image: body.image });
+      return "error" in r ? json(r, 400) : json(r);
     }
     case "solution": {
       // only the teacher's device gets the solution; drawn on the board it is there for the student too

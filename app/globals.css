@@ -1242,3 +1242,50 @@ textarea.input {
   font-weight: 400;
   font-style: normal;
 }
+/* KI prüfen (components/whiteboard/TaskBar.tsx): the KI's suggestion under the grading row, teacher only */
+.wb-check {
+  max-width: min(640px, 100%);
+  gap: 10px;
+  padding: 8px 8px 8px 14px;
+}
+.wb-check-text {
+  min-width: 0;
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.wb-check-label {
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.wb-check-richtig {
+  color: var(--green);
+}
+.wb-check-teilweise {
+  color: var(--amber);
+}
+.wb-check-falsch {
+  color: var(--red);
+}
+.wb-check-read {
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.wb-check-take {
+  background: var(--accent);
+  color: #fff;
+}
+.wb-check-take:active {
+  background: var(--accent);
+  opacity: 0.85;
+}
+.wb-check-done {
+  flex-shrink: 0;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-3);
+}

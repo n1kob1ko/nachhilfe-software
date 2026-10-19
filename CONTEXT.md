@@ -184,9 +184,14 @@ _Avoid_: Navigator, Aufgabenliste, Reiter
 
 **Bewerten am Whiteboard**:
 Der Lehrer bewertet eine am Whiteboard gerechnete **Aufgabe** mit Richtig, Teilweise oder Falsch. Das ist eine
-Lehrerbewertung wie bei einer freien Antwort und zählt für den Lernstand; die KI liest das Whiteboard nicht
-(`lib/whiteboard-grades.ts`).
+Lehrerbewertung wie bei einer freien Antwort und zählt für den Lernstand (`lib/whiteboard-grades.ts`).
 _Avoid_: Korrigieren, Abhaken, Whiteboard-Prüfung
+
+**KI prüfen**:
+Auf Tipp des Lehrers liest die KI das Bild einer Aufgabe am Whiteboard mit der Handschrift darunter und schlägt
+Richtig, Teilweise oder Falsch mit Grund vor, oder sagt „nicht sicher“. Es zählt erst, wenn der Lehrer übernimmt
+(`lib/whiteboard-check.ts`).
+_Avoid_: KI-Korrektur, automatische Bewertung
 
 **Auswendig schreiben**:
 Eine Aufgabe, in der ein Text auswendig geschrieben wird: erst ist er zu lesen,

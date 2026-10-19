@@ -5,6 +5,7 @@ import {
   CaptureUpdateAction,
   Excalidraw,
   convertToExcalidrawElements,
+  exportToBlob,
   exportToSvg,
   getCommonBounds,
   reconcileElements,
@@ -13,10 +14,11 @@ import {
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as T from "@/lib/whiteboard-templates";
+import type { BoardCheck } from "@/lib/whiteboard-check";
 import type { BoardGrade } from "@/lib/whiteboard-grades";
 import { InsertPanel, type WorksheetForBoard } from "./InsertPanel";
 import { QuickTools, type QuickTool } from "./QuickTools";
-import { TaskBar, type BoardTask } from "./TaskBar";
+import { TaskBar, type BoardTask, type TaskCheck } from "./TaskBar";
 
 // Fonts come from this server (copied by scripts/copy-excalidraw-fonts.mjs), not from a CDN.
 if (typeof window !== "undefined") (window as unknown as { EXCALIDRAW_ASSET_PATH: string }).EXCALIDRAW_ASSET_PATH = "/excalidraw-assets/";
@@ -41,6 +43,8 @@ export type WhiteboardProps = {
   initialPageId?: number;
   worksheets?: WorksheetForBoard[];
   endUnit?: () => Promise<void>;
+  /** the teacher may let the KI check a task's handwriting (lib/whiteboard-check.ts) */
+  kiCheck?: boolean;
 };
 
 type Status = "verbinde" | "live" | "getrennt";
@@ -97,6 +101,8 @@ export default function Whiteboard(props: WhiteboardProps) {
   const [boardTasks, setBoardTasks] = useState<BoardTask[]>([]);
   const [currentTask, setCurrentTask] = useState<string | null>(null);
   const [grades, setGrades] = useState<Record<number, BoardGrade>>({});
+  /** KI prüfen: the KI's suggestion per task, on the teacher's device only and never stored */
+  const [checks, setChecks] = useState<Record<string, TaskCheck>>({});
 
   const clientId = useMemo(() => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Math.random())).slice(0, 36), []);
   const known = useRef(new Map<string, number>()); // element id -> version the server has
@@ -123,7 +129,8 @@ export default function Whiteboard(props: WhiteboardProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clientId, op, ...data }),
       });
-      if (!res.ok) throw new Error(String(res.status));
+      // the server's sentence when it gives one (KI prüfen shows it), else the status
+      if (!res.ok) throw new Error(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? String(res.status));
       return res.json();
     },
     [endpoint, query, clientId],
@@ -237,8 +244,10 @@ export default function Whiteboard(props: WhiteboardProps) {
     const left = panel && panel.width > 0 && panel.right - s.offsetLeft < s.width / 3 ? panel.right - s.offsetLeft + 16 : 48;
     // readable size: as wide as the content allows, never tiny and never bigger than 1:1
     const zoom = Math.max(0.6, Math.min(1, (s.width - left - 48) / Math.max(1, maxX - minX)));
-    // tasks get the task bar at the top: they start below it
-    const gap = tasksKey.current || found.some((e) => tagOf(e)) ? barGap.current : 32;
+    // tasks get the task bar at the top: they start below it (and below the KI's suggestion, when one is open)
+    const bar = wrapRef.current?.querySelector(".wb-tasks")?.getBoundingClientRect();
+    const barBottom = bar && bar.height > 0 ? bar.bottom - s.offsetTop + 16 : 0;
+    const gap = tasksKey.current || found.some((e) => tagOf(e)) ? Math.max(barGap.current, barBottom) : 32;
     a.updateScene({ appState: { zoom: { value: zoom as never }, scrollX: left / zoom - minX, scrollY: gap / zoom - minY } });
     return true;
   }, []);
@@ -510,6 +519,56 @@ export default function Whiteboard(props: WhiteboardProps) {
     [post],
   );
 
+  /**
+   * KI prüfen (lib/whiteboard-check.ts): a picture of the task and everything written over its area goes to the
+   * server, the KI's suggestion comes back. The solution beside the task is not in the picture.
+   */
+  const checkTask = useCallback(
+    async (key: string, taskId: number) => {
+      const a = apiRef.current;
+      const els = taskElements(key);
+      if (!a || !els.length) return;
+      const [minX, minY, maxX, maxY] = getCommonBounds(els);
+      const inside = a.getSceneElements().filter((e) => {
+        const [x1, y1, x2, y2] = getCommonBounds([e]);
+        return x2 > minX && x1 < maxX && y2 > minY && y1 < maxY;
+      });
+      // nothing written yet: no request, it would only cost
+      if (!inside.some((e) => !tagOf(e))) {
+        setChecks((c) => ({ ...c, [key]: { error: "Bei dieser Aufgabe steht noch nichts. Die KI prüft erst, wenn etwas geschrieben ist." } }));
+        return;
+      }
+      setChecks((c) => ({ ...c, [key]: { busy: true } }));
+      try {
+        // big enough for small exponents, not bigger than the KI reads anyway (long side 1568)
+        const blob = await exportToBlob({
+          elements: inside,
+          appState: { exportBackground: true, viewBackgroundColor: "#ffffff", exportWithDarkMode: false },
+          files: a.getFiles(),
+          mimeType: "image/png",
+          exportPadding: 16,
+          getDimensions: (w: number, h: number) => {
+            const scale = Math.min(2, 1568 / Math.max(w, h, 1));
+            return { width: Math.round(w * scale), height: Math.round(h * scale), scale };
+          },
+        });
+        const image = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result));
+          r.onerror = () => reject(r.error);
+          r.readAsDataURL(blob);
+        });
+        const r: { check?: BoardCheck } = await post("check", { taskId, image });
+        setChecks((c) => ({ ...c, [key]: r.check ? { result: r.check } : { error: "Die KI hat nicht geantwortet." } }));
+      } catch (e) {
+        setChecks((c) => ({ ...c, [key]: { error: e instanceof Error && !/^\d+$/.test(e.message) ? e.message : "Die KI-Prüfung hat nicht geklappt. Bitte noch einmal tippen." } }));
+      }
+      // the note under the bar is taller than the bar: the task moves down so its first line stays readable
+      requestAnimationFrame(() => requestAnimationFrame(() => currentRef.current === key && reveal(taskElements(key).map((e) => e.id))));
+    },
+    [post, taskElements, reveal],
+  );
+
   /** Shows the solution right of the task's area to calculate in, on both devices. */
   const showSolution = useCallback(
     async (key: string, taskId: number) => {
@@ -752,6 +811,8 @@ export default function Whiteboard(props: WhiteboardProps) {
             onGo={goToTask}
             onGrade={(taskId, review) => void gradeTask(taskId, review)}
             onSolution={(key, taskId) => void showSolution(key, taskId)}
+            checks={props.kiCheck ? checks : null}
+            onCheck={(key, taskId) => void checkTask(key, taskId)}
           />
         )}
         {teacher && panel && canWrite && (

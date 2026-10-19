@@ -9,7 +9,7 @@
  *   the assignment is made, in the running unit.
  * - A task the student already finished in the exercise gets the teacher's grade instead: the board is where it
  *   was worked out. A task whose solution the student looked at stays as it is.
- * - The KI never reads the board.
+ * - The KI never grades: „KI prüfen“ (lib/whiteboard-check.ts) only suggests, the teacher takes it over here.
  */
 import { documentAssignment } from "./autodoc";
 import { levelOf } from "./curriculum";

@@ -86,6 +86,7 @@ export type AIFunction =
   | "material"
   | "stundenplan"
   | "stoffzettel"
+  | "whiteboard"
   | "druckblatt"
   | "textkorrektur"
   | "textanalyse"
@@ -141,6 +142,10 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // Stoffzettel einer Schularbeit (lib/stoffzettel.ts): only on the teacher's click, after the tick „kein Name darauf“;
   // the answer is Art, Fach, Datum and Stoff, so the same sheet on the same day is not paid for twice
   stoffzettel: { label: "Stoffzettel lesen", area: "MATERIAL", tier: "standard", maxTokens: 3_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  // KI prüfen am Whiteboard (lib/whiteboard-check.ts): only on the teacher's click; the picture of one task with the
+  // handwriting under it and the task's solution; the answer is a suggestion the teacher confirms. Thinking on, because
+  // reading handwritten maths wrongly would mark a right answer wrong; the same picture is not paid for twice
+  whiteboard: { label: "Whiteboard prüfen", area: "MATERIAL", tier: "standard", maxTokens: 6_000, timeoutMs: 90_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 60 * MIN, cache: "aus" },
   // Blätter erstellen (Phase 5, Schritt 6): Wortlisten und Spalten für die drei Druckblätter.
   // Kleine, klar umrissene Listen — der schnelle Tarif reicht, der Standardtarif wäre Verschwendung.
   // Nur auf Klick der Lehrkraft, nichts wird von selbst übernommen; reuseMs 0, weil jede Anfrage
