@@ -57,6 +57,13 @@ zählt für die Abrechnung. Auf der Einheitenseite steht beides nebeneinander:
 „geplant 100 min · tatsächlich 85 min“.
 _Avoid_: geplante Dauer, Zeit, Länge
 
+**Abrechnung**:
+Die stattgefundenen **Einheiten** eines Monats, die neueste oben, auch im CSV. Löschen nimmt
+eine Einheit nach einer Rückfrage ganz aus der App: aus Abrechnung, Lernverlauf und Einheiten.
+Gelöste Aufgaben bleiben im Lernstand. Lehrer löschen nur ihre eigenen Einheiten, die
+Verwaltung alle.
+_Avoid_: Rechnung, Stundenliste, Honorarliste
+
 **Wochenplan**:
 Der Plan einer Kalenderwoche (Montag bis Sonntag, Europe/Vienna): welche
 **geplanten Einheiten** es gibt, mit Lehrer, Schüler, Raum und Zeit. Eine Woche

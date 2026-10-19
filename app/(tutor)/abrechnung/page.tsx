@@ -1,18 +1,27 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { BillingDelete } from "@/components/BillingDelete";
 import { PrintButton } from "@/components/PrintButton";
 import { Empty, PageHeader } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
-import { billingDay, resolveBilling, scopeToViewer, type BillingParams } from "@/lib/billing";
+import { billingDay, resolveBilling, scopeToViewer, type BillingParams, type DeleteRefusal } from "@/lib/billing";
 import { listStudents, listTeachers } from "@/lib/repo";
 
 export const metadata = { title: "Abrechnung" };
 
+const REFUSED: Record<DeleteRefusal, string> = {
+  weg: "Diese Einheit steht nicht mehr in der Abrechnung.",
+  fremd: "Nur der Lehrer der Einheit oder die Verwaltung kann sie löschen.",
+  laeuft: "Die Einheit läuft noch. Beende sie zuerst.",
+};
+
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
 
-export default async function Billing({ searchParams }: { searchParams: Promise<BillingParams> }) {
+export default async function Billing({ searchParams }: { searchParams: Promise<BillingParams & { geloescht?: string; fehler?: string }> }) {
   const viewer = await requireTeacher();
-  const sp = scopeToViewer(await searchParams, viewer);
+  const raw = await searchParams;
+  const sp = scopeToViewer(raw, viewer);
+  const refused = raw.fehler && Object.hasOwn(REFUSED, raw.fehler) ? REFUSED[raw.fehler as DeleteRefusal] : null;
   const b = resolveBilling(sp);
   const teachers = listTeachers();
   const students = listStudents();
@@ -88,6 +97,17 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
         <button className="btn btn-primary">Anzeigen</button>
       </form>
 
+      {raw.geloescht && (
+        <div role="status" className="no-print mb-6 flex items-center gap-2 rounded-2xl bg-green-wash px-4 py-3 text-[15px] font-medium text-green">
+          <CheckCircle2 size={18} aria-hidden /> Die Einheit ist gelöscht.
+        </div>
+      )}
+      {refused && (
+        <div role="alert" className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[15px]">
+          {refused}
+        </div>
+      )}
+
       {b.rows.length === 0 ? (
         <Empty
           title={`Keine Einheiten im ${b.label}`}
@@ -115,6 +135,9 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
                   <th className="px-3 py-3 font-semibold">Schüler</th>
                   <th className="px-3 py-3 font-semibold">Thema</th>
                   <th className="px-5 py-3 font-semibold">Beobachtungen</th>
+                  <th className="no-print relative w-12 py-3 pr-3">
+                    <span className="sr-only">Löschen</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line align-top">
@@ -139,6 +162,9 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
                       {r.topic && <div>{r.topic}</div>}
                     </td>
                     <td className="max-w-[44ch] px-5 py-3 whitespace-pre-line text-ink-2">{r.tutor_notes || "–"}</td>
+                    <td className="no-print py-2 pr-3 text-right">
+                      <BillingDelete id={r.id} wer={`von ${r.student_name} am ${billingDay(r.starts_at)}`} zurueck={query(b.monat)} />
+                    </td>
                   </tr>
                 ))}
               </tbody>

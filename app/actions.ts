@@ -7,6 +7,7 @@ import { aiEnabled, analyzeWithAI } from "@/lib/ai";
 import { RECOMMENDATION_NOTE, pct } from "@/lib/analysis";
 import { hasData, seedDemo } from "@/lib/demo";
 import { requireTeacher } from "@/lib/auth";
+import { deleteBillingEntry } from "@/lib/billing";
 import { noteActivity } from "@/lib/learning";
 import * as repo from "@/lib/repo";
 import { dropFilesIfUnused, studentImageFiles } from "@/lib/picture-story";
@@ -102,6 +103,19 @@ export async function deleteLessonAction(id: number, studentId: number) {
   repo.deleteLesson(id);
   revalidatePath("/", "layout");
   redirect(`/schueler/${studentId}?tab=lernverlauf`);
+}
+
+/** Abrechnung: deletes an Einheit for good, then back to the same month and filters. */
+export async function deleteBillingEntryAction(id: number, formData: FormData) {
+  const viewer = await requireTeacher();
+  const r = deleteBillingEntry(id, viewer);
+  const from = new URLSearchParams(str(formData, "zurueck"));
+  const back = new URLSearchParams();
+  for (const k of ["monat", "lehrer", "schueler"]) if (from.get(k)) back.set(k, from.get(k)!);
+  if (r.ok) back.set("geloescht", "1");
+  else back.set("fehler", r.error);
+  revalidatePath("/", "layout");
+  redirect(`/abrechnung?${back}`);
 }
 
 // ---------- homework & tests ----------
