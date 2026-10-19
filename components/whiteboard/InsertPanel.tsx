@@ -10,7 +10,7 @@ type Range = { xMin: number; xMax: number; yMin: number; yMax: number };
 type Props = {
   worksheets: WorksheetForBoard[];
   onClose: () => void;
-  onTasks: (title: string, tasks: TaskForBoard[]) => void;
+  onTasks: (title: string, tasks: TaskForBoard[], worksheetId: number) => void;
   onSolution: (t: TaskForBoard) => void;
   onText: (text: string, framed: boolean) => void;
   onFormula: (f: string) => void;
@@ -90,13 +90,13 @@ export function InsertPanel(p: Props) {
                         className="wb-chip wb-chip-primary"
                         disabled={!w.tasks.some((t) => picked.has(keyOf(w.id, t.number)))}
                         onClick={() => {
-                          p.onTasks(w.title, w.tasks.filter((t) => picked.has(keyOf(w.id, t.number))));
+                          p.onTasks(w.title, w.tasks.filter((t) => picked.has(keyOf(w.id, t.number))), w.id);
                           setPicked(new Set());
                         }}
                       >
                         Ausgewählte einfügen
                       </button>
-                      <button className="wb-chip" onClick={() => p.onTasks(w.title, w.tasks)}>
+                      <button className="wb-chip" onClick={() => p.onTasks(w.title, w.tasks, w.id)}>
                         Alle {w.tasks.length}
                       </button>
                     </div>

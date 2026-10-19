@@ -1,6 +1,7 @@
 import { categoryLabel, TASK_TYPES } from "@/lib/curriculum";
 import type { Task } from "@/lib/repo";
 import { ASPECT_SHORT, isAspect, OPEN_ASPECTS, severalNoted } from "@/lib/lesen";
+import { clozeParts } from "@/lib/math-format";
 import { mathAnswerText } from "@/lib/math-task";
 import { GAP, hintLabel, type TaskDraft } from "@/lib/tasks";
 import { genderTone, genusBadge } from "./genus";
@@ -30,11 +31,16 @@ export function GenusBadge({ genus, className = "" }: { genus: unknown; classNam
 
 
 function withGaps(text: string) {
-  const parts = text.split(GAP);
+  const parts = clozeParts(text, GAP);
   return parts.map((p, i) => (
     <span key={i}>
-      <MathText text={p} />
-      {i < parts.length - 1 && <span className="mx-1 inline-block w-20 border-b-2 border-ink-3 align-baseline" aria-label="Lücke" />}
+      <MathText text={p.text} />
+      {i < parts.length - 1 &&
+        (p.raised ? (
+          <span className="relative -top-[0.55em] mx-0.5 inline-block h-[0.9em] w-7 border-b-2 border-ink-3 align-baseline" aria-label="Lücke, Hochzahl" />
+        ) : (
+          <span className="mx-1 inline-block w-20 border-b-2 border-ink-3 align-baseline" aria-label="Lücke" />
+        ))}
     </span>
   ));
 }

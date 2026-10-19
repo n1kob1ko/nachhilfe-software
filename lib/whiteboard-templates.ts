@@ -6,11 +6,16 @@
  * turns them into real elements with Excalidraw's convertToExcalidrawElements. Backgrounds such as
  * grids and task texts are locked, so a student cannot move or erase them by accident.
  */
-import { splitFractions } from "./math-text";
+import { parseMath, type MathNode } from "./math-format";
 
 export type Skeleton = Record<string, unknown> & { type: string; x: number; y: number };
 export type Point = { x: number; y: number };
-export type TaskForBoard = { number: number; prompt: string; options: string[] | null; solution?: string };
+export type TaskForBoard = { number: number; prompt: string; options: string[] | null; solution?: string; taskId?: number };
+/**
+ * Which task of one insert an element belongs to (Excalidraw's customData, the only custom data the server keeps,
+ * lib/whiteboard.ts). The task bar on the board finds the tasks by it; `task` and `ws` let the teacher grade them.
+ */
+export type TaskTag = { n: number; set: string; task?: number; ws?: number };
 /** Width of a text in the board's font, measured in the browser. Without it fractions stay as "3/4". */
 export type Measure = (text: string, fontSize: number) => number;
 
@@ -47,12 +52,24 @@ const line = (x: number, y: number, dx: number, dy: number, extra: Partial<Skele
   ...extra,
 });
 
+/** Words of a line; a bracket stays on one line with what is in it ("(2a^2 · b)^3"). */
+function words(para: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  for (const w of para.split(/\s+/)) {
+    if (depth > 0 && out.length) out[out.length - 1] += ` ${w}`;
+    else out.push(w);
+    depth = Math.max(0, depth + (w.match(/\(/g)?.length ?? 0) - (w.match(/\)/g)?.length ?? 0));
+  }
+  return out;
+}
+
 /** Wraps long task texts so they stay readable on a tablet. */
 function wrap(s: string, max = 58): string {
   const out: string[] = [];
   for (const para of s.split("\n")) {
     let cur = "";
-    for (const word of para.split(/\s+/)) {
+    for (const word of words(para)) {
       if (cur && (cur + " " + word).length > max) {
         out.push(cur);
         cur = word;
@@ -66,49 +83,124 @@ function wrap(s: string, max = 58): string {
 const lines = (s: string) => s.split("\n").length;
 const LINE = 1.35; // Excalidraw's line height for Nunito
 
+const SUP_DIGITS: Record<string, string> = { "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹", "-": "⁻", "−": "⁻", "+": "⁺", n: "ⁿ", x: "ˣ", "(": "⁽", ")": "⁾" };
+
+/** Roots as text ("√16", "√(x+1)"), so a line only holds text, powers and fractions. */
+function flatRoots(nodes: MathNode[]): MathNode[] {
+  return nodes.flatMap((n): MathNode[] => {
+    if (typeof n === "string") return [n];
+    if (n.t === "sup") return [{ t: "sup", body: flatRoots(n.body) }];
+    if (n.t === "frac") return [{ ...n, num: flatRoots(n.num), den: flatRoots(n.den) }];
+    const body = flatRoots(n.body);
+    return body.length === 1 && typeof body[0] === "string" && /^[\p{L}\p{N}]+$/u.test(body[0]) ? [`√${body[0]}`] : ["√(", ...body, ")"];
+  });
+}
+
+/** One line as plain text: powers as small raised digits where there are such signs (x², 2⁻³), fractions with "/". */
+function plain(nodes: MathNode[]): string {
+  return nodes
+    .map((n) => {
+      if (typeof n === "string") return n;
+      if (n.t === "sup") {
+        const s = plain(n.body);
+        return [...s].every((c) => SUP_DIGITS[c]) ? [...s].map((c) => SUP_DIGITS[c]).join("") : `^(${s})`;
+      }
+      if (n.t === "root") return plain(flatRoots([n]));
+      const part = (x: MathNode[]) => (x.length === 1 && typeof x[0] === "string" && /^[\p{L}\p{N}]+$/u.test(x[0]) ? x[0] : `(${plain(x)})`);
+      return `${n.minus ? "−" : ""}${part(n.num)}/${part(n.den)}`;
+    })
+    .join("");
+}
+
+const hasMath = (nodes: MathNode[]) => nodes.some((n) => typeof n !== "string");
+const supSize = (fontSize: number) => Math.max(12, Math.round(fontSize * 0.62));
+
+/** Width of a run of text and powers in the board's font. */
+function widthOf(nodes: MathNode[], fontSize: number, measure: Measure): number {
+  let w = 0;
+  for (const n of nodes) {
+    if (typeof n === "string") w += measure(n, fontSize);
+    else if (n.t === "sup") w += widthOf(n.body, supSize(fontSize), measure) + 2;
+    else w += measure(plain([n]), fontSize);
+  }
+  return w;
+}
+
 /**
- * A wrapped text whose fractions ("3/4") are drawn as numerator, bar and denominator. Each line with a
- * fraction becomes separate text pieces placed side by side, measured with the board's font.
+ * Places a run of text and powers with its top at y; a power is a smaller text, raised to sit like x². Returns
+ * the width it takes.
+ */
+function placeRun(nodes: MathNode[], x: number, y: number, fontSize: number, measure: Measure, extra: Partial<Skeleton>, out: Skeleton[]): number {
+  let cx = x;
+  for (const n of nodes) {
+    if (typeof n === "string") {
+      if (n.trim()) out.push(text(n, cx, y, { fontSize, ...extra }));
+      cx += measure(n, fontSize);
+    } else if (n.t === "sup") {
+      // same top as the text: the smaller font's baseline then sits about 0.4 of a line higher
+      cx += placeRun(n.body, cx + 1, y - fontSize * 0.04, supSize(fontSize), measure, extra, out) + 2;
+    } else {
+      const t = plain([n]);
+      out.push(text(t, cx, y, { fontSize, ...extra }));
+      cx += measure(t, fontSize);
+    }
+  }
+  return cx - x;
+}
+
+/**
+ * A wrapped text with its maths set like on paper: fractions as numerator, bar and denominator, powers raised
+ * (x² instead of x^2), roots with √. Each line with maths becomes text pieces placed side by side, measured with
+ * the board's font. Without a measure (or without maths) it stays one text, powers as ² ³ where possible.
  */
 function mathText(s: string, x: number, y: number, fontSize: number, measure: Measure | undefined, extra: Partial<Skeleton> = {}): { elements: Skeleton[]; height: number } {
-  if (!measure || !splitFractions(s).some((p) => typeof p !== "string")) return { elements: [text(s, x, y, { fontSize, ...extra })], height: lines(s) * fontSize * LINE };
+  const rows = s.split("\n").map((r) => flatRoots(parseMath(r)));
+  if (!measure || !rows.some(hasMath)) {
+    const t = rows.map(plain).join("\n");
+    return { elements: [text(t, x, y, { fontSize, ...extra })], height: lines(t) * fontSize * LINE };
+  }
   const small = Math.round(fontSize * 0.78);
+  const tag = extra.customData ? { customData: extra.customData } : {};
   const elements: Skeleton[] = [];
   let top = y;
-  for (const row of s.split("\n")) {
-    const parts = splitFractions(row);
-    if (!parts.some((p) => typeof p !== "string")) {
-      if (row) elements.push(text(row, x, top, { fontSize, ...extra }));
+  for (const row of rows) {
+    if (!hasMath(row)) {
+      const t = plain(row);
+      if (t) elements.push(text(t, x, top, { fontSize, ...extra }));
       top += fontSize * LINE;
       continue;
     }
-    const height = small * LINE * 2 + 6;
+    const tall = row.some((n) => typeof n !== "string" && n.t === "frac");
+    const height = tall ? small * LINE * 2 + 6 : fontSize * LINE;
+    const mid = top + (height - fontSize * LINE) / 2;
     let cx = x;
-    for (const p of parts) {
-      if (typeof p === "string") {
-        if (p) elements.push(text(p, cx, top + (height - fontSize * LINE) / 2, { fontSize, ...extra }));
-        cx += measure(p, fontSize);
+    for (const n of row) {
+      if (typeof n === "string" || n.t !== "frac") {
+        cx += placeRun([n], cx, mid, fontSize, measure, extra, elements);
         continue;
       }
-      if (p.minus) {
-        elements.push(text("−", cx, top + (height - fontSize * LINE) / 2, { fontSize, ...extra }));
-        cx += measure("−", fontSize);
-      }
-      const wn = measure(p.num, small);
-      const wd = measure(p.den, small);
+      if (n.minus) cx += placeRun(["−"], cx, mid, fontSize, measure, extra, elements);
+      const wn = widthOf(n.num, small, measure);
+      const wd = widthOf(n.den, small, measure);
       const w = Math.max(wn, wd) + 10;
-      elements.push(text(p.num, cx + (w - wn) / 2, top, { fontSize: small, ...extra }));
-      elements.push(line(cx + 2, top + small * LINE + 3, w - 4, 0, { strokeColor: (extra.strokeColor as string) ?? INK, strokeWidth: 2, locked: extra.locked ?? false }));
-      elements.push(text(p.den, cx + (w - wd) / 2, top + small * LINE + 6, { fontSize: small, ...extra }));
+      placeRun(n.num, cx + (w - wn) / 2, top, small, measure, extra, elements);
+      elements.push(line(cx + 2, top + small * LINE + 3, w - 4, 0, { strokeColor: (extra.strokeColor as string) ?? INK, strokeWidth: 2, locked: extra.locked ?? false, ...tag }));
+      placeRun(n.den, cx + (w - wd) / 2, top + small * LINE + 6, small, measure, extra, elements);
       cx += w + 2;
     }
-    top += height + 4;
+    top += height + (tall ? 4 : 0);
   }
   return { elements, height: top - y };
 }
 
-/** One or more tasks, each with a dashed area underneath to calculate in. */
-export function tasksTemplate(tasks: TaskForBoard[], at: Point, opts: { title?: string; workHeight?: number; measure?: Measure } = {}): Skeleton[] {
+/** Width of the dashed area to calculate in; the task bar on the board uses it to fit a task on the screen. */
+export const WORK_WIDTH = 900;
+
+/**
+ * One or more tasks, each with a dashed area underneath to calculate in. With `set` every piece of a task is
+ * tagged (TaskTag), so the board can list the tasks, jump to one and let the teacher grade it.
+ */
+export function tasksTemplate(tasks: TaskForBoard[], at: Point, opts: { title?: string; workHeight?: number; measure?: Measure; set?: string; worksheetId?: number } = {}): Skeleton[] {
   const out: Skeleton[] = [];
   let y = at.y;
   if (opts.title) {
@@ -116,16 +208,19 @@ export function tasksTemplate(tasks: TaskForBoard[], at: Point, opts: { title?: 
     y += 40;
   }
   for (const t of tasks) {
-    const prompt = mathText(wrap(`${t.number}) ${t.prompt}`), at.x, y, 30, opts.measure, { locked: true });
+    const tag: TaskTag | null = opts.set ? { n: t.number, set: opts.set, ...(t.taskId ? { task: t.taskId } : {}), ...(opts.worksheetId ? { ws: opts.worksheetId } : {}) } : null;
+    const extra: Partial<Skeleton> = { locked: true, ...(tag ? { customData: { aufgabe: tag } } : {}) };
+    const prompt = mathText(wrap(`${t.number}) ${t.prompt}`), at.x, y, 30, opts.measure, extra);
     out.push(...prompt.elements);
     y += prompt.height + 10;
     if (t.options?.length) {
-      const options = mathText(t.options.map((o, i) => `${String.fromCharCode(65 + i)})  ${o}`).join("\n"), at.x + 24, y, 26, opts.measure, { locked: true });
+      const options = mathText(t.options.map((o, i) => `${String.fromCharCode(65 + i)})  ${o}`).join("\n"), at.x + 24, y, 26, opts.measure, extra);
       out.push(...options.elements);
       y += options.height + 10;
     }
-    const h = opts.workHeight ?? 220;
-    out.push({ type: "rectangle", x: at.x, y, width: 900, height: h, strokeColor: SOFT, strokeStyle: "dashed", strokeWidth: 1, roughness: 0, backgroundColor: "transparent", locked: true, roundness: null });
+    // room for a few lines of working: maths is written on the board, not typed
+    const h = opts.workHeight ?? 300;
+    out.push({ type: "rectangle", x: at.x, y, width: WORK_WIDTH, height: h, strokeColor: SOFT, strokeStyle: "dashed", strokeWidth: 1, roughness: 0, backgroundColor: "transparent", roundness: null, ...extra });
     y += h + 50;
   }
   return out;

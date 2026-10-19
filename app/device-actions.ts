@@ -15,7 +15,7 @@ import * as repo from "@/lib/repo";
 import { submitAnswer, type SubmitInput } from "@/lib/service";
 import { activeUnitForTeacher, canManageUnit, getUnit } from "@/lib/units";
 import { ensureBoardForUnit, queueInsert } from "@/lib/whiteboard";
-import { boardTask } from "@/lib/whiteboard-content";
+import { boardTaskForStudent } from "@/lib/whiteboard-content";
 
 // ---------- tablet side ----------
 
@@ -184,7 +184,7 @@ export async function currentTaskToBoardAction(unitId: number) {
     const tasks = repo.listTasks(a.worksheet_id);
     const attempts = repo.listAttemptsForAssignment(a.id);
     const open = tasks.find((x) => !attempts.some((y) => y.task_id === x.id && y.final)) ?? tasks.at(-1);
-    if (open) queueInsert(board.id, { kind: "tasks", title: a.title, tasks: [boardTask(open)] });
+    if (open) queueInsert(board.id, { kind: "tasks", title: a.title, worksheetId: a.worksheet_id, tasks: [boardTaskForStudent(open)] });
   }
   showOnTablet(unit, { kind: "tafel" });
 }

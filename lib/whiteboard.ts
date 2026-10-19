@@ -29,7 +29,7 @@ export type PageInfo = { id: number; position: number; title: string; updated_at
 /** An Excalidraw element as stored here. Only the fields the merge needs are typed. */
 export type El = { id: string; type: string; version: number; versionNonce: number; isDeleted?: boolean; index?: string | null; [k: string]: unknown };
 export type InsertPayload =
-  | { kind: "tasks"; title: string; tasks: { number: number; prompt: string; options: string[] | null; solution?: string }[] }
+  | { kind: "tasks"; title: string; worksheetId?: number; tasks: { number: number; prompt: string; options: string[] | null; taskId?: number }[] }
   | { kind: "text"; text: string };
 
 const iso = () => new Date().toISOString();
@@ -226,7 +226,26 @@ export function sanitize(raw: unknown): El | null {
   const clean: El = { ...e };
   delete clean.link; // no clickable links on the board
   delete clean.customData;
+  const tag = taskTag(e.customData);
+  if (tag) clean.customData = { aufgabe: tag };
   return clean;
+}
+
+const positive = (x: unknown) => (Number.isInteger(x) && (x as number) > 0 && (x as number) < 1e9 ? (x as number) : undefined);
+
+/**
+ * The only custom data kept on an element: which task of an insert it belongs to (TaskTag in
+ * lib/whiteboard-templates.ts). Anything else a browser sends there is dropped.
+ */
+export function taskTag(raw: unknown): { n: number; set: string; task?: number; ws?: number } | null {
+  const a = raw && typeof raw === "object" ? (raw as { aufgabe?: unknown }).aufgabe : null;
+  if (!a || typeof a !== "object") return null;
+  const t = a as Record<string, unknown>;
+  const n = positive(t.n);
+  if (!n || typeof t.set !== "string" || !/^[\w-]{1,40}$/.test(t.set)) return null;
+  const task = positive(t.task);
+  const ws = positive(t.ws);
+  return { n, set: t.set, ...(task ? { task } : {}), ...(ws ? { ws } : {}) };
 }
 
 const wins = (inc: El, cur: El | undefined) => !cur || inc.version > cur.version || (inc.version === cur.version && inc.versionNonce < cur.versionNonce);
@@ -269,8 +288,11 @@ export function pagePreview(pageId: number): string | null {
 export type PendingInsert = { id: number; page_id: number | null; payload: InsertPayload };
 
 /** Queues content for a board and tells the open devices; the first one to claim it draws it. */
-export function queueInsert(boardId: number, payload: InsertPayload): number {
+export function queueInsert(boardId: number, raw: InsertPayload): number {
   const board = getBoard(boardId)!;
+  // the student's device may draw it: only what goes on the board, never a solution
+  const payload: InsertPayload =
+    raw.kind === "tasks" ? { ...raw, tasks: raw.tasks.map((t) => ({ number: t.number, prompt: t.prompt, options: t.options, ...(t.taskId ? { taskId: t.taskId } : {}) })) } : raw;
   const id = Number(
     db()
       .prepare("INSERT INTO whiteboard_inserts (board_id, page_id, payload, created_at) VALUES (?, ?, ?, ?)")

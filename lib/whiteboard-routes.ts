@@ -2,11 +2,13 @@
  * Request handling shared by the teacher routes (/tafel/[unitId]/…) and the student routes
  * (/lernen/[token]/tafel/…). The routes only work out who is asking; what each role may do is decided here.
  */
+import * as repo from "./repo";
 import { getUnit } from "./units";
 import * as wb from "./whiteboard";
+import { boardGrades, gradeBoardTask } from "./whiteboard-grades";
 import { notePage, presence, publish, stream } from "./whiteboard-hub";
 
-export type Viewer = { role: wb.Role; name: string; canWrite: boolean };
+export type Viewer = { role: wb.Role; name: string; canWrite: boolean; teacherId?: number };
 
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
 
@@ -31,9 +33,14 @@ type Body = {
   pointer?: { x: number; y: number };
   button?: "up" | "down";
   ids?: unknown[];
+  taskId?: number;
+  taskIds?: unknown[];
+  review?: string;
 };
 
-const TEACHER_OPS = new Set(["page.add", "page.duplicate", "page.delete", "page.rename", "page.select", "page.clear"]);
+const TEACHER_OPS = new Set(["page.add", "page.duplicate", "page.delete", "page.rename", "page.select", "page.clear", "grade", "solution"]);
+/** What a device that may only look can still ask for. */
+const READ_OPS = new Set(["load", "grades"]);
 
 export async function sync(board: wb.Board, viewer: Viewer, request: Request): Promise<Response> {
   const raw = await request.text();
@@ -50,7 +57,7 @@ export async function sync(board: wb.Board, viewer: Viewer, request: Request): P
   const pageOk = Number.isInteger(pageId) && wb.pageBelongsTo(pageId, board.id);
 
   if (TEACHER_OPS.has(op) && viewer.role !== "lehrer") return json({ error: "Nicht erlaubt." }, 403);
-  if (op !== "load" && !viewer.canWrite) return json({ error: "Nur ansehen." }, 403);
+  if (!READ_OPS.has(op) && !viewer.canWrite) return json({ error: "Nur ansehen." }, 403);
 
   switch (op) {
     case "load": {
@@ -86,6 +93,28 @@ export async function sync(board: wb.Board, viewer: Viewer, request: Request): P
     }
     case "claim":
       return json({ ok: wb.claimInsert(board.id, Number(body.insertId)) });
+    case "grades": {
+      // how the tasks on the board stand (the task bar): the teacher's grade or the checked answer
+      const ids = Array.isArray(body.taskIds) ? body.taskIds.map(Number) : [];
+      return json({ grades: boardGrades(board.student_id, ids) });
+    }
+    case "grade": {
+      // Bewerten am Whiteboard (lib/whiteboard-grades.ts): richtig, teilweise or falsch for one task
+      const unit = getUnit(board.unit_id);
+      if (!unit || !viewer.teacherId) return json({ error: "Einheit nicht gefunden." }, 404);
+      const taskId = Number(body.taskId);
+      const r = gradeBoardTask({ studentId: board.student_id, unitId: unit.id, teacherId: viewer.teacherId, taskId, review: body.review });
+      if ("error" in r) return json(r, 400);
+      const grades = { [taskId]: r.grade };
+      publish(board.id, { type: "grades", grades, from: clientId }, clientId);
+      return json({ ok: true, grades });
+    }
+    case "solution": {
+      // only the teacher's device gets the solution; drawn on the board it is there for the student too
+      const task = repo.getTask(Number(body.taskId));
+      if (!task) return json({ error: "Diese Aufgabe gibt es nicht mehr." }, 404);
+      return json({ number: task.position, solution: task.solution });
+    }
     case "page.add":
     case "page.duplicate": {
       const id = op === "page.add" ? wb.addPage(board.id, { title: body.title, afterPageId: Number(body.afterPageId) || undefined }) : pageOk ? wb.duplicatePage(board.id, pageId) : null;

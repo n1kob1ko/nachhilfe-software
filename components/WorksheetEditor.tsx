@@ -170,10 +170,11 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
                   </button>
                 )}
                 {t.type !== "memorize" && (
-                  <label className="flex items-center gap-1 text-[13px] text-ink-2">
-                    <span className="sr-only">Schwierigkeit ändern</span>
+                  <label className="flex items-center gap-1.5 text-[13px] text-ink-2">
+                    {/* visible: a lone „mittel“ said nothing (niko, 19.10.2026) */}
+                    <span>Schwierigkeit</span>
                     <select
-                      className="input h-8 py-0 text-[13px]"
+                      className="input input-sm"
                       value={(DIFFICULTIES as readonly string[]).includes(t.difficulty) ? t.difficulty : ""}
                       disabled={pending}
                       onChange={(e) => run(() => regenerateTaskAction(t.id, e.target.value as Difficulty))}

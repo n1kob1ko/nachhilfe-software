@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import { GAP } from "@/lib/tasks";
-import { parseMath, textBlocks, type MathNode } from "@/lib/math-format";
+import { clozeParts, parseMath, textBlocks, type MathNode } from "@/lib/math-format";
 
 function nodes(list: MathNode[]): ReactNode {
   return list.map((n, i) => {
@@ -76,22 +76,20 @@ export function RichText({
 }) {
   let gap = 0;
   const withGaps = (s: string) =>
-    s.split(GAP).map((part, i, all) => {
+    clozeParts(s, GAP).map((part, i, all) => {
       const g = i < all.length - 1 ? gap++ : -1;
       const fill = g >= 0 ? gapAnswers?.[g] : null;
+      const gapEl =
+        fill && (typeof fill === "string" || fill.text || fill.correct) ? (
+          <FilledGap fill={fill} />
+        ) : (
+          <span className="ab-gap" style={{ width: `${part.raised ? Math.min(gapsMm[g] ?? 6, 7) : (gapsMm[g] ?? 32)}mm` }} aria-label="Lücke" />
+        );
       return (
         <Fragment key={i}>
-          <MathLine text={part} />
-          {g >= 0 &&
-            (fill && (typeof fill === "string" || fill.text || fill.correct) ? (
-              <FilledGap fill={fill} />
-            ) : (
-              <span
-                className="ab-gap"
-                style={{ width: `${gapsMm[g] ?? 32}mm` }}
-                aria-label="Lücke"
-              />
-            ))}
+          <MathLine text={part.text} />
+          {/* a gap in an exponent ("3^___") is written raised, like the power */}
+          {g >= 0 && (part.raised ? <sup className="ab-sup">{gapEl}</sup> : gapEl)}
         </Fragment>
       );
     });

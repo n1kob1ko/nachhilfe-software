@@ -14,7 +14,7 @@ export async function teacherAccess(unitIdRaw: string): Promise<Access> {
   const board = unit ? ensureBoardForUnit(unit.id) : null;
   if (!unit || !board) return { error: new Response("Nicht gefunden.", { status: 404 }) };
   // colleagues may look at the board; the unit's teacher and the admin may work on it
-  return { board, viewer: { role: "lehrer", name: teacher.name, canWrite: canManageUnit(teacher, unit) } };
+  return { board, viewer: { role: "lehrer", name: teacher.name, canWrite: canManageUnit(teacher, unit), teacherId: teacher.id } };
 }
 
 export function studentAccess(token: string, unitIdRaw: string | null): Access {

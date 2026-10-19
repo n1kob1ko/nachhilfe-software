@@ -176,6 +176,18 @@ werden genau wie sonst gespeichert. Im Code `assignments.mode = 'schnell'`
 (`lib/quick-round.ts`).
 _Avoid_: Quiz, Blitzrunde, Schnelltest, Microlearning
 
+**Aufgabenleiste**:
+Die Leiste „Aufgabe 1 2 3 …“ oben am Whiteboard, sobald Aufgaben einer **Übung** darauf stehen. Ein Tipp
+springt zur Aufgabe, die Aufgabe auf dem Bildschirm ist markiert, bewertete tragen ✓, ½ oder ✗
+([docs/mathe-whiteboard.md](docs/mathe-whiteboard.md)).
+_Avoid_: Navigator, Aufgabenliste, Reiter
+
+**Bewerten am Whiteboard**:
+Der Lehrer bewertet eine am Whiteboard gerechnete **Aufgabe** mit Richtig, Teilweise oder Falsch. Das ist eine
+Lehrerbewertung wie bei einer freien Antwort und zählt für den Lernstand; die KI liest das Whiteboard nicht
+(`lib/whiteboard-grades.ts`).
+_Avoid_: Korrigieren, Abhaken, Whiteboard-Prüfung
+
 **Auswendig schreiben**:
 Eine Aufgabe, in der ein Text auswendig geschrieben wird: erst ist er zu lesen,
 dann verschwinden nach und nach Wörter und Buchstaben, bis das Feld leer ist; die
