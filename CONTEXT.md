@@ -39,6 +39,14 @@ Inaktivität automatisch. Ihre **Dauer** ist die echte Zeit von Start bis Ende.
 Abgerechnet werden nur Einheiten, nie das selbstständige Üben.
 _Avoid_: Stunde, Lektion, Sitzung, Termin
 
+**Einschätzung**:
+Wie der Schüler sich in einer **Einheit** getan hat, beim Beenden aus den Daten
+geschrieben (`lib/einschaetzung.ts`, ohne KI): Gesamteindruck 1–5, Sätze mit
+Begründung, Vergleich mit den letzten Einheiten, dazu Verständnis, Konzentration
+und Mitarbeit. Erst ab 4 Aufgaben am Gerät gibt es Werte. Damit ist die Einheit
+dokumentiert, ohne dass der Lehrer etwas einträgt; was er ändert, bleibt.
+_Avoid_: Bewertung, Note, Beurteilung
+
 **geplante Einheit**:
 Ein Platz im Wochenplan: wer (Lehrer, Schüler), wo (Raum), an welchem Wochentag,
 zu welcher Startzeit und mit welcher **geplanten Dauer**. Sie wird erst wirklich,

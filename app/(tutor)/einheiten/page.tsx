@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { UnitStatusPill } from "@/components/UnitControl";
-import { Empty, PageHeader, Pill } from "@/components/ui";
+import { Empty, PageHeader } from "@/components/ui";
 import { billingDay, resolveMonth } from "@/lib/billing";
 import { listStudents, listTeachers, getLessonForUnit } from "@/lib/repo";
 import { listUnits, unitDurationMs, type UnitStatus } from "@/lib/units";
@@ -129,13 +129,8 @@ export default async function Units({ searchParams }: { searchParams: Promise<{ 
                           <span className="text-ink-3">–</span>
                         ) : (
                           <Link href={`/einheiten/${u.id}`} className="link text-[13px] font-medium">
-                            {u.status === "gestartet" ? "Öffnen" : lesson?.reviewed_at ? "Ansehen" : "Abschließen"}
+                            {u.status === "gestartet" ? "Öffnen" : "Ansehen"}
                           </Link>
-                        )}
-                        {lesson && !lesson.reviewed_at && u.status === "beendet" && (
-                          <span className="ml-2">
-                            <Pill tone="amber">offen</Pill>
-                          </span>
                         )}
                       </td>
                     </tr>

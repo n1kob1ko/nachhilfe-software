@@ -568,7 +568,7 @@ export default function Whiteboard(props: WhiteboardProps) {
           {teacher && props.endUnit && running && canWrite && (
             <button
               className="wb-btn wb-btn-wide wb-btn-primary"
-              title="Einheit beenden und Dokumentation abschließen"
+              title="Einheit beenden, die Dokumentation schreibt sich selbst"
               onClick={async () => {
                 await flush();
                 await uploadPreview();

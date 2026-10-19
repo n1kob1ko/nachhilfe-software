@@ -167,7 +167,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
   const recentIds = [...new Set(myUnits.map((u) => u.student_id))].filter((id) => byId.has(id));
   const ordered = [...new Set([...(fokus ? [fokus.studentId] : []), ...slots.map((p) => p.student_id), ...todays.map((l) => l.student_id), ...recentIds, ...students.map((s) => s.id)])].map((id) => byId.get(id)!);
 
-  // to-dos: exams ahead (14/7/3 days, Mehr › Lehrplan), documentation not yet completed, fresh results, homework due
+  // to-dos: exams ahead (14/7/3 days, Mehr › Lehrplan), fresh results, homework due (a unit documents itself, lib/einschaetzung.ts)
   const todos: TodoItem[] = [];
   for (const e of examReminders(today, { teacherId: teacher.id })) {
     todos.push({
@@ -182,12 +182,6 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
       ),
       when: formatDate(e.date, { day: "numeric", month: "short" }),
     });
-  }
-  for (const u of myUnits.filter((u) => u.status === "beendet").slice(0, 30)) {
-    const lesson = repo.getLessonForUnit(u.id);
-    if (lesson && !lesson.reviewed_at) {
-      todos.push({ key: `u${u.id}`, href: `/einheiten/${u.id}`, icon: ClipboardPen, text: <>Dokumentation der Einheit mit <b>{u.student_name}</b> abschließen</>, when: formatDate(u.started_at, { day: "numeric", month: "short" }) });
-    }
   }
   for (const r of repo.recentActivity(20).filter((x) => now.getTime() - parseLocal(x.completed_at).getTime() < 48 * 3600_000)) {
     todos.push({

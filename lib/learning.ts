@@ -10,6 +10,7 @@ import { onUnitEnd } from "./ai/realtime";
 import { WEAK, STRONG, parseTime } from "./analysis";
 import { localStamp } from "./autodoc";
 import { db } from "./db";
+import { dokumentiereAutomatisch } from "./einschaetzung";
 import * as repo from "./repo";
 import { analyzeStudent } from "./service";
 import { textsForUnit } from "./texts";
@@ -344,8 +345,8 @@ export function expectedSubject(studentId: number, at = Date.now()): string {
 }
 
 /**
- * Ends a unit and writes its Lern-Dokumentation. Works without any teacher input; the teacher
- * completes it afterwards on the unit page. Returns the lesson id.
+ * Ends a unit and writes its Lern-Dokumentation. Works without any teacher input (lib/einschaetzung.ts
+ * fills the fields the teacher used to fill); the teacher may change it afterwards. Returns the lesson id.
  */
 export function endUnit(unitId: number, opts: FinishOptions = {}): number | null {
   const at = opts.at ?? Date.now();
@@ -362,6 +363,7 @@ export function writeLearningDoc(unit: UnitView, at = Date.now()): number {
   const student = repo.getStudent(unit.student_id)!;
   const r = buildUnitReport(unit, at);
   const existing = repo.getLessonForUnit(unit.id) ?? plannedLessonFor(unit);
+  const autoActivities = activitiesText(r);
   const lessonId = repo.saveLesson(
     {
       student_id: unit.student_id,
@@ -374,7 +376,7 @@ export function writeLearningDoc(unit: UnitView, at = Date.now()): number {
       subject: r.subjects[0] ?? r.texts?.find((t) => t.subject)?.subject ?? existing?.subject ?? student.subjects[0] ?? "",
       topic: existing?.topic || r.topics.join(", ") || [...new Set((r.texts ?? []).map((t) => t.topic).filter(Boolean))].join(", "),
       status: "abgeschlossen",
-      activities: existing?.activities || activitiesText(r),
+      activities: existing?.activities || autoActivities,
       mistakes: existing?.mistakes ?? "",
       understanding: existing?.understanding ?? null,
       tutor_notes: existing?.tutor_notes ?? "",
@@ -386,6 +388,8 @@ export function writeLearningDoc(unit: UnitView, at = Date.now()): number {
     existing?.id,
   );
   snapshotSkills(unit, r, at);
+  // the teacher does not have to fill anything in: scales, Positives, Schwierigkeiten and the next goal from the data
+  dokumentiereAutomatisch(lessonId, r, at, existing?.activities ? {} : { activities: autoActivities });
   const subject = repo.getLesson(lessonId)?.subject;
   if (subject) db().prepare("UPDATE units SET subject = ? WHERE id = ?").run(subject, unit.id);
   return lessonId;
