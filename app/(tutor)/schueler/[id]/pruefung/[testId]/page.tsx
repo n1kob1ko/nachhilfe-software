@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarClock, Plus } from "lucide-react";
+import { CalendarClock, FileText, Plus } from "lucide-react";
 import { setExamSkillsAction } from "@/app/curriculum-actions";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, Reveal, SectionTitle, StatusChip, formatDate } from "@/components/ui";
@@ -39,12 +39,17 @@ export default async function ExamPrepPage({ params }: { params: Promise<{ id: s
         }
       />
       <div className="grid max-w-[920px] grid-cols-[minmax(0,1fr)] gap-10">
-        {(test.topics?.length ?? 0) > 0 && (
+        {((test.topics?.length ?? 0) > 0 || test.material_id) && (
           <p className="flex flex-wrap items-center gap-1.5 text-[15px]">
-            <span className="font-medium text-ink-2">Stoff:</span>
-            {test.topics!.map((t) => (
+            {(test.topics?.length ?? 0) > 0 && <span className="font-medium text-ink-2">Stoff:</span>}
+            {test.topics?.map((t) => (
               <Pill key={t}>{t}</Pill>
             ))}
+            {test.material_id && (
+              <a href={`/material/${test.material_id}/datei`} target="_blank" rel="noreferrer" className="ml-1 inline-flex items-center gap-1 text-[14px] font-semibold text-accent hover:underline">
+                <FileText size={14} aria-hidden /> Stoffzettel
+              </a>
+            )}
           </p>
         )}
 

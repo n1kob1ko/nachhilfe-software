@@ -85,6 +85,7 @@ export type AIFunction =
   | "notiz"
   | "material"
   | "stundenplan"
+  | "stoffzettel"
   | "druckblatt"
   | "textkorrektur"
   | "textanalyse"
@@ -137,6 +138,9 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // Stundenplan-Fotos (lib/planung/stundenplan-foto.ts): only on the admin's click, after the tick that first names
   // may go to the KI; the answer holds first names, so it is never kept for reuse
   stundenplan: { label: "Stundenplan-Foto lesen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
+  // Stoffzettel einer Schularbeit (lib/stoffzettel.ts): only on the teacher's click, after the tick „kein Name darauf“;
+  // the answer is Art, Fach, Datum and Stoff, so the same sheet on the same day is not paid for twice
+  stoffzettel: { label: "Stoffzettel lesen", area: "MATERIAL", tier: "standard", maxTokens: 3_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // Blätter erstellen (Phase 5, Schritt 6): Wortlisten und Spalten für die drei Druckblätter.
   // Kleine, klar umrissene Listen — der schnelle Tarif reicht, der Standardtarif wäre Verschwendung.
   // Nur auf Klick der Lehrkraft, nichts wird von selbst übernommen; reuseMs 0, weil jede Anfrage

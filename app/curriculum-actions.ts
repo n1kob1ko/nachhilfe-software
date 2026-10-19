@@ -6,6 +6,8 @@ import { requireAdmin, requireTeacher } from "@/lib/auth";
 import * as imp from "@/lib/curriculum-import";
 import { matchSkills, setExamThresholds, splitTopics } from "@/lib/lehrplan";
 import * as repo from "@/lib/repo";
+import { fachAus } from "@/lib/school";
+import { stoffzettelFuer } from "@/lib/stoffzettel";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const num = (f: FormData, k: string) => (str(f, k) === "" ? null : Number(str(f, k).replace(",", ".")));
@@ -34,12 +36,17 @@ export async function addExamAction(formData: FormData) {
   const topics = splitTopics(str(formData, "topics"));
   const grade = num(formData, "grade");
   const points = num(formData, "points");
+  // the Fach may be one outside the profile when the Stoffzettel names it (Biologie)
+  const subject = fachAus(str(formData, "subject"), repo.getStudent(studentId)?.subjects ?? []);
+  const kind = str(formData, "kind") || "Schularbeit";
+  const title = str(formData, "title").slice(0, 120);
+  const materialId = stoffzettelFuer(Number(str(formData, "material_id")), { student_id: studentId, title, kind, subject, topics });
   repo.addTest({
     student_id: studentId,
     date: str(formData, "date") || todayLocal(),
-    subject: str(formData, "subject"),
-    kind: str(formData, "kind") || "Schularbeit",
-    title: str(formData, "title"),
+    subject,
+    kind,
+    title,
     topic: topics.join(", "),
     topics,
     grade,
@@ -48,9 +55,11 @@ export async function addExamAction(formData: FormData) {
     notes: str(formData, "notes"),
     skill_ids: [...new Set(formData.getAll("skill_ids").map(String))],
     teacher_id: teacher.id,
+    material_id: materialId,
   });
   revalidatePath(`/schueler/${studentId}`);
   revalidatePath("/");
+  if (materialId) revalidatePath("/mehr/material", "layout");
 }
 
 export async function setExamResultAction(testId: number, formData: FormData) {

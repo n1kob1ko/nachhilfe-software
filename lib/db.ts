@@ -758,6 +758,7 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["tests", "status", "TEXT NOT NULL DEFAULT 'geschrieben'"], // 'geplant' | 'geschrieben' | 'abgesagt'
   ["tests", "teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
   ["tests", "created_at", "TEXT"],
+  ["tests", "material_id", "INTEGER REFERENCES materials(id) ON DELETE SET NULL"], // der Stoffzettel (lib/stoffzettel.ts)
   // prerequisites and Lehrplan links: who made them, and removed ones stay as rows so a removed
   // standard link does not come back with the next start or import
   ["skill_links", "origin", "TEXT NOT NULL DEFAULT 'app'"], // app | import | lehrer
