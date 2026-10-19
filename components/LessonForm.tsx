@@ -38,7 +38,7 @@ export async function LessonForm({ student, lesson }: { student: repo.Student; l
           </label>
           <label className="field">
             <span className="label">Dauer (min)</span>
-            <input className="input num" type="number" name="duration_min" min={15} step={5} defaultValue={lesson?.duration_min ?? 60} />
+            <input className="input num" type="number" name="duration_min" min={15} step={5} defaultValue={lesson?.duration_min || 60} />
           </label>
           <label className="field">
             <span className="label">Fach</span>

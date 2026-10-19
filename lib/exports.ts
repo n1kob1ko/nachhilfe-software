@@ -86,7 +86,8 @@ export const DATASETS: Dataset[] = [
       return {
         headers: ["ID", "Einheit", "Beginn", "Dauer (min)", "Status", "Lehrer", "Schüler", "Fach", "Thema", "Was gemacht", "Fehler", "Verständnis (1–5)", "Konzentration (1–5)", "Motivation (1–5)", "Mitarbeit (1–5)", "Beobachtungen", "Schwierigkeiten", "Positive Entwicklungen", "Wiederholungen", "Nächstes Lernziel", "Hausübung", "Fähigkeiten", "Ergänzt am"],
         rows: q(`${LESSON_SQL} WHERE l.kind = 'stunde' ORDER BY l.starts_at`).map((r) => [
-          n(r.id), n(r.unit_id), localTime(s(r.starts_at)), n(r.duration_min), s(r.status), s(r.teacher_name), s(r.student_name), s(r.subject), s(r.topic),
+          // Dauer 0 = Uhrzeit und Dauer nicht erfasst (Import der Dokumentation): nur das Datum
+          n(r.id), n(r.unit_id), r.duration_min ? localTime(s(r.starts_at)) : s(r.starts_at).slice(0, 10), n(r.duration_min || null), s(r.status), s(r.teacher_name), s(r.student_name), s(r.subject), s(r.topic),
           s(r.activities), s(r.mistakes), n(r.understanding), n(r.concentration), n(r.motivation), n(r.participation), s(r.tutor_notes), s(r.difficulties),
           s(r.positives), s(r.review_topics), s(r.next_steps), s(r.homework_note), names(r.skill_ids), localTime(s(r.reviewed_at)),
         ]),
@@ -217,10 +218,10 @@ export const DATASETS: Dataset[] = [
     build: () => ({
       headers: ["Monat", "Tag", "Lehrer", "Schüler", "Fach", "Thema", "Start", "Ende", "Dauer (min)", "Endzeit geschätzt", "Beobachtungen"],
       rows: repo.billingEntries({ from: "0000", to: "9999" }).map((r) => {
-        const minutes = r.unit_start && r.unit_end ? Math.round((Date.parse(r.unit_end) - Date.parse(r.unit_start)) / 60_000) : r.duration_min;
+        const minutes = r.unit_start && r.unit_end ? Math.round((Date.parse(r.unit_end) - Date.parse(r.unit_start)) / 60_000) : r.duration_min || "";
         return [
           r.starts_at.slice(0, 7), r.starts_at.slice(0, 10), r.teacher_name ?? "", r.student_name, r.subject, r.topic,
-          r.unit_start ? localTime(r.unit_start).slice(11) : r.starts_at.slice(11, 16), r.unit_end ? localTime(r.unit_end).slice(11) : "", minutes, yes(r.unit_end_estimated), r.tutor_notes,
+          r.unit_start ? localTime(r.unit_start).slice(11) : r.duration_min ? r.starts_at.slice(11, 16) : "", r.unit_end ? localTime(r.unit_end).slice(11) : "", minutes, yes(r.unit_end_estimated), r.tutor_notes,
         ];
       }),
     }),

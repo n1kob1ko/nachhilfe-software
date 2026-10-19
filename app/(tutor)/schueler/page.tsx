@@ -3,17 +3,29 @@ import { Plus, Search } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
 import { Empty, PageHeader } from "@/components/ui";
 import { listStudents, listTeachers } from "@/lib/repo";
-import { klassenLabel } from "@/lib/school";
+import { checkLevel, klassenLabel } from "@/lib/school";
 import { Avatar } from "@/components/Art";
 import { subjectTone } from "@/components/Calendar";
 import { analyzeStudent } from "@/lib/service";
 
 export const metadata = { title: "Schüler" };
 
-export default async function Students({ searchParams }: { searchParams: Promise<{ suche?: string }> }) {
-  const q = ((await searchParams).suche ?? "").trim();
+/** Schulart oder Klasse fehlt (z. B. nach dem Import der Dokumentation): die Schulstufe ist unklar. */
+const klasseFehlt = (s: { school_type: string; klasse: number | null; grade: number }) => checkLevel(s.school_type, s.klasse, s.grade).status === "unklar";
+
+export default async function Students({ searchParams }: { searchParams: Promise<{ suche?: string; filter?: string }> }) {
+  const sp = await searchParams;
+  const q = (sp.suche ?? "").trim();
+  const nurOffen = sp.filter === "klasse-fehlt";
   const all = listStudents();
-  const students = q ? all.filter((s) => s.name.toLowerCase().includes(q.toLowerCase())) : all;
+  const offen = all.filter(klasseFehlt).length;
+  const students = all.filter((s) => (!q || s.name.toLowerCase().includes(q.toLowerCase())) && (!nurOffen || klasseFehlt(s)));
+  const filterLink = (an: boolean) => {
+    const p = new URLSearchParams();
+    if (q) p.set("suche", q);
+    if (an) p.set("filter", "klasse-fehlt");
+    return `/schueler${p.size ? `?${p}` : ""}`;
+  };
   const teachers = new Map(listTeachers().map((t) => [t.id, t.name]));
   return (
     <>
@@ -32,12 +44,24 @@ export default async function Students({ searchParams }: { searchParams: Promise
             <Search size={18} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-ink-3" aria-hidden />
             <input className="input !min-h-[48px] !pl-11 text-[16px]" name="suche" defaultValue={q} placeholder="Schüler suchen" aria-label="Schüler suchen" autoComplete="off" />
           </div>
+          {nurOffen && <input type="hidden" name="filter" value="klasse-fehlt" />}
           <button className="btn btn-secondary !min-h-[48px]">Suchen</button>
         </form>
       )}
-      {q && students.length === 0 ? (
+      {(offen > 0 || nurOffen) && (
+        <nav className="mb-5 flex flex-wrap gap-2" aria-label="Filter">
+          <Link href={filterLink(false)} className={`btn btn-sm ${nurOffen ? "btn-secondary" : "btn-primary"}`} aria-current={nurOffen ? undefined : "page"}>
+            Alle
+          </Link>
+          <Link href={filterLink(true)} className={`btn btn-sm ${nurOffen ? "btn-primary" : "btn-secondary"}`} aria-current={nurOffen ? "page" : undefined}>
+            Klasse fehlt <span className="num">{offen}</span>
+          </Link>
+        </nav>
+      )}
+      {(q || nurOffen) && students.length === 0 ? (
         <p className="text-[15px] text-ink-2">
-          Kein Schüler heißt „{q}“. <Link href="/schueler" className="link">Alle anzeigen</Link>
+          {nurOffen && !q ? "Bei allen Schülern sind Schulart und Klasse eingetragen." : `Kein Schüler heißt „${q}“${nurOffen ? " und hat keine Klasse" : ""}.`}{" "}
+          <Link href="/schueler" className="link">Alle anzeigen</Link>
         </p>
       ) : students.length === 0 ? (
         <Empty
@@ -62,7 +86,7 @@ export default async function Students({ searchParams }: { searchParams: Promise
                     <div className="min-w-0 flex-1">
                       <span className="block truncate text-[16px] font-semibold">{s.name}</span>
                       <span className="block truncate text-[13px] text-ink-2">
-                        {klassenLabel(s.school_type, s.klasse)}
+                        {klasseFehlt(s) ? <span className="text-amber">{klassenLabel(s.school_type, s.klasse) || "Klasse fehlt"}</span> : klassenLabel(s.school_type, s.klasse)}
                         {teachers.get(s.teacher_id ?? 0) && ` · ${teachers.get(s.teacher_id ?? 0)}`}
                       </span>
                     </div>

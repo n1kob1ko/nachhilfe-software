@@ -345,6 +345,7 @@ export function einfachesBriefing(d: BriefingDaten): BriefingInhalt {
     if (letzte.positives.trim()) letzterStand.push(`Gut: ${clip(letzte.positives, 200)}`);
     if (letzte.tutor_notes.trim()) letzterStand.push(`Beobachtungen: ${clip(letzte.tutor_notes, 200)}`);
     if (letzte.next_steps.trim()) letzterStand.push(`Nächstes Mal: ${clip(letzte.next_steps, 200)}`);
+    if (letzte.homework_note.trim()) letzterStand.push(`Hausübung: ${clip(letzte.homework_note, 200)}`);
     const selbst = d.verlauf.filter((l) => l.kind === "selbststaendig" && l.starts_at > letzte.starts_at).length;
     if (selbst) letzterStand.push(`Seitdem selbstständig geübt: ${selbst} ${selbst === 1 ? "Übung" : "Übungen"}`);
   } else letzterStand.push("Noch keine Dokumentation einer Einheit.");
@@ -368,6 +369,8 @@ export function einfachesBriefing(d: BriefingDaten): BriefingInhalt {
   });
   const hu = d.hausuebungen[0];
   if (hu) bloecke.push({ gewicht: 0.5, titel: "Hausübung kontrollieren", beschreibung: clip(hu.description, 160), uebung: null });
+  // sonst die Hausübung, die in der letzten Dokumentation steht (z. B. aus dem Import der Dokumentation)
+  else if (letzte?.homework_note.trim()) bloecke.push({ gewicht: 0.5, titel: "Hausübung kontrollieren", beschreibung: clip(letzte.homework_note, 160), uebung: null });
   const t = d.schularbeit;
   if (t && t.days <= 14) {
     const namen = t.skill_ids.map((id) => d.analysis.skills.find((s) => s.skill.id === id)?.skill.name ?? "").filter(Boolean);

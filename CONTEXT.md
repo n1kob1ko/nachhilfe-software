@@ -24,6 +24,12 @@ Wer unterrichtet wird. Eine Zeile in `students`, **ohne Konto**: er erreicht die
 App über seinen geheimen Link `/lernen/[token]` oder über ein gekoppeltes Gerät.
 _Avoid_: Kind, Klient, Teilnehmer, Schüleraccount, Nutzer
 
+**Klasse fehlt**:
+Ein **Schüler** ohne Schulart oder Klasse, z. B. nach dem Import der Dokumentation. Seine
+Schulstufe ist „unklar“ (`grade` 0). Die Schülerliste filtert danach, das Profil bittet ums
+Nachtragen (D27, [docs/import.md](docs/import.md)).
+_Avoid_: unbekannte Klasse, ohne Stufe, Klasse offen
+
 ## Unterricht und Planung
 
 **Einheit**:

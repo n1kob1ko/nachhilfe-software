@@ -123,7 +123,9 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
                     <td className="num px-5 py-3 whitespace-nowrap">
                       {billingDay(r.starts_at)}
                       <div className="text-[12px] text-ink-3">
-                        {r.unit_start && r.unit_end ? `${clock(r.unit_start)}–${r.unit_end_estimated ? "ca. " : ""}${clock(r.unit_end)}` : `${r.starts_at.slice(11, 16)} · ${r.duration_min} min`}
+                        {r.unit_start && r.unit_end ? `${clock(r.unit_start)}–${r.unit_end_estimated ? "ca. " : ""}${clock(r.unit_end)}` : r.duration_min > 0
+                            ? `${r.starts_at.slice(11, 16)} · ${r.duration_min} min`
+                            : "ohne Uhrzeit"}
                       </div>
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap">{r.teacher_name ?? <span className="text-red">offen</span>}</td>

@@ -122,7 +122,8 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
       .filter((l) => !schuelerMitPlatz.has(l.student_id))
       .map((l) => ({
         key: `lesson-${l.id}`,
-        zeit: formatTime(parseLocal(l.starts_at).toISOString()),
+        // Dauer 0 = ohne Uhrzeit dokumentiert (Import der Dokumentation, D27)
+        zeit: l.duration_min ? formatTime(parseLocal(l.starts_at).toISOString()) : "–",
         studentId: l.student_id,
         studentName: l.student_name,
         ort: l.subject || "",

@@ -33,10 +33,11 @@ export async function saveStudentAction(formData: FormData) {
   await requireTeacher();
   const id = int(formData, "id");
   const schoolTypeName = str(formData, "school_type");
-  const klasse = Math.min(schoolType(schoolTypeName)?.classes ?? 13, Math.max(1, int(formData, "klasse") || 1));
+  // „noch nicht bekannt“ kommt leer an: dann bleibt die Klasse leer und die Schulstufe offen (0 = unklar)
+  const klasse = int(formData, "klasse") ? Math.min(schoolType(schoolTypeName)?.classes ?? 13, Math.max(1, int(formData, "klasse"))) : null;
   const data: repo.StudentInput = {
     name: str(formData, "name"),
-    grade: schulstufe(schoolTypeName, klasse),
+    grade: klasse !== null && schoolType(schoolTypeName) ? schulstufe(schoolTypeName, klasse) : 0,
     klasse,
     teacher_id: int(formData, "teacher_id") || null,
     school: str(formData, "school"),

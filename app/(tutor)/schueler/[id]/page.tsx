@@ -70,9 +70,8 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
         <div className="min-w-0">
           <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">{student.name}</h1>
           <p className="mt-0.5 text-[15px] text-ink-2">
-            {klassenLabel(student.school_type, student.klasse)}
-            {student.subjects.length > 0 && ` · ${student.subjects.join(", ")}`}
-            {teacher && ` · bei ${teacher.name}`}
+            {/* ohne Schulart und Klasse (z. B. nach dem Import) beginnt die Zeile ohne „·“ */}
+            {[klassenLabel(student.school_type, student.klasse), student.subjects.join(", "), teacher && `bei ${teacher.name}`].filter(Boolean).join(" · ")}
           </p>
           {(() => {
             const level = checkLevel(student.school_type, student.klasse, student.grade);

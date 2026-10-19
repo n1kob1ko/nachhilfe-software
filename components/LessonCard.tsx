@@ -36,7 +36,8 @@ export function LessonCard({ lesson, studentId, result }: { lesson: repo.Lesson;
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[14px]">
           <span className="font-semibold">{formatDate(lesson.starts_at, { weekday: "short", day: "numeric", month: "numeric" })}</span>
-          <span className="num text-ink-2">{lesson.duration_min} min</span>
+          {/* 0 = nicht erfasst (Import der Dokumentation, D27) */}
+          {lesson.duration_min > 0 && <span className="num text-ink-2">{lesson.duration_min} min</span>}
           {teacher && <span className="text-ink-2">{teacher.name}</span>}
           <span className="text-ink-2">{[lesson.subject, lesson.topic].filter(Boolean).join(" · ")}</span>
         </div>

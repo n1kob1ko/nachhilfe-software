@@ -1,12 +1,15 @@
 /**
- * CSV-Import von **Schülern** und **Lehrern** (Phase 7 des Merges, Entscheidung D14).
+ * CSV-Import von **Schülern** und **Lehrern** (Phase 7 des Merges, Entscheidung D14) und der
+ * **Dokumentation aus einem Formular** (D27, `lib/doku-import.ts`).
  *
- * Gelesen wird genau das Format, das `lib/exports.ts` schreibt (Semikolon, UTF-8 mit oder ohne
- * BOM, `parseCsv` in `lib/csv.ts`). Zwei Schritte, und nur der zweite schreibt:
+ * Gelesen wird das Format, das `lib/exports.ts` schreibt (Semikolon, UTF-8 mit oder ohne BOM,
+ * `parseCsv` in `lib/csv.ts`), und auch eine Datei mit Komma aus Google Tabellen. Zwei Schritte,
+ * und nur der zweite schreibt:
  *
  * 1. `vorschauImport()` liest die Datei, prüft **jede Zeile mit zod** und meldet Fehler je Zeile
- *    sowie Dubletten (Schüler: gleicher Name **und** gleiche Klasse; Lehrer: Name oder
- *    Benutzername gibt es schon). Es wird nichts geschrieben — die Funktion liest nur.
+ *    sowie Dubletten (Schüler: gleicher Name **und** gleiche Klasse, fehlt auf einer Seite die
+ *    Klasse, reicht der Name; Lehrer: Name oder Benutzername gibt es schon). Es wird nichts
+ *    geschrieben — die Funktion liest nur.
  * 2. `importiere()` prüft dieselbe Datei noch einmal und schreibt sie. Hat auch nur eine Zeile
  *    einen Fehler, wird **nichts** geschrieben (alles oder nichts); Dubletten werden übersprungen.
  *
@@ -24,17 +27,19 @@ import { db } from "./db";
 import { INITIAL_PASSWORD, hashPassword } from "./password";
 import { istAdmin, type Akteur } from "./planung/berechtigungen";
 import { setSchuelerPlanung, type ModusWunsch } from "./planung/repo";
+import { pruefeDokumentation, schreibeDokumentation, type DokuGeprueft } from "./doku-import";
 import { createStudent, type StudentInput } from "./repo";
 import { SCHOOL_TYPES, checkLevel, klassenLabel, schoolType, schulstufe } from "./school";
 
-export type ImportArt = "schueler" | "lehrer";
+export type ImportArt = "schueler" | "lehrer" | "dokumentation";
 
 export const IMPORT_ARTEN: { art: ImportArt; label: string; hinweis: string }[] = [
+  { art: "dokumentation", label: "Dokumentation", hinweis: "Tabelle des Formulars, eine Zeile je Einheit" },
   { art: "schueler", label: "Schüler", hinweis: "Spalten des Exports „Schüler und Schülerprofile“" },
   { art: "lehrer", label: "Lehrer", hinweis: "Name, Benutzername und ob Verwaltung" },
 ];
 
-export const artAus = (wert: unknown): ImportArt => (wert === "lehrer" ? "lehrer" : "schueler");
+export const artAus = (wert: unknown): ImportArt => (wert === "lehrer" || wert === "dokumentation" ? wert : "schueler");
 
 export type ImportZeile = {
   /** Zeilennummer in der Datei; die Kopfzeile ist Zeile 1. */
@@ -43,6 +48,8 @@ export type ImportZeile = {
   fehler: string[];
   /** "" = neu, "datei" = in der Datei doppelt, "datenbank" = gibt es schon. */
   dublette: "" | "datei" | "datenbank";
+  /** Kein Fehler, nur ein Hinweis zur Zeile, z. B. „Klasse fehlt“ (Schulstufe bleibt unklar). */
+  hinweis?: string;
 };
 
 export type ImportVorschau = {
@@ -53,6 +60,10 @@ export type ImportVorschau = {
   gesamt: number;
   /** Zeilen, die angelegt würden (ohne Fehler und ohne Dublette). */
   gueltig: number;
+  /** Schüler ohne eindeutige Schulstufe (Schulart oder Klasse fehlt): später im Profil nachtragen */
+  stufeOffen: number;
+  /** Nur Dokumentation: Schüler, die der Import neu anlegt, mit gleichen Vornamen in der App. */
+  neueSchueler?: { name: string; einheiten: number; aehnlich: string[] }[];
   fehlerhaft: number;
   dubletten: number;
   /** Fehler der ganzen Datei (leer, Pflichtspalte fehlt): dann gibt es keine Zeilen. */
@@ -70,8 +81,10 @@ type Spalte = { feld: string; label: string; titel: string[]; pflicht?: boolean 
 /** Die Spalten des Exports „Schüler und Schülerprofile“ (`lib/exports.ts`), nach Namen gelesen. */
 const SCHUELER_SPALTEN: Spalte[] = [
   { feld: "name", label: "Name", titel: ["name"], pflicht: true },
-  { feld: "school_type", label: "Schultyp", titel: ["schultyp", "schulart", "schule typ"], pflicht: true },
-  { feld: "klasse", label: "Klasse", titel: ["klasse"], pflicht: true },
+  // Schultyp und Klasse dürfen fehlen oder leer sein: der Schüler wird angelegt, seine Schulstufe
+  // bleibt „unklar“, und das Profil bittet darum, sie nachzutragen (lib/school.ts `checkLevel`)
+  { feld: "school_type", label: "Schultyp", titel: ["schultyp", "schulart", "schule typ"] },
+  { feld: "klasse", label: "Klasse", titel: ["klasse"] },
   { feld: "school", label: "Schule", titel: ["schule"] },
   { feld: "subjects", label: "Fächer", titel: ["fächer", "faecher"] },
   { feld: "current_topics", label: "Aktuelle Themen", titel: ["aktuelle themen", "themen"] },
@@ -98,16 +111,6 @@ const LEHRER_SPALTEN: Spalte[] = [
 const normKopf = (s: string) => s.trim().toLowerCase().replace(/_/g, " ").replace(/\s+/g, " ");
 
 // ---------- Werte ----------
-
-/**
- * Eine ganze Zahl als Text. Bewusst **keine** Umwandlung: `=1+1` oder `-5` sind hier keine Zahl,
- * sondern ein Fehler in der Zeile — eine Zelle wird nie stillschweigend zur Zahl (Phase 7).
- */
-const zahlText = (label: string, min: number, max: number) =>
-  z
-    .string()
-    .refine((v) => /^\d+$/.test(v) && Number(v) >= min && Number(v) <= max, `${label}: bitte eine ganze Zahl zwischen ${min} und ${max} angeben.`)
-    .transform(Number);
 
 /** Leer heißt „nicht angegeben“ und bekommt die Vorgabe der Datenbank. */
 const zahlOderLeer = (label: string, min: number, max: number, standard: number) =>
@@ -144,11 +147,12 @@ const teile = (roh: string) => [...new Set(roh.split(",").map((t) => t.trim()).f
 const schuelerZeileSchema = z
   .object({
     name: z.string().min(1, "Name fehlt."),
-    school_type: z
+    // leer = noch nicht bekannt; ein Wert muss aber ein bekannter Schultyp sein
+    school_type: z.string().refine((v) => v === "" || Boolean(schoolType(v)), `Schultyp unbekannt (${SCHOOL_TYPES.map((t) => t.name).join(", ")}).`),
+    klasse: z
       .string()
-      .min(1, "Schultyp fehlt.")
-      .refine((v) => Boolean(schoolType(v)), `Schultyp unbekannt (${SCHOOL_TYPES.map((t) => t.name).join(", ")}).`),
-    klasse: zahlText("Klasse", 1, 13),
+      .refine((v) => v === "" || (/^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= 13), "Klasse: bitte eine ganze Zahl zwischen 1 und 13 angeben oder leer lassen.")
+      .transform((v) => (v === "" ? null : Number(v))),
     school: z.string(),
     subjects: z.string().transform(teile),
     current_topics: z.string(),
@@ -163,8 +167,9 @@ const schuelerZeileSchema = z
     geplante_dauer: zahlOderLeer("Geplante Dauer", 1, 300, 100),
     modus: z.enum(["vor_ort", "online", "egal"], MODUS_FEHLER),
   })
-  // Klasse und Schultyp nach **derselben** Regel wie das Formular (lib/school.ts)
+  // Klasse und Schultyp nach **derselben** Regel wie das Formular (lib/school.ts) — sobald beide da sind
   .superRefine((r, ctx) => {
+    if (!r.school_type || r.klasse === null) return;
     const level = checkLevel(r.school_type, r.klasse);
     if (level.status !== "eindeutig") ctx.addIssue({ code: "custom", message: level.reason ?? "Klasse und Schultyp passen nicht zusammen." });
   });
@@ -190,11 +195,28 @@ type SchuelerSatz = {
 type LehrerSatz = { name: string; username: string; is_admin: boolean; active: boolean };
 
 type ZeileIntern = { anzeige: ImportZeile; schueler?: SchuelerSatz; lehrer?: LehrerSatz };
-type Geprueft = { vorschau: ImportVorschau; intern: ZeileIntern[] };
+type Geprueft = { vorschau: ImportVorschau; intern: ZeileIntern[]; doku?: DokuGeprueft };
 
 // ---------- Prüfen ----------
 
-const schuelerSchluessel = (name: string, klasse: number) => `${name.trim().toLowerCase()}|${klasse}`;
+/**
+ * Schüler, die es schon gibt (in der Datenbank oder weiter oben in der Datei): gleicher Name und
+ * gleiche Klasse. Fehlt die Klasse auf einer der beiden Seiten, reicht der gleiche Name — sonst
+ * entstünde jemand doppelt, der zuerst ohne und später mit Klasse kommt.
+ */
+class SchuelerBestand {
+  private klassen = new Map<string, Set<number | null>>();
+  private static schluessel = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
+  add(name: string, klasse: number | null) {
+    const k = SchuelerBestand.schluessel(name);
+    this.klassen.set(k, (this.klassen.get(k) ?? new Set()).add(klasse));
+  }
+  has(name: string, klasse: number | null): boolean {
+    const vorhanden = this.klassen.get(SchuelerBestand.schluessel(name));
+    if (!vorhanden) return false;
+    return klasse === null || vorhanden.has(null) || vorhanden.has(klasse);
+  }
+}
 
 const meldungen = (fehler: z.ZodError) => [...new Set(fehler.issues.map((i) => i.message))];
 
@@ -208,14 +230,19 @@ function lehrerBestand() {
   };
 }
 
-function schuelerBestand() {
-  const rows = db().prepare("SELECT name, klasse FROM students").all() as { name: string; klasse: number | null }[];
-  return new Set(rows.map((r) => schuelerSchluessel(r.name, Number(r.klasse) || 0)));
+function schuelerBestand(): SchuelerBestand {
+  const bestand = new SchuelerBestand();
+  for (const r of db().prepare("SELECT name, klasse FROM students").all() as { name: string; klasse: number | null }[]) bestand.add(r.name, r.klasse || null);
+  return bestand;
 }
 
 function pruefe(art: ImportArt, text: string): Geprueft {
+  if (art === "dokumentation") {
+    const doku = pruefeDokumentation(text);
+    return { vorschau: doku.vorschau, intern: [], doku };
+  }
   const spalten = art === "lehrer" ? LEHRER_SPALTEN : SCHUELER_SPALTEN;
-  const vorschau: ImportVorschau = { art, spalten: [], zeilen: [], gesamt: 0, gueltig: 0, fehlerhaft: 0, dubletten: 0 };
+  const vorschau: ImportVorschau = { art, spalten: [], zeilen: [], gesamt: 0, gueltig: 0, stufeOffen: 0, fehlerhaft: 0, dubletten: 0 };
   const intern: ZeileIntern[] = [];
   const zeilen = parseCsv(text);
   if (!zeilen.length) return { vorschau: { ...vorschau, fehler: "Die Datei ist leer." }, intern };
@@ -245,6 +272,7 @@ function pruefe(art: ImportArt, text: string): Geprueft {
   const vorhanden = art === "schueler" ? schuelerBestand() : null;
   const inDatei = new Set<string>();
   const namenInDatei = new Set<string>();
+  const schuelerInDatei = new SchuelerBestand();
 
   for (const { z, nr } of daten) {
     const wert = (feld: string) => {
@@ -302,21 +330,24 @@ function pruefe(art: ImportArt, text: string): Geprueft {
       } else {
         const d: SchuelerGeprueft = geprueft.data;
         const klasse = d.klasse;
-        anzeige.beschriftung = `${d.name} · ${klassenLabel(d.school_type, klasse)}`;
+        const level = checkLevel(d.school_type, klasse);
+        anzeige.beschriftung = [d.name, klassenLabel(d.school_type, klasse)].filter(Boolean).join(" · ");
+        if (level.status !== "eindeutig")
+          anzeige.hinweis = !d.school_type && klasse === null ? "Schulart und Klasse fehlen" : !d.school_type ? "Schulart fehlt" : "Klasse fehlt";
         const teacherId = d.lehrer ? lehrer.nachBenutzername.get(d.lehrer.toLowerCase()) ?? null : null;
         // ein unbekannter Benutzername ist ein Zeilenfehler, keine stillschweigend leere Zuordnung
         if (d.lehrer && teacherId === null) anzeige.fehler.push(`Lehrer „${d.lehrer}“ ist unbekannt (die Spalte „Lehrer“ braucht den Benutzernamen).`);
         if (!anzeige.fehler.length) {
-          const schluessel = schuelerSchluessel(d.name, klasse);
-          if (vorhanden!.has(schluessel)) anzeige.dublette = "datenbank";
-          else if (inDatei.has(schluessel)) anzeige.dublette = "datei";
-          else inDatei.add(schluessel);
+          if (vorhanden!.has(d.name, klasse)) anzeige.dublette = "datenbank";
+          else if (schuelerInDatei.has(d.name, klasse)) anzeige.dublette = "datei";
+          else schuelerInDatei.add(d.name, klasse);
           intern.push({
             anzeige,
             schueler: {
               input: {
                 name: d.name,
-                grade: schulstufe(d.school_type, klasse),
+                // ohne eindeutige Schulstufe 0 = „nicht bekannt“ (stufe_status wird „unklar“)
+                grade: level.status === "eindeutig" && klasse !== null ? schulstufe(d.school_type, klasse) : 0,
                 klasse,
                 teacher_id: teacherId,
                 school: d.school,
@@ -341,7 +372,10 @@ function pruefe(art: ImportArt, text: string): Geprueft {
     vorschau.zeilen.push(anzeige);
     if (anzeige.fehler.length) vorschau.fehlerhaft++;
     else if (anzeige.dublette) vorschau.dubletten++;
-    else vorschau.gueltig++;
+    else {
+      vorschau.gueltig++;
+      if (anzeige.hinweis) vorschau.stufeOffen++;
+    }
   }
   return { vorschau, intern };
 }
@@ -350,7 +384,7 @@ function pruefe(art: ImportArt, text: string): Geprueft {
 
 /** Schritt 1: prüfen und anzeigen. Liest nur — es wird nichts geschrieben. */
 export function vorschauImport(akteur: Akteur, art: ImportArt, text: string): ImportVorschau {
-  if (!istAdmin(akteur)) return { art, spalten: [], zeilen: [], gesamt: 0, gueltig: 0, fehlerhaft: 0, dubletten: 0, fehler: NICHT_ADMIN };
+  if (!istAdmin(akteur)) return { art, spalten: [], zeilen: [], gesamt: 0, gueltig: 0, stufeOffen: 0, fehlerhaft: 0, dubletten: 0, fehler: NICHT_ADMIN };
   return pruefe(art, text).vorschau;
 }
 
@@ -360,13 +394,20 @@ export function vorschauImport(akteur: Akteur, art: ImportArt, text: string): Im
  */
 export function importiere(akteur: Akteur, art: ImportArt, text: string): ImportErgebnis {
   if (!istAdmin(akteur)) return { ok: false, fehler: NICHT_ADMIN };
-  const { vorschau, intern } = pruefe(art, text);
+  const { vorschau, intern, doku } = pruefe(art, text);
   if (vorschau.fehler) return { ok: false, fehler: vorschau.fehler, vorschau };
   if (vorschau.fehlerhaft) {
     return { ok: false, fehler: `${vorschau.fehlerhaft} ${vorschau.fehlerhaft === 1 ? "Zeile hat" : "Zeilen haben"} Fehler — es wurde nichts geschrieben. Bitte die Datei ausbessern und neu prüfen.`, vorschau };
   }
 
   const conn = db();
+  if (doku) {
+    try {
+      return conn.transaction(() => schreibeDokumentation(doku))();
+    } catch (e) {
+      return { ok: false, fehler: `Der Import wurde abgebrochen, es wurde nichts geschrieben: ${e instanceof Error ? e.message : "unbekannter Fehler"}`, vorschau };
+    }
+  }
   let angelegt = 0;
   let uebersprungen = 0;
   try {

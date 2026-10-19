@@ -10,25 +10,35 @@ type Props = {
   onChange?: (type: string, klasse: number) => void;
   /** Student form: show the internal Schulstufe and flag an old, unclear school type. */
   showStufe?: boolean;
+  /**
+   * Student form: Schultyp and Klasse may stay „noch nicht bekannt“ (value ""). The student keeps an
+   * unclear Schulstufe and shows up under „Klasse fehlt“ until both are filled in.
+   */
+  offenErlaubt?: boolean;
 };
 
+const OFFEN = "noch nicht bekannt";
+
 /** Schultyp + Klasse, with the class list matching the school type (VS 1–4, Gymnasium 1–8, HTL/HAK 1–5 …). */
-export function SchoolClassFields({ type: initialType, klasse: initialKlasse, onChange, showStufe }: Props) {
-  const [type, setType] = useState(schoolType(initialType ?? "")?.name ?? "Mittelschule");
-  const [klasse, setKlasse] = useState(initialKlasse ?? 1);
-  const t = schoolType(type)!;
-  const update = (nextType: string, nextKlasse: number) => {
+export function SchoolClassFields({ type: initialType, klasse: initialKlasse, onChange, showStufe, offenErlaubt }: Props) {
+  // an existing student without a known type or class opens as „noch nicht bekannt“; a new one as before
+  const bestehend = offenErlaubt && initialType !== undefined;
+  const [type, setType] = useState(schoolType(initialType ?? "")?.name ?? (bestehend ? "" : "Mittelschule"));
+  const [klasse, setKlasse] = useState<number | null>(initialKlasse ?? (bestehend ? null : 1));
+  const t = schoolType(type);
+  const update = (nextType: string, nextKlasse: number | null) => {
     const max = schoolType(nextType)?.classes ?? 13;
-    const k = Math.min(max, Math.max(1, nextKlasse));
+    const k = nextKlasse === null ? null : Math.min(max, Math.max(1, nextKlasse));
     setType(nextType);
     setKlasse(k);
-    onChange?.(nextType, k);
+    if (k !== null) onChange?.(nextType, k);
   };
   return (
     <>
       <label className="field">
         <span className="label">Schultyp</span>
         <select className="input" name="school_type" value={type} onChange={(e) => update(e.target.value, klasse)}>
+          {offenErlaubt && <option value="">{OFFEN}</option>}
           {SCHOOL_TYPES.map((s) => (
             <option key={s.name} value={s.name}>
               {s.name}
@@ -38,14 +48,20 @@ export function SchoolClassFields({ type: initialType, klasse: initialKlasse, on
       </label>
       <label className="field">
         <span className="label">Klasse</span>
-        <select className="input num" name="klasse" value={klasse} onChange={(e) => update(type, Number(e.target.value))}>
-          {Array.from({ length: t.classes }, (_, i) => i + 1).map((k) => (
+        <select className="input num" name="klasse" value={klasse ?? ""} onChange={(e) => update(type, e.target.value ? Number(e.target.value) : null)}>
+          {offenErlaubt && <option value="">{OFFEN}</option>}
+          {Array.from({ length: t?.classes ?? 13 }, (_, i) => i + 1).map((k) => (
             <option key={k} value={k}>
-              {k}. Klasse{t.name === "Gymnasium" ? (k <= 4 ? " (Unterstufe)" : " (Oberstufe)") : ""}
+              {k}. Klasse{t?.name === "Gymnasium" ? (k <= 4 ? " (Unterstufe)" : " (Oberstufe)") : ""}
             </option>
           ))}
         </select>
-        {showStufe && <span className="num text-[12.5px] text-ink-3">= Schulstufe {t.offset + klasse}</span>}
+        {showStufe &&
+          (t && klasse !== null ? (
+            <span className="num text-[12.5px] text-ink-3">= Schulstufe {t.offset + klasse}</span>
+          ) : (
+            <span className="text-[12.5px] text-amber">Schulstufe noch offen</span>
+          ))}
       </label>
       {showStufe && initialType && !schoolType(initialType) && (
         <p className="text-[13px] text-amber sm:col-span-3">
