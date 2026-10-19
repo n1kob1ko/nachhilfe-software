@@ -55,6 +55,14 @@ dazu die Textarbeiten und die Seiten des Whiteboards. Nichts wird gespeichert, d
 PDF macht der Druckdialog des Browsers.
 _Avoid_: Mappe als Ordner von Materialien, Portfolio
 
+**Minitest**:
+Ein paar Aufgaben (5, 6 oder 8) über den Stoff der letzten **Einheit**, am Anfang
+der Einheit wie eine kleine Schularbeit: ohne Tipps, ein Versuch je Aufgabe, richtig
+oder falsch erst am Ende. Er soll Schülern die Nervosität vor Tests nehmen. Am
+Tablet `assignments.mode = 'test'`, gedruckt nur die Übung mit
+`worksheets.minitest_unit_id` (`lib/minitest.ts`). Die Aufgaben kommen ohne KI.
+_Avoid_: Probeschularbeit (so nennt ihn niko, im Programm heißt er Minitest), Quiz, **Diagnose**
+
 **geplante Einheit**:
 Ein Platz im Wochenplan: wer (Lehrer, Schüler), wo (Raum), an welchem Wochentag,
 zu welcher Startzeit und mit welcher **geplanten Dauer**. Sie wird erst wirklich,

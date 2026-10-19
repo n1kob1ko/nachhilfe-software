@@ -12,6 +12,7 @@ import { aiLiveState, type AILive } from "./ai/realtime";
 import { db } from "./db";
 import { hasDevice } from "./devices";
 import { activeLaptop, endLaptopsOfUnit, laptopChannel, openLaptopCode, pendingLaptop } from "./laptop";
+import { isMinitest } from "./quick-round";
 import * as repo from "./repo";
 import { getText, noteTextInUnit } from "./texts";
 import { activeUnitForTeacher, getUnit, runningUnitForStudent, type UnitView } from "./units";
@@ -166,6 +167,8 @@ export type LiveSnapshot = {
     assignmentId: number;
     title: string;
     single: boolean;
+    /** a Minitest (lib/minitest.ts): no hints, one try, no solutions to show */
+    test: boolean;
     taskNo: number;
     total: number;
     /** "bereit": sent while no tablet is paired (the student uses the link) */
@@ -220,6 +223,7 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
       assignmentId: a.id,
       title: a.title,
       single: a.source_task_id !== null,
+      test: isMinitest(a.mode),
       taskNo,
       total: tasks.length,
       state: a.completed_at ? "fertig" : a.delivered_at || attempts.length ? "arbeitet" : device ? "nicht angekommen" : "bereit",

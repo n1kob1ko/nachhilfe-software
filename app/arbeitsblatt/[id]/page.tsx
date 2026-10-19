@@ -5,6 +5,7 @@ import { buildSheet, readOptions } from "@/lib/arbeitsblatt";
 import { requireTeacher } from "@/lib/auth";
 import * as repo from "@/lib/repo";
 import { klassenLabel, stufeLabel } from "@/lib/school";
+import { getUnit } from "@/lib/units";
 
 type Params = {
   params: Promise<{ id: string }>;
@@ -49,7 +50,11 @@ export default async function WorksheetSheetPage({
   const data = load(Number(id));
   if (!data) notFound();
   const { w, student, title, tasks } = data;
-  const o = readOptions(await searchParams, title);
+  const sp = await searchParams;
+  const o = readOptions(sp, title);
+  // aus einer Einheit geöffnet (Minitest drucken): zurück zur Einheit
+  const unit = typeof sp.einheit === "string" ? getUnit(Number(sp.einheit)) : null;
+  const ausEinheit = unit && unit.student_id === w.student_id ? unit : null;
   const names = new Map<string, string | null>();
   const skillName = (sid: string) => {
     if (!names.has(sid)) names.set(sid, repo.getSkill(sid)?.name ?? null);
@@ -69,8 +74,9 @@ export default async function WorksheetSheetPage({
     skillName,
     o,
   );
-  const back =
-    w.kind === "bibliothek"
+  const back = ausEinheit
+    ? { href: `/einheiten/${ausEinheit.id}`, label: "Zur Einheit" }
+    : w.kind === "bibliothek"
       ? { href: `/uebungen/bibliothek/${w.id}`, label: "Aufgabenbibliothek" }
       : { href: `/uebungen/${w.id}`, label: "Zur Übung" };
   return (
@@ -78,7 +84,7 @@ export default async function WorksheetSheetPage({
       doc={doc}
       o={o}
       path={`/arbeitsblatt/${w.id}`}
-      extra={[]}
+      extra={ausEinheit ? [["einheit", String(ausEinheit.id)]] : []}
       back={back}
     />
   );

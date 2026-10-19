@@ -12,8 +12,8 @@ import { StudentCorrection } from "@/components/text/correction/StudentCorrectio
 import { laptopEndReason, laptopState, type EndReason } from "@/lib/laptop";
 import { currentLaptop, laptopContext } from "@/lib/laptop-context";
 import { markDelivered, parseView, pushLive, unitAssignments, unitText } from "@/lib/live";
-import { showsQuickRound } from "@/lib/quick-round";
-import { MAX_TRIES } from "@/lib/service";
+import { isMinitest, showsQuickRound } from "@/lib/quick-round";
+import { triesFor } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
 import { storyForEditor } from "@/lib/picture-story";
 import { textDoc, textsForStudent, textsForUnit, wordsLabel } from "@/lib/texts";
@@ -160,7 +160,8 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
         assignmentId={current.id}
         title={current.title}
         tasks={tasks}
-        maxTries={MAX_TRIES}
+        maxTries={triesFor(current.mode)}
+        test={isMinitest(current.mode)}
       />
     );
   } else {
