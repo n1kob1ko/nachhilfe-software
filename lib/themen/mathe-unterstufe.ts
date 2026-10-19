@@ -16,6 +16,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.zahlen.gross",
         name: "Große Zahlen lesen, schreiben und am Zahlenstrahl darstellen",
+        suchwoerter: ["Stellenwerttafel", "Stellenwertsystem", "dekadisches Zahlensystem", "Zehnersystem", "Zahlen vergleichen und ordnen", "Millionen und Milliarden"],
         stufen: [5, 6],
         erklaerung: "Von rechts in Dreiergruppen teilen: Einer, Tausender, Millionen, Milliarden. Jede Stelle ist zehnmal so viel wert wie die Stelle rechts daneben. Beispiel: 4 030 205 sind 4 Millionen 30 Tausend 205.",
         fehler: [
@@ -27,6 +28,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.zahlen.roemisch",
         name: "Römische Zahlen lesen und schreiben",
+        suchwoerter: ["römisches Zahlensystem", "römische Zahlzeichen"],
         stufen: [5, 6],
         erklaerung: "I = 1, V = 5, X = 10, L = 50, C = 100, D = 500, M = 1 000. Steht ein kleineres Zeichen vor einem größeren, wird es abgezogen. Beispiel: XIV = 14, MCMXC = 1 000 + 900 + 90 = 1 990.",
         fehler: [
@@ -38,6 +40,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.zahlen.runden",
         name: "Runden und Überschlagen",
+        suchwoerter: ["Rundungsregeln", "Überschlagsrechnung", "Schätzen"],
         stufen: [5, 6],
         erklaerung: "Auf die Ziffer rechts von der Rundungsstelle schauen: bei 0 bis 4 abrunden, bei 5 bis 9 aufrunden. Für einen Überschlag rundet man vorher, damit man im Kopf rechnen kann. Beispiel: 3 486 auf Hunderter gerundet ist 3 500; 48 · 21 ist ungefähr 50 · 20 = 1 000.",
         fehler: [
@@ -49,6 +52,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.zahlen.addieren",
         name: "Schriftlich addieren und subtrahieren",
+        suchwoerter: ["Addition", "Subtraktion", "Summe und Differenz", "Ergänzen"],
         stufen: [5, 6],
         erklaerung: "Stellengerecht untereinander schreiben, Einer unter Einer. Von rechts nach links rechnen und den Übertrag in die nächste Stelle mitnehmen. Beispiel: 4 052 − 1 378 = 2 674.",
         fehler: [
@@ -60,6 +64,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.zahlen.multiplizieren",
         name: "Schriftlich multiplizieren",
+        suchwoerter: ["Multiplikation", "Produkt", "Malrechnung"],
         stufen: [5, 6],
         erklaerung: "Mit jeder Ziffer des zweiten Faktors einzeln multiplizieren, jede neue Zeile um eine Stelle weiter nach rechts rücken und am Ende addieren. Beispiel: 324 · 23 = 6 480 + 972 = 7 452.",
         fehler: [
@@ -71,6 +76,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.zahlen.dividieren",
         name: "Schriftlich dividieren (durch ein- und zweistellige Zahlen)",
+        suchwoerter: ["Division", "Quotient", "Division mit Rest"],
         stufen: [5, 6],
         erklaerung: "Von links Stelle für Stelle: Wie oft passt der Divisor hinein? Mal nehmen, abziehen, nächste Ziffer herunterholen. Probe mit Multiplizieren. Beispiel: 1 512 : 6 = 252, Probe 252 · 6 = 1 512.",
         fehler: [
@@ -82,6 +88,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.zahlen.zehner",
         name: "Mit 10, 100 und 1 000 multiplizieren und dividieren",
+        suchwoerter: ["Stufenzahlen"],
         stufen: [5, 6],
         erklaerung: "Mal 10, 100, 1 000: das Komma rückt um 1, 2 oder 3 Stellen nach rechts. Durch 10, 100, 1 000: nach links. Fehlende Stellen füllt man mit Nullen. Beispiel: 3,7 · 100 = 370; 45 : 1 000 = 0,045.",
         fehler: [
@@ -93,6 +100,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.zahlen.vorrang",
         name: "Punkt vor Strich und Klammern",
+        suchwoerter: ["Vorrangregeln", "Klammerregeln", "Punktrechnung vor Strichrechnung", "verbundene Rechenarten"],
         stufen: [5, 6],
         erklaerung: "Zuerst was in Klammern steht, dann Punktrechnungen (mal, durch), zuletzt Strichrechnungen (plus, minus). Gleichrangiges von links nach rechts. Beispiel: 20 − 3 · 4 = 20 − 12 = 8, aber (20 − 3) · 4 = 68.",
         fehler: [
@@ -104,6 +112,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.zahlen.rechengesetze",
         name: "Rechengesetze: Vertauschen, Verbinden und Verteilen",
+        suchwoerter: ["Kommutativgesetz", "Assoziativgesetz", "Distributivgesetz", "Vertauschungsgesetz", "Verbindungsgesetz", "Verteilungsgesetz", "Rechenvorteile"],
         stufen: [5, 6],
         erklaerung: "Beim Addieren und Multiplizieren darf man vertauschen und anders zusammenfassen (Kommutativ- und Assoziativgesetz). Verteilungsgesetz: a · (b + c) = a · b + a · c. Beispiel: 25 · 7 · 4 = 25 · 4 · 7 = 700; 6 · 98 = 6 · 100 − 6 · 2 = 588.",
         fehler: [
@@ -115,6 +124,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.zahlen.sachaufgaben",
         name: "Sachaufgaben mit natürlichen Zahlen",
+        suchwoerter: ["Textaufgaben", "Sachrechnen"],
         stufen: [5, 6],
         erklaerung: "Text genau lesen, wichtige Angaben herausschreiben, die Frage klären, Rechnung aufstellen, rechnen und einen Antwortsatz mit Einheit schreiben. Ein Überschlag zeigt, ob das Ergebnis stimmen kann.",
         fehler: [
@@ -127,10 +137,12 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Dezimalzahlen",
+    suchwoerter: ["Dezimalbrüche", "Kommazahlen"],
     themen: [
       {
         id: "mathe.dezimal.vergleichen",
         name: "Dezimalzahlen vergleichen und ordnen",
+        suchwoerter: ["Zehntel, Hundertstel und Tausendstel"],
         stufen: [5, 6],
         erklaerung: "Stelle für Stelle von links vergleichen, fehlende Stellen nach dem Komma mit Nullen auffüllen. Beispiel: 0,7 und 0,65 → 0,70 > 0,65.",
         fehler: [
@@ -142,6 +154,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.dezimal.addieren",
         name: "Dezimalzahlen addieren und subtrahieren",
+        suchwoerter: ["Kommazahlen addieren und subtrahieren"],
         stufen: [5, 6],
         erklaerung: "Komma unter Komma schreiben, fehlende Stellen mit Nullen auffüllen, dann rechnen wie mit natürlichen Zahlen. Beispiel: 12,5 + 3,75 = 12,50 + 3,75 = 16,25.",
         fehler: [
@@ -153,6 +166,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.dezimal.multiplizieren",
         name: "Dezimalzahlen multiplizieren und dividieren",
+        suchwoerter: ["Kommazahlen multiplizieren und dividieren"],
         stufen: [5, 6],
         erklaerung: "Multiplizieren: ohne Komma rechnen, das Ergebnis bekommt so viele Nachkommastellen wie beide Faktoren zusammen. Dividieren: das Komma bei beiden Zahlen gleich weit verschieben, bis der Divisor keine Nachkommastellen mehr hat. Beispiel: 1,2 · 0,3 = 0,36; 4,8 : 0,6 = 48 : 6 = 8.",
         fehler: [
@@ -165,10 +179,12 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Größen und Maße",
+    suchwoerter: ["Maßeinheiten", "Einheiten umrechnen"],
     themen: [
       {
         id: "mathe.masse.geld",
         name: "Mit Geld rechnen (Euro und Cent)",
+        suchwoerter: ["Euro", "Cent", "Geldbeträge"],
         stufen: [5, 6],
         erklaerung: "1 € = 100 c. Beträge mit Komma haben immer zwei Nachkommastellen: 3,05 € sind 3 € und 5 c. Zum Rechnen alles in dieselbe Einheit bringen. Beispiel: 4,50 € + 75 c = 4,50 € + 0,75 € = 5,25 €.",
         fehler: [
@@ -180,6 +196,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.masse.laengen",
         name: "Längenmaße umrechnen",
+        suchwoerter: ["Längen", "Meter", "Kilometer", "Zentimeter", "Millimeter", "Dezimeter"],
         stufen: [5, 6],
         erklaerung: "Zwischen mm, cm, dm und m ist die Umrechnungszahl 10, zwischen m und km 1 000. Beispiel: 3,25 m = 325 cm; 4 km 50 m = 4 050 m = 4,05 km.",
         fehler: [
@@ -191,6 +208,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.masse.massen",
         name: "Massenmaße umrechnen (t, kg, dag, g)",
+        suchwoerter: ["Gewicht", "Kilogramm", "Gramm", "Dekagramm", "Tonnen"],
         stufen: [5, 6],
         erklaerung: "1 t = 1 000 kg, 1 kg = 100 dag, 1 dag = 10 g. Beispiel: 2,5 kg = 250 dag = 2 500 g; 35 dag = 0,35 kg.",
         fehler: [
@@ -202,6 +220,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.masse.zeit",
         name: "Zeitmaße und Zeitspannen",
+        suchwoerter: ["Uhrzeit", "Zeitdauer", "Stunden, Minuten und Sekunden", "Kalender"],
         stufen: [5, 6],
         erklaerung: "1 h = 60 min, 1 min = 60 s, 1 d = 24 h. Zeitspannen rechnet man am besten in Schritten bis zur vollen Stunde. Beispiel: von 8:45 bis 10:20 sind 15 min + 1 h + 20 min = 1 h 35 min.",
         fehler: [
@@ -213,6 +232,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.masse.flaechen",
         name: "Flächenmaße umrechnen",
+        suchwoerter: ["Quadratmeter", "Quadratzentimeter", "Hektar"],
         stufen: [5, 6],
         erklaerung: "Zwischen benachbarten Flächenmaßen ist die Umrechnungszahl 100: mm², cm², dm², m², a, ha, km². Beispiel: 3 m² = 300 dm² = 30 000 cm²; 1 ha = 100 a = 10 000 m².",
         fehler: [
@@ -224,6 +244,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.masse.volumen",
         name: "Raummaße und Liter umrechnen",
+        suchwoerter: ["Hohlmaße", "Kubikmeter", "Kubikzentimeter", "Milliliter"],
         stufen: [5, 7],
         erklaerung: "Zwischen benachbarten Raummaßen ist die Umrechnungszahl 1 000: mm³, cm³, dm³, m³. 1 dm³ = 1 l, 1 l = 10 dl = 100 cl = 1 000 ml, 1 hl = 100 l. Beispiel: 2,5 m³ = 2 500 dm³ = 2 500 l.",
         fehler: [
@@ -235,6 +256,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.masse.massstab",
         name: "Mit dem Maßstab rechnen",
+        suchwoerter: ["Pläne und Landkarten", "Vergrößern und Verkleinern"],
         stufen: [5, 6],
         erklaerung: "Maßstab 1 : 1 000 heißt: 1 cm im Plan sind 1 000 cm in Wirklichkeit. Wirklichkeit = Länge im Plan · 1 000, Länge im Plan = Wirklichkeit : 1 000. Danach in eine passende Einheit umrechnen. Beispiel: 4,5 cm im Plan sind 4 500 cm = 45 m.",
         fehler: [
@@ -251,6 +273,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.teilbarkeit.teiler",
         name: "Teiler und Vielfache",
+        suchwoerter: ["Teilermenge", "Vielfachenmenge"],
         stufen: [5, 6],
         erklaerung: "Teiler von 12 sind alle Zahlen, durch die 12 ohne Rest teilbar ist: 1, 2, 3, 4, 6, 12. Vielfache von 4 sind 4, 8, 12, 16 … Teiler sucht man am besten paarweise: 1 · 12, 2 · 6, 3 · 4.",
         fehler: [
@@ -262,6 +285,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.teilbarkeit.regeln",
         name: "Teilbarkeitsregeln",
+        suchwoerter: ["Endstellenregel", "Ziffernsumme", "Quersumme"],
         stufen: [6, 7],
         erklaerung: "Durch 2: letzte Ziffer gerade. Durch 5: letzte Ziffer 0 oder 5. Durch 10: letzte Ziffer 0. Durch 4: die letzten zwei Ziffern bilden eine Zahl, die durch 4 teilbar ist. Durch 3 oder 9: die Ziffernsumme ist durch 3 oder 9 teilbar. Beispiel: 348 hat die Ziffernsumme 15, ist also durch 3 teilbar, aber nicht durch 9.",
         fehler: [
@@ -273,6 +297,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.teilbarkeit.primzahlen",
         name: "Primzahlen und Primfaktorzerlegung",
+        suchwoerter: ["Primfaktoren", "zusammengesetzte Zahlen"],
         stufen: [6, 7],
         erklaerung: "Eine Primzahl hat genau zwei Teiler, 1 und sich selbst: 2, 3, 5, 7, 11, 13 … Bei der Primfaktorzerlegung teilt man so lange durch Primzahlen, bis 1 übrig bleibt. Beispiel: 60 = 2 · 2 · 3 · 5 = 2² · 3 · 5.",
         fehler: [
@@ -284,6 +309,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.teilbarkeit.ggt-kgv",
         name: "ggT und kgV bestimmen",
+        suchwoerter: ["größter gemeinsamer Teiler", "kleinstes gemeinsames Vielfaches"],
         stufen: [6, 7],
         erklaerung: "ggT: der größte Teiler, den beide Zahlen haben. kgV: das kleinste Vielfache, das beide Zahlen haben. Mit Primfaktoren: ggT = die gemeinsamen Faktoren, kgV = alle Faktoren in der höchsten Anzahl. Beispiel: 12 = 2² · 3 und 18 = 2 · 3², also ggT = 6 und kgV = 36.",
         fehler: [
@@ -296,10 +322,12 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Bruchrechnung",
+    suchwoerter: ["Bruchzahlen"],
     themen: [
       {
         id: "mathe.brueche.anteile",
         name: "Brüche als Anteile darstellen und ablesen",
+        suchwoerter: ["Zähler und Nenner", "Stammbrüche"],
         stufen: [5, 6],
         erklaerung: "Der Nenner sagt, in wie viele gleich große Teile das Ganze geteilt ist, der Zähler, wie viele Teile man nimmt. Beispiel: 3/8 einer Pizza heißt: in 8 gleiche Stücke teilen und 3 davon nehmen.",
         fehler: [
@@ -311,6 +339,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.brueche.gemischt",
         name: "Unechte Brüche und gemischte Zahlen umwandeln",
+        suchwoerter: ["echte Brüche"],
         stufen: [5, 6],
         erklaerung: "Unechter Bruch in gemischte Zahl: Zähler durch Nenner dividieren, das Ergebnis sind die Ganzen, der Rest ist der neue Zähler. Umgekehrt: Ganze mal Nenner plus Zähler. Beispiel: 11/4 = 2 3/4, denn 11 : 4 = 2 Rest 3.",
         fehler: [
@@ -322,6 +351,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.brueche.vonzahlen",
         name: "Bruchteile von Zahlen und Größen berechnen",
+        suchwoerter: ["Bruchteile von Größen", "Anteile berechnen"],
         stufen: [5, 6],
         erklaerung: "„3/4 von 20“ heißt: durch den Nenner dividieren und mit dem Zähler multiplizieren. Beispiel: 3/4 von 20 € = 20 € : 4 · 3 = 15 €.",
         fehler: [
@@ -356,10 +386,12 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Negative Zahlen",
+    suchwoerter: ["ganze Zahlen"],
     themen: [
       {
         id: "mathe.negativ.zahlengerade",
         name: "Ganze Zahlen ordnen und auf der Zahlengeraden darstellen",
+        suchwoerter: ["Zahlengerade", "Vorzeichen", "Betrag"],
         stufen: [6, 7],
         erklaerung: "Links von 0 liegen die negativen Zahlen. Je weiter rechts eine Zahl liegt, desto größer ist sie. Der Betrag ist der Abstand von 0. Beispiel: −7 < −2 und |−7| = 7.",
         fehler: [
@@ -371,6 +403,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.negativ.rational",
         name: "Rationale Zahlen: Brüche und Dezimalzahlen mit Vorzeichen",
+        suchwoerter: ["rationale Zahlen", "Vorzeichenregeln"],
         stufen: [7, 8],
         erklaerung: "Mit negativen Brüchen und Dezimalzahlen rechnet man nach denselben Vorzeichenregeln wie mit ganzen Zahlen. Beispiel: −1/2 + 3/4 = −2/4 + 3/4 = 1/4; (−0,5) · (−4) = 2.",
         fehler: [
@@ -383,10 +416,12 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Proportionalität",
+    suchwoerter: ["Schlussrechnung", "proportionale Zuordnungen"],
     themen: [
       {
         id: "mathe.proportional.direkt",
         name: "Direkte Proportionalität (Schlussrechnung)",
+        suchwoerter: ["direktes Verhältnis", "direkt proportional", "Dreisatz"],
         stufen: [6, 7],
         erklaerung: "Je mehr, desto mehr, und zwar im gleichen Verhältnis: doppelt so viel Ware kostet doppelt so viel. Schlussrechnung: zuerst auf 1 schließen, dann auf die gesuchte Menge. Beispiel: 3 kg kosten 7,50 €, 1 kg kostet 2,50 €, 5 kg kosten 12,50 €.",
         fehler: [
@@ -398,6 +433,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.proportional.indirekt",
         name: "Indirekte Proportionalität",
+        suchwoerter: ["indirektes Verhältnis", "umgekehrt proportional", "verkehrte Schlussrechnung"],
         stufen: [6, 7],
         erklaerung: "Je mehr, desto weniger, und zwar so, dass das Produkt gleich bleibt: doppelt so viele Pumpen brauchen halb so lange. Beispiel: 4 Pumpen brauchen 6 h, 1 Pumpe braucht 24 h, 3 Pumpen brauchen 8 h.",
         fehler: [
@@ -409,6 +445,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.proportional.verhaeltnisse",
         name: "Verhältnisse und Proportionen",
+        suchwoerter: ["Verhältnisgleichungen"],
         stufen: [7, 8],
         erklaerung: "Ein Verhältnis a : b vergleicht zwei Größen. In einer Proportion a : b = c : d gilt a · d = b · c. Beispiel: Saft und Wasser im Verhältnis 2 : 5, zu 6 dl Saft gehören 15 dl Wasser, denn 2 : 5 = 6 : 15.",
         fehler: [
@@ -425,6 +462,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.prozent.aenderung",
         name: "Prozentuelle Erhöhung und Verminderung (Änderungsfaktor)",
+        suchwoerter: ["Rabatt", "Preiserhöhung", "Preissenkung", "Mehrwertsteuer", "Skonto"],
         stufen: [6, 8],
         erklaerung: "Erhöhung um 20 %: mal 1,2. Verminderung um 20 %: mal 0,8. Mehrere Änderungen multipliziert man nacheinander. Beispiel: 80 € um 20 % erhöht ergibt 80 · 1,2 = 96 €, danach um 20 % vermindert 96 · 0,8 = 76,80 €.",
         fehler: [
@@ -436,6 +474,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.prozent.promille",
         name: "Promille",
+        suchwoerter: ["Promillerechnung"],
         stufen: [6, 7],
         erklaerung: "Promille heißt Tausendstel: 1 ‰ = 0,001 = 0,1 %. Man rechnet wie mit Prozent, nur mit 1 000 statt 100. Beispiel: 3 ‰ von 2 000 € = 2 000 · 3 : 1 000 = 6 €.",
         fehler: [
@@ -447,6 +486,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.prozent.zinsen",
         name: "Zinsen berechnen",
+        suchwoerter: ["Zinsrechnung", "Sparbuch", "Zinssatz"],
         stufen: [7, 8],
         erklaerung: "Zinsen sind ein Prozentwert: Zinsen = Kapital · Zinssatz : 100 für ein Jahr, bei kürzerer Zeit anteilig. Mit Zinseszinsen wächst das Kapital jedes Jahr um denselben Faktor. Beispiel: 2 000 € zu 3 % bringen in einem Jahr 60 € Zinsen; nach zwei Jahren mit Zinseszinsen sind es 2 000 · 1,03² = 2 121,80 €.",
         fehler: [
@@ -459,10 +499,12 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Terme",
+    suchwoerter: ["Termrechnung", "Rechnen mit Variablen"],
     themen: [
       {
         id: "mathe.terme.aufstellen",
         name: "Terme aufstellen und Werte einsetzen",
+        suchwoerter: ["Variablen", "Terme mit Variablen"],
         stufen: [5, 7],
         erklaerung: "Für eine unbekannte Zahl schreibt man eine Variable, zum Beispiel x. „Das Doppelte einer Zahl, vermindert um 3“ ist 2 · x − 3. Beim Einsetzen ersetzt man x durch die Zahl, am besten in Klammern. Beispiel: für x = 5 ist 2 · 5 − 3 = 7.",
         fehler: [
@@ -474,6 +516,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.terme.zusammenfassen",
         name: "Terme zusammenfassen",
+        suchwoerter: ["gleichartige Terme", "Terme vereinfachen", "Monome und Polynome"],
         stufen: [7, 8],
         erklaerung: "Nur gleichartige Glieder lassen sich zusammenfassen: x mit x, x² mit x², Zahlen mit Zahlen. Beispiel: 3x + 5 + 2x − 1 = 5x + 4; 4a · 3b = 12ab.",
         fehler: [
@@ -485,6 +528,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.terme.klammern",
         name: "Klammern auflösen und ausmultiplizieren",
+        suchwoerter: ["Ausmultiplizieren", "Klammerrechnung", "Produkte von Summen"],
         stufen: [7, 8],
         erklaerung: "Plus vor der Klammer: Klammer weglassen. Minus vor der Klammer: alle Vorzeichen in der Klammer umdrehen. Zahl vor der Klammer: jedes Glied multiplizieren. Zwei Klammern: jedes Glied mit jedem. Beispiel: 10 − (3x − 4) = 14 − 3x; (x + 2) · (x + 5) = x² + 7x + 10.",
         fehler: [
@@ -496,6 +540,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.terme.herausheben",
         name: "Herausheben",
+        suchwoerter: ["Faktorisieren", "gemeinsamer Faktor"],
         stufen: [7, 8],
         erklaerung: "Einen gemeinsamen Faktor aller Glieder vor die Klammer schreiben, in der Klammer bleibt, was übrig ist. Probe durch Ausmultiplizieren. Beispiel: 6x + 9 = 3 · (2x + 3); 4a² − 2a = 2a · (2a − 1).",
         fehler: [
@@ -507,6 +552,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.terme.binomisch",
         name: "Binomische Formeln",
+        suchwoerter: ["Binome"],
         stufen: [7, 9],
         erklaerung: "(a + b)² = a² + 2ab + b², (a − b)² = a² − 2ab + b², (a + b) · (a − b) = a² − b². Beispiel: (x + 3)² = x² + 6x + 9; (2x − 5) · (2x + 5) = 4x² − 25.",
         fehler: [
@@ -519,10 +565,12 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Gleichungen",
+    suchwoerter: ["Gleichungslehre"],
     themen: [
       {
         id: "mathe.gleichungen.probieren",
         name: "Einfache Gleichungen durch Probieren und Umkehren lösen",
+        suchwoerter: ["Äquivalenzumformungen", "Lösungsmenge"],
         stufen: [5, 6],
         erklaerung: "Eine Gleichung ist wie eine Waage. Die gesuchte Zahl findet man durch Probieren oder durch Rückwärtsrechnen mit der Umkehrrechnung. Beispiel: x · 4 + 3 = 23 → 23 − 3 = 20 → 20 : 4 = 5. Probe: 5 · 4 + 3 = 23.",
         fehler: [
@@ -534,6 +582,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.gleichungen.formeln",
         name: "Formeln umformen",
+        suchwoerter: ["Formeln umstellen"],
         stufen: [6, 9],
         erklaerung: "Eine Formel formt man um wie eine Gleichung: auf beiden Seiten dasselbe rechnen, bis die gesuchte Größe allein steht. Beispiel: A = a · b nach b umgeformt ist b = A : a. Aus A = c · h : 2 wird h = 2 · A : c.",
         fehler: [
@@ -545,6 +594,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.gleichungen.brueche",
         name: "Gleichungen mit Brüchen",
+        suchwoerter: ["Bruchgleichungen"],
         stufen: [7, 9],
         erklaerung: "Zuerst jedes Glied auf beiden Seiten mit dem Hauptnenner multiplizieren, damit die Brüche verschwinden, dann wie gewohnt lösen. Beispiel: x/2 + x/3 = 10, mal 6: 3x + 2x = 60, also x = 12.",
         fehler: [
@@ -561,6 +611,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.potenzen.schreibweise",
         name: "Potenzen und Zehnerpotenzen",
+        suchwoerter: ["Hochzahl", "Exponent", "Gleitkommadarstellung", "wissenschaftliche Schreibweise", "Quadratzahlen", "Kubikzahlen"],
         stufen: [7, 8],
         erklaerung: "Eine Potenz ist eine kurze Schreibweise für wiederholtes Multiplizieren: 2^5 = 2 · 2 · 2 · 2 · 2 = 32. Große Zahlen schreibt man mit Zehnerpotenzen: 4 500 000 = 4,5 · 10^6.",
         fehler: [
@@ -577,6 +628,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.wurzeln.quadratwurzel",
         name: "Quadratwurzeln berechnen und schätzen",
+        suchwoerter: ["Wurzelziehen"],
         stufen: [8, 9],
         erklaerung: "Die Quadratwurzel von a ist die nicht negative Zahl, die mit sich selbst multipliziert a ergibt: sqrt(49) = 7. Andere Wurzeln schätzt man zwischen zwei Quadratzahlen ein: sqrt(30) liegt zwischen 5 und 6, nahe bei 5,5.",
         fehler: [
@@ -588,6 +640,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.wurzeln.regeln",
         name: "Rechenregeln für Wurzeln",
+        suchwoerter: ["Wurzelgesetze"],
         stufen: [8, 9],
         erklaerung: "sqrt(a · b) = sqrt(a) · sqrt(b) und sqrt(a : b) = sqrt(a) : sqrt(b). Bei Plus und Minus gilt das nicht. Beispiel: sqrt(50) = sqrt(25 · 2) = 5 · sqrt(2), aber sqrt(9 + 16) = 5 und nicht 3 + 4.",
         fehler: [
@@ -599,6 +652,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.wurzeln.reell",
         name: "Rationale und irrationale Zahlen",
+        suchwoerter: ["reelle Zahlen", "irrationale Zahlen", "Zahlenmengen"],
         stufen: [8, 9],
         erklaerung: "Rationale Zahlen lassen sich als Bruch schreiben, ihre Dezimaldarstellung bricht ab oder ist periodisch. Irrationale Zahlen wie sqrt(2) oder π haben unendlich viele Nachkommastellen ohne Periode. Mit gerundeten Werten rechnet man nur ungefähr: 1,41² = 1,9881 und nicht 2.",
         fehler: [
@@ -615,6 +669,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.funktionen.wachstum",
         name: "Lineares Wachstum und lineare Abnahme",
+        suchwoerter: ["lineare Zunahme"],
         stufen: [7, 8],
         erklaerung: "Bei linearem Wachstum kommt in jedem Zeitschritt derselbe Betrag dazu, bei linearer Abnahme fällt er weg. Beispiel: Ein Becken enthält 200 l, pro Minute fließen 15 l dazu, nach t Minuten sind es 200 + 15 · t Liter.",
         fehler: [
@@ -626,6 +681,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.funktionen.graphen",
         name: "Graphen in Sachsituationen lesen",
+        suchwoerter: ["Zeit-Weg-Diagramm", "Graphen interpretieren"],
         stufen: [8, 9],
         erklaerung: "Zuerst die Achsen lesen: was steht waagrecht, was senkrecht, in welchen Einheiten. Steigt der Graph, nimmt die Größe zu, ist er waagrecht, bleibt sie gleich. Beispiel: Im Zeit-Weg-Diagramm heißt ein waagrechtes Stück, dass die Person steht.",
         fehler: [
@@ -637,6 +693,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.funktionen.darstellungen",
         name: "Funktionen: Wertetabelle, Graph und Funktionsgleichung",
+        suchwoerter: ["Wertetabelle", "Funktionsbegriff", "Zuordnungen"],
         stufen: [8, 9],
         erklaerung: "Eine Funktion ordnet jedem x genau einen Wert f(x) zu. Aus der Gleichung macht man eine Wertetabelle und zeichnet die Punkte ins Koordinatensystem. Beispiel: f(x) = 2x − 1 ergibt f(0) = −1, f(1) = 1, f(2) = 3.",
         fehler: [
@@ -648,6 +705,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.funktionen.linear",
         name: "Lineare Funktionen zeichnen und ablesen (k und d)",
+        suchwoerter: ["Steigung", "Steigungsdreieck", "Achsenabschnitt"],
         stufen: [8, 9],
         erklaerung: "f(x) = k · x + d: d ist der Schnittpunkt mit der y-Achse, k die Steigung, also um wie viel y wächst, wenn x um 1 größer wird. Zeichnen: bei (0 | d) beginnen, dann mit dem Steigungsdreieck 1 nach rechts und k nach oben. Beispiel: f(x) = 2x − 1 beginnt bei (0 | −1) und steigt pro Schritt um 2.",
         fehler: [
@@ -703,6 +761,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.gleichungssysteme.grafisch",
         name: "Lineare Gleichungssysteme grafisch lösen",
+        suchwoerter: ["Schnittpunkt zweier Geraden"],
         stufen: [8, 9],
         erklaerung: "Jede Gleichung nach y auflösen und als Gerade zeichnen. Der Schnittpunkt ist die Lösung. Parallele Geraden: keine Lösung. Dieselbe Gerade: unendlich viele Lösungen.",
         fehler: [
@@ -726,10 +785,12 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Geometrische Grundbegriffe",
+    suchwoerter: ["Grundbegriffe der Geometrie"],
     themen: [
       {
         id: "mathe.geometrie.grundbegriffe",
         name: "Strecke, Strahl, Gerade: parallel und normal",
+        suchwoerter: ["geometrische Grundbegriffe", "Normale", "Parallele", "Lagebeziehungen"],
         stufen: [5, 6],
         erklaerung: "Eine Strecke hat zwei Endpunkte, ein Strahl einen Anfangspunkt, eine Gerade keinen. Parallele Geraden haben überall denselben Abstand, normale Geraden schneiden einander im rechten Winkel. Abstand heißt immer kürzester Weg, also normal gemessen.",
         fehler: [
@@ -741,6 +802,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.geometrie.kreis",
         name: "Kreis und Kreisteile zeichnen und benennen",
+        suchwoerter: ["Radius", "Durchmesser", "Kreissehne", "Zirkel"],
         stufen: [5, 6],
         erklaerung: "Alle Punkte der Kreislinie haben denselben Abstand r vom Mittelpunkt. Der Durchmesser ist doppelt so lang wie der Radius. Kreisteile: Kreisbogen, Kreissektor (wie ein Tortenstück) und Kreissegment (von einer Sehne abgeschnitten). Eine Tangente berührt den Kreis in einem Punkt und steht dort normal auf den Radius.",
         fehler: [
@@ -752,6 +814,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.geometrie.koordinaten",
         name: "Koordinatensystem: Punkte eintragen und ablesen",
+        suchwoerter: ["Koordinaten"],
         stufen: [6, 7],
         erklaerung: "Ein Punkt P(x | y): zuerst x waagrecht, dann y senkrecht. Negative Werte gehen nach links oder nach unten. Beispiel: A(3 | −2) liegt 3 nach rechts und 2 nach unten.",
         fehler: [
@@ -763,6 +826,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.geometrie.symmetrie",
         name: "Achsensymmetrie und Kongruenz",
+        suchwoerter: ["symmetrische Figuren", "Spiegelung", "Spiegelachse", "deckungsgleich"],
         stufen: [6, 7],
         erklaerung: "Eine Figur ist achsensymmetrisch, wenn sie beim Falten entlang der Achse genau aufeinander passt. Ein Punkt und sein Spiegelpunkt liegen auf einer Normalen zur Achse, gleich weit von ihr entfernt. Kongruente Figuren sind deckungsgleich: alle Seiten und Winkel stimmen überein.",
         fehler: [
@@ -774,6 +838,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.geometrie.symmetralen",
         name: "Streckensymmetrale und Winkelsymmetrale konstruieren",
+        suchwoerter: ["Mittelsenkrechte", "Winkelhalbierende", "Streckenhalbierende"],
         stufen: [6, 7],
         erklaerung: "Die Streckensymmetrale steht normal auf die Strecke und geht durch ihren Mittelpunkt, jeder Punkt auf ihr ist von beiden Endpunkten gleich weit entfernt. Die Winkelsymmetrale teilt den Winkel in zwei gleiche Hälften. Konstruiert wird mit dem Zirkel: zwei Kreisbögen mit gleichem Radius.",
         fehler: [
@@ -790,6 +855,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.winkel.messen",
         name: "Winkel messen, zeichnen und benennen",
+        suchwoerter: ["Geodreieck", "Winkelarten", "spitzer, stumpfer und rechter Winkel"],
         stufen: [5, 6],
         erklaerung: "Winkel misst man in Grad. Spitz: unter 90°, recht: genau 90°, stumpf: zwischen 90° und 180°, gestreckt: 180°, erhaben: über 180°, voll: 360°. Messen: Nullpunkt des Geodreiecks auf den Scheitel, Nulllinie auf einen Schenkel.",
         fehler: [
@@ -801,6 +867,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.winkel.beziehungen",
         name: "Winkelsumme und Winkelbeziehungen",
+        suchwoerter: ["Scheitelwinkel", "Nebenwinkel", "Stufenwinkel", "Wechselwinkel", "Winkelsumme im Dreieck"],
         stufen: [6, 7],
         erklaerung: "Im Dreieck ist die Winkelsumme 180°, im Viereck 360°. Nebenwinkel ergänzen einander auf 180°, Scheitelwinkel sind gleich groß, ebenso Parallelwinkel an parallelen Geraden. Beispiel: α = 50° und β = 70° → γ = 60°.",
         fehler: [
@@ -817,6 +884,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.dreiecke.arten",
         name: "Dreiecke und Vierecke: Arten und Eigenschaften",
+        suchwoerter: ["Dreiecksarten", "Vierecksarten", "Eigenschaften von Vierecken"],
         stufen: [6, 7],
         erklaerung: "Dreiecke nach Winkeln: spitzwinkelig, rechtwinkelig, stumpfwinkelig; nach Seiten: unregelmäßig, gleichschenkelig, gleichseitig. Vierecke: Quadrat, Rechteck, Raute (Rhombus), Parallelogramm, Deltoid (Drachenviereck), Trapez. Jedes Quadrat ist auch ein Rechteck und eine Raute.",
         fehler: [
@@ -828,6 +896,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.dreiecke.konstruieren",
         name: "Dreiecke und Vierecke konstruieren",
+        suchwoerter: ["Dreieckskonstruktion", "Viereckskonstruktion", "Kongruenzsätze"],
         stufen: [6, 7],
         erklaerung: "Zuerst eine Planfigur skizzieren und die gegebenen Stücke markieren. Dann mit einer Seite beginnen und die weiteren Punkte mit dem Zirkel (Längen) oder dem Geodreieck (Winkel) festlegen. Beschriftung gegen den Uhrzeigersinn: A, B, C; die Seite a liegt gegenüber von A.",
         fehler: [
@@ -839,6 +908,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.dreiecke.punkte",
         name: "Besondere Punkte im Dreieck",
+        suchwoerter: ["Umkreis", "Inkreis", "Schwerpunkt", "Höhenschnittpunkt", "Eulersche Gerade"],
         stufen: [6, 7],
         erklaerung: "Umkreismittelpunkt: Schnittpunkt der Seitensymmetralen. Inkreismittelpunkt: Schnittpunkt der Winkelsymmetralen. Schwerpunkt: Schnittpunkt der Schwerlinien (von einer Ecke zur Mitte der gegenüberliegenden Seite). Höhenschnittpunkt: Schnittpunkt der Höhen.",
         fehler: [
@@ -851,6 +921,7 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Flächeninhalt und Umfang",
+    suchwoerter: ["Flächenberechnung"],
     themen: [
       {
         id: "mathe.flaechen.rechteck",
@@ -866,6 +937,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.flaechen.zusammengesetzt",
         name: "Zusammengesetzte Figuren",
+        suchwoerter: ["zusammengesetzte Flächen"],
         stufen: [5, 7],
         erklaerung: "Die Figur in Rechtecke (später auch Dreiecke) zerlegen oder zu einem großen Rechteck ergänzen und das Fehlende abziehen. Fehlende Seitenlängen aus den gegebenen ausrechnen.",
         fehler: [
@@ -888,6 +960,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.flaechen.dreieck",
         name: "Flächeninhalt von Dreiecken",
+        suchwoerter: ["Dreiecksfläche"],
         stufen: [6, 7],
         erklaerung: "A = c · h : 2, also Grundlinie mal zugehörige Höhe durch 2. Die Höhe steht normal auf die Grundlinie. Im rechtwinkeligen Dreieck sind die beiden Katheten Grundlinie und Höhe: A = a · b : 2.",
         fehler: [
@@ -899,6 +972,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.flaechen.vierecke",
         name: "Flächeninhalt von Parallelogramm, Raute, Deltoid und Trapez",
+        suchwoerter: ["Vierecksflächen"],
         stufen: [6, 7],
         erklaerung: "Parallelogramm: A = a · h. Raute und Deltoid: A = e · f : 2 (die Diagonalen). Trapez: A = (a + c) · h : 2. Die Höhe ist immer der normale Abstand, nicht die schräge Seite. Beispiel: Trapez mit a = 8 cm, c = 4 cm und h = 5 cm → A = 30 cm².",
         fehler: [
@@ -910,6 +984,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.flaechen.vielecke",
         name: "Flächeninhalt von Vielecken",
+        suchwoerter: ["regelmäßige Vielecke", "Sechseck", "Achteck"],
         stufen: [6, 8],
         erklaerung: "Ein Vieleck zerlegt man in Dreiecke und Vierecke, berechnet jede Teilfläche und addiert. Ein regelmäßiges Sechseck besteht aus 6 gleichseitigen Dreiecken. Im Koordinatensystem hilft ein umschließendes Rechteck, von dem man Dreiecke abzieht.",
         fehler: [
@@ -921,6 +996,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.flaechen.kreis",
         name: "Umfang und Flächeninhalt von Kreisen",
+        suchwoerter: ["Kreisfläche", "Kreisumfang", "Kreiszahl"],
         stufen: [8, 9],
         erklaerung: "u = 2 · r · π = d · π und A = r² · π, π ist ungefähr 3,14. Beispiel: r = 5 cm → u ≈ 31,4 cm und A ≈ 78,5 cm².",
         fehler: [
@@ -932,6 +1008,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.flaechen.kreisteile",
         name: "Kreisteile: Halbkreis, Viertelkreis und Kreissektor",
+        suchwoerter: ["Kreisbogen", "Kreisring"],
         stufen: [8, 9],
         erklaerung: "Ein Kreissektor mit dem Winkel α ist der Anteil α : 360° vom ganzen Kreis: A = r² · π · α : 360° und Bogen b = 2 · r · π · α : 360°. Beim Umfang eines Halbkreises gehört der Durchmesser dazu.",
         fehler: [
@@ -944,10 +1021,12 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Körper",
+    suchwoerter: ["Körperberechnung", "Raumgeometrie"],
     themen: [
       {
         id: "mathe.koerper.formen",
         name: "Körper erkennen und beschreiben",
+        suchwoerter: ["geometrische Körper", "Ecken, Kanten und Flächen"],
         stufen: [5, 6],
         erklaerung: "Würfel, Quader, Prisma, Pyramide, Zylinder, Kegel und Kugel unterscheidet man an Flächen, Kanten und Ecken. Beispiel: Ein Quader hat 6 Flächen, 12 Kanten und 8 Ecken.",
         fehler: [
@@ -959,6 +1038,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.koerper.netze",
         name: "Netze und Schrägrisse",
+        suchwoerter: ["Körpernetze", "Schrägriss", "Grundriss", "Aufriss", "Kreuzriss"],
         stufen: [5, 7],
         erklaerung: "Ein Netz ist der aufgeklappte Körper: beim Würfel 6 Quadrate, die sich zusammenfalten lassen, ohne dass zwei Flächen übereinanderliegen. Im Schrägriss zeichnet man die vordere Fläche in wahrer Größe und die nach hinten laufenden Kanten schräg und verkürzt.",
         fehler: [
@@ -970,6 +1050,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.koerper.quader",
         name: "Oberfläche und Volumen von Quader und Würfel",
+        suchwoerter: ["Rauminhalt", "Oberflächeninhalt"],
         stufen: [5, 6],
         erklaerung: "Volumen: V = a · b · h. Oberfläche: O = 2 · (a · b + a · h + b · h), beim Würfel O = 6 · a². Beispiel: a = 5 cm, b = 3 cm und h = 2 cm → V = 30 cm³ und O = 2 · (15 + 10 + 6) = 62 cm².",
         fehler: [
@@ -1025,6 +1106,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.koerper.dichte",
         name: "Masse und Dichte von Körpern",
+        suchwoerter: ["Dichte"],
         stufen: [7, 9],
         erklaerung: "Masse = Volumen · Dichte. Die Einheiten müssen zusammenpassen: Ist die Dichte in g pro cm³ angegeben, braucht man das Volumen in cm³. Beispiel: Ein Eisenstück mit 10 cm³ und der Dichte 7,9 g pro cm³ wiegt 79 g.",
         fehler: [
@@ -1090,6 +1172,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.aehnlichkeit.figuren",
         name: "Ähnliche Figuren und Ähnlichkeitsfaktor",
+        suchwoerter: ["Strahlensatz", "Vergrößerung und Verkleinerung"],
         stufen: [7, 8],
         erklaerung: "Ähnliche Figuren haben gleich große Winkel, alle Längen sind mit demselben Faktor k vergrößert oder verkleinert. Der Flächeninhalt ändert sich mit k². Beispiel: k = 3 → Seiten dreimal so lang, Fläche neunmal so groß.",
         fehler: [
@@ -1102,10 +1185,12 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Statistik",
+    suchwoerter: ["beschreibende Statistik", "Daten auswerten"],
     themen: [
       {
         id: "mathe.statistik.diagramme",
         name: "Diagramme lesen und zeichnen",
+        suchwoerter: ["Säulendiagramm", "Balkendiagramm", "Kreisdiagramm", "Liniendiagramm", "Strichliste"],
         stufen: [5, 8],
         erklaerung: "Säulen- und Balkendiagramme vergleichen Anzahlen, Kreisdiagramme und Prozentstreifen zeigen Anteile, Liniendiagramme zeigen Entwicklungen. Zuerst Titel, Achsen und Einteilung lesen. Eine Achse, die nicht bei 0 beginnt, lässt Unterschiede größer aussehen.",
         fehler: [
@@ -1117,6 +1202,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.statistik.kennzahlen",
         name: "Mittelwert, Median und Spannweite",
+        suchwoerter: ["arithmetisches Mittel", "Durchschnitt", "Zentralwert", "Modus"],
         stufen: [5, 8],
         erklaerung: "Mittelwert: alle Werte addieren und durch ihre Anzahl dividieren. Median: Werte der Größe nach ordnen und den mittleren nehmen, bei gerader Anzahl den Mittelwert der beiden mittleren. Spannweite: größter minus kleinster Wert. Beispiel: 2, 3, 3, 5, 12 → Mittelwert 5, Median 3, Spannweite 10.",
         fehler: [
@@ -1128,6 +1214,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.statistik.haeufigkeiten",
         name: "Absolute und relative Häufigkeiten",
+        suchwoerter: ["Häufigkeitstabelle"],
         stufen: [5, 7],
         erklaerung: "Absolute Häufigkeit: wie oft etwas vorkommt. Relative Häufigkeit: absolute Häufigkeit durch die Gesamtzahl, als Bruch, Dezimalzahl oder Prozent. Beispiel: 6 von 24 Kindern → 6/24 = 1/4 = 25 %. Alle relativen Häufigkeiten zusammen ergeben 100 %.",
         fehler: [
@@ -1150,6 +1237,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.statistik.abzaehlen",
         name: "Abzählen mit Baumdiagrammen",
+        suchwoerter: ["Kombinatorik", "Möglichkeiten zählen"],
         stufen: [5, 6],
         erklaerung: "Bei jeder Auswahl verzweigt sich das Baumdiagramm. Die Anzahl der Möglichkeiten ist das Produkt der Möglichkeiten auf jeder Stufe. Beispiel: 3 Vorspeisen und 2 Hauptspeisen ergeben 3 · 2 = 6 Menüs.",
         fehler: [
@@ -1166,6 +1254,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.wahrscheinlichkeit.laplace",
         name: "Wahrscheinlichkeit bei Münze und Würfel",
+        suchwoerter: ["Zufall", "Zufallsexperiment", "Laplace", "Wahrscheinlichkeitsrechnung"],
         stufen: [7, 8],
         erklaerung: "Wenn alle Ergebnisse gleich wahrscheinlich sind: Wahrscheinlichkeit = günstige Ergebnisse durch mögliche Ergebnisse. Beispiel: gerade Augenzahl beim Würfeln: 3/6 = 1/2 = 50 %. Eine Wahrscheinlichkeit liegt immer zwischen 0 und 1.",
         fehler: [
@@ -1177,6 +1266,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.wahrscheinlichkeit.zweistufig",
         name: "Zweistufige Zufallsexperimente mit Baumdiagramm",
+        suchwoerter: ["Baumdiagramm", "Pfadregeln"],
         stufen: [8, 9],
         erklaerung: "Entlang eines Pfades multipliziert man die Wahrscheinlichkeiten. Gehören mehrere Pfade zum Ereignis, addiert man ihre Ergebnisse. Beispiel: zweimal eine Münze werfen, mindestens einmal Kopf: 1 − 1/2 · 1/2 = 3/4.",
         fehler: [
@@ -1331,4 +1421,16 @@ const VORAUSSETZUNGEN: [string, string][] = [
   ["mathe.wahrscheinlichkeit.zweistufig", "mathe.statistik.abzaehlen"],
 ];
 
-export const MATHE_UNTERSTUFE: Modul = { fach: "Mathematik", bereiche: BEREICHE, fehlerBisher: FEHLER_BISHER, voraussetzungen: VORAUSSETZUNGEN };
+/** Suchwörter of the fraction and negative number skills of lib/curriculum.ts. */
+const SUCHWOERTER_BISHER: Record<string, string[]> = {
+  "mathe.brueche.kuerzen": ["Brüche kürzen"],
+  "mathe.brueche.erweitern": ["Brüche erweitern", "gleichnamig machen"],
+  "mathe.brueche.addieren": ["Brüche addieren", "Addition von Brüchen", "gleichnamige Brüche"],
+  "mathe.brueche.subtrahieren": ["Brüche subtrahieren", "Subtraktion von Brüchen"],
+  "mathe.brueche.multiplizieren": ["Brüche multiplizieren", "Multiplikation von Brüchen"],
+  "mathe.brueche.dividieren": ["Brüche dividieren", "Division von Brüchen"],
+  "mathe.negativ.addieren": ["Addition und Subtraktion ganzer Zahlen"],
+  "mathe.negativ.multiplizieren": ["Multiplikation und Division ganzer Zahlen"],
+};
+
+export const MATHE_UNTERSTUFE: Modul = { fach: "Mathematik", bereiche: BEREICHE, fehlerBisher: FEHLER_BISHER, suchwoerterBisher: SUCHWOERTER_BISHER, voraussetzungen: VORAUSSETZUNGEN };

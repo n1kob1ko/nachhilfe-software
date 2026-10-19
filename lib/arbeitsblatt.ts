@@ -337,6 +337,13 @@ export type SheetDoc = {
   tasks: SheetTask[];
   /** Leseverständnis: the text all questions are about, printed once before them */
   reading: ReadingText | null;
+  /** Probeschularbeit (lib/probeschularbeit.ts blattDaten): points per task in order, total, grading key, time */
+  probe?: {
+    punkte: number[];
+    gesamt: number;
+    bereiche: { note: { note: number; label: string }; von: number; bis: number }[];
+    dauer: number | null;
+  } | null;
 };
 
 export function buildSheet(

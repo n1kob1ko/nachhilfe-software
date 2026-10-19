@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { SheetPage } from "@/components/arbeitsblatt/SheetPage";
 import { buildSheet, readOptions } from "@/lib/arbeitsblatt";
 import { requireTeacher } from "@/lib/auth";
+import { blattDaten } from "@/lib/probeschularbeit";
 import * as repo from "@/lib/repo";
 import { klassenLabel, stufeLabel } from "@/lib/school";
 import { getUnit } from "@/lib/units";
@@ -60,20 +61,24 @@ export default async function WorksheetSheetPage({
     if (!names.has(sid)) names.set(sid, repo.getSkill(sid)?.name ?? null);
     return names.get(sid)!;
   };
-  const doc = buildSheet(
-    {
-      title,
-      subject: w.subject,
-      klasseLabel: w.klasse
-        ? klassenLabel(w.school_type, w.klasse)
-        : stufeLabel(w.grade),
-      topic: w.topic,
-      studentName: student?.name ?? null,
-      tasks,
-    },
-    skillName,
-    o,
-  );
+  const doc = {
+    ...buildSheet(
+      {
+        title,
+        subject: w.subject,
+        klasseLabel: w.klasse
+          ? klassenLabel(w.school_type, w.klasse)
+          : stufeLabel(w.grade),
+        topic: w.topic,
+        studentName: student?.name ?? null,
+        tasks,
+      },
+      skillName,
+      o,
+    ),
+    // Probeschularbeit: Punkte je Aufgabe und Notenschlüssel
+    probe: blattDaten(w, tasks),
+  };
   const back = ausEinheit
     ? { href: `/einheiten/${ausEinheit.id}`, label: "Zur Einheit" }
     : w.kind === "bibliothek"

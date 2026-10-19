@@ -826,6 +826,9 @@ function School({ student }: { student: repo.Student }) {
                   <Link href={`/schueler/${student.id}/pruefung/${t.id}`} className="btn btn-primary btn-sm">
                     Vorbereitung starten
                   </Link>
+                  <Link href={`/schueler/${student.id}/pruefung/${t.id}${t.skill_ids.length ? "#probeschularbeit" : "?ziel=probe#stoff-zuordnen"}`} className="btn btn-secondary btn-sm">
+                    Probeschularbeit
+                  </Link>
                   <Reveal label="Ergebnis eintragen">
                     <form action={setExamResultAction.bind(null, t.id)} className="flex flex-wrap items-center gap-2">
                       <input className="input num w-[84px]" name="grade" type="number" min={1} max={5} placeholder="Note" aria-label="Note" />

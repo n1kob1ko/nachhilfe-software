@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin, requireTeacher } from "@/lib/auth";
 import * as imp from "@/lib/curriculum-import";
-import { matchSkills, setExamThresholds, splitTopics } from "@/lib/lehrplan";
+import { merkeZuordnung, setExamThresholds, splitTopics, stoffVorschlag, STOFF_THEMEN_MAX } from "@/lib/lehrplan";
 import * as repo from "@/lib/repo";
 import { fachAus } from "@/lib/school";
 import { stoffzettelFuer } from "@/lib/stoffzettel";
@@ -17,16 +17,36 @@ const todayLocal = () => {
 };
 
 // ---------- exams ----------
-export type TopicSuggestion = { topic: string; skills: { id: string; name: string; area: string }[] };
+export type TopicSuggestion = { topic: string; skills: { id: string; name: string; area: string }[]; best: string[] };
 
-/** Skill suggestions for the Stoff of an exam; nothing is linked until the teacher ticks it. */
+/** Skill suggestions per topic of the Stoff, the sure ones to be shown ticked; nothing is linked before „Eintragen“. */
 export async function suggestSkillsAction(studentId: number, subject: string, text: string): Promise<TopicSuggestion[]> {
   await requireTeacher();
   const student = repo.getStudent(studentId);
   if (!student) return [];
-  return splitTopics(text)
-    .slice(0, 8)
-    .map((topic) => ({ topic, skills: matchSkills(topic, subject, { student, limit: 6 }).map((m) => ({ id: m.skill.id, name: m.skill.parent_id ? `${repo.getSkill(m.skill.parent_id)?.name ?? ""} › ${m.skill.name}` : m.skill.name, area: m.skill.area })) }));
+  return stoffVorschlag(splitTopics(text).slice(0, STOFF_THEMEN_MAX), subject, student).map((v) => ({
+    topic: v.topic,
+    skills: v.skills.map((s) => ({ id: s.id, name: s.parent_id ? `${repo.getSkill(s.parent_id)?.name ?? ""} › ${s.name}` : s.name, area: s.area })),
+    best: v.best,
+  }));
+}
+
+/**
+ * The skills ticked on a Stoff form: per topic (`stoff_thema` in order, `stoff_<i>` ticked or chosen, `stoff_auto_<i>`
+ * what was suggested) and `skill_ids` without a topic. Unknown ids are dropped. A topic whose ticks differ from the
+ * suggestion is remembered for next time (lib/lehrplan.ts merkeZuordnung).
+ */
+function zuordnungAus(formData: FormData, subject: string, teacherId: number): string[] {
+  const ids = new Set(formData.getAll("skill_ids").map(String));
+  formData.getAll("stoff_thema").forEach((raw, i) => {
+    const topic = String(raw).trim();
+    const chosen = [...new Set(formData.getAll(`stoff_${i}`).map(String).filter(Boolean))].filter((id) => repo.getSkill(id));
+    const auto = str(formData, `stoff_auto_${i}`).split(",").filter(Boolean);
+    for (const id of chosen) ids.add(id);
+    const same = chosen.length === auto.length && chosen.every((id) => auto.includes(id));
+    if (topic && !same) merkeZuordnung(subject, topic, chosen, teacherId);
+  });
+  return [...ids].filter((id) => repo.getSkill(id));
 }
 
 /** Quick entry from the student profile: Art, Fach, Datum, Stoff (and a result, if already written). */
@@ -53,7 +73,7 @@ export async function addExamAction(formData: FormData) {
     points,
     max_points: num(formData, "max_points"),
     notes: str(formData, "notes"),
-    skill_ids: [...new Set(formData.getAll("skill_ids").map(String))],
+    skill_ids: zuordnungAus(formData, subject, teacher.id),
     teacher_id: teacher.id,
     material_id: materialId,
   });
@@ -80,14 +100,17 @@ export async function cancelExamAction(testId: number) {
   revalidatePath("/");
 }
 
-/** The skills an exam covers, as ticked on the preparation page. */
+/** The skills an exam covers, as ticked on the preparation page („Stoff zuordnen“ or „Fähigkeiten der Prüfung ändern“). */
 export async function setExamSkillsAction(testId: number, formData: FormData) {
-  await requireTeacher();
+  const teacher = await requireTeacher();
   const t = repo.getTest(testId);
   if (!t) return;
-  repo.setTestSkills(testId, [...new Set(formData.getAll("skill_ids").map(String))]);
+  const ids = zuordnungAus(formData, t.subject, teacher.id);
+  repo.setTestSkills(testId, ids);
   revalidatePath(`/schueler/${t.student_id}/pruefung/${testId}`);
   revalidatePath(`/schueler/${t.student_id}`);
+  // from „Probeschularbeit“ on the profile: on to creating it
+  redirect(`/schueler/${t.student_id}/pruefung/${testId}?zugeordnet=${ids.length}${str(formData, "ziel") === "probe" ? "#probeschularbeit" : ""}`);
 }
 
 // ---------- curriculum admin ----------

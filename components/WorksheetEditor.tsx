@@ -16,6 +16,7 @@ import {
   type ActionResult,
 } from "@/app/builder-actions";
 import { saveToLibraryAction } from "@/app/library-actions";
+import { setzePunkteAction } from "@/app/probeschularbeit-actions";
 import { AddReadingQuestion, ReadingIssues, ReadingQuestionFields, ReadingTextPanel } from "@/components/ReadingEditor";
 import { TaskBody } from "@/components/TaskPreview";
 import { FigurBild } from "@/components/Figur";
@@ -27,6 +28,7 @@ import { GAP, gapCount, hintLabel, type TaskDraft } from "@/lib/tasks";
 import { isResultForm, PART_KINDS, RESULT_FORMS, wayMode, type PartKind } from "@/lib/math-check";
 import { checkOwnSolution } from "@/lib/math-task";
 import { readingIssues, readingSet, type ReadingText } from "@/lib/lesen";
+import { PUNKTE_MAX, punkteText } from "@/lib/probeschularbeit-regeln";
 import { MathText } from "./MathText";
 
 type Skill = { id: string; name: string; area: string; parent_id: string | null };
@@ -48,7 +50,12 @@ type Props = {
   library?: boolean;
   /** task that opens in the editor right away (a new library task) */
   initialEditing?: number | null;
+  /** Probeschularbeit (lib/probeschularbeit.ts): Punkte je Aufgabe, im Editor änderbar */
+  punkte?: Record<number, number>;
 };
+
+/** Punkte zur Auswahl: halbe bis 5, dann ganze, und die aktuelle, falls sie nicht dabei ist */
+const PUNKTE_WAHL = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 12, 15, PUNKTE_MAX];
 
 const FORMATS = (Object.keys(TASK_TYPES) as (keyof typeof TASK_TYPES)[]).filter((k): k is TaskType => k !== "mixed");
 
@@ -129,7 +136,10 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
   return (
     <div className={pending ? "opacity-60 transition-opacity" : ""} aria-busy={pending}>
       <div className="grid grid-cols-[32px_minmax(0,1fr)] gap-3">
-        <span className="num pt-0.5 text-[15px] font-semibold text-ink-3">{p.index}.</span>
+        <span className="num pt-0.5 text-[15px] font-semibold text-ink-3">
+          {p.index}.
+          {p.punkte && p.punkte[t.id] !== undefined && <span className="mt-1 block text-[12px] font-medium whitespace-nowrap text-ink-3">{punkteText(p.punkte[t.id])} P.</span>}
+        </span>
         <div className="min-w-0">
           <TaskBody task={t} showSolution={p.showSolutions} skillName={p.skillName} subject={p.subject} passageShown={p.passageShown} />
           {p.editable && <ReadingIssues issues={p.issues ?? []} />}
@@ -188,6 +198,31 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
                           {d}
                         </option>
                       ))}
+                    </select>
+                  </label>
+                )}
+                {p.punkte && p.punkte[t.id] !== undefined && (
+                  <label className="flex items-center gap-1.5 text-[13px] text-ink-2">
+                    <span>Punkte</span>
+                    <select
+                      className="input input-sm"
+                      value={p.punkte[t.id]}
+                      disabled={pending}
+                      onChange={(e) =>
+                        run(async () => {
+                          const r = await setzePunkteAction(t.id, Number(e.target.value));
+                          return r.error ? { error: r.error } : null;
+                        })
+                      }
+                      aria-label={`Punkte für Aufgabe ${p.index}`}
+                    >
+                      {[...new Set([...PUNKTE_WAHL, p.punkte[t.id]])]
+                        .sort((a, b) => a - b)
+                        .map((x) => (
+                          <option key={x} value={x}>
+                            {punkteText(x)}
+                          </option>
+                        ))}
                     </select>
                   </label>
                 )}

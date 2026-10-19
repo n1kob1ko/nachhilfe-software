@@ -13,6 +13,7 @@ import { Lines, WorkField } from "./WorkArea";
 import { Marked } from "@/components/FixMarks";
 import { FigurBild, figurKopf } from "@/components/Figur";
 import { markFaultyText } from "@/lib/fix-text";
+import { bereichText, punkteText } from "@/lib/probeschularbeit-regeln";
 
 const letter = (i: number) => String.fromCharCode(97 + i);
 
@@ -111,6 +112,7 @@ function Header({
     o.subject && doc.subject,
     o.klasse && doc.klasseLabel,
     o.topic && doc.topic,
+    doc.probe?.dauer && `Arbeitszeit: ${doc.probe.dauer} Minuten`,
   ].filter(Boolean) as string[];
   return (
     <header className="ab-head">
@@ -195,11 +197,26 @@ function PromptAroundArea({
   );
 }
 
+/** Probeschularbeit: the points of a task at its right edge, with a box for the points reached (student sheet). */
+function Punkte({ p, teacher }: { p: number; teacher: boolean }) {
+  return (
+    <span className="ab-punkte">
+      {!teacher && <span className="ab-punkte-box" aria-label="erreichte Punkte" />}
+      <span>
+        {!teacher && "/ "}
+        {punkteText(p)} P.
+      </span>
+    </span>
+  );
+}
+
+const taskClass = (o: SheetOptions, punkte?: number) => ["ab-task", !o.numbers && "ab-task-plain", punkte !== undefined && "ab-task-probe"].filter(Boolean).join(" ");
+
 /** One task as the student gets it: prompt, choices, room to work and write. */
-export function StudentTask({ t, o }: { t: SheetTask; o: SheetOptions }) {
+export function StudentTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?: number }) {
   const { task, plan } = t;
   return (
-    <div className={o.numbers ? "ab-task" : "ab-task ab-task-plain"}>
+    <div className={taskClass(o, punkte)}>
       {o.numbers && <span className="ab-num">{t.n}</span>}
       <div className="ab-body">
         <MitBild
@@ -266,12 +283,13 @@ export function StudentTask({ t, o }: { t: SheetTask; o: SheetOptions }) {
           <Lines count={plan.lines} label={plan.answerLabel} />
         )}
       </div>
+      {punkte !== undefined && <Punkte p={punkte} teacher={false} />}
     </div>
   );
 }
 
 /** The task with its solution, solution path, skill, difficulty and typical errors (teacher version only). */
-function TeacherTask({ t, o }: { t: SheetTask; o: SheetOptions }) {
+function TeacherTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?: number }) {
   const { task } = t;
   const answer = shortAnswer(task);
   const steps = task.solutionSteps?.length ? task.solutionSteps : null;
@@ -280,7 +298,7 @@ function TeacherTask({ t, o }: { t: SheetTask; o: SheetOptions }) {
       all.findIndex((x) => x.answer === e.answer && x.label === e.label) === i,
   );
   return (
-    <div className={o.numbers ? "ab-task" : "ab-task ab-task-plain"}>
+    <div className={taskClass(o, punkte)}>
       {o.numbers && <span className="ab-num">{t.n}</span>}
       <div className="ab-body">
         <MitBild
@@ -451,7 +469,46 @@ function TeacherTask({ t, o }: { t: SheetTask; o: SheetOptions }) {
           )}
         </div>
       </div>
+      {punkte !== undefined && <Punkte p={punkte} teacher />}
     </div>
+  );
+}
+
+/** Probeschularbeit: total points, a field for the grade and the grading key under the last task. */
+function Bewertung({ probe, teacher }: { probe: NonNullable<SheetDoc["probe"]>; teacher: boolean }) {
+  return (
+    <section className="ab-bewertung" aria-label="Bewertung">
+      {teacher ? (
+        <p className="ab-gesamt">
+          Gesamt: <b>{punkteText(probe.gesamt)} Punkte</b>
+        </p>
+      ) : (
+        <p className="ab-gesamt">
+          <span>Gesamt:</span>
+          <span className="ab-field-line ab-field-short" />
+          <span>von {punkteText(probe.gesamt)} Punkten</span>
+          <span className="ab-gesamt-note">Note:</span>
+          <span className="ab-field-line ab-field-short" />
+        </p>
+      )}
+      <table className="ab-schluessel">
+        <caption>Notenschlüssel</caption>
+        <tbody>
+          <tr>
+            {probe.bereiche.map((b) => (
+              <th key={b.note.note} scope="col">
+                {b.note.label}
+              </th>
+            ))}
+          </tr>
+          <tr>
+            {probe.bereiche.map((b) => (
+              <td key={b.note.note}>{bereichText(b)}</td>
+            ))}
+          </tr>
+        </tbody>
+      </table>
+    </section>
   );
 }
 
@@ -504,13 +561,14 @@ export function Sheet({ doc, o }: { doc: SheetDoc; o: SheetOptions }) {
           <Fragment key={t.n}>
             {t.passage && <Passage text={t.passage} />}
             {teacher ? (
-              <TeacherTask t={t} o={o} />
+              <TeacherTask t={t} o={o} punkte={doc.probe?.punkte[t.n - 1]} />
             ) : (
-              <StudentTask t={t} o={o} />
+              <StudentTask t={t} o={o} punkte={doc.probe?.punkte[t.n - 1]} />
             )}
           </Fragment>
         ))}
       </div>
+      {doc.probe && <Bewertung probe={doc.probe} teacher={teacher} />}
       {!teacher && o.solutions === "seite" && <SolutionPage doc={doc} o={o} />}
     </article>
   );

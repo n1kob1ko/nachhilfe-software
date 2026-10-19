@@ -9,6 +9,7 @@ import { FixCompare } from "@/components/FixMarks";
 import { closestVersion } from "@/lib/fix-text";
 import { ReviewButtons } from "@/components/ReviewButtons";
 import { PageHeader, formatDate, formatDuration } from "@/components/ui";
+import { ergebnis, punkteText } from "@/lib/probeschularbeit";
 import * as repo from "@/lib/repo";
 import { GAP, HINT_LABELS, REVIEWS, TEACHER_GRADED, isReview } from "@/lib/tasks";
 import { MathText } from "@/components/MathText";
@@ -66,11 +67,28 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   const withHelp = finals.filter((a) => a.hints_used > 0 || a.solution_viewed).length;
   const unit = runningUnitForStudent(student.id);
   const reading = readingSet(tasks);
+  // Probeschularbeit (lib/probeschularbeit.ts): Punkte und Note statt Hilfen (sie läuft ohne Tipps)
+  const probe = w.probe_test_id ? repo.getTest(w.probe_test_id) : null;
+  const pe = probe ? ergebnis(assignment.id) : null;
+  const metrics: [string, string][] = [
+    ...(pe
+      ? ([
+          ["Punkte", `${punkteText(pe.erreicht)} von ${punkteText(pe.gesamt)}`],
+          ["Note", pe.note ? `${pe.note.note} · ${pe.note.label}` : "noch offen"],
+        ] as [string, string][])
+      : []),
+    ["Richtig", `${correct} von ${tasks.length}`],
+    ...(toReview ? ([["Zu bewerten", `${toReview}`]] as [string, string][]) : []),
+    ["Bearbeitet", `${finals.length} von ${tasks.length}`],
+    ["Zeit gesamt", formatDuration(totalSec)],
+    ...(pe ? [] : ([["Mit Hilfe gelöst", `${withHelp}`]] as [string, string][])),
+  ];
+  const cols: Record<number, string> = { 4: "sm:grid-cols-4", 5: "sm:grid-cols-5", 6: "sm:grid-cols-3 lg:grid-cols-6" };
 
   return (
     <>
       <PageHeader
-        back={{ href: `/schueler/${student.id}?tab=uebungen`, label: student.name }}
+        back={probe ? { href: `/schueler/${student.id}/pruefung/${probe.id}#probeschularbeit`, label: "Vorbereitung" } : { href: `/schueler/${student.id}?tab=uebungen`, label: student.name }}
         title={w.title}
         subtitle={`${student.name} · gesendet am ${formatDate(assignment.assigned_at)}${assignment.completed_at ? ` · fertig am ${formatDate(assignment.completed_at)}` : ""}`}
       />
@@ -90,14 +108,13 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
         )}
       </div>
       {assignment.note && <p className="-mt-4 mb-6 text-[14px] text-ink-2">{assignment.note}</p>}
-      <dl className={`mb-8 grid grid-cols-2 gap-4 ${toReview ? "sm:grid-cols-5" : "sm:grid-cols-4"}`}>
-        {[
-          ["Richtig", `${correct} von ${tasks.length}`],
-          ...(toReview ? [["Zu bewerten", `${toReview}`]] : []),
-          ["Bearbeitet", `${finals.length} von ${tasks.length}`],
-          ["Zeit gesamt", formatDuration(totalSec)],
-          ["Mit Hilfe gelöst", `${withHelp}`],
-        ].map(([k, v]) => (
+      {pe && pe.offen > 0 && (
+        <p className="-mt-4 mb-6 text-[14px] text-ink-2">
+          Die Note steht fest, sobald du {pe.offen === 1 ? "die offene Aufgabe" : `die ${pe.offen} offenen Aufgaben`} bewertet hast. „Teilweise richtig“ zählt die halben Punkte.
+        </p>
+      )}
+      <dl className={`mb-8 grid grid-cols-2 gap-4 ${cols[metrics.length] ?? "sm:grid-cols-4"}`}>
+        {metrics.map(([k, v]) => (
           <div key={k} className="panel px-4 py-3">
             <dt className="text-[12px] font-semibold text-ink-3">{k}</dt>
             <dd className="num mt-0.5 text-[20px] font-semibold">{v}</dd>

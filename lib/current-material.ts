@@ -6,7 +6,7 @@
  */
 import { db, json } from "./db";
 import { dayOf } from "./exams";
-import { matchSkills, splitTopics } from "./lehrplan";
+import { matchSkills, skillsForStudent, splitTopics } from "./lehrplan";
 import * as repo from "./repo";
 
 export const MATERIAL_SOURCES = {
@@ -59,12 +59,12 @@ export function materialSkills(cm: Pick<CurrentMaterial, "topic" | "subtopic" | 
   const known = new Set(repo.listSkills().map((s) => s.id));
   const ids = cm.skill_ids.filter((id) => known.has(id));
   if (ids.length) return { ids, suggested: false };
-  const best = (o: { student?: Pick<repo.Student, "school_type" | "klasse" | "grade"> }) =>
-    matchSkills(`${cm.topic} ${cm.subtopic}`, cm.subject, { ...o, limit: 1 }).filter((x) => x.via === "faehigkeit");
-  const level = student ? best({ student }) : [];
-  const all = best({});
-  const pick = level.length && !(all.length && all[0].score > level[0].score) ? level : all;
-  return { ids: pick.map((x) => x.skill.id), suggested: true };
+  // one ranking over every class, so the scores of a hit at the student's level and one above it compare
+  const all = matchSkills(`${cm.topic} ${cm.subtopic}`, cm.subject, { limit: 1000 }).filter((x) => x.via === "faehigkeit");
+  const own = student ? new Set(skillsForStudent(student, cm.subject, { earlier: true }).map((s) => s.id)) : null;
+  const level = own ? all.filter((x) => own.has(x.skill.id)) : [];
+  const pick = level.length && !(all[0].score > level[0].score) ? level : all;
+  return { ids: pick.slice(0, 1).map((x) => x.skill.id), suggested: true };
 }
 
 /** Active entries of a student: most important first, then the newest. */
