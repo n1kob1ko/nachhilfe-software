@@ -311,6 +311,8 @@ export function Wochenplan({ uebersicht, darfBearbeiten, basisPfad, druckHref, a
       <OffenSchubfach offen={uebersicht.offen} istOffen={offenAuf} onSchliessen={() => setOffenAuf(false)} />
 
       <PlatzDialog
+        // a different place (or a new one) starts with its own values, not those of the last one opened
+        key={platzImDialog?.id ?? (dialog.neu ? "neu" : "zu")}
         platz={platzImDialog}
         neu={dialog.neu}
         woche={woche}

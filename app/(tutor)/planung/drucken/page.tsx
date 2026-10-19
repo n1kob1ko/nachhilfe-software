@@ -100,6 +100,7 @@ export default async function PlanungDruckenPage({ searchParams }: { searchParam
                   <td className="py-1.5">
                     {p.status === "entwurf" ? "Entwurf" : "veröffentlicht"}
                     {p.locked ? " · gesperrt" : ""}
+                    {p.zugleichMit.length ? ` · gleichzeitig mit ${p.zugleichMit.join(", ")}` : ""}
                     {p.nichtStattgefunden ? " · nicht stattgefunden" : ""}
                   </td>
                 </tr>

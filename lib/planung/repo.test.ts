@@ -125,7 +125,7 @@ test("Überlappung Lehrer: abgelehnt mit Grund, danach ist es erlaubt", async ()
   // der Lehrer ist 08:00–09:40 belegt, ein zweiter Platz 09:00–10:40 überschneidet sich
   const zweiter = planung.legePlatzAn({ ...basis, start_min: 540, student_id: berta, room_id: r2 });
   assert.equal(zweiter.ok, false);
-  assert.equal(zweiter.ok === false ? zweiter.fehler : "", "Lehrer Niko ist am Montag 08:00–09:40 schon verplant.");
+  assert.equal(zweiter.ok === false ? zweiter.fehler : "", "Lehrer Niko ist am Montag 08:00–09:40 schon verplant. Sollen beide Schüler zugleich kommen, setz beim Platz den Haken „Gleichzeitig mit einem anderen Schüler“.");
   assert.equal(planung.einheitenFuerWoche(MONTAG).length, 1, "der abgelehnte Platz wurde nicht geschrieben");
   // direkt anschließend (09:40) ist in Ordnung — Überlappung heißt echt größer, nicht berühren
   assert.equal(planung.legePlatzAn({ ...basis, start_min: 580, student_id: berta, room_id: r2 }).ok, true);

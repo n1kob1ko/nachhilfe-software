@@ -135,10 +135,34 @@ function startKandidaten(spannen: Spanne[], raster: number, dauer: number): numb
   return starts.sort((a, b) => a - b);
 }
 
+/**
+ * Überlappende Blöcke zu einem zusammenziehen. Bei einem Lehrer überlappen sich nur Plätze, die
+ * bewusst **gleichzeitig** sind (zwei Schüler zugleich, D26); er ist dann einmal belegt, nicht zweimal.
+ */
+export function zusammenfassen(bloecke: { start: number; end: number }[]): { start: number; end: number }[] {
+  const sortiert = [...bloecke].sort((a, b) => a.start - b.start || a.end - b.end);
+  const out: { start: number; end: number }[] = [];
+  for (const b of sortiert) {
+    const letzter = out[out.length - 1];
+    if (letzter && b.start < letzter.end) letzter.end = Math.max(letzter.end, b.end);
+    else out.push({ start: b.start, end: b.end });
+  }
+  return out;
+}
+
+/** Die Minuten, in denen ein Lehrer belegt ist, je Tag zusammengefasst: zwei Schüler gleichzeitig zählen einmal (D26). */
+export function belegteMinuten(einheiten: { weekday: number; start: number; end: number }[]): number {
+  const proTag = new Map<number, { start: number; end: number }[]>();
+  for (const e of einheiten) proTag.set(e.weekday, [...(proTag.get(e.weekday) ?? []), e]);
+  let summe = 0;
+  for (const bloecke of proTag.values()) for (const b of zusammenfassen(bloecke)) summe += b.end - b.start;
+  return summe;
+}
+
 /** Minuten „unnützer“ Lücke zwischen den Einheiten eines Lehrers an einem Tag. */
 function lueckenMinuten(einheiten: { start: number; end: number }[], schwelle: number): number {
-  if (einheiten.length <= 1) return 0;
-  const sortiert = [...einheiten].sort((a, b) => a.start - b.start);
+  const sortiert = zusammenfassen(einheiten);
+  if (sortiert.length <= 1) return 0;
   let luecke = 0;
   for (let i = 0; i < sortiert.length - 1; i++) {
     const dazwischen = sortiert[i + 1].start - sortiert[i].end;
@@ -159,13 +183,16 @@ function lueckenMinuten(einheiten: { start: number; end: number }[], schwelle: n
  * Regeln ohnehin „unnütz“.
  */
 function hatLuecken(einheiten: { start: number; end: number }[], toleranz: number): boolean {
-  if (einheiten.length <= 1) return false;
-  const sortiert = [...einheiten].sort((a, b) => a.start - b.start);
+  const sortiert = zusammenfassen(einheiten);
+  if (sortiert.length <= 1) return false;
   for (let i = 0; i < sortiert.length - 1; i++) if (sortiert[i + 1].start - sortiert[i].end >= toleranz) return true;
   return false;
 }
 
-/** Bewertung eines Kandidaten: Restkapazität und Nähe bringen Punkte, Lücken und Einzel-Einheiten kosten. */
+/**
+ * Bewertung eines Kandidaten: Restkapazität und Nähe bringen Punkte, Lücken und Einzel-Einheiten kosten.
+ * `doppelt`: Minuten, in denen der Lehrer schon zwei Schüler gleichzeitig hat (D26) — sie zählen einmal.
+ */
 function bewertePlatz(
   teacherId: number,
   lehrerMaxMinuten: number,
@@ -175,9 +202,10 @@ function bewertePlatz(
   schueler: PlanungSchueler,
   einheitenNachLehrer: Map<number, GeplanteEinheit[]>,
   regeln: PlanungsRegeln,
+  doppelt = 0,
 ): number {
   const vorhanden = einheitenNachLehrer.get(teacherId) ?? [];
-  const bisherMinuten = vorhanden.reduce((summe, e) => summe + (e.end - e.start), 0);
+  const bisherMinuten = vorhanden.reduce((summe, e) => summe + (e.end - e.start), 0) - doppelt;
   const restKapazitaet = Math.max(0, lehrerMaxMinuten - bisherMinuten - (end - start));
   let punkte = restKapazitaet * regeln.pointsPerMinuteRemainingCapacity;
 
@@ -396,7 +424,15 @@ export function generiereWochenplan(eingabe: GeneratorEingabe): GeneratorErgebni
   const geplantNachSchueler = new Map<number, number>();
   for (const e of einheiten) geplantNachSchueler.set(e.studentId, (geplantNachSchueler.get(e.studentId) ?? 0) + (e.end - e.start));
 
-  const lehrerMinuten = (teacherId: number) => (einheitenNachLehrer.get(teacherId) ?? []).reduce((summe, e) => summe + (e.end - e.start), 0);
+  // Überlappen können sich bei einem Lehrer nur gesperrte Plätze „gleichzeitig“ (D26) — der Generator
+  // selbst plant nie zwei Schüler zugleich. Die doppelt gezählten Minuten stehen deshalb von Anfang an fest.
+  const doppelteMinuten = new Map<number, number>();
+  for (const [teacherId, liste] of einheitenNachLehrer) {
+    const doppelt = liste.reduce((summe, e) => summe + (e.end - e.start), 0) - belegteMinuten(liste);
+    if (doppelt > 0) doppelteMinuten.set(teacherId, doppelt);
+  }
+  const lehrerMinuten = (teacherId: number) =>
+    (einheitenNachLehrer.get(teacherId) ?? []).reduce((summe, e) => summe + (e.end - e.start), 0) - (doppelteMinuten.get(teacherId) ?? 0);
 
   /** Bester Kandidat für diesen Schüler; gibt den bis dahin besten Stand zurück, wenn das Budget ausgeht. */
   function besterKandidat(schueler: PlanungSchueler, rest: number): { best: Kandidat | null; machbar: number; abgebrochen: boolean } {
@@ -455,7 +491,7 @@ export function generiereWochenplan(eingabe: GeneratorEingabe): GeneratorErgebni
             if (ueberschneidet(tag, start, end, einheiten, "raum", roomId)) continue;
             if (lehrerHatGebaeudekonflikt(einheitenNachLehrer.get(lehrer.id) ?? [], tag, raum.building, gebaeudeNachRaumId)) continue;
 
-            const punkte = bewertePlatz(lehrer.id, maxMinuten, tag, start, end, schueler, einheitenNachLehrer, regeln);
+            const punkte = bewertePlatz(lehrer.id, maxMinuten, tag, start, end, schueler, einheitenNachLehrer, regeln, doppelteMinuten.get(lehrer.id) ?? 0);
             const paar = pruefePaarRegeln(schueler.id, tag, start, end, einheiten, regeln, schuelerNachId);
             if (paar.hartBlockiert) continue;
             machbar += 1;

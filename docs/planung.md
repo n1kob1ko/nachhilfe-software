@@ -49,6 +49,7 @@ CREATE TABLE geplante_einheiten (
   status TEXT NOT NULL DEFAULT 'entwurf',   -- entwurf | veroeffentlicht
   locked INTEGER NOT NULL DEFAULT 0,
   unit_id INTEGER REFERENCES units(id) ON DELETE SET NULL,
+  gleichzeitig INTEGER NOT NULL DEFAULT 0, -- 1 = zwei Schüler gleichzeitig erlaubt (D26)
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -69,7 +70,8 @@ Zwei Entscheidungen daran sind wichtig:
   bzw. `pruefeUndNormiere`) für Lehrer, Schüler **und** Raum. Ein Platz, der sich überschneidet,
   wird mit einem deutschen Grund abgelehnt („Lehrer Niko ist am Montag 08:00–09:40 schon
   verplant.“) und nicht geschrieben; ein Stapel (Entwurf speichern, Vorwoche übernehmen) wird
-  vorher komplett geprüft und sonst gar nicht geschrieben.
+  vorher komplett geprüft und sonst gar nicht geschrieben. Die einzige Ausnahme sind zwei Schüler
+  gleichzeitig beim selben Lehrer (D26, unten).
 
 ## geplante Dauer und Dauer (D3, D16, D19)
 
@@ -131,6 +133,35 @@ Ergebnis als Entwurf. Was der Generator tut:
 - **Sperren:** `repo.setzeGesperrt(id, true)`. Ein gesperrter Platz ist von Hand gesetzt und wird
   von „Neu generieren“ **nie** verschoben. Entsperren macht ihn wieder zum Vorschlag.
 - **Löschen:** `repo.loeschePlatz(id)`.
+- **Zwei Schüler gleichzeitig:** Haken „Gleichzeitig mit einem anderen Schüler“ im Platz-Dialog
+  (`gleichzeitig: true`), siehe *Zwei Schüler gleichzeitig (D26)*.
+
+### Zwei Schüler gleichzeitig (D26)
+
+Manchmal hat ein Lehrer zwei Schüler zur selben Zeit. niko hat am 2026-10-19 entschieden: das ist
+eine bewusste Ausnahme **pro Platz**, keine Einstellung je Lehrer.
+
+- Ein Platz mit `gleichzeitig = 1` darf sich mit **einem** anderen Platz desselben Lehrers
+  überschneiden. Es reicht, wenn einer der beiden den Haken trägt; der Partner kann danach
+  verschoben werden, ohne selbst einen zu brauchen.
+- Höchstens zwei zugleich: überschnitte ein dritter Platz dieselbe Minute, wird abgelehnt („Lehrer
+  Niko hat am Montag 09:20–09:40 schon zwei Schüler gleichzeitig. Mehr als zwei gehen nicht.“).
+  Nacheinander versetzt (A mit B, danach B mit C) geht.
+- Die beiden dürfen im selben Raum sein. Ein anderer Lehrer im selben Raum bleibt verboten, ebenso
+  derselbe Schüler zweimal.
+- Ohne Haken bleibt alles wie bisher; die Absage nennt den Weg („… setz beim Platz den Haken …“).
+- Nach dem Speichern sind **beide** Plätze gesperrt (`sperreZugleich` in `lib/planung/repo.ts`).
+  Der Generator plant nie zwei Schüler zugleich; ohne Sperre löste „Neu generieren“ das Paar auf.
+  „Vorwoche übernehmen“ nimmt den Haken mit und sperrt das Paar, alle anderen Kopien bleiben ohne
+  Sperre (D24).
+- Gezählt wird die **Lehrerzeit** einmal: Lehrerkachel, Wochenziel, Auslastung, Lücken und die
+  Kapazität im Generator fassen überlappende Plätze zusammen (`zusammenfassen`, `belegteMinuten`
+  in `lib/planung/generator.ts`). Die Summe aller Plätze und der Bedarf zählen weiter je Schüler.
+- In der Wochenansicht stehen die beiden nebeneinander (`spurenFuer` in `WochenplanGitter.tsx`),
+  mit einem Personen-Zeichen und „gleichzeitig mit …“ im Tooltip, im Dialog und im A4-Druck.
+- Die echten Einheiten ändern sich nicht: beide Schüler bekommen ihre eigene Einheit. Das
+  Lehrer-Tablet zeigt die zuletzt gestartete (`activeUnitForTeacher`); der andere Schüler arbeitet
+  über „Eigenes Gerät verbinden“ (`docs/schueler-laptop.md`) oder auf Papier.
 
 ### 4. Veröffentlichen
 
@@ -145,7 +176,8 @@ auch veröffentlichte Plätze einer Woche weg („alles zurücksetzen“).
 Verknüpfung zur Einheit (`unit_id` leer) und **ohne Sperre** — die Kopie ist ein Vorschlag, den
 „Neu generieren“ noch umbauen darf. Gibt es in der Vorwoche einen veröffentlichten Plan, wird der
 übernommen, sonst deren Entwurf; die Zielwoche muss leer sein. Eine automatische Wiederholung gibt
-es nicht (D24): ohne Klick passiert nichts.
+es nicht (D24): ohne Klick passiert nichts. Ausnahme: zwei Schüler gleichzeitig (D26) kommen samt
+Haken **gesperrt** mit.
 
 ### 6. Neu generieren (D24)
 
@@ -348,6 +380,7 @@ Quell-Repos plus variable Dauer, 10-Minuten-Raster, gesperrte Plätze, Zeitbudge
 `lib/planung/regeln.test.ts`, `lib/planung/repo.test.ts`, `lib/planung/heute.test.ts`,
 `lib/planung/verfuegbarkeit.test.ts`, `lib/planung/aktionen.test.ts`,
 `lib/planung/wochenplan-aktionen.test.ts`, `lib/planung/zeit.test.ts`,
+`lib/planung/gleichzeitig.test.ts` (zwei Schüler gleichzeitig, D26),
 `lib/units-verknuepfung.test.ts` (Verknüpfung, „nicht stattgefunden“ ohne Abrechnungsfolge, die
 Entscheidung zu `lessons.status = 'geplant'`) und die Sicherung in `lib/robust.test.ts`.
 

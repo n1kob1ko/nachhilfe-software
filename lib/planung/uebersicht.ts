@@ -13,6 +13,7 @@
  */
 import { listStudents } from "../repo";
 import { leseRegeln } from "./regeln";
+import { belegteMinuten, zusammenfassen } from "./generator";
 import {
   einheitenFuerWoche,
   getSchuelerPlanung,
@@ -21,6 +22,7 @@ import {
   mitNamen,
   wochenEingaben,
   wochenStatus,
+  zugleichMit,
   type ModusWunsch,
   type PlatzStatus,
   type RaumModus,
@@ -42,6 +44,7 @@ export type UebersichtLehrer = {
   verfuegbarkeit: Verfuegbarkeit;
   /** Plätze dieser Woche in der betrachteten Sicht. */
   einheiten: number;
+  /** Zeit, in der der Lehrer belegt ist: zwei Schüler gleichzeitig zählen einmal (D26). */
   minuten: number;
   /** Summe der unnützen Lücken (kürzer als `lueckenSchwelle`). */
   lueckenMinuten: number;
@@ -81,6 +84,10 @@ export type UebersichtPlatz = {
   unitId: number | null;
   /** Veröffentlicht, ohne Einheit und die geplante Zeit ist vorbei (D17). */
   nichtStattgefunden: boolean;
+  /** Haken „gleichzeitig“ (D26). */
+  gleichzeitig: boolean;
+  /** Die Schüler, die zur selben Zeit beim selben Lehrer sind (D26); meist leer. */
+  zugleichMit: string[];
 };
 
 export type UebersichtLuecke = { teacherId: number; weekday: Wochentag; start: number; end: number };
@@ -134,7 +141,8 @@ export type WochenUebersicht = {
  * `penaltyPer30MinGap` bewertet; ab der Schwelle gelten sie als Bruch (siehe `docs/planung.md`).
  */
 export function lueckenFuerTag(bloecke: { start: number; end: number }[], schwelle: number): { start: number; end: number }[] {
-  const sortiert = [...bloecke].sort((a, b) => a.start - b.start || a.end - b.end);
+  // zwei Schüler gleichzeitig (D26) sind für den Lehrer ein Block
+  const sortiert = zusammenfassen(bloecke);
   const luecken: { start: number; end: number }[] = [];
   for (let i = 0; i < sortiert.length - 1; i++) {
     const start = sortiert[i].end;
@@ -178,7 +186,11 @@ export function kennzahlen(
     schwelle,
   );
   const lueckenMinuten = luecken.reduce((summe, l) => summe + (l.end - l.start), 0);
-  const geplant = plaetze.filter((p) => lehrer.some((l) => l.id === p.teacherId)).reduce((summe, p) => summe + p.dauer, 0);
+  // Lehrerzeit: zwei Schüler gleichzeitig (D26) zählen einmal
+  const geplant = lehrer.reduce(
+    (summe, l) => summe + belegteMinuten(plaetze.filter((p) => p.teacherId === l.id).map((p) => ({ weekday: p.weekday, start: p.startMin, end: p.startMin + p.dauer }))),
+    0,
+  );
   const proSchueler = new Map<number, number>();
   for (const p of plaetze) proSchueler.set(p.studentId, (proSchueler.get(p.studentId) ?? 0) + 1);
   return {
@@ -242,7 +254,8 @@ export function wochenUebersicht(weekStart: string, opts: { status?: PlatzStatus
   const zeilen = einheitenFuerWoche(woche, { status: opts.status ?? "alle" }).filter(
     (z) => opts.nurLehrerId === undefined || z.teacher_id === opts.nurLehrerId,
   );
-  const plaetze: UebersichtPlatz[] = mitNamen(zeilen).map((z) => ({
+  const mitNamenZeilen = mitNamen(zeilen);
+  const plaetze: UebersichtPlatz[] = mitNamenZeilen.map((z) => ({
     id: z.id,
     weekday: z.weekday,
     startMin: z.start_min,
@@ -259,6 +272,8 @@ export function wochenUebersicht(weekStart: string, opts: { status?: PlatzStatus
     locked: z.locked === 1,
     unitId: z.unit_id,
     nichtStattgefunden: istNichtStattgefunden(z, now),
+    gleichzeitig: z.gleichzeitig === 1,
+    zugleichMit: zugleichMit(z, mitNamenZeilen).map((x) => x.student_name),
   }));
 
   // Lehrerkacheln: Namen, Verfügbarkeit und Wochenziel kommen aus den Eingaben des Generators
@@ -274,7 +289,7 @@ export function wochenUebersicht(weekStart: string, opts: { status?: PlatzStatus
         zielMin: l.weeklyTargetMinutes || null,
         verfuegbarkeit: l.availability,
         einheiten: meine.length,
-        minuten: meine.reduce((summe, p) => summe + p.dauer, 0),
+        minuten: belegteMinuten(meine.map((p) => ({ weekday: p.weekday, start: p.startMin, end: p.startMin + p.dauer }))),
         lueckenMinuten: luecken.reduce((summe, x) => summe + (x.end - x.start), 0),
       };
     });
