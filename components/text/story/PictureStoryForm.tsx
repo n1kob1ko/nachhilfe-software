@@ -3,13 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, ChevronDown, GripVertical, ImagePlus, Images, Trash2 } from "lucide-react";
 import { SchoolClassFields } from "@/components/SchoolClassFields";
+import { shrinkImage } from "@/components/shrink-image";
 
 /** Mirrors lib/picture-story.ts (kept here so the browser does not load server code). */
 const MAX_IMAGES = 12;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const TYPES = ["image/jpeg", "image/png", "image/webp"];
-/** Longer side of a picture after the browser made it smaller: plenty for the screen and for A4. */
-const MAX_SIDE = 2000;
 
 export type StoryDefaults = {
   title: string;
@@ -44,39 +43,6 @@ type Props = {
 };
 
 const sizeLabel = (b: number) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toLocaleString("de-AT", { maximumFractionDigits: 1 })} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
-
-/**
- * Makes a large picture smaller in the browser (JPEG), so the upload is fast also on a tablet. Every JPEG is
- * drawn anew, which drops its EXIF data (camera, place, time of a phone photo). Small PNG and WebP files stay as they are.
- */
-async function shrink(file: File): Promise<File> {
-  if (typeof createImageBitmap !== "function") return file;
-  let bmp: ImageBitmap;
-  try {
-    bmp = await createImageBitmap(file);
-  } catch {
-    return file; // the server decides
-  }
-  const scale = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
-  const photo = file.type === "image/jpeg";
-  if (scale === 1 && !photo && file.size <= 1.5 * 1024 * 1024) {
-    bmp.close();
-    return file;
-  }
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bmp.width * scale);
-  canvas.height = Math.round(bmp.height * scale);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return file;
-  // transparent drawings stay readable on white paper
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-  bmp.close();
-  const blob = await new Promise<Blob | null>((ok) => canvas.toBlob(ok, "image/jpeg", 0.86));
-  if (!blob || (!photo && blob.size >= file.size)) return file;
-  return new File([blob], file.name.replace(/\.[a-z0-9]+$/i, "") + ".jpg", { type: "image/jpeg" });
-}
 
 /**
  * Pictures and settings of a Bildgeschichte: upload (button or drop), preview, order by dragging or with
@@ -114,7 +80,7 @@ export function PictureStoryForm(p: Props) {
     setBusy("bilder");
     const added: Item[] = [];
     for (const f of take) {
-      const small = await shrink(f);
+      const small = await shrinkImage(f);
       if (small.size > MAX_IMAGE_BYTES) {
         notes.push(`„${f.name}“ ist zu groß (höchstens 10 MB).`);
         continue;

@@ -55,6 +55,15 @@ export function aiEnabled(fn?: AIFunction) {
 }
 
 /**
+ * Whether `fn` can get a photo now: KI on for it, and its provider reads images (the manual mode and
+ * DeepSeek do not). „Foto vom Stoff“ asks this before it offers the photo (lib/foto-uebung.ts).
+ */
+export function aiReadsImages(fn: AIFunction) {
+  if (!aiEnabled(fn)) return false;
+  return custom || unsupported(routeFor(fn).provider, [{ type: "image", mime: "image/jpeg", base64: "" }]) === null;
+}
+
+/**
  * Whether the month's budget stops `fn` now: the budget of the provider its area uses (Anthropic has
  * its own). The manual mode and a local model cost nothing, an empty budget does not stop them.
  */

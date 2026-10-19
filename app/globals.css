@@ -224,6 +224,10 @@ textarea.input {
   font-size: 16px;
   font-weight: 600;
 }
+/* a row of large buttons that should fit side by side (the actions of a running unit) */
+.btn-reihe .btn-lg {
+  padding: 0 20px;
+}
 /* touch screens: small buttons still get a finger-sized target */
 @media (pointer: coarse) {
   .btn-sm {
