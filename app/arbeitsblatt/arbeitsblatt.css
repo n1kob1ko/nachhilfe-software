@@ -722,3 +722,176 @@
 .ab-task:has(.ab-parts) {
   break-inside: auto;
 }
+
+/* ---------- Mappe einer Einheit (app/arbeitsblatt/einheit) ---------- */
+/* the student's answers in dark ink, the marks in the margin like a teacher's red pen */
+.mp-kopf-rechts {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 5mm;
+}
+.mp-logo {
+  width: 17mm;
+  height: auto;
+}
+.mp-abschnitt {
+  margin-bottom: 9mm;
+}
+.mp-abschnitt + .mp-abschnitt {
+  padding-top: 5mm;
+  border-top: 0.25mm solid #bbb;
+}
+.mp-h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1mm 4mm;
+  margin: 0 0 1mm;
+  font-size: 14pt;
+  font-weight: 700;
+  line-height: 1.3;
+  break-after: avoid;
+}
+.mp-h2-vor {
+  font-weight: 600;
+  color: #444;
+}
+.mp-h2-zahl {
+  margin-left: auto;
+  font-size: 10.5pt;
+  font-weight: 600;
+  color: #333;
+}
+.mp-meta {
+  margin: 0 0 4mm;
+  break-after: avoid;
+}
+.mp-task {
+  grid-template-columns: 9mm minmax(0, 1fr) 11mm;
+  margin-bottom: 6mm;
+}
+.mp-zeichen {
+  justify-self: end;
+  font-size: 17pt;
+  font-weight: 700;
+  line-height: 1;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.mp-zeichen-richtig {
+  color: #145c32;
+}
+.mp-zeichen-teilweise {
+  font-size: 12pt;
+  color: #8a5a00;
+}
+.mp-zeichen-falsch {
+  color: #b02a24;
+}
+.mp-zeichen-loesung {
+  color: #777;
+}
+.mp-label {
+  font-size: 10.5pt;
+  font-weight: 600;
+  color: #333;
+}
+.mp-antwort {
+  margin: 2mm 0 0;
+  padding: 1mm 0 1mm 3mm;
+  border-left: 0.6mm solid #999;
+  font-size: 12pt;
+  line-height: 1.55;
+  overflow-wrap: break-word;
+}
+.mp-rechnung {
+  margin-top: 2mm;
+  padding-left: 3mm;
+  border-left: 0.6mm solid #999;
+}
+.mp-rechenzeile {
+  margin: 0 0 1mm;
+}
+.mp-ergebnis {
+  margin: 1.5mm 0 0;
+}
+.mp-reihe {
+  list-style: none;
+  margin: 2mm 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1.2mm;
+}
+.mp-reihe li {
+  display: flex;
+  gap: 2.5mm;
+}
+.mp-reihe-nr {
+  flex: none;
+  width: 6mm;
+  font-weight: 700;
+}
+.mp-gewaehlt {
+  font-weight: 600;
+}
+.mp-gewaehlt .ab-box {
+  font-weight: 700;
+}
+.mp-richtig-markiert,
+.mp-loesung {
+  color: #145c32;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.mp-richtig-markiert {
+  font-size: 10pt;
+  font-weight: 600;
+}
+.mp-loesung {
+  margin: 1.5mm 0 0;
+  font-size: 11pt;
+}
+.mp-loesung .mp-label {
+  color: inherit;
+}
+.mp-hinweis {
+  margin: 1mm 0 0;
+  font-size: 9.5pt;
+  color: #555;
+}
+.mp-ausgelassen {
+  margin: -2mm 0 0;
+  font-size: 10pt;
+  color: #555;
+}
+.mp-tafel {
+  display: grid;
+  gap: 5mm;
+}
+.mp-tafel-seite {
+  margin: 0;
+  break-inside: avoid;
+}
+.mp-tafel-seite img {
+  display: block;
+  width: 100%;
+  max-height: 150mm;
+  object-fit: contain;
+  border: 0.25mm solid #bbb;
+  border-radius: 1.5mm;
+}
+.mp-tafel-seite figcaption {
+  margin-top: 1mm;
+  font-size: 9.5pt;
+  color: #555;
+}
+@media screen and (max-width: 900px) {
+  .mp-kopf-rechts {
+    flex-direction: column-reverse;
+    align-items: flex-end;
+  }
+  .ab-sheet .ab-head:has(.mp-kopf-rechts) {
+    flex-wrap: wrap;
+  }
+}
