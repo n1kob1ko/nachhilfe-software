@@ -1,9 +1,22 @@
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { getStudentByToken } from "@/lib/repo";
 import { Avatar } from "@/components/Art";
 import { BrandMark } from "@/components/Brand";
 
 export const dynamic = "force-dynamic";
+
+// „Zum Home-Bildschirm“ macht aus dem Link eine App, die genau diesen Schüler öffnet
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params;
+  return {
+    manifest: `/lernen/${encodeURIComponent(token)}/manifest`,
+    appleWebApp: { capable: true, title: "Lernheft", statusBarStyle: "default" },
+    robots: { index: false, follow: false },
+  };
+}
+
+export const viewport: Viewport = { themeColor: "#fbf6f1" };
 
 export default async function LearnLayout({ children, params }: { children: React.ReactNode; params: Promise<{ token: string }> }) {
   const { token } = await params;
