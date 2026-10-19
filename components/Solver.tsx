@@ -14,6 +14,7 @@ import { clozeParts } from "@/lib/math-format";
 import { splitFractions } from "@/lib/math-text";
 import { checkedMath, initialMath, markMath, MathAnswerInput, mathAnswer, mathReady, mathTouched, restoreMath, type MathState, type MathTaskView } from "./MathAnswer";
 import { GenusBadge } from "./TaskPreview";
+import { FigurBild, figurKopf } from "./Figur";
 import { MathText } from "./MathText";
 import { FixCompare } from "./FixMarks";
 import { ReadingTextView } from "./ReadingText";
@@ -46,6 +47,8 @@ export type ClientTask = {
   genus: "m" | "f" | "n" | null;
   /** Rechenweg and Sachaufgabe: the equation or term, the parts (components/MathAnswer.tsx). */
   math: MathTaskView | null;
+  /** Aufgabe mit Bild: das fertige SVG ohne Lösung (lib/figur.ts figurSvg); null ohne Bild. */
+  figur?: string | null;
   /**
    * correct null: waits for the teacher's grade. review: the teacher's grade (richtig, teilweise, falsch).
    * given and expected: the student's corrected text and the right one (Fehler korrigieren).
@@ -575,7 +578,10 @@ function TaskCard({
     };
   }, [unsent, deliver]);
 
-  const promptParts = useMemo(() => clozeParts(task.prompt, GAP), [task.prompt]);
+  // Aufgabe mit Bild und Lücken: die Frage (erste Zeile ohne Lücke) steht über dem Bild, die Lücken darunter
+  const bildKopf = task.figur && task.blanks > 0 ? figurKopf(task.prompt, GAP) : null;
+  const clozeText = bildKopf ? task.prompt.slice(bildKopf.length + 1) : task.prompt;
+  const promptParts = useMemo(() => clozeParts(clozeText, GAP), [clozeText]);
   // the teacher grades the answer: it is handed in, not checked
   const handIn = test || (reading && (task.type === "free" || (task.type === "reading" && !task.options)));
 
@@ -596,6 +602,12 @@ function TaskCard({
           if (canSubmit) send();
         }}
       >
+        {bildKopf && (
+          <p className="text-[21px] leading-snug font-medium whitespace-pre-line">
+            <MathText text={bildKopf} />
+          </p>
+        )}
+        {bildKopf && <FigurBild svg={task.figur} groesser={1.2} className="mb-3" />}
         {task.blanks > 0 ? (
           <p className={`${reading ? "text-[18px] leading-[2.2]" : "text-[21px] leading-[2.1]"} font-medium`}>
             {promptParts.map((p, i) => (
@@ -632,6 +644,8 @@ function TaskCard({
         ) : (
           <p className={`${reading ? "text-[19px] leading-snug" : "text-[21px] leading-snug"} font-medium whitespace-pre-line`}>{reading ? task.prompt : <MathText text={task.prompt} />}</p>
         )}
+        {/* Aufgabe mit Bild: das Bild unter der Frage (bei Lücken ohne eigene Fragezeile darüber) */}
+        {task.figur && !bildKopf && <FigurBild svg={task.figur} groesser={1.2} />}
         {/* Umlaute für Lückentexte: eine Tablet-Tastatur gibt ä ö ü ß nicht immer her (components/UmlautBar.tsx) */}
         {task.blanks > 0 && !final && <UmlautBar target={umlaut} className="mt-3" />}
 

@@ -6,6 +6,7 @@
 import { aiEnabled, bankOfSkill, generateBankItemsWithAI, generatePlanWithAI, type AIMeta } from "./ai";
 import type { BankId } from "./banks";
 import { DIFFICULTIES, categoriesFor, difficultyFor, mixFor, type Category, type Difficulty, type TaskType } from "./curriculum";
+import { aufgabenSchluessel, leseFigur } from "./figur";
 import { generateForSlot } from "./generators";
 import { expectedFixes } from "./fix-text";
 import { checkOwnSolution } from "./math-task";
@@ -333,7 +334,17 @@ function bankForSlot(subject: string, p: PlanSlot): BankId | null {
 export async function generateTasks(
   s: BuilderSettings,
   ctx: StudentContext | null,
-  o: { count?: number; avoid?: string[]; skillIds?: string[]; categories?: string[]; difficulty?: DifficultyChoice; meta?: AIMeta } = {},
+  o: {
+    count?: number;
+    /** Aufgabentexte, die nicht noch einmal kommen sollen (für die KI). */
+    avoid?: string[];
+    /** Dasselbe als Schlüssel mit Bild (lib/figur.ts aufgabenSchluessel), für die eingebauten Generatoren; ohne: avoid. */
+    avoidKeys?: string[];
+    skillIds?: string[];
+    categories?: string[];
+    difficulty?: DifficultyChoice;
+    meta?: AIMeta;
+  } = {},
 ): Promise<{ tasks: TaskDraft[]; source: "ki" | "generator"; aiError?: string }> {
   const settings = { ...s, skillIds: o.skillIds ?? s.skillIds, categories: o.categories ?? s.categories, difficulty: o.difficulty ?? s.difficulty };
   const skills = resolveSkills(settings, ctx);
@@ -431,8 +442,11 @@ export async function generateTasks(
   }
 
   // the rest (or everything without AI) from the built-in generators, slot by slot
-  const avoid = new Set([...(o.avoid ?? []), ...slots.filter((t): t is TaskDraft => Boolean(t)).map((t) => t.prompt)]);
+  // Aufgaben mit Bild haben oft denselben Text: verglichen wird mit dem Bild (aufgabenSchluessel)
+  const avoid = new Set([...(o.avoidKeys ?? o.avoid ?? []), ...slots.filter((t): t is TaskDraft => Boolean(t)).map(aufgabenSchluessel)]);
   const missedType: string[] = [];
+  /** was statt des fehlenden Typs kam: „eine freie Antwort“ oder ein anderer Aufgabentyp (Aufgaben mit Bild) */
+  const instead: string[] = [];
   for (let i = 0; i < plan.length; i++) {
     if (slots[i]) continue;
     const { skill: r, category } = plan[i];
@@ -444,10 +458,13 @@ export async function generateTasks(
     let t: TaskDraft | null = null;
     for (let guard = 0; guard < 12; guard++) {
       t = generateForSlot({ skillId: r.skill.id, skillName: r.skill.name, generatorSkillId: r.parent?.id, difficulty: r.difficulty, category, subject: settings.subject, wortarten, grade }, Math.random, Math.floor(i / skills.length) + guard);
-      if (!avoid.has(t.prompt) || guard >= 10) break;
+      if (!avoid.has(aufgabenSchluessel(t)) || guard >= 10) break;
     }
-    avoid.add(t!.prompt);
-    if (category && t!.category !== category) missedType.push(typeName(settings.subject, category));
+    avoid.add(aufgabenSchluessel(t!));
+    if (category && t!.category !== category) {
+      missedType.push(typeName(settings.subject, category));
+      instead.push(t!.type === "free" ? "eine freie Antwort" : typeName(settings.subject, t!.category ?? null) || "eine freie Antwort");
+    }
     slots[i] = t;
   }
   // parents count too, so the progress of "Dividieren" also moves when "Kehrwert" is practised
@@ -455,7 +472,7 @@ export async function generateTasks(
   const notes = [
     aiError,
     fromAI && fromAI < aiCount ? `${aiCount - fromAI} ${aiCount - fromAI === 1 ? "Aufgabe kam" : "Aufgaben kamen"} von der KI nicht im gewünschten Typ und ${aiCount - fromAI === 1 ? "wurde" : "wurden"} ohne KI erstellt.` : "",
-    missedType.length ? `Ohne KI gibt es ${[...new Set(missedType)].join(" und ")} für diese Fähigkeit nicht: ${missedType.length === 1 ? "eine Aufgabe ist" : `${missedType.length} Aufgaben sind`} stattdessen eine freie Antwort.` : "",
+    missedType.length ? `Ohne KI gibt es ${[...new Set(missedType)].join(" und ")} für diese Fähigkeit nicht: ${missedType.length === 1 ? "eine Aufgabe ist" : `${missedType.length} Aufgaben sind`} stattdessen ${[...new Set(instead)].join(" oder ")}.` : "",
   ].filter(Boolean);
   return { tasks, source: fromAI ? "ki" : "generator", aiError: notes.length ? notes.join(" ") : undefined };
 }
@@ -539,8 +556,9 @@ export async function regenerateTask(taskId: number, o: { difficulty?: Difficult
   const ctx = s.studentId ? studentContext(s.studentId) : null;
   const skillIds = task.skillId ? [task.skillId] : s.skillIds;
   const difficulty = o.difficulty ?? (task.difficulty as Difficulty);
-  const others = repo.listTasks(w.id).map((t) => t.prompt);
-  const out = await generateTasks(s, ctx, { count: 1, avoid: others, skillIds, categories: task.category ? [task.category] : [], difficulty, meta: { teacherId: o.teacherId ?? null, studentId: s.studentId, trigger: "neu_erstellen" } });
+  const all = repo.listTasks(w.id);
+  const others = all.map((t) => t.prompt);
+  const out = await generateTasks(s, ctx, { count: 1, avoid: others, avoidKeys: all.map(aufgabenSchluessel), skillIds, categories: task.category ? [task.category] : [], difficulty, meta: { teacherId: o.teacherId ?? null, studentId: s.studentId, trigger: "neu_erstellen" } });
   const next = out.tasks[0];
   if (!next) return { ok: false, aiError: out.aiError };
   repo.updateTask(taskId, { ...next, difficulty });
@@ -643,7 +661,7 @@ export function normalizeTask(t: TaskDraft): TaskDraft {
     out.answer = { ...out.answer, accepted, fixes };
   }
   if (out.type === "rechenweg") {
-    out.data = { ...(out.data.start?.trim() ? { start: out.data.start.trim() } : {}), ...(out.data.variable?.trim() ? { variable: out.data.variable.trim().slice(0, 1) } : {}) };
+    out.data = { ...(out.data.start?.trim() ? { start: out.data.start.trim() } : {}), ...(out.data.variable?.trim() ? { variable: out.data.variable.trim().slice(0, 1) } : {}), ...(out.data.figure ? { figure: out.data.figure } : {}) };
     out.answer = { ...out.answer, accepted: (out.answer.accepted ?? []).map((a) => a.trim()).filter(Boolean), unit: out.answer.unit?.trim() || null };
     out.solutionSteps = (out.solutionSteps ?? []).map((l) => l.trim()).filter(Boolean);
   }
@@ -675,6 +693,12 @@ export function normalizeTask(t: TaskDraft): TaskDraft {
     }
     out.answer = { steps };
     out.data = { ...out.data, steps: shown };
+  }
+  // Aufgabe mit Bild: nur ein Bild, das lib/figur.ts lesen kann, wird gespeichert (sauber kopiert)
+  if (out.data.figure !== undefined) {
+    const { figure, ...rest } = out.data;
+    const ok = leseFigur(figure);
+    out.data = ok ? { ...rest, figure: ok } : rest;
   }
   return out;
 }

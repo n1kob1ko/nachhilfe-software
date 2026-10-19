@@ -11,6 +11,7 @@
  * so a fast pen stroke is not one database write per point.
  */
 import { db } from "./db";
+import type { Szene } from "./figur";
 import { unitChanged } from "./live";
 import { publish } from "./whiteboard-hub";
 import { getUnit, touchUnit } from "./units";
@@ -29,7 +30,7 @@ export type PageInfo = { id: number; position: number; title: string; updated_at
 /** An Excalidraw element as stored here. Only the fields the merge needs are typed. */
 export type El = { id: string; type: string; version: number; versionNonce: number; isDeleted?: boolean; index?: string | null; [k: string]: unknown };
 export type InsertPayload =
-  | { kind: "tasks"; title: string; worksheetId?: number; tasks: { number: number; prompt: string; options: string[] | null; taskId?: number }[] }
+  | { kind: "tasks"; title: string; worksheetId?: number; tasks: { number: number; prompt: string; options: string[] | null; taskId?: number; figure?: Szene | null; figureText?: string | null }[] }
   | { kind: "text"; text: string };
 
 const iso = () => new Date().toISOString();
@@ -292,7 +293,20 @@ export function queueInsert(boardId: number, raw: InsertPayload): number {
   const board = getBoard(boardId)!;
   // the student's device may draw it: only what goes on the board, never a solution
   const payload: InsertPayload =
-    raw.kind === "tasks" ? { ...raw, tasks: raw.tasks.map((t) => ({ number: t.number, prompt: t.prompt, options: t.options, ...(t.taskId ? { taskId: t.taskId } : {}) })) } : raw;
+    raw.kind === "tasks"
+      ? {
+          ...raw,
+          tasks: raw.tasks.map((t) => ({
+            number: t.number,
+            prompt: t.prompt,
+            options: t.options,
+            ...(t.taskId ? { taskId: t.taskId } : {}),
+            // Aufgabe mit Bild: die Szene ohne Lösung (lib/whiteboard-content.ts boardTaskForStudent)
+            ...(t.figure ? { figure: t.figure } : {}),
+            ...(t.figureText ? { figureText: t.figureText } : {}),
+          })),
+        }
+      : raw;
   const id = Number(
     db()
       .prepare("INSERT INTO whiteboard_inserts (board_id, page_id, payload, created_at) VALUES (?, ?, ?, ?)")

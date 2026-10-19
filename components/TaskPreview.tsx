@@ -4,6 +4,7 @@ import { ASPECT_SHORT, isAspect, OPEN_ASPECTS, severalNoted } from "@/lib/lesen"
 import { clozeParts } from "@/lib/math-format";
 import { mathAnswerText } from "@/lib/math-task";
 import { GAP, hintLabel, type TaskDraft } from "@/lib/tasks";
+import { FigurBild } from "./Figur";
 import { genderTone, genusBadge } from "./genus";
 import { MathText } from "./MathText";
 
@@ -65,6 +66,8 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
     <div className="min-w-0">
       {task.data.passage && !passageShown && <blockquote className="ruled mb-4 max-w-[70ch] rounded-lg bg-paper px-4 py-1 text-[15px]"><MathText text={task.data.passage} /></blockquote>}
       <p className="max-w-[70ch] text-[16px] leading-relaxed whitespace-pre-line">{task.prompt ? withGaps(task.prompt) : <span className="text-ink-3 italic">Noch keine Aufgabenstellung</span>}</p>
+      {/* Aufgabe mit Bild: mit Lösung zeigt das Bild die gesuchten Werte (zum Prüfen, ob Bild und Lösung zusammenpassen) */}
+      {task.data.figure ? <FigurBild figure={task.data.figure} loesung={showSolution} className="mb-1" /> : null}
       {task.data.genus && (
         <p className="mt-1.5">
           <GenusBadge genus={task.data.genus} />

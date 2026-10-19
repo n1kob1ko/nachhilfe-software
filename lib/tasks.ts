@@ -1,4 +1,5 @@
 import type { Difficulty, TaskType } from "./curriculum";
+import type { Figur } from "./figur";
 import { checkFix, type FixLabel } from "./fix-text";
 import { checkMemorize, mistakeLabel } from "./memorize";
 import type { PartSolution, PartView, ResultForm } from "./math-check";
@@ -71,6 +72,10 @@ export type TaskDraft = {
     /** Artikel-Aufgaben: das Genus des Nomens (m = maskulin, f = feminin, n = neutral), damit die Oberfläche
      *  es färben kann (D10, components/genus.ts). Die Farbe ist nie das einzige Signal. */
     genus?: "m" | "f" | "n";
+    /** Aufgabe mit Bild: Zahlenstrahl, Koordinatensystem oder Figur (lib/figur.ts). Die Antwort steht
+     *  trotzdem in answer; das Bild enthält die Zahlen, aus denen sie berechnet wurde. Schülerinnen und
+     *  Schüler bekommen nur das fertige SVG ohne Lösung, nie diese Angaben. */
+    figure?: Figur;
   };
   answer: AnswerSpec;
   solution: string;

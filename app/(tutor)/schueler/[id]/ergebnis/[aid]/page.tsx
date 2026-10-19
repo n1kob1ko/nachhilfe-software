@@ -12,6 +12,7 @@ import { PageHeader, formatDate, formatDuration } from "@/components/ui";
 import * as repo from "@/lib/repo";
 import { GAP, HINT_LABELS, REVIEWS, TEACHER_GRADED, isReview } from "@/lib/tasks";
 import { MathText } from "@/components/MathText";
+import { FigurBild } from "@/components/Figur";
 import { MathWork } from "@/components/MathWork";
 import { readMathAnswer } from "@/lib/math-check";
 import { gradeMathTask } from "@/lib/math-task";
@@ -137,6 +138,8 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
               <div className="min-w-0">
                 {isAspect(t.data.aspect) && <p className="mb-0.5 text-[12px] font-semibold text-ink-3">{ASPECT_SHORT[t.data.aspect]}</p>}
                 <p className="max-w-[70ch] whitespace-pre-line"><MathText text={t.prompt.split(GAP).join("____")} /></p>
+                {/* Aufgabe mit Bild: klein und mit den gesuchten Werten, damit „C“ oder „B“ als Antwort lesbar ist */}
+                {t.data.figure ? <FigurBild figure={t.data.figure} loesung groesser={0.8} /> : null}
                 {t.type === "rechenweg" && t.data.start && (
                   <p className="mt-1 text-[17px] font-semibold">
                     <MathText text={t.data.start} />

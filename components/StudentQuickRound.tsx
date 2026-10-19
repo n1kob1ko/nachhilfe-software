@@ -24,6 +24,7 @@ import { laptopRecordHintAction, laptopSubmitAnswerAction } from "@/app/laptop-a
 import { hintLabel } from "@/lib/tasks";
 import { MathText } from "./MathText";
 import { newSubmissionId, useActiveTime, type ClientTask } from "./Solver";
+import { FigurBild } from "./Figur";
 
 /** So lange bleibt die Rückmeldung stehen, dann kommt die nächste Aufgabe (wie im Vorbild). */
 export const QUICK_FEEDBACK_MS = 1200;
@@ -253,6 +254,8 @@ export function StudentQuickRound({
       <p className="mb-5 text-center text-[22px] leading-snug font-medium">
         <MathText text={current.prompt} />
       </p>
+      {/* Aufgabe mit Bild: das Bild unter der Frage, mittig */}
+      {current.figur && <FigurBild svg={current.figur} groesser={1.2} className="mx-auto mb-5" />}
 
       {hintsShown > 0 && (
         <ul className="mb-4 space-y-2">

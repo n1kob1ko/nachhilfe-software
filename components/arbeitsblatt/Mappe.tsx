@@ -6,7 +6,7 @@ import type { MappeOptionen } from "@/lib/mappe-druck";
 import * as repo from "@/lib/repo";
 import { wordsLabel } from "@/lib/texts";
 import { MathLine, RichText } from "./MathLine";
-import { Passage, ReadingPassage, Start, StudentTask } from "./Sheet";
+import { MitBild, Passage, ReadingPassage, Start, StudentTask } from "./Sheet";
 import { Pictures, TextBody } from "./TextPrint";
 
 const letter = (i: number) => String.fromCharCode(97 + i);
@@ -154,7 +154,8 @@ function MappeTask({ t, a, o }: { t: SheetTask; a: MappeAufgabe; o: MappeOptione
     <div className="ab-task mp-task" data-bewertung={a.bewertung}>
       <span className="ab-num">{t.n}</span>
       <div className="ab-body">
-        <RichText text={task.prompt} gapsMm={t.plan.gapsMm} gapAnswers={luecken?.map((l) => ({ text: l.text, wrong: l.falsch, correct: l.richtig }))} />
+        {/* Aufgabe mit Bild: das Bild wie am Blatt; mit Lösung (bei Fehlern) zeigt es die gesuchten Werte */}
+        <MitBild task={task} loesung={zeigeLoesung} rest={(prompt) => <RichText text={prompt} gapsMm={t.plan.gapsMm} gapAnswers={luecken?.map((l) => ({ text: l.text, wrong: l.falsch, correct: l.richtig }))} />} />
         <Start task={task} />
         {task.type === "fix" && task.data.faulty && <p className="ab-faulty">{task.data.faulty}</p>}
         {antwort ? (

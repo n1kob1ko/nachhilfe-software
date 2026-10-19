@@ -6,11 +6,22 @@
  * turns them into real elements with Excalidraw's convertToExcalidrawElements. Backgrounds such as
  * grids and task texts are locked, so a student cannot move or erase them by accident.
  */
+import { textBreite, type Szene } from "./figur";
 import { parseMath, type MathNode } from "./math-format";
 
 export type Skeleton = Record<string, unknown> & { type: string; x: number; y: number };
 export type Point = { x: number; y: number };
-export type TaskForBoard = { number: number; prompt: string; options: string[] | null; solution?: string; taskId?: number };
+export type TaskForBoard = {
+  number: number;
+  prompt: string;
+  options: string[] | null;
+  solution?: string;
+  taskId?: number;
+  /** Aufgabe mit Bild: das Bild als Szene ohne Lösung (lib/figur.ts figurSzene), gezeichnet mit Tafel-Elementen */
+  figure?: Szene | null;
+  /** dasselbe in Worten, falls das Bild nicht gezeichnet werden kann */
+  figureText?: string | null;
+};
 /**
  * Which task of one insert an element belongs to (Excalidraw's customData, the only custom data the server keeps,
  * lib/whiteboard.ts). The task bar on the board finds the tasks by it; `task` and `ws` let the teacher grade them.
@@ -213,6 +224,16 @@ export function tasksTemplate(tasks: TaskForBoard[], at: Point, opts: { title?: 
     const prompt = mathText(wrap(`${t.number}) ${t.prompt}`), at.x, y, 30, opts.measure, extra);
     out.push(...prompt.elements);
     y += prompt.height + 10;
+    // Aufgabe mit Bild: das Bild unter der Frage, aus Linien und Texten (gesperrt wie die Aufgabe); sonst in Worten
+    if (t.figure) {
+      const bild = figureTemplate(t.figure, { x: at.x + 12, y: y + 6 }, { measure: opts.measure, extra });
+      out.push(...bild.elements);
+      y += bild.height + 22;
+    } else if (t.figureText) {
+      const bild = mathText(wrap(`Bild: ${t.figureText}`), at.x, y, 22, undefined, { ...extra, strokeColor: "#4b5563" });
+      out.push(...bild.elements);
+      y += bild.height + 10;
+    }
     if (t.options?.length) {
       const options = mathText(t.options.map((o, i) => `${String.fromCharCode(65 + i)})  ${o}`).join("\n"), at.x + 24, y, 26, opts.measure, extra);
       out.push(...options.elements);
@@ -224,6 +245,74 @@ export function tasksTemplate(tasks: TaskForBoard[], at: Point, opts: { title?: 
     y += h + 50;
   }
   return out;
+}
+
+/**
+ * Das Bild einer Aufgabe mit Bild auf der Tafel: dieselbe Szene wie am Bildschirm und am Blatt (lib/figur.ts), nur
+ * aus Tafel-Elementen (Linien, Ellipsen, Texte), damit man daneben und hinein schreiben kann. Höchstens so breit wie
+ * das Rechenfeld. Gibt die Elemente und die Größe auf der Tafel zurück.
+ */
+export function figureTemplate(s: Szene, at: Point, opts: { measure?: Measure; extra?: Partial<Skeleton>; maxWidth?: number } = {}): { elements: Skeleton[]; width: number; height: number } {
+  const k = Math.min(1.6, (opts.maxWidth ?? WORK_WIDTH - 24) / Math.max(1, s.b));
+  const X = (x: number) => at.x + x * k;
+  const Y = (y: number) => at.y + y * k;
+  const base: Partial<Skeleton> = { locked: true, roughness: 0, ...(opts.extra ?? {}) };
+  const out: Skeleton[] = [];
+  const breite = (str: string, size: number) => (opts.measure ? opts.measure(str, size) : textBreite(str, size));
+  const strich = (w: number) => Math.max(1, Math.round(w * k * 0.75 * 2) / 2);
+  const schrift = (x: number, y: number, str: string, g: number, a: "start" | "middle" | "end") => {
+    const size = Math.round(g * k);
+    const w = breite(str, size);
+    const x0 = a === "start" ? x : a === "end" ? x - w : x - w / 2;
+    out.push(text(str, x0, y - (size * LINE) / 2, { fontSize: size, ...base }));
+  };
+  for (const t of s.teile) {
+    switch (t.t) {
+      case "linie": {
+        const dx = (t.x2 - t.x1) * k;
+        const dy = (t.y2 - t.y1) * k;
+        out.push(line(X(t.x1), Y(t.y1), dx, dy, { strokeColor: t.stil === "gitter" ? "#c9ced6" : INK, strokeWidth: t.stil === "gitter" ? 1 : strich(t.w), strokeStyle: t.stil === "strich" ? "dashed" : "solid", ...base }));
+        break;
+      }
+      case "weg": {
+        const [x0, y0] = t.p[0];
+        const pts = t.p.map(([x, y]) => [(x - x0) * k, (y - y0) * k]);
+        if (t.zu) pts.push([0, 0]);
+        const xs = pts.map((p) => p[0]);
+        const ys = pts.map((p) => p[1]);
+        out.push({
+          type: "line",
+          x: X(x0),
+          y: Y(y0),
+          width: Math.max(...xs) - Math.min(...xs),
+          height: Math.max(...ys) - Math.min(...ys),
+          points: pts,
+          strokeColor: INK,
+          strokeWidth: strich(t.w),
+          backgroundColor: t.fuellung === "voll" ? INK : t.fuellung === "flaeche" ? "#f1f3f7" : "transparent",
+          fillStyle: "solid",
+          ...base,
+        });
+        break;
+      }
+      case "punkt":
+        out.push({ type: "ellipse", x: X(t.x - t.r), y: Y(t.y - t.r), width: 2 * t.r * k, height: 2 * t.r * k, strokeColor: INK, strokeWidth: t.offen ? 2 : 1, backgroundColor: t.offen ? "#ffffff" : INK, fillStyle: "solid", ...base });
+        break;
+      case "text":
+        schrift(X(t.x), Y(t.y), t.s, t.g, t.a);
+        break;
+      case "bruch": {
+        const size = Math.round(t.g * k);
+        const w = Math.max(breite(t.z, size), breite(t.n, size)) + 6;
+        schrift(X(t.x), Y(t.y - t.g * 0.62), t.z, t.g, "middle");
+        out.push(line(X(t.x) - w / 2, Y(t.y), w, 0, { strokeColor: INK, strokeWidth: 2, ...base }));
+        schrift(X(t.x), Y(t.y + t.g * 0.66), t.n, t.g, "middle");
+        if (t.minus) schrift(X(t.x) - w / 2 - 4, Y(t.y), "−", t.g, "end");
+        break;
+      }
+    }
+  }
+  return { elements: out, width: s.b * k, height: s.h * k };
 }
 
 /** A solution shown by the teacher, in green. */

@@ -18,6 +18,7 @@ import {
 import { saveToLibraryAction } from "@/app/library-actions";
 import { AddReadingQuestion, ReadingIssues, ReadingQuestionFields, ReadingTextPanel } from "@/components/ReadingEditor";
 import { TaskBody } from "@/components/TaskPreview";
+import { FigurBild } from "@/components/Figur";
 import { TabletSend } from "@/components/device/TabletSend";
 import { categoriesFor, DIFFICULTIES, TASK_TYPES, type Difficulty, type TaskType } from "@/lib/curriculum";
 import type { Task } from "@/lib/repo";
@@ -422,7 +423,9 @@ function SkillSelect({ skills, value, onChange }: { skills: Skill[]; value: stri
 // ---------- editing ----------
 /** Switches the answer format and keeps what still fits (prompt, solution, hints). */
 function reshape(t: TaskDraft, format: TaskType): TaskDraft {
-  const r = reshapeBase(t, format);
+  const base = reshapeBase(t, format);
+  // Aufgabe mit Bild: das Bild bleibt bei jedem Antwortformat dabei
+  const r = t.data.figure ? { ...base, data: { ...base.data, figure: t.data.figure } } : base;
   // a question about a shared reading text keeps the text, what it practises and its Beleg
   if (t.data.aspect === undefined && t.data.passageTitle === undefined) return r;
   return { ...r, data: { ...r.data, passage: t.data.passage, passageTitle: t.data.passageTitle, aspect: t.data.aspect }, answer: { ...r.answer, evidence: t.answer.evidence ?? [] } };
@@ -594,6 +597,19 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
         <textarea className="input min-h-[84px]" value={t.prompt} onChange={(e) => set({ prompt: e.target.value })} />
         {t.type === "cloze" && <span className="text-[12px] text-ink-3">Lücken mit {GAP} (drei Unterstriche) markieren. Jetzt: {gaps} {gaps === 1 ? "Lücke" : "Lücken"}.</span>}
       </label>
+      {/* Aufgabe mit Bild: das Bild entsteht aus den Zahlen der Aufgabe und wird hier nur gezeigt */}
+      {t.data.figure ? (
+        <div className="rounded-lg border border-line bg-paper px-4 py-3">
+          <p className="text-[13px] font-semibold text-ink-2">Bild zur Aufgabe (mit den gesuchten Werten, wie in der Lehrerfassung)</p>
+          <FigurBild figure={t.data.figure} loesung />
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[12px] text-ink-3">Das Bild lässt sich nicht bearbeiten. Änderst du Zahlen in der Aufgabe, passt es nicht mehr: dann „Neu erstellen“ oder das Bild entfernen.</p>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setData({ figure: undefined })}>
+              Bild entfernen
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {(t.type === "mc" || t.type === "reading") &&
         list(t.data.options ?? [], (next) => setT((cur) => ({ ...cur, data: { ...cur.data, options: next }, answer: { ...cur.answer, correct: Math.min(cur.answer.correct ?? 0, next.length - 1) } })), (i) => `${String.fromCharCode(97 + i)})`, {

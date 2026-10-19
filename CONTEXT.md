@@ -209,6 +209,15 @@ Im Code der Aufgabentyp `memorize` (`lib/memorize.ts`), der Text steht in
 `data.passage`.
 _Avoid_: Memorize, Auswendiglernen, Diktat, Abfrage
 
+**Aufgabe mit Bild**:
+Eine **Aufgabe** in Mathematik, zu der ein Bild gehört: ein Zahlenstrahl (auch Zahlengerade), ein
+Koordinatensystem mit Punkten oder Geraden oder eine Figur mit beschrifteten Längen. Das Bild ist
+kein eigenes Antwortformat: die Angaben stehen in `data.figure`, geantwortet wird als Rechnung,
+Multiple Choice, Lückentext, Rechenweg oder Sachaufgabe. Ein Zeichner für Schülergerät, Vorschau,
+A4-Blatt, Mappe und Whiteboard (`lib/figur.ts`); die Aufgaben kommen ohne KI aus den Generatoren
+(`lib/generators-figur.ts`, [docs/aufgaben-mit-bild.md](docs/aufgaben-mit-bild.md)).
+_Avoid_: Bildaufgabe, Grafikaufgabe, Abbildung, Diagramm
+
 ## Material, Bibliothek, Vorlage
 
 **Material**:

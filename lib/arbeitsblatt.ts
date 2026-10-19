@@ -235,7 +235,8 @@ export function planTask(
   const area = (mm: number): WorkArea | null =>
     kind && mm > 0 ? { kind, heightMm: mm } : null;
 
-  if (math && o.field !== "keins" && COORDINATES.test(text))
+  // ein leeres Koordinatensystem zum Zeichnen; eine Aufgabe mit Bild bringt ihr Bild selbst mit (lib/figur.ts)
+  if (math && o.field !== "keins" && !task.data.figure && COORDINATES.test(text))
     plan.area = { kind: "koordinaten", heightMm: COORD_MM[o.space] };
 
   // the maths formats always get squared paper to calculate on, unless the teacher chose another field or none
@@ -256,8 +257,10 @@ export function planTask(
     return plan;
   }
 
+  // Aufgabe mit Bild: Ablesen am Zahlenstrahl oder im Koordinatensystem braucht kein oder nur ein kleines Feld
+  const ablesen = Boolean(task.data.figure && task.data.figure.art !== "figur");
   if (options.length) {
-    if (math && !plan.area) plan.area = area(SMALL_MM[o.space]);
+    if (math && !plan.area && !ablesen) plan.area = area(SMALL_MM[o.space]);
     return plan;
   }
   if (task.data.steps) return plan;
@@ -285,6 +288,13 @@ export function planTask(
     plan.lines = Math.max(3, Math.min(20, Math.round((Math.ceil(len / 55) + 1) * Math.max(1, SCALE[o.space]))));
     return plan;
   }
+  // Aufgabe mit Bild und Lücken: abgelesen wird gleich in die Lücken; bei einer Figur wird zuerst gerechnet,
+  // das Feld steht dann zwischen Bild und Lücken (components/arbeitsblatt/Sheet.tsx)
+  if (task.data.figure && task.answer.blanks) {
+    if (math && !ablesen) plan.area = area(CALC_MM[o.space]);
+    plan.areaBeforeLastLine = Boolean(plan.area);
+    return plan;
+  }
   if (task.answer.blanks && !(math && resultLine)) {
     // gaps in a table (Wertetabelle) are filled in place, without a field for working
     if (
@@ -295,8 +305,8 @@ export function planTask(
       plan.area = area(SMALL_MM[o.space]);
     return plan;
   }
-  // short answers (calculations, grammar, vocabulary); a closing "Ergebnis: ___" gets the full field above it
-  if (math && !plan.area) plan.area = area(CALC_MM[o.space]);
+  // short answers (calculations, grammar, vocabulary); a closing "Ergebnis: ___" gets the full field above it.
+  if (math && !plan.area) plan.area = area(ablesen ? SMALL_MM[o.space] : CALC_MM[o.space]);
   plan.areaBeforeLastLine = Boolean(plan.area) && resultLine;
   if (!gaps) {
     plan.lines = o.space === "gross" && !math ? 2 : 1;
