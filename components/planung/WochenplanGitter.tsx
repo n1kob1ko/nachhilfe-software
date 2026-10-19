@@ -1,8 +1,11 @@
 "use client";
 
 /**
- * Das Gitter der Wochenansicht: Zeilen = Lehrer, Spalten = die sieben Tage, Höhe = Zeit auf einem
- * 10-Minuten-Raster (D19). Es zeichnet nur; gerechnet wird im Server (`lib/planung/uebersicht.ts`).
+ * Das Gitter der Wochenansicht: je Lehrer ein Band mit seinen Kennzahlen und darunter seine Zeile,
+ * Spalten = die Tage, Höhe = Zeit. Gezeigt wird nur die Arbeitszeit (Verfügbarkeit und Plätze) und
+ * Samstag/Sonntag nur, wenn dort jemand kann oder etwas steht. Volle Stunden sind Linien, das
+ * 10-Minuten-Raster (D19) erscheint erst beim Ziehen. Es zeichnet nur; gerechnet wird im Server
+ * (`lib/planung/uebersicht.ts`).
  *
  * Ziehen und Ablegen: Ein Platz wird gezogen, die Zelle unter dem Zeiger meldet ihre Position
  * (`onDragOverZelle`), die Seite fragt damit `checkSlotTargetAction` — und die antwortet über
@@ -22,30 +25,13 @@ export const MINUTEN_HOEHE = 0.8;
 /** Raster der Startzeiten in Minuten (D19: Vielfache von 10). */
 export const RASTER = 10;
 
-const SPALTE_ZEIT = 46;
-const SPALTE_LEHRER = 132;
-const SPALTE_TAG = 104;
+const SPALTE_ZEIT = 52;
+const SPALTE_TAG = 116;
 
 export type Ziel = { teacherId: number; weekday: Wochentag; startMin: number };
 export type Urteil = { ziel: Ziel; ok: boolean; fehler?: string };
 
 export const zielSchluessel = (z: Ziel) => `${z.teacherId}|${z.weekday}|${z.startMin}`;
-
-/** Der sichtbare Zeitbereich: mindestens 08:00–18:00, sonst alles, was Plätze oder Verfügbarkeit brauchen. */
-export function anzeigeBereich(plaetze: { startMin: number; dauer: number }[], lehrer: { verfuegbarkeit: Verfuegbarkeit }[]): { von: number; bis: number } {
-  let von = 8 * 60;
-  let bis = 18 * 60;
-  const merken = (start: number, ende: number) => {
-    von = Math.min(von, start);
-    bis = Math.max(bis, ende);
-  };
-  for (const p of plaetze) merken(p.startMin, p.startMin + p.dauer);
-  for (const l of lehrer)
-    for (const spannen of Object.values(l.verfuegbarkeit)) for (const spanne of spannen ?? []) merken(spanne.start, spanne.end);
-  von = Math.max(0, Math.floor(von / 60) * 60);
-  bis = Math.min(1440, Math.ceil(bis / 60) * 60);
-  return { von, bis: Math.max(bis, von + 240) };
-}
 
 /**
  * Zwei Schüler gleichzeitig (D26): Plätze einer Zelle, die sich überschneiden, stehen nebeneinander,
@@ -86,6 +72,9 @@ export function startAusY(clientY: number, obenImDokument: number, bereich: { vo
   return Math.max(0, Math.min(1430, auf10(roh)));
 }
 
+/** Nicht verfügbare Zeit: feine Schraffur auf dem Papierton, damit freie Zeit weiß hervortritt. */
+const SCHRAFFUR = "repeating-linear-gradient(135deg, var(--paper) 0 7px, var(--panel) 7px 8px)";
+
 type Props = {
   tage: UebersichtTage[];
   heute: Wochentag;
@@ -112,10 +101,14 @@ type Props = {
 export function WochenplanGitter(props: Props) {
   const { tage, heute, lehrer, plaetze, schueler, luecken, bereich, interaktiv, ziehPlatz, ziel, urteil, woche, zurueck, onZiehen, onZiehenEnde, onZellenZiel, onZellenVerlassen, onAblegen, onBearbeiten } = props;
   const hoehe = (bereich.bis - bereich.von) * MINUTEN_HOEHE;
-  const rasterPx = RASTER * MINUTEN_HOEHE;
   const stundePx = 60 * MINUTEN_HOEHE;
   const stunden: number[] = [];
-  for (let m = Math.ceil(bereich.von / 60) * 60; m <= bereich.bis; m += 60) stunden.push(m);
+  for (let m = Math.ceil(bereich.von / 60) * 60; m < bereich.bis; m += 60) stunden.push(m);
+  // volle Stunden als Linie; beim Ziehen zusätzlich das 10-Minuten-Raster, auf das abgelegt wird
+  const linien = [
+    `repeating-linear-gradient(to bottom, var(--line-strong) 0 1px, transparent 1px ${stundePx}px)`,
+    ...(ziehPlatz ? [`repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px ${RASTER * MINUTEN_HOEHE}px)`] : []),
+  ].join(", ");
 
   if (!lehrer.length)
     return (
@@ -126,212 +119,200 @@ export function WochenplanGitter(props: Props) {
 
   return (
     <div className="overflow-x-auto rounded-[20px] border border-line bg-surface shadow-[var(--shadow-card)]">
-      <div style={{ minWidth: SPALTE_ZEIT + SPALTE_LEHRER + 7 * SPALTE_TAG }}>
-        <div className="grid" style={{ gridTemplateColumns: `${SPALTE_ZEIT}px ${SPALTE_LEHRER}px repeat(7, minmax(${SPALTE_TAG}px, 1fr))` }}>
-          <div className="sticky top-0 left-0 z-30 border-r border-b border-line bg-surface" aria-hidden />
-          <div className="sticky top-0 z-20 border-r border-b border-line bg-surface px-2 py-2 text-[12px] font-semibold text-ink-2">Lehrer</div>
-          {tage.map((t) => (
-            <div
-              key={t.tag}
-              className={`sticky top-0 z-20 border-r border-b border-line px-1.5 py-2 text-center last:border-r-0 ${t.tag === heute ? "bg-accent-wash" : "bg-surface"}`}
-            >
-              <div className={`text-[12px] font-semibold ${t.tag === heute ? "text-accent" : "text-ink"}`}>{t.label}</div>
+      <div className="grid" style={{ gridTemplateColumns: `${SPALTE_ZEIT}px repeat(${tage.length}, minmax(${SPALTE_TAG}px, 1fr))`, minWidth: SPALTE_ZEIT + tage.length * SPALTE_TAG }}>
+        <div className="sticky left-0 z-30 border-b border-line bg-surface" aria-hidden />
+        {tage.map((t) => {
+          const [kurz, datum] = t.label.split(", ");
+          const istHeute = t.tag === heute;
+          return (
+            <div key={t.tag} className={`border-b border-l border-line px-2 py-2.5 text-center ${istHeute ? "bg-accent-wash" : ""}`}>
+              <div className={`text-[13px] font-semibold ${istHeute ? "text-accent" : "text-ink"}`}>{kurz}</div>
+              <div className={`num text-[11.5px] ${istHeute ? "text-accent" : "text-ink-3"}`}>{datum}</div>
             </div>
-          ))}
+          );
+        })}
 
-          {lehrer.map((l) => (
-            <Fragment key={l.id}>
-              {/* Zeitleiste dieser Zeile */}
-              <div className="relative border-r border-b border-line bg-panel/40" style={{ height: hoehe }}>
-                {stunden.map((m) => (
-                  <span key={m} className="num absolute right-1.5 -translate-y-1/2 text-[10px] text-ink-3" style={{ top: (m - bereich.von) * MINUTEN_HOEHE }}>
-                    {minutenLabel(m)}
-                  </span>
-                ))}
-              </div>
-
-              {/* Lehrername und Kennzahlen */}
-              <div className="sticky left-0 z-10 border-r border-b border-line bg-surface px-2 py-2" style={{ height: hoehe }}>
-                <div className="text-[13px] font-semibold text-ink">{l.name}</div>
-                <div className="num text-[11px] text-ink-3">
+        {lehrer.map((l) => (
+          <Fragment key={l.id}>
+            {/* Band des Lehrers: Name und Kennzahlen, beim seitlichen Scrollen bleibt es stehen */}
+            <div className="col-span-full border-b border-line bg-panel/70">
+              <div className="sticky left-0 flex w-max max-w-[100vw] flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2">
+                <span className="text-[14px] font-semibold text-ink">{l.name}</span>
+                <span className="num text-[12.5px] text-ink-2">
                   {l.einheiten} {l.einheiten === 1 ? "Einheit" : "Einheiten"} · {l.minuten} min
-                </div>
+                </span>
                 {l.zielMin ? (
-                  <div className="num text-[11px] text-ink-3">
-                    Ziel {l.zielMin} min ({Math.round((l.minuten / l.zielMin) * 100)} %)
-                  </div>
+                  <span className="flex items-center gap-2 text-[12.5px] text-ink-2" title={`Ziel: ${l.zielMin} min in der Woche`}>
+                    <span className="relative h-1.5 w-16 overflow-hidden rounded-full bg-[var(--bar-track)]" aria-hidden>
+                      <span className="absolute inset-y-0 left-0 rounded-full bg-[var(--bar)]" style={{ width: `${Math.min(100, (l.minuten / l.zielMin) * 100)}%` }} />
+                    </span>
+                    <span className="num">
+                      {Math.round((l.minuten / l.zielMin) * 100)} % vom Ziel {l.zielMin} min
+                    </span>
+                  </span>
                 ) : null}
-                {l.lueckenMinuten > 0 ? <div className="num text-[11px] text-amber">Lücken {l.lueckenMinuten} min</div> : null}
+                {l.lueckenMinuten > 0 ? <span className="num text-[12.5px] font-medium text-amber">Lücken {l.lueckenMinuten} min</span> : null}
               </div>
+            </div>
 
-              {tage.map((t) => {
-                const meine = plaetze.filter((p) => p.teacherId === l.id && p.weekday === t.tag);
-                const spurNach = spurenFuer(meine);
-                const meineLuecken = luecken.filter((x) => x.teacherId === l.id && x.weekday === t.tag);
-                const spannen = l.verfuegbarkeit[String(t.tag) as keyof Verfuegbarkeit] ?? [];
-                const zielHier = ziel && ziel.teacherId === l.id && ziel.weekday === t.tag ? ziel : null;
-                const urteilHier = zielHier && urteil && zielSchluessel(urteil.ziel) === zielSchluessel(zielHier) ? urteil : null;
-                const ungueltig = urteilHier?.ok === false;
-                const ziehDauer = ziehPlatz?.dauer ?? 100;
+            {/* Zeitleiste dieser Zeile: die Uhrzeit steht unter ihrer Linie, die letzte fällt weg */}
+            <div className="sticky left-0 z-20 border-b border-line bg-surface" style={{ height: hoehe }} aria-hidden>
+              {stunden.map((m) => (
+                <span key={m} className="num absolute right-2 text-[11px] leading-none text-ink-3" style={{ top: (m - bereich.von) * MINUTEN_HOEHE + 4 }}>
+                  {minutenLabel(m)}
+                </span>
+              ))}
+            </div>
 
-                return (
-                  <div
-                    key={`${l.id}-${t.tag}`}
-                    className={`relative border-r border-b border-line ${ungueltig ? "cursor-not-allowed ring-1 ring-inset ring-red" : interaktiv && ziehPlatz ? "cursor-copy" : ""}`}
-                    style={{
-                      height: hoehe,
-                      backgroundImage: `repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px ${rasterPx}px), repeating-linear-gradient(to bottom, var(--line-strong) 0 1px, transparent 1px ${stundePx}px)`,
-                    }}
-                    title={ungueltig ? urteilHier?.fehler : undefined}
-                    onDragOver={(e) => {
-                      if (!interaktiv || !ziehPlatz) return;
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = "move";
-                      onZellenZiel({ teacherId: l.id, weekday: t.tag, startMin: startAusY(e.clientY, e.currentTarget.getBoundingClientRect().top, bereich) });
-                    }}
-                    onDragLeave={(e) => {
-                      const naechstes = e.relatedTarget as Node | null;
-                      if (naechstes && e.currentTarget.contains(naechstes)) return;
-                      onZellenVerlassen();
-                    }}
-                    onDrop={(e) => {
-                      if (!interaktiv || !ziehPlatz) return;
-                      e.preventDefault();
-                      onAblegen({ teacherId: l.id, weekday: t.tag, startMin: startAusY(e.clientY, e.currentTarget.getBoundingClientRect().top, bereich) });
-                    }}
-                  >
-                    {/* Verfügbarkeit des Lehrers */}
-                    {spannen.map((s, i) => (
-                      <div
-                        key={`v${i}`}
-                        className="absolute inset-x-0"
-                        style={{ top: (Math.max(s.start, bereich.von) - bereich.von) * MINUTEN_HOEHE, height: (Math.min(s.end, bereich.bis) - Math.max(s.start, bereich.von)) * MINUTEN_HOEHE, background: "var(--green-wash)", opacity: 0.5 }}
-                        aria-hidden
-                      />
-                    ))}
+            {tage.map((t) => {
+              const meine = plaetze.filter((p) => p.teacherId === l.id && p.weekday === t.tag);
+              const spurNach = spurenFuer(meine);
+              const meineLuecken = luecken.filter((x) => x.teacherId === l.id && x.weekday === t.tag);
+              const spannen = l.verfuegbarkeit[String(t.tag) as keyof Verfuegbarkeit] ?? [];
+              const zielHier = ziel && ziel.teacherId === l.id && ziel.weekday === t.tag ? ziel : null;
+              const urteilHier = zielHier && urteil && zielSchluessel(urteil.ziel) === zielSchluessel(zielHier) ? urteil : null;
+              const ungueltig = urteilHier?.ok === false;
+              const ziehDauer = ziehPlatz?.dauer ?? 100;
 
-                    {/* Lücken, die als unnütz gelten */}
-                    {meineLuecken.map((x, i) => (
-                      <div
-                        key={`l${i}`}
-                        className="absolute inset-x-0 flex items-center justify-center"
-                        style={{ top: (x.start - bereich.von) * MINUTEN_HOEHE, height: (x.end - x.start) * MINUTEN_HOEHE, background: "var(--amber-wash)", opacity: 0.85 }}
-                        title={`Lücke ${x.end - x.start} min`}
-                      >
-                        <span className="num text-[9px] text-amber">{x.end - x.start}′</span>
-                      </div>
-                    ))}
+              return (
+                <div
+                  key={`${l.id}-${t.tag}`}
+                  className={`relative border-b border-l border-line ${ungueltig ? "cursor-not-allowed ring-1 ring-inset ring-red" : interaktiv && ziehPlatz ? "cursor-copy" : ""}`}
+                  style={{ height: hoehe, background: SCHRAFFUR }}
+                  title={ungueltig ? urteilHier?.fehler : undefined}
+                  onDragOver={(e) => {
+                    if (!interaktiv || !ziehPlatz) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    onZellenZiel({ teacherId: l.id, weekday: t.tag, startMin: startAusY(e.clientY, e.currentTarget.getBoundingClientRect().top, bereich) });
+                  }}
+                  onDragLeave={(e) => {
+                    const naechstes = e.relatedTarget as Node | null;
+                    if (naechstes && e.currentTarget.contains(naechstes)) return;
+                    onZellenVerlassen();
+                  }}
+                  onDrop={(e) => {
+                    if (!interaktiv || !ziehPlatz) return;
+                    e.preventDefault();
+                    onAblegen({ teacherId: l.id, weekday: t.tag, startMin: startAusY(e.clientY, e.currentTarget.getBoundingClientRect().top, bereich) });
+                  }}
+                >
+                  {/* Verfügbarkeit des Lehrers: weiß, der Rest bleibt schraffiert */}
+                  {spannen.map((s, i) => (
+                    <div
+                      key={`v${i}`}
+                      className="absolute inset-x-0 bg-surface"
+                      style={{ top: (Math.max(s.start, bereich.von) - bereich.von) * MINUTEN_HOEHE, height: (Math.min(s.end, bereich.bis) - Math.max(s.start, bereich.von)) * MINUTEN_HOEHE }}
+                      aria-hidden
+                    />
+                  ))}
 
-                    {/* Geplante Einheiten; zwei Schüler gleichzeitig (D26) stehen nebeneinander */}
-                    <div className={ungueltig ? "opacity-50" : ""}>
-                      {meine.map((p) => {
-                        const tone = subjectTone(schueler.find((s) => s.id === p.studentId)?.subjects[0]);
-                        const blockHoehe = Math.max(16, p.dauer * MINUTEN_HOEHE);
-                        const kompakt = blockHoehe < 46;
-                        const { spur, spuren } = spurNach.get(p.id) ?? { spur: 0, spuren: 1 };
-                        const zugleich = p.zugleichMit.length ? ` · gleichzeitig mit ${p.zugleichMit.join(", ")}` : "";
-                        return (
-                          <div
-                            key={p.id}
-                            draggable={interaktiv}
-                            onDragStart={(e) => {
-                              if ((e.target as HTMLElement).closest("button, a")) {
-                                e.preventDefault();
-                                return;
-                              }
-                              e.dataTransfer.setData("text/plain", String(p.id));
-                              e.dataTransfer.effectAllowed = "move";
-                              onZiehen(p);
-                            }}
-                            onDragEnd={onZiehenEnde}
-                            className={`group absolute z-10 overflow-hidden rounded-[10px] border px-1.5 py-0.5 text-left text-[11px] leading-tight ${interaktiv ? "cursor-grab" : ""} ${p.locked ? "ring-1 ring-accent" : ""} ${p.status === "entwurf" ? "border-dashed" : "border-solid"} ${p.nichtStattgefunden ? "opacity-60" : ""}`}
-                            style={{
-                              top: (p.startMin - bereich.von) * MINUTEN_HOEHE,
-                              height: blockHoehe,
-                              left: `calc(${(spur / spuren) * 100}% + ${spur ? 2 : 4}px)`,
-                              width: `calc(${100 / spuren}% - ${spuren > 1 ? 6 : 8}px)`,
-                              background: tone.soft,
-                              borderColor: tone.bg,
-                              color: tone.fg,
-                            }}
-                            title={`${p.studentName} · ${minutenLabel(p.startMin)}–${minutenLabel(p.startMin + p.dauer)}${p.roomName ? ` · ${p.roomName}` : ""}${p.locked ? " · gesperrt" : ""}${zugleich}${p.nichtStattgefunden ? " · nicht stattgefunden" : ""}`}
-                          >
-                            {/* in a half-width lane the name keeps the first line, the marks move below it */}
-                            <div className={spuren > 1 ? "flex flex-col items-start gap-0.5" : "flex items-center gap-1"}>
-                              <span className="max-w-full min-w-0 truncate font-semibold">{p.studentName}</span>
-                              {(p.locked || zugleich) && (
-                                <span
-                                  className={`flex shrink-0 items-center gap-0.5 rounded-full px-1 text-[9px] font-semibold ${spuren > 1 ? "" : "ml-auto"}`}
-                                  style={{ background: "var(--surface)" }}
-                                >
-                                  {zugleich && (
-                                    <span title={`Gleichzeitig mit ${p.zugleichMit.join(", ")}`} className="flex items-center">
-                                      <Users size={9} strokeWidth={2.6} aria-label="gleichzeitig" />
-                                    </span>
-                                  )}
-                                  {p.locked && (
-                                    <span title="Gesperrt: bleibt bei „Neu generieren“ stehen" className="flex items-center gap-0.5">
-                                      <Lock size={9} strokeWidth={2.6} aria-hidden />
-                                      {spuren === 1 && "gesperrt"}
-                                    </span>
-                                  )}
-                                </span>
-                              )}
-                            </div>
-                            {!kompakt && (
-                              <div className="num truncate">
-                                {spuren > 1 ? (
-                                  minutenLabel(p.startMin)
-                                ) : (
-                                  <>
-                                    {minutenLabel(p.startMin)}–{minutenLabel(p.startMin + p.dauer)}
-                                    {p.roomName ? ` · ${p.roomName}` : ""}
-                                  </>
-                                )}
-                              </div>
-                            )}
-                            {p.nichtStattgefunden && !kompakt && <div className="truncate font-semibold">nicht stattgefunden</div>}
-                            {interaktiv && (
-                              <div className="absolute top-0 right-0 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
-                                <button type="button" className="rounded bg-surface/90 p-0.5 text-ink-2 hover:text-accent" aria-label={`${p.studentName} bearbeiten`} onClick={() => onBearbeiten(p)}>
-                                  <Pencil size={11} aria-hidden />
-                                </button>
-                                <form action={lockSlotAction.bind(null, p.id, !p.locked)}>
-                                  <input type="hidden" name="woche" value={woche} />
-                                  <input type="hidden" name="zurueck" value={zurueck} />
-                                  <button type="submit" className="rounded bg-surface/90 p-0.5 text-ink-2 hover:text-accent" aria-label={p.locked ? `${p.studentName} entsperren` : `${p.studentName} sperren`}>
-                                    <Lock size={11} aria-hidden />
-                                  </button>
-                                </form>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                  {/* Stundenlinien über allem Flächigen, unter den Plätzen */}
+                  <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: linien }} aria-hidden />
+
+                  {/* Lücken, die als unnütz gelten */}
+                  {meineLuecken.map((x, i) => (
+                    <div
+                      key={`l${i}`}
+                      className="absolute inset-x-1 flex items-center justify-center rounded-md"
+                      style={{ top: (x.start - bereich.von) * MINUTEN_HOEHE, height: (x.end - x.start) * MINUTEN_HOEHE, background: "var(--amber-wash)" }}
+                      title={`Lücke ${x.end - x.start} min`}
+                    >
+                      <span className="num text-[10.5px] font-semibold text-amber">Lücke {x.end - x.start}′</span>
                     </div>
+                  ))}
 
-                    {/* Ziel des Ziehvorgangs: Umriss oder Absage */}
-                    {zielHier && ziehPlatz && (
-                      urteilHier?.ok === false ? (
-                        <div className="pointer-events-none absolute inset-0 z-20 flex items-start justify-center pt-1" style={{ background: "var(--red-wash)", opacity: 0.7 }}>
-                          <span className="rounded-full bg-surface px-1.5 py-0.5 text-[10px] font-semibold text-red">nicht möglich</span>
-                        </div>
-                      ) : (
+                  {/* Geplante Einheiten; zwei Schüler gleichzeitig (D26) stehen nebeneinander */}
+                  <div className={ungueltig ? "opacity-50" : ""}>
+                    {meine.map((p) => {
+                      const tone = subjectTone(schueler.find((s) => s.id === p.studentId)?.subjects[0]);
+                      const blockHoehe = Math.max(22, p.dauer * MINUTEN_HOEHE);
+                      // so viele Textzeilen passen in den Block; der Name steht immer da
+                      const zeilen = Math.floor((blockHoehe - 12) / 14);
+                      const { spur, spuren } = spurNach.get(p.id) ?? { spur: 0, spuren: 1 };
+                      const zugleich = p.zugleichMit.length ? ` · gleichzeitig mit ${p.zugleichMit.join(", ")}` : "";
+                      const aus = p.nichtStattgefunden;
+                      return (
                         <div
-                          className="pointer-events-none absolute left-1 right-1 z-20 rounded-[10px] border-2 border-dashed border-accent bg-accent-wash/70 px-1.5 py-0.5 text-[11px]"
-                          style={{ top: (zielHier.startMin - bereich.von) * MINUTEN_HOEHE, height: Math.max(16, ziehDauer * MINUTEN_HOEHE) }}
+                          key={p.id}
+                          draggable={interaktiv}
+                          onDragStart={(e) => {
+                            if ((e.target as HTMLElement).closest("button, a")) {
+                              e.preventDefault();
+                              return;
+                            }
+                            e.dataTransfer.setData("text/plain", String(p.id));
+                            e.dataTransfer.effectAllowed = "move";
+                            onZiehen(p);
+                          }}
+                          onDragEnd={onZiehenEnde}
+                          className={`group absolute z-10 overflow-hidden rounded-[10px] border px-2 py-1 text-left leading-tight shadow-[0_1px_2px_rgba(80,45,20,0.08)] ${interaktiv ? "cursor-grab" : ""} ${p.status === "entwurf" ? "border-dashed" : "border-solid"}`}
+                          style={{
+                            top: (p.startMin - bereich.von) * MINUTEN_HOEHE + 1,
+                            height: blockHoehe - 2,
+                            left: `calc(${(spur / spuren) * 100}% + ${spur ? 2 : 4}px)`,
+                            width: `calc(${100 / spuren}% - ${spuren > 1 ? 6 : 8}px)`,
+                            background: aus ? "var(--paper)" : tone.bg,
+                            borderColor: aus ? "var(--line-strong)" : `color-mix(in srgb, ${tone.fg} 35%, transparent)`,
+                          }}
+                          title={`${p.studentName} · ${minutenLabel(p.startMin)}–${minutenLabel(p.startMin + p.dauer)}${p.roomName ? ` · ${p.roomName}` : ""}${p.locked ? " · gesperrt" : ""}${zugleich}${aus ? " · nicht stattgefunden" : ""}`}
                         >
-                          <span className="num font-semibold text-accent">{minutenLabel(zielHier.startMin)}</span>
-                          <span className="truncate"> {ziehPlatz.studentName}</span>
+                          <div className="flex items-start gap-1">
+                            <span className={`min-w-0 flex-1 truncate text-[12px] font-semibold ${aus ? "text-ink-3 line-through" : "text-ink"}`}>{p.studentName}</span>
+                            {zugleich && <Users size={11} strokeWidth={2.4} className="mt-0.5 shrink-0 text-ink-2" aria-label="gleichzeitig" />}
+                            {p.locked && <Lock size={11} strokeWidth={2.4} className="mt-0.5 shrink-0 text-ink-2" aria-label="gesperrt" />}
+                          </div>
+                          {zeilen >= 2 && (
+                            <div className="num truncate text-[11px] text-ink-2">
+                              {spuren > 1 ? minutenLabel(p.startMin) : `${minutenLabel(p.startMin)}–${minutenLabel(p.startMin + p.dauer)}`}
+                            </div>
+                          )}
+                          {zeilen >= 3 &&
+                            (aus ? (
+                              <div className="truncate text-[10.5px] font-semibold text-red">nicht stattgefunden</div>
+                            ) : (
+                              p.roomName && spuren === 1 && <div className="truncate text-[11px] text-ink-3">{p.roomName}</div>
+                            ))}
+                          {interaktiv && (
+                            <div className="absolute top-0.5 right-0.5 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                              <button type="button" className="rounded-md bg-surface p-1 text-ink-2 shadow-sm hover:text-accent" aria-label={`${p.studentName} bearbeiten`} onClick={() => onBearbeiten(p)}>
+                                <Pencil size={11} aria-hidden />
+                              </button>
+                              <form action={lockSlotAction.bind(null, p.id, !p.locked)}>
+                                <input type="hidden" name="woche" value={woche} />
+                                <input type="hidden" name="zurueck" value={zurueck} />
+                                <button type="submit" className="rounded-md bg-surface p-1 text-ink-2 shadow-sm hover:text-accent" aria-label={p.locked ? `${p.studentName} entsperren` : `${p.studentName} sperren`}>
+                                  <Lock size={11} aria-hidden />
+                                </button>
+                              </form>
+                            </div>
+                          )}
                         </div>
-                      )
-                    )}
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </Fragment>
-          ))}
-        </div>
+
+                  {/* Ziel des Ziehvorgangs: Umriss oder Absage */}
+                  {zielHier && ziehPlatz && (
+                    urteilHier?.ok === false ? (
+                      <div className="pointer-events-none absolute inset-0 z-20 flex items-start justify-center pt-1" style={{ background: "var(--red-wash)", opacity: 0.7 }}>
+                        <span className="rounded-full bg-surface px-1.5 py-0.5 text-[10px] font-semibold text-red">nicht möglich</span>
+                      </div>
+                    ) : (
+                      <div
+                        className="pointer-events-none absolute left-1 right-1 z-20 rounded-[10px] border-2 border-dashed border-accent bg-accent-wash/70 px-1.5 py-0.5 text-[11px]"
+                        style={{ top: (zielHier.startMin - bereich.von) * MINUTEN_HOEHE, height: Math.max(22, ziehDauer * MINUTEN_HOEHE) }}
+                      >
+                        <span className="num font-semibold text-accent">{minutenLabel(zielHier.startMin)}</span>
+                        <span className="truncate"> {ziehPlatz.studentName}</span>
+                      </div>
+                    )
+                  )}
+                </div>
+              );
+            })}
+          </Fragment>
+        ))}
       </div>
     </div>
   );

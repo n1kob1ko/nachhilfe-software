@@ -1,4 +1,3 @@
-import { CalendarDays } from "lucide-react";
 import { Wochenplan, type PlanungFilterWerte } from "@/components/planung/Wochenplan";
 import { PageHeader } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
@@ -58,13 +57,10 @@ export default async function PlanungPage({
           <>
             Eine Woche ist entweder <b>Entwurf</b> oder <b>veröffentlicht</b>. Die Verwaltung generiert, verschiebt und veröffentlicht; ein Lehrer sieht nur seine eigene veröffentlichte Woche.
             Ziehen verschiebt einen Platz auf einen anderen Tag, eine andere Zeit oder einen anderen Lehrer — unzulässige Ziele werden geprüft (Lehrer, Schüler, Raum) und ausgeblendet. Gesperrte Plätze bleiben bei „Neu generieren“ stehen.
+            Weiß ist die Zeit, in der ein Lehrer kann, schraffiert die übrige. Zeiten sind lokale Zeiten (Europe/Vienna). Die geplante Dauer (1–300 Minuten) ist der Vorschlag; abgerechnet wird nur die echte Einheit.
           </>
         }
       />
-      <p className="mb-4 flex items-start gap-2 text-[13px] text-ink-2">
-        <CalendarDays size={15} className="mt-0.5 shrink-0" aria-hidden />
-        Zeiten sind lokale Zeiten (Europe/Vienna). Die geplante Dauer (1–300 Minuten) ist der Vorschlag; abgerechnet wird nur die echte Einheit.
-      </p>
 
       {fremdeWoche && (
         <p className="mb-4 rounded-2xl px-4 py-3 text-[14px] text-amber" role="status" style={{ background: "var(--amber-wash)" }}>

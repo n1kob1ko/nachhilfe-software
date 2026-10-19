@@ -1,92 +1,12 @@
 "use client";
 
 /**
- * Die Randstücke der Wochenansicht: Seitenleiste (Lehrer und Schüler mit „x/y Einheiten geplant“),
- * das **Offen-Schubfach** (Schüler, deren Bedarf die Woche nicht deckt, D18) und der Fuß mit den
- * Summen. Alles bekommt fertige Zahlen aus `lib/planung/uebersicht.ts` und rechnet nicht selbst.
+ * Die Randstücke der Wochenansicht: die Kennzahlen der Woche und das **Offen-Schubfach** (Schüler,
+ * deren Bedarf die Woche nicht deckt, D18). Beide bekommen fertige Zahlen aus
+ * `lib/planung/uebersicht.ts` und rechnen nicht selbst.
  */
 import { AlertTriangle, CheckCircle2, DoorOpen, X } from "lucide-react";
-import { Pill } from "@/components/ui";
-import type { UebersichtLehrer, UebersichtOffen, UebersichtSchueler, WochenSummen } from "@/lib/planung/uebersicht";
-
-/** „3/2“ heißt: drei Plätze von zwei verlangten. */
-const paar = (ist: number, soll: number) => `${ist}/${soll}`;
-
-export function WochenplanSeitenleiste({
-  lehrer,
-  schueler,
-  onLehrerWaehlen,
-  onSchuelerWaehlen,
-  gewaehlterLehrer,
-  gewaehlterSchueler,
-}: {
-  lehrer: UebersichtLehrer[];
-  schueler: UebersichtSchueler[];
-  gewaehlterLehrer?: number;
-  gewaehlterSchueler?: number;
-  onLehrerWaehlen?: (id: number) => void;
-  onSchuelerWaehlen?: (id: number) => void;
-}) {
-  return (
-    <aside className="no-print hidden w-[248px] shrink-0 flex-col gap-4 lg:flex">
-      <section className="panel px-3 py-3">
-        <h2 className="mb-2 text-[13px] font-semibold text-ink-2">Lehrer</h2>
-        <ul className="space-y-0.5">
-          {lehrer.map((l) => (
-            <li key={l.id}>
-              <button
-                type="button"
-                onClick={() => onLehrerWaehlen?.(l.id)}
-                aria-pressed={gewaehlterLehrer === l.id}
-                title="Nur diesen Lehrer anzeigen"
-                className={`w-full rounded-lg px-2 py-1.5 text-left text-[13px] hover:bg-panel ${gewaehlterLehrer === l.id ? "bg-panel" : ""}`}
-              >
-                <span className="block truncate font-medium text-ink">{l.name}</span>
-                <span className="num block text-[12px] text-ink-2">
-                  {l.einheiten} Einheiten · {l.minuten}
-                  {l.zielMin ? `/${l.zielMin}` : ""} min
-                </span>
-                {l.lueckenMinuten > 0 && <span className="block text-[11px] text-amber">Lücken {l.lueckenMinuten} min</span>}
-              </button>
-            </li>
-          ))}
-          {!lehrer.length && <li className="px-2 py-1 text-[13px] text-ink-3">Keine Lehrer.</li>}
-        </ul>
-      </section>
-
-      <section className="panel px-3 py-3">
-        <h2 className="mb-2 text-[13px] font-semibold text-ink-2">Schüler</h2>
-        <ul className="space-y-0.5">
-          {schueler.map((s) => {
-            const offen = s.einheitenProWoche > 0 && s.einheiten < s.einheitenProWoche;
-            return (
-              <li key={s.id}>
-                <button
-                  type="button"
-                  onClick={() => onSchuelerWaehlen?.(s.id)}
-                  aria-pressed={gewaehlterSchueler === s.id}
-                  title="Nur diesen Schüler anzeigen"
-                  className={`w-full rounded-lg px-2 py-1.5 text-left text-[13px] hover:bg-panel ${gewaehlterSchueler === s.id ? "bg-panel" : ""}`}
-                >
-                  <span className="block truncate font-medium text-ink">{s.name}</span>
-                  <span className="num block text-[12px] text-ink-2">
-                    {s.einheitenProWoche > 0 ? `${paar(s.einheiten, s.einheitenProWoche)} Einheiten geplant` : `${s.einheiten} Einheiten (kein Bedarf)`}
-                  </span>
-                  {offen && (
-                    <Pill tone="amber" title="Der Bedarf dieser Woche ist noch nicht gedeckt">
-                      offen
-                    </Pill>
-                  )}
-                </button>
-              </li>
-            );
-          })}
-          {!schueler.length && <li className="px-2 py-1 text-[13px] text-ink-3">Keine Schüler.</li>}
-        </ul>
-      </section>
-    </aside>
-  );
-}
+import type { UebersichtOffen, WochenUebersicht } from "@/lib/planung/uebersicht";
 
 /** Das Schubfach der nicht gedeckten Schüler — die Liste kommt aus der Datenbank, nicht aus dem letzten Lauf. */
 export function OffenSchubfach({ offen, istOffen, onSchliessen }: { offen: UebersichtOffen[]; istOffen: boolean; onSchliessen: () => void }) {
@@ -138,34 +58,46 @@ export function OffenSchubfach({ offen, istOffen, onSchliessen }: { offen: Ueber
   );
 }
 
-export function WochenplanFuss({ summen, raeume }: { summen: WochenSummen; raeume: { id: number; name: string; mode: string }[] }) {
+/**
+ * Die Kennzahlen der Woche in einer Zeile über dem Gitter. „… noch offen“ öffnet das Schubfach; die
+ * Liste kommt aus der Datenbank, nicht aus dem letzten Lauf.
+ */
+export function WochenKennzahlen({ uebersicht, onOffen }: { uebersicht: WochenUebersicht; onOffen: () => void }) {
+  const { summen, offen, raeume } = uebersicht;
   const online = raeume.filter((r) => r.mode === "online").length;
+  const belegt = summen.einheiten > 0;
   return (
-    <footer className="no-print panel mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 text-[13px]">
-      <span className="font-medium text-ink">
-        <strong className="num">{summen.einheiten}</strong> geplante Einheiten · <span className="num">{summen.minuten}</span> min
-      </span>
-      <span className="text-ink-2">
-        Auslastung <strong className="num">{summen.auslastung}&nbsp;%</strong> (geschlossene Lehrertage)
-      </span>
-      <span className="num text-ink-2">Lücken {summen.lueckenMinuten} min</span>
-      {summen.unterBedarf > 0 ? (
-        <span className="text-amber">
-          <strong className="num">{summen.unterBedarf}</strong> Schüler unter Bedarf
+    <div className="no-print flex flex-wrap items-center gap-x-5 gap-y-2 text-[13.5px] text-ink-2">
+      {belegt ? (
+        <span>
+          <strong className="num font-semibold text-ink">{summen.einheiten}</strong> {summen.einheiten === 1 ? "Einheit" : "Einheiten"} · <span className="num">{summen.minuten}</span> min
         </span>
       ) : (
-        <span className="flex items-center gap-1 text-green">
-          <CheckCircle2 size={15} aria-hidden /> alle Schüler eingeplant
+        <span>Noch keine Plätze in dieser Woche.</span>
+      )}
+      {belegt && (
+        <span title="Geplante Minuten im Verhältnis zu geplanten Minuten und unnützen Lücken, an Tagen, an denen der Lehrer unterrichtet">
+          Auslastung <strong className="num font-semibold text-ink">{summen.auslastung}&nbsp;%</strong>
         </span>
       )}
+      {summen.lueckenMinuten > 0 && <span className="num font-medium text-amber">Lücken {summen.lueckenMinuten} min</span>}
       {summen.nichtStattgefunden > 0 && (
-        <span className="text-red">
+        <span className="font-medium text-red">
           <strong className="num">{summen.nichtStattgefunden}</strong> nicht stattgefunden
         </span>
       )}
+      {offen.length > 0 ? (
+        <button type="button" onClick={onOffen} className="inline-flex min-h-[34px] items-center gap-1.5 rounded-full bg-amber-wash px-3 font-semibold text-amber transition-[filter] hover:brightness-95">
+          <AlertTriangle size={14} aria-hidden /> {offen.length} Schüler noch offen
+        </button>
+      ) : belegt ? (
+        <span className="flex items-center gap-1 font-medium text-green">
+          <CheckCircle2 size={15} aria-hidden /> alle Schüler eingeplant
+        </span>
+      ) : null}
       <span className="flex items-center gap-1 text-ink-3">
         <DoorOpen size={14} aria-hidden /> {raeume.length} Räume{online ? `, ${online} online` : ""}
       </span>
-    </footer>
+    </div>
   );
 }

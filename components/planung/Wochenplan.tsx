@@ -2,10 +2,10 @@
 
 /**
  * Die Wochenansicht (Phase 4): **eine** Ansicht mit Filtern statt der getrennten Seiten des
- * Quell-Repos — Zeilen = Lehrer, Spalten = Tage, 10-Minuten-Raster, Lückenschraffur, Sperrmarke,
- * Entwurfsrand, Ziehen mit ausgeblendeten unzulässigen Zielen, Seitenleiste, Offen-Schubfach,
- * Summenfuß und die Knöpfe Generieren / Neu generieren / Vorwoche übernehmen / Veröffentlichen /
- * Entwurf verwerfen.
+ * Quell-Repos. Oben drei ruhige Zeilen: die Woche mit ihrem Zustand und nur den Knöpfen, die in
+ * diesem Zustand gehen (Generieren / Vorwoche übernehmen, dann Neu generieren / Veröffentlichen /
+ * Entwurf verwerfen); die Kennzahlen der Woche mit dem Weg ins Offen-Schubfach; Filter und
+ * Werkzeuge. Darunter das Gitter (je Lehrer ein Band, Spalten = Tage), das die volle Breite bekommt.
  *
  * Die Rechte entscheiden die Server Actions (`lib/planung/aktionen.ts`, D23); hier wird nur
  * ausgeblendet, was ein Lehrer ohnehin nicht darf. Die Filter stehen in der Adresse, damit die
@@ -14,15 +14,16 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, ListPlus, Printer, Settings2, Sparkles, TriangleAlert, Wand2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListPlus, Printer, Settings2, Sparkles, Wand2 } from "lucide-react";
 import { checkSlotTargetAction, copyPreviousWeekAction, discardDraftAction, generateWeekAction, moveSlotAction, publishWeekAction, regenerateWeekAction } from "@/app/planung-actions";
 import { Pill } from "@/components/ui";
 import type { WochenUebersicht } from "@/lib/planung/uebersicht";
 import { minutenLabel, tagAddieren } from "@/lib/planung/zeit";
 import { PlatzDialog } from "./PlatzDialog";
 import { RegelnDialog } from "./RegelnDialog";
-import { anzeigeBereich, WochenplanGitter, zielSchluessel, type Urteil, type Ziel } from "./WochenplanGitter";
-import { OffenSchubfach, WochenplanFuss, WochenplanSeitenleiste } from "./WochenplanPanels";
+import { anzeigeBereich, sichtbareTage } from "@/lib/planung/ansicht";
+import { WochenplanGitter, zielSchluessel, type Urteil, type Ziel } from "./WochenplanGitter";
+import { OffenSchubfach, WochenKennzahlen } from "./WochenplanPanels";
 import type { PlanungsRegeln } from "@/lib/planung/regeln";
 
 export type PlanungFilterWerte = { lehrer: number; raum: number; schueler: number };
@@ -72,7 +73,7 @@ export function Wochenplan({ uebersicht, darfBearbeiten, basisPfad, druckHref, a
     return `${basisPfad}${basisPfad.includes("?") ? "&" : "?"}${teile.join("&")}`;
   };
 
-  // Filter: nur die Anzeige. Seitenleiste und Summen bleiben die ganze Woche (bzw. die Sicht der Rolle).
+  // Filter: nur die Anzeige. Die Kennzahlen bleiben die ganze Woche (bzw. die Sicht der Rolle).
   const sichtbareLehrer = useMemo(() => (filter.lehrer ? uebersicht.lehrer.filter((l) => l.id === filter.lehrer) : uebersicht.lehrer), [uebersicht.lehrer, filter.lehrer]);
   const sichtbarePlaetze = useMemo(
     () =>
@@ -85,6 +86,7 @@ export function Wochenplan({ uebersicht, darfBearbeiten, basisPfad, druckHref, a
     [uebersicht.plaetze, filter],
   );
   const bereich = useMemo(() => anzeigeBereich(sichtbarePlaetze, sichtbareLehrer), [sichtbarePlaetze, sichtbareLehrer]);
+  const tage = useMemo(() => sichtbareTage(uebersicht.tage, sichtbarePlaetze, sichtbareLehrer), [uebersicht.tage, sichtbarePlaetze, sichtbareLehrer]);
 
   function filterSetzen(neu: Partial<PlanungFilterWerte>) {
     router.replace(url(neu), { scroll: false });
@@ -152,33 +154,91 @@ export function Wochenplan({ uebersicht, darfBearbeiten, basisPfad, druckHref, a
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Kopfzeile: Woche, Zustand, Werkzeuge */}
-      <div className="no-print flex flex-wrap items-center gap-2">
+      {/* 1. Die Woche, ihr Zustand und was in diesem Zustand geht */}
+      <div className="no-print flex flex-wrap items-center gap-x-3 gap-y-2">
         <div className="flex items-center gap-1">
-          <Link href={url({ woche: tagAddieren(woche, -7) })} className="btn btn-ghost btn-sm" aria-label="Vorwoche">
-            <ChevronLeft size={16} aria-hidden />
+          <Link href={url({ woche: tagAddieren(woche, -7) })} className="btn btn-ghost btn-sm !px-2.5" aria-label="Vorwoche">
+            <ChevronLeft size={18} aria-hidden />
           </Link>
-          <span className="min-w-[180px] text-center text-[15px] font-semibold">{uebersicht.label}</span>
-          <Link href={url({ woche: tagAddieren(woche, 7) })} className="btn btn-ghost btn-sm" aria-label="Nächste Woche">
-            <ChevronRight size={16} aria-hidden />
+          <h2 className="min-w-[190px] text-center font-[family-name:var(--font-display)] text-[18px] font-semibold tracking-[-0.01em]">{uebersicht.label}</h2>
+          <Link href={url({ woche: tagAddieren(woche, 7) })} className="btn btn-ghost btn-sm !px-2.5" aria-label="Nächste Woche">
+            <ChevronRight size={18} aria-hidden />
           </Link>
         </div>
         <Pill tone={status === "veroeffentlicht" ? "green" : status === "entwurf" ? "amber" : "neutral"}>
           {status === "veroeffentlicht" ? "veröffentlicht" : status === "entwurf" ? "Entwurf" : "leer"}
         </Pill>
         {!darfBearbeiten && <Pill tone="neutral">nur lesen</Pill>}
+        {woche !== aktuelleWoche && (
+          <Link href={url({ woche: aktuelleWoche })} className="btn btn-ghost btn-sm">
+            Diese Woche
+          </Link>
+        )}
 
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          {woche !== aktuelleWoche && (
-            <Link href={url({ woche: aktuelleWoche })} className="btn btn-ghost btn-sm">
-              Diese Woche
-            </Link>
-          )}
-          {uebersicht.offen.length > 0 && (
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setOffenAuf(true)}>
-              <TriangleAlert size={15} aria-hidden /> Offen ({uebersicht.offen.length})
-            </button>
-          )}
+        {darfBearbeiten && status !== "veroeffentlicht" && (
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            {status === "leer" ? (
+              <>
+                <Werkzeug action={copyPreviousWeekAction} woche={woche} zurueck={zurueck} titel="Die Plätze der Vorwoche als Entwurf übernehmen">
+                  Vorwoche übernehmen
+                </Werkzeug>
+                <Werkzeug action={generateWeekAction} woche={woche} zurueck={zurueck} titel="Plätze für diese Woche vorschlagen" className="btn btn-primary btn-sm">
+                  <Wand2 size={15} aria-hidden /> Generieren
+                </Werkzeug>
+              </>
+            ) : (
+              <>
+                <Werkzeug action={discardDraftAction} woche={woche} zurueck={zurueck} titel="Nur den Entwurf wegwerfen" bestaetigen="Den Entwurf dieser Woche wirklich verwerfen?" className="btn btn-ghost btn-sm">
+                  Entwurf verwerfen
+                </Werkzeug>
+                <Werkzeug action={regenerateWeekAction} woche={woche} zurueck={zurueck} titel="Neu rechnen; gesperrte Plätze bleiben stehen">
+                  <Sparkles size={15} aria-hidden /> Neu generieren
+                </Werkzeug>
+                <Werkzeug action={publishWeekAction} woche={woche} zurueck={zurueck} titel="Den Entwurf veröffentlichen" className="btn btn-primary btn-sm">
+                  Veröffentlichen
+                </Werkzeug>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 2. Kennzahlen der Woche; „offen“ öffnet das Schubfach */}
+      <WochenKennzahlen uebersicht={uebersicht} onOffen={() => setOffenAuf(true)} />
+
+      {/* 3. Filter links, Werkzeuge rechts */}
+      <div className="no-print flex flex-wrap items-center gap-2">
+        <select className="input !min-h-[38px] !w-auto max-w-[170px] !py-1.5 !text-[14px]" aria-label="Lehrer" value={filter.lehrer} onChange={(e) => filterSetzen({ lehrer: Number(e.currentTarget.value) })}>
+          <option value={0}>Alle Lehrer</option>
+          {uebersicht.lehrer.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.name}
+            </option>
+          ))}
+        </select>
+        <select className="input !min-h-[38px] !w-auto max-w-[180px] !py-1.5 !text-[14px]" aria-label="Raum" value={filter.raum} onChange={(e) => filterSetzen({ raum: Number(e.currentTarget.value) })}>
+          <option value={0}>Alle Räume</option>
+          {uebersicht.raeume.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name} · {r.building}
+            </option>
+          ))}
+        </select>
+        <select className="input !min-h-[38px] !w-auto max-w-[180px] !py-1.5 !text-[14px]" aria-label="Schüler" value={filter.schueler} onChange={(e) => filterSetzen({ schueler: Number(e.currentTarget.value) })}>
+          <option value={0}>Alle Schüler</option>
+          {uebersicht.schueler.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+        {filter.lehrer || filter.raum || filter.schueler ? (
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => filterSetzen({ lehrer: 0, raum: 0, schueler: 0 })}>
+            Filter zurücksetzen
+          </button>
+        ) : null}
+
+        <div className="ml-auto flex flex-wrap items-center gap-1">
           {darfBearbeiten && (
             <>
               <Link href={url({ neu: true })} className="btn btn-secondary btn-sm">
@@ -195,119 +255,41 @@ export function Wochenplan({ uebersicht, darfBearbeiten, basisPfad, druckHref, a
         </div>
       </div>
 
-      {darfBearbeiten && (
-        <div className="no-print flex flex-wrap items-center gap-2">
-          <Werkzeug action={generateWeekAction} woche={woche} zurueck={zurueck} disabled={status !== "leer"} titel={status !== "leer" ? "Die Woche ist nicht leer. Nimm „Neu generieren“." : "Plätze für diese Woche vorschlagen"}>
-            <Wand2 size={15} aria-hidden /> Generieren
-          </Werkzeug>
-          <Werkzeug action={regenerateWeekAction} woche={woche} zurueck={zurueck} disabled={status === "veroeffentlicht"} titel={status === "veroeffentlicht" ? "Eine veröffentlichte Woche wird nicht neu gerechnet." : "Neu rechnen; gesperrte Plätze bleiben stehen"}>
-            <Sparkles size={15} aria-hidden /> Neu generieren
-          </Werkzeug>
-          <Werkzeug action={copyPreviousWeekAction} woche={woche} zurueck={zurueck} disabled={status !== "leer"} titel={status !== "leer" ? "Diese Woche ist nicht leer." : "Die Plätze der Vorwoche als Entwurf übernehmen"}>
-            Vorwoche übernehmen
-          </Werkzeug>
-          <Werkzeug action={publishWeekAction} woche={woche} zurueck={zurueck} disabled={status !== "entwurf"} titel={status !== "entwurf" ? "Es gibt keinen Entwurf zum Veröffentlichen." : "Den Entwurf veröffentlichen"} className="btn btn-primary btn-sm">
-            Veröffentlichen
-          </Werkzeug>
-          <Werkzeug action={discardDraftAction} woche={woche} zurueck={zurueck} disabled={status !== "entwurf"} titel={status !== "entwurf" ? "Es gibt keinen Entwurf." : "Nur den Entwurf wegwerfen"} bestaetigen="Den Entwurf dieser Woche wirklich verwerfen?">
-            Entwurf verwerfen
-          </Werkzeug>
-        </div>
-      )}
-
-      {/* Filter: Lehrer, Raum, Schüler */}
-      <div className="no-print flex flex-wrap items-end gap-3">
-        <label className="field max-w-[220px]">
-          <span className="label">Lehrer</span>
-          <select className="input" value={filter.lehrer} onChange={(e) => filterSetzen({ lehrer: Number(e.currentTarget.value) })}>
-            <option value={0}>Alle Lehrer</option>
-            {uebersicht.lehrer.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field max-w-[220px]">
-          <span className="label">Raum</span>
-          <select className="input" value={filter.raum} onChange={(e) => filterSetzen({ raum: Number(e.currentTarget.value) })}>
-            <option value={0}>Alle Räume</option>
-            {uebersicht.raeume.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name} · {r.building}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field max-w-[240px]">
-          <span className="label">Schüler</span>
-          <select className="input" value={filter.schueler} onChange={(e) => filterSetzen({ schueler: Number(e.currentTarget.value) })}>
-            <option value={0}>Alle Schüler</option>
-            {uebersicht.schueler.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        {filter.lehrer || filter.raum || filter.schueler ? (
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => filterSetzen({ lehrer: 0, raum: 0, schueler: 0 })}>
-            Filter zurücksetzen
-          </button>
-        ) : null}
-        <p className="ml-auto max-w-[46ch] text-[12px] text-ink-3">
-          Ziehen verschiebt einen Platz. Unzulässige Ziele werden rot ausgeblendet und nehmen nichts an.
-        </p>
-      </div>
-
       {(meldung.fehler || ziehFehler || meldung.ok) && (
         <p role="status" className={`rounded-2xl px-4 py-3 text-[14px] ${meldung.fehler || ziehFehler ? "text-red" : "text-green"}`} style={{ background: meldung.fehler || ziehFehler ? "var(--red-wash)" : "var(--green-wash)" }}>
           {meldung.fehler ?? ziehFehler ?? meldung.ok}
         </p>
       )}
 
-      <div className="flex gap-4">
-        <div className="min-w-0 flex-1">
-          <WochenplanGitter
-            tage={uebersicht.tage}
-            heute={uebersicht.heute}
-            lehrer={sichtbareLehrer}
-            plaetze={sichtbarePlaetze}
-            schueler={uebersicht.schueler}
-            luecken={uebersicht.luecken}
-            bereich={bereich}
-            interaktiv={darfBearbeiten}
-            ziehPlatz={ziehPlatz}
-            ziel={ziel}
-            urteil={urteil}
-            woche={woche}
-            zurueck={zurueck}
-            onZiehen={(p) => {
-              setZiehFehler(null);
-              geprueft.current.clear();
-              versprechen.current.clear();
-              setZiehPlatz(p);
-            }}
-            onZiehenEnde={ziehenBeenden}
-            onZellenZiel={zellenZiel}
-            onZellenVerlassen={() => setZiel(null)}
-            onAblegen={(z) => void ablegen(z)}
-            onBearbeiten={(p) => {
-              if (darfBearbeiten) router.push(url({ platz: p.id }));
-            }}
-          />
-        </div>
-        <WochenplanSeitenleiste
-          lehrer={uebersicht.lehrer}
-          schueler={uebersicht.schueler}
-          gewaehlterLehrer={filter.lehrer || undefined}
-          gewaehlterSchueler={filter.schueler || undefined}
-          onLehrerWaehlen={(id) => filterSetzen({ lehrer: filter.lehrer === id ? 0 : id })}
-          onSchuelerWaehlen={(id) => filterSetzen({ schueler: filter.schueler === id ? 0 : id })}
-        />
-      </div>
+      <WochenplanGitter
+        tage={tage}
+        heute={uebersicht.heute}
+        lehrer={sichtbareLehrer}
+        plaetze={sichtbarePlaetze}
+        schueler={uebersicht.schueler}
+        luecken={uebersicht.luecken}
+        bereich={bereich}
+        interaktiv={darfBearbeiten}
+        ziehPlatz={ziehPlatz}
+        ziel={ziel}
+        urteil={urteil}
+        woche={woche}
+        zurueck={zurueck}
+        onZiehen={(p) => {
+          setZiehFehler(null);
+          geprueft.current.clear();
+          versprechen.current.clear();
+          setZiehPlatz(p);
+        }}
+        onZiehenEnde={ziehenBeenden}
+        onZellenZiel={zellenZiel}
+        onZellenVerlassen={() => setZiel(null)}
+        onAblegen={(z) => void ablegen(z)}
+        onBearbeiten={(p) => {
+          if (darfBearbeiten) router.push(url({ platz: p.id }));
+        }}
+      />
 
-      <WochenplanFuss summen={uebersicht.summen} raeume={uebersicht.raeume} />
       <OffenSchubfach offen={uebersicht.offen} istOffen={offenAuf} onSchliessen={() => setOffenAuf(false)} />
 
       <PlatzDialog

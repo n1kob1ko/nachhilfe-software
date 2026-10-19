@@ -356,8 +356,9 @@ Die Oberfläche dazu:
 | `app/(tutor)/planung/page.tsx` | die Wochenansicht der Verwaltung: Filter, Wochenwahl, Meldungen, Dialoge |
 | `app/(tutor)/planung/drucken/page.tsx` | A4-Druck der Woche |
 | `app/planung-actions.ts` | alle Server Actions der Planung (generieren, veröffentlichen, Platz anlegen/ändern/sperren/löschen, Regeln, Räume) mit Rechteprüfung |
-| `components/planung/Wochenplan.tsx`, `WochenplanGitter.tsx` | das Gitter (10-Minuten-Raster, Ziehen, gesperrte und ausgefallene Plätze) und sein Rahmen |
-| `components/planung/WochenplanPanels.tsx` | Seitenleiste (Lehrer und Schüler mit „x/y Einheiten geplant“), Schubfach der offenen Schüler, Fußzeile mit Kennzahlen |
+| `components/planung/Wochenplan.tsx`, `WochenplanGitter.tsx` | der Rahmen (Woche mit Zustand und nur den Knöpfen, die in diesem Zustand gehen; Filter und Werkzeuge) und das Gitter: je Lehrer ein Band mit Kennzahlen, Spalten = Tage, schraffiert = nicht verfügbar, Stundenlinien, das 10-Minuten-Raster erst beim Ziehen, gesperrte und ausgefallene Plätze |
+| `components/planung/WochenplanPanels.tsx` | Kennzahlen der Woche über dem Gitter („… Schüler noch offen“ öffnet das Schubfach) und das Schubfach der offenen Schüler |
+| `lib/planung/ansicht.ts` | was das Gitter zeigt: nur die Arbeitszeit (`anzeigeBereich`) und Samstag/Sonntag nur mit Platz oder Verfügbarkeit (`sichtbareTage`) |
 | `components/planung/PlatzDialog.tsx`, `RegelnDialog.tsx` | ein einzelner Platz (anlegen/ändern/sperren) und die Regeln |
 | `components/planung/VerfuegbarkeitEditor.tsx`, `VerfuegbarkeitFormular.tsx`, `VerfuegbarkeitTabelle.tsx`, `WochenAbweichung.tsx` | Verfügbarkeit und Wochenabweichung (Phase 3) |
 | `components/planung/RaumForm.tsx`, `RaumPraeferenzen.tsx`, `RaumAktionen.tsx` | Räume und Raumwünsche (Phase 3, D22) |
