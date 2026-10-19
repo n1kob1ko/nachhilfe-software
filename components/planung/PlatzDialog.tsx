@@ -126,7 +126,7 @@ export function PlatzDialog({
             </label>
             <label className="field">
               <span className="label">geplante Dauer</span>
-              <input type="number" name="geplante_dauer" min={1} max={300} step={5} value={dauer} onChange={(e) => setDauer(Number(e.currentTarget.value))} className="input" required />
+              <input type="number" name="geplante_dauer" min={1} max={300} step={1} value={dauer} onChange={(e) => setDauer(Number(e.currentTarget.value))} className="input" required />
             </label>
           </div>
 

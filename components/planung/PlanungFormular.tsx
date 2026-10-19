@@ -43,7 +43,7 @@ export function PlanungFormular({
         </label>
         <label className="field">
           <span className="label">Geplante Dauer (Minuten)</span>
-          <input className="input" type="number" name="geplante_dauer" min={1} max={300} step={5} defaultValue={planung.geplante_dauer} />
+          <input className="input" type="number" name="geplante_dauer" min={1} max={300} step={1} defaultValue={planung.geplante_dauer} />
           <span className="text-[12px] text-ink-3">Vorgabe 100, erlaubt 1–300. Die echte Einheit bleibt davon unberührt.</span>
         </label>
         <div className="field">
