@@ -241,7 +241,7 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
 
 function Mark({ small }: { small?: boolean }) {
   return (
-    <BrandMark height={small ? 40 : 54} />
+    <BrandMark height={small ? 48 : 68} />
   );
 }
 
