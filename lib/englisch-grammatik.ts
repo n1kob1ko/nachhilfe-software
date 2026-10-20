@@ -1057,26 +1057,24 @@ const ANZEICHEN: [string, Pronomen, string, string][] = [
   ["The sky is very grey. It", "it", "snow", ""],
   ["It's ten to eight and Lena is still at home. She", "she", "be", "late for school"],
 ];
-/** will: a spontaneous decision, a prediction or a promise. [text before the gap, pronoun, verb, rest, negative] */
+/**
+ * will: a spontaneous decision or a promise. [text before the gap, pronoun, verb, rest, negative]
+ * No predictions with „I think“ or „I'm sure“: there going to is right too.
+ */
 const WILL: [string, Pronomen, string, string, boolean?][] = [
   ["The phone is ringing. I", "I", "answer", "it"],
   ["It's cold in here. I", "I", "close", "the window"],
   ["You look hungry. I", "I", "make", "you a sandwich"],
   ["Your bags look heavy. I", "I", "carry", "them for you"],
-  ["I think it", "it", "snow", "tomorrow"],
-  ["I'm sure you", "you", "pass", "the test"],
-  ["Maybe Lena", "she", "be", "a famous singer one day"],
-  ["I think Austria", "it", "win", "the match"],
   ["Don't worry, I", "I", "tell", "anybody", true],
   ["I promise I", "I", "forget", "your birthday", true],
   ["Wait, I", "I", "help", "you with your bag"],
-  ["I'm sure Grandma", "she", "like", "the present"],
 ];
 
 function futureSatz(rng: Rng, st: Stufe): Satz {
   const kind = art(rng, { plan: 2, anzeichen: 1, will: 2 });
   const titel = st >= 2 ? undefined : kind === "will" ? "Fill in will." : "Fill in going to.";
-  const hilfe = "going to für Pläne und für das, was man schon kommen sieht; will für spontane Entschlüsse, Vermutungen und Versprechen.";
+  const hilfe = "going to für Pläne und für das, was man schon kommen sieht; will für spontane Entschlüsse und Versprechen.";
   const goingTo = (v: Verb, p: Pronomen, label: string): Luecke =>
     L(`${be(p)} going to ${v.base}`, [
       F(`will ${v.base}`, label, { fix: false }),
@@ -1096,11 +1094,11 @@ function futureSatz(rng: Rng, st: Stufe): Satz {
           : L(`will ${v.base}`, [
               F(`will ${v.s}`, "Nach will steht die Grundform"),
               F(`will to ${v.base}`, "Nach will kein to"),
-              F(`${be(p)} going to ${v.base}`, "Spontan entschieden, vermutet oder versprochen: will", { fix: false }),
+              F(`${be(p)} going to ${v.base}`, "Spontan entschieden oder versprochen: will", { fix: false }),
               F(simple(v, p), "will vergessen", { fix: false }),
             ], v.base),
       ],
-      regel: `will + Grundform (${nicht ? "won't" : "will"} ${v.base}): ${vor.startsWith("I think") || vor.startsWith("I'm sure") || vor.startsWith("Maybe") ? "eine Vermutung" : nicht ? "ein Versprechen" : "spontan entschieden"}.`,
+      regel: `will + Grundform (${nicht ? "won't" : "will"} ${v.base}): ${nicht ? "ein Versprechen" : "spontan entschieden"}.`,
       hilfe,
       titel,
     };
@@ -2517,7 +2515,7 @@ const FAEHIGKEITEN: Record<string, Faehigkeit> = {
   "englisch.grammar.if1": { titel: T("Fill in the verbs (if-clause type 1)."), wahl: T("Choose the right forms."), satz: (r, s) => ifSatz(r, s, 1) },
   "englisch.grammar.if2": { titel: T("Fill in the verbs (if-clause type 2)."), wahl: T("Choose the right forms."), satz: (r, s) => ifSatz(r, s, 2) },
   "englisch.grammar.passive": { titel: T("Fill in the passive (present simple)."), wahl: T("Choose the passive form."), satz: passivSatz, kurz: passivKurz },
-  "englisch.grammar.reported": { titel: T("Report what they said. Move the tense one step back."), wahl: T("Choose the right form."), satz: reportedSatz, kurz: reportedKurz },
+  "englisch.grammar.reported": { titel: T("Report what they said. Move the tense one step back."), wahl: T("Report what they said. Move the tense one step back."), satz: reportedSatz, kurz: reportedKurz },
   "englisch.vocab.irregular": { titel: T("Fill in the missing forms."), wahl: T("Choose the right form."), satz: irregularSatz, kurz: irregularKurz, uebersetzen: irregularUebersetzen, standard: "kurz" },
 };
 
