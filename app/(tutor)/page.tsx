@@ -220,8 +220,8 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
           running.map((u) => (
             <section key={u.id} className="buehne px-6 py-7 md:px-8" aria-label="Laufende Einheit">
               <div className="relative z-10 md:pr-[220px]">
-                <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[13px] font-semibold text-accent-bright">
-                  <span className="h-2 w-2 rounded-full bg-accent-bright" aria-hidden /> Einheit läuft
+                <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[13px] font-semibold text-white">
+                  <span className="h-2 w-2 rounded-full bg-white" aria-hidden /> Einheit läuft
                 </p>
                 <h2 className="mt-3 text-[28px] leading-tight font-semibold md:text-[32px]">Einheit mit {firstName(u.student_name)}</h2>
                 <p className="buehne-meta mt-1 text-[16px]">
@@ -245,7 +245,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
             <div className="relative z-10 md:pr-[220px]">
               {fokus ? (
                 <>
-                  <p className="text-[13px] font-semibold tracking-[0.06em] text-accent-bright uppercase">
+                  <p className="text-[13px] font-semibold tracking-[0.06em] text-white/90 uppercase">
                     Als Nächstes · <span className="num">{fokus.zeit}</span>
                   </p>
                   <h2 className="mt-1 text-[28px] leading-tight font-semibold md:text-[32px]">{fokus.name}</h2>
@@ -450,7 +450,7 @@ function StudentPicker({ students, open, label }: { students: repo.Student[]; op
   if (open) return list;
   return (
     <details className="group mt-4">
-      <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[15px] font-semibold text-accent-bright">
+      <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[15px] font-semibold text-accent">
         {label} <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden />
       </summary>
       {list}

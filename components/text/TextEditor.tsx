@@ -123,7 +123,7 @@ function Tool({
       aria-pressed={on}
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
-      className={`flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-xl px-2.5 text-[14px] font-semibold transition-colors ${on ? "bg-ink text-surface" : "text-ink hover:bg-panel"}`}
+      className={`flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-xl px-2.5 text-[14px] font-semibold transition-colors ${on ? "bg-accent text-white" : "text-ink hover:bg-panel"}`}
     >
       {children}
     </button>

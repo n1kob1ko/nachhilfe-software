@@ -10,7 +10,7 @@ const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 export function subjectTone(subject: string | null | undefined) {
   const s = (subject ?? "").toLowerCase();
   if (s.startsWith("mathe")) return { bg: "var(--tile-lilac)", fg: "#4a429e", soft: "#eeecf8" };
-  if (s.startsWith("deutsch")) return { bg: "var(--tile-peach)", fg: "#7d5a0c", soft: "#f8f0dc" };
+  if (s.startsWith("deutsch")) return { bg: "var(--tile-peach)", fg: "#a0360c", soft: "#fff1e8" };
   if (s.startsWith("engl")) return { bg: "var(--tile-mint)", fg: "#1f6b3b", soft: "#e6f3ea" };
   return { bg: "var(--tile-pink)", fg: "#9c2f27", soft: "#faeae7" };
 }
@@ -64,7 +64,7 @@ export function MonthCalendar({ month, selected, today, busy, href }: { month: s
               <span
                 className={`num flex h-9 w-9 items-center justify-center rounded-full text-[14px] transition-colors ${
                   isToday
-                    ? "bg-ink font-semibold text-white"
+                    ? "bg-accent font-semibold text-white"
                     : isSel
                       ? "font-semibold text-ink ring-2 ring-accent-bright"
                       : inMonth

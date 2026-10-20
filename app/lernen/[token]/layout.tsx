@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   };
 }
 
-export const viewport: Viewport = { themeColor: "#f5f0e8" };
+export const viewport: Viewport = { themeColor: "#fffaf4" };
 
 export default async function LearnLayout({ children, params }: { children: React.ReactNode; params: Promise<{ token: string }> }) {
   const { token } = await params;

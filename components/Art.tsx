@@ -4,7 +4,7 @@
  * sitting on the card.
  */
 
-const Shadow = ({ cx, cy, rx }: { cx: number; cy: number; rx: number }) => <ellipse cx={cx} cy={cy} rx={rx} ry={rx * 0.16} fill="#221c17" opacity="0.22" />;
+const Shadow = ({ cx, cy, rx }: { cx: number; cy: number; rx: number }) => <ellipse cx={cx} cy={cy} rx={rx} ry={rx * 0.16} fill="#2a221c" opacity="0.22" />;
 
 function Calculator() {
   const keys = Array.from({ length: 16 }, (_, i) => ({ x: 52 + (i % 4) * 26, y: 92 + Math.floor(i / 4) * 20, op: i % 4 === 3 }));
@@ -13,26 +13,26 @@ function Calculator() {
       <Shadow cx={102} cy={190} rx={74} />
       <defs>
         <linearGradient id="calc-body" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#e9cd84" />
-          <stop offset="1" stopColor="#c6962e" />
+          <stop offset="0" stopColor="#ffb98c" />
+          <stop offset="1" stopColor="#f0702f" />
         </linearGradient>
         <linearGradient id="calc-screen" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fbf6ea" />
-          <stop offset="1" stopColor="#e7dcc3" />
+          <stop offset="0" stopColor="#fffaf4" />
+          <stop offset="1" stopColor="#f1dfcf" />
         </linearGradient>
       </defs>
       <g transform="rotate(-8 100 110)">
-        <rect x="34" y="34" width="132" height="158" rx="22" fill="#9a7420" />
+        <rect x="34" y="34" width="132" height="158" rx="22" fill="#c24a16" />
         <rect x="34" y="26" width="132" height="158" rx="22" fill="url(#calc-body)" />
-        <rect x="50" y="42" width="100" height="36" rx="9" fill="#6b4c0b" opacity="0.35" />
+        <rect x="50" y="42" width="100" height="36" rx="9" fill="#a0360c" opacity="0.35" />
         <rect x="50" y="40" width="100" height="34" rx="9" fill="url(#calc-screen)" />
-        <text x="140" y="65" textAnchor="end" fontFamily="var(--font-display)" fontSize="17" fontWeight="600" fill="#584d42">
+        <text x="140" y="65" textAnchor="end" fontFamily="var(--font-display)" fontSize="17" fontWeight="600" fill="#6a5648">
           3/4
         </text>
         {keys.map((k, i) => (
           <g key={i}>
-            <rect x={k.x} y={k.y + 3} width="20" height="14" rx="5" fill={k.op ? "#8c1f18" : "#221c17"} />
-            <rect x={k.x} y={k.y} width="20" height="14" rx="5" fill={k.op ? "#b3281f" : "#3b322a"} />
+            <rect x={k.x} y={k.y + 3} width="20" height="14" rx="5" fill={k.op ? "#8c1f18" : "#2a221c"} />
+            <rect x={k.x} y={k.y} width="20" height="14" rx="5" fill={k.op ? "#b3281f" : "#4a3d33"} />
           </g>
         ))}
       </g>
@@ -55,11 +55,11 @@ function Books() {
       {book(150, 150, "#b7d3bf", "#7fa88c", 0)}
       {book(120, 136, "#c9c3ea", "#8f88c9", -3)}
       {book(90, 142, "#e5b08f", "#b9704f", 2)}
-      {book(60, 124, "#e9cd84", "#c6962e", -2)}
+      {book(60, 124, "#ffb98c", "#f0702f", -2)}
       <g transform="translate(118 24) rotate(18)">
-        <rect x="0" y="0" width="12" height="52" rx="3" fill="#cfa24a" />
-        <polygon points="0,52 12,52 6,64" fill="#f1e3c0" />
-        <polygon points="4,58 8,58 6,64" fill="#221c17" />
+        <rect x="0" y="0" width="12" height="52" rx="3" fill="#ff8b4e" />
+        <polygon points="0,52 12,52 6,64" fill="#ffe3cf" />
+        <polygon points="4,58 8,58 6,64" fill="#2a221c" />
       </g>
     </>
   );
@@ -77,9 +77,9 @@ function Speech() {
         </text>
       </g>
       <g transform="translate(78 98)">
-        <path d="M18 28 a20 20 0 0 1 20 -20 h56 a20 20 0 0 1 20 20 v26 a20 20 0 0 1 -20 20 h-6 v18 l-22 -18 h-28 a20 20 0 0 1 -20 -20 z" fill="#c6962e" transform="translate(0 5)" />
-        <path d="M18 28 a20 20 0 0 1 20 -20 h56 a20 20 0 0 1 20 20 v26 a20 20 0 0 1 -20 20 h-6 v18 l-22 -18 h-28 a20 20 0 0 1 -20 -20 z" fill="#e9cd84" />
-        <text x="66" y="51" textAnchor="middle" fontFamily="var(--font-display)" fontSize="22" fontWeight="700" fill="#221c17">
+        <path d="M18 28 a20 20 0 0 1 20 -20 h56 a20 20 0 0 1 20 20 v26 a20 20 0 0 1 -20 20 h-6 v18 l-22 -18 h-28 a20 20 0 0 1 -20 -20 z" fill="#f0702f" transform="translate(0 5)" />
+        <path d="M18 28 a20 20 0 0 1 20 -20 h56 a20 20 0 0 1 20 20 v26 a20 20 0 0 1 -20 20 h-6 v18 l-22 -18 h-28 a20 20 0 0 1 -20 -20 z" fill="#ffb98c" />
+        <text x="66" y="51" textAnchor="middle" fontFamily="var(--font-display)" fontSize="22" fontWeight="700" fill="#2a221c">
           Hallo
         </text>
       </g>
@@ -92,14 +92,14 @@ function Notebook() {
     <>
       <Shadow cx={100} cy={190} rx={70} />
       <g transform="rotate(-6 100 110)">
-        <rect x="44" y="36" width="116" height="150" rx="16" fill="#9a7420" />
-        <rect x="44" y="28" width="116" height="150" rx="16" fill="#cfa24a" />
-        <rect x="62" y="28" width="98" height="150" rx="14" fill="#fbf6ea" />
+        <rect x="44" y="36" width="116" height="150" rx="16" fill="#c24a16" />
+        <rect x="44" y="28" width="116" height="150" rx="16" fill="#ff8b4e" />
+        <rect x="62" y="28" width="98" height="150" rx="14" fill="#fffaf4" />
         {[58, 78, 98, 118, 138, 158].map((y) => (
-          <rect key={y} x="74" y={y} width="72" height="3" rx="1.5" fill="#e7dcc3" />
+          <rect key={y} x="74" y={y} width="72" height="3" rx="1.5" fill="#f1dfcf" />
         ))}
         {[48, 72, 96, 120, 144, 168].map((y) => (
-          <circle key={y} cx="53" cy={y} r="5" fill="#221c17" opacity="0.45" />
+          <circle key={y} cx="53" cy={y} r="5" fill="#2a221c" opacity="0.45" />
         ))}
       </g>
     </>
@@ -140,19 +140,19 @@ export function TileArt({ kind }: { kind: "alert" | "sheet" | "target" | "calend
       )}
       {kind === "target" && (
         <>
-          <circle cx="60" cy="66" r="48" fill="#9a7420" />
-          <circle cx="60" cy="60" r="48" fill="#cfa24a" />
+          <circle cx="60" cy="66" r="48" fill="#c24a16" />
+          <circle cx="60" cy="60" r="48" fill="#ff8b4e" />
           <circle cx="60" cy="60" r="32" fill="#fff" />
-          <circle cx="60" cy="60" r="18" fill="#cfa24a" />
+          <circle cx="60" cy="60" r="18" fill="#ff8b4e" />
           <circle cx="60" cy="60" r="6" fill="#fff" />
         </>
       )}
       {kind === "calendar" && (
         <>
-          <rect x="12" y="26" width="96" height="88" rx="16" fill="#3b322a" transform="translate(0 5)" />
-          <rect x="12" y="26" width="96" height="88" rx="16" fill="#584d42" />
-          <rect x="34" y="14" width="10" height="24" rx="5" fill="#cfa24a" />
-          <rect x="76" y="14" width="10" height="24" rx="5" fill="#cfa24a" />
+          <rect x="12" y="26" width="96" height="88" rx="16" fill="#4a3d33" transform="translate(0 5)" />
+          <rect x="12" y="26" width="96" height="88" rx="16" fill="#6a5648" />
+          <rect x="34" y="14" width="10" height="24" rx="5" fill="#ff8b4e" />
+          <rect x="76" y="14" width="10" height="24" rx="5" fill="#ff8b4e" />
           {[0, 1, 2].flatMap((r) => [0, 1, 2].map((c) => <rect key={`${r}${c}`} x={28 + c * 24} y={50 + r * 20} width="16" height="12" rx="4" fill="#fff" opacity={r === 1 && c === 1 ? 1 : 0.85} />))}
         </>
       )}
@@ -161,11 +161,11 @@ export function TileArt({ kind }: { kind: "alert" | "sheet" | "target" | "calend
 }
 
 const AVATAR = [
-  ["#f5e6c6", "#7d5a0c"],
+  ["#ffe3cf", "#a0360c"],
   ["#e3e0f4", "#4a429e"],
   ["#d8ecdf", "#1f6b3b"],
   ["#f6dcd7", "#9c2f27"],
-  ["#ece4d7", "#584d42"],
+  ["#ece4d7", "#6a5648"],
   ["#d9e6f5", "#2a4f86"],
 ];
 

@@ -1,26 +1,27 @@
 @import "tailwindcss";
 
 /*
- * Lernheft, aus dem Logo von MC Dream Education abgeleitet: Elfenbein als Fläche, Braunschwarz als
- * Schrift und für die Hauptaktion, Gold für Akzente (aktiv, ausgewählt, Fortschritt), weiße Karten
- * mit Haarlinie. Rot nur für Fehler, Grün für Gelöstes, Orange-Braun für Hinweise.
+ * Lernheft „Sonne“: cremeweiße Fläche, weiße Karten mit Haarlinie, warmes Braunschwarz als Schrift,
+ * Orange für Aktionen, Aktives und Links (Gold des Logos, kräftiger). Rot nur für Fehler, Grün für
+ * Gelöstes, Orange-Braun für Hinweise.
  */
 :root {
-  --backdrop: #ebe4d8;
-  --backdrop-2: #f5f0e8;
-  --paper: #f5f0e8;
+  --backdrop: #f7ebe0;
+  --backdrop-2: #fffaf4;
+  --paper: #fffaf4;
   --surface: #ffffff;
-  --panel: #f1eadf;
-  --line: #e7dfd2;
-  --line-strong: #d3c7b5;
-  --ink: #221c17;
-  --ink-2: #584d42;
-  --ink-3: #716458;
-  /* Bronze für Text und Links (5,7 : 1 auf Weiß), Gold für Flächen und Icons, helles Gold als Wash */
-  --accent: #86600f;
-  --accent-hover: #6b4c0b;
-  --accent-bright: #cfa24a;
-  --accent-wash: #f6ecd4;
+  --panel: #fff0e4;
+  --line: #f1dfcf;
+  --line-strong: #e4c9b3;
+  --ink: #2a221c;
+  --ink-2: #6a5648;
+  --ink-3: #7d675a;
+  /* Orange für Links, Text und gefüllte Aktionen (5,3 : 1 mit Weiß), helles Orange für Icons und
+     Punkte (trägt dunkle Schrift), Wash für leichte Flächen */
+  --accent: #bd4211;
+  --accent-hover: #a0360c;
+  --accent-bright: #ff8b4e;
+  --accent-wash: #ffe8da;
   --red: #b3281f;
   --red-wash: #fbe8e5;
   --amber: #9a4e07;
@@ -29,19 +30,19 @@
   --green-wash: #e2f1e5;
   --violet: #5b55b5;
   --violet-wash: #e9e8f7;
-  --tile-pink: #f6dcd7;
-  --tile-mint: #d8ecdf;
-  --tile-lilac: #e3e0f4;
-  --tile-peach: #f5e6c6;
-  --bar-track: #ebe3d6;
-  --bar: #c6962e;
+  --tile-pink: #ffdcd9;
+  --tile-mint: #d7f0e2;
+  --tile-lilac: #e6e2fb;
+  --tile-peach: #ffe3cf;
+  --bar-track: #f6e6da;
+  --bar: #f0702f;
   --series-1: #2a6fd0;
-  --series-2: #c58a24;
+  --series-2: #e0742a;
   --series-3: #1f9a6c;
   --series-4: #b04f9a;
-  /* Schatten in der Farbe des Papiers, kaum sichtbar */
-  --shadow-card: 0 1px 2px rgba(60, 40, 15, 0.04), 0 6px 20px -12px rgba(60, 40, 15, 0.12);
-  --shadow-pop: 0 2px 4px rgba(60, 40, 15, 0.06), 0 18px 40px -16px rgba(60, 40, 15, 0.28);
+  /* Schatten in der Farbe der Fläche, kaum sichtbar */
+  --shadow-card: 0 1px 2px rgba(90, 45, 15, 0.04), 0 6px 20px -12px rgba(90, 45, 15, 0.12);
+  --shadow-pop: 0 2px 4px rgba(90, 45, 15, 0.06), 0 18px 40px -16px rgba(90, 45, 15, 0.28);
   /* motion: strong ease-out for feedback, the iOS-like curve for drawers */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -96,7 +97,7 @@ h1 {
   letter-spacing: -0.02em;
 }
 ::selection {
-  background: #f0dfae;
+  background: #ffd9c2;
   color: var(--ink);
 }
 * {
@@ -198,14 +199,14 @@ textarea.input {
   cursor: not-allowed;
   transform: none;
 }
-/* Hauptaktion: dunkel wie der Hut im Logo, Gold beim Fokus */
+/* Hauptaktion: Orange mit weißer Schrift, weicher Schatten in derselben Farbe */
 .btn-primary {
-  background: var(--ink);
+  background: var(--accent);
   color: #fff;
-  box-shadow: 0 1px 2px rgba(34, 28, 23, 0.2);
+  box-shadow: 0 6px 16px -8px rgba(189, 66, 17, 0.6);
 }
 .btn-primary:hover:not(:disabled) {
-  background: #3b322a;
+  background: var(--accent-hover);
 }
 .btn-secondary {
   background: var(--surface);
@@ -214,7 +215,7 @@ textarea.input {
 }
 .btn-secondary:hover:not(:disabled) {
   border-color: var(--accent-bright);
-  background: #fffdf8;
+  background: #fffaf4;
 }
 .btn-ghost {
   color: var(--ink-2);
@@ -258,27 +259,27 @@ textarea.input {
   box-shadow: var(--shadow-card);
 }
 
-/* Die dunkle Bühne: eine Karte pro Seite in Braunschwarz mit goldenem Lichtfleck (Startseite,
-   Schüler-App). Darin sind Buttons golden, Nebentext hell. */
+/* Die Bühne: eine Karte pro Seite in Orange mit hellem Lichtfleck (Startseite, Schüler-App).
+   Darin sind Hauptknöpfe weiß mit oranger Schrift, Nebentext hell. */
 .buehne {
   position: relative;
   overflow: hidden;
   border-radius: 24px;
   background:
-    radial-gradient(120% 90% at 100% 0%, rgba(207, 162, 74, 0.28), transparent 55%),
-    var(--ink);
+    radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, 0.22), transparent 55%),
+    linear-gradient(135deg, #ff8c4f, #dc4e16);
   color: #fff;
 }
 .buehne .buehne-meta {
-  color: #cbbda9;
+  color: #ffe4d3;
 }
 .buehne .btn-primary {
-  background: var(--accent-bright);
-  color: var(--ink);
-  box-shadow: none;
+  background: #fff;
+  color: var(--accent);
+  box-shadow: 0 6px 16px -10px rgba(90, 30, 5, 0.5);
 }
 .buehne .btn-primary:hover:not(:disabled) {
-  background: #dcb15c;
+  background: #fff4ec;
 }
 .buehne .btn-secondary {
   background: rgba(255, 255, 255, 0.08);
@@ -291,7 +292,7 @@ textarea.input {
 }
 .buehne .link,
 .buehne a.link {
-  color: var(--accent-bright);
+  color: #fff;
 }
 
 /* Kennzahl: Zahl groß, Wort klein, auf einer Karte */

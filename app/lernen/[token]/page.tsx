@@ -38,7 +38,7 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
 
       {unit && (
         <Link href={`/lernen/${token}/tafel`} className="panel mt-8 flex items-center gap-4 border-accent-bright/60 bg-accent-wash px-5 py-5 transition-colors hover:border-accent-bright">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-ink text-accent-bright">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-white">
             <Presentation size={24} aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
