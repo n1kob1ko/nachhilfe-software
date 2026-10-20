@@ -1,6 +1,6 @@
 /**
- * Aufgaben mit Bild, ohne KI: Zahlenstrahl, Koordinatensystem und Figur (lib/figur.ts) für die passenden
- * Fähigkeiten von der Volksschule bis zur Oberstufe. Jede Aufgabe ist richtig gebaut: die Lösung wird aus
+ * Aufgaben mit Bild, ohne KI: Zahlenstrahl, Koordinatensystem, Figur, Kreis und Diagramm (lib/figur.ts) für
+ * die passenden Fähigkeiten von der Volksschule bis zur Oberstufe. Jede Aufgabe ist richtig gebaut: die Lösung wird aus
  * denselben Zahlen gerechnet, die gezeichnet werden (Teilstrich, Punkt, Seitenlänge), nie getrennt davon.
  * Die Antwort ist ein gewohntes Format (Rechnung, Multiple Choice, Lückentext, Rechenweg, Sachaufgabe),
  * geprüft wird mit lib/tasks.ts bzw. lib/math-check.ts wie bei jeder anderen Aufgabe. Eigene Zahlen und
@@ -10,7 +10,27 @@
  * KI, die Diagnose und der Minitest diese Aufgaben machen.
  */
 import type { Difficulty } from "./curriculum";
-import { bruchText, bruchWert, geradenText, kuerzen, wertBei, zahl, zahlBei, type Bruch, type Figur, type Flaeche, type Koordinaten, type Punkt2, type Zahlenstrahl } from "./figur";
+import {
+  bruchText,
+  bruchWert,
+  geradenText,
+  kreisWinkel,
+  KREIS_TEILE,
+  kuerzen,
+  wertBei,
+  zahl,
+  zahlBei,
+  type Bruch,
+  type Diagramm,
+  type DiagrammForm,
+  type Figur,
+  type Flaeche,
+  type Koordinaten,
+  type Kreis,
+  type KreisTeil,
+  type Punkt2,
+  type Zahlenstrahl,
+} from "./figur";
 import type { PartSolution, PartView } from "./math-check";
 import { parseNumber, type TaskDraft } from "./tasks";
 
@@ -1284,6 +1304,1112 @@ function pythagorasFiguren(skillId: string, diff: Difficulty, format: FigurForma
 }
 
 // =====================================================================
+// Kreise: Radius und Durchmesser, Umfang und Flächeninhalt, Kreisteile
+// =====================================================================
+
+const PI_TEXT = "Rechne mit π ≈ 3,14.";
+const RUND_TEXT = "Runde auf eine Nachkommastelle.";
+/** Nachkommastellen einer Zahl (höchstens 6). */
+function stellenVon(x: number): number {
+  for (let d = 0; d <= 6; d++) if (Math.abs(Math.round(x * 10 ** d) - x * 10 ** d) < 1e-6) return d;
+  return 6;
+}
+/** Kaufmännisch gerundet, auch wenn die Gleitkommazahl knapp unter …5 liegt (19,625 → 19,6; 0,45 → 0,5). */
+const rundeAuf = (x: number, n: number) => Math.sign(x) * (Math.round(Math.abs(x) * 10 ** n + 1e-7) / 10 ** n);
+
+/**
+ * Ein Ergebnis mit π, gerechnet mit 3,14 wie im Schulbuch: `faktor` · 3,14 + `dazu`. Mehr als zwei Nachkommastellen
+ * werden auf eine gerundet (die Aufgabe sagt es dann, `rund` erzwingt es für alle Teile einer Aufgabe). Wer mit der
+ * π-Taste rechnet und gleich rundet, bekommt manchmal etwas anderes: das zählt auch als richtig (`auch`).
+ */
+type PiWert = { wert: number; text: string; auch: string | null; genau: number; gerundet: boolean };
+function piWert(faktor: number, dazu = 0, rund = false): PiWert {
+  const genau = Math.round((faktor * 3.14 + dazu) * 1e6) / 1e6;
+  const gerundet = rund || stellenVon(genau) > 2;
+  const st = gerundet ? 1 : stellenVon(genau);
+  const wert = rundeAuf(genau, st);
+  const mitPi = rundeAuf(faktor * Math.PI + dazu, st);
+  // gerundet immer mit einer Nachkommastelle („1 194,0“), so wie gefragt
+  const text = (v: number) => (gerundet ? zahl(v, 1) : zahl(v));
+  return { wert, text: text(wert), auch: Math.abs(mitPi - wert) > 1e-9 ? text(mitPi) : null, genau, gerundet };
+}
+/** Die richtigen Antworten eines π-Ergebnisses (mit 3,14 und mit der π-Taste), ohne Leerzeichen in der Zahl (Rechenweg). */
+const piAntworten = (p: PiWert) => [p.text, ...(p.auch ? [p.auch] : [])].map((x) => x.replace(/\s/g, ""));
+/** Ein typischer Fehler mit π: gleich gerundet wie das richtige Ergebnis, damit er beim Eintippen erkannt wird. */
+const piFehler = (faktor: number, dazu: number, p: PiWert, label: string): Fehler => {
+  const v = faktor * 3.14 + dazu;
+  return { answer: zahl(rundeAuf(v, p.gerundet || stellenVon(Math.round(v * 1e6) / 1e6) > 2 ? 1 : 6)), label };
+};
+/** Rechenzeile mit 3,14: „A = 6² · 3,14 = 113,04“, gerundet „… = 19,625 ≈ 19,6“. */
+const piZeile = (links: string, p: PiWert) => `${links} = ${roh(p.genau)}${p.gerundet && Math.abs(p.genau - p.wert) > 1e-9 ? ` ≈ ${p.text.replace(/\s/g, "")}` : ""}`;
+/** Typische Fehler ohne alle richtigen Antworten und ohne Doppelte. */
+const fehlerOhneAlle = (richtig: string[], fehler: (Fehler | null | undefined)[]) => {
+  const weg = new Set(richtig.map(schluessel));
+  return fehlerOhne(richtig[0], fehler).filter((f) => !weg.has(schluessel(f.answer)));
+};
+
+function kreisBild(o: Partial<Kreis> & Pick<Kreis, "teil">): Kreis {
+  return { art: "kreis", strecke: "radius", text: "", mitte: "M", winkelZeigen: false, getoent: false, ganzerKreis: false, ...o, winkel: kreisWinkel({ teil: o.teil, winkel: o.winkel ?? 360 }) };
+}
+
+/** Kreis zeichnen und benennen (5./6. Schulstufe): Radius und Durchmesser, Namen der Kreisteile. */
+function kreisGrundAufgabe(skillId: string, diff: Difficulty, format: FigurFormat, rng: Rng): TaskDraft | null {
+  const lv = LEVEL[diff];
+  if (format === "rechenweg" || format === "sachaufgabe") return null;
+  if (format === "mc" && rng() < 0.5) {
+    if (rng() < 0.5) {
+      // welche Strecke ist x?
+      const welche = pick(rng, ["radius", "durchmesser"] as const);
+      const options = ["Radius", "Durchmesser", "Kreisbogen", "Umfang"];
+      const correct = welche === "radius" ? 0 : 1;
+      return aufgabe(skillId, diff, "mc", {
+        prompt: "Wie heißt die Strecke x im Bild?",
+        figur: kreisBild({ teil: "kreis", strecke: welche, text: "x" }),
+        data: { options },
+        answer: { correct },
+        solution:
+          welche === "radius"
+            ? "x geht vom Mittelpunkt M bis zur Kreislinie: das ist der Radius r."
+            : "x geht von der Kreislinie durch den Mittelpunkt M bis zur anderen Seite: das ist der Durchmesser d.",
+        hints: ["Beginnt die Strecke im Mittelpunkt, oder geht sie durch ihn hindurch?", "Der Radius geht vom Mittelpunkt zur Kreislinie, der Durchmesser ganz hinüber."],
+        errorMap: [{ answer: String(1 - correct), label: "Radius und Durchmesser verwechselt" }],
+      });
+    }
+    // welcher Kreisteil ist getönt? Nur echte Sektoren (90° und 180° wären auch Viertel- und Halbkreis)
+    const winkel = pick(rng, [40, 50, 60, 70, 75, 100, 110, 120, 135, 140]);
+    const options = shuffle(rng, ["Kreissektor", "Kreissegment", "Kreisring", "Halbkreis"]);
+    return aufgabe(skillId, diff, "mc", {
+      prompt: "Wie heißt der getönte Teil des Kreises?",
+      figur: kreisBild({ teil: "sektor", winkel, strecke: "keine", getoent: true, ganzerKreis: true }),
+      data: { options },
+      answer: { correct: options.indexOf("Kreissektor") },
+      solution: "Der getönte Teil wird von zwei Radien und einem Kreisbogen begrenzt, wie ein Stück Torte: das ist ein Kreissektor.\nEin Kreissegment schneidet dagegen eine gerade Strecke (eine Sehne) vom Kreis ab.",
+      hints: ["Schau, welche Linien den getönten Teil begrenzen.", "Zwei Radien und ein Bogen: wie ein Stück Torte."],
+      errorMap: [{ answer: String(options.indexOf("Kreissegment")), label: "Kreissektor und Kreissegment verwechselt" }],
+    });
+  }
+  const e = lv === 3 && rng() < 0.4 ? "m" : "cm";
+  const r = lv === 0 ? rint(rng, 2, 9) : lv === 1 ? rint(rng, 3, 15) : lv === 2 ? rint(rng, 3, 19) / 2 : rng() < 0.5 ? rint(rng, 5, 29) / 2 : rint(rng, 8, 25);
+  const d = 2 * r;
+  const t = (v: number) => `${zahl(v)} ${e}`;
+  const hilfen = ["Der Durchmesser geht durch den Mittelpunkt ganz über den Kreis, der Radius nur bis zur Mitte.", "d = 2 · r und r = d : 2"];
+  if (format === "cloze") {
+    return aufgabe(skillId, diff, "cloze", {
+      prompt: `Im Bild ist der Radius eingezeichnet. Ergänze.\nDurchmesser d = ___ ${e}\nEin Kreis mit doppelt so großem Radius hat den Durchmesser ___ ${e}.`,
+      figur: kreisBild({ teil: "kreis", strecke: "radius", text: `r = ${t(r)}` }),
+      answer: { blanks: [[zahl(d)], [zahl(2 * d)]], mode: "value" },
+      solution: `d = 2 · r = 2 · ${t(r)} = ${t(d)}\nDoppelter Radius: r = ${t(2 * r)}, also d = 2 · ${t(2 * r)} = ${t(2 * d)}`,
+      hints: hilfen,
+    });
+  }
+  const art = pick(rng, ["d", "r", "zirkel"] as const);
+  const figur = art === "d" ? kreisBild({ teil: "kreis", strecke: "radius", text: `r = ${t(r)}` }) : kreisBild({ teil: "kreis", strecke: "durchmesser", text: `d = ${t(d)}` });
+  const gesucht = art === "d" ? d : r;
+  const frage =
+    art === "d"
+      ? "Im Bild ist der Radius eingezeichnet. Wie lang ist der Durchmesser d?"
+      : art === "r"
+        ? "Im Bild ist der Durchmesser eingezeichnet. Wie lang ist der Radius r?"
+        : "Du willst diesen Kreis mit dem Zirkel zeichnen. Wie weit musst du den Zirkel öffnen?";
+  const solution = art === "d" ? `d = 2 · r = 2 · ${t(r)} = ${t(d)}` : `r = d : 2 = ${t(d)} : 2 = ${t(r)}${art === "zirkel" ? `\nDer Zirkel wird auf den Radius geöffnet, also auf ${t(r)}.` : ""}`;
+  const fehler = fehlerOhne(
+    zahl(gesucht),
+    art === "d"
+      ? [{ answer: zahl(r), label: "Radius und Durchmesser verwechselt" }, { answer: zahl(r / 2), label: "Durch 2 statt mal 2 gerechnet" }]
+      : [{ answer: zahl(d), label: art === "zirkel" ? "Zirkel auf den Durchmesser eingestellt (Radius und Durchmesser verwechselt)" : "Radius und Durchmesser verwechselt" }, { answer: zahl(2 * d), label: "Mal 2 statt durch 2 gerechnet" }],
+  );
+  if (format === "mc") {
+    const m = auswahl(rng, t(gesucht), fehler.map((f) => ({ ...f, answer: `${f.answer} ${e}` })));
+    return aufgabe(skillId, diff, "mc", { prompt: frage, figur, data: { options: m.options }, answer: { correct: m.correct }, solution, hints: hilfen, errorMap: m.errorMap });
+  }
+  return aufgabe(skillId, diff, "calc", { prompt: `${frage} Gib das Ergebnis in ${e} an.`, figur, answer: { accepted: mitEinheit(zahl(gesucht), e), mode: "value" }, solution, hints: hilfen, errorMap: fehler });
+}
+
+/** Umfang und Flächeninhalt von Kreisen (8./9. Schulstufe), π ≈ 3,14. */
+function kreisFlaecheAufgabe(skillId: string, diff: Difficulty, format: FigurFormat, rng: Rng): TaskDraft | null {
+  const lv = LEVEL[diff];
+  if (format === "sachaufgabe") return kreisSachaufgabe(skillId, diff, rng);
+  if (lv === 3 && format !== "cloze" && rng() < 0.5) return kreisUmkehrAufgabe(skillId, diff, format, rng);
+  const e = rng() < 0.7 ? "cm" : "m";
+  const mitD = lv === 0 ? false : lv === 1 ? rng() < 0.6 : rng() < 0.5;
+  const r = lv === 0 ? rint(rng, 2, 10) : lv === 1 ? rint(rng, 2, 15) : lv === 2 ? rint(rng, 5, 25) / 2 : rint(rng, 6, 40) / 2;
+  const d = 2 * r;
+  const figur = mitD ? kreisBild({ teil: "kreis", strecke: "durchmesser", text: `d = ${zahl(d)} ${e}` }) : kreisBild({ teil: "kreis", strecke: "radius", text: `r = ${zahl(r)} ${e}` });
+  const beide = format === "cloze";
+  const uRoh = piWert(d);
+  const aRoh = piWert(r * r);
+  // ein Rundungshinweis gilt für die ganze Aufgabe
+  const rund = beide ? uRoh.gerundet || aRoh.gerundet : false;
+  const u = piWert(d, 0, rund);
+  const A = piWert(r * r, 0, rund);
+  const rText = `${roh(d)} : 2 = ${roh(r)}`;
+  const uZeile = mitD ? piZeile(`u = ${roh(d)} · 3,14`, u) : piZeile(`u = 2 · ${roh(r)} · 3,14`, u);
+  const aZeile = piZeile(`A = ${roh(r)}² · 3,14`, A);
+  const uWeg = mitD ? `u = d · π\n${uZeile}` : `u = 2 · r · π\n${uZeile}`;
+  const aWeg = `${mitD ? `r = d : 2 = ${rText}\n` : ""}A = r² · π\n${aZeile}`;
+  const hinweis = (gerundet: boolean) => `${PI_TEXT}${gerundet ? ` ${RUND_TEXT}` : ""}`;
+  if (beide) {
+    return aufgabe(skillId, diff, "cloze", {
+      prompt: `Berechne Umfang und Flächeninhalt des Kreises. ${hinweis(rund)}\nu = ___ ${e}\nA = ___ ${e}²`,
+      figur,
+      answer: { blanks: [piAntworten(u), piAntworten(A)], mode: "value" },
+      solution: `${uWeg} ${e}\n${aWeg} ${e}²`,
+      hints: ["u = d · π = 2 · r · π", "A = r² · π, dafür brauchst du den Radius."],
+    });
+  }
+  const flaeche = rng() < 0.55;
+  const p = flaeche ? A : u;
+  const einheit = flaeche ? `${e}²` : e;
+  const fehler = fehlerOhneAlle(
+    piAntworten(p),
+    flaeche
+      ? [
+          piFehler(d * d, 0, p, "Mit dem Durchmesser statt dem Radius in A = r² · π gerechnet"),
+          piFehler(d, 0, p, "Umfang und Flächeninhalt verwechselt"),
+          { answer: zahl(rundeAuf(r * r, p.gerundet ? 1 : 6)), label: "π vergessen" },
+        ]
+      : [piFehler(r, 0, p, "Mit dem Radius statt dem Durchmesser gerechnet (u = r · π)"), piFehler(r * r, 0, p, "Umfang und Flächeninhalt verwechselt"), { answer: zahl(rundeAuf(d, p.gerundet ? 1 : 6)), label: "π vergessen" }],
+  );
+  const frage = `Berechne ${flaeche ? "den Flächeninhalt" : "den Umfang"} des Kreises. ${hinweis(p.gerundet)}`;
+  const solution = `${flaeche ? aWeg : uWeg} ${einheit}`;
+  const hilfen = flaeche ? ["A = r² · π", mitD ? "Du brauchst den Radius: r = d : 2." : "Rechne zuerst r² = r · r."] : ["u = d · π = 2 · r · π", mitD ? "Der Durchmesser steht im Bild." : "d = 2 · r"];
+  if (format === "rechenweg") {
+    const zeilen = [...(mitD && flaeche ? [`r = ${rText}`] : []), flaeche ? aZeile : uZeile];
+    return aufgabe(skillId, diff, "rechenweg", {
+      prompt: `${frage} ${WEG}`,
+      figur,
+      answer: { accepted: piAntworten(p).map((x) => `${x} ${einheit}`), unit: einheit, form: null, round: p.gerundet ? 1 : null, needWay: true },
+      solution,
+      steps: zeilen.map(zahlenWeg),
+      hints: hilfen,
+      errorMap: fehler.map((f) => ({ ...f, answer: `${f.answer.replace(/\s/g, "")} ${einheit}` })),
+    });
+  }
+  if (format === "mc") {
+    const m = auswahl(rng, `${p.text} ${einheit}`, fehler.map((f) => ({ ...f, answer: `${f.answer} ${einheit}` })));
+    return aufgabe(skillId, diff, "mc", { prompt: frage, figur, data: { options: m.options }, answer: { correct: m.correct }, solution, hints: hilfen, errorMap: m.errorMap });
+  }
+  if (format !== "calc") return null;
+  return aufgabe(skillId, diff, "calc", {
+    prompt: `${frage} Gib das Ergebnis in ${einheit} an.`,
+    figur,
+    answer: { accepted: piAntworten(p).flatMap((x) => mitEinheit(x, einheit)), mode: "value" },
+    solution,
+    hints: hilfen,
+    errorMap: fehler,
+  });
+}
+
+/** Rückwärts: aus dem Umfang der Durchmesser, aus dem Flächeninhalt der Radius (mit Wurzel). */
+function kreisUmkehrAufgabe(skillId: string, diff: Difficulty, format: FigurFormat, rng: Rng): TaskDraft | null {
+  const e = rng() < 0.7 ? "cm" : "m";
+  const ausU = rng() < 0.5;
+  const r = rint(rng, 2, 12);
+  const d = 2 * r;
+  const gegeben = ausU ? Math.round(d * 3.14 * 100) / 100 : Math.round(r * r * 3.14 * 100) / 100;
+  const gesucht = ausU ? d : r;
+  // mit der π-Taste: genauso gerundet (auf ganze Zahlen)
+  const mitPi = Math.round(ausU ? gegeben / Math.PI : Math.sqrt(gegeben / Math.PI));
+  const richtig = [zahl(gesucht), ...(mitPi !== gesucht ? [zahl(mitPi)] : [])];
+  const figur = ausU ? kreisBild({ teil: "kreis", strecke: "durchmesser", text: "d = ?", loesung: `d = ${zahl(d)} ${e}` }) : kreisBild({ teil: "kreis", strecke: "radius", text: "r = ?", loesung: `r = ${zahl(r)} ${e}` });
+  const frage = ausU
+    ? `Der Kreis hat den Umfang u = ${zahl(gegeben)} ${e}. Wie lang ist sein Durchmesser d? ${PI_TEXT}`
+    : `Der Kreis hat den Flächeninhalt A = ${zahl(gegeben)} ${e}². Wie lang ist sein Radius r? ${PI_TEXT}`;
+  const zeilen = ausU ? [`d = ${roh(gegeben)} : 3,14 = ${d}`] : [`r² = ${roh(gegeben)} : 3,14 = ${r * r}`, `r = √${r * r} = ${r}`];
+  const solution = ausU ? `u = d · π, also d = u : π\n${zeilen[0]} ${e}` : `A = r² · π, also r² = A : π\n${zeilen[0]}\n${zeilen[1]} ${e}`;
+  const fehler = fehlerOhneAlle(
+    richtig,
+    ausU
+      ? [{ answer: zahl(r), label: "Den Radius statt den Durchmesser angegeben" }, { answer: zahl(rundeAuf(gegeben * 3.14, 2)), label: "Mit π multipliziert statt dividiert" }]
+      : [{ answer: zahl(r * r), label: "Die Wurzel am Ende vergessen" }, { answer: zahl(d), label: "Den Durchmesser statt den Radius angegeben" }],
+  );
+  const hilfen = ausU ? ["u = d · π. Rechne rückwärts.", "d = u : π"] : ["A = r² · π. Rechne rückwärts: zuerst durch π, dann die Wurzel.", "r² = A : π"];
+  if (format === "rechenweg")
+    return aufgabe(skillId, diff, "rechenweg", {
+      prompt: `${frage} ${WEG}`,
+      figur,
+      answer: { accepted: richtig.map((x) => `${x} ${e}`), unit: e, form: null, needWay: true },
+      solution,
+      steps: ausU ? zeilen.map(zahlenWeg) : [`${roh(gegeben)} : 3,14 = ${r * r}`, `√${r * r} = ${r}`],
+      hints: hilfen,
+      errorMap: fehler.map((f) => ({ ...f, answer: `${f.answer.replace(/\s/g, "")} ${e}` })),
+    });
+  if (format === "mc") {
+    const m = auswahl(rng, `${zahl(gesucht)} ${e}`, fehler.map((f) => ({ ...f, answer: `${f.answer} ${e}` })));
+    return aufgabe(skillId, diff, "mc", { prompt: frage, figur, data: { options: m.options }, answer: { correct: m.correct }, solution, hints: hilfen, errorMap: m.errorMap });
+  }
+  if (format !== "calc") return null;
+  return aufgabe(skillId, diff, "calc", { prompt: `${frage} Gib das Ergebnis in ${e} an.`, figur, answer: { accepted: richtig.flatMap((x) => mitEinheit(x, e)), mode: "value" }, solution, hints: hilfen, errorMap: fehler });
+}
+
+const KREIS_SACHEN = [
+  { ding: "Ein rundes Trampolin", rand: "Wie lang ist der Rand des Trampolins?", flaeche: "Wie groß ist die Sprungfläche?", kosten: "Ein Schutznetz rundherum kostet {p} € pro Meter. Was kostet das Netz? Rechne mit deinem Ergebnis aus a).", preise: [8, 12, 15] },
+  { ding: "Ein runder Gartenteich", rand: "Wie lang ist ein Zaun einmal rund um den Teich?", flaeche: "Wie groß ist die Wasserfläche?", kosten: "Der Zaun kostet {p} € pro Meter. Was kostet der Zaun? Rechne mit deinem Ergebnis aus a).", preise: [9, 14, 20] },
+  { ding: "Ein rundes Blumenbeet", rand: "Wie lang ist eine Rasenkante einmal rund um das Beet?", flaeche: "Wie groß ist die Fläche des Beets?", kosten: "Die Rasenkante kostet {p} € pro Meter. Was kostet sie? Rechne mit deinem Ergebnis aus a).", preise: [4, 6, 7] },
+];
+
+function kreisSachaufgabe(skillId: string, diff: Difficulty, rng: Rng): TaskDraft {
+  const lv = LEVEL[diff];
+  const s = pick(rng, KREIS_SACHEN);
+  const mitD = rng() < 0.5;
+  const d = lv <= 1 ? 2 * rint(rng, 1, 4) : rint(rng, 3, 9);
+  const r = d / 2;
+  const roh1 = piWert(d);
+  const roh2 = piWert(r * r);
+  const rund = roh1.gerundet || roh2.gerundet;
+  const u = piWert(d, 0, rund);
+  const A = piWert(r * r, 0, rund);
+  const preis = pick(rng, s.preise);
+  const kosten = rundeAuf(u.wert * preis, 2);
+  const parts: (PartView & PartSolution)[] = [
+    { label: "a)", prompt: s.rand, kind: "zahl", accepted: piAntworten(u).map((x) => `${x} m`), unit: "m", round: rund ? 1 : null, solution: `u = d · π = ${zahl(d)} m · 3,14 ${rund ? "≈" : "="} ${u.text} m`, errorMap: [{ answer: `${zahl(rundeAuf(r * 3.14, rund ? 1 : 2))} m`, label: "Mit dem Radius statt dem Durchmesser gerechnet (u = r · π)" }] },
+    { label: "b)", prompt: s.flaeche, kind: "zahl", accepted: piAntworten(A).map((x) => `${x} m²`), unit: "m²", round: rund ? 1 : null, solution: `A = r² · π = (${zahl(r)} m)² · 3,14 ${rund ? "≈" : "="} ${A.text} m²`, errorMap: [{ answer: `${zahl(rundeAuf(d * d * 3.14, rund ? 1 : 2))} m²`, label: "Mit dem Durchmesser statt dem Radius in A = r² · π gerechnet" }] },
+    { label: "c)", prompt: s.kosten.replace("{p}", String(preis)), kind: "zahl", accepted: [`${geldText(kosten)} €`], unit: "€", round: 2, follow: `a * ${preis}`, solution: `${u.text} · ${preis} € = ${geldText(kosten)} €` },
+  ];
+  return {
+    type: "sachaufgabe",
+    skillId,
+    skillIds: [skillId],
+    category: "sachaufgabe",
+    difficulty: diff,
+    prompt: `${s.ding} hat ${mitD ? `einen Durchmesser von ${zahl(d)} m` : `einen Radius von ${zahl(r)} m`}. ${PI_TEXT}${rund ? ` ${RUND_TEXT}` : ""}`,
+    data: { parts: parts.map(({ label, prompt, kind }) => ({ label, prompt, kind })), figure: mitD ? kreisBild({ teil: "kreis", strecke: "durchmesser", text: `d = ${zahl(d)} m` }) : kreisBild({ teil: "kreis", strecke: "radius", text: `r = ${zahl(r)} m` }) },
+    answer: { parts: parts.map(({ accepted, unit, round, follow, solution, errorMap }) => ({ accepted, unit: unit ?? null, round: round ?? null, follow: follow ?? null, solution, errorMap })) },
+    solution: parts.map((p) => `${p.label} ${p.solution}`).join("\n"),
+    hints: ["Einmal rundherum: das ist der Umfang.", "u = d · π und A = r² · π"],
+    errorMap: [],
+    estimatedTimeSec: 420,
+  };
+}
+/** Geld mit zwei Nachkommastellen, außer bei ganzen Euro. */
+const geldText = (x: number) => (Number.isInteger(Math.round(x * 100) / 100) ? zahl(x) : zahl(x, 2));
+
+/** Halbkreis, Viertelkreis, Kreissektor: Flächeninhalt, Umfang, Bogenlänge. */
+function kreisteilAufgabe(skillId: string, diff: Difficulty, format: FigurFormat, rng: Rng): TaskDraft | null {
+  const lv = LEVEL[diff];
+  if (format === "sachaufgabe") return kreisteilSachaufgabe(skillId, diff, rng);
+  const e = rng() < 0.75 ? "cm" : "m";
+  const teil: KreisTeil = lv === 0 ? "halbkreis" : lv === 1 ? pick(rng, ["halbkreis", "viertelkreis"] as const) : lv === 2 ? pick(rng, ["viertelkreis", "sektor", "sektor"] as const) : "sektor";
+  const winkel = teil === "sektor" ? pick(rng, lv === 2 ? [30, 36, 45, 60, 72, 120, 150, 240, 270] : [40, 80, 100, 135, 140, 160, 200, 225, 300]) : kreisWinkel({ teil, winkel: 0 });
+  const anteil = winkel / 360;
+  const beide = format === "cloze";
+  const flaeche = !beide && rng() < 0.5;
+  // ein Radius, mit dem der Anteil keine endlose Kommazahl gibt (120° bei r = 5: 25 : 3 = 8,333…)
+  const passt = (x: number) => (beide || flaeche ? stellenVon(x * x * anteil) <= 2 : true) && (beide || !flaeche ? stellenVon(2 * x * anteil) <= 2 : true);
+  let r = lv <= 1 ? rint(rng, 2, 12) : rint(rng, 3, 15);
+  for (let t = 0; t < 40 && !passt(r); t++) r = lv <= 1 ? rint(rng, 2, 12) : rint(rng, 3, 15);
+  const d = 2 * r;
+  const mitD = teil === "halbkreis" && rng() < 0.5;
+  const name = KREIS_TEILE[teil];
+  const figur = kreisBild({ teil, winkel, strecke: mitD ? "durchmesser" : "radius", text: mitD ? `d = ${zahl(d)} ${e}` : `r = ${zahl(r)} ${e}`, getoent: true, winkelZeigen: teil !== "halbkreis", ganzerKreis: lv <= 1 || (teil === "sektor" && rng() < 0.5) });
+  const anteilText = teil === "halbkreis" ? " : 2" : teil === "viertelkreis" ? " : 4" : ` · ${winkel} : 360`;
+  const anteilFormel = teil === "halbkreis" ? " : 2" : teil === "viertelkreis" ? " : 4" : " · α : 360°";
+  // was gefragt ist: Fläche, Umfang (Halbkreis, Viertelkreis) oder Bogenlänge (Sektor)
+  const zweite = teil === "sektor" ? "b" : "u";
+  const fA = r * r * anteil;
+  const fZ = d * anteil;
+  const dazu = teil === "sektor" ? 0 : teil === "halbkreis" ? d : 2 * r;
+  const rund = beide && (piWert(fA).gerundet || piWert(fZ, dazu).gerundet);
+  const A = piWert(fA, 0, rund);
+  const Z = piWert(fZ, dazu, rund);
+  const rZeile = mitD ? `r = ${roh(d)} : 2 = ${roh(r)}` : null;
+  const aZeile = piZeile(`A = ${roh(r)}² · 3,14${anteilText}`, A);
+  const zZeile =
+    teil === "sektor"
+      ? piZeile(`b = 2 · ${roh(r)} · 3,14 · ${winkel} : 360`, Z)
+      : teil === "halbkreis"
+        ? piZeile(`u = ${roh(d)} · 3,14 : 2 + ${roh(d)}`, Z)
+        : piZeile(`u = 2 · ${roh(r)} · 3,14 : 4 + 2 · ${roh(r)}`, Z);
+  const aWeg = `${rZeile ? `${rZeile}\n` : ""}A = r² · π${anteilFormel}\n${aZeile}`;
+  const zWeg =
+    teil === "sektor"
+      ? `b = 2 · r · π · α : 360°\n${zZeile}`
+      : teil === "halbkreis"
+        ? `Zum Umfang gehören der halbe Kreisbogen und der Durchmesser.\nu = d · π : 2 + d\n${zZeile}`
+        : `Zum Umfang gehören der Viertelbogen und zwei Radien.\nu = 2 · r · π : 4 + 2 · r\n${zZeile}`;
+  const hinweis = (g: boolean) => `${PI_TEXT}${g ? ` ${RUND_TEXT}` : ""}`;
+  const hilfenA = [teil === "sektor" ? `Der Sektor ist der Anteil ${winkel}° : 360° vom ganzen Kreis.` : `Ein ${name} ist ${teil === "halbkreis" ? "die Hälfte" : "ein Viertel"} vom ganzen Kreis.`, `A = r² · π${anteilFormel}`];
+  if (beide) {
+    if (teil === "sektor") {
+      const b = kuerzen({ z: winkel, n: 360 });
+      return aufgabe(skillId, diff, "cloze", {
+        prompt: `Der Kreissektor ist ein Teil des ganzen Kreises. ${hinweis(rund)}\nAnteil am ganzen Kreis (als Bruch): ___\nA = ___ ${e}²\nb = ___ ${e}`,
+        figur,
+        answer: { blanks: [[bruchText(b)], piAntworten(A), piAntworten(Z)], mode: "value" },
+        solution: `Anteil: ${winkel}° : 360° = ${bruchText(b)}\n${aWeg} ${e}²\n${zWeg} ${e}`,
+        hints: [hilfenA[0], "A = r² · π · α : 360° und b = 2 · r · π · α : 360°"],
+      });
+    }
+    return aufgabe(skillId, diff, "cloze", {
+      prompt: `Berechne Flächeninhalt und Umfang des ${name}es. ${hinweis(rund)}\nA = ___ ${e}²\nu = ___ ${e}`,
+      figur,
+      answer: { blanks: [piAntworten(A), piAntworten(Z)], mode: "value" },
+      solution: `${aWeg} ${e}²\n${zWeg} ${e}`,
+      hints: [hilfenA[0], teil === "halbkreis" ? "Beim Umfang gehört der Durchmesser dazu." : "Beim Umfang gehören die zwei Radien dazu."],
+    });
+  }
+  const p = flaeche ? A : Z;
+  const einheit = flaeche ? `${e}²` : e;
+  const fehler: (Fehler | null)[] = flaeche
+    ? [
+        piFehler(r * r, 0, p, "Den ganzen Kreis berechnet, nicht den Anteil"),
+        teil === "sektor" ? piFehler((r * r * 360) / winkel, 0, p, "Anteil verkehrt gebildet (360° : α statt α : 360°)") : null,
+        teil === "sektor" ? piFehler(fZ, 0, p, "Bogenlänge und Flächeninhalt verwechselt") : null,
+        mitD ? piFehler(d * d * anteil, 0, p, "Mit dem Durchmesser statt dem Radius gerechnet") : null,
+      ]
+    : teil === "sektor"
+      ? [piFehler(d, 0, p, "Den ganzen Umfang berechnet, nicht den Anteil"), piFehler((d * 360) / winkel, 0, p, "Anteil verkehrt gebildet (360° : α statt α : 360°)"), piFehler(fA, 0, p, "Bogenlänge und Flächeninhalt verwechselt")]
+      : [
+          piFehler(fZ, 0, p, teil === "halbkreis" ? "Beim Umfang des Halbkreises den Durchmesser vergessen" : "Beim Umfang die beiden Radien vergessen"),
+          piFehler(d, 0, p, "Den Umfang des ganzen Kreises berechnet"),
+        ];
+  const fehl = fehlerOhneAlle(piAntworten(p), fehler);
+  const was = flaeche ? "den Flächeninhalt" : teil === "sektor" ? "die Länge des Kreisbogens b" : "den Umfang";
+  const frage = `Berechne ${was} des ${teil === "sektor" ? "Kreissektors" : `${name}es`}. ${hinweis(p.gerundet)}`;
+  const solution = `${flaeche ? aWeg : zWeg} ${einheit}`;
+  const hilfen = flaeche ? hilfenA : teil === "sektor" ? [hilfenA[0], "b = 2 · r · π · α : 360°"] : [teil === "halbkreis" ? "Der Umfang ist der halbe Kreisbogen und der Durchmesser." : "Der Umfang ist der Viertelbogen und zwei Radien.", teil === "halbkreis" ? "u = d · π : 2 + d" : "u = 2 · r · π : 4 + 2 · r"];
+  if (format === "rechenweg") {
+    const zeilen = [...(rZeile && flaeche ? [rZeile] : []), flaeche ? aZeile : zZeile];
+    return aufgabe(skillId, diff, "rechenweg", {
+      prompt: `${frage} ${WEG}`,
+      figur,
+      answer: { accepted: piAntworten(p).map((x) => `${x} ${einheit}`), unit: einheit, form: null, round: p.gerundet ? 1 : null, needWay: true },
+      solution,
+      steps: zeilen.map(zahlenWeg),
+      hints: hilfen,
+      errorMap: fehl.map((f) => ({ ...f, answer: `${f.answer.replace(/\s/g, "")} ${einheit}` })),
+    });
+  }
+  if (format === "mc") {
+    const m = auswahl(rng, `${p.text} ${einheit}`, fehl.map((f) => ({ ...f, answer: `${f.answer} ${einheit}` })));
+    return aufgabe(skillId, diff, "mc", { prompt: frage, figur, data: { options: m.options }, answer: { correct: m.correct }, solution, hints: hilfen, errorMap: m.errorMap });
+  }
+  if (format !== "calc") return null;
+  return aufgabe(skillId, diff, "calc", { prompt: `${frage} Gib das Ergebnis in ${einheit} an.`, figur, answer: { accepted: piAntworten(p).flatMap((x) => mitEinheit(x, einheit)), mode: "value" }, solution, hints: hilfen, errorMap: fehl });
+}
+
+/** Pizza in gleich großen Stücken oder ein Rasensprenger, der einen Kreissektor bewässert. */
+function kreisteilSachaufgabe(skillId: string, diff: Difficulty, rng: Rng): TaskDraft {
+  const pizza = rng() < 0.5;
+  let parts: (PartView & PartSolution)[];
+  let prompt: string;
+  let figur: Kreis;
+  if (pizza) {
+    const stuecke = pick(rng, [4, 6, 8]);
+    // ein Durchmesser, mit dem ein Stück keine endlose Kommazahl gibt
+    const durchmesser = shuffle(rng, [24, 28, 30, 32, 36]);
+    const d = durchmesser.find((x) => stellenVon((x * x) / 4 / stuecke) <= 2 && stellenVon(x / stuecke) <= 2) ?? 24;
+    const r = d / 2;
+    const winkel = 360 / stuecke;
+    const roh1 = piWert((r * r) / stuecke);
+    const roh2 = piWert(d / stuecke);
+    const rund = roh1.gerundet || roh2.gerundet;
+    const A = piWert((r * r) / stuecke, 0, rund);
+    const b = piWert(d / stuecke, 0, rund);
+    prompt = `Eine runde Pizza mit dem Durchmesser d = ${d} cm wird in ${stuecke} gleich große Stücke geschnitten. Im Bild ist ein Stück getönt. ${PI_TEXT}${rund ? ` ${RUND_TEXT}` : ""}`;
+    figur = kreisBild({ teil: "sektor", winkel, strecke: "radius", text: `r = ${r} cm`, getoent: true, ganzerKreis: true });
+    parts = [
+      { label: "a)", prompt: "Wie groß ist der Winkel eines Stücks in der Mitte?", kind: "zahl", accepted: [`${winkel}°`], unit: "°", solution: `360° : ${stuecke} = ${winkel}°`, errorMap: [{ answer: `${stuecke}°`, label: "Die Anzahl der Stücke statt des Winkels angegeben" }] },
+      { label: "b)", prompt: "Wie groß ist die Fläche eines Stücks?", kind: "zahl", accepted: piAntworten(A).map((x) => `${x} cm²`), unit: "cm²", round: rund ? 1 : null, solution: `A = r² · π : ${stuecke} = ${r}² · 3,14 : ${stuecke} ${rund ? "≈" : "="} ${A.text} cm²`, errorMap: [{ answer: `${zahl(rundeAuf(d * d * 3.14 / stuecke, rund ? 1 : 2))} cm²`, label: "Mit dem Durchmesser statt dem Radius gerechnet" }] },
+      { label: "c)", prompt: "Wie lang ist der Rand (der Kreisbogen) eines Stücks?", kind: "zahl", accepted: piAntworten(b).map((x) => `${x} cm`), unit: "cm", round: rund ? 1 : null, solution: `b = d · π : ${stuecke} = ${d} · 3,14 : ${stuecke} ${rund ? "≈" : "="} ${b.text} cm` },
+    ];
+  } else {
+    const winkel = pick(rng, [72, 90, 144, 180, 216, 270]);
+    const r = rint(rng, 3, 9);
+    const roh1 = piWert((r * r * winkel) / 360);
+    const roh2 = piWert((2 * r * winkel) / 360);
+    const rund = roh1.gerundet || roh2.gerundet;
+    const A = piWert((r * r * winkel) / 360, 0, rund);
+    const b = piWert((2 * r * winkel) / 360, 0, rund);
+    const prozent = (winkel / 360) * 100;
+    prompt = `Ein Rasensprenger dreht sich hin und her und bewässert dabei einen Kreissektor mit α = ${winkel}°. Das Wasser reicht ${r} m weit. ${PI_TEXT}${rund ? ` ${RUND_TEXT}` : ""}`;
+    figur = kreisBild({ teil: "sektor", winkel, strecke: "radius", text: `r = ${r} m`, getoent: true, winkelZeigen: true, ganzerKreis: true });
+    parts = [
+      { label: "a)", prompt: "Wie groß ist die Rasenfläche, die bewässert wird?", kind: "zahl", accepted: piAntworten(A).map((x) => `${x} m²`), unit: "m²", round: rund ? 1 : null, solution: `A = r² · π · α : 360° = ${r}² · 3,14 · ${winkel} : 360 ${rund ? "≈" : "="} ${A.text} m²`, errorMap: [{ answer: `${zahl(rundeAuf(r * r * 3.14, rund ? 1 : 2))} m²`, label: "Den ganzen Kreis berechnet, nicht den Anteil" }] },
+      { label: "b)", prompt: "Wie lang ist der äußere Rand der bewässerten Fläche (der Kreisbogen)?", kind: "zahl", accepted: piAntworten(b).map((x) => `${x} m`), unit: "m", round: rund ? 1 : null, solution: `b = 2 · r · π · α : 360° = 2 · ${r} · 3,14 · ${winkel} : 360 ${rund ? "≈" : "="} ${b.text} m` },
+      { label: "c)", prompt: "Wie viel Prozent der ganzen Kreisfläche sind das?", kind: "zahl", accepted: [`${zahl(prozent)} %`], unit: "%", solution: `${winkel}° : 360° = ${zahl(winkel / 360)} = ${zahl(prozent)} %`, errorMap: [{ answer: `${winkel} %`, label: "Den Winkel als Prozentsatz genommen" }] },
+    ];
+  }
+  return {
+    type: "sachaufgabe",
+    skillId,
+    skillIds: [skillId],
+    category: "sachaufgabe",
+    difficulty: diff,
+    prompt,
+    data: { parts: parts.map(({ label, prompt: p, kind }) => ({ label, prompt: p, kind })), figure: figur },
+    answer: { parts: parts.map(({ accepted, unit, round, solution, errorMap }) => ({ accepted, unit: unit ?? null, round: round ?? null, follow: null, solution, errorMap })) },
+    solution: parts.map((p) => `${p.label} ${p.solution}`).join("\n"),
+    hints: ["Ein Stück ist der Anteil α : 360° vom ganzen Kreis.", "A = r² · π · α : 360° und b = 2 · r · π · α : 360°"],
+    errorMap: [],
+    estimatedTimeSec: 420,
+  };
+}
+
+// =====================================================================
+// Diagramme: ablesen, vergleichen, zusammenzählen, Häufigkeiten, Mittelwert
+// =====================================================================
+
+/** Ein Ding im Diagramm: kurz an der Achse, lang in Antworten, als Satzteil in Fragen. */
+type Ding = { name: string; lang: string; satz: string };
+type DiaKontext = {
+  titel: string;
+  achse: string;
+  /** was gezählt wird, für Antworten mit Wort („12 Kinder“); leer = nur die Zahl */
+  wort: string;
+  dinge: Ding[];
+  /** wie die Dinge der Reihe nach stehen: fest (Wochentage, Uhrzeiten) oder gemischt */
+  fest?: boolean;
+  /** passen auch Werte in die Tausende (Gäste im Freibad, nicht Kinder einer Schule) */
+  gross?: boolean;
+  frage: (x: Ding) => string;
+  mehr: (a: Ding, b: Ding) => string;
+  gesamt: string;
+  meiste: string;
+  /** Satz für „Insgesamt waren es N.“ (gesuchte Säule, relative Häufigkeit) */
+  insgesamt: (n: string) => string;
+};
+
+const tag = (name: string, lang: string): Ding => ({ name, lang, satz: `am ${lang}` });
+const WOCHE = [tag("Mo", "Montag"), tag("Di", "Dienstag"), tag("Mi", "Mittwoch"), tag("Do", "Donnerstag"), tag("Fr", "Freitag"), tag("Sa", "Samstag"), tag("So", "Sonntag")];
+const ding = (name: string, satz: string, lang = name): Ding => ({ name, lang, satz });
+
+/** Umfragen und Zählungen in der Volksschule: kleine Anzahlen. */
+const VS_KONTEXTE: DiaKontext[] = [
+  {
+    titel: "Umfrage: Lieblingsobst",
+    achse: "Anzahl Kinder",
+    wort: "Kinder",
+    dinge: [ding("Äpfel", "Äpfel"), ding("Bananen", "Bananen"), ding("Birnen", "Birnen"), ding("Trauben", "Trauben"), ding("Erdbeeren", "Erdbeeren"), ding("Kirschen", "Kirschen")],
+    frage: (x) => `Wie viele Kinder essen am liebsten ${x.satz}?`,
+    mehr: (a, b) => `Wie viele Kinder mehr essen am liebsten ${a.satz} als ${b.satz}?`,
+    gesamt: "Wie viele Kinder wurden insgesamt befragt?",
+    meiste: "Welches Obst essen die meisten Kinder am liebsten?",
+    insgesamt: (n) => `Insgesamt wurden ${n} Kinder befragt.`,
+  },
+  {
+    titel: "Haustiere der Kinder",
+    achse: "Anzahl Kinder",
+    wort: "Kinder",
+    dinge: [ding("Hund", "einen Hund"), ding("Katze", "eine Katze"), ding("Hase", "einen Hasen"), ding("Fische", "Fische"), ding("Vogel", "einen Vogel"), ding("Pferd", "ein Pferd")],
+    frage: (x) => `Wie viele Kinder haben ${x.satz}?`,
+    mehr: (a, b) => `Wie viele Kinder mehr haben ${a.satz} als ${b.satz}?`,
+    gesamt: "Wie viele Kinder sind es zusammen?",
+    meiste: "Welches Haustier haben die meisten Kinder?",
+    insgesamt: (n) => `Zusammen sind es ${n} Kinder.`,
+  },
+  {
+    titel: "So kommen wir zur Schule",
+    achse: "Anzahl Kinder",
+    wort: "Kinder",
+    dinge: [ding("zu Fuß", "zu Fuß"), ding("Rad", "mit dem Rad"), ding("Bus", "mit dem Bus"), ding("Auto", "mit dem Auto"), ding("Roller", "mit dem Roller")],
+    frage: (x) => `Wie viele Kinder kommen ${x.satz} zur Schule?`,
+    mehr: (a, b) => `Wie viele Kinder mehr kommen ${a.satz} als ${b.satz}?`,
+    gesamt: "Wie viele Kinder wurden insgesamt gefragt?",
+    meiste: "Wie kommen die meisten Kinder zur Schule?",
+    insgesamt: (n) => `Insgesamt wurden ${n} Kinder gefragt.`,
+  },
+  {
+    titel: "Ausgeborgte Bücher in der Schulbücherei",
+    achse: "Anzahl Bücher",
+    wort: "Bücher",
+    dinge: WOCHE.slice(0, 5),
+    fest: true,
+    frage: (x) => `Wie viele Bücher wurden ${x.satz} ausgeborgt?`,
+    mehr: (a, b) => `Wie viele Bücher wurden ${a.satz} mehr ausgeborgt als ${b.satz}?`,
+    gesamt: "Wie viele Bücher wurden in dieser Woche ausgeborgt?",
+    meiste: "An welchem Tag wurden die meisten Bücher ausgeborgt?",
+    insgesamt: (n) => `In dieser Woche wurden ${n} Bücher ausgeborgt.`,
+  },
+  {
+    titel: "Gesammelte Kastanien",
+    achse: "Anzahl Kastanien",
+    wort: "Kastanien",
+    dinge: ["1a", "1b", "2a", "2b", "3a", "3b"].map((k) => ding(k, `die ${k}`, `die ${k}`)),
+    fest: true,
+    frage: (x) => `Wie viele Kastanien hat ${x.satz} gesammelt?`,
+    mehr: (a, b) => `Wie viele Kastanien hat ${a.satz} mehr gesammelt als ${b.satz}?`,
+    gesamt: "Wie viele Kastanien wurden insgesamt gesammelt?",
+    meiste: "Welche Klasse hat die meisten Kastanien gesammelt?",
+    insgesamt: (n) => `Insgesamt wurden ${n} Kastanien gesammelt.`,
+  },
+];
+
+/** Unterstufe: größere Zahlen. */
+const US_KONTEXTE: DiaKontext[] = [
+  {
+    titel: "Gäste im Freibad",
+    achse: "Anzahl Gäste",
+    wort: "Gäste",
+    dinge: WOCHE,
+    fest: true,
+    gross: true,
+    frage: (x) => `Wie viele Gäste kamen ${x.satz} ins Freibad?`,
+    mehr: (a, b) => `Wie viele Gäste kamen ${a.satz} mehr als ${b.satz}?`,
+    gesamt: "Wie viele Gäste kamen an diesen Tagen insgesamt?",
+    meiste: "An welchem Tag kamen die meisten Gäste?",
+    insgesamt: (n) => `An diesen Tagen kamen insgesamt ${n} Gäste.`,
+  },
+  {
+    titel: "Verkaufte Kuchenstücke beim Schulfest",
+    achse: "Anzahl Stück",
+    wort: "Stück",
+    dinge: [ding("Schoko", "Schokokuchen", "Schokokuchen"), ding("Topfen", "Topfenkuchen", "Topfenkuchen"), ding("Apfel", "Apfelkuchen", "Apfelkuchen"), ding("Marmor", "Marmorkuchen", "Marmorkuchen"), ding("Nuss", "Nusskuchen", "Nusskuchen"), ding("Karotte", "Karottenkuchen", "Karottenkuchen")],
+    frage: (x) => `Wie viele Stück ${x.satz} wurden verkauft?`,
+    mehr: (a, b) => `Wie viele Stück ${a.satz} wurden mehr verkauft als ${b.satz}?`,
+    gesamt: "Wie viele Kuchenstücke wurden insgesamt verkauft?",
+    meiste: "Von welchem Kuchen wurden die meisten Stücke verkauft?",
+    insgesamt: (n) => `Insgesamt wurden ${n} Kuchenstücke verkauft.`,
+  },
+  {
+    titel: "Lieblingssport an unserer Schule",
+    achse: "Anzahl Kinder",
+    wort: "Kinder",
+    dinge: [ding("Fußball", "Fußball"), ding("Schwimmen", "Schwimmen"), ding("Tanzen", "Tanzen"), ding("Klettern", "Klettern"), ding("Radfahren", "Radfahren"), ding("Volleyball", "Volleyball")],
+    frage: (x) => `Wie viele Kinder nannten ${x.satz}?`,
+    mehr: (a, b) => `Wie viele Kinder mehr nannten ${a.satz} als ${b.satz}?`,
+    gesamt: "Wie viele Kinder wurden insgesamt befragt?",
+    meiste: "Welcher Sport wurde am häufigsten genannt?",
+    insgesamt: (n) => `Insgesamt wurden ${n} Kinder befragt.`,
+  },
+];
+
+/** Eine Umfrage für Häufigkeiten (die Gesamtzahl zählt). */
+const UMFRAGEN = [VS_KONTEXTE[0], VS_KONTEXTE[2], US_KONTEXTE[2]];
+
+/** Einteilung der Achse je Stufe: Abstand der Gitterlinien, jede wievielte Linie eine Zahl hat, größter Wert in Linien. */
+type Einteilung = { schritt: number; zahlenAlle: number; linien: number };
+function einteilung(vs: boolean, lv: number, rng: Rng, gross = false): Einteilung {
+  // Gäste im Freibad: schon leicht mit Zehnern und Fünfzigern
+  if (gross)
+    return [
+      { schritt: 10, zahlenAlle: 1, linien: 12 },
+      pick(rng, [{ schritt: 20, zahlenAlle: 1, linien: 12 }, { schritt: 50, zahlenAlle: 2, linien: 12 }]),
+      pick(rng, [{ schritt: 50, zahlenAlle: 2, linien: 12 }, { schritt: 25, zahlenAlle: 4, linien: 16 }]),
+      pick(rng, [{ schritt: 50, zahlenAlle: 2, linien: 14 }, { schritt: 250, zahlenAlle: 2, linien: 12 }]),
+    ][lv];
+  if (vs) return [{ schritt: 1, zahlenAlle: 1, linien: 10 }, { schritt: 2, zahlenAlle: 1, linien: 10 }, pick(rng, [{ schritt: 2, zahlenAlle: 2, linien: 12 }, { schritt: 5, zahlenAlle: 2, linien: 10 }]), pick(rng, [{ schritt: 10, zahlenAlle: 2, linien: 10 }, { schritt: 5, zahlenAlle: 2, linien: 16 }])][lv];
+  return [
+    { schritt: 2, zahlenAlle: 1, linien: 12 },
+    pick(rng, [{ schritt: 5, zahlenAlle: 2, linien: 12 }, { schritt: 10, zahlenAlle: 1, linien: 10 }]),
+    pick(rng, [{ schritt: 20, zahlenAlle: 2, linien: 12 }, { schritt: 25, zahlenAlle: 2, linien: 12 }, { schritt: 10, zahlenAlle: 2, linien: 15 }]),
+    pick(rng, [{ schritt: 20, zahlenAlle: 5, linien: 15 }, { schritt: 25, zahlenAlle: 4, linien: 12 }]),
+  ][lv];
+}
+
+/** Verschiedene Werte (Vielfache von `schritt`, 1 bis `linien` Linien hoch) mit genau einem größten und einem kleinsten. */
+function dingWerte(rng: Rng, anzahl: number, e: Einteilung): number[] {
+  for (let t = 0; t < 60; t++) {
+    const k = Array.from({ length: anzahl }, () => rint(rng, 1, e.linien));
+    const max = Math.max(...k);
+    const min = Math.min(...k);
+    if (k.filter((x) => x === max).length === 1 && k.filter((x) => x === min).length === 1 && new Set(k).size >= anzahl - 1) return k.map((x) => x * e.schritt);
+  }
+  return Array.from({ length: anzahl }, (_, i) => ((i * 3) % e.linien + 1) * e.schritt);
+}
+/** Die Achse geht eine beschriftete Linie über den größten Wert hinaus. */
+const achsenEnde = (max: number, e: Einteilung) => Math.ceil((max + e.schritt) / (e.schritt * e.zahlenAlle)) * e.schritt * e.zahlenAlle;
+
+function diagrammBild(k: DiaKontext, dinge: Ding[], werte: number[], e: Einteilung, o: Partial<Diagramm> = {}): Diagramm {
+  return { art: "diagramm", form: "saeulen", titel: k.titel, achse: k.achse, min: 0, max: achsenEnde(Math.max(...werte), e), schritt: e.schritt, zahlenAlle: e.zahlenAlle, werte: dinge.map((d, i) => ({ name: d.name, wert: werte[i] })), werteZeigen: false, ...o };
+}
+/** Die Dinge eines Kontexts für ein Diagramm: der Reihe nach (Tage) oder gemischt. */
+const dingeFuer = (rng: Rng, k: DiaKontext, anzahl: number) => (k.fest ? k.dinge.slice(0, anzahl) : shuffle(rng, k.dinge).slice(0, anzahl));
+
+const ABLESE_HILFEN = (e: Einteilung) => [
+  "Lies zuerst, was die Achse zählt und wie sie eingeteilt ist.",
+  e.zahlenAlle > 1 ? `Nicht jede Linie hat eine Zahl: von einer Zahl zur nächsten sind es ${e.zahlenAlle} Linien. Eine Linie ist ${zahl(e.schritt)}.` : `Von einer Linie zur nächsten sind es ${zahl(e.schritt)}.`,
+];
+const ablesenWeg = (x: Ding, v: number, e: Einteilung, fuer = "Die Säule") =>
+  `${fuer} bei „${x.name}“ reicht bis zur Linie bei ${zahl(v)}${e.schritt !== 1 ? ` (${zahl(v / e.schritt)} Linien, jede ist ${zahl(e.schritt)})` : ""}.`;
+/** Fehler beim Ablesen: Linien gezählt statt Werte, die Einteilung der Zahlen genommen, um eine Linie verzählt. */
+function ablesenFehler(v: number, e: Einteilung): Fehler[] {
+  return [
+    ...(e.schritt !== 1 ? [{ answer: zahl(v / e.schritt), label: "Einteilung der Achse nicht beachtet (jede Linie als 1 gezählt)" }] : []),
+    ...(e.zahlenAlle > 1 ? [{ answer: zahl(v * e.zahlenAlle), label: "Einteilung der Achse nicht beachtet (jede Linie so groß wie der Abstand der Zahlen)" }] : []),
+    { answer: zahl(v + e.schritt), label: "Um eine Linie verzählt" },
+    ...(v - e.schritt > 0 ? [{ answer: zahl(v - e.schritt), label: "Um eine Linie verzählt" }] : []),
+  ];
+}
+/** Antwort mit dem gezählten Wort („12 Kinder“, „12“). */
+const mitWort = (wert: string, wort: string) => (wort ? mitEinheit(wert, wort) : [wert]);
+
+/**
+ * Säulen- und Balkendiagramme lesen: ablesen, vergleichen, zusammenzählen, die meisten; in der Unterstufe auch eine
+ * fehlende Säule aus der Gesamtzahl und eine abgeschnittene Achse.
+ */
+function diagrammAufgabe(skillId: string, diff: Difficulty, format: FigurFormat, rng: Rng, vs: boolean): TaskDraft | null {
+  const lv = LEVEL[diff];
+  if (format === "sachaufgabe") return null;
+  if (!vs && rng() < 0.3 && format !== "rechenweg") {
+    const t = linienAufgabe(skillId, diff, format, rng);
+    if (t) return t;
+  }
+  if (!vs && lv >= 2 && format === "mc" && rng() < 0.35) return abgeschnittenAufgabe(skillId, diff, rng);
+  const k = pick(rng, vs ? (lv <= 1 ? VS_KONTEXTE.slice(0, 4) : VS_KONTEXTE) : US_KONTEXTE);
+  const anzahl = Math.min(k.dinge.length, vs ? rint(rng, 4, 5) : rint(rng, 4, 6));
+  const e = einteilung(vs, lv, rng, k.gross);
+  const dinge = dingeFuer(rng, k, anzahl);
+  const werte = dingWerte(rng, anzahl, e);
+  const balken = !vs || lv >= 1 ? rng() < 0.35 : false;
+  const form: DiagrammForm = balken ? "balken" : "saeulen";
+  const fuer = balken ? "Der Balken" : "Die Säule";
+  const figur = diagrammBild(k, dinge, werte, e, { form });
+  const hilfen = ABLESE_HILFEN(e);
+  const summe = werte.reduce((a, b) => a + b, 0);
+  const wo = (x: Ding) => dinge.indexOf(x);
+  if (format === "cloze") {
+    // zwei Dinge mit verschiedenen Werten
+    const gemischt = shuffle(rng, dinge);
+    const [a, b] = [gemischt[0], gemischt.find((x) => werte[wo(x)] !== werte[wo(gemischt[0])])!];
+    return aufgabe(skillId, diff, "cloze", {
+      prompt: `Lies im Diagramm ab.\n${a.lang}: ___${k.wort ? ` ${k.wort}` : ""}\n${b.lang}: ___${k.wort ? ` ${k.wort}` : ""}`,
+      figur,
+      answer: { blanks: [[zahl(werte[wo(a)])], [zahl(werte[wo(b)])]], mode: "value" },
+      solution: `${ablesenWeg(a, werte[wo(a)], e, fuer)}\n${ablesenWeg(b, werte[wo(b)], e, fuer)}`,
+      hints: hilfen,
+    });
+  }
+  if (format === "rechenweg") {
+    const gesamt = rng() < 0.55;
+    const [a, b] = [...dinge].sort((x, y) => werte[wo(y)] - werte[wo(x)]);
+    const zeile = gesamt ? `${werte.map(roh).join(" + ")} = ${roh(summe)}` : `${roh(werte[wo(a)])} − ${roh(werte[wo(b)])} = ${roh(werte[wo(a)] - werte[wo(b)])}`;
+    const ergebnis = gesamt ? summe : werte[wo(a)] - werte[wo(b)];
+    return aufgabe(skillId, diff, "rechenweg", {
+      prompt: `${gesamt ? k.gesamt : k.mehr(a, b)} Lies die Werte ab und ${gesamt ? "zähle sie zusammen" : "rechne"}. ${WEG}`,
+      figur,
+      answer: { accepted: [roh(ergebnis)], unit: null, form: null, needWay: true },
+      solution: gesamt ? `Die Werte: ${dinge.map((x, i) => `${x.lang} ${zahl(werte[i])}`).join(", ")}\n${zeile}` : `${ablesenWeg(a, werte[wo(a)], e, fuer)}\n${ablesenWeg(b, werte[wo(b)], e, fuer)}\n${zeile}`,
+      steps: [zeile],
+      hints: [...hilfen.slice(1), gesamt ? "Zähle alle Werte zusammen." : "Rechne den größeren minus den kleineren Wert."],
+      errorMap: gesamt ? [] : fehlerOhne(roh(ergebnis), [{ answer: roh(werte[wo(a)] + werte[wo(b)]), label: "Addiert statt subtrahiert" }]),
+    });
+  }
+  // Multiple Choice: wo ist es am meisten? Bei mehr als 4 Dingen stehen das größte und 3 andere zur Wahl
+  if (format === "mc" && rng() < 0.4) {
+    const groesste = werte.indexOf(Math.max(...werte));
+    const andere = shuffle(rng, dinge.map((_, i) => i).filter((i) => i !== groesste)).slice(0, 3);
+    const wahl = [groesste, ...andere].sort((a, b) => a - b);
+    const reihe = wahl.map((i) => dinge[i]);
+    const options = reihe.map((x) => x.lang);
+    const w4 = wahl.map((i) => werte[i]);
+    const correct = w4.indexOf(Math.max(...w4));
+    const kleinste = w4.indexOf(Math.min(...w4));
+    const frage = reihe.length === dinge.length ? k.meiste : `${k.meiste} Wähle aus: ${options.join(", ")}.`;
+    return aufgabe(skillId, diff, "mc", {
+      prompt: frage,
+      figur,
+      data: { options },
+      answer: { correct },
+      solution: `${balken ? "Der längste Balken" : "Die höchste Säule"} gehört zu „${reihe[correct].name}“ (${zahl(w4[correct])}).`,
+      hints: [balken ? "Such den längsten Balken." : "Such die höchste Säule.", "Vergleiche, wie weit jede reicht."],
+      errorMap: kleinste !== correct ? [{ answer: String(kleinste), label: balken ? "Den kürzesten statt den längsten Balken genommen" : "Die niedrigste statt die höchste Säule genommen" }] : [],
+    });
+  }
+  // gesuchte Säule: aus der Gesamtzahl rechnen (Unterstufe)
+  if (!vs && format === "calc" && rng() < 0.3) {
+    const i = rint(rng, 0, anzahl - 1);
+    const x = dinge[i];
+    const andere = werte.filter((_, j) => j !== i);
+    const gesucht = diagrammBild(k, dinge, werte, e, { form, werte: dinge.map((d, j) => ({ name: d.name, wert: werte[j], ...(j === i ? { gesucht: true } : {}) })) });
+    return aufgabe(skillId, diff, "calc", {
+      prompt: `${k.insgesamt(zahl(summe))} Im Diagramm fehlt ${balken ? "der Balken" : "die Säule"} bei „${x.name}“. ${k.frage(x)}`,
+      figur: gesucht,
+      answer: { accepted: mitWort(zahl(werte[i]), k.wort), mode: "value" },
+      solution: `Die anderen zusammen: ${andere.map(roh).join(" + ")} = ${roh(summe - werte[i])}\n${roh(summe)} − ${roh(summe - werte[i])} = ${roh(werte[i])}`,
+      hints: ["Lies alle anderen Werte ab und zähle sie zusammen.", "Was zur Gesamtzahl fehlt, gehört zur fehlenden Säule."],
+      errorMap: fehlerOhne(zahl(werte[i]), [{ answer: zahl(summe - werte[i]), label: "Die anderen Werte addiert, aber nicht von der Gesamtzahl abgezogen" }]),
+    });
+  }
+  // Rechnung oder Multiple Choice: ablesen, vergleichen, zusammenzählen
+  const art = format === "mc" ? pick(rng, ["ablesen", "ablesen", "mehr"] as const) : pick(rng, ["ablesen", "ablesen", "mehr", "gesamt"] as const);
+  let richtig: number;
+  let frage: string;
+  let solution: string;
+  let fehler: (Fehler | null)[];
+  if (art === "ablesen") {
+    const x = pick(rng, dinge);
+    richtig = werte[wo(x)];
+    frage = k.frage(x);
+    solution = ablesenWeg(x, richtig, e, fuer);
+    fehler = ablesenFehler(richtig, e);
+  } else if (art === "mehr") {
+    // zwei Dinge mit verschiedenen Werten, das größere zuerst
+    const gemischt = shuffle(rng, dinge);
+    const zweites = gemischt.find((x) => werte[wo(x)] !== werte[wo(gemischt[0])])!;
+    const [a, b] = [gemischt[0], zweites].sort((x, y) => werte[wo(y)] - werte[wo(x)]);
+    const va = werte[wo(a)];
+    const vb = werte[wo(b)];
+    richtig = va - vb;
+    frage = k.mehr(a, b);
+    solution = `${ablesenWeg(a, va, e, fuer)}\n${ablesenWeg(b, vb, e, fuer)}\n${zahl(va)} − ${zahl(vb)} = ${zahl(richtig)}`;
+    fehler = [{ answer: zahl(va + vb), label: "Addiert statt subtrahiert" }, ...(e.schritt !== 1 ? [{ answer: zahl(richtig / e.schritt), label: "Einteilung der Achse nicht beachtet (jede Linie als 1 gezählt)" }] : [])];
+  } else {
+    richtig = summe;
+    frage = k.gesamt;
+    solution = `Die Werte: ${dinge.map((x, i) => `${x.lang} ${zahl(werte[i])}`).join(", ")}\n${werte.map((v) => zahl(v)).join(" + ")} = ${zahl(summe)}`;
+    const ohne = Math.min(...werte);
+    fehler = [{ answer: zahl(summe - ohne), label: "Einen Wert beim Zusammenzählen vergessen" }];
+  }
+  const fehl = fehlerOhne(zahl(richtig), fehler);
+  const hilfenArt = art === "mehr" ? [...hilfen, "Lies beide Werte ab und rechne den Unterschied aus."] : art === "gesamt" ? [...hilfen, "Lies jeden Wert ab und zähle alle zusammen."] : hilfen;
+  if (format === "mc") {
+    const w = k.wort ? ` ${k.wort}` : "";
+    const m = auswahl(rng, `${zahl(richtig)}${w}`, fehl.map((f) => ({ ...f, answer: `${f.answer}${w}` })));
+    return aufgabe(skillId, diff, "mc", { prompt: frage, figur, data: { options: m.options }, answer: { correct: m.correct }, solution, hints: hilfenArt, errorMap: m.errorMap });
+  }
+  if (format !== "calc") return null;
+  return aufgabe(skillId, diff, "calc", { prompt: frage, figur, answer: { accepted: mitWort(zahl(richtig), k.wort), mode: "value" }, solution, hints: hilfenArt, errorMap: fehl });
+}
+
+/** Die Säule von B ist doppelt so hoch wie die von A, aber die Achse beginnt nicht bei 0. */
+function abgeschnittenAufgabe(skillId: string, diff: Difficulty, rng: Rng): TaskDraft {
+  const k = US_KONTEXTE[0];
+  const schritt = pick(rng, [10, 20]);
+  const unten = pick(rng, [200, 300, 400, 500]);
+  const z = rint(rng, 2, 4);
+  const [a, b] = shuffle(rng, k.dinge.slice(0, 7)).slice(0, 2).sort((x, y) => k.dinge.indexOf(x) - k.dinge.indexOf(y));
+  const va = unten + z * schritt;
+  const vb = unten + 2 * z * schritt;
+  const [ersterW, zweiterW] = rng() < 0.5 ? [va, vb] : [vb, va];
+  const klein = ersterW < zweiterW ? a : b;
+  const gross = ersterW < zweiterW ? b : a;
+  const figur: Diagramm = { art: "diagramm", form: "saeulen", titel: k.titel, achse: k.achse, min: unten, max: unten + (2 * z + 2) * schritt, schritt, zahlenAlle: 2, werte: [{ name: a.name, wert: ersterW }, { name: b.name, wert: zweiterW }], werteZeigen: false };
+  const d = vb - va;
+  const richtig = `${cap(gross.satz)} kamen ${zahl(d)} Gäste mehr als ${klein.satz}.`;
+  const m = auswahl(
+    rng,
+    richtig,
+    [
+      { answer: `${cap(gross.satz)} kamen doppelt so viele Gäste wie ${klein.satz}.`, label: "Abgeschnittene Achse übersehen und Unterschiede überschätzt" },
+      { answer: `${cap(gross.satz)} kamen ${zahl(d / schritt)} Gäste mehr als ${klein.satz}.`, label: "Einteilung der Achse nicht beachtet (jede Linie als 1 gezählt)" },
+      { answer: `${cap(klein.satz)} kamen mehr Gäste als ${gross.satz}.`, label: "Die Säulen verwechselt" },
+    ],
+  );
+  return aufgabe(skillId, diff, "mc", {
+    prompt: "Welche Aussage stimmt? Schau genau auf die Achse.",
+    figur,
+    data: { options: m.options },
+    answer: { correct: m.correct },
+    solution: `Die Achse beginnt erst bei ${zahl(unten)}, nicht bei 0. Darum sieht der Unterschied größer aus, als er ist.\n${cap(gross.satz)}: ${zahl(vb)}, ${klein.satz}: ${zahl(va)}\n${zahl(vb)} − ${zahl(va)} = ${zahl(d)}`,
+    hints: ["Bei welcher Zahl beginnt die Achse?", "Lies beide Werte ab und vergleiche die Zahlen, nicht die Höhen."],
+    errorMap: m.errorMap,
+  });
+}
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** Liniendiagramme: Temperatur über den Tag (auch unter 0) und Wachstum einer Pflanze. */
+type Linie = { titel: string; achse: string; wort: string; dinge: Ding[]; werte: number[]; e: Einteilung; min: number; frage: (x: Ding) => string; zunahme: (a: Ding, b: Ding) => string; meiste: string; einheitText: string };
+function linieFuer(lv: number, rng: Rng): Linie {
+  const uhr = (h: number): Ding => ({ name: `${h} Uhr`, lang: `um ${h} Uhr`, satz: `um ${h} Uhr` });
+  if (rng() < 0.5) {
+    // Temperatur: im Winter ab „schwer“ auch unter 0
+    const winter = lv >= 3;
+    const zeiten = [6, 8, 10, 12, 14, 16, 18].map(uhr).slice(0, rint(rng, 5, 7));
+    const schritt = lv === 0 ? 1 : 2;
+    const e: Einteilung = { schritt, zahlenAlle: lv === 0 ? 2 : 1, linien: 10 };
+    const tiefst = winter ? -rint(rng, 3, 4) * schritt : rint(rng, 2, 4) * schritt;
+    // erst wärmer, dann wieder kühler; die wärmste Stunde gibt es nur einmal
+    const spitze = rint(rng, 2, zeiten.length - 2);
+    const werte: number[] = [];
+    let v = tiefst;
+    for (let i = 0; i < zeiten.length; i++) {
+      werte.push(v);
+      v += (i < spitze ? rint(rng, 1, 3) : -rint(rng, 1, 2)) * schritt;
+    }
+    // eine beschriftete Linie unter dem kältesten Wert, höchstens bis 0
+    const zahlen = schritt * e.zahlenAlle;
+    const min = Math.min(0, Math.floor((Math.min(...werte) - schritt) / zahlen) * zahlen);
+    return {
+      titel: winter ? "Temperatur an einem Wintertag" : "Temperatur an einem Herbsttag",
+      achse: "°C",
+      wort: "°C",
+      dinge: zeiten,
+      werte,
+      e,
+      min,
+      frage: (x) => `Wie viel Grad hatte es ${x.satz}?`,
+      zunahme: (a, b) => `Um wie viel Grad ist es von ${a.name} bis ${b.name} wärmer geworden?`,
+      meiste: "Wann war es am wärmsten?",
+      einheitText: "°C",
+    };
+  }
+  const wochen = Array.from({ length: rint(rng, 5, 6) }, (_, i): Ding => ({ name: `${i + 1}. Woche`, lang: `in der ${i + 1}. Woche`, satz: `in der ${i + 1}. Woche` }));
+  const e: Einteilung = lv <= 1 ? { schritt: 10, zahlenAlle: lv === 0 ? 1 : 2, linien: 16 } : { schritt: 20, zahlenAlle: 2, linien: 12 };
+  const werte: number[] = [];
+  let v = rint(rng, 1, 2) * e.schritt;
+  for (let i = 0; i < wochen.length; i++) {
+    werte.push(v);
+    v += rint(rng, 1, 3) * e.schritt;
+  }
+  return {
+    titel: "Höhe einer Sonnenblume",
+    achse: "Höhe in cm",
+    wort: "cm",
+    dinge: wochen,
+    werte,
+    e,
+    min: 0,
+    frage: (x) => `Wie hoch war die Sonnenblume ${x.satz}?`,
+    zunahme: (a, b) => `Um wie viele Zentimeter ist die Sonnenblume von der ${a.name} bis zur ${b.name} gewachsen?`,
+    meiste: "In welcher Woche ist die Sonnenblume am meisten gewachsen?",
+    einheitText: "cm",
+  };
+}
+
+function linienAufgabe(skillId: string, diff: Difficulty, format: FigurFormat, rng: Rng): TaskDraft | null {
+  const lv = LEVEL[diff];
+  const L = linieFuer(lv, rng);
+  const max = Math.ceil((Math.max(...L.werte) + L.e.schritt) / (L.e.schritt * L.e.zahlenAlle)) * L.e.schritt * L.e.zahlenAlle;
+  const figur: Diagramm = { art: "diagramm", form: "linie", titel: L.titel, achse: L.achse, min: L.min, max, schritt: L.e.schritt, zahlenAlle: L.e.zahlenAlle, werte: L.dinge.map((x, i) => ({ name: x.name, wert: L.werte[i] })), werteZeigen: false };
+  const hilfen = ["Geh vom Punkt waagrecht hinüber zur Achse.", ...ABLESE_HILFEN(L.e).slice(1)];
+  const weg = (i: number) => `Der Punkt bei ${L.dinge[i].name} liegt auf der Linie bei ${zahl(L.werte[i])}.`;
+  const wort = (s: string) => (L.wort ? `${s} ${L.wort}` : s);
+  if (format === "cloze") {
+    const [i, j] = shuffle(rng, L.dinge.map((_, k) => k)).slice(0, 2).sort((a, b) => a - b);
+    return aufgabe(skillId, diff, "cloze", {
+      prompt: `Lies im Diagramm ab.\n${L.dinge[i].name}: ___ ${L.einheitText}\n${L.dinge[j].name}: ___ ${L.einheitText}`,
+      figur,
+      answer: { blanks: [[zahl(L.werte[i])], [zahl(L.werte[j])]], mode: "value" },
+      solution: `${weg(i)}\n${weg(j)}`,
+      hints: hilfen,
+    });
+  }
+  if (format === "mc" && rng() < 0.5) {
+    // am wärmsten bzw. am meisten gewachsen
+    const sonne = L.einheitText === "cm";
+    const werte = sonne ? L.werte.slice(1).map((v, i) => v - L.werte[i]) : L.werte;
+    const namen = sonne ? L.dinge.slice(1).map((x, i) => `von der ${L.dinge[i].name} bis zur ${x.name}`) : L.dinge.map((x) => x.lang);
+    const best = werte.indexOf(Math.max(...werte));
+    if (werte.filter((v) => v === werte[best]).length !== 1) return null;
+    // vier Antworten, die richtige dabei
+    const idx = shuffle(rng, werte.map((_, i) => i).filter((i) => i !== best)).slice(0, 3);
+    const reihe = [best, ...idx].sort((a, b) => a - b);
+    const options = reihe.map((i) => (sonne ? cap(namen[i]) : namen[i]));
+    // wer die größte Höhe sucht, nimmt die letzte Woche
+    const spaet = reihe.indexOf(werte.length - 1);
+    return aufgabe(skillId, diff, "mc", {
+      prompt: L.meiste,
+      figur,
+      data: { options },
+      answer: { correct: reihe.indexOf(best) },
+      solution: sonne
+        ? `Am meisten gewachsen ist sie dort, wo die Linie am steilsten steigt: ${namen[best]} (${zahl(L.werte[best])} cm → ${zahl(L.werte[best + 1])} cm, also ${zahl(werte[best])} cm).`
+        : `Der höchste Punkt liegt bei ${L.dinge[best].name}: ${zahl(L.werte[best])} °C.`,
+      hints: sonne ? ["Wo steigt die Linie am steilsten?", "Rechne für jede Woche aus, wie viel dazugekommen ist."] : ["Such den höchsten Punkt der Linie.", "Lies darunter die Uhrzeit ab."],
+      errorMap: sonne && spaet >= 0 && reihe[spaet] !== best ? [{ answer: String(spaet), label: "Die größte Höhe statt des größten Zuwachses genommen" }] : [],
+    });
+  }
+  const zunahme = rng() < 0.45;
+  let richtig: number;
+  let frage: string;
+  let solution: string;
+  let fehler: (Fehler | null)[];
+  if (zunahme) {
+    const spitze = L.werte.indexOf(Math.max(...L.werte));
+    const i = rint(rng, 0, Math.max(0, spitze - 1));
+    const j = rint(rng, i + 1, spitze);
+    richtig = L.werte[j] - L.werte[i];
+    frage = L.zunahme(L.dinge[i], L.dinge[j]);
+    solution = `${weg(i)}\n${weg(j)}\n${zahl(L.werte[j])} − ${br(L.werte[i])} = ${zahl(richtig)}`;
+    fehler = [
+      L.werte[i] < 0 ? { answer: zahl(L.werte[j] + L.werte[i]), label: "Mit dem Vorzeichen falsch gerechnet" } : { answer: zahl(L.werte[j] + L.werte[i]), label: "Addiert statt subtrahiert" },
+      { answer: zahl(L.werte[j]), label: "Nur den zweiten Wert abgelesen" },
+    ];
+  } else {
+    const i = rint(rng, 0, L.dinge.length - 1);
+    richtig = L.werte[i];
+    frage = L.frage(L.dinge[i]);
+    solution = weg(i);
+    fehler = [...ablesenFehler(Math.abs(richtig), L.e).map((f) => (richtig < 0 ? { ...f, answer: zahl(-(parseNumber(f.answer) ?? 0)) } : f)), richtig < 0 ? { answer: zahl(-richtig), label: "Das Minus übersehen (unter 0 abgelesen wie über 0)" } : null];
+  }
+  const fehl = fehlerOhne(zahl(richtig), fehler);
+  if (format === "mc") {
+    const m = auswahl(rng, wort(zahl(richtig)), fehl.map((f) => ({ ...f, answer: wort(f.answer) })));
+    return aufgabe(skillId, diff, "mc", { prompt: frage, figur, data: { options: m.options }, answer: { correct: m.correct }, solution, hints: hilfen, errorMap: m.errorMap });
+  }
+  if (format !== "calc") return null;
+  const grad = L.einheitText === "°C" ? [`${zahl(richtig)} Grad`, `${zahl(richtig)} °`, `${zahl(richtig)}°`] : [];
+  return aufgabe(skillId, diff, "calc", { prompt: `${frage} Gib das Ergebnis in ${L.einheitText} an.`, figur, answer: { accepted: [...mitEinheit(zahl(richtig), L.einheitText), ...grad], mode: "value" }, solution, hints: hilfen, errorMap: fehl });
+}
+
+/** Absolute und relative Häufigkeit aus einem Säulendiagramm einer Umfrage. */
+function haeufigkeitAufgabe(skillId: string, diff: Difficulty, format: FigurFormat, rng: Rng): TaskDraft | null {
+  const lv = LEVEL[diff];
+  if (format === "sachaufgabe") return null;
+  // Gesamtzahl, Einteilung und Werte so, dass jede relative Häufigkeit ein ganzer Prozentsatz ist
+  const plan = [
+    { n: 20, e: { schritt: 1, zahlenAlle: 1, linien: 10 } },
+    { n: 25, e: { schritt: 1, zahlenAlle: 2, linien: 12 } },
+    { n: 40, e: { schritt: 2, zahlenAlle: 1, linien: 10 } },
+    pick(rng, [{ n: 200, e: { schritt: 10, zahlenAlle: 2, linien: 10 } }, { n: 80, e: { schritt: 4, zahlenAlle: 1, linien: 10 } }]),
+  ][lv];
+  const k = pick(rng, UMFRAGEN);
+  const anzahl = rint(rng, 4, 5);
+  const teile = plan.n / plan.e.schritt;
+  let k2: number[] = [];
+  for (let t = 0; t < 200; t++) {
+    const x = Array.from({ length: anzahl - 1 }, () => rint(rng, 1, Math.min(plan.e.linien, teile - anzahl)));
+    const letzte = teile - x.reduce((a, b) => a + b, 0);
+    const alle = [...x, letzte];
+    if (letzte >= 1 && letzte <= plan.e.linien && alle.filter((v) => v === Math.max(...alle)).length === 1 && new Set(alle).size >= anzahl - 1) {
+      k2 = alle;
+      break;
+    }
+  }
+  if (!k2.length) k2 = Array.from({ length: anzahl }, (_, i) => (i < anzahl - 1 ? 1 : teile - (anzahl - 1)));
+  const werte = k2.map((x) => x * plan.e.schritt);
+  const dinge = dingeFuer(rng, k, anzahl);
+  const figur = diagrammBild(k, dinge, werte, plan.e);
+  const i = rint(rng, 0, anzahl - 1);
+  const x = dinge[i];
+  const a = werte[i];
+  const p = (a / plan.n) * 100;
+  // die Gesamtzahl steht in der Angabe, ab „mittel“ zählt man sie selbst zusammen
+  const nGegeben = lv <= 1;
+  const kopf = nGegeben ? `${k.insgesamt(zahl(plan.n))} ` : "";
+  const nWeg = `${werte.map(roh).join(" + ")} = ${roh(plan.n)}`;
+  const solution = `${nGegeben ? `Gesamtzahl: ${zahl(plan.n)}` : `Gesamtzahl: ${nWeg}`}\nAbsolute Häufigkeit von ${x.lang}: ${zahl(a)}\nRelative Häufigkeit: ${zahl(a)} : ${zahl(plan.n)} = ${zahl(a / plan.n)} = ${zahl(p)} %`;
+  const hilfen = [nGegeben ? "Die absolute Häufigkeit liest du an der Säule ab." : "Zähle zuerst alle Werte zusammen: das ist die Gesamtzahl.", "Relative Häufigkeit = absolute Häufigkeit : Gesamtzahl"];
+  const richtig = [`${zahl(p)} %`, `${zahl(p)}%`, zahl(p), zahl(a / plan.n), bruchText({ z: a, n: plan.n })];
+  const falschN = (a / (plan.n - a)) * 100;
+  const fehler = fehlerOhneAlle(richtig, [
+    { answer: zahl(a), label: "Absolute und relative Häufigkeit verwechselt" },
+    Number.isInteger(Math.round(falschN * 10) / 10) && Math.abs(falschN * 10 - Math.round(falschN * 10)) < 1e-9 ? { answer: zahl(falschN), label: "Durch die falsche Gesamtzahl dividiert" } : null,
+  ]).filter((f) => !/[/,]/.test(f.answer) || f.label !== "Absolute und relative Häufigkeit verwechselt");
+  const frage = `${kopf}Wie groß ist die relative Häufigkeit von „${x.name}“? Gib sie in Prozent an.`;
+  if (format === "cloze") {
+    return aufgabe(skillId, diff, "cloze", {
+      prompt: `${kopf}Ergänze für „${x.name}“.\nabsolute Häufigkeit: ___\nrelative Häufigkeit: ___ %`,
+      figur,
+      answer: { blanks: [[zahl(a)], [zahl(p)]], mode: "value" },
+      solution,
+      hints: hilfen,
+    });
+  }
+  if (format === "rechenweg") {
+    const zeilen = [...(nGegeben ? [] : [nWeg]), `${roh(a)} : ${roh(plan.n)} = ${roh(a / plan.n)}`];
+    return aufgabe(skillId, diff, "rechenweg", {
+      prompt: `${frage} ${WEG}`,
+      figur,
+      answer: { accepted: [`${zahl(p)} %`], unit: "%", form: null, needWay: true },
+      solution,
+      steps: zeilen,
+      hints: hilfen,
+      errorMap: fehler.map((f) => ({ ...f, answer: `${f.answer} %` })),
+    });
+  }
+  if (format === "mc") {
+    const m = auswahl(rng, `${zahl(p)} %`, fehler.map((f) => ({ ...f, answer: `${f.answer} %` })), [`${zahl(p + 5)} %`, `${zahl(Math.max(1, p - 5))} %`, `${zahl(p * 2)} %`]);
+    return aufgabe(skillId, diff, "mc", { prompt: frage.replace(" Gib sie in Prozent an.", ""), figur, data: { options: m.options }, answer: { correct: m.correct }, solution, hints: hilfen, errorMap: m.errorMap });
+  }
+  if (format !== "calc") return null;
+  return aufgabe(skillId, diff, "calc", { prompt: frage, figur, answer: { accepted: richtig, mode: "value" }, solution, hints: hilfen, errorMap: fehler });
+}
+
+/** Mittelwert, Median und Spannweite aus einem Diagramm. */
+type KennKontext = { titel: string; achse: string; wort: string; dinge: Ding[]; schritt: number; zahlenAlle: number; linien: number; form: DiagrammForm; nullErlaubt: boolean; mittelFrage: string };
+const KENN_KONTEXTE: KennKontext[] = [
+  { titel: "Tore unserer Mannschaft", achse: "Tore", wort: "Tore", dinge: Array.from({ length: 7 }, (_, i) => ding(`${i + 1}. Spiel`, `im ${i + 1}. Spiel`)), schritt: 1, zahlenAlle: 1, linien: 6, form: "saeulen", nullErlaubt: true, mittelFrage: "Wie viele Tore hat die Mannschaft im Durchschnitt pro Spiel geschossen?" },
+  { titel: "Gelesene Seiten", achse: "Seiten", wort: "Seiten", dinge: WOCHE, schritt: 5, zahlenAlle: 2, linien: 12, form: "saeulen", nullErlaubt: true, mittelFrage: "Wie viele Seiten wurden im Durchschnitt pro Tag gelesen?" },
+  { titel: "Mittagstemperatur in einer Woche", achse: "°C", wort: "°C", dinge: WOCHE, schritt: 1, zahlenAlle: 2, linien: 24, form: "linie", nullErlaubt: false, mittelFrage: "Wie hoch war die Mittagstemperatur im Durchschnitt?" },
+];
+
+function kennzahlAufgabe(skillId: string, diff: Difficulty, format: FigurFormat, rng: Rng): TaskDraft | null {
+  const lv = LEVEL[diff];
+  if (format === "sachaufgabe") return null;
+  const k = pick(rng, format === "rechenweg" ? KENN_KONTEXTE.slice(0, 2) : KENN_KONTEXTE);
+  const anzahl = lv <= 1 ? pick(rng, [5, 5, 4]) : rint(rng, 5, 7);
+  const n = Math.min(anzahl, k.dinge.length);
+  // Werte mit ganzem Mittelwert (ab „schwer“ auch ,5), manchmal mit einer 0 (die gehört mitgezählt)
+  let werte: number[] = [];
+  for (let t = 0; t < 400; t++) {
+    const unten = k.form === "linie" ? rint(rng, 8, 14) : k.nullErlaubt && rng() < 0.35 ? 0 : 1;
+    const w = Array.from({ length: n }, () => (k.form === "linie" ? rint(rng, unten, unten + 8) : rint(rng, unten === 0 ? 1 : 1, k.linien)) * k.schritt);
+    if (unten === 0) w[rint(rng, 0, n - 1)] = 0;
+    const summe = w.reduce((a, b) => a + b, 0);
+    const mittelOk = lv >= 3 ? Number.isInteger((summe * 2) / n) : Number.isInteger(summe / n);
+    const sortiert = [...w].sort((a, b) => a - b);
+    // der Median unterscheidet sich vom mittleren Wert in der Reihenfolge des Diagramms (sonst fällt das Ordnen nicht auf)
+    if (mittelOk && new Set(w).size >= n - 1 && Math.max(...w) > Math.min(...w) && (n % 2 === 0 || sortiert[(n - 1) / 2] !== w[(n - 1) / 2])) {
+      werte = w;
+      break;
+    }
+  }
+  if (!werte.length) werte = Array.from({ length: n }, (_, i) => (i + 1) * k.schritt);
+  const dinge = k.dinge.slice(0, n);
+  const max = Math.ceil((Math.max(...werte) + k.schritt) / (k.schritt * k.zahlenAlle)) * k.schritt * k.zahlenAlle;
+  const min = k.form === "linie" ? Math.max(0, Math.floor((Math.min(...werte) - 2 * k.schritt) / (k.schritt * k.zahlenAlle)) * k.schritt * k.zahlenAlle) : 0;
+  const figur: Diagramm = { art: "diagramm", form: k.form, titel: k.titel, achse: k.achse, min, max, schritt: k.schritt, zahlenAlle: k.zahlenAlle, werte: dinge.map((d, i) => ({ name: d.name, wert: werte[i] })), werteZeigen: false };
+  const summe = werte.reduce((a, b) => a + b, 0);
+  const mittel = summe / n;
+  const sortiert = [...werte].sort((a, b) => a - b);
+  const median = n % 2 ? sortiert[(n - 1) / 2] : (sortiert[n / 2 - 1] + sortiert[n / 2]) / 2;
+  const spann = Math.max(...werte) - Math.min(...werte);
+  const liste = werte.map((v) => zahl(v)).join(", ");
+  const ablesen = `Die Werte: ${liste}`;
+  const mittelWeg = `(${werte.map(roh).join(" + ")}) : ${n} = ${roh(summe)} : ${n} = ${roh(mittel)}`;
+  const nullen = werte.filter((v) => v === 0).length;
+  const w = k.wort === "°C" ? " °C" : "";
+  if (format === "cloze") {
+    return aufgabe(skillId, diff, "cloze", {
+      prompt: `Lies die Werte ab.\ngrößter Wert: ___${w}\nkleinster Wert: ___${w}\nSpannweite: ___${w}`,
+      figur,
+      answer: { blanks: [[zahl(Math.max(...werte))], [zahl(Math.min(...werte))], [zahl(spann)]], mode: "value" },
+      solution: `${ablesen}\nSpannweite = größter Wert − kleinster Wert = ${zahl(Math.max(...werte))} − ${zahl(Math.min(...werte))} = ${zahl(spann)}`,
+      hints: ["Such den höchsten und den niedrigsten Wert.", "Spannweite = größter Wert − kleinster Wert"],
+    });
+  }
+  if (format === "rechenweg") {
+    return aufgabe(skillId, diff, "rechenweg", {
+      prompt: `${k.mittelFrage} Lies die Werte ab und berechne den Mittelwert. ${WEG}`,
+      figur,
+      answer: { accepted: [zahl(mittel)], unit: null, form: null, needWay: true },
+      solution: `${ablesen}\nMittelwert = Summe : Anzahl\n${mittelWeg}`,
+      steps: [mittelWeg],
+      hints: ["Zähle alle Werte zusammen.", `Dividiere durch die Anzahl der Werte (${n}).`],
+      errorMap: fehlerOhne(zahl(mittel), [{ answer: zahl(summe), label: "Nur addiert, nicht durch die Anzahl dividiert" }, nullen ? { answer: zahl(rundeAuf(summe / (n - nullen), 2)), label: "Durch die falsche Anzahl dividiert (Werte mit 0 nicht mitgezählt)" } : null]),
+    });
+  }
+  const art = pick(rng, lv === 0 ? (["mittel", "spann"] as const) : (["mittel", "mittel", "median", "spann"] as const));
+  let richtig: number;
+  let frage: string;
+  let solution: string;
+  let hilfen: string[];
+  let fehler: (Fehler | null)[];
+  if (art === "mittel") {
+    richtig = mittel;
+    frage = k.mittelFrage;
+    solution = `${ablesen}\nMittelwert = Summe : Anzahl\n${mittelWeg}`;
+    hilfen = ["Lies alle Werte ab und zähle sie zusammen.", `Dividiere durch die Anzahl der Werte (${n}), auch Werte mit 0 zählen mit.`];
+    fehler = [{ answer: zahl(summe), label: "Nur addiert, nicht durch die Anzahl dividiert" }, nullen ? { answer: zahl(rundeAuf(summe / (n - nullen), 2)), label: "Durch die falsche Anzahl dividiert (Werte mit 0 nicht mitgezählt)" } : null];
+  } else if (art === "median") {
+    richtig = median;
+    frage = `Bestimme den Median (Zentralwert) der Werte im Diagramm.`;
+    solution = `${ablesen}\nGeordnet: ${sortiert.map((v) => zahl(v)).join(", ")}\n${n % 2 ? `Der mittlere Wert ist ${zahl(median)}.` : `Die beiden mittleren Werte sind ${zahl(sortiert[n / 2 - 1])} und ${zahl(sortiert[n / 2])}: (${zahl(sortiert[n / 2 - 1])} + ${zahl(sortiert[n / 2])}) : 2 = ${zahl(median)}`}`;
+    hilfen = ["Ordne die Werte zuerst der Größe nach.", n % 2 ? "Der Median ist der Wert in der Mitte." : "Bei einer geraden Anzahl: der Mittelwert der beiden mittleren Werte."];
+    fehler = [
+      n % 2 ? { answer: zahl(werte[(n - 1) / 2]), label: "Median gesucht, ohne die Werte vorher zu ordnen" } : { answer: zahl((werte[n / 2 - 1] + werte[n / 2]) / 2), label: "Median gesucht, ohne die Werte vorher zu ordnen" },
+      n % 2 ? null : { answer: zahl(sortiert[n / 2 - 1]), label: "Bei gerader Anzahl nur einen der beiden mittleren Werte genommen" },
+      n % 2 ? null : { answer: zahl(sortiert[n / 2]), label: "Bei gerader Anzahl nur einen der beiden mittleren Werte genommen" },
+    ];
+  } else {
+    richtig = spann;
+    frage = "Wie groß ist die Spannweite der Werte im Diagramm?";
+    solution = `${ablesen}\nSpannweite = größter Wert − kleinster Wert = ${zahl(Math.max(...werte))} − ${zahl(Math.min(...werte))} = ${zahl(spann)}`;
+    hilfen = ["Such den größten und den kleinsten Wert.", "Spannweite = größter Wert − kleinster Wert"];
+    fehler = [{ answer: zahl(Math.max(...werte)), label: "Nur den größten Wert genommen" }];
+  }
+  const fehl = fehlerOhne(zahl(richtig), fehler);
+  if (format === "mc") {
+    const m = auswahl(rng, `${zahl(richtig)}${w}`, fehl.map((f) => ({ ...f, answer: `${f.answer}${w}` })));
+    return aufgabe(skillId, diff, "mc", { prompt: frage, figur, data: { options: m.options }, answer: { correct: m.correct }, solution, hints: hilfen, errorMap: m.errorMap });
+  }
+  if (format !== "calc") return null;
+  return aufgabe(skillId, diff, "calc", { prompt: frage, figur, answer: { accepted: k.wort ? mitEinheit(zahl(richtig), k.wort) : [zahl(richtig)], mode: "value" }, solution, hints: hilfen, errorMap: fehl });
+}
+
+// =====================================================================
 // welche Fähigkeit welche Aufgaben bekommt
 // =====================================================================
 
@@ -1339,6 +2465,13 @@ export const FIGUR_FAEHIGKEITEN: Record<string, { bau: Bau; formate: FigurFormat
   "mathe.flaechen.umkehr": { bau: umkehrAufgabe, formate: ["calc", "mc", "cloze", "rechenweg"], bild: "Figur" },
   "mathe.pythagoras.seite": { bau: pythagorasSeite, formate: ["calc", "mc", "cloze", "rechenweg"], bild: "Figur" },
   "mathe.pythagoras.figuren": { bau: pythagorasFiguren, formate: ["calc", "mc", "cloze", "rechenweg"], bild: "Figur" },
+  "mathe.geometrie.kreis": { bau: kreisGrundAufgabe, formate: ["calc", "mc", "cloze"], bild: "Kreis" },
+  "mathe.flaechen.kreis": { bau: kreisFlaecheAufgabe, formate: ["calc", "mc", "cloze", "rechenweg", "sachaufgabe"], bild: "Kreis" },
+  "mathe.flaechen.kreisteile": { bau: kreisteilAufgabe, formate: ["calc", "mc", "cloze", "rechenweg", "sachaufgabe"], bild: "Kreis" },
+  "mathe.vs.daten.diagramme": { bau: (s, d, f, r) => diagrammAufgabe(s, d, f, r, true), formate: ["calc", "mc", "cloze", "rechenweg"], bild: "Diagramm" },
+  "mathe.statistik.diagramme": { bau: (s, d, f, r) => diagrammAufgabe(s, d, f, r, false), formate: ["calc", "mc", "cloze", "rechenweg"], bild: "Diagramm" },
+  "mathe.statistik.haeufigkeiten": { bau: haeufigkeitAufgabe, formate: ["calc", "mc", "cloze", "rechenweg"], bild: "Diagramm" },
+  "mathe.statistik.kennzahlen": { bau: kennzahlAufgabe, formate: ["calc", "mc", "cloze", "rechenweg"], bild: "Diagramm" },
 };
 
 /** Fähigkeit (oder ihre Elternfähigkeit) mit Aufgaben mit Bild; null ohne. */

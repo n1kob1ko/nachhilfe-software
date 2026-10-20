@@ -289,8 +289,9 @@ export function figureTemplate(s: Szene, at: Point, opts: { measure?: Measure; e
           points: pts,
           strokeColor: INK,
           strokeWidth: strich(t.w),
-          backgroundColor: t.fuellung === "voll" ? INK : t.fuellung === "flaeche" ? "#f1f3f7" : "transparent",
+          backgroundColor: t.fuellung === "voll" ? INK : t.fuellung === "flaeche" ? "#f1f3f7" : t.fuellung === "getoent" ? "#d5dae3" : "transparent",
           fillStyle: "solid",
+          strokeStyle: t.stil === "strich" ? "dashed" : "solid",
           ...base,
         });
         break;

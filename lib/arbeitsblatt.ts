@@ -4,6 +4,7 @@
  * the source. Works the same for generated, hand-made and KI tasks.
  */
 import { categoryLabel, TASK_TYPES } from "./curriculum";
+import { zumAblesen } from "./figur";
 import { textBlocks } from "./math-format";
 import { ASPECT_SHORT, isAspect, readingSet, type ReadingText } from "./lesen";
 import { GAP, type TaskDraft } from "./tasks";
@@ -257,8 +258,8 @@ export function planTask(
     return plan;
   }
 
-  // Aufgabe mit Bild: Ablesen am Zahlenstrahl oder im Koordinatensystem braucht kein oder nur ein kleines Feld
-  const ablesen = Boolean(task.data.figure && task.data.figure.art !== "figur");
+  // Aufgabe mit Bild: Ablesen am Zahlenstrahl, im Koordinatensystem oder im Diagramm braucht kein oder nur ein kleines Feld
+  const ablesen = zumAblesen(task.data.figure);
   if (options.length) {
     if (math && !plan.area && !ablesen) plan.area = area(SMALL_MM[o.space]);
     return plan;

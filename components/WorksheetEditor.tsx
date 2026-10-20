@@ -19,7 +19,7 @@ import { saveToLibraryAction } from "@/app/library-actions";
 import { setzePunkteAction } from "@/app/probeschularbeit-actions";
 import { AddReadingQuestion, ReadingIssues, ReadingQuestionFields, ReadingTextPanel } from "@/components/ReadingEditor";
 import { TaskBody } from "@/components/TaskPreview";
-import { FigurBild } from "@/components/Figur";
+import { FigurEditor } from "@/components/FigurEditor";
 import { TabletSend } from "@/components/device/TabletSend";
 import { categoriesFor, DIFFICULTIES, TASK_TYPES, type Difficulty, type TaskType } from "@/lib/curriculum";
 import type { Task } from "@/lib/repo";
@@ -508,24 +508,30 @@ function reshapeBase(t: TaskDraft, format: TaskType): TaskDraft {
   }
 }
 
+const BILD_STIMMT_NICHT = "Das Bild stimmt noch nicht:";
+
 function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Task; index: number; subject: string; skills: Skill[]; reading?: ReadingText | null; onDone: () => void }) {
   const { id: _id, worksheet_id: _w, position: _p, ...initial } = task;
   void _id, void _w, void _p;
   const [t, setT] = useState<TaskDraft>({ ...initial, hints: initial.hints.length ? initial.hints : ["", "", ""] });
   const [pending, start] = useTransition();
   const [note, setNote] = useState<ActionResult>(null);
+  // ein Bild, das im Formular gerade nicht stimmt: gespeichert wird erst, wenn es passt
+  const [bildFehler, setBildFehler] = useState<string | null>(null);
   const set = (patch: Partial<TaskDraft>) => setT((cur) => ({ ...cur, ...patch }));
   const setAnswer = (patch: Partial<TaskDraft["answer"]>) => setT((cur) => ({ ...cur, answer: { ...cur.answer, ...patch } }));
   const setData = (patch: Partial<TaskDraft["data"]>) => setT((cur) => ({ ...cur, data: { ...cur.data, ...patch } }));
   const cats = categoriesFor(subject);
   const gaps = gapCount(t.prompt);
   const blanks = t.answer.blanks ?? [];
-  const save = () =>
+  const save = () => {
+    if (bildFehler) return setNote({ error: `${BILD_STIMMT_NICHT} ${bildFehler}` });
     start(async () => {
       const r = await saveTaskAction(task.id, t);
       setNote(r);
       if (r?.ok) onDone();
     });
+  };
   const list = (items: string[], onChange: (next: string[]) => void, label: (i: number) => string, opts: { min?: number; correct?: number; onCorrect?: (i: number) => void; movable?: boolean; addLabel: string }) => (
     <div className="grid gap-1.5">
       {items.map((v, i) => (
@@ -632,18 +638,21 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
         <textarea className="input min-h-[84px]" value={t.prompt} onChange={(e) => set({ prompt: e.target.value })} />
         {t.type === "cloze" && <span className="text-[12px] text-ink-3">Lücken mit {GAP} (drei Unterstriche) markieren. Jetzt: {gaps} {gaps === 1 ? "Lücke" : "Lücken"}.</span>}
       </label>
-      {/* Aufgabe mit Bild: das Bild entsteht aus den Zahlen der Aufgabe und wird hier nur gezeigt */}
+      {/* Aufgabe mit Bild: Vorschau mit den gesuchten Werten, auf Wunsch ändern (geprüft wie beim Speichern) oder entfernen */}
       {t.data.figure ? (
-        <div className="rounded-lg border border-line bg-paper px-4 py-3">
-          <p className="text-[13px] font-semibold text-ink-2">Bild zur Aufgabe (mit den gesuchten Werten, wie in der Lehrerfassung)</p>
-          <FigurBild figure={t.data.figure} loesung />
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[12px] text-ink-3">Das Bild lässt sich nicht bearbeiten. Änderst du Zahlen in der Aufgabe, passt es nicht mehr: dann „Neu erstellen“ oder das Bild entfernen.</p>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setData({ figure: undefined })}>
-              Bild entfernen
-            </button>
-          </div>
-        </div>
+        <FigurEditor
+          figure={t.data.figure}
+          onChange={(figur, fehler) => {
+            setBildFehler(fehler);
+            if (figur) setData({ figure: figur });
+            // stimmt das Bild wieder, verschwindet der Hinweis vom gesperrten Speichern
+            if (!fehler) setNote((n) => (n?.error?.startsWith(BILD_STIMMT_NICHT) ? null : n));
+          }}
+          onRemove={() => {
+            setBildFehler(null);
+            setData({ figure: undefined });
+          }}
+        />
       ) : null}
 
       {(t.type === "mc" || t.type === "reading") &&
