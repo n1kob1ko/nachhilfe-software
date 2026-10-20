@@ -64,7 +64,7 @@ Wählt man im Builder eine dieser Fähigkeiten (`deutsch.os.matura.zusammenfassu
 
 ## KI-Korrektur
 
-Die bestehende Textkorrektur bleibt unverändert. Sie erkennt die Textsorte am Thema des Textes (`kindCriteria()` in `lib/text-correction-rules.ts`): Die Zusammenfassung bekommt die Regel der Inhaltsangabe, Leserbrief und offener Brief die Regel für Briefe, Erörterung und Textanalyse ihre eigene, Kommentar, Meinungsrede und Empfehlung die allgemeine Regel. Eigene Regeln für diese Textsorten brauchen die Freigabe und sind nicht Teil dieser Änderung. Die Textbeilage wird **nicht** gesendet, und anders als bei der Textinterpretation geht auch keine Zeile über den Bezugstext mit. Der Name des Autors der Textbeilage wird wie jeder andere Name behandelt: Findet die Namenserkennung ihn, wird er zu [Name].
+Die Textkorrektur erkennt die Textsorte am Thema des Textes (`kindCriteria()` in `lib/text-correction-rules.ts`). Jede Textsorte hat ihre eigene Regel (von niko am 2026-10-20 freigegeben): Zusammenfassung, Leserbrief, offener Brief, Kommentar, Meinungsrede und Empfehlung stehen vor der allgemeinen Brief- und Inhaltsangabe-Regel, damit ein Leserbrief nicht nach Ort und Datum gefragt wird. Erörterung und Textanalyse hatten schon ihre eigene. Konjunktiv I verlangt die Zusammenfassung nur in der Oberstufe. Der Prompt selbst ist unverändert. Die Textbeilage wird **nicht** gesendet, und anders als bei der Textinterpretation geht auch keine Zeile über den Bezugstext mit. Der Name des Autors der Textbeilage wird wie jeder andere Name behandelt: Findet die Namenserkennung ihn, wird er zu [Name].
 
 ## Beispiele
 
