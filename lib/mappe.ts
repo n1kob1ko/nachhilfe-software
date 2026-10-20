@@ -10,6 +10,8 @@
  */
 import { readMathAnswer } from "./math-check";
 import { maturaFormat, maturaKreuzeAus } from "./matura-formate";
+import { englischFormat } from "./englisch-matura-formate";
+import { leseRichtigFalsch } from "./englisch-matura-pruefen";
 import * as repo from "./repo";
 import { klassenLabel, stufeLabel } from "./school";
 import { GAP, sameAnswer } from "./tasks";
@@ -30,7 +32,9 @@ export type Antwort =
   | { art: "teile"; teile: { schritte: string[]; ergebnis: string; text: string }[] }
   | { art: "text"; text: string }
   /** Matura-Formate (lib/matura-formate.ts maturaKreuze): die Kreuze, je Lücke der Satzteil, je Aussage der Buchstabe */
-  | { art: "kreuze"; kreuze: (number | null)[] };
+  | { art: "kreuze"; kreuze: (number | null)[] }
+  /** Englisch-Matura (lib/englisch-matura-formate.ts): je Aussage oder Frage die Wahl, bei True or False die Belege */
+  | { art: "englisch"; wahl: (number | null)[]; belege: string[] };
 
 const zeilen = (xs: string[] | undefined) => (xs ?? []).filter((x) => x.trim());
 
@@ -38,6 +42,17 @@ const zeilen = (xs: string[] | undefined) => (xs ?? []).filter((x) => x.trim());
 export function leseAntwort(t: Pick<repo.Task, "type" | "data" | "answer"> & { category?: string | null }, raw: string): Antwort {
   // Matura-Formate: angekreuzt wird wie auf dem Maturablatt, auch beim Lückentext
   if (maturaFormat(t)) return { art: "kreuze", kreuze: maturaKreuzeAus(t, raw) };
+  if (t.type === "zuordnung" && englischFormat(t)) {
+    if (t.data.zuordnung?.art === "richtig-falsch") return { art: "englisch", ...leseRichtigFalsch(raw) };
+    let v: unknown = null;
+    try {
+      v = JSON.parse(raw);
+    } catch {
+      // keine lesbare Antwort: nichts eingetragen
+    }
+    const wahl = Array.isArray(v) ? v.map((x) => (typeof x === "number" && Number.isInteger(x) ? x : null)) : [];
+    return { art: "englisch", wahl, belege: [] };
+  }
   if (t.type === "rechenweg") {
     const a = readMathAnswer(raw);
     return { art: "rechnung", schritte: zeilen(a.steps), ergebnis: a.result?.trim() ?? "", tafel: Boolean(a.board) };

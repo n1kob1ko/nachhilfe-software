@@ -26,6 +26,8 @@ import type { Task } from "@/lib/repo";
 import { expectedFixes } from "@/lib/fix-text";
 import { buchstabe, GAP, gapCount, hintLabel, kreisZahl, type TaskDraft } from "@/lib/tasks";
 import { istMaturaKategorie, maturaFormat, maturaLeer, MATURA_FORM, type MaturaKategorie } from "@/lib/matura-formate";
+import { englischFormat, englischLeer, ENGLISCH_TEIL, istEnglischMatura, type EnglischMaturaFormat } from "@/lib/englisch-matura-formate";
+import { EnglischMaturaFelder } from "./EnglischMaturaEditor";
 import { isResultForm, PART_KINDS, RESULT_FORMS, wayMode, type PartKind } from "@/lib/math-check";
 import { checkOwnSolution } from "@/lib/math-task";
 import { readingIssues, readingSet, type ReadingText } from "@/lib/lesen";
@@ -508,7 +510,9 @@ function reshapeBase(t: TaskDraft, format: TaskType): TaskDraft {
     // Zuordnung (Matura-Format): zwei Aussagen, vier Antworten A bis D
     case "zuordnung": {
       const leer = maturaLeer("matura-zuordnung");
-      return { ...keep, data: { zuordnung: t.data.zuordnung ?? leer.data.zuordnung }, answer: { pairs: t.answer.pairs ?? leer.answer.pairs } };
+      // ohne die Art der Englisch-Matura (True or False, Fragen, Matching): die übliche Zuordnung
+      const z = t.data.zuordnung ? { statements: t.data.zuordnung.statements, options: t.data.zuordnung.options } : leer.data.zuordnung;
+      return { ...keep, data: { zuordnung: z }, answer: { pairs: t.answer.pairs ?? leer.answer.pairs } };
     }
     default:
       return { ...keep, data: {}, answer: { accepted: t.answer.accepted ?? [""], mode: "value" } };
@@ -544,10 +548,23 @@ function maturaUmbau(t: TaskDraft, k: MaturaKategorie): TaskDraft {
   }
 }
 
+/**
+ * Eine Aufgabe in ein Format der Englisch-Matura bringen (lib/englisch-matura-formate.ts): die leere Form des Formats;
+ * Lesetext und Titel bleiben bei Reading, Lösungsweg und Hilfen immer.
+ */
+function englischUmbau(t: TaskDraft, k: EnglischMaturaFormat): TaskDraft {
+  const leer = englischLeer(k);
+  const text = ENGLISCH_TEIL[k] === "reading" ? { passage: t.data.passage ?? "", passageTitle: t.data.passageTitle ?? "" } : {};
+  return { ...t, category: k, type: leer.type, prompt: leer.prompt, data: { ...leer.data, ...text }, answer: leer.answer, errorMap: [] };
+}
+
 /** Ein anderer Aufgabentyp im Editor: ein Matura-Format bekommt seine feste Form, weg davon fallen dessen Felder weg. */
 function kategorieWechsel(cur: TaskDraft, key: string, formats: TaskType[] | undefined): TaskDraft {
   if (istMaturaKategorie(key)) return maturaUmbau(cur, key);
+  if (istEnglischMatura(key)) return englischUmbau(cur, key);
   const category = key || null;
+  // von der Englisch-Matura zurück: die übliche Form (ohne Wörter im Kasten, Wortgrenze, Schreibauftrag)
+  if (englischFormat(cur)) return { ...reshape(cur, formats && !formats.includes(cur.type) ? formats[0] : cur.type), category };
   if (formats && !formats.includes(cur.type)) return { ...reshape(cur, formats[0]), category };
   // vom Matura-Format zurück: die übliche Form desselben Antwortformats (eine richtige Antwort, Lücken zum Schreiben)
   if (maturaFormat(cur) && cur.type !== "zuordnung") return { ...reshape(cur, cur.type), category };
@@ -611,6 +628,8 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
   );
   // Matura-Formate: die Zahl der Antworten, Lücken und Aussagen ist fest (lib/matura-formate.ts)
   const matura = istMaturaKategorie(t.category) ? t.category : null;
+  // Englisch-Matura: eigene Felder (components/EnglischMaturaEditor.tsx)
+  const en = englischFormat(t);
   const z = t.type === "zuordnung" ? t.data.zuordnung : undefined;
   const setZuordnung = (patch: Partial<NonNullable<TaskDraft["data"]["zuordnung"]>>) =>
     setT((cur) => ({ ...cur, data: { ...cur.data, zuordnung: { statements: [], options: [], ...cur.data.zuordnung, ...patch } } }));
@@ -655,7 +674,7 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
         <label className="field">
           <span className="label">Antwortformat</span>
           {/* ein Matura-Format legt das Antwortformat fest */}
-          <select className="input" value={t.type} disabled={Boolean(matura)} title={matura ? "Das Matura-Format legt das Antwortformat fest." : undefined} onChange={(e) => setT((cur) => reshape(cur, e.target.value as TaskType))}>
+          <select className="input" value={t.type} disabled={Boolean(matura || en)} title={matura || en ? "Das Matura-Format legt das Antwortformat fest." : undefined} onChange={(e) => setT((cur) => reshape(cur, e.target.value as TaskType))}>
             {FORMATS.map((f) => (
               <option key={f} value={f}>
                 {TASK_TYPES[f]}
@@ -697,7 +716,7 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
       </details>
 
       {reading && !t.data.teil && <ReadingQuestionFields t={t} setT={setT} subject={subject} text={reading.text} />}
-      {!reading && (t.type === "reading" || t.type === "memorize" || (t.type === "free" && t.data.passage !== undefined)) && (
+      {!reading && !en && (t.type === "reading" || t.type === "memorize" || (t.type === "free" && t.data.passage !== undefined)) && (
         <label className="field">
           <span className="label">{t.type === "memorize" ? "Text zum Auswendiglernen (die Lösung ist dieser Text)" : "Lesetext"}</span>
           <textarea className="input min-h-[120px]" value={t.data.passage ?? ""} onChange={(e) => setData({ passage: e.target.value })} />
@@ -713,6 +732,7 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
           </span>
         )}
       </label>
+      {en && <EnglischMaturaFelder t={t} setT={setT} geteilterText={Boolean(reading)} />}
       {/* Aufgabe mit Bild: Vorschau mit den gesuchten Werten, auf Wunsch ändern (geprüft wie beim Speichern) oder entfernen */}
       {t.data.figure ? (
         <FigurEditor
@@ -796,7 +816,7 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
           })}
         </div>
       )}
-      {t.type === "zuordnung" && z && (
+      {t.type === "zuordnung" && z && !en && (
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid content-start gap-1.5">
             <span className="label">Aussagen und ihr richtiger Buchstabe</span>
@@ -861,15 +881,17 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
       {(t.type === "rechenweg" || t.type === "sachaufgabe") && <MathCheckNote t={t} />}
       {t.type === "free" && (
         <>
-          <label className="field">
-            <span className="label">Antwortfeld für den Schüler</span>
-            <select className="input max-w-[320px]" value={String(t.data.lines ?? 5)} onChange={(e) => setData({ lines: Number(e.target.value) })}>
-              <option value="1">Einzeilig (kurze Antwort)</option>
-              <option value="3">Ein paar Sätze</option>
-              <option value="5">Mehrere Sätze</option>
-              <option value="9">Längerer Text</option>
-            </select>
-          </label>
+          {!en && (
+            <label className="field">
+              <span className="label">Antwortfeld für den Schüler</span>
+              <select className="input max-w-[320px]" value={String(t.data.lines ?? 5)} onChange={(e) => setData({ lines: Number(e.target.value) })}>
+                <option value="1">Einzeilig (kurze Antwort)</option>
+                <option value="3">Ein paar Sätze</option>
+                <option value="5">Mehrere Sätze</option>
+                <option value="9">Längerer Text</option>
+              </select>
+            </label>
+          )}
           <label className="field">
             <span className="label">Musterlösung</span>
             <textarea className="input min-h-[72px]" value={t.answer.sample ?? ""} onChange={(e) => setAnswer({ sample: e.target.value })} />

@@ -113,6 +113,17 @@ export const CATEGORIES: Record<string, Category[]> = {
     c("korrigieren", "Fehler korrigieren", ["fix"], "Sentence or paragraph with mistakes; the student writes it correctly."),
     c("auswendig", "Auswendig schreiben", ["memorize"], "Einen kurzen englischen Text auswendig schreiben: erst lesen, dann verschwinden nach und nach Wörter und Buchstaben, dann wird der Text aus dem Gedächtnis aufgeschrieben."),
     c("offen", "Freie Antwort", ["free"], "Antwort in eigenen Worten; der Lehrer bewertet."),
+    // Formate der schriftlichen Englisch-Matura (SRDP, B2), lib/englisch-matura-formate.ts. Übernommen ist nur die
+    // Form; Texte und Aufgaben sind eigene (lib/englisch-matura-texte.ts) oder von der KI.
+    c("matura-true-false", "Matura: True or False mit Begründung", ["zuordnung"], "Lesetext mit Aussagen: True oder False ankreuzen und die ersten vier Wörter des Satzes aufschreiben, der es zeigt."),
+    c("matura-reading-mc", "Matura: Multiple Choice zum Text", ["zuordnung"], "Lesetext mit Fragen, je vier Antworten A bis D, eine richtig."),
+    c("matura-matching", "Matura: Multiple Matching", ["zuordnung"], "Überschriften zu Absätzen oder Satzenden zu Satzanfängen zuordnen; einige bleiben übrig."),
+    c("matura-short-answers", "Matura: Short Answers", ["cloze"], "Fragen zum Lesetext, Antworten mit höchstens vier Wörtern."),
+    c("matura-banked-gap", "Matura: Banked Gap Fill", ["cloze"], "Text mit Lücken und einem Kasten mit Wörtern; einige Wörter bleiben übrig."),
+    c("matura-open-gap", "Matura: Open Gap Fill", ["cloze"], "Text mit Lücken ohne Vorgaben, ein Wort je Lücke."),
+    c("matura-editing", "Matura: Editing", ["cloze"], "Text in Zeilen: das überflüssige Wort jeder Zeile finden oder ✓ bei einer richtigen Zeile."),
+    c("matura-word-formation", "Matura: Word Formation", ["cloze"], "Text mit Lücken: aus dem Wort in Großbuchstaben das passende Wort bilden."),
+    c("matura-writing", "Matura: Writing", ["free"], "Schreibauftrag nach Textsorte mit drei Punkten und Wortanzahl (±10 %); die Lehrkraft bewertet nach den vier Kriterien."),
   ],
 };
 export const DEFAULT_CATEGORIES: Category[] = [
@@ -145,6 +156,16 @@ const MIX_BY_SKILL: [RegExp, string[]][] = [
   [/^englisch\.vs\.vocab/, ["mc", "vocabulary", "gap"]],
   [/^englisch\.vocab\.eigene$/, ["vocabulary", "gap", "translation", "mc"]],
   [/^englisch\.vocab/, ["vocabulary", "gap", "translation"]],
+  // Englisch-Matura (lib/englisch-matura.ts): gemischt heißt das Format der Fähigkeit, ein Lesetext je Aufgabe
+  [/^englisch\.os\.reading\.true-false$/, ["matura-true-false"]],
+  [/^englisch\.os\.reading\.multiple-choice$/, ["matura-reading-mc"]],
+  [/^englisch\.os\.reading\.multiple-matching$/, ["matura-matching"]],
+  [/^englisch\.os\.reading\.short-answers$/, ["matura-short-answers"]],
+  [/^englisch\.os\.liu\.gap-fill-choice$/, ["matura-banked-gap"]],
+  [/^englisch\.os\.liu\.open-gap-fill$/, ["matura-open-gap"]],
+  [/^englisch\.os\.liu\.editing$/, ["matura-editing"]],
+  [/^englisch\.os\.vocab\.word-formation$/, ["matura-word-formation"]],
+  [/^englisch\.os\.writing\.(task|article|blog-post|blog-comment|informal-email|formal-email|complaint|report|essay|leaflet)$/, ["matura-writing"]],
   [/^englisch\.reading/, ["reading", "offen"]],
   [/^englisch\.translation/, ["translation", "korrigieren", "offen"]],
   // Mathematik: the working counts, so Rechenweg and Sachaufgaben come first, multiple choice last

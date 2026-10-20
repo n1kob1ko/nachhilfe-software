@@ -6,8 +6,11 @@ import type { MappeOptionen } from "@/lib/mappe-druck";
 import * as repo from "@/lib/repo";
 import { wordsLabel } from "@/lib/texts";
 import { MathLine, RichText } from "./MathLine";
-import { lueckenNamen, MaturaAntworten, MitBild, Passage, ReadingPassage, Start, StudentTask } from "./Sheet";
+import { lueckenNamen, MaturaAntworten, MitBild, ReadingPassage, Start, StudentTask, TaskPassage } from "./Sheet";
 import { maturaFormat, maturaKreuze } from "@/lib/matura-formate";
+import { englischFormat } from "@/lib/englisch-matura-formate";
+import { belegPasst } from "@/lib/englisch-matura-pruefen";
+import { EnglischAntworten, MitWortKasten } from "./EnglischMatura";
 import { Pictures, TextBody } from "./TextPrint";
 
 const letter = (i: number) => String.fromCharCode(97 + i);
@@ -85,7 +88,8 @@ function AntwortBlock({ t, a, zeigeLoesung }: { t: SheetTask; a: Antwort; zeigeL
       // die Werte stehen schon in den Lücken der Aufgabe
       return null;
     case "kreuze":
-      // Matura-Formate: die Kreuze stehen in den Tabellen der Aufgabe (MappeTask)
+    case "englisch":
+      // Matura-Formate: die Kreuze und Buchstaben stehen in den Tabellen der Aufgabe (MappeTask)
       return null;
     case "rechnung":
       return (
@@ -145,14 +149,26 @@ function AntwortBlock({ t, a, zeigeLoesung }: { t: SheetTask; a: Antwort; zeigeL
 function MappeTask({ t, a, o }: { t: SheetTask; a: MappeAufgabe; o: MappeOptionen }) {
   const { task } = t;
   const matura = maturaFormat(task);
+  const en = englischFormat(task);
+  const enTabelle = Boolean(en && task.type === "zuordnung");
   // wer bei einer Auswahl gleich die Lösung angesehen hat, sieht trotzdem die Möglichkeiten
-  const antwort: Antwort | null = a.antwort ?? (matura ? { art: "kreuze", kreuze: [] } : task.data.options ? { art: "wahl", index: null } : null);
+  const antwort: Antwort | null =
+    a.antwort ?? (matura ? { art: "kreuze", kreuze: [] } : enTabelle ? { art: "englisch", wahl: [], belege: [] } : task.data.options ? { art: "wahl", index: null } : null);
   const fehler = a.bewertung === "falsch" || a.bewertung === "teilweise" || a.bewertung === "loesung";
   // ohne Häkchen und Kreuze ein sauberes Blatt nur mit den Antworten: dann auch ohne Lösungen und Hinweise
   const zeigeLoesung = o.marks && o.solutions && fehler;
   const loesung = zeigeLoesung ? (shortAnswer(task) ?? task.answer.sample ?? null) : null;
   // falsche Lücken einzeln markiert; steht die richtige Antwort schon in der Lücke, entfällt die Zeile „Richtig:“
-  const luecken = matura ? undefined : lueckenFuerMappe(task, antwort, { markieren: Boolean(o.marks && fehler), loesung: zeigeLoesung });
+  // Short Answers: was die App nicht sicher prüfen kann, entscheidet die Lehrkraft; dort wird keine Lücke als falsch markiert
+  const luecken = matura ? undefined : lueckenFuerMappe(task, antwort, { markieren: Boolean(o.marks && fehler) && en !== "matura-short-answers", loesung: zeigeLoesung });
+  // Englisch-Matura: die richtige Wahl neben einer falschen, bei True or False die ersten Wörter des Belegs, wenn er nicht passt
+  const enRichtig =
+    zeigeLoesung && antwort?.art === "englisch"
+      ? {
+          wahl: task.answer.pairs ?? [],
+          belege: (task.answer.belege ?? []).map((b, i) => (belegPasst(antwort.belege[i] ?? "", b, task.data.passage ?? "") === "ja" ? "" : b)),
+        }
+      : null;
   const loesungInLuecke = Boolean(luecken?.some((l) => l.richtig));
   const zeichen = o.marks ? ZEICHEN[a.bewertung] : null;
   return (
@@ -163,19 +179,26 @@ function MappeTask({ t, a, o }: { t: SheetTask; a: MappeAufgabe; o: MappeOptione
         <MitBild
           task={task}
           loesung={zeigeLoesung}
-          rest={(prompt) => <RichText text={prompt} gapsMm={t.plan.gapsMm} gapLabels={lueckenNamen(task)} gapAnswers={luecken?.map((l) => ({ text: l.text, wrong: l.falsch, correct: l.richtig }))} />}
+          rest={(prompt) => (
+            <MitWortKasten
+              task={task}
+              prompt={prompt}
+              rest={(text) => <RichText text={text} gapsMm={t.plan.gapsMm} gapLabels={lueckenNamen(task)} gapAnswers={luecken?.map((l) => ({ text: l.text, wrong: l.falsch, correct: l.richtig }))} />}
+            />
+          )}
         />
         <Start task={task} />
         {task.type === "fix" && task.data.faulty && <p className="ab-faulty">{task.data.faulty}</p>}
         {/* Matura-Formate: die Kreuze des Schülers wie auf dem Maturablatt, bei Fehlern die richtigen daneben */}
         {matura && <MaturaAntworten task={task} kreuze={antwort?.art === "kreuze" ? antwort.kreuze : []} richtig={zeigeLoesung ? maturaKreuze(task) : null} />}
+        {enTabelle && <EnglischAntworten task={task} wahl={antwort?.art === "englisch" ? antwort.wahl : []} belege={antwort?.art === "englisch" ? antwort.belege : []} richtig={enRichtig} />}
         {antwort ? (
           <AntwortBlock t={t} a={antwort} zeigeLoesung={zeigeLoesung} />
         ) : (
           <p className="mp-antwort ab-muted">keine Antwort</p>
         )}
         {o.marks && <Hinweis a={a} />}
-        {loesung && !loesungInLuecke && task.data.options === undefined && !matura && (
+        {loesung && !loesungInLuecke && task.data.options === undefined && !matura && !enTabelle && (
           <p className="mp-loesung">
             <span className="mp-label">Richtig:</span> <MathLine text={loesung} />
           </p>
@@ -223,7 +246,7 @@ function UebungAbschnitt({ u, o, leer }: { u: MappeUebung; o: MappeOptionen; lee
           if (a.bewertung === "nicht" && !o.open) return null;
           return (
             <Fragment key={t.n}>
-              {t.passage && <Passage text={t.passage} />}
+              <TaskPassage t={t} teacher={false} />
               {a.bewertung === "nicht" ? <StudentTask t={t} o={BLATT} /> : <MappeTask t={t} a={a} o={o} />}
             </Fragment>
           );

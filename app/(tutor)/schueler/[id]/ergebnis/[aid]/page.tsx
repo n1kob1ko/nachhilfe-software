@@ -10,9 +10,10 @@ import { closestVersion } from "@/lib/fix-text";
 import { ReviewButtons } from "@/components/ReviewButtons";
 import { PageHeader, formatDate, formatDuration } from "@/components/ui";
 import { maturaAntwortText } from "@/lib/matura-formate";
+import { englischFormat, ENGLISCH_TEIL, wortRahmen } from "@/lib/englisch-matura-formate";
 import { ergebnis, punkteText } from "@/lib/probeschularbeit";
 import * as repo from "@/lib/repo";
-import { GAP, HINT_LABELS, REVIEWS, TEACHER_GRADED, isReview, kreisZahl } from "@/lib/tasks";
+import { buchstabe, GAP, HINT_LABELS, REVIEWS, TEACHER_GRADED, isReview, kreisZahl } from "@/lib/tasks";
 import { MathText } from "@/components/MathText";
 import { FigurBild } from "@/components/Figur";
 import { MathWork } from "@/components/MathWork";
@@ -30,6 +31,11 @@ function shownAnswer(t: repo.Task, raw: string) {
     if (t.type === "sachaufgabe") return (t.data.parts ?? []).map((p, i) => `${p.label || `${String.fromCharCode(97 + i)})`} ${(p.kind === "text" ? a.parts?.[i]?.text : a.parts?.[i]?.result) || "–"}`).join("  ·  ");
     const steps = a.steps?.filter((l) => l.trim()).length ?? 0;
     return `${a.result?.trim() || "kein Ergebnis"}${steps ? ` (${steps} ${steps === 1 ? "Zeile" : "Zeilen"} Rechenweg)` : a.board ? " (Rechenweg am Whiteboard)" : ""}`;
+  }
+  // Englisch-Matura, Writing: der Text mit seiner Wortanzahl und dem verlangten Rahmen (±10 %)
+  if (t.data.schreibauftrag && raw.trim()) {
+    const { min, max } = wortRahmen(t.data.schreibauftrag.woerter);
+    return `${raw.trim()}\n\n${wordCount(raw)} Wörter, verlangt ${min} bis ${max}`;
   }
   // Matura-Formate: die angekreuzten Antworten („b) … · d) …“), die Buchstaben der Zuordnung, ① ② des Lückentexts
   const matura = maturaAntwortText(t, raw);
@@ -160,15 +166,36 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
                 {isAspect(t.data.aspect) && <p className="mb-0.5 text-[12px] font-semibold text-ink-3">{ASPECT_SHORT[t.data.aspect]}</p>}
                 {/* Lückentext zum Ankreuzen: die Lücken heißen ① ②, so wie in der Antwort des Schülers */}
                 <p className="max-w-[70ch] whitespace-pre-line"><MathText text={t.data.gapOptions ? t.prompt.split(GAP).reduce((a, b, k) => `${a}${kreisZahl(k)}${b}`) : t.prompt.split(GAP).join("____")} /></p>
-                {/* Zuordnung: die Aussagen, damit „1 → C“ lesbar ist */}
+                {/* Englisch-Matura, Reading: der Text der Aufgabe zum Nachlesen (bei einem Text für das ganze Blatt steht er oben) */}
+                {!reading && t.data.passage && englischFormat(t) && ENGLISCH_TEIL[englischFormat(t)!] === "reading" && (
+                  <details className="no-print mt-1 max-w-[70ch] text-[14px]">
+                    <summary className="cursor-pointer font-semibold text-ink-2">Lesetext</summary>
+                    <div className="mt-2 rounded-lg bg-paper px-4 py-3">
+                      <ReadingTextView title={t.data.passageTitle?.trim() ?? ""} text={t.data.passage} lang="en" />
+                    </div>
+                  </details>
+                )}
+                {/* Zuordnung: die Aussagen, damit „1 → C“ lesbar ist; Englisch-Matura: auch die Antworten A bis D je Frage oder die Buchstaben */}
                 {t.data.zuordnung && (
                   <ol className="mt-1 max-w-[70ch] space-y-0.5 text-[14px] text-ink-2">
                     {t.data.zuordnung.statements.map((st, k) => (
                       <li key={k}>
                         <span className="num font-semibold text-ink-3">{k + 1}</span> <MathText text={st} />
+                        {t.data.zuordnung!.choices?.[k] && (
+                          <span className="block pl-4 text-[13px] text-ink-3">{t.data.zuordnung!.choices[k].map((c, j) => `${buchstabe(j)} ${c}`).join(" · ")}</span>
+                        )}
                       </li>
                     ))}
                   </ol>
+                )}
+                {t.data.zuordnung && englischFormat(t) === "matura-matching" && (
+                  <ul className="mt-1 max-w-[70ch] space-y-0.5 text-[13px] text-ink-3">
+                    {t.data.zuordnung.options.map((o, k) => (
+                      <li key={k}>
+                        <span className="font-semibold">{buchstabe(k)}</span> {o}
+                      </li>
+                    ))}
+                  </ul>
                 )}
                 {/* Aufgabe mit Bild: klein und mit den gesuchten Werten, damit „C“ oder „B“ als Antwort lesbar ist */}
                 {t.data.figure ? <FigurBild figure={t.data.figure} loesung groesser={0.8} /> : null}

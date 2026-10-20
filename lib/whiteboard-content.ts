@@ -1,7 +1,7 @@
 /** App content prepared for the whiteboard (server side). Task positions count from 1. */
 import { figurBeschreibung, figurSzene } from "./figur";
 import * as repo from "./repo";
-import { GAP, kreisZahl } from "./tasks";
+import { buchstabe, GAP, kreisZahl } from "./tasks";
 import { maturaLoesung } from "./matura-formate";
 import type { TaskForBoard } from "./whiteboard-templates";
 
@@ -11,10 +11,14 @@ export function boardTask(t: repo.Task): TaskForBoard {
   // Satzteile; bei der Zuordnung die Aussagen 1, 2 und die Antworten als A bis D
   const luecken = t.data.gapOptions;
   const z = t.type === "zuordnung" ? t.data.zuordnung : undefined;
+  // Englisch-Matura (lib/englisch-matura-formate.ts): bei Multiple Choice zum Text je Frage die Antworten A bis D,
+  // beim Banked Gap Fill die Wörter im Kasten
   const extra = luecken
     ? luecken.map((g, i) => `${kreisZahl(i + 1)}  ${g.join("  ·  ")}`)
     : z
-      ? z.statements.map((s, i) => `${i + 1}  ${s}`)
+      ? z.statements.map((s, i) => `${i + 1}  ${s}${z.choices?.[i] ? `\n    ${z.choices[i].map((c, j) => `${buchstabe(j)} ${c}`).join("  ·  ")}` : ""}`)
+      : t.data.wortliste
+        ? [`Box: ${t.data.wortliste.join("  ·  ")}`]
       : t.type === "rechenweg" && t.data.start
         ? [t.data.start]
         : t.type === "sachaufgabe"
@@ -25,7 +29,7 @@ export function boardTask(t: repo.Task): TaskForBoard {
   const kreuze = maturaLoesung(t);
   // Aufgabe mit Bild: das Bild ohne Lösung (so darf es auch das Schülergerät zeichnen), dazu in Worten
   const bild = t.data.figure ? { figure: figurSzene(t.data.figure), figureText: figurBeschreibung(t.data.figure) } : {};
-  return { number: t.position, prompt: [prompt, ...extra].join("\n"), options: z ? z.options : (t.data.options ?? t.data.steps ?? null), solution: kreuze ? `Lösung: ${kreuze}\n${t.solution}` : t.solution, taskId: t.id, ...bild };
+  return { number: t.position, prompt: [prompt, ...extra].join("\n"), options: z ? (z.choices ? null : z.options) : (t.data.options ?? t.data.steps ?? null), solution: kreuze ? `Lösung: ${kreuze}\n${t.solution}` : t.solution, taskId: t.id, ...bild };
 }
 
 /** What goes onto the board through the insert queue: the student's device may draw it, so never the solution. */
