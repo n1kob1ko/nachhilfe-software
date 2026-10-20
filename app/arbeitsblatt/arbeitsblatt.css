@@ -237,6 +237,55 @@
   font-weight: 700;
   color: #666;
 }
+/* Textinterpretation: the story line by line as printed, a line number every 5 lines */
+.ab-zeile {
+  position: relative;
+  margin: 0;
+  padding-left: 13mm;
+  text-indent: -4mm;
+  font-size: 11.5pt;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  break-inside: avoid;
+}
+.ab-zeile-nr {
+  position: absolute;
+  left: 0;
+  top: 0.6mm;
+  width: 6mm;
+  text-indent: 0;
+  text-align: right;
+  font-size: 8.5pt;
+  font-weight: 700;
+  color: #666;
+}
+.ti-print-anhang {
+  break-before: page;
+}
+.ab-plan {
+  margin: 0 0 6mm;
+  padding: 3mm 5mm;
+  border: 0.3mm solid #bbb;
+  border-radius: 1.5mm;
+  font-size: 10pt;
+  line-height: 1.45;
+  break-inside: avoid;
+}
+.ab-plan-title {
+  margin: 0 0 1.5mm;
+  font-size: 11pt;
+  font-weight: 700;
+}
+.ab-plan-list {
+  margin: 0;
+  padding-left: 5mm;
+}
+.ab-plan-list li {
+  margin: 0 0 0.8mm;
+}
+.ab-plan-words {
+  color: #555;
+}
 .ab-lese-fragen {
   margin: 0 0 4mm;
   font-size: 12.5pt;

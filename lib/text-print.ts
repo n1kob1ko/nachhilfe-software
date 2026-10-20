@@ -6,8 +6,12 @@
 export type Spacing = "normal" | "weit";
 /** Which text of a correction is printed: the student's, the corrected one, or the student's with the corrections marked. */
 export type Fassung = "original" | "endfassung" | "korrektur";
-/** Bildgeschichte: the written story, or an empty worksheet (pictures, task and lines) to write on paper. */
-export type Blatt = "geschichte" | "leer";
+/**
+ * Bildgeschichte: the written story, or an empty worksheet (pictures, task and lines) to write on paper.
+ * Textinterpretation: the written interpretation, the worksheet (task, numbered story, Schreibplan, lines),
+ * or the interpretation with the numbered story after it ("beides").
+ */
+export type Blatt = "geschichte" | "leer" | "beides";
 export type TextPrintOptions = {
   title: string;
   /** a correction of the text (its id); without one the current text is printed as before */
@@ -37,7 +41,8 @@ export const TEXT_PRINT_CHECKS: [BoolKey, string, string][] = [
   ["pages", "seiten", "Seitenzahlen"],
 ];
 export const SPACING_LABEL: Record<Spacing, string> = { normal: "normal", weit: "weit (Platz zum Korrigieren)" };
-export const BLATT_LABEL: Record<Blatt, string> = { geschichte: "Fertige Bildgeschichte", leer: "Leeres Arbeitsblatt zum Schreiben" };
+export const BLATT_LABEL: Record<Exclude<Blatt, "beides">, string> = { geschichte: "Fertige Bildgeschichte", leer: "Leeres Arbeitsblatt zum Schreiben" };
+export const INTERPRETATION_BLATT_LABEL: Record<Blatt, string> = { geschichte: "Fertige Textinterpretation", beides: "Textinterpretation und Text mit Zeilen", leer: "Arbeitsblatt: Auftrag, Text und Schreibplan" };
 export const FASSUNG_LABEL: Record<Fassung, string> = { original: "Original (wie geschrieben)", endfassung: "Korrigierte Endfassung", korrektur: "Mit sichtbaren Korrekturen" };
 
 type Params = Record<string, string | string[] | undefined>;
@@ -50,7 +55,8 @@ export function readTextPrintOptions(sp: Params, defaultTitle: string): TextPrin
     if (v === "1" || v === "0") o[k] = v === "1";
   }
   if (one(sp.abstand) === "weit") o.spacing = "weit";
-  if (one(sp.blatt) === "leer") o.blatt = "leer";
+  const blatt = one(sp.blatt);
+  if (blatt === "leer" || blatt === "beides") o.blatt = blatt;
   const k = Number(one(sp.k));
   if (Number.isInteger(k) && k > 0) o.correction = k;
   const f = one(sp.fassung);

@@ -127,6 +127,22 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
       {sp.hinweis === "lesenki" && (
         <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Die KI hat keine passenden Fragen geliefert. Die Fragen stammen aus Vorlagen, bitte prüfen und anpassen.</p>
       )}
+      {draft && tasks.some((t) => t.data.teil) && (
+        // Teilübungen of a Textinterpretation (lib/textinterpretation.ts): the whole interpretation is a Schreibauftrag
+        <p className="no-print mb-6 rounded-2xl bg-accent-wash px-4 py-3 text-[14px]" data-testid="hinweis-teiluebungen">
+          Kurze Teilübungen zur Textinterpretation: Jede übt einen Teil, der Text mit Zeilennummern steht daneben.
+          {w.student_id ? (
+            <>
+              {" "}
+              Die ganze Interpretation mit rund 500 Wörtern ist ein eigener{" "}
+              <Link href={`/schueler/${w.student_id}/textinterpretation`} className="font-semibold text-accent hover:underline">
+                Schreibauftrag
+              </Link>
+              .
+            </>
+          ) : null}
+        </p>
+      )}
       {sp.hinweis === "lesenweniger" && (
         <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">
           Nur {Number(sp.anzahl) || "einige"} Fragen passten sicher zum Text. Weitere Fragen kannst du unten beim Text ergänzen.

@@ -205,7 +205,7 @@ function UebungAbschnitt({ u, o, leer }: { u: MappeUebung; o: MappeOptionen; lee
         )}
       </h2>
       {meta.length > 0 && <p className="ab-meta mp-meta">{meta.join(" · ")}</p>}
-      {doc.reading && zuZeigen.length > 0 && <ReadingPassage title={doc.reading.title} text={doc.reading.text} teacher={false} />}
+      {doc.reading && zuZeigen.length > 0 && <ReadingPassage title={doc.reading.title} text={doc.reading.text} teacher={false} zeilen={doc.reading.zeilen} leerzeilen={doc.reading.leerzeilen} />}
       <div className="ab-tasks">
         {doc.tasks.map((t, i) => {
           const a = u.aufgaben[i];

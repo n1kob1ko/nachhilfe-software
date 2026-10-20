@@ -21,6 +21,8 @@ import { memorizeCategory, memorizeWords } from "./memorize";
 import { isQuickRound, type AssignmentMode } from "./quick-round";
 import { analyzeStudent } from "./service";
 import { gapCount, GAP, type TaskDraft } from "./tasks";
+import { isInterpretationSkill, MAX_TEILUEBUNGEN, nextTeiluebung, teiluebungen, type TeilSource } from "./textinterpretation";
+import { teilSourceForStudent, teilSourceOf } from "./textinterpretation-store";
 import { runningUnitForStudent } from "./units";
 import { isPlaceholder, wortartenFor, type WortartSetting } from "./wortarten";
 
@@ -344,6 +346,8 @@ export async function generateTasks(
     categories?: string[];
     difficulty?: DifficultyChoice;
     meta?: AIMeta;
+    /** Textinterpretation: the story of the Teilübungen (else the student's latest one or the example). */
+    interpretation?: TeilSource;
   } = {},
 ): Promise<{ tasks: TaskDraft[]; source: "ki" | "generator"; aiError?: string }> {
   const settings = { ...s, skillIds: o.skillIds ?? s.skillIds, categories: o.categories ?? s.categories, difficulty: o.difficulty ?? s.difficulty };
@@ -351,8 +355,21 @@ export async function generateTasks(
   if (!skills.length) throw new Error("Bitte mindestens eine Fähigkeit auswählen.");
   const count = Math.max(1, Math.min(30, o.count ?? settings.count));
   const cats: Category[] = categoriesFor(settings.subject).filter((c) => settings.categories.includes(c.key));
-  const plan = planSlots(settings.subject, skills, cats, count);
+  // Textinterpretation: every part of an interpretation at most twice, the rest of the exercise as planned
+  const plan = planSlots(settings.subject, skills, cats, count).filter((p, i, all) => !isInterpretationSkill(p.skill.skill.id) || all.slice(0, i).filter((q) => isInterpretationSkill(q.skill.skill.id)).length < MAX_TEILUEBUNGEN);
   const slots: (TaskDraft | null)[] = plan.map(() => null);
+  // Textinterpretation (lib/textinterpretation.ts): no 200-word mini interpretation from the KI or a short
+  // free answer, but Teilübungen about one part on a whole story with line numbers, without KI. The whole
+  // interpretation of about 500 words is a Schreibauftrag (lib/textinterpretation-store.ts).
+  const interp = plan.map((p) => isInterpretationSkill(p.skill.skill.id));
+  const interpAt = plan.map((_, i) => i).filter((i) => interp[i]);
+  if (interpAt.length) {
+    const made = teiluebungen(o.interpretation ?? teilSourceForStudent(ctx?.studentId ?? settings.studentId), interpAt.length);
+    interpAt.forEach((i, k) => {
+      const r = plan[i].skill;
+      slots[i] = { ...made[k], skillId: r.skill.id, skillIds: [...new Set([r.skill.id, ...(r.parent ? [r.parent.id] : [])])], difficulty: r.difficulty };
+    });
+  }
   // „Auswendig schreiben“ kommt weder von der KI noch aus den Generatoren: den Text gibt die Lehrkraft
   // ein. Die Aufgabe entsteht leer und wird im Editor ausgefüllt (checkTask verlangt den Text).
   const memorize = plan.map((p) => memorizeCategory(settings.subject, p.category));
@@ -365,7 +382,7 @@ export async function generateTasks(
   let aiError: string | undefined;
   let fromAI = 0;
   /** So viele Aufgaben soll die KI liefern (alle außer den Auswendig-Aufgaben). */
-  const aiCount = plan.length - memorize.filter(Boolean).length;
+  const aiCount = plan.length - memorize.filter(Boolean).length - interpAt.length;
 
   if (settings.useAI && aiEnabled() && aiCount) {
     // Warum der Bankweg nichts geliefert hat (Phase 1, Schritt 6) — nur für den Fall, dass am Ende gar
@@ -430,7 +447,7 @@ export async function generateTasks(
           if (t) slots[rest[k]] = t;
         });
       }
-      fromAI = slots.filter(Boolean).length;
+      fromAI = slots.filter((t, i) => t && !interp[i]).length;
       // Kam gar keine Aufgabe von der KI, ist der Grund des Bankwegs die genauere Meldung; füllt er nur
       // einen Teil, steht er neben dem Hinweis auf die ohne KI erstellten Aufgaben. Ohne Bankweg bleibt
       // die Meldung genau wie bisher. Auswendig-Aufgaben fragt die KI nie: sie zählen hier nicht mit.
@@ -486,7 +503,7 @@ function autoTitle(s: BuilderSettings, ctx: StudentContext | null) {
 }
 
 /** Generates tasks and stores them as a draft exercise for the preview. */
-export async function createDraft(s: BuilderSettings, teacherId: number | null, o: { empty?: boolean } = {}): Promise<{ id: number; aiError?: string }> {
+export async function createDraft(s: BuilderSettings, teacherId: number | null, o: { empty?: boolean; interpretationTextId?: number } = {}): Promise<{ id: number; aiError?: string }> {
   const ctx = s.studentId ? studentContext(s.studentId) : null;
   const all = repo.listSkills();
   const chosen = all.filter((x) => s.skillIds.includes(x.id));
@@ -494,7 +511,8 @@ export async function createDraft(s: BuilderSettings, teacherId: number | null, 
   let source: repo.Worksheet["source"] = "manuell";
   let aiError: string | undefined;
   if (!o.empty) {
-    const out = await generateTasks(s, ctx, { meta: { teacherId, studentId: s.studentId, trigger: "uebung" } });
+    const interpretation = o.interpretationTextId ? (teilSourceOf(o.interpretationTextId) ?? undefined) : undefined;
+    const out = await generateTasks(s, ctx, { meta: { teacherId, studentId: s.studentId, trigger: "uebung" }, interpretation });
     tasks = out.tasks;
     source = out.source;
     aiError = out.aiError;
@@ -544,6 +562,14 @@ export function settingsOf(w: repo.Worksheet): BuilderSettings {
 
 /** Replaces one task by a new one for the same skill and type (optionally at another difficulty). */
 export async function regenerateTask(taskId: number, o: { difficulty?: Difficulty; useAI?: boolean; teacherId?: number | null } = {}): Promise<{ ok: boolean; aiError?: string }> {
+  // a Teilübung of a Textinterpretation: the other wording for the same part, about the same story
+  const teil = repo.getTask(taskId);
+  const nextTeil = teil?.data.teil ? nextTeiluebung(teil) : null;
+  if (teil && nextTeil) {
+    repo.updateTask(taskId, { ...nextTeil, difficulty: o.difficulty ?? teil.difficulty });
+    repo.setTaskOrigin(taskId, { sourceType: "eigen" });
+    return { ok: true };
+  }
   // a question about the shared reading text: another question about the same text (lib/lesen-draft.ts)
   const reading = await regenerateReadingQuestion(taskId, o.teacherId ?? null, o.difficulty);
   if (reading) return reading;

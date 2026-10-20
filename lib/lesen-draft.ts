@@ -9,6 +9,7 @@ import { aspectSkill, isAspect, isTextType, joinParagraphs, paragraphsOf, planAs
 import * as repo from "./repo";
 import { klassenLabel, schulstufe } from "./school";
 import type { TaskDraft } from "./tasks";
+import { cleanStory } from "./textinterpretation";
 
 export type ReadingSettings = {
   studentId: number | null;
@@ -128,10 +129,12 @@ export async function createReadingDraft(s: ReadingSettings, teacherId: number |
 /** The editor changes the text (and title) once: every question of the exercise gets it. */
 export function saveReadingText(worksheetId: number, r: ReadingText): { error?: string } {
   const tasks = repo.listTasks(worksheetId);
-  if (!readingSet(tasks)) return { error: "Diese Übung hat keinen gemeinsamen Lesetext." };
-  const text = joinParagraphs(paragraphsOf(r.text));
+  const set = readingSet(tasks);
+  if (!set) return { error: "Diese Übung hat keinen gemeinsamen Lesetext." };
+  // a story with line numbers (Textinterpretation) keeps its line breaks exactly
+  const text = set.zeilen ? cleanStory(r.text) : joinParagraphs(paragraphsOf(r.text));
   if (wordCount(text) < 20) return { error: "Der Text ist zu kurz." };
-  for (const t of withText(tasks, { title: r.title.trim(), text })) {
+  for (const t of withText(tasks, { title: r.title.trim(), text, zeilen: set.zeilen, leerzeilen: set.leerzeilen })) {
     const { id, worksheet_id: _w, position: _p, ...draft } = t;
     void _w, void _p;
     repo.updateTask(id, draft);

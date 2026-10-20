@@ -2,7 +2,8 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
-import { BookOpenCheck, Camera, CheckCircle2, ChartNoAxesColumn, ExternalLink, Images, PenLine, Plus, Presentation, Printer, Square } from "lucide-react";
+import { BookOpenCheck, BookOpenText, Camera, CheckCircle2, ChartNoAxesColumn, ExternalLink, Images, PenLine, Plus, Presentation, Printer, Square } from "lucide-react";
+import { levelFor } from "@/lib/text-correction-rules";
 import { endUnitAction } from "@/app/session-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { BoardThumbs } from "@/components/BoardThumbs";
@@ -362,6 +363,12 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
               <Link href={`/einheiten/${unit.id}/bildgeschichte`} className="btn btn-secondary btn-lg" data-testid="bildgeschichte-erstellen">
                 <Images size={18} aria-hidden /> Bildgeschichte erstellen
               </Link>
+              {/* Oberstufe: a whole story with line numbers, interpreted in about 500 words */}
+              {levelFor(student.school_type, student.klasse).band === "oberstufe" && (
+                <Link href={`/einheiten/${unit.id}/textinterpretation`} className="btn btn-secondary btn-lg" data-testid="textinterpretation-erstellen">
+                  <BookOpenText size={18} aria-hidden /> Textinterpretation
+                </Link>
+              )}
             </div>
           )}
         </div>

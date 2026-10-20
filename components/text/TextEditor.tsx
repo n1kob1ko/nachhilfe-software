@@ -26,6 +26,9 @@ import {
   docToHtml,
   type TextDoc,
 } from "@/lib/text-doc";
+import { schreibplan, type InterpretationView } from "@/lib/textinterpretation";
+import { ExamplePanel, HintsPanel, WordProgress } from "./interpretation/InterpretationParts";
+import { NumberedStory, SchreibplanList } from "./interpretation/NumberedStory";
 import { readDom } from "./read-dom";
 import { StoryColumn, StoryStrip, type StoryPictures } from "./story/StoryPictures";
 import { saveTextFile } from "./save-file";
@@ -53,6 +56,11 @@ type Props = {
   targetWords?: number | null;
   /** "Abgeben" on the student's device: POST endpoint, and where to go afterwards */
   handIn?: { url: string; home: string };
+  /**
+   * Textinterpretation: the story with line numbers next to the text (or behind a "Text" tab on a narrow
+   * screen), the Schreibplan above, words against the target and Hinweise without KI below.
+   */
+  interpretation?: InterpretationView;
 };
 
 type Status =
@@ -140,6 +148,7 @@ export function TextEditor({
   pictures,
   targetWords,
   handIn,
+  interpretation,
 }: Props) {
   const store = `${backupPrefix}${textId}`;
   const editor = useRef<HTMLDivElement>(null);
@@ -171,6 +180,8 @@ export function TextEditor({
     h: false,
   });
   const [focus, setFocus] = useState(false);
+  // Textinterpretation on a narrow screen: the story or the writing; first the story while nothing is written
+  const [pane, setPane] = useState<"text" | "schreiben">(initial.body.length === 0 ? "text" : "schreiben");
   const [conflict, setConflict] = useState<null | {
     version: number;
     body: TextDoc;
@@ -811,7 +822,7 @@ export function TextEditor({
           <div className="tx-handin" data-testid="abgeben-bereich">
             {handing === "fragen" ? (
               <>
-                <p className="text-[15px] font-semibold">Bist du fertig? Dann gib deine Geschichte ab.</p>
+                <p className="text-[15px] font-semibold">Bist du fertig? Dann gib deine {interpretation ? "Interpretation" : "Geschichte"} ab.</p>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" className="btn btn-primary" onClick={() => void submitHandIn()} data-testid="abgeben-ja">
                     <Send size={16} aria-hidden /> Ja, abgeben
@@ -836,10 +847,88 @@ export function TextEditor({
     </>
   );
 
+  const toolbar = (
+    <div role="toolbar" aria-label="Text bearbeiten" className="tx-toolbar">
+      <div className="flex items-center gap-0.5">
+        <Tool
+          label="Absatz"
+          on={!marks.h}
+          onClick={() => exec("formatBlock", "<p>")}
+        >
+          <Pilcrow size={17} aria-hidden />{" "}
+          <span className="hidden sm:inline">Text</span>
+        </Tool>
+        <Tool
+          label="Überschrift"
+          on={marks.h}
+          onClick={() => exec("formatBlock", marks.h ? "<p>" : "<h2>")}
+        >
+          <Heading size={17} aria-hidden />{" "}
+          <span className="hidden sm:inline">Überschrift</span>
+        </Tool>
+      </div>
+      <span className="tx-sep" aria-hidden />
+      <div className="flex items-center gap-0.5">
+        <Tool label="Fett" on={marks.b} onClick={() => exec("bold")}>
+          <Bold size={18} aria-hidden />
+        </Tool>
+        <Tool label="Kursiv" on={marks.i} onClick={() => exec("italic")}>
+          <Italic size={18} aria-hidden />
+        </Tool>
+        <Tool
+          label="Unterstrichen"
+          on={marks.u}
+          onClick={() => exec("underline")}
+        >
+          <Underline size={18} aria-hidden />
+        </Tool>
+      </div>
+      <span className="tx-sep" aria-hidden />
+      <div className="flex items-center gap-0.5">
+        <Tool label="Rückgängig" onClick={() => exec("undo")}>
+          <Undo2 size={18} aria-hidden />
+        </Tool>
+        <Tool label="Wiederholen" onClick={() => exec("redo")}>
+          <Redo2 size={18} aria-hidden />
+        </Tool>
+      </div>
+      <div className="ml-auto flex items-center gap-1">
+        <span
+          className={`hidden items-center gap-1.5 px-2 text-[13px] font-medium md:inline-flex ${statusView.tone}`}
+          role="status"
+          aria-live="polite"
+          data-testid="save-status"
+          data-status={status}
+        >
+          {statusView.icon} {statusView.text}
+        </span>
+        <Tool
+          label={focus ? "Vollbild beenden" : "Vollbild"}
+          onClick={() => void toggleFocus()}
+        >
+          {focus ? (
+            <Minimize2 size={18} aria-hidden />
+          ) : (
+            <Maximize2 size={18} aria-hidden />
+          )}
+        </Tool>
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => void save()}
+          className="btn btn-primary h-11 min-h-11 px-4"
+          disabled={status === "speichert"}
+        >
+          <Save size={16} aria-hidden /> Speichern
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div
       ref={shell}
-      className={`${focus ? "tx-focus" : "tx-shell"}${pictures ? " tx-story" : ""}`}
+      className={`${focus ? "tx-focus" : "tx-shell"}${pictures ? " tx-story" : ""}${interpretation ? " tx-interp lesen-breit" : ""}`}
       data-testid="text-editor"
       data-status={status}
     >
@@ -866,168 +955,54 @@ export function TextEditor({
           </div>
         )}
       </header>
-      {pictures ? (
+      {interpretation ? (
+        <div className="ti-grid" data-pane={pane}>
+          <div className="ti-tabs">
+            <div className="ti-tabs-pill" role="tablist" aria-label="Ansicht">
+              <button type="button" role="tab" className="kx-tab" aria-selected={pane === "text"} onClick={() => setPane("text")} data-testid="tab-text">
+                Text lesen
+              </button>
+              <button type="button" role="tab" className="kx-tab" aria-selected={pane === "schreiben"} onClick={() => setPane("schreiben")} data-testid="tab-schreiben">
+                Schreiben
+              </button>
+            </div>
+          </div>
+          <aside className="ti-story-col" aria-label="Text zur Interpretation">
+            <NumberedStory text={interpretation.text} countBlank={interpretation.countBlank} title={interpretation.title} author={interpretation.author} year={interpretation.year} kind={interpretation.kind} />
+            <button type="button" className="btn btn-secondary ti-to-write" onClick={() => setPane("schreiben")}>
+              Zum Schreiben
+            </button>
+          </aside>
+          <div className="ti-main">
+            <details className="ti-box ti-planbox" open={!focus}>
+              <summary className="ti-summary">Schreibplan: 7 Teile, ca. {interpretation.target.toLocaleString("de-AT")} Wörter</summary>
+              <SchreibplanList plan={schreibplan(interpretation.target, interpretation.kind)} className="mt-2" />
+            </details>
+            <div className="tx-sticky">
+              {toolbar}
+              <WordProgress words={counts.words} target={interpretation.target} />
+            </div>
+            {main}
+            <div className="mt-4 grid gap-3">
+              <HintsPanel doc={latest.current} story={interpretation} />
+              <ExamplePanel />
+            </div>
+          </div>
+        </div>
+      ) : pictures ? (
         <div className="tx-story-grid">
           <StoryColumn p={pictures} />
           <div className="tx-story-main">
             <div className="tx-sticky">
               <StoryStrip p={pictures} />
-              <div role="toolbar" aria-label="Text bearbeiten" className="tx-toolbar">
-                <div className="flex items-center gap-0.5">
-                  <Tool
-                    label="Absatz"
-                    on={!marks.h}
-                    onClick={() => exec("formatBlock", "<p>")}
-                  >
-                    <Pilcrow size={17} aria-hidden />{" "}
-                    <span className="hidden sm:inline">Text</span>
-                  </Tool>
-                  <Tool
-                    label="Überschrift"
-                    on={marks.h}
-                    onClick={() => exec("formatBlock", marks.h ? "<p>" : "<h2>")}
-                  >
-                    <Heading size={17} aria-hidden />{" "}
-                    <span className="hidden sm:inline">Überschrift</span>
-                  </Tool>
-                </div>
-                <span className="tx-sep" aria-hidden />
-                <div className="flex items-center gap-0.5">
-                  <Tool label="Fett" on={marks.b} onClick={() => exec("bold")}>
-                    <Bold size={18} aria-hidden />
-                  </Tool>
-                  <Tool label="Kursiv" on={marks.i} onClick={() => exec("italic")}>
-                    <Italic size={18} aria-hidden />
-                  </Tool>
-                  <Tool
-                    label="Unterstrichen"
-                    on={marks.u}
-                    onClick={() => exec("underline")}
-                  >
-                    <Underline size={18} aria-hidden />
-                  </Tool>
-                </div>
-                <span className="tx-sep" aria-hidden />
-                <div className="flex items-center gap-0.5">
-                  <Tool label="Rückgängig" onClick={() => exec("undo")}>
-                    <Undo2 size={18} aria-hidden />
-                  </Tool>
-                  <Tool label="Wiederholen" onClick={() => exec("redo")}>
-                    <Redo2 size={18} aria-hidden />
-                  </Tool>
-                </div>
-                <div className="ml-auto flex items-center gap-1">
-                  <span
-                    className={`hidden items-center gap-1.5 px-2 text-[13px] font-medium md:inline-flex ${statusView.tone}`}
-                    role="status"
-                    aria-live="polite"
-                    data-testid="save-status"
-                    data-status={status}
-                  >
-                    {statusView.icon} {statusView.text}
-                  </span>
-                  <Tool
-                    label={focus ? "Vollbild beenden" : "Vollbild"}
-                    onClick={() => void toggleFocus()}
-                  >
-                    {focus ? (
-                      <Minimize2 size={18} aria-hidden />
-                    ) : (
-                      <Maximize2 size={18} aria-hidden />
-                    )}
-                  </Tool>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => void save()}
-                    className="btn btn-primary h-11 min-h-11 px-4"
-                    disabled={status === "speichert"}
-                  >
-                    <Save size={16} aria-hidden /> Speichern
-                  </button>
-                </div>
-              </div>
+              {toolbar}
             </div>
             {main}
           </div>
         </div>
       ) : (
         <>
-          <div role="toolbar" aria-label="Text bearbeiten" className="tx-toolbar">
-            <div className="flex items-center gap-0.5">
-              <Tool
-                label="Absatz"
-                on={!marks.h}
-                onClick={() => exec("formatBlock", "<p>")}
-              >
-                <Pilcrow size={17} aria-hidden />{" "}
-                <span className="hidden sm:inline">Text</span>
-              </Tool>
-              <Tool
-                label="Überschrift"
-                on={marks.h}
-                onClick={() => exec("formatBlock", marks.h ? "<p>" : "<h2>")}
-              >
-                <Heading size={17} aria-hidden />{" "}
-                <span className="hidden sm:inline">Überschrift</span>
-              </Tool>
-            </div>
-            <span className="tx-sep" aria-hidden />
-            <div className="flex items-center gap-0.5">
-              <Tool label="Fett" on={marks.b} onClick={() => exec("bold")}>
-                <Bold size={18} aria-hidden />
-              </Tool>
-              <Tool label="Kursiv" on={marks.i} onClick={() => exec("italic")}>
-                <Italic size={18} aria-hidden />
-              </Tool>
-              <Tool
-                label="Unterstrichen"
-                on={marks.u}
-                onClick={() => exec("underline")}
-              >
-                <Underline size={18} aria-hidden />
-              </Tool>
-            </div>
-            <span className="tx-sep" aria-hidden />
-            <div className="flex items-center gap-0.5">
-              <Tool label="Rückgängig" onClick={() => exec("undo")}>
-                <Undo2 size={18} aria-hidden />
-              </Tool>
-              <Tool label="Wiederholen" onClick={() => exec("redo")}>
-                <Redo2 size={18} aria-hidden />
-              </Tool>
-            </div>
-            <div className="ml-auto flex items-center gap-1">
-              <span
-                className={`hidden items-center gap-1.5 px-2 text-[13px] font-medium md:inline-flex ${statusView.tone}`}
-                role="status"
-                aria-live="polite"
-                data-testid="save-status"
-                data-status={status}
-              >
-                {statusView.icon} {statusView.text}
-              </span>
-              <Tool
-                label={focus ? "Vollbild beenden" : "Vollbild"}
-                onClick={() => void toggleFocus()}
-              >
-                {focus ? (
-                  <Minimize2 size={18} aria-hidden />
-                ) : (
-                  <Maximize2 size={18} aria-hidden />
-                )}
-              </Tool>
-              <button
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => void save()}
-                className="btn btn-primary h-11 min-h-11 px-4"
-                disabled={status === "speichert"}
-              >
-                <Save size={16} aria-hidden /> Speichern
-              </button>
-            </div>
-          </div>
+          {toolbar}
           {main}
         </>
       )}
