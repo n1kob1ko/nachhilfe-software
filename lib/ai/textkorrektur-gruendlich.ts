@@ -20,7 +20,7 @@
  * sentence with the KI's version (lib/text-correction-diff.ts), the KI's list giving the explanations.
  */
 import { z } from "zod";
-import { applyChanges, clip, comparable, flagItems, replacementProblem, ruleItems, sentencesOf, setAside, tidyItems, withInfo, withNote, type CheckItem, type Sentence } from "../text-correction-checks";
+import { applyChanges, clip, comparable, flagItems, keepQuoteStyle, onlyQuotesDiffer, replacementProblem, ruleItems, sentencesOf, setAside, tidyItems, withInfo, withNote, type CheckItem, type Sentence } from "../text-correction-checks";
 import { anchorFindings, FOREIGN_PLACEHOLDER, maskText, NAME_PLACEHOLDER, type CorrectionFailCause, type InFinding, type ItemOrigin, type NewItem, type Range } from "../text-correction-core";
 import { compareVersions, hidesGrammar } from "../text-correction-diff";
 import { isEnglish, normalizeCategory, TEXT_CATEGORIES, type Level } from "../text-correction-rules";
@@ -594,7 +594,7 @@ export function betterMisfit(p: Pick<Proposal, "quote" | "before" | "after">, be
   return null;
 }
 
-export function applyVerdicts<T extends CheckItem & { origin: ItemOrigin; agreed?: boolean }>(items: T[], proposals: Proposal[], data: Verify, pattern: RegExp | null): { items: T[]; missed: InFinding[] } {
+export function applyVerdicts<T extends CheckItem & { origin: ItemOrigin; agreed?: boolean }>(items: T[], proposals: Proposal[], data: Verify, pattern: RegExp | null, whole = ""): { items: T[]; missed: InFinding[] } {
   const out = [...items];
   const byNr = new Map<number, Verify["checks"][number]>();
   for (const c of Array.isArray(data.checks) ? data.checks : []) if (Number.isInteger(c?.nr) && !byNr.has(c.nr)) byNr.set(c.nr, c);
@@ -610,12 +610,14 @@ export function applyVerdicts<T extends CheckItem & { origin: ItemOrigin; agreed
     const better = typeof c.better_replacement === "string" ? c.better_replacement.replace(/\s+/g, " ") : "";
     const betterExplanation = short(c.better_explanation, 300);
     // „falsch“ with the same wording as before contradicts itself: a doubt, not a verdict
-    if (verdict === "falsch" && better.trim() && better.trim() === p.replacement.trim()) {
+    // the kind of quotation marks never counts: "…" and „…“ are the same wording (niko, 2026-10-20)
+    const same = (a: string, b: string) => a.trim() === b.trim() || onlyQuotesDiffer(a.trim(), b.trim());
+    if (verdict === "falsch" && better.trim() && same(better, p.replacement)) {
       out[p.k] = withNote(it, `Die zweite Prüfung widerspricht sich${reason ? `: ${reason}` : "."}`);
       return;
     }
     if (verdict === "falsch") {
-      const keep = better.trim() && (better.trim() === p.quote.trim() || echoesNeighbours(p, better));
+      const keep = better.trim() && (same(better, p.quote) || echoesNeighbours(p, better));
       if (keep && it.agreed) {
         // the check against step 1's list and its sentence: a doubt for the teacher, not a decision. All 7 suggestions
         // „neu“ sorted out this way in the tests of 2026-10-09 to 2026-10-11 were right; the same verdict without the
@@ -630,7 +632,7 @@ export function applyVerdicts<T extends CheckItem & { origin: ItemOrigin; agreed
           ? // the first suggestion stays, marked: the check's wording is meant for other words than the place
             withNote(it, `Die zweite Prüfung hält das für falsch. Ihre Fassung „${short(restoreNames(better, it.quote, pattern), 60)}“ wurde nicht übernommen, weil sie nicht genau an diese Stelle passt: ${misfit}${reason ? ` Begründung der Prüfung: ${reason}` : ""}`)
           : withNote(
-              { ...it, replacement: restoreNames(better, it.quote, pattern).slice(0, 200), explanation: betterExplanation || it.explanation },
+              { ...it, replacement: keepQuoteStyle(it.quote, restoreNames(better, it.quote, pattern), whole || it.quote).slice(0, 200), explanation: betterExplanation || it.explanation },
               `Die zweite Prüfung hat „${short(it.replacement, 60)}“ verbessert${reason ? `: ${reason}` : "."}`,
             );
       } else {
@@ -776,7 +778,7 @@ export async function correctThoroughly(
     failed = { verifyCause: v.cause, ...(v.code ? { verifyCode: v.code } : {}) };
     items = items.map((it) => (it.kind === "hinweis" ? it : withNote(it, NOT_CHECKED)));
   } else if (v?.ok) {
-    const applied = applyVerdicts(items, proposals, v.data, o.pattern);
+    const applied = applyVerdicts(items, proposals, v.data, o.pattern, texts.join("\n"));
     // a better wording of the check with the spaces right, like every suggestion of step 1
     items = tidyItems(texts, applied.items, o.taken);
     // the check's own finds: never where a suggestion or a decision already is
