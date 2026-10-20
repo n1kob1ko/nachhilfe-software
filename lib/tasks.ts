@@ -294,16 +294,17 @@ function checkZuordnung(task: Pick<TaskDraft, "errorMap">, given: string, pairs:
   const offen = wrong.filter((i) => picked[i] == null);
   const falsch = wrong.filter((i) => picked[i] != null);
   const liste = (xs: number[]) => xs.map((i) => i + 1).join(" und ");
+  // „bei 2“ statt „Aussage 2“: zugeordnet werden auch Terme, Funktionen und Stellen
   const feedback =
     offen.length === pairs.length
-      ? "Ordne jeder Aussage einen Buchstaben zu."
+      ? "Wähle bei jeder Nummer einen Buchstaben."
       : falsch.length === pairs.length
         ? pairs.length === 2
-          ? "Beide Aussagen sind falsch zugeordnet."
-          : "Keine Aussage ist richtig zugeordnet."
+          ? "Beide Buchstaben stimmen nicht."
+          : "Kein Buchstabe stimmt."
         : [
-            falsch.length ? `Aussage ${liste(falsch)} ${falsch.length === 1 ? "ist" : "sind"} falsch zugeordnet.` : "",
-            offen.length ? `Aussage ${liste(offen)} ${offen.length === 1 ? "hat" : "haben"} noch keinen Buchstaben.` : "",
+            falsch.length ? `Bei ${liste(falsch)} ${falsch.length === 1 ? "stimmt der Buchstabe" : "stimmen die Buchstaben"} nicht.` : "",
+            offen.length ? `Bei ${liste(offen)} fehlt noch ${offen.length === 1 ? "ein Buchstabe" : "der Buchstabe"}.` : "",
           ]
             .filter(Boolean)
             .join(" ");

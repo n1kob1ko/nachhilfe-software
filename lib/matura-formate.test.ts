@@ -140,13 +140,13 @@ test("Zuordnung: der Punkt nur, wenn beide Aussagen den richtigen Buchstaben hab
   const t = ZUORDNUNG;
   assert.equal(checkAnswer(t, "[1,3]").correct, true);
   const getauscht = checkAnswer(t, "[3,1]");
-  assert.deepEqual([getauscht.correct, getauscht.wrongGaps, getauscht.feedback], [false, [1, 2], "Beide Aussagen sind falsch zugeordnet."]);
+  assert.deepEqual([getauscht.correct, getauscht.wrongGaps, getauscht.feedback], [false, [1, 2], "Beide Buchstaben stimmen nicht."]);
   const eine = checkAnswer(t, "[1,2]");
-  assert.deepEqual([eine.correct, eine.wrongGaps, eine.feedback, eine.errorLabel], [false, [2], "Aussage 2 ist falsch zugeordnet.", "Bei x = −b/(2a) das Minus vergessen"]);
+  assert.deepEqual([eine.correct, eine.wrongGaps, eine.feedback, eine.errorLabel], [false, [2], "Bei 2 stimmt der Buchstabe nicht.", "Bei x = −b/(2a) das Minus vergessen"]);
   const offen = checkAnswer(t, "[1,null]");
-  assert.deepEqual([offen.correct, offen.feedback], [false, "Aussage 2 hat noch keinen Buchstaben."]);
+  assert.deepEqual([offen.correct, offen.feedback], [false, "Bei 2 fehlt noch ein Buchstabe."]);
   assert.equal(checkAnswer(t, "[0,3]").errorLabel, "b statt c genommen");
-  assert.equal(checkAnswer(t, "[null,null]").feedback, "Ordne jeder Aussage einen Buchstaben zu.");
+  assert.equal(checkAnswer(t, "[null,null]").feedback, "Wähle bei jeder Nummer einen Buchstaben.");
 });
 
 test("alte Aufgaben bleiben, wie sie waren: Multiple Choice mit einer Antwort, Lückentext zum Schreiben", () => {
