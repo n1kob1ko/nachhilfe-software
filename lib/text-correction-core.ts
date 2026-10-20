@@ -7,7 +7,7 @@ import type { FailCause } from "./ai/router";
 import type { AICorrection } from "./ai/textkorrektur";
 import { blockText, normalizeRuns, type Block, type Run, type TextDoc } from "./text-doc";
 import { ADDRESS_BEFORE, ARTICLES, isNounName, isWordName } from "./name-detection";
-import { tidyEdges } from "./text-correction-checks";
+import { keepQuoteStyle, onlyQuotesDiffer, quoteStyleHint, tidyEdges } from "./text-correction-checks";
 import { categoryInfo, normalizeCategory, TEXT_CATEGORIES, type Level } from "./text-correction-rules";
 
 export type ItemStatus = "offen" | "uebernommen" | "abgelehnt";
@@ -294,6 +294,8 @@ export type InFinding = AICorrection["findings"][number] & { from?: number; to?:
  * category is unknown, its paragraph does not exist, it has no explanation, the replacement equals the
  * quote, or there are already too many; a finding whose quote is not in the paragraph becomes a note
  * without a place. `taken` are places already decided (carried over from the previous correction).
+ * The kind of quotation marks is no error: a change of "…" to „…“ only is left out, like a hint about
+ * nothing else, and a replacement keeps the student's straight ones (keepQuoteStyle).
  */
 /** The words of a quote without the signs at their edges („gesagt,“ → „gesagt“, „[Name]“ stays). */
 const bareWords = (s: string) => s.split(/\s+/).map((w) => w.replace(/^[^\p{L}\p{N}[]+|[^\p{L}\p{N}\]]+$/gu, "")).filter(Boolean);
@@ -306,6 +308,7 @@ export function anchorFindings(
   const items: NewItem[] = [];
   let dropped = 0;
   const masks = doc.map((b) => maskText(blockText(b), o.pattern));
+  const whole = doc.map(blockText).join("\n");
   const taken = new Map<number, Range[]>([...(o.taken ?? new Map())].map(([k, v]) => [k, [...v]]));
   const decided = o.taken ?? new Map<number, Range[]>();
   const cursor = new Map<number, number>();
@@ -318,6 +321,8 @@ export function anchorFindings(
     const replacement = typeof f?.replacement === "string" ? f.replacement.replace(/\s+/g, " ") : "";
     const explanation = clip(f?.explanation, 300);
     const kind = kindOf(f?.kind);
+    // straight quotation marks ("…") instead of „…“ are no error (niko, 2026-10-20): no suggestion, and none counted as verworfen
+    if (quote.trim() && onlyQuotesDiffer(quote.trim(), replacement.trim())) continue;
     if (!category || block < 0 || block >= doc.length || !quote.trim() || wordsIn(quote) > MAX_QUOTE_WORDS || !explanation || replacement.trim() === quote.trim() || FOREIGN_PLACEHOLDER.test(quote + replacement)) {
       dropped++;
       continue;
@@ -349,7 +354,7 @@ export function anchorFindings(
         dropped++;
         continue;
       }
-      items.push({ block, pos_start: null, pos_end: null, quote: clip(quote, 200), replacement: clip(replacement, 200), category, kind, rule, explanation, skill_id, ...extra });
+      items.push({ block, pos_start: null, pos_end: null, quote: clip(quote, 200), replacement: clip(keepQuoteStyle(quote, replacement, whole), 200), category, kind, rule, explanation, skill_id, ...extra });
       marks++;
       if (kind === "stil") style++;
       continue;
@@ -359,7 +364,9 @@ export function anchorFindings(
     // a replacement that names someone gets the name back that stood there
     const names = maskText(text.slice(at.start, at.end), o.pattern).names;
     let n = 0;
-    const restored = replacement.split(NAME_PLACEHOLDER).reduce((acc, part, i) => (i === 0 ? part : acc + (names[n++] ?? names[0] ?? NAME_PLACEHOLDER) + part), "");
+    const named = replacement.split(NAME_PLACEHOLDER).reduce((acc, part, i) => (i === 0 ? part : acc + (names[n++] ?? names[0] ?? NAME_PLACEHOLDER) + part), "");
+    // the student's kind of quotation marks: "…" stays "…" when the KI writes „…“
+    const restored = keepQuoteStyle(text.slice(at.start, at.end), named, whole);
     // no space before a sign and no two spaces once it stands in the text („gesagt , dass“); the word before only comes
     // in when no other suggestion has it, else just the space (that one may come later in the list)
     const others = new Set(ai.findings.filter((g) => g !== f && g?.para === f.para && typeof g?.quote === "string").flatMap((g) => bareWords(g.quote)));
@@ -370,6 +377,7 @@ export function anchorFindings(
       dropped++;
       continue;
     }
+    if (onlyQuotesDiffer(original, tidy)) continue;
     items.push({ block, pos_start: start, pos_end: end, quote: original, replacement: tidy, category, kind, rule, explanation, skill_id, ...extra });
     taken.set(block, [...blockTaken, { start, end }]);
     cursor.set(block, hit.end);
@@ -380,6 +388,7 @@ export function anchorFindings(
   for (const h of Array.isArray(ai.hints) ? ai.hints : []) {
     const category = normalizeCategory(h?.category);
     const text = clip(h?.text, 400);
+    if (quoteStyleHint(text)) continue; // only about „…“ instead of "…": no error, so no hint either
     if (!category || !text || hints >= MAX_HINTS) {
       dropped++;
       continue;

@@ -59,6 +59,7 @@ Die KI liefert JSON nach einem festen Schema. Der Server prüft jede Stelle einz
   - das Zitat länger als 30 Wörter ist,
   - die Verbesserung gleich dem Original ist,
   - die Höchstzahl erreicht ist.
+- **Anführungszeichen.** Gerade Anführungszeichen ("…") sind kein Fehler (niko, 2026-10-20). Ändert eine Stelle nur "…" in „…“ (oder '…' in ‚…‘), wird kein Vorschlag daraus, und sie zählt auch nicht als verworfen. Ein Hinweis, der nur die Art der Anführungszeichen anspricht, fällt ebenso weg; einer über fehlende bleibt. Eine echte Verbesserung behält die geraden Zeichen des Schülers, auch die bessere Fassung der zweiten Prüfung. Wo die Stelle selbst keine hat, entscheidet der ganze Text; wer „…“ schreibt oder mischt, bekommt die Zeichen der KI. Fehlende Anführungszeichen bleiben ein Fehler.
 - **Nicht gefunden.** Ein Zitat, das der Server nicht findet, wird zu einem Hinweis ohne Ort.
 - **Doppelt.** Eine Stelle, die schon entschieden ist, wird übersprungen. Überschneiden sich zwei neue Vorschläge, zählt der zweite als verworfen (früher ging er stillschweigend verloren).
 
