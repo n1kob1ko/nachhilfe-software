@@ -265,6 +265,19 @@ textarea.input {
   background-position: -1px -1px;
 }
 
+/* Aufgabe mit Bild (components/Figur.tsx, lib/figur.ts): das SVG zeichnet in der Textfarbe und wird
+   schmal verkleinert, nie breiter als der Platz (kein seitliches Verschieben am Handy) */
+.figur {
+  max-width: 100%;
+  margin-top: 0.75rem;
+  color: var(--ink);
+}
+.figur svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 @media print {
   .no-print {
     display: none !important;
@@ -272,6 +285,10 @@ textarea.input {
   body,
   html {
     background: #fff;
+  }
+  .figur {
+    color: #000;
+    break-inside: avoid;
   }
   .panel {
     border: none;

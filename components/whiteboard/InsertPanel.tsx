@@ -76,6 +76,7 @@ export function InsertPanel(p: Props) {
                           <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0" checked={picked.has(keyOf(w.id, t.number))} onChange={() => toggle(keyOf(w.id, t.number))} />
                           <span>
                             <span className="num font-semibold">{t.number})</span> <MathText text={t.prompt} />
+                            {t.figure && <span className="text-ink-3"> · mit Bild</span>}
                           </span>
                         </label>
                         {t.solution && (

@@ -1,6 +1,7 @@
 import type { ClientTask } from "@/components/Solver";
 import { answerText } from "@/components/TaskPreview";
 import { isGenus } from "@/components/genus";
+import { figurSvg } from "./figur";
 import { closestVersion } from "./fix-text";
 import { readingSet } from "./lesen";
 import { gradeMathTask, unknownOf } from "./math-task";
@@ -41,6 +42,8 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
       faulty: t.type === "fix" ? (t.data.faulty ?? "") : null,
       lines: t.type === "free" ? (t.data.lines ?? null) : null,
       genus: isGenus(t.data.genus) ? t.data.genus : null,
+      // Aufgabe mit Bild: nur das fertige Bild ohne Lösung, nie die Angaben dahinter (sie verraten, wo die Marke steht)
+      figur: figurSvg(t.data.figure),
       math:
         t.type === "rechenweg" || t.type === "sachaufgabe"
           ? {

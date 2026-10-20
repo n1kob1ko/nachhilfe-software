@@ -11,6 +11,7 @@ import { GAP } from "@/lib/tasks";
 import { MathLine, RichText } from "./MathLine";
 import { Lines, WorkField } from "./WorkArea";
 import { Marked } from "@/components/FixMarks";
+import { FigurBild, figurKopf } from "@/components/Figur";
 import { markFaultyText } from "@/lib/fix-text";
 import { bereichText, punkteText } from "@/lib/probeschularbeit-regeln";
 
@@ -23,6 +24,31 @@ export function Start({ task }: { task: SheetTask["task"] }) {
       <MathLine text={task.data.start} />
     </p>
   ) : null;
+}
+
+/** Druckgröße der Bilder: Millimeter je Einheit der Zeichnung (die Schrift wird so etwa 10 pt groß). */
+export const FIGUR_MM = 0.25;
+
+/**
+ * Aufgabe mit Bild am Blatt: die Frage, das Bild (Lehrerfassung: mit den gesuchten Werten), dann der Rest der
+ * Aufgabe. `rest` zeichnet den Text nach dem Bild (mit Lücken oder Rechenfeld); ohne Bild kommt nur `rest`.
+ */
+export function MitBild({ task, loesung, rest }: { task: SheetTask["task"]; loesung: boolean; rest: (prompt: string) => React.ReactNode }) {
+  if (!task.data.figure) return <>{rest(task.prompt)}</>;
+  const kopf = figurKopf(task.prompt, GAP);
+  const bild = <FigurBild figure={task.data.figure} loesung={loesung} mm={FIGUR_MM} className="ab-figur" />;
+  return kopf ? (
+    <>
+      <RichText text={kopf} />
+      {bild}
+      {rest(task.prompt.slice(kopf.length + 1))}
+    </>
+  ) : (
+    <>
+      {rest(task.prompt)}
+      {bild}
+    </>
+  );
 }
 
 /** Sachaufgabe: the parts a), b), c), each with room to calculate and a line for the answer (student) or its solution (teacher). */
@@ -193,15 +219,29 @@ export function StudentTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; p
     <div className={taskClass(o, punkte)}>
       {o.numbers && <span className="ab-num">{t.n}</span>}
       <div className="ab-body">
-        {plan.areaBeforeLastLine && plan.area ? (
-          <PromptAroundArea
-            prompt={task.prompt}
-            gapsMm={plan.gapsMm}
-            area={plan.area}
-          />
-        ) : (
-          <RichText text={task.prompt} gapsMm={plan.gapsMm} />
-        )}
+        <MitBild
+          task={task}
+          loesung={false}
+          rest={(prompt) =>
+            plan.areaBeforeLastLine && plan.area && task.data.figure && figurKopf(task.prompt, GAP) ? (
+              // Aufgabe mit Bild: Frage, Bild, Feld zum Rechnen, dann alle Lücken
+              <>
+                <WorkField area={plan.area} />
+                <div className="ab-result">
+                  <RichText text={prompt} gapsMm={plan.gapsMm} />
+                </div>
+              </>
+            ) : plan.areaBeforeLastLine && plan.area ? (
+              <PromptAroundArea
+                prompt={prompt}
+                gapsMm={plan.gapsMm}
+                area={plan.area}
+              />
+            ) : (
+              <RichText text={prompt} gapsMm={plan.gapsMm} />
+            )
+          }
+        />
         <Start task={task} />
         {task.type === "sachaufgabe" && <Parts t={t} teacher={false} />}
         {task.type === "fix" && task.data.faulty && <p className="ab-faulty">{task.data.faulty}</p>}
@@ -261,15 +301,21 @@ function TeacherTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?:
     <div className={taskClass(o, punkte)}>
       {o.numbers && <span className="ab-num">{t.n}</span>}
       <div className="ab-body">
-        <RichText
-          text={task.prompt}
-          gapsMm={t.plan.gapsMm}
-          gapAnswers={
-            task.answer.blanks?.map((b) => b[0] ?? null) ??
-            (task.prompt.split(GAP).length === 2
-              ? [task.answer.accepted?.[0] ?? null]
-              : undefined)
-          }
+        <MitBild
+          task={task}
+          loesung
+          rest={(prompt) => (
+            <RichText
+              text={prompt}
+              gapsMm={t.plan.gapsMm}
+              gapAnswers={
+                task.answer.blanks?.map((b) => b[0] ?? null) ??
+                (task.prompt.split(GAP).length === 2
+                  ? [task.answer.accepted?.[0] ?? null]
+                  : undefined)
+              }
+            />
+          )}
         />
         {task.data.options && (
           <ol
@@ -489,6 +535,10 @@ function SolutionPage({ doc, o }: { doc: SheetDoc; o: SheetOptions }) {
                   <p className="ab-pre ab-muted">
                     <MathLine text={t.task.solution} />
                   </p>
+                )}
+                {/* Ablesen am Zahlenstrahl oder im Koordinatensystem: das Bild mit den Werten, klein */}
+                {t.task.data.figure && t.task.data.figure.art !== "figur" && (
+                  <FigurBild figure={t.task.data.figure} loesung mm={FIGUR_MM * 0.7} className="ab-figur" />
                 )}
               </div>
             </li>

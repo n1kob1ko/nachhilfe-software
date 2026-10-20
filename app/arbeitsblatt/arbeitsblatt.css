@@ -335,6 +335,17 @@
   font-size: 13pt;
   font-weight: 600;
 }
+/* Aufgabe mit Bild (components/Figur.tsx): schwarze Striche, nichts als CSS-Hintergrund (das druckt nicht),
+   Breite in mm je nach Bild, nie breiter als die Spalte, nicht über eine Seite geteilt */
+.ab-sheet .ab-figur {
+  margin: 2mm 0 2.5mm;
+  max-width: 100%;
+  color: #000;
+  break-inside: avoid;
+}
+.ab-solutions .ab-figur {
+  margin: 1mm 0 0;
+}
 .ab-parts {
   list-style: none;
   margin: 2mm 0 0;

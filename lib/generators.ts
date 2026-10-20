@@ -23,7 +23,9 @@ import {
   type HauptsatzGliedsatzItem,
   type PraepositionenItem,
 } from "./banks";
+import { aufgabenSchluessel } from "./figur";
 import { expectedFixes } from "./fix-text";
+import { figurAufgabe, figurFaehigkeit, type FigurFormat } from "./generators-figur";
 import { rechenwegTask, sachaufgabeTask } from "./generators-mathe";
 import { MATHE_RECHNUNGEN } from "./mathe-rechnungen";
 import { textaufgabeTask } from "./textaufgaben";
@@ -866,7 +868,12 @@ function toMC(rng: Rng, t: TaskDraft): TaskDraft {
     .filter((e) => e.answer !== "-1");
   // shown with a decimal comma and a real minus sign
   const show = (o: string) => o.replace(/(\d)\.(\d)/g, "$1,$2").replace(/^-(?=\d)/, "−");
-  return { ...t, type: "mc", data: { options: options.map(show) }, answer: { correct: options.indexOf(correct) }, errorMap };
+  return { ...t, type: "mc", data: { ...mitBild(t), options: options.map(show) }, answer: { correct: options.indexOf(correct) }, errorMap };
+}
+
+/** Das Bild einer Aufgabe mit Bild (lib/figur.ts) bleibt bei jeder Umwandlung dabei. */
+function mitBild(t: TaskDraft): Pick<TaskDraft["data"], "figure"> {
+  return t.data.figure ? { figure: t.data.figure } : {};
 }
 
 function toCloze(t: TaskDraft): TaskDraft {
@@ -918,7 +925,7 @@ function toOrder(rng: Rng, t: TaskDraft): TaskDraft | null {
     type: "order",
     category: "ordnen",
     prompt: `Bring die Schritte des Lösungswegs in die richtige Reihenfolge.\n${t.prompt}`,
-    data: { steps: shown },
+    data: { ...mitBild(t), steps: shown },
     answer: { steps },
     hints: ["Womit beginnt man bei dieser Aufgabe?", "Der letzte Schritt ist das Ergebnis."],
     errorMap: [],
@@ -938,6 +945,35 @@ export type Slot = {
   grade?: number;
 };
 
+/** Eine Aufgabe mit Bild als Rechnung; wo es keine gibt (Intervalle), als Multiple Choice. */
+const figurBasis = (figId: string, diff: Difficulty, rng: Rng) => figurAufgabe(figId, diff, "calc", rng) ?? figurAufgabe(figId, diff, "mc", rng);
+
+/**
+ * Ein Platz im Builder für eine Fähigkeit mit Aufgaben mit Bild: Multiple Choice und Lückentext haben eigene
+ * Fragen zum Bild, die anderen Aufgabentypen entstehen wie bei den anderen Generatoren aus der Rechnung.
+ */
+function figurFuerSlot(figId: string, slot: Slot, rng: Rng, tag: (t: TaskDraft, category?: string | null) => TaskDraft): TaskDraft {
+  const basis = figurBasis(figId, slot.difficulty, rng)!;
+  switch (slot.category) {
+    case "mc":
+      return tag(figurAufgabe(figId, slot.difficulty, "mc", rng) ?? toMC(rng, basis));
+    case "lueckentext":
+    case "gap":
+      return tag(figurAufgabe(figId, slot.difficulty, "cloze", rng) ?? toCloze(basis));
+    case "fehler":
+      return tag(toFindError(rng, basis) ?? basis, "fehler");
+    case "ordnen": {
+      const ordered = toOrder(rng, basis);
+      return ordered ? tag(ordered, "ordnen") : tag(basis, "rechnung");
+    }
+    case "textaufgabe":
+      return tag(basis, "rechnung");
+    default:
+      // „Direkte Rechnung“ erlaubt Rechnung und Multiple Choice (Intervalle gibt es nur so)
+      return tag(basis);
+  }
+}
+
 /**
  * One task for one slot of the builder: skill, difficulty and task type. Sub-skills without a
  * generator of their own use the generator of their parent (generatorSkillId). Returns an
@@ -950,10 +986,12 @@ export function generateForSlot(slot: Slot, rng: Rng = Math.random, variant = 0)
     return wortartenTask({ skillId: slot.skillId, setting, difficulty: slot.difficulty, category: slot.category, variant }, rng);
   }
   const genId = GEN[slot.skillId] ? slot.skillId : slot.generatorSkillId && GEN[slot.generatorSkillId] ? slot.generatorSkillId : null;
+  // Aufgaben mit Bild (Zahlenstrahl, Koordinatensystem, Figur): lib/generators-figur.ts
+  const figId = figurFaehigkeit(slot.skillId) ?? figurFaehigkeit(slot.generatorSkillId);
   const tag = (t: TaskDraft, category: string | null = slot.category): TaskDraft => ({
     ...t,
     skillId: slot.skillId,
-    skillIds: [...new Set([slot.skillId, ...(genId && genId !== slot.skillId ? [genId] : [])])],
+    skillIds: [...new Set([slot.skillId, ...[genId, figId].filter((x): x is string => Boolean(x) && x !== slot.skillId)])],
     category,
     difficulty: slot.difficulty,
   });
@@ -971,9 +1009,11 @@ export function generateForSlot(slot: Slot, rng: Rng = Math.random, variant = 0)
   // Rechenweg and Sachaufgabe: own maths generators (lib/generators-mathe.ts); skills without one get a free answer
   if (slot.category === "rechenweg" || slot.category === "sachaufgabe") {
     const make = slot.category === "rechenweg" ? rechenwegTask : sachaufgabeTask;
-    const t = make(slot.skillId, slot.difficulty, rng) ?? (genId ? make(genId, slot.difficulty, rng) : null);
+    const bild = figId ? figurAufgabe(figId, slot.difficulty, slot.category, rng) : null;
+    const t = bild ?? make(slot.skillId, slot.difficulty, rng) ?? (genId ? make(genId, slot.difficulty, rng) : null);
     return t ? tag(t, slot.category) : free();
   }
+  if (figId && !["offen", "schreiben", "writing"].includes(slot.category ?? "")) return figurFuerSlot(figId, slot, rng, tag);
   if (!genId || ["offen", "schreiben", "writing"].includes(slot.category ?? "")) return free();
   const base = GEN[genId](rng, slot.difficulty);
   switch (slot.category) {
@@ -1034,7 +1074,16 @@ export function hasBuiltInGenerator(skillId: string): boolean {
   // Teilfähigkeiten (ids "parent.suffix") use the generator of their skill
   const parent = skillId.split(".").slice(0, 3).join(".");
   if (parent !== skillId && hasBuiltInGenerator(parent)) return true;
-  return skillId in GEN || skillId.endsWith("reading.comprehension") || skillId === "deutsch.text.verstehen" || isWortartenSkill(skillId);
+  return skillId in GEN || figurFaehigkeit(skillId) !== null || skillId.endsWith("reading.comprehension") || skillId === "deutsch.text.verstehen" || isWortartenSkill(skillId);
+}
+
+/** Eine Aufgabe mit Bild im Aufgabentyp der Anfrage (gemischt: Rechnung, Multiple Choice oder Lückentext). */
+function figurFuerTyp(figId: string, req: GenerateRequest, rng: Rng): TaskDraft {
+  const type = req.taskType === "mixed" ? pick(rng, ["calc", "mc", "cloze"] as const) : req.taskType;
+  const basis = () => figurBasis(figId, req.difficulty, rng)!;
+  if (type === "mc" || type === "cloze" || type === "rechenweg" || type === "sachaufgabe") return figurAufgabe(figId, req.difficulty, type as FigurFormat, rng) ?? basis();
+  if (type === "order") return toOrder(rng, basis()) ?? basis();
+  return basis();
 }
 
 /** Generates tasks without AI. Skills without a generator get explanation tasks. */
@@ -1052,12 +1101,23 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
   while (out.length < req.count && guard++ < req.count * 20 && skills.length > 0) {
     const skill = skills[i++ % skills.length];
     let t: TaskDraft;
-    const maths = req.taskType === "rechenweg" ? rechenwegTask(skill.id, req.difficulty, rng) : req.taskType === "sachaufgabe" ? sachaufgabeTask(skill.id, req.difficulty, rng) : null;
+    const figId = figurFaehigkeit(skill.id);
+    // Rechenweg und Sachaufgabe: zuerst mit Bild (wenn es das für die Fähigkeit gibt), sonst lib/generators-mathe.ts
+    const fuerSkill = (f: TaskDraft | null): TaskDraft | null => (f ? { ...f, skillId: skill.id, skillIds: [...new Set([skill.id, ...(f.skillIds ?? [])])] } : null);
+    const maths =
+      req.taskType === "rechenweg"
+        ? (fuerSkill(figId ? figurAufgabe(figId, req.difficulty, "rechenweg", rng) : null) ?? rechenwegTask(skill.id, req.difficulty, rng))
+        : req.taskType === "sachaufgabe"
+          ? (fuerSkill(figId ? figurAufgabe(figId, req.difficulty, "sachaufgabe", rng) : null) ?? sachaufgabeTask(skill.id, req.difficulty, rng))
+          : null;
     if (isWortartenSkill(skill.id)) {
       const setting = req.wortarten ?? wortartenFor(req.skills.map((s) => s.id), req.grade ?? 5)!;
       t = wortartenTask({ skillId: skill.id, setting, difficulty: req.difficulty, category: WORTART_CATEGORY[req.taskType] ?? null, variant: Math.floor((i - 1) / skills.length) + guard }, rng);
     } else if (maths) {
       t = maths;
+    } else if (figId && req.taskType !== "free") {
+      // Aufgaben mit Bild: die Fähigkeit der Aufgabe ist die gewählte (auch eine Teilfähigkeit)
+      t = fuerSkill(figurFuerTyp(figId, req, rng))!;
     } else if (req.taskType === "free" || req.taskType === "rechenweg" || req.taskType === "sachaufgabe" || !GEN[skill.id]) {
       t = freeTask(skill.id, skill.name, req.difficulty, Math.floor((i - 1) / skills.length));
       if (seen.has(t.prompt.split("\n")[0])) break;
@@ -1068,7 +1128,8 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
       else if (type === "cloze") t = toCloze(t);
       else if (type === "grammar" && t.type === "calc") t = { ...t, type: "grammar" };
     }
-    const key = t.prompt.split("\n")[0];
+    // Aufgaben mit Bild unterscheiden sich im Bild, nicht in der ersten Zeile
+    const key = t.data.figure ? aufgabenSchluessel(t) : t.prompt.split("\n")[0];
     if (seen.has(key) && guard < req.count * 15) continue;
     seen.add(key);
     out.push(t);

@@ -17,6 +17,7 @@
 import { db } from "./db";
 import { libraryTask, taskKey } from "./diagnose";
 import { DIFFICULTIES, type Difficulty, type TaskType } from "./curriculum";
+import { aufgabenSchluessel } from "./figur";
 import { generateBuiltIn, hasBuiltInGenerator } from "./generators";
 import { isMinitest } from "./quick-round";
 import * as repo from "./repo";
@@ -94,6 +95,16 @@ export function letzterStoff(studentId: number, unitId: number | null): Stoff | 
   return null;
 }
 
+/** Die gespeicherten Daten einer Aufgabe (JSON); kaputte Daten zählen als leer. */
+function datenVon(raw: string): { figure?: unknown } {
+  try {
+    const v = JSON.parse(raw) as unknown;
+    return v && typeof v === "object" ? (v as { figure?: unknown }) : {};
+  } catch {
+    return {};
+  }
+}
+
 const schwierigkeit = (d: string): Difficulty => ((DIFFICULTIES as readonly string[]).includes(d) ? (d as Difficulty) : "mittel");
 /** Antwortformate, in denen die Generatoren neue Varianten machen; alles andere als Rechnung. */
 const FORMAT: Partial<Record<TaskType, TaskType>> = { calc: "calc", mc: "mc", cloze: "cloze", rechenweg: "rechenweg", sachaufgabe: "sachaufgabe" };
@@ -128,7 +139,7 @@ function neueVariante(v: StoffAufgabe, grade: number, schonDa: Set<string>, gese
       const [t] = generateBuiltIn({ subject: v.fach, skills: [{ id: skillId, name }], difficulty: schwierigkeit(v.task.difficulty), count: 1, taskType: format, seed: seed === undefined ? undefined : seed + k, grade });
       // Erklärungsaufgaben (frei) und ganze Lesetexte passen nicht in einen kurzen Test
       if (!t || ((t.type === "free" || t.type === "reading") && t.type !== v.task.type)) break;
-      if (schonDa.has(taskKey(t)) || gesehen.has(t.prompt)) continue;
+      if (schonDa.has(taskKey(t)) || gesehen.has(aufgabenSchluessel(t))) continue;
       return { ...t, skillId, sourceType: "eigen" };
     }
   }
@@ -144,8 +155,11 @@ function kopie(t: repo.Task): TaskDraft {
 
 /** Die Aufgaben des Minitests aus dem Stoff: neue Varianten, sonst Bibliothek, sonst die Aufgabe selbst. */
 export function minitestAufgaben(stoff: Stoff, anzahl: number, grade: number, seed?: number): TaskDraft[] {
+  // schon bearbeitete Aufgaben; Aufgaben mit Bild haben oft denselben Text und zählen mit ihrem Bild (aufgabenSchluessel)
   const gesehen = new Set(
-    (db().prepare("SELECT DISTINCT t.prompt FROM attempts a JOIN tasks t ON t.id = a.task_id WHERE a.student_id = ?").all(stoff.unit.student_id) as { prompt: string }[]).map((r) => r.prompt),
+    (db().prepare("SELECT DISTINCT t.prompt, t.data FROM attempts a JOIN tasks t ON t.id = a.task_id WHERE a.student_id = ?").all(stoff.unit.student_id) as { prompt: string; data: string }[]).map((r) =>
+      aufgabenSchluessel({ prompt: r.prompt, data: datenVon(r.data) }),
+    ),
   );
   const schonDa = new Set<string>();
   const benutzt = new Set<number>();

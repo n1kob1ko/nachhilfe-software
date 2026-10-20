@@ -140,6 +140,10 @@ const MIX_BY_SKILL: [RegExp, string[]][] = [
   [/^mathe\.gleichungen\.text/, ["sachaufgabe", "rechenweg", "textaufgabe", "ordnen"]],
   [/^mathe\.gleichungen\./, ["rechenweg", "rechnung", "lueckentext", "fehler"]],
   [/^mathe\.prozent\./, ["sachaufgabe", "rechenweg", "rechnung", "mc"]],
+  // Ablesen am Bild (lib/generators-figur.ts): Zahlenstrahl, Zahlengerade, Koordinatensystem. Hier gibt es
+  // keinen Rechenweg; Intervalle sind nur Multiple Choice.
+  [/^mathe\.os\.zahlen\.intervalle(\.|$)/, ["mc"]],
+  [/^mathe\.(vs\.zahlen\.zahlenstrahl|zahlen\.gross|negativ\.(zahlengerade|rational)|dezimal\.vergleichen|brueche\.(anteile|vergleichen|gemischt)|geometrie\.koordinaten|funktionen\.darstellungen|gleichungssysteme\.grafisch)(\.|$)/, ["rechnung", "lueckentext", "mc"]],
   [/^mathe\.brueche\./, ["rechenweg", "sachaufgabe", "rechnung", "mc"]],
   [/^mathe\./, ["rechenweg", "rechnung", "lueckentext", "mc"]],
 ];
