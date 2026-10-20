@@ -144,6 +144,7 @@ Ohne Admin-Zugang geht Schritt 1 auch per `railway ssh`:
 | --- | --- |
 | `DATABASE_PATH` | Datenbankdatei, im Docker-Image `/data/nachhilfe.db` |
 | `UPLOADS_PATH` | Ordner für Material, sonst `uploads/` neben der Datenbank |
+| `TZ` | im Docker-Image `Europe/Vienna`. Die App setzt beim Start ohnehin Wiener Zeit (`instrumentation.ts`): „heute“ auf der Startseite und die Uhrzeiten der Dokumentation sind Wiener Zeit, auch wenn der Server in UTC läuft |
 | `ANTHROPIC_API_KEY` | optional: Schlüssel für Anthropic (Standard-Anbieter) für neue Aufgaben, Echtzeit-Hinweise, Material-Erkennung, formulierte Notizen |
 | `OPENROUTER_API_KEY` | optional: Schlüssel für OpenRouter (`OPENROUTER_BASE_URL` nur bei abweichender Adresse). Ist nur dieser Schlüssel gesetzt, laufen alle Bereiche über OpenRouter mit den Standardmodellen (siehe [ki-modelle.md](ki-modelle.md)) |
 | `DEEPSEEK_API_KEY` | optional: Schlüssel für DeepSeek direkt (`DEEPSEEK_BASE_URL` nur bei abweichender Adresse); liest keine Bilder oder PDFs |

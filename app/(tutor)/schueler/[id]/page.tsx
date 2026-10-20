@@ -130,7 +130,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
 function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
   const lessons = repo.listLessons(student.id).filter((l) => l.kind === "stunde");
   const lastDone = lessons.find((l) => l.status === "abgeschlossen");
-  const next = [...lessons].reverse().find((l) => l.status === "geplant" && l.starts_at >= new Date().toISOString().slice(0, 10));
+  const next = [...lessons].reverse().find((l) => l.status === "geplant" && l.starts_at >= wienerDatum());
   const tests = repo.listTests(student.id);
   const hw = repo.listHomework(student.id).filter((h) => h.status === "offen");
   const first = student.name.split(" ")[0];

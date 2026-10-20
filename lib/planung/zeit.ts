@@ -125,6 +125,12 @@ export function wienerMinuten(now: Date = new Date()): number {
   return (Number(stunde) % 24) * 60 + Number(minute);
 }
 
+/** Datum und Uhrzeit in Europe/Vienna als YYYY-MM-DDTHH:MM, so wie Termine in `lessons.starts_at` stehen. */
+export function wienerZeitstempel(now: Date | number = new Date()): string {
+  const { jahr, monat, tag, stunde, minute } = wienerTeile(new Date(now));
+  return `${jahr}-${monat}-${tag}T${String(Number(stunde) % 24).padStart(2, "0")}:${minute}`;
+}
+
 /** Montag der laufenden Woche in Europe/Vienna. */
 export function wienerWochenstart(now: Date = new Date()): string {
   return wochenstartVon(wienerDatum(now));
