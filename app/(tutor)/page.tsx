@@ -451,7 +451,8 @@ function StudentPicker({ students, open, label }: { students: repo.Student[]; op
   if (open) return list;
   return (
     <details className="group mt-4">
-      <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[15px] font-semibold text-accent">
+      {/* steht in der blauen Bühne: weiß, nicht blau (niko, 21.10.2026) */}
+      <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[15px] font-semibold text-white/90 hover:text-white">
         {label} <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden />
       </summary>
       {list}
