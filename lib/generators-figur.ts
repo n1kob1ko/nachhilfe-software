@@ -1985,11 +1985,14 @@ function diagrammAufgabe(skillId: string, diff: Difficulty, format: FigurFormat,
       errorMap: gesamt ? [] : fehlerOhne(roh(ergebnis), [{ answer: roh(werte[wo(a)] + werte[wo(b)]), label: "Addiert statt subtrahiert" }]),
     });
   }
-  // Multiple Choice: wo ist es am meisten?
+  // Multiple Choice: wo ist es am meisten? Bei mehr als 4 Dingen stehen das größte und 3 andere zur Wahl
   if (format === "mc" && rng() < 0.4) {
-    const options = dinge.slice(0, 4).map((x) => x.lang);
-    const reihe = dinge.slice(0, 4);
-    const w4 = werte.slice(0, 4);
+    const groesste = werte.indexOf(Math.max(...werte));
+    const andere = shuffle(rng, dinge.map((_, i) => i).filter((i) => i !== groesste)).slice(0, 3);
+    const wahl = [groesste, ...andere].sort((a, b) => a - b);
+    const reihe = wahl.map((i) => dinge[i]);
+    const options = reihe.map((x) => x.lang);
+    const w4 = wahl.map((i) => werte[i]);
     const correct = w4.indexOf(Math.max(...w4));
     const kleinste = w4.indexOf(Math.min(...w4));
     const frage = reihe.length === dinge.length ? k.meiste : `${k.meiste} Wähle aus: ${options.join(", ")}.`;

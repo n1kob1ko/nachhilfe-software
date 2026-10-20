@@ -148,6 +148,12 @@ export function kuerzen({ z, n }: Bruch): Bruch {
 export const bruchWert = (b: Bruch) => b.z / b.n;
 /** Liegt der Wert im Diagramm genau auf einer Gitterlinie? Sonst wird er angeschrieben. */
 export const aufGitter = (f: Pick<Diagramm, "min" | "schritt">, v: number) => Math.abs((v - f.min) / f.schritt - Math.round((v - f.min) / f.schritt)) < 1e-6;
+/**
+ * Steht der Wert im Bild als Zahl dabei? Ja, wenn alle Werte angeschrieben werden, wenn er zwischen zwei
+ * Gitterlinien liegt oder wenn eine Säule oder ein Balken 0 ist (sonst sähe man nur eine Lücke). Gesuchte nie.
+ */
+export const angeschrieben = (f: Diagramm, w: Diagramm["werte"][number]) =>
+  !w.gesucht && (f.werteZeigen || !aufGitter(f, w.wert) || (w.wert === 0 && f.form !== "linie"));
 
 /** Schöne Zahl wie im Schulbuch: Beistrich, Leerzeichen zwischen Dreiergruppen ab 1 000, echtes Minus. */
 export function zahl(v: number, nachkomma?: number): string {
@@ -431,7 +437,7 @@ export function figurBeschreibung(raw: unknown): string | null {
     const teile = [`${DIAGRAMM_FORMEN[f.form]}${f.titel ? ` „${f.titel}“` : ""} mit ${f.werte.length} ${f.werte.length === 1 ? stueck[0] : stueck[1]}${namen.length ? `: ${aufzaehlen(namen)}` : ""}.`];
     teile.push(`Die Achse${f.achse ? ` „${f.achse}“` : ""} geht von ${zahl(f.min)} bis ${zahl(f.max)}, die Gitterlinien sind ${zahl(f.schritt)} auseinander.`);
     if (f.form !== "linie" && f.min > 0) teile.push("Die Achse beginnt nicht bei 0.");
-    const gezeigt = f.werte.filter((w) => !w.gesucht && (f.werteZeigen || !aufGitter(f, w.wert)));
+    const gezeigt = f.werte.filter((w) => angeschrieben(f, w));
     if (gezeigt.length) teile.push(`Angeschrieben: ${gezeigt.map((w) => `${w.name ? `${w.name} ` : ""}${zahl(w.wert)}`).join(", ")}.`);
     const fehlt = f.werte.filter((w) => w.gesucht).map((w) => w.name || "?");
     if (fehlt.length) teile.push(`${f.form === "balken" ? "Der Balken" : "Die Säule"} bei ${aufzaehlen(fehlt)} fehlt.`);
@@ -885,8 +891,8 @@ function diagrammSzene(f: Diagramm, loesung: boolean): Teil[] {
   const zahlAn = (alle: number) => (v: number) => (((Math.round((v - basis) / f.schritt) % alle) + alle) % alle) === 0;
   const GZ = 12.5;
   const GN = 13;
-  const anschreiben = (w: Diagramm["werte"][number]) => loesung || (!w.gesucht && (f.werteZeigen || !aufGitter(f, w.wert)));
-  const wertFett = (w: Diagramm["werte"][number]) => loesung && (w.gesucht || !(f.werteZeigen || !aufGitter(f, w.wert)));
+  const anschreiben = (w: Diagramm["werte"][number]) => loesung || angeschrieben(f, w);
+  const wertFett = (w: Diagramm["werte"][number]) => loesung && !angeschrieben(f, w);
   const zahlenBreite = Math.max(...linien.filter(zahlAn(f.zahlenAlle)).map((v) => textBreite(zahl(v), GZ)), 8);
   /**
    * Die Zahlen an der Werteachse berühren sich nie: der Abstand der Gitterlinien `g` wächst bis `hoechstens`, bis

@@ -111,6 +111,8 @@ Die Zahlen sind wie im Schulbuch: ganze oder einfache Dezimalzahlen, pythagoreis
 ### Diagramme: genau ablesbar
 
 - Jeder Wert liegt auf einer Gitterlinie. Ein Wert dazwischen (nur im Editor möglich) wird im Bild angeschrieben, damit er genau ablesbar bleibt.
+- Eine Säule oder ein Balken mit 0 steht immer als „0“ im Bild. Sonst sähe man nur eine Lücke und wüsste nicht, ob der Wert fehlt (wichtig beim Mittelwert, wo die 0 mitzählt).
+- Bei „Wo am meisten?“ mit mehr als 4 Dingen stehen das größte und 3 andere zur Wahl, nie nur die ersten 4.
 - Nicht jede Linie hat eine Zahl: ab „mittel“ steht oft nur an jeder zweiten (oder vierten, fünften) Linie eine. Das ist Absicht; die Hilfen sagen, wie viel eine Linie ist.
 - Die Zahlen an der Werteachse berühren sich nie: sind sie breit (etwa 240 beim Balkendiagramm), rücken die Gitterlinien auseinander. Erst bei sehr vielen Linien (nur im Editor möglich) steht an weniger Linien eine Zahl; die Gitterlinien bleiben alle.
 - Eine Achse, die nicht bei 0 beginnt, hat ein Zackenzeichen; die Aufgabe dazu fragt, welche Aussage stimmt.

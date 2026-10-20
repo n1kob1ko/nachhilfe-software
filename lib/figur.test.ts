@@ -226,9 +226,13 @@ function diagrammAusDemBild(t: TaskDraft, f: Diagramm, got: (number | null)[], w
       const i = zu.indexOf(Math.max(...zu));
       return assert.equal(o[t.answer.correct!], `Von der ${f.werte[i].name} bis zur ${f.werte[i + 1].name}`, wo);
     }
-    const reihe = werte.slice(0, o.length);
     assert.ok(o.length === werte.length || p.includes(`Wähle aus: ${o.join(", ")}.`), wo);
-    return assert.equal(reihe[t.answer.correct!], Math.max(...reihe), wo);
+    // richtig ist das Größte im ganzen Diagramm, nicht nur unter den Antworten („Mo“ steht als „Montag“, „1a“ als „die 1a“ zur Wahl)
+    const passt = (x: string, name: string) => x.toLowerCase().startsWith(name.toLowerCase()) || x.toLowerCase().endsWith(` ${name.toLowerCase()}`);
+    const wert = (x: string) => werte[f.werte.findIndex((w) => passt(x, w.name))];
+    assert.ok(o.every((x) => wert(x) !== undefined), `${wo}: ${o.join(" | ")}`);
+    assert.equal(werte.filter((v) => v === Math.max(...werte)).length, 1, wo);
+    return assert.equal(wert(o[t.answer.correct!]), Math.max(...werte), wo);
   }
   if (t.type === "cloze") return gleich(gelesen);
   if (t.solution.startsWith("Die Werte:")) return gleich([summe]);
@@ -501,6 +505,35 @@ test("Kreis und Diagramm: gesuchte Werte nur in der Lehrerfassung, Werte genau a
   assert.doesNotMatch(frech, /<script|<i>/);
   assert.match(frech, /&lt;script&gt;x&lt;\/script&gt;/);
   assert.match(frech, /a&amp;b/);
+});
+
+test("Diagramme: eine 0 steht als Zahl da, „die meisten“ hat immer die richtige Antwort zur Wahl", () => {
+  // eine Säule oder ein Balken mit 0 ist sonst nur eine Lücke: man sähe nicht, ob der Wert fehlt
+  const woche: Diagramm = { art: "diagramm", form: "saeulen", titel: "Gelesene Seiten", achse: "Seiten", min: 0, max: 40, schritt: 10, zahlenAlle: 1, werte: [{ name: "Mo", wert: 30 }, { name: "Di", wert: 0 }], werteZeigen: false };
+  for (const form of ["saeulen", "balken"] as const) {
+    const svg = figurSvg({ ...woche, form })!;
+    assert.equal(svg.match(/>0</g)?.length, 2, `${form}: die 0 an der Achse und bei der Säule`);
+    assert.match(figurBeschreibung({ ...woche, form })!, /Angeschrieben: Di 0\./);
+  }
+  assert.equal(figurSvg({ ...woche, form: "linie" })!.match(/>0</g)?.length, 1, "auf der Linie ist der Punkt bei 0 zu sehen");
+  // „Wo am meisten?“ mit mehr als 4 Dingen: das größte ist immer unter den 4 Antworten
+  let seed = 5;
+  const rng = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  let gesehen = 0;
+  for (const skill of ["mathe.vs.daten.diagramme", "mathe.statistik.diagramme"])
+    for (const d of DIFFS)
+      for (let i = 0; i < 120; i++) {
+        const t = figurAufgabe(skill, d, "mc", rng);
+        const f = t?.data.figure;
+        if (!t || f?.art !== "diagramm" || !/meisten/.test(t.prompt) || f.form === "linie") continue;
+        gesehen++;
+        const groesste = Math.max(...f.werte.map((w) => w.wert));
+        const richtig = (t.data.options as string[])[t.answer.correct as number];
+        const name = f.werte.find((w) => w.wert === groesste)!.name;
+        assert.equal(f.werte.filter((w) => w.wert === groesste).length, 1, t.prompt);
+        assert.ok(richtig.toLowerCase().includes(name.toLowerCase().slice(0, 3)), `${t.prompt}: ${richtig} statt ${name}`);
+      }
+  assert.ok(gesehen > 20, `nur ${gesehen} Aufgaben „die meisten“`);
 });
 
 test("Diagramme: die Zahlen an der Werteachse berühren sich nie, alle Gitterlinien bleiben, auch bei sehr vielen", () => {
