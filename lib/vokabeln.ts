@@ -522,6 +522,27 @@ export function wortSchluessel(e: Pick<Vokabel, "en" | "de">): string {
   return `Vokabel ${h.toString(36)}`;
 }
 
+/** e is in the topic lists with this meaning: an entry there has its English and its German. */
+function bekannt(lex: Lexikon | undefined, e: Vokabel): boolean {
+  const de = deFormen(e);
+  for (const k of enKeys(e)) {
+    for (const l of lex?.nachEn.get(k) ?? []) if (deFormen(l).some((x) => de.some((y) => y.key === x.key && (!x.artikel || !y.artikel || artikelPasst(x.artikel, y.artikel))))) return true;
+  }
+  return false;
+}
+
+/**
+ * The other words of the list, split: an answer from sicher is certainly wrong, one from unsicher goes to the
+ * teacher. In an own list two words may mean nearly the same (look = schauen, watch = anschauen), so a word
+ * is only certainly another one when the checked topic lists know both words.
+ */
+function teileFremd(q: Quelle, e: Vokabel, fremd: Vokabel[]): { sicher: Vokabel[]; unsicher: Vokabel[] } {
+  if (q.thema) return { sicher: fremd, unsicher: [] };
+  if (!bekannt(q.lexikon, e)) return { sicher: [], unsicher: fremd };
+  const sicher = fremd.filter((x) => bekannt(q.lexikon, x));
+  return { sicher, unsicher: fremd.filter((x) => !sicher.includes(x)) };
+}
+
 /** The other words of the list as [answer, translation], words of the same class first, at most 120. */
 function andere(fremd: Vokabel[], richtung: Richtung, wa: Wortart | undefined): [string, string][] {
   const sortiert = [...fremd.filter((x) => wortartVon(x) === wa), ...fremd.filter((x) => wortartVon(x) !== wa)];
@@ -532,6 +553,7 @@ function andere(fremd: Vokabel[], richtung: Richtung, wa: Wortart | undefined): 
 
 function kurzantwort(q: Quelle, e: Vokabel, richtung: Richtung): TaskDraft {
   const { richtig, frage, auch, fremd, sprache, wa } = antworten(q, e, richtung);
+  const { sicher, unsicher } = teileFremd(q, e, fremd);
   const gefragt = richtung === "de-en" ? e.de[0] : e.en[0];
   const satz = e.satz ? sauberSatz(e.satz) : null;
   const f = e.satz ? fundstelle(e) : null;
@@ -541,7 +563,8 @@ function kurzantwort(q: Quelle, e: Vokabel, richtung: Richtung): TaskDraft {
     ...(wa ? { wortart: wa } : {}),
     frage,
     ...(auch.length ? { auch } : {}),
-    andere: andere(fremd, richtung, wa),
+    andere: andere(sicher, richtung, wa),
+    ...(unsicher.length ? { andereUnsicher: andere(unsicher, richtung, wa) } : {}),
   };
   const hints =
     richtung === "de-en"
@@ -621,12 +644,15 @@ function luecke(q: Quelle, e: Vokabel, st: number): TaskDraft | null {
   const cue = e.de[0].replace(/[()]/g, "").replace(/\s+/g, " ").trim();
   const hinweis = (teileDe(cue).artikel ? cue.split(" ").slice(1).join(" ") : cue).trim();
   const { fremd, wa } = antworten(q, e, "de-en");
+  const { sicher, unsicher } = teileFremd(q, e, fremd);
   const formen = andereFormen(f, wa);
+  const fuerDenSatz = (xs: Vokabel[]) => andere(xs, "de-en", wa).map(([w, d]) => [imSatz(w, wortartVon({ en: [w], de: [d] })), d] as [string, string]);
   const vokabel: VokabelSpec = {
     sprache: "en",
     ...(wa ? { wortart: wa } : {}),
     frage: uniq([...e.de, hinweis]),
-    andere: andere(fremd, "de-en", wa).map(([w, d]) => [imSatz(w, wortartVon({ en: [w], de: [d] })), d] as [string, string]),
+    andere: fuerDenSatz(sicher),
+    ...(unsicher.length ? { andereUnsicher: fuerDenSatz(unsicher) } : {}),
     ...(f.gebeugt ? { grundform: f.grund, formSicher: q.thema && !auchVergangenheit(f) } : {}),
     ...(formen.length ? { formen } : {}),
   };

@@ -463,7 +463,7 @@ pillow = der Polster; das Kissen | My pillow is soft.
 blanket = die Decke; die Bettdecke | I need a warm blanket.
 `,
       `
-to move = umziehen | We move to Vienna next month.
+to move = umziehen | We want to move to a bigger flat.
 to rent = mieten | They rent a small flat.
 furniture = die Möbel | We need new furniture.
 dishwasher = der Geschirrspüler; die Spülmaschine | Put the plates in the dishwasher.
@@ -557,7 +557,7 @@ bag = die Tasche; die Tüte; das Sackerl | Do you need a bag?
       `
 customer = der Kunde; die Kundin | The customer wants to pay.
 shop assistant = der Verkäufer; die Verkäuferin | The shop assistant is very friendly.
-receipt = der Kassenbon; der Kassazettel; die Quittung | Keep the receipt.
+receipt = der Kassabon; der Kassenbon; der Kassazettel; die Quittung | Keep the receipt.
 to fit = passen | These shoes don't fit.
 to look for = suchen | I'm looking for a red scarf.
 cash = das Bargeld | Do you pay in cash?

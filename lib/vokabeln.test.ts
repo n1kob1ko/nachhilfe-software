@@ -387,6 +387,20 @@ test("prüfen: falsch nur, wenn die App weiß warum; sonst schaut die Lehrkraft"
   // ein anderes Wort der Liste: falsch, und das Etikett sagt, was es heißt
   const katze = pruefe(hund, "cat");
   assert.deepEqual([katze.correct, katze.errorLabel, katze.errorType], [false, "„cat“ heißt „die Katze“", "wortschatz"]);
+  // in einer eigenen Liste nur, wenn die Themenlisten beide Wörter kennen: look, see und watch kennen sie nicht
+  const schauen = eigeneQuelle("look = schauen\nsee = sehen\nwatch = beobachten; anschauen\ndog = der Hund");
+  const look = schriftlich(schauen, wort(schauen, "look"), "en-de");
+  for (const [s, bei] of [["sehen", "see"], ["anschauen", "watch"]]) {
+    const r = pruefe(look, s);
+    assert.equal(r.correct, null, s);
+    assert.equal(r.feedback, `In der Liste steht „${s}“ bei „${bei}“. Ob es hier auch passt, schaut sich deine Lehrerin bzw. dein Lehrer an.`);
+  }
+  assert.equal(pruefe(look, "Hund").correct, null, "look kennen die Themenlisten nicht");
+  assert.equal(pruefe(schriftlich(schauen, wort(schauen, "dog"), "en-de"), "sehen").correct, null);
+  assert.equal(pruefe(schriftlich(schauen, wort(schauen, "watch"), "de-en"), "look").correct, null);
+  // in einer Themenliste ist ein anderes Wort sicher falsch: dort sind die Bedeutungen geprüft
+  const ff = themaQuelle("englisch.vocab.false-friends");
+  assert.equal(pruefe(schriftlich(ff, wort(ff, "fast"), "en-de"), "fast").errorLabel, "„fast“ heißt auf Englisch „almost“");
   // ein Buchstabe falsch: zählt als falsch, mit eigenem Etikett
   const tipp = pruefe(hund, "dgo");
   assert.deepEqual([tipp.correct, tipp.errorLabel, tipp.errorType], [false, "Ein Buchstabe falsch", "rechtschreibung"]);

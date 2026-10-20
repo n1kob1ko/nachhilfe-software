@@ -1,10 +1,12 @@
 /**
  * Vokabeltrainer: how an answer is compared with the words of a list (lib/vokabeln.ts builds the tasks).
  * niko's rule: a wrong correction is worse than a missing one. So an answer counts as wrong only when the
- * app knows why: another word of the same list, the wrong German article, the base form in a gap of a checked
- * topic sentence, one letter wrong. Every other answer that is not in the list may still be right: a synonym,
- * the word of the question (clever, Shop and rucksack are the same in both languages), singular for plural,
- * another form in a gap. It goes to the teacher, like a free answer (correct: null).
+ * app knows why: another word of the same list (in an own list only when the topic lists know both words),
+ * the wrong German article, the base form in a gap of a checked topic sentence, one letter wrong. Every other
+ * answer that is not in the list may still be right: a synonym, another word of an own list that may mean
+ * nearly the same (watch for look), the word of the question (clever, Shop and rucksack are the same in both
+ * languages), singular for plural, another form in a gap. It goes to the teacher, like a free answer
+ * (correct: null).
  *
  * What does not matter: upper and lower case, extra spaces and hyphens, a full stop at the end, British
  * or American spelling (colour, color), the English article before a noun (a, an, the), "to" before a
@@ -32,8 +34,10 @@ export type VokabelSpec = {
   frage?: string[];
   /** Also right: translations of the asked word in the topic lists (another meaning than the list's). */
   auch?: string[];
-  /** The other words of the list: [word in the language of the answer, its translation]. */
+  /** The other words of the list: [word in the language of the answer, its translation]. Such an answer is wrong. */
   andere?: [string, string][];
+  /** Other words of an own list that may mean nearly the same (look, watch): such an answer goes to the teacher. */
+  andereUnsicher?: [string, string][];
   /** Gap: the base forms when the sentence needs another form (cats, played). */
   grundform?: string[];
   /** The base form in such a gap is certainly wrong (checked sentences of the topic lists); otherwise the teacher decides. */
@@ -411,6 +415,9 @@ export function pruefeVokabel(
     if (vergleiche(wert, wort, v.sprache, wa) !== "ja") continue;
     const label = v.sprache === "en" ? `„${wort}“ heißt „${bedeutung}“` : `„${wort}“ heißt auf Englisch „${bedeutung}“`;
     return falsch(label, `Leider nicht richtig. ${label}.`, "wortschatz");
+  }
+  for (const [wort, bedeutung] of v.andereUnsicher ?? []) {
+    if (vergleiche(wert, wort, v.sprache, wa) === "ja") return offen(`In der Liste steht „${wort}“ bei „${bedeutung}“. Ob es hier auch passt, schaut sich deine Lehrerin bzw. dein Lehrer an.`);
   }
   if (artikelFehler) return falsch("Falscher Artikel", "Das Wort stimmt, aber der Artikel nicht.", "grammatik");
   // the word of the question: often copied, but some words are the same in both languages (clever, Shop, rucksack)
