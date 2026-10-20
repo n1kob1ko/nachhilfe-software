@@ -592,6 +592,21 @@ CREATE TABLE IF NOT EXISTS picture_story_images (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_picture_story_images ON picture_story_images(text_id, position);
+-- Textinterpretation (lib/textinterpretation-store.ts): a Textarbeit on a given story. The student's text is the
+-- text itself; this row holds the story the teacher pasted (line breaks kept), its author and the word target.
+CREATE TABLE IF NOT EXISTS text_interpretations (
+  text_id INTEGER PRIMARY KEY REFERENCES texts(id) ON DELETE CASCADE,
+  story_title TEXT NOT NULL,
+  story_author TEXT NOT NULL DEFAULT '',
+  story_year TEXT NOT NULL DEFAULT '',
+  story_kind TEXT NOT NULL DEFAULT 'Kurzgeschichte',
+  story_text TEXT NOT NULL,
+  count_blank INTEGER NOT NULL DEFAULT 0,
+  target_words INTEGER NOT NULL DEFAULT 500,
+  source_note TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
 -- ---------- Planung (Phase 3 des Merges): Räume und Verfügbarkeit ----------
 -- Wo eine geplante Einheit stattfindet: Gebäude, Name und ob vor Ort oder online. Ein Raum wird
 -- deaktiviert statt gelöscht, sobald Plätze auf ihn zeigen (lib/planung/raeume.ts).

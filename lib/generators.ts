@@ -24,6 +24,7 @@ import {
   type PraepositionenItem,
 } from "./banks";
 import { artikelForm, bankStufe, endungImSatz, fallVon, type Stufe } from "./banken-regeln";
+import { DEUTSCH_SATZLEHRE, deutschAufgabe, deutschFuerKategorie, deutschFuerTyp, istDeutschSatzlehre } from "./deutsch-satzlehre";
 import { ENGLISCH_GRAMMATIK, englischAufgabe, englischFuerKategorie, englischFuerTyp, istEnglischGrammatik } from "./englisch-grammatik";
 import { aufgabenSchluessel } from "./figur";
 import { expectedFixes } from "./fix-text";
@@ -74,6 +75,9 @@ const GEN: Record<string, Gen> = {
   "deutsch.grammatik.perfekt": stufenCloze("deutsch.grammatik.perfekt", "perfekt", perfektItems, "exact"),
   // Englisch: Tenses, Grammar und Irregular verbs mit eigenen Wortlisten und Satzmustern (lib/englisch-grammatik.ts)
   ...ENGLISCH_GRAMMATIK,
+  // Deutsch-Satzlehre: Satzglieder, Fälle, Zeitformen, Passiv, direkte Rede aus Satzmustern (lib/deutsch-satzlehre.ts)
+  ...DEUTSCH_SATZLEHRE,
+  // Vokabeltrainer: Themenlisten mit eigenen Sätzen (lib/vokabeln-themen.ts)
   ...VOKABEL_GENERATOREN,
 };
 
@@ -794,6 +798,7 @@ const FIX_TRENNER: Record<string, string> = { "deutsch.grammatik.artikel": ", " 
 export function correctionTask(skillId: string, diff: Difficulty, rng: Rng = Math.random): TaskDraft | null {
   // Englisch: Sätze aus den Satzmustern, je Satz ein typischer Fehler (lib/englisch-grammatik.ts)
   if (istEnglischGrammatik(skillId)) return englischAufgabe(skillId, "fix", diff, rng);
+  if (istDeutschSatzlehre(skillId)) return deutschAufgabe(skillId, "fix", diff, rng);
   const items = fixItems(skillId, diff);
   if (!items.length) return null;
   const n = Math.min(items.length, LEVEL[diff] >= 3 ? 3 : LEVEL[diff] >= 2 ? 2 : 1);
@@ -1009,6 +1014,10 @@ export function generateForSlot(slot: Slot, rng: Rng = Math.random, variant = 0)
     const { task, category } = englischFuerKategorie(genId, slot.category, slot.difficulty, rng);
     return tag(task, category);
   }
+  if (istDeutschSatzlehre(genId)) {
+    const { task, category } = deutschFuerKategorie(genId, slot.category, slot.difficulty, rng);
+    return tag(task, category);
+  }
   const base = GEN[genId](rng, slot.difficulty);
   switch (slot.category) {
     case "mc":
@@ -1119,6 +1128,8 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
       t = vokabelFuerTyp(skill.id, req.taskType, req.difficulty, rng);
     } else if (istEnglischGrammatik(skill.id)) {
       t = englischFuerTyp(skill.id, req.taskType, req.difficulty, rng);
+    } else if (istDeutschSatzlehre(skill.id)) {
+      t = deutschFuerTyp(skill.id, req.taskType, req.difficulty, rng);
     } else {
       t = GEN[skill.id](rng, req.difficulty);
       const type = req.taskType === "mixed" ? pick(rng, ["calc", "mc", "cloze"] as const) : req.taskType;
@@ -1127,7 +1138,7 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
       else if (type === "grammar" && t.type === "calc") t = { ...t, type: "grammar" };
     }
     // Aufgaben mit Bild unterscheiden sich im Bild, englische im Satz (zweite Zeile), nicht in der ersten Zeile
-    const key = t.data.figure || istEnglischGrammatik(skill.id) || istVokabelThema(skill.id) ? aufgabenSchluessel(t) : t.prompt.split("\n")[0];
+    const key = t.data.figure || istEnglischGrammatik(skill.id) || istDeutschSatzlehre(skill.id) || istVokabelThema(skill.id) ? aufgabenSchluessel(t) : t.prompt.split("\n")[0];
     if (seen.has(key) && guard < req.count * 15) continue;
     seen.add(key);
     out.push(t);

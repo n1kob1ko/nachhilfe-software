@@ -29,7 +29,7 @@ export type ClientTask = {
   options: string[] | null;
   passage: string | null;
   /** Leseverständnis: the shared text, on the first question only; every question is about it (lib/lesen.ts). */
-  reading?: { title: string; text: string; lang: string } | null;
+  reading?: { title: string; text: string; lang: string; zeilen?: boolean; leerzeilen?: boolean } | null;
   blanks: number;
   /** Cloze: the gaps are word endings; a gap may stay empty (= keine Endung, lib/tasks.ts AnswerSpec.endings). */
   endings?: boolean;
@@ -340,7 +340,7 @@ export function Solver({
             aria-label="Lesetext"
             className={`${view === "frage" ? "hidden lg:block" : ""} rounded-2xl border border-line bg-surface px-5 py-6 md:px-8 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:overflow-y-auto`}
           >
-            <ReadingTextView title={reading.title} text={reading.text} size="lg" lang={reading.lang} />
+            <ReadingTextView title={reading.title} text={reading.text} size="lg" lang={reading.lang} zeilen={reading.zeilen} leerzeilen={reading.leerzeilen} />
             <button type="button" className="btn btn-primary mt-6 lg:hidden" onClick={() => setView("frage")}>
               Zu Frage {index + 1} <ChevronRight size={17} aria-hidden />
             </button>

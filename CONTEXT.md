@@ -226,6 +226,29 @@ A4-Blatt, Mappe und Whiteboard (`lib/figur.ts`); die Aufgaben kommen ohne KI aus
 (`lib/generators-figur.ts`, [docs/aufgaben-mit-bild.md](docs/aufgaben-mit-bild.md)).
 _Avoid_: Bildaufgabe, Grafikaufgabe, Abbildung, Diagramm
 
+**Textinterpretation**:
+Ein Schreibauftrag der Oberstufe wie bei der Schularbeit: eine ganze Geschichte
+mit **Zeilennummern** (jede fünfte sichtbar) und rund 500 Wörter Interpretation in
+sieben Teilen (Einleitung, Inhaltsangabe, Form, Sprache, Figur, Deutung, Schluss),
+zitiert als „…“ (Z. 12). Eine Textarbeit mit der Textsorte „Textinterpretation“
+und einer Zeile in `text_interpretations`; beim Schreiben stehen Geschichte,
+**Schreibplan**, Wortzähler und Hinweise ohne KI daneben
+([docs/textinterpretation.md](docs/textinterpretation.md)).
+_Avoid_: Interpretationsaufgabe, Analyse (die Textanalyse ist eine andere Textsorte), Mini-Interpretation
+
+**Schreibplan**:
+Die sieben Teile einer **Textinterpretation** mit einem Satz Hilfe und einer
+Wortzahl je Teil, aus dem Wortziel gerechnet. Steht beim Schreiben über dem
+Editor und auf dem Arbeitsblatt.
+_Avoid_: Gliederung, Aufbauplan, Raster
+
+**Teilübung**:
+Eine freie **Aufgabe** zu einem Teil des **Schreibplans** (z. B. Einleitung mit
+Deutungshypothese oder Stilmittel mit Zitat und Zeile), zur ganzen Geschichte mit
+Zeilennummern. Entsteht ohne KI, wenn im Übungs-Builder die Fähigkeit
+Textinterpretation gewählt ist; die ganze Interpretation ist der Schreibauftrag.
+_Avoid_: Teilaufgabe (das ist ein Teil einer Sachaufgabe), Mini-Interpretation
+
 ## Material, Bibliothek, Vorlage
 
 **Material**:

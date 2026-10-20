@@ -1,6 +1,6 @@
 "use client";
 
-import { Lightbulb, ListPlus, Search, Sparkles, Wand2, Zap } from "lucide-react";
+import { BookOpenText, Lightbulb, ListPlus, Search, Sparkles, Wand2, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useMemo, useState } from "react";
@@ -12,6 +12,7 @@ import type { StudentContext, Suggestion } from "@/lib/builder";
 import { categoriesFor, DIFFICULTIES, difficultyFor } from "@/lib/curriculum";
 import { categoriesFitQuickRound, QUICK_ROUND_CATEGORY_REASON } from "@/lib/quick-round";
 import { klassenLabel, schulstufe } from "@/lib/school";
+import { isInterpretationSkill } from "@/lib/textinterpretation";
 import { EIGENE_VOKABELN } from "@/lib/vokabeln-pruefen";
 import { UNTERARTEN_SKILL, WORTARTEN, WORTARTEN_SKILL, WORTART_PLURAL, wortartenFor, wortartSkill, type Wortart } from "@/lib/wortarten";
 
@@ -247,6 +248,25 @@ export function BuilderForm({
             {areas.length === 0 && <p className="text-[14px] text-ink-3">Keine Fähigkeit passt zur Suche.</p>}
           </div>
           <WortartenChoice selected={selected} setSelected={setSelected} known={new Set(skills.map((x) => x.id))} grade={grade} ctx={ctx} />
+          {selected.some(isInterpretationSkill) && (
+            // a whole interpretation is a Schreibauftrag; the builder only makes Teilübungen (lib/textinterpretation.ts)
+            <div className="mt-4 rounded-2xl bg-accent-wash px-4 py-3 text-[14px]" data-testid="hinweis-textinterpretation">
+              <p className="flex items-center gap-2 font-semibold">
+                <BookOpenText size={16} aria-hidden /> Textinterpretation
+              </p>
+              <p className="mt-1 text-ink-2">
+                Hier entstehen kurze Teilübungen zu einer ganzen Geschichte mit Zeilennummern, zum Beispiel Einleitung mit Deutungshypothese, Inhaltsangabe im Präsens oder Stilmittel mit Zitat und Zeile. Die ganze Interpretation mit
+                rund 500 Wörtern legst du als Schreibauftrag an.
+              </p>
+              {ctx ? (
+                <Link href={`/schueler/${ctx.studentId}/textinterpretation`} className="btn btn-secondary btn-sm mt-2" data-testid="schreibauftrag-anlegen">
+                  Schreibauftrag für {ctx.first} anlegen
+                </Link>
+              ) : (
+                <p className="mt-1 text-ink-2">Wähl oben einen Schüler, dann kannst du den Schreibauftrag anlegen.</p>
+              )}
+            </div>
+          )}
         </Step>
 
         {/* 4 · Schwierigkeit */}

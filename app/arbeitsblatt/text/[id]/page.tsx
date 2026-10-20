@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageStyle } from "@/components/arbeitsblatt/Sheet";
 import { Lines } from "@/components/arbeitsblatt/WorkArea";
+import { PrintSchreibplan, PrintStory } from "@/components/arbeitsblatt/PrintStory";
 import { Pictures, RunList } from "@/components/arbeitsblatt/TextPrint";
 import { TextPrintSettings } from "@/components/text/TextPrintSettings";
 import { requireTeacher } from "@/lib/auth";
@@ -11,6 +12,11 @@ import { blockText, type Block } from "@/lib/text-doc";
 import { getPictureStory, SOURCE_KINDS, storyImages } from "@/lib/picture-story";
 import { readTextPrintOptions } from "@/lib/text-print";
 import { getText, textDoc, wordsLabel } from "@/lib/texts";
+import { schreibplan, storyReference } from "@/lib/textinterpretation";
+import { interpretationFor } from "@/lib/textinterpretation-store";
+
+/** Lines to write a Textinterpretation by hand: about two A4 pages, enough for 500 words. */
+const INTERPRETATION_LINES = 52;
 
 type Params = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -50,8 +56,12 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
   const o = readTextPrintOptions(await searchParams, text.title);
   const story = getPictureStory(text.id);
   const images = story ? storyImages(text.id) : [];
-  // the empty worksheet: pictures, task and lines, nothing the student wrote
-  const blank = Boolean(story) && o.blatt === "leer";
+  // Textinterpretation: the story with line numbers, on the worksheet or after the interpretation
+  const interp = interpretationFor(text.id);
+  if (!story && !interp && o.blatt !== "geschichte") o.blatt = "geschichte";
+  if (story && o.blatt === "beides") o.blatt = "geschichte";
+  // the empty worksheet: pictures (or the story to interpret), task and lines, nothing the student wrote
+  const blank = (Boolean(story) || Boolean(interp)) && o.blatt === "leer";
   if (blank) {
     o.correction = null;
     o.overview = false;
@@ -84,6 +94,7 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
         words={correction ? correction.words : text.words}
         withCorrection={Boolean(correction)}
         story={Boolean(story)}
+        interpretation={Boolean(interp)}
       />
       <main className="ab-preview">
         <article className={`ab-sheet tx-print${o.spacing === "weit" ? " tx-print-wide" : ""}${fassung === "korrektur" ? " tx-print-korrektur" : ""}`} lang="de" data-fassung={fassung}>
@@ -116,6 +127,19 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
             </section>
           )}
           {images.length > 0 && <Pictures images={images} />}
+          {blank && interp && (
+            <>
+              <section className="ab-lesetext ti-print-text" aria-label="Text zur Interpretation" data-testid="druck-text">
+                <p className="ab-lese-hint">Die Zahlen am Rand nennen die Zeilen. Zitiere so: „…“ (Z. 12) oder (Z. 12f.).</p>
+                <h2 className="ab-lese-title">{storyReference(interp)}</h2>
+                <PrintStory text={interp.text} countBlank={interp.countBlank} />
+              </section>
+              <PrintSchreibplan plan={schreibplan(interp.target, interp.kind)} target={interp.target} />
+              <section className="bg-blank" data-testid="druck-leer">
+                <Lines count={INTERPRETATION_LINES} />
+              </section>
+            </>
+          )}
           {blank && story && (
             <section className="bg-blank" data-testid="druck-leer">
               {(story.starters.length > 0 || story.hints || story.target_words) && (
@@ -165,6 +189,12 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
               })
             )}
           </div>
+          )}
+          {interp && o.blatt === "beides" && (
+            <section className="ab-lesetext ti-print-text ti-print-anhang" aria-label="Text zur Interpretation" data-testid="druck-text">
+              <h2 className="ab-lese-title">{storyReference(interp)}</h2>
+              <PrintStory text={interp.text} countBlank={interp.countBlank} />
+            </section>
           )}
           {fassung === "korrektur" && (numbered.length > 0 || notes.length > 0) && (
             <section className="tx-k-section" data-testid="druck-korrekturen">

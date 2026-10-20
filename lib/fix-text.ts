@@ -151,7 +151,12 @@ export function checkFix(faulty: string, accepted: string[], given: string, o: {
       }
       const wrong = joinTokens(orig.slice(e.from, e.to));
       const right = joinTokens(e.insert);
-      const label = o.labels?.find((l) => l.wrong && (norm(l.wrong).toLowerCase() === norm(wrong).toLowerCase() || (wrong && norm(l.wrong).toLowerCase().includes(norm(wrong).toLowerCase()))));
+      // a missing word or mark (Doppelpunkt vergessen) has no wrong word: its label is found by what is missing
+      const label = o.labels?.find((l) =>
+        l.wrong
+          ? norm(l.wrong).toLowerCase() === norm(wrong).toLowerCase() || (wrong && norm(l.wrong).toLowerCase().includes(norm(wrong).toLowerCase()))
+          : !wrong && norm(l.right).toLowerCase() === norm(right).toLowerCase(),
+      );
       missed.push({ wrong, right, label: label?.label ?? "", errorType: label?.errorType ?? null, tried });
     }
   }

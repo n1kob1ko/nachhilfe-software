@@ -21,6 +21,7 @@ import { skillsForPrompt } from "./lehrplan";
 import { getSkill, getStudent } from "./repo";
 import { detectNames } from "./name-detection";
 import { blockText, parseDoc, type TextDoc } from "./text-doc";
+import { interpretationContext } from "./textinterpretation-store";
 import {
   anchorFindings,
   clip,
@@ -234,7 +235,10 @@ export function namesToHide(text: Pick<TextView, "student_name">): string[] {
 export function foundNames(text: TextView, doc: TextDoc): string[] {
   const known = namePattern(namesToHide(text));
   const pictures = pictureContext(text.id)?.captions ?? [];
-  return detectNames([text.prompt, ...doc.map(blockText), ...pictures]).filter((n) => maskText(n, known).masked !== NAME_PLACEHOLDER);
+  // Textinterpretation: the author of the story is no personal name to hide ("Brunnhofers Kurzgeschichte" too)
+  const author = new Set((interpretationContext(text.id)?.author ?? "").toLowerCase().split(/[^\p{L}]+/u).filter((w) => w.length > 1));
+  const isAuthor = (n: string) => author.size > 0 && n.toLowerCase().split(/[^\p{L}]+/u).filter(Boolean).every((w) => author.has(w) || author.has(w.replace(/s$/, "")));
+  return detectNames([text.prompt, ...doc.map(blockText), ...pictures]).filter((n) => maskText(n, known).masked !== NAME_PLACEHOLDER && !isAuthor(n));
 }
 
 /** Bildgeschichte: the descriptions of the pictures, names masked like in the text. */
@@ -260,6 +264,7 @@ export function correctionRequest(text: TextView, doc: TextDoc, names: string[] 
     blocks: doc.map((b) => ({ text: maskText(blockText(b), pattern).masked.replace(/\n/g, " "), heading: b.t === "h" })),
     skills: skills.slice(0, 60).map((s) => ({ id: s.id, name: `${s.area} › ${s.name}` })),
     pictures: picturesFor(text.id, pattern),
+    source: interpretationContext(text.id),
   };
 }
 

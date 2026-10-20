@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, History, Images, Laptop, Printer, RotateCcw, SpellCheck, Tablet } from "lucide-react";
+import { BookOpenText, CheckCircle2, FileText, History, Images, Laptop, ListChecks, Printer, RotateCcw, SpellCheck, Tablet } from "lucide-react";
 import { restoreRevisionAction, setTextStatusAction, showTextOnTabletAction, updateTextInfoAction } from "@/app/text-actions";
+import { interpretationExercisesAction } from "@/app/textinterpretation-actions";
 import { TextEditor } from "@/components/text/TextEditor";
 import { TextLive } from "@/components/text/TextLive";
 import { Pill, Reveal, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { SUBJECTS } from "@/lib/curriculum";
 import { storyForEditor } from "@/lib/picture-story";
+import { interpretationFor } from "@/lib/textinterpretation-store";
 import { getText, listRevisions, textDoc, TEXT_KINDS, unitsOfText, wordsLabel } from "@/lib/texts";
 import { studentDevice } from "@/lib/live";
 import { correctionInfoForStudent } from "@/lib/text-correction";
@@ -35,6 +37,7 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
   const meta = [text.subject, text.topic, text.student_name].filter(Boolean).join(" · ");
   const correction = correctionInfoForStudent(text.student_id).get(text.id);
   const story = storyForEditor(text.id, "/material/bildgeschichte/bild");
+  const interp = interpretationFor(text.id);
 
   const actions = (
     <>
@@ -50,12 +53,29 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
           <Images size={16} aria-hidden /> Bilder und Aufgabe
         </Link>
       )}
+      {interp && (
+        <Link href={`/texte/${text.id}/textinterpretation`} className="btn btn-secondary" data-testid="text-und-auftrag">
+          <BookOpenText size={16} aria-hidden /> Text und Auftrag
+        </Link>
+      )}
       <Link href={`/texte/${text.id}/korrektur`} className="btn btn-secondary" data-testid="korrigieren">
         <SpellCheck size={16} aria-hidden /> {correction ? `Korrektur${correction.open ? ` (${correction.open} offen)` : ""}` : "Korrigieren"}
       </Link>
       <Link href={`/arbeitsblatt/text/${text.id}`} className="btn btn-secondary" target="_blank">
         <Printer size={16} aria-hidden /> PDF / Drucken
       </Link>
+      {interp && (
+        <Link href={`/arbeitsblatt/text/${text.id}?blatt=leer`} className="btn btn-secondary" target="_blank" data-testid="arbeitsblatt-drucken">
+          <FileText size={16} aria-hidden /> Arbeitsblatt
+        </Link>
+      )}
+      {interp && (
+        <form action={interpretationExercisesAction.bind(null, text.id)}>
+          <button className="btn btn-ghost" data-testid="teiluebungen">
+            <ListChecks size={16} aria-hidden /> Teilübungen dazu
+          </button>
+        </form>
+      )}
       <form action={setTextStatusAction.bind(null, text.id, text.status === "fertig" ? "offen" : "fertig")}>
         <button className="btn btn-ghost">
           {text.status === "fertig" ? (
@@ -103,7 +123,8 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
         meta={meta}
         actions={actions}
         pictures={story?.pictures}
-        targetWords={story?.targetWords}
+        targetWords={story?.targetWords ?? interp?.target}
+        interpretation={interp ?? undefined}
       />
 
       <div className="mt-8 grid max-w-[820px] gap-3">
@@ -129,7 +150,7 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
             ))}
           </p>
         )}
-        {!story && (
+        {!story && !interp && (
         <Reveal label="Titel und Aufgabe ändern">
           <form action={updateTextInfoAction.bind(null, text.id)} className="grid gap-4 pt-1">
             <label className="field">

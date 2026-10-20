@@ -86,6 +86,7 @@ export type AIFunction =
   | "material"
   | "stundenplan"
   | "stoffzettel"
+  | "textfoto"
   | "whiteboard"
   | "druckblatt"
   | "textkorrektur"
@@ -142,6 +143,9 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // Stoffzettel einer Schularbeit (lib/stoffzettel.ts): only on the teacher's click, after the tick „kein Name darauf“;
   // the answer is Art, Fach, Datum and Stoff, so the same sheet on the same day is not paid for twice
   stoffzettel: { label: "Stoffzettel lesen", area: "MATERIAL", tier: "standard", maxTokens: 3_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  // Text vom Foto (lib/textinterpretation-foto.ts): only on the teacher's click, after the tick „kein Name darauf“; the
+  // printed story of a Textinterpretation, line by line. The answer is the printed text only, so the same page is not paid twice
+  textfoto: { label: "Text vom Foto lesen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 120_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // KI prüfen am Whiteboard (lib/whiteboard-check.ts): only on the teacher's click; the picture of one task with the
   // handwriting under it and the task's solution; the answer is a suggestion the teacher confirms. Thinking on, because
   // reading handwritten maths wrongly would mark a right answer wrong; the same picture is not paid for twice
