@@ -12,11 +12,11 @@ import { blockText, type Block } from "@/lib/text-doc";
 import { getPictureStory, SOURCE_KINDS, storyImages } from "@/lib/picture-story";
 import { readTextPrintOptions } from "@/lib/text-print";
 import { getText, textDoc, wordsLabel } from "@/lib/texts";
-import { schreibplan, storyReference } from "@/lib/textinterpretation";
-import { interpretationFor } from "@/lib/textinterpretation-store";
+import { beilageReference, planFor, SORTEN } from "@/lib/schreibauftrag";
+import { auftragFor } from "@/lib/schreibauftrag-store";
 
-/** Lines to write a Textinterpretation by hand: about two A4 pages, enough for 500 words. */
-const INTERPRETATION_LINES = 52;
+/** Lines to write a Schreibauftrag by hand: 52 for 500 words (about two A4 pages), at least 24. */
+const linesFor = (target: number) => Math.max(24, Math.round((target * 52) / 500));
 
 type Params = { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -56,12 +56,13 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
   const o = readTextPrintOptions(await searchParams, text.title);
   const story = getPictureStory(text.id);
   const images = story ? storyImages(text.id) : [];
-  // Textinterpretation: the story with line numbers, on the worksheet or after the interpretation
-  const interp = interpretationFor(text.id);
-  if (!story && !interp && o.blatt !== "geschichte") o.blatt = "geschichte";
+  // Schreibauftrag: the story or Textbeilage with line numbers, on the worksheet or after the written text
+  const auftrag = auftragFor(text.id);
+  const sorte = auftrag ? SORTEN[auftrag.sorte] : null;
+  if (!story && !auftrag && o.blatt !== "geschichte") o.blatt = "geschichte";
   if (story && o.blatt === "beides") o.blatt = "geschichte";
-  // the empty worksheet: pictures (or the story to interpret), task and lines, nothing the student wrote
-  const blank = (Boolean(story) || Boolean(interp)) && o.blatt === "leer";
+  // the empty worksheet: pictures (or the story or Textbeilage), task and lines, nothing the student wrote
+  const blank = (Boolean(story) || Boolean(auftrag)) && o.blatt === "leer";
   if (blank) {
     o.correction = null;
     o.overview = false;
@@ -94,7 +95,7 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
         words={correction ? correction.words : text.words}
         withCorrection={Boolean(correction)}
         story={Boolean(story)}
-        interpretation={Boolean(interp)}
+        auftrag={sorte?.name}
       />
       <main className="ab-preview">
         <article className={`ab-sheet tx-print${o.spacing === "weit" ? " tx-print-wide" : ""}${fassung === "korrektur" ? " tx-print-korrektur" : ""}`} lang="de" data-fassung={fassung}>
@@ -127,16 +128,19 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
             </section>
           )}
           {images.length > 0 && <Pictures images={images} />}
-          {blank && interp && (
+          {blank && auftrag && sorte && (
             <>
-              <section className="ab-lesetext ti-print-text" aria-label="Text zur Interpretation" data-testid="druck-text">
-                <p className="ab-lese-hint">Die Zahlen am Rand nennen die Zeilen. Zitiere so: „…“ (Z. 12) oder (Z. 12f.).</p>
-                <h2 className="ab-lese-title">{storyReference(interp)}</h2>
-                <PrintStory text={interp.text} countBlank={interp.countBlank} />
+              <section className="ab-lesetext ti-print-text" aria-label={sorte.beilage === "Geschichte" ? "Text zur Interpretation" : "Textbeilage"} data-testid="druck-text">
+                <p className="ab-lese-hint">
+                  Die Zahlen am Rand nennen die Zeilen.{sorte.zitiert ? " Zitiere so: „…“ (Z. 12) oder (Z. 12f.)." : " Verweise so: (Z. 12) oder (Z. 12f.)."}
+                </p>
+                {sorte.beilage === "Textbeilage" && <p className="ab-lese-kind">{auftrag.kind}</p>}
+                <h2 className="ab-lese-title">{beilageReference(auftrag)}</h2>
+                <PrintStory text={auftrag.text} countBlank={auftrag.countBlank} />
               </section>
-              <PrintSchreibplan plan={schreibplan(interp.target, interp.kind)} target={interp.target} />
+              <PrintSchreibplan plan={planFor(auftrag)} target={auftrag.target} merkmale={sorte.merkmale} />
               <section className="bg-blank" data-testid="druck-leer">
-                <Lines count={INTERPRETATION_LINES} />
+                <Lines count={linesFor(auftrag.target)} />
               </section>
             </>
           )}
@@ -190,10 +194,10 @@ export default async function TextPrintPage({ params, searchParams }: Params) {
             )}
           </div>
           )}
-          {interp && o.blatt === "beides" && (
-            <section className="ab-lesetext ti-print-text ti-print-anhang" aria-label="Text zur Interpretation" data-testid="druck-text">
-              <h2 className="ab-lese-title">{storyReference(interp)}</h2>
-              <PrintStory text={interp.text} countBlank={interp.countBlank} />
+          {auftrag && sorte && o.blatt === "beides" && (
+            <section className="ab-lesetext ti-print-text ti-print-anhang" aria-label={sorte.beilage === "Geschichte" ? "Text zur Interpretation" : "Textbeilage"} data-testid="druck-text">
+              <h2 className="ab-lese-title">{beilageReference(auftrag)}</h2>
+              <PrintStory text={auftrag.text} countBlank={auftrag.countBlank} />
             </section>
           )}
           {fassung === "korrektur" && (numbered.length > 0 || notes.length > 0) && (

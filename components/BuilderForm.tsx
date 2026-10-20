@@ -12,7 +12,8 @@ import type { StudentContext, Suggestion } from "@/lib/builder";
 import { categoriesFor, DIFFICULTIES, difficultyFor } from "@/lib/curriculum";
 import { categoriesFitQuickRound, QUICK_ROUND_CATEGORY_REASON } from "@/lib/quick-round";
 import { klassenLabel, schulstufe } from "@/lib/school";
-import { isInterpretationSkill } from "@/lib/textinterpretation";
+import { SORTEN, sorteOfSkill, type SorteKey } from "@/lib/schreibauftrag";
+import { wordRange } from "@/lib/textinterpretation";
 import { EIGENE_VOKABELN } from "@/lib/vokabeln-pruefen";
 import { UNTERARTEN_SKILL, WORTARTEN, WORTARTEN_SKILL, WORTART_PLURAL, wortartenFor, wortartSkill, type Wortart } from "@/lib/wortarten";
 
@@ -248,25 +249,7 @@ export function BuilderForm({
             {areas.length === 0 && <p className="text-[14px] text-ink-3">Keine Fähigkeit passt zur Suche.</p>}
           </div>
           <WortartenChoice selected={selected} setSelected={setSelected} known={new Set(skills.map((x) => x.id))} grade={grade} ctx={ctx} />
-          {selected.some(isInterpretationSkill) && (
-            // a whole interpretation is a Schreibauftrag; the builder only makes Teilübungen (lib/textinterpretation.ts)
-            <div className="mt-4 rounded-2xl bg-accent-wash px-4 py-3 text-[14px]" data-testid="hinweis-textinterpretation">
-              <p className="flex items-center gap-2 font-semibold">
-                <BookOpenText size={16} aria-hidden /> Textinterpretation
-              </p>
-              <p className="mt-1 text-ink-2">
-                Hier entstehen kurze Teilübungen zu einer ganzen Geschichte mit Zeilennummern, zum Beispiel Einleitung mit Deutungshypothese, Inhaltsangabe im Präsens oder Stilmittel mit Zitat und Zeile. Die ganze Interpretation mit
-                rund 500 Wörtern legst du als Schreibauftrag an.
-              </p>
-              {ctx ? (
-                <Link href={`/schueler/${ctx.studentId}/textinterpretation`} className="btn btn-secondary btn-sm mt-2" data-testid="schreibauftrag-anlegen">
-                  Schreibauftrag für {ctx.first} anlegen
-                </Link>
-              ) : (
-                <p className="mt-1 text-ink-2">Wähl oben einen Schüler, dann kannst du den Schreibauftrag anlegen.</p>
-              )}
-            </div>
-          )}
+          <SchreibauftragHinweis sorten={[...new Set(selected.map(sorteOfSkill).filter((k): k is SorteKey => k !== null))]} ctx={ctx} />
         </Step>
 
         {/* 4 · Schwierigkeit */}
@@ -578,4 +561,36 @@ function EmptyButton() {
 function ManuellWaehrendErstellung() {
   const { pending } = useFormStatus();
   return <ManualAustausch aktiv={pending} />;
+}
+
+/**
+ * Schreibaufträge der SRDP (Leserbrief, Erörterung, Textinterpretation …): the builder only makes Teilübungen about
+ * one part of the Schreibplan (lib/schreibauftrag.ts); the whole text is a Schreibauftrag of its own.
+ */
+function SchreibauftragHinweis({ sorten, ctx }: { sorten: SorteKey[]; ctx: { studentId: number; first: string } | null }) {
+  if (!sorten.length) return null;
+  const one = sorten.length === 1 ? SORTEN[sorten[0]] : null;
+  const { min, max } = wordRange(one?.target ?? 500);
+  return (
+    <div className="mt-4 rounded-2xl bg-accent-wash px-4 py-3 text-[14px]" data-testid="hinweis-schreibauftrag">
+      <p className="flex items-center gap-2 font-semibold">
+        <BookOpenText size={16} aria-hidden /> {one ? one.name : "Schreibaufträge"}
+      </p>
+      <p className="mt-1 text-ink-2">
+        {one?.key === "textinterpretation"
+          ? "Hier entstehen kurze Teilübungen zu einer ganzen Geschichte mit Zeilennummern, zum Beispiel Einleitung mit Deutungshypothese, Inhaltsangabe im Präsens oder Stilmittel mit Zitat und Zeile."
+          : one
+            ? `Hier entstehen kurze Teilübungen zu einer ganzen Textbeilage mit Zeilennummern. Jede übt einen Teil des Schreibplans: ${one.parts.map((p) => p.title).join(", ")}.`
+            : "Hier entstehen kurze Teilübungen zu einer ganzen Textbeilage mit Zeilennummern. Jede übt einen Teil des Schreibplans."}{" "}
+        {one ? `Den ganzen Text mit ${min} bis ${max} Wörtern legst du als Schreibauftrag an.` : "Den ganzen Text legst du als Schreibauftrag an."}
+      </p>
+      {ctx ? (
+        <Link href={`/schueler/${ctx.studentId}/schreibauftrag${one ? `?sorte=${one.key}` : ""}`} className="btn btn-secondary btn-sm mt-2" data-testid="schreibauftrag-anlegen">
+          Schreibauftrag für {ctx.first} anlegen
+        </Link>
+      ) : (
+        <p className="mt-1 text-ink-2">Wähl oben einen Schüler, dann kannst du den Schreibauftrag anlegen.</p>
+      )}
+    </div>
+  );
 }

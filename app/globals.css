@@ -1202,7 +1202,7 @@ textarea.input {
   padding-top: 16px;
 }
 
-/* Textinterpretation (components/text/interpretation): the story with line numbers next to the writing */
+/* Schreibaufträge (components/text/interpretation): the story or Textbeilage with line numbers next to the writing */
 .ti-story {
   font-size: 15px;
   line-height: 1.6;
@@ -1317,6 +1317,16 @@ textarea.input {
   display: block;
   color: var(--ink-2);
   font-size: 13px;
+}
+.ti-merkmale {
+  margin: 4px 0 2px;
+  padding-left: 18px;
+  list-style: disc;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.ti-merkmale li {
+  margin-bottom: 2px;
 }
 .ti-progress {
   padding: 8px 4px 2px;

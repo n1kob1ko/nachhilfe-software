@@ -2,19 +2,21 @@
 
 Eine Textinterpretation wie bei der Schularbeit: eine ganze Kurzgeschichte mit Zeilennummern und rund 500 Wörter Interpretation in sieben Teilen. Technisch ist sie eine normale Textarbeit mit der Textsorte „Textinterpretation“ und einer Zeile in `text_interpretations` (Geschichte, Autor, Jahr, Textsorte, Wortziel). Deshalb gilt alles, was für Texte gilt: automatisches Speichern, frühere Fassungen, Mitlesen, Abgeben, Korrektur, Lernverlauf und A4-Druck.
 
+Die Textinterpretation ist einer von neun Schreibaufträgen. Die anderen Textsorten (Zusammenfassung, Leserbrief, Erörterung, Kommentar, Meinungsrede, Textanalyse, offener Brief, Empfehlung) nutzen dieselbe Ansicht, dasselbe Formular und dieselbe Tabelle: [schreibauftraege.md](schreibauftraege.md).
+
 ## Warum die Übungen vorher zu kurz waren
 
 Die Fähigkeit `deutsch.os.matura.textinterpretation` hatte keinen eigenen Generator. Der Übungs-Builder machte daraus gewöhnliche freie Aufgaben: ohne KI eine Zeile „Erkläre …“, mit KI eine kurze, erfundene Textstelle im Aufgabentext und eine freie Antwort mit höchstens 20 Linien (`answer_lines` ist in `aiTaskToDraftRaw` auf 20 begrenzt). Das ergab Mini-Interpretationen von etwa 200 Wörtern, ohne ganzen Text, ohne Zeilennummern und ohne den Aufbau der Schule.
 
 ## Ablauf
 
-1. **Anlegen.** In einer laufenden Einheit eines Oberstufen-Schülers auf „Textinterpretation“ tippen (`/einheiten/<id>/textinterpretation`). Ohne Einheit geht es über das Schülerprofil oder den Hinweis im Übungs-Builder (`/schueler/<id>/textinterpretation`).
+1. **Anlegen.** In einer laufenden Einheit eines Oberstufen-Schülers auf „Schreibauftrag“ tippen und „Textinterpretation“ wählen (`/einheiten/<id>/schreibauftrag?sorte=textinterpretation`). Ohne Einheit geht es über das Schülerprofil oder den Hinweis im Übungs-Builder (`/schueler/<id>/schreibauftrag?sorte=textinterpretation`). Die alten Adressen `…/textinterpretation` leiten dorthin weiter.
    - Titel, Autor oder Autorin, Jahr (wenn bekannt), Textsorte (Kurzgeschichte, Erzählung, Parabel, …) und das Wortziel (Vorgabe 500, erlaubt 150 bis 1 500).
    - Den Text der Geschichte einfügen. Jeder Zeilenumbruch bleibt, jede Zeile bekommt ihre Nummer, sichtbar ist jede fünfte. Leerzeilen zählen nur mit, wenn der Haken „Leerzeilen mitzählen“ gesetzt ist. Die Vorschau zeigt die Nummern so, wie der Schüler sie sieht.
    - Der Arbeitsauftrag entsteht aus den Angaben (Textsorte, Bezugstext, Arbeitsaufträge, Umfang) und folgt ihnen, bis du ihn selbst änderst. „Wieder aus den Angaben“ holt die Vorlage zurück.
    - „Beispielgeschichte einfügen“ füllt alles mit der erfundenen Geschichte „Sieben Uhr zwölf“ aus (siehe unten).
    - „Quelle“ ist nur für dich und wird nicht gedruckt.
-2. **Ändern.** In der Textarbeit führt „Text und Auftrag“ zu `/texte/<id>/textinterpretation`. Der geschriebene Text bleibt dabei unverändert; ein offenes Tablet oder ein offener Laptop zeigt die Änderung sofort.
+2. **Ändern.** In der Textarbeit führt „Text und Auftrag“ zu `/texte/<id>/schreibauftrag`. Der geschriebene Text bleibt dabei unverändert; ein offenes Tablet oder ein offener Laptop zeigt die Änderung sofort.
 3. **Schreiben.** Am Tablet (`/geraet`) und am eigenen Laptop (`/mitmachen`) sieht der Schüler:
    - **Breit** (Schreibbereich ab 900 px, Laptop oder iPad quer): links die Geschichte mit Zeilennummern, sie bleibt beim Scrollen stehen; rechts Schreibplan, Wortzähler und Editor.
    - **Schmal** (Handy, iPad hoch): zwei Reiter „Text lesen“ und „Schreiben“. Am Handy (390 px) gibt es kein seitliches Scrollen; lange Zeilen brechen mit hängendem Einzug um, die Nummer bleibt links.
@@ -75,8 +77,9 @@ Ins Repository, in Tests und Doku kommen nur erfundene Texte und Namen. Geschich
 ## Code
 
 - `lib/textinterpretation.ts`: Zeilennummern, Schreibplan, Arbeitsauftrag, Zitate finden, Hinweise, Teilübungen (rein, ohne Datenbank)
-- `lib/textinterpretation-store.ts`: Tabelle `text_interpretations`, Anlegen und Ändern
-- `app/textinterpretation-actions.ts`: Server-Aktionen
-- `components/text/interpretation/`: Formular, nummerierte Geschichte, Hinweise, Wortzähler, Foto
-- `components/text/TextEditor.tsx`: Ansicht beim Schreiben (`interpretation`)
+- `lib/textinterpretation-store.ts`: Textinterpretationen in `text_interpretations` (dünne Hülle um `lib/schreibauftrag-store.ts`)
+- `lib/schreibauftrag.ts`, `lib/schreibauftrag-store.ts`: alle Textsorten, siehe [schreibauftraege.md](schreibauftraege.md)
+- `app/schreibauftrag-actions.ts`: Server-Aktionen
+- `components/text/interpretation/`: Formular (`SchreibauftragForm`), nummerierte Geschichte, Hinweise, Wortzähler, Foto
+- `components/text/TextEditor.tsx`: Ansicht beim Schreiben (`auftrag`)
 - Tests: `lib/textinterpretation.test.ts`, `lib/textinterpretation-foto.test.ts`

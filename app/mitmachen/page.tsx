@@ -17,7 +17,7 @@ import * as repo from "@/lib/repo";
 import { triesFor } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
 import { storyForEditor } from "@/lib/picture-story";
-import { interpretationFor } from "@/lib/textinterpretation-store";
+import { auftragFor } from "@/lib/schreibauftrag-store";
 import { textDoc, textsForStudent, textsForUnit, wordsLabel } from "@/lib/texts";
 
 const first = (n: string) => n.split(" ")[0];
@@ -122,11 +122,11 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
   let content: React.ReactNode;
   if (text) {
     const story = storyForEditor(text.id, "/mitmachen/bild");
-    const interp = interpretationFor(text.id);
+    const auftrag = auftragFor(text.id);
     content = (
       <>
-        {/* a Textinterpretation needs the whole width for the story and the text: the list waits behind this link */}
-        {interp && (
+        {/* a Schreibauftrag needs the whole width for the Textbeilage and the text: the list waits behind this link */}
+        {auftrag && (
           <a href="/mitmachen/ansicht?zu=start" className="mb-3 inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2">
             ← Alle Aufgaben
           </a>
@@ -142,9 +142,9 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
           prompt={text.prompt}
           meta={[text.subject, text.topic].filter(Boolean).join(" · ")}
           pictures={story?.pictures}
-          targetWords={story?.targetWords ?? interp?.target}
-          interpretation={interp ?? undefined}
-          handIn={(story || interp) && text.status !== "fertig" ? { url: `/mitmachen/text/${text.id}/abgeben`, home: "/mitmachen/ansicht?zu=start" } : undefined}
+          targetWords={story?.targetWords ?? auftrag?.target}
+          auftrag={auftrag ?? undefined}
+          handIn={(story || auftrag) && text.status !== "fertig" ? { url: `/mitmachen/text/${text.id}/abgeben`, home: "/mitmachen/ansicht?zu=start" } : undefined}
         />
       </>
     );

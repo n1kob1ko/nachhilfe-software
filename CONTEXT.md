@@ -226,6 +226,20 @@ A4-Blatt, Mappe und Whiteboard (`lib/figur.ts`); die Aufgaben kommen ohne KI aus
 (`lib/generators-figur.ts`, [docs/aufgaben-mit-bild.md](docs/aufgaben-mit-bild.md)).
 _Avoid_: Bildaufgabe, Grafikaufgabe, Abbildung, Diagramm
 
+**Schreibauftrag**:
+Eine Textarbeit der Oberstufe in einer Textsorte der SRDP (Textinterpretation,
+Zusammenfassung, Leserbrief, Erörterung, Kommentar, Meinungsrede, Textanalyse,
+offener Brief, Empfehlung): **Textbeilage** mit **Zeilennummern**, drei
+Arbeitsaufträge, Wortziel und **Schreibplan**. Eine Zeile in `text_interpretations`
+mit der Spalte `sorte` ([docs/schreibauftraege.md](docs/schreibauftraege.md)).
+_Avoid_: Schreibaufgabe, Textaufgabe (das ist bei der Matura ein Teil eines Themenpakets)
+
+**Textbeilage**:
+Der Text, auf den sich ein **Schreibauftrag** bezieht (Zeitungsartikel, Kommentar,
+Blogbeitrag, Rede, …), mit Titel, Autor, Medium und Datum. Bei der
+**Textinterpretation** ist es die Geschichte.
+_Avoid_: Bezugstext, Materialtext, Vorlage (das ist etwas anderes)
+
 **Matura-Format**:
 Ein Antwortformat der schriftlichen AHS-Mathematik-Matura (Teil 1): **1 aus 5**, **2 aus 5**,
 **Lückentext zum Ankreuzen** (zwei Lücken ① ②, je drei Satzteile) und **Zuordnung** (zwei Aussagen,
@@ -254,16 +268,17 @@ und einer Zeile in `text_interpretations`; beim Schreiben stehen Geschichte,
 _Avoid_: Interpretationsaufgabe, Analyse (die Textanalyse ist eine andere Textsorte), Mini-Interpretation
 
 **Schreibplan**:
-Die sieben Teile einer **Textinterpretation** mit einem Satz Hilfe und einer
-Wortzahl je Teil, aus dem Wortziel gerechnet. Steht beim Schreiben über dem
+Die Teile eines **Schreibauftrags** (bei der **Textinterpretation** sieben) mit
+einem Satz Hilfe und einer Wortzahl je Teil, aus dem Wortziel gerechnet. Steht beim Schreiben über dem
 Editor und auf dem Arbeitsblatt.
 _Avoid_: Gliederung, Aufbauplan, Raster
 
 **Teilübung**:
 Eine freie **Aufgabe** zu einem Teil des **Schreibplans** (z. B. Einleitung mit
-Deutungshypothese oder Stilmittel mit Zitat und Zeile), zur ganzen Geschichte mit
-Zeilennummern. Entsteht ohne KI, wenn im Übungs-Builder die Fähigkeit
-Textinterpretation gewählt ist; die ganze Interpretation ist der Schreibauftrag.
+Deutungshypothese oder Stilmittel mit Zitat und Zeile), zur ganzen **Textbeilage**
+mit Zeilennummern. Entsteht ohne KI, wenn im Übungs-Builder die Fähigkeit einer
+Textsorte gewählt ist (z. B. Textinterpretation, Leserbrief); der ganze Text ist der
+**Schreibauftrag**.
 _Avoid_: Teilaufgabe (das ist ein Teil einer Sachaufgabe), Mini-Interpretation
 
 ## Material, Bibliothek, Vorlage
