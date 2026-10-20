@@ -43,7 +43,8 @@ export function difficultyFor(mastery: number | null): Difficulty {
  * calc = short answer compared as a number/fraction, grammar = short answer compared as text,
  * order = put steps in the right order, fix = correct a text with errors (lib/fix-text.ts), rechenweg =
  * result with the working line by line, sachaufgabe = parts a), b), c) (both lib/math-check.ts),
- * memorize = write a text from memory (lib/memorize.ts).
+ * memorize = write a text from memory (lib/memorize.ts), zuordnung = Matura-Format: statements get a letter
+ * A to D each (lib/matura-formate.ts).
  */
 export const TASK_TYPES = {
   mc: "Multiple Choice",
@@ -57,6 +58,7 @@ export const TASK_TYPES = {
   memorize: "Auswendig schreiben",
   rechenweg: "Rechenweg",
   sachaufgabe: "Sachaufgabe mit Teilfragen",
+  zuordnung: "Zuordnung",
   mixed: "Gemischt",
 } as const;
 export type TaskType = Exclude<keyof typeof TASK_TYPES, "mixed">;
@@ -80,6 +82,12 @@ export const CATEGORIES: Record<string, Category[]> = {
     c("fehler", "Fehler finden", ["calc", "mc"], "Eine vorgerechnete Lösung mit einem typischen Fehler; der Schüler gibt das richtige Ergebnis an."),
     c("ordnen", "Lösungsweg ordnen", ["order"], "Die Schritte eines Lösungswegs in die richtige Reihenfolge bringen."),
     c("offen", "Freie Antwort", ["free"], "Erklären, begründen oder eigenes Beispiel finden; der Lehrer bewertet."),
+    // Antwortformate der schriftlichen AHS-Mathematik-Matura (Teil 1, je 0 oder 1 Punkt), lib/matura-formate.ts.
+    // Übernommen ist nur die Form; die Aufgaben sind eigene (lib/mathe-matura.ts) oder von der KI.
+    c("matura-1aus5", "Matura: 1 aus 5", ["mc"], "Fünf Antworten, genau eine ist richtig."),
+    c("matura-2aus5", "Matura: 2 aus 5", ["mc"], "Fünf Antworten, genau zwei sind richtig. Den Punkt gibt es nur, wenn beide angekreuzt sind und keine falsche."),
+    c("matura-lueckentext", "Matura: Lückentext zum Ankreuzen", ["cloze"], "Ein Satz mit zwei Lücken ① und ②, je drei Satzteile zum Ankreuzen. Der Punkt nur, wenn beide stimmen."),
+    c("matura-zuordnung", "Matura: Zuordnung", ["zuordnung"], "Zwei Aussagen und vier Antworten A bis D. Jede Aussage bekommt einen Buchstaben, der Punkt nur, wenn beide stimmen."),
   ],
   Deutsch: [
     c("rechtschreibung", "Rechtschreibung", ["cloze", "grammar", "mc"], "Richtige Schreibung eines Wortes oder einer Stelle."),
@@ -153,6 +161,11 @@ const MIX_BY_SKILL: [RegExp, string[]][] = [
   // Häufigkeiten und Kennzahlen aus einem Diagramm: ablesen und rechnen
   [/^mathe\.statistik\.(haeufigkeiten|kennzahlen)(\.|$)/, ["rechnung", "rechenweg", "lueckentext", "mc"]],
   [/^mathe\.brueche\./, ["rechenweg", "sachaufgabe", "rechnung", "mc"]],
+  // Oberstufe mit eigenen Matura-Aufgaben (lib/mathe-matura.ts): gemischt heißt die vier Antwortformate der Matura
+  [
+    /^mathe\.os\.(funktionen\.(quadratisch|scheitel|verschieben)|wachstum\.(exponentiell|halbwertszeit)|log\.(begriff|regeln)|folgen\.(arithmetisch|geometrisch)|diff\.(aenderungsrate|potenzregel|monotonie)|wahrscheinlichkeit\.(binomial-bereiche|mehrstufig)|integral\.stammfunktion)(\.|$)/,
+    ["matura-1aus5", "matura-2aus5", "matura-lueckentext", "matura-zuordnung"],
+  ],
   [/^mathe\./, ["rechenweg", "rechnung", "lueckentext", "mc"]],
 ];
 const MIX_BY_SUBJECT: Record<string, string[]> = {

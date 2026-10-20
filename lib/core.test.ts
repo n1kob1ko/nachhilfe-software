@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { CURRICULUM, DIFFICULTIES } from "./curriculum";
 import { generateBuiltIn, hasBuiltInGenerator } from "./generators";
-import { checkAnswer, parseNumber } from "./tasks";
+import { maturaRichtigeAntwort } from "./matura-formate";
+import { checkAnswer, kreisZahl, parseNumber, type TaskDraft } from "./tasks";
 import { masteryAt, taskScore } from "./analysis";
 
 test("parseNumber understands fractions, mixed numbers and decimals", () => {
@@ -22,16 +23,19 @@ test("every built-in task accepts its own solution and rejects its typical error
         assert.ok(tasks.length > 0, `${skill.id} produced no tasks`);
         for (const t of tasks) {
           const right =
-            t.data.options && typeof t.answer.correct === "number"
+            maturaRichtigeAntwort(t) ??
+            (t.data.options && typeof t.answer.correct === "number"
               ? String(t.answer.correct)
               : t.answer.blanks
                 ? JSON.stringify(t.answer.blanks.map((b) => b[0]))
-                : (t.answer.accepted?.[0] ?? "");
+                : (t.answer.accepted?.[0] ?? ""));
           if (t.type === "free") continue;
           assert.equal(checkAnswer(t, right).correct, true, `${skill.id}: "${t.prompt}" rejects its own answer ${right}`);
           for (const e of t.errorMap) {
-            if (t.answer.blanks && t.answer.blanks.length > 1) continue;
-            const wrong = t.answer.blanks ? JSON.stringify([e.answer]) : e.answer;
+            // Matura-Formate (lib/matura-formate.ts): der typische Fehler in einer sonst richtigen Antwort
+            const matura = maturaMitFehler(t, e.answer);
+            if (!matura && t.answer.blanks && t.answer.blanks.length > 1) continue;
+            const wrong = matura ?? (t.answer.blanks ? JSON.stringify([e.answer]) : e.answer);
             const r = checkAnswer(t, wrong);
             assert.equal(r.correct, false, `${skill.id}: typical error "${e.answer}" counted as correct for "${t.prompt}"`);
             assert.equal(r.errorLabel, e.label);
@@ -41,6 +45,22 @@ test("every built-in task accepts its own solution and rejects its typical error
     }
   }
 });
+
+/** Die richtige Antwort einer Matura-Aufgabe mit einem typischen Fehler darin; null bei anderen Aufgaben. */
+function maturaMitFehler(t: TaskDraft, fehler: string): string | null {
+  if (t.answer.correctAll?.length) return JSON.stringify([t.answer.correctAll[0], Number(fehler)]);
+  if (t.type === "zuordnung" && t.answer.pairs) {
+    const [, aussage, antwort] = /^(\d+) → ([A-D])$/.exec(fehler) ?? [];
+    const pairs: number[] = [...t.answer.pairs];
+    pairs[Number(aussage) - 1] = antwort.charCodeAt(0) - 65;
+    return JSON.stringify(pairs);
+  }
+  if (t.data.gapOptions && t.answer.blanks) {
+    const luecke = t.data.gapOptions.findIndex((_, i) => fehler.startsWith(`${kreisZahl(i + 1)} `));
+    return JSON.stringify(t.answer.blanks.map((b, i) => (i === luecke ? fehler.slice(2) : b[0])));
+  }
+  return null;
+}
 
 test("fraction division recognises the forgotten reciprocal", () => {
   const [t] = generateBuiltIn({ subject: "Mathematik", skills: [{ id: "mathe.brueche.dividieren", name: "Dividieren" }], difficulty: "mittel", count: 1, taskType: "calc", seed: 3 });

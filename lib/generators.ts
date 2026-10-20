@@ -30,7 +30,9 @@ import { aufgabenSchluessel } from "./figur";
 import { expectedFixes } from "./fix-text";
 import { figurAufgabe, figurFaehigkeit, type FigurFormat } from "./generators-figur";
 import { rechenwegTask, sachaufgabeTask } from "./generators-mathe";
+import { MATHE_MATURA, istMatheMatura, matheMaturaFuerKategorie, matheMaturaFuerTyp } from "./mathe-matura";
 import { MATHE_RECHNUNGEN } from "./mathe-rechnungen";
+import { istMaturaKategorie, pruefeMatura } from "./matura-formate";
 import { textaufgabeTask } from "./textaufgaben";
 import { ERKLAERUNG } from "./themen";
 import { VOKABEL_GENERATOREN, istVokabelThema, vokabelFuerSlot, vokabelFuerTyp } from "./vokabeln-themen";
@@ -56,6 +58,8 @@ const GEN: Record<string, Gen> = {
   // Mathematik: Rechnungen mit Schulbuch-Zahlen (lib/mathe-rechnungen.ts); Textgleichungen sind Textaufgaben
   ...MATHE_RECHNUNGEN,
   "mathe.gleichungen.text": (rng, diff) => textaufgabeTask("mathe.gleichungen.text", diff, rng)!,
+  // Oberstufe: Aufgaben in den Antwortformaten der AHS-Matura (lib/mathe-matura.ts)
+  ...MATHE_MATURA,
 
   "deutsch.beistrich.aufzaehlung": bankMC("deutsch.beistrich.aufzaehlung", () => BEISTRICH_AUFZ),
   "deutsch.beistrich.nebensatz": bankMC("deutsch.beistrich.nebensatz", () => BEISTRICH_NS),
@@ -839,7 +843,8 @@ export function clozeTask(skillId: string, diff: Difficulty, rng: Rng = Math.ran
 }
 
 // ---------- conversions ----------
-function toMC(rng: Rng, t: TaskDraft): TaskDraft {
+/** Multiple Choice aus einer Rechnung: das Ergebnis und bis zu `falsche` falsche Antworten (typische Fehler zuerst). */
+function toMC(rng: Rng, t: TaskDraft, falsche = 3): TaskDraft {
   if (t.data.options) return t;
   const correct = t.answer.accepted?.[0];
   if (!correct) return t;
@@ -850,16 +855,27 @@ function toMC(rng: Rng, t: TaskDraft): TaskDraft {
     const decimals = (correct.split(/[.,]/)[1] ?? "").length;
     const write = (d: number) => (decimals ? d.toFixed(decimals) : String(Math.round(d * 1e4) / 1e4)).replace(".", ",");
     const taken = (s: string) => [correct, ...distractors].some((x) => parseNumber(x) === parseNumber(s));
-    for (const d of [n + 1, n - 1, n * 2, n + 10]) if (distractors.length < 3 && !taken(write(d))) distractors.push(write(d));
+    for (const d of [n + 1, n - 1, n * 2, n + 10]) if (distractors.length < falsche && !taken(write(d))) distractors.push(write(d));
   }
   if (distractors.length < 1) return t;
-  const options = shuffle(rng, [correct, ...distractors.slice(0, 3)]);
+  const options = shuffle(rng, [correct, ...distractors.slice(0, falsche)]);
   const errorMap = t.errorMap
     .map((e) => ({ answer: String(options.indexOf(e.answer)), label: e.label }))
     .filter((e) => e.answer !== "-1");
   // shown with a decimal comma and a real minus sign
   const show = (o: string) => o.replace(/(\d)\.(\d)/g, "$1,$2").replace(/^-(?=\d)/, "−");
   return { ...t, type: "mc", data: { ...mitBild(t), options: options.map(show) }, answer: { correct: options.indexOf(correct) }, errorMap };
+}
+
+/**
+ * Matura „1 aus 5“ aus einer Rechnung einer Fähigkeit ohne eigene Matura-Aufgaben: das Ergebnis und vier falsche
+ * Antworten. null, wenn es keine vier verschiedenen gibt (dann bleibt es eine Rechnung, der Builder sagt es).
+ */
+function toEinAusFuenf(rng: Rng, t: TaskDraft): TaskDraft | null {
+  if (t.data.options) return null;
+  const mc = toMC(rng, t, 4);
+  const task: TaskDraft = { ...mc, category: "matura-1aus5" };
+  return mc.data.options?.length === 5 && !pruefeMatura(task) ? task : null;
 }
 
 /** Das Bild einer Aufgabe mit Bild (lib/figur.ts) bleibt bei jeder Umwandlung dabei. */
@@ -936,6 +952,16 @@ export type Slot = {
   grade?: number;
 };
 
+/**
+ * Ein Matura-Format für eine Fähigkeit ohne eigene Matura-Aufgaben (lib/mathe-matura.ts): 1 aus 5 entsteht aus
+ * der Rechnung; 2 aus 5, Lückentext zum Ankreuzen und Zuordnung brauchen eigene Aussagen, dann bleibt es die
+ * Rechnung mit ihrer echten Kategorie, und der Builder zählt den Typ als fehlend (typFehlt).
+ */
+function maturaAusRechnung(rng: Rng, base: TaskDraft, category: string, tag: (t: TaskDraft, category?: string | null) => TaskDraft): TaskDraft {
+  const fuenf = category === "matura-1aus5" ? toEinAusFuenf(rng, base) : null;
+  return fuenf ? tag(fuenf, "matura-1aus5") : tag(base, base.type === "mc" ? "mc" : "rechnung");
+}
+
 /** Eine Aufgabe mit Bild als Rechnung; wo es keine gibt (Intervalle), als Multiple Choice. */
 const figurBasis = (figId: string, diff: Difficulty, rng: Rng) => figurAufgabe(figId, diff, "calc", rng) ?? figurAufgabe(figId, diff, "mc", rng);
 
@@ -959,6 +985,11 @@ function figurFuerSlot(figId: string, slot: Slot, rng: Rng, tag: (t: TaskDraft, 
     }
     case "textaufgabe":
       return tag(basis, "rechnung");
+    case "matura-1aus5":
+    case "matura-2aus5":
+    case "matura-lueckentext":
+    case "matura-zuordnung":
+      return maturaAusRechnung(rng, basis, slot.category, tag);
     default:
       // „Direkte Rechnung“ erlaubt Rechnung und Multiple Choice (Intervalle gibt es nur so)
       return tag(basis);
@@ -1009,6 +1040,11 @@ export function generateForSlot(slot: Slot, rng: Rng = Math.random, variant = 0)
   }
   if (figId && !["offen", "schreiben", "writing"].includes(slot.category ?? "")) return figurFuerSlot(figId, slot, rng, tag);
   if (!genId || ["offen", "schreiben", "writing"].includes(slot.category ?? "")) return free();
+  // Mathematik-Matura: die vier Antwortformate aus eigenen Aussagen; andere Typen als 1 aus 5 (der Builder sagt es)
+  if (istMatheMatura(genId)) {
+    const { task, category } = matheMaturaFuerKategorie(genId, slot.category, slot.difficulty, rng);
+    return tag(task, category);
+  }
   // Englisch: jeder Aufgabentyp aus den Satzmustern; einen, den die Fähigkeit nicht hat, als Lückentext (der Builder sagt es)
   if (istEnglischGrammatik(genId)) {
     const { task, category } = englischFuerKategorie(genId, slot.category, slot.difficulty, rng);
@@ -1042,6 +1078,7 @@ export function generateForSlot(slot: Slot, rng: Rng = Math.random, variant = 0)
       return story ? tag(story, "textaufgabe") : tag(base, "rechnung");
     }
     default:
+      if (istMaturaKategorie(slot.category)) return maturaAusRechnung(rng, base, slot.category, tag);
       return tag(base);
   }
 }
@@ -1130,6 +1167,8 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
       t = englischFuerTyp(skill.id, req.taskType, req.difficulty, rng);
     } else if (istDeutschSatzlehre(skill.id)) {
       t = deutschFuerTyp(skill.id, req.taskType, req.difficulty, rng);
+    } else if (istMatheMatura(skill.id)) {
+      t = matheMaturaFuerTyp(skill.id, req.taskType, req.difficulty, rng);
     } else {
       t = GEN[skill.id](rng, req.difficulty);
       const type = req.taskType === "mixed" ? pick(rng, ["calc", "mc", "cloze"] as const) : req.taskType;
@@ -1138,7 +1177,7 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
       else if (type === "grammar" && t.type === "calc") t = { ...t, type: "grammar" };
     }
     // Aufgaben mit Bild unterscheiden sich im Bild, englische im Satz (zweite Zeile), nicht in der ersten Zeile
-    const key = t.data.figure || istEnglischGrammatik(skill.id) || istDeutschSatzlehre(skill.id) || istVokabelThema(skill.id) ? aufgabenSchluessel(t) : t.prompt.split("\n")[0];
+    const key = t.data.figure || istEnglischGrammatik(skill.id) || istDeutschSatzlehre(skill.id) || istVokabelThema(skill.id) || istMatheMatura(skill.id) ? aufgabenSchluessel(t) : t.prompt.split("\n")[0];
     if (seen.has(key) && guard < req.count * 15) continue;
     seen.add(key);
     out.push(t);

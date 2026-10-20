@@ -7,7 +7,8 @@ import {
   type WorkArea as WorkAreaType,
 } from "@/lib/arbeitsblatt";
 import { isAspect, OPEN_ASPECTS, paragraphsOf, severalNoted } from "@/lib/lesen";
-import { GAP } from "@/lib/tasks";
+import { buchstabe, GAP, kreisZahl, type TaskDraft } from "@/lib/tasks";
+import { maturaFormat, maturaKreuze } from "@/lib/matura-formate";
 import { MathLine, RichText } from "./MathLine";
 import { Lines, WorkField } from "./WorkArea";
 import { PrintStory } from "./PrintStory";
@@ -26,6 +27,113 @@ export function Start({ task }: { task: SheetTask["task"] }) {
       <MathLine text={task.data.start} />
     </p>
   ) : null;
+}
+
+/** Lückentext zum Ankreuzen (Matura-Format): die Lücken heißen ① ② und werden darunter angekreuzt. */
+export const lueckenNamen = (task: Pick<TaskDraft, "data">) => task.data.gapOptions?.map((_, i) => kreisZahl(i + 1));
+
+/**
+ * Matura-Formate (lib/matura-formate.ts) wie auf dem Maturablatt: 1 aus 5 und 2 aus 5 untereinander mit dem
+ * Kästchen rechts, beim Lückentext je Lücke ① ② eine Tabelle mit drei Satzteilen, bei der Zuordnung ein
+ * Kästchen für den Buchstaben neben jeder Aussage und die Antworten A bis D daneben.
+ * `kreuze`: was angekreuzt ist (Lehrerfassung: die Lösung, Mappe: die Antwort des Schülers), in der Form von
+ * lib/matura-formate.ts maturaKreuze. `richtig` (Mappe mit Lösung): ein richtiges Kreuz, das fehlt, steht daneben.
+ */
+export function MaturaAntworten({ task, kreuze = [], richtig = null }: { task: TaskDraft; kreuze?: (number | null)[]; richtig?: (number | null)[] | null }) {
+  const format = maturaFormat(task);
+  const kaestchen = (an: boolean) => (
+    <span className="ab-box" aria-label={an ? "angekreuzt" : undefined}>
+      {an ? "✕" : ""}
+    </span>
+  );
+  const fehlt = (an: boolean, soll: boolean) => (richtig && soll && !an ? <span className="mp-richtig-markiert"> ← richtig</span> : null);
+  if (format === "matura-1aus5" || format === "matura-2aus5")
+    return (
+      <table className="ab-matura ab-matura-wahl">
+        <tbody>
+          {(task.data.options ?? []).map((x, i) => {
+            const an = kreuze.includes(i);
+            return (
+              <tr key={i} className={an ? "ab-matura-an" : undefined}>
+                <td>
+                  <MathLine text={x} />
+                  {fehlt(an, Boolean(richtig?.includes(i)))}
+                </td>
+                <td className="ab-matura-box">{kaestchen(an)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    );
+  if (format === "matura-lueckentext")
+    return (
+      <div className="ab-matura-paar">
+        {(task.data.gapOptions ?? []).map((g, i) => (
+          <table key={i} className="ab-matura">
+            <thead>
+              <tr>
+                <th colSpan={2}>{kreisZahl(i + 1)}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {g.map((x, j) => {
+                const an = kreuze[i] === j;
+                return (
+                  <tr key={j} className={an ? "ab-matura-an" : undefined}>
+                    <td>
+                      <MathLine text={x} />
+                      {fehlt(an, richtig?.[i] === j)}
+                    </td>
+                    <td className="ab-matura-box">{kaestchen(an)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        ))}
+      </div>
+    );
+  const z = task.data.zuordnung;
+  if (format === "matura-zuordnung" && z)
+    return (
+      <div className="ab-matura-paar">
+        <table className="ab-matura">
+          <tbody>
+            {z.statements.map((st, i) => {
+              const k = kreuze[i] ?? null;
+              const soll = richtig?.[i] ?? null;
+              return (
+                <tr key={i}>
+                  <td>
+                    <MathLine text={st} />
+                    {soll !== null && soll !== k && <span className="mp-richtig-markiert"> ← richtig: {buchstabe(soll)}</span>}
+                  </td>
+                  <td className="ab-matura-box">
+                    <span className="ab-matura-buchstabe" aria-label={k === null ? "Buchstabe eintragen" : undefined}>
+                      {k === null ? "" : buchstabe(k)}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <table className="ab-matura">
+          <tbody>
+            {z.options.map((o, k) => (
+              <tr key={k}>
+                <th scope="row">{buchstabe(k)}</th>
+                <td>
+                  <MathLine text={o} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  return null;
 }
 
 /** Druckgröße der Bilder: Millimeter je Einheit der Zeichnung (die Schrift wird so etwa 10 pt groß). */
@@ -226,6 +334,7 @@ const taskClass = (o: SheetOptions, punkte?: number) => ["ab-task", !o.numbers &
 /** One task as the student gets it: prompt, choices, room to work and write. */
 export function StudentTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?: number }) {
   const { task, plan } = t;
+  const matura = maturaFormat(task);
   return (
     <div className={taskClass(o, punkte)}>
       {o.numbers && <span className="ab-num">{t.n}</span>}
@@ -249,14 +358,15 @@ export function StudentTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; p
                 area={plan.area}
               />
             ) : (
-              <RichText text={prompt} gapsMm={plan.gapsMm} />
+              <RichText text={prompt} gapsMm={plan.gapsMm} gapLabels={lueckenNamen(task)} />
             )
           }
         />
         <Start task={task} />
         {task.type === "sachaufgabe" && <Parts t={t} teacher={false} />}
         {task.type === "fix" && task.data.faulty && <p className="ab-faulty">{task.data.faulty}</p>}
-        {task.data.options && (
+        {matura && <MaturaAntworten task={task} />}
+        {task.data.options && !matura && (
           <ol
             className={
               plan.optionColumns === 2
@@ -302,6 +412,7 @@ export function StudentTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; p
 /** The task with its solution, solution path, skill, difficulty and typical errors (teacher version only). */
 function TeacherTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?: number }) {
   const { task } = t;
+  const matura = maturaFormat(task);
   const answer = shortAnswer(task);
   const steps = task.solutionSteps?.length ? task.solutionSteps : null;
   const errors = task.errorMap.filter(
@@ -319,6 +430,7 @@ function TeacherTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?:
             <RichText
               text={prompt}
               gapsMm={t.plan.gapsMm}
+              gapLabels={lueckenNamen(task)}
               gapAnswers={
                 task.answer.blanks?.map((b) => b[0] ?? null) ??
                 (task.prompt.split(GAP).length === 2
@@ -328,7 +440,9 @@ function TeacherTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?:
             />
           )}
         />
-        {task.data.options && (
+        {/* Matura-Formate: die richtigen Kreuze in den Kästchen */}
+        {matura && <MaturaAntworten task={task} kreuze={maturaKreuze(task)} />}
+        {task.data.options && !matura && (
           <ol
             className={
               t.plan.optionColumns === 2
@@ -378,7 +492,7 @@ function TeacherTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?:
               <b>Auch richtig:</b> {task.answer.accepted!.slice(1).join(" · ")}
             </p>
           )}
-          {task.answer.blanks?.some((b) => b.length > 1) && (
+          {!task.data.gapOptions && task.answer.blanks?.some((b) => b.length > 1) && (
             <p>
               <b>Auch richtig:</b>{" "}
               {task.answer.blanks

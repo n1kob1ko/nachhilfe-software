@@ -10,6 +10,13 @@ import { pruefeVokabel, type VokabelSpec } from "./vokabeln-pruefen";
 export type AnswerSpec = {
   /** Multiple choice / reading: index of the correct option. */
   correct?: number;
+  /**
+   * Matura-Format „2 aus 5“ (lib/matura-formate.ts): die Indizes aller richtigen Antworten in data.options,
+   * statt `correct`. Richtig ist die Antwort nur, wenn genau diese angekreuzt sind (alles oder nichts).
+   */
+  correctAll?: number[];
+  /** Zuordnung: für jede Aussage in data.zuordnung der Index der passenden Antwort (0 = A). Alles oder nichts. */
+  pairs?: number[];
   /** Short answers: accepted solutions. */
   accepted?: string[];
   /** value = numerically equal (fractions, decimals); exact = case sensitive; text = case insensitive. */
@@ -105,11 +112,21 @@ export type TaskDraft = {
      *  trotzdem in answer; das Bild enthält die Zahlen, aus denen sie berechnet wurde. Schülerinnen und
      *  Schüler bekommen nur das fertige SVG ohne Lösung, nie diese Angaben. */
     figure?: Figur;
+    /**
+     * Lückentext zum Ankreuzen (Matura-Format): je Lücke die Satzteile zum Ankreuzen, in der Reihenfolge der
+     * Lücken. Die richtigen stehen wie sonst in answer.blanks; die Antwort ist der gewählte Satzteil.
+     */
+    gapOptions?: string[][];
+    /** Zuordnung (Matura-Format): die Aussagen und die Antworten A, B, C, D. Die Lösung steht in answer.pairs. */
+    zuordnung?: { statements: string[]; options: string[] };
   };
   answer: AnswerSpec;
   solution: string;
   hints: string[];
-  /** Typical wrong answers and what they reveal (for MC: the option index as string). */
+  /**
+   * Typical wrong answers and what they reveal (for MC and „2 aus 5“: the option index as string; Zuordnung:
+   * Aussage und Buchstabe, „2 → C“; Lückentext zum Ankreuzen: Lücke und Satzteil, „② nach unten offen“).
+   */
   errorMap: { answer: string; label: string }[];
   /** Lösungsweg as separate steps (AI tasks); the text in `solution` stays the main form. */
   solutionSteps?: string[];
@@ -214,9 +231,97 @@ function labelFor(task: Pick<TaskDraft, "errorMap" | "answer">, given: string, s
   return null;
 }
 
+/** ① ② ③ …: so heißen die Lücken eines Lückentexts zum Ankreuzen, wie auf dem Maturablatt. */
+export const kreisZahl = (n: number) => (n >= 1 && n <= 20 ? String.fromCharCode(0x245f + n) : `(${n})`);
+/** A, B, C, D: die Antworten einer Zuordnung. */
+export const buchstabe = (i: number) => String.fromCharCode(65 + i);
+const ZAHLWORT: Record<number, string> = { 2: "zwei", 3: "drei", 4: "vier" };
+
+/** Eine Auswahl als JSON-Array von Indizes ("[0,3]", "[2,null]"), auch eine einzelne Zahl ("2"). null = nichts gewählt. */
+function indizes(given: string): (number | null)[] {
+  let v: unknown;
+  try {
+    v = JSON.parse(given);
+  } catch {
+    return [];
+  }
+  const index = (x: unknown) => (x !== null && x !== "" && Number.isInteger(Number(x)) && Number(x) >= 0 ? Number(x) : null);
+  if (Array.isArray(v)) return v.map(index);
+  return index(v) === null ? [] : [index(v)];
+}
+
+/** Ein Eintrag der Fehlerliste einer Zuordnung: „2 → C“, auch „2C“ oder „2 = c“. */
+function zuordnungsFehler(answer: string): { aussage: number; antwort: number } | null {
+  const m = answer.trim().match(/^(\d+)\s*(?:→|->|=|:)?\s*([A-Za-z])$/);
+  return m ? { aussage: Number(m[1]) - 1, antwort: m[2].toUpperCase().charCodeAt(0) - 65 } : null;
+}
+
+/** Matura „2 aus 5“: ein Punkt nur, wenn alle richtigen und keine falsche angekreuzt sind. */
+function checkMehrfachwahl(task: Pick<TaskDraft, "errorMap" | "answer">, given: string, richtig: number[]): CheckResult {
+  const picked = [...new Set(indizes(given).filter((i): i is number => i !== null))];
+  const need = richtig.length;
+  const right = picked.filter((i) => richtig.includes(i));
+  const wrong = picked.filter((i) => !richtig.includes(i));
+  if (right.length === need && !wrong.length) return { correct: true, errorLabel: null, feedback: "Richtig!" };
+  const n = ZAHLWORT[need] ?? String(need);
+  const fehlen = need - right.length;
+  const feedback = !picked.length
+    ? `Kreuze ${n} Antworten an.`
+    : picked.length > need
+      ? `Du hast ${picked.length} Antworten angekreuzt. Genau ${n} sind richtig.`
+      : !wrong.length
+        ? fehlen === 1
+          ? `Eine der ${n} richtigen Antworten fehlt.`
+          : `${fehlen} der ${n} richtigen Antworten fehlen.`
+        : right.length
+          ? right.length === 1 && wrong.length === 1
+            ? "Eine Antwort stimmt, die andere nicht."
+            : "Nicht alle angekreuzten Antworten stimmen."
+          : picked.length === 1
+            ? `Die angekreuzte Antwort stimmt nicht. Genau ${n} sind richtig.`
+            : "Keine der angekreuzten Antworten stimmt.";
+  const errorLabel =
+    (wrong.length ? labelFor(task, String(wrong[0])) : null) ??
+    (picked.length > need ? `Mehr als ${n} Antworten angekreuzt` : picked.length && !wrong.length ? "Nicht alle richtigen Antworten angekreuzt" : null);
+  return { correct: false, errorLabel, feedback };
+}
+
+/** Zuordnung: jede Aussage bekommt einen Buchstaben; ein Punkt nur, wenn alle stimmen. */
+function checkZuordnung(task: Pick<TaskDraft, "errorMap">, given: string, pairs: number[]): CheckResult {
+  const picked = indizes(given);
+  const wrong = pairs.map((p, i) => (picked[i] === p ? -1 : i)).filter((i) => i >= 0);
+  if (!wrong.length) return { correct: true, errorLabel: null, feedback: "Richtig!" };
+  const offen = wrong.filter((i) => picked[i] == null);
+  const falsch = wrong.filter((i) => picked[i] != null);
+  const liste = (xs: number[]) => xs.map((i) => i + 1).join(" und ");
+  // „bei 2“ statt „Aussage 2“: zugeordnet werden auch Terme, Funktionen und Stellen
+  const feedback =
+    offen.length === pairs.length
+      ? "Wähle bei jeder Nummer einen Buchstaben."
+      : falsch.length === pairs.length
+        ? pairs.length === 2
+          ? "Beide Buchstaben stimmen nicht."
+          : "Kein Buchstabe stimmt."
+        : [
+            falsch.length ? `Bei ${liste(falsch)} ${falsch.length === 1 ? "stimmt der Buchstabe" : "stimmen die Buchstaben"} nicht.` : "",
+            offen.length ? `Bei ${liste(offen)} fehlt noch ${offen.length === 1 ? "ein Buchstabe" : "der Buchstabe"}.` : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+  const label = falsch
+    .map((i) => task.errorMap.find((e) => {
+      const f = zuordnungsFehler(e.answer);
+      return f !== null && f.aussage === i && f.antwort === picked[i];
+    })?.label)
+    .find(Boolean);
+  return { correct: false, wrongGaps: wrong.map((i) => i + 1), errorLabel: label ?? (falsch.length ? "Falsch zugeordnet" : null), feedback };
+}
+
 /**
  * Checks an answer. `given` is the raw value: option index for MC, text for short answers,
- * a JSON array of strings for cloze tasks.
+ * a JSON array of strings for cloze tasks. Matura-Formate (lib/matura-formate.ts): „2 aus 5“ and Zuordnung
+ * get a JSON array of option indices ("[1,4]"; Zuordnung in the order of the statements, null = no letter yet),
+ * a Lückentext zum Ankreuzen the chosen phrases like any cloze task.
  */
 export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "errorMap">, given: string): CheckResult {
   const a = task.answer;
@@ -226,6 +331,8 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
     const r = checkMemorize(task.data.passage ?? "", given);
     return { correct: r.correct, errorLabel: r.correct ? null : mistakeLabel(r.mistakes), feedback: r.feedback };
   }
+  if (task.data.options && a.correctAll?.length) return checkMehrfachwahl(task, given, a.correctAll);
+  if (task.type === "zuordnung" && a.pairs?.length) return checkZuordnung(task, given, a.pairs);
   if (task.data.options && typeof a.correct === "number") {
     const idx = Number(given);
     const correct = idx === a.correct;
@@ -289,10 +396,17 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
     return {
       correct,
       wrongGaps: correct ? undefined : wrong.map((i) => i + 1),
-      errorLabel: correct ? null : labelFor(task, values.join(" | ")) ?? wrong.map((i) => labelFor(task, values[i] ?? "", same)).find(Boolean) ?? null,
-      feedback: correct
-        ? "Alle Lücken richtig!"
-        : `${wrong.length} von ${a.blanks.length} Lücken sind noch falsch (Lücke ${wrong.map((i) => i + 1).join(", ")}).`,
+      // Lückentext zum Ankreuzen: derselbe Satzteil kann in beiden Lücken stehen, die Fehlerliste nennt die Lücke („② 36“)
+      errorLabel: correct
+        ? null
+        : (labelFor(task, values.join(" | ")) ??
+          wrong.map((i) => (task.data.gapOptions ? labelFor(task, `${kreisZahl(i + 1)} ${values[i] ?? ""}`, same) : null) ?? labelFor(task, values[i] ?? "", same)).find(Boolean) ??
+          null),
+      feedback: task.data.gapOptions
+        ? ankreuzFeedback(wrong, values, a.blanks.length)
+        : correct
+          ? "Alle Lücken richtig!"
+          : `${wrong.length} von ${a.blanks.length} Lücken sind noch falsch (Lücke ${wrong.map((i) => i + 1).join(", ")}).`,
     };
   }
   if (a.accepted && a.accepted.length > 0) {
@@ -304,6 +418,21 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
     return { correct, errorLabel: correct ? null : labelFor(task, given), feedback };
   }
   return { correct: null, errorLabel: null, feedback: "Wird bewertet." };
+}
+
+/** Lückentext zum Ankreuzen: die Lücken heißen ① ② wie auf dem Maturablatt; ein Punkt nur, wenn alle stimmen. */
+function ankreuzFeedback(wrong: number[], values: string[], gaps: number): string {
+  if (!wrong.length) return "Richtig!";
+  const leer = wrong.filter((i) => !(values[i] ?? "").trim());
+  const liste = (xs: number[]) => xs.map((i) => kreisZahl(i + 1)).join(" und ");
+  if (leer.length === gaps) return "Kreuze bei jeder Lücke eine Möglichkeit an.";
+  const falsch = wrong.filter((i) => !leer.includes(i));
+  return [
+    falsch.length === gaps && gaps === 2 ? "Beide Lücken stimmen nicht." : falsch.length ? `Lücke ${liste(falsch)} ${falsch.length === 1 ? "stimmt" : "stimmen"} nicht.` : "",
+    leer.length ? `Kreuze bei Lücke ${liste(leer)} noch eine Möglichkeit an.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export function gapCount(prompt: string) {
