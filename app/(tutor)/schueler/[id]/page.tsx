@@ -39,13 +39,12 @@ import { einheitenFuerWoche, istNichtStattgefunden, mitNamen, slotDatum } from "
 import { datumLabel, minutenLabel, wienerDatum, wienerWochenstart, wochenLabel } from "@/lib/planung/zeit";
 import { listenVon } from "@/lib/vokabellisten";
 
+/** Vier Bereiche statt sechs: Stoff und Prüfungen teilen sich einen Tab, Übungen und Lernverlauf auch. */
 const TABS = [
   ["ueberblick", "Überblick"],
   ["fortschritt", "Lernstand"],
-  ["stoff", "Aktueller Stoff"],
-  ["schule", "Prüfungen"],
-  ["uebungen", "Übungen"],
-  ["lernverlauf", "Lernverlauf"],
+  ["schule", "Stoff & Prüfungen"],
+  ["lernverlauf", "Übungen & Verlauf"],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
@@ -57,8 +56,8 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
   const sp = await searchParams;
   const student = repo.getStudent(Number(id));
   if (!student) notFound();
-  // old addresses keep working: "stunden" is now the Lernverlauf, "analyse" is part of Fortschritt
-  const requested = sp.tab === "stunden" ? "lernverlauf" : sp.tab === "analyse" ? "fortschritt" : sp.tab;
+  // old addresses keep working: "stunden" and "uebungen" are in Übungen & Verlauf, "analyse" in Lernstand, "stoff" in Stoff & Prüfungen
+  const requested = ({ stunden: "lernverlauf", uebungen: "lernverlauf", analyse: "fortschritt", stoff: "schule" } as Record<string, string>)[sp.tab ?? ""] ?? sp.tab;
   const tab: Tab = (TABS.find(([k]) => k === requested)?.[0] ?? "ueberblick") as Tab;
   const a = analyzeStudent(student.id)!;
   const teacher = repo.getTeacher(student.teacher_id);
@@ -120,10 +119,30 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
           <AnalysisTab student={student} a={a} assignedId={sp.zugewiesen} error={sp.fehler} />
         </div>
       )}
-      {tab === "lernverlauf" && <Lessons student={student} filter={sp.art} />}
-      {tab === "schule" && <School student={student} />}
-      {tab === "stoff" && <CurrentMaterialTab student={student} edit={Number(sp.bearbeiten) || null} />}
-      {tab === "uebungen" && <Exercises student={student} />}
+      {tab === "lernverlauf" && (
+        <div className="space-y-14">
+          <section aria-labelledby="lernverlauf-titel">
+            <h2 id="lernverlauf-titel" className="gruppe-titel mb-4">Lernverlauf</h2>
+            <Lessons student={student} filter={sp.art} />
+          </section>
+          <section aria-labelledby="uebungen-titel">
+            <h2 id="uebungen-titel" className="gruppe-titel mb-4">Übungen</h2>
+            <Exercises student={student} />
+          </section>
+        </div>
+      )}
+      {tab === "schule" && (
+        <div className="space-y-14">
+          <section aria-labelledby="stoff-titel">
+            <h2 id="stoff-titel" className="gruppe-titel mb-4">Aktueller Stoff</h2>
+            <CurrentMaterialTab student={student} edit={Number(sp.bearbeiten) || null} />
+          </section>
+          <section aria-labelledby="schule-titel">
+            <h2 id="schule-titel" className="gruppe-titel mb-4">Prüfungen und Hausübungen</h2>
+            <School student={student} />
+          </section>
+        </div>
+      )}
     </>
   );
 }
@@ -248,7 +267,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
       "Fach und Themen",
       <span key="topics">
         {[student.subjects.join(", "), student.current_topics].filter(Boolean).join(" · ") || "–"}{" "}
-        <Link href={`/schueler/${student.id}?tab=stoff`} className="link font-medium whitespace-nowrap">
+        <Link href={`/schueler/${student.id}?tab=schule`} className="link font-medium whitespace-nowrap">
           Aktuellen Stoff festlegen ›
         </Link>
       </span>,
@@ -764,7 +783,7 @@ function CurrentMaterialTab({ student, edit }: { student: repo.Student; edit: nu
                 <Link href={`/uebungen/neu?schueler=${student.id}&stoff=${cm.id}`} className="btn btn-primary btn-sm">
                   Übung dazu erstellen
                 </Link>
-                <Link href={`/schueler/${student.id}?tab=stoff&bearbeiten=${cm.id}`} className="btn btn-ghost btn-sm">
+                <Link href={`/schueler/${student.id}?tab=schule&bearbeiten=${cm.id}`} className="btn btn-ghost btn-sm">
                   <Pencil size={14} aria-hidden /> Bearbeiten
                 </Link>
                 <form action={endMaterialAction.bind(null, cm.id)} className="ml-auto">

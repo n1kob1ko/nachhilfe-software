@@ -5,14 +5,66 @@ import { useId, useMemo, useState } from "react";
 type Series = { label: string; points: { at: number; mastery: number | null }[] };
 
 const COLORS = ["var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)"];
-const W = 720;
-const H = 260;
-const M = { top: 16, right: 170, bottom: 30, left: 40 };
+/* Laptop: breit mit Beschriftung am Linienende. Handy: schmal, ohne Endbeschriftung, dafür Legende. */
+const LAYOUT = {
+  wide: { W: 720, H: 260, M: { top: 16, right: 170, bottom: 30, left: 40 }, endLabels: true },
+  narrow: { W: 360, H: 230, M: { top: 14, right: 18, bottom: 28, left: 34 }, endLabels: false },
+} as const;
 
 /** Mastery over time, one line per topic. Crosshair tooltip, direct end labels, table fallback. */
 export function ProgressChart({ series }: { series: Series[] }) {
-  const [hover, setHover] = useState<number | null>(null);
   const titleId = useId();
+  const xs = series[0]?.points.map((p) => p.at) ?? [];
+  const n = xs.length;
+  const fmt = (t: number) => new Date(t).toLocaleDateString("de-AT", { day: "numeric", month: "short" });
+  if (n === 0 || series.length === 0) return <p className="text-[14px] text-ink-2">Noch nicht genug Daten für einen Verlauf.</p>;
+  return (
+    <figure className="m-0">
+      <figcaption id={titleId} className="sr-only">
+        Beherrschung pro Thema im Zeitverlauf
+      </figcaption>
+      <div className="hidden md:block">
+        <Plot series={series} layout="wide" titleId={titleId} />
+      </div>
+      <div className="md:hidden">
+        <Plot series={series} layout="narrow" titleId={titleId} />
+      </div>
+      <details className="mt-2 text-[13px]">
+        <summary className="cursor-pointer text-ink-2 hover:text-ink">Als Tabelle anzeigen</summary>
+        <div className="mt-2 overflow-x-auto">
+          <table className="num w-full text-left">
+            <thead>
+              <tr className="text-ink-3">
+                <th className="py-1 pr-4 font-medium">Woche</th>
+                {series.map((s) => (
+                  <th key={s.label} className="py-1 pr-4 font-medium">
+                    {s.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {xs.map((t, i) => (
+                <tr key={t} className="border-t border-line">
+                  <td className="py-1 pr-4">{fmt(t)}</td>
+                  {series.map((s) => (
+                    <td key={s.label} className="py-1 pr-4">
+                      {s.points[i].mastery === null ? "–" : `${Math.round(s.points[i].mastery! * 100)} %`}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </figure>
+  );
+}
+
+function Plot({ series, layout, titleId }: { series: Series[]; layout: keyof typeof LAYOUT; titleId: string }) {
+  const { W, H, M, endLabels } = LAYOUT[layout];
+  const [hover, setHover] = useState<number | null>(null);
   const xs = series[0]?.points.map((p) => p.at) ?? [];
   const n = xs.length;
   const iw = W - M.left - M.right;
@@ -40,7 +92,7 @@ export function ProgressChart({ series }: { series: Series[] }) {
   );
 
   // end labels: last known value, pushed apart only when they would overlap (with leader lines)
-  const ends = series
+  const ends = (endLabels ? series : [])
     .map((s, i) => {
       const last = [...s.points].reverse().find((p) => p.mastery !== null);
       return last ? { i, label: s.label, v: last.mastery!, y: y(last.mastery!) } : null;
@@ -51,8 +103,6 @@ export function ProgressChart({ series }: { series: Series[] }) {
 
   const fmt = (t: number) => new Date(t).toLocaleDateString("de-AT", { day: "numeric", month: "short" });
 
-  if (n === 0 || series.length === 0) return <p className="text-[14px] text-ink-2">Noch nicht genug Daten für einen Verlauf.</p>;
-
   const onMove = (e: React.PointerEvent<SVGRectElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const px = ((e.clientX - rect.left) / rect.width) * iw;
@@ -60,11 +110,8 @@ export function ProgressChart({ series }: { series: Series[] }) {
   };
 
   return (
-    <figure className="m-0">
-      <figcaption id={titleId} className="sr-only">
-        Beherrschung pro Thema im Zeitverlauf
-      </figcaption>
-      {series.length > 1 && (
+    <>
+      {(series.length > 1 || !endLabels) && (
         <ul className="mb-3 flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-ink-2" aria-label="Legende">
           {series.map((s, i) => (
             <li key={s.label} className="flex items-center gap-2">
@@ -80,14 +127,14 @@ export function ProgressChart({ series }: { series: Series[] }) {
         <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-labelledby={titleId}>
           {[0, 0.25, 0.5, 0.75, 1].map((v) => (
             <g key={v}>
-              <line x1={M.left} x2={M.left + iw} y1={y(v)} y2={y(v)} stroke="#e7e2d6" strokeWidth="1" />
+              <line x1={M.left} x2={M.left + iw} y1={y(v)} y2={y(v)} stroke="var(--line)" strokeWidth="1" />
               <text x={M.left - 8} y={y(v)} dy="0.32em" textAnchor="end" fontSize="11" fill="var(--ink-3)" className="num">
                 {Math.round(v * 100)}
               </text>
             </g>
           ))}
           {xs.map((t, i) =>
-            i % Math.ceil(n / 6) === 0 || i === n - 1 ? (
+            i % Math.ceil(n / (endLabels ? 6 : 4)) === 0 || i === n - 1 ? (
               <text key={t} x={x(i)} y={H - 8} textAnchor="middle" fontSize="11" fill="var(--ink-3)">
                 {i === n - 1 ? "heute" : fmt(t)}
               </text>
@@ -154,35 +201,6 @@ export function ProgressChart({ series }: { series: Series[] }) {
           </div>
         )}
       </div>
-      <details className="mt-2 text-[13px]">
-        <summary className="cursor-pointer text-ink-2 hover:text-ink">Als Tabelle anzeigen</summary>
-        <div className="mt-2 overflow-x-auto">
-          <table className="num w-full text-left">
-            <thead>
-              <tr className="text-ink-3">
-                <th className="py-1 pr-4 font-medium">Woche</th>
-                {series.map((s) => (
-                  <th key={s.label} className="py-1 pr-4 font-medium">
-                    {s.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {xs.map((t, i) => (
-                <tr key={t} className="border-t border-line">
-                  <td className="py-1 pr-4">{fmt(t)}</td>
-                  {series.map((s) => (
-                    <td key={s.label} className="py-1 pr-4">
-                      {s.points[i].mastery === null ? "–" : `${Math.round(s.points[i].mastery! * 100)} %`}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </details>
-    </figure>
+    </>
   );
 }
