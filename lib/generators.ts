@@ -25,11 +25,12 @@ import {
 } from "./banks";
 import { expectedFixes } from "./fix-text";
 import { rechenwegTask, sachaufgabeTask } from "./generators-mathe";
+import { MATHE_RECHNUNGEN } from "./mathe-rechnungen";
+import { textaufgabeTask } from "./textaufgaben";
 import { ERKLAERUNG } from "./themen";
 import { isWortartenSkill, wortartenFor, wortartenTask, type WortartSetting } from "./wortarten";
 
 type Rng = () => number;
-const rint = (rng: Rng, min: number, max: number) => Math.floor(rng() * (max - min + 1)) + min;
 const pick = <T,>(rng: Rng, arr: readonly T[]): T => arr[Math.floor(rng() * arr.length)];
 function shuffle<T>(rng: Rng, arr: T[]): T[] {
   const a = [...arr];
@@ -42,24 +43,6 @@ function shuffle<T>(rng: Rng, arr: T[]): T[] {
 
 // The built-in generators know four number ranges; "sehr schwer" uses the hardest one.
 const LEVEL: Record<Difficulty, number> = { "sehr leicht": 0, leicht: 1, "leicht bis mittel": 1, mittel: 2, schwer: 3, "sehr schwer": 3 };
-
-// ---------- fractions ----------
-const gcd = (a: number, b: number): number => (b === 0 ? Math.abs(a) : gcd(b, a % b));
-const lcm = (a: number, b: number) => Math.abs(a * b) / gcd(a, b);
-type Frac = { n: number; d: number };
-const reduce = ({ n, d }: Frac): Frac => {
-  const g = gcd(n, d) || 1;
-  const sign = d < 0 ? -1 : 1;
-  return { n: (sign * n) / g, d: (sign * d) / g };
-};
-const fs = ({ n, d }: Frac) => (d === 1 ? `${n}` : `${n}/${d}`);
-const val = (f: Frac) => f.n / f.d;
-
-function properFrac(rng: Rng, maxDen: number): Frac {
-  const d = rint(rng, 2, maxDen);
-  const n = rint(rng, 1, d - 1);
-  return reduce({ n, d }).d === 1 ? properFrac(rng, maxDen) : reduce({ n, d });
-}
 
 function shortAnswer(
   skillId: string,
@@ -100,214 +83,9 @@ function dedupeErrors(answer: string, errors: { answer: string; label: string }[
 type Gen = (rng: Rng, difficulty: Difficulty) => TaskDraft;
 
 const GEN: Record<string, Gen> = {
-  "mathe.brueche.kuerzen": (rng, diff) => {
-    const lv = LEVEL[diff];
-    const base = properFrac(rng, [6, 9, 12, 15][lv]);
-    const k = pick(rng, [[2, 3, 5], [2, 3, 4, 5], [4, 6, 8, 9], [6, 8, 12, 15]][lv]);
-    const q: Frac = { n: base.n * k, d: base.d * k };
-    const smallFactor = [2, 3, 5].find((p) => k % p === 0 && p !== k);
-    const errors = smallFactor
-      ? [{ answer: fs({ n: q.n / smallFactor, d: q.d / smallFactor }), label: "Nicht vollständig gekürzt" }]
-      : [];
-    return shortAnswer(
-      "mathe.brueche.kuerzen",
-      diff,
-      `Kürze den Bruch ${fs(q)} so weit wie möglich.`,
-      fs(base),
-      `Der größte gemeinsame Teiler von ${q.n} und ${q.d} ist ${k}.\n${q.n} : ${k} = ${base.n} und ${q.d} : ${k} = ${base.d}.\nErgebnis: ${fs(base)}`,
-      ["Suche den größten gemeinsamen Teiler (ggT) von Zähler und Nenner.", `Zähler und Nenner sind beide durch ${k} teilbar.`],
-      errors,
-      "exact",
-    );
-  },
-  "mathe.brueche.erweitern": (rng, diff) => {
-    const lv = LEVEL[diff];
-    const base = properFrac(rng, [6, 8, 10, 12][lv]);
-    const k = rint(rng, 2, [4, 6, 8, 12][lv]);
-    const target = base.d * k;
-    return shortAnswer(
-      "mathe.brueche.erweitern",
-      diff,
-      `Erweitere ${fs(base)} auf den Nenner ${target}.`,
-      `${base.n * k}/${target}`,
-      `${target} : ${base.d} = ${k}, also wird mit ${k} erweitert.\nZähler: ${base.n} · ${k} = ${base.n * k}\nErgebnis: ${base.n * k}/${target}`,
-      ["Mit welcher Zahl musst du den Nenner multiplizieren, um auf den neuen Nenner zu kommen?", "Zähler und Nenner werden mit derselben Zahl multipliziert."],
-      [
-        { answer: `${base.n}/${target}`, label: "Nur den Nenner verändert" },
-        { answer: `${base.n + (target - base.d)}/${target}`, label: "Addiert statt multipliziert" },
-      ],
-      "exact",
-    );
-  },
-  "mathe.brueche.addieren": (rng, diff) => fracOp(rng, diff, "+"),
-  "mathe.brueche.subtrahieren": (rng, diff) => fracOp(rng, diff, "-"),
-  "mathe.brueche.multiplizieren": (rng, diff) => fracOp(rng, diff, "·"),
-  "mathe.brueche.dividieren": (rng, diff) => fracOp(rng, diff, ":"),
-
-  "mathe.negativ.addieren": (rng, diff) => {
-    const lv = LEVEL[diff];
-    const r = [10, 20, 50, 100][lv];
-    const a = rint(rng, -r, r);
-    const b = rint(rng, 1, r);
-    const op = pick(rng, ["+", "-"] as const);
-    const bStr = rng() < 0.5 ? `(−${b})` : `${b}`;
-    const bVal = bStr.startsWith("(") ? -b : b;
-    const res = op === "+" ? a + bVal : a - bVal;
-    const aStr = a < 0 ? `(−${-a})` : `${a}`;
-    return shortAnswer(
-      "mathe.negativ.addieren",
-      diff,
-      `Berechne: ${aStr} ${op} ${bStr}`,
-      `${res}`,
-      `${op === "-" && bVal < 0 ? "Minus mal Minus ergibt Plus: " : ""}${aStr} ${op} ${bStr} = ${res}`,
-      ["Stell dir die Zahlengerade vor.", "Zwei Minus hintereinander werden zu einem Plus."],
-      [{ answer: `${-res}`, label: "Vorzeichenfehler" }],
-    );
-  },
-  "mathe.negativ.multiplizieren": (rng, diff) => {
-    const lv = LEVEL[diff];
-    const r = [6, 9, 12, 15][lv];
-    const a = rint(rng, 2, r) * (rng() < 0.5 ? -1 : 1);
-    const b = rint(rng, 2, r) * (rng() < 0.6 ? -1 : 1);
-    const div = rng() < 0.4;
-    const show = (x: number) => (x < 0 ? `(−${-x})` : `${x}`);
-    const prompt = div ? `Berechne: ${show(a * b)} : ${show(b)}` : `Berechne: ${show(a)} · ${show(b)}`;
-    const res = div ? a : a * b;
-    return shortAnswer(
-      "mathe.negativ.multiplizieren",
-      diff,
-      prompt,
-      `${res}`,
-      `Gleiche Vorzeichen ergeben Plus, verschiedene Vorzeichen ergeben Minus.\nErgebnis: ${res}`,
-      ["Rechne zuerst ohne Vorzeichen.", "Gleiche Vorzeichen → Plus, verschiedene → Minus."],
-      [{ answer: `${-res}`, label: "Vorzeichenregel nicht angewendet" }],
-    );
-  },
-
-  "mathe.prozent.prozentwert": (rng, diff) => {
-    const lv = LEVEL[diff];
-    const G = pick(rng, [[100, 200, 50, 400], [80, 120, 250, 600], [75, 240, 360, 1250], [48, 85, 1260, 3450]][lv]);
-    const p = pick(rng, [[10, 25, 50], [5, 15, 20, 30], [12, 35, 40, 8], [2.5, 17, 12.5, 7]][lv]);
-    const W = round2((G * p) / 100);
-    return shortAnswer(
-      "mathe.prozent.prozentwert",
-      diff,
-      `Wie viel sind ${de(p)} % von ${de(G)} €? (Ergebnis in €)`,
-      `${W}`,
-      `W = G · p / 100 = ${de(G)} · ${de(p)} / 100 = ${de(W)} €`,
-      ["1 % ist ein Hundertstel des Grundwerts.", `Berechne zuerst 1 % von ${de(G)}.`],
-      [{ answer: `${G * p}`, label: "Durch 100 dividieren vergessen" }],
-    );
-  },
-  "mathe.prozent.prozentsatz": (rng, diff) => {
-    const lv = LEVEL[diff];
-    const G = pick(rng, [[100, 200, 50], [40, 80, 250, 500], [60, 120, 360, 750], [64, 125, 480, 1600]][lv]);
-    const p = pick(rng, [[10, 20, 50], [5, 25, 40, 75], [12.5, 15, 35, 60], [2.5, 7.5, 37.5, 62.5]][lv]);
-    const W = round2((G * p) / 100);
-    return shortAnswer(
-      "mathe.prozent.prozentsatz",
-      diff,
-      `${de(W)} € von ${de(G)} € – wie viel Prozent sind das? (Ergebnis in %)`,
-      `${p}`,
-      `p = W / G · 100 = ${de(W)} / ${de(G)} · 100 = ${de(p)} %`,
-      ["Teile den Prozentwert durch den Grundwert.", "Vergiss nicht, mit 100 zu multiplizieren."],
-      [{ answer: `${round2(W / G)}`, label: "Mal 100 vergessen" }],
-    );
-  },
-  "mathe.prozent.grundwert": (rng, diff) => {
-    const lv = LEVEL[diff];
-    const G = pick(rng, [[100, 200, 400], [80, 160, 500, 300], [240, 360, 640, 900], [1250, 480, 2400, 760]][lv]);
-    const p = pick(rng, [[10, 25, 50], [5, 20, 40], [15, 30, 12.5], [7.5, 2.5, 35]][lv]);
-    const W = round2((G * p) / 100);
-    return shortAnswer(
-      "mathe.prozent.grundwert",
-      diff,
-      `${de(p)} % eines Betrags sind ${de(W)} €. Wie groß ist der ganze Betrag? (Ergebnis in €)`,
-      `${G}`,
-      `G = W · 100 / p = ${de(W)} · 100 / ${de(p)} = ${de(G)} €`,
-      [`Wenn ${de(p)} % = ${de(W)} €, wie viel ist dann 1 %?`, "Grundwert = Prozentwert · 100 / Prozentsatz."],
-      [{ answer: `${round2((W * p) / 100)}`, label: "Prozentwert statt Grundwert berechnet" }],
-    );
-  },
-
-  "mathe.gleichungen.einfach": (rng, diff) => {
-    const lv = LEVEL[diff];
-    const x = rint(rng, -[5, 10, 15, 20][lv] * (lv > 0 ? 1 : 0), [10, 12, 15, 20][lv]);
-    const a = rint(rng, 2, [5, 9, 12, 15][lv]);
-    const b = rint(rng, 1, [10, 20, 30, 50][lv]) * (lv > 1 && rng() < 0.5 ? -1 : 1);
-    const c = a * x + b;
-    const bs = b < 0 ? `− ${-b}` : `+ ${b}`;
-    return shortAnswer(
-      "mathe.gleichungen.einfach",
-      diff,
-      `Löse die Gleichung: ${a}x ${bs} = ${c}`,
-      `${x}`,
-      `${a}x ${bs} = ${c}   | ${b < 0 ? `+ ${-b}` : `− ${b}`}\n${a}x = ${c - b}   | : ${a}\nx = ${x}`,
-      ["Bring zuerst die Zahl ohne x auf die andere Seite.", `Teile am Ende durch ${a}.`],
-      [
-        { answer: `${(c + b) / a}`, label: "Vorzeichenfehler beim Umformen" },
-        { answer: `${c - b}`, label: "Durch den Koeffizienten teilen vergessen" },
-      ],
-      "value",
-      [`x=${x}`],
-    );
-  },
-  "mathe.gleichungen.klammern": (rng, diff) => {
-    const lv = LEVEL[diff];
-    const x = rint(rng, lv > 1 ? -8 : 1, 10);
-    const a = rint(rng, 2, [4, 6, 8, 9][lv]);
-    const b = rint(rng, 1, [5, 8, 12, 15][lv]);
-    const c = a * (x + b);
-    return shortAnswer(
-      "mathe.gleichungen.klammern",
-      diff,
-      `Löse die Gleichung: ${a}(x + ${b}) = ${c}`,
-      `${x}`,
-      `Klammer auflösen: ${a}x + ${a * b} = ${c}   | − ${a * b}\n${a}x = ${c - a * b}   | : ${a}\nx = ${x}`,
-      ["Multipliziere die Zahl vor der Klammer mit jedem Glied in der Klammer.", `${a} · ${b} = ${a * b}`],
-      [{ answer: `${(c - b) / a}`, label: "Klammer nicht vollständig ausmultipliziert" }],
-      "value",
-      [`x=${x}`],
-    );
-  },
-  "mathe.gleichungen.text": (rng, diff) => {
-    const lv = LEVEL[diff];
-    const x = rint(rng, 2, [10, 15, 25, 40][lv]);
-    const a = rint(rng, 2, [4, 5, 7, 9][lv]);
-    const b = rint(rng, 1, [10, 20, 30, 50][lv]);
-    const c = a * x + b;
-    return shortAnswer(
-      "mathe.gleichungen.text",
-      diff,
-      `Ich denke mir eine Zahl, multipliziere sie mit ${a} und addiere ${b}. Ich erhalte ${c}. Wie heißt die Zahl?`,
-      `${x}`,
-      `Gleichung: ${a}x + ${b} = ${c}\n${a}x = ${c - b}\nx = ${x}`,
-      ["Nenne die gesuchte Zahl x und schreib eine Gleichung.", `${a}x + ${b} = ${c}`],
-      [{ answer: `${(c + b) / a}`, label: "Vorzeichenfehler beim Umformen" }],
-    );
-  },
-  "mathe.potenzen.regeln": (rng, diff) => {
-    const lv = LEVEL[diff];
-    const m = rint(rng, 2, [5, 7, 9, 12][lv]);
-    const n = rint(rng, 2, [4, 6, 8, 10][lv]);
-    const kind = pick(rng, ["mul", "div", "pow"] as const);
-    if (kind === "mul")
-      return shortAnswer("mathe.potenzen.regeln", diff, `Vereinfache: x^${m} · x^${n} = x^?  (Gib den Exponenten an.)`, `${m + n}`,
-        `Gleiche Basis, multiplizieren → Exponenten addieren: ${m} + ${n} = ${m + n}`,
-        ["Bei der Multiplikation von Potenzen mit gleicher Basis werden die Exponenten …?"],
-        [{ answer: `${m * n}`, label: "Exponenten multipliziert statt addiert" }]);
-    if (kind === "div") {
-      const big = m + n;
-      return shortAnswer("mathe.potenzen.regeln", diff, `Vereinfache: x^${big} : x^${n} = x^?  (Gib den Exponenten an.)`, `${m}`,
-        `Gleiche Basis, dividieren → Exponenten subtrahieren: ${big} − ${n} = ${m}`,
-        ["Bei der Division werden die Exponenten subtrahiert."],
-        [{ answer: `${big / n}`, label: "Exponenten dividiert statt subtrahiert" }]);
-    }
-    return shortAnswer("mathe.potenzen.regeln", diff, `Vereinfache: (x^${m})^${n} = x^?  (Gib den Exponenten an.)`, `${m * n}`,
-      `Potenz einer Potenz → Exponenten multiplizieren: ${m} · ${n} = ${m * n}`,
-      ["Beim Potenzieren einer Potenz werden die Exponenten multipliziert."],
-      [{ answer: `${m + n}`, label: "Exponenten addiert statt multipliziert" }]);
-  },
+  // Mathematik: Rechnungen mit Schulbuch-Zahlen (lib/mathe-rechnungen.ts); Textgleichungen sind Textaufgaben
+  ...MATHE_RECHNUNGEN,
+  "mathe.gleichungen.text": (rng, diff) => textaufgabeTask("mathe.gleichungen.text", diff, rng)!,
 
   "deutsch.beistrich.aufzaehlung": bankMC("deutsch.beistrich.aufzaehlung", () => BEISTRICH_AUFZ),
   "deutsch.beistrich.nebensatz": bankMC("deutsch.beistrich.nebensatz", () => BEISTRICH_NS),
@@ -350,81 +128,6 @@ const GEN: Record<string, Gen> = {
   },
   "englisch.grammar.comparatives": bankCloze("englisch.grammar.comparatives", () => COMPARATIVES, "text"),
 };
-
-function round2(x: number) {
-  return Math.round(x * 100) / 100;
-}
-function de(x: number) {
-  return String(x).replace(".", ",");
-}
-
-function fracOp(rng: Rng, diff: Difficulty, op: "+" | "-" | "·" | ":"): TaskDraft {
-  const lv = LEVEL[diff];
-  const maxDen = [6, 9, 12, 16][lv];
-  for (let tries = 0; tries < 50; tries++) {
-    let a = properFrac(rng, maxDen);
-    let b = properFrac(rng, maxDen);
-    if (lv === 0 && (op === "+" || op === "-")) b = { n: rint(rng, 1, a.d - 1), d: a.d };
-    if (op === "-" && val(a) < val(b)) [a, b] = [b, a];
-    if (val(a) === val(b)) continue;
-    const res =
-      op === "+"
-        ? reduce({ n: a.n * b.d + b.n * a.d, d: a.d * b.d })
-        : op === "-"
-          ? reduce({ n: a.n * b.d - b.n * a.d, d: a.d * b.d })
-          : op === "·"
-            ? reduce({ n: a.n * b.n, d: a.d * b.d })
-            : reduce({ n: a.n * b.d, d: a.d * b.n });
-    const errors: { answer: string; label: string }[] = [];
-    let solution = "";
-    let hints: string[] = [];
-    if (op === "+" || op === "-") {
-      const L = lcm(a.d, b.d);
-      const an = a.n * (L / a.d);
-      const bn = b.n * (L / b.d);
-      const raw = op === "+" ? an + bn : an - bn;
-      solution =
-        (a.d === b.d
-          ? `Gleiche Nenner: Zähler ${op === "+" ? "addieren" : "subtrahieren"}, Nenner bleibt.\n`
-          : `Gemeinsamer Nenner: ${L}\n${fs(a)} = ${an}/${L},  ${fs(b)} = ${bn}/${L}\n`) +
-        `${an}/${L} ${op} ${bn}/${L} = ${raw}/${L}` +
-        (fs(res) !== `${raw}/${L}` ? `\nGekürzt: ${fs(res)}` : "");
-      hints = a.d === b.d ? ["Die Nenner sind gleich – was passiert mit den Zählern?"] : ["Bring beide Brüche zuerst auf einen gemeinsamen Nenner.", `Ein gemeinsamer Nenner ist ${L}.`];
-      const wrongN = op === "+" ? a.n + b.n : a.n - b.n;
-      const wrongD = op === "+" ? a.d + b.d : a.d - b.d;
-      if (wrongD > 0 && a.d !== b.d) errors.push({ answer: fs(reduce({ n: wrongN, d: wrongD })), label: "Zähler und Nenner einzeln gerechnet" });
-      if (a.d !== b.d) errors.push({ answer: fs(reduce({ n: wrongN, d: L })), label: "Zähler beim Erweitern nicht angepasst" });
-      if (a.d === b.d) errors.push({ answer: fs(reduce({ n: wrongN, d: a.d * 2 })), label: "Nenner mitaddiert" });
-    } else if (op === "·") {
-      solution = `Zähler mal Zähler, Nenner mal Nenner:\n${fs(a)} · ${fs(b)} = ${a.n * b.n}/${a.d * b.d}` + (fs(res) !== `${a.n * b.n}/${a.d * b.d}` ? ` = ${fs(res)}` : "");
-      hints = ["Beim Multiplizieren brauchst du keinen gemeinsamen Nenner.", "Zähler · Zähler und Nenner · Nenner."];
-      errors.push({ answer: fs(reduce({ n: a.n * b.d, d: a.d * b.n })), label: "Mit dem Kehrwert multipliziert (wie bei Division)" });
-      if (a.d === b.d) errors.push({ answer: fs(reduce({ n: a.n * b.n, d: a.d })), label: "Nenner nicht multipliziert" });
-    } else {
-      const kehr = { n: b.d, d: b.n };
-      solution = `Durch einen Bruch dividieren heißt mit dem Kehrwert multiplizieren:\n${fs(a)} : ${fs(b)} = ${fs(a)} · ${fs(kehr)} = ${a.n * b.d}/${a.d * b.n}` + (fs(res) !== `${a.n * b.d}/${a.d * b.n}` ? ` = ${fs(res)}` : "");
-      hints = ["Dividieren durch einen Bruch = multiplizieren mit dem Kehrwert.", `Der Kehrwert von ${fs(b)} ist ${fs(kehr)}.`];
-      errors.push({ answer: fs(reduce({ n: a.n * b.n, d: a.d * b.d })), label: "Kehrwert vergessen" });
-      errors.push({ answer: fs(reduce({ n: a.d * b.n, d: a.n * b.d })), label: "Falschen Bruch umgedreht" });
-    }
-    const uniq = errors.filter((e) => Math.abs(evalFrac(e.answer) - val(res)) > 1e-9);
-    const skill = { "+": "addieren", "-": "subtrahieren", "·": "multiplizieren", ":": "dividieren" }[op];
-    return shortAnswer(
-      `mathe.brueche.${skill}`,
-      diff,
-      `Berechne und kürze das Ergebnis: ${fs(a)} ${op} ${fs(b)}`,
-      fs(res),
-      solution,
-      hints,
-      uniq,
-    );
-  }
-  throw new Error("could not generate fraction task");
-}
-function evalFrac(s: string) {
-  const [n, d] = s.split("/").map(Number);
-  return d ? n / d : n;
-}
 
 // ---------- item banks ----------
 type MCItem = { q: string; options: string[]; correct: number; solution: string; hint: string; errors?: Record<number, string> };
@@ -1150,14 +853,20 @@ function toMC(rng: Rng, t: TaskDraft): TaskDraft {
   const distractors = t.errorMap.map((e) => e.answer).filter((a, i, arr) => a !== correct && arr.indexOf(a) === i);
   const n = Number(correct.replace(",", "."));
   if (t.answer.mode === "value" && Number.isFinite(n)) {
-    for (const d of [n + 1, n - 1, n * 2, n + 10]) if (distractors.length < 3 && !distractors.includes(String(d))) distractors.push(String(d));
+    // extra numbers written like the right answer (9,50 next to 10,50, never 10.5)
+    const decimals = (correct.split(/[.,]/)[1] ?? "").length;
+    const write = (d: number) => (decimals ? d.toFixed(decimals) : String(Math.round(d * 1e4) / 1e4)).replace(".", ",");
+    const taken = (s: string) => [correct, ...distractors].some((x) => parseNumber(x) === parseNumber(s));
+    for (const d of [n + 1, n - 1, n * 2, n + 10]) if (distractors.length < 3 && !taken(write(d))) distractors.push(write(d));
   }
   if (distractors.length < 1) return t;
   const options = shuffle(rng, [correct, ...distractors.slice(0, 3)]);
   const errorMap = t.errorMap
     .map((e) => ({ answer: String(options.indexOf(e.answer)), label: e.label }))
     .filter((e) => e.answer !== "-1");
-  return { ...t, type: "mc", data: { options: options.map((o) => o.replace(/(\d)\.(\d)/g, "$1,$2")) }, answer: { correct: options.indexOf(correct) }, errorMap };
+  // shown with a decimal comma and a real minus sign
+  const show = (o: string) => o.replace(/(\d)\.(\d)/g, "$1,$2").replace(/^-(?=\d)/, "−");
+  return { ...t, type: "mc", data: { options: options.map(show) }, answer: { correct: options.indexOf(correct) }, errorMap };
 }
 
 function toCloze(t: TaskDraft): TaskDraft {
@@ -1180,7 +889,7 @@ function toFindError(rng: Rng, t: TaskDraft): TaskDraft | null {
     ...t,
     type: t.type === "grammar" ? "grammar" : "calc",
     category: "fehler",
-    prompt: `${t.prompt}\n${name} hat als Ergebnis ${wrong.answer} herausbekommen. Das stimmt nicht. Finde den Fehler und gib das richtige Ergebnis an.`,
+    prompt: `${t.prompt}\n${name} hat als Ergebnis ${wrong.answer.replace(/^-(?=\d)/, "−")} herausbekommen. Das stimmt nicht. Finde den Fehler und gib das richtige Ergebnis an.`,
     hints: ["Rechne die Aufgabe selbst Schritt für Schritt und vergleiche.", `Typischer Fehler an dieser Stelle: ${wrong.label}.`, ...t.hints.slice(0, 1)],
     errorMap: [{ answer: wrong.answer, label: `Fehler übernommen: ${wrong.label}` }, ...t.errorMap.filter((e) => e !== wrong)],
   };
@@ -1284,9 +993,11 @@ export function generateForSlot(slot: Slot, rng: Rng = Math.random, variant = 0)
       const ordered = toOrder(rng, base);
       return ordered ? tag(ordered, "ordnen") : tag(base, "rechnung");
     }
-    case "textaufgabe":
-      // the built-in generators write bare calculations; stories come from the AI
-      return tag(base, genId === "mathe.gleichungen.text" ? "textaufgabe" : "rechnung");
+    case "textaufgabe": {
+      // a short word problem with school-book numbers (lib/textaufgaben.ts); skills without stories keep the calculation
+      const story = textaufgabeTask(slot.skillId, slot.difficulty, rng) ?? textaufgabeTask(genId, slot.difficulty, rng);
+      return story ? tag(story, "textaufgabe") : tag(base, "rechnung");
+    }
     default:
       return tag(base);
   }
