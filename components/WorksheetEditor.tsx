@@ -118,7 +118,7 @@ export function WorksheetEditor(p: Props) {
           );
         })}
       </ol>
-      {p.editable && !p.library && (reading ? <AddReadingQuestion worksheetId={p.worksheetId} afterId={p.tasks.at(-1)?.id} onAdded={(id) => setEditing(id)} /> : <AddTask {...p} afterId={p.tasks.at(-1)?.id} onAdded={(id) => setEditing(id)} />)}
+      {p.editable && !p.library && (reading && !reading.zeilen ? <AddReadingQuestion worksheetId={p.worksheetId} afterId={p.tasks.at(-1)?.id} onAdded={(id) => setEditing(id)} /> : <AddTask {...p} afterId={p.tasks.at(-1)?.id} onAdded={(id) => setEditing(id)} />)}
     </div>
   );
 }
@@ -463,7 +463,8 @@ function reshape(t: TaskDraft, format: TaskType): TaskDraft {
   const r = t.data.figure ? { ...base, data: { ...base.data, figure: t.data.figure } } : base;
   // a question about a shared reading text keeps the text, what it practises and its Beleg
   if (t.data.aspect === undefined && t.data.passageTitle === undefined) return r;
-  return { ...r, data: { ...r.data, passage: t.data.passage, passageTitle: t.data.passageTitle, aspect: t.data.aspect }, answer: { ...r.answer, evidence: t.answer.evidence ?? [] } };
+  const interp = t.data.zeilen ? { zeilen: true, leerzeilen: t.data.leerzeilen, teil: t.data.teil, textsorte: t.data.textsorte } : {};
+  return { ...r, data: { ...r.data, passage: t.data.passage, passageTitle: t.data.passageTitle, aspect: t.data.aspect, ...interp }, answer: { ...r.answer, evidence: t.answer.evidence ?? [] } };
 }
 function reshapeBase(t: TaskDraft, format: TaskType): TaskDraft {
   const keep = { ...t, type: format };
@@ -625,7 +626,7 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
         </div>
       </details>
 
-      {reading && <ReadingQuestionFields t={t} setT={setT} subject={subject} text={reading.text} />}
+      {reading && !t.data.teil && <ReadingQuestionFields t={t} setT={setT} subject={subject} text={reading.text} />}
       {!reading && (t.type === "reading" || t.type === "memorize" || (t.type === "free" && t.data.passage !== undefined)) && (
         <label className="field">
           <span className="label">{t.type === "memorize" ? "Text zum Auswendiglernen (die Lösung ist dieser Text)" : "Lesetext"}</span>

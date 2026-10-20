@@ -16,6 +16,8 @@ import { gradeMathTask, type MathView } from "./math-task";
 import { carelessCredit } from "./lehrplan";
 import { isMinitest } from "./quick-round";
 import { onAnswer } from "./ai/realtime";
+import { isInterpretationSkill, MAX_TEILUEBUNGEN, teiluebungen } from "./textinterpretation";
+import { teilSourceForStudent } from "./textinterpretation-store";
 
 // the setting lives with the other settings in lib/lehrplan.ts (lib/autodoc.ts reads it too)
 export { CARELESS_SETTING, carelessCredit } from "./lehrplan";
@@ -68,7 +70,10 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
   let aiError: string | undefined;
   const grade = schulstufe(req.schoolType, req.klasse);
   const wortarten = wortartenFor(req.skillIds, grade);
-  if ((req.useAI ?? true) && aiEnabled()) {
+  // Textinterpretation: Teilübungen on a whole story with line numbers, without KI (lib/textinterpretation.ts)
+  if (skills.every((s) => isInterpretationSkill(s.id))) {
+    tasks = teiluebungen(teilSourceForStudent(req.studentId ?? null), Math.min(count, MAX_TEILUEBUNGEN), { skillId: skills[0].id, difficulty: req.difficulty });
+  } else if ((req.useAI ?? true) && aiEnabled()) {
     try {
       tasks = await generateWithAI({
         subject: req.subject,

@@ -128,7 +128,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
             <span className="num text-[13px] font-normal text-ink-3">{wordCount(reading.text)} Wörter</span>
           </summary>
           <div className="pt-2 pb-5">
-            <ReadingTextView title={reading.title} text={reading.text} lang={w.subject === "Englisch" ? "en" : "de"} />
+            <ReadingTextView title={reading.title} text={reading.text} lang={w.subject === "Englisch" ? "en" : "de"} zeilen={reading.zeilen} leerzeilen={reading.leerzeilen} />
           </div>
         </details>
       )}

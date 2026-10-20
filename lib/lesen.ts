@@ -110,7 +110,8 @@ export function findQuote(text: string, quote: string): number | null {
 
 // ---------- reading exercises ----------
 export type Evidence = { paragraph: number; quote: string };
-export type ReadingText = { title: string; text: string };
+/** zeilen: a Textinterpretation's story, shown line by line with line numbers instead of paragraphs (lib/textinterpretation.ts). */
+export type ReadingText = { title: string; text: string; zeilen?: boolean; leerzeilen?: boolean };
 
 /** The shared text of a worksheet whose tasks all use the same one (at least two tasks), else null. */
 export function readingSet(tasks: Pick<TaskDraft, "type" | "data">[]): ReadingText | null {
@@ -120,7 +121,8 @@ export function readingSet(tasks: Pick<TaskDraft, "type" | "data">[]): ReadingTe
   if (tasks.some((t) => t.type === "memorize")) return null;
   const text = tasks[0].data.passage?.trim();
   if (!text || !tasks.every((t) => t.data.passage?.trim() === text)) return null;
-  return { title: tasks.find((t) => t.data.passageTitle?.trim())?.data.passageTitle?.trim() ?? "", text };
+  const title = tasks.find((t) => t.data.passageTitle?.trim())?.data.passageTitle?.trim() ?? "";
+  return tasks[0].data.zeilen ? { title, text, zeilen: true, ...(tasks[0].data.leerzeilen ? { leerzeilen: true } : {}) } : { title, text };
 }
 
 // ---------- checks: questions that do not fit the text ----------
@@ -181,6 +183,11 @@ export function readingIssues(task: Q, text: string, others: Q[] = []): string[]
   const ps = paragraphsOf(text);
   const aspect = isAspect(task.data.aspect) ? task.data.aspect : null;
   const shown = task.prompt.replaceAll(GAP, " ");
+  // a Teilübung of a Textinterpretation (lib/textinterpretation.ts) quotes the title and asks for lines, not paragraphs
+  if (task.data.teil) {
+    if (task.type === "free" && !task.answer.sample?.trim() && !task.answer.criteria?.some((c) => c.trim()) && !task.solution.trim()) out.push("Musterlösung oder Erwartungshorizont fehlt.");
+    return out;
+  }
   for (const n of paragraphRefs(shown)) if (n < 1 || n > ps.length) out.push(`Die Frage nennt Abschnitt ${n}, der Text hat ${ps.length === 1 ? "nur einen Abschnitt" : `${ps.length} Abschnitte`}.`);
   const plain = bare(text);
   for (const q of quotedIn(shown)) if (!plain.includes(bare(q))) out.push(`„${q}“ kommt im Text nicht vor.`);
@@ -226,6 +233,8 @@ export function readingIssues(task: Q, text: string, others: Q[] = []): string[]
 /** Notes about the whole exercise: too much multiple choice, too few kinds of questions. */
 export function readingSetIssues(tasks: Q[]): string[] {
   const out: string[] = [];
+  // Teilübungen of a Textinterpretation practise its parts, not reading aspects
+  if (tasks.some((t) => t.data.teil)) return out;
   const mc = tasks.filter((t) => t.data.options?.length).length;
   if (tasks.length >= 4 && mc > Math.max(1, Math.floor(tasks.length / 4))) out.push(`${mc} von ${tasks.length} Fragen sind Multiple Choice. Offene Fragen zeigen besser, ob der Text verstanden wurde.`);
   const kinds = new Set(tasks.map((t) => t.data.aspect).filter(isAspect));
@@ -453,5 +462,5 @@ export function placeEvidence(text: string, evidence: Evidence[]): Evidence[] {
 
 /** Gives every question of a set the (edited) text and title. */
 export function withText<T extends Pick<TaskDraft, "data">>(tasks: T[], r: ReadingText): T[] {
-  return tasks.map((t) => ({ ...t, data: { ...t.data, passage: r.text, passageTitle: r.title || undefined } }));
+  return tasks.map((t) => ({ ...t, data: { ...t.data, passage: r.text, passageTitle: r.title || undefined, ...(r.zeilen ? { zeilen: true } : {}), ...(r.leerzeilen ? { leerzeilen: true } : {}) } }));
 }

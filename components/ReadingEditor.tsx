@@ -7,6 +7,7 @@ import { addReadingQuestionAction, saveReadingTextAction } from "@/app/lesen-act
 import { ReadingTextView } from "@/components/ReadingText";
 import { ASPECT_KEYS, ASPECT_SHORT, aspectSkill, findQuote, isAspect, NEEDS_EVIDENCE, OPEN_ASPECTS, paragraphsOf, readingSetIssues, wordCount, type Aspect, type ReadingText } from "@/lib/lesen";
 import type { TaskDraft } from "@/lib/tasks";
+import { lastLine, numberedLines } from "@/lib/textinterpretation";
 
 /** The shared text of a reading exercise: shown once above the questions, edited once for all of them. */
 export function ReadingTextPanel({ worksheetId, reading, tasks, editable, subject }: { worksheetId: number; reading: ReadingText; tasks: TaskDraft[]; editable: boolean; subject: string }) {
@@ -30,7 +31,7 @@ export function ReadingTextPanel({ worksheetId, reading, tasks, editable, subjec
     <section className="panel mb-2 px-5 py-5 md:px-6" aria-label="Lesetext">
       <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
         <p className="label flex items-center gap-1.5">
-          <BookOpenText size={14} aria-hidden /> Lesetext für alle {tasks.length} Fragen
+          <BookOpenText size={14} aria-hidden /> {reading.zeilen ? `Text mit Zeilennummern für alle ${tasks.length} Aufgaben` : `Lesetext für alle ${tasks.length} Fragen`}
         </p>
         {editable && !editing && (
           <button type="button" className="btn btn-ghost btn-sm no-print ml-auto" onClick={() => setEditing(true)}>
@@ -45,10 +46,10 @@ export function ReadingTextPanel({ worksheetId, reading, tasks, editable, subjec
             <input className="input" value={title} maxLength={160} onChange={(e) => setTitle(e.target.value)} />
           </label>
           <label className="field">
-            <span className="label">Text (Absätze mit einer Leerzeile trennen)</span>
-            <textarea className="input min-h-[420px] leading-relaxed" value={text} onChange={(e) => setText(e.target.value)} />
+            <span className="label">{reading.zeilen ? "Text (jede Zeile wie auf dem Blatt, die Zeilenumbrüche bleiben)" : "Text (Absätze mit einer Leerzeile trennen)"}</span>
+            <textarea className="input min-h-[420px] leading-relaxed" value={text} onChange={(e) => setText(e.target.value)} wrap={reading.zeilen ? "off" : undefined} />
             <span className="num text-[13px] text-ink-2">
-              {wordCount(text)} Wörter · {ps} {ps === 1 ? "Abschnitt" : "Abschnitte"}
+              {wordCount(text)} Wörter · {reading.zeilen ? `${lastLine(numberedLines(text, reading.leerzeilen))} Zeilen` : `${ps} ${ps === 1 ? "Abschnitt" : "Abschnitte"}`}
             </span>
           </label>
           <p className="text-[13px] text-ink-3">Alle Fragen verwenden danach den neuen Text. Prüfe Belege und Abschnittsnummern, wenn du Absätze verschiebst: die Hinweise bei den Fragen zeigen es an.</p>
@@ -70,7 +71,7 @@ export function ReadingTextPanel({ worksheetId, reading, tasks, editable, subjec
           </div>
         </div>
       ) : (
-        <ReadingTextView title={reading.title} text={reading.text} meta lang={subject === "Englisch" ? "en" : "de"} />
+        <ReadingTextView title={reading.title} text={reading.text} meta lang={subject === "Englisch" ? "en" : "de"} zeilen={reading.zeilen} leerzeilen={reading.leerzeilen} />
       )}
       {note && <p className={`mt-2 text-[13px] ${note.error ? "text-red" : "text-green"}`} role={note.error ? "alert" : "status"}>{note.error ?? note.ok}</p>}
       {kinds.size > 0 && (
