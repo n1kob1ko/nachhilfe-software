@@ -219,9 +219,7 @@ export function rechenwegTask(skillId: string, difficulty: Difficulty, rng: Rng 
       }
     }
     case "mathe.potenzen.regeln": {
-      let p = potenzAufgabe(rng, lv);
-      // the checker reads "9a" before a bracket or space as 9 ar (an area unit): no bare "a" after a number
-      for (let i = 0; i < 30 && /\da(?![\^\w])/.test(p.start); i++) p = potenzAufgabe(rng, lv);
+      const p = potenzAufgabe(rng, lv);
       const result = potenz(p.base, p.e, p.k);
       return rechenweg(skillId, difficulty, {
         prompt: `${p.eine ? "Schreib als eine Potenz" : "Vereinfache mit den Potenzregeln"}. ${WRITE}`,

@@ -160,6 +160,23 @@ test("review before merge: no automatic 'falsch' for right working the app reads
   assert.equal(r.check.correct, null);
 });
 
+test("a letter right after a number is a variable, not a unit: 9a is not 9 Ar", async () => {
+  const { gradeMathTask } = await import("./math-task");
+  const term = { ...BRUCH, data: { start: "9a · (2a + 3)" }, answer: { accepted: ["18a^2 + 27a"], needWay: true } };
+  const right = gradeMathTask(term, way(["9a · 2a + 9a · 3", "18a² + 27a"], "18a² + 27a"));
+  assert.equal(right.check.correct, true);
+  assert.deepEqual(right.view.steps!.map((s) => s.status), ["ok", "ok"]);
+  assert.equal(gradeMathTask(term, way(["18a² + 27"], "18a² + 27")).check.correct, false, "a lost a stays wrong");
+  const sum = { ...BRUCH, data: { start: "2a + 3a + 4b" }, answer: { accepted: ["5a + 4b"], needWay: true } };
+  assert.equal(gradeMathTask(sum, way(["5a + 4b"], "5a + 4b")).check.correct, true);
+  assert.equal(gradeMathTask(sum, way(["5 + 4b"], "5 + 4b")).check.correct, false, "without the a it is another term");
+  const equation = { ...GLEICHUNG, data: { start: "2a + 5 = 11" }, answer: { accepted: ["3"], needWay: true } };
+  assert.equal(gradeMathTask(equation, way(["2a = 6", "a = 3"])).check.correct, true);
+  // units with a space after the number stay units
+  const meter = { ...BRUCH, data: { start: "5 m + 3 m" }, answer: { accepted: ["8 m"], needWay: true } };
+  assert.equal(gradeMathTask(meter, way(["8 m"], "8 m")).check.correct, true);
+});
+
 test("review before merge: resending, two devices and a second teacher grade never count twice", async () => {
   const { tasks, answer, repo, niko, sid, aid } = await setup("Rechenweg mehrfach", [GLEICHUNG, GLEICHUNG, GLEICHUNG]);
   const { reviewAnswer } = await import("./service");
