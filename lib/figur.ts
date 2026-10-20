@@ -714,8 +714,10 @@ export const hatFigur = (data: { figure?: unknown } | null | undefined) => Boole
 
 /**
  * Schlüssel, um doppelte Aufgaben zu erkennen. Aufgaben mit Bild haben oft denselben Text („Welche Zahl ist bei
- * A markiert?“) und unterscheiden sich nur im Bild; ohne Bild ist es der Text allein, wie bisher.
+ * A markiert?“) und unterscheiden sich nur im Bild; ohne Bild ist es der Text allein, wie bisher. Bei „Fehler
+ * korrigieren“ gehört der Text mit den Fehlern dazu: die Aufgabenstellung ist oft für alle dieselbe.
  */
-export function aufgabenSchluessel(t: { prompt: string; data?: { figure?: unknown } | null }): string {
-  return t.data?.figure ? `${t.prompt}\n${JSON.stringify(t.data.figure)}` : t.prompt;
+export function aufgabenSchluessel(t: { prompt: string; data?: { figure?: unknown; faulty?: string } | null }): string {
+  const text = t.data?.faulty ? `${t.prompt}\n${t.data.faulty}` : t.prompt;
+  return t.data?.figure ? `${text}\n${JSON.stringify(t.data.figure)}` : text;
 }
