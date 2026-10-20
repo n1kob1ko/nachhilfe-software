@@ -62,7 +62,7 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
             review: fin.review ?? null,
             sample: t.answer.sample ?? null,
             given: t.type === "fix" && !fin.solution_viewed ? fin.answer : null,
-            expected: t.type === "fix" ? (closestVersion(t.answer.accepted ?? [], fin.answer, t.answer.mode !== "text") ?? null) : null,
+            expected: t.type === "fix" ? (fin.correct && t.answer.contractions ? fin.answer : (closestVersion(t.answer.accepted ?? [], fin.answer, t.answer.mode !== "text") ?? null)) : null,
             // the student's own lines with the marks of the check
             math: (t.type === "rechenweg" || t.type === "sachaufgabe") && !fin.solution_viewed ? gradeMathTask(t, fin.answer).view : null,
           }

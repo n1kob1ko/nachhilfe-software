@@ -24,6 +24,7 @@ import {
   type PraepositionenItem,
 } from "./banks";
 import { artikelForm, bankStufe, endungImSatz, fallVon, type Stufe } from "./banken-regeln";
+import { ENGLISCH_GRAMMATIK, englischAufgabe, englischFuerKategorie, englischFuerTyp, istEnglischGrammatik } from "./englisch-grammatik";
 import { aufgabenSchluessel } from "./figur";
 import { expectedFixes } from "./fix-text";
 import { figurAufgabe, figurFaehigkeit, type FigurFormat } from "./generators-figur";
@@ -46,42 +47,6 @@ function shuffle<T>(rng: Rng, arr: T[]): T[] {
 
 // The built-in generators know four number ranges; "sehr schwer" uses the hardest one.
 const LEVEL: Record<Difficulty, number> = { "sehr leicht": 0, leicht: 1, "leicht bis mittel": 1, mittel: 2, schwer: 3, "sehr schwer": 3 };
-
-function shortAnswer(
-  skillId: string,
-  difficulty: Difficulty,
-  prompt: string,
-  answer: string,
-  solution: string,
-  hints: string[],
-  errors: { answer: string; label: string }[],
-  mode: "value" | "exact" | "text" = "value",
-  extraAccepted: string[] = [],
-): TaskDraft {
-  return {
-    type: "calc",
-    skillId,
-    difficulty,
-    prompt,
-    data: {},
-    answer: { accepted: [answer, ...extraAccepted], mode },
-    solution,
-    hints,
-    errorMap: dedupeErrors(answer, errors, mode),
-  };
-}
-
-/** Drops typical errors that coincide with the right answer or with an earlier error. */
-function dedupeErrors(answer: string, errors: { answer: string; label: string }[], mode: "value" | "exact" | "text") {
-  const key = (a: string) => (mode === "value" ? String(parseNumber(a) ?? a) : mode === "text" ? a.toLowerCase() : a);
-  const seen = new Set([key(answer)]);
-  return errors.filter((e) => {
-    const k = key(e.answer);
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  });
-}
 
 type Gen = (rng: Rng, difficulty: Difficulty) => TaskDraft;
 
@@ -106,30 +71,8 @@ const GEN: Record<string, Gen> = {
   // Präteritum und Perfekt kommen aus data/banks/ (Phase 1); ihre Einträge standen früher in ZEITEN_CLOZE
   "deutsch.grammatik.praeteritum": stufenCloze("deutsch.grammatik.praeteritum", "praeteritum", praeteritumItems, "exact"),
   "deutsch.grammatik.perfekt": stufenCloze("deutsch.grammatik.perfekt", "perfekt", perfektItems, "exact"),
-  "englisch.tenses.presentsimple": bankCloze("englisch.tenses.presentsimple", () => PRESENT_SIMPLE, "text"),
-  "englisch.tenses.pastsimple": bankCloze("englisch.tenses.pastsimple", () => PAST_SIMPLE, "text"),
-  "englisch.tenses.presentperfect": bankCloze("englisch.tenses.presentperfect", () => PRESENT_PERFECT, "text"),
-  "englisch.vocab.irregular": (rng, diff) => {
-    const [inf, past, pp] = pick(rng, IRREGULAR);
-    const askPP = LEVEL[diff] >= 1 && rng() < 0.6;
-    return {
-      ...shortAnswer(
-        "englisch.vocab.irregular",
-        diff,
-        askPP ? `Give the past participle (3rd form) of “${inf}”.` : `Give the past simple (2nd form) of “${inf}”.`,
-        askPP ? pp : past,
-        `${inf} – ${past} – ${pp}`,
-        ["This is an irregular verb, so it does not end in -ed.", `The forms are: ${inf} – ? – ?`],
-        [
-          { answer: `${inf.replace(/e$/, "")}ed`, label: "Unregelmäßiges Verb regelmäßig gebildet" },
-          { answer: askPP ? past : pp, label: askPP ? "2. statt 3. Form" : "3. statt 2. Form" },
-        ],
-        "text",
-      ),
-      type: "grammar",
-    };
-  },
-  "englisch.grammar.comparatives": bankCloze("englisch.grammar.comparatives", () => COMPARATIVES, "text"),
+  // Englisch: Tenses, Grammar und Irregular verbs mit eigenen Wortlisten und Satzmustern (lib/englisch-grammatik.ts)
+  ...ENGLISCH_GRAMMATIK,
 };
 
 // ---------- item banks ----------
@@ -544,84 +487,6 @@ const SSS: ClozeItem[] = (
   errors: (a === "ss" ? { "ß": "ss/ß verwechselt (kurzer Vokal)" } : a === "ß" ? { ss: "ss/ß verwechselt (langer Vokal)" } : { ss: "s/ss verwechselt" }) as Record<string, string>,
 }));
 
-const PRESENT_SIMPLE: ClozeItem[] = (
-  [
-    ["She ___ tennis every Sunday. (play)", "plays", "he/she/it → -s"],
-    ["My dad ___ to work by bus. (go)", "goes", "he/she/it → -es after o"],
-    ["They ___ in Vienna. (live)", "live", "they → no -s"],
-    ["Tom ___ his homework after school. (do)", "does", "he → does"],
-    ["The shop ___ at 9 o'clock. (open)", "opens", "it → -s"],
-    ["My sister ___ TV every evening. (watch)", "watches", "he/she/it → -es after ch"],
-    ["___ she like pizza? (do)", "Does", "Questions with he/she/it → Does"],
-  ] as [string, string, string][]
-).map(([q, a, solution]) => ({
-  q: `Fill in the present simple: ${q}`,
-  blanks: [[a]],
-  solution: `${a} – ${solution}`,
-  hint: "He, she, it – das -s muss mit!",
-  errors: (/s$/.test(a) ? { [a.replace(/(?<=(ch|sh|o))es$|s$/, "")]: "-s bei he/she/it vergessen" } : { [`${a}s`]: "-s bei they/we/I angehängt" }) as Record<string, string>,
-}));
-
-const PAST_SIMPLE: ClozeItem[] = (
-  [
-    ["Yesterday I ___ to school by bike. (go)", "went", "go – went – gone", "goed"],
-    ["We ___ a great film last night. (see)", "saw", "see – saw – seen", "seed"],
-    ["She ___ her keys at home. (leave)", "left", "leave – left – left", "leaved"],
-    ["They ___ football after school. (play)", "played", "regular verb → -ed", "play"],
-    ["He ___ a letter to his grandma. (write)", "wrote", "write – wrote – written", "writed"],
-    ["I ___ my homework two days ago. (finish)", "finished", "regular verb → -ed", "finish"],
-    ["We ___ pizza on Friday. (eat)", "ate", "eat – ate – eaten", "eated"],
-  ] as [string, string, string, string][]
-).map(([q, a, solution, wrong]) => ({
-  q: `Fill in the past simple: ${q}`,
-  blanks: [[a]],
-  solution: `${a} (${solution})`,
-  hint: "Signalwörter wie yesterday, last, ago → Past Simple. Ist das Verb unregelmäßig?",
-  errors: { [wrong]: wrong.endsWith("ed") ? "Unregelmäßiges Verb regelmäßig gebildet" : "Past Simple nicht gebildet" },
-}));
-
-const PRESENT_PERFECT: ClozeItem[] = (
-  [
-    ["I ___ never ___ to London. (be)", ["have", "been"], "never → Present Perfect: have + been", "was"],
-    ["She ___ already ___ her homework. (finish)", ["has", "finished"], "already → Present Perfect: has + finished", "finished"],
-    ["We ___ just ___ lunch. (eat)", ["have", "eaten"], "just → Present Perfect: have + eaten", "ate"],
-    ["___ you ever ___ sushi? (try)", ["Have", "tried"], "ever → Present Perfect question: Have … tried", "did"],
-    ["He ___ not ___ the film yet. (see)", ["has", "seen"], "not … yet → Present Perfect: has not seen", "saw"],
-    ["They ___ ___ here since 2020. (live)", ["have", "lived"], "since → Present Perfect: have lived", "live"],
-  ] as [string, string[], string, string][]
-).map(([q, a, solution]) => ({
-  q: `Fill in the present perfect: ${q}`,
-  blanks: a.map((x) => [x]),
-  solution,
-  hint: "Present Perfect = have/has + 3. Form (past participle).",
-  errors: {},
-}));
-
-const IRREGULAR: [string, string, string][] = [
-  ["go", "went", "gone"], ["see", "saw", "seen"], ["write", "wrote", "written"], ["take", "took", "taken"],
-  ["eat", "ate", "eaten"], ["give", "gave", "given"], ["buy", "bought", "bought"], ["think", "thought", "thought"],
-  ["swim", "swam", "swum"], ["begin", "began", "begun"], ["drink", "drank", "drunk"], ["speak", "spoke", "spoken"],
-  ["break", "broke", "broken"], ["forget", "forgot", "forgotten"], ["choose", "chose", "chosen"], ["fly", "flew", "flown"],
-];
-
-const COMPARATIVES: ClozeItem[] = (
-  [
-    ["My brother is ___ than me. (tall)", "taller", "short adjective → -er", "more tall"],
-    ["This book is ___ than that one. (interesting)", "more interesting", "long adjective → more …", "interestinger"],
-    ["Today is ___ than yesterday. (hot)", "hotter", "short vowel + consonant → double consonant: hotter", "hoter"],
-    ["My test was ___ than yours. (bad)", "worse", "irregular: bad – worse – worst", "badder"],
-    ["Your bag is ___ than mine. (heavy)", "heavier", "-y → -ier", "heavyer"],
-    ["Maths is ___ than English for me. (difficult)", "more difficult", "long adjective → more …", "difficulter"],
-    ["This is ___ than I thought. (good)", "better", "irregular: good – better – best", "gooder"],
-  ] as [string, string, string, string][]
-).map(([q, a, solution, wrong]) => ({
-  q: `Fill in the comparative: ${q}`,
-  blanks: [[a]],
-  solution: `${a} – ${solution}`,
-  hint: "Kurze Adjektive bekommen -er, lange Adjektive bekommen „more“.",
-  errors: { [wrong]: "Steigerungsform falsch gebildet" },
-}));
-
 // ---------- reading ----------
 type Passage = { text: string; questions: { q: string; options: string[]; correct: number; solution: string }[] };
 const READING: Record<string, Passage[]> = {
@@ -895,12 +760,6 @@ export function fixItems(skillId: string, diff: Difficulty): FixItem[] {
       return fromCloze(GROSS, "rechtschreibung");
     case "deutsch.recht.sss":
       return fromCloze(SSS, "rechtschreibung");
-    case "englisch.tenses.presentsimple":
-      return fromCloze(PRESENT_SIMPLE, "grammatik");
-    case "englisch.tenses.pastsimple":
-      return fromCloze(PAST_SIMPLE, "grammatik");
-    case "englisch.grammar.comparatives":
-      return fromCloze(COMPARATIVES, "grammatik");
     default:
       return [];
   }
@@ -931,11 +790,12 @@ const FIX_TRENNER: Record<string, string> = { "deutsch.grammatik.artikel": ", " 
  * get more sentences, so the student has to find the errors in a short paragraph.
  */
 export function correctionTask(skillId: string, diff: Difficulty, rng: Rng = Math.random): TaskDraft | null {
+  // Englisch: Sätze aus den Satzmustern, je Satz ein typischer Fehler (lib/englisch-grammatik.ts)
+  if (istEnglischGrammatik(skillId)) return englischAufgabe(skillId, "fix", diff, rng);
   const items = fixItems(skillId, diff);
   if (!items.length) return null;
   const n = Math.min(items.length, LEVEL[diff] >= 3 ? 3 : LEVEL[diff] >= 2 ? 2 : 1);
   const chosen = shuffle(rng, items).slice(0, n);
-  const english = skillId.startsWith("englisch.");
   const trenner = FIX_TRENNER[skillId] ?? " ";
   const faulty = chosen.map((c) => c.wrong).join(trenner);
   const corrected = chosen.map((c) => c.right).join(trenner);
@@ -946,7 +806,7 @@ export function correctionTask(skillId: string, diff: Difficulty, rng: Rng = Mat
     skillId,
     category: "korrigieren",
     difficulty: diff,
-    prompt: FIX_PROMPT[skillId] ?? (english ? "Find the mistakes and write the text correctly." : "Im Text sind Fehler. Schreib ihn richtig."),
+    prompt: FIX_PROMPT[skillId] ?? "Im Text sind Fehler. Schreib ihn richtig.",
     data: { faulty },
     answer: {
       accepted: [corrected, ...versions.filter((v) => v !== corrected)],
@@ -957,7 +817,7 @@ export function correctionTask(skillId: string, diff: Difficulty, rng: Rng = Mat
     },
     solution: chosen.map((c) => `${c.right}\n→ ${c.label}`).join("\n"),
     hints: [
-      english ? "Lies Satz für Satz. Passt jedes Wort?" : trenner === " " ? "Lies Satz für Satz langsam. Wo klingt etwas falsch?" : "Sprich jedes Nomen mit seinem Artikel laut. Wo klingt etwas falsch?",
+      trenner === " " ? "Lies Satz für Satz langsam. Wo klingt etwas falsch?" : "Sprich jedes Nomen mit seinem Artikel laut. Wo klingt etwas falsch?",
       n === 1 ? "Es ist genau ein Fehler." : `Es sind ${n} Fehler, ${trenner === " " ? "in jedem Satz einer" : "bei jedem Nomen einer"}.`,
     ],
     errorMap: [],
@@ -1139,6 +999,11 @@ export function generateForSlot(slot: Slot, rng: Rng = Math.random, variant = 0)
   }
   if (figId && !["offen", "schreiben", "writing"].includes(slot.category ?? "")) return figurFuerSlot(figId, slot, rng, tag);
   if (!genId || ["offen", "schreiben", "writing"].includes(slot.category ?? "")) return free();
+  // Englisch: jeder Aufgabentyp aus den Satzmustern; einen, den die Fähigkeit nicht hat, als Lückentext (der Builder sagt es)
+  if (istEnglischGrammatik(genId)) {
+    const { task, category } = englischFuerKategorie(genId, slot.category, slot.difficulty, rng);
+    return tag(task, category);
+  }
   const base = GEN[genId](rng, slot.difficulty);
   switch (slot.category) {
     case "mc":
@@ -1245,6 +1110,8 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
     } else if (req.taskType === "free" || req.taskType === "rechenweg" || req.taskType === "sachaufgabe" || !GEN[skill.id]) {
       t = freeTask(skill.id, skill.name, req.difficulty, Math.floor((i - 1) / skills.length));
       if (seen.has(t.prompt.split("\n")[0])) break;
+    } else if (istEnglischGrammatik(skill.id)) {
+      t = englischFuerTyp(skill.id, req.taskType, req.difficulty, rng);
     } else {
       t = GEN[skill.id](rng, req.difficulty);
       const type = req.taskType === "mixed" ? pick(rng, ["calc", "mc", "cloze"] as const) : req.taskType;
@@ -1252,8 +1119,8 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
       else if (type === "cloze") t = toCloze(t);
       else if (type === "grammar" && t.type === "calc") t = { ...t, type: "grammar" };
     }
-    // Aufgaben mit Bild unterscheiden sich im Bild, nicht in der ersten Zeile
-    const key = t.data.figure ? aufgabenSchluessel(t) : t.prompt.split("\n")[0];
+    // Aufgaben mit Bild unterscheiden sich im Bild, englische im Satz (zweite Zeile), nicht in der ersten Zeile
+    const key = t.data.figure || istEnglischGrammatik(skill.id) ? aufgabenSchluessel(t) : t.prompt.split("\n")[0];
     if (seen.has(key) && guard < req.count * 15) continue;
     seen.add(key);
     out.push(t);

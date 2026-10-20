@@ -191,7 +191,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
                   </details>
                 )}
                 {t.type === "fix" && fin && !fin.solution_viewed && t.data.faulty && t.answer.accepted?.[0] && (
-                  <FixCompare faulty={t.data.faulty} given={fin.answer} expected={closestVersion(t.answer.accepted, fin.answer, t.answer.mode !== "text") ?? t.answer.accepted[0]} caseSensitive={t.answer.mode !== "text"} className="mt-3 max-w-[90ch]" />
+                  <FixCompare faulty={t.data.faulty} given={fin.answer} expected={fin.correct && t.answer.contractions ? fin.answer : (closestVersion(t.answer.accepted, fin.answer, t.answer.mode !== "text") ?? t.answer.accepted[0])} caseSensitive={t.answer.mode !== "text"} className="mt-3 max-w-[90ch]" />
                 )}
                 {(t.type !== "fix" || !fin || Boolean(fin.solution_viewed)) && answerText(t) && <p className="mt-1 text-[13px] text-ink-3">Richtige Lösung: <MathText text={answerText(t)} /></p>}
                 {(t.answer.sample || t.answer.criteria?.length || t.answer.evidence?.length) && (!answerText(t) || t.answer.evidence?.length) ? (

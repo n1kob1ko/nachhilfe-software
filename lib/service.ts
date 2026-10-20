@@ -188,7 +188,8 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
     throw new Error("Aufgabe nicht gefunden.");
   }
   const reveal = (r: SubmitResult): SubmitResult => {
-    if (task.type === "fix" && r.final) return { ...r, expected: closestVersion(task.answer.accepted ?? [], input.answer, task.answer.mode !== "text") ?? task.answer.accepted?.[0] };
+    // English: a right text with a contraction written out (does not for doesn't) is itself the right version
+    if (task.type === "fix" && r.final) return { ...r, expected: r.correct && task.answer.contractions ? input.answer : (closestVersion(task.answer.accepted ?? [], input.answer, task.answer.mode !== "text") ?? task.answer.accepted?.[0]) };
     // the marks on the student's lines and parts: worked out again from the answer sent, the same on a repeat
     if ((task.type === "rechenweg" || task.type === "sachaufgabe") && !input.giveUp) return { ...r, math: gradeMathTask(task, input.answer).view };
     return r;

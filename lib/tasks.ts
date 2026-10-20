@@ -1,5 +1,6 @@
 import type { Difficulty, TaskType } from "./curriculum";
 import type { Figur } from "./figur";
+import { langform } from "./englisch-kurzformen";
 import { checkFix, type FixLabel } from "./fix-text";
 import { checkMemorize, mistakeLabel } from "./memorize";
 import type { PartSolution, PartView, ResultForm } from "./math-check";
@@ -12,6 +13,8 @@ export type AnswerSpec = {
   accepted?: string[];
   /** value = numerically equal (fractions, decimals); exact = case sensitive; text = case insensitive. */
   mode?: "value" | "exact" | "text";
+  /** English: a contraction counts the same as its long form (doesn't = does not), lib/englisch-kurzformen.ts. */
+  contractions?: boolean;
   /** Cloze: accepted alternatives per gap (gaps are written as ___ in the prompt). */
   blanks?: string[][];
   /**
@@ -158,25 +161,26 @@ export function normalizeText(s: string, caseSensitive = false) {
   return out;
 }
 
-export function sameAnswer(given: string, expected: string, mode: AnswerSpec["mode"]) {
+export function sameAnswer(given: string, expected: string, mode: AnswerSpec["mode"], contractions = false) {
   // a number in a gap or a short answer: 0,5 and 0.5 are the same
   if (mode === "value" || (/^\s*-?\d+([.,]\d+)?\s*$/.test(given) && /^\s*-?\d+([.,]\d+)?\s*$/.test(expected))) {
     const a = parseNumber(given);
     const b = parseNumber(expected);
     if (a !== null && b !== null) return Math.abs(a - b) < 1e-6;
   }
-  return normalizeText(given, mode === "exact") === normalizeText(expected, mode === "exact");
+  const norm = (s: string) => (contractions ? langform(normalizeText(s, mode === "exact")) : normalizeText(s, mode === "exact"));
+  return norm(given) === norm(expected);
 }
 
 /** Eine Endung ohne Bindestrich davor: „-en“ → „en“, „-“ und eine leere Lücke → „“ (keine Endung). */
 export const endingOf = (s: string) => s.trim().replace(/^[-‐–—]+/, "").trim();
 
-type Same = (given: string, expected: string, mode: AnswerSpec["mode"]) => boolean;
-const sameEnding: Same = (given, expected, mode) => sameAnswer(endingOf(given), endingOf(expected), mode);
+type Same = (given: string, expected: string, mode: AnswerSpec["mode"], contractions?: boolean) => boolean;
+const sameEnding: Same = (given, expected, mode, contractions) => sameAnswer(endingOf(given), endingOf(expected), mode, contractions);
 
 function labelFor(task: Pick<TaskDraft, "errorMap" | "answer">, given: string, same: Same = sameAnswer) {
   for (const e of task.errorMap) {
-    if (same(given, e.answer, task.answer.mode)) return e.label;
+    if (same(given, e.answer, task.answer.mode, task.answer.contractions)) return e.label;
   }
   return null;
 }
@@ -221,9 +225,16 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
   }
   if (task.type === "rechenweg" || task.type === "sachaufgabe") return gradeMathTask(task, given).check;
   if (task.type === "fix" && task.data.faulty !== undefined) {
-    const r = checkFix(task.data.faulty, a.accepted ?? [], given, { caseSensitive: a.mode !== "text", labels: a.fixes });
+    const long = (s: string) => (a.contractions ? langform(s) : s);
+    const labels = a.contractions ? a.fixes?.map((f) => ({ ...f, wrong: long(f.wrong), right: long(f.right) })) : a.fixes;
+    const r = checkFix(long(task.data.faulty), (a.accepted ?? []).map(long), long(given), { caseSensitive: a.mode !== "text", labels });
     if (r.correct) return { correct: true, errorLabel: null, feedback: r.total === 1 ? "Richtig verbessert!" : `Alle ${r.total} Fehler richtig verbessert!` };
-    const first = r.missed[0];
+    let first: FixLabel | undefined = r.missed[0];
+    // English: a missing word ("is cleaned", "does not like") has no wrong word to find the label by
+    if (a.contractions && first && !first.label) {
+      const missing = first.right;
+      first = r.missed.find((m) => m.label) ?? labels?.find((l) => l.label && missing && ` ${l.right} `.includes(` ${missing} `)) ?? first;
+    }
     const parts = [
       r.total ? `${r.fixed} von ${r.total} ${r.total === 1 ? "Fehler" : "Fehlern"} verbessert.` : "",
       r.extra ? `${r.extra === 1 ? "Eine Stelle, die richtig war, hast" : `${r.extra} Stellen, die richtig waren, hast`} du verändert.` : "",
@@ -241,7 +252,7 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
     // Endungen: „-en“ wie „en“, eine leere Lücke wie „-“ (keine Endung)
     const same = a.endings ? sameEnding : sameAnswer;
     const wrong = a.blanks
-      .map((alts, i) => (alts.some((alt) => same(values[i] ?? "", alt, a.mode ?? "text")) ? -1 : i))
+      .map((alts, i) => (alts.some((alt) => same(values[i] ?? "", alt, a.mode ?? "text", a.contractions)) ? -1 : i))
       .filter((i) => i >= 0);
     const correct = wrong.length === 0;
     return {
@@ -254,7 +265,7 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
     };
   }
   if (a.accepted && a.accepted.length > 0) {
-    const correct = a.accepted.some((exp) => sameAnswer(given, exp, a.mode ?? "text"));
+    const correct = a.accepted.some((exp) => sameAnswer(given, exp, a.mode ?? "text", a.contractions));
     let feedback = correct ? "Richtig!" : "Leider nicht richtig.";
     if (!correct && a.mode === "value" && parseNumber(given) === null && given.trim()) {
       feedback = "Die Eingabe ist keine Zahl. Schreib z. B. 3/4, 1 1/2 oder 0,75.";
