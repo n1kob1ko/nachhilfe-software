@@ -6,7 +6,7 @@ import { masteryStatus, STATUS_THRESHOLDS, statusTone } from "@/lib/mastery";
 
 export function PageHeader({ title, subtitle, actions, back, info }: { title: React.ReactNode; subtitle?: React.ReactNode; actions?: React.ReactNode; back?: { href: string; label: string }; info?: React.ReactNode }) {
   return (
-    <header className="mb-8">
+    <header className="mb-7">
       {back && (
         <Link href={back.href} className="no-print mb-3 inline-flex items-center gap-1 text-[13px] font-medium text-ink-3 hover:text-ink">
           ← {back.label}
@@ -14,7 +14,7 @@ export function PageHeader({ title, subtitle, actions, back, info }: { title: Re
       )}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] text-balance">
+          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] text-balance md:text-[30px]">
             {title}
             {info && (
               <span className="ml-1.5">
@@ -121,7 +121,7 @@ export function MasteryBar({ value, size = "md" }: { value: number | null; size?
 
 export function Empty({ title, children, action }: { title: string; children?: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-line-strong px-6 py-10 text-center">
+    <div className="rounded-[18px] border border-dashed border-line-strong bg-surface/60 px-6 py-10 text-center">
       <p className="font-semibold">{title}</p>
       {children && <div className="mx-auto mt-1.5 max-w-[52ch] text-[14px] text-ink-2">{children}</div>}
       {action && <div className="mt-4 flex justify-center gap-2">{action}</div>}

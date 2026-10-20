@@ -45,7 +45,7 @@ export function StudentFocus({ studentId }: { studentId: number }) {
     <ul className="mt-5 grid gap-2 sm:grid-cols-2" aria-label="Auf einen Blick">
       {items.map(({ key, icon: Icon, label, text, href }) => (
         <li key={key}>
-          <Link href={href} className="flex min-h-[56px] items-center gap-3 rounded-2xl bg-surface/80 px-3.5 py-2 hover:bg-surface">
+          <Link href={href} className="flex min-h-[56px] items-center gap-3 rounded-2xl bg-surface px-3.5 py-2 text-ink transition-colors hover:bg-panel">
             <Icon size={18} className="shrink-0 text-accent" aria-hidden />
             <span className="min-w-0 flex-1">
               <span className="block text-[12px] font-semibold text-ink-3">{label}</span>

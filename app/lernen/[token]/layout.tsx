@@ -16,21 +16,21 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   };
 }
 
-export const viewport: Viewport = { themeColor: "#fbf6f1" };
+export const viewport: Viewport = { themeColor: "#f5f0e8" };
 
 export default async function LearnLayout({ children, params }: { children: React.ReactNode; params: Promise<{ token: string }> }) {
   const { token } = await params;
   const student = getStudentByToken(token);
   if (!student) notFound();
   return (
-    <div className="min-h-screen bg-[radial-gradient(120%_80%_at_0%_0%,var(--backdrop-2),var(--paper)_55%)]">
+    <div className="min-h-screen bg-paper">
       <header>
         <div className="mx-auto flex max-w-[860px] items-center justify-between px-4 py-3">
           <a href={`/lernen/${token}`} className="display flex items-center gap-2.5 text-[17px] font-semibold">
             <BrandMark height={36} />
             Lernheft
           </a>
-          <span className="flex items-center gap-2 rounded-full bg-surface py-1 pr-3 pl-1 text-[14px] font-medium shadow-[var(--shadow-card)]">
+          <span className="flex items-center gap-2 rounded-full border border-line bg-surface py-1 pr-3 pl-1 text-[14px] font-medium">
             <Avatar name={student.name} size={28} />
             {student.name}
           </span>

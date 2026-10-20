@@ -131,7 +131,7 @@ export function BuilderForm({
     : null;
 
   return (
-    <form action={action} className="grid gap-x-10 gap-y-8 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <form action={action} className="grid min-w-0 gap-x-8 gap-y-8 xl:grid-cols-[minmax(0,1fr)_300px]">
       <input type="hidden" name="subject" value={subject} />
       <input type="hidden" name="count" value={count} />
       {selected.map((id) => (
@@ -144,11 +144,11 @@ export function BuilderForm({
       <ol className="grid gap-8">
         {/* 1 · Schüler */}
         <Step n={1} title="Schüler">
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <label className="field">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <label className="field min-w-0">
               <span className="label">Schüler</span>
               <select
-                className="input"
+                className="input min-w-0 max-w-full"
                 name="student_id"
                 value={ctx?.studentId ?? ""}
                 onChange={(e) => router.replace(e.target.value ? `/uebungen/neu?schueler=${e.target.value}` : "/uebungen/neu")}
@@ -371,7 +371,7 @@ export function BuilderForm({
         </Step>
       </ol>
 
-      <aside className="grid content-start gap-4 xl:sticky xl:top-6">
+      <aside className="grid min-w-0 content-start gap-4 xl:sticky xl:top-6">
         <div className="panel grid gap-4 px-4 py-4">
           <label className="field">
             <span className="label">Hinweis an die KI (optional)</span>
@@ -541,7 +541,7 @@ function Submit({ disabled, ai, count }: { disabled: boolean; ai: boolean; count
   const { pending, data } = useFormStatus();
   const mine = pending && data?.get("mode") !== "leer";
   return (
-    <button className="btn btn-primary btn-lg" name="mode" value="generieren" disabled={disabled || pending}>
+    <button className="btn btn-primary btn-lg w-full !whitespace-normal text-center" name="mode" value="generieren" disabled={disabled || pending}>
       <Sparkles size={17} aria-hidden />
       {mine ? (ai ? `Claude erstellt ${count} Aufgaben …` : "Wird erstellt …") : "Übung erstellen und Vorschau zeigen"}
     </button>

@@ -4,5 +4,5 @@ export const viewport = { width: "device-width", initialScale: 1, maximumScale: 
 
 /** The student tablet: no navigation, nothing but what the running unit needs. */
 export default function DeviceLayout({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen bg-[radial-gradient(120%_80%_at_0%_0%,var(--backdrop-2),var(--paper)_55%)]">{children}</div>;
+  return <div className="min-h-screen bg-paper">{children}</div>;
 }

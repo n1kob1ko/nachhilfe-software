@@ -17,6 +17,9 @@ const REFUSED: Record<DeleteRefusal, string> = {
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
 
+/** „12 h 30 min“ aus Minuten; unter einer Stunde nur Minuten. */
+const stundenLabel = (min: number) => (min === 0 ? "–" : min < 60 ? `${min} min` : `${Math.floor(min / 60)} h${min % 60 ? ` ${min % 60} min` : ""}`);
+
 /** Uhrzeit einer Zeile: aus der Einheit, sonst Beginn und Dauer; `null`, wenn keine bekannt ist. */
 function zeit(r: BillingRow) {
   if (r.unit_start && r.unit_end) return `${clock(r.unit_start)}–${r.unit_end_estimated ? "ca. " : ""}${clock(r.unit_end)}`;
@@ -138,11 +141,30 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
         </Empty>
       ) : (
         <>
-          <p className="mb-3 text-[14px] text-ink-2">
-            <span className="num font-semibold text-ink">{b.rows.length}</span> {b.rows.length === 1 ? "Einheit" : "Einheiten"}
-            {perTeacher.length > 1 && <> · {perTeacher.map((t) => `${t.name} ${t.n}`).join(" · ")}</>}
-            {unassigned > 0 && <span className="text-red"> · {unassigned} ohne Lehrer</span>}
-          </p>
+          <ul className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Summen">
+            <li className="kennzahl">
+              <span className="kennzahl-wort">Einheiten</span>
+              <span className="kennzahl-wert">{b.rows.length}</span>
+              <span className="kennzahl-zusatz">{b.label}</span>
+            </li>
+            <li className="kennzahl">
+              <span className="kennzahl-wort">Schüler</span>
+              <span className="kennzahl-wert">{new Set(b.rows.map((r) => r.student_name)).size}</span>
+              <span className="kennzahl-zusatz">{tage.length} {tage.length === 1 ? "Tag" : "Tage"}</span>
+            </li>
+            <li className="kennzahl">
+              <span className="kennzahl-wort">Zeit</span>
+              <span className="kennzahl-wert">{stundenLabel(b.rows.reduce((sum, r) => sum + (r.duration_min > 0 ? r.duration_min : 0), 0))}</span>
+              <span className="kennzahl-zusatz">{b.rows.some((r) => !(r.duration_min > 0)) ? "ohne Zeilen ohne Dauer" : "dokumentierte Dauer"}</span>
+            </li>
+            <li className="kennzahl">
+              <span className="kennzahl-wort">Lehrer</span>
+              <span className="kennzahl-wert">{perTeacher.length || "–"}</span>
+              <span className={`kennzahl-zusatz ${unassigned > 0 ? "text-red" : ""}`}>
+                {unassigned > 0 ? `${unassigned} ohne Lehrer` : perTeacher.map((t) => `${t.name.split(" ")[0]} ${t.n}`).join(" · ") || "–"}
+              </span>
+            </li>
+          </ul>
           <div className="grid gap-5 lg:hidden print:hidden" data-testid="abr-liste">
             {tage.map(({ tag, rows }) => (
               <section key={tag} aria-label={tag}>

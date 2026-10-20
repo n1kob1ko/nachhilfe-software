@@ -9,10 +9,10 @@ const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 /** Colour of a subject in calendars and tags (same pastel family as the overview tiles). */
 export function subjectTone(subject: string | null | undefined) {
   const s = (subject ?? "").toLowerCase();
-  if (s.startsWith("mathe")) return { bg: "var(--tile-lilac)", fg: "#4b3aa8", soft: "#efecfd" };
-  if (s.startsWith("deutsch")) return { bg: "var(--tile-peach)", fg: "#9b4520", soft: "#fdf0e5" };
-  if (s.startsWith("engl")) return { bg: "var(--tile-mint)", fg: "#1b6f3d", soft: "#e9f7ef" };
-  return { bg: "var(--tile-pink)", fg: "#a12a25", soft: "#fdeeed" };
+  if (s.startsWith("mathe")) return { bg: "var(--tile-lilac)", fg: "#4a429e", soft: "#eeecf8" };
+  if (s.startsWith("deutsch")) return { bg: "var(--tile-peach)", fg: "#7d5a0c", soft: "#f8f0dc" };
+  if (s.startsWith("engl")) return { bg: "var(--tile-mint)", fg: "#1f6b3b", soft: "#e6f3ea" };
+  return { bg: "var(--tile-pink)", fg: "#9c2f27", soft: "#faeae7" };
 }
 
 /** Month grid; days with lessons get a dot, today is filled, the chosen day has a ring. Links keep it server-rendered. */
@@ -64,7 +64,7 @@ export function MonthCalendar({ month, selected, today, busy, href }: { month: s
               <span
                 className={`num flex h-9 w-9 items-center justify-center rounded-full text-[14px] transition-colors ${
                   isToday
-                    ? "bg-accent-bright font-semibold text-white shadow-[0_6px_14px_-6px_rgba(238,122,69,0.9)]"
+                    ? "bg-ink font-semibold text-white"
                     : isSel
                       ? "font-semibold text-ink ring-2 ring-accent-bright"
                       : inMonth

@@ -20,8 +20,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     // start_url muss im Scope liegen, deshalb ohne Schrägstrich am Ende
     scope: start,
     display: "standalone",
-    background_color: "#fbf6f1",
-    theme_color: "#fbf6f1",
+    background_color: "#f5f0e8",
+    theme_color: "#f5f0e8",
     icons: [
       { src: "/icon.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/apple-icon.png", sizes: "180x180", type: "image/png" },
