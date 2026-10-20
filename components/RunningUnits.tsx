@@ -34,7 +34,7 @@ export function RunningUnits({ units }: { units: RunningUnit[] }) {
                 (<Elapsed since={u.started_at} />)
               </span>
             </span>
-            <span className="inline-flex shrink-0 items-center gap-1 font-semibold">
+            <span className="inline-flex shrink-0 items-center gap-1 font-semibold text-white">
               Zur Einheit <ArrowRight size={16} aria-hidden />
             </span>
           </Link>

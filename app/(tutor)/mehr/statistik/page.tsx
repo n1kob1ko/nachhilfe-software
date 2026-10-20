@@ -170,7 +170,7 @@ function Chips({ label, items }: { label: string; items: { key: string; label: s
           key={i.key || "alle"}
           href={i.href}
           aria-current={i.active ? "true" : undefined}
-          className={`inline-flex min-h-[44px] items-center rounded-full px-4 text-[14px] font-medium ${i.active ? "bg-ink text-surface" : "bg-panel text-ink-2 hover:text-ink"}`}
+          className={`inline-flex min-h-[44px] items-center rounded-full px-4 text-[14px] font-medium ${i.active ? "bg-accent text-white" : "bg-panel text-ink-2 hover:text-ink"}`}
         >
           {i.label}
         </Link>

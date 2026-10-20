@@ -52,43 +52,49 @@ export default async function MorePage() {
   }
   return (
     <>
-      <PageHeader title="Mehr" />
-      <div className="mb-8 flex items-center gap-3">
-        <Avatar name={teacher.name} size={48} />
-        <div>
+      <PageHeader
+        title="Mehr"
+        actions={
+          <form action={logoutAction}>
+            <button className="btn btn-secondary">
+              <LogOut size={16} aria-hidden /> Abmelden
+            </button>
+          </form>
+        }
+      />
+      <div className="panel mb-8 flex flex-wrap items-center gap-4 px-5 py-4">
+        <Avatar name={teacher.name} size={52} />
+        <div className="min-w-0 flex-1">
           <div className="text-[17px] font-semibold">{teacher.name}</div>
-          <div className="text-[14px] text-ink-2">{teacher.is_admin ? "Verwaltung" : "Lehrer"}</div>
+          <div className="text-[14px] text-ink-2">{teacher.is_admin ? "Verwaltung" : "Lehrkraft"}</div>
         </div>
+        <p className="flex items-center gap-2 text-[13px] text-ink-2">
+          <Sparkles size={15} className="shrink-0 text-accent" aria-hidden />
+          {aiEnabled() ? "KI ist eingerichtet." : "Ohne KI-Schlüssel: eingebaute Generatoren."}
+        </p>
       </div>
-      <div className="grid max-w-[640px] gap-8">
+      <div className="grid gap-8">
         {groups.map((g) => (
           <section key={g.title}>
-            <h2 className="mb-2 text-[15px] font-semibold text-ink-2">{g.title}</h2>
-            <ul className="panel divide-y divide-line">
+            <h2 className="gruppe-titel mb-3">{g.title}</h2>
+            <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {g.items.map(({ href, label, hint, icon: Icon }) => (
                 <li key={href}>
-                  <Link href={href} className="flex min-h-[64px] items-center gap-4 px-4 py-3 hover:bg-panel/60">
-                    <Icon size={20} className="shrink-0 text-ink-2" aria-hidden />
+                  <Link href={href} className="panel drueck flex h-full min-h-[76px] items-center gap-3.5 px-4 py-3 transition-colors hover:border-line-strong">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-wash text-accent" aria-hidden>
+                      <Icon size={19} strokeWidth={1.9} />
+                    </span>
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold">{label}</span>
-                      <span className="block text-[13px] text-ink-2">{hint}</span>
+                      <span className="block text-[13px] leading-snug text-ink-2">{hint}</span>
                     </span>
-                    <ChevronRight size={18} className="text-ink-3" aria-hidden />
+                    <ChevronRight size={18} className="shrink-0 text-ink-3" aria-hidden />
                   </Link>
                 </li>
               ))}
             </ul>
           </section>
         ))}
-        <p className="flex items-start gap-2 text-[13px] text-ink-2">
-          <Sparkles size={15} className="mt-0.5 shrink-0" aria-hidden />
-          {aiEnabled() ? "Übungen und Auswertungen werden mit Claude erstellt." : "Übungen werden mit den eingebauten Aufgabengeneratoren erstellt (kein KI-Schlüssel hinterlegt)."}
-        </p>
-        <form action={logoutAction}>
-          <button className="btn btn-secondary btn-lg">
-            <LogOut size={17} aria-hidden /> Abmelden
-          </button>
-        </form>
       </div>
     </>
   );

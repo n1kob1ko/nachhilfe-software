@@ -26,10 +26,10 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
 
   return (
     <>
-      <section className="relative overflow-hidden rounded-[28px] bg-accent-wash px-6 py-7 md:px-8 md:py-9">
+      <section className="buehne px-6 py-7 md:px-8 md:py-9">
         <div className="relative z-10 sm:pr-[170px]">
           <h1 className="text-[30px] font-semibold tracking-[-0.02em] md:text-[34px]">Hallo {first}!</h1>
-          <p className="mt-1 text-[17px] text-ink-2">
+          <p className="buehne-meta mt-1 text-[17px]">
             {open.length === 0 ? "Gerade ist nichts offen. Gut gemacht!" : open.length === 1 ? "Eine Übung wartet auf dich." : `${open.length} Übungen warten auf dich.`}
           </p>
         </div>
@@ -37,7 +37,7 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
       </section>
 
       {unit && (
-        <Link href={`/lernen/${token}/tafel`} className="panel mt-8 flex items-center gap-4 border-accent/40 bg-accent-wash px-5 py-5 transition-colors hover:border-accent">
+        <Link href={`/lernen/${token}/tafel`} className="panel mt-8 flex items-center gap-4 border-accent-bright/60 bg-accent-wash px-5 py-5 transition-colors hover:border-accent-bright">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-white">
             <Presentation size={24} aria-hidden />
           </span>
@@ -50,7 +50,7 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
       )}
 
       {naechster && (
-        <section className="mt-8 rounded-[24px] bg-surface px-5 py-5 shadow-[var(--shadow-card)] md:px-6" aria-label="Nächster Termin" data-testid="naechster-termin">
+        <section className="panel mt-8 px-5 py-5 md:px-6" aria-label="Nächster Termin" data-testid="naechster-termin">
           <p className="flex items-center gap-2 text-[14px] font-semibold text-accent">
             <CalendarDays size={17} aria-hidden /> {naechster.jetzt ? "Jetzt" : naechster.heute ? "Heute" : "Nächster Termin"}
           </p>

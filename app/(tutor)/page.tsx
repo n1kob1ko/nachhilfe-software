@@ -206,16 +206,26 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
       <StartTabs aktiv="start" />
       <Greeting name={teacher.name} date={now} />
 
+      <Kennzahlen
+        werte={[
+          { wort: "Heute", wert: String(tagesplan.length), zusatz: tagesplan.length === 0 ? "keine Einheit" : tagesplan.length === 1 ? "Einheit" : `Einheiten, ${schuelerHeute} Schüler`, href: "#heute" },
+          // die laufende Einheit steht in der Bühne; hier immer die Uhrzeit der nächsten geplanten Einheit (niko, 21.10.2026)
+          { wort: "Als Nächstes", wert: fokus ? fokus.zeit.split(/[–-]/)[0].trim() : "–", zusatz: fokus ? firstName(fokus.name) : running.length > 0 ? "nichts mehr geplant" : "nichts geplant", href: fokus ? "#heute" : undefined },
+          { wort: "Zu erledigen", wert: String(todos.length), zusatz: todos.length === 0 ? "nichts offen" : todos.some((t) => t.key.startsWith("p")) ? "Prüfungen und mehr" : "Hausübungen, Ergebnisse", href: "#offen" },
+          { wort: "Schüler", wert: String(students.length), zusatz: `${recentIds.length} zuletzt bei dir`, href: "/schueler" },
+        ]}
+      />
+
       <div className="space-y-10">
         {running.length > 0 ? (
           running.map((u) => (
-            <section key={u.id} className="relative overflow-hidden rounded-[28px] bg-accent-wash px-6 py-7 md:px-8" aria-label="Laufende Einheit">
+            <section key={u.id} className="buehne px-6 py-7 md:px-8" aria-label="Laufende Einheit">
               <div className="relative z-10 md:pr-[220px]">
-                <p className="inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1 text-[13px] font-semibold text-green">
-                  <span className="h-2 w-2 rounded-full bg-green" aria-hidden /> Einheit läuft
+                <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[13px] font-semibold text-white">
+                  <span className="h-2 w-2 rounded-full bg-white" aria-hidden /> Einheit läuft
                 </p>
                 <h2 className="mt-3 text-[28px] leading-tight font-semibold md:text-[32px]">Einheit mit {firstName(u.student_name)}</h2>
-                <p className="mt-1 text-[16px] text-ink-2">
+                <p className="buehne-meta mt-1 text-[16px]">
                   seit <span className="num">{formatTime(u.started_at)}</span> (<Elapsed since={u.started_at} />){u.subject && ` · ${u.subject}`}
                 </p>
                 <StudentFocus studentId={u.student_id} />
@@ -232,15 +242,15 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
             </section>
           ))
         ) : (
-          <section className="relative overflow-hidden rounded-[28px] bg-accent-wash px-6 py-7 md:px-8" aria-label="Einheit starten">
+          <section className="buehne px-6 py-7 md:px-8" aria-label="Einheit starten">
             <div className="relative z-10 md:pr-[220px]">
               {fokus ? (
                 <>
-                  <p className="text-[15px] font-semibold text-ink-2">
+                  <p className="text-[13px] font-semibold tracking-[0.06em] text-white/90 uppercase">
                     Als Nächstes · <span className="num">{fokus.zeit}</span>
                   </p>
                   <h2 className="mt-1 text-[28px] leading-tight font-semibold md:text-[32px]">{fokus.name}</h2>
-                  <p className="mt-1 text-[16px] text-ink-2">{fokus.zusatz}</p>
+                  <p className="buehne-meta mt-1 text-[16px]">{fokus.zusatz}</p>
                   <StudentFocus studentId={fokus.studentId} />
                   <div className="mt-6 flex flex-wrap items-start gap-3">
                     <form action={startUnitAction.bind(null, fokus.studentId)}>
@@ -254,7 +264,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
               ) : (
                 <>
                   <h2 className="text-[28px] leading-tight font-semibold md:text-[32px]">Einheit starten</h2>
-                  <p className="mt-1 text-[16px] text-ink-2">Wähle den Schüler, mit dem du jetzt arbeitest.</p>
+                  <p className="buehne-meta mt-1 text-[16px]">Wähle den Schüler, mit dem du jetzt arbeitest.</p>
                   <StudentPicker students={ordered} open />
                 </>
               )}
@@ -264,7 +274,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         )}
 
         <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-2">
-          <section>
+          <section id="heute">
             <SectionTitle>{schuelerHeute > 0 ? `Heute: ${schuelerHeute} Schüler` : "Heute"}</SectionTitle>
             {tagesplan.length === 0 ? (
               <p className="text-[15px] text-ink-2">Heute sind keine Einheiten eingeplant.</p>
@@ -273,7 +283,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
             )}
           </section>
 
-          <section>
+          <section id="offen">
             <SectionTitle>Zu erledigen</SectionTitle>
             {todos.length === 0 ? (
               <p className="text-[15px] text-ink-2">Nichts offen.</p>
@@ -319,9 +329,37 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
   );
 }
 
+/** Vier Zahlen, die den Tag auf einen Blick erklären: heute, als Nächstes, offen, Schüler. */
+function Kennzahlen({ werte }: { werte: { wort: string; wert: string; zusatz: string; href?: string }[] }) {
+  return (
+    <ul className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Auf einen Blick">
+      {werte.map((k) => {
+        const inner = (
+          <>
+            <span className="kennzahl-wort">{k.wort}</span>
+            <span className="kennzahl-wert">{k.wert}</span>
+            <span className="kennzahl-zusatz">{k.zusatz}</span>
+          </>
+        );
+        return (
+          <li key={k.wort} className="min-w-0">
+            {k.href ? (
+              <Link href={k.href} className="kennzahl drueck block h-full transition-colors hover:border-line-strong">
+                {inner}
+              </Link>
+            ) : (
+              <div className="kennzahl h-full">{inner}</div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function Greeting({ name, date }: { name: string; date: Date }) {
   return (
-    <header className="mb-7">
+    <header className="mb-6">
       <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] md:text-[32px]">Hallo, {firstName(name)}</h1>
       <p className="mt-1 text-[15px] text-ink-2">{date.toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long", timeZone: ZEITZONE })}</p>
     </header>
@@ -390,7 +428,7 @@ function StudentPicker({ students, open, label }: { students: repo.Student[]; op
       {students.slice(0, 8).map((s) => (
         <li key={s.id}>
           <form action={startUnitAction.bind(null, s.id)}>
-            <button className="flex min-h-[60px] w-full items-center gap-3 rounded-2xl bg-surface px-3 py-2 text-left shadow-[var(--shadow-card)] transition-colors hover:bg-panel" aria-label={`Einheit mit ${s.name} starten`}>
+            <button className="flex min-h-[60px] w-full items-center gap-3 rounded-2xl bg-surface px-3 py-2 text-left text-ink shadow-[var(--shadow-card)] transition-colors hover:bg-panel" aria-label={`Einheit mit ${s.name} starten`}>
               <Avatar name={s.name} size={40} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">{s.name}</span>

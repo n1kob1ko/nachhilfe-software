@@ -87,7 +87,7 @@ export function Lernverlauf({ student, filter }: { student: repo.Student; filter
               key={k}
               href={`/schueler/${student.id}?tab=lernverlauf${k === "alle" ? "" : `&art=${k}`}`}
               aria-current={art === k ? "true" : undefined}
-              className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 text-[13px] font-medium ${art === k ? "bg-ink text-surface" : "bg-panel text-ink-2 hover:text-ink"}`}
+              className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 text-[13px] font-medium ${art === k ? "bg-accent text-white" : "bg-panel text-ink-2 hover:text-ink"}`}
             >
               {label}
               <span className="num ml-1.5 opacity-70">{count[k]}</span>

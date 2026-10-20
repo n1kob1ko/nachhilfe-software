@@ -17,7 +17,7 @@ import { ExamForm } from "@/components/ExamForm";
 import { cancelExamAction, setExamResultAction } from "@/app/curriculum-actions";
 import { SchuelerAppLink } from "@/components/SchuelerAppLink";
 import { ProgressChart } from "@/components/ProgressChart";
-import { Empty, LevelTag, MasteryBar, More, Pill, Reveal, SectionTitle, StatusChip, TrendBadge, formatDate, formatDuration, formatTime } from "@/components/ui";
+import { Empty, LevelTag, MasteryBar, More, Pill, Reveal, SectionTitle, StatusChip, TrendBadge, formatDate, formatDuration, formatTime, masteryLevel } from "@/components/ui";
 import { Info } from "@/components/Info";
 import { aiEnabled } from "@/lib/ai";
 import { type Analysis, pct } from "@/lib/analysis";
@@ -39,13 +39,12 @@ import { einheitenFuerWoche, istNichtStattgefunden, mitNamen, slotDatum } from "
 import { datumLabel, minutenLabel, wienerDatum, wienerWochenstart, wochenLabel } from "@/lib/planung/zeit";
 import { listenVon } from "@/lib/vokabellisten";
 
+/** Vier Bereiche statt sechs: Stoff und Prüfungen teilen sich einen Tab, Übungen und Lernverlauf auch. */
 const TABS = [
   ["ueberblick", "Überblick"],
   ["fortschritt", "Lernstand"],
-  ["stoff", "Aktueller Stoff"],
-  ["schule", "Prüfungen"],
-  ["uebungen", "Übungen"],
-  ["lernverlauf", "Lernverlauf"],
+  ["schule", "Stoff & Prüfungen"],
+  ["lernverlauf", "Übungen & Verlauf"],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
@@ -57,8 +56,8 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
   const sp = await searchParams;
   const student = repo.getStudent(Number(id));
   if (!student) notFound();
-  // old addresses keep working: "stunden" is now the Lernverlauf, "analyse" is part of Fortschritt
-  const requested = sp.tab === "stunden" ? "lernverlauf" : sp.tab === "analyse" ? "fortschritt" : sp.tab;
+  // old addresses keep working: "stunden" and "uebungen" are in Übungen & Verlauf, "analyse" in Lernstand, "stoff" in Stoff & Prüfungen
+  const requested = ({ stunden: "lernverlauf", uebungen: "lernverlauf", analyse: "fortschritt", stoff: "schule" } as Record<string, string>)[sp.tab ?? ""] ?? sp.tab;
   const tab: Tab = (TABS.find(([k]) => k === requested)?.[0] ?? "ueberblick") as Tab;
   const a = analyzeStudent(student.id)!;
   const teacher = repo.getTeacher(student.teacher_id);
@@ -68,7 +67,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
       <Link href="/schueler" className="no-print mb-3 inline-flex min-h-[36px] items-center gap-1 text-[14px] font-medium text-ink-2 hover:text-ink">
         ← Alle Schüler
       </Link>
-      <header className="mb-6 flex flex-wrap items-center gap-4">
+      <header className="mb-6 flex items-center gap-4">
         <Avatar name={student.name} size={56} />
         <div className="min-w-0">
           <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">{student.name}</h1>
@@ -86,18 +85,19 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
           })()}
         </div>
       </header>
-      <div className="no-print mb-8 flex flex-wrap gap-3">
+      <div className="no-print mb-7 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3 [&_.btn]:w-full sm:[&_.btn]:w-auto [&>:first-child]:col-span-2 sm:[&>:first-child]:col-auto">
         <UnitControl student={student} />
         <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-secondary btn-lg">
           <Plus size={18} aria-hidden /> Übung erstellen
         </Link>
         <Link href={`/schueler/${student.id}?tab=lernverlauf`} className="btn btn-secondary btn-lg">
-          <History size={18} aria-hidden /> Lernverlauf ansehen
+          <History size={18} aria-hidden /> <span className="sm:hidden">Lernverlauf</span><span className="hidden sm:inline">Lernverlauf ansehen</span>
         </Link>
         <Link href={`/schueler/${student.id}/briefing`} className="btn btn-secondary btn-lg">
-          <Sparkles size={18} aria-hidden /> Briefing für heute
+          <Sparkles size={18} aria-hidden /> <span className="sm:hidden">Briefing</span><span className="hidden sm:inline">Briefing für heute</span>
         </Link>
       </div>
+      <Kopfzahlen student={student} a={a} />
       <nav className="no-print mb-8 flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-panel p-1" aria-label="Bereiche">
         {TABS.map(([key, label]) => (
           <Link
@@ -119,11 +119,86 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
           <AnalysisTab student={student} a={a} assignedId={sp.zugewiesen} error={sp.fehler} />
         </div>
       )}
-      {tab === "lernverlauf" && <Lessons student={student} filter={sp.art} />}
-      {tab === "schule" && <School student={student} />}
-      {tab === "stoff" && <CurrentMaterialTab student={student} edit={Number(sp.bearbeiten) || null} />}
-      {tab === "uebungen" && <Exercises student={student} />}
+      {tab === "lernverlauf" && (
+        <div className="space-y-14">
+          <section aria-labelledby="lernverlauf-titel">
+            <h2 id="lernverlauf-titel" className="gruppe-titel mb-4">Lernverlauf</h2>
+            <Lessons student={student} filter={sp.art} />
+          </section>
+          <section aria-labelledby="uebungen-titel">
+            <h2 id="uebungen-titel" className="gruppe-titel mb-4">Übungen</h2>
+            <Exercises student={student} />
+          </section>
+        </div>
+      )}
+      {tab === "schule" && (
+        <div className="space-y-14">
+          <section aria-labelledby="stoff-titel">
+            <h2 id="stoff-titel" className="gruppe-titel mb-4">Aktueller Stoff</h2>
+            <CurrentMaterialTab student={student} edit={Number(sp.bearbeiten) || null} />
+          </section>
+          <section aria-labelledby="schule-titel">
+            <h2 id="schule-titel" className="gruppe-titel mb-4">Prüfungen und Hausübungen</h2>
+            <School student={student} />
+          </section>
+        </div>
+      )}
     </>
+  );
+}
+
+/** Vier Zahlen über den Tabs: Lernstand, Trend, nächste Prüfung, Einheiten. Jede führt zu ihrem Bereich. */
+function Kopfzahlen({ student, a }: { student: repo.Student; a: Analysis }) {
+  const today = dayOf(new Date());
+  const exam = repo.upcomingTests(today, student.id)[0];
+  const tage = exam ? daysUntil(exam.date, today) : null;
+  const einheiten = repo.listLessons(student.id).filter((l) => l.kind === "stunde" && l.status === "abgeschlossen");
+  const offeneHw = repo.listHomework(student.id).filter((h) => h.status === "offen").length;
+  const mastery = a.overall.mastery;
+  const level = masteryLevel(mastery);
+  const LevelIcon = level.icon;
+  const karten: { wort: string; wert: React.ReactNode; zusatz: React.ReactNode; href: string }[] = [
+    {
+      wort: "Lernstand",
+      wert: mastery === null ? "–" : `${pct(mastery)}`,
+      zusatz: (
+        <span className={`inline-flex items-center gap-1 ${level.cls}`}>
+          <LevelIcon size={13} strokeWidth={2.25} aria-hidden /> {level.label}
+        </span>
+      ),
+      href: `/schueler/${student.id}?tab=fortschritt`,
+    },
+    {
+      wort: "Trend",
+      wert: a.overall.trend === "none" || a.overall.delta === null ? "–" : `${a.overall.delta > 0 ? "+" : ""}${a.overall.delta}`,
+      zusatz: <TrendBadge trend={a.overall.trend} />,
+      href: `/schueler/${student.id}?tab=fortschritt`,
+    },
+    {
+      wort: "Nächste Prüfung",
+      wert: exam ? (tage === 0 ? "heute" : tage === 1 ? "morgen" : `${tage} Tage`) : "–",
+      zusatz: exam ? exam.title || `${exam.kind} ${exam.subject}` : "keine eingetragen",
+      href: `/schueler/${student.id}?tab=schule`,
+    },
+    {
+      wort: "Einheiten",
+      wert: String(einheiten.length),
+      zusatz: offeneHw > 0 ? `${offeneHw} ${offeneHw === 1 ? "offene Hausübung" : "offene Hausübungen"}` : einheiten[0] ? `zuletzt ${formatDate(einheiten[0].starts_at, { day: "numeric", month: "short" })}` : "noch keine",
+      href: `/schueler/${student.id}?tab=lernverlauf`,
+    },
+  ];
+  return (
+    <ul className="no-print mb-7 grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Auf einen Blick">
+      {karten.map((k) => (
+        <li key={k.wort} className="min-w-0">
+          <Link href={k.href} className="kennzahl drueck block h-full transition-colors hover:border-line-strong">
+            <span className="kennzahl-wort">{k.wort}</span>
+            <span className="kennzahl-wert">{k.wert}</span>
+            <span className="kennzahl-zusatz">{k.zusatz}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -192,7 +267,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
       "Fach und Themen",
       <span key="topics">
         {[student.subjects.join(", "), student.current_topics].filter(Boolean).join(" · ") || "–"}{" "}
-        <Link href={`/schueler/${student.id}?tab=stoff`} className="link font-medium whitespace-nowrap">
+        <Link href={`/schueler/${student.id}?tab=schule`} className="link font-medium whitespace-nowrap">
           Aktuellen Stoff festlegen ›
         </Link>
       </span>,
@@ -708,7 +783,7 @@ function CurrentMaterialTab({ student, edit }: { student: repo.Student; edit: nu
                 <Link href={`/uebungen/neu?schueler=${student.id}&stoff=${cm.id}`} className="btn btn-primary btn-sm">
                   Übung dazu erstellen
                 </Link>
-                <Link href={`/schueler/${student.id}?tab=stoff&bearbeiten=${cm.id}`} className="btn btn-ghost btn-sm">
+                <Link href={`/schueler/${student.id}?tab=schule&bearbeiten=${cm.id}`} className="btn btn-ghost btn-sm">
                   <Pencil size={14} aria-hidden /> Bearbeiten
                 </Link>
                 <form action={endMaterialAction.bind(null, cm.id)} className="ml-auto">

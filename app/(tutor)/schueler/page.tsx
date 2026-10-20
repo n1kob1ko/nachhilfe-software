@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
-import { Empty, PageHeader } from "@/components/ui";
+import { Empty, PageHeader, StatusChip, TrendBadge } from "@/components/ui";
 import { listStudents, listTeachers } from "@/lib/repo";
 import { checkLevel, klassenLabel } from "@/lib/school";
 import { Avatar } from "@/components/Art";
@@ -80,12 +80,12 @@ export default async function Students({ searchParams }: { searchParams: Promise
             const a = analyzeStudent(s.id)!;
             return (
               <li key={s.id}>
-                <Link href={`/schueler/${s.id}`} className="panel block h-full px-5 py-4 transition-transform hover:-translate-y-0.5">
+                <Link href={`/schueler/${s.id}`} className="panel drueck block h-full px-5 py-4 transition-colors hover:border-line-strong">
                   <div className="flex items-center gap-3">
                     <Avatar name={s.name} size={44} />
                     <div className="min-w-0 flex-1">
                       <span className="block truncate text-[16px] font-semibold">{s.name}</span>
-                      <span className="block truncate text-[13px] text-ink-2">
+                      <span className="block text-[13px] leading-snug text-ink-2">
                         {klasseFehlt(s) ? <span className="text-amber">{klassenLabel(s.school_type, s.klasse) || "Klasse fehlt"}</span> : klassenLabel(s.school_type, s.klasse)}
                         {teachers.get(s.teacher_id ?? 0) && ` · ${teachers.get(s.teacher_id ?? 0)}`}
                       </span>
@@ -105,15 +105,19 @@ export default async function Students({ searchParams }: { searchParams: Promise
                       <span className="text-[13px] text-ink-3">Keine Fächer</span>
                     )}
                   </div>
-                  <p className="mt-3 text-[14px] text-ink-2">
-                    {a.mainProblem ? (
-                      <>
-                        Schwierigkeit: <span className="font-medium text-red">{a.mainProblem.skill.name}</span>
-                      </>
-                    ) : (
-                      "Keine Schwierigkeit erkannt"
-                    )}
-                  </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-line pt-3 text-[13px]">
+                    <StatusChip mastery={a.overall.mastery} />
+                    <TrendBadge trend={a.overall.trend} delta={a.overall.delta} compact />
+                    <span className="basis-full text-ink-2">
+                      {a.mainProblem ? (
+                        <>
+                          Schwierigkeit: <span className="font-medium text-red">{a.mainProblem.skill.name}</span>
+                        </>
+                      ) : (
+                        "keine Schwierigkeit erkannt"
+                      )}
+                    </span>
+                  </div>
                 </Link>
               </li>
             );

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ArrowDown, ArrowUp, BookmarkPlus, Check, Library, Pencil, Plus, Presentation, RefreshCw, Send, Trash2, X } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, BookmarkPlus, Check, Library, Pencil, Plus, Presentation, RefreshCw, Send, Trash2, X, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import {
@@ -135,6 +135,8 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
   const [pending, start] = useTransition();
   const [note, setNote] = useState<ActionResult>(null);
   const [panel, setPanel] = useState<"none" | "send">("none");
+  // nur „Bearbeiten“ und „Einzeln senden“ sind immer sichtbar; der Rest kommt hinter „Mehr“ (kürzere Seite)
+  const [more, setMore] = useState(false);
   const run = (fn: () => Promise<ActionResult>) =>
     start(async () => {
       setNote(null);
@@ -179,7 +181,7 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
               <Pencil size={14} aria-hidden /> Bearbeiten
             </button>
             {/* a library task is curated: it changes only in the editor (difficulty included), never replaced at a click */}
-            {!p.library && (
+            {!p.library && more && (
               <>
                 {/* Auswendig schreiben: den Text schreibt die Lehrkraft, „Neu erstellen“ würde ihn leeren */}
                 {t.type !== "memorize" && (
@@ -252,10 +254,9 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
                 </button>
               </>
             )}
-            <span className="mx-1 h-5 w-px bg-line" aria-hidden />
           </>
         )}
-        {!p.library && (
+        {!p.library && (more || !p.editable) && (
           <button type="button" className="btn btn-ghost btn-sm" disabled={pending} onClick={() => run(() => saveToLibraryAction(t.id))} title="Eine Kopie dieser Aufgabe in der Aufgabenbibliothek speichern">
             <BookmarkPlus size={14} aria-hidden /> In Bibliothek
           </button>
@@ -263,6 +264,11 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
         <button type="button" className="btn btn-ghost btn-sm" aria-expanded={panel === "send"} onClick={() => setPanel(panel === "send" ? "none" : "send")} title="Nur diese eine Aufgabe an einen Schüler oder aufs Whiteboard senden">
           <Send size={14} aria-hidden /> Einzeln senden
         </button>
+        {p.editable && !p.library && (
+          <button type="button" className="btn btn-ghost btn-sm" aria-expanded={more} onClick={() => setMore(!more)} title="Neu erstellen, Schwierigkeit, Reihenfolge, Bibliothek, Löschen">
+            <ChevronDown size={14} aria-hidden className={`transition-transform ${more ? "rotate-180" : ""}`} /> {more ? "Weniger" : "Mehr"}
+          </button>
+        )}
       </div>
       {panel === "send" && <SendPanel {...p} run={run} pending={pending} />}
       <div className="mt-2 pl-[44px]">

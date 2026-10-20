@@ -33,9 +33,9 @@ export function TabBar() {
       {ITEMS.map(({ href, label, icon: Icon, match }) => {
         const active = isActive(path, match);
         return (
-          <Link key={href} href={href} aria-current={active ? "page" : undefined} className={`flex min-h-[60px] flex-col items-center justify-center gap-1 text-[12px] font-medium ${active ? "text-accent" : "text-ink-2"}`}>
-            <span className={`flex h-8 w-12 items-center justify-center rounded-full ${active ? "bg-accent-wash" : ""}`}>
-              <Icon size={20} strokeWidth={1.9} aria-hidden />
+          <Link key={href} href={href} aria-current={active ? "page" : undefined} className={`flex min-h-[60px] flex-col items-center justify-center gap-1 text-[12px] font-medium ${active ? "text-ink" : "text-ink-3"}`}>
+            <span className={`flex h-8 w-12 items-center justify-center rounded-full transition-colors ${active ? "bg-accent-bright text-ink" : ""}`}>
+              <Icon size={20} strokeWidth={active ? 2.2 : 1.9} aria-hidden />
             </span>
             {label}
           </Link>
@@ -48,7 +48,7 @@ export function TabBar() {
 export function Nav() {
   const path = usePathname();
   return (
-    <nav className="flex flex-col gap-1.5" aria-label="Hauptnavigation">
+    <nav className="flex flex-col gap-1" aria-label="Hauptnavigation">
       {ITEMS.map(({ href, label, icon: Icon, match }) => {
         const active = isActive(path, match);
         return (
@@ -56,16 +56,16 @@ export function Nav() {
             key={href}
             href={href}
             aria-current={active ? "page" : undefined}
-            className={`group flex min-h-[48px] shrink-0 items-center gap-3 rounded-full py-1.5 pr-4 pl-1.5 text-[15px] font-medium transition-colors ${
+            className={`group flex min-h-[46px] shrink-0 items-center gap-3 rounded-full py-1.5 pr-4 pl-1.5 text-[15px] font-medium transition-colors ${
               active ? "bg-surface text-ink shadow-[var(--shadow-card)]" : "text-ink-2 hover:bg-surface/70 hover:text-ink"
             }`}
           >
             <span
-              className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
-                active ? "bg-accent-bright text-white shadow-[0_6px_14px_-6px_rgba(238,122,69,0.9)]" : "bg-surface text-ink-2 group-hover:text-accent"
+              className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+                active ? "bg-accent-bright text-ink" : "text-ink-3 group-hover:text-ink"
               }`}
             >
-              <Icon size={17} strokeWidth={1.9} aria-hidden />
+              <Icon size={17} strokeWidth={active ? 2.2 : 1.9} aria-hidden />
             </span>
             <span className={active ? "font-semibold" : ""}>{label}</span>
           </Link>
@@ -78,7 +78,7 @@ export function Nav() {
 /** Logo-Zeichen von MC Dream Education, darunter der Name der App und des Instituts. */
 export function Brand() {
   return (
-    <Link href="/" className="flex items-center gap-2 rounded-2xl">
+    <Link href="/" className="flex items-center gap-2.5 rounded-2xl">
       <BrandMark height={38} />
       <span className="leading-tight">
         <span className="display block text-[18px] font-semibold tracking-[-0.01em]">Lernheft</span>

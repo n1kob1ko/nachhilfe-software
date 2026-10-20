@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenText, Lightbulb, ListPlus, Search, Sparkles, Wand2, Zap } from "lucide-react";
+import { BookOpenText, Lightbulb, ListPlus, Search, Sparkles, Wand2, Zap, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useMemo, useState } from "react";
@@ -131,7 +131,7 @@ export function BuilderForm({
     : null;
 
   return (
-    <form action={action} className="grid gap-x-10 gap-y-8 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <form action={action} className="grid min-w-0 gap-x-8 gap-y-8 xl:grid-cols-[minmax(0,1fr)_300px]">
       <input type="hidden" name="subject" value={subject} />
       <input type="hidden" name="count" value={count} />
       {selected.map((id) => (
@@ -144,11 +144,11 @@ export function BuilderForm({
       <ol className="grid gap-8">
         {/* 1 · Schüler */}
         <Step n={1} title="Schüler">
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <label className="field">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <label className="field min-w-0">
               <span className="label">Schüler</span>
               <select
-                className="input"
+                className="input min-w-0 max-w-full"
                 name="student_id"
                 value={ctx?.studentId ?? ""}
                 onChange={(e) => router.replace(e.target.value ? `/uebungen/neu?schueler=${e.target.value}` : "/uebungen/neu")}
@@ -214,12 +214,12 @@ export function BuilderForm({
               Gewählt: <span className="font-semibold text-ink">{chosen.map(labelOf).join(" · ")}</span>
             </p>
           )}
-          <div className="grid items-start gap-3 md:grid-cols-2">
-            {areas.map(([area, list]) => {
-              const fits = list.some(({ skill }) => grade >= skill.grade_min && grade <= skill.grade_max);
+          {(() => {
+            const fitsArea = (list: { skill: Skill }[]) => list.some(({ skill }) => grade >= skill.grade_min && grade <= skill.grade_max);
+            const card = ([area, list]: (typeof areas)[number], fits: boolean) => {
               const open = query.trim() !== "" || list.some(({ skill, subs }) => [skill, ...subs].some((x) => selected.includes(x.id)));
               return (
-                <details key={area} open={open} className={`panel group px-4 py-3 ${fits ? "" : "opacity-75"}`}>
+                <details key={area} open={open} className="panel group px-4 py-3">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-semibold">
                     <span>
                       {area}
@@ -245,9 +245,32 @@ export function BuilderForm({
                   </ul>
                 </details>
               );
-            })}
-            {areas.length === 0 && <p className="text-[14px] text-ink-3">Keine Fähigkeit passt zur Suche.</p>}
-          </div>
+            };
+            // Themen der Schulstufe zuerst; die anderen Schulstufen bleiben eingeklappt, bei einer Suche oder einer
+            // dort gewählten Fähigkeit sind sie offen
+            const searching = query.trim() !== "";
+            const own = areas.filter(([, list]) => fitsArea(list));
+            const other = areas.filter(([, list]) => !fitsArea(list));
+            const otherOpen = searching || other.some(([, list]) => list.some(({ skill, subs }) => [skill, ...subs].some((x) => selected.includes(x.id))));
+            return (
+              <>
+                <div className="grid items-start gap-3 md:grid-cols-2">
+                  {own.map((a) => card(a, true))}
+                  {areas.length === 0 && <p className="text-[14px] text-ink-3">Keine Fähigkeit passt zur Suche.</p>}
+                  {own.length === 0 && areas.length > 0 && !otherOpen && <p className="text-[14px] text-ink-3">Für {levelText} gibt es hier noch keine Themen.</p>}
+                </div>
+                {other.length > 0 && (
+                  <details open={otherOpen} className="group mt-3">
+                    <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-semibold text-accent">
+                      <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden />
+                      {other.length} Themen anderer Schulstufen
+                    </summary>
+                    <div className="mt-3 grid items-start gap-3 md:grid-cols-2">{other.map((a) => card(a, false))}</div>
+                  </details>
+                )}
+              </>
+            );
+          })()}
           <WortartenChoice selected={selected} setSelected={setSelected} known={new Set(skills.map((x) => x.id))} grade={grade} ctx={ctx} />
           <SchreibauftragHinweis sorten={[...new Set(selected.map(sorteOfSkill).filter((k): k is SorteKey => k !== null))]} ctx={ctx} />
         </Step>
@@ -371,7 +394,7 @@ export function BuilderForm({
         </Step>
       </ol>
 
-      <aside className="grid content-start gap-4 xl:sticky xl:top-6">
+      <aside className="grid min-w-0 content-start gap-4 xl:sticky xl:top-6">
         <div className="panel grid gap-4 px-4 py-4">
           <label className="field">
             <span className="label">Hinweis an die KI (optional)</span>
@@ -541,7 +564,7 @@ function Submit({ disabled, ai, count }: { disabled: boolean; ai: boolean; count
   const { pending, data } = useFormStatus();
   const mine = pending && data?.get("mode") !== "leer";
   return (
-    <button className="btn btn-primary btn-lg" name="mode" value="generieren" disabled={disabled || pending}>
+    <button className="btn btn-primary btn-lg w-full !whitespace-normal text-center" name="mode" value="generieren" disabled={disabled || pending}>
       <Sparkles size={17} aria-hidden />
       {mine ? (ai ? `Claude erstellt ${count} Aufgaben …` : "Wird erstellt …") : "Übung erstellen und Vorschau zeigen"}
     </button>

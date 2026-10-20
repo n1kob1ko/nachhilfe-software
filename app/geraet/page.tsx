@@ -1,6 +1,7 @@
 import { ArrowLeftRight, Laptop, PenLine, Presentation } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import { chooseDeviceUnitAction } from "@/app/device-actions";
+import { SubjectArt } from "@/components/Art";
 import { BrandMark } from "@/components/Brand";
 import { DeviceLive } from "@/components/device/DeviceLive";
 import { PairForm } from "@/components/device/PairForm";
@@ -192,7 +193,11 @@ export default async function DevicePage() {
         ))}
       </ul>
     ) : (
-      <p className="panel px-6 py-10 text-center text-[17px] text-ink-2">Gleich geht&apos;s los. {teacherFirst} schickt dir eine Aufgabe.</p>
+      <div className="panel relative flex min-h-[320px] flex-col items-center justify-center overflow-hidden px-6 py-12 text-center">
+        <SubjectArt subject={unit.subject} className="h-[150px] w-[150px]" />
+        <p className="mt-6 text-[26px] font-semibold tracking-[-0.02em]">Gleich geht&apos;s los</p>
+        <p className="mt-1 text-[17px] text-ink-2">{teacherFirst} schickt dir eine Aufgabe.</p>
+      </div>
     );
   }
 
