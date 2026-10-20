@@ -17,6 +17,7 @@ import { activeMaterial, materialLabel, materialSkills, MATERIAL_SOURCES } from 
 import { daysUntil, dayOf } from "./exams";
 import { nextSteps } from "./recommend";
 import { masteryStatus } from "./mastery";
+import { istMaturaKategorie, maturaLeer, pruefeMatura } from "./matura-formate";
 import { memorizeCategory, memorizeWords } from "./memorize";
 import { isQuickRound, type AssignmentMode } from "./quick-round";
 import { analyzeStudent } from "./service";
@@ -623,6 +624,8 @@ export async function regenerateTask(taskId: number, o: { difficulty?: Difficult
 // ---------- manual tasks and checks ----------
 export function blankTask(format: TaskType, skillId: string | null, category: string | null, difficulty: Difficulty): TaskDraft {
   const base = { skillId, skillIds: skillId ? [skillId] : [], category, difficulty, prompt: "", data: {}, solution: "", hints: [], errorMap: [] };
+  // Matura-Formate (lib/matura-formate.ts): fünf Antworten, zwei Lücken mit je drei Satzteilen, zwei Aussagen zu vier Antworten
+  if (istMaturaKategorie(category)) return { ...base, ...maturaLeer(category) };
   switch (format) {
     case "mc":
       return { ...base, type: "mc", data: { options: ["", "", ""] }, answer: { correct: 0 } };
@@ -650,6 +653,8 @@ export function blankTask(format: TaskType, skillId: string | null, category: st
     // Auswendig schreiben: der Text steht in data.passage; die Lösung ist der Text selbst (lib/memorize.ts)
     case "memorize":
       return { ...base, type: "memorize", prompt: "Schreib den Text aus dem Gedächtnis auf.", data: { passage: "" }, answer: {} };
+    case "zuordnung":
+      return { ...base, ...maturaLeer("matura-zuordnung") };
     default:
       return { ...base, type: "calc", answer: { accepted: [""], mode: "value" } };
   }
@@ -657,12 +662,16 @@ export function blankTask(format: TaskType, skillId: string | null, category: st
 
 /** What is missing before a task can be given to a student; null when it is complete. */
 export function checkTask(t: TaskDraft): string | null {
-  if (!t.prompt.trim() || t.prompt.trim() === `… ${GAP} …`) return "Die Aufgabenstellung fehlt.";
+  // leer ist auch ein Lückentext, der nur aus Lücken und „…“ besteht
+  if (!t.prompt.trim() || t.prompt.split(GAP).every((p) => !p.replace(/…/g, "").trim())) return "Die Aufgabenstellung fehlt.";
   if (!t.skillId) return "Bitte eine Fähigkeit zuordnen.";
+  // Matura-Formate: fünf Antworten, zwei richtige bei 2 aus 5, je drei Satzteile, vier Antworten zu zwei Aussagen
+  const matura = pruefeMatura(t);
+  if (matura) return matura;
   if (t.type === "mc" || t.type === "reading") {
     if (t.data.options) {
       if (t.data.options.filter((o) => o.trim()).length < 2 || t.data.options.some((o) => !o.trim())) return "Jede Antwortmöglichkeit braucht einen Text (mindestens zwei).";
-      if (typeof t.answer.correct !== "number" || t.answer.correct < 0 || t.answer.correct >= t.data.options.length) return "Bitte die richtige Antwort markieren.";
+      if (!t.answer.correctAll?.length && (typeof t.answer.correct !== "number" || t.answer.correct < 0 || t.answer.correct >= t.data.options.length)) return "Bitte die richtige Antwort markieren.";
     } else if (!t.answer.sample?.trim()) return "Die Musterlösung fehlt.";
     if (t.type === "reading" && !t.data.passage?.trim()) return "Der Lesetext fehlt.";
   }
@@ -746,6 +755,15 @@ export function normalizeTask(t: TaskDraft): TaskDraft {
     }
     out.answer = { steps };
     out.data = { ...out.data, steps: shown };
+  }
+  // Matura-Formate: Texte ohne Leerraum am Rand, die Lösung des Lückentexts wie der markierte Satzteil
+  if (out.data.gapOptions) {
+    out.data = { ...out.data, gapOptions: out.data.gapOptions.map((g) => g.map((x) => x.trim())) };
+    out.answer = { ...out.answer, blanks: (out.answer.blanks ?? []).map((b) => b.map((x) => x.trim())) };
+  }
+  if (out.data.zuordnung) {
+    const z = out.data.zuordnung;
+    out.data = { ...out.data, zuordnung: { statements: z.statements.map((x) => x.trim()), options: z.options.map((x) => x.trim()) } };
   }
   // Aufgabe mit Bild: nur ein Bild, das lib/figur.ts lesen kann, wird gespeichert (sauber kopiert)
   if (out.data.figure !== undefined) {

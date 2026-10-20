@@ -12,6 +12,7 @@ import { db } from "../db";
 import { ERROR_TYPES } from "../error-types";
 import * as repo from "../repo";
 import type { TaskDraft } from "../tasks";
+import { maturaFalscheAntwort, maturaRichtigeAntwort } from "../matura-formate";
 import { AREA_LABEL, FUNCTIONS, routeFor, type AIFunction, type Area, type Usage } from "./config";
 import { latestInsight } from "./insights";
 import { liveStats, newExerciseForUnit, onHint, resetLiveStats, setScheduler, settle } from "./realtime";
@@ -223,6 +224,9 @@ function rightAnswer(t: repo.Task): string {
   if (t.type === "rechenweg") return JSON.stringify({ steps: t.solutionSteps ?? [], result: a.accepted?.[0] ?? "" });
   if (t.type === "sachaufgabe")
     return JSON.stringify({ parts: (t.data.parts ?? []).map((p, i) => (p.kind === "text" ? { text: a.parts?.[i]?.sample ?? t.solution } : { result: a.parts?.[i]?.accepted?.[0] ?? "" })) });
+  // Matura-Formate: beide Kreuze bei 2 aus 5, die Buchstaben der Zuordnung, die Satzteile des Lückentexts
+  const matura = maturaRichtigeAntwort(t);
+  if (matura) return matura;
   if (t.data.options && typeof a.correct === "number") return String(a.correct);
   if (a.steps && t.data.steps) return JSON.stringify(a.steps.map((s) => t.data.steps!.indexOf(s)));
   if (a.blanks) return JSON.stringify(a.blanks.map((b) => b[0]));
@@ -235,6 +239,8 @@ function wrongAnswer(t: repo.Task, sign: boolean): string {
   if (t.type === "rechenweg") return JSON.stringify({ steps: [], result: wrongValue(a.accepted?.[0] ?? "1", sign) });
   if (t.type === "sachaufgabe")
     return JSON.stringify({ parts: (t.data.parts ?? []).map((p, i) => (p.kind === "text" ? { text: "Ich weiß nicht genau." } : { result: wrongValue(a.parts?.[i]?.accepted?.[0] ?? "1", sign) })) });
+  const matura = maturaFalscheAntwort(t);
+  if (matura) return matura;
   if (t.data.options && typeof a.correct === "number") return String((a.correct + 1) % t.data.options.length);
   if (a.steps && t.data.steps) return JSON.stringify(a.steps.map((s) => t.data.steps!.indexOf(s)).reverse());
   if (a.blanks) return JSON.stringify(a.blanks.map(() => "x"));

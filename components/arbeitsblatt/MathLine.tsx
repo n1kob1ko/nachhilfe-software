@@ -63,16 +63,19 @@ function FilledGap({ fill }: { fill: Exclude<GapFill, null> }) {
 
 /**
  * Task text as printed: paragraphs with line breaks, Markdown tables as tables, maths typeset and
- * every ___ as a writing gap (widths in mm, from the expected answer).
+ * every ___ as a writing gap (widths in mm, from the expected answer). `gapLabels`: the gaps of a
+ * Lückentext zum Ankreuzen (Matura-Format) are named ① ② and ticked below, not written in.
  */
 export function RichText({
   text,
   gapsMm = [],
   gapAnswers,
+  gapLabels,
 }: {
   text: string;
   gapsMm?: number[];
   gapAnswers?: GapFill[];
+  gapLabels?: string[];
 }) {
   let gap = 0;
   const withGaps = (s: string) =>
@@ -80,7 +83,9 @@ export function RichText({
       const g = i < all.length - 1 ? gap++ : -1;
       const fill = g >= 0 ? gapAnswers?.[g] : null;
       const gapEl =
-        fill && (typeof fill === "string" || fill.text || fill.correct) ? (
+        g >= 0 && gapLabels?.[g] ? (
+          <span className="ab-gap-nr">{gapLabels[g]}</span>
+        ) : fill && (typeof fill === "string" || fill.text || fill.correct) ? (
           <FilledGap fill={fill} />
         ) : (
           <span className="ab-gap" style={{ width: `${part.raised ? Math.min(gapsMm[g] ?? 6, 7) : (gapsMm[g] ?? 32)}mm` }} aria-label="Lücke" />

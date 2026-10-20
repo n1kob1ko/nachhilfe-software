@@ -11,6 +11,7 @@
  * widersprechen können.
  */
 import type { Category } from "./curriculum";
+import { istMaturaKategorie } from "./matura-formate";
 
 /**
  * Wie eine Übung einem Schüler gezeigt wird: der übliche Ablauf, als Schnellrunde oder als Minitest
@@ -32,7 +33,7 @@ export const QUICK_ROUND_MIN_OPTIONS = 2;
  * Eine Aufgabe, wie sie die Prüfung braucht — absichtlich in beiden Formen: der Lehrer hat
  * `lib/repo.ts Task` (`data.options`), die Schülerseite `components/Solver.tsx ClientTask` (`options`).
  */
-export type QuickRoundTask = { type: string; options?: string[] | null; data?: { options?: string[] | null } };
+export type QuickRoundTask = { type: string; options?: string[] | null; pick?: number | null; data?: { options?: string[] | null }; answer?: { correctAll?: number[] } };
 
 export const quickRoundOptions = (t: QuickRoundTask): string[] | null => t.data ? (t.data.options ?? null) : (t.options ?? null);
 
@@ -46,6 +47,8 @@ export function quickRoundProblem(tasks: QuickRoundTask[]): string | null {
   for (const [i, t] of tasks.entries()) {
     const options = quickRoundOptions(t);
     if (t.type !== "mc" || !options) return `Aufgabe ${i + 1} ist kein Multiple Choice. In eine Schnellrunde passen nur Multiple-Choice-Aufgaben.`;
+    // Matura „2 aus 5“ (lib/matura-formate.ts): ein Tipp beantwortet die Aufgabe nicht, es sind zwei Kreuze
+    if (t.answer?.correctAll?.length || t.pick) return `Aufgabe ${i + 1} hat zwei richtige Antworten (2 aus 5). In eine Schnellrunde passt nur eine richtige Antwort.`;
     if (options.length > QUICK_ROUND_MAX_OPTIONS) return `Aufgabe ${i + 1} hat ${options.length} Antworten. In eine Schnellrunde passen höchstens vier.`;
     if (options.length < QUICK_ROUND_MIN_OPTIONS) return `Aufgabe ${i + 1} hat weniger als zwei Antworten.`;
   }
@@ -70,7 +73,9 @@ export const showsQuickRound = (mode: string | null | undefined, tasks: QuickRou
  * können alles ergeben und sind darum keine Zusage.
  */
 export function categoriesFitQuickRound(cats: Category[]): boolean {
-  return cats.length > 0 && cats.every((c) => c.formats.includes("mc"));
+  // die Matura-Formate passen nie: 1 aus 5 und 2 aus 5 haben fünf Antworten (2 aus 5 auch zwei richtige),
+  // Lückentext und Zuordnung sind kein Multiple Choice (lib/matura-formate.ts)
+  return cats.length > 0 && cats.every((c) => c.formats.includes("mc") && !istMaturaKategorie(c.key));
 }
 
 /** Kurzer deutscher Grund, warum es mit diesen Aufgabentypen keine Schnellrunde werden kann. */

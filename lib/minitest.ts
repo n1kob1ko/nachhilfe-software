@@ -106,8 +106,8 @@ function datenVon(raw: string): { figure?: unknown } {
 }
 
 const schwierigkeit = (d: string): Difficulty => ((DIFFICULTIES as readonly string[]).includes(d) ? (d as Difficulty) : "mittel");
-/** Antwortformate, in denen die Generatoren neue Varianten machen; alles andere als Rechnung. */
-const FORMAT: Partial<Record<TaskType, TaskType>> = { calc: "calc", mc: "mc", cloze: "cloze", rechenweg: "rechenweg", sachaufgabe: "sachaufgabe" };
+/** Antwortformate, in denen die Generatoren neue Varianten machen; alles andere als Rechnung. Zuordnung: Matura-Format (lib/mathe-matura.ts). */
+const FORMAT: Partial<Record<TaskType, TaskType>> = { calc: "calc", mc: "mc", cloze: "cloze", rechenweg: "rechenweg", sachaufgabe: "sachaufgabe", zuordnung: "zuordnung" };
 
 /**
  * Die Reihenfolge der Vorlagen: reihum über die Fähigkeiten (schwache zuerst), je Fähigkeit die falsch
@@ -157,8 +157,8 @@ function kopie(t: repo.Task): TaskDraft {
 export function minitestAufgaben(stoff: Stoff, anzahl: number, grade: number, seed?: number): TaskDraft[] {
   // schon bearbeitete Aufgaben; Aufgaben mit Bild haben oft denselben Text und zählen mit ihrem Bild (aufgabenSchluessel)
   const gesehen = new Set(
-    (db().prepare("SELECT DISTINCT t.prompt, t.data FROM attempts a JOIN tasks t ON t.id = a.task_id WHERE a.student_id = ?").all(stoff.unit.student_id) as { prompt: string; data: string }[]).map((r) =>
-      aufgabenSchluessel({ prompt: r.prompt, data: datenVon(r.data) }),
+    (db().prepare("SELECT DISTINCT t.prompt, t.data, t.category FROM attempts a JOIN tasks t ON t.id = a.task_id WHERE a.student_id = ?").all(stoff.unit.student_id) as { prompt: string; data: string; category: string | null }[]).map((r) =>
+      aufgabenSchluessel({ prompt: r.prompt, category: r.category, data: datenVon(r.data) }),
     ),
   );
   const schonDa = new Set<string>();

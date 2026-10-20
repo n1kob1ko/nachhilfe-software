@@ -357,6 +357,68 @@
   font-weight: 700;
 }
 
+/* Matura-Formate (lib/matura-formate.ts) wie auf dem Maturablatt: Tabellen mit dem Kästchen rechts,
+   die Lücken des Lückentexts heißen ① ②, die Zuordnung hat ein Kästchen für den Buchstaben */
+.ab-gap-nr {
+  display: inline-block;
+  min-width: 16mm;
+  margin: 0 0.6mm;
+  border-bottom: 0.3mm solid #000;
+  text-align: center;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.ab-matura {
+  border-collapse: collapse;
+  margin: 2mm 0 0;
+  break-inside: avoid;
+}
+.ab-matura th,
+.ab-matura td {
+  border: 0.3mm solid #000;
+  padding: 1.3mm 2.5mm;
+  vertical-align: middle;
+  text-align: left;
+}
+.ab-matura th {
+  font-weight: 700;
+  text-align: center;
+}
+.ab-matura td.ab-matura-box {
+  width: 9mm;
+  padding: 1mm;
+  text-align: center;
+}
+.ab-matura-box .ab-box {
+  transform: none;
+}
+.ab-matura-wahl {
+  width: min(100%, 150mm);
+}
+.ab-matura-an td {
+  font-weight: 600;
+}
+.ab-matura-paar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 2mm 6mm;
+  margin-top: 2mm;
+}
+.ab-matura-paar > .ab-matura {
+  flex: 1 1 60mm;
+  margin: 0;
+}
+.ab-matura-buchstabe {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 7mm;
+  height: 7mm;
+  border: 0.3mm solid #000;
+  font-weight: 700;
+}
+
 .ab-steps {
   list-style: none;
   margin: 1.5mm 0 0;

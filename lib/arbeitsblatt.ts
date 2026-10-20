@@ -8,6 +8,7 @@ import { zumAblesen } from "./figur";
 import { textBlocks } from "./math-format";
 import { ASPECT_SHORT, isAspect, readingSet, type ReadingText } from "./lesen";
 import { GAP, type TaskDraft } from "./tasks";
+import { maturaFormat, maturaLoesung } from "./matura-formate";
 import { mathAnswerText, unknownOf } from "./math-task";
 
 export type Space = "klein" | "mittel" | "gross";
@@ -207,13 +208,15 @@ export function planTask(
     ),
   );
   const options = task.data.options ?? [];
+  // Matura-Formate: die Antworten stehen wie auf dem Maturablatt untereinander, mit dem Kästchen rechts
+  const matura = maturaFormat(task);
   const plan: TaskPlan = {
     area: null,
     lines: 0,
     answerLabel: null,
     gapsMm,
     optionColumns:
-      options.length >= 4 && options.every((x) => x.length <= 22) ? 2 : 1,
+      !matura && options.length >= 4 && options.every((x) => x.length <= 22) ? 2 : 1,
     areaBeforeLastLine: false,
     parts: null,
   };
@@ -260,6 +263,12 @@ export function planTask(
 
   // Aufgabe mit Bild: Ablesen am Zahlenstrahl, im Koordinatensystem oder im Diagramm braucht kein oder nur ein kleines Feld
   const ablesen = zumAblesen(task.data.figure);
+  // Matura-Formate: angekreuzt wird in den Tabellen darunter (components/arbeitsblatt/Sheet.tsx), keine Antwortzeile;
+  // in Mathematik ein kleines Feld für Nebenrechnungen
+  if (matura) {
+    if (math && !plan.area && !ablesen) plan.area = area(SMALL_MM[o.space]);
+    return plan;
+  }
   if (options.length) {
     if (math && !plan.area && !ablesen) plan.area = area(SMALL_MM[o.space]);
     return plan;
@@ -403,6 +412,9 @@ export function shortAnswer(
   if (t.type === "rechenweg" || t.type === "sachaufgabe") return mathAnswerText(t);
   // Auswendig schreiben: die Lösung ist der Text selbst, er steht in data.passage
   if (t.type === "memorize") return t.data.passage?.trim() || null;
+  // Matura-Formate: beide richtigen Antworten, die Satzteile zu ① ②, die Buchstaben der Zuordnung
+  const matura = maturaLoesung(t);
+  if (matura) return matura;
   if (t.data.options && typeof t.answer.correct === "number")
     return `${String.fromCharCode(97 + t.answer.correct)}) ${t.data.options[t.answer.correct]}`;
   if (t.answer.steps)
