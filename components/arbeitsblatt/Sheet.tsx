@@ -10,6 +10,7 @@ import { isAspect, OPEN_ASPECTS, paragraphsOf, severalNoted } from "@/lib/lesen"
 import { GAP } from "@/lib/tasks";
 import { MathLine, RichText } from "./MathLine";
 import { Lines, WorkField } from "./WorkArea";
+import { PrintStory } from "./PrintStory";
 import { Marked } from "@/components/FixMarks";
 import { FigurBild, figurKopf } from "@/components/Figur";
 import { zumAblesen } from "@/lib/figur";
@@ -156,7 +157,16 @@ export function Passage({ text }: { text: string }) {
 }
 
 /** Leseverständnis: the text once, with its title and numbered paragraphs; it may run over several pages. */
-export function ReadingPassage({ title, text, teacher }: { title: string; text: string; teacher: boolean }) {
+export function ReadingPassage({ title, text, teacher, zeilen = false, leerzeilen = false }: { title: string; text: string; teacher: boolean; zeilen?: boolean; leerzeilen?: boolean }) {
+  // a story for a Textinterpretation: line by line as printed, a line number every 5 lines
+  if (zeilen)
+    return (
+      <section className="ab-lesetext" aria-label="Text">
+        {!teacher && <p className="ab-lese-hint">Lies den Text genau. Die Zahlen am Rand nennen die Zeilen: Zitiere mit Zeilenangabe, z. B. (Z. 12).</p>}
+        {title && <h2 className="ab-lese-title">{title}</h2>}
+        <PrintStory text={text} countBlank={leerzeilen} />
+      </section>
+    );
   return (
     <section className="ab-lesetext" aria-label="Lesetext">
       {!teacher && <p className="ab-lese-hint">Lies den Text genau. Beantworte dann die Fragen. Die Zahlen am Rand nennen die Abschnitte.</p>}
@@ -555,7 +565,7 @@ export function Sheet({ doc, o }: { doc: SheetDoc; o: SheetOptions }) {
   return (
     <article className="ab-sheet" lang="de">
       <Header doc={doc} o={o} teacher={teacher} />
-      {doc.reading && <ReadingPassage title={doc.reading.title} text={doc.reading.text} teacher={teacher} />}
+      {doc.reading && <ReadingPassage title={doc.reading.title} text={doc.reading.text} teacher={teacher} zeilen={doc.reading.zeilen} leerzeilen={doc.reading.leerzeilen} />}
       {doc.reading && <h2 className="ab-lese-fragen">Fragen zum Text</h2>}
       <div className="ab-tasks">
         {doc.tasks.map((t) => (

@@ -1202,6 +1202,233 @@ textarea.input {
   padding-top: 16px;
 }
 
+/* Textinterpretation (components/text/interpretation): the story with line numbers next to the writing */
+.ti-story {
+  font-size: 15px;
+  line-height: 1.6;
+}
+.ti-story-head {
+  margin-bottom: 10px;
+}
+.ti-story-kind {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.ti-story-title {
+  font-size: 19px;
+  line-height: 1.3;
+  font-weight: 650;
+}
+.ti-story-by {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.ti-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ti-line {
+  display: grid;
+  grid-template-columns: 2.4em minmax(0, 1fr);
+  column-gap: 0.6em;
+}
+.ti-nr {
+  text-align: right;
+  font-size: 0.8em;
+  line-height: 2;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+.ti-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  /* a line that does not fit wraps indented, so the printed lines stay visible */
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+.ti-line:hover .ti-text {
+  background: var(--panel);
+}
+.ti-box {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  padding: 10px 16px;
+}
+.ti-summary {
+  display: flex;
+  min-height: 44px;
+  cursor: pointer;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.ti-badge {
+  display: inline-flex;
+  min-width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--amber-wash);
+  color: var(--amber);
+  font-size: 12px;
+}
+.ti-plan {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+}
+.ti-plan-part {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 8px;
+  font-size: 14px;
+}
+.ti-plan-nr {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+.ti-plan-title {
+  display: block;
+  font-weight: 600;
+}
+.ti-plan-words {
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.ti-plan-hint {
+  display: block;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.ti-progress {
+  padding: 8px 4px 2px;
+  background: var(--paper);
+}
+.ti-progress-bar {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--panel);
+  overflow: hidden;
+}
+.ti-progress-range {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--green-wash);
+}
+.ti-progress-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+.ti-progress[data-state="im-ziel"] .ti-progress-fill {
+  background: var(--green);
+}
+.ti-progress-text {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.tx-shell.tx-interp {
+  max-width: 1320px;
+}
+.tx-interp {
+  container-type: inline-size;
+}
+.tx-focus.tx-interp {
+  padding-left: max(16px, calc((100vw - 1320px) / 2));
+  padding-right: max(16px, calc((100vw - 1320px) / 2));
+}
+/* the bar is as wide as the text and opaque, so nothing shows beside the tabs while scrolling (52px pill + 6px) */
+.ti-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 7;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  background: var(--paper);
+}
+.ti-tabs-pill {
+  display: flex;
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--panel);
+}
+.ti-grid[data-pane="schreiben"] .ti-story-col,
+.ti-grid[data-pane="text"] .ti-main {
+  display: none;
+}
+.ti-story-col {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  padding: 16px 14px 18px 6px;
+}
+.ti-to-write {
+  margin: 14px 0 0 14px;
+}
+.ti-main .tx-sticky {
+  top: 58px;
+}
+.ti-planbox {
+  margin-bottom: 10px;
+}
+@container (min-width: 900px) {
+  .ti-tabs,
+  .ti-to-write {
+    display: none;
+  }
+  .ti-grid {
+    display: grid;
+    grid-template-columns: minmax(320px, 44%) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .ti-grid[data-pane] .ti-story-col,
+  .ti-grid[data-pane] .ti-main {
+    display: block;
+  }
+  .ti-story-col {
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+  }
+  .ti-main .tx-sticky {
+    top: 0;
+  }
+  .ti-plan {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 16px;
+  }
+}
+
 /* Fehler korrigieren: corrected words green, words that are still or newly wrong red */
 .fx-fixed {
   background: var(--green-wash);

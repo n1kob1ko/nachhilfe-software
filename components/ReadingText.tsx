@@ -1,10 +1,25 @@
 import { paragraphsOf, wordCount } from "@/lib/lesen";
+import { lastLine, numberedLines } from "@/lib/textinterpretation";
+import { NumberedStory } from "./text/interpretation/NumberedStory";
 
 /**
  * A reading text the way a school sheet shows it: the title, then the paragraphs with their number in the
  * margin, so questions ("im 3. Abschnitt") and Belege can point at them.
  */
-export function ReadingTextView({ title, text, size = "md", meta = false, lang = "de" }: { title: string; text: string; size?: "md" | "lg"; meta?: boolean; lang?: string }) {
+export function ReadingTextView({ title, text, size = "md", meta = false, lang = "de", zeilen = false, leerzeilen = false }: { title: string; text: string; size?: "md" | "lg"; meta?: boolean; lang?: string; zeilen?: boolean; leerzeilen?: boolean }) {
+  // a story for a Textinterpretation: line by line as printed, with line numbers
+  if (zeilen)
+    return (
+      <article className="lesetext" lang={lang}>
+        {title && <h2 className={`mb-3 font-semibold tracking-[-0.01em] ${size === "lg" ? "text-[22px]" : "text-[19px]"}`}>{title}</h2>}
+        {meta && (
+          <p className="num mb-3 text-[12.5px] text-ink-3">
+            {wordCount(text)} Wörter · {lastLine(numberedLines(text, leerzeilen))} Zeilen
+          </p>
+        )}
+        <NumberedStory text={text} countBlank={leerzeilen} className={size === "lg" ? "text-[17px]" : ""} />
+      </article>
+    );
   const ps = paragraphsOf(text);
   return (
     <article className="lesetext" lang={lang}>

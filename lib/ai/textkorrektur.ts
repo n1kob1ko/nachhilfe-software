@@ -63,7 +63,19 @@ export type CorrectionRequest = {
   skills: { id: string; name: string }[];
   /** Bildgeschichte: number of pictures and the teacher's short descriptions (names masked); the pictures themselves are never sent */
   pictures?: { count: number; captions: string[] } | null;
+  /** Textinterpretation: what the interpreted story is (title, author, kind, number of lines); the story itself is never sent */
+  source?: { title: string; author: string; year: string; kind: string; lines: number } | null;
 };
+
+/** What the KI may say about the story a Textinterpretation is about: it does not have it. */
+export function sourceLines(s: CorrectionRequest["source"]): string[] {
+  if (!s) return [];
+  const what = [`„${s.title}“`, s.author ? `von ${s.author}` : "", s.year ? `(${s.year})` : ""].filter(Boolean).join(" ");
+  return [
+    `Interpretierter Text: ${s.kind} ${what}, ${s.lines} Zeilen.`,
+    "Der interpretierte Text liegt dir nicht vor: Prüfe Zitate und Zeilenangaben nicht auf Richtigkeit und behaupte nichts über seinen Inhalt. Markiere nur, wenn ein Zitat keine Anführungszeichen oder keine Zeilenangabe hat. Der Name des Autors oder der Autorin und Figurennamen sind kein Fehler.",
+  ];
+}
 
 /** What the KI may say about the pictures: only what the descriptions say. */
 export function picturesLines(p: CorrectionRequest["pictures"]): string[] {
@@ -89,6 +101,7 @@ export function headerLines(r: CorrectionRequest): string[] {
     `Anforderungen der Textsorte: ${kindCriteria(r.kind)}`,
     r.task ? `Aufgabenstellung: ${r.task}` : "Aufgabenstellung: keine angegeben",
     ...picturesLines(r.pictures),
+    ...sourceLines(r.source),
     `Höchstens ${r.level.maxStyle} Stilvorschläge.`,
     english ? "Der Text ist englisch: quote und replacement auf Englisch, explanation auf Deutsch." : "",
     "",
