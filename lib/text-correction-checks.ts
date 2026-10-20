@@ -118,6 +118,45 @@ export function comparable(s: string): string {
     .trim();
 }
 
+// ---------- the kind of quotation marks ----------
+
+/** Double and single quotation marks: the straight one a keyboard types and the typographic ones („…“ »…« ‚…‘ ’). */
+const QUOTE_KINDS = [
+  { plain: '"', typo: /[„“”«»]/, all: /[„“”«»]/g },
+  { plain: "'", typo: /[‚‘’‹›]/, all: /[‚‘’‹›]/g },
+] as const;
+const plainQuotes = (s: string) => QUOTE_KINDS.reduce((out, k) => out.replace(k.all, k.plain), s);
+
+/** Two wordings that differ in the kind of quotation marks only ("Haus" and „Haus“, 'Haus' and ‚Haus‘): no correction. */
+export function onlyQuotesDiffer(a: string, b: string): boolean {
+  return a !== b && plainQuotes(a) === plainQuotes(b);
+}
+
+/**
+ * A replacement with the student's kind of quotation marks. Straight ones ("…") are no error (niko, 2026-10-20): where
+ * the student types them, the KI's „…“ (and ‚…‘, ’ for ') become straight ones again. What counts is the place; where it
+ * has no quotation marks of that kind, the whole text (`text`). Where the student writes „…“ or mixes both, nothing changes.
+ */
+export function keepQuoteStyle(place: string, replacement: string, text: string = place): string {
+  let out = replacement;
+  for (const k of QUOTE_KINDS) {
+    if (!k.typo.test(out)) continue;
+    const straightOnly = (s: string) => s.includes(k.plain) && !k.typo.test(s);
+    const atPlace = place.includes(k.plain) || k.typo.test(place);
+    if (atPlace ? straightOnly(place) : straightOnly(text)) out = out.replace(k.all, k.plain);
+  }
+  return out;
+}
+
+/**
+ * A hint of the KI about the kind of quotation marks only („Verwende die deutschen Anführungszeichen unten und oben.“).
+ * Straight ones are no error, so such a hint is left out; one about missing quotation marks stays.
+ */
+export function quoteStyleHint(text: string): boolean {
+  if (!/Anführungszeichen|Gänsefüßchen/i.test(text) || /fehl|vergess|ohne Anführungszeichen|keine Anführungszeichen/i.test(text)) return false;
+  return /gerade|typografisch|unten|oben|deutsche\w* Anführungszeichen|englische\w* Anführungszeichen|Art der Anführungszeichen|Form der Anführungszeichen/i.test(text);
+}
+
 // ---------- does a replacement fit its place? ----------
 
 /** Placeholders the app or a filter writes for the KI („[Name]“, „[PERSON_NAME]“) and the marks of the second check's text (⟦ ⟧): never part of a student's text. */
