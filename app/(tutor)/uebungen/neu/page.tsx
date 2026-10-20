@@ -9,10 +9,12 @@ import { parseSettings, studentContext } from "@/lib/builder";
 import { getMaterial } from "@/lib/current-material";
 import { categoryLabel } from "@/lib/curriculum";
 import { getSkill, listSkills, listStudents, listTemplates } from "@/lib/repo";
+import { EIGENE_VOKABELN } from "@/lib/vokabeln";
+import { listenVon } from "@/lib/vokabellisten";
 
 export const metadata = { title: "Übung erstellen" };
 
-export default async function NewWorksheet({ searchParams }: { searchParams: Promise<{ schueler?: string; skill?: string; skills?: string; anzahl?: string; stoff?: string }> }) {
+export default async function NewWorksheet({ searchParams }: { searchParams: Promise<{ schueler?: string; skill?: string; skills?: string; anzahl?: string; stoff?: string; vokabeln?: string }> }) {
   const sp = await searchParams;
   const ai = aiEnabled();
   const studentId = Number(sp.schueler) || null;
@@ -24,6 +26,9 @@ export default async function NewWorksheet({ searchParams }: { searchParams: Pro
   const material = sp.stoff ? getMaterial(Number(sp.stoff)) : null;
   const stoff = material && material.student_id === studentId ? material : null;
   const templates = listTemplates();
+  // eigene Vokabellisten des Schülers; ?vokabeln=<id> oder ?vokabeln=alle wählt sie gleich aus
+  const vokabelListen = ctx ? listenVon(ctx.studentId).map(({ id, title, woerter }) => ({ id, title, woerter })) : [];
+  const preListen = sp.vokabeln === "alle" ? vokabelListen.map((l) => l.id) : vokabelListen.filter((l) => l.id === Number(sp.vokabeln)).map((l) => l.id);
   return (
     <>
       <PageHeader
@@ -76,13 +81,16 @@ export default async function NewWorksheet({ searchParams }: { searchParams: Pro
         </details>
       )}
       <BuilderForm
-        key={`${studentId ?? 0}:${stoff?.id ?? ""}`}
+        key={`${studentId ?? 0}:${stoff?.id ?? ""}:${preListen.join(",")}`}
         skills={listSkills().filter((s) => (s.status ?? "aktiv") === "aktiv")}
         students={listStudents().map(({ id, name }) => ({ id, name }))}
         ctx={ctx}
         aiEnabled={ai}
+        vokabelListen={vokabelListen}
         preset={
-          preSkills.length
+          preListen.length
+            ? { skillIds: [EIGENE_VOKABELN], subject: "Englisch", count: preCount, vokabelListen: preListen }
+            : preSkills.length
             ? { skillIds: preSkills.map((x) => x.id), subject: preSkills[0].subject, count: preCount }
             : stoff
               ? { suggestion: `stoff:${stoff.id}`, subject: stoff.subject, count: preCount }

@@ -5,6 +5,7 @@ import { checkFix, type FixLabel } from "./fix-text";
 import { checkMemorize, mistakeLabel } from "./memorize";
 import type { PartSolution, PartView, ResultForm } from "./math-check";
 import { gradeMathTask } from "./math-task";
+import { pruefeVokabel, type VokabelSpec } from "./vokabeln-pruefen";
 
 export type AnswerSpec = {
   /** Multiple choice / reading: index of the correct option. */
@@ -42,6 +43,11 @@ export type AnswerSpec = {
   parts?: PartSolution[];
   /** Leseverständnis: where in the reading text the answer stands (paragraph from 1, quoted word for word). */
   evidence?: { paragraph: number; quote: string }[];
+  /**
+   * Vokabeltrainer (lib/vokabeln.ts): a word of a list, written or in the gap of its sentence. The right
+   * answers stay in accepted or blanks; this says how they are compared (lib/vokabeln-pruefen.ts).
+   */
+  vokabel?: VokabelSpec;
 };
 
 export type TaskDraft = {
@@ -80,6 +86,8 @@ export type TaskDraft = {
     /** Artikel-Aufgaben: das Genus des Nomens (m = maskulin, f = feminin, n = neutral), damit die Oberfläche
      *  es färben kann (D10, components/genus.ts). Die Farbe ist nie das einzige Signal. */
     genus?: "m" | "f" | "n";
+    /** Vokabeltrainer: a key of the asked word that does not show it (lib/vokabeln.ts wortSchluessel); one word once on a sheet. */
+    wort?: string;
     /** Aufgabe mit Bild: Zahlenstrahl, Koordinatensystem oder Figur (lib/figur.ts). Die Antwort steht
      *  trotzdem in answer; das Bild enthält die Zahlen, aus denen sie berechnet wurde. Schülerinnen und
      *  Schüler bekommen nur das fertige SVG ohne Lösung, nie diese Angaben. */
@@ -242,6 +250,8 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
     ];
     return { correct: false, errorLabel: first?.label || null, errorType: first?.errorType ?? null, feedback: parts.filter(Boolean).join(" ") };
   }
+  // Vokabeln: Artikel, „to“, britisch/amerikanisch und Alternativen zählen; was nicht in der Liste steht, bewertet die Lehrkraft
+  if (a.vokabel && (a.accepted?.length || a.blanks?.length === 1)) return pruefeVokabel(task, given);
   if (a.blanks) {
     let values: string[] = [];
     try {

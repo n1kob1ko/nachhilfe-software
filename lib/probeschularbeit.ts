@@ -23,6 +23,8 @@ import { getSetting, setSetting } from "./lehrplan";
 import * as repo from "./repo";
 import { klassenLabel, schulstufe } from "./school";
 import type { TaskDraft } from "./tasks";
+import { EIGENE_VOKABELN } from "./vokabeln";
+import { eigeneFuerPlaetze } from "./vokabellisten";
 import { wortartenFor } from "./wortarten";
 import {
   ANZAHL,
@@ -231,11 +233,17 @@ export async function erstelleProbeschularbeit(input: ProbeInput): Promise<{ wor
   );
   const benutzt = new Set<number>();
   const drafts: (TaskDraft | null)[] = plan.map((p) => libraryTask(test.subject, p, benutzt, gesehen));
+  // Vokabeln aus den eigenen Listen des Schülers, nie von der KI
+  const eigene = plan.map((p, i) => ({ p, i })).filter(({ p, i }) => !drafts[i] && p.skillId === EIGENE_VOKABELN);
+  const vokabelMix = mixFor(test.subject, EIGENE_VOKABELN);
+  eigeneFuerPlaetze(student.id, null, eigene.map(({ p }, k) => ({ category: vokabelMix[k % vokabelMix.length], difficulty: p.difficulty })), { avoid: gesehen }).forEach((t, k) => {
+    if (t) drafts[eigene[k].i] = t;
+  });
 
   // Fähigkeiten ohne Generator: von der KI, eine Anfrage für alle
   let aiError: string | undefined;
   let source: repo.Worksheet["source"] = "generator";
-  const fuerKi = plan.map((p, i) => ({ p, i })).filter(({ p, i }) => !drafts[i] && !hasBuiltInGenerator(p.skillId));
+  const fuerKi = plan.map((p, i) => ({ p, i })).filter(({ p, i }) => !drafts[i] && !hasBuiltInGenerator(p.skillId) && p.skillId !== EIGENE_VOKABELN);
   if (fuerKi.length && (input.useAI ?? true) && aiEnabled()) {
     try {
       const paare = [...new Map(fuerKi.map(({ p }) => [`${p.skillId}|${p.difficulty}`, p])).values()];

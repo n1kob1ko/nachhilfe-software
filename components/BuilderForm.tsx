@@ -1,6 +1,7 @@
 "use client";
 
-import { Lightbulb, Search, Sparkles, Wand2, Zap } from "lucide-react";
+import { Lightbulb, ListPlus, Search, Sparkles, Wand2, Zap } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
@@ -11,12 +12,15 @@ import type { StudentContext, Suggestion } from "@/lib/builder";
 import { categoriesFor, DIFFICULTIES, difficultyFor } from "@/lib/curriculum";
 import { categoriesFitQuickRound, QUICK_ROUND_CATEGORY_REASON } from "@/lib/quick-round";
 import { klassenLabel, schulstufe } from "@/lib/school";
+import { EIGENE_VOKABELN } from "@/lib/vokabeln-pruefen";
 import { UNTERARTEN_SKILL, WORTARTEN, WORTARTEN_SKILL, WORTART_PLURAL, wortartenFor, wortartSkill, type Wortart } from "@/lib/wortarten";
 
 type Skill = { id: string; subject: string; area: string; name: string; grade_min: number; grade_max: number; parent_id: string | null };
 type Student = { id: number; name: string };
-/** `suggestion`: key of the suggestion to preselect (e.g. stoff:<id> from an Aktueller-Stoff card). */
-export type BuilderPreset = { skillIds?: string[]; subject?: string; difficulty?: string; count?: number; categories?: string[]; suggestion?: string };
+/** An own word list of the student (lib/vokabellisten.ts). */
+type Liste = { id: number; title: string; woerter: number };
+/** `suggestion`: key of the suggestion to preselect (e.g. stoff:<id> from an Aktueller-Stoff card). `vokabelListen`: own lists to preselect. */
+export type BuilderPreset = { skillIds?: string[]; subject?: string; difficulty?: string; count?: number; categories?: string[]; suggestion?: string; vokabelListen?: number[] };
 
 const AUTO = "automatisch";
 const COUNTS = [5, 10, 15, 20];
@@ -26,7 +30,21 @@ const chip =
   "cursor-pointer rounded-lg border border-line-strong bg-surface px-3 py-1.5 text-[14px] transition-colors hover:border-ink-3 has-checked:border-accent has-checked:bg-accent-wash has-checked:text-accent has-focus-visible:outline-2 has-focus-visible:outline-accent";
 const pct = (m: number | null | undefined) => (m == null ? null : `${Math.round(m * 100)} %`);
 
-export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skills: Skill[]; students: Student[]; ctx: StudentContext | null; aiEnabled: boolean; preset?: BuilderPreset }) {
+export function BuilderForm({
+  skills,
+  students,
+  ctx,
+  aiEnabled,
+  preset,
+  vokabelListen = [],
+}: {
+  skills: Skill[];
+  students: Student[];
+  ctx: StudentContext | null;
+  aiEnabled: boolean;
+  preset?: BuilderPreset;
+  vokabelListen?: Liste[];
+}) {
   const router = useRouter();
   const [state, action] = useActionState<ActionResult, FormData>(createDraftAction, null);
   const subjects = useMemo(() => [...new Set(skills.map((s) => s.subject))], [skills]);
@@ -37,6 +55,8 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
   const [subject, setSubject] = useState(preset?.subject ?? firstSkill?.subject ?? ctx?.subjects.find((x) => subjects.includes(x)) ?? subjects[0]);
   const [level, setLevel] = useState({ type: ctx?.schoolType || "Mittelschule", klasse: ctx?.klasse ?? 2 });
   const [selected, setSelected] = useState<string[]>(preset?.skillIds ?? first?.skillIds ?? []);
+  // eigene Vokabellisten: eine gewählte Liste bringt die Fähigkeit „Vokabeln aus eigenen Listen“ mit
+  const [listen, setListen] = useState<number[]>(preset?.vokabelListen ?? (selected.includes(EIGENE_VOKABELN) ? vokabelListen.map((l) => l.id) : []));
   const [applied, setApplied] = useState<string | null>(first?.key ?? null);
   const [difficulty, setDifficulty] = useState<string>(preset?.difficulty ?? (ctx ? AUTO : "mittel"));
   const [count, setCount] = useState(preset?.count ?? 10);
@@ -64,7 +84,7 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
   const areas = useMemo(() => {
     const q = query.trim().toLowerCase();
     const m = new Map<string, { skill: Skill; subs: Skill[] }[]>();
-    for (const s of skills.filter((x) => x.subject === subject && !x.parent_id)) {
+    for (const s of skills.filter((x) => x.subject === subject && !x.parent_id && x.id !== EIGENE_VOKABELN)) {
       const subs = skills.filter((x) => x.parent_id === s.id);
       if (q && ![s, ...subs].some((x) => `${x.area} ${x.name}`.toLowerCase().includes(q))) continue;
       m.set(s.area, [...(m.get(s.area) ?? []), { skill: s, subs }]);
@@ -77,10 +97,17 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
     setApplied(null);
     setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
   };
+  const toggleListe = (id: number) => {
+    setApplied(null);
+    const next = listen.includes(id) ? listen.filter((x) => x !== id) : [...listen, id];
+    setListen(next);
+    setSelected((cur) => (next.length ? (cur.includes(EIGENE_VOKABELN) ? cur : [...cur, EIGENE_VOKABELN]) : cur.filter((x) => x !== EIGENE_VOKABELN)));
+  };
   const apply = (sg: Suggestion) => {
     const sk = byId.get(sg.skillIds[0]);
     if (sk && sk.subject !== subject) setSubject(sk.subject);
     setSelected(sg.skillIds);
+    setListen(sg.skillIds.includes(EIGENE_VOKABELN) ? vokabelListen.map((l) => l.id) : []);
     setCats(sg.categories);
     setDifficulty(sg.difficulty);
     setApplied(sg.key);
@@ -88,12 +115,14 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
   const changeSubject = (s: string) => {
     setSubject(s);
     setSelected([]);
+    setListen([]);
     setCats([]);
     setApplied(null);
   };
 
   const chosen = selected.map((id) => byId.get(id)).filter((x): x is Skill => Boolean(x));
-  const labelOf = (s: Skill) => (s.parent_id ? `${byId.get(s.parent_id)?.name} › ${s.name}` : s.name);
+  const listTitles = vokabelListen.filter((l) => listen.includes(l.id)).map((l) => l.title);
+  const labelOf = (s: Skill) => (s.id === EIGENE_VOKABELN && listTitles.length ? `Vokabeln: ${listTitles.join(", ")}` : s.parent_id ? `${byId.get(s.parent_id)?.name} › ${s.name}` : s.name);
   const levelText = klassenLabel(level.type, level.klasse);
   const request = chosen.length
     ? `Erstelle ${count} Übungen${ctx ? ` für ${ctx.first}` : ""}, ${levelText}, ${subject}: ${chosen.map(labelOf).join(", ")}.`
@@ -105,6 +134,9 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
       <input type="hidden" name="count" value={count} />
       {selected.map((id) => (
         <input key={id} type="hidden" name="skill_ids" value={id} />
+      ))}
+      {listen.map((id) => (
+        <input key={id} type="hidden" name="vokabel_listen" value={id} />
       ))}
 
       <ol className="grid gap-8">
@@ -170,6 +202,7 @@ export function BuilderForm({ skills, students, ctx, aiEnabled, preset }: { skil
 
         {/* 3 · Thema und Fähigkeit */}
         <Step n={3} title="Thema und Fähigkeit" note="Jede Aufgabe gehört zu einer genauen Fähigkeit. Teilfähigkeiten zählen auch für die übergeordnete Fähigkeit.">
+          {subject === "Englisch" && ctx && <EigeneListen first={ctx.first} studentId={ctx.studentId} listen={vokabelListen} chosen={listen} onToggle={toggleListe} />}
           <div className="relative mb-3 max-w-[360px]">
             <Search size={15} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-3" aria-hidden />
             <input className="input" style={{ paddingLeft: 36 }} type="search" placeholder="Thema oder Fähigkeit suchen" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Fähigkeit suchen" />
@@ -421,6 +454,33 @@ function WortartenChoice({ selected, setSelected, known, grade, ctx }: { selecte
         {wa.chosen
           ? "Nur diese Wortarten kommen in Aufgaben, Antworten und Lösungen vor."
           : `Grundeinstellung für die ${grade}. Schulstufe${fromStudent ? ", dazu Wortarten aus dem aktuellen Stoff und dem Lernverlauf" : ""}. Tippe an, um Wortarten an- oder abzuwählen.`}
+      </p>
+    </div>
+  );
+}
+
+/** Eigene Vokabellisten des Schülers: die Aufgaben kommen nur aus den gewählten Listen, ohne KI. */
+function EigeneListen({ first, studentId, listen, chosen, onToggle }: { first: string; studentId: number; listen: Liste[]; chosen: number[]; onToggle: (id: number) => void }) {
+  return (
+    <div className="panel mb-4 px-4 py-3" data-testid="eigene-vokabellisten">
+      <p className="label mb-2">Eigene Vokabellisten von {first}</p>
+      {listen.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5">
+          {listen.map((l) => (
+            <label key={l.id} className={chip}>
+              <input type="checkbox" checked={chosen.includes(l.id)} onChange={() => onToggle(l.id)} className="sr-only" />
+              {l.title} <span className="text-[12.5px] opacity-75">· {l.woerter} {l.woerter === 1 ? "Wort" : "Wörter"}</span>
+            </label>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[13.5px] text-ink-2">Für {first} gibt es noch keine Liste.</p>
+      )}
+      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-ink-2">
+        <span>Die Aufgaben kommen nur aus den gewählten Listen, ohne KI. Fertige Themenlisten findest du unten unter Vocabulary.</span>
+        <Link href={`/schueler/${studentId}/vokabeln/neu`} className="inline-flex items-center gap-1 font-semibold text-accent hover:underline">
+          <ListPlus size={14} aria-hidden /> Neue Liste
+        </Link>
       </p>
     </div>
   );

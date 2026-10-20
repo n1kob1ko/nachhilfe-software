@@ -4,6 +4,7 @@ import { checkTask } from "./builder";
 import { db } from "./db";
 import { DIAGNOSE_MAX, planDiagnosis, type DiagnosisItem } from "./diagnose-plan";
 import { generateBuiltIn, hasBuiltInGenerator } from "./generators";
+import { EIGENE_VOKABELN } from "./vokabeln-pruefen";
 import { wortartenFor } from "./wortarten";
 import { browseSkills, prerequisitesOf } from "./lehrplan";
 import { levelWeight, STATUS_THRESHOLDS, taskScore } from "./mastery";
@@ -26,7 +27,7 @@ export { DIAGNOSE_MAX, DIAGNOSE_MIN, planDiagnosis, type DiagnosisItem } from ".
 
 /** Main skills of the chosen topics, spread over the topics in curriculum order, at most ten. */
 export function diagnosisSkills(o: { subject: string; branch: SchoolBranch | null; klasse: number | null; topics: string[] }): repo.Skill[] {
-  const scope = browseSkills({ subject: o.subject, branch: o.branch, klasse: o.klasse }).filter((s) => !s.parent_id);
+  const scope = browseSkills({ subject: o.subject, branch: o.branch, klasse: o.klasse }).filter((s) => !s.parent_id && s.id !== EIGENE_VOKABELN);
   const topics = o.topics.length ? o.topics : [...new Set(scope.map((s) => s.area))];
   const lists = topics.map((t) => scope.filter((s) => s.area === t)).filter((l) => l.length);
   const out: repo.Skill[] = [];

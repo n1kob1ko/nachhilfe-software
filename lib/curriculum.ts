@@ -133,6 +133,9 @@ const MIX_BY_SKILL: [RegExp, string[]][] = [
   [/^deutsch\.wortarten\./, ["wortarten", "lueckentext", "wortarten", "korrigieren"]],
   [/^deutsch\.text\./, ["textverstaendnis", "offen"]],
   [/^englisch\.(tenses|grammar)\./, ["gap", "korrigieren", "offen", "grammar"]],
+  // Vokabeln (lib/vokabeln.ts): in der Volksschule mehr Auswahl, eigene Listen vor allem schreiben
+  [/^englisch\.vs\.vocab/, ["mc", "vocabulary", "gap"]],
+  [/^englisch\.vocab\.eigene$/, ["vocabulary", "gap", "translation", "mc"]],
   [/^englisch\.vocab/, ["vocabulary", "gap", "translation"]],
   [/^englisch\.reading/, ["reading", "offen"]],
   [/^englisch\.translation/, ["translation", "korrigieren", "offen"]],

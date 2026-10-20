@@ -1726,6 +1726,71 @@
    "Vereinbarungen treffen"
   ],
   [
+   "englisch.vocab.freizeit",
+   "MS-ENG-1-B3-K3",
+   "Hobbys"
+  ],
+  [
+   "englisch.vocab.freizeit",
+   "MS-ENG-1-B4-K1",
+   "Hobbys"
+  ],
+  [
+   "englisch.vocab.tagesablauf",
+   "MS-ENG-1-B3-K3",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.vocab.tagesablauf",
+   "MS-ENG-1-B4-K1",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.vocab.wohnen",
+   "MS-ENG-2-B4-K1",
+   "persönlichen Lebensumfeldes"
+  ],
+  [
+   "englisch.vocab.essen",
+   "MS-ENG-2-B3-K2",
+   "in Alltagssituationen"
+  ],
+  [
+   "englisch.vocab.kleidung",
+   "MS-ENG-2-B3-K2",
+   "in Alltagssituationen"
+  ],
+  [
+   "englisch.vocab.stadt",
+   "MS-ENG-2-B3-K3",
+   "Orte"
+  ],
+  [
+   "englisch.vocab.stadt",
+   "MS-ENG-2-B4-K1",
+   "Orte"
+  ],
+  [
+   "englisch.vocab.gefuehle",
+   "MS-ENG-2-B3-K3",
+   "Gefühle"
+  ],
+  [
+   "englisch.vocab.gefuehle",
+   "MS-ENG-3-B2-K2",
+   "Wünsche und Gefühle verstehen"
+  ],
+  [
+   "englisch.vocab.gefuehle",
+   "MS-ENG-4-B4-K2",
+   "Gefühle beschreiben"
+  ],
+  [
+   "englisch.vocab.medien",
+   "MS-ENG-4-B4-K1",
+   "Postings"
+  ],
+  [
    "englisch.reading.skimming-scanning",
    "MS-ENG-2-B2-K2",
    "wichtige Informationen entnehmen"
@@ -5035,6 +5100,81 @@
    "englisch.vocab.uhrzeit-datum",
    "AHS-ENG-2-B3-K2",
    "Vereinbarungen treffen"
+  ],
+  [
+   "englisch.vocab.freizeit",
+   "AHS-ENG-1-B3-K3",
+   "Hobbys"
+  ],
+  [
+   "englisch.vocab.freizeit",
+   "AHS-ENG-1-B4-K1",
+   "Hobbys"
+  ],
+  [
+   "englisch.vocab.tagesablauf",
+   "AHS-ENG-1-B3-K3",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.vocab.tagesablauf",
+   "AHS-ENG-1-B4-K1",
+   "Tagesablauf"
+  ],
+  [
+   "englisch.vocab.wohnen",
+   "AHS-ENG-2-B4-K1",
+   "persönlichen Lebensumfeldes"
+  ],
+  [
+   "englisch.vocab.essen",
+   "AHS-ENG-2-B3-K2",
+   "in Alltagssituationen"
+  ],
+  [
+   "englisch.vocab.kleidung",
+   "AHS-ENG-2-B3-K2",
+   "in Alltagssituationen"
+  ],
+  [
+   "englisch.vocab.stadt",
+   "AHS-ENG-2-B3-K3",
+   "Orte"
+  ],
+  [
+   "englisch.vocab.stadt",
+   "AHS-ENG-2-B4-K1",
+   "Orte"
+  ],
+  [
+   "englisch.vocab.gefuehle",
+   "AHS-ENG-2-B3-K3",
+   "Gefühle"
+  ],
+  [
+   "englisch.vocab.gefuehle",
+   "AHS-ENG-3-B2-K2",
+   "Wünsche und Gefühle verstehen"
+  ],
+  [
+   "englisch.vocab.gefuehle",
+   "AHS-ENG-4-B4-K2",
+   "Gefühle beschreiben"
+  ],
+  [
+   "englisch.vocab.medien",
+   "AHS-ENG-4-B4-K1",
+   "Postings"
+  ],
+  [
+   "englisch.vocab.reisen",
+   "AHS-ENG-5-T3-K1",
+   "Reisen"
+  ],
+  [
+   "englisch.vocab.reisen",
+   "AHS-ENG-5-T4-K2",
+   "Reise"
   ],
   [
    "englisch.reading.skimming-scanning",
@@ -10248,6 +10388,36 @@
    "englisch.vs.vocab.zeit",
    "VS-ENG-3-B4-K1",
    "Schriftbild bewusst wahrnehmen"
+  ],
+  [
+   "englisch.vs.vocab.koerper-kleidung",
+   "VS-ENG-1-B1-K1",
+   "Wörter und kurze Äußerungen"
+  ],
+  [
+   "englisch.vs.vocab.koerper-kleidung",
+   "VS-ENG-3-B4-K2",
+   "mit einzelnen Wörtern ergänzen"
+  ],
+  [
+   "englisch.vs.vocab.essen",
+   "VS-ENG-2-B3-K1",
+   "kurze Wörter und Phrasen"
+  ],
+  [
+   "englisch.vs.vocab.essen",
+   "VS-ENG-3-B4-K2",
+   "mit einzelnen Wörtern ergänzen"
+  ],
+  [
+   "englisch.vs.vocab.zuhause",
+   "VS-ENG-2-B2-K2",
+   "sehr kurze Informationen geben"
+  ],
+  [
+   "englisch.vs.vocab.zuhause",
+   "VS-ENG-4-B4-K2",
+   "mit einzelnen Wörtern und Phrasen ergänzen"
   ],
   [
    "englisch.vs.listening.verstehen",

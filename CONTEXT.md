@@ -177,6 +177,13 @@ und Englisch von der Volksschule bis zur Oberstufe). Nicht dasselbe wie die Fehl
 (`lib/error-types.ts`).
 _Avoid_: Fehlerkatalog, Misconceptions, häufige Fehler
 
+**Vokabelliste**:
+Englische Wörter mit ihrer deutschen Bedeutung, ein Paar pro Zeile („mobile phone; cell phone = das Handy |
+My mobile phone is in my bag.“). Eine **Themenliste** gehört zu einer Vokabel-**Fähigkeit** und kommt mit der
+App (`lib/vokabeln-themen.ts`); eine **eigene Liste** schreibt der Lehrer für einen Schüler (`vokabellisten`,
+Fähigkeit „Vokabeln aus eigenen Listen“). Aus beiden entstehen die Aufgaben ohne KI (`lib/vokabeln.ts`).
+_Avoid_: Wortliste, Vokabelheft, Wordlist, Deck
+
 **Schnellrunde**:
 Eine Übung im Schülermodus, aber im Durchlauf: Multiple Choice mit höchstens vier
 Antworten, ein Tipp, kurze Rückmeldung, automatisch die nächste Aufgabe; Anfang

@@ -658,6 +658,30 @@
   [
    "englisch.vs.writing.woerter",
    "VS-ENG-4-B4-K2"
+  ],
+  [
+   "englisch.vs.vocab.koerper-kleidung",
+   "VS-ENG-1-B1-K1"
+  ],
+  [
+   "englisch.vs.vocab.koerper-kleidung",
+   "VS-ENG-3-B4-K2"
+  ],
+  [
+   "englisch.vs.vocab.essen",
+   "VS-ENG-2-B3-K1"
+  ],
+  [
+   "englisch.vs.vocab.essen",
+   "VS-ENG-3-B4-K2"
+  ],
+  [
+   "englisch.vs.vocab.zuhause",
+   "VS-ENG-2-B2-K2"
+  ],
+  [
+   "englisch.vs.vocab.zuhause",
+   "VS-ENG-4-B4-K2"
   ]
  ]
 }
