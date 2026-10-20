@@ -11,6 +11,7 @@ import { runningUnitForStudent, touchUnit } from "./units";
 import * as repo from "./repo";
 import { suggestErrorType } from "./error-types";
 import { checkAnswer, isReview, TEACHER_GRADED, type TaskDraft } from "./tasks";
+import { englischFormat } from "./englisch-matura-formate";
 import { closestVersion } from "./fix-text";
 import { gradeMathTask, type MathView } from "./math-task";
 import { carelessCredit } from "./lehrplan";
@@ -330,9 +331,11 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
     // a free answer: saved for the teacher's grade, never counted as wrong because it is worded differently;
     // a maths answer the app cannot check safely (its note and suggested Fehlerart stay with it)
     // a vocabulary answer that is not in the list keeps its note (lib/vokabeln-pruefen.ts), e.g. „Das Wort stimmt. Ob die Form …“
+    // Englisch-Matura (lib/englisch-matura-pruefen.ts): the note says which statements or questions the teacher looks at
+    const keep = Boolean(task.answer.vokabel) || (task.type !== "free" && englischFormat(task) !== null);
     const out = maths
       ? store({ answer: input.answer, correct: false, solutionViewed: false, errorLabel: result.errorLabel, feedback: result.feedback, errorType, review: "offen" })
-      : store({ answer: input.answer, correct: false, solutionViewed: false, errorLabel: null, feedback: task.answer.vokabel ? result.feedback : PENDING, errorType: null, review: "offen" });
+      : store({ answer: input.answer, correct: false, solutionViewed: false, errorLabel: null, feedback: keep ? result.feedback : PENDING, errorType: null, review: "offen" });
     if (!out.fresh) return settled(out.attempt);
     after(out.attempt, null, true);
     const res = resultOf(out.attempt, task.solution, task.answer.sample ?? task.solution);
@@ -362,7 +365,8 @@ export function reviewAnswer(attemptId: number, review: string, teacherId: numbe
   const attempt = repo.getAttempt(attemptId);
   const task = attempt ? repo.getTask(attempt.task_id) : null;
   if (!attempt || !task) return { error: "Antwort nicht gefunden." };
-  if (!TEACHER_GRADED.has(task.type) && attempt.review !== "offen") return { error: "Diese Aufgabe prüft die App selbst." };
+  // Englisch-Matura: auch „teilweise richtig“ aus dem letzten Versuch kann die Lehrkraft ändern (lib/englisch-matura-pruefen.ts)
+  if (!TEACHER_GRADED.has(task.type) && attempt.review !== "offen" && !englischFormat(task)) return { error: "Diese Aufgabe prüft die App selbst." };
   if (!repo.setAttemptReview(attemptId, review, teacherId)) return { error: "Nur eine abgeschlossene Antwort kann bewertet werden." };
   documentAssignment(attempt.assignment_id);
   return { ok: true, attempt: repo.getAttempt(attemptId)! };

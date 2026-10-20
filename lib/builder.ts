@@ -18,6 +18,8 @@ import { daysUntil, dayOf } from "./exams";
 import { nextSteps } from "./recommend";
 import { masteryStatus } from "./mastery";
 import { istMaturaKategorie, maturaLeer, pruefeMatura } from "./matura-formate";
+import { englischLeer, istEnglischMatura, pruefeEnglisch } from "./englisch-matura-formate";
+import { englischGleichwertig } from "./englisch-matura";
 import { memorizeCategory, memorizeWords } from "./memorize";
 import { isQuickRound, type AssignmentMode } from "./quick-round";
 import { analyzeStudent } from "./service";
@@ -505,7 +507,8 @@ export async function generateTasks(
       if (!avoid.has(aufgabenSchluessel(t)) || guard >= 10) break;
     }
     avoid.add(aufgabenSchluessel(t!));
-    if (category && t!.category !== category) missedType++;
+    // Englisch-Matura: „Reading comprehension“ für eine Fähigkeit mit True or False bekommt True or False, das ist der Typ
+    if (category && t!.category !== category && !englischGleichwertig(category, t!.category)) missedType++;
     slots[i] = t;
   }
   // parents count too, so the progress of "Dividieren" also moves when "Kehrwert" is practised
@@ -626,6 +629,8 @@ export function blankTask(format: TaskType, skillId: string | null, category: st
   const base = { skillId, skillIds: skillId ? [skillId] : [], category, difficulty, prompt: "", data: {}, solution: "", hints: [], errorMap: [] };
   // Matura-Formate (lib/matura-formate.ts): fünf Antworten, zwei Lücken mit je drei Satzteilen, zwei Aussagen zu vier Antworten
   if (istMaturaKategorie(category)) return { ...base, ...maturaLeer(category) };
+  // Englisch-Matura (lib/englisch-matura-formate.ts): Lesetext mit Items, Lückentext, Schreibauftrag mit den vier Kriterien
+  if (istEnglischMatura(category)) return { ...base, ...englischLeer(category) };
   switch (format) {
     case "mc":
       return { ...base, type: "mc", data: { options: ["", "", ""] }, answer: { correct: 0 } };
@@ -666,7 +671,7 @@ export function checkTask(t: TaskDraft): string | null {
   if (!t.prompt.trim() || t.prompt.split(GAP).every((p) => !p.replace(/…/g, "").trim())) return "Die Aufgabenstellung fehlt.";
   if (!t.skillId) return "Bitte eine Fähigkeit zuordnen.";
   // Matura-Formate: fünf Antworten, zwei richtige bei 2 aus 5, je drei Satzteile, vier Antworten zu zwei Aussagen
-  const matura = pruefeMatura(t);
+  const matura = pruefeMatura(t) ?? pruefeEnglisch(t);
   if (matura) return matura;
   if (t.type === "mc" || t.type === "reading") {
     if (t.data.options) {
@@ -763,8 +768,14 @@ export function normalizeTask(t: TaskDraft): TaskDraft {
   }
   if (out.data.zuordnung) {
     const z = out.data.zuordnung;
-    out.data = { ...out.data, zuordnung: { statements: z.statements.map((x) => x.trim()), options: z.options.map((x) => x.trim()) } };
+    // Englisch-Matura: wie zugeordnet wird (True or False, Fragen, Matching) und die Antworten je Frage bleiben
+    out.data = {
+      ...out.data,
+      zuordnung: { statements: z.statements.map((x) => x.trim()), options: z.options.map((x) => x.trim()), ...(z.art ? { art: z.art } : {}), ...(z.choices ? { choices: z.choices.map((c) => c.map((x) => x.trim())) } : {}) },
+    };
   }
+  if (out.answer.belege) out.answer = { ...out.answer, belege: out.answer.belege.map((x) => x.trim()) };
+  if (out.data.wortliste) out.data = { ...out.data, wortliste: out.data.wortliste.map((x) => x.trim()).filter(Boolean) };
   // Aufgabe mit Bild: nur ein Bild, das lib/figur.ts lesen kann, wird gespeichert (sauber kopiert)
   if (out.data.figure !== undefined) {
     const { figure, ...rest } = out.data;

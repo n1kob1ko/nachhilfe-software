@@ -1,4 +1,5 @@
 import { categoryLabel, TASK_TYPES } from "@/lib/curriculum";
+import { englischFormat, ENGLISCH_TEIL, TEXTSORTEN, wortRahmen } from "@/lib/englisch-matura-formate";
 import type { Task } from "@/lib/repo";
 import { ASPECT_SHORT, isAspect, OPEN_ASPECTS, severalNoted } from "@/lib/lesen";
 import { clozeParts } from "@/lib/math-format";
@@ -8,6 +9,7 @@ import { buchstabe, GAP, hintLabel, kreisZahl, type TaskDraft } from "@/lib/task
 import { FigurBild } from "./Figur";
 import { genderTone, genusBadge } from "./genus";
 import { MathText } from "./MathText";
+import { ReadingTextView } from "./ReadingText";
 
 const partName = (label: string, i: number) => label || `${String.fromCharCode(97 + i)})`;
 
@@ -69,9 +71,27 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
   const aspect = isAspect(task.data.aspect) ? task.data.aspect : null;
   const cat = aspect ? ASPECT_SHORT[aspect] : subject ? categoryLabel(subject, task.category) : null;
   const evidence = (task.answer.evidence ?? []).filter((e) => e.quote.trim());
+  // Englisch-Matura (lib/englisch-matura-formate.ts): der Lesetext mit nummerierten Absätzen, True or False und Fragen mit A bis D
+  const en = englischFormat(task);
+  const z = task.data.zuordnung;
+  const englischZuordnung = Boolean(en && z && (z.art === "richtig-falsch" || z.art === "fragen"));
+  const schreiben = task.data.schreibauftrag;
   return (
     <div className="min-w-0">
-      {task.data.passage && !passageShown && <blockquote className="ruled mb-4 max-w-[70ch] rounded-lg bg-paper px-4 py-1 text-[15px]"><MathText text={task.data.passage} /></blockquote>}
+      {task.data.passage && !passageShown && en && ENGLISCH_TEIL[en] === "reading" ? (
+        <div className="mb-4 max-w-[70ch] rounded-lg bg-paper px-4 py-3">
+          <ReadingTextView title={task.data.passageTitle?.trim() ?? ""} text={task.data.passage} lang="en" />
+        </div>
+      ) : (
+        task.data.passage && !passageShown && <blockquote className="ruled mb-4 max-w-[70ch] rounded-lg bg-paper px-4 py-1 text-[15px]"><MathText text={task.data.passage} /></blockquote>
+      )}
+      {task.data.wortliste && (
+        <p className="mb-2 flex max-w-[70ch] flex-wrap gap-x-4 gap-y-1 rounded-md border border-line-strong bg-surface px-3 py-1.5 text-[15px]" lang="en">
+          {task.data.wortliste.map((w) => (
+            <span key={w}>{w}</span>
+          ))}
+        </p>
+      )}
       <p className="max-w-[70ch] text-[16px] leading-relaxed whitespace-pre-line">{task.prompt ? withGaps(task.prompt, Boolean(task.data.gapOptions)) : <span className="text-ink-3 italic">Noch keine Aufgabenstellung</span>}</p>
       {/* Aufgabe mit Bild: mit Lösung zeigt das Bild die gesuchten Werte (zum Prüfen, ob Bild und Lösung zusammenpassen) */}
       {task.data.figure ? <FigurBild figure={task.data.figure} loesung={showSolution} className="mb-1" /> : null}
@@ -114,7 +134,37 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
           ))}
         </div>
       )}
-      {task.data.zuordnung && (
+      {z && englischZuordnung && (
+        <ol className="mt-2 max-w-[70ch] space-y-2" lang="en">
+          {z.statements.map((st, i) => (
+            <li key={i} className="flex gap-2">
+              <span className="num text-ink-3">{i + 1}</span>
+              <span className="min-w-0 flex-1">
+                {st}
+                {z.art === "richtig-falsch" ? (
+                  <span className="mt-0.5 flex flex-wrap gap-3 text-[14px]">
+                    {z.options.map((o, k) => (
+                      <span key={k} className={showSolution && task.answer.pairs?.[i] === k ? "font-semibold text-green" : "text-ink-2"}>
+                        {showSolution && task.answer.pairs?.[i] === k ? "☒" : "☐"} {o}
+                      </span>
+                    ))}
+                    {showSolution && task.answer.belege?.[i] && <span className="text-ink-2">„{task.answer.belege[i]}“</span>}
+                  </span>
+                ) : (
+                  <span className="mt-0.5 grid gap-0.5 text-[14px]">
+                    {(z.choices?.[i] ?? []).map((o, k) => (
+                      <span key={k} className={showSolution && task.answer.pairs?.[i] === k ? "font-semibold text-green" : "text-ink-2"}>
+                        {buchstabe(k)} {o}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+      {task.data.zuordnung && !englischZuordnung && (
         <div className="mt-2 grid max-w-[70ch] gap-2 sm:grid-cols-2">
           <ol className="space-y-1">
             {task.data.zuordnung.statements.map((st, i) => (
@@ -187,6 +237,11 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
             );
           })}
         </ol>
+      )}
+      {schreiben && (
+        <p className="mt-2 text-[13px] text-ink-2">
+          Writing: {TEXTSORTEN[schreiben.textsorte as keyof typeof TEXTSORTEN]?.name ?? schreiben.textsorte}, etwa {schreiben.woerter} Wörter ({wortRahmen(schreiben.woerter).min} bis {wortRahmen(schreiben.woerter).max})
+        </p>
       )}
       {task.type === "fix" && task.data.faulty && <p className="ruled mt-2 max-w-[70ch] rounded-lg border border-line bg-paper px-4 py-1 text-[15px] whitespace-pre-line">{task.data.faulty}</p>}
       {(task.type === "rechenweg" || task.type === "sachaufgabe") && !showSolution && <div className="squared mt-3 h-24 max-w-[520px] rounded-md border border-line" aria-hidden />}

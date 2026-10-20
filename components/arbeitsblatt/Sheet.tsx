@@ -9,6 +9,8 @@ import {
 import { isAspect, OPEN_ASPECTS, paragraphsOf, severalNoted } from "@/lib/lesen";
 import { buchstabe, GAP, kreisZahl, type TaskDraft } from "@/lib/tasks";
 import { maturaFormat, maturaKreuze } from "@/lib/matura-formate";
+import { englischFormat, ENGLISCH_TEIL } from "@/lib/englisch-matura-formate";
+import { EnglischAntworten, englischEintrag, MitWortKasten } from "./EnglischMatura";
 import { MathLine, RichText } from "./MathLine";
 import { Lines, WorkField } from "./WorkArea";
 import { PrintStory } from "./PrintStory";
@@ -265,7 +267,7 @@ export function Passage({ text }: { text: string }) {
 }
 
 /** Leseverständnis: the text once, with its title and numbered paragraphs; it may run over several pages. */
-export function ReadingPassage({ title, text, teacher, zeilen = false, leerzeilen = false }: { title: string; text: string; teacher: boolean; zeilen?: boolean; leerzeilen?: boolean }) {
+export function ReadingPassage({ title, text, teacher, zeilen = false, leerzeilen = false, lang }: { title: string; text: string; teacher: boolean; zeilen?: boolean; leerzeilen?: boolean; lang?: string }) {
   // the story or Textbeilage of a Schreibauftrag: line by line as printed, a line number every 5 lines
   if (zeilen)
     return (
@@ -278,15 +280,26 @@ export function ReadingPassage({ title, text, teacher, zeilen = false, leerzeile
   return (
     <section className="ab-lesetext" aria-label="Lesetext">
       {!teacher && <p className="ab-lese-hint">Lies den Text genau. Beantworte dann die Fragen. Die Zahlen am Rand nennen die Abschnitte.</p>}
-      {title && <h2 className="ab-lese-title">{title}</h2>}
+      {title && (
+        <h2 className="ab-lese-title" lang={lang}>
+          {title}
+        </h2>
+      )}
       {paragraphsOf(text).map((p, i) => (
-        <p key={i} className="ab-absatz">
+        <p key={i} className="ab-absatz" lang={lang}>
           <span className="ab-absatz-nr">{i + 1}</span>
           {p}
         </p>
       ))}
     </section>
   );
+}
+
+/** The text above a task the first time it is used; Englisch-Matura, Reading: with its title and numbered paragraphs. */
+export function TaskPassage({ t, teacher }: { t: SheetTask; teacher: boolean }) {
+  if (!t.passage) return null;
+  const k = englischFormat(t.task);
+  return k && ENGLISCH_TEIL[k] === "reading" ? <ReadingPassage title={t.task.data.passageTitle?.trim() ?? ""} text={t.passage} teacher={teacher} lang="en" /> : <Passage text={t.passage} />;
 }
 
 /** "Berechne …" – field for working – "Ergebnis: ___": the result line comes after the field. */
@@ -335,8 +348,9 @@ const taskClass = (o: SheetOptions, punkte?: number) => ["ab-task", !o.numbers &
 export function StudentTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?: number }) {
   const { task, plan } = t;
   const matura = maturaFormat(task);
+  const en = englischFormat(task);
   return (
-    <div className={taskClass(o, punkte)}>
+    <div className={taskClass(o, punkte)} lang={en ? "en" : undefined}>
       {o.numbers && <span className="ab-num">{t.n}</span>}
       <div className="ab-body">
         <MitBild
@@ -358,7 +372,7 @@ export function StudentTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; p
                 area={plan.area}
               />
             ) : (
-              <RichText text={prompt} gapsMm={plan.gapsMm} gapLabels={lueckenNamen(task)} />
+              <MitWortKasten task={task} prompt={prompt} rest={(text) => <RichText text={text} gapsMm={plan.gapsMm} gapLabels={lueckenNamen(task)} />} />
             )
           }
         />
@@ -366,6 +380,7 @@ export function StudentTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; p
         {task.type === "sachaufgabe" && <Parts t={t} teacher={false} />}
         {task.type === "fix" && task.data.faulty && <p className="ab-faulty">{task.data.faulty}</p>}
         {matura && <MaturaAntworten task={task} />}
+        {en && <EnglischAntworten task={task} />}
         {task.data.options && !matura && (
           <ol
             className={
@@ -413,6 +428,7 @@ export function StudentTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; p
 function TeacherTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?: number }) {
   const { task } = t;
   const matura = maturaFormat(task);
+  const en = englischFormat(task);
   const answer = shortAnswer(task);
   const steps = task.solutionSteps?.length ? task.solutionSteps : null;
   const errors = task.errorMap.filter(
@@ -420,28 +436,35 @@ function TeacherTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?:
       all.findIndex((x) => x.answer === e.answer && x.label === e.label) === i,
   );
   return (
-    <div className={taskClass(o, punkte)}>
+    <div className={taskClass(o, punkte)} lang={en ? "en" : undefined}>
       {o.numbers && <span className="ab-num">{t.n}</span>}
       <div className="ab-body">
         <MitBild
           task={task}
           loesung
           rest={(prompt) => (
-            <RichText
-              text={prompt}
-              gapsMm={t.plan.gapsMm}
-              gapLabels={lueckenNamen(task)}
-              gapAnswers={
-                task.answer.blanks?.map((b) => b[0] ?? null) ??
-                (task.prompt.split(GAP).length === 2
-                  ? [task.answer.accepted?.[0] ?? null]
-                  : undefined)
-              }
+            <MitWortKasten
+              task={task}
+              prompt={prompt}
+              rest={(text) => (
+                <RichText
+                  text={text}
+                  gapsMm={t.plan.gapsMm}
+                  gapLabels={lueckenNamen(task)}
+                  gapAnswers={
+                    task.answer.blanks?.map((b) => b[0] ?? null) ??
+                    (task.prompt.split(GAP).length === 2
+                      ? [task.answer.accepted?.[0] ?? null]
+                      : undefined)
+                  }
+                />
+              )}
             />
           )}
         />
         {/* Matura-Formate: die richtigen Kreuze in den Kästchen */}
         {matura && <MaturaAntworten task={task} kreuze={maturaKreuze(task)} />}
+        {en && <EnglischAntworten task={task} {...englischEintrag(task)} />}
         {task.data.options && !matura && (
           <ol
             className={
@@ -481,7 +504,7 @@ function TeacherTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?:
             ))}
           </ul>
         )}
-        <div className="ab-solution">
+        <div className="ab-solution" lang={en ? "de" : undefined}>
           {answer && (
             <p>
               <b>Lösung:</b> <MathLine text={answer} />
@@ -684,7 +707,7 @@ export function Sheet({ doc, o }: { doc: SheetDoc; o: SheetOptions }) {
       <div className="ab-tasks">
         {doc.tasks.map((t) => (
           <Fragment key={t.n}>
-            {t.passage && <Passage text={t.passage} />}
+            <TaskPassage t={t} teacher={teacher} />
             {teacher ? (
               <TeacherTask t={t} o={o} punkte={doc.probe?.punkte[t.n - 1]} />
             ) : (

@@ -9,6 +9,7 @@ import { textBlocks } from "./math-format";
 import { ASPECT_SHORT, isAspect, readingSet, type ReadingText } from "./lesen";
 import { GAP, type TaskDraft } from "./tasks";
 import { maturaFormat, maturaLoesung } from "./matura-formate";
+import { englischFormat } from "./englisch-matura-formate";
 import { mathAnswerText, unknownOf } from "./math-task";
 
 export type Space = "klein" | "mittel" | "gross";
@@ -200,11 +201,17 @@ export function planTask(
   const math = subject === "Mathematik";
   const text = `${task.prompt}\n${task.data.passage ?? ""}`;
   const gaps = task.prompt.split(GAP).length - 1;
+  // Englisch-Matura: Short Answers brauchen Platz für bis zu vier Wörter, Editing für ein Wort oder ✓
+  const en = englischFormat(task);
+  const minMm = en === "matura-short-answers" ? 50 : en === "matura-editing" ? 25 : en ? 22 : 0;
   const gapsMm = Array.from({ length: gaps }, (_, i) =>
-    gapWidth(
-      // room for the longest right answer of the gap
-      [...(task.answer.blanks?.[i] ?? [])].sort((x, y) => y.length - x.length)[0] ??
-        (gaps === 1 ? task.answer.accepted?.[0] : undefined),
+    Math.max(
+      minMm,
+      gapWidth(
+        // room for the longest right answer of the gap
+        [...(task.answer.blanks?.[i] ?? [])].sort((x, y) => y.length - x.length)[0] ??
+          (gaps === 1 ? task.answer.accepted?.[0] : undefined),
+      ),
     ),
   );
   const options = task.data.options ?? [];
@@ -267,6 +274,14 @@ export function planTask(
   // in Mathematik ein kleines Feld für Nebenrechnungen
   if (matura) {
     if (math && !plan.area && !ablesen) plan.area = area(SMALL_MM[o.space]);
+    return plan;
+  }
+  // Englisch-Matura: True or False, Multiple Choice und Matching werden in der Tabelle eingetragen
+  // (components/arbeitsblatt/EnglischMatura.tsx); Writing bekommt Zeilen für die verlangte Wortanzahl plus 10 %,
+  // etwa zehn Wörter je Zeile
+  if (en && task.type === "zuordnung") return plan;
+  if (en === "matura-writing" && task.data.schreibauftrag) {
+    plan.lines = Math.max(10, Math.min(40, Math.round(Math.ceil(Math.round(task.data.schreibauftrag.woerter * 1.1) / 10) * SCALE[o.space])));
     return plan;
   }
   if (options.length) {

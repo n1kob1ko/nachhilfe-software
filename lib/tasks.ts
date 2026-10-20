@@ -6,6 +6,7 @@ import { checkMemorize, mistakeLabel } from "./memorize";
 import type { PartSolution, PartView, ResultForm } from "./math-check";
 import { gradeMathTask } from "./math-task";
 import { pruefeVokabel, type VokabelSpec } from "./vokabeln-pruefen";
+import { pruefeEnglischAuswahl, pruefeEnglischLuecken, pruefeRichtigFalsch } from "./englisch-matura-pruefen";
 
 export type AnswerSpec = {
   /** Multiple choice / reading: index of the correct option. */
@@ -60,6 +61,18 @@ export type AnswerSpec = {
    * answers stay in accepted or blanks; this says how they are compared (lib/vokabeln-pruefen.ts).
    */
   vokabel?: VokabelSpec;
+  /**
+   * Englisch-Matura True or False (lib/englisch-matura-formate.ts): je Aussage der Satz aus data.passage, der die
+   * Entscheidung belegt, Wort für Wort. Die Schülerin bzw. der Schüler schreibt seine ersten Wörter dazu.
+   */
+  belege?: string[];
+  /** Englisch-Matura Short Answers: so viele Wörter darf eine Antwort höchstens haben (meist 4). */
+  maxWords?: number;
+  /**
+   * Englisch-Matura (Open Gap Fill, Word Formation …): jede Lücke zählt für sich wie ein Punkt der Matura; im letzten
+   * Versuch ist eine Antwort mit mindestens der Hälfte richtig „teilweise richtig“ (lib/englisch-matura-pruefen.ts).
+   */
+  teilpunkte?: boolean;
 };
 
 export type TaskDraft = {
@@ -120,8 +133,19 @@ export type TaskDraft = {
      * Lücken. Die richtigen stehen wie sonst in answer.blanks; die Antwort ist der gewählte Satzteil.
      */
     gapOptions?: string[][];
-    /** Zuordnung (Matura-Format): die Aussagen und die Antworten A, B, C, D. Die Lösung steht in answer.pairs. */
-    zuordnung?: { statements: string[]; options: string[] };
+    /**
+     * Zuordnung (Matura-Format): die Aussagen und die Antworten A, B, C, D. Die Lösung steht in answer.pairs.
+     * art (Englisch-Matura, lib/englisch-matura-formate.ts): richtig-falsch = je Aussage True (0) oder False (1)
+     * mit Beleg; fragen = Multiple Choice zum Text, je Frage die Antworten A bis D in choices (options leer);
+     * ueberschriften und satzenden = Multiple Matching mit mehr Antworten als Aussagen. Ohne art: Mathematik.
+     */
+    zuordnung?: { statements: string[]; options: string[]; art?: ZuordnungsArt; choices?: string[][] };
+    /** Englisch-Matura Banked Gap Fill: die Wörter im Kasten, alphabetisch, mit den Wörtern, die übrig bleiben. */
+    wortliste?: string[];
+    /** Englisch-Matura Editing: jede Zeile endet mit einer Lücke; darin das überflüssige Wort oder ✓. */
+    editing?: boolean;
+    /** Englisch-Matura Writing: die Textsorte und die Wortanzahl, um die es geht (±10 %). */
+    schreibauftrag?: { textsorte: string; woerter: number };
   };
   answer: AnswerSpec;
   solution: string;
@@ -139,6 +163,9 @@ export type TaskDraft = {
   sourceType?: string;
   sourceId?: number | null;
 };
+
+/** Wie bei einer Zuordnung der Englisch-Matura zugeordnet wird (data.zuordnung.art). */
+export type ZuordnungsArt = "richtig-falsch" | "fragen" | "ueberschriften" | "satzenden";
 
 export type CheckResult = {
   /** null = cannot be decided automatically (free text: the teacher grades it). */
@@ -335,7 +362,13 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
     return { correct: r.correct, errorLabel: r.correct ? null : mistakeLabel(r.mistakes), feedback: r.feedback };
   }
   if (task.data.options && a.correctAll?.length) return checkMehrfachwahl(task, given, a.correctAll);
-  if (task.type === "zuordnung" && a.pairs?.length) return checkZuordnung(task, given, a.pairs);
+  if (task.type === "zuordnung" && a.pairs?.length) {
+    // Englisch-Matura: True or False mit Beleg, Multiple Choice zum Text, Multiple Matching (lib/englisch-matura-pruefen.ts)
+    const art = task.data.zuordnung?.art;
+    if (art === "richtig-falsch") return pruefeRichtigFalsch(task, given);
+    if (art) return pruefeEnglischAuswahl(task, given);
+    return checkZuordnung(task, given, a.pairs);
+  }
   if (task.data.options && typeof a.correct === "number") {
     const idx = Number(given);
     const correct = idx === a.correct;
@@ -383,6 +416,8 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
   }
   // Vokabeln: Artikel, „to“, britisch/amerikanisch und Alternativen zählen; was nicht in der Liste steht, bewertet die Lehrkraft
   if (a.vokabel && (a.accepted?.length || a.blanks?.length === 1)) return pruefeVokabel(task, given);
+  // Englisch-Matura: Short Answers, Editing und die Lückentexte der Language in Use, je Lücke bewertet
+  if (a.blanks && (a.maxWords || task.data.editing || task.data.wortliste || a.teilpunkte)) return pruefeEnglischLuecken(task, given);
   if (a.blanks) {
     let values: string[] = [];
     try {

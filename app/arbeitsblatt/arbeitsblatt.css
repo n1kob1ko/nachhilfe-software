@@ -419,6 +419,47 @@
   font-weight: 700;
 }
 
+/* Englisch-Matura (components/arbeitsblatt/EnglischMatura.tsx): True or False mit Beleg, Fragen mit A bis D,
+   der Kasten mit den Wörtern beim Banked Gap Fill */
+.ab-englisch-tf {
+  width: 100%;
+}
+.ab-englisch-tf th {
+  font-size: 9.5pt;
+}
+.ab-englisch-tf .ab-englisch-tf-wahl {
+  width: 13mm;
+}
+.ab-englisch-beleg {
+  width: 48mm;
+  height: 9mm;
+}
+.ab-englisch-fragen {
+  list-style: none;
+  margin: 2mm 0 0;
+  padding: 0;
+  display: grid;
+  gap: 3mm;
+}
+.ab-englisch-fragen > li {
+  break-inside: avoid;
+}
+.ab-englisch-frage {
+  margin: 0;
+  font-weight: 600;
+}
+.ab-englisch-fragen .ab-matura {
+  margin-top: 1mm;
+}
+.ab-wortkasten {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5mm 6mm;
+  margin: 2mm 0 3mm;
+  padding: 2mm 3mm;
+  border: 0.3mm solid #000;
+}
+
 .ab-steps {
   list-style: none;
   margin: 1.5mm 0 0;

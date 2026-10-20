@@ -5,6 +5,7 @@
 import type { Difficulty } from "./curriculum";
 import type { TaskDraft } from "./tasks";
 import { maturaFormat, MATURA_PUNKTE } from "./matura-formate";
+import { englischPunkte } from "./englisch-matura-formate";
 
 /** Wie lange die Schularbeit dauert, in Minuten, und wie viele Aufgaben dazu passen. */
 export const DAUER = [25, 50, 100] as const;
@@ -45,10 +46,13 @@ export const PUNKTE_MAX = 20;
 
 /**
  * Die Vorgabe für eine Aufgabe: nach Schwierigkeit, eine Sachaufgabe mit mehreren Teilen je Teil einen mehr.
- * Eine Aufgabe im Matura-Format gibt wie bei der Matura 0 oder 1 Punkt (lib/matura-formate.ts).
+ * Eine Aufgabe im Matura-Format gibt wie bei der Matura 0 oder 1 Punkt (lib/matura-formate.ts), eine der
+ * Englisch-Matura einen Punkt je Aussage, Frage, Lücke oder Zeile (lib/englisch-matura-formate.ts).
  */
 export function standardPunkte(t: Pick<TaskDraft, "difficulty" | "type" | "data"> & { answer?: TaskDraft["answer"]; category?: string | null }): number {
   if (maturaFormat({ type: t.type, data: t.data, answer: t.answer ?? {}, category: t.category })) return MATURA_PUNKTE;
+  const englisch = englischPunkte({ type: t.type, data: t.data, answer: t.answer ?? {}, category: t.category });
+  if (englisch) return englisch;
   const base = PUNKTE_STANDARD[t.difficulty] ?? 3;
   const teile = t.type === "sachaufgabe" ? (t.data.parts?.length ?? 0) : 0;
   return teile > 1 ? base + teile - 1 : base;

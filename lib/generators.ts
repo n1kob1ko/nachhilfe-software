@@ -26,6 +26,8 @@ import {
 import { artikelForm, bankStufe, endungImSatz, fallVon, type Stufe } from "./banken-regeln";
 import { DEUTSCH_SATZLEHRE, deutschAufgabe, deutschFuerKategorie, deutschFuerTyp, istDeutschSatzlehre } from "./deutsch-satzlehre";
 import { ENGLISCH_GRAMMATIK, englischAufgabe, englischFuerKategorie, englischFuerTyp, istEnglischGrammatik } from "./englisch-grammatik";
+import { ENGLISCH_MATURA_GEN, englischMaturaFuerKategorie, englischMaturaFuerTyp, istEnglischMaturaSkill } from "./englisch-matura";
+import { ENGLISCH_TEIL, istEnglischMatura } from "./englisch-matura-formate";
 import { aufgabenSchluessel } from "./figur";
 import { expectedFixes } from "./fix-text";
 import { figurAufgabe, figurFaehigkeit, type FigurFormat } from "./generators-figur";
@@ -79,6 +81,8 @@ const GEN: Record<string, Gen> = {
   "deutsch.grammatik.perfekt": stufenCloze("deutsch.grammatik.perfekt", "perfekt", perfektItems, "exact"),
   // Englisch: Tenses, Grammar und Irregular verbs mit eigenen Wortlisten und Satzmustern (lib/englisch-grammatik.ts)
   ...ENGLISCH_GRAMMATIK,
+  // Englisch-Matura: Reading, Language in Use und Writing aus eigenen Texten (lib/englisch-matura.ts)
+  ...ENGLISCH_MATURA_GEN,
   // Deutsch-Satzlehre: Satzglieder, Fälle, Zeitformen, Passiv, direkte Rede aus Satzmustern (lib/deutsch-satzlehre.ts)
   ...DEUTSCH_SATZLEHRE,
   // Vokabeltrainer: Themenlisten mit eigenen Sätzen (lib/vokabeln-themen.ts)
@@ -1002,6 +1006,10 @@ function figurFuerSlot(figId: string, slot: Slot, rng: Rng, tag: (t: TaskDraft, 
  * explanation task when nothing fits, so the builder always gets the number it asked for.
  */
 export function generateForSlot(slot: Slot, rng: Rng = Math.random, variant = 0): TaskDraft {
+  // Ein Englisch-Matura-Format bei einer Fähigkeit ohne Matura-Texte: Leseverstehen bei Reading, sonst ehrlich als Lückentext
+  const lesen = slot.skillId.endsWith("reading.comprehension");
+  if (istEnglischMatura(slot.category) && !istEnglischMaturaSkill(slot.skillId) && !istEnglischMaturaSkill(slot.generatorSkillId))
+    slot = { ...slot, category: ENGLISCH_TEIL[slot.category] === "reading" && lesen ? "reading" : "gap" };
   // Wortarten: real determination tasks with the chosen Wortarten (an explanation only for „Freie Antwort“)
   if (isWortartenSkill(slot.skillId)) {
     const setting = slot.wortarten ?? wortartenFor([slot.skillId], slot.grade ?? 5)!;
@@ -1039,6 +1047,12 @@ export function generateForSlot(slot: Slot, rng: Rng = Math.random, variant = 0)
     return t ? tag(t, slot.category) : free();
   }
   if (figId && !["offen", "schreiben", "writing"].includes(slot.category ?? "")) return figurFuerSlot(figId, slot, rng, tag);
+  // Englisch-Matura: ein Text mit mehreren Items im Format der Fähigkeit oder im gewählten, wenn es zum selben Teil gehört
+  // (lib/englisch-matura.ts); eine freie Antwort nur bei Reading und Language in Use, beim Writing ist sie der Schreibauftrag
+  if (genId && istEnglischMaturaSkill(genId) && !(slot.category === "offen" && !genId.startsWith("englisch.os.writing."))) {
+    const { task, category } = englischMaturaFuerKategorie(genId, slot.category, slot.difficulty, rng);
+    return tag(task, category);
+  }
   if (!genId || ["offen", "schreiben", "writing"].includes(slot.category ?? "")) return free();
   // Mathematik-Matura: die vier Antwortformate aus eigenen Aussagen; andere Typen als 1 aus 5 (der Builder sagt es)
   if (istMatheMatura(genId)) {
@@ -1169,6 +1183,8 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
       t = deutschFuerTyp(skill.id, req.taskType, req.difficulty, rng);
     } else if (istMatheMatura(skill.id)) {
       t = matheMaturaFuerTyp(skill.id, req.taskType, req.difficulty, rng);
+    } else if (istEnglischMaturaSkill(skill.id)) {
+      t = englischMaturaFuerTyp(skill.id, req.taskType, req.difficulty, rng);
     } else {
       t = GEN[skill.id](rng, req.difficulty);
       const type = req.taskType === "mixed" ? pick(rng, ["calc", "mc", "cloze"] as const) : req.taskType;
@@ -1177,7 +1193,7 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
       else if (type === "grammar" && t.type === "calc") t = { ...t, type: "grammar" };
     }
     // Aufgaben mit Bild unterscheiden sich im Bild, englische im Satz (zweite Zeile), nicht in der ersten Zeile
-    const key = t.data.figure || istEnglischGrammatik(skill.id) || istDeutschSatzlehre(skill.id) || istVokabelThema(skill.id) || istMatheMatura(skill.id) ? aufgabenSchluessel(t) : t.prompt.split("\n")[0];
+    const key = t.data.figure || istEnglischGrammatik(skill.id) || istDeutschSatzlehre(skill.id) || istVokabelThema(skill.id) || istMatheMatura(skill.id) || istEnglischMaturaSkill(skill.id) ? aufgabenSchluessel(t) : t.prompt.split("\n")[0];
     if (seen.has(key) && guard < req.count * 15) continue;
     seen.add(key);
     out.push(t);

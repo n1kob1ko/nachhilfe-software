@@ -13,7 +13,12 @@
  * - 2 aus 5: type "mc", data.options (5), answer.correctAll (die zwei Indizes), kein answer.correct
  * - Lückentext: type "cloze", zwei ___ im prompt, data.gapOptions (je 3 Satzteile), answer.blanks (je der richtige)
  * - Zuordnung: type "zuordnung", data.zuordnung (2 Aussagen, 4 Antworten A bis D), answer.pairs
+ *
+ * Die Formate der Englisch-Matura (True or False, Multiple Choice zum Text, Matching, Short Answers, Language in
+ * Use, Writing) stehen in lib/englisch-matura-formate.ts; die Funktionen hier geben sie dorthin weiter
+ * (Lösung, Antworttext, richtige und falsche Antwort), maturaFormat gibt für sie null.
  */
+import { englischAntwortText, englischFalscheAntwort, englischFormat, englischLoesung, englischRichtigeAntwort } from "./englisch-matura-formate";
 import { buchstabe, GAP, gapCount, kreisZahl, normalizeText, parseNumber, type TaskDraft } from "./tasks";
 
 export const MATURA_KATEGORIEN = ["matura-1aus5", "matura-2aus5", "matura-lueckentext", "matura-zuordnung"] as const;
@@ -39,6 +44,8 @@ type Teil = Pick<TaskDraft, "type" | "data" | "answer"> & { category?: string | 
 /** Das Matura-Format einer Aufgabe: aus der Kategorie, sonst an der Form erkannt; null = keines. */
 export function maturaFormat(t: Teil): MaturaKategorie | null {
   if (istMaturaKategorie(t.category)) return t.category;
+  // die Formate der Englisch-Matura haben ihre eigenen Regeln (lib/englisch-matura-formate.ts)
+  if (englischFormat(t)) return null;
   if (t.type === "zuordnung") return "matura-zuordnung";
   if (t.data.gapOptions) return "matura-lueckentext";
   if (t.answer.correctAll) return "matura-2aus5";
@@ -139,6 +146,7 @@ export function maturaLeer(k: MaturaKategorie): Pick<TaskDraft, "type" | "data" 
 
 /** Die richtige Antwort als Text („b) … · d) …“, „① … · ② …“, „1 → C, 2 → A“); null ohne Matura-Format. */
 export function maturaLoesung(t: Teil): string | null {
+  if (englischFormat(t)) return englischLoesung(t);
   const o = t.data.options ?? [];
   if (t.answer.correctAll?.length) return t.answer.correctAll.map((i) => `${String.fromCharCode(97 + i)}) ${o[i] ?? "?"}`).join(" · ");
   if (t.type === "zuordnung" && t.data.zuordnung && t.answer.pairs) {
@@ -151,6 +159,7 @@ export function maturaLoesung(t: Teil): string | null {
 
 /** Die gespeicherte Antwort des Schülers als Text; null ohne Matura-Format (dann gilt die übliche Anzeige). */
 export function maturaAntwortText(t: Teil, raw: string): string | null {
+  if (englischFormat(t)) return englischAntwortText(t, raw);
   let v: unknown;
   try {
     v = JSON.parse(raw);
@@ -227,6 +236,7 @@ export function maturaKreuzeAus(t: Teil, raw: string): (number | null)[] {
 
 /** Die richtige Antwort, wie der Solver sie schickt (für Tests und den Testmodus); null ohne Matura-Format. */
 export function maturaRichtigeAntwort(t: Teil): string | null {
+  if (englischFormat(t)) return englischRichtigeAntwort(t);
   if (t.answer.correctAll?.length) return JSON.stringify([...t.answer.correctAll].sort((a, b) => a - b));
   if (t.type === "zuordnung" && t.answer.pairs) return JSON.stringify(t.answer.pairs);
   if (t.data.gapOptions && t.answer.blanks) return JSON.stringify(t.answer.blanks.map((b) => b[0]));
@@ -235,6 +245,7 @@ export function maturaRichtigeAntwort(t: Teil): string | null {
 
 /** Eine falsche Antwort, wie der Solver sie schickt: eine richtige fehlt, die Zuordnung vertauscht, die Lücken falsch. */
 export function maturaFalscheAntwort(t: Teil): string | null {
+  if (englischFormat(t)) return englischFalscheAntwort(t);
   if (t.answer.correctAll?.length) return JSON.stringify(t.answer.correctAll.slice(0, 1));
   if (t.type === "zuordnung" && t.answer.pairs) return JSON.stringify([...t.answer.pairs].reverse());
   if (t.data.gapOptions && t.answer.blanks) return JSON.stringify(t.data.gapOptions.map((g, i) => g.find((x) => !(t.answer.blanks![i] ?? []).includes(x)) ?? ""));

@@ -248,6 +248,13 @@ Zuordnung nur, wenn alles stimmt. Übernommen ist nur die Form, nie eine Aufgabe
 aus Maturen, Schulbüchern oder vom IQS. Im Code die Aufgabentypen `matura-1aus5`, `matura-2aus5`,
 `matura-lueckentext` und `matura-zuordnung` (`lib/matura-formate.ts`); die Aufgaben kommen ohne KI aus
 eigenen Generatoren (`lib/mathe-matura.ts`) oder von der KI. Das Konstruktionsformat gibt es nicht.
+In Englisch die Formate der schriftlichen Englisch-Matura: Reading (**True or False mit Begründung**,
+**Multiple Choice** zum Text, **Multiple Matching**, **Short Answers**), Language in Use (**Banked Gap Fill**,
+**Open Gap Fill**, **Editing**, **Word Formation**) und **Writing** (Textsorte, Wortanzahl ±10 %, drei Punkte,
+vier Kriterien). Eine Aufgabe ist ein Text mit mehreren Items; jedes Item zählt für sich, was die App nicht
+sicher entscheiden kann (ein anderer Beleg, eine Kurzantwort in anderen Worten), bewertet die Lehrkraft.
+Im Code `matura-true-false` bis `matura-writing` (`lib/englisch-matura-formate.ts`, eigene Texte in
+`lib/englisch-matura-texte.ts`); Listening gibt es nicht.
 _Avoid_: Maturaaufgabe, Typ-1-Aufgabe, SRDP-Aufgabe, Ankreuzaufgabe
 
 **Textinterpretation**:

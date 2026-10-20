@@ -39,8 +39,23 @@ export type ClientTask = {
   pick?: number | null;
   /** Lückentext zum Ankreuzen: je Lücke (① ②) die Satzteile; die Antwort ist der gewählte Satzteil. */
   gapOptions?: string[][] | null;
-  /** Zuordnung: die Aussagen und die Antworten A bis D, ohne die Lösung. */
-  zuordnung?: { statements: string[]; options: string[] } | null;
+  /**
+   * Zuordnung: die Aussagen und die Antworten A bis D, ohne die Lösung. Englisch-Matura: art sagt, ob es True or
+   * False, Multiple Choice zum Text (choices: je Frage die Antworten A bis D) oder Multiple Matching ist.
+   */
+  zuordnung?: { statements: string[]; options: string[]; art?: string | null; choices?: string[][] | null } | null;
+  /**
+   * Englisch-Matura (lib/englisch-matura-formate.ts): lesetext = der Text steht neben den Fragen, wortliste = die Wörter
+   * im Kasten, maxWords = Short Answers, editing = Zeilen mit ✓, schreiben = Writing mit dem Rahmen der Wortanzahl.
+   */
+  englisch?: {
+    format: string;
+    lesetext: { title: string } | null;
+    wortliste: string[] | null;
+    maxWords: number | null;
+    editing: boolean;
+    schreiben: { textsorte: string; woerter: number; min: number; max: number } | null;
+  } | null;
   hints: string[];
   /** Hints already opened earlier (stored per hint). */
   hintsOpened: number;
@@ -92,6 +107,8 @@ type Draft = {
   picks?: number[];
   /** Zuordnung: je Aussage der gewählte Buchstabe (0 = A), null = noch keiner. */
   pairs?: (number | null)[];
+  /** True or False: je Aussage die ersten Wörter des Belegs. */
+  belege?: string[];
 };
 function readDraft(key: string): Draft | null {
   try {
@@ -462,6 +479,13 @@ function TaskCard({
   const mehrfach = Boolean(task.pick && task.options);
   const [picks, setPicks] = useState<number[]>([]);
   const [pairs, setPairs] = useState<(number | null)[]>(() => (task.zuordnung?.statements ?? []).map(() => null));
+  // Englisch-Matura (lib/englisch-matura-formate.ts): True or False mit Beleg, Multiple Choice je Frage, Wörter aus dem Kasten
+  const en = task.englisch ?? null;
+  const richtigFalsch = task.zuordnung?.art === "richtig-falsch";
+  const fragen = task.zuordnung?.art === "fragen";
+  const [belege, setBelege] = useState<string[]>(() => (task.zuordnung?.statements ?? []).map(() => ""));
+  // die Lücke, in die ein Wort aus dem Kasten kommt
+  const [aktiv, setAktiv] = useState(0);
   // Auswendig schreiben: wie viel vom Text noch zu sehen ist (lib/memorize.ts)
   const [level, setLevel] = useState<MemorizeLevel>(0);
   // die Umlautleiste schreibt in das Textfeld, das zuletzt den Fokus hatte
@@ -514,7 +538,9 @@ function TaskCard({
         if (isMemorizeLevel(d.level)) setLevel(d.level);
         if (Array.isArray(d.picks) && task.options) setPicks(d.picks.filter((i) => Number.isInteger(i) && i >= 0 && i < task.options!.length));
         const z = task.zuordnung;
-        if (Array.isArray(d.pairs) && z && d.pairs.length === z.statements.length) setPairs(d.pairs.map((p) => (typeof p === "number" && Number.isInteger(p) && p >= 0 && p < z.options.length ? p : null)));
+        if (Array.isArray(d.pairs) && z && d.pairs.length === z.statements.length)
+          setPairs(d.pairs.map((p, i) => (typeof p === "number" && Number.isInteger(p) && p >= 0 && p < (z.choices?.[i]?.length ?? z.options.length) ? p : null)));
+        if (Array.isArray(d.belege) && z && d.belege.length === z.statements.length) setBelege(d.belege.map(String));
         if (m && d.math && typeof d.math === "object") setMath(restoreMath(m, d.math));
       }
     }
@@ -533,17 +559,21 @@ function TaskCard({
       (math !== null && mathTouched(math)) ||
       level > 0 ||
       picks.length > 0 ||
-      pairs.some((p) => p !== null);
-    writeDraft(key, changed ? { choice, text, gaps, order, level, picks, pairs, ...(m && math ? { math: mathAnswer(m, math) } : {}) } : null);
+      pairs.some((p) => p !== null) ||
+      belege.some((b) => b.trim());
+    writeDraft(key, changed ? { choice, text, gaps, order, level, picks, pairs, belege, ...(m && math ? { math: mathAnswer(m, math) } : {}) } : null);
     setKept(changed);
-  }, [key, final, choice, text, gaps, order, math, m, task.faulty, level, picks, pairs]);
+  }, [key, final, choice, text, gaps, order, math, m, task.faulty, level, picks, pairs, belege]);
 
-  // „2 aus 5“ und Zuordnung schicken ein JSON-Array von Indizes (lib/tasks.ts checkAnswer), der Lückentext die Satzteile
+  // „2 aus 5“ und Zuordnung schicken ein JSON-Array von Indizes (lib/tasks.ts checkAnswer), der Lückentext die Satzteile,
+  // True or False die Wahl und die Belege ({ wahl, belege }, lib/englisch-matura-pruefen.ts)
   const answer =
     m && math
       ? JSON.stringify(mathAnswer(m, math))
       : task.zuordnung
-        ? JSON.stringify(pairs)
+        ? richtigFalsch
+          ? JSON.stringify({ wahl: pairs, belege: belege.map((b) => b.trim()) })
+          : JSON.stringify(pairs)
         : task.options
           ? mehrfach
             ? JSON.stringify([...picks].sort((a, b) => a - b))
@@ -602,10 +632,11 @@ function TaskCard({
         setWrongGaps(res.final ? [] : (res.wrongGaps ?? []));
         if (m && res.math && !test) setMath((s) => s && markMath(m, s, res.math));
         const given = task.faulty !== null ? input.answer : undefined;
-        setFeedback({ correct: res.correct, text: res.feedback, final: res.final, solution: res.solution, sample: res.sample, pending: res.pendingReview, expected: res.expected, given });
+        const partial = res.review === "teilweise";
+        setFeedback({ correct: res.correct, text: res.feedback, final: res.final, partial, solution: res.solution, sample: res.sample, pending: res.pendingReview, expected: res.expected, given });
         if (res.final) {
           writeDraft(draftKey(via, assignmentId, task.id), null);
-          onFinished({ correct: res.pendingReview ? null : Boolean(res.correct), solution: res.solution ?? "", sample: res.sample ?? null, given: given ?? null, expected: res.expected ?? null, math: res.math ?? null });
+          onFinished({ correct: res.pendingReview ? null : Boolean(res.correct), review: res.review ?? null, solution: res.solution ?? "", sample: res.sample ?? null, given: given ?? null, expected: res.expected ?? null, math: res.math ?? null });
           // Minitest: keine Rückmeldung zur einzelnen Aufgabe, gleich weiter
           if (test) next.current();
         }
@@ -640,21 +671,44 @@ function TaskCard({
 
   // Aufgabe mit Bild und Lücken: die Frage (erste Zeile ohne Lücke) steht über dem Bild, die Lücken darunter
   const bildKopf = task.figur && task.blanks > 0 ? figurKopf(task.prompt, GAP) : null;
-  const clozeText = bildKopf ? task.prompt.slice(bildKopf.length + 1) : task.prompt;
+  // Englisch-Matura mit Lücken: der Arbeitsauftrag über dem Kasten mit den Wörtern, der Text darunter
+  const enKopf = en && !bildKopf && task.blanks > 0 && task.prompt.includes("\n\n") && !task.prompt.split("\n\n")[0].includes(GAP) ? task.prompt.split("\n\n")[0] : null;
+  const clozeText = bildKopf ? task.prompt.slice(bildKopf.length + 1) : enKopf ? task.prompt.slice(enKopf.length + 2) : task.prompt;
   const promptParts = useMemo(() => clozeParts(clozeText, GAP), [clozeText]);
   // the teacher grades the answer: it is handed in, not checked
-  const handIn = test || (reading && (task.type === "free" || (task.type === "reading" && !task.options)));
+  const handIn = test || (reading && (task.type === "free" || (task.type === "reading" && !task.options))) || Boolean(en?.schreiben);
+  // Englisch-Matura, Reading: der Text mit nummerierten Absätzen, am großen Bildschirm neben den Fragen
+  const lesetext = en?.lesetext && task.passage ? en.lesetext : null;
+  // Banked Gap Fill: ein Wort aus dem Kasten kommt in die gewählte Lücke, dann geht es zur nächsten leeren
+  const wortRein = (w: string) => {
+    const next = gaps.map((x, j) => (j === aktiv ? w : x));
+    setGaps(next);
+    setWrongGaps((x) => x.filter((n) => n !== aktiv + 1));
+    const leer = next.findIndex((x, j) => j > aktiv && !x.trim());
+    const irgendeine = next.findIndex((x) => !x.trim());
+    setAktiv(leer >= 0 ? leer : irgendeine >= 0 ? irgendeine : aktiv);
+  };
+  const zuLang = en?.maxWords ? gaps.map((g, i) => (words(g) > en.maxWords! ? i + 1 : 0)).filter(Boolean) : [];
 
   return (
-    <article>
-      {task.passage &&
+    <article className={lesetext ? "lesen-breit lg:grid lg:grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)] lg:items-start lg:gap-8" : undefined}>
+      {lesetext ? (
+        <section
+          aria-label="Lesetext"
+          className="mb-6 rounded-2xl border border-line bg-surface px-5 py-6 md:px-8 lg:sticky lg:top-4 lg:mb-0 lg:max-h-[calc(100dvh-2rem)] lg:overflow-y-auto"
+        >
+          <ReadingTextView title={lesetext.title} text={task.passage!} size="lg" lang="en" />
+        </section>
+      ) : (
+        task.passage &&
         (task.type === "memorize" ? (
           // Auswendig schreiben: der Text mit der gewählten Hilfe-Stufe (lib/memorize.ts); fertig steht
           // der ganze Text wieder da (dann sind die Stufen nur noch Anzeige)
           <MemorizeTextBox passage={task.passage} level={final ? 0 : level} onChange={setLevel} disabled={final} />
         ) : (
           <div className="ruled mb-6 rounded-xl border border-line bg-surface px-5 py-1 text-[17px]"><MathText text={task.passage} /></div>
-        ))}
+        ))
+      )}
 
       <form
         onSubmit={(e) => {
@@ -668,6 +722,35 @@ function TaskCard({
           </p>
         )}
         {bildKopf && <FigurBild svg={task.figur} groesser={1.2} className="mb-3" />}
+        {enKopf && (
+          <p className="mb-4 text-[18px] leading-snug font-medium" lang="en">
+            {enKopf}
+          </p>
+        )}
+        {en?.wortliste && (
+          <div className="mb-5 rounded-xl border border-line bg-panel px-4 py-3">
+            <p className="text-[13px] font-semibold text-ink-2">{final ? "Wörter im Kasten" : "Wörter im Kasten: tippe ein Wort an, es kommt in die markierte Lücke."}</p>
+            <div className="mt-2 flex flex-wrap gap-2" lang="en">
+              {en.wortliste.map((w) => {
+                const benutzt = gaps.some((g) => g.trim().toLowerCase() === w.toLowerCase());
+                return (
+                  <button
+                    key={w}
+                    type="button"
+                    disabled={final}
+                    onClick={() => wortRein(w)}
+                    aria-label={benutzt ? `${w}, schon verwendet` : w}
+                    className={`min-h-[40px] rounded-lg border px-3 text-[16px] font-medium transition-colors ${
+                      benutzt ? "border-line text-ink-3 line-through" : "border-line-strong bg-surface hover:border-ink-3"
+                    }`}
+                  >
+                    {w}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {task.gapOptions ? (
           // Lückentext zum Ankreuzen: statt Eingabefeldern stehen ① ② im Satz, gefüllt mit dem angekreuzten Satzteil
           <p className="text-[21px] leading-[2.1] font-medium">
@@ -689,45 +772,74 @@ function TaskCard({
             ))}
           </p>
         ) : task.blanks > 0 ? (
-          <p className={`${reading ? "text-[18px] leading-[2.2]" : "text-[21px] leading-[2.1]"} font-medium`}>
+          <p className={`${reading || en ? "text-[18px] leading-[2.2]" : "text-[21px] leading-[2.1]"} font-medium`} lang={en ? "en" : undefined}>
             {promptParts.map((p, i) => (
               <span key={i} className="whitespace-pre-line">
-                <MathText text={p.text} />
+                {en ? p.text : <MathText text={p.text} />}
                 {i < promptParts.length - 1 && (
-                  <input
-                    ref={i === 0 ? (el) => void (inputRef.current = el) : undefined}
-                    value={gaps[i]}
-                    disabled={final}
-                    onChange={(e) => {
-                      setGaps((g) => g.map((x, j) => (j === i ? e.target.value : x)));
-                      setWrongGaps((w) => w.filter((n) => n !== i + 1));
-                    }}
-                    onFocus={(e) => void (umlaut.current = { el: e.currentTarget, set: (v) => setGaps((g) => g.map((x, j) => (j === i ? v : x))) })}
-                    aria-label={p.raised ? `Lücke ${i + 1}, Hochzahl` : `Lücke ${i + 1}`}
-                    aria-invalid={wrongGaps.includes(i + 1) || undefined}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    // grows with the answer: long words and several words fit, the line wraps around it
-                    // a gap in an exponent ("3^___") sits raised and smaller, like the power it stands for
-                    style={{ width: `min(100%, ${Math.max(p.raised ? 3 : 6, gaps[i].length + 2)}ch)` }}
-                    className={`inline-block border-0 border-b-2 py-0 text-center font-semibold outline-none disabled:opacity-70 ${
-                      p.raised ? "relative -top-[0.7em] mx-0.5 min-h-[36px] px-1 text-[15px]" : "mx-1 min-h-[44px] px-2 text-[19px]"
-                    } ${
-                      wrongGaps.includes(i + 1) ? "border-red bg-red-wash text-red" : "border-accent bg-accent-wash/60 text-accent focus:bg-accent-wash"
-                    }`}
-                  />
+                  <>
+                    <input
+                      ref={i === 0 ? (el) => void (inputRef.current = el) : undefined}
+                      value={gaps[i]}
+                      disabled={final}
+                      onChange={(e) => {
+                        setGaps((g) => g.map((x, j) => (j === i ? e.target.value : x)));
+                        setWrongGaps((w) => w.filter((n) => n !== i + 1));
+                      }}
+                      onFocus={(e) => {
+                        setAktiv(i);
+                        umlaut.current = { el: e.currentTarget, set: (v) => setGaps((g) => g.map((x, j) => (j === i ? v : x))) };
+                      }}
+                      aria-label={p.raised ? `Lücke ${i + 1}, Hochzahl` : en?.editing ? `Zeile ${i + 1}` : en?.maxWords ? `Antwort ${i + 1}` : `Lücke ${i + 1}`}
+                      aria-invalid={wrongGaps.includes(i + 1) || undefined}
+                      autoComplete="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
+                      // grows with the answer: long words and several words fit, the line wraps around it
+                      // a gap in an exponent ("3^___") sits raised and smaller, like the power it stands for
+                      style={{ width: `min(100%, ${Math.max(p.raised ? 3 : 6, gaps[i].length + 2)}ch)` }}
+                      className={`inline-block border-0 border-b-2 py-0 text-center font-semibold outline-none disabled:opacity-70 ${
+                        p.raised ? "relative -top-[0.7em] mx-0.5 min-h-[36px] px-1 text-[15px]" : "mx-1 min-h-[44px] px-2 text-[19px]"
+                      } ${
+                        wrongGaps.includes(i + 1) ? "border-red bg-red-wash text-red" : "border-accent bg-accent-wash/60 text-accent focus:bg-accent-wash"
+                      } ${en?.wortliste && !final && i === aktiv ? "rounded-t-md ring-2 ring-accent" : ""}`}
+                    />
+                    {/* Editing: eine richtige Zeile bekommt ein ✓ */}
+                    {en?.editing && !final && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGaps((g) => g.map((x, j) => (j === i ? "✓" : x)));
+                          setWrongGaps((w) => w.filter((n) => n !== i + 1));
+                        }}
+                        aria-label={`Zeile ${i + 1} ist richtig`}
+                        className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border align-middle text-[17px] ${gaps[i] === "✓" ? "border-accent bg-accent text-white" : "border-line-strong bg-surface hover:border-ink-3"}`}
+                      >
+                        ✓
+                      </button>
+                    )}
+                  </>
                 )}
               </span>
             ))}
           </p>
         ) : (
-          <p className={`${reading ? "text-[19px] leading-snug" : "text-[21px] leading-snug"} font-medium whitespace-pre-line`}>{reading ? task.prompt : <MathText text={task.prompt} />}</p>
+          <p className={`${reading || en ? "text-[19px] leading-snug" : "text-[21px] leading-snug"} font-medium whitespace-pre-line`} lang={en ? "en" : undefined}>
+            {reading || en ? task.prompt : <MathText text={task.prompt} />}
+          </p>
         )}
         {/* Aufgabe mit Bild: das Bild unter der Frage (bei Lücken ohne eigene Fragezeile darüber) */}
         {task.figur && !bildKopf && <FigurBild svg={task.figur} groesser={1.2} />}
         {/* Umlaute für Lückentexte: eine Tablet-Tastatur gibt ä ö ü ß nicht immer her (components/UmlautBar.tsx) */}
-        {task.blanks > 0 && !task.gapOptions && !final && <UmlautBar target={umlaut} className="mt-3" />}
+        {task.blanks > 0 && !task.gapOptions && !final && !en && <UmlautBar target={umlaut} className="mt-3" />}
+        {en?.maxWords && !final && (
+          <p className={`mt-3 text-[14px] ${zuLang.length ? "font-semibold text-amber" : "text-ink-3"}`} aria-live="polite">
+            {zuLang.length
+              ? `Bei ${zuLang.join(" und ")} sind es mehr als ${en.maxWords} Wörter.`
+              : `Höchstens ${en.maxWords} Wörter je Antwort.`}
+          </p>
+        )}
+        {en?.editing && !final && <p className="mt-3 text-[14px] text-ink-3">Schreib das überflüssige Wort neben die Zeile. Ist die Zeile richtig, tippe auf ✓.</p>}
 
         {task.gapOptions && (
           <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -792,14 +904,107 @@ function TaskCard({
           </div>
         )}
 
-        {task.zuordnung && (
+        {task.zuordnung && richtigFalsch && (
+          // True or False: je Aussage True oder False und die ersten Wörter des Satzes, der es zeigt
+          <ol className="mt-6 grid gap-3" aria-label="Aussagen" lang="en">
+            {task.zuordnung.statements.map((st, i) => (
+              <li key={i} className={`rounded-xl border bg-surface px-4 py-3 ${wrongGaps.includes(i + 1) ? "border-red" : "border-line-strong"}`}>
+                <p className="flex gap-2.5 text-[17px]">
+                  <span className="num font-semibold text-ink-3">{i + 1}</span>
+                  <span className="min-w-0">{st}</span>
+                </p>
+                <div className="mt-2.5 flex flex-wrap gap-2" role="radiogroup" aria-label={`Aussage ${i + 1}: True oder False`}>
+                  {task.zuordnung!.options.map((o, k) => (
+                    <label
+                      key={k}
+                      className={`flex h-11 min-w-[88px] cursor-pointer items-center justify-center rounded-lg border px-4 text-[16px] font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent ${
+                        pairs[i] === k ? "border-accent bg-accent text-white" : "border-line-strong bg-surface hover:border-ink-3"
+                      } ${final ? "cursor-default" : ""}`}
+                    >
+                      <input
+                        type="radio"
+                        name={`zuordnung-${task.id}-${i}`}
+                        className="sr-only"
+                        checked={pairs[i] === k}
+                        disabled={final}
+                        onChange={() => {
+                          setPairs((p) => p.map((x, j) => (j === i ? k : x)));
+                          setWrongGaps((w) => w.filter((n) => n !== i + 1));
+                        }}
+                      />
+                      {o}
+                    </label>
+                  ))}
+                </div>
+                <label className="mt-2.5 block">
+                  <span className="text-[13px] font-semibold text-ink-2" lang="de">
+                    Begründung: die ersten vier Wörter des Satzes
+                  </span>
+                  <input
+                    className="input mt-1 text-[16px]"
+                    value={belege[i] ?? ""}
+                    disabled={final}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setBelege((b) => b.map((x, j) => (j === i ? v : x)));
+                      setWrongGaps((w) => w.filter((n) => n !== i + 1));
+                    }}
+                    autoComplete="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                  />
+                </label>
+              </li>
+            ))}
+          </ol>
+        )}
+
+        {task.zuordnung && fragen && (
+          // Multiple Choice zum Text: je Frage vier Antworten A bis D
+          <ol className="mt-6 grid gap-3" aria-label="Fragen" lang="en">
+            {task.zuordnung.statements.map((st, i) => (
+              <li key={i} className={`rounded-xl border bg-surface px-4 py-3 ${wrongGaps.includes(i + 1) ? "border-red" : "border-line-strong"}`}>
+                <p className="flex gap-2.5 text-[17px] font-medium">
+                  <span className="num font-semibold text-ink-3">{i + 1}</span>
+                  <span className="min-w-0">{st}</span>
+                </p>
+                <div className="mt-2.5 grid gap-2" role="radiogroup" aria-label={`Antwort auf Frage ${i + 1}`}>
+                  {(task.zuordnung!.choices?.[i] ?? []).map((o, k) => (
+                    <label
+                      key={k}
+                      className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 text-[16px] transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent ${
+                        pairs[i] === k ? "border-accent bg-accent-wash" : "border-line-strong bg-surface hover:border-ink-3"
+                      } ${final ? "cursor-default" : ""}`}
+                    >
+                      <input
+                        type="radio"
+                        name={`zuordnung-${task.id}-${i}`}
+                        className="sr-only"
+                        checked={pairs[i] === k}
+                        disabled={final}
+                        onChange={() => {
+                          setPairs((p) => p.map((x, j) => (j === i ? k : x)));
+                          setWrongGaps((w) => w.filter((n) => n !== i + 1));
+                        }}
+                      />
+                      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[14px] font-semibold ${pairs[i] === k ? "bg-accent text-white" : "bg-panel text-ink-2"}`}>{buchstabe(k)}</span>
+                      <span className="min-w-0 pt-0.5">{o}</span>
+                    </label>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+
+        {task.zuordnung && !richtigFalsch && !fragen && (
           <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] md:items-start">
-            <ol className="grid gap-3" aria-label="Aussagen">
+            <ol className="grid gap-3" aria-label="Aussagen" lang={en ? "en" : undefined}>
               {task.zuordnung.statements.map((st, i) => (
                 <li key={i} className={`rounded-xl border bg-surface px-4 py-3 ${wrongGaps.includes(i + 1) ? "border-red" : "border-line-strong"}`}>
                   <p className="flex gap-2.5 text-[17px]">
                     <span className="num font-semibold text-ink-3">{i + 1}</span>
-                    <span className="min-w-0"><MathText text={st} /></span>
+                    <span className="min-w-0">{en ? st : <MathText text={st} />}</span>
                   </p>
                   <div className="mt-2.5 flex flex-wrap gap-2" role="radiogroup" aria-label={`Buchstabe für Aussage ${i + 1}`}>
                     {task.zuordnung!.options.map((_, k) => (
@@ -828,11 +1033,11 @@ function TaskCard({
               ))}
             </ol>
             {/* am Handy stehen die Antworten über den Aussagen: erst lesen, dann zuordnen */}
-            <ul className="grid gap-2 rounded-xl border border-line bg-panel px-4 py-3 max-md:order-first" aria-label="Antworten A bis D">
+            <ul className="grid gap-2 rounded-xl border border-line bg-panel px-4 py-3 max-md:order-first" aria-label={`Antworten A bis ${buchstabe(task.zuordnung.options.length - 1)}`} lang={en ? "en" : undefined}>
               {task.zuordnung.options.map((o, k) => (
                 <li key={k} className="flex gap-3 text-[17px]">
                   <span className="w-5 shrink-0 font-semibold text-ink-2">{buchstabe(k)}</span>
-                  <span className="min-w-0"><MathText text={o} /></span>
+                  <span className="min-w-0">{en ? o : <MathText text={o} />}</span>
                 </li>
               ))}
             </ul>
@@ -964,14 +1169,23 @@ function TaskCard({
                 disabled={final}
                 onChange={(e) => setText(e.target.value)}
                 onFocus={(e) => void (umlaut.current = { el: e.currentTarget, set: (v) => setText(v) })}
-                placeholder="Deine Antwort"
-                aria-label="Deine Antwort"
+                placeholder={en?.schreiben ? "Dein Text" : "Deine Antwort"}
+                aria-label={en?.schreiben ? "Dein Text" : "Deine Antwort"}
+                // Writing wie bei der Matura: ohne Rechtschreibprüfung
+                lang={en ? "en" : undefined}
+                spellCheck={en?.schreiben ? false : undefined}
               />
               <p className="num mt-1 flex justify-between gap-3 text-[13px] text-ink-3">
-                <span>{reading && kept && !final ? "Entwurf auf diesem Gerät gespeichert" : ""}</span>
-                <span aria-live="polite">{words(text) === 1 ? "1 Wort" : `${words(text)} Wörter`}</span>
+                <span>{(reading || en?.schreiben) && kept && !final ? "Entwurf auf diesem Gerät gespeichert" : ""}</span>
+                {en?.schreiben ? (
+                  <span aria-live="polite" className={words(text) > 0 && (words(text) < en.schreiben.min || words(text) > en.schreiben.max) ? "font-semibold text-amber" : ""}>
+                    {words(text)} Wörter, verlangt {en.schreiben.min} bis {en.schreiben.max}
+                  </span>
+                ) : (
+                  <span aria-live="polite">{words(text) === 1 ? "1 Wort" : `${words(text)} Wörter`}</span>
+                )}
               </p>
-              {!final && <UmlautBar target={umlaut} className="mt-2" />}
+              {!final && !en && <UmlautBar target={umlaut} className="mt-2" />}
             </div>
           ) : (
             <>

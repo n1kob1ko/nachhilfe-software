@@ -1,6 +1,7 @@
 import type { ClientTask } from "@/components/Solver";
 import { answerText } from "@/components/TaskPreview";
 import { isGenus } from "@/components/genus";
+import { englischFormat, ENGLISCH_TEIL, wortRahmen } from "./englisch-matura-formate";
 import { figurSvg } from "./figur";
 import { closestVersion } from "./fix-text";
 import { readingSet } from "./lesen";
@@ -35,8 +36,17 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
       // und Antworten der Zuordnung. Nie correctAll, pairs oder die Werte in blanks: die sind die Lösung.
       pick: t.answer.correctAll?.length ?? null,
       gapOptions: t.data.gapOptions ?? null,
-      zuordnung: t.type === "zuordnung" && t.data.zuordnung ? { statements: t.data.zuordnung.statements, options: t.data.zuordnung.options } : null,
+      zuordnung:
+        t.type === "zuordnung" && t.data.zuordnung
+          ? {
+              statements: t.data.zuordnung.statements,
+              options: t.data.zuordnung.options,
+              ...(t.data.zuordnung.art ? { art: t.data.zuordnung.art } : {}),
+              ...(t.data.zuordnung.choices ? { choices: t.data.zuordnung.choices } : {}),
+            }
+          : null,
       passage: reading ? null : (t.data.passage ?? null),
+      englisch: englischClient(t, Boolean(reading)),
       reading: reading && i === 0 ? { ...reading, lang: w.subject === "Englisch" ? "en" : "de" } : null,
       blanks: t.answer.blanks?.length ?? 0,
       endings: t.answer.endings === true,
@@ -74,4 +84,23 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
         : null,
     };
   });
+}
+
+/**
+ * Englisch-Matura (lib/englisch-matura-formate.ts): was das Gerät zum Format braucht, die Wörter im Kasten,
+ * die Wortgrenze und den Rahmen der Wortanzahl. Nie pairs, belege oder die Werte in blanks: die sind die Lösung.
+ */
+function englischClient(t: repo.Task, reading: boolean): ClientTask["englisch"] {
+  const k = englischFormat(t);
+  if (!k) return null;
+  const s = t.data.schreibauftrag;
+  return {
+    format: k,
+    // der Lesetext steht neben den Fragen; bei einem Text für das ganze Blatt zeigt ihn schon der Solver
+    lesetext: ENGLISCH_TEIL[k] === "reading" && !reading && t.data.passage?.trim() ? { title: t.data.passageTitle?.trim() ?? "" } : null,
+    wortliste: t.data.wortliste ?? null,
+    maxWords: t.answer.maxWords ?? null,
+    editing: t.data.editing === true,
+    schreiben: s ? { textsorte: s.textsorte, woerter: s.woerter, ...wortRahmen(s.woerter) } : null,
+  };
 }
