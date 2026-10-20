@@ -12,8 +12,10 @@ RUN npm run build && npm prune --omit=dev
 
 FROM node:22-bookworm-slim
 WORKDIR /app
+# TZ: „heute“ and the times of lessons are Vienna time (the host runs in UTC); instrumentation.ts sets it too
 ENV NODE_ENV=production \
     PORT=3000 \
+    TZ=Europe/Vienna \
     DATABASE_PATH=/data/nachhilfe.db
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules

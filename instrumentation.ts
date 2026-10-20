@@ -1,11 +1,15 @@
 /**
- * Runs once when the server starts. Ends forgotten units in the background, so this does not
+ * Runs once when the server starts. First it sets the time zone to Vienna: „heute“, the times of
+ * lessons and every date the server writes or shows are Vienna time, also when the host runs in UTC
+ * (Railway does; the Dockerfile sets TZ as well). Then it ends forgotten units in the background, so this does not
  * depend on a teacher or student opening the app (pages and answers also check on every request).
  * On the production server it also warns about accounts on the public start password and starts
  * the daily backup.
  */
 export async function register() {
-  if (process.env.NEXT_RUNTIME !== "nodejs" || process.env.DATABASE_PATH === ":memory:") return;
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  process.env.TZ = (await import("./lib/planung/zeit")).ZEITZONE;
+  if (process.env.DATABASE_PATH === ":memory:") return;
   const { sweepIdleUnits } = await import("./lib/learning");
   const sweep = () => {
     try {

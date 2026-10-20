@@ -6,12 +6,12 @@ import { parseTime, taskScore } from "./analysis";
 import { db } from "./db";
 import { errorTypeLabel } from "./error-types";
 import { carelessCredit } from "./lehrplan";
+import { wienerZeitstempel } from "./planung/zeit";
 import * as repo from "./repo";
 
-const pad = (n: number) => String(n).padStart(2, "0");
+/** The time of a lesson as it is stored: Vienna wall time (the server may run in UTC). */
 export function localStamp(ms: number) {
-  const d = new Date(ms);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return wienerZeitstempel(ms);
 }
 
 export type AutoDoc = Omit<repo.LessonInput, "student_id" | "teacher_id">;

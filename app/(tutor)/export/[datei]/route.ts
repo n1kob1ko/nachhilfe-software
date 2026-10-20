@@ -2,10 +2,11 @@ import { currentTeacher } from "@/lib/auth";
 import { flushBoard } from "@/lib/whiteboard";
 import { exportBackup } from "@/lib/backup";
 import { datasetCsv } from "@/lib/exports";
+import { wienerDatum } from "@/lib/planung/zeit";
 
 export const dynamic = "force-dynamic";
 
-const stamp = () => new Date().toISOString().slice(0, 10);
+const stamp = () => wienerDatum();
 
 /** Downloads for the Datenexport page. Only for administrators; checked here because layouts do not cover route handlers. */
 export async function GET(_request: Request, { params }: { params: Promise<{ datei: string }> }) {

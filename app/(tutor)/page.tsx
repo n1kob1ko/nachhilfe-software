@@ -3,7 +3,7 @@ import { ArrowRight, CalendarClock, ChevronDown, ClipboardPen, FileCheck2, Noteb
 import { loadDemoData } from "@/app/actions";
 import { startUnitAction } from "@/app/session-actions";
 import { Avatar, SubjectArt } from "@/components/Art";
-import { Tagesplan, dayKey, type TagesplanPunkt } from "@/components/Calendar";
+import { Tagesplan, type TagesplanPunkt } from "@/components/Calendar";
 import { Elapsed } from "@/components/Elapsed";
 import { StudentFocus } from "@/components/StudentFocus";
 import { Wochenplan } from "@/components/planung/Wochenplan";
@@ -13,13 +13,12 @@ import * as repo from "@/lib/repo";
 import { heutigeEinheiten } from "@/lib/planung/heute";
 import { leseRegeln } from "@/lib/planung/regeln";
 import { wochenUebersicht } from "@/lib/planung/uebersicht";
-import { minutenLabel, wienerMinuten, wienerWochenstart } from "@/lib/planung/zeit";
+import { ZEITZONE, minutenLabel, tagAddieren, wienerDatum, wienerMinuten, wienerWochenstart } from "@/lib/planung/zeit";
 import { klassenLabel } from "@/lib/school";
 import { getUnit, listUnits, runningUnits } from "@/lib/units";
 import { examReminders, STAGE_LABEL } from "@/lib/exams";
 
 const parseLocal = (s: string) => new Date(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s) && !/Z|[+-]\d{2}:?\d{2}$/.test(s) ? s.replace(" ", "T") : s);
-const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 const firstName = (n: string) => n.split(" ")[0];
 
 /**
@@ -54,7 +53,9 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
   }
   const students = repo.listStudents();
   const now = new Date();
-  const today = dayKey(now);
+  // „heute“ in Vienna: kurz nach Mitternacht ist in UTC noch gestern
+  const today = wienerDatum(now);
+  const tomorrow = tagAddieren(today, 1);
 
   if (students.length === 0) {
     return (
@@ -82,7 +83,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
 
   const byId = new Map(students.map((s) => [s.id, s]));
   const running = runningUnits(teacher.id);
-  const todays = repo.lessonsBetween(`${today}T00:00`, `${dayKey(addDays(now, 1))}T00:00`).filter((l) => l.status !== "abgesagt" && (!l.teacher_id || l.teacher_id === teacher.id));
+  const todays = repo.lessonsBetween(`${today}T00:00`, `${tomorrow}T00:00`).filter((l) => l.status !== "abgesagt" && (!l.teacher_id || l.teacher_id === teacher.id));
   const next = todays.find((l) => l.status !== "abgeschlossen" && parseLocal(l.starts_at).getTime() + l.duration_min * 60_000 > now.getTime());
 
   /**
@@ -196,7 +197,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
       when: formatDate(r.completed_at, { day: "numeric", month: "short" }),
     });
   }
-  for (const h of repo.openHomeworkDue(dayKey(addDays(now, 1)))) {
+  for (const h of repo.openHomeworkDue(tomorrow)) {
     todos.push({ key: `h${h.id}`, href: `/schueler/${h.student_id}?tab=schule`, icon: NotebookPen, text: <>Hausübung von <b>{firstName(h.student_name)}</b> kontrollieren: {h.description}</>, when: h.due_date ? formatDate(h.due_date, { day: "numeric", month: "short" }) : "" });
   }
 
@@ -322,7 +323,7 @@ function Greeting({ name, date }: { name: string; date: Date }) {
   return (
     <header className="mb-7">
       <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] md:text-[32px]">Hallo, {firstName(name)}</h1>
-      <p className="mt-1 text-[15px] text-ink-2">{date.toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long" })}</p>
+      <p className="mt-1 text-[15px] text-ink-2">{date.toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long", timeZone: ZEITZONE })}</p>
     </header>
   );
 }

@@ -3,6 +3,7 @@ import { db, json } from "./db";
 import type { TaskDraft } from "./tasks";
 import { checkLevel } from "./school";
 import { levelOf } from "./curriculum";
+import { wienerDatum } from "./planung/zeit";
 import type { AssignmentMode } from "./quick-round";
 
 export type Teacher = { id: number; name: string; active: number; username: string; is_admin: number; must_change_password: number };
@@ -489,7 +490,7 @@ export function addTest(t: Omit<TestResult, "id">): number {
       teacher_id: null,
       material_id: null,
       ...t,
-      status: t.status ?? (t.grade == null && t.points == null && t.date > new Date().toISOString().slice(0, 10) ? "geplant" : "geschrieben"),
+      status: t.status ?? (t.grade == null && t.points == null && t.date > wienerDatum() ? "geplant" : "geschrieben"),
       skill_ids: JSON.stringify(t.skill_ids),
       topics: JSON.stringify(t.topics ?? []),
     });

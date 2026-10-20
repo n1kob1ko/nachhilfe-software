@@ -5,16 +5,13 @@ import { redirect } from "next/navigation";
 import { requireAdmin, requireTeacher } from "@/lib/auth";
 import * as imp from "@/lib/curriculum-import";
 import { merkeZuordnung, setExamThresholds, splitTopics, stoffVorschlag, STOFF_THEMEN_MAX } from "@/lib/lehrplan";
+import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
 import { fachAus } from "@/lib/school";
 import { stoffzettelFuer } from "@/lib/stoffzettel";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const num = (f: FormData, k: string) => (str(f, k) === "" ? null : Number(str(f, k).replace(",", ".")));
-const todayLocal = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
 
 // ---------- exams ----------
 export type TopicSuggestion = { topic: string; skills: { id: string; name: string; area: string }[]; best: string[] };
@@ -63,7 +60,7 @@ export async function addExamAction(formData: FormData) {
   const materialId = stoffzettelFuer(Number(str(formData, "material_id")), { student_id: studentId, title, kind, subject, topics });
   repo.addTest({
     student_id: studentId,
-    date: str(formData, "date") || todayLocal(),
+    date: str(formData, "date") || wienerDatum(),
     subject,
     kind,
     title,

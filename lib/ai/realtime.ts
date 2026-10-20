@@ -12,6 +12,7 @@ import { DIFFICULTIES, levelOf } from "../curriculum";
 import { db } from "../db";
 import { ERROR_TYPES, type ErrorType } from "../error-types";
 import * as repo from "../repo";
+import { wienerDatum } from "../planung/zeit";
 import { klassenLabel } from "../school";
 import type { WortartSetting } from "../wortarten";
 import { getUnit } from "../units";
@@ -164,7 +165,7 @@ function nextCandidates(skillId: string | null): { id: string; name: string }[] 
 }
 
 function examFor(studentId: number, subject: string, now: number) {
-  const today = new Date(now).toISOString().slice(0, 10);
+  const today = wienerDatum(new Date(now));
   const t = repo
     .listTests(studentId)
     .filter((x) => (x.status ?? "geplant") === "geplant" && x.date >= today && x.subject === subject)

@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { CURRICULUM, PREREQUISITES } from "./curriculum";
 import { INITIAL_PASSWORD, PUBLIC_DEFAULT_PASSWORD, hashPassword, verifyPassword } from "./password";
+import { wienerZeitstempel } from "./planung/zeit";
 import { checkLevel, migrateLegacy } from "./school";
 import { applyPendingRestore } from "./sicherungen";
 import { skillCode } from "./skill-code";
@@ -975,6 +976,14 @@ function migrate(conn: Database.Database) {
     conn.exec(`UPDATE units SET ended_by = 'automatisch', end_estimated = 1 WHERE ended_by = '' AND status = 'beendet' AND end_reason LIKE 'automatisch%'`);
     conn.exec(`UPDATE units SET ended_by = 'lehrer' WHERE ended_by = '' AND status <> 'gestartet'`);
     conn.exec(`UPDATE units SET subject = COALESCE((SELECT l.subject FROM lessons l WHERE l.unit_id = units.id), '') WHERE subject = ''`);
+    // The Lern-Dokumentation of a unit written while the server ran in UTC: its start was the UTC time, one or
+    // two hours early (shortly after midnight even the day before). Moved to Vienna time once; a start in
+    // Vienna time never equals the UTC one, so a later start finds nothing.
+    const utcStart = conn
+      .prepare("SELECT l.id, u.started_at FROM lessons l JOIN units u ON u.id = l.unit_id WHERE l.starts_at = substr(u.started_at, 1, 16) AND u.started_at LIKE '%Z'")
+      .all() as { id: number; started_at: string }[];
+    const setStart = conn.prepare("UPDATE lessons SET starts_at = ? WHERE id = ?");
+    for (const r of utcStart) setStart.run(wienerZeitstempel(Date.parse(r.started_at)), r.id);
     // At most one running unit per student. Older duplicates (if any) are closed before the index is built.
     conn.exec(`UPDATE units SET status = 'abgebrochen', ended_at = started_at, ended_by = 'automatisch',
       end_reason = 'doppelt gestartet, automatisch geschlossen'
