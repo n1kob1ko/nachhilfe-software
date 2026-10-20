@@ -67,7 +67,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Du ___ das Auto direkt vor der Tür. (parken)",
+    "q": "Setze das Verb im Präteritum ein: Du ___ das Fahrrad direkt vor der Tür. (parken)",
     "blanks": [
       [
         "parktest"
@@ -137,7 +137,6 @@
     "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
     "errors": {
       "singte": "Falsche Präteritumform von „singen“",
-      "sangest": "Falsche Präteritumform von „singen“",
       "sungst": "Falsche Präteritumform von „singen“"
     }
   },
@@ -145,14 +144,14 @@
     "q": "Setze das Verb im Präteritum ein: Du ___ lange an der Bushaltestelle. (stehen)",
     "blanks": [
       [
-        "standest"
+        "standest",
+        "standst"
       ]
     ],
-    "solution": "stehen → standest",
+    "solution": "stehen → standest (auch standst)",
     "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
     "errors": {
       "stehst": "Falsche Präteritumform von „stehen“",
-      "standst": "Falsche Präteritumform von „stehen“",
       "stehtest": "Falsche Präteritumform von „stehen“"
     }
   },
@@ -187,22 +186,22 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Du ___ mich gestern Abend an. (rufen)",
+    "q": "Setze das Verb im Präteritum ein: Du ___ mich gestern Abend an. (anrufen)",
     "blanks": [
       [
         "riefst"
       ]
     ],
-    "solution": "rufen → riefst",
+    "solution": "anrufen → du riefst an",
     "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
     "errors": {
-      "rufte": "Falsche Präteritumform von „rufen“",
-      "ruftest": "Falsche Präteritumform von „rufen“",
-      "rieft": "Falsche Präteritumform von „rufen“"
+      "rufte": "Falsche Präteritumform von „anrufen“",
+      "ruftest": "Falsche Präteritumform von „anrufen“",
+      "rieft": "Falsche Präteritumform von „anrufen“"
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Du ___ mir ewige Treue. (versprechen)",
+    "q": "Setze das Verb im Präteritum ein: Du ___ mir einen Ausflug. (versprechen)",
     "blanks": [
       [
         "versprachst"
@@ -277,18 +276,18 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Er ___ aus dem Bus aus. (steigen)",
+    "q": "Setze das Verb im Präteritum ein: Er ___ aus dem Bus aus. (aussteigen)",
     "blanks": [
       [
         "stieg"
       ]
     ],
-    "solution": "steigen → stieg",
+    "solution": "aussteigen → er stieg aus",
     "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
     "errors": {
-      "steigt": "Falsche Präteritumform von „steigen“",
-      "stiegt": "Falsche Präteritumform von „steigen“",
-      "steigte": "Falsche Präteritumform von „steigen“"
+      "steigt": "Falsche Präteritumform von „aussteigen“",
+      "stiegt": "Falsche Präteritumform von „aussteigen“",
+      "steigte": "Falsche Präteritumform von „aussteigen“"
     }
   },
   {
@@ -557,7 +556,7 @@
     "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
     "errors": {
       "schließt": "Falsche Präteritumform von „schließen“",
-      "schloß": "Falsche Präteritumform von „schließen“",
+      "schloß": "Rechtschreibung: nach kurzem Vokal steht ss",
       "schließte": "Falsche Präteritumform von „schließen“"
     }
   },
@@ -652,7 +651,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Ich ___ etwas Hilfe bei den Hausaufgaben. (brauchen)",
+    "q": "Setze das Verb im Präteritum ein: Ich ___ etwas Hilfe bei der Hausübung. (brauchen)",
     "blanks": [
       [
         "brauchte"
@@ -696,7 +695,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Ich ___ ihr die volle Wahrheit. (versprechen)",
+    "q": "Setze das Verb im Präteritum ein: Ich ___ ihr, pünktlich zu sein. (versprechen)",
     "blanks": [
       [
         "versprach"
@@ -893,10 +892,11 @@
     "q": "Setze das Verb im Präteritum ein: Ihr ___ einen Kuchen für die Party. (backen)",
     "blanks": [
       [
-        "backtet"
+        "backtet",
+        "buktet"
       ]
     ],
-    "solution": "backen → backtet",
+    "solution": "backen → backtet (auch buktet)",
     "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
     "errors": {
       "bäckt": "Falsche Präteritumform von „backen“",
@@ -1024,7 +1024,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ alle Fragen korrekt. (beantworten)",
+    "q": "Setze das Verb im Präteritum ein: Die Schüler ___ alle Fragen richtig. (beantworten)",
     "blanks": [
       [
         "beantworteten"
@@ -1039,7 +1039,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ das Fußballspiel ganz knapp. (verlieren)",
+    "q": "Setze das Verb im Präteritum ein: Die Spieler ___ das Fußballspiel ganz knapp. (verlieren)",
     "blanks": [
       [
         "verloren"
@@ -1054,7 +1054,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ das Paket voller Vorfreude. (öffnen)",
+    "q": "Setze das Verb im Präteritum ein: Die Kinder ___ das Paket voller Vorfreude. (öffnen)",
     "blanks": [
       [
         "öffneten"
@@ -1069,7 +1069,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ die Aufgabe sofort. (verstehen)",
+    "q": "Setze das Verb im Präteritum ein: Die Schülerinnen ___ die Aufgabe sofort. (verstehen)",
     "blanks": [
       [
         "verstanden"
@@ -1084,7 +1084,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ durch den ganzen Park. (laufen)",
+    "q": "Setze das Verb im Präteritum ein: Die Hunde ___ durch den ganzen Park. (laufen)",
     "blanks": [
       [
         "liefen"
@@ -1099,7 +1099,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ ein spannendes Buch im Bett. (lesen)",
+    "q": "Setze das Verb im Präteritum ein: Die Mädchen ___ abends ein spannendes Buch. (lesen)",
     "blanks": [
       [
         "lasen"
@@ -1114,7 +1114,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ früher in einer kleinen Wohnung. (wohnen)",
+    "q": "Setze das Verb im Präteritum ein: Meine Großeltern ___ früher in einer kleinen Wohnung. (wohnen)",
     "blanks": [
       [
         "wohnten"
@@ -1129,7 +1129,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ ihr altes Auto bei eBay. (verkaufen)",
+    "q": "Setze das Verb im Präteritum ein: Meine Eltern ___ ihr altes Auto im Internet. (verkaufen)",
     "blanks": [
       [
         "verkauften"
@@ -1144,7 +1144,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ ihre Verwandten in Hamburg. (besuchen)",
+    "q": "Setze das Verb im Präteritum ein: Die Kinder ___ ihre Verwandten in Graz. (besuchen)",
     "blanks": [
       [
         "besuchten"
@@ -1159,7 +1159,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ ihre schmutzige Kleidung. (waschen)",
+    "q": "Setze das Verb im Präteritum ein: Die Fußballer ___ ihre schmutzige Kleidung. (waschen)",
     "blanks": [
       [
         "wuschen"
@@ -1174,7 +1174,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ in einem kleinen Hotel. (übernachten)",
+    "q": "Setze das Verb im Präteritum ein: Die Touristen ___ in einem kleinen Hotel. (übernachten)",
     "blanks": [
       [
         "übernachteten"
@@ -1189,7 +1189,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ lange auf den Arzt. (warten)",
+    "q": "Setze das Verb im Präteritum ein: Die Patienten ___ lange auf den Arzt. (warten)",
     "blanks": [
       [
         "warteten"
@@ -1204,7 +1204,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ schnell zur Bushaltestelle. (laufen)",
+    "q": "Setze das Verb im Präteritum ein: Die Schüler ___ schnell zur Bushaltestelle. (laufen)",
     "blanks": [
       [
         "liefen"
@@ -1219,7 +1219,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ viel zu spät zum Termin. (kommen)",
+    "q": "Setze das Verb im Präteritum ein: Die Gäste ___ viel zu spät zum Essen. (kommen)",
     "blanks": [
       [
         "kamen"
@@ -1234,21 +1234,20 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ viele Gäste zum Fest ein. (laden)",
+    "q": "Setze das Verb im Präteritum ein: Meine Eltern ___ viele Gäste zum Fest ein. (einladen)",
     "blanks": [
       [
         "luden"
       ]
     ],
-    "solution": "laden → luden",
+    "solution": "einladen → sie luden ein",
     "hint": "Präteritum: die einfache Vergangenheitsform. Bei starken Verben ändert sich der Vokal.",
     "errors": {
-      "ladeten": "Falsche Präteritumform von „laden“",
-      "ladet": "Falsche Präteritumform von „laden“"
+      "ladet": "Falsche Präteritumform von „einladen“"
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Sie ___ über das Wochenende in Berlin. (bleiben)",
+    "q": "Setze das Verb im Präteritum ein: Meine Freunde ___ über das Wochenende in Wien. (bleiben)",
     "blanks": [
       [
         "blieben"
@@ -1337,7 +1336,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Wir ___ einen Film auf Netflix. (schauen)",
+    "q": "Setze das Verb im Präteritum ein: Wir ___ einen Film im Fernsehen. (schauen)",
     "blanks": [
       [
         "schauten"
@@ -1366,7 +1365,7 @@
     }
   },
   {
-    "q": "Setze das Verb im Präteritum ein: Wir ___ fleißig für die Deutschprüfung. (lernen)",
+    "q": "Setze das Verb im Präteritum ein: Wir ___ fleißig für die Deutschschularbeit. (lernen)",
     "blanks": [
       [
         "lernten"

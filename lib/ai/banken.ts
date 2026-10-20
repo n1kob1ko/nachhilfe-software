@@ -18,13 +18,14 @@
  * Ablauf: `buildBankPrompt()` baut den Auftrag (ohne die API zu rufen, damit er prüfbar ist),
  * `generateBankItemsWithAI()` holt die Einträge über `lib/ai/router.ts` (Feature-Schlüssel `aufgaben`,
  * kein neuer KI-Bereich, keine neue Route), `parseAiBankItem()` prüft jeden Eintrag gegen das
- * Bankschema, `aiBankItemToDraft()` macht daraus eine Aufgabe. Der Genus-Abgleich der Artikel-Einträge
+ * Bankschema und gegen die fachlichen Regeln der Banken (`lib/banken-regeln.ts`, dieselben wie für die
+ * Dateien), `aiBankItemToDraft()` macht daraus eine Aufgabe. Der Genus-Abgleich der Artikel-Einträge
  * läuft über `lib/german-nouns.ts` und nur, wenn das Modell ein Geschlecht angibt: geraten wird nie.
  */
 import { z } from "zod";
+import { eintragFehler } from "../banken-regeln";
 import { bankItemTask } from "../generators";
 import { genusMarker, parseNoun, type Genus } from "../german-nouns";
-import { gapCount } from "../tasks";
 import type { Difficulty } from "../curriculum";
 import type { TaskDraft } from "../tasks";
 import {
@@ -36,7 +37,6 @@ import {
   praepositionenItemSchema,
   type BankId,
   type BankItem,
-  type BankTypes,
 } from "../banks";
 import { runAI, type AIMeta } from "./router";
 
@@ -83,6 +83,7 @@ Anforderungen:
 - Die Wörter sind eine Mischung aus den Artikeln "der", "die" und "das".
 - Wähle Wörter, die für das Thema typisch sind (Niveau A1 bis B2).
 - Jedes Wort muss eine präzise englische Übersetzung haben. Bitte kein Plural!
+- Nur Wörter mit genau einem richtigen Artikel: keine Wörter, die mit zwei Artikeln richtig sind (der oder das Keks, der oder das Joghurt), keine Wörter mit zwei Bedeutungen und verschiedenem Artikel (der See, die See), keine Personen, die Mann oder Frau sein können (der oder die Angestellte).
 - Hole dir keine Wörter aus anderen Quellen: die Liste ist neu von dir zusammengestellt.
 Formatierung: Gib das Ergebnis ausschließlich als valides JSON-Array aus. Nutze exakt diese Struktur für jedes Objekt:
 {
@@ -103,7 +104,11 @@ export const ADJEKTIVDEKLINATION_ANWEISUNG = `Rolle: Du bist ein Experte für De
 Aufgabe: Erstelle Übungssätze zur deutschen Adjektivdeklination. Jeder Satz muss zwei Lücken haben: eine für die Adjektivendung und eine für die Nomen-Endung (insbesondere für Genitiv -s/-es oder n-Deklination).
 Anforderungen an die Sätze:
 - Die Kombination aus Adjektiv und Nomen muss logisch sinnvoll sein.
-- Variiere zwischen bestimmtem, unbestimmtem und Nullartikel.
+- In jedem Satz darf nur eine Kombination der beiden Endungen richtig sein, denn jede Lücke wird für sich geprüft.
+- Vor dem Adjektiv steht immer ein Begleiter: der, das, dem, den, des, ein, einem, einen, eines, einer, kein, mein, dieser … Ohne Begleiter passen oft mehrere Endungen.
+- Keine Begleiter, nach denen Einzahl und Mehrzahl passen: „die“, „diese“, „meine“ … (die rote Rose, die roten Rosen) und „der“, „dieser“ … im Genitiv (der roten Rose, der roten Rosen). Auch nicht alle, beide, einige, viele, wenige.
+- Keine Nomen, die auf zwei Arten dekliniert werden (Nachbar, Bauer, Bär).
+- Variiere zwischen bestimmtem und unbestimmtem Artikel, zwischen Nominativ, Akkusativ, Dativ und Genitiv.
 - Die Sätze haben ein mittleres Sprachniveau (A1/A2/B1/B2).
 Technisches Format (strikt einhalten), JSON-Array aus Objekten mit diesem Aufbau:
 - prefix: Der Teil des Satzes bis zur ersten Lücke (inkl. Adjektivstamm).
@@ -113,6 +118,7 @@ Technisches Format (strikt einhalten), JSON-Array aus Objekten mit diesem Aufbau
 - correct1: Die richtige Endung für das Adjektiv; sie muss in options1 vorkommen.
 - options2: 4 Optionen für das Nomen (z. B. ["-", "-e", "-en", "-s"]). Nutze "-" für "keine Endung".
 - correct2: Die richtige Endung für das Nomen; sie muss in options2 vorkommen.
+- alsoCorrect2 (nur wenn nötig): weitere richtige Nomenendungen. Sind im Genitiv -s und -es beide richtig (des Tags, des Tages), steht eine in correct2 und die andere in alsoCorrect2, nie in options2.
 - solution: Der vollständige, korrekte Satz (prefix + richtige Endungen + middle + suffix).
 Beispiel:
 {
@@ -121,7 +127,7 @@ Beispiel:
   "suffix": " wurde das Spiel abgesagt.",
   "options1": ["-e", "-er", "-en", "-em"],
   "correct1": "-en",
-  "options2": ["-", "-e", "-en", "-s"],
+  "options2": ["-s", "-", "-e", "-en"],
   "correct2": "-s",
   "solution": "Wegen des starken Regens wurde das Spiel abgesagt."
 }`;
@@ -137,14 +143,15 @@ Anforderungen an die Grammatik:
 - Die Sätze sind alltagsnah und logisch sinnvoll.
 - Es wird immer der Kasus (Dativ oder Akkusativ) nach der Präposition geübt.
 - Der Artikel in der Lücke passt zum Nomen und zum verlangten Kasus.
+- Nur ein Fall darf passen. Bei Wechselpräpositionen (an, auf, hinter, in, neben, über, unter, vor, zwischen) legt das Verb den Fall fest: Lage (liegen, stehen, sitzen, hängen) verlangt den Dativ, Richtung (legen, stellen, setzen) den Akkusativ. Keine Bewegungsverben wie gehen, laufen, fahren, fliegen, springen ohne Richtungswort (er läuft in das Haus und er läuft in dem Haus sind beide richtig), keine Verben wie passen, parken, schreiben, verstecken.
 Technisches Format (strikt einhalten), JSON-Array aus Objekten mit diesem Aufbau:
 - prefix: Der Teil des Satzes vor der Lücke (endet mit der Präposition).
 - noun: Das Nomen, das nach der Lücke folgt (ohne Artikel).
 - article: Das Genus des Nomens als bestimmter Artikel im Nominativ: "der", "die" oder "das".
 - suffix: Der Rest des Satzes nach dem Nomen (z. B. ein Punkt oder weitere Satzteile).
-- options: genau 4 Antwortmöglichkeiten (z. B. ["dem", "der", "den", "das"]).
+- options: genau 4 Antwortmöglichkeiten, zuerst die richtige, dann der Artikel im anderen Fall (z. B. ["dem", "den", "der", "das"]).
 - correct: Die exakt richtige Antwort; sie muss in options vorkommen und der einzige richtige Artikel sein.
-- kasus: "Dativ" oder "Akkusativ" — der Fall, den die Präposition hier verlangt.
+- kasus: "Dativ" oder "Akkusativ", der Fall, den die Präposition hier verlangt.
 - solution: Der vollständige korrekte Satz.
 Beispiel:
 {
@@ -152,7 +159,7 @@ Beispiel:
   "noun": "Tisch",
   "article": "der",
   "suffix": ".",
-  "options": ["dem", "der", "das", "den"],
+  "options": ["dem", "den", "der", "das"],
   "correct": "dem",
   "kasus": "Dativ",
   "solution": "Das Buch liegt auf dem Tisch."
@@ -160,31 +167,35 @@ Beispiel:
 
 /** Präteritum — Bankform `ClozeItem`: eine Lücke je Verbform, dazu Lösung und Hilfe. */
 export const PRAETERITUM_ANWEISUNG = `Rolle: Du bist ein Experte für deutsche Grammatik und erstellst Übungssätze zum Präteritum.
-Aufgabe: Erstelle Lückensätze, in denen genau eine Verbform im Präteritum einzusetzen ist (ein bis zwei Lücken je Satz, jede Lücke ist ___).
+Aufgabe: Erstelle Lückensätze, in denen genau eine Verbform im Präteritum einzusetzen ist (eine Lücke je Satz, die Lücke ist ___).
 Anforderungen:
 - Jeder Satz ist ein vollständiger, alltagsnaher Satz mit klarem Zeitbezug (gestern, früher, damals …).
+- Am Satzende steht die Grundform des Verbs in Klammern, z. B. "Gestern ___ ich in die Schule. (gehen)". Bei trennbaren Verben die ganze Grundform: "Er ___ aus dem Bus aus. (aussteigen)".
+- Das Subjekt ist eindeutig: kein "sie" oder "Sie" direkt vor oder nach der Lücke (Einzahl oder Mehrzahl?), sondern ein Nomen oder ich, du, er, es, wir, ihr.
 - Gemischt werden starke Verben (ging, fuhr, las, schrieb) und schwache Verben (lernte, spielte, arbeitete).
-- Die Lösung ist eindeutig; dort, wo mehrere Formen richtig wären, gib alle in der Lösung an.
+- Die Lösung ist eindeutig; dort, wo mehrere Formen richtig sind (du standest, du standst), stehen alle in blanks.
 Technisches Format (strikt einhalten), JSON-Array aus Objekten:
-- q: der Satz mit ___ für jede Lücke; die Anzahl der ___ ist genau die Anzahl der Lücken.
-- blanks: ein Array je Lücke, jede Lücke ist ein Array mit allen akzeptierten Schreibweisen, z. B. [["ging"], ["fuhr", "ist gefahren"]].
+- q: der Satz mit ___ für die Lücke und der Grundform in Klammern am Ende; die Anzahl der ___ ist genau die Anzahl der Lücken.
+- blanks: ein Array je Lücke, jede Lücke ist ein Array mit allen akzeptierten Schreibweisen, z. B. [["ging"]] oder [["standest", "standst"]].
 - solution: der vollständige richtige Satz, kurz begründet (z. B. "lesen ist stark: er las").
 - hint: eine Hilfe, die an die Regel erinnert, ohne die Lösung zu verraten.
-- errors (optional): typische falsche Formen als Schlüssel und der Denkfehler dahinter als Text, z. B. {"gehte": "schwache Form bei starkem Verb"}.`;
+- errors (optional): typische falsche Formen als Schlüssel und der Denkfehler dahinter als Text, z. B. {"gehte": "schwache Form bei starkem Verb"}. Eine Form, die auch richtig ist (auch veraltet), ist kein Fehler.`;
 
 /** Perfekt — Bankform `ClozeItem`; das Hilfsverb ist Teil der Lücke. */
 export const PERFEKT_ANWEISUNG = `Rolle: Du bist ein Experte für deutsche Grammatik und erstellst Übungssätze zum Perfekt.
-Aufgabe: Erstelle Lückensätze im Perfekt (haben oder sein + Partizip II). Ein bis zwei Lücken je Satz, jede Lücke ist ___.
+Aufgabe: Erstelle Lückensätze im Perfekt (haben oder sein + Partizip II). Genau zwei Lücken je Satz: die erste für das Hilfsverb, die zweite für das Partizip II, jede Lücke ist ___.
 Anforderungen:
 - Bewegungs- und Zustandsverben bilden das Perfekt mit "sein" (ich bin gegangen, ich bin gewesen), alle anderen mit "haben".
-- Steht das Hilfsverb und das Partizip II getrennt, bekommt jede Stelle eine eigene Lücke (z. B. "Wir ___ gestern lange ___." mit blanks [["haben"], ["gelernt"]]).
+- Keine Verben, die in Österreich mit "sein" und in Deutschland mit "haben" gehen (sitzen, liegen, stehen, schwimmen, hängen), außer beide Hilfsverben stehen in blanks.
+- Am Satzende steht die Grundform des Verbs in Klammern, z. B. "Wir ___ gestern lange ___. (lernen)" mit blanks [["haben"], ["gelernt"]].
+- Das Subjekt ist eindeutig: kein "sie" oder "Sie" direkt vor oder nach einer Lücke, sondern ein Nomen oder ich, du, er, es, wir, ihr.
 - Der Satz ist vollständig, alltagsnah und hat einen klaren Zeitbezug (gestern, letzten Sommer, schon …).
 Technisches Format (strikt einhalten), JSON-Array aus Objekten:
-- q: der Satz mit ___ für jede Lücke; die Anzahl der ___ ist genau die Anzahl der Lücken.
+- q: der Satz mit ___ für jede Lücke und der Grundform in Klammern am Ende; die Anzahl der ___ ist genau die Anzahl der Lücken.
 - blanks: ein Array je Lücke, jede Lücke ist ein Array mit allen akzeptierten Schreibweisen.
 - solution: der vollständige richtige Satz, kurz begründet (z. B. "gehen bildet das Perfekt mit sein: wir sind gegangen").
 - hint: eine Hilfe, die an die Regel erinnert, ohne die Lösung zu verraten.
-- errors (optional): typische falsche Formen als Schlüssel und der Denkfehler dahinter als Text, z. B. {"hat gefahren": "falsches Hilfsverb"}.`;
+- errors (optional): typische falsche Formen als Schlüssel und der Denkfehler dahinter als Text, z. B. {"hat": "Falsches Hilfsverb", "gefahrt": "Falsches Partizip II"}.`;
 
 /** das/dass — Bankform `ClozeItem` plus die Begründung aus der Quelle. */
 export const DAS_DASS_ANWEISUNG = `Rolle: Du bist ein Experte für deutsche Rechtschreibung und erstellst Übungen zu das/dass.
@@ -195,9 +206,9 @@ Anforderungen:
 - Beide Fälle kommen vor; prüfe bei jedem Satz die Ersatzprobe.
 - Der Satz ist vollständig, alltagsnah und in österreichischer Schreibweise.
 Technisches Format (strikt einhalten), JSON-Array aus Objekten:
-- q: der Satz mit ___ für jede Lücke; die Anzahl der ___ ist genau die Anzahl der Lücken.
+- q: "Setze „das“ oder „dass“ ein: " und dahinter der Satz mit ___ für jede Lücke; die Anzahl der ___ ist genau die Anzahl der Lücken.
 - blanks: ein Array je Lücke, jede Lücke ist ein Array mit allen akzeptierten Schreibweisen, z. B. [["dass"]].
-- solution: der vollständige richtige Satz.
+- solution: der vollständige richtige Satz, genau der Satz aus q mit den Lösungen in den Lücken.
 - hint: eine Hilfe (Ersatzprobe mit "dieses/welches"), ohne die Lösung zu verraten.
 - explanation: die Begründung, warum "das" oder "dass" richtig ist, in einem Satz.
 - errors (optional): typische falsche Formen als Schlüssel und der Denkfehler dahinter als Text, z. B. {"das": "Ersatzprobe mit „dieses“ nicht möglich"}.`;
@@ -211,13 +222,13 @@ Anforderungen:
 - Aneinandergereiht ergeben die beiden Teile den vollständigen, richtigen Satz (Beistrichstellung beachten).
 - Der Gliedsatz darf nicht am Anfang stehen, damit die Zuordnung eindeutig bleibt.
 Technisches Format (strikt einhalten), JSON-Array aus Objekten:
-- parts: genau zwei Objekte in der Reihenfolge des Satzes, jedes mit "text" (der Satzteil ohne führenden oder abschließenden Beistrich, Leerzeichen am Rand vermeiden) und "type" ("HS" oder "GS").
+- parts: genau zwei Objekte in der Reihenfolge des Satzes, jedes mit "text" (der Satzteil ohne Leerzeichen am Rand) und "type" ("HS" oder "GS"). Der erste Teil endet mit dem Beistrich, der zweite mit dem Satzzeichen (Punkt, Fragezeichen oder Rufzeichen).
 - Genau ein Teil hat "type": "HS", der andere "GS".
 Beispiel:
 {
   "parts": [
-    { "text": "Ich gehe heute früh schlafen", "type": "HS" },
-    { "text": "weil ich morgen eine Schularbeit habe", "type": "GS" }
+    { "text": "Ich gehe heute früh schlafen,", "type": "HS" },
+    { "text": "weil ich morgen eine Schularbeit habe.", "type": "GS" }
   ]
 }`;
 
@@ -285,6 +296,8 @@ const artikelKiSchema = z
     word: z.string().min(1),
     article: z.enum(ARTIKEL_ARTICLES).nullable().optional(),
     genus: z.string().min(1).nullable().optional(),
+    meaning: z.string().min(1).optional(),
+    alsoArticle: z.array(z.enum(ARTIKEL_ARTICLES)).min(1).optional(),
     translation: z.string().min(1).optional(),
     tags: z.array(z.string().min(1)).min(1),
   })
@@ -357,9 +370,12 @@ const firstIssue = (e: z.ZodError) => {
 };
 
 /**
- * Prüft einen KI-Eintrag gegen das Bankschema — und darüber hinaus gegen dieselben Zusagen, die
- * `lib/banks.test.ts` für die Dateien prüft (Lückenzahl, `correct` in den Optionen). Ein Eintrag, der
- * hier nicht durchkommt, wird verworfen und nicht zu einer Aufgabe.
+ * Prüft einen KI-Eintrag gegen das Bankschema und gegen dieselben fachlichen Regeln, die
+ * `lib/banken.test.ts` für jeden Eintrag der Dateien prüft (`eintragFehler` in lib/banken-regeln.ts:
+ * Lückenzahl, richtige Antworten unter den Fehlern, Sätze mit zwei richtigen Lösungen …). Ein Eintrag,
+ * der hier nicht durchkommt, wird verworfen und nicht zu einer Aufgabe. Vorher wird nur die Form
+ * angeglichen, die eindeutig ist: die Anweisung vor einem das/dass-Satz und der Beistrich zwischen
+ * Haupt- und Gliedsatz.
  */
 export function parseAiBankItem<K extends BankId>(id: K, raw: unknown): BankItemParse<K> {
   const no = (error: string): BankItemParse<K> => ({ ok: false, error });
@@ -372,34 +388,45 @@ export function parseAiBankItem<K extends BankId>(id: K, raw: unknown): BankItem
     if (!vorpruefung.success) return no(firstIssue(vorpruefung.error));
     const d = vorpruefung.data;
     if (abgleich.status === "ohne") return no("kein Geschlecht angegeben (article fehlt) — es wird keines geraten");
-    kandidat = { word: abgleich.word, article: abgleich.article, ...(d.translation ? { translation: d.translation } : {}), tags: d.tags };
+    kandidat = {
+      word: abgleich.word,
+      article: abgleich.article,
+      ...(d.meaning ? { meaning: d.meaning } : {}),
+      ...(d.alsoArticle ? { alsoArticle: d.alsoArticle } : {}),
+      ...(d.translation ? { translation: d.translation } : {}),
+      tags: d.tags,
+    };
   }
+  kandidat = angleichen(id, kandidat);
 
   const parsed = ITEM_SCHEMAS[id].safeParse(kandidat);
   if (!parsed.success) return no(firstIssue(parsed.error));
   const item = parsed.data as BankItem<K>;
 
-  const fachlich = fachlichePruefung(id, item as BankTypes[BankId]);
+  const fachlich = eintragFehler(id, item)[0];
   return fachlich ? no(fachlich) : { ok: true, item };
 }
 
-/** Die Zusagen, die `lib/banks.test.ts` für die Bankdateien prüft — hier für einzelne KI-Einträge. */
-function fachlichePruefung(id: BankId, item: BankTypes[BankId]): string | null {
-  if (id === "praeteritum" || id === "perfekt" || id === "das-dass") {
-    const i = item as BankTypes["praeteritum"];
-    const gaps = gapCount(i.q);
-    return gaps === i.blanks.length ? null : `${gaps} Lücken im Satz, aber ${i.blanks.length} Lösungen`;
+/** Die Anweisung, mit der jeder das/dass-Satz der Bank beginnt. */
+const DAS_DASS_ANWEISUNG_IM_SATZ = "Setze „das“ oder „dass“ ein: ";
+
+/**
+ * Gleicht die Form eines KI-Eintrags an die Bank an, wo es nur eine richtige Form gibt: ein das/dass-Satz
+ * bekommt die Anweisung davor, der erste Teil eines Satzes aus Haupt- und Gliedsatz den Beistrich am Ende.
+ * Inhalt (Wörter, Lösungen) wird nie verändert.
+ */
+function angleichen(id: BankId, raw: unknown): unknown {
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return raw;
+  const o = raw as Record<string, unknown>;
+  if (id === "das-dass" && typeof o.q === "string" && !o.q.startsWith(DAS_DASS_ANWEISUNG_IM_SATZ)) return { ...o, q: `${DAS_DASS_ANWEISUNG_IM_SATZ}${o.q.trim()}` };
+  if (id === "hauptsatz-gliedsatz" && Array.isArray(o.parts) && o.parts.length === 2) {
+    const [erster, zweiter] = o.parts as unknown[];
+    if (erster && typeof erster === "object" && typeof (erster as { text?: unknown }).text === "string") {
+      const text = ((erster as { text: string }).text).trim();
+      if (text && !text.endsWith(",")) return { ...o, parts: [{ ...(erster as object), text: `${text},` }, zweiter] };
+    }
   }
-  if (id === "adjektivdeklination") {
-    const i = item as BankTypes["adjektivdeklination"];
-    if (!i.options1.includes(i.correct1)) return `correct1 „${i.correct1}“ fehlt in options1`;
-    return i.options2.includes(i.correct2) ? null : `correct2 „${i.correct2}“ fehlt in options2`;
-  }
-  if (id === "praepositionen") {
-    const i = item as BankTypes["praepositionen"];
-    return i.options.includes(i.correct) ? null : `correct „${i.correct}“ fehlt in options`;
-  }
-  return null;
+  return raw;
 }
 
 // ---------- aus KI-Einträgen werden Aufgaben ----------

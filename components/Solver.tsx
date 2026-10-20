@@ -31,6 +31,8 @@ export type ClientTask = {
   /** Leseverständnis: the shared text, on the first question only; every question is about it (lib/lesen.ts). */
   reading?: { title: string; text: string; lang: string } | null;
   blanks: number;
+  /** Cloze: the gaps are word endings; a gap may stay empty (= keine Endung, lib/tasks.ts AnswerSpec.endings). */
+  endings?: boolean;
   /** Order tasks: the steps in the (shuffled) order they are shown. */
   steps: string[] | null;
   hints: string[];
@@ -506,7 +508,7 @@ function TaskCard({
   const answer = m && math ? JSON.stringify(mathAnswer(m, math)) : task.options ? (choice === null ? "" : String(choice)) : task.steps ? JSON.stringify(order) : task.blanks > 0 ? JSON.stringify(gaps) : text;
   // a correction task needs a changed text: the faulty one as it is is never the answer
   const unchanged = task.faulty !== null && text.trim() === task.faulty.trim();
-  const canSubmit = !pending && !final && (m && math ? mathReady(m, math) : task.options ? choice !== null : task.steps ? true : task.blanks > 0 ? gaps.every((g) => g.trim()) : text.trim().length > 0 && !unchanged);
+  const canSubmit = !pending && !final && (m && math ? mathReady(m, math) : task.options ? choice !== null : task.steps ? true : task.blanks > 0 ? (task.endings ? gaps.some((g) => g.trim()) : gaps.every((g) => g.trim())) : text.trim().length > 0 && !unchanged);
   const move = (pos: number, dir: -1 | 1) =>
     setOrder((o) => {
       const j = pos + dir;

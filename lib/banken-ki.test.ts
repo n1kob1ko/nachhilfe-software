@@ -18,7 +18,7 @@ for (const k of ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "OPENROUTER_API_KE
 /** Ein gültiger Artikel-Eintrag in Bankform. */
 const HUND: ArtikelItem = { word: "Hund", article: "der", translation: "dog", tags: ["Tiere"] };
 /** Ein gültiger Präteritum-Eintrag in Bankform. */
-const GING = { q: "Gestern ___ ich in die Schule.", blanks: [["ging"]], solution: "gehen ist stark: ich ging", hint: "Welche Zeitform verlangt „gestern“?", errors: { gehte: "schwache Form bei starkem Verb" } };
+const GING = { q: "Gestern ___ ich in die Schule. (gehen)", blanks: [["ging"]], solution: "gehen ist stark: ich ging", hint: "Welche Zeitform verlangt „gestern“?", errors: { gehte: "schwache Form bei starkem Verb" } };
 
 async function fakeRouter<T>(answer: (prompt: string, schema: { parse: (x: unknown) => unknown }, model: string) => unknown, run: (router: typeof import("./ai/router")) => Promise<T>): Promise<T> {
   const router = await import("./ai/router");
@@ -281,7 +281,7 @@ test("runBankPruefung: beanstandete Einträge kommen mit Grund und geprüftem Vo
   assert.equal(ergebnis.ran, true, ergebnis.message);
   const bank = ergebnis.banks[0];
   assert.equal(bank.id, "artikel");
-  assert.equal(bank.total, 1927);
+  assert.equal(bank.total, 1914);
   assert.equal(bank.checked, 3);
   assert.equal(bank.unanswered, 0);
   assert.equal(bank.flagged.length, 1);
@@ -360,7 +360,7 @@ test("der Bericht mit Ergebnis nennt je Bank die Zahlen und jeden beanstandeten 
   assert.ok(!md.includes("NICHT stattgefunden"), "ein gelaufener Lauf meldet keinen Ausfall");
   assert.match(md, /Modell: m-test/);
   assert.match(md, /Probelauf: höchstens 20 Einträge je Bank/);
-  assert.match(md, /\| Artikel bestimmen \| artikel\.json \| 1927 \| 1927 \| 0 \| 3 \| 1 \|/);
+  assert.match(md, /\| Artikel bestimmen \| artikel\.json \| 1914 \| 1914 \| 0 \| 3 \| 1 \|/);
   assert.match(md, /### Artikel bestimmen \(`artikel\.json`\) — 1/);
   assert.match(md, /- \*\*Nr\. 2\*\* .*Grund: Artikel falsch/);
   assert.match(md, /Vorschlag verworfen/);
@@ -393,7 +393,7 @@ test("review: true: der Eintrag bleibt in der Bank und verschwindet aus den Aufg
   } finally {
     useBankContentForTest(null);
   }
-  assert.equal(bankItems("artikel").length, 1927, "nach dem Test müssen die echten Banken wieder gelesen werden");
+  assert.equal(bankItems("artikel").length, 1914, "nach dem Test müssen die echten Banken wieder gelesen werden");
 });
 
 test("review: true gilt für jede Bank: markierte Einträge sind nie in bankUsable", () => {

@@ -34,6 +34,7 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
       passage: reading ? null : (t.data.passage ?? null),
       reading: reading && i === 0 ? { ...reading, lang: w.subject === "Englisch" ? "en" : "de" } : null,
       blanks: t.answer.blanks?.length ?? 0,
+      endings: t.answer.endings === true,
       steps: t.type === "order" ? (t.data.steps ?? null) : null,
       hints: test ? [] : t.hints,
       hintsOpened: new Set(hintUses.filter((h) => h.task_id === t.id).map((h) => h.hint_index)).size,

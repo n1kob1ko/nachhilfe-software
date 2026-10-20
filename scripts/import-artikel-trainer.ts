@@ -1,8 +1,13 @@
 /**
  * One-shot import of the Artikel Trainer banks (Flask JSON) into `data/banks/*.json`.
  *
- * The script stays in the repository after the import so that the committed banks can be
+ * The script stays in the repository after the import so that the first import can be
  * reproduced: same source, same output, byte for byte. It never writes into the source repo.
+ *
+ * Since the bank review (docs/banks-pruefung.md) the committed banks are no longer the raw import:
+ * entries that graded right answers as wrong were removed or rewritten, and new sentences were added.
+ * A re-run would undo that. Run it only into a scratch copy and compare; lib/banken.test.ts fails on
+ * every entry the review rules flag.
  *
  *   tsx scripts/import-artikel-trainer.ts <Pfad zu .../Artikel Trainer/categories> [--kasus-ki]
  *
