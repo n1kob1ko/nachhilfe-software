@@ -377,7 +377,8 @@ export function analyzeWay(lines: string[], ctx: WayContext): WayVerdict {
   const steps: StepVerdict[] = [];
   const list = lines.map((l) => l.trim()).filter(Boolean);
   const x = ctx.mode === "gleichung" ? (ctx.variable || "x") : null;
-  const startNode = ctx.mode === "term" && ctx.start ? parseExpr(stripUnits(ctx.start), { vars: [...letters(ctx.start)] }) : null;
+  const startVars = ctx.start ? [...letters(ctx.start)] : [];
+  const startNode = ctx.mode === "term" && ctx.start ? parseExpr(stripUnits(ctx.start, startVars), { vars: startVars }) : null;
   const vars = ctx.mode === "gleichung" ? [x!] : startNode ? [...varsOf(startNode)] : [];
   const envs = ctx.mode === "gleichung" ? (ctx.solutions ?? []).map((s) => ({ [x!]: s })) : samples(vars).slice(0, vars.length ? 4 : 1);
   const startValues = startNode ? envs.map((env) => evaluate(startNode, env)) : [];
@@ -481,8 +482,11 @@ export function analyzeWay(lines: string[], ctx: WayContext): WayVerdict {
 }
 
 function letters(s: string): Set<string> {
-  const out = new Set<string>();
-  for (const m of stripUnits(normalizeMath(s)).replace(/\b(sqrt|wurzel|pi)\b/gi, "").matchAll(/\p{L}/gu)) out.add(m[0]);
+  const norm = normalizeMath(s);
+  // a single letter written right after a number is a variable ("9a", "2x"), never a unit: "9a" is not 9 Ar
+  const attached = [...norm.matchAll(/(?<=[\d)])\p{L}(?!\p{L})/gu)].map((m) => m[0]);
+  const out = new Set<string>(attached);
+  for (const m of stripUnits(norm, attached).replace(/\b(sqrt|wurzel|pi)\b/gi, "").matchAll(/\p{L}/gu)) out.add(m[0]);
   return out;
 }
 
