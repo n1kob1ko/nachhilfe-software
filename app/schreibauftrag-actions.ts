@@ -7,32 +7,35 @@ import { createDraft, type BuilderSettings } from "@/lib/builder";
 import { noteActivity } from "@/lib/learning";
 import { pushLive, showOnTablet, studentDevice } from "@/lib/live";
 import * as repo from "@/lib/repo";
+import { SORTEN, type SorteKey } from "@/lib/schreibauftrag";
+import { auftragFor, cleanAuftragSettings, createAuftrag, quelleOf, updateAuftrag } from "@/lib/schreibauftrag-store";
 import { textChannel } from "@/lib/text-routes";
 import { getText } from "@/lib/texts";
-import { TEXTINTERPRETATION_SKILL } from "@/lib/textinterpretation";
-import { cleanSettings, createInterpretation, getInterpretation, teilSourceOf, updateInterpretation } from "@/lib/textinterpretation-store";
 import { canManageUnit, getUnit, runningUnitForStudent } from "@/lib/units";
 import { publish } from "@/lib/whiteboard-hub";
 
-export type InterpretationFormState = { error?: string } | null;
+export type AuftragFormState = { error?: string } | null;
 
 const fields = (f: FormData) => ({
   title: f.get("title"),
   author: f.get("author"),
   year: f.get("year"),
+  medium: f.get("medium"),
   kind: f.get("kind"),
   story: f.get("story"),
   countBlank: f.get("countBlank"),
   target: f.get("target"),
+  situation: f.get("situation"),
   prompt: f.get("prompt"),
   sourceNote: f.get("sourceNote"),
 });
 
 /**
- * A new Textinterpretation (Schreibauftrag): in a running unit, or for a student from the student page or
- * the builder. Without a unit the text waits on the student page and opens on the tablet in the next unit.
+ * A new Schreibauftrag (Textinterpretation, Leserbrief, Erörterung …): in a running unit, or for a student from the
+ * student page or the builder. Without a unit the text waits on the student page and opens on the tablet in the
+ * next unit.
  */
-export async function createInterpretationAction(where: { unitId: number } | { studentId: number }, _prev: InterpretationFormState, f: FormData): Promise<InterpretationFormState> {
+export async function createAuftragAction(sorte: SorteKey, where: { unitId: number } | { studentId: number }, _prev: AuftragFormState, f: FormData): Promise<AuftragFormState> {
   const t = await requireTeacher();
   let unit = "unitId" in where ? getUnit(where.unitId) : null;
   let studentId: number;
@@ -49,9 +52,9 @@ export async function createInterpretationAction(where: { unitId: number } | { s
     const running = runningUnitForStudent(student.id);
     unit = running && canManageUnit(t, running) ? running : null;
   }
-  const out = cleanSettings(fields(f));
+  const out = cleanAuftragSettings(sorte, fields(f));
   if ("error" in out) return { error: out.error };
-  const text = createInterpretation({ studentId, teacherId: t.id, unitId: unit?.id ?? null, settings: out.settings });
+  const text = createAuftrag({ studentId, teacherId: t.id, unitId: unit?.id ?? null, settings: out.settings });
   noteActivity(studentId);
   const tablet = Boolean(unit) && f.get("tablet") === "1" && studentDevice(unit!) !== null;
   if (unit) {
@@ -63,14 +66,15 @@ export async function createInterpretationAction(where: { unitId: number } | { s
   redirect(tablet && unit ? `/einheiten/${unit.id}?text=${text.id}` : `/texte/${text.id}`);
 }
 
-/** Changes story, Arbeitsauftrag and word target; the student's text stays as it is. */
-export async function updateInterpretationAction(textId: number, _prev: InterpretationFormState, f: FormData): Promise<InterpretationFormState> {
+/** Changes Textbeilage, Arbeitsauftrag, Schreibsituation and word target; the student's text stays as it is. */
+export async function updateAuftragAction(textId: number, _prev: AuftragFormState, f: FormData): Promise<AuftragFormState> {
   await requireTeacher();
   const text = getText(textId);
-  if (!text || !getInterpretation(textId)) redirect("/");
-  const out = cleanSettings(fields(f));
+  const auftrag = auftragFor(textId);
+  if (!text || !auftrag) redirect("/");
+  const out = cleanAuftragSettings(auftrag.sorte, fields(f));
   if ("error" in out) return { error: out.error };
-  updateInterpretation(textId, out.settings);
+  updateAuftrag(textId, out.settings);
   // the student's device shows the new text and task at once
   publish(textChannel(textId), { type: "info" });
   const unit = runningUnitForStudent(text.student_id);
@@ -79,27 +83,28 @@ export async function updateInterpretationAction(textId: number, _prev: Interpre
   redirect(`/texte/${textId}`);
 }
 
-/** Short Teilübungen about the story of this Textinterpretation, as an exercise draft to check and send. */
-export async function interpretationExercisesAction(textId: number) {
+/** Short Teilübungen about the Textbeilage of this Schreibauftrag, one per part, as an exercise draft to check and send. */
+export async function auftragExercisesAction(textId: number) {
   const t = await requireTeacher();
   const text = getText(textId);
-  const source = teilSourceOf(textId);
+  const source = quelleOf(textId);
   if (!text || !source) redirect("/");
   const student = repo.getStudent(text.student_id);
+  const sorte = SORTEN[source.sorte];
   const s: BuilderSettings = {
     studentId: text.student_id,
     subject: "Deutsch",
     schoolType: student?.school_type ?? "Gymnasium",
     klasse: student?.klasse ?? 7,
-    skillIds: [TEXTINTERPRETATION_SKILL],
+    skillIds: [sorte.skill],
     difficulty: "mittel",
-    count: 7,
+    count: source.sorte === "textinterpretation" ? 7 : sorte.parts.length,
     categories: [],
     focus: "",
     useAI: false,
     title: `Teilübungen zu „${source.title}“`,
   };
-  const out = await createDraft(s, t.id, { interpretationTextId: textId });
+  const out = await createDraft(s, t.id, { auftragTextId: textId });
   revalidatePath("/uebungen");
   redirect(`/uebungen/${out.id}`);
 }

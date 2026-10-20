@@ -18,9 +18,11 @@ import { settingsOf } from "@/lib/builder";
 import { getMaterial } from "@/lib/materials";
 import { punkteDerAufgaben, punkteText } from "@/lib/probeschularbeit";
 import * as repo from "@/lib/repo";
+import { isSorte, SORTEN, type SorteKey } from "@/lib/schreibauftrag";
 import { requireTeacher } from "@/lib/auth";
 import { klassenLabel, stufeLabel } from "@/lib/school";
 import { GAP } from "@/lib/tasks";
+import { wordRange } from "@/lib/textinterpretation";
 import { runningBoardsFor } from "@/lib/whiteboard";
 
 export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string; gesendet?: string; ausgelassen?: string; anzahl?: string }> }) {
@@ -31,6 +33,9 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
   if (!w) notFound();
   if (w.kind === "bibliothek") redirect(`/uebungen/bibliothek/${w.id}`);
   const tasks = repo.listTasks(w.id);
+  // Teilübungen of a Schreibauftrag: the Textsorte of the first one (none written down: the Textinterpretation)
+  const teil = tasks.find((t) => t.data.teil);
+  const teilSorte: SorteKey | null = teil ? (isSorte(teil.data.schreibsorte) ? teil.data.schreibsorte : "textinterpretation") : null;
   const skills = repo.listSkills().filter((s) => s.subject === w.subject);
   const students = repo.listStudents().map(({ id, name }) => ({ id, name }));
   const draft = w.status === "entwurf";
@@ -132,15 +137,15 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
       {sp.hinweis === "lesenki" && (
         <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Die KI hat keine passenden Fragen geliefert. Die Fragen stammen aus Vorlagen, bitte prüfen und anpassen.</p>
       )}
-      {draft && tasks.some((t) => t.data.teil) && (
-        // Teilübungen of a Textinterpretation (lib/textinterpretation.ts): the whole interpretation is a Schreibauftrag
+      {draft && teilSorte && (
+        // Teilübungen of a Schreibauftrag (lib/schreibauftrag.ts): the whole text is a Schreibauftrag of its own
         <p className="no-print mb-6 rounded-2xl bg-accent-wash px-4 py-3 text-[14px]" data-testid="hinweis-teiluebungen">
-          Kurze Teilübungen zur Textinterpretation: Jede übt einen Teil, der Text mit Zeilennummern steht daneben.
+          Kurze Teilübungen {teilSorte === "textinterpretation" ? "zur Textinterpretation" : `für ${SORTEN[teilSorte].einen}`}: Jede übt einen Teil, der Text mit Zeilennummern steht daneben.
           {w.student_id ? (
             <>
               {" "}
-              Die ganze Interpretation mit rund 500 Wörtern ist ein eigener{" "}
-              <Link href={`/schueler/${w.student_id}/textinterpretation`} className="font-semibold text-accent hover:underline">
+              Der ganze Text mit {wordRange(SORTEN[teilSorte].target).min} bis {wordRange(SORTEN[teilSorte].target).max} Wörtern ist ein eigener{" "}
+              <Link href={`/schueler/${w.student_id}/schreibauftrag?sorte=${teilSorte}`} className="font-semibold text-accent hover:underline">
                 Schreibauftrag
               </Link>
               .

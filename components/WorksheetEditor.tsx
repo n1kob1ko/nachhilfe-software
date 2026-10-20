@@ -463,7 +463,7 @@ function reshape(t: TaskDraft, format: TaskType): TaskDraft {
   const r = t.data.figure ? { ...base, data: { ...base.data, figure: t.data.figure } } : base;
   // a question about a shared reading text keeps the text, what it practises and its Beleg
   if (t.data.aspect === undefined && t.data.passageTitle === undefined) return r;
-  const interp = t.data.zeilen ? { zeilen: true, leerzeilen: t.data.leerzeilen, teil: t.data.teil, textsorte: t.data.textsorte } : {};
+  const interp = t.data.zeilen ? { zeilen: true, leerzeilen: t.data.leerzeilen, teil: t.data.teil, textsorte: t.data.textsorte, schreibsorte: t.data.schreibsorte } : {};
   return { ...r, data: { ...r.data, passage: t.data.passage, passageTitle: t.data.passageTitle, aspect: t.data.aspect, ...interp }, answer: { ...r.answer, evidence: t.answer.evidence ?? [] } };
 }
 function reshapeBase(t: TaskDraft, format: TaskType): TaskDraft {

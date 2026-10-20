@@ -21,8 +21,8 @@ import { memorizeCategory, memorizeWords } from "./memorize";
 import { isQuickRound, type AssignmentMode } from "./quick-round";
 import { analyzeStudent } from "./service";
 import { gapCount, GAP, type TaskDraft } from "./tasks";
-import { isInterpretationSkill, MAX_TEILUEBUNGEN, nextTeiluebung, teiluebungen, type TeilSource } from "./textinterpretation";
-import { teilSourceForStudent, teilSourceOf } from "./textinterpretation-store";
+import { maxTeiluebungen, nextTeiluebungFor, sorteOfSkill, teiluebungenFor, type AuftragQuelle, type SorteKey } from "./schreibauftrag";
+import { quelleForStudent, quelleOf } from "./schreibauftrag-store";
 import { runningUnitForStudent } from "./units";
 import { EIGENE_VOKABELN } from "./vokabeln";
 import { eigeneFuerPlaetze, ohneWoerter, vokabelQuelle } from "./vokabellisten";
@@ -352,8 +352,8 @@ export async function generateTasks(
     categories?: string[];
     difficulty?: DifficultyChoice;
     meta?: AIMeta;
-    /** Textinterpretation: the story of the Teilübungen (else the student's latest one or the example). */
-    interpretation?: TeilSource;
+    /** Schreibaufträge: the Textbeilage (or story) of the Teilübungen of its Textsorte (else the student's latest one or the example). */
+    quelle?: AuftragQuelle;
   } = {},
 ): Promise<{ tasks: TaskDraft[]; source: "ki" | "generator"; aiError?: string; typFehlt?: number }> {
   const settings = { ...s, skillIds: o.skillIds ?? s.skillIds, categories: o.categories ?? s.categories, difficulty: o.difficulty ?? s.difficulty };
@@ -361,17 +361,20 @@ export async function generateTasks(
   if (!skills.length) throw new Error("Bitte mindestens eine Fähigkeit auswählen.");
   const count = Math.max(1, Math.min(30, o.count ?? settings.count));
   const cats: Category[] = categoriesFor(settings.subject).filter((c) => settings.categories.includes(c.key));
-  // Textinterpretation: every part of an interpretation at most twice, the rest of the exercise as planned
-  const plan = planSlots(settings.subject, skills, cats, count).filter((p, i, all) => !isInterpretationSkill(p.skill.skill.id) || all.slice(0, i).filter((q) => isInterpretationSkill(q.skill.skill.id)).length < MAX_TEILUEBUNGEN);
+  // Schreibaufträge: every part of a Textsorte at most twice, the rest of the exercise as planned
+  const plan = planSlots(settings.subject, skills, cats, count).filter((p, i, all) => {
+    const sorte = sorteOfSkill(p.skill.skill.id);
+    return !sorte || all.slice(0, i).filter((q) => sorteOfSkill(q.skill.skill.id) === sorte).length < maxTeiluebungen(sorte);
+  });
   const slots: (TaskDraft | null)[] = plan.map(() => null);
-  // Textinterpretation (lib/textinterpretation.ts): no 200-word mini interpretation from the KI or a short
-  // free answer, but Teilübungen about one part on a whole story with line numbers, without KI. The whole
-  // interpretation of about 500 words is a Schreibauftrag (lib/textinterpretation-store.ts).
-  const interp = plan.map((p) => isInterpretationSkill(p.skill.skill.id));
-  const interpAt = plan.map((_, i) => i).filter((i) => interp[i]);
-  if (interpAt.length) {
-    const made = teiluebungen(o.interpretation ?? teilSourceForStudent(ctx?.studentId ?? settings.studentId), interpAt.length);
-    interpAt.forEach((i, k) => {
+  // Schreibaufträge der SRDP (lib/schreibauftrag.ts): no 200-word mini Leserbrief or Erörterung from the KI or a
+  // short free answer, but Teilübungen about one part of the Schreibplan on a whole Textbeilage with line numbers,
+  // without KI. The whole text of 300 to 600 words is a Schreibauftrag (lib/schreibauftrag-store.ts).
+  const sorten = plan.map((p) => sorteOfSkill(p.skill.skill.id));
+  for (const sorte of new Set(sorten.filter((x): x is SorteKey => x !== null))) {
+    const at = plan.map((_, i) => i).filter((i) => sorten[i] === sorte);
+    const made = teiluebungenFor(o.quelle?.sorte === sorte ? o.quelle : quelleForStudent(ctx?.studentId ?? settings.studentId, sorte), at.length);
+    at.forEach((i, k) => {
       const r = plan[i].skill;
       slots[i] = { ...made[k], skillId: r.skill.id, skillIds: [...new Set([r.skill.id, ...(r.parent ? [r.parent.id] : [])])], difficulty: r.difficulty };
     });
@@ -525,7 +528,7 @@ function autoTitle(s: BuilderSettings, ctx: StudentContext | null) {
 }
 
 /** Generates tasks and stores them as a draft exercise for the preview. */
-export async function createDraft(s: BuilderSettings, teacherId: number | null, o: { empty?: boolean; interpretationTextId?: number } = {}): Promise<{ id: number; aiError?: string; typFehlt?: number }> {
+export async function createDraft(s: BuilderSettings, teacherId: number | null, o: { empty?: boolean; auftragTextId?: number } = {}): Promise<{ id: number; aiError?: string; typFehlt?: number }> {
   const ctx = s.studentId ? studentContext(s.studentId) : null;
   const all = repo.listSkills();
   const chosen = all.filter((x) => s.skillIds.includes(x.id));
@@ -534,8 +537,8 @@ export async function createDraft(s: BuilderSettings, teacherId: number | null, 
   let aiError: string | undefined;
   let typFehlt: number | undefined;
   if (!o.empty) {
-    const interpretation = o.interpretationTextId ? (teilSourceOf(o.interpretationTextId) ?? undefined) : undefined;
-    const out = await generateTasks(s, ctx, { meta: { teacherId, studentId: s.studentId, trigger: "uebung" }, interpretation });
+    const quelle = o.auftragTextId ? (quelleOf(o.auftragTextId) ?? undefined) : undefined;
+    const out = await generateTasks(s, ctx, { meta: { teacherId, studentId: s.studentId, trigger: "uebung" }, quelle });
     tasks = out.tasks;
     source = out.source;
     aiError = out.aiError;
@@ -586,9 +589,9 @@ export function settingsOf(w: repo.Worksheet): BuilderSettings {
 
 /** Replaces one task by a new one for the same skill and type (optionally at another difficulty). */
 export async function regenerateTask(taskId: number, o: { difficulty?: Difficulty; useAI?: boolean; teacherId?: number | null } = {}): Promise<{ ok: boolean; aiError?: string; typFehlt?: number }> {
-  // a Teilübung of a Textinterpretation: the other wording for the same part, about the same story
+  // a Teilübung of a Schreibauftrag: the other wording for the same part, about the same Textbeilage or story
   const teil = repo.getTask(taskId);
-  const nextTeil = teil?.data.teil ? nextTeiluebung(teil) : null;
+  const nextTeil = teil?.data.teil ? nextTeiluebungFor(teil) : null;
   if (teil && nextTeil) {
     repo.updateTask(taskId, { ...nextTeil, difficulty: o.difficulty ?? teil.difficulty });
     repo.setTaskOrigin(taskId, { sourceType: "eigen" });

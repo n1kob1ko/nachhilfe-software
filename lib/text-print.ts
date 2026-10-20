@@ -8,8 +8,8 @@ export type Spacing = "normal" | "weit";
 export type Fassung = "original" | "endfassung" | "korrektur";
 /**
  * Bildgeschichte: the written story, or an empty worksheet (pictures, task and lines) to write on paper.
- * Textinterpretation: the written interpretation, the worksheet (task, numbered story, Schreibplan, lines),
- * or the interpretation with the numbered story after it ("beides").
+ * Schreibauftrag (Textinterpretation, Leserbrief, Erörterung …): the written text, the worksheet (task, numbered
+ * story or Textbeilage, Schreibplan, lines), or the text with the numbered Textbeilage after it ("beides").
  */
 export type Blatt = "geschichte" | "leer" | "beides";
 export type TextPrintOptions = {
@@ -43,6 +43,7 @@ export const TEXT_PRINT_CHECKS: [BoolKey, string, string][] = [
 export const SPACING_LABEL: Record<Spacing, string> = { normal: "normal", weit: "weit (Platz zum Korrigieren)" };
 export const BLATT_LABEL: Record<Exclude<Blatt, "beides">, string> = { geschichte: "Fertige Bildgeschichte", leer: "Leeres Arbeitsblatt zum Schreiben" };
 export const INTERPRETATION_BLATT_LABEL: Record<Blatt, string> = { geschichte: "Fertige Textinterpretation", beides: "Textinterpretation und Text mit Zeilen", leer: "Arbeitsblatt: Auftrag, Text und Schreibplan" };
+export const AUFTRAG_BLATT_LABEL: Record<Blatt, string> = { geschichte: "Fertiger Text", beides: "Text und Textbeilage mit Zeilen", leer: "Arbeitsblatt: Auftrag, Textbeilage und Schreibplan" };
 export const FASSUNG_LABEL: Record<Fassung, string> = { original: "Original (wie geschrieben)", endfassung: "Korrigierte Endfassung", korrektur: "Mit sichtbaren Korrekturen" };
 
 type Params = Record<string, string | string[] | undefined>;

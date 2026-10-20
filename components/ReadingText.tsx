@@ -7,7 +7,7 @@ import { NumberedStory } from "./text/interpretation/NumberedStory";
  * margin, so questions ("im 3. Abschnitt") and Belege can point at them.
  */
 export function ReadingTextView({ title, text, size = "md", meta = false, lang = "de", zeilen = false, leerzeilen = false }: { title: string; text: string; size?: "md" | "lg"; meta?: boolean; lang?: string; zeilen?: boolean; leerzeilen?: boolean }) {
-  // a story for a Textinterpretation: line by line as printed, with line numbers
+  // the story or Textbeilage of a Schreibauftrag: line by line as printed, with line numbers
   if (zeilen)
     return (
       <article className="lesetext" lang={lang}>

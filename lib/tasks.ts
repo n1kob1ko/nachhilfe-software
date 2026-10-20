@@ -90,10 +90,13 @@ export type TaskDraft = {
     zeilen?: boolean;
     /** … and its empty lines get a number too. */
     leerzeilen?: boolean;
-    /** Teilübung: which part of an interpretation the task practises (einleitung, inhalt, form, sprache, figur, deutung, schluss). */
+    /** Teilübung: which part of an interpretation the task practises (einleitung, inhalt, form, sprache, figur, deutung, schluss),
+     *  or of another Schreibauftrag (the part keys of lib/schreibauftrag.ts). */
     teil?: string;
-    /** … and the kind of text it is about (Kurzgeschichte, Parabel, …). */
+    /** … and the kind of text it is about (Kurzgeschichte, Parabel, …; Kommentar, Bericht, … for a Textbeilage). */
     textsorte?: string;
+    /** … and the Textsorte written (leserbrief, eroerterung, … as in lib/schreibauftrag.ts); missing: Textinterpretation. */
+    schreibsorte?: string;
     /** KI-Aufgaben: what the teacher has to check before the task can be sent (e.g. a doubtful Wortart); never shown to students. */
     pruefen?: string[];
     /** Artikel-Aufgaben: das Genus des Nomens (m = maskulin, f = feminin, n = neutral), damit die Oberfläche

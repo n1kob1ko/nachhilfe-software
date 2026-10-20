@@ -417,7 +417,7 @@ test("builder: the student's own story, a draft for one Textinterpretation, and 
   assert.ok(forStudent.tasks.every((t) => t.data.passageTitle === "„Die Brücke“ von Erfundene Autorin" && t.data.textsorte === "Parabel"), "the student's latest story");
   assert.ok(forStudent.tasks.every((t) => !t.answer.sample), "no model answer for a story the Lernheft does not know");
 
-  const draft = await builder.createDraft({ ...settings({ studentId: s.sid, count: 7, useAI: false }), title: "Teilübungen" }, s.niko.id, { interpretationTextId: text.id });
+  const draft = await builder.createDraft({ ...settings({ studentId: s.sid, count: 7, useAI: false }), title: "Teilübungen" }, s.niko.id, { auftragTextId: text.id });
   const tasks = repo.listTasks(draft.id);
   assert.equal(tasks.length, 7);
   assert.deepEqual(tasks.map((t) => t.data.teil), ["einleitung", "inhalt", "sprache", "form", "figur", "deutung", "schluss"]);

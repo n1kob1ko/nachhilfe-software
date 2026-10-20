@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ArrowLeft, Printer } from "lucide-react";
-import { BLATT_LABEL, FASSUNG_LABEL, INTERPRETATION_BLATT_LABEL, SPACING_LABEL, TEXT_PRINT_CHECKS, textPrintQuery, type Blatt, type Fassung, type Spacing, type TextPrintOptions } from "@/lib/text-print";
+import { AUFTRAG_BLATT_LABEL, BLATT_LABEL, FASSUNG_LABEL, INTERPRETATION_BLATT_LABEL, SPACING_LABEL, TEXT_PRINT_CHECKS, textPrintQuery, type Blatt, type Fassung, type Spacing, type TextPrintOptions } from "@/lib/text-print";
 
-type Props = { options: TextPrintOptions; defaultTitle: string; path: string; back: { href: string; label: string }; words: number; withCorrection?: boolean; story?: boolean; interpretation?: boolean };
+type Props = { options: TextPrintOptions; defaultTitle: string; path: string; back: { href: string; label: string }; words: number; withCorrection?: boolean; story?: boolean; /** a Schreibauftrag: the name of its Textsorte */ auftrag?: string };
 
 /** Settings beside the A4 preview of a text (the same layout as the worksheet settings). */
-export function TextPrintSettings({ options, defaultTitle, path, back, words, withCorrection, story, interpretation }: Props) {
-  const blattLabels: Partial<Record<Blatt, string>> | null = interpretation ? INTERPRETATION_BLATT_LABEL : story ? BLATT_LABEL : null;
+export function TextPrintSettings({ options, defaultTitle, path, back, words, withCorrection, story, auftrag }: Props) {
+  const blattLabels: Partial<Record<Blatt, string>> | null = auftrag ? (auftrag === "Textinterpretation" ? INTERPRETATION_BLATT_LABEL : AUFTRAG_BLATT_LABEL) : story ? BLATT_LABEL : null;
   const router = useRouter();
   const [o, setO] = useState(options);
   const [pending, start] = useTransition();
@@ -25,7 +25,7 @@ export function TextPrintSettings({ options, defaultTitle, path, back, words, wi
       <Link href={back.href} className="inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-medium text-ink-2 hover:text-accent">
         <ArrowLeft size={16} aria-hidden /> {back.label}
       </Link>
-      <h1 className="mt-1 text-[20px] font-semibold">{story ? "Bildgeschichte drucken" : interpretation ? "Textinterpretation drucken" : "Text drucken"}</h1>
+      <h1 className="mt-1 text-[20px] font-semibold">{story ? "Bildgeschichte drucken" : auftrag ? `${auftrag} drucken` : "Text drucken"}</h1>
       <p className="mb-4 text-[13px] text-ink-3">
         A4 Hochformat · <span className="num">{words.toLocaleString("de-AT")}</span> {words === 1 ? "Wort" : "Wörter"}
       </p>
