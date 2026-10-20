@@ -20,18 +20,29 @@ import { z } from "zod";
 const reviewField = { review: z.boolean().optional() };
 
 // ---------- Schemas ----------
-/** Artikel bestimmen: ein Nomen mit seinem Artikel (Genus). `tags` sind die Themendateien der Quelle. */
+/**
+ * Artikel bestimmen: ein Nomen mit seinem Artikel (Genus). `tags` sind die Themendateien der Quelle.
+ * `meaning` ist die Bedeutung in wenigen Worten, nur bei Wörtern mit zwei Bedeutungen und verschiedenem
+ * Artikel (der See, die See): sie steht in der Aufgabe. `alsoArticle` sind weitere richtige Artikel
+ * (das Keks in Österreich); solche Wörter kommen nicht als Auswahl, nur als Lückentext.
+ */
 export const artikelItemSchema = z
   .object({
     word: z.string().min(1),
     article: z.enum(["der", "die", "das"]),
+    meaning: z.string().min(1).optional(),
+    alsoArticle: z.array(z.enum(["der", "die", "das"])).min(1).optional(),
     translation: z.string().min(1).optional(),
     tags: z.array(z.string().min(1)).min(1),
     ...reviewField,
   })
   .strict();
 
-/** Adjektivdeklination: zwei Lücken (Adjektivendung, Nomenendung) mit je vier Optionen. */
+/**
+ * Adjektivdeklination: zwei Lücken (Adjektivendung, Nomenendung) mit je vier Optionen. Endungen stehen
+ * mit Bindestrich („-en“), „-“ heißt keine Endung. `alsoCorrect2` sind weitere richtige Nomenendungen
+ * (des Tags und des Tages); sie stehen nicht unter den falschen Optionen.
+ */
 export const adjektivdeklinationItemSchema = z
   .object({
     prefix: z.string(),
@@ -41,6 +52,7 @@ export const adjektivdeklinationItemSchema = z
     correct1: z.string().min(1),
     options2: z.array(z.string().min(1)).min(2),
     correct2: z.string().min(1),
+    alsoCorrect2: z.array(z.string().min(1)).min(1).optional(),
     solution: z.string().min(1),
     ...reviewField,
   })

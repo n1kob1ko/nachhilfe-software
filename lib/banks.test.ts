@@ -1,9 +1,11 @@
 /**
  * Prüft die Aufgabenbanken unter `data/banks/` (Phase 1 des Merges, Inhalte aus dem Artikel Trainer).
  *
- * Die Zahlen in diesen Tests sind aus der Quelle gemessen. Ein fehlerhafter Neu-Import fällt damit
- * auf: falsche Anzahl, verlorene Einträge, doppelte Schlüssel oder ein `correct`, das nicht in den
- * angebotenen Optionen steht.
+ * Die Zahlen in diesen Tests sind aus der Quelle gemessen und nach der fachlichen Prüfung der Banken
+ * nachgezählt (docs/banks-pruefung.md: falsche Einträge sind entfernt oder neu geschrieben). Ein
+ * fehlerhafter Neu-Import fällt damit auf: falsche Anzahl, verlorene Einträge, doppelte Schlüssel oder
+ * ein `correct`, das nicht in den angebotenen Optionen steht. Die fachlichen Regeln für jeden Eintrag
+ * prüft lib/banken.test.ts.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -66,18 +68,20 @@ test("jede Bankdatei existiert und erfüllt ihr Schema", () => {
 });
 
 test("die Zahlen der Banken stimmen mit der Quelle überein", () => {
-  // articles: 2867 Zeilen, 1926 verschiedene Wörter; „Laster“ ist ein echter Homograph und behält
-  // beide Artikel, deshalb 1927 Einträge.
-  assert.equal(artikel().length, 1927);
-  assert.equal(new Set(artikel().map((i) => i.word)).size, 1926);
-  // adjectiv_declension: 3 × 100
-  assert.equal(adjektivdeklination().length, 300);
-  // prepositions/test.json
-  assert.equal(praepositionen().length, 100);
+  // articles: 2867 Zeilen, 1926 verschiedene Wörter; nach der Prüfung 1913 (Wörter im Plural, Personen
+  // mit der und die, Krake, Joghurt, Service und Radiergummi entfernt). „Laster“ ist ein echter Homograph
+  // und behält beide Artikel, mit `meaning`, deshalb ein Eintrag mehr als Wörter.
+  assert.equal(artikel().length, 1914);
+  assert.equal(new Set(artikel().map((i) => i.word)).size, 1913);
+  // adjectiv_declension: 3 × 100, nach der Prüfung 282 (Doppelungen und Sätze mit zwei richtigen Lösungen
+  // entfernt, eigene Sätze für die leichteren Stufen dazu)
+  assert.equal(adjektivdeklination().length, 282);
+  // prepositions/test.json (100): 26 Sätze, in denen Dativ und Akkusativ passen, entfernt, 25 eigene dazu
+  assert.equal(praepositionen().length, 99);
   // past_tense/allgemein.json (100) + die zwei Präteritum-Einträge aus lib/generators.ts
   assert.equal(praeteritum().length, 102);
-  // past_perfect_tense/test.json (20) + die zwei Perfekt-Einträge aus lib/generators.ts
-  assert.equal(perfekt().length, 22);
+  // die zwei Perfekt-Einträge aus lib/generators.ts + 16 reparierte aus past_perfect_tense/test.json + 47 eigene Sätze
+  assert.equal(perfekt().length, 65);
   // das_dass.json (339) + die acht DAS_DASS-Einträge aus lib/generators.ts
   assert.equal(dasDass().length, 347);
   // satzbau/syntax_sentences.json
@@ -117,11 +121,11 @@ test("jeder artikel-Eintrag hat einen gültigen Artikel und mindestens ein Tag",
     for (const tag of item.tags) assert.ok(TOPICS.includes(tag), `${item.word}: unbekanntes Tag „${tag}“`);
     assert.equal(new Set(item.tags).size, item.tags.length, `${item.word}: Tag doppelt`);
   }
-  // 543 Wörter stehen in mehr als einer Themendatei, ihre tags sind zusammengelegt.
+  // 542 Wörter stehen in mehr als einer Themendatei, ihre tags sind zusammengelegt.
   const mehrfach = artikel().filter((i) => i.tags.length > 1);
   const woerter = new Set(mehrfach.map((i) => i.word));
   woerter.add("Laster"); // der Homograph: zwei Einträge mit je einem Tag
-  assert.equal(woerter.size, 543);
+  assert.equal(woerter.size, 542);
 });
 
 test("correct/correct1/correct2 stehen immer in den angebotenen Optionen", () => {
@@ -194,7 +198,7 @@ test("praepositionen: Kasus abgeleitet, Genus ohne Farbwert", () => {
     // der Farbwert der Quelle wird nicht mitgeführt
     assert.equal((item as unknown as Record<string, unknown>).noun_color, undefined);
   }
-  assert.deepEqual(kasus, { Dativ: 48, Akkusativ: 52, offen: 0 });
+  assert.deepEqual(kasus, { Dativ: 58, Akkusativ: 41, offen: 0 });
 });
 
 test("hauptsatz-gliedsatz: genau ein Haupt- und ein Gliedsatz", () => {
@@ -249,5 +253,5 @@ test("fehlende oder kaputte Bankdatei: der Test scheitert laut, die App läuft w
   } finally {
     useBankContentForTest(null);
   }
-  assert.equal(bankItems("artikel").length, 1927, "nach dem Test müssen die echten Banken wieder gelesen werden");
+  assert.equal(bankItems("artikel").length, 1914, "nach dem Test müssen die echten Banken wieder gelesen werden");
 });

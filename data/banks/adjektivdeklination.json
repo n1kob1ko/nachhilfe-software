@@ -4,17 +4,17 @@
     "middle": " Nachmittag",
     "suffix": " lesen wir gerne.",
     "options1": [
-      "-em",
       "-en",
-      "-er",
-      "-es"
+      "-em",
+      "-e",
+      "-er"
     ],
-    "correct1": "-em",
+    "correct1": "-en",
     "options2": [
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "An einem regnerischen Nachmittag lesen wir gerne."
@@ -24,49 +24,9 @@
     "middle": " Tag",
     "suffix": " gehen wir spazieren.",
     "options1": [
-      "-em",
-      "-en",
-      "-er",
-      "-es"
-    ],
-    "correct1": "-em",
-    "options2": [
-      "-",
-      "-s",
-      "-es",
-      "-n"
-    ],
-    "correct2": "-",
-    "solution": "An einem sonnigen Tag gehen wir spazieren."
-  },
-  {
-    "prefix": "Anlässlich ein",
-    "middle": " feierlich",
-    "suffix": " Empfang... hielt er eine Rede.",
-    "options1": [
-      "-es",
       "-en",
       "-em",
-      "-er"
-    ],
-    "correct1": "-es",
-    "options2": [
-      "-s",
-      "-es",
-      "-",
-      "-en"
-    ],
-    "correct2": "-s",
-    "solution": "Anlässlich eines feierlichen Empfangs hielt er eine Rede."
-  },
-  {
-    "prefix": "Anlässlich sein",
-    "middle": " achtzigst",
-    "suffix": " Geburtstag... gab es ein großes Fest.",
-    "options1": [
-      "-en",
-      "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
@@ -76,27 +36,76 @@
       "-es",
       "-en"
     ],
-    "correct2": "-s",
-    "solution": "Anlässlich seines achtzigsten Geburtstags gab es ein großes Fest."
+    "correct2": "-",
+    "solution": "An einem sonnigen Tag gehen wir spazieren."
   },
   {
-    "prefix": "Anstatt ein",
-    "middle": " langweilig",
-    "suffix": " Vortrag... gab es eine Diskussion.",
+    "prefix": "Anlässlich eines feierlich",
+    "middle": " Empfang",
+    "suffix": " hielt er eine Rede.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
+    "solution": "Anlässlich eines feierlichen Empfangs hielt er eine Rede."
+  },
+  {
+    "prefix": "Anlässlich seines achtzigst",
+    "middle": " Geburtstag",
+    "suffix": " gab es ein großes Fest.",
+    "options1": [
+      "-en",
+      "-es",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-s",
+      "-",
+      "-en",
+      "-e"
+    ],
+    "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
+    "solution": "Anlässlich seines achtzigsten Geburtstags gab es ein großes Fest."
+  },
+  {
+    "prefix": "Anstatt eines langweilig",
+    "middle": " Vortrag",
+    "suffix": " gab es eine Diskussion.",
+    "options1": [
+      "-en",
+      "-es",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-s",
+      "-",
+      "-en",
+      "-e"
+    ],
+    "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Anstatt eines langweiligen Vortrags gab es eine Diskussion."
   },
   {
@@ -106,137 +115,106 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-es",
-      "-s",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
     "solution": "Anstatt eines süßen Nachtisches esse ich lieber Käse."
   },
   {
-    "prefix": "Anstelle d",
-    "middle": " weiß",
-    "suffix": " Hemd... trug er ein blaues.",
+    "prefix": "Anstelle des weiß",
+    "middle": " Hemd",
+    "suffix": " trug er ein blaues.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Anstelle des weißen Hemdes trug er ein blaues."
   },
   {
-    "prefix": "Aufgrund d",
-    "middle": " gering",
-    "suffix": " Sicht... flogen keine Flugzeuge.",
+    "prefix": "Aufgrund des stark",
+    "middle": " Wind",
+    "suffix": " fielen Ziegel vom Dach.",
     "options1": [
-      "-er",
       "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-en",
-      "-s",
-      "-e"
-    ],
-    "correct2": "-",
-    "solution": "Aufgrund der geringen Sicht flogen keine Flugzeuge."
-  },
-  {
-    "prefix": "Aufgrund d",
-    "middle": " hoh",
-    "suffix": " Well... war das Schwimmen verboten.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-n",
-      "-",
-      "-s",
-      "-en"
-    ],
-    "correct2": "-n",
-    "solution": "Aufgrund der hohen Wellen war das Schwimmen verboten."
-  },
-  {
-    "prefix": "Aufgrund d",
-    "middle": " stark",
-    "suffix": " Wind... fielen Ziegel vom Dach.",
-    "options1": [
       "-es",
-      "-en",
-      "-em",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Aufgrund des starken Windes fielen Ziegel vom Dach."
   },
   {
-    "prefix": "Aufgrund ein",
-    "middle": " klein",
-    "suffix": " Irrtum... gab es große Probleme.",
+    "prefix": "Aufgrund eines klein",
+    "middle": " Irrtum",
+    "suffix": " gab es große Probleme.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
     "solution": "Aufgrund eines kleinen Irrtums gab es große Probleme."
   },
   {
-    "prefix": "Aufgrund ein",
-    "middle": " misslungen",
-    "suffix": " Versuch... wurde das Projekt gestoppt.",
+    "prefix": "Aufgrund eines misslungen",
+    "middle": " Versuch",
+    "suffix": " wurde das Projekt gestoppt.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Aufgrund eines misslungenen Versuchs wurde das Projekt gestoppt."
   },
   {
@@ -246,55 +224,35 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-n"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Aufgrund eines schweren Fehlers wurde er entlassen."
   },
   {
-    "prefix": "Aufgrund schlecht",
-    "middle": " Wetter",
-    "suffix": " blieb die Terrasse heute geschlossen.",
+    "prefix": "Das Aroma des frisch",
+    "middle": " Tee",
+    "suffix": " war sehr beruhigend.",
     "options1": [
-      "-em",
       "-en",
-      "-er",
-      "-es"
+      "-es",
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
+      "-s",
       "-",
       "-n",
-      "-s",
-      "-e"
-    ],
-    "correct2": "-s",
-    "solution": "Aufgrund schlechten Wetters blieb die Terrasse heute geschlossen."
-  },
-  {
-    "prefix": "Das Aroma d",
-    "middle": " frisch",
-    "suffix": " Te... war sehr beruhigend.",
-    "options1": [
-      "-es",
-      "-en",
-      "-em",
-      "-er"
-    ],
-    "correct1": "-es",
-    "options2": [
-      "-s",
-      "-es",
-      "-",
-      "-en"
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Das Aroma des frischen Tees war sehr beruhigend."
@@ -306,135 +264,101 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
-      "-s",
       "-es",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
     "solution": "Das Aroma des gebratenen Fleisches ist sehr intensiv."
   },
   {
-    "prefix": "Das Aroma edel",
-    "middle": " Gewürz",
-    "suffix": " ist teuer.",
+    "prefix": "Das Auto des jung",
+    "middle": " Mann",
+    "suffix": " steht in der Garage.",
     "options1": [
-      "-er",
       "-en",
       "-es",
-      "-em"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
       "-e",
-      "-s",
-      "-es"
-    ],
-    "correct2": "-e",
-    "solution": "Das Aroma edler Gewürze ist teuer."
-  },
-  {
-    "prefix": "Das Aroma geröstet",
-    "middle": " Kaffee",
-    "suffix": " ist herrlich.",
-    "options1": [
-      "-en",
-      "-es",
-      "-er",
-      "-em"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
+      "-es",
       "-",
-      "-s",
-      "-es",
-      "-n"
-    ],
-    "correct2": "-s",
-    "solution": "Das Aroma gerösteten Kaffees ist herrlich."
-  },
-  {
-    "prefix": "Das Auto d",
-    "middle": " jung",
-    "suffix": " Mann... steht in der Garage.",
-    "options1": [
-      "-es",
       "-en",
-      "-em",
-      "-er"
-    ],
-    "correct1": "-es",
-    "options2": [
-      "-es",
-      "-s",
-      "-",
-      "-en"
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Das Auto des jungen Mannes steht in der Garage."
   },
   {
     "prefix": "Das Auto des reich",
-    "middle": " Nachbar",
+    "middle": " Onkel",
     "suffix": " ist sehr teuer.",
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-n",
       "-s",
       "-",
-      "-en"
+      "-n",
+      "-ns"
     ],
-    "correct2": "-n",
-    "solution": "Das Auto des reichen Nachbarn ist sehr teuer."
+    "correct2": "-s",
+    "solution": "Das Auto des reichen Onkels ist sehr teuer."
   },
   {
-    "prefix": "Das Bellen d",
-    "middle": " benachbart",
-    "suffix": " Hund... ist sehr laut.",
+    "prefix": "Das Bellen des benachbart",
+    "middle": " Hund",
+    "suffix": " ist sehr laut.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
+      "-en",
       "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Das Bellen des benachbarten Hundes ist sehr laut."
   },
   {
-    "prefix": "Das Dach d",
-    "middle": " klein",
-    "suffix": " Häuschen... war mit Moos bedeckt.",
+    "prefix": "Das Dach des klein",
+    "middle": " Häuschen",
+    "suffix": " war mit Moos bedeckt.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-en"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Das Dach des kleinen Häuschens war mit Moos bedeckt."
@@ -446,58 +370,64 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-es",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Das Design des neuen Kühlschranks ist sehr modern."
   },
   {
-    "prefix": "Das Ende d",
-    "middle": " heiß",
-    "suffix": " Sommer... kam überraschend.",
+    "prefix": "Das Ende des heiß",
+    "middle": " Sommer",
+    "suffix": " kam überraschend.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-en"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Das Ende des heißen Sommers kam überraschend."
   },
   {
-    "prefix": "Das Ende d",
-    "middle": " lang",
-    "suffix": " Tag... war sehr entspannend.",
+    "prefix": "Das Ende des lang",
+    "middle": " Tag",
+    "suffix": " war sehr entspannend.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
-      "-s",
       "-es",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
-    "correct2": "-s",
-    "solution": "Das Ende des langen Tags war sehr entspannend."
+    "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
+    "solution": "Das Ende des langen Tages war sehr entspannend."
   },
   {
     "prefix": "Das Ende des spannend",
@@ -506,17 +436,20 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
-      "-e",
       "-s",
-      "-es"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Das Ende des spannenden Films hat mich sehr überrascht."
   },
   {
@@ -526,158 +459,127 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-es",
-      "-s",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Das Ende des tollen Festes war sehr spät."
   },
   {
-    "prefix": "Das Gehalt ein",
-    "middle": " einfach",
-    "suffix": " Angestellt... reicht oft kaum aus.",
+    "prefix": "Das Gehalt eines einfach",
+    "middle": " Angestellte",
+    "suffix": " reicht oft kaum aus.",
     "options1": [
       "-en",
-      "-es",
-      "-em",
-      "-er"
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-n",
+      "-",
       "-s",
-      "-en",
-      "-"
+      "-ns"
     ],
-    "correct2": "-en",
+    "correct2": "-n",
     "solution": "Das Gehalt eines einfachen Angestellten reicht oft kaum aus."
   },
   {
-    "prefix": "Das Gesicht d",
-    "middle": " alt",
-    "suffix": " Mann... war voller Falten.",
+    "prefix": "Das Gesicht des alt",
+    "middle": " Mann",
+    "suffix": " war voller Falten.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Das Gesicht des alten Mannes war voller Falten."
   },
   {
-    "prefix": "Das Gewicht des schwer",
-    "middle": " Sack",
-    "suffix": " Kartoffeln überrascht mich.",
+    "prefix": "Das Licht des hell",
+    "middle": " Mond",
+    "suffix": " fällt ins Zimmer.",
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-es",
-      "-s",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
-    "solution": "Das Gewicht des schweren Sackes Kartoffeln überrascht mich."
-  },
-  {
-    "prefix": "Das Licht d",
-    "middle": " hell",
-    "suffix": " Sonn... blendete mich.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-e",
-      "-n",
+    "alsoCorrect2": [
       "-s"
     ],
-    "correct2": "-",
-    "solution": "Das Licht der hellen Sonne blendete mich."
+    "solution": "Das Licht des hellen Mondes fällt ins Zimmer."
   },
   {
-    "prefix": "Das Schicksal des arm",
-    "middle": " Bauer",
-    "suffix": " berührte uns.",
+    "prefix": "Das Ufer des breit",
+    "middle": " Fluss",
+    "suffix": " war bewaldet.",
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-n",
-      "-s",
-      "-",
-      "-en"
-    ],
-    "correct2": "-n",
-    "solution": "Das Schicksal des armen Bauern berührte uns."
-  },
-  {
-    "prefix": "Das Ufer d",
-    "middle": " breit",
-    "suffix": " Fluss... war bewaldet.",
-    "options1": [
       "-es",
+      "-",
       "-en",
-      "-em",
-      "-er"
-    ],
-    "correct1": "-es",
-    "options2": [
-      "-es",
-      "-s",
-      "-",
-      "-en"
+      "-e"
     ],
     "correct2": "-es",
     "solution": "Das Ufer des breiten Flusses war bewaldet."
   },
   {
-    "prefix": "Das Zimmer mein",
+    "prefix": "Das Zimmer meines klein",
     "middle": " Bruder",
     "suffix": " ist immer sehr unordentlich.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
-      "-",
       "-s",
+      "-",
       "-n",
-      "-es"
+      "-ns"
     ],
     "correct2": "-s",
-    "solution": "Das Zimmer meines Bruders ist immer sehr unordentlich."
+    "solution": "Das Zimmer meines kleinen Bruders ist immer sehr unordentlich."
   },
   {
     "prefix": "Das ist das Büro unseres neu",
@@ -686,58 +588,18 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-s",
-      "-es",
-      "-",
-      "-n"
-    ],
-    "correct2": "-s",
-    "solution": "Das ist das Büro unseres neuen Chefs."
-  },
-  {
-    "prefix": "Das ist das Ende des harten",
-    "middle": " Tag",
-    "suffix": " in der Küche.",
-    "options1": [
-      "-en",
-      "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
-      "-es",
       "-s",
-      "-n"
-    ],
-    "correct2": "-es",
-    "solution": "Das ist das Ende des harten Tages in der Küche."
-  },
-  {
-    "prefix": "Das ist das Ende des spannend",
-    "middle": " Film",
-    "suffix": ".",
-    "options1": [
+      "-",
       "-en",
-      "-es",
-      "-er",
-      "-em"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-s",
-      "-es",
-      "-",
-      "-n"
+      "-e"
     ],
     "correct2": "-s",
-    "solution": "Das ist das Ende des spannenden Films."
+    "solution": "Das ist das Büro unseres neuen Chefs."
   },
   {
     "prefix": "Das ist das Haus des reich",
@@ -745,14 +607,14 @@
     "suffix": ".",
     "options1": [
       "-en",
-      "-es",
-      "-em",
-      "-er"
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-en",
+      "-",
       "-s",
       "-es"
     ],
@@ -765,16 +627,16 @@
     "suffix": ".",
     "options1": [
       "-en",
-      "-es",
-      "-em",
-      "-er"
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-n",
+      "-",
       "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Das ist das Spielzeug des kleinen Jungen."
@@ -786,17 +648,20 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-n"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Das ist das Spielzeug des kleinen Kindes."
   },
   {
@@ -805,39 +670,39 @@
     "suffix": ".",
     "options1": [
       "-en",
-      "-es",
-      "-em",
-      "-er"
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-en",
+      "-",
       "-s",
-      "-e"
+      "-es"
     ],
     "correct2": "-en",
     "solution": "Das ist der Hund des jungen Polizisten."
   },
   {
-    "prefix": "Das ist der Korb des klein",
+    "prefix": "Das ist der Stall des klein",
     "middle": " Hase",
     "suffix": ".",
     "options1": [
       "-en",
-      "-es",
-      "-em",
-      "-er"
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-n",
+      "-",
       "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-n",
-    "solution": "Das ist der Korb des kleinen Hasen."
+    "solution": "Das ist der Stall des kleinen Hasen."
   },
   {
     "prefix": "Das ist der Name des neu",
@@ -846,38 +711,41 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-es",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Das ist der Name des neuen Gerichts."
   },
   {
-    "prefix": "Das ist die Schüssel des grau",
+    "prefix": "Das ist der Rüssel des grau",
     "middle": " Elefant",
-    "suffix": " im Zoo-Restaurant.",
+    "suffix": ".",
     "options1": [
       "-en",
-      "-es",
-      "-em",
-      "-er"
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-en",
+      "-",
       "-s",
-      "-e"
+      "-es"
     ],
     "correct2": "-en",
-    "solution": "Das ist die Schüssel des grauen Elefanten im Zoo-Restaurant."
+    "solution": "Das ist der Rüssel des grauen Elefanten."
   },
   {
     "prefix": "Das ist die Tasche des fremd",
@@ -885,59 +753,59 @@
     "suffix": ".",
     "options1": [
       "-en",
-      "-es",
+      "-e",
       "-er",
-      "-em"
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-n",
-      "-s",
       "-",
-      "-en"
+      "-s",
+      "-es"
     ],
     "correct2": "-n",
     "solution": "Das ist die Tasche des fremden Herrn."
   },
   {
-    "prefix": "Das ist die Tasche des fremd",
+    "prefix": "Das ist die Tasche eines fremd",
     "middle": " Mensch",
-    "suffix": " in unserer Küche.",
+    "suffix": ".",
     "options1": [
       "-en",
-      "-es",
-      "-em",
-      "-er"
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-en",
+      "-",
       "-s",
       "-es"
     ],
     "correct2": "-en",
-    "solution": "Das ist die Tasche des fremden Menschen in unserer Küche."
+    "solution": "Das ist die Tasche eines fremden Menschen."
   },
   {
-    "prefix": "Das ist die Tasche eines reich",
-    "middle": " Touriste",
+    "prefix": "Das ist der Koffer eines reich",
+    "middle": " Tourist",
     "suffix": ".",
     "options1": [
       "-en",
-      "-es",
+      "-e",
       "-er",
-      "-em"
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
-      "-n",
-      "-s",
+      "-en",
       "-",
-      "-en"
+      "-s",
+      "-es"
     ],
-    "correct2": "-n",
-    "solution": "Das ist die Tasche eines reichen Touristen."
+    "correct2": "-en",
+    "solution": "Das ist der Koffer eines reichen Touristen."
   },
   {
     "prefix": "Das ist ein bekannt",
@@ -952,9 +820,9 @@
     "correct1": "-er",
     "options2": [
       "-",
-      "-en",
       "-s",
-      "-es"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
     "solution": "Das ist ein bekannter Architekt."
@@ -974,7 +842,7 @@
       "-",
       "-n",
       "-s",
-      "-es"
+      "-ns"
     ],
     "correct2": "-",
     "solution": "Das ist ein bekannter Name."
@@ -994,54 +862,54 @@
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Das ist ein schwieriger Fall."
   },
   {
-    "prefix": "Der Bau d",
-    "middle": " neu",
-    "suffix": " Brück... dauert zwei Jahre.",
+    "prefix": "Der Bau einer neu",
+    "middle": " Brücke",
+    "suffix": " dauert zwei Jahre.",
     "options1": [
-      "-er",
       "-en",
       "-e",
+      "-er",
       "-es"
     ],
-    "correct1": "-er",
+    "correct1": "-en",
     "options2": [
       "-",
       "-n",
       "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-",
-    "solution": "Der Bau der neuen Brücke dauert zwei Jahre."
+    "solution": "Der Bau einer neuen Brücke dauert zwei Jahre."
   },
   {
-    "prefix": "Der Besitzer d",
-    "middle": " schwarz",
-    "suffix": " Katze... wird gesucht.",
+    "prefix": "Der Besitzer einer schwarz",
+    "middle": " Katze",
+    "suffix": " wird gesucht.",
     "options1": [
-      "-er",
       "-en",
       "-e",
+      "-er",
       "-es"
     ],
-    "correct1": "-er",
+    "correct1": "-en",
     "options2": [
       "-",
       "-n",
       "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-",
-    "solution": "Der Besitzer der schwarzen Katze wird gesucht."
+    "solution": "Der Besitzer einer schwarzen Katze wird gesucht."
   },
   {
     "prefix": "Der Biologe beobachtet den wild",
-    "middle": " Bär",
+    "middle": " Affe",
     "suffix": ".",
     "options1": [
       "-en",
@@ -1051,13 +919,13 @@
     ],
     "correct1": "-en",
     "options2": [
-      "-en",
-      "-s",
+      "-n",
       "-",
-      "-es"
+      "-s",
+      "-ns"
     ],
-    "correct2": "-en",
-    "solution": "Der Biologe beobachtet den wilden Bären."
+    "correct2": "-n",
+    "solution": "Der Biologe beobachtet den wilden Affen."
   },
   {
     "prefix": "Der Boden des hoh",
@@ -1066,15 +934,15 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-es",
-      "-s",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
     "solution": "Der Boden des hohen Glases ist dick."
@@ -1086,17 +954,20 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-es",
-      "-s",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Der Boden des schmutzigen Topfes muss geschrubbt werden."
   },
   {
@@ -1105,15 +976,15 @@
     "suffix": " eine wichtige Aufgabe.",
     "options1": [
       "-en",
-      "-e",
       "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
+      "-en",
       "-",
       "-s",
-      "-en",
       "-es"
     ],
     "correct2": "-en",
@@ -1126,15 +997,15 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-es",
-      "-s",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
     "solution": "Der Deckel des hölzernen Fasses ist schwer."
@@ -1146,38 +1017,41 @@
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-en",
-      "-s",
       "-",
+      "-s",
       "-es"
     ],
     "correct2": "-en",
     "solution": "Der Direktor dankte dem fleißigen Studenten."
   },
   {
-    "prefix": "Der Duft frisch",
+    "prefix": "Der Duft des frisch",
     "middle": " Brot",
     "suffix": " zieht durch das ganze Haus.",
     "options1": [
-      "-es",
-      "-em",
       "-en",
+      "-es",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
-      "-s",
       "-es",
-      "-en"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
-    "solution": "Der Duft frischen Brotes zieht durch das ganze Haus."
+    "alsoCorrect2": [
+      "-s"
+    ],
+    "solution": "Der Duft des frischen Brotes zieht durch das ganze Haus."
   },
   {
     "prefix": "Der Erfolg des jung",
@@ -1186,55 +1060,58 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-es",
-      "-s",
-      "-en"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Der Erfolg des jungen Koches ist beeindruckend."
   },
   {
-    "prefix": "Der Erfolg d",
-    "middle": " jung",
-    "suffix": " Student... freute den Professor.",
+    "prefix": "Der Erfolg des jung",
+    "middle": " Student",
+    "suffix": " freute den Professor.",
     "options1": [
       "-en",
-      "-es",
-      "-em",
-      "-er"
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
-      "-s",
       "-en",
       "-",
+      "-s",
       "-es"
     ],
     "correct2": "-en",
     "solution": "Der Erfolg des jungen Studenten freute den Professor."
   },
   {
-    "prefix": "Der Erfolg ein",
-    "middle": " gut",
-    "suffix": " Sportler... hängt vom Training ab.",
+    "prefix": "Der Erfolg eines gut",
+    "middle": " Sportler",
+    "suffix": " hängt vom Training ab.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-en"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Der Erfolg eines guten Sportlers hängt vom Training ab."
@@ -1246,75 +1123,35 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-n"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Der Geruch des frischen Kaffees erfüllt den Raum."
   },
   {
-    "prefix": "Der Geruch faul",
-    "middle": " Ei",
-    "suffix": " ist schrecklich.",
+    "prefix": "Der Geschmack der exotisch",
+    "middle": " Frucht",
+    "suffix": " war sehr süß.",
     "options1": [
-      "-er",
       "-en",
-      "-es",
-      "-em"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
+      "-e",
       "-er",
-      "-s",
       "-es"
-    ],
-    "correct2": "-er",
-    "solution": "Der Geruch fauler Eier ist schrecklich."
-  },
-  {
-    "prefix": "Der Geruch frisch",
-    "middle": " Kaffee",
-    "suffix": " am Morgen ist wunderbar.",
-    "options1": [
-      "-es",
-      "-en",
-      "-em",
-      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-",
       "-s",
       "-es",
-      "-n"
-    ],
-    "correct2": "-s",
-    "solution": "Der Geruch frischen Kaffees am Morgen ist wunderbar."
-  },
-  {
-    "prefix": "Der Geschmack d",
-    "middle": " exotisch",
-    "suffix": " Frucht... war sehr süß.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-en",
-      "-s",
-      "-e"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Der Geschmack der exotischen Frucht war sehr süß."
@@ -1326,38 +1163,38 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-es",
-      "-n"
+      "-",
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Der Geschmack des frischen Gemüses ist unschlagbar."
   },
   {
     "prefix": "Der Geschmack des teur",
-    "middle": " Wein",
+    "middle": " Käse",
     "suffix": " ist wirklich hervorragend.",
     "options1": [
       "-en",
       "-es",
       "-e",
-      "-em"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-es",
-      "-n"
+      "-",
+      "-n",
+      "-ns"
     ],
-    "correct2": "-es",
-    "solution": "Der Geschmack des teuren Weines ist wirklich hervorragend."
+    "correct2": "-s",
+    "solution": "Der Geschmack des teuren Käses ist wirklich hervorragend."
   },
   {
     "prefix": "Der Glanz des poliert",
@@ -1366,38 +1203,41 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-es",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Der Glanz des polierten Bestecks sieht toll aus."
   },
   {
     "prefix": "Der Hund des freundlich",
-    "middle": " Nachbar",
+    "middle": " Förster",
     "suffix": " bellt nachts sehr selten.",
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
-      "-n",
       "-",
-      "-es"
+      "-n",
+      "-ns"
     ],
-    "correct2": "-n",
-    "solution": "Der Hund des freundlichen Nachbarn bellt nachts sehr selten."
+    "correct2": "-s",
+    "solution": "Der Hund des freundlichen Försters bellt nachts sehr selten."
   },
   {
     "prefix": "Der Inhalt des alt",
@@ -1406,37 +1246,43 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-n"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Der Inhalt des alten Briefes war geheim."
   },
   {
-    "prefix": "Der Inhalt d",
-    "middle": " geliefert",
-    "suffix": " Paket... war beschädigt.",
+    "prefix": "Der Inhalt des geliefert",
+    "middle": " Paket",
+    "suffix": " war beschädigt.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Der Inhalt des gelieferten Pakets war beschädigt."
   },
   {
@@ -1447,17 +1293,17 @@
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-",
-      "-en",
       "-s",
-      "-e"
+      "-es",
+      "-en"
     ],
-    "correct2": "-en",
-    "solution": "Der Junge hilft dem erfahrenen Kochen beim Zwiebelschneiden."
+    "correct2": "-",
+    "solution": "Der Junge hilft dem erfahrenen Koch beim Zwiebelschneiden."
   },
   {
     "prefix": "Der Kellner bringt dem hungrig",
@@ -1466,18 +1312,18 @@
     "options1": [
       "-en",
       "-em",
-      "-es",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-",
-      "-en",
       "-s",
-      "-e"
+      "-es",
+      "-en"
     ],
-    "correct2": "-en",
-    "solution": "Der Kellner bringt dem hungrigen Gasten die Speisekarte."
+    "correct2": "-",
+    "solution": "Der Kellner bringt dem hungrigen Gast die Speisekarte."
   },
   {
     "prefix": "Der Kellner gibt dem klein",
@@ -1487,14 +1333,14 @@
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-",
       "-s",
       "-es",
-      "-er"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Der Kellner gibt dem kleinen Kind einen Löffel."
@@ -1506,17 +1352,20 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-es",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Der Kern eines reifen Pfirsichs ist hart."
   },
   {
@@ -1525,35 +1374,35 @@
     "suffix": " ist schwer auszusprechen.",
     "options1": [
       "-en",
-      "-es",
+      "-e",
       "-er",
-      "-em"
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-n",
-      "-s",
       "-",
-      "-en"
+      "-s",
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Der Name des jungen Franzosen ist schwer auszusprechen."
   },
   {
-    "prefix": "Der Name ein",
-    "middle": " fremd",
-    "suffix": " Person... stand auf dem Zettel.",
+    "prefix": "Der Name einer fremd",
+    "middle": " Person",
+    "suffix": " stand auf dem Zettel.",
     "options1": [
-      "-er",
       "-en",
       "-e",
+      "-er",
       "-es"
     ],
-    "correct1": "-er",
+    "correct1": "-en",
     "options2": [
       "-",
-      "-n",
       "-s",
+      "-es",
       "-en"
     ],
     "correct2": "-",
@@ -1566,15 +1415,15 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
+      "-",
       "-n",
-      "-es"
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Der Preis eines roten Paprikas ist gestiegen."
@@ -1586,15 +1435,15 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
+      "-",
       "-n",
-      "-es"
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Der Rand des weißen Tellers ist blau."
@@ -1606,75 +1455,84 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-es",
-      "-s",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Der Rat eines guten Freundes ist wertvoll."
   },
   {
-    "prefix": "Der Schatten d",
-    "middle": " groß",
-    "suffix": " Baum... spendete Kühle.",
+    "prefix": "Der Schatten des groß",
+    "middle": " Baum",
+    "suffix": " spendete Kühle.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Der Schatten des großen Baumes spendete Kühle."
   },
   {
-    "prefix": "Der Titel d",
-    "middle": " alt",
-    "suffix": " Buch... ist kaum noch lesbar.",
+    "prefix": "Der Titel des alt",
+    "middle": " Buch",
+    "suffix": " ist kaum noch lesbar.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Der Titel des alten Buches ist kaum noch lesbar."
   },
   {
-    "prefix": "Der Ursprung d",
-    "middle": " seltsam",
-    "suffix": " Geräusch... blieb ungeklärt.",
+    "prefix": "Der Ursprung des seltsam",
+    "middle": " Geräusch",
+    "suffix": " blieb ungeklärt.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
     "solution": "Der Ursprung des seltsamen Geräusches blieb ungeklärt."
@@ -1686,98 +1544,84 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-n"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Die Antwort des klugen Schülers war richtig."
   },
   {
-    "prefix": "Die Augen mein",
-    "middle": " klein",
-    "suffix": " Schwester... leuchteten vor Freude.",
+    "prefix": "Die Augen des klein",
+    "middle": " Mädchen",
+    "suffix": " leuchteten vor Freude.",
     "options1": [
-      "-er",
       "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-n",
-      "-s",
-      "-en"
-    ],
-    "correct2": "-",
-    "solution": "Die Augen meiner kleinen Schwester leuchteten vor Freude."
-  },
-  {
-    "prefix": "Die Bedeutung d",
-    "middle": " alt",
-    "suffix": " Wort... hat sich gewandelt.",
-    "options1": [
       "-es",
-      "-en",
-      "-em",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
-      "-es",
       "-s",
       "-",
-      "-en"
+      "-n",
+      "-ns"
+    ],
+    "correct2": "-s",
+    "solution": "Die Augen des kleinen Mädchens leuchteten vor Freude."
+  },
+  {
+    "prefix": "Die Bedeutung des alt",
+    "middle": " Wort",
+    "suffix": " hat sich gewandelt.",
+    "options1": [
+      "-en",
+      "-es",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-es",
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Die Bedeutung des alten Wortes hat sich gewandelt."
   },
   {
-    "prefix": "Die Blätter d",
-    "middle": " grün",
-    "suffix": " Pflanz... müssen gegossen werden.",
+    "prefix": "Die Blätter des hoh",
+    "middle": " Baum",
+    "suffix": " färben sich im Herbst gelb.",
     "options1": [
-      "-er",
       "-en",
+      "-es",
       "-e",
-      "-es"
+      "-er"
     ],
-    "correct1": "-er",
+    "correct1": "-en",
     "options2": [
-      "-e",
-      "-en",
+      "-es",
       "-",
+      "-en",
+      "-e"
+    ],
+    "correct2": "-es",
+    "alsoCorrect2": [
       "-s"
     ],
-    "correct2": "-e",
-    "solution": "Die Blätter der grünen Pflanze müssen gegossen werden."
-  },
-  {
-    "prefix": "Die Blätter d",
-    "middle": " hoch",
-    "suffix": " Bäum... färben sich im Herbst gelb.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-e",
-      "-en",
-      "-s"
-    ],
-    "correct2": "-e",
-    "solution": "Die Blätter der hohen Bäume färben sich im Herbst gelb."
+    "solution": "Die Blätter des hohen Baumes färben sich im Herbst gelb."
   },
   {
     "prefix": "Die Blätter des grün",
@@ -1786,95 +1630,81 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-es",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Die Blätter des grünen Salats sind knackig."
   },
   {
-    "prefix": "Die Blüte d",
-    "middle": " rot",
-    "suffix": " Ros... duftet herrlich.",
+    "prefix": "Die Erforschung des weit",
+    "middle": " Weltraum",
+    "suffix": " ist sehr teuer.",
     "options1": [
-      "-er",
       "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-n",
-      "-s",
-      "-en"
-    ],
-    "correct2": "-",
-    "solution": "Die Blüte der roten Rose duftet herrlich."
-  },
-  {
-    "prefix": "Die Erforschung d",
-    "middle": " weit",
-    "suffix": " Weltraum... ist sehr teuer.",
-    "options1": [
       "-es",
-      "-en",
-      "-em",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
-      "-es",
       "-s",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
-    "correct2": "-es",
+    "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Die Erforschung des weiten Weltraums ist sehr teuer."
   },
   {
-    "prefix": "Die Eröffnung d",
-    "middle": " neu",
-    "suffix": " Museum... findet morgen statt.",
+    "prefix": "Die Eröffnung des neu",
+    "middle": " Museum",
+    "suffix": " findet morgen statt.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
     "solution": "Die Eröffnung des neuen Museums findet morgen statt."
   },
   {
-    "prefix": "Die Farbe d",
-    "middle": " blau",
-    "suffix": " Himmel... war wunderschön.",
+    "prefix": "Die Farbe des blau",
+    "middle": " Himmel",
+    "suffix": " war wunderschön.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-en"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Die Farbe des blauen Himmels war wunderschön."
@@ -1886,17 +1716,20 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-n"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Die Farbe des blauen Kleides gefällt mir sehr."
   },
   {
@@ -1906,78 +1739,61 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-es",
-      "-s",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Die Farbe des dunklen Brotes gefällt mir."
   },
   {
     "prefix": "Die Farbe des hell",
-    "middle": " Bier",
-    "suffix": " ist golden.",
+    "middle": " Holz",
+    "suffix": " ist schön.",
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
-      "-s",
       "-es",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
-    "correct2": "-s",
-    "solution": "Die Farbe des hellen Bieres ist golden."
+    "correct2": "-es",
+    "solution": "Die Farbe des hellen Holzes ist schön."
   },
   {
-    "prefix": "Die Farbe d",
-    "middle": " klar",
-    "suffix": " Wasser... faszinierte die Taucher.",
+    "prefix": "Die Farbe des klar",
+    "middle": " Wasser",
+    "suffix": " faszinierte die Taucher.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-en"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Die Farbe des klaren Wassers faszinierte die Taucher."
-  },
-  {
-    "prefix": "Die Farbe des neu",
-    "middle": " Kleid",
-    "suffix": " passt perfekt zu deinen Augen.",
-    "options1": [
-      "-en",
-      "-es",
-      "-em",
-      "-er"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-",
-      "-s",
-      "-es",
-      "-er"
-    ],
-    "correct2": "-es",
-    "solution": "Die Farbe des neuen Kleides passt perfekt zu deinen Augen."
   },
   {
     "prefix": "Die Farbe des reif",
@@ -1986,58 +1802,18 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
+      "-",
       "-n",
-      "-es"
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Die Farbe des reifen Apfels ist tiefrot."
-  },
-  {
-    "prefix": "Die Farbe grün",
-    "middle": " Tee",
-    "suffix": " ist sehr beruhigend.",
-    "options1": [
-      "-en",
-      "-es",
-      "-er",
-      "-em"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-",
-      "-s",
-      "-es",
-      "-n"
-    ],
-    "correct2": "-s",
-    "solution": "Die Farbe grünen Tees ist sehr beruhigend."
-  },
-  {
-    "prefix": "Die Form des rund",
-    "middle": " Teller",
-    "suffix": " ist klassisch.",
-    "options1": [
-      "-en",
-      "-es",
-      "-em",
-      "-er"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-",
-      "-s",
-      "-n",
-      "-es"
-    ],
-    "correct2": "-s",
-    "solution": "Die Form des runden Tellers ist klassisch."
   },
   {
     "prefix": "Die Gesundheit des alt",
@@ -2045,15 +1821,15 @@
     "suffix": " verbessert sich.",
     "options1": [
       "-en",
-      "-es",
+      "-e",
       "-er",
-      "-em"
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-en",
-      "-s",
       "-",
+      "-s",
       "-es"
     ],
     "correct2": "-en",
@@ -2065,58 +1841,61 @@
     "suffix": " war sehr nützlich.",
     "options1": [
       "-en",
-      "-es",
+      "-e",
       "-er",
-      "-em"
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-en",
-      "-s",
       "-",
+      "-s",
       "-es"
     ],
     "correct2": "-en",
     "solution": "Die Hilfe des netten Polizisten war sehr nützlich."
   },
   {
-    "prefix": "Die Hilfe ein",
-    "middle": " erfahren",
-    "suffix": " Spezialist... war notwendig.",
+    "prefix": "Die Hilfe eines erfahren",
+    "middle": " Spezialist",
+    "suffix": " war notwendig.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
-      "-er"
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-en",
-      "-s",
       "-",
+      "-s",
       "-es"
     ],
     "correct2": "-en",
     "solution": "Die Hilfe eines erfahrenen Spezialisten war notwendig."
   },
   {
-    "prefix": "Die Hilfe mein",
-    "middle": " gut",
-    "suffix": " Freund... war sehr wertvoll.",
+    "prefix": "Die Hilfe meines gut",
+    "middle": " Freund",
+    "suffix": " war sehr wertvoll.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
-      "-s",
       "-es",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
-    "correct2": "-s",
+    "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Die Hilfe meines guten Freundes war sehr wertvoll."
   },
   {
@@ -2126,118 +1905,18 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-es",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
     "solution": "Die Hitze des glühenden Grills ist sehr stark."
-  },
-  {
-    "prefix": "Die Hitze siedend",
-    "middle": " Wasser",
-    "suffix": " ist gefährlich.",
-    "options1": [
-      "-en",
-      "-es",
-      "-em",
-      "-er"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-",
-      "-s",
-      "-es",
-      "-n"
-    ],
-    "correct2": "-s",
-    "solution": "Die Hitze siedenden Wassers ist gefährlich."
-  },
-  {
-    "prefix": "Die Kinder d",
-    "middle": " nett",
-    "suffix": " Nachbar... spielen im Garten.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-n",
-      "-",
-      "-s",
-      "-en"
-    ],
-    "correct2": "-n",
-    "solution": "Die Kinder der netten Nachbarn spielen im Garten."
-  },
-  {
-    "prefix": "Die Kleidung d",
-    "middle": " schick",
-    "suffix": " Frau... war sehr elegant.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-n",
-      "-s",
-      "-en"
-    ],
-    "correct2": "-",
-    "solution": "Die Kleidung der schicken Frau war sehr elegant."
-  },
-  {
-    "prefix": "Die Konsistenz flüssig",
-    "middle": " Teig",
-    "suffix": " ist genau richtig.",
-    "options1": [
-      "-en",
-      "-es",
-      "-em",
-      "-er"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-",
-      "-s",
-      "-es",
-      "-n"
-    ],
-    "correct2": "-es",
-    "solution": "Die Konsistenz flüssigen Teiges ist genau richtig."
-  },
-  {
-    "prefix": "Die Kraft stark",
-    "middle": " Arm",
-    "suffix": " ist beim Teigkneten wichtig.",
-    "options1": [
-      "-er",
-      "-en",
-      "-es",
-      "-em"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-e",
-      "-s",
-      "-es"
-    ],
-    "correct2": "-e",
-    "solution": "Die Kraft starker Arme ist beim Teigkneten wichtig."
   },
   {
     "prefix": "Die Lage des modern",
@@ -2246,58 +1925,58 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-n"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Die Lage des modernen Hotels ist perfekt."
   },
   {
-    "prefix": "Die Länge d",
-    "middle": " geplant",
-    "suffix": " Tunnel... beträgt fünf Kilometer.",
+    "prefix": "Die Länge des geplant",
+    "middle": " Tunnel",
+    "suffix": " beträgt fünf Kilometer.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-en"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Die Länge des geplanten Tunnels beträgt fünf Kilometer."
   },
   {
-    "prefix": "Die Meinung d",
-    "middle": " bayerisch",
-    "suffix": " Minister... wurde kritisiert.",
+    "prefix": "Die Meinung des neu",
+    "middle": " Minister",
+    "suffix": " wurde kritisiert.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-en"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
-    "solution": "Die Meinung des bayerischen Ministers wurde kritisiert."
+    "solution": "Die Meinung des neuen Ministers wurde kritisiert."
   },
   {
     "prefix": "Die Meinung des bekannt",
@@ -2305,179 +1984,108 @@
     "suffix": " ist uns wichtig.",
     "options1": [
       "-en",
-      "-es",
+      "-e",
       "-er",
-      "-em"
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-n",
-      "-s",
       "-",
-      "-en"
+      "-s",
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Die Meinung des bekannten Experten ist uns wichtig."
   },
   {
-    "prefix": "Die Meinung mein",
-    "middle": " Elter",
-    "suffix": " ist mir sehr wichtig.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-n",
-      "-",
-      "-s",
-      "-es"
-    ],
-    "correct2": "-",
-    "solution": "Die Meinung meiner Eltern ist mir sehr wichtig."
-  },
-  {
-    "prefix": "Die Pflege d",
-    "middle": " krank",
-    "suffix": " Tier... erfordert viel Geduld.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-e",
-      "-n",
-      "-s"
-    ],
-    "correct2": "-e",
-    "solution": "Die Pflege der kranken Tiere erfordert viel Geduld."
-  },
-  {
-    "prefix": "Die Qualität d",
-    "middle": " geliefert",
-    "suffix": " War... war mangelhaft.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-e",
-      "-en",
-      "-",
-      "-s"
-    ],
-    "correct2": "-e",
-    "solution": "Die Qualität der gelieferten Ware war mangelhaft."
-  },
-  {
-    "prefix": "Die Qualität des französisch",
-    "middle": " Wein",
-    "suffix": " ist hervorragend.",
+    "prefix": "Die Pflege eines krank",
+    "middle": " Tier",
+    "suffix": " erfordert viel Geduld.",
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-n"
+      "-n",
+      "-ns"
     ],
     "correct2": "-es",
-    "solution": "Die Qualität des französischen Weines ist hervorragend."
+    "alsoCorrect2": [
+      "-s"
+    ],
+    "solution": "Die Pflege eines kranken Tieres erfordert viel Geduld."
+  },
+  {
+    "prefix": "Die Qualität des geliefert",
+    "middle": " Obst",
+    "suffix": " war mangelhaft.",
+    "options1": [
+      "-en",
+      "-es",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-es",
+      "-",
+      "-en",
+      "-e"
+    ],
+    "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
+    "solution": "Die Qualität des gelieferten Obstes war mangelhaft."
   },
   {
     "prefix": "Die Qualität des frisch",
     "middle": " Fisch",
-    "suffix": " ist entscheidend für das Sushi.",
+    "suffix": " ist sehr wichtig.",
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
-      "-s",
       "-es",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
-    "solution": "Die Qualität des frischen Fisches ist entscheidend für das Sushi."
-  },
-  {
-    "prefix": "Die Qualität des teur",
-    "middle": " Wein",
-    "suffix": " enttäuschte die Gäste.",
-    "options1": [
-      "-en",
-      "-es",
-      "-er",
-      "-em"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-",
-      "-e",
-      "-s",
-      "-en"
-    ],
-    "correct2": "-s",
-    "solution": "Die Qualität des teuren Weines enttäuschte die Gäste."
-  },
-  {
-    "prefix": "Die Qualität gut",
-    "middle": " Fleisch",
-    "suffix": " erkennt man sofort.",
-    "options1": [
-      "-en",
-      "-es",
-      "-er",
-      "-em"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-",
-      "-s",
-      "-es",
-      "-n"
-    ],
-    "correct2": "-es",
-    "solution": "Die Qualität guten Fleisches erkennt man sofort."
+    "solution": "Die Qualität des frischen Fisches ist sehr wichtig."
   },
   {
     "prefix": "Die Reinigung des teur",
     "middle": " Teppich",
-    "suffix": " in der Wohnküche ist schwierig.",
+    "suffix": " ist schwierig.",
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-es",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
-    "solution": "Die Reinigung des teuren Teppichs in der Wohnküche ist schwierig."
+    "alsoCorrect2": [
+      "-es"
+    ],
+    "solution": "Die Reinigung des teuren Teppichs ist schwierig."
   },
   {
     "prefix": "Die Reinigung des verschmutzt",
@@ -2486,15 +2094,15 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
+      "-",
       "-n",
-      "-es"
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Die Reinigung des verschmutzten Bodens dauert lange."
@@ -2506,58 +2114,21 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-s",
       "-es",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Die Reparatur des kaputten Fahrrades war sehr teuer."
-  },
-  {
-    "prefix": "Die Schale braun",
-    "middle": " Ei",
-    "suffix": " ist oft dicker.",
-    "options1": [
-      "-er",
-      "-en",
-      "-es",
-      "-em"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-er",
-      "-s",
-      "-es"
-    ],
-    "correct2": "-er",
-    "solution": "Die Schale brauner Eier ist oft dicker."
-  },
-  {
-    "prefix": "Die Schärfe der klein",
-    "middle": " Chili",
-    "suffix": " wird oft unterschätzt.",
-    "options1": [
-      "-en",
-      "-e",
-      "-er",
-      "-es"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-",
-      "-s",
-      "-n",
-      "-en"
-    ],
-    "correct2": "-",
-    "solution": "Die Schärfe der kleinen Chili wird oft unterschätzt."
   },
   {
     "prefix": "Die Stimme des berühmt",
@@ -2566,138 +2137,141 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-n"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Die Stimme des berühmten Sängers war wunderbar."
   },
   {
-    "prefix": "Die Stimme d",
-    "middle": " klein",
-    "suffix": " Kind... war sehr leise.",
+    "prefix": "Die Stimme des klein",
+    "middle": " Kind",
+    "suffix": " war sehr leise.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Die Stimme des kleinen Kindes war sehr leise."
   },
   {
     "prefix": "Die Stimme des laut",
     "middle": " Mensch",
-    "suffix": " nervt in der Küche.",
+    "suffix": " nervt mich.",
     "options1": [
       "-en",
-      "-es",
-      "-em",
-      "-er"
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-en",
+      "-",
       "-s",
       "-es"
     ],
     "correct2": "-en",
-    "solution": "Die Stimme des lauten Menschen nervt in der Küche."
+    "solution": "Die Stimme des lauten Menschen nervt mich."
   },
   {
     "prefix": "Die Stimme einer bekannt",
     "middle": " Sängerin",
     "suffix": " klang durch den Raum.",
     "options1": [
+      "-en",
       "-e",
       "-er",
-      "-en",
       "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-",
-      "-n",
       "-s",
-      "-nen"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
     "solution": "Die Stimme einer bekannten Sängerin klang durch den Raum."
   },
   {
-    "prefix": "Die Stimme ein",
-    "middle": " zornig",
-    "suffix": " Lehrer... erschreckte die Klasse.",
+    "prefix": "Die Stimme eines zornig",
+    "middle": " Lehrer",
+    "suffix": " erschreckte die Klasse.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-en"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Die Stimme eines zornigen Lehrers erschreckte die Klasse."
   },
   {
-    "prefix": "Die Tasche der jung",
+    "prefix": "Die Tasche einer jung",
     "middle": " Frau",
     "suffix": " wurde im Bus gestohlen.",
     "options1": [
       "-en",
-      "-er",
       "-e",
+      "-er",
       "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-",
-      "-en",
       "-s",
-      "-es"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
-    "solution": "Die Tasche der jungen Frau wurde im Bus gestohlen."
+    "solution": "Die Tasche einer jungen Frau wurde im Bus gestohlen."
   },
   {
-    "prefix": "Die Tasche mein",
-    "middle": " Kolleg",
+    "prefix": "Die Tasche meines neu",
+    "middle": " Kollege",
     "suffix": " liegt noch im Büro.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
-      "-er"
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-n",
-      "-s",
       "-",
-      "-es"
+      "-s",
+      "-ns"
     ],
     "correct2": "-n",
-    "solution": "Die Tasche meines Kollegen liegt noch im Büro."
+    "solution": "Die Tasche meines neuen Kollegen liegt noch im Büro."
   },
   {
     "prefix": "Die Tür des klein",
@@ -2706,38 +2280,18 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-n"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Die Tür des kleinen Autos klemmt."
-  },
-  {
-    "prefix": "Die Tür d",
-    "middle": " verschlossen",
-    "suffix": " Schrank... ließ sich nicht öffnen.",
-    "options1": [
-      "-es",
-      "-en",
-      "-em",
-      "-er"
-    ],
-    "correct1": "-es",
-    "options2": [
-      "-es",
-      "-s",
-      "-",
-      "-en"
-    ],
-    "correct2": "-es",
-    "solution": "Die Tür des verschlossenen Schrankes ließ sich nicht öffnen."
   },
   {
     "prefix": "Die Tür des verschlossen",
@@ -2746,98 +2300,81 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-n"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Die Tür des verschlossenen Schrankes lässt sich nicht öffnen."
   },
   {
-    "prefix": "Die Türen d",
-    "middle": " historisch",
-    "suffix": " Gebäude... sind aus Eichenholz.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-s",
-      "-e",
-      "-n"
-    ],
-    "correct2": "-",
-    "solution": "Die Türen der historischen Gebäude sind aus Eichenholz."
-  },
-  {
-    "prefix": "Die Wirkung stark",
-    "middle": " Kaffee",
-    "suffix": " lässt schnell nach.",
+    "prefix": "Die Türen des historisch",
+    "middle": " Gebäude",
+    "suffix": " sind aus Eichenholz.",
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-es",
-      "-n"
+      "-",
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
-    "solution": "Die Wirkung starken Kaffees lässt schnell nach."
+    "solution": "Die Türen des historischen Gebäudes sind aus Eichenholz."
   },
   {
-    "prefix": "Die Wohnung ein",
-    "middle": " bekannt",
-    "suffix": " Schauspieler... wurde verkauft.",
+    "prefix": "Die Wohnung eines bekannt",
+    "middle": " Schauspieler",
+    "suffix": " wurde verkauft.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
-      "-en",
       "-",
-      "-es"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Die Wohnung eines bekannten Schauspielers wurde verkauft."
   },
   {
-    "prefix": "Die Wurzeln d",
-    "middle": " alt",
-    "suffix": " Eich... reichen tief in die Erde.",
+    "prefix": "Die Wurzeln einer alt",
+    "middle": " Eiche",
+    "suffix": " reichen tief in die Erde.",
     "options1": [
-      "-er",
       "-en",
       "-e",
+      "-er",
       "-es"
     ],
-    "correct1": "-er",
+    "correct1": "-en",
     "options2": [
       "-",
       "-n",
       "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-",
-    "solution": "Die Wurzeln der alten Eiche reichen tief in die Erde."
+    "solution": "Die Wurzeln einer alten Eiche reichen tief in die Erde."
   },
   {
     "prefix": "Die Zubereitung eines lecker",
@@ -2846,38 +2383,41 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-es",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Die Zubereitung eines leckeren Salats ist einfach."
   },
   {
-    "prefix": "Die Zukunft unser",
+    "prefix": "Die Zukunft unseres blau",
     "middle": " Planet",
     "suffix": " bereitet vielen Sorgen.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
-      "-er"
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-en",
-      "-s",
       "-",
+      "-s",
       "-es"
     ],
     "correct2": "-en",
-    "solution": "Die Zukunft unseres Planeten bereitet vielen Sorgen."
+    "solution": "Die Zukunft unseres blauen Planeten bereitet vielen Sorgen."
   },
   {
     "prefix": "Dunkl",
@@ -2892,21 +2432,21 @@
     "correct1": "-e",
     "options2": [
       "-",
-      "-n",
       "-s",
-      "-en"
+      "-n",
+      "-e"
     ],
     "correct2": "-",
     "solution": "Dunkle Wolken ziehen am Himmel auf."
   },
   {
-    "prefix": "Ein Glas kühl",
+    "prefix": "Kühl",
     "middle": " Wasser",
     "suffix": " erfrischt an heißen Tagen.",
     "options1": [
       "-es",
+      "-e",
       "-en",
-      "-em",
       "-er"
     ],
     "correct1": "-es",
@@ -2914,30 +2454,30 @@
       "-",
       "-s",
       "-n",
-      "-es"
+      "-e"
     ],
     "correct2": "-",
-    "solution": "Ein Glas kühles Wasser erfrischt an heißen Tagen."
+    "solution": "Kühles Wasser erfrischt an heißen Tagen."
   },
   {
-    "prefix": "Ein Löffel voll süß",
+    "prefix": "Flüssig",
     "middle": " Honig",
-    "suffix": " passt gut in den Tee.",
+    "suffix": " lässt sich leicht verteilen.",
     "options1": [
+      "-er",
+      "-e",
       "-en",
-      "-es",
-      "-em",
-      "-er"
+      "-es"
     ],
-    "correct1": "-en",
+    "correct1": "-er",
     "options2": [
       "-",
       "-s",
-      "-n",
-      "-es"
+      "-es",
+      "-en"
     ],
-    "correct2": "-s",
-    "solution": "Ein Löffel voll süßen Honigs passt gut in den Tee."
+    "correct2": "-",
+    "solution": "Flüssiger Honig lässt sich leicht verteilen."
   },
   {
     "prefix": "Ein fremd",
@@ -2952,9 +2492,9 @@
     "correct1": "-er",
     "options2": [
       "-",
-      "-en",
       "-s",
-      "-es"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ein fremder Passant fragte nach der Uhrzeit."
@@ -2972,9 +2512,9 @@
     "correct1": "-er",
     "options2": [
       "-",
-      "-en",
       "-s",
-      "-es"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ein freundlicher Polizist erklärte mir den Weg."
@@ -2993,8 +2533,8 @@
     "options2": [
       "-",
       "-s",
-      "-es",
-      "-n"
+      "-n",
+      "-e"
     ],
     "correct2": "-",
     "solution": "Ein grüner Apfel schmeckt oft sauer."
@@ -3014,50 +2554,10 @@
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ein guter Freund hilft einem immer."
-  },
-  {
-    "prefix": "Ein gut",
-    "middle": " Wein",
-    "suffix": " braucht Zeit zum Atmen.",
-    "options1": [
-      "-er",
-      "-en",
-      "-es",
-      "-em"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-s",
-      "-es",
-      "-n"
-    ],
-    "correct2": "-",
-    "solution": "Ein guter Wein braucht Zeit zum Atmen."
-  },
-  {
-    "prefix": "Ein gut",
-    "middle": " Wein",
-    "suffix": " muss atmen.",
-    "options1": [
-      "-er",
-      "-e",
-      "-en",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-s",
-      "-es",
-      "-n"
-    ],
-    "correct2": "-",
-    "solution": "Ein guter Wein muss atmen."
   },
   {
     "prefix": "Ein hell",
@@ -3074,7 +2574,7 @@
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ein heller Stern leuchtet am Himmel."
@@ -3085,9 +2585,9 @@
     "suffix": " schien durch das Fenster.",
     "options1": [
       "-es",
-      "-er",
       "-e",
-      "-en"
+      "-en",
+      "-er"
     ],
     "correct1": "-es",
     "options2": [
@@ -3114,7 +2614,7 @@
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ein hohler Baum bietet Tieren Schutz."
@@ -3125,23 +2625,23 @@
     "suffix": " hilft niemandem.",
     "options1": [
       "-es",
-      "-er",
       "-e",
-      "-en"
+      "-en",
+      "-er"
     ],
     "correct1": "-es",
     "options2": [
       "-",
       "-s",
-      "-es",
-      "-n"
+      "-n",
+      "-e"
     ],
     "correct2": "-",
     "solution": "Ein hohles Versprechen hilft niemandem."
   },
   {
     "prefix": "Ein jung",
-    "middle": " Assistenz",
+    "middle": " Assistent",
     "suffix": " half dem Professor.",
     "options1": [
       "-er",
@@ -3152,9 +2652,9 @@
     "correct1": "-er",
     "options2": [
       "-",
-      "-en",
       "-s",
-      "-es"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ein junger Assistent half dem Professor."
@@ -3174,7 +2674,7 @@
       "-",
       "-n",
       "-s",
-      "-es"
+      "-ns"
     ],
     "correct2": "-",
     "solution": "Ein junger Löwe spielt in der Sonne."
@@ -3194,7 +2694,7 @@
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ein kleiner Hund bellte mich an."
@@ -3214,7 +2714,7 @@
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ein kluger Kopf findet immer eine Lösung."
@@ -3234,7 +2734,7 @@
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ein lauter Knall erschreckte alle."
@@ -3245,16 +2745,16 @@
     "suffix": " steht neben der Kirche.",
     "options1": [
       "-es",
-      "-er",
       "-e",
-      "-en"
+      "-en",
+      "-er"
     ],
     "correct1": "-es",
     "options2": [
       "-",
+      "-n",
       "-s",
-      "-es",
-      "-n"
+      "-ns"
     ],
     "correct2": "-",
     "solution": "Ein modernes Gebäude steht neben der Kirche."
@@ -3272,9 +2772,9 @@
     "correct1": "-er",
     "options2": [
       "-",
-      "-en",
       "-s",
-      "-es"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ein mutiger Soldat rettete das Kind."
@@ -3292,9 +2792,9 @@
     "correct1": "-er",
     "options2": [
       "-",
-      "-en",
       "-s",
-      "-es"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ein reicher Fürst baute dieses Schloss."
@@ -3305,39 +2805,39 @@
     "suffix": " gehört in jede Küche.",
     "options1": [
       "-es",
+      "-e",
       "-en",
-      "-er",
-      "-em"
+      "-er"
     ],
     "correct1": "-es",
     "options2": [
       "-",
       "-s",
       "-n",
-      "-es"
+      "-e"
     ],
     "correct2": "-",
     "solution": "Ein scharfes Messer gehört in jede Küche."
   },
   {
-    "prefix": "Ein schmutzig",
+    "prefix": "Ich stelle ein schmutzig",
     "middle": " Glas",
-    "suffix": " stelle ich in die Spülmaschine.",
+    "suffix": " in den Geschirrspüler.",
     "options1": [
       "-es",
+      "-e",
       "-en",
-      "-er",
-      "-em"
+      "-er"
     ],
     "correct1": "-es",
     "options2": [
       "-",
       "-s",
-      "-n",
-      "-es"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
-    "solution": "Ein schmutziges Glas stelle ich in die Spülmaschine."
+    "solution": "Ich stelle ein schmutziges Glas in den Geschirrspüler."
   },
   {
     "prefix": "Ein wahr",
@@ -3352,9 +2852,9 @@
     "correct1": "-er",
     "options2": [
       "-",
-      "-en",
       "-s",
-      "-es"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ein wahrer Held kennt keine Angst."
@@ -3365,16 +2865,16 @@
     "suffix": " schmeckt im Winter am besten.",
     "options1": [
       "-er",
+      "-e",
       "-en",
-      "-es",
-      "-em"
+      "-es"
     ],
     "correct1": "-er",
     "options2": [
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ein warmer Kakao schmeckt im Winter am besten."
@@ -3387,37 +2887,37 @@
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-n",
+      "-",
       "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Er antwortet dem höflichen Beamten."
   },
   {
-    "prefix": "Er gibt dem hungrig",
-    "middle": " Bär",
-    "suffix": " einen Apfel.",
+    "prefix": "Er gibt dem klein",
+    "middle": " Hase",
+    "suffix": " eine Karotte.",
     "options1": [
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
+      "-n",
       "-",
-      "-en",
       "-s",
-      "-e"
+      "-ns"
     ],
-    "correct2": "-en",
-    "solution": "Er gibt dem hungrigen Bären einen Apfel."
+    "correct2": "-n",
+    "solution": "Er gibt dem kleinen Hasen eine Karotte."
   },
   {
     "prefix": "Er gibt dem hungrig",
@@ -3427,14 +2927,14 @@
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-n",
+      "-",
       "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Er gibt dem hungrigen Löwen Fleisch."
@@ -3447,37 +2947,37 @@
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-en",
+      "-",
       "-s",
-      "-e"
+      "-es"
     ],
     "correct2": "-en",
     "solution": "Er hilft dem alten Patienten beim Essen."
   },
   {
     "prefix": "Er isst ein belegt",
-    "middle": " Brötchen",
+    "middle": " Brot",
     "suffix": " in der Pause.",
     "options1": [
       "-es",
+      "-e",
       "-en",
-      "-em",
-      "-e"
+      "-er"
     ],
     "correct1": "-es",
     "options2": [
       "-",
       "-s",
-      "-n",
+      "-es",
       "-en"
     ],
     "correct2": "-",
-    "solution": "Er isst ein belegtes Brötchen in der Pause."
+    "solution": "Er isst ein belegtes Brot in der Pause."
   },
   {
     "prefix": "Er ist ein gut",
@@ -3492,16 +2992,16 @@
     "correct1": "-er",
     "options2": [
       "-",
-      "-en",
       "-s",
-      "-es"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
     "solution": "Er ist ein guter Mensch."
   },
   {
     "prefix": "Er ist ein höflich",
-    "middle": " Kolleg",
+    "middle": " Kollege",
     "suffix": ".",
     "options1": [
       "-er",
@@ -3511,12 +3011,12 @@
     ],
     "correct1": "-er",
     "options2": [
-      "-e",
       "-",
-      "-en",
-      "-s"
+      "-n",
+      "-s",
+      "-ns"
     ],
-    "correct2": "-e",
+    "correct2": "-",
     "solution": "Er ist ein höflicher Kollege."
   },
   {
@@ -3526,15 +3026,15 @@
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-es"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Er schreibt mit einem schwarzen Stift."
@@ -3546,15 +3046,15 @@
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-es"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Er spielt mit einem neuen Ball."
@@ -3566,14 +3066,14 @@
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-en",
-      "-s",
       "-",
+      "-s",
       "-es"
     ],
     "correct2": "-en",
@@ -3586,15 +3086,15 @@
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-n",
-      "-s",
       "-",
-      "-en"
+      "-s",
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Er wohnt bei einem netten Verwandten."
@@ -3602,22 +3102,22 @@
   {
     "prefix": "Er zeigt dem neugierig",
     "middle": " Tourist",
-    "suffix": " die Küche.",
+    "suffix": " die Stadt.",
     "options1": [
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-en",
+      "-",
       "-s",
-      "-e"
+      "-es"
     ],
     "correct2": "-en",
-    "solution": "Er zeigt dem neugierigen Touristen die Küche."
+    "solution": "Er zeigt dem neugierigen Touristen die Stadt."
   },
   {
     "prefix": "Frisch",
@@ -3625,16 +3125,16 @@
     "suffix": " enthält viele Vitamine.",
     "options1": [
       "-er",
+      "-e",
       "-en",
-      "-es",
-      "-em"
+      "-es"
     ],
     "correct1": "-er",
     "options2": [
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Frischer Saft enthält viele Vitamine."
@@ -3645,39 +3145,39 @@
     "suffix": " riecht einfach wunderbar.",
     "options1": [
       "-es",
+      "-e",
       "-en",
-      "-er",
-      "-e"
+      "-er"
     ],
     "correct1": "-es",
     "options2": [
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Frisches Brot riecht einfach wunderbar."
   },
   {
-    "prefix": "Geben Sie dem klein",
+    "prefix": "Gib dem klein",
     "middle": " Junge",
     "suffix": " bitte einen Keks.",
     "options1": [
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-n",
+      "-",
       "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-n",
-    "solution": "Geben Sie dem kleinen Jungen bitte einen Keks."
+    "solution": "Gib dem kleinen Jungen bitte einen Keks."
   },
   {
     "prefix": "Hast du den neu",
@@ -3694,7 +3194,7 @@
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Hast du den neuen Film schon gesehen?"
@@ -3705,16 +3205,16 @@
     "suffix": ".",
     "options1": [
       "-es",
+      "-e",
       "-en",
-      "-er",
-      "-e"
+      "-er"
     ],
     "correct1": "-es",
     "options2": [
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ich brauche ein neues Handy."
@@ -3726,15 +3226,15 @@
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-n",
-      "-s",
       "-",
-      "-en"
+      "-s",
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Ich danke dem freundlichen Beamten."
@@ -3742,22 +3242,22 @@
   {
     "prefix": "Ich fahre mit dem alt",
     "middle": " Fahrrad",
-    "suffix": " zur Arbeit.",
+    "suffix": " zur Schule.",
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
-    "solution": "Ich fahre mit dem alten Fahrrad zur Arbeit."
+    "solution": "Ich fahre mit dem alten Fahrrad zur Schule."
   },
   {
     "prefix": "Ich gebe dem klein",
@@ -3767,13 +3267,13 @@
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-",
       "-s",
-      "-e",
+      "-es",
       "-en"
     ],
     "correct2": "-",
@@ -3787,14 +3287,14 @@
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-n",
+      "-",
       "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Ich glaube dem freundlichen Zeugen."
@@ -3806,14 +3306,13 @@
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-",
       "-s",
-      "-es",
       "-n"
     ],
     "correct2": "-",
@@ -3833,8 +3332,8 @@
     "options2": [
       "-",
       "-s",
-      "-es",
-      "-n"
+      "-n",
+      "-e"
     ],
     "correct2": "-",
     "solution": "Ich habe einen großen Fehler gemacht."
@@ -3846,78 +3345,38 @@
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-n",
-      "-s",
       "-",
-      "-en"
+      "-s",
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Ich habe mit einem freundlichen Kunden gesprochen."
   },
   {
     "prefix": "Ich helfe dem alt",
-    "middle": " Nachbar",
-    "suffix": " beim Tragen der schweren Einkäufe.",
-    "options1": [
-      "-em",
-      "-en",
-      "-es",
-      "-e"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-",
-      "-s",
-      "-n",
-      "-en"
-    ],
-    "correct2": "-n",
-    "solution": "Ich helfe dem alten Nachbarn beim Tragen der schweren Einkäufe."
-  },
-  {
-    "prefix": "Ich helfe dem alt",
-    "middle": " Nachbar",
-    "suffix": ".",
+    "middle": " Herr",
+    "suffix": " beim Tragen der Einkäufe.",
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-n",
-      "-s",
       "-",
-      "-en"
+      "-s",
+      "-es"
     ],
     "correct2": "-n",
-    "solution": "Ich helfe dem alten Nachbarn."
-  },
-  {
-    "prefix": "Ich helfe dem krank",
-    "middle": " Nachbar",
-    "suffix": " beim Einkaufen.",
-    "options1": [
-      "-em",
-      "-en",
-      "-er",
-      "-e"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-n",
-      "-s",
-      "-",
-      "-en"
-    ],
-    "correct2": "-n",
-    "solution": "Ich helfe dem kranken Nachbarn beim Einkaufen."
+    "solution": "Ich helfe dem alten Herrn beim Tragen der Einkäufe."
   },
   {
     "prefix": "Ich helfe der krank",
@@ -3925,59 +3384,39 @@
     "suffix": " in der Küche.",
     "options1": [
       "-en",
-      "-er",
       "-e",
+      "-er",
       "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-",
-      "-n",
       "-s",
-      "-en"
+      "-n",
+      "-e"
     ],
     "correct2": "-",
     "solution": "Ich helfe der kranken Mutter in der Küche."
   },
   {
-    "prefix": "Ich mag den Geschmack dunkl",
-    "middle": " Schokolade",
-    "suffix": ".",
+    "prefix": "Warm",
+    "middle": " Kakao",
+    "suffix": " ist mein Lieblingsgetränk.",
     "options1": [
       "-er",
+      "-e",
       "-en",
-      "-es",
-      "-e"
+      "-es"
     ],
     "correct1": "-er",
     "options2": [
       "-",
-      "-n",
-      "-s",
-      "-es"
-    ],
-    "correct2": "-",
-    "solution": "Ich mag den Geschmack dunkler Schokolade."
-  },
-  {
-    "prefix": "Ich mag warm",
-    "middle": " Kakao",
-    "suffix": ".",
-    "options1": [
-      "-en",
-      "-er",
-      "-es",
-      "-e"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
-    "solution": "Ich mag warmen Kakao."
+    "solution": "Warmer Kakao ist mein Lieblingsgetränk."
   },
   {
     "prefix": "Ich nehme ein sauber",
@@ -3985,39 +3424,39 @@
     "suffix": " zum Abtrocknen.",
     "options1": [
       "-es",
+      "-e",
       "-en",
-      "-em",
-      "-e"
+      "-er"
     ],
     "correct1": "-es",
     "options2": [
       "-",
       "-s",
-      "-n",
-      "-es"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
     "solution": "Ich nehme ein sauberes Handtuch zum Abtrocknen."
   },
   {
-    "prefix": "Ich nehme eine Scheibe frisch",
+    "prefix": "Frisch",
     "middle": " Schinken",
-    "suffix": ".",
+    "suffix": " schmeckt am besten.",
     "options1": [
-      "-en",
-      "-es",
       "-er",
-      "-em"
+      "-e",
+      "-en",
+      "-es"
     ],
-    "correct1": "-en",
+    "correct1": "-er",
     "options2": [
       "-",
       "-s",
-      "-es",
-      "-n"
+      "-n",
+      "-e"
     ],
-    "correct2": "-s",
-    "solution": "Ich nehme eine Scheibe frischen Schinkens."
+    "correct2": "-",
+    "solution": "Frischer Schinken schmeckt am besten."
   },
   {
     "prefix": "Ich sehe den klein",
@@ -4032,8 +3471,8 @@
     "correct1": "-en",
     "options2": [
       "-en",
-      "-s",
       "-",
+      "-s",
       "-es"
     ],
     "correct2": "-en",
@@ -4046,58 +3485,58 @@
     "options1": [
       "-e",
       "-en",
-      "-es",
-      "-em"
+      "-er",
+      "-es"
     ],
     "correct1": "-e",
     "options2": [
       "-",
       "-s",
       "-n",
-      "-en"
+      "-e"
     ],
     "correct2": "-",
     "solution": "Ich stelle das warme Essen auf den Tisch."
   },
   {
     "prefix": "Ich telefoniere mit einem neu",
-    "middle": " Kolleg",
+    "middle": " Kollege",
     "suffix": ".",
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-en",
       "-n",
       "-",
-      "-s"
+      "-s",
+      "-ns"
     ],
-    "correct2": "-en",
+    "correct2": "-n",
     "solution": "Ich telefoniere mit einem neuen Kollegen."
   },
   {
-    "prefix": "Ich trinke am liebsten kalt",
+    "prefix": "Kalt",
     "middle": " Tee",
-    "suffix": ".",
+    "suffix": " schmeckt im Sommer gut.",
     "options1": [
-      "-en",
       "-er",
-      "-es",
-      "-em"
+      "-e",
+      "-en",
+      "-es"
     ],
-    "correct1": "-en",
+    "correct1": "-er",
     "options2": [
       "-",
+      "-n",
       "-s",
-      "-es",
-      "-n"
+      "-ns"
     ],
     "correct2": "-",
-    "solution": "Ich trinke am liebsten kalten Tee."
+    "solution": "Kalter Tee schmeckt im Sommer gut."
   },
   {
     "prefix": "Ich vertraue dem ehrlich",
@@ -4106,15 +3545,15 @@
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-n",
-      "-s",
       "-",
-      "-en"
+      "-s",
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Ich vertraue dem ehrlichen Zeugen."
@@ -4127,14 +3566,14 @@
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-n",
+      "-",
       "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Ich vertraue dem erfahrenen Biologen bei der Pilzauswahl."
@@ -4146,15 +3585,15 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-n",
-      "-es"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
     "solution": "In der Küche eines guten Restaurants ist es immer hektisch."
@@ -4166,137 +3605,149 @@
     "options1": [
       "-en",
       "-em",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "In einem alten Haus gibt es oft Probleme."
+  },
+  {
+    "prefix": "Infolge einer fatal",
+    "middle": " Fehlentscheidung",
+    "suffix": " verlor er alles.",
+    "options1": [
+      "-en",
+      "-e",
       "-er",
       "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-",
+      "-s",
       "-es",
-      "-s",
-      "-n"
-    ],
-    "correct2": "-",
-    "solution": "In einem alten Haus gibt es oft Probleme."
-  },
-  {
-    "prefix": "Infolge ein",
-    "middle": " fatal",
-    "suffix": " Fehlentscheidung... verlor er alles.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-en",
-      "-s",
-      "-e"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Infolge einer fatalen Fehlentscheidung verlor er alles."
   },
   {
-    "prefix": "Infolge ein",
-    "middle": " schwer",
-    "suffix": " Unfall... war die Straße gesperrt.",
+    "prefix": "Infolge eines schwer",
+    "middle": " Unfall",
+    "suffix": " war die Straße gesperrt.",
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Infolge eines schweren Unfalls war die Straße gesperrt."
   },
   {
-    "prefix": "Inmitten ein",
-    "middle": " blühend",
-    "suffix": " Garten... steht ein Brunnen.",
+    "prefix": "Inmitten eines blühend",
+    "middle": " Garten",
+    "suffix": " steht ein Brunnen.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-en"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Inmitten eines blühenden Gartens steht ein Brunnen."
   },
   {
-    "prefix": "Innerhalb d",
-    "middle": " nächst",
-    "suffix": " Jahr... wird die Firma wachsen.",
+    "prefix": "Innerhalb des nächst",
+    "middle": " Jahr",
+    "suffix": " wird die Firma wachsen.",
     "options1": [
-      "-er",
       "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-e",
-      "-en",
-      "-",
-      "-s"
-    ],
-    "correct2": "-e",
-    "solution": "Innerhalb der nächsten Jahre wird die Firma wachsen."
-  },
-  {
-    "prefix": "Innerhalb ein",
-    "middle": " bestimmt",
-    "suffix": " Bereich... darf man nicht parken.",
-    "options1": [
       "-es",
-      "-en",
-      "-em",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
-      "-s",
       "-es",
       "-",
-      "-en"
+      "-en",
+      "-e"
+    ],
+    "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
+    "solution": "Innerhalb des nächsten Jahres wird die Firma wachsen."
+  },
+  {
+    "prefix": "Innerhalb eines bestimmt",
+    "middle": " Bereich",
+    "suffix": " darf man nicht parken.",
+    "options1": [
+      "-en",
+      "-es",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-s",
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Innerhalb eines bestimmten Bereichs darf man nicht parken."
   },
   {
-    "prefix": "Innerhalb ein",
-    "middle": " fest",
-    "suffix": " Zeitraum... muss die Arbeit fertig sein.",
+    "prefix": "Innerhalb eines fest",
+    "middle": " Zeitraum",
+    "suffix": " muss die Arbeit fertig sein.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Innerhalb eines festen Zeitraums muss die Arbeit fertig sein."
   },
   {
@@ -4306,37 +3757,43 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
-      "-e",
       "-s",
-      "-en"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Innerhalb eines kurzen Moments veränderte sich alles."
   },
   {
-    "prefix": "Jenseits d",
-    "middle": " dunkl",
-    "suffix": " Wald... liegt ein kleines Dorf.",
+    "prefix": "Jenseits des dunkl",
+    "middle": " Wald",
+    "suffix": " liegt ein kleines Dorf.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
-      "-s",
       "-es",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Jenseits des dunklen Waldes liegt ein kleines Dorf."
   },
   {
@@ -4345,39 +3802,19 @@
     "suffix": " hilft gegen Verbrennungen.",
     "options1": [
       "-es",
+      "-e",
       "-en",
-      "-er",
-      "-em"
+      "-er"
     ],
     "correct1": "-es",
     "options2": [
       "-",
       "-s",
       "-n",
-      "-es"
+      "-e"
     ],
     "correct2": "-",
     "solution": "Kaltes Wasser hilft gegen Verbrennungen."
-  },
-  {
-    "prefix": "Kalt",
-    "middle": " Wasser",
-    "suffix": " ist erfrischend im Sommer.",
-    "options1": [
-      "-es",
-      "-en",
-      "-er",
-      "-e"
-    ],
-    "correct1": "-es",
-    "options2": [
-      "-",
-      "-s",
-      "-es",
-      "-n"
-    ],
-    "correct2": "-",
-    "solution": "Kaltes Wasser ist erfrischend im Sommer."
   },
   {
     "prefix": "Mit viel geduldig",
@@ -4385,16 +3822,16 @@
     "suffix": " schafft man alles.",
     "options1": [
       "-er",
+      "-e",
       "-en",
-      "-es",
-      "-e"
+      "-es"
     ],
     "correct1": "-er",
     "options2": [
       "-",
-      "-en",
       "-s",
-      "-es"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
     "solution": "Mit viel geduldiger Arbeit schafft man alles."
@@ -4404,60 +3841,63 @@
     "middle": " Computer",
     "suffix": " löste er das Problem sofort.",
     "options1": [
-      "-em",
-      "-er",
       "-en",
-      "-es"
+      "-es",
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
+      "-s",
       "-",
       "-n",
-      "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Mithilfe eines modernen Computers löste er das Problem sofort."
   },
   {
-    "prefix": "Oberhalb d",
-    "middle": " steil",
-    "suffix": " Berg... steht eine kleine Hütte.",
+    "prefix": "Oberhalb des steil",
+    "middle": " Berg",
+    "suffix": " steht eine kleine Hütte.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
-      "-s",
       "-es",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Oberhalb des steilen Berges steht eine kleine Hütte."
   },
   {
     "prefix": "Scharf",
     "middle": " Essen",
-    "suffix": " vertrage ich nicht gut.",
+    "suffix": " ist nichts für mich.",
     "options1": [
       "-es",
+      "-e",
       "-en",
-      "-er",
-      "-e"
+      "-er"
     ],
     "correct1": "-es",
     "options2": [
       "-",
       "-s",
-      "-es",
-      "-n"
+      "-n",
+      "-e"
     ],
     "correct2": "-",
-    "solution": "Scharfes Essen vertrage ich nicht gut."
+    "solution": "Scharfes Essen ist nichts für mich."
   },
   {
     "prefix": "Sie reicht dem alt",
@@ -4467,56 +3907,55 @@
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-n",
-      "-en",
-      "-s"
+      "-",
+      "-s",
+      "-es"
     ],
     "correct2": "-n",
     "solution": "Sie reicht dem alten Herrn eine Tasse Tee."
   },
   {
     "prefix": "Sie schenkt dem alt",
-    "middle": " Nachbar",
+    "middle": " Großvater",
     "suffix": " ein Glas Marmelade.",
     "options1": [
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-",
-      "-n",
-      "-en",
-      "-s"
+      "-s",
+      "-n"
     ],
-    "correct2": "-n",
-    "solution": "Sie schenkt dem alten Nachbarn ein Glas Marmelade."
+    "correct2": "-",
+    "solution": "Sie schenkt dem alten Großvater ein Glas Marmelade."
   },
   {
     "prefix": "Sie schenkt dem lieb",
-    "middle": " Jung",
+    "middle": " Junge",
     "suffix": " ein Buch.",
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-en",
       "-n",
       "-",
-      "-s"
+      "-s",
+      "-ns"
     ],
-    "correct2": "-en",
+    "correct2": "-n",
     "solution": "Sie schenkt dem lieben Jungen ein Buch."
   },
   {
@@ -4533,8 +3972,8 @@
     "options2": [
       "-",
       "-s",
-      "-es",
-      "-n"
+      "-n",
+      "-e"
     ],
     "correct2": "-",
     "solution": "Sie sucht einen neuen Mitbewohner."
@@ -4546,118 +3985,104 @@
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-es"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-",
-      "-es",
       "-s",
-      "-n"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
     "solution": "Sie sucht nach einem guten Arbeitsplatz."
   },
   {
-    "prefix": "Statt d",
-    "middle": " geplant",
-    "suffix": " Ausflug... blieben wir zu Hause.",
+    "prefix": "Statt des geplant",
+    "middle": " Ausflug",
+    "suffix": " blieben wir zu Hause.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Statt des geplanten Ausflugs blieben wir zu Hause."
   },
   {
-    "prefix": "Statt d",
-    "middle": " vereinbart",
-    "suffix": " Termin... kam er einen Tag später.",
+    "prefix": "Statt des vereinbart",
+    "middle": " Termin",
+    "suffix": " kam er einen Tag später.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Statt des vereinbarten Termins kam er einen Tag später."
   },
   {
-    "prefix": "Statt ein",
-    "middle": " neu",
-    "suffix": " Fernseher... kaufte er ein Radio.",
+    "prefix": "Statt eines neu",
+    "middle": " Fernseher",
+    "suffix": " kaufte er ein Radio.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-en"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Statt eines neuen Fernsehers kaufte er ein Radio."
   },
   {
-    "prefix": "Statt frisch",
-    "middle": " Brot",
-    "suffix": " gab es nur altes Knäckebrot.",
-    "options1": [
-      "-em",
-      "-en",
-      "-es",
-      "-er"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-",
-      "-s",
-      "-es",
-      "-n"
-    ],
-    "correct2": "-es",
-    "solution": "Statt frischen Brotes gab es nur altes Knäckebrot."
-  },
-  {
     "prefix": "Süß",
     "middle": " Nachtisch",
-    "suffix": " essen fast alle Kinder gern.",
+    "suffix": " schmeckt fast allen Kindern.",
     "options1": [
-      "-en",
       "-er",
-      "-es",
-      "-em"
+      "-e",
+      "-en",
+      "-es"
     ],
-    "correct1": "-en",
+    "correct1": "-er",
     "options2": [
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
-    "solution": "Süßen Nachtisch essen fast alle Kinder gern."
+    "solution": "Süßer Nachtisch schmeckt fast allen Kindern."
   },
   {
     "prefix": "Trotz des dicht",
@@ -4666,15 +4091,15 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-n"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Trotz des dichten Nebels fuhr er sehr schnell."
@@ -4686,78 +4111,38 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-n"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Trotz des geringen Einkommens ist er zufrieden."
   },
   {
-    "prefix": "Trotz des hohem",
+    "prefix": "Trotz des hoh",
     "middle": " Fieber",
     "suffix": " ging er zur Arbeit.",
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-n"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Trotz des hohen Fiebers ging er zur Arbeit."
-  },
-  {
-    "prefix": "Trotz d",
-    "middle": " hoh",
-    "suffix": " Fieber... wollte das Kind spielen.",
-    "options1": [
-      "-es",
-      "-en",
-      "-em",
-      "-er"
-    ],
-    "correct1": "-es",
-    "options2": [
-      "-s",
-      "-es",
-      "-",
-      "-en"
-    ],
-    "correct2": "-s",
-    "solution": "Trotz des hohen Fiebers wollte das Kind spielen."
-  },
-  {
-    "prefix": "Trotz d",
-    "middle": " hoh",
-    "suffix": " Preis... kaufte er das Auto.",
-    "options1": [
-      "-es",
-      "-en",
-      "-em",
-      "-er"
-    ],
-    "correct1": "-es",
-    "options2": [
-      "-es",
-      "-s",
-      "-",
-      "-en"
-    ],
-    "correct2": "-es",
-    "solution": "Trotz des hohen Preises kaufte er das Auto."
   },
   {
     "prefix": "Trotz des hoh",
@@ -4766,15 +4151,15 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-n"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
     "solution": "Trotz des hohen Preises kaufte er das Auto."
@@ -4787,14 +4172,14 @@
       "-en",
       "-es",
       "-e",
-      "-em"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
+      "-",
       "-n",
-      "-en"
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Trotz des modernen Ofens verbrennt der Kuchen manchmal."
@@ -4806,15 +4191,15 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
+      "-",
       "-n",
-      "-es"
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Trotz des schlechten Wetters grillen wir draußen."
@@ -4826,38 +4211,18 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-es",
-      "-es",
       "-",
-      "-n"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
     "solution": "Trotz des starken Schmerzes lachte er."
-  },
-  {
-    "prefix": "Trotz ein",
-    "middle": " gering",
-    "suffix": " Einkommen... ist er sehr großzügig.",
-    "options1": [
-      "-es",
-      "-en",
-      "-em",
-      "-er"
-    ],
-    "correct1": "-es",
-    "options2": [
-      "-s",
-      "-es",
-      "-",
-      "-en"
-    ],
-    "correct2": "-s",
-    "solution": "Trotz eines geringen Einkommens ist er sehr großzügig."
   },
   {
     "prefix": "Trotz eines gültig",
@@ -4865,256 +4230,165 @@
     "suffix": " musste er eine Strafe zahlen.",
     "options1": [
       "-en",
-      "-er",
       "-es",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-s",
+      "-",
+      "-en",
       "-e"
+    ],
+    "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
+    "solution": "Trotz eines gültigen Fahrscheins musste er eine Strafe zahlen."
+  },
+  {
+    "prefix": "Trotz eines kräftig",
+    "middle": " Frühstück",
+    "suffix": " hatte er bald wieder Hunger.",
+    "options1": [
+      "-en",
+      "-es",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-s",
+      "-",
+      "-en",
+      "-e"
+    ],
+    "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
+    "solution": "Trotz eines kräftigen Frühstücks hatte er bald wieder Hunger."
+  },
+  {
+    "prefix": "Trotz einer schwer",
+    "middle": " Krankheit",
+    "suffix": " verlor sie nie den Mut.",
+    "options1": [
+      "-en",
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-",
-      "-e",
-      "-en",
-      "-s"
+      "-s",
+      "-es",
+      "-en"
     ],
-    "correct2": "-s",
-    "solution": "Trotz eines gültigen Fahrscheins musste er eine Strafe zahlen."
+    "correct2": "-",
+    "solution": "Trotz einer schweren Krankheit verlor sie nie den Mut."
   },
   {
-    "prefix": "Trotz ein",
-    "middle": " kräftig",
-    "suffix": " Frühstück... hatte er bald wieder Hunger.",
+    "prefix": "Wegen eines fehlend",
+    "middle": " Beweis",
+    "suffix": " wurde der Prozess beendet.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
-      "-s",
       "-es",
       "-",
+      "-en",
+      "-e"
+    ],
+    "correct2": "-es",
+    "solution": "Wegen eines fehlenden Beweises wurde der Prozess beendet."
+  },
+  {
+    "prefix": "Wegen einer fehlend",
+    "middle": " Unterschrift",
+    "suffix": " ist der Vertrag ungültig.",
+    "options1": [
+      "-en",
+      "-e",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
       "-en"
     ],
-    "correct2": "-s",
-    "solution": "Trotz eines kräftigen Frühstücks hatte er bald wieder Hunger."
-  },
-  {
-    "prefix": "Trotz groß",
-    "middle": " Anstrengung",
-    "suffix": " hat er das Ziel nicht erreicht.",
-    "options1": [
-      "-en",
-      "-er",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-en",
-      "-s",
-      "-e"
-    ],
     "correct2": "-",
-    "solution": "Trotz großer Anstrengung hat er das Ziel nicht erreicht."
+    "solution": "Wegen einer fehlenden Unterschrift ist der Vertrag ungültig."
   },
   {
-    "prefix": "Trotz ihr",
-    "middle": " schwer",
-    "suffix": " Krankheit... verlor sie nie den Mut.",
+    "prefix": "Wegen des glatt",
+    "middle": " Eis",
+    "suffix": " passierten viele Unfälle.",
     "options1": [
-      "-er",
       "-en",
+      "-es",
       "-e",
-      "-es"
+      "-er"
     ],
-    "correct1": "-er",
+    "correct1": "-en",
     "options2": [
+      "-es",
       "-",
       "-en",
-      "-s",
       "-e"
     ],
-    "correct2": "-",
-    "solution": "Trotz ihrer schweren Krankheit verlor sie nie den Mut."
-  },
-  {
-    "prefix": "Ungeachtet d",
-    "middle": " hohl",
-    "suffix": " Phras... war die Rede beeindruckend.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-n",
-      "-",
-      "-s",
-      "-en"
-    ],
-    "correct2": "-n",
-    "solution": "Ungeachtet der hohlen Phrasen war die Rede beeindruckend."
-  },
-  {
-    "prefix": "Wegen d",
-    "middle": " fehlend",
-    "suffix": " Beweis... wurde der Prozess beendet.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-e",
-      "-",
-      "-s",
-      "-en"
-    ],
-    "correct2": "-e",
-    "solution": "Wegen der fehlenden Beweise wurde der Prozess beendet."
-  },
-  {
-    "prefix": "Wegen d",
-    "middle": " fehlend",
-    "suffix": " Unterschrift... ist der Vertrag ungültig.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-en",
-      "-s",
-      "-e"
-    ],
-    "correct2": "-",
-    "solution": "Wegen der fehlenden Unterschrift ist der Vertrag ungültig."
-  },
-  {
-    "prefix": "Wegen d",
-    "middle": " glatt",
-    "suffix": " Fahrbahn... passierten Unfälle.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-en",
-      "-s",
-      "-e"
-    ],
-    "correct2": "-",
-    "solution": "Wegen der glatten Fahrbahn passierten Unfälle."
-  },
-  {
-    "prefix": "Wegen d",
-    "middle": " hoh",
-    "suffix": " Miet... zogen sie aufs Land.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-en",
-      "-s",
-      "-e"
-    ],
-    "correct2": "-",
-    "solution": "Wegen der hohen Miete zogen sie aufs Land."
-  },
-  {
-    "prefix": "Wegen d",
-    "middle": " hohl",
-    "suffix": " Versprechung... wählte ihn niemand.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-en",
-      "-",
-      "-s",
-      "-e"
-    ],
-    "correct2": "-en",
-    "solution": "Wegen der hohlen Versprechungen wählte ihn niemand."
-  },
-  {
-    "prefix": "Wegen d",
-    "middle": " laut",
-    "suffix": " Musik... konnten wir nicht schlafen.",
-    "options1": [
-      "-er",
-      "-en",
-      "-e",
-      "-es"
-    ],
-    "correct1": "-er",
-    "options2": [
-      "-",
-      "-en",
-      "-s",
-      "-e"
-    ],
-    "correct2": "-",
-    "solution": "Wegen der lauten Musik konnten wir nicht schlafen."
+    "correct2": "-es",
+    "solution": "Wegen des glatten Eises passierten viele Unfälle."
   },
   {
     "prefix": "Wegen des bitter",
     "middle": " Geschmack",
-    "suffix": " mag ich keinen Chicorée.",
+    "suffix": " trinke ich keinen Kaffee.",
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-es",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
-    "solution": "Wegen des bitteren Geschmacks mag ich keinen Chicorée."
+    "alsoCorrect2": [
+      "-es"
+    ],
+    "solution": "Wegen des bitteren Geschmacks trinke ich keinen Kaffee."
   },
   {
-    "prefix": "Wegen d",
-    "middle": " dicht",
-    "suffix": " Nebel... sah man fast nichts.",
+    "prefix": "Wegen des dicht",
+    "middle": " Nebel",
+    "suffix": " sah man fast nichts.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-en"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Wegen des dichten Nebels sah man fast nichts."
@@ -5126,57 +4400,43 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-n"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Wegen des heftigen Streites verließ er den Raum."
   },
   {
-    "prefix": "Wegen des hoh",
-    "middle": " Preis",
-    "suffix": " kaufen wir den Bio-Kaffee nicht.",
+    "prefix": "Wegen des kaputt",
+    "middle": " Aufzug",
+    "suffix": " mussten wir laufen.",
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
-      "-es",
       "-s",
-      "-n"
-    ],
-    "correct2": "-es",
-    "solution": "Wegen des hohen Preises kaufen wir den Bio-Kaffee nicht."
-  },
-  {
-    "prefix": "Wegen d",
-    "middle": " kaputt",
-    "suffix": " Aufzug... mussten wir laufen.",
-    "options1": [
-      "-es",
+      "-",
       "-en",
-      "-em",
-      "-er"
+      "-e"
     ],
-    "correct1": "-es",
-    "options2": [
-      "-es",
-      "-s",
-      "-",
-      "-en"
+    "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
     ],
-    "correct2": "-es",
     "solution": "Wegen des kaputten Aufzugs mussten wir laufen."
   },
   {
@@ -5186,17 +4446,20 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-n"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Wegen des lauten Lärmes konnte ich nicht schlafen."
   },
   {
@@ -5211,10 +4474,10 @@
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-es",
-      "-n"
+      "-",
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Wegen des scharfen Messers muss man beim Schneiden vorsichtig sein."
@@ -5226,15 +4489,15 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-n"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Wegen des schlechten Wetters blieb ich zu Hause."
@@ -5244,40 +4507,20 @@
     "middle": " Regen",
     "suffix": " wurde das Fußballspiel abgesagt.",
     "options1": [
-      "-e",
-      "-er",
-      "-en",
-      "-em"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-",
-      "-e",
-      "-n",
-      "-s"
-    ],
-    "correct2": "-s",
-    "solution": "Wegen des starken Regens wurde das Fußballspiel abgesagt."
-  },
-  {
-    "prefix": "Wegen des stark",
-    "middle": " Wind",
-    "suffix": " bleibt das Küchenfenster zu.",
-    "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
-      "-es",
       "-s",
-      "-n"
+      "-",
+      "-n",
+      "-ns"
     ],
-    "correct2": "-es",
-    "solution": "Wegen des starken Windes bleibt das Küchenfenster zu."
+    "correct2": "-s",
+    "solution": "Wegen des starken Regens wurde das Fußballspiel abgesagt."
   },
   {
     "prefix": "Wegen des stark",
@@ -5286,38 +4529,41 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-n"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Wegen des starken Windes wurde die Brücke gesperrt."
   },
   {
-    "prefix": "Wegen ein",
-    "middle": " dumm",
-    "suffix": " Missverständnis... gab es Streit.",
+    "prefix": "Wegen eines dumm",
+    "middle": " Witz",
+    "suffix": " gab es Streit.",
     "options1": [
-      "-es",
       "-en",
-      "-em",
+      "-es",
+      "-e",
       "-er"
     ],
-    "correct1": "-es",
+    "correct1": "-en",
     "options2": [
       "-es",
-      "-s",
       "-",
-      "-en"
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
-    "solution": "Wegen eines dummen Missverständnisses gab es Streit."
+    "solution": "Wegen eines dummen Witzes gab es Streit."
   },
   {
     "prefix": "Wegen eines faul",
@@ -5326,17 +4572,20 @@
     "options1": [
       "-en",
       "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-es",
-      "-s",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-es",
+    "alsoCorrect2": [
+      "-s"
+    ],
     "solution": "Wegen eines faulen Zahnes kann er nicht kauen."
   },
   {
@@ -5346,38 +4595,21 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-s",
-      "-es",
-      "-",
-      "-n"
-    ],
-    "correct2": "-s",
-    "solution": "Wegen eines fehlenden Dokuments gab es Probleme."
-  },
-  {
-    "prefix": "Wegen eines klein",
-    "middle": " Unfall",
-    "suffix": " ist die Suppe versalzen.",
-    "options1": [
-      "-en",
-      "-es",
-      "-em",
+      "-e",
       "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
-      "-es",
-      "-n"
+      "-",
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
-    "solution": "Wegen eines kleinen Unfalls ist die Suppe versalzen."
+    "alsoCorrect2": [
+      "-es"
+    ],
+    "solution": "Wegen eines fehlenden Dokuments gab es Probleme."
   },
   {
     "prefix": "Wegen eines plötzlich",
@@ -5386,38 +4618,21 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-n"
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Wegen eines plötzlichen Notfalls musste er gehen."
-  },
-  {
-    "prefix": "Wegen ein",
-    "middle": " technisch",
-    "suffix": " Defekt... fährt der Zug heute nicht.",
-    "options1": [
-      "-es",
-      "-em",
-      "-er",
-      "-en"
-    ],
-    "correct1": "-es",
-    "options2": [
-      "-s",
-      "-",
-      "-es",
-      "-en"
-    ],
-    "correct2": "-s",
-    "solution": "Wegen eines technischen Defekts fährt der Zug heute nicht."
   },
   {
     "prefix": "Wegen eines technisch",
@@ -5426,17 +4641,20 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-n"
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Wegen eines technischen Defekts hatte der Zug Verspätung."
   },
   {
@@ -5446,15 +4664,15 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
+      "-",
       "-n",
-      "-es"
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Wegen eines technischen Fehlers funktioniert der Kühlschrank nicht."
@@ -5465,16 +4683,16 @@
     "suffix": ".",
     "options1": [
       "-es",
+      "-e",
       "-en",
-      "-em",
-      "-e"
+      "-er"
     ],
     "correct1": "-es",
     "options2": [
       "-",
       "-s",
-      "-n",
-      "-es"
+      "-es",
+      "-en"
     ],
     "correct2": "-",
     "solution": "Wir brauchen ein neues Sieb."
@@ -5483,26 +4701,6 @@
     "prefix": "Wir brauchen einen groß",
     "middle": " Topf",
     "suffix": " für die Suppe.",
-    "options1": [
-      "-en",
-      "-es",
-      "-em",
-      "-er"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-",
-      "-s",
-      "-es",
-      "-n"
-    ],
-    "correct2": "-",
-    "solution": "Wir brauchen einen großen Topf für die Suppe."
-  },
-  {
-    "prefix": "Wir brauchen einen hohl",
-    "middle": " Zahn",
-    "suffix": " nicht mehr zu füllen.",
     "options1": [
       "-en",
       "-e",
@@ -5514,10 +4712,30 @@
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
-    "solution": "Wir brauchen einen hohlen Zahn nicht mehr zu füllen."
+    "solution": "Wir brauchen einen großen Topf für die Suppe."
+  },
+  {
+    "prefix": "Der Zahnarzt behandelt einen hohl",
+    "middle": " Zahn",
+    "suffix": ".",
+    "options1": [
+      "-en",
+      "-e",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der Zahnarzt behandelt einen hohlen Zahn."
   },
   {
     "prefix": "Wir brauchen einen neu",
@@ -5532,9 +4750,9 @@
     "correct1": "-en",
     "options2": [
       "-n",
-      "-ns",
       "-",
-      "-s"
+      "-s",
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Wir brauchen einen neuen Namen für unser Projekt."
@@ -5545,39 +4763,19 @@
     "suffix": " für die Spüle.",
     "options1": [
       "-en",
-      "-es",
-      "-em",
-      "-er"
-    ],
-    "correct1": "-en",
-    "options2": [
-      "-",
-      "-s",
-      "-es",
-      "-n"
-    ],
-    "correct2": "-",
-    "solution": "Wir brauchen einen neuen Wasserhahn für die Spüle."
-  },
-  {
-    "prefix": "Wir danken dem fleißig",
-    "middle": " Student",
-    "suffix": ".",
-    "options1": [
-      "-en",
-      "-em",
       "-e",
+      "-er",
       "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-",
-      "-en",
       "-s",
-      "-e"
+      "-es",
+      "-en"
     ],
-    "correct2": "-en",
-    "solution": "Wir danken dem fleißigen Studenten."
+    "correct2": "-",
+    "solution": "Wir brauchen einen neuen Wasserhahn für die Spüle."
   },
   {
     "prefix": "Wir danken dem freundlich",
@@ -5587,14 +4785,14 @@
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
-      "-n",
       "-en",
-      "-s"
+      "-",
+      "-s",
+      "-es"
     ],
     "correct2": "-en",
     "solution": "Wir danken dem freundlichen Lieferanten für die pünktliche Lieferung."
@@ -5605,16 +4803,16 @@
     "suffix": ".",
     "options1": [
       "-en",
-      "-es",
-      "-em",
-      "-er"
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-n",
+      "-",
       "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Wir folgen dem Rat des erfahrenen Kollegen."
@@ -5626,14 +4824,13 @@
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-",
       "-s",
-      "-es",
       "-n"
     ],
     "correct2": "-",
@@ -5653,8 +4850,8 @@
     "options2": [
       "-",
       "-s",
-      "-es",
-      "-n"
+      "-n",
+      "-e"
     ],
     "correct2": "-",
     "solution": "Wir genießen das schöne Wetter."
@@ -5665,16 +4862,16 @@
     "suffix": " im Hotel gebucht.",
     "options1": [
       "-es",
+      "-e",
       "-en",
-      "-er",
-      "-e"
+      "-er"
     ],
     "correct1": "-es",
     "options2": [
       "-",
       "-s",
-      "-es",
-      "-n"
+      "-n",
+      "-e"
     ],
     "correct2": "-",
     "solution": "Wir haben ein schönes Zimmer im Hotel gebucht."
@@ -5686,14 +4883,14 @@
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-en",
-      "-s",
       "-",
+      "-s",
       "-es"
     ],
     "correct2": "-en",
@@ -5707,14 +4904,14 @@
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-n",
+      "-",
       "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Wir hören dem klugen Experten beim Kochen zu."
@@ -5725,8 +4922,8 @@
     "suffix": " Käse.",
     "options1": [
       "-es",
+      "-e",
       "-en",
-      "-em",
       "-er"
     ],
     "correct1": "-es",
@@ -5734,7 +4931,7 @@
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Wir kaufen ein großes Stück Käse."
@@ -5752,31 +4949,31 @@
     "correct1": "-en",
     "options2": [
       "-n",
-      "-s",
       "-",
-      "-en"
+      "-s",
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Wir rufen den kompetenten Experten an."
   },
   {
     "prefix": "Wir schenken dem alt",
-    "middle": " Kolleg",
+    "middle": " Kollege",
     "suffix": " eine Uhr.",
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-e"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-en",
       "-n",
       "-",
-      "-s"
+      "-s",
+      "-ns"
     ],
-    "correct2": "-en",
+    "correct2": "-n",
     "solution": "Wir schenken dem alten Kollegen eine Uhr."
   },
   {
@@ -5787,14 +4984,14 @@
       "-en",
       "-em",
       "-e",
-      "-es"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-n",
+      "-",
       "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Wir schenken dem netten Kollegen ein neues Kochbuch."
@@ -5805,15 +5002,15 @@
     "suffix": ".",
     "options1": [
       "-en",
-      "-es",
-      "-em",
-      "-e"
+      "-e",
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-",
       "-s",
-      "-n",
+      "-es",
       "-en"
     ],
     "correct2": "-",
@@ -5827,37 +5024,37 @@
       "-en",
       "-e",
       "-er",
-      "-em"
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
       "-en",
-      "-s",
       "-",
+      "-s",
       "-es"
     ],
     "correct2": "-en",
     "solution": "Wir suchen einen erfahrenen Spezialisten für unser Team."
   },
   {
-    "prefix": "Wir trinken ein Glas kalt",
+    "prefix": "Kalt",
     "middle": " Milch",
-    "suffix": ".",
+    "suffix": " schmeckt mir am besten.",
     "options1": [
       "-e",
-      "-er",
       "-en",
+      "-er",
       "-es"
     ],
     "correct1": "-e",
     "options2": [
       "-",
-      "-n",
       "-s",
+      "-es",
       "-en"
     ],
     "correct2": "-",
-    "solution": "Wir trinken ein Glas kalte Milch."
+    "solution": "Kalte Milch schmeckt mir am besten."
   },
   {
     "prefix": "Wir warten auf den neu",
@@ -5865,16 +5062,16 @@
     "suffix": ".",
     "options1": [
       "-en",
-      "-es",
       "-e",
-      "-er"
+      "-er",
+      "-es"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-n",
+      "-",
       "-s",
-      "-en"
+      "-ns"
     ],
     "correct2": "-n",
     "solution": "Wir warten auf den neuen Kollegen."
@@ -5886,27 +5083,27 @@
     "options1": [
       "-en",
       "-em",
-      "-er",
-      "-es"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-",
       "-s",
       "-es",
-      "-n"
+      "-en"
     ],
     "correct2": "-",
     "solution": "Wir wohnen in einem kleinen Dorf."
   },
   {
-    "prefix": "Während der lang",
+    "prefix": "Während einer lang",
     "middle": " Reise",
     "suffix": " las sie drei dicke Bücher.",
     "options1": [
+      "-en",
       "-e",
       "-er",
-      "-en",
       "-es"
     ],
     "correct1": "-en",
@@ -5914,10 +5111,10 @@
       "-",
       "-n",
       "-s",
-      "-es"
+      "-ns"
     ],
     "correct2": "-",
-    "solution": "Während der langen Reise las sie drei dicke Bücher."
+    "solution": "Während einer langen Reise las sie drei dicke Bücher."
   },
   {
     "prefix": "Während des heiß",
@@ -5926,15 +5123,15 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
       "-",
-      "-es",
-      "-n"
+      "-n",
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Während des heißen Sommers badeten wir täglich."
@@ -5947,14 +5144,14 @@
       "-en",
       "-es",
       "-e",
-      "-em"
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
-      "-",
       "-s",
+      "-",
       "-n",
-      "-es"
+      "-ns"
     ],
     "correct2": "-s",
     "solution": "Während des langen Abendessens haben wir viel gelacht."
@@ -5966,37 +5163,660 @@
     "options1": [
       "-en",
       "-es",
-      "-er",
-      "-em"
+      "-e",
+      "-er"
     ],
     "correct1": "-en",
     "options2": [
       "-s",
-      "-es",
       "-",
-      "-n"
+      "-en",
+      "-e"
     ],
     "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
     "solution": "Während des langen Vortrags schliefen viele Gäste ein."
   },
   {
-    "prefix": "Während ein",
-    "middle": " gewaltig",
-    "suffix": " Sturm... fielen viele Bäume um.",
+    "prefix": "Während eines gewaltig",
+    "middle": " Sturm",
+    "suffix": " fielen viele Bäume um.",
+    "options1": [
+      "-en",
+      "-es",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-s",
+      "-",
+      "-en",
+      "-e"
+    ],
+    "correct2": "-s",
+    "alsoCorrect2": [
+      "-es"
+    ],
+    "solution": "Während eines gewaltigen Sturms fielen viele Bäume um."
+  },
+  {
+    "prefix": "Der alt",
+    "middle": " Hund",
+    "suffix": " schläft im Körbchen.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der alte Hund schläft im Körbchen."
+  },
+  {
+    "prefix": "Das klein",
+    "middle": " Kind",
+    "suffix": " spielt im Sand.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das kleine Kind spielt im Sand."
+  },
+  {
+    "prefix": "Eine neu",
+    "middle": " Lehrerin",
+    "suffix": " kommt morgen in unsere Klasse.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Eine neue Lehrerin kommt morgen in unsere Klasse."
+  },
+  {
+    "prefix": "Ich lese ein spannend",
+    "middle": " Buch",
+    "suffix": ".",
     "options1": [
       "-es",
+      "-e",
       "-en",
-      "-em",
       "-er"
     ],
     "correct1": "-es",
     "options2": [
-      "-s",
       "-",
+      "-s",
       "-es",
       "-en"
     ],
-    "correct2": "-s",
-    "solution": "Während eines gewaltigen Sturms fielen viele Bäume um."
+    "correct2": "-",
+    "solution": "Ich lese ein spannendes Buch."
+  },
+  {
+    "prefix": "Wir besuchen den groß",
+    "middle": " Zoo",
+    "suffix": ".",
+    "options1": [
+      "-en",
+      "-e",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Wir besuchen den großen Zoo."
+  },
+  {
+    "prefix": "Mein Bruder hat einen rot",
+    "middle": " Rucksack",
+    "suffix": ".",
+    "options1": [
+      "-en",
+      "-e",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Mein Bruder hat einen roten Rucksack."
+  },
+  {
+    "prefix": "Der neu",
+    "middle": " Schüler",
+    "suffix": " sitzt neben mir.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-n",
+      "-e"
+    ],
+    "correct2": "-",
+    "solution": "Der neue Schüler sitzt neben mir."
+  },
+  {
+    "prefix": "Ein klein",
+    "middle": " Mädchen",
+    "suffix": " singt ein Lied.",
+    "options1": [
+      "-es",
+      "-e",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-n",
+      "-e"
+    ],
+    "correct2": "-",
+    "solution": "Ein kleines Mädchen singt ein Lied."
+  },
+  {
+    "prefix": "Ich trage einen warm",
+    "middle": " Pullover",
+    "suffix": ".",
+    "options1": [
+      "-en",
+      "-e",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-n",
+      "-e"
+    ],
+    "correct2": "-",
+    "solution": "Ich trage einen warmen Pullover."
+  },
+  {
+    "prefix": "Sie kauft ein neu",
+    "middle": " Fahrrad",
+    "suffix": ".",
+    "options1": [
+      "-es",
+      "-e",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Sie kauft ein neues Fahrrad."
+  },
+  {
+    "prefix": "Der freundlich",
+    "middle": " Busfahrer",
+    "suffix": " grüßt alle Kinder.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-n",
+      "-e"
+    ],
+    "correct2": "-",
+    "solution": "Der freundliche Busfahrer grüßt alle Kinder."
+  },
+  {
+    "prefix": "Das alt",
+    "middle": " Haus",
+    "suffix": " steht leer.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das alte Haus steht leer."
+  },
+  {
+    "prefix": "Eine groß",
+    "middle": " Katze",
+    "suffix": " sitzt auf dem Dach.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-n",
+      "-s",
+      "-ns"
+    ],
+    "correct2": "-",
+    "solution": "Eine große Katze sitzt auf dem Dach."
+  },
+  {
+    "prefix": "Er hat ein schnell",
+    "middle": " Auto",
+    "suffix": ".",
+    "options1": [
+      "-es",
+      "-e",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Er hat ein schnelles Auto."
+  },
+  {
+    "prefix": "Der blau",
+    "middle": " Ball",
+    "suffix": " liegt im Garten.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der blaue Ball liegt im Garten."
+  },
+  {
+    "prefix": "Ich suche den klein",
+    "middle": " Schlüssel",
+    "suffix": ".",
+    "options1": [
+      "-en",
+      "-e",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-n",
+      "-e"
+    ],
+    "correct2": "-",
+    "solution": "Ich suche den kleinen Schlüssel."
+  },
+  {
+    "prefix": "Das rot",
+    "middle": " Auto",
+    "suffix": " gehört meiner Tante.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das rote Auto gehört meiner Tante."
+  },
+  {
+    "prefix": "Eine bunt",
+    "middle": " Blume",
+    "suffix": " wächst am Weg.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-n",
+      "-s",
+      "-ns"
+    ],
+    "correct2": "-",
+    "solution": "Eine bunte Blume wächst am Weg."
+  },
+  {
+    "prefix": "Ich sehe einen groß",
+    "middle": " Vogel",
+    "suffix": " am Himmel.",
+    "options1": [
+      "-en",
+      "-e",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-n",
+      "-e"
+    ],
+    "correct2": "-",
+    "solution": "Ich sehe einen großen Vogel am Himmel."
+  },
+  {
+    "prefix": "Ich spiele mit dem neu",
+    "middle": " Ball",
+    "suffix": ".",
+    "options1": [
+      "-en",
+      "-em",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ich spiele mit dem neuen Ball."
+  },
+  {
+    "prefix": "Wir fahren mit einem alt",
+    "middle": " Bus",
+    "suffix": " zum See.",
+    "options1": [
+      "-en",
+      "-em",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Wir fahren mit einem alten Bus zum See."
+  },
+  {
+    "prefix": "Sie wohnt in einer klein",
+    "middle": " Wohnung",
+    "suffix": ".",
+    "options1": [
+      "-en",
+      "-e",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Sie wohnt in einer kleinen Wohnung."
+  },
+  {
+    "prefix": "Ich schreibe mit einer neu",
+    "middle": " Füllfeder",
+    "suffix": ".",
+    "options1": [
+      "-en",
+      "-e",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-n",
+      "-e"
+    ],
+    "correct2": "-",
+    "solution": "Ich schreibe mit einer neuen Füllfeder."
+  },
+  {
+    "prefix": "Er sitzt auf einem bequem",
+    "middle": " Sessel",
+    "suffix": ".",
+    "options1": [
+      "-en",
+      "-em",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-n"
+    ],
+    "correct2": "-",
+    "solution": "Er sitzt auf einem bequemen Sessel."
+  },
+  {
+    "prefix": "Wir helfen der alt",
+    "middle": " Frau",
+    "suffix": ".",
+    "options1": [
+      "-en",
+      "-e",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Wir helfen der alten Frau."
+  },
+  {
+    "prefix": "Ich gebe meinem klein",
+    "middle": " Bruder",
+    "suffix": " ein Stück Kuchen.",
+    "options1": [
+      "-en",
+      "-em",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-n"
+    ],
+    "correct2": "-",
+    "solution": "Ich gebe meinem kleinen Bruder ein Stück Kuchen."
+  },
+  {
+    "prefix": "Mit diesem scharf",
+    "middle": " Messer",
+    "suffix": " schneide ich das Brot.",
+    "options1": [
+      "-en",
+      "-em",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-n"
+    ],
+    "correct2": "-",
+    "solution": "Mit diesem scharfen Messer schneide ich das Brot."
+  },
+  {
+    "prefix": "Wir sprechen mit der neu",
+    "middle": " Nachbarin",
+    "suffix": ".",
+    "options1": [
+      "-en",
+      "-e",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Wir sprechen mit der neuen Nachbarin."
+  },
+  {
+    "prefix": "Das Kind schläft in einem warm",
+    "middle": " Bett",
+    "suffix": ".",
+    "options1": [
+      "-en",
+      "-em",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das Kind schläft in einem warmen Bett."
+  },
+  {
+    "prefix": "Sie geht mit ihrem klein",
+    "middle": " Hund",
+    "suffix": " spazieren.",
+    "options1": [
+      "-en",
+      "-em",
+      "-e",
+      "-er"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Sie geht mit ihrem kleinen Hund spazieren."
+  },
+  {
+    "prefix": "Er antwortet der freundlich",
+    "middle": " Lehrerin",
+    "suffix": ".",
+    "options1": [
+      "-en",
+      "-e",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-en",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Er antwortet der freundlichen Lehrerin."
   }
 ]

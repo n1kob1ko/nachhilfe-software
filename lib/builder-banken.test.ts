@@ -52,20 +52,20 @@ const BANK_ITEMS: Record<BankId, unknown[]> = {
     { prefix: "Ich hänge das Bild an ", noun: "Wand", article: "die", suffix: ".", options: ["die", "der", "dem", "den"], correct: "die", kasus: "Akkusativ", solution: "Ich hänge das Bild an die Wand." },
   ],
   praeteritum: [
-    { q: "Gestern ___ ich in die Schule.", blanks: [["ging"]], solution: "gehen ist stark: ich ging", hint: "Welche Zeitform verlangt „gestern“?", errors: { gehte: "schwache Form bei starkem Verb" } },
-    { q: "Früher ___ er jeden Tag Vokabeln.", blanks: [["lernte"]], solution: "schwache Verben bilden -te: er lernte", hint: "Schwache Verben bekommen -te." },
+    { q: "Gestern ___ ich in die Schule. (gehen)", blanks: [["ging"]], solution: "gehen ist stark: ich ging", hint: "Welche Zeitform verlangt „gestern“?", errors: { gehte: "schwache Form bei starkem Verb" } },
+    { q: "Früher ___ er jeden Tag Vokabeln. (lernen)", blanks: [["lernte"]], solution: "schwache Verben bilden -te: er lernte", hint: "Schwache Verben bekommen -te." },
   ],
   perfekt: [
-    { q: "Wir ___ gestern lange ___.", blanks: [["haben"], ["gelernt"]], solution: "lernen bildet das Perfekt mit haben: wir haben gelernt", hint: "Hilfsverb und Partizip II stehen getrennt.", errors: { "hat gelernt": "falsches Hilfsverb" } },
-    { q: "Sie ___ letzten Sommer nach Wien ___.", blanks: [["ist"], ["gefahren"]], solution: "fahren bildet das Perfekt mit sein: sie ist gefahren", hint: "Bewegungsverben bilden das Perfekt mit sein." },
+    { q: "Wir ___ gestern lange ___. (lernen)", blanks: [["haben"], ["gelernt"]], solution: "lernen bildet das Perfekt mit haben: wir haben gelernt", hint: "Hilfsverb und Partizip II stehen getrennt.", errors: { sind: "Falsches Hilfsverb" } },
+    { q: "Meine Tante ___ letzten Sommer nach Wien ___. (fahren)", blanks: [["ist"], ["gefahren"]], solution: "fahren bildet das Perfekt mit sein: sie ist gefahren", hint: "Bewegungsverben bilden das Perfekt mit sein." },
   ],
   "das-dass": [
-    { q: "Ich hoffe, ___ du kommst.", blanks: [["dass"]], solution: "„dass“ leitet den Nebensatz ein: Ich hoffe, dass du kommst.", hint: "Mach die Ersatzprobe mit „dieses/welches“.", errors: { das: "Ersatzprobe mit „dieses“ nicht möglich" }, explanation: "„dass“ ist eine Konjunktion und leitet den Nebensatz ein." },
-    { q: "___ Buch, ___ ich gelesen habe, war spannend.", blanks: [["Das"], ["das"]], solution: "„Das“ ist Artikel, „das“ ist Pronomen.", hint: "Ersatzprobe mit „dieses“.", explanation: "Beides schreibt sich „das“; nur die Konjunktion heißt „dass“." },
+    { q: "Setze „das“ oder „dass“ ein: Ich hoffe, ___ du kommst.", blanks: [["dass"]], solution: "„dass“ leitet den Nebensatz ein: Ich hoffe, dass du kommst.", hint: "Mach die Ersatzprobe mit „dieses/welches“.", errors: { das: "Ersatzprobe mit „dieses“ nicht möglich" }, explanation: "„dass“ ist eine Konjunktion und leitet den Nebensatz ein." },
+    { q: "Setze „das“ oder „dass“ ein: ___ Buch, ___ ich gelesen habe, war spannend.", blanks: [["Das"], ["das"]], solution: "„Das“ ist Artikel, „das“ ist Pronomen.", hint: "Ersatzprobe mit „dieses“.", explanation: "Beides schreibt sich „das“; nur die Konjunktion heißt „dass“." },
   ],
   "hauptsatz-gliedsatz": [
-    { parts: [{ text: "Ich gehe heute früh schlafen", type: "HS" }, { text: "weil ich morgen eine Schularbeit habe", type: "GS" }] },
-    { parts: [{ text: "Der Hund bellt laut", type: "HS" }, { text: "obwohl er gerade gefressen hat", type: "GS" }] },
+    { parts: [{ text: "Ich gehe heute früh schlafen,", type: "HS" }, { text: "weil ich morgen eine Schularbeit habe.", type: "GS" }] },
+    { parts: [{ text: "Der Hund bellt laut,", type: "HS" }, { text: "obwohl er gerade gefressen hat.", type: "GS" }] },
   ],
 };
 

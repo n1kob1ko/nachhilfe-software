@@ -108,6 +108,7 @@ test("Adjektivdeklination: cloze mit genau zwei Lücken (Adjektivendung, Nomenen
     assert.equal(gapCount(t.prompt), 2, `„${t.prompt}“ hat nicht zwei Lücken`);
     assert.equal(t.answer.blanks!.length, 2, "zwei Lösungen für zwei Lücken");
     assert.equal(t.answer.mode, "exact", "exakt geprüft (Groß-/Kleinschreibung zählt)");
+    assert.equal(t.answer.endings, true, "die Lücken sind Endungen: „en“ wie „-en“, leer wie „-“");
     for (const blank of t.answer.blanks!) assert.ok(blank[0].length > 0, "leere Lücke");
   }
 });
@@ -118,7 +119,10 @@ test("Präpositionen: cloze mit genau einer Lücke und Kasus-Fehlertext", () => 
     assert.equal(gapCount(t.prompt), 1, `„${t.prompt}“ hat nicht genau eine Lücke`);
     assert.equal(t.answer.blanks!.length, 1);
     assert.equal(t.errorMap.length >= 1, true, "kein typischer Fehler");
-    for (const e of t.errorMap) assert.match(e.label, /(Dativ statt Akkusativ|Akkusativ statt Dativ|Falscher Fall nach der Präposition)/);
+    // benannt nach dem Fall des gewählten Artikels; ein Artikel, der zu keinem Fall passt, ist ein Genusfehler
+    for (const e of t.errorMap) assert.match(e.label, /^((Nominativ|Dativ|Akkusativ) statt (Dativ|Akkusativ)|Falscher Fall nach der Präposition|Falsches Genus: (der|die|das) \S+)$/);
+    // der Artikel im anderen Fall steht vorne (ihn nehmen „Fehler finden“ und „Fehler korrigieren“)
+    assert.match(t.errorMap[0].label, /^(Dativ statt Akkusativ|Akkusativ statt Dativ)$/);
   }
 });
 

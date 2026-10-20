@@ -3,14 +3,16 @@
  *
  * Die Einträge in `data/banks/` sind importiert und nie gelesen worden (Risiko „Bank quality“ im Plan).
  * Dieser Lauf legt sie Bank für Bank der KI-Prüfung in `lib/ai/qualitaetstest.ts` (`runBankPruefung`)
- * vor und schreibt die beanstandeten Einträge mit ihrem Grund nach `docs/banks-pruefung.md`.
+ * vor und schreibt die beanstandeten Einträge mit ihrem Grund nach `docs/banks-pruefung-ki.md`.
+ * Die fachliche Prüfung ohne KI (jeder Eintrag, bei jedem `npm test`) steht in lib/banken-regeln.ts und
+ * docs/banks-pruefung.md.
  *
  * Aufrufe:
  *   npm run banks:pruefung                        echter Lauf über alle Einträge
  *   npm run banks:pruefung -- --limit 20          billiger Probelauf: höchstens 20 Einträge je Bank
  *   npm run banks:pruefung -- --bank artikel      nur eine Bank (mehrfach möglich)
  *   npm run banks:pruefung -- --setzen            setzt „review: true“ für die beanstandeten Einträge
- *   npm run banks:pruefung -- --bericht <datei>   anderer Bericht (Standard docs/banks-pruefung.md)
+ *   npm run banks:pruefung -- --bericht <datei>   anderer Bericht (Standard docs/banks-pruefung-ki.md)
  *
  * Nichts wird ohne `--setzen` geschrieben außer dem Bericht: ob ein beanstandeter Eintrag markiert wird,
  * entscheidet ein Mensch. Ohne Schlüssel (oder mit aufgebrauchtem Budget) läuft nichts, der Bericht wird
@@ -31,7 +33,7 @@ const value = (name: string) => {
 };
 const values = (name: string) => args.flatMap((a, i) => (a === `--${name}` && args[i + 1] ? [args[i + 1]] : []));
 
-const BERIGHT = value("bericht") ?? path.join(process.cwd(), "docs", "banks-pruefung.md");
+const BERIGHT = value("bericht") ?? path.join(process.cwd(), "docs", "banks-pruefung-ki.md");
 const kurz = (v: unknown, max = 300) => {
   const s = typeof v === "string" ? v : JSON.stringify(v);
   return s.length > max ? `${s.slice(0, max)}…` : s;
