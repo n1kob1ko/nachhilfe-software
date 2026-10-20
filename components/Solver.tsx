@@ -809,10 +809,14 @@ function TaskCard({
             </>
           ))}
         {task.type === "calc" && !task.options && task.blanks === 0 &&
-          (text.includes("/") && splitFractions(text).some((x) => typeof x !== "string") ? (
+          ((text.includes("/") && splitFractions(text).some((x) => typeof x !== "string")) || /\^\(?\d/.test(text) ? (
             <p className="mt-2 text-[17px] text-ink-2" aria-live="polite">
               <span className="text-[13px] text-ink-3">Deine Antwort: </span>
               <MathText text={text} />
+            </p>
+          ) : task.prompt.includes("^") ? (
+            <p className="mt-2 text-[13px] text-ink-3">
+              Hochzahlen schreibst du mit ^: x^5, das wird zu <MathText text="x^5" />.
             </p>
           ) : (
             <p className="mt-2 text-[13px] text-ink-3">
