@@ -10,10 +10,10 @@ import { clientIp } from "@/lib/client-ip";
 import { deviceContext } from "@/lib/device-context";
 import { canManageDevice, createPairCode, getDevice, pairDevice, renameDevice, revokeDevice, setDeviceCookie } from "@/lib/devices";
 import { noteActivity } from "@/lib/learning";
-import { nextTaskAfter, notifyStudent, notifyTablet, parseView, pushLive, pushTabletPresence, showOnTablet, unitAssignment, unitAssignments, unitText, type Delivery } from "@/lib/live";
+import { moveTablet, resendUnit, nextTaskAfter, notifyDevice, notifyStudent, parseView, pushLive, pushTabletPresence, showOnTablet, unitAssignment, unitAssignments, unitText, type Delivery } from "@/lib/live";
 import * as repo from "@/lib/repo";
 import { submitAnswer, type SubmitInput } from "@/lib/service";
-import { activeUnitForTeacher, canManageUnit, getUnit } from "@/lib/units";
+import { canManageUnit, getUnit, unitForSend } from "@/lib/units";
 import { ensureBoardForUnit, queueInsert } from "@/lib/whiteboard";
 import { boardTaskForStudent } from "@/lib/whiteboard-content";
 
@@ -31,7 +31,19 @@ export async function pairDeviceAction(_prev: PairState, form: FormData): Promis
   redirect("/geraet");
 }
 
-/** The exercise must belong to the unit the tablet's teacher is teaching right now. */
+/**
+ * „Wer arbeitet an diesem Gerät?“ (D26): two units of the tablet's teacher run, the student taps their
+ * name. Only a running unit of the tablet's own teacher can be chosen. `unit_id` empty: ask again.
+ */
+export async function chooseDeviceUnitAction(form: FormData) {
+  const ctx = await deviceContext();
+  if (!ctx) redirect("/geraet");
+  const raw = Number(form.get("unit_id"));
+  moveTablet(ctx.device.id, Number.isInteger(raw) && raw > 0 ? raw : null);
+  redirect("/geraet");
+}
+
+/** The exercise must belong to the unit the tablet shows (a running unit of its teacher). */
 async function tabletAssignment(assignmentId: number) {
   const ctx = await deviceContext();
   if (!ctx?.unit || !ctx.student) throw new Error("Gerade läuft keine Einheit.");
@@ -84,7 +96,7 @@ export async function revokeDeviceAction(id: number) {
   const d = await manageableDevice(id);
   revokeDevice(id);
   // the tablet reloads and finds its cookie no longer valid
-  notifyTablet(d.teacher_id, "getrennt");
+  notifyDevice(d.id, "getrennt");
   pushTabletPresence(d.teacher_id);
   revalidatePath("/mehr/geraete");
 }
@@ -94,16 +106,18 @@ export async function revokeDeviceAction(id: number) {
 export type SendState = (Delivery & { assignmentId?: number; unitId?: number; student?: string }) | { status: "fehler"; error: string } | null;
 
 /**
- * "An Schüler senden": the exercise goes to the student of the teacher's running unit, on the
- * teacher's tablet. Nothing to choose. An offline tablet (or, without a tablet, the student's link)
- * gets it as soon as it is opened, but the send does not count as delivered until then.
+ * "An Anna senden": the exercise goes to the student of a running unit of the teacher, on the tablet
+ * of that unit (or the student's laptop). With two units at once (D26) the button names the unit; it is
+ * the unit of the exercise's student when there is one. An offline tablet (or, without a tablet, the
+ * student's link) gets it as soon as it is opened, but the send does not count as delivered until then.
  */
 export async function sendToTabletAction(_prev: SendState, form: FormData): Promise<SendState> {
   const t = await requireTeacher();
-  const unit = activeUnitForTeacher(t.id);
-  if (!unit) return { status: "fehler", error: "Gerade läuft keine Einheit." };
   const worksheetId = Number(form.get("worksheet_id"));
   const taskId = Number(form.get("task_id"));
+  const sheet = taskId ? repo.getWorksheet(repo.getTask(taskId)?.worksheet_id ?? 0) : repo.getWorksheet(worksheetId);
+  const unit = unitForSend(t.id, Number(form.get("unit_id")) || null, sheet?.student_id ?? null);
+  if ("error" in unit) return { status: "fehler", error: unit.error };
   const out = taskId ? sendSingleTask(taskId, unit.student_id, t.id) : releaseWorksheet(worksheetId, unit.student_id);
   if (out.error || !out.assignmentId) return { status: "fehler", error: out.error ?? "Senden fehlgeschlagen." };
   noteActivity(unit.student_id);
@@ -112,11 +126,11 @@ export async function sendToTabletAction(_prev: SendState, form: FormData): Prom
   return { ...sent, assignmentId: out.assignmentId, unitId: unit.id, student: unit.student_name.split(" ")[0] };
 }
 
-/** "Erneut senden" after the tablet was offline: shows the same exercise again, no copy. */
+/** "Erneut senden" after the tablet was offline: shows the same exercise again, no copy, in the unit it was sent in. */
 export async function resendAction(assignmentId: number): Promise<SendState> {
   const t = await requireTeacher();
-  const unit = activeUnitForTeacher(t.id);
-  if (!unit || !unitAssignment(unit.id, assignmentId)) return { status: "fehler", error: "Diese Übung gehört nicht zur laufenden Einheit." };
+  const unit = resendUnit(t.id, assignmentId);
+  if (!unit) return { status: "fehler", error: "Diese Übung gehört nicht zur laufenden Einheit." };
   return { ...showOnTablet(unit, { kind: "aufgabe", assignmentId }), assignmentId, unitId: unit.id, student: unit.student_name.split(" ")[0] };
 }
 
@@ -125,6 +139,21 @@ async function managedRunningUnit(unitId: number) {
   const unit = getUnit(unitId);
   if (!unit || unit.status !== "gestartet" || !canManageUnit(t, unit)) throw new Error("Diese Einheit läuft nicht.");
   return { t, unit };
+}
+
+/**
+ * „Tablet für Anna“ on the unit page (D26): the teacher puts one of their tablets on one of their
+ * running units, or back to „Wer arbeitet an diesem Gerät?“ (unitId null).
+ */
+export async function assignTabletAction(deviceId: number, unitId: number | null) {
+  const t = await requireTeacher();
+  const d = getDevice(deviceId);
+  if (!d || !canManageDevice(t, d)) return;
+  if (unitId !== null) {
+    const unit = getUnit(unitId);
+    if (!unit || unit.teacher_id !== d.teacher_id || !canManageUnit(t, unit)) return;
+  }
+  moveTablet(d.id, unitId);
 }
 
 /** Teacher switches what the tablet shows: overview, whiteboard or an exercise of this unit. */

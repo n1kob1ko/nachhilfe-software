@@ -1,5 +1,6 @@
-import { Laptop, PenLine, Presentation } from "lucide-react";
+import { ArrowLeftRight, Laptop, PenLine, Presentation } from "lucide-react";
 import { ChevronRight } from "lucide-react";
+import { chooseDeviceUnitAction } from "@/app/device-actions";
 import { BrandMark } from "@/components/Brand";
 import { DeviceLive } from "@/components/device/DeviceLive";
 import { PairForm } from "@/components/device/PairForm";
@@ -19,19 +20,47 @@ import { StudentCorrection } from "@/components/text/correction/StudentCorrectio
 import { storyForEditor } from "@/lib/picture-story";
 import { auftragFor } from "@/lib/schreibauftrag-store";
 import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
+import { runningUnits } from "@/lib/units";
+import { shortNames } from "@/lib/vornamen";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
 
 /**
- * The student tablet. It belongs to a teacher and shows exactly one of three things:
- * the pairing screen, "Bereit für die nächste Einheit", or the running unit of its teacher.
- * Nothing of a previous student is ever rendered: everything below comes from the running unit.
+ * The student tablet. It belongs to a teacher and shows exactly one of four things:
+ * the pairing screen, "Bereit für die nächste Einheit", „Wer arbeitet an diesem Gerät?“ (two units of
+ * its teacher run and none is chosen here yet, D26), or the running unit it shows.
+ * Nothing of a previous student is ever rendered: everything below comes from that unit.
  */
 export default async function DevicePage() {
   const ctx = await deviceContext();
   if (!ctx) return <Pairing />;
   touchDevice(ctx.device.id);
-  const { device, unit, student } = ctx;
+  const { device, unit, student, choices } = ctx;
   const teacherFirst = device.teacher_name.split(" ")[0];
+
+  if (choices.length > 0) {
+    const names = shortNames(choices.map((u) => u.student_name));
+    return (
+      <DeviceLive unitId={null} choosing>
+        <Centered>
+          <BrandMark height={64} />
+          <h1 className="mt-6 text-[30px] font-semibold tracking-[-0.02em]">Wer arbeitet an diesem Gerät?</h1>
+          <p className="mt-2 text-[16px] text-ink-2">Tippe auf deinen Namen.</p>
+          <div className="mt-8 grid w-full max-w-[520px] gap-4 sm:grid-cols-2">
+            {choices.map((u, i) => (
+              <form key={u.id} action={chooseDeviceUnitAction}>
+                <input type="hidden" name="unit_id" value={u.id} />
+                <button className="panel flex min-h-[120px] w-full flex-col items-center justify-center gap-1 px-5 py-6 transition-colors hover:border-accent">
+                  <span className="text-[26px] font-semibold">{names[i]}</span>
+                  {u.subject && <span className="text-[15px] text-ink-2">{u.subject}</span>}
+                </button>
+              </form>
+            ))}
+          </div>
+          <p className="mt-8 text-[14px] text-ink-3">Verbunden mit {teacherFirst}</p>
+        </Centered>
+      </DeviceLive>
+    );
+  }
 
   if (!unit || !student) {
     return (
@@ -46,6 +75,8 @@ export default async function DevicePage() {
   }
 
   const first = student.name.split(" ")[0];
+  // two units of the teacher run (D26): the student can hand the tablet over („Wechseln“ asks again)
+  const twoRunning = runningUnits(device.teacher_id).length > 1;
   const list = unitAssignments(unit.id);
   const view = parseView(unit.device_view);
   // the student works on their own laptop in this unit: exercises and texts are there, the tablet only offers the board
@@ -171,7 +202,16 @@ export default async function DevicePage() {
       <div key={unit.id} className={`mx-auto px-4 py-5 has-[.lesen-breit]:max-w-[1320px] ${text && storyForEditor(text.id, "") ? "max-w-[1240px]" : "max-w-[860px]"}`}>
         <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-[24px] leading-tight font-semibold">{first}</p>
+            <div className="flex items-center gap-3 text-[24px] leading-tight font-semibold">
+              {first}
+              {twoRunning && (
+                <form action={chooseDeviceUnitAction}>
+                  <button className="btn btn-ghost btn-sm" title="Ein anderer Schüler arbeitet an diesem Gerät">
+                    <ArrowLeftRight size={15} aria-hidden /> Wechseln
+                  </button>
+                </form>
+              )}
+            </div>
             <p className="flex items-center gap-2 text-[14px] text-ink-2">
               {unit.subject && <span>{unit.subject}</span>}
               <span className="inline-flex items-center gap-1.5 font-semibold text-green">

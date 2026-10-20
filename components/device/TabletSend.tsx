@@ -15,20 +15,30 @@ function SendButton({ label, small }: { label: string; small?: boolean }) {
   );
 }
 
+export type SendTarget = { unitId: number; student: string };
+
 /**
- * "An Max senden": one button. The exercise (or one task) goes to the student of the teacher's
- * running unit, on the teacher's tablet. Shows honestly whether it arrived.
+ * "An Max senden": one button per running unit it can go to. The exercise (or one task) goes to the
+ * student of that unit, on the tablet of that unit. Usually that is one button: the unit of the
+ * exercise's student. Two only when two units run (D26) and the exercise belongs to neither student.
+ * Shows honestly whether it arrived.
  */
-export function TabletSend({ student, unitId, worksheetId, taskId, small }: { student: string; unitId: number; worksheetId?: number; taskId?: number; small?: boolean }) {
+export function TabletSend({ targets, worksheetId, taskId, small }: { targets: SendTarget[]; worksheetId?: number; taskId?: number; small?: boolean }) {
   const [state, action] = useActionState<SendState, FormData>(sendToTabletAction, null);
+  const sentTo = (state && "unitId" in state && state.unitId) || targets[0]?.unitId || 0;
   return (
     <div className="grid gap-3">
-      <form action={action}>
-        {worksheetId ? <input type="hidden" name="worksheet_id" value={worksheetId} /> : null}
-        {taskId ? <input type="hidden" name="task_id" value={taskId} /> : null}
-        <SendButton label={`An ${student} senden`} small={small} />
-      </form>
-      <SendResult state={state} unitId={unitId} />
+      <div className="flex flex-wrap gap-2">
+        {targets.map((t) => (
+          <form key={t.unitId} action={action}>
+            <input type="hidden" name="unit_id" value={t.unitId} />
+            {worksheetId ? <input type="hidden" name="worksheet_id" value={worksheetId} /> : null}
+            {taskId ? <input type="hidden" name="task_id" value={taskId} /> : null}
+            <SendButton label={`An ${t.student} senden`} small={small} />
+          </form>
+        ))}
+      </div>
+      <SendResult state={state} unitId={sentTo} />
     </div>
   );
 }

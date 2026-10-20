@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { ArrowDown, ArrowUp, CheckCircle2, CircleDashed, Eye, ListChecks, PenLine, Presentation, Printer, RotateCcw, SkipForward, Sparkles, TabletSmartphone, XCircle } from "lucide-react";
-import { currentTaskToBoardAction, newExerciseAction, resendAction, retryTaskAction, sendNextTaskAction, showSolutionAction, tabletViewAction } from "@/app/device-actions";
+import { assignTabletAction, currentTaskToBoardAction, newExerciseAction, resendAction, retryTaskAction, sendNextTaskAction, showSolutionAction, tabletViewAction } from "@/app/device-actions";
 import { ACTION_LABEL } from "@/lib/ai/labels";
 import type { AILive } from "@/lib/ai/realtime";
 import type { LiveSnapshot } from "@/lib/live";
@@ -73,7 +73,10 @@ export function LiveStatus({ unitId, initial, join }: { unitId: number; initial:
 
   const run = (fn: () => Promise<unknown>) => start(async () => void (await fn()));
   const c = s.current;
-  const tablet = !s.tablet.paired ? "kein" : s.tablet.online ? "online" : "offline";
+  // two units at once (D26): no tablet is on this unit yet, the other student has it or it asks „Wer arbeitet …?“
+  const parallel = s.parallel.units.length > 1;
+  const noTabletHere = parallel && s.tablet.paired && !s.parallel.tablets.some((t) => t.unitId === unitId);
+  const tablet = !s.tablet.paired ? "kein" : noTabletHere ? "anderswo" : s.tablet.online ? "online" : "offline";
   const onLaptop = s.device === "laptop";
   const dev = onLaptop ? "Laptop" : "Tablet";
   const devOnline = onLaptop ? Boolean(s.laptop.active?.online) : tablet === "online";
@@ -88,6 +91,10 @@ export function LiveStatus({ unitId, initial, join }: { unitId: number; initial:
             </span>
             <ConnectTablet />
           </>
+        ) : tablet === "anderswo" ? (
+          <span className="inline-flex items-center gap-2 rounded-full bg-panel px-3 py-1 text-[13px] font-semibold text-ink-2">
+            <TabletSmartphone size={14} aria-hidden /> Kein Tablet bei {s.student}
+          </span>
         ) : (
           <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[13px] font-semibold ${tablet === "online" ? "bg-green-wash text-green" : "bg-red-wash text-red"}`}>
             <span className={`h-2 w-2 rounded-full ${tablet === "online" ? "bg-green" : "bg-red"}`} aria-hidden />
@@ -104,6 +111,7 @@ export function LiveStatus({ unitId, initial, join }: { unitId: number; initial:
           </div>
         )}
       </div>
+      {s.running && parallel && s.parallel.tablets.length > 0 && <TabletChoice parallel={s.parallel} pending={pending} run={run} />}
       {s.running && <LaptopAccess unitId={unitId} student={s.student} laptop={s.laptop} join={join} />}
 
       {s.text ? (
@@ -215,6 +223,38 @@ export function LiveStatus({ unitId, initial, join }: { unitId: number; initial:
       )}
       {s.ai.on && s.running && <AIHint unitId={unitId} ai={s.ai} />}
     </section>
+  );
+}
+
+/** Zwei Schüler gleichzeitig (D26): which student each of the teacher's tablets is for; one tap switches it. */
+function TabletChoice({ parallel, pending, run }: { parallel: LiveSnapshot["parallel"]; pending: boolean; run: (fn: () => Promise<unknown>) => void }) {
+  return (
+    <div className="mt-3 grid gap-2 rounded-2xl bg-panel px-4 py-3" aria-label="Tablets bei zwei Einheiten">
+      <p className="text-[13px] text-ink-2">Zwei Einheiten laufen. Jedes Tablet zeigt einen Schüler:</p>
+      {parallel.tablets.map((t) => (
+        <div key={t.id} className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <span className="inline-flex min-w-0 items-center gap-1.5 text-[14px] font-semibold">
+            <span className={`h-2 w-2 shrink-0 rounded-full ${t.online ? "bg-green" : "bg-ink-3"}`} aria-label={t.online ? "verbunden" : "offline"} />
+            <span className="truncate">{t.name}</span>
+          </span>
+          <div className="flex gap-1 rounded-full bg-surface p-1" role="group" aria-label={`${t.name} ist für`}>
+            {parallel.units.map((u) => (
+              <button
+                key={u.id}
+                type="button"
+                aria-pressed={t.unitId === u.id}
+                disabled={pending}
+                onClick={() => run(() => assignTabletAction(t.id, u.id))}
+                className={`flex min-h-[36px] items-center rounded-full px-3 text-[13px] font-semibold ${t.unitId === u.id ? "bg-accent text-white" : "text-ink-2 hover:text-ink"}`}
+              >
+                {u.student}
+              </button>
+            ))}
+          </div>
+          {t.unitId === null && <span className="text-[13px] text-ink-3">fragt „Wer arbeitet an diesem Gerät?“</span>}
+        </div>
+      ))}
+    </div>
   );
 }
 

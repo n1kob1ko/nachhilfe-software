@@ -159,9 +159,21 @@ eine bewusste Ausnahme **pro Platz**, keine Einstellung je Lehrer.
   in `lib/planung/generator.ts`). Die Summe aller Plätze und der Bedarf zählen weiter je Schüler.
 - In der Wochenansicht stehen die beiden nebeneinander (`spurenFuer` in `WochenplanGitter.tsx`),
   mit einem Personen-Zeichen und „gleichzeitig mit …“ im Tooltip, im Dialog und im A4-Druck.
-- Die echten Einheiten ändern sich nicht: beide Schüler bekommen ihre eigene Einheit. Das
-  Lehrer-Tablet zeigt die zuletzt gestartete (`activeUnitForTeacher`); der andere Schüler arbeitet
-  über „Eigenes Gerät verbinden“ (`docs/schueler-laptop.md`) oder auf Papier.
+- Die echten Einheiten ändern sich nicht: beide Schüler bekommen ihre eigene Einheit mit eigenem
+  Whiteboard. Seit dem Fehlerbericht vom 2026-10-20 („Übung für Schüler 2 ging aufs Whiteboard von
+  Schüler 1, Schüler 2 kam nicht auf sein Whiteboard“) gilt im Unterricht:
+  - Was für einen Schüler gesendet wird, geht in **seine** Einheit (`sendTargets`, `unitForSend` in
+    `lib/units.ts`), nie in die zuerst oder zuletzt gestartete. „An Anna senden“, „Erneut senden“
+    und „Auf Whiteboard senden“ nehmen die Einheit des Schülers der Übung; gehört die Übung keinem
+    der beiden (Bibliothek, anderer Schüler), stehen zwei Knöpfe mit Vornamen da („An Anna senden“ /
+    „An Ben senden“, „Whiteboard von Anna“ / „Whiteboard von Ben“), keine versteckte Auswahl.
+  - Ein Tablet ohne Wahl fragt „Wer arbeitet an diesem Gerät?“ und merkt sich die gewählte
+    Einheit (`student_devices.unit_id`), solange sie läuft. Der Lehrer kann es im Live-Status
+    umstellen; „Wechseln“ am Tablet fragt neu. Ein Senden erreicht nur das Tablet dieser Einheit
+    (`docs/schueler-tablet.md`). Läuft nur eine Einheit, bleibt alles wie bisher.
+  - Ohne zweites Tablet arbeitet der andere Schüler in seiner Schüler-App (dort „Whiteboard
+    öffnen“), über „Eigenes Gerät verbinden“ (`docs/schueler-laptop.md`, ohne Whiteboard) oder auf
+    Papier.
 
 ### 4. Veröffentlichen
 

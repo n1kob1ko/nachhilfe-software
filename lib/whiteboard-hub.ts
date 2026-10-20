@@ -1,6 +1,6 @@
 /**
  * Live connections. Every open screen holds one Server-Sent-Events stream on a channel and gets
- * the events published there. Channels: a board id (number) for whiteboards, "geraet:<teacher id>"
+ * the events published there. Channels: a board id (number) for whiteboards, "geraet:<tablet id>"
  * for a teacher's student tablet and "einheit:<unit id>" for the live status on the teacher's laptop.
  *
  * SSE fits the existing stack: plain Next.js route handlers, no extra server process, works through

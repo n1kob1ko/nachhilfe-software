@@ -127,6 +127,9 @@ _Avoid_: fixiert, gepinnt, blockiert, locked
 Haken an einer **geplanten Einheit**: der Lehrer darf zu dieser Zeit einen
 zweiten Schüler haben, auch im selben Raum, aber nie einen dritten. Beide Plätze
 werden dabei **gesperrt**. Die Lehrerzeit zählt dann einmal, nicht zweimal.
+Im Unterricht hat jeder der beiden seine eigene Einheit: Senden geht in die Einheit des Schülers
+der Übung, und ein Tablet zeigt die Einheit, die an ihm gewählt wurde („Wer arbeitet an diesem
+Gerät?“, [docs/schueler-tablet.md](docs/schueler-tablet.md)).
 _Avoid_: Gruppe, Doppelstunde, parallel
 
 **Stundenplan-Foto**:

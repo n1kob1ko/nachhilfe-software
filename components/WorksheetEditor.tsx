@@ -20,7 +20,8 @@ import { setzePunkteAction } from "@/app/probeschularbeit-actions";
 import { AddReadingQuestion, ReadingIssues, ReadingQuestionFields, ReadingTextPanel } from "@/components/ReadingEditor";
 import { TaskBody } from "@/components/TaskPreview";
 import { FigurEditor } from "@/components/FigurEditor";
-import { TabletSend } from "@/components/device/TabletSend";
+import { TabletSend, type SendTarget } from "@/components/device/TabletSend";
+import { shortNames } from "@/lib/vornamen";
 import { categoriesFor, DIFFICULTIES, TASK_TYPES, type Difficulty, type TaskType } from "@/lib/curriculum";
 import type { Task } from "@/lib/repo";
 import { expectedFixes } from "@/lib/fix-text";
@@ -45,8 +46,11 @@ type Props = {
   students: { id: number; name: string }[];
   defaultStudentId: number | null;
   units: Unit[];
-  /** the teacher's running unit: single tasks go straight to its student's tablet */
-  active?: { unitId: number; student: string } | null;
+  /**
+   * where „An Anna senden“ goes: the running unit of the exercise's student, else the teacher's running
+   * units (two at once, D26: one button each). Empty: no unit runs, the student is chosen.
+   */
+  targets?: SendTarget[];
   showSolutions: boolean;
   aiEnabled: boolean;
   /** Aufgabenbibliothek: one task, no adding, reordering or regenerating, no "In Bibliothek" */
@@ -271,14 +275,16 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
 /** "An Schüler senden" and "Auf Whiteboard senden" for one task. */
 function SendPanel(p: Props & { task: Task; run: (fn: () => Promise<ActionResult>) => void; pending: boolean }) {
   const [studentId, setStudentId] = useState<number | "">(p.defaultStudentId ?? "");
-  const preferred = p.units.find((u) => u.unit_id === p.active?.unitId) ?? p.units.find((u) => u.student_id === p.defaultStudentId) ?? p.units[0];
-  const [unitId, setUnitId] = useState(preferred?.unit_id ?? 0);
+  // the board of the exercise's student first (D26: never simply the first unit started)
+  const own = p.units.find((u) => u.student_id === p.defaultStudentId);
+  const boards = own ? [own, ...p.units.filter((u) => u !== own)] : p.units;
+  const names = shortNames(boards.map((u) => u.student_name));
   return (
     <div className="mt-3 ml-[44px] grid gap-3 rounded-lg bg-paper px-4 py-3 sm:grid-cols-2">
-      {p.active ? (
+      {p.targets?.length ? (
         <div className="grid content-start gap-2">
           <span className="label">An Schüler senden</span>
-          <TabletSend student={p.active.student} unitId={p.active.unitId} taskId={p.task.id} small />
+          <TabletSend targets={p.targets} taskId={p.task.id} small />
         </div>
       ) : (
       <div className="grid gap-2">
@@ -306,17 +312,12 @@ function SendPanel(p: Props & { task: Task; run: (fn: () => Promise<ActionResult
         {p.units.length === 0 ? (
           <p className="text-[13px] text-ink-3">Nur während einer laufenden Einheit.</p>
         ) : (
-          <div className="flex gap-2">
-            <select className="input min-w-0 flex-1" value={unitId} onChange={(e) => setUnitId(Number(e.target.value))} aria-label="Whiteboard von">
-              {p.units.map((u) => (
-                <option key={u.unit_id} value={u.unit_id}>
-                  Whiteboard von {u.student_name}
-                </option>
-              ))}
-            </select>
-            <button type="button" className="btn btn-secondary btn-sm" disabled={p.pending} onClick={() => p.run(() => sendTaskToBoardAction(p.task.id, unitId))}>
-              <Presentation size={14} aria-hidden /> Aufs Whiteboard
-            </button>
+          <div className="flex flex-wrap gap-2">
+            {boards.map((u, i) => (
+              <button key={u.unit_id} type="button" className="btn btn-secondary btn-sm" disabled={p.pending} onClick={() => p.run(() => sendTaskToBoardAction(p.task.id, u.unit_id))}>
+                <Presentation size={14} aria-hidden /> {boards.length > 1 ? `Whiteboard von ${names[i]}` : "Aufs Whiteboard"}
+              </button>
+            ))}
           </div>
         )}
       </div>

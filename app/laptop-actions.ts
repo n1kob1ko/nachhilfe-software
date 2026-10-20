@@ -18,7 +18,7 @@ import {
   requestLaptopAccess,
 } from "@/lib/laptop";
 import { laptopContext, setLaptopCookie } from "@/lib/laptop-context";
-import { notifyTablet, pushLive, unitAssignment } from "@/lib/live";
+import { notifyUnitTablets, pushLive, unitAssignment } from "@/lib/live";
 import * as repo from "@/lib/repo";
 import { submitAnswer, type SubmitInput } from "@/lib/service";
 import { canManageUnit, getUnit } from "@/lib/units";
@@ -94,7 +94,7 @@ export async function approveLaptopAction(unitId: number, sessionId: number) {
   for (const id of out.ended) publish(laptopChannel(id), { type: "ended", reason: "ersetzt" });
   publish(laptopChannel(sessionId), { type: "refresh", reason: "bestaetigt" });
   // the tablet steps back to "arbeitet am eigenen Laptop"
-  notifyTablet(unit.teacher_id, "laptop");
+  notifyUnitTablets(unit, "laptop");
   pushLive(unit.id);
   revalidatePath(`/einheiten/${unit.id}`);
 }
@@ -111,7 +111,7 @@ export async function endLaptopAction(unitId: number, sessionId: number) {
   const s = getLaptop(sessionId);
   if (!s || s.unit_id !== unit.id) return;
   if (endLaptop(s.id, "lehrer")) publish(laptopChannel(s.id), { type: "ended", reason: "lehrer" });
-  notifyTablet(unit.teacher_id, "laptop");
+  notifyUnitTablets(unit, "laptop");
   pushLive(unit.id);
   revalidatePath(`/einheiten/${unit.id}`);
 }

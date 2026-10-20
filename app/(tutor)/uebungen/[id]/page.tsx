@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowRight, CheckCircle2, Copy, ExternalLink, Eye, EyeOff, FileCheck2, Printer, Send, Sparkles } from "lucide-react";
-import { activeUnitForTeacher, runningUnitForStudent } from "@/lib/units";
+import { runningUnitForStudent, sendTargets } from "@/lib/units";
 import { SendResult, TabletSend } from "@/components/device/TabletSend";
 import type { SendState } from "@/app/device-actions";
 import { studentDevice, studentDeviceOnline } from "@/lib/live";
@@ -23,7 +23,8 @@ import { requireTeacher } from "@/lib/auth";
 import { klassenLabel, stufeLabel } from "@/lib/school";
 import { GAP } from "@/lib/tasks";
 import { wordRange } from "@/lib/textinterpretation";
-import { runningBoardsFor } from "@/lib/whiteboard";
+import { shortNames } from "@/lib/vornamen";
+import { ownBoardFor, runningBoardsFor } from "@/lib/whiteboard";
 
 export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string; gesendet?: string; ausgelassen?: string; anzahl?: string }> }) {
   const { id } = await params;
@@ -44,22 +45,31 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
   const showSolutions = sp.loesungen ? sp.loesungen !== "0" : true;
   const assignments = repo.listAssignmentsForWorksheet(w.id);
   const units = runningBoardsFor(teacher.id);
-  // during a unit everything goes to its student on the teacher's tablet: no student to choose
-  const active = activeUnitForTeacher(teacher.id);
-  const activeFirst = active?.student_name.split(" ")[0] ?? "";
-  const inActive = active ? assignments.find((x) => x.unit_id === active.id) : undefined;
+  // whose exercise this is: the student it was made for, else the one who got it
+  const owner = w.student_id ?? assignments[0]?.student_id ?? null;
+  // during a unit everything goes to its student on that unit's tablet: no student to choose. With two units at
+  // once (D26) it is the unit of the exercise's student; only an exercise of neither student offers both.
+  const targetUnits = sendTargets(teacher.id, owner);
+  const targetNames = shortNames(targetUnits.map((u) => u.student_name));
+  const targets = targetUnits.map((u, i) => ({ unitId: u.id, student: targetNames[i] }));
+  const two = targets.length > 1;
+  const inTarget = assignments.find((x) => targetUnits.some((u) => u.id === x.unit_id));
+  const sentUnit = inTarget ? targetUnits.find((u) => u.id === inTarget.unit_id) : undefined;
   // after "An Max senden": did it reach the tablet? (from the database, so a reload shows the same)
-  const device = active ? studentDevice(active) : null;
+  const device = sentUnit ? studentDevice(sentUnit) : null;
   const delivery: SendState =
-    active && inActive
+    sentUnit && inTarget
       ? {
-          status: !device ? "kein-geraet" : inActive.delivered_at || inActive.started_at || studentDeviceOnline(active) ? "gesendet" : "offline",
+          status: !device ? "kein-geraet" : inTarget.delivered_at || inTarget.started_at || studentDeviceOnline(sentUnit) ? "gesendet" : "offline",
           device: device ?? undefined,
-          assignmentId: inActive.id,
-          unitId: active.id,
-          student: activeFirst,
+          assignmentId: inTarget.id,
+          unitId: sentUnit.id,
+          student: sentUnit.student_name.split(" ")[0],
         }
       : null;
+  // „Auf Whiteboard senden“: the board of the exercise's student is preselected
+  const ownBoard = ownBoardFor(teacher.id, owner);
+  const boardButtons = targets.map((t) => <BoardSendButton key={t.unitId} worksheetId={w.id} unitId={t.unitId} student={two ? t.student : undefined} />);
   // Schnellrunde: dieselbe Prüfung wie auf der Schülerseite, über die fertigen Aufgaben (lib/quick-round.ts).
   // Der Haken im Builder (Schritt 6) ist nur der Wunsch; hier sieht der Lehrer, ob es wirklich geht.
   const quickProblem = quickRoundProblem(tasks);
@@ -182,11 +192,11 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
                 <ExternalLink size={16} className="shrink-0 text-ink-3" aria-label="Foto groß ansehen" />
               </a>
             )}
-            {active ? (
+            {targets.length ? (
               <>
                 <div className="flex flex-wrap items-start gap-3">
-                  <TabletSend student={activeFirst} unitId={active.id} worksheetId={w.id} />
-                  {tasks.length > 0 && <BoardSendButton worksheetId={w.id} unitId={active.id} />}
+                  <TabletSend targets={targets} worksheetId={w.id} />
+                  {tasks.length > 0 && boardButtons}
                 </div>
                 {quickWished && <p className="mt-1 text-[13px] text-ink-2">Wird als Schnellrunde gesendet: ein Tipp pro Aufgabe, automatisch weiter.</p>}
                 {probe && <p className="mt-1 text-[13px] text-ink-2">Läuft wie eine Schularbeit: ohne Tipps, ein Versuch je Aufgabe.</p>}
@@ -211,11 +221,11 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
             <p className="num mb-4 text-[15px] text-ink-2">
               {mainAssignment.done_count} von {tasks.length} Aufgaben bearbeitet · {mainAssignment.correct_count} richtig
             </p>
-            {active && (
+            {targets.length > 0 && (
               <div className="mb-4">
                 <div className="flex flex-wrap items-start gap-3">
-                  {inActive ? <SendResult state={delivery} unitId={active.id} unitLink={false} /> : <TabletSend student={activeFirst} unitId={active.id} worksheetId={w.id} />}
-                  {tasks.length > 0 && <BoardSendButton worksheetId={w.id} unitId={active.id} />}
+                  {sentUnit ? <SendResult state={delivery} unitId={sentUnit.id} unitLink={false} /> : <TabletSend targets={targets} worksheetId={w.id} />}
+                  {tasks.length > 0 && boardButtons}
                 </div>
               </div>
             )}
@@ -234,13 +244,13 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         ) : (
           <>
             <h2 className="mb-1 text-[18px] font-semibold">Noch an niemanden gesendet</h2>
-            {active && (
+            {targets.length > 0 && (
               <div className="mb-4 flex flex-wrap items-start gap-3">
-                <TabletSend student={activeFirst} unitId={active.id} worksheetId={w.id} />
-                {tasks.length > 0 && <BoardSendButton worksheetId={w.id} unitId={active.id} />}
+                <TabletSend targets={targets} worksheetId={w.id} />
+                {tasks.length > 0 && boardButtons}
               </div>
             )}
-            <p className="mb-4 text-[14px] text-ink-2">{active ? "Oder an jemand anderen:" : "Wähle, wer die Übung bekommt."}</p>
+            <p className="mb-4 text-[14px] text-ink-2">{targets.length ? "Oder an jemand anderen:" : "Wähle, wer die Übung bekommt."}</p>
             <form action={assignWorksheetAction} className="flex flex-wrap items-end gap-3">
               <input type="hidden" name="worksheet_id" value={w.id} />
               <label className="field min-w-[220px]">
@@ -287,7 +297,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         students={students}
         defaultStudentId={w.student_id}
         units={units}
-        active={active ? { unitId: active.id, student: activeFirst } : null}
+        targets={targets}
         showSolutions={showSolutions}
         aiEnabled={aiEnabled()}
         punkte={punkte ? Object.fromEntries(punkte) : undefined}
@@ -353,7 +363,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
               </form>
             </div>
           )}
-          {tasks.length > 0 && units.length > 0 && <SendToBoard worksheetId={w.id} tasks={tasks.map((t) => ({ id: t.id, label: t.prompt.replaceAll(GAP, "…") }))} units={units} />}
+          {tasks.length > 0 && units.length > 0 && <SendToBoard worksheetId={w.id} tasks={tasks.map((t) => ({ id: t.id, label: t.prompt.replaceAll(GAP, "…") }))} units={units} defaultUnitId={ownBoard} />}
           <div className="grid content-start gap-3">
             <span className="label flex items-center gap-1.5">
               <Copy size={14} aria-hidden /> Wiederverwenden

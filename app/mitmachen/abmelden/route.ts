@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { LAPTOP_COOKIE, signOutLaptop } from "@/lib/laptop";
 import { currentLaptop } from "@/lib/laptop-context";
-import { notifyTablet, pushLive } from "@/lib/live";
+import { notifyUnitTablets, pushLive } from "@/lib/live";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   if (site && site !== "same-origin") return new Response("Nicht erlaubt.", { status: 403 });
   const session = await currentLaptop();
   if (session && signOutLaptop(session.id)) {
-    notifyTablet(session.teacher_id, "laptop");
+    notifyUnitTablets({ id: session.unit_id, teacher_id: session.teacher_id }, "laptop");
     pushLive(session.unit_id);
   }
   const res = new NextResponse(null, { status: 303, headers: { Location: "/mitmachen?abgemeldet=1", "Cache-Control": "no-store", "Clear-Site-Data": '"cache"' } });

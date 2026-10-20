@@ -52,9 +52,33 @@ export function runningUnitForStudent(studentId: number): UnitView | null {
   return (db().prepare(`${VIEW} WHERE u.student_id = ? AND u.status = 'gestartet' ORDER BY u.started_at DESC LIMIT 1`).get(studentId) as UnitView | undefined) ?? null;
 }
 
-/** The unit a teacher is teaching right now (the latest one, should two be running). Their tablet shows it. */
-export function activeUnitForTeacher(teacherId: number): UnitView | null {
-  return (db().prepare(`${VIEW} WHERE u.teacher_id = ? AND u.status = 'gestartet' ORDER BY u.started_at DESC, u.id DESC LIMIT 1`).get(teacherId) as UnitView | undefined) ?? null;
+/**
+ * Wohin „An Anna senden“ geht (D26: ein Lehrer kann zwei Einheiten zugleich haben). Läuft beim Lehrer
+ * eine Einheit mit dem Schüler der Übung, ist es genau diese. Sonst kommen alle laufenden Einheiten
+ * des Lehrers in Frage: bei einer ist es diese (wie bisher), bei zweien wählt der Lehrer per Knopf.
+ * Nie „die zuletzt gestartete“: das schickte die Übung von Schüler 2 an Schüler 1.
+ */
+export function sendTargets(teacherId: number, studentId: number | null | undefined): UnitView[] {
+  const mine = runningUnits(teacherId);
+  const own = studentId ? mine.find((u) => u.student_id === studentId) : undefined;
+  return own ? [own] : mine;
+}
+
+/**
+ * The running unit one send goes to: the unit named by the button (`pickedUnitId`), else the unit of the
+ * exercise's student, else the teacher's only running unit. Only the teacher's own running units. With
+ * two running units and nothing to go by there is no guess.
+ */
+export function unitForSend(teacherId: number, pickedUnitId: number | null, studentId: number | null): UnitView | { error: string } {
+  if (pickedUnitId) {
+    const unit = getUnit(pickedUnitId);
+    if (!unit || unit.status !== "gestartet" || unit.teacher_id !== teacherId) return { error: "Diese Einheit läuft nicht mehr." };
+    return unit;
+  }
+  const targets = sendTargets(teacherId, studentId);
+  if (targets.length === 0) return { error: "Gerade läuft keine Einheit." };
+  if (targets.length > 1) return { error: "Gerade laufen zwei Einheiten. Wähle, an wen." };
+  return targets[0];
 }
 
 /** Running units, with the number of exercises the student has not finished yet. */
@@ -149,6 +173,8 @@ export function finishUnit(id: number, status: "beendet" | "abgebrochen", o: Fin
        WHERE id = ? AND status = 'gestartet'`,
     )
     .run(status, iso(o.at ?? Date.now()), o.reason ?? "", auto ? "automatisch" : "lehrer", o.byTeacherId ?? null, o.estimated ? 1 : 0, id);
+  // an ended unit frees the tablets chosen for it (D26); lib/devices.ts `deviceUnit` checks it anyway
+  db().prepare("UPDATE student_devices SET unit_id = NULL WHERE unit_id = ?").run(id);
   return getUnit(id);
 }
 

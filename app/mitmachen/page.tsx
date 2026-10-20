@@ -9,6 +9,7 @@ import { Solver } from "@/components/Solver";
 import { StudentQuickRound } from "@/components/StudentQuickRound";
 import { TextEditor } from "@/components/text/TextEditor";
 import { StudentCorrection } from "@/components/text/correction/StudentCorrection";
+import { devicesOfUnit } from "@/lib/devices";
 import { laptopEndReason, laptopState, type EndReason } from "@/lib/laptop";
 import { currentLaptop, laptopContext } from "@/lib/laptop-context";
 import { markDelivered, parseView, pushLive, unitAssignments, unitText } from "@/lib/live";
@@ -180,7 +181,12 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
       <div className="panel flex flex-col items-center px-6 py-14 text-center">
         <Laptop size={34} strokeWidth={1.75} className="text-accent" aria-hidden />
         <p className="mt-4 text-[19px] font-semibold">{list.length || texts.length ? "Wähle links, woran du arbeitest." : `Gleich geht's los. ${first(unit.teacher_name)} schickt dir eine Aufgabe.`}</p>
-        {view.kind === "tafel" && <p className="mt-1 text-[15px] text-ink-2">Gerade ist das Whiteboard am Tablet dran.</p>}
+        {view.kind === "tafel" && (
+          <p className="mt-1 text-[15px] text-ink-2">
+            {/* two units at once (D26): the tablet may be with the other student; the board also opens in the student's own app */}
+            {devicesOfUnit(unit).length ? "Gerade ist das Whiteboard am Tablet dran." : "Das Whiteboard öffnest du in deiner Schüler-App."}
+          </p>
+        )}
       </div>
     );
   }

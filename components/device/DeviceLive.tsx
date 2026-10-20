@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
  * Keeps the tablet in step with the teacher: one live connection; whenever the teacher starts or ends
  * a unit or sends something, the view is loaded again (without reloading the page).
  */
-export function DeviceLive({ unitId, children }: { unitId: number | null; children: React.ReactNode }) {
+export function DeviceLive({ unitId, choosing = false, children }: { unitId: number | null; choosing?: boolean; children: React.ReactNode }) {
   const router = useRouter();
   const [online, setOnline] = useState(false);
   useEffect(() => {
@@ -15,18 +15,18 @@ export function DeviceLive({ unitId, children }: { unitId: number | null; childr
     es.onopen = () => setOnline(true);
     es.onerror = () => setOnline(false);
     es.onmessage = (msg) => {
-      const ev = JSON.parse(msg.data) as { type: string; unitId?: number | null; reason?: string };
+      const ev = JSON.parse(msg.data) as { type: string; unitId?: number | null; choosing?: boolean; reason?: string };
       if (ev.type === "hello") {
         setOnline(true);
-        // after being offline: catch up if a unit started or ended in the meantime
-        if ((ev.unitId ?? null) !== unitId) router.refresh();
+        // after being offline: catch up if a unit started or ended (or a second one started) in the meantime
+        if ((ev.unitId ?? null) !== unitId || Boolean(ev.choosing) !== choosing) router.refresh();
       } else if (ev.type === "refresh") {
         if (ev.reason === "getrennt") window.location.replace("/geraet");
         else router.refresh();
       }
     };
     return () => es.close();
-  }, [router, unitId]);
+  }, [router, unitId, choosing]);
   return (
     <>
       {children}

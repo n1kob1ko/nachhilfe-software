@@ -9,7 +9,7 @@ import { PageHeader, Pill, Reveal } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { baseUrl } from "@/lib/base-url";
 import { canManageDevice, listDevices, openPairCode } from "@/lib/devices";
-import { tabletOnline } from "@/lib/live";
+import { deviceOnline } from "@/lib/live";
 import { listTeachers } from "@/lib/repo";
 
 export const metadata = { title: "Schülergeräte" };
@@ -81,7 +81,7 @@ export default async function DevicesPage({ searchParams }: { searchParams: Prom
         ) : (
           <ul className="panel divide-y divide-line">
             {devices.map((d) => {
-              const online = tabletOnline(d.teacher_id);
+              const online = deviceOnline(d.id);
               const mine = canManageDevice(teacher, d);
               return (
                 <li key={d.id} className="px-5 py-4">
