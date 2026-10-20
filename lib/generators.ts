@@ -33,6 +33,7 @@ import { rechenwegTask, sachaufgabeTask } from "./generators-mathe";
 import { MATHE_RECHNUNGEN } from "./mathe-rechnungen";
 import { textaufgabeTask } from "./textaufgaben";
 import { ERKLAERUNG } from "./themen";
+import { VOKABEL_GENERATOREN, istVokabelThema, vokabelFuerSlot, vokabelFuerTyp } from "./vokabeln-themen";
 import { isWortartenSkill, wortartenFor, wortartenTask, type WortartSetting } from "./wortarten";
 
 type Rng = () => number;
@@ -76,6 +77,8 @@ const GEN: Record<string, Gen> = {
   ...ENGLISCH_GRAMMATIK,
   // Deutsch-Satzlehre: Satzglieder, Fälle, Zeitformen, Passiv, direkte Rede aus Satzmustern (lib/deutsch-satzlehre.ts)
   ...DEUTSCH_SATZLEHRE,
+  // Vokabeltrainer: Themenlisten mit eigenen Sätzen (lib/vokabeln-themen.ts)
+  ...VOKABEL_GENERATOREN,
 };
 
 // ---------- item banks ----------
@@ -973,6 +976,9 @@ export function generateForSlot(slot: Slot, rng: Rng = Math.random, variant = 0)
     const setting = slot.wortarten ?? wortartenFor([slot.skillId], slot.grade ?? 5)!;
     return wortartenTask({ skillId: slot.skillId, setting, difficulty: slot.difficulty, category: slot.category, variant }, rng);
   }
+  // Vokabeln: aus den Themenlisten (lib/vokabeln-themen.ts); null bei „Freie Antwort“
+  const vokabel = vokabelFuerSlot(slot, rng);
+  if (vokabel) return vokabel;
   const genId = GEN[slot.skillId] ? slot.skillId : slot.generatorSkillId && GEN[slot.generatorSkillId] ? slot.generatorSkillId : null;
   // Aufgaben mit Bild (Zahlenstrahl, Koordinatensystem, Figur): lib/generators-figur.ts
   const figId = figurFaehigkeit(slot.skillId) ?? figurFaehigkeit(slot.generatorSkillId);
@@ -1118,6 +1124,8 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
     } else if (req.taskType === "free" || req.taskType === "rechenweg" || req.taskType === "sachaufgabe" || !GEN[skill.id]) {
       t = freeTask(skill.id, skill.name, req.difficulty, Math.floor((i - 1) / skills.length));
       if (seen.has(t.prompt.split("\n")[0])) break;
+    } else if (istVokabelThema(skill.id)) {
+      t = vokabelFuerTyp(skill.id, req.taskType, req.difficulty, rng);
     } else if (istEnglischGrammatik(skill.id)) {
       t = englischFuerTyp(skill.id, req.taskType, req.difficulty, rng);
     } else if (istDeutschSatzlehre(skill.id)) {
@@ -1130,7 +1138,7 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
       else if (type === "grammar" && t.type === "calc") t = { ...t, type: "grammar" };
     }
     // Aufgaben mit Bild unterscheiden sich im Bild, englische im Satz (zweite Zeile), nicht in der ersten Zeile
-    const key = t.data.figure || istEnglischGrammatik(skill.id) || istDeutschSatzlehre(skill.id) ? aufgabenSchluessel(t) : t.prompt.split("\n")[0];
+    const key = t.data.figure || istEnglischGrammatik(skill.id) || istDeutschSatzlehre(skill.id) || istVokabelThema(skill.id) ? aufgabenSchluessel(t) : t.prompt.split("\n")[0];
     if (seen.has(key) && guard < req.count * 15) continue;
     seen.add(key);
     out.push(t);

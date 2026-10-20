@@ -8,6 +8,7 @@ import { branchesWithSkills, browseSkills, curriculumFor } from "@/lib/lehrplan"
 import { listSkills, type Skill } from "@/lib/repo";
 import { klasseLabel, klassenRange, MAX_STUFE, stufeLabel } from "@/lib/school";
 import { typischeFehler } from "@/lib/themen";
+import { EIGENE_VOKABELN } from "@/lib/vokabeln-pruefen";
 
 const STUFEN = Array.from({ length: MAX_STUFE }, (_, i) => i + 1);
 
@@ -180,7 +181,7 @@ function SkillList({ list, all }: { list: Skill[]; all: Skill[] }) {
             <span className="flex items-center gap-2">
               <Link href={`/uebungen/neu?skill=${encodeURIComponent(s.id)}`} className="flex min-h-[44px] flex-1 items-center gap-2 text-[16px] font-medium hover:text-accent">
                 {s.name}
-                {!hasBuiltInGenerator(s.id) && <Sparkles size={14} aria-label="Aufgaben nur mit KI" className="shrink-0 text-ink-3" />}
+                {!hasBuiltInGenerator(s.id) && s.id !== EIGENE_VOKABELN && <Sparkles size={14} aria-label="Aufgaben nur mit KI" className="shrink-0 text-ink-3" />}
                 {s.practice_shift && <span className="rounded-full bg-amber-wash px-2 py-0.5 text-[12px] font-medium text-amber">oft {s.practice_shift === "frueher" ? "früher" : "später"}</span>}
               </Link>
               {soGehts ? (

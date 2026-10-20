@@ -10,6 +10,7 @@ import { activeMaterial } from "@/lib/current-material";
 import { diagnosisSkills, recentDiagnoses } from "@/lib/diagnose";
 import { dayOf, daysUntil } from "@/lib/exams";
 import { hasBuiltInGenerator } from "@/lib/generators";
+import { EIGENE_VOKABELN } from "@/lib/vokabeln-pruefen";
 import { branchesWithSkills, browseSkills } from "@/lib/lehrplan";
 import * as repo from "@/lib/repo";
 import { klasseLabel, klassenLabel, SCHOOL_BRANCHES, type SchoolBranch } from "@/lib/school";
@@ -44,7 +45,8 @@ export default async function DiagnosePage({ searchParams }: { searchParams: Pro
   const branches = subject ? branchesWithSkills(subject).map((b) => b.branch) : [];
   const branch = subject ? (branches.find((b) => b.key === sp.schulart) ?? null) : null;
   const klasse = branch && branch.classes.includes(Number(sp.klasse)) ? Number(sp.klasse) : null;
-  const scope = branch && klasse ? browseSkills({ subject: subject!, branch, klasse }).filter((s) => !s.parent_id) : [];
+  // eine Diagnose mit den eigenen Vokabellisten ergibt keinen Sinn: die Listen sind kein Stoff der Schulstufe
+  const scope = branch && klasse ? browseSkills({ subject: subject!, branch, klasse }).filter((s) => !s.parent_id && s.id !== EIGENE_VOKABELN) : [];
   const areas = [...new Set(scope.map((s) => s.area))];
   const ticked = (Array.isArray(sp.thema) ? sp.thema : sp.thema ? [sp.thema] : []).filter((t) => areas.includes(t));
   // "Weiter" in the topic step without a tick (alle) means all topics

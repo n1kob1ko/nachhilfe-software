@@ -37,6 +37,7 @@ import { checkLevel } from "@/lib/school";
 import { stoffzettelLesbar } from "@/lib/stoffzettel";
 import { einheitenFuerWoche, istNichtStattgefunden, mitNamen, slotDatum } from "@/lib/planung/repo";
 import { datumLabel, minutenLabel, wienerDatum, wienerWochenstart, wochenLabel } from "@/lib/planung/zeit";
+import { listenVon } from "@/lib/vokabellisten";
 
 const TABS = [
   ["ueberblick", "Überblick"],
@@ -933,6 +934,38 @@ function School({ student }: { student: repo.Student }) {
   );
 }
 
+/** Eigene Vokabellisten (lib/vokabellisten.ts): bei Englisch im Profil oder sobald es eine Liste gibt. */
+function Vokabellisten({ student, first }: { student: repo.Student; first: string }) {
+  const listen = listenVon(student.id);
+  if (!listen.length && !student.subjects.includes("Englisch")) return null;
+  const href = `/schueler/${student.id}/vokabeln`;
+  return (
+    <div className="panel flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-4" data-testid="vokabellisten-profil">
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold">Vokabellisten</p>
+        <p className="text-[13px] text-ink-2">
+          {listen.length
+            ? `${listen.length} ${listen.length === 1 ? "Liste" : "Listen"}: ${listen
+                .slice(0, 3)
+                .map((l) => l.title)
+                .join(", ")}${listen.length > 3 ? " …" : ""}`
+            : `Eigene Wortlisten für ${first}, geübt Deutsch ↔ Englisch, mit Auswahl und Lücke im Satz.`}
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Link href={href} className="btn btn-secondary btn-sm">
+          {listen.length ? "Listen ansehen" : "Liste anlegen"}
+        </Link>
+        {listen.length > 0 && (
+          <Link href={`/uebungen/neu?schueler=${student.id}&vokabeln=alle`} className="btn btn-primary btn-sm">
+            Übung aus allen Listen
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Exercises({ student }: { student: repo.Student }) {
   const list = repo.listAssignments(student.id);
   const first = student.name.split(" ")[0];
@@ -941,6 +974,7 @@ function Exercises({ student }: { student: repo.Student }) {
       <div className="panel px-5 py-4">
         <SchuelerAppLink token={student.access_token} first={first} />
       </div>
+      <Vokabellisten student={student} first={first} />
       {(() => {
         const drafts = repo.listWorksheets().filter((w) => w.student_id === student.id && w.status === "entwurf");
         if (!drafts.length) return null;

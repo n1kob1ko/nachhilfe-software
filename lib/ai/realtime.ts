@@ -442,12 +442,15 @@ export async function newExerciseForUnit(unitId: number, teacherId: number): Pro
   let tasks = null as Awaited<ReturnType<typeof generateWithAI>>;
   let note: string | undefined;
   let wortarten: WortartSetting | null = null;
+  // Vokabeln aus eigenen Listen: nur aus den Listen der Schülerin bzw. des Schülers (lib/vokabellisten.ts), nie von der KI
+  const { EIGENE_VOKABELN } = await import("../vokabeln");
+  const eigene = skill.id === EIGENE_VOKABELN;
   liveStats.newTasks++;
   try {
     const { contextForAI, studentContext, wortartenSetting } = await import("../builder");
     const ctx = studentContext(student.id);
     wortarten = wortartenSetting([skill.id], student.school_type, student.klasse ?? 1, ctx);
-    tasks = await generateWithAI(
+    tasks = eigene ? null : await generateWithAI(
       {
         subject: skill.subject,
         level: klassenLabel(student.school_type, student.klasse),
@@ -471,7 +474,10 @@ export async function newExerciseForUnit(unitId: number, teacherId: number): Pro
   if (!tasks?.length) {
     const { generateBuiltIn } = await import("../generators");
     const { schulstufe } = await import("../school");
-    tasks = generateBuiltIn({ subject: skill.subject, skills: [{ id: skill.id, name: skill.name }], difficulty, count: 2, taskType: "mixed", grade: schulstufe(student.school_type, student.klasse ?? 1), wortarten });
+    const { eigeneVokabelAufgaben } = await import("../vokabellisten");
+    tasks = eigene
+      ? eigeneVokabelAufgaben(student.id, { count: 2, difficulty, taskType: "mixed", avoid: used.map((u) => u.prompt) })
+      : generateBuiltIn({ subject: skill.subject, skills: [{ id: skill.id, name: skill.name }], difficulty, count: 2, taskType: "mixed", grade: schulstufe(student.school_type, student.klasse ?? 1), wortarten });
     source = "generator";
   }
   if (!tasks.length) return { ok: false, error: "Für diese Fähigkeit konnte keine Aufgabe erstellt werden." };

@@ -2070,6 +2070,66 @@
   [
    "englisch.os.speaking.dialogue",
    "AHS-ENG-7-S2-T3-K1"
+  ],
+  [
+   "englisch.vocab.freizeit",
+   "AHS-ENG-1-B3-K3"
+  ],
+  [
+   "englisch.vocab.freizeit",
+   "AHS-ENG-1-B4-K1"
+  ],
+  [
+   "englisch.vocab.tagesablauf",
+   "AHS-ENG-1-B3-K3"
+  ],
+  [
+   "englisch.vocab.tagesablauf",
+   "AHS-ENG-1-B4-K1"
+  ],
+  [
+   "englisch.vocab.wohnen",
+   "AHS-ENG-2-B4-K1"
+  ],
+  [
+   "englisch.vocab.essen",
+   "AHS-ENG-2-B3-K2"
+  ],
+  [
+   "englisch.vocab.kleidung",
+   "AHS-ENG-2-B3-K2"
+  ],
+  [
+   "englisch.vocab.stadt",
+   "AHS-ENG-2-B3-K3"
+  ],
+  [
+   "englisch.vocab.stadt",
+   "AHS-ENG-2-B4-K1"
+  ],
+  [
+   "englisch.vocab.gefuehle",
+   "AHS-ENG-2-B3-K3"
+  ],
+  [
+   "englisch.vocab.gefuehle",
+   "AHS-ENG-3-B2-K2"
+  ],
+  [
+   "englisch.vocab.gefuehle",
+   "AHS-ENG-4-B4-K2"
+  ],
+  [
+   "englisch.vocab.medien",
+   "AHS-ENG-4-B4-K1"
+  ],
+  [
+   "englisch.vocab.reisen",
+   "AHS-ENG-5-T3-K1"
+  ],
+  [
+   "englisch.vocab.reisen",
+   "AHS-ENG-5-T4-K2"
   ]
  ]
 }

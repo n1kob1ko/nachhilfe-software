@@ -676,6 +676,18 @@ CREATE TABLE IF NOT EXISTS stoff_zuordnungen (
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (subject, schluessel, skill_id)
 );
+-- Vokabeltrainer (lib/vokabellisten.ts): the teacher's own word lists for one student, one pair per line
+-- ("english; alternative = deutsch | example sentence"), read by lib/vokabeln.ts leseListe.
+CREATE TABLE IF NOT EXISTS vokabellisten (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  title TEXT NOT NULL,
+  text TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_vokabellisten_student ON vokabellisten(student_id, updated_at);
 CREATE INDEX IF NOT EXISTS idx_ge_week ON geplante_einheiten(week_start, status);
 CREATE INDEX IF NOT EXISTS idx_ge_teacher ON geplante_einheiten(teacher_id, week_start);
 CREATE INDEX IF NOT EXISTS idx_ge_student ON geplante_einheiten(student_id, week_start);

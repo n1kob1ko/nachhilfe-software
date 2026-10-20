@@ -24,6 +24,8 @@ import { gapCount, GAP, type TaskDraft } from "./tasks";
 import { isInterpretationSkill, MAX_TEILUEBUNGEN, nextTeiluebung, teiluebungen, type TeilSource } from "./textinterpretation";
 import { teilSourceForStudent, teilSourceOf } from "./textinterpretation-store";
 import { runningUnitForStudent } from "./units";
+import { EIGENE_VOKABELN } from "./vokabeln";
+import { eigeneFuerPlaetze, ohneWoerter, vokabelQuelle } from "./vokabellisten";
 import { isPlaceholder, wortartenFor, type WortartSetting } from "./wortarten";
 
 export const AUTO = "automatisch";
@@ -55,17 +57,23 @@ export type BuilderSettings = {
    */
   materialId?: number;
   examples?: string[];
+  /** Eigene Vokabellisten (lib/vokabellisten.ts) of the student for the skill EIGENE_VOKABELN; none = all of them. */
+  vokabelListen?: number[];
 };
 
 export function settingsFromForm(f: FormData): BuilderSettings {
   const str = (k: string) => String(f.get(k) ?? "").trim();
   const difficulty = str("difficulty");
+  const vokabelListen = [...new Set(f.getAll("vokabel_listen").map(Number).filter((n) => Number.isInteger(n) && n > 0))];
+  const skillIds = f.getAll("skill_ids").map(String).filter(Boolean);
   return {
     studentId: Number(f.get("student_id")) || null,
     subject: str("subject"),
     schoolType: str("school_type") || "Mittelschule",
     klasse: Number(f.get("klasse")) || 1,
-    skillIds: f.getAll("skill_ids").map(String).filter(Boolean),
+    // a chosen list brings its skill along
+    skillIds: vokabelListen.length && !skillIds.includes(EIGENE_VOKABELN) ? [...skillIds, EIGENE_VOKABELN] : skillIds,
+    ...(vokabelListen.length ? { vokabelListen } : {}),
     difficulty: difficulty === AUTO || (DIFFICULTIES as readonly string[]).includes(difficulty) ? (difficulty as DifficultyChoice) : "mittel",
     count: Math.max(1, Math.min(30, Number(f.get("count")) || 10)),
     categories: f.getAll("categories").map(String).filter(Boolean),
@@ -374,13 +382,32 @@ export async function generateTasks(
   const aiCats = cats.filter((c) => !(c.formats.length === 1 && c.formats[0] === "memorize"));
   // die Plätze, um die sich die KI kümmern soll (ohne die Auswendig-Aufgaben)
   const aiSlots = () => plan.map((_, i) => i).filter((i) => !slots[i] && !memorize[i]);
+  /** so viele Plätze bekamen einen anderen Typ, weil es den gewählten ohne KI nicht gibt */
+  let missedType = 0;
+  // Vokabeln aus eigenen Listen (lib/vokabellisten.ts): nur aus den Listen der Schülerin bzw. des Schülers, nie von der KI
+  const eigene = plan.map((p, i) => (p.skill.skill.id === EIGENE_VOKABELN && !memorize[i] ? i : -1)).filter((i) => i >= 0);
+  if (eigene.length) {
+    const fehlt = ohneWoerter(settings.studentId, settings.vokabelListen);
+    if (fehlt) throw new Error(fehlt);
+    const plaetze = eigene.map((i) => ({ category: plan[i].category, difficulty: plan[i].skill.difficulty }));
+    const out = eigeneFuerPlaetze(settings.studentId!, settings.vokabelListen, plaetze, { avoid: [...(o.avoidKeys ?? []), ...(o.avoid ?? [])] });
+    eigene.forEach((i, k) => {
+      const t = out[k];
+      if (!t) return;
+      slots[i] = t;
+      if (plan[i].category && t.category !== plan[i].category) missedType++;
+    });
+  }
+  const vorher = slots.filter(Boolean).length;
   // Wortarten: from all skills of the exercise, also when only one task is made again
   const wortarten = wortartenSetting([...new Set([...s.skillIds, ...settings.skillIds])], settings.schoolType, settings.klasse, ctx);
   const grade = schulstufe(settings.schoolType, settings.klasse);
   let aiError: string | undefined;
   let fromAI = 0;
-  /** So viele Aufgaben soll die KI liefern (alle außer den Auswendig-Aufgaben). */
-  const aiCount = plan.length - memorize.filter(Boolean).length - interpAt.length;
+  /** So viele Aufgaben soll die KI liefern (alle außer den Auswendig-Aufgaben, den Teilübungen und denen aus eigenen Vokabellisten). */
+  const aiCount = aiSlots().length;
+  /** Was die KI nicht wiederholen soll; die Aufgaben aus eigenen Vokabellisten bekommt sie nicht zu sehen. */
+  const schonDa = () => [...(o.avoid ?? []), ...slots.filter((t): t is TaskDraft => t !== null && t.skillId !== EIGENE_VOKABELN).map((t) => t.prompt)];
 
   if (settings.useAI && aiEnabled() && aiCount) {
     // Warum der Bankweg nichts geliefert hat (Phase 1, Schritt 6) — nur für den Fall, dass am Ende gar
@@ -405,7 +432,7 @@ export async function generateTasks(
             count: idx.length,
             difficulty: plan[idx[0]].skill.difficulty,
             topic: settings.focus.trim() || undefined,
-            avoid: [...(o.avoid ?? []), ...slots.filter((t): t is TaskDraft => Boolean(t)).map((t) => t.prompt)],
+            avoid: schonDa(),
             meta: o.meta,
           });
           if ("error" in out) {
@@ -428,14 +455,14 @@ export async function generateTasks(
           {
             subject: settings.subject,
             level: klassenLabel(settings.schoolType, settings.klasse),
-            skills: skills.map((r) => ({ id: r.skill.id, name: r.skill.name, area: r.skill.area, parentName: r.parent?.name, difficulty: r.difficulty })),
+            skills: skills.filter((r) => r.skill.id !== EIGENE_VOKABELN).map((r) => ({ id: r.skill.id, name: r.skill.name, area: r.skill.area, parentName: r.parent?.name, difficulty: r.difficulty })),
             count: rest.length,
             categories: aiCats,
             plan: rest.map((i) => ({ skillId: plan[i].skill.skill.id, category: plan[i].category ?? categoriesFor(settings.subject)[0]?.key ?? "" })),
             studentContext: ctx ? contextForAI(ctx, skills.map((r) => r.skill.id)) : null,
             focusNote: settings.focus,
             examples: settings.examples,
-            avoid: [...(o.avoid ?? []), ...slots.filter((t): t is TaskDraft => Boolean(t)).map((t) => t.prompt)],
+            avoid: schonDa(),
             wortarten,
           },
           o.meta,
@@ -445,7 +472,8 @@ export async function generateTasks(
           if (t) slots[rest[k]] = t;
         });
       }
-      fromAI = slots.filter((t, i) => t && !interp[i]).length;
+      // ohne die Teilübungen und die Aufgaben aus eigenen Vokabellisten, die schon vorher da waren
+      fromAI = slots.filter(Boolean).length - vorher;
       // Kam gar keine Aufgabe von der KI, ist der Grund des Bankwegs die genauere Meldung; füllt er nur
       // einen Teil, steht er neben dem Hinweis auf die ohne KI erstellten Aufgaben. Ohne Bankweg bleibt
       // die Meldung genau wie bisher. Auswendig-Aufgaben fragt die KI nie: sie zählen hier nicht mit.
@@ -459,8 +487,6 @@ export async function generateTasks(
   // the rest (or everything without AI) from the built-in generators, slot by slot
   // Aufgaben mit Bild haben oft denselben Text: verglichen wird mit dem Bild (aufgabenSchluessel)
   const avoid = new Set([...(o.avoidKeys ?? o.avoid ?? []), ...slots.filter((t): t is TaskDraft => Boolean(t)).map(aufgabenSchluessel)]);
-  /** so viele Plätze bekamen einen anderen Typ, weil es den gewählten ohne KI nicht gibt */
-  let missedType = 0;
   for (let i = 0; i < plan.length; i++) {
     if (slots[i]) continue;
     const { skill: r, category } = plan[i];
@@ -489,10 +515,12 @@ export async function generateTasks(
 }
 
 function autoTitle(s: BuilderSettings, ctx: StudentContext | null) {
-  const all = repo.listSkills();
+  // eigene Vokabellisten: ihre Namen statt „Vokabeln aus eigenen Listen“
+  const listen = s.studentId && s.skillIds.includes(EIGENE_VOKABELN) ? vokabelQuelle(s.studentId, s.vokabelListen).titel : [];
+  const all = repo.listSkills().map((x) => (x.id === EIGENE_VOKABELN && listen.length ? { ...x, name: `Vokabeln ${listen.join(", ")}` } : x));
   const chosen = all.filter((x) => s.skillIds.includes(x.id));
   const areas = [...new Set(chosen.map((x) => x.area))];
-  const what = chosen.length === 1 ? `${chosen[0].area}: ${skillLabel(chosen[0], all)}` : areas.length === 1 ? `${areas[0]}: ${chosen.map((x) => x.name).join(", ")}` : areas.join(", ");
+  const what = chosen.length === 1 && chosen[0].id === EIGENE_VOKABELN && listen.length ? chosen[0].name : chosen.length === 1 ? `${chosen[0].area}: ${skillLabel(chosen[0], all)}` : areas.length === 1 ? `${areas[0]}: ${chosen.map((x) => x.name).join(", ")}` : areas.join(", ");
   return `${ctx ? `${ctx.first} – ` : ""}${what}`.slice(0, 120);
 }
 

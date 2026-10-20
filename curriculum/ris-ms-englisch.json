@@ -973,6 +973,58 @@
   [
    "englisch.speaking.presentation",
    "MS-ENG-4-B3-K3"
+  ],
+  [
+   "englisch.vocab.freizeit",
+   "MS-ENG-1-B3-K3"
+  ],
+  [
+   "englisch.vocab.freizeit",
+   "MS-ENG-1-B4-K1"
+  ],
+  [
+   "englisch.vocab.tagesablauf",
+   "MS-ENG-1-B3-K3"
+  ],
+  [
+   "englisch.vocab.tagesablauf",
+   "MS-ENG-1-B4-K1"
+  ],
+  [
+   "englisch.vocab.wohnen",
+   "MS-ENG-2-B4-K1"
+  ],
+  [
+   "englisch.vocab.essen",
+   "MS-ENG-2-B3-K2"
+  ],
+  [
+   "englisch.vocab.kleidung",
+   "MS-ENG-2-B3-K2"
+  ],
+  [
+   "englisch.vocab.stadt",
+   "MS-ENG-2-B3-K3"
+  ],
+  [
+   "englisch.vocab.stadt",
+   "MS-ENG-2-B4-K1"
+  ],
+  [
+   "englisch.vocab.gefuehle",
+   "MS-ENG-2-B3-K3"
+  ],
+  [
+   "englisch.vocab.gefuehle",
+   "MS-ENG-3-B2-K2"
+  ],
+  [
+   "englisch.vocab.gefuehle",
+   "MS-ENG-4-B4-K2"
+  ],
+  [
+   "englisch.vocab.medien",
+   "MS-ENG-4-B4-K1"
   ]
  ]
 }

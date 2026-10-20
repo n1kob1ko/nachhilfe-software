@@ -18,6 +18,8 @@ import { isMinitest } from "./quick-round";
 import { onAnswer } from "./ai/realtime";
 import { isInterpretationSkill, MAX_TEILUEBUNGEN, teiluebungen } from "./textinterpretation";
 import { teilSourceForStudent } from "./textinterpretation-store";
+import { EIGENE_VOKABELN } from "./vokabeln";
+import { eigeneVokabelAufgaben, ohneWoerter } from "./vokabellisten";
 
 // the setting lives with the other settings in lib/lehrplan.ts (lib/autodoc.ts reads it too)
 export { CARELESS_SETTING, carelessCredit } from "./lehrplan";
@@ -70,15 +72,21 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
   let aiError: string | undefined;
   const grade = schulstufe(req.schoolType, req.klasse);
   const wortarten = wortartenFor(req.skillIds, grade);
-  // Textinterpretation: Teilübungen on a whole story with line numbers, without KI (lib/textinterpretation.ts)
-  if (skills.every((s) => isInterpretationSkill(s.id))) {
+  // Vokabeln aus eigenen Listen (lib/vokabellisten.ts): nur aus den Listen der Schülerin bzw. des Schülers, nie von der KI
+  const andere = skills.filter((s) => s.id !== EIGENE_VOKABELN);
+  if (!andere.length) {
+    const fehlt = ohneWoerter(req.studentId ?? null);
+    if (fehlt) throw new Error(fehlt);
+    tasks = eigeneVokabelAufgaben(req.studentId!, { count, difficulty: req.difficulty, taskType: req.taskType });
+  } else if (skills.every((s) => isInterpretationSkill(s.id))) {
+    // Textinterpretation: Teilübungen on a whole story with line numbers, without KI (lib/textinterpretation.ts)
     tasks = teiluebungen(teilSourceForStudent(req.studentId ?? null), Math.min(count, MAX_TEILUEBUNGEN), { skillId: skills[0].id, difficulty: req.difficulty });
   } else if ((req.useAI ?? true) && aiEnabled()) {
     try {
       tasks = await generateWithAI({
         subject: req.subject,
         level: klassenLabel(req.schoolType, req.klasse),
-        skills: skills.map((s) => ({ id: s.id, name: s.name, area: s.area, difficulty: req.difficulty })),
+        skills: andere.map((s) => ({ id: s.id, name: s.name, area: s.area, difficulty: req.difficulty })),
         count,
         categories: [],
         focusNote: [req.taskType !== "mixed" ? `Aufgabenformat: ${TASK_TYPES[req.taskType]}` : "", req.focusNote ?? ""].filter(Boolean).join(". "),
@@ -92,7 +100,7 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
     }
   }
   if (!tasks || tasks.length === 0) {
-    tasks = generateBuiltIn({ subject: req.subject, skills: skills.map((s) => ({ id: s.id, name: s.name })), difficulty: req.difficulty, count, taskType: req.taskType, grade, wortarten });
+    tasks = generateBuiltIn({ subject: req.subject, skills: andere.map((s) => ({ id: s.id, name: s.name })), difficulty: req.difficulty, count, taskType: req.taskType, grade, wortarten });
   }
   const label = req.kind === "ueberpruefung" ? "Überprüfung" : TASK_TYPES[req.taskType];
   const title = req.title?.trim() || `${skills.length === 1 ? `${skills[0].area}: ${skills[0].name}` : topic} · ${label}`;
@@ -316,9 +324,10 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
   if (result.correct === null) {
     // a free answer: saved for the teacher's grade, never counted as wrong because it is worded differently;
     // a maths answer the app cannot check safely (its note and suggested Fehlerart stay with it)
+    // a vocabulary answer that is not in the list keeps its note (lib/vokabeln-pruefen.ts), e.g. „Das Wort stimmt. Ob die Form …“
     const out = maths
       ? store({ answer: input.answer, correct: false, solutionViewed: false, errorLabel: result.errorLabel, feedback: result.feedback, errorType, review: "offen" })
-      : store({ answer: input.answer, correct: false, solutionViewed: false, errorLabel: null, feedback: PENDING, errorType: null, review: "offen" });
+      : store({ answer: input.answer, correct: false, solutionViewed: false, errorLabel: null, feedback: task.answer.vokabel ? result.feedback : PENDING, errorType: null, review: "offen" });
     if (!out.fresh) return settled(out.attempt);
     after(out.attempt, null, true);
     const res = resultOf(out.attempt, task.solution, task.answer.sample ?? task.solution);
