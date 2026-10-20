@@ -29,6 +29,7 @@ import {
   FALL_NAME,
   GRUPPEN,
   HABEN,
+  SCHUL_GRUPPEN,
   MAEDCHEN,
   NAMEN,
   PERSONEN,
@@ -36,6 +37,7 @@ import {
   VERBEN,
   WERDEN,
   begleiter,
+  schulisch,
   form,
   formen,
   hilfsverben,
@@ -1125,13 +1127,13 @@ const SIGNAL: Record<Tempus, (string | null)[]> = {
   futur2: ["bis Freitag", "bis morgen", "bis zum Abend"],
 };
 type ZSubjekt = { p: Person; text: string; pron: string };
-function zSubjekt(rng: Rng, erlaubt: Person[]): ZSubjekt {
+function zSubjekt(rng: Rng, erlaubt: Person[], rest = ""): ZSubjekt {
   const p = pick(rng, erlaubt);
   if (p === 2) {
     const name = pick(rng, NAMEN);
     return { p, text: name, pron: maedchen(name) ? "sie" : "er" };
   }
-  if (p === 5) return { p, text: pick(rng, GRUPPEN), pron: "sie" };
+  if (p === 5) return { p, text: pick(rng, schulisch(rest) ? SCHUL_GRUPPEN : GRUPPEN), pron: "sie" };
   return { p, text: ["ich", "du", "", "wir", "ihr"][p], pron: ["ich", "du", "", "wir", "ihr"][p] };
 }
 const hilfForm = (h: "haben" | "sein", p: Person, zeit: "praes" | "praet") => (h === "haben" ? HABEN : SEIN)[zeit][p];
@@ -1161,13 +1163,13 @@ const PERSONEN_PRAET: Person[] = [0, 2, 3, 5];
 function zBauen(rng: Rng, st: Stufe, t: Tempus, o: { verb?: (v: Verb) => boolean; personen?: Person[]; signal?: boolean } = {}): ZBau {
   const personen = o.personen ?? (t === "praeteritum" || t === "plusquamperfekt" ? PERSONEN_PRAET : st === 0 ? [0, 2, 3] : [0, 1, 2, 3, 4, 5]);
   const v = pick(rng, VERBEN.filter((x) => x.stufe <= Math.min(st, 2) && (o.verb?.(x) ?? true)));
-  const s = zSubjekt(rng, personen);
   const rest = pick(rng, v.rest);
+  const s = zSubjekt(rng, personen, rest);
   const signal = o.signal === false ? null : pick(rng, SIGNAL[t]);
   if (t === "plusquamperfekt") {
     // „Als Mia kam, hatte Lena das Buch schon gelesen.“
     const andere = pick(rng, NAMEN.filter((n) => n !== s.text));
-    const als = pick(rng, [`Als ${andere} kam`, `Als ${andere} anrief`, `Als ${andere} nach Hause kam`]);
+    const als = pick(rng, [`Als ${andere} kam`, `Als ${andere} anrief`, ...(rest === "nach Hause" ? [] : [`Als ${andere} nach Hause kam`])]);
     if (o.signal !== false && rng() < 0.6) return { v, s, t, vorn: `${als},`, mittel: [s.text, "schon", rest], rest, signal: null, vor: als };
     return { v, s, t, vorn: s.text, mittel: ["schon", rest], rest, signal: null };
   }
@@ -1392,8 +1394,8 @@ const DANACH: [string, string, string, string][] = [
 ];
 function nachdemSatz(rng: Rng, st: Stufe): Satz {
   const v = pick(rng, VERBEN.filter((x) => x.stufe <= Math.min(st, 2) && x.hilf !== "beide"));
-  const s = zSubjekt(rng, PERSONEN_PRAET);
   const rest = pick(rng, v.rest);
+  const s = zSubjekt(rng, PERSONEN_PRAET, rest);
   const [sg, pl, danachRest] = pick(rng, DANACH.filter((d) => d[3] !== v.inf));
   const hilf = hilfForm(v.hilf as "haben" | "sein", s.p, "praet");
   const hilfPraes = hilfForm(v.hilf as "haben" | "sein", s.p, "praes");

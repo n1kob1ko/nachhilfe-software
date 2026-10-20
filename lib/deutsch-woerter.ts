@@ -161,6 +161,9 @@ export const SEIN = { praes: ["bin", "bist", "ist", "sind", "seid", "sind"], pra
 export const WERDEN = { praes: ["werde", "wirst", "wird", "werden", "werdet", "werden"], praet: ["wurde", "wurdest", "wurde", "wurden", "wurdet", "wurden"] };
 /** Gruppen in der Mehrzahl (3. Person Mehrzahl). */
 export const GRUPPEN = ["meine Eltern", "die Kinder", "meine Freunde", "unsere Nachbarn", "die Schülerinnen"];
+/** Schule und Hausübung passen nur zu Kindern: nicht „unsere Nachbarn … an die Schularbeit“. */
+export const SCHUL_GRUPPEN = ["die Kinder", "meine Freunde", "die Schülerinnen"];
+export const schulisch = (rest: string) => /Schul|Hausübung|Turnbeutel/.test(rest);
 
 // ---------- Verben für die Zeitformen ----------
 /**

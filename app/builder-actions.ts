@@ -56,15 +56,18 @@ export async function createDraftAction(_prev: ActionResult, form: FormData): Pr
     return { error: e instanceof Error ? e.message : "Die Übung konnte nicht erstellt werden." };
   }
   revalidatePath("/uebungen");
-  redirect(`/uebungen/${out.id}${out.aiError ? "?hinweis=ki" : ""}`);
+  redirect(`/uebungen/${out.id}${hinweisQuery(out)}`);
 }
+
+/** Der Hinweis über der neuen Übung: KI nicht erreichbar, oder der gewählte Typ fehlt ohne KI. */
+const hinweisQuery = (out: { aiError?: string; typFehlt?: number }) => (out.aiError ? "?hinweis=ki" : out.typFehlt ? `?hinweis=typ&anzahl=${out.typFehlt}` : "");
 
 export async function useTemplateAction(form: FormData) {
   const teacher = await requireTeacher();
   const out = await draftFromTemplate(Number(form.get("template_id")), Number(form.get("student_id")) || null, teacher.id);
   if (!out.id) throw new Error(out.error ?? "Vorlage konnte nicht verwendet werden.");
   revalidatePath("/uebungen");
-  redirect(`/uebungen/${out.id}${out.aiError ? "?hinweis=ki" : ""}`);
+  redirect(`/uebungen/${out.id}${hinweisQuery(out)}`);
 }
 
 export async function deleteTemplateAction(id: number) {
@@ -159,7 +162,8 @@ export async function regenerateTaskAction(taskId: number, difficulty?: Difficul
   const out = await regenerateTask(taskId, { difficulty: d, teacherId: teacher.id });
   refresh(e.task.worksheet_id);
   if (!out.ok) return { error: out.aiError ?? "Für diese Fähigkeit konnte keine neue Aufgabe erstellt werden." };
-  return out.aiError ? { warning: "Claude war nicht erreichbar, die neue Aufgabe kommt aus dem Generator." } : { ok: "Neue Aufgabe erstellt." };
+  if (out.aiError) return { warning: "Claude war nicht erreichbar, die neue Aufgabe kommt aus dem Generator." };
+  return out.typFehlt ? { warning: "Diesen Aufgabentyp gibt es ohne KI für diese Fähigkeit nicht. Die neue Aufgabe hat einen anderen Typ." } : { ok: "Neue Aufgabe erstellt." };
 }
 
 export async function searchTasksAction(worksheetId: number, text: string) {

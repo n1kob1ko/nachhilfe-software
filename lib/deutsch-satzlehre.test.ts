@@ -479,3 +479,35 @@ test("auf dem Blatt des Schülers: gerade Anführungszeichen gelten, ein Fehler 
   assert.equal(r.correct, false);
   assert.equal(repo.listAttemptsForAssignment(aid).find((a) => a.task_id === t.id)?.error_label, e.label);
 });
+
+test("Schule und Hausübung nur bei Kindern, nie bei „unsere Nachbarn“ oder „meine Eltern“", () => {
+  const erwachsene = /\b(unsere Nachbarn|meine Eltern)\b/i;
+  const schule = /Schul|Hausübung|Turnbeutel/;
+  let geprueft = 0;
+  for (const x of ALLE) {
+    for (const satz of `${x.t.prompt}\n${x.t.data.faulty ?? ""}`.split(/(?<=[.?!])\s+|\n/)) {
+      if (!schule.test(satz)) continue;
+      geprueft++;
+      assert.ok(!erwachsene.test(satz), `${satz}: ${wo(x)}`);
+    }
+    // „Als Lena nach Hause kam, waren sie schon nach Hause gelaufen“: nie zweimal „nach Hause“
+    assert.ok(!/nach Hause kam, [^.]*nach Hause/.test(x.t.prompt), wo(x));
+  }
+  assert.ok(geprueft > 100, `genug Sätze mit Schule (${geprueft})`);
+});
+
+test("Builder ohne KI: fehlt der gewählte Typ, ist das ein Hinweis zum Typ und kein KI-Fehler", async () => {
+  process.env.DATABASE_PATH = ":memory:";
+  const builder = await import("./builder");
+  const out = await builder.generateTasks(
+    { studentId: null, subject: "Deutsch", schoolType: "Mittelschule", klasse: 3, skillIds: ["deutsch.satz.satzglieder"], difficulty: "mittel", count: 3, categories: ["korrigieren"], focus: "", useAI: false, title: "" },
+    null,
+  );
+  assert.equal(out.aiError, undefined, "die KI war gar nicht gefragt");
+  assert.equal(out.typFehlt, 3);
+  const passt = await builder.generateTasks(
+    { studentId: null, subject: "Deutsch", schoolType: "Mittelschule", klasse: 3, skillIds: ["deutsch.satz.objekte"], difficulty: "mittel", count: 3, categories: ["korrigieren"], focus: "", useAI: false, title: "" },
+    null,
+  );
+  assert.deepEqual([passt.aiError, passt.typFehlt], [undefined, undefined]);
+});
