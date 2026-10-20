@@ -10,7 +10,7 @@ const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 export function subjectTone(subject: string | null | undefined) {
   const s = (subject ?? "").toLowerCase();
   if (s.startsWith("mathe")) return { bg: "var(--tile-lilac)", fg: "#4a429e", soft: "#eeecf8" };
-  if (s.startsWith("deutsch")) return { bg: "var(--tile-peach)", fg: "#a0360c", soft: "#fff1e8" };
+  if (s.startsWith("deutsch")) return { bg: "var(--tile-peach)", fg: "#8a5a0a", soft: "#fff6e8" };
   if (s.startsWith("engl")) return { bg: "var(--tile-mint)", fg: "#1f6b3b", soft: "#e6f3ea" };
   return { bg: "var(--tile-pink)", fg: "#9c2f27", soft: "#faeae7" };
 }

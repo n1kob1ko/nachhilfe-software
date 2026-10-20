@@ -1,27 +1,27 @@
 @import "tailwindcss";
 
 /*
- * Lernheft „Sonne“: cremeweiße Fläche, weiße Karten mit Haarlinie, warmes Braunschwarz als Schrift,
- * Orange für Aktionen, Aktives und Links (Gold des Logos, kräftiger). Rot nur für Fehler, Grün für
- * Gelöstes, Orange-Braun für Hinweise.
+ * Lernheft „Himmel“: kühle, fast weiße Fläche, weiße Karten mit Haarlinie, Blauschwarz als Schrift,
+ * ein klares Blau für Aktionen, Aktives und Links; das Gold des Logos bleibt als Nebenton (Deutsch,
+ * Avatare). Rot nur für Fehler, Grün für Gelöstes, Orange-Braun für Hinweise.
  */
 :root {
-  --backdrop: #f7ebe0;
-  --backdrop-2: #fffaf4;
-  --paper: #fffaf4;
+  --backdrop: #e6edf6;
+  --backdrop-2: #f5f8fc;
+  --paper: #f5f8fc;
   --surface: #ffffff;
-  --panel: #fff0e4;
-  --line: #f1dfcf;
-  --line-strong: #e4c9b3;
-  --ink: #2a221c;
-  --ink-2: #6a5648;
-  --ink-3: #7d675a;
-  /* Orange für Links, Text und gefüllte Aktionen (5,3 : 1 mit Weiß), helles Orange für Icons und
+  --panel: #eaf1f9;
+  --line: #dce5ef;
+  --line-strong: #c3d2e2;
+  --ink: #151f2b;
+  --ink-2: #4b5a6b;
+  --ink-3: #5f6e80;
+  /* Blau für Links, Text und gefüllte Aktionen (5,8 : 1 mit Weiß), helles Blau für Icons und
      Punkte (trägt dunkle Schrift), Wash für leichte Flächen */
-  --accent: #bd4211;
-  --accent-hover: #a0360c;
-  --accent-bright: #ff8b4e;
-  --accent-wash: #ffe8da;
+  --accent: #1d63c4;
+  --accent-hover: #164f9e;
+  --accent-bright: #5b9cf2;
+  --accent-wash: #e3eefc;
   --red: #b3281f;
   --red-wash: #fbe8e5;
   --amber: #9a4e07;
@@ -30,19 +30,19 @@
   --green-wash: #e2f1e5;
   --violet: #5b55b5;
   --violet-wash: #e9e8f7;
-  --tile-pink: #ffdcd9;
-  --tile-mint: #d7f0e2;
-  --tile-lilac: #e6e2fb;
-  --tile-peach: #ffe3cf;
-  --bar-track: #f6e6da;
-  --bar: #f0702f;
+  --tile-pink: #ffdede;
+  --tile-mint: #d6f1e4;
+  --tile-lilac: #e6e3fb;
+  --tile-peach: #ffe6cf;
+  --bar-track: #e3eaf2;
+  --bar: #2f7de1;
   --series-1: #2a6fd0;
-  --series-2: #e0742a;
+  --series-2: #c58a24;
   --series-3: #1f9a6c;
   --series-4: #b04f9a;
   /* Schatten in der Farbe der Fläche, kaum sichtbar */
-  --shadow-card: 0 1px 2px rgba(90, 45, 15, 0.04), 0 6px 20px -12px rgba(90, 45, 15, 0.12);
-  --shadow-pop: 0 2px 4px rgba(90, 45, 15, 0.06), 0 18px 40px -16px rgba(90, 45, 15, 0.28);
+  --shadow-card: 0 1px 2px rgba(20, 40, 80, 0.04), 0 6px 20px -12px rgba(20, 40, 80, 0.12);
+  --shadow-pop: 0 2px 4px rgba(20, 40, 80, 0.06), 0 18px 40px -16px rgba(20, 40, 80, 0.28);
   /* motion: strong ease-out for feedback, the iOS-like curve for drawers */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -97,7 +97,7 @@ h1 {
   letter-spacing: -0.02em;
 }
 ::selection {
-  background: #ffd9c2;
+  background: #cfe1fb;
   color: var(--ink);
 }
 * {
@@ -199,11 +199,11 @@ textarea.input {
   cursor: not-allowed;
   transform: none;
 }
-/* Hauptaktion: Orange mit weißer Schrift, weicher Schatten in derselben Farbe */
+/* Hauptaktion: Blau mit weißer Schrift, weicher Schatten in derselben Farbe */
 .btn-primary {
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 6px 16px -8px rgba(189, 66, 17, 0.6);
+  box-shadow: 0 6px 16px -8px rgba(29, 99, 196, 0.55);
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--accent-hover);
@@ -215,7 +215,7 @@ textarea.input {
 }
 .btn-secondary:hover:not(:disabled) {
   border-color: var(--accent-bright);
-  background: #fffaf4;
+  background: #f5f8fc;
 }
 .btn-ghost {
   color: var(--ink-2);
@@ -259,27 +259,27 @@ textarea.input {
   box-shadow: var(--shadow-card);
 }
 
-/* Die Bühne: eine Karte pro Seite in Orange mit hellem Lichtfleck (Startseite, Schüler-App).
-   Darin sind Hauptknöpfe weiß mit oranger Schrift, Nebentext hell. */
+/* Die Bühne: eine Karte pro Seite in Blau mit hellem Lichtfleck (Startseite, Schüler-App).
+   Darin sind Hauptknöpfe weiß mit blauer Schrift, Nebentext hell. */
 .buehne {
   position: relative;
   overflow: hidden;
   border-radius: 24px;
   background:
     radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, 0.22), transparent 55%),
-    linear-gradient(135deg, #ff8c4f, #dc4e16);
+    linear-gradient(135deg, #3f8ef5, #1f5fd0);
   color: #fff;
 }
 .buehne .buehne-meta {
-  color: #ffe4d3;
+  color: #d8e6fb;
 }
 .buehne .btn-primary {
   background: #fff;
   color: var(--accent);
-  box-shadow: 0 6px 16px -10px rgba(90, 30, 5, 0.5);
+  box-shadow: 0 6px 16px -10px rgba(10, 30, 70, 0.5);
 }
 .buehne .btn-primary:hover:not(:disabled) {
-  background: #fff4ec;
+  background: #eef4fd;
 }
 .buehne .btn-secondary {
   background: rgba(255, 255, 255, 0.08);
