@@ -67,14 +67,6 @@
     ]
   },
   {
-    "word": "Abgeordnete",
-    "article": "der",
-    "translation": "delegate",
-    "tags": [
-      "Allgemein"
-    ]
-  },
-  {
     "word": "Abgrund",
     "article": "der",
     "translation": "abyss",
@@ -125,6 +117,9 @@
   {
     "word": "Abscheu",
     "article": "der",
+    "alsoArticle": [
+      "die"
+    ],
     "translation": "disgust",
     "tags": [
       "charkteresierung"
@@ -193,14 +188,6 @@
     "translation": "aggressiveness",
     "tags": [
       "charkteresierung"
-    ]
-  },
-  {
-    "word": "Ahne",
-    "article": "der",
-    "translation": "ancestor",
-    "tags": [
-      "Allgemein"
     ]
   },
   {
@@ -424,14 +411,6 @@
     ]
   },
   {
-    "word": "Angeklagte",
-    "article": "der",
-    "translation": "defendant",
-    "tags": [
-      "Allgemein"
-    ]
-  },
-  {
     "word": "Angel",
     "article": "die",
     "translation": "fishing rod",
@@ -600,6 +579,9 @@
   {
     "word": "App",
     "article": "die",
+    "alsoArticle": [
+      "das"
+    ],
     "translation": "app",
     "tags": [
       "Allgemein"
@@ -1273,14 +1255,6 @@
     ]
   },
   {
-    "word": "Bekannte",
-    "article": "der",
-    "translation": "acquaintance",
-    "tags": [
-      "Allgemein"
-    ]
-  },
-  {
     "word": "Belastung",
     "article": "die",
     "translation": "burden",
@@ -1660,6 +1634,9 @@
   {
     "word": "Blog",
     "article": "der",
+    "alsoArticle": [
+      "das"
+    ],
     "translation": "blog",
     "tags": [
       "Allgemein"
@@ -1754,6 +1731,9 @@
   {
     "word": "Bonbon",
     "article": "das",
+    "alsoArticle": [
+      "der"
+    ],
     "translation": "candy",
     "tags": [
       "Einfach"
@@ -1949,6 +1929,9 @@
   {
     "word": "Burnout",
     "article": "das",
+    "alsoArticle": [
+      "der"
+    ],
     "translation": "burnout",
     "tags": [
       "Allgemein"
@@ -2571,6 +2554,9 @@
   {
     "word": "Dschungel",
     "article": "der",
+    "alsoArticle": [
+      "das"
+    ],
     "translation": "jungle",
     "tags": [
       "Allgemein",
@@ -3192,6 +3178,7 @@
   {
     "word": "Erbe",
     "article": "das",
+    "meaning": "was man erbt",
     "translation": "inheritance",
     "tags": [
       "Grusel"
@@ -3770,14 +3757,6 @@
     ]
   },
   {
-    "word": "Finanzen",
-    "article": "die",
-    "translation": "finances",
-    "tags": [
-      "Allgemein"
-    ]
-  },
-  {
     "word": "Finger",
     "article": "der",
     "translation": "finger",
@@ -3961,6 +3940,7 @@
   {
     "word": "Flur",
     "article": "der",
+    "meaning": "Gang in der Wohnung",
     "translation": "hallway",
     "tags": [
       "Einfach",
@@ -4118,14 +4098,6 @@
     "translation": "Friday",
     "tags": [
       "Einfach"
-    ]
-  },
-  {
-    "word": "Fremde",
-    "article": "der",
-    "translation": "stranger",
-    "tags": [
-      "Allgemein"
     ]
   },
   {
@@ -4517,14 +4489,6 @@
     ]
   },
   {
-    "word": "Gefangene",
-    "article": "der",
-    "translation": "prisoner",
-    "tags": [
-      "Allgemein"
-    ]
-  },
-  {
     "word": "Gefängnis",
     "article": "das",
     "translation": "prison",
@@ -4554,6 +4518,7 @@
   {
     "word": "Gehalt",
     "article": "das",
+    "meaning": "Lohn für die Arbeit",
     "translation": "salary",
     "tags": [
       "Allgemein"
@@ -5212,7 +5177,7 @@
   },
   {
     "word": "Großmut",
-    "article": "der",
+    "article": "die",
     "translation": "magnanimity",
     "tags": [
       "charkteresierung"
@@ -5313,6 +5278,9 @@
   {
     "word": "Haargummi",
     "article": "das",
+    "alsoArticle": [
+      "der"
+    ],
     "translation": "hair tie",
     "tags": [
       "Einfach"
@@ -6047,6 +6015,7 @@
   {
     "word": "Hut",
     "article": "der",
+    "meaning": "Kopfbedeckung",
     "translation": "hat",
     "tags": [
       "Allgemein",
@@ -6405,14 +6374,6 @@
     ]
   },
   {
-    "word": "Joghurt",
-    "article": "der",
-    "translation": "yogurt",
-    "tags": [
-      "Einfach"
-    ]
-  },
-  {
     "word": "Jugend",
     "article": "die",
     "translation": "youth",
@@ -6424,6 +6385,7 @@
   {
     "word": "Junge",
     "article": "der",
+    "meaning": "Bub",
     "translation": "boy",
     "tags": [
       "Allgemein",
@@ -6725,6 +6687,9 @@
   {
     "word": "Keks",
     "article": "der",
+    "alsoArticle": [
+      "das"
+    ],
     "translation": "cookie",
     "tags": [
       "Einfach"
@@ -6785,6 +6750,7 @@
   {
     "word": "Kiefer",
     "article": "die",
+    "meaning": "Nadelbaum",
     "translation": "pine",
     "tags": [
       "Einfach"
@@ -6864,6 +6830,7 @@
   {
     "word": "Kiwi",
     "article": "die",
+    "meaning": "Frucht",
     "translation": "kiwi",
     "tags": [
       "Einfach"
@@ -7365,6 +7332,7 @@
   {
     "word": "Korn",
     "article": "das",
+    "meaning": "Getreide",
     "translation": "grain",
     "tags": [
       "Tiere"
@@ -7402,15 +7370,6 @@
       "Allgemein",
       "Grusel",
       "charkteresierung"
-    ]
-  },
-  {
-    "word": "Krake",
-    "article": "die",
-    "translation": "octopus",
-    "tags": [
-      "Einfach",
-      "Tiere"
     ]
   },
   {
@@ -7668,6 +7627,7 @@
   {
     "word": "Kunde",
     "article": "der",
+    "meaning": "Käufer im Geschäft",
     "translation": "customer",
     "tags": [
       "Allgemein"
@@ -7973,6 +7933,9 @@
   {
     "word": "Laptop",
     "article": "der",
+    "alsoArticle": [
+      "das"
+    ],
     "translation": "laptop",
     "tags": [
       "Allgemein"
@@ -7981,6 +7944,7 @@
   {
     "word": "Laster",
     "article": "das",
+    "meaning": "schlechte Gewohnheit",
     "translation": "vice",
     "tags": [
       "charkteresierung"
@@ -7989,6 +7953,7 @@
   {
     "word": "Laster",
     "article": "der",
+    "meaning": "Lastwagen",
     "translation": "truck",
     "tags": [
       "Einfach"
@@ -8143,6 +8108,7 @@
   {
     "word": "Leiter",
     "article": "die",
+    "meaning": "zum Hinaufsteigen",
     "translation": "ladder",
     "tags": [
       "Einfach"
@@ -8479,6 +8445,7 @@
   {
     "word": "Mangel",
     "article": "der",
+    "meaning": "wenn etwas fehlt",
     "translation": "deficiency",
     "tags": [
       "charkteresierung"
@@ -8582,6 +8549,7 @@
   {
     "word": "Mast",
     "article": "der",
+    "meaning": "hohe Stange",
     "translation": "mast",
     "tags": [
       "Einfach"
@@ -8777,6 +8745,7 @@
   {
     "word": "Messer",
     "article": "das",
+    "meaning": "zum Schneiden",
     "translation": "knife",
     "tags": [
       "Allgemein",
@@ -8954,6 +8923,7 @@
   {
     "word": "Moment",
     "article": "der",
+    "meaning": "kurze Zeit",
     "translation": "moment",
     "tags": [
       "Allgemein"
@@ -9911,6 +9881,9 @@
   {
     "word": "Paprika",
     "article": "die",
+    "alsoArticle": [
+      "der"
+    ],
     "translation": "bell pepper",
     "tags": [
       "Einfach"
@@ -10375,6 +10348,7 @@
   {
     "word": "Plastik",
     "article": "das",
+    "meaning": "Kunststoff",
     "translation": "plastic",
     "tags": [
       "Einfach"
@@ -10780,14 +10754,6 @@
     ]
   },
   {
-    "word": "Radiergummi",
-    "article": "der",
-    "translation": "eraser",
-    "tags": [
-      "Einfach"
-    ]
-  },
-  {
     "word": "Radio",
     "article": "das",
     "translation": "radio",
@@ -11134,6 +11100,7 @@
   {
     "word": "Reis",
     "article": "der",
+    "meaning": "Lebensmittel",
     "translation": "rice",
     "tags": [
       "Einfach",
@@ -12102,14 +12069,6 @@
     ]
   },
   {
-    "word": "Schulden",
-    "article": "die",
-    "translation": "debt",
-    "tags": [
-      "Allgemein"
-    ]
-  },
-  {
     "word": "Schule",
     "article": "die",
     "translation": "school",
@@ -12264,6 +12223,7 @@
   {
     "word": "See",
     "article": "der",
+    "meaning": "Gewässer an Land, kein Meer",
     "translation": "lake",
     "tags": [
       "Allgemein",
@@ -12427,14 +12387,6 @@
     "translation": "sensitivity",
     "tags": [
       "charkteresierung"
-    ]
-  },
-  {
-    "word": "Service",
-    "article": "der",
-    "translation": "service",
-    "tags": [
-      "Allgemein"
     ]
   },
   {
@@ -13077,6 +13029,7 @@
   {
     "word": "Steuer",
     "article": "die",
+    "meaning": "Geld für den Staat",
     "translation": "tax",
     "tags": [
       "Allgemein"
@@ -13093,6 +13046,7 @@
   {
     "word": "Stift",
     "article": "der",
+    "meaning": "zum Schreiben",
     "translation": "pen",
     "tags": [
       "Allgemein",
@@ -13691,6 +13645,9 @@
   {
     "word": "Teil",
     "article": "der",
+    "alsoArticle": [
+      "das"
+    ],
     "translation": "part",
     "tags": [
       "Allgemein",
@@ -13848,6 +13805,9 @@
   {
     "word": "Thermostat",
     "article": "das",
+    "alsoArticle": [
+      "der"
+    ],
     "translation": "thermostat",
     "tags": [
       "Einfach"
@@ -13992,6 +13952,7 @@
   {
     "word": "Tor",
     "article": "das",
+    "meaning": "beim Fußball",
     "translation": "gate",
     "tags": [
       "Allgemein",
@@ -14550,14 +14511,6 @@
     ]
   },
   {
-    "word": "Verdächtige",
-    "article": "der",
-    "translation": "suspect",
-    "tags": [
-      "Allgemein"
-    ]
-  },
-  {
     "word": "Verein",
     "article": "der",
     "translation": "club",
@@ -14795,6 +14748,9 @@
   {
     "word": "Virus",
     "article": "das",
+    "alsoArticle": [
+      "der"
+    ],
     "translation": "virus",
     "tags": [
       "Allgemein"
@@ -14818,9 +14774,9 @@
     ]
   },
   {
-    "word": "Vitamine",
-    "article": "die",
-    "translation": "vitamins",
+    "word": "Vitamin",
+    "article": "das",
+    "translation": "vitamin",
     "tags": [
       "Allgemein"
     ]

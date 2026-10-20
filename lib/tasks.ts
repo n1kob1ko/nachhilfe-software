@@ -17,6 +17,11 @@ export type AnswerSpec = {
   contractions?: boolean;
   /** Cloze: accepted alternatives per gap (gaps are written as ___ in the prompt). */
   blanks?: string[][];
+  /**
+   * Cloze: the gaps are word endings (Adjektivdeklination). „en“ and „-en“ count the same, and an empty
+   * gap or „-“ means „keine Endung“; the Solver then also takes an answer with empty gaps.
+   */
+  endings?: boolean;
   /** Free text: sample answer used for grading. */
   sample?: string;
   /** Order tasks: the steps in the right order. */
@@ -167,9 +172,15 @@ export function sameAnswer(given: string, expected: string, mode: AnswerSpec["mo
   return norm(given) === norm(expected);
 }
 
-function labelFor(task: Pick<TaskDraft, "errorMap" | "answer">, given: string) {
+/** Eine Endung ohne Bindestrich davor: „-en“ → „en“, „-“ und eine leere Lücke → „“ (keine Endung). */
+export const endingOf = (s: string) => s.trim().replace(/^[-‐–—]+/, "").trim();
+
+type Same = (given: string, expected: string, mode: AnswerSpec["mode"], contractions?: boolean) => boolean;
+const sameEnding: Same = (given, expected, mode, contractions) => sameAnswer(endingOf(given), endingOf(expected), mode, contractions);
+
+function labelFor(task: Pick<TaskDraft, "errorMap" | "answer">, given: string, same: Same = sameAnswer) {
   for (const e of task.errorMap) {
-    if (sameAnswer(given, e.answer, task.answer.mode, task.answer.contractions)) return e.label;
+    if (same(given, e.answer, task.answer.mode, task.answer.contractions)) return e.label;
   }
   return null;
 }
@@ -238,14 +249,16 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
     } catch {
       values = [given];
     }
+    // Endungen: „-en“ wie „en“, eine leere Lücke wie „-“ (keine Endung)
+    const same = a.endings ? sameEnding : sameAnswer;
     const wrong = a.blanks
-      .map((alts, i) => (alts.some((alt) => sameAnswer(values[i] ?? "", alt, a.mode ?? "text", a.contractions)) ? -1 : i))
+      .map((alts, i) => (alts.some((alt) => same(values[i] ?? "", alt, a.mode ?? "text", a.contractions)) ? -1 : i))
       .filter((i) => i >= 0);
     const correct = wrong.length === 0;
     return {
       correct,
       wrongGaps: correct ? undefined : wrong.map((i) => i + 1),
-      errorLabel: correct ? null : labelFor(task, values.join(" | ")) ?? wrong.map((i) => labelFor(task, values[i] ?? "")).find(Boolean) ?? null,
+      errorLabel: correct ? null : labelFor(task, values.join(" | ")) ?? wrong.map((i) => labelFor(task, values[i] ?? "", same)).find(Boolean) ?? null,
       feedback: correct
         ? "Alle Lücken richtig!"
         : `${wrong.length} von ${a.blanks.length} Lücken sind noch falsch (Lücke ${wrong.map((i) => i + 1).join(", ")}).`,
