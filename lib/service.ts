@@ -16,8 +16,8 @@ import { gradeMathTask, type MathView } from "./math-task";
 import { carelessCredit } from "./lehrplan";
 import { isMinitest } from "./quick-round";
 import { onAnswer } from "./ai/realtime";
-import { isInterpretationSkill, MAX_TEILUEBUNGEN, teiluebungen } from "./textinterpretation";
-import { teilSourceForStudent } from "./textinterpretation-store";
+import { maxTeiluebungen, sorteOfSkill, teiluebungenFor } from "./schreibauftrag";
+import { quelleForStudent } from "./schreibauftrag-store";
 import { EIGENE_VOKABELN } from "./vokabeln";
 import { eigeneVokabelAufgaben, ohneWoerter } from "./vokabellisten";
 
@@ -78,9 +78,14 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
     const fehlt = ohneWoerter(req.studentId ?? null);
     if (fehlt) throw new Error(fehlt);
     tasks = eigeneVokabelAufgaben(req.studentId!, { count, difficulty: req.difficulty, taskType: req.taskType });
-  } else if (skills.every((s) => isInterpretationSkill(s.id))) {
-    // Textinterpretation: Teilübungen on a whole story with line numbers, without KI (lib/textinterpretation.ts)
-    tasks = teiluebungen(teilSourceForStudent(req.studentId ?? null), Math.min(count, MAX_TEILUEBUNGEN), { skillId: skills[0].id, difficulty: req.difficulty });
+  } else if (skills.every((s) => sorteOfSkill(s.id))) {
+    // Schreibaufträge: Teilübungen on a whole Textbeilage or story with line numbers, without KI (lib/schreibauftrag.ts),
+    // the count shared among the Textsorten chosen, each at most twice per part
+    const per = Math.max(1, Math.ceil(count / skills.length));
+    tasks = skills.flatMap((s) => {
+      const sorte = sorteOfSkill(s.id)!;
+      return teiluebungenFor(quelleForStudent(req.studentId ?? null, sorte), Math.min(per, maxTeiluebungen(sorte)), { skillId: s.id, difficulty: req.difficulty });
+    }).slice(0, count);
   } else if ((req.useAI ?? true) && aiEnabled()) {
     try {
       tasks = await generateWithAI({

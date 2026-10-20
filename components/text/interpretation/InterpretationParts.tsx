@@ -1,7 +1,7 @@
 import { CheckCircle2, Info, Lightbulb } from "lucide-react";
+import { beispielFor, hinweiseFor, SORTEN, type AuftragView, type SorteKey } from "@/lib/schreibauftrag";
 import type { TextDoc } from "@/lib/text-doc";
-import { hinweise, numberedLines, TEIL_TITLES, wordRange, type HinweisTone, type InterpretationView } from "@/lib/textinterpretation";
-import { BEISPIEL_AUTORIN, BEISPIEL_GESCHICHTE, BEISPIEL_INTERPRETATION, BEISPIEL_JAHR, BEISPIEL_TITEL } from "@/lib/textinterpretation-beispiel";
+import { wordRange, type HinweisTone } from "@/lib/textinterpretation";
 import { NumberedStory } from "./NumberedStory";
 
 /** How far the text is: words against the target, with the range of the Arbeitsauftrag marked. */
@@ -31,8 +31,8 @@ const TONE: Record<HinweisTone, { icon: React.ReactNode; cls: string; label: str
 };
 
 /** Hinweise without KI on the text as it is now. Only hints: nothing here is a grade. */
-export function HintsPanel({ doc, story }: { doc: TextDoc; story: InterpretationView }) {
-  const list = hinweise(doc, { title: story.title, author: story.author, target: story.target, lines: numberedLines(story.text, story.countBlank) });
+export function HintsPanel({ doc, auftrag }: { doc: TextDoc; auftrag: AuftragView }) {
+  const list = hinweiseFor(doc, auftrag);
   const tips = list.filter((h) => h.tone === "tipp").length;
   return (
     <details className="ti-box" data-testid="hinweise">
@@ -54,25 +54,37 @@ export function HintsPanel({ doc, story }: { doc: TextDoc; story: Interpretation
   );
 }
 
-/** „So kann es aussehen“: the Lernheft's model interpretation of its own example story, part by part. */
-export function ExamplePanel() {
+/**
+ * „So kann es aussehen“: the Lernheft's model text of this Textsorte about its own example, part by part. A
+ * Betreff, an Anrede or a Gruß stays on its own line, as in the letter.
+ */
+export function ExamplePanel({ sorte }: { sorte: SorteKey }) {
+  const b = beispielFor(sorte);
+  const s = SORTEN[sorte];
+  const story = s.beilage === "Geschichte";
   return (
     <details className="ti-box" data-testid="beispiel">
       <summary className="ti-summary">So kann es aussehen</summary>
       <p className="mt-1 text-[13px] text-ink-2">
-        Eine Beispiel-Interpretation zu einer anderen Kurzgeschichte („{BEISPIEL_TITEL}“, für das Lernheft geschrieben). Sie zeigt den Aufbau, nicht die Lösung für deinen Text.
+        {story ? "Eine Beispiel-Interpretation zu einer anderen Kurzgeschichte" : `Ein Beispiel für ${s.einen} zu einer anderen Textbeilage`} („{b.beilage.title}“, für das Lernheft geschrieben). {story ? "Sie" : "Es"} zeigt
+        den Aufbau, nicht die Lösung für deinen Text.
       </p>
+      {b.situation && <p className="mt-2 text-[13px] text-ink-2">Schreibsituation: {b.situation}</p>}
       <div className="mt-3 grid gap-3">
-        {BEISPIEL_INTERPRETATION.map((p) => (
-          <div key={p.teil}>
-            <p className="text-[12px] font-semibold tracking-[0.04em] text-accent uppercase">{TEIL_TITLES[p.teil]}</p>
-            <p className="mt-0.5 text-[14px] leading-relaxed">{p.text}</p>
+        {b.teile.map((p) => (
+          <div key={p.key}>
+            <p className="text-[12px] font-semibold tracking-[0.04em] text-accent uppercase">{p.title}</p>
+            {p.text.split("\n").map((t, i) => (
+              <p key={i} className="mt-0.5 text-[14px] leading-relaxed">
+                {t}
+              </p>
+            ))}
           </div>
         ))}
       </div>
       <details className="mt-3">
-        <summary className="ti-summary text-[14px]">Die Beispielgeschichte lesen</summary>
-        <NumberedStory text={BEISPIEL_GESCHICHTE} title={BEISPIEL_TITEL} author={BEISPIEL_AUTORIN} year={BEISPIEL_JAHR} kind="Kurzgeschichte" className="mt-2" headingLevel={3} />
+        <summary className="ti-summary text-[14px]">{story ? "Die Beispielgeschichte lesen" : "Die Beispiel-Textbeilage lesen"}</summary>
+        <NumberedStory text={b.beilage.text} title={b.beilage.title} author={b.beilage.author} year={b.beilage.year} medium={b.beilage.medium} kind={b.beilage.kind} className="mt-2" headingLevel={3} />
       </details>
     </details>
   );

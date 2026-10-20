@@ -266,7 +266,7 @@ export function Passage({ text }: { text: string }) {
 
 /** Leseverständnis: the text once, with its title and numbered paragraphs; it may run over several pages. */
 export function ReadingPassage({ title, text, teacher, zeilen = false, leerzeilen = false }: { title: string; text: string; teacher: boolean; zeilen?: boolean; leerzeilen?: boolean }) {
-  // a story for a Textinterpretation: line by line as printed, a line number every 5 lines
+  // the story or Textbeilage of a Schreibauftrag: line by line as printed, a line number every 5 lines
   if (zeilen)
     return (
       <section className="ab-lesetext" aria-label="Text">

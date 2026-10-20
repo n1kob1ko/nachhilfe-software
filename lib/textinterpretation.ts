@@ -106,12 +106,13 @@ export const TEIL_TITLES: Record<TeilKey, string> = Object.fromEntries(PARTS.map
 export const TEIL_KEYS = PARTS.map((p) => p.key);
 export const isTeil = (x: unknown): x is TeilKey => typeof x === "string" && (TEIL_KEYS as string[]).includes(x);
 
-const round5 = (n: number) => Math.max(10, Math.round(n / 5) * 5);
+/** A word budget: rounded to 5, at least 10. */
+export const round5 = (n: number) => Math.max(10, Math.round(n / 5) * 5);
 
-/** The target in words within the limits; anything unreadable is the default of 500. */
-export function cleanTarget(v: unknown): number {
+/** The target in words within the limits; anything unreadable is the default (500, or the one of another Textsorte). */
+export function cleanTarget(v: unknown, fallback = DEFAULT_TARGET): number {
   const n = Math.round(Number(String(v ?? "").trim()));
-  if (!Number.isFinite(n) || n <= 0) return DEFAULT_TARGET;
+  if (!Number.isFinite(n) || n <= 0) return fallback;
   return Math.max(MIN_TARGET, Math.min(MAX_TARGET, n));
 }
 
@@ -303,11 +304,11 @@ export type Hinweis = { key: "umfang" | "einleitung" | "zitate" | "zeilen" | "st
 
 export type HinweisInfo = { title: string; author: string; target: number; lines: StoryLine[] };
 
-const short = (s: string, n = 40) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
-const plural = (n: number, one: string, many: string) => `${n.toLocaleString("de-AT")} ${n === 1 ? one : many}`;
+export const short = (s: string, n = 40) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
+export const plural = (n: number, one: string, many: string) => `${n.toLocaleString("de-AT")} ${n === 1 ? one : many}`;
 
 /** The paragraphs a reader sees: blocks with text, headings included. */
-const paragraphs = (doc: TextDoc) => doc.map(blockText).filter((t) => t.trim());
+export const paragraphs = (doc: TextDoc) => doc.map(blockText).filter((t) => t.trim());
 
 /** The surname of an author ("Ida Brunnhofer" → "brunnhofer"); empty without author. */
 function surname(author: string): string {
@@ -317,7 +318,7 @@ function surname(author: string): string {
 const STOP = new Set(["der", "die", "das", "ein", "eine", "einer", "und", "the", "a", "an", "of", "von", "vom", "zum", "zur", "im", "am", "in"]);
 
 /** Does the text name the title: word for word, or with all its content words? */
-function namesTitle(text: string, title: string): boolean {
+export function namesTitle(text: string, title: string): boolean {
   const t = bareText(title);
   if (!t) return true;
   const hay = ` ${bareText(text)} `;
@@ -325,7 +326,7 @@ function namesTitle(text: string, title: string): boolean {
   const words = t.split(" ").filter((w) => w.length >= 3 && !STOP.has(w));
   return words.length > 0 && words.every((w) => hay.includes(` ${w} `) || hay.includes(` ${w}s `));
 }
-function namesAuthor(text: string, author: string): boolean {
+export function namesAuthor(text: string, author: string): boolean {
   const name = surname(author);
   if (!name) return true;
   const hay = ` ${bareText(text)} `;
@@ -334,7 +335,7 @@ function namesAuthor(text: string, author: string): boolean {
 }
 
 /** The opening of the text: up to and including the first paragraph with some substance (a heading line before it counts too). */
-function opening(doc: TextDoc): string {
+export function opening(doc: TextDoc): string {
   const ps = paragraphs(doc);
   const out: string[] = [];
   for (const p of ps) {
@@ -344,38 +345,25 @@ function opening(doc: TextDoc): string {
   return out.join("\n");
 }
 
+/** Umfang: the words against the range of the Arbeitsauftrag (every Schreibauftrag, lib/schreibauftrag.ts too). */
+export function umfangHinweis(words: number, target: number): Hinweis {
+  const { min, max } = wordRange(cleanTarget(target));
+  if (!words) return { key: "umfang", tone: "info", text: `Noch nichts geschrieben. Ziel: ${min} bis ${max} Wörter.` };
+  if (words < min) return { key: "umfang", tone: "info", text: `${plural(words, "Wort", "Wörter")} von ${min} bis ${max}. Es fehlen noch etwa ${(min - words).toLocaleString("de-AT")}.` };
+  if (words <= max) return { key: "umfang", tone: "gut", text: `Der Umfang passt: ${plural(words, "Wort", "Wörter")} (Ziel ${min} bis ${max}).` };
+  return { key: "umfang", tone: "tipp", text: `${plural(words, "Wort", "Wörter")}, etwas mehr als ${max}. Schau, ob du an einer Stelle kürzen kannst.` };
+}
+
 /**
- * Hinweise on a written interpretation, without KI. They only point at things to look at again: the
- * length against the target, whether the opening names author and title, how many quotes have a line
- * number, line numbers the story does not have, quotes found word for word at another place than given,
- * and the number of paragraphs. A quote that is not found word for word is never questioned.
+ * Zitate, Zeilen, Stelle: how many quotes have a line number, line numbers the text does not have, and quotes found
+ * word for word at another place than given. A quote that is not found word for word is never questioned. `title`
+ * (and `medium`, the newspaper of a Textbeilage) in quotation marks is no quote.
  */
-export function hinweise(doc: TextDoc, info: HinweisInfo): Hinweis[] {
+export function zitatHinweise(doc: TextDoc, words: number, info: { title: string; medium?: string; lines: StoryLine[] }): Hinweis[] {
   const out: Hinweis[] = [];
-  const words = countWords(doc);
-  const target = cleanTarget(info.target);
-  const { min, max } = wordRange(target);
   const last = lastLine(info.lines);
-
-  // Umfang
-  if (!words) out.push({ key: "umfang", tone: "info", text: `Noch nichts geschrieben. Ziel: ${min} bis ${max} Wörter.` });
-  else if (words < min) out.push({ key: "umfang", tone: "info", text: `${plural(words, "Wort", "Wörter")} von ${min} bis ${max}. Es fehlen noch etwa ${(min - words).toLocaleString("de-AT")}.` });
-  else if (words <= max) out.push({ key: "umfang", tone: "gut", text: `Der Umfang passt: ${plural(words, "Wort", "Wörter")} (Ziel ${min} bis ${max}).` });
-  else out.push({ key: "umfang", tone: "tipp", text: `${plural(words, "Wort", "Wörter")}, etwas mehr als ${max}. Schau, ob du an einer Stelle kürzen kannst.` });
-  if (words < 20) return out;
-
-  // Einleitung: author and title in the opening
-  const intro = opening(doc);
-  const author = namesAuthor(intro, info.author);
-  const title = namesTitle(intro, info.title);
-  const name = info.author.trim();
-  if (author && title) out.push({ key: "einleitung", tone: "gut", text: name ? "Die Einleitung nennt Autor oder Autorin und Titel." : "Die Einleitung nennt den Titel." });
-  else if (!author && !title) out.push({ key: "einleitung", tone: "tipp", text: `Im ersten Absatz finde ich weder ${name} noch den Titel „${info.title.trim()}“. Nenn beides gleich am Anfang.` });
-  else if (!author) out.push({ key: "einleitung", tone: "tipp", text: `Im ersten Absatz finde ich den Namen ${name} nicht. Nenn ihn in der Einleitung.` });
-  else out.push({ key: "einleitung", tone: "tipp", text: `Im ersten Absatz finde ich den Titel „${info.title.trim()}“ nicht. Nenn ihn in der Einleitung.` });
-
-  // Zitate: the title in quotation marks is no quote
-  const quotes = quotesOf(doc).filter((q) => bareText(q.text) && bareText(q.text) !== bareText(info.title));
+  const names = [info.title, info.medium ?? ""].map(bareText).filter(Boolean);
+  const quotes = quotesOf(doc).filter((q) => bareText(q.text) && !names.includes(bareText(q.text)));
   const withRef = quotes.filter((q) => q.hasRef);
   if (!quotes.length) {
     if (words >= 100) out.push({ key: "zitate", tone: "tipp", text: "Noch keine Zitate. Belege deine Aussagen mit Zitat und Zeile, z. B. „…“ (Z. 12)." });
@@ -421,11 +409,40 @@ export function hinweise(doc: TextDoc, info: HinweisInfo): Hinweis[] {
     }
     if (moved.length) out.push({ key: "stelle", tone: "tipp", text: `Schau bei diesen Zeilenangaben noch einmal nach: ${moved.slice(0, 3).join("; ")}.` });
   }
+  return out;
+}
 
-  // Absätze
+/** Absätze: is the Schreibplan to be seen in paragraphs? `min` paragraphs from 60 % of the target on. */
+export function absaetzeHinweis(doc: TextDoc, words: number, target: number, min = 5): Hinweis {
   const ps = paragraphs(doc).length;
-  if (words >= target * 0.6 && ps < 5) out.push({ key: "absaetze", tone: "tipp", text: `Dein Text hat ${plural(ps, "Absatz", "Absätze")}. Ein eigener Absatz für jeden Teil des Schreibplans macht den Aufbau sichtbar.` });
-  else out.push({ key: "absaetze", tone: ps >= 5 ? "gut" : "info", text: `${plural(ps, "Absatz", "Absätze")}${ps >= 5 ? ": Der Aufbau ist gut zu sehen." : "."}` });
+  if (words >= cleanTarget(target) * 0.6 && ps < min) return { key: "absaetze", tone: "tipp", text: `Dein Text hat ${plural(ps, "Absatz", "Absätze")}. Ein eigener Absatz für jeden Teil des Schreibplans macht den Aufbau sichtbar.` };
+  return { key: "absaetze", tone: ps >= min ? "gut" : "info", text: `${plural(ps, "Absatz", "Absätze")}${ps >= min ? ": Der Aufbau ist gut zu sehen." : "."}` };
+}
+
+/**
+ * Hinweise on a written interpretation, without KI. They only point at things to look at again: the
+ * length against the target, whether the opening names author and title, how many quotes have a line
+ * number, line numbers the story does not have, quotes found word for word at another place than given,
+ * and the number of paragraphs. A quote that is not found word for word is never questioned.
+ */
+export function hinweise(doc: TextDoc, info: HinweisInfo): Hinweis[] {
+  const words = countWords(doc);
+  const target = cleanTarget(info.target);
+  const out: Hinweis[] = [umfangHinweis(words, target)];
+  if (words < 20) return out;
+
+  // Einleitung: author and title in the opening
+  const intro = opening(doc);
+  const author = namesAuthor(intro, info.author);
+  const title = namesTitle(intro, info.title);
+  const name = info.author.trim();
+  if (author && title) out.push({ key: "einleitung", tone: "gut", text: name ? "Die Einleitung nennt Autor oder Autorin und Titel." : "Die Einleitung nennt den Titel." });
+  else if (!author && !title) out.push({ key: "einleitung", tone: "tipp", text: `Im ersten Absatz finde ich weder ${name} noch den Titel „${info.title.trim()}“. Nenn beides gleich am Anfang.` });
+  else if (!author) out.push({ key: "einleitung", tone: "tipp", text: `Im ersten Absatz finde ich den Namen ${name} nicht. Nenn ihn in der Einleitung.` });
+  else out.push({ key: "einleitung", tone: "tipp", text: `Im ersten Absatz finde ich den Titel „${info.title.trim()}“ nicht. Nenn ihn in der Einleitung.` });
+
+  out.push(...zitatHinweise(doc, words, { title: info.title, lines: info.lines }));
+  out.push(absaetzeHinweis(doc, words, target));
   return out;
 }
 

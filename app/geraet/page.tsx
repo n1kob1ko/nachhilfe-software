@@ -17,7 +17,7 @@ import { clientTasks } from "@/lib/solver-tasks";
 import { TextEditor } from "@/components/text/TextEditor";
 import { StudentCorrection } from "@/components/text/correction/StudentCorrection";
 import { storyForEditor } from "@/lib/picture-story";
-import { interpretationFor } from "@/lib/textinterpretation-store";
+import { auftragFor } from "@/lib/schreibauftrag-store";
 import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
 
@@ -70,7 +70,7 @@ export default async function DevicePage() {
     );
   } else if (text) {
     const story = storyForEditor(text.id, "/geraet/bild");
-    const interp = interpretationFor(text.id);
+    const auftrag = auftragFor(text.id);
     content = (
       <>
         <a href="/geraet/ansicht?zu=start" className="mb-3 inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2">
@@ -87,9 +87,9 @@ export default async function DevicePage() {
           meta={[text.subject, text.topic].filter(Boolean).join(" · ")}
           large
           pictures={story?.pictures}
-          targetWords={story?.targetWords ?? interp?.target}
-          interpretation={interp ?? undefined}
-          handIn={(story || interp) && text.status !== "fertig" ? { url: `/geraet/text/${text.id}/abgeben`, home: "/geraet/ansicht?zu=start" } : undefined}
+          targetWords={story?.targetWords ?? auftrag?.target}
+          auftrag={auftrag ?? undefined}
+          handIn={(story || auftrag) && text.status !== "fertig" ? { url: `/geraet/text/${text.id}/abgeben`, home: "/geraet/ansicht?zu=start" } : undefined}
         />
       </>
     );

@@ -592,8 +592,9 @@ CREATE TABLE IF NOT EXISTS picture_story_images (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_picture_story_images ON picture_story_images(text_id, position);
--- Textinterpretation (lib/textinterpretation-store.ts): a Textarbeit on a given story. The student's text is the
--- text itself; this row holds the story the teacher pasted (line breaks kept), its author and the word target.
+-- Schreibaufträge (lib/schreibauftrag-store.ts), first the Textinterpretation: a Textarbeit on a given story or
+-- Textbeilage. The student's text is the text itself; this row holds what the teacher pasted (line breaks kept),
+-- its author and the word target. Textsorte, medium and Schreibsituation are added in COLUMNS.
 CREATE TABLE IF NOT EXISTS text_interpretations (
   text_id INTEGER PRIMARY KEY REFERENCES texts(id) ON DELETE CASCADE,
   story_title TEXT NOT NULL,
@@ -887,6 +888,11 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // und die Punkte je Aufgabe (null = Vorgabe nach Schwierigkeit)
   ["worksheets", "probe_test_id", "INTEGER REFERENCES tests(id) ON DELETE SET NULL"],
   ["tasks", "points", "REAL"],
+  // Schreibaufträge (lib/schreibauftrag-store.ts, 2026-10-20): text_interpretations hält jede Textsorte der SRDP,
+  // nicht nur die Textinterpretation (sorte), dazu das Medium der Textbeilage und die Schreibsituation
+  ["text_interpretations", "sorte", "TEXT NOT NULL DEFAULT 'textinterpretation'"],
+  ["text_interpretations", "story_medium", "TEXT NOT NULL DEFAULT ''"],
+  ["text_interpretations", "situation", "TEXT NOT NULL DEFAULT ''"],
 ];
 
 /** Teachers to start with; more can be added later. */

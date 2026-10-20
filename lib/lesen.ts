@@ -110,7 +110,7 @@ export function findQuote(text: string, quote: string): number | null {
 
 // ---------- reading exercises ----------
 export type Evidence = { paragraph: number; quote: string };
-/** zeilen: a Textinterpretation's story, shown line by line with line numbers instead of paragraphs (lib/textinterpretation.ts). */
+/** zeilen: the story or Textbeilage of a Schreibauftrag, shown line by line with line numbers instead of paragraphs (lib/schreibauftrag.ts). */
 export type ReadingText = { title: string; text: string; zeilen?: boolean; leerzeilen?: boolean };
 
 /** The shared text of a worksheet whose tasks all use the same one (at least two tasks), else null. */
@@ -183,7 +183,7 @@ export function readingIssues(task: Q, text: string, others: Q[] = []): string[]
   const ps = paragraphsOf(text);
   const aspect = isAspect(task.data.aspect) ? task.data.aspect : null;
   const shown = task.prompt.replaceAll(GAP, " ");
-  // a Teilübung of a Textinterpretation (lib/textinterpretation.ts) quotes the title and asks for lines, not paragraphs
+  // a Teilübung of a Schreibauftrag (lib/schreibauftrag.ts) quotes the title and asks for lines, not paragraphs
   if (task.data.teil) {
     if (task.type === "free" && !task.answer.sample?.trim() && !task.answer.criteria?.some((c) => c.trim()) && !task.solution.trim()) out.push("Musterlösung oder Erwartungshorizont fehlt.");
     return out;
@@ -233,7 +233,7 @@ export function readingIssues(task: Q, text: string, others: Q[] = []): string[]
 /** Notes about the whole exercise: too much multiple choice, too few kinds of questions. */
 export function readingSetIssues(tasks: Q[]): string[] {
   const out: string[] = [];
-  // Teilübungen of a Textinterpretation practise its parts, not reading aspects
+  // Teilübungen of a Schreibauftrag practise its parts, not reading aspects
   if (tasks.some((t) => t.data.teil)) return out;
   const mc = tasks.filter((t) => t.data.options?.length).length;
   if (tasks.length >= 4 && mc > Math.max(1, Math.floor(tasks.length / 4))) out.push(`${mc} von ${tasks.length} Fragen sind Multiple Choice. Offene Fragen zeigen besser, ob der Text verstanden wurde.`);

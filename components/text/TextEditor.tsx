@@ -26,9 +26,9 @@ import {
   docToHtml,
   type TextDoc,
 } from "@/lib/text-doc";
-import { schreibplan, type InterpretationView } from "@/lib/textinterpretation";
+import { planFor, SORTEN, type AuftragView } from "@/lib/schreibauftrag";
 import { ExamplePanel, HintsPanel, WordProgress } from "./interpretation/InterpretationParts";
-import { NumberedStory, SchreibplanList } from "./interpretation/NumberedStory";
+import { MerkmaleList, NumberedStory, SchreibplanList } from "./interpretation/NumberedStory";
 import { readDom } from "./read-dom";
 import { StoryColumn, StoryStrip, type StoryPictures } from "./story/StoryPictures";
 import { saveTextFile } from "./save-file";
@@ -57,10 +57,11 @@ type Props = {
   /** "Abgeben" on the student's device: POST endpoint, and where to go afterwards */
   handIn?: { url: string; home: string };
   /**
-   * Textinterpretation: the story with line numbers next to the text (or behind a "Text" tab on a narrow
-   * screen), the Schreibplan above, words against the target and Hinweise without KI below.
+   * Schreibauftrag (Textinterpretation, Leserbrief, Erörterung …): the story or Textbeilage with line numbers next
+   * to the text (or behind a "Text" tab on a narrow screen), the Schreibplan and what to look out for above, words
+   * against the target and Hinweise without KI below.
    */
-  interpretation?: InterpretationView;
+  auftrag?: AuftragView;
 };
 
 type Status =
@@ -148,7 +149,7 @@ export function TextEditor({
   pictures,
   targetWords,
   handIn,
-  interpretation,
+  auftrag,
 }: Props) {
   const store = `${backupPrefix}${textId}`;
   const editor = useRef<HTMLDivElement>(null);
@@ -180,7 +181,7 @@ export function TextEditor({
     h: false,
   });
   const [focus, setFocus] = useState(false);
-  // Textinterpretation on a narrow screen: the story or the writing; first the story while nothing is written
+  // Schreibauftrag on a narrow screen: the Textbeilage or the writing; first the Textbeilage while nothing is written
   const [pane, setPane] = useState<"text" | "schreiben">(initial.body.length === 0 ? "text" : "schreiben");
   const [conflict, setConflict] = useState<null | {
     version: number;
@@ -822,7 +823,7 @@ export function TextEditor({
           <div className="tx-handin" data-testid="abgeben-bereich">
             {handing === "fragen" ? (
               <>
-                <p className="text-[15px] font-semibold">Bist du fertig? Dann gib deine {interpretation ? "Interpretation" : "Geschichte"} ab.</p>
+                <p className="text-[15px] font-semibold">Bist du fertig? Dann gib {auftrag ? SORTEN[auftrag.sorte].deinen : "deine Geschichte"} ab.</p>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" className="btn btn-primary" onClick={() => void submitHandIn()} data-testid="abgeben-ja">
                     <Send size={16} aria-hidden /> Ja, abgeben
@@ -925,10 +926,13 @@ export function TextEditor({
     </div>
   );
 
+  // Schreibauftrag: the parts of the Schreibplan with their word budget
+  const plan = auftrag ? planFor(auftrag) : [];
+
   return (
     <div
       ref={shell}
-      className={`${focus ? "tx-focus" : "tx-shell"}${pictures ? " tx-story" : ""}${interpretation ? " tx-interp lesen-breit" : ""}`}
+      className={`${focus ? "tx-focus" : "tx-shell"}${pictures ? " tx-story" : ""}${auftrag ? " tx-interp lesen-breit" : ""}`}
       data-testid="text-editor"
       data-status={status}
     >
@@ -955,7 +959,7 @@ export function TextEditor({
           </div>
         )}
       </header>
-      {interpretation ? (
+      {auftrag ? (
         <div className="ti-grid" data-pane={pane}>
           <div className="ti-tabs">
             <div className="ti-tabs-pill" role="tablist" aria-label="Ansicht">
@@ -967,25 +971,28 @@ export function TextEditor({
               </button>
             </div>
           </div>
-          <aside className="ti-story-col" aria-label="Text zur Interpretation">
-            <NumberedStory text={interpretation.text} countBlank={interpretation.countBlank} title={interpretation.title} author={interpretation.author} year={interpretation.year} kind={interpretation.kind} />
+          <aside className="ti-story-col" aria-label={SORTEN[auftrag.sorte].beilage === "Geschichte" ? "Text zur Interpretation" : "Textbeilage"}>
+            <NumberedStory text={auftrag.text} countBlank={auftrag.countBlank} title={auftrag.title} author={auftrag.author} year={auftrag.year} medium={auftrag.medium} kind={auftrag.kind} />
             <button type="button" className="btn btn-secondary ti-to-write" onClick={() => setPane("schreiben")}>
               Zum Schreiben
             </button>
           </aside>
           <div className="ti-main">
             <details className="ti-box ti-planbox" open={!focus}>
-              <summary className="ti-summary">Schreibplan: 7 Teile, ca. {interpretation.target.toLocaleString("de-AT")} Wörter</summary>
-              <SchreibplanList plan={schreibplan(interpretation.target, interpretation.kind)} className="mt-2" />
+              <summary className="ti-summary">
+                Schreibplan: {plan.length} Teile, ca. {auftrag.target.toLocaleString("de-AT")} Wörter
+              </summary>
+              <SchreibplanList plan={plan} className="mt-2" />
+              <MerkmaleList merkmale={SORTEN[auftrag.sorte].merkmale} className="mt-3" />
             </details>
             <div className="tx-sticky">
               {toolbar}
-              <WordProgress words={counts.words} target={interpretation.target} />
+              <WordProgress words={counts.words} target={auftrag.target} />
             </div>
             {main}
             <div className="mt-4 grid gap-3">
-              <HintsPanel doc={latest.current} story={interpretation} />
-              <ExamplePanel />
+              <HintsPanel doc={latest.current} auftrag={auftrag} />
+              <ExamplePanel sorte={auftrag.sorte} />
             </div>
           </div>
         </div>

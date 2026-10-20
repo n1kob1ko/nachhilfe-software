@@ -363,10 +363,10 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
               <Link href={`/einheiten/${unit.id}/bildgeschichte`} className="btn btn-secondary btn-lg" data-testid="bildgeschichte-erstellen">
                 <Images size={18} aria-hidden /> Bildgeschichte erstellen
               </Link>
-              {/* Oberstufe: a whole story with line numbers, interpreted in about 500 words */}
+              {/* Oberstufe: a Schreibauftrag of the SRDP (Leserbrief, Erörterung, Textinterpretation …) on a whole Textbeilage with line numbers */}
               {levelFor(student.school_type, student.klasse).band === "oberstufe" && (
-                <Link href={`/einheiten/${unit.id}/textinterpretation`} className="btn btn-secondary btn-lg" data-testid="textinterpretation-erstellen">
-                  <BookOpenText size={18} aria-hidden /> Textinterpretation
+                <Link href={`/einheiten/${unit.id}/schreibauftrag`} className="btn btn-secondary btn-lg" data-testid="schreibauftrag-erstellen">
+                  <BookOpenText size={18} aria-hidden /> Schreibauftrag
                 </Link>
               )}
             </div>
