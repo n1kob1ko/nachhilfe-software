@@ -74,8 +74,8 @@ test("tablet → teacher → running unit → student; two teachers never mix", 
   assert.equal(devices.hasDevice(niko.id), false);
   const a = units.startUnit(niko.id, anna, { subject: "Mathematik" }).unit;
   const l = units.startUnit(thomas.id, lea, { subject: "Mathematik" }).unit;
-  assert.equal(units.activeUnitForTeacher(niko.id)?.id, a.id);
-  assert.equal(units.activeUnitForTeacher(thomas.id)?.id, l.id);
+  assert.deepEqual(units.runningUnits(niko.id).map((u) => u.id), [a.id]);
+  assert.deepEqual(units.runningUnits(thomas.id).map((u) => u.id), [l.id]);
 
   const { id: w1 } = await buildWorksheet({ subject: "Mathematik", schoolType: "Mittelschule", klasse: 2, skillIds: ["mathe.brueche.dividieren"], difficulty: "leicht", count: 2, taskType: "calc", useAI: false });
   const forAnna = repo.assignWorksheet(w1, anna, "", a.id);
@@ -95,11 +95,11 @@ test("tablet → teacher → running unit → student; two teachers never mix", 
 
   // Anna → Max: the tablet only ever sees the running unit, so nothing of Anna is left
   learning.endUnit(a.id, { byTeacherId: niko.id });
-  assert.equal(units.activeUnitForTeacher(niko.id), null, "after the end: Bereit für die nächste Einheit");
+  assert.deepEqual(units.runningUnits(niko.id), [], "after the end: Bereit für die nächste Einheit");
   const m = units.startUnit(niko.id, max).unit;
-  assert.equal(units.activeUnitForTeacher(niko.id)?.id, m.id);
+  assert.deepEqual(units.runningUnits(niko.id).map((u) => u.id), [m.id]);
   assert.deepEqual(live.unitAssignments(m.id), []);
   assert.equal(live.unitAssignment(m.id, forAnna), null);
   assert.equal(repo.getAssignment(forAnna)?.student_id, anna, "Anna's work stays on the server");
-  assert.equal(units.activeUnitForTeacher(thomas.id)?.id, l.id, "Thomas is not affected");
+  assert.deepEqual(units.runningUnits(thomas.id).map((u) => u.id), [l.id], "Thomas is not affected");
 });

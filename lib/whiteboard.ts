@@ -346,6 +346,11 @@ export function notifyUnitClosed(unitId: number) {
 }
 
 /** Boards of the running units of a teacher, for "Auf Whiteboard senden". */
+/** The running unit (board) of the exercise's student among the teacher's: preselected in „Auf Whiteboard senden“ (D26). */
+export function ownBoardFor(teacherId: number, studentId: number | null): number | null {
+  return studentId ? (runningBoardsFor(teacherId).find((u) => u.student_id === studentId)?.unit_id ?? null) : null;
+}
+
 export function runningBoardsFor(teacherId: number) {
   return db()
     .prepare(

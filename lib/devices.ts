@@ -5,10 +5,15 @@
  *   tablet → teacher → the teacher's running unit → the student of that unit.
  * The tablet never stores a student. It holds a random secret in an httpOnly cookie; the database
  * keeps only its SHA-256 hash, so a database copy cannot be used to impersonate a tablet.
+ *
+ * Zwei Schüler gleichzeitig (D26): laufen beim Lehrer zwei Einheiten, fragt ein Tablet „Wer arbeitet
+ * an diesem Gerät?“ und merkt sich die gewählte **Einheit** (`unit_id`), nie den Schüler. Die Wahl gilt
+ * nur, solange diese Einheit läuft; mit dem Ende ist sie weg. Läuft nur eine, zeigt jedes Tablet sie.
  */
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { db } from "./db";
+import { runningUnits, type UnitView } from "./units";
 
 export const DEVICE_COOKIE = "lernheft_geraet";
 const CODE_MINUTES = 10;
@@ -21,12 +26,14 @@ export type Device = {
   paired_at: string;
   last_seen_at: string | null;
   revoked_at: string | null;
+  /** the running unit chosen on this tablet while two run (D26); only valid while that unit runs */
+  unit_id: number | null;
 };
 export type DeviceView = Device & { teacher_name: string };
 
 const hash = (token: string) => crypto.createHash("sha256").update(token).digest("hex");
 const iso = (ms = Date.now()) => new Date(ms).toISOString();
-const VIEW = `SELECT d.id, d.teacher_id, d.name, d.paired_at, d.last_seen_at, d.revoked_at, t.name AS teacher_name
+const VIEW = `SELECT d.id, d.teacher_id, d.name, d.paired_at, d.last_seen_at, d.revoked_at, d.unit_id, t.name AS teacher_name
   FROM student_devices d JOIN teachers t ON t.id = d.teacher_id`;
 
 // ---------- pairing ----------
@@ -130,6 +137,35 @@ export function revokeDevice(id: number, now = Date.now()) {
 
 export function touchDevice(id: number, now = Date.now()) {
   db().prepare("UPDATE student_devices SET last_seen_at = ? WHERE id = ?").run(iso(now), id);
+}
+
+// ---------- which running unit a tablet shows (D26) ----------
+
+/**
+ * The unit this tablet shows: none running → null; one running → that one; two running → the one
+ * chosen on the tablet (or by the teacher), else none yet and `choices` lists both for
+ * „Wer arbeitet an diesem Gerät?“. Only units of the tablet's own teacher that run right now.
+ */
+export function deviceUnit(device: Pick<Device, "teacher_id" | "unit_id">): { unit: UnitView | null; choices: UnitView[] } {
+  const running = runningUnits(device.teacher_id);
+  const chosen = device.unit_id ? running.find((u) => u.id === device.unit_id) : undefined;
+  if (chosen) return { unit: chosen, choices: [] };
+  if (running.length <= 1) return { unit: running[0] ?? null, choices: [] };
+  return { unit: null, choices: running };
+}
+
+/** Puts the tablet on a running unit of its own teacher (null: ask again). False if that unit is not allowed. */
+export function chooseDeviceUnit(deviceId: number, unitId: number | null): boolean {
+  const d = getDevice(deviceId);
+  if (!d || d.revoked_at) return false;
+  if (unitId !== null && !runningUnits(d.teacher_id).some((u) => u.id === unitId)) return false;
+  db().prepare("UPDATE student_devices SET unit_id = ? WHERE id = ?").run(unitId, deviceId);
+  return true;
+}
+
+/** The connected tablets that show this unit right now. */
+export function devicesOfUnit(unit: { id: number; teacher_id: number }): DeviceView[] {
+  return listDevices(unit.teacher_id).filter((d) => deviceUnit(d).unit?.id === unit.id);
 }
 
 /** Only the tablet's own teacher and admins may rename or disconnect it. */

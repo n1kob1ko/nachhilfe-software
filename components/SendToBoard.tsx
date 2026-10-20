@@ -4,18 +4,26 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Presentation } from "lucide-react";
 import { sendToBoardAction, type SendState } from "@/app/whiteboard-actions";
+import { shortNames } from "@/lib/vornamen";
 
 type Props = {
   worksheetId: number;
   tasks: { id: number; label: string }[];
   units: { unit_id: number; student_name: string }[];
+  /** the board of the exercise's student, when their unit runs; else nothing is preselected while two run */
+  defaultUnitId?: number | null;
 };
 
-/** "Auf Whiteboard senden" on an exercise: the tasks appear on the board as text the student can write under. */
-export function SendToBoard({ worksheetId, tasks, units }: Props) {
+/**
+ * "Auf Whiteboard senden" on an exercise: the tasks appear on the board as text the student can write under.
+ * With two units at once (D26) both boards are offered as two buttons; the exercise's student is preselected,
+ * never simply the first unit started.
+ */
+export function SendToBoard({ worksheetId, tasks, units, defaultUnitId }: Props) {
   const [state, action, busy] = useActionState<SendState, FormData>(sendToBoardAction, null);
   const [picked, setPicked] = useState<Set<number>>(new Set());
-  const [unitId, setUnitId] = useState(units[0]?.unit_id ?? 0);
+  const [unitId, setUnitId] = useState(units.find((u) => u.unit_id === defaultUnitId)?.unit_id ?? (units.length === 1 ? units[0].unit_id : 0));
+  const names = shortNames(units.map((u) => u.student_name));
 
   if (units.length === 0) {
     return (
@@ -33,13 +41,21 @@ export function SendToBoard({ worksheetId, tasks, units }: Props) {
         <Presentation size={14} aria-hidden /> Auf Whiteboard senden
       </span>
       {units.length > 1 ? (
-        <select className="input" name="unit_id" value={unitId} onChange={(e) => setUnitId(Number(e.target.value))} aria-label="Whiteboard von">
-          {units.map((u) => (
-            <option key={u.unit_id} value={u.unit_id}>
-              Whiteboard von {u.student_name}
-            </option>
-          ))}
-        </select>
+        <fieldset className="grid gap-1.5">
+          <legend className="sr-only">Auf welches Whiteboard?</legend>
+          <div className="flex flex-wrap gap-2">
+            {units.map((u, i) => (
+              <label
+                key={u.unit_id}
+                className="flex min-h-[44px] cursor-pointer items-center gap-2 rounded-full border border-line bg-surface px-4 text-[14px] font-semibold has-checked:border-accent has-checked:bg-accent-wash has-checked:text-accent"
+              >
+                <input type="radio" name="unit_id" value={u.unit_id} checked={unitId === u.unit_id} onChange={() => setUnitId(u.unit_id)} required className="accent-[var(--accent)]" />
+                Whiteboard von {names[i]}
+              </label>
+            ))}
+          </div>
+          {!unitId && <p className="text-[13px] text-ink-2">Gerade laufen zwei Einheiten. Wähle das Whiteboard.</p>}
+        </fieldset>
       ) : (
         <>
           <input type="hidden" name="unit_id" value={unitId} />
@@ -57,7 +73,7 @@ export function SendToBoard({ worksheetId, tasks, units }: Props) {
           </label>
         ))}
       </fieldset>
-      <button className="btn btn-primary" disabled={busy}>
+      <button className="btn btn-primary" disabled={busy || !unitId}>
         {picked.size ? `${picked.size} ${picked.size === 1 ? "Aufgabe" : "Aufgaben"} senden` : `Alle ${tasks.length} Aufgaben senden`}
       </button>
       {state?.ok && (
@@ -81,14 +97,14 @@ export function SendToBoard({ worksheetId, tasks, units }: Props) {
  * "Aufs Whiteboard" next to „An Max senden“ while a unit runs: all tasks at once onto the student's board, where
  * maths is written with the pen and the teacher grades each task (docs/mathe-whiteboard.md).
  */
-export function BoardSendButton({ worksheetId, unitId, small }: { worksheetId: number; unitId: number; small?: boolean }) {
+export function BoardSendButton({ worksheetId, unitId, student, small }: { worksheetId: number; unitId: number; /** with two units at once: „Whiteboard von Anna“ */ student?: string; small?: boolean }) {
   const [state, action, busy] = useActionState<SendState, FormData>(sendToBoardAction, null);
   return (
     <form action={action} className="grid gap-2">
       <input type="hidden" name="worksheet_id" value={worksheetId} />
       <input type="hidden" name="unit_id" value={unitId} />
       <button className={`btn btn-secondary w-fit ${small ? "" : "btn-lg"}`} disabled={busy} title="Alle Aufgaben aufs Whiteboard: der Schüler rechnet mit dem Stift, du bewertest jede Aufgabe dort">
-        <Presentation size={small ? 15 : 18} aria-hidden /> {busy ? "Wird gesendet …" : "Aufs Whiteboard"}
+        <Presentation size={small ? 15 : 18} aria-hidden /> {busy ? "Wird gesendet …" : student ? `Whiteboard von ${student}` : "Aufs Whiteboard"}
       </button>
       {state?.ok && (
         <p className="text-[14px] text-green" role="status">

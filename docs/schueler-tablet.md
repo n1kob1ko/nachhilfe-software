@@ -13,6 +13,16 @@
 7. **Textarbeit.** „Textarbeit starten“ öffnet am Tablet einen Schreibbereich für längere Texte (Ansicht `text:<id>`). Details in `docs/textarbeit.md`.
 8. **Einheit beenden.** Die Dokumentation wird erstellt und das Tablet springt sofort auf Bereitschaft. Beim nächsten Schüler ist nichts vom vorherigen sichtbar. Seine Daten bleiben auf dem Server.
 
+**Zwei Schüler gleichzeitig (D26, seit 2026-10-20)**
+
+Laufen beim Lehrer zwei Einheiten, hat jede ihr eigenes Tablet, ihr eigenes Whiteboard und ihre eigenen Übungen:
+
+- **Wer arbeitet an diesem Gerät?** Ein Tablet ohne Wahl zeigt beide Vornamen. Der Schüler tippt seinen Namen; das Tablet merkt sich die **Einheit** (`student_devices.unit_id`), nie den Schüler. Die Wahl gilt nur, solange diese Einheit läuft: mit ihrem Ende ist sie weg (`finishUnit`), und läuft danach nur noch eine Einheit, zeigt das Tablet diese.
+- **Wechseln.** Im Kopf des Tablets steht „Wechseln“; das fragt neu. Im Live-Status jeder der beiden Einheiten stellt der Lehrer jedes seiner Tablets per Tipp auf Anna oder Ben.
+- **Senden.** „An Anna senden“, „Erneut senden“ und „Auf Whiteboard senden“ gehen in die Einheit des Schülers der Übung. Gehört die Übung keinem der beiden (Bibliothek, anderer Schüler), stehen zwei Knöpfe mit Vornamen da. Ein Senden (`showOnTablet`) erreicht nur die Tablets dieser Einheit: öffnet der Lehrer das Whiteboard von Ben, bleibt Annas Tablet, wo es ist.
+- **Live-Status.** „Tablet verbunden“ zählt nur die Tablets dieser Einheit. Ist keins dort, steht „Kein Tablet bei Ben“ da.
+- Läuft nur eine Einheit, ändert sich nichts: jedes Tablet des Lehrers zeigt sie.
+
 **Sonderfälle**
 
 - **Kein Tablet gekoppelt:** Die App zeigt „Noch kein Schülergerät verbunden“ mit dem Knopf „Tablet verbinden“, der direkt zum Code führt. Die Übung liegt trotzdem am Lernlink bereit.
@@ -24,15 +34,15 @@
 
 | Wunsch | Umsetzung |
 |---|---|
-| Realtime | Derselbe SSE-Hub wie beim Whiteboard (`lib/whiteboard-hub.ts`), erweitert um Text-Kanäle: `geraet:<lehrer>` für das Tablet und `einheit:<id>` für den Live-Status. Es gibt kein zweites Live-System. |
+| Realtime | Derselbe SSE-Hub wie beim Whiteboard (`lib/whiteboard-hub.ts`), erweitert um Text-Kanäle: `geraet:<tablet>` je Tablet und `einheit:<id>` für den Live-Status. Start und Ende einer Einheit gehen an alle Tablets des Lehrers, alles andere nur an die Tablets der Einheit (`notifyUnitTablets`). Es gibt kein zweites Live-System. |
 | tutoring_sessions | `units` (bestehend), plus `device_view`: was das Tablet zeigt. |
 | exercises | `worksheets` (bestehend), plus `source_task_id` für einzeln gesendete Aufgaben. |
 | exercise_assignments | `assignments` (bestehend), plus `delivered_at`. |
 | student_answers | `attempts` und `hint_uses` (bestehend). |
-| student_devices | neu: `id, teacher_id, name, token_hash, paired_at, last_seen_at, revoked_at`. Der Status online/offline kommt live aus dem Hub und wird nicht gespeichert. |
+| student_devices | neu: `id, teacher_id, name, token_hash, paired_at, last_seen_at, revoked_at`, dazu `unit_id` (die am Tablet gewählte laufende Einheit, wenn zwei laufen). Der Status online/offline kommt live aus dem Hub und wird nicht gespeichert. |
 | Kopplungscodes | neu: `device_pair_codes` (Code, Lehrer, Ablauf). |
 
-Das Tablet speichert keinen Schüler. Jede Anfrage löst serverseitig auf: Tablet → Lehrer → `activeUnitForTeacher` → Schüler.
+Das Tablet speichert keinen Schüler. Jede Anfrage löst serverseitig auf: Tablet → Lehrer → laufende Einheit (bei zweien die am Tablet gewählte, `deviceUnit` in `lib/devices.ts`) → Schüler.
 
 ## Sicherheit (serverseitig)
 
@@ -42,7 +52,7 @@ Das Tablet speichert keinen Schüler. Jede Anfrage löst serverseitig auf: Table
 - Trennen wirkt sofort.
 
 **Was das Tablet sehen darf**
-- Es sieht nur die laufende Einheit seines Lehrers: die Übungen dieser Einheit und das Whiteboard dieser Einheit.
+- Es sieht nur eine laufende Einheit seines Lehrers: die Übungen dieser Einheit und das Whiteboard dieser Einheit. Wählen kann es nur unter den laufenden Einheiten seines eigenen Lehrers.
 - Antworten, Hilfen und Status werden gegen diese Einheit geprüft.
 - Alle Lehrerbereiche bleiben hinter dem Lehrer-Login. Das Tablet-Cookie öffnet sie nicht.
 
@@ -55,7 +65,7 @@ Das Tablet speichert keinen Schüler. Jede Anfrage löst serverseitig auf: Table
 
 ## Grenzen
 
-- Pro Lehrer ist ein Tablet gedacht. Mehrere gekoppelte Tablets zeigen dasselbe, und „online“ gilt pro Lehrer.
+- Pro Lehrer ist ein Tablet gedacht, bei zwei Schülern gleichzeitig zwei. Bei einer laufenden Einheit zeigen alle Tablets des Lehrers dasselbe; „online“ zählt die Tablets der Einheit.
 - Der Live-Hub läuft im Speicher eines einzelnen Server-Prozesses, wie schon das Whiteboard.
 
 ## Getestet
@@ -65,6 +75,8 @@ Das Tablet speichert keinen Schüler. Jede Anfrage löst serverseitig auf: Table
 - Sperre nach Fehlversuchen
 - Trennung zweier Lehrer
 - Wechsel Anna → Max
+
+`lib/zwei-schueler.test.ts` deckt zwei Einheiten gleichzeitig ab: Senden in die Einheit des Schülers der Übung (auch Whiteboard und „Erneut senden“), zwei Tablets mit je eigener Einheit, `showOnTablet` erreicht nur das passende Tablet, die Wahl nur unter den Einheiten des eigenen Lehrers, das Ende gibt die Wahl frei.
 
 Der Browser-Test deckt mit zwei Lehrern und zwei Tablets alle 13 Szenarien ab:
 1. Koppeln von Tablet A

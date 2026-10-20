@@ -162,7 +162,8 @@ CREATE TABLE IF NOT EXISTS skill_snapshots (
 );
 
 -- Student tablets. A tablet belongs to a teacher, never to a student: the student it shows comes
--- from the teacher's running unit. The tablet keeps a random secret in a cookie; only its hash is stored.
+-- from the teacher's running unit (with two running units: the one chosen on the tablet,
+-- unit_id in COLUMNS). The tablet keeps a random secret in a cookie; only its hash is stored.
 CREATE TABLE IF NOT EXISTS student_devices (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
@@ -893,6 +894,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["text_interpretations", "sorte", "TEXT NOT NULL DEFAULT 'textinterpretation'"],
   ["text_interpretations", "story_medium", "TEXT NOT NULL DEFAULT ''"],
   ["text_interpretations", "situation", "TEXT NOT NULL DEFAULT ''"],
+  // Zwei Schüler gleichzeitig (D26) am Tablet (2026-10-20): welche laufende Einheit dieses Tablet zeigt, wenn beim
+  // Lehrer zwei laufen. Gilt nur, solange diese Einheit läuft (lib/devices.ts `deviceUnit`); null = noch nicht gewählt.
+  ["student_devices", "unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
 ];
 
 /** Teachers to start with; more can be added later. */

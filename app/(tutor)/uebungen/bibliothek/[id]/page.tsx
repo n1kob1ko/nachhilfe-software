@@ -12,7 +12,8 @@ import { SOURCE_TYPE_LABEL, type SourceType } from "@/lib/lehrplan";
 import { getLibraryEntry, LIBRARY_ORIGIN_LABEL, namedSourceOf, namedSources, SETTABLE_ORIGINS } from "@/lib/library";
 import * as repo from "@/lib/repo";
 import { klassenLabel, SCHOOL_TYPES } from "@/lib/school";
-import { activeUnitForTeacher } from "@/lib/units";
+import { sendTargets } from "@/lib/units";
+import { shortNames } from "@/lib/vornamen";
 import { runningBoardsFor } from "@/lib/whiteboard";
 
 export const metadata = { title: "Bibliotheksaufgabe" };
@@ -28,7 +29,9 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
   if (!e) notFound();
   const skills = repo.listSkills().filter((s) => s.subject === e.subject);
   const students = repo.listStudents().map(({ id, name }) => ({ id, name }));
-  const active = activeUnitForTeacher(teacher.id);
+  // a library task belongs to no student: every running unit of the teacher (two at once: one button each, D26)
+  const running = sendTargets(teacher.id, null);
+  const runningNames = shortNames(running.map((u) => u.student_name));
   const topics = [...new Set(skills.map((s) => s.area))];
   const level = e.klasse ? klassenLabel(e.school_type, e.klasse) : e.school_type;
   const sources = namedSources();
@@ -99,7 +102,7 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
         students={students}
         defaultStudentId={null}
         units={runningBoardsFor(teacher.id)}
-        active={active ? { unitId: active.id, student: active.student_name.split(" ")[0] } : null}
+        targets={running.map((u, i) => ({ unitId: u.id, student: runningNames[i] }))}
         showSolutions
         aiEnabled={aiEnabled()}
       />

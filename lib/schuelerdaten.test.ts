@@ -639,7 +639,7 @@ test("Login → Schüler → Einheit → Übung → Tablet → Antwort → Track
   assert.equal(devices.deviceForToken(paired.token)?.teacher_id, niko.id);
 
   const { unit } = units.startUnit(niko.id, sid, { subject: "Mathematik" });
-  assert.equal(units.activeUnitForTeacher(paired.device.teacher_id)?.student_id, sid, "the tablet shows the student of the running unit");
+  assert.equal(devices.deviceUnit(devices.deviceForToken(paired.token)!).unit?.student_id, sid, "the tablet shows the student of the running unit");
 
   // the builder takes over the current material; the exercise is sent within the unit
   const ctx = builder.studentContext(sid)!;
@@ -671,7 +671,7 @@ test("Login → Schüler → Einheit → Übung → Tablet → Antwort → Track
 
   // end → Lern-Dokumentation with summary → the teacher's documentation
   const lessonId = learning.endUnit(unit.id, { byTeacherId: niko.id })!;
-  assert.equal(units.activeUnitForTeacher(niko.id), null, "the tablet is ready for the next unit");
+  assert.equal(devices.deviceUnit(devices.deviceForToken(paired.token)!).unit, null, "the tablet is ready for the next unit");
   const lesson = repo.getLesson(lessonId)!;
   assert.equal(learning.readReport(lesson)!.tasksDone, tasks.length);
   const brief = sum.unitBrief(lessonId)!;

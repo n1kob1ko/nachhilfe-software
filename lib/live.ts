@@ -1,7 +1,8 @@
 /**
  * What the teacher's student tablet shows, and the live status the teacher sees on the laptop.
- * Uses the same realtime hub as the whiteboard, on two more channels:
- *   "geraet:<teacher id>"  – the tablet(s) of a teacher; any event makes the tablet reload its view
+ * Uses the same realtime hub as the whiteboard, on more channels:
+ *   "geraet:<device id>"   – one tablet; any event makes it reload its view. A tablet belongs to a teacher
+ *                            and shows the running unit (with two running: the one chosen on it, D26)
  *   "einheit:<unit id>"    – the live status on the teacher's unit page
  *   "laptop:<session id>"  – a student's own laptop, connected for one unit (lib/laptop.ts)
  *
@@ -10,15 +11,16 @@
  */
 import { aiLiveState, type AILive } from "./ai/realtime";
 import { db } from "./db";
-import { hasDevice } from "./devices";
+import { chooseDeviceUnit, deviceUnit, devicesOfUnit, getDevice, hasDevice, listDevices } from "./devices";
 import { activeLaptop, endLaptopsOfUnit, laptopChannel, openLaptopCode, pendingLaptop } from "./laptop";
 import { isMinitest } from "./quick-round";
 import * as repo from "./repo";
 import { getText, noteTextInUnit } from "./texts";
-import { activeUnitForTeacher, getUnit, runningUnitForStudent, type UnitView } from "./units";
+import { getUnit, runningUnitForStudent, runningUnits, type UnitView } from "./units";
+import { shortNames } from "./vornamen";
 import { isOnline, publish } from "./whiteboard-hub";
 
-export const deviceChannel = (teacherId: number) => `geraet:${teacherId}`;
+export const deviceChannel = (deviceId: number) => `geraet:${deviceId}`;
 export const unitChannel = (unitId: number) => `einheit:${unitId}`;
 
 export type View = { kind: "start" } | { kind: "tafel" } | { kind: "aufgabe"; assignmentId: number } | { kind: "text"; textId: number };
@@ -62,9 +64,14 @@ export function markDelivered(assignmentId: number) {
   return res.changes > 0;
 }
 
-/** Is a tablet of this teacher connected right now? */
-export function tabletOnline(teacherId: number) {
-  return isOnline(deviceChannel(teacherId), "schueler");
+/** Is this tablet connected right now? */
+export function deviceOnline(deviceId: number) {
+  return isOnline(deviceChannel(deviceId), "schueler");
+}
+
+/** Is a tablet that shows this unit connected right now? (With two running units only the tablets on this one count.) */
+export function tabletOnline(unit: Pick<UnitView, "id" | "teacher_id">) {
+  return devicesOfUnit(unit).some((d) => deviceOnline(d.id));
 }
 
 export type StudentDevice = "laptop" | "tablet";
@@ -79,7 +86,7 @@ export function studentDevice(unit: Pick<UnitView, "id" | "teacher_id">): Studen
 /** Is the student's device of this unit connected right now? */
 export function studentDeviceOnline(unit: Pick<UnitView, "id" | "teacher_id">): boolean {
   const l = activeLaptop(unit.id);
-  return l ? laptopOnline(l.id) : tabletOnline(unit.teacher_id);
+  return l ? laptopOnline(l.id) : tabletOnline(unit);
 }
 
 export function laptopOnline(sessionId: number) {
@@ -92,18 +99,28 @@ export function notifyLaptop(unitId: number, reason: string) {
   if (l) publish(laptopChannel(l.id), { type: "refresh", reason });
 }
 
-/** Both student screens of a unit load again: the teacher's tablet and a confirmed laptop. */
+/** Both student screens of a unit load again: the tablet(s) showing it and a confirmed laptop. */
 export function notifyStudent(unit: Pick<UnitView, "id" | "teacher_id">, reason: string) {
-  notifyTablet(unit.teacher_id, reason);
+  notifyUnitTablets(unit, reason);
   notifyLaptop(unit.id, reason);
 }
 
-/** Tells the teacher's tablet to load its view again (unit started or ended, new exercise, …). */
+/** Every tablet of the teacher loads again (a unit started or ended: which unit a tablet shows may change). */
 export function notifyTablet(teacherId: number, reason: string) {
-  publish(deviceChannel(teacherId), { type: "refresh", reason });
+  for (const d of listDevices(teacherId)) notifyDevice(d.id, reason);
 }
 
-/** Switches the tablet of the unit's teacher to `view`. Only for running units. */
+/** Only the tablets that show this unit load again (new exercise, whiteboard, …): the other student's tablet stays as it is. */
+export function notifyUnitTablets(unit: Pick<UnitView, "id" | "teacher_id">, reason: string) {
+  for (const d of devicesOfUnit(unit)) notifyDevice(d.id, reason);
+}
+
+/** One tablet loads again (also a just disconnected one, which then finds its cookie no longer valid). */
+export function notifyDevice(deviceId: number, reason: string) {
+  publish(deviceChannel(deviceId), { type: "refresh", reason });
+}
+
+/** Switches the tablet(s) of this unit to `view`; a tablet on the teacher's other running unit is not touched. Only for running units. */
 export function showOnTablet(unit: UnitView, view: View): Delivery {
   if (unit.status !== "gestartet") return { status: "offline" };
   db().prepare("UPDATE units SET device_view = ? WHERE id = ?").run(viewText(view), unit.id);
@@ -114,7 +131,15 @@ export function showOnTablet(unit: UnitView, view: View): Delivery {
   const laptop = activeLaptop(unit.id);
   if (laptop) return { status: laptopOnline(laptop.id) ? "gesendet" : "offline", device: "laptop" };
   if (!hasDevice(unit.teacher_id)) return { status: "kein-geraet" };
-  return { status: tabletOnline(unit.teacher_id) ? "gesendet" : "offline", device: "tablet" };
+  return { status: tabletOnline(unit) ? "gesendet" : "offline", device: "tablet" };
+}
+
+/** „Erneut senden“: the running unit (of this teacher) the exercise was sent in, not the teacher's other one (D26). */
+export function resendUnit(teacherId: number, assignmentId: number): UnitView | null {
+  const unitId = repo.getAssignment(assignmentId)?.unit_id;
+  const unit = unitId ? getUnit(unitId) : null;
+  if (!unit || unit.status !== "gestartet" || unit.teacher_id !== teacherId || !unitAssignment(unit.id, assignmentId)) return null;
+  return unit;
 }
 
 /** Something was sent to a student the classic way (student picked): if a unit with them runs, it also goes onto that teacher's tablet. */
@@ -130,8 +155,10 @@ export function deliverIfRunning(studentId: number, assignmentId: number | undef
 export function unitChanged(teacherId: number, unitId: number) {
   progress.delete(unitId);
   if (getUnit(unitId)?.status !== "gestartet") for (const id of endLaptopsOfUnit(unitId)) publish(laptopChannel(id), { type: "ended", reason: "einheit" });
+  // every tablet of the teacher: with a second unit starting or one of two ending, the unit a tablet shows changes
   notifyTablet(teacherId, "einheit");
   pushLive(unitId);
+  pushTabletPresence(teacherId);
 }
 
 // ---------- progress reported by the tablet ----------
@@ -154,6 +181,11 @@ export type LiveSnapshot = {
   running: boolean;
   student: string;
   tablet: { paired: boolean; online: boolean };
+  /**
+   * Zwei Schüler gleichzeitig (D26): both running units of the teacher and every tablet of the teacher with
+   * the unit it shows (null: it asks „Wer arbeitet an diesem Gerät?“). Empty while only one unit runs.
+   */
+  parallel: { units: { id: number; student: string }[]; tablets: { id: number; name: string; online: boolean; unitId: number | null }[] };
   /** where the student works right now */
   device: StudentDevice | null;
   /** "Eigenes Gerät verbinden": the code on show, a request to confirm, the confirmed laptop */
@@ -244,7 +276,8 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
     unitId: unit.id,
     running: unit.status === "gestartet",
     student: unit.student_name.split(" ")[0],
-    tablet: { paired, online: tabletOnline(unit.teacher_id) },
+    tablet: { paired, online: tabletOnline(unit) },
+    parallel: parallelOf(unit),
     device,
     laptop: {
       code: unit.status === "gestartet" ? openLaptopCode(unit.id) : null,
@@ -259,6 +292,17 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
   };
 }
 
+/** With two running units of the teacher: both students and where each tablet is (for „Tablet für …“ on the unit page). */
+function parallelOf(unit: UnitView): LiveSnapshot["parallel"] {
+  const running = unit.status === "gestartet" ? runningUnits(unit.teacher_id) : [];
+  if (running.length < 2) return { units: [], tablets: [] };
+  const names = shortNames(running.map((u) => u.student_name));
+  return {
+    units: running.map((u, i) => ({ id: u.id, student: names[i] })),
+    tablets: listDevices(unit.teacher_id).map((d) => ({ id: d.id, name: d.name, online: deviceOnline(d.id), unitId: deviceUnit(d).unit?.id ?? null })),
+  };
+}
+
 /** Sends the current live status to the teacher's unit page. */
 export function pushLive(unitId: number) {
   if (!isOnline(unitChannel(unitId))) return;
@@ -266,10 +310,21 @@ export function pushLive(unitId: number) {
   if (s) publish(unitChannel(unitId), { type: "live", snapshot: s });
 }
 
-/** The tablet came or went: every unit page of that teacher updates its "Tablet: verbunden". */
+/** A tablet came, went or changed its unit: every running unit page of that teacher updates its "Tablet verbunden". */
 export function pushTabletPresence(teacherId: number) {
-  const unit = activeUnitForTeacher(teacherId);
-  if (unit) pushLive(unit.id);
+  for (const u of runningUnits(teacherId)) pushLive(u.id);
+}
+
+/**
+ * Puts a tablet on one of its teacher's running units (D26), chosen on the tablet or by the teacher;
+ * null asks „Wer arbeitet an diesem Gerät?“ again. The tablet reloads and both unit pages update.
+ */
+export function moveTablet(deviceId: number, unitId: number | null): boolean {
+  const d = getDevice(deviceId);
+  if (!d || !chooseDeviceUnit(deviceId, unitId)) return false;
+  notifyDevice(deviceId, "einheit");
+  pushTabletPresence(d.teacher_id);
+  return true;
 }
 
 /** The task after `taskId` in its exercise, for "Nächste Aufgabe senden". */
