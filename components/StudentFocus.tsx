@@ -41,7 +41,8 @@ export function StudentFocus({ studentId }: { studentId: number }) {
     });
   if (hw) items.push({ key: "h", icon: NotebookPen, label: "Offene Hausübung", text: `${hw.description}${hw.due_date ? `, fällig ${formatDate(hw.due_date, { day: "numeric", month: "short" })}` : ""}`, href: `/schueler/${studentId}?tab=schule` });
   if (!items.length) return null;
-  // li min-w-0: sonst macht der lange, nicht umbrechende Text die Karte breiter als die Bühne (Handy)
+  // li min-w-0: sonst macht der lange Text die Karte breiter als die Bühne (Handy); der Text bricht um, statt
+  // mit „…“ zu enden (niko, 21.10.2026)
   return (
     <ul className="mt-5 grid gap-2 sm:grid-cols-2" aria-label="Auf einen Blick">
       {items.map(({ key, icon: Icon, label, text, href }) => (
@@ -50,7 +51,7 @@ export function StudentFocus({ studentId }: { studentId: number }) {
             <Icon size={18} className="shrink-0 text-accent" aria-hidden />
             <span className="min-w-0 flex-1">
               <span className="block text-[12px] font-semibold text-ink-3">{label}</span>
-              <span className="block truncate text-[14px] font-medium">{text}</span>
+              <span className="block text-[14px] leading-snug font-medium">{text}</span>
             </span>
           </Link>
         </li>

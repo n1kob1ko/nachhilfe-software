@@ -209,7 +209,8 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
       <Kennzahlen
         werte={[
           { wort: "Heute", wert: String(tagesplan.length), zusatz: tagesplan.length === 0 ? "keine Einheit" : tagesplan.length === 1 ? "Einheit" : `Einheiten, ${schuelerHeute} Schüler`, href: "#heute" },
-          { wort: "Als Nächstes", wert: running.length > 0 ? "läuft" : fokus ? fokus.zeit : "–", zusatz: running.length > 0 ? `mit ${firstName(running[0].student_name)}` : fokus ? firstName(fokus.name) : "nichts geplant" },
+          // die laufende Einheit steht in der Bühne; hier immer die Uhrzeit der nächsten geplanten Einheit (niko, 21.10.2026)
+          { wort: "Als Nächstes", wert: fokus ? fokus.zeit.split(/[–-]/)[0].trim() : "–", zusatz: fokus ? firstName(fokus.name) : running.length > 0 ? "nichts mehr geplant" : "nichts geplant", href: fokus ? "#heute" : undefined },
           { wort: "Zu erledigen", wert: String(todos.length), zusatz: todos.length === 0 ? "nichts offen" : todos.some((t) => t.key.startsWith("p")) ? "Prüfungen und mehr" : "Hausübungen, Ergebnisse", href: "#offen" },
           { wort: "Schüler", wert: String(students.length), zusatz: `${recentIds.length} zuletzt bei dir`, href: "/schueler" },
         ]}
