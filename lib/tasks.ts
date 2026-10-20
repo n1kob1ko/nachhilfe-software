@@ -1,7 +1,7 @@
 import type { Difficulty, TaskType } from "./curriculum";
 import type { Figur } from "./figur";
 import { langform } from "./englisch-kurzformen";
-import { checkFix, type FixLabel } from "./fix-text";
+import { checkFix, tokenize, type FixLabel } from "./fix-text";
 import { checkMemorize, mistakeLabel } from "./memorize";
 import type { PartSolution, PartView, ResultForm } from "./math-check";
 import { gradeMathTask } from "./math-task";
@@ -15,6 +15,11 @@ export type AnswerSpec = {
   mode?: "value" | "exact" | "text";
   /** English: a contraction counts the same as its long form (doesn't = does not), lib/englisch-kurzformen.ts. */
   contractions?: boolean;
+  /**
+   * Direkte Rede: jedes Satzzeichen zählt, auch der Punkt am Ende. Leerzeichen und die Art der
+   * Anführungszeichen („…“, "…", »…«) zählen nicht (lib/deutsch-satzlehre.ts).
+   */
+  satzzeichen?: boolean;
   /** Cloze: accepted alternatives per gap (gaps are written as ___ in the prompt). */
   blanks?: string[][];
   /**
@@ -161,7 +166,15 @@ export function normalizeText(s: string, caseSensitive = false) {
   return out;
 }
 
-export function sameAnswer(given: string, expected: string, mode: AnswerSpec["mode"], contractions = false) {
+/** Words and punctuation marks one by one, every kind of quotation mark the same, spaces left out. */
+const mitSatzzeichen = (s: string, caseSensitive: boolean) =>
+  tokenize(s)
+    .map((t) => t.text.replace(/[„“”"«»‟]/g, '"'))
+    .map((x) => (caseSensitive ? x : x.toLowerCase()))
+    .join(" ");
+
+export function sameAnswer(given: string, expected: string, mode: AnswerSpec["mode"], contractions = false, satzzeichen = false) {
+  if (satzzeichen) return mitSatzzeichen(given, mode === "exact") === mitSatzzeichen(expected, mode === "exact");
   // a number in a gap or a short answer: 0,5 and 0.5 are the same
   if (mode === "value" || (/^\s*-?\d+([.,]\d+)?\s*$/.test(given) && /^\s*-?\d+([.,]\d+)?\s*$/.test(expected))) {
     const a = parseNumber(given);
@@ -175,12 +188,12 @@ export function sameAnswer(given: string, expected: string, mode: AnswerSpec["mo
 /** Eine Endung ohne Bindestrich davor: „-en“ → „en“, „-“ und eine leere Lücke → „“ (keine Endung). */
 export const endingOf = (s: string) => s.trim().replace(/^[-‐–—]+/, "").trim();
 
-type Same = (given: string, expected: string, mode: AnswerSpec["mode"], contractions?: boolean) => boolean;
-const sameEnding: Same = (given, expected, mode, contractions) => sameAnswer(endingOf(given), endingOf(expected), mode, contractions);
+type Same = (given: string, expected: string, mode: AnswerSpec["mode"], contractions?: boolean, satzzeichen?: boolean) => boolean;
+const sameEnding: Same = (given, expected, mode, contractions, satzzeichen) => sameAnswer(endingOf(given), endingOf(expected), mode, contractions, satzzeichen);
 
 function labelFor(task: Pick<TaskDraft, "errorMap" | "answer">, given: string, same: Same = sameAnswer) {
   for (const e of task.errorMap) {
-    if (same(given, e.answer, task.answer.mode, task.answer.contractions)) return e.label;
+    if (same(given, e.answer, task.answer.mode, task.answer.contractions, task.answer.satzzeichen)) return e.label;
   }
   return null;
 }
@@ -252,7 +265,7 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
     // Endungen: „-en“ wie „en“, eine leere Lücke wie „-“ (keine Endung)
     const same = a.endings ? sameEnding : sameAnswer;
     const wrong = a.blanks
-      .map((alts, i) => (alts.some((alt) => same(values[i] ?? "", alt, a.mode ?? "text", a.contractions)) ? -1 : i))
+      .map((alts, i) => (alts.some((alt) => same(values[i] ?? "", alt, a.mode ?? "text", a.contractions, a.satzzeichen)) ? -1 : i))
       .filter((i) => i >= 0);
     const correct = wrong.length === 0;
     return {
@@ -265,7 +278,7 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
     };
   }
   if (a.accepted && a.accepted.length > 0) {
-    const correct = a.accepted.some((exp) => sameAnswer(given, exp, a.mode ?? "text", a.contractions));
+    const correct = a.accepted.some((exp) => sameAnswer(given, exp, a.mode ?? "text", a.contractions, a.satzzeichen));
     let feedback = correct ? "Richtig!" : "Leider nicht richtig.";
     if (!correct && a.mode === "value" && parseNumber(given) === null && given.trim()) {
       feedback = "Die Eingabe ist keine Zahl. Schreib z. B. 3/4, 1 1/2 oder 0,75.";

@@ -181,7 +181,7 @@ export function suggestErrorType(task: Checkable, given: string, label: string |
     const list = Array.isArray(values) ? values.map((v) => String(v ?? "")) : [given];
     fields = a.blanks
       .map((alts, i) => ({ given: list[i] ?? "", expected: alts }))
-      .filter((f) => f.given.trim() && f.expected.length && !f.expected.some((alt) => sameAnswer(f.given, alt, a.mode ?? "text", a.contractions)));
+      .filter((f) => f.given.trim() && f.expected.length && !f.expected.some((alt) => sameAnswer(f.given, alt, a.mode ?? "text", a.contractions, a.satzzeichen)));
   } else if (a.accepted?.length) {
     fields = [{ given, expected: a.accepted }];
   }
