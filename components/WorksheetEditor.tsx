@@ -24,7 +24,8 @@ import { TabletSend } from "@/components/device/TabletSend";
 import { categoriesFor, DIFFICULTIES, TASK_TYPES, type Difficulty, type TaskType } from "@/lib/curriculum";
 import type { Task } from "@/lib/repo";
 import { expectedFixes } from "@/lib/fix-text";
-import { GAP, gapCount, hintLabel, type TaskDraft } from "@/lib/tasks";
+import { buchstabe, GAP, gapCount, hintLabel, kreisZahl, type TaskDraft } from "@/lib/tasks";
+import { istMaturaKategorie, maturaFormat, maturaLeer, MATURA_FORM, type MaturaKategorie } from "@/lib/matura-formate";
 import { isResultForm, PART_KINDS, RESULT_FORMS, wayMode, type PartKind } from "@/lib/math-check";
 import { checkOwnSolution } from "@/lib/math-task";
 import { readingIssues, readingSet, type ReadingText } from "@/lib/lesen";
@@ -504,9 +505,53 @@ function reshapeBase(t: TaskDraft, format: TaskType): TaskDraft {
         data: { parts: t.data.parts ?? [{ label: "a)", prompt: "", kind: "zahl" }, { label: "b)", prompt: "", kind: "zahl" }] },
         answer: { parts: t.answer.parts ?? [{ accepted: [""] }, { accepted: [""] }] },
       };
+    // Zuordnung (Matura-Format): zwei Aussagen, vier Antworten A bis D
+    case "zuordnung": {
+      const leer = maturaLeer("matura-zuordnung");
+      return { ...keep, data: { zuordnung: t.data.zuordnung ?? leer.data.zuordnung }, answer: { pairs: t.answer.pairs ?? leer.answer.pairs } };
+    }
     default:
       return { ...keep, data: {}, answer: { accepted: t.answer.accepted ?? [""], mode: "value" } };
   }
+}
+
+/**
+ * Eine Aufgabe in ein Matura-Format bringen (lib/matura-formate.ts): Aufgabenstellung, Lösungsweg, Hilfen und
+ * Bild bleiben, die Antworten, soweit sie passen; der Rest ist leer zum Ausfüllen.
+ */
+function maturaUmbau(t: TaskDraft, k: MaturaKategorie): TaskDraft {
+  const leer = maturaLeer(k);
+  const bild = t.data.figure ? { figure: t.data.figure } : {};
+  const fuenf = Array.from({ length: MATURA_FORM.antworten }, (_, i) => t.data.options?.[i] ?? "");
+  const erste = Math.min(t.answer.correct ?? t.answer.correctAll?.[0] ?? 0, MATURA_FORM.antworten - 1);
+  const base = { ...t, category: k, type: leer.type };
+  switch (k) {
+    case "matura-1aus5":
+      return { ...base, data: { ...bild, options: fuenf }, answer: { correct: erste } };
+    case "matura-2aus5": {
+      const zweite = t.answer.correctAll?.find((i) => i !== erste && i < MATURA_FORM.antworten) ?? (erste === 0 ? 1 : 0);
+      return { ...base, data: { ...bild, options: fuenf }, answer: { correctAll: [erste, zweite].sort((a, b) => a - b) } };
+    }
+    case "matura-lueckentext":
+      return {
+        ...base,
+        prompt: t.prompt.trim() ? t.prompt : leer.prompt!,
+        data: { ...bild, gapOptions: t.data.gapOptions ?? leer.data.gapOptions },
+        answer: t.data.gapOptions && t.answer.blanks ? { blanks: t.answer.blanks, mode: "text" } : leer.answer,
+      };
+    case "matura-zuordnung":
+      return { ...base, data: { ...bild, zuordnung: t.data.zuordnung ?? leer.data.zuordnung }, answer: { pairs: t.answer.pairs ?? leer.answer.pairs } };
+  }
+}
+
+/** Ein anderer Aufgabentyp im Editor: ein Matura-Format bekommt seine feste Form, weg davon fallen dessen Felder weg. */
+function kategorieWechsel(cur: TaskDraft, key: string, formats: TaskType[] | undefined): TaskDraft {
+  if (istMaturaKategorie(key)) return maturaUmbau(cur, key);
+  const category = key || null;
+  if (formats && !formats.includes(cur.type)) return { ...reshape(cur, formats[0]), category };
+  // vom Matura-Format zurück: die übliche Form desselben Antwortformats (eine richtige Antwort, Lücken zum Schreiben)
+  if (maturaFormat(cur) && cur.type !== "zuordnung") return { ...reshape(cur, cur.type), category };
+  return { ...cur, category };
 }
 
 const BILD_STIMMT_NICHT = "Das Bild stimmt noch nicht:";
@@ -533,11 +578,18 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
       if (r?.ok) onDone();
     });
   };
-  const list = (items: string[], onChange: (next: string[]) => void, label: (i: number) => string, opts: { min?: number; correct?: number; onCorrect?: (i: number) => void; movable?: boolean; addLabel: string }) => (
+  const list = (
+    items: string[],
+    onChange: (next: string[]) => void,
+    label: (i: number) => string,
+    opts: { min?: number; max?: number; correct?: number; onCorrect?: (i: number) => void; checked?: number[]; onCheck?: (i: number) => void; movable?: boolean; addLabel: string },
+  ) => (
     <div className="grid gap-1.5">
       {items.map((v, i) => (
         <div key={i} className="flex items-center gap-2">
           {opts.onCorrect && <input type="radio" name={`correct-${task.id}`} checked={opts.correct === i} onChange={() => opts.onCorrect!(i)} className="h-4 w-4 accent-[var(--green)]" aria-label={`${label(i)} ist richtig`} title="Richtige Antwort" />}
+          {/* Matura „2 aus 5“: mehrere richtige Antworten zum Ankreuzen */}
+          {opts.onCheck && <input type="checkbox" checked={opts.checked?.includes(i) ?? false} onChange={() => opts.onCheck!(i)} className="h-4 w-4 accent-[var(--green)]" aria-label={`${label(i)} ist richtig`} title="Richtige Antwort" />}
           <span className="num w-6 shrink-0 text-[13px] text-ink-3">{label(i)}</span>
           <input className="input" value={v} onChange={(e) => onChange(items.map((x, j) => (j === i ? e.target.value : x)))} aria-label={label(i)} />
           {opts.movable && (
@@ -550,11 +602,28 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
           </button>
         </div>
       ))}
-      <button type="button" className="justify-self-start text-[13px] font-semibold text-accent hover:underline" onClick={() => onChange([...items, ""])}>
-        + {opts.addLabel}
-      </button>
+      {items.length < (opts.max ?? Infinity) && (
+        <button type="button" className="justify-self-start text-[13px] font-semibold text-accent hover:underline" onClick={() => onChange([...items, ""])}>
+          + {opts.addLabel}
+        </button>
+      )}
     </div>
   );
+  // Matura-Formate: die Zahl der Antworten, Lücken und Aussagen ist fest (lib/matura-formate.ts)
+  const matura = istMaturaKategorie(t.category) ? t.category : null;
+  const z = t.type === "zuordnung" ? t.data.zuordnung : undefined;
+  const setZuordnung = (patch: Partial<NonNullable<TaskDraft["data"]["zuordnung"]>>) =>
+    setT((cur) => ({ ...cur, data: { ...cur.data, zuordnung: { statements: [], options: [], ...cur.data.zuordnung, ...patch } } }));
+  // Lückentext zum Ankreuzen: der richtige Satzteil steht als Text in answer.blanks; ändert sich sein Text, ändert sich die Lösung mit
+  const setSatzteil = (i: number, j: number, v: string) =>
+    setT((cur) => {
+      const g = (cur.data.gapOptions ?? []).map((x) => [...x]);
+      const b = (cur.answer.blanks ?? []).map((x) => [...x]);
+      const richtig = g[i].findIndex((x) => (b[i] ?? []).includes(x));
+      g[i][j] = v;
+      if (richtig === j) b[i] = [v];
+      return { ...cur, data: { ...cur.data, gapOptions: g }, answer: { ...cur.answer, blanks: b } };
+    });
 
   return (
     <div className="grid gap-4" aria-label={`Aufgabe ${index} bearbeiten`}>
@@ -572,7 +641,7 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
             value={t.category ?? ""}
             onChange={(e) => {
               const c = cats.find((x) => x.key === e.target.value);
-              setT((cur) => (c && !c.formats.includes(cur.type) ? { ...reshape(cur, c.formats[0]), category: c.key } : { ...cur, category: e.target.value || null }));
+              setT((cur) => kategorieWechsel(cur, e.target.value, c?.formats));
             }}
           >
             <option value="">–</option>
@@ -585,7 +654,8 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
         </label>
         <label className="field">
           <span className="label">Antwortformat</span>
-          <select className="input" value={t.type} onChange={(e) => setT((cur) => reshape(cur, e.target.value as TaskType))}>
+          {/* ein Matura-Format legt das Antwortformat fest */}
+          <select className="input" value={t.type} disabled={Boolean(matura)} title={matura ? "Das Matura-Format legt das Antwortformat fest." : undefined} onChange={(e) => setT((cur) => reshape(cur, e.target.value as TaskType))}>
             {FORMATS.map((f) => (
               <option key={f} value={f}>
                 {TASK_TYPES[f]}
@@ -637,7 +707,11 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
       <label className="field">
         <span className="label">Aufgabenstellung</span>
         <textarea className="input min-h-[84px]" value={t.prompt} onChange={(e) => set({ prompt: e.target.value })} />
-        {t.type === "cloze" && <span className="text-[12px] text-ink-3">Lücken mit {GAP} (drei Unterstriche) markieren. Jetzt: {gaps} {gaps === 1 ? "Lücke" : "Lücken"}.</span>}
+        {t.type === "cloze" && (
+          <span className="text-[12px] text-ink-3">
+            {t.data.gapOptions ? `Genau zwei Lücken ① ② mit ${GAP} (drei Unterstriche) markieren.` : `Lücken mit ${GAP} (drei Unterstriche) markieren.`} Jetzt: {gaps} {gaps === 1 ? "Lücke" : "Lücken"}.
+          </span>
+        )}
       </label>
       {/* Aufgabe mit Bild: Vorschau mit den gesuchten Werten, auf Wunsch ändern (geprüft wie beim Speichern) oder entfernen */}
       {t.data.figure ? (
@@ -656,13 +730,34 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
         />
       ) : null}
 
-      {(t.type === "mc" || t.type === "reading") &&
+      {(t.type === "mc" || t.type === "reading") && !t.answer.correctAll &&
         list(t.data.options ?? [], (next) => setT((cur) => ({ ...cur, data: { ...cur.data, options: next }, answer: { ...cur.answer, correct: Math.min(cur.answer.correct ?? 0, next.length - 1) } })), (i) => `${String.fromCharCode(97 + i)})`, {
-          min: 2,
+          min: matura ? MATURA_FORM.antworten : 2,
+          max: matura ? MATURA_FORM.antworten : undefined,
           correct: t.answer.correct,
           onCorrect: (i) => setAnswer({ correct: i }),
           addLabel: "Antwortmöglichkeit",
         })}
+      {t.type === "mc" && t.answer.correctAll && (
+        <div className="grid gap-1.5">
+          <span className="label">Fünf Antworten, die zwei richtigen ankreuzen</span>
+          {list(
+            t.data.options ?? [],
+            (next) => setT((cur) => ({ ...cur, data: { ...cur.data, options: next }, answer: { ...cur.answer, correctAll: (cur.answer.correctAll ?? []).filter((i) => i < next.length) } })),
+            (i) => `${String.fromCharCode(97 + i)})`,
+            {
+              min: MATURA_FORM.antworten,
+              max: MATURA_FORM.antworten,
+              checked: t.answer.correctAll,
+              onCheck: (i) => {
+                const r = t.answer.correctAll ?? [];
+                setAnswer({ correctAll: (r.includes(i) ? r.filter((x) => x !== i) : [...r, i]).sort((a, b) => a - b) });
+              },
+              addLabel: "Antwortmöglichkeit",
+            },
+          )}
+        </div>
+      )}
       {(t.type === "calc" || t.type === "grammar") && (
         <div className="grid gap-1.5">
           <span className="label">Richtige Antwort{t.type === "calc" ? " (Zahl, Bruch oder Text)" : ""}</span>
@@ -675,7 +770,67 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
           )}
         </div>
       )}
-      {t.type === "cloze" && (
+      {t.type === "cloze" && t.data.gapOptions && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {t.data.gapOptions.map((g, i) => {
+            const richtig = g.findIndex((x) => (blanks[i] ?? []).includes(x));
+            return (
+              <div key={i} className="grid content-start gap-1.5">
+                <span className="label">Lücke {kreisZahl(i + 1)}: drei Satzteile, den richtigen markieren</span>
+                {g.map((o, j) => (
+                  <div key={j} className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name={`luecke-${task.id}-${i}`}
+                      checked={richtig === j}
+                      onChange={() => setAnswer({ blanks: (t.data.gapOptions ?? []).map((x, k) => (k === i ? [o] : (blanks[k] ?? [""]))) })}
+                      className="h-4 w-4 accent-[var(--green)]"
+                      aria-label={`Lücke ${i + 1}, Satzteil ${j + 1} ist richtig`}
+                      title="Richtiger Satzteil"
+                    />
+                    <input className="input" value={o} onChange={(e) => setSatzteil(i, j, e.target.value)} aria-label={`Lücke ${i + 1}, Satzteil ${j + 1}`} />
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {t.type === "zuordnung" && z && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid content-start gap-1.5">
+            <span className="label">Aussagen und ihr richtiger Buchstabe</span>
+            {z.statements.map((st, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="num w-6 shrink-0 text-[13px] text-ink-3">{i + 1}</span>
+                <input className="input" value={st} onChange={(e) => setZuordnung({ statements: z.statements.map((x, j) => (j === i ? e.target.value : x)) })} aria-label={`Aussage ${i + 1}`} />
+                <select
+                  className="input w-20 shrink-0"
+                  value={t.answer.pairs?.[i] ?? 0}
+                  onChange={(e) => setAnswer({ pairs: z.statements.map((_, j) => (j === i ? Number(e.target.value) : (t.answer.pairs?.[j] ?? 0))) })}
+                  aria-label={`Richtiger Buchstabe für Aussage ${i + 1}`}
+                >
+                  {z.options.map((_, k) => (
+                    <option key={k} value={k}>
+                      {buchstabe(k)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+          <div className="grid content-start gap-1.5">
+            <span className="label">Antworten A bis D</span>
+            {z.options.map((o, k) => (
+              <div key={k} className="flex items-center gap-2">
+                <span className="w-6 shrink-0 text-[13px] font-semibold text-ink-3">{buchstabe(k)}</span>
+                <input className="input" value={o} onChange={(e) => setZuordnung({ options: z.options.map((x, j) => (j === k ? e.target.value : x)) })} aria-label={`Antwort ${buchstabe(k)}`} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {t.type === "cloze" && !t.data.gapOptions && (
         <div className="grid gap-1.5">
           <span className="label">Lösungen der Lücken (weitere richtige Antworten mit | trennen)</span>
           {Array.from({ length: Math.max(gaps, blanks.length) }, (_, i) => (
@@ -749,7 +904,7 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
         <span className="label">Typische Fehler</span>
         {t.errorMap.map((e, i) => (
           <div key={i} className="flex items-center gap-2">
-            <input className="input w-36" placeholder={t.data.options ? "Option (0, 1 …)" : "falsche Antwort"} value={e.answer} onChange={(ev) => set({ errorMap: t.errorMap.map((x, j) => (j === i ? { ...x, answer: ev.target.value } : x)) })} aria-label="Falsche Antwort" />
+            <input className="input w-36" placeholder={t.data.options ? "Option (0, 1 …)" : z ? "z. B. 1 → C" : t.data.gapOptions ? "z. B. ② Satzteil" : "falsche Antwort"} value={e.answer} onChange={(ev) => set({ errorMap: t.errorMap.map((x, j) => (j === i ? { ...x, answer: ev.target.value } : x)) })} aria-label="Falsche Antwort" />
             <input className="input" placeholder="Was dahintersteckt, z. B. Kehrwert vergessen" value={e.label} onChange={(ev) => set({ errorMap: t.errorMap.map((x, j) => (j === i ? { ...x, label: ev.target.value } : x)) })} aria-label="Fehler" />
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => set({ errorMap: t.errorMap.filter((_, j) => j !== i) })} aria-label="Fehler entfernen">
               <X size={14} aria-hidden />

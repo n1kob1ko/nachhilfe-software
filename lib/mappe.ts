@@ -9,6 +9,7 @@
  * benutzten Seiten des Whiteboards.
  */
 import { readMathAnswer } from "./math-check";
+import { maturaFormat, maturaKreuzeAus } from "./matura-formate";
 import * as repo from "./repo";
 import { klassenLabel, stufeLabel } from "./school";
 import { GAP, sameAnswer } from "./tasks";
@@ -27,12 +28,16 @@ export type Antwort =
   | { art: "luecken"; werte: string[] }
   | { art: "rechnung"; schritte: string[]; ergebnis: string; tafel: boolean }
   | { art: "teile"; teile: { schritte: string[]; ergebnis: string; text: string }[] }
-  | { art: "text"; text: string };
+  | { art: "text"; text: string }
+  /** Matura-Formate (lib/matura-formate.ts maturaKreuze): die Kreuze, je Lücke der Satzteil, je Aussage der Buchstabe */
+  | { art: "kreuze"; kreuze: (number | null)[] };
 
 const zeilen = (xs: string[] | undefined) => (xs ?? []).filter((x) => x.trim());
 
 /** Liest eine gespeicherte Antwort: Auswahl als Index, Reihenfolge und Lücken als JSON-Liste, Rechenweg als JSON-Objekt, sonst Text. */
-export function leseAntwort(t: Pick<repo.Task, "type" | "data" | "answer">, raw: string): Antwort {
+export function leseAntwort(t: Pick<repo.Task, "type" | "data" | "answer"> & { category?: string | null }, raw: string): Antwort {
+  // Matura-Formate: angekreuzt wird wie auf dem Maturablatt, auch beim Lückentext
+  if (maturaFormat(t)) return { art: "kreuze", kreuze: maturaKreuzeAus(t, raw) };
   if (t.type === "rechenweg") {
     const a = readMathAnswer(raw);
     return { art: "rechnung", schritte: zeilen(a.steps), ergebnis: a.result?.trim() ?? "", tafel: Boolean(a.board) };

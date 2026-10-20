@@ -31,6 +31,11 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
       type: t.type,
       prompt: t.prompt,
       options: t.data.options ?? null,
+      // Matura-Formate (lib/matura-formate.ts): wie viele anzukreuzen sind, die Satzteile je Lücke, die Aussagen
+      // und Antworten der Zuordnung. Nie correctAll, pairs oder die Werte in blanks: die sind die Lösung.
+      pick: t.answer.correctAll?.length ?? null,
+      gapOptions: t.data.gapOptions ?? null,
+      zuordnung: t.type === "zuordnung" && t.data.zuordnung ? { statements: t.data.zuordnung.statements, options: t.data.zuordnung.options } : null,
       passage: reading ? null : (t.data.passage ?? null),
       reading: reading && i === 0 ? { ...reading, lang: w.subject === "Englisch" ? "en" : "de" } : null,
       blanks: t.answer.blanks?.length ?? 0,

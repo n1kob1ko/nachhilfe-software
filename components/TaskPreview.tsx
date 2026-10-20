@@ -3,7 +3,8 @@ import type { Task } from "@/lib/repo";
 import { ASPECT_SHORT, isAspect, OPEN_ASPECTS, severalNoted } from "@/lib/lesen";
 import { clozeParts } from "@/lib/math-format";
 import { mathAnswerText } from "@/lib/math-task";
-import { GAP, hintLabel, type TaskDraft } from "@/lib/tasks";
+import { maturaLoesung } from "@/lib/matura-formate";
+import { buchstabe, GAP, hintLabel, kreisZahl, type TaskDraft } from "@/lib/tasks";
 import { FigurBild } from "./Figur";
 import { genderTone, genusBadge } from "./genus";
 import { MathText } from "./MathText";
@@ -31,13 +32,16 @@ export function GenusBadge({ genus, className = "" }: { genus: unknown; classNam
 }
 
 
-function withGaps(text: string) {
+function withGaps(text: string, ankreuzen = false) {
   const parts = clozeParts(text, GAP);
   return parts.map((p, i) => (
     <span key={i}>
       <MathText text={p.text} />
       {i < parts.length - 1 &&
-        (p.raised ? (
+        // Lückentext zum Ankreuzen: die Lücken heißen ① ② wie die Satzteile darunter
+        (ankreuzen ? (
+          <span className="mx-1 inline-block min-w-12 border-b-2 border-ink-3 text-center align-baseline font-semibold text-ink-2">{kreisZahl(i + 1)}</span>
+        ) : p.raised ? (
           <span className="relative -top-[0.55em] mx-0.5 inline-block h-[0.9em] w-7 border-b-2 border-ink-3 align-baseline" aria-label="Lücke, Hochzahl" />
         ) : (
           <span className="mx-1 inline-block w-20 border-b-2 border-ink-3 align-baseline" aria-label="Lücke" />
@@ -50,6 +54,9 @@ export function answerText(t: Pick<TaskDraft, "type" | "data" | "answer">) {
   if (t.type === "rechenweg" || t.type === "sachaufgabe") return mathAnswerText(t);
   // Auswendig schreiben: die Lösung ist der Text selbst (lib/memorize.ts)
   if (t.type === "memorize") return t.data.passage?.trim() || null;
+  // Matura-Formate: beide richtigen Antworten, die Satzteile zu ① ②, die Buchstaben der Zuordnung
+  const matura = maturaLoesung(t);
+  if (matura) return matura;
   if (t.data.options && typeof t.answer.correct === "number") return `${String.fromCharCode(97 + t.answer.correct)}) ${t.data.options[t.answer.correct]}`;
   if (t.answer.steps) return t.answer.steps.map((s, i) => `${i + 1}. ${s}`).join("  ");
   if (t.answer.blanks) return t.answer.blanks.map((b) => b[0]).join(" · ");
@@ -65,7 +72,7 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
   return (
     <div className="min-w-0">
       {task.data.passage && !passageShown && <blockquote className="ruled mb-4 max-w-[70ch] rounded-lg bg-paper px-4 py-1 text-[15px]"><MathText text={task.data.passage} /></blockquote>}
-      <p className="max-w-[70ch] text-[16px] leading-relaxed whitespace-pre-line">{task.prompt ? withGaps(task.prompt) : <span className="text-ink-3 italic">Noch keine Aufgabenstellung</span>}</p>
+      <p className="max-w-[70ch] text-[16px] leading-relaxed whitespace-pre-line">{task.prompt ? withGaps(task.prompt, Boolean(task.data.gapOptions)) : <span className="text-ink-3 italic">Noch keine Aufgabenstellung</span>}</p>
       {/* Aufgabe mit Bild: mit Lösung zeigt das Bild die gesuchten Werte (zum Prüfen, ob Bild und Lösung zusammenpassen) */}
       {task.data.figure ? <FigurBild figure={task.data.figure} loesung={showSolution} className="mb-1" /> : null}
       {task.data.genus && (
@@ -76,7 +83,7 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
       {task.data.options && (
         <ol className="mt-2 space-y-1">
           {task.data.options.map((o, i) => (
-            <li key={i} className={`flex gap-2 ${showSolution && task.answer.correct === i ? "font-semibold text-green" : ""}`}>
+            <li key={i} className={`flex gap-2 ${showSolution && (task.answer.correct === i || task.answer.correctAll?.includes(i)) ? "font-semibold text-green" : ""}`}>
               <span className="text-ink-3">{String.fromCharCode(97 + i)})</span>
               <span>
                 <MathText text={o} />
@@ -84,6 +91,55 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
             </li>
           ))}
         </ol>
+      )}
+      {task.data.options && task.answer.correctAll && (
+        <p className="mt-1 text-[13px] text-ink-3">Genau zwei Antworten sind richtig.</p>
+      )}
+      {task.data.gapOptions && (
+        <div className="mt-2 grid max-w-[70ch] gap-2 sm:grid-cols-2">
+          {task.data.gapOptions.map((g, i) => (
+            <ul key={i} className="rounded-md border border-line bg-surface px-3 py-1.5">
+              <li className="text-[13px] font-semibold text-ink-2">{kreisZahl(i + 1)}</li>
+              {g.map((o, j) => (
+                <li key={j} className={`flex gap-2 ${showSolution && task.answer.blanks?.[i]?.includes(o) ? "font-semibold text-green" : ""}`}>
+                  <span className="text-ink-3" aria-hidden>
+                    ☐
+                  </span>
+                  <span>
+                    <MathText text={o} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      )}
+      {task.data.zuordnung && (
+        <div className="mt-2 grid max-w-[70ch] gap-2 sm:grid-cols-2">
+          <ol className="space-y-1">
+            {task.data.zuordnung.statements.map((st, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="num text-ink-3">{i + 1}</span>
+                <span className="min-w-0 flex-1">
+                  <MathText text={st} />
+                </span>
+                <span className={`num inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border border-line-strong text-[13px] font-semibold ${showSolution ? "text-green" : ""}`}>
+                  {showSolution && typeof task.answer.pairs?.[i] === "number" ? buchstabe(task.answer.pairs[i]) : ""}
+                </span>
+              </li>
+            ))}
+          </ol>
+          <ul className="space-y-1">
+            {task.data.zuordnung.options.map((o, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="font-semibold text-ink-3">{buchstabe(i)}</span>
+                <span>
+                  <MathText text={o} />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       {task.data.steps && (
         <ul className="mt-2 space-y-1">
@@ -134,7 +190,7 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
       )}
       {task.type === "fix" && task.data.faulty && <p className="ruled mt-2 max-w-[70ch] rounded-lg border border-line bg-paper px-4 py-1 text-[15px] whitespace-pre-line">{task.data.faulty}</p>}
       {(task.type === "rechenweg" || task.type === "sachaufgabe") && !showSolution && <div className="squared mt-3 h-24 max-w-[520px] rounded-md border border-line" aria-hidden />}
-      {!task.data.options && !task.data.steps && !task.answer.blanks && task.type !== "fix" && task.type !== "rechenweg" && task.type !== "sachaufgabe" && !showSolution && (
+      {!task.data.options && !task.data.steps && !task.answer.blanks && !task.data.zuordnung && task.type !== "fix" && task.type !== "rechenweg" && task.type !== "sachaufgabe" && !showSolution && (
         <div className="mt-3 grid max-w-[520px] gap-3" aria-hidden>
           {Array.from(
             {
@@ -163,7 +219,7 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
               <span className="font-semibold">Lösung:</span> <MathText text={answerText(task)} />
             </p>
           )}
-          {task.answer.blanks?.some((b) => b.filter((x) => x.trim()).length > 1) && (
+          {!task.data.gapOptions && task.answer.blanks?.some((b) => b.filter((x) => x.trim()).length > 1) && (
             <p className="text-[13px] text-ink-2">
               Auch richtig:{" "}
               {task.answer.blanks

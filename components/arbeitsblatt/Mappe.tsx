@@ -6,7 +6,8 @@ import type { MappeOptionen } from "@/lib/mappe-druck";
 import * as repo from "@/lib/repo";
 import { wordsLabel } from "@/lib/texts";
 import { MathLine, RichText } from "./MathLine";
-import { MitBild, Passage, ReadingPassage, Start, StudentTask } from "./Sheet";
+import { lueckenNamen, MaturaAntworten, MitBild, Passage, ReadingPassage, Start, StudentTask } from "./Sheet";
+import { maturaFormat, maturaKreuze } from "@/lib/matura-formate";
 import { Pictures, TextBody } from "./TextPrint";
 
 const letter = (i: number) => String.fromCharCode(97 + i);
@@ -83,6 +84,9 @@ function AntwortBlock({ t, a, zeigeLoesung }: { t: SheetTask; a: Antwort; zeigeL
     case "luecken":
       // die Werte stehen schon in den Lücken der Aufgabe
       return null;
+    case "kreuze":
+      // Matura-Formate: die Kreuze stehen in den Tabellen der Aufgabe (MappeTask)
+      return null;
     case "rechnung":
       return (
         <div className="mp-rechnung">
@@ -140,14 +144,15 @@ function AntwortBlock({ t, a, zeigeLoesung }: { t: SheetTask; a: Antwort; zeigeL
 /** Eine bearbeitete Aufgabe: Aufgabe, Antwort des Schülers, Zeichen am Rand und bei Fehlern die richtige Lösung. */
 function MappeTask({ t, a, o }: { t: SheetTask; a: MappeAufgabe; o: MappeOptionen }) {
   const { task } = t;
+  const matura = maturaFormat(task);
   // wer bei einer Auswahl gleich die Lösung angesehen hat, sieht trotzdem die Möglichkeiten
-  const antwort: Antwort | null = a.antwort ?? (task.data.options ? { art: "wahl", index: null } : null);
+  const antwort: Antwort | null = a.antwort ?? (matura ? { art: "kreuze", kreuze: [] } : task.data.options ? { art: "wahl", index: null } : null);
   const fehler = a.bewertung === "falsch" || a.bewertung === "teilweise" || a.bewertung === "loesung";
   // ohne Häkchen und Kreuze ein sauberes Blatt nur mit den Antworten: dann auch ohne Lösungen und Hinweise
   const zeigeLoesung = o.marks && o.solutions && fehler;
   const loesung = zeigeLoesung ? (shortAnswer(task) ?? task.answer.sample ?? null) : null;
   // falsche Lücken einzeln markiert; steht die richtige Antwort schon in der Lücke, entfällt die Zeile „Richtig:“
-  const luecken = lueckenFuerMappe(task, antwort, { markieren: Boolean(o.marks && fehler), loesung: zeigeLoesung });
+  const luecken = matura ? undefined : lueckenFuerMappe(task, antwort, { markieren: Boolean(o.marks && fehler), loesung: zeigeLoesung });
   const loesungInLuecke = Boolean(luecken?.some((l) => l.richtig));
   const zeichen = o.marks ? ZEICHEN[a.bewertung] : null;
   return (
@@ -155,16 +160,22 @@ function MappeTask({ t, a, o }: { t: SheetTask; a: MappeAufgabe; o: MappeOptione
       <span className="ab-num">{t.n}</span>
       <div className="ab-body">
         {/* Aufgabe mit Bild: das Bild wie am Blatt; mit Lösung (bei Fehlern) zeigt es die gesuchten Werte */}
-        <MitBild task={task} loesung={zeigeLoesung} rest={(prompt) => <RichText text={prompt} gapsMm={t.plan.gapsMm} gapAnswers={luecken?.map((l) => ({ text: l.text, wrong: l.falsch, correct: l.richtig }))} />} />
+        <MitBild
+          task={task}
+          loesung={zeigeLoesung}
+          rest={(prompt) => <RichText text={prompt} gapsMm={t.plan.gapsMm} gapLabels={lueckenNamen(task)} gapAnswers={luecken?.map((l) => ({ text: l.text, wrong: l.falsch, correct: l.richtig }))} />}
+        />
         <Start task={task} />
         {task.type === "fix" && task.data.faulty && <p className="ab-faulty">{task.data.faulty}</p>}
+        {/* Matura-Formate: die Kreuze des Schülers wie auf dem Maturablatt, bei Fehlern die richtigen daneben */}
+        {matura && <MaturaAntworten task={task} kreuze={antwort?.art === "kreuze" ? antwort.kreuze : []} richtig={zeigeLoesung ? maturaKreuze(task) : null} />}
         {antwort ? (
           <AntwortBlock t={t} a={antwort} zeigeLoesung={zeigeLoesung} />
         ) : (
           <p className="mp-antwort ab-muted">keine Antwort</p>
         )}
         {o.marks && <Hinweis a={a} />}
-        {loesung && !loesungInLuecke && task.data.options === undefined && (
+        {loesung && !loesungInLuecke && task.data.options === undefined && !matura && (
           <p className="mp-loesung">
             <span className="mp-label">Richtig:</span> <MathLine text={loesung} />
           </p>

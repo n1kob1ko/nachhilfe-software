@@ -1045,8 +1045,19 @@ export const hatFigur = (data: { figure?: unknown } | null | undefined) => Boole
  * Vokabel-Aufgabe ist ihr Wort (lib/vokabeln.ts wortSchluessel): „hobby“ kommt nicht zweimal, auch nicht
  * einmal als Auswahl und einmal in die andere Richtung.
  */
-export function aufgabenSchluessel(t: { prompt: string; data?: { figure?: unknown; faulty?: string; wort?: string } | null }): string {
+export function aufgabenSchluessel(t: {
+  prompt: string;
+  category?: string | null;
+  data?: { figure?: unknown; faulty?: string; wort?: string; options?: string[]; gapOptions?: string[][]; zuordnung?: { statements: string[]; options: string[] } } | null;
+}): string {
   if (t.data?.wort) return t.data.wort;
   const text = t.data?.faulty ? `${t.prompt}\n${t.data.faulty}` : t.prompt;
-  return t.data?.figure ? `${text}\n${JSON.stringify(t.data.figure)}` : text;
+  // Matura-Formate (lib/matura-formate.ts): der Stamm ist oft für alle gleich („a und b sind positive reelle
+  // Zahlen.“), die Aufgabe steckt in den Antworten; die Reihenfolge der Antworten zählt nicht
+  const d = t.data;
+  if (t.category?.startsWith("matura-") || d?.gapOptions || d?.zuordnung) {
+    const sortiert = (xs: readonly string[] | undefined) => (xs ? [...xs].sort() : null);
+    return `${text}\n${JSON.stringify([sortiert(d?.options), d?.gapOptions?.map(sortiert) ?? null, d?.zuordnung ? [d.zuordnung.statements, sortiert(d.zuordnung.options)] : null])}`;
+  }
+  return d?.figure ? `${text}\n${JSON.stringify(d.figure)}` : text;
 }

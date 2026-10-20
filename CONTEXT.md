@@ -226,6 +226,16 @@ A4-Blatt, Mappe und Whiteboard (`lib/figur.ts`); die Aufgaben kommen ohne KI aus
 (`lib/generators-figur.ts`, [docs/aufgaben-mit-bild.md](docs/aufgaben-mit-bild.md)).
 _Avoid_: Bildaufgabe, Grafikaufgabe, Abbildung, Diagramm
 
+**Matura-Format**:
+Ein Antwortformat der schriftlichen AHS-Mathematik-Matura (Teil 1): **1 aus 5**, **2 aus 5**,
+**Lückentext zum Ankreuzen** (zwei Lücken ① ②, je drei Satzteile) und **Zuordnung** (zwei Aussagen,
+vier Antworten A bis D). Jede solche **Aufgabe** gibt 0 oder 1 Punkt; bei 2 aus 5, Lückentext und
+Zuordnung nur, wenn alles stimmt. Übernommen ist nur die Form, nie eine Aufgabe aus dem Aufgabenpool,
+aus Maturen, Schulbüchern oder vom IQS. Im Code die Aufgabentypen `matura-1aus5`, `matura-2aus5`,
+`matura-lueckentext` und `matura-zuordnung` (`lib/matura-formate.ts`); die Aufgaben kommen ohne KI aus
+eigenen Generatoren (`lib/mathe-matura.ts`) oder von der KI. Das Konstruktionsformat gibt es nicht.
+_Avoid_: Maturaaufgabe, Typ-1-Aufgabe, SRDP-Aufgabe, Ankreuzaufgabe
+
 **Textinterpretation**:
 Ein Schreibauftrag der Oberstufe wie bei der Schularbeit: eine ganze Geschichte
 mit **Zeilennummern** (jede fünfte sichtbar) und rund 500 Wörter Interpretation in
