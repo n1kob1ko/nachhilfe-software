@@ -304,8 +304,6 @@ export function wortartenSetting(skillIds: string[], schoolType: string, klasse:
   return wortartenFor(skillIds, schulstufe(schoolType, klasse), { practised, current });
 }
 
-const typeName = (subject: string, key: string | null) => (key ? (categoriesFor(subject).find((c) => c.key === key)?.label ?? key) : "");
-
 /**
  * Das Antwortformat jeder Bank (Phase 1 des Merges, Schritt 6). `bankItemTask` (lib/generators.ts) baut
  * aus einem Bankeintrag genau eine Form: Artikel und Haupt-/Gliedsatz sind Multiple Choice, alle übrigen
@@ -349,7 +347,7 @@ export async function generateTasks(
     /** Textinterpretation: the story of the Teilübungen (else the student's latest one or the example). */
     interpretation?: TeilSource;
   } = {},
-): Promise<{ tasks: TaskDraft[]; source: "ki" | "generator"; aiError?: string }> {
+): Promise<{ tasks: TaskDraft[]; source: "ki" | "generator"; aiError?: string; typFehlt?: number }> {
   const settings = { ...s, skillIds: o.skillIds ?? s.skillIds, categories: o.categories ?? s.categories, difficulty: o.difficulty ?? s.difficulty };
   const skills = resolveSkills(settings, ctx);
   if (!skills.length) throw new Error("Bitte mindestens eine Fähigkeit auswählen.");
@@ -461,9 +459,8 @@ export async function generateTasks(
   // the rest (or everything without AI) from the built-in generators, slot by slot
   // Aufgaben mit Bild haben oft denselben Text: verglichen wird mit dem Bild (aufgabenSchluessel)
   const avoid = new Set([...(o.avoidKeys ?? o.avoid ?? []), ...slots.filter((t): t is TaskDraft => Boolean(t)).map(aufgabenSchluessel)]);
-  const missedType: string[] = [];
-  /** was statt des fehlenden Typs kam: „eine freie Antwort“ oder ein anderer Aufgabentyp (Aufgaben mit Bild) */
-  const instead: string[] = [];
+  /** so viele Plätze bekamen einen anderen Typ, weil es den gewählten ohne KI nicht gibt */
+  let missedType = 0;
   for (let i = 0; i < plan.length; i++) {
     if (slots[i]) continue;
     const { skill: r, category } = plan[i];
@@ -478,10 +475,7 @@ export async function generateTasks(
       if (!avoid.has(aufgabenSchluessel(t)) || guard >= 10) break;
     }
     avoid.add(aufgabenSchluessel(t!));
-    if (category && t!.category !== category) {
-      missedType.push(typeName(settings.subject, category));
-      instead.push(t!.type === "free" ? "eine freie Antwort" : typeName(settings.subject, t!.category ?? null) || "eine freie Antwort");
-    }
+    if (category && t!.category !== category) missedType++;
     slots[i] = t;
   }
   // parents count too, so the progress of "Dividieren" also moves when "Kehrwert" is practised
@@ -489,9 +483,9 @@ export async function generateTasks(
   const notes = [
     aiError,
     fromAI && fromAI < aiCount ? `${aiCount - fromAI} ${aiCount - fromAI === 1 ? "Aufgabe kam" : "Aufgaben kamen"} von der KI nicht im gewünschten Typ und ${aiCount - fromAI === 1 ? "wurde" : "wurden"} ohne KI erstellt.` : "",
-    missedType.length ? `Ohne KI gibt es ${[...new Set(missedType)].join(" und ")} für diese Fähigkeit nicht: ${missedType.length === 1 ? "eine Aufgabe ist" : `${missedType.length} Aufgaben sind`} stattdessen ${[...new Set(instead)].join(" oder ")}.` : "",
   ].filter(Boolean);
-  return { tasks, source: fromAI ? "ki" : "generator", aiError: notes.length ? notes.join(" ") : undefined };
+  // Kein KI-Fehler: Den gewählten Typ gibt es ohne KI für diese Fähigkeit nicht (Seite: ?hinweis=typ).
+  return { tasks, source: fromAI ? "ki" : "generator", aiError: notes.length ? notes.join(" ") : undefined, typFehlt: missedType || undefined };
 }
 
 function autoTitle(s: BuilderSettings, ctx: StudentContext | null) {
@@ -503,19 +497,21 @@ function autoTitle(s: BuilderSettings, ctx: StudentContext | null) {
 }
 
 /** Generates tasks and stores them as a draft exercise for the preview. */
-export async function createDraft(s: BuilderSettings, teacherId: number | null, o: { empty?: boolean; interpretationTextId?: number } = {}): Promise<{ id: number; aiError?: string }> {
+export async function createDraft(s: BuilderSettings, teacherId: number | null, o: { empty?: boolean; interpretationTextId?: number } = {}): Promise<{ id: number; aiError?: string; typFehlt?: number }> {
   const ctx = s.studentId ? studentContext(s.studentId) : null;
   const all = repo.listSkills();
   const chosen = all.filter((x) => s.skillIds.includes(x.id));
   let tasks: TaskDraft[] = [];
   let source: repo.Worksheet["source"] = "manuell";
   let aiError: string | undefined;
+  let typFehlt: number | undefined;
   if (!o.empty) {
     const interpretation = o.interpretationTextId ? (teilSourceOf(o.interpretationTextId) ?? undefined) : undefined;
     const out = await generateTasks(s, ctx, { meta: { teacherId, studentId: s.studentId, trigger: "uebung" }, interpretation });
     tasks = out.tasks;
     source = out.source;
     aiError = out.aiError;
+    typFehlt = out.typFehlt;
   }
   const id = repo.createWorksheet(
     {
@@ -537,7 +533,7 @@ export async function createDraft(s: BuilderSettings, teacherId: number | null, 
     },
     tasks,
   );
-  return { id, aiError };
+  return { id, aiError, typFehlt };
 }
 
 /** Settings of an exercise for regenerating tasks; older exercises get them rebuilt from their columns. */
@@ -561,7 +557,7 @@ export function settingsOf(w: repo.Worksheet): BuilderSettings {
 }
 
 /** Replaces one task by a new one for the same skill and type (optionally at another difficulty). */
-export async function regenerateTask(taskId: number, o: { difficulty?: Difficulty; useAI?: boolean; teacherId?: number | null } = {}): Promise<{ ok: boolean; aiError?: string }> {
+export async function regenerateTask(taskId: number, o: { difficulty?: Difficulty; useAI?: boolean; teacherId?: number | null } = {}): Promise<{ ok: boolean; aiError?: string; typFehlt?: number }> {
   // a Teilübung of a Textinterpretation: the other wording for the same part, about the same story
   const teil = repo.getTask(taskId);
   const nextTeil = teil?.data.teil ? nextTeiluebung(teil) : null;
@@ -590,7 +586,7 @@ export async function regenerateTask(taskId: number, o: { difficulty?: Difficult
   repo.updateTask(taskId, { ...next, difficulty });
   // new content, new origin: the old source and licence (e.g. an imported OER task) do not apply any more
   repo.setTaskOrigin(taskId, { sourceType: next.sourceType ?? "eigen" });
-  return { ok: true, aiError: out.aiError };
+  return { ok: true, aiError: out.aiError, typFehlt: out.typFehlt };
 }
 
 // ---------- manual tasks and checks ----------
@@ -796,7 +792,7 @@ export function saveTemplate(worksheetId: number, name: string, withTasks: boole
 }
 
 /** "Verwenden": a draft for the student, from the template's tasks or freshly generated from its settings. */
-export async function draftFromTemplate(templateId: number, studentId: number | null, teacherId: number | null): Promise<{ id?: number; aiError?: string; error?: string }> {
+export async function draftFromTemplate(templateId: number, studentId: number | null, teacherId: number | null): Promise<{ id?: number; aiError?: string; typFehlt?: number; error?: string }> {
   const tp = repo.getTemplate(templateId);
   if (!tp) return { error: "Vorlage nicht gefunden." };
   repo.noteTemplateUsed(templateId);

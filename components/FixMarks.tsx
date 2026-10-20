@@ -6,7 +6,8 @@ export function Marked({ marks, className = "" }: { marks: Mark[]; className?: s
     <p className={`whitespace-pre-line ${className}`}>
       {marks.map((m, i) => (
         <span key={i}>
-          {i > 0 && (m.pre || (/^[.,;:!?)\]]$/.test(m.text) ? "" : " "))}
+          {/* the spaces as written: no space after „ or before “ (direkte Rede) */}
+          {i > 0 && m.pre}
           {m.kind === "same" ? m.text : <span className={m.kind === "fixed" ? "fx-fixed" : "fx-wrong"}>{m.text}</span>}
         </span>
       ))}

@@ -96,7 +96,7 @@ export function lueckenFuerMappe(
   return Array.from({ length: Math.max(werte.length, erwartet.length) }, (_, i) => {
     const text = (werte[i] ?? "").trim();
     const moeglich = erwartet[i] ?? [];
-    if (!o.markieren || !moeglich.length || moeglich.some((m) => sameAnswer(text, m, t.answer.mode ?? "text", t.answer.contractions))) return { text };
+    if (!o.markieren || !moeglich.length || moeglich.some((m) => sameAnswer(text, m, t.answer.mode ?? "text", t.answer.contractions, t.answer.satzzeichen))) return { text };
     return { text, falsch: true, ...(o.loesung ? { richtig: moeglich[0] } : {}) };
   });
 }

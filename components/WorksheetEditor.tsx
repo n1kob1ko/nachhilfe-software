@@ -475,7 +475,7 @@ function reshapeBase(t: TaskDraft, format: TaskType): TaskDraft {
     case "reading":
       return { ...keep, data: { passage: t.data.passage ?? "", options: opts }, answer: { correct: t.answer.correct ?? 0 } };
     case "cloze":
-      return { ...keep, data: {}, prompt: t.prompt.includes(GAP) ? t.prompt : `${t.prompt} ${GAP}`.trim(), answer: { blanks: t.answer.blanks ?? [[t.answer.accepted?.[0] ?? ""]], mode: t.answer.mode ?? "text", ...(t.answer.endings ? { endings: true } : {}) } };
+      return { ...keep, data: {}, prompt: t.prompt.includes(GAP) ? t.prompt : `${t.prompt} ${GAP}`.trim(), answer: { blanks: t.answer.blanks ?? [[t.answer.accepted?.[0] ?? ""]], mode: t.answer.mode ?? "text", ...(t.answer.endings ? { endings: true } : {}), ...(t.answer.satzzeichen ? { satzzeichen: true } : {}) } };
     case "free":
       return { ...keep, data: { passage: t.data.passage, lines: t.data.lines ?? 5 }, answer: { sample: t.answer.sample ?? t.answer.accepted?.[0] ?? "", criteria: t.answer.criteria ?? [] } };
     case "fix":
@@ -490,7 +490,7 @@ function reshapeBase(t: TaskDraft, format: TaskType): TaskDraft {
     case "memorize":
       return { ...keep, data: { passage: t.data.passage ?? "" }, answer: {} };
     case "grammar":
-      return { ...keep, data: {}, answer: { accepted: t.answer.accepted ?? [""], mode: t.answer.mode === "exact" ? "exact" : "text" } };
+      return { ...keep, data: {}, answer: { accepted: t.answer.accepted ?? [""], mode: t.answer.mode === "exact" ? "exact" : "text", ...(t.answer.satzzeichen ? { satzzeichen: true } : {}) } };
     case "rechenweg":
       return {
         ...keep,

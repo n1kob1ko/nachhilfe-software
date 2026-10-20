@@ -985,7 +985,7 @@ test("Builder: eine Übung ohne KI mit Aufgaben mit Bild, ohne falsche Hinweise 
   assert.equal(out.source, "generator");
   assert.equal(out.tasks.length, 12);
   assert.ok(out.tasks.every((t) => t.data.figure), "jede Aufgabe mit Bild");
-  assert.ok(!/freie Antwort/.test(out.aiError ?? ""), out.aiError);
+  assert.equal(out.typFehlt, undefined, "jeder Platz hat seinen Typ");
   assert.equal(new Set(out.tasks.map(aufgabenSchluessel)).size, 12);
   for (const t of out.tasks) assert.equal(builder.checkTask(t), null, t.prompt);
   // gespeichert und neu erstellt: das Bild bleibt, die neue Aufgabe ist eine andere

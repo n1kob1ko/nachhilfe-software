@@ -119,6 +119,11 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
       {sp.hinweis === "ki" && (
         <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Claude war nicht erreichbar. Die Aufgaben stammen aus den eingebauten Generatoren.</p>
       )}
+      {sp.hinweis === "typ" && (
+        <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">
+          {Number(sp.anzahl) === 1 ? "Eine Aufgabe hat" : `${Number(sp.anzahl) || "Einige"} Aufgaben haben`} einen anderen Typ, weil es den gewählten Typ ohne KI für diese Fähigkeit nicht gibt. Ändere sie unten mit „Bearbeiten“.
+        </p>
+      )}
       {sp.hinweis === "erklaeren" && (
         <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">
           {Number(sp.anzahl) === 1 ? "Eine Aufgabe ist" : `${Number(sp.anzahl) || "Einige"} Aufgaben sind`} nur eine Erklär-Aufgabe, weil es zu diesem Thema keine eingebauten Aufgaben gibt. Ändere sie unten mit „Bearbeiten“.
