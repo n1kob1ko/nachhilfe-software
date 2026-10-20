@@ -12,6 +12,7 @@ import { MathLine, RichText } from "./MathLine";
 import { Lines, WorkField } from "./WorkArea";
 import { Marked } from "@/components/FixMarks";
 import { FigurBild, figurKopf } from "@/components/Figur";
+import { zumAblesen } from "@/lib/figur";
 import { markFaultyText } from "@/lib/fix-text";
 import { bereichText, punkteText } from "@/lib/probeschularbeit-regeln";
 
@@ -536,8 +537,8 @@ function SolutionPage({ doc, o }: { doc: SheetDoc; o: SheetOptions }) {
                     <MathLine text={t.task.solution} />
                   </p>
                 )}
-                {/* Ablesen am Zahlenstrahl oder im Koordinatensystem: das Bild mit den Werten, klein */}
-                {t.task.data.figure && t.task.data.figure.art !== "figur" && (
+                {/* Ablesen am Zahlenstrahl, im Koordinatensystem oder im Diagramm: das Bild mit den Werten, klein */}
+                {zumAblesen(t.task.data.figure) && (
                   <FigurBild figure={t.task.data.figure} loesung mm={FIGUR_MM * 0.7} className="ab-figur" />
                 )}
               </div>

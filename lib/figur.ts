@@ -1,8 +1,9 @@
 /**
- * Aufgaben mit Bild: ein Zahlenstrahl, ein Koordinatensystem oder eine Figur hängt an einer Aufgabe
- * (`tasks.data.figure`). Die Antwort bleibt ein gewohntes Format (Rechnung, Multiple Choice, Lückentext,
- * Rechenweg, Sachaufgabe), geprüft wird wie immer (lib/tasks.ts checkAnswer); das Bild zeigt nur, was zur
- * Aufgabe gehört. Die Aufgaben dazu macht lib/generators-figur.ts aus denselben Zahlen, die es zeichnet.
+ * Aufgaben mit Bild: ein Zahlenstrahl, ein Koordinatensystem, eine Figur, ein Kreis oder ein Diagramm hängt an
+ * einer Aufgabe (`tasks.data.figure`). Die Antwort bleibt ein gewohntes Format (Rechnung, Multiple Choice,
+ * Lückentext, Rechenweg, Sachaufgabe), geprüft wird wie immer (lib/tasks.ts checkAnswer); das Bild zeigt nur,
+ * was zur Aufgabe gehört. Die Aufgaben dazu macht lib/generators-figur.ts aus denselben Zahlen, die es zeichnet;
+ * im Editor ändert die Lehrkraft das Bild über lib/figur-editor.ts, gespeichert wird nur, was `leseFigur` annimmt.
  *
  * Ein Zeichner für alle Stellen: `figurSzene` legt das Bild als einfache Teile an (Linien, Wege, Punkte,
  * Texte, Brüche), `figurSvg` macht daraus ein SVG (Schüler-Gerät, Vorschau, Editor, A4-Druck, Mappe), das
@@ -70,10 +71,65 @@ export type Flaeche = {
   innen?: { text: string; bei: Punkt2 } | null;
 };
 
-export type Figur = Zahlenstrahl | Koordinaten | Flaeche;
+export type KreisTeil = "kreis" | "halbkreis" | "viertelkreis" | "sektor";
+
+export type Kreis = {
+  art: "kreis";
+  teil: KreisTeil;
+  /** Mittelpunktswinkel in Grad: beim Sektor 1 bis 359, sonst 360, 180 oder 90 (folgt aus dem Teil) */
+  winkel: number;
+  /** eingezeichnete Strecke: Radius (vom Mittelpunkt nach rechts) oder Durchmesser (waagrecht durch den Mittelpunkt) */
+  strecke: "radius" | "durchmesser" | "keine";
+  /** Beschriftung der Strecke ("r = 5 cm", "d = ?"); `loesung` nur für die Lehrerfassung */
+  text: string;
+  loesung?: string;
+  /** Name des Mittelpunkts ("M"), leer = ohne Namen */
+  mitte: string;
+  /** den Winkel anschreiben (Sektor, Halbkreis) bzw. den rechten Winkel zeichnen (Viertelkreis) */
+  winkelZeigen: boolean;
+  /** die Fläche deutlich getönt statt nur ganz leicht */
+  getoent: boolean;
+  /** bei einem Kreisteil den übrigen Kreis gestrichelt dazu (zeigt den Anteil am ganzen Kreis) */
+  ganzerKreis: boolean;
+};
+
+export type DiagrammForm = "saeulen" | "balken" | "linie";
+
+export type Diagramm = {
+  art: "diagramm";
+  form: DiagrammForm;
+  /** Überschrift ("Lieblingsobst der 3b"), leer = ohne */
+  titel: string;
+  /** Beschriftung der Werteachse ("Anzahl Kinder", "°C") */
+  achse: string;
+  /** Werteachse von min bis max mit einer Gitterlinie alle `schritt`; min und max sind Vielfache von `schritt`.
+   *  Säulen und Balken beginnen bei min ≥ 0 (min > 0: abgeschnittene Achse, mit Zeichen); Linien dürfen unter 0. */
+  min: number;
+  max: number;
+  schritt: number;
+  /** jede wievielte Gitterlinie eine Zahl bekommt (1 = jede) */
+  zahlenAlle: number;
+  /** Säulen, Balken oder Punkte von links nach rechts (Balken von oben nach unten). `gesucht`: nicht gezeichnet,
+   *  nur ein „?“; die Lehrerfassung zeigt den Wert. Ein Wert, der nicht auf einer Gitterlinie liegt, wird
+   *  angeschrieben, damit er genau ablesbar bleibt. */
+  werte: { name: string; wert: number; gesucht?: boolean }[];
+  /** jeden Wert anschreiben (wenn nicht das Ablesen, sondern das Rechnen geübt wird) */
+  werteZeigen: boolean;
+};
+
+export type Figur = Zahlenstrahl | Koordinaten | Flaeche | Kreis | Diagramm;
 export type FigurArt = Figur["art"];
 
-export const FIGUR_ARTEN: Record<FigurArt, string> = { zahlenstrahl: "Zahlenstrahl", koordinaten: "Koordinatensystem", figur: "Figur" };
+export const FIGUR_ARTEN: Record<FigurArt, string> = { zahlenstrahl: "Zahlenstrahl", koordinaten: "Koordinatensystem", figur: "Figur", kreis: "Kreis", diagramm: "Diagramm" };
+export const KREIS_TEILE: Record<KreisTeil, string> = { kreis: "Kreis", halbkreis: "Halbkreis", viertelkreis: "Viertelkreis", sektor: "Kreissektor" };
+export const DIAGRAMM_FORMEN: Record<DiagrammForm, string> = { saeulen: "Säulendiagramm", balken: "Balkendiagramm", linie: "Liniendiagramm" };
+/** Mittelpunktswinkel eines Kreisteils in Grad. */
+export const kreisWinkel = (f: Pick<Kreis, "teil" | "winkel">) => (f.teil === "kreis" ? 360 : f.teil === "halbkreis" ? 180 : f.teil === "viertelkreis" ? 90 : f.winkel);
+/**
+ * Wird am Bild vor allem abgelesen (Zahlenstrahl, Koordinatensystem, Diagramm)? Dann braucht das A4-Blatt kein großes
+ * Rechenfeld und die Lösungsseite zeigt das Bild mit den Werten. Bei Figur und Kreis wird gerechnet.
+ */
+export const zumAblesen = (f: Figur | null | undefined) => Boolean(f && (f.art === "zahlenstrahl" || f.art === "koordinaten" || f.art === "diagramm"));
 
 // ---------- Zahlen ----------
 
@@ -90,6 +146,8 @@ export function kuerzen({ z, n }: Bruch): Bruch {
   return { z: (s * z) / g, n: (s * n) / g };
 }
 export const bruchWert = (b: Bruch) => b.z / b.n;
+/** Liegt der Wert im Diagramm genau auf einer Gitterlinie? Sonst wird er angeschrieben. */
+export const aufGitter = (f: Pick<Diagramm, "min" | "schritt">, v: number) => Math.abs((v - f.min) / f.schritt - Math.round((v - f.min) / f.schritt)) < 1e-6;
 
 /** Schöne Zahl wie im Schulbuch: Beistrich, Leerzeichen zwischen Dreiergruppen ab 1 000, echtes Minus. */
 export function zahl(v: number, nachkomma?: number): string {
@@ -152,16 +210,19 @@ const bruch = (x: unknown): Bruch | null => {
 };
 
 /**
- * Liest eine gespeicherte Figur und gibt eine saubere Kopie zurück, oder null, wenn sie nicht stimmt. Alles, was
- * aus der Datenbank oder vom Editor kommt, geht hier durch; Texte werden gekürzt, Listen begrenzt.
+ * Liest eine gespeicherte Figur und gibt eine saubere Kopie zurück, oder einen kurzen Grund, warum sie nicht stimmt.
+ * Alles, was aus der Datenbank oder vom Editor kommt, geht hier durch; Texte werden gekürzt, Listen begrenzt,
+ * einzelne unbrauchbare Einträge (eine Marke außerhalb des Strahls) fallen weg.
  */
-export function leseFigur(raw: unknown): Figur | null {
-  if (!raw || typeof raw !== "object") return null;
+function pruefe(raw: unknown): Figur | string {
+  if (!raw || typeof raw !== "object") return "Kein Bild.";
   const f = raw as Record<string, unknown>;
   if (f.art === "zahlenstrahl") {
     const schritt = bruch(f.schritt);
-    if (!schritt || schritt.z === 0 || !endlich(f.start) || !ganz(f.schritte, 1, 200)) return null;
-    if (!Number.isInteger(Math.round((f.start as number) * schritt.n * 1e6) / 1e6)) return null;
+    if (!schritt || schritt.z === 0) return "Ein Teilstück muss eine Zahl ungleich 0 sein.";
+    if (!endlich(f.start)) return "Der Anfang ist keine Zahl.";
+    if (!ganz(f.schritte, 1, 200)) return "Der Strahl braucht 1 bis 200 Teilstücke.";
+    if (!Number.isInteger(Math.round((f.start as number) * schritt.n * 1e6) / 1e6)) return "Der Anfang passt nicht zum Teilstück.";
     const schritte = f.schritte as number;
     const imBereich = (i: unknown): i is number => ganz(i, 0, schritte);
     const format = f.format === "dezimal" || f.format === "bruch" ? f.format : "ganz";
@@ -190,7 +251,8 @@ export function leseFigur(raw: unknown): Figur | null {
     const bereich = (x: unknown): [number, number] | null => (Array.isArray(x) && ganz(x[0], -30, 0) && ganz(x[1], 0, 30) && x[1] - x[0] >= 2 ? [x[0], x[1]] : null);
     const x = bereich(f.x);
     const y = bereich(f.y);
-    if (!x || !y || !endlich(f.einheit, 1e6) || (f.einheit as number) <= 0) return null;
+    if (!x || !y) return "Jede Achse muss die 0 enthalten, mindestens 2 Kästchen lang sein und höchstens 30 Kästchen in jede Richtung gehen.";
+    if (!endlich(f.einheit, 1e6) || (f.einheit as number) <= 0) return "Ein Kästchen muss größer als 0 sein.";
     const punkte = (Array.isArray(f.punkte) ? f.punkte : []).slice(0, 12).flatMap((p) => {
       const q = p as { name?: unknown; x?: unknown; y?: unknown };
       const name = kurz(q?.name, 3);
@@ -206,8 +268,12 @@ export function leseFigur(raw: unknown): Figur | null {
   if (f.art === "figur") {
     const FORMEN: FlaechenForm[] = ["rechteck", "quadrat", "dreieck", "rechtwinklig", "l-form", "gleichschenklig"];
     const form = FORMEN.includes(f.form as FlaechenForm) ? (f.form as FlaechenForm) : null;
+    if (!form) return "Unbekannte Form.";
     const ecken = (Array.isArray(f.ecken) ? f.ecken : []).slice(0, 12).map(punkt2);
-    if (!form || ecken.length < 3 || ecken.some((e) => !e)) return null;
+    if (ecken.length < 3 || ecken.some((e) => !e)) return "Die Figur braucht mindestens drei Ecken.";
+    const xs = ecken.map((e) => e![0]);
+    const ys = ecken.map((e) => e![1]);
+    if (Math.max(...xs) - Math.min(...xs) <= 0 || Math.max(...ys) - Math.min(...ys) <= 0) return "Die Figur ist zu flach: jede Länge muss größer als 0 sein.";
     const n = ecken.length;
     const seiten = (Array.isArray(f.seiten) ? f.seiten : []).slice(0, 12).flatMap((s) => {
       const q = s as { von?: unknown; text?: unknown; loesung?: unknown };
@@ -238,7 +304,78 @@ export function leseFigur(raw: unknown): Figur | null {
       innen: innenText && innenBei ? { text: innenText, bei: innenBei } : null,
     };
   }
-  return null;
+  if (f.art === "kreis") {
+    const TEILE: KreisTeil[] = ["kreis", "halbkreis", "viertelkreis", "sektor"];
+    const teil = TEILE.includes(f.teil as KreisTeil) ? (f.teil as KreisTeil) : null;
+    if (!teil) return "Unbekannter Kreisteil.";
+    if (teil === "sektor" && !ganz(f.winkel, 1, 359)) return "Der Winkel des Kreissektors muss eine ganze Zahl von 1 bis 359 sein.";
+    const strecke = f.strecke === "radius" || f.strecke === "durchmesser" ? f.strecke : "keine";
+    const ganzerKreis = teil !== "kreis" && Boolean(f.ganzerKreis);
+    if (strecke === "durchmesser" && (teil === "viertelkreis" || teil === "sektor") && !ganzerKreis) return "Einen Durchmesser hat nur ein ganzer Kreis oder ein Halbkreis (oder zeig den ganzen Kreis gestrichelt dazu).";
+    const loesung = kurz(f.loesung);
+    return {
+      art: "kreis",
+      teil,
+      winkel: kreisWinkel({ teil, winkel: f.winkel as number }),
+      strecke,
+      text: strecke === "keine" ? "" : (kurz(f.text) ?? ""),
+      ...(loesung && strecke !== "keine" ? { loesung } : {}),
+      mitte: kurz(f.mitte, 3) ?? "",
+      winkelZeigen: teil !== "kreis" && Boolean(f.winkelZeigen),
+      getoent: Boolean(f.getoent),
+      ganzerKreis,
+    };
+  }
+  if (f.art === "diagramm") {
+    const form = f.form === "saeulen" || f.form === "balken" || f.form === "linie" ? f.form : null;
+    if (!form) return "Unbekannte Art von Diagramm.";
+    if (!endlich(f.schritt, 1e6) || (f.schritt as number) <= 0) return "Der Abstand der Gitterlinien muss größer als 0 sein.";
+    if (!endlich(f.min) || !endlich(f.max)) return "Anfang und Ende der Achse müssen Zahlen sein.";
+    const schritt = f.schritt as number;
+    const min = f.min as number;
+    const max = f.max as number;
+    const vielfaches = (v: number) => Math.abs(v / schritt - Math.round(v / schritt)) < 1e-6;
+    if (!vielfaches(min) || !vielfaches(max)) return `Anfang und Ende der Achse müssen auf einer Gitterlinie liegen (Vielfache von ${zahl(schritt)}).`;
+    const linien = Math.round((max - min) / schritt);
+    if (linien < 1 || linien > 40) return "Die Achse braucht 1 bis 40 Abstände zwischen den Gitterlinien.";
+    if (form !== "linie" && min < 0) return "Säulen und Balken beginnen bei 0 oder darüber.";
+    const roh = Array.isArray(f.werte) ? f.werte : [];
+    if (roh.length < 1 || roh.length > 12) return "Das Diagramm braucht 1 bis 12 Werte.";
+    const werte: Diagramm["werte"] = [];
+    for (const w of roh) {
+      const q = w as { name?: unknown; wert?: unknown; gesucht?: unknown };
+      const name = kurz(q?.name, 16) ?? "";
+      if (!endlich(q?.wert)) return `Der Wert${name ? ` bei ${name}` : ""} ist keine Zahl.`;
+      const wert = q.wert as number;
+      if (wert < min - 1e-9 || wert > max + 1e-9) return `Der Wert ${zahl(wert)}${name ? ` bei ${name}` : ""} liegt außerhalb der Achse (${zahl(min)} bis ${zahl(max)}).`;
+      werte.push({ name, wert, ...(q.gesucht && form !== "linie" ? { gesucht: true } : {}) });
+    }
+    return {
+      art: "diagramm",
+      form,
+      titel: kurz(f.titel, 60) ?? "",
+      achse: kurz(f.achse, 24) ?? "",
+      min,
+      max,
+      schritt,
+      zahlenAlle: ganz(f.zahlenAlle, 1, 10) ? f.zahlenAlle : 1,
+      werte,
+      werteZeigen: Boolean(f.werteZeigen),
+    };
+  }
+  return "Unbekannte Art von Bild.";
+}
+
+/** Die Figur sauber gelesen, oder null, wenn sie nicht stimmt (dann wird sie weder gespeichert noch gezeichnet). */
+export function leseFigur(raw: unknown): Figur | null {
+  const r = pruefe(raw);
+  return typeof r === "string" ? null : r;
+}
+
+/** Warum eine Figur nicht angenommen wird (für den Editor), oder null, wenn sie stimmt. */
+export function figurFehler(raw: unknown): string | null {
+  const r = pruefe(raw);
+  return typeof r === "string" ? r : null;
 }
 
 // ---------- Beschreibung (aria-label, Text am Whiteboard) ----------
@@ -281,6 +418,25 @@ export function figurBeschreibung(raw: unknown): string | null {
     if (dinge.length) teile.push(`Eingezeichnet ${f.punkte.length + f.geraden.length > 1 ? "sind" : "ist"} ${aufzaehlen(dinge)}.`);
     return teile.join(" ");
   }
+  if (f.art === "kreis") {
+    const teile = [`${KREIS_TEILE[f.teil]}${f.mitte ? ` mit dem Mittelpunkt ${f.mitte}` : ""}${f.getoent ? ", die Fläche ist getönt" : ""}.`];
+    if (f.ganzerKreis) teile.push("Der übrige Kreis ist gestrichelt.");
+    if (f.winkelZeigen) teile.push(f.teil === "viertelkreis" ? "Der rechte Winkel ist eingezeichnet." : `Der Winkel ist ${zahl(f.winkel)}°.`);
+    if (f.strecke !== "keine") teile.push(`Eingezeichnet ist der ${f.strecke === "radius" ? "Radius" : "Durchmesser"}${f.text ? `, beschriftet: ${gesucht(f.text)}` : ""}.`);
+    return teile.join(" ");
+  }
+  if (f.art === "diagramm") {
+    const stueck = f.form === "saeulen" ? ["Säule", "Säulen"] : f.form === "balken" ? ["Balken", "Balken"] : ["Punkt", "Punkten"];
+    const namen = f.werte.map((w) => w.name).filter(Boolean);
+    const teile = [`${DIAGRAMM_FORMEN[f.form]}${f.titel ? ` „${f.titel}“` : ""} mit ${f.werte.length} ${f.werte.length === 1 ? stueck[0] : stueck[1]}${namen.length ? `: ${aufzaehlen(namen)}` : ""}.`];
+    teile.push(`Die Achse${f.achse ? ` „${f.achse}“` : ""} geht von ${zahl(f.min)} bis ${zahl(f.max)}, die Gitterlinien sind ${zahl(f.schritt)} auseinander.`);
+    if (f.form !== "linie" && f.min > 0) teile.push("Die Achse beginnt nicht bei 0.");
+    const gezeigt = f.werte.filter((w) => !w.gesucht && (f.werteZeigen || !aufGitter(f, w.wert)));
+    if (gezeigt.length) teile.push(`Angeschrieben: ${gezeigt.map((w) => `${w.name ? `${w.name} ` : ""}${zahl(w.wert)}`).join(", ")}.`);
+    const fehlt = f.werte.filter((w) => w.gesucht).map((w) => w.name || "?");
+    if (fehlt.length) teile.push(`${f.form === "balken" ? "Der Balken" : "Die Säule"} bei ${aufzaehlen(fehlt)} fehlt.`);
+    return teile.join(" ");
+  }
   const angaben = [...f.seiten.map((s) => s.text), ...(f.strecken ?? []).flatMap((s) => (s.text ? [s.text] : [])), ...(f.innen ? [f.innen.text] : [])].filter(Boolean).map(gesucht);
   const teile = [`${FORM_NAME[f.form]}.`];
   if (angaben.length) teile.push(`Beschriftet: ${angaben.join(", ")}.`);
@@ -292,7 +448,8 @@ export function figurBeschreibung(raw: unknown): string | null {
 
 export type Teil =
   | { t: "linie"; x1: number; y1: number; x2: number; y2: number; w: number; stil?: "strich" | "gitter" }
-  | { t: "weg"; p: Punkt2[]; zu: boolean; w: number; fuellung?: "flaeche" | "voll" }
+  /** fuellung: flaeche = ganz leicht getönt, getoent = deutlich (Kreisteil, Säule), voll = in der Strichfarbe */
+  | { t: "weg"; p: Punkt2[]; zu: boolean; w: number; fuellung?: "flaeche" | "getoent" | "voll"; stil?: "strich" }
   | { t: "punkt"; x: number; y: number; r: number; offen?: boolean }
   /** y ist die Mitte der Zeile; `halo`: mit hellem Rand, damit Gitterlinien darunter den Text nicht stören */
   | { t: "text"; x: number; y: number; s: string; g: number; a: "start" | "middle" | "end"; fett?: boolean; halo?: boolean }
@@ -655,11 +812,174 @@ function flaechenSzene(f: Flaeche, loesung: boolean): Teil[] {
   return teile;
 }
 
+/** Punkte auf einem Kreisbogen um (0 | 0) von Winkel `von` bis `bis` (Grad, gegen den Uhrzeigersinn, y nach unten). */
+function bogen(r: number, von: number, bis: number): Punkt2[] {
+  const n = Math.max(2, Math.ceil(Math.abs(bis - von) / 3));
+  return Array.from({ length: n + 1 }, (_, i) => {
+    const w = ((von + ((bis - von) * i) / n) * Math.PI) / 180;
+    return [r * Math.cos(w), -r * Math.sin(w)] as Punkt2;
+  });
+}
+
+/**
+ * Kreis und Kreisteile: der Mittelpunkt liegt bei (0 | 0), ein Kreisteil beginnt beim Radius nach rechts und geht
+ * gegen den Uhrzeigersinn (Halbkreis oben, Viertelkreis rechts oben). Radius und Durchmesser liegen waagrecht, ihre
+ * Beschriftung steht außerhalb der Fläche; der Name des Mittelpunkts steht dort, wo keine Beschriftung ist.
+ */
+function kreisSzene(f: Kreis, loesung: boolean): Teil[] {
+  const R = 90;
+  const a = kreisWinkel(f);
+  const teile: Teil[] = [];
+  if (f.ganzerKreis) teile.push({ t: "weg", p: bogen(R, a, 360), zu: false, w: 1.1, stil: "strich" });
+  const rand = a === 360 ? bogen(R, 0, 360).slice(0, -1) : [[0, 0] as Punkt2, ...bogen(R, 0, a)];
+  teile.push({ t: "weg", p: rand, zu: true, w: 2, fuellung: f.getoent ? "getoent" : "flaeche" });
+  const G = 15;
+  const text = loesung && f.loesung ? f.loesung : f.text;
+  const fett = Boolean(loesung && f.loesung) || text.includes("?");
+  // wo die Beschriftung der Strecke steht: über dem ganzen Kreis, sonst unter der waagrechten Kante (außen)
+  const unten = a <= 180;
+  let mitteOben = false;
+  if (f.strecke === "durchmesser") {
+    teile.push({ t: "linie", x1: -R, y1: 0, x2: R, y2: 0, w: 1.8 });
+    if (text) {
+      if (f.teil === "kreis") teile.push({ t: "text", x: 0, y: -13, s: text, g: G, a: "middle", fett });
+      else if (f.teil === "halbkreis") {
+        teile.push({ t: "text", x: 0, y: 15, s: text, g: G, a: "middle", fett });
+        mitteOben = true;
+      } else teile.push({ t: "text", x: -R / 2, y: 15, s: text, g: G, a: "middle", fett });
+    }
+  } else if (f.strecke === "radius") {
+    teile.push({ t: "linie", x1: 0, y1: 0, x2: R, y2: 0, w: 1.8 });
+    teile.push({ t: "punkt", x: R, y: 0, r: 2.2 });
+    // über 180°: die Beschriftung liegt in der Fläche, rechts vom Winkelbogen
+    if (text) teile.push(f.teil === "kreis" || unten ? { t: "text", x: R / 2, y: f.teil === "kreis" ? -13 : 15, s: text, g: G, a: "middle", fett } : { t: "text", x: 26, y: -13, s: text, g: G, a: "start", fett });
+  }
+  if (f.winkelZeigen && f.teil === "viertelkreis") teile.push(...winkelzeichen([0, 0], [1, 0], [0, -1], 13));
+  else if (f.winkelZeigen && a < 360) {
+    teile.push({ t: "weg", p: bogen(a >= 180 ? 16 : 22, 0, a), zu: false, w: 1.2 });
+    const m = ((a / 2) * Math.PI) / 180;
+    const abstand = Math.min(R * 0.72, Math.max(38, 15 / Math.max(Math.sin(m), 0.01)));
+    teile.push({ t: "text", x: Math.cos(m) * abstand, y: -Math.sin(m) * abstand, s: `${zahl(a)}°`, g: G - 1, a: "middle" });
+  }
+  // Mittelpunkt mit Namen: beim ganzen Kreis darunter, sonst außerhalb der Fläche (gegenüber der Winkelhalbierenden)
+  teile.push({ t: "punkt", x: 0, y: 0, r: 3 });
+  if (f.mitte) {
+    const gegen = (((a / 2 + 180) % 360) * Math.PI) / 180;
+    const [x, y] = f.teil === "kreis" ? [0, 15] : mitteOben ? [0, -15] : [Math.cos(gegen) * 17, -Math.sin(gegen) * 17];
+    teile.push({ t: "text", x, y, s: f.mitte, g: G, a: "middle", fett: true });
+  }
+  return teile;
+}
+
+/**
+ * Säulen-, Balken- und Liniendiagramm: Gitterlinien in gleichem Abstand, Zahlen an jeder `zahlenAlle`-ten Linie,
+ * Titel und Achsenname oben links. Ein Wert neben den Gitterlinien wird angeschrieben (genau ablesbar); mit Lösung
+ * stehen alle Werte fett dabei, eine gesuchte Säule ist gestrichelt.
+ */
+function diagrammSzene(f: Diagramm, loesung: boolean): Teil[] {
+  const teile: Teil[] = [];
+  const n = Math.round((f.max - f.min) / f.schritt);
+  const linien = Array.from({ length: n + 1 }, (_, k) => f.min + k * f.schritt);
+  // Zahlen ab der 0 gezählt (bei einer abgeschnittenen Achse ab ihrem Anfang, damit er eine Zahl hat)
+  const basis = f.min <= 0 && f.max >= 0 ? 0 : f.min;
+  const zahlAn = (alle: number) => (v: number) => (((Math.round((v - basis) / f.schritt) % alle) + alle) % alle) === 0;
+  const GZ = 12.5;
+  const GN = 13;
+  const anschreiben = (w: Diagramm["werte"][number]) => loesung || (!w.gesucht && (f.werteZeigen || !aufGitter(f, w.wert)));
+  const wertFett = (w: Diagramm["werte"][number]) => loesung && (w.gesucht || !(f.werteZeigen || !aufGitter(f, w.wert)));
+  const zahlenBreite = Math.max(...linien.filter(zahlAn(f.zahlenAlle)).map((v) => textBreite(zahl(v), GZ)), 8);
+  /**
+   * Die Zahlen an der Werteachse berühren sich nie: der Abstand der Gitterlinien `g` wächst bis `hoechstens`, bis
+   * zwischen zwei Zahlen `platz` frei ist. Reicht das nicht (sehr viele Linien), steht nur an jeder 2., 3. …
+   * Zahlen-Linie eine Zahl; die Gitterlinien bleiben alle, die Werte also genau ablesbar.
+   */
+  const einteilen = (wunsch: number, hoechstens: number, platz: number) => {
+    const g = Math.max(wunsch, Math.min(hoechstens, Math.ceil(platz / f.zahlenAlle)));
+    return { g, mitZahl: zahlAn(f.zahlenAlle * Math.max(1, Math.ceil(platz / (g * f.zahlenAlle) - 1e-9))) };
+  };
+  if (f.form === "balken") {
+    const { g, mitZahl } = einteilen(Math.max(16, Math.min(40, Math.floor(280 / n))), Math.min(40, Math.floor(480 / n)), zahlenBreite + 8);
+    const W = n * g;
+    const x = (v: number) => ((v - f.min) / f.schritt) * g;
+    const rh = 30;
+    const H = rh * f.werte.length;
+    const namenBreite = Math.max(...f.werte.map((w) => textBreite(w.name, GN)), 6);
+    for (const v of linien) if (v !== f.min) teile.push({ t: "linie", x1: x(v), y1: 0, x2: x(v), y2: H, w: 0.8, stil: "gitter" });
+    f.werte.forEach((w, i) => {
+      const cy = rh * (i + 0.5);
+      teile.push({ t: "text", x: -8, y: cy, s: w.name, g: GN, a: "end" });
+      if (!w.gesucht) teile.push({ t: "weg", p: [[0, cy - 9], [x(w.wert), cy - 9], [x(w.wert), cy + 9], [0, cy + 9]], zu: true, w: 1.4, fuellung: "getoent" });
+      else if (loesung) teile.push({ t: "weg", p: [[0, cy - 9], [x(w.wert), cy - 9], [x(w.wert), cy + 9], [0, cy + 9]], zu: true, w: 1.4, stil: "strich" });
+      else teile.push({ t: "text", x: 8, y: cy, s: "?", g: 16, a: "start", fett: true });
+      if (anschreiben(w)) teile.push({ t: "text", x: x(w.wert) + 6, y: cy, s: zahl(w.wert), g: GN, a: "start", fett: wertFett(w) });
+    });
+    teile.push({ t: "linie", x1: 0, y1: 0, x2: 0, y2: H, w: 1.6 });
+    teile.push({ t: "linie", x1: 0, y1: H, x2: W + 6, y2: H, w: 1.6 });
+    for (const v of linien) {
+      if (!mitZahl(v)) continue;
+      teile.push({ t: "linie", x1: x(v), y1: H, x2: x(v), y2: H + 4, w: 1.2 });
+      teile.push({ t: "text", x: x(v), y: H + 14, s: zahl(v), g: GZ, a: "middle" });
+    }
+    if (f.min > 0) teile.push({ t: "weg", p: [[4, H - 5], [8, H + 5], [12, H - 5], [16, H + 5]], zu: false, w: 1.4 });
+    if (f.achse) teile.push({ t: "text", x: W + 6, y: H + 32, s: f.achse, g: GN, a: "end" });
+    if (f.titel) teile.push({ t: "text", x: -8 - namenBreite, y: -18, s: f.titel, g: 15, a: "start", fett: true });
+    return teile;
+  }
+  // Säulen und Linie: Werteachse senkrecht
+  const { g, mitZahl } = einteilen(Math.max(12, Math.min(28, Math.floor(220 / n))), Math.min(28, Math.floor(360 / n)), GZ + 4);
+  const H = n * g;
+  const y = (v: number) => ((f.max - v) / f.schritt) * g;
+  const namenBreite = Math.max(...f.werte.map((w) => textBreite(w.name, GN)), 0);
+  const wertBreite = Math.max(...f.werte.map((w) => textBreite(zahl(w.wert), GN, true)), 0);
+  const slot = Math.max(42, namenBreite + 10, wertBreite + 10);
+  const W = slot * f.werte.length;
+  const null0 = f.form === "linie" && f.min < 0 && f.max > 0 ? 0 : f.min;
+  for (const v of linien) if (v !== null0) teile.push({ t: "linie", x1: 0, y1: y(v), x2: W, y2: y(v), w: 0.8, stil: "gitter" });
+  teile.push({ t: "linie", x1: 0, y1: y(null0), x2: W, y2: y(null0), w: 1.6 });
+  teile.push({ t: "linie", x1: 0, y1: H, x2: 0, y2: -8, w: 1.6 });
+  for (const v of linien) {
+    if (!mitZahl(v)) continue;
+    teile.push({ t: "linie", x1: -4, y1: y(v), x2: 0, y2: y(v), w: 1.2 });
+    teile.push({ t: "text", x: -7, y: y(v), s: zahl(v), g: GZ, a: "end" });
+  }
+  if (f.form !== "linie" && f.min > 0) teile.push({ t: "weg", p: [[-5, H - 4], [5, H - 8], [-5, H - 12], [5, H - 16]], zu: false, w: 1.4 });
+  const cx = (i: number) => slot * (i + 0.5);
+  f.werte.forEach((w, i) => teile.push({ t: "text", x: cx(i), y: H + 14, s: w.name, g: GN, a: "middle" }));
+  if (f.form === "saeulen") {
+    const b = Math.min(slot * 0.62, 40) / 2;
+    f.werte.forEach((w, i) => {
+      const ecken: Punkt2[] = [[cx(i) - b, H], [cx(i) - b, y(w.wert)], [cx(i) + b, y(w.wert)], [cx(i) + b, H]];
+      if (!w.gesucht) teile.push({ t: "weg", p: ecken, zu: true, w: 1.4, fuellung: "getoent" });
+      else if (loesung) teile.push({ t: "weg", p: ecken, zu: true, w: 1.4, stil: "strich" });
+      else teile.push({ t: "text", x: cx(i), y: H - 12, s: "?", g: 16, a: "middle", fett: true });
+      if (anschreiben(w)) teile.push({ t: "text", x: cx(i), y: y(w.wert) - 9, s: zahl(w.wert), g: GN, a: "middle", fett: wertFett(w) });
+    });
+  } else {
+    teile.push({ t: "weg", p: f.werte.map((w, i) => [cx(i), y(w.wert)] as Punkt2), zu: false, w: 2.2 });
+    f.werte.forEach((w, i) => {
+      teile.push({ t: "punkt", x: cx(i), y: y(w.wert), r: 3.8 });
+      if (anschreiben(w)) {
+        // über dem Punkt, außer die Linie kommt von oben und geht nach oben weiter: dann darunter
+        const davor = f.werte[i - 1]?.wert ?? -Infinity;
+        const danach = f.werte[i + 1]?.wert ?? -Infinity;
+        const darunter = davor > w.wert && danach > w.wert;
+        teile.push({ t: "text", x: cx(i), y: y(w.wert) + (darunter ? 13 : -12), s: zahl(w.wert), g: GN, a: "middle", fett: wertFett(w), halo: true });
+      }
+    });
+  }
+  const links = -7 - zahlenBreite;
+  if (f.achse) teile.push({ t: "text", x: links, y: -26, s: f.achse, g: GN, a: "start" });
+  if (f.titel) teile.push({ t: "text", x: links, y: f.achse ? -50 : -28, s: f.titel, g: 15, a: "start", fett: true });
+  return teile;
+}
+
 /** Die Figur als Szene; null, wenn die gespeicherte Figur nicht lesbar ist. `loesung`: mit den gesuchten Werten (Lehrerfassung). */
 export function figurSzene(raw: unknown, o: { loesung?: boolean } = {}): Szene | null {
   const f = leseFigur(raw);
   if (!f) return null;
-  const roh = f.art === "zahlenstrahl" ? zahlenstrahlSzene(f, Boolean(o.loesung)) : f.art === "koordinaten" ? koordinatenSzene(f, Boolean(o.loesung)) : flaechenSzene(f, Boolean(o.loesung));
+  const l = Boolean(o.loesung);
+  const roh =
+    f.art === "zahlenstrahl" ? zahlenstrahlSzene(f, l) : f.art === "koordinaten" ? koordinatenSzene(f, l) : f.art === "kreis" ? kreisSzene(f, l) : f.art === "diagramm" ? diagrammSzene(f, l) : flaechenSzene(f, l);
   const { b, h, teile } = einpassen(roh, 8);
   return { art: f.art, b, h, teile, beschreibung: figurBeschreibung(f) ?? FIGUR_ARTEN[f.art] };
 }
@@ -676,8 +996,8 @@ function teilSvg(t: Teil): string {
       return `<line x1="${r1(t.x1)}" y1="${r1(t.y1)}" x2="${r1(t.x2)}" y2="${r1(t.y2)}" stroke="${t.stil === "gitter" ? GITTER : "currentColor"}" stroke-width="${t.w}"${t.stil === "strich" ? ' stroke-dasharray="6 4"' : ""} stroke-linecap="round"/>`;
     case "weg": {
       const d = t.p.map(([x, y], i) => `${i ? "L" : "M"}${r1(x)} ${r1(y)}`).join(" ") + (t.zu ? " Z" : "");
-      const fill = t.fuellung === "voll" ? ' fill="currentColor"' : t.fuellung === "flaeche" ? ' fill="currentColor" fill-opacity="0.06"' : ' fill="none"';
-      return `<path d="${d}"${fill} stroke="currentColor" stroke-width="${t.w}" stroke-linejoin="round"/>`;
+      const fill = t.fuellung === "voll" ? ' fill="currentColor"' : t.fuellung === "flaeche" ? ' fill="currentColor" fill-opacity="0.06"' : t.fuellung === "getoent" ? ' fill="currentColor" fill-opacity="0.2"' : ' fill="none"';
+      return `<path d="${d}"${fill} stroke="currentColor" stroke-width="${t.w}"${t.stil === "strich" ? ' stroke-dasharray="6 4"' : ""} stroke-linejoin="round"/>`;
     }
     case "punkt":
       return `<circle cx="${r1(t.x)}" cy="${r1(t.y)}" r="${t.r}" fill="${t.offen ? "#fff" : "currentColor"}" stroke="currentColor" stroke-width="${t.offen ? 1.8 : 1}"/>`;

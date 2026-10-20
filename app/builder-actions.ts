@@ -19,6 +19,7 @@ import {
   settingsFromForm,
 } from "@/lib/builder";
 import { DIFFICULTIES, type Difficulty, type TaskType, TASK_TYPES } from "@/lib/curriculum";
+import { figurFehler } from "@/lib/figur";
 import { noteActivity } from "@/lib/learning";
 import { readingSet, withText } from "@/lib/lesen";
 import { titleFromTask } from "@/lib/library";
@@ -81,6 +82,9 @@ export async function saveTaskAction(taskId: number, draft: TaskDraft): Promise<
   // saved by the teacher = checked: the KI's „Bitte prüfen“ notes are done
   const { pruefen: _checked, ...data } = draft.data ?? {};
   void _checked;
+  // ein Bild, das nicht stimmt, wird nicht still weggelassen: die Lehrkraft bekommt den Grund
+  const bild = data.figure !== undefined ? figurFehler(data.figure) : null;
+  if (bild) return { error: `Das Bild stimmt nicht: ${bild}` };
   const t = normalizeTask({ ...draft, data, prompt: String(draft.prompt ?? "").slice(0, 4000) });
   repo.updateTask(taskId, t);
   titleFromTask(e.task.worksheet_id);

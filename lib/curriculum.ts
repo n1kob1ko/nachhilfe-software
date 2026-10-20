@@ -144,6 +144,11 @@ const MIX_BY_SKILL: [RegExp, string[]][] = [
   // keinen Rechenweg; Intervalle sind nur Multiple Choice.
   [/^mathe\.os\.zahlen\.intervalle(\.|$)/, ["mc"]],
   [/^mathe\.(vs\.zahlen\.zahlenstrahl|zahlen\.gross|negativ\.(zahlengerade|rational)|dezimal\.vergleichen|brueche\.(anteile|vergleichen|gemischt)|geometrie\.koordinaten|funktionen\.darstellungen|gleichungssysteme\.grafisch)(\.|$)/, ["rechnung", "lueckentext", "mc"]],
+  // Kreis benennen (Radius, Durchmesser) und Diagramme lesen: vor allem ablesen, wenig Rechenweg
+  [/^mathe\.(geometrie\.kreis|vs\.daten\.diagramme)(\.|$)/, ["rechnung", "lueckentext", "mc"]],
+  [/^mathe\.statistik\.diagramme(\.|$)/, ["rechnung", "mc", "lueckentext"]],
+  // Häufigkeiten und Kennzahlen aus einem Diagramm: ablesen und rechnen
+  [/^mathe\.statistik\.(haeufigkeiten|kennzahlen)(\.|$)/, ["rechnung", "rechenweg", "lueckentext", "mc"]],
   [/^mathe\.brueche\./, ["rechenweg", "sachaufgabe", "rechnung", "mc"]],
   [/^mathe\./, ["rechenweg", "rechnung", "lueckentext", "mc"]],
 ];
