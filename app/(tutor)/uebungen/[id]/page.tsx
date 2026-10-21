@@ -223,7 +223,8 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
             </p>
             {targets.length > 0 && (
               <div className="mb-4">
-                <div className="flex flex-wrap items-start gap-3">
+                {/* Status und Knopf auf einer Linie, die Rückmeldung des Knopfs darunter über die ganze Breite (niko, 21.10.2026) */}
+                <div className="flex flex-wrap items-center gap-3">
                   {sentUnit ? <SendResult state={delivery} unitId={sentUnit.id} unitLink={false} /> : <TabletSend targets={targets} worksheetId={w.id} />}
                   {tasks.length > 0 && boardButtons}
                 </div>

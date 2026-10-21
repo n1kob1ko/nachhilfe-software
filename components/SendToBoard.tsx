@@ -99,15 +99,17 @@ export function SendToBoard({ worksheetId, tasks, units, defaultUnitId }: Props)
  */
 export function BoardSendButton({ worksheetId, unitId, student, small }: { worksheetId: number; unitId: number; /** with two units at once: „Whiteboard von Anna“ */ student?: string; small?: boolean }) {
   const [state, action, busy] = useActionState<SendState, FormData>(sendToBoardAction, null);
+  // `contents`: der Knopf steht in der Zeile der anderen Sende-Knöpfe, die Rückmeldung bricht als eigene Zeile
+  // über die ganze Breite um, statt eingerückt unter dem Knopf zu hängen
   return (
-    <form action={action} className="grid gap-2">
+    <form action={action} className="contents">
       <input type="hidden" name="worksheet_id" value={worksheetId} />
       <input type="hidden" name="unit_id" value={unitId} />
       <button className={`btn btn-secondary w-fit ${small ? "" : "btn-lg"}`} disabled={busy} title="Alle Aufgaben aufs Whiteboard: der Schüler rechnet mit dem Stift, du bewertest jede Aufgabe dort">
         <Presentation size={small ? 15 : 18} aria-hidden /> {busy ? "Wird gesendet …" : student ? `Whiteboard von ${student}` : "Aufs Whiteboard"}
       </button>
       {state?.ok && (
-        <p className="text-[14px] text-green" role="status">
+        <p className="basis-full text-[14px] text-green" role="status">
           {state.ok}{" "}
           <Link href={`/tafel/${unitId}`} className="font-medium underline">
             Whiteboard öffnen
@@ -115,7 +117,7 @@ export function BoardSendButton({ worksheetId, unitId, student, small }: { works
         </p>
       )}
       {state?.error && (
-        <p className="text-[14px] text-red" role="alert">
+        <p className="basis-full text-[14px] text-red" role="alert">
           {state.error}
         </p>
       )}
