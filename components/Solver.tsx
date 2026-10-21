@@ -339,7 +339,7 @@ export function Solver({
                   aria-label={`Frage ${i + 1}${t.finished ? (t.finished.correct === null ? ", abgegeben" : t.finished.correct ? ", richtig" : ", erledigt") : ""}`}
                   className={`num flex h-11 w-11 items-center justify-center rounded-full border text-[15px] font-semibold transition-colors ${
                     i === index
-                      ? "border-accent bg-accent text-white"
+                      ? "border-accent bg-accent text-on-fill"
                       : c === "green"
                         ? "border-transparent bg-green-wash text-green"
                         : c === "amber"
@@ -813,7 +813,7 @@ function TaskCard({
                           setWrongGaps((w) => w.filter((n) => n !== i + 1));
                         }}
                         aria-label={`Zeile ${i + 1} ist richtig`}
-                        className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border align-middle text-[17px] ${gaps[i] === "✓" ? "border-accent bg-accent text-white" : "border-line-strong bg-surface hover:border-ink-3"}`}
+                        className={`inline-flex h-10 w-10 items-center justify-center rounded-lg border align-middle text-[17px] ${gaps[i] === "✓" ? "border-accent bg-accent text-on-fill" : "border-line-strong bg-surface hover:border-ink-3"}`}
                       >
                         ✓
                       </button>
@@ -918,7 +918,7 @@ function TaskCard({
                     <label
                       key={k}
                       className={`flex h-11 min-w-[88px] cursor-pointer items-center justify-center rounded-lg border px-4 text-[16px] font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent ${
-                        pairs[i] === k ? "border-accent bg-accent text-white" : "border-line-strong bg-surface hover:border-ink-3"
+                        pairs[i] === k ? "border-accent bg-accent text-on-fill" : "border-line-strong bg-surface hover:border-ink-3"
                       } ${final ? "cursor-default" : ""}`}
                     >
                       <input
@@ -987,7 +987,7 @@ function TaskCard({
                           setWrongGaps((w) => w.filter((n) => n !== i + 1));
                         }}
                       />
-                      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[14px] font-semibold ${pairs[i] === k ? "bg-accent text-white" : "bg-panel text-ink-2"}`}>{buchstabe(k)}</span>
+                      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[14px] font-semibold ${pairs[i] === k ? "bg-accent text-on-fill" : "bg-panel text-ink-2"}`}>{buchstabe(k)}</span>
                       <span className="min-w-0 pt-0.5">{o}</span>
                     </label>
                   ))}
@@ -1011,7 +1011,7 @@ function TaskCard({
                       <label
                         key={k}
                         className={`flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border text-[17px] font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent ${
-                          pairs[i] === k ? "border-accent bg-accent text-white" : "border-line-strong bg-surface hover:border-ink-3"
+                          pairs[i] === k ? "border-accent bg-accent text-on-fill" : "border-line-strong bg-surface hover:border-ink-3"
                         } ${final ? "cursor-default" : ""}`}
                       >
                         <input
@@ -1225,7 +1225,7 @@ function TaskCard({
         {hintsShown > 0 && (
           <ul className="mt-6 space-y-2">
             {task.hints.slice(0, hintsShown).map((h, i) => (
-              <li key={i} className="flex gap-2 rounded-lg bg-amber-wash px-4 py-2.5 text-[15px] text-[#5c3a00]">
+              <li key={i} className="flex gap-2 rounded-lg bg-amber-wash px-4 py-2.5 text-[15px] text-amber">
                 <Lightbulb size={17} className="mt-0.5 shrink-0" aria-hidden />
                 <span>
                   <span className="block text-[12.5px] font-semibold">{hintLabel(i)}</span>

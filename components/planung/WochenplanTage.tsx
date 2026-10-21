@@ -72,7 +72,7 @@ export function WochenplanTage({ tage, heute, lehrer, plaetze, schueler, luecken
                 aria-label={`${LANGE_TAGE[t.tag]}, ${datum}, ${anzahl === 1 ? "1 Einheit" : `${anzahl} Einheiten`}${istHeute ? ", heute" : ""}`}
                 onClick={() => setGewaehlt(t.tag)}
                 className={`drueck flex min-h-[64px] flex-col items-center justify-center gap-0.5 rounded-2xl border px-1 py-1.5 ${
-                  aktiv ? "border-transparent bg-accent text-white shadow-[var(--shadow-card)]" : istHeute ? "border-accent-bright/50 bg-accent-wash text-ink" : "border-line bg-surface text-ink"
+                  aktiv ? "border-transparent bg-accent text-on-fill shadow-[var(--shadow-card)]" : istHeute ? "border-accent-bright/50 bg-accent-wash text-ink" : "border-line bg-surface text-ink"
                 }`}
               >
                 <span className={`text-[12px] font-semibold ${aktiv ? "text-white/80" : istHeute ? "text-accent" : "text-ink-2"}`}>{kurz}</span>

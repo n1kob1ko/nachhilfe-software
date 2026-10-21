@@ -143,7 +143,7 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
         <p className="mb-3 flex flex-wrap items-center gap-2 text-[14px] text-ink-2">
           Korrekturen:
           {all.map((x) => (
-            <Link key={x.id} href={`/texte/${text.id}/korrektur?k=${x.id}`} className={`inline-flex min-h-[44px] items-center rounded-full px-3 ${x.id === c.id ? "bg-accent font-semibold text-white" : "bg-panel hover:text-ink"}`}>
+            <Link key={x.id} href={`/texte/${text.id}/korrektur?k=${x.id}`} className={`inline-flex min-h-[44px] items-center rounded-full px-3 ${x.id === c.id ? "bg-accent font-semibold text-on-fill" : "bg-panel hover:text-ink"}`}>
               Fassung vom {when(x.created_at)}
             </Link>
           ))}

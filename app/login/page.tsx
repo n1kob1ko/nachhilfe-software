@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/AuthForms";
 import { BrandLogo } from "@/components/Brand";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { currentTeacher } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,8 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
   if (await currentTeacher()) redirect("/");
   const { weiter } = await searchParams;
   return (
-    <main className="grid min-h-screen place-items-center bg-paper px-4 py-10">
+    <main className="relative grid min-h-screen place-items-center bg-paper px-4 py-10">
+      <ThemeToggle className="absolute top-4 right-4" />
       <div className="w-full max-w-[400px]">
         <BrandLogo width={210} className="mx-auto mb-8 h-auto w-[150px] md:w-[210px]" />
         <div className="panel px-6 py-6 md:px-7 md:py-7">

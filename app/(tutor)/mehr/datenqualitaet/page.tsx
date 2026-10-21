@@ -24,7 +24,7 @@ const OK_TEXT: Record<string, string> = {
   getrennt: "Zusammenführung aufgehoben.",
   gespeichert: "Gespeichert.",
 };
-const navChip = (on: boolean) => `inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[14px] font-medium whitespace-nowrap ${on ? "bg-accent text-white" : "bg-panel text-ink-2 hover:text-ink"}`;
+const navChip = (on: boolean) => `inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[14px] font-medium whitespace-nowrap ${on ? "bg-accent text-on-fill" : "bg-panel text-ink-2 hover:text-ink"}`;
 const radioChip = "flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-[13.5px] has-checked:border-accent has-checked:bg-accent-wash has-checked:text-accent";
 
 /**

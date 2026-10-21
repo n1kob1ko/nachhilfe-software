@@ -260,7 +260,7 @@ export function StudentQuickRound({
       {hintsShown > 0 && (
         <ul className="mb-4 space-y-2">
           {current.hints.slice(0, hintsShown).map((h, i) => (
-            <li key={i} className="flex gap-2 rounded-xl bg-amber-wash px-4 py-3 text-[16px] text-[#5c3a00]">
+            <li key={i} className="flex gap-2 rounded-xl bg-amber-wash px-4 py-3 text-[16px] text-amber">
               <Lightbulb size={18} className="mt-0.5 shrink-0" aria-hidden />
               <span>
                 <span className="block text-[13px] font-semibold">{hintLabel(i)}</span>

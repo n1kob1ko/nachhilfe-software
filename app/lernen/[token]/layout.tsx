@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getStudentByToken } from "@/lib/repo";
 import { Avatar } from "@/components/Art";
 import { BrandMark } from "@/components/Brand";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -30,9 +31,12 @@ export default async function LearnLayout({ children, params }: { children: Reac
             <BrandMark height={36} />
             Lernheft
           </a>
-          <span className="flex items-center gap-2 rounded-full border border-line bg-surface py-1 pr-3 pl-1 text-[14px] font-medium">
-            <Avatar name={student.name} size={28} />
-            {student.name}
+          <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 rounded-full border border-line bg-surface py-1 pr-3 pl-1 text-[14px] font-medium">
+              <Avatar name={student.name} size={28} />
+              {student.name}
+            </span>
+            <ThemeToggle />
           </span>
         </div>
       </header>

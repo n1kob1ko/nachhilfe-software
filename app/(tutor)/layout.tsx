@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Brand, Nav, TabBar } from "@/components/Nav";
 import { Avatar } from "@/components/Art";
 import { RunningUnits } from "@/components/RunningUnits";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { requireTeacher } from "@/lib/auth";
 import { backfillAutoDocs } from "@/lib/autodoc";
 import { sweepIdleUnits } from "@/lib/learning";
@@ -10,8 +11,9 @@ import { runningUnits } from "@/lib/units";
 export const dynamic = "force-dynamic";
 
 /**
- * Der Rahmen der Lehrkraft: links eine ruhige Leiste auf Elfenbein mit dem Logo und den fünf
- * Einträgen, rechts die Seite. Am Telefon steht das Logo oben und die fünf Einträge unten (TabBar).
+ * Der Rahmen der Lehrkraft: links eine ruhige Leiste mit dem Logo und den fünf Einträgen, rechts die
+ * Seite. Am Telefon steht das Logo oben und die fünf Einträge unten (TabBar). Der Knopf für den
+ * Dunkelmodus steht neben dem Konto, nie als sechster Eintrag in der Navigation.
  */
 export default async function TutorLayout({ children }: { children: React.ReactNode }) {
   const teacher = await requireTeacher();
@@ -31,14 +33,20 @@ export default async function TutorLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-paper md:grid md:grid-cols-[236px_minmax(0,1fr)] print:bg-white">
       <header className="no-print flex items-center justify-between gap-3 border-b border-line bg-paper px-4 py-2.5 md:hidden">
         <Brand />
-        {me}
+        <div className="flex min-w-0 items-center gap-2">
+          {me}
+          <ThemeToggle />
+        </div>
       </header>
       <aside className="no-print hidden border-r border-line md:sticky md:top-0 md:flex md:h-screen md:flex-col md:px-4 md:py-6">
         <Brand />
         <div className="mt-8">
           <Nav />
         </div>
-        <div className="mt-auto">{me}</div>
+        <div className="mt-auto flex items-center gap-2">
+          <div className="min-w-0 flex-1">{me}</div>
+          <ThemeToggle />
+        </div>
       </aside>
       <main className="min-w-0 px-4 pt-5 pb-28 md:px-8 md:py-8 lg:px-10">
         <div className="mx-auto max-w-[1120px]">

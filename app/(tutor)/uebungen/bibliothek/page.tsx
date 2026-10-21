@@ -165,7 +165,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
                 key={k || "alle"}
                 href={href({ q: sp.q, fach: k })}
                 aria-current={(sp.fach ?? "") === k ? "true" : undefined}
-                className={`inline-flex min-h-[40px] items-center rounded-full px-4 text-[14px] font-medium ${(sp.fach ?? "") === k ? "bg-accent text-white" : "bg-panel text-ink-2 hover:text-ink"}`}
+                className={`inline-flex min-h-[40px] items-center rounded-full px-4 text-[14px] font-medium ${(sp.fach ?? "") === k ? "bg-accent text-on-fill" : "bg-panel text-ink-2 hover:text-ink"}`}
               >
                 {l}
               </Link>

@@ -40,6 +40,21 @@
   --series-2: #c58a24;
   --series-3: #1f9a6c;
   --series-4: #b04f9a;
+  /* Schrift auf gefüllten Farben (Blau, Rot, Grün) und auf dem hellen Blau der Navigation */
+  --on-fill: #ffffff;
+  --on-bright: #151f2b;
+  --line-hover: #aebfd2;
+  --selection: #cfe1fb;
+  --ruled: #f0e4d9;
+  /* Fächer: Schrift und leichte Fläche je Fach (subjectTone in components/Calendar.tsx) */
+  --mathe-fg: #4a429e;
+  --mathe-soft: #eeecf8;
+  --deutsch-fg: #8a5a0a;
+  --deutsch-soft: #fff6e8;
+  --englisch-fg: #1f6b3b;
+  --englisch-soft: #e6f3ea;
+  --sonst-fg: #9c2f27;
+  --sonst-soft: #faeae7;
   /* Schatten in der Farbe der Fläche, kaum sichtbar */
   --shadow-card: 0 1px 2px rgba(20, 40, 80, 0.04), 0 6px 20px -12px rgba(20, 40, 80, 0.12);
   --shadow-pop: 0 2px 4px rgba(20, 40, 80, 0.06), 0 18px 40px -16px rgba(20, 40, 80, 0.28);
@@ -61,6 +76,8 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-bright: var(--accent-bright);
   --color-accent-wash: var(--accent-wash);
+  --color-on-fill: var(--on-fill);
+  --color-on-bright: var(--on-bright);
   --color-red: var(--red);
   --color-red-wash: var(--red-wash);
   --color-amber: var(--amber);
@@ -77,6 +94,86 @@
   --font-display: var(--font-outfit), var(--font-jakarta), ui-sans-serif, sans-serif;
   --shadow-card: var(--shadow-card);
   --shadow-pop: var(--shadow-pop);
+}
+
+/*
+ * Dunkelmodus (niko, 21.10.2026): dieselben Token, nachts. Tiefes Blauschwarz als Fläche, etwas hellere
+ * Karten, helle Schrift; das Blau wird heller, damit es auf Dunkel lesbar bleibt, und trägt dann dunkle
+ * statt weiße Schrift (`--on-fill`). Die Bühne bleibt blau mit weißer Schrift. Nur am Bildschirm: der
+ * Druck bleibt immer hell. Der Knopf dafür ist `components/ThemeToggle.tsx`, der Wert steht als
+ * `data-theme` am <html> (gesetzt in app/layout.tsx, gemerkt je Gerät).
+ */
+@media screen {
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --backdrop: #0a1018;
+    --backdrop-2: #0f1620;
+    --paper: #0f1620;
+    --surface: #171f2b;
+    --panel: #1f2937;
+    --line: #28344a;
+    --line-strong: #3a4a63;
+    --line-hover: #4d5f7a;
+    --ink: #e8eef6;
+    --ink-2: #b3c0d1;
+    --ink-3: #8e9db1;
+    --accent: #5b9cf2;
+    --accent-hover: #7ab3ff;
+    --accent-bright: #7ab3ff;
+    --accent-wash: #1b2d49;
+    --on-fill: #0f1620;
+    --on-bright: #0f1620;
+    --red: #f29d94;
+    --red-wash: #3b1f1e;
+    --amber: #f0b36b;
+    --amber-wash: #3a2a14;
+    --green: #6fcf8f;
+    --green-wash: #17301f;
+    --violet: #b3aef5;
+    --violet-wash: #282647;
+    --tile-pink: #3f2628;
+    --tile-mint: #1c3528;
+    --tile-lilac: #2e2b4d;
+    --tile-peach: #3d2e18;
+    --mathe-fg: #c4bff5;
+    --mathe-soft: #2e2b4d;
+    --deutsch-fg: #f0c784;
+    --deutsch-soft: #3d2e18;
+    --englisch-fg: #8fdbb0;
+    --englisch-soft: #1c3528;
+    --sonst-fg: #f3a9a4;
+    --sonst-soft: #3f2628;
+    --bar-track: #2a3648;
+    --bar: #5b9cf2;
+    --series-1: #5b9cf2;
+    --series-2: #e0a94a;
+    --series-3: #3fc48b;
+    --series-4: #d77bc0;
+    --selection: #2b4d80;
+    --ruled: #2c3850;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 20px -12px rgba(0, 0, 0, 0.5);
+    --shadow-pop: 0 2px 4px rgba(0, 0, 0, 0.3), 0 18px 40px -16px rgba(0, 0, 0, 0.7);
+  }
+  html[data-theme="dark"] .btn-primary {
+    box-shadow: 0 6px 16px -8px rgba(91, 156, 242, 0.35);
+  }
+  html[data-theme="dark"] .buehne {
+    background:
+      radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, 0.14), transparent 55%),
+      linear-gradient(135deg, #3478e0, #1b4aa8);
+  }
+  /* das Logo ist schwarz und gold: nachts die Fassung mit hellen Strichen (components/Brand.tsx) */
+  html[data-theme="dark"] .marke-hell {
+    display: none;
+  }
+}
+.marke-dunkel {
+  display: none;
+}
+@media screen {
+  html[data-theme="dark"] .marke-dunkel {
+    display: block;
+  }
 }
 
 html {
@@ -97,7 +194,7 @@ h1 {
   letter-spacing: -0.02em;
 }
 ::selection {
-  background: #cfe1fb;
+  background: var(--selection);
   color: var(--ink);
 }
 * {
@@ -148,10 +245,10 @@ button.link:hover {
   transition: border-color 150ms, box-shadow 150ms;
 }
 .input::placeholder {
-  color: #948a7e;
+  color: var(--ink-3);
 }
 .input:hover {
-  border-color: #b9ab96;
+  border-color: var(--line-hover);
 }
 .input:focus {
   outline: none;
@@ -202,7 +299,7 @@ textarea.input {
 /* Hauptaktion: Blau mit weißer Schrift, weicher Schatten in derselben Farbe */
 .btn-primary {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-fill);
   box-shadow: 0 6px 16px -8px rgba(29, 99, 196, 0.55);
 }
 .btn-primary:hover:not(:disabled) {
@@ -215,7 +312,7 @@ textarea.input {
 }
 .btn-secondary:hover:not(:disabled) {
   border-color: var(--accent-bright);
-  background: #f5f8fc;
+  background: var(--paper);
 }
 .btn-ghost {
   color: var(--ink-2);
@@ -275,7 +372,7 @@ textarea.input {
 }
 .buehne .btn-primary {
   background: #fff;
-  color: var(--accent);
+  color: #1d63c4;
   box-shadow: 0 6px 16px -10px rgba(10, 30, 70, 0.5);
 }
 .buehne .btn-primary:hover:not(:disabled) {
@@ -337,14 +434,14 @@ textarea.input {
 
 /* lined paper for the documentation views */
 .ruled {
-  background-image: linear-gradient(to bottom, transparent 27px, #f0e4d9 27px, #f0e4d9 28px);
+  background-image: linear-gradient(to bottom, transparent 27px, var(--ruled) 27px, var(--ruled) 28px);
   background-size: 100% 28px;
   line-height: 28px;
 }
 /* squared paper for calculations (Rechenweg) */
 .squared {
   background-color: var(--surface);
-  background-image: linear-gradient(#f0e4d9 1px, transparent 1px), linear-gradient(90deg, #f0e4d9 1px, transparent 1px);
+  background-image: linear-gradient(var(--ruled) 1px, transparent 1px), linear-gradient(90deg, var(--ruled) 1px, transparent 1px);
   background-size: 22px 22px;
   background-position: -1px -1px;
 }
@@ -465,7 +562,7 @@ textarea.input {
 .wb-btn-primary {
   border-color: var(--accent);
   background: var(--accent);
-  color: #fff;
+  color: var(--on-fill);
 }
 .wb-tab {
   display: inline-flex;
@@ -529,7 +626,7 @@ textarea.input {
   gap: 4px;
   border-radius: 16px;
   border: 1px solid var(--line);
-  background: rgb(255 255 255 / 0.96);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
   padding: 5px;
   box-shadow: 0 6px 20px rgb(0 0 0 / 0.1);
   pointer-events: auto;
@@ -561,7 +658,7 @@ textarea.input {
   gap: 4px;
   border-radius: 16px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--surface);
   padding: 6px;
   box-shadow: 0 12px 32px rgb(0 0 0 / 0.14);
 }
@@ -584,7 +681,7 @@ textarea.input {
   width: 40px;
   height: 40px;
   border-radius: 999px;
-  border: 3px solid #fff;
+  border: 3px solid var(--surface);
   box-shadow: 0 0 0 1px var(--line);
 }
 .wb-swatch-on {
@@ -708,15 +805,15 @@ textarea.input {
 }
 .wb-grade-richtig.wb-grade-on {
   background: var(--green);
-  color: #fff;
+  color: var(--on-fill);
 }
 .wb-grade-teilweise.wb-grade-on {
   background: var(--amber);
-  color: #fff;
+  color: var(--on-fill);
 }
 .wb-grade-falsch.wb-grade-on {
   background: var(--red);
-  color: #fff;
+  color: var(--on-fill);
 }
 .wb-grade-on span {
   color: inherit;
@@ -760,7 +857,7 @@ textarea.input {
 .wb-chip-primary {
   border-color: var(--accent);
   background: var(--accent);
-  color: #fff;
+  color: var(--on-fill);
 }
 /* The student sees only the big tool bar: no menus, library or property panels of the drawing library. */
 .wb-student .excalidraw .App-toolbar,
@@ -1199,7 +1296,7 @@ textarea.input {
   padding: 0 7px;
   font-size: 14px;
   font-weight: 650;
-  color: #fff;
+  color: var(--surface);
 }
 .sp-toggle {
   display: inline-flex;
@@ -1614,7 +1711,7 @@ textarea.input {
 }
 .wb-check-take {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-fill);
 }
 .wb-check-take:active {
   background: var(--accent);

@@ -16,9 +16,9 @@
   box-sizing: border-box;
   flex: none;
   overflow: hidden;
-  /* Weißes Papier, nicht die cremefarbene Arbeitsfläche der App. */
+  /* Weißes Papier, nicht die Arbeitsfläche der App; die Schrift bleibt auch im Dunkelmodus dunkel. */
   background: #fff;
-  color: var(--ink);
+  color: #151f2b;
   box-shadow: var(--shadow-card);
   outline: 1px solid var(--line);
 }

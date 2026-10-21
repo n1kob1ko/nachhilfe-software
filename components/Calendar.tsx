@@ -6,13 +6,13 @@ export const pad = (n: number) => String(n).padStart(2, "0");
 export const dayKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
-/** Colour of a subject in calendars and tags (same pastel family as the overview tiles). */
+/** Colour of a subject in calendars and tags (same pastel family as the overview tiles); the values are tokens so the dark mode can swap them. */
 export function subjectTone(subject: string | null | undefined) {
   const s = (subject ?? "").toLowerCase();
-  if (s.startsWith("mathe")) return { bg: "var(--tile-lilac)", fg: "#4a429e", soft: "#eeecf8" };
-  if (s.startsWith("deutsch")) return { bg: "var(--tile-peach)", fg: "#8a5a0a", soft: "#fff6e8" };
-  if (s.startsWith("engl")) return { bg: "var(--tile-mint)", fg: "#1f6b3b", soft: "#e6f3ea" };
-  return { bg: "var(--tile-pink)", fg: "#9c2f27", soft: "#faeae7" };
+  if (s.startsWith("mathe")) return { bg: "var(--tile-lilac)", fg: "var(--mathe-fg)", soft: "var(--mathe-soft)" };
+  if (s.startsWith("deutsch")) return { bg: "var(--tile-peach)", fg: "var(--deutsch-fg)", soft: "var(--deutsch-soft)" };
+  if (s.startsWith("engl")) return { bg: "var(--tile-mint)", fg: "var(--englisch-fg)", soft: "var(--englisch-soft)" };
+  return { bg: "var(--tile-pink)", fg: "var(--sonst-fg)", soft: "var(--sonst-soft)" };
 }
 
 /** Month grid; days with lessons get a dot, today is filled, the chosen day has a ring. Links keep it server-rendered. */
@@ -64,7 +64,7 @@ export function MonthCalendar({ month, selected, today, busy, href }: { month: s
               <span
                 className={`num flex h-9 w-9 items-center justify-center rounded-full text-[14px] transition-colors ${
                   isToday
-                    ? "bg-accent font-semibold text-white"
+                    ? "bg-accent font-semibold text-on-fill"
                     : isSel
                       ? "font-semibold text-ink ring-2 ring-accent-bright"
                       : inMonth
@@ -118,7 +118,7 @@ export function DayPlan({ items, now }: { items: PlanItem[]; now?: Date }) {
             className="absolute right-0 left-[58px] flex gap-2.5 overflow-hidden rounded-2xl px-3 py-2 transition-transform hover:-translate-y-0.5"
             style={{ top: top(it.start) + 2, height: h, background: tone.bg }}
           >
-            <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/80 text-[11px] font-bold" style={{ color: tone.fg }} aria-hidden>
+            <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface/80 text-[11px] font-bold" style={{ color: tone.fg }} aria-hidden>
               {it.subject.slice(0, 1)}
             </span>
             <span className="min-w-0">

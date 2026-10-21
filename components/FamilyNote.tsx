@@ -36,7 +36,7 @@ export function FamilyNote({ lessonId, initial, source, ai }: { lessonId: number
             type="button"
             aria-pressed={audience === a}
             onClick={() => setAudience(a)}
-            className={`inline-flex min-h-[44px] items-center rounded-full px-4 text-[14px] font-medium ${audience === a ? "bg-accent text-white" : "bg-panel text-ink-2 hover:text-ink"}`}
+            className={`inline-flex min-h-[44px] items-center rounded-full px-4 text-[14px] font-medium ${audience === a ? "bg-accent text-on-fill" : "bg-panel text-ink-2 hover:text-ink"}`}
           >
             {a === "eltern" ? "Eltern" : "Schüler"}
           </button>

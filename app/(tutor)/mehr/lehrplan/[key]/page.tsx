@@ -61,7 +61,7 @@ export default async function CurriculumTreePage({ params, searchParams }: { par
                 key={value}
                 href={`/mehr/lehrplan/${encodeURIComponent(c.key)}?klasse=${value}`}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-[14px] font-medium whitespace-nowrap ${active ? "bg-accent text-white" : "bg-panel text-ink-2 hover:text-ink"}`}
+                className={`flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-[14px] font-medium whitespace-nowrap ${active ? "bg-accent text-on-fill" : "bg-panel text-ink-2 hover:text-ink"}`}
               >
                 {label}
               </Link>
