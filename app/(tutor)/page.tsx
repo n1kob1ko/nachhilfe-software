@@ -4,18 +4,18 @@ import { loadDemoData } from "@/app/actions";
 import { startUnitAction } from "@/app/session-actions";
 import { Avatar, SubjectArt } from "@/components/Art";
 import { Tagesplan, type TagesplanPunkt } from "@/components/Calendar";
-import { Elapsed } from "@/components/Elapsed";
+import { Elapsed, Restzeit } from "@/components/Elapsed";
 import { StudentFocus } from "@/components/StudentFocus";
 import { Wochenplan } from "@/components/planung/Wochenplan";
 import { Empty, SectionTitle, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import * as repo from "@/lib/repo";
-import { heutigeEinheiten } from "@/lib/planung/heute";
+import { bisBeginnLabel, heutigeEinheiten, zeitfenster } from "@/lib/planung/heute";
 import { leseRegeln } from "@/lib/planung/regeln";
 import { wochenUebersicht } from "@/lib/planung/uebersicht";
 import { ZEITZONE, minutenLabel, tagAddieren, wienerDatum, wienerMinuten, wienerWochenstart } from "@/lib/planung/zeit";
 import { klassenLabel } from "@/lib/school";
-import { getUnit, listUnits, runningUnits } from "@/lib/units";
+import { getUnit, listUnits, platzFuerEinheit, runningUnits } from "@/lib/units";
 import { examReminders, STAGE_LABEL } from "@/lib/exams";
 
 const parseLocal = (s: string) => new Date(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s) && !/Z|[+-]\d{2}:?\d{2}$/.test(s) ? s.replace(" ", "T") : s);
@@ -145,22 +145,34 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
    * nächste von Hand geplante Einheit. Beide Wege starten dieselbe Einheit — mit Platz verknüpft
    * sie sich dabei (D17), ohne Platz läuft sie wie bisher.
    */
+  // Beginn und Ende stehen groß in der Bühne und in der Kennzahl (niko, 21.10.2026: „wann der Schüler kommt und bis wann er aus hat“)
   const fokus = naechsterPlatz
-    ? {
-        studentId: naechsterPlatz.student_id,
-        name: naechsterPlatz.student_name,
-        zeit: naechsterPlatz.zeit_label,
-        zusatz: [naechsterPlatz.room_name, `${naechsterPlatz.geplante_dauer} min geplant`].filter(Boolean).join(" · "),
-        subject: byId.get(naechsterPlatz.student_id)?.subjects[0],
-      }
+    ? (() => {
+        const f = zeitfenster(naechsterPlatz, now);
+        return {
+          studentId: naechsterPlatz.student_id,
+          name: naechsterPlatz.student_name,
+          von: f.von,
+          bis: f.bis as string | null,
+          wann: f.bisBeginn === null ? null : bisBeginnLabel(f.bisBeginn),
+          zusatz: [naechsterPlatz.room_name, `${naechsterPlatz.geplante_dauer} min`].filter(Boolean).join(" · "),
+          subject: byId.get(naechsterPlatz.student_id)?.subjects[0],
+        };
+      })()
     : next
-      ? {
-          studentId: next.student_id,
-          name: next.student_name,
-          zeit: formatTime(parseLocal(next.starts_at).toISOString()),
-          zusatz: next.topic || next.subject,
-          subject: next.subject,
-        }
+      ? (() => {
+          const start = parseLocal(next.starts_at);
+          const bisBeginn = Math.round((start.getTime() - now.getTime()) / 60_000);
+          return {
+            studentId: next.student_id,
+            name: next.student_name,
+            von: formatTime(start.toISOString()),
+            bis: next.duration_min ? formatTime(new Date(start.getTime() + next.duration_min * 60_000).toISOString()) : null,
+            wann: bisBeginnLabel(bisBeginn),
+            zusatz: next.topic || next.subject,
+            subject: next.subject,
+          };
+        })()
       : null;
 
   // recently used = the students of my latest units, then everyone else
@@ -210,7 +222,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         werte={[
           { wort: "Heute", wert: String(tagesplan.length), zusatz: tagesplan.length === 0 ? "keine Einheit" : tagesplan.length === 1 ? "Einheit" : `Einheiten, ${schuelerHeute} Schüler`, href: "#heute" },
           // die laufende Einheit steht in der Bühne; hier immer die Uhrzeit der nächsten geplanten Einheit (niko, 21.10.2026)
-          { wort: "Als Nächstes", wert: fokus ? fokus.zeit.split(/[–-]/)[0].trim() : "–", zusatz: fokus ? firstName(fokus.name) : running.length > 0 ? "nichts mehr geplant" : "nichts geplant", href: fokus ? "#heute" : undefined },
+          { wort: "Als Nächstes", wert: fokus ? fokus.von : "–", zusatz: fokus ? (fokus.bis ? `${firstName(fokus.name)} · bis ${fokus.bis}` : firstName(fokus.name)) : running.length > 0 ? "nichts mehr geplant" : "nichts geplant", href: fokus ? "#heute" : undefined },
           { wort: "Zu erledigen", wert: String(todos.length), zusatz: todos.length === 0 ? "nichts offen" : todos.some((t) => t.key.startsWith("p")) ? "Prüfungen und mehr" : "Hausübungen, Ergebnisse", href: "#offen" },
           { wort: "Schüler", wert: String(students.length), zusatz: `${recentIds.length} zuletzt bei dir`, href: "/schueler" },
         ]}
@@ -218,13 +230,27 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
 
       <div className="space-y-10">
         {running.length > 0 ? (
-          running.map((u) => (
+          running.map((u) => {
+            // der Platz im Wochenplan liefert das geplante Ende: „14:00–15:40 · noch 38 min“
+            const platz = platzFuerEinheit(u);
+            const fenster = platz ? zeitfenster(platz, now) : null;
+            return (
             <section key={u.id} className="buehne px-6 py-7 md:px-8" aria-label="Laufende Einheit">
               <div className="relative z-10 md:pr-[220px]">
                 <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[13px] font-semibold text-white">
                   <span className="h-2 w-2 rounded-full bg-white" aria-hidden /> Einheit läuft
                 </p>
                 <h2 className="mt-3 text-[28px] leading-tight font-semibold md:text-[32px]">Einheit mit {firstName(u.student_name)}</h2>
+                {fenster && (
+                  <p className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <span className="num text-[22px] leading-none font-semibold">{fenster.label}</span>
+                    {fenster.restMinuten !== null && (
+                      <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[14px] font-semibold">
+                        <Restzeit rest={fenster.restMinuten} ab={now.getTime()} />
+                      </span>
+                    )}
+                  </p>
+                )}
                 <p className="buehne-meta mt-1 text-[16px]">
                   seit <span className="num">{formatTime(u.started_at)}</span> (<Elapsed since={u.started_at} />){u.subject && ` · ${u.subject}`}
                 </p>
@@ -240,17 +266,21 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
               </div>
               <SubjectArt subject={u.subject} className="pointer-events-none absolute -right-2 -bottom-6 hidden h-[220px] w-[220px] md:block" />
             </section>
-          ))
+            );
+          })
         ) : (
           <section className="buehne px-6 py-7 md:px-8" aria-label="Einheit starten">
             <div className="relative z-10 md:pr-[220px]">
               {fokus ? (
                 <>
                   <p className="text-[13px] font-semibold tracking-[0.06em] text-white/90 uppercase">
-                    Als Nächstes · <span className="num">{fokus.zeit}</span>
+                    Als Nächstes{fokus.wann && <span className="num"> · {fokus.wann}</span>}
                   </p>
                   <h2 className="mt-1 text-[28px] leading-tight font-semibold md:text-[32px]">{fokus.name}</h2>
-                  <p className="buehne-meta mt-1 text-[16px]">{fokus.zusatz}</p>
+                  <p className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <span className="num text-[22px] leading-none font-semibold">{fokus.bis ? `${fokus.von}–${fokus.bis}` : fokus.von}</span>
+                    {fokus.zusatz && <span className="buehne-meta text-[16px]">{fokus.zusatz}</span>}
+                  </p>
                   <StudentFocus studentId={fokus.studentId} />
                   <div className="mt-6 flex flex-wrap items-start gap-3">
                     <form action={startUnitAction.bind(null, fokus.studentId)}>

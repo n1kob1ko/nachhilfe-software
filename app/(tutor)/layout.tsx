@@ -5,7 +5,8 @@ import { RunningUnits } from "@/components/RunningUnits";
 import { requireTeacher } from "@/lib/auth";
 import { backfillAutoDocs } from "@/lib/autodoc";
 import { sweepIdleUnits } from "@/lib/learning";
-import { runningUnits } from "@/lib/units";
+import { platzFuerEinheit, runningUnits } from "@/lib/units";
+import { zeitfenster } from "@/lib/planung/heute";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,11 @@ export default async function TutorLayout({ children }: { children: React.ReactN
   const teacher = await requireTeacher();
   backfillAutoDocs();
   sweepIdleUnits();
-  const running = runningUnits(teacher.id);
+  // mit geplantem Ende („bis 15:40“) aus dem Wochenplan, wo es einen Platz gibt
+  const running = runningUnits(teacher.id).map((u) => {
+    const platz = platzFuerEinheit(u);
+    return { ...u, bis: platz ? zeitfenster(platz).bis : null };
+  });
   const me = (
     <Link href="/mehr" className="flex items-center gap-2.5 rounded-full py-1 pr-3 pl-1 text-[14px] transition-colors hover:bg-surface" title="Konto und Einstellungen">
       <Avatar name={teacher.name} size={32} />

@@ -5,7 +5,7 @@ import { HideOn } from "@/components/HideOn";
 import { formatTime } from "@/components/ui";
 import type { UnitView } from "@/lib/units";
 
-export type RunningUnit = UnitView & { open_exercises: number };
+export type RunningUnit = UnitView & { open_exercises: number; /** geplantes Ende aus dem Wochenplan, „15:40“ */ bis?: string | null };
 
 /**
  * While the teacher has a unit running, every page says so at the top, with one way back into it.
@@ -33,6 +33,12 @@ export function RunningUnits({ units }: { units: RunningUnit[] }) {
                 {" "}
                 (<Elapsed since={u.started_at} />)
               </span>
+              {u.bis && (
+                <>
+                  {" "}
+                  · bis <span className="num">{u.bis}</span>
+                </>
+              )}
             </span>
             <span className="inline-flex shrink-0 items-center gap-1 font-semibold text-white">
               Zur Einheit <ArrowRight size={16} aria-hidden />

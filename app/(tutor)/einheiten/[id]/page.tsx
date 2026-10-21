@@ -8,7 +8,7 @@ import { endUnitAction } from "@/app/session-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { BoardThumbs } from "@/components/BoardThumbs";
 import { CopyLink } from "@/components/CopyLink";
-import { Elapsed } from "@/components/Elapsed";
+import { Elapsed, Restzeit } from "@/components/Elapsed";
 import { UnitDocForm } from "@/components/UnitDocForm";
 import { EinschaetzungKarte } from "@/components/Einschaetzung";
 import { CancelUnit } from "@/components/UnitControl";
@@ -33,6 +33,7 @@ import { letzterStoff, minitestDerEinheit } from "@/lib/minitest";
 import { MinitestKarte } from "@/components/MinitestKarte";
 import * as repo from "@/lib/repo";
 import { requireTeacher } from "@/lib/auth";
+import { zeitfenster } from "@/lib/planung/heute";
 import { canManageUnit, getUnit, platzFuerEinheit, unitDurationMs, type UnitView } from "@/lib/units";
 
 export const metadata = { title: "Einheit" };
@@ -67,6 +68,8 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   const running = unit.status === "gestartet";
   // D16/D17: der Wochenplan-Platz dieser Einheit — er liefert die geplante Dauer
   const platz = platzFuerEinheit(unit);
+  // geplant „14:00–15:40“ und, solange sie läuft, „noch 38 min“ (niko, 21.10.2026)
+  const fenster = platz ? zeitfenster(platz) : null;
 
   const sent = sp.gesendet ? repo.getWorksheet(Number(sp.gesendet)) : null;
   const startedText = sp.text ? getText(Number(sp.text)) : null;
@@ -121,9 +124,14 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
             <span className="num text-[15px] text-ink-2">
               <Elapsed since={unit.started_at} />
               {unit.subject && ` · ${unit.subject}`}
-              {platz && ` · geplant ${platz.geplante_dauer} min`}
+              {fenster && ` · geplant ${fenster.label}`}
               {unit.teacher_id !== teacher.id && ` · ${unit.teacher_name}`}
             </span>
+            {fenster?.restMinuten !== null && fenster?.restMinuten !== undefined && (
+              <span className="rounded-full bg-accent-wash px-2.5 py-0.5 text-[14px] font-semibold text-accent">
+                <Restzeit rest={fenster.restMinuten} ab={Date.now()} />
+              </span>
+            )}
           </div>
           {mayManage ? (
             <nav className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Einheit">

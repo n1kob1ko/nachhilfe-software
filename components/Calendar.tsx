@@ -178,7 +178,8 @@ export function Tagesplan({ punkte, starten }: { punkte: TagesplanPunkt[]; start
     <ul className="panel divide-y divide-line">
       {punkte.map((p) => (
         <li key={p.key} className={`flex min-h-[60px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 ${p.nichtStattgefunden ? "text-ink-3" : ""}`}>
-          <span className="num w-[92px] shrink-0 text-[15px] font-semibold">{p.zeit}</span>
+          {/* breit genug für „02:00–03:40“ in einer Zeile */}
+          <span className="num w-[106px] shrink-0 text-[16px] font-semibold">{p.zeit}</span>
           <Avatar name={p.studentName} size={34} />
           {/* the name keeps room; the actions move to their own line when the row gets narrow */}
           <Link href={`/schueler/${p.studentId}`} className="min-w-[8.5rem] flex-1">

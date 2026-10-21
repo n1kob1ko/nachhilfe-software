@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Search } from "lucide-react";
+import { CalendarDays, Plus, Search } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
 import { Empty, PageHeader, StatusChip, TrendBadge } from "@/components/ui";
 import { listStudents, listTeachers } from "@/lib/repo";
@@ -7,6 +7,7 @@ import { checkLevel, klassenLabel } from "@/lib/school";
 import { Avatar } from "@/components/Art";
 import { subjectTone } from "@/components/Calendar";
 import { analyzeStudent } from "@/lib/service";
+import { termineFuerSchueler } from "@/lib/planung/schueler-termine";
 
 export const metadata = { title: "Schüler" };
 
@@ -78,6 +79,8 @@ export default async function Students({ searchParams }: { searchParams: Promise
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {students.map((s) => {
             const a = analyzeStudent(s.id)!;
+            // wann der Schüler als Nächstes kommt (veröffentlichter Plan, diese und nächste Woche)
+            const termin = termineFuerSchueler(s.id).naechster;
             return (
               <li key={s.id}>
                 <Link href={`/schueler/${s.id}`} className="panel drueck block h-full px-5 py-4 transition-colors hover:border-line-strong">
@@ -105,7 +108,20 @@ export default async function Students({ searchParams }: { searchParams: Promise
                       <span className="text-[13px] text-ink-3">Keine Fächer</span>
                     )}
                   </div>
-                  <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-line pt-3 text-[13px]">
+                  <p className="mt-3 flex items-center gap-1.5 text-[13.5px]">
+                    <CalendarDays size={15} className="shrink-0 text-accent" aria-hidden />
+                    {termin ? (
+                      <span>
+                        <span className="num font-semibold">{termin.jetzt ? "jetzt" : termin.heute ? "heute" : termin.label}</span>
+                        {" "}
+                        <span className="num">{termin.zeit}</span>
+                        {!termin.raumOffen && <span className="text-ink-2"> · {termin.ort.split(" · ")[0]}</span>}
+                      </span>
+                    ) : (
+                      <span className="text-ink-3">kein Termin im Plan</span>
+                    )}
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-line pt-3 text-[13px]">
                     <StatusChip mastery={a.overall.mastery} />
                     <TrendBadge trend={a.overall.trend} delta={a.overall.delta} compact />
                     <span className="basis-full text-ink-2">
