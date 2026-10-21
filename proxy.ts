@@ -11,7 +11,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // everything except the login page, the health check, the student areas (link, tablet and own laptop), material files (they check
-  // the session themselves; uploads can be larger than the proxy's body limit) and static files
-  matcher: ["/((?!login|health|lernen|geraet|mitmachen|material/|excalidraw-assets|_next/static|_next/image|favicon.ico|icon|.*\\.(?:png|svg|ico|webmanifest)$).*)"],
+  // everything except the login page, the health check, the student areas (link, tablet and own laptop), material files and feedback (they
+  // check the session themselves; uploads can be larger than the proxy's body limit) and static files
+  matcher: ["/((?!login|health|lernen|geraet|mitmachen|material/|feedback/|excalidraw-assets|_next/static|_next/image|favicon.ico|icon|.*\\.(?:png|svg|ico|webmanifest)$).*)"],
 };

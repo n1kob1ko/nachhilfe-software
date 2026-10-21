@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Brand, Nav, TabBar } from "@/components/Nav";
 import { Avatar } from "@/components/Art";
+import { FeedbackButton } from "@/components/FeedbackButton";
 import { RunningUnits } from "@/components/RunningUnits";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { requireTeacher } from "@/lib/auth";
@@ -13,8 +14,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * Der Rahmen der Lehrkraft: links eine ruhige Leiste mit dem Logo und den fünf Einträgen, rechts die
- * Seite. Am Telefon steht das Logo oben und die fünf Einträge unten (TabBar). Der Knopf für den
- * Dunkelmodus steht neben dem Konto, nie als sechster Eintrag in der Navigation.
+ * Seite. Am Telefon steht das Logo oben und die fünf Einträge unten (TabBar). Die Knöpfe für Feedback
+ * und den Dunkelmodus stehen neben dem Konto, nie als sechster Eintrag in der Navigation.
  */
 export default async function TutorLayout({ children }: { children: React.ReactNode }) {
   const teacher = await requireTeacher();
@@ -25,10 +26,11 @@ export default async function TutorLayout({ children }: { children: React.ReactN
     const platz = platzFuerEinheit(u);
     return { ...u, bis: platz ? zeitfenster(platz).bis : null };
   });
-  const me = (
-    <Link href="/mehr" className="flex items-center gap-2.5 rounded-full py-1 pr-3 pl-1 text-[14px] transition-colors hover:bg-surface" title="Konto und Einstellungen">
+  // am Telefon nur das Bild: neben Feedback und Dunkelmodus ist für den Namen kein Platz
+  const me = (kompakt = false) => (
+    <Link href="/mehr" className={`flex items-center gap-2.5 rounded-full text-[14px] transition-colors hover:bg-surface ${kompakt ? "p-1" : "py-1 pr-3 pl-1"}`} title="Konto und Einstellungen">
       <Avatar name={teacher.name} size={32} />
-      <span className="min-w-0">
+      <span className={kompakt ? "sr-only" : "min-w-0"}>
         <span className="block truncate font-semibold">{teacher.name}</span>
         <span className="block truncate text-[12px] text-ink-3">{teacher.is_admin ? "Verwaltung" : "Lehrkraft"}</span>
       </span>
@@ -39,7 +41,8 @@ export default async function TutorLayout({ children }: { children: React.ReactN
       <header className="no-print flex items-center justify-between gap-3 border-b border-line bg-paper px-4 py-2.5 md:hidden">
         <Brand />
         <div className="flex min-w-0 items-center gap-2">
-          {me}
+          {me(true)}
+          <FeedbackButton />
           <ThemeToggle />
         </div>
       </header>
@@ -48,9 +51,12 @@ export default async function TutorLayout({ children }: { children: React.ReactN
         <div className="mt-8">
           <Nav />
         </div>
-        <div className="mt-auto flex items-center gap-2">
-          <div className="min-w-0 flex-1">{me}</div>
-          <ThemeToggle />
+        <div className="mt-auto space-y-2">
+          <FeedbackButton variant="zeile" />
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">{me()}</div>
+            <ThemeToggle />
+          </div>
         </div>
       </aside>
       <main className="min-w-0 px-4 pt-5 pb-28 md:px-8 md:py-8 lg:px-10">

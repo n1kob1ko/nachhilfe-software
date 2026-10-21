@@ -1,16 +1,18 @@
 import Link from "next/link";
-import { BarChart3, CalendarClock, CalendarDays, ChevronRight, Clock3, Coins, DoorOpen, Download, FileText, FileUp, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, ShieldCheck, Sparkles, TabletSmartphone } from "lucide-react";
+import { BarChart3, CalendarClock, CalendarDays, ChevronRight, Clock3, Coins, DoorOpen, Download, FileText, FileUp, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, MessageSquarePlus, ShieldCheck, Sparkles, TabletSmartphone } from "lucide-react";
 import { logoutAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
 import { PageHeader } from "@/components/ui";
 import { aiEnabled } from "@/lib/ai";
 import { requireTeacher } from "@/lib/auth";
+import { feedbackZahlen } from "@/lib/feedback";
 
 export const metadata = { title: "Mehr" };
 
 /** Everything a teacher needs only now and then, so the main navigation can stay at five entries. */
 export default async function MorePage() {
   const teacher = await requireTeacher();
+  const offenesFeedback = feedbackZahlen(teacher.is_admin ? undefined : teacher.id).offen;
   const groups: { title: string; items: { href: string; label: string; hint: string; icon: typeof Clock3 }[] }[] = [
     {
       title: "Unterricht",
@@ -38,7 +40,17 @@ export default async function MorePage() {
     },
     {
       title: "Konto",
-      items: [{ href: "/passwort", label: "Passwort ändern", hint: "Für dein Login", icon: KeyRound }],
+      items: [
+        { href: "/passwort", label: "Passwort ändern", hint: "Für dein Login", icon: KeyRound },
+        {
+          href: "/mehr/feedback",
+          label: "Feedback",
+          hint: teacher.is_admin
+            ? `${offenesFeedback ? `${offenesFeedback} offen. ` : ""}Was Lehrkräfte melden: lesen, abhaken, weitergeben`
+            : "Was du gemeldet hast und was schon erledigt ist",
+          icon: MessageSquarePlus,
+        },
+      ],
     },
   ];
   if (teacher.is_admin) {

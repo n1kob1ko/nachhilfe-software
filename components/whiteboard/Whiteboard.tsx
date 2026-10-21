@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as T from "@/lib/whiteboard-templates";
 import type { BoardCheck } from "@/lib/whiteboard-check";
 import type { BoardGrade } from "@/lib/whiteboard-grades";
+import { FeedbackButton } from "@/components/FeedbackButton";
 import { InsertPanel, type WorksheetForBoard } from "./InsertPanel";
 import { QuickTools, type QuickTool } from "./QuickTools";
 import { TaskBar, type BoardTask, type TaskCheck } from "./TaskBar";
@@ -748,6 +749,7 @@ export default function Whiteboard(props: WhiteboardProps) {
               </div>
             </>
           )}
+          {teacher && <FeedbackButton variant="tafel" />}
           <button className="wb-btn" onClick={toggleFullscreen} aria-label={fullscreen ? "Vollbild beenden" : "Vollbild"} title={fullscreen ? "Vollbild beenden" : "Vollbild: nur das Whiteboard zeigen"}>
             {fullscreen ? "⤡" : "⤢"}
           </button>

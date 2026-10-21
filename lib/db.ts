@@ -690,6 +690,24 @@ CREATE TABLE IF NOT EXISTS vokabellisten (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_vokabellisten_student ON vokabellisten(student_id, updated_at);
+-- Feedback der Lehrkräfte (lib/feedback.ts): what bothers them or is missing, sent with one tap from any
+-- page; the page, the screen size and the last browser errors come along by themselves.
+CREATE TABLE IF NOT EXISTS feedback (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  art TEXT NOT NULL DEFAULT 'fehler',       -- fehler | wunsch | sonstiges
+  text TEXT NOT NULL,
+  seite TEXT NOT NULL DEFAULT '',           -- path and query of the page it was sent from
+  bildschirm TEXT NOT NULL DEFAULT '',      -- "1280×800" (viewport)
+  modus TEXT NOT NULL DEFAULT '',           -- hell | dunkel
+  browser TEXT NOT NULL DEFAULT '',         -- user agent
+  fehler_log TEXT NOT NULL DEFAULT '[]',    -- JSON: the last errors in the browser before sending
+  bild TEXT,                                -- stored file name in the uploads folder (screenshot), or NULL
+  status TEXT NOT NULL DEFAULT 'offen',     -- offen | erledigt
+  erledigt_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status, created_at);
 CREATE INDEX IF NOT EXISTS idx_ge_week ON geplante_einheiten(week_start, status);
 CREATE INDEX IF NOT EXISTS idx_ge_teacher ON geplante_einheiten(teacher_id, week_start);
 CREATE INDEX IF NOT EXISTS idx_ge_student ON geplante_einheiten(student_id, week_start);
