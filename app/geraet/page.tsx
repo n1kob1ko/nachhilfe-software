@@ -14,6 +14,7 @@ import { activeLaptop } from "@/lib/laptop";
 import { markDelivered, parseView, pushLive, unitAssignments, unitText } from "@/lib/live";
 import { isMinitest, showsQuickRound } from "@/lib/quick-round";
 import * as repo from "@/lib/repo";
+import { activeMaterial, materialLabel } from "@/lib/current-material";
 import { triesFor } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
 import { TextEditor } from "@/components/text/TextEditor";
@@ -31,6 +32,13 @@ import { ensureBoardForUnit } from "@/lib/whiteboard";
  * its teacher run and none is chosen here yet, D26), or the running unit it shows.
  * Nothing of a previous student is ever rendered: everything below comes from that unit.
  */
+
+/** Das Thema zum Bild der Bühne: der aktuelle Stoff des Schülers (Thema und Unterthema). */
+const bildThema = (studentId: number) => {
+  const m = activeMaterial(studentId)[0];
+  return m ? `${m.topic} ${materialLabel(m)}` : null;
+};
+
 export default async function DevicePage() {
   const ctx = await deviceContext();
   if (!ctx) return <Pairing />;
@@ -194,7 +202,7 @@ export default async function DevicePage() {
       </ul>
     ) : (
       <div className="panel relative flex min-h-[320px] flex-col items-center justify-center overflow-hidden px-6 py-12 text-center">
-        <SubjectArt subject={unit.subject} className="h-[150px] w-[150px]" />
+        <SubjectArt subject={unit.subject} topic={bildThema(unit.student_id)} seed={unit.student_id} className="h-[150px] w-[150px]" />
         <p className="mt-6 text-[26px] font-semibold tracking-[-0.02em]">Gleich geht&apos;s los</p>
         <p className="mt-1 text-[17px] text-ink-2">{teacherFirst} schickt dir eine Aufgabe.</p>
       </div>

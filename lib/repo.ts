@@ -591,11 +591,20 @@ export function createWorksheet(w: WorksheetInput, tasks: TaskDraft[]): number {
   return tx();
 }
 /** Exercises (and diagnoses); library entries are listed in the Aufgabenbibliothek (lib/library.ts). */
-export function listWorksheets(): (Worksheet & { task_count: number; assigned: number; recipients: string[] })[] {
+/**
+ * Alle Übungen mit Stand der Zuweisungen: `assigned` gesendet, `started` begonnen (noch offen),
+ * `completed` erledigt, `correct` richtig gelöste Aufgaben der erledigten Zuweisungen (endgültige
+ * Versuche) — für die Übungen-Liste „an Max · erledigt 7/8“ (niko, 21.10.2026).
+ */
+export function listWorksheets(): (Worksheet & { task_count: number; assigned: number; started: number; completed: number; correct: number; recipients: string[] })[] {
   return db()
     .prepare(
       `SELECT w.*, (SELECT COUNT(*) FROM tasks t WHERE t.worksheet_id = w.id) AS task_count,
               (SELECT COUNT(*) FROM assignments a WHERE a.worksheet_id = w.id) AS assigned,
+              (SELECT COUNT(*) FROM assignments a WHERE a.worksheet_id = w.id AND a.completed_at IS NULL AND a.started_at IS NOT NULL) AS started,
+              (SELECT COUNT(*) FROM assignments a WHERE a.worksheet_id = w.id AND a.completed_at IS NOT NULL) AS completed,
+              (SELECT COUNT(*) FROM attempts x JOIN assignments a ON a.id = x.assignment_id
+                WHERE a.worksheet_id = w.id AND a.completed_at IS NOT NULL AND x.final = 1 AND x.correct = 1) AS correct,
               (SELECT GROUP_CONCAT(s.name, '|') FROM assignments a JOIN students s ON s.id = a.student_id WHERE a.worksheet_id = w.id) AS recipients
        FROM worksheets w WHERE w.kind <> 'bibliothek' ORDER BY w.created_at DESC, w.id DESC`,
     )
@@ -604,6 +613,9 @@ export function listWorksheets(): (Worksheet & { task_count: number; assigned: n
       ...toWorksheet(r as Row),
       task_count: (r as Row).task_count as number,
       assigned: (r as Row).assigned as number,
+      started: (r as Row).started as number,
+      completed: (r as Row).completed as number,
+      correct: (r as Row).correct as number,
       recipients: (((r as Row).recipients as string | null) ?? "").split("|").filter(Boolean),
     }));
 }

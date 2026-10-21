@@ -680,3 +680,31 @@ test("Login → Schüler → Einheit → Übung → Tablet → Antwort → Track
   assert.equal(repo.getLesson(lessonId)!.next_steps, "Dividieren ohne Hilfe");
   assert.ok(repo.getLesson(lessonId)!.reviewed_at, "documented");
 });
+
+// ---------- auf einen Blick (niko, 21.10.2026) ----------
+test("an exercise shows its state in the list: open, started, done with the result; a near exam becomes a short hint", async () => {
+  const { sid, repo } = await setup("Otto Offen");
+  const { dayOf, pruefungsHinweise } = await import("./exams");
+  const today = dayOf(new Date());
+  const { w, aid, t } = await practice(sid, ["mathe.brueche.kuerzen", "mathe.brueche.erweitern"]);
+  const row = () => repo.listWorksheets().find((x) => x.id === w)!;
+  assert.deepEqual([row().assigned, row().started, row().completed, row().correct], [1, 0, 0, 0], "sent, not started");
+  repo.markAssignmentStarted(aid);
+  assert.deepEqual([row().started, row().completed], [1, 0], "started, still open");
+  const answer = (skill: string, correct: number) =>
+    repo.recordAttempt({ assignment_id: aid, task_id: t[skill].id, student_id: sid, skill_id: skill, answer: correct ? "1" : "2", correct, final: 1, attempt_no: 1, time_ms: 1000, hints_used: 0, solution_viewed: 0, error_label: null, feedback: "" });
+  answer("mathe.brueche.kuerzen", 1);
+  answer("mathe.brueche.erweitern", 0);
+  repo.completeAssignmentIfDone(aid);
+  assert.deepEqual([row().started, row().completed, row().correct, row().task_count], [0, 1, 1, 2], "done: 1 of 2 right");
+
+  assert.equal(pruefungsHinweise(today).get(sid), undefined, "no exam, no hint");
+  repo.addTest({ student_id: sid, date: plusDays(today, 20), subject: "Mathematik", kind: "Schularbeit", topic: "Brüche", grade: null, points: null, max_points: null, notes: "", skill_ids: [] });
+  assert.equal(pruefungsHinweise(today).get(sid), undefined, "20 days away is outside the first stage (14)");
+  repo.addTest({ student_id: sid, date: plusDays(today, 2), subject: "Mathematik", kind: "Test", topic: "Kürzen", grade: null, points: null, max_points: null, notes: "", skill_ids: [] });
+  repo.addTest({ student_id: sid, date: plusDays(today, 9), subject: "Deutsch", kind: "Schularbeit", topic: "Erzählung", grade: null, points: null, max_points: null, notes: "", skill_ids: [] });
+  const hint = pruefungsHinweise(today).get(sid)!;
+  assert.equal(hint.text, "Test Mathematik in 2 Tagen", "the soonest exam, as one line");
+  assert.deepEqual([hint.days, hint.stage, hint.tone], [2, "bald", "red"]);
+  assert.equal(pruefungsHinweise(today, { studentId: 999_999 }).size, 0);
+});

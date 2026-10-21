@@ -6,8 +6,16 @@ import { MasteryBar, Pill, TrendBadge, formatDate } from "@/components/ui";
 import { AppHinweis } from "@/components/AppHinweis";
 import { termineFuerSchueler } from "@/lib/planung/schueler-termine";
 import * as repo from "@/lib/repo";
+import { activeMaterial, materialLabel } from "@/lib/current-material";
 import { analyzeStudent } from "@/lib/service";
 import { runningUnitForStudent } from "@/lib/units";
+
+
+/** Das Thema zum Bild der Bühne: der aktuelle Stoff des Schülers (Thema und Unterthema). */
+const bildThema = (studentId: number) => {
+  const m = activeMaterial(studentId)[0];
+  return m ? `${m.topic} ${materialLabel(m)}` : null;
+};
 
 export default async function LearnHome({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -33,7 +41,7 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
             {open.length === 0 ? "Gerade ist nichts offen. Gut gemacht!" : open.length === 1 ? "Eine Übung wartet auf dich." : `${open.length} Übungen warten auf dich.`}
           </p>
         </div>
-        <SubjectArt subject={student.subjects[0]} className="pointer-events-none absolute -right-4 -bottom-6 hidden h-[190px] w-[190px] sm:block" />
+        <SubjectArt subject={student.subjects[0]} topic={bildThema(student.id)} seed={student.id} className="pointer-events-none absolute -right-4 -bottom-6 hidden h-[190px] w-[190px] sm:block" />
       </section>
 
       {unit && (

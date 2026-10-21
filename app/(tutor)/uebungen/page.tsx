@@ -32,6 +32,16 @@ export default async function Worksheets({ searchParams }: { searchParams: Promi
     const tone = subjectTone(w.subject);
     const type = worksheetTypeLabel(w.subject, w.task_type);
     const to = w.recipients.map((n) => n.split(" ")[0]);
+    const an = to.length > 2 ? `${to.slice(0, 2).join(", ")} +${to.length - 2}` : to.join(", ");
+    // Stand der gesendeten Übung in einem Chip: offen, begonnen oder erledigt mit Ergebnis (niko, 21.10.2026)
+    const stand: { tone: "neutral" | "amber" | "green"; text: string } =
+      w.assigned > 0 && w.completed === w.assigned
+        ? { tone: "green", text: `erledigt · ${w.correct}/${w.task_count * w.completed} richtig` }
+        : w.completed > 0
+          ? { tone: "green", text: `${w.completed} von ${w.assigned} erledigt` }
+          : w.started > 0
+            ? { tone: "amber", text: "begonnen" }
+            : { tone: "neutral", text: "noch offen" };
     return (
       <li key={w.id}>
         <Link href={`/uebungen/${w.id}`} className="group flex min-h-[60px] items-center gap-4 px-5 py-2.5 hover:bg-panel/60">
@@ -46,8 +56,8 @@ export default async function Worksheets({ searchParams }: { searchParams: Promi
               {w.status === "entwurf" ? (
                 <Pill tone="amber">Entwurf{w.student_id && students.get(w.student_id) ? ` für ${students.get(w.student_id)}` : ""}</Pill>
               ) : to.length > 0 ? (
-                <Pill tone="green" title={`Gesendet an ${w.recipients.join(", ")}`}>
-                  an {to.length > 2 ? `${to.slice(0, 2).join(", ")} +${to.length - 2}` : to.join(", ")}
+                <Pill tone={stand.tone} title={`Gesendet an ${w.recipients.join(", ")}`}>
+                  an {an} · <span className="num">{stand.text}</span>
                 </Pill>
               ) : null}
               {w.kind === "ueberpruefung" && <Pill tone="accent">Überprüfung</Pill>}
