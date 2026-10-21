@@ -28,6 +28,7 @@ import { dayOf, daysUntil, examReminders, reminderStage, STAGE_LABEL, STAGE_TONE
 import { examThresholds } from "@/lib/lehrplan";
 import { diagnosesOf } from "@/lib/diagnose";
 import { nextSteps, RULE_LABEL, RULE_TONE, type NextStep } from "@/lib/recommend";
+import { termineFuerSchueler, type SchuelerTermin } from "@/lib/planung/schueler-termine";
 import { activeMaterial, materialHistory, materialLabel, MATERIAL_SOURCES, PRIORITY_LABEL, profileTopic } from "@/lib/current-material";
 import { errorTypeLabel } from "@/lib/error-types";
 import { textErrorsForStudent } from "@/lib/text-correction";
@@ -147,8 +148,25 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
   );
 }
 
-/** Vier Zahlen über den Tabs: Lernstand, Trend, nächste Prüfung, Einheiten. Jede führt zu ihrem Bereich. */
+/**
+ * Der nächste Termin als Kennzahl: heute die Uhrzeit groß („15:30“, darunter „heute bis 17:10 · Raum 2“),
+ * sonst Tag und Uhrzeit („Mo 15:30“, darunter „27.10. bis 17:10 · Raum 2“). niko, 21.10.2026: wann der
+ * Schüler kommt und bis wann er aus hat, muss auf den ersten Blick zu sehen sein.
+ */
+function terminKennzahl(t: SchuelerTermin | null): { wert: string; zusatz: string } {
+  if (!t) return { wert: "–", zusatz: "kein Termin im Plan" };
+  const [von, bis] = t.zeit.split("–");
+  const [tag, datum] = t.label.split(", ");
+  // nur der Raumname: das Gebäude passt nicht auf die Karte
+  const ort = t.raumOffen ? "" : ` · ${t.ort.split(" · ")[0]}`;
+  if (t.jetzt) return { wert: "jetzt", zusatz: `bis ${bis}${ort}` };
+  if (t.heute) return { wert: von, zusatz: `heute bis ${bis}${ort}` };
+  return { wert: `${tag} ${von}`, zusatz: `${datum} bis ${bis}${ort}` };
+}
+
+/** Vier Zahlen über den Tabs: nächster Termin, Lernstand (mit Trend), nächste Prüfung, Einheiten. Jede führt zu ihrem Bereich. */
 function Kopfzahlen({ student, a }: { student: repo.Student; a: Analysis }) {
+  const termin = terminKennzahl(termineFuerSchueler(student.id).naechster);
   const today = dayOf(new Date());
   const exam = repo.upcomingTests(today, student.id)[0];
   const tage = exam ? daysUntil(exam.date, today) : null;
@@ -158,20 +176,18 @@ function Kopfzahlen({ student, a }: { student: repo.Student; a: Analysis }) {
   const level = masteryLevel(mastery);
   const LevelIcon = level.icon;
   const karten: { wort: string; wert: React.ReactNode; zusatz: React.ReactNode; href: string }[] = [
+    { wort: "Nächster Termin", wert: termin.wert, zusatz: termin.zusatz, href: "/planung" },
     {
       wort: "Lernstand",
       wert: mastery === null ? "–" : `${pct(mastery)}`,
       zusatz: (
-        <span className={`inline-flex items-center gap-1 ${level.cls}`}>
-          <LevelIcon size={13} strokeWidth={2.25} aria-hidden /> {level.label}
+        <span className="inline-flex items-center gap-2">
+          <span className={`inline-flex items-center gap-1 ${level.cls}`}>
+            <LevelIcon size={13} strokeWidth={2.25} aria-hidden /> {level.label}
+          </span>
+          <TrendBadge trend={a.overall.trend} delta={a.overall.delta} compact />
         </span>
       ),
-      href: `/schueler/${student.id}?tab=fortschritt`,
-    },
-    {
-      wort: "Trend",
-      wert: a.overall.trend === "none" || a.overall.delta === null ? "–" : `${a.overall.delta > 0 ? "+" : ""}${a.overall.delta}`,
-      zusatz: <TrendBadge trend={a.overall.trend} />,
       href: `/schueler/${student.id}?tab=fortschritt`,
     },
     {
@@ -247,7 +263,8 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
     nichtStattgefunden: istNichtStattgefunden(z, jetzt),
   }));
   const versaeumt = termine.filter((t) => t.nichtStattgefunden).length;
-  const naechsterTermin = termine.find((t) => !t.nichtStattgefunden && t.datum >= heute) ?? null;
+  // diese und die nächste Woche, dieselbe Quelle wie die Schüler-App
+  const naechsterTermin = termineFuerSchueler(student.id).naechster;
   // the most important first: what is going on at school now, the next exam, what to practise
   const rows: [string, React.ReactNode][] = [];
   if (material.length) {
@@ -389,7 +406,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
                 [
                   "Nächster Termin",
                   naechsterTermin
-                    ? `${naechsterTermin.label}, ${naechsterTermin.zeit}${naechsterTermin.raum ? ` · ${naechsterTermin.raum}` : ""}`
+                    ? `${naechsterTermin.label}, ${naechsterTermin.zeit}${naechsterTermin.raumOffen ? "" : ` · ${naechsterTermin.ort}`}`
                     : next
                       ? `${formatDate(next.starts_at, { weekday: "short", day: "numeric", month: "short" })}, ${formatTime(next.starts_at)}`
                       : "nicht geplant",

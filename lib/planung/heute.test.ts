@@ -147,3 +147,21 @@ test("offene Plätze heute: ohne Einheit, der nächste zuerst (für den Start ei
   assert.deepEqual(heute.offenePlaetzeHeute(anna, { now: MONTAG_MITTAG, teacherId: 999999 }), []);
   assert.deepEqual(heute.offenePlaetzeHeute(berta, { now: MONTAG_MITTAG }), [], "Berta hat heute nichts");
 });
+
+test("zeitfenster: Beginn, Ende, Rest und Abstand zum Beginn nur am Tag des Platzes", async () => {
+  const { zeitfenster, bisBeginnLabel } = await import("./heute");
+  const platz = { week_start: MONTAG, weekday: 1 as const, start_min: 690, geplante_dauer: 100 }; // 11:30–13:10
+  const mittag = zeitfenster(platz, MONTAG_MITTAG); // 12:00 in Wien
+  assert.deepEqual(mittag, { von: "11:30", bis: "13:10", label: "11:30–13:10", restMinuten: 70, bisBeginn: -30 });
+  // nach dem Ende ist der Rest negativ („über der Zeit“)
+  assert.equal(zeitfenster(platz, new Date("2026-10-12T11:20:00Z")).restMinuten, -10);
+  // am Dienstag (in Wien) gibt es weder Rest noch Abstand
+  const dienstag = zeitfenster(platz, MONTAG_SPAET);
+  assert.equal(dienstag.restMinuten, null);
+  assert.equal(dienstag.bisBeginn, null);
+  assert.equal(dienstag.label, "11:30–13:10");
+  assert.equal(bisBeginnLabel(-5), "jetzt");
+  assert.equal(bisBeginnLabel(0), "jetzt");
+  assert.equal(bisBeginnLabel(40), "in 40 min");
+  assert.equal(bisBeginnLabel(130), "in 2 h 10 min");
+});

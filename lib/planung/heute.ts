@@ -15,7 +15,43 @@ import {
   wochentagVon,
   type Wochentag,
 } from "./zeit";
-import { einheitenFuerTag, istNichtStattgefunden, mitNamen, type GeplanteEinheitZeile, type PlatzMitNamen } from "./repo";
+import { einheitenFuerTag, istNichtStattgefunden, mitNamen, slotDatum, type GeplanteEinheitZeile, type PlatzMitNamen } from "./repo";
+
+/**
+ * Das geplante Zeitfenster eines Platzes, so wie es Lehrer und Schüler lesen (niko, 21.10.2026:
+ * „wann der Schüler kommt und bis wann er aus hat“): „14:00–15:40“, dazu Beginn und Ende einzeln
+ * und, nur am Tag des Platzes, die Minuten bis zum Ende (negativ = über der Zeit) und bis zum Beginn.
+ */
+export type Zeitfenster = {
+  von: string;
+  bis: string;
+  /** „14:00–15:40“ */
+  label: string;
+  /** Minuten bis zum geplanten Ende; null, wenn der Platz nicht heute ist */
+  restMinuten: number | null;
+  /** Minuten bis zum geplanten Beginn (negativ = schon begonnen); null, wenn nicht heute */
+  bisBeginn: number | null;
+};
+
+export function zeitfenster(zeile: Pick<GeplanteEinheitZeile, "week_start" | "weekday" | "start_min" | "geplante_dauer">, now: Date = new Date()): Zeitfenster {
+  const ende = zeile.start_min + zeile.geplante_dauer;
+  const heute = wienerDatum(now) === slotDatum(zeile.week_start, zeile.weekday);
+  const jetzt = wienerMinuten(now);
+  return {
+    von: minutenLabel(zeile.start_min),
+    bis: minutenLabel(ende),
+    label: `${minutenLabel(zeile.start_min)}–${minutenLabel(ende)}`,
+    restMinuten: heute ? ende - jetzt : null,
+    bisBeginn: heute ? zeile.start_min - jetzt : null,
+  };
+}
+
+/** „in 40 min“, „in 2 h 10 min“, „jetzt“ (schon begonnen) — für die Zeile „Als Nächstes“. */
+export function bisBeginnLabel(minuten: number): string {
+  if (minuten <= 0) return "jetzt";
+  if (minuten < 60) return `in ${minuten} min`;
+  return `in ${Math.floor(minuten / 60)} h ${String(minuten % 60).padStart(2, "0")} min`;
+}
 
 export type HeutePlatz = PlatzMitNamen & {
   /** "14:00–15:40" — so, wie es auf dem Dashboard steht. */
