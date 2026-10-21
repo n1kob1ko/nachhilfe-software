@@ -106,3 +106,18 @@ export function notenBereiche(gesamt: number, grenzen: readonly number[]): Noten
 
 /** „21–24“, oder eine Zahl, wenn von und bis gleich sind. */
 export const bereichText = (b: Pick<NotenBereich, "von" | "bis">) => (b.von === b.bis ? punkteText(b.von) : `${punkteText(b.von)}–${punkteText(b.bis)}`);
+
+/**
+ * Die Punkte vom Blatt einer auf Papier gelösten Übung (lib/blatt-einlesen.ts, taskId → erreicht), oder null für
+ * eine Übung vom Gerät.
+ */
+export function papierPunkte(settings: string | null): Record<number, number> | null {
+  if (!settings) return null;
+  try {
+    const p = (JSON.parse(settings) as { papier?: { erreicht?: Record<string, number> } }).papier;
+    if (!p?.erreicht) return null;
+    return Object.fromEntries(Object.entries(p.erreicht).map(([k, v]) => [Number(k), Number(v)]));
+  } catch {
+    return null;
+  }
+}
