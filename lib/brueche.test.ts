@@ -42,3 +42,12 @@ test("Ohne Messfunktion und ohne Brüche bleibt der Text ein Stück", () => {
   const sol = solutionTemplate({ number: 2, prompt: "", options: [], solution: "3/4" }, { x: 0, y: 0 }, measure);
   assert.ok(sol.some((e) => e.type === "line" && e.strokeColor === "#15803d"));
 });
+
+test("ein Schrägstrich mit Leerzeichen zwischen Termen wird ein Bruch (niko, 21.10.2026)", () => {
+  assert.deepEqual(splitFractions("(2x^3)^2 · (3x^2)^3 / (6x^4)^2"), [{ minus: false, num: "(2x^3)^2 · (3x^2)^3", den: "(6x^4)^2" }]);
+  assert.deepEqual(splitFractions("Vereinfache 12a^5 / 4a^2 = ?"), ["Vereinfache ", { minus: false, num: "12a^5", den: "4a^2" }, " = ?"]);
+  assert.deepEqual(fractions("-6x^2 / 3x"), [{ minus: true, num: "6x^2", den: "3x" }]);
+  assert.deepEqual(fractions("1 / 2 · 3/4"), [{ minus: false, num: "1", den: "2" }, { minus: false, num: "3", den: "4" }]);
+  // Wörter und Auswahl bleiben, ebenso a / b · c (der Nenner ist kein Produkt) und Ketten a / b / c
+  for (const s of ["go / goes", "und / oder", "(is / are)", "a / b / c", "Kosten / 4"]) assert.deepEqual(fractions(s), [], s);
+});
