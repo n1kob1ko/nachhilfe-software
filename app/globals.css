@@ -162,17 +162,17 @@
       radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, 0.14), transparent 55%),
       linear-gradient(135deg, #3478e0, #1b4aa8);
   }
-  /* das Logo ist schwarz und gold: nachts steht es auf einer weißen Plakette */
-  html[data-theme="dark"] .marke {
-    background: #fff;
-    border-radius: 8px;
-    padding: 2px 4px;
+  /* das Logo ist schwarz und gold: nachts die Fassung mit hellen Strichen (components/Brand.tsx) */
+  html[data-theme="dark"] .marke-hell {
+    display: none;
   }
-  html[data-theme="dark"] .logo-plakette {
-    background: #fff;
-    border-radius: 18px;
-    padding: 14px 20px;
-    box-sizing: content-box;
+}
+.marke-dunkel {
+  display: none;
+}
+@media screen {
+  html[data-theme="dark"] .marke-dunkel {
+    display: block;
   }
 }
 
