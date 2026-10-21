@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Circle, FileText, History, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Camera, CheckCircle2, Circle, FileText, History, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/Art";
 import {
   addHomeworkAction,
@@ -922,6 +922,11 @@ function School({ student }: { student: repo.Student }) {
                   <Link href={`/schueler/${student.id}/pruefung/${t.id}${t.skill_ids.length ? "#probeschularbeit" : "?ziel=probe#stoff-zuordnen"}`} className="btn btn-secondary btn-sm">
                     Probeschularbeit
                   </Link>
+                  {days <= 0 && (
+                    <Link href={`/schueler/${student.id}/blatt?pruefung=${t.id}`} className="btn btn-secondary btn-sm" data-testid="blatt-zur-pruefung">
+                      <Camera size={14} aria-hidden /> Blatt einlesen
+                    </Link>
+                  )}
                   <Reveal label="Ergebnis eintragen">
                     <form action={setExamResultAction.bind(null, t.id)} className="flex flex-wrap items-center gap-2">
                       <input className="input num w-[84px]" name="grade" type="number" min={1} max={5} placeholder="Note" aria-label="Note" />
@@ -938,6 +943,15 @@ function School({ student }: { student: repo.Student }) {
             );
           })}
         </ul>
+        <Link href={`/schueler/${student.id}/blatt`} className="panel mb-5 flex items-center gap-3 px-4 py-3.5 transition-colors hover:border-line-hover" data-testid="blatt-einlesen">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-wash text-accent" aria-hidden>
+            <Camera size={20} />
+          </span>
+          <span className="grid gap-0.5">
+            <span className="font-semibold">Gelöstes Blatt einlesen</span>
+            <span className="text-[13.5px] text-ink-2">Probeschularbeit oder Test auf Papier fotografieren. Die KI liest es aus, du prüfst und übernimmst.</span>
+          </span>
+        </Link>
         <ExamForm studentId={student.id} subjects={subjects} today={today} kiLiest={stoffzettelLesbar().ok} />
         <h3 className="mt-8 mb-1 text-[15px] font-semibold">Ergebnisse</h3>
         <ul className="divide-y divide-line">

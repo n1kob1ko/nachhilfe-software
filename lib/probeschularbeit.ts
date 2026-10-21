@@ -32,6 +32,7 @@ import {
   isDauer,
   noteFuer as note,
   notenBereiche,
+  papierPunkte,
   planeProbeschularbeit,
   PUNKTE_MAX,
   SCHLUESSEL_STANDARD,
@@ -107,6 +108,8 @@ export function ergebnis(assignmentId: number): ProbeErgebnis | null {
   if (!a) return null;
   const tasks = repo.listTasks(a.worksheet_id);
   const punkte = punkteDerAufgaben(a.worksheet_id, tasks);
+  // auf Papier gelöst: die Punkte, die auf dem Blatt stehen
+  const papier = papierPunkte(repo.getWorksheet(a.worksheet_id)?.settings ?? null);
   const finals = repo.listAttemptsForAssignment(assignmentId).filter((x) => x.final);
   let erreicht = 0;
   let offen = 0;
@@ -115,6 +118,7 @@ export function ergebnis(assignmentId: number): ProbeErgebnis | null {
     if (!f) continue;
     const p = punkte.get(t.id) ?? 0;
     if (f.review === "offen") offen++;
+    else if (papier && t.id in papier) erreicht += papier[t.id];
     else if (f.review === "teilweise") erreicht += Math.round(p) / 2;
     else if (f.correct) erreicht += p;
   }

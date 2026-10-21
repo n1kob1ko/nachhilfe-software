@@ -87,6 +87,7 @@ export type AIFunction =
   | "stundenplan"
   | "stoffzettel"
   | "textfoto"
+  | "blatt"
   | "whiteboard"
   | "druckblatt"
   | "textkorrektur"
@@ -145,6 +146,9 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   stoffzettel: { label: "Stoffzettel lesen", area: "MATERIAL", tier: "standard", maxTokens: 3_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // Text vom Foto (lib/textinterpretation-foto.ts): only on the teacher's click, after the tick „kein Name darauf“; the
   // printed story of a Textinterpretation, line by line. The answer is the printed text only, so the same page is not paid twice
+  // Gelöstes Blatt einlesen (lib/blatt-einlesen.ts): only on the teacher's click, after the tick „kein Name darauf“; the
+  // pages of a printed test the student solved on paper. Thinking on: the KI checks the maths of every answer itself
+  blatt: { label: "Gelöstes Blatt lesen", area: "MATERIAL", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   textfoto: { label: "Text vom Foto lesen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 120_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // KI prüfen am Whiteboard (lib/whiteboard-check.ts): only on the teacher's click; the picture of one task with the
   // handwriting under it and the task's solution; the answer is a suggestion the teacher confirms. Thinking on, because
