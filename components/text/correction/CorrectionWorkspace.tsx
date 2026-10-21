@@ -487,7 +487,7 @@ export function CorrectionWorkspace(p: Props) {
               <button key={v} type="button" role="tab" aria-selected={view === v} className="kx-tab" onClick={() => show(v)}>
                 {label}
                 {v === "korrekturen" && ov.open > 0 && (
-                  <span className="num rounded-full bg-red px-2 py-0.5 text-[12px] leading-none text-white" aria-label={`${ov.open} offen`}>
+                  <span className="num rounded-full bg-red px-2 py-0.5 text-[12px] leading-none text-on-fill" aria-label={`${ov.open} offen`}>
                     {ov.open}
                   </span>
                 )}
@@ -769,7 +769,7 @@ export function CorrectionWorkspace(p: Props) {
           )}
           {cats.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-1.5" role="group" aria-label="Nach Kategorie filtern">
-              <button type="button" aria-pressed={filter === null} onClick={() => setFilter(null)} className={`inline-flex min-h-[44px] items-center rounded-full px-3.5 text-[13px] font-semibold ${filter === null ? "bg-accent text-white" : "bg-panel text-ink-2"}`}>
+              <button type="button" aria-pressed={filter === null} onClick={() => setFilter(null)} className={`inline-flex min-h-[44px] items-center rounded-full px-3.5 text-[13px] font-semibold ${filter === null ? "bg-accent text-on-fill" : "bg-panel text-ink-2"}`}>
                 Alle
               </button>
               {cats.map((k) => (
@@ -778,7 +778,7 @@ export function CorrectionWorkspace(p: Props) {
                   type="button"
                   aria-pressed={filter === k.key}
                   onClick={() => setFilter(filter === k.key ? null : k.key)}
-                  className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold ${filter === k.key ? "bg-accent text-white" : "bg-panel text-ink-2"}`}
+                  className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold ${filter === k.key ? "bg-accent text-on-fill" : "bg-panel text-ink-2"}`}
                   title={`${k.label}: ${k.open} offen`}
                 >
                   {k.label} <span className="num opacity-75">{k.open || k.all}</span>

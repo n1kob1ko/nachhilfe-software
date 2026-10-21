@@ -119,7 +119,7 @@ export function WochenAbweichung({
                 }}
               >
                 <input type="hidden" name="zurueck" value={zurueck} />
-                <button className="btn btn-danger btn-sm border border-[#e8c3bf]">
+                <button className="btn btn-danger btn-sm border border-red/30">
                   <Trash2 size={15} aria-hidden /> Abweichung entfernen
                 </button>
               </form>

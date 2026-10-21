@@ -131,7 +131,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
               <AreaLink href={`/tafel/${unit.id}`} icon={<Presentation size={20} aria-hidden />} label="Whiteboard" />
               <AreaLink href={`/einheiten/${unit.id}?bereich=fortschritt`} on={area === "fortschritt"} icon={<ChartNoAxesColumn size={20} aria-hidden />} label="Fortschritt" />
               <form action={endUnitAction.bind(null, unit.id)} className="contents">
-                <button className="flex min-h-[60px] items-center justify-center gap-2 rounded-2xl bg-ink px-3 text-[15px] font-semibold text-white transition-colors hover:bg-ink-2">
+                <button className="flex min-h-[60px] items-center justify-center gap-2 rounded-2xl bg-ink px-3 text-[15px] font-semibold text-surface transition-colors hover:bg-ink-2">
                   <Square size={18} aria-hidden /> Einheit beenden
                 </button>
               </form>
@@ -318,7 +318,7 @@ function AreaLink({ href, on, icon, label }: { href: string; on?: boolean; icon:
       href={href}
       aria-current={on ? "page" : undefined}
       className={`flex min-h-[60px] items-center justify-center gap-2 rounded-2xl px-3 text-[15px] font-semibold transition-colors ${
-        on ? "bg-accent text-white shadow-[0_8px_18px_-10px_rgba(201,79,23,0.9)]" : "bg-surface text-ink shadow-[var(--shadow-card)] hover:bg-panel"
+        on ? "bg-accent text-on-fill shadow-[var(--shadow-card)]" : "bg-surface text-ink shadow-[var(--shadow-card)] hover:bg-panel"
       }`}
     >
       {icon}

@@ -34,7 +34,7 @@ export function TabBar() {
         const active = isActive(path, match);
         return (
           <Link key={href} href={href} aria-current={active ? "page" : undefined} className={`flex min-h-[60px] flex-col items-center justify-center gap-1 text-[12px] font-medium ${active ? "text-ink" : "text-ink-3"}`}>
-            <span className={`flex h-8 w-12 items-center justify-center rounded-full transition-colors ${active ? "bg-accent-bright text-ink" : ""}`}>
+            <span className={`flex h-8 w-12 items-center justify-center rounded-full transition-colors ${active ? "bg-accent-bright text-on-bright" : ""}`}>
               <Icon size={20} strokeWidth={active ? 2.2 : 1.9} aria-hidden />
             </span>
             {label}
@@ -62,7 +62,7 @@ export function Nav() {
           >
             <span
               className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
-                active ? "bg-accent-bright text-ink" : "text-ink-3 group-hover:text-ink"
+                active ? "bg-accent-bright text-on-bright" : "text-ink-3 group-hover:text-ink"
               }`}
             >
               <Icon size={17} strokeWidth={active ? 2.2 : 1.9} aria-hidden />

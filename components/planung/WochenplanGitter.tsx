@@ -316,7 +316,7 @@ export function WochenplanGitter(props: Props) {
                                 onZiehen(p);
                               }}
                               onDragEnd={onZiehenEnde}
-                              className={`peer absolute z-10 overflow-hidden rounded-[10px] border px-2 py-1 text-left leading-tight shadow-[0_1px_2px_rgba(80,45,20,0.08)] transition-shadow duration-150 ${
+                              className={`peer absolute z-10 overflow-hidden rounded-[10px] border px-2 py-1 text-left leading-tight shadow-[var(--shadow-card)] transition-shadow duration-150 ${
                                 interaktiv ? "cursor-grab hover:shadow-[var(--shadow-pop)] active:cursor-grabbing" : ""
                               } ${p.status === "entwurf" ? "border-dashed" : "border-solid"}`}
                               style={{

@@ -19,7 +19,7 @@ export function BrandMark({ height = 40, alleine = false, className = "" }: { he
       width={Math.round(height * ZEICHEN_VERHAELTNIS)}
       height={height}
       alt={alleine ? "MC Dream Education" : ""}
-      className={`shrink-0 select-none ${className}`}
+      className={`marke shrink-0 select-none ${className}`}
       draggable={false}
     />
   );

@@ -245,7 +245,7 @@ function TabletChoice({ parallel, pending, run }: { parallel: LiveSnapshot["para
                 aria-pressed={t.unitId === u.id}
                 disabled={pending}
                 onClick={() => run(() => assignTabletAction(t.id, u.id))}
-                className={`flex min-h-[36px] items-center rounded-full px-3 text-[13px] font-semibold ${t.unitId === u.id ? "bg-accent text-white" : "text-ink-2 hover:text-ink"}`}
+                className={`flex min-h-[36px] items-center rounded-full px-3 text-[13px] font-semibold ${t.unitId === u.id ? "bg-accent text-on-fill" : "text-ink-2 hover:text-ink"}`}
               >
                 {u.student}
               </button>

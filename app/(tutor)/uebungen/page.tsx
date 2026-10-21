@@ -101,7 +101,7 @@ export default async function Worksheets({ searchParams }: { searchParams: Promi
                   key={k || "alle"}
                   href={k ? `/uebungen?filter=${encodeURIComponent(k)}` : "/uebungen"}
                   aria-current={active === k ? "true" : undefined}
-                  className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 text-[13px] font-medium ${active === k ? "bg-accent text-white" : "bg-panel text-ink-2 hover:text-ink"}`}
+                  className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 text-[13px] font-medium ${active === k ? "bg-accent text-on-fill" : "bg-panel text-ink-2 hover:text-ink"}`}
                 >
                   {label}
                   <span className="num ml-1.5 opacity-70">{n}</span>

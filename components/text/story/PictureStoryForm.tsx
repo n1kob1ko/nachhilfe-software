@@ -232,7 +232,7 @@ export function PictureStoryForm(p: Props) {
                 <div className="relative bg-panel">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={it.url} alt={`Bild ${i + 1}`} className="aspect-[4/3] w-full object-contain" draggable={false} />
-                  <span className="num absolute top-2 left-2 flex h-8 min-w-8 items-center justify-center rounded-full bg-ink px-2 text-[15px] font-semibold text-white" data-testid="bild-nummer">
+                  <span className="num absolute top-2 left-2 flex h-8 min-w-8 items-center justify-center rounded-full bg-ink px-2 text-[15px] font-semibold text-surface" data-testid="bild-nummer">
                     {i + 1}
                   </span>
                   <button

@@ -22,7 +22,7 @@ export async function UnitControl({ student, size = "lg" }: { student: Student; 
   }
   return (
     <Link href={`/einheiten/${unit.id}`} className={`btn btn-primary ${cls}`}>
-      <span className="h-2.5 w-2.5 rounded-full bg-white" aria-hidden /> Einheit läuft seit {formatTime(unit.started_at)}
+      <span className="h-2.5 w-2.5 rounded-full bg-on-fill" aria-hidden /> Einheit läuft seit {formatTime(unit.started_at)}
       {unit.teacher_id !== teacher?.id && ` (${unit.teacher_name})`}
     </Link>
   );

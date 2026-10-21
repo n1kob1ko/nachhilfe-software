@@ -185,7 +185,7 @@ function Plot({ series, layout, titleId }: { series: Series[]; layout: keyof typ
         </svg>
         {hover !== null && (
           <div
-            className="pointer-events-none absolute top-2 rounded-lg border border-line bg-surface px-3 py-2 text-[12px] shadow-[0_4px_16px_rgba(27,29,35,0.12)]"
+            className="pointer-events-none absolute top-2 rounded-lg border border-line bg-surface px-3 py-2 text-[12px] shadow-[var(--shadow-pop)]"
             style={{ left: `${(x(hover) / W) * 100}%`, transform: x(hover) > W / 2 ? "translateX(calc(-100% - 12px))" : "translateX(12px)" }}
           >
             <div className="mb-1 font-medium text-ink-2">{hover === n - 1 ? "Heute" : `Woche bis ${fmt(xs[hover])}`}</div>

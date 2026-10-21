@@ -268,7 +268,7 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
         {` · ${task.difficulty}`}
       </p>
       {showSolution && (
-        <div className="mt-3 rounded-lg border border-[#cfe3d6] bg-green-wash px-4 py-3 text-[14px]">
+        <div className="mt-3 rounded-lg border border-green/30 bg-green-wash px-4 py-3 text-[14px]">
           {answerText(task) && (
             <p>
               <span className="font-semibold">Lösung:</span> <MathText text={answerText(task)} />

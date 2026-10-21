@@ -90,7 +90,7 @@ export default async function EditStudent({
 
       <form action={deleteStudentAction.bind(null, student.id)} className="mt-12 max-w-[760px] border-t border-line pt-6">
         <p className="mb-3 text-[14px] text-ink-2">Löscht den Schüler mit allen Einheiten, Hausübungen, Tests und Übungsergebnissen.</p>
-        <button className="btn btn-danger border border-[#e8c3bf]">Schüler endgültig löschen</button>
+        <button className="btn btn-danger border border-red/30">Schüler endgültig löschen</button>
       </form>
     </>
   );

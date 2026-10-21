@@ -42,7 +42,7 @@ const OK_TEXT: Record<string, string> = {
   getrennt: "Zusammenführung aufgehoben.",
 };
 const radioChip = "flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-[13.5px] has-checked:border-accent has-checked:bg-accent-wash has-checked:text-accent";
-const navChip = (on: boolean) => `inline-flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-[14px] font-medium whitespace-nowrap ${on ? "bg-accent text-white" : "bg-panel text-ink-2 hover:text-ink"}`;
+const navChip = (on: boolean) => `inline-flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-[14px] font-medium whitespace-nowrap ${on ? "bg-accent text-on-fill" : "bg-panel text-ink-2 hover:text-ink"}`;
 const cut = (s: string, n = 90) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 /** Group entries of a curriculum; the entries below them are indented in the select. */
 const GROUP_KINDS = new Set(["kompetenzbereich", "thema", "lehrstoffbereich"]);
