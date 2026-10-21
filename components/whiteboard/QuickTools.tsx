@@ -23,6 +23,11 @@ type Props = {
   onUndo: () => void;
   onRedo: () => void;
   onFit: () => void;
+  /** Stiftmodus: der Stift schreibt, der Finger schiebt das Blatt (niko, 21.10.2026) */
+  penMode: boolean;
+  onPenMode: (on: boolean) => void;
+  /** +1 größer, -1 kleiner; im Stiftmodus zoomen die Finger nicht mehr */
+  onZoom: (step: 1 | -1) => void;
 };
 
 /**
@@ -32,7 +37,7 @@ type Props = {
  */
 const RARE: QuickTool[] = ["auswahl", "linie", "pfeil", "rechteck", "kreis", "laser"];
 
-export function QuickTools({ teacher, tool, onTool, onUndo, onRedo, onFit }: Props) {
+export function QuickTools({ teacher, tool, onTool, onUndo, onRedo, onFit, penMode, onPenMode, onZoom }: Props) {
   const [more, setMore] = useState(false);
   const [color, setColor] = useState(COLORS[0].value);
   const [width, setWidth] = useState(2);
@@ -81,6 +86,14 @@ export function QuickTools({ teacher, tool, onTool, onUndo, onRedo, onFit }: Pro
               )}
               <Btn label="Wiederholen" tip="Wiederholen: zurückgenommenen Schritt wiederherstellen" onClick={onRedo} icon={<svg viewBox="0 0 24 24" className="wb-ico"><path d="m15 14 5-5-5-5" /><path d="M20 9H10a6 6 0 0 0 0 12h3" /></svg>} />
               <Btn label="Alles zeigen" tip="Alles zeigen: so zoomen, dass die ganze Seite sichtbar ist" onClick={onFit} icon={<svg viewBox="0 0 24 24" className="wb-ico"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>} />
+              <Btn label="Größer" tip="Größer: näher heranzoomen" onClick={() => onZoom(1)} icon={<svg viewBox="0 0 24 24" className="wb-ico"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5M8.5 11h5M11 8.5v5" /></svg>} />
+              <Btn label="Kleiner" tip="Kleiner: mehr vom Blatt sehen" onClick={() => onZoom(-1)} icon={<svg viewBox="0 0 24 24" className="wb-ico"><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5M8.5 11h5" /></svg>} />
+              <Btn
+                label={penMode ? "Mit Finger schreiben" : "Nur Stift schreibt"}
+                tip={penMode ? "Gerade schreibt nur der Stift, der Finger schiebt das Blatt. Tippen: auch der Finger schreibt." : "Gerade schreibt auch der Finger. Tippen: nur der Stift schreibt, der Finger schiebt das Blatt."}
+                onClick={() => onPenMode(!penMode)}
+                icon={penMode ? <HandIcon /> : <PenIcon color="#1e1e1e" />}
+              />
             </div>
           )}
         </div>

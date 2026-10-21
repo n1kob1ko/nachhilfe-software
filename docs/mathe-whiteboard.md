@@ -78,3 +78,12 @@ niko, 2026-10-19: „Warum liest die KI das whiteboard nicht?“, dann auf die F
 - Kosten: eine Anfrage pro Tipp (KI-Funktion `whiteboard`, Bereich Material, mit Nachdenken). Dasselbe Bild noch
   einmal kostet nichts (eine Stunde lang gemerkt). Ohne Lösung bei der Aufgabe wird nicht gefragt.
 - Ohne KI, oder in einem Modus, der keine Bilder liest (manuell, DeepSeek), gibt es den Knopf nicht.
+
+## Stiftmodus (niko, 21.10.2026)
+
+Alle Schüler-Tablets haben einen Stift. Deshalb gilt am Tablet der Schüler von Anfang an der Stiftmodus, beim Lehrer schaltet ihn der erste Stiftstrich ein (Excalidraw `penMode`).
+
+- Nur der Stift schreibt. Ein oder zwei Finger schieben das Blatt und zoomen nie, die Hand auf dem Blatt malt nichts (`components/whiteboard/Whiteboard.tsx`, eigene Touch-Behandlung vor Excalidraw).
+- Zoomen geht über „Mehr“ › „Größer“ / „Kleiner“ und „Alles zeigen“.
+- „Mehr“ › „Mit Finger schreiben“ schaltet den Stiftmodus aus, „Nur Stift schreibt“ wieder ein.
+- Vom anderen Gerät ist nur noch der Laserpunkt zu sehen, ohne Namen; Zeiger mit Namen gibt es nicht mehr.

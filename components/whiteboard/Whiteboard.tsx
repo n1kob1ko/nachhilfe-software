@@ -116,6 +116,8 @@ export default function Whiteboard(props: WhiteboardProps) {
   const collaborators = useRef(new Map<string, Record<string, unknown>>());
   const firstHello = useRef(true);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const penRef = useRef(false);
+  const [penMode, setPenMode] = useState(false);
   const tasksKey = useRef("");
   /** Height of the task bar (and the teacher's grading row below it): revealed tasks start below it. */
   const barGap = useRef(76);
@@ -195,8 +197,13 @@ export default function Whiteboard(props: WhiteboardProps) {
   }, []);
 
   const onChange = useCallback(
-    (elements: readonly El[], app: { scrollY: number; height: number; zoom: { value: number } }) => {
+    (elements: readonly El[], app: { scrollY: number; height: number; zoom: { value: number }; penMode?: boolean }) => {
       followTasks(elements, app);
+      // Excalidraw schaltet den Stiftmodus selbst ein, sobald ein Stift das Blatt berührt
+      if (app.penMode !== undefined && app.penMode !== penRef.current) {
+        penRef.current = app.penMode;
+        setPenMode(app.penMode);
+      }
       if (loading.current) return;
       let changed = false;
       for (const e of elements) {
@@ -391,13 +398,13 @@ export default function Whiteboard(props: WhiteboardProps) {
           if (ev.pageId === viewRef.current) applyRemote(ev.elements);
           break;
         case "pointer": {
-          if (ev.pageId !== viewRef.current) {
+          // nur der Laserpunkt des anderen Geräts, ohne Namen: wer gerade schreibt, braucht niemand (niko, 21.10.2026)
+          if (ev.pageId !== viewRef.current || ev.pointer.tool !== "laser") {
             collaborators.current.delete(ev.clientId);
           } else {
             collaborators.current.set(ev.clientId, {
-              pointer: { x: ev.pointer.x, y: ev.pointer.y, tool: ev.pointer.tool === "laser" ? "laser" : "pointer" },
+              pointer: { x: ev.pointer.x, y: ev.pointer.y, tool: "laser" },
               button: ev.button,
-              username: ev.name,
               color: ev.role === "lehrer" ? { background: "#dbe4ff", stroke: "#1f4fd1" } : { background: "#ffe8cc", stroke: "#d9480f" },
             });
           }
@@ -650,6 +657,90 @@ export default function Whiteboard(props: WhiteboardProps) {
     return () => document.removeEventListener("fullscreenchange", on);
   }, []);
 
+  // ---------- Stiftmodus (niko, 21.10.2026: alle Tablets haben einen Stift) ----------
+  // Im Stiftmodus schreibt nur der Stift. Finger schieben das Blatt, mit einem oder zwei Fingern, und
+  // zoomen nie: Excalidraw würde mit zwei Fingern immer auch zoomen. Die Hand auf dem Blatt malt nichts.
+  // Auf Tablets der Schüler ist der Modus von Anfang an an; sonst schaltet ihn der erste Stiftstrich ein.
+  const setPen = useCallback((on: boolean) => {
+    penRef.current = on;
+    setPenMode(on);
+    apiRef.current?.updateScene({ appState: { penMode: on, penDetected: true } as never });
+  }, []);
+  useEffect(() => {
+    if (api && !teacher && canWrite && window.matchMedia("(pointer: coarse)").matches) setPen(true);
+  }, [api, teacher, canWrite, setPen]);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const touches = new Map<number, { x: number; y: number }>();
+    // eigene Buchführung der Verschiebung: getAppState() hinkt zwischen zwei Fingerbewegungen im selben
+    // Bild hinterher, sonst zählte bei zwei Fingern nur einer
+    let view: { x: number; y: number } | null = null;
+    const onCanvas = (t: EventTarget | null) => t instanceof HTMLCanvasElement;
+    const stop = (e: Event) => {
+      e.stopPropagation();
+      if (e.cancelable) e.preventDefault();
+    };
+    const down = (e: PointerEvent) => {
+      if (e.pointerType !== "touch" || !penRef.current || !onCanvas(e.target)) return;
+      stop(e);
+      if (touches.size === 0) view = null;
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    };
+    const move = (e: PointerEvent) => {
+      const last = touches.get(e.pointerId);
+      if (!last) return;
+      stop(e);
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const a = apiRef.current;
+      if (!a) return;
+      const s = a.getAppState();
+      view ??= { x: s.scrollX, y: s.scrollY };
+      // mit zwei Fingern zählt die Mitte: jeder Finger trägt seinen Anteil bei
+      const n = touches.size;
+      const z = s.zoom.value;
+      view.x += (e.clientX - last.x) / n / z;
+      view.y += (e.clientY - last.y) / n / z;
+      a.updateScene({ appState: { scrollX: view.x, scrollY: view.y } as never });
+    };
+    const up = (e: PointerEvent) => {
+      if (touches.delete(e.pointerId)) e.stopPropagation();
+    };
+    // Doppeltippen mit dem Finger öffnet sonst ein Textfeld, Safari zoomt über eigene Gesten
+    const touch = (e: TouchEvent) => {
+      if (penRef.current && onCanvas(e.target)) stop(e);
+    };
+    const gesture = (e: Event) => {
+      if (penRef.current) stop(e);
+    };
+    const opts = { capture: true, passive: false } as const;
+    el.addEventListener("pointerdown", down, opts);
+    el.addEventListener("pointermove", move, opts);
+    el.addEventListener("pointerup", up, opts);
+    el.addEventListener("pointercancel", up, opts);
+    for (const t of ["touchstart", "touchmove", "touchend"] as const) el.addEventListener(t, touch, opts);
+    for (const g of ["gesturestart", "gesturechange", "gestureend"]) window.addEventListener(g, gesture, opts);
+    return () => {
+      el.removeEventListener("pointerdown", down, opts);
+      el.removeEventListener("pointermove", move, opts);
+      el.removeEventListener("pointerup", up, opts);
+      el.removeEventListener("pointercancel", up, opts);
+      for (const t of ["touchstart", "touchmove", "touchend"] as const) el.removeEventListener(t, touch, opts);
+      for (const g of ["gesturestart", "gesturechange", "gestureend"]) window.removeEventListener(g, gesture, opts);
+    };
+  }, []);
+  /** Größer/Kleiner um die Mitte des Bildschirms (im Stiftmodus der einzige Weg zu zoomen). */
+  const zoomStep = useCallback((step: 1 | -1) => {
+    const a = apiRef.current;
+    if (!a) return;
+    const s = a.getAppState();
+    const z = s.zoom.value;
+    const next = Math.min(3, Math.max(0.3, Math.round(z * (step > 0 ? 1.25 : 0.8) * 100) / 100));
+    const cx = s.width / 2;
+    const cy = s.height / 2;
+    a.updateScene({ appState: { zoom: { value: next as never }, scrollX: cx / next - (cx / z - s.scrollX), scrollY: cy / next - (cy / z - s.scrollY) } });
+  }, []);
+
   // pick the pen once the board is ready
   useEffect(() => {
     if (api && canWrite) pickTool("stift", { color: "#1e1e1e", width: 2 });
@@ -800,6 +891,9 @@ export default function Whiteboard(props: WhiteboardProps) {
             onUndo={() => key("undo")}
             onRedo={() => key("redo")}
             onFit={() => apiRef.current?.scrollToContent(undefined, { fitToViewport: true, viewportZoomFactor: 0.9, minZoom: 0.35, animate: true })}
+            penMode={penMode}
+            onPenMode={setPen}
+            onZoom={zoomStep}
           />
         )}
         {boardTasks.length > 0 && (
