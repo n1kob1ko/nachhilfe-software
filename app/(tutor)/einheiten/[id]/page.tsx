@@ -2,7 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
-import { BookOpenCheck, BookOpenText, Camera, CheckCircle2, ChartNoAxesColumn, ExternalLink, Images, PenLine, Plus, Presentation, Printer, Square } from "lucide-react";
+import { BookOpenCheck, BookOpenText, CalendarClock, Camera, CheckCircle2, ChartNoAxesColumn, ExternalLink, Images, PenLine, Plus, Presentation, Printer, Square } from "lucide-react";
 import { levelFor } from "@/lib/text-correction-rules";
 import { endUnitAction } from "@/app/session-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
@@ -34,6 +34,10 @@ import { MinitestKarte } from "@/components/MinitestKarte";
 import * as repo from "@/lib/repo";
 import { requireTeacher } from "@/lib/auth";
 import { zeitfenster } from "@/lib/planung/heute";
+import { dayOf, pruefungsHinweise } from "@/lib/exams";
+
+/** Textfarbe je Erinnerungsstufe (lib/exams.ts STAGE_TONE) */
+const TON_TEXT = { neutral: "text-ink", amber: "text-amber", red: "text-red" } as const;
 import { canManageUnit, getUnit, platzFuerEinheit, unitDurationMs, type UnitView } from "@/lib/units";
 
 export const metadata = { title: "Einheit" };
@@ -70,6 +74,8 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   const platz = platzFuerEinheit(unit);
   // geplant „14:00–15:40“ und, solange sie läuft, „noch 38 min“ (niko, 21.10.2026)
   const fenster = platz ? zeitfenster(platz) : null;
+  // naht eine Prüfung, steht sie in der Kopfzeile der laufenden Einheit (niko, 21.10.2026)
+  const pruefung = running ? pruefungsHinweise(dayOf(new Date()), { studentId: student.id }).get(student.id) : undefined;
 
   const sent = sp.gesendet ? repo.getWorksheet(Number(sp.gesendet)) : null;
   const startedText = sp.text ? getText(Number(sp.text)) : null;
@@ -131,6 +137,11 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
               <span className="rounded-full bg-accent-wash px-2.5 py-0.5 text-[14px] font-semibold text-accent">
                 <Restzeit rest={fenster.restMinuten} ab={Date.now()} />
               </span>
+            )}
+            {pruefung && (
+              <Link href={`/schueler/${student.id}/pruefung/${pruefung.test.id}`} className={`inline-flex items-center gap-1.5 text-[15px] font-semibold ${TON_TEXT[pruefung.tone]}`}>
+                <CalendarClock size={16} aria-hidden /> {pruefung.text}
+              </Link>
             )}
           </div>
           {mayManage ? (

@@ -45,6 +45,24 @@ export function examReminders(today: string, o: { teacherId?: number; studentId?
     });
 }
 
+/** „heute“, „morgen“, „in 5 Tagen“ */
+export const inTagen = (days: number) => (days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`);
+
+export type PruefungsHinweis = { test: ExamReminder; days: number; stage: ReminderStage; tone: "neutral" | "amber" | "red"; text: string };
+/**
+ * Die nächste geplante Prüfung je Schüler, sobald sie in der ersten Erinnerungsstufe liegt (Standard
+ * 14 Tage), als kurzer Hinweis für Listen und Kopfzeilen: „Schularbeit Mathematik in 3 Tagen“
+ * (niko, 21.10.2026: das Wichtige auf einen Blick, aber nicht zu viel).
+ */
+export function pruefungsHinweise(today: string, o: { teacherId?: number; studentId?: number } = {}): Map<number, PruefungsHinweis> {
+  const map = new Map<number, PruefungsHinweis>();
+  for (const e of examReminders(today, o)) {
+    if (map.has(e.student_id)) continue;
+    map.set(e.student_id, { test: e, days: e.days, stage: e.stage, tone: STAGE_TONE[e.stage], text: `${e.kind} ${e.subject} ${inTagen(e.days)}` });
+  }
+  return map;
+}
+
 export type PrepSkill = { skill: repo.Skill; mastery: number | null; status: MasteryStatus; tasksDone: number; lastPracticed: number | null; weakPrerequisites: { skill: repo.Skill; mastery: number | null }[] };
 export type PlanItem = { skill: repo.Skill; count: number; difficulty: Difficulty; reason: string };
 export type ExamPrep = {

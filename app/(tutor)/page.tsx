@@ -10,13 +10,14 @@ import { Wochenplan } from "@/components/planung/Wochenplan";
 import { Empty, SectionTitle, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import * as repo from "@/lib/repo";
+import { activeMaterial, materialLabel } from "@/lib/current-material";
 import { bisBeginnLabel, heutigeEinheiten, zeitfenster } from "@/lib/planung/heute";
 import { leseRegeln } from "@/lib/planung/regeln";
 import { wochenUebersicht } from "@/lib/planung/uebersicht";
 import { ZEITZONE, minutenLabel, tagAddieren, wienerDatum, wienerMinuten, wienerWochenstart } from "@/lib/planung/zeit";
 import { klassenLabel } from "@/lib/school";
 import { getUnit, listUnits, platzFuerEinheit, runningUnits } from "@/lib/units";
-import { examReminders, STAGE_LABEL } from "@/lib/exams";
+import { examReminders, pruefungsHinweise, STAGE_LABEL } from "@/lib/exams";
 
 const parseLocal = (s: string) => new Date(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s) && !/Z|[+-]\d{2}:?\d{2}$/.test(s) ? s.replace(" ", "T") : s);
 const firstName = (n: string) => n.split(" ")[0];
@@ -40,6 +41,13 @@ type TodoItem = { key: string; href: string; icon: typeof ClipboardPen; text: Re
  * Mit `?tab=woche` steht hier **Meine Woche**: die eigene **veröffentlichte** Woche des Lehrers,
  * nur lesend (D23). Entwürfe und fremde Wochen sieht nur die Verwaltung unter /planung.
  */
+
+/** Das Thema zum Bild der Bühne: der aktuelle Stoff des Schülers (Thema und Unterthema). */
+const bildThema = (studentId: number) => {
+  const m = activeMaterial(studentId)[0];
+  return m ? `${m.topic} ${materialLabel(m)}` : null;
+};
+
 export default async function StartPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const teacher = await requireTeacher();
   const sp = await searchParams;
@@ -100,6 +108,12 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
     const d = parseLocal(s);
     return d.getHours() * 60 + d.getMinutes();
   };
+  // nahe Prüfungen je Schüler, damit sie im Tagesplan neben dem Raum stehen (niko, 21.10.2026)
+  const pruefungen = pruefungsHinweise(today, { teacherId: teacher.id });
+  const pruefungVon = (studentId: number) => {
+    const p = pruefungen.get(studentId);
+    return p ? { text: p.text, tone: p.tone } : null;
+  };
   const tagesplan: (TagesplanPunkt & { sort: number })[] = [
     ...slots.map((p) => {
       const unit = p.unit_id === null ? null : getUnit(p.unit_id);
@@ -109,7 +123,9 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         studentId: p.student_id,
         studentName: p.student_name,
         ort: ortLabel(p.room_name, p.room_building, p.room_mode === "online"),
-        hinweis: `${p.geplante_dauer} min geplant`,
+        // die Dauer steht schon in „14:00–15:40“; hier zählt, ob eine Prüfung naht
+        hinweis: "",
+        pruefung: pruefungVon(p.student_id),
         einheitId: p.unit_id,
         einheitStatus: unit?.status ?? null,
         nichtStattgefunden: p.nicht_stattgefunden,
@@ -129,6 +145,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         studentName: l.student_name,
         ort: l.subject || "",
         hinweis: l.topic,
+        pruefung: pruefungVon(l.student_id),
         einheitId: l.unit_id,
         einheitStatus: l.unit_id ? (getUnit(l.unit_id)?.status ?? null) : null,
         nichtStattgefunden: false,
@@ -264,7 +281,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
                   </Link>
                 </div>
               </div>
-              <SubjectArt subject={u.subject} className="pointer-events-none absolute -right-2 -bottom-6 hidden h-[220px] w-[220px] md:block" />
+              <SubjectArt subject={u.subject} topic={bildThema(u.student_id)} seed={u.student_id} className="pointer-events-none absolute -right-2 -bottom-6 hidden h-[220px] w-[220px] md:block" />
             </section>
             );
           })
@@ -299,7 +316,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
                 </>
               )}
             </div>
-            <SubjectArt subject={fokus?.subject ?? ordered[0]?.subjects[0]} className="pointer-events-none absolute -right-2 -bottom-6 hidden h-[220px] w-[220px] md:block" />
+            <SubjectArt subject={fokus?.subject ?? ordered[0]?.subjects[0]} topic={bildThema(fokus?.studentId ?? ordered[0]?.id ?? 0)} seed={fokus?.studentId ?? ordered[0]?.id} className="pointer-events-none absolute -right-2 -bottom-6 hidden h-[220px] w-[220px] md:block" />
           </section>
         )}
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, Plus, Search } from "lucide-react";
+import { CalendarClock, CalendarDays, Plus, Search } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
 import { Empty, PageHeader, StatusChip, TrendBadge } from "@/components/ui";
 import { listStudents, listTeachers } from "@/lib/repo";
@@ -8,6 +8,10 @@ import { Avatar } from "@/components/Art";
 import { subjectTone } from "@/components/Calendar";
 import { analyzeStudent } from "@/lib/service";
 import { termineFuerSchueler } from "@/lib/planung/schueler-termine";
+import { dayOf, pruefungsHinweise } from "@/lib/exams";
+
+/** Textfarbe je Erinnerungsstufe (lib/exams.ts STAGE_TONE) */
+const TON_TEXT = { neutral: "text-ink", amber: "text-amber", red: "text-red" } as const;
 
 export const metadata = { title: "Schüler" };
 
@@ -28,6 +32,8 @@ export default async function Students({ searchParams }: { searchParams: Promise
     return `/schueler${p.size ? `?${p}` : ""}`;
   };
   const teachers = new Map(listTeachers().map((t) => [t.id, t.name]));
+  // nahe Prüfungen je Schüler (erste Erinnerungsstufe), eine Zeile pro Karte (niko, 21.10.2026)
+  const pruefungen = pruefungsHinweise(dayOf(new Date()));
   return (
     <>
       <PageHeader
@@ -81,6 +87,7 @@ export default async function Students({ searchParams }: { searchParams: Promise
             const a = analyzeStudent(s.id)!;
             // wann der Schüler als Nächstes kommt (veröffentlichter Plan, diese und nächste Woche)
             const termin = termineFuerSchueler(s.id).naechster;
+            const pruefung = pruefungen.get(s.id);
             return (
               <li key={s.id}>
                 <Link href={`/schueler/${s.id}`} className="panel drueck block h-full px-5 py-4 transition-colors hover:border-line-strong">
@@ -121,6 +128,12 @@ export default async function Students({ searchParams }: { searchParams: Promise
                       <span className="text-ink-3">kein Termin im Plan</span>
                     )}
                   </p>
+                  {pruefung && (
+                    <p className={`mt-1.5 flex items-center gap-1.5 text-[13.5px] font-semibold ${TON_TEXT[pruefung.tone]}`}>
+                      <CalendarClock size={15} className="shrink-0" aria-hidden />
+                      <span className="truncate">{pruefung.text}</span>
+                    </p>
+                  )}
                   <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-line pt-3 text-[13px]">
                     <StatusChip mastery={a.overall.mastery} />
                     <TrendBadge trend={a.overall.trend} delta={a.overall.delta} compact />

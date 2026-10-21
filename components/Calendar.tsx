@@ -150,8 +150,10 @@ export type TagesplanPunkt = {
   studentName: string;
   /** Raum · Gebäude, "online" oder "Raum noch offen"; bei einer Zeile ohne Platz das Fach */
   ort: string;
-  /** "100 min geplant" oder das Thema der Dokumentationszeile */
+  /** das Thema der Dokumentationszeile; beim Platz leer (die Dauer steht schon in der Zeit) */
   hinweis: string;
+  /** die nächste Prüfung, wenn sie nahe ist: „Schularbeit Mathematik in 3 Tagen“ (lib/exams.ts) */
+  pruefung?: { text: string; tone: "neutral" | "amber" | "red" } | null;
   /** die Einheit, die diesen Platz schon hat — dann führt die Zeile dorthin statt zu starten */
   einheitId: number | null;
   einheitStatus: "gestartet" | "beendet" | "abgebrochen" | null;
@@ -173,6 +175,9 @@ export type TagesplanPunkt = {
  * `starten` ist die Server Action der Startseite (als Eigenschaft übergeben, damit diese Datei
  * nichts aus `app/` importieren muss).
  */
+/** Textfarbe je Erinnerungsstufe der Prüfung (lib/exams.ts STAGE_TONE) */
+const TON_TEXT = { neutral: "text-ink", amber: "text-amber", red: "text-red" } as const;
+
 export function Tagesplan({ punkte, starten }: { punkte: TagesplanPunkt[]; starten: (studentId: number) => Promise<void> }) {
   return (
     <ul className="panel divide-y divide-line">
@@ -188,6 +193,8 @@ export function Tagesplan({ punkte, starten }: { punkte: TagesplanPunkt[]; start
               {p.ort}
               {p.hinweis && ` · ${p.hinweis}`}
             </span>
+            {/* eigene Zeile, damit sie in der schmalen Spalte nicht mit „…“ endet */}
+            {p.pruefung && <span className={`block text-[13px] leading-snug font-semibold ${TON_TEXT[p.pruefung.tone]}`}>{p.pruefung.text}</span>}
           </Link>
           <div className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
             {p.nichtStattgefunden && <span className="text-[13px] text-ink-3">nicht stattgefunden</span>}
