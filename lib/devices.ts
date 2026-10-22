@@ -13,6 +13,7 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { db } from "./db";
+import { aufPraesentationsAdresse } from "./praesentation-anfrage";
 import { runningUnits, type UnitView } from "./units";
 
 export const DEVICE_COOKIE = "lernheft_geraet";
@@ -101,6 +102,7 @@ export function deviceForToken(token: string | undefined): DeviceView | null {
 
 /** The tablet making this request, from its cookie. */
 export async function currentDevice(): Promise<DeviceView | null> {
+  if (await aufPraesentationsAdresse()) return null;
   return deviceForToken((await cookies()).get(DEVICE_COOKIE)?.value);
 }
 

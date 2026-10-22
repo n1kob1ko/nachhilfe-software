@@ -314,6 +314,19 @@ Unterrichts mit Minuten, was der Lehrer sagt und fragt, erwartete Antwort, was b
 Lehrer sie prüft. Import und Export als JSON (`lib/lernpakete.ts`, [docs/lernpaket-format.md](docs/lernpaket-format.md)).
 _Avoid_: Stundenbild, Unterrichtsplan, Lektion, Kurs, Template
 
+**Präsentation**:
+Folien mit Animationen, hochgeladen als HTML-Datei oder ZIP-Datei (claude.ai, reveal.js, iSpring, Articulate);
+der Browser spielt sie ab, wie sie gebaut sind. Dazu der **Vortragstext** je Folie, nur auf Lehrerseiten. Ein
+Lernpaket kann eine Präsentation haben; seine Schritte nennen die Folie. Läuft auf einer eigenen Adresse in einer
+Sandbox, getrennt von Schülerdaten und Sitzungen (`lib/praesentationen.ts`, [docs/praesentation-format.md](docs/praesentation-format.md)).
+PowerPoint geht nur als PDF unter Material, ohne Animationen.
+_Avoid_: Deck, Foliensatz, Slides, Präsi
+
+**Vortragstext**:
+Was der Lehrer zu einer Folie sagt. Steht in der Datenbank, nie in den ausgelieferten Dateien, und erscheint nie
+auf einer Schülerseite.
+_Avoid_: Sprechernotizen, Speaker Notes, Skript
+
 ## Schule
 
 **Fach**:

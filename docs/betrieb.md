@@ -96,6 +96,7 @@ Neuer Web Service aus dem Repo (Runtime Docker), Disk mit Mount-Pfad `/data` anl
 | Datenbank | `/data/nachhilfe.db` (+ `-wal`, `-shm`) | bleibt |
 | Material | `/data/uploads` | bleibt |
 | Bilder von Bildgeschichten | `/data/uploads/bildgeschichten` | bleiben, in der Sicherung enthalten |
+| Präsentationen | `/data/uploads/praesentationen` | bleiben, in der Sicherung enthalten |
 | Anmeldungen | Tabelle `teacher_sessions` | bleiben, niemand muss sich neu anmelden |
 | Tablets | Tabelle `student_devices`, Cookie am Tablet | bleiben verbunden |
 | Was das Tablet zeigt | `units.device_view` | bleibt |
@@ -144,6 +145,7 @@ Ohne Admin-Zugang geht Schritt 1 auch per `railway ssh`:
 | --- | --- |
 | `DATABASE_PATH` | Datenbankdatei, im Docker-Image `/data/nachhilfe.db` |
 | `UPLOADS_PATH` | Ordner für Material, sonst `uploads/` neben der Datenbank |
+| `PRESENTATION_ORIGIN` | Adresse, unter der hochgeladene Präsentationen laufen, z. B. `https://folien.example.at`: ein anderer Rechnername als die App, die auf denselben Dienst zeigt. Ohne sie gehen Hochladen und Liste, Abspielen nicht. Siehe [praesentation-format.md](praesentation-format.md) |
 | `TZ` | im Docker-Image `Europe/Vienna`. Die App setzt beim Start ohnehin Wiener Zeit (`instrumentation.ts`): „heute“ auf der Startseite und die Uhrzeiten der Dokumentation sind Wiener Zeit, auch wenn der Server in UTC läuft |
 | `ANTHROPIC_API_KEY` | optional: Schlüssel für Anthropic (Standard-Anbieter) für neue Aufgaben, Echtzeit-Hinweise, Material-Erkennung, formulierte Notizen |
 | `OPENROUTER_API_KEY` | optional: Schlüssel für OpenRouter (`OPENROUTER_BASE_URL` nur bei abweichender Adresse). Ist nur dieser Schlüssel gesetzt, laufen alle Bereiche über OpenRouter mit den Standardmodellen (siehe [ki-modelle.md](ki-modelle.md)) |

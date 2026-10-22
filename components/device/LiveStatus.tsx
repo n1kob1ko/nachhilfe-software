@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { ArrowDown, ArrowUp, CheckCircle2, CircleDashed, Eye, ListChecks, PenLine, Presentation, Printer, RotateCcw, SkipForward, Sparkles, TabletSmartphone, XCircle } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, CircleDashed, Eye, ListChecks, MonitorPlay, PenLine, Presentation, Printer, RotateCcw, SkipForward, Sparkles, TabletSmartphone, XCircle } from "lucide-react";
 import { assignTabletAction, currentTaskToBoardAction, newExerciseAction, resendAction, retryTaskAction, sendNextTaskAction, showSolutionAction, tabletViewAction } from "@/app/device-actions";
 import { ACTION_LABEL } from "@/lib/ai/labels";
 import type { AILive } from "@/lib/ai/realtime";
@@ -104,13 +104,24 @@ export function LiveStatus({ unitId, initial, join }: { unitId: number; initial:
         {(tablet !== "kein" || onLaptop) && (
           <div className="ml-auto flex gap-1 rounded-full bg-panel p-1" role="group" aria-label={`${dev} zeigt`}>
             {s.text && <ViewButton on={s.view === "text"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, `text:${s.text!.id}`))} icon={<PenLine size={16} aria-hidden />} label="Text" />}
-            <ViewButton on={s.view !== "tafel" && s.view !== "text"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, c ? `aufgabe:${c.assignmentId}` : ""))} icon={<ListChecks size={16} aria-hidden />} label="Aufgaben" />
+            <ViewButton on={s.view !== "tafel" && s.view !== "text" && s.view !== "praesentation"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, c ? `aufgabe:${c.assignmentId}` : ""))} icon={<ListChecks size={16} aria-hidden />} label="Aufgaben" />
             {tablet !== "kein" && (
               <ViewButton on={s.view === "tafel"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, "tafel"))} icon={<Presentation size={16} aria-hidden />} label="Whiteboard" />
             )}
           </div>
         )}
       </div>
+      {s.praesentation && (
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px]">
+          <MonitorPlay size={16} className="text-accent" aria-hidden />
+          <span>
+            {dev} zeigt „{s.praesentation.title}“, Folie <span className="num">{s.praesentation.folie}</span>
+          </span>
+          <Link href={`/mehr/praesentationen/${s.praesentation.id}`} className="font-semibold text-accent hover:underline">
+            Vortrag öffnen
+          </Link>
+        </p>
+      )}
       {s.running && parallel && s.parallel.tablets.length > 0 && <TabletChoice parallel={s.parallel} pending={pending} run={run} />}
       {s.running && <LaptopAccess unitId={unitId} student={s.student} laptop={s.laptop} join={join} />}
 

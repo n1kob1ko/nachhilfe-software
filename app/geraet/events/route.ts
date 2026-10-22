@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     // the tablet compares this with what it shows, so nothing is missed while it was offline
     hello: () => {
       const { unit, choices } = deviceUnit(device);
-      return { type: "hello", unitId: unit?.id ?? null, choosing: choices.length > 0 };
+      return { type: "hello", unitId: unit?.id ?? null, choosing: choices.length > 0, view: unit?.device_view ?? "" };
     },
     onAlive: () => touchDevice(device.id),
     onPresence: () => pushTabletPresence(device.teacher_id),

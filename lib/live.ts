@@ -5,6 +5,7 @@
  *                            and shows the running unit (with two running: the one chosen on it, D26)
  *   "einheit:<unit id>"    – the live status on the teacher's unit page
  *   "laptop:<session id>"  – a student's own laptop, connected for one unit (lib/laptop.ts)
+ * A presentation on the student device turns its slides with a "folie" event instead of a reload.
  *
  * What the student sees is kept per unit (units.device_view). It is shown on the teacher's tablet, or,
  * while a laptop is confirmed for the unit, on that laptop instead (the tablet then only offers the board).
@@ -15,6 +16,7 @@ import { chooseDeviceUnit, deviceUnit, devicesOfUnit, getDevice, hasDevice, list
 import { activeLaptop, endLaptopsOfUnit, laptopChannel, openLaptopCode, pendingLaptop } from "./laptop";
 import { isMinitest } from "./quick-round";
 import * as repo from "./repo";
+import { MAX_FOLIE } from "./praesentation-protokoll";
 import { getText, noteTextInUnit } from "./texts";
 import { getUnit, runningUnitForStudent, runningUnits, type UnitView } from "./units";
 import { shortNames } from "./vornamen";
@@ -23,16 +25,25 @@ import { isOnline, publish } from "./whiteboard-hub";
 export const deviceChannel = (deviceId: number) => `geraet:${deviceId}`;
 export const unitChannel = (unitId: number) => `einheit:${unitId}`;
 
-export type View = { kind: "start" } | { kind: "tafel" } | { kind: "aufgabe"; assignmentId: number } | { kind: "text"; textId: number };
+export type View =
+  | { kind: "start" }
+  | { kind: "tafel" }
+  | { kind: "aufgabe"; assignmentId: number }
+  | { kind: "text"; textId: number }
+  // a presentation (lib/praesentationen.ts) at the teacher's slide; never with the Vortragstext
+  | { kind: "praesentation"; id: number; folie: number };
 
 export function parseView(raw: string): View {
   if (raw === "tafel") return { kind: "tafel" };
   const m = /^aufgabe:(\d+)$/.exec(raw);
   if (m) return { kind: "aufgabe", assignmentId: Number(m[1]) };
+  const p = /^praesentation:(\d+):(\d+)$/.exec(raw);
+  if (p) return { kind: "praesentation", id: Number(p[1]), folie: Math.min(MAX_FOLIE, Math.max(1, Number(p[2]))) };
   const t = /^text:(\d+)$/.exec(raw);
   return t ? { kind: "text", textId: Number(t[1]) } : { kind: "start" };
 }
-const viewText = (v: View) => (v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : "");
+const viewText = (v: View) =>
+  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : "";
 
 /** May the tablet of this unit show that text? Only texts of the unit's student. */
 export function unitText(unit: Pick<UnitView, "student_id">, textId: number) {
@@ -134,6 +145,24 @@ export function showOnTablet(unit: UnitView, view: View): Delivery {
   return { status: tabletOnline(unit) ? "gesendet" : "offline", device: "tablet" };
 }
 
+/**
+ * The teacher turned to another slide: the student device of the unit follows without reloading, but only
+ * while it shows this presentation. The slide is kept in device_view, so a device that reconnects catches up.
+ */
+export function folieAmGeraet(unit: UnitView, praesId: number, folie: number, schritt: number | null = null): boolean {
+  const v = parseView(unit.device_view);
+  if (unit.status !== "gestartet" || v.kind !== "praesentation" || v.id !== praesId || !Number.isInteger(folie)) return false;
+  const n = Math.min(MAX_FOLIE, Math.max(1, folie));
+  if (n !== v.folie) db().prepare("UPDATE units SET device_view = ? WHERE id = ?").run(viewText({ ...v, folie: n }), unit.id);
+  // the animation step on the slide only travels live; a device that reconnects starts the slide from the beginning
+  const ev = { type: "folie", praesentation: praesId, folie: n, schritt: Number.isInteger(schritt) && schritt! >= 0 ? schritt : null };
+  for (const d of devicesOfUnit(unit)) publish(deviceChannel(d.id), ev);
+  const laptop = activeLaptop(unit.id);
+  if (laptop) publish(laptopChannel(laptop.id), ev);
+  pushLive(unit.id);
+  return true;
+}
+
 /** „Erneut senden“: the running unit (of this teacher) the exercise was sent in, not the teacher's other one (D26). */
 export function resendUnit(teacherId: number, assignmentId: number): UnitView | null {
   const unitId = repo.getAssignment(assignmentId)?.unit_id;
@@ -219,6 +248,8 @@ export type LiveSnapshot = {
   };
   /** the Textarbeit the tablet shows */
   text: null | { id: number; title: string; words: number; updatedAt: string; version: number };
+  /** the presentation the student device shows, at the teacher's slide */
+  praesentation: null | { id: number; title: string; folie: number };
   /** number of answers in this unit, so the page knows when to reload its result lists */
   answers: number;
   /** what the KI noticed last (lib/ai/realtime.ts) */
@@ -287,9 +318,15 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
     view: view.kind,
     current,
     text: textNow,
+    praesentation: view.kind === "praesentation" ? praesentationNow(view.id, view.folie) : null,
     answers,
     ai: aiLiveState(unit.id),
   };
+}
+
+function praesentationNow(id: number, folie: number): LiveSnapshot["praesentation"] {
+  const p = db().prepare("SELECT title FROM praesentationen WHERE id = ?").get(id) as { title: string } | undefined;
+  return p ? { id, title: p.title, folie } : null;
 }
 
 /** With two running units of the teacher: both students and where each tablet is (for „Tablet für …“ on the unit page). */

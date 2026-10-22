@@ -10,7 +10,8 @@ export async function GET(request: Request) {
   }
   const ctx = await deviceContext();
   const view = parseView(new URL(request.url).searchParams.get("zu") ?? "");
-  const allowed = view.kind === "aufgabe" ? unitAssignment(ctx?.unit?.id ?? 0, view.assignmentId) : view.kind === "text" ? ctx?.unit && unitText(ctx.unit, view.textId) : true;
+  // a presentation only ever comes from the teacher (app/praesentation-actions.ts)
+  const allowed = view.kind === "praesentation" ? false : view.kind === "aufgabe" ? unitAssignment(ctx?.unit?.id ?? 0, view.assignmentId) : view.kind === "text" ? ctx?.unit && unitText(ctx.unit, view.textId) : true;
   // while the student works on a laptop the tablet only opens and leaves the board, it never moves the laptop on
   const laptop = ctx?.unit ? activeLaptop(ctx.unit.id) : null;
   const tabletOnly = !laptop || view.kind === "tafel" || (view.kind === "start" && ctx?.unit?.device_view === "tafel");

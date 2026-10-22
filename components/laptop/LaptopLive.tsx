@@ -31,6 +31,9 @@ export function LaptopLive({ state, view, children }: { state: "wartet" | "aktiv
         // after being offline: catch up with what happened in the meantime
         if (ev.state !== state) leaveTo("/mitmachen");
         else if (ev.view !== view) router.refresh();
+      } else if (ev.type === "folie") {
+        // the teacher turned the slide of the presentation on show (components/praesentation/SchuelerDeck.tsx)
+        window.dispatchEvent(new CustomEvent("lernheft-folie", { detail: ev }));
       } else if (ev.type === "refresh") {
         if (state === "wartet") leaveTo("/mitmachen");
         else router.refresh();

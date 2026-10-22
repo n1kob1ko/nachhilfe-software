@@ -4,6 +4,7 @@ import { JoinForm } from "@/components/laptop/JoinForm";
 import { DRAFT_PREFIX } from "@/components/laptop/drafts";
 import { LaptopLive } from "@/components/laptop/LaptopLive";
 import { LeaveButton } from "@/components/laptop/LeaveButton";
+import { PraesentationAmGeraet } from "@/components/praesentation/AmGeraet";
 import { EndedCleanup, JoinCleanup } from "@/components/laptop/LocalDrafts";
 import { Solver } from "@/components/Solver";
 import { StudentQuickRound } from "@/components/StudentQuickRound";
@@ -149,6 +150,8 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
         />
       </>
     );
+  } else if (view.kind === "praesentation") {
+    content = <PraesentationAmGeraet id={view.id} folie={view.folie} />;
   } else if (current) {
     // Schnellrunde (lib/quick-round.ts): derselbe Abgabeweg wie sonst, nur der Ablauf ist ein anderer
     const tasks = clientTasks(current);
