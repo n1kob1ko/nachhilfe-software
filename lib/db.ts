@@ -708,6 +708,48 @@ CREATE TABLE IF NOT EXISTS feedback (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status, created_at);
+-- Lernpakete (lib/lernpakete.ts): a prepared lesson per topic, not per student, built once and used for many.
+-- Never deleted: archiviert keeps it retrievable. Import and export as JSON (docs/lernpaket-format.md).
+CREATE TABLE IF NOT EXISTS lernpakete (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  fach TEXT NOT NULL,
+  schulart TEXT NOT NULL DEFAULT '',        -- SCHOOL_TYPES name or '' (any)
+  klasse INTEGER,                           -- class of the schulart, NULL = any
+  schulstufe INTEGER,                       -- 1–13 from schulart and klasse, NULL = any
+  thema TEXT NOT NULL DEFAULT '',
+  skill_ids TEXT NOT NULL DEFAULT '[]',     -- JSON: skills(id), the main one first
+  schwierigkeit TEXT NOT NULL DEFAULT 'mittel',
+  dauer_minuten INTEGER NOT NULL DEFAULT 50,
+  ziel TEXT NOT NULL DEFAULT '',
+  quelle TEXT NOT NULL DEFAULT 'hand',      -- hand | import | ki
+  status TEXT NOT NULL DEFAULT 'entwurf',   -- entwurf | geprueft | archiviert
+  created_by INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  geprueft_von INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  geprueft_am TEXT
+);
+-- One step of a Lernpaket in teaching order. aufgaben: JSON TaskDraft[] (lib/tasks.ts), the format of the
+-- builder, so they can become an exercise; pruefen: JSON string[], what a person still has to check.
+CREATE TABLE IF NOT EXISTS lernpaket_schritte (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  paket_id INTEGER NOT NULL REFERENCES lernpakete(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,
+  art TEXT NOT NULL,                        -- einstieg | erklaerung | beispiel | frage | gefuehrte_uebung | uebung | zusatz | kontrolle | abschluss
+  titel TEXT NOT NULL,
+  minuten INTEGER NOT NULL,
+  lehrer_sagt TEXT NOT NULL DEFAULT '',
+  folie INTEGER,                            -- slide number of a later presentation, NULL = none
+  lehrer_fragt TEXT NOT NULL DEFAULT '',
+  erwartete_antwort TEXT NOT NULL DEFAULT '',
+  bei_fehler TEXT NOT NULL DEFAULT '',
+  notiz TEXT NOT NULL DEFAULT '',
+  aufgaben TEXT NOT NULL DEFAULT '[]',
+  pruefen TEXT NOT NULL DEFAULT '[]'
+);
+CREATE INDEX IF NOT EXISTS idx_lernpaket_schritte ON lernpaket_schritte(paket_id, position);
+CREATE INDEX IF NOT EXISTS idx_lernpakete_status ON lernpakete(status, fach);
 CREATE INDEX IF NOT EXISTS idx_ge_week ON geplante_einheiten(week_start, status);
 CREATE INDEX IF NOT EXISTS idx_ge_teacher ON geplante_einheiten(teacher_id, week_start);
 CREATE INDEX IF NOT EXISTS idx_ge_student ON geplante_einheiten(student_id, week_start);

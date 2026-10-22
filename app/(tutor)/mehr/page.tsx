@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, CalendarClock, CalendarDays, ChevronRight, Clock3, Coins, DoorOpen, Download, FileText, FileUp, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, MessageSquarePlus, ShieldCheck, Sparkles, TabletSmartphone } from "lucide-react";
+import { BarChart3, CalendarClock, CalendarDays, ChevronRight, Clock3, Coins, DoorOpen, Download, FileText, FileUp, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, MessageSquarePlus, Package, ShieldCheck, Sparkles, TabletSmartphone } from "lucide-react";
 import { logoutAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
 import { PageHeader } from "@/components/ui";
@@ -24,6 +24,7 @@ export default async function MorePage() {
         { href: "/mehr/raeume", label: "Räume", hint: "Gebäude, Raumname, vor Ort oder online", icon: DoorOpen },
         { href: "/diagnose", label: "Diagnose", hint: "Stand eines Schülers mit 5 bis 10 Aufgaben prüfen", icon: ListChecks },
         { href: "/uebungen/bibliothek", label: "Aufgabenbibliothek", hint: "Gespeicherte Aufgaben suchen und wiederverwenden", icon: Library },
+        { href: "/mehr/lernpakete", label: "Lernpakete", hint: "Vorbereitete Einheiten je Thema: Ablauf, Fragen, Aufgaben; anlegen, importieren, exportieren", icon: Package },
         { href: "/mehr/material", label: "Material", hint: "Fotos und PDFs hochladen, einordnen, Aufgaben übernehmen", icon: FolderUp },
         { href: "/mehr/geraete", label: "Schülergeräte", hint: "Schüler-Tablet verbinden oder trennen", icon: TabletSmartphone },
         { href: "/faehigkeiten", label: "Themen und Fähigkeiten", hint: "Woran der Lernstand gemessen wird; eigene Fähigkeiten anlegen", icon: GitBranch },
