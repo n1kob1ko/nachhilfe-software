@@ -145,7 +145,7 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
           pictures={story?.pictures}
           targetWords={story?.targetWords ?? auftrag?.target}
           auftrag={auftrag ?? undefined}
-          handIn={(story || auftrag) && text.status !== "fertig" ? { url: `/mitmachen/text/${text.id}/abgeben`, home: "/mitmachen/ansicht?zu=start" } : undefined}
+          handIn={text.status !== "fertig" ? { url: `/mitmachen/text/${text.id}/abgeben`, home: "/mitmachen/ansicht?zu=start" } : undefined}
         />
       </>
     );

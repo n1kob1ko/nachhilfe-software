@@ -122,6 +122,8 @@ export async function deleteBillingEntryAction(id: number, formData: FormData) {
 export async function addHomeworkAction(formData: FormData) {
   await requireTeacher();
   const studentId = int(formData, "student_id");
+  // optional: die Übung, zu der die Hausübung gehört (nur eine dieses Schülers)
+  const assignment = int(formData, "assignment_id") ? repo.getAssignment(int(formData, "assignment_id")) : null;
   repo.addHomework({
     student_id: studentId,
     subject: fachAus(str(formData, "subject"), repo.getStudent(studentId)?.subjects),
@@ -129,8 +131,10 @@ export async function addHomeworkAction(formData: FormData) {
     due_date: str(formData, "due_date") || null,
     status: "offen",
     notes: "",
+    assignment_id: assignment?.student_id === studentId ? assignment.id : null,
   });
   revalidatePath(`/schueler/${studentId}`);
+  revalidatePath("/");
 }
 export async function setHomeworkStatusAction(id: number, studentId: number, status: string) {
   await requireTeacher();

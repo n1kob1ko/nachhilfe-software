@@ -171,7 +171,7 @@ function Kopfzahlen({ student, a }: { student: repo.Student; a: Analysis }) {
   const exam = repo.upcomingTests(today, student.id)[0];
   const tage = exam ? daysUntil(exam.date, today) : null;
   const einheiten = repo.listLessons(student.id).filter((l) => l.kind === "stunde" && l.status === "abgeschlossen");
-  const offeneHw = repo.listHomework(student.id).filter((h) => h.status === "offen").length;
+  const offeneHw = repo.listHomework(student.id).filter(repo.homeworkOpen).length;
   const mastery = a.overall.mastery;
   const level = masteryLevel(mastery);
   const LevelIcon = level.icon;
@@ -224,7 +224,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
   const lastDone = lessons.find((l) => l.status === "abgeschlossen");
   const next = [...lessons].reverse().find((l) => l.status === "geplant" && l.starts_at >= wienerDatum());
   const tests = repo.listTests(student.id);
-  const hw = repo.listHomework(student.id).filter((h) => h.status === "offen");
+  const hw = repo.listHomework(student.id).filter(repo.homeworkOpen);
   const first = student.name.split(" ")[0];
   const skillList = (list: typeof a.strengths, cls: string, empty: string, note: string) =>
     list.length ? (
@@ -864,6 +864,8 @@ function StoffzettelLink({ id }: { id: number }) {
 
 function School({ student }: { student: repo.Student }) {
   const homework = repo.listHomework(student.id);
+  // eine Hausübung kann zu einer Übung gehören: ist sie fertig, ist die Hausübung erledigt
+  const offeneUebungen = repo.listAssignments(student.id).filter((x) => !x.completed_at).slice(0, 20);
   const tests = repo.listTests(student.id);
   const subjects = student.subjects.length ? student.subjects : ["Mathematik"];
   const today = dayOf(new Date());
@@ -998,19 +1000,35 @@ function School({ student }: { student: repo.Student }) {
         <ul className="mb-5 divide-y divide-line">
           {homework.length === 0 && <li className="py-2 text-[14px] text-ink-3">Keine Hausübungen eingetragen.</li>}
           {homework.map((h) => {
-            const done = h.status === "erledigt";
+            const done = !repo.homeworkOpen(h);
+            const durchUebung = done && h.status !== "erledigt";
             return (
               <li key={h.id} className="flex items-start gap-3 py-2.5">
-                <form action={setHomeworkStatusAction.bind(null, h.id, student.id, done ? "offen" : "erledigt")}>
-                  <button className={`mt-0.5 ${done ? "text-green" : "text-ink-3 hover:text-ink"}`} aria-label={done ? "Als offen markieren" : "Als erledigt markieren"}>
-                    {done ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-                  </button>
-                </form>
+                {durchUebung ? (
+                  <span className="mt-0.5 text-green" title="Erledigt: die Übung ist fertig">
+                    <CheckCircle2 size={18} aria-label="Erledigt: die Übung ist fertig" />
+                  </span>
+                ) : (
+                  <form action={setHomeworkStatusAction.bind(null, h.id, student.id, done ? "offen" : "erledigt")}>
+                    <button className={`mt-0.5 ${done ? "text-green" : "text-ink-3 hover:text-ink"}`} aria-label={done ? "Als offen markieren" : "Als erledigt markieren"}>
+                      {done ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+                    </button>
+                  </form>
+                )}
                 <div className={`min-w-0 flex-1 text-[14px] ${done ? "text-ink-3 line-through" : ""}`}>
                   {h.description}
                   <div className="text-[12px] text-ink-3 no-underline">
                     {h.subject}
                     {h.due_date && ` · fällig ${formatDate(h.due_date, { day: "numeric", month: "short" })}`}
+                    {h.assignment_id && h.assignment_title && (
+                      <>
+                        {" · Übung "}
+                        <Link href={h.assignment_completed_at ? `/schueler/${student.id}/ergebnis/${h.assignment_id}` : `/schueler/${student.id}?tab=uebungen`} className="link">
+                          {h.assignment_title}
+                        </Link>
+                        {h.assignment_completed_at && " fertig"}
+                      </>
+                    )}
                     {!done && h.due_date && h.due_date < today && <span className="font-semibold text-red"> · überfällig</span>}
                   </div>
                 </div>
@@ -1033,6 +1051,19 @@ function School({ student }: { student: repo.Student }) {
             <FachFeld id="hausuebung" eigene={subjects} wert={subjects[0]} ariaLabel="Fach" />
             <input className="input" type="date" name="due_date" aria-label="Fällig am" />
           </div>
+          {offeneUebungen.length > 0 && (
+            <label className="field">
+              <span className="label">Gehört zur Übung (optional)</span>
+              <select className="input" name="assignment_id" defaultValue="">
+                <option value="">keine</option>
+                {offeneUebungen.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <button className="btn btn-secondary justify-self-start">Hinzufügen</button>
         </form>
       </section>

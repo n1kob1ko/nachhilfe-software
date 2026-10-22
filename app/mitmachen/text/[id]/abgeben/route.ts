@@ -4,7 +4,7 @@ import { handleHandIn } from "@/lib/text-routes";
 
 export const dynamic = "force-dynamic";
 
-/** "Abgeben" of a Bildgeschichte on the student's own laptop. */
+/** "Abgeben" of a Textarbeit on the student's own laptop. */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await currentLaptop();
   if (!session) return Response.json({ error: "Dieses Gerät ist nicht verbunden." }, { status: 401 });
