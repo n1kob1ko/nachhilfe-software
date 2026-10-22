@@ -17,6 +17,8 @@ import { wochenUebersicht } from "@/lib/planung/uebersicht";
 import { ZEITZONE, minutenLabel, tagAddieren, wienerDatum, wienerMinuten, wienerWochenstart } from "@/lib/planung/zeit";
 import { klassenLabel } from "@/lib/school";
 import { getUnit, listUnits, platzFuerEinheit, runningUnits } from "@/lib/units";
+import { vorbereitung } from "@/lib/cockpit";
+import { getLernpaket, listLernpakete } from "@/lib/lernpakete";
 import { examReminders, pruefungsHinweise, STAGE_LABEL } from "@/lib/exams";
 
 const parseLocal = (s: string) => new Date(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s) && !/Z|[+-]\d{2}:?\d{2}$/.test(s) ? s.replace(" ", "T") : s);
@@ -114,6 +116,13 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
     const p = pruefungen.get(studentId);
     return p ? { text: p.text, tone: p.tone } : null;
   };
+  // „Einheit vorbereiten“: das Lernpaket für heute, das Cockpit übernimmt es beim Start (lib/cockpit.ts); nur, wenn es Pakete gibt
+  const mitPaketen = listLernpakete().length > 0;
+  const vorbereiten = (studentId: number, offen: boolean) => {
+    if (!mitPaketen || !offen) return null;
+    const v = vorbereitung(studentId, today);
+    return { href: `/schueler/${studentId}/vorbereiten`, paket: v ? (getLernpaket(v.paket_id)?.title ?? null) : null };
+  };
   const tagesplan: (TagesplanPunkt & { sort: number })[] = [
     ...slots.map((p) => {
       const unit = p.unit_id === null ? null : getUnit(p.unit_id);
@@ -132,6 +141,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         ohnePlatz: false,
         erledigt: unit?.status === "beendet",
         briefingHref: p.nicht_stattgefunden || unit?.status === "beendet" ? null : `/schueler/${p.student_id}/briefing?start=1&platz=${p.id}`,
+        vorbereiten: vorbereiten(p.student_id, p.unit_id === null && !p.nicht_stattgefunden),
         sort: p.start_min,
       };
     }),
@@ -152,6 +162,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         ohnePlatz: l.status === "geplant",
         erledigt: l.status === "abgeschlossen",
         briefingHref: l.status === "abgeschlossen" ? null : `/schueler/${l.student_id}/briefing?start=1`,
+        vorbereiten: vorbereiten(l.student_id, !l.unit_id && l.status !== "abgeschlossen"),
         sort: minutenVon(l.starts_at),
       })),
   ].sort((a, b) => a.sort - b.sort);

@@ -154,7 +154,7 @@ function fokus(d: Pick<BriefingDaten, "schritte" | "schularbeit" | "analysis" | 
  * und Druckblätter, schon zugewiesene offene Übungen und die Aufgabenbanken. „Passend“ heißt: eine
  * ihrer Fähigkeiten ist eine Fokus-Fähigkeit, deren Teilfähigkeit oder deren Oberfähigkeit.
  */
-function kandidaten(student: repo.Student, gewicht: Map<string, number>, limit = 15): Kandidat[] {
+export function kandidaten(student: repo.Student, gewicht: Map<string, number>, limit = 15): Kandidat[] {
   if (!gewicht.size) return [];
   const skills = new Map(repo.listSkills().map((s) => [s.id, s]));
   const name = (id: string) => skills.get(id)?.name ?? id;

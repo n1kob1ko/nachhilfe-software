@@ -2,11 +2,12 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
-import { BookOpenCheck, BookOpenText, CalendarClock, Camera, CheckCircle2, ChartNoAxesColumn, ExternalLink, Images, PenLine, Plus, Presentation, Printer, Square } from "lucide-react";
+import { BookOpenCheck, BookOpenText, CalendarClock, Camera, CheckCircle2, ChartNoAxesColumn, ExternalLink, Gauge, Images, PenLine, Plus, Presentation, Printer, Square } from "lucide-react";
 import { levelFor } from "@/lib/text-correction-rules";
 import { endUnitAction } from "@/app/session-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { BoardThumbs } from "@/components/BoardThumbs";
+import { AblaufRueckblick, CockpitBereich } from "@/components/cockpit/Cockpit";
 import { CopyLink } from "@/components/CopyLink";
 import { Elapsed, Restzeit } from "@/components/Elapsed";
 import { UnitDocForm } from "@/components/UnitDocForm";
@@ -60,7 +61,7 @@ function dauerLabel(geplanteDauer: number | null, minutes: number, estimated: bo
  * running → everything for the unit in one place (Übungen, Whiteboard, Fortschritt, Einheit beenden);
  * ended → the documentation, written automatically (lib/einschaetzung.ts), changeable on request.
  */
-export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string }> }) {
+export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -114,7 +115,8 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   );
 
   if (running) {
-    const area = sp.bereich === "fortschritt" ? "fortschritt" : "uebungen";
+    // das Cockpit (lib/cockpit.ts): Lernpaket Schritt für Schritt, nur für den Lehrer der Einheit
+    const area = sp.bereich === "fortschritt" ? "fortschritt" : sp.bereich === "cockpit" && mayManage ? "cockpit" : "uebungen";
     return (
       <>
         <AutoRefresh seconds={30} />
@@ -145,12 +147,13 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
             )}
           </div>
           {mayManage ? (
-            <nav className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Einheit">
+            <nav className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5" aria-label="Einheit">
               <AreaLink href={`/einheiten/${unit.id}`} on={area === "uebungen"} icon={<BookOpenCheck size={20} aria-hidden />} label="Übungen" />
+              <AreaLink href={`/einheiten/${unit.id}?bereich=cockpit`} on={area === "cockpit"} icon={<Gauge size={20} aria-hidden />} label="Cockpit" />
               <AreaLink href={`/tafel/${unit.id}`} icon={<Presentation size={20} aria-hidden />} label="Whiteboard" />
               <AreaLink href={`/einheiten/${unit.id}?bereich=fortschritt`} on={area === "fortschritt"} icon={<ChartNoAxesColumn size={20} aria-hidden />} label="Fortschritt" />
               <form action={endUnitAction.bind(null, unit.id)} className="contents">
-                <button className="flex min-h-[60px] items-center justify-center gap-2 rounded-2xl bg-ink px-3 text-[15px] font-semibold text-surface transition-colors hover:bg-ink-2">
+                <button className="col-span-2 flex min-h-[60px] items-center justify-center gap-2 rounded-2xl bg-ink px-3 text-[15px] font-semibold text-surface transition-colors hover:bg-ink-2 xl:col-span-1">
                   <Square size={18} aria-hidden /> Einheit beenden
                 </button>
               </form>
@@ -161,7 +164,13 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         </header>
         {notices}
         {mayManage && <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} join={await joinInfo()} />}
-        {area === "uebungen" ? <UnitExercisesArea unit={unit} student={student} mayManage={mayManage} /> : <UnitProgressArea unit={unit} studentName={student.name} />}
+        {area === "cockpit" ? (
+          <CockpitBereich unit={unit} student={student} fehler={sp.cockpit} />
+        ) : area === "uebungen" ? (
+          <UnitExercisesArea unit={unit} student={student} mayManage={mayManage} />
+        ) : (
+          <UnitProgressArea unit={unit} studentName={student.name} />
+        )}
         {mayManage && (
           <div className="mt-14 border-t border-line pt-5">
             <CancelUnit unitId={unit.id} />
@@ -273,6 +282,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
             )}
           </section>
         )}
+        <AblaufRueckblick unitId={unit.id} />
         <UnitDocuments unitId={unit.id} />
         <section>
           <SectionTitle>Whiteboard</SectionTitle>
