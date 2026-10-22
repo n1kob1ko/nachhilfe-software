@@ -26,7 +26,7 @@ export type BoardGrade = Review | "offen" | "loesung";
 
 /** The newest assignment of this exercise for the student, or null. */
 function assignmentFor(studentId: number, worksheetId: number) {
-  return repo.listAssignments(studentId).find((a) => a.worksheet_id === worksheetId) ?? null;
+  return repo.listAssignments(studentId, { archiv: "alle" }).find((a) => a.worksheet_id === worksheetId) ?? null;
 }
 
 /**

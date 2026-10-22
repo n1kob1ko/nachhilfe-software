@@ -915,6 +915,15 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // Zwei Schüler gleichzeitig (D26) am Tablet (2026-10-20): welche laufende Einheit dieses Tablet zeigt, wenn beim
   // Lehrer zwei laufen. Gilt nur, solange diese Einheit läuft (lib/devices.ts `deviceUnit`); null = noch nicht gewählt.
   ["student_devices", "unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
+  // Archiv (lib/archiv.ts, 2026-10-22): archiviert statt gelöscht. Die Zeile bleibt mit Versuchen, Dokumentation und
+  // Lernstand; sie fehlt nur in Listen, Auswahl und Suche, und Schüler sehen sie nicht mehr als offen. null = nicht archiviert.
+  // Eine Textarbeit (auch Bildgeschichte und Schreibauftrag) wird an `texts` archiviert, die Zusatztabellen hängen daran.
+  ["worksheets", "archived_at", "TEXT"],
+  ["worksheets", "archived_by", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["assignments", "archived_at", "TEXT"],
+  ["assignments", "archived_by", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["texts", "archived_at", "TEXT"],
+  ["texts", "archived_by", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
 ];
 
 /** Teachers to start with; more can be added later. */

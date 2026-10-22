@@ -92,7 +92,7 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
     const reason = laptopEndReason(session) ?? "einheit";
     const e = ENDED[reason];
     // only a laptop that was confirmed may still hand in copies of its texts (lib/laptop.ts laptopMayWrite)
-    const textIds = session.approved_at ? textsForStudent(session.student_id).map((t) => t.id) : [];
+    const textIds = session.approved_at ? textsForStudent(session.student_id, { archiv: "alle" }).map((t) => t.id) : [];
     return (
       <Centered>
         <Mark />
@@ -111,7 +111,9 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
   const { unit, student } = ctx;
   const name = first(student.name);
   const list = unitAssignments(unit.id);
-  const texts = textsForUnit(unit.id);
+  const unitTexts = textsForUnit(unit.id);
+  // archived texts are not offered any more; their local copies are still handed in on leaving
+  const texts = unitTexts.filter((t) => !t.archived_at);
   const view = parseView(unit.device_view);
   const current = view.kind === "aufgabe" ? list.find((a) => a.id === view.assignmentId) : undefined;
   const text = view.kind === "text" ? unitText(unit, view.textId) : null;
@@ -229,7 +231,7 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
               </p>
             </div>
           </div>
-          <LeaveButton textIds={texts.map((t) => t.id)} />
+          <LeaveButton textIds={unitTexts.map((t) => t.id)} />
         </header>
         {/* a Leseverständnis needs the whole width for text and questions: the list waits behind "← Titel" */}
         <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-10 has-[.lesen-breit]:lg:grid-cols-1 [&:has(.lesen-breit)>nav]:hidden">

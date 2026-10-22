@@ -165,7 +165,7 @@ export default async function DevicePage() {
     );
   } else {
     const open = list.filter((a) => !a.completed_at);
-    const texts = textsForUnit(unit.id).filter((t) => t.status !== "fertig");
+    const texts = textsForUnit(unit.id).filter((t) => t.status !== "fertig" && !t.archived_at);
     content = open.length || texts.length ? (
       <ul className="space-y-3">
         {texts.map((t) => (
