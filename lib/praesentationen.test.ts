@@ -232,6 +232,7 @@ test("the deck route answers only on the presentation host, and the proxy refuse
     for (const teil of ["sandbox allow-scripts", "connect-src 'none'", "form-action 'none'", `script-src http://127.0.0.1:3000/deck/${p.token}/ 'unsafe-inline'`, "frame-ancestors http://localhost:*"])
       assert.ok(csp.includes(teil), `CSP has ${teil}: ${csp}`);
     assert.equal(ok.headers.get("x-content-type-options"), "nosniff");
+    assert.equal(ok.headers.get("x-frame-options"), null, "deck files rely on frame-ancestors alone");
     assert.match(ok.headers.get("content-type") ?? "", /^text\/html/);
     const body = await ok.text();
     assert.ok(body.includes("lernheft-praesentation") && body.indexOf("lernheft-praesentation") < body.lastIndexOf("</body>"), "the bridge goes in before </body>");
@@ -257,6 +258,26 @@ test("the deck route answers only on the presentation host, and the proxy refuse
     if (alt === undefined) delete process.env.PRESENTATION_ORIGIN;
     else process.env.PRESENTATION_ORIGIN = alt;
   }
+});
+
+test("X-Frame-Options DENY is on every path except deck files; the other global headers stay everywhere", async () => {
+  const { default: config } = await import("../next.config");
+  const { getPathMatch } = await import("next/dist/shared/lib/router/utils/path-match");
+  const regeln = await config.headers!();
+  const kopfzeilen = (pfad: string) => {
+    const k = new Map<string, string>();
+    for (const r of regeln)
+      if (getPathMatch(r.source, { strict: true, removeUnnamedParams: true })(pfad) !== false)
+        for (const h of r.headers) k.set(h.key.toLowerCase(), h.value);
+    return k;
+  };
+  const deck = kopfzeilen("/deck/abcdefghijklmnopqrstuvwx/Folien/index.html");
+  assert.equal(deck.get("x-frame-options"), undefined);
+  assert.equal(deck.get("referrer-policy"), "no-referrer");
+  assert.equal(deck.get("x-content-type-options"), "nosniff");
+  for (const pfad of ["/", "/login", "/lernen/abc", "/geraet", "/mehr/praesentationen", "/decks"])
+    assert.equal(kopfzeilen(pfad).get("x-frame-options"), "DENY", pfad);
+  assert.equal(kopfzeilen("/material/7/datei").get("x-frame-options"), "SAMEORIGIN", "the PDF preview still frames itself");
 });
 
 test("deck host checks: other host name required, frame-ancestors from PUBLIC_URL, setup hints", async () => {
