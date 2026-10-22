@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { PageHeader } from "@/components/ui";
 import { PictureStoryForm } from "@/components/text/story/PictureStoryForm";
 import { requireTeacher } from "@/lib/auth";
-import { SUBJECTS } from "@/lib/curriculum";
+import { fachNamen } from "@/lib/faecher";
 import { getPictureStory, LINE_CHOICES, SOURCE_KINDS, storyImages } from "@/lib/picture-story";
 import { getText } from "@/lib/texts";
 
@@ -36,7 +36,7 @@ export default async function EditPictureStoryPage({ params }: { params: Promise
           sourceNote: story.source_note,
         }}
         images={images.map((i) => ({ id: i.id, url: `/material/bildgeschichte/bild/${i.id}`, caption: i.caption, name: i.file_name, size: i.size }))}
-        subjects={[...SUBJECTS]}
+        subjects={fachNamen()}
         lineChoices={LINE_CHOICES}
         sourceKinds={SOURCE_KINDS}
         name={text.student_name.split(" ")[0]}

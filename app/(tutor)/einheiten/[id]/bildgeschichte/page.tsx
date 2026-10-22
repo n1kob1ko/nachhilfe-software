@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { PageHeader } from "@/components/ui";
 import { PictureStoryForm } from "@/components/text/story/PictureStoryForm";
 import { requireTeacher } from "@/lib/auth";
-import { SUBJECTS } from "@/lib/curriculum";
+import { fachNamen } from "@/lib/faecher";
 import { studentDevice } from "@/lib/live";
 import { LINE_CHOICES, SOURCE_KINDS } from "@/lib/picture-story";
 import { getStudent } from "@/lib/repo";
@@ -47,7 +47,7 @@ export default async function NewPictureStoryPage({ params }: { params: Promise<
           sourceKind: "",
           sourceNote: "",
         }}
-        subjects={[...SUBJECTS]}
+        subjects={fachNamen()}
         lineChoices={LINE_CHOICES}
         sourceKinds={SOURCE_KINDS}
         device={studentDevice(unit)}

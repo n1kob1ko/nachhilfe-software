@@ -7,7 +7,7 @@ import { TextEditor } from "@/components/text/TextEditor";
 import { TextLive } from "@/components/text/TextLive";
 import { Pill, Reveal, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
-import { SUBJECTS } from "@/lib/curriculum";
+import { fachNamen } from "@/lib/faecher";
 import { storyForEditor } from "@/lib/picture-story";
 import { auftragFor } from "@/lib/schreibauftrag-store";
 import { getText, listRevisions, textDoc, TEXT_KINDS, unitsOfText, wordsLabel } from "@/lib/texts";
@@ -168,7 +168,7 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
               </label>
             </div>
             <datalist id="text-subjects">
-              {SUBJECTS.map((s) => (
+              {fachNamen().map((s) => (
                 <option key={s} value={s} />
               ))}
             </datalist>
