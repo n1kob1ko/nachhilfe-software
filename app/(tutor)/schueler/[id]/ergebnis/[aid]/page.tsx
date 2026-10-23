@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { runningUnitForStudent } from "@/lib/units";
 import { CheckCircle2, CircleDashed, Lightbulb, Plus, XCircle } from "lucide-react";
 import { deleteAssignmentAction } from "@/app/actions";
+import { archiveAssignmentAction, restoreAssignmentAction, restoreWorksheetAction } from "@/app/archiv-actions";
+import { ArchivBanner, ArchivKnopf, ArchivMeldung } from "@/components/Archiv";
+import { LoeschenMitWarnung } from "@/components/LoeschenMitWarnung";
 import { answerText } from "@/components/TaskPreview";
 import { ErrorTypeSelect } from "@/components/ErrorTypeSelect";
 import { ErgebnisGesehen } from "@/components/ErgebnisGesehen";
@@ -62,12 +65,16 @@ function shownAnswer(t: repo.Task, raw: string) {
   return raw;
 }
 
-export default async function ResultPage({ params }: { params: Promise<{ id: string; aid: string }> }) {
+export default async function ResultPage({ params, searchParams }: { params: Promise<{ id: string; aid: string }>; searchParams: Promise<{ archiv?: string; fehler?: string }> }) {
   const { id, aid } = await params;
+  const sp = await searchParams;
   const student = repo.getStudent(Number(id));
   const assignment = repo.getAssignment(Number(aid));
   if (!student || !assignment || assignment.student_id !== student.id) notFound();
   const w = repo.getWorksheet(assignment.worksheet_id)!;
+  // Archiv (lib/archiv.ts): this copy, or the whole exercise
+  const archivedAt = assignment.archived_at ?? w.archived_at ?? null;
+  const here = `/schueler/${student.id}/ergebnis/${assignment.id}`;
   const tasks = repo.listTasks(w.id);
   const attempts = repo.listAttemptsForAssignment(assignment.id);
   const finals = attempts.filter((a) => a.final);
@@ -119,6 +126,18 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
           </Link>
         )}
       </div>
+      <ArchivMeldung archiv={sp.archiv} fehler={sp.fehler} archiviert="Archiviert." wiederhergestellt={`Wiederhergestellt. ${student.name.split(" ")[0]} sieht die Übung wieder.`} />
+      {archivedAt && (
+        <ArchivBanner
+          seit={archivedAt}
+          text={
+            w.archived_at
+              ? "Die ganze Übung ist archiviert, für alle Schüler. Antworten, Dokumentation und Lernstand bleiben."
+              : `${student.name.split(" ")[0]} sieht die Übung nicht mehr als offen. Antworten, Dokumentation und Lernstand bleiben.`
+          }
+          restore={w.archived_at ? restoreWorksheetAction.bind(null, w.id, here) : restoreAssignmentAction.bind(null, assignment.id, here)}
+        />
+      )}
       {assignment.note && <p className="-mt-4 mb-6 text-[14px] text-ink-2">{assignment.note}</p>}
       {pe && pe.offen > 0 && (
         <p className="-mt-4 mb-6 text-[14px] text-ink-2">
@@ -298,9 +317,21 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
           );
         })}
       </ol>
-      <form action={deleteAssignmentAction.bind(null, assignment.id, student.id)} className="mt-8">
-        <button className="btn btn-danger btn-sm">Übung beim Schüler entfernen (mit Ergebnissen)</button>
-      </form>
+      <div className="no-print mt-8 grid gap-3 border-t border-line pt-6" data-testid="archivieren-loeschen">
+        <p className="max-w-[80ch] text-[14px] text-ink-2">
+          Archivieren nimmt die Übung aus der Liste, und {student.name.split(" ")[0]} sieht sie nicht mehr als offen. Antworten, Dokumentation und Lernstand bleiben.
+          Entfernen löscht sie beim Schüler ganz, mit allen Antworten und der Dokumentation dazu.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          {!archivedAt && <ArchivKnopf action={archiveAssignmentAction.bind(null, assignment.id, `/schueler/${student.id}?tab=lernverlauf`)} />}
+          <LoeschenMitWarnung
+            action={deleteAssignmentAction.bind(null, assignment.id, student.id)}
+            label="Beim Schüler entfernen (mit Ergebnissen)"
+            className="btn btn-danger btn-sm"
+            frage={`„${w.title}“ bei ${student.name} ganz entfernen? Das löscht ${finals.length ? `die ${finals.length} beantworteten Aufgaben` : "alle Antworten"} und die Dokumentation dazu, und es lässt sich nicht rückgängig machen. Zum Aufräumen ohne Verlust lieber „Archivieren“.`}
+          />
+        </div>
+      </div>
     </>
   );
 }

@@ -103,7 +103,7 @@ export function zuErledigen(teacherId: number, heute: string, now = new Date()):
        FROM assignments a JOIN students s ON s.id = a.student_id JOIN worksheets w ON w.id = a.worksheet_id
        LEFT JOIN units u ON u.id = a.unit_id
        LEFT JOIN todo_gesehen g ON g.teacher_id = @me AND g.art = 'ergebnis' AND g.ref_id = a.id
-       WHERE a.completed_at IS NOT NULL
+       WHERE a.completed_at IS NOT NULL AND COALESCE(a.archived_at, w.archived_at) IS NULL
          AND (datetime(a.completed_at) >= datetime(@seit) OR a.id IN (SELECT assignment_id FROM attempts WHERE review = 'offen'))
          AND COALESCE(u.teacher_id, w.teacher_id, s.teacher_id, @me) = @me
        ORDER BY datetime(a.completed_at) DESC, a.id DESC`,
@@ -147,7 +147,7 @@ export function zuErledigen(teacherId: number, heute: string, now = new Date()):
         EXISTS (SELECT 1 FROM text_corrections c WHERE c.text_id = x.id AND c.version >= x.version) AS korrigiert
        FROM texts x JOIN students s ON s.id = x.student_id
        LEFT JOIN todo_gesehen g ON g.teacher_id = @me AND g.art = 'text' AND g.ref_id = x.id
-       WHERE x.status = 'fertig' AND x.completed_at IS NOT NULL AND datetime(x.completed_at) >= datetime(@seit)
+       WHERE x.status = 'fertig' AND x.completed_at IS NOT NULL AND x.archived_at IS NULL AND datetime(x.completed_at) >= datetime(@seit)
          AND COALESCE(x.teacher_id, s.teacher_id, @me) = @me
        ORDER BY x.completed_at DESC, x.id DESC`,
     )

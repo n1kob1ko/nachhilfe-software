@@ -64,7 +64,7 @@ export async function setTextStatusAction(id: number, status: "offen" | "fertig"
 export async function showTextOnTabletAction(id: number) {
   const { t, text } = await teacherText(id);
   const unit = runningUnitForStudent(text.student_id);
-  if (!unit || !canManageUnit(t, unit)) return;
+  if (!unit || !canManageUnit(t, unit) || text.archived_at) return;
   showOnTablet(unit, { kind: "text", textId: text.id });
   revalidatePath(`/texte/${text.id}`);
 }

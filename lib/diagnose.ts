@@ -45,7 +45,7 @@ export function libraryTask(subject: string, item: DiagnosisItem, used: Set<numb
   const rows = db()
     .prepare(
       `SELECT t.id FROM tasks t JOIN worksheets w ON w.id = t.worksheet_id
-       WHERE w.kind = 'bibliothek' AND w.subject = ? AND t.difficulty = ? AND t.type <> 'free'
+       WHERE w.kind = 'bibliothek' AND w.archived_at IS NULL AND w.subject = ? AND t.difficulty = ? AND t.type <> 'free'
          AND EXISTS (SELECT 1 FROM task_skills ts WHERE ts.task_id = t.id AND ts.skill_id = ?)
        ORDER BY t.id`,
     )
@@ -311,7 +311,7 @@ export function recentDiagnoses(limit = 6): { id: number; student_id: number; st
               (SELECT COUNT(*) FROM tasks t WHERE t.worksheet_id = w.id) AS total,
               (SELECT COUNT(DISTINCT x.task_id) FROM attempts x WHERE x.assignment_id = a.id AND x.final = 1) AS done
        FROM assignments a JOIN worksheets w ON w.id = a.worksheet_id JOIN students s ON s.id = a.student_id
-       WHERE w.kind = 'diagnose' ORDER BY a.assigned_at DESC, a.id DESC LIMIT ?`,
+       WHERE w.kind = 'diagnose' AND ${repo.ASSIGNMENT_ARCHIVED} IS NULL ORDER BY a.assigned_at DESC, a.id DESC LIMIT ?`,
     )
     .all(limit) as { id: number; student_id: number; student_name: string; title: string; topic: string; assigned_at: string; total: number; done: number }[];
 }

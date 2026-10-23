@@ -9,6 +9,7 @@
  * every few minutes, the previous version is kept in text_revisions.
  */
 import { db } from "./db";
+import { archivSql, type ArchivFilter } from "./repo";
 import { countChars, countWords, docKey, parseDoc, type TextDoc } from "./text-doc";
 import { runningUnitForStudent, touchUnit } from "./units";
 
@@ -30,8 +31,11 @@ export type TextRow = {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  /** Archiv (lib/archiv.ts): when and by whom it was archived; null = in the normal lists. */
+  archived_at?: string | null;
+  archived_by?: number | null;
 };
-export type TextView = TextRow & { student_name: string; teacher_name: string | null };
+export type TextView =TextRow & { student_name: string; teacher_name: string | null };
 
 /** Kinds of text offered when a text is started (free input is allowed too). */
 export const TEXT_KINDS = [
@@ -182,27 +186,32 @@ export function restoreRevision(textId: number, revisionId: number): SaveResult 
   return saveText(textId, parseDoc(rev.body), text.version, { force: true });
 }
 
-export type UnitText = Pick<TextRow, "id" | "title" | "topic" | "subject" | "status" | "words" | "updated_at"> & {
+export type UnitText = Pick<TextRow, "id" | "title" | "topic" | "subject" | "status" | "words" | "updated_at" | "archived_at"> & {
   words_before: number;
   words_after: number;
   /** started in this unit (else continued) */
   started_here: number;
 };
 
-/** Texts written or continued in a unit, oldest first. */
+/**
+ * Texts written or continued in a unit, oldest first. Archived ones are included: this is the unit's documentation.
+ * Whatever offers texts to work on (tablet, laptop, the running unit) leaves out those with archived_at.
+ */
 export function textsForUnit(unitId: number): UnitText[] {
   return db()
     .prepare(
-      `SELECT x.id, x.title, x.topic, x.subject, x.status, x.words, x.updated_at, tu.words_before, tu.words_after,
+      `SELECT x.id, x.title, x.topic, x.subject, x.status, x.words, x.updated_at, x.archived_at, tu.words_before, tu.words_after,
         (x.unit_id IS ? ) AS started_here
        FROM text_units tu JOIN texts x ON x.id = tu.text_id WHERE tu.unit_id = ? ORDER BY tu.first_at, x.id`,
     )
     .all(unitId, unitId) as UnitText[];
 }
 
-/** All texts of a student, newest change first. */
-export function textsForStudent(studentId: number): TextView[] {
-  return db().prepare(`${VIEW} WHERE x.student_id = ? ORDER BY x.updated_at DESC, x.id DESC`).all(studentId) as TextView[];
+/** All texts of a student, newest change first; archived ones only when asked for (lib/archiv.ts). */
+export function textsForStudent(studentId: number, o: { archiv?: ArchivFilter } = {}): TextView[] {
+  return db()
+    .prepare(`${VIEW} WHERE x.student_id = ? AND ${archivSql("x.archived_at", o.archiv ?? "ohne")} ORDER BY x.updated_at DESC, x.id DESC`)
+    .all(studentId) as TextView[];
 }
 
 /** Units a text was worked on in, oldest first. */

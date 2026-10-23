@@ -209,7 +209,7 @@ export function mappeFuerEinheit(unitId: number): Mappe | null {
     })
     .filter((u): u is MappeUebung => Boolean(u));
   const unbearbeitet = repo
-    .listAssignments(student.id)
+    .listAssignments(student.id, { archiv: "alle" })
     .filter((a) => a.unit_id === unitId && !reihenfolge.includes(a.id))
     .reverse()
     .map((a) => uebung(a, vorname, []))

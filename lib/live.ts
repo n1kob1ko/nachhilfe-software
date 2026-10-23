@@ -34,13 +34,13 @@ export function parseView(raw: string): View {
 }
 const viewText = (v: View) => (v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : "");
 
-/** May the tablet of this unit show that text? Only texts of the unit's student. */
+/** May the tablet of this unit show that text? Only texts of the unit's student, and none that is archived. */
 export function unitText(unit: Pick<UnitView, "student_id">, textId: number) {
   const t = getText(textId);
-  return t && t.student_id === unit.student_id ? t : null;
+  return t && t.student_id === unit.student_id && !t.archived_at ? t : null;
 }
 
-/** Exercises sent in this unit: the only ones the tablet may show. */
+/** Exercises sent in this unit and not archived: the only ones the tablet may show. */
 export function unitAssignments(unitId: number) {
   return db()
     .prepare(
@@ -50,7 +50,7 @@ export function unitAssignments(unitId: number) {
         (SELECT COUNT(*) FROM attempts x WHERE x.assignment_id = a.id AND x.final = 1 AND x.correct = 1) AS correct_count
        FROM assignments a JOIN worksheets w ON w.id = a.worksheet_id
        JOIN units u ON u.id = a.unit_id
-       WHERE a.unit_id = ? AND a.student_id = u.student_id ORDER BY a.id`,
+       WHERE a.unit_id = ? AND a.student_id = u.student_id AND ${repo.ASSIGNMENT_ARCHIVED} IS NULL ORDER BY a.id`,
     )
     .all(unitId) as (repo.Assignment & { title: string; source_task_id: number | null; task_count: number; done_count: number; correct_count: number })[];
 }
