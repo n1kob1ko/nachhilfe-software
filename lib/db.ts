@@ -708,6 +708,16 @@ CREATE TABLE IF NOT EXISTS feedback (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status, created_at);
+-- „Zu erledigen“ auf der Startseite (lib/zu-erledigen.ts): was ein Lehrer schon angesehen oder abgehakt hat,
+-- je Lehrer. art = ergebnis (assignments.id) | text (texts.id). Gilt nur, wenn seen_at nach dem Fertigwerden liegt:
+-- ein wieder abgegebener Text ist wieder offen. Der Zustand selbst wird beim Lesen berechnet, nicht gespeichert.
+CREATE TABLE IF NOT EXISTS todo_gesehen (
+  teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+  art TEXT NOT NULL,
+  ref_id INTEGER NOT NULL,
+  seen_at TEXT NOT NULL,
+  PRIMARY KEY (teacher_id, art, ref_id)
+);
 CREATE INDEX IF NOT EXISTS idx_ge_week ON geplante_einheiten(week_start, status);
 CREATE INDEX IF NOT EXISTS idx_ge_teacher ON geplante_einheiten(teacher_id, week_start);
 CREATE INDEX IF NOT EXISTS idx_ge_student ON geplante_einheiten(student_id, week_start);
@@ -924,6 +934,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["assignments", "archived_by", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
   ["texts", "archived_at", "TEXT"],
   ["texts", "archived_by", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  // Hausübung mit Übung (2026-10-22): ist die verknüpfte Übung fertig, gilt die Hausübung als erledigt
+  // (beim Lesen berechnet, lib/zu-erledigen.ts); das Häkchen von Hand bleibt daneben bestehen
+  ["homework", "assignment_id", "INTEGER REFERENCES assignments(id) ON DELETE SET NULL"],
 ];
 
 /** Teachers to start with; more can be added later. */

@@ -9,6 +9,7 @@ import { textChannel } from "@/lib/text-routes";
 import { createText, getText, restoreRevision, setTextStatus, updateTextInfo } from "@/lib/texts";
 import { canManageUnit, getUnit, runningUnitForStudent } from "@/lib/units";
 import { publish } from "@/lib/whiteboard-hub";
+import { markiereGesehen } from "@/lib/zu-erledigen";
 
 const str = (f: FormData, k: string, max = 2000) => String(f.get(k) ?? "").trim().slice(0, max);
 
@@ -51,9 +52,12 @@ export async function updateTextInfoAction(id: number, f: FormData) {
 }
 
 export async function setTextStatusAction(id: number, status: "offen" | "fertig") {
-  const { text } = await teacherText(id);
+  const { t, text } = await teacherText(id);
   setTextStatus(text.id, status);
+  // wer selbst „fertig“ setzt, hat den Text gesehen: er wartet in „Zu erledigen“ nicht auf ihn
+  if (status === "fertig") markiereGesehen(t.id, "text", text.id);
   revalidatePath(`/texte/${text.id}`);
+  revalidatePath("/");
 }
 
 /** Opens the text on the tablet of the teacher who is teaching its student right now (to continue it). */

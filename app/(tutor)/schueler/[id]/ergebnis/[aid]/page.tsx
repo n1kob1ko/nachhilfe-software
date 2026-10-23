@@ -8,6 +8,7 @@ import { ArchivBanner, ArchivKnopf, ArchivMeldung } from "@/components/Archiv";
 import { LoeschenMitWarnung } from "@/components/LoeschenMitWarnung";
 import { answerText } from "@/components/TaskPreview";
 import { ErrorTypeSelect } from "@/components/ErrorTypeSelect";
+import { ErgebnisGesehen } from "@/components/ErgebnisGesehen";
 import { FixCompare } from "@/components/FixMarks";
 import { closestVersion } from "@/lib/fix-text";
 import { ReviewButtons } from "@/components/ReviewButtons";
@@ -104,6 +105,7 @@ export default async function ResultPage({ params, searchParams }: { params: Pro
 
   return (
     <>
+      {assignment.completed_at && <ErgebnisGesehen assignmentId={assignment.id} />}
       <PageHeader
         back={probe ? { href: `/schueler/${student.id}/pruefung/${probe.id}#probeschularbeit`, label: "Vorbereitung" } : { href: `/schueler/${student.id}?tab=uebungen`, label: student.name }}
         title={w.title}

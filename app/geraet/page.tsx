@@ -129,7 +129,7 @@ export default async function DevicePage() {
           pictures={story?.pictures}
           targetWords={story?.targetWords ?? auftrag?.target}
           auftrag={auftrag ?? undefined}
-          handIn={(story || auftrag) && text.status !== "fertig" ? { url: `/geraet/text/${text.id}/abgeben`, home: "/geraet/ansicht?zu=start" } : undefined}
+          handIn={text.status !== "fertig" ? { url: `/geraet/text/${text.id}/abgeben`, home: "/geraet/ansicht?zu=start" } : undefined}
         />
       </>
     );
