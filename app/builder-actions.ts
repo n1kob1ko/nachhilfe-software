@@ -20,6 +20,7 @@ import {
 } from "@/lib/builder";
 import { DIFFICULTIES, type Difficulty, type TaskType, TASK_TYPES } from "@/lib/curriculum";
 import { figurFehler } from "@/lib/figur";
+import { freigabeVon, isFreigabe, zeigtHilfen } from "@/lib/freigabe";
 import { noteActivity } from "@/lib/learning";
 import { readingSet, withText } from "@/lib/lesen";
 import { titleFromTask } from "@/lib/library";
@@ -221,11 +222,15 @@ export async function saveTemplateAction(_prev: ActionResult, form: FormData): P
   return { ok: `Vorlage „${name}“ gespeichert.` };
 }
 
-export async function setSolutionsVisibleAction(assignmentId: number, visible: boolean) {
+/** Freigabe in Stufen (lib/freigabe.ts): Nichts, Nur Hilfen, Hilfen und Lösung, Alles. */
+export async function setFreigabeAction(assignmentId: number, freigabe: string) {
   await requireTeacher();
   const a = repo.getAssignment(assignmentId);
-  if (!a) return;
-  repo.setSolutionsVisible(assignmentId, visible);
+  if (!a || !isFreigabe(freigabe)) return;
+  repo.setFreigabe(assignmentId, freigabe);
+  // läuft gerade eine Einheit, sieht das Tablet die neue Stufe sofort
+  const unit = runningUnitForStudent(a.student_id);
+  if (unit) pushLive(unit.id);
   revalidatePath(`/uebungen/${a.worksheet_id}`);
   revalidatePath("/lernen", "layout");
 }
@@ -264,6 +269,8 @@ export async function recordHintAction(token: string, assignmentId: number, task
   const t = repo.getTask(taskId);
   if (!student || !a || !t || a.student_id !== student.id || t.worksheet_id !== a.worksheet_id) return;
   if (!Number.isInteger(hintIndex) || hintIndex < 0 || hintIndex >= t.hints.length) return;
+  // Freigabe „Nichts“: es gibt keine Hilfen, also wird auch keine gezählt
+  if (!zeigtHilfen(freigabeVon(a))) return;
   const unit = runningUnitForStudent(student.id);
   repo.recordHintUse({ assignment_id: a.id, task_id: t.id, student_id: student.id, hint_index: hintIndex, unit_id: unit?.id ?? a.unit_id });
   if (unit) {

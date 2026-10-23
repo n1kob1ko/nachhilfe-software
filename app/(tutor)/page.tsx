@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CalendarClock, CalendarSync, Check, CheckCircle2, ChevronDown, FileCheck2, NotebookPen, PenLine, Play, Plus, Presentation } from "lucide-react";
+import { ArrowRight, CalendarClock, CalendarPlus, CalendarSync, Check, CheckCircle2, ChevronDown, FileCheck2, NotebookPen, PenLine, Play, Plus, Presentation } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
 import { startUnitAction } from "@/app/session-actions";
 import { abhakenAction } from "@/app/zu-erledigen-actions";
@@ -370,7 +370,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
   );
 }
 
-const TODO_ICON = { pruefung: CalendarClock, ergebnis: FileCheck2, hausuebung: NotebookPen, text: PenLine, terminanfrage: CalendarSync };
+const TODO_ICON = { pruefung: CalendarClock, ergebnis: FileCheck2, hausuebung: NotebookPen, text: PenLine, terminanfrage: CalendarSync, einreichung: CalendarPlus };
 
 /** Was ein Punkt in „Zu erledigen“ sagt; der Zustand steht darunter. */
 function todoText(p: Punkt): React.ReactNode {
@@ -412,6 +412,14 @@ function todoText(p: Punkt): React.ReactNode {
       return (
         <>
           {p.aufgabe === "bestaetigen" ? <>Terminanfrage für {name} bestätigen</> : <>Tausch für {name} zustimmen</>}: {p.beschreibung}
+        </>
+      );
+    case "einreichung":
+      // vom Schüler in seiner App eingetragen (lib/pruefliste.ts)
+      return (
+        <>
+          Prüfung von {name} {p.zustand === "erledigt" ? (p.uebernommen ? "übernommen" : "verworfen") : p.zuPruefen ? "prüfen" : "eingetragen, bitte ansehen"}: {p.titel}
+          <span className="text-ink-2"> · {p.pruefungsDatum ? formatDate(p.pruefungsDatum, { day: "numeric", month: "short" }) : "ohne Datum"}</span>
         </>
       );
   }

@@ -16,6 +16,9 @@
  *   gibt oder der Lehrer sie abhakt.
  * - Terminanfrage (lib/planung/terminanfragen.ts): für die Verwaltung jede offene Anfrage, für einen Lehrer ein
  *   Tausch, der auf seine Zustimmung wartet. Offen, bis sie entschieden ist.
+ * - Eingetragene Prüfung: was ein Schüler in seiner App eingetragen hat (lib/pruefliste.ts), zu prüfen oder schon
+ *   als Prüfung eingetragen. Wartet auf Lehrerbewertung (zu prüfen) oder Offen (schon eingetragen), bis ein Lehrer
+ *   sie in der Prüfliste übernimmt, bestätigt oder verwirft.
  *
  * Nur die eigenen Schüler (students.teacher_id leer oder der Lehrer, wie bei den Prüfungen) und die eigenen
  * Übungen (der Lehrer der Einheit, sonst wer die Übung gemacht hat, sonst der des Schülers).
@@ -33,7 +36,7 @@ export const ZUSTAND_TONE: Record<Zustand, "neutral" | "red" | "amber" | "green"
 /** Wie lange ein ungesehenes Ergebnis oder ein abgegebener Text in der Liste bleibt, und wie weit „Erledigt“ zurückreicht. */
 export const FENSTER_TAGE = 7;
 
-export type Art = "pruefung" | "ergebnis" | "hausuebung" | "text" | "terminanfrage";
+export type Art = "pruefung" | "ergebnis" | "hausuebung" | "text" | "terminanfrage" | "einreichung";
 /** Was „Abhaken“ in der Liste tut: Hausübung als erledigt markieren oder als gesehen merken. */
 export type Abhaken = { art: "hausuebung" | "ergebnis" | "text"; id: number; studentId: number };
 
@@ -43,7 +46,8 @@ export type Punkt =
   | (Basis & { art: "ergebnis"; titel: string; richtig: number; aufgaben: number; zuBewerten: number })
   | (Basis & { art: "hausuebung"; beschreibung: string; uebung: string | null })
   | (Basis & { art: "text"; titel: string })
-  | (Basis & { art: "terminanfrage"; aufgabe: "bestaetigen" | "zustimmen"; beschreibung: string });
+  | (Basis & { art: "terminanfrage"; aufgabe: "bestaetigen" | "zustimmen"; beschreibung: string })
+  | (Basis & { art: "einreichung"; titel: string; pruefungsDatum: string | null; zuPruefen: boolean; uebernommen: boolean });
 
 // ---------- der Zustand, rein aus den Daten ----------
 
@@ -169,6 +173,25 @@ export function zuErledigen(teacherId: number, heute: string, now = new Date()):
   const ich = conn.prepare("SELECT id, is_admin FROM teachers WHERE id = ?").get(teacherId) as { id: number; is_admin: number } | undefined;
   for (const a of ich ? anfragenZuErledigen(ich) : []) {
     punkte.push({ key: `ta${a.id}`, art: "terminanfrage", zustand: "offen", studentId: a.studentId, studentName: a.studentName, href: a.href, datum: a.datum, abhaken: null, aufgabe: a.aufgabe, beschreibung: a.beschreibung });
+  }
+  // vom Schüler eingetragene Prüfungen: offen bis zur Entscheidung in der Prüfliste, entschiedene der letzten Tage
+  const einreichungen = conn
+    .prepare(
+      `SELECT e.id, e.student_id, s.name AS student_name, COALESCE(t.kind, e.art) AS art, COALESCE(t.subject, e.fach) AS fach, COALESCE(t.date, e.datum) AS datum,
+         e.status, e.created_at, e.entschieden_am
+       FROM pruefung_einreichungen e JOIN students s ON s.id = e.student_id LEFT JOIN tests t ON t.id = e.test_id
+       WHERE (e.status = 'eingereicht' OR (e.status = 'automatisch' AND e.test_id IS NOT NULL) OR datetime(e.entschieden_am) >= datetime(@seit))
+         AND COALESCE(s.teacher_id, @me) = @me
+       ORDER BY e.created_at, e.id`,
+    )
+    .all({ me: teacherId, seit }) as { id: number; student_id: number; student_name: string; art: string; fach: string; datum: string | null; status: string; created_at: string; entschieden_am: string | null }[];
+  for (const e of einreichungen) {
+    const offen = e.status === "eingereicht" || e.status === "automatisch";
+    punkte.push({
+      key: `e${e.id}`, art: "einreichung", zustand: !offen ? "erledigt" : e.status === "eingereicht" ? "wartet" : "offen", studentId: e.student_id, studentName: e.student_name, href: `/schueler/${e.student_id}?tab=schule#pruefliste`,
+      datum: offen ? e.created_at : (e.entschieden_am ?? e.created_at), abhaken: null,
+      titel: `${e.art} ${e.fach}`, pruefungsDatum: e.datum, zuPruefen: e.status === "eingereicht", uebernommen: e.status === "uebernommen",
+    });
   }
 
   // offen: das Dringende zuerst, sonst in der Reihenfolge oben; erledigt: das Neueste zuerst

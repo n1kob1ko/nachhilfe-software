@@ -154,7 +154,7 @@ export default async function DevicePage() {
       />
     ) : (
       <Solver
-        key={`${current.id}-${current.solutions_visible}`}
+        key={`${current.id}-${current.solutions_visible}-${current.freigabe ?? ""}`}
         token=""
         via="geraet"
         homeHref="/geraet/ansicht?zu=start"

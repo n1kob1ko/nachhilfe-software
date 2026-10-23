@@ -19,6 +19,7 @@ import { FigurBild, figurKopf } from "@/components/Figur";
 import { zumAblesen } from "@/lib/figur";
 import { markFaultyText } from "@/lib/fix-text";
 import { bereichText, punkteText } from "@/lib/probeschularbeit-regeln";
+import { loesungsdaten } from "@/lib/loesungsdaten";
 
 const letter = (i: number) => String.fromCharCode(97 + i);
 
@@ -431,6 +432,9 @@ function TeacherTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?:
   const en = englischFormat(task);
   const answer = shortAnswer(task);
   const steps = task.solutionSteps?.length ? task.solutionSteps : null;
+  // Lösungsdaten (lib/loesungsdaten.ts): andere Wege und die Erklärung. Die Schritte aus der Antwort (Korrekturen,
+  // Zuordnung, Teilfragen, Belege) stehen auf der Lehrerfassung schon bei der Lösung.
+  const daten = loesungsdaten(task);
   const errors = task.errorMap.filter(
     (e, i, all) =>
       all.findIndex((x) => x.answer === e.answer && x.label === e.label) === i,
@@ -583,6 +587,18 @@ function TeacherTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?:
               )}
             </div>
           )}
+          {daten.wege.length > 0 && (
+            <div className="ab-solution-errors">
+              <b>{daten.wege.length === 1 ? "Anderer Weg:" : "Andere Wege:"}</b>
+              <ul>
+                {daten.wege.map((w, i) => (
+                  <li key={i} className="ab-pre">
+                    <MathLine text={w} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <p className="ab-solution-meta">
             {[
               t.skillName && `Fähigkeit: ${t.skillName}`,
@@ -614,6 +630,14 @@ function TeacherTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?:
                 ))}
               </ul>
             </div>
+          )}
+          {!errors.length && daten.achten.length > 0 && (
+            <p className="ab-solution-meta">Oft falsch: {daten.achten.join(" · ")}</p>
+          )}
+          {daten.erklaerung && (
+            <p>
+              <b>Für dich:</b> <MathLine text={daten.erklaerung} />
+            </p>
           )}
         </div>
       </div>

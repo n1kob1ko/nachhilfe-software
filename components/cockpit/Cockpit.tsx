@@ -16,6 +16,7 @@ import { AnpassenKnopf, CockpitSenden, SchrittNotiz } from "@/components/cockpit
 import { TabletSend } from "@/components/device/TabletSend";
 import { Info } from "@/components/Info";
 import { StatusPill } from "@/components/LernpaketStatus";
+import { SchuelerWorteKarte } from "@/components/SchuelerNotiz";
 import { TaskBody } from "@/components/TaskPreview";
 import { Pill, Reveal, SectionTitle } from "@/components/ui";
 import { grenzeHinweis, schuelerStand } from "@/lib/ai/schueler-kosten";
@@ -26,6 +27,7 @@ import { ohnePaket, paketWahl, type PaketWahl } from "@/lib/cockpit-vorschlag";
 import { getLernpaket, SCHRITT_ARTEN, ungeprueft, type Lernpaket, type LernpaketSchritt } from "@/lib/lernpakete";
 import { RULE_LABEL, RULE_TONE } from "@/lib/recommend";
 import * as repo from "@/lib/repo";
+import { schuelerWorte } from "@/lib/schueler-notiz";
 import { klassenLabel } from "@/lib/school";
 import type { UnitView } from "@/lib/units";
 
@@ -55,6 +57,8 @@ export function CockpitBereich({ unit, student, fehler }: { unit: UnitView; stud
   const vorschlag = c.paket ? wahl.vorschlaege.find((v) => v.paket.id === c.paket!.id) : undefined;
   // „Anpassen“: Vorschläge und Übernommenes gelten für das Paket, das gerade gewählt ist
   const liste = c.paket ? anpassungen(unit.id).filter((a) => a.paket_id === c.paket!.id) : [];
+  // was der Schüler vor dieser Einheit geschrieben hat: seine Worte, nur zum Lesen (lib/schueler-notiz.ts)
+  const worte = schuelerWorte(student.id, unit.id);
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-8" data-testid="cockpit">
       {fehler && (
@@ -63,6 +67,7 @@ export function CockpitBereich({ unit, student, fehler }: { unit: UnitView; stud
         </p>
       )}
       <KiGrenzeHinweis studentId={student.id} name={name} />
+      {worte && <SchuelerWorteKarte worte={worte} name={name} />}
       {c.paket ? (
         <>
           <PaketKopf c={c} paket={c.paket} warum={vorschlag?.warum ?? null}>

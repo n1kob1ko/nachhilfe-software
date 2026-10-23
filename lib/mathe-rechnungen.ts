@@ -25,6 +25,7 @@ import {
   klammer,
   kuerze,
   kuerzenAufgabe,
+  lcm,
   mal,
   minus,
   pick,
@@ -67,11 +68,14 @@ export function ohneDoppelte(accepted: string[], errors: Fehler[], mode: Mode): 
   });
 }
 
-/** A short-answer task; the first accepted answer is the one shown in the solution. */
+/**
+ * A short-answer task; the first accepted answer is the one shown in the solution. wege: other ways to the same
+ * result, only where there really is one (Lösungsdaten, lib/loesungsdaten.ts).
+ */
 export function kurzaufgabe(
   skillId: string,
   difficulty: Difficulty,
-  o: { prompt: string; accepted: string[]; mode?: Mode; solution: string; hints: string[]; errors: Fehler[]; category?: string; time?: number },
+  o: { prompt: string; accepted: string[]; mode?: Mode; solution: string; hints: string[]; errors: Fehler[]; category?: string; time?: number; wege?: string[] },
 ): TaskDraft {
   const mode = o.mode ?? "value";
   const accepted = [...new Set(o.accepted.filter(Boolean))];
@@ -89,6 +93,7 @@ export function kurzaufgabe(
     hints: o.hints,
     errorMap: ohneDoppelte(accepted, errors, mode),
     ...(o.time ? { estimatedTimeSec: o.time } : {}),
+    ...(o.wege?.length ? { altWays: o.wege } : {}),
   };
 }
 
@@ -112,12 +117,14 @@ const istGemischt = (f: Frac) => f.d !== 1 && Math.abs(f.n) > f.d;
  * The worked solution, hints and typical errors of a fraction calculation. Used by the calculations and
  * by the word problems, so a story about pizza explains its sum the same way as the bare calculation.
  */
-export function bruchWeg(r: BruchRechnung): { solution: string; hints: string[]; errors: Fehler[] } {
+export function bruchWeg(r: BruchRechnung): { solution: string; hints: string[]; errors: Fehler[]; wege: string[] } {
   const [a, b] = r.terms;
   const op = r.ops[0];
   const lines: string[] = [];
   const errors: Fehler[] = [];
   const hints: string[] = [];
+  // andere Wege zum selben Ergebnis, nur wo es einen gibt (Lösungsdaten für Lehrer und Freigabe „Alles“)
+  const wege: string[] = [];
   const mixed = r.gemischt && r.terms.some(istGemischt);
   if (mixed) {
     lines.push(`Gemischte Zahlen in unechte Brüche umwandeln: ${r.terms.filter(istGemischt).map((t) => `${gemischt(t)} = ${bruch(t)}`).join(", ")}`);
@@ -144,6 +151,11 @@ export function bruchWeg(r: BruchRechnung): { solution: string; hints: string[];
       lines.push(erw.join(", "));
       lines.push(`${r.terms.map((t, i) => `${i ? ` ${r.ops[i - 1]} ` : ""}${t.n * (L / t.d)}/${L}`).join("")} = ${kette(raw, L)}`);
       hints.push("Bring alle Brüche zuerst auf einen gemeinsamen Nenner.", `Der kleinste gemeinsame Nenner ist ${L}.`, erw[0]);
+      // statt des kleinsten gemeinsamen Nenners das Produkt der Nenner: größere Zahlen, am Ende mehr kürzen
+      const P = a.d * b.d;
+      const rawP = op === "+" ? a.n * b.d + b.n * a.d : a.n * b.d - b.n * a.d;
+      if (r.terms.length === 2 && !mixed && P !== L && rawP > 0)
+        wege.push(`Mit dem Produkt der Nenner (${a.d} · ${b.d} = ${P}) statt mit ${L}: ${a.n * b.d}/${P} ${op} ${b.n * a.d}/${P} = ${kette(rawP, P)}`);
       const nSum = verknuepfe(
         r.terms.map((t) => t.n),
         r.ops,
@@ -167,6 +179,12 @@ export function bruchWeg(r: BruchRechnung): { solution: string; hints: string[];
       const teil = r.terms.map((t) => kuerze({ n: t.n - Math.trunc(t.n / t.d) * t.d, d: t.d }));
       const ohneGanze = r.ops.reduce((acc, o, i) => anwenden(acc, o, teil[i + 1]), teil[0]);
       if (ohneGanze.n > 0) errors.push({ answer: bruchAntwort(ohneGanze), label: "Die Ganzen vergessen" });
+      // beim Addieren: Ganze und Brüche getrennt, ohne unechte Brüche
+      if (op === "+" && r.terms.length === 2) {
+        const ganze = r.terms.reduce((s, t) => s + Math.trunc(t.n / t.d), 0);
+        const summe = kuerze(plus(teil[0], teil[1]));
+        wege.push(`Ganze und Brüche getrennt: ${r.terms.map((t) => Math.trunc(t.n / t.d)).join(" + ")} = ${ganze} und ${teil.map(bruch).join(" + ")} = ${kette(summe.n, summe.d)}, zusammen ${bruchAntwort(r.result)}`);
+      }
     }
   } else if (op === "·") {
     if (b.d === 1) {
@@ -182,6 +200,10 @@ export function bruchWeg(r: BruchRechnung): { solution: string; hints: string[];
       const g1 = gcd(a.n, b.d);
       const g2 = gcd(b.n, a.d);
       if (g1 > 1 || g2 > 1) hints.push(`Kürze vorher über Kreuz: ${g1 > 1 ? `${a.n} und ${b.d} durch ${g1}` : `${b.n} und ${a.d} durch ${g2}`}.`);
+      if (g1 > 1 || g2 > 1) {
+        const [n1, d2, n2, d1] = [a.n / g1, b.d / g1, b.n / g2, a.d / g2];
+        wege.push(`Vorher über Kreuz kürzen, dann sind die Zahlen kleiner: (${n1} · ${n2})/(${d1} · ${d2}) = ${kette(n1 * n2, d1 * d2)}`);
+      }
       errors.push({ answer: bruchAntwort(durch(a, b)), label: "Mit dem Kehrwert multipliziert (wie beim Dividieren)" });
       if (a.d === b.d) errors.push({ answer: bruchAntwort({ n: a.n * b.n, d: a.d }), label: "Nenner nicht multipliziert" });
       if (mixed) {
@@ -196,6 +218,7 @@ export function bruchWeg(r: BruchRechnung): { solution: string; hints: string[];
       lines.push(`${text} = ${a.n}/(${a.d} · ${b.n}) = ${kette(a.n, a.d * b.n)}`);
       hints.push(`Teile ${bruch(a)} in ${b.n} gleiche Teile.`, "Beim Dividieren durch eine ganze Zahl wird der Nenner mit der Zahl multipliziert.");
       errors.push({ answer: bruchAntwort({ n: a.n * b.n, d: a.d }), label: "Multipliziert statt dividiert" });
+      if (a.n % b.n === 0) wege.push(`Der Zähler ist durch ${b.n} teilbar: ${a.n} : ${b.n} = ${a.n / b.n}, der Nenner bleibt: ${kette(a.n / b.n, a.d)}`);
     } else {
       const kehr = { n: b.d, d: b.n };
       lines.push("Durch einen Bruch dividieren heißt mit dem Kehrwert multiplizieren.");
@@ -203,9 +226,13 @@ export function bruchWeg(r: BruchRechnung): { solution: string; hints: string[];
       hints.push("Dividieren durch einen Bruch heißt: mit dem Kehrwert multiplizieren.", `Der Kehrwert von ${bruch(b)} ist ${bruch(kehr)}.`);
       errors.push({ answer: bruchAntwort(mal(a, b)), label: "Kehrwert vergessen" });
       errors.push({ answer: bruchAntwort(mal({ n: a.d, d: a.n }, b)), label: "Falschen Bruch umgedreht" });
+      // gleichnamig machen, dann Zähler durch Zähler
+      const N = lcm(a.d, b.d);
+      const [z1, z2] = [a.n * (N / a.d), b.n * (N / b.d)];
+      wege.push(`Auf denselben Nenner bringen, dann die Zähler dividieren: ${z1}/${N} : ${z2}/${N} = ${z1} : ${z2} = ${kette(z1, z2)}`);
     }
   }
-  return { solution: lines.join("\n"), hints, errors };
+  return { solution: lines.join("\n"), hints, errors, wege };
 }
 const ganzZahl = (k: number): Frac => ({ n: k, d: 1 });
 
@@ -221,7 +248,26 @@ function bruchAufgabe(rng: Rng, diff: Difficulty, op: BruchOp): TaskDraft {
     solution: w.solution,
     hints: w.hints,
     errors: w.errors,
+    wege: w.wege,
   });
+}
+
+/** Kürzen in Schritten statt mit dem ggT: 36/48 = 18/24 (durch 2) = … ; nur wenn der ggT aus mehreren Primzahlen besteht. */
+function kuerzenInSchritten(q: Frac, k: number): string[] {
+  const teiler: number[] = [];
+  for (let rest = k, p = 2; rest > 1; ) {
+    if (rest % p === 0) {
+      teiler.push(p);
+      rest /= p;
+    } else p++;
+  }
+  if (teiler.length < 2) return [];
+  let f = q;
+  const kette = teiler.map((p) => {
+    f = { n: f.n / p, d: f.d / p };
+    return `${bruch(f)} (durch ${p})`;
+  });
+  return [`In kleinen Schritten statt gleich durch ${k}: ${bruch(q)} = ${kette.join(" = ")}`];
 }
 
 function kuerzen(rng: Rng, diff: Difficulty): TaskDraft {
@@ -243,6 +289,7 @@ function kuerzen(rng: Rng, diff: Difficulty): TaskDraft {
       { answer: `${r.n}/${q.d}`, label: "Nur den Zähler gekürzt" },
       { answer: `${q.n}/${r.d}`, label: "Nur den Nenner gekürzt" },
     ],
+    wege: kuerzenInSchritten(q, k),
   });
 }
 
@@ -322,14 +369,23 @@ function negativAddieren(rng: Rng, diff: Difficulty): TaskDraft {
       ...(plusMinus ? [{ answer: antwort(mit((x, i) => (i === 0 ? x : ops[i - 1] === "+" ? Math.abs(x) : -x))), label: "Plus vor einer negativen Zahl als Plus gerechnet" }] : []),
       { answer: antwort(-res), label: "Vorzeichenfehler beim Ergebnis" },
     ];
+    // das Beispiel der Regel nie mit dem Ergebnis der Aufgabe (bei −4 als Ergebnis ein anderes)
+    const bsp = Math.abs(res) === 4 ? 3 : 4;
+    // Hilfe 3: der erste Schritt, nie die ganze Rechnung. Bei zwei Zahlen ohne Klammer wäre lines[0] schon das Ergebnis.
+    const ersterSchritt = lines.length > 1 ? lines[0] : `Starte auf der Zahlengerade bei ${zahl(signed[0])} und geh ${zahl(Math.abs(signed[1]))} nach ${signed[1] < 0 ? "links" : "rechts"}.`;
+    // ein anderer Weg ab drei Zahlen: erst alle Plus-, dann alle Minuszahlen zusammenfassen
+    const plusTeil = rund(signed.filter((x) => x > 0).reduce((s, x) => s + x, 0));
+    const minusTeil = rund(signed.filter((x) => x < 0).reduce((s, x) => s + x, 0));
+    const wege = signed.length >= 3 && plusTeil > 0 && minusTeil < 0 ? [`Erst zusammenfassen: alle Plus-Zahlen ergeben ${zahl(plusTeil)}, alle Minus-Zahlen ${zahl(minusTeil)}. ${zahl(plusTeil)} − ${zahl(-minusTeil)} = ${zahl(res)}`] : [];
     return kurzaufgabe("mathe.negativ.addieren", diff, {
       prompt: `Berechne: ${text}`,
       accepted: [antwort(res)],
       solution: lines.join("\n"),
+      wege,
       hints: [
         "Stell dir die Zahlengerade vor: Plus heißt nach rechts, Minus nach links.",
-        minusMinus ? "Minus eine negative Zahl ist wie Plus: − (−4) = + 4." : plusMinus ? "Plus eine negative Zahl ist wie Minus: + (−4) = − 4." : "Rechne Schritt für Schritt von links nach rechts.",
-        lines[0],
+        minusMinus ? `Minus eine negative Zahl ist wie Plus: − (−${bsp}) = + ${bsp}.` : plusMinus ? `Plus eine negative Zahl ist wie Minus: + (−${bsp}) = − ${bsp}.` : "Rechne Schritt für Schritt von links nach rechts.",
+        ersterSchritt,
       ],
       errors,
     });
@@ -402,6 +458,25 @@ export function prozentwertWeg(G: number, p: number, W: number, einheit = "€")
   return [`1 % = ${g(G)}${u} : 100 = ${zahl(G / 100)}${u}`, `${zahl(p)} % = ${zahl(G / 100)}${u} · ${zahl(p)} = ${g(W)}${u}`];
 }
 
+/**
+ * Die letzte Hilfe zum Prozentwert: der erste Schritt des Wegs. Bei der Hälfte, einem Viertel oder Zehntel ist der
+ * Weg nur eine Zeile, die schon das Ergebnis nennt; dann steht nur, womit geteilt wird.
+ */
+export function prozentwertHilfe(G: number, p: number, W: number, einheit = "€"): string {
+  const weg = prozentwertWeg(G, p, W, einheit);
+  if (weg.length > 1) return weg[0];
+  const g = `${einheit === "€" ? geld(G) : zahl(G)}${einheit ? ` ${einheit}` : ""}`;
+  return p === 50 ? `50 % ist die Hälfte: Teile ${g} durch 2.` : p === 25 ? `25 % ist ein Viertel: Teile ${g} durch 4.` : `10 % ist ein Zehntel: Teile ${g} durch 10.`;
+}
+
+/** Andere Wege zum Prozentwert: mit dem Faktor, und über 1 %, wenn der Weg eine Abkürzung (Hälfte, 10 %) nimmt. */
+export function prozentwertWege(G: number, p: number, W: number, einheit = "€"): string[] {
+  const u = einheit ? ` ${einheit}` : "";
+  const g = (x: number) => (einheit === "€" ? geld(x) : zahl(x));
+  const ueber1 = prozentwertWeg(G, p, W, einheit)[0].startsWith("1 %") ? [] : [`Über 1 %: 1 % = ${g(G)}${u} : 100 = ${zahl(G / 100)}${u}, ${zahl(p)} % = ${zahl(G / 100)}${u} · ${zahl(p)} = ${g(W)}${u}`];
+  return [`Mit dem Faktor: ${zahl(p)} % = ${zahl(p / 100)}, also ${g(G)}${u} · ${zahl(p / 100)} = ${g(W)}${u}`, ...ueber1];
+}
+
 function prozentwert(rng: Rng, diff: Difficulty): TaskDraft {
   const lv = STUFE[diff];
   const { G, p, W } = prozentFall(rng, lv, "wert");
@@ -410,7 +485,8 @@ function prozentwert(rng: Rng, diff: Difficulty): TaskDraft {
     prompt: `Wie viel sind ${zahl(p)} % von ${euro(G)}? Gib das Ergebnis in Euro an.`,
     accepted: [geldAntwort(W), `${geldAntwort(W)} €`],
     solution: weg.join("\n"),
-    hints: ["1 % ist der hundertste Teil des Grundwerts.", `Berechne zuerst 1 % von ${euro(G)}.`, weg[0]],
+    wege: prozentwertWege(G, p, W),
+    hints: ["1 % ist der hundertste Teil des Grundwerts.", `Berechne zuerst 1 % von ${euro(G)}.`, prozentwertHilfe(G, p, W)],
     errors: [
       { answer: antwort(rund(G * p)), label: "Durch 100 dividieren vergessen" },
       { answer: antwort(rund(G / p)), label: "Durch den Prozentsatz dividiert statt multipliziert" },
@@ -425,7 +501,9 @@ function prozentsatz(rng: Rng, diff: Difficulty): TaskDraft {
     prompt: `Wie viel Prozent sind ${euro(W)} von ${euro(G)}? Gib das Ergebnis in Prozent an.`,
     accepted: [antwort(p), `${antwort(p)} %`],
     solution: `${geld(W)} € : ${geld(G)} € = ${zahl(p / 100)}\n${zahl(p / 100)} = ${zahl(p)} %`,
-    hints: ["Teile den Teil (Prozentwert) durch das Ganze (Grundwert).", "Die Dezimalzahl mal 100 gibt die Prozent.", `${geld(W)} : ${geld(G)} = ${zahl(p / 100)}`],
+    // die letzte Hilfe nennt die Rechnung, nicht ihr Ergebnis: 0,75 wäre mit „mal 100“ schon die Antwort
+    hints: ["Teile den Teil (Prozentwert) durch das Ganze (Grundwert).", "Die Dezimalzahl mal 100 gibt die Prozent.", `Rechne ${geld(W)} : ${geld(G)}.`],
+    wege: [`Über 1 %: 1 % von ${geld(G)} € sind ${zahl(G / 100)} €. ${geld(W)} € : ${zahl(G / 100)} € = ${zahl(p)}, also ${zahl(p)} %`],
     errors: [
       { answer: antwort(p / 100), label: "Mal 100 vergessen" },
       { answer: antwort(rund((G / W) * 100)), label: "Grundwert und Prozentwert vertauscht" },
@@ -441,6 +519,7 @@ function grundwert(rng: Rng, diff: Difficulty): TaskDraft {
     accepted: [geldAntwort(G), `${geldAntwort(G)} €`],
     solution: `${zahl(p)} % = ${geld(W)} €\n1 % = ${geld(W)} € : ${zahl(p)} = ${zahl(G / 100)} €\n100 % = ${zahl(G / 100)} € · 100 = ${geld(G)} €`,
     hints: [`Wenn ${zahl(p)} % gleich ${euro(W)} sind, wie viel ist dann 1 %?`, "Vom 1 % kommst du mit · 100 zum Ganzen.", `1 % = ${geld(W)} € : ${zahl(p)}`],
+    wege: [`Mit dem Faktor: ${zahl(p)} % = ${zahl(p / 100)}, also ${geld(W)} € : ${zahl(p / 100)} = ${geld(G)} €`],
     errors: [
       { answer: antwort(rund((W * p) / 100)), label: "Prozentwert statt Grundwert berechnet" },
       { answer: antwort(rund(W * 100)), label: "Durch den Prozentsatz dividieren vergessen" },
