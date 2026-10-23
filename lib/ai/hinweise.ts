@@ -15,8 +15,8 @@ import { db } from "../db";
 import { detectNames } from "../name-detection";
 import { maskText, namePattern } from "../text-correction-core";
 
-/** Was aus der Datenbank gebraucht wird: der Name (zum Verbergen) und die Hinweise. */
-export type SchuelerFuerHinweise = { name: string; ki_hinweise: string };
+/** Was aus der Datenbank gebraucht wird: der Name (zum Verbergen) und die Hinweise; die id für Kosten und Speicher. */
+export type SchuelerFuerHinweise = { id?: number; name: string; ki_hinweise: string };
 
 /**
  * Der Schüler, um den es in dieser Anfrage geht, oder null. Ohne `studentId` und ohne `unitId` wird
@@ -24,7 +24,7 @@ export type SchuelerFuerHinweise = { name: string; ki_hinweise: string };
  */
 export function schuelerDerAnfrage(meta: { studentId?: number | null; unitId?: number | null }): SchuelerFuerHinweise | null {
   if (meta.studentId == null && meta.unitId == null) return null;
-  const select = "SELECT s.name, s.ki_hinweise FROM students s";
+  const select = "SELECT s.id, s.name, s.ki_hinweise FROM students s";
   try {
     const row =
       meta.studentId != null

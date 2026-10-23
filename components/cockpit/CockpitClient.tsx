@@ -2,7 +2,8 @@
 
 import { useActionState, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
-import { Check, Send } from "lucide-react";
+import { Check, Send, SlidersHorizontal } from "lucide-react";
+import type { AnpassenState } from "@/app/cockpit-actions";
 import type { SendState } from "@/app/device-actions";
 import { SendResult } from "@/components/device/TabletSend";
 
@@ -27,6 +28,35 @@ export function CockpitSenden({ action, unitId, label, primary }: { action: (pre
         <SendenKnopf label={label} primary={primary} />
       </form>
       <SendResult state={state} unitId={unitId} unitLink={false} />
+    </div>
+  );
+}
+
+function AnpassenSenden({ label }: { label: string }) {
+  const { pending } = useFormStatus();
+  return (
+    <button className="btn btn-secondary w-fit" disabled={pending} data-testid="anpassen">
+      <SlidersHorizontal size={16} aria-hidden /> {pending ? "Vorschläge werden erstellt …" : label}
+    </button>
+  );
+}
+
+/**
+ * „Anpassen“ im Cockpit: eine Anfrage an die KI, nur auf Klick. Die Vorschläge zeigt danach die Seite selbst
+ * (sie wird neu geladen); hier steht nur, ob es geklappt hat.
+ */
+export function AnpassenKnopf({ action, label }: { action: (prev: AnpassenState, form: FormData) => Promise<AnpassenState>; label: string }) {
+  const [state, formAction] = useActionState<AnpassenState, FormData>(action, null);
+  return (
+    <div className="grid gap-1.5">
+      <form action={formAction}>
+        <AnpassenSenden label={label} />
+      </form>
+      {state && (
+        <p role={state.ok ? "status" : "alert"} className={`text-[13.5px] ${state.ok ? "text-ink-2" : "text-red"}`}>
+          {state.meldung}
+        </p>
+      )}
     </div>
   );
 }

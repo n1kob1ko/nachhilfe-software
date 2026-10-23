@@ -22,6 +22,7 @@ import {
   type Meta,
   type SchrittInput,
 } from "@/lib/lernpakete";
+import { entwerfeLernpaket, type KiEingabe, type KiErgebnis } from "@/lib/lernpaket-ki";
 import * as repo from "@/lib/repo";
 
 const LP = "/mehr/lernpakete";
@@ -82,6 +83,22 @@ export async function importLernpaketAction(f: FormData) {
   if ("fehler" in out) redirect(mitFehler(`${LP}?import=1`, out.fehler));
   revalidatePath(LP);
   redirect(`${LP}/${out.id}?importiert=1`);
+}
+
+/**
+ * „Mit KI entwerfen“ (lib/lernpaket-ki.ts): one request, stored as Entwurf, „ungeprüft“. Returns instead of
+ * redirecting, so the page can show the progress, a failure and „Erneut versuchen“; a double click waits for
+ * the running request and costs nothing.
+ */
+export async function lernpaketMitKiAction(e: KiEingabe): Promise<KiErgebnis> {
+  const teacher = await requireTeacher();
+  const s = (v: unknown) => (typeof v === "string" ? v : "");
+  const res = await entwerfeLernpaket(
+    { skillId: s(e?.skillId), fach: s(e?.fach), thema: s(e?.thema), schulart: s(e?.schulart), klasse: Number(e?.klasse) || null, dauer: Number(e?.dauer) || undefined, schwierigkeit: s(e?.schwierigkeit), hinweise: s(e?.hinweise) },
+    teacher.id,
+  );
+  if (res.ok) revalidatePath(LP, "layout");
+  return res;
 }
 
 export async function updateLernpaketAction(id: number, f: FormData) {

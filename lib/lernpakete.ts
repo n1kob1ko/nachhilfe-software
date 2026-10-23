@@ -4,7 +4,7 @@
  * do on a mistake, and optional tasks in the builder's format (TaskDraft, lib/tasks.ts), checked with the
  * builder's own checks (normalizeTask, checkTask) so they can later go through the usual exercise flow.
  *
- * A package is never deleted: archiving keeps it retrievable. Imported (and later KI-made) packages start
+ * A package is never deleted: archiving keeps it retrievable. Imported and KI-made (lib/lernpaket-ki.ts) packages start
  * as Entwurf and stay „ungeprüft“ until a teacher marks them Geprüft. Import and export use one JSON file,
  * format „lernheft-lernpaket“, version 1 (docs/lernpaket-format.md).
  */
@@ -64,6 +64,8 @@ export type Lernpaket = {
   geprueft_am: string | null;
   /** the presentation of this package (lib/praesentationen.ts); its slides match the steps' `folie` */
   praesentation_id: number | null;
+  /** a KI draft: its request in ai_calls (tokens and cost, lib/lernpaket-ki.ts) */
+  ki_call_id: number | null;
   /** name of the teacher who marked it geprüft */
   geprueft_von_name: string | null;
   /** number of steps and their minutes together */
@@ -341,6 +343,16 @@ export function pruefeAufgabe(a: TaskDraft, p: { skillIds: string[]; schwierigke
   return { aufgabe: t };
 }
 
+/**
+ * One task as a file has it: the file's shape, then the builder's checks (pruefeAufgabe). A KI draft
+ * (lib/lernpaket-ki.ts) checks each task with this and leaves out one that fails, instead of the package.
+ */
+export function pruefeDateiAufgabe(roh: unknown, p: { skillIds: string[]; schwierigkeit: Difficulty; fach: string }): { aufgabe: TaskDraft } | { fehler: string } {
+  const r = AufgabeSchema.safeParse(roh);
+  if (!r.success) return { fehler: meldung(r.error.issues[0], roh) };
+  return pruefeAufgabe(r.data as TaskDraft, p);
+}
+
 // ---------- metadata ----------
 
 export type Meta = {
@@ -471,13 +483,13 @@ export function createLernpaket(m: Meta, teacherId: number | null): { id: number
   return { id: insertPaket(out.wert, "hand", teacherId) };
 }
 
-function insertPaket(m: Meta, quelle: PaketQuelle, teacherId: number | null): number {
+function insertPaket(m: Meta, quelle: PaketQuelle, teacherId: number | null, kiCallId: number | null = null): number {
   const r = db()
     .prepare(
-      `INSERT INTO lernpakete (title, fach, schulart, klasse, schulstufe, thema, skill_ids, schwierigkeit, dauer_minuten, ziel, quelle, status, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'entwurf', ?)`,
+      `INSERT INTO lernpakete (title, fach, schulart, klasse, schulstufe, thema, skill_ids, schwierigkeit, dauer_minuten, ziel, quelle, status, created_by, ki_call_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'entwurf', ?, ?)`,
     )
-    .run(m.title, m.fach, m.schulart, m.klasse, m.schulart && m.klasse ? schulstufe(m.schulart, m.klasse) : null, m.thema, JSON.stringify(m.skill_ids), m.schwierigkeit, m.dauer_minuten, m.ziel, quelle, teacherId);
+    .run(m.title, m.fach, m.schulart, m.klasse, m.schulart && m.klasse ? schulstufe(m.schulart, m.klasse) : null, m.thema, JSON.stringify(m.skill_ids), m.schwierigkeit, m.dauer_minuten, m.ziel, quelle, teacherId, kiCallId);
   return Number(r.lastInsertRowid);
 }
 
@@ -685,8 +697,11 @@ function setzeAufgaben(s: LernpaketSchritt, aufgaben: TaskDraft[]) {
 
 // ---------- import and export ----------
 
-/** Reads a file and stores it as a new package: Entwurf, quelle „import“, not yet geprüft. */
-export function importiereLernpaket(roh: string | unknown, teacherId: number | null): { id: number } | { fehler: string[] } {
+/**
+ * Reads a file and stores it as a new package: Entwurf, quelle „import“, not yet geprüft. A KI draft comes
+ * the same way, with quelle „ki“ and its request in the cost log (lib/lernpaket-ki.ts).
+ */
+export function importiereLernpaket(roh: string | unknown, teacherId: number | null, o: { quelle?: "import" | "ki"; kiCallId?: number | null } = {}): { id: number } | { fehler: string[] } {
   const r = leseLernpaket(roh);
   if (!r.ok) return { fehler: r.fehler };
   const d = r.datei;
@@ -695,8 +710,9 @@ export function importiereLernpaket(roh: string | unknown, teacherId: number | n
   conn.transaction(() => {
     id = insertPaket(
       { title: d.titel, fach: d.fach, schulart: d.schulart, klasse: d.klasse, thema: d.thema, skill_ids: d.faehigkeiten, schwierigkeit: d.schwierigkeit, dauer_minuten: d.dauer_minuten, ziel: d.ziel },
-      "import",
+      o.quelle ?? "import",
       teacherId,
+      o.kiCallId ?? null,
     );
     d.schritte.forEach((s, i) => insertSchritt(id, i, s));
   })();

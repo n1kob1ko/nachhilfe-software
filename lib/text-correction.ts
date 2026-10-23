@@ -15,7 +15,8 @@ import { correctThoroughly, englishText, estimateTokensThorough, thoroughVersion
 import { costOf, FUNCTIONS, routeFor, type AIFunction } from "./ai/config";
 import { acceptProblem, flagItems, notApplicable, setAside } from "./text-correction-checks";
 import { PROVIDER_LABEL } from "./ai/providers";
-import { aiEnabled, breakerState, budgetUsedUp } from "./ai/router";
+import { aiEnabled, breakerState, budgetUsedUp, schuelerGestoppt } from "./ai/router";
+import { grenzeErreichtText } from "./ai/schueler-kosten";
 import { db } from "./db";
 import { skillsForPrompt } from "./lehrplan";
 import { getSkill, getStudent } from "./repo";
@@ -126,12 +127,13 @@ export function retryKind(c: CorrectionRow, now = Date.now()): RetryKind | null 
 }
 
 /**
- * Why nothing should be sent to the KI right now: not set up, the month's budget used up, or paused after outages.
- * Checked before a run is claimed, so a refused start sends nothing and leaves no row in the cost log.
+ * Why nothing should be sent to the KI right now: not set up, the month's budget or the student's limit used up, or
+ * paused after outages. Checked before a run is claimed, so a refused start sends nothing and leaves no row in the cost log.
  */
-function sendBlocked(fn: AIFunction): string | null {
+function sendBlocked(fn: AIFunction, studentId: number | null | undefined): string | null {
   if (!aiEnabled(fn)) return "Die KI ist nicht eingerichtet. Du kannst den Text selbst korrigieren.";
   if (budgetUsedUp(fn)) return "Das KI-Budget für diesen Monat ist aufgebraucht. Es wurde nichts an die KI gesendet.";
+  if (studentId != null && schuelerGestoppt(fn, studentId)) return `${grenzeErreichtText()} Du kannst den Text selbst korrigieren.`;
   if (breakerState().paused) return "Die KI war zuletzt mehrmals nicht erreichbar und macht ein paar Minuten Pause. Es wurde nichts gesendet; bitte später nochmal versuchen.";
   return null;
 }
@@ -290,7 +292,7 @@ export function startAICorrection(
   const state = aiState(c);
   if (state === "fertig" || state === "laeuft") return { ok: true, correctionId: c.id, reused: true };
   const method = o.method ? methodOf(o.method) : defaultMethod();
-  const blocked = sendBlocked(method === "gruendlich" ? "textanalyse" : "textkorrektur");
+  const blocked = sendBlocked(method === "gruendlich" ? "textanalyse" : "textkorrektur", text.student_id);
   if (blocked) return { ok: false, error: blocked };
   const now = iso();
   const claimed = db()
@@ -326,7 +328,7 @@ export function startThoroughRecheck(correctionId: number, teacherId: number, o:
   if (!c) return { ok: false, error: "Korrektur nicht gefunden." };
   if (c.words > AI_MAX_WORDS || c.words < AI_MIN_WORDS) return { ok: false, error: "Diese Fassung kann die KI nicht korrigieren (Länge)." };
   if (aiState(c) === "laeuft" || verifyState(c) === "laeuft") return { ok: true, correctionId, reused: true };
-  const blocked = sendBlocked("textanalyse");
+  const blocked = sendBlocked("textanalyse", getText(c.text_id)?.student_id);
   if (blocked) return { ok: false, error: blocked };
   const conn = db();
   const now = iso();
@@ -360,7 +362,7 @@ export function retryAICorrection(correctionId: number, teacherId: number, o: { 
   if (aiState(c) === "laeuft" || verifyState(c) === "laeuft") return { ok: true, correctionId, reused: true };
   const kind = retryKind(c);
   if (!kind) return { ok: false, error: "Hier ist nichts fehlgeschlagen, das sich wiederholen lässt." };
-  const blocked = sendBlocked(kind === "pruefung" ? "textpruefung" : c.method === "gruendlich" ? "textanalyse" : "textkorrektur");
+  const blocked = sendBlocked(kind === "pruefung" ? "textpruefung" : c.method === "gruendlich" ? "textanalyse" : "textkorrektur", getText(c.text_id)?.student_id);
   if (blocked) return { ok: false, error: blocked };
   const now = iso();
   const claimed =

@@ -446,7 +446,7 @@ CREATE TABLE IF NOT EXISTS app_settings (
   value TEXT NOT NULL
 );
 -- One row per KI request (lib/ai/router.ts): what it cost and how it went. No prompt, no answer, no
--- student name; teacher and unit only as ids for the cost statistics.
+-- student name; teacher, unit and student (column added in migrate) only as ids for the cost statistics.
 CREATE TABLE IF NOT EXISTS ai_calls (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   created_at TEXT NOT NULL,
@@ -801,6 +801,40 @@ CREATE TABLE IF NOT EXISTS einheit_vorbereitung (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (student_id, datum)
 );
+-- „Anpassen“ im Cockpit (lib/anpassen.ts): Vorschläge der KI für den Schüler dieser Einheit zu einem Schritt des
+-- Lernpakets. Gelten nur für diese Einheit; das Paket, Lernstand, Diagnose und Einschätzung bleiben unberührt.
+-- art = beispiel | leichter | schwerer | bei_fehler; status = vorschlag (ungeprüft) | uebernommen | verworfen.
+-- bezug: JSON, die Tatsachen der App, auf die sich der Vorschlag stützt (von der App geschrieben, nie von der KI).
+CREATE TABLE IF NOT EXISTS einheit_anpassungen (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  paket_id INTEGER REFERENCES lernpakete(id) ON DELETE SET NULL,
+  schritt_id INTEGER NOT NULL,
+  art TEXT NOT NULL,
+  titel TEXT NOT NULL DEFAULT '',
+  text TEXT NOT NULL,
+  antwort TEXT NOT NULL DEFAULT '',
+  bezug TEXT NOT NULL DEFAULT '[]',
+  status TEXT NOT NULL DEFAULT 'vorschlag',
+  call_id INTEGER REFERENCES ai_calls(id) ON DELETE SET NULL,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  decided_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_einheit_anpassungen ON einheit_anpassungen(unit_id, status);
+-- Gespeicherte Antworten der KI (lib/ai/speicher.ts): dieselbe Anfrage (Funktion, Anbieter, Modell, vollständiger
+-- Prompt, Schüler) wird bis expires_at aus der Datenbank beantwortet, auch nach einem Neustart. key = sha256 davon.
+-- created_at, expires_at: Millisekunden. Ein gelöschter Schüler nimmt seine gespeicherten Antworten mit.
+CREATE TABLE IF NOT EXISTS ai_cache (
+  key TEXT PRIMARY KEY,
+  fn TEXT NOT NULL,
+  model TEXT NOT NULL,
+  student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+  data TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ai_cache_expires ON ai_cache(expires_at);
 -- Fächer (lib/faecher.ts): the one list every subject picker offers. Starts with SCHULFAECHER; the Verwaltung
 -- adds own subjects and deactivates unused ones. Never renamed or deleted: lessons, tests and profiles keep
 -- the subject as plain text, so an old value that is not in this list stays valid.
@@ -1036,6 +1070,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // Präsentationen (lib/praesentationen.ts, 2026-10-22): die Präsentation eines Lernpakets; ihre Folien
   // passen zur Spalte `folie` der Schritte
   ["lernpakete", "praesentation_id", "INTEGER REFERENCES praesentationen(id) ON DELETE SET NULL"],
+  // Lernpaket mit KI entwerfen (lib/lernpaket-ki.ts, 2026-10-23): die Anfrage im Protokoll (ai_calls.id), für Tokens und Kosten
+  ["lernpakete", "ki_call_id", "INTEGER"],
   // Archiv (lib/archiv.ts, 2026-10-22): archiviert statt gelöscht. Die Zeile bleibt mit Versuchen, Dokumentation und
   // Lernstand; sie fehlt nur in Listen, Auswahl und Suche, und Schüler sehen sie nicht mehr als offen. null = nicht archiviert.
   // Eine Textarbeit (auch Bildgeschichte und Schreibauftrag) wird an `texts` archiviert, die Zusatztabellen hängen daran.
@@ -1048,6 +1084,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // Hausübung mit Übung (2026-10-22): ist die verknüpfte Übung fertig, gilt die Hausübung als erledigt
   // (beim Lesen berechnet, lib/zu-erledigen.ts); das Häkchen von Hand bleibt daneben bestehen
   ["homework", "assignment_id", "INTEGER REFERENCES assignments(id) ON DELETE SET NULL"],
+  // KI-Grenze je Schüler und Monat (lib/ai/schueler-kosten.ts, 2026-10-23): um welchen Schüler es im Aufruf ging
+  // (meta.studentId, sonst der Schüler der Einheit); null = keiner (Lesetext, Druckblatt, Verbindungstest …)
+  ["ai_calls", "student_id", "INTEGER REFERENCES students(id) ON DELETE SET NULL"],
 ];
 
 /** Teachers to start with; more can be added later. */
@@ -1136,6 +1175,7 @@ function migrate(conn: Database.Database) {
       );
     }
     conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_lessons_assignment ON lessons(assignment_id) WHERE assignment_id IS NOT NULL");
+    conn.exec("CREATE INDEX IF NOT EXISTS idx_ai_calls_student ON ai_calls(student_id, created_at)");
     // Old rows only had a Schulstufe: derive school type and class from it.
     const legacy = conn.prepare("SELECT id, school_type, grade FROM students WHERE klasse IS NULL").all() as { id: number; school_type: string; grade: number }[];
     const fix = conn.prepare("UPDATE students SET school_type = ?, klasse = ? WHERE id = ?");

@@ -5,7 +5,8 @@ import { Info } from "@/components/Info";
 import { PageHeader } from "@/components/ui";
 import { briefingAnfrage } from "@/lib/ai/briefing";
 import { costOf, routeFor } from "@/lib/ai/config";
-import { aiEnabled, budgetUsedUp } from "@/lib/ai/router";
+import { aiEnabled, budgetUsedUp, schuelerGestoppt } from "@/lib/ai/router";
+import { grenzeErreichtText } from "@/lib/ai/schueler-kosten";
 import { requireTeacher } from "@/lib/auth";
 import { briefingDaten, einfachesBriefing, gespeichertesBriefing, schuelerZeile, uebungLinks } from "@/lib/briefing";
 
@@ -35,7 +36,9 @@ export default async function BriefingPage({ params, searchParams }: { params: P
     ? "Die KI ist aus oder für den gewählten Anbieter ist kein Schlüssel hinterlegt (Mehr › KI-Kosten)."
     : budgetUsedUp("briefing")
       ? "Das KI-Budget für diesen Monat ist aufgebraucht."
-      : null;
+      : schuelerGestoppt("briefing", d.student.id)
+        ? grenzeErreichtText()
+        : null;
   const anfrage = briefingAnfrage(d);
 
   return (

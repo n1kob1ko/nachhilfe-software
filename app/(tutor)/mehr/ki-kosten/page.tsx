@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AIQualityTest } from "@/components/AIQualityTest";
 import { AISelfTest } from "@/components/AISelfTest";
 import { AITextTest } from "@/components/AITextTest";
@@ -5,7 +6,8 @@ import { KiAnbieterWahl, type AnbieterOption } from "@/components/ai/KiAnbieterW
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, SectionTitle } from "@/components/ui";
 import { AREA_LABEL, FUNCTIONS, aiSwitchedOff, budget, mainProvider, poolOf, priceFor, routeFor, type AIFunction, type Area, type BudgetPool } from "@/lib/ai/config";
-import { budgetState, costByDay, costByFunction, costByMonth, costByTeacher, recentCalls, type Sum } from "@/lib/ai/log";
+import { budgetState, costByDay, costByFunction, costByMonth, costByStudent, costByTeacher, recentCalls, type Sum } from "@/lib/ai/log";
+import { schuelerGrenze, schuelerStand } from "@/lib/ai/schueler-kosten";
 import { KI_MODUS_LABEL, kiModus } from "@/lib/ai/modus";
 import { PROVIDER_LABEL, providerReady } from "@/lib/ai/providers";
 import { aiEnabled, breakerState } from "@/lib/ai/router";
@@ -68,6 +70,8 @@ export default async function AICostPage() {
   const days = costByDay(14, f);
   const months = costByMonth(6, f);
   const teachers = teacher.is_admin ? costByTeacher(month) : [];
+  const students = costByStudent(month, f);
+  const grenze = schuelerGrenze();
   const calls = recentCalls(25, f);
 
   return (
@@ -223,6 +227,60 @@ export default async function AICostPage() {
           <SumTable rows={teachers} first="Lehrer" />
         </section>
       )}
+
+      <section className="mb-10" data-testid="pro-schueler">
+        <SectionTitle>
+          <span>
+            Pro Schüler, dieser Monat
+            <Info label="Grenze je Schüler">
+              Zusätzlich zum Monatsbudget gilt je Schüler eine Grenze: ab {eur(grenze.warnEur)} sehen Lehrer im Cockpit und im Schülerprofil einen Hinweis (AI_STUDENT_WARN_EUR), ab {eur(grenze.stopEur)} lehnt jede
+              KI-Funktion für diesen Schüler bis zum Monatsende ab (AI_STUDENT_LIMIT_EUR). Die App arbeitet dann ohne KI weiter. Gezählt werden alle Aufrufe zu diesem Schüler, von jedem Lehrer; Kurs 1&nbsp;€ ={" "}
+              {grenze.usdPerEur.toLocaleString("de-AT")}&nbsp;$ (AI_USD_PER_EUR).
+            </Info>
+          </span>
+        </SectionTitle>
+        {students.length ? (
+          <div className="panel overflow-x-auto">
+            <table className="w-full min-w-[560px] text-left text-[14px]">
+              <thead>
+                <tr className="border-b border-line text-[12px] text-ink-3">
+                  <th className="px-5 py-3 font-semibold">Schüler</th>
+                  <th className="px-3 py-3 text-right font-semibold">API-Aufrufe</th>
+                  <th className="px-3 py-3 text-right font-semibold">aus Speicher</th>
+                  <th className="px-3 py-3 text-right font-semibold">Kosten</th>
+                  <th className="px-5 py-3 font-semibold">Grenze ({eur(grenze.stopEur)})</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {students.map((r) => {
+                  const s = schuelerStand(r.id);
+                  return (
+                    <tr key={r.id}>
+                      <td className="px-5 py-2.5">
+                        <Link href={`/schueler/${r.id}`} className="hover:text-accent">
+                          {r.key}
+                        </Link>
+                      </td>
+                      <td className="num px-3 py-2.5 text-right">{n(r.paid + r.errors)}</td>
+                      <td className="num px-3 py-2.5 text-right">{n(r.reused)}</td>
+                      <td className="num px-3 py-2.5 text-right font-semibold">
+                        {eur(r.usd / grenze.usdPerEur)}
+                        <span className="block text-[12px] font-normal text-ink-3">{usd(r.usd)}</span>
+                      </td>
+                      <td className="px-5 py-2.5">
+                        {s.stufe === "aus" ? <Pill tone="red">Gestoppt</Pill> : s.stufe === "warnung" ? <Pill tone="amber">Über {eur(grenze.warnEur)}</Pill> : <span className="text-ink-3">ok</span>}
+                        <span className="num ml-2 text-[13px] text-ink-2">{eur(s.eur)} gesamt</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-[14px] text-ink-2">In diesem Monat noch keine KI-Aufrufe zu einem Schüler.</p>
+        )}
+      </section>
 
       <section className="mb-10">
         <SectionTitle>Pro Tag, letzte 14 Tage</SectionTitle>

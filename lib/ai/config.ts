@@ -83,6 +83,7 @@ export type AIFunction =
   | "analyse"
   | "tiefenanalyse"
   | "notiz"
+  | "anpassen"
   | "material"
   | "stundenplan"
   | "stoffzettel"
@@ -95,6 +96,7 @@ export type AIFunction =
   | "textpruefung"
   | "lesen"
   | "briefing"
+  | "lernpaket"
   | "verbindungstest";
 
 export type FunctionSpec = {
@@ -137,6 +139,8 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   analyse: { label: "Schüler-Einschätzung", area: "ANALYSIS", tier: "standard", maxTokens: 3_000, timeoutMs: 45_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 10 * MIN, cache: "aus" },
   tiefenanalyse: { label: "Tiefenanalyse", area: "DEEP", tier: "deep", maxTokens: 8_000, timeoutMs: 120_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 10 * MIN, cache: "aus" },
   notiz: { label: "Notiz für Eltern/Schüler", area: "ANALYSIS", tier: "standard", maxTokens: 1_000, timeoutMs: 30_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
+  // „Anpassen“ im Cockpit (lib/anpassen.ts): only on the teacher's click, about 3 cents; suggestions for this unit only
+  anpassen: { label: "Anpassen im Cockpit", area: "EXERCISE", tier: "standard", maxTokens: 3_000, timeoutMs: 60_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 60 * MIN, cache: "aus" },
   material: { label: "Material erkennen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // Stundenplan-Fotos (lib/planung/stundenplan-foto.ts): only on the admin's click, after the tick that first names
   // may go to the KI; the answer holds first names, so it is never kept for reuse
@@ -168,6 +172,9 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   lesen: { label: "Leseverständnis erstellen", area: "EXERCISE", tier: "standard", maxTokens: 24_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   // Tagesbriefing (lib/briefing.ts): only on the teacher's click, saved per student and day, so nothing is reused here
   briefing: { label: "Tagesbriefing", area: "ANALYSIS", tier: "standard", maxTokens: 8_000, timeoutMs: 120_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
+  // Lernpaket mit KI entwerfen (lib/lernpaket-ki.ts): only on the teacher's click, for a topic, never with student data.
+  // One long answer (all steps with their tasks); thinking on, because correctness beats quantity. Each click is a new draft
+  lernpaket: { label: "Lernpaket entwerfen", area: "EXERCISE", tier: "standard", maxTokens: 32_000, timeoutMs: 300_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 0, cache: "aus", schemaInPrompt: true },
   // KI-Selbsttest on Mehr › KI-Kosten: one tiny request before the real test requests
   verbindungstest: { label: "Verbindungstest", area: "ANALYSIS", tier: "fast", maxTokens: 50, timeoutMs: 20_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
 };

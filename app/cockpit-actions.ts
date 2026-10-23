@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { SendState } from "@/app/device-actions";
+import { entscheide, erstelleAnpassungen } from "@/lib/anpassen";
 import { requireTeacher } from "@/lib/auth";
 import { bereiteVor, markiereSchritt, sendeAusGenerator, sendeSchritt, setzeNotiz, verschiebeSchritt, waehleFaehigkeit, waehlePaket, zeigeSchritt, type Markierung } from "@/lib/cockpit";
 import { noteActivity } from "@/lib/learning";
@@ -101,4 +102,22 @@ export async function vorbereitenAction(studentId: number, form: FormData) {
   revalidatePath(`/schueler/${studentId}/vorbereiten`);
   if ("fehler" in out) redirect(`/schueler/${studentId}/vorbereiten?fehler=${encodeURIComponent(out.fehler)}`);
   redirect(id > 0 ? "/" : `/schueler/${studentId}/vorbereiten`);
+}
+
+export type AnpassenState = { ok: boolean; meldung: string } | null;
+
+/** „Anpassen“: Vorschläge der KI für den Schüler dieser Einheit, nur auf Klick. Ungeprüft, bis der Lehrer entscheidet. */
+export async function anpassenAction(unitId: number, _prev: AnpassenState, _form?: FormData): Promise<AnpassenState> {
+  const { t } = await laufendeEinheit(unitId);
+  const out = await erstelleAnpassungen(unitId, t.id);
+  revalidatePath(`/einheiten/${unitId}`);
+  if (!out.ok) return { ok: false, meldung: out.error };
+  return { ok: true, meldung: `${out.anzahl} ${out.anzahl === 1 ? "Vorschlag" : "Vorschläge"} da. Bitte prüfen, bevor du sie verwendest.` };
+}
+
+/** Einen Vorschlag für diese Einheit übernehmen oder verwerfen; das Lernpaket bleibt, wie es ist. */
+export async function entscheideAnpassungAction(unitId: number, id: number, status: "uebernommen" | "verworfen") {
+  await laufendeEinheit(unitId);
+  entscheide(unitId, id, status === "uebernommen" ? "uebernommen" : "verworfen");
+  zurueck(unitId);
 }

@@ -15,6 +15,8 @@ export type CallRow = {
   model: string;
   teacherId: number | null;
   unitId: number | null;
+  /** the student the request is about (lib/ai/schueler-kosten.ts); null for requests about no one */
+  studentId?: number | null;
   trigger: string;
   input: number;
   output: number;
@@ -36,8 +38,8 @@ export function logCall(r: CallRow): number {
   const at = r.at ?? Date.now();
   const res = db()
     .prepare(
-      `INSERT INTO ai_calls (created_at, fn, tier, provider, model, teacher_id, unit_id, trigger, input_tokens, output_tokens, cache_write_tokens, cache_read_tokens, thinking_tokens, duration_ms, cost_usd, status, error, test)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO ai_calls (created_at, fn, tier, provider, model, teacher_id, unit_id, student_id, trigger, input_tokens, output_tokens, cache_write_tokens, cache_read_tokens, thinking_tokens, duration_ms, cost_usd, status, error, test)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       new Date(at).toISOString(),
@@ -47,6 +49,7 @@ export function logCall(r: CallRow): number {
       r.model,
       r.teacherId,
       r.unitId,
+      r.studentId ?? null,
       r.trigger,
       Math.round(r.input),
       Math.round(r.output),
@@ -124,6 +127,16 @@ export function costByTeacher(month: string, f: Filter = {}) {
        ${where(f, "substr(c.created_at, 1, 7) = ?", "c.")} GROUP BY key ORDER BY usd DESC`,
     )
     .all(month) as (Sum & { key: string })[];
+}
+
+/** Per student this month (requests about no student are left out); id for the limit per student. */
+export function costByStudent(month: string, f: Filter = {}) {
+  return db()
+    .prepare(
+      `SELECT c.student_id AS id, COALESCE(s.name, 'gelöschter Schüler') AS key, ${sum("c.")} FROM ai_calls c LEFT JOIN students s ON s.id = c.student_id
+       ${where(f, "c.student_id IS NOT NULL AND substr(c.created_at, 1, 7) = ?", "c.")} GROUP BY c.student_id ORDER BY usd DESC`,
+    )
+    .all(month) as (Sum & { key: string; id: number })[];
 }
 
 export function costByFunction(month: string, f: Filter = {}) {
