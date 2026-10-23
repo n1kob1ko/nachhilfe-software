@@ -16,7 +16,7 @@ import { datumLabel, tagAddieren, wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
 import { schuelerWorte } from "@/lib/schueler-notiz";
 import { runningUnitForStudent } from "@/lib/units";
-import { autoWahl, kiVorgabe, kommendeTermine, ohnePaketMarkiert, schuelerBasis, VORAUS_TAGE } from "@/lib/vorbereitung-auto";
+import { autoWahl, kiVorgabe, kommendeTermine, ohnePaketMarkiert, schuelerBasis, VORAUS_TAGE, wuenscheFuer } from "@/lib/vorbereitung-auto";
 
 export const metadata = { title: "Einheit vorbereiten" };
 
@@ -39,8 +39,11 @@ export default async function VorbereitenPage({ params, searchParams }: { params
   const p = v ? getLernpaket(v.paket_id) : null;
   const entfernt = !p && ohnePaketMarkiert(student.id, datum);
   // Fach und Dauer aus dem Termin des Tages, wenn es einen gibt
-  const termin = kommendeTermine(teacher.id).find((x) => x.studentId === student.id && x.datum === datum);
-  const auto = p || entfernt ? null : autoWahl(schuelerBasis(student, new Date()), { datum, fach: termin?.fach ?? "" });
+  const termine = kommendeTermine(teacher.id).filter((x) => x.studentId === student.id);
+  const termin = termine.find((x) => x.datum === datum);
+  // was der Schüler für nächstes Mal geschrieben hat, gilt nur für seine nächste Einheit
+  const naechste = !termine.length || termine[0].datum === datum;
+  const auto = p || entfernt ? null : autoWahl(schuelerBasis(student, new Date()), { datum, fach: termin?.fach ?? "", wuensche: naechste ? wuenscheFuer(student.id, null) : undefined });
   const fehlt = auto?.art === "kein_paket" ? auto.signal : auto?.art === "paket" ? auto.luecke : null;
   const ki = fehlt ? kiVorgabe(fehlt, student, { fach: termin?.fach ?? "", dauer: termin?.dauer || 50, gibtSkill: (x) => Boolean(repo.getSkill(x)) }) : null;
   const kosten = ki ? kostenSchaetzung().text : "";

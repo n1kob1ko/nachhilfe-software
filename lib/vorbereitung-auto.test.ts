@@ -27,13 +27,13 @@ const pruefung: Signal = { art: "pruefung", fach: "Deutsch", skill_ids: ["d.fael
 const schwaeche: Signal = { art: "lernstand", fach: "Deutsch", skill_ids: ["d.artikel"], stoff: [], thema: "Artikel bestimmen", warum: "Schwäche: Artikel bestimmen – Lernstand 40 %" };
 const letzte: Signal = { art: "letzte_einheit", fach: "Deutsch", skill_ids: [], stoff: ["Zeitformen"], thema: "Zeitformen", warum: "Letzte Einheit am 20.10.: Zeitformen" };
 
-test("ranking: Prüfung before Lernstand before Wunsch before the last unit, whatever order the signals come in", async () => {
+test("ranking: Prüfung before the student's wish before Lernstand before the last unit, whatever order the signals come in", async () => {
   const { waehleAutomatisch, wunschSignal } = await import("./vorbereitung-auto");
   const faelle = paket({ id: 1, title: "Die vier Fälle", skill_ids: ["d.faelle"] });
   const artikel = paket({ id: 2, title: "Artikel", skill_ids: ["d.artikel"] });
   const zeiten = paket({ id: 3, title: "Zeitformen im Überblick" });
-  const wunsch = wunschSignal({ text: "Wortarten", fach: "Deutsch" })!;
-  const wortarten = paket({ id: 4, title: "Wortarten kennen" });
+  const wunsch = wunschSignal({ text: "Ich verstehe die Wortarten nicht.", name: "Lena", skill_ids: ["d.wortarten"], fach: "Deutsch", thema: "Wortarten" })!;
+  const wortarten = paket({ id: 4, title: "Wortarten kennen", skill_ids: ["d.wortarten"] });
   const e = (pakete: Lernpaket[]) => waehleAutomatisch({ pakete, student: vs4, fach: "Deutsch", signale: [letzte, wunsch, schwaeche, pruefung], verwandt: gleich });
   const alle = [zeiten, wortarten, artikel, faelle];
   let w = e(alle);
@@ -42,11 +42,11 @@ test("ranking: Prüfung before Lernstand before Wunsch before the last unit, wha
   assert.equal(w.art === "paket" && w.warum, "Schularbeit am 4.11. – Die vier Fälle");
   assert.equal(w.art === "paket" && w.luecke, null);
   w = e(alle.filter((p) => p !== faelle));
-  assert.equal(w.art === "paket" && w.paket.id, 2, "then the weak skill");
+  assert.equal(w.art === "paket" && w.paket.id, 4, "then the student's wish, above the app's recommendations");
+  assert.equal(w.art === "paket" && w.warum, "Lena schreibt: „Ich verstehe die Wortarten nicht.“", "in the student's own words");
   assert.equal(w.art === "paket" && w.luecke?.art, "pruefung", "and it says that the Prüfung has no package");
-  w = e([zeiten, wortarten]);
-  assert.equal(w.art === "paket" && w.paket.id, 4, "then the student's wish");
-  assert.equal(w.art === "paket" && w.warum, "Wunsch des Schülers: Wortarten");
+  w = e([zeiten, artikel]);
+  assert.equal(w.art === "paket" && w.paket.id, 2, "then the weak skill");
   w = e([zeiten]);
   assert.equal(w.art === "paket" && w.paket.id, 3, "then the last unit's topic");
   assert.equal(w.art === "paket" && w.unsicher, true, "found by a word only: marked as unsure");
@@ -300,14 +300,73 @@ test("coming units: published slots of the next 7 days, with the teacher's choic
   assert.equal(s.kiAufrufe(), 0, "the list never asks the KI");
 });
 
-test("the Wunsch des Schülers hook: a wish is a signal once the caller passes it", async () => {
+test("a wish that names no skill changes nothing: no signal, the same choice as without it", async () => {
+  const { waehleAutomatisch, wunschSignal } = await import("./vorbereitung-auto");
+  const ohne = { text: "Bitte mehr Pausen", name: "Lena", skill_ids: [] };
+  assert.equal(wunschSignal(ohne), null);
+  assert.equal(wunschSignal({ ...ohne, text: "   ", skill_ids: ["d.faelle"] }), null, "nothing written");
+  const zeitformen = paket({ id: 1, title: "Pausen und Zeitformen", skill_ids: ["d.zeiten"] });
+  const artikel = paket({ id: 2, title: "Artikel", skill_ids: ["d.artikel"] });
+  const e = (signale: Signal[]) => waehleAutomatisch({ pakete: [zeitformen, artikel], student: vs4, fach: "Deutsch", signale, verwandt: gleich });
+  const signale = [schwaeche, letzte];
+  // the caller drops a wish without skills before it becomes a signal, and the words are never matched as Stichwort
+  const mitWunsch = [...signale, ...[ohne].flatMap((w) => wunschSignal(w) ?? [])];
+  assert.deepEqual(e(mitWunsch), e(signale));
+  assert.equal(e([]).art, "ohne_signal");
+});
+
+test("„Für nächstes Mal“ from the student app: preselected above Lernstand, quoted with the first name, only for the next unit, never to the KI", async () => {
   const s = await setup();
-  const sid = s.schueler("Wim Probe");
-  const p = s.paket({ titel: "Artikel richtig setzen", skills: ["deutsch.grammatik.artikel"] });
+  const n = await import("./schueler-notiz");
+  const sid = s.schueler("Lena Wunschtest");
+  const faelle = s.paket({ titel: "Die vier Fälle" });
+  const artikel = s.paket({ titel: "Artikel", skills: ["deutsch.grammatik.artikel"] });
+  // a weak skill from the Lernstand: wrong answers on Artikel
+  const ws = s.repo.createWorksheet(
+    { title: "Artikel", subject: "Deutsch", grade: 4, school_type: "Volksschule", klasse: 4, topic: "Artikel", difficulty: "mittel", task_type: "free", kind: "uebung", source: "manuell", skill_ids: ["deutsch.grammatik.artikel"] },
+    [{ type: "free", skillId: "deutsch.grammatik.artikel", difficulty: "mittel", prompt: "Welcher Artikel passt zu „Haus“?", data: {}, answer: { accepted: ["das"], mode: "text" }, solution: "", hints: [], errorMap: [] }],
+  );
+  const asg = s.repo.assignWorksheet(ws, sid, "");
+  const taskId = s.repo.listTasks(ws)[0].id;
+  for (let i = 1; i <= 3; i++)
+    s.db().prepare("INSERT INTO attempts (assignment_id, task_id, student_id, skill_id, attempt_no, answer, correct, final) VALUES (?, ?, ?, ?, ?, 'der', 0, 1)").run(asg, taskId, sid, "deutsch.grammatik.artikel", i);
   s.platz(sid, 1);
-  assert.equal(s.auto.naechsteEinheiten(s.teacher.id)[0].wahl.art, "ohne_signal");
-  const mitWunsch = s.auto.naechsteEinheiten(s.teacher.id, new Date(), { wuensche: () => [{ text: "Artikel", fach: "Deutsch" }] })[0];
-  assert.equal(mitWunsch.wahl.art === "paket" && mitWunsch.wahl.paket.id, p.id);
-  assert.equal(mitWunsch.wahl.art === "paket" && mitWunsch.wahl.warum, "Wunsch des Schülers: Artikel");
+  s.platz(sid, 3);
+  let liste = s.auto.naechsteEinheiten(s.teacher.id);
+  assert.equal(liste[0].wahl.art === "paket" && liste[0].wahl.paket.id, artikel.id, "without a wish: the weak skill");
+
+  // a wish that names no skill changes nothing
+  assert.ok("ok" in n.speichereWunsch(sid, "Bitte wieder mit dem Tablet arbeiten"));
+  liste = s.auto.naechsteEinheiten(s.teacher.id);
+  assert.equal(liste[0].wahl.art === "paket" && liste[0].wahl.paket.id, artikel.id);
+  assert.ok(liste[0].wahl.art === "paket" && !liste[0].wahl.warum.includes("schreibt"));
+
+  const satz = "Wir haben die vier Fälle begonnen. Den dritten und vierten Fall verstehe ich nicht.";
+  assert.ok("ok" in n.speichereWunsch(sid, satz));
+  liste = s.auto.naechsteEinheiten(s.teacher.id);
+  assert.equal(liste[0].wahl.art === "paket" && liste[0].wahl.paket.id, faelle.id, "the wish wins over the weak skill");
+  assert.equal(liste[0].wahl.art === "paket" && liste[0].wahl.warum, `Lena schreibt: „${satz}“`);
+  assert.equal(liste[1].wahl.art === "paket" && liste[1].wahl.paket.id, artikel.id, "the unit after next: the wish was for the next one only");
+
+  // a Prüfung still comes first
+  s.schularbeit(sid, 8, ["Artikel"], ["deutsch.grammatik.artikel"]);
+  assert.equal(s.auto.naechsteEinheiten(s.teacher.id)[0].wahl.art === "paket" && (s.auto.naechsteEinheiten(s.teacher.id)[0].wahl as { paket: Lernpaket }).paket.id, artikel.id);
+  s.db().prepare("DELETE FROM tests WHERE student_id = ?").run(sid);
+
+  // in the cockpit: the wish written before the unit
+  const unit = s.units.startUnit(s.teacher.id, sid, { subject: "Deutsch", at: Date.now() + 1000 }).unit;
+  const d = s.c.cockpit(unit.id);
+  assert.equal(d.paket?.id, faelle.id);
+  assert.equal(d.stand.automatisch?.warum, `Lena schreibt: „${satz}“`);
+  s.units.finishUnit(unit.id, "abgebrochen");
+
+  // no package for the wish: „Kein Paket“ names the skill; the KI form gets the skill, never the student's words
+  s.db().prepare("UPDATE lernpakete SET status = 'entwurf' WHERE id = ?").run(faelle.id);
+  const kein = s.auto.naechsteEinheiten(s.teacher.id)[0];
+  assert.equal(kein.wahl.art === "paket" && kein.wahl.luecke?.art, "wunsch");
+  assert.ok(kein.ki && kein.ki.skillId === "deutsch.grammatik.faelle");
+  assert.ok(!s.auto.kiHref(kein.ki!).includes("verstehe") && !s.auto.kiHref(kein.ki!).includes("Lena"), "no words of the student, no name");
+  assert.equal(s.kiAufrufe(), 0, "nothing went to the KI");
+  assert.equal((s.db().prepare("SELECT COUNT(*) AS n FROM vorbereitung_ohne_paket").get() as { n: number }).n, 0, "nothing stored");
   s.router.setTransport(null);
 });
