@@ -750,6 +750,32 @@ CREATE TABLE IF NOT EXISTS lernpaket_schritte (
 );
 CREATE INDEX IF NOT EXISTS idx_lernpaket_schritte ON lernpaket_schritte(paket_id, position);
 CREATE INDEX IF NOT EXISTS idx_lernpakete_status ON lernpakete(status, fach);
+-- Präsentationen (lib/praesentationen.ts): an uploaded HTML presentation with a Vortragstext per slide. The files
+-- lie in uploads/praesentationen/<token>/ and are served only on PRESENTATION_ORIGIN (docs/praesentation-format.md).
+CREATE TABLE IF NOT EXISTS praesentationen (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  fach TEXT NOT NULL,
+  schulart TEXT NOT NULL DEFAULT '',
+  klasse INTEGER,
+  schulstufe INTEGER,
+  thema TEXT NOT NULL DEFAULT '',
+  skill_ids TEXT NOT NULL DEFAULT '[]',     -- JSON: skills(id)
+  schwierigkeit TEXT NOT NULL DEFAULT 'mittel',
+  beschreibung TEXT NOT NULL DEFAULT '',
+  token TEXT NOT NULL UNIQUE,               -- random: the folder and the address of the files
+  start_pfad TEXT NOT NULL,                 -- the page that opens first, relative to the folder
+  dateien TEXT NOT NULL DEFAULT '[]',       -- JSON [{pfad, groesse}]: the only files that are served
+  groesse INTEGER NOT NULL DEFAULT 0,
+  datei_name TEXT NOT NULL DEFAULT '',      -- name of the uploaded file
+  extern TEXT NOT NULL DEFAULT '[]',        -- JSON: hosts the deck tries to load from (blocked)
+  notizen TEXT NOT NULL DEFAULT '{}',       -- JSON {folie: Vortragstext}; teacher pages only
+  status TEXT NOT NULL DEFAULT 'aktiv',     -- aktiv | archiviert
+  created_by INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_praesentationen_status ON praesentationen(status, fach);
 -- Cockpit of a running Einheit (lib/cockpit.ts): the Lernpaket (or, without one, the skill) of this unit and
 -- how far it got. The package itself never changes: order, done and skipped steps are this unit's only.
 -- reihenfolge, erledigt, uebersprungen: JSON step ids; notizen: JSON {step id: text}; gesendet: JSON {step id: worksheet ids}.
@@ -1002,6 +1028,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // Zwei Schüler gleichzeitig (D26) am Tablet (2026-10-20): welche laufende Einheit dieses Tablet zeigt, wenn beim
   // Lehrer zwei laufen. Gilt nur, solange diese Einheit läuft (lib/devices.ts `deviceUnit`); null = noch nicht gewählt.
   ["student_devices", "unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
+  // Präsentationen (lib/praesentationen.ts, 2026-10-22): die Präsentation eines Lernpakets; ihre Folien
+  // passen zur Spalte `folie` der Schritte
+  ["lernpakete", "praesentation_id", "INTEGER REFERENCES praesentationen(id) ON DELETE SET NULL"],
   // Archiv (lib/archiv.ts, 2026-10-22): archiviert statt gelöscht. Die Zeile bleibt mit Versuchen, Dokumentation und
   // Lernstand; sie fehlt nur in Listen, Auswahl und Suche, und Schüler sehen sie nicht mehr als offen. null = nicht archiviert.
   // Eine Textarbeit (auch Bildgeschichte und Schreibauftrag) wird an `texts` archiviert, die Zusatztabellen hängen daran.

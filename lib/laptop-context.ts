@@ -4,11 +4,13 @@
  * session was confirmed for, and only while that unit runs.
  */
 import { cookies } from "next/headers";
+import { aufPraesentationsAdresse } from "./praesentation-anfrage";
 import { LAPTOP_COOKIE, laptopForToken, laptopState, type LaptopView } from "./laptop";
 import * as repo from "./repo";
 import { getUnit, type UnitView } from "./units";
 
 export async function currentLaptop(): Promise<LaptopView | null> {
+  if (await aufPraesentationsAdresse()) return null;
   return laptopForToken((await cookies()).get(LAPTOP_COOKIE)?.value);
 }
 

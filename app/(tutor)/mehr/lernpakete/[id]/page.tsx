@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Archive, ArrowDown, ArrowUp, CheckCircle2, Download, Pencil, Presentation, RotateCcw, ShieldAlert, ShieldCheck, Trash2 } from "lucide-react";
+import { Archive, ArrowDown, ArrowUp, CheckCircle2, Download, MonitorPlay, Pencil, Presentation, RotateCcw, ShieldAlert, ShieldCheck, Trash2 } from "lucide-react";
 import {
   addAufgabeAction,
   addSchrittAction,
@@ -14,6 +14,7 @@ import {
   updateSchrittAction,
   zurueckZuEntwurfAction,
 } from "@/app/lernpaket-actions";
+import { verknuepfeLernpaketAction } from "@/app/praesentation-actions";
 import { StatusPill } from "@/components/LernpaketStatus";
 import { SkillPicker } from "@/components/SkillPicker";
 import { TaskBody } from "@/components/TaskPreview";
@@ -22,6 +23,7 @@ import { requireTeacher } from "@/lib/auth";
 import { DIFFICULTIES, TASK_TYPES } from "@/lib/curriculum";
 import { searchLibrary } from "@/lib/library";
 import { getLernpaket, GRENZEN, offeneHinweise, PAKET_QUELLE, SCHRITT_ARTEN, ungeprueft, type LernpaketSchritt } from "@/lib/lernpakete";
+import { getPraesentation, listPraesentationen } from "@/lib/praesentationen";
 import * as repo from "@/lib/repo";
 import { fachVorschlaege, klassenLabel, SCHOOL_TYPES } from "@/lib/school";
 
@@ -66,6 +68,10 @@ export default async function LernpaketPage({ params, searchParams }: { params: 
   // start minute of each step: the minutes add up to the total
   const start = p.schritte.reduce<number[]>((acc, s, i) => [...acc, i === 0 ? 0 : acc[i - 1] + p.schritte[i - 1].minuten], []);
   const diff = p.dauer_minuten - summe;
+  const praes = p.praesentation_id ? getPraesentation(p.praesentation_id) : null;
+  // to choose from: the presentations of the package's Fach first, the linked one even when archived
+  const praesAuswahl = bearbeiten ? [...listPraesentationen()].sort((a, b) => Number(b.fach === p.fach) - Number(a.fach === p.fach) || a.title.localeCompare(b.title, "de")) : [];
+  if (bearbeiten && praes && !praesAuswahl.some((x) => x.id === praes.id)) praesAuswahl.unshift(praes);
 
   const meldung = sp.importiert
     ? "Importiert. Lies die Schritte und Aufgaben durch, dann „Geprüft“."
@@ -209,6 +215,20 @@ export default async function LernpaketPage({ params, searchParams }: { params: 
         </section>
       )}
 
+      {praes && (
+        <section className="panel mb-8 flex max-w-[760px] flex-wrap items-center gap-3 px-5 py-4" aria-label="Präsentation">
+          <MonitorPlay size={20} className="shrink-0 text-accent" aria-hidden />
+          <p className="min-w-0 flex-1 text-[15px]">
+            <span className="text-ink-3">Präsentation: </span>
+            <span className="font-semibold">{praes.title}</span>
+            {praes.status === "archiviert" && <span className="text-ink-3"> (archiviert)</span>}
+          </p>
+          <Link href={`/mehr/praesentationen/${praes.id}`} className="btn btn-primary">
+            Vortrag öffnen
+          </Link>
+        </section>
+      )}
+
       <SectionTitle>Ablauf</SectionTitle>
       {p.schritte.length === 0 && <p className="mb-4 text-[14px] text-ink-3">Noch keine Schritte. {bearbeiten ? "Unten den ersten Schritt anlegen." : "Mit „Bearbeiten“ den ersten Schritt anlegen."}</p>}
       <ol className="grid gap-3">
@@ -231,7 +251,14 @@ export default async function LernpaketPage({ params, searchParams }: { params: 
                 <>
                   <dt className="text-ink-3">Präsentation zeigt</dt>
                   <dd className="flex items-center gap-1.5">
-                    <Presentation size={14} className="text-accent" aria-hidden /> Folie {s.folie}
+                    <Presentation size={14} className="text-accent" aria-hidden />
+                    {praes ? (
+                      <Link href={`/mehr/praesentationen/${praes.id}?folie=${s.folie}`} className="text-accent hover:underline">
+                        Folie {s.folie}
+                      </Link>
+                    ) : (
+                      <>Folie {s.folie}</>
+                    )}
                   </dd>
                 </>
               )}
@@ -311,6 +338,30 @@ export default async function LernpaketPage({ params, searchParams }: { params: 
               <button className="btn btn-primary mt-3">Schritt anlegen</button>
             </form>
           </details>
+
+          <section id="praesentation" className="mt-10 max-w-[760px] scroll-mt-24" aria-label="Präsentation wählen">
+            <SectionTitle>Präsentation</SectionTitle>
+            <form action={verknuepfeLernpaketAction.bind(null, p.id)} className="flex flex-wrap items-end gap-2">
+              <label className="field min-w-[220px] flex-1">
+                <span className="label">Die Folien der Schritte zeigt</span>
+                <select className="input" name="praesentation_id" defaultValue={praes?.id ?? ""}>
+                  <option value="">keine Präsentation</option>
+                  {praesAuswahl.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.title} ({x.fach})
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button className="btn btn-secondary">Speichern</button>
+            </form>
+            <p className="mt-2 text-[13px] text-ink-3">
+              Im Vortrag steht dann bei jeder Folie, was der Lehrer in diesem Schritt sagt und fragt.{" "}
+              <Link href="/mehr/praesentationen?neu=1" className="text-accent hover:underline">
+                Präsentation hochladen
+              </Link>
+            </p>
+          </section>
 
           <section id="angaben" className="mt-10 max-w-[760px] scroll-mt-24" aria-label="Angaben">
             <SectionTitle>Angaben zum Paket</SectionTitle>

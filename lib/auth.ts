@@ -7,6 +7,7 @@ import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "./db";
+import { aufPraesentationsAdresse } from "./praesentation-anfrage";
 import { PUBLIC_DEFAULT_PASSWORD, defaultPasswordBlocked, hashPassword, verifyPassword } from "./password";
 import { getTeacher, type Teacher } from "./repo";
 
@@ -88,6 +89,8 @@ export function deleteSession(token: string | undefined) {
 }
 
 export async function currentTeacher(): Promise<Teacher | null> {
+  // the presentation address never has a session (lib/praesentation-host.ts)
+  if (await aufPraesentationsAdresse()) return null;
   return teacherForToken((await cookies()).get(SESSION_COOKIE)?.value);
 }
 

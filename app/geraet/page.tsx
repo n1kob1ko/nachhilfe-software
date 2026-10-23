@@ -5,6 +5,7 @@ import { SubjectArt } from "@/components/Art";
 import { BrandMark } from "@/components/Brand";
 import { DeviceLive } from "@/components/device/DeviceLive";
 import { PairForm } from "@/components/device/PairForm";
+import { PraesentationAmGeraet } from "@/components/praesentation/AmGeraet";
 import { Solver } from "@/components/Solver";
 import { StudentQuickRound } from "@/components/StudentQuickRound";
 import { WhiteboardLoader } from "@/components/whiteboard/WhiteboardLoader";
@@ -133,6 +134,8 @@ export default async function DevicePage() {
         />
       </>
     );
+  } else if (view.kind === "praesentation") {
+    content = <PraesentationAmGeraet id={view.id} folie={view.folie} />;
   } else if (view.kind === "tafel") {
     ensureBoardForUnit(unit.id);
     content = <WhiteboardLoader role="schueler" endpoint="/geraet/tafel" query={`?einheit=${unit.id}`} studentName={student.name} backHref="/geraet/ansicht?zu=start" />;
@@ -210,7 +213,7 @@ export default async function DevicePage() {
   }
 
   return (
-    <DeviceLive unitId={unit.id}>
+    <DeviceLive unitId={unit.id} view={unit.device_view}>
       {/* keyed by unit: a new student never sees anything left over from the previous one */}
       <div key={unit.id} className={`mx-auto px-4 py-5 has-[.lesen-breit]:max-w-[1320px] ${text && storyForEditor(text.id, "") ? "max-w-[1240px]" : "max-w-[860px]"}`}>
         <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -235,8 +238,8 @@ export default async function DevicePage() {
           <nav className="flex gap-1 rounded-full bg-panel p-1" aria-label="Ansicht">
             <a
               href="/geraet/ansicht?zu=start"
-              aria-current={view.kind !== "tafel" ? "page" : undefined}
-              className={`flex min-h-[48px] items-center rounded-full px-5 text-[15px] font-semibold ${view.kind !== "tafel" ? "bg-surface shadow-[var(--shadow-card)]" : "text-ink-2"}`}
+              aria-current={view.kind !== "tafel" && view.kind !== "praesentation" ? "page" : undefined}
+              className={`flex min-h-[48px] items-center rounded-full px-5 text-[15px] font-semibold ${view.kind !== "tafel" && view.kind !== "praesentation" ? "bg-surface shadow-[var(--shadow-card)]" : "text-ink-2"}`}
             >
               Aufgaben
             </a>

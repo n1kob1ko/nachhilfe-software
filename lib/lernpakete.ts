@@ -62,6 +62,8 @@ export type Lernpaket = {
   updated_at: string;
   geprueft_von: number | null;
   geprueft_am: string | null;
+  /** the presentation of this package (lib/praesentationen.ts); its slides match the steps' `folie` */
+  praesentation_id: number | null;
   /** name of the teacher who marked it geprüft */
   geprueft_von_name: string | null;
   /** number of steps and their minutes together */

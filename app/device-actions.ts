@@ -11,6 +11,7 @@ import { deviceContext } from "@/lib/device-context";
 import { canManageDevice, createPairCode, getDevice, pairDevice, renameDevice, revokeDevice, setDeviceCookie } from "@/lib/devices";
 import { noteActivity } from "@/lib/learning";
 import { moveTablet, resendUnit, nextTaskAfter, notifyDevice, notifyStudent, parseView, pushLive, pushTabletPresence, showOnTablet, unitAssignment, unitAssignments, unitText, type Delivery } from "@/lib/live";
+import { getPraesentation } from "@/lib/praesentationen";
 import * as repo from "@/lib/repo";
 import { submitAnswer, type SubmitInput } from "@/lib/service";
 import { canManageUnit, getUnit, unitForSend } from "@/lib/units";
@@ -162,6 +163,7 @@ export async function tabletViewAction(unitId: number, view: string) {
   const v = parseView(view);
   if (v.kind === "aufgabe" && !unitAssignment(unit.id, v.assignmentId)) return;
   if (v.kind === "text" && !unitText(unit, v.textId)) return;
+  if (v.kind === "praesentation" && !getPraesentation(v.id)) return;
   showOnTablet(unit, v);
 }
 
