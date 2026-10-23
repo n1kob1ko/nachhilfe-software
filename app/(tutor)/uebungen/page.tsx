@@ -1,6 +1,8 @@
 import { subjectTone } from "@/components/Calendar";
 import Link from "next/link";
-import { ChevronDown, Library, Plus, Sparkles } from "lucide-react";
+import { Archive, ChevronDown, Library, Plus, Sparkles } from "lucide-react";
+import { restoreWorksheetAction } from "@/app/archiv-actions";
+import { ArchivMeldung, WiederherstellenKnopf } from "@/components/Archiv";
 import { Empty, PageHeader, Pill, formatDate } from "@/components/ui";
 import { worksheetTypeLabel } from "@/lib/curriculum";
 import { libraryCount } from "@/lib/library";
@@ -9,9 +11,11 @@ import { klassenLabel, stufeLabel } from "@/lib/school";
 
 export const metadata = { title: "Übungen" };
 
-export default async function Worksheets({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
-  const { filter } = await searchParams;
+export default async function Worksheets({ searchParams }: { searchParams: Promise<{ filter?: string; archiv?: string; fehler?: string }> }) {
+  const { filter, archiv, fehler } = await searchParams;
   const all = listWorksheets();
+  // Archiv (lib/archiv.ts): archivierte Übungen nur unter diesem Filter, mit „Wiederherstellen“
+  const archived = listWorksheets({ archiv: "nur" }).sort((a, b) => (b.archived_at ?? "").localeCompare(a.archived_at ?? ""));
   const lib = libraryCount();
   const students = new Map(listStudents().map((s) => [s.id, s.name.split(" ")[0]]));
   const subjects = [...new Set(all.map((w) => w.subject))];
@@ -19,13 +23,15 @@ export default async function Worksheets({ searchParams }: { searchParams: Promi
     ["", "Alle", all.length],
     ["entwurf", "Entwürfe", all.filter((w) => w.status === "entwurf").length],
     ...subjects.map((s) => [s, s, all.filter((w) => w.subject === s).length] as [string, string, number]),
+    ["archiv", "Archiv", archived.length],
   ];
   const active = filters.find(([k]) => k === filter)?.[0] ?? "";
-  const list = all.filter((w) => !active || (active === "entwurf" ? w.status === "entwurf" : w.subject === active));
+  const inArchiv = active === "archiv";
+  const list = inArchiv ? archived : all.filter((w) => !active || (active === "entwurf" ? w.status === "entwurf" : w.subject === active));
   // die letzten 14 Tage offen (mindestens 8, höchstens 15 Zeilen), alles Ältere eingeklappt
   const cutoff = Date.now() - 14 * 24 * 3600 * 1000;
   const age = (w: (typeof all)[number]) => new Date(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(w.created_at) ? w.created_at.replace(" ", "T") + "Z" : w.created_at).getTime();
-  const openCount = Math.min(15, Math.max(8, list.filter((w) => age(w) >= cutoff).length));
+  const openCount = inArchiv ? list.length : Math.min(15, Math.max(8, list.filter((w) => age(w) >= cutoff).length));
   const recent = list.slice(0, openCount);
   const older = list.slice(openCount);
   const row = (w: (typeof all)[number]) => {
@@ -43,8 +49,8 @@ export default async function Worksheets({ searchParams }: { searchParams: Promi
             ? { tone: "amber", text: "begonnen" }
             : { tone: "neutral", text: "noch offen" };
     return (
-      <li key={w.id}>
-        <Link href={`/uebungen/${w.id}`} className="group flex min-h-[60px] items-center gap-4 px-5 py-2.5 hover:bg-panel/60">
+      <li key={w.id} className={inArchiv ? "flex flex-wrap items-center gap-x-2 pr-4 pb-2 sm:flex-nowrap sm:pb-0" : undefined}>
+        <Link href={`/uebungen/${w.id}`} className={`group flex min-h-[60px] min-w-0 flex-1 items-center gap-4 px-5 py-2.5 hover:bg-panel/60${inArchiv ? " basis-full sm:basis-auto" : ""}`}>
           <div className="min-w-0 flex-1">
             <p className="truncate font-medium group-hover:text-accent" title={w.title}>
               {w.title}
@@ -73,10 +79,11 @@ export default async function Worksheets({ searchParams }: { searchParams: Promi
               </span>
             </div>
           </div>
-          <span className="num shrink-0 text-[13px] text-ink-3" title={formatDate(w.created_at)}>
-            {formatDate(w.created_at, { day: "numeric", month: "numeric" })}
+          <span className="num shrink-0 text-[13px] text-ink-3" title={inArchiv && w.archived_at ? `archiviert am ${formatDate(w.archived_at)}` : formatDate(w.created_at)}>
+            {formatDate(inArchiv && w.archived_at ? w.archived_at : w.created_at, { day: "numeric", month: "numeric" })}
           </span>
         </Link>
+        {inArchiv && <WiederherstellenKnopf action={restoreWorksheetAction.bind(null, w.id, "/uebungen?filter=archiv")} className="btn btn-secondary btn-sm ml-5 sm:ml-0" />}
       </li>
     );
   };
@@ -97,7 +104,8 @@ export default async function Worksheets({ searchParams }: { searchParams: Promi
           </>
         }
       />
-      {all.length === 0 ? (
+      <ArchivMeldung archiv={archiv} fehler={fehler} archiviert="Übung archiviert. Unter „Archiv“ kannst du sie wiederherstellen." />
+      {all.length === 0 && archived.length === 0 ? (
         <Empty title="Noch keine Übungen" action={<Link href="/uebungen/neu" className="btn btn-primary">Erste Übung erstellen</Link>}>
           Lösungswege werden automatisch mit erstellt.
         </Empty>
@@ -113,14 +121,20 @@ export default async function Worksheets({ searchParams }: { searchParams: Promi
                   aria-current={active === k ? "true" : undefined}
                   className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 text-[13px] font-medium ${active === k ? "bg-accent text-on-fill" : "bg-panel text-ink-2 hover:text-ink"}`}
                 >
+                  {k === "archiv" && <Archive size={14} className="mr-1.5" aria-hidden />}
                   {label}
                   <span className="num ml-1.5 opacity-70">{n}</span>
                 </Link>
               ))}
           </nav>
+          {inArchiv && (
+            <p className="mb-3 max-w-[80ch] text-[14px] text-ink-2">
+              Archivierte Übungen stehen nicht in der Liste, und Schüler sehen sie nicht mehr als offen. Antworten, Dokumentation und Lernstand bleiben.
+            </p>
+          )}
           <ul className="panel divide-y divide-line">
             {recent.map((w) => row(w))}
-            {list.length === 0 && <li className="px-5 py-6 text-[14px] text-ink-3">Keine Übungen in diesem Filter.</li>}
+            {list.length === 0 && <li className="px-5 py-6 text-[14px] text-ink-3">{inArchiv ? "Das Archiv ist leer." : "Keine Übungen in diesem Filter."}</li>}
           </ul>
           {older.length > 0 && (
             <details className="group mt-4">

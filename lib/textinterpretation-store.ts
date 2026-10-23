@@ -113,7 +113,7 @@ export function teilSourceOf(textId: number): TeilSource | null {
 export function teilSourceForStudent(studentId: number | null): TeilSource {
   if (studentId) {
     const r = db()
-      .prepare("SELECT i.text_id FROM text_interpretations i JOIN texts t ON t.id = i.text_id WHERE t.student_id = ? AND i.sorte = ? ORDER BY i.updated_at DESC, i.text_id DESC LIMIT 1")
+      .prepare("SELECT i.text_id FROM text_interpretations i JOIN texts t ON t.id = i.text_id WHERE t.student_id = ? AND i.sorte = ? AND t.archived_at IS NULL ORDER BY i.updated_at DESC, i.text_id DESC LIMIT 1")
       .get(studentId, SORTE) as { text_id: number } | undefined;
     const own = r ? teilSourceOf(r.text_id) : null;
     if (own) return own;

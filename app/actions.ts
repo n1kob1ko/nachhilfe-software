@@ -11,6 +11,7 @@ import { deleteBillingEntry } from "@/lib/billing";
 import { noteActivity } from "@/lib/learning";
 import * as repo from "@/lib/repo";
 import { dropFilesIfUnused, studentImageFiles } from "@/lib/picture-story";
+import { alleFachNamen } from "@/lib/faecher";
 import { fachAus, klassenLabel, schoolType, schulstufe } from "@/lib/school";
 import { analyzeStudent, buildWorksheet, submitAnswer, type SubmitInput } from "@/lib/service";
 import { runningUnitForStudent } from "@/lib/units";
@@ -52,7 +53,8 @@ export async function saveStudentAction(formData: FormData) {
     ki_hinweise: str(formData, "ki_hinweise"),
   };
   const extra = str(formData, "subject_other");
-  if (extra) data.subjects.push(...extra.split(",").map((s) => s.trim()).filter(Boolean));
+  if (extra) data.subjects.push(...extra.split(",").map((s) => fachAus(s, [], alleFachNamen())).filter(Boolean));
+  data.subjects = [...new Set(data.subjects)];
   if (!data.name) throw new Error("Name fehlt");
   let sid = id;
   if (id) repo.updateStudent(id, data);
@@ -83,7 +85,7 @@ export async function saveLessonAction(formData: FormData) {
     starts_at: str(formData, "starts_at"),
     duration_min: int(formData, "duration_min") || 60,
     // jedes Fach, auch einmalig (z. B. Biologie vor einem Test); die Fächer im Profil bleiben
-    subject: fachAus(str(formData, "subject"), repo.getStudent(studentId)?.subjects),
+    subject: fachAus(str(formData, "subject"), repo.getStudent(studentId)?.subjects, alleFachNamen()),
     topic: str(formData, "topic"),
     status: (str(formData, "status") as repo.Lesson["status"]) || "geplant",
     activities: str(formData, "activities"),
@@ -122,15 +124,19 @@ export async function deleteBillingEntryAction(id: number, formData: FormData) {
 export async function addHomeworkAction(formData: FormData) {
   await requireTeacher();
   const studentId = int(formData, "student_id");
+  // optional: die Übung, zu der die Hausübung gehört (nur eine dieses Schülers)
+  const assignment = int(formData, "assignment_id") ? repo.getAssignment(int(formData, "assignment_id")) : null;
   repo.addHomework({
     student_id: studentId,
-    subject: fachAus(str(formData, "subject"), repo.getStudent(studentId)?.subjects),
+    subject: fachAus(str(formData, "subject"), repo.getStudent(studentId)?.subjects, alleFachNamen()),
     description: str(formData, "description"),
     due_date: str(formData, "due_date") || null,
     status: "offen",
     notes: "",
+    assignment_id: assignment?.student_id === studentId ? assignment.id : null,
   });
   revalidatePath(`/schueler/${studentId}`);
+  revalidatePath("/");
 }
 export async function setHomeworkStatusAction(id: number, studentId: number, status: string) {
   await requireTeacher();

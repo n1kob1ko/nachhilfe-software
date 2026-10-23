@@ -90,7 +90,7 @@ export function unitBrief(lessonId: number, o: { today?: string; now?: number } 
   // 6. homework and the next tests
   const dates: BriefLine[] = repo
     .listHomework(lesson.student_id)
-    .filter((h) => h.status === "offen")
+    .filter(repo.homeworkOpen)
     .map((h) => data(`Hausübung${h.subject ? ` ${h.subject}` : ""}: ${h.description}${h.due_date ? `, bis ${shortDate(h.due_date)}` : ""}`));
   dates.push(...teacher(lesson.homework_note));
   for (const t of repo.upcomingTests(today, lesson.student_id)) {

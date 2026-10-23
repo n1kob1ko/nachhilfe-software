@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { BookmarkPlus, Plus, Printer, Search, X } from "lucide-react";
+import { Archive, BookmarkPlus, Plus, Printer, Search, X } from "lucide-react";
+import { restoreWorksheetAction } from "@/app/archiv-actions";
 import { createLibraryTaskAction, exerciseFromLibraryAction } from "@/app/library-actions";
+import { ArchivMeldung, WiederherstellenKnopf } from "@/components/Archiv";
 import { subjectTone } from "@/components/Calendar";
 import { Info } from "@/components/Info";
-import { Empty, PageHeader, Pill } from "@/components/ui";
+import { Empty, PageHeader, Pill, formatDate } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { DIFFICULTIES, TASK_TYPES, worksheetTypeLabel } from "@/lib/curriculum";
-import { LIBRARY_ORIGIN_LABEL, libraryFacets, searchLibrary, type LibraryFilter, type LibraryOrigin } from "@/lib/library";
+import { LIBRARY_ORIGIN_LABEL, libraryCount, libraryFacets, searchLibrary, type LibraryFilter, type LibraryOrigin } from "@/lib/library";
 import * as repo from "@/lib/repo";
 import { klassenLabel, SCHOOL_TYPES } from "@/lib/school";
 import { GAP } from "@/lib/tasks";
@@ -14,7 +16,7 @@ import { MathText } from "@/components/MathText";
 
 export const metadata = { title: "Aufgabenbibliothek" };
 
-type Params = { q?: string; fach?: string; stufe?: string; thema?: string; skill?: string; schwierigkeit?: string; typ?: string; herkunft?: string; tag?: string; neu?: string; fehler?: string; geloescht?: string };
+type Params = { q?: string; fach?: string; stufe?: string; thema?: string; skill?: string; schwierigkeit?: string; typ?: string; herkunft?: string; tag?: string; neu?: string; fehler?: string; geloescht?: string; archiv?: string; ansicht?: string };
 const KEYS = ["q", "fach", "stufe", "thema", "skill", "schwierigkeit", "typ", "herkunft", "tag"] as const;
 const LIB = "/uebungen/bibliothek";
 const href = (p: Partial<Params>) => {
@@ -30,6 +32,8 @@ const tone = (o: LibraryOrigin) => (o === "ki" ? "accent" : o === "importiert" ?
 export default async function LibraryPage({ searchParams }: { searchParams: Promise<Params> }) {
   await requireTeacher();
   const sp = await searchParams;
+  if (sp.ansicht === "archiv") return <LibraryArchive archiv={sp.archiv} fehler={sp.fehler} />;
+  const archivCount = libraryCount(true);
   const [schoolType, klasse] = (sp.stufe ?? "").split("|");
   const filter: LibraryFilter = {
     q: sp.q,
@@ -71,13 +75,21 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
         title="Aufgabenbibliothek"
         info="Gute Aufgaben zum Wiederverwenden. In jeder Übung mit „In Bibliothek“ speichern oder hier neu schreiben. Ausgewählte Aufgaben werden zu einer neuen Übung."
         actions={
-          <Link href={sp.neu ? href(current) : href({ ...current, neu: "1" })} className={`btn ${sp.neu ? "btn-secondary" : "btn-primary"}`}>
-            <Plus size={16} aria-hidden /> Neue Aufgabe
-          </Link>
+          <>
+            {archivCount > 0 && (
+              <Link href={`${LIB}?ansicht=archiv`} className="btn btn-ghost">
+                <Archive size={16} aria-hidden /> Archiv <span className="num text-ink-3">{archivCount}</span>
+              </Link>
+            )}
+            <Link href={sp.neu ? href(current) : href({ ...current, neu: "1" })} className={`btn ${sp.neu ? "btn-secondary" : "btn-primary"}`}>
+              <Plus size={16} aria-hidden /> Neue Aufgabe
+            </Link>
+          </>
         }
       />
       {sp.fehler && <p className="mb-4 rounded-lg bg-red-wash px-4 py-2.5 text-[14px] text-red" role="alert">{sp.fehler}</p>}
       {sp.geloescht && <p className="mb-4 text-[14px] text-green" role="status">Aufgabe gelöscht.</p>}
+      <ArchivMeldung archiv={sp.archiv} archiviert="Aufgabe archiviert. Oben unter „Archiv“ kannst du sie wiederherstellen." />
 
       {sp.neu && (
         <form action={createLibraryTaskAction} className="panel mb-8 grid max-w-[760px] gap-3 px-5 py-4 sm:grid-cols-2">
@@ -268,6 +280,36 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
           </form>
         </>
       )}
+    </>
+  );
+}
+
+/** Archiv der Bibliothek (lib/archiv.ts): archivierte Aufgaben, nicht in Suche und Auswahl, mit „Wiederherstellen“. */
+function LibraryArchive({ archiv, fehler }: { archiv?: string; fehler?: string }) {
+  const list = searchLibrary({ archived: true }, 1000);
+  const back = `${LIB}?ansicht=archiv`;
+  return (
+    <>
+      <PageHeader
+        back={{ href: LIB, label: "Aufgabenbibliothek" }}
+        title="Archiv der Bibliothek"
+        info="Archivierte Aufgaben stehen nicht in der Bibliothek und nicht in der Suche. Übungen, die sie schon enthalten, behalten ihre Kopie."
+      />
+      <ArchivMeldung archiv={archiv} fehler={fehler} archiviert="Aufgabe archiviert." wiederhergestellt="Wiederhergestellt. Die Aufgabe steht wieder in der Bibliothek." />
+      <ul className="panel divide-y divide-line" data-testid="bibliothek-archiv">
+        {list.map((e) => (
+          <li key={e.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+            <Link href={`${LIB}/${e.id}`} className="group min-w-0 flex-1 basis-56 py-1">
+              <p className="font-medium group-hover:text-accent">{e.title}</p>
+              <p className="num mt-0.5 text-[13px] text-ink-3">
+                {[e.subject, e.topic, e.archived_at ? `archiviert am ${formatDate(e.archived_at, { day: "numeric", month: "short" })}` : ""].filter(Boolean).join(" · ")}
+              </p>
+            </Link>
+            <WiederherstellenKnopf action={restoreWorksheetAction.bind(null, e.id, back)} className="btn btn-secondary btn-sm" />
+          </li>
+        ))}
+        {list.length === 0 && <li className="px-5 py-6 text-[14px] text-ink-3">Das Archiv ist leer.</li>}
+      </ul>
     </>
   );
 }

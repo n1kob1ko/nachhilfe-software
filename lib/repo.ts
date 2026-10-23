@@ -107,7 +107,9 @@ export type Lesson = {
   auto_felder?: string;
 };
 
-export type Homework = { id: number; student_id: number; subject: string; description: string; due_date: string | null; status: string; notes: string };
+export type Homework = { id: number; student_id: number; subject: string; description: string; due_date: string | null; status: string; notes: string; assignment_id: number | null };
+/** A Hausübung with the Übung it belongs to (if any): when that Übung is fertig, the Hausübung counts as erledigt. */
+export type HomeworkView = Homework & { assignment_title: string | null; assignment_completed_at: string | null };
 export type TestResult = {
   id: number;
   student_id: number;
@@ -159,9 +161,12 @@ export type Worksheet = {
   tags: string[];
   /** The Schularbeit a Probeschularbeit was made for (lib/probeschularbeit.ts); null for every other exercise. */
   probe_test_id?: number | null;
+  /** Archiv (lib/archiv.ts): when and by whom it was archived; null = in the normal lists. */
+  archived_at?: string | null;
+  archived_by?: number | null;
 };
 
-export type Task = TaskDraft & { id: number; worksheet_id: number; position: number; level: number | null };
+export type Task =TaskDraft & { id: number; worksheet_id: number; position: number; level: number | null };
 export type WorksheetInput = Omit<Worksheet, "id" | "created_at" | "student_id" | "status" | "teacher_id" | "settings" | "source_worksheet_id" | "tags"> &
   Partial<Pick<Worksheet, "student_id" | "status" | "teacher_id" | "settings" | "source_worksheet_id" | "tags">>;
 
@@ -181,7 +186,18 @@ export type Assignment = {
   delivered_at: string | null;
   /** "normal" = the usual flow, "schnell" = Schnellrunde (lib/quick-round.ts); default for existing rows. */
   mode: AssignmentMode;
+  /** Archiv (lib/archiv.ts): this student's copy archived; the exercise itself can be archived too (worksheets.archived_at). */
+  archived_at?: string | null;
+  archived_by?: number | null;
 };
+
+/**
+ * Archiv (lib/archiv.ts): "ohne" = only what is not archived (the normal lists), "nur" = only the archived
+ * ones (the Archiv view), "alle" = both (documentation, Lernverlauf, Mappe: nothing there disappears).
+ */
+export type ArchivFilter = "ohne" | "nur" | "alle";
+/** SQL condition for an archive filter on a column (or an expression that is null when not archived). */
+export const archivSql = (expr: string, f: ArchivFilter) => (f === "ohne" ? `${expr} IS NULL` : f === "nur" ? `${expr} IS NOT NULL` : "1 = 1");
 
 export type Attempt = {
   id: number;
@@ -459,16 +475,21 @@ export function billingEntries(f: BillingFilter): BillingRow[] {
 }
 
 // ---------- homework & tests ----------
-export function listHomework(studentId: number): Homework[] {
-  return db().prepare("SELECT * FROM homework WHERE student_id = ? ORDER BY status = 'erledigt', due_date").all(studentId) as Homework[];
-}
-export function openHomeworkDue(until: string): (Homework & { student_name: string })[] {
+export function listHomework(studentId: number): HomeworkView[] {
   return db()
-    .prepare("SELECT h.*, s.name AS student_name FROM homework h JOIN students s ON s.id = h.student_id WHERE h.status = 'offen' AND h.due_date IS NOT NULL AND h.due_date <= ? ORDER BY h.due_date")
-    .all(until) as (Homework & { student_name: string })[];
+    .prepare(
+      `SELECT h.*, w.title AS assignment_title, a.completed_at AS assignment_completed_at
+       FROM homework h LEFT JOIN assignments a ON a.id = h.assignment_id LEFT JOIN worksheets w ON w.id = a.worksheet_id
+       WHERE h.student_id = ? ORDER BY (h.status = 'erledigt' OR a.completed_at IS NOT NULL), h.due_date`,
+    )
+    .all(studentId) as HomeworkView[];
 }
-export function addHomework(h: Omit<Homework, "id">) {
-  db().prepare("INSERT INTO homework (student_id, subject, description, due_date, status, notes) VALUES (@student_id, @subject, @description, @due_date, @status, @notes)").run(h);
+/** Still to do: not ticked off by hand and its Übung (if it has one) not fertig yet. */
+export const homeworkOpen = (h: Pick<HomeworkView, "status" | "assignment_completed_at">) => h.status !== "erledigt" && !h.assignment_completed_at;
+export function addHomework(h: Omit<Homework, "id" | "assignment_id"> & { assignment_id?: number | null }) {
+  db()
+    .prepare("INSERT INTO homework (student_id, subject, description, due_date, status, notes, assignment_id) VALUES (@student_id, @subject, @description, @due_date, @status, @notes, @assignment_id)")
+    .run({ ...h, assignment_id: h.assignment_id ?? null });
 }
 export function setHomeworkStatus(id: number, status: string) {
   db().prepare("UPDATE homework SET status = ? WHERE id = ?").run(status, id);
@@ -596,7 +617,7 @@ export function createWorksheet(w: WorksheetInput, tasks: TaskDraft[]): number {
  * `completed` erledigt, `correct` richtig gelöste Aufgaben der erledigten Zuweisungen (endgültige
  * Versuche) — für die Übungen-Liste „an Max · erledigt 7/8“ (niko, 21.10.2026).
  */
-export function listWorksheets(): (Worksheet & { task_count: number; assigned: number; started: number; completed: number; correct: number; recipients: string[] })[] {
+export function listWorksheets(o: { archiv?: ArchivFilter } = {}): (Worksheet & { task_count: number; assigned: number; started: number; completed: number; correct: number; recipients: string[] })[] {
   return db()
     .prepare(
       `SELECT w.*, (SELECT COUNT(*) FROM tasks t WHERE t.worksheet_id = w.id) AS task_count,
@@ -606,7 +627,7 @@ export function listWorksheets(): (Worksheet & { task_count: number; assigned: n
               (SELECT COUNT(*) FROM attempts x JOIN assignments a ON a.id = x.assignment_id
                 WHERE a.worksheet_id = w.id AND a.completed_at IS NOT NULL AND x.final = 1 AND x.correct = 1) AS correct,
               (SELECT GROUP_CONCAT(s.name, '|') FROM assignments a JOIN students s ON s.id = a.student_id WHERE a.worksheet_id = w.id) AS recipients
-       FROM worksheets w WHERE w.kind <> 'bibliothek' ORDER BY w.created_at DESC, w.id DESC`,
+       FROM worksheets w WHERE w.kind <> 'bibliothek' AND ${archivSql("w.archived_at", o.archiv ?? "ohne")} ORDER BY w.created_at DESC, w.id DESC`,
     )
     .all()
     .map((r) => ({
@@ -719,9 +740,12 @@ export function duplicateWorksheet(
     tasks,
   );
 }
-/** Tasks from the library and other exercises to reuse: best matches for the given skills first, library entries before copies in exercises. */
+/**
+ * Tasks from the library and other exercises to reuse: best matches for the given skills first, library entries before
+ * copies in exercises. Archived exercises and library entries are left out.
+ */
 export function searchTasks(q: { skillIds?: string[]; text?: string; subject?: string; excludeWorksheetId?: number; limit?: number }): (Task & { worksheet_title: string; worksheet_kind: Worksheet["kind"] })[] {
-  const where: string[] = ["1 = 1"];
+  const where: string[] = ["w.archived_at IS NULL"];
   const params: unknown[] = [];
   if (q.subject) {
     where.push("w.subject = ?");
@@ -797,8 +821,8 @@ export function assignWorksheet(worksheetId: number, studentId: number, note = "
   const probe = db().prepare("SELECT probe_test_id FROM worksheets WHERE id = ?").get(worksheetId) as { probe_test_id: number | null } | undefined;
   if (probe?.probe_test_id) mode = "test";
   const res = db().prepare("INSERT INTO assignments (worksheet_id, student_id, note, unit_id, mode) VALUES (?, ?, ?, ?, ?)").run(worksheetId, studentId, note, unitId, mode);
-  // students only ever see released exercises
-  db().prepare("UPDATE worksheets SET status = 'freigegeben' WHERE id = ?").run(worksheetId);
+  // students only ever see released exercises; sending an archived exercise again takes it out of the archive
+  db().prepare("UPDATE worksheets SET status = 'freigegeben', archived_at = NULL, archived_by = NULL WHERE id = ?").run(worksheetId);
   return Number(res.lastInsertRowid);
 }
 export function listAssignmentsForWorksheet(worksheetId: number) {
@@ -825,21 +849,38 @@ export type AssignmentView = Assignment & {
   task_count: number;
   done_count: number;
   correct_count: number;
+  /** when the exercise itself was archived (for every student); the student's own copy has archived_at */
+  worksheet_archived_at: string | null;
+  /** 1 = archived, by itself or with its exercise: no longer open for the student, not in the normal lists */
+  archiviert: number;
 };
-export function listAssignments(studentId: number): AssignmentView[] {
+/** An archived assignment: its own archive mark or that of its exercise (SQL, a = assignments, w = worksheets). */
+export const ASSIGNMENT_ARCHIVED = "COALESCE(a.archived_at, w.archived_at)";
+/**
+ * The exercises a student got, newest first. Archived ones are left out unless asked for: whatever shows the
+ * student open work or offers exercises keeps the default, documentation and the Lernverlauf take "alle".
+ */
+export function listAssignments(studentId: number, o: { archiv?: ArchivFilter } = {}): AssignmentView[] {
   return db()
     .prepare(
-      `SELECT a.*, w.title, w.subject, w.kind, w.difficulty, w.skill_ids, w.probe_test_id,
+      `SELECT a.*, w.title, w.subject, w.kind, w.difficulty, w.skill_ids, w.probe_test_id, w.archived_at AS worksheet_archived_at,
+        (${ASSIGNMENT_ARCHIVED} IS NOT NULL) AS archiviert,
         (SELECT COUNT(*) FROM tasks t WHERE t.worksheet_id = w.id) AS task_count,
         (SELECT COUNT(DISTINCT task_id) FROM attempts x WHERE x.assignment_id = a.id AND x.final = 1) AS done_count,
         (SELECT COUNT(*) FROM attempts x WHERE x.assignment_id = a.id AND x.final = 1 AND x.correct = 1) AS correct_count
-       FROM assignments a JOIN worksheets w ON w.id = a.worksheet_id WHERE a.student_id = ? ORDER BY a.assigned_at DESC, a.id DESC`,
+       FROM assignments a JOIN worksheets w ON w.id = a.worksheet_id
+       WHERE a.student_id = ? AND ${archivSql(ASSIGNMENT_ARCHIVED, o.archiv ?? "ohne")} ORDER BY a.assigned_at DESC, a.id DESC`,
     )
     .all(studentId)
     .map((r) => ({ ...(r as unknown as AssignmentView), skill_ids: json((r as Row).skill_ids as string, []) }));
 }
 export function getAssignment(id: number): Assignment | null {
   return (db().prepare("SELECT * FROM assignments WHERE id = ?").get(id) as Assignment | undefined) ?? null;
+}
+/** Is this assignment archived, by itself or with its exercise? Then the student no longer works on it. */
+export function assignmentArchived(id: number): boolean {
+  const r = db().prepare(`SELECT ${ASSIGNMENT_ARCHIVED} AS at FROM assignments a JOIN worksheets w ON w.id = a.worksheet_id WHERE a.id = ?`).get(id) as { at: string | null } | undefined;
+  return Boolean(r?.at);
 }
 export function deleteAssignment(id: number) {
   db().prepare("DELETE FROM assignments WHERE id = ?").run(id);
@@ -952,15 +993,4 @@ export function pendingReviews(o: { studentId?: number; unitId?: number; assignm
 }
 export function getAttempt(id: number): Attempt | null {
   return (db().prepare("SELECT * FROM attempts WHERE id = ?").get(id) as Attempt | undefined) ?? null;
-}
-export function recentActivity(limit = 8) {
-  return db()
-    .prepare(
-      `SELECT a.id AS assignment_id, s.id AS student_id, s.name AS student_name, w.title, a.completed_at,
-        (SELECT COUNT(*) FROM attempts x WHERE x.assignment_id = a.id AND x.final = 1 AND x.correct = 1) AS correct_count,
-        (SELECT COUNT(*) FROM tasks t WHERE t.worksheet_id = w.id) AS task_count
-       FROM assignments a JOIN students s ON s.id = a.student_id JOIN worksheets w ON w.id = a.worksheet_id
-       WHERE a.completed_at IS NOT NULL ORDER BY a.completed_at DESC LIMIT ?`,
-    )
-    .all(limit) as { assignment_id: number; student_id: number; student_name: string; title: string; completed_at: string; correct_count: number; task_count: number }[];
 }

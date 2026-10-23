@@ -13,27 +13,34 @@ export const SCHOOL_TYPES: SchoolType[] = [
 ];
 
 /**
- * Vorschläge für das **Fach einer Einheit**. Unterrichtet wird jedes Fach; das Feld bleibt frei.
+ * Die Schulfächer, mit denen die Fächerliste (Tabelle `faecher`, lib/faecher.ts) beginnt; die Verwaltung
+ * ergänzt sie unter Mehr › Fächer. Unterrichtet wird jedes Fach; das Fach einer Einheit bleibt frei.
  * Lehrplan, Übungen und Lernstand je Fähigkeit gibt es nur für Mathematik, Deutsch und Englisch
  * (`SUBJECTS` in lib/curriculum.ts). Eine Einheit in einem anderen Fach wird nur dokumentiert.
  */
 export const SCHULFAECHER = [
   "Mathematik", "Deutsch", "Englisch", "Französisch", "Spanisch", "Italienisch", "Latein", "Biologie", "Chemie", "Physik",
   "Geographie", "Geschichte", "Informatik", "Rechnungswesen", "Betriebswirtschaft", "Volkswirtschaft", "Psychologie und Philosophie", "Musik",
+  "Sachunterricht", "Digitale Grundbildung",
 ];
 
-/** Die Fächer des Schülers zuerst, dann die übrigen Schulfächer, ohne Doppelte. */
-export function fachVorschlaege(eigene: string[] = []): string[] {
-  return [...new Set([...eigene, ...SCHULFAECHER])];
+/** Die Fächer des Schülers zuerst, dann die übrigen (`alle`: die Fächerliste), ohne Doppelte. */
+export function fachVorschlaege(eigene: string[] = [], alle: readonly string[] = SCHULFAECHER): string[] {
+  return [...new Set([...eigene, ...alle])];
 }
 
 /**
  * Ein eingetipptes Fach: Leerzeichen bereinigt, höchstens 60 Zeichen, und in der Schreibweise eines
  * bekannten Fachs („biologie“ → „Biologie“), damit Lernverlauf und Abrechnung einheitlich bleiben.
  */
-export function fachAus(roh: string, eigene: string[] = []): string {
+export function fachAus(roh: string, eigene: string[] = [], alle: readonly string[] = SCHULFAECHER): string {
   const v = roh.trim().replace(/\s+/g, " ").slice(0, 60);
-  return fachVorschlaege(eigene).find((f) => f.toLowerCase() === v.toLowerCase()) ?? v;
+  return fachVorschlaege(eigene, alle).find((f) => f.toLowerCase() === v.toLowerCase()) ?? v;
+}
+
+/** Die Auswahl eines Fach-Menüs; ein alter Wert, der nicht (mehr) in der Liste steht, bleibt wählbar. */
+export function mitWert(liste: readonly string[], wert: string | null | undefined): string[] {
+  return wert && !liste.includes(wert) ? [...liste, wert] : [...liste];
 }
 
 export function schoolType(name: string): SchoolType | null {

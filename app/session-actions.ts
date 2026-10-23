@@ -25,6 +25,7 @@ import { endUnit, expectedSubject, sweepIdleUnits } from "@/lib/learning";
 import { INITIAL_PASSWORD, PUBLIC_DEFAULT_PASSWORD, randomStartPassword } from "@/lib/password";
 import * as repo from "@/lib/repo";
 import { ensureBoardForUnit, notifyUnitClosed } from "@/lib/whiteboard";
+import { alleFachNamen } from "@/lib/faecher";
 import { fachAus } from "@/lib/school";
 import { canManageUnit, finishUnit, getUnit, runningUnits, setUnitSubject, startUnit } from "@/lib/units";
 
@@ -181,7 +182,7 @@ export async function saveUnitDocAction(lessonId: number, formData: FormData) {
   const understanding = rating(formData, "understanding");
   const homework = str(formData, "homework_note");
   // das Fach dieser Einheit, frei wählbar (ein Formular ohne das Feld behält das bisherige)
-  const subject = fachAus(str(formData, "subject"), repo.getStudent(lesson.student_id)?.subjects) || lesson.subject;
+  const subject = fachAus(str(formData, "subject"), repo.getStudent(lesson.student_id)?.subjects, alleFachNamen()) || lesson.subject;
   repo.saveLesson(
     {
       ...lesson,
