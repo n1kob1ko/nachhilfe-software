@@ -66,14 +66,16 @@ type Luecke = { richtig: string[]; fehler: Fehler[]; cue?: string };
 const L = (richtig: string | string[], fehler: Fehler[], cue?: string): Luecke => ({ richtig: typeof richtig === "string" ? [richtig] : richtig, fehler, cue });
 
 /**
- * A sentence with gaps (___). `regel` says why the answer is right, `hilfe` is the first hint. `titel` is
- * the instruction of the gap text, `cueEnde` stands in brackets at the end ("lesen, Futur I").
+ * A sentence with gaps (___). `regel` says why the answer is right, `hilfe` is the first hint. `tipp` is the
+ * second hint when `regel` names the answer: the rule as a question to ask or on another example, so no
+ * hint gives the answer away (lib/hinweise-loesung.test.ts). `titel` is the instruction of the gap text,
+ * `cueEnde` stands in brackets at the end ("lesen, Futur I").
  */
-export type Satz = { text: string; luecken: Luecke[]; regel: string; hilfe: string; titel: string; cueEnde?: string };
+export type Satz = { text: string; luecken: Luecke[]; regel: string; hilfe: string; tipp?: string; titel: string; cueEnde?: string };
 /** A short answer: instruction, the sentence or words to work with, the right answers and the typical errors. */
-export type Umformung = { auftrag: string; vorlage: string; richtig: string[]; fehler: Fehler[]; regel: string; hilfe: string };
+export type Umformung = { auftrag: string; vorlage: string; richtig: string[]; fehler: Fehler[]; regel: string; hilfe: string; tipp?: string };
 /** Multiple choice: the question, the sentence, the right option and wrong options with what they reveal. */
-export type Wahl = { titel: string; text: string; richtig: string; falsch: Fehler[]; regel: string; hilfe: string };
+export type Wahl = { titel: string; text: string; richtig: string; falsch: Fehler[]; regel: string; hilfe: string; tipp?: string };
 
 type Faehigkeit = {
   luecke: (rng: Rng, st: Stufe) => Satz;
@@ -166,7 +168,7 @@ function lueckentext(skillId: string, difficulty: Difficulty, s: Satz, zeichen =
     data: {},
     answer: { blanks: s.luecken.map((l) => l.richtig), mode: "text", ...(zeichen ? { satzzeichen: true } : {}) },
     solution: loesung(fuellen(s, rechts), s.regel),
-    hints: [s.hilfe, s.regel],
+    hints: [s.hilfe, s.tipp ?? s.regel],
     errorMap: s.luecken.flatMap((l, i) =>
       sauber(l.richtig, l.fehler, zeichen).map((f) => ({ answer: s.luecken.length === 1 ? f.answer : rechts.map((r, j) => (j === i ? f.answer : r)).join(" | "), label: f.label })),
     ),
@@ -196,7 +198,7 @@ function auswahl(skillId: string, difficulty: Difficulty, w: Wahl, rng: Rng, zei
     data: { options },
     answer: { correct: options.indexOf(w.richtig) },
     solution: loesung(w.richtig, w.regel),
-    hints: [w.hilfe, w.regel],
+    hints: [w.hilfe, w.tipp ?? w.regel],
     errorMap: gezeigt.map((f) => ({ answer: String(options.indexOf(f.answer)), label: f.label })),
   };
 }
@@ -212,6 +214,7 @@ function wahlAusSatz(s: Satz, titel: string, ganz = false): Wahl {
     falsch: s.luecken.flatMap((l, i) => sauber(l.richtig, l.fehler, ganz).map((f) => ({ ...f, answer: zeige(rechts.map((r, j) => (j === i ? f.answer : r))) }))),
     regel: s.regel,
     hilfe: s.hilfe,
+    tipp: s.tipp,
   };
 }
 
@@ -265,7 +268,7 @@ function kurzantwort(skillId: string, difficulty: Difficulty, u: Umformung, zeic
     data: {},
     answer: { accepted: u.richtig, mode: "text", ...(zeichen ? { satzzeichen: true } : {}) },
     solution: loesung(u.richtig[0], u.regel),
-    hints: [u.hilfe, u.regel],
+    hints: [u.hilfe, u.tipp ?? u.regel],
     errorMap: sauber(u.richtig, u.fehler, zeichen).map(({ answer, label }) => ({ answer, label })),
   };
 }
@@ -474,6 +477,8 @@ function frage(b: Bau, ohne: Glied): string | null {
   return `${GAP} ${[b.finit, ...mittel.map(gliedText), b.ende].filter(Boolean).join(" ")}?`;
 }
 const zitat = (g: Glied) => `„${g.text}“`;
+/** The hint for a question word to fill in: try them, without naming the right one. */
+const FRAGEWORT_TIPP = (g: Glied) => `Setz die Fragewörter nacheinander ein und lies die Frage ganz. Bei welchem passt ${zitat(g)} als Antwort?`;
 /** The Frageprobe as a sentence: „Wem hat Julia am Abend gedankt?“ (without the asked Satzglied). */
 function frageMit(b: Bau, ohne: Glied, wort: string): string {
   const rest = gliederVon(b).filter((g) => g !== ohne);
@@ -491,6 +496,7 @@ const gliedFrage = (g: Glied) => (g.adv ? `${ADV_FRAGE[g.adv][0]}?` : ROLLE_FRAG
 // ---------- Satzglieder bestimmen ----------
 const SG_REGEL = "Was beim Umstellen zusammenbleibt, ist ein Satzglied. Das Subjekt erfragst du mit „Wer oder was?“, das gebeugte Verb steht an zweiter Stelle.";
 const SG_HILFE = "Stell den Satz um: Welche Wörter bleiben zusammen? Frag dann mit „Wer oder was?“ und dem Prädikat.";
+const PRAEDIKAT_TIPP = "Das Prädikat kann zwei Teile haben: Der gebeugte Teil steht an zweiter Stelle, der andere am Satzende.";
 
 function subjektFehler(b: Bau, g: Glied): Fehler {
   const vorn = g === b.vorfeld ? "Das erste Satzglied ist nicht immer das Subjekt. " : "";
@@ -512,6 +518,7 @@ function satzgliederWahl(rng: Rng, st: Stufe): Wahl {
       ],
       regel: `Das Prädikat ist zweiteilig: ${praedikatVon(b)}. Der gebeugte Teil steht an zweiter Stelle, der andere am Ende.`,
       hilfe: "Welches Verb steht an zweiter Stelle? Gehört noch ein Teil am Satzende dazu?",
+      tipp: PRAEDIKAT_TIPP,
     };
   }
   if (kind === "einteilung") {
@@ -537,6 +544,7 @@ function satzgliederWahl(rng: Rng, st: Stufe): Wahl {
       falsch: shuffle(rng, falsch),
       regel: `Mit der Umstellprobe: ${zeige(teile)} Jedes Satzglied kann man als Ganzes an den Anfang stellen.`,
       hilfe: "Stell den Satz um. Welche Wörter kannst du nur gemeinsam verschieben?",
+      tipp: "Mit der Umstellprobe: Jedes Satzglied kann man als Ganzes an den Anfang stellen. Probier es mit jeder Wortgruppe aus.",
     };
   }
   const b = bauen(rng, st, { adv: st === 0 ? 1 : undefined });
@@ -549,6 +557,7 @@ function satzgliederWahl(rng: Rng, st: Stufe): Wahl {
     falsch: andere.map((g) => subjektFehler(b, g)),
     regel: `Wer oder was ${b.finit}${b.ende ? ` … ${b.ende}` : ""}? ${cap(S.text)}. Das Subjekt steht im Nominativ.`,
     hilfe: "Frag mit „Wer oder was?“ und dem Prädikat.",
+    tipp: `Frag: Wer oder was ${b.finit}${b.ende ? ` … ${b.ende}` : ""}? Das Subjekt steht im Nominativ.`,
   };
 }
 function satzgliederLuecke(rng: Rng, st: Stufe): Satz {
@@ -570,6 +579,7 @@ function satzgliederLuecke(rng: Rng, st: Stufe): Satz {
     ],
     regel: `Subjekt: ${S.text} (Wer oder was ${pr}?). Prädikat: ${pr}.`,
     hilfe: SG_HILFE,
+    tipp: `Das Prädikat ist das gebeugte Verb an zweiter Stelle, bei zwei Teilen auch der Teil am Satzende. Das Subjekt findest du mit „Wer oder was?“ und dem Prädikat.`,
   };
 }
 function satzgliederKurz(rng: Rng, st: Stufe): Umformung {
@@ -600,6 +610,7 @@ function satzgliederKurz(rng: Rng, st: Stufe): Umformung {
       fehler,
       regel: `${richtig[0]} Die Satzglieder bleiben beim Umstellen zusammen, das gebeugte Verb bleibt an zweiter Stelle.`,
       hilfe: "Stell das Satzglied an den Anfang. Was steht dann an zweiter Stelle?",
+      tipp: "Die Satzglieder bleiben beim Umstellen zusammen, das gebeugte Verb bleibt an zweiter Stelle.",
     };
   }
   if (kind === "praedikat") {
@@ -612,6 +623,7 @@ function satzgliederKurz(rng: Rng, st: Stufe): Umformung {
       fehler: [F(b.finit, "Nur den gebeugten Teil genommen: Das Prädikat hat hier zwei Teile"), F(b.ende, "Den gebeugten Teil vergessen: Er steht an zweiter Stelle"), F(`${b.finit} ${obj.text} ${b.ende}`, `${zitat(obj)} gehört nicht zum Prädikat`)],
       regel: `Das Prädikat ist ${praedikatVon(b)}: der gebeugte Teil an zweiter Stelle, der andere am Ende.`,
       hilfe: "Welches Verb steht an zweiter Stelle? Welcher Teil gehört am Ende dazu?",
+      tipp: PRAEDIKAT_TIPP,
     };
   }
   const b = bauen(rng, st, { vorn: st >= 1 ? "adv" : "S", adv: st >= 1 ? 1 : undefined });
@@ -625,6 +637,7 @@ function satzgliederKurz(rng: Rng, st: Stufe): Umformung {
       .map((g) => subjektFehler(b, g)),
     regel: `Wer oder was ${praedikatVon(b)}? ${cap(S.text)}.`,
     hilfe: "Frag mit „Wer oder was?“ und dem Prädikat.",
+    tipp: `Frag: Wer oder was ${praedikatVon(b)}?`,
   };
 }
 
@@ -665,6 +678,7 @@ function objekteWahl(rng: Rng, st: Stufe): Wahl {
       falsch: ["Subjekt", "Dativobjekt", "Akkusativobjekt", "adverbiale Bestimmung"].filter((x) => x !== richtig).map((x) => F(x, labels[x])),
       regel: `${gliedFrage(g)} ${cap(g.text)}: ${richtig === "adverbiale Bestimmung" ? `eine ${rolleName(g)}` : `das ${richtig}`}.`,
       hilfe: "Frag mit dem ganzen Prädikat: Wer oder was? Wem? Wen oder was? Wann, wo, wie, warum?",
+      tipp: `Stell die Fragen mit dem ganzen Prädikat (${praedikatVon(b)}). Auf welche antwortet ${zitat(g)}?`,
     };
   }
   const ziel = gliederVon(b).find((g) => g.rolle === gesucht)!;
@@ -677,6 +691,7 @@ function objekteWahl(rng: Rng, st: Stufe): Wahl {
       .map((g) => objektFehler(g, gesucht)),
     regel: `${frageMit(b, ziel, gesucht === "D" ? "Wem" : "Wen oder was")} ${cap(ziel.text)}.`,
     hilfe: OBJ_REGEL,
+    tipp: `Frag: ${frageMit(b, ziel, gesucht === "D" ? "Wem" : "Wen oder was")}`,
   };
 }
 /** The question words for an object: Wem? Wen oder was? (things: also Was?, persons: also Wen?). */
@@ -713,6 +728,7 @@ function objekteLuecke(rng: Rng, st: Stufe): Satz {
       luecken: [L(richtig, fehler)],
       regel: `${richtig[0]} ${q.slice(GAP.length + 1)} ${cap(ziel.text)}: das ${gesucht === "D" ? "Dativobjekt" : "Akkusativobjekt"}.`,
       hilfe: OBJ_REGEL,
+      tipp: FRAGEWORT_TIPP(ziel),
     };
   }
   throw new Error("Kein passender Satz gefunden");
@@ -730,6 +746,7 @@ function objekteKurz(rng: Rng, st: Stufe): Umformung {
       .map((g) => objektFehler(g, gesucht)),
     regel: `${frageMit(b, ziel, gesucht === "D" ? "Wem" : "Wen oder was")} ${cap(ziel.text)}.`,
     hilfe: OBJ_REGEL,
+    tipp: `Frag: ${frageMit(b, ziel, gesucht === "D" ? "Wem" : "Wen oder was")}`,
   };
 }
 /**
@@ -778,6 +795,7 @@ function adverbialeWahl(rng: Rng, st: Stufe): Wahl {
         .map((g) => F(g.text, g.adv ? `${zitat(g)} ist eine Angabe ${TYP_GENITIV[ADV_TYP[g.adv]]} (${gliedFrage(g)})` : `${zitat(g)} ist das ${ROLLE_NAME[g.rolle]} (${gliedFrage(g)})`)),
       regel: `${ADV_FRAGE[ziel.adv!][0]}? ${cap(ziel.text)}: eine adverbiale Bestimmung ${TYP_GENITIV[typ]}.`,
       hilfe: ADV_REGEL,
+      tipp: `Frag: ${frageMit(b, ziel, ADV_FRAGE[ziel.adv!][0])}`,
     };
   }
   // the Grund first when there is one (the trap with a preposition), otherwise any
@@ -790,6 +808,7 @@ function adverbialeWahl(rng: Rng, st: Stufe): Wahl {
     falsch: (Object.keys(TYP_NAME) as AdvTyp[]).filter((t) => t !== typ).map((t) => typFehler(ziel, t)),
     regel: `${frageMit(b, ziel, ADV_FRAGE[ziel.adv!][0])} ${cap(ziel.text)}: adverbiale Bestimmung ${TYP_GENITIV[typ]}.`,
     hilfe: ADV_REGEL,
+    tipp: `Stell die Fragen mit dem ganzen Prädikat (${praedikatVon(b)}). Auf welche antwortet ${zitat(ziel)}?`,
   };
 }
 /** The wrong question words for an adverbiale Bestimmung. */
@@ -822,6 +841,7 @@ function adverbialeLuecke(rng: Rng, st: Stufe): Satz {
       luecken: [L(richtig, advFrageFehler(ziel.adv!))],
       regel: `${richtig[0]} ${q.slice(GAP.length + 1)} ${cap(ziel.text)}: adverbiale Bestimmung ${TYP_GENITIV[ADV_TYP[ziel.adv!]]}.`,
       hilfe: ADV_REGEL,
+      tipp: FRAGEWORT_TIPP(ziel),
     };
   }
   throw new Error("Kein passender Satz gefunden");
@@ -840,6 +860,7 @@ function adverbialeKurz(rng: Rng, st: Stufe): Umformung {
       .map((g) => F(g.text, g.adv ? `${zitat(g)} ist eine Angabe ${TYP_GENITIV[ADV_TYP[g.adv]]} (${gliedFrage(g)})` : `${zitat(g)} ist das ${ROLLE_NAME[g.rolle]} (${gliedFrage(g)})`)),
     regel: `${ADV_FRAGE[ziel.adv!][0]}? ${cap(ziel.text)}.`,
     hilfe: ADV_REGEL,
+    tipp: `Frag: ${frageMit(b, ziel, ADV_FRAGE[ziel.adv!][0])}`,
   };
 }
 
@@ -848,6 +869,10 @@ function adverbialeKurz(rng: Rng, st: Stufe): Umformung {
 // =====================================================================
 const FALL_NR: Record<Fall, number> = { nom: 1, gen: 2, dat: 3, akk: 4 };
 const FALL_REGEL = "Frag mit dem ganzen Prädikat: Wer oder was? (Nominativ), Wessen? (Genitiv), Wem? (Dativ), Wen oder was? (Akkusativ).";
+const FALL_ERSATZPROBE = "Ersatzprobe: Setz statt der Wortgruppe „ich“, „mir“ oder „mich“ ein. Passt „ich“, ist es der Nominativ, bei „mir“ der Dativ, bei „mich“ der Akkusativ. Antwortet sie auf „Wessen?“, ist es der Genitiv.";
+/** Another noun of the same genus: the case shown on a word that is not asked. */
+const BSP_NOMEN: Record<NP["n"]["genus"], string[]> = { m: ["Hund", "Kater"], f: ["Katze", "Tante"], n: ["Pferd", "Heft"] };
+const bspNp = (x: NP): NP => np(x.b, BSP_NOMEN[x.n.genus].find((w) => w !== x.n.wort)!);
 /** The subjects of the Fälle sentences: ich, wir, a name or „mein Bruder“; `markiert`: the subject shows its case. */
 type FallSubjekt = { text: string; p: 0 | 3 | 2; markiert: boolean };
 function fallSubjekt(rng: Rng): FallSubjekt {
@@ -930,6 +955,7 @@ function fallSatz(rng: Rng, st: Stufe, fuerFix = false): FallLuecke {
         luecken: [L(richtig, [F(falsch, verwechselt(p.fall, anderer(p.fall))), F(p.pron, `Das ist der Nominativ: ${FALL_FRAGE[p.fall]} ${richtig}`, { fix: false })], fuerFix ? undefined : p.pron)],
         regel: `${FALL_FRAGE[p.fall]} ${richtig}: ${FALL_NAME[p.fall]}.`,
         hilfe: FALL_REGEL,
+        tipp: `Frag mit dem Prädikat: Wem? oder Wen oder was? Dann setz „${p.pron}“ in diesen Fall.`,
       },
       ziel: richtig,
       fall: p.fall,
@@ -955,6 +981,7 @@ function fallSatz(rng: Rng, st: Stufe, fuerFix = false): FallLuecke {
         luecken: [L(art0, [F(begleiter(x.b, x.n.genus, anderer(p.fall)), label), F(begleiter(x.b, x.n.genus, "nom"), `Das ist der Nominativ: ${label}`)], x.b)],
         regel,
         hilfe: FALL_REGEL,
+        tipp: `„${p.p}“ verlangt den ${FALL_NAME[p.fall]}. Wie heißt „${x.b}“ in diesem Fall vor „${x.n.wort}“?`,
       },
       ziel: richtigNp,
       fall: p.fall,
@@ -972,7 +999,14 @@ function fallSatz(rng: Rng, st: Stufe, fuerFix = false): FallLuecke {
     const wessen = `Wessen ${ding.wort}?`;
     const fehler = person.genus === "f" ? [F(begleiter(x.b, "f", "nom"), `${wessen} Das verlangt den Genitiv: ${form(x, "gen")}`)] : [F(begleiter(x.b, "m", "dat"), `Dativ statt Genitiv: ${wessen} ${form(x, "gen")}`), F(begleiter(x.b, "m", "akk"), `Akkusativ statt Genitiv: ${wessen} ${form(x, "gen")}`)];
     return {
-      satz: { titel, text: `Das ist ${dingNp} ${GAP} ${x.n.gen[0]}.`, luecken: [L(richtig, fehler, x.b)], regel: `${wessen} ${cap(form(x, "gen"))}: ${FALL_NAME.gen}.`, hilfe: FALL_REGEL },
+      satz: {
+        titel,
+        text: `Das ist ${dingNp} ${GAP} ${x.n.gen[0]}.`,
+        luecken: [L(richtig, fehler, x.b)],
+        regel: `${wessen} ${cap(form(x, "gen"))}: ${FALL_NAME.gen}.`,
+        hilfe: FALL_REGEL,
+        tipp: `Frag: ${wessen} Darauf antwortet der Genitiv. Wie heißt „${x.b}“ im Genitiv vor „${x.n.wort}“?`,
+      },
       ziel: form(x, "gen"),
       fall: "gen",
       vorlage: { x, fall: "gen" },
@@ -997,6 +1031,7 @@ function fallSatz(rng: Rng, st: Stufe, fuerFix = false): FallLuecke {
         luecken: [L(begleiter(x.b, x.n.genus, "dat"), [F(begleiter(x.b, x.n.genus, "akk"), label), F(begleiter(x.b, x.n.genus, "nom"), `Das ist der Nominativ: ${label}`), F(begleiter(x.b, x.n.genus, "gen"), `Das ist der Genitiv: ${label}`)], x.b)],
         regel: `Wem? ${richtigNp}: ${FALL_NAME.dat}.`,
         hilfe: FALL_REGEL,
+        tipp: `„${verbInf}“ verlangt ein Dativobjekt: Frag „Wem?“. Wie heißt „${x.b}“ im Dativ vor „${x.n.wort}“?`,
       },
       ziel: richtigNp,
       fall: "dat",
@@ -1020,6 +1055,7 @@ function fallSatz(rng: Rng, st: Stufe, fuerFix = false): FallLuecke {
       luecken: [L(begleiter(x.b, "m", "akk"), [F(begleiter(x.b, "m", "dat"), label), F(begleiter(x.b, "m", "nom"), `Das ist der Nominativ: ${label}`)], x.b)],
       regel: `Wen oder was? ${richtigNp}: ${FALL_NAME.akk}.`,
       hilfe: FALL_REGEL,
+      tipp: `„${v.f[1]}“ verlangt ein Akkusativobjekt: Frag „Wen oder was?“. Wie heißt „${x.b}“ im Akkusativ vor „${x.n.wort}“?`,
     },
     ziel: richtigNp,
     fall: "akk",
@@ -1042,6 +1078,7 @@ function faelleWahl(rng: Rng, st: Stufe): Wahl {
     falsch: (["nom", "gen", "dat", "akk"] as Fall[]).filter((x) => x !== f).map((x) => F(FALL_NAME[x], extra?.[x] ?? fallLabel(f, x, praep))),
     regel: praep ? `„${praep}“ verlangt den ${FALL_NAME[f]}.` : `${FALL_FRAGE[f]} ${cap(ziel)}: ${FALL_NAME[f]}.`,
     hilfe: FALL_REGEL,
+    tipp: praep ? `Frag mit der Präposition: „${praep} wem?“ oder „${praep} wen?“ Was klingt richtig?` : FALL_ERSATZPROBE,
   });
   const kind = art(rng, { satz: 4, satzglied: 3, falle: st >= 3 ? 2 : 0 });
   if (kind === "falle") {
@@ -1054,7 +1091,11 @@ function faelleWahl(rng: Rng, st: Stufe): Wahl {
     }
     if (t === 1) {
       const z = pick(rng, ["des Regens", "der Hitze", "des Gewitters"]);
-      return mit(`Wegen ${z} bleibt ${name} zu Hause.`, z, "gen", undefined, { dat: "„wegen“ verlangt in der geschriebenen Sprache den Genitiv" });
+      // the Ersatzprobe would lead to the Dativ here („wegen mir“ is spoken language)
+      return {
+        ...mit(`Wegen ${z} bleibt ${name} zu Hause.`, z, "gen", undefined, { dat: "„wegen“ verlangt in der geschriebenen Sprache den Genitiv" }),
+        tipp: "Bei „wegen“ hilft die Ersatzprobe nicht: „wegen mir“ ist Umgangssprache. Stell die Fragen Wem?, Wen oder was? und Wessen? an die Wortgruppe. Welche passt?",
+      };
     }
     const p = pick(rng, PERSONEN.filter((n) => n.genus === "f"));
     const z = form(np("mein", p.wort), "gen");
@@ -1093,6 +1134,7 @@ function faelleKurz(rng: Rng, st: Stufe): Umformung {
       .map((w) => F(w, `Das ist der ${(["nom", "gen", "dat", "akk"] as Fall[]).filter((z) => formen(x, z).includes(w)).map((z) => FALL_NAME[z]).join(" oder der ")}`)),
     regel: `${FALL_NAME[f]}: ${formen(x, f).join(" oder ")}.`,
     hilfe: `Der ${FALL_NR[f]}. Fall antwortet auf „${FALL_FRAGE[f]}“. Wie heißt dann der Begleiter?`,
+    tipp: `Zum Vergleich ein anderes Nomen im ${FALL_NAME[f]}: ${form(bspNp(x), "nom")} → ${FALL_FRAGE[f]} ${form(bspNp(x), f)}.`,
   };
 }
 
@@ -1248,6 +1290,12 @@ function zeitFehler(z: ZBau): { finit: Fehler[]; ende: Fehler[] } {
   return { finit: sauber(richtig.finit, finit), ende: sauber(richtig.ende, ende) };
 }
 const ZEIT_HILFE = "Welche Zeitform ist gefragt? Brauchst du ein Hilfsverb (haben, sein, werden)?";
+/** The forms of „spielen“ for the hint when the task's verb is „lesen“, the example of TEMPUS_BAU. */
+const SPIELEN: Record<Tempus, string> = { praesens: "spielt", praeteritum: "spielte", perfekt: "hat gespielt", plusquamperfekt: "hatte gespielt", futur1: "wird spielen", futur2: "wird gespielt haben" };
+/** How the tense is built, shown on another verb than the task's. */
+const tempusTipp = (t: Tempus, v: Verb) => `${v.inf === "lesen" ? TEMPUS_BAU[t].replace(/\(.*\)$/, `(${SPIELEN[t]})`) : TEMPUS_BAU[t]}.`;
+const TEMPUS_TIPP =
+  "Präsens und Präteritum haben kein Hilfsverb. Perfekt: „haben“ oder „sein“ im Präsens und das Partizip II. Plusquamperfekt: „hatte“ oder „war“ und das Partizip II. Futur I: „werden“ und die Grundform. Futur II: „werden“, das Partizip II und „haben“ oder „sein“.";
 /** A gap text: the finite verb and (if there is one) the end of the Prädikat are gaps; the verb and the tense in brackets. */
 function zeitLuecke(z: ZBau, titel = "Setze das Verb in der angegebenen Zeitform ein."): Satz {
   const f = verbformen(z.v, z.s.p, z.t);
@@ -1260,6 +1308,7 @@ function zeitLuecke(z: ZBau, titel = "Setze das Verb in der angegebenen Zeitform
     cueEnde: `${z.v.inf}, ${TEMPUS_KURZ[z.t]}`,
     regel: `${TEMPUS_BAU[z.t]}. ${zSatz(z)}`,
     hilfe: ZEIT_HILFE,
+    tipp: tempusTipp(z.t, z.v),
   };
 }
 /** Recognise the tense: the sentence and four of the six tenses. */
@@ -1268,6 +1317,7 @@ function zeitErkennen(rng: Rng, st: Stufe, nur?: Tempus[]): Wahl {
   const t = pick(rng, moeglich);
   let text: string;
   let falle: string | null = null;
+  let tipp = TEMPUS_TIPP;
   // traps from level 3: „werden“ with a Partizip (Passiv) or as a Vollverb, a future time with the Präsens
   if (!nur && t === "praesens" && st >= 3 && rng() < 0.6) {
     const k = rint(rng, 0, 2);
@@ -1276,13 +1326,16 @@ function zeitErkennen(rng: Rng, st: Stufe, nur?: Tempus[]): Wahl {
       const pat = pick(rng, p.patienten);
       text = `${cap(pat.nom)} ${pat.pl ? "werden" : "wird"} ${p.taeter.von[0]} ${p.p2}.`;
       falle = "Nicht jede Form mit „werden“ ist Futur: Hier steht „werden“ mit dem Partizip II (Passiv), die Zeitform ist Präsens";
+      tipp = "Nicht jede Form mit „werden“ ist Futur. Steht „werden“ hier mit der Grundform oder mit dem Partizip II?";
     } else if (k === 1) {
       text = pick(rng, ["Mein Bruder wird bald zwölf.", "Im Herbst wird es früh dunkel.", `${pick(rng, MAEDCHEN)} wird Tierärztin.`]);
       falle = "„werden“ ist hier ein Vollverb ohne Grundform: Präsens";
+      tipp = "„werden“ kann auch ein Vollverb sein (groß werden, zwölf werden). Steht eine Grundform dabei?";
     } else {
       const z = zBauen(rng, st, "praesens", { verb: (v) => Boolean(v.bewegung), signal: false });
       text = zSatz({ ...z, vorn: "morgen", mittel: [z.s.text, z.rest] });
       falle = "Die Zeitform erkennst du an der Verbform, nicht an „morgen“: Das ist das Präsens";
+      tipp = "Die Zeitform erkennst du an der Verbform, nicht an einem Zeitwort wie „morgen“.";
     }
   } else text = zSatz(zBauen(rng, st, t));
   const verwechslung: Partial<Record<Tempus, Partial<Record<Tempus, string>>>> = {
@@ -1304,6 +1357,7 @@ function zeitErkennen(rng: Rng, st: Stufe, nur?: Tempus[]): Wahl {
     falsch: wahl.map((x) => F(TEMPUS_NAME[x], verwechslung[t]?.[x] ?? `${TEMPUS_KURZ[x]} statt ${TEMPUS_KURZ[t]}. ${TEMPUS_BAU[t]}`)),
     regel: falle ? `${falle}.` : `${TEMPUS_BAU[t]}.`,
     hilfe: "Gibt es ein Hilfsverb (haben, sein, werden)? In welcher Form steht es? Wie viele Teile hat das Prädikat?",
+    tipp,
   };
 }
 /** Rewrite a sentence in another tense; every order of the Satzglieder counts. */
@@ -1340,6 +1394,7 @@ function zeitUmformen(rng: Rng, st: Stufe, von: Tempus, nach: Tempus): Umformung
     fehler,
     regel: `${TEMPUS_BAU[nach]}. ${richtig[0]}`,
     hilfe: ZEIT_HILFE,
+    tipp: tempusTipp(nach, z.v),
   };
 }
 function zeitenLuecke(rng: Rng, st: Stufe): Satz {
@@ -1416,6 +1471,7 @@ function nachdemSatz(rng: Rng, st: Stufe): Satz {
     cueEnde: `${v.inf}, Plusquamperfekt`,
     regel: `Was zuerst geschah, steht im Plusquamperfekt: ${v.p2} ${hilf}. Danach im Präteritum: ${s.p === 3 || s.p === 5 ? pl : sg}.`,
     hilfe: "Was geschah zuerst? Dafür brauchst du „hatte“ oder „war“ und das Partizip II.",
+    tipp: "Im Gliedsatz mit „nachdem“ steht das gebeugte Verb am Ende: zuerst das Partizip II, dann „hatte“ oder „war“ in der passenden Form.",
   };
 }
 function plusquamperfektLuecke(rng: Rng, st: Stufe): Satz {
@@ -1512,6 +1568,7 @@ function passivLuecke(rng: Rng, st: Stufe): Satz {
     cueEnde: `${p.inf}, ${TEMPUS_KURZ[t]}`,
     regel: `${PASSIV_BAU[t]}. ${fertig(f.finit, f.ende)}`,
     hilfe: PASSIV_HILFE,
+    tipp: `${PASSIV_BAU[t]}.`,
   };
 }
 function aktivSatz(p: PassivRahmen, pat: Patient, t: PTempus, zeit: string | null): string {
@@ -1539,6 +1596,7 @@ function passivWahl(rng: Rng, st: Stufe): Wahl {
       ],
       regel: `${richtig} Passiv: „werden“ und das Partizip II.`,
       hilfe: PASSIV_HILFE,
+      tipp: "Im Passiv wird das Akkusativobjekt zum Subjekt, wer es tut, steht mit „von“. Dazu „werden“ in derselben Zeitform und das Partizip II.",
     };
   }
   return wahlAusSatz(passivLuecke(rng, st), "Welche Form passt in die Lücken?");
@@ -1728,6 +1786,7 @@ function redeKurz(rng: Rng, st: Stufe): Umformung {
         ],
         regel: `${vorn} ${RD_REGEL.vorn}`,
         hilfe: RD_HILFE,
+        tipp: RD_REGEL.vorn,
       };
     return {
       auftrag: "Stell den Begleitsatz nach hinten. Achte auf die Satzzeichen.",
@@ -1740,6 +1799,7 @@ function redeKurz(rng: Rng, st: Stufe): Umformung {
       ],
       regel: `${hinten[0]} ${RD_REGEL.hinten}`,
       hilfe: RD_HILFE,
+      tipp: RD_REGEL.hinten,
     };
   }
   // write the sentence with all its punctuation; not with the Begleitsatz in the middle: without marks
@@ -1755,6 +1815,7 @@ function redeKurz(rng: Rng, st: Stufe): Umformung {
     fehler: s.luecken.flatMap((l, i) => sauber(l.richtig, l.fehler, true).map((f) => F(fuellen(s, rechts.map((r, j) => (j === i ? f.answer : r))), f.label))),
     regel: `${fuellen(s, rechts)} ${s.regel}`,
     hilfe: RD_HILFE,
+    tipp: s.regel,
   };
 }
 
@@ -1929,11 +1990,17 @@ function fehlerFinden(skillId: string, difficulty: Difficulty, rng: Rng): TaskDr
   const e = pick(rng, mc.errorMap);
   const name = pick(rng, [...MAEDCHEN.slice(0, 6), ...BUBEN.slice(0, 6)]);
   const gewaehlt = mc.data.options![Number(e.answer)];
+  // the label often names the right answer („Genitiv statt Dativ: Frag „Wem?““): then only the part after
+  // it, or the hints of the task when that names it too
+  const richtig = mc.data.options![mc.answer.correct!].replace(/\s*\([^)]*\)/g, "").toLowerCase();
+  const nennt = (x: string) => x.toLowerCase().includes(richtig);
+  const rest = e.label.replace(/^[^:.]*[:.]\s*/, "");
+  const warum = !nennt(e.label) ? e.label : rest !== e.label && !nennt(rest) ? rest : null;
   return {
     ...mc,
     category: "fehler",
     prompt: `${mc.prompt}\n${name} hat „${gewaehlt}“ gewählt. Das stimmt nicht. Was ist richtig?`,
-    hints: [`Warum stimmt „${gewaehlt}“ nicht? ${e.label}.`, ...mc.hints.slice(0, 1)],
+    hints: warum ? [`Warum stimmt „${gewaehlt}“ nicht? ${warum}.`, ...mc.hints.slice(0, 1)] : mc.hints.slice(0, 2),
     errorMap: [{ answer: e.answer, label: `Fehler übernommen: ${e.label}` }, ...mc.errorMap.filter((x) => x !== e)],
   };
 }
