@@ -323,7 +323,10 @@ _Avoid_: Gegenstand, Unterrichtsgegenstand, Kurs
 
 **Hausübung**:
 Was der Schüler zu Hause macht: Beschreibung, Fach, Fälligkeit, offen oder
-erledigt. Österreichisch für Hausaufgabe.
+erledigt. Österreichisch für Hausaufgabe. Sie kann zu einer **Übung** gehören
+(`homework.assignment_id`): ist die fertig, ist die Hausübung erledigt, auch ohne Häkchen.
+Auf der Startseite steht sie unter „Zu erledigen“ mit Zustand Offen, Überfällig oder
+Erledigt (`lib/zu-erledigen.ts`).
 _Avoid_: Hausaufgabe, Homework, Übung, Aufgabe
 
 **Schularbeit**:

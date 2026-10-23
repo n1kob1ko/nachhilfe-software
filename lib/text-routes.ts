@@ -4,8 +4,7 @@
  * new version, or 409 with the stored text when it was changed elsewhere in the meantime.
  */
 import { notifyStudent, parseView, pushLive } from "./live";
-import { getPictureStory, handIn } from "./picture-story";
-import { getAuftrag } from "./schreibauftrag-store";
+import { handIn } from "./picture-story";
 import { validateDoc } from "./text-doc";
 import { getText, saveText, type TextView } from "./texts";
 import { runningUnitForStudent } from "./units";
@@ -55,14 +54,15 @@ function afterSave(text: TextView, version: number, by: "lehrer" | "schueler") {
 }
 
 /**
- * "Abgeben" from the student's device (Bildgeschichten, Schreibaufträge): the browser sends the version it has saved; a
- * newer one on the server means something is not saved here yet, so nothing is handed in.
+ * "Abgeben" from the student's device (every Textarbeit: Bildgeschichten, Schreibaufträge and plain texts): the browser
+ * sends the version it has saved; a newer one on the server means something is not saved here yet, so nothing is handed in.
+ * A handed-in text waits in the teacher's „Zu erledigen“ (lib/zu-erledigen.ts).
  */
 export async function handleHandIn(request: Request, textId: number, o: { mayWrite: (t: TextView) => boolean }): Promise<Response> {
   const site = request.headers.get("sec-fetch-site");
   if (site && site !== "same-origin") return json({ error: "Nicht erlaubt." }, 403);
   const text = Number.isInteger(textId) ? getText(textId) : null;
-  if (!text || !(getPictureStory(text.id) || getAuftrag(text.id))) return json({ error: "Diesen Text gibt es nicht." }, 404);
+  if (!text) return json({ error: "Diesen Text gibt es nicht." }, 404);
   if (!o.mayWrite(text)) return json({ error: "Dieser Text kann hier gerade nicht abgegeben werden." }, 403);
   let data: { version?: unknown };
   try {

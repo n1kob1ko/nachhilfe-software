@@ -22,7 +22,7 @@ Jede Textsorte hat:
    - Der Arbeitsauftrag entsteht aus den Angaben und folgt ihnen, bis du ihn selbst änderst.
    - „Beispiel einfügen“ füllt alles mit der Beispiel-Textbeilage der Textsorte aus.
 2. **Ändern.** In der Textarbeit führt „Text und Auftrag“ zu `/texte/<id>/schreibauftrag`. Die Textsorte bleibt, der geschriebene Text auch.
-3. **Schreiben.** Am Tablet (`/geraet`) und am eigenen Laptop (`/mitmachen`) wie bei der Textinterpretation: breit links die Textbeilage mit Zeilennummern, rechts Schreibplan mit „Achte auf“, Wortzähler und Editor; schmal zwei Reiter „Text lesen“ und „Schreiben“. Darunter die Hinweise und „So kann es aussehen“ mit dem Mustertext der Textsorte.
+3. **Schreiben.** Am Tablet (`/geraet`) und am eigenen Laptop (`/mitmachen`) wie bei der Textinterpretation: breit links die Textbeilage mit Zeilennummern, rechts Schreibplan mit „Achte auf“, Wortzähler und Editor (die Textbeilage lässt sich ausblenden, dann geht der Editor über die ganze Breite); schmal zwei Reiter „Text lesen“ und „Schreiben“. Darunter die Hinweise und „So kann es aussehen“ mit dem Mustertext der Textsorte.
 4. **Abgeben, korrigieren, Lernverlauf** wie bei jedem Text ([textarbeit.md](textarbeit.md), [textkorrektur.md](textkorrektur.md)).
 5. **Drucken.** „PDF / Drucken“ hat das Feld „Ausgabe“: das Arbeitsblatt (Arbeitsauftrag, Textbeilage mit Art, Titel, Autor, Medium und Datum, Zeilennummern, Schreibplan mit „Achte auf“ und Linien: 52 Linien je 500 Wörter, mindestens 24), den fertigen Text, oder den Text mit der Textbeilage auf einer neuen Seite.
 

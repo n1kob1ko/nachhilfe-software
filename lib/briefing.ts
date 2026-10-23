@@ -267,7 +267,7 @@ export function briefingDaten(studentId: number, o: { now?: Date; platzId?: numb
       .map((t) => ({ ...t, days: daysUntil(t.date, datum) }))
       .find((t) => t.days <= 60) ?? null;
   const schritte = nextSteps(studentId, { today: datum, now: now.getTime(), limit: 5 });
-  const hausuebungen = (db().prepare("SELECT * FROM homework WHERE student_id = ? AND status = 'offen' ORDER BY due_date IS NULL, due_date").all(studentId) as repo.Homework[]).slice(0, 3);
+  const hausuebungen = (db().prepare("SELECT h.* FROM homework h WHERE h.student_id = ? AND h.status = 'offen' AND NOT EXISTS (SELECT 1 FROM assignments a WHERE a.id = h.assignment_id AND a.completed_at IS NOT NULL) ORDER BY h.due_date IS NULL, h.due_date").all(studentId) as repo.Homework[]).slice(0, 3);
   const basis = { schritte, schularbeit, analysis, doku };
   return {
     student,
