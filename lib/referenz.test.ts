@@ -317,11 +317,11 @@ test("„Lernpaket mit KI“ gets the examples of its skill, names masked", asyn
   const auftrag = {
     fach: "Mathematik", thema: "Gleichungen", schulart: "Gymnasium", klasse: 3, stufe: "3. Klasse Gymnasium", skill, parent: null, dauer: 50,
     schwierigkeit: "mittel" as const, hinweise: "", erklaerung: "", fehler: [], wortarten: null,
-    vorbilder: [{ faehigkeit: "Gleichungen › Einfach", format: "Textaufgabe", grundkompetenz: "AG 2.1", aufgabe: "Mia Probe kauft 3 Hefte um je x Euro …", loesung: "x = 2", nurAufbau: false }],
+    referenzen: [{ faehigkeit: "Gleichungen › Einfach", format: "Textaufgabe", grundkompetenz: "AG 2.1", aufgabe: "Mia Probe kauft 3 Hefte um je x Euro …", loesung: "x = 2", nurAufbau: false }],
   };
   const { prompt } = lernpaketAnfrage(auftrag, [], ["Mia Probe"]);
   assert.match(prompt, /Beispiele aus der Referenzsammlung/);
   assert.match(prompt, /\[Name\] kauft 3 Hefte/);
   assert.ok(!prompt.includes("Mia Probe"));
-  assert.ok(!lernpaketAnfrage({ ...auftrag, vorbilder: [] }, []).prompt.includes("Referenzsammlung"));
+  assert.ok(!lernpaketAnfrage({ ...auftrag, referenzen: [] }, []).prompt.includes("Referenzsammlung"));
 });

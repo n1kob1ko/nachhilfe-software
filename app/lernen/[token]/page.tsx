@@ -1,13 +1,23 @@
 import Link from "next/link";
-import { CalendarDays, CheckCircle2, ChevronRight, DoorOpen, Presentation } from "lucide-react";
+import { CalendarDays, CalendarPlus, CheckCircle2, ChevronRight, DoorOpen, Presentation } from "lucide-react";
 import { notFound } from "next/navigation";
 import { SubjectArt } from "@/components/Art";
 import { MasteryBar, Pill, TrendBadge, formatDate } from "@/components/ui";
 import { AppHinweis } from "@/components/AppHinweis";
+import { Hausuebungen } from "@/components/lernen/Hausuebungen";
+import { KommendePruefungen } from "@/components/lernen/KommendePruefungen";
+import { Unterlagen } from "@/components/lernen/Unterlagen";
+import { VergangeneEinheiten } from "@/components/lernen/VergangeneEinheiten";
+import { NaechstesMal, SchuelerNotizFrage } from "@/components/SchuelerNotizFrage";
 import { termineFuerSchueler } from "@/lib/planung/schueler-termine";
+import { anfragbareTermine, anfragenFuerSchueler } from "@/lib/planung/terminanfragen";
+import { antwortSchuelerAction, stelleSchuelerAnfrageAction } from "@/app/terminanfrage-actions";
+import { AnfrageMeldung, AnfragenListe, TerminAendern } from "@/components/planung/Terminanfragen";
+import { eintraegeFuerSchueler, STATUS_LABEL } from "@/lib/pruefliste";
 import * as repo from "@/lib/repo";
 import { activeMaterial, materialLabel } from "@/lib/current-material";
 import { analyzeStudent } from "@/lib/service";
+import { notizFuerSchueler, offenerWunsch } from "@/lib/schueler-notiz";
 import { runningUnitForStudent } from "@/lib/units";
 
 
@@ -17,8 +27,9 @@ const bildThema = (studentId: number) => {
   return m ? `${m.topic} ${materialLabel(m)}` : null;
 };
 
-export default async function LearnHome({ params }: { params: Promise<{ token: string }> }) {
+export default async function LearnHome({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ anfrage_ok?: string; anfrage_fehler?: string }> }) {
   const { token } = await params;
+  const sp = await searchParams;
   const student = repo.getStudentByToken(token);
   if (!student) notFound();
   const list = repo.listAssignments(student.id);
@@ -31,6 +42,14 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
 
   // wo und wann: nur veröffentlichte Plätze, ohne Namen (lib/planung/schueler-termine.ts)
   const { naechster, wochen } = termineFuerSchueler(student.id);
+  // Terminanfragen: verschieben oder tauschen; ein anderer Schüler erscheint nur als Zeit (lib/planung/terminanfragen.ts)
+  const aenderbar = new Map(anfragbareTermine({ schuelerId: student.id }).map((t) => [t.id, t]));
+  const anfragen = anfragenFuerSchueler(student.id);
+  const mitAnfrage = new Set(anfragen.filter((x) => x.status === "wartet" || x.status === "offen").flatMap((x) => x.platzIds));
+  // eingetragene Prüfungen: nur die eigenen Angaben und der Stand (lib/pruefliste.ts)
+  const pruefungen = eintraegeFuerSchueler(student.id);
+  // „Was war heute schwer?“ nach der letzten Einheit und „Für nächstes Mal“, nur die eigenen (lib/schueler-notiz.ts)
+  const notiz = notizFuerSchueler(student.id);
 
   return (
     <>
@@ -43,6 +62,15 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
         </div>
         <SubjectArt subject={student.subjects[0]} topic={bildThema(student.id)} seed={student.id} className="pointer-events-none absolute -right-4 -bottom-6 hidden h-[190px] w-[190px] sm:block" />
       </section>
+
+      {notiz && (
+        <SchuelerNotizFrage
+          token={token}
+          unitId={notiz.unitId}
+          wann={notiz.wann}
+          notiz={notiz.notiz && { auswahl: notiz.notiz.auswahl, text: notiz.notiz.text, uebersprungen: notiz.notiz.uebersprungen }}
+        />
+      )}
 
       {unit && (
         <Link href={`/lernen/${token}/tafel`} className="panel mt-8 flex items-center gap-4 border-accent-bright/60 bg-accent-wash px-5 py-5 transition-colors hover:border-accent-bright">
@@ -73,10 +101,17 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
         </section>
       )}
 
-      <section className="panel mt-8 px-5 py-5" aria-label="Deine Termine" data-testid="termine">
+      <NaechstesMal token={token} text={offenerWunsch(student.id)?.text ?? null} />
+
+      {/* Übersicht (lib/schuelerportal.ts): Prüfungen und Hausübungen gleich nach dem nächsten Termin */}
+      <KommendePruefungen studentId={student.id} />
+      <Hausuebungen studentId={student.id} token={token} />
+
+            <section id="terminanfragen" className="panel mt-8 scroll-mt-4 px-5 py-5" aria-label="Deine Termine" data-testid="termine">
         <h2 className="flex items-center gap-2 text-[18px] font-semibold">
           <CalendarDays size={18} className="text-accent" aria-hidden /> Deine Termine
         </h2>
+        <AnfrageMeldung ok={sp.anfrage_ok} fehler={sp.anfrage_fehler} />
         {wochen.map((w) => (
           <div key={w.wochenstart} className="mt-4">
             <p className="text-[13px] font-semibold text-ink-2">
@@ -92,6 +127,7 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
                       <span className="num font-semibold">{t.label}</span>
                       <span className="num">{t.zeit}</span>
                       {t.heute && !t.vorbei && <Pill tone="accent">heute</Pill>}
+                      {mitAnfrage.has(t.id) && <Pill tone="amber">Anfrage offen</Pill>}
                     </span>
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-ink-2">
                       <DoorOpen size={15} className="shrink-0 text-ink-3" aria-hidden />
@@ -99,12 +135,19 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
                       {!t.raumOffen && <Pill tone={t.online ? "accent" : "neutral"}>{t.online ? "online" : "vor Ort"}</Pill>}
                       {t.nichtStattgefunden && <span className="text-[13px] text-ink-3">nicht stattgefunden</span>}
                     </span>
+                    {aenderbar.has(t.id) && <TerminAendern termin={aenderbar.get(t.id)!} aktion={stelleSchuelerAnfrageAction.bind(null, token)} schueler />}
                   </li>
                 ))}
               </ul>
             )}
           </div>
         ))}
+        {anfragen.length > 0 && (
+          <div className="mt-5">
+            <p className="mb-2 text-[13px] font-semibold text-ink-2">Deine Anfragen</p>
+            <AnfragenListe anfragen={anfragen} antwort={(a, was) => antwortSchuelerAction.bind(null, token, a.id, was)} schueler />
+          </div>
+        )}
       </section>
 
       <AppHinweis />
@@ -134,6 +177,37 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
           ))}
         </ul>
       )}
+
+      <section id="pruefungen" className="mt-12 scroll-mt-6" aria-label="Von dir eingetragen" data-testid="pruefung-eintraege">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-[18px] font-semibold">Von dir eingetragen</h2>
+          <Link href={`/lernen/${token}/pruefung`} className="btn btn-secondary" data-testid="pruefung-eintragen">
+            <CalendarPlus size={17} aria-hidden /> Prüfung eintragen
+          </Link>
+        </div>
+        {pruefungen.length === 0 ? (
+          <p className="text-[15px] text-ink-2">Steht eine Schularbeit oder ein Test an? Trag sie hier ein, mit einem Foto vom Stoffzettel.</p>
+        ) : (
+          <ul className="panel divide-y divide-line">
+            {pruefungen.map((p) => (
+              <li key={p.id} className="flex items-start justify-between gap-3 px-5 py-3">
+                <span className="min-w-0">
+                  <span className="block font-semibold">
+                    {p.art} {p.fach}
+                  </span>
+                  <span className="block text-[14px] break-words text-ink-2">
+                    <span className="num">{p.datum ? formatDate(p.datum, { weekday: "short", day: "numeric", month: "short" }) : "Datum offen"}</span>
+                    {p.stoff && ` · ${p.stoff}`}
+                  </span>
+                </span>
+                <Pill tone={p.status === "uebernommen" || p.status === "automatisch" ? "green" : p.status === "eingereicht" ? "accent" : "neutral"}>{STATUS_LABEL[p.status]}</Pill>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      <Unterlagen studentId={student.id} token={token} />
+      <VergangeneEinheiten studentId={student.id} />
 
       {practiced.length > 0 && (
         <section className="mt-12">

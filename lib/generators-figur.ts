@@ -705,7 +705,7 @@ function lineareAufgabe(skillId: string, diff: Difficulty, format: FigurFormat, 
       figur: figur(),
       answer: { accepted: [zahl(y1)], mode: "value" },
       solution: `Über x = ${zahl(x1)} liegt der Graph bei y = ${zahl(y1)}, also f(${zahl(x1)}) = ${zahl(y1)}.`,
-      hints: ["Geh auf der x-Achse zu x = " + zahl(x1) + " und dann senkrecht bis zum Graphen.", "Der Funktionswert ist die y-Koordinate dieses Punktes."],
+      hints: ["Geh auf der x-Achse bis " + zahl(x1) + " und dann senkrecht bis zum Graphen.", "Der Funktionswert ist die y-Koordinate dieses Punktes."],
       errorMap: fehlerOhne(zahl(y1), [umgekehrt ? { answer: zahl(umgekehrt[0]), label: "x und y vertauscht" } : null, { answer: zahl(-y1), label: "Vorzeichen falsch abgelesen" }]),
     });
   }

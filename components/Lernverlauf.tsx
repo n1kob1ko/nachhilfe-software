@@ -4,6 +4,7 @@ import { archiveTextAction } from "@/app/archiv-actions";
 import { LessonCard, rateTone } from "@/components/LessonCard";
 import { Info } from "@/components/Info";
 import { EinschaetzungPill } from "@/components/Einschaetzung";
+import { SchuelerNotizAnzeige, WunschZeile } from "@/components/SchuelerNotiz";
 import { BoardThumbs } from "@/components/BoardThumbs";
 import { UnitStatusPill } from "@/components/UnitControl";
 import { Empty, More, Pill, Reveal, SectionTitle, formatDate } from "@/components/ui";
@@ -11,6 +12,7 @@ import { pct } from "@/lib/analysis";
 import { autoFelderVon, leseEinschaetzung } from "@/lib/einschaetzung";
 import { progressOverview, readReport } from "@/lib/learning";
 import * as repo from "@/lib/repo";
+import { notizenFuerSchueler, wuenscheFuerSchueler, type SchuelerNotiz, type Wunsch } from "@/lib/schueler-notiz";
 import { analyzeStudent } from "@/lib/service";
 import { textsForStudent, textsForUnit, wordsLabel } from "@/lib/texts";
 import { correctionInfoForStudent, type TextCorrectionInfo } from "@/lib/text-correction";
@@ -40,11 +42,15 @@ export function Lernverlauf({ student, filter }: { student: repo.Student; filter
   const count = { alle: entries.length, einheiten: entries.filter((e) => !isPractice(e)).length, selbststaendig: entries.filter(isPractice).length };
   const shown = entries.filter((e) => art === "alle" || (art === "selbststaendig" ? isPractice(e) : !isPractice(e)));
   const results = new Map(repo.listAssignments(student.id, { archiv: "alle" }).map((x) => [x.id, { done: x.done_count, correct: x.correct_count }]));
+  // aus der Schüler-App: „Für nächstes Mal“ bei der Einheit, für die es war, „Was war heute schwer?“ bei der, nach der er es schrieb
+  const notizen = notizenFuerSchueler(student.id);
+  const wuensche = wuenscheFuerSchueler(student.id);
+  const vorname = student.name.split(" ")[0];
   const VISIBLE = 8;
   const item = (e: Entry) =>
     e.kind === "unit" ? (
       <li key={`u${e.unit.id}`} id={`einheit-${e.unit.id}`} className="scroll-mt-6">
-        <UnitEntry unit={e.unit} lesson={e.lesson} />
+        <UnitEntry unit={e.unit} lesson={e.lesson} notiz={notizen.get(e.unit.id)} wunsch={wuensche.get(e.unit.id)} vorname={vorname} />
       </li>
     ) : (
       <li key={`l${e.lesson.id}`}>
@@ -112,7 +118,7 @@ export function Lernverlauf({ student, filter }: { student: repo.Student; filter
   );
 }
 
-function UnitEntry({ unit, lesson }: { unit: UnitView; lesson: repo.Lesson | null }) {
+function UnitEntry({ unit, lesson, notiz, wunsch, vorname }: { unit: UnitView; lesson: repo.Lesson | null; notiz?: SchuelerNotiz; wunsch?: Wunsch; vorname: string }) {
   const r = lesson ? readReport(lesson) : null;
   const einschaetzung = lesson ? leseEinschaetzung(lesson) : null;
   const auto = lesson ? autoFelderVon(lesson) : new Set<string>();
@@ -163,6 +169,8 @@ function UnitEntry({ unit, lesson }: { unit: UnitView; lesson: repo.Lesson | nul
     return (
       <article className="panel px-5 py-3.5">
         {head}
+        {wunsch && <WunschZeile wunsch={wunsch} name={vorname} />}
+        {notiz && <SchuelerNotizAnzeige notiz={notiz} name={vorname} kompakt />}
         <UnitTextLinks unitId={unit.id} />
         <BoardThumbs unitId={unit.id} size="sm" />
       </article>
@@ -240,6 +248,8 @@ function UnitEntry({ unit, lesson }: { unit: UnitView; lesson: repo.Lesson | nul
           {keyDifficulties.length > 3 && <span className="text-[12px] text-ink-3">+{keyDifficulties.length - 3}</span>}
         </div>
       )}
+      {wunsch && <WunschZeile wunsch={wunsch} name={vorname} />}
+      {notiz && <SchuelerNotizAnzeige notiz={notiz} name={vorname} kompakt />}
       <UnitTextLinks unitId={unit.id} />
       {lesson.next_steps && (
         <p className="mt-1.5 truncate text-[14px]" title={lesson.next_steps}>

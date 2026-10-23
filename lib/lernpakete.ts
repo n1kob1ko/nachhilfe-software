@@ -140,6 +140,9 @@ const AufgabeSchema = z.strictObject({
   hints: z.array(z.string().max(1000)).max(6).default([]),
   errorMap: z.array(z.strictObject({ answer: z.string(), label: z.string() })).max(20).default([]),
   solutionSteps: z.array(z.string()).optional(),
+  // Lösungsdaten für den Lehrer (lib/loesungsdaten.ts)
+  teacherNote: z.string().max(GRENZEN.text).optional(),
+  altWays: z.array(z.string().max(1000)).max(6).optional(),
   estimatedTimeSec: z.number().int().positive().nullable().optional(),
   // Quellenangabe einer übernommenen Aufgabe (Referenzsammlung): geht mit der Aufgabe mit
   quelle: z.string().trim().max(200).nullable().optional(),

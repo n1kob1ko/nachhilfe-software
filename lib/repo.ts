@@ -5,6 +5,7 @@ import { checkLevel } from "./school";
 import { levelOf } from "./curriculum";
 import { wienerDatum } from "./planung/zeit";
 import type { AssignmentMode } from "./quick-round";
+import { zeigtLoesung, type Freigabe } from "./freigabe";
 
 export type Teacher = { id: number; name: string; active: number; username: string; is_admin: number; must_change_password: number };
 const TEACHER_COLS = "id, name, active, username, is_admin, must_change_password";
@@ -132,6 +133,8 @@ export type TestResult = {
   created_at?: string | null;
   /** the Stoffzettel as material (photo or PDF, lib/stoffzettel.ts) */
   material_id?: number | null;
+  /** 'schueler' when the student entered it in his app (lib/pruefliste.ts) */
+  quelle?: string;
 };
 
 export type Worksheet = {
@@ -180,8 +183,10 @@ export type Assignment = {
   note: string;
   /** Unit that was running when it was assigned. */
   unit_id: number | null;
-  /** Teacher has opened the solutions for the student. */
+  /** Teacher has opened the solutions for the student (kept in step with freigabe: 1 from „Hilfen und Lösung“ on). */
   solutions_visible: number;
+  /** What the student may see (lib/freigabe.ts freigabeVon): nichts, hilfen, loesung, alles; null = older row. */
+  freigabe: string | null;
   /** When the exercise was shown on the student tablet; null while it has not arrived there. */
   delivered_at: string | null;
   /** "normal" = the usual flow, "schnell" = Schnellrunde (lib/quick-round.ts); default for existing rows. */
@@ -265,6 +270,8 @@ const toTask = (r: Row): Task => ({
   hints: json(r.hints as string, []),
   errorMap: json(r.error_map as string, []),
   solutionSteps: json(r.solution_steps as string, []),
+  teacherNote: (r.teacher_note as string | undefined) ?? "",
+  altWays: json(r.alt_ways as string, []),
   estimatedTimeSec: (r.estimated_time_sec as number | null) ?? null,
   sourceType: (r.source_type as string) ?? "eigen",
   sourceId: (r.source_id as number | null) ?? null,
@@ -557,12 +564,12 @@ function insertTask(worksheetId: number, position: number, t: TaskDraft): number
   const id = Number(
     conn
       .prepare(
-        `INSERT INTO tasks (worksheet_id, position, type, category, skill_id, difficulty, prompt, data, answer, solution, hints, error_map, level, solution_steps, estimated_time_sec, source_type, source_id, quelle)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO tasks (worksheet_id, position, type, category, skill_id, difficulty, prompt, data, answer, solution, hints, error_map, level, solution_steps, teacher_note, alt_ways, estimated_time_sec, source_type, source_id, quelle)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         worksheetId, position, t.type, t.category ?? null, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap),
-        levelOf(t.difficulty), JSON.stringify(t.solutionSteps ?? []), t.estimatedTimeSec ?? null, ...taskOrigin(worksheetId, t), t.quelle?.trim() || null,
+        levelOf(t.difficulty), JSON.stringify(t.solutionSteps ?? []), t.teacherNote ?? "", JSON.stringify(t.altWays ?? []), t.estimatedTimeSec ?? null, ...taskOrigin(worksheetId, t), t.quelle?.trim() || null,
       ).lastInsertRowid,
   );
   writeTaskSkills(id, t);
@@ -677,8 +684,11 @@ export function updateTask(id: number, t: TaskDraft) {
   if (!cur) return;
   db()
     // die Quelle gehört zum Inhalt: der Editor schickt sie mit, eine neu erstellte Aufgabe hat keine
-    .prepare("UPDATE tasks SET type = ?, category = ?, skill_id = ?, difficulty = ?, prompt = ?, data = ?, answer = ?, solution = ?, hints = ?, error_map = ?, level = ?, solution_steps = ?, quelle = ? WHERE id = ?")
-    .run(t.type, t.category ?? null, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap), levelOf(t.difficulty), JSON.stringify(t.solutionSteps ?? cur.solutionSteps ?? []), t.quelle?.trim() || null, id);
+    .prepare("UPDATE tasks SET type = ?, category = ?, skill_id = ?, difficulty = ?, prompt = ?, data = ?, answer = ?, solution = ?, hints = ?, error_map = ?, level = ?, solution_steps = ?, teacher_note = ?, alt_ways = ?, quelle = ? WHERE id = ?")
+    .run(
+      t.type, t.category ?? null, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap), levelOf(t.difficulty),
+      JSON.stringify(t.solutionSteps ?? cur.solutionSteps ?? []), t.teacherNote ?? cur.teacherNote ?? "", JSON.stringify(t.altWays ?? cur.altWays ?? []), t.quelle?.trim() || null, id,
+    );
   writeTaskSkills(id, t);
   syncWorksheetSkills(cur.worksheet_id);
 }
@@ -839,7 +849,11 @@ export function listAssignmentsForWorksheet(worksheetId: number) {
     .all(worksheetId) as (Assignment & { student_name: string; done_count: number; correct_count: number })[];
 }
 export function setSolutionsVisible(assignmentId: number, visible: boolean) {
-  db().prepare("UPDATE assignments SET solutions_visible = ? WHERE id = ?").run(visible ? 1 : 0, assignmentId);
+  setFreigabe(assignmentId, visible ? "loesung" : "hilfen");
+}
+/** The Freigabe of an assigned exercise; solutions_visible follows, so older readers see the same. */
+export function setFreigabe(assignmentId: number, f: Freigabe) {
+  db().prepare("UPDATE assignments SET freigabe = ?, solutions_visible = ? WHERE id = ?").run(f, zeigtLoesung(f) ? 1 : 0, assignmentId);
 }
 export type AssignmentView = Assignment & {
   title: string;

@@ -1,5 +1,6 @@
 import { aiEnabled, generateWithAI } from "./ai";
 import { parseTime } from "./analysis";
+import { aufgabeSchluessel, ausgeblendet, nachBewertung } from "./bewertungen";
 import { checkTask } from "./builder";
 import { db } from "./db";
 import { DIAGNOSE_MAX, planDiagnosis, type DiagnosisItem } from "./diagnose-plan";
@@ -39,7 +40,8 @@ export function diagnosisSkills(o: { subject: string; branch: SchoolBranch | nul
 
 /**
  * A complete library task for this skill and difficulty that the student has not seen yet and the
- * diagnosis does not have yet (a duplicated library entry has the same task).
+ * diagnosis does not have yet (a duplicated library entry has the same task). Well-rated tasks first, badly rated
+ * ones never (lib/bewertungen.ts).
  */
 export function libraryTask(subject: string, item: DiagnosisItem, used: Set<number>, seen: Set<string>): TaskDraft | null {
   const rows = db()
@@ -50,10 +52,14 @@ export function libraryTask(subject: string, item: DiagnosisItem, used: Set<numb
        ORDER BY t.id`,
     )
     .all(subject, item.difficulty, item.skillId) as { id: number }[];
-  for (const { id } of rows) {
-    if (used.has(id)) continue;
-    const t = repo.getTask(id);
-    if (!t || seen.has(t.prompt) || checkTask(t)) continue;
+  const weg = ausgeblendet();
+  const tasks = nachBewertung(
+    rows.flatMap(({ id }) => (used.has(id) ? [] : [repo.getTask(id)].filter((t): t is repo.Task => Boolean(t)))),
+    (t) => t,
+  );
+  for (const t of tasks) {
+    const id = t.id;
+    if (seen.has(t.prompt) || checkTask(t) || weg.has(aufgabeSchluessel(t))) continue;
     used.add(id);
     seen.add(t.prompt);
     const { id: _i, worksheet_id: _w, position: _p, level: _l, ...draft } = t;

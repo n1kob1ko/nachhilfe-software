@@ -866,3 +866,164 @@ export function neuGenerieren(weekStart: string, opts: { seed?: number; zeitbudg
   if (!geschrieben.ok) return geschrieben;
   return { ok: true, anzahl: geschrieben.anzahl, offen: ergebnis.offen, zeitbudgetErreicht: ergebnis.zeitbudgetErreicht, dauerMs: ergebnis.dauerMs };
 }
+
+// ---------- Terminanfragen und von Hand geplante Einheiten (Plan 3.3) ----------
+
+/** Ein Zeitraum an einem Tag, für die Prüfung gegen von Hand geplante Einheiten (`lessons.status = 'geplant'`). */
+type Belegung = {
+  student_id: number;
+  /** null = „noch offen“ im Formular */
+  teacher_id: number | null;
+  start: number;
+  ende: number;
+  /** Haken „gleichzeitig“ (D26) */
+  gleichzeitig: boolean;
+  /** ein Platz im Wochenplan (sonst eine von Hand geplante Einheit) */
+  platz: boolean;
+};
+
+/** "2026-10-26T14:00" → Datum und Minuten; null, wenn keine Uhrzeit dasteht. */
+export function datumUndMinuten(startsAt: string): { datum: string; minuten: number } | null {
+  const m = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}):(\d{2})/.exec(startsAt);
+  if (!m || !istDatum(m[1])) return null;
+  return { datum: m[1], minuten: Number(m[2]) * 60 + Number(m[3]) };
+}
+
+/** Die von Hand geplanten Einheiten eines Tages (ohne die mit `ausserLessonId`), als Belegung. */
+function handTermineAm(datum: string, ausserLessonId?: number): Belegung[] {
+  const zeilen = db()
+    .prepare(
+      "SELECT id, student_id, teacher_id, starts_at, duration_min FROM lessons WHERE kind = 'stunde' AND status = 'geplant' AND starts_at >= ? AND starts_at < ? AND duration_min > 0",
+    )
+    .all(`${datum}T00:00`, `${tagAddieren(datum, 1)}T00:00`) as { id: number; student_id: number; teacher_id: number | null; starts_at: string; duration_min: number }[];
+  const out: Belegung[] = [];
+  for (const z of zeilen) {
+    const zeit = datumUndMinuten(z.starts_at);
+    if (z.id === ausserLessonId || !zeit || zeit.datum !== datum) continue;
+    out.push({ student_id: z.student_id, teacher_id: z.teacher_id, start: zeit.minuten, ende: zeit.minuten + z.duration_min, gleichzeitig: false, platz: false });
+  }
+  return out;
+}
+
+/**
+ * Dieselben Regeln wie `pruefeUndNormiere`, für einen Zeitraum gegen gemischte Belegungen (Plätze und von Hand
+ * geplante Einheiten). Ein Platz und eine von Hand geplante Einheit desselben Schülers beim selben Lehrer zur
+ * selben Zeit sind **ein** Termin (die Zeile trägt Fach und Thema der Einheit, docs/planung.md), kein Konflikt.
+ */
+function pruefeBelegung(neu: Belegung, andere: Belegung[], tag: Wochentag, mitHakenHinweis: boolean): PruefErgebnis {
+  const zugleich: { start: number; end: number }[] = [];
+  for (const a of andere) {
+    if (!ueberlappt({ start: neu.start, end: neu.ende }, { start: a.start, end: a.ende })) continue;
+    const zeit = `${WOCHENTAG_LANG[tag]} ${minutenLabel(a.start)}–${minutenLabel(a.ende)}`;
+    if (a.student_id === neu.student_id) {
+      const derselbeTermin = a.platz !== neu.platz && (a.teacher_id === null || neu.teacher_id === null || a.teacher_id === neu.teacher_id);
+      if (derselbeTermin) continue;
+      return { ok: false, art: "schueler", fehler: `${schuelerName(neu.student_id)} hat am ${zeit} schon eine geplante Einheit.` };
+    }
+    if (neu.teacher_id === null || a.teacher_id !== neu.teacher_id) continue;
+    if (!neu.gleichzeitig && !a.gleichzeitig)
+      return {
+        ok: false,
+        art: "lehrer",
+        fehler: `Lehrer ${lehrerName(neu.teacher_id)} ist am ${zeit} schon verplant.${mitHakenHinweis ? " Sollen beide Schüler zugleich kommen, setz den Haken „Gleichzeitig mit einem anderen Schüler“." : ""}`,
+      };
+    zugleich.push({ start: a.start, end: a.ende });
+  }
+  // höchstens zwei zugleich, wie im Wochenplan
+  for (let i = 0; i < zugleich.length; i++)
+    for (let j = i + 1; j < zugleich.length; j++) {
+      const von = Math.max(neu.start, zugleich[i].start, zugleich[j].start);
+      const bis = Math.min(neu.ende, zugleich[i].end, zugleich[j].end);
+      if (von < bis && neu.teacher_id !== null)
+        return {
+          ok: false,
+          art: "lehrer",
+          fehler: `Lehrer ${lehrerName(neu.teacher_id)} hat am ${WOCHENTAG_LANG[tag]} ${minutenLabel(von)}–${minutenLabel(bis)} schon zwei Schüler gleichzeitig. Mehr als zwei gehen nicht.`,
+        };
+    }
+  return { ok: true };
+}
+
+/**
+ * Eine von Hand geplante Einheit (Formular „Einheit nachtragen oder planen“, `lessons.status = 'geplant'`) gegen
+ * die **veröffentlichten** Plätze ihres Tages und die anderen von Hand geplanten Einheiten prüfen: Lehrer und
+ * Schüler wie im Wochenplan, zwei Schüler zugleich nur mit dem Haken (D26). Räume haben diese Zeilen nicht.
+ */
+export function pruefeEinzeltermin(e: {
+  starts_at: string;
+  duration_min: number;
+  teacher_id: number | null;
+  student_id: number;
+  gleichzeitig?: boolean;
+  ausserLessonId?: number;
+}): PruefErgebnis {
+  const zeit = datumUndMinuten(e.starts_at);
+  const dauer = Math.round(Number(e.duration_min));
+  if (!zeit || !(dauer > 0)) return { ok: true };
+  const plaetze = einheitenFuerTag(zeit.datum, { status: "veroeffentlicht" }).map<Belegung>((z) => ({
+    student_id: z.student_id,
+    teacher_id: z.teacher_id,
+    start: z.start_min,
+    ende: z.start_min + z.geplante_dauer,
+    gleichzeitig: z.gleichzeitig === 1,
+    platz: true,
+  }));
+  const neu: Belegung = { student_id: e.student_id, teacher_id: e.teacher_id || null, start: zeit.minuten, ende: zeit.minuten + dauer, gleichzeitig: !!e.gleichzeitig, platz: false };
+  return pruefeBelegung(neu, [...plaetze, ...handTermineAm(zeit.datum, e.ausserLessonId)], wochentagVon(zeit.datum), true);
+}
+
+/** Wohin ein Platz bei einer Terminanfrage kommt; ohne `room_id` bleibt der Raum. */
+export type NeueLage = { id: number; week_start: string; weekday: number; start_min: number; room_id?: number | null };
+
+/**
+ * Einen oder zwei Plätze auf einmal an eine neue Zeit legen (Terminanfragen: verschieben oder tauschen,
+ * `lib/planung/terminanfragen.ts`). Jede neue Lage geht durch **dieselbe** Prüfung wie jeder andere Schreibweg
+ * (`pruefeUndNormiere`: Lehrer, Schüler, Raum, gesperrte Plätze, gleichzeitig) und zusätzlich gegen die von Hand
+ * geplanten Einheiten des Tages. Die alten Lagen der bewegten Plätze zählen nicht mehr. Geht eine Lage nicht,
+ * wird nichts geschrieben; mit `nurPruefen` wird nie geschrieben.
+ */
+export function legePlaetzeNeu(lagen: NeueLage[], opts: { nurPruefen?: boolean } = {}): PruefErgebnis & { hinweis?: string } {
+  const ids = new Set(lagen.map((l) => l.id));
+  const geprueft: { id: number; platz: PlatzKern & { status: PlatzStatus; locked: number; gleichzeitig: number } }[] = [];
+  for (const lage of lagen) {
+    const vorhanden = getGeplanteEinheit(lage.id);
+    if (!vorhanden) return { ok: false, fehler: "Geplante Einheit nicht gefunden." };
+    if (!istDatum(lage.week_start)) return { ok: false, fehler: "Bitte eine Woche wählen." };
+    const woche = wochenstartVon(lage.week_start);
+    const gegen: PlatzKern[] = [
+      ...einheitenFuerWoche(woche, { status: "alle" }).filter((z) => !ids.has(z.id)),
+      ...geprueft.map((g) => g.platz).filter((p) => p.week_start === woche),
+    ];
+    const ergebnis = pruefeUndNormiere(
+      {
+        week_start: woche,
+        weekday: lage.weekday,
+        start_min: lage.start_min,
+        geplante_dauer: vorhanden.geplante_dauer,
+        teacher_id: vorhanden.teacher_id,
+        student_id: vorhanden.student_id,
+        room_id: lage.room_id === undefined ? vorhanden.room_id : lage.room_id,
+        status: vorhanden.status,
+        locked: vorhanden.locked === 1,
+        gleichzeitig: vorhanden.gleichzeitig === 1,
+      },
+      gegen,
+    );
+    if (!ergebnis.ok) return { ok: false, fehler: ergebnis.fehler, art: ergebnis.art };
+    const p = ergebnis.platz;
+    const neu: Belegung = { student_id: p.student_id, teacher_id: p.teacher_id, start: p.start_min, ende: p.start_min + p.geplante_dauer, gleichzeitig: p.gleichzeitig === 1, platz: true };
+    const hand = pruefeBelegung(neu, handTermineAm(slotDatum(p.week_start, p.weekday)), p.weekday as Wochentag, false);
+    if (!hand.ok) return hand;
+    geprueft.push({ id: lage.id, platz: p });
+  }
+  if (opts.nurPruefen) return { ok: true };
+  const schreiben = db().transaction(() => {
+    const update = db().prepare(
+      "UPDATE geplante_einheiten SET week_start = @week_start, weekday = @weekday, start_min = @start_min, room_id = @room_id, updated_at = datetime('now') WHERE id = @id",
+    );
+    for (const g of geprueft) update.run({ id: g.id, week_start: g.platz.week_start, weekday: g.platz.weekday, start_min: g.platz.start_min, room_id: g.platz.room_id });
+  });
+  schreiben();
+  const hinweise = geprueft.map((g) => sperreZugleich(g.id)).filter(Boolean);
+  return { ok: true, hinweis: hinweise.length ? hinweise.join(" ") : undefined };
+}

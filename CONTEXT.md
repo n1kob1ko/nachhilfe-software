@@ -139,6 +139,13 @@ jede Zeile, dann stehen die Plätze **gesperrt** im **Wochenplan** ([docs/stunde
 Das Foto selbst wird nicht gespeichert. In der App heißt der Plan weiter **Wochenplan**.
 _Avoid_: Stundenplan-Import, Plan-Scan
 
+**Terminanfrage**:
+Die Bitte eines **Schülers** oder **Lehrers**, eine veröffentlichte **geplante Einheit** zu verschieben oder mit
+einer anderen desselben Lehrers zu tauschen. Ein Tausch wartet zuerst auf die Zustimmung der anderen Seite, dann
+bestätigt oder lehnt die Verwaltung ab; bewegt wird erst beim Bestätigen, mit der Prüfung des **Wochenplans**
+([docs/planung.md](docs/planung.md#terminanfragen-plan-33)).
+_Avoid_: Umbuchung, Änderungswunsch, Terminwunsch
+
 **Raum**:
 Wo eine **geplante Einheit** stattfindet: Gebäude, Name, und ob vor Ort oder
 online. Ein Raum wird deaktiviert, nie gelöscht, sobald Plätze auf ihn zeigen.
@@ -309,6 +316,16 @@ Bilder Dritter aus einer freien Quelle kann in die **Bibliothek**, die Quelle st
 Schülerseite. Sprachen nur als Aufbau, ohne Texte. Unter Mehr (`lib/referenz.ts`).
 _Avoid_: Aufgabenpool, Vorbildsammlung, Referenzen-Import
 
+**Aufgabe bewerten**:
+Ein Lehrer gibt einer **Aufgabe** 1 bis 5 Sterne, kreuzt Gründe an (Fachlich falsch, Musterlösung falsch, Zu einfach,
+Zu schwierig, Unverständlich, Nicht altersgerecht, Passt nicht zum Schulstoff, Zu ähnlich, Besonders gute Aufgabe) und
+schreibt bei Bedarf einen Kommentar; eine Bewertung je Aufgabe und Lehrer, änderbar. Bewertet wird die Aufgabe, nie der
+Schüler: Versuche und Lernstand bleiben unberührt. Gleicher Inhalt ist dieselbe Aufgabe, in Übung, Bibliothek und
+Lernpaket. Gut bewertete kommen in Suche und Vorschlägen zuerst und gehen der KI als Vorbild mit; „Fachlich falsch“,
+„Musterlösung falsch“ oder höchstens 2 Sterne blenden die Aufgabe aus Vorschlägen und automatischer Auswahl aus, in der
+Bibliothek bleibt sie unter dem Filter „Bewertung“ (`aufgabe_bewertungen`, `lib/bewertungen.ts`).
+_Avoid_: Lehrerbewertung (das ist die Bewertung einer Schülerantwort), Feedback, Rating, Like
+
 **Vorlage**:
 Ein gespeichertes Rezept für eine **Übung**: die Einstellungen des Builders und,
 wenn gewünscht, die festen Aufgaben — damit dieselbe Übung in einem Klick wieder
@@ -346,6 +363,14 @@ den Schüler dieser Einheit. Reihenfolge, Erledigt, Übersprungen und Notizen ge
 übersprungen oder nicht erreicht wurden. Ohne Lernpaket zeigt es Fähigkeit, Erklärung, typische Fehler, passende
 Übungen und den Plan aus dem **Tagesbriefing**. „Vorbereiten“ im Tagesplan wählt das Paket vor dem Start.
 _Avoid_: Stundenablauf, Lehrermodus, Regie
+
+**Notiz nach der Einheit / Für nächstes Mal**:
+Was der **Schüler** selbst in der **Schüler-App** schreibt: nach einer **Einheit** einmal „Was war heute schwer?“
+(Antworten zum Antippen und freier Text, überspringbar), jederzeit „Für nächstes Mal“ (was drankommen soll, was er
+in der Schule nicht versteht). Änderbar bis zur nächsten Einheit; der Lehrer liest es als Zitat im **Cockpit**, bei
+„Vorbereiten“ und im Lernverlauf. Ohne KI sucht die App darin eine **Fähigkeit**; ein passendes **Lernpaket** nennt
+das bei „Warum heute“. Zählt nie für Lernstand oder **Einschätzung** und geht nicht an die KI (`lib/schueler-notiz.ts`).
+_Avoid_: Feedback, Bewertung, Selbsteinschätzung, Stundennotiz
 
 ## Schule
 
@@ -396,6 +421,14 @@ Das Foto oder PDF, auf dem steht, was zu einer **Schularbeit** kommt: Fach, Term
 lesen und das Formular vorfüllen; gespeichert wird erst, wenn der Lehrer einträgt
 ([docs/stoffzettel.md](docs/stoffzettel.md)). Nicht verwechseln mit **Foto vom Stoff** (daraus wird eine Übung).
 _Avoid_: Stoffangabe, Prüfungsstoff-Upload, Anhang
+
+**Prüfliste**:
+Was ein **Schüler** in seiner App unter „Prüfung eintragen“ eingetragen hat (Art, Fach, Datum, Stoff, Notiz,
+Fotos vom **Stoffzettel**), soweit es noch ein Lehrer ansehen soll. Ist alles klar (vor allem ein sicheres Datum),
+wird gleich eine Schularbeit „vom Schüler eingetragen“ (`tests.quelle = 'schueler'`); sonst wartet der Eintrag
+hier, ohne Termin. Am Profil unter Stoff & Prüfungen und in „Zu erledigen“; der Lehrer ändert, übernimmt oder
+verwirft ([docs/stoffzettel.md](docs/stoffzettel.md), `lib/pruefliste.ts`).
+_Avoid_: Einreichungen, Posteingang, Prüfungsvorschläge
 
 **Stoff zuordnen**:
 Die Punkte des Stoffs einer **Schularbeit** mit **Fähigkeiten** verknüpfen; erst dann gibt es Plan und

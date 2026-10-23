@@ -16,6 +16,8 @@ import {
   type ActionResult,
 } from "@/app/builder-actions";
 import { saveToLibraryAction } from "@/app/library-actions";
+import { AufgabeBewertung } from "@/components/AufgabeBewertung";
+import type { BewertungInfo } from "@/lib/bewertung-regeln";
 import { setzePunkteAction } from "@/app/probeschularbeit-actions";
 import { AddReadingQuestion, ReadingIssues, ReadingQuestionFields, ReadingTextPanel } from "@/components/ReadingEditor";
 import { TaskBody } from "@/components/TaskPreview";
@@ -32,6 +34,7 @@ import { EnglischMaturaFelder } from "./EnglischMaturaEditor";
 import { isResultForm, PART_KINDS, RESULT_FORMS, wayMode, type PartKind } from "@/lib/math-check";
 import { checkOwnSolution } from "@/lib/math-task";
 import { readingIssues, readingSet, type ReadingText } from "@/lib/lesen";
+import { lehrerErklaerung } from "@/lib/loesungsdaten";
 import { PUNKTE_MAX, punkteText } from "@/lib/probeschularbeit-regeln";
 import { MathText } from "./MathText";
 
@@ -59,6 +62,8 @@ type Props = {
   initialEditing?: number | null;
   /** Probeschularbeit (lib/probeschularbeit.ts): Punkte je Aufgabe, im Editor änderbar */
   punkte?: Record<number, number>;
+  /** Aufgaben bewerten (lib/bewertungen.ts): Stand und eigene Bewertung je Aufgabe (task id) */
+  bewertungen?: Record<number, BewertungInfo>;
 };
 
 /** Punkte zur Auswahl: halbe bis 5, dann ganze, und die aktuelle, falls sie nicht dabei ist */
@@ -269,6 +274,7 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
             <ChevronDown size={14} aria-hidden className={`transition-transform ${more ? "rotate-180" : ""}`} /> {more ? "Weniger" : "Mehr"}
           </button>
         )}
+        {p.bewertungen?.[t.id] && <AufgabeBewertung key={p.bewertungen[t.id].schluessel} ziel={{ art: "aufgabe", id: t.id }} info={p.bewertungen[t.id]} className="sm:ml-auto" />}
       </div>
       {panel === "send" && <SendPanel {...p} run={run} pending={pending} />}
       <div className="mt-2 pl-[44px]">
@@ -929,6 +935,17 @@ function TaskForm({ task, index, subject, skills, reading, onDone }: { task: Tas
         {list(t.hints, (next) => set({ hints: next }), (i) => String(i + 1), { min: 0, addLabel: "Hilfe" })}
         <span className="text-[12px] text-ink-3">{[0, 1, 2].map(hintLabel).join(" · ")}</span>
       </div>
+      {/* Lösungsdaten (lib/loesungsdaten.ts): Schüler sehen sie nur bei der Freigabe „Alles“ */}
+      <div className="grid gap-1.5">
+        <span className="label">Andere Wege</span>
+        {list(t.altWays ?? [], (next) => set({ altWays: next }), (i) => `${i + 1}.`, { min: 0, addLabel: "Weg" })}
+        <span className="text-[12px] text-ink-3">Nur wenn es wirklich einen anderen Weg zur selben Lösung gibt.</span>
+      </div>
+      <label className="field">
+        <span className="label">Erklärung für dich</span>
+        <textarea className="input min-h-[64px]" value={t.teacherNote ?? ""} placeholder={lehrerErklaerung({ ...t, teacherNote: "" }).erklaerung || "Worum es bei der Aufgabe geht"} onChange={(e) => set({ teacherNote: e.target.value })} />
+        <span className="text-[12px] text-ink-3">Leer lassen, dann gilt die Erklärung der Fähigkeit.</span>
+      </label>
       <div className="grid gap-1.5">
         <span className="label">Typische Fehler</span>
         {t.errorMap.map((e, i) => (
