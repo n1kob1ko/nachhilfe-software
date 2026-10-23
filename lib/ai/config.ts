@@ -95,6 +95,7 @@ export type AIFunction =
   | "textpruefung"
   | "lesen"
   | "briefing"
+  | "lernpaket"
   | "verbindungstest";
 
 export type FunctionSpec = {
@@ -168,6 +169,9 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   lesen: { label: "Leseverständnis erstellen", area: "EXERCISE", tier: "standard", maxTokens: 24_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   // Tagesbriefing (lib/briefing.ts): only on the teacher's click, saved per student and day, so nothing is reused here
   briefing: { label: "Tagesbriefing", area: "ANALYSIS", tier: "standard", maxTokens: 8_000, timeoutMs: 120_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
+  // Lernpaket mit KI entwerfen (lib/lernpaket-ki.ts): only on the teacher's click, for a topic, never with student data.
+  // One long answer (all steps with their tasks); thinking on, because correctness beats quantity. Each click is a new draft
+  lernpaket: { label: "Lernpaket entwerfen", area: "EXERCISE", tier: "standard", maxTokens: 32_000, timeoutMs: 300_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 0, cache: "aus", schemaInPrompt: true },
   // KI-Selbsttest on Mehr › KI-Kosten: one tiny request before the real test requests
   verbindungstest: { label: "Verbindungstest", area: "ANALYSIS", tier: "fast", maxTokens: 50, timeoutMs: 20_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
 };

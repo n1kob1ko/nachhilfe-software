@@ -22,7 +22,8 @@ import { checkWortartTask, isPlaceholder, isWortartenSkill, widenNames, wortarte
 // ---------- exercise generation ----------
 const FORMATS = ["mc", "calc", "grammar", "cloze", "free", "reading", "order", "fix", "rechenweg", "sachaufgabe", "zuordnung"] as const;
 const FORM_KEYS = Object.keys(RESULT_FORMS) as [keyof typeof RESULT_FORMS, ...(keyof typeof RESULT_FORMS)[]];
-const TaskSchema = z.object({
+/** One task as the KI writes it (also inside a Lernpaket, lib/ai/lernpaket.ts); aiTaskToDraft checks it. */
+export const TaskSchema = z.object({
   category: z.string().describe("Schlüssel des Aufgabentyps aus der vorgegebenen Liste"),
   format: z.enum(FORMATS).describe("Antwortformat, passend zum Aufgabentyp"),
   skill_ids: z.array(z.string()).describe("1–3 Skill-IDs aus der Liste, die wichtigste zuerst"),
@@ -130,7 +131,7 @@ Die typischen Fehler beschreiben echte Denkfehler, die Schülerinnen und Schüle
 Halte das verlangte Format jeder Aufgabe genau ein: ein Lückentext ist ein Text mit Lücken zum Selbst-Eintragen, keine Auswahlaufgabe; eine Korrekturaufgabe ist ein Text mit Fehlern, den der Schüler selbst verbessert.
 Wenn du etwas über den Schüler erfährst, richte die Aufgaben gezielt darauf aus: übe, was er falsch macht, und baue auf dem auf, was er kann.`;
 
-const FORMAT_RULES = `Formate:
+export const FORMAT_RULES = `Formate:
 - mc: options + correct_option
 - calc: accepted_answers, numeric=true bei Zahlen/Brüchen
 - grammar: accepted_answers (kurzer Text)

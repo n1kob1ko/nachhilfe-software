@@ -18,6 +18,7 @@ Import und Export: eine JSON-Datei, `"format": "lernheft-lernpaket"`, `"version"
 | Paket ansehen und bearbeiten | `app/(tutor)/mehr/lernpakete/[id]/page.tsx` |
 | Export (Download) | `app/(tutor)/mehr/lernpakete/[id]/export/route.ts` |
 | Tests | `lib/lernpakete.test.ts` (prüft auch das Beispiel unten) |
+| Mit KI entwerfen | `lib/lernpaket-ki.ts`, `lib/ai/lernpaket.ts`, `components/LernpaketKiForm.tsx`, Test `lib/lernpaket-ki.test.ts`, Probelauf `npm run ai:lernpaket` |
 
 ## Ablauf in der App
 
@@ -31,6 +32,48 @@ Import und Export: eine JSON-Datei, `"format": "lernheft-lernpaket"`, `"version"
    entsteht dasselbe Paket (als neuer Entwurf).
 4. Gelöscht wird kein Paket. **Archivieren** nimmt es aus der Liste; unter „Archiviert“ ist es mit allen
    Schritten weiter da und lässt sich wiederherstellen.
+
+## Mit KI entwerfen
+
+niko, 2026-10-23 (Plan 2.1): „Lernpaket entwerfen“ zu einem Thema; alles kommt „ungeprüft“.
+
+1. Mehr › **Lernpakete** › **Mit KI entwerfen**: eine Fähigkeit wählen (oder Fach und Thema eintippen),
+   Schulart, Klasse, Dauer (Vorgabe 50 Minuten), Schwierigkeit und bei Bedarf Hinweise (zum Beispiel
+   typische Fehler). Am Knopf stehen die geschätzten Kosten (etwa 15 bis 25 Cent je Paket).
+2. Eine Anfrage an die KI über den Router (`lernpaket`, Bereich Aufgaben: Budget, Protokoll in `ai_calls`,
+   manueller Modus). Die Seite zeigt, wie lange sie schon läuft; das dauert meist ein bis drei Minuten.
+   Ein Doppelklick wartet auf dieselbe Anfrage. Bei einem Fehler wird nichts gespeichert, die Meldung
+   sagt warum, und **Erneut versuchen** schickt dasselbe noch einmal.
+3. Die Antwort wird eine Datei in diesem Format und geht durch dieselbe Prüfung wie ein Import. Fach,
+   Schulart, Klasse, Thema, Fähigkeit, Schwierigkeit und Dauer kommen vom Lehrer, nie von der KI; passen
+   die Minuten nicht zur Dauer, werden sie im Verhältnis angepasst. Gespeichert wird ein **Entwurf** mit
+   der Herkunft „von der KI“, **Ungeprüft**, und die Kosten aus `ai_calls` stehen auf der Seite des Pakets.
+4. Was die KI unsicher findet, steht im Schritt unter `pruefen` („Noch zu prüfen“).
+
+Regeln:
+
+- Kein Schülerdatum geht mit: ein Paket gehört zu einem Thema. Die Anfrage hat weder Schüler noch Einheit
+  (also auch keine KI-Hinweise); Namen von Schülern und Lehrern in den Hinweisen und im Bestand werden
+  durch [Name] ersetzt.
+- Die KI bekommt die Fähigkeit mit Schulstufen, Lernziel und Beschreibung aus dem Lehrplan, die Erklärung
+  und die typischen Fehler der App. Sie soll lieber weniger und dafür sichere Schritte und Aufgaben
+  liefern, keine Zitate, Seitenzahlen oder Quellen erfinden und österreichische Begriffe verwenden.
+- Aufgaben zuerst aus dem Bestand ohne KI: bis zu 8 aus der Aufgabenbibliothek und bis zu 6 aus den
+  eingebauten Generatoren (mit den Aufgabenbanken) für diese Fähigkeit, jede vorher wie beim Import
+  geprüft. Die KI wählt sie über ihre Kennung (`B…`, `G…`); eine Kennung, die nicht im Bestand steht,
+  fällt weg.
+- Eigene Aufgaben der KI nur, wo der Bestand nicht reicht (höchstens 2 je Schritt, 6 im Paket). Jede geht
+  durch dieselben Prüfungen wie eine KI-Aufgabe im Builder (`aiTaskToDraft`: nur die Formate ihres
+  Aufgabentyps, Rechenweg nachgerechnet, Wortarten geprüft) und danach durch die des Imports. Was nicht
+  besteht, fällt weg; zweifelhafte Wortarten bleiben mit `data.pruefen` stehen. Ohne Fähigkeit gibt es
+  keine Aufgaben.
+- Ohne KI (ausgeschaltet, kein Schlüssel, Budget aufgebraucht) sagt der Bereich das und der Knopf bleibt
+  aus; Neues Lernpaket und Importieren gehen weiter.
+
+Probelauf ohne die App, eigene Wegwerf-Datenbank: `npm run ai:lernpaket -- --skill deutsch.grammatik.faelle`
+(kostet nichts, Tokens geschätzt). Mit `--echt` geht eine echte Anfrage an den eingestellten Anbieter und
+zeigt Tokens und Kosten; dazu `--schulart`, `--klasse`, `--dauer`, `--schwierigkeit`, `--hinweise` und
+`--datei paket.json` (das Paket zum Ansehen oder Importieren).
 
 ## Das Paket
 

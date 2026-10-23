@@ -310,8 +310,8 @@ _Avoid_: Template, Muster, Blaupause, Schablone
 **Lernpaket**:
 Eine vorbereitete **Einheit** zu einem Thema, nicht für einen Schüler: Schritte in der Reihenfolge des
 Unterrichts mit Minuten, was der Lehrer sagt und fragt, erwartete Antwort, was bei Fehlern hilft, dazu
-**Aufgaben** im Format der Übungen. Entwurf, geprüft oder archiviert; importierte sind „ungeprüft“, bis ein
-Lehrer sie prüft. Import und Export als JSON (`lib/lernpakete.ts`, [docs/lernpaket-format.md](docs/lernpaket-format.md)).
+**Aufgaben** im Format der Übungen. Entwurf, geprüft oder archiviert; importierte und von der KI entworfene
+sind „ungeprüft“, bis ein Lehrer sie prüft. Import und Export als JSON (`lib/lernpakete.ts`, [docs/lernpaket-format.md](docs/lernpaket-format.md)).
 _Avoid_: Stundenbild, Unterrichtsplan, Lektion, Kurs, Template
 
 **Präsentation**:

@@ -1,18 +1,20 @@
 import Link from "next/link";
-import { FileUp, Plus, Search, X } from "lucide-react";
+import { FileUp, Plus, Search, Sparkles, X } from "lucide-react";
 import { createLernpaketAction, importLernpaketAction } from "@/app/lernpaket-actions";
 import { subjectTone } from "@/components/Calendar";
+import { LernpaketKiForm } from "@/components/LernpaketKiForm";
 import { StatusPill } from "@/components/LernpaketStatus";
 import { Empty, PageHeader, Pill } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { DIFFICULTIES } from "@/lib/curriculum";
+import { KI_DAUER, kiAusGrund, kostenSchaetzung } from "@/lib/lernpaket-ki";
 import { lernpaketFacetten, listLernpakete, PAKET_STATUS, type PaketStatus } from "@/lib/lernpakete";
 import * as repo from "@/lib/repo";
 import { fachVorschlaege, klassenLabel, SCHOOL_TYPES } from "@/lib/school";
 
 export const metadata = { title: "Lernpakete" };
 
-type Params = { q?: string; status?: string; fach?: string; stufe?: string; thema?: string; skill?: string; neu?: string; import?: string; fehler?: string };
+type Params = { q?: string; status?: string; fach?: string; stufe?: string; thema?: string; skill?: string; neu?: string; import?: string; ki?: string; fehler?: string };
 const KEYS = ["q", "status", "fach", "stufe", "thema", "skill"] as const;
 const FILTER = ["fach", "stufe", "thema", "skill"] as const;
 const LP = "/mehr/lernpakete";
@@ -24,7 +26,8 @@ const isStatus = (s: string | undefined): s is PaketStatus => Boolean(s && Objec
 
 /**
  * Lernpakete: prepared lessons per topic, for many students. Filters by Fach, Schulart und Klasse, Thema and
- * Fähigkeit; status chips on top. New ones are written here or imported as a JSON file.
+ * Fähigkeit; status chips on top. New ones are written here, imported as a JSON file or drafted by the KI
+ * (lib/lernpaket-ki.ts).
  */
 export default async function LernpaketePage({ searchParams }: { searchParams: Promise<Params> }) {
   await requireTeacher();
@@ -41,7 +44,14 @@ export default async function LernpaketePage({ searchParams }: { searchParams: P
   const label = (k: (typeof FILTER)[number], v: string) =>
     k === "stufe" ? klassenLabel(v.split("|")[0], Number(v.split("|")[1]) || null, { short: true }) || v.split("|")[0] : k === "skill" ? skillName(v) : v;
   const fehler = sp.fehler?.split("\n").filter(Boolean) ?? [];
-  const offen = sp.neu ? "neu" : sp.import ? "import" : null;
+  const offen = sp.neu ? "neu" : sp.import ? "import" : sp.ki ? "ki" : null;
+  const skillLabel = (s: repo.Skill) => (s.parent_id ? `${skillName(s.parent_id)} › ${s.name}` : s.name);
+  const gruppen = subjects.flatMap((subject) =>
+    [...new Set(skills.filter((s) => s.subject === subject).map((s) => s.area))].map((area) => ({
+      label: `${subject} › ${area}`,
+      skills: skills.filter((s) => s.subject === subject && s.area === area).map((s) => ({ id: s.id, label: skillLabel(s) })),
+    })),
+  );
   const aktiv = f.status.entwurf + f.status.geprueft;
 
   return (
@@ -49,9 +59,12 @@ export default async function LernpaketePage({ searchParams }: { searchParams: P
       <PageHeader
         back={{ href: "/mehr", label: "Mehr" }}
         title="Lernpakete"
-        info="Eine vorbereitete Einheit zu einem Thema, für viele Schüler: Ablauf mit Minuten, was du sagst und fragst, erwartete Antworten, was bei Fehlern hilft, Aufgaben mit Lösungen. Importierte Pakete sind ungeprüft, bis du sie durchgehst und „Geprüft“ tippst."
+        info="Eine vorbereitete Einheit zu einem Thema, für viele Schüler: Ablauf mit Minuten, was du sagst und fragst, erwartete Antworten, was bei Fehlern hilft, Aufgaben mit Lösungen. Importierte und von der KI entworfene Pakete sind ungeprüft, bis du sie durchgehst und „Geprüft“ tippst."
         actions={
           <>
+            <Link href={offen === "ki" ? href(current) : href({ ...current, ki: "1" })} className={`btn ${offen === "ki" ? "btn-primary" : "btn-secondary"}`}>
+              <Sparkles size={16} aria-hidden /> Mit KI entwerfen
+            </Link>
             <Link href={offen === "import" ? href(current) : href({ ...current, import: "1" })} className={`btn ${offen === "import" ? "btn-primary" : "btn-secondary"}`}>
               <FileUp size={16} aria-hidden /> Importieren
             </Link>
@@ -70,6 +83,18 @@ export default async function LernpaketePage({ searchParams }: { searchParams: P
             ))}
           </ul>
         </div>
+      )}
+
+      {offen === "ki" && (
+        <LernpaketKiForm
+          gruppen={gruppen}
+          faecher={fachVorschlaege()}
+          schularten={SCHOOL_TYPES.map((t) => t.name)}
+          schwierigkeiten={DIFFICULTIES}
+          dauer={KI_DAUER}
+          kiAus={kiAusGrund()}
+          kosten={kostenSchaetzung().text}
+        />
       )}
 
       {offen === "import" && (
@@ -104,7 +129,7 @@ export default async function LernpaketePage({ searchParams }: { searchParams: P
                       .filter((s) => s.subject === subject && s.area === area)
                       .map((s) => (
                         <option key={s.id} value={s.id}>
-                          {s.parent_id ? `${skillName(s.parent_id)} › ${s.name}` : s.name}
+                          {skillLabel(s)}
                         </option>
                       ))}
                   </optgroup>
@@ -165,7 +190,7 @@ export default async function LernpaketePage({ searchParams }: { searchParams: P
 
       {f.gesamt === 0 ? (
         <Empty title="Noch keine Lernpakete">
-          Oben ein neues Lernpaket anlegen oder eine Datei im Format „lernheft-lernpaket“ importieren.
+          Oben ein neues Lernpaket anlegen, mit der KI entwerfen oder eine Datei im Format „lernheft-lernpaket“ importieren.
         </Empty>
       ) : (
         <>

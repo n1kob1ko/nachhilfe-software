@@ -21,6 +21,7 @@ import { TaskBody } from "@/components/TaskPreview";
 import { PageHeader, Pill, Reveal, SectionTitle, formatDate } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { DIFFICULTIES, TASK_TYPES } from "@/lib/curriculum";
+import { kiKosten } from "@/lib/lernpaket-ki";
 import { searchLibrary } from "@/lib/library";
 import { getLernpaket, GRENZEN, offeneHinweise, PAKET_QUELLE, SCHRITT_ARTEN, ungeprueft, type LernpaketSchritt } from "@/lib/lernpakete";
 import { getPraesentation, listPraesentationen } from "@/lib/praesentationen";
@@ -29,7 +30,7 @@ import { fachVorschlaege, klassenLabel, SCHOOL_TYPES } from "@/lib/school";
 
 export const metadata = { title: "Lernpaket" };
 
-type Params = { bearbeiten?: string; schritt?: string; neuerSchritt?: string; fehler?: string; importiert?: string; geprueft?: string; gespeichert?: string; archiviert?: string; wiederhergestellt?: string };
+type Params = { bearbeiten?: string; schritt?: string; neuerSchritt?: string; fehler?: string; importiert?: string; ki?: string; weggelassen?: string; geprueft?: string; gespeichert?: string; archiviert?: string; wiederhergestellt?: string };
 const LP = "/mehr/lernpakete";
 
 /** The teacher's script fields of a step, in the order they are used. */
@@ -73,9 +74,13 @@ export default async function LernpaketPage({ params, searchParams }: { params: 
   const praesAuswahl = bearbeiten ? [...listPraesentationen()].sort((a, b) => Number(b.fach === p.fach) - Number(a.fach === p.fach) || a.title.localeCompare(b.title, "de")) : [];
   if (bearbeiten && praes && !praesAuswahl.some((x) => x.id === praes.id)) praesAuswahl.unshift(praes);
 
+  const kosten = p.quelle === "ki" ? kiKosten(p.ki_call_id) : null;
+  const weggelassen = Number(sp.weggelassen) || 0;
   const meldung = sp.importiert
     ? "Importiert. Lies die Schritte und Aufgaben durch, dann „Geprüft“."
-    : sp.geprueft
+    : sp.ki
+      ? `Von der KI entworfen.${weggelassen ? ` ${weggelassen === 1 ? "Eine Aufgabe wurde" : `${weggelassen} Aufgaben wurden`} weggelassen (automatische Prüfung nicht bestanden oder nicht im Bestand).` : ""} Lies die Schritte und Aufgaben durch, dann „Geprüft“.`
+      : sp.geprueft
       ? "Als geprüft markiert."
       : sp.gespeichert
         ? "Gespeichert."
@@ -187,6 +192,18 @@ export default async function LernpaketPage({ params, searchParams }: { params: 
           <span className="kennzahl-zusatz">in der Präsentation</span>
         </li>
       </ul>
+      {kosten && (
+        <p className="-mt-3 mb-6 text-[13px] text-ink-3" data-testid="lernpaket-ki-kosten">
+          KI-Entwurf: Kosten <span className="num">{kosten.cent} Cent</span> (<span className="num">{kosten.usd.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 4 })} $</span>) ·{" "}
+          <span className="num">{kosten.tokensEin.toLocaleString("de-AT")}</span> Tokens ein, <span className="num">{kosten.tokensAus.toLocaleString("de-AT")}</span> aus
+          {kosten.denken ? (
+            <>
+              {" "}
+              (davon <span className="num">{kosten.denken.toLocaleString("de-AT")}</span> Denken)
+            </>
+          ) : null}
+        </p>
+      )}
 
       {(p.ziel || p.skill_ids.length > 0 || p.geprueft_am) && (
         <section className="mb-8 max-w-[760px]" aria-label="Ziel">
