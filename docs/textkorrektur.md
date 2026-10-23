@@ -49,6 +49,15 @@ Die KI bekommt die Stufe, die Kriterien der Textsorte und die Aufgabenstellung. 
 
 Die Fähigkeiten der Fehler kommen nur aus der Fähigkeitenliste des Fachs.
 
+### Bewerbungsschreiben und Lebenslauf
+
+Eigene Regeln in `kindCriteria` (`lib/text-correction-rules.ts`), vor der allgemeinen Brief-Regel. Sie greifen bei Textsorten mit „Bewerb…“ (Bewerbungsschreiben, Bewerbung, Bewerbungsbrief) oder „Motivationsschreiben“ und bei „Lebenslauf“; nennt die Textsorte beides, bekommt die KI beide Regeln.
+
+- **Bewerbungsschreiben (Normbrief):** Absender mit Telefon und E-Mail, Empfänger, Ort und Datum, Betreff, Anrede (danach klein weiter), Text in Absätzen, „Mit freundlichen Grüßen“ ohne Beistrich, Unterschrift, Beilagen. Inhalt: wo man von der Stelle erfahren hat, Interesse an Stelle und Betrieb, Schulsituation, Gründe und Stärken mit Beispiel, Bitte um Gespräch oder Antwort, Hinweis auf die Beilagen. Höflichkeitsform Sie/Ihnen/Ihr groß, keine Umgangssprache, keine unpassenden privaten Angaben.
+- **Lebenslauf (tabellarisch):** persönliche Daten, Schulbildung, praktische Erfahrungen, Kenntnisse, Interessen, am Ende Ort, Datum, Unterschrift; neueste Station zuerst, Zeitangaben einheitlich und ohne Lücken, nur Angaben, die für die Bewerbung wichtig sind.
+
+Damit nichts Falsches markiert wird (lieber weniger Hinweise als ein falscher): Ein fehlender Teil ist ein Hinweis zum ganzen Text, keine Stelle. Anordnung, Leerzeilen, rechtsbündig und fett sind im Text nicht zu sehen (oft kommt er von Papier, siehe `textarbeit.md`) und kein Fehler; ebenso das Wort „Betreff“ und die Schreibweise des Datums oder der Zeitangaben. Im Lebenslauf sind Stichwörter ohne Satzzeichen richtig, „ | “ trennt nur Spalten. Namen, Adressen, Telefonnummern und E-Mail-Adressen werden nicht verbessert. Der Hauptprompt bleibt unverändert.
+
 ## Wie der Server KI-Antworten prüft
 
 Die KI liefert JSON nach einem festen Schema. Der Server prüft jede Stelle einzeln:

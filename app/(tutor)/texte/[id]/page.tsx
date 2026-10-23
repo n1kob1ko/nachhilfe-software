@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BookOpenText, CheckCircle2, ClipboardCheck, FileText, History, Images, Laptop, ListChecks, Printer, RotateCcw, SpellCheck, Tablet } from "lucide-react";
+import { BookOpenText, Camera, CheckCircle2, ClipboardCheck, FileText, History, Images, Laptop, ListChecks, Printer, RotateCcw, SpellCheck, Tablet } from "lucide-react";
 import { restoreRevisionAction, setTextStatusAction, showTextOnTabletAction, updateTextInfoAction } from "@/app/text-actions";
 import { auftragExercisesAction } from "@/app/schreibauftrag-actions";
 import { archiveTextAction, restoreTextAction } from "@/app/archiv-actions";
@@ -23,7 +23,7 @@ export const metadata = { title: "Textarbeit" };
 const first = (n: string) => n.split(" ")[0];
 
 /** One Textarbeit at the teacher's laptop: read along while the student writes, write here, print, continue later. */
-export default async function TextPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ archiv?: string; fehler?: string }> }) {
+export default async function TextPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ archiv?: string; fehler?: string; papier?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -76,6 +76,10 @@ export default async function TextPage({ params, searchParams }: { params: Promi
       <Link href={`/arbeitsblatt/text/${text.id}`} className="btn btn-secondary" target="_blank">
         <Printer size={16} aria-hidden /> PDF / Drucken
       </Link>
+      {/* a text written on paper (lib/handschrift.ts): read from photos or typed in, then corrected like any text */}
+      <Link href={`/texte/${text.id}/papier`} className="btn btn-secondary" data-testid="vom-foto">
+        <Camera size={16} aria-hidden /> Vom Foto übernehmen
+      </Link>
       {auftrag && (
         <Link href={`/arbeitsblatt/text/${text.id}?blatt=leer`} className="btn btn-secondary" target="_blank" data-testid="arbeitsblatt-drucken">
           <FileText size={16} aria-hidden /> Arbeitsblatt
@@ -123,12 +127,22 @@ export default async function TextPage({ params, searchParams }: { params: Promi
           </Pill>
         )}
         {text.status === "fertig" ? <Pill tone="green">fertig</Pill> : <Pill tone="amber">in Arbeit</Pill>}
+        {text.von_papier && (
+          <span className="text-[13px] text-ink-3" data-testid="von-papier" title={`Übernommen am ${formatDate(text.von_papier, { day: "numeric", month: "long" })}, ${formatTime(text.von_papier)}`}>
+            von Papier übernommen
+          </span>
+        )}
         {pruefung && (
           <Link href={`/schueler/${pruefung.studentId}/pruefung/${pruefung.id}`} className="text-[14px] font-medium text-accent hover:underline" data-testid="auftrag-pruefung">
             Zur Prüfung: {pruefung.label}
           </Link>
         )}
       </div>
+      {sp.papier === "1" && text.von_papier && (
+        <p className="no-print mb-3 rounded-xl bg-green-wash px-4 py-3 text-[14px] text-green" role="status" data-testid="papier-uebernommen">
+          Übernommen. Jetzt kannst du ihn korrigieren, bewerten und drucken wie jeden Text.
+        </p>
+      )}
       <ArchivMeldung archiv={sp.archiv} fehler={sp.fehler} archiviert="Archiviert." wiederhergestellt="Wiederhergestellt. Der Text steht wieder in der Liste." />
       {text.archived_at && (
         <ArchivBanner

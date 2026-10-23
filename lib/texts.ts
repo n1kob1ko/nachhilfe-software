@@ -34,6 +34,8 @@ export type TextRow = {
   /** Archiv (lib/archiv.ts): when and by whom it was archived; null = in the normal lists. */
   archived_at?: string | null;
   archived_by?: number | null;
+  /** Handgeschriebenen Text einlesen (lib/handschrift.ts): when it was last taken over from paper; teachers only. */
+  von_papier?: string | null;
 };
 export type TextView =TextRow & { student_name: string; teacher_name: string | null };
 
@@ -47,6 +49,8 @@ export const TEXT_KINDS = [
   "Inhaltsangabe",
   "Beschreibung",
   "Brief",
+  "Bewerbungsschreiben",
+  "Lebenslauf",
   "Erörterung",
   "Zusammenfassung",
   "Essay",
@@ -184,6 +188,23 @@ export function restoreRevision(textId: number, revisionId: number): SaveResult 
   // the current text is always kept, however recent the last revision
   db().prepare("INSERT INTO text_revisions (text_id, version, body, words, saved_at) VALUES (?, ?, ?, ?, ?)").run(textId, text.version, text.body, text.words, iso());
   return saveText(textId, parseDoc(rev.body), text.version, { force: true });
+}
+
+/**
+ * A text written on paper becomes the text (lib/handschrift.ts), as a new version like any other, so correction,
+ * Bewertung, print and documentation work unchanged. What was there before is kept under „Frühere Fassungen“,
+ * however recent the last one; `von_papier` notes when (for the teacher only).
+ */
+export function saveFromPaper(textId: number, doc: TextDoc, at = Date.now()): SaveResult {
+  const conn = db();
+  return conn.transaction((): SaveResult => {
+    const text = getText(textId);
+    if (!text) return { ok: false, reason: "fehlt" };
+    if (text.words && docKey(doc) !== text.body) conn.prepare("INSERT INTO text_revisions (text_id, version, body, words, saved_at) VALUES (?, ?, ?, ?, ?)").run(textId, text.version, text.body, text.words, iso(at));
+    const res = saveText(textId, doc, text.version, { force: true, at });
+    if (res.ok) conn.prepare("UPDATE texts SET von_papier = ? WHERE id = ?").run(iso(at), textId);
+    return res;
+  })();
 }
 
 export type UnitText = Pick<TextRow, "id" | "title" | "topic" | "subject" | "status" | "words" | "updated_at" | "archived_at"> & {

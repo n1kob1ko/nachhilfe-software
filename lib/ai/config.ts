@@ -88,6 +88,7 @@ export type AIFunction =
   | "stundenplan"
   | "stoffzettel"
   | "textfoto"
+  | "handschrift"
   | "blatt"
   | "whiteboard"
   | "druckblatt"
@@ -160,6 +161,10 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // pages of a printed test the student solved on paper. Thinking on: the KI checks the maths of every answer itself
   blatt: { label: "Gelöstes Blatt lesen", area: "MATERIAL", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   textfoto: { label: "Text vom Foto lesen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 120_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  // Handgeschriebenen Text einlesen (lib/handschrift.ts): only on the teacher's click, after the tick „kein Name darauf“; a
+  // student's text written on paper, word for word with every mistake. The answer is the student's own writing, so it is
+  // kept for reuse one hour only (a reload does not pay twice), not a whole day
+  handschrift: { label: "Handschrift lesen", area: "MATERIAL", tier: "standard", maxTokens: 12_000, timeoutMs: 150_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 60 * MIN, cache: "aus" },
   // KI prüfen am Whiteboard (lib/whiteboard-check.ts): only on the teacher's click; the picture of one task with the
   // handwriting under it and the task's solution; the answer is a suggestion the teacher confirms. Thinking on, because
   // reading handwritten maths wrongly would mark a right answer wrong; the same picture is not paid for twice

@@ -120,6 +120,23 @@ test("topics: the search finds them in every subject, at the student's level and
   assert.deepEqual(matchSkills("Kurvendiskussion", "Mathematik", { student: ms3 }), []);
   assert.deepEqual(matchSkills("Finanzmathematik", "Mathematik", { student: ahs7 }), [], "Finanzmathematik is HAK");
   assert.ok(matchSkills("Finanzmathematik", "Mathematik", { student: hak3 }).length >= 3);
+  // Bewerbung in der 4. Klasse (2026-10-23): AHS und Mittelschule finden die Unterstufe, die Oberstufe ihre eigenen
+  const ahs4 = { school_type: "Gymnasium", klasse: 4, grade: 8 };
+  const ms4 = { school_type: "Mittelschule", klasse: 4, grade: 8 };
+  for (const student of [ahs4, ms4]) {
+    assert.equal(matchSkills("Bewerbungsschreiben", "Deutsch", { student })[0]?.skill.id, "deutsch.schreiben.bewerbung");
+    assert.equal(matchSkills("Motivationsschreiben", "Deutsch", { student })[0]?.skill.id, "deutsch.schreiben.bewerbung");
+    assert.equal(matchSkills("Lebenslauf", "Deutsch", { student })[0]?.skill.id, "deutsch.schreiben.lebenslauf");
+  }
+  // on a Stoffzettel the skill of the student's own Schulstufe comes first
+  const { stoffVorschlag } = await import("./lehrplan");
+  const [lebenslauf, bewerbung] = stoffVorschlag(["Lebenslauf", "Bewerbungsschreiben"], "Deutsch", ahs7);
+  assert.equal(lebenslauf.skills[0]?.id, "deutsch.os.bewerbung.lebenslauf");
+  assert.equal(bewerbung.skills[0]?.id, "deutsch.os.bewerbung.schreiben");
+  const [lebenslauf4, bewerbung4] = stoffVorschlag(["Lebenslauf", "Bewerbungsschreiben"], "Deutsch", ahs4);
+  assert.equal(lebenslauf4.skills[0]?.id, "deutsch.schreiben.lebenslauf");
+  assert.equal(bewerbung4.skills[0]?.id, "deutsch.schreiben.bewerbung");
+  assert.deepEqual(matchSkills("Bewerbungsschreiben", "Deutsch", { student: ms3 }).filter((m) => m.skill.id.includes("bewerbung")), [], "not before the 8. Schulstufe");
 });
 
 test("topics: seeded with school types and prerequisites, browsable per school type and class, linked to the Lehrplan", async () => {
