@@ -1044,6 +1044,31 @@ CREATE INDEX IF NOT EXISTS idx_units_student ON units(student_id, started_at);
 CREATE INDEX IF NOT EXISTS idx_units_teacher ON units(teacher_id, started_at);
 CREATE INDEX IF NOT EXISTS idx_snapshots ON skill_snapshots(student_id, skill_id, recorded_at);
 CREATE INDEX IF NOT EXISTS idx_lessons_student ON lessons(student_id, starts_at);
+-- Bildgeschichte erstellen (lib/bildfolge.ts, Plan 5.2): eine Bilderfolge, die die App aus der kurzen Beschreibung der
+-- Lehrkraft erstellt hat. Der Plan (JSON: Szenen und die feste Beschreibung der Figuren) bleibt, damit „Dieses Bild neu“
+-- dieselben Figuren zeichnet. Kein Name, kein Foto. student_id: für wen sie erstellt wurde (Kostengrenze), sonst null.
+CREATE TABLE IF NOT EXISTS bildfolgen (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  student_id INTEGER REFERENCES students(id) ON DELETE SET NULL,
+  beschreibung TEXT NOT NULL,
+  plan TEXT NOT NULL,
+  plan_call_id INTEGER,
+  created_at TEXT NOT NULL
+);
+-- das aktuelle Bild je Szene; die Datei liegt wie die Bilder der Bildgeschichten unter uploads/bildgeschichten
+CREATE TABLE IF NOT EXISTS bildfolge_bilder (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  bildfolge_id INTEGER NOT NULL REFERENCES bildfolgen(id) ON DELETE CASCADE,
+  szene INTEGER NOT NULL,
+  mime TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  sha256 TEXT NOT NULL,
+  stored_path TEXT NOT NULL,
+  call_id INTEGER,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_bildfolge_bilder ON bildfolge_bilder(bildfolge_id, szene);
 -- Präsentation aus einem Lernpaket (lib/praesentation-ki.ts, Plan 5.1): der Vorschlag der KI, bevor der Lehrer ihn übernimmt.
 -- inhalt: JSON, der Inhalt der Folien (lib/ai/praesentation.ts Deck), nie HTML; die App baut die Präsentation erst beim Übernehmen.
 -- status = vorschlag | uebernommen | verworfen; praesentation_id: die gespeicherte Präsentation nach dem Übernehmen.
@@ -1278,6 +1303,11 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["tasks", "quelle", "TEXT"],
   // Prüfungen eintragen (lib/pruefliste.ts, Plan 3.1): 'schueler' = der Schüler hat sie in seiner App eingetragen
   ["tests", "quelle", "TEXT NOT NULL DEFAULT ''"],
+  // Bildgeschichte erstellen (lib/bildfolge.ts, Plan 5.2): 1 = mit KI erstellt (nur intern, Schülerseiten zeigen es nicht),
+  // dazu Bilderfolge und Szene, aus denen „Dieses Bild neu“ dasselbe Bild noch einmal erstellt
+  ["picture_story_images", "ki", "INTEGER NOT NULL DEFAULT 0"],
+  ["picture_story_images", "bildfolge_id", "INTEGER REFERENCES bildfolgen(id) ON DELETE SET NULL"],
+  ["picture_story_images", "szene", "INTEGER"],
   // Präsentation aus einem Lernpaket (lib/praesentation-ki.ts, Plan 5.1): 'ki' = von der KI erstellt ('' = hochgeladen), die Anfrage
   // im Protokoll, und wer sie geprüft hat; eine KI-Präsentation bleibt „Ungeprüft“, bis ein Lehrer sie ansieht
   ["praesentationen", "quelle", "TEXT NOT NULL DEFAULT ''"],

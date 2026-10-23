@@ -6,7 +6,7 @@
 import type { ProviderId, Usage } from "../config";
 import { parseLenient } from "./repair";
 import { ANTHROPIC_MAX_UNIONS, jsonIn, jsonSchemaOf, unionCount, withSchemaInstruction } from "./schema";
-import { ProviderHttpError, type AIRequest, type AnswerFailure, type Capabilities, type Part, type Transport } from "./types";
+import { ProviderHttpError, type AIRequest, type AnswerFailure, type Capabilities, type ImageRequest, type ImageTransport, type Part, type Transport } from "./types";
 
 type Flavor = Capabilities & {
   label: string;
@@ -176,5 +176,71 @@ export const openAICompatibleTransport: Transport = async (req) => {
     model: data?.model || req.model,
     usage: usageOf(data?.usage),
     ...(typeof data?.usage?.cost === "number" ? { costUsd: data.usage.cost } : {}),
+  };
+};
+
+// ---------- pictures (Bildgeschichte erstellen, lib/bildfolge.ts) ----------
+
+/**
+ * The request body of a picture on OpenRouter's image endpoint (exported for tests: what leaves the app is
+ * visible there). The reference pictures go as data URLs; the same key and address as every other request.
+ */
+export function imageBody(req: ImageRequest) {
+  return {
+    model: req.model,
+    prompt: req.prompt,
+    n: 1,
+    aspect_ratio: req.aspectRatio,
+    ...(req.references.length ? { input_references: req.references.map((r) => ({ type: "image_url", image_url: { url: `data:${r.mime};base64,${r.base64}` } })) } : {}),
+  };
+}
+
+type ImageResponse = {
+  model?: string;
+  error?: unknown;
+  data?: { b64_json?: string; url?: string }[];
+  /** the answer of a chat completion with modalities ["image", "text"] has the picture here */
+  choices?: { message?: { images?: { image_url?: { url?: string } }[] } }[];
+  usage?: ChatResponse["usage"];
+};
+
+/** The bytes of a data URL or of plain base64; null for anything else (a web address is never fetched). */
+function bytesOf(v: string | undefined): Buffer | null {
+  if (!v) return null;
+  const m = /^data:image\/[a-z+.-]+;base64,(.+)$/is.exec(v);
+  if (m) return Buffer.from(m[1], "base64");
+  return /^[A-Za-z0-9+/=\s]+$/.test(v) ? Buffer.from(v, "base64") : null;
+}
+
+/** One picture from OpenRouter (POST /images). Only OpenRouter: the other providers of this adapter make none. */
+export const openRouterImageTransport: ImageTransport = async (req) => {
+  const flavor = FLAVORS.openrouter;
+  const base = flavor.baseUrl().replace(/\/+$/, "");
+  const body = JSON.stringify(imageBody(req));
+  let res: Response | null = null;
+  let error = "";
+  // one retry on overload or a server error; a picture that failed is not billed
+  for (let attempt = 0; attempt < 2; attempt++) {
+    res = await fetch(`${base}/images`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${flavor.key()}` }, body, signal: req.signal });
+    if (res.ok) break;
+    error = await res.text();
+    if (!(res.status === 429 || res.status >= 500) || attempt === 1) break;
+    await new Promise((r) => setTimeout(r, 800));
+  }
+  if (!res!.ok) throw new ProviderHttpError(`${flavor.label} antwortet mit ${res!.status}: ${error.slice(0, 200)}`, res!.status);
+  const data = (await res!.json().catch((e: unknown) => {
+    if (req.signal.aborted) throw e;
+    return null;
+  })) as ImageResponse | null;
+  const first = data?.data?.[0];
+  const bytes = bytesOf(first?.b64_json) ?? bytesOf(first?.url) ?? bytesOf(data?.choices?.[0]?.message?.images?.[0]?.image_url?.url);
+  const sent = sentError(data?.error);
+  const problem = bytes?.length ? undefined : data == null ? "Antwort nicht lesbar" : sent ? `${flavor.label} meldet einen Fehler: ${String(sent.message ?? "ohne Text").slice(0, 150)}` : "Antwort ohne Bild";
+  return {
+    data: bytes?.length ? bytes : null,
+    model: data?.model || req.model,
+    usage: usageOf(data?.usage),
+    ...(typeof data?.usage?.cost === "number" ? { costUsd: data.usage.cost } : {}),
+    ...(problem ? { problem } : {}),
   };
 };

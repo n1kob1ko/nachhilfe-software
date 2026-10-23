@@ -65,6 +65,11 @@ export type StoryImage = {
   stored_path: string;
   caption: string;
   created_at: string;
+  /** 1 = made by the app (lib/bildfolge.ts); only teachers see it */
+  ki: number;
+  /** the Bilderfolge and scene it was made from, for „Dieses Bild neu“; null for uploaded pictures */
+  bildfolge_id: number | null;
+  szene: number | null;
 };
 export type StorySettings = {
   schoolType: string;
@@ -143,11 +148,27 @@ export function storeImageFile(img: UploadedImage): { mime: string; size: number
   return { mime: type.mime, size: img.data.length, sha256, stored, name };
 }
 
-/** Removes the file of a picture that no picture uses any more. */
-function dropFileIfUnused(stored: string) {
-  const used = db().prepare("SELECT COUNT(*) AS n FROM picture_story_images WHERE stored_path = ?").get(stored) as { n: number };
+/** Removes the file of a picture that no picture uses any more (neither a story nor a Bilderfolge, lib/bildfolge.ts). */
+export function dropFileIfUnused(stored: string) {
+  const used = db().prepare("SELECT (SELECT COUNT(*) FROM picture_story_images WHERE stored_path = ?) + (SELECT COUNT(*) FROM bildfolge_bilder WHERE stored_path = ?) AS n").get(stored, stored) as { n: number };
   if (!used.n) fs.rmSync(imageFile({ stored_path: stored }), { force: true });
 }
+
+type StoredFile = { mime: string; size: number; sha256: string; stored: string; name: string; ki?: number; bildfolgeId?: number | null; szene?: number | null };
+
+/** A picture the app made (lib/bildfolge.ts), as a story takes it over: the same file, marked as made with KI. */
+function generatedFile(id: number): StoredFile {
+  const r = db().prepare("SELECT bildfolge_id, szene, mime, size, sha256, stored_path FROM bildfolge_bilder WHERE id = ?").get(id) as
+    | { bildfolge_id: number; szene: number; mime: string; size: number; sha256: string; stored_path: string }
+    | undefined;
+  if (!r) throw new Error("Ein erstelltes Bild gibt es nicht mehr. Bitte die Seite neu laden.");
+  return { mime: r.mime, size: r.size, sha256: r.sha256, stored: r.stored_path, name: `bild-${r.szene}${path.extname(r.stored_path)}`, ki: 1, bildfolgeId: r.bildfolge_id, szene: r.szene };
+}
+
+const INSERT_IMAGE =
+  "INSERT INTO picture_story_images (text_id, position, file_name, mime, size, sha256, stored_path, caption, created_at, ki, bildfolge_id, szene) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+const insertValues = (textId: number, position: number, f: StoredFile, caption: string, now: string) =>
+  [textId, position, f.name, f.mime, f.size, f.sha256, f.stored, caption, now, f.ki ?? 0, f.bildfolgeId ?? null, f.szene ?? null] as const;
 
 /** Picture files of all stories of a student, read before the student is deleted (rows go by cascade, files do not). */
 export function studentImageFiles(studentId: number): string[] {
@@ -202,7 +223,8 @@ export type NewPictureStory = {
   title: string;
   prompt: string;
   settings: StorySettings;
-  images: (UploadedImage & { caption?: string })[];
+  /** uploaded files, or pictures the app made (`kiBild`: bildfolge_bilder.id, lib/bildfolge.ts) */
+  images: ((UploadedImage | { kiBild: number }) & { caption?: string })[];
 };
 
 /**
@@ -212,7 +234,7 @@ export type NewPictureStory = {
 export function createPictureStory(n: NewPictureStory): TextView {
   if (!n.images.length) throw new Error("Bitte mindestens ein Bild hochladen.");
   if (n.images.length > MAX_IMAGES) throw new Error(`Höchstens ${MAX_IMAGES} Bilder.`);
-  const files = n.images.map((img) => ({ ...storeImageFile(img), caption: cleanCaption(img.caption) }));
+  const files = n.images.map((img) => ({ ...("kiBild" in img ? generatedFile(img.kiBild) : storeImageFile(img)), caption: cleanCaption(img.caption) }));
   const conn = db();
   const now = iso();
   return conn.transaction(() => {
@@ -224,16 +246,14 @@ export function createPictureStory(n: NewPictureStory): TextView {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(text.id, s.schoolType, s.klasse, s.targetWords, JSON.stringify(s.starters), s.hints, s.lines, s.sourceKind, s.sourceNote, now, now);
-    const ins = conn.prepare(
-      "INSERT INTO picture_story_images (text_id, position, file_name, mime, size, sha256, stored_path, caption, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    );
-    files.forEach((f, i) => ins.run(text.id, i + 1, f.name, f.mime, f.size, f.sha256, f.stored, f.caption, now));
+    const ins = conn.prepare(INSERT_IMAGE);
+    files.forEach((f, i) => ins.run(...insertValues(text.id, i + 1, f, f.caption, now)));
     return text;
   })();
 }
 
-/** One place in the new order: a picture the story already has, or the n-th newly uploaded file. */
-export type OrderEntry = { id: number; caption?: string } | { upload: number; caption?: string };
+/** One place in the new order: a picture the story already has, the n-th newly uploaded file, or a picture the app made (bildfolge_bilder.id). */
+export type OrderEntry = { id: number; caption?: string } | { upload: number; caption?: string } | { ki: number; caption?: string };
 
 export type StoryChange = {
   title: string;
@@ -256,15 +276,16 @@ export function updatePictureStory(textId: number, c: StoryChange): void {
   const existing = new Map(storyImages(textId).map((i) => [i.id, i]));
   const seen = new Set<string>();
   for (const e of c.order) {
-    const key = "id" in e ? `i${e.id}` : `u${e.upload}`;
+    const key = "id" in e ? `i${e.id}` : "upload" in e ? `u${e.upload}` : `k${e.ki}`;
     if (seen.has(key)) throw new Error("Ein Bild steht doppelt in der Reihenfolge.");
     seen.add(key);
     if ("id" in e && !existing.has(e.id)) throw new Error("Ein Bild gehört nicht zu dieser Bildgeschichte.");
     if ("upload" in e && !c.uploads[e.upload]) throw new Error("Ein neues Bild ist nicht angekommen. Bitte noch einmal versuchen.");
   }
-  const stored = new Map<number, ReturnType<typeof storeImageFile>>();
+  const stored = new Map<string, StoredFile>();
   c.order.forEach((e) => {
-    if ("upload" in e) stored.set(e.upload, storeImageFile(c.uploads[e.upload]));
+    if ("upload" in e) stored.set(`u${e.upload}`, storeImageFile(c.uploads[e.upload]));
+    if ("ki" in e) stored.set(`k${e.ki}`, generatedFile(e.ki));
   });
   const conn = db();
   const now = iso();
@@ -277,15 +298,10 @@ export function updatePictureStory(textId: number, c: StoryChange): void {
       .run(s.schoolType, s.klasse, s.targetWords, JSON.stringify(s.starters), s.hints, s.lines, s.sourceKind, s.sourceNote, now, textId);
     for (const r of removed) conn.prepare("DELETE FROM picture_story_images WHERE id = ?").run(r.id);
     const move = conn.prepare("UPDATE picture_story_images SET position = ?, caption = ? WHERE id = ?");
-    const ins = conn.prepare(
-      "INSERT INTO picture_story_images (text_id, position, file_name, mime, size, sha256, stored_path, caption, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    );
+    const ins = conn.prepare(INSERT_IMAGE);
     c.order.forEach((e, i) => {
       if ("id" in e) move.run(i + 1, e.caption === undefined ? existing.get(e.id)!.caption : cleanCaption(e.caption), e.id);
-      else {
-        const f = stored.get(e.upload)!;
-        ins.run(textId, i + 1, f.name, f.mime, f.size, f.sha256, f.stored, cleanCaption(e.caption), now);
-      }
+      else ins.run(...insertValues(textId, i + 1, stored.get("upload" in e ? `u${e.upload}` : `k${e.ki}`)!, cleanCaption(e.caption), now));
     });
   })();
   for (const r of removed) dropFileIfUnused(r.stored_path);
