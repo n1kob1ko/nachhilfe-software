@@ -686,7 +686,7 @@ export async function leseStundenplanFoto(file: { mime: "image/jpeg" | "image/pn
 
 // ---------- Stoffzettel einer Schularbeit (lib/stoffzettel.ts) ----------
 const StoffzettelSchema = z.object({
-  art: z.string().nullable().describe("Die Art, wie sie auf dem Zettel steht, z. B. Schularbeit, Test, Vokabeltest, Mündliche Prüfung; null, wenn keine genannt ist"),
+  art: z.string().nullable().describe("Die Art, wie sie auf dem Zettel steht, z. B. Schularbeit, Test, Vokabeltest, Mündliche Prüfung, Referat; null, wenn keine genannt ist"),
   fach: z.string().nullable().describe("Das Fach, z. B. Mathematik, Englisch, Biologie; null, wenn es nicht zu erkennen ist"),
   datum: z.string().nullable().describe("Der Termin als JJJJ-MM-TT; null, wenn kein Termin auf dem Zettel steht"),
   titel: z.string().nullable().describe("Die Bezeichnung wie auf dem Zettel, z. B. 2. Mathematik-Schularbeit; ohne Namen von Personen und ohne Klasse; null, wenn keine dasteht"),

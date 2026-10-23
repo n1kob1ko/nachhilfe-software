@@ -32,6 +32,8 @@ import { buildUnitReport, readReport } from "@/lib/learning";
 import { mappeFuerEinheit, mappeHatInhalt } from "@/lib/mappe";
 import { letzterStoff, minitestDerEinheit } from "@/lib/minitest";
 import { MinitestKarte } from "@/components/MinitestKarte";
+import { SchuelerNotizAnzeige } from "@/components/SchuelerNotiz";
+import { hatInhalt, notizZuEinheit } from "@/lib/schueler-notiz";
 import * as repo from "@/lib/repo";
 import { requireTeacher } from "@/lib/auth";
 import { zeitfenster } from "@/lib/planung/heute";
@@ -215,6 +217,8 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   const auto = lesson ? autoFelderVon(lesson) : new Set<string>();
   const frisch = lesson && !lesson.reviewed_at;
   const mappe = mappeFuerEinheit(unit.id);
+  // „Was war heute schwer?“, vom Schüler nach dieser Einheit geschrieben (lib/schueler-notiz.ts)
+  const notiz = notizZuEinheit(unit.id);
   return (
     <>
       {notices}
@@ -238,6 +242,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         )}
       </header>
       <div className="grid max-w-[820px] gap-10">
+        {hatInhalt(notiz) && <SchuelerNotizAnzeige notiz={notiz} name={first(student.name)} />}
         {lesson && <EinschaetzungKarte e={einschaetzung} lesson={lesson} auto={auto} />}
         {brief && lesson && <BriefSection brief={brief} lesson={lesson} mayManage={mayManage} />}
         {lesson ? (

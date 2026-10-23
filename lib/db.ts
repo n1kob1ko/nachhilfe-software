@@ -873,6 +873,91 @@ CREATE TABLE IF NOT EXISTS aufgabe_bewertungen (
   UNIQUE (schluessel, teacher_id)
 );
 CREATE INDEX IF NOT EXISTS idx_aufgabe_bewertungen_skill ON aufgabe_bewertungen(skill_id);
+-- Terminanfragen (lib/planung/terminanfragen.ts, Plan 3.3): ein veröffentlichter Platz soll verschoben oder mit
+-- einem anderen getauscht werden. Ein Tausch wartet zuerst auf die Zustimmung der anderen Seite (Schüler oder
+-- ihr Lehrer), dann bestätigt oder lehnt die Verwaltung ab. Bewegt wird erst beim Bestätigen, mit derselben
+-- Prüfung wie im Wochenplan. vorher/ziel_*: wo der Platz bei der Anfrage lag und wohin er soll; beim Tausch ist
+-- ziel_* die Lage des anderen Platzes, und der kommt an vorher.
+CREATE TABLE IF NOT EXISTS terminanfragen (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  art TEXT NOT NULL,                        -- verschieben | tauschen
+  status TEXT NOT NULL,                     -- wartet (auf Zustimmung) | offen (bei der Verwaltung) | bestaetigt | abgelehnt
+  platz_id INTEGER NOT NULL REFERENCES geplante_einheiten(id) ON DELETE CASCADE,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  vorher TEXT NOT NULL,                     -- JSON { week_start, weekday, start_min }
+  ziel_week_start TEXT NOT NULL,
+  ziel_weekday INTEGER NOT NULL,
+  ziel_start_min INTEGER NOT NULL,
+  ziel_raum_id INTEGER REFERENCES rooms(id) ON DELETE SET NULL, -- beim Verschieben ein anderer freier Raum; null = Raum bleibt
+  partner_platz_id INTEGER REFERENCES geplante_einheiten(id) ON DELETE CASCADE,
+  partner_student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+  von TEXT NOT NULL,                        -- schueler | lehrer
+  von_teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  notiz TEXT NOT NULL DEFAULT '',           -- nur für Lehrer und Verwaltung, nie für den anderen Schüler
+  zugestimmt TEXT NOT NULL DEFAULT '',      -- '' | schueler | lehrer
+  zugestimmt_at TEXT,
+  grund TEXT NOT NULL DEFAULT '',           -- kurzer Grund einer Ablehnung
+  entschieden_von TEXT NOT NULL DEFAULT '', -- '' | partner | verwaltung
+  entschieden_teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  entschieden_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_terminanfragen_status ON terminanfragen(status, created_at);
+-- Prüfungen, die ein Schüler in seiner App einträgt (lib/pruefliste.ts, Plan 3.1). Ist alles klar (vor allem ein sicheres
+-- Datum), wird gleich eine Schularbeit (tests, quelle = 'schueler'); sonst prüft ein Lehrer in der Prüfliste.
+-- status = eingereicht (zu prüfen) | automatisch (eingetragen, Lehrer hat noch nicht bestätigt) | uebernommen | verworfen.
+-- datum NULL = keins angegeben; keine_namen = 1: der Schüler hat bestätigt, dass auf den Fotos kein Name steht.
+CREATE TABLE IF NOT EXISTS pruefung_einreichungen (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  art TEXT NOT NULL,
+  fach TEXT NOT NULL,
+  datum TEXT,
+  stoff TEXT NOT NULL DEFAULT '',
+  notiz TEXT NOT NULL DEFAULT '',
+  keine_namen INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'eingereicht',
+  test_id INTEGER REFERENCES tests(id) ON DELETE SET NULL,
+  entschieden_von INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  entschieden_am TEXT,
+  created_at TEXT NOT NULL
+);
+-- Die Fotos dazu, je als Material des Schülers (Stoffzettel). neu = 1: das Material entstand mit dieser Einreichung
+-- (beim Verwerfen wird es gelöscht). gelesen_am: das Foto wurde einmal gelesen, vorschlag ist das Ergebnis (JSON).
+CREATE TABLE IF NOT EXISTS pruefung_einreichung_fotos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  einreichung_id INTEGER NOT NULL REFERENCES pruefung_einreichungen(id) ON DELETE CASCADE,
+  material_id INTEGER REFERENCES materials(id) ON DELETE SET NULL,
+  neu INTEGER NOT NULL DEFAULT 1,
+  gelesen_am TEXT,
+  vorschlag TEXT,
+  fehler TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_pruefung_einreichungen ON pruefung_einreichungen(student_id, status);
+CREATE INDEX IF NOT EXISTS idx_pruefung_einreichung_fotos ON pruefung_einreichung_fotos(einreichung_id);
+-- Notiz nach der Einheit (lib/schueler-notiz.ts): „Was war heute schwer?“ aus der Schüler-App, eine je Einheit.
+-- auswahl: JSON der angetippten Antworten (NOTIZ_AUSWAHL); uebersprungen = 1: die Frage kommt nicht wieder.
+-- Die Worte des Schülers: zählen nicht für Lernstand oder Einschätzung und gehen nicht an die KI.
+CREATE TABLE IF NOT EXISTS schueler_notizen (
+  unit_id INTEGER PRIMARY KEY REFERENCES units(id) ON DELETE CASCADE,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  auswahl TEXT NOT NULL DEFAULT '[]',
+  text TEXT NOT NULL DEFAULT '',
+  uebersprungen INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_schueler_notizen_student ON schueler_notizen(student_id);
+-- „Für nächstes Mal“ aus der Schüler-App (lib/schueler-notiz.ts): was drankommen soll oder was er in der Schule nicht
+-- versteht. Gehört zur ersten Einheit, die nach created_at beginnt; bis dahin änderbar. created_at, updated_at: ISO wie units.started_at.
+CREATE TABLE IF NOT EXISTS schueler_wuensche (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_schueler_wuensche_student ON schueler_wuensche(student_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_ge_week ON geplante_einheiten(week_start, status);
 CREATE INDEX IF NOT EXISTS idx_ge_teacher ON geplante_einheiten(teacher_id, week_start);
 CREATE INDEX IF NOT EXISTS idx_ge_student ON geplante_einheiten(student_id, week_start);
@@ -945,6 +1030,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["worksheets", "source_task_id", "INTEGER REFERENCES tasks(id) ON DELETE SET NULL"],
   ["assignments", "unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
   ["assignments", "solutions_visible", "INTEGER NOT NULL DEFAULT 0"],
+  // Freigabe in Stufen (lib/freigabe.ts): nichts | hilfen | loesung | alles; NULL = aus solutions_visible
+  ["assignments", "freigabe", "TEXT"],
   // Schnellrunde (Phase 2 des Merges): 'normal' = the usual flow, 'schnell' = one tap per task with a
   // short feedback and automatic next task (components/StudentQuickRound.tsx). Attempts, time and hints
   // are stored exactly as in normal mode; only the student's flow differs (lib/quick-round.ts).
@@ -971,6 +1058,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["tasks", "source_item_id", "INTEGER REFERENCES source_items(id) ON DELETE SET NULL"],
   ["tasks", "level", "INTEGER"],
   ["tasks", "solution_steps", "TEXT NOT NULL DEFAULT '[]'"],
+  // Lösungsdaten (Plan 2.3): Erklärung für den Lehrer ('' = aus Fähigkeit und typischen Fehlern) und andere Wege
+  ["tasks", "teacher_note", "TEXT NOT NULL DEFAULT ''"],
+  ["tasks", "alt_ways", "TEXT NOT NULL DEFAULT '[]'"],
   ["tasks", "estimated_time_sec", "INTEGER"],
   // tracking: who taught and how hard the task was, at the moment of the answer
   ["attempts", "teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
@@ -1100,6 +1190,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // KI-Grenze je Schüler und Monat (lib/ai/schueler-kosten.ts, 2026-10-23): um welchen Schüler es im Aufruf ging
   // (meta.studentId, sonst der Schüler der Einheit); null = keiner (Lesetext, Druckblatt, Verbindungstest …)
   ["ai_calls", "student_id", "INTEGER REFERENCES students(id) ON DELETE SET NULL"],
+  // Prüfungen eintragen (lib/pruefliste.ts, Plan 3.1): 'schueler' = der Schüler hat sie in seiner App eingetragen
+  ["tests", "quelle", "TEXT NOT NULL DEFAULT ''"],
 ];
 
 /** Teachers to start with; more can be added later. */

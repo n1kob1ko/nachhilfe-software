@@ -169,7 +169,7 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
       />
     ) : (
       <Solver
-        key={`${current.id}-${current.solutions_visible}`}
+        key={`${current.id}-${current.solutions_visible}-${current.freigabe ?? ""}`}
         token=""
         via="laptop"
         homeHref="/mitmachen/ansicht?zu=start"

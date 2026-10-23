@@ -17,6 +17,7 @@ import {
   rejectLaptop,
   requestLaptopAccess,
 } from "@/lib/laptop";
+import { freigabeVon, zeigtHilfen } from "@/lib/freigabe";
 import { laptopContext, setLaptopCookie } from "@/lib/laptop-context";
 import { notifyUnitTablets, pushLive, unitAssignment } from "@/lib/live";
 import * as repo from "@/lib/repo";
@@ -59,6 +60,8 @@ export async function laptopRecordHintAction(assignmentId: number, taskId: numbe
   const { student, unit, assignment } = await laptopAssignment(assignmentId);
   const t = repo.getTask(taskId);
   if (!t || t.worksheet_id !== assignment.worksheet_id || !Number.isInteger(hintIndex) || hintIndex < 0 || hintIndex >= t.hints.length) return;
+  // Freigabe „Nichts“: es gibt keine Hilfen, also wird auch keine gezählt
+  if (!zeigtHilfen(freigabeVon(assignment))) return;
   repo.recordHintUse({ assignment_id: assignment.id, task_id: t.id, student_id: student.id, hint_index: hintIndex, unit_id: unit.id });
   pushLive(unit.id);
   onHint({ unitId: unit.id, teacherId: unit.teacher_id, taskId: t.id, assignmentId: assignment.id, hintIndex });

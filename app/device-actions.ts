@@ -9,6 +9,7 @@ import { sendSingleTask, releaseWorksheet } from "@/lib/builder";
 import { clientIp } from "@/lib/client-ip";
 import { deviceContext } from "@/lib/device-context";
 import { canManageDevice, createPairCode, getDevice, pairDevice, renameDevice, revokeDevice, setDeviceCookie } from "@/lib/devices";
+import { freigabeVon, hoehere, zeigtHilfen } from "@/lib/freigabe";
 import { noteActivity } from "@/lib/learning";
 import { moveTablet, resendUnit, nextTaskAfter, notifyDevice, notifyStudent, parseView, pushLive, pushTabletPresence, showOnTablet, unitAssignment, unitAssignments, unitText, type Delivery } from "@/lib/live";
 import { getPraesentation } from "@/lib/praesentationen";
@@ -64,6 +65,8 @@ export async function deviceRecordHintAction(assignmentId: number, taskId: numbe
   const { student, unit, assignment } = await tabletAssignment(assignmentId);
   const t = repo.getTask(taskId);
   if (!t || t.worksheet_id !== assignment.worksheet_id || !Number.isInteger(hintIndex) || hintIndex < 0 || hintIndex >= t.hints.length) return;
+  // Freigabe „Nichts“: es gibt keine Hilfen, also wird auch keine gezählt
+  if (!zeigtHilfen(freigabeVon(assignment))) return;
   repo.recordHintUse({ assignment_id: assignment.id, task_id: t.id, student_id: student.id, hint_index: hintIndex, unit_id: unit.id });
   pushLive(unit.id);
   onHint({ unitId: unit.id, teacherId: unit.teacher_id, taskId: t.id, assignmentId: assignment.id, hintIndex });
@@ -196,12 +199,12 @@ export async function retryTaskAction(unitId: number) {
   revalidatePath(`/einheiten/${unit.id}`);
 }
 
-/** "Lösung zeigen" for the exercise on the tablet. */
+/** "Lösung zeigen" for the exercise on the tablet: at least „Hilfen und Lösung“, an „Alles“ stays. */
 export async function showSolutionAction(unitId: number) {
   const { unit } = await managedRunningUnit(unitId);
   const a = currentAssignment(unit.id, unit.device_view);
   if (!a) return;
-  repo.setSolutionsVisible(a.id, true);
+  repo.setFreigabe(a.id, hoehere(freigabeVon(a), "loesung"));
   notifyStudent(unit, "loesung");
   pushLive(unit.id);
 }

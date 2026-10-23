@@ -64,6 +64,7 @@ export function artVomZettel(roh: string | null): Pruefungsart | null {
   if (/schularbeit|\bsa\b/.test(v)) return "Schularbeit";
   if (/vokabel/.test(v)) return "Vokabeltest";
   if (/mündlich|muendlich/.test(v)) return "Mündliche Prüfung";
+  if (/referat|präsentation/.test(v)) return "Referat";
   if (/test/.test(v)) return "Test";
   return null;
 }
@@ -118,7 +119,7 @@ export function vorschlagAusGelesen(g: StoffzettelGelesen, o: { heute: string; f
  * Liest einen gespeicherten Zettel (Material) mit der KI. Wirft einen Fehler mit einem Satz für den Lehrer; der
  * Zettel bleibt dann gespeichert und angehängt.
  */
-export async function liesStoffzettel(o: { materialId: number; studentId: number; teacherId: number; heute: string }): Promise<StoffzettelVorschlag> {
+export async function liesStoffzettel(o: { materialId: number; studentId: number; teacherId: number | null; heute: string }): Promise<StoffzettelVorschlag> {
   const geht = stoffzettelLesbar();
   if (!geht.ok) throw new Error(geht.grund);
   const m = getMaterial(o.materialId);

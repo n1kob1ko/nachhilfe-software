@@ -9,8 +9,9 @@ import { assignWorksheetAction, deleteWorksheetAction } from "@/app/actions";
 import { archiveWorksheetAction, restoreWorksheetAction } from "@/app/archiv-actions";
 import { ArchivBanner, ArchivKnopf, ArchivMeldung, WiederherstellenKnopf } from "@/components/Archiv";
 import { LoeschenMitWarnung } from "@/components/LoeschenMitWarnung";
-import { copyAsDraftAction, setSolutionsVisibleAction } from "@/app/builder-actions";
-import { quickRoundProblem } from "@/lib/quick-round";
+import { copyAsDraftAction, setFreigabeAction } from "@/app/builder-actions";
+import { FREIGABE_INFO, FREIGABE_LABEL, FREIGABEN, freigabeVon, type Freigabe } from "@/lib/freigabe";
+import { isMinitest, quickRoundProblem } from "@/lib/quick-round";
 import { BoardSendButton, SendToBoard } from "@/components/SendToBoard";
 import { FlowSteps } from "@/components/FlowSteps";
 import { PageHeader, Pill, Reveal } from "@/components/ui";
@@ -353,11 +354,11 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
                         {x.done_count}/{tasks.length} · {x.correct_count} richtig
                       </span>
                     </div>
-                    <form action={setSolutionsVisibleAction.bind(null, x.id, !x.solutions_visible)}>
-                      <button className={`min-h-[36px] text-[13px] font-semibold hover:underline ${x.solutions_visible ? "text-green" : "text-accent"}`}>
-                        {x.solutions_visible ? "Lösungen sichtbar · wieder verbergen" : "Lösungen für den Schüler zeigen"}
-                      </button>
-                    </form>
+                    {isMinitest(x.mode) ? (
+                      <p className="text-[12.5px] text-ink-3">{w.probe_test_id ? "Probeschularbeit" : "Minitest"}: ohne Hilfen und ohne Lösung</p>
+                    ) : (
+                      <FreigabeWahl assignmentId={x.id} student={x.student_name} current={freigabeVon(x)} />
+                    )}
                   </li>
                 ))}
               </ul>
@@ -435,5 +436,30 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         </div>
       </details>
     </>
+  );
+}
+
+/**
+ * Freigabe in Stufen je zugewiesener Übung (lib/freigabe.ts): was der Schüler sieht. Jede Stufe ist ein eigener
+ * Knopf, damit es mit einem Tipp geht; die gewählte ist gefüllt.
+ */
+function FreigabeWahl({ assignmentId, student, current }: { assignmentId: number; student: string; current: Freigabe }) {
+  return (
+    <div className="grid gap-1">
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Freigabe für ${student}`}>
+        {FREIGABEN.map((f) => (
+          <form key={f} action={setFreigabeAction.bind(null, assignmentId, f)}>
+            <button
+              aria-pressed={f === current}
+              title={FREIGABE_INFO[f]}
+              className={`inline-flex min-h-[36px] items-center rounded-full px-3 text-[12.5px] font-semibold ${f === current ? "bg-accent text-on-fill" : "bg-panel text-ink-2 hover:text-accent"}`}
+            >
+              {FREIGABE_LABEL[f]}
+            </button>
+          </form>
+        ))}
+      </div>
+      <p className="text-[12px] text-ink-3">{FREIGABE_INFO[current]}</p>
+    </div>
   );
 }

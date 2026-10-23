@@ -59,8 +59,11 @@ export type ClientTask = {
   hints: string[];
   /** Hints already opened earlier (stored per hint). */
   hintsOpened: number;
-  /** Set when the teacher has released the solutions for this exercise. */
-  released: { solution: string; answer: string | null } | null;
+  /**
+   * Set when the teacher has released the solutions for this exercise (Freigabe „Hilfen und Lösung“); steps, other
+   * ways, the explanation and what to watch for only with „Alles“ (lib/freigabe.ts).
+   */
+  released: { solution: string; answer: string | null; steps?: string[]; ways?: string[]; explanation?: string; watch?: string[] } | null;
   triesUsed: number;
   /** Fehler korrigieren: the text with errors the student corrects. */
   faulty: string | null;
@@ -1278,6 +1281,13 @@ function TaskCard({
             <summary className="cursor-pointer text-[14px] font-semibold text-ink-2">Lösung ansehen (von deinem Lehrer gezeigt)</summary>
             {task.released.answer && <p className="mt-2 font-semibold"><MathText text={task.released.answer} /></p>}
             <p className="mt-1 text-[16px] whitespace-pre-line"><MathText text={task.released.solution} /></p>
+            <ReleasedMore r={task.released} />
+          </details>
+        )}
+        {task.released && final && hasMore(task.released) && (
+          <details className="mt-4 rounded-xl border border-line bg-surface px-5 py-3">
+            <summary className="cursor-pointer text-[14px] font-semibold text-ink-2">Schritt für Schritt (von deinem Lehrer gezeigt)</summary>
+            <ReleasedMore r={task.released} />
           </details>
         )}
 
@@ -1364,6 +1374,44 @@ export function useActiveTime() {
       return v;
     },
   };
+}
+
+type Released = NonNullable<ClientTask["released"]>;
+const hasMore = (r: Released) => Boolean(r.steps?.length || r.ways?.length || r.explanation || r.watch?.length);
+
+/** Freigabe „Alles“: Schritte, andere Wege, worum es geht und worauf man achtet; nur was der Lehrer freigegeben hat. */
+function ReleasedMore({ r }: { r: Released }) {
+  if (!hasMore(r)) return null;
+  const list = (title: string, items: string[], ordered = false) => {
+    const Tag = ordered ? "ol" : "ul";
+    return (
+      <div className="mt-3">
+        <p className="text-[14px] font-semibold text-ink-2">{title}</p>
+        <Tag className={`mt-1 space-y-1 pl-5 text-[16px] ${ordered ? "list-decimal" : "list-disc"}`}>
+          {items.map((x, i) => (
+            <li key={i}>
+              <MathText text={x} />
+            </li>
+          ))}
+        </Tag>
+      </div>
+    );
+  };
+  return (
+    <>
+      {r.steps?.length ? list("Schritt für Schritt", r.steps, true) : null}
+      {r.ways?.length ? list(r.ways.length === 1 ? "Ein anderer Weg" : "Andere Wege", r.ways) : null}
+      {r.explanation && (
+        <div className="mt-3">
+          <p className="text-[14px] font-semibold text-ink-2">Worum es geht</p>
+          <p className="mt-1 text-[16px]">
+            <MathText text={r.explanation} />
+          </p>
+        </div>
+      )}
+      {r.watch?.length ? list("Darauf achten", r.watch) : null}
+    </>
+  );
 }
 
 /** On the tablet the way back changes what it shows, so it must never be prefetched: a plain link there. */
