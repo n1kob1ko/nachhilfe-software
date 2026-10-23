@@ -4,10 +4,12 @@ import { notFound } from "next/navigation";
 import { SubjectArt } from "@/components/Art";
 import { MasteryBar, Pill, TrendBadge, formatDate } from "@/components/ui";
 import { AppHinweis } from "@/components/AppHinweis";
+import { NaechstesMal, SchuelerNotizFrage } from "@/components/SchuelerNotizFrage";
 import { termineFuerSchueler } from "@/lib/planung/schueler-termine";
 import * as repo from "@/lib/repo";
 import { activeMaterial, materialLabel } from "@/lib/current-material";
 import { analyzeStudent } from "@/lib/service";
+import { notizFuerSchueler, offenerWunsch } from "@/lib/schueler-notiz";
 import { runningUnitForStudent } from "@/lib/units";
 
 
@@ -31,6 +33,8 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
 
   // wo und wann: nur veröffentlichte Plätze, ohne Namen (lib/planung/schueler-termine.ts)
   const { naechster, wochen } = termineFuerSchueler(student.id);
+  // „Was war heute schwer?“ nach der letzten Einheit und „Für nächstes Mal“, nur die eigenen (lib/schueler-notiz.ts)
+  const notiz = notizFuerSchueler(student.id);
 
   return (
     <>
@@ -43,6 +47,15 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
         </div>
         <SubjectArt subject={student.subjects[0]} topic={bildThema(student.id)} seed={student.id} className="pointer-events-none absolute -right-4 -bottom-6 hidden h-[190px] w-[190px] sm:block" />
       </section>
+
+      {notiz && (
+        <SchuelerNotizFrage
+          token={token}
+          unitId={notiz.unitId}
+          wann={notiz.wann}
+          notiz={notiz.notiz && { auswahl: notiz.notiz.auswahl, text: notiz.notiz.text, uebersprungen: notiz.notiz.uebersprungen }}
+        />
+      )}
 
       {unit && (
         <Link href={`/lernen/${token}/tafel`} className="panel mt-8 flex items-center gap-4 border-accent-bright/60 bg-accent-wash px-5 py-5 transition-colors hover:border-accent-bright">
@@ -72,6 +85,8 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
           </p>
         </section>
       )}
+
+      <NaechstesMal token={token} text={offenerWunsch(student.id)?.text ?? null} />
 
       <section className="panel mt-8 px-5 py-5" aria-label="Deine Termine" data-testid="termine">
         <h2 className="flex items-center gap-2 text-[18px] font-semibold">

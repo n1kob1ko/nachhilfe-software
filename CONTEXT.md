@@ -337,6 +337,14 @@ den Schüler dieser Einheit. Reihenfolge, Erledigt, Übersprungen und Notizen ge
 Übungen und den Plan aus dem **Tagesbriefing**. „Vorbereiten“ im Tagesplan wählt das Paket vor dem Start.
 _Avoid_: Stundenablauf, Lehrermodus, Regie
 
+**Notiz nach der Einheit / Für nächstes Mal**:
+Was der **Schüler** selbst in der **Schüler-App** schreibt: nach einer **Einheit** einmal „Was war heute schwer?“
+(Antworten zum Antippen und freier Text, überspringbar), jederzeit „Für nächstes Mal“ (was drankommen soll, was er
+in der Schule nicht versteht). Änderbar bis zur nächsten Einheit; der Lehrer liest es als Zitat im **Cockpit**, bei
+„Vorbereiten“ und im Lernverlauf. Ohne KI sucht die App darin eine **Fähigkeit**; ein passendes **Lernpaket** nennt
+das bei „Warum heute“. Zählt nie für Lernstand oder **Einschätzung** und geht nicht an die KI (`lib/schueler-notiz.ts`).
+_Avoid_: Feedback, Bewertung, Selbsteinschätzung, Stundennotiz
+
 ## Schule
 
 **Fach**:
