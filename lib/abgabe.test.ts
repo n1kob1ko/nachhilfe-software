@@ -19,10 +19,12 @@ async function setup(name: string, count = 2) {
   const aid = repo.assignWorksheet(wid, sid);
   const tasks = repo.listTasks(wid);
   const right = (t: (typeof tasks)[number]) => t.answer.accepted?.[0] ?? "";
+  // a wrong answer for sure: the tasks are random and 7/9 can be the right one
+  const wrong = (t: (typeof tasks)[number]) => (right(t) === "7/9" ? "1/9" : "7/9");
   const answer = (taskId: number, text: string, submissionId?: string, extra: { giveUp?: boolean } = {}) =>
     submitAnswer({ token: student.access_token, assignmentId: aid, taskId, answer: text, timeMs: 20_000, hintsUsed: 0, submissionId, ...extra });
   const attempts = (taskId?: number) => repo.listAttemptsForAssignment(aid).filter((a) => taskId === undefined || a.task_id === taskId);
-  return { repo, db, niko, sid, student, aid, tasks, right, answer, attempts, submitAnswer };
+  return { repo, db, niko, sid, student, aid, tasks, right, wrong, answer, attempts, submitAnswer };
 }
 
 const id = (n: number) => `abgabe-${String(n).padStart(12, "0")}`;
@@ -46,25 +48,25 @@ test("the same submission sent twice (connection broke after the click) is store
 });
 
 test("a repeat that arrives while the first request is still being handled is not stored twice", async () => {
-  const { tasks, answer, attempts } = await setup("Gleichzeitig");
+  const { tasks, wrong, answer, attempts } = await setup("Gleichzeitig");
   const t = tasks[0];
-  const results = await Promise.all([answer(t.id, "7/9", id(2)), answer(t.id, "7/9", id(2)), answer(t.id, "7/9", id(2))]);
+  const results = await Promise.all([answer(t.id, wrong(t), id(2)), answer(t.id, wrong(t), id(2)), answer(t.id, wrong(t), id(2))]);
   assert.equal(attempts(t.id).length, 1);
   assert.ok(results.every((r) => r.attemptNo === 1 && r.correct === false));
 });
 
 test("a new click is a new attempt; repeating the old one later does not count again", async () => {
-  const { tasks, right, answer, attempts } = await setup("Neuer Versuch");
+  const { tasks, right, wrong, answer, attempts } = await setup("Neuer Versuch");
   const t = tasks[0];
-  const wrong = await answer(t.id, "7/9", id(3));
-  assert.equal(wrong.correct, false);
-  assert.match(wrong.feedback, /noch 2 Versuche/);
-  assert.equal((await answer(t.id, "7/9", id(3))).attemptNo, 1, "the repeat is still attempt 1");
+  const first = await answer(t.id, wrong(t), id(3));
+  assert.equal(first.correct, false);
+  assert.match(first.feedback, /noch 2 Versuche/);
+  assert.equal((await answer(t.id, wrong(t), id(3))).attemptNo, 1, "the repeat is still attempt 1");
   const second = await answer(t.id, right(t), id(4));
   assert.equal(second.attemptNo, 2, "a deliberate new attempt counts");
   assert.equal(second.correct, true);
   // a late repeat of the first attempt: its own result, nothing new stored
-  const late = await answer(t.id, "7/9", id(3));
+  const late = await answer(t.id, wrong(t), id(3));
   assert.equal(late.attemptNo, 1);
   assert.equal(late.correct, false);
   assert.deepEqual(attempts(t.id).map((a) => [a.attempt_no, a.correct, a.final]), [[1, 0, 0], [2, 1, 1]]);
@@ -85,9 +87,9 @@ test("giving up twice in a row (repeat) stores one solution view", async () => {
 });
 
 test("the database refuses a second answer with the same submission id", async () => {
-  const { db, tasks, answer, attempts } = await setup("Datenbank");
+  const { db, tasks, wrong, answer, attempts } = await setup("Datenbank");
   const t = tasks[0];
-  await answer(t.id, "7/9", id(7));
+  await answer(t.id, wrong(t), id(7));
   const row = attempts(t.id)[0];
   assert.throws(
     () =>
@@ -97,8 +99,8 @@ test("the database refuses a second answer with the same submission id", async (
     /UNIQUE/,
   );
   // answers without an id (older devices, the demo) are not affected
-  await answer(t.id, "7/9");
-  await answer(t.id, "7/9");
+  await answer(t.id, wrong(t));
+  await answer(t.id, wrong(t));
   assert.equal(attempts(t.id).length, 3);
 });
 
@@ -107,8 +109,7 @@ test("submission ids are checked: no foreign results, no reuse for another task,
   const b = await setup("Ben Id");
   await a.answer(a.tasks[0].id, a.right(a.tasks[0]), id(8));
   // Ben's device happens to send the same id: it is Ben's own new answer, Anna's result stays hers
-  // a wrong answer for sure (the tasks are random; 7/9 can be right)
-  const ben = await b.answer(b.tasks[0].id, b.right(b.tasks[0]) === "7/9" ? "1/9" : "7/9", id(8));
+  const ben = await b.answer(b.tasks[0].id, b.wrong(b.tasks[0]), id(8));
   assert.equal(ben.correct, false);
   assert.equal(b.attempts().length, 1);
   assert.equal(a.attempts().length, 1);
