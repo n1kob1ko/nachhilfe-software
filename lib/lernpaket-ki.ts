@@ -14,11 +14,13 @@ import { budget, costOf, isLocalModel, routeFor } from "./ai/config";
 import { jsonSchemaOf } from "./ai/providers/schema";
 import { entwurfAusAntwort, dateiFelder, LERNPAKET_SYSTEM, LernpaketKiSchema, lernpaketAnfrage, type BestandAufgabe, type KiAuftrag } from "./ai/lernpaket";
 import { aiEnabled, budgetUsedUp, runAI } from "./ai/router";
+import { aufgabeSchluessel, ausgeblendet, rueckmeldungZeile, staende, vorbildZeilen } from "./bewertungen";
 import { DIFFICULTIES, type Difficulty } from "./curriculum";
 import { db } from "./db";
 import { EXPLAIN, generateBuiltIn, hasBuiltInGenerator } from "./generators";
 import { importiereLernpaket, pruefeDateiAufgabe, pruefeMeta } from "./lernpakete";
 import { searchLibrary } from "./library";
+import { referenzVorbilder } from "./referenz";
 import * as repo from "./repo";
 import { klassenLabel, schulstufe } from "./school";
 import { typischeFehler } from "./themen";
@@ -62,6 +64,8 @@ export function pruefeEingabe(e: KiEingabe): { auftrag: KiAuftrag } | { fehler: 
       erklaerung: skill ? (EXPLAIN[skill.id] ?? (parent ? EXPLAIN[parent.id] : undefined) ?? "") : "",
       fehler: skill ? typischeFehler(skill.id).slice(0, 8) : [],
       wortarten: skill && isWortartenSkill(skill.id) ? wortartenFor([skill.id], grade) : null,
+      vorbilder: skill ? vorbildZeilen([skill.id], 3) : [],
+      rueckmeldung: skill ? rueckmeldungZeile([skill.id]) : "",
     },
   };
 }
@@ -71,19 +75,25 @@ const BESTAND = { bibliothek: 8, generator: 6 } as const;
 /**
  * Tasks without KI for the package's skill: the Aufgabenbibliothek first, then the built-in generators (with
  * the task banks behind them), each checked like an imported task. The generator runs with a fixed seed, so
- * the list for one skill stays the same.
+ * the list for one skill stays the same. Badly rated tasks are left out, well-rated ones are marked
+ * (lib/bewertungen.ts; the library search puts them first).
  */
 export function bestandFuer(a: KiAuftrag): BestandAufgabe[] {
   if (!a.skill) return [];
   const p = { skillIds: [a.skill.id], schwierigkeit: a.schwierigkeit, fach: a.fach };
   const out: BestandAufgabe[] = [];
   const prompts = new Set<string>();
+  const weg = ausgeblendet();
+  /** the key of each task as it is stored (its rating), before the import check */
+  const schluessel: string[] = [];
   const nimm = (id: string, herkunft: BestandAufgabe["herkunft"], t: Parameters<typeof dateiFelder>[0]) => {
-    if (prompts.has(t.prompt)) return false;
+    const k = aufgabeSchluessel(t);
+    if (prompts.has(t.prompt) || weg.has(k)) return false;
     const r = pruefeDateiAufgabe(dateiFelder(t), p);
     if ("fehler" in r) return false;
     prompts.add(t.prompt);
     out.push({ id, herkunft, aufgabe: r.aufgabe });
+    schluessel.push(k);
     return true;
   };
   let n = 0;
@@ -100,7 +110,8 @@ export function bestandFuer(a: KiAuftrag): BestandAufgabe[] {
       if (nimm(`G${g + 1}`, "generator", t)) g++;
     }
   }
-  return out;
+  const st = staende(schluessel);
+  return out.map((b, i) => (st.get(schluessel[i])?.gut ? { ...b, gut: true } : b));
 }
 
 /** Names that never leave the app: every teacher and every student. */
@@ -171,7 +182,8 @@ export async function entwerfeLernpaket(e: KiEingabe, teacherId: number | null):
       if ("fehler" in geprueft) return { ok: false, error: geprueft.fehler.join(" ") };
       const aus = kiAusGrund();
       if (aus) return { ok: false, error: aus };
-      const a = geprueft.auftrag;
+      // mit Fähigkeit: geprüfte Einträge der Referenzsammlung dazu als Beispiele (lib/referenz.ts)
+      const a = { ...geprueft.auftrag, referenzen: geprueft.auftrag.skill ? referenzVorbilder({ fach: geprueft.auftrag.fach, skillIds: [geprueft.auftrag.skill.id] }) : [] };
       const bestand = bestandFuer(a);
       const { system, prompt } = lernpaketAnfrage(a, bestand, bekannteNamen());
       // no student and no unit: the router adds no KI-Hinweise, and nothing about a student goes out

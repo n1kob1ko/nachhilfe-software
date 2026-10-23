@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { ArrowRight, CalendarClock, Check, CheckCircle2, ChevronDown, FileCheck2, NotebookPen, PenLine, Play, Plus, Presentation } from "lucide-react";
+import { ArrowRight, CalendarClock, CalendarPlus, CalendarSync, Check, CheckCircle2, ChevronDown, FileCheck2, NotebookPen, PenLine, Play, Plus, Presentation } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
 import { startUnitAction } from "@/app/session-actions";
 import { abhakenAction } from "@/app/zu-erledigen-actions";
+import { antwortLehrerAction, stelleLehrerAnfrageAction } from "@/app/terminanfrage-actions";
+import { AnfrageMeldung, AnfragenListe, TerminAendern } from "@/components/planung/Terminanfragen";
 import { Avatar, SubjectArt } from "@/components/Art";
 import { Tagesplan, type TagesplanPunkt } from "@/components/Calendar";
 import { Elapsed, Restzeit } from "@/components/Elapsed";
@@ -14,6 +16,7 @@ import * as repo from "@/lib/repo";
 import { activeMaterial, materialLabel } from "@/lib/current-material";
 import { bisBeginnLabel, heutigeEinheiten, zeitfenster } from "@/lib/planung/heute";
 import { leseRegeln } from "@/lib/planung/regeln";
+import { anfragbareTermine, anfragenFuerLehrer } from "@/lib/planung/terminanfragen";
 import { wochenUebersicht } from "@/lib/planung/uebersicht";
 import { ZEITZONE, minutenLabel, tagAddieren, wienerDatum, wienerMinuten, wienerWochenstart } from "@/lib/planung/zeit";
 import { klassenLabel } from "@/lib/school";
@@ -50,14 +53,14 @@ const bildThema = (studentId: number) => {
   return m ? `${m.topic} ${materialLabel(m)}` : null;
 };
 
-export default async function StartPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+export default async function StartPage({ searchParams }: { searchParams: Promise<{ tab?: string; anfrage_ok?: string; anfrage_fehler?: string }> }) {
   const teacher = await requireTeacher();
   const sp = await searchParams;
   if (sp.tab === "woche") {
     return (
       <>
         <StartTabs aktiv="woche" />
-        <MeineWoche teacherId={teacher.id} name={teacher.name} />
+        <MeineWoche teacherId={teacher.id} name={teacher.name} isAdmin={teacher.is_admin} meldung={{ ok: sp.anfrage_ok, fehler: sp.anfrage_fehler }} />
       </>
     );
   }
@@ -367,7 +370,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
   );
 }
 
-const TODO_ICON = { pruefung: CalendarClock, ergebnis: FileCheck2, hausuebung: NotebookPen, text: PenLine };
+const TODO_ICON = { pruefung: CalendarClock, ergebnis: FileCheck2, hausuebung: NotebookPen, text: PenLine, terminanfrage: CalendarSync, einreichung: CalendarPlus };
 
 /** Was ein Punkt in „Zu erledigen“ sagt; der Zustand steht darunter. */
 function todoText(p: Punkt): React.ReactNode {
@@ -403,6 +406,20 @@ function todoText(p: Punkt): React.ReactNode {
       return (
         <>
           Text von {name} {p.zustand === "erledigt" ? "abgegeben" : "ansehen"}: {p.titel}
+        </>
+      );
+    case "terminanfrage":
+      return (
+        <>
+          {p.aufgabe === "bestaetigen" ? <>Terminanfrage für {name} bestätigen</> : <>Tausch für {name} zustimmen</>}: {p.beschreibung}
+        </>
+      );
+    case "einreichung":
+      // vom Schüler in seiner App eingetragen (lib/pruefliste.ts)
+      return (
+        <>
+          Prüfung von {name} {p.zustand === "erledigt" ? (p.uebernommen ? "übernommen" : "verworfen") : p.zuPruefen ? "prüfen" : "eingetragen, bitte ansehen"}: {p.titel}
+          <span className="text-ink-2"> · {p.pruefungsDatum ? formatDate(p.pruefungsDatum, { day: "numeric", month: "short" }) : "ohne Datum"}</span>
         </>
       );
   }
@@ -498,9 +515,13 @@ function StartTabs({ aktiv }: { aktiv: "start" | "woche" }) {
  * „Meine Woche“ (D23): die eigene Woche, **nur veröffentlichte** Plätze, nur zum Lesen. Gedacht als
  * kurzer Blick vom Dashboard aus — geändert wird unter Mehr › Planung (Verwaltung).
  */
-async function MeineWoche({ teacherId, name }: { teacherId: number; name: string }) {
+async function MeineWoche({ teacherId, name, isAdmin, meldung }: { teacherId: number; name: string; isAdmin: number; meldung: { ok?: string; fehler?: string } }) {
   const woche = wienerWochenstart();
   const uebersicht = wochenUebersicht(woche, { status: "veroeffentlicht", nurLehrerId: teacherId });
+  // Terminanfragen (lib/planung/terminanfragen.ts): eigene und die, bei denen ich zustimmen soll; bestätigt wird unter Planung
+  const ich = { id: teacherId, is_admin: isAdmin };
+  const anfragen = anfragenFuerLehrer(ich);
+  const termine = anfragbareTermine({ lehrer: ich });
   return (
     <>
       <header className="mb-5">
@@ -509,6 +530,32 @@ async function MeineWoche({ teacherId, name }: { teacherId: number; name: string
           {uebersicht.label} · {uebersicht.summen.einheiten} geplante Einheiten · {name} · nur veröffentlichte Plätze
         </p>
       </header>
+      {(anfragen.length > 0 || termine.length > 0 || meldung.ok || meldung.fehler) && (
+        <section id="terminanfragen" className="mb-8 scroll-mt-4">
+          <SectionTitle>Terminanfragen</SectionTitle>
+          <AnfrageMeldung ok={meldung.ok} fehler={meldung.fehler} />
+          {anfragen.length > 0 && (
+            <div className="mt-3">
+              <AnfragenListe anfragen={anfragen} antwort={(a) => antwortLehrerAction.bind(null, a.id)} zurueck="/?tab=woche" />
+            </div>
+          )}
+          {termine.length > 0 && (
+            <details className="group mt-3">
+              <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-medium text-accent">
+                Einen Termin verschieben oder tauschen <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden />
+              </summary>
+              <ul className="panel mt-2 divide-y divide-line">
+                {termine.map((t) => (
+                  <li key={t.id} className="px-4 py-3 text-[14px]">
+                    <span className="num font-semibold">{t.label}</span> <span className="text-ink-2">· {t.schueler}</span>
+                    <TerminAendern termin={t} aktion={stelleLehrerAnfrageAction} zurueck="/?tab=woche" />
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </section>
+      )}
       {uebersicht.plaetze.length === 0 ? (
         <p className="panel px-5 py-6 text-[15px] text-ink-2">
           Für dich ist diese Woche nichts veröffentlicht. Sobald die Verwaltung den Plan veröffentlicht, steht er hier.

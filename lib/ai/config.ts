@@ -99,6 +99,7 @@ export type AIFunction =
   | "lernpaket"
   | "erwartung"
   | "bewertung"
+  | "referenz"
   | "verbindungstest";
 
 export type FunctionSpec = {
@@ -181,6 +182,9 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // click; a Bewertung of the same version of a text is not paid for twice. Thinking on: quotes and lines have to be right
   erwartung: { label: "Erwartungshorizont vorschlagen", area: "TEXT", tier: "standard", maxTokens: 6_000, timeoutMs: 120_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "aus", schemaInPrompt: true },
   bewertung: { label: "Bewertung vorschlagen", area: "TEXT", tier: "standard", maxTokens: 8_000, timeoutMs: 150_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus", schemaInPrompt: true },
+  // Referenzsammlung (lib/referenz.ts): only on the teacher's click, a PDF of tasks the teacher downloaded by hand; the
+  // answer is what stands on the pages (no student data), so the same file is not paid for twice
+  referenz: { label: "Referenzsammlung lesen", area: "MATERIAL", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // KI-Selbsttest on Mehr › KI-Kosten: one tiny request before the real test requests
   verbindungstest: { label: "Verbindungstest", area: "ANALYSIS", tier: "fast", maxTokens: 50, timeoutMs: 20_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
 };

@@ -18,8 +18,11 @@ import { WEAK } from "./analysis";
 import { BANK_LABEL } from "./banks";
 import { bankOfSkill } from "./ai/banken";
 import type { AIMeta } from "./ai/router";
+import { aufgabeSchluessel, staende } from "./bewertungen";
+import { schnittText } from "./bewertung-regeln";
 import { parseSettings } from "./builder";
-import { db } from "./db";
+import type { TaskDraft } from "./tasks";
+import { db, json } from "./db";
 import { daysUntil } from "./exams";
 import { masteryStatus } from "./mastery";
 import { listMaterials } from "./materials";
@@ -209,10 +212,20 @@ export function kandidaten(student: repo.Student, gewicht: Map<string, number>, 
       score: p.score + (w.student_id === student.id ? 1 : 0) - (vorher ? 2 : 0),
     });
   }
-  // the Aufgabenbibliothek: single saved tasks, after whole exercises
-  const bibliothek = db().prepare("SELECT id, title, subject, skill_ids, difficulty FROM worksheets WHERE kind = 'bibliothek' AND status = 'freigegeben' AND archived_at IS NULL").all() as { id: number; title: string; subject: string; skill_ids: string; difficulty: string }[];
-  for (const b of bibliothek) {
+  // the Aufgabenbibliothek: single saved tasks, after whole exercises; well-rated ones before the others, badly rated
+  // ones never (lib/bewertungen.ts)
+  const bibliothek = db()
+    .prepare(
+      `SELECT w.id, w.title, w.subject, w.skill_ids, w.difficulty, t.type, t.prompt, t.data, t.answer FROM worksheets w JOIN tasks t ON t.worksheet_id = w.id
+       WHERE w.kind = 'bibliothek' AND w.status = 'freigegeben' AND w.archived_at IS NULL`,
+    )
+    .all() as { id: number; title: string; subject: string; skill_ids: string; difficulty: string; type: TaskDraft["type"]; prompt: string; data: string; answer: string }[];
+  const schluessel = bibliothek.map((b) => aufgabeSchluessel({ type: b.type, prompt: b.prompt, data: json(b.data, {}), answer: json(b.answer, {}) }));
+  const bewertung = staende(schluessel);
+  for (const [k, b] of bibliothek.entries()) {
     if (!fachPasst(b.subject)) continue;
+    const st = bewertung.get(schluessel[k]);
+    if (st?.ausgeblendet) continue;
     let ids: string[] = [];
     try {
       ids = JSON.parse(b.skill_ids || "[]") as string[];
@@ -221,7 +234,15 @@ export function kandidaten(student: repo.Student, gewicht: Map<string, number>, 
     }
     const p = passend(ids);
     if (!p.treffer.length) continue;
-    out.push({ id: `B${b.id}`, art: "bibliothek", titel: b.title, href: `/uebungen/bibliothek/${b.id}`, skills: p.treffer.map(name), info: ["eine Aufgabe aus der Bibliothek", b.difficulty].filter(Boolean).join(" · "), score: p.score - 1 });
+    out.push({
+      id: `B${b.id}`,
+      art: "bibliothek",
+      titel: b.title,
+      href: `/uebungen/bibliothek/${b.id}`,
+      skills: p.treffer.map(name),
+      info: ["eine Aufgabe aus der Bibliothek", b.difficulty, st?.gut ? `gut bewertet (${schnittText(st)} Sterne)` : ""].filter(Boolean).join(" · "),
+      score: p.score - 1 + (st?.gut ? 1 : 0),
+    });
   }
   for (const t of repo.listTemplates()) {
     if (!fachPasst(t.subject)) continue;

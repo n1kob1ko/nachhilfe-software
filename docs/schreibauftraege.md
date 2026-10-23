@@ -99,7 +99,7 @@ Ein Test prüft Umfang und Teile jedes Mustertexts und jedes Zitat der Mustertex
 - `lib/schreibauftrag-store.ts`: Tabelle `text_interpretations` (Spalten `sorte`, `story_medium`, `situation`, `beilage_ziel`, `test_id` in `COLUMNS` von `lib/db.ts`), Anlegen und Ändern, Prüfungen zur Wahl
 - `lib/schreibauftrag-umfang.ts`: Vorgaben für Wortziel und Länge der Textbeilage
 - `lib/pdf-text.ts`, `app/material/textpdf/route.ts`: Text aus einer PDF lesen, ohne KI und ohne Speichern
-- `lib/bewertung-kriterien.ts` (Kriterien, Stufen, Vorlage), `lib/schreibauftrag-bewertung.ts` (Tabellen `auftrag_erwartungen`, `text_bewertungen`), `lib/ai/schreibauftrag-bewertung.ts` (KI), `lib/zitatpruefung.ts`, `app/bewertung-actions.ts`, `app/(tutor)/texte/[id]/bewertung/`
+- `lib/bewertung-kriterien.ts` (Kriterien, Stufen, Vorlage), `lib/schreibauftrag-bewertung.ts` (Tabellen `auftrag_erwartungen`, `text_bewertungen`), `lib/ai/schreibauftrag-bewertung.ts` (KI), `lib/zitatpruefung.ts`, `app/textbewertung-actions.ts`, `app/(tutor)/texte/[id]/bewertung/`
 - `lib/textinterpretation-store.ts`: die Funktionen der Textinterpretation darauf; sie sehen nur Zeilen mit `sorte = 'textinterpretation'`
 - `app/schreibauftrag-actions.ts`: Server-Aktionen
 - `components/text/interpretation/`: Formular (`SchreibauftragForm`), Textsortenwahl, nummerierte Textbeilage, Hinweise, Wortzähler, Foto

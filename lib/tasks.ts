@@ -157,11 +157,20 @@ export type TaskDraft = {
   errorMap: { answer: string; label: string }[];
   /** Lösungsweg as separate steps (AI tasks); the text in `solution` stays the main form. */
   solutionSteps?: string[];
+  /**
+   * Erklärung für den Lehrer, von Hand geschrieben; leer = die App schreibt sie aus Fähigkeit und typischen
+   * Fehlern (lib/loesungsdaten.ts). Schüler sehen sie nur bei der Freigabe „Alles“.
+   */
+  teacherNote?: string;
+  /** Andere Wege zur selben Lösung, nur wo es sie wirklich gibt (Generatoren, Lehrer). Schüler: nur bei „Alles“. */
+  altWays?: string[];
   /** Expected working time in seconds, if known. */
   estimatedTimeSec?: number | null;
   /** Origin: eigen (generators, teacher), ki, oer, lehrplan, demo. Licence data via sourceId (content_sources). */
   sourceType?: string;
   sourceId?: number | null;
+  /** Quellenangabe einer übernommenen Aufgabe (Referenzsammlung, lib/referenz.ts): auf dem Blatt und beim Schüler „Quelle: …“. */
+  quelle?: string | null;
 };
 
 /** Wie bei einer Zuordnung der Englisch-Matura zugeordnet wird (data.zuordnung.art). */

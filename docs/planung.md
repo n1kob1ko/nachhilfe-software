@@ -402,6 +402,49 @@ Quell-Repos plus variable Dauer, 10-Minuten-Raster, gesperrte Plätze, Zeitbudge
 `lib/units-verknuepfung.test.ts` (Verknüpfung, „nicht stattgefunden“ ohne Abrechnungsfolge, die
 Entscheidung zu `lessons.status = 'geplant'`) und die Sicherung in `lib/robust.test.ts`.
 
+## Terminanfragen (Plan 3.3)
+
+Ein Schüler (in seiner App) oder ein Lehrer (in „Meine Woche“) bittet darum, einen **veröffentlichten** Platz zu
+verschieben oder mit einem anderen Platz **desselben Lehrers** zu tauschen. Nur Plätze, die noch nicht begonnen haben
+und keine Einheit haben; je Platz eine offene Anfrage. Tabelle `terminanfragen`, Logik in
+`lib/planung/terminanfragen.ts`, Oberfläche in `components/planung/Terminanfragen.tsx`, Aktionen in
+`app/terminanfrage-actions.ts`.
+
+| Zustand | Bedeutung |
+|---|---|
+| `wartet` (Wartet auf Zustimmung) | ein Tausch: die andere Seite (der andere Schüler oder sein Lehrer) stimmt zu oder lehnt ab. Stellt der Lehrer des anderen Platzes den Tausch selbst, ist er gleich `offen` |
+| `offen` | bei der Verwaltung: unter Planung oben „Terminanfragen“ und in „Zu erledigen“ |
+| `bestaetigt` | die Verwaltung hat bestätigt, die Plätze sind bewegt |
+| `abgelehnt` | mit kurzem Grund; lehnt der andere Schüler ab, steht ein fester Satz da („Der andere Termin passt nicht.“), damit kein Text eines Schülers beim anderen landet |
+
+- **Freie Zeiten:** zum Verschieben schlägt `freieZeiten` in der Schüler-App bis zu sechs Zeiten vor (höchstens zwei je Tag, Raster
+  30 Minuten), in der Woche des Platzes und jeder veröffentlichten Woche bis nächste Woche: innerhalb der
+  Verfügbarkeit des Lehrers und, wenn eingetragen, des Schülers (samt Wochenabweichung), geprüft wie beim
+  Bestätigen. Ist der eigene Raum belegt, wird ein freier Raum derselben Art gesucht (Wunschräume des Lehrers
+  zuerst) und mit der Anfrage gemerkt (`ziel_raum_id`). Eine eigene Zeit geht auch; sie wird gleich geprüft, nur ein
+  belegter Raum hält sie nicht auf (die Verwaltung wählt beim Bestätigen einen anderen).
+- **Bestätigen** (`bestaetige`) bewegt erst, und zwar über `legePlaetzeNeu` in `lib/planung/repo.ts`: dieselbe
+  Prüfung wie jeder andere Schreibweg (`pruefeUndNormiere`: Lehrer, Schüler, Raum, gesperrte Plätze, gleichzeitig,
+  D26), zum Zeitpunkt des Bestätigens, und zusätzlich gegen die von Hand geplanten Einheiten des Tages. Beim Tausch
+  wechseln beide Plätze Zeit und Raum, jeder behält seinen Lehrer, Schüler und seine geplante Dauer. Geht es nicht,
+  wurde ein Platz inzwischen im Wochenplan geändert oder hat er begonnen, ändert sich nichts und der Grund steht da.
+- **Namen:** ein Schüler sieht einen Tauschpartner nur als Zeit, nie seinen Namen; die Notiz zur Anfrage sehen nur
+  Lehrer und Verwaltung. Absagen der Prüfung kommen für Schüler ohne Namen („Zu dieser Zeit ist dein Lehrer schon
+  verplant.“).
+- Benachrichtigt wird niemand (wie D25): die Anfrage steht in der Schüler-App, in „Meine Woche“, unter Planung und in
+  „Zu erledigen“ (Verwaltung: bestätigen; Lehrer: einem Tausch zustimmen).
+
+### Von Hand geplante Einheiten (Plan 3.3)
+
+Eine Einheit, die ein Lehrer über „Einheit nachtragen oder planen“ mit Status „geplant“ einträgt
+(`lessons.status = 'geplant'`), wird jetzt auf Überschneidung geprüft (`pruefeEinzeltermin` in
+`lib/planung/repo.ts`): gegen die **veröffentlichten** Plätze ihres Tages und die anderen von Hand geplanten
+Einheiten, für Lehrer und Schüler wie im Wochenplan. Zwei Schüler zugleich gehen mit dem Haken „Gleichzeitig mit einem
+anderen Schüler“ (höchstens zwei). Ein Platz und eine geplante Zeile desselben Schülers beim selben Lehrer zur selben
+Zeit sind derselbe Termin (die Zeile trägt Fach und Thema) und kein Konflikt. Geprüft wird beim Speichern, wenn sich
+Zeit, Dauer, Lehrer oder Status geändert haben; das Formular prüft vorher (`EinzelterminPruefung`), damit nichts
+Getipptes verloren geht. Räume haben diese Zeilen nicht.
+
 ## Was aus dem Quell-Repo nicht übernommen wurde
 
 - `weekStartDate` im Eingabeobjekt („reserved for future date-based rules“, dort nie benutzt).

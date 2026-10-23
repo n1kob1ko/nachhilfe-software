@@ -5,12 +5,14 @@
  */
 import { aiEnabled, bankOfSkill, generateBankItemsWithAI, generatePlanWithAI, type AIMeta } from "./ai";
 import type { BankId } from "./banks";
+import { aufgabeSchluessel, ausgeblendet, rueckmeldungZeile, vorbildZeilen } from "./bewertungen";
 import { DIFFICULTIES, categoriesFor, difficultyFor, mixFor, type Category, type Difficulty, type TaskType } from "./curriculum";
 import { aufgabenSchluessel, leseFigur } from "./figur";
 import { generateForSlot } from "./generators";
 import { expectedFixes } from "./fix-text";
 import { checkOwnSolution } from "./math-task";
 import { regenerateReadingQuestion } from "./lesen-draft";
+import { referenzVorbilder } from "./referenz";
 import * as repo from "./repo";
 import { klassenLabel, schulstufe } from "./school";
 import { activeMaterial, materialLabel, materialSkills, MATERIAL_SOURCES } from "./current-material";
@@ -468,6 +470,11 @@ export async function generateTasks(
             studentContext: ctx ? contextForAI(ctx, skills.map((r) => r.skill.id)) : null,
             focusNote: settings.focus,
             examples: settings.examples,
+            // geprüfte Einträge der Referenzsammlung zu diesen Fähigkeiten und Formaten, als Beispiele (lib/referenz.ts)
+            vorbilder: referenzVorbilder({ fach: settings.subject, skillIds: skills.map((r) => r.skill.id), formate: rest.map((i) => plan[i].category ?? "") }),
+            // gut bewertete Aufgaben dieser Fähigkeiten als Vorbild (lib/bewertungen.ts)
+            gutBewertet: vorbildZeilen(skills.map((r) => r.skill.id).filter((id) => id !== EIGENE_VOKABELN), 3),
+            rueckmeldung: rueckmeldungZeile(skills.map((r) => r.skill.id)),
             avoid: schonDa(),
             wortarten,
           },
@@ -493,6 +500,8 @@ export async function generateTasks(
   // the rest (or everything without AI) from the built-in generators, slot by slot
   // Aufgaben mit Bild haben oft denselben Text: verglichen wird mit dem Bild (aufgabenSchluessel)
   const avoid = new Set([...(o.avoidKeys ?? o.avoid ?? []), ...slots.filter((t): t is TaskDraft => Boolean(t)).map(aufgabenSchluessel)]);
+  // schlecht bewertete Aufgaben (lib/bewertungen.ts) kommen aus dem Generator nicht wieder, solange er eine andere findet
+  const weg = ausgeblendet();
   for (let i = 0; i < plan.length; i++) {
     if (slots[i]) continue;
     const { skill: r, category } = plan[i];
@@ -504,7 +513,7 @@ export async function generateTasks(
     let t: TaskDraft | null = null;
     for (let guard = 0; guard < 12; guard++) {
       t = generateForSlot({ skillId: r.skill.id, skillName: r.skill.name, generatorSkillId: r.parent?.id, difficulty: r.difficulty, category, subject: settings.subject, wortarten, grade }, Math.random, Math.floor(i / skills.length) + guard);
-      if (!avoid.has(aufgabenSchluessel(t)) || guard >= 10) break;
+      if ((!avoid.has(aufgabenSchluessel(t)) && !weg.has(aufgabeSchluessel(t))) || guard >= 10) break;
     }
     avoid.add(aufgabenSchluessel(t!));
     // Englisch-Matura: „Reading comprehension“ für eine Fähigkeit mit True or False bekommt True or False, das ist der Typ
@@ -711,6 +720,9 @@ export function checkTask(t: TaskDraft): string | null {
 export function normalizeTask(t: TaskDraft): TaskDraft {
   const out: TaskDraft = { ...t, prompt: t.prompt.trim(), solution: t.solution.trim(), hints: t.hints.map((h) => h.trim()).filter(Boolean), errorMap: t.errorMap.filter((e) => e.answer.trim() && e.label.trim()) };
   out.skillIds = [...new Set([t.skillId, ...(t.skillIds ?? [])].filter((x): x is string => Boolean(x)))];
+  // Lösungsdaten für den Lehrer: leere Wege fallen weg, eine leere Erklärung heißt „die der Fähigkeit“
+  if (out.teacherNote !== undefined) out.teacherNote = out.teacherNote.trim();
+  if (out.altWays) out.altWays = out.altWays.map((w) => w.trim()).filter(Boolean);
   if (out.type === "calc" || out.type === "grammar") out.answer = { ...out.answer, accepted: (out.answer.accepted ?? []).map((a) => a.trim()).filter(Boolean) };
   if (out.answer.criteria) out.answer = { ...out.answer, criteria: out.answer.criteria.map((c) => c.trim()).filter(Boolean) };
   // Leseverständnis: Belege without text are dropped, the paragraph is a number from 1

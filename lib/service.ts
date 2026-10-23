@@ -5,6 +5,7 @@ import { db } from "./db";
 import type { Difficulty, TaskType } from "./curriculum";
 import { TASK_TYPES, levelOf } from "./curriculum";
 import { generateBuiltIn } from "./generators";
+import { ohneAusgeblendete } from "./bewertungen";
 import { wortartenFor } from "./wortarten";
 import { klassenLabel, schulstufe } from "./school";
 import { runningUnitForStudent, touchUnit } from "./units";
@@ -106,7 +107,8 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
     }
   }
   if (!tasks || tasks.length === 0) {
-    tasks = generateBuiltIn({ subject: req.subject, skills: andere.map((s) => ({ id: s.id, name: s.name })), difficulty: req.difficulty, count, taskType: req.taskType, grade, wortarten });
+    // schlecht bewertete Aufgaben (lib/bewertungen.ts) bleiben weg, auch wenn es dann weniger werden
+    tasks = ohneAusgeblendete(generateBuiltIn({ subject: req.subject, skills: andere.map((s) => ({ id: s.id, name: s.name })), difficulty: req.difficulty, count, taskType: req.taskType, grade, wortarten }));
   }
   const label = req.kind === "ueberpruefung" ? "Überprüfung" : TASK_TYPES[req.taskType];
   const title = req.title?.trim() || `${skills.length === 1 ? `${skills[0].area}: ${skills[0].name}` : topic} · ${label}`;

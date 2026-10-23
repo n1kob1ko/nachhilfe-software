@@ -7,7 +7,7 @@ import {
   speichereErwartungAction,
   verwirfBewertungVorschlagAction,
   verwirfErwartungVorschlagAction,
-} from "@/app/bewertung-actions";
+} from "@/app/textbewertung-actions";
 import { BewertungForm, ErwartungForm, KiKnopf, type BewertungWerte } from "@/components/text/bewertung/BewertungTeile";
 import { PageHeader, Pill, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";

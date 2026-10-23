@@ -8,7 +8,8 @@ import { Info } from "@/components/Info";
 import { Empty, PageHeader, Pill, formatDate } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { DIFFICULTIES, TASK_TYPES, worksheetTypeLabel } from "@/lib/curriculum";
-import { LIBRARY_ORIGIN_LABEL, libraryCount, libraryFacets, searchLibrary, type LibraryFilter, type LibraryOrigin } from "@/lib/library";
+import { LIBRARY_ORIGIN_LABEL, LIBRARY_RATINGS, libraryCount, libraryFacets, searchLibrary, type LibraryFilter, type LibraryOrigin, type LibraryRating } from "@/lib/library";
+import { BewertungsZeichen } from "@/components/AufgabeBewertung";
 import * as repo from "@/lib/repo";
 import { klassenLabel, SCHOOL_TYPES } from "@/lib/school";
 import { GAP } from "@/lib/tasks";
@@ -16,8 +17,8 @@ import { MathText } from "@/components/MathText";
 
 export const metadata = { title: "Aufgabenbibliothek" };
 
-type Params = { q?: string; fach?: string; stufe?: string; thema?: string; skill?: string; schwierigkeit?: string; typ?: string; herkunft?: string; tag?: string; neu?: string; fehler?: string; geloescht?: string; archiv?: string; ansicht?: string };
-const KEYS = ["q", "fach", "stufe", "thema", "skill", "schwierigkeit", "typ", "herkunft", "tag"] as const;
+type Params = { q?: string; fach?: string; stufe?: string; thema?: string; skill?: string; schwierigkeit?: string; typ?: string; herkunft?: string; tag?: string; bewertung?: string; neu?: string; fehler?: string; geloescht?: string; archiv?: string; ansicht?: string };
+const KEYS = ["q", "fach", "stufe", "thema", "skill", "schwierigkeit", "typ", "herkunft", "tag", "bewertung"] as const;
 const LIB = "/uebungen/bibliothek";
 const href = (p: Partial<Params>) => {
   const q = new URLSearchParams(Object.entries(p).filter(([, v]) => v) as [string, string][]).toString();
@@ -46,9 +47,12 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
     type: sp.typ,
     origin: sp.herkunft && Object.hasOwn(LIBRARY_ORIGIN_LABEL, sp.herkunft) ? (sp.herkunft as LibraryOrigin) : undefined,
     tag: sp.tag,
+    bewertung: sp.bewertung && Object.hasOwn(LIBRARY_RATINGS, sp.bewertung) ? (sp.bewertung as LibraryRating) : undefined,
   };
   const facets = libraryFacets(sp.fach);
   const list = searchLibrary(filter);
+  // schlecht bewertete fehlen ohne Filter (lib/bewertungen.ts): wie viele, damit man sie findet
+  const versteckt = filter.bewertung ? 0 : searchLibrary({ ...filter, bewertung: "ausgeblendet" }).length;
   const skills = repo.listSkills();
   const skillName = (id: string) => skills.find((s) => s.id === id)?.name ?? id;
   const current: Partial<Params> = Object.fromEntries(KEYS.map((k) => [k, sp[k]]).filter(([, v]) => v));
@@ -64,7 +68,9 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
             ? Object.hasOwn(LIBRARY_ORIGIN_LABEL, v) ? LIBRARY_ORIGIN_LABEL[v as LibraryOrigin] : v
             : k === "tag"
               ? `#${v}`
-              : v;
+              : k === "bewertung"
+                ? Object.hasOwn(LIBRARY_RATINGS, v) ? LIBRARY_RATINGS[v as keyof typeof LIBRARY_RATINGS] : v
+                : v;
   const students = repo.listStudents();
   const subjects = [...new Set(skills.map((s) => s.subject))];
 
@@ -202,6 +208,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
                 <FilterSelect name="typ" label="Aufgabentyp" value={sp.typ} options={facets.types.map((v) => [v, worksheetTypeLabel(sp.fach ?? "", v)])} />
                 <FilterSelect name="herkunft" label="Herkunft" value={sp.herkunft} options={facets.origins.map((v) => [v, LIBRARY_ORIGIN_LABEL[v]])} />
                 <FilterSelect name="tag" label="Tag" value={sp.tag} options={facets.tags.map((v) => [v, `#${v}`])} />
+                <FilterSelect name="bewertung" label="Bewertung" value={sp.bewertung} options={Object.entries(LIBRARY_RATINGS)} allLabel="Alle außer ausgeblendete" />
                 <div className="flex items-end">
                   <button className="btn btn-secondary w-full">Filter anwenden</button>
                 </div>
@@ -223,6 +230,14 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
             <input type="hidden" name="back" value={href(current)} />
             <p className="mb-2 text-[13px] text-ink-3">
               <span className="num">{list.length}</span> {list.length === 1 ? "Aufgabe" : "Aufgaben"}
+              {versteckt > 0 && (
+                <>
+                  {" · "}
+                  <Link href={href({ ...current, bewertung: "ausgeblendet" })} className="link" data-testid="ausgeblendete-zeigen">
+                    <span className="num">{versteckt}</span> schlecht bewertete ausgeblendet, anzeigen
+                  </Link>
+                </>
+              )}
             </p>
             <ul className="panel divide-y divide-line">
               {list.map((e) => {
@@ -244,6 +259,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
                         <Pill>{e.task.difficulty}</Pill>
                         <Pill>{worksheetTypeLabel(e.subject, e.task.category ?? e.task.type)}</Pill>
                         <Pill tone={tone(e.origin)}>{LIBRARY_ORIGIN_LABEL[e.origin]}</Pill>
+                        {e.bewertung && <BewertungsZeichen stand={e.bewertung} />}
                         {e.tags.map((tag) => (
                           <span key={tag} className="text-ink-3">
                             #{tag}
@@ -314,12 +330,12 @@ function LibraryArchive({ archiv, fehler }: { archiv?: string; fehler?: string }
   );
 }
 
-function FilterSelect({ name, label, value, options }: { name: string; label: string; value?: string; options: [string, string][] }) {
+function FilterSelect({ name, label, value, options, allLabel = "Alle" }: { name: string; label: string; value?: string; options: [string, string][]; allLabel?: string }) {
   return (
     <label className="field">
       <span className="label">{label}</span>
       <select className="input" name={name} defaultValue={value ?? ""} disabled={options.length === 0 && !value}>
-        <option value="">Alle</option>
+        <option value="">{allLabel}</option>
         {options.map(([v, l]) => (
           <option key={v} value={v}>
             {l}

@@ -5,6 +5,7 @@ import { deliverIfRunning, pushLive, showOnTablet } from "@/lib/live";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/lib/auth";
+import { ohneAusgeblendete } from "@/lib/bewertungen";
 import {
   blankTask,
   checkTask,
@@ -20,6 +21,7 @@ import {
 } from "@/lib/builder";
 import { DIFFICULTIES, type Difficulty, type TaskType, TASK_TYPES } from "@/lib/curriculum";
 import { figurFehler } from "@/lib/figur";
+import { freigabeVon, isFreigabe, zeigtHilfen } from "@/lib/freigabe";
 import { noteActivity } from "@/lib/learning";
 import { readingSet, withText } from "@/lib/lesen";
 import { titleFromTask } from "@/lib/library";
@@ -88,7 +90,8 @@ export async function saveTaskAction(taskId: number, draft: TaskDraft): Promise<
   // ein Bild, das nicht stimmt, wird nicht still weggelassen: die Lehrkraft bekommt den Grund
   const bild = data.figure !== undefined ? figurFehler(data.figure) : null;
   if (bild) return { error: `Das Bild stimmt nicht: ${bild}` };
-  const t = normalizeTask({ ...draft, data, prompt: String(draft.prompt ?? "").slice(0, 4000) });
+  // die Quellenangabe (Referenzsammlung) bleibt, wie sie gespeichert ist: Bearbeiten nimmt sie nicht weg
+  const t = normalizeTask({ ...draft, data, prompt: String(draft.prompt ?? "").slice(0, 4000), quelle: e.task.quelle ?? null });
   repo.updateTask(taskId, t);
   titleFromTask(e.task.worksheet_id);
   refresh(e.task.worksheet_id);
@@ -170,8 +173,9 @@ export async function searchTasksAction(worksheetId: number, text: string) {
   await requireTeacher();
   const w = repo.getWorksheet(worksheetId);
   if (!w) return [];
-  return repo
-    .searchTasks({ skillIds: w.skill_ids, subject: w.subject, text, excludeWorksheetId: worksheetId, limit: 12 })
+  // schlecht bewertete Aufgaben (lib/bewertungen.ts) schlägt die Suche nicht vor
+  return ohneAusgeblendete(repo.searchTasks({ skillIds: w.skill_ids, subject: w.subject, text, excludeWorksheetId: worksheetId, limit: 30 }))
+    .slice(0, 12)
     .map((t) => ({ id: t.id, prompt: t.prompt, type: t.type, difficulty: t.difficulty, skillId: t.skillId, worksheetTitle: t.worksheet_title, library: t.worksheet_kind === "bibliothek" }));
 }
 
@@ -221,11 +225,15 @@ export async function saveTemplateAction(_prev: ActionResult, form: FormData): P
   return { ok: `Vorlage „${name}“ gespeichert.` };
 }
 
-export async function setSolutionsVisibleAction(assignmentId: number, visible: boolean) {
+/** Freigabe in Stufen (lib/freigabe.ts): Nichts, Nur Hilfen, Hilfen und Lösung, Alles. */
+export async function setFreigabeAction(assignmentId: number, freigabe: string) {
   await requireTeacher();
   const a = repo.getAssignment(assignmentId);
-  if (!a) return;
-  repo.setSolutionsVisible(assignmentId, visible);
+  if (!a || !isFreigabe(freigabe)) return;
+  repo.setFreigabe(assignmentId, freigabe);
+  // läuft gerade eine Einheit, sieht das Tablet die neue Stufe sofort
+  const unit = runningUnitForStudent(a.student_id);
+  if (unit) pushLive(unit.id);
   revalidatePath(`/uebungen/${a.worksheet_id}`);
   revalidatePath("/lernen", "layout");
 }
@@ -264,6 +272,8 @@ export async function recordHintAction(token: string, assignmentId: number, task
   const t = repo.getTask(taskId);
   if (!student || !a || !t || a.student_id !== student.id || t.worksheet_id !== a.worksheet_id) return;
   if (!Number.isInteger(hintIndex) || hintIndex < 0 || hintIndex >= t.hints.length) return;
+  // Freigabe „Nichts“: es gibt keine Hilfen, also wird auch keine gezählt
+  if (!zeigtHilfen(freigabeVon(a))) return;
   const unit = runningUnitForStudent(student.id);
   repo.recordHintUse({ assignment_id: a.id, task_id: t.id, student_id: student.id, hint_index: hintIndex, unit_id: unit?.id ?? a.unit_id });
   if (unit) {

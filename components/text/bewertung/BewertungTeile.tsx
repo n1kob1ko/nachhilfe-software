@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Check, Sparkles } from "lucide-react";
-import type { BewertungState } from "@/app/bewertung-actions";
+import type { BewertungState } from "@/app/textbewertung-actions";
 import { KRITERIEN, schnitt, STUFEN, stufeOf, type Erwartung, type KriteriumKey, type Stufe } from "@/lib/bewertung-kriterien";
 import type { GefundenerBeleg } from "@/lib/zitatpruefung";
 

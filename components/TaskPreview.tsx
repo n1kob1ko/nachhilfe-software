@@ -2,6 +2,7 @@ import { categoryLabel, TASK_TYPES } from "@/lib/curriculum";
 import { englischFormat, ENGLISCH_TEIL, TEXTSORTEN, wortRahmen } from "@/lib/englisch-matura-formate";
 import type { Task } from "@/lib/repo";
 import { ASPECT_SHORT, isAspect, OPEN_ASPECTS, severalNoted } from "@/lib/lesen";
+import { EIN_SCHRITT, loesungsdaten, schritteWieLoesung } from "@/lib/loesungsdaten";
 import { clozeParts } from "@/lib/math-format";
 import { mathAnswerText } from "@/lib/math-task";
 import { maturaLoesung } from "@/lib/matura-formate";
@@ -95,6 +96,7 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
       <p className="max-w-[70ch] text-[16px] leading-relaxed whitespace-pre-line">{task.prompt ? withGaps(task.prompt, Boolean(task.data.gapOptions)) : <span className="text-ink-3 italic">Noch keine Aufgabenstellung</span>}</p>
       {/* Aufgabe mit Bild: mit Lösung zeigt das Bild die gesuchten Werte (zum Prüfen, ob Bild und Lösung zusammenpassen) */}
       {task.data.figure ? <FigurBild figure={task.data.figure} loesung={showSolution} className="mb-1" /> : null}
+      {task.quelle && <p className="mt-1 text-[12px] text-ink-3">Quelle: {task.quelle}</p>}
       {task.data.genus && (
         <p className="mt-1.5">
           <GenusBadge genus={task.data.genus} />
@@ -324,6 +326,7 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
           )}
           {task.type === "rechenweg" && (task.answer.accepted?.length ?? 0) > 1 && <p className="text-[13px] text-ink-2">Auch richtig: {task.answer.accepted!.slice(1).join(" · ")}</p>}
           {task.solution && <p className="mt-1 whitespace-pre-line text-ink-2"><MathText text={task.solution} /></p>}
+          <LehrerDaten task={task} teil="weg" />
           {task.hints.length > 0 && (
             <ul className="mt-2 space-y-0.5 text-[13px] text-ink-2">
               {task.hints.map((h, i) => (
@@ -338,9 +341,65 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
               Typische Fehler: {task.errorMap.map((e) => e.label).filter((v, i, a) => a.indexOf(v) === i).join(" · ")}
             </p>
           )}
+          <LehrerDaten task={task} teil="erklaerung" />
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Lösungsdaten für den Lehrer (lib/loesungsdaten.ts): unter dem Lösungsweg die geschriebenen Schritte und andere
+ * Wege, am Ende die Erklärung. Gibt es keine Schritte, steht dort warum.
+ */
+function LehrerDaten({ task, teil }: { task: TaskDraft; teil: "weg" | "erklaerung" }) {
+  const d = loesungsdaten(task);
+  if (teil === "erklaerung") {
+    const achten = task.errorMap.length ? [] : d.achten;
+    if (!d.erklaerung && !achten.length) return null;
+    return (
+      <div className="mt-2 border-t border-green/20 pt-2 text-[13px] text-ink-2">
+        {d.erklaerung && (
+          <p>
+            <span className="font-semibold text-ink">Für dich:</span> <MathText text={d.erklaerung} />
+          </p>
+        )}
+        {achten.length > 0 && <p className="mt-0.5 text-ink-3">Oft falsch: {achten.join(" · ")}</p>}
+      </div>
+    );
+  }
+  // Schritte aus der Antwort (Korrekturen, Zuordnung, Teilfragen, Belege) stehen oben schon bei der Lösung;
+  // hier nur von Hand oder vom Generator geschriebene, wenn sie mehr sind als die Zeilen des Lösungswegs
+  const schritte = task.solutionSteps?.length && !schritteWieLoesung(task, d.schritte) ? d.schritte : [];
+  return (
+    <>
+      {schritte.length > 0 && (
+        <div className="mt-2 text-[13px]">
+          <span className="font-semibold">Lösungsschritte:</span>
+          <ol className="list-decimal pl-5 text-ink-2">
+            {schritte.map((s, i) => (
+              <li key={i}>
+                <MathText text={s} />
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+      {/* ein Schritt ist offensichtlich; nur wo es keinen Weg gibt oder keiner hinterlegt ist, steht der Grund */}
+      {!d.schritte.length && d.ohneSchritte && d.ohneSchritte !== EIN_SCHRITT && <p className="mt-1 text-[12px] text-ink-3">{d.ohneSchritte}</p>}
+      {d.wege.length > 0 && (
+        <div className="mt-2 text-[13px]">
+          <span className="font-semibold">{d.wege.length === 1 ? "Anderer Weg:" : "Andere Wege:"}</span>
+          <ul className="list-disc pl-5 text-ink-2">
+            {d.wege.map((w, i) => (
+              <li key={i} className="whitespace-pre-line">
+                <MathText text={w} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
   );
 }
 
