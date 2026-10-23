@@ -1,7 +1,7 @@
 import { currentTeacher } from "@/lib/auth";
 import { noteActivity } from "@/lib/learning";
 import { pushLive, showOnTablet, studentDevice } from "@/lib/live";
-import { createPictureStory, MAX_REQUEST_BYTES } from "@/lib/picture-story";
+import { createPictureStory, MAX_REQUEST_BYTES, type NewPictureStory } from "@/lib/picture-story";
 import { foreignRequest, notAllowed, readStoryForm } from "@/lib/picture-story-routes";
 import { canManageUnit, getUnit } from "@/lib/units";
 
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   if (unit.status !== "gestartet") return fail("Diese Einheit ist schon beendet.");
   const f = await readStoryForm(form);
   if (!f.title) return fail("Bitte einen Titel eingeben.");
-  const files = f.order.flatMap((e) => ("upload" in e && f.uploads[e.upload] ? [{ ...f.uploads[e.upload], caption: e.caption }] : []));
+  const files = f.order.flatMap((e): NewPictureStory["images"] => ("upload" in e && f.uploads[e.upload] ? [{ ...f.uploads[e.upload], caption: e.caption }] : "ki" in e ? [{ kiBild: e.ki, caption: e.caption }] : []));
   try {
     const text = createPictureStory({ studentId: unit.student_id, teacherId: teacher.id, unitId: unit.id, subject: f.subject || "Deutsch", title: f.title, prompt: f.prompt, settings: f.settings, images: files });
     noteActivity(unit.student_id);

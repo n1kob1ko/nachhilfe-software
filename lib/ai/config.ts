@@ -100,6 +100,8 @@ export type AIFunction =
   | "erwartung"
   | "bewertung"
   | "referenz"
+  | "bildplan"
+  | "bild"
   | "verbindungstest";
 
 export type FunctionSpec = {
@@ -185,6 +187,12 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // Referenzsammlung (lib/referenz.ts): only on the teacher's click, a PDF of tasks the teacher downloaded by hand; the
   // answer is what stands on the pages (no student data), so the same file is not paid for twice
   referenz: { label: "Referenzsammlung lesen", area: "MATERIAL", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  // Bildgeschichte erstellen (lib/bildfolge.ts): only on the teacher's click, from the teacher's short description (never a
+  // name or a photo). First this plan: the scenes and a fixed description of the figures, so every picture shows the same ones
+  bildplan: { label: "Bildgeschichte planen", area: "MATERIAL", tier: "standard", maxTokens: 4_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
+  // then one request per picture. It always goes to OpenRouter with AI_IMAGE_MODEL (imageRoute below), whatever this area
+  // uses; the entry is here for its label and limits in the cost log. maxTokens is not used by the image endpoint
+  bild: { label: "Bild für Bildgeschichte", area: "MATERIAL", tier: "standard", maxTokens: 1, timeoutMs: 150_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   // KI-Selbsttest on Mehr › KI-Kosten: one tiny request before the real test requests
   verbindungstest: { label: "Verbindungstest", area: "ANALYSIS", tier: "fast", maxTokens: 50, timeoutMs: 20_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
 };
@@ -270,6 +278,37 @@ export type Usage = { input: number; output: number; cacheWrite: number; cacheWr
 export function costOf(model: string, tier: Tier, u: Usage): number {
   const { price } = priceFor(model, tier);
   return (u.input * price.in + u.output * price.out + u.cacheWrite * price.cacheWrite + (u.cacheWrite1h ?? 0) * price.in * 2 + u.cacheRead * price.cacheRead) / 1_000_000;
+}
+
+// ---------- pictures (Bildgeschichte erstellen, lib/bildfolge.ts) ----------
+
+/**
+ * Pictures come from OpenRouter only (the Claude models make none): with the app's OpenRouter key, logged in
+ * ai_calls and counted against the general monthly budget like every OpenRouter request. Default (checked
+ * 2026-10-23 on openrouter.ai): Gemini 3.1 Flash Lite Image, the cheapest Gemini picture model; it takes
+ * reference pictures and keeps figures alike across pictures. 30 $ per million picture tokens, one picture
+ * (1K) is about 1 290 tokens: about 3.9 US cents. Another model: AI_IMAGE_MODEL (an OpenRouter id).
+ */
+export const DEFAULT_IMAGE_MODEL = "google/gemini-3.1-flash-lite-image";
+export function imageRoute(): { provider: "openrouter"; model: string } {
+  const m = process.env.AI_IMAGE_MODEL?.trim() ?? "";
+  return { provider: "openrouter", model: fitModel("openrouter", m) ?? DEFAULT_IMAGE_MODEL };
+}
+
+/** US dollars per picture, from the prices on openrouter.ai (2026-10-23); AI_IMAGE_PRICE_USD overrides. */
+const IMAGE_PRICES: [prefix: string, usd: number][] = [
+  ["google/gemini-3.1-flash-lite-image", 0.039],
+  ["google/gemini-2.5-flash-image", 0.039],
+  ["google/gemini-3.1-flash-image", 0.078],
+  ["openai/gpt-image-1-mini", 0.01],
+];
+/** For the estimate before the click, and as the cost when OpenRouter reports none. Unknown models: a high guess. */
+export function imagePrice(model: string): { usd: number; known: boolean } {
+  const raw = process.env.AI_IMAGE_PRICE_USD?.trim();
+  const v = Number(raw);
+  if (raw && Number.isFinite(v) && v >= 0) return { usd: v, known: true };
+  const hit = IMAGE_PRICES.find(([prefix]) => model.startsWith(prefix));
+  return hit ? { usd: hit[1], known: true } : { usd: 0.08, known: false };
 }
 
 // ---------- budget ----------

@@ -89,6 +89,10 @@ Anthropic: eigenes Budget `ANTHROPIC_MONTHLY_BUDGET_USD`, Standard 90 $ (siehe A
 
 Gegen doppelte Aufrufe: gleiche Anfragen kommen aus dem Speicher, laufende werden nicht doppelt gestellt, nach drei Fehlern pausiert die KI fünf Minuten, Aufgaben nur auf Klick.
 
+## Bilder für Bildgeschichten
+
+Die Claude-Modelle zeichnen keine Bilder. „Bilder erstellen lassen“ im Bildgeschichte-Formular (`lib/bildfolge.ts`) fragt deshalb zuerst wie gewohnt den Router nach einem Plan (Szenen und eine feste Beschreibung der Figuren, Funktion „Bildgeschichte planen“), dann je Bild OpenRouter (`POST /images` im Adapter `lib/ai/providers/openai-compatible.ts`, derselbe `OPENROUTER_API_KEY`). Die Figurenbeschreibung geht mit jedem Bild mit, ab dem zweiten Bild auch das erste als Vorlage. Modell: `AI_IMAGE_MODEL`, Standard `google/gemini-3.1-flash-lite-image` (Preis am 23. Oktober 2026: 30 $ je 1 Mio. Bild-Tokens, ein Bild etwa 1 290 Tokens, also etwa 3,9 US-Cent). Eine Geschichte mit 6 Bildern kostet damit etwa 0,24 $ (rund 22 Cent), dazu der Plan (unter 2 Cent). Jeder Aufruf steht in `ai_calls` mit dem Preis, den OpenRouter meldet, zählt zum allgemeinen Budget und, wenn die Geschichte für einen Schüler ist, zu dessen Grenze. Gesendet werden nur die Beschreibung der Lehrkraft (alle bekannten Namen durch `[Name]` ersetzt) und die erstellten Bilder, nie ein Foto oder Daten eines Schülers.
+
 ## KI testen
 
 Mehr › KI-Kosten › KI testen (nur Administration). Zuerst eine winzige Anfrage; antwortet der Anbieter, folgen drei echte Anfragen mit erfundenen Daten:

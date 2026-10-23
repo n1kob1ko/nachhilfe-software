@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { PageHeader } from "@/components/ui";
 import { PictureStoryForm } from "@/components/text/story/PictureStoryForm";
 import { requireTeacher } from "@/lib/auth";
+import { bilderAusGrund, getBildfolge, kostenSchaetzung } from "@/lib/bildfolge";
 import { fachNamen } from "@/lib/faecher";
 import { getPictureStory, LINE_CHOICES, SOURCE_KINDS, storyImages } from "@/lib/picture-story";
 import { getText } from "@/lib/texts";
@@ -17,6 +18,7 @@ export default async function EditPictureStoryPage({ params }: { params: Promise
   const story = getPictureStory(text.id);
   if (!story) redirect(`/texte/${text.id}`);
   const images = storyImages(text.id);
+  const kosten = kostenSchaetzung();
   return (
     <div className="max-w-[980px]">
       <PageHeader title={`Bilder und Aufgabe: ${text.title}`} subtitle={`${text.student_name} · Der geschriebene Text bleibt unverändert.`} back={{ href: `/texte/${text.id}`, label: "Zur Bildgeschichte" }} />
@@ -35,7 +37,18 @@ export default async function EditPictureStoryPage({ params }: { params: Promise
           sourceKind: story.source_kind,
           sourceNote: story.source_note,
         }}
-        images={images.map((i) => ({ id: i.id, url: `/material/bildgeschichte/bild/${i.id}`, caption: i.caption, name: i.file_name, size: i.size }))}
+        images={images.map((i) => ({
+          id: i.id,
+          url: `/material/bildgeschichte/bild/${i.id}`,
+          caption: i.caption,
+          name: i.file_name,
+          size: i.size,
+          ki: i.ki === 1,
+          // „Dieses Bild neu“ only while the Bilderfolge with its plan is there
+          bildfolgeId: i.bildfolge_id && getBildfolge(i.bildfolge_id) ? i.bildfolge_id : null,
+          szene: i.szene,
+        }))}
+        generator={{ fuer: { text: text.id }, aus: bilderAusGrund(text.student_id), planCent: kosten.planCent, bildCent: kosten.bildCent }}
         subjects={fachNamen()}
         lineChoices={LINE_CHOICES}
         sourceKinds={SOURCE_KINDS}

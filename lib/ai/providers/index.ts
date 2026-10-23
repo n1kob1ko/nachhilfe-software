@@ -5,9 +5,10 @@ import { manualTransport } from "./manual";
 import { FLAVORS, openAICompatibleTransport } from "./openai-compatible";
 import type { Capabilities, Prompt, Transport } from "./types";
 
-export type { AIRequest, AIResult, AnswerFailure, Part, Prompt, Transport } from "./types";
+export type { AIRequest, AIResult, AnswerFailure, ImageRequest, ImageResult, ImageTransport, Part, Prompt, Transport } from "./types";
 export { ProviderHttpError } from "./types";
 export { manualTransport } from "./manual";
+export { openRouterImageTransport } from "./openai-compatible";
 
 export const PROVIDER_LABEL: Record<ProviderId, string> = {
   anthropic: "Anthropic",

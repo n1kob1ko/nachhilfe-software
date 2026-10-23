@@ -35,7 +35,8 @@ const str = (f: FormData, k: string, max: number) => String(f.get(k) ?? "").trim
 
 /**
  * The form of the Bildgeschichte editor: fields, the new files ("bild0", "bild1", …) and "reihenfolge",
- * a JSON list such as [{"id":3,"caption":"…"},{"upload":0,"caption":"…"}].
+ * a JSON list such as [{"id":3,"caption":"…"},{"upload":0,"caption":"…"},{"ki":7,"caption":"…"}] (ki: a picture the
+ * app made, lib/bildfolge.ts).
  */
 export async function readStoryForm(form: FormData): Promise<StoryForm> {
   const uploads: UploadedImage[] = [];
@@ -51,6 +52,7 @@ export async function readStoryForm(form: FormData): Promise<StoryForm> {
         const caption = typeof e?.caption === "string" ? e.caption : undefined;
         if (Number.isInteger(e?.id)) return [{ id: e.id, caption }];
         if (Number.isInteger(e?.upload) && e.upload >= 0 && e.upload < MAX_IMAGES) return [{ upload: e.upload, caption }];
+        if (Number.isInteger(e?.ki) && e.ki > 0) return [{ ki: e.ki, caption }];
         return [];
       });
   } catch {
@@ -77,7 +79,7 @@ export async function readStoryForm(form: FormData): Promise<StoryForm> {
 }
 
 /** A picture, sent with the type its content has, never as anything a browser would run. */
-export function sendImage(img: StoryImage): Response {
+export function sendImage(img: Pick<StoryImage, "stored_path" | "mime" | "sha256">): Response {
   let data: Buffer;
   try {
     data = fs.readFileSync(imageFile(img));

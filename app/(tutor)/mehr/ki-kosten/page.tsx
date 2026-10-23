@@ -5,7 +5,7 @@ import { AITextTest } from "@/components/AITextTest";
 import { KiAnbieterWahl, type AnbieterOption } from "@/components/ai/KiAnbieterWahl";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, SectionTitle } from "@/components/ui";
-import { AREA_LABEL, FUNCTIONS, aiSwitchedOff, budget, mainProvider, poolOf, priceFor, routeFor, type AIFunction, type Area, type BudgetPool } from "@/lib/ai/config";
+import { AREA_LABEL, FUNCTIONS, aiSwitchedOff, budget, imagePrice, imageRoute, mainProvider, poolOf, priceFor, routeFor, type AIFunction, type Area, type BudgetPool } from "@/lib/ai/config";
 import { budgetState, costByDay, costByFunction, costByMonth, costByStudent, costByTeacher, recentCalls, type Sum } from "@/lib/ai/log";
 import { schuelerGrenze, schuelerStand } from "@/lib/ai/schueler-kosten";
 import { KI_MODUS_LABEL, kiModus } from "@/lib/ai/modus";
@@ -182,7 +182,8 @@ export default async function AICostPage() {
             </thead>
             <tbody className="divide-y divide-line">
               {(Object.keys(AREA_LABEL) as Area[]).map((a) => {
-                const fns = (Object.keys(FUNCTIONS) as AIFunction[]).filter((f) => FUNCTIONS[f].area === a);
+                // Bilder laufen immer über OpenRouter mit eigenem Modell (Zeile unter der Tabelle)
+                const fns = (Object.keys(FUNCTIONS) as AIFunction[]).filter((f) => FUNCTIONS[f].area === a && f !== "bild");
                 const route = routeFor(fns[0]);
                 const tier = FUNCTIONS[fns[0]].tier;
                 const p = priceFor(route.model, tier);
@@ -214,6 +215,10 @@ export default async function AICostPage() {
           </table>
         </div>
         <p className="mt-2 text-[13px] text-ink-3">Preise: Eingabe / Ausgabe. Wiederverwendete Teile (Cache) kosten 10&nbsp;% der Eingabe. Für Modelle ohne bekannten Preis gilt AI_PRICES_JSON oder eine Schätzung.</p>
+        <p className="mt-1 text-[13px] text-ink-3" data-testid="bilder-modell">
+          Bilder für Bildgeschichten: immer OpenRouter, Modell <span className="font-mono">{imageRoute().model}</span>, etwa <span className="num">{usd(imagePrice(imageRoute().model).usd)}</span> je Bild
+          {providerReady("openrouter") ? "" : " (nicht eingerichtet: kein OpenRouter-Schlüssel)"}. Zählt zum allgemeinen Budget.
+        </p>
       </section>
 
       <section className="mb-10">
