@@ -9,6 +9,7 @@
 import { onUnitEnd } from "./ai/realtime";
 import { WEAK, STRONG, parseTime } from "./analysis";
 import { localStamp } from "./autodoc";
+import { dokumentiereAblauf } from "./cockpit";
 import { db } from "./db";
 import { dokumentiereAutomatisch } from "./einschaetzung";
 import { isMinitest } from "./quick-round";
@@ -371,6 +372,8 @@ export function endUnit(unitId: number, opts: FinishOptions = {}): number | null
   if (!unit || unit.status !== "beendet") return null;
   notifyUnitClosed(unitId);
   const lessonId = writeLearningDoc(unit, at);
+  // the Cockpit's facts: which steps of the Lernpaket were done, skipped or not reached (lib/cockpit.ts)
+  dokumentiereAblauf(lessonId, unitId);
   // one KI summary of the whole unit, in the background; pending live analyses are dropped
   onUnitEnd({ unitId, teacherId: unit.teacher_id, lessonId });
   return lessonId;

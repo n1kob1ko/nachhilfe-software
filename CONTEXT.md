@@ -327,6 +327,16 @@ Was der Lehrer zu einer Folie sagt. Steht in der Datenbank, nie in den ausgelief
 auf einer Schülerseite.
 _Avoid_: Sprechernotizen, Speaker Notes, Skript
 
+**Cockpit**:
+Der Bereich „Cockpit“ der laufenden **Einheit**: das **Lernpaket** für heute mit „Warum heute“ (Vorschlag ohne KI
+aus Schularbeit, Empfehlung und früheren Einheiten), die Schritte und der aktuelle Schritt mit dem, was der Lehrer
+sagt und fragt, erwarteter Antwort und was bei Fehlern hilft. „Übung senden“ schickt die Aufgaben des Schritts an
+den Schüler dieser Einheit. Reihenfolge, Erledigt, Übersprungen und Notizen gelten nur für die Einheit
+(`einheit_cockpit`, `lib/cockpit.ts`); beim Beenden kommt in die Dokumentation, welche Schritte erledigt,
+übersprungen oder nicht erreicht wurden. Ohne Lernpaket zeigt es Fähigkeit, Erklärung, typische Fehler, passende
+Übungen und den Plan aus dem **Tagesbriefing**. „Vorbereiten“ im Tagesplan wählt das Paket vor dem Start.
+_Avoid_: Stundenablauf, Lehrermodus, Regie
+
 ## Schule
 
 **Fach**:
