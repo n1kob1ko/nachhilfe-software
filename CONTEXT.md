@@ -460,6 +460,20 @@ Bestand. Die Fassung aus den Daten ist immer da; die KI-Fassung nur auf Klick, e
 pro Schüler und Tag gespeichert. Sie ändert nie den Lernstand.
 _Avoid_: Stundenvorbereitung, Unterrichtsplan, Tagesplan (das ist die Liste „Heute“ auf der Startseite)
 
+**Anpassen**:
+Der Knopf im **Cockpit**: auf Klick schlägt die KI für das **Lernpaket** der laufenden **Einheit** Anpassungen an
+diesen Schüler vor (Zusatzbeispiel zu seinen letzten Fehlern, leichtere oder schwerere Frage mit erwarteter
+Antwort, Hinweis „Bei Fehler“). Jeder Vorschlag ist „Ungeprüft“, bis der Lehrer ihn übernimmt oder verwirft;
+Übernommenes gilt nur für diese Einheit (`einheit_anpassungen`, `lib/anpassen.ts`), das Paket, Lernstand und
+Diagnose bleiben unverändert.
+_Avoid_: Personalisieren, KI-Anpassung, Differenzieren
+
+**KI-Grenze je Schüler**:
+Was die KI für einen Schüler in einem Monat kosten darf (`ai_calls.student_id`, `lib/ai/schueler-kosten.ts`):
+ab 1 € sehen Lehrer einen Hinweis im Cockpit und im Schülerprofil, ab 3 € lehnt jede KI-Funktion für diesen
+Schüler bis zum Monatsende ab. Gilt zusätzlich zum Monatsbudget; Schülerseiten zeigen davon nichts.
+_Avoid_: Schülerbudget, Kontingent
+
 **manueller KI-Modus**:
 Ein Betrieb ohne Anfrage nach außen: die App zeigt den vollständigen Prompt zum
 Kopieren, der Lehrer fügt die Antwort ein, und die App prüft sie mit derselben
