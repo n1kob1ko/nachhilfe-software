@@ -570,7 +570,11 @@ test("unit summary: six questions from the data, teacher lines marked, nothing p
   const { unit } = units.startUnit(niko.id, sid, { at: Date.now() - 45 * 60_000, subject: "Mathematik" });
   const { id: wid } = await buildWorksheet({ subject: "Mathematik", schoolType: "Mittelschule", klasse: 2, skillIds: ["mathe.brueche.kuerzen", "mathe.brueche.dividieren"], difficulty: "leicht", count: 4, taskType: "calc", useAI: false });
   const aid = repo.assignWorksheet(wid, sid);
-  for (const t of repo.listTasks(wid)) {
+  const tasks = repo.listTasks(wid);
+  // mostly 2 Kürzen + 2 Dividieren; when the generator draws the same Dividieren task twice, Kürzen gets that turn (3 + 1)
+  const kuerzen = tasks.filter((t) => t.skillId === "mathe.brueche.kuerzen").length;
+  assert.deepEqual([tasks.length, kuerzen > 0, kuerzen < 4], [4, true, true], "4 tasks, both skills");
+  for (const t of tasks) {
     const { right, wrong } = answers(t);
     const ok = t.skillId === "mathe.brueche.kuerzen";
     for (let i = 0; i < (ok ? 1 : 3); i++) await submitAnswer({ token: student.access_token, assignmentId: aid, taskId: t.id, answer: ok ? right : wrong, timeMs: 30_000, hintsUsed: ok ? 0 : 1 });
@@ -587,7 +591,7 @@ test("unit summary: six questions from the data, teacher lines marked, nothing p
 
   const b = sum.unitBrief(lessonId, { today })!;
   for (const [key] of sum.BRIEF_QUESTIONS) assert.ok(b[key].length > 0, `${key} is answered`);
-  assert.ok(b.done.some((l) => /4 Aufgaben bearbeitet, 2 richtig/.test(l.text)));
+  assert.ok(b.done.some((l) => l.text.startsWith(`4 Aufgaben bearbeitet, ${kuerzen} richtig`)), "the Kürzen tasks were right, the Dividieren ones wrong");
   assert.ok(b.good.some((l) => l.from === "daten" && /Kürzen/i.test(l.text)));
   assert.ok(b.good.some((l) => l.from === "lehrer"), "the teacher's note is there, marked as such");
   assert.ok(b.difficulties.some((l) => /Dividieren/i.test(l.text)));
