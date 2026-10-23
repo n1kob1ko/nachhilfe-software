@@ -181,7 +181,8 @@ test("Bewerbungsschreiben mit Angabe: genau die Aufträge der App, keine erfunde
   assert.ok(anfrage.includes("Rechtschreibung, Grammatik und Zeichensetzung gehören nicht hierher"), "Sprache und Inhalt getrennt");
   assert.ok(!anfrage.includes("Sonnleitner") && !anfrage.includes("Mira"), "der Schülername ist verborgen");
   assert.ok(anfrage.includes("Frau Kornberger"), "ein Name aus der Angabe bleibt, damit Zitate daraus auffindbar sind");
-  assert.ok(!anfrage.includes("Inhalt (") && !anfrage.includes("Stufen:"), "keine Kriterien der SRDP bei einer normalen Textarbeit");
+  assert.ok(!anfrage.includes("SRDP") && !anfrage.includes("Textstruktur") && !anfrage.includes("Normative Sprachrichtigkeit"), "keine Wörter der SRDP in der Unterstufe");
+  assert.ok(anfrage.includes("- textstruktur (Aufbau): ") && anfrage.includes("Stufen: 1 = Sehr gut"), "die Kriterien in den Worten der Schulstufe");
 
   const p = s.sb.pruefungInfo(s.textId);
   assert.equal(p.status, "fertig");
@@ -199,7 +200,7 @@ test("Bewerbungsschreiben mit Angabe: genau die Aufträge der App, keine erfunde
   assert.deepEqual(p.fehlte, []);
   assert.equal(p.version, s.texts.getText(s.textId)!.version);
 
-  // nur für die Lehrkraft: kein Lernstand, keine Bewertung, die Angabe steht nicht im Text
+  // nur für die Lehrkraft: kein Lernstand, ohne Kriterien in der Antwort kein Vorschlag der Note, die Angabe steht nicht im Text
   assert.deepEqual(await zaehle(), vorher);
   assert.equal(s.sb.bewertungInfo(s.textId).vorschlag, null);
   assert.equal("angabe" in s.texts.getText(s.textId)!, false, "die Angabe ist nicht Teil des Texts, den Schülerseiten lesen");

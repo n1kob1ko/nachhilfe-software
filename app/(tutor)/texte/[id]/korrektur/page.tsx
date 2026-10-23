@@ -78,7 +78,7 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
     <section className="panel max-w-[760px] px-6 py-6" data-testid="korrektur-start">
       <h2 className="text-[19px] font-semibold">{c ? "Die aktuelle Fassung korrigieren" : "Diesen Text korrigieren"}</h2>
       <p className="mt-1 text-[15px] text-ink-2">
-        <span className="num">{wordsLabel(text.words)}</span> · Fassung vom <span className="num">{when(text.updated_at)}</span>. Ein Klick prüft beides: die Sprache nach dem Maßstab „{level.label}“ und ob die Aufgabe erfüllt ist. Nichts wird ohne deine Bestätigung übernommen, der Originaltext bleibt unverändert.
+        <span className="num">{wordsLabel(text.words)}</span> · Fassung vom <span className="num">{when(text.updated_at)}</span>. Ein Klick prüft beides: die Sprache nach dem Maßstab „{level.label}“ und ob die Aufgabe erfüllt ist, mit einem Vorschlag für die Note. Nichts wird ohne deine Bestätigung übernommen, der Originaltext bleibt unverändert.
       </p>
       {!aufgabe.pruefbar && (
         <p className="mt-2 text-[14px] text-ink-2" data-testid="start-ohne-aufgabe">
@@ -105,7 +105,7 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
         <SpellCheck size={16} aria-hidden /> Sprache
       </Link>
       <Link href={teilHref("aufgabe")} className="kx-tab" aria-current={teil === "aufgabe" ? "page" : undefined} data-testid="teil-aufgabe" title={kurz?.titel}>
-        <ListChecks size={16} aria-hidden /> Aufgabe erfüllt?
+        <ListChecks size={16} aria-hidden /> Aufgabe und Note
         {kurz && <Pill tone={kurz.tone}>{kurz.kurz}</Pill>}
       </Link>
     </nav>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Archive, ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, PenLine, Plus, Printer, SpellCheck } from "lucide-react";
+import { Archive, ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, ClipboardCheck, PenLine, Plus, Printer, SpellCheck } from "lucide-react";
 import { archiveTextAction } from "@/app/archiv-actions";
 import { LessonCard, rateTone } from "@/components/LessonCard";
 import { Info } from "@/components/Info";
@@ -9,6 +9,7 @@ import { BoardThumbs } from "@/components/BoardThumbs";
 import { UnitStatusPill } from "@/components/UnitControl";
 import { Empty, More, Pill, Reveal, SectionTitle, formatDate } from "@/components/ui";
 import { pct } from "@/lib/analysis";
+import { KRITERIUM_KEYS, KRITERIUM_KURZ, type KriteriumKey } from "@/lib/bewertung-kriterien";
 import { autoFelderVon, leseEinschaetzung } from "@/lib/einschaetzung";
 import { progressOverview, readReport } from "@/lib/learning";
 import * as repo from "@/lib/repo";
@@ -16,6 +17,7 @@ import { notizenFuerSchueler, wuenscheFuerSchueler, type SchuelerNotiz, type Wun
 import { analyzeStudent } from "@/lib/service";
 import { textsForStudent, textsForUnit, wordsLabel } from "@/lib/texts";
 import { correctionInfoForStudent, type TextCorrectionInfo } from "@/lib/text-correction";
+import { bestaetigteBewertungen } from "@/lib/text-note";
 import { listUnits, unitDurationMs, type UnitView } from "@/lib/units";
 
 const FILTERS = [
@@ -401,11 +403,23 @@ function CorrectionLink({ textId, info }: { textId: number; info: TextCorrection
   );
 }
 
+/** The confirmed grade of a text: „Note 3“ (or „bewertet“ without one), the four Stufen in the title. */
+function NoteLink({ textId, n }: { textId: number; n: { note: number | null; stufen: Record<KriteriumKey, number> } }) {
+  const stufen = KRITERIUM_KEYS.map((k) => `${KRITERIUM_KURZ[k]} ${n.stufen[k]}`).join(", ");
+  return (
+    <Link href={`/texte/${textId}/korrektur?teil=aufgabe`} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-green-wash px-3.5 text-[13px] font-semibold text-green hover:underline" title={stufen} data-testid="text-note">
+      <ClipboardCheck size={14} aria-hidden /> {n.note ? `Note ${n.note}` : "bewertet"}
+    </Link>
+  );
+}
+
 /** All Textarbeiten of the student: unfinished first, then the newest. */
 function StudentTexts({ studentId }: { studentId: number }) {
   const texts = textsForStudent(studentId).sort((a, b) => (a.status === b.status ? 0 : a.status === "offen" ? -1 : 1));
   if (!texts.length) return null;
   const corrections = correctionInfoForStudent(studentId);
+  // nur übernommene Bewertungen, nie ein Vorschlag der KI (lib/text-note.ts)
+  const noten = bestaetigteBewertungen(studentId);
   const VISIBLE = 5;
   const row = (t: (typeof texts)[number]) => (
     <li key={t.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
@@ -418,6 +432,7 @@ function StudentTexts({ studentId }: { studentId: number }) {
       </span>
       {t.status === "fertig" ? <Pill tone="green">fertig</Pill> : <Pill tone="amber">in Arbeit</Pill>}
       {corrections.has(t.id) && <CorrectionLink textId={t.id} info={corrections.get(t.id)!} />}
+      {noten.has(t.id) && <NoteLink textId={t.id} n={noten.get(t.id)!} />}
       <Link href={`/texte/${t.id}`} className="btn btn-secondary btn-sm">
         Öffnen
       </Link>

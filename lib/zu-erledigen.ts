@@ -14,6 +14,10 @@
  *   verknüpfte Übung fertig ist (homework.assignment_id).
  * - Text: eine abgegebene Textarbeit. Wartet auf Lehrerbewertung, bis es eine Korrektur dieser Fassung
  *   gibt oder der Lehrer sie abhakt.
+ * - Bewertung (2026-10-23): eine abgegebene Textarbeit mit Aufgabenstellung aus einer beendeten Einheit, deren Note noch
+ *   nicht bestätigt ist (die Dokumentation sagt „Bewertung offen“). Wartet auf Lehrerbewertung, bis die Lehrkraft sie
+ *   übernimmt; solange ein Vorschlag der KI da ist, auch nach FENSTER_TAGE. Steht nicht da, solange der Text selbst noch
+ *   auf die Korrektur wartet (dann genügt ein Punkt).
  * - Terminanfrage (lib/planung/terminanfragen.ts): für die Verwaltung jede offene Anfrage, für einen Lehrer ein
  *   Tausch, der auf seine Zustimmung wartet. Offen, bis sie entschieden ist.
  * - Eingetragene Prüfung: was ein Schüler in seiner App eingetragen hat (lib/pruefliste.ts), zu prüfen oder schon
@@ -23,6 +27,7 @@
  * Nur die eigenen Schüler (students.teacher_id leer oder der Lehrer, wie bei den Prüfungen) und die eigenen
  * Übungen (der Lehrer der Einheit, sonst wer die Übung gemacht hat, sonst der des Schülers).
  */
+import { arbeitsauftraege } from "./bewertung-kriterien";
 import { db } from "./db";
 import { examReminders, type ExamReminder } from "./exams";
 import { anfragenZuErledigen } from "./planung/terminanfragen";
@@ -36,7 +41,7 @@ export const ZUSTAND_TONE: Record<Zustand, "neutral" | "red" | "amber" | "green"
 /** Wie lange ein ungesehenes Ergebnis oder ein abgegebener Text in der Liste bleibt, und wie weit „Erledigt“ zurückreicht. */
 export const FENSTER_TAGE = 7;
 
-export type Art = "pruefung" | "ergebnis" | "hausuebung" | "text" | "terminanfrage" | "einreichung";
+export type Art = "pruefung" | "ergebnis" | "hausuebung" | "text" | "bewertung" | "terminanfrage" | "einreichung";
 /** Was „Abhaken“ in der Liste tut: Hausübung als erledigt markieren oder als gesehen merken. */
 export type Abhaken = { art: "hausuebung" | "ergebnis" | "text"; id: number; studentId: number };
 
@@ -46,6 +51,7 @@ export type Punkt =
   | (Basis & { art: "ergebnis"; titel: string; richtig: number; aufgaben: number; zuBewerten: number })
   | (Basis & { art: "hausuebung"; beschreibung: string; uebung: string | null })
   | (Basis & { art: "text"; titel: string })
+  | (Basis & { art: "bewertung"; titel: string; vorschlag: boolean })
   | (Basis & { art: "terminanfrage"; aufgabe: "bestaetigen" | "zustimmen"; beschreibung: string })
   | (Basis & { art: "einreichung"; titel: string; pruefungsDatum: string | null; zuPruefen: boolean; uebernommen: boolean });
 
@@ -167,6 +173,27 @@ export function zuErledigen(teacherId: number, heute: string, now = new Date()):
       key: `t${t.id}`, art: "text", zustand, studentId: t.student_id, studentName: t.student_name, href: `/texte/${t.id}`, datum: t.completed_at,
       abhaken: zustand === "wartet" ? { art: "text", id: t.id, studentId: t.student_id } : null,
       titel: t.title,
+    });
+  }
+
+  // Note offen: abgegeben, in einer beendeten Einheit geschrieben, noch nicht bestätigt (die Dokumentation sagt „Bewertung offen“)
+  const wartetAufKorrektur = new Set(punkte.filter((p) => p.art === "text" && p.zustand === "wartet").map((p) => p.key));
+  const offeneNoten = conn
+    .prepare(
+      `SELECT x.id, x.student_id, s.name AS student_name, x.title, x.prompt, x.completed_at, COALESCE(b.vorschlag, '') <> '' AS vorschlag
+       FROM texts x JOIN students s ON s.id = x.student_id LEFT JOIN text_bewertungen b ON b.text_id = x.id
+       WHERE x.status = 'fertig' AND x.completed_at IS NOT NULL AND x.archived_at IS NULL AND b.bestaetigt_at IS NULL
+         AND EXISTS (SELECT 1 FROM text_units tu JOIN units u ON u.id = tu.unit_id WHERE tu.text_id = x.id AND u.status = 'beendet')
+         AND (COALESCE(b.vorschlag, '') <> '' OR datetime(x.completed_at) >= datetime(@seit))
+         AND COALESCE(x.teacher_id, s.teacher_id, @me) = @me
+       ORDER BY x.completed_at DESC, x.id DESC`,
+    )
+    .all({ me: teacherId, seit }) as { id: number; student_id: number; student_name: string; title: string; prompt: string; completed_at: string; vorschlag: number }[];
+  for (const t of offeneNoten) {
+    if (!arbeitsauftraege(t.prompt).punkte.length || wartetAufKorrektur.has(`t${t.id}`)) continue;
+    punkte.push({
+      key: `b${t.id}`, art: "bewertung", zustand: "wartet", studentId: t.student_id, studentName: t.student_name, href: `/texte/${t.id}/korrektur?teil=aufgabe`, datum: t.completed_at, abhaken: null,
+      titel: t.title, vorschlag: Boolean(t.vorschlag),
     });
   }
 

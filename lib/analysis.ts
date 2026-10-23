@@ -56,10 +56,21 @@ export function parseTime(s: string): number {
 
 const GRADE_SCORE: Record<number, number> = { 1: 0.95, 2: 0.82, 3: 0.68, 4: 0.52, 5: 0.25 };
 
+/** A grade 1–5 as a score, like a test; a mean such as 2.5 lies between its two grades. */
+export function gradeScore(note: number): number | null {
+  if (!(note >= 1 && note <= 5)) return null;
+  const lo = Math.floor(note);
+  const hi = Math.ceil(note);
+  return lo === hi ? GRADE_SCORE[lo] : GRADE_SCORE[lo] + (GRADE_SCORE[hi] - GRADE_SCORE[lo]) * (note - lo);
+}
+
+/** A Textarbeit with the grade the teacher confirmed (lib/text-note.ts): one per text, never a KI proposal. */
+export type TextGrade = { skillId: string; note: number; at: string };
+
 /** Skills an answer counts for: all skills of its task and their parent skills, if known. */
 export const skillsOf = (a: Pick<Attempt, "skill_id" | "skill_ids">): string[] => (a.skill_ids?.length ? a.skill_ids : a.skill_id ? [a.skill_id] : []);
 
-export function collectEvidence(attempts: Attempt[], lessons: Lesson[], tests: TestResult[], o: { careless?: boolean } = {}): Evidence[] {
+export function collectEvidence(attempts: Attempt[], lessons: Lesson[], tests: TestResult[], o: { careless?: boolean; texts?: TextGrade[] } = {}): Evidence[] {
   const ev: Evidence[] = [];
   for (const a of attempts) {
     if (!a.final) continue;
@@ -75,6 +86,10 @@ export function collectEvidence(attempts: Attempt[], lessons: Lesson[], tests: T
     const score = t.points != null && t.max_points ? t.points / t.max_points : t.grade ? GRADE_SCORE[t.grade] : null;
     if (score == null) continue;
     for (const id of t.skill_ids) ev.push({ skillId: id, score, weight: SOURCE_WEIGHT.test, at: parseTime(t.date), source: "test" });
+  }
+  for (const t of o.texts ?? []) {
+    const score = gradeScore(t.note);
+    if (score !== null) ev.push({ skillId: t.skillId, score, weight: SOURCE_WEIGHT.text, at: parseTime(t.at), source: "text" });
   }
   return ev.sort((a, b) => a.at - b.at);
 }
@@ -115,9 +130,11 @@ export function computeAnalysis(input: {
   now?: number;
   /** Flüchtigkeitsfehler marked by the teacher count milder (lib/mastery.ts); default on. */
   careless?: boolean;
+  /** confirmed grades of Textarbeiten (lib/text-note.ts) */
+  texts?: TextGrade[];
 }): Analysis {
   const now = input.now ?? Date.now();
-  const evidence = collectEvidence(input.attempts, input.lessons, input.tests, { careless: input.careless });
+  const evidence = collectEvidence(input.attempts, input.lessons, input.tests, { careless: input.careless, texts: input.texts });
   const bySkill = new Map<string, Evidence[]>();
   for (const e of evidence) bySkill.set(e.skillId, [...(bySkill.get(e.skillId) ?? []), e]);
 

@@ -13,11 +13,12 @@
  *        (says little about the skill; only a teacher's mark counts, never the app's suggestion,
  *        and it can be switched off under Mehr › Datenqualität)
  *    A documented tutoring lesson counts with the teacher's rating (1–5 → 0…1),
- *    a Schularbeit/Test with its points or grade.
+ *    a Schularbeit/Test with its points or grade,
+ *    a Textarbeit with the grade the teacher confirmed (Gesamtnote, else the mean of the four Stufen; same scale as a test).
  *
  * 2. Every piece of evidence has a WEIGHT:
  *      task: by difficulty 1–5 → 0.6 / 0.8 / 1.0 / 1.25 / 1.5  (a hard task says more than an easy one)
- *      lesson rating: 1.5      test result: 2
+ *      lesson rating: 1.5      confirmed Textarbeit: 1.5      test result: 2
  *    and the weight halves every 45 days (RECENCY): last week's answers count far more than last term's.
  *
  * 3. Lernstand = weighted average of all scores, plus one neutral "virtual task" at 50 %,
@@ -28,14 +29,14 @@
  * 5. Status words: ≥ 85 % sicher · ≥ 70 % gut · ≥ 50 % üben · below kritisch · no evidence: nicht getestet.
  */
 
-export type EvidenceSource = "aufgabe" | "stunde" | "test";
+export type EvidenceSource = "aufgabe" | "stunde" | "test" | "text";
 export type Evidence = { skillId: string; score: number; weight: number; at: number; source: EvidenceSource };
 
 const DAY = 86_400_000;
 export const HALF_LIFE_DAYS = 45;
 export const PRIOR = { score: 0.5, weight: 1 };
 export const LEVEL_WEIGHT: Record<number, number> = { 1: 0.6, 2: 0.8, 3: 1, 4: 1.25, 5: 1.5 };
-export const SOURCE_WEIGHT: Record<EvidenceSource, number> = { aufgabe: 1, stunde: 1.5, test: 2 };
+export const SOURCE_WEIGHT: Record<EvidenceSource, number> = { aufgabe: 1, stunde: 1.5, test: 2, text: 1.5 };
 
 /** Fehlerarten that say little about understanding the skill (lib/error-types.ts). */
 export const CARELESS_TYPES: ReadonlySet<string> = new Set(["fluechtig", "gelesen"]);

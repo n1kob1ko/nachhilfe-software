@@ -9,13 +9,15 @@
 import { onUnitEnd } from "./ai/realtime";
 import { WEAK, STRONG, parseTime } from "./analysis";
 import { localStamp } from "./autodoc";
+import { KRITERIUM_KEYS, KRITERIUM_KURZ } from "./bewertung-kriterien";
 import { dokumentiereAblauf } from "./cockpit";
-import { db } from "./db";
-import { dokumentiereAutomatisch } from "./einschaetzung";
+import { db, json } from "./db";
+import { autoFelderVon, dokumentiereAutomatisch } from "./einschaetzung";
 import { isMinitest } from "./quick-round";
 import * as repo from "./repo";
 import { analyzeStudent } from "./service";
-import { textsForUnit } from "./texts";
+import { bewertungFuerBericht, type BerichtBewertung } from "./text-note";
+import { textsForUnit, type UnitText } from "./texts";
 import { notifyUnitClosed } from "./whiteboard";
 import { finishUnit, getUnit, touchUnit, unitDurationMs, type FinishOptions, type UnitView } from "./units";
 
@@ -103,7 +105,17 @@ export type UnitReport = {
   minitest?: { von: number; erledigt: number; richtig: number; falsch: string[] };
 };
 
-export type ReportText = { id: number; title: string; topic: string; subject: string; words: number; added: number; startedHere: boolean };
+export type ReportText = {
+  id: number;
+  title: string;
+  topic: string;
+  subject: string;
+  words: number;
+  added: number;
+  startedHere: boolean;
+  /** die Note, nur in der letzten Einheit des Texts (lib/text-note.ts): bestätigt mit Zahlen, sonst „offen“; fehlt sonst */
+  bewertung?: BerichtBewertung;
+};
 
 const PAUSE_MS = 2 * 60_000;
 
@@ -276,18 +288,37 @@ export function buildUnitReport(unit: UnitView, now = Date.now()): UnitReport {
     problemTasks: tasks.filter((t) => (t.finished && !t.correct) || t.help === "loesung" || t.tries >= 3).map((t) => t.taskId),
     tasks,
     ...(minitest ? { minitest } : {}),
-    texts: textsForUnit(unit.id).map((t) => ({ id: t.id, title: t.title, topic: t.topic, subject: t.subject, words: t.words_after, added: t.words_after - t.words_before, startedHere: Boolean(t.started_here) })),
+    texts: textsForUnit(unit.id).map((t) => reportText(t, unit.id)),
   };
+}
+
+function reportText(t: UnitText, unitId: number): ReportText {
+  const bewertung = bewertungFuerBericht(t.id, unitId);
+  return { id: t.id, title: t.title, topic: t.topic, subject: t.subject, words: t.words_after, added: t.words_after - t.words_before, startedHere: Boolean(t.started_here), ...(bewertung ? { bewertung } : {}) };
 }
 
 const pctText = (x: number | null) => (x === null ? "–" : `${Math.round(x * 100)} %`);
 const list = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} und ${xs[xs.length - 1]}`);
 
-/** "Textarbeit „Mein Ausflug“ (Erlebniserzählung, 246 Wörter)" */
+/**
+ * Die Note eines Texts in einer Zeile, wie bei anderen Übungen „x von y richtig“: „2 von 3 Arbeitsaufträgen erfüllt,
+ * Note 3 (Inhalt 3, Aufbau 2, Ausdruck 3, Sprache 4)“; „Bewertung offen“, solange die Lehrkraft nicht bestätigt hat
+ * (nie die Zahlen eines Vorschlags); '' ohne Note.
+ */
+export function bewertungText(b: BerichtBewertung | undefined): string {
+  if (!b) return "";
+  if (b.stand === "offen") return "Bewertung offen";
+  const stufen = KRITERIUM_KEYS.map((k) => `${KRITERIUM_KURZ[k]} ${b.stufen[k]}`).join(", ");
+  const auftraege = b.von ? `${b.erfuellt} von ${b.von} ${b.von === 1 ? "Arbeitsauftrag" : "Arbeitsaufträgen"} erfüllt, ` : "";
+  return `${auftraege}${b.note ? `Note ${b.note} (${stufen})` : `bewertet: ${stufen}`}`;
+}
+
+/** "Textarbeit „Mein Ausflug“ (Erlebniserzählung, 246 Wörter)", mit Note: "…: 2 von 3 Arbeitsaufträgen erfüllt, Note 3 (…)" */
 export function textLine(t: ReportText) {
   const words = `${t.words} ${t.words === 1 ? "Wort" : "Wörter"}`;
   const more = t.startedHere ? words : `weitergeschrieben, jetzt ${words}`;
-  return `Textarbeit „${t.title}“ (${t.topic && t.topic !== t.title ? `${t.topic}, ` : ""}${more})`;
+  const note = bewertungText(t.bewertung);
+  return `Textarbeit „${t.title}“ (${t.topic && t.topic !== t.title ? `${t.topic}, ` : ""}${more})${note ? `: ${note}` : ""}`;
 }
 
 /** Readable German summary, e.g. "Max arbeitete heute an der Bruchrechnung (Dividieren und Multiplizieren). …" */
@@ -413,6 +444,41 @@ export function writeLearningDoc(unit: UnitView, at = Date.now()): number {
   const subject = repo.getLesson(lessonId)?.subject;
   if (subject) db().prepare("UPDATE units SET subject = ? WHERE id = ?").run(subject, unit.id);
   return lessonId;
+}
+
+/**
+ * Nach „Bewertung übernehmen“ oder dem Zurücknehmen (lib/schreibauftrag-bewertung.ts): die Dokumentation jeder beendeten
+ * Einheit, in der der Text geschrieben wurde. Im gespeicherten Bericht steht die Note des Texts neu (bewertungFuerBericht);
+ * die Zusammenfassung und „Was wurde gemacht“ nur, wenn sie noch genau so lauten, wie die App sie geschrieben hat. Was die
+ * Lehrkraft geschrieben oder geändert hat, bleibt, wie es ist. Der Lernstand je Einheit (skill_snapshots) bleibt: er
+ * ist der Stand beim Beenden; der Lernstand jetzt rechnet die Note mit (lib/text-note.ts).
+ */
+export function textBewertungInDoku(textId: number) {
+  const units = db().prepare("SELECT unit_id FROM text_units WHERE text_id = ?").all(textId) as { unit_id: number }[];
+  for (const { unit_id } of units) {
+    const lesson = repo.getLessonForUnit(unit_id);
+    const r = lesson ? readReport(lesson) : null;
+    if (!lesson || !r?.texts?.some((t) => t.id === textId)) continue;
+    const b = bewertungFuerBericht(textId, unit_id);
+    const neu: UnitReport = {
+      ...r,
+      texts: r.texts.map((t) => {
+        if (t.id !== textId) return t;
+        const { bewertung: _alt, ...rest } = t;
+        return b ? { ...rest, bewertung: b } : rest;
+      }),
+    };
+    if (JSON.stringify(neu.texts) === JSON.stringify(r.texts)) continue;
+    const name = repo.getStudent(lesson.student_id)?.name ?? "";
+    const summary = lesson.summary === summarize(r, name) ? summarize(neu, name) : lesson.summary;
+    const autoActivities = autoFelderVon(lesson).has("activities") || lesson.activities === activitiesText(r);
+    const activities = autoActivities ? activitiesText(neu) : lesson.activities;
+    repo.saveLesson({ ...lesson, summary, activities, report: JSON.stringify(neu) }, lesson.id);
+    if (autoActivities) {
+      const auto = json<Record<string, unknown>>(lesson.auto_felder, {});
+      db().prepare("UPDATE lessons SET auto_felder = ? WHERE id = ?").run(JSON.stringify({ ...auto, activities }), lesson.id);
+    }
+  }
 }
 
 export function readReport(lesson: Pick<repo.Lesson, "report">): UnitReport | null {

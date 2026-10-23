@@ -117,7 +117,7 @@ export function AIStartButton({
                 {preview.pictures && <li>die kurzen Bildbeschreibungen ({preview.pictures.length} Bilder), nicht die Bilder selbst</li>}
                 {mitAufgabe && aufgabe && (
                   <li data-testid="ki-aufgabe-gesendet">
-                    für „Aufgabe erfüllt?“: die {aufgabe.punkte.length === 1 ? "Aufgabenstellung als ein Auftrag" : `${aufgabe.punkte.length} Arbeitsaufträge`}
+                    für „Aufgabe und Note“: die {aufgabe.punkte.length === 1 ? "Aufgabenstellung als ein Auftrag" : `${aufgabe.punkte.length} Arbeitsaufträge`}
                     {aufgabe.vorlage ? `, ${aufgabe.vorlage}` : ""}
                     {aufgabe.art === "schreibauftrag" ? " und der Erwartungshorizont" : ""}
                   </li>
@@ -130,13 +130,13 @@ export function AIStartButton({
             </div>
             {aufgabe && !recheck && (
               <div className="grid gap-2" data-testid="ki-aufgabe">
-                <p className="font-semibold">Aufgabe erfüllt?</p>
+                <p className="font-semibold">Aufgabe und Note</p>
                 {aufgabe.schonDa ? (
                   <p className="text-[14px] text-ink-2">Für diese Fassung schon geprüft. Sie wird nicht noch einmal gesendet.</p>
                 ) : aufgabe.grund && aufgabe.pruefbar ? (
                   <p className="text-[14px] text-ink-2">Wird diesmal nicht geprüft: {aufgabe.grund}</p>
                 ) : mitAufgabe ? (
-                  <p className="text-[14px] text-ink-2">Die KI prüft je Arbeitsauftrag, ob er erfüllt ist. Getrennt von der Sprache, der Text wird nicht umgeschrieben.</p>
+                  <p className="text-[14px] text-ink-2">Die KI prüft je Arbeitsauftrag, ob er erfüllt ist, und schlägt eine Stufe je Kriterium und eine Note vor. Sie gilt erst, wenn du sie übernimmst. Der Text wird nicht umgeschrieben.</p>
                 ) : null}
                 {!aufgabe.schonDa && <WasFehlt zeilen={aufgabe.zeilen} titel="Was fehlt" />}
               </div>

@@ -44,7 +44,7 @@ export default async function TextPage({ params, searchParams }: { params: Promi
   const correction = correctionInfoForStudent(text.student_id).get(text.id);
   const story = storyForEditor(text.id, "/material/bildgeschichte/bild");
   const auftrag = auftragFor(text.id);
-  const bewertung = auftrag ? bewertungInfo(text.id).bestaetigt : null;
+  const bewertung = bewertungInfo(text.id).bestaetigt;
   const pruefung = auftrag ? pruefungDesAuftrags(text.id) : null;
 
   const actions = (

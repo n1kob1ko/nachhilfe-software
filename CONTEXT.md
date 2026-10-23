@@ -307,23 +307,23 @@ Vorschlag ist „Ungeprüft“, bis sie speichert. Schüler sehen ihn nur gespei
 (`auftrag_erwartungen`, [docs/schreibauftraege.md](docs/schreibauftraege.md)).
 _Avoid_: Musterlösung, Lösung, Raster
 
-**Bewertung** (eines Schreibauftrags):
-Je Kriterium eine Stufe 1–5 wie die Notenstufen mit Begründung, dazu wahlweise eine Gesamtnote. Gilt nur, wenn die
-Lehrkraft sie bestätigt; ein Vorschlag der KI ist nur ein Vorschlag. Geht nicht in den Lernstand
-(`text_bewertungen`).
+**Bewertung** (einer Textarbeit, zuerst nur des Schreibauftrags):
+Je Kriterium eine Stufe 1–5 wie die Notenstufen mit Begründung, dazu eine Gesamtnote und das Urteil je
+**Arbeitsauftrag**. Die KI schlägt sie vor („Vorschlag der KI“); sie gilt erst, wenn die Lehrkraft sie mit „Bewertung
+übernehmen“ speichert. Dann steht sie in der Dokumentation der Einheit und zählt für den Lernstand der Fähigkeit der
+Textsorte; bis dahin steht dort „Bewertung offen“ (`text_bewertungen`, `lib/text-note.ts`).
 _Avoid_: Korrektur (das ist die Textkorrektur), Benotung, Punkte
 
-**Aufgabe erfüllt?**:
+**Aufgabe und Note** (zuerst „Aufgabe erfüllt?“):
 Der zweite Teil der Korrektur einer Textarbeit, neben „Sprache“: je **Arbeitsauftrag** ein Urteil (erfüllt,
-teilweise, fehlt, nicht beurteilbar) mit Begründung und geprüften Belegen. Die Aufträge liest die App aus der
-Aufgabenstellung, die KI beurteilt nur diese. Die erweiterte **Bewertung**, für jede Textarbeit; ein Klick auf
-„Korrigieren“ startet beide Teile. Nur für die Lehrkraft, nicht im Lernstand
-([docs/textkorrektur.md](docs/textkorrektur.md)).
+teilweise, fehlt, nicht beurteilbar) mit Begründung und geprüften Belegen, darunter die **Bewertung**. Die Aufträge
+liest die App aus der Aufgabenstellung, die KI beurteilt nur diese. Ein Klick auf „Korrigieren“ startet beide Teile.
+Nur für die Lehrkraft ([docs/textkorrektur.md](docs/textkorrektur.md)).
 _Avoid_: Inhaltskorrektur, zweite Korrektur, Note
 
 **Angabe** (einer Textarbeit):
 Was die Lehrkraft zur Aufgabe einfügt, etwa die Stellenanzeige zur Bewerbung oder die Notizen eines Arbeitsblatts.
-Nur für die Lehrkraft und **Aufgabe erfüllt?** (`text_angaben`). Beim **Schreibauftrag** ist es die **Textbeilage**.
+Nur für die Lehrkraft und **Aufgabe und Note** (`text_angaben`). Beim **Schreibauftrag** ist es die **Textbeilage**.
 _Avoid_: Textbeilage (die hat Zeilen und gehört zum Schreibauftrag), Material, Anhang
 
 **Zitatprüfung**:

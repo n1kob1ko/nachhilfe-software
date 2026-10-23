@@ -8,6 +8,9 @@ import { auftragFor } from "@/lib/schreibauftrag-store";
 import {
   bestaetigeBewertung,
   erwartungVorschlagen,
+  kriterienDesTexts,
+  nimmBewertungZurueck,
+  pruefungInfo,
   retryAufgabenPruefung,
   setzeFreigabe,
   speichereAngabe,
@@ -101,14 +104,31 @@ export async function speichereAngabeAction(textId: number, _prev: BewertungStat
   return { ok: true, meldung: "Angabe gespeichert." };
 }
 
-/** Die Lehrkraft bestätigt Stufen und Begründungen: nur das gilt als Bewertung. */
+/**
+ * „Bewertung übernehmen“: die Lehrkraft bestätigt Stufen, Note und das Urteil je Auftrag (vorher geändert oder nicht). Nur das
+ * gilt als Bewertung; ab jetzt steht sie in der Dokumentation und zählt für den Lernstand.
+ */
 export async function bestaetigeBewertungAction(textId: number, _prev: BewertungState, f: FormData): Promise<BewertungState> {
   const t = await requireTeacher();
-  const out = cleanBewertung((n) => f.get(n));
+  const text = getText(textId);
+  if (!text) return { ok: false, meldung: "Diesen Text gibt es nicht." };
+  const out = cleanBewertung((n) => f.get(n), { auftraege: pruefungInfo(textId).auftraege ?? [], namen: kriterienDesTexts(text) });
   if ("error" in out) return { ok: false, meldung: out.error };
-  if (!bestaetigeBewertung(textId, out.bewertung, t.id)) return { ok: false, meldung: "Diesen Schreibauftrag gibt es nicht." };
+  if (!bestaetigeBewertung(textId, out.bewertung, t.id)) return { ok: false, meldung: "Diesen Text gibt es nicht." };
   neuLaden(textId);
-  return { ok: true, meldung: "Bewertung bestätigt." };
+  revalidatePath(`/schueler/${text.student_id}`);
+  revalidatePath("/einheiten/[id]", "page");
+  return { ok: true, meldung: "Bewertung übernommen." };
+}
+
+/** „Bewertung zurücknehmen“: sie steht nicht mehr in der Dokumentation und zählt nicht mehr für den Lernstand. */
+export async function nimmBewertungZurueckAction(textId: number) {
+  await requireTeacher();
+  nimmBewertungZurueck(textId);
+  neuLaden(textId);
+  const text = getText(textId);
+  if (text) revalidatePath(`/schueler/${text.student_id}`);
+  revalidatePath("/einheiten/[id]", "page");
 }
 
 export async function verwirfBewertungVorschlagAction(textId: number) {

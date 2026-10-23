@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookMarked, CalendarClock, CalendarPlus, CalendarSync, Check, CheckCircle2, ChevronDown, FileCheck2, NotebookPen, PenLine, Play, Plus, Presentation } from "lucide-react";
+import { ArrowRight, BookMarked, CalendarClock, CalendarPlus, CalendarSync, Check, CheckCircle2, ChevronDown, ClipboardCheck, FileCheck2, NotebookPen, PenLine, Play, Plus, Presentation } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
 import { startUnitAction } from "@/app/session-actions";
 import { abhakenAction } from "@/app/zu-erledigen-actions";
@@ -462,7 +462,7 @@ function VorbereitungListe({ punkte, kosten }: { punkte: NaechsteEinheit[]; kost
   );
 }
 
-const TODO_ICON = { pruefung: CalendarClock, ergebnis: FileCheck2, hausuebung: NotebookPen, text: PenLine, terminanfrage: CalendarSync, einreichung: CalendarPlus };
+const TODO_ICON = { pruefung: CalendarClock, ergebnis: FileCheck2, hausuebung: NotebookPen, text: PenLine, bewertung: ClipboardCheck, terminanfrage: CalendarSync, einreichung: CalendarPlus };
 
 /** Was ein Punkt in „Zu erledigen“ sagt; der Zustand steht darunter. */
 function todoText(p: Punkt): React.ReactNode {
@@ -498,6 +498,13 @@ function todoText(p: Punkt): React.ReactNode {
       return (
         <>
           Text von {name} {p.zustand === "erledigt" ? "abgegeben" : "ansehen"}: {p.titel}
+        </>
+      );
+    case "bewertung":
+      return (
+        <>
+          Bewertung von {name} bestätigen: {p.titel}
+          {p.vorschlag && <span className="text-ink-2"> · Vorschlag da</span>}
         </>
       );
     case "terminanfrage":
