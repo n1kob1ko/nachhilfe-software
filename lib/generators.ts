@@ -1112,10 +1112,25 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
     return readingTasks(rng, req.subject, readingSkill?.id ?? req.skills[0]?.id ?? null, req.difficulty, req.count);
   }
   const skills = req.skills.filter((s) => !(s.id.endsWith("reading.comprehension") || s.id === "deutsch.text.verstehen"));
-  let i = 0;
+  // Je Fähigkeit: Aufgaben auf dem Blatt, Versuche, Doppelte hintereinander, keine neue Aufgabe mehr (freie Aufgaben aufgebraucht)
+  const anzahl = skills.map(() => 0);
+  const versuche = skills.map(() => 0);
+  const doppelt = skills.map(() => 0);
+  const aus = skills.map(() => false);
+  // Dran ist die Fähigkeit mit den wenigsten Aufgaben (bei Gleichstand die erste), damit sie gleich verteilt sind;
+  // eine, die nur noch Doppelte liefert, erst wieder, wenn keine andere mehr geht
+  const naechste = (): number => {
+    const offen = skills.map((_, k) => k).filter((k) => !aus[k]);
+    const frisch = offen.filter((k) => doppelt[k] < 20);
+    const wahl = frisch.length > 0 ? frisch : offen;
+    return wahl.reduce((a, b) => (anzahl[b] < anzahl[a] ? b : a), wahl[0] ?? -1);
+  };
   let guard = 0;
-  while (out.length < req.count && guard++ < req.count * 20 && skills.length > 0) {
-    const skill = skills[i++ % skills.length];
+  while (out.length < req.count && guard++ < req.count * 20) {
+    const k = naechste();
+    if (k < 0) break;
+    const skill = skills[k];
+    const runde = versuche[k]++;
     let t: TaskDraft;
     const figId = figurFaehigkeit(skill.id);
     // Rechenweg und Sachaufgabe: zuerst mit Bild (wenn es das für die Fähigkeit gibt), sonst lib/generators-mathe.ts
@@ -1128,15 +1143,18 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
           : null;
     if (isWortartenSkill(skill.id)) {
       const setting = req.wortarten ?? wortartenFor(req.skills.map((s) => s.id), req.grade ?? 5)!;
-      t = wortartenTask({ skillId: skill.id, setting, difficulty: req.difficulty, category: WORTART_CATEGORY[req.taskType] ?? null, variant: Math.floor((i - 1) / skills.length) + guard }, rng);
+      t = wortartenTask({ skillId: skill.id, setting, difficulty: req.difficulty, category: WORTART_CATEGORY[req.taskType] ?? null, variant: runde + guard }, rng);
     } else if (maths) {
       t = maths;
     } else if (figId && req.taskType !== "free") {
       // Aufgaben mit Bild: die Fähigkeit der Aufgabe ist die gewählte (auch eine Teilfähigkeit)
       t = fuerSkill(figurFuerTyp(figId, req, rng))!;
     } else if (req.taskType === "free" || req.taskType === "rechenweg" || req.taskType === "sachaufgabe" || !GEN[skill.id]) {
-      t = freeTask(skill.id, skill.name, req.difficulty, Math.floor((i - 1) / skills.length));
-      if (seen.has(t.prompt.split("\n")[0])) break;
+      t = freeTask(skill.id, skill.name, req.difficulty, runde);
+      if (seen.has(t.prompt.split("\n")[0])) {
+        aus[k] = true;
+        continue;
+      }
     } else if (istVokabelThema(skill.id)) {
       t = vokabelFuerTyp(skill.id, req.taskType, req.difficulty, rng);
     } else if (istEnglischGrammatik(skill.id)) {
@@ -1156,9 +1174,14 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
     }
     // Aufgaben mit Bild unterscheiden sich im Bild, englische im Satz (zweite Zeile), nicht in der ersten Zeile
     const key = t.data.figure || istEnglischGrammatik(skill.id) || istDeutschSatzlehre(skill.id) || istVokabelThema(skill.id) || istMatheMatura(skill.id) || istEnglischMaturaSkill(skill.id) ? aufgabenSchluessel(t) : t.prompt.split("\n")[0];
-    if (seen.has(key) && guard < req.count * 15) continue;
+    if (seen.has(key) && guard < req.count * 15) {
+      doppelt[k]++;
+      continue;
+    }
     seen.add(key);
     out.push(t);
+    anzahl[k]++;
+    doppelt[k] = 0;
   }
   return out;
 }
