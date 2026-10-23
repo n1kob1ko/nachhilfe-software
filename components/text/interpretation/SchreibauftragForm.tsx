@@ -5,7 +5,10 @@ import { BookOpenText, RotateCcw, WrapText } from "lucide-react";
 import type { AuftragFormState } from "@/app/schreibauftrag-actions";
 import { arbeitsauftrag, beispielFor, hasLongLines, kindsOf, planFor, SORTEN, wrapLines, type SorteKey } from "@/lib/schreibauftrag";
 import { cleanTarget, lastLine, MAX_TARGET, MIN_STORY_LINES, MIN_TARGET, numberedLines, wordRange } from "@/lib/textinterpretation";
+import { beilageLaenge, MAX_BEILAGE, MIN_BEILAGE, umfangVorgabe } from "@/lib/schreibauftrag-umfang";
+import { countWords } from "@/lib/text-doc";
 import { MerkmaleList, NumberedStory, SchreibplanList } from "./NumberedStory";
+import { PdfLesen } from "./PdfLesen";
 import { TextFotoLesen } from "./TextFotoLesen";
 
 export type AuftragDefaults = {
@@ -21,10 +24,14 @@ export type AuftragDefaults = {
   /** empty: the Arbeitsauftrag follows the entries until the teacher changes it */
   prompt: string;
   sourceNote: string;
+  /** Länge der Textbeilage in Wörtern, getrennt vom Wortziel; null = keine Vorgabe */
+  beilageZiel: number | null;
+  /** die Prüfung des Schülers, zu der der Auftrag gehört */
+  testId: number | null;
 };
 
-/** An empty form for a new Schreibauftrag of this Textsorte. */
-const emptyDefaults = (sorte: SorteKey): AuftragDefaults => ({
+/** An empty form for a new Schreibauftrag of this Textsorte; word target and length of the Textbeilage by Schulstufe. */
+const emptyDefaults = (sorte: SorteKey, stufe: number | null | undefined): AuftragDefaults => ({
   title: "",
   author: "",
   year: "",
@@ -32,10 +39,12 @@ const emptyDefaults = (sorte: SorteKey): AuftragDefaults => ({
   kind: SORTEN[sorte].defaultKind,
   story: "",
   countBlank: false,
-  target: SORTEN[sorte].target,
+  target: umfangVorgabe(sorte, stufe).target,
   situation: "",
   prompt: "",
   sourceNote: "",
+  beilageZiel: umfangVorgabe(sorte, stufe).beilage,
+  testId: null,
 });
 
 type Props = {
@@ -52,6 +61,12 @@ type Props = {
   /** the KI can read the printed text from a photo (lib/textinterpretation-foto.ts); only on click */
   kiLiest?: boolean;
   studentId?: number;
+  /** the student's Schulstufe: defaults for word target and length of the Textbeilage */
+  stufe?: number | null;
+  /** the student's Prüfungen the Auftrag can belong to */
+  pruefungen?: { id: number; label: string }[];
+  /** a new Auftrag that belongs to this Prüfung (from the Prüfung's page) */
+  pruefung?: number | null;
 };
 
 /**
@@ -60,9 +75,9 @@ type Props = {
  * with a whole paragraph in one line, can be broken into lines. The Arbeitsauftrag follows the entries until the
  * teacher writes their own.
  */
-export function SchreibauftragForm({ sorte, action, defaults: saved, device, name, submitLabel, note, kiLiest, studentId }: Props) {
+export function SchreibauftragForm({ sorte, action, defaults: saved, device, name, submitLabel, note, kiLiest, studentId, stufe, pruefungen = [], pruefung }: Props) {
   const s = SORTEN[sorte];
-  const defaults = saved ?? emptyDefaults(sorte);
+  const defaults = saved ?? { ...emptyDefaults(sorte, stufe), testId: pruefung ?? null };
   const story = s.beilage === "Geschichte";
   const [state, formAction, pending] = useActionState<AuftragFormState, FormData>(action, null);
   const [title, setTitle] = useState(defaults.title);
@@ -75,12 +90,14 @@ export function SchreibauftragForm({ sorte, action, defaults: saved, device, nam
   const [target, setTarget] = useState(String(defaults.target));
   const [situation, setSituation] = useState(defaults.situation);
   const [own, setOwn] = useState(defaults.prompt);
+  const [beilageZiel, setBeilageZiel] = useState(defaults.beilageZiel ? String(defaults.beilageZiel) : "");
   const words = cleanTarget(target, s.target);
   const auto = arbeitsauftrag({ sorte, title: title.trim() || "…", author, year, medium, kind, target: words, situation });
   const prompt = own || auto;
   const lines = useMemo(() => lastLine(numberedLines(text, countBlank)), [text, countBlank]);
   const blanks = useMemo(() => text.replace(/\r\n?/g, "\n").trim().split("\n").filter((l) => !l.trim()).length, [text]);
   const long = useMemo(() => hasLongLines(text), [text]);
+  const laenge = useMemo(() => beilageLaenge(countWords(text), Number(beilageZiel) > 0 ? Number(beilageZiel) : null), [text, beilageZiel]);
   const { min, max } = wordRange(words);
   const was = story ? "der Geschichte" : "der Textbeilage";
 
@@ -122,8 +139,9 @@ export function SchreibauftragForm({ sorte, action, defaults: saved, device, nam
               <span className="label">Jahr (wenn bekannt)</span>
               <input className="input" name="year" maxLength={20} inputMode="numeric" value={year} onChange={(e) => setYear(e.target.value)} />
             </label>
-            <KindSelect sorte={sorte} kind={kind} setKind={setKind} label="Textsorte" />
-            <TargetInput target={target} setTarget={setTarget} min={min} max={max} className="col-span-2 sm:col-span-1" />
+            <KindSelect sorte={sorte} kind={kind} setKind={setKind} label="Textsorte" className="col-span-1 sm:col-span-2" />
+            <BeilageInput value={beilageZiel} setValue={setBeilageZiel} was={was} />
+            <TargetInput target={target} setTarget={setTarget} min={min} max={max} />
           </div>
         ) : (
           <>
@@ -137,8 +155,9 @@ export function SchreibauftragForm({ sorte, action, defaults: saved, device, nam
                 <input className="input" name="year" maxLength={40} value={year} onChange={(e) => setYear(e.target.value)} placeholder="z. B. 12. März 2026" />
               </label>
             </div>
+            <KindSelect sorte={sorte} kind={kind} setKind={setKind} label="Art der Textbeilage" />
             <div className="grid grid-cols-2 gap-4">
-              <KindSelect sorte={sorte} kind={kind} setKind={setKind} label="Art der Textbeilage" />
+              <BeilageInput value={beilageZiel} setValue={setBeilageZiel} was={was} />
               <TargetInput target={target} setTarget={setTarget} min={min} max={max} />
             </div>
             {s.situation && (
@@ -160,7 +179,8 @@ export function SchreibauftragForm({ sorte, action, defaults: saved, device, nam
             <BookOpenText size={15} aria-hidden /> {story ? "Beispielgeschichte einfügen" : "Beispiel einfügen"}
           </button>
         </div>
-        <p className="text-[13px] text-ink-2">Füge den ganzen Text so ein, wie er auf dem Blatt steht: Jede Zeile bleibt eine Zeile und bekommt ihre Nummer. Kopiere ihn am besten aus einer PDF-Datei.</p>
+        <p className="text-[13px] text-ink-2">Ein eigener Text oder einer vom Blatt: Füge ihn so ein, wie er auf dem Blatt steht, oder übernimm ihn aus einem PDF. Jede Zeile bleibt eine Zeile und bekommt ihre Nummer.</p>
+        <PdfLesen onText={fromPhoto} kiLiest={Boolean(kiLiest)} />
         {kiLiest && <TextFotoLesen studentId={studentId} onText={fromPhoto} />}
         <textarea
           id="ti-story"
@@ -177,6 +197,12 @@ export function SchreibauftragForm({ sorte, action, defaults: saved, device, nam
         <p className="num text-[13px] text-ink-2" data-testid="zeilen-erkannt">
           {lines ? `${lines} Zeilen erkannt` : "Noch kein Text"}
           {lines > 0 && lines < MIN_STORY_LINES ? `: zu wenig für ${s.einen}, bitte mit Zeilenumbrüchen einfügen` : ""}
+          {lines > 0 && (
+            <span className={laenge.passt ? "" : "text-amber"} data-testid="beilage-laenge">
+              {" · "}
+              {laenge.text}
+            </span>
+          )}
         </p>
         {long && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-panel px-4 py-2 text-[14px]" data-testid="lange-zeilen">
@@ -224,6 +250,21 @@ export function SchreibauftragForm({ sorte, action, defaults: saved, device, nam
         <MerkmaleList merkmale={s.merkmale} className="mt-3" />
       </details>
 
+      {pruefungen.length > 0 && (
+        <label className="field">
+          <span className="label">Gehört zur Prüfung</span>
+          <select className="input" name="testId" defaultValue={defaults.testId ? String(defaults.testId) : ""} data-testid="pruefung">
+            <option value="">Keine</option>
+            {pruefungen.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+          <span className="text-[13px] text-ink-2">Der Auftrag steht dann auch bei der Prüfung.</span>
+        </label>
+      )}
+
       <label className="field">
         <span className="label">Quelle (nur für dich, wird nicht gedruckt)</span>
         <input className="input" name="sourceNote" maxLength={400} defaultValue={defaults.sourceNote} placeholder="z. B. Schulbuch S. 34 oder Kopie der Lehrerin" />
@@ -253,9 +294,9 @@ export function SchreibauftragForm({ sorte, action, defaults: saved, device, nam
   );
 }
 
-function KindSelect({ sorte, kind, setKind, label }: { sorte: SorteKey; kind: string; setKind: (k: string) => void; label: string }) {
+function KindSelect({ sorte, kind, setKind, label, className = "" }: { sorte: SorteKey; kind: string; setKind: (k: string) => void; label: string; className?: string }) {
   return (
-    <label className="field">
+    <label className={`field ${className}`}>
       <span className="label">{label}</span>
       <select className="input" name="kind" value={kind} onChange={(e) => setKind(e.target.value)}>
         {kindsOf(sorte).map((k) => (
@@ -268,10 +309,21 @@ function KindSelect({ sorte, kind, setKind, label }: { sorte: SorteKey; kind: st
   );
 }
 
+/** Die Länge der Textbeilage: eine eigene Zahl, getrennt vom Wortziel des Schülers. */
+function BeilageInput({ value, setValue, was }: { value: string; setValue: (v: string) => void; was: string }) {
+  return (
+    <label className="field">
+      <span className="label">Länge {was}</span>
+      <input className="input" name="beilageZiel" type="number" min={MIN_BEILAGE} max={MAX_BEILAGE} step={10} value={value} onChange={(e) => setValue(e.target.value)} placeholder="Wörter" data-testid="beilage-ziel" />
+      <span className="text-[13px] text-ink-2">Wörter, als Richtwert</span>
+    </label>
+  );
+}
+
 function TargetInput({ target, setTarget, min, max, className = "" }: { target: string; setTarget: (v: string) => void; min: number; max: number; className?: string }) {
   return (
     <label className={`field ${className}`}>
-      <span className="label">Wortziel</span>
+      <span className="label">Wortziel (Schülertext)</span>
       <input className="input" name="target" type="number" min={MIN_TARGET} max={MAX_TARGET} step={10} required value={target} onChange={(e) => setTarget(e.target.value)} />
       <span className="text-[13px] text-ink-2">
         Im Auftrag: {min} bis {max} Wörter

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BookOpenText, CheckCircle2, FileText, History, Images, Laptop, ListChecks, Printer, RotateCcw, SpellCheck, Tablet } from "lucide-react";
+import { BookOpenText, CheckCircle2, ClipboardCheck, FileText, History, Images, Laptop, ListChecks, Printer, RotateCcw, SpellCheck, Tablet } from "lucide-react";
 import { restoreRevisionAction, setTextStatusAction, showTextOnTabletAction, updateTextInfoAction } from "@/app/text-actions";
 import { auftragExercisesAction } from "@/app/schreibauftrag-actions";
 import { archiveTextAction, restoreTextAction } from "@/app/archiv-actions";
@@ -11,7 +11,8 @@ import { Pill, Reveal, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { fachNamen } from "@/lib/faecher";
 import { storyForEditor } from "@/lib/picture-story";
-import { auftragFor } from "@/lib/schreibauftrag-store";
+import { bewertungInfo, freigegebeneErwartung } from "@/lib/schreibauftrag-bewertung";
+import { auftragFor, pruefungDesAuftrags } from "@/lib/schreibauftrag-store";
 import { getText, listRevisions, textDoc, TEXT_KINDS, unitsOfText, wordsLabel } from "@/lib/texts";
 import { studentDevice } from "@/lib/live";
 import { correctionInfoForStudent } from "@/lib/text-correction";
@@ -42,6 +43,8 @@ export default async function TextPage({ params, searchParams }: { params: Promi
   const correction = correctionInfoForStudent(text.student_id).get(text.id);
   const story = storyForEditor(text.id, "/material/bildgeschichte/bild");
   const auftrag = auftragFor(text.id);
+  const bewertung = auftrag ? bewertungInfo(text.id).bestaetigt : null;
+  const pruefung = auftrag ? pruefungDesAuftrags(text.id) : null;
 
   const actions = (
     <>
@@ -60,6 +63,11 @@ export default async function TextPage({ params, searchParams }: { params: Promi
       {auftrag && (
         <Link href={`/texte/${text.id}/schreibauftrag`} className="btn btn-secondary" data-testid="text-und-auftrag">
           <BookOpenText size={16} aria-hidden /> Text und Auftrag
+        </Link>
+      )}
+      {auftrag && (
+        <Link href={`/texte/${text.id}/bewertung`} className="btn btn-secondary" data-testid="bewertung-link">
+          <ClipboardCheck size={16} aria-hidden /> {bewertung ? `Bewertung${bewertung.note ? ` · Note ${bewertung.note}` : " · bestätigt"}` : "Bewertung"}
         </Link>
       )}
       <Link href={`/texte/${text.id}/korrektur`} className="btn btn-secondary" data-testid="korrigieren">
@@ -115,6 +123,11 @@ export default async function TextPage({ params, searchParams }: { params: Promi
           </Pill>
         )}
         {text.status === "fertig" ? <Pill tone="green">fertig</Pill> : <Pill tone="amber">in Arbeit</Pill>}
+        {pruefung && (
+          <Link href={`/schueler/${pruefung.studentId}/pruefung/${pruefung.id}`} className="text-[14px] font-medium text-accent hover:underline" data-testid="auftrag-pruefung">
+            Zur Prüfung: {pruefung.label}
+          </Link>
+        )}
       </div>
       <ArchivMeldung archiv={sp.archiv} fehler={sp.fehler} archiviert="Archiviert." wiederhergestellt="Wiederhergestellt. Der Text steht wieder in der Liste." />
       {text.archived_at && (
@@ -137,6 +150,7 @@ export default async function TextPage({ params, searchParams }: { params: Promi
         pictures={story?.pictures}
         targetWords={story?.targetWords ?? auftrag?.target}
         auftrag={auftrag ?? undefined}
+        erwartung={auftrag ? (freigegebeneErwartung(text.id) ?? undefined) : undefined}
       />
 
       <div className="mt-8 grid max-w-[820px] gap-3">

@@ -12,6 +12,7 @@ import { aiEnabled } from "@/lib/ai";
 import { matchSkills, skillsForStudent, stoffVorschlag } from "@/lib/lehrplan";
 import { probeschularbeitenZu, punkteText } from "@/lib/probeschularbeit";
 import type { Skill } from "@/lib/repo";
+import { auftraegeZurPruefung } from "@/lib/schreibauftrag-store";
 
 export const metadata = { title: "Vorbereitung" };
 
@@ -45,6 +46,7 @@ export default async function ExamPrepPage({
   const offered = zuordnen ? [] : [...new Map([...skills.map((s) => s.skill), ...topics.flatMap((t) => matchSkills(t, test.subject, { student, limit: 6 }).map((m) => m.skill))].map((s) => [s.id, s])).values()];
   const zugeordnet = sp.zugeordnet !== undefined ? Number(sp.zugeordnet) : null;
   const proben = probeschularbeitenZu(test.id);
+  const auftraege = auftraegeZurPruefung(test.id);
   const builder = `/uebungen/neu?schueler=${student.id}&skills=${plan.map((p) => encodeURIComponent(p.skill.id)).join(",")}&anzahl=${Math.min(30, totalTasks)}`;
 
   return (
@@ -211,6 +213,35 @@ export default async function ExamPrepPage({
             </div>
           )}
         </section>
+
+        {(auftraege.length > 0 || /deutsch/i.test(test.subject)) && (
+          <section aria-label="Schreibaufträge" data-testid="pruefung-schreibauftraege">
+            <SectionTitle
+              action={
+                <Link href={`/schueler/${student.id}/schreibauftrag?pruefung=${test.id}`} className="btn btn-secondary btn-sm">
+                  <Plus size={15} aria-hidden /> Schreibauftrag dazu
+                </Link>
+              }
+            >
+              Schreibaufträge
+            </SectionTitle>
+            {auftraege.length > 0 ? (
+              <ul className="panel divide-y divide-line">
+                {auftraege.map((a) => (
+                  <li key={a.textId} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
+                    <Link href={`/texte/${a.textId}`} className="min-w-0 flex-1 font-medium hover:underline">
+                      {a.title}
+                    </Link>
+                    <span className="num text-[13px] text-ink-2">{a.words.toLocaleString("de-AT")} Wörter</span>
+                    {a.status === "fertig" ? <Pill tone="green">abgegeben</Pill> : <Pill tone="amber">in Arbeit</Pill>}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-[14px] text-ink-3">Noch keiner. Ein Schreibauftrag in der Textsorte der Schularbeit, mit eigener Textbeilage.</p>
+            )}
+          </section>
+        )}
 
         <section aria-label="Lernstand im Stoff">
           <SectionTitle>Lernstand im Stoff</SectionTitle>

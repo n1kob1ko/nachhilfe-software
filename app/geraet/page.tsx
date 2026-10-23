@@ -21,6 +21,7 @@ import { clientTasks } from "@/lib/solver-tasks";
 import { TextEditor } from "@/components/text/TextEditor";
 import { StudentCorrection } from "@/components/text/correction/StudentCorrection";
 import { storyForEditor } from "@/lib/picture-story";
+import { freigegebeneErwartung } from "@/lib/schreibauftrag-bewertung";
 import { auftragFor } from "@/lib/schreibauftrag-store";
 import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
 import { runningUnits } from "@/lib/units";
@@ -130,6 +131,7 @@ export default async function DevicePage() {
           pictures={story?.pictures}
           targetWords={story?.targetWords ?? auftrag?.target}
           auftrag={auftrag ?? undefined}
+          erwartung={auftrag ? (freigegebeneErwartung(text.id) ?? undefined) : undefined}
           handIn={text.status !== "fertig" ? { url: `/geraet/text/${text.id}/abgeben`, home: "/geraet/ansicht?zu=start" } : undefined}
         />
       </>

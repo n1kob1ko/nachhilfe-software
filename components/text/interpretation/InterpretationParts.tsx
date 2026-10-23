@@ -55,6 +55,31 @@ export function HintsPanel({ doc, auftrag }: { doc: TextDoc; auftrag: AuftragVie
 }
 
 /**
+ * „Darauf kommt es an“: the Erwartungshorizont the teacher saved and released, criterion by criterion. Never a
+ * suggestion that is not checked; the page only gets it when it is released (lib/schreibauftrag-bewertung.ts).
+ */
+export function ErwartungPanel({ erwartung }: { erwartung: { name: string; punkte: string[] }[] }) {
+  return (
+    <details className="ti-box" data-testid="erwartung-schueler">
+      <summary className="ti-summary">Darauf kommt es an</summary>
+      <p className="mt-1 text-[13px] text-ink-2">Was ein guter Text enthalten kann. Es gibt mehr als einen richtigen Weg.</p>
+      <div className="mt-2 grid gap-3">
+        {erwartung.map((k) => (
+          <div key={k.name}>
+            <p className="text-[12px] font-semibold tracking-[0.04em] text-accent uppercase">{k.name}</p>
+            <ul className="mt-1 grid list-disc gap-0.5 pl-5 text-[14px]">
+              {k.punkte.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+/**
  * „So kann es aussehen“: the Lernheft's model text of this Textsorte about its own example, part by part. A
  * Betreff, an Anrede or a Gruß stays on its own line, as in the letter.
  */
