@@ -32,7 +32,15 @@ und kein Passwort; wer den Link hat, sieht diese Seite (wie bisher).
 - Nach einer Einheit einmal **„Was war heute schwer?“** (Antworten zum Antippen, freier Text,
   „Überspringen“), danach die eigene Notiz zum Ändern; unter dem nächsten Termin **„Für nächstes Mal“**,
   jederzeit. Beides bis zur nächsten Einheit änderbar, nur die eigenen Worte (`lib/schueler-notiz.ts`).
-- Darunter wie bisher die offenen Übungen, der Fortschritt und „Erledigt“.
+- **Kommende Prüfungen** (nach dem nächsten Termin): nur geplante ab heute, die nächste zuerst, mit Art, Fach
+  und dem Stoff kurz. Vergangene und abgesagte nicht.
+- **Hausübungen:** die offenen zuerst (überfällig, heute, morgen markiert), mit Übung führt die Zeile zu ihr;
+  erledigte (abgehakt oder Übung fertig) unter „Erledigt“. Ohne Hausübung kein Abschnitt.
+- Darunter wie bisher die offenen Übungen.
+- **Deine Unterlagen:** die Präsentationen aus seinen Einheiten (Lernpaket im Cockpit), abgespielt wie in der
+  Schüleransicht, ohne Vortragstext; und die Übungen mit freigegebener Lösung („Hilfen und Lösung“ oder „Alles“).
+- **Vergangene Einheiten:** Datum, Fach, Thema, geübte Fähigkeiten, gelöste Aufgaben. Keine Notizen des Lehrers.
+- Dann wie bisher der Fortschritt und „Erledigt“.
 
 ## Technik
 
@@ -43,6 +51,9 @@ und kein Passwort; wer den Link hat, sieht diese Seite (wie bisher).
 | `app/lernen/[token]/layout.tsx` | verweist auf das Manifest, `appleWebApp` für iOS, `noindex`, Farbe der Statusleiste |
 | `components/AppHinweis.tsx` | der Hinweis „Lernheft als App“ mit Install-Knopf, wo der Browser ihn anbietet |
 | `components/SchuelerAppLink.tsx` | Link, Öffnen und QR-Code am Schülerprofil |
+| `lib/schuelerportal.ts` | die Übersicht: Prüfungen, Hausübungen, Unterlagen, vergangene Einheiten; nur seine Zeilen, nur freigegebene Felder |
+| `components/lernen/` | die Abschnitte der Übersicht |
+| `app/lernen/[token]/praesentation/[id]/page.tsx` | eine Präsentation aus „Deine Unterlagen“; jede andere id ist 404 |
 
 Es gibt **kein globales Manifest** (`app/manifest.ts`): das würde auch für die Lehrer-Seiten gelten
 und als Start nicht den Link des Schülers kennen. Die Lehrer-Seiten bleiben, wie sie sind.
