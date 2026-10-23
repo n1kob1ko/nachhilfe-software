@@ -17,6 +17,7 @@ import { analyzeStudent, buildWorksheet, submitAnswer, type SubmitInput } from "
 import { runningUnitForStudent } from "@/lib/units";
 import { dayOf } from "@/lib/exams";
 import { findNextStep } from "@/lib/recommend";
+import { pruefeEinzeltermin } from "@/lib/planung/repo";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const int = (f: FormData, k: string) => {
@@ -73,8 +74,34 @@ export async function deleteStudentAction(id: number) {
 }
 
 // ---------- lessons ----------
+/**
+ * Eine von Hand geplante Einheit überschneidet sich nicht mit dem Wochenplan oder einer anderen geplanten Einheit
+ * (Plan 3.3, lib/planung/repo.ts `pruefeEinzeltermin`). Geprüft wird nur, was geplant ist und sich an Zeit, Dauer,
+ * Lehrer oder Status geändert hat; Dokumentiertes bleibt, wie es war. null = passt.
+ */
+function einzelterminFehler(formData: FormData): string | null {
+  const id = int(formData, "id");
+  if ((str(formData, "status") || "geplant") !== "geplant") return null;
+  const lesson = { starts_at: str(formData, "starts_at"), duration_min: int(formData, "duration_min") || 60, teacher_id: int(formData, "teacher_id") || null, student_id: int(formData, "student_id") };
+  const vorher = id ? repo.getLesson(id) : null;
+  if (vorher && vorher.status === "geplant" && vorher.starts_at === lesson.starts_at && vorher.duration_min === lesson.duration_min && vorher.teacher_id === lesson.teacher_id) return null;
+  const r = pruefeEinzeltermin({ ...lesson, gleichzeitig: str(formData, "gleichzeitig") === "1", ausserLessonId: id || undefined });
+  return r.ok ? null : r.fehler;
+}
+
+/** Vorab im Formular, damit nichts Getipptes verloren geht; saveLessonAction prüft trotzdem selbst. */
+export async function pruefeEinzelterminAction(formData: FormData): Promise<string | null> {
+  await requireTeacher();
+  return einzelterminFehler(formData);
+}
+
 export async function saveLessonAction(formData: FormData) {
   await requireTeacher();
+  const ueberschneidung = einzelterminFehler(formData);
+  if (ueberschneidung) {
+    const lessonId = int(formData, "id");
+    redirect(`/schueler/${int(formData, "student_id")}/stunden/${lessonId || "neu"}?fehler=${encodeURIComponent(ueberschneidung)}`);
+  }
   const id = int(formData, "id");
   const studentId = int(formData, "student_id");
   noteActivity(studentId);

@@ -14,6 +14,8 @@
  *   verknüpfte Übung fertig ist (homework.assignment_id).
  * - Text: eine abgegebene Textarbeit. Wartet auf Lehrerbewertung, bis es eine Korrektur dieser Fassung
  *   gibt oder der Lehrer sie abhakt.
+ * - Terminanfrage (lib/planung/terminanfragen.ts): für die Verwaltung jede offene Anfrage, für einen Lehrer ein
+ *   Tausch, der auf seine Zustimmung wartet. Offen, bis sie entschieden ist.
  * - Eingetragene Prüfung: was ein Schüler in seiner App eingetragen hat (lib/pruefliste.ts), zu prüfen oder schon
  *   als Prüfung eingetragen. Wartet auf Lehrerbewertung (zu prüfen) oder Offen (schon eingetragen), bis ein Lehrer
  *   sie in der Prüfliste übernimmt, bestätigt oder verwirft.
@@ -23,6 +25,7 @@
  */
 import { db } from "./db";
 import { examReminders, type ExamReminder } from "./exams";
+import { anfragenZuErledigen } from "./planung/terminanfragen";
 import { tagAddieren } from "./planung/zeit";
 import { homeworkOpen, type HomeworkView } from "./repo";
 
@@ -33,7 +36,7 @@ export const ZUSTAND_TONE: Record<Zustand, "neutral" | "red" | "amber" | "green"
 /** Wie lange ein ungesehenes Ergebnis oder ein abgegebener Text in der Liste bleibt, und wie weit „Erledigt“ zurückreicht. */
 export const FENSTER_TAGE = 7;
 
-export type Art = "pruefung" | "ergebnis" | "hausuebung" | "text" | "einreichung";
+export type Art = "pruefung" | "ergebnis" | "hausuebung" | "text" | "terminanfrage" | "einreichung";
 /** Was „Abhaken“ in der Liste tut: Hausübung als erledigt markieren oder als gesehen merken. */
 export type Abhaken = { art: "hausuebung" | "ergebnis" | "text"; id: number; studentId: number };
 
@@ -43,6 +46,7 @@ export type Punkt =
   | (Basis & { art: "ergebnis"; titel: string; richtig: number; aufgaben: number; zuBewerten: number })
   | (Basis & { art: "hausuebung"; beschreibung: string; uebung: string | null })
   | (Basis & { art: "text"; titel: string })
+  | (Basis & { art: "terminanfrage"; aufgabe: "bestaetigen" | "zustimmen"; beschreibung: string })
   | (Basis & { art: "einreichung"; titel: string; pruefungsDatum: string | null; zuPruefen: boolean; uebernommen: boolean });
 
 // ---------- der Zustand, rein aus den Daten ----------
@@ -166,6 +170,10 @@ export function zuErledigen(teacherId: number, heute: string, now = new Date()):
     });
   }
 
+  const ich = conn.prepare("SELECT id, is_admin FROM teachers WHERE id = ?").get(teacherId) as { id: number; is_admin: number } | undefined;
+  for (const a of ich ? anfragenZuErledigen(ich) : []) {
+    punkte.push({ key: `ta${a.id}`, art: "terminanfrage", zustand: "offen", studentId: a.studentId, studentName: a.studentName, href: a.href, datum: a.datum, abhaken: null, aufgabe: a.aufgabe, beschreibung: a.beschreibung });
+  }
   // vom Schüler eingetragene Prüfungen: offen bis zur Entscheidung in der Prüfliste, entschiedene der letzten Tage
   const einreichungen = conn
     .prepare(

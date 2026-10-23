@@ -10,6 +10,9 @@ import { Unterlagen } from "@/components/lernen/Unterlagen";
 import { VergangeneEinheiten } from "@/components/lernen/VergangeneEinheiten";
 import { NaechstesMal, SchuelerNotizFrage } from "@/components/SchuelerNotizFrage";
 import { termineFuerSchueler } from "@/lib/planung/schueler-termine";
+import { anfragbareTermine, anfragenFuerSchueler } from "@/lib/planung/terminanfragen";
+import { antwortSchuelerAction, stelleSchuelerAnfrageAction } from "@/app/terminanfrage-actions";
+import { AnfrageMeldung, AnfragenListe, TerminAendern } from "@/components/planung/Terminanfragen";
 import { eintraegeFuerSchueler, STATUS_LABEL } from "@/lib/pruefliste";
 import * as repo from "@/lib/repo";
 import { activeMaterial, materialLabel } from "@/lib/current-material";
@@ -24,8 +27,9 @@ const bildThema = (studentId: number) => {
   return m ? `${m.topic} ${materialLabel(m)}` : null;
 };
 
-export default async function LearnHome({ params }: { params: Promise<{ token: string }> }) {
+export default async function LearnHome({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ anfrage_ok?: string; anfrage_fehler?: string }> }) {
   const { token } = await params;
+  const sp = await searchParams;
   const student = repo.getStudentByToken(token);
   if (!student) notFound();
   const list = repo.listAssignments(student.id);
@@ -38,6 +42,10 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
 
   // wo und wann: nur veröffentlichte Plätze, ohne Namen (lib/planung/schueler-termine.ts)
   const { naechster, wochen } = termineFuerSchueler(student.id);
+  // Terminanfragen: verschieben oder tauschen; ein anderer Schüler erscheint nur als Zeit (lib/planung/terminanfragen.ts)
+  const aenderbar = new Map(anfragbareTermine({ schuelerId: student.id }).map((t) => [t.id, t]));
+  const anfragen = anfragenFuerSchueler(student.id);
+  const mitAnfrage = new Set(anfragen.filter((x) => x.status === "wartet" || x.status === "offen").flatMap((x) => x.platzIds));
   // eingetragene Prüfungen: nur die eigenen Angaben und der Stand (lib/pruefliste.ts)
   const pruefungen = eintraegeFuerSchueler(student.id);
   // „Was war heute schwer?“ nach der letzten Einheit und „Für nächstes Mal“, nur die eigenen (lib/schueler-notiz.ts)
@@ -99,10 +107,11 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
       <KommendePruefungen studentId={student.id} />
       <Hausuebungen studentId={student.id} token={token} />
 
-      <section className="panel mt-8 px-5 py-5" aria-label="Deine Termine" data-testid="termine">
+            <section id="terminanfragen" className="panel mt-8 scroll-mt-4 px-5 py-5" aria-label="Deine Termine" data-testid="termine">
         <h2 className="flex items-center gap-2 text-[18px] font-semibold">
           <CalendarDays size={18} className="text-accent" aria-hidden /> Deine Termine
         </h2>
+        <AnfrageMeldung ok={sp.anfrage_ok} fehler={sp.anfrage_fehler} />
         {wochen.map((w) => (
           <div key={w.wochenstart} className="mt-4">
             <p className="text-[13px] font-semibold text-ink-2">
@@ -118,6 +127,7 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
                       <span className="num font-semibold">{t.label}</span>
                       <span className="num">{t.zeit}</span>
                       {t.heute && !t.vorbei && <Pill tone="accent">heute</Pill>}
+                      {mitAnfrage.has(t.id) && <Pill tone="amber">Anfrage offen</Pill>}
                     </span>
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-ink-2">
                       <DoorOpen size={15} className="shrink-0 text-ink-3" aria-hidden />
@@ -125,12 +135,19 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
                       {!t.raumOffen && <Pill tone={t.online ? "accent" : "neutral"}>{t.online ? "online" : "vor Ort"}</Pill>}
                       {t.nichtStattgefunden && <span className="text-[13px] text-ink-3">nicht stattgefunden</span>}
                     </span>
+                    {aenderbar.has(t.id) && <TerminAendern termin={aenderbar.get(t.id)!} aktion={stelleSchuelerAnfrageAction.bind(null, token)} schueler />}
                   </li>
                 ))}
               </ul>
             )}
           </div>
         ))}
+        {anfragen.length > 0 && (
+          <div className="mt-5">
+            <p className="mb-2 text-[13px] font-semibold text-ink-2">Deine Anfragen</p>
+            <AnfragenListe anfragen={anfragen} antwort={(a, was) => antwortSchuelerAction.bind(null, token, a.id, was)} schueler />
+          </div>
+        )}
       </section>
 
       <AppHinweis />

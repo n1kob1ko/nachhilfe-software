@@ -1,8 +1,12 @@
 import { Wochenplan, type PlanungFilterWerte, type Vorgabe } from "@/components/planung/Wochenplan";
-import { PageHeader } from "@/components/ui";
+import { antwortLehrerAction, bestaetigeAnfrageAction } from "@/app/terminanfrage-actions";
+import { AnfrageMeldung, AnfragenListe } from "@/components/planung/Terminanfragen";
+import { PageHeader, SectionTitle } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { darfWocheSehen, darfWochenplanBearbeiten } from "@/lib/planung/berechtigungen";
 import { leseRegeln, pruefeRegeln, regelnJson } from "@/lib/planung/regeln";
+import { listRaeume } from "@/lib/planung/repo";
+import { anfragenFuerVerwaltung } from "@/lib/planung/terminanfragen";
 import { wochenUebersicht } from "@/lib/planung/uebersicht";
 import { istDatum, wochenstartVon, wienerWochenstart, type Wochentag } from "@/lib/planung/zeit";
 
@@ -21,7 +25,7 @@ export const metadata = { title: "Planung" };
 export default async function PlanungPage({
   searchParams,
 }: {
-  searchParams: Promise<{ woche?: string; lehrer?: string; raum?: string; schueler?: string; neu?: string; bei?: string; tag?: string; um?: string; platz?: string; regeln?: string; ok?: string; fehler?: string }>;
+  searchParams: Promise<{ woche?: string; lehrer?: string; raum?: string; schueler?: string; neu?: string; bei?: string; tag?: string; um?: string; platz?: string; regeln?: string; ok?: string; fehler?: string; anfrage_ok?: string; anfrage_fehler?: string }>;
 }) {
   const me = await requireTeacher();
   const sp = await searchParams;
@@ -54,6 +58,11 @@ export default async function PlanungPage({
     startMin: sp.um && Number.isInteger(um) && um >= 0 && um < 1440 ? um : undefined,
   };
 
+  // Terminanfragen (lib/planung/terminanfragen.ts): hier bestätigt oder lehnt die Verwaltung ab
+  const anfragen = darfBearbeiten ? anfragenFuerVerwaltung() : [];
+  const offeneAnfragen = anfragen.filter((a) => a.status === "offen" || a.status === "wartet");
+  const erledigteAnfragen = anfragen.filter((a) => a.status !== "offen" && a.status !== "wartet");
+
   const regelnRoh = regelnJson();
   const regelnGebrochen = !!regelnRoh && !pruefeRegeln(regelnRoh).ok;
 
@@ -76,6 +85,32 @@ export default async function PlanungPage({
         <p className="mb-4 rounded-2xl px-4 py-3 text-[14px] text-amber" role="status" style={{ background: "var(--amber-wash)" }}>
           Die Woche eines anderen Lehrers ist hier nicht sichtbar. Du siehst deine eigene veröffentlichte Woche.
         </p>
+      )}
+
+      {darfBearbeiten && (anfragen.length > 0 || sp.anfrage_ok || sp.anfrage_fehler) && (
+        <section id="terminanfragen" className="mb-8 scroll-mt-4" aria-label="Terminanfragen">
+          <SectionTitle>{offeneAnfragen.length ? `Terminanfragen: ${offeneAnfragen.length} offen` : "Terminanfragen"}</SectionTitle>
+          <AnfrageMeldung ok={sp.anfrage_ok} fehler={sp.anfrage_fehler} />
+          {offeneAnfragen.length > 0 && (
+            <div className="mt-3">
+              <AnfragenListe
+                anfragen={offeneAnfragen}
+                antwort={(a) => antwortLehrerAction.bind(null, a.id)}
+                bestaetigen={(a) => bestaetigeAnfrageAction.bind(null, a.id)}
+                zurueck={zurueck}
+                raeume={listRaeume()}
+              />
+            </div>
+          )}
+          {erledigteAnfragen.length > 0 && (
+            <details className="group mt-3">
+              <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center text-[14px] font-medium text-ink-2 hover:text-ink">
+                Entschieden <span className="num ml-1">({erledigteAnfragen.length})</span>
+              </summary>
+              <AnfragenListe anfragen={erledigteAnfragen} antwort={(a) => antwortLehrerAction.bind(null, a.id)} />
+            </details>
+          )}
+        </section>
       )}
 
       <Wochenplan
