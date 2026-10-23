@@ -185,7 +185,7 @@ export function paketWahl(studentId: number, o: { fach?: string; ausser?: number
   const t = repo.upcomingTests(heute, studentId)[0];
   const days = t ? daysUntil(t.date, heute) : null;
   const pruefung: Pruefung | null =
-    t && days !== null ? { days, subject: t.subject, skill_ids: t.skill_ids, topics: t.topics?.length ? t.topics : t.topic ? [t.topic] : [], label: `${t.title || `${t.kind} ${t.subject}`} ${wann(days)}` } : null;
+    t && days !== null ? { days, subject: t.subject, skill_ids: t.skill_ids, topics: t.topics?.length ? t.topics : t.topic ? [t.topic] : [], label: `${t.title || `${t.kind} ${t.subject}`} ${wann(days)}${t.quelle === "schueler" ? " (vom Schüler eingetragen)" : ""}` } : null;
   const e: VorschlagEingabe = {
     pakete,
     schulstufe: student.grade || null,

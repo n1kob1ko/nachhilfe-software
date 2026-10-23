@@ -395,6 +395,14 @@ lesen und das Formular vorfüllen; gespeichert wird erst, wenn der Lehrer eintr�
 ([docs/stoffzettel.md](docs/stoffzettel.md)). Nicht verwechseln mit **Foto vom Stoff** (daraus wird eine Übung).
 _Avoid_: Stoffangabe, Prüfungsstoff-Upload, Anhang
 
+**Prüfliste**:
+Was ein **Schüler** in seiner App unter „Prüfung eintragen“ eingetragen hat (Art, Fach, Datum, Stoff, Notiz,
+Fotos vom **Stoffzettel**), soweit es noch ein Lehrer ansehen soll. Ist alles klar (vor allem ein sicheres Datum),
+wird gleich eine Schularbeit „vom Schüler eingetragen“ (`tests.quelle = 'schueler'`); sonst wartet der Eintrag
+hier, ohne Termin. Am Profil unter Stoff & Prüfungen und in „Zu erledigen“; der Lehrer ändert, übernimmt oder
+verwirft ([docs/stoffzettel.md](docs/stoffzettel.md), `lib/pruefliste.ts`).
+_Avoid_: Einreichungen, Posteingang, Prüfungsvorschläge
+
 **Stoff zuordnen**:
 Die Punkte des Stoffs einer **Schularbeit** mit **Fähigkeiten** verknüpfen; erst dann gibt es Plan und
 **Probeschularbeit**. Ohne KI vorgeschlagen (`stoffVorschlag` in `lib/lehrplan.ts`): angehakt ist nur, was

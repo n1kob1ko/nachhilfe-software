@@ -8,7 +8,7 @@ import { Abschnitt, kalenderblatt, tagLabel } from "./Abschnitt";
 export function KommendePruefungen({ studentId }: { studentId: number }) {
   const liste = kommendePruefungen(studentId);
   return (
-    <Abschnitt titel="Kommende Prüfungen" icon={GraduationCap} anzahl={liste.length} testId="pruefungen">
+    <Abschnitt titel="Kommende Prüfungen" icon={GraduationCap} anzahl={liste.length} testId="kommende-pruefungen">
       {liste.length === 0 ? (
         <p className="mt-2 text-[15px] text-ink-2">Keine Prüfungen eingetragen.</p>
       ) : (
