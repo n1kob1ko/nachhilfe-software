@@ -189,7 +189,11 @@ test("Dokumentation: „Bewertung offen“ und ein Punkt in „Zu erledigen“, 
   // noch einmal übernommen, mit einer anderen Note: ersetzt, zählt nicht doppelt
   const zwei = cleanBewertung((n) => ({ ...form, note: "2", s_inhalt: "2" })[n], { auftraege: p.auftraege! });
   assert.ok("bewertung" in zwei);
+  // inzwischen „Wieder öffnen“ getippt: die übernommene Note macht den Text wieder fertig
+  const texts = await import("./texts");
+  texts.setTextStatus(s.textId, "offen");
   s.sb.bestaetigeBewertung(s.textId, zwei.bewertung, s.niko.id);
+  assert.equal(texts.getText(s.textId)!.status, "fertig", "Note übernommen: Text fertig, nicht mehr „in Arbeit“");
   const nach2 = (await lernstand(s.sid, "deutsch.schreiben.bewerbung"))!;
   assert.ok(Math.abs(nach2 - erwartet(2)) < 0.005, `${nach2} ≈ ${erwartet(2)}: ersetzt, nicht dazugezählt`);
   assert.ok(s.repo.getLesson(lessonId)!.summary.includes("Note 2 (Inhalt 2, Aufbau 2, Ausdruck 3, Sprache 4)"));

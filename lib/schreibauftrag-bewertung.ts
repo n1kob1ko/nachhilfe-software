@@ -54,7 +54,7 @@ import { skillFuerText, type SkillInfo } from "./text-note";
 import { blockText, parseDoc } from "./text-doc";
 import { foundNames, levelOfText, maskText, namePattern, namesToHide, startAICorrection, type CorrectionMethod, type StartResult } from "./text-correction";
 import { bareText, cleanStory } from "./textinterpretation";
-import { getText, type TextView } from "./texts";
+import { getText, setTextStatus, type TextView } from "./texts";
 import { pruefgrundlage, type GefundenerBeleg } from "./zitatpruefung";
 
 const iso = () => new Date().toISOString();
@@ -356,6 +356,8 @@ export function bestaetigeBewertung(textId: number, b: Bewertung, teacherId: num
   db()
     .prepare(`UPDATE text_bewertungen SET kriterien = ?, note = ?, version = ?, bestaetigt_at = ?, bestaetigt_von = ?, lernstand_skill = ?, ${OHNE_VORSCHLAG} WHERE text_id = ?`)
     .run(JSON.stringify(b), b.note, text.version, iso(), teacherId, lernstandSkillFuer(text)?.id ?? "", textId);
+  // eine übernommene Note heißt: der Text ist fertig (sonst steht er weiter „in Arbeit“ in Lernverlauf und Liste)
+  if (text.status !== "fertig") setTextStatus(textId, "fertig");
   textBewertungInDoku(textId);
   return true;
 }
