@@ -16,6 +16,8 @@ import {
 } from "@/app/lernpaket-actions";
 import { verknuepfeLernpaketAction } from "@/app/praesentation-actions";
 import { StatusPill } from "@/components/LernpaketStatus";
+import { KiVorschlag } from "@/components/praesentation/KiVorschlag";
+import { PraesentationKiKnopf } from "@/components/praesentation/PraesentationKiKnopf";
 import { SkillPicker } from "@/components/SkillPicker";
 import { TaskBody } from "@/components/TaskPreview";
 import { PageHeader, Pill, Reveal, SectionTitle, formatDate } from "@/components/ui";
@@ -26,13 +28,14 @@ import { DIFFICULTIES, TASK_TYPES } from "@/lib/curriculum";
 import { kiKosten } from "@/lib/lernpaket-ki";
 import { searchLibrary } from "@/lib/library";
 import { getLernpaket, GRENZEN, offeneHinweise, PAKET_QUELLE, SCHRITT_ARTEN, ungeprueft, type LernpaketSchritt } from "@/lib/lernpakete";
-import { getPraesentation, listPraesentationen } from "@/lib/praesentationen";
+import { getPraesentation, listPraesentationen, praesUngeprueft } from "@/lib/praesentationen";
+import { offenerPraesEntwurf, praesKiAusGrund, praesKostenSchaetzung } from "@/lib/praesentation-ki";
 import * as repo from "@/lib/repo";
 import { fachVorschlaege, klassenLabel, SCHOOL_TYPES } from "@/lib/school";
 
 export const metadata = { title: "Lernpaket" };
 
-type Params = { bearbeiten?: string; schritt?: string; neuerSchritt?: string; fehler?: string; importiert?: string; ki?: string; weggelassen?: string; geprueft?: string; gespeichert?: string; archiviert?: string; wiederhergestellt?: string };
+type Params = { bearbeiten?: string; schritt?: string; neuerSchritt?: string; fehler?: string; importiert?: string; ki?: string; weggelassen?: string; geprueft?: string; gespeichert?: string; archiviert?: string; wiederhergestellt?: string; praesentation?: string; verworfen?: string; vorschlag?: string };
 const LP = "/mehr/lernpakete";
 
 /** The teacher's script fields of a step, in the order they are used. */
@@ -77,6 +80,11 @@ export default async function LernpaketPage({ params, searchParams }: { params: 
   // to choose from: the presentations of the package's Fach first, the linked one even when archived
   const praesAuswahl = bearbeiten ? [...listPraesentationen()].sort((a, b) => Number(b.fach === p.fach) - Number(a.fach === p.fach) || a.title.localeCompare(b.title, "de")) : [];
   if (bearbeiten && praes && !praesAuswahl.some((x) => x.id === praes.id)) praesAuswahl.unshift(praes);
+  // „Präsentation erstellen“ (lib/praesentation-ki.ts): from a checked package; an open proposal shows instead of the button
+  const vorschlag = archiviert || bearbeiten ? null : offenerPraesEntwurf(p.id);
+  const praesKi = !archiviert && !bearbeiten && !vorschlag && p.status === "geprueft" && p.schritte.length > 0;
+  const praesKiAus = praesKi ? praesKiAusGrund() : null;
+  const praesKosten = praesKi ? praesKostenSchaetzung(p).text : "";
 
   const kosten = p.quelle === "ki" ? kiKosten(p.ki_call_id) : null;
   const weggelassen = Number(sp.weggelassen) || 0;
@@ -92,7 +100,11 @@ export default async function LernpaketPage({ params, searchParams }: { params: 
           ? "Archiviert. Das Paket ist unter „Archiviert“ weiter da."
           : sp.wiederhergestellt
             ? "Wiederhergestellt."
-            : null;
+            : sp.praesentation
+              ? "Präsentation übernommen und mit dem Paket verknüpft. Die Schritte zeigen jetzt ihre Folien. Sieh sie dir im Vortrag an und markiere sie dort als geprüft."
+              : sp.verworfen
+                ? "Vorschlag verworfen."
+                : null;
 
   return (
     <>
@@ -243,12 +255,43 @@ export default async function LernpaketPage({ params, searchParams }: { params: 
             <span className="text-ink-3">Präsentation: </span>
             <span className="font-semibold">{praes.title}</span>
             {praes.status === "archiviert" && <span className="text-ink-3"> (archiviert)</span>}
+            {praesUngeprueft(praes) && (
+              <>
+                {" "}
+                <Pill tone="amber" title="Von der KI erstellt und noch von niemandem geprüft">
+                  <ShieldAlert size={12} aria-hidden /> Ungeprüft
+                </Pill>
+              </>
+            )}
           </p>
           <Link href={`/mehr/praesentationen/${praes.id}`} className="btn btn-primary">
             Vortrag öffnen
           </Link>
+          {praesKi && (
+            <div className="min-w-0 basis-full border-t border-line pt-3">
+              <PraesentationKiKnopf paketId={p.id} kosten={praesKosten} kiAus={praesKiAus} neu />
+            </div>
+          )}
         </section>
       )}
+      {!praes && praesKi && (
+        <section className="panel mb-8 max-w-[760px] px-5 py-4" aria-label="Präsentation erstellen">
+          <p className="flex items-center gap-2 font-semibold">
+            <MonitorPlay size={20} className="shrink-0 text-accent" aria-hidden /> Noch keine Präsentation
+          </p>
+          <p className="mt-1 mb-3 text-[14px] text-ink-2">
+            Die KI erstellt aus den Schritten eine Präsentation mit Animationen und Vortragstext je Folie. Du siehst sie zuerst als Vorschlag; erst mit „Übernehmen“ wird sie gespeichert, mit dem Paket
+            verknüpft und für jeden Schüler verwendet.
+          </p>
+          <PraesentationKiKnopf paketId={p.id} kosten={praesKosten} kiAus={praesKiAus} neu={false} />
+        </section>
+      )}
+      {!praes && !vorschlag && p.status === "entwurf" && p.schritte.length > 0 && (
+        <p className="mb-8 flex max-w-[760px] items-center gap-2 text-[14px] text-ink-3">
+          <MonitorPlay size={16} className="shrink-0" aria-hidden /> Eine Präsentation mit KI lässt sich erstellen, sobald das Paket geprüft ist.
+        </p>
+      )}
+      {vorschlag && <KiVorschlag e={vorschlag} schritte={p.schritte} kosten={kiKosten(vorschlag.call_id)} ersetzt={Boolean(praes)} />}
 
       <SectionTitle>Ablauf</SectionTitle>
       {p.schritte.length === 0 && <p className="mb-4 text-[14px] text-ink-3">Noch keine Schritte. {bearbeiten ? "Unten den ersten Schritt anlegen." : "Mit „Bearbeiten“ den ersten Schritt anlegen."}</p>}
