@@ -8,9 +8,10 @@ import { requireTeacher } from "@/lib/auth";
 import { bereiteVor, markiereSchritt, sendeAusGenerator, sendeSchritt, setzeNotiz, verschiebeSchritt, waehleFaehigkeit, waehlePaket, zeigeSchritt, type Markierung } from "@/lib/cockpit";
 import { noteActivity } from "@/lib/learning";
 import { pushLive, showOnTablet } from "@/lib/live";
-import { wienerDatum } from "@/lib/planung/zeit";
+import { tagAddieren, wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
 import { canManageUnit, getUnit } from "@/lib/units";
+import { entferneVorschlag, VORAUS_TAGE, vorschlagErlauben } from "@/lib/vorbereitung-auto";
 
 /**
  * Das Cockpit der laufenden Einheit (lib/cockpit.ts). Jede Aktion gilt für genau diese Einheit: auch mit zwei
@@ -92,16 +93,52 @@ export async function sendeGeneratorAction(unitId: number, skillId: string, _pre
   return aufsGeraet(unitId, await sendeAusGenerator(unitId, skillId, t.id));
 }
 
-/** „Einheit vorbereiten“ auf der Startseite: das Lernpaket für heute, die Einheit übernimmt es beim Start. */
+/** Der Tag einer Vorbereitung aus dem Formular: heute bis in sieben Tagen, sonst heute. */
+function vorbereitungsTag(wert: unknown): string {
+  const heute = wienerDatum();
+  const d = typeof wert === "string" && /^\d{4}-\d{2}-\d{2}$/.test(wert) ? wert : heute;
+  return d >= heute && d < tagAddieren(heute, VORAUS_TAGE) ? d : heute;
+}
+
+const vorbereitenSeite = (studentId: number, datum: string) => `/schueler/${studentId}/vorbereiten${datum === wienerDatum() ? "" : `?datum=${datum}`}`;
+
+/** „Einheit vorbereiten“ auf der Startseite: das Lernpaket für den Tag, die Einheit übernimmt es beim Start. */
 export async function vorbereitenAction(studentId: number, form: FormData) {
   const t = await requireTeacher();
   if (!repo.getStudent(studentId)) redirect("/");
   const id = Number(form.get("paket_id"));
-  const out = bereiteVor(studentId, wienerDatum(), Number.isInteger(id) && id > 0 ? id : null, t.id);
+  const datum = vorbereitungsTag(form.get("datum"));
+  const seite = vorbereitenSeite(studentId, datum);
+  const out = bereiteVor(studentId, datum, Number.isInteger(id) && id > 0 ? id : null, t.id);
   revalidatePath("/");
   revalidatePath(`/schueler/${studentId}/vorbereiten`);
-  if ("fehler" in out) redirect(`/schueler/${studentId}/vorbereiten?fehler=${encodeURIComponent(out.fehler)}`);
-  redirect(id > 0 ? "/" : `/schueler/${studentId}/vorbereiten`);
+  if ("fehler" in out) redirect(`${seite}${seite.includes("?") ? "&" : "?"}fehler=${encodeURIComponent(out.fehler)}`);
+  redirect(id > 0 ? "/" : seite);
+}
+
+/**
+ * „Entfernen“ beim Vorschlag der App (lib/vorbereitung-auto.ts): für diesen Schüler und Tag kein Paket. `ziel`
+ * ist die Seite, auf der getippt wurde (Startseite oder „Einheit vorbereiten“).
+ */
+export async function entferneVorschlagAction(studentId: number, form: FormData) {
+  const t = await requireTeacher();
+  if (!repo.getStudent(studentId)) redirect("/");
+  const datum = vorbereitungsTag(form.get("datum"));
+  entferneVorschlag(studentId, datum, t.id);
+  revalidatePath("/");
+  revalidatePath(`/schueler/${studentId}/vorbereiten`);
+  redirect(form.get("ziel") === "start" ? "/#vorbereitung" : vorbereitenSeite(studentId, datum));
+}
+
+/** Nach „Entfernen“: der Vorschlag der App darf für diesen Tag wieder kommen. */
+export async function vorschlagZeigenAction(studentId: number, form: FormData) {
+  await requireTeacher();
+  if (!repo.getStudent(studentId)) redirect("/");
+  const datum = vorbereitungsTag(form.get("datum"));
+  vorschlagErlauben(studentId, datum);
+  revalidatePath("/");
+  revalidatePath(`/schueler/${studentId}/vorbereiten`);
+  redirect(form.get("ziel") === "start" ? "/#vorbereitung" : vorbereitenSeite(studentId, datum));
 }
 
 export type AnpassenState = { ok: boolean; meldung: string } | null;

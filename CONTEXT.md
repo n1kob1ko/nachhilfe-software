@@ -381,6 +381,9 @@ den Schüler dieser Einheit. Reihenfolge, Erledigt, Übersprungen und Notizen ge
 (`einheit_cockpit`, `lib/cockpit.ts`); beim Beenden kommt in die Dokumentation, welche Schritte erledigt,
 übersprungen oder nicht erreicht wurden. Ohne Lernpaket zeigt es Fähigkeit, Erklärung, typische Fehler, passende
 Übungen und den Plan aus dem **Tagesbriefing**. „Vorbereiten“ im Tagesplan wählt das Paket vor dem Start.
+Hat der Lehrer nichts gewählt, steht der Vorschlag der App schon da: ein geprüftes Paket nach Prüfung, Lernstand
+und letzter Einheit, ohne KI (`lib/vorbereitung-auto.ts`); „Entfernen“ nimmt ihn weg, die Wahl des Lehrers gilt immer
+vor. Auf der Startseite steht er für die nächsten 7 Tage unter „Vorbereitung“; fehlt ein Paket, „Mit KI entwerfen“.
 _Avoid_: Stundenablauf, Lehrermodus, Regie
 
 **Notiz nach der Einheit / Für nächstes Mal**:

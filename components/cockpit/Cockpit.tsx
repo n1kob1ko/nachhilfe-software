@@ -13,6 +13,7 @@ import {
   zeigeSchrittAction,
 } from "@/app/cockpit-actions";
 import { AnpassenKnopf, CockpitSenden, SchrittNotiz } from "@/components/cockpit/CockpitClient";
+import { KeinPaket, VorschlagWarum } from "@/components/cockpit/Vorbereitung";
 import { AufgabeBewertung } from "@/components/AufgabeBewertung";
 import { bewertungInfos } from "@/lib/bewertungen";
 import { TabletSend } from "@/components/device/TabletSend";
@@ -26,12 +27,14 @@ import { ANPASSUNG_ARTEN, anpassenStatus, anpassungen, type Anpassung } from "@/
 import { KANDIDAT_LABEL } from "@/lib/briefing";
 import { cockpit, zusammenfassung, ablauf, leseStand, type CockpitDaten } from "@/lib/cockpit";
 import { ohnePaket, paketWahl, type PaketWahl } from "@/lib/cockpit-vorschlag";
+import { kostenSchaetzung } from "@/lib/lernpaket-ki";
 import { getLernpaket, SCHRITT_ARTEN, ungeprueft, type Lernpaket, type LernpaketSchritt } from "@/lib/lernpakete";
 import { RULE_LABEL, RULE_TONE } from "@/lib/recommend";
 import * as repo from "@/lib/repo";
 import { schuelerWorte } from "@/lib/schueler-notiz";
 import { klassenLabel } from "@/lib/school";
-import type { UnitView } from "@/lib/units";
+import { platzFuerEinheit, type UnitView } from "@/lib/units";
+import { autoFuerEinheit, kiVorgabe, type Signal } from "@/lib/vorbereitung-auto";
 
 const first = (n: string) => n.split(" ")[0];
 const LP = "/mehr/lernpakete";
@@ -59,6 +62,11 @@ export function CockpitBereich({ unit, student, fehler, teacherId = null }: { un
   const vorschlag = c.paket ? wahl.vorschlaege.find((v) => v.paket.id === c.paket!.id) : undefined;
   // „Anpassen“: Vorschläge und Übernommenes gelten für das Paket, das gerade gewählt ist
   const liste = c.paket ? anpassungen(unit.id).filter((a) => a.paket_id === c.paket!.id) : [];
+  // „Stunden automatisch vorbereiten“ (lib/vorbereitung-auto.ts): fehlt ein geprüftes Paket, „Mit KI entwerfen“ ausgefüllt, nur auf Klick
+  const auto = c.paket ? null : autoFuerEinheit(unit);
+  const fehlt: Signal | null = c.stand.automatisch?.luecke ?? (auto?.art === "kein_paket" ? auto.signal : null);
+  const ki = fehlt ? kiVorgabe(fehlt, student, { fach: unit.subject, dauer: platzFuerEinheit(unit)?.geplante_dauer ?? 50, gibtSkill: (id) => Boolean(repo.getSkill(id)) }) : null;
+  const kosten = ki ? kostenSchaetzung().text : "";
   // was der Schüler vor dieser Einheit geschrieben hat: seine Worte, nur zum Lesen (lib/schueler-notiz.ts)
   const worte = schuelerWorte(student.id, unit.id);
   return (
@@ -72,8 +80,9 @@ export function CockpitBereich({ unit, student, fehler, teacherId = null }: { un
       {worte && <SchuelerWorteKarte worte={worte} name={name} />}
       {c.paket ? (
         <>
-          <PaketKopf c={c} paket={c.paket} warum={vorschlag?.warum ?? null}>
-            <Reveal label="Anderes Lernpaket oder ohne">
+          <PaketKopf c={c} paket={c.paket} warum={vorschlag?.warum ?? null} entfernen={c.stand.automatisch ? waehlePaketAction.bind(null, unit.id) : null}>
+            {c.stand.automatisch?.luecke && ki && <KeinPaket klein thema={c.stand.automatisch.luecke.thema} ki={ki} kosten={kosten} />}
+            <Reveal label={c.stand.automatisch ? "Anderes Paket" : "Anderes Lernpaket oder ohne"}>
               <div className="pt-2">
                 <PaketAuswahl wahl={wahl} action={waehlePaketAction.bind(null, unit.id)} gewaehlt={c.paket.id} ohne />
               </div>
@@ -91,6 +100,12 @@ export function CockpitBereich({ unit, student, fehler, teacherId = null }: { un
             <SectionTitle>
               <span>Lernpaket für heute</span>
             </SectionTitle>
+            {auto?.art === "kein_paket" && (
+              <div className="panel mb-4 grid gap-1.5 px-5 py-4">
+                <KeinPaket thema={auto.thema} ki={ki} kosten={kosten} entwuerfe={auto.entwuerfe} />
+                <p className="text-[13px] text-ink-3">Warum dieses Thema: {auto.signal.warum}. Die KI läuft erst, wenn du im Formular „Entwurf erstellen“ tippst.</p>
+              </div>
+            )}
             <PaketAuswahl wahl={wahl} action={waehlePaketAction.bind(null, unit.id)} gewaehlt={null} unten />
           </section>
           <OhnePaketAnsicht unit={unit} student={student} skillId={c.stand.skill_id} />
@@ -100,8 +115,12 @@ export function CockpitBereich({ unit, student, fehler, teacherId = null }: { un
   );
 }
 
-/** Title, status and „Warum heute“ of the chosen package; how far this unit got. */
-function PaketKopf({ c, paket, warum, children }: { c: CockpitDaten; paket: Lernpaket; warum: string | null; children: React.ReactNode }) {
+/**
+ * Title, status and „Warum heute“ of the chosen package; how far this unit got. A suggestion of the app
+ * (`stand.automatisch`) says so and has „Entfernen“; the first tap in the cockpit keeps it.
+ */
+function PaketKopf({ c, paket, warum, entfernen, children }: { c: CockpitDaten; paket: Lernpaket; warum: string | null; entfernen: ((f: FormData) => Promise<void>) | null; children: React.ReactNode }) {
+  const auto = c.stand.automatisch;
   const z = zusammenfassung(c.schritte, c.schritte.map((s) => s.id), c.stand);
   return (
     <section className="panel px-5 py-4" aria-label="Lernpaket">
@@ -112,18 +131,30 @@ function PaketKopf({ c, paket, warum, children }: { c: CockpitDaten; paket: Lern
         <Link href={`${LP}/${paket.id}`} className="ml-auto inline-flex min-h-[36px] items-center gap-1 text-[13px] font-medium text-ink-2 hover:text-ink">
           Paket ansehen <ExternalLink size={13} aria-hidden />
         </Link>
+        {entfernen && (
+          <form action={entfernen}>
+            <input type="hidden" name="paket_id" value="" />
+            <button className="btn btn-ghost btn-sm" title="Ohne Lernpaket weiter; der Vorschlag kommt für diese Einheit nicht wieder">
+              Entfernen
+            </button>
+          </form>
+        )}
       </div>
       <p className="num mt-1 text-[14px] text-ink-2">
         {paket.fach} · {stufeVon(paket)} · {c.schritte.length} Schritte · {c.schritte.reduce((n, s) => n + s.minuten, 0)} min · erledigt {z.erledigt.length}
         {z.uebersprungen.length > 0 && `, übersprungen ${z.uebersprungen.length}`}
       </p>
-      {warum && (
-        <p className="mt-2 text-[14.5px]">
-          <span className="font-semibold">Warum heute: </span>
-          {warum}
-        </p>
+      {auto ? (
+        <VorschlagWarum className="mt-2" warum={auto.warum} unsicher={auto.passung === "stichwort"} />
+      ) : (
+        warum && (
+          <p className="mt-2 text-[14.5px]">
+            <span className="font-semibold">Warum heute: </span>
+            {warum}
+          </p>
+        )
       )}
-      {c.stand.vorbereitet && <p className="mt-1 text-[13px] text-ink-3">Auf der Startseite für heute vorbereitet.</p>}
+      {c.stand.vorbereitet && <p className="mt-1 text-[13px] text-ink-3">{auto ? "Von der App vorbereitet. Mit dem ersten Tippen auf einen Schritt bleibt es gewählt." : "Auf der Startseite für heute vorbereitet."}</p>}
       {ungeprueft(paket) && (
         <p className="mt-3 flex items-start gap-2 rounded-xl bg-amber-wash px-3 py-2 text-[14px] text-amber" role="note">
           <ShieldAlert size={17} className="mt-0.5 shrink-0" aria-hidden />
@@ -132,17 +163,18 @@ function PaketKopf({ c, paket, warum, children }: { c: CockpitDaten; paket: Lern
           </span>
         </p>
       )}
-      <div className="mt-2">{children}</div>
+      <div className="mt-2 grid gap-2">{children}</div>
     </section>
   );
 }
 
 /**
  * Suggestions with „Warum heute“, then every package to pick from. `ohne` adds „Ohne Lernpaket“; `unten`
- * says that the skill's material follows below.
+ * says that the skill's material follows below; `felder` go along with every form (the day on „Einheit vorbereiten“).
  * Used in the cockpit and on „Einheit vorbereiten“.
  */
-export function PaketAuswahl({ wahl, action, gewaehlt, ohne, unten }: { wahl: PaketWahl; action: (f: FormData) => Promise<void>; gewaehlt: number | null; ohne?: boolean; unten?: boolean }) {
+export function PaketAuswahl({ wahl, action, gewaehlt, ohne, unten, felder = {} }: { wahl: PaketWahl; action: (f: FormData) => Promise<void>; gewaehlt: number | null; ohne?: boolean; unten?: boolean; felder?: Record<string, string> }) {
+  const mit = Object.entries(felder).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />);
   if (!wahl.gesamt) {
     return (
       <p className="panel px-5 py-4 text-[14.5px] text-ink-2">
@@ -174,6 +206,7 @@ export function PaketAuswahl({ wahl, action, gewaehlt, ohne, unten }: { wahl: Pa
               </p>
               {v.ungeprueft && <p className="text-[13px] font-medium text-amber">Ungeprüft: vor dem Unterricht durchlesen.</p>}
               <form action={action} className="mt-auto pt-1">
+                {mit}
                 <input type="hidden" name="paket_id" value={v.paket.id} />
                 <button className={`btn btn-sm ${v.paket.id === gewaehlt ? "btn-secondary" : "btn-primary"}`} disabled={v.paket.id === gewaehlt}>
                   {v.paket.id === gewaehlt ? "Gewählt" : "Nehmen"}
@@ -186,6 +219,7 @@ export function PaketAuswahl({ wahl, action, gewaehlt, ohne, unten }: { wahl: Pa
         <p className="text-[14px] text-ink-2">Kein Lernpaket passt heute zu Prüfung, Empfehlung oder letzter Einheit. Du kannst trotzdem eines wählen.</p>
       )}
       <form action={action} className="flex flex-wrap items-end gap-2">
+        {mit}
         <label className="field min-w-0 flex-1 basis-[260px]">
           <span className="label">Alle Lernpakete</span>
           <select className="input" name="paket_id" defaultValue={gewaehlt ?? ""} required>
@@ -216,6 +250,7 @@ export function PaketAuswahl({ wahl, action, gewaehlt, ohne, unten }: { wahl: Pa
       </form>
       {ohne && gewaehlt !== null && (
         <form action={action}>
+          {mit}
           <input type="hidden" name="paket_id" value="" />
           <button className="btn btn-ghost btn-sm">Ohne Lernpaket weiter</button>
         </form>

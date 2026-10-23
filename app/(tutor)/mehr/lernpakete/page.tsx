@@ -14,7 +14,9 @@ import { fachVorschlaege, klassenLabel, SCHOOL_TYPES } from "@/lib/school";
 
 export const metadata = { title: "Lernpakete" };
 
-type Params = { q?: string; status?: string; fach?: string; stufe?: string; thema?: string; skill?: string; neu?: string; import?: string; ki?: string; fehler?: string };
+type Params = { q?: string; status?: string; fach?: string; stufe?: string; thema?: string; skill?: string; neu?: string; import?: string; ki?: string; fehler?: string } & KiParams;
+/** „Mit KI entwerfen“ ausgefüllt aus „Kein Paket für …“ (lib/vorbereitung-auto.ts `kiHref`) */
+type KiParams = { ki_skill?: string; ki_fach?: string; ki_thema?: string; ki_schulart?: string; ki_klasse?: string; ki_dauer?: string };
 const KEYS = ["q", "status", "fach", "stufe", "thema", "skill"] as const;
 const FILTER = ["fach", "stufe", "thema", "skill"] as const;
 const LP = "/mehr/lernpakete";
@@ -53,6 +55,17 @@ export default async function LernpaketePage({ searchParams }: { searchParams: P
     })),
   );
   const aktiv = f.status.entwurf + f.status.geprueft;
+  const kiVorgabe =
+    sp.ki_skill || sp.ki_fach || sp.ki_thema
+      ? {
+          skillId: sp.ki_skill && repo.getSkill(sp.ki_skill) ? sp.ki_skill : undefined,
+          fach: sp.ki_fach?.slice(0, 60),
+          thema: sp.ki_thema?.slice(0, 120),
+          schulart: SCHOOL_TYPES.some((t) => t.name === sp.ki_schulart) ? sp.ki_schulart : undefined,
+          klasse: Number(sp.ki_klasse) >= 1 && Number(sp.ki_klasse) <= 8 ? Number(sp.ki_klasse) : null,
+          dauer: Number(sp.ki_dauer) >= KI_DAUER.von && Number(sp.ki_dauer) <= KI_DAUER.bis ? Number(sp.ki_dauer) : undefined,
+        }
+      : null;
 
   return (
     <>
@@ -94,6 +107,7 @@ export default async function LernpaketePage({ searchParams }: { searchParams: P
           dauer={KI_DAUER}
           kiAus={kiAusGrund()}
           kosten={kostenSchaetzung().text}
+          vorgabe={kiVorgabe}
         />
       )}
 

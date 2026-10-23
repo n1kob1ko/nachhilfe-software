@@ -24,6 +24,7 @@ import { schulstufe } from "./school";
 import { analyzeStudent, buildWorksheet } from "./service";
 import type { TaskDraft } from "./tasks";
 import { getUnit } from "./units";
+import { autoFuerEinheit, vorschlagErlauben, type Passung, type Signal } from "./vorbereitung-auto";
 
 /** Höchstlänge einer Notiz je Schritt. */
 export const NOTIZ_MAX = 2000;
@@ -45,10 +46,12 @@ export type Stand = {
   gesendet: Record<string, number[]>;
   /** noch nicht gespeichert, aus „Einheit vorbereiten“ übernommen */
   vorbereitet: boolean;
+  /** noch nicht gespeichert: der Vorschlag der App (lib/vorbereitung-auto.ts), nicht die Wahl des Lehrers */
+  automatisch: { warum: string; passung: Passung; luecke: Signal | null } | null;
   updated_at: string | null;
 };
 
-const leer = (unitId: number): Stand => ({ unit_id: unitId, paket_id: null, skill_id: null, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], notizen: {}, gesendet: {}, vorbereitet: false, updated_at: null });
+const leer = (unitId: number): Stand => ({ unit_id: unitId, paket_id: null, skill_id: null, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], notizen: {}, gesendet: {}, vorbereitet: false, automatisch: null, updated_at: null });
 
 // ---------- the rules, without the database ----------
 
@@ -163,6 +166,7 @@ const zuStand = (r: Row): Stand => ({
   notizen: json<Record<string, string>>(r.notizen, {}),
   gesendet: json<Record<string, number[]>>(r.gesendet, {}),
   vorbereitet: false,
+  automatisch: null,
   updated_at: r.updated_at,
 });
 
@@ -176,14 +180,18 @@ const tagDerEinheit = (startedAt: string) => wienerDatum(new Date(startedAt));
 
 /**
  * Der Stand des Cockpits einer Einheit. Ist noch nichts gespeichert, gilt das Lernpaket aus „Einheit
- * vorbereiten“ für diesen Schüler und Tag (noch ungespeichert, `vorbereitet`).
+ * vorbereiten“ für diesen Schüler und Tag (noch ungespeichert, `vorbereitet`); hat der Lehrer keines gewählt,
+ * der Vorschlag der App für die laufende Einheit (`automatisch`, lib/vorbereitung-auto.ts, ohne KI).
  */
 export function leseStand(unitId: number): Stand {
   const s = gespeichert(unitId);
   if (s) return s;
   const unit = getUnit(unitId);
   const v = unit ? vorbereitung(unit.student_id, tagDerEinheit(unit.started_at)) : null;
-  return v && getLernpaket(v.paket_id) ? { ...leer(unitId), paket_id: v.paket_id, vorbereitet: true } : leer(unitId);
+  if (v && getLernpaket(v.paket_id)) return { ...leer(unitId), paket_id: v.paket_id, vorbereitet: true };
+  const a = unit ? autoFuerEinheit(unit) : null;
+  if (a?.art === "paket") return { ...leer(unitId), paket_id: a.paket.id, vorbereitet: true, automatisch: { warum: a.warum, passung: a.passung, luecke: a.luecke } };
+  return leer(unitId);
 }
 
 function speichere(s: Stand) {
@@ -409,6 +417,8 @@ export function bereiteVor(studentId: number, datum: string, paketId: number | n
        ON CONFLICT(student_id, datum) DO UPDATE SET paket_id = excluded.paket_id, teacher_id = excluded.teacher_id, created_at = datetime('now')`,
     )
     .run(studentId, datum, paketId, teacherId);
+  // chosen by hand: a removed suggestion no longer counts for this day
+  vorschlagErlauben(studentId, datum);
   return { ok: true };
 }
 

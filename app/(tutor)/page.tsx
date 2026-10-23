@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { ArrowRight, CalendarClock, CalendarPlus, CalendarSync, Check, CheckCircle2, ChevronDown, FileCheck2, NotebookPen, PenLine, Play, Plus, Presentation } from "lucide-react";
+import { ArrowRight, BookMarked, CalendarClock, CalendarPlus, CalendarSync, Check, CheckCircle2, ChevronDown, FileCheck2, NotebookPen, PenLine, Play, Plus, Presentation } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
 import { startUnitAction } from "@/app/session-actions";
 import { abhakenAction } from "@/app/zu-erledigen-actions";
+import { entferneVorschlagAction, vorschlagZeigenAction } from "@/app/cockpit-actions";
+import { KeinPaket, VorschlagWarum } from "@/components/cockpit/Vorbereitung";
 import { antwortLehrerAction, stelleLehrerAnfrageAction } from "@/app/terminanfrage-actions";
 import { AnfrageMeldung, AnfragenListe, TerminAendern } from "@/components/planung/Terminanfragen";
 import { Avatar, SubjectArt } from "@/components/Art";
@@ -25,6 +27,8 @@ import { vorbereitung } from "@/lib/cockpit";
 import { getLernpaket, listLernpakete } from "@/lib/lernpakete";
 import { pruefungsHinweise, STAGE_LABEL } from "@/lib/exams";
 import { ZUSTAND_LABEL, ZUSTAND_TONE, zuErledigen, type Punkt } from "@/lib/zu-erledigen";
+import { kostenSchaetzung } from "@/lib/lernpaket-ki";
+import { naechsteEinheiten, VORAUS_TAGE, type NaechsteEinheit } from "@/lib/vorbereitung-auto";
 
 const parseLocal = (s: string) => new Date(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s) && !/Z|[+-]\d{2}:?\d{2}$/.test(s) ? s.replace(" ", "T") : s);
 const firstName = (n: string) => n.split(" ")[0];
@@ -216,6 +220,10 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
   const ueberfaellig = todos.offen.filter((p) => p.zustand === "ueberfaellig").length;
   const zuBewerten = todos.offen.filter((p) => p.zustand === "wartet").length;
 
+  // „Stunden automatisch vorbereiten“ (lib/vorbereitung-auto.ts): die nächsten 7 Tage, ohne KI; nur Vorschläge
+  const naechste = naechsteEinheiten(teacher.id, now);
+  const kiKosten = naechste.some((n) => n.ki) ? kostenSchaetzung().text : "";
+
   return (
     <>
       <StartTabs aktiv="start" />
@@ -344,6 +352,21 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
           </section>
         </div>
 
+        {naechste.length > 0 && (
+          <section id="vorbereitung" aria-label="Nächste Einheiten">
+            <SectionTitle>{`Vorbereitung: nächste ${VORAUS_TAGE} Tage`}</SectionTitle>
+            <VorbereitungListe punkte={naechste.slice(0, 6)} kosten={kiKosten} />
+            {naechste.length > 6 && (
+              <details className="group mt-3">
+                <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-medium text-accent">
+                  Noch {naechste.length - 6} weitere <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden />
+                </summary>
+                <VorbereitungListe punkte={naechste.slice(6)} kosten={kiKosten} />
+              </details>
+            )}
+          </section>
+        )}
+
         {recentIds.length > 0 && (
           <section>
             <SectionTitle action={<Link href="/schueler" className="link text-[14px] font-medium">Alle Schüler</Link>}>Zuletzt verwendet</SectionTitle>
@@ -367,6 +390,75 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         )}
       </div>
     </>
+  );
+}
+
+/**
+ * Je kommende Einheit eine Zeile: das Paket, das der Lehrer gewählt hat, sonst der Vorschlag der App mit „Warum“
+ * und „Entfernen“, oder „Kein Paket für …“ mit „Mit KI entwerfen“ (kostet erst nach dem Klick im Formular).
+ */
+function VorbereitungListe({ punkte, kosten }: { punkte: NaechsteEinheit[]; kosten: string }) {
+  return (
+    <ul className="panel divide-y divide-line" data-testid="vorbereitung">
+      {punkte.map((n) => {
+        const href = `/schueler/${n.studentId}/vorbereiten${n.heute ? "" : `?datum=${n.datum}`}`;
+        const w = n.wahl;
+        return (
+          <li key={n.key} className="flex flex-wrap items-start gap-x-3 gap-y-2 px-4 py-3">
+            <span className="num w-full shrink-0 text-[14px] leading-snug font-semibold sm:w-[106px]">
+              {n.heute ? "Heute" : n.tag} <span className="font-normal text-ink-2 sm:block">{n.zeit}</span>
+            </span>
+            <div className="grid min-w-0 flex-1 basis-[15rem] gap-1">
+              <Link href={`/schueler/${n.studentId}`} className="truncate font-semibold hover:text-accent">
+                {n.studentName}
+                {n.fach && <span className="font-normal text-ink-2"> · {n.fach}</span>}
+              </Link>
+              {w.art === "gewaehlt" && (
+                <p className="flex items-center gap-1.5 text-[14px]">
+                  <CheckCircle2 size={15} className="shrink-0 text-green" aria-hidden /> <span className="font-medium">{w.paket.title}</span> <span className="text-ink-3">· von dir gewählt</span>
+                </p>
+              )}
+              {w.art === "paket" && (
+                <>
+                  <p className="flex items-center gap-1.5 text-[14px] font-medium">
+                    <BookMarked size={15} className="shrink-0 text-accent" aria-hidden /> {w.paket.title}
+                  </p>
+                  <VorschlagWarum warum={w.warum} unsicher={w.unsicher} />
+                  {w.luecke && n.ki && <KeinPaket klein thema={w.luecke.thema} ki={n.ki} kosten={kosten} />}
+                </>
+              )}
+              {w.art === "kein_paket" && (
+                <>
+                  <KeinPaket klein thema={w.thema} ki={n.ki} kosten={kosten} entwuerfe={w.entwuerfe} />
+                  <p className="text-[13px] text-ink-3">Warum dieses Thema: {w.signal.warum}</p>
+                </>
+              )}
+              {w.art === "entfernt" && <p className="text-[14px] text-ink-2">Ohne Lernpaket</p>}
+              {w.art === "ohne_signal" && <p className="text-[13px] text-ink-3">Noch kein Thema aus Prüfung, Lernstand oder letzter Einheit.</p>}
+            </div>
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+              {w.art === "paket" && (
+                <form action={entferneVorschlagAction.bind(null, n.studentId)}>
+                  <input type="hidden" name="datum" value={n.datum} />
+                  <input type="hidden" name="ziel" value="start" />
+                  <button className="btn btn-ghost btn-sm">Entfernen</button>
+                </form>
+              )}
+              {w.art === "entfernt" && (
+                <form action={vorschlagZeigenAction.bind(null, n.studentId)}>
+                  <input type="hidden" name="datum" value={n.datum} />
+                  <input type="hidden" name="ziel" value="start" />
+                  <button className="btn btn-ghost btn-sm">Vorschlag zeigen</button>
+                </form>
+              )}
+              <Link href={href} className="btn btn-secondary btn-sm">
+                {w.art === "paket" ? "Anderes Paket" : w.art === "gewaehlt" ? "Ändern" : "Paket wählen"}
+              </Link>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
