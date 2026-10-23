@@ -6,7 +6,8 @@ import { Info } from "@/components/Info";
 import { PageHeader, Pill, Reveal, SectionTitle, formatDate } from "@/components/ui";
 import { aiEnabled } from "@/lib/ai";
 import { requireTeacher } from "@/lib/auth";
-import { DIFFICULTIES, SUBJECTS } from "@/lib/curriculum";
+import { DIFFICULTIES } from "@/lib/curriculum";
+import { alleFachNamen, fachNamen } from "@/lib/faecher";
 import {
   druckblattArt,
   getMaterial,
@@ -22,7 +23,7 @@ import {
   type Material,
 } from "@/lib/materials";
 import * as repo from "@/lib/repo";
-import { klassenLabel, SCHOOL_TYPES } from "@/lib/school";
+import { klassenLabel, mitWert, SCHOOL_TYPES } from "@/lib/school";
 import { MathText } from "@/components/MathText";
 
 export const metadata = { title: "Material" };
@@ -56,7 +57,7 @@ export default async function MaterialPage({ params, searchParams }: { params: P
   // a suggestion only fills the form when the teacher asks for it; saving the form is the check
   const useSuggestion = Boolean(sp.vorschlag && a);
   const values = {
-    subject: (useSuggestion && a?.subject && (SUBJECTS as readonly string[]).includes(a.subject) ? a.subject : m.subject) || "",
+    subject: (useSuggestion && a?.subject && alleFachNamen().includes(a.subject) ? a.subject : m.subject) || "",
     topic: (useSuggestion && a?.topic) || m.topic,
     skillIds: useSuggestion && a ? [...new Set([...m.skill_ids, ...a.skill_ids])] : m.skill_ids,
   };
@@ -155,7 +156,7 @@ export default async function MaterialPage({ params, searchParams }: { params: P
                 <span className="label">Fach</span>
                 <select className="input" name="subject" defaultValue={values.subject}>
                   <option value="">–</option>
-                  {SUBJECTS.map((s) => (
+                  {mitWert(fachNamen(), values.subject).map((s) => (
                     <option key={s}>{s}</option>
                   ))}
                 </select>
@@ -201,7 +202,9 @@ export default async function MaterialPage({ params, searchParams }: { params: P
                       <span className="text-ink-3">· {s.area}</span>
                     </label>
                   ))}
-                  {chips.length === 0 && <span className="text-[13px] text-ink-3">Kein Vorschlag zum Thema. Wähle aus der Liste.</span>}
+                  {chips.length === 0 && (
+                    <span className="text-[13px] text-ink-3">{rest.length ? "Kein Vorschlag zum Thema. Wähle aus der Liste." : `Für ${values.subject} gibt es keine Fähigkeiten. Fach und Thema reichen.`}</span>
+                  )}
                 </div>
                 {rest.length > 0 && (
                   <Reveal label="Aus allen Fähigkeiten wählen">

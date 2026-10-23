@@ -130,7 +130,7 @@ export default async function DevicePage() {
           pictures={story?.pictures}
           targetWords={story?.targetWords ?? auftrag?.target}
           auftrag={auftrag ?? undefined}
-          handIn={(story || auftrag) && text.status !== "fertig" ? { url: `/geraet/text/${text.id}/abgeben`, home: "/geraet/ansicht?zu=start" } : undefined}
+          handIn={text.status !== "fertig" ? { url: `/geraet/text/${text.id}/abgeben`, home: "/geraet/ansicht?zu=start" } : undefined}
         />
       </>
     );
@@ -168,7 +168,7 @@ export default async function DevicePage() {
     );
   } else {
     const open = list.filter((a) => !a.completed_at);
-    const texts = textsForUnit(unit.id).filter((t) => t.status !== "fertig");
+    const texts = textsForUnit(unit.id).filter((t) => t.status !== "fertig" && !t.archived_at);
     content = open.length || texts.length ? (
       <ul className="space-y-3">
         {texts.map((t) => (

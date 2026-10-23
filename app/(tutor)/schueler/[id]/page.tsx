@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Camera, CheckCircle2, Circle, FileText, History, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Archive, Camera, CheckCircle2, Circle, FileText, History, PenLine, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/Art";
 import {
   addHomeworkAction,
@@ -9,7 +9,9 @@ import {
   deleteTestAction,
   setHomeworkStatusAction,
 } from "@/app/actions";
+import { archiveAssignmentAction, restoreAssignmentAction, restoreTextAction } from "@/app/archiv-actions";
 import { AIInsight } from "@/components/AIInsight";
+import { ArchivMeldung, WiederherstellenKnopf } from "@/components/Archiv";
 import { FachFeld } from "@/components/FachFeld";
 import { Lernverlauf } from "@/components/Lernverlauf";
 import { UnitControl } from "@/components/UnitControl";
@@ -21,6 +23,7 @@ import { Empty, LevelTag, MasteryBar, More, Pill, Reveal, SectionTitle, StatusCh
 import { Info } from "@/components/Info";
 import { aiEnabled } from "@/lib/ai";
 import { type Analysis, pct } from "@/lib/analysis";
+import { weitereFaecher } from "@/lib/faecher";
 import * as repo from "@/lib/repo";
 import { klassenLabel } from "@/lib/school";
 import { analyzeStudent } from "@/lib/service";
@@ -39,6 +42,7 @@ import { stoffzettelLesbar } from "@/lib/stoffzettel";
 import { einheitenFuerWoche, istNichtStattgefunden, mitNamen, slotDatum } from "@/lib/planung/repo";
 import { datumLabel, minutenLabel, wienerDatum, wienerWochenstart, wochenLabel } from "@/lib/planung/zeit";
 import { listenVon } from "@/lib/vokabellisten";
+import { textsForStudent, wordsLabel } from "@/lib/texts";
 
 /** Vier Bereiche statt sechs: Stoff und Prüfungen teilen sich einen Tab, Übungen und Lernverlauf auch. */
 const TABS = [
@@ -52,7 +56,7 @@ type Tab = (typeof TABS)[number][0];
 /** Builder prefilled for a recommendation: student, skill, number of tasks. */
 const builderHref = (studentId: number, r: Pick<NextStep, "skill" | "count">) => `/uebungen/neu?schueler=${studentId}&skill=${encodeURIComponent(r.skill.id)}&anzahl=${r.count}`;
 
-export default async function StudentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; zugewiesen?: string; art?: string; bearbeiten?: string; fehler?: string }> }) {
+export default async function StudentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; zugewiesen?: string; art?: string; bearbeiten?: string; fehler?: string; archiv?: string; ansicht?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const student = repo.getStudent(Number(id));
@@ -122,6 +126,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
       )}
       {tab === "lernverlauf" && (
         <div className="space-y-14">
+          <ArchivMeldung archiv={sp.archiv} fehler={sp.fehler} archiviert="Archiviert. Unten unter „Archiv“ kannst du es wiederherstellen." />
           <section aria-labelledby="lernverlauf-titel">
             <h2 id="lernverlauf-titel" className="gruppe-titel mb-4">Lernverlauf</h2>
             <Lessons student={student} filter={sp.art} />
@@ -130,6 +135,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
             <h2 id="uebungen-titel" className="gruppe-titel mb-4">Übungen</h2>
             <Exercises student={student} />
           </section>
+          <ArchivSection student={student} open={sp.ansicht === "archiv"} />
         </div>
       )}
       {tab === "schule" && (
@@ -171,7 +177,7 @@ function Kopfzahlen({ student, a }: { student: repo.Student; a: Analysis }) {
   const exam = repo.upcomingTests(today, student.id)[0];
   const tage = exam ? daysUntil(exam.date, today) : null;
   const einheiten = repo.listLessons(student.id).filter((l) => l.kind === "stunde" && l.status === "abgeschlossen");
-  const offeneHw = repo.listHomework(student.id).filter((h) => h.status === "offen").length;
+  const offeneHw = repo.listHomework(student.id).filter(repo.homeworkOpen).length;
   const mastery = a.overall.mastery;
   const level = masteryLevel(mastery);
   const LevelIcon = level.icon;
@@ -224,7 +230,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
   const lastDone = lessons.find((l) => l.status === "abgeschlossen");
   const next = [...lessons].reverse().find((l) => l.status === "geplant" && l.starts_at >= wienerDatum());
   const tests = repo.listTests(student.id);
-  const hw = repo.listHomework(student.id).filter((h) => h.status === "offen");
+  const hw = repo.listHomework(student.id).filter(repo.homeworkOpen);
   const first = student.name.split(" ")[0];
   const skillList = (list: typeof a.strengths, cls: string, empty: string, note: string) =>
     list.length ? (
@@ -821,6 +827,7 @@ function CurrentMaterialTab({ student, edit }: { student: repo.Student; edit: nu
           key={editing?.id ?? "neu"}
           studentId={student.id}
           subjects={editing ? [editing.subject] : [...open, ...subjects.filter((x) => !open.includes(x))]}
+          weitere={editing ? [] : weitereFaecher(subjects)}
           skills={skills}
           today={today}
           initial={editing ? { ...editing } : fromProfile}
@@ -864,6 +871,8 @@ function StoffzettelLink({ id }: { id: number }) {
 
 function School({ student }: { student: repo.Student }) {
   const homework = repo.listHomework(student.id);
+  // eine Hausübung kann zu einer Übung gehören: ist sie fertig, ist die Hausübung erledigt
+  const offeneUebungen = repo.listAssignments(student.id).filter((x) => !x.completed_at).slice(0, 20);
   const tests = repo.listTests(student.id);
   const subjects = student.subjects.length ? student.subjects : ["Mathematik"];
   const today = dayOf(new Date());
@@ -952,7 +961,7 @@ function School({ student }: { student: repo.Student }) {
             <span className="text-[13.5px] text-ink-2">Probeschularbeit oder Test auf Papier fotografieren. Die KI liest es aus, du prüfst und übernimmst.</span>
           </span>
         </Link>
-        <ExamForm studentId={student.id} subjects={subjects} today={today} kiLiest={stoffzettelLesbar().ok} />
+        <ExamForm studentId={student.id} subjects={subjects} weitere={weitereFaecher(subjects)} today={today} kiLiest={stoffzettelLesbar().ok} />
         <h3 className="mt-8 mb-1 text-[15px] font-semibold">Ergebnisse</h3>
         <ul className="divide-y divide-line">
           {written.length === 0 && <li className="py-2 text-[14px] text-ink-3">Noch keine Ergebnisse eingetragen.</li>}
@@ -998,19 +1007,35 @@ function School({ student }: { student: repo.Student }) {
         <ul className="mb-5 divide-y divide-line">
           {homework.length === 0 && <li className="py-2 text-[14px] text-ink-3">Keine Hausübungen eingetragen.</li>}
           {homework.map((h) => {
-            const done = h.status === "erledigt";
+            const done = !repo.homeworkOpen(h);
+            const durchUebung = done && h.status !== "erledigt";
             return (
               <li key={h.id} className="flex items-start gap-3 py-2.5">
-                <form action={setHomeworkStatusAction.bind(null, h.id, student.id, done ? "offen" : "erledigt")}>
-                  <button className={`mt-0.5 ${done ? "text-green" : "text-ink-3 hover:text-ink"}`} aria-label={done ? "Als offen markieren" : "Als erledigt markieren"}>
-                    {done ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-                  </button>
-                </form>
+                {durchUebung ? (
+                  <span className="mt-0.5 text-green" title="Erledigt: die Übung ist fertig">
+                    <CheckCircle2 size={18} aria-label="Erledigt: die Übung ist fertig" />
+                  </span>
+                ) : (
+                  <form action={setHomeworkStatusAction.bind(null, h.id, student.id, done ? "offen" : "erledigt")}>
+                    <button className={`mt-0.5 ${done ? "text-green" : "text-ink-3 hover:text-ink"}`} aria-label={done ? "Als offen markieren" : "Als erledigt markieren"}>
+                      {done ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+                    </button>
+                  </form>
+                )}
                 <div className={`min-w-0 flex-1 text-[14px] ${done ? "text-ink-3 line-through" : ""}`}>
                   {h.description}
                   <div className="text-[12px] text-ink-3 no-underline">
                     {h.subject}
                     {h.due_date && ` · fällig ${formatDate(h.due_date, { day: "numeric", month: "short" })}`}
+                    {h.assignment_id && h.assignment_title && (
+                      <>
+                        {" · Übung "}
+                        <Link href={h.assignment_completed_at ? `/schueler/${student.id}/ergebnis/${h.assignment_id}` : `/schueler/${student.id}?tab=uebungen`} className="link">
+                          {h.assignment_title}
+                        </Link>
+                        {h.assignment_completed_at && " fertig"}
+                      </>
+                    )}
                     {!done && h.due_date && h.due_date < today && <span className="font-semibold text-red"> · überfällig</span>}
                   </div>
                 </div>
@@ -1033,6 +1058,19 @@ function School({ student }: { student: repo.Student }) {
             <FachFeld id="hausuebung" eigene={subjects} wert={subjects[0]} ariaLabel="Fach" />
             <input className="input" type="date" name="due_date" aria-label="Fällig am" />
           </div>
+          {offeneUebungen.length > 0 && (
+            <label className="field">
+              <span className="label">Gehört zur Übung (optional)</span>
+              <select className="input" name="assignment_id" defaultValue="">
+                <option value="">keine</option>
+                {offeneUebungen.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <button className="btn btn-secondary justify-self-start">Hinzufügen</button>
         </form>
       </section>
@@ -1119,6 +1157,9 @@ function Exercises({ student }: { student: repo.Student }) {
                 <th className="px-3 py-3 font-semibold">Zugewiesen</th>
                 <th className="px-3 py-3 font-semibold">Status</th>
                 <th className="px-5 py-3 text-right font-semibold">Ergebnis</th>
+                <th className="py-3 pr-3">
+                  <span className="sr-only">Archivieren</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -1146,6 +1187,13 @@ function Exercises({ student }: { student: repo.Student }) {
                     {x.completed_at ? <Pill tone="green">erledigt</Pill> : x.done_count > 0 ? <Pill tone="amber">{x.done_count}/{x.task_count} bearbeitet</Pill> : <Pill>offen</Pill>}
                   </td>
                   <td className="num px-5 py-3 text-right font-semibold">{x.done_count > 0 ? `${x.correct_count}/${x.done_count} richtig` : "–"}</td>
+                  <td className="py-3 pr-3 text-right">
+                    <form action={archiveAssignmentAction.bind(null, x.id, `/schueler/${student.id}?tab=lernverlauf`)}>
+                      <button className="btn btn-ghost btn-sm !px-2.5" aria-label={`${x.title} archivieren`} title="Archivieren: nicht mehr offen, Antworten und Lernstand bleiben">
+                        <Archive size={15} aria-hidden />
+                      </button>
+                    </form>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -1153,5 +1201,80 @@ function Exercises({ student }: { student: repo.Student }) {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Archiv des Schülers (lib/archiv.ts): archivierte Übungen und Texte, erst auf Klick sichtbar, je mit „Wiederherstellen“.
+ * Eine Übung, die als Ganzes archiviert ist (für alle Schüler), holt man auf ihrer Seite zurück.
+ */
+function ArchivSection({ student, open }: { student: repo.Student; open: boolean }) {
+  const uebungen = repo.listAssignments(student.id, { archiv: "nur" });
+  const texte = textsForStudent(student.id, { archiv: "nur" });
+  if (!uebungen.length && !texte.length) return null;
+  const first = student.name.split(" ")[0];
+  const back = `/schueler/${student.id}?tab=lernverlauf&ansicht=archiv#archiv`;
+  const anzahl = [
+    uebungen.length ? `${uebungen.length} ${uebungen.length === 1 ? "Übung" : "Übungen"}` : "",
+    texte.length ? `${texte.length} ${texte.length === 1 ? "Text" : "Texte"}` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const day = (iso: string) => formatDate(iso, { day: "numeric", month: "short" });
+  if (!open)
+    return (
+      <section id="archiv" className="no-print scroll-mt-6">
+        <Link href={back} className="inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-semibold text-accent hover:underline" data-testid="archiv-link">
+          <Archive size={16} aria-hidden /> Archiv ansehen <span className="num font-normal text-ink-3">({anzahl})</span>
+        </Link>
+      </section>
+    );
+  return (
+    <section id="archiv" aria-labelledby="archiv-titel" className="no-print scroll-mt-6" data-testid="archiv">
+      <h2 id="archiv-titel" className="gruppe-titel mb-2">
+        Archiv
+      </h2>
+      <p className="mb-4 max-w-[80ch] text-[14px] text-ink-2">{first} sieht diese Übungen und Texte nicht mehr als offen. Antworten, Dokumentation und Lernstand bleiben.</p>
+      <ul className="panel divide-y divide-line">
+        {uebungen.map((x) => (
+          <li key={`a${x.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+            <Archive size={18} className="shrink-0 text-ink-3" aria-hidden />
+            <span className="min-w-0 flex-1 basis-56">
+              <Link href={`/schueler/${student.id}/ergebnis/${x.id}`} className="block font-semibold hover:text-accent">
+                {x.title}
+              </Link>
+              <span className="num block text-[14px] text-ink-2">
+                Übung · gesendet am {day(x.assigned_at)} · {x.done_count > 0 ? `${x.correct_count}/${x.done_count} richtig` : "nicht bearbeitet"} · archiviert am{" "}
+                {day((x.archived_at ?? x.worksheet_archived_at)!)}
+              </span>
+            </span>
+            {x.worksheet_archived_at ? (
+              <Link href={`/uebungen/${x.worksheet_id}`} className="btn btn-ghost btn-sm" title="Die ganze Übung ist archiviert, für alle Schüler">
+                Ganze Übung archiviert · öffnen
+              </Link>
+            ) : (
+              <WiederherstellenKnopf action={restoreAssignmentAction.bind(null, x.id, back)} className="btn btn-secondary btn-sm" />
+            )}
+          </li>
+        ))}
+        {texte.map((t) => (
+          <li key={`t${t.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+            <PenLine size={18} className="shrink-0 text-ink-3" aria-hidden />
+            <span className="min-w-0 flex-1 basis-56">
+              <Link href={`/texte/${t.id}`} className="block font-semibold hover:text-accent">
+                {t.title}
+              </Link>
+              <span className="num block text-[14px] text-ink-2">
+                Text · {wordsLabel(t.words)} · archiviert am {day(t.archived_at!)}
+              </span>
+            </span>
+            <WiederherstellenKnopf action={restoreTextAction.bind(null, t.id, back)} className="btn btn-secondary btn-sm" />
+          </li>
+        ))}
+      </ul>
+      <Link href={`/schueler/${student.id}?tab=lernverlauf#uebungen-titel`} className="mt-3 inline-flex min-h-[44px] items-center text-[14px] font-semibold text-accent hover:underline">
+        Archiv schließen
+      </Link>
+    </section>
   );
 }

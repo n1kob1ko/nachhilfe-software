@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CheckCircle2, Copy, Printer, Sparkles, Trash2 } from "lucide-react";
 import { deleteLibraryEntryAction, duplicateLibraryEntryAction, exerciseFromLibraryAction, setLibraryOriginAction, updateLibraryEntryAction } from "@/app/library-actions";
+import { archiveWorksheetAction, restoreWorksheetAction } from "@/app/archiv-actions";
+import { ArchivBanner, ArchivKnopf, ArchivMeldung, WiederherstellenKnopf } from "@/components/Archiv";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, SectionTitle, formatDate } from "@/components/ui";
 import { WorksheetEditor } from "@/components/WorksheetEditor";
@@ -21,7 +23,7 @@ export const metadata = { title: "Bibliotheksaufgabe" };
 const chip = "flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-[13.5px] has-checked:border-accent has-checked:bg-accent-wash has-checked:text-accent";
 
 /** One task of the library: the task in the editor, where it belongs, where it comes from, and reuse. */
-export default async function LibraryEntryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bearbeiten?: string; gespeichert?: string; kopie?: string; fehler?: string }> }) {
+export default async function LibraryEntryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bearbeiten?: string; gespeichert?: string; kopie?: string; fehler?: string; archiv?: string }> }) {
   const teacher = await requireTeacher();
   const { id } = await params;
   const sp = await searchParams;
@@ -65,6 +67,15 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
         <p className="no-print mb-4 inline-flex items-center gap-1.5 text-[14px] font-semibold text-green" role="status">
           <CheckCircle2 size={16} aria-hidden /> {sp.kopie ? "Kopie angelegt. Du siehst jetzt die Kopie." : "Gespeichert."}
         </p>
+      )}
+      {/* errors of the other forms are shown where they belong (Herkunft below) */}
+      <ArchivMeldung archiv={sp.archiv} archiviert="Archiviert." wiederhergestellt="Wiederhergestellt. Die Aufgabe steht wieder in der Bibliothek." />
+      {e.archived_at && (
+        <ArchivBanner
+          seit={e.archived_at}
+          text="Sie steht nicht in der Bibliothek und nicht in der Suche. Übungen, die sie schon enthalten, behalten ihre Kopie."
+          restore={restoreWorksheetAction.bind(null, e.id, `/uebungen/bibliothek/${e.id}`)}
+        />
       )}
 
       <section className="no-print mb-8 rounded-[24px] bg-accent-wash px-5 py-5 md:px-6" aria-label="Verwenden">
@@ -256,6 +267,11 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
             <Copy size={15} aria-hidden /> Duplizieren
           </button>
         </form>
+        {e.archived_at ? (
+          <WiederherstellenKnopf action={restoreWorksheetAction.bind(null, e.id, `/uebungen/bibliothek/${e.id}`)} />
+        ) : (
+          <ArchivKnopf action={archiveWorksheetAction.bind(null, e.id, "/uebungen/bibliothek")} />
+        )}
         <details className="reveal">
           <summary>
             <Trash2 size={15} aria-hidden className="text-red" /> Aus der Bibliothek löschen

@@ -47,6 +47,8 @@ export type LibraryEntry = {
   source: { id: number; key: string; name: string; license: string; attribution: string; url: string } | null;
   /** the source the task was written after (material, school book …), also when it is not under its licence */
   model: { id: number; name: string } | null;
+  /** in the library's Archiv since then (lib/archiv.ts); null = in the library */
+  archived_at: string | null;
 };
 
 export type LibraryFilter = {
@@ -61,6 +63,8 @@ export type LibraryFilter = {
   type?: string;
   origin?: LibraryOrigin;
   tag?: string;
+  /** Archiv (lib/archiv.ts): true = only archived entries; otherwise archived ones are left out */
+  archived?: boolean;
 };
 
 export const cleanTags = (tags: string[] | string): string[] =>
@@ -92,6 +96,7 @@ function toEntry(w: repo.Worksheet, task: repo.Task): LibraryEntry {
     origin: libraryOrigin(task.sourceType),
     source: src ? { id: src.id, key: src.key, name: src.name, license: src.license, attribution: src.attribution_text, url: src.url } : null,
     model: model ?? null,
+    archived_at: w.archived_at ?? null,
   };
 }
 
@@ -107,7 +112,7 @@ function findSame(subject: string, t: Pick<TaskDraft, "prompt" | "answer" | "dat
   const row = db()
     .prepare(
       `SELECT w.id FROM worksheets w JOIN tasks t ON t.worksheet_id = w.id
-       WHERE w.kind = 'bibliothek' AND w.subject = ? AND t.prompt = ? AND t.answer = ? AND t.data = ? LIMIT 1`,
+       WHERE w.kind = 'bibliothek' AND w.archived_at IS NULL AND w.subject = ? AND t.prompt = ? AND t.answer = ? AND t.data = ? LIMIT 1`,
     )
     .get(subject, t.prompt, JSON.stringify(t.answer), JSON.stringify(t.data)) as { id: number } | undefined;
   return row?.id ?? null;
@@ -267,7 +272,7 @@ export function deleteLibraryEntry(id: number): boolean {
 
 /** Entries matching the filter, newest first. A skill filter also finds tasks of its sub-skills. */
 export function searchLibrary(f: LibraryFilter = {}, limit = 200): LibraryEntry[] {
-  const where = ["w.kind = 'bibliothek'"];
+  const where = ["w.kind = 'bibliothek'", f.archived ? "w.archived_at IS NOT NULL" : "w.archived_at IS NULL"];
   const params: unknown[] = [];
   const add = (sql: string, ...p: unknown[]) => (where.push(sql), params.push(...p));
   if (f.subject) add("w.subject = ?", f.subject);
@@ -313,7 +318,9 @@ export function libraryFacets(subject?: string) {
   };
 }
 
-export const libraryCount = () => (db().prepare("SELECT COUNT(*) AS n FROM worksheets WHERE kind = 'bibliothek'").get() as { n: number }).n;
+/** Entries in the library; archived: those in its Archiv instead. */
+export const libraryCount = (archived = false) =>
+  (db().prepare(`SELECT COUNT(*) AS n FROM worksheets WHERE kind = 'bibliothek' AND archived_at IS ${archived ? "NOT NULL" : "NULL"}`).get() as { n: number }).n;
 
 /**
  * A new draft exercise from library entries (in the order given). Entries of another subject than the

@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowRight, CheckCircle2, Copy, ExternalLink, Eye, EyeOff, FileCheck2, Printer, Send, Sparkles } from "lucide-react";
+import { Archive, ArrowRight, CheckCircle2, Copy, ExternalLink, Eye, EyeOff, FileCheck2, Printer, Send, Sparkles } from "lucide-react";
 import { runningUnitForStudent, sendTargets } from "@/lib/units";
 import { SendResult, TabletSend } from "@/components/device/TabletSend";
 import type { SendState } from "@/app/device-actions";
 import { studentDevice, studentDeviceOnline } from "@/lib/live";
 import { assignWorksheetAction, deleteWorksheetAction } from "@/app/actions";
+import { archiveWorksheetAction, restoreWorksheetAction } from "@/app/archiv-actions";
+import { ArchivBanner, ArchivKnopf, ArchivMeldung, WiederherstellenKnopf } from "@/components/Archiv";
+import { LoeschenMitWarnung } from "@/components/LoeschenMitWarnung";
 import { copyAsDraftAction, setSolutionsVisibleAction } from "@/app/builder-actions";
 import { quickRoundProblem } from "@/lib/quick-round";
 import { BoardSendButton, SendToBoard } from "@/components/SendToBoard";
@@ -26,7 +29,7 @@ import { wordRange } from "@/lib/textinterpretation";
 import { shortNames } from "@/lib/vornamen";
 import { ownBoardFor, runningBoardsFor } from "@/lib/whiteboard";
 
-export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string; gesendet?: string; ausgelassen?: string; anzahl?: string }> }) {
+export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string; gesendet?: string; ausgelassen?: string; anzahl?: string; archiv?: string; fehler?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -126,6 +129,14 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
           </span>
         }
       />
+      <ArchivMeldung archiv={sp.archiv} fehler={sp.fehler} archiviert="Übung archiviert." wiederhergestellt="Wiederhergestellt. Die Übung steht wieder in der Liste." />
+      {w.archived_at && (
+        <ArchivBanner
+          seit={w.archived_at}
+          text="Sie steht nicht in der Übungsliste, und Schüler sehen sie nicht mehr als offen. Antworten, Dokumentation und Lernstand bleiben. Wer sie wieder sendet, holt sie zurück."
+          restore={restoreWorksheetAction.bind(null, w.id, `/uebungen/${w.id}`)}
+        />
+      )}
       {sp.hinweis === "fach" && (
         <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">
           {Number(sp.ausgelassen) === 1 ? "Eine Aufgabe" : `${Number(sp.ausgelassen) || "Einige"} Aufgaben`} aus einem anderen Fach {Number(sp.ausgelassen) === 1 ? "wurde" : "wurden"} nicht übernommen.
@@ -307,7 +318,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
       <details className="no-print group mt-12 rounded-2xl border border-line bg-surface px-5 py-1">
         <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between text-[15px] font-semibold">
           Weitere Aktionen
-          <span className="text-[13px] font-normal text-ink-3 group-open:hidden">Lösungen, PDF, Whiteboard, Kopieren, Vorlage, Löschen</span>
+          <span className="text-[13px] font-normal text-ink-3 group-open:hidden">Lösungen, PDF, Whiteboard, Kopieren, Vorlage, Archivieren</span>
         </summary>
         <div className="grid gap-8 pt-3 pb-6 lg:grid-cols-2">
           <div className="grid content-start gap-3">
@@ -330,9 +341,12 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
                 {assignments.map((x) => (
                   <li key={x.id} className="grid gap-1">
                     <div className="flex items-baseline justify-between gap-2 text-[14px]">
-                      <Link href={`/schueler/${x.student_id}/ergebnis/${x.id}`} className="font-medium hover:text-accent">
-                        {x.student_name}
-                      </Link>
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        <Link href={`/schueler/${x.student_id}/ergebnis/${x.id}`} className="font-medium hover:text-accent">
+                          {x.student_name}
+                        </Link>
+                        {x.archived_at && <Pill>archiviert</Pill>}
+                      </span>
                       <span className="num text-[12px] text-ink-3">
                         {x.done_count}/{tasks.length} · {x.correct_count} richtig
                       </span>
@@ -394,9 +408,28 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
               <SaveTemplatePanel worksheetId={w.id} suggestion={`${baseTitle} · ${tasks.length} Aufgaben`} />
             </div>
           </div>
-          <form action={deleteWorksheetAction.bind(null, w.id)} className="self-end">
-            <button className="btn btn-danger">Übung löschen</button>
-          </form>
+          <div className="grid content-start gap-3 border-t border-line pt-4 lg:col-span-2" data-testid="archivieren-loeschen">
+            <span className="label flex items-center gap-1.5">
+              <Archive size={14} aria-hidden /> Archivieren oder löschen
+            </span>
+            <p className="max-w-[80ch] text-[14px] text-ink-2">
+              Archivieren nimmt die Übung aus der Liste, Schüler sehen sie nicht mehr als offen. Antworten, Dokumentation und Lernstand bleiben, und du kannst sie
+              jederzeit wiederherstellen. Löschen entfernt die Übung ganz, mit allen Antworten der Schüler und der Dokumentation dazu.
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              {w.archived_at ? (
+                <WiederherstellenKnopf action={restoreWorksheetAction.bind(null, w.id, `/uebungen/${w.id}`)} />
+              ) : (
+                <ArchivKnopf action={archiveWorksheetAction.bind(null, w.id, "/uebungen")} label="Übung archivieren" />
+              )}
+              <LoeschenMitWarnung
+                action={deleteWorksheetAction.bind(null, w.id)}
+                label="Übung löschen"
+                className="btn btn-danger"
+                frage={`„${w.title}“ endgültig löschen? Das löscht auch ${assignments.length === 1 ? "die Antworten des Schülers" : assignments.length > 1 ? `die Antworten von ${assignments.length} Schülern` : "alle Antworten"} und die Dokumentation dazu, und es lässt sich nicht rückgängig machen. Zum Aufräumen ohne Verlust lieber „Archivieren“.`}
+              />
+            </div>
+          </div>
         </div>
       </details>
     </>

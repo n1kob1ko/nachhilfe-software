@@ -1619,6 +1619,32 @@ textarea.input {
     column-gap: 16px;
   }
 }
+/* Textbeilage ausblenden: only beside the writing (wide); it stays in the page, the writing takes the whole width */
+.ti-beilage-slot,
+.ti-beilage-label {
+  display: none;
+}
+@container (min-width: 900px) {
+  .ti-beilage-slot {
+    display: flex;
+    align-items: center;
+  }
+  .ti-grid[data-beilage="aus"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ti-grid[data-beilage="aus"] .ti-story-col {
+    display: none;
+  }
+  /* hidden, there is room: the way back is spelled out */
+  .ti-grid[data-beilage="aus"] .ti-beilage-label {
+    display: inline;
+  }
+}
+@container (min-width: 1100px) {
+  .ti-beilage-label {
+    display: inline;
+  }
+}
 
 /* Fehler korrigieren: corrected words green, words that are still or newly wrong red */
 .fx-fixed {

@@ -174,12 +174,13 @@ function kandidaten(student: repo.Student, gewicht: Map<string, number>, limit =
   const fachPasst = (f: string) => !faecher.length || !f || faecher.includes(f);
   const out: Kandidat[] = [];
 
-  const zuweisungen = repo.listAssignments(student.id);
-  const offen = new Set(zuweisungen.filter((a) => !a.completed_at).map((a) => a.worksheet_id));
+  // Archived copies still count as "schon bearbeitet", but never as open work.
+  const zuweisungen = repo.listAssignments(student.id, { archiv: "alle" });
+  const offen = new Set(zuweisungen.filter((a) => !a.completed_at && !a.archiviert).map((a) => a.worksheet_id));
   const zuletzt = new Map<number, (typeof zuweisungen)[number]>();
   for (const a of zuweisungen) if (a.completed_at && !zuletzt.has(a.worksheet_id)) zuletzt.set(a.worksheet_id, a);
 
-  for (const a of zuweisungen.filter((x) => !x.completed_at)) {
+  for (const a of zuweisungen.filter((x) => !x.completed_at && !x.archiviert)) {
     const p = passend(a.skill_ids);
     if (!p.treffer.length) continue;
     out.push({
@@ -209,7 +210,7 @@ function kandidaten(student: repo.Student, gewicht: Map<string, number>, limit =
     });
   }
   // the Aufgabenbibliothek: single saved tasks, after whole exercises
-  const bibliothek = db().prepare("SELECT id, title, subject, skill_ids, difficulty FROM worksheets WHERE kind = 'bibliothek' AND status = 'freigegeben'").all() as { id: number; title: string; subject: string; skill_ids: string; difficulty: string }[];
+  const bibliothek = db().prepare("SELECT id, title, subject, skill_ids, difficulty FROM worksheets WHERE kind = 'bibliothek' AND status = 'freigegeben' AND archived_at IS NULL").all() as { id: number; title: string; subject: string; skill_ids: string; difficulty: string }[];
   for (const b of bibliothek) {
     if (!fachPasst(b.subject)) continue;
     let ids: string[] = [];
@@ -267,7 +268,7 @@ export function briefingDaten(studentId: number, o: { now?: Date; platzId?: numb
       .map((t) => ({ ...t, days: daysUntil(t.date, datum) }))
       .find((t) => t.days <= 60) ?? null;
   const schritte = nextSteps(studentId, { today: datum, now: now.getTime(), limit: 5 });
-  const hausuebungen = (db().prepare("SELECT * FROM homework WHERE student_id = ? AND status = 'offen' ORDER BY due_date IS NULL, due_date").all(studentId) as repo.Homework[]).slice(0, 3);
+  const hausuebungen = (db().prepare("SELECT h.* FROM homework h WHERE h.student_id = ? AND h.status = 'offen' AND NOT EXISTS (SELECT 1 FROM assignments a WHERE a.id = h.assignment_id AND a.completed_at IS NOT NULL) ORDER BY h.due_date IS NULL, h.due_date").all(studentId) as repo.Homework[]).slice(0, 3);
   const basis = { schritte, schularbeit, analysis, doku };
   return {
     student,

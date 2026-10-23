@@ -3,11 +3,13 @@ import { notFound } from "next/navigation";
 import { BookOpenText, CheckCircle2, FileText, History, Images, Laptop, ListChecks, Printer, RotateCcw, SpellCheck, Tablet } from "lucide-react";
 import { restoreRevisionAction, setTextStatusAction, showTextOnTabletAction, updateTextInfoAction } from "@/app/text-actions";
 import { auftragExercisesAction } from "@/app/schreibauftrag-actions";
+import { archiveTextAction, restoreTextAction } from "@/app/archiv-actions";
+import { ArchivBanner, ArchivKnopf, ArchivMeldung } from "@/components/Archiv";
 import { TextEditor } from "@/components/text/TextEditor";
 import { TextLive } from "@/components/text/TextLive";
 import { Pill, Reveal, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
-import { SUBJECTS } from "@/lib/curriculum";
+import { fachNamen } from "@/lib/faecher";
 import { storyForEditor } from "@/lib/picture-story";
 import { auftragFor } from "@/lib/schreibauftrag-store";
 import { getText, listRevisions, textDoc, TEXT_KINDS, unitsOfText, wordsLabel } from "@/lib/texts";
@@ -20,8 +22,9 @@ export const metadata = { title: "Textarbeit" };
 const first = (n: string) => n.split(" ")[0];
 
 /** One Textarbeit at the teacher's laptop: read along while the student writes, write here, print, continue later. */
-export default async function TextPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function TextPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ archiv?: string; fehler?: string }> }) {
   const { id } = await params;
+  const sp = await searchParams;
   const teacher = await requireTeacher();
   const text = getText(Number(id));
   if (!text) notFound();
@@ -30,7 +33,8 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
   const device = ownUnit ? studentDevice(ownUnit) : null;
   const word = device === "laptop" ? "Laptop" : "Tablet";
   const onTablet = Boolean(device) && ownUnit?.device_view === `text:${text.id}`;
-  const canShow = ownUnit && !onTablet && device;
+  // an archived text is not offered to the student's device (lib/live.ts unitText)
+  const canShow = ownUnit && !onTablet && device && !text.archived_at;
   const revisions = listRevisions(text.id);
   const units = unitsOfText(text.id);
   const name = first(text.student_name);
@@ -112,6 +116,14 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
         )}
         {text.status === "fertig" ? <Pill tone="green">fertig</Pill> : <Pill tone="amber">in Arbeit</Pill>}
       </div>
+      <ArchivMeldung archiv={sp.archiv} fehler={sp.fehler} archiviert="Archiviert." wiederhergestellt="Wiederhergestellt. Der Text steht wieder in der Liste." />
+      {text.archived_at && (
+        <ArchivBanner
+          seit={text.archived_at}
+          text={`Er steht nicht mehr in der Liste der Texte, und ${name} bekommt ihn nicht mehr zum Weiterschreiben angeboten. Text, Fassungen, Korrekturen und Dokumentation bleiben.`}
+          restore={restoreTextAction.bind(null, text.id, `/texte/${text.id}`)}
+        />
+      )}
 
       <TextEditor
         key={text.id}
@@ -168,7 +180,7 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
               </label>
             </div>
             <datalist id="text-subjects">
-              {SUBJECTS.map((s) => (
+              {fachNamen().map((s) => (
                 <option key={s} value={s} />
               ))}
             </datalist>
@@ -209,6 +221,12 @@ export default async function TextPage({ params }: { params: Promise<{ id: strin
               ))}
             </ul>
           </Reveal>
+        )}
+        {!text.archived_at && (
+          <div className="no-print flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-4" data-testid="text-archivieren">
+            <ArchivKnopf action={archiveTextAction.bind(null, text.id, `/schueler/${text.student_id}?tab=lernverlauf`)} label="Text archivieren" className="btn btn-ghost" />
+            <span className="text-[13px] text-ink-3">Nimmt den Text aus der Liste. Text, Korrekturen und Dokumentation bleiben, Wiederherstellen geht jederzeit.</span>
+          </div>
         )}
       </div>
     </>

@@ -18,7 +18,7 @@ Die Fähigkeit `deutsch.os.matura.textinterpretation` hatte keinen eigenen Gener
    - „Quelle“ ist nur für dich und wird nicht gedruckt.
 2. **Ändern.** In der Textarbeit führt „Text und Auftrag“ zu `/texte/<id>/schreibauftrag`. Der geschriebene Text bleibt dabei unverändert; ein offenes Tablet oder ein offener Laptop zeigt die Änderung sofort.
 3. **Schreiben.** Am Tablet (`/geraet`) und am eigenen Laptop (`/mitmachen`) sieht der Schüler:
-   - **Breit** (Schreibbereich ab 900 px, Laptop oder iPad quer): links die Geschichte mit Zeilennummern, sie bleibt beim Scrollen stehen; rechts Schreibplan, Wortzähler und Editor.
+   - **Breit** (Schreibbereich ab 900 px, Laptop oder iPad quer): links die Geschichte mit Zeilennummern, sie bleibt beim Scrollen stehen; rechts Schreibplan, Wortzähler und Editor. Der Knopf ganz links in der Werkzeugleiste („Geschichte ausblenden“, bei den anderen Textsorten „Textbeilage ausblenden“) blendet sie aus, dann schreibt man über die ganze Breite; „… zeigen“ holt sie zurück, an derselben Stelle. Die Wahl gilt pro Text auf diesem Gerät. Text, Speichern und Aufgabe bleiben, wie sie sind; im Vollbild steht die Aufgabe zum Aufklappen über dem Schreibplan.
    - **Schmal** (Handy, iPad hoch): zwei Reiter „Text lesen“ und „Schreiben“. Am Handy (390 px) gibt es kein seitliches Scrollen; lange Zeilen brechen mit hängendem Einzug um, die Nummer bleibt links.
    - Den **Schreibplan** mit den sieben Teilen, einem Satz Hilfe und einer Wortzahl je Teil. Er ist offen, bis der Schüler den Fokusmodus wählt.
    - Den **Wortzähler** mit Balken: Ziel ±10 % (bei 500 also 450 bis 550 Wörter).
