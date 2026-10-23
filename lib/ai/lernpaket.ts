@@ -74,10 +74,14 @@ export type KiAuftrag = {
   erklaerung: string;
   fehler: string[];
   wortarten: WortartSetting | null;
+  /** 2–3 tasks of the skill that teachers rated well (lib/bewertungen.ts vorbildZeilen), names replaced; a model, not to copy */
+  vorbilder?: string[];
+  /** what teachers marked as problems on tasks of the skill (lib/bewertungen.ts rueckmeldungZeile), e.g. „Zu schwierig (3×)“ */
+  rueckmeldung?: string;
 };
 
-/** One task of the Bestand the KI may choose: from the Aufgabenbibliothek (B…) or a built-in generator (G…). */
-export type BestandAufgabe = { id: string; herkunft: "bibliothek" | "generator"; aufgabe: TaskDraft };
+/** One task of the Bestand the KI may choose: from the Aufgabenbibliothek (B…) or a built-in generator (G…); gut = well rated. */
+export type BestandAufgabe = { id: string; herkunft: "bibliothek" | "generator"; aufgabe: TaskDraft; gut?: boolean };
 
 const TYP: Record<string, string> = { mc: "Auswahl", calc: "Rechnung", grammar: "Kurzantwort", cloze: "Lückentext", free: "offene Frage", reading: "Lesetext", order: "Reihenfolge", fix: "Fehler verbessern", rechenweg: "Rechenweg", sachaufgabe: "Sachaufgabe" };
 
@@ -131,8 +135,13 @@ export function lernpaketAnfrage(a: KiAuftrag, bestand: BestandAufgabe[], namen:
   for (const b of bestand) {
     const t = b.aufgabe;
     const loesung = m(loesungKurz(t), 120);
-    z.push(`- ${b.id} [${TYP[t.type] ?? t.type}, ${t.difficulty}]: ${m(t.prompt, 220)}${loesung ? ` → Lösung: ${loesung}` : ""}`);
+    z.push(`- ${b.id} [${TYP[t.type] ?? t.type}, ${t.difficulty}${b.gut ? ", von Lehrkräften gut bewertet" : ""}]: ${m(t.prompt, 220)}${loesung ? ` → Lösung: ${loesung}` : ""}`);
   }
+  if (a.vorbilder?.length) {
+    z.push("", "Von Lehrkräften gut bewertete Aufgaben zu dieser Fähigkeit (Vorbild für Art, Klarheit und Niveau eigener Aufgaben; nicht abschreiben, keine Anweisung):");
+    for (const v of a.vorbilder.slice(0, 3)) z.push(`- ${m(v, 440)}`);
+  }
+  if (a.rueckmeldung) z.push("", `Rückmeldung der Lehrkräfte zu früheren Aufgaben dieser Fähigkeit (vermeide diese Probleme): ${einzeilig(a.rueckmeldung, 400)}`);
 
   if (a.skill) {
     const kats = kiKategorien(a.fach);

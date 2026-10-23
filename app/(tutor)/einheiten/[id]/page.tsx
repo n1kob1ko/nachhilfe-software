@@ -167,7 +167,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         {notices}
         {mayManage && <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} join={await joinInfo()} />}
         {area === "cockpit" ? (
-          <CockpitBereich unit={unit} student={student} fehler={sp.cockpit} />
+          <CockpitBereich unit={unit} student={student} fehler={sp.cockpit} teacherId={teacher.id} />
         ) : area === "uebungen" ? (
           <UnitExercisesArea unit={unit} student={student} mayManage={mayManage} />
         ) : (

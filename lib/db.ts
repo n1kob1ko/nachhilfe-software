@@ -855,6 +855,24 @@ CREATE TABLE IF NOT EXISTS todo_gesehen (
   seen_at TEXT NOT NULL,
   PRIMARY KEY (teacher_id, art, ref_id)
 );
+-- Aufgaben bewerten (lib/bewertungen.ts, 2026-10-23): eine Bewertung je Aufgabe und Lehrer, getrennt von Schülerleistungen.
+-- schluessel: der Inhalt der Aufgabe (Format, Text, Daten, Antwort), Kopien in Übungen, Bibliothek und Lernpaketen teilen ihn.
+-- gruende: JSON-Schlüssel aus lib/bewertung-regeln.ts; aufgabe: JSON TaskDraft, wie bewertet (Vorbild für die KI).
+CREATE TABLE IF NOT EXISTS aufgabe_bewertungen (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  schluessel TEXT NOT NULL,
+  teacher_id INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+  sterne INTEGER NOT NULL,                  -- 1–5
+  gruende TEXT NOT NULL DEFAULT '[]',
+  kommentar TEXT NOT NULL DEFAULT '',
+  fach TEXT NOT NULL DEFAULT '',
+  skill_id TEXT,
+  aufgabe TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (schluessel, teacher_id)
+);
+CREATE INDEX IF NOT EXISTS idx_aufgabe_bewertungen_skill ON aufgabe_bewertungen(skill_id);
 -- Terminanfragen (lib/planung/terminanfragen.ts, Plan 3.3): ein veröffentlichter Platz soll verschoben oder mit
 -- einem anderen getauscht werden. Ein Tausch wartet zuerst auf die Zustimmung der anderen Seite (Schüler oder
 -- ihr Lehrer), dann bestätigt oder lehnt die Verwaltung ab. Bewegt wird erst beim Bestätigen, mit derselben

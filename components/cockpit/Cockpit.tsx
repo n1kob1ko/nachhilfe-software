@@ -13,6 +13,8 @@ import {
   zeigeSchrittAction,
 } from "@/app/cockpit-actions";
 import { AnpassenKnopf, CockpitSenden, SchrittNotiz } from "@/components/cockpit/CockpitClient";
+import { AufgabeBewertung } from "@/components/AufgabeBewertung";
+import { bewertungInfos } from "@/lib/bewertungen";
 import { TabletSend } from "@/components/device/TabletSend";
 import { Info } from "@/components/Info";
 import { StatusPill } from "@/components/LernpaketStatus";
@@ -50,7 +52,7 @@ const stufeVon = (p: Pick<Lernpaket, "schulart" | "klasse">) => (p.klasse ? klas
  * Schritte (am Handy als Leiste, ab Tablet quer links) und rechts der Schritt auf dem Schirm mit dem, was der
  * Lehrer sagt und fragt. Ohne Lernpaket steht da, was es zur Fähigkeit schon gibt. Nur für den Lehrer.
  */
-export function CockpitBereich({ unit, student, fehler }: { unit: UnitView; student: repo.Student; fehler?: string }) {
+export function CockpitBereich({ unit, student, fehler, teacherId = null }: { unit: UnitView; student: repo.Student; fehler?: string; teacherId?: number | null }) {
   const c = cockpit(unit.id);
   const wahl = paketWahl(student.id, { fach: unit.subject, ausser: unit.id });
   const name = first(student.name);
@@ -80,7 +82,7 @@ export function CockpitBereich({ unit, student, fehler }: { unit: UnitView; stud
           <AnpassenBereich c={c} unitId={unit.id} studentId={student.id} name={name} liste={liste} />
           <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,290px)_minmax(0,1fr)] lg:items-start lg:gap-6">
             <SchrittListe c={c} unitId={unit.id} />
-            {c.aktuell ? <SchrittPanel c={c} s={c.aktuell} unitId={unit.id} name={name} paket={c.paket} angepasst={liste.filter((a) => a.status === "uebernommen" && a.schritt_id === c.aktuell!.id)} /> : <AllesDurch c={c} />}
+            {c.aktuell ? <SchrittPanel c={c} s={c.aktuell} unitId={unit.id} name={name} paket={c.paket} teacherId={teacherId} angepasst={liste.filter((a) => a.status === "uebernommen" && a.schritt_id === c.aktuell!.id)} /> : <AllesDurch c={c} />}
           </div>
         </>
       ) : (
@@ -262,7 +264,9 @@ function SchrittListe({ c, unitId }: { c: CockpitDaten; unitId: number }) {
 }
 
 /** The step on screen: what to say, ask, expect and do on a mistake; send its tasks; done, skip, move. */
-function SchrittPanel({ c, s, unitId, name, paket, angepasst }: { c: CockpitDaten; s: LernpaketSchritt; unitId: number; name: string; paket: Lernpaket; angepasst: Anpassung[] }) {
+function SchrittPanel({ c, s, unitId, name, paket, angepasst, teacherId }: { c: CockpitDaten; s: LernpaketSchritt; unitId: number; name: string; paket: Lernpaket; angepasst: Anpassung[]; teacherId: number | null }) {
+  // Aufgaben bewerten (lib/bewertungen.ts): die Aufgaben des Schritts, nie die Antworten des Schülers
+  const bewertungen = bewertungInfos(s.aufgaben, teacherId);
   const i = c.schritte.findIndex((x) => x.id === s.id);
   const st = statusVon(c, s.id);
   const ab = c.ab.get(s.id) ?? 0;
@@ -345,6 +349,9 @@ function SchrittPanel({ c, s, unitId, name, paket, angepasst }: { c: CockpitDate
                     </p>
                   ))}
                   <TaskBody task={a} showSolution skillName={a.skillId ? skillName(a.skillId) : undefined} subject={paket.fach} />
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <AufgabeBewertung key={bewertungen[j].schluessel} ziel={{ art: "schritt", id: s.id, index: j }} info={bewertungen[j]} className="-ml-3" />
+                  </div>
                 </li>
               ))}
             </ol>
