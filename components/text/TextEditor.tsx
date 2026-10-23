@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
   Bold,
@@ -12,6 +12,8 @@ import {
   Loader2,
   Maximize2,
   Minimize2,
+  PanelLeftClose,
+  PanelLeftOpen,
   Pilcrow,
   Redo2,
   Save,
@@ -27,6 +29,7 @@ import {
   type TextDoc,
 } from "@/lib/text-doc";
 import { planFor, SORTEN, type AuftragView } from "@/lib/schreibauftrag";
+import { beilageKey } from "@/lib/text-ansicht";
 import { ExamplePanel, HintsPanel, WordProgress } from "./interpretation/InterpretationParts";
 import { MerkmaleList, NumberedStory, SchreibplanList } from "./interpretation/NumberedStory";
 import { readDom } from "./read-dom";
@@ -183,6 +186,12 @@ export function TextEditor({
   const [focus, setFocus] = useState(false);
   // Schreibauftrag on a narrow screen: the Textbeilage or the writing; first the Textbeilage while nothing is written
   const [pane, setPane] = useState<"text" | "schreiben">(initial.body.length === 0 ? "text" : "schreiben");
+  // Schreibauftrag on a wide screen: the Textbeilage can be hidden, then the writing takes the whole width; it stays
+  // mounted and comes back where it was scrolled to. Remembered per text on this device.
+  const [beilageAus, setBeilageAus] = useState(false);
+  const storyCol = useRef<HTMLElement>(null);
+  const storyScroll = useRef(0);
+  const beilageStore = beilageKey(backupPrefix, textId);
   const [conflict, setConflict] = useState<null | {
     version: number;
     body: TextDoc;
@@ -456,6 +465,32 @@ export function TextEditor({
     },
     [flush],
   );
+
+  // ---------- Textbeilage beside the writing (Schreibauftrag, wide screen) ----------
+
+  useEffect(() => {
+    if (!auftrag) return;
+    try {
+      setBeilageAus(localStorage.getItem(beilageStore) === "aus");
+    } catch {
+      // no storage: the Textbeilage is shown
+    }
+  }, [auftrag, beilageStore]);
+  // hidden it has no scroll position: back where it was
+  useLayoutEffect(() => {
+    if (!beilageAus && storyCol.current) storyCol.current.scrollTop = storyScroll.current;
+  }, [beilageAus]);
+  const toggleBeilage = () => {
+    const aus = !beilageAus;
+    if (aus && storyCol.current) storyScroll.current = storyCol.current.scrollTop;
+    setBeilageAus(aus);
+    try {
+      if (aus) localStorage.setItem(beilageStore, "aus");
+      else localStorage.removeItem(beilageStore);
+    } catch {
+      // only for this visit
+    }
+  };
 
   // ---------- formatting ----------
 
@@ -848,8 +883,29 @@ export function TextEditor({
     </>
   );
 
+  const beilageLabel = auftrag ? `${SORTEN[auftrag.sorte].beilage} ${beilageAus ? "zeigen" : "ausblenden"}` : "";
   const toolbar = (
     <div role="toolbar" aria-label="Text bearbeiten" className="tx-toolbar">
+      {auftrag && (
+        // only where the Textbeilage stands beside the writing; on a narrow screen the tabs switch
+        <span className="ti-beilage-slot">
+          <button
+            type="button"
+            title={beilageLabel}
+            aria-label={beilageLabel}
+            aria-expanded={!beilageAus}
+            aria-controls={`beilage-${textId}`}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={toggleBeilage}
+            className={`flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-xl px-2.5 text-[14px] font-semibold transition-colors ${beilageAus ? "bg-accent-wash text-accent" : "text-ink hover:bg-panel"}`}
+            data-testid="beilage-umschalten"
+          >
+            {beilageAus ? <PanelLeftOpen size={18} aria-hidden /> : <PanelLeftClose size={18} aria-hidden />}
+            <span className="ti-beilage-label">{beilageLabel}</span>
+          </button>
+          <span className="tx-sep" aria-hidden />
+        </span>
+      )}
       <div className="flex items-center gap-0.5">
         <Tool
           label="Absatz"
@@ -960,7 +1016,7 @@ export function TextEditor({
         )}
       </header>
       {auftrag ? (
-        <div className="ti-grid" data-pane={pane}>
+        <div className="ti-grid" data-pane={pane} data-beilage={beilageAus ? "aus" : "an"}>
           <div className="ti-tabs">
             <div className="ti-tabs-pill" role="tablist" aria-label="Ansicht">
               <button type="button" role="tab" className="kx-tab" aria-selected={pane === "text"} onClick={() => setPane("text")} data-testid="tab-text">
@@ -971,13 +1027,20 @@ export function TextEditor({
               </button>
             </div>
           </div>
-          <aside className="ti-story-col" aria-label={SORTEN[auftrag.sorte].beilage === "Geschichte" ? "Text zur Interpretation" : "Textbeilage"}>
+          <aside ref={storyCol} id={`beilage-${textId}`} className="ti-story-col" aria-label={SORTEN[auftrag.sorte].beilage === "Geschichte" ? "Text zur Interpretation" : "Textbeilage"}>
             <NumberedStory text={auftrag.text} countBlank={auftrag.countBlank} title={auftrag.title} author={auftrag.author} year={auftrag.year} medium={auftrag.medium} kind={auftrag.kind} />
             <button type="button" className="btn btn-secondary ti-to-write" onClick={() => setPane("schreiben")}>
               Zum Schreiben
             </button>
           </aside>
           <div className="ti-main">
+            {focus && prompt && (
+              // in Vollbild the header is gone: the Aufgabe stays one tap away
+              <details className="ti-box ti-planbox" data-testid="aufgabe-vollbild">
+                <summary className="ti-summary">Aufgabe</summary>
+                <p className="mt-2 text-[15px] whitespace-pre-line">{prompt}</p>
+              </details>
+            )}
             <details className="ti-box ti-planbox" open={!focus}>
               <summary className="ti-summary">
                 Schreibplan: {plan.length} Teile, ca. {auftrag.target.toLocaleString("de-AT")} Wörter
