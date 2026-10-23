@@ -141,6 +141,8 @@ const AufgabeSchema = z.strictObject({
   errorMap: z.array(z.strictObject({ answer: z.string(), label: z.string() })).max(20).default([]),
   solutionSteps: z.array(z.string()).optional(),
   estimatedTimeSec: z.number().int().positive().nullable().optional(),
+  // Quellenangabe einer übernommenen Aufgabe (Referenzsammlung): geht mit der Aufgabe mit
+  quelle: z.string().trim().max(200).nullable().optional(),
 });
 
 const SchrittSchema = z.strictObject({

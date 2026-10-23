@@ -189,6 +189,12 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
                 <dd>{e.source.attribution}</dd>
               </>
             )}
+            {e.task.quelle && (
+              <>
+                <dt className="text-ink-3">Quellenangabe</dt>
+                <dd>{e.task.quelle} (steht auf dem Blatt und beim Schüler)</dd>
+              </>
+            )}
             {e.model && e.model.id !== e.source?.id && (
               <>
                 <dt className="text-ink-3">Vorlage</dt>

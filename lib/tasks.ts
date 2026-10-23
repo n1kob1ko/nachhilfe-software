@@ -162,6 +162,8 @@ export type TaskDraft = {
   /** Origin: eigen (generators, teacher), ki, oer, lehrplan, demo. Licence data via sourceId (content_sources). */
   sourceType?: string;
   sourceId?: number | null;
+  /** Quellenangabe einer übernommenen Aufgabe (Referenzsammlung, lib/referenz.ts): auf dem Blatt und beim Schüler „Quelle: …“. */
+  quelle?: string | null;
 };
 
 /** Wie bei einer Zuordnung der Englisch-Matura zugeordnet wird (data.zuordnung.art). */

@@ -269,6 +269,8 @@ const toTask = (r: Row): Task => ({
   sourceType: (r.source_type as string) ?? "eigen",
   sourceId: (r.source_id as number | null) ?? null,
   level: (r.level as number | null) ?? null,
+  // nur wenn es eine gibt: Aufgaben ohne Quelle bleiben, wie sie waren
+  ...(r.quelle ? { quelle: r.quelle as string } : {}),
 });
 
 // ---------- teachers ----------
@@ -555,12 +557,12 @@ function insertTask(worksheetId: number, position: number, t: TaskDraft): number
   const id = Number(
     conn
       .prepare(
-        `INSERT INTO tasks (worksheet_id, position, type, category, skill_id, difficulty, prompt, data, answer, solution, hints, error_map, level, solution_steps, estimated_time_sec, source_type, source_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO tasks (worksheet_id, position, type, category, skill_id, difficulty, prompt, data, answer, solution, hints, error_map, level, solution_steps, estimated_time_sec, source_type, source_id, quelle)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         worksheetId, position, t.type, t.category ?? null, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap),
-        levelOf(t.difficulty), JSON.stringify(t.solutionSteps ?? []), t.estimatedTimeSec ?? null, ...taskOrigin(worksheetId, t),
+        levelOf(t.difficulty), JSON.stringify(t.solutionSteps ?? []), t.estimatedTimeSec ?? null, ...taskOrigin(worksheetId, t), t.quelle?.trim() || null,
       ).lastInsertRowid,
   );
   writeTaskSkills(id, t);
@@ -674,8 +676,9 @@ export function updateTask(id: number, t: TaskDraft) {
   const cur = getTask(id);
   if (!cur) return;
   db()
-    .prepare("UPDATE tasks SET type = ?, category = ?, skill_id = ?, difficulty = ?, prompt = ?, data = ?, answer = ?, solution = ?, hints = ?, error_map = ?, level = ?, solution_steps = ? WHERE id = ?")
-    .run(t.type, t.category ?? null, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap), levelOf(t.difficulty), JSON.stringify(t.solutionSteps ?? cur.solutionSteps ?? []), id);
+    // die Quelle gehört zum Inhalt: der Editor schickt sie mit, eine neu erstellte Aufgabe hat keine
+    .prepare("UPDATE tasks SET type = ?, category = ?, skill_id = ?, difficulty = ?, prompt = ?, data = ?, answer = ?, solution = ?, hints = ?, error_map = ?, level = ?, solution_steps = ?, quelle = ? WHERE id = ?")
+    .run(t.type, t.category ?? null, t.skillId, t.difficulty, t.prompt, JSON.stringify(t.data), JSON.stringify(t.answer), t.solution, JSON.stringify(t.hints), JSON.stringify(t.errorMap), levelOf(t.difficulty), JSON.stringify(t.solutionSteps ?? cur.solutionSteps ?? []), t.quelle?.trim() || null, id);
   writeTaskSkills(id, t);
   syncWorksheetSkills(cur.worksheet_id);
 }

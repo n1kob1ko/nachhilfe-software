@@ -855,6 +855,29 @@ CREATE TABLE IF NOT EXISTS todo_gesehen (
   seen_at TEXT NOT NULL,
   PRIMARY KEY (teacher_id, art, ref_id)
 );
+-- Referenzsammlung (lib/referenz.ts, 2026-10-23): Aufgaben aus einem von Hand geladenen PDF, nur für Lehrer. Die KI liest
+-- die Datei einmal; jeder Eintrag ist ungeprüft, bis ein Lehrer ihn speichert. format = Kategorie (lib/curriculum.ts)
+-- oder ''. dritte = enthält Texte oder Bilder Dritter (bleibt Referenz). worksheet_id = die Bibliotheksaufgabe daraus.
+CREATE TABLE IF NOT EXISTS referenz_eintraege (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  fach TEXT NOT NULL,
+  skill_id TEXT REFERENCES skills(id) ON DELETE SET NULL,
+  grundkompetenz TEXT NOT NULL DEFAULT '',
+  format TEXT NOT NULL DEFAULT '',
+  aufgabe TEXT NOT NULL DEFAULT '',
+  loesung TEXT NOT NULL DEFAULT '',
+  quelle TEXT NOT NULL,
+  dritte INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'ungeprueft',
+  hinweise TEXT NOT NULL DEFAULT '[]',
+  datei TEXT NOT NULL DEFAULT '',
+  worksheet_id INTEGER REFERENCES worksheets(id) ON DELETE SET NULL,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  geprueft_von INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  geprueft_am TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_referenz_fach ON referenz_eintraege(fach, skill_id, status);
 CREATE INDEX IF NOT EXISTS idx_ge_week ON geplante_einheiten(week_start, status);
 CREATE INDEX IF NOT EXISTS idx_ge_teacher ON geplante_einheiten(teacher_id, week_start);
 CREATE INDEX IF NOT EXISTS idx_ge_student ON geplante_einheiten(student_id, week_start);
@@ -1082,6 +1105,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // KI-Grenze je Schüler und Monat (lib/ai/schueler-kosten.ts, 2026-10-23): um welchen Schüler es im Aufruf ging
   // (meta.studentId, sonst der Schüler der Einheit); null = keiner (Lesetext, Druckblatt, Verbindungstest …)
   ["ai_calls", "student_id", "INTEGER REFERENCES students(id) ON DELETE SET NULL"],
+  // Referenzsammlung (lib/referenz.ts, 2026-10-23): die Quellenangabe einer übernommenen Aufgabe („aufgabenpool.at, 1_234“),
+  // geht mit jeder Kopie mit und steht auf dem Blatt und beim Schüler als „Quelle: …“; null = keine
+  ["tasks", "quelle", "TEXT"],
 ];
 
 /** Teachers to start with; more can be added later. */

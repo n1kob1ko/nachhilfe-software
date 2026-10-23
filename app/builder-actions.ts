@@ -88,7 +88,8 @@ export async function saveTaskAction(taskId: number, draft: TaskDraft): Promise<
   // ein Bild, das nicht stimmt, wird nicht still weggelassen: die Lehrkraft bekommt den Grund
   const bild = data.figure !== undefined ? figurFehler(data.figure) : null;
   if (bild) return { error: `Das Bild stimmt nicht: ${bild}` };
-  const t = normalizeTask({ ...draft, data, prompt: String(draft.prompt ?? "").slice(0, 4000) });
+  // die Quellenangabe (Referenzsammlung) bleibt, wie sie gespeichert ist: Bearbeiten nimmt sie nicht weg
+  const t = normalizeTask({ ...draft, data, prompt: String(draft.prompt ?? "").slice(0, 4000), quelle: e.task.quelle ?? null });
   repo.updateTask(taskId, t);
   titleFromTask(e.task.worksheet_id);
   refresh(e.task.worksheet_id);

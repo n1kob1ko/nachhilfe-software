@@ -60,6 +60,8 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
       genus: isGenus(t.data.genus) ? t.data.genus : null,
       // Aufgabe mit Bild: nur das fertige Bild ohne Lösung, nie die Angaben dahinter (sie verraten, wo die Marke steht)
       figur: figurSvg(t.data.figure),
+      // eine übernommene Aufgabe nennt ihre Quelle (Referenzsammlung, lib/referenz.ts)
+      quelle: t.quelle ?? null,
       math:
         t.type === "rechenweg" || t.type === "sachaufgabe"
           ? {

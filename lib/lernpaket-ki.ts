@@ -19,6 +19,7 @@ import { db } from "./db";
 import { EXPLAIN, generateBuiltIn, hasBuiltInGenerator } from "./generators";
 import { importiereLernpaket, pruefeDateiAufgabe, pruefeMeta } from "./lernpakete";
 import { searchLibrary } from "./library";
+import { referenzVorbilder } from "./referenz";
 import * as repo from "./repo";
 import { klassenLabel, schulstufe } from "./school";
 import { typischeFehler } from "./themen";
@@ -171,7 +172,8 @@ export async function entwerfeLernpaket(e: KiEingabe, teacherId: number | null):
       if ("fehler" in geprueft) return { ok: false, error: geprueft.fehler.join(" ") };
       const aus = kiAusGrund();
       if (aus) return { ok: false, error: aus };
-      const a = geprueft.auftrag;
+      // mit Fähigkeit: geprüfte Einträge der Referenzsammlung dazu als Beispiele (lib/referenz.ts)
+      const a = { ...geprueft.auftrag, vorbilder: geprueft.auftrag.skill ? referenzVorbilder({ fach: geprueft.auftrag.fach, skillIds: [geprueft.auftrag.skill.id] }) : [] };
       const bestand = bestandFuer(a);
       const { system, prompt } = lernpaketAnfrage(a, bestand, bekannteNamen());
       // no student and no unit: the router adds no KI-Hinweise, and nothing about a student goes out

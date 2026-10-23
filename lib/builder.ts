@@ -11,6 +11,7 @@ import { generateForSlot } from "./generators";
 import { expectedFixes } from "./fix-text";
 import { checkOwnSolution } from "./math-task";
 import { regenerateReadingQuestion } from "./lesen-draft";
+import { referenzVorbilder } from "./referenz";
 import * as repo from "./repo";
 import { klassenLabel, schulstufe } from "./school";
 import { activeMaterial, materialLabel, materialSkills, MATERIAL_SOURCES } from "./current-material";
@@ -468,6 +469,8 @@ export async function generateTasks(
             studentContext: ctx ? contextForAI(ctx, skills.map((r) => r.skill.id)) : null,
             focusNote: settings.focus,
             examples: settings.examples,
+            // geprüfte Einträge der Referenzsammlung zu diesen Fähigkeiten und Formaten, als Beispiele (lib/referenz.ts)
+            vorbilder: referenzVorbilder({ fach: settings.subject, skillIds: skills.map((r) => r.skill.id), formate: rest.map((i) => plan[i].category ?? "") }),
             avoid: schonDa(),
             wortarten,
           },
