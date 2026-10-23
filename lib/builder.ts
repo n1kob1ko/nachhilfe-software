@@ -711,6 +711,9 @@ export function checkTask(t: TaskDraft): string | null {
 export function normalizeTask(t: TaskDraft): TaskDraft {
   const out: TaskDraft = { ...t, prompt: t.prompt.trim(), solution: t.solution.trim(), hints: t.hints.map((h) => h.trim()).filter(Boolean), errorMap: t.errorMap.filter((e) => e.answer.trim() && e.label.trim()) };
   out.skillIds = [...new Set([t.skillId, ...(t.skillIds ?? [])].filter((x): x is string => Boolean(x)))];
+  // Lösungsdaten für den Lehrer: leere Wege fallen weg, eine leere Erklärung heißt „die der Fähigkeit“
+  if (out.teacherNote !== undefined) out.teacherNote = out.teacherNote.trim();
+  if (out.altWays) out.altWays = out.altWays.map((w) => w.trim()).filter(Boolean);
   if (out.type === "calc" || out.type === "grammar") out.answer = { ...out.answer, accepted: (out.answer.accepted ?? []).map((a) => a.trim()).filter(Boolean) };
   if (out.answer.criteria) out.answer = { ...out.answer, criteria: out.answer.criteria.map((c) => c.trim()).filter(Boolean) };
   // Leseverständnis: Belege without text are dropped, the paragraph is a number from 1

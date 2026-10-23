@@ -40,17 +40,18 @@ import {
   zahl,
   type BruchOp,
   type BruchRechnung,
+  type Frac,
   type Gleichung,
   type Rng,
   type Stufe,
 } from "./schulbuch-zahlen";
-import type { TaskDraft } from "./tasks";
+import { parseNumber, type TaskDraft } from "./tasks";
 import { gleichungsText } from "./textaufgaben";
 
 const WRITE = "Schreib jeden Rechenschritt in eine eigene Zeile.";
 const rund = (x: number) => Math.round(x * 10000) / 10000;
 
-function rechenweg(skillId: string, difficulty: Difficulty, o: { prompt: string; start?: string; variable?: string; accepted: string[]; unit?: string; form?: TaskDraft["answer"]["form"]; steps: string[]; solution: string; hints: string[]; errors?: { answer: string; label: string }[]; time?: number }): TaskDraft {
+function rechenweg(skillId: string, difficulty: Difficulty, o: { prompt: string; start?: string; variable?: string; accepted: string[]; unit?: string; form?: TaskDraft["answer"]["form"]; steps: string[]; solution: string; hints: string[]; errors?: { answer: string; label: string }[]; time?: number; wege?: string[] }): TaskDraft {
   return {
     type: "rechenweg",
     skillId,
@@ -65,6 +66,7 @@ function rechenweg(skillId: string, difficulty: Difficulty, o: { prompt: string;
     hints: o.hints,
     errorMap: o.errors ?? [],
     estimatedTimeSec: o.time ?? 150,
+    ...(o.wege?.length ? { altWays: o.wege } : {}),
   };
 }
 
@@ -99,6 +101,14 @@ function bruchZeilen(r: BruchRechnung): string[] {
   const lines = [`${bruch(a)} · ${b.d}/${b.n}`, ...roh(a.n * b.d, a.d * b.n)];
   return lines[lines.length - 1] === bruch(res) ? lines : [...lines, bruch(res)];
 }
+
+/** Is this line already the result (a plain number or fraction of the same value), not a step towards it? */
+const gleicherWert = (line: string, f: Frac) => {
+  const v = parseNumber(line);
+  return v !== null && Math.abs(v - f.n / f.d) < 1e-9;
+};
+/** Gleiche Nenner: die Zähler mit ihren Rechenzeichen, „2 + 1“ aus 2/3 + 1/3. */
+const zaehlerTerm = (r: BruchRechnung) => r.terms.map((x, i) => `${i ? ` ${r.ops[i - 1]} ` : ""}${x.n}`).join("");
 
 /** −5 − (−8) + 3: the terms of a sum with negative numbers, as in lib/mathe-rechnungen.ts. */
 function negativeSumme(rng: Rng, lv: Stufe) {
@@ -180,8 +190,10 @@ export function rechenwegTask(skillId: string, difficulty: Difficulty, rng: Rng 
         form: "gekuerzt",
         steps,
         solution: `${start} = ${steps.join(" = ")}`,
-        hints: [...w.hints.slice(0, 2), `${start} = ${steps[0]}`],
+        // die erste Zeile des Wegs; bei gleichen Nennern ist sie schon das Ergebnis, dann nur die Zähler zusammen
+        hints: [...w.hints.slice(0, 2), gleicherWert(steps[0], r.result) ? `${start} = (${zaehlerTerm(r)})/${r.terms[0].d}` : `${start} = ${steps[0]}`],
         errors: w.errors,
+        wege: w.wege,
         time: r.terms.length > 2 ? 240 : 150,
       });
     }
