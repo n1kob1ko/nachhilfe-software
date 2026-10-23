@@ -66,7 +66,9 @@ const L = (richtig: string | string[], fehler: Fehler[], cue?: string): Luecke =
 
 /**
  * A sentence with one or two gaps (___). `regel` says why the answer is right (shown with the solution),
- * `hilfe` is the first hint. `titel` replaces the instruction of the skill for this sentence.
+ * `hilfe` is the first hint. `tipp` is the second hint when `regel` names the answer: the same rule shown
+ * on another word or as a question to ask, so a hint never gives the answer away (lib/hinweise-loesung.test.ts).
+ * `titel` replaces the instruction of the skill for this sentence.
  * `fixExtra`: more errors for "Fehler korrigieren" that are not a gap ("taller then me").
  * `ohneLuecke`: the right answer is "no word" (on next Monday): only multiple choice and correction.
  * `tabelle`: a line of the verb table ("go, ___, ___"), not a sentence: no correction text.
@@ -76,13 +78,14 @@ export type Satz = {
   luecken: Luecke[];
   regel: string;
   hilfe: string;
+  tipp?: string;
   titel?: string;
   fixExtra?: { von: string; zu: string; label: string }[];
   ohneLuecke?: boolean;
   tabelle?: boolean;
 };
 /** A short answer: an instruction, the sentence or word to work with, the right answers and the typical errors. */
-export type Umformung = { auftrag: string; vorlage: string; richtig: string[]; fehler: Fehler[]; regel: string; hilfe: string };
+export type Umformung = { auftrag: string; vorlage: string; richtig: string[]; fehler: Fehler[]; regel: string; hilfe: string; tipp?: string };
 
 type Faehigkeit = {
   /** instruction of the gap text */
@@ -118,6 +121,16 @@ const zeit = (z: string) => (z ? ` ${z}` : "");
 const regelBe = (p: Pronomen) => (p === "I" ? "Bei I steht am." : dritte(p) ? "Bei he, she, it steht is." : "Bei you, we, they steht are.");
 const regelHat = (p: Pronomen) => (dritte(p) ? "Bei he, she, it steht has." : "Bei I, you, we, they steht have.");
 const regelWar = (p: Pronomen) => (war(p) === "was" ? "Bei I, he, she, it steht was." : "Bei you, we, they steht were.");
+
+// ---------- examples for hints: the rule on another word, never on the word of the task ----------
+/** The first verb of the list that is none of the task's verbs. */
+const beispiel = (liste: readonly string[], ...meiden: Verb[]) => verb(liste.find((b) => !meiden.some((m) => m.base === b)) ?? liste[liste.length - 1]);
+/** The first example (word, its forms) that is not about the task's word. */
+const anderes = <T extends readonly string[]>(liste: readonly T[], wort: string): T => liste.find((x) => x[0] !== wort) ?? liste[liste.length - 1];
+/** The subject of an example in the same person as the task: I, she (for he, she, it) or they (also for you, we). */
+const bspWer = (p: Pronomen): Pronomen => (p === "I" ? "I" : dritte(p) ? "she" : "they");
+const REGELMAESSIG_BSP = ["work", "play", "help"];
+const UNREGELMAESSIG_BSP = ["go", "see", "take"];
 
 /** One of several kinds, by weight: art(rng, { aussage: 2, frage: 1 }). */
 function art<K extends string>(rng: Rng, gewichte: Partial<Record<K, number>>): K {
@@ -168,6 +181,20 @@ function sRegel(v: Verb): string {
   if (v.s.endsWith("es") && !v.base.endsWith("e")) return "Nach s, sh, ch, x und o kommt „-es“";
   return "Bei he, she, it kommt „-s“ dazu";
 }
+/** The -ing spelling rule with an example of another verb, or nothing when the -ing form is regular. */
+function ingTipp(v: Verb): string {
+  if (v.ing === `${v.base}ing`) return "";
+  const bsp = /ie$/.test(v.base)
+    ? anderes([["lie", "lying"], ["tie", "tying"]], v.base)
+    : v.ing.length === v.base.length + 3 && /e$/.test(v.base)
+      ? anderes([["see", "seeing"], ["agree", "agreeing"]], v.base)
+      : /e$/.test(v.base) && !/ee$/.test(v.base)
+        ? anderes([["make", "making"], ["write", "writing"]], v.base)
+        : v.ing.length === v.base.length + 4
+          ? anderes([["swim", "swimming"], ["run", "running"]], v.base)
+          : null;
+  return bsp ? ` ${ingRegel(v)} (${bsp[0]} → ${bsp[1]}).` : ` ${ingRegel(v)}.`;
+}
 function ingRegel(v: Verb): string {
   if (/ie$/.test(v.base)) return "ie wird vor „-ing“ zu y";
   if (v.ing.length === v.base.length + 3 && /e$/.test(v.base)) return "Kein stummes e vor „-ing“ weglassen";
@@ -199,6 +226,15 @@ function falschePP(v: Verb): Fehler[] {
 }
 const formen = (v: Verb) => (v.base === "be" ? "be, was/were, been" : `${v.base}, ${[v.past, ...v.pastAlt].join("/")}, ${[v.pp, ...v.ppAlt].join("/")}`);
 const vergangenheitsRegel = (v: Verb) => (v.irregular ? `${v.base} ist unregelmäßig: ${formen(v)}.` : `Regelmäßig: Grundform + „-ed“: ${v.past}.`);
+/** The same rule for a hint: on another verb, and without naming the verb (its 2nd form can be the same: cut, cut). */
+function vergangenheitsTipp(v: Verb, ...andere: Verb[]): string {
+  if (v.irregular) {
+    const w = beispiel(UNREGELMAESSIG_BSP, v, ...andere);
+    return `Das Verb ist unregelmäßig: Nimm die 2. Form (wie ${w.base} → ${w.past}).`;
+  }
+  const w = beispiel(REGELMAESSIG_BSP, v, ...andere);
+  return `Regelmäßig: Grundform + „-ed“ (${w.base} → ${w.past}).${falschesEd(v.base) ? ` ${edRegel(v)}.` : ""}`;
+}
 
 
 // ---------- the formats: gap text, multiple choice, Fehler korrigieren, short answer ----------
@@ -252,7 +288,7 @@ function lueckentext(skillId: string, difficulty: Difficulty, titel: string, s: 
     data: {},
     answer: { blanks: s.luecken.map((l) => l.richtig), mode: "text", contractions: true },
     solution: `${fuellen(s, rechts)}\n${s.regel}`,
-    hints: [s.hilfe, s.regel],
+    hints: [s.hilfe, s.tipp ?? s.regel],
     // several gaps: the error stands with the other gaps right ("has | ate"), so the label is found for the whole answer
     errorMap: s.luecken.flatMap((l, i) =>
       sauber(l.richtig, l.fehler).map((f) => ({ answer: s.luecken.length === 1 ? f.answer : rechts.map((r, j) => (j === i ? f.answer : r)).join(" | "), label: f.label })),
@@ -285,7 +321,7 @@ function auswahl(skillId: string, difficulty: Difficulty, titel: string, s: Satz
     data: { options },
     answer: { correct: options.indexOf(richtig) },
     solution: `${fuellen(s, rechts)}\n${s.regel}`,
-    hints: [s.hilfe, s.regel],
+    hints: [s.hilfe, s.tipp ?? s.regel],
     errorMap: falsche.slice(0, 3).map((f) => ({ answer: String(options.indexOf(f.text)), label: f.label })),
   };
 }
@@ -363,7 +399,7 @@ function kurzantwort(skillId: string, difficulty: Difficulty, u: Umformung): Tas
     data: {},
     answer: { accepted: u.richtig, mode: "text", contractions: true },
     solution: `${u.richtig[0]}\n${u.regel}`,
-    hints: [u.hilfe, u.regel],
+    hints: [u.hilfe, u.tipp ?? u.regel],
     errorMap: sauber(u.richtig, u.fehler).map(({ answer, label }) => ({ answer, label })),
   };
 }
@@ -399,6 +435,13 @@ const MOEGEN: [string, string][] = [
 
 const psRegel = (v: Verb, p: Pronomen) =>
   !dritte(p) ? `Bei I, you, we, they bleibt die Grundform: ${v.base}.` : v.base === "have" ? "Bei he, she, it heißt es has." : `${sRegel(v)}: ${v.s}.`;
+/** The -s rule as a hint: shown on another verb with the same ending (she watches), never on the verb of the task. */
+function psTipp(v: Verb, p: Pronomen): string {
+  if (!dritte(p)) return `Bei I, you, we, they bleibt die Grundform, ohne „-s“ (${bspWer(p)} ${beispiel(["read", "play", "work"], v).base}).`;
+  if (v.base === "have") return "have ist bei he, she, it unregelmäßig: Es heißt nicht „haves“.";
+  const w = v.s.endsWith("ies") ? beispiel(["try", "carry", "study"], v) : v.s.endsWith("es") && !v.base.endsWith("e") ? beispiel(["watch", "wash", "fix"], v) : beispiel(["read", "play", "work"], v);
+  return `${sRegel(v)} (she ${w.s}).`;
+}
 const psFehler = (v: Verb, p: Pronomen): Fehler[] =>
   dritte(p)
     ? [F(v.base, "„-s“ bei he, she, it vergessen"), F(naivS(v.base), sRegel(v)), F(`${be(p)} ${v.ing}`, "Present Progressive statt Present Simple", { fix: false })]
@@ -434,6 +477,7 @@ function presentSimpleSatz(rng: Rng, st: Stufe, nur?: "s" | "fragen"): Satz {
       luecken: [L(simple(v, p.p), psFehler(v, p.p), "like"), L(`${tunNicht(q.p)} like`, psNichtFehler(v, q.p), "not / like")],
       regel: `${psRegel(v, p.p)} Verneinung: ${tunNicht(q.p)} + Grundform.`,
       hilfe: PS_HILFE,
+      tipp: `${psTipp(v, p.p)} Verneinung: don't oder doesn't + Grundform.`,
     };
   }
   // the 3rd person -s: on the harder levels mostly verbs with -es, -ies or has
@@ -449,6 +493,7 @@ function presentSimpleSatz(rng: Rng, st: Stufe, nur?: "s" | "fragen"): Satz {
       luecken: [L(`${tunNicht(p.p)} ${v.base}`, psNichtFehler(v, p.p), `not / ${v.base}`)],
       regel: `Verneinung: ${tunNicht(p.p)} + Grundform (${tunNicht(p.p)} ${v.base}).`,
       hilfe: "Verneint wird mit don't oder doesn't. Welche Form hat das Verb danach?",
+      tipp: `Verneinung: ${tunNicht(p.p)} + Grundform (${bspWer(p.p)} ${tunNicht(bspWer(p.p))} ${beispiel(REGELMAESSIG_BSP, v).base}).`,
     };
   if (kind === "frage") {
     const [f1, f2] = psFrageFehler(v, p.p);
@@ -457,6 +502,7 @@ function presentSimpleSatz(rng: Rng, st: Stufe, nur?: "s" | "fragen"): Satz {
       luecken: [L(tun(p.p), f1), L(v.base, f2, v.base)],
       regel: `Frage: ${cap(tun(p.p))} + ${klein(p)} + Grundform (${cap(tun(p.p))} ${klein(p)} ${v.base} …?).`,
       hilfe: "Fragen im Present Simple brauchen do oder does. Welche Form hat das Verb danach?",
+      tipp: "Frage: do bei I, you, we, they, does bei he, she, it. Danach das Subjekt und die Grundform.",
     };
   }
   if (kind === "kurz") {
@@ -475,9 +521,10 @@ function presentSimpleSatz(rng: Rng, st: Stufe, nur?: "s" | "fragen"): Satz {
       ],
       regel: `Kurzantwort mit dem Hilfsverb der Frage: ${ja ? "Yes" : "No"}, ${ap} ${antwort}.`,
       hilfe: "Schau auf die Frage: Mit welchem Hilfsverb beginnt sie?",
+      tipp: "Kurzantwort: das Pronomen und das Hilfsverb der Frage, ohne das Verb. Bei No kommt n't dazu.",
     };
   }
-  return { text: `${p.text} ___ ${rest}${z}.`, luecken: [L(simple(v, p.p), psFehler(v, p.p), v.base)], regel: psRegel(v, p.p), hilfe: PS_HILFE };
+  return { text: `${p.text} ___ ${rest}${z}.`, luecken: [L(simple(v, p.p), psFehler(v, p.p), v.base)], regel: psRegel(v, p.p), hilfe: PS_HILFE, tipp: psTipp(v, p.p) };
 }
 
 /** Short answers: make the sentence negative, ask a question, or (3rd person -s) start with another subject. */
@@ -558,6 +605,7 @@ function progressiveSatz(rng: Rng, st: Stufe): Satz {
   const p = person(rng, { ...werFuer(h), ...(kind === "frage" ? { ohneIch: true } : {}) });
   const rest = mit(h.rest, p.p);
   const regel = `Present Progressive: ${be(p.p)} + „-ing“-Form (${be(p.p)} ${v.ing}).${v.ing !== `${v.base}ing` ? ` ${ingRegel(v)}.` : ""}`;
+  const tipp = `Present Progressive: am, is oder are + „-ing“-Form (she is ${beispiel(["read", "play", "work"], v).ing}).${ingTipp(v)}`;
   if (kind === "verneinung")
     return {
       text: `${p.text} ___ ${rest} ${pick(rng, JETZT)}.`,
@@ -571,6 +619,7 @@ function progressiveSatz(rng: Rng, st: Stufe): Satz {
       ],
       regel,
       hilfe: "Verneinung: am not, isn't oder aren't und die „-ing“-Form.",
+      tipp,
     };
   if (kind === "frage")
     return {
@@ -578,6 +627,7 @@ function progressiveSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(be(p.p), [F(tun(p.p), "Frage mit do statt mit be"), F(anderesBe(p.p), regelBe(p.p))]), L(progRichtig(v, p.p).map((x) => x.split(" ")[1]), [F(v.base, "„-ing“ vergessen"), F(naivIng(v.base), ingRegel(v))], v.base)],
       regel,
       hilfe: "Fragen im Present Progressive beginnen mit am, is oder are.",
+      tipp,
     };
   if (kind === "zwei") {
     const h2 = handlung(rng, st, "j", (x) => x.bereich === h.bereich && x.v !== h.v);
@@ -588,10 +638,11 @@ function progressiveSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(progRichtig(v, p.p), progFehler(v, p.p), v.base), L(progRichtig(v2, q.p), progFehler(v2, q.p), v2.base)],
       regel: `Present Progressive: am, is oder are + „-ing“-Form (${be(p.p)} ${v.ing}, ${be(q.p)} ${v2.ing}).`,
       hilfe: PROG_HILFE,
+      tipp: `Present Progressive: am, is oder are + „-ing“-Form (she is ${beispiel(["read", "play", "work"], v, v2).ing}, they are ${beispiel(["help", "cook", "talk"], v, v2).ing}).`,
     };
   }
   const r = jetztRahmen(rng, h);
-  return { text: `${r.vorn}${p.text} ___ ${rest}${r.hinten}.`, luecken: [L(progRichtig(v, p.p), progFehler(v, p.p), v.base)], regel, hilfe: PROG_HILFE };
+  return { text: `${r.vorn}${p.text} ___ ${rest}${r.hinten}.`, luecken: [L(progRichtig(v, p.p), progFehler(v, p.p), v.base)], regel, hilfe: PROG_HILFE, tipp };
 }
 
 function progressiveKurz(rng: Rng, st: Stufe): Umformung {
@@ -675,12 +726,23 @@ function simpleProgressiveSatz(rng: Rng, st: Stufe): Satz {
       luecken: [simpleL(a, p.p, "Für Gewohnheiten (usually) steht das Present Simple"), progL(b, p.p)],
       regel: `usually: Present Simple (${simple(a, p.p)}). ${cap(jetzt)}: Present Progressive (${be(p.p)} ${b.ing}).`,
       hilfe,
+      tipp: (() => {
+        const w = beispiel(["read", "play", "work"], a, b);
+        const q = bspWer(p.p);
+        return `usually: Present Simple (${q} ${simple(w, q)}). ${cap(jetzt)}: Present Progressive (${q} ${be(q)} ${w.ing}).`;
+      })(),
     };
   }
   if (kind === "fakt") {
     const [s, p, v0, rest] = pick(rng, FAKTEN);
     const v = verb(v0);
-    return { text: `${s} ___ ${rest}.`, luecken: [simpleL(v, p, "Für Tatsachen steht das Present Simple")], regel: `Eine Tatsache, die immer gilt: Present Simple (${simple(v, p)}).`, hilfe };
+    return {
+      text: `${s} ___ ${rest}.`,
+      luecken: [simpleL(v, p, "Für Tatsachen steht das Present Simple")],
+      regel: `Eine Tatsache, die immer gilt: Present Simple (${simple(v, p)}).`,
+      hilfe,
+      tipp: "Eine Tatsache, die immer gilt: Present Simple (A bird flies. Birds fly.)",
+    };
   }
   if (kind === "zustand") {
     // "is living" can be right (for a while), so live is no trap here
@@ -693,6 +755,7 @@ function simpleProgressiveSatz(rng: Rng, st: Stufe): Satz {
       luecken: [simpleL(v, p.p, `${v.base} ist ein Zustandsverb: keine „-ing“-Form`)],
       regel: `${v.base} beschreibt einen Zustand, keine Handlung: nur Present Simple (${simple(v, p.p)}).`,
       hilfe,
+      tipp: "Das Verb beschreibt einen Zustand (wissen, mögen, brauchen …), keine Handlung. Zustandsverben haben keine „-ing“-Form.",
     };
   }
   const h = handlung(rng, st, kind === "jetzt" ? "j" : "g", (x) => x.zeiten.includes("g") && x.zeiten.includes("j"));
@@ -701,10 +764,24 @@ function simpleProgressiveSatz(rng: Rng, st: Stufe): Satz {
   const rest = mit(h.rest, p.p);
   if (kind === "jetzt") {
     const r = jetztRahmen(rng, h);
-    return { text: `${r.vorn}${p.text} ___ ${rest}${r.hinten}.`, luecken: [progL(v, p.p)], regel: `Gerade jetzt: Present Progressive (${be(p.p)} ${v.ing}).`, hilfe };
+    const q = bspWer(p.p);
+    return {
+      text: `${r.vorn}${p.text} ___ ${rest}${r.hinten}.`,
+      luecken: [progL(v, p.p)],
+      regel: `Gerade jetzt: Present Progressive (${be(p.p)} ${v.ing}).`,
+      hilfe,
+      tipp: `Gerade jetzt: Present Progressive, am, is oder are + „-ing“-Form (${q} ${be(q)} ${beispiel(["read", "play", "work"], v).ing}).`,
+    };
   }
   const z = oft(rng, h) || "every day";
-  return { text: `${p.text} ___ ${rest} ${z}.`, luecken: [simpleL(v, p.p, "Für Gewohnheiten steht das Present Simple")], regel: `Eine Gewohnheit (${z}): Present Simple (${simple(v, p.p)}).`, hilfe };
+  const q = bspWer(p.p);
+  return {
+    text: `${p.text} ___ ${rest} ${z}.`,
+    luecken: [simpleL(v, p.p, "Für Gewohnheiten steht das Present Simple")],
+    regel: `Eine Gewohnheit (${z}): Present Simple (${simple(v, p.p)}).`,
+    hilfe,
+    tipp: `Eine Gewohnheit (${z}): Present Simple (${q} ${simple(beispiel(["read", "play", "work"], v), q)}).`,
+  };
 }
 
 // ---------- Past Simple ----------
@@ -744,6 +821,7 @@ function pastSimpleSatz(rng: Rng, st: Stufe, nurUnregelmaessig = false): Satz {
       ],
       regel: `Past Simple von be: ${regelWar(p.p)}`,
       hilfe: "be hat im Past Simple zwei Formen: was und were.",
+      tipp: "was bei I, he, she, it; were bei you, we, they. Ersetze das Subjekt durch ein Pronomen.",
     };
   }
   if (kind === "zwei") {
@@ -756,6 +834,7 @@ function pastSimpleSatz(rng: Rng, st: Stufe, nurUnregelmaessig = false): Satz {
       luecken: [L(pastRichtig(v1), pastFehler(v1, q.p), v1.base), L(pastRichtig(v2), pastFehler(v2, q.p), v2.base)],
       regel: `${vergangenheitsRegel(v1)} ${vergangenheitsRegel(v2)}`,
       hilfe: PAST_HILFE,
+      tipp: v1.irregular === v2.irregular ? vergangenheitsTipp(v1, v2) : `${vergangenheitsTipp(v1, v2)} ${vergangenheitsTipp(v2, v1)}`,
     };
   }
   // the verb: an irregular one with its own sentence part, or an action of a person
@@ -774,15 +853,22 @@ function pastSimpleSatz(rng: Rng, st: Stufe, nurUnregelmaessig = false): Satz {
   const hinten = kleinAnfang(t);
   const text = (ende = ".") => (vorn ? `${cap(t)} ${klein(p)} ___ ${rest}${ende}` : `${p.text} ___ ${rest} ${hinten}${ende}`);
   if (kind === "verneinung")
-    return { text: text(), luecken: [L(`didn't ${v.base}`, pastNichtFehler(v), `not / ${v.base}`)], regel: `Verneinung: didn't + Grundform (didn't ${v.base}).`, hilfe: "Verneint wird mit didn't. Welche Form hat das Verb danach?" };
+    return {
+      text: text(),
+      luecken: [L(`didn't ${v.base}`, pastNichtFehler(v), `not / ${v.base}`)],
+      regel: `Verneinung: didn't + Grundform (didn't ${v.base}).`,
+      hilfe: "Verneint wird mit didn't. Welche Form hat das Verb danach?",
+      tipp: `Verneinung: didn't + Grundform (she didn't ${beispiel(UNREGELMAESSIG_BSP, v).base}).`,
+    };
   if (kind === "frage")
     return {
       text: vorn ? `${cap(t)}, ___ ${klein(p)} ___ ${rest}?` : `___ ${klein(p)} ___ ${rest} ${hinten}?`,
       luecken: [L("did", [F(tun(p.p), "Present statt Past Simple"), F(war(p.p), "Frage mit was statt mit did")]), L(v.base, [F(v.past, "Nach did steht die Grundform")], v.base)],
       regel: `Frage: Did + Subjekt + Grundform (did … ${v.base}).`,
-      hilfe: "Fragen im Past Simple beginnen mit did. Welche Form hat das Verb danach?",
+      hilfe: "Fragen im Past Simple bildest du mit der Vergangenheit von do. Welche Form hat das Verb danach?",
+      tipp: "Nach dem Hilfsverb steht das Verb in der Grundform, auch in der Vergangenheit: Die Vergangenheit zeigt nur das Hilfsverb.",
     };
-  return { text: text(), luecken: [L(pastRichtig(v), pastFehler(v, p.p), v.base)], regel: vergangenheitsRegel(v), hilfe: PAST_HILFE };
+  return { text: text(), luecken: [L(pastRichtig(v), pastFehler(v, p.p), v.base)], regel: vergangenheitsRegel(v), hilfe: PAST_HILFE, tipp: vergangenheitsTipp(v) };
 }
 
 function pastSimpleKurz(rng: Rng, st: Stufe, nurUnregelmaessig = false): Umformung {
@@ -831,6 +917,7 @@ function pastProgressiveSatz(rng: Rng, st: Stufe): Satz {
   const rest = mit(h.rest, p.p);
   const damals = pick(rng, DAMALS[h.bereich]);
   const regel = `Past Progressive: ${war(p.p)} + „-ing“-Form (${war(p.p)} ${v.ing}).`;
+  const tipp = `Past Progressive: was oder were + „-ing“-Form (she was ${beispiel(["read", "play", "work"], v).ing}).${ingTipp(v)}`;
   if (kind === "verneinung")
     return {
       text: `${damals}, ${klein(p)} ___ ${rest}.`,
@@ -844,6 +931,7 @@ function pastProgressiveSatz(rng: Rng, st: Stufe): Satz {
       ],
       regel,
       hilfe: "Verneinung: wasn't oder weren't und die „-ing“-Form.",
+      tipp,
     };
   if (kind === "frage")
     return {
@@ -851,6 +939,7 @@ function pastProgressiveSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(war(p.p), [F("did", "Frage mit did statt mit was oder were"), F(anderesWar(p.p), regelWar(p.p))]), L(ppRichtig(v, p.p).map((x) => x.split(" ")[1]), [F(v.base, "„-ing“ vergessen"), F(naivIng(v.base), ingRegel(v))], v.base)],
       regel,
       hilfe: "Fragen im Past Progressive beginnen mit was oder were.",
+      tipp,
     };
   if (kind === "wfrage")
     return {
@@ -858,6 +947,7 @@ function pastProgressiveSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(war(p.p), [F("did", "Frage mit did statt mit was oder were"), F(anderesWar(p.p), regelWar(p.p))]), L("doing", [F("do", "„-ing“ vergessen"), F("did", "Past Simple statt Past Progressive")], "do")],
       regel: `Frage: What + ${war(p.p)} + Subjekt + doing?`,
       hilfe: "Nach dem Fragewort kommt was oder were, dann das Subjekt und die „-ing“-Form.",
+      tipp: "Gefragt wird, was jemand gerade tat: Das Verb dafür ist do, in der „-ing“-Form. was bei I, he, she, it; were bei you, we, they.",
     };
   if (kind === "zwei") {
     const h2 = handlung(rng, st, "j", (x) => x.bereich === h.bereich && x.v !== h.v);
@@ -868,9 +958,10 @@ function pastProgressiveSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(ppRichtig(v, p.p), ppFehler(v, p.p), v.base), L(ppRichtig(v2, q.p), ppFehler(v2, q.p), v2.base)],
       regel: `Past Progressive: was oder were + „-ing“-Form (${war(p.p)} ${v.ing}, ${war(q.p)} ${v2.ing}).`,
       hilfe: PP_HILFE,
+      tipp: `Past Progressive: was oder were + „-ing“-Form (she was ${beispiel(["read", "play", "work"], v, v2).ing}, they were ${beispiel(["help", "cook", "talk"], v, v2).ing}).`,
     };
   }
-  return { text: `${damals}, ${klein(p)} ___ ${rest}.`, luecken: [L(ppRichtig(v, p.p), ppFehler(v, p.p), v.base)], regel, hilfe: PP_HILFE };
+  return { text: `${damals}, ${klein(p)} ___ ${rest}.`, luecken: [L(ppRichtig(v, p.p), ppFehler(v, p.p), v.base)], regel, hilfe: PP_HILFE, tipp };
 }
 
 // ---------- Past Simple oder Past Progressive ----------
@@ -908,10 +999,11 @@ function pastSimpleProgressiveSatz(rng: Rng, st: Stufe): Satz {
   const kurz = L(pastRichtig(ev), [F(`${war(evP)} ${ev.ing}`, "Die kurze Handlung, die dazwischenkommt, steht im Past Simple", { fix: false }), ...falschePast(ev), F(ev.base, ev.irregular ? "Grundform statt 2. Form" : "„-ed“ vergessen")], ev.base);
   const regel = `Die lange Handlung im Past Progressive (${war(p.p)} ${v.ing}), die kurze, die dazwischenkommt, im Past Simple (${ev.past}).`;
   const hilfe = "Was dauerte länger, was kam kurz dazwischen? Nach while steht meist das Progressive, nach when meist das Simple.";
+  const tipp = "Die lange Handlung im Past Progressive (was oder were + „-ing“-Form), die kurze, die dazwischenkommt, im Past Simple (2. Form).";
   const ende = er ? ` ${er}` : "";
   if (st >= 2 && rng() < 0.4)
-    return { text: `While ${klein(p)} ___ ${rest}, ${es} ___${ende}.`, luecken: [lang, kurz], regel, hilfe };
-  return { text: `${p.text} ___ ${rest} when ${es} ___${ende}.`, luecken: [lang, kurz], regel, hilfe };
+    return { text: `While ${klein(p)} ___ ${rest}, ${es} ___${ende}.`, luecken: [lang, kurz], regel, hilfe, tipp };
+  return { text: `${p.text} ___ ${rest} when ${es} ___${ende}.`, luecken: [lang, kurz], regel, hilfe, tipp };
 }
 
 // ---------- Present Perfect ----------
@@ -956,6 +1048,11 @@ const DAUER: [string, string, string[], string[]][] = [
 const ppRichtigPerfekt = (v: Verb) => [v.pp, ...v.ppAlt];
 const perfektRegel = (v: Verb, p: Pronomen) =>
   `Present Perfect: ${hat(p)} + 3. Form (${hat(p)} ${v.pp}).${v.irregular ? ` ${formen(v)}.` : ""}`;
+/** The present perfect rule for a hint: have or has, the 3rd form shown on another verb. */
+const perfektTipp = (v: Verb, nicht = false) => {
+  const w = beispiel(v.irregular ? UNREGELMAESSIG_BSP : REGELMAESSIG_BSP, v);
+  return `${nicht ? "Verneinung: haven't oder hasn't" : "Present Perfect: have oder has"} + 3. Form (she ${nicht ? "hasn't" : "has"} ${w.pp}).${v.irregular ? " Das Verb ist unregelmäßig." : ""}`;
+};
 const hatFehler = (v: Verb, p: Pronomen): Fehler[] => [F(anderesHat(p), regelHat(p)), ...(v.base !== "go" ? [F(be(p), "have oder has, nicht be")] : [])];
 const PERF_HILFE = "Present Perfect: have oder has und die 3. Form. Ist das Verb unregelmäßig?";
 
@@ -984,6 +1081,7 @@ function presentPerfectSatz(rng: Rng, st: Stufe): Satz {
         luecken: [L(mitSince ? "since" : "for", [F(mitSince ? "for" : "since", mitSince ? "since für einen Zeitpunkt (seit 2019)" : "for für eine Zeitdauer (seit drei Jahren)"), F("from", "seit heißt since oder for")])],
         regel: mitSince ? `since für einen Zeitpunkt: since ${dauer}.` : `for für eine Zeitdauer: for ${dauer}.`,
         hilfe: "Ist es ein Zeitpunkt (since) oder eine Zeitdauer (for)?",
+        tipp: "since für einen Zeitpunkt (since Easter), for für eine Zeitdauer (for two weeks).",
       };
     return {
       text: `${p.text} ___ ${rest} ${mitSince ? "since" : "for"} ${dauer}.`,
@@ -998,6 +1096,7 @@ function presentPerfectSatz(rng: Rng, st: Stufe): Satz {
       ],
       regel: `Mit since und for für etwas, das bis jetzt andauert: Present Perfect (${hat(p.p)} ${v.pp}).`,
       hilfe: "Seit wann oder wie lange schon? Das ist im Englischen Present Perfect, nicht Present.",
+      tipp: `Mit since und for für etwas, das bis jetzt andauert: Present Perfect, have oder has + 3. Form (she has ${beispiel(["work", "help", "stay"], v).pp}).`,
     };
   }
   const p = person(rng, { kind: true, ...(kind === "frage" ? { ohneIch: true } : {}) });
@@ -1010,10 +1109,11 @@ function presentPerfectSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(hat(p.p), [F(tun(p.p), "Frage mit do statt mit have oder has"), F(anderesHat(p.p), regelHat(p.p))]), pp],
       regel,
       hilfe: PERF_HILFE,
+      tipp: perfektTipp(v),
     };
   if (kind === "yet")
     return rng() < 0.5 && p.p !== "I"
-      ? { text: `___ ${klein(p)} ___ ${rest} yet?`, luecken: [L(hat(p.p), [F(tun(p.p), "Frage mit do statt mit have oder has"), F(anderesHat(p.p), regelHat(p.p))]), pp], regel, hilfe: PERF_HILFE }
+      ? { text: `___ ${klein(p)} ___ ${rest} yet?`, luecken: [L(hat(p.p), [F(tun(p.p), "Frage mit do statt mit have oder has"), F(anderesHat(p.p), regelHat(p.p))]), pp], regel, hilfe: PERF_HILFE, tipp: perfektTipp(v) }
       : {
           text: `${p.text} ___ ${rest} yet.`,
           luecken: [
@@ -1026,11 +1126,12 @@ function presentPerfectSatz(rng: Rng, st: Stufe): Satz {
           ],
           regel: `Verneinung: ${hat(p.p)}n't + 3. Form (${hat(p.p)}n't ${v.pp}).`,
           hilfe: PERF_HILFE,
+          tipp: perfektTipp(v, true),
         };
   const wort = kind === "nie" ? "never" : "already";
   // the easiest level: only the 3rd form
-  if (st === 0) return { text: `${p.text} ${hat(p.p)} ${wort} ___ ${rest}.`, luecken: [pp], regel, hilfe: PERF_HILFE };
-  return { text: `${p.text} ___ ${wort} ___ ${rest}.`, luecken: [L(hat(p.p), hatFehler(v, p.p)), pp], regel, hilfe: PERF_HILFE };
+  if (st === 0) return { text: `${p.text} ${hat(p.p)} ${wort} ___ ${rest}.`, luecken: [pp], regel, hilfe: PERF_HILFE, tipp: perfektTipp(v) };
+  return { text: `${p.text} ___ ${wort} ___ ${rest}.`, luecken: [L(hat(p.p), hatFehler(v, p.p)), pp], regel, hilfe: PERF_HILFE, tipp: perfektTipp(v) };
 }
 
 // ---------- going to und will ----------
@@ -1100,6 +1201,7 @@ function futureSatz(rng: Rng, st: Stufe): Satz {
       ],
       regel: `will + Grundform (${nicht ? "won't" : "will"} ${v.base}): ${nicht ? "ein Versprechen" : "spontan entschieden"}.`,
       hilfe,
+      tipp: `${nicht ? "won't" : "will"} + Grundform (I ${nicht ? "won't" : "will"} ${beispiel(["call", "open", "wait"], v).base}): ${nicht ? "ein Versprechen" : "spontan entschieden"}.`,
       titel,
     };
   }
@@ -1111,6 +1213,7 @@ function futureSatz(rng: Rng, st: Stufe): Satz {
       luecken: [goingTo(v, p, "Man sieht es schon kommen: going to")],
       regel: `Man sieht schon, dass es passiert: going to (${be(p)} going to ${v.base}).`,
       hilfe,
+      tipp: `Man sieht schon, dass es passiert: am, is oder are + going to + Grundform (${bspWer(p)} ${be(bspWer(p))} going to ${beispiel(["cry", "stop", "win"], v).base}).`,
       titel,
     };
   }
@@ -1122,6 +1225,7 @@ function futureSatz(rng: Rng, st: Stufe): Satz {
     luecken: [goingTo(v, p.p, "Ein Plan, der schon feststeht: going to")],
     regel: `Ein Plan, der schon feststeht: going to (${be(p.p)} going to ${v.base}).`,
     hilfe,
+    tipp: `Ein Plan, der schon feststeht: am, is oder are + going to + Grundform (${bspWer(p.p)} ${be(bspWer(p.p))} going to ${beispiel(["visit", "cook", "play"], v).base}).`,
     titel,
   };
 }
@@ -1160,6 +1264,7 @@ const ES_GIBT: [string, boolean][] = [
   ["a castle on the hill", true],
   ["many tourists in Salzburg in summer", false],
 ];
+const TIPP_BE = "Ersetze das Subjekt durch ein Pronomen (I, you, he, she, it, we, they). Welche Form von be gehört dazu?";
 const alleBe = (p: Pronomen): Fehler[] => (["am", "is", "are"] as const).filter((x) => x !== be(p)).map((x) => F(x, regelBe(p)));
 
 function toBeSatz(rng: Rng, st: Stufe): Satz {
@@ -1175,6 +1280,7 @@ function toBeSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(richtig, [F(anders, eins ? "there is bei einem Ding" : "there are bei mehreren Dingen"), F(nicht ? "doesn't" : "has", nicht ? "Verneinung von be ohne do" : "es gibt heißt there is oder there are")], nicht ? "not" : undefined)],
       regel: eins ? "Eines: there is." : "Mehrere: there are.",
       hilfe: "Ist es eines oder sind es mehrere?",
+      tipp: "there is bei einem Nomen in der Einzahl (auch bei milk oder water), there are bei der Mehrzahl. Schau auf das Nomen nach der Lücke.",
     };
   }
   const tierOk = rng() < 0.2;
@@ -1186,6 +1292,7 @@ function toBeSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(beNicht(p.p), [F(tunNicht(p.p), "Verneinung von be ohne do"), F(`not`, "am, is oder are vergessen"), F(`${anderesBe(p.p)} not`, regelBe(p.p))], "not")],
       regel: `Verneinung: ${beNicht(p.p)}. ${regelBe(p.p)}`,
       hilfe: "Das not kommt direkt nach am, is oder are.",
+      tipp: TIPP_BE,
     };
   if (kind === "frage")
     return {
@@ -1193,6 +1300,7 @@ function toBeSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(be(p.p), [F(tun(p.p), "Frage mit be ohne do"), ...alleBe(p.p)])],
       regel: `Frage: ${cap(be(p.p))} kommt vor das Subjekt. ${regelBe(p.p)}`,
       hilfe,
+      tipp: `Frage: am, is oder are kommt vor das Subjekt. ${TIPP_BE}`,
     };
   if (kind === "kurz") {
     const ja = rng() < 0.5;
@@ -1202,9 +1310,10 @@ function toBeSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(ja ? be(ap) : beNicht(ap), ja ? [F(tun(ap), "Kurzantwort mit do statt mit be"), ...alleBe(ap)] : [F(tunNicht(ap), "Kurzantwort mit do statt mit be"), F("not", "am, is oder are vergessen")])],
       regel: `Kurzantwort mit be: ${ja ? "Yes" : "No"}, ${ap} ${ja ? be(ap) : beNicht(ap)}.`,
       hilfe: "Die Frage beginnt mit am, is oder are. Damit antwortest du auch.",
+      tipp: "Kurzantwort: das Pronomen und am, is oder are, passend zum Pronomen. Bei No kommt not dazu.",
     };
   }
-  return { text: `${p.text} ___ ${praed}.`, luecken: [L(be(p.p), [...alleBe(p.p), F("be", "Grundform statt am, is oder are")])], regel: regelBe(p.p), hilfe };
+  return { text: `${p.text} ___ ${praed}.`, luecken: [L(be(p.p), [...alleBe(p.p), F("be", "Grundform statt am, is oder are")])], regel: regelBe(p.p), hilfe, tipp: TIPP_BE };
 }
 
 // ---------- have got ----------
@@ -1240,6 +1349,7 @@ function haveGotSatz(rng: Rng, st: Stufe): Satz {
       ],
       regel: `Verneinung: ${hat(p.p)}n't got.`,
       hilfe,
+      tipp: "Verneinung: haven't got oder hasn't got, ohne do. Ist das Subjekt he, she oder it?",
     };
   if (kind === "frage")
     return {
@@ -1247,6 +1357,7 @@ function haveGotSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(hat(p.p), [F(tun(p.p), "Fragen mit have got ohne do"), F(anderesHat(p.p), regelHat(p.p)), F(be(p.p), "have got mit be verwechselt")])],
       regel: `Frage: ${cap(hat(p.p))} + Subjekt + got …?`,
       hilfe,
+      tipp: "Frage: Have oder Has + Subjekt + got …? Ohne do. Ist das Subjekt he, she oder it?",
     };
   if (kind === "kurz") {
     const ja = rng() < 0.5;
@@ -1258,6 +1369,7 @@ function haveGotSatz(rng: Rng, st: Stufe): Satz {
       ],
       regel: `Kurzantwort: ${ja ? "Yes" : "No"}, ${ap} ${ja ? hat(ap) : `${hat(ap)}n't`}. Ohne got.`,
       hilfe: "Die Kurzantwort nimmt have oder has aus der Frage, ohne got.",
+      tipp: "Kurzantwort: das Pronomen und have oder has, passend zum Pronomen, bei No mit n't. Ohne got.",
     };
   }
   return {
@@ -1265,6 +1377,7 @@ function haveGotSatz(rng: Rng, st: Stufe): Satz {
     luecken: [L(`${hat(p.p)} got`, [F(`${anderesHat(p.p)} got`, regelHat(p.p)), F(`${be(p.p)} got`, "have got mit be verwechselt"), F(`${hat(p.p)} get`, "have got: immer got")], "have got")],
     regel: regelHat(p.p).replace("has.", "has got.").replace("have.", "have got."),
     hilfe,
+    tipp: "Ersetze das Subjekt durch ein Pronomen: he, she und it nehmen has got, I, you, we und they have got.",
   };
 }
 
@@ -1278,6 +1391,18 @@ const PLURAL_REGEL: Record<Nomen["art"], string> = {
   unr: "Unregelmäßige Mehrzahl",
   gleich: "Diese Mehrzahl ist gleich wie die Einzahl",
 };
+/** Examples for the hint: another word with the same plural rule. */
+const PLURAL_BSP: Record<Nomen["art"], [string, string][]> = {
+  s: [["book", "books"], ["toy", "toys"]],
+  es: [["box", "boxes"], ["dish", "dishes"]],
+  ies: [["city", "cities"], ["baby", "babies"]],
+  ves: [["leaf", "leaves"], ["knife", "knives"]],
+  o: [["tomato", "tomatoes"], ["hero", "heroes"]],
+  unr: [["mouse", "mice"], ["foot", "feet"]],
+  gleich: [["sheep", "sheep"], ["deer", "deer"]],
+};
+/** photo and piano: only -s */
+const nurS = (n: Nomen) => n.art === "o" && !n.pl.endsWith("es");
 function pluralFehler(n: Nomen): Fehler[] {
   const out: Fehler[] = [F(n.sg, "Mehrzahl vergessen")];
   const naiv = `${n.sg}s`;
@@ -1299,8 +1424,12 @@ function pluralSatz(rng: Rng, st: Stufe): Satz {
   return {
     text: n.satz,
     luecken: [L(n.pl, pluralFehler(n), n.sg)],
-    regel: `${PLURAL_REGEL[n.art]}: ${n.sg}, ${n.pl}.`,
+    regel: `${nurS(n) ? "photo und piano bekommen nur „-s“" : PLURAL_REGEL[n.art]}: ${n.sg}, ${n.pl}.`,
     hilfe: "Wie endet das Wort? s, sh, ch, x, y, f oder o? Oder ist es unregelmäßig?",
+    tipp: (() => {
+      const [sg, pl] = nurS(n) ? anderes([["photo", "photos"], ["piano", "pianos"]], n.sg) : anderes(PLURAL_BSP[n.art], n.sg);
+      return `${nurS(n) ? "Manche Wörter auf o bekommen nur „-s“" : PLURAL_REGEL[n.art]} (${sg} → ${pl}).`;
+    })(),
   };
 }
 
@@ -1356,6 +1485,12 @@ function genitivSatz(rng: Rng, st: Stufe): Satz {
     text: vorn ? `___ ${ding} ${sind} ${aussage}.` : `${ding === "trainers" ? "These are" : "This is"} ___ ${ding}.`,
     luecken: [L(genitiv(b), fehler, b.text)],
     regel: b.art === "mehrzahl" ? `Mehrzahl auf s: nur der Apostroph (${genitiv(b)} ${ding}).` : `Besitz: „'s“ (${genitiv(b)} ${ding}).`,
+    tipp:
+      b.art === "mehrzahl"
+        ? "Mehrzahl auf s: nur der Apostroph (the teachers' room)."
+        : b.art === "unr"
+          ? "Mehrzahl ohne s am Ende: „'s“ wie bei der Einzahl (the people's houses)."
+          : "Besitz einer Person: „'s“ (the teacher's desk).",
     hilfe: "Wem gehört es? Einzahl: „'s“. Mehrzahl auf s: nur der Apostroph.",
     fixExtra: vorn ? [] : [{ von: `${genitiv(b)} ${ding}`, zu: `the ${ding} of ${b.text}`, label: "Bei Personen steht der s-Genitiv" }],
   };
@@ -1425,6 +1560,12 @@ function praepZeitSatz(rng: Rng, st: Stufe): Satz {
     luecken: [L(richtig, (["at", "on", "in"] as const).filter((x) => x !== richtig).map((x) => F(x, ZEIT_REGEL[za])))],
     regel: `${ZEIT_REGEL[za]}.`,
     hilfe: "Uhrzeit: at. Tag und Datum: on. Monat, Jahreszeit, Jahr, Tageszeit: in.",
+    tipp:
+      za === "at"
+        ? "night, Christmas, lunchtime und midnight sind feste Wendungen: Sie stehen mit derselben Präposition wie die Uhrzeiten."
+        : za === "kein"
+          ? `${ZEIT_REGEL.kein}.`
+          : "Was steht nach der Lücke: eine Uhrzeit, ein Tag oder Datum, ein Monat, eine Jahreszeit, ein Jahr oder eine Tageszeit? Jede Art hat ihre eigene Präposition.",
     ohneLuecke: za === "kein",
   };
 }
@@ -1453,6 +1594,7 @@ function haeufigkeitSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(`${b} ${adv}`, [F(`${adv} ${b}`, "Nach am, is oder are steht das Adverb"), F(adv, "am, is oder are vergessen")], `be / ${adv}`)],
       regel: `Nach am, is oder are steht das Adverb: ${b} ${adv}.`,
       hilfe,
+      tipp: `Nach am, is oder are steht das Adverb (she is ${adv === "often" ? "always" : "often"} tired).`,
     };
   }
   const h = handlung(rng, st, "g");
@@ -1469,6 +1611,7 @@ function haeufigkeitSatz(rng: Rng, st: Stufe): Satz {
     ],
     regel: `Das Adverb steht vor dem Vollverb: ${adv} ${simple(v, p.p)}.`,
     hilfe,
+    tipp: `Das Adverb steht vor dem Vollverb (${bspWer(p.p)} ${adv === "often" ? "always" : "often"} ${simple(beispiel(["read", "play", "work"], v), bspWer(p.p))}).`,
   };
 }
 
@@ -1590,6 +1733,7 @@ function fragenSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(richtig, [F(`${past ? "did" : "does"} ${v.base}`, "Fragt man nach dem Subjekt, fällt do weg", { fix: false }), F(v.base, past ? "Grundform statt Past Simple" : "Bei who und what als Subjekt: „-s“")], v.base)],
       regel: `Fragt man nach dem Subjekt (${w}?), gibt es kein do: ${cap(w)} ${richtig} …?`,
       hilfe: "Fragst du nach dem, der etwas tut? Dann fällt do weg.",
+      tipp: "Fragt man nach dem Subjekt (who? what?), gibt es kein do: Das Verb steht wie im Aussagesatz mit he, she, it (Who knows the answer? Who found the key?).",
     };
   }
   const vergangen = kind === "vergangenheit";
@@ -1603,6 +1747,7 @@ function fragenSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(hat(p.p), [F(tun(p.p), "have got: Frage ohne do"), F(anderesHat(p.p), regelHat(p.p))])],
       regel: `Mit have got: How many … ${hat(p.p)} … got?`,
       hilfe,
+      tipp: "Mit have got: How many … have oder has … got? Ohne do. Ist das Subjekt he, she oder it?",
     };
   }
   const v = verb(b);
@@ -1615,6 +1760,7 @@ function fragenSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(w, (WORT_VERWECHSELT[w] ?? []).map((x) => F(x, `Fragewort verwechselt: ${w} heißt „${FRAGEWORT[w]}“`)))],
       regel: `${cap(w)} heißt „${FRAGEWORT[w]}“. Die Antwort sagt, wonach gefragt wird.`,
       hilfe: "Lies die Antwort: Wonach wird gefragt?",
+      tipp: "Ein Ort: where. Eine Zeit: when oder what time. Ein Grund: why. Wie: how. Wie oft: how often. Wie viele: how many. Ein Ding oder eine Sache: what.",
     };
   return {
     text: `${cap(w)} ___ ${ende}${antwortText}`,
@@ -1623,6 +1769,9 @@ function fragenSatz(rng: Rng, st: Stufe): Satz {
     ],
     regel: `Fragewort + ${hv} + Subjekt + Grundform: ${cap(w)} ${hv} ${klein(p)} ${v.base} …?`,
     hilfe,
+    tipp: vergangen
+      ? "Fragewort + Hilfsverb + Subjekt + Grundform. In der Vergangenheit nimmst du die Vergangenheit von do."
+      : "Fragewort + do oder does + Subjekt + Grundform: does bei he, she, it, do bei I, you, we, they.",
   };
 }
 
@@ -1710,12 +1859,13 @@ function modalSatz(rng: Rng, st: Stufe): Satz {
       ],
       regel: `should + Grundform für einen Rat: You ${nicht ? "shouldn't" : "should"} ${v.base} …`,
       hilfe,
+      tipp: `should + Grundform für einen Rat (You ${nicht ? "shouldn't" : "should"} ${beispiel(["read", "help", "wait"], v).base} …).`,
     };
   }
   if (kind === "must") {
     const [lage, s, p, b, rest] = pick(rng, PFLICHT);
     const v = verb(b);
-    return { text: `${lage} ${s} ___${rest ? ` ${rest}` : ""}.`, luecken: [modalL("must", v, p)], regel: `must + Grundform: ${s} must ${v.base}.`, hilfe };
+    return { text: `${lage} ${s} ___${rest ? ` ${rest}` : ""}.`, luecken: [modalL("must", v, p)], regel: `must + Grundform: ${s} must ${v.base}.`, hilfe, tipp: `must + Grundform (${bspWer(p)} must ${beispiel(["read", "help", "wait"], v).base}).` };
   }
   const [b, rest] = pick(rng, KOENNEN);
   const v = verb(b);
@@ -1726,6 +1876,7 @@ function modalSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L("can", [F(tun(p.p), "Fragen mit can ohne do"), F(be(p.p), "Fragen mit can ohne be")]), L(v.base, [F(`to ${v.base}`, "Nach can kein to"), F(v.s, "Nach can steht die Grundform"), F(v.ing, "Nach can steht die Grundform")], v.base)],
       regel: "Frage: Can + Subjekt + Grundform, ohne do.",
       hilfe,
+      tipp: "Frage mit einem Modalverb: Das Modalverb kommt vor das Subjekt, dann die Grundform. Kein do.",
     };
   }
   if (kind === "could") {
@@ -1735,6 +1886,7 @@ function modalSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(`could ${v.base}`, [F(`can ${v.base}`, "Für die Vergangenheit: could"), F(`could ${v.past}`, "Nach could steht die Grundform"), F(`could to ${v.base}`, "Nach could kein to")], `can / ${v.base}`)],
       regel: `Vergangenheit von can: could + Grundform (could ${v.base}).`,
       hilfe,
+      tipp: `Vergangenheit von can: could + Grundform (she could ${beispiel(["read", "help", "cook"], v).base}).`,
     };
   }
   const p = person(rng, { kind: true });
@@ -1745,7 +1897,7 @@ function modalSatz(rng: Rng, st: Stufe): Satz {
       regel: `Verneinung: can't (cannot) + Grundform.`,
       hilfe,
     };
-  return { text: `${p.text} ___ ${rest}.`, luecken: [modalL("can", v, p.p)], regel: `can + Grundform: ${klein(p)} can ${v.base}.`, hilfe };
+  return { text: `${p.text} ___ ${rest}.`, luecken: [modalL("can", v, p.p)], regel: `can + Grundform: ${klein(p)} can ${v.base}.`, hilfe, tipp: `can + Grundform (${bspWer(p.p)} can ${beispiel(["read", "help", "cook"], v).base}).` };
 }
 
 // ---------- must, mustn't, have to, don't have to ----------
@@ -1787,12 +1939,14 @@ function mussSatz(rng: Rng, st: Stufe): Satz {
   const [text, ma, er] = pick(rng, MUSS.filter((x) => arten.includes(x[1])));
   const nichtMuessen = er ? "doesn't have to" : "don't have to";
   const hilfe = "mustn't heißt „nicht dürfen“, don't have to heißt „nicht müssen“.";
+  const tipp = "Ist es verboten oder nur nicht nötig? Ein Verbot: must mit not. Nicht nötig: have to mit don't oder doesn't.";
   if (ma === "verbot")
     return {
       text,
       luecken: [L("mustn't", [F(nichtMuessen, "Ein Verbot: mustn't (don't have to heißt nicht müssen)"), F("don't must", "must wird ohne do verneint"), F("mustn't to", "Nach mustn't kein to")])],
       regel: "Ein Verbot: mustn't (nicht dürfen).",
       hilfe,
+      tipp,
       titel: "Fill in mustn't or don't have to.",
     };
   if (ma === "frei")
@@ -1801,6 +1955,7 @@ function mussSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(nichtMuessen, [F("mustn't", "Es ist nicht nötig: don't have to (mustn't heißt nicht dürfen)"), F(er ? "don't have to" : "doesn't have to", er ? "Bei he, she, it: doesn't have to" : "doesn't nur bei he, she, it"), F(er ? "doesn't has to" : "don't has to", "Nach don't und doesn't: have to")])],
       regel: `Es ist nicht nötig: ${nichtMuessen} (nicht müssen).`,
       hilfe,
+      tipp,
       titel: "Fill in mustn't or don't have to.",
     };
   if (ma === "musste")
@@ -1809,6 +1964,7 @@ function mussSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L("had to", [F("must", "must gibt es nicht in der Vergangenheit: had to"), F("have to", "Vergangenheit: had to"), F("musted", "must gibt es nicht in der Vergangenheit: had to")])],
       regel: "Vergangenheit von must und have to: had to.",
       hilfe: "Steht der Satz in der Vergangenheit? must hat keine Vergangenheitsform.",
+      tipp: "Nimm have to und setz have ins Past Simple.",
       titel: "Fill in must, have to or had to.",
     };
   return {
@@ -1816,6 +1972,7 @@ function mussSatz(rng: Rng, st: Stufe): Satz {
     luecken: [L(er ? ["has to", "must"] : ["have to", "must"], [F(er ? "have to" : "has to", er ? "Bei he, she, it: has to" : "has to nur bei he, she, it"), F("must to", "Nach must kein to"), F("mustn't", "mustn't heißt nicht dürfen", { fix: false })])],
     regel: `Eine Pflicht: must oder ${er ? "has to" : "have to"}.`,
     hilfe,
+    tipp: "Eine Pflicht: must, oder have to (bei he, she, it: has to).",
     titel: "Fill in must, have to or had to.",
   };
 }
@@ -1865,6 +2022,7 @@ const SOME_ANY_PAARE: [string, SomeArt, SomeArt][] = [
   ["Would you like ___ grapes? There aren't ___ strawberries left.", "angebot", "verneinung"],
   ["Can I have ___ crisps, please? I didn't have ___ lunch today.", "angebot", "verneinung"],
 ];
+const SOME_TIPP = "some in bejahten Sätzen und bei Angeboten und Bitten, any in verneinten Sätzen und meist in Fragen. Das gilt auch für Wörter mit -thing, -body und -where.";
 const SOME_REGEL: Record<SomeArt, string> = {
   aussage: "In bejahten Sätzen steht some",
   verneinung: "In verneinten Sätzen steht any",
@@ -1883,6 +2041,7 @@ function someAnySatz(rng: Rng, st: Stufe): Satz {
       luecken: [luecke(a1), luecke(a2)],
       regel: `${SOME_REGEL[a1]}: ${wort(a1)}. ${SOME_REGEL[a2]}: ${wort(a2)}.`,
       hilfe: "Bejaht, verneint, Frage oder Angebot? Schau dir jeden Satzteil einzeln an.",
+      tipp: SOME_TIPP,
     };
   }
   const liste = SOME_ANY.filter(([, a, c]) => (st >= 2 || !c) && (st >= 1 || a === "aussage" || a === "verneinung" || a === "frage"));
@@ -1895,6 +2054,7 @@ function someAnySatz(rng: Rng, st: Stufe): Satz {
     luecken: [L(richtig, [...wort(some ? "any" : "some").map((x) => F(x, SOME_REGEL[sa])), ...(sa === "verneinung" ? wort("no").map((x) => F(x, "Doppelte Verneinung: nach not steht any")) : [])], c ? `…${c}` : undefined)],
     regel: `${SOME_REGEL[sa]}: ${richtig[0]}.`,
     hilfe: "Bejaht, verneint, Frage oder Angebot?",
+    tipp: SOME_TIPP,
   };
 }
 
@@ -1933,6 +2093,7 @@ const MENGE: [string, boolean, "frage" | "verneinung" | "aussage"][] = [
 function muchManySatz(rng: Rng, st: Stufe): Satz {
   const [text, zaehlbar, ma] = pick(rng, MENGE.filter((x) => st >= 1 || x[2] !== "aussage"));
   const hilfe = "Kann man es zählen (apples, friends)? Dann many. Nicht zählbar (money, time)? Dann much. In bejahten Sätzen meist a lot of.";
+  const tipp = "Probe: Kannst du eine Zahl davorsetzen (three cars)? Dann ist das Nomen zählbar. Und: Ist der Satz eine Frage, verneint oder bejaht?";
   const art0 = zaehlbar ? "many" : "much";
   if (ma === "aussage")
     return {
@@ -1940,6 +2101,7 @@ function muchManySatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(["a lot of", "lots of", ...(zaehlbar ? ["many"] : [])], [F("much", zaehlbar ? "much nur bei nicht zählbaren Nomen" : "In bejahten Sätzen steht a lot of"), ...(zaehlbar ? [] : [F("many", "many nur bei zählbaren Nomen")]), F("a lot", "a lot of: of vergessen")])],
       regel: `In bejahten Sätzen meist a lot of${zaehlbar ? " (auch many)" : ""}.`,
       hilfe,
+      tipp,
     };
   // a lot of also fits a negative sentence
   return {
@@ -1952,6 +2114,7 @@ function muchManySatz(rng: Rng, st: Stufe): Satz {
     ],
     regel: zaehlbar ? "Zählbar: many." : "Nicht zählbar: much.",
     hilfe,
+    tipp,
   };
 }
 
@@ -2049,13 +2212,24 @@ function superlativFehler(a: Adjektiv): Fehler[] {
   return [...out, F(`the most ${a.a}`, "Kurze Adjektive: the „-est“")];
 }
 
+/** The rule of an adjective's comparison and two other adjectives that follow it: base, comparative, superlative. */
+const STEIGERUNG_TIPP: Record<Adjektiv["art"], [string, [string, string, string][]]> = {
+  kurz: ["Kurze Adjektive: „-er“ und „-est“", [["small", "smaller", "smallest"], ["old", "older", "oldest"]]],
+  e: ["Endet das Adjektiv auf e, kommt nur „-r“ oder „-st“ dazu", [["nice", "nicer", "nicest"], ["large", "larger", "largest"]]],
+  doppelt: ["Nach kurzem Vokal wird der Endbuchstabe verdoppelt", [["big", "bigger", "biggest"], ["hot", "hotter", "hottest"]]],
+  y: ["Konsonant + y wird zu „-ier“ und „-iest“", [["happy", "happier", "happiest"], ["easy", "easier", "easiest"]]],
+  lang: ["Lange Adjektive: more und most", [["beautiful", "more beautiful", "most beautiful"], ["expensive", "more expensive", "most expensive"]]],
+  unr: ["Das Adjektiv ist unregelmäßig", [["good", "better", "best"], ["bad", "worse", "worst"]]],
+};
 function steigerungSatz(rng: Rng, st: Stufe): Satz {
   const kind = art(rng, { komp: 3, sup: st >= 1 ? 2 : 0, wie: st >= 3 ? 1 : 0 });
   const hilfe = "Kurze Adjektive: „-er“ und „-est“. Lange Adjektive: more und most. good, bad und far sind unregelmäßig.";
   if (kind === "sup") {
     const [a0, text] = nachStufe(rng, SPITZE, st, (x) => adjektiv(x[0]).stufe);
     const a = adjektiv(a0);
-    return { text, luecken: [L(a.sup.map((x) => `the ${x}`), superlativFehler(a), a.a)], regel: `Superlativ: the ${a.sup[0]}.`, hilfe };
+    const [r, bsp] = STEIGERUNG_TIPP[a.art];
+    const [g, , sup] = anderes(bsp, a.a);
+    return { text, luecken: [L(a.sup.map((x) => `the ${x}`), superlativFehler(a), a.a)], regel: `Superlativ: the ${a.sup[0]}.`, hilfe, tipp: `Superlativ mit the. ${r} (${g} → the ${sup}).` };
   }
   const wie = kind === "wie";
   // as … as: "An elephant is not as tall as a giraffe." (B first, so the sentence stays true)
@@ -2068,12 +2242,18 @@ function steigerungSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(a.a, [F(a.komp[0], "Nach as … as steht die Grundform"), F(`more ${a.a}`, "Nach as … as steht die Grundform")], a.a)],
       regel: `as … as: die Grundform (as ${a.a} as).`,
       hilfe: "Bei as … as wird nicht gesteigert.",
+      tipp: `as … as: die Grundform, ohne „-er“ und ohne more (as ${a.a === "old" ? "big" : "old"} as).`,
     };
   return {
     text: `${x} ${ist(x)} ___${nach ?? ""} than ${y}.`,
     luecken: [L(a.komp, komparativFehler(a), a.a)],
     regel: `Komparativ: ${a.komp.join(" oder ")}.`,
     hilfe,
+    tipp: (() => {
+      const [r, bsp] = STEIGERUNG_TIPP[a.art];
+      const [g, komp] = anderes(bsp, a.a);
+      return `Komparativ. ${r} (${g} → ${komp}).`;
+    })(),
     fixExtra: [{ von: "than", zu: "then", label: "than (als) mit then (dann) verwechselt" }],
   };
 }
@@ -2135,10 +2315,12 @@ function ifSatz(rng: Rng, st: Stufe, typ: 1 | 2): Satz {
   let ifForm: string;
   let mainForm: string;
   let s1: string, r1: string, s2: string, r2: string;
+  let beteiligt: Verb[] = [];
   if (typ === 1) {
     const [a, p1, v1b, ra, b, p2, v2b, rb, nicht] = pick(rng, IF1);
     const v1 = verb(v1b);
     const v2 = verb(v2b);
+    beteiligt = [v1, v2];
     ifForm = simple(v1, p1);
     mainForm = `${nicht ? "won't" : "will"} ${v2.base}`;
     ifL = L(ifForm, [F(`will ${v1.base}`, "Im if-Satz kein will"), ...(dritte(p1) ? [F(v1.base, v1.base === "be" ? "Bei he, she, it: is" : "„-s“ bei he, she, it vergessen")] : []), F(`would ${v1.base}`, "Im if-Satz kein would")], v1.base);
@@ -2148,6 +2330,7 @@ function ifSatz(rng: Rng, st: Stufe, typ: 1 | 2): Satz {
     const [a, p1, v1b, ra, b, p2, v2b, rb] = pick(rng, IF2);
     const v1 = verb(v1b);
     const v2 = verb(v2b);
+    beteiligt = [v1, v2];
     void p2;
     ifForm = v1.base === "be" ? "were" : v1.past;
     const ifRichtig = v1.base === "be" ? (ra === "you" ? ["were"] : ["were", "was"].filter((x) => x === "were" || p1 === "I" || dritte(p1))) : [v1.past];
@@ -2157,6 +2340,13 @@ function ifSatz(rng: Rng, st: Stufe, typ: 1 | 2): Satz {
     [s1, r1, s2, r2] = [a, ra, b, rb];
   }
   const regel = typ === 1 ? `if-Satz Typ 1: if + Present Simple (${ifForm}), Hauptsatz will + Grundform (${mainForm}).` : `if-Satz Typ 2: if + Past Simple (${ifForm}), Hauptsatz would + Grundform (${mainForm}).`;
+  // the rule on other verbs: never the forms of the task
+  const w1 = beispiel(["work", "help", "listen"], ...beteiligt);
+  const w2 = beispiel(["play", "call", "stay"], ...beteiligt);
+  const tipp =
+    typ === 1
+      ? `if-Satz Typ 1: if + Present Simple, Hauptsatz will + Grundform (If she ${w1.s} …, she will ${w2.base} …).`
+      : `if-Satz Typ 2: if + Past Simple, Hauptsatz would + Grundform (If she ${w1.past} …, she would ${w2.base} …).`;
   const ifTeil = (luecke: boolean) => `if ${s1} ${luecke ? "___" : ifForm}${r1 ? ` ${r1}` : ""}`;
   const mainTeil = (luecke: boolean) => `${s2} ${luecke ? "___" : mainForm}${r2 ? ` ${r2}` : ""}`;
   // only one gap on the easy levels: either the if-clause or the main clause
@@ -2168,6 +2358,7 @@ function ifSatz(rng: Rng, st: Stufe, typ: 1 | 2): Satz {
     luecken,
     regel,
     hilfe,
+    tipp,
   };
 }
 
@@ -2229,6 +2420,10 @@ function passivSatz(rng: Rng, st: Stufe): Satz {
     ],
     regel: `Passiv: ${hv} + 3. Form (${hv} ${v.pp}).`,
     hilfe: past ? "Passiv in der Vergangenheit: was oder were + 3. Form." : "Passiv: am, is oder are + 3. Form.",
+    tipp: (() => {
+      const w = beispiel(v.irregular ? ["write", "take", "see"] : ["clean", "open", "paint"], v);
+      return `Passiv: ${past ? "was oder were" : "am, is oder are"} + 3. Form (it ${past ? "was" : "is"} ${w.pp}).${v.irregular ? " Das Verb ist unregelmäßig." : ""}`;
+    })(),
     fixExtra: von ? [{ von: `by ${von}`, zu: `from ${von}`, label: "Wer es tut, steht nach by (nicht from)" }] : [],
     titel: st >= 1 ? "Fill in the passive (present simple or past simple)." : undefined,
   };
@@ -2283,11 +2478,11 @@ function passivKurz(rng: Rng, st: Stufe): Umformung {
 
 // ---------- Reported Speech ----------
 /** [direct speech, reported part with {er} {sein} and ___, right answers, errors, rule, level] */
-type Bericht = { direkt: string; satz: string; richtig: string[]; fehler: Fehler[]; regel: string; stufe: WortStufe };
-const R = (direkt: string, satz: string, richtig: string | string[], fehler: Fehler[], regel: string, stufe: WortStufe = 0): Bericht => ({ direkt, satz, richtig: typeof richtig === "string" ? [richtig] : richtig, fehler, regel, stufe });
+type Bericht = { direkt: string; satz: string; richtig: string[]; fehler: Fehler[]; regel: string; stufe: WortStufe; tipp?: string };
+const R = (direkt: string, satz: string, richtig: string | string[], fehler: Fehler[], regel: string, stufe: WortStufe = 0, tipp?: string): Bericht => ({ direkt, satz, richtig: typeof richtig === "string" ? [richtig] : richtig, fehler, regel, stufe, tipp });
 const ZURUECK = "Die Zeit rückt zurück";
 const BERICHTE: Bericht[] = [
-  R("I am hungry.", "{Name} said that {er} ___ hungry.", "was", [F("is", `${ZURUECK}: am wird zu was`, { fix: false }), F("were", "Bei he, she: was")], "am und is werden zu was."),
+  R("I am hungry.", "{Name} said that {er} ___ hungry.", "was", [F("is", `${ZURUECK}: am wird zu was`, { fix: false }), F("were", "Bei he, she: was")], "am und is werden zu was.", 0, "am und is rücken ins Past Simple zurück."),
   R("I like horses.", "{Name} said that {er} ___ horses.", "liked", [F("likes", `${ZURUECK}: Present Simple wird Past Simple`, { fix: false }), F("like", `${ZURUECK}: Present Simple wird Past Simple`)], "Present Simple wird Past Simple."),
   R("I live in Graz.", "{Name} said that {er} ___ in Graz.", "lived", [F("lives", `${ZURUECK}: Present Simple wird Past Simple`, { fix: false }), F("has lived", "Present Simple wird Past Simple")], "Present Simple wird Past Simple."),
   R("I am reading a book.", "{Name} said that {er} ___ a book.", "was reading", [F("is reading", `${ZURUECK}: is reading wird was reading`, { fix: false }), F("read", "Die Verlaufsform bleibt: was reading")], "Present Progressive wird Past Progressive."),
@@ -2296,9 +2491,9 @@ const BERICHTE: Bericht[] = [
   R("I lost my keys.", "{Name} said that {er} ___ {sein} keys.", "had lost", [F("lost", `${ZURUECK}: Past Simple wird Past Perfect`, { fix: false }), F("has lost", "Past Perfect: had + 3. Form")], "Past Simple wird Past Perfect (had + 3. Form).", 2),
   R("I have finished my homework.", "{Name} said that {er} ___ {sein} homework.", "had finished", [F("has finished", `${ZURUECK}: has finished wird had finished`, { fix: false }), F("had finish", "Past Perfect: had + 3. Form")], "Present Perfect wird Past Perfect (had + 3. Form).", 2),
   R("I am going to visit my aunt.", "{Name} said that {er} ___ {sein} aunt.", "was going to visit", [F("is going to visit", `${ZURUECK}: is going to wird was going to`, { fix: false }), F("was going to visited", "Nach going to steht die Grundform")], "am going to wird was going to.", 1),
-  R("I will call you tomorrow.", "{Name} said that {er} would call me ___.", ["the next day", "the following day"], [F("tomorrow", "tomorrow wird zu the next day", { fix: false }), F("the day before", "the day before heißt am Tag davor")], "tomorrow wird the next day.", 2),
-  R("I was ill yesterday.", "{Name} said that {er} had been ill ___.", ["the day before", "the previous day"], [F("yesterday", "yesterday wird zu the day before", { fix: false }), F("the next day", "the next day heißt am nächsten Tag")], "yesterday wird the day before.", 2),
-  R("My brother is twelve.", "{Name} said that {sein} brother ___ twelve.", "was", [F("is", `${ZURUECK}: is wird was`, { fix: false }), F("were", "Bei einer Person: was")], "is wird was."),
+  R("I will call you tomorrow.", "{Name} said that {er} would call me ___.", ["the next day", "the following day"], [F("tomorrow", "tomorrow wird zu the next day", { fix: false }), F("the day before", "the day before heißt am Tag davor")], "tomorrow wird the next day.", 2, "tomorrow wird zu „am nächsten Tag“. Wie sagt man das auf Englisch?"),
+  R("I was ill yesterday.", "{Name} said that {er} had been ill ___.", ["the day before", "the previous day"], [F("yesterday", "yesterday wird zu the day before", { fix: false }), F("the next day", "the next day heißt am nächsten Tag")], "yesterday wird the day before.", 2, "yesterday wird zu „am Tag davor“. Wie sagt man das auf Englisch?"),
+  R("My brother is twelve.", "{Name} said that {sein} brother ___ twelve.", "was", [F("is", `${ZURUECK}: is wird was`, { fix: false }), F("were", "Bei einer Person: was")], "is wird was.", 0, "is rückt ins Past Simple zurück."),
   R("I don't like spinach.", "{Name} said that {er} ___ spinach.", "didn't like", [F("doesn't like", `${ZURUECK}: doesn't wird didn't`, { fix: false }), F("didn't liked", "Nach didn't steht die Grundform")], "don't und doesn't werden didn't.", 1),
   R("I'm tired.", "{Name} said that ___ was tired.", "{er}", [F("I", "Das Pronomen passt sich an: I wird he oder she")], "Das Pronomen passt sich an: I wird he oder she.", 1),
 ];
@@ -2329,6 +2524,7 @@ function reportedSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(mitPerson ? "told" : "said", [F(mitPerson ? "said" : "told", mitPerson ? "Mit Person (me, us): tell, also told me" : "told braucht eine Person (told me)"), F(mitPerson ? "tell" : "say", "Past Simple: said oder told")], "say / tell")],
       regel: mitPerson ? "Mit Person: told me, told us." : "Ohne Person: said.",
       hilfe: "Steht nach dem Verb eine Person (me, us, the teacher)? Dann told, sonst said.",
+      tipp: "Mit einer Person danach (me, us, the teacher) steht tell, ohne Person say. Beide im Past Simple.",
       titel: "Fill in said or told.",
     };
   }
@@ -2338,6 +2534,7 @@ function reportedSatz(rng: Rng, st: Stufe): Satz {
     luecken: [L(r.richtig.map((x) => einsetzen(x, b)), r.fehler)],
     regel: `${r.regel}`,
     hilfe: "said steht in der Vergangenheit: Die Zeit rückt einen Schritt zurück. Passen die Pronomen?",
+    tipp: r.tipp,
   };
 }
 
@@ -2359,6 +2556,13 @@ function reportedKurz(rng: Rng, st: Stufe): Umformung {
 
 // ---------- Irregular verbs ----------
 const UNR_HILFE = "Unregelmäßige Verben lernst du in drei Formen: Grundform, 2. Form (Past Simple), 3. Form (Past Participle).";
+/** Another irregular verb in its three forms, for a hint: go, went, gone. */
+const unrBsp = (v: Verb) => {
+  const w = beispiel(UNREGELMAESSIG_BSP, v);
+  return `${w.base}, ${w.past}, ${w.pp}`;
+};
+/** „Das Verb heißt …“ for a hint, but not when the German word is one of the forms asked (fall: fallen). */
+const heisst = (u: { de: string }, v: Verb) => ([v.past, v.pp].some((f) => u.de.split(/[ ,]+/).includes(f)) ? "" : `Das Verb heißt „${u.de}“. `);
 
 /** A line of the verb table ("go, ___, ___") or a sentence with the 2nd or 3rd form. */
 function irregularSatz(rng: Rng, st: Stufe): Satz {
@@ -2373,6 +2577,7 @@ function irregularSatz(rng: Rng, st: Stufe): Satz {
       luecken: welche === "beide" ? [past, pp] : welche === "past" ? [past] : [pp],
       regel: `${formen(v)} (${u.de}).`,
       hilfe: UNR_HILFE,
+      tipp: `${heisst(u, v)}Sag die Reihe laut, wie bei ${unrBsp(v)}.`,
       tabelle: true,
     };
   }
@@ -2386,6 +2591,7 @@ function irregularSatz(rng: Rng, st: Stufe): Satz {
       luecken: [L(ppRichtigPerfekt(v), falschePP(v), v.base)],
       regel: `Nach have oder has steht die 3. Form: ${formen(v)}.`,
       hilfe: UNR_HILFE,
+      tipp: `Nach have oder has steht die 3. Form (wie bei ${unrBsp(v)}).`,
       titel: "Fill in the right form of the verb.",
     };
   return {
@@ -2393,6 +2599,7 @@ function irregularSatz(rng: Rng, st: Stufe): Satz {
     luecken: [L(pastRichtig(v), pastFehler(v, p.p), v.base)],
     regel: `Past Simple: die 2. Form. ${formen(v)}.`,
     hilfe: UNR_HILFE,
+    tipp: `Past Simple: die 2. Form (wie bei ${unrBsp(v)}).`,
     titel: st >= 2 ? "Fill in the right form of the verb." : "Fill in the past simple.",
   };
 }
@@ -2406,6 +2613,8 @@ function irregularKurz(rng: Rng, st: Stufe): Umformung {
   const u = nachStufe(rng, UNREGELMAESSIG.filter((x) => x.base !== "be"), st, (x) => x.stufe);
   const v = verb(u.base);
   const regel = `${formen(v)}.`;
+  // the German word stands in the task already
+  const tipp = `Sag die Reihe laut, wie bei ${unrBsp(v)}.`;
   if (st >= 3)
     return {
       auftrag: "Write the 2nd and the 3rd form.",
@@ -2418,6 +2627,7 @@ function irregularKurz(rng: Rng, st: Stufe): Umformung {
       ],
       regel,
       hilfe: UNR_HILFE,
+      tipp,
     };
   const pp = st >= 1 && rng() < 0.5;
   return {
@@ -2427,6 +2637,7 @@ function irregularKurz(rng: Rng, st: Stufe): Umformung {
     fehler: pp ? falschePP(v) : [...falschePast(v), F(v.base, "Grundform statt 2. Form")],
     regel,
     hilfe: UNR_HILFE,
+    tipp,
   };
 }
 
@@ -2468,6 +2679,7 @@ function irregularUebersetzen(rng: Rng, st: Stufe): Umformung {
       ],
       regel: `${u.de}: ${formen(v)}.`,
       hilfe: "Es ist ein unregelmäßiges Verb. Denk an einen Satz, in dem du es verwendest.",
+      tipp: `Die Grundform beginnt mit „${v.base[0]}“. Dann die 2. und die 3. Form, wie bei ${unrBsp(v)}.`,
     };
   return {
     auftrag: "Which irregular verb is it? Write the English base form.",
@@ -2476,6 +2688,7 @@ function irregularUebersetzen(rng: Rng, st: Stufe): Umformung {
     fehler: [...falsch, F(v.past, "2. Form statt Grundform"), ...(v.pp !== v.past && v.pp !== v.base ? [F(v.pp, "3. Form statt Grundform")] : [])],
     regel: `${u.de}: ${formen(v)}.`,
     hilfe: "Es ist ein unregelmäßiges Verb. Denk an einen Satz, in dem du es verwendest.",
+    tipp: `Das englische Verb beginnt mit „${v.base[0]}“ und hat ${v.base.length} Buchstaben.`,
   };
 }
 
