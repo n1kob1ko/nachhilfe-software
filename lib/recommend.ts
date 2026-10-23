@@ -102,10 +102,11 @@ export function nextSteps(studentId: number, o: { today: string; now?: number; l
     for (const label of splitMistakes(l.mistakes)) for (const id of new Set(l.skill_ids.map(real))) noteError(id, null, label);
   }
   const top = (map: Map<string, number>) => [...map].sort((x, y) => y[1] - x[1])[0];
-  const assignments = repo.listAssignments(studentId);
+  // archived exercises still count as done; an archived one is no longer open (lib/archiv.ts)
+  const assignments = repo.listAssignments(studentId, { archiv: "alle" });
   // an exercise is about a skill when it has the skill or one of its Teilfähigkeiten
   const covers = (x: (typeof assignments)[number], id: string) => x.skill_ids.some((s) => real(s) === id || byId.get(s)?.parent_id === id);
-  const openFor = (id: string) => assignments.find((x) => !x.completed_at && covers(x, id));
+  const openFor = (id: string) => assignments.find((x) => !x.completed_at && !x.archiviert && covers(x, id));
   // practice and check are told apart by the kind of the exercise: every finished one counts,
   // also one made in the builder or sent without a recommendation
   const lastDone = (id: string, kind: "uebung" | "ueberpruefung") =>

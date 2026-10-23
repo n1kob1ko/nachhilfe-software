@@ -1,13 +1,14 @@
 import Link from "next/link";
-import { ArrowRight, CalendarClock, ChevronDown, ClipboardPen, FileCheck2, NotebookPen, Play, Plus, Presentation } from "lucide-react";
+import { ArrowRight, CalendarClock, Check, CheckCircle2, ChevronDown, FileCheck2, NotebookPen, PenLine, Play, Plus, Presentation } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
 import { startUnitAction } from "@/app/session-actions";
+import { abhakenAction } from "@/app/zu-erledigen-actions";
 import { Avatar, SubjectArt } from "@/components/Art";
 import { Tagesplan, type TagesplanPunkt } from "@/components/Calendar";
 import { Elapsed, Restzeit } from "@/components/Elapsed";
 import { StudentFocus } from "@/components/StudentFocus";
 import { Wochenplan } from "@/components/planung/Wochenplan";
-import { Empty, SectionTitle, formatDate, formatTime } from "@/components/ui";
+import { Empty, Pill, SectionTitle, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import * as repo from "@/lib/repo";
 import { activeMaterial, materialLabel } from "@/lib/current-material";
@@ -19,7 +20,8 @@ import { klassenLabel } from "@/lib/school";
 import { getUnit, listUnits, platzFuerEinheit, runningUnits } from "@/lib/units";
 import { vorbereitung } from "@/lib/cockpit";
 import { getLernpaket, listLernpakete } from "@/lib/lernpakete";
-import { examReminders, pruefungsHinweise, STAGE_LABEL } from "@/lib/exams";
+import { pruefungsHinweise, STAGE_LABEL } from "@/lib/exams";
+import { ZUSTAND_LABEL, ZUSTAND_TONE, zuErledigen, type Punkt } from "@/lib/zu-erledigen";
 
 const parseLocal = (s: string) => new Date(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s) && !/Z|[+-]\d{2}:?\d{2}$/.test(s) ? s.replace(" ", "T") : s);
 const firstName = (n: string) => n.split(" ")[0];
@@ -33,8 +35,6 @@ const ortLabel = (raum: string | null, gebaeude: string | null, online: boolean)
   const zusatz = gebaeude && gebaeude.toLowerCase() !== (online ? "online" : "vor ort") ? ` · ${gebaeude}` : "";
   return `${raum}${zusatz}${online ? " · online" : ""}`;
 };
-
-type TodoItem = { key: string; href: string; icon: typeof ClipboardPen; text: React.ReactNode; when: string };
 
 /**
  * The start page answers one question: what do I do now? A running unit, or the big
@@ -208,38 +208,10 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
   const recentIds = [...new Set(myUnits.map((u) => u.student_id))].filter((id) => byId.has(id));
   const ordered = [...new Set([...(fokus ? [fokus.studentId] : []), ...slots.map((p) => p.student_id), ...todays.map((l) => l.student_id), ...recentIds, ...students.map((s) => s.id)])].map((id) => byId.get(id)!);
 
-  // to-dos: exams ahead (14/7/3 days, Mehr › Lehrplan), fresh results, homework due (a unit documents itself, lib/einschaetzung.ts)
-  const todos: TodoItem[] = [];
-  for (const e of examReminders(today, { teacherId: teacher.id })) {
-    todos.push({
-      key: `p${e.id}`,
-      href: `/schueler/${e.student_id}/pruefung/${e.id}`,
-      icon: CalendarClock,
-      text: (
-        <>
-          <span className={`font-semibold ${e.stage === "bald" ? "text-red" : e.stage === "prioritaet" ? "text-amber" : ""}`}>{STAGE_LABEL[e.stage]}:</span> {e.kind} {e.subject} von <b>{firstName(e.student_name)}</b>{" "}
-          {e.days === 0 ? "heute" : e.days === 1 ? "morgen" : `in ${e.days} Tagen`}
-        </>
-      ),
-      when: formatDate(e.date, { day: "numeric", month: "short" }),
-    });
-  }
-  for (const r of repo.recentActivity(20).filter((x) => now.getTime() - parseLocal(x.completed_at).getTime() < 48 * 3600_000)) {
-    todos.push({
-      key: `a${r.assignment_id}`,
-      href: `/schueler/${r.student_id}/ergebnis/${r.assignment_id}`,
-      icon: FileCheck2,
-      text: (
-        <>
-          Ergebnis von <b>{firstName(r.student_name)}</b> ansehen: {r.title} ({r.correct_count}/{r.task_count} richtig)
-        </>
-      ),
-      when: formatDate(r.completed_at, { day: "numeric", month: "short" }),
-    });
-  }
-  for (const h of repo.openHomeworkDue(tomorrow)) {
-    todos.push({ key: `h${h.id}`, href: `/schueler/${h.student_id}?tab=schule`, icon: NotebookPen, text: <>Hausübung von <b>{firstName(h.student_name)}</b> kontrollieren: {h.description}</>, when: h.due_date ? formatDate(h.due_date, { day: "numeric", month: "short" }) : "" });
-  }
+  // Zu erledigen (lib/zu-erledigen.ts): Prüfungen, Ergebnisse, Hausübungen und abgegebene Texte, je mit Zustand
+  const todos = zuErledigen(teacher.id, today, now);
+  const ueberfaellig = todos.offen.filter((p) => p.zustand === "ueberfaellig").length;
+  const zuBewerten = todos.offen.filter((p) => p.zustand === "wartet").length;
 
   return (
     <>
@@ -251,7 +223,7 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
           { wort: "Heute", wert: String(tagesplan.length), zusatz: tagesplan.length === 0 ? "keine Einheit" : tagesplan.length === 1 ? "Einheit" : `Einheiten, ${schuelerHeute} Schüler`, href: "#heute" },
           // die laufende Einheit steht in der Bühne; hier immer die Uhrzeit der nächsten geplanten Einheit (niko, 21.10.2026)
           { wort: "Als Nächstes", wert: fokus ? fokus.von : "–", zusatz: fokus ? (fokus.bis ? `${firstName(fokus.name)} · bis ${fokus.bis}` : firstName(fokus.name)) : running.length > 0 ? "nichts mehr geplant" : "nichts geplant", href: fokus ? "#heute" : undefined },
-          { wort: "Zu erledigen", wert: String(todos.length), zusatz: todos.length === 0 ? "nichts offen" : todos.some((t) => t.key.startsWith("p")) ? "Prüfungen und mehr" : "Hausübungen, Ergebnisse", href: "#offen" },
+          { wort: "Zu erledigen", wert: String(todos.offen.length), zusatz: todos.offen.length === 0 ? "nichts offen" : ueberfaellig ? `davon ${ueberfaellig} überfällig` : zuBewerten ? `davon ${zuBewerten} zu bewerten` : todos.offen.some((t) => t.art === "pruefung") ? "Prüfungen und mehr" : "Hausübungen, Ergebnisse", href: "#offen" },
           { wort: "Schüler", wert: String(students.length), zusatz: `${recentIds.length} zuletzt bei dir`, href: "/schueler" },
         ]}
       />
@@ -343,20 +315,28 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
 
           <section id="offen">
             <SectionTitle>Zu erledigen</SectionTitle>
-            {todos.length === 0 ? (
+            {todos.offen.length === 0 ? (
               <p className="text-[15px] text-ink-2">Nichts offen.</p>
             ) : (
-              <ul className="panel divide-y divide-line">
-                {todos.slice(0, 6).map(({ key, href, icon: Icon, text, when }) => (
-                  <li key={key}>
-                    <Link href={href} className="flex min-h-[60px] items-center gap-3 px-4 py-2.5 text-[14px] hover:bg-panel/60">
-                      <Icon size={19} className="shrink-0 text-accent" aria-hidden />
-                      <span className="min-w-0 flex-1">{text}</span>
-                      <span className="num shrink-0 text-[13px] text-ink-3">{when}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <TodoListe punkte={todos.offen.slice(0, 6)} />
+                {todos.offen.length > 6 && (
+                  <details className="group mt-3">
+                    <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-medium text-accent">
+                      Noch {todos.offen.length - 6} weitere <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden />
+                    </summary>
+                    <TodoListe punkte={todos.offen.slice(6)} />
+                  </details>
+                )}
+              </>
+            )}
+            {todos.erledigt.length > 0 && (
+              <details className="group mt-3" data-testid="todo-erledigt">
+                <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-medium text-ink-2 hover:text-ink">
+                  Erledigt <span className="num">({todos.erledigt.length})</span> <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden />
+                </summary>
+                <TodoListe punkte={todos.erledigt.slice(0, 10)} />
+              </details>
             )}
           </section>
         </div>
@@ -384,6 +364,79 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
         )}
       </div>
     </>
+  );
+}
+
+const TODO_ICON = { pruefung: CalendarClock, ergebnis: FileCheck2, hausuebung: NotebookPen, text: PenLine };
+
+/** Was ein Punkt in „Zu erledigen“ sagt; der Zustand steht darunter. */
+function todoText(p: Punkt): React.ReactNode {
+  const name = <b>{firstName(p.studentName)}</b>;
+  switch (p.art) {
+    case "pruefung": {
+      const e = p.pruefung;
+      return (
+        <>
+          <span className={`font-semibold ${e.stage === "bald" ? "text-red" : e.stage === "prioritaet" ? "text-amber" : ""}`}>{STAGE_LABEL[e.stage]}:</span> {e.kind} {e.subject} von {name} {e.days === 0 ? "heute" : e.days === 1 ? "morgen" : `in ${e.days} Tagen`}
+        </>
+      );
+    }
+    case "ergebnis":
+      return p.zustand === "wartet" ? (
+        <>
+          Ergebnis von {name} bewerten: {p.titel} ({p.zuBewerten} {p.zuBewerten === 1 ? "Antwort" : "Antworten"})
+        </>
+      ) : (
+        <>
+          Ergebnis von {name} ansehen: {p.titel} ({p.richtig}/{p.aufgaben} richtig)
+        </>
+      );
+    case "hausuebung":
+      return (
+        <>
+          Hausübung von {name}
+          {p.zustand === "erledigt" ? "" : " kontrollieren"}: {p.beschreibung}
+          {p.uebung && <span className="text-ink-2"> · Übung „{p.uebung}“</span>}
+        </>
+      );
+    case "text":
+      return (
+        <>
+          Text von {name} {p.zustand === "erledigt" ? "abgegeben" : "ansehen"}: {p.titel}
+        </>
+      );
+  }
+}
+
+/** Die Zeilen von „Zu erledigen“ (offen oder erledigt): Link zum Punkt, Zustand, Datum und, wo es geht, „Abhaken“. */
+function TodoListe({ punkte }: { punkte: Punkt[] }) {
+  return (
+    <ul className="panel divide-y divide-line">
+      {punkte.map((p) => {
+        const Icon = p.zustand === "erledigt" ? CheckCircle2 : TODO_ICON[p.art];
+        return (
+          <li key={p.key} className="flex items-stretch">
+            <Link href={p.href} className="flex min-h-[60px] min-w-0 flex-1 items-center gap-3 px-4 py-2.5 text-[14px] hover:bg-panel/60">
+              <Icon size={19} className={`shrink-0 ${p.zustand === "erledigt" ? "text-green" : "text-accent"}`} aria-hidden />
+              <span className={`min-w-0 flex-1 ${p.zustand === "erledigt" ? "text-ink-2" : ""}`}>
+                {todoText(p)}
+                <span className="mt-1 block">
+                  <Pill tone={ZUSTAND_TONE[p.zustand]}>{ZUSTAND_LABEL[p.zustand]}</Pill>
+                </span>
+              </span>
+              <span className="num shrink-0 text-[13px] text-ink-3">{formatDate(p.datum, { day: "numeric", month: "short" })}</span>
+            </Link>
+            {p.abhaken && (
+              <form action={abhakenAction.bind(null, p.abhaken)} className="flex shrink-0 items-center pr-2">
+                <button className="btn btn-ghost btn-sm min-h-[44px] min-w-[44px] !px-2 text-ink-3 hover:text-green" aria-label="Abhaken" title="Abhaken">
+                  <Check size={18} aria-hidden />
+                </button>
+              </form>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

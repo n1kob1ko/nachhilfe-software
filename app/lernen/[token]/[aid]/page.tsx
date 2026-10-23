@@ -10,7 +10,8 @@ export default async function SolvePage({ params }: { params: Promise<{ token: s
   const { token, aid } = await params;
   const student = repo.getStudentByToken(token);
   const assignment = repo.getAssignment(Number(aid));
-  if (!student || !assignment || assignment.student_id !== student.id) notFound();
+  // an archived exercise (lib/archiv.ts) is no longer open for the student
+  if (!student || !assignment || assignment.student_id !== student.id || repo.assignmentArchived(assignment.id)) notFound();
   const w = repo.getWorksheet(assignment.worksheet_id)!;
   const tasks = clientTasks(assignment);
   // Schnellrunde nur, wenn der Lehrer sie so gesendet hat und die Aufgaben es hergeben (lib/quick-round.ts);

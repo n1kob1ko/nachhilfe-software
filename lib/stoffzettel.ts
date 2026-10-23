@@ -16,6 +16,7 @@ import fs from "node:fs";
 import { aiEnabled, aiReadsImages, leseStoffzettel, type StoffzettelGelesen } from "./ai";
 import { db } from "./db";
 import { daysUntil } from "./exams";
+import { fachNamen } from "./faecher";
 import { getMaterial, hatDatei, materialFile, MAX_ANALYSIS_IMAGE_BYTES, MAX_ANALYSIS_PDF_BYTES, sniffType } from "./materials";
 import { PRUEFUNGSARTEN } from "./pruefungsarten";
 import * as repo from "./repo";
@@ -140,7 +141,8 @@ export async function liesStoffzettel(o: { materialId: number; studentId: number
     { teacherId: o.teacherId, studentId: o.studentId, trigger: "stoffzettel" },
   );
   if (!gelesen) throw new Error("Die KI hat den Zettel nicht gelesen. Trag Fach, Datum und Stoff bitte selbst ein.");
-  return vorschlagAusGelesen(gelesen, { heute: o.heute, faecher });
+  // ein gelesenes Fach zählt, wenn es beim Schüler oder in der Fächerliste steht (Mehr › Fächer)
+  return vorschlagAusGelesen(gelesen, { heute: o.heute, faecher: [...faecher, ...fachNamen()] });
 }
 
 /**

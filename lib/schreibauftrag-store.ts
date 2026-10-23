@@ -178,7 +178,7 @@ export function quelleOf(textId: number): AuftragQuelle | null {
 export function quelleForStudent(studentId: number | null, sorte: SorteKey): AuftragQuelle {
   if (studentId) {
     const r = db()
-      .prepare("SELECT i.text_id FROM text_interpretations i JOIN texts t ON t.id = i.text_id WHERE t.student_id = ? AND i.sorte = ? ORDER BY i.updated_at DESC, i.text_id DESC LIMIT 1")
+      .prepare("SELECT i.text_id FROM text_interpretations i JOIN texts t ON t.id = i.text_id WHERE t.student_id = ? AND i.sorte = ? AND t.archived_at IS NULL ORDER BY i.updated_at DESC, i.text_id DESC LIMIT 1")
       .get(studentId, sorte) as { text_id: number } | undefined;
     const own = r ? quelleOf(r.text_id) : null;
     if (own) return own;

@@ -27,7 +27,7 @@ const chip = "flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-full
  * Aktueller Stoff of one subject: Thema and Unterthema as the school calls them; matching skills
  * appear as chips to tick (nothing is linked automatically), the rest is optional.
  */
-export function MaterialForm({ studentId, subjects, skills, initial, today }: { studentId: number; subjects: string[]; skills: SkillOption[]; initial?: MaterialValues; today: string }) {
+export function MaterialForm({ studentId, subjects, weitere = [], skills, initial, today }: { studentId: number; subjects: string[]; weitere?: string[]; skills: SkillOption[]; initial?: MaterialValues; today: string }) {
   const [state, action, saving] = useActionState<MaterialState, FormData>(saveMaterialAction, null);
   const [subject, setSubject] = useState(initial?.subject ?? subjects[0] ?? "Mathematik");
   const [topic, setTopic] = useState(initial?.topic ?? "");
@@ -70,6 +70,13 @@ export function MaterialForm({ studentId, subjects, skills, initial, today }: { 
               {subjects.map((s) => (
                 <option key={s}>{s}</option>
               ))}
+              {weitere.length > 0 && (
+                <optgroup label="Weitere Fächer">
+                  {weitere.map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           )}
         </label>
@@ -83,40 +90,46 @@ export function MaterialForm({ studentId, subjects, skills, initial, today }: { 
         </label>
       </div>
 
-      <div className="grid gap-1.5" aria-live="polite">
-        <p className="flex items-center gap-1.5 text-[12.5px] text-ink-2">
-          <Sparkles size={13} aria-hidden /> Fähigkeiten antippen, die dazugehören
+      {ofSubject.length === 0 && extra.length === 0 ? (
+        <p className="text-[13px] text-ink-3" aria-live="polite">
+          Für {subject} gibt es keine Fähigkeiten zum Antippen. Thema und Notiz reichen.
         </p>
-        <div className="flex flex-wrap gap-1.5">
-          {[...suggested, ...extra.map((id) => byId.get(id)).filter((x): x is SkillOption => Boolean(x))].map((s) => (
-            <label key={s.id} className={chip}>
-              <input type="checkbox" checked={checked.includes(s.id)} onChange={() => toggle(s.id)} className="accent-[var(--accent)]" />
-              {s.name}
-              <span className="text-ink-3">· {s.area}</span>
-            </label>
-          ))}
-          {suggested.length === 0 && extra.length === 0 && <span className="text-[13px] text-ink-3">{pending ? "Suche passende Fähigkeiten …" : topic ? "Kein Vorschlag. Wähle unten aus der Liste." : "Erscheinen, sobald du ein Thema eingibst."}</span>}
-        </div>
-        <Reveal label="Aus allen Fähigkeiten wählen">
-          <div className="grid max-h-[280px] gap-3 overflow-y-auto rounded-lg border border-line bg-paper p-3">
-            {areas.map((area) => (
-              <fieldset key={area}>
-                <legend className="mb-1 text-[12px] font-semibold text-ink-3">{area}</legend>
-                <div className="flex flex-wrap gap-1.5">
-                  {ofSubject
-                    .filter((s) => s.area === area)
-                    .map((s) => (
-                      <label key={s.id} className="flex min-h-[34px] cursor-pointer items-center gap-1.5 rounded-md border border-line bg-surface px-2 text-[13px] has-checked:border-accent has-checked:bg-accent-wash">
-                        <input type="checkbox" checked={checked.includes(s.id)} onChange={() => toggle(s.id)} className="accent-[var(--accent)]" />
-                        {s.name}
-                      </label>
-                    ))}
-                </div>
-              </fieldset>
+      ) : (
+        <div className="grid gap-1.5" aria-live="polite">
+          <p className="flex items-center gap-1.5 text-[12.5px] text-ink-2">
+            <Sparkles size={13} aria-hidden /> Fähigkeiten antippen, die dazugehören
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {[...suggested, ...extra.map((id) => byId.get(id)).filter((x): x is SkillOption => Boolean(x))].map((s) => (
+              <label key={s.id} className={chip}>
+                <input type="checkbox" checked={checked.includes(s.id)} onChange={() => toggle(s.id)} className="accent-[var(--accent)]" />
+                {s.name}
+                <span className="text-ink-3">· {s.area}</span>
+              </label>
             ))}
+            {suggested.length === 0 && extra.length === 0 && <span className="text-[13px] text-ink-3">{pending ? "Suche passende Fähigkeiten …" : topic ? "Kein Vorschlag. Wähle unten aus der Liste." : "Erscheinen, sobald du ein Thema eingibst."}</span>}
           </div>
-        </Reveal>
-      </div>
+          <Reveal label="Aus allen Fähigkeiten wählen">
+            <div className="grid max-h-[280px] gap-3 overflow-y-auto rounded-lg border border-line bg-paper p-3">
+              {areas.map((area) => (
+                <fieldset key={area}>
+                  <legend className="mb-1 text-[12px] font-semibold text-ink-3">{area}</legend>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ofSubject
+                      .filter((s) => s.area === area)
+                      .map((s) => (
+                        <label key={s.id} className="flex min-h-[34px] cursor-pointer items-center gap-1.5 rounded-md border border-line bg-surface px-2 text-[13px] has-checked:border-accent has-checked:bg-accent-wash">
+                          <input type="checkbox" checked={checked.includes(s.id)} onChange={() => toggle(s.id)} className="accent-[var(--accent)]" />
+                          {s.name}
+                        </label>
+                      ))}
+                  </div>
+                </fieldset>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="field">

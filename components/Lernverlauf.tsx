@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, PenLine, Plus, Printer, SpellCheck } from "lucide-react";
+import { Archive, ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, PenLine, Plus, Printer, SpellCheck } from "lucide-react";
+import { archiveTextAction } from "@/app/archiv-actions";
 import { LessonCard, rateTone } from "@/components/LessonCard";
 import { Info } from "@/components/Info";
 import { EinschaetzungPill } from "@/components/Einschaetzung";
@@ -38,7 +39,7 @@ export function Lernverlauf({ student, filter }: { student: repo.Student; filter
   const isPractice = (e: Entry) => e.kind === "lesson" && e.lesson.kind === "selbststaendig";
   const count = { alle: entries.length, einheiten: entries.filter((e) => !isPractice(e)).length, selbststaendig: entries.filter(isPractice).length };
   const shown = entries.filter((e) => art === "alle" || (art === "selbststaendig" ? isPractice(e) : !isPractice(e)));
-  const results = new Map(repo.listAssignments(student.id).map((x) => [x.id, { done: x.done_count, correct: x.correct_count }]));
+  const results = new Map(repo.listAssignments(student.id, { archiv: "alle" }).map((x) => [x.id, { done: x.done_count, correct: x.correct_count }]));
   const VISIBLE = 8;
   const item = (e: Entry) =>
     e.kind === "unit" ? (
@@ -413,6 +414,11 @@ function StudentTexts({ studentId }: { studentId: number }) {
       <Link href={`/arbeitsblatt/text/${t.id}`} target="_blank" className="btn btn-ghost btn-sm" aria-label={`${t.title}: PDF / Drucken`}>
         <Printer size={14} aria-hidden /> PDF
       </Link>
+      <form action={archiveTextAction.bind(null, t.id, `/schueler/${studentId}?tab=lernverlauf`)}>
+        <button className="btn btn-ghost btn-sm !px-2.5" aria-label={`${t.title} archivieren`} title="Archivieren: nicht mehr in der Liste, der Text bleibt">
+          <Archive size={15} aria-hidden />
+        </button>
+      </form>
     </li>
   );
   return (

@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { PageHeader } from "@/components/ui";
 import { StartTextForm } from "@/components/text/StartTextForm";
 import { requireTeacher } from "@/lib/auth";
-import { SUBJECTS } from "@/lib/curriculum";
+import { fachNamen } from "@/lib/faecher";
 import { getStudent } from "@/lib/repo";
 import { TEXT_KINDS } from "@/lib/texts";
 import { studentDevice } from "@/lib/live";
@@ -33,7 +33,7 @@ export default async function StartTextPage({ params }: { params: Promise<{ id: 
         info="Ein längerer Text, den der Schüler in der Einheit schreibt. Er wird laufend gespeichert und kann in späteren Einheiten weitergeschrieben werden."
         back={{ href: `/einheiten/${unit.id}`, label: "Zurück zur Einheit" }}
       />
-      <StartTextForm unitId={unit.id} subject={textSubject(unit.subject, student.subjects)} subjects={[...SUBJECTS]} kinds={TEXT_KINDS} device={studentDevice(unit)} name={name} />
+      <StartTextForm unitId={unit.id} subject={textSubject(unit.subject, student.subjects)} subjects={fachNamen()} kinds={TEXT_KINDS} device={studentDevice(unit)} name={name} />
     </div>
   );
 }

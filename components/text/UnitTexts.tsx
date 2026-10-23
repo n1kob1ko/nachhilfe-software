@@ -12,7 +12,7 @@ const label = (t: Pick<UnitText, "title" | "topic">) => (t.topic && t.topic !== 
  */
 export function RunningUnitTexts({ unitId, studentId, deviceView, device, name }: { unitId: number; studentId: number; deviceView: string; device: "laptop" | "tablet" | null; name: string }) {
   const word = device === "laptop" ? "Laptop" : "Tablet";
-  const here = textsForUnit(unitId);
+  const here = textsForUnit(unitId).filter((t) => !t.archived_at);
   const ids = new Set(here.map((t) => t.id));
   const earlier = textsForStudent(studentId).filter((t) => !ids.has(t.id) && t.status !== "fertig");
   if (!here.length && !earlier.length) return null;

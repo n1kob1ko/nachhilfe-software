@@ -332,12 +332,18 @@ regelmäßig bei uns hat. Das **Fach einer Einheit** (auch einer Hausübung) ist
 frei: jedes Schulfach, auch einmalig, z. B. Biologie vor einem Test, ohne dass
 sich das Profil ändert. Lehrplan, Übungen und Lernstand je Fähigkeit gibt es nur
 für Mathematik, Deutsch und Englisch; eine Einheit in einem anderen Fach wird
-dokumentiert, aber nicht ausgewertet.
+dokumentiert, aber nicht ausgewertet. Alle Fach-Felder wählen aus der
+**Fächerliste** (Mehr › Fächer, Tabelle `faecher`): die Verwaltung legt Fächer an
+und deaktiviert sie, umbenannt wird nie; ein altes, frei eingetipptes Fach bleibt
+gültig.
 _Avoid_: Gegenstand, Unterrichtsgegenstand, Kurs
 
 **Hausübung**:
 Was der Schüler zu Hause macht: Beschreibung, Fach, Fälligkeit, offen oder
-erledigt. Österreichisch für Hausaufgabe.
+erledigt. Österreichisch für Hausaufgabe. Sie kann zu einer **Übung** gehören
+(`homework.assignment_id`): ist die fertig, ist die Hausübung erledigt, auch ohne Häkchen.
+Auf der Startseite steht sie unter „Zu erledigen“ mit Zustand Offen, Überfällig oder
+Erledigt (`lib/zu-erledigen.ts`).
 _Avoid_: Hausaufgabe, Homework, Übung, Aufgabe
 
 **Schularbeit**:

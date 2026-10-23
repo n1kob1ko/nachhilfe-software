@@ -2,11 +2,12 @@ import Link from "next/link";
 import { FileText, ImageIcon, PenLine, Upload } from "lucide-react";
 import { Empty, PageHeader, Pill, formatDate } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
-import { SUBJECTS } from "@/lib/curriculum";
+import { fachNamen } from "@/lib/faecher";
 import { BLATTART_LABEL } from "@/lib/druckblatt/definition/schemas";
 import { druckblattArt, libraryTasksOf, listMaterials, MATERIAL_KINDS, MATERIAL_STATUS, MAX_UPLOAD_BYTES } from "@/lib/materials";
 import { sourceById } from "@/lib/lehrplan";
 import * as repo from "@/lib/repo";
+import { mitWert } from "@/lib/school";
 
 export const metadata = { title: "Material" };
 
@@ -71,7 +72,7 @@ export default async function MaterialsPage({ searchParams }: { searchParams: Pr
             <span className="label">Fach</span>
             <select className="input" name="fach" defaultValue={sp.fach ?? ""}>
               <option value="">später</option>
-              {SUBJECTS.map((s) => (
+              {mitWert(fachNamen(), sp.fach).map((s) => (
                 <option key={s}>{s}</option>
               ))}
             </select>

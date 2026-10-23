@@ -4,7 +4,7 @@ import { deviceMayWrite } from "@/lib/texts";
 
 export const dynamic = "force-dynamic";
 
-/** "Abgeben" of a Bildgeschichte on the student tablet. */
+/** "Abgeben" of a Textarbeit on the student tablet. */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const device = await currentDevice();
   if (!device) return Response.json({ error: "Dieses Tablet ist nicht verbunden." }, { status: 401 });

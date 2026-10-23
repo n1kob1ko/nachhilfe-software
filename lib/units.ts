@@ -85,7 +85,8 @@ export function unitForSend(teacherId: number, pickedUnitId: number | null, stud
 export function runningUnits(teacherId?: number): (UnitView & { open_exercises: number })[] {
   return db()
     .prepare(
-      `SELECT v.*, (SELECT COUNT(*) FROM assignments a WHERE a.student_id = v.student_id AND a.completed_at IS NULL) AS open_exercises
+      `SELECT v.*, (SELECT COUNT(*) FROM assignments a JOIN worksheets w ON w.id = a.worksheet_id
+                WHERE a.student_id = v.student_id AND a.completed_at IS NULL AND COALESCE(a.archived_at, w.archived_at) IS NULL) AS open_exercises
        FROM (${VIEW} WHERE u.status = 'gestartet' AND (@t IS NULL OR u.teacher_id = @t)) v ORDER BY v.started_at`,
     )
     .all({ t: teacherId ?? null }) as (UnitView & { open_exercises: number })[];
