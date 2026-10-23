@@ -1031,6 +1031,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // Präsentationen (lib/praesentationen.ts, 2026-10-22): die Präsentation eines Lernpakets; ihre Folien
   // passen zur Spalte `folie` der Schritte
   ["lernpakete", "praesentation_id", "INTEGER REFERENCES praesentationen(id) ON DELETE SET NULL"],
+  // Lernpaket mit KI entwerfen (lib/lernpaket-ki.ts, 2026-10-23): die Anfrage im Protokoll (ai_calls.id), für Tokens und Kosten
+  ["lernpakete", "ki_call_id", "INTEGER"],
   // Archiv (lib/archiv.ts, 2026-10-22): archiviert statt gelöscht. Die Zeile bleibt mit Versuchen, Dokumentation und
   // Lernstand; sie fehlt nur in Listen, Auswahl und Suche, und Schüler sehen sie nicht mehr als offen. null = nicht archiviert.
   // Eine Textarbeit (auch Bildgeschichte und Schreibauftrag) wird an `texts` archiviert, die Zusatztabellen hängen daran.

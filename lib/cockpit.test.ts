@@ -95,7 +95,7 @@ test("the documentation names only what the teacher tapped, and replaces its own
 
 const paketFix = (o: Partial<Lernpaket> & { id: number }): Lernpaket => ({
   title: `Paket ${o.id}`, fach: "Mathematik", schulart: "Mittelschule", klasse: 1, schulstufe: 5, thema: "", skill_ids: [], schwierigkeit: "mittel", dauer_minuten: 50, ziel: "",
-  quelle: "hand", status: "geprueft", created_by: null, created_at: "", updated_at: "", geprueft_von: null, geprueft_am: "2026-10-01", geprueft_von_name: null, schritt_zahl: 5, minuten_summe: 50, praesentation_id: null,
+  quelle: "hand", status: "geprueft", created_by: null, created_at: "", updated_at: "", geprueft_von: null, geprueft_am: "2026-10-01", geprueft_von_name: null, schritt_zahl: 5, minuten_summe: 50, praesentation_id: null, ki_call_id: null,
   ...o,
 });
 const skillFix = (id: string, name: string) => ({ id, name, subject: "Mathematik", area: "Bruchrechnung" }) as repo.Skill;
