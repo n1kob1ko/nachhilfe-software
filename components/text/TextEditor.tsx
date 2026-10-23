@@ -858,7 +858,7 @@ export function TextEditor({
           <div className="tx-handin" data-testid="abgeben-bereich">
             {handing === "fragen" ? (
               <>
-                <p className="text-[15px] font-semibold">Bist du fertig? Dann gib {auftrag ? SORTEN[auftrag.sorte].deinen : "deine Geschichte"} ab.</p>
+                <p className="text-[15px] font-semibold">Bist du fertig? Dann gib {auftrag ? SORTEN[auftrag.sorte].deinen : pictures ? "deine Geschichte" : "deinen Text"} ab.</p>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" className="btn btn-primary" onClick={() => void submitHandIn()} data-testid="abgeben-ja">
                     <Send size={16} aria-hidden /> Ja, abgeben

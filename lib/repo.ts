@@ -107,7 +107,9 @@ export type Lesson = {
   auto_felder?: string;
 };
 
-export type Homework = { id: number; student_id: number; subject: string; description: string; due_date: string | null; status: string; notes: string };
+export type Homework = { id: number; student_id: number; subject: string; description: string; due_date: string | null; status: string; notes: string; assignment_id: number | null };
+/** A Hausübung with the Übung it belongs to (if any): when that Übung is fertig, the Hausübung counts as erledigt. */
+export type HomeworkView = Homework & { assignment_title: string | null; assignment_completed_at: string | null };
 export type TestResult = {
   id: number;
   student_id: number;
@@ -459,16 +461,21 @@ export function billingEntries(f: BillingFilter): BillingRow[] {
 }
 
 // ---------- homework & tests ----------
-export function listHomework(studentId: number): Homework[] {
-  return db().prepare("SELECT * FROM homework WHERE student_id = ? ORDER BY status = 'erledigt', due_date").all(studentId) as Homework[];
-}
-export function openHomeworkDue(until: string): (Homework & { student_name: string })[] {
+export function listHomework(studentId: number): HomeworkView[] {
   return db()
-    .prepare("SELECT h.*, s.name AS student_name FROM homework h JOIN students s ON s.id = h.student_id WHERE h.status = 'offen' AND h.due_date IS NOT NULL AND h.due_date <= ? ORDER BY h.due_date")
-    .all(until) as (Homework & { student_name: string })[];
+    .prepare(
+      `SELECT h.*, w.title AS assignment_title, a.completed_at AS assignment_completed_at
+       FROM homework h LEFT JOIN assignments a ON a.id = h.assignment_id LEFT JOIN worksheets w ON w.id = a.worksheet_id
+       WHERE h.student_id = ? ORDER BY (h.status = 'erledigt' OR a.completed_at IS NOT NULL), h.due_date`,
+    )
+    .all(studentId) as HomeworkView[];
 }
-export function addHomework(h: Omit<Homework, "id">) {
-  db().prepare("INSERT INTO homework (student_id, subject, description, due_date, status, notes) VALUES (@student_id, @subject, @description, @due_date, @status, @notes)").run(h);
+/** Still to do: not ticked off by hand and its Übung (if it has one) not fertig yet. */
+export const homeworkOpen = (h: Pick<HomeworkView, "status" | "assignment_completed_at">) => h.status !== "erledigt" && !h.assignment_completed_at;
+export function addHomework(h: Omit<Homework, "id" | "assignment_id"> & { assignment_id?: number | null }) {
+  db()
+    .prepare("INSERT INTO homework (student_id, subject, description, due_date, status, notes, assignment_id) VALUES (@student_id, @subject, @description, @due_date, @status, @notes, @assignment_id)")
+    .run({ ...h, assignment_id: h.assignment_id ?? null });
 }
 export function setHomeworkStatus(id: number, status: string) {
   db().prepare("UPDATE homework SET status = ? WHERE id = ?").run(status, id);
@@ -952,15 +959,4 @@ export function pendingReviews(o: { studentId?: number; unitId?: number; assignm
 }
 export function getAttempt(id: number): Attempt | null {
   return (db().prepare("SELECT * FROM attempts WHERE id = ?").get(id) as Attempt | undefined) ?? null;
-}
-export function recentActivity(limit = 8) {
-  return db()
-    .prepare(
-      `SELECT a.id AS assignment_id, s.id AS student_id, s.name AS student_name, w.title, a.completed_at,
-        (SELECT COUNT(*) FROM attempts x WHERE x.assignment_id = a.id AND x.final = 1 AND x.correct = 1) AS correct_count,
-        (SELECT COUNT(*) FROM tasks t WHERE t.worksheet_id = w.id) AS task_count
-       FROM assignments a JOIN students s ON s.id = a.student_id JOIN worksheets w ON w.id = a.worksheet_id
-       WHERE a.completed_at IS NOT NULL ORDER BY a.completed_at DESC LIMIT ?`,
-    )
-    .all(limit) as { assignment_id: number; student_id: number; student_name: string; title: string; completed_at: string; correct_count: number; task_count: number }[];
 }

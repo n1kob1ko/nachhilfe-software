@@ -5,6 +5,7 @@ import { CheckCircle2, CircleDashed, Lightbulb, Plus, XCircle } from "lucide-rea
 import { deleteAssignmentAction } from "@/app/actions";
 import { answerText } from "@/components/TaskPreview";
 import { ErrorTypeSelect } from "@/components/ErrorTypeSelect";
+import { ErgebnisGesehen } from "@/components/ErgebnisGesehen";
 import { FixCompare } from "@/components/FixMarks";
 import { closestVersion } from "@/lib/fix-text";
 import { ReviewButtons } from "@/components/ReviewButtons";
@@ -97,6 +98,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
 
   return (
     <>
+      {assignment.completed_at && <ErgebnisGesehen assignmentId={assignment.id} />}
       <PageHeader
         back={probe ? { href: `/schueler/${student.id}/pruefung/${probe.id}#probeschularbeit`, label: "Vorbereitung" } : { href: `/schueler/${student.id}?tab=uebungen`, label: student.name }}
         title={w.title}
