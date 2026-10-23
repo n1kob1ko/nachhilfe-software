@@ -299,6 +299,16 @@ genau eine Aufgabe samt Herkunft und Lizenz; aus ausgewählten Einträgen entste
 mit einem Klick eine neue Übung.
 _Avoid_: Archiv, Sammlung, Pool, Katalog
 
+**Aufgabe bewerten**:
+Ein Lehrer gibt einer **Aufgabe** 1 bis 5 Sterne, kreuzt Gründe an (Fachlich falsch, Musterlösung falsch, Zu einfach,
+Zu schwierig, Unverständlich, Nicht altersgerecht, Passt nicht zum Schulstoff, Zu ähnlich, Besonders gute Aufgabe) und
+schreibt bei Bedarf einen Kommentar; eine Bewertung je Aufgabe und Lehrer, änderbar. Bewertet wird die Aufgabe, nie der
+Schüler: Versuche und Lernstand bleiben unberührt. Gleicher Inhalt ist dieselbe Aufgabe, in Übung, Bibliothek und
+Lernpaket. Gut bewertete kommen in Suche und Vorschlägen zuerst und gehen der KI als Vorbild mit; „Fachlich falsch“,
+„Musterlösung falsch“ oder höchstens 2 Sterne blenden die Aufgabe aus Vorschlägen und automatischer Auswahl aus, in der
+Bibliothek bleibt sie unter dem Filter „Bewertung“ (`aufgabe_bewertungen`, `lib/bewertungen.ts`).
+_Avoid_: Lehrerbewertung (das ist die Bewertung einer Schülerantwort), Feedback, Rating, Like
+
 **Vorlage**:
 Ein gespeichertes Rezept für eine **Übung**: die Einstellungen des Builders und,
 wenn gewünscht, die festen Aufgaben — damit dieselbe Übung in einem Klick wieder

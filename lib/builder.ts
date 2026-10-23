@@ -5,6 +5,7 @@
  */
 import { aiEnabled, bankOfSkill, generateBankItemsWithAI, generatePlanWithAI, type AIMeta } from "./ai";
 import type { BankId } from "./banks";
+import { aufgabeSchluessel, ausgeblendet, rueckmeldungZeile, vorbildZeilen } from "./bewertungen";
 import { DIFFICULTIES, categoriesFor, difficultyFor, mixFor, type Category, type Difficulty, type TaskType } from "./curriculum";
 import { aufgabenSchluessel, leseFigur } from "./figur";
 import { generateForSlot } from "./generators";
@@ -468,6 +469,9 @@ export async function generateTasks(
             studentContext: ctx ? contextForAI(ctx, skills.map((r) => r.skill.id)) : null,
             focusNote: settings.focus,
             examples: settings.examples,
+            // gut bewertete Aufgaben dieser Fähigkeiten als Vorbild (lib/bewertungen.ts)
+            gutBewertet: vorbildZeilen(skills.map((r) => r.skill.id).filter((id) => id !== EIGENE_VOKABELN), 3),
+            rueckmeldung: rueckmeldungZeile(skills.map((r) => r.skill.id)),
             avoid: schonDa(),
             wortarten,
           },
@@ -493,6 +497,8 @@ export async function generateTasks(
   // the rest (or everything without AI) from the built-in generators, slot by slot
   // Aufgaben mit Bild haben oft denselben Text: verglichen wird mit dem Bild (aufgabenSchluessel)
   const avoid = new Set([...(o.avoidKeys ?? o.avoid ?? []), ...slots.filter((t): t is TaskDraft => Boolean(t)).map(aufgabenSchluessel)]);
+  // schlecht bewertete Aufgaben (lib/bewertungen.ts) kommen aus dem Generator nicht wieder, solange er eine andere findet
+  const weg = ausgeblendet();
   for (let i = 0; i < plan.length; i++) {
     if (slots[i]) continue;
     const { skill: r, category } = plan[i];
@@ -504,7 +510,7 @@ export async function generateTasks(
     let t: TaskDraft | null = null;
     for (let guard = 0; guard < 12; guard++) {
       t = generateForSlot({ skillId: r.skill.id, skillName: r.skill.name, generatorSkillId: r.parent?.id, difficulty: r.difficulty, category, subject: settings.subject, wortarten, grade }, Math.random, Math.floor(i / skills.length) + guard);
-      if (!avoid.has(aufgabenSchluessel(t)) || guard >= 10) break;
+      if ((!avoid.has(aufgabenSchluessel(t)) && !weg.has(aufgabeSchluessel(t))) || guard >= 10) break;
     }
     avoid.add(aufgabenSchluessel(t!));
     // Englisch-Matura: „Reading comprehension“ für eine Fähigkeit mit True or False bekommt True or False, das ist der Typ

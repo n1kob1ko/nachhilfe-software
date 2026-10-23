@@ -20,6 +20,8 @@ import { SkillPicker } from "@/components/SkillPicker";
 import { TaskBody } from "@/components/TaskPreview";
 import { PageHeader, Pill, Reveal, SectionTitle, formatDate } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
+import { AufgabeBewertung } from "@/components/AufgabeBewertung";
+import { bewertungInfos } from "@/lib/bewertungen";
 import { DIFFICULTIES, TASK_TYPES } from "@/lib/curriculum";
 import { kiKosten } from "@/lib/lernpaket-ki";
 import { searchLibrary } from "@/lib/library";
@@ -48,11 +50,13 @@ const SKRIPT = [
  * steps can be added, moved, changed and removed.
  */
 export default async function LernpaketPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Params> }) {
-  await requireTeacher();
+  const teacher = await requireTeacher();
   const { id } = await params;
   const sp = await searchParams;
   const p = getLernpaket(Number(id));
   if (!p) notFound();
+  // Aufgaben bewerten (lib/bewertungen.ts): je Schritt die Bewertung jeder Aufgabe
+  const bewertungen = new Map(p.schritte.map((s) => [s.id, bewertungInfos(s.aufgaben, teacher.id)]));
   const archiviert = p.status === "archiviert";
   const bearbeiten = Boolean(sp.bearbeiten) && !archiviert;
   const skills = repo.listSkills();
@@ -312,6 +316,9 @@ export default async function LernpaketPage({ params, searchParams }: { params: 
                           ))}
                         </p>
                         <TaskBody task={a} showSolution skillName={a.skillId ? skillName(a.skillId) : undefined} subject={p.fach} />
+                        <div className="no-print mt-2 flex flex-wrap items-center gap-1.5">
+                          <AufgabeBewertung key={bewertungen.get(s.id)![j].schluessel} ziel={{ art: "schritt", id: s.id, index: j }} info={bewertungen.get(s.id)![j]} className="-ml-3" />
+                        </div>
                         {bearbeiten && (
                           <form action={removeAufgabeAction.bind(null, s.id, j)} className="mt-2">
                             <button className="btn btn-ghost btn-sm text-red">

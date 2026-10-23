@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Copy, Printer, Sparkles, Trash2 } from "lucide-react";
+import { CheckCircle2, Copy, EyeOff, Printer, Sparkles, Trash2 } from "lucide-react";
 import { deleteLibraryEntryAction, duplicateLibraryEntryAction, exerciseFromLibraryAction, setLibraryOriginAction, updateLibraryEntryAction } from "@/app/library-actions";
 import { archiveWorksheetAction, restoreWorksheetAction } from "@/app/archiv-actions";
 import { ArchivBanner, ArchivKnopf, ArchivMeldung, WiederherstellenKnopf } from "@/components/Archiv";
@@ -9,6 +9,7 @@ import { PageHeader, Pill, SectionTitle, formatDate } from "@/components/ui";
 import { WorksheetEditor } from "@/components/WorksheetEditor";
 import { aiEnabled } from "@/lib/ai";
 import { requireTeacher } from "@/lib/auth";
+import { bewertungenJeAufgabe } from "@/lib/bewertungen";
 import { worksheetTypeLabel } from "@/lib/curriculum";
 import { SOURCE_TYPE_LABEL, type SourceType } from "@/lib/lehrplan";
 import { getLibraryEntry, LIBRARY_ORIGIN_LABEL, namedSourceOf, namedSources, SETTABLE_ORIGINS } from "@/lib/library";
@@ -39,6 +40,7 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
   const sources = namedSources();
   const sourceTypes = [...new Set(sources.map((s) => s.source_type))];
   const named = namedSourceOf(e);
+  const bewertungen = bewertungenJeAufgabe([e.task], teacher.id);
 
   return (
     <>
@@ -78,6 +80,12 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
         />
       )}
 
+      {bewertungen[e.task.id].ausgeblendet && (
+        <p className="no-print mb-4 flex items-start gap-2 rounded-lg bg-red-wash px-4 py-2.5 text-[14px] text-red" role="note" data-testid="ausgeblendet">
+          <EyeOff size={16} className="mt-0.5 shrink-0" aria-hidden />
+          Schlecht bewertet: Diese Aufgabe fehlt in Vorschlägen und in der automatischen Auswahl. In der Bibliothek steht sie nur unter dem Filter „Bewertung“. Gelöscht ist nichts.
+        </p>
+      )}
       <section className="no-print mb-8 rounded-[24px] bg-accent-wash px-5 py-5 md:px-6" aria-label="Verwenden">
         <h2 className="mb-3 text-[18px] font-semibold">Verwenden</h2>
         <form action={exerciseFromLibraryAction} className="flex flex-wrap items-end gap-3">
@@ -116,6 +124,7 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
         targets={running.map((u, i) => ({ unitId: u.id, student: runningNames[i] }))}
         showSolutions
         aiEnabled={aiEnabled()}
+        bewertungen={bewertungen}
       />
 
       <div className="no-print mt-10 grid max-w-[920px] gap-10 lg:grid-cols-2">

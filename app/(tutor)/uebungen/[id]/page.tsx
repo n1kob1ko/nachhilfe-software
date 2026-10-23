@@ -17,6 +17,7 @@ import { PageHeader, Pill, Reveal } from "@/components/ui";
 import { WorksheetEditor } from "@/components/WorksheetEditor";
 import { ReleasePanel, SaveTemplatePanel, type QuickRoundChoice } from "@/components/WorksheetPanels";
 import { aiEnabled } from "@/lib/ai";
+import { bewertungenJeAufgabe } from "@/lib/bewertungen";
 import { settingsOf } from "@/lib/builder";
 import { getMaterial } from "@/lib/materials";
 import { punkteDerAufgaben, punkteText } from "@/lib/probeschularbeit";
@@ -313,6 +314,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         showSolutions={showSolutions}
         aiEnabled={aiEnabled()}
         punkte={punkte ? Object.fromEntries(punkte) : undefined}
+        bewertungen={bewertungenJeAufgabe(tasks, teacher.id)}
       />
 
       <details className="no-print group mt-12 rounded-2xl border border-line bg-surface px-5 py-1">
