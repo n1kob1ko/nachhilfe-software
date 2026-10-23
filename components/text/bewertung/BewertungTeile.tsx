@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Check, Sparkles } from "lucide-react";
 import type { BewertungState } from "@/app/textbewertung-actions";
-import { KRITERIEN, schnitt, STUFEN, stufeOf, type Erwartung, type KriteriumKey, type Stufe } from "@/lib/bewertung-kriterien";
+import { AUFTRAG_STATUS, KRITERIEN, schnitt, STUFEN, stufeOf, type AuftragStatus, type Erwartung, type KriteriumKey, type KriteriumText, type Stufe } from "@/lib/bewertung-kriterien";
 import type { GefundenerBeleg } from "@/lib/zitatpruefung";
 
 type Action = (prev: BewertungState, f: FormData) => Promise<BewertungState>;
@@ -78,17 +78,65 @@ export function ErwartungForm({ action, werte, freigegeben, name }: { action: Ac
 
 export type BewertungWerte = Record<KriteriumKey, { stufe: Stufe | null; begruendung: string; belege: GefundenerBeleg[] }>;
 
-/** Stufe und Begründung je Kriterium, die Gesamtnote; erst „Bewertung bestätigen“ macht daraus die Bewertung. */
-export function BewertungForm({ action, werte, note, name }: { action: Action; werte: BewertungWerte; note: Stufe | null; name: string }) {
+/**
+ * Das Urteil je Arbeitsauftrag, Stufe und Begründung je Kriterium (in den Worten der Schulstufe), die Gesamtnote; erst
+ * „Bewertung übernehmen“ macht daraus die Bewertung. `hinweise`: je Kriterium eine Zeile darunter (etwa die Fehler der
+ * Korrektur der Sprache, oder warum es für Inhalt keinen Vorschlag gibt).
+ */
+export function BewertungForm({
+  action,
+  werte,
+  note,
+  name,
+  kriterien = KRITERIEN.map((k) => ({ ...k })),
+  auftraege = [],
+  hinweise = {},
+  label = "Bewertung übernehmen",
+}: {
+  action: Action;
+  werte: BewertungWerte;
+  note: Stufe | null;
+  name: string;
+  kriterien?: KriteriumText[];
+  auftraege?: { nr: number; text: string; status: AuftragStatus }[];
+  hinweise?: Partial<Record<KriteriumKey, string>>;
+  label?: string;
+}) {
   const [state, formAction] = useActionState<BewertungState, FormData>(action, null);
   const [stufen, setStufen] = useState<Record<KriteriumKey, Stufe | null>>(() => Object.fromEntries(KRITERIEN.map((k) => [k.key, werte[k.key].stufe])) as Record<KriteriumKey, Stufe | null>);
   const s = schnitt(KRITERIEN.map((k) => ({ stufe: stufen[k.key] })));
   return (
     <form action={formAction} className="grid gap-5" data-testid="bewertung-form">
-      {KRITERIEN.map((k) => (
+      {auftraege.length > 0 && (
+        <fieldset className="grid gap-2">
+          <legend className="text-[16px] font-semibold">Arbeitsaufträge</legend>
+          <ol className="grid gap-2">
+            {auftraege.map((a) => (
+              <li key={a.nr} className="grid gap-1.5 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-center sm:gap-3">
+                <span className="min-w-0 text-[14.5px]">
+                  <span className="num font-semibold text-ink-3">{a.nr}.</span> {a.text}
+                </span>
+                <select className="input" name={`a_${a.nr}`} defaultValue={a.status} aria-label={`Auftrag ${a.nr}`} data-testid={`auftrag-status-${a.nr}`}>
+                  {AUFTRAG_STATUS.map((x) => (
+                    <option key={x.key} value={x.key}>
+                      {x.name}
+                    </option>
+                  ))}
+                </select>
+              </li>
+            ))}
+          </ol>
+        </fieldset>
+      )}
+      {kriterien.map((k) => (
         <fieldset key={k.key} className="grid gap-2 border-t border-line pt-4 first:border-t-0 first:pt-0">
           <legend className="text-[16px] font-semibold">{k.name}</legend>
           <p className="text-[13px] text-ink-2">{k.frage}</p>
+          {hinweise[k.key] && (
+            <p className="text-[13.5px] text-ink-2" data-testid={`hinweis-${k.key}`}>
+              {hinweise[k.key]}
+            </p>
+          )}
           <label className="field max-w-[340px]">
             <span className="label">Stufe</span>
             <select
@@ -124,7 +172,7 @@ export function BewertungForm({ action, werte, note, name }: { action: Action; w
       ))}
       <div className="grid gap-2 border-t border-line pt-4">
         <label className="field max-w-[340px]">
-          <span className="label">Gesamtnote (wenn du eine gibst)</span>
+          <span className="label">Gesamtnote</span>
           <select className="input" name="note" defaultValue={note ?? ""} data-testid="gesamtnote">
             <option value="">Keine</option>
             {STUFEN.map((st) => (
@@ -137,7 +185,7 @@ export function BewertungForm({ action, werte, note, name }: { action: Action; w
         {s !== null && <p className="num text-[13px] text-ink-2">Schnitt der Kriterien: {s.toLocaleString("de-AT")} (nur als Hilfe)</p>}
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <Senden label="Bewertung bestätigen" pending="Wird gespeichert …" primary icon={<Check size={16} aria-hidden />} testid="bewertung-bestaetigen" />
+        <Senden label={label} pending="Wird gespeichert …" primary icon={<Check size={16} aria-hidden />} testid="bewertung-bestaetigen" />
         <Meldung state={state} />
       </div>
     </form>

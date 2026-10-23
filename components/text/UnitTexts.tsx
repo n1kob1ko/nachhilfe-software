@@ -2,6 +2,8 @@ import Link from "next/link";
 import { FileText, Laptop, PenLine, Printer, Tablet } from "lucide-react";
 import { showTextOnTabletAction } from "@/app/text-actions";
 import { Pill, SectionTitle, formatDate } from "@/components/ui";
+import { bewertungText } from "@/lib/learning";
+import { bewertungFuerBericht } from "@/lib/text-note";
 import { textsForStudent, textsForUnit, wordsLabel, type UnitText } from "@/lib/texts";
 
 const label = (t: Pick<UnitText, "title" | "topic">) => (t.topic && t.topic !== t.title ? `${t.topic}: ${t.title}` : t.title);
@@ -57,7 +59,10 @@ export function RunningUnitTexts({ unitId, studentId, deviceView, device, name }
   );
 }
 
-/** "Dokumente dieser Einheit" after the unit: every text written or continued in it, to open and print. */
+/**
+ * "Dokumente dieser Einheit" after the unit: every text written or continued in it, to open and print, with its grade as
+ * the documentation shows it (lib/text-note.ts): confirmed numbers, „Bewertung offen“ with a link, or nothing.
+ */
 export function UnitDocuments({ unitId }: { unitId: number }) {
   const texts = textsForUnit(unitId);
   if (!texts.length) return null;
@@ -67,10 +72,11 @@ export function UnitDocuments({ unitId }: { unitId: number }) {
       <ul className="panel divide-y divide-line">
         {texts.map((t) => {
           const added = t.words_after - t.words_before;
+          const b = bewertungFuerBericht(t.id, unitId);
           return (
             <li key={t.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
               <FileText size={18} className="shrink-0 text-accent" aria-hidden />
-              <span className="min-w-0 flex-1">
+              <span className="min-w-0 flex-1 basis-[220px]">
                 <span className="block font-semibold">
                   {label(t)} – <span className="num">{wordsLabel(t.words)}</span>
                 </span>
@@ -79,6 +85,16 @@ export function UnitDocuments({ unitId }: { unitId: number }) {
                   {t.subject ? ` · ${t.subject}` : ""}
                   {t.status === "fertig" ? " · fertig" : ""}
                 </span>
+                {b?.stand === "bestaetigt" && (
+                  <span className="num mt-0.5 block text-[14px] font-medium" data-testid="dokument-note">
+                    {bewertungText(b)}
+                  </span>
+                )}
+                {b?.stand === "offen" && (
+                  <Link href={`/texte/${t.id}/korrektur?teil=aufgabe`} className="mt-1 inline-flex min-h-[32px] items-center gap-1.5 text-[14px] font-medium text-amber hover:underline" data-testid="dokument-note-offen">
+                    Bewertung offen · bestätigen
+                  </Link>
+                )}
               </span>
               <Link href={`/texte/${t.id}`} className="btn btn-secondary">
                 Öffnen

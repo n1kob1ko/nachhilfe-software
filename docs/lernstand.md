@@ -13,9 +13,19 @@ Eine zentrale Funktion: `masteryAt()` in `lib/mastery.ts`. Keine KI.
      die die App nicht sicher prüfen kann ([rechenwege.md](rechenwege.md))
    - automatisch „teilweise richtig“ (Rechenweg mit fehlender Einheit, Sachaufgabe mit einem Teil richtig): 0,5 wie oben
    - eine dokumentierte Einheit zählt mit dem Verständnis 1–5 (→ 0…1), ein Test mit Punkten oder Note
+   - eine **Textarbeit mit übernommener Bewertung** (niko, 2026-10-23: „Auch Lernstand“) zählt mit ihrer Note wie
+     eine Schularbeit: Note 1 → 0,95 · 2 → 0,82 · 3 → 0,68 · 4 → 0,52 · 5 → 0,25. Ohne Gesamtnote zählt der Schnitt der
+     vier Stufen (etwa 2,3, dazwischen linear). Nur was die Lehrkraft mit „Bewertung übernehmen“ gespeichert hat, nie
+     ein Vorschlag der KI. Je Text eine Note: neu übernehmen ersetzt sie, „Bewertung zurücknehmen“ nimmt sie heraus.
+     Zeitpunkt ist die Abgabe des Texts. Sie zählt für eine Fähigkeit: beim Schreibauftrag die seiner Textsorte, sonst
+     die der Textsorte bei der Schulstufe des Schülers (Bewerbungsschreiben in der 8. Schulstufe →
+     „Bewerbungsschreiben für Praktikum und Schnuppertage“, ab der 9. → „Bewerbungsschreiben“; Liste in
+     `lib/text-note.ts`). Gibt es keine passende (etwa „Beschreibung“ oder eine Erlebniserzählung in der 8. Schulstufe),
+     zählt die Note für nichts, und die Korrekturseite sagt das. Die Fehlerarten der Korrektur der Sprache zählen
+     weiterhin nicht. Die Diagnose liest den Lernstand und sieht die Note damit wie ein Übungsergebnis.
 2. **Gewicht**
    - Aufgabe nach Schwierigkeit 1–5: 0,6 / 0,8 / 1,0 / 1,25 / 1,5
-   - Einheit 1,5, Test 2
+   - Einheit 1,5, Textarbeit 1,5 (wie eine sehr schwere Aufgabe), Test 2
    - das Gewicht halbiert sich alle 45 Tage (Aktualität)
 3. **Lernstand** = gewichteter Schnitt plus eine neutrale „virtuelle Aufgabe“ mit 50 %, damit eine
    einzelne richtige Antwort nicht 100 % zeigt (eine richtige Aufgabe → 75 %).

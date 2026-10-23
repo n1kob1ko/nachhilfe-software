@@ -15,6 +15,11 @@
  *   Lehrkraft (`text_angaben`) oder den Bildbeschreibungen. Was fehlt, sagt die App (fehlendeAngaben); ohne
  *   Aufgabenstellung wird nichts gesendet. Die Prüfung läuft auf Klick im Hintergrund, mit der Korrektur der Sprache
  *   zusammen gestartet (app/correction-actions.ts) oder allein, und lässt sich einzeln wiederholen.
+ * - **Note für jede Textarbeit** (2026-10-23, „Aufgabe und Note“): dieselbe Anfrage schlägt auch ohne Schreibauftrag die
+ *   vier Kriterien (in den Worten der Schulstufe), eine Gesamtnote und damit das Urteil je Auftrag vor; liegt die
+ *   Korrektur der Sprache schon vor, zählt ihre Fehlerzahl. „Bewertung übernehmen“ (bestaetigeBewertung) macht daraus die
+ *   Bewertung der Lehrkraft. Erst dann steht sie in der Dokumentation der Einheit (lib/learning.ts textBewertungInDoku) und
+ *   zählt für den Lernstand einer Fähigkeit (lib/text-note.ts); ein Vorschlag zählt nirgends.
  */
 import { createHash } from "node:crypto";
 import { after } from "next/server";
@@ -22,12 +27,30 @@ import { costOf, FUNCTIONS, routeFor } from "./ai/config";
 import { PROVIDER_LABEL } from "./ai/providers";
 import { aiEnabled, breakerState, budgetUsedUp, schuelerGestoppt } from "./ai/router";
 import { grenzeErreichtText } from "./ai/schueler-kosten";
-import { estimateTokensBewertung, kiAufgaben, kiBewertung, kiErwartung, type AuftragDaten, type AuftragErgebnis, type KriteriumVorschlag } from "./ai/schreibauftrag-bewertung";
-import { erwartungLeer, fehlendeAngaben, KRITERIEN, parseBewertung, parseErwartung, vorlageFor, type Bewertung, type Erwartung, type FehlendeAngaben, type FehltZeile } from "./bewertung-kriterien";
+import { estimateTokensBewertung, kiAufgaben, kiBewertung, kiErwartung, type AuftragDaten, type AuftragErgebnis, type KriteriumVorschlag, type Sprachbefund } from "./ai/schreibauftrag-bewertung";
+import {
+  erwartungLeer,
+  fehlendeAngaben,
+  KRITERIEN,
+  kriterienFuer,
+  parseBewertung,
+  parseErwartung,
+  stufeOf,
+  vorlageFor,
+  type Bewertung,
+  type Erwartung,
+  type FehlendeAngaben,
+  type FehltZeile,
+  type KriteriumText,
+  type Stufe,
+} from "./bewertung-kriterien";
 import { db } from "./db";
+import { textBewertungInDoku } from "./learning";
 import { pictureContext } from "./picture-story";
+import { listSkills } from "./repo";
 import { auftragFor } from "./schreibauftrag-store";
-import type { AuftragView } from "./schreibauftrag";
+import { SORTEN, type AuftragView } from "./schreibauftrag";
+import { skillFuerText, type SkillInfo } from "./text-note";
 import { blockText, parseDoc } from "./text-doc";
 import { foundNames, levelOfText, maskText, namePattern, namesToHide, startAICorrection, type CorrectionMethod, type StartResult } from "./text-correction";
 import { bareText, cleanStory } from "./textinterpretation";
@@ -205,9 +228,21 @@ type BewertungRow = {
   vorschlag_version: number | null;
   vorschlag_verworfen: number;
   vorschlag_at: string | null;
+  vorschlag_note: number | null;
+  vorschlag_ohne_inhalt: number;
+  lernstand_skill: string;
 };
 
-export type BewertungVorschlag = { kriterien: KriteriumVorschlag[]; verworfen: number; version: number | null; at: string | null };
+export type BewertungVorschlag = {
+  kriterien: KriteriumVorschlag[];
+  /** die Gesamtnote, die die KI vorschlägt; null: keine (etwa weil der Inhalt nicht zu beurteilen war) */
+  note: Stufe | null;
+  /** die App hat den Vorschlag für Inhalt weggelassen: ein Auftrag war nicht zu beurteilen */
+  ohneInhalt: boolean;
+  verworfen: number;
+  version: number | null;
+  at: string | null;
+};
 
 export type BewertungInfo = {
   /** nur das zählt: von der Lehrkraft bestätigt */
@@ -216,6 +251,8 @@ export type BewertungInfo = {
   /** die Fassung des Texts, die bestätigt wurde */
   version: number | null;
   vorschlag: BewertungVorschlag | null;
+  /** die Fähigkeit, für die die bestätigte Note im Lernstand zählt; '' = keine */
+  lernstandSkill: string;
 };
 
 const bewertungRow = (textId: number) => (db().prepare("SELECT * FROM text_bewertungen WHERE text_id = ?").get(textId) as BewertungRow | undefined) ?? null;
@@ -237,8 +274,40 @@ export function bewertungInfo(textId: number): BewertungInfo {
     bestaetigt: parseBewertung(r?.kriterien),
     bestaetigtAt: r?.bestaetigt_at ?? null,
     version: r?.version ?? null,
-    vorschlag: v && r ? { kriterien: v, verworfen: r.vorschlag_verworfen, version: r.vorschlag_version, at: r.vorschlag_at } : null,
+    vorschlag: v && r ? { kriterien: v, note: stufeOf(r.vorschlag_note), ohneInhalt: Boolean(r.vorschlag_ohne_inhalt), verworfen: r.vorschlag_verworfen, version: r.vorschlag_version, at: r.vorschlag_at } : null,
+    lernstandSkill: r?.bestaetigt_at ? r.lernstand_skill : "",
   };
+}
+
+/** Die vier Kriterien in den Worten der Schulstufe dieses Texts (Oberstufe: die der SRDP). */
+export const kriterienDesTexts = (text: TextView): KriteriumText[] => kriterienFuer(levelOfText(text).band);
+
+/**
+ * Die Fähigkeit, für die die Note dieses Texts im Lernstand zählt (lib/text-note.ts skillFuerText): beim Schreibauftrag
+ * die seiner Textsorte, sonst die Textsorte bei der Schulstufe des Schülers. null: keine passende, die Note zählt nicht.
+ */
+export function lernstandSkillFuer(text: TextView, skills: SkillInfo[] = listSkills()): SkillInfo | null {
+  const a = auftragFor(text.id);
+  return skillFuerText(
+    { fach: text.subject, textsorte: text.topic, schulstufe: levelOfText(text).schulstufe, sorteSkill: a ? SORTEN[a.sorte].skill : null, bildgeschichte: Boolean(pictureContext(text.id)) },
+    skills,
+  );
+}
+
+/**
+ * Was die Korrektur der Sprache an der aktuellen Fassung gefunden hat, wenn sie fertig ist: Fehler (keine Stilvorschläge),
+ * die nicht abgelehnt wurden. null: noch keine fertige Korrektur dieser Fassung.
+ */
+export function sprachBefund(text: Pick<TextView, "id" | "version">): Sprachbefund | null {
+  const r = db()
+    .prepare(
+      `SELECT c.words, c.ai_status, SUM(i.kind = 'fehler' AND i.status <> 'abgelehnt') AS fehler, COUNT(i.id) AS alle
+       FROM text_corrections c LEFT JOIN text_correction_items i ON i.correction_id = c.id WHERE c.text_id = ? AND c.version = ? GROUP BY c.id`,
+    )
+    .get(text.id, text.version) as { words: number; ai_status: string; fehler: number | null; alle: number } | undefined;
+  // fertig: die KI hat geprüft, oder die Lehrkraft hat selbst korrigiert und Markierungen gesetzt
+  if (!r || !r.words || !(r.ai_status === "fertig" || (r.ai_status === "keine" && r.alle > 0))) return null;
+  return { fehler: r.fehler ?? 0, woerter: r.words };
 }
 
 /** Ab so vielen Wörtern gibt es einen Vorschlag; die Lehrkraft kann jeden Text selbst bewerten. */
@@ -262,7 +331,7 @@ export function bewertungMoeglich(text: TextView): string | null {
 export async function bewertungVorschlagen(textId: number, teacherId: number | null, o: { zustimmung: boolean }): Promise<VorschlagErgebnis> {
   if (!o.zustimmung) return { ok: false, error: "Bitte zuerst bestätigen, dass der Text ohne Namen an die KI gehen darf." };
   const text = getText(textId);
-  if (!text || !auftragFor(textId)) return { ok: false, error: "Diesen Schreibauftrag gibt es nicht." };
+  if (!text) return { ok: false, error: "Diesen Text gibt es nicht." };
   const nicht = bewertungMoeglich(text);
   if (nicht) return { ok: false, error: nicht };
   const r = await startAufgabenPruefung(textId, teacherId, { consent: true, wait: true, neu: true });
@@ -272,19 +341,34 @@ export async function bewertungVorschlagen(textId: number, teacherId: number | n
   return { ok: true, verworfen: (bewertungInfo(textId).vorschlag?.verworfen ?? 0) + p.verworfen };
 }
 
-/** Die Lehrkraft bestätigt die Bewertung: nur diese Werte gelten. Ein offener Vorschlag ist damit erledigt. */
+const OHNE_VORSCHLAG = "vorschlag = '', vorschlag_version = NULL, vorschlag_verworfen = 0, vorschlag_at = NULL, vorschlag_note = NULL, vorschlag_ohne_inhalt = 0";
+
+/**
+ * „Bewertung übernehmen“: die Lehrkraft bestätigt Stufen, Note und das Urteil je Auftrag (bei jeder Textarbeit). Nur diese
+ * Werte gelten; ein offener Vorschlag ist damit erledigt. Die Note zählt ab jetzt für den Lernstand der Fähigkeit des Texts
+ * (ersetzt eine frühere Bestätigung, zählt nie doppelt) und steht in der Dokumentation der Einheit, in der der Text
+ * geschrieben wurde; dort ändert sich nur, was die App selbst geschrieben hat.
+ */
 export function bestaetigeBewertung(textId: number, b: Bewertung, teacherId: number | null): boolean {
   const text = getText(textId);
-  if (!text || !auftragFor(textId)) return false;
+  if (!text) return false;
   db().prepare("INSERT OR IGNORE INTO text_bewertungen (text_id) VALUES (?)").run(textId);
   db()
-    .prepare("UPDATE text_bewertungen SET kriterien = ?, note = ?, version = ?, bestaetigt_at = ?, bestaetigt_von = ?, vorschlag = '', vorschlag_version = NULL, vorschlag_verworfen = 0, vorschlag_at = NULL WHERE text_id = ?")
-    .run(JSON.stringify(b), b.note, text.version, iso(), teacherId, textId);
+    .prepare(`UPDATE text_bewertungen SET kriterien = ?, note = ?, version = ?, bestaetigt_at = ?, bestaetigt_von = ?, lernstand_skill = ?, ${OHNE_VORSCHLAG} WHERE text_id = ?`)
+    .run(JSON.stringify(b), b.note, text.version, iso(), teacherId, lernstandSkillFuer(text)?.id ?? "", textId);
+  textBewertungInDoku(textId);
   return true;
 }
 
+/** „Bewertung zurücknehmen“: die Note gilt nicht mehr, weder in der Dokumentation noch im Lernstand. */
+export function nimmBewertungZurueck(textId: number): boolean {
+  const r = db().prepare("UPDATE text_bewertungen SET kriterien = '', note = NULL, version = NULL, bestaetigt_at = NULL, bestaetigt_von = NULL, lernstand_skill = '' WHERE text_id = ? AND bestaetigt_at IS NOT NULL").run(textId);
+  if (r.changes) textBewertungInDoku(textId);
+  return r.changes > 0;
+}
+
 export function verwirfBewertungVorschlag(textId: number) {
-  db().prepare("UPDATE text_bewertungen SET vorschlag = '', vorschlag_version = NULL, vorschlag_verworfen = 0, vorschlag_at = NULL WHERE text_id = ?").run(textId);
+  db().prepare(`UPDATE text_bewertungen SET ${OHNE_VORSCHLAG} WHERE text_id = ?`).run(textId);
 }
 
 // ---------- Angabe / Textvorlage einer Textarbeit ----------
@@ -551,26 +635,32 @@ export async function runAufgabenPruefung(textId: number, teacherId: number | nu
     const masked = (x: string) => maskText(x, muster).masked;
     let ergebnis: Ergebnis;
     const now = iso();
+    // die Korrektur der Sprache, wenn sie schon fertig ist (meist läuft sie gleichzeitig: dann beurteilt die KI selbst)
+    const sprache = sprachBefund(text);
+    const vorschlagSpeichern = (o: { kriterien: KriteriumVorschlag[]; note: Stufe | null; ohneInhalt: boolean; verworfen: number; callId: number | null }) =>
+      db()
+        .prepare("UPDATE text_bewertungen SET vorschlag = ?, vorschlag_version = ?, vorschlag_verworfen = ?, vorschlag_at = ?, vorschlag_call_id = ?, vorschlag_note = ?, vorschlag_ohne_inhalt = ? WHERE text_id = ?")
+        .run(o.kriterien.length ? JSON.stringify(o.kriterien) : "", text.version, o.verworfen, o.kriterien.length ? now : null, o.callId, o.note, o.ohneInhalt ? 1 : 0, textId);
     if (a) {
       const e = erwartungInfo(textId)!;
       const pg = pruefgrundlage({ beilage: a.text, countBlank: a.countBlank, schueler: absaetze, titel: a.title, medium: a.medium });
-      const out = await kiBewertung({ ...auftragDaten(text, a, muster), erwartung: e.gespeichert ?? e.vorlage, erwartungGespeichert: e.gespeichert !== null, absaetze, woerter: text.words, punkte: punkte.map(masked) }, pg, meta);
+      const out = await kiBewertung({ ...auftragDaten(text, a, muster), erwartung: e.gespeichert ?? e.vorlage, erwartungGespeichert: e.gespeichert !== null, absaetze, woerter: text.words, punkte: punkte.map(masked), sprache }, pg, meta);
       if (!out.ok) return void fail(out.error);
       ergebnis = { auftraege: out.auftraege, verworfen: out.auftraegeVerworfen, fehlte: g.fehlend.zeilen };
-      db()
-        .prepare("UPDATE text_bewertungen SET vorschlag = ?, vorschlag_version = ?, vorschlag_verworfen = ?, vorschlag_at = ?, vorschlag_call_id = ? WHERE text_id = ?")
-        .run(JSON.stringify(out.kriterien), text.version, out.verworfen, now, out.callId, textId);
+      vorschlagSpeichern(out);
     } else {
       // Bildbeschreibungen mit allen Namen verborgen wie bei der Korrektur der Sprache; die Angabe nur ohne Schüler- und Lehrernamen
       const vorlage = g.art === "bildgeschichte" ? masked(g.vorlage) : maskText(g.vorlage, namePattern(namesToHide(text))).masked;
       const pg = pruefgrundlage({ beilage: vorlage, schueler: absaetze });
+      const level = levelOfText(text);
       const out = await kiAufgaben(
-        { fach: text.subject || "Deutsch", textsorte: text.topic, stufe: levelOfText(text).label, rahmen: g.fehlend.auftraege.rahmen.map(masked), punkte: punkte.map(masked), vorlage, absaetze, woerter: text.words },
+        { fach: text.subject || "Deutsch", textsorte: text.topic, stufe: level.label, band: level.band, sprache, rahmen: g.fehlend.auftraege.rahmen.map(masked), punkte: punkte.map(masked), vorlage, absaetze, woerter: text.words },
         pg,
         meta,
       );
       if (!out.ok) return void fail(out.error);
       ergebnis = { auftraege: out.auftraege, verworfen: out.verworfen, fehlte: g.fehlend.zeilen };
+      vorschlagSpeichern({ ...out, verworfen: out.kriterienVerworfen });
     }
     // die Aufträge, wie die App sie gelesen hat (ohne [Name]), nicht wie sie an die KI gingen
     ergebnis.auftraege = ergebnis.auftraege.map((x, i) => ({ ...x, text: punkte[i] ?? x.text }));

@@ -4,7 +4,7 @@
 
 1. **Starten.** In einer laufenden Einheit unter „Übungen für Max“ auf „Textarbeit starten“ tippen.
    - Eingaben: Titel, Fach, Textsorte und Aufgabenstellung. Die Textsorten zur Auswahl sind Vorschläge (darunter Bewerbungsschreiben und Lebenslauf), freie Eingabe geht auch.
-   - Wahlweise, aufklappbar: **„Angabe / Textvorlage“**, etwa die Stellenanzeige und die Notizen vom Arbeitsblatt, eingefügt oder mit „Aus PDF übernehmen“ (`lib/pdf-text.ts`, ohne KI; die Datei wird nicht gespeichert). Nur die Lehrkraft sieht sie; „Aufgabe erfüllt?“ prüft damit Bezug und Zitate ([textkorrektur.md](textkorrektur.md)). Schreibaufträge haben stattdessen ihre Textbeilage, Bildgeschichten ihre Bildbeschreibungen.
+   - Wahlweise, aufklappbar: **„Angabe / Textvorlage“**, etwa die Stellenanzeige und die Notizen vom Arbeitsblatt, eingefügt oder mit „Aus PDF übernehmen“ (`lib/pdf-text.ts`, ohne KI; die Datei wird nicht gespeichert). Nur die Lehrkraft sieht sie; „Aufgabe und Note“ prüft damit Bezug und Zitate ([textkorrektur.md](textkorrektur.md)). Schreibaufträge haben stattdessen ihre Textbeilage, Bildgeschichten ihre Bildbeschreibungen.
    - „Wo schreibt Max?“: **Am Gerät** (Standard) oder **Auf Papier**. Auf Papier öffnet sich nach dem Start gleich „Vom Foto übernehmen“ (siehe unten), am Tablet öffnet sich nichts.
    - „Gleich am Tablet von Max öffnen“ ist an, wenn ein Schüler-Tablet verbunden ist.
    - Ohne Tablet öffnet sich der Text am Lehrergerät (`/texte/<id>`).
@@ -18,9 +18,10 @@
    - Der Lehrer kann dort auch selbst schreiben, „Titel, Aufgabe und Angabe ändern“ und frühere Fassungen zurückholen.
 4. **Einheit beenden.** Der Abschluss-Bildschirm zeigt „Dokumente dieser Einheit“, zum Beispiel „Erlebniserzählung: Mein aufregender Ausflug – 246 Wörter“, mit Öffnen und PDF / Drucken.
    - Die Dokumentation erwähnt die Textarbeit: Titel, Textsorte und Wörter, nie den Text selbst.
+   - Mit übernommener Bewertung (Korrektur › „Aufgabe und Note“) steht die Note dabei, wie bei Übungen „x von y richtig“: „2 von 3 Arbeitsaufträgen erfüllt, Note 3 (Inhalt 3, Aufbau 2, Ausdruck 3, Sprache 4)“, in der Dokumentation und unter „Dokumente dieser Einheit“. Ist ein abgegebener Text mit Aufgabenstellung noch nicht bewertet, steht „Bewertung offen“ mit einem Link, und „Zu erledigen“ zeigt „Bewertung bestätigen“. Wird später bewertet, aktualisiert die App die Dokumentation der letzten Einheit des Texts; was die Lehrkraft dort selbst geschrieben hat, bleibt ([textkorrektur.md](textkorrektur.md)).
 5. **Später weiterschreiben.** In der nächsten Einheit stehen unfertige Texte unter „Textarbeiten“ mit „Am Tablet öffnen“.
    - Jede Einheit merkt sich, wie viele Wörter vorher und nachher da waren.
-6. **Finden.** Im Lernverlauf gibt es den Abschnitt „Texte“ (unfertige zuerst). Jede Einheit verlinkt ihre Texte.
+6. **Finden.** Im Lernverlauf gibt es den Abschnitt „Texte“ (unfertige zuerst), mit „Note 3“ bei einem bewerteten Text. Jede Einheit verlinkt ihre Texte.
 7. **Drucken.** „PDF / Drucken“ öffnet `/arbeitsblatt/text/<id>`. Die Seite nutzt dieselbe Technik wie die Arbeitsblätter:
    - A4 Hochformat mit 20 mm Rand links zum Lochen.
    - Optional: Name, Datum, Fach und Textsorte, Aufgabenstellung, Wortanzahl, Seitenzahlen.
@@ -35,7 +36,7 @@ Für Texte, die der Schüler mit der Hand auf Papier schreibt, etwa ein Bewerbun
 2. **Haken setzen.** „Auf den Fotos steht kein echter Name, auch nicht oben im Kopf des Blatts.“ Ohne Haken geht nichts hinaus.
 3. **Mit KI lesen.** Neben dem Knopf steht die Schätzung, etwa „ca. 1 Cent je Seite“. Die KI schreibt den Text **wortgetreu** ab: jeder Rechtschreib-, Grammatik- und Beistrichfehler bleibt stehen, nichts wird verbessert. Absätze bleiben Absätze; eigene Zeilen (Absender, Datum, Anrede, Grußformel) stehen in eigenen Zeilen, Tabellenspalten (Lebenslauf) getrennt mit „ | “. Durchgestrichenes fällt weg, Unlesbares steht als `[?]` da. Gedruckte Aufgaben, der Kopf des Blatts und Korrekturzeichen einer Lehrkraft werden nicht abgeschrieben.
 4. **Vergleichen.** Die Abschrift steht in einem Textfeld neben dem Foto (am Handy darunter). Der Lehrer verbessert nur, was die KI falsch gelesen hat, und ergänzt `[?]`. Die Seite zählt die noch offenen `[?]`.
-5. **Übernehmen.** Erst „Als Text übernehmen“ speichert: als neue Fassung des Textes (`saveFromPaper` in `lib/texts.ts`). Was vorher da war, bleibt unter „Frühere Fassungen“. „Text als fertig markieren“ ist dabei vorausgewählt. Danach gehen Korrektur (mit „Aufgabe erfüllt?“), Lernverlauf, Druck und Dokumentation wie bei jedem Text. Oben steht klein „von Papier übernommen“, nur für Lehrer.
+5. **Übernehmen.** Erst „Als Text übernehmen“ speichert: als neue Fassung des Textes (`saveFromPaper` in `lib/texts.ts`). Was vorher da war, bleibt unter „Frühere Fassungen“. „Text als fertig markieren“ ist dabei vorausgewählt. Danach gehen Korrektur (mit „Aufgabe und Note“), Lernverlauf, Druck und Dokumentation wie bei jedem Text. Oben steht klein „von Papier übernommen“, nur für Lehrer.
 
 **Ohne KI** (kein Schlüssel, manueller Modus, Budget oder Grenze je Schüler erreicht) steht statt des Knopfs der Grund, und der Lehrer tippt den Text in dasselbe Feld ab, mit den Fotos daneben.
 
@@ -100,7 +101,7 @@ Die Tabellen sind Teil der Sicherung (`lib/backup.ts`).
 | Einheit (`units.device_view`) | neue Ansicht `text:<id>` am Tablet |
 | SSE-Hub (`lib/whiteboard-hub.ts`) | Kanal `text:<id>` zum Mitlesen; Tablet und Live-Status über die bestehenden Kanäle |
 | Live-Status | zeigt die Textarbeit statt der Aufgabe |
-| Lern-Dokumentation (`lib/learning.ts`) | `UnitReport.texts`, Zusammenfassung, „Was wurde gemacht“, Fach und Thema |
+| Lern-Dokumentation (`lib/learning.ts`) | `UnitReport.texts` (mit `bewertung`, lib/text-note.ts), Zusammenfassung, „Was wurde gemacht“, Fach und Thema |
 | Arbeitsblatt-Druck | `PageStyle` (A4, Ränder, Seitenzahlen) und `arbeitsblatt.css` |
 
 ## Grenzen (bewusst nicht in Phase 1)

@@ -1338,6 +1338,12 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["text_bewertungen", "pruefung_freigabe_at", "TEXT"],
   ["text_bewertungen", "pruefung_freigabe_von", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
   ["text_bewertungen", "pruefung_namen", "TEXT NOT NULL DEFAULT ''"],
+  // Note für jede Textarbeit (2026-10-23): vorschlag_note die Gesamtnote, die die KI vorschlägt; vorschlag_ohne_inhalt 1, wenn die
+  // App den Vorschlag für Inhalt (und die Note) weggelassen hat, weil ein Auftrag nicht zu beurteilen war; lernstand_skill die
+  // Fähigkeit, für die die bestätigte Note im Lernstand zählt ('' = keine, lib/analysis.ts); erst bestaetigt_at macht sie gültig
+  ["text_bewertungen", "vorschlag_note", "INTEGER"],
+  ["text_bewertungen", "vorschlag_ohne_inhalt", "INTEGER NOT NULL DEFAULT 0"],
+  ["text_bewertungen", "lernstand_skill", "TEXT NOT NULL DEFAULT ''"],
 ];
 
 /** Teachers to start with; more can be added later. */

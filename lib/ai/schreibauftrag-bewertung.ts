@@ -7,10 +7,12 @@
  * Bewertung der Erwartungshorizont und der Schülertext. Namen von Schüler, Lehrkräften und weitere gefundene Namen
  * ersetzt der Aufrufer vorher durch [Name] (lib/schreibauftrag-bewertung.ts).
  *
- * Dieselbe Funktion `bewertung` prüft für „Aufgabe erfüllt?“ (jede Textarbeit) je Arbeitsauftrag, ob er erfüllt ist. Die
+ * Dieselbe Funktion `bewertung` prüft für „Aufgabe und Note“ (jede Textarbeit) je Arbeitsauftrag, ob er erfüllt ist. Die
  * Liste der Aufträge kommt von der App (lib/bewertung-kriterien.ts arbeitsauftraege), nie von der KI: sie antwortet für
- * genau diese Nummern, ein Eintrag zu einer anderen Nummer fällt heraus. Beim Schreibauftrag kommen die Urteile in
- * derselben Anfrage wie die vier Kriterien, bei einer anderen Textarbeit allein (kiAufgaben).
+ * genau diese Nummern, ein Eintrag zu einer anderen Nummer fällt heraus. In derselben Anfrage schlägt sie die vier
+ * Kriterien mit Stufe und eine Gesamtnote vor (seit 2026-10-23 bei jeder Textarbeit, kiAufgaben; beim Schreibauftrag mit
+ * dem Erwartungshorizont, kiBewertung). Die Wörter der Kriterien folgen der Schulstufe, die der SRDP nur in der Oberstufe.
+ * Liegt die Korrektur der Sprache schon vor, bekommt die KI ihre Fehlerzahl je 100 Wörter für die Sprachrichtigkeit.
  *
  * Was zurückkommt, prüft die App (lib/zitatpruefung.ts): jedes Zitat und jede Zeilenangabe wird im Text gesucht,
  * was nicht gefunden wird, fällt heraus und wird gezählt. Alles bleibt ein Vorschlag: der Erwartungshorizont ist
@@ -24,6 +26,7 @@ import {
   isKriterium,
   KRITERIEN,
   KRITERIUM_KEYS,
+  kriterienFuer,
   kriteriumName,
   leereErwartung,
   MAX_PUNKT,
@@ -32,6 +35,7 @@ import {
   type AuftragStatus,
   type Erwartung,
   type KriteriumKey,
+  type KriteriumText,
   type Stufe,
 } from "../bewertung-kriterien";
 import { planFor, SORTEN, type AuftragView } from "../schreibauftrag";
@@ -69,7 +73,8 @@ function auftragsTeil(d: AuftragDaten): string[] {
   return z;
 }
 
-const KRITERIEN_TEXT = KRITERIEN.map((k) => `- ${k.key} (${k.name}): ${k.frage}`).join("\n");
+const kriterienText = (ks: readonly KriteriumText[]) => ks.map((k) => `- ${k.key} (${k.name}): ${k.frage}`).join("\n");
+const KRITERIEN_TEXT = kriterienText(KRITERIEN);
 
 const ZITIEREN = [
   "Zitate: Setze nur wörtliche Zitate in Anführungszeichen „…“, Buchstabe für Buchstabe aus dem Text kopiert, sonst keine Anführungszeichen (auch nicht für Begriffe).",
@@ -147,8 +152,21 @@ const AuftraegeSchema = z
   )
   .describe("Genau ein Eintrag je nummeriertem Arbeitsauftrag, in derselben Reihenfolge, keine weiteren");
 
-/** Für eine Textarbeit ohne Schreibauftrag: nur die Arbeitsaufträge, keine Kriterien der SRDP. */
-export const AufgabenSchema = z.object({ auftraege: AuftraegeSchema });
+const KriterienSchema = z
+  .array(
+    z.object({
+      kriterium: z.string().describe(`Eines von: ${KRITERIUM_KEYS.join(", ")}`),
+      stufe: z.number().int().describe(`1–5: ${STUFEN.map((s) => `${s.wert} = ${s.name} (${s.text})`).join("; ")}`),
+      begruendung: z.string().describe("1–3 kurze Sätze: was gelingt, was fehlt"),
+      belege: z.array(BelegSchema).describe("0–3 Belege für die Begründung"),
+    }),
+  )
+  .describe("Genau vier Einträge, einer je Kriterium");
+
+const NoteSchema = z.number().int().nullable().describe("Vorgeschlagene Gesamtnote 1–5 (österreichische Schulnote), passend zu den vier Stufen; null, wenn ein Kriterium nicht zu beurteilen ist");
+
+/** Für eine Textarbeit ohne Schreibauftrag: die Arbeitsaufträge, dazu die vier Kriterien in den Worten der Schulstufe und eine Note. */
+export const AufgabenSchema = z.object({ auftraege: AuftraegeSchema, kriterien: KriterienSchema.default([]), note: NoteSchema.default(null) });
 export type AufgabenKi = z.infer<typeof AufgabenSchema>;
 
 const AUFTRAEGE_REGELN = [
@@ -205,11 +223,34 @@ export function pruefeAuftraege(raw: AufgabenKi["auftraege"], punkte: string[], 
   return { auftraege, verworfen };
 }
 
-/** Eine Textarbeit ohne Schreibauftrag, wie die KI sie für „Aufgabe erfüllt?“ bekommt; alles schon ohne Namen. */
+/** Was die Korrektur der Sprache gefunden hat (Fehler, keine Stilvorschläge), wenn sie schon fertig ist. */
+export type Sprachbefund = { fehler: number; woerter: number };
+
+/** Fehler je 100 Wörter, auf eine Kommastelle. */
+export const je100 = (b: Sprachbefund) => Math.round((b.fehler / Math.max(1, b.woerter)) * 1000) / 10;
+
+/** Die Zeile zur Sprache in der Anfrage: der Befund der Korrektur, sonst der Hinweis, dass sie noch fehlt. */
+function sprachZeile(b: Sprachbefund | null | undefined): string {
+  return b
+    ? `Korrektur der Sprache (schon gemacht): ${b.fehler} Fehler in ${b.woerter} Wörtern, etwa ${je100(b).toLocaleString("de-AT")} je 100 Wörter. Stütze die Stufe bei sprachrichtigkeit vor allem darauf, gemessen an der Schulstufe.`
+    : "Korrektur der Sprache: liegt noch nicht vor. Beurteile sprachrichtigkeit selbst am Text, vorsichtig und gemessen an der Schulstufe.";
+}
+
+const NOTE_REGELN = [
+  `Stufen: ${STUFEN.map((s) => `${s.wert} = ${s.name}: ${s.text}`).join("; ")}.`,
+  "Begründe jede Stufe in 1–3 kurzen, sachlichen Sätzen (was gelingt, was fehlt). Stütze dich nur auf den Text, keine Vermutungen über die Person.",
+  "note: eine Gesamtnote 1–5 nach den österreichischen Schulnoten, die zu den vier Stufen passt; der Inhalt zählt am meisten. Ist ein Kriterium nicht zu beurteilen, note null.",
+].join("\n");
+
+/** Eine Textarbeit ohne Schreibauftrag, wie die KI sie für „Aufgabe und Note“ bekommt; alles schon ohne Namen. */
 export type AufgabenDaten = {
   fach: string;
   textsorte: string;
   stufe: string;
+  /** volksschule, unterstufe oder oberstufe: die Wörter der Kriterien (lib/bewertung-kriterien.ts kriterienFuer) */
+  band: "volksschule" | "unterstufe" | "oberstufe";
+  /** die Korrektur der Sprache, wenn sie beim Start schon fertig war; sonst null */
+  sprache?: Sprachbefund | null;
   /** die Zeilen der Aufgabenstellung, die zu keinem Auftrag gehören */
   rahmen: string[];
   punkte: string[];
@@ -220,14 +261,18 @@ export type AufgabenDaten = {
   woerter: number;
 };
 
-const SYSTEM_AUFGABEN = [
-  "Du prüfst für eine Lehrkraft in Österreich, ob ein Schülertext die Aufgabe erfüllt: je Arbeitsauftrag ein Urteil. Du bewertest nicht die Sprache und vergibst keine Note.",
-  AUFTRAEGE_REGELN,
-  "Fehlt die Angabe oder Textvorlage, beurteile den Bezug auf sie und Zitate daraus nicht; dann ist ein Auftrag, der nur damit zu prüfen ist, nicht_beurteilbar.",
-  "Belege: wörtliche Stellen aus dem Schülertext oder der Angabe (quelle textbeilage).",
-  ZITIEREN,
-  "Schreib ohne Anrede. Nenne keine Namen; „[Name]“ steht für einen ersetzten Namen und bleibt so. Stütze dich nur auf den Text, keine Vermutungen über die Person. Die Lehrkraft entscheidet.",
-].join("\n");
+const systemAufgaben = (band: AufgabenDaten["band"]) =>
+  [
+    "Du schlägst einer Lehrkraft in Österreich die Bewertung eines Schülertexts vor: unter auftraege je Arbeitsauftrag ein Urteil, unter kriterien vier Stufen und unter note eine Gesamtnote. Die Lehrkraft prüft alles und entscheidet.",
+    AUFTRAEGE_REGELN,
+    "Fehlt die Angabe oder Textvorlage, beurteile den Bezug auf sie und Zitate daraus nicht; dann ist ein Auftrag, der nur damit zu prüfen ist, nicht_beurteilbar.",
+    `Dann, getrennt davon, die vier Kriterien, gemessen an der Schulstufe${band === "oberstufe" ? " (wie bei der SRDP)" : ", nicht an der Matura"}:`,
+    kriterienText(kriterienFuer(band)),
+    NOTE_REGELN,
+    "Belege: wörtliche Stellen aus dem Schülertext oder der Angabe (quelle textbeilage).",
+    ZITIEREN,
+    "Schreib ohne Anrede. Nenne keine Namen; „[Name]“ steht für einen ersetzten Namen und bleibt so. Die Lehrkraft entscheidet.",
+  ].join("\n");
 
 export function aufgabenAnfrage(d: AufgabenDaten): { system: string; prompt: string } {
   const z: string[] = [];
@@ -238,14 +283,32 @@ export function aufgabenAnfrage(d: AufgabenDaten): { system: string; prompt: str
   z.push("", "Arbeitsaufträge (von der App nummeriert; beurteile genau diese):", ...nummeriert(d.punkte));
   if (d.vorlage.trim()) z.push("", "Angabe / Textvorlage:", "Zeilennummer | Zeile", beilageMitZeilen({ text: d.vorlage, countBlank: false }));
   else z.push("", "Angabe / Textvorlage: keine. Bezug auf eine Vorlage und Zitate daraus lassen sich nicht prüfen.");
+  z.push("", sprachZeile(d.sprache));
   z.push("", `Schülertext (${d.woerter} Wörter, Absätze A1, A2 …):`);
   d.absaetze.forEach((p, i) => z.push(`A${i + 1}: ${p}`));
-  return { system: SYSTEM_AUFGABEN, prompt: z.join("\n") };
+  return { system: systemAufgaben(d.band), prompt: z.join("\n") };
 }
 
-export type KiAufgaben = { ok: true; auftraege: AuftragErgebnis[]; verworfen: number; callId: number | null } | { ok: false; error: string };
+/**
+ * Der Vorschlag der Note, wie die App ihn übernimmt. Ein Auftrag, den die KI nicht beurteilen konnte (meist fehlt die
+ * Angabe), nimmt dem Inhalt den Vorschlag: dann gibt es für Inhalt keine Stufe und keine Gesamtnote, die Lehrkraft
+ * entscheidet selbst. Eine Note gibt es nur mit allen vier Stufen und nur zwischen der besten und der schwächsten.
+ */
+export function pruefeNote(kriterien: KriteriumVorschlag[], note: unknown, auftraege: Pick<AuftragErgebnis, "status" | "ohneAntwort">[]): { kriterien: KriteriumVorschlag[]; note: Stufe | null; ohneInhalt: boolean } {
+  // nur was die KI selbst nicht beurteilen konnte; ein Auftrag ohne Antwort ist markiert, sagt aber nichts über fehlende Angaben
+  const ohneInhalt = auftraege.some((a) => a.status === "nicht_beurteilbar" && !a.ohneAntwort);
+  const ks = ohneInhalt ? kriterien.filter((k) => k.key !== "inhalt") : kriterien;
+  const n = stufeOf(note);
+  if (!n || ks.length < KRITERIUM_KEYS.length) return { kriterien: ks, note: null, ohneInhalt };
+  const stufen = ks.map((k) => k.stufe);
+  return { kriterien: ks, note: Math.min(Math.max(n, Math.min(...stufen)), Math.max(...stufen)) as Stufe, ohneInhalt };
+}
 
-/** „Aufgabe erfüllt?“ für eine Textarbeit ohne Schreibauftrag: dieselbe KI-Funktion wie die Bewertung, ohne Kriterien. */
+export type KiAufgaben =
+  | { ok: true; auftraege: AuftragErgebnis[]; verworfen: number; kriterien: KriteriumVorschlag[]; note: Stufe | null; ohneInhalt: boolean; kriterienVerworfen: number; callId: number | null }
+  | { ok: false; error: string };
+
+/** „Aufgabe und Note“ für eine Textarbeit ohne Schreibauftrag: die Aufträge, die vier Kriterien und eine Note in einer Anfrage. */
 export async function kiAufgaben(d: AufgabenDaten, g: Pruefgrundlage, meta: AIMeta): Promise<KiAufgaben> {
   if (!d.punkte.length) return { ok: false, error: "Es gibt keine Aufgabenstellung." };
   const { system, prompt } = aufgabenAnfrage(d);
@@ -253,7 +316,11 @@ export async function kiAufgaben(d: AufgabenDaten, g: Pruefgrundlage, meta: AIMe
   if (!out.ok) return { ok: false, error: out.message };
   const geprueft = pruefeAuftraege(out.data.auftraege, d.punkte, g);
   if (geprueft.auftraege.every((a) => a.ohneAntwort)) return { ok: false, error: "Die KI hat zu keinem Arbeitsauftrag etwas Brauchbares geliefert." };
-  return { ok: true, ...geprueft, callId: out.callId };
+  // ohne brauchbare Kriterien bleibt das Urteil je Auftrag; die Stufen trägt die Lehrkraft dann selbst ein
+  const k = out.data.kriterien.length ? pruefeBewertung({ kriterien: out.data.kriterien, auftraege: [], note: null }, g) : null;
+  const kriterien = k && !("fehler" in k) ? k.kriterien : [];
+  const n = pruefeNote(kriterien, out.data.note, geprueft.auftraege);
+  return { ok: true, ...geprueft, kriterien: n.kriterien, note: n.note, ohneInhalt: n.ohneInhalt, kriterienVerworfen: k && !("fehler" in k) ? k.verworfen : out.data.kriterien.length, callId: out.callId };
 }
 
 /**
@@ -262,31 +329,16 @@ export async function kiAufgaben(d: AufgabenDaten, g: Pruefgrundlage, meta: AIMe
  */
 export function estimateTokensBewertung(o: { woerter: number; vorlageWoerter: number; auftraege: number; srdp: boolean }) {
   const text = Math.round((o.woerter + o.vorlageWoerter) * 1.7);
-  return { input: 1_100 + text + o.auftraege * 40 + (o.srdp ? 700 : 0), output: 500 + o.auftraege * 160 + (o.srdp ? 900 : 0) };
+  // seit 2026-10-23 auch ohne Schreibauftrag die vier Kriterien und eine Note (ohne Erwartungshorizont etwas weniger hinaus)
+  return { input: 1_100 + text + o.auftraege * 40 + (o.srdp ? 700 : 350), output: 500 + o.auftraege * 160 + 900 };
 }
 
 // ---------- Bewertung ----------
 
 export const BewertungSchema = z.object({
-  kriterien: z
-    .array(
-      z.object({
-        kriterium: z.string().describe(`Eines von: ${KRITERIUM_KEYS.join(", ")}`),
-        stufe: z.number().int().describe(`1–5: ${STUFEN.map((s) => `${s.wert} = ${s.name} (${s.text})`).join("; ")}`),
-        begruendung: z.string().describe("1–3 kurze Sätze: was gelingt, was fehlt, gemessen am Erwartungshorizont"),
-        belege: z
-          .array(
-            z.object({
-              zitat: z.string().describe("wörtlich und buchstabengenau kopiert, ohne Anführungszeichen, meist 3–12 Wörter"),
-              quelle: z.enum(["schuelertext", "textbeilage"]),
-              zeile: z.string().nullable().describe("nur bei quelle textbeilage: die Zeile aus der Liste, z. B. „12“ oder „12f.“; sonst null"),
-            }),
-          )
-          .describe("0–3 Belege für die Begründung"),
-      }),
-    )
-    .describe("Genau vier Einträge, einer je Kriterium"),
+  kriterien: KriterienSchema,
   auftraege: AuftraegeSchema.default([]),
+  note: NoteSchema.default(null),
 });
 export type BewertungKi = z.infer<typeof BewertungSchema>;
 
@@ -299,14 +351,15 @@ export type BewertungDaten = AuftragDaten & {
   woerter: number;
   /** die Arbeitsaufträge, wie die App sie aus dem Arbeitsauftrag liest (lib/bewertung-kriterien.ts arbeitsauftraege) */
   punkte: string[];
+  /** die Korrektur der Sprache, wenn sie beim Start schon fertig war */
+  sprache?: Sprachbefund | null;
 };
 
 const SYSTEM_BEWERTUNG = [
   "Du schlägst einer Deutsch-Lehrkraft in Österreich eine Bewertung eines Schülertexts zu einem Schreibauftrag der Oberstufe (SRDP) vor.",
   "Bewerte jedes der vier Kriterien für sich, gemessen am Erwartungshorizont und am Arbeitsauftrag:",
   KRITERIEN_TEXT,
-  `Stufen: ${STUFEN.map((s) => `${s.wert} = ${s.name}: ${s.text}`).join("; ")}.`,
-  "Begründe jede Stufe in 1–3 kurzen, sachlichen Sätzen (was gelingt, was fehlt). Stütze dich nur auf den Text, keine Vermutungen über die Person.",
+  NOTE_REGELN,
   "Der Erwartungshorizont nennt Richtungen, keine einzige Lösung: Eine andere Deutung oder Meinung ist nicht falsch, wenn sie am Text begründet ist.",
   "Belege: wörtliche Stellen aus dem Schülertext oder der Textbeilage; höchstens drei je Kriterium.",
   "Dazu unter auftraege, getrennt von den Kriterien:",
@@ -323,6 +376,7 @@ export function bewertungAnfrage(d: BewertungDaten): { system: string; prompt: s
     z.push(`${k.name}:`);
     for (const p of d.erwartung[k.key]) z.push(`- ${p}`);
   }
+  z.push("", sprachZeile(d.sprache));
   z.push("", `Schülertext (${d.woerter} Wörter, Absätze A1, A2 …):`);
   d.absaetze.forEach((p, i) => z.push(`A${i + 1}: ${p}`));
   return { system: SYSTEM_BEWERTUNG, prompt: z.join("\n") };
@@ -362,7 +416,9 @@ export function pruefeBewertung(raw: BewertungKi, g: Pruefgrundlage): { kriterie
 }
 
 /** verworfen: bei den Kriterien; auftraegeVerworfen: bei den Arbeitsaufträgen (erfundene Aufträge, Sätze, Belege). */
-export type KiBewertung = { ok: true; kriterien: KriteriumVorschlag[]; auftraege: AuftragErgebnis[]; verworfen: number; auftraegeVerworfen: number; callId: number | null } | { ok: false; error: string };
+export type KiBewertung =
+  | { ok: true; kriterien: KriteriumVorschlag[]; note: Stufe | null; ohneInhalt: boolean; auftraege: AuftragErgebnis[]; verworfen: number; auftraegeVerworfen: number; callId: number | null }
+  | { ok: false; error: string };
 
 /** Die Bewertung eines Schreibauftrags: die vier Kriterien und, in derselben Anfrage, das Urteil je Arbeitsauftrag. */
 export async function kiBewertung(d: BewertungDaten, g: Pruefgrundlage, meta: AIMeta): Promise<KiBewertung> {
@@ -372,5 +428,6 @@ export async function kiBewertung(d: BewertungDaten, g: Pruefgrundlage, meta: AI
   const geprueft = pruefeBewertung(out.data, g);
   if ("fehler" in geprueft) return { ok: false, error: geprueft.fehler };
   const a = pruefeAuftraege(out.data.auftraege, d.punkte, g);
-  return { ok: true, kriterien: geprueft.kriterien, auftraege: a.auftraege, verworfen: geprueft.verworfen, auftraegeVerworfen: a.verworfen, callId: out.callId };
+  const n = pruefeNote(geprueft.kriterien, out.data.note, a.auftraege);
+  return { ok: true, kriterien: n.kriterien, note: n.note, ohneInhalt: n.ohneInhalt, auftraege: a.auftraege, verworfen: geprueft.verworfen, auftraegeVerworfen: a.verworfen, callId: out.callId };
 }

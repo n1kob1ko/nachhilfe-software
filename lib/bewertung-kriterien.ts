@@ -18,6 +18,32 @@ export const KRITERIUM_KEYS = KRITERIEN.map((k) => k.key) as KriteriumKey[];
 export const isKriterium = (x: unknown): x is KriteriumKey => typeof x === "string" && (KRITERIUM_KEYS as string[]).includes(x);
 export const kriteriumName = (k: KriteriumKey) => KRITERIEN.find((x) => x.key === k)!.name;
 
+/** Kurz, für die Dokumentation einer Einheit: „Note 3 (Inhalt 3, Aufbau 2, Ausdruck 3, Sprache 4)“. */
+export const KRITERIUM_KURZ: Record<KriteriumKey, string> = { inhalt: "Inhalt", textstruktur: "Aufbau", stil: "Ausdruck", sprachrichtigkeit: "Sprache" };
+
+export type KriteriumText = { key: KriteriumKey; name: string; frage: string };
+
+/**
+ * Die vier Kriterien in den Worten der Schulstufe (2026-10-23): dieselben Schlüssel für jede Textarbeit, die Wörter der
+ * SRDP nur in der Oberstufe. So speichert text_bewertungen jede Bewertung gleich, und die Dokumentation liest sie gleich.
+ */
+export function kriterienFuer(band: "volksschule" | "unterstufe" | "oberstufe"): KriteriumText[] {
+  if (band === "oberstufe") return KRITERIEN.map((k) => ({ ...k }));
+  if (band === "volksschule")
+    return [
+      { key: "inhalt", name: "Inhalt", frage: "Passt der Text zur Aufgabe, ist alles Verlangte da, versteht man, was passiert" },
+      { key: "textstruktur", name: "Aufbau", frage: "Anfang, Mitte und Schluss, eine sinnvolle Reihenfolge" },
+      { key: "stil", name: "Ausdruck", frage: "Treffende Wörter, verschiedene Satzanfänge, keine ständigen Wiederholungen" },
+      { key: "sprachrichtigkeit", name: "Sprachrichtigkeit", frage: "Rechtschreibung, Satzzeichen und Satzbau, gemessen an dieser Schulstufe" },
+    ];
+  return [
+    { key: "inhalt", name: "Inhalt", frage: "Arbeitsaufträge erfüllt, Bezug zur Angabe stimmt, Aussagen begründet" },
+    { key: "textstruktur", name: "Aufbau", frage: "Aufbau der Textsorte (Einleitung, Hauptteil, Schluss oder Teile des Briefs), Absätze, roter Faden" },
+    { key: "stil", name: "Ausdruck", frage: "Wortwahl, Satzbau, Ton und Merkmale der Textsorte" },
+    { key: "sprachrichtigkeit", name: "Sprachrichtigkeit", frage: "Rechtschreibung, Grammatik, Zeichensetzung, gemessen an dieser Schulstufe" },
+  ];
+}
+
 /** Die Stufen je Kriterium, wie die Notenstufen der Leistungsbeurteilungsverordnung. */
 export const STUFEN = [
   { wert: 1, name: "Sehr gut", text: "weit über das Wesentliche hinaus erfüllt" },
@@ -106,36 +132,58 @@ export function vorlageFor(v: Pick<AuftragView, "sorte" | "target" | "kind">, pr
 // ---------- die Bewertung ----------
 
 export type BewertungKriterium = { key: KriteriumKey; stufe: Stufe; begruendung: string };
-export type Bewertung = { kriterien: BewertungKriterium[]; note: Stufe | null };
+/** Ein Arbeitsauftrag, wie die Lehrkraft ihn mit der Bewertung übernommen hat (vorher ein Urteil der KI). */
+export type BewertungAuftrag = { nr: number; text: string; status: AuftragStatus };
+export type Bewertung = { kriterien: BewertungKriterium[]; note: Stufe | null; auftraege?: BewertungAuftrag[] };
 
 export const MAX_BEGRUENDUNG = 1500;
 
-/** Die Bewertung aus dem Formular (`s_inhalt`, `b_inhalt` …, `note`): jede Stufe ist Pflicht, die Gesamtnote nicht. */
-export function cleanBewertung(f: (name: string) => unknown): { bewertung: Bewertung } | { error: string } {
+/**
+ * Die Bewertung aus dem Formular (`s_inhalt`, `b_inhalt` …, `note`, je Arbeitsauftrag `a_1` …): jede Stufe ist Pflicht,
+ * die Gesamtnote nicht. `auftraege`: die Aufträge, wie die App sie gelesen hat; ihr Urteil kommt aus dem Formular.
+ * `namen`: die Wörter der Kriterien in der Meldung.
+ */
+export function cleanBewertung(f: (name: string) => unknown, o: { auftraege?: { nr: number; text: string }[]; namen?: KriteriumText[] } = {}): { bewertung: Bewertung } | { error: string } {
   const kriterien: BewertungKriterium[] = [];
   for (const k of KRITERIUM_KEYS) {
     const stufe = stufeOf(f(`s_${k}`));
-    if (!stufe) return { error: `Bitte bei „${kriteriumName(k)}“ eine Stufe wählen.` };
+    if (!stufe) return { error: `Bitte bei „${o.namen?.find((x) => x.key === k)?.name ?? kriteriumName(k)}“ eine Stufe wählen.` };
     const begruendung = String(f(`b_${k}`) ?? "").replace(/\r\n?/g, "\n").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim().slice(0, MAX_BEGRUENDUNG);
     kriterien.push({ key: k, stufe, begruendung });
   }
-  return { bewertung: { kriterien, note: stufeOf(f("note")) } };
+  const auftraege = (o.auftraege ?? []).flatMap((a): BewertungAuftrag[] => {
+    const s = f(`a_${a.nr}`);
+    return isAuftragStatus(s) ? [{ nr: a.nr, text: a.text, status: s }] : [];
+  });
+  return { bewertung: { kriterien, note: stufeOf(f("note")), ...(auftraege.length ? { auftraege } : {}) } };
 }
 
 export function parseBewertung(json: string | null | undefined): Bewertung | null {
   if (!json) return null;
   try {
-    const raw = JSON.parse(json) as { kriterien?: unknown; note?: unknown };
+    const raw = JSON.parse(json) as { kriterien?: unknown; note?: unknown; auftraege?: unknown };
     const list = Array.isArray(raw.kriterien) ? (raw.kriterien as Record<string, unknown>[]) : [];
     const kriterien = KRITERIUM_KEYS.flatMap((k): BewertungKriterium[] => {
       const r = list.find((x) => x?.key === k);
       const stufe = stufeOf(r?.stufe);
       return r && stufe ? [{ key: k, stufe, begruendung: String(r.begruendung ?? "") }] : [];
     });
-    return kriterien.length === KRITERIUM_KEYS.length ? { kriterien, note: stufeOf(raw.note) } : null;
+    const auftraege = (Array.isArray(raw.auftraege) ? (raw.auftraege as Record<string, unknown>[]) : []).flatMap((a): BewertungAuftrag[] =>
+      a && Number.isInteger(a.nr) && isAuftragStatus(a.status) ? [{ nr: Number(a.nr), text: String(a.text ?? ""), status: a.status }] : [],
+    );
+    return kriterien.length === KRITERIUM_KEYS.length ? { kriterien, note: stufeOf(raw.note), ...(auftraege.length ? { auftraege } : {}) } : null;
   } catch {
     return null;
   }
+}
+
+/**
+ * Die Note, die für den Lernstand zählt: die Gesamtnote, sonst der Schnitt der vier Stufen (ungerundet, 1 bis 5).
+ * null: keine Bewertung. Die Umrechnung in einen Wert 0 bis 1 macht lib/analysis.ts wie bei einer Schularbeit.
+ */
+export function lernstandNote(b: Pick<Bewertung, "kriterien" | "note">): number | null {
+  if (b.note) return b.note;
+  return schnitt(b.kriterien);
 }
 
 /** Der Schnitt der Stufen, auf eine Kommastelle; nur als Hilfe neben der Gesamtnote, die die Lehrkraft setzt. */

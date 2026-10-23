@@ -2,7 +2,7 @@
  * Erwartungshorizont, Bewertung und Umfang eines Schreibauftrags (lib/schreibauftrag-bewertung.ts,
  * lib/bewertung-kriterien.ts, lib/schreibauftrag-umfang.ts, Plan 4.2): ein Vorschlag der KI ist ungeprüft, bis die
  * Lehrkraft speichert; Schüler sehen nur Gespeichertes und Freigegebenes; erfundene Zitate und Zeilen fallen heraus;
- * eine Bewertung gilt erst bestätigt und geht nicht in den Lernstand. Schüler und Texte sind erfunden.
+ * eine Bewertung gilt erst bestätigt (dann zählt sie für den Lernstand, lib/note-doku.test.ts). Schüler und Texte sind erfunden.
  * No KI call leaves the test: every request goes to router.setTransport.
  */
 import assert from "node:assert/strict";
@@ -197,7 +197,7 @@ const SCHUELERTEXT = [
   "Mit freundlichen Grüßen",
 ].join("\n");
 
-test("Bewertung: nur abgegebene Texte, nur mit Zustimmung; Namen verborgen; Vorschlag gilt nicht, bis bestätigt; kein Lernstand", async () => {
+test("Bewertung: nur abgegebene Texte, nur mit Zustimmung; Namen verborgen; Vorschlag gilt nicht, bis bestätigt", async () => {
   const s = await setup("Jaro Bewertung");
   const { docFromText } = await import("./text-doc");
   assert.ok(s.texts.saveText(s.text.id, docFromText(SCHUELERTEXT), 0).ok);
@@ -264,7 +264,7 @@ test("Bewertung: nur abgegebene Texte, nur mit Zustimmung; Namen verborgen; Vors
   assert.equal(fest.bestaetigt!.note, 2);
   assert.equal(fest.vorschlag, null);
   assert.equal(schnitt(fest.bestaetigt!.kriterien), 2.5);
-  assert.deepEqual(await zaehle(), vorher, "nichts im Lernstand, in Stunden oder Prüfungen");
+  assert.deepEqual(await zaehle(), vorher, "keine neuen Antworten, Stunden oder Prüfungen (die Note zählt aus text_bewertungen, lib/text-note.ts)");
 
   const { db } = await import("./db");
   const call = db().prepare("SELECT student_id, trigger FROM ai_calls WHERE fn = 'bewertung' ORDER BY id DESC LIMIT 1").get() as { student_id: number; trigger: string };
