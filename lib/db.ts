@@ -801,6 +801,15 @@ CREATE TABLE IF NOT EXISTS einheit_vorbereitung (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (student_id, datum)
 );
+-- „Stunden automatisch vorbereiten“ (lib/vorbereitung-auto.ts): der Lehrer hat den Vorschlag für die Einheit eines
+-- Schülers an diesem Tag (Europe/Vienna) entfernt und will kein Paket. Der Vorschlag selbst wird nie gespeichert.
+CREATE TABLE IF NOT EXISTS vorbereitung_ohne_paket (
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  datum TEXT NOT NULL,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (student_id, datum)
+);
 -- „Anpassen“ im Cockpit (lib/anpassen.ts): Vorschläge der KI für den Schüler dieser Einheit zu einem Schritt des
 -- Lernpakets. Gelten nur für diese Einheit; das Paket, Lernstand, Diagnose und Einschätzung bleiben unberührt.
 -- art = beispiel | leichter | schwerer | bei_fehler; status = vorschlag (ungeprüft) | uebernommen | verworfen.

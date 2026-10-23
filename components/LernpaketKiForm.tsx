@@ -14,7 +14,8 @@ const dauerText = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStar
  * „Mit KI entwerfen“ unter Mehr › Lernpakete (lib/lernpaket-ki.ts): Fähigkeit oder Fach und Thema, Schulart,
  * Klasse, Dauer, Schwierigkeit und Hinweise. Die geschätzten Kosten stehen am Knopf. Während die KI schreibt,
  * läuft die Zeit mit; bei einem Fehler bleibt alles stehen und „Erneut versuchen“ schickt dasselbe noch einmal.
- * Ist die KI aus, sagt der Bereich das, und der Knopf bleibt aus.
+ * Ist die KI aus, sagt der Bereich das, und der Knopf bleibt aus. `vorgabe` füllt das Formular aus (aus
+ * „Kein Paket für …“ der Vorbereitung, lib/vorbereitung-auto.ts); gefragt wird die KI auch dann erst nach dem Klick.
  */
 export function LernpaketKiForm(props: {
   gruppen: SkillGruppe[];
@@ -26,7 +27,9 @@ export function LernpaketKiForm(props: {
   kiAus: string | null;
   /** „ca. 14–23 Cent“ oder „kostet nichts (manueller Modus)“ */
   kosten: string;
+  vorgabe?: { skillId?: string; fach?: string; thema?: string; schulart?: string; klasse?: number | null; dauer?: number } | null;
 }) {
+  const v = props.vorgabe ?? {};
   const [laeuft, starten] = useTransition();
   const [fehler, setFehler] = useState<string | null>(null);
   const [letzte, setLetzte] = useState<KiEingabe | null>(null);
@@ -74,6 +77,11 @@ export function LernpaketKiForm(props: {
   return (
     <form onSubmit={absenden} className="panel mb-8 grid max-w-[760px] gap-3 px-5 py-4 sm:grid-cols-2" data-testid="lernpaket-ki">
       <ManualAustausch aktiv={laeuft} />
+      {props.vorgabe && (
+        <p className="rounded-lg bg-accent-wash px-4 py-3 text-[14px] sm:col-span-2" role="status">
+          Aus der Vorbereitung ausgefüllt. Prüfe die Angaben; die KI fängt erst an, wenn du „Entwurf erstellen“ tippst.
+        </p>
+      )}
       <p className="text-[14px] text-ink-2 sm:col-span-2">
         Die KI schreibt Ablauf, Erklärungen, Fragen und erwartete Antworten zu einem Thema. Aufgaben nimmt sie zuerst aus der Bibliothek und den eingebauten Generatoren; eigene behält Lernheft nur, wenn sie die automatische Prüfung bestehen. Das Paket kommt als Entwurf und bleibt „Ungeprüft“, bis du es geprüft hast. Was die KI unsicher findet, steht bei „Noch zu prüfen“.
       </p>
@@ -84,7 +92,7 @@ export function LernpaketKiForm(props: {
       )}
       <label className="field sm:col-span-2">
         <span className="label">Fähigkeit (bestimmt Fach und Thema)</span>
-        <select className="input" name="skill_id" defaultValue="" disabled={laeuft}>
+        <select className="input" name="skill_id" defaultValue={v.skillId ?? ""} disabled={laeuft}>
           <option value="">Ohne Fähigkeit (dann Fach und Thema angeben, ohne Aufgaben)</option>
           {props.gruppen.map((g) => (
             <optgroup key={g.label} label={g.label}>
@@ -99,7 +107,7 @@ export function LernpaketKiForm(props: {
       </label>
       <label className="field">
         <span className="label">Fach (ohne Fähigkeit)</span>
-        <input className="input" name="fach" list="lp-ki-faecher" maxLength={60} autoComplete="off" placeholder="z. B. Biologie" disabled={laeuft} />
+        <input className="input" name="fach" list="lp-ki-faecher" maxLength={60} autoComplete="off" placeholder="z. B. Biologie" defaultValue={v.skillId ? "" : (v.fach ?? "")} disabled={laeuft} />
         <datalist id="lp-ki-faecher">
           {props.faecher.map((x) => (
             <option key={x} value={x} />
@@ -108,11 +116,11 @@ export function LernpaketKiForm(props: {
       </label>
       <label className="field">
         <span className="label">Thema (ohne Fähigkeit nötig)</span>
-        <input className="input" name="thema" maxLength={120} placeholder="z. B. Die Zelle" disabled={laeuft} />
+        <input className="input" name="thema" maxLength={120} placeholder="z. B. Die Zelle" defaultValue={v.thema ?? ""} disabled={laeuft} />
       </label>
       <label className="field">
         <span className="label">Schulart</span>
-        <select className="input" name="schulart" defaultValue="" disabled={laeuft}>
+        <select className="input" name="schulart" defaultValue={v.schulart ?? ""} disabled={laeuft}>
           <option value="">jede</option>
           {props.schularten.map((t) => (
             <option key={t}>{t}</option>
@@ -121,7 +129,7 @@ export function LernpaketKiForm(props: {
       </label>
       <label className="field">
         <span className="label">Klasse</span>
-        <select className="input" name="klasse" defaultValue="" disabled={laeuft}>
+        <select className="input" name="klasse" defaultValue={v.klasse ? String(v.klasse) : ""} disabled={laeuft}>
           <option value="">jede</option>
           {Array.from({ length: 8 }, (_, i) => i + 1).map((k) => (
             <option key={k} value={k}>
@@ -132,7 +140,7 @@ export function LernpaketKiForm(props: {
       </label>
       <label className="field">
         <span className="label">Dauer in Minuten</span>
-        <input className="input num" type="number" name="dauer" min={props.dauer.von} max={props.dauer.bis} defaultValue={props.dauer.vorgabe} required disabled={laeuft} />
+        <input className="input num" type="number" name="dauer" min={props.dauer.von} max={props.dauer.bis} defaultValue={v.dauer ?? props.dauer.vorgabe} required disabled={laeuft} />
       </label>
       <label className="field">
         <span className="label">Schwierigkeit</span>
