@@ -855,6 +855,36 @@ CREATE TABLE IF NOT EXISTS todo_gesehen (
   seen_at TEXT NOT NULL,
   PRIMARY KEY (teacher_id, art, ref_id)
 );
+-- Terminanfragen (lib/planung/terminanfragen.ts, Plan 3.3): ein veröffentlichter Platz soll verschoben oder mit
+-- einem anderen getauscht werden. Ein Tausch wartet zuerst auf die Zustimmung der anderen Seite (Schüler oder
+-- ihr Lehrer), dann bestätigt oder lehnt die Verwaltung ab. Bewegt wird erst beim Bestätigen, mit derselben
+-- Prüfung wie im Wochenplan. vorher/ziel_*: wo der Platz bei der Anfrage lag und wohin er soll; beim Tausch ist
+-- ziel_* die Lage des anderen Platzes, und der kommt an vorher.
+CREATE TABLE IF NOT EXISTS terminanfragen (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  art TEXT NOT NULL,                        -- verschieben | tauschen
+  status TEXT NOT NULL,                     -- wartet (auf Zustimmung) | offen (bei der Verwaltung) | bestaetigt | abgelehnt
+  platz_id INTEGER NOT NULL REFERENCES geplante_einheiten(id) ON DELETE CASCADE,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  vorher TEXT NOT NULL,                     -- JSON { week_start, weekday, start_min }
+  ziel_week_start TEXT NOT NULL,
+  ziel_weekday INTEGER NOT NULL,
+  ziel_start_min INTEGER NOT NULL,
+  ziel_raum_id INTEGER REFERENCES rooms(id) ON DELETE SET NULL, -- beim Verschieben ein anderer freier Raum; null = Raum bleibt
+  partner_platz_id INTEGER REFERENCES geplante_einheiten(id) ON DELETE CASCADE,
+  partner_student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+  von TEXT NOT NULL,                        -- schueler | lehrer
+  von_teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  notiz TEXT NOT NULL DEFAULT '',           -- nur für Lehrer und Verwaltung, nie für den anderen Schüler
+  zugestimmt TEXT NOT NULL DEFAULT '',      -- '' | schueler | lehrer
+  zugestimmt_at TEXT,
+  grund TEXT NOT NULL DEFAULT '',           -- kurzer Grund einer Ablehnung
+  entschieden_von TEXT NOT NULL DEFAULT '', -- '' | partner | verwaltung
+  entschieden_teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  entschieden_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_terminanfragen_status ON terminanfragen(status, created_at);
 CREATE INDEX IF NOT EXISTS idx_ge_week ON geplante_einheiten(week_start, status);
 CREATE INDEX IF NOT EXISTS idx_ge_teacher ON geplante_einheiten(teacher_id, week_start);
 CREATE INDEX IF NOT EXISTS idx_ge_student ON geplante_einheiten(student_id, week_start);

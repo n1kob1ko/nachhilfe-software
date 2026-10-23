@@ -139,6 +139,13 @@ jede Zeile, dann stehen die Plätze **gesperrt** im **Wochenplan** ([docs/stunde
 Das Foto selbst wird nicht gespeichert. In der App heißt der Plan weiter **Wochenplan**.
 _Avoid_: Stundenplan-Import, Plan-Scan
 
+**Terminanfrage**:
+Die Bitte eines **Schülers** oder **Lehrers**, eine veröffentlichte **geplante Einheit** zu verschieben oder mit
+einer anderen desselben Lehrers zu tauschen. Ein Tausch wartet zuerst auf die Zustimmung der anderen Seite, dann
+bestätigt oder lehnt die Verwaltung ab; bewegt wird erst beim Bestätigen, mit der Prüfung des **Wochenplans**
+([docs/planung.md](docs/planung.md#terminanfragen-plan-33)).
+_Avoid_: Umbuchung, Änderungswunsch, Terminwunsch
+
 **Raum**:
 Wo eine **geplante Einheit** stattfindet: Gebäude, Name, und ob vor Ort oder
 online. Ein Raum wird deaktiviert, nie gelöscht, sobald Plätze auf ihn zeigen.

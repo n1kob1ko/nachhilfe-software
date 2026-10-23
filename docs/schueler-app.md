@@ -29,6 +29,10 @@ und kein Passwort; wer den Link hat, sieht diese Seite (wie bisher).
 - Wie bisher (D17/D23) **nur veröffentlichte Plätze** und **ohne Namen**: kein Lehrer, keine anderen
   Schüler. Entwürfe sieht der Schüler nie. Beim Veröffentlichen wird weiterhin niemand
   benachrichtigt (D25).
+- **Verschieben oder tauschen** unter jedem kommenden Termin (Plan 3.3, [planung.md](planung.md#terminanfragen-plan-33)):
+  freie Zeiten zur Auswahl (oder eine eigene Zeit), dazu eine Notiz; oder ein anderer Termin desselben Lehrers zum
+  Tausch, **nur als Zeit**. Darunter „Deine Anfragen“ mit Zustand; eine Tauschanfrage an ihn kann er zustimmen oder
+  ablehnen. Bewegt wird erst, wenn die Verwaltung bestätigt.
 - Darunter wie bisher die offenen Übungen, der Fortschritt und „Erledigt“.
 
 ## Technik
@@ -36,6 +40,7 @@ und kein Passwort; wer den Link hat, sieht diese Seite (wie bisher).
 | Datei | Inhalt |
 |---|---|
 | `lib/planung/schueler-termine.ts` | `termineFuerSchueler(studentId, now?)`: nächster Termin und Wochen, nur veröffentlicht, ohne Namen |
+| `lib/planung/terminanfragen.ts`, `components/planung/Terminanfragen.tsx`, `app/terminanfrage-actions.ts` | Terminanfragen: freie Zeiten, Anfragen ohne Namen anderer Schüler |
 | `app/lernen/[token]/manifest/route.ts` | das Web-App-Manifest **je Schüler**: `start_url` = `scope` = `id` = `/lernen/[token]`, damit die App genau seinen Link öffnet. Unbekannter Token: 404 |
 | `app/lernen/[token]/layout.tsx` | verweist auf das Manifest, `appleWebApp` für iOS, `noindex`, Farbe der Statusleiste |
 | `components/AppHinweis.tsx` | der Hinweis „Lernheft als App“ mit Install-Knopf, wo der Browser ihn anbietet |
