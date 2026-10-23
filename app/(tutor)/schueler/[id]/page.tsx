@@ -36,6 +36,7 @@ import { activeMaterial, materialHistory, materialLabel, MATERIAL_SOURCES, PRIOR
 import { errorTypeLabel } from "@/lib/error-types";
 import { textErrorsForStudent } from "@/lib/text-correction";
 import { MaterialForm } from "@/components/MaterialForm";
+import { KiGrenzeHinweis } from "@/components/cockpit/Cockpit";
 import { endMaterialAction } from "@/app/learning-actions";
 import { checkLevel } from "@/lib/school";
 import { stoffzettelLesbar } from "@/lib/stoffzettel";
@@ -102,6 +103,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
           <Sparkles size={18} aria-hidden /> <span className="sm:hidden">Briefing</span><span className="hidden sm:inline">Briefing für heute</span>
         </Link>
       </div>
+      <KiGrenzeHinweis studentId={student.id} name={student.name.split(" ")[0]} className="no-print mb-6" />
       <Kopfzahlen student={student} a={a} />
       <nav className="no-print mb-8 flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-panel p-1" aria-label="Bereiche">
         {TABS.map(([key, label]) => (

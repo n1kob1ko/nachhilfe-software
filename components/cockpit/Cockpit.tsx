@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ArrowDown, ArrowUp, BookMarked, CalendarClock, Check, CheckCircle2, CircleDot, ExternalLink, Presentation, ShieldAlert, SkipForward, Undo2 } from "lucide-react";
 import {
+  anpassenAction,
+  entscheideAnpassungAction,
   markiereSchrittAction,
   notizAction,
   sendeGeneratorAction,
@@ -10,11 +12,14 @@ import {
   waehlePaketAction,
   zeigeSchrittAction,
 } from "@/app/cockpit-actions";
-import { CockpitSenden, SchrittNotiz } from "@/components/cockpit/CockpitClient";
+import { AnpassenKnopf, CockpitSenden, SchrittNotiz } from "@/components/cockpit/CockpitClient";
 import { TabletSend } from "@/components/device/TabletSend";
+import { Info } from "@/components/Info";
 import { StatusPill } from "@/components/LernpaketStatus";
 import { TaskBody } from "@/components/TaskPreview";
 import { Pill, Reveal, SectionTitle } from "@/components/ui";
+import { grenzeHinweis, schuelerStand } from "@/lib/ai/schueler-kosten";
+import { ANPASSUNG_ARTEN, anpassenStatus, anpassungen, type Anpassung } from "@/lib/anpassen";
 import { KANDIDAT_LABEL } from "@/lib/briefing";
 import { cockpit, zusammenfassung, ablauf, leseStand, type CockpitDaten } from "@/lib/cockpit";
 import { ohnePaket, paketWahl, type PaketWahl } from "@/lib/cockpit-vorschlag";
@@ -48,6 +53,8 @@ export function CockpitBereich({ unit, student, fehler }: { unit: UnitView; stud
   const wahl = paketWahl(student.id, { fach: unit.subject, ausser: unit.id });
   const name = first(student.name);
   const vorschlag = c.paket ? wahl.vorschlaege.find((v) => v.paket.id === c.paket!.id) : undefined;
+  // „Anpassen“: Vorschläge und Übernommenes gelten für das Paket, das gerade gewählt ist
+  const liste = c.paket ? anpassungen(unit.id).filter((a) => a.paket_id === c.paket!.id) : [];
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-8" data-testid="cockpit">
       {fehler && (
@@ -55,6 +62,7 @@ export function CockpitBereich({ unit, student, fehler }: { unit: UnitView; stud
           {fehler}
         </p>
       )}
+      <KiGrenzeHinweis studentId={student.id} name={name} />
       {c.paket ? (
         <>
           <PaketKopf c={c} paket={c.paket} warum={vorschlag?.warum ?? null}>
@@ -64,9 +72,10 @@ export function CockpitBereich({ unit, student, fehler }: { unit: UnitView; stud
               </div>
             </Reveal>
           </PaketKopf>
+          <AnpassenBereich c={c} unitId={unit.id} studentId={student.id} name={name} liste={liste} />
           <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,290px)_minmax(0,1fr)] lg:items-start lg:gap-6">
             <SchrittListe c={c} unitId={unit.id} />
-            {c.aktuell ? <SchrittPanel c={c} s={c.aktuell} unitId={unit.id} name={name} paket={c.paket} /> : <AllesDurch c={c} />}
+            {c.aktuell ? <SchrittPanel c={c} s={c.aktuell} unitId={unit.id} name={name} paket={c.paket} angepasst={liste.filter((a) => a.status === "uebernommen" && a.schritt_id === c.aktuell!.id)} /> : <AllesDurch c={c} />}
           </div>
         </>
       ) : (
@@ -248,7 +257,7 @@ function SchrittListe({ c, unitId }: { c: CockpitDaten; unitId: number }) {
 }
 
 /** The step on screen: what to say, ask, expect and do on a mistake; send its tasks; done, skip, move. */
-function SchrittPanel({ c, s, unitId, name, paket }: { c: CockpitDaten; s: LernpaketSchritt; unitId: number; name: string; paket: Lernpaket }) {
+function SchrittPanel({ c, s, unitId, name, paket, angepasst }: { c: CockpitDaten; s: LernpaketSchritt; unitId: number; name: string; paket: Lernpaket; angepasst: Anpassung[] }) {
   const i = c.schritte.findIndex((x) => x.id === s.id);
   const st = statusVon(c, s.id);
   const ab = c.ab.get(s.id) ?? 0;
@@ -289,6 +298,20 @@ function SchrittPanel({ c, s, unitId, name, paket }: { c: CockpitDaten; s: Lernp
         ))}
       </dl>
       {SKRIPT.every(([k]) => !s[k].trim()) && <p className="mt-3 text-[14px] text-ink-3">Zu diesem Schritt steht im Paket nichts zum Sagen oder Fragen.</p>}
+
+      {angepasst.length > 0 && (
+        <div className="mt-4 grid gap-2" data-testid="angepasst">
+          <p className="text-[13px] font-semibold text-ink-2">Für {name} angepasst, nur in dieser Einheit</p>
+          {angepasst.map((a) => (
+            <div key={a.id} className={`rounded-xl px-3 py-2 ${a.art === "bei_fehler" ? "bg-amber-wash" : "border border-line"}`}>
+              <AnpassungInhalt a={a} />
+              <form action={entscheideAnpassungAction.bind(null, unitId, a.id, "verworfen")} className="mt-1">
+                <button className="btn btn-ghost btn-sm !px-2">Entfernen</button>
+              </form>
+            </div>
+          ))}
+        </div>
+      )}
 
       {s.pruefen.length > 0 && (
         <ul className="mt-3 grid gap-1 rounded-xl bg-amber-wash px-3 py-2 text-[13.5px] text-amber">
@@ -363,6 +386,106 @@ function SchrittPanel({ c, s, unitId, name, paket }: { c: CockpitDaten; s: Lernp
       <div className="mt-5 border-t border-line pt-4">
         <SchrittNotiz key={s.id} speichern={notizAction.bind(null, unitId, s.id)} initial={c.stand.notizen[s.id] ?? ""} />
       </div>
+    </section>
+  );
+}
+
+/**
+ * From the warning level of the limit per student and month on (lib/ai/schueler-kosten.ts): a note for the teacher.
+ * Cockpit and student profile; never on student pages.
+ */
+export function KiGrenzeHinweis({ studentId, name, className = "" }: { studentId: number; name: string; className?: string }) {
+  const text = grenzeHinweis(schuelerStand(studentId), name);
+  if (!text) return null;
+  return (
+    <p className={`flex items-start gap-2 rounded-xl bg-amber-wash px-3 py-2 text-[14px] text-amber ${className}`} role="note" data-testid="ki-grenze">
+      <ShieldAlert size={17} className="mt-0.5 shrink-0" aria-hidden />
+      <span>{text}</span>
+    </p>
+  );
+}
+
+/** One adaptation: kind and title, the text, the expected answer. */
+function AnpassungInhalt({ a }: { a: Anpassung }) {
+  return (
+    <>
+      <p className={`text-[13px] font-semibold ${a.art === "bei_fehler" ? "text-amber" : "text-ink-2"}`}>
+        {ANPASSUNG_ARTEN[a.art]}: {a.titel}
+      </p>
+      <p className="mt-0.5 text-[15px] whitespace-pre-line">{a.text}</p>
+      {a.antwort && (
+        <p className="mt-1 text-[14px] whitespace-pre-line">
+          <span className="font-semibold text-green">Erwartete Antwort: </span>
+          {a.antwort}
+        </p>
+      )}
+    </>
+  );
+}
+
+/**
+ * „Anpassen“ (lib/anpassen.ts): on click the KI suggests examples, easier or harder questions and hints for this
+ * student. Each suggestion is „Ungeprüft“ until the teacher takes it (for this unit only) or discards it. Without KI,
+ * budget or with the student's limit reached the button says why; the cockpit works as before.
+ */
+function AnpassenBereich({ c, unitId, studentId, name, liste }: { c: CockpitDaten; unitId: number; studentId: number; name: string; liste: Anpassung[] }) {
+  const status = anpassenStatus(studentId);
+  const offen = liste.filter((a) => a.status === "vorschlag");
+  const nr = new Map(c.schritte.map((s, i) => [s.id, i + 1]));
+  return (
+    <section className="panel px-5 py-4" aria-label="Anpassen" data-testid="anpassen-bereich">
+      <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
+        <div className="min-w-0 flex-1 basis-[260px]">
+          <h3 className="flex items-center gap-1.5 text-[16px] font-semibold">
+            Anpassen für {name}
+            <Info label="Was geht an die KI?">
+              Nur auf Klick, etwa 3 Cent: die Schritte dieses Lernpakets und Tatsachen aus der App, nämlich die letzten falschen Antworten, häufige Fehlerarten, Lernstand, letzte Diagnose und die nächste
+              Schularbeit mit Stoff. Namen sind vorher durch [Name] ersetzt. Die Vorschläge gelten nur für diese Einheit; Lernpaket, Lernstand, Diagnose und Einschätzung bleiben unverändert.
+            </Info>
+          </h3>
+          <p className="mt-0.5 text-[14px] text-ink-2">Zusatzbeispiel zu den letzten Fehlern, leichtere oder schwerere Frage, Hinweis bei Fehler. Das Paket bleibt, wie es ist.</p>
+        </div>
+        {status.moeglich ? (
+          <AnpassenKnopf action={anpassenAction.bind(null, unitId)} label={offen.length ? "Neue Vorschläge" : "Anpassen"} />
+        ) : (
+          <p className="text-[14px] text-ink-2 sm:max-w-[320px]" data-testid="anpassen-aus">
+            {status.grund}
+          </p>
+        )}
+      </div>
+      {offen.length > 0 && (
+        <ul className="mt-4 grid gap-3" aria-label="Vorschläge">
+          {offen.map((a) => (
+            <li key={a.id} className="rounded-xl border border-line px-3 py-3">
+              <p className="mb-1 flex flex-wrap items-center gap-2 text-[13px] text-ink-3">
+                <Pill tone="amber">Ungeprüft</Pill>
+                <span className="num">Schritt {nr.get(a.schritt_id) ?? "?"}</span>
+              </p>
+              <AnpassungInhalt a={a} />
+              {a.bezug.length > 0 && (
+                <div className="mt-2 text-[13px] text-ink-2">
+                  <p className="font-semibold">Stützt sich auf</p>
+                  <ul className="list-disc space-y-0.5 pl-5">
+                    {a.bezug.map((b, i) => (
+                      <li key={i}>{b}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <form action={entscheideAnpassungAction.bind(null, unitId, a.id, "uebernommen")}>
+                  <button className="btn btn-primary btn-sm">
+                    <Check size={15} aria-hidden /> Übernehmen
+                  </button>
+                </form>
+                <form action={entscheideAnpassungAction.bind(null, unitId, a.id, "verworfen")}>
+                  <button className="btn btn-secondary btn-sm">Verwerfen</button>
+                </form>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
@@ -569,7 +692,8 @@ export function AblaufRueckblick({ unitId }: { unitId: number }) {
   if (!p) return null;
   const byId = new Map(p.schritte.map((x) => [x.id, x]));
   const order = ablauf(p.schritte, s.reihenfolge);
-  if (!s.erledigt.length && !s.uebersprungen.length && !Object.keys(s.notizen).length) return null;
+  const angepasst = anpassungen(unitId, "uebernommen").filter((a) => a.paket_id === p.id);
+  if (!s.erledigt.length && !s.uebersprungen.length && !Object.keys(s.notizen).length && !angepasst.length) return null;
   return (
     <section aria-label="Lernpaket">
       <SectionTitle>
@@ -589,6 +713,13 @@ export function AblaufRueckblick({ unitId }: { unitId: number }) {
                 </Pill>
               </p>
               {s.notizen[id] && <p className="text-[14px] whitespace-pre-line text-ink-2 sm:pl-6">Notiz: {s.notizen[id]}</p>}
+              {angepasst
+                .filter((a) => a.schritt_id === id)
+                .map((a) => (
+                  <p key={a.id} className="text-[14px] text-ink-2 sm:pl-6">
+                    Angepasst: {ANPASSUNG_ARTEN[a.art]} „{a.titel}“
+                  </p>
+                ))}
             </li>
           );
         })}

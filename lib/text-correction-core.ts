@@ -99,6 +99,7 @@ export type CorrectionRow = {
 const FAILURE_TEXT: Record<CorrectionFailCause, string> = {
   aus: "Die KI ist ausgeschaltet oder nicht eingerichtet.",
   budget: "Das KI-Budget für diesen Monat ist aufgebraucht.",
+  schuelergrenze: "Die KI-Grenze für diesen Schüler ist in diesem Monat erreicht.",
   pausiert: "Die KI war zuletzt mehrmals nicht erreichbar und macht ein paar Minuten Pause.",
   zeitlimit: "Die KI hat nicht rechtzeitig geantwortet.",
   nicht_erreichbar: "Die KI war nicht erreichbar.",

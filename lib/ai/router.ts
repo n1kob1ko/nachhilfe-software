@@ -12,6 +12,8 @@ import { FUNCTIONS, MANUAL_TIMEOUT_MS, PROVIDER_IDS, aiSwitchedOff, costOf, fitM
 import { schuelerDerAnfrage, systemMitHinweisen } from "./hinweise";
 import { budgetState, logCall, type CallStatus } from "./log";
 import { providerReady, providerTransport, unsupported, type Prompt, type Transport } from "./providers";
+import { grenzeErreichtText, schuelerStand } from "./schueler-kosten";
+import { ladeAntwort, leereSpeicher, speichereAntwort, vergiss } from "./speicher";
 
 export type { AIRequest, AIResult, Part, Prompt, Transport } from "./providers";
 
@@ -72,6 +74,15 @@ export function budgetUsedUp(fn: AIFunction): boolean {
   return provider !== "manual" && !isLocalModel(provider) && budgetState(now(), poolOf(provider)).level === "aus";
 }
 
+/**
+ * Whether the limit per student and month (lib/ai/schueler-kosten.ts) stops `fn` for this student now. Like the
+ * budget it does not stop the manual mode or a local model, which cost nothing.
+ */
+export function schuelerGestoppt(fn: AIFunction, studentId: number): boolean {
+  const { provider } = routeFor(fn);
+  return provider !== "manual" && !isLocalModel(provider) && schuelerStand(studentId, now()).stufe === "aus";
+}
+
 /** For the cost page: whether any provider has a key at all. The manual mode is no provider and needs none. */
 export function anyProviderKey() {
   return PROVIDER_IDS.some((id) => id !== "manual" && providerReady(id));
@@ -101,23 +112,34 @@ export function breakerState() {
 }
 
 // ---------- reuse of identical requests ----------
+// in memory for this process, and in the database (lib/ai/speicher.ts) so that a restart pays nothing twice
 const { done, inflight } = state;
 const MAX_REMEMBERED = 300;
 
+/** Forgets everything, the stored answers in the database too (tests, the 60-minute simulation). */
 export function resetRouter() {
   done.clear();
   inflight.clear();
+  leereSpeicher();
   breaker.failures = 0;
   breaker.until = 0;
 }
 
 /** An answer the caller found unusable although it had the right shape: the same request asks the KI again instead of reusing it. */
 export function forgetAnswer(data: unknown) {
-  for (const [fp, kept] of done) if (kept.data === data) done.delete(fp);
+  for (const [fp, kept] of done)
+    if (kept.data === data) {
+      done.delete(fp);
+      vergiss(fp);
+    }
 }
 
-function fingerprint(fn: AIFunction, provider: string, model: string, system: string, prompt: Prompt, extra?: unknown) {
-  return createHash("sha256").update(JSON.stringify(extra === undefined ? [fn, provider, model, system, prompt] : [fn, provider, model, system, prompt, extra])).digest("hex");
+/** The key of a request: function, provider, model, the full prompt and the student it is about (never shared between students). */
+function fingerprint(fn: AIFunction, provider: string, model: string, system: string, prompt: Prompt, extra: unknown, studentId: number | null) {
+  const parts: unknown[] = [fn, provider, model, system, prompt];
+  if (extra !== undefined) parts.push(extra);
+  if (studentId != null) parts.push({ schueler: studentId });
+  return createHash("sha256").update(JSON.stringify(parts)).digest("hex");
 }
 
 /**
@@ -126,7 +148,7 @@ function fingerprint(fn: AIFunction, provider: string, model: string, system: st
  * is one), an answer cut off, empty, without JSON, of the wrong shape or refused, a setting that does not fit
  * (a photo for a provider that cannot read one), or an unusable answer without a known reason.
  */
-export type FailCause = "aus" | "budget" | "pausiert" | "zeitlimit" | "nicht_erreichbar" | "anbieter" | "unvollstaendig" | "leer" | "json" | "schema" | "verweigert" | "einstellung" | "unbrauchbar";
+export type FailCause = "aus" | "budget" | "schuelergrenze" | "pausiert" | "zeitlimit" | "nicht_erreichbar" | "anbieter" | "unvollstaendig" | "leer" | "json" | "schema" | "verweigert" | "einstellung" | "unbrauchbar";
 
 export type Outcome<T> =
   | { ok: true; data: T; reused: boolean; callId: number | null }
@@ -171,7 +193,10 @@ export async function runAI<S extends z.ZodType>(
   // schülerbezogenen Anfrage, nie zusammen mit seinem Namen. Ohne Schüler oder ohne Hinweise bleibt
   // der Prompt unverändert. Der Fingerabdruck unten und der manuelle Modus rechnen damit mit dem
   // vollständigen Prompt: ändern sich die Hinweise, wird nichts Altes wiederverwendet.
-  system = systemMitHinweisen(system, schuelerDerAnfrage(meta));
+  const schueler = schuelerDerAnfrage(meta);
+  system = systemMitHinweisen(system, schueler);
+  // der Schüler der Anfrage, wie die Datenbank ihn kennt: für die Grenze je Schüler, das Protokoll und den Speicher
+  const studentId = schueler?.id ?? null;
   // ein lokales Modell (Ollama) kostet nichts und läuft auch mit aufgebrauchtem Budget weiter
   const local = isLocalModel(provider);
   const log = (status: CallStatus, extra: Partial<Parameters<typeof logCall>[0]> = {}) =>
@@ -182,6 +207,7 @@ export async function runAI<S extends z.ZodType>(
       model,
       teacherId: meta.teacherId ?? null,
       unitId: meta.unitId ?? null,
+      studentId,
       trigger: meta.trigger ?? "",
       input: 0,
       output: 0,
@@ -195,8 +221,14 @@ export async function runAI<S extends z.ZodType>(
       ...extra,
     });
 
-  const fp = fingerprint(fn, provider, model, system, prompt, ov ? [ov.tag, thinking, effort] : undefined);
-  const kept = spec.reuseMs > 0 ? done.get(fp) : undefined;
+  const fp = fingerprint(fn, provider, model, system, prompt, ov ? [ov.tag, thinking, effort] : undefined, studentId);
+  // the KI-Qualitätstest compares runs: its answers stay in memory only
+  const persist = spec.reuseMs > 0 && !ov;
+  let kept = spec.reuseMs > 0 ? done.get(fp) : undefined;
+  if (!(kept && kept.at > now() - spec.reuseMs) && persist) {
+    const stored = ladeAntwort(fp, now() - spec.reuseMs, now());
+    if (stored) done.set(fp, (kept = stored));
+  }
   if (kept && kept.at > now() - spec.reuseMs) return { ok: true, data: kept.data as z.infer<S>, reused: true, callId: log("cache") };
   const running = inflight.get(fp);
   if (running) {
@@ -208,6 +240,11 @@ export async function runAI<S extends z.ZodType>(
     if (breaker.until > now()) return { ok: false, status: "pausiert", cause: "pausiert", message: MESSAGES.pausiert, callId: log("pausiert") };
     // a local model (Ollama) is free too: an empty budget does not stop it, the outage break above does
     if (!local && budgetState(now(), poolOf(provider)).level === "aus") return { ok: false, status: "budget", cause: "budget", message: MESSAGES.budget, callId: log("budget") };
+    // die Grenze je Schüler und Monat (lib/ai/schueler-kosten.ts), zusätzlich zum Monatsbudget
+    if (!local && studentId != null && schuelerStand(studentId, now()).stufe === "aus") {
+      const message = grenzeErreichtText();
+      return { ok: false, status: "budget", cause: "schuelergrenze", message, callId: log("budget", { error: "Grenze je Schüler" }) };
+    }
   }
   // a photo or PDF the configured provider cannot read: a setting to change, not an outage
   const cannot = custom ? null : unsupported(provider, prompt);
@@ -252,6 +289,7 @@ export async function runAI<S extends z.ZodType>(
       if (spec.reuseMs > 0) {
         done.set(fp, { at: now(), data: res.parsed });
         if (done.size > MAX_REMEMBERED) done.delete(done.keys().next().value!);
+        if (persist) speichereAntwort({ key: fp, fn, model, studentId, data: res.parsed, at: now(), gueltigMs: spec.reuseMs });
       }
       return { ok: true, data: res.parsed as z.infer<S>, reused: false, callId };
     } catch (e) {

@@ -93,7 +93,7 @@ export async function analyzeMaterialAction(id: number, f: FormData) {
   let a: Awaited<ReturnType<typeof analyzeMaterialWithAI>> = null;
   let problem = "Claude hat nichts erkannt.";
   try {
-    a = await analyzeMaterialWithAI({ mime: m.mime ?? "", base64: data.toString("base64") }, { subject, skills }, { teacherId: teacher.id, trigger: "material" });
+    a = await analyzeMaterialWithAI({ mime: m.mime ?? "", base64: data.toString("base64") }, { subject, skills }, { teacherId: teacher.id, studentId: m.student_id, trigger: "material" });
   } catch (e) {
     problem = e instanceof Error ? e.message : String(e);
   }
