@@ -13,13 +13,13 @@ import {
   removeTeacherItem,
   retryAICorrection,
   setShared,
-  startAICorrection,
   startThoroughRecheck,
   type ItemKind,
   type ItemStatus,
   type TeacherItemInput,
 } from "@/lib/text-correction";
 import { parseNames } from "@/lib/name-detection";
+import { korrigierenStarten } from "@/lib/schreibauftrag-bewertung";
 import { getText } from "@/lib/texts";
 import { canManageUnit, runningUnitForStudent } from "@/lib/units";
 
@@ -42,14 +42,25 @@ function namesFrom(f: FormData): string[] | undefined {
   return [...new Set([...kept, ...parseNames(String(f.get("extra") ?? ""))])].slice(0, 80);
 }
 
-/** „Mit KI korrigieren“ after the consent dialog: only with the box ticked, never automatically. */
+/**
+ * „Korrigieren“ after the consent dialog: only with the box ticked, never automatically. One click starts both parts:
+ * the language correction and, with `aufgabe`, „Aufgabe erfüllt?“ (lib/schreibauftrag-bewertung.ts), which the app skips
+ * by itself when there is no Aufgabenstellung. Each part runs in the background and keeps its own result or error.
+ */
 export async function startAICorrectionAction(textId: number, _prev: StartState, f: FormData): Promise<StartState> {
   const t = await requireTeacher();
   const text = getText(textId);
   if (!text) redirect("/");
   const unit = runningUnitForStudent(text.student_id);
-  const res = await startAICorrection(textId, t.id, { consent: f.get("consent") === "1", unitId: unit?.id ?? null, method: f.get("method") === "gruendlich" ? "gruendlich" : "einfach", names: namesFrom(f) });
-  if (!res.ok) return { error: res.error };
+  // what „Aufgabe erfüllt?“ cannot do (no Aufgabenstellung, budget) the page shows in that part
+  const { sprache } = await korrigierenStarten(textId, t.id, {
+    consent: f.get("consent") === "1",
+    unitId: unit?.id ?? null,
+    method: f.get("method") === "gruendlich" ? "gruendlich" : "einfach",
+    names: namesFrom(f),
+    aufgabe: f.get("aufgabe") === "1",
+  });
+  if (!sprache.ok) return { error: sprache.error };
   revalidatePath(page(textId));
   redirect(page(textId));
 }

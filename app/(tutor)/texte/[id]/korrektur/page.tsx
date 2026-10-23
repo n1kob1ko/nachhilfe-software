@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, History, PenLine } from "lucide-react";
+import { AlertTriangle, History, ListChecks, PenLine, SpellCheck } from "lucide-react";
 import { startManualCorrectionAction } from "@/app/correction-actions";
+import { AutoRefresh } from "@/components/AutoRefresh";
+import { AufgabeTeil, aufgabeKurz } from "@/components/text/bewertung/AufgabeTeil";
 import { AIStartButton } from "@/components/text/correction/AIStartButton";
 import { StoryStrip } from "@/components/text/story/StoryPictures";
 import { storyForEditor } from "@/lib/picture-story";
@@ -12,6 +14,7 @@ import { requireTeacher } from "@/lib/auth";
 import { getSkill } from "@/lib/repo";
 import { aiPreview, aiState, correctionsOfText, hiddenWords, levelOfText, listItems, retryCostUsd, retryKind, snapshotDoc, verifyState } from "@/lib/text-correction";
 import { maskedNames, shownFailure } from "@/lib/text-correction-core";
+import { aufgabeVorschau } from "@/lib/schreibauftrag-bewertung";
 import { getText, wordsLabel } from "@/lib/texts";
 
 export const metadata = { title: "Korrektur" };
@@ -20,11 +23,12 @@ const first = (n: string) => n.split(" ")[0];
 const when = (iso: string) => `${formatDate(iso, { day: "numeric", month: "short" })}, ${formatTime(iso)}`;
 const VIEWS: View[] = ["original", "korrekturen", "endfassung"];
 
-type Params = { params: Promise<{ id: string }>; searchParams: Promise<{ k?: string; ansicht?: string }> };
+type Params = { params: Promise<{ id: string }>; searchParams: Promise<{ k?: string; ansicht?: string; teil?: string }> };
 
 /**
- * Korrektur of a Textarbeit: the text in three views (Original, Korrekturen, Endfassung). Works without
- * KI; the KI is asked only on the teacher's click and after the consent dialog.
+ * Korrektur of a Textarbeit in two parts: „Sprache“ (the text in three views: Original, Korrekturen, Endfassung) and
+ * „Aufgabe erfüllt?“ (components/text/bewertung/AufgabeTeil.tsx, with the Bewertung of a Schreibauftrag). Works without
+ * KI; the KI is asked only on the teacher's click and after the consent dialog, which starts both parts at once.
  */
 export default async function CorrectionPage({ params, searchParams }: Params) {
   const [{ id }, sp] = await Promise.all([params, searchParams]);
@@ -41,6 +45,10 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
   const preview = aiPreview(text);
   const view = VIEWS.includes(sp.ansicht as View) ? (sp.ansicht as View) : "korrekturen";
   const story = storyForEditor(text.id, "/material/bildgeschichte/bild");
+  const teil = sp.teil === "aufgabe" ? "aufgabe" : "sprache";
+  const aufgabe = aufgabeVorschau(text);
+  const kurz = aufgabeKurz(text.id);
+  const teilHref = (t: "sprache" | "aufgabe") => `/texte/${text.id}/korrektur?${new URLSearchParams({ ...(sp.k ? { k: sp.k } : {}), teil: t })}`;
 
   const head = (
     <div className="mb-5">
@@ -65,16 +73,23 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
     </div>
   );
 
+  const korrigieren = <AIStartButton textId={text.id} preview={preview} label="Korrigieren" aufgabe={aufgabe} />;
   const start = (
     <section className="panel max-w-[760px] px-6 py-6" data-testid="korrektur-start">
       <h2 className="text-[19px] font-semibold">{c ? "Die aktuelle Fassung korrigieren" : "Diesen Text korrigieren"}</h2>
       <p className="mt-1 text-[15px] text-ink-2">
-        <span className="num">{wordsLabel(text.words)}</span> · Fassung vom <span className="num">{when(text.updated_at)}</span>. Die KI schlägt Korrekturen nach dem Maßstab „{level.label}“ vor. Nichts wird ohne deine Bestätigung übernommen, der Originaltext bleibt unverändert.
+        <span className="num">{wordsLabel(text.words)}</span> · Fassung vom <span className="num">{when(text.updated_at)}</span>. Ein Klick prüft beides: die Sprache nach dem Maßstab „{level.label}“ und ob die Aufgabe erfüllt ist. Nichts wird ohne deine Bestätigung übernommen, der Originaltext bleibt unverändert.
       </p>
+      {!aufgabe.pruefbar && (
+        <p className="mt-2 text-[14px] text-ink-2" data-testid="start-ohne-aufgabe">
+          Diesmal nur die Sprache: {aufgabe.zeilen.find((z) => z.ton === "stopp")?.text}{" "}
+          <Link href={teilHref("aufgabe")} className="font-medium text-accent hover:underline">
+            Mehr dazu
+          </Link>
+        </p>
+      )}
       <div className="mt-4 flex flex-wrap items-start gap-3">
-        <div>
-          <AIStartButton textId={text.id} preview={preview} />
-        </div>
+        <div>{korrigieren}</div>
         <form action={startManualCorrectionAction.bind(null, text.id)}>
           <button className="btn btn-secondary" disabled={!text.words} data-testid="selbst-korrigieren">
             <PenLine size={16} aria-hidden /> Selbst korrigieren
@@ -84,11 +99,28 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
     </section>
   );
 
-  if (!c) {
+  const teile = (
+    <nav className="kx-tabs mb-5 max-w-full" aria-label="Teile der Korrektur" data-testid="korrektur-teile">
+      <Link href={teilHref("sprache")} className="kx-tab" aria-current={teil === "sprache" ? "page" : undefined} data-testid="teil-sprache">
+        <SpellCheck size={16} aria-hidden /> Sprache
+      </Link>
+      <Link href={teilHref("aufgabe")} className="kx-tab" aria-current={teil === "aufgabe" ? "page" : undefined} data-testid="teil-aufgabe" title={kurz?.titel}>
+        <ListChecks size={16} aria-hidden /> Aufgabe erfüllt?
+        {kurz && <Pill tone={kurz.tone}>{kurz.kurz}</Pill>}
+      </Link>
+    </nav>
+  );
+  const refresh = kurz?.laeuft && <AutoRefresh seconds={3} />;
+
+  if (!c || teil === "aufgabe") {
+    // „Korrigieren“ starts both parts while the language has no KI run on the current version yet
+    const sprachKI = current ? aiState(current) !== "keine" : false;
     return (
       <>
         {head}
-        {start}
+        {refresh}
+        {teile}
+        {teil === "aufgabe" ? <AufgabeTeil text={text} start={sprachKI ? undefined : korrigieren} /> : start}
       </>
     );
   }
@@ -109,6 +141,8 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
   return (
     <>
       {head}
+      {refresh}
+      {teile}
       {outdated && (
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl bg-amber-wash px-5 py-4 text-[15px]" role="status" data-testid="veraltet">
           <History size={18} className="shrink-0 text-amber" aria-hidden />
@@ -180,7 +214,7 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
         retry={retry === "pruefung" ? retryButton : undefined}
         aiStart={
           mayRunAI ? (
-            <AIStartButton textId={text.id} preview={preview} label={state === "fehler" ? "Nochmal mit KI versuchen" : "Zusätzlich mit KI prüfen"} variant="secondary" />
+            <AIStartButton textId={text.id} preview={preview} label={state === "fehler" ? "Nochmal mit KI versuchen" : "Zusätzlich mit KI prüfen"} variant="secondary" aufgabe={aufgabe} />
           ) : mayRecheck ? (
             <AIStartButton textId={text.id} preview={aiPreview(text, maskedNames(c.masked_names))} label="Gründlich nachprüfen" variant="secondary" recheck={c.id} />
           ) : undefined

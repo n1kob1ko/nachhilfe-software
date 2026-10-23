@@ -9,17 +9,27 @@
  *   je Kriterium. Das ist ein Vorschlag; als Bewertung gilt nur, was die Lehrkraft bestätigt. Nichts davon geht in
  *   den Lernstand, die Diagnose oder die Dokumentation.
  * - Jedes Zitat und jede Zeilenangabe der KI prüft die App im Text (lib/zitatpruefung.ts).
+ * - **„Aufgabe erfüllt?“** (2026-10-23) ist dieselbe Bewertung, erweitert und für jede Textarbeit: je Arbeitsauftrag, den
+ *   die App aus der Aufgabenstellung liest, ein Urteil der KI (erfüllt, teilweise, fehlt, nicht beurteilbar). Beim
+ *   Schreibauftrag kommt es in derselben Anfrage wie die Stufen, bei einer anderen Textarbeit allein, mit der Angabe der
+ *   Lehrkraft (`text_angaben`) oder den Bildbeschreibungen. Was fehlt, sagt die App (fehlendeAngaben); ohne
+ *   Aufgabenstellung wird nichts gesendet. Die Prüfung läuft auf Klick im Hintergrund, mit der Korrektur der Sprache
+ *   zusammen gestartet (app/correction-actions.ts) oder allein, und lässt sich einzeln wiederholen.
  */
 import { createHash } from "node:crypto";
+import { after } from "next/server";
+import { costOf, FUNCTIONS, routeFor } from "./ai/config";
+import { PROVIDER_LABEL } from "./ai/providers";
 import { aiEnabled, breakerState, budgetUsedUp, schuelerGestoppt } from "./ai/router";
 import { grenzeErreichtText } from "./ai/schueler-kosten";
-import { kiBewertung, kiErwartung, type AuftragDaten, type KriteriumVorschlag } from "./ai/schreibauftrag-bewertung";
-import { erwartungLeer, KRITERIEN, parseBewertung, parseErwartung, vorlageFor, type Bewertung, type Erwartung } from "./bewertung-kriterien";
+import { estimateTokensBewertung, kiAufgaben, kiBewertung, kiErwartung, type AuftragDaten, type AuftragErgebnis, type KriteriumVorschlag } from "./ai/schreibauftrag-bewertung";
+import { erwartungLeer, fehlendeAngaben, KRITERIEN, parseBewertung, parseErwartung, vorlageFor, type Bewertung, type Erwartung, type FehlendeAngaben, type FehltZeile } from "./bewertung-kriterien";
 import { db } from "./db";
+import { pictureContext } from "./picture-story";
 import { auftragFor } from "./schreibauftrag-store";
 import type { AuftragView } from "./schreibauftrag";
 import { blockText, parseDoc } from "./text-doc";
-import { foundNames, levelOfText, maskText, namePattern, namesToHide } from "./text-correction";
+import { foundNames, levelOfText, maskText, namePattern, namesToHide, startAICorrection, type CorrectionMethod, type StartResult } from "./text-correction";
 import { bareText, cleanStory } from "./textinterpretation";
 import { getText, type TextView } from "./texts";
 import { pruefgrundlage, type GefundenerBeleg } from "./zitatpruefung";
@@ -142,10 +152,10 @@ export function kiStatus(fn: "erwartung" | "bewertung", studentId: number): { mo
  * Wer verborgen wird: Schüler, Lehrkräfte und weitere Namen, die die App im Text findet, außer Namen, die in der
  * Textbeilage stehen (Figuren, Autorin): die Textbeilage geht ohnehin mit, und Zitate daraus müssen sich finden lassen.
  */
-function namenMuster(text: TextView, a: AuftragView): RegExp | null {
-  const doc = parseDoc(text.body);
+function namenMuster(text: TextView, a: Pick<AuftragView, "text" | "author">, gewaehlt: string[] | null = null): RegExp | null {
   const beilage = ` ${bareText(`${a.text} ${a.author}`)} `;
-  const gefunden = foundNames(text, doc).filter((n) => !bareText(n).split(" ").every((w) => beilage.includes(` ${w} `)));
+  // gewaehlt: die Namen, die die Lehrkraft in der Freigabe der Korrektur verbergen ließ; sonst alle, die die App findet
+  const gefunden = (gewaehlt ?? foundNames(text, parseDoc(text.body))).filter((n) => !bareText(n).split(" ").every((w) => beilage.includes(` ${w} `)));
   return namePattern([...namesToHide(text), ...gefunden]);
 }
 
@@ -244,41 +254,22 @@ export function bewertungMoeglich(text: TextView): string | null {
 }
 
 /**
- * „Bewertung vorschlagen“, nach der Zustimmung der Lehrkraft: der Text ohne Namen, der Erwartungshorizont (gespeichert,
- * sonst die Vorlage der Textsorte, nie ein ungeprüfter Vorschlag) und die Textbeilage gehen an die KI. Der Vorschlag
- * ersetzt einen älteren Vorschlag; eine bestätigte Bewertung bleibt, bis die Lehrkraft eine neue bestätigt.
+ * „Bewertung vorschlagen“, nach der Zustimmung der Lehrkraft, und wartet auf das Ergebnis: dieselbe Prüfung wie
+ * „Aufgabe erfüllt?“ (startAufgabenPruefung). Der Text ohne Namen, der Erwartungshorizont (gespeichert, sonst die Vorlage
+ * der Textsorte, nie ein ungeprüfter Vorschlag) und die Textbeilage gehen an die KI. Der Vorschlag ersetzt einen
+ * älteren Vorschlag; eine bestätigte Bewertung bleibt, bis die Lehrkraft eine neue bestätigt.
  */
-export function bewertungVorschlagen(textId: number, teacherId: number | null, o: { zustimmung: boolean }): Promise<VorschlagErgebnis> {
-  if (!o.zustimmung) return Promise.resolve({ ok: false, error: "Bitte zuerst bestätigen, dass der Text ohne Namen an die KI gehen darf." });
-  const key = `b${textId}`;
-  const running = laufend.get(key);
-  if (running) return running;
-  const job = (async (): Promise<VorschlagErgebnis> => {
-    const text = getText(textId);
-    const a = auftragFor(textId);
-    if (!text || !a) return { ok: false, error: "Diesen Schreibauftrag gibt es nicht." };
-    const nicht = bewertungMoeglich(text);
-    if (nicht) return { ok: false, error: nicht };
-    const muster = namenMuster(text, a);
-    const absaetze = parseDoc(text.body)
-      .map((b) => maskText(blockText(b), muster).masked.replace(/\s*\n\s*/g, " ").trim())
-      .filter(Boolean);
-    const e = erwartungInfo(textId)!;
-    const g = pruefgrundlage({ beilage: a.text, countBlank: a.countBlank, schueler: absaetze, titel: a.title, medium: a.medium });
-    const out = await kiBewertung(
-      { ...auftragDaten(text, a, muster), erwartung: e.gespeichert ?? e.vorlage, erwartungGespeichert: e.gespeichert !== null, absaetze, woerter: text.words },
-      g,
-      { teacherId, studentId: text.student_id, trigger: "bewertung" },
-    );
-    if (!out.ok) return { ok: false, error: out.error };
-    db().prepare("INSERT OR IGNORE INTO text_bewertungen (text_id) VALUES (?)").run(textId);
-    db()
-      .prepare("UPDATE text_bewertungen SET vorschlag = ?, vorschlag_version = ?, vorschlag_verworfen = ?, vorschlag_at = ?, vorschlag_call_id = ? WHERE text_id = ?")
-      .run(JSON.stringify(out.kriterien), text.version, out.verworfen, iso(), out.callId, textId);
-    return { ok: true, verworfen: out.verworfen };
-  })().finally(() => laufend.delete(key));
-  laufend.set(key, job);
-  return job;
+export async function bewertungVorschlagen(textId: number, teacherId: number | null, o: { zustimmung: boolean }): Promise<VorschlagErgebnis> {
+  if (!o.zustimmung) return { ok: false, error: "Bitte zuerst bestätigen, dass der Text ohne Namen an die KI gehen darf." };
+  const text = getText(textId);
+  if (!text || !auftragFor(textId)) return { ok: false, error: "Diesen Schreibauftrag gibt es nicht." };
+  const nicht = bewertungMoeglich(text);
+  if (nicht) return { ok: false, error: nicht };
+  const r = await startAufgabenPruefung(textId, teacherId, { consent: true, wait: true, neu: true });
+  if (!r.ok) return { ok: false, error: r.error };
+  const p = pruefungInfo(textId);
+  if (p.status !== "fertig") return { ok: false, error: p.status === "laeuft" ? "Die Prüfung läuft schon." : p.fehler || "Die KI hat keine brauchbare Bewertung geliefert." };
+  return { ok: true, verworfen: (bewertungInfo(textId).vorschlag?.verworfen ?? 0) + p.verworfen };
 }
 
 /** Die Lehrkraft bestätigt die Bewertung: nur diese Werte gelten. Ein offener Vorschlag ist damit erledigt. */
@@ -294,4 +285,307 @@ export function bestaetigeBewertung(textId: number, b: Bewertung, teacherId: num
 
 export function verwirfBewertungVorschlag(textId: number) {
   db().prepare("UPDATE text_bewertungen SET vorschlag = '', vorschlag_version = NULL, vorschlag_verworfen = 0, vorschlag_at = NULL WHERE text_id = ?").run(textId);
+}
+
+// ---------- Angabe / Textvorlage einer Textarbeit ----------
+
+export const MAX_ANGABE = 30_000;
+
+/** Die Angabe aus dem Formular: Zeilen bleiben (für die Zeilennummern), Leerraum am Zeilenende und viele Leerzeilen nicht. */
+export const cleanAngabe = (v: unknown) =>
+  String(v ?? "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/[ \t]+$/gm, "")
+    .replace(/\n{4,}/g, "\n\n\n")
+    .trim()
+    .slice(0, MAX_ANGABE);
+
+/** Was die Lehrkraft als Angabe oder Textvorlage eingefügt hat; '' = nichts. Nur für Lehrkraft und KI-Prüfung. */
+export function angabeOf(textId: number): string {
+  return (db().prepare("SELECT text FROM text_angaben WHERE text_id = ?").get(textId) as { text: string } | undefined)?.text ?? "";
+}
+
+export function speichereAngabe(textId: number, text: string, teacherId: number | null) {
+  db()
+    .prepare("INSERT INTO text_angaben (text_id, text, updated_at, updated_by) VALUES (?, ?, ?, ?) ON CONFLICT(text_id) DO UPDATE SET text = excluded.text, updated_at = excluded.updated_at, updated_by = excluded.updated_by")
+    .run(textId, cleanAngabe(text), iso(), teacherId);
+}
+
+// ---------- „Aufgabe erfüllt?“ ----------
+
+export type PruefungArt = "schreibauftrag" | "bildgeschichte" | "text";
+
+/** Woran die Aufgabe gemessen wird: die Art des Texts, die Vorlage und was fehlt (lib/bewertung-kriterien.ts). */
+export type AufgabeGrundlage = {
+  art: PruefungArt;
+  /** die Textbeilage, die Bildbeschreibungen („Bild 1: …“) oder die Angabe der Lehrkraft; '' = keine */
+  vorlage: string;
+  countBlank: boolean;
+  auftrag: AuftragView | null;
+  fehlend: FehlendeAngaben;
+};
+
+const wortzahl = (s: string) => s.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
+
+export function aufgabeGrundlage(text: TextView): AufgabeGrundlage {
+  const a = auftragFor(text.id);
+  const p = a ? null : pictureContext(text.id);
+  const art: PruefungArt = a ? "schreibauftrag" : p ? "bildgeschichte" : "text";
+  const vorlage = a ? a.text : p ? p.captions.map((c, i) => (c.trim() ? `Bild ${i + 1}: ${c.replace(/\s+/g, " ").trim()}` : "")).filter(Boolean).join("\n") : angabeOf(text.id);
+  const fehlend = fehlendeAngaben({
+    prompt: text.prompt,
+    art,
+    vorlage,
+    erwartungGespeichert: a ? erwartungInfo(text.id)?.gespeichert != null : undefined,
+    fertig: text.status === "fertig",
+    woerter: text.words,
+    minWoerter: BEWERTUNG_MIN_WORDS,
+    maxWoerter: BEWERTUNG_MAX_WORDS,
+  });
+  return { art, vorlage, countBlank: a?.countBlank ?? false, auftrag: a, fehlend };
+}
+
+export type PruefungStatus = "keine" | "laeuft" | "fertig" | "fehler";
+
+type PruefungRow = {
+  auftraege: string;
+  auftraege_version: number | null;
+  auftraege_at: string | null;
+  pruefung_status: string;
+  pruefung_fehler: string;
+  pruefung_start: string | null;
+  pruefung_freigabe_at: string | null;
+  pruefung_namen: string;
+};
+
+export type PruefungInfo = {
+  status: PruefungStatus;
+  /** warum sie fehlgeschlagen ist, wie die Lehrkraft es liest */
+  fehler: string;
+  startedAt: string | null;
+  /** das letzte Ergebnis (bleibt bei einem Fehler danach stehen); null: noch keines */
+  auftraege: AuftragErgebnis[] | null;
+  verworfen: number;
+  /** was bei diesem Ergebnis fehlte („Was gefehlt hat“), wie die App es beim Prüfen bestimmt hat */
+  fehlte: FehltZeile[];
+  /** die Fassung des Texts, die geprüft wurde */
+  version: number | null;
+  at: string | null;
+  /** die Lehrkraft hat zugestimmt: „Erneut versuchen“ braucht keinen neuen Haken */
+  freigegeben: boolean;
+};
+
+/** So lange darf eine Prüfung laufen, dann gilt sie als unterbrochen. */
+const pruefungLimitMs = () => FUNCTIONS.bewertung.timeoutMs + 60_000;
+
+const pruefungRow = (textId: number) =>
+  (db().prepare("SELECT auftraege, auftraege_version, auftraege_at, pruefung_status, pruefung_fehler, pruefung_start, pruefung_freigabe_at, pruefung_namen FROM text_bewertungen WHERE text_id = ?").get(textId) as PruefungRow | undefined) ?? null;
+
+type Ergebnis = { auftraege: AuftragErgebnis[]; verworfen: number; fehlte: FehltZeile[] };
+
+function parseAuftraege(json: string): Ergebnis | null {
+  if (!json) return null;
+  try {
+    const raw = JSON.parse(json) as Partial<Ergebnis>;
+    return Array.isArray(raw.auftraege)
+      ? { auftraege: raw.auftraege.map((x) => ({ ...x, belege: Array.isArray(x.belege) ? x.belege : [] })), verworfen: Number(raw.verworfen) || 0, fehlte: Array.isArray(raw.fehlte) ? raw.fehlte : [] }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export function pruefungInfo(textId: number, now = Date.now()): PruefungInfo {
+  const r = pruefungRow(textId);
+  const ergebnis = parseAuftraege(r?.auftraege ?? "");
+  let status: PruefungStatus = r && ["laeuft", "fertig", "fehler"].includes(r.pruefung_status) ? (r.pruefung_status as PruefungStatus) : "keine";
+  let fehler = r?.pruefung_fehler ?? "";
+  if (status === "laeuft" && (!r?.pruefung_start || Date.parse(r.pruefung_start) < now - pruefungLimitMs())) {
+    status = "fehler";
+    fehler = "Die Prüfung wurde unterbrochen.";
+  }
+  return {
+    status,
+    fehler,
+    startedAt: r?.pruefung_start ?? null,
+    auftraege: ergebnis?.auftraege ?? null,
+    verworfen: ergebnis?.verworfen ?? 0,
+    fehlte: ergebnis?.fehlte ?? [],
+    version: r?.auftraege_version ?? null,
+    at: r?.auftraege_at ?? null,
+    freigegeben: Boolean(r?.pruefung_freigabe_at),
+  };
+}
+
+/** Was die Lehrkraft in der Freigabe sieht: was fehlt, welche Aufträge die KI prüft, was es etwa kostet. */
+export type AufgabeVorschau = {
+  pruefbar: boolean;
+  zeilen: FehlendeAngaben["zeilen"];
+  punkte: string[];
+  art: PruefungArt;
+  /** „die Textbeilage“, „die Bildbeschreibungen“, „die Angabe“; null: keine Vorlage */
+  vorlage: string | null;
+  costUsd: number;
+  provider: string;
+  model: string;
+  /** für diese Fassung schon geprüft oder läuft gerade: der Klick sendet sie nicht noch einmal */
+  schonDa: boolean;
+  /** warum die KI gerade nicht kann (aus, Budget, Grenze je Schüler) */
+  grund: string | null;
+};
+
+export function aufgabeVorschau(text: TextView): AufgabeVorschau {
+  const g = aufgabeGrundlage(text);
+  const route = routeFor("bewertung");
+  const t = estimateTokensBewertung({ woerter: text.words, vorlageWoerter: wortzahl(g.vorlage), auftraege: g.fehlend.auftraege.punkte.length, srdp: g.art === "schreibauftrag" });
+  const p = pruefungInfo(text.id);
+  return {
+    pruefbar: g.fehlend.pruefbar,
+    zeilen: g.fehlend.zeilen,
+    punkte: g.fehlend.auftraege.punkte,
+    art: g.art,
+    vorlage: !g.vorlage.trim() ? null : g.art === "schreibauftrag" ? "die Textbeilage" : g.art === "bildgeschichte" ? "die Bildbeschreibungen" : "die Angabe",
+    costUsd: costOf(route.model, FUNCTIONS.bewertung.tier, { input: t.input, output: t.output, cacheWrite: 0, cacheRead: 0 }),
+    provider: PROVIDER_LABEL[route.provider],
+    model: route.model,
+    schonDa: p.status === "laeuft" || (p.status === "fertig" && p.version === text.version),
+    grund: kiStatus("bewertung", text.student_id).grund,
+  };
+}
+
+export type PruefungStart = { ok: true; reused: boolean } | { ok: false; error: string; uebersprungen?: boolean };
+
+const isoAt = (ms: number) => new Date(ms).toISOString();
+
+/**
+ * Startet „Aufgabe erfüllt?“ nach der Zustimmung der Lehrkraft und kehrt gleich zurück; das Ergebnis kommt im
+ * Hintergrund (die Seite fragt nach). Ohne Aufgabenstellung (oder bei einem Text, der nicht abgegeben ist) wird nichts
+ * gesendet: `uebersprungen`. Eine Fassung, die schon geprüft ist, wird nicht noch einmal gesendet, außer mit `neu`
+ * („Neu prüfen“). names: die Namen aus der Freigabe der Korrektur, die verborgen werden.
+ */
+export function startAufgabenPruefung(textId: number, teacherId: number | null, o: { consent: boolean; names?: string[]; wait?: boolean; neu?: boolean }): PruefungStart | Promise<PruefungStart> {
+  if (!o.consent) return { ok: false, error: "Bitte zuerst bestätigen, dass der Text ohne Namen an die KI gehen darf." };
+  const text = getText(textId);
+  if (!text) return { ok: false, error: "Text nicht gefunden." };
+  const g = aufgabeGrundlage(text);
+  if (!g.fehlend.pruefbar) return { ok: false, error: g.fehlend.zeilen.find((z) => z.ton === "stopp")?.text ?? "Diese Aufgabe lässt sich nicht prüfen.", uebersprungen: true };
+  const grund = kiStatus("bewertung", text.student_id).grund;
+  if (grund) return { ok: false, error: grund };
+  const p = pruefungInfo(textId);
+  if (p.status === "laeuft" || (p.status === "fertig" && p.version === text.version && !o.neu)) return { ok: true, reused: true };
+  db().prepare("INSERT OR IGNORE INTO text_bewertungen (text_id) VALUES (?)").run(textId);
+  const now = Date.now();
+  const claimed = db()
+    .prepare(
+      `UPDATE text_bewertungen SET pruefung_status = 'laeuft', pruefung_fehler = '', pruefung_start = ?, pruefung_freigabe_at = ?, pruefung_freigabe_von = ?,
+       pruefung_namen = COALESCE(?, pruefung_namen)
+       WHERE text_id = ? AND (pruefung_status IN ('keine', 'fertig', 'fehler') OR (pruefung_status = 'laeuft' AND (pruefung_start IS NULL OR pruefung_start < ?)))`,
+    )
+    .run(isoAt(now), isoAt(now), teacherId, o.names ? JSON.stringify(o.names) : null, textId, isoAt(now - pruefungLimitMs()));
+  if (!claimed.changes) return { ok: true, reused: true };
+  const run = runAufgabenPruefung(textId, teacherId).then((): PruefungStart => ({ ok: true, reused: false }));
+  if (o.wait) return run;
+  try {
+    after(() => run);
+  } catch {
+    // außerhalb einer Anfrage (Tests, Skripte): das Promise läuft von selbst weiter
+  }
+  return { ok: true, reused: false };
+}
+
+/**
+ * „Korrigieren“ nach der Freigabe: ein Klick startet beide Teile, die Korrektur der Sprache (lib/text-correction.ts,
+ * unverändert, im gewählten Verfahren) und mit `aufgabe` „Aufgabe erfüllt?“, mit derselben Zustimmung und denselben
+ * Namen. Scheitert der Start der Sprache, wird nichts weiter gesendet. Fehlt die Aufgabenstellung, überspringt die App
+ * die Aufgabe von selbst (`uebersprungen`). Jeder Teil läuft für sich im Hintergrund und behält sein Ergebnis oder seinen Fehler.
+ */
+export async function korrigierenStarten(
+  textId: number,
+  teacherId: number,
+  o: { consent: boolean; unitId?: number | null; method?: CorrectionMethod; names?: string[]; aufgabe: boolean; wait?: boolean },
+): Promise<{ sprache: StartResult; aufgabe: PruefungStart | null }> {
+  const sprache = await startAICorrection(textId, teacherId, { consent: o.consent, unitId: o.unitId, method: o.method, names: o.names, wait: o.wait });
+  if (!sprache.ok || !o.aufgabe) return { sprache, aufgabe: null };
+  return { sprache, aufgabe: await startAufgabenPruefung(textId, teacherId, { consent: o.consent, names: o.names, wait: o.wait }) };
+}
+
+/** „Erneut versuchen“ nach einem Fehler, nur auf Klick: mit der Zustimmung und den Namen von vorhin. */
+export function retryAufgabenPruefung(textId: number, teacherId: number | null, o: { wait?: boolean } = {}): PruefungStart | Promise<PruefungStart> {
+  const p = pruefungInfo(textId);
+  if (p.status === "laeuft") return { ok: true, reused: true };
+  if (p.status !== "fehler" || !p.freigegeben) return { ok: false, error: "Hier ist nichts fehlgeschlagen, das sich wiederholen lässt." };
+  return startAufgabenPruefung(textId, teacherId, { consent: true, wait: o.wait, neu: true });
+}
+
+function gewaehlteNamen(json: string): string[] | null {
+  if (!json) return null;
+  try {
+    const v = JSON.parse(json) as unknown;
+    return Array.isArray(v) ? v.map(String) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fragt die KI und speichert das geprüfte Ergebnis. Wirft nie; ein Fehler bleibt mit Grund an der Zeile, ein früheres
+ * Ergebnis bleibt stehen. Beim Schreibauftrag füllt dieselbe Antwort auch den Vorschlag der Bewertung.
+ */
+export async function runAufgabenPruefung(textId: number, teacherId: number | null): Promise<void> {
+  const fail = (m: string) => db().prepare("UPDATE text_bewertungen SET pruefung_status = 'fehler', pruefung_fehler = ? WHERE text_id = ?").run(m.slice(0, 300), textId);
+  try {
+    const text = getText(textId);
+    if (!text) return void fail("Text nicht gefunden.");
+    const g = aufgabeGrundlage(text);
+    if (!g.fehlend.pruefbar) return void fail(g.fehlend.zeilen.find((z) => z.ton === "stopp")?.text ?? "Diese Aufgabe lässt sich nicht prüfen.");
+    const namen = gewaehlteNamen(pruefungRow(textId)?.pruefung_namen ?? "");
+    const punkte = g.fehlend.auftraege.punkte;
+    const meta = { teacherId, studentId: text.student_id, trigger: "bewertung" };
+    const a = g.auftrag;
+    // die Fremdnamen, die auch in der Vorlage stehen (Figuren, Autorin, die Firma der Stellenanzeige), bleiben stehen,
+    // damit Zitate daraus auffindbar sind; die Vorlage geht ohnehin mit
+    const muster = namenMuster(text, a ?? { text: g.art === "text" ? g.vorlage : "", author: "" }, namen);
+    const absaetze = parseDoc(text.body)
+      .map((b) => maskText(blockText(b), muster).masked.replace(/\s*\n\s*/g, " ").trim())
+      .filter(Boolean);
+    const masked = (x: string) => maskText(x, muster).masked;
+    let ergebnis: Ergebnis;
+    const now = iso();
+    if (a) {
+      const e = erwartungInfo(textId)!;
+      const pg = pruefgrundlage({ beilage: a.text, countBlank: a.countBlank, schueler: absaetze, titel: a.title, medium: a.medium });
+      const out = await kiBewertung({ ...auftragDaten(text, a, muster), erwartung: e.gespeichert ?? e.vorlage, erwartungGespeichert: e.gespeichert !== null, absaetze, woerter: text.words, punkte: punkte.map(masked) }, pg, meta);
+      if (!out.ok) return void fail(out.error);
+      ergebnis = { auftraege: out.auftraege, verworfen: out.auftraegeVerworfen, fehlte: g.fehlend.zeilen };
+      db()
+        .prepare("UPDATE text_bewertungen SET vorschlag = ?, vorschlag_version = ?, vorschlag_verworfen = ?, vorschlag_at = ?, vorschlag_call_id = ? WHERE text_id = ?")
+        .run(JSON.stringify(out.kriterien), text.version, out.verworfen, now, out.callId, textId);
+    } else {
+      // Bildbeschreibungen mit allen Namen verborgen wie bei der Korrektur der Sprache; die Angabe nur ohne Schüler- und Lehrernamen
+      const vorlage = g.art === "bildgeschichte" ? masked(g.vorlage) : maskText(g.vorlage, namePattern(namesToHide(text))).masked;
+      const pg = pruefgrundlage({ beilage: vorlage, schueler: absaetze });
+      const out = await kiAufgaben(
+        { fach: text.subject || "Deutsch", textsorte: text.topic, stufe: levelOfText(text).label, rahmen: g.fehlend.auftraege.rahmen.map(masked), punkte: punkte.map(masked), vorlage, absaetze, woerter: text.words },
+        pg,
+        meta,
+      );
+      if (!out.ok) return void fail(out.error);
+      ergebnis = { auftraege: out.auftraege, verworfen: out.verworfen, fehlte: g.fehlend.zeilen };
+    }
+    // die Aufträge, wie die App sie gelesen hat (ohne [Name]), nicht wie sie an die KI gingen
+    ergebnis.auftraege = ergebnis.auftraege.map((x, i) => ({ ...x, text: punkte[i] ?? x.text }));
+    db()
+      .prepare("UPDATE text_bewertungen SET auftraege = ?, auftraege_version = ?, auftraege_at = ?, pruefung_status = 'fertig', pruefung_fehler = '' WHERE text_id = ?")
+      .run(JSON.stringify(ergebnis), text.version, now, textId);
+  } catch (e) {
+    fail(e instanceof Error && e.message ? `Die Prüfung ist fehlgeschlagen (${e.message}).` : "Die Prüfung ist fehlgeschlagen.");
+  }
+}
+
+/** Was „Erneut versuchen“ etwa kostet, in US-Cent, mindestens 1. */
+export const aufgabeCents = (v: Pick<AufgabeVorschau, "costUsd">) => Math.max(1, Math.round(v.costUsd * 100));
+
+/** Zusammengezählt, für den Knopf auf der Textseite: wie viele Aufträge erfüllt sind. */
+export function aufgabeStand(p: PruefungInfo): { erfuellt: number; von: number } | null {
+  return p.auftraege ? { erfuellt: p.auftraege.filter((a) => a.status === "erfuellt").length, von: p.auftraege.length } : null;
 }

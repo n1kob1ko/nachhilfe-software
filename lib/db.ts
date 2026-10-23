@@ -896,6 +896,15 @@ CREATE TABLE IF NOT EXISTS text_bewertungen (
   vorschlag_at TEXT,
   vorschlag_call_id INTEGER REFERENCES ai_calls(id) ON DELETE SET NULL
 );
+-- Angabe / Textvorlage einer Textarbeit (lib/schreibauftrag-bewertung.ts, 2026-10-23): was die Lehrkraft zur Aufgabe einfügt,
+-- etwa die Stellenanzeige und die Notizen eines Arbeitsblatts. Nur für die Lehrkraft und „Aufgabe erfüllt?“; Schülerseiten
+-- lesen diese Tabelle nicht. Schreibaufträge haben stattdessen ihre Textbeilage in text_interpretations.
+CREATE TABLE IF NOT EXISTS text_angaben (
+  text_id INTEGER PRIMARY KEY REFERENCES texts(id) ON DELETE CASCADE,
+  text TEXT NOT NULL DEFAULT '',
+  updated_at TEXT,
+  updated_by INTEGER REFERENCES teachers(id) ON DELETE SET NULL
+);
 -- Referenzsammlung (lib/referenz.ts, 2026-10-23): Aufgaben aus einem von Hand geladenen PDF, nur für Lehrer. Die KI liest
 -- die Datei einmal; jeder Eintrag ist ungeprüft, bis ein Lehrer ihn speichert. format = Kategorie (lib/curriculum.ts)
 -- oder ''. dritte = enthält Texte oder Bilder Dritter (bleibt Referenz). worksheet_id = die Bibliotheksaufgabe daraus.
@@ -1317,6 +1326,18 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // Handgeschriebenen Text einlesen (lib/handschrift.ts, 2026-10-23): wann der Text zuletzt von Papier übernommen wurde
   // (vom Foto oder abgetippt); nur für den Lehrer („von Papier übernommen“), Schülerseiten zeigen es nicht. null = am Gerät geschrieben
   ["texts", "von_papier", "TEXT"],
+  // „Aufgabe erfüllt?“ (lib/schreibauftrag-bewertung.ts, 2026-10-23): die Prüfung je Arbeitsauftrag, für jede Textarbeit. auftraege:
+  // JSON des geprüften Ergebnisses (Zitate von der App geprüft); pruefung_status keine/laeuft/fertig/fehler, damit die Prüfung im
+  // Hintergrund läuft und einzeln wiederholt werden kann; pruefung_namen: die Namen, die die Lehrkraft in der Freigabe verbergen ließ
+  ["text_bewertungen", "auftraege", "TEXT NOT NULL DEFAULT ''"],
+  ["text_bewertungen", "auftraege_version", "INTEGER"],
+  ["text_bewertungen", "auftraege_at", "TEXT"],
+  ["text_bewertungen", "pruefung_status", "TEXT NOT NULL DEFAULT 'keine'"],
+  ["text_bewertungen", "pruefung_fehler", "TEXT NOT NULL DEFAULT ''"],
+  ["text_bewertungen", "pruefung_start", "TEXT"],
+  ["text_bewertungen", "pruefung_freigabe_at", "TEXT"],
+  ["text_bewertungen", "pruefung_freigabe_von", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["text_bewertungen", "pruefung_namen", "TEXT NOT NULL DEFAULT ''"],
 ];
 
 /** Teachers to start with; more can be added later. */

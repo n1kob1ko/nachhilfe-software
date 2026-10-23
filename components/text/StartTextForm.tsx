@@ -1,12 +1,13 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Camera, PenLine } from "lucide-react";
+import { Camera, ChevronDown, PenLine } from "lucide-react";
 import { startTextAction, type StartTextState } from "@/app/text-actions";
+import { AngabeFeld } from "@/components/text/bewertung/Angabe";
 
 type Props = { unitId: number; subject: string; subjects: string[]; kinds: string[]; device: "laptop" | "tablet" | null; name: string };
 
-/** Titel, Fach, Textsorte and Aufgabenstellung of a new Textarbeit; it opens on the tablet by default. */
+/** Titel, Fach, Textsorte, Aufgabenstellung and (optional) Angabe of a new Textarbeit; it opens on the tablet by default. */
 export function StartTextForm({ unitId, subject, subjects, kinds, device, name }: Props) {
   const [state, action, pending] = useActionState<StartTextState, FormData>(startTextAction.bind(null, unitId), null);
   const [wo, setWo] = useState<"geraet" | "papier">("geraet");
@@ -40,6 +41,16 @@ export function StartTextForm({ unitId, subject, subjects, kinds, device, name }
         <span className="label">Aufgabenstellung</span>
         <textarea className="input" name="prompt" rows={4} maxLength={4000} placeholder="z. B. Erzähle von einem Ausflug, bei dem etwas Unerwartetes passiert ist. Achte auf Einleitung, Höhepunkt und Schluss." />
       </label>
+      {/* teacher only: „Aufgabe erfüllt?“ checks the text against it (lib/schreibauftrag-bewertung.ts) */}
+      <details className="reveal">
+        <summary>
+          <ChevronDown size={15} aria-hidden className="reveal-chevron" />
+          Angabe / Textvorlage hinzufügen
+        </summary>
+        <div className="pt-2">
+          <AngabeFeld rows={4} />
+        </div>
+      </details>
       <fieldset className="grid gap-2 sm:grid-cols-2">
         <legend className="label mb-2">Wo schreibt {name}?</legend>
         {(

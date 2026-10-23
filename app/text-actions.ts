@@ -6,6 +6,7 @@ import { requireTeacher } from "@/lib/auth";
 import { uebernimmVonPapier } from "@/lib/handschrift";
 import { noteActivity } from "@/lib/learning";
 import { pushLive, showOnTablet, studentDevice } from "@/lib/live";
+import { speichereAngabe } from "@/lib/schreibauftrag-bewertung";
 import { textChannel } from "@/lib/text-routes";
 import { createText, getText, restoreRevision, setTextStatus, updateTextInfo } from "@/lib/texts";
 import { canManageUnit, getUnit, runningUnitForStudent } from "@/lib/units";
@@ -29,6 +30,8 @@ export async function startTextAction(unitId: number, _prev: StartTextState, f: 
   const title = str(f, "title", 140);
   if (!title) return { error: "Bitte einen Titel eingeben." };
   const text = createText({ studentId: unit.student_id, teacherId: t.id, unitId: unit.id, subject: str(f, "subject", 60), topic: str(f, "topic", 80), title, prompt: str(f, "prompt", 4000) });
+  // Angabe / Textvorlage (wahlweise): nur für die Lehrkraft und „Aufgabe erfüllt?“, nie am Schülergerät
+  if (String(f.get("angabe") ?? "").trim()) speichereAngabe(text.id, String(f.get("angabe")), t.id);
   noteActivity(unit.student_id);
   // written on paper (lib/handschrift.ts): nothing opens on the tablet, the teacher takes the text over from the photos
   const papier = f.get("wo") === "papier";
@@ -77,10 +80,12 @@ async function teacherText(id: number) {
 }
 
 export async function updateTextInfoAction(id: number, f: FormData) {
-  const { text } = await teacherText(id);
+  const { t, text } = await teacherText(id);
   updateTextInfo(text.id, { title: str(f, "title", 140) || text.title, subject: str(f, "subject", 60), topic: str(f, "topic", 80), prompt: str(f, "prompt", 4000) });
+  if (f.has("angabe")) speichereAngabe(text.id, String(f.get("angabe")), t.id);
   publish(textChannel(text.id), { type: "info" });
   revalidatePath(`/texte/${text.id}`);
+  revalidatePath(`/texte/${text.id}/korrektur`);
 }
 
 export async function setTextStatusAction(id: number, status: "offen" | "fertig") {
