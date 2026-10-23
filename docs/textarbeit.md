@@ -3,7 +3,8 @@
 ## Ablauf
 
 1. **Starten.** In einer laufenden Einheit unter „Übungen für Max“ auf „Textarbeit starten“ tippen.
-   - Eingaben: Titel, Fach, Textsorte und Aufgabenstellung.
+   - Eingaben: Titel, Fach, Textsorte und Aufgabenstellung. Die Textsorten zur Auswahl sind Vorschläge (darunter Bewerbungsschreiben und Lebenslauf), freie Eingabe geht auch.
+   - „Wo schreibt Max?“: **Am Gerät** (Standard) oder **Auf Papier**. Auf Papier öffnet sich nach dem Start gleich „Vom Foto übernehmen“ (siehe unten), am Tablet öffnet sich nichts.
    - „Gleich am Tablet von Max öffnen“ ist an, wenn ein Schüler-Tablet verbunden ist.
    - Ohne Tablet öffnet sich der Text am Lehrergerät (`/texte/<id>`).
 2. **Schreiben.** Max schreibt am Tablet in einem schlichten Editor.
@@ -25,11 +26,25 @@
    - Zeilenabstand „weit“ lässt Platz zum Korrigieren.
    - Absätze werden nie mit einer einzelnen Zeile getrennt (`orphans`/`widows`). Überschriften bleiben beim folgenden Text.
 
+## Vom Papier übernehmen (handgeschriebene Texte)
+
+Für Texte, die der Schüler mit der Hand auf Papier schreibt, etwa ein Bewerbungsschreiben für die Schularbeit. Nur für Lehrer: in der Textarbeit „Vom Foto übernehmen“ (`/texte/<id>/papier`), oder beim Starten „Auf Papier“ wählen.
+
+1. **Fotografieren.** Bis zu 4 Fotos oder PDF-Seiten. Große Fotos werden im Browser verkleinert (dabei fallen auch die Kameradaten weg).
+2. **Haken setzen.** „Auf den Fotos steht kein echter Name, auch nicht oben im Kopf des Blatts.“ Ohne Haken geht nichts hinaus.
+3. **Mit KI lesen.** Neben dem Knopf steht die Schätzung, etwa „ca. 1 Cent je Seite“. Die KI schreibt den Text **wortgetreu** ab: jeder Rechtschreib-, Grammatik- und Beistrichfehler bleibt stehen, nichts wird verbessert. Absätze bleiben Absätze; eigene Zeilen (Absender, Datum, Anrede, Grußformel) stehen in eigenen Zeilen, Tabellenspalten (Lebenslauf) getrennt mit „ | “. Durchgestrichenes fällt weg, Unlesbares steht als `[?]` da. Gedruckte Aufgaben, der Kopf des Blatts und Korrekturzeichen einer Lehrkraft werden nicht abgeschrieben.
+4. **Vergleichen.** Die Abschrift steht in einem Textfeld neben dem Foto (am Handy darunter). Der Lehrer verbessert nur, was die KI falsch gelesen hat, und ergänzt `[?]`. Die Seite zählt die noch offenen `[?]`.
+5. **Übernehmen.** Erst „Als Text übernehmen“ speichert: als neue Fassung des Textes (`saveFromPaper` in `lib/texts.ts`). Was vorher da war, bleibt unter „Frühere Fassungen“. „Text als fertig markieren“ ist dabei vorausgewählt. Danach gehen Korrektur, Bewertung, Lernverlauf, Druck und Dokumentation wie bei jedem Text. Oben steht klein „von Papier übernommen“, nur für Lehrer.
+
+**Ohne KI** (kein Schlüssel, manueller Modus, Budget oder Grenze je Schüler erreicht) steht statt des Knopfs der Grund, und der Lehrer tippt den Text in dasselbe Feld ab, mit den Fotos daneben.
+
+**Datenschutz und Kosten.** Die Fotos werden nicht gespeichert; sie gehen nur beim Lesen an die KI (`/material/handschrift`, wie „Text vom Foto“ der Textinterpretation). Kein Name aus der App geht mit. Die Anfrage läuft über den Router (`runAI`, Funktion `handschrift`) mit der id des Schülers, zählt also für das Monatsbudget und die Grenze je Schüler. Dieselben Fotos werden eine Stunde lang nicht noch einmal bezahlt. Code: `lib/handschrift.ts`, `lib/handschrift-regeln.ts`, `components/text/HandschriftEinlesen.tsx`.
+
 ## Datenmodell
 
 | Tabelle | Inhalt |
 |---|---|
-| `texts` | `student_id`, `teacher_id`, `unit_id` (begonnen in), `subject`, `topic` (Textsorte), `title`, `prompt`, `body`, `words`, `chars`, `version`, `status` (offen/fertig), `created_at`, `updated_at`, `completed_at` |
+| `texts` | `student_id`, `teacher_id`, `unit_id` (begonnen in), `subject`, `topic` (Textsorte), `title`, `prompt`, `body`, `words`, `chars`, `version`, `status` (offen/fertig), `created_at`, `updated_at`, `completed_at`, `von_papier` (wann zuletzt von Papier übernommen; null = am Gerät geschrieben) |
 | `text_units` | Jede Einheit, in der am Text gearbeitet wurde: `words_before`, `words_after`, `first_at`, `last_at`. Daraus kommen „Dokumente dieser Einheit“ und die Dokumentation. |
 | `text_revisions` | Frühere Fassungen: höchstens alle 5 Minuten, immer vor einem großen Löschen (≥ 30 % und ≥ 20 Wörter) und immer, wenn eine woanders geschriebene Fassung überschrieben wird. Die letzten 40 bleiben. |
 
@@ -64,7 +79,7 @@ Die Tabellen sind Teil der Sicherung (`lib/backup.ts`).
 
 ## Zugriff
 
-**Lehrer** (`/texte/<id>`, `/texte/<id>/speichern`, `/texte/<id>/events`, `/arbeitsblatt/text/<id>`)
+**Lehrer** (`/texte/<id>`, `/texte/<id>/speichern`, `/texte/<id>/events`, `/texte/<id>/papier`, `/material/handschrift`, `/arbeitsblatt/text/<id>`)
 - Angemeldete Lehrer. Schüler sind für alle Lehrer gemeinsam.
 
 **Tablet** (`/geraet/text/<id>`)

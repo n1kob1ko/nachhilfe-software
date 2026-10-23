@@ -1314,6 +1314,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["praesentationen", "ki_call_id", "INTEGER"],
   ["praesentationen", "geprueft_von", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
   ["praesentationen", "geprueft_am", "TEXT"],
+  // Handgeschriebenen Text einlesen (lib/handschrift.ts, 2026-10-23): wann der Text zuletzt von Papier übernommen wurde
+  // (vom Foto oder abgetippt); nur für den Lehrer („von Papier übernommen“), Schülerseiten zeigen es nicht. null = am Gerät geschrieben
+  ["texts", "von_papier", "TEXT"],
 ];
 
 /** Teachers to start with; more can be added later. */

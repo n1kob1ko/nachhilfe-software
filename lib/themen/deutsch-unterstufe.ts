@@ -563,6 +563,34 @@ const BEREICHE: Bereich[] = [
           "Nach dem Gruß einen Beistrich gesetzt (Mit freundlichen Grüßen,)",
         ],
       },
+      // Bewerbung in der 4. Klasse (niko, 2026-10-23): für die berufspraktischen Tage und die Schularbeit; die Oberstufe
+      // hat deutsch.os.bewerbung.*. Lehrplan 8. Schulstufe: „Textproduktion unter gezieltem Einsatz von Vorgaben und Vorlagen“
+      {
+        id: "deutsch.schreiben.lebenslauf",
+        name: "Tabellarischer Lebenslauf",
+        suchwoerter: ["Curriculum Vitae", "Bewerbungsunterlagen"],
+        stufen: [8, 8],
+        erklaerung: "Der tabellarische Lebenslauf hat Abschnitte: persönliche Daten (Name, Geburtsdatum, Adresse, Telefon, E-Mail), Schulbildung, praktische Erfahrungen, Kenntnisse (Sprachen, Computer, Kurse) und Interessen. Die neueste Station steht oben, Jahreszahlen sind einheitlich. Am Ende stehen Ort, Datum und Unterschrift. Beispiel: „seit 2022 Mittelschule, derzeit 4. Klasse“ steht über „2018 bis 2022 Volksschule“.",
+        fehler: [
+          "Die älteste Station oben statt der neuesten",
+          "Jahreszahlen uneinheitlich geschrieben (2018–2022, dann seit Sept. 22)",
+          "Private Angaben aufgenommen, die nichts mit der Bewerbung zu tun haben (Lieblingsfarbe, Haustier, Namen der Geschwister)",
+          "Eigenschaften oder Gründe in den Lebenslauf geschrieben statt ins Bewerbungsschreiben (Ich bin sehr pünktlich.)",
+        ],
+      },
+      {
+        id: "deutsch.schreiben.bewerbung",
+        name: "Bewerbungsschreiben für Praktikum und Schnuppertage",
+        suchwoerter: ["Motivationsschreiben", "Bewerbungsbrief", "berufspraktische Tage"],
+        stufen: [8, 8],
+        erklaerung: "Das Bewerbungsschreiben ist ein formeller Brief: Absender mit Telefon und E-Mail, Empfänger, Ort und Datum, Betreff, Anrede, Text in Absätzen, Grußformel, Unterschrift und Beilagen. Im Text: wo man von der Stelle erfahren hat, warum sie interessiert, die Schule, Stärken mit Beispielen und die Bitte um ein Gespräch. Beispiel: „Im Werkunterricht habe ich ein Regal gebaut und gelernt, genau zu arbeiten.“",
+        fehler: [
+          "Stärken nur behauptet statt mit einem Beispiel belegt (Ich bin teamfähig.)",
+          "Die Höflichkeitsform kleingeschrieben (Ich freue mich auf ihre Antwort.)",
+          "Nach der Anrede großgeschrieben weitergemacht (Sehr geehrter Herr Berger, Ich …)",
+          "Fast jeden Satz mit „Ich“ begonnen oder umgangssprachlich geschrieben (Hi, das wäre echt super)",
+        ],
+      },
       {
         id: "deutsch.schreiben.ueberarbeiten",
         name: "Eigene Texte überarbeiten",
@@ -899,6 +927,8 @@ const VORAUSSETZUNGEN: [string, string][] = [
   ["deutsch.literatur.ballade", "deutsch.literatur.gedicht"],
   ["deutsch.schreiben.erzaehlung", "deutsch.vs.schreiben.erzaehlen"],
   ["deutsch.schreiben.inhaltsangabe", "deutsch.grammatik.indirekte-rede"],
+  ["deutsch.schreiben.bewerbung", "deutsch.schreiben.brief"],
+  ["deutsch.schreiben.bewerbung", "deutsch.schreiben.lebenslauf"],
   ["deutsch.beschreiben.gegenstand", "deutsch.vs.schreiben.beschreiben"],
   ["deutsch.beschreiben.weg", "deutsch.vs.schreiben.beschreiben"],
   ["deutsch.beschreiben.vorgang", "deutsch.vs.schreiben.beschreiben"],

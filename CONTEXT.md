@@ -78,6 +78,13 @@ mit neuen Aufgaben in derselben Art. Der Lehrer prüft ihn in der Vorschau und s
 ihn. Das Foto bleibt als Material des Schülers; ohne KI gibt es das nicht.
 _Avoid_: Foto-Upload, Scan
 
+**Vom Foto übernehmen**:
+Eine **Textarbeit**, die der Schüler mit der Hand auf Papier geschrieben hat, kommt in die App
+(`/texte/[id]/papier`, `lib/handschrift.ts`). Die KI schreibt die Fotos wortgetreu ab, mit allen
+Fehlern; der Lehrer vergleicht und übernimmt den Text als neue Fassung. Ohne KI tippt er ihn ab. Die
+Fotos werden nicht gespeichert. Danach ist es eine Textarbeit wie jede andere.
+_Avoid_: Scan, OCR
+
 **geplante Einheit**:
 Ein Platz im Wochenplan: wer (Lehrer, Schüler), wo (Raum), an welchem Wochentag,
 zu welcher Startzeit und mit welcher **geplanten Dauer**. Sie wird erst wirklich,

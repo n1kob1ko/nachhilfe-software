@@ -111,7 +111,22 @@ export function levelFor(schoolType: string, klasse: number | null | undefined):
 
 // ---------- kind of text ----------
 
+/**
+ * Bewerbung in der 4. Klasse (niko, 2026-10-23): Normbrief und Inhaltspunkte, wie sie die Schule verlangt. Oft
+ * kommt der Text von Papier (lib/handschrift.ts): Anordnung, Leerzeilen und Fettdruck sind dann nicht zu sehen.
+ * Lieber weniger Hinweise als ein falscher: was fehlt, ist ein Hinweis zum ganzen Text, und übliche Schreibweisen
+ * von Datum, Betreff und Zeitangaben sind kein Fehler.
+ */
+const BEWERBUNG =
+  "Bewerbungsschreiben (Normbrief): Absender mit Adresse, Telefon und E-Mail; Empfänger (Firma, Ansprechperson, Adresse); Ort und Datum; Betreff, der kurz sagt, worum es geht; Anrede „Sehr geehrte Frau …,“ oder „Sehr geehrter Herr …,“, danach klein weiter, außer bei einem Nomen; Text in Absätzen; Grußformel „Mit freundlichen Grüßen“ ohne Beistrich; Unterschrift; Beilagen. Inhalt: wo man von der Stelle erfahren hat; Interesse an der Stelle und am Betrieb; die eigene Schulsituation; Gründe und Stärken, jede mit einem Beispiel; Bitte um ein Gespräch oder eine Antwort; Hinweis auf die Beilagen. Höflichkeitsform „Sie“, „Ihnen“, „Ihr“ groß; sachlich und höflich, keine Umgangssprache; keine privaten Angaben, die nichts mit der Stelle zu tun haben. Ein fehlender Teil ist ein Hinweis zum ganzen Text, keine Stelle im Text. Anordnung, Leerzeilen, rechtsbündig oder fett sind im Text nicht zu sehen und kein Fehler; ob das Wort „Betreff“ davorsteht und wie das Datum geschrieben ist (Wien, 23. Oktober 2026 oder Wien, am 23. 10. 2026), ist kein Fehler. Namen, Adressen, Telefonnummern und E-Mail-Adressen nicht verbessern.";
+const LEBENSLAUF =
+  "Lebenslauf (tabellarisch): Abschnitte persönliche Daten (Name, Geburtsdatum, Adresse, Telefon, E-Mail), Schulbildung, praktische Erfahrungen (Praktika, Mithilfe, Schnuppertage), Kenntnisse (Sprachen, Computer, Kurse) und Interessen, die zur Bewerbung passen; am Ende Ort, Datum und Unterschrift. In jedem Abschnitt steht die neueste Station zuerst; Zeitangaben einheitlich geschrieben (welche Schreibweise, ist egal) und ohne Lücken; nur Angaben, die für die Bewerbung wichtig sind, keine privaten Einzelheiten wie Lieblingsessen, Geschwister oder Fernsehserien; Eigenschaften und Gründe gehören ins Bewerbungsschreiben. Stichwörter statt Sätzen sind hier richtig: fehlende Satzzeichen, Verben oder Artikel in den Zeilen sind kein Fehler. Ein „|“ trennt nur die Spalten der Tabelle und ist kein Fehler. Ein fehlender Abschnitt ist ein Hinweis zum ganzen Text. Namen, Adressen, Telefonnummern und E-Mail-Adressen nicht verbessern.";
+
 const KINDS: [RegExp, string][] = [
+  // vor allen Briefen: ein „Bewerbungsbrief“ bekommt nicht die allgemeine Brief-Regel
+  [/^(?=.*lebenslauf)(?=.*(bewerb|motivationsschreiben))/i, `Lebenslauf und Bewerbungsschreiben, zwei Teile mit je eigener Regel. ${LEBENSLAUF} ${BEWERBUNG}`],
+  [/bewerb|motivationsschreiben/i, BEWERBUNG],
+  [/lebenslauf/i, LEBENSLAUF],
   [/techn/i, "Technischer Bericht: klare Gliederung (Ziel, Durchführung, Ergebnis, Schlussfolgerung), Fachbegriffe richtig, sachlich und unpersönlich (Passiv oder „man“), Werte und Einheiten exakt, Präteritum für Durchgeführtes."],
   [/gesch(ä|ae)ftsbrief|business letter/i, "Geschäftsbrief: Absender, Empfänger, Ort und Datum, Betreff, Anrede, sachlicher höflicher Geschäftsstil, klares Anliegen, Grußformel, Unterschrift; normgerechter Aufbau."],
   [/beschwerde|complaint/i, "Beschwerdebrief: Ort und Datum, Betreff, höfliche Anrede, Sachverhalt mit Zeit und Ort, Begründung, konkrete Forderung (mit Frist), Grußformel; sachlich bleiben; Höflichkeitsform „Sie/Ihnen“ groß."],
