@@ -4,6 +4,10 @@ import { notFound } from "next/navigation";
 import { SubjectArt } from "@/components/Art";
 import { MasteryBar, Pill, TrendBadge, formatDate } from "@/components/ui";
 import { AppHinweis } from "@/components/AppHinweis";
+import { Hausuebungen } from "@/components/lernen/Hausuebungen";
+import { KommendePruefungen } from "@/components/lernen/KommendePruefungen";
+import { Unterlagen } from "@/components/lernen/Unterlagen";
+import { VergangeneEinheiten } from "@/components/lernen/VergangeneEinheiten";
 import { termineFuerSchueler } from "@/lib/planung/schueler-termine";
 import * as repo from "@/lib/repo";
 import { activeMaterial, materialLabel } from "@/lib/current-material";
@@ -73,6 +77,10 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
         </section>
       )}
 
+      {/* Übersicht (lib/schuelerportal.ts): Prüfungen und Hausübungen gleich nach dem nächsten Termin */}
+      <KommendePruefungen studentId={student.id} />
+      <Hausuebungen studentId={student.id} token={token} />
+
       <section className="panel mt-8 px-5 py-5" aria-label="Deine Termine" data-testid="termine">
         <h2 className="flex items-center gap-2 text-[18px] font-semibold">
           <CalendarDays size={18} className="text-accent" aria-hidden /> Deine Termine
@@ -134,6 +142,9 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
           ))}
         </ul>
       )}
+
+      <Unterlagen studentId={student.id} token={token} />
+      <VergangeneEinheiten studentId={student.id} />
 
       {practiced.length > 0 && (
         <section className="mt-12">
