@@ -7,6 +7,7 @@ import * as imp from "@/lib/curriculum-import";
 import { merkeZuordnung, setExamThresholds, splitTopics, stoffVorschlag, STOFF_THEMEN_MAX } from "@/lib/lehrplan";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
+import { alleFachNamen } from "@/lib/faecher";
 import { fachAus } from "@/lib/school";
 import { stoffzettelFuer } from "@/lib/stoffzettel";
 
@@ -54,7 +55,7 @@ export async function addExamAction(formData: FormData) {
   const grade = num(formData, "grade");
   const points = num(formData, "points");
   // the Fach may be one outside the profile when the Stoffzettel names it (Biologie)
-  const subject = fachAus(str(formData, "subject"), repo.getStudent(studentId)?.subjects ?? []);
+  const subject = fachAus(str(formData, "subject"), repo.getStudent(studentId)?.subjects ?? [], alleFachNamen());
   const kind = str(formData, "kind") || "Schularbeit";
   const title = str(formData, "title").slice(0, 120);
   const materialId = stoffzettelFuer(Number(str(formData, "material_id")), { student_id: studentId, title, kind, subject, topics });

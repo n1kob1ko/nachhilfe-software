@@ -1,11 +1,25 @@
 import { saveStudentAction } from "@/app/actions";
 import { SchoolClassFields } from "@/components/SchoolClassFields";
+import { Reveal } from "@/components/ui";
 import { SUBJECTS } from "@/lib/curriculum";
+import { alleFachNamen, fachNamen } from "@/lib/faecher";
 import { listTeachers, type Student } from "@/lib/repo";
 
 export function StudentForm({ student }: { student?: Student }) {
   const teachers = listTeachers();
-  const others = student?.subjects.filter((s) => !(SUBJECTS as readonly string[]).includes(s)) ?? [];
+  const eigene = student?.subjects ?? [];
+  // Fächer im Profil aus der Fächerliste (Mehr › Fächer): die Hauptfächer und die des Schülers offen, der Rest
+  // aufklappbar; was nicht in der Liste steht (frei eingetippt), bleibt im Feld „Weitere“
+  const liste = alleFachNamen();
+  const sichtbar = [...new Set([...SUBJECTS, ...liste.filter((f) => eigene.includes(f))])];
+  const zumAufklappen = fachNamen().filter((f) => !sichtbar.includes(f));
+  const others = eigene.filter((s) => !liste.includes(s));
+  const chip = (s: string) => (
+    <label key={s} className="flex cursor-pointer items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 py-2 text-[14px] has-checked:border-accent has-checked:bg-accent-wash">
+      <input type="checkbox" name="subjects" value={s} defaultChecked={eigene.includes(s)} className="accent-[var(--accent)]" />
+      {s}
+    </label>
+  );
   return (
     <form action={saveStudentAction} className="grid max-w-[760px] gap-6">
       {student && <input type="hidden" name="id" value={student.id} />}
@@ -36,14 +50,14 @@ export function StudentForm({ student }: { student?: Student }) {
       <fieldset className="field">
         <legend className="label mb-1.5">Fächer</legend>
         <div className="flex flex-wrap gap-2">
-          {SUBJECTS.map((s) => (
-            <label key={s} className="flex cursor-pointer items-center gap-2 rounded-lg border border-line-strong bg-surface px-3 py-2 text-[14px] has-checked:border-accent has-checked:bg-accent-wash">
-              <input type="checkbox" name="subjects" value={s} defaultChecked={student?.subjects.includes(s)} className="accent-[var(--accent)]" />
-              {s}
-            </label>
-          ))}
+          {sichtbar.map(chip)}
           <input className="input max-w-[240px]" name="subject_other" defaultValue={others.join(", ")} placeholder="Weitere, mit Beistrich getrennt" />
         </div>
+        {zumAufklappen.length > 0 && (
+          <Reveal label={`${zumAufklappen.length} weitere Fächer`} className="mt-2">
+            <div className="flex flex-wrap gap-2">{zumAufklappen.map(chip)}</div>
+          </Reveal>
+        )}
       </fieldset>
       <label className="field">
         <span className="label">Aktuelle Themen</span>

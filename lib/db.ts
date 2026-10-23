@@ -4,7 +4,7 @@ import path from "node:path";
 import { CURRICULUM, PREREQUISITES } from "./curriculum";
 import { INITIAL_PASSWORD, PUBLIC_DEFAULT_PASSWORD, hashPassword, verifyPassword } from "./password";
 import { wienerZeitstempel } from "./planung/zeit";
-import { checkLevel, migrateLegacy } from "./school";
+import { SCHULFAECHER, checkLevel, migrateLegacy } from "./school";
 import { applyPendingRestore } from "./sicherungen";
 import { skillCode } from "./skill-code";
 
@@ -708,6 +708,16 @@ CREATE TABLE IF NOT EXISTS feedback (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status, created_at);
+-- Fächer (lib/faecher.ts): the one list every subject picker offers. Starts with SCHULFAECHER; the Verwaltung
+-- adds own subjects and deactivates unused ones. Never renamed or deleted: lessons, tests and profiles keep
+-- the subject as plain text, so an old value that is not in this list stays valid.
+CREATE TABLE IF NOT EXISTS faecher (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  aktiv INTEGER NOT NULL DEFAULT 1,
+  sort INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 -- „Zu erledigen“ auf der Startseite (lib/zu-erledigen.ts): was ein Lehrer schon angesehen oder abgehakt hat,
 -- je Lehrer. art = ergebnis (assignments.id) | text (texts.id). Gilt nur, wenn seen_at nach dem Fertigwerden liegt:
 -- ein wieder abgegebener Text ist wieder offen. Der Zustand selbst wird beim Lesen berechnet, nicht gespeichert.
@@ -1073,6 +1083,9 @@ function migrate(conn: Database.Database) {
     conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_teachers_username ON teachers(username)");
     conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_current_material_active ON current_material(student_id, subject) WHERE ended_at IS NULL");
     conn.exec("CREATE INDEX IF NOT EXISTS idx_attempts_error_type ON attempts(error_type) WHERE error_type IS NOT NULL");
+    // the school subjects of the Fächerliste: missing ones are added, a deactivated one stays deactivated
+    const insertFach = conn.prepare("INSERT OR IGNORE INTO faecher (name, sort) VALUES (?, ?)");
+    for (const [i, name] of SCHULFAECHER.entries()) insertFach.run(name, i);
     // every task is linked to its main skill in task_skills as well
     conn.exec("INSERT OR IGNORE INTO task_skills (task_id, skill_id) SELECT id, skill_id FROM tasks WHERE skill_id IS NOT NULL");
   });

@@ -24,7 +24,7 @@ type Zettel = { file: File; url: string | null };
  * and saved with the Schularbeit. With KI the teacher can have it read (after the tick „kein Name“): Art, Fach,
  * Datum, Bezeichnung and Stoff are filled in, every field stays editable, and nothing is saved before „Eintragen“.
  */
-export function ExamForm({ studentId, subjects, today, kiLiest }: { studentId: number; subjects: string[]; today: string; kiLiest: boolean }) {
+export function ExamForm({ studentId, subjects, weitere = [], today, kiLiest }: { studentId: number; subjects: string[]; weitere?: string[]; today: string; kiLiest: boolean }) {
   const [kind, setKind] = useState<string>(PRUEFUNGSARTEN[0]);
   const [subject, setSubject] = useState(subjects[0] ?? "Mathematik");
   const [extraFach, setExtraFach] = useState<string | null>(null);
@@ -72,7 +72,8 @@ export function ExamForm({ studentId, subjects, today, kiLiest }: { studentId: n
   const chip = (sg: TopicSuggestion, i: number) => (s: TopicSuggestion["skills"][number]) => (
     <StoffChip key={s.id} name={`stoff_${i}`} value={s.id} label={s.name} area={s.area === thema ? undefined : s.area} checked={ticked(sg).includes(s.id)} onChange={() => toggle(sg, s.id)} />
   );
-  const faecher = extraFach && !subjects.includes(extraFach) ? [...subjects, extraFach] : subjects;
+  // the student's subjects first, then „Weitere Fächer“ from the Fächerliste (Mehr › Fächer)
+  const faecher = extraFach && !subjects.includes(extraFach) && !weitere.includes(extraFach) ? [...subjects, extraFach] : subjects;
 
   function entfernen() {
     setZettel(null);
@@ -147,7 +148,7 @@ export function ExamForm({ studentId, subjects, today, kiLiest }: { studentId: n
   function uebernehmen(v: StoffzettelVorschlag) {
     if (v.art) setKind(v.art);
     if (v.fach) {
-      if (!subjects.includes(v.fach)) setExtraFach(v.fach);
+      if (!subjects.includes(v.fach) && !weitere.includes(v.fach)) setExtraFach(v.fach);
       setSubject(v.fach);
     }
     // no date on the sheet: today is almost never the day of the Schularbeit, so the field is emptied to be filled in
@@ -298,6 +299,13 @@ export function ExamForm({ studentId, subjects, today, kiLiest }: { studentId: n
           {faecher.map((s) => (
             <option key={s}>{s}</option>
           ))}
+          {weitere.length > 0 && (
+            <optgroup label="Weitere Fächer">
+              {weitere.map((s) => (
+                <option key={s}>{s}</option>
+              ))}
+            </optgroup>
+          )}
         </select>
         <input className="input col-span-2 sm:col-span-1" type="date" name="date" required value={date} onChange={(e) => setDate(e.target.value)} aria-label="Datum" />
       </div>

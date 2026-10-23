@@ -21,6 +21,7 @@ import { Empty, LevelTag, MasteryBar, More, Pill, Reveal, SectionTitle, StatusCh
 import { Info } from "@/components/Info";
 import { aiEnabled } from "@/lib/ai";
 import { type Analysis, pct } from "@/lib/analysis";
+import { weitereFaecher } from "@/lib/faecher";
 import * as repo from "@/lib/repo";
 import { klassenLabel } from "@/lib/school";
 import { analyzeStudent } from "@/lib/service";
@@ -821,6 +822,7 @@ function CurrentMaterialTab({ student, edit }: { student: repo.Student; edit: nu
           key={editing?.id ?? "neu"}
           studentId={student.id}
           subjects={editing ? [editing.subject] : [...open, ...subjects.filter((x) => !open.includes(x))]}
+          weitere={editing ? [] : weitereFaecher(subjects)}
           skills={skills}
           today={today}
           initial={editing ? { ...editing } : fromProfile}
@@ -954,7 +956,7 @@ function School({ student }: { student: repo.Student }) {
             <span className="text-[13.5px] text-ink-2">Probeschularbeit oder Test auf Papier fotografieren. Die KI liest es aus, du prüfst und übernimmst.</span>
           </span>
         </Link>
-        <ExamForm studentId={student.id} subjects={subjects} today={today} kiLiest={stoffzettelLesbar().ok} />
+        <ExamForm studentId={student.id} subjects={subjects} weitere={weitereFaecher(subjects)} today={today} kiLiest={stoffzettelLesbar().ok} />
         <h3 className="mt-8 mb-1 text-[15px] font-semibold">Ergebnisse</h3>
         <ul className="divide-y divide-line">
           {written.length === 0 && <li className="py-2 text-[14px] text-ink-3">Noch keine Ergebnisse eingetragen.</li>}

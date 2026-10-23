@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, CalendarClock, CalendarDays, ChevronRight, Clock3, Coins, DoorOpen, Download, FileText, FileUp, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, MessageSquarePlus, ShieldCheck, Sparkles, TabletSmartphone } from "lucide-react";
+import { BarChart3, BookOpen, CalendarClock, CalendarDays, ChevronRight, Clock3, Coins, DoorOpen, Download, FileText, FileUp, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, MessageSquarePlus, ShieldCheck, Sparkles, TabletSmartphone } from "lucide-react";
 import { logoutAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
 import { PageHeader } from "@/components/ui";
@@ -22,6 +22,12 @@ export default async function MorePage() {
         { href: "/einheiten", label: "Alle Einheiten", hint: "Wer hat wann mit wem gearbeitet, pro Monat", icon: Clock3 },
         { href: "/lehrer", label: "Lehrer & Verfügbarkeit", hint: "Eigene Verfügbarkeit, Wochenziel und Raumwünsche; als Verwaltung auch Accounts", icon: CalendarClock },
         { href: "/mehr/raeume", label: "Räume", hint: "Gebäude, Raumname, vor Ort oder online", icon: DoorOpen },
+        {
+          href: "/mehr/faecher",
+          label: "Fächer",
+          hint: teacher.is_admin ? "Alle Schulfächer für Profil, Einheit und Schularbeit; eigene ergänzen" : "Alle Schulfächer, aus denen Profil, Einheit und Schularbeit wählen",
+          icon: BookOpen,
+        },
         { href: "/diagnose", label: "Diagnose", hint: "Stand eines Schülers mit 5 bis 10 Aufgaben prüfen", icon: ListChecks },
         { href: "/uebungen/bibliothek", label: "Aufgabenbibliothek", hint: "Gespeicherte Aufgaben suchen und wiederverwenden", icon: Library },
         { href: "/mehr/material", label: "Material", hint: "Fotos und PDFs hochladen, einordnen, Aufgaben übernehmen", icon: FolderUp },
