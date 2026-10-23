@@ -29,6 +29,9 @@ und kein Passwort; wer den Link hat, sieht diese Seite (wie bisher).
 - Wie bisher (D17/D23) **nur veröffentlichte Plätze** und **ohne Namen**: kein Lehrer, keine anderen
   Schüler. Entwürfe sieht der Schüler nie. Beim Veröffentlichen wird weiterhin niemand
   benachrichtigt (D25).
+- Nach einer Einheit einmal **„Was war heute schwer?“** (Antworten zum Antippen, freier Text,
+  „Überspringen“), danach die eigene Notiz zum Ändern; unter dem nächsten Termin **„Für nächstes Mal“**,
+  jederzeit. Beides bis zur nächsten Einheit änderbar, nur die eigenen Worte (`lib/schueler-notiz.ts`).
 - **Kommende Prüfungen** (nach dem nächsten Termin): nur geplante ab heute, die nächste zuerst, mit Art, Fach
   und dem Stoff kurz. Vergangene und abgesagte nicht.
 - **Hausübungen:** die offenen zuerst (überfällig, heute, morgen markiert), mit Übung führt die Zeile zu ihr;

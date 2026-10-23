@@ -855,6 +855,29 @@ CREATE TABLE IF NOT EXISTS todo_gesehen (
   seen_at TEXT NOT NULL,
   PRIMARY KEY (teacher_id, art, ref_id)
 );
+-- Notiz nach der Einheit (lib/schueler-notiz.ts): „Was war heute schwer?“ aus der Schüler-App, eine je Einheit.
+-- auswahl: JSON der angetippten Antworten (NOTIZ_AUSWAHL); uebersprungen = 1: die Frage kommt nicht wieder.
+-- Die Worte des Schülers: zählen nicht für Lernstand oder Einschätzung und gehen nicht an die KI.
+CREATE TABLE IF NOT EXISTS schueler_notizen (
+  unit_id INTEGER PRIMARY KEY REFERENCES units(id) ON DELETE CASCADE,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  auswahl TEXT NOT NULL DEFAULT '[]',
+  text TEXT NOT NULL DEFAULT '',
+  uebersprungen INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_schueler_notizen_student ON schueler_notizen(student_id);
+-- „Für nächstes Mal“ aus der Schüler-App (lib/schueler-notiz.ts): was drankommen soll oder was er in der Schule nicht
+-- versteht. Gehört zur ersten Einheit, die nach created_at beginnt; bis dahin änderbar. created_at, updated_at: ISO wie units.started_at.
+CREATE TABLE IF NOT EXISTS schueler_wuensche (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_schueler_wuensche_student ON schueler_wuensche(student_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_ge_week ON geplante_einheiten(week_start, status);
 CREATE INDEX IF NOT EXISTS idx_ge_teacher ON geplante_einheiten(teacher_id, week_start);
 CREATE INDEX IF NOT EXISTS idx_ge_student ON geplante_einheiten(student_id, week_start);
