@@ -126,6 +126,36 @@ Läuft eine Einheit mit Tablet oder eigenem Laptop, zeigt „Am Schülergerät z
 nur live mit: ein Gerät, das neu verbindet, zeigt die Folie des Lehrers von ihrem Anfang. „Zurück zu den
 Aufgaben“ holt das Gerät zurück. Der Schüler selbst kann keine Präsentation öffnen.
 
+## Aus einem Lernpaket erstellen (KI)
+
+niko, 2026-10-23 (Plan 5.1): „Die KI soll anhand des Unterrichtsthemas automatisch geeignete vorhandene
+Präsentationen auswählen. Fehlt eine Präsentation, soll sie später eine neue erstellen können. Diese wird
+gespeichert und wiederverwendet.“ Hier geht es um den zweiten Teil, das Erstellen. Code: `lib/praesentation-ki.ts`, `lib/ai/praesentation.ts`,
+`lib/praesentation-html.ts`, `components/praesentation/PraesentationKiKnopf.tsx` und `KiVorschlag.tsx`, Test
+`lib/praesentation-ki.test.ts`.
+
+1. Auf der Seite eines **geprüften** Lernpakets: **Präsentation erstellen** (hat das Paket schon eine:
+   **Neue Präsentation erstellen**, mit Rückfrage). Am Knopf stehen die geschätzten Kosten, aus der Länge des
+   Pakets und der Preisliste (`lib/ai/config.ts`), etwa 12 bis 26 Cent mit dem Standardmodell.
+2. Eine Anfrage über den Router (`praesentation`, Bereich Aufgaben: Monatsbudget, Protokoll in `ai_calls`,
+   manueller Modus). Mit geht nur das Paket: Titel, Fach, Schulart, Klasse, Thema, Ziel und je Schritt Art,
+   Minuten, Titel, „Lehrer sagt“, „Lehrer fragt“, die erwartete Antwort, „Bei Fehler“ und die bisherige Folie.
+   Keine Aufgaben, keine Notizen, kein Schüler (also auch keine Grenze je Schüler); Namen werden ersetzt.
+3. Die KI schreibt **kein HTML**. Sie liefert je Folie einen Titel, wenige Blöcke (Text, Liste, Beispiel,
+   Merksatz, kleine Tabelle, Frage; keine Bilder), welche davon erst beim Klicken erscheinen, den
+   Vortragstext und die Nummern der Schritte, zu denen die Folie gehört. Lernheft kürzt zu lange Texte, lässt
+   leere Blöcke weg und speichert das als **Vorschlag** (`praesentation_entwuerfe`). Zeigt eine Folie die
+   erwartete Antwort einer Frage, steht das bei „Noch zu prüfen“: die Folien sieht auch der Schüler.
+4. Der Vorschlag zeigt jede Folie neben ihrem Vortragstext und welche Folie jeder Schritt danach zeigt.
+   **Übernehmen** baut daraus `index.html` (das Gerüst des Skills „lernheft-lernpaket“, jeder Text escapt, nur
+   `**fett**` wird fett) und `lernheft-notizen.json`, packt beides als ZIP und speichert es über denselben Weg
+   wie ein Upload, mit derselben Prüfung. Die Präsentation ist „mit KI erstellt“ und **Ungeprüft**, bis ein
+   Lehrer auf ihrer Seite „Geprüft“ tippt. Sie wird mit dem Paket verknüpft, jeder Schritt bekommt die erste
+   Folie, die zu ihm gehört (sonst keine), und sie gilt für jeden Schüler, der das Paket bekommt. Eine
+   frühere Präsentation des Pakets bleibt unter Präsentationen. **Verwerfen** ändert nichts.
+5. Ohne KI (ausgeschaltet, kein Schlüssel, Budget aufgebraucht) sagt der Bereich das, der Knopf bleibt aus,
+   und es geht keine Anfrage hinaus. Hochladen geht weiter.
+
 ## Sicherheit und Einrichtung
 
 Hochgeladene Präsentationen enthalten fremde Skripte. Sie sind deshalb vollständig von den

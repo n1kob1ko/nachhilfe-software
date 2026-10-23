@@ -9,11 +9,13 @@ import {
   archivierePraesentation,
   getPraesentation,
   importiereNotizen,
+  markierePraesentationGeprueft,
   setzeNotiz,
   stellePraesentationWiederHer,
   updatePraesentation,
   verknuepfeLernpaket,
 } from "@/lib/praesentationen";
+import { erstellePraesEntwurf, getPraesEntwurf, uebernimmPraesEntwurf, verwirfPraesEntwurf, type PraesKiErgebnis } from "@/lib/praesentation-ki";
 import { canManageUnit, getUnit } from "@/lib/units";
 
 const PR = "/mehr/praesentationen";
@@ -79,6 +81,49 @@ export async function verknuepfeLernpaketAction(paketId: number, f: FormData) {
   revalidatePath(`/mehr/lernpakete/${paketId}`);
   revalidatePath(PR, "layout");
   redirect("fehler" in out ? mitFehler(`/mehr/lernpakete/${paketId}?bearbeiten=1`, out.fehler, "#praesentation") : `/mehr/lernpakete/${paketId}?bearbeiten=1&gespeichert=1#praesentation`);
+}
+
+/** A KI deck the teacher has looked through: „Ungeprüft“ goes. */
+export async function markPraesGeprueftAction(id: number) {
+  const teacher = await requireTeacher();
+  markierePraesentationGeprueft(id, teacher.id);
+  revalidatePath(PR, "layout");
+  redirect(`${PR}/${id}?geprueft=1`);
+}
+
+// ---------- „Präsentation erstellen“ from a Lernpaket (lib/praesentation-ki.ts) ----------
+
+/**
+ * One request for a checked package, stored as a proposal. Returns instead of redirecting, so the page can show the
+ * progress, a failure and „Erneut versuchen“; a double click waits for the running request and costs nothing.
+ */
+export async function praesentationMitKiAction(paketId: number): Promise<PraesKiErgebnis> {
+  const teacher = await requireTeacher();
+  const res = await erstellePraesEntwurf(Number(paketId), teacher.id);
+  if (res.ok) revalidatePath(`/mehr/lernpakete/${paketId}`);
+  return res;
+}
+
+/** „Übernehmen“: saved as a Präsentation („Ungeprüft“), linked to the package, the steps' slide numbers set. */
+export async function uebernimmPraesVorschlagAction(entwurfId: number) {
+  const teacher = await requireTeacher();
+  const out = uebernimmPraesEntwurf(entwurfId, teacher.id);
+  if ("fehler" in out) {
+    const e = getPraesEntwurf(entwurfId);
+    redirect(mitFehler(e ? `/mehr/lernpakete/${e.paket_id}` : "/mehr/lernpakete", out.fehler));
+  }
+  revalidatePath(PR, "layout");
+  revalidatePath("/mehr/lernpakete", "layout");
+  redirect(`/mehr/lernpakete/${out.paketId}?praesentation=1`);
+}
+
+/** „Verwerfen“: the proposal goes; the package stays as it is. */
+export async function verwirfPraesVorschlagAction(entwurfId: number) {
+  await requireTeacher();
+  const out = verwirfPraesEntwurf(entwurfId);
+  if (!out) redirect("/mehr/lernpakete");
+  revalidatePath(`/mehr/lernpakete/${out.paketId}`);
+  redirect(`/mehr/lernpakete/${out.paketId}?verworfen=1`);
 }
 
 // ---------- the student device ----------

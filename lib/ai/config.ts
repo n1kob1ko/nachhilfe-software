@@ -97,6 +97,7 @@ export type AIFunction =
   | "lesen"
   | "briefing"
   | "lernpaket"
+  | "praesentation"
   | "erwartung"
   | "bewertung"
   | "referenz"
@@ -180,6 +181,9 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // Lernpaket mit KI entwerfen (lib/lernpaket-ki.ts): only on the teacher's click, for a topic, never with student data.
   // One long answer (all steps with their tasks); thinking on, because correctness beats quantity. Each click is a new draft
   lernpaket: { label: "Lernpaket entwerfen", area: "EXERCISE", tier: "standard", maxTokens: 32_000, timeoutMs: 300_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 0, cache: "aus", schemaInPrompt: true },
+  // Präsentation aus einem Lernpaket (lib/praesentation-ki.ts): only on the teacher's click, for a checked package, never with
+  // student data. The KI writes the slides' content as JSON, never HTML; the app builds the deck. Each click is a new draft
+  praesentation: { label: "Präsentation erstellen", area: "EXERCISE", tier: "standard", maxTokens: 32_000, timeoutMs: 300_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 0, cache: "aus", schemaInPrompt: true },
   // Schreibauftrag (lib/schreibauftrag-bewertung.ts): only on the teacher's click. The Erwartungshorizont is a new draft on every
   // click; a Bewertung of the same version of a text is not paid for twice. Thinking on: quotes and lines have to be right
   erwartung: { label: "Erwartungshorizont vorschlagen", area: "TEXT", tier: "standard", maxTokens: 6_000, timeoutMs: 120_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "aus", schemaInPrompt: true },

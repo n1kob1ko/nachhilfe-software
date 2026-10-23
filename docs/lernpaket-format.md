@@ -19,6 +19,7 @@ Import und Export: eine JSON-Datei, `"format": "lernheft-lernpaket"`, `"version"
 | Export (Download) | `app/(tutor)/mehr/lernpakete/[id]/export/route.ts` |
 | Tests | `lib/lernpakete.test.ts` (prüft auch das Beispiel unten) |
 | Mit KI entwerfen | `lib/lernpaket-ki.ts`, `lib/ai/lernpaket.ts`, `components/LernpaketKiForm.tsx`, Test `lib/lernpaket-ki.test.ts`, Probelauf `npm run ai:lernpaket` |
+| Präsentation erstellen (aus einem geprüften Paket) | `lib/praesentation-ki.ts`, [praesentation-format.md](praesentation-format.md#aus-einem-lernpaket-erstellen-ki) |
 
 ## Ablauf in der App
 
