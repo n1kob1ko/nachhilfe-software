@@ -67,3 +67,28 @@ export type Transport = (req: AIRequest) => Promise<AIResult>;
 
 /** What a provider can read besides text. */
 export type Capabilities = { images: boolean; pdf: boolean };
+
+/**
+ * A picture from a description (Bildgeschichte erstellen, lib/bildfolge.ts). Only OpenRouter makes them.
+ * `references` are pictures whose figures and style the model keeps (the first picture of the same story),
+ * never a photo of a person.
+ */
+export type ImageRequest = {
+  model: string;
+  prompt: string;
+  references: { mime: "image/jpeg" | "image/png" | "image/webp"; base64: string }[];
+  /** width:height, e.g. "4:3" */
+  aspectRatio: string;
+  signal: AbortSignal;
+};
+export type ImageResult = {
+  /** the picture's bytes; null when the answer held none */
+  data: Buffer | null;
+  model: string;
+  usage: Usage;
+  /** the provider's own price for this request, when it reports one (OpenRouter does) */
+  costUsd?: number;
+  /** why there is no picture, without content */
+  problem?: string;
+};
+export type ImageTransport = (req: ImageRequest) => Promise<ImageResult>;

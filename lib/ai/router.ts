@@ -8,10 +8,10 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash } from "node:crypto";
 import type { z } from "zod";
-import { FUNCTIONS, MANUAL_TIMEOUT_MS, PROVIDER_IDS, aiSwitchedOff, costOf, fitModel, isLocalModel, poolOf, routeFor, type AIFunction, type Usage } from "./config";
+import { FUNCTIONS, MANUAL_TIMEOUT_MS, PROVIDER_IDS, aiSwitchedOff, costOf, fitModel, hasKey, imagePrice, imageRoute, isLocalModel, poolOf, routeFor, type AIFunction, type Usage } from "./config";
 import { schuelerDerAnfrage, systemMitHinweisen } from "./hinweise";
 import { budgetState, logCall, type CallStatus } from "./log";
-import { providerReady, providerTransport, unsupported, type Prompt, type Transport } from "./providers";
+import { openRouterImageTransport, providerReady, providerTransport, unsupported, type ImageRequest, type ImageTransport, type Prompt, type Transport } from "./providers";
 import { grenzeErreichtText, schuelerStand } from "./schueler-kosten";
 import { ladeAntwort, leereSpeicher, speichereAntwort, vergiss } from "./speicher";
 
@@ -320,4 +320,62 @@ export function unwrap<T>(r: Outcome<T>): T | null {
   if (r.ok) return r.data;
   if (r.status === "abgelehnt") return null;
   throw new Error(r.message);
+}
+
+// ---------- pictures (Bildgeschichte erstellen, lib/bildfolge.ts) ----------
+/**
+ * Pictures are the one thing the text providers cannot do, so they always go to OpenRouter (config.ts
+ * `imageRoute`), with the same rules as runAI: switched off, budget of their pool used up or the limit of the
+ * student reached means no request; every request is logged in ai_calls with what OpenRouter charged.
+ */
+let imageTransport: ImageTransport = openRouterImageTransport;
+let imageCustom = false;
+
+/** Replaces the picture provider (null = OpenRouter). A replaced one counts as set up without a key. */
+export function setImageTransport(t: ImageTransport | null) {
+  imageTransport = t ?? openRouterImageTransport;
+  imageCustom = t !== null;
+}
+
+export const BILDER_NICHT_EINGERICHTET = "Bilder erstellen ist nicht eingerichtet.";
+
+/** Whether pictures can be made: KI not switched off and the OpenRouter key set. */
+export function imagesReady() {
+  return !aiSwitchedOff() && (imageCustom || hasKey("openrouter"));
+}
+
+export type ImageOutcome = { ok: true; data: Buffer; callId: number } | { ok: false; status: "aus" | "budget" | "timeout" | "fehler" | "abgelehnt"; cause: FailCause; message: string; callId: number | null };
+
+/**
+ * One picture. `references`: pictures of the same story whose figures and style it keeps. Never throws.
+ * Only the prompt and these pictures leave the app; the caller makes sure neither holds a name or a photo of a person.
+ */
+export async function runImage(prompt: string, references: ImageRequest["references"], o: { aspectRatio?: string; meta?: AIMeta } = {}): Promise<ImageOutcome> {
+  if (!imagesReady()) return { ok: false, status: "aus", cause: "aus", message: aiSwitchedOff() ? MESSAGES.aus : BILDER_NICHT_EINGERICHTET, callId: null };
+  const spec = FUNCTIONS.bild;
+  const { provider, model } = imageRoute();
+  const meta = o.meta ?? {};
+  const studentId = schuelerDerAnfrage(meta)?.id ?? null;
+  const log = (status: CallStatus, extra: Partial<Parameters<typeof logCall>[0]> = {}) =>
+    logCall({ fn: "bild", tier: spec.tier, provider, model, teacherId: meta.teacherId ?? null, unitId: meta.unitId ?? null, studentId, trigger: meta.trigger ?? "", input: 0, output: 0, cacheWrite: 0, cacheRead: 0, durationMs: 0, costUsd: 0, status, test: testRun, at: now(), ...extra });
+  if (budgetState(now(), poolOf(provider)).level === "aus") return { ok: false, status: "budget", cause: "budget", message: MESSAGES.budget, callId: log("budget") };
+  if (studentId != null && schuelerStand(studentId, now()).stufe === "aus") return { ok: false, status: "budget", cause: "schuelergrenze", message: grenzeErreichtText(), callId: log("budget", { error: "Grenze je Schüler" }) };
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), spec.timeoutMs);
+  const started = Date.now();
+  try {
+    const res = await imageTransport({ model, prompt, references, aspectRatio: o.aspectRatio ?? "4:3", signal: ctrl.signal });
+    // OpenRouter's own price; without it the list price of a picture. A request without a picture is not billed
+    const costUsd = res.costUsd ?? (res.data ? imagePrice(res.model || model).usd : 0);
+    const row = { model: res.model || model, input: res.usage.input, output: res.usage.output, cacheWrite: res.usage.cacheWrite, cacheRead: res.usage.cacheRead, costUsd, durationMs: Date.now() - started };
+    if (!res.data) return { ok: false, status: "abgelehnt", cause: "leer", message: "Es kam kein Bild zurück. Bitte noch einmal versuchen.", callId: log("abgelehnt", { ...row, error: res.problem ?? "" }) };
+    return { ok: true, data: res.data, callId: log("ok", row) };
+  } catch (e) {
+    const timedOut = ctrl.signal.aborted;
+    const message = timedOut ? MESSAGES.timeout : `Die KI war nicht erreichbar (${e instanceof Error ? e.message : String(e)}).`.slice(0, 300);
+    const code = timedOut ? undefined : httpStatusOf(e);
+    return { ok: false, status: timedOut ? "timeout" : "fehler", cause: timedOut ? "zeitlimit" : code ? "anbieter" : "nicht_erreichbar", message, callId: log(timedOut ? "timeout" : "fehler", { durationMs: Date.now() - started, error: message }) };
+  } finally {
+    clearTimeout(timer);
+  }
 }

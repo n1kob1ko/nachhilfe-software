@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { PageHeader } from "@/components/ui";
 import { PictureStoryForm } from "@/components/text/story/PictureStoryForm";
 import { requireTeacher } from "@/lib/auth";
+import { bilderAusGrund, kostenSchaetzung } from "@/lib/bildfolge";
 import { fachNamen } from "@/lib/faecher";
 import { studentDevice } from "@/lib/live";
 import { LINE_CHOICES, SOURCE_KINDS } from "@/lib/picture-story";
@@ -24,6 +25,7 @@ export default async function NewPictureStoryPage({ params }: { params: Promise<
   const student = getStudent(unit.student_id)!;
   const name = student.name.split(" ")[0];
   const level = levelFor(student.school_type, student.klasse);
+  const kosten = kostenSchaetzung();
   return (
     <div className="max-w-[980px]">
       <PageHeader
@@ -54,6 +56,7 @@ export default async function NewPictureStoryPage({ params }: { params: Promise<
         name={name}
         submitLabel="Bildgeschichte erstellen"
         cancelHref={`/einheiten/${unit.id}`}
+        generator={{ fuer: { einheit: unit.id }, aus: bilderAusGrund(unit.student_id), planCent: kosten.planCent, bildCent: kosten.bildCent }}
       />
     </div>
   );

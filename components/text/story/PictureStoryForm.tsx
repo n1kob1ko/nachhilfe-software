@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, ChevronDown, GripVertical, ImagePlus, Images, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, GripVertical, ImagePlus, Images, Loader2, RefreshCw, Trash2 } from "lucide-react";
+import { bildErstellenAction } from "@/app/bildfolge-actions";
 import { SchoolClassFields } from "@/components/SchoolClassFields";
 import { shrinkImage } from "@/components/shrink-image";
+import { BildfolgeErstellen, centText, type BildfolgeGenerator } from "@/components/text/story/BildfolgeErstellen";
+import type { ErstelltesBild } from "@/lib/bildfolge";
 
 /** Mirrors lib/picture-story.ts (kept here so the browser does not load server code). */
 const MAX_IMAGES = 12;
@@ -23,9 +26,11 @@ export type StoryDefaults = {
   sourceKind: string;
   sourceNote: string;
 };
-export type ExistingImage = { id: number; url: string; caption: string; name: string; size: number };
+/** `bildfolgeId`/`szene`: a picture the app made, which „Dieses Bild neu“ can make again */
+export type ExistingImage = { id: number; url: string; caption: string; name: string; size: number; ki?: boolean; bildfolgeId?: number | null; szene?: number | null };
 
-type Item = { key: string; id?: number; file?: File; url: string; caption: string; name: string; size: number };
+/** `kiBild`: a picture the app made and the story does not have yet (bildfolge_bilder.id) */
+type Item = { key: string; id?: number; file?: File; kiBild?: number; ki?: boolean; bildfolgeId?: number | null; szene?: number | null; url: string; caption: string; name: string; size: number };
 
 type Props = {
   /** POST target: /material/bildgeschichte/neu or /material/bildgeschichte/<id> */
@@ -40,6 +45,8 @@ type Props = {
   name: string;
   submitLabel: string;
   cancelHref: string;
+  /** „Bilder erstellen lassen“ (lib/bildfolge.ts) */
+  generator?: BildfolgeGenerator;
 };
 
 const sizeLabel = (b: number) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toLocaleString("de-AT", { maximumFractionDigits: 1 })} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
@@ -50,10 +57,15 @@ const sizeLabel = (b: number) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toLoca
  * room to write on paper. Sends everything in one request.
  */
 export function PictureStoryForm(p: Props) {
-  const [items, setItems] = useState<Item[]>(() => (p.images ?? []).map((i) => ({ key: `i${i.id}`, id: i.id, url: i.url, caption: i.caption, name: i.name, size: i.size })));
+  const [items, setItems] = useState<Item[]>(() =>
+    (p.images ?? []).map((i) => ({ key: `i${i.id}`, id: i.id, url: i.url, caption: i.caption, name: i.name, size: i.size, ki: i.ki, bildfolgeId: i.bildfolgeId, szene: i.szene })),
+  );
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
-  const [busy, setBusy] = useState<null | "bilder" | "senden">(null);
+  const [busy, setBusy] = useState<null | "bilder" | "senden" | "erstellen">(null);
+  /** the picture „Dieses Bild neu“ is making right now */
+  const [neuKey, setNeuKey] = useState<string | null>(null);
+  const titleInput = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const [dragKey, setDragKey] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -124,6 +136,30 @@ export function PictureStoryForm(p: Props) {
   }
   const endDrag = () => setDragKey(null);
 
+  // a picture the app made (BildfolgeErstellen): at the end, with the scene's short description
+  const addGenerated = (b: ErstelltesBild) =>
+    setItems((now) => [...now, { key: `k${b.id}`, kiBild: b.id, ki: true, bildfolgeId: b.bildfolgeId, szene: b.szene, url: b.url, caption: b.beschreibung, name: `Bild ${b.szene}`, size: b.size }].slice(0, MAX_IMAGES));
+
+  // „Dieses Bild neu“: the same scene again, at the same place; the description stays
+  async function neuErstellen(it: Item) {
+    if (busy || !it.bildfolgeId || !it.szene) return;
+    setError(null);
+    setNote(null);
+    setBusy("erstellen");
+    setNeuKey(it.key);
+    try {
+      const r = await bildErstellenAction(it.bildfolgeId, it.szene);
+      if (r.ok) {
+        setItems((now) => now.map((x) => (x.key === it.key ? { ...x, id: undefined, file: undefined, kiBild: r.bild.id, url: r.bild.url, size: r.bild.size } : x)));
+        setNote(`Neues Bild erstellt (${centText(r.cent)}).`);
+      } else setError(r.error);
+    } catch {
+      setError("Keine Antwort vom Server. Das bisherige Bild bleibt.");
+    }
+    setNeuKey(null);
+    setBusy(null);
+  }
+
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy) return;
@@ -136,6 +172,7 @@ export function PictureStoryForm(p: Props) {
     let n = 0;
     const order = items.map((i) => {
       if (i.id) return { id: i.id, caption: i.caption };
+      if (i.kiBild) return { ki: i.kiBild, caption: i.caption };
       form.append(`bild${n}`, i.file!, i.file!.name);
       return { upload: n++, caption: i.caption };
     });
@@ -187,6 +224,19 @@ export function PictureStoryForm(p: Props) {
             }}
           />
         </div>
+
+        {p.generator && (
+          <BildfolgeErstellen
+            {...p.generator}
+            leer={items.length === 0}
+            platz={MAX_IMAGES - items.length}
+            onBild={addGenerated}
+            onTitel={(t) => {
+              if (titleInput.current && !titleInput.current.value.trim()) titleInput.current.value = t;
+            }}
+            onBusy={(on) => setBusy(on ? "erstellen" : null)}
+          />
+        )}
 
         {items.length === 0 ? (
           <button
@@ -251,6 +301,7 @@ export function PictureStoryForm(p: Props) {
                 <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 p-3">
                   <p className="num truncate text-[12.5px] text-ink-3" title={it.name}>
                     {it.name} · {sizeLabel(it.size)}
+                    {it.ki ? " · mit KI erstellt" : ""}
                     {it.id ? "" : " · neu"}
                   </p>
                   <label className="grid min-w-0 gap-1">
@@ -283,6 +334,12 @@ export function PictureStoryForm(p: Props) {
                       <Trash2 size={16} aria-hidden />
                     </button>
                   </div>
+                  {it.bildfolgeId && it.szene && p.generator && !p.generator.aus && (
+                    <button type="button" className="btn btn-ghost justify-start px-3 text-[14px]" onClick={() => void neuErstellen(it)} disabled={busy !== null} data-testid="bild-neu">
+                      {neuKey === it.key ? <Loader2 size={16} className="animate-spin" aria-hidden /> : <RefreshCw size={16} aria-hidden />}
+                      {neuKey === it.key ? "Wird neu gezeichnet …" : <>Dieses Bild neu · <span className="num">{centText(p.generator.bildCent)}</span></>}
+                    </button>
+                  )}
                 </div>
               </li>
             ))}
@@ -303,13 +360,13 @@ export function PictureStoryForm(p: Props) {
           {busy === "bilder" ? "Bilder werden vorbereitet …" : note}
           {items.length > 0 && total > 0 && !busy && <span className="num"> Neu hochzuladen: {sizeLabel(total)}.</span>}
         </p>
-        <p className="text-[13px] text-ink-2">Die kurzen Beschreibungen sieht nur die KI-Korrektur, damit sie den Bezug zu den Bildern prüfen kann. Die Bilder selbst werden nie an die KI gesendet.</p>
+        <p className="text-[13px] text-ink-2">Die kurzen Beschreibungen sieht nur die KI-Korrektur, damit sie den Bezug zu den Bildern prüfen kann. Hochgeladene Bilder werden nie an die KI gesendet.</p>
       </section>
 
       <section aria-label="Aufgabe" className="grid gap-5">
         <label className="field">
           <span className="label">Titel</span>
-          <input className="input" name="title" required maxLength={140} defaultValue={d.title} placeholder="z. B. Der verlorene Ball" />
+          <input ref={titleInput} className="input" name="title" required maxLength={140} defaultValue={d.title} placeholder="z. B. Der verlorene Ball" />
         </label>
         <div className="grid gap-5 sm:grid-cols-3">
           <label className="field">

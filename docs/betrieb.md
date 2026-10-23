@@ -164,6 +164,8 @@ Ohne Admin-Zugang geht Schritt 1 auch per `railway ssh`:
 | `AI_REALTIME_MAX_PER_HOUR` | höchstens so viele Echtzeit-Analysen pro Einheit und Stunde, Standard 40 |
 | `AI_PRICES_JSON` | Preise je Modell (Anfang des Namens) setzen oder überschreiben, z. B. `{"deepseek-chat":{"in":0.3,"out":1.2}}` (US-Dollar je 1 Mio. Tokens). OpenRouter meldet seinen Preis selbst, ohne Eintrag wird für andere Modelle mit dem Anthropic-Preis der Stufe geschätzt |
 | `AI_DISABLED` | `1` schaltet alle KI-Aufrufe ab, die App läuft ohne KI weiter |
+| `AI_IMAGE_MODEL` | Bilder für Bildgeschichten („Bilder erstellen lassen“): OpenRouter-Modell, Standard `google/gemini-3.1-flash-lite-image` (etwa 3,9 US-Cent je Bild). Läuft immer über `OPENROUTER_API_KEY` und zählt zu `AI_MONTHLY_BUDGET_EUR`; ohne diesen Schlüssel steht im Formular „Bilder erstellen ist nicht eingerichtet“ |
+| `AI_IMAGE_PRICE_USD` | Preis je Bild in US-Dollar für die Schätzung vor dem Klick (und falls OpenRouter keinen Preis meldet); ohne Eintrag gilt die Liste in `lib/ai/config.ts` |
 | `PORT` | Port des Servers, Standard 3000 |
 | `INSECURE_COOKIES` | `1` erlaubt Anmeldung ohne HTTPS (nur lokal) |
 | `INITIAL_TEACHER_PASSWORD` | Startpasswort für die ersten Konten auf dem Server (geheim halten) |
