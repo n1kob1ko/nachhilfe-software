@@ -893,6 +893,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["worksheets", "source_task_id", "INTEGER REFERENCES tasks(id) ON DELETE SET NULL"],
   ["assignments", "unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
   ["assignments", "solutions_visible", "INTEGER NOT NULL DEFAULT 0"],
+  // Freigabe in Stufen (lib/freigabe.ts): nichts | hilfen | loesung | alles; NULL = aus solutions_visible
+  ["assignments", "freigabe", "TEXT"],
   // Schnellrunde (Phase 2 des Merges): 'normal' = the usual flow, 'schnell' = one tap per task with a
   // short feedback and automatic next task (components/StudentQuickRound.tsx). Attempts, time and hints
   // are stored exactly as in normal mode; only the student's flow differs (lib/quick-round.ts).
@@ -919,6 +921,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["tasks", "source_item_id", "INTEGER REFERENCES source_items(id) ON DELETE SET NULL"],
   ["tasks", "level", "INTEGER"],
   ["tasks", "solution_steps", "TEXT NOT NULL DEFAULT '[]'"],
+  // Lösungsdaten (Plan 2.3): Erklärung für den Lehrer ('' = aus Fähigkeit und typischen Fehlern) und andere Wege
+  ["tasks", "teacher_note", "TEXT NOT NULL DEFAULT ''"],
+  ["tasks", "alt_ways", "TEXT NOT NULL DEFAULT '[]'"],
   ["tasks", "estimated_time_sec", "INTEGER"],
   // tracking: who taught and how hard the task was, at the moment of the answer
   ["attempts", "teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
