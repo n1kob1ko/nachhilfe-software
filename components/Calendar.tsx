@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, ChevronLeft, ChevronRight, Play, Sparkles } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Play, Sparkles } from "lucide-react";
 import { Avatar } from "@/components/Art";
 
 export const pad = (n: number) => String(n).padStart(2, "0");
@@ -165,6 +165,8 @@ export type TagesplanPunkt = {
   erledigt: boolean;
   /** das Tagesbriefing dieses Schülers (lib/briefing.ts); null, wo es nicht mehr hilft */
   briefingHref?: string | null;
+  /** „Einheit vorbereiten“: das Lernpaket für heute wählen (lib/cockpit.ts); `paket` ist das gewählte */
+  vorbereiten?: { href: string; paket: string | null } | null;
 };
 
 /**
@@ -207,6 +209,11 @@ export function Tagesplan({ punkte, starten }: { punkte: TagesplanPunkt[]; start
             {p.briefingHref && (
               <Link href={p.briefingHref} className="btn btn-secondary btn-sm">
                 <Sparkles size={14} aria-hidden /> Briefing
+              </Link>
+            )}
+            {p.vorbereiten && (
+              <Link href={p.vorbereiten.href} className="btn btn-secondary btn-sm" title={p.vorbereiten.paket ? `Lernpaket: ${p.vorbereiten.paket}` : "Lernpaket für heute wählen"}>
+                {p.vorbereiten.paket ? <CheckCircle2 size={14} className="text-green" aria-hidden /> : <ClipboardList size={14} aria-hidden />} {p.vorbereiten.paket ? "Vorbereitet" : "Vorbereiten"}
               </Link>
             )}
             {p.einheitId !== null ? (

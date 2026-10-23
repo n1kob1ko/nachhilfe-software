@@ -750,6 +750,31 @@ CREATE TABLE IF NOT EXISTS lernpaket_schritte (
 );
 CREATE INDEX IF NOT EXISTS idx_lernpaket_schritte ON lernpaket_schritte(paket_id, position);
 CREATE INDEX IF NOT EXISTS idx_lernpakete_status ON lernpakete(status, fach);
+-- Cockpit of a running Einheit (lib/cockpit.ts): the Lernpaket (or, without one, the skill) of this unit and
+-- how far it got. The package itself never changes: order, done and skipped steps are this unit's only.
+-- reihenfolge, erledigt, uebersprungen: JSON step ids; notizen: JSON {step id: text}; gesendet: JSON {step id: worksheet ids}.
+CREATE TABLE IF NOT EXISTS einheit_cockpit (
+  unit_id INTEGER PRIMARY KEY REFERENCES units(id) ON DELETE CASCADE,
+  paket_id INTEGER REFERENCES lernpakete(id) ON DELETE SET NULL,
+  skill_id TEXT,                            -- without a package: the skill of this unit
+  reihenfolge TEXT NOT NULL DEFAULT '[]',
+  aktuell INTEGER,                          -- the step on screen (lernpaket_schritte.id)
+  erledigt TEXT NOT NULL DEFAULT '[]',
+  uebersprungen TEXT NOT NULL DEFAULT '[]',
+  notizen TEXT NOT NULL DEFAULT '{}',
+  gesendet TEXT NOT NULL DEFAULT '{}',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+-- „Einheit vorbereiten“ on the start page: the package chosen for a student's unit of that day (Europe/Vienna),
+-- taken over by the cockpit when the unit starts.
+CREATE TABLE IF NOT EXISTS einheit_vorbereitung (
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  datum TEXT NOT NULL,
+  paket_id INTEGER NOT NULL REFERENCES lernpakete(id) ON DELETE CASCADE,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (student_id, datum)
+);
 -- Fächer (lib/faecher.ts): the one list every subject picker offers. Starts with SCHULFAECHER; the Verwaltung
 -- adds own subjects and deactivates unused ones. Never renamed or deleted: lessons, tests and profiles keep
 -- the subject as plain text, so an old value that is not in this list stays valid.

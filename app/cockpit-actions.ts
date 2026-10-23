@@ -1,0 +1,104 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import type { SendState } from "@/app/device-actions";
+import { requireTeacher } from "@/lib/auth";
+import { bereiteVor, markiereSchritt, sendeAusGenerator, sendeSchritt, setzeNotiz, verschiebeSchritt, waehleFaehigkeit, waehlePaket, zeigeSchritt, type Markierung } from "@/lib/cockpit";
+import { noteActivity } from "@/lib/learning";
+import { pushLive, showOnTablet } from "@/lib/live";
+import { wienerDatum } from "@/lib/planung/zeit";
+import * as repo from "@/lib/repo";
+import { canManageUnit, getUnit } from "@/lib/units";
+
+/**
+ * Das Cockpit der laufenden Einheit (lib/cockpit.ts). Jede Aktion gilt für genau diese Einheit: auch mit zwei
+ * Einheiten zugleich geht eine Übung an deren Schüler und auf deren Gerät.
+ */
+async function laufendeEinheit(unitId: number) {
+  const t = await requireTeacher();
+  const unit = getUnit(unitId);
+  if (!unit) redirect("/einheiten");
+  if (!canManageUnit(t, unit)) redirect(`/einheiten/${unitId}?fremd=1`);
+  if (unit.status !== "gestartet") redirect(`/einheiten/${unitId}`);
+  return { t, unit };
+}
+
+const zurueck = (unitId: number, fehler?: string) => {
+  revalidatePath(`/einheiten/${unitId}`);
+  if (fehler) redirect(`/einheiten/${unitId}?bereich=cockpit&cockpit=${encodeURIComponent(fehler)}`);
+};
+
+export async function waehlePaketAction(unitId: number, form: FormData) {
+  await laufendeEinheit(unitId);
+  const id = Number(form.get("paket_id"));
+  const out = waehlePaket(unitId, Number.isInteger(id) && id > 0 ? id : null);
+  zurueck(unitId, "fehler" in out ? out.fehler : undefined);
+}
+
+export async function waehleFaehigkeitAction(unitId: number, form: FormData) {
+  await laufendeEinheit(unitId);
+  const out = waehleFaehigkeit(unitId, String(form.get("skill_id") ?? "") || null);
+  zurueck(unitId, "fehler" in out ? out.fehler : undefined);
+}
+
+export async function markiereSchrittAction(unitId: number, schrittId: number, was: Markierung) {
+  await laufendeEinheit(unitId);
+  markiereSchritt(unitId, schrittId, was);
+  zurueck(unitId);
+}
+
+export async function zeigeSchrittAction(unitId: number, schrittId: number) {
+  await laufendeEinheit(unitId);
+  zeigeSchritt(unitId, schrittId);
+  zurueck(unitId);
+}
+
+export async function verschiebeSchrittAction(unitId: number, schrittId: number, richtung: -1 | 1) {
+  await laufendeEinheit(unitId);
+  verschiebeSchritt(unitId, schrittId, richtung === -1 ? -1 : 1);
+  zurueck(unitId);
+}
+
+/** Die Notiz des Lehrers zu einem Schritt; bleibt beim Lehrer. */
+export async function notizAction(unitId: number, schrittId: number, text: string): Promise<{ ok: boolean }> {
+  await laufendeEinheit(unitId);
+  const ok = setzeNotiz(unitId, schrittId, String(text ?? ""));
+  revalidatePath(`/einheiten/${unitId}`);
+  return { ok };
+}
+
+/** Bringt eine eben zugewiesene Übung auf das Gerät der Einheit, wie „An Anna senden“. */
+async function aufsGeraet(unitId: number, out: { worksheetId: number; assignmentId: number } | { fehler: string }): Promise<SendState> {
+  if ("fehler" in out) return { status: "fehler", error: out.fehler };
+  const unit = getUnit(unitId)!;
+  noteActivity(unit.student_id);
+  const sent = showOnTablet(unit, { kind: "aufgabe", assignmentId: out.assignmentId });
+  pushLive(unit.id);
+  revalidatePath("/", "layout");
+  return { ...sent, assignmentId: out.assignmentId, unitId: unit.id, student: unit.student_name.split(" ")[0] };
+}
+
+/** „Übung senden“: die Aufgaben des Schritts an den Schüler dieser Einheit. */
+export async function sendeSchrittAction(unitId: number, schrittId: number, _prev: SendState, _form?: FormData): Promise<SendState> {
+  const { t } = await laufendeEinheit(unitId);
+  return aufsGeraet(unitId, sendeSchritt(unitId, schrittId, t.id));
+}
+
+/** Ohne Lernpaket: eine neue Übung zur Fähigkeit aus den Generatoren, ohne KI. */
+export async function sendeGeneratorAction(unitId: number, skillId: string, _prev: SendState, _form?: FormData): Promise<SendState> {
+  const { t } = await laufendeEinheit(unitId);
+  return aufsGeraet(unitId, await sendeAusGenerator(unitId, skillId, t.id));
+}
+
+/** „Einheit vorbereiten“ auf der Startseite: das Lernpaket für heute, die Einheit übernimmt es beim Start. */
+export async function vorbereitenAction(studentId: number, form: FormData) {
+  const t = await requireTeacher();
+  if (!repo.getStudent(studentId)) redirect("/");
+  const id = Number(form.get("paket_id"));
+  const out = bereiteVor(studentId, wienerDatum(), Number.isInteger(id) && id > 0 ? id : null, t.id);
+  revalidatePath("/");
+  revalidatePath(`/schueler/${studentId}/vorbereiten`);
+  if ("fehler" in out) redirect(`/schueler/${studentId}/vorbereiten?fehler=${encodeURIComponent(out.fehler)}`);
+  redirect(id > 0 ? "/" : `/schueler/${studentId}/vorbereiten`);
+}
