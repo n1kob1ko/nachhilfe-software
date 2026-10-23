@@ -255,7 +255,8 @@ Ein Antwortformat der schriftlichen AHS-Mathematik-Matura (Teil 1): **1 aus 5**,
 **Lückentext zum Ankreuzen** (zwei Lücken ① ②, je drei Satzteile) und **Zuordnung** (zwei Aussagen,
 vier Antworten A bis D). Jede solche **Aufgabe** gibt 0 oder 1 Punkt; bei 2 aus 5, Lückentext und
 Zuordnung nur, wenn alles stimmt. Übernommen ist nur die Form, nie eine Aufgabe aus dem Aufgabenpool,
-aus Maturen, Schulbüchern oder vom IQS. Im Code die Aufgabentypen `matura-1aus5`, `matura-2aus5`,
+aus Maturen, Schulbüchern oder vom IQS (Ausnahme: der Lehrer übernimmt eine Aufgabe von aufgabenpool.at
+selbst über die **Referenzsammlung**, mit Quelle). Im Code die Aufgabentypen `matura-1aus5`, `matura-2aus5`,
 `matura-lueckentext` und `matura-zuordnung` (`lib/matura-formate.ts`); die Aufgaben kommen ohne KI aus
 eigenen Generatoren (`lib/mathe-matura.ts`) oder von der KI. Das Konstruktionsformat gibt es nicht.
 In Englisch die Formate der schriftlichen Englisch-Matura: Reading (**True or False mit Begründung**,
@@ -305,6 +306,15 @@ Die Sammlung einzelner, guter, wiederverwendbarer **Aufgaben**. Jeder Eintrag is
 genau eine Aufgabe samt Herkunft und Lizenz; aus ausgewählten Einträgen entsteht
 mit einem Klick eine neue Übung.
 _Avoid_: Archiv, Sammlung, Pool, Katalog
+
+**Referenzsammlung**:
+Aufgaben aus fremden Quellen (z. B. aufgabenpool.at), die der Lehrer als PDF hochlädt; die KI liest sie
+einmal in Einträge mit Aufgabentext, Format, Fach, Fähigkeit, Grundkompetenz, Lösungserwartung und
+**Quelle** (Pflicht, nie erfunden). Jeder Eintrag ist „ungeprüft“, bis ein Lehrer ihn speichert. Geprüfte
+Einträge dienen der KI im Builder und bei „Lernpaket mit KI“ als Beispiele; ein Eintrag ohne Texte oder
+Bilder Dritter aus einer freien Quelle kann in die **Bibliothek**, die Quelle steht dann auf Blatt und
+Schülerseite. Sprachen nur als Aufbau, ohne Texte. Unter Mehr (`lib/referenz.ts`).
+_Avoid_: Aufgabenpool, Vorbildsammlung, Referenzen-Import
 
 **Aufgabe bewerten**:
 Ein Lehrer gibt einer **Aufgabe** 1 bis 5 Sterne, kreuzt Gründe an (Fachlich falsch, Musterlösung falsch, Zu einfach,

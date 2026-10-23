@@ -142,6 +142,7 @@ später als Übung an einen Schüler gehen kann. Sie wird beim Import mit densel
 | `hints` | nein | bis zu 6 Hilfen: Denkanstoß, Regel, erster Schritt |
 | `errorMap` | nein | typische falsche Antworten: `{"answer": "0", "label": "…"}` (bei Multiple Choice der Index als Text) |
 | `category` | nein | Aufgabentyp wie im Builder (z. B. `textaufgabe`) |
+| `quelle` | nein | Quellenangabe einer übernommenen Aufgabe (Referenzsammlung), z. B. `aufgabenpool.at, 1_234`; steht auf dem Blatt und beim Schüler als „Quelle: …“ |
 
 Die häufigsten Formate kurz:
 

@@ -18,6 +18,7 @@ import type { Skill } from "../repo";
 import { maskText, namePattern } from "../text-correction-core";
 import type { TaskDraft } from "../tasks";
 import { wortartenPromptRules, type WortartSetting } from "../wortarten";
+import { vorbilderPrompt, type Vorbild } from "../referenz-regeln";
 import { aiTaskToDraft, FORMAT_RULES, TaskSchema } from "./features";
 
 const ARTEN = Object.keys(SCHRITT_ARTEN) as [SchrittArt, ...SchrittArt[]];
@@ -74,6 +75,8 @@ export type KiAuftrag = {
   erklaerung: string;
   fehler: string[];
   wortarten: WortartSetting | null;
+  /** geprüfte Einträge der Referenzsammlung zur Fähigkeit (lib/referenz.ts), als Beispiele für eigene Aufgaben */
+  referenzen?: Vorbild[];
   /** 2–3 tasks of the skill that teachers rated well (lib/bewertungen.ts vorbildZeilen), names replaced; a model, not to copy */
   vorbilder?: string[];
   /** what teachers marked as problems on tasks of the skill (lib/bewertungen.ts rueckmeldungZeile), e.g. „Zu schwierig (3×)“ */
@@ -149,6 +152,7 @@ export function lernpaketAnfrage(a: KiAuftrag, bestand: BestandAufgabe[], namen:
     for (const c of kats) z.push(`- ${c.key}: ${c.label} – ${c.hint} (Format: ${c.formats.join(" oder ")})`);
     z.push("", FORMAT_RULES);
     if (a.wortarten) z.push("", wortartenPromptRules(a.wortarten));
+    if (a.referenzen?.length) z.push("", vorbilderPrompt(a.referenzen, (s) => maskText(s, pattern).masked));
   } else {
     z.push("", "Ohne Fähigkeit: keine Aufgaben. aufgaben_aus_bestand und neue_aufgaben bleiben leer.");
   }
@@ -299,5 +303,7 @@ export function dateiFelder(t: TaskDraft): Record<string, unknown> {
     errorMap: (t.errorMap ?? []).map((e) => ({ answer: String(e.answer), label: String(e.label) })).slice(0, 20),
     ...(t.solutionSteps ? { solutionSteps: t.solutionSteps } : {}),
     ...(t.estimatedTimeSec ? { estimatedTimeSec: Math.round(t.estimatedTimeSec) } : {}),
+    // die Quelle einer Aufgabe aus der Referenzsammlung bleibt an ihr
+    ...(t.quelle ? { quelle: t.quelle } : {}),
   };
 }

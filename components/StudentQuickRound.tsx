@@ -256,6 +256,7 @@ export function StudentQuickRound({
       </p>
       {/* Aufgabe mit Bild: das Bild unter der Frage, mittig */}
       {current.figur && <FigurBild svg={current.figur} groesser={1.2} className="mx-auto mb-5" />}
+      {current.quelle && <p className="-mt-3 mb-5 text-center text-[12px] text-ink-3">Quelle: {current.quelle}</p>}
 
       {hintsShown > 0 && (
         <ul className="mb-4 space-y-2">

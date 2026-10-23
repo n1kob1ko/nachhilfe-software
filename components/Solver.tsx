@@ -75,6 +75,8 @@ export type ClientTask = {
   math: MathTaskView | null;
   /** Aufgabe mit Bild: das fertige SVG ohne Lösung (lib/figur.ts figurSvg); null ohne Bild. */
   figur?: string | null;
+  /** Quellenangabe einer übernommenen Aufgabe („aufgabenpool.at, 1_234“), klein unter der Aufgabe; null ohne. */
+  quelle?: string | null;
   /**
    * correct null: waits for the teacher's grade. review: the teacher's grade (richtig, teilweise, falsch).
    * given and expected: the student's corrected text and the right one (Fehler korrigieren).
@@ -833,6 +835,7 @@ function TaskCard({
         )}
         {/* Aufgabe mit Bild: das Bild unter der Frage (bei Lücken ohne eigene Fragezeile darüber) */}
         {task.figur && !bildKopf && <FigurBild svg={task.figur} groesser={1.2} />}
+        {task.quelle && <p className="mt-2 text-[12px] text-ink-3">Quelle: {task.quelle}</p>}
         {/* Umlaute für Lückentexte: eine Tablet-Tastatur gibt ä ö ü ß nicht immer her (components/UmlautBar.tsx) */}
         {task.blanks > 0 && !task.gapOptions && !final && !en && <UmlautBar target={umlaut} className="mt-3" />}
         {en?.maxWords && !final && (

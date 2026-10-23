@@ -855,6 +855,29 @@ CREATE TABLE IF NOT EXISTS todo_gesehen (
   seen_at TEXT NOT NULL,
   PRIMARY KEY (teacher_id, art, ref_id)
 );
+-- Referenzsammlung (lib/referenz.ts, 2026-10-23): Aufgaben aus einem von Hand geladenen PDF, nur für Lehrer. Die KI liest
+-- die Datei einmal; jeder Eintrag ist ungeprüft, bis ein Lehrer ihn speichert. format = Kategorie (lib/curriculum.ts)
+-- oder ''. dritte = enthält Texte oder Bilder Dritter (bleibt Referenz). worksheet_id = die Bibliotheksaufgabe daraus.
+CREATE TABLE IF NOT EXISTS referenz_eintraege (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  fach TEXT NOT NULL,
+  skill_id TEXT REFERENCES skills(id) ON DELETE SET NULL,
+  grundkompetenz TEXT NOT NULL DEFAULT '',
+  format TEXT NOT NULL DEFAULT '',
+  aufgabe TEXT NOT NULL DEFAULT '',
+  loesung TEXT NOT NULL DEFAULT '',
+  quelle TEXT NOT NULL,
+  dritte INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'ungeprueft',
+  hinweise TEXT NOT NULL DEFAULT '[]',
+  datei TEXT NOT NULL DEFAULT '',
+  worksheet_id INTEGER REFERENCES worksheets(id) ON DELETE SET NULL,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  geprueft_von INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  geprueft_am TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_referenz_fach ON referenz_eintraege(fach, skill_id, status);
 -- Aufgaben bewerten (lib/bewertungen.ts, 2026-10-23): eine Bewertung je Aufgabe und Lehrer, getrennt von Schülerleistungen.
 -- schluessel: der Inhalt der Aufgabe (Format, Text, Daten, Antwort), Kopien in Übungen, Bibliothek und Lernpaketen teilen ihn.
 -- gruende: JSON-Schlüssel aus lib/bewertung-regeln.ts; aufgabe: JSON TaskDraft, wie bewertet (Vorbild für die KI).
@@ -1190,6 +1213,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // KI-Grenze je Schüler und Monat (lib/ai/schueler-kosten.ts, 2026-10-23): um welchen Schüler es im Aufruf ging
   // (meta.studentId, sonst der Schüler der Einheit); null = keiner (Lesetext, Druckblatt, Verbindungstest …)
   ["ai_calls", "student_id", "INTEGER REFERENCES students(id) ON DELETE SET NULL"],
+  // Referenzsammlung (lib/referenz.ts, 2026-10-23): die Quellenangabe einer übernommenen Aufgabe („aufgabenpool.at, 1_234“),
+  // geht mit jeder Kopie mit und steht auf dem Blatt und beim Schüler als „Quelle: …“; null = keine
+  ["tasks", "quelle", "TEXT"],
   // Prüfungen eintragen (lib/pruefliste.ts, Plan 3.1): 'schueler' = der Schüler hat sie in seiner App eingetragen
   ["tests", "quelle", "TEXT NOT NULL DEFAULT ''"],
 ];
