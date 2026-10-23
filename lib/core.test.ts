@@ -69,6 +69,28 @@ test("fraction division recognises the forgotten reciprocal", () => {
   assert.equal(checkAnswer(t, label.answer).errorLabel, "Kehrwert vergessen");
 });
 
+test("tasks are spread evenly across the chosen skills, also when a duplicate is dropped", () => {
+  const sets = [
+    { ids: ["mathe.brueche.kuerzen", "mathe.brueche.dividieren"], counts: [4, 6] },
+    { ids: ["mathe.brueche.kuerzen", "mathe.brueche.erweitern", "mathe.brueche.addieren"], counts: [6, 9] },
+  ];
+  for (const { ids, counts } of sets) {
+    for (const count of counts) {
+      for (const difficulty of DIFFICULTIES) {
+        for (const taskType of ["calc", "mc", "cloze", "mixed"] as const) {
+          for (let seed = 1; seed <= 200; seed++) {
+            const tasks = generateBuiltIn({ subject: "Mathematik", skills: ids.map((id) => ({ id, name: id })), difficulty, count, taskType, seed });
+            assert.equal(tasks.length, count);
+            const je = ids.map((id) => tasks.filter((t) => t.skillId === id).length);
+            assert.ok(Math.max(...je) - Math.min(...je) <= 1, `${ids.join(" + ")} ${difficulty} ${taskType} ${count} seed ${seed}: ${je.join(" / ")}`);
+            assert.equal(new Set(tasks.map((t) => t.prompt.split("\n")[0])).size, count, "no task twice");
+          }
+        }
+      }
+    }
+  }
+});
+
 test("mastery rewards first tries and recent evidence", () => {
   assert.equal(taskScore({ correct: 1, attempt_no: 1, hints_used: 0, solution_viewed: 0 }), 1);
   assert.ok(taskScore({ correct: 1, attempt_no: 2, hints_used: 1, solution_viewed: 0 }) < 0.7);
