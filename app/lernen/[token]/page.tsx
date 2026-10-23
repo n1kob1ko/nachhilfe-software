@@ -4,11 +4,17 @@ import { notFound } from "next/navigation";
 import { SubjectArt } from "@/components/Art";
 import { MasteryBar, Pill, TrendBadge, formatDate } from "@/components/ui";
 import { AppHinweis } from "@/components/AppHinweis";
+import { Hausuebungen } from "@/components/lernen/Hausuebungen";
+import { KommendePruefungen } from "@/components/lernen/KommendePruefungen";
+import { Unterlagen } from "@/components/lernen/Unterlagen";
+import { VergangeneEinheiten } from "@/components/lernen/VergangeneEinheiten";
+import { NaechstesMal, SchuelerNotizFrage } from "@/components/SchuelerNotizFrage";
 import { termineFuerSchueler } from "@/lib/planung/schueler-termine";
 import { eintraegeFuerSchueler, STATUS_LABEL } from "@/lib/pruefliste";
 import * as repo from "@/lib/repo";
 import { activeMaterial, materialLabel } from "@/lib/current-material";
 import { analyzeStudent } from "@/lib/service";
+import { notizFuerSchueler, offenerWunsch } from "@/lib/schueler-notiz";
 import { runningUnitForStudent } from "@/lib/units";
 
 
@@ -34,6 +40,8 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
   const { naechster, wochen } = termineFuerSchueler(student.id);
   // eingetragene Prüfungen: nur die eigenen Angaben und der Stand (lib/pruefliste.ts)
   const pruefungen = eintraegeFuerSchueler(student.id);
+  // „Was war heute schwer?“ nach der letzten Einheit und „Für nächstes Mal“, nur die eigenen (lib/schueler-notiz.ts)
+  const notiz = notizFuerSchueler(student.id);
 
   return (
     <>
@@ -46,6 +54,15 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
         </div>
         <SubjectArt subject={student.subjects[0]} topic={bildThema(student.id)} seed={student.id} className="pointer-events-none absolute -right-4 -bottom-6 hidden h-[190px] w-[190px] sm:block" />
       </section>
+
+      {notiz && (
+        <SchuelerNotizFrage
+          token={token}
+          unitId={notiz.unitId}
+          wann={notiz.wann}
+          notiz={notiz.notiz && { auswahl: notiz.notiz.auswahl, text: notiz.notiz.text, uebersprungen: notiz.notiz.uebersprungen }}
+        />
+      )}
 
       {unit && (
         <Link href={`/lernen/${token}/tafel`} className="panel mt-8 flex items-center gap-4 border-accent-bright/60 bg-accent-wash px-5 py-5 transition-colors hover:border-accent-bright">
@@ -75,6 +92,12 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
           </p>
         </section>
       )}
+
+      <NaechstesMal token={token} text={offenerWunsch(student.id)?.text ?? null} />
+
+      {/* Übersicht (lib/schuelerportal.ts): Prüfungen und Hausübungen gleich nach dem nächsten Termin */}
+      <KommendePruefungen studentId={student.id} />
+      <Hausuebungen studentId={student.id} token={token} />
 
       <section className="panel mt-8 px-5 py-5" aria-label="Deine Termine" data-testid="termine">
         <h2 className="flex items-center gap-2 text-[18px] font-semibold">
@@ -138,9 +161,9 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
         </ul>
       )}
 
-      <section id="pruefungen" className="mt-12 scroll-mt-6" aria-label="Deine Prüfungen" data-testid="pruefungen">
+      <section id="pruefungen" className="mt-12 scroll-mt-6" aria-label="Von dir eingetragen" data-testid="pruefung-eintraege">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-[18px] font-semibold">Deine Prüfungen</h2>
+          <h2 className="text-[18px] font-semibold">Von dir eingetragen</h2>
           <Link href={`/lernen/${token}/pruefung`} className="btn btn-secondary" data-testid="pruefung-eintragen">
             <CalendarPlus size={17} aria-hidden /> Prüfung eintragen
           </Link>
@@ -166,6 +189,8 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
           </ul>
         )}
       </section>
+      <Unterlagen studentId={student.id} token={token} />
+      <VergangeneEinheiten studentId={student.id} />
 
       {practiced.length > 0 && (
         <section className="mt-12">

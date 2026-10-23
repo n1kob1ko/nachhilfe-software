@@ -6,7 +6,7 @@
  * checks like a calculation; units may be written or left out.
  */
 import type { Difficulty } from "./curriculum";
-import { bruchWeg, ersterSchritt, kurzaufgabe, prozentwertWeg, type Fehler } from "./mathe-rechnungen";
+import { bruchWeg, ersterSchritt, kurzaufgabe, prozentwertHilfe, prozentwertWeg, prozentwertWege, type Fehler } from "./mathe-rechnungen";
 import {
   STUFE,
   antwort,
@@ -87,7 +87,7 @@ function bruchWerte(f: Frac): string[] {
 const t = (f: Frac) => termText(f, true);
 const stunden = (f: Frac) => (wert(f) > 1 ? "Stunden" : "Stunde");
 
-type Story = { prompt: string; accepted: string[]; mode?: "value" | "exact" | "text"; solution: string; hints: string[]; errors: Fehler[] };
+type Story = { prompt: string; accepted: string[]; mode?: "value" | "exact" | "text"; solution: string; hints: string[]; errors: Fehler[]; wege?: string[] };
 type Kontext = { stufen: Stufe[]; make: (rng: Rng, lv: Stufe) => Story | null };
 
 /** A context that fits the level, tried in random order until one has numbers for it. */
@@ -255,7 +255,11 @@ function erweiternStory(rng: Rng, lv: Stufe): Story | null {
     prompt: u.text(p, bruch(f), T),
     accepted: mitEinheit([String(x)], u.einheit),
     solution: [`${T} : ${f.d} = ${k}, also mit ${k} erweitern.`, `${bruch(f)} = (${f.n} · ${k})/(${f.d} · ${k}) = ${x}/${T}`, `Antwort: Das sind ${x} ${u.wort}.`].join("\n"),
-    hints: [`Erweitere den Bruch auf den Nenner ${T}.`, `${T} : ${f.d} = ${k}`, `Zähler und Nenner mal ${k}.`],
+    // with Zähler 1 the factor already is the answer, so the hints only point the way there
+    hints:
+      f.n === 1
+        ? [`Erweitere den Bruch auf den Nenner ${T}.`, `Mit welcher Zahl musst du ${f.d} multiplizieren, damit ${T} herauskommt?`, `${bruch(f)} von ${T} heißt: ${T} in ${f.d} gleich große Teile teilen.`]
+        : [`Erweitere den Bruch auf den Nenner ${T}.`, `${T} : ${f.d} = ${k}`, `Zähler und Nenner mal ${k}.`],
     errors: [
       { answer: String(k), label: "Mit dem Zähler multiplizieren vergessen" },
       { answer: String(T - x), label: "Den Rest statt den Anteil berechnet" },
@@ -539,6 +543,7 @@ function bruchStory(rng: Rng, lv: Stufe, op: BruchOp, kontexte: BruchKontext[]):
       solution: [`Rechnung: ${rechnung}`, w.solution, `Antwort: ${s.antwort}`].join("\n"),
       hints: [`Welche Rechenart passt? Schreib zuerst die Rechnung auf: ${rechnung}`, ...w.hints.slice(0, 2)],
       errors: w.errors,
+      wege: w.wege,
     };
   }
   return null;
@@ -826,11 +831,12 @@ function prozentwertStory(o: { prompt: string; f: Fall; einheit: string[]; einhe
     prompt: o.prompt,
     accepted: mitEinheit([a], o.einheit),
     solution: [...weg, `Antwort: ${o.antwort(o.geld ? geld(W) : zahl(W))}`].join("\n"),
-    hints: ["Gesucht ist ein Teil vom Ganzen (der Prozentwert).", `Berechne zuerst 1 % oder 10 % von ${zahl(G)}.`, weg[0]],
+    hints: ["Gesucht ist ein Teil vom Ganzen (der Prozentwert).", `Berechne zuerst 1 % oder 10 % von ${zahl(G)}.`, prozentwertHilfe(G, p, W, o.einheitWeg)],
     errors: [
       { answer: antwort(rund(G * p)), label: "Durch 100 dividieren vergessen" },
       { answer: antwort(rund(G - W)), label: "Den Rest statt den Anteil berechnet" },
     ],
+    wege: prozentwertWege(G, p, W, o.einheitWeg),
   };
 }
 
@@ -845,11 +851,12 @@ const PROZENTWERT: Kontext[] = [
           prompt: `Im Abverkauf gibt es auf ${ding.einen} um ${euro(G)} ${zahl(p)} % Rabatt. Wie viel Euro sparst du?`,
           accepted: mitEinheit([geldAntwort(W)], ["€", "Euro"]),
           solution: [...weg, `Antwort: Du sparst ${euro(W)}.`].join("\n"),
-          hints: ["Der Rabatt ist ein Teil vom alten Preis.", `Berechne ${zahl(p)} % von ${euro(G)}.`, weg[0]],
+          hints: ["Der Rabatt ist ein Teil vom alten Preis.", `Berechne ${zahl(p)} % von ${euro(G)}.`, prozentwertHilfe(G, p, W)],
           errors: [
             { answer: antwort(rund(G * p)), label: "Durch 100 dividieren vergessen" },
             { answer: geldAntwort(rund(G - W)), label: "Neuen Preis statt Rabatt berechnet" },
           ],
+          wege: prozentwertWege(G, p, W),
         };
       const teurer = lv === 4 && rng() < 0.4;
       const neu = rund(teurer ? G + W : G - W);
@@ -1511,7 +1518,8 @@ function potenzStory(o: { prompt: string; base: string; e: number; k?: number; z
     accepted: [...potenzVarianten(o.base, o.e, k), ...(o.zahl ? zahlVarianten(zahlwert) : [])],
     mode: "text",
     solution: [...o.rechnung, `Antwort: ${potenz(o.base, o.e, k)}${o.zahl ? ` = ${zahlVarianten(zahlwert)[1] ?? zahlwert}` : ""}`].join("\n"),
-    hints: [o.regel, "Hochzahlen schreibst du mit ^, zum Beispiel 2^5 für 2 hoch 5.", o.rechnung[0]],
+    // a one-line way ends in the result, so the hint stops one step before it
+    hints: [o.regel, "Hochzahlen schreibst du mit ^, zum Beispiel 2^5 für 2 hoch 5.", o.rechnung.length > 1 ? o.rechnung[0] : o.rechnung[0].split(" = ").slice(0, -1).join(" = ")],
     errors: o.errors.filter((e) => e.answer !== potenz(o.base, o.e, k)),
   };
 }

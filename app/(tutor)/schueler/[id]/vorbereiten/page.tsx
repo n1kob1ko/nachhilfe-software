@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { vorbereitenAction } from "@/app/cockpit-actions";
 import { PaketAuswahl } from "@/components/cockpit/Cockpit";
+import { SchuelerWorteKarte } from "@/components/SchuelerNotiz";
 import { PageHeader } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { vorbereitung } from "@/lib/cockpit";
@@ -10,6 +11,7 @@ import { paketWahl } from "@/lib/cockpit-vorschlag";
 import { getLernpaket } from "@/lib/lernpakete";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
+import { schuelerWorte } from "@/lib/schueler-notiz";
 import { runningUnitForStudent } from "@/lib/units";
 
 export const metadata = { title: "Einheit vorbereiten" };
@@ -28,6 +30,8 @@ export default async function VorbereitenPage({ params, searchParams }: { params
   const p = v ? getLernpaket(v.paket_id) : null;
   const laeuft = runningUnitForStudent(student.id);
   const wahl = paketWahl(student.id);
+  // was der Schüler für die nächste Einheit geschrieben hat (lib/schueler-notiz.ts); passt es zu einem Paket, steht es bei „Warum heute“
+  const worte = laeuft ? null : schuelerWorte(student.id, null);
   return (
     <>
       <PageHeader title={`Einheit vorbereiten: ${student.name}`} back={{ href: "/", label: "Heute" }} subtitle="Das Lernpaket für heute. Beim Start der Einheit steht es im Cockpit bereit." />
@@ -58,6 +62,7 @@ export default async function VorbereitenPage({ params, searchParams }: { params
             </form>
           </div>
         )}
+        {worte && <SchuelerWorteKarte worte={worte} name={student.name.split(" ")[0]} />}
         <PaketAuswahl wahl={wahl} action={vorbereitenAction.bind(null, student.id)} gewaehlt={p?.id ?? null} />
       </div>
     </>
