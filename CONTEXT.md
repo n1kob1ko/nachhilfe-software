@@ -365,7 +365,8 @@ Folien mit Animationen, hochgeladen als HTML-Datei oder ZIP-Datei (claude.ai, re
 der Browser spielt sie ab, wie sie gebaut sind. Dazu der **Vortragstext** je Folie, nur auf Lehrerseiten. Ein
 Lernpaket kann eine Präsentation haben; seine Schritte nennen die Folie. Läuft auf einer eigenen Adresse in einer
 Sandbox, getrennt von Schülerdaten und Sitzungen (`lib/praesentationen.ts`, [docs/praesentation-format.md](docs/praesentation-format.md)).
-PowerPoint geht nur als PDF unter Material, ohne Animationen.
+PowerPoint geht nur als PDF unter Material, ohne Animationen. Aus einem geprüften Lernpaket kann die KI eine
+erstellen: erst ein Vorschlag, mit „Übernehmen“ gespeichert, „Ungeprüft“, bis ein Lehrer sie ansieht (`lib/praesentation-ki.ts`).
 _Avoid_: Deck, Foliensatz, Slides, Präsi
 
 **Vortragstext**:

@@ -56,7 +56,16 @@ export type Praesentation = {
   created_by: number | null;
   created_at: string;
   updated_at: string;
+  /** "ki": von der KI aus einem Lernpaket erstellt (lib/praesentation-ki.ts); "" = hochgeladen */
+  quelle: string;
+  /** a KI deck: its request in ai_calls (tokens and cost) */
+  ki_call_id: number | null;
+  geprueft_von: number | null;
+  geprueft_am: string | null;
 };
+
+/** A KI deck no teacher has looked at yet. An upload is the teacher's own file and needs no mark. */
+export const praesUngeprueft = (p: Pick<Praesentation, "quelle" | "geprueft_am">) => p.quelle === "ki" && !p.geprueft_am;
 
 /** What the upload form and the edit form give: the data of a Lernpaket, with a description instead of a goal. */
 export type PraesMeta = {
@@ -173,7 +182,7 @@ export type ImportErgebnis = { id: number; extern: string[] } | { fehler: string
  * An upload from the teacher: one HTML file or a ZIP. Checked (lib/praesentation-zip.ts), the notes file
  * read, the files written, the row stored. A PDF is not a presentation here: the caller puts it under Material.
  */
-export function importierePraesentation(datei: { name: string; data: Buffer }, m: PraesMeta, teacherId: number | null): ImportErgebnis {
+export function importierePraesentation(datei: { name: string; data: Buffer }, m: PraesMeta, teacherId: number | null, o: { quelle?: "ki"; kiCallId?: number | null } = {}): ImportErgebnis {
   if (!datei.data.length) return { fehler: ["Bitte eine Datei wählen."] };
   if (datei.data.length > ZIP_GRENZEN.upload) return { fehler: [`Die Datei ist zu groß (höchstens ${ZIP_GRENZEN.upload / 1024 / 1024} MB).`] };
   const art = uploadArt(datei.name, datei.data);
@@ -200,13 +209,13 @@ export function importierePraesentation(datei: { name: string; data: Buffer }, m
   const w = meta.wert;
   const res = db()
     .prepare(
-      `INSERT INTO praesentationen (title, fach, schulart, klasse, schulstufe, thema, skill_ids, schwierigkeit, beschreibung, token, start_pfad, dateien, groesse, datei_name, extern, notizen, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO praesentationen (title, fach, schulart, klasse, schulstufe, thema, skill_ids, schwierigkeit, beschreibung, token, start_pfad, dateien, groesse, datei_name, extern, notizen, created_by, quelle, ki_call_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       w.title, w.fach, w.schulart, w.klasse, w.schulart && w.klasse ? schulstufe(w.schulart, w.klasse) : null, w.thema, JSON.stringify(w.skill_ids), w.schwierigkeit, w.ziel,
       token, r.wert.start, JSON.stringify(r.wert.dateien.map((d) => ({ pfad: d.pfad, groesse: d.daten.length }))), r.wert.dateien.reduce((n, d) => n + d.daten.length, 0),
-      sauberName(datei.name), JSON.stringify(r.wert.extern), JSON.stringify(notizen), teacherId,
+      sauberName(datei.name), JSON.stringify(r.wert.extern), JSON.stringify(notizen), teacherId, o.quelle ?? "", o.kiCallId ?? null,
     );
   return { id: Number(res.lastInsertRowid), extern: r.wert.extern };
 }
@@ -356,6 +365,11 @@ export function archivierePraesentation(id: number): boolean {
 
 export function stellePraesentationWiederHer(id: number): boolean {
   return db().prepare("UPDATE praesentationen SET status = 'aktiv', updated_at = datetime('now') WHERE id = ? AND status = 'archiviert'").run(id).changes > 0;
+}
+
+/** A KI deck the teacher has looked through: the „Ungeprüft“ mark goes. */
+export function markierePraesentationGeprueft(id: number, teacherId: number): boolean {
+  return db().prepare("UPDATE praesentationen SET geprueft_von = ?, geprueft_am = datetime('now'), updated_at = datetime('now') WHERE id = ? AND geprueft_am IS NULL").run(teacherId, id).changes > 0;
 }
 
 // ---------- Lernpakete ----------

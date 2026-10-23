@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { Search, Upload, X } from "lucide-react";
+import { Search, ShieldAlert, Upload, X } from "lucide-react";
 import { subjectTone } from "@/components/Calendar";
 import { Empty, PageHeader, Pill } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { DIFFICULTIES } from "@/lib/curriculum";
-import { listPraesentationen, praesentationFacetten, type PraesStatus } from "@/lib/praesentationen";
+import { listPraesentationen, praesentationFacetten, praesUngeprueft, type PraesStatus } from "@/lib/praesentationen";
 import { GRENZEN } from "@/lib/praesentation-zip";
 import * as repo from "@/lib/repo";
 import { fachVorschlaege, klassenLabel, SCHOOL_TYPES } from "@/lib/school";
@@ -220,6 +220,12 @@ export default async function PraesentationenPage({ searchParams }: { searchPara
                       <Pill>
                         Vortragstext zu <span className="num">{notizen}</span> {notizen === 1 ? "Folie" : "Folien"}
                       </Pill>
+                      {p.quelle === "ki" && <Pill>mit KI erstellt</Pill>}
+                      {praesUngeprueft(p) && (
+                        <Pill tone="amber" title="Von der KI erstellt und noch von niemandem geprüft">
+                          <ShieldAlert size={12} aria-hidden /> Ungeprüft
+                        </Pill>
+                      )}
                       <span className="num text-ink-3">{mb(p.groesse)}</span>
                     </span>
                   </Link>

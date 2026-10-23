@@ -1044,6 +1044,21 @@ CREATE INDEX IF NOT EXISTS idx_units_student ON units(student_id, started_at);
 CREATE INDEX IF NOT EXISTS idx_units_teacher ON units(teacher_id, started_at);
 CREATE INDEX IF NOT EXISTS idx_snapshots ON skill_snapshots(student_id, skill_id, recorded_at);
 CREATE INDEX IF NOT EXISTS idx_lessons_student ON lessons(student_id, starts_at);
+-- Präsentation aus einem Lernpaket (lib/praesentation-ki.ts, Plan 5.1): der Vorschlag der KI, bevor der Lehrer ihn übernimmt.
+-- inhalt: JSON, der Inhalt der Folien (lib/ai/praesentation.ts Deck), nie HTML; die App baut die Präsentation erst beim Übernehmen.
+-- status = vorschlag | uebernommen | verworfen; praesentation_id: die gespeicherte Präsentation nach dem Übernehmen.
+CREATE TABLE IF NOT EXISTS praesentation_entwuerfe (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  paket_id INTEGER NOT NULL REFERENCES lernpakete(id) ON DELETE CASCADE,
+  inhalt TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'vorschlag',
+  praesentation_id INTEGER REFERENCES praesentationen(id) ON DELETE SET NULL,
+  call_id INTEGER REFERENCES ai_calls(id) ON DELETE SET NULL,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_praesentation_entwuerfe ON praesentation_entwuerfe(paket_id, status);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */
@@ -1263,6 +1278,12 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["tasks", "quelle", "TEXT"],
   // Prüfungen eintragen (lib/pruefliste.ts, Plan 3.1): 'schueler' = der Schüler hat sie in seiner App eingetragen
   ["tests", "quelle", "TEXT NOT NULL DEFAULT ''"],
+  // Präsentation aus einem Lernpaket (lib/praesentation-ki.ts, Plan 5.1): 'ki' = von der KI erstellt ('' = hochgeladen), die Anfrage
+  // im Protokoll, und wer sie geprüft hat; eine KI-Präsentation bleibt „Ungeprüft“, bis ein Lehrer sie ansieht
+  ["praesentationen", "quelle", "TEXT NOT NULL DEFAULT ''"],
+  ["praesentationen", "ki_call_id", "INTEGER"],
+  ["praesentationen", "geprueft_von", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
+  ["praesentationen", "geprueft_am", "TEXT"],
 ];
 
 /** Teachers to start with; more can be added later. */
