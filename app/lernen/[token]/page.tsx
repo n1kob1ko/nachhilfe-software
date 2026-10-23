@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { CalendarDays, CheckCircle2, ChevronRight, DoorOpen, Presentation } from "lucide-react";
+import { CalendarDays, CalendarPlus, CheckCircle2, ChevronRight, DoorOpen, Presentation } from "lucide-react";
 import { notFound } from "next/navigation";
 import { SubjectArt } from "@/components/Art";
 import { MasteryBar, Pill, TrendBadge, formatDate } from "@/components/ui";
 import { AppHinweis } from "@/components/AppHinweis";
 import { termineFuerSchueler } from "@/lib/planung/schueler-termine";
+import { eintraegeFuerSchueler, STATUS_LABEL } from "@/lib/pruefliste";
 import * as repo from "@/lib/repo";
 import { activeMaterial, materialLabel } from "@/lib/current-material";
 import { analyzeStudent } from "@/lib/service";
@@ -31,6 +32,8 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
 
   // wo und wann: nur veröffentlichte Plätze, ohne Namen (lib/planung/schueler-termine.ts)
   const { naechster, wochen } = termineFuerSchueler(student.id);
+  // eingetragene Prüfungen: nur die eigenen Angaben und der Stand (lib/pruefliste.ts)
+  const pruefungen = eintraegeFuerSchueler(student.id);
 
   return (
     <>
@@ -134,6 +137,35 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
           ))}
         </ul>
       )}
+
+      <section id="pruefungen" className="mt-12 scroll-mt-6" aria-label="Deine Prüfungen" data-testid="pruefungen">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-[18px] font-semibold">Deine Prüfungen</h2>
+          <Link href={`/lernen/${token}/pruefung`} className="btn btn-secondary" data-testid="pruefung-eintragen">
+            <CalendarPlus size={17} aria-hidden /> Prüfung eintragen
+          </Link>
+        </div>
+        {pruefungen.length === 0 ? (
+          <p className="text-[15px] text-ink-2">Steht eine Schularbeit oder ein Test an? Trag sie hier ein, mit einem Foto vom Stoffzettel.</p>
+        ) : (
+          <ul className="panel divide-y divide-line">
+            {pruefungen.map((p) => (
+              <li key={p.id} className="flex items-start justify-between gap-3 px-5 py-3">
+                <span className="min-w-0">
+                  <span className="block font-semibold">
+                    {p.art} {p.fach}
+                  </span>
+                  <span className="block text-[14px] break-words text-ink-2">
+                    <span className="num">{p.datum ? formatDate(p.datum, { weekday: "short", day: "numeric", month: "short" }) : "Datum offen"}</span>
+                    {p.stoff && ` · ${p.stoff}`}
+                  </span>
+                </span>
+                <Pill tone={p.status === "uebernommen" || p.status === "automatisch" ? "green" : p.status === "eingereicht" ? "accent" : "neutral"}>{STATUS_LABEL[p.status]}</Pill>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {practiced.length > 0 && (
         <section className="mt-12">

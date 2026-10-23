@@ -855,6 +855,38 @@ CREATE TABLE IF NOT EXISTS todo_gesehen (
   seen_at TEXT NOT NULL,
   PRIMARY KEY (teacher_id, art, ref_id)
 );
+-- Prüfungen, die ein Schüler in seiner App einträgt (lib/pruefliste.ts, Plan 3.1). Ist alles klar (vor allem ein sicheres
+-- Datum), wird gleich eine Schularbeit (tests, quelle = 'schueler'); sonst prüft ein Lehrer in der Prüfliste.
+-- status = eingereicht (zu prüfen) | automatisch (eingetragen, Lehrer hat noch nicht bestätigt) | uebernommen | verworfen.
+-- datum NULL = keins angegeben; keine_namen = 1: der Schüler hat bestätigt, dass auf den Fotos kein Name steht.
+CREATE TABLE IF NOT EXISTS pruefung_einreichungen (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  art TEXT NOT NULL,
+  fach TEXT NOT NULL,
+  datum TEXT,
+  stoff TEXT NOT NULL DEFAULT '',
+  notiz TEXT NOT NULL DEFAULT '',
+  keine_namen INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'eingereicht',
+  test_id INTEGER REFERENCES tests(id) ON DELETE SET NULL,
+  entschieden_von INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  entschieden_am TEXT,
+  created_at TEXT NOT NULL
+);
+-- Die Fotos dazu, je als Material des Schülers (Stoffzettel). neu = 1: das Material entstand mit dieser Einreichung
+-- (beim Verwerfen wird es gelöscht). gelesen_am: das Foto wurde einmal gelesen, vorschlag ist das Ergebnis (JSON).
+CREATE TABLE IF NOT EXISTS pruefung_einreichung_fotos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  einreichung_id INTEGER NOT NULL REFERENCES pruefung_einreichungen(id) ON DELETE CASCADE,
+  material_id INTEGER REFERENCES materials(id) ON DELETE SET NULL,
+  neu INTEGER NOT NULL DEFAULT 1,
+  gelesen_am TEXT,
+  vorschlag TEXT,
+  fehler TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_pruefung_einreichungen ON pruefung_einreichungen(student_id, status);
+CREATE INDEX IF NOT EXISTS idx_pruefung_einreichung_fotos ON pruefung_einreichung_fotos(einreichung_id);
 CREATE INDEX IF NOT EXISTS idx_ge_week ON geplante_einheiten(week_start, status);
 CREATE INDEX IF NOT EXISTS idx_ge_teacher ON geplante_einheiten(teacher_id, week_start);
 CREATE INDEX IF NOT EXISTS idx_ge_student ON geplante_einheiten(student_id, week_start);
@@ -1082,6 +1114,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // KI-Grenze je Schüler und Monat (lib/ai/schueler-kosten.ts, 2026-10-23): um welchen Schüler es im Aufruf ging
   // (meta.studentId, sonst der Schüler der Einheit); null = keiner (Lesetext, Druckblatt, Verbindungstest …)
   ["ai_calls", "student_id", "INTEGER REFERENCES students(id) ON DELETE SET NULL"],
+  // Prüfungen eintragen (lib/pruefliste.ts, Plan 3.1): 'schueler' = der Schüler hat sie in seiner App eingetragen
+  ["tests", "quelle", "TEXT NOT NULL DEFAULT ''"],
 ];
 
 /** Teachers to start with; more can be added later. */

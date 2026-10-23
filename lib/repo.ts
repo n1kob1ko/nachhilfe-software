@@ -132,6 +132,8 @@ export type TestResult = {
   created_at?: string | null;
   /** the Stoffzettel as material (photo or PDF, lib/stoffzettel.ts) */
   material_id?: number | null;
+  /** 'schueler' when the student entered it in his app (lib/pruefliste.ts) */
+  quelle?: string;
 };
 
 export type Worksheet = {

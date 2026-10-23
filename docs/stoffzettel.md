@@ -50,6 +50,41 @@ hochladen damit es eingetragen ist für den schüler“. Der Begriff steht in [C
 - Der Zettel bleibt Material des Schülers, auch wenn die Schularbeit gelöscht wird. Wird das Material
   gelöscht, bleibt die Schularbeit ohne Zettel.
 
+## Vom Schüler eingetragen (Prüfliste)
+
+niko, Plan 3.1: „Der Schüler fotografiert einen Stoffzettel und lädt ihn hoch. Danach soll die Verarbeitung
+automatisch erfolgen. … Unklare Angaben sollen zur Überprüfung angeboten werden. Keine erfundenen Termine
+automatisch eintragen.“
+
+| Bereich | Ort |
+|---|---|
+| Regeln, Speichern, Lesen, Entscheiden | `lib/pruefliste.ts` |
+| Schüler-App | `app/lernen/[token]/pruefung/page.tsx`, `components/PruefungEintragen.tsx`, Liste auf `app/lernen/[token]/page.tsx` |
+| Hochladen, Verarbeiten | `app/lernen/[token]/pruefung/senden/route.ts`, `.../verarbeiten/route.ts` |
+| Prüfliste | `components/Pruefliste.tsx`, `components/PrueflisteEintrag.tsx`, `app/pruefliste-actions.ts` |
+| Tabellen | `pruefung_einreichungen`, `pruefung_einreichung_fotos`; Spalte `tests.quelle` |
+
+1. In der Schüler-App **Prüfung eintragen**: Art, Fach, Datum (darf leer bleiben), Stoff, Notiz, bis zu
+   4 Fotos oder PDFs. Ein Hinweis zur Datenverarbeitung steht immer beim Foto-Knopf.
+2. Mit dem Haken „Auf den Fotos ist kein Name zu sehen“ werden die Fotos gleich nach dem Hochladen
+   gelesen, ohne eigenen Knopf. Der Schüler sieht „Dokument wird verarbeitet.“, dann „Prüfungsstoff wurde
+   eingetragen.“ Ohne Haken, ohne KI oder an der Grenze je Schüler wird nichts gelesen.
+3. Ist alles klar, wird gleich eine Schularbeit eingetragen (`automatischMoeglich`): jedes Foto gelesen,
+   Art, Fach und Datum widersprechen dem Schüler nicht, und das Datum liegt ab heute und höchstens ein Jahr
+   voraus; ein Datum vom Foto zählt nicht, wenn beim Lesen etwas unsicher war. Sie steht im Profil mit
+   „vom Schüler eingetragen“ und zählt für Erinnerung, Cockpit und „Warum heute“.
+4. Sonst bleibt der Eintrag in der **Prüfliste** (Profil › Stoff & Prüfungen, „Zu erledigen“), ohne Termin.
+   Ein leeres Feld wird mit dem Gelesenen vorgefüllt, ein anderer Wert steht als Hinweis da, ein unklares
+   Datum bleibt leer. **Übernehmen** legt die Schularbeit an (Datum Pflicht), **Verwerfen** nicht.
+5. Auch eine schon eingetragene steht in der Prüfliste, bis ein Lehrer sie **bestätigt** (Änderungen gehen in
+   die Schularbeit) oder **verwirft** (die Schularbeit wird gelöscht, solange sie kein Ergebnis hat).
+6. Nur die Lehrer des Schülers und der Admin. Der Schüler sieht eingereicht, eingetragen, übernommen oder
+   nicht übernommen, nie Notizen oder Hinweise vom Lesen. Verworfene Fotos, die sonst nirgends hängen,
+   werden gelöscht.
+
+Jedes Foto wird höchstens einmal gelesen (auch nach einem Fehler), die Kosten zählen für den Schüler.
+Ein Schüler kann höchstens 6 Einträge am Tag machen und 10 offene haben.
+
 ## Kosten
 
 Eine Anfrage pro Zettel (Bereich MATERIAL, Stufe standard, ohne Nachdenken, kurze Antwort), auf
