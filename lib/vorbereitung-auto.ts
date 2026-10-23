@@ -3,8 +3,9 @@
  * schon vorbereitet“). Für jede kommende Einheit sucht die App nach festen Regeln, ohne KI und ohne Kosten, das
  * passende **geprüfte** Lernpaket aus. Die Signale, das stärkste zuerst (`SIGNAL_RANG`):
  *   1. eine Prüfung in den nächsten 30 Tagen in diesem Fach: ihre Fähigkeiten (Stoff zugeordnet) oder ihr Stoff
- *   2. der Lernstand: aktueller Stoff, Schwäche, Fehler zuletzt, Voraussetzung, Wiederholen (lib/recommend.ts)
- *   3. ein Wunsch des Schülers für die nächste Stunde (Haken für später, siehe `WunschDesSchuelers`)
+ *   2. der Wunsch des Schülers: was er in der Schüler-App unter „Für nächstes Mal“ oder „Was war heute schwer?“
+ *      geschrieben hat, soweit die Wörter eine Fähigkeit nennen (lib/schueler-notiz.ts, `wuenscheFuer`)
+ *   3. der Lernstand: aktueller Stoff, Schwäche, Fehler zuletzt, Voraussetzung, Wiederholen (lib/recommend.ts)
  *   4. die letzte Einheit: ein begonnenes Paket, sonst ihr Thema
  * Dazu müssen Fach, Schulart und Schulstufe passen. Entwürfe und ungeprüfte Pakete werden nie vorausgewählt,
  * nur als „Entwurf“ genannt. Findet sich keines, sagt die App „Kein Paket für …“ und bietet „Mit KI entwerfen“
@@ -14,7 +15,7 @@
  * selbst wählt (`einheit_vorbereitung`, das Cockpit der Einheit), gilt immer vor dem Vorschlag; „Entfernen“
  * merkt sich nur, dass er für diesen Tag kein Paket will (`vorbereitung_ohne_paket`).
  */
-import { frueher, stoffPasst } from "./cockpit-vorschlag";
+import { frueher, stoffPasst, zitat } from "./cockpit-vorschlag";
 import { db } from "./db";
 import { daysUntil } from "./exams";
 import { ungeprueft, listLernpakete, getLernpaket, type Lernpaket } from "./lernpakete";
@@ -22,6 +23,7 @@ import { einheitenFuerTag, istNichtStattgefunden, mitNamen } from "./planung/rep
 import { datumLabel, minutenLabel, tagAddieren, wienerDatum } from "./planung/zeit";
 import { nextSteps, RULE_LABEL, type NextStep } from "./recommend";
 import * as repo from "./repo";
+import { schuelerWorte } from "./schueler-notiz";
 
 /** Wie weit eine Prüfung voraus zählt. */
 export const PRUEFUNG_TAGE = 30;
@@ -30,8 +32,11 @@ export const VORAUS_TAGE = 7;
 
 export type SignalArt = "pruefung" | "lernstand" | "wunsch" | "letzte_einheit";
 
-/** Die Stärke der Signale: das höhere gewinnt, bei gleicher Art das frühere in der Liste. */
-export const SIGNAL_RANG: Record<SignalArt, number> = { pruefung: 4, lernstand: 3, wunsch: 2, letzte_einheit: 1 };
+/**
+ * Die Stärke der Signale: das höhere gewinnt, bei gleicher Art das frühere in der Liste. Der Wunsch des Schülers
+ * steht unter einer nahen Prüfung und über den Empfehlungen der App, wie „Warum heute“ in lib/cockpit-vorschlag.ts.
+ */
+export const SIGNAL_RANG: Record<SignalArt, number> = { pruefung: 4, wunsch: 3, lernstand: 2, letzte_einheit: 1 };
 export const SIGNAL_LABEL: Record<SignalArt, string> = { pruefung: "Prüfung", lernstand: "Lernstand", wunsch: "Wunsch des Schülers", letzte_einheit: "Letzte Einheit" };
 
 /** Ein Grund, ein Thema zu nehmen, aus dem, was die App schon weiß. */
@@ -51,16 +56,32 @@ export type Signal = {
 };
 
 /**
- * Haken für den **Wunsch des Schülers** für die nächste Stunde (Plan 3.2, Zweig notiz-nach-stunde, noch nicht
- * fertig). Sobald es die Wünsche gibt, gibt der Aufrufer sie als `wuensche` mit; hier hängt nichts an ihrer
- * Tabelle. Ein Wunsch bleibt ein Vorschlag des Schülers, keine Tatsache über ihn.
+ * Der **Wunsch des Schülers** für die nächste Einheit: ein Satz aus der Schüler-App („Für nächstes Mal“ oder „Was
+ * war heute schwer?“) mit den Fähigkeiten, die seine Wörter sicher nennen (`faehigkeitenAus`, lib/schueler-notiz.ts).
+ * `name` ist sein Vorname. Es sind seine Worte, keine Tatsache über ihn: berechnet beim Anzeigen, nie gespeichert.
  */
-export type WunschDesSchuelers = { text: string; fach?: string; skill_ids?: string[] };
+export type WunschDesSchuelers = { text: string; name: string; skill_ids: string[]; fach?: string; thema?: string };
 
+/** Nur ein Wunsch, der eine Fähigkeit nennt, ist ein Signal; sonst ändert er nichts. „Warum“ zitiert den Schüler. */
 export function wunschSignal(w: WunschDesSchuelers): Signal | null {
-  const text = w.text.replace(/\s+/g, " ").trim().slice(0, 120);
-  if (!text && !w.skill_ids?.length) return null;
-  return { art: "wunsch", fach: w.fach ?? "", skill_ids: w.skill_ids ?? [], stoff: text ? [text] : [], thema: text, warum: `${SIGNAL_LABEL.wunsch}: ${text}` };
+  const text = w.text.replace(/\s+/g, " ").trim();
+  if (!text || !w.skill_ids.length) return null;
+  return { art: "wunsch", fach: w.fach ?? "", skill_ids: w.skill_ids, stoff: [], thema: w.thema ?? "", warum: `${w.name} schreibt: „${zitat(text)}“` };
+}
+
+/**
+ * Was der Schüler vor der Einheit `unitId` geschrieben hat (ohne Einheit: was gerade offen ist, für seine nächste),
+ * je Satz mit den Fähigkeiten, die er nennt; „Für nächstes Mal“ zuerst. Sätze ohne Treffer fallen weg.
+ */
+export function wuenscheFuer(studentId: number, unitId: number | null): WunschDesSchuelers[] {
+  const student = repo.getStudent(studentId);
+  const w = student ? schuelerWorte(studentId, unitId) : null;
+  if (!student || !w) return [];
+  const name = student.name.split(" ")[0];
+  return w.treffer.map((t) => {
+    const faecher = new Set(t.skills.map((s) => s.subject));
+    return { text: t.text, name, skill_ids: t.skills.map((s) => s.id), fach: faecher.size === 1 ? t.skills[0].subject : "", thema: t.skills[0].name };
+  });
 }
 
 /** Wie ein Paket zum Signal passt: über die Fähigkeit, als genau dieses Paket, oder nur über ein Stichwort (unsicher). */
@@ -204,7 +225,7 @@ export function schuelerBasis(student: repo.Student, now: Date): SchuelerBasis {
 
 /**
  * Die Signale für eine Einheit am `datum` im `fach` (leer = Fächer im Profil). `ausser` ist die Einheit selbst
- * (sie zählt nicht als „letzte“). `wuensche` ist der Haken für den Wunsch des Schülers.
+ * (sie zählt nicht als „letzte“). `wuensche`: was der Schüler für diese Einheit geschrieben hat (`wuenscheFuer`).
  */
 export function signaleFuer(b: SchuelerBasis, o: { datum: string; fach: string; ausser?: number | null; wuensche?: WunschDesSchuelers[] }): Signal[] {
   const faecher = o.fach ? [o.fach] : b.student.subjects;
@@ -289,7 +310,7 @@ export function autoFuerEinheit(unit: { id: number; student_id: number; subject:
   if (ohnePaketMarkiert(unit.student_id, datum)) return null;
   const student = repo.getStudent(unit.student_id);
   if (!student) return null;
-  return autoWahl(schuelerBasis(student, now), { datum, fach: unit.subject ?? "", ausser: unit.id });
+  return autoWahl(schuelerBasis(student, now), { datum, fach: unit.subject ?? "", ausser: unit.id, wuensche: wuenscheFuer(student.id, unit.id) });
 }
 
 // ---------- the coming units (start page) ----------
@@ -355,13 +376,18 @@ export function kommendeTermine(teacherId: number, now: Date = new Date(), tage 
     .sort((a, b) => a.datum.localeCompare(b.datum) || a.start_min - b.start_min || a.studentName.localeCompare(b.studentName, "de"));
 }
 
-/** Für jede kommende Einheit: die Wahl des Lehrers, sonst der Vorschlag. Nur lesen, keine KI. */
+/**
+ * Für jede kommende Einheit: die Wahl des Lehrers, sonst der Vorschlag. Nur lesen, keine KI. Was der Schüler für
+ * nächstes Mal geschrieben hat, zählt nur für seine nächste Einheit (`wuensche`, sonst `wuenscheFuer`).
+ */
 export function naechsteEinheiten(teacherId: number, now: Date = new Date(), o: { tage?: number; wuensche?: (studentId: number) => WunschDesSchuelers[] } = {}): NaechsteEinheit[] {
   const termine = kommendeTermine(teacherId, now, o.tage);
   if (!termine.length) return [];
   const pakete = listLernpakete();
   const verwandt = verwandtschaft();
   const basen = new Map<number, SchuelerBasis | null>();
+  const wunschVon = o.wuensche ?? ((id: number) => wuenscheFuer(id, null));
+  const schonGeplant = new Set<number>();
   const heute = wienerDatum(now);
   const out: NaechsteEinheit[] = [];
   for (const t of termine) {
@@ -371,13 +397,15 @@ export function naechsteEinheiten(teacherId: number, now: Date = new Date(), o: 
     }
     const b = basen.get(t.studentId);
     if (!b) continue;
+    const naechste = !schonGeplant.has(t.studentId);
+    schonGeplant.add(t.studentId);
     const v = db().prepare("SELECT paket_id FROM einheit_vorbereitung WHERE student_id = ? AND datum = ?").get(t.studentId, t.datum) as { paket_id: number } | undefined;
     const gewaehlt = v ? getLernpaket(v.paket_id) : null;
     const wahl: Vorbereitet = gewaehlt
       ? { art: "gewaehlt", paket: gewaehlt }
       : ohnePaketMarkiert(t.studentId, t.datum)
         ? { art: "entfernt" }
-        : autoWahl(b, { datum: t.datum, fach: t.fach, wuensche: o.wuensche?.(t.studentId), pakete, verwandt });
+        : autoWahl(b, { datum: t.datum, fach: t.fach, wuensche: naechste ? wunschVon(t.studentId) : undefined, pakete, verwandt });
     const fehlt = wahl.art === "kein_paket" ? wahl.signal : wahl.art === "paket" ? wahl.luecke : null;
     out.push({
       key: t.key,
