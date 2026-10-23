@@ -5,6 +5,8 @@
  *      im Titel oder Thema des Pakets („Brüche“ ↔ „Bruchrechnung“)
  *   2. die Empfehlung der App (`nextSteps`, lib/recommend.ts): Prüfung, aktueller Stoff, Schwäche, Fehler …
  *   3. das Paket wurde in einer früheren Einheit begonnen und nicht fertig
+ *   4. der Schüler schreibt in der Schüler-App, was schwer war oder drankommen soll, und die Wörter nennen eine
+ *      Fähigkeit des Pakets (lib/schueler-notiz.ts); „Warum heute“ zitiert ihn
  * Dazu passen Fach (Fach der Einheit oder Fächer im Profil) und Schulstufe (höchstens eine daneben); ein
  * Paket, das schon ganz durch ist, rückt nach hinten. Geprüfte Pakete gehen vor; ungeprüfte stehen nur mit
  * dem Hinweis „Ungeprüft“ da. Der Lehrer kann jedes Paket nehmen oder keines.
@@ -19,6 +21,7 @@ import { getLernpaket, listLernpakete, ungeprueft, type Lernpaket } from "./lern
 import { wienerDatum } from "./planung/zeit";
 import { nextSteps, type NextStep } from "./recommend";
 import * as repo from "./repo";
+import { schuelerWorte } from "./schueler-notiz";
 import { typischeFehler } from "./themen";
 
 const wann = (days: number) => (days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`);
@@ -43,6 +46,17 @@ export type VorschlagEingabe = {
   frueher: Map<number, Frueher>;
   /** gleiche Fähigkeit, oder die eine ist Teilfähigkeit der anderen */
   verwandt: (a: string, b: string) => boolean;
+  /** was der Schüler vor dieser Einheit geschrieben hat, je Text die Fähigkeiten, die er nennt; `name` ist sein Vorname */
+  worte?: { name: string; treffer: { text: string; skill_ids: string[] }[] } | null;
+};
+
+/** Was der Schüler schreibt, für „Warum heute“; ein langer Text endet nach einem ganzen Wort mit „…“. */
+export const zitat = (text: string, max = 120) => {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  const k = t.slice(0, max);
+  const leer = k.lastIndexOf(" ");
+  return `${(leer > max / 2 ? k.slice(0, leer) : k).trimEnd()} …`;
 };
 
 export type Vorschlag = {
@@ -97,6 +111,8 @@ export function schlageVor(e: VorschlagEingabe): Vorschlag[] {
       if (s.rule === 1 && pruefungGenannt) return; // the Schularbeit is named already
       if (p.skill_ids.some((id) => e.verwandt(id, s.skill.id))) gruende.push({ g: 60 - 5 * i, text: `${s.skill.name}: ${s.reason}` });
     });
+    const w = e.worte?.treffer.find((x) => p.skill_ids.some((id) => x.skill_ids.some((y) => e.verwandt(id, y))));
+    if (w) gruende.push({ g: 80, text: `${e.worte!.name} schreibt: „${zitat(w.text)}“` });
     const f = e.frueher.get(p.id);
     if (f && f.offen > 0 && f.erledigt > 0) gruende.push({ g: 50, text: `Am ${datumKurz(f.datum)} begonnen: ${f.erledigt} von ${f.gesamt} Schritten erledigt` });
     if (!gruende.length) continue;
@@ -179,8 +195,16 @@ export function paketWahl(studentId: number, o: { fach?: string; ausser?: number
     pruefung,
     frueher: frueher(studentId, o.ausser ?? null),
     verwandt,
+    worte: worteFuerVorschlag(student, o.ausser ?? null),
   };
   return { vorschlaege: schlageVor(e).slice(0, 3), ...alleZurWahl(pakete, e), gesamt: pakete.length };
+}
+
+/** Die Sätze des Schülers vor der Einheit `ausser` (ohne: die offenen, für die nächste) mit den Fähigkeiten, die sie nennen. */
+function worteFuerVorschlag(student: repo.Student, ausser: number | null): VorschlagEingabe["worte"] {
+  const w = schuelerWorte(student.id, ausser);
+  if (!w?.treffer.length) return null;
+  return { name: student.name.split(" ")[0], treffer: w.treffer.map((t) => ({ text: t.text, skill_ids: t.skills.map((s) => s.id) })) };
 }
 
 // ---------- without a package ----------

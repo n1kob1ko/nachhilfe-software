@@ -29,6 +29,9 @@ und kein Passwort; wer den Link hat, sieht diese Seite (wie bisher).
 - Wie bisher (D17/D23) **nur veröffentlichte Plätze** und **ohne Namen**: kein Lehrer, keine anderen
   Schüler. Entwürfe sieht der Schüler nie. Beim Veröffentlichen wird weiterhin niemand
   benachrichtigt (D25).
+- Nach einer Einheit einmal **„Was war heute schwer?“** (Antworten zum Antippen, freier Text,
+  „Überspringen“), danach die eigene Notiz zum Ändern; unter dem nächsten Termin **„Für nächstes Mal“**,
+  jederzeit. Beides bis zur nächsten Einheit änderbar, nur die eigenen Worte (`lib/schueler-notiz.ts`).
 - Darunter wie bisher die offenen Übungen, der Fortschritt und „Erledigt“.
 
 ## Technik
