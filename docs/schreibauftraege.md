@@ -15,10 +15,13 @@ Jede Textsorte hat:
 ## Ablauf
 
 1. **Anlegen.** In einer laufenden Einheit eines Oberstufen-Schülers auf „Schreibauftrag“ tippen (`/einheiten/<id>/schreibauftrag`) und die Textsorte wählen. Ohne Einheit geht es über den Hinweis im Übungs-Builder (`/schueler/<id>/schreibauftrag`). Die alten Adressen `…/textinterpretation` leiten weiter.
-   - Titel, Autor oder Autorin, „Erschienen in“ (Zeitung, Zeitschrift oder Webseite), Datum, Art der Textbeilage (Zeitungsartikel, Bericht, Reportage, Kommentar, Kolumne, Essay, Interview, Rede, Leserbrief, Rezension, Blogeintrag, Sachtext) und das Wortziel.
+   - Titel, Autor oder Autorin, „Erschienen in“ (Zeitung, Zeitschrift oder Webseite), Datum, Art der Textbeilage (Zeitungsartikel, Bericht, Reportage, Kommentar, Kolumne, Essay, Interview, Rede, Leserbrief, Rezension, Blogeintrag, Sachtext).
+   - **Zwei Längen, getrennt:** „Länge der Textbeilage“ (100 bis 6 000 Wörter) und „Wortziel (Schülertext)“. Die Vorgaben richten sich nach der Schulstufe (`lib/schreibauftrag-umfang.ts`): ab der 12. Schulstufe (z. B. 4. Jahrgang HTL, 8. Klasse AHS) das Wortziel der Textsorte, in der 9., 10. und 11. Schulstufe 70, 80 und 90 % davon; eine Geschichte 600 bis 900 Wörter, ein Sachtext 400 bis 700. Diese Längen sind eine Annahme und gelten nur als Vorschlag. Unter der eingefügten Textbeilage steht, wie viele Wörter sie hat und ob das zur geplanten Länge passt; die App kürzt nichts.
+   - **Gehört zur Prüfung:** wahlweise eine Schularbeit oder ein Test des Schülers (die des letzten halben Jahres, ohne abgesagte). Der Auftrag steht dann auf der Seite dieser Prüfung unter „Schreibaufträge“, dort gibt es auch „Schreibauftrag dazu“, und die Textarbeit verweist auf die Prüfung.
    - Die **Schreibsituation**, wo die Textsorte eine hat: Anlass und Publikum der Meinungsrede, der Adressat des offenen Briefs und die Zielgruppe der Empfehlung sind Pflicht. Die Frage der Erörterung ist wahlweise (ohne Frage heißt es „die Frage, um die es im Text geht“), ebenso eine Situation für Zusammenfassung, Leserbrief und Kommentar. Die Textanalyse hat keine.
    - Den Text der Textbeilage einfügen. Jeder Zeilenumbruch bleibt, jede Zeile bekommt ihre Nummer, sichtbar ist jede fünfte. Kommt der Text von einer Webseite (ein ganzer Absatz in einer Zeile), erscheint **„Zeilen umbrechen“**: Die App teilt lange Zeilen in Zeilen von etwa 62 Zeichen, ohne ein Wort zu trennen.
-   - „Vom Foto lesen“ (nur mit KI, nur auf Klick) wie bei der Textinterpretation.
+   - Ein **eigener Text** wird einfach eingefügt. **„Aus PDF übernehmen“** liest den Text einer PDF ohne KI (`lib/pdf-text.ts`): Zeilenumbrüche bleiben, ein großer erster Satz wird zum Titel, Zeilennummern am Rand fallen weg, weil die App selbst zählt. Die Lehrkraft prüft und ändert den Text danach im Feld; die Datei wird nicht gespeichert. Eine gescannte PDF (nur Bilder) hat keinen Text, dann hilft „Vom Foto lesen“.
+   - „Vom Foto lesen“ (nur mit KI, nur auf Klick) wie bei der Textinterpretation; es nimmt auch PDFs.
    - Der Arbeitsauftrag entsteht aus den Angaben und folgt ihnen, bis du ihn selbst änderst.
    - „Beispiel einfügen“ füllt alles mit der Beispiel-Textbeilage der Textsorte aus.
 2. **Ändern.** In der Textarbeit führt „Text und Auftrag“ zu `/texte/<id>/schreibauftrag`. Die Textsorte bleibt, der geschriebene Text auch.
@@ -58,6 +61,15 @@ Die Hinweise sind Tipps, keine Note (`hinweiseFor()` in `lib/schreibauftrag.ts`)
 
 Ein Test prüft, dass jeder Mustertext keinen einzigen Tipp bekommt, und dass jeder Hinweis anschlägt, wenn das Gesuchte fehlt.
 
+## Erwartungshorizont und Bewertung
+
+In der Textarbeit führt **„Bewertung“** zu `/texte/<id>/bewertung` (nur für die Lehrkraft).
+
+- **Erwartungshorizont** je Auftrag und Kriterium der SRDP (Inhalt, Textstruktur, Stil und Ausdruck, normative Sprachrichtigkeit), ein Punkt je Zeile. Ohne gespeicherten Erwartungshorizont steht die Vorlage aus der Textsorte im Formular (Arbeitsaufträge, Schreibplan, Umfang, Merkmale). Bei Deutungen und Meinungen nennt er Richtungen („jede am Text begründete Richtung zählt“), keinen Mustertext. **„Mit KI vorschlagen“** schickt Auftrag und Textbeilage (ohne Schülernamen) an die KI; der Vorschlag steht als **„Ungeprüft“** daneben, bis die Lehrkraft ihn übernimmt und speichert. Schüler sehen beim Schreiben „Darauf kommt es an“ nur, wenn die Lehrkraft den gespeicherten Erwartungshorizont freigibt, nie einen Vorschlag. Ändert sich die Textbeilage nach dem Speichern, erscheint ein Hinweis, die Zeilenangaben zu prüfen.
+- **Bewertung** eines abgegebenen Texts: je Kriterium eine Stufe 1–5 wie die Notenstufen der LBVO und eine Begründung, dazu wahlweise eine Gesamtnote; der Schnitt der Stufen steht als Hilfe daneben. **„Bewertung vorschlagen“** geht erst nach dem Abgeben, ab 30 Wörtern und nach einem Haken der Lehrkraft, dass der Text ohne Namen an die KI geht. Mit geht der gespeicherte Erwartungshorizont (sonst die Vorlage, nie ein ungeprüfter Vorschlag) und die Textbeilage. Der Vorschlag füllt nur das Formular vor; als Bewertung gilt, was die Lehrkraft mit „Bewertung bestätigen“ speichert. Die Bewertung geht nicht in den Lernstand, die Diagnose oder die Dokumentation.
+- **Zitatprüfung** (`lib/zitatpruefung.ts`): Jedes Zitat und jede Zeilenangabe der KI sucht die App selbst in der Textbeilage und im Schülertext, wie bei den Hinweisen mit getrennten Wörtern am Zeilenende, gekürzten Zitaten mit […] und einer Zeile Spielraum. Ein Punkt des Erwartungshorizonts oder ein Satz der Begründung mit einem Zitat oder einer Zeile, die es nicht gibt, fällt heraus, ebenso ein Beleg; die Zahl steht beim Vorschlag („2 Stellen … wurden weggelassen“). Die Zeile eines Belegs rechnet die App, nie die KI.
+- KI-Funktionen `erwartung` und `bewertung` (Bereich Text), über `runAI` mit der Schüler-ID, damit die Grenze je Schüler gilt. Ohne KI trägt die Lehrkraft alles selbst ein.
+
 ## Teilübungen im Übungs-Builder
 
 Wählt man im Builder eine dieser Fähigkeiten (`deutsch.os.matura.zusammenfassung` usw.), entstehen keine kurzen Mini-Aufgaben mehr, sondern **Teilübungen** ohne KI: je eine freie Aufgabe zu einem Teil des Schreibplans, mit der ganzen Textbeilage mit Zeilennummern als gemeinsamem Lesetext und dem Erwartungshorizont des Teils. Grundlage ist der letzte Schreibauftrag des Schülers in dieser Textsorte, sonst die Beispiel-Textbeilage; beim Beispiel ist der Mustertext die Musterlösung. Jeder Teil höchstens zweimal pro Übung, die zweite Runde mit der anderen Formulierung; „Neu erzeugen“ wechselt die Formulierung und behält Teil und Textbeilage. Mehrere Textsorten in einer Übung bekommen jede ihre eigene Textbeilage; andere Fähigkeiten gehen wie bisher an die KI oder die Generatoren. Aus einem Schreibauftrag heraus macht „Teilübungen dazu“ eine Teilübung je Teil zu genau dieser Textbeilage. Der Empfehlungsweg (eine Fähigkeit, „Mit einem Klick zuweisen“) macht ebenfalls Teilübungen.
@@ -84,9 +96,12 @@ Ein Test prüft Umfang und Teile jedes Mustertexts und jedes Zitat der Mustertex
 
 - `lib/schreibauftrag.ts`: Textsorten, Schreibplan, Arbeitsauftrag, Hinweise, Beispiele, Teilübungen (rein, ohne Datenbank); für die Textinterpretation gibt es an `lib/textinterpretation.ts` weiter
 - `lib/schreibauftrag-beispiele.ts`: Textbeilagen und Mustertexte
-- `lib/schreibauftrag-store.ts`: Tabelle `text_interpretations` (Spalten `sorte`, `story_medium`, `situation` in `COLUMNS` von `lib/db.ts`), Anlegen und Ändern
+- `lib/schreibauftrag-store.ts`: Tabelle `text_interpretations` (Spalten `sorte`, `story_medium`, `situation`, `beilage_ziel`, `test_id` in `COLUMNS` von `lib/db.ts`), Anlegen und Ändern, Prüfungen zur Wahl
+- `lib/schreibauftrag-umfang.ts`: Vorgaben für Wortziel und Länge der Textbeilage
+- `lib/pdf-text.ts`, `app/material/textpdf/route.ts`: Text aus einer PDF lesen, ohne KI und ohne Speichern
+- `lib/bewertung-kriterien.ts` (Kriterien, Stufen, Vorlage), `lib/schreibauftrag-bewertung.ts` (Tabellen `auftrag_erwartungen`, `text_bewertungen`), `lib/ai/schreibauftrag-bewertung.ts` (KI), `lib/zitatpruefung.ts`, `app/textbewertung-actions.ts`, `app/(tutor)/texte/[id]/bewertung/`
 - `lib/textinterpretation-store.ts`: die Funktionen der Textinterpretation darauf; sie sehen nur Zeilen mit `sorte = 'textinterpretation'`
 - `app/schreibauftrag-actions.ts`: Server-Aktionen
 - `components/text/interpretation/`: Formular (`SchreibauftragForm`), Textsortenwahl, nummerierte Textbeilage, Hinweise, Wortzähler, Foto
 - `components/text/TextEditor.tsx`: Ansicht beim Schreiben (`auftrag`)
-- Tests: `lib/schreibauftrag.test.ts`
+- Tests: `lib/schreibauftrag.test.ts`, `lib/schreibauftrag-bewertung.test.ts`, `lib/zitatpruefung.test.ts`, `lib/pdf-text.test.ts`

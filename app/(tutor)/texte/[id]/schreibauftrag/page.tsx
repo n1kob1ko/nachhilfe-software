@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/ui";
 import { SchreibauftragForm } from "@/components/text/interpretation/SchreibauftragForm";
 import { requireTeacher } from "@/lib/auth";
 import { SORTEN } from "@/lib/schreibauftrag";
-import { auftragSettingsOf } from "@/lib/schreibauftrag-store";
+import { auftragSettingsOf, pruefungenFuerAuftrag } from "@/lib/schreibauftrag-store";
 import { textFotoLesbar } from "@/lib/textinterpretation-foto";
 import { getText } from "@/lib/texts";
 
@@ -24,7 +24,8 @@ export default async function EditAuftragPage({ params }: { params: Promise<{ id
       <SchreibauftragForm
         sorte={s.sorte}
         action={updateAuftragAction.bind(null, text.id)}
-        defaults={{ title: s.title, author: s.author, year: s.year, medium: s.medium, kind: s.kind, story: s.story, countBlank: s.countBlank, target: s.target, situation: s.situation, prompt: s.prompt, sourceNote: s.sourceNote }}
+        defaults={{ title: s.title, author: s.author, year: s.year, medium: s.medium, kind: s.kind, story: s.story, countBlank: s.countBlank, target: s.target, situation: s.situation, prompt: s.prompt, sourceNote: s.sourceNote, beilageZiel: s.beilageZiel ?? null, testId: s.testId ?? null }}
+        pruefungen={pruefungenFuerAuftrag(text.student_id, s.testId ?? null)}
         name={name}
         kiLiest={textFotoLesbar().ok}
         studentId={text.student_id}

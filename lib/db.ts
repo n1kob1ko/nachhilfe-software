@@ -855,6 +855,38 @@ CREATE TABLE IF NOT EXISTS todo_gesehen (
   seen_at TEXT NOT NULL,
   PRIMARY KEY (teacher_id, art, ref_id)
 );
+-- Erwartungshorizont eines Schreibauftrags (lib/schreibauftrag-bewertung.ts): je Kriterium, was ein guter Text enthält.
+-- kriterien: JSON, von der Lehrkraft gespeichert ('' = noch nichts); vorschlag: JSON der KI, ungeprüft, bis die Lehrkraft
+-- speichert. freigegeben = 1: der Schüler sieht beim Schreiben die gespeicherten Punkte, nie den Vorschlag.
+-- beilage_hash: die Textbeilage beim Speichern; ändert sie sich, stimmen Zeilenangaben vielleicht nicht mehr.
+CREATE TABLE IF NOT EXISTS auftrag_erwartungen (
+  text_id INTEGER PRIMARY KEY REFERENCES texts(id) ON DELETE CASCADE,
+  kriterien TEXT NOT NULL DEFAULT '',
+  beilage_hash TEXT NOT NULL DEFAULT '',
+  gespeichert_at TEXT,
+  gespeichert_von INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  freigegeben INTEGER NOT NULL DEFAULT 0,
+  vorschlag TEXT NOT NULL DEFAULT '',
+  vorschlag_verworfen INTEGER NOT NULL DEFAULT 0,
+  vorschlag_at TEXT,
+  vorschlag_call_id INTEGER REFERENCES ai_calls(id) ON DELETE SET NULL
+);
+-- Bewertung eines Schreibauftrags (lib/schreibauftrag-bewertung.ts): je Kriterium Stufe und Begründung. kriterien: JSON,
+-- von der Lehrkraft bestätigt (nur das zählt; geht nicht in Lernstand oder Diagnose); version: die Fassung des Texts.
+-- vorschlag: JSON der KI, Zitate und Zeilen von der App geprüft (vorschlag_verworfen: so viel fiel heraus).
+CREATE TABLE IF NOT EXISTS text_bewertungen (
+  text_id INTEGER PRIMARY KEY REFERENCES texts(id) ON DELETE CASCADE,
+  kriterien TEXT NOT NULL DEFAULT '',
+  note INTEGER,
+  version INTEGER,
+  bestaetigt_at TEXT,
+  bestaetigt_von INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  vorschlag TEXT NOT NULL DEFAULT '',
+  vorschlag_version INTEGER,
+  vorschlag_verworfen INTEGER NOT NULL DEFAULT 0,
+  vorschlag_at TEXT,
+  vorschlag_call_id INTEGER REFERENCES ai_calls(id) ON DELETE SET NULL
+);
 -- Referenzsammlung (lib/referenz.ts, 2026-10-23): Aufgaben aus einem von Hand geladenen PDF, nur für Lehrer. Die KI liest
 -- die Datei einmal; jeder Eintrag ist ungeprüft, bis ein Lehrer ihn speichert. format = Kategorie (lib/curriculum.ts)
 -- oder ''. dritte = enthält Texte oder Bilder Dritter (bleibt Referenz). worksheet_id = die Bibliotheksaufgabe daraus.
@@ -1213,6 +1245,10 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // KI-Grenze je Schüler und Monat (lib/ai/schueler-kosten.ts, 2026-10-23): um welchen Schüler es im Aufruf ging
   // (meta.studentId, sonst der Schüler der Einheit); null = keiner (Lesetext, Druckblatt, Verbindungstest …)
   ["ai_calls", "student_id", "INTEGER REFERENCES students(id) ON DELETE SET NULL"],
+  // Schreibauftrag (Plan 4.2, 2026-10-23): die Länge der Textbeilage in Wörtern, getrennt vom Wortziel des Schülers
+  // (null = keine Vorgabe), und die Prüfung des Schülers, zu der der Auftrag gehört
+  ["text_interpretations", "beilage_ziel", "INTEGER"],
+  ["text_interpretations", "test_id", "INTEGER REFERENCES tests(id) ON DELETE SET NULL"],
   // Referenzsammlung (lib/referenz.ts, 2026-10-23): die Quellenangabe einer übernommenen Aufgabe („aufgabenpool.at, 1_234“),
   // geht mit jeder Kopie mit und steht auf dem Blatt und beim Schüler als „Quelle: …“; null = keine
   ["tasks", "quelle", "TEXT"],

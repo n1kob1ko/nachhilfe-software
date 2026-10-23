@@ -292,6 +292,25 @@ Textsorte gewählt ist (z. B. Textinterpretation, Leserbrief); der ganze Text is
 **Schreibauftrag**.
 _Avoid_: Teilaufgabe (das ist ein Teil einer Sachaufgabe), Mini-Interpretation
 
+**Erwartungshorizont**:
+Was ein guter Text zu einem **Schreibauftrag** enthält, je Kriterium der SRDP (Inhalt, Textstruktur, Stil und
+Ausdruck, normative Sprachrichtigkeit) in kurzen Punkten. Bei Deutungen und Meinungen nennt er mehrere
+vertretbare Richtungen, nie einen Mustertext. Die Lehrkraft schreibt ihn oder lässt ihn vorschlagen; ein
+Vorschlag ist „Ungeprüft“, bis sie speichert. Schüler sehen ihn nur gespeichert und freigegeben
+(`auftrag_erwartungen`, [docs/schreibauftraege.md](docs/schreibauftraege.md)).
+_Avoid_: Musterlösung, Lösung, Raster
+
+**Bewertung** (eines Schreibauftrags):
+Je Kriterium eine Stufe 1–5 wie die Notenstufen mit Begründung, dazu wahlweise eine Gesamtnote. Gilt nur, wenn die
+Lehrkraft sie bestätigt; ein Vorschlag der KI ist nur ein Vorschlag. Geht nicht in den Lernstand
+(`text_bewertungen`).
+_Avoid_: Korrektur (das ist die Textkorrektur), Benotung, Punkte
+
+**Zitatprüfung**:
+Die App sucht jedes Zitat und jede Zeilenangabe, die die KI über einen Text schreibt, selbst in der **Textbeilage**
+oder im Schülertext. Was sie nicht findet, fällt heraus und wird gezählt (`lib/zitatpruefung.ts`).
+_Avoid_: Faktencheck, Plausibilitätsprüfung
+
 ## Material, Bibliothek, Vorlage
 
 **Material**:

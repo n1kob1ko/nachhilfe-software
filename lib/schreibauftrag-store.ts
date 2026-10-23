@@ -21,6 +21,7 @@ import {
   type AuftragView,
   type SorteKey,
 } from "./schreibauftrag";
+import { cleanBeilageZiel } from "./schreibauftrag-umfang";
 import { cleanStory, cleanTarget, lastLine, MAX_STORY_CHARS, MAX_STORY_LINES, MIN_STORY_LINES, numberedLines } from "./textinterpretation";
 
 export type AuftragRow = {
@@ -36,6 +37,10 @@ export type AuftragRow = {
   target_words: number;
   situation: string;
   source_note: string;
+  /** Länge der Textbeilage in Wörtern (Vorgabe), null = keine */
+  beilage_ziel: number | null;
+  /** die Prüfung des Schülers, zu der der Auftrag gehört */
+  test_id: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -54,6 +59,10 @@ export type AuftragSettings = {
   situation: string;
   prompt: string;
   sourceNote: string;
+  /** Länge der Textbeilage in Wörtern, getrennt vom Wortziel; null = keine Vorgabe, fehlt = bleibt, wie es ist */
+  beilageZiel?: number | null;
+  /** die Prüfung des Schülers (tests.id), zu der der Auftrag gehört; null = keine, fehlt = bleibt */
+  testId?: number | null;
 };
 
 const iso = () => new Date().toISOString();
@@ -83,7 +92,8 @@ export function cleanAuftragSettings(sorte: SorteKey, raw: Partial<Record<keyof 
   const situation = s.situation ? cleanSituation(raw.situation) : "";
   const target = cleanTarget(raw.target, s.target);
   const prompt = String(raw.prompt ?? "").replace(/\r\n?/g, "\n").trim().slice(0, 4000) || arbeitsauftrag({ sorte, title, author, year, medium, kind, target, situation });
-  return { settings: { sorte, title, author, year, medium, kind, story, countBlank, target, situation, prompt, sourceNote: line(raw.sourceNote, 400) } };
+  const testId = Number(raw.testId) > 0 ? Math.round(Number(raw.testId)) : null;
+  return { settings: { sorte, title, author, year, medium, kind, story, countBlank, target, situation, prompt, sourceNote: line(raw.sourceNote, 400), beilageZiel: cleanBeilageZiel(raw.beilageZiel), testId } };
 }
 
 export function getAuftrag(textId: number): AuftragRow | null {
@@ -136,6 +146,7 @@ export function createAuftrag(n: NewAuftrag): TextView {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(text.id, s.sorte, s.title, s.author, s.year, s.medium, s.kind, s.story, s.countBlank ? 1 : 0, s.target, s.situation, s.sourceNote, now, now);
+    if (s.beilageZiel !== undefined || s.testId !== undefined) conn.prepare("UPDATE text_interpretations SET beilage_ziel = ?, test_id = ? WHERE text_id = ?").run(s.beilageZiel ?? null, s.testId ?? null, text.id);
     return text;
   })();
 }
@@ -153,6 +164,8 @@ export function updateAuftrag(textId: number, s: AuftragSettings): void {
         "UPDATE text_interpretations SET story_title = ?, story_author = ?, story_year = ?, story_medium = ?, story_kind = ?, story_text = ?, count_blank = ?, target_words = ?, situation = ?, source_note = ?, updated_at = ? WHERE text_id = ?",
       )
       .run(s.title, s.author, s.year, s.medium, s.kind, s.story, s.countBlank ? 1 : 0, s.target, s.situation, s.sourceNote, now, textId);
+    if (s.beilageZiel !== undefined) conn.prepare("UPDATE text_interpretations SET beilage_ziel = ? WHERE text_id = ?").run(s.beilageZiel, textId);
+    if (s.testId !== undefined) conn.prepare("UPDATE text_interpretations SET test_id = ? WHERE text_id = ?").run(s.testId, textId);
   })();
 }
 
@@ -162,7 +175,14 @@ export function auftragSettingsOf(textId: number): (AuftragSettings & { textId: 
   const text = getText(textId);
   if (!r || !text) return null;
   const v = auftragView(r);
-  return { textId, studentId: text.student_id, sorte: v.sorte, title: v.title, author: v.author, year: v.year, medium: v.medium, kind: v.kind, story: v.text, countBlank: v.countBlank, target: v.target, situation: v.situation, prompt: text.prompt, sourceNote: r.source_note };
+  return { textId, studentId: text.student_id, sorte: v.sorte, title: v.title, author: v.author, year: v.year, medium: v.medium, kind: v.kind, story: v.text, countBlank: v.countBlank, target: v.target, situation: v.situation, prompt: text.prompt, sourceNote: r.source_note, beilageZiel: r.beilage_ziel ?? null, testId: r.test_id ?? null };
+}
+
+/** Die Schreibaufträge, die zu einer Prüfung gehören (für die Seite der Prüfung). */
+export function auftraegeZurPruefung(testId: number): { textId: number; title: string; status: string; words: number }[] {
+  return db()
+    .prepare("SELECT t.id AS textId, t.title, t.status, t.words FROM text_interpretations i JOIN texts t ON t.id = i.text_id WHERE i.test_id = ? AND t.archived_at IS NULL ORDER BY t.created_at")
+    .all(testId) as { textId: number; title: string; status: string; words: number }[];
 }
 
 /** The Textbeilage of a Schreibauftrag as source of Teilübungen. */
@@ -184,4 +204,27 @@ export function quelleForStudent(studentId: number | null, sorte: SorteKey): Auf
     if (own) return own;
   }
   return beispielQuelle(sorte);
+}
+
+/**
+ * Die Prüfungen, zu denen ein Auftrag gehören kann: die des Schülers ab einem halben Jahr zurück, ohne abgesagte, die
+ * neuesten zuerst. `aktuell`: die schon gewählte bleibt in der Liste, auch wenn sie älter ist.
+ */
+export function pruefungenFuerAuftrag(studentId: number, aktuell: number | null = null): { id: number; label: string }[] {
+  const ab = new Date(Date.now() - 183 * 86_400_000).toISOString().slice(0, 10);
+  const rows = db()
+    .prepare("SELECT id, date, subject, kind, title, topic FROM tests WHERE student_id = ? AND ((date >= ? AND COALESCE(status, '') <> 'abgesagt') OR id = ?) ORDER BY date DESC")
+    .all(studentId, ab, aktuell ?? -1) as { id: number; date: string; subject: string; kind: string; title: string | null; topic: string }[];
+  const datum = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString("de-AT", { day: "numeric", month: "numeric", year: "numeric", timeZone: "Europe/Vienna" });
+  return rows.map((t) => ({ id: t.id, label: [t.title?.trim() || `${t.kind} ${t.subject}`, datum(t.date), t.topic.trim()].filter(Boolean).join(" · ").slice(0, 140) }));
+}
+
+/** Zu welcher Prüfung ein Auftrag gehört, für die Textseite. */
+export function pruefungDesAuftrags(textId: number): { id: number; studentId: number; label: string } | null {
+  const r = getAuftrag(textId);
+  if (!r?.test_id) return null;
+  const t = db().prepare("SELECT id, student_id FROM tests WHERE id = ?").get(r.test_id) as { id: number; student_id: number } | undefined;
+  if (!t) return null;
+  const label = pruefungenFuerAuftrag(t.student_id, t.id).find((p) => p.id === t.id)?.label ?? "Prüfung";
+  return { id: t.id, studentId: t.student_id, label };
 }
