@@ -437,7 +437,8 @@ function zuordnen(c: Ctx): Made | null {
       data: {},
       answer: { blanks: chosen.map((t) => answerNames(t.wa!)), mode: "text", criteria: ["Jedes Wort hat die richtige Wortart."] },
       solution: solutionLines(chosen, s, (t) => WORTART_LABEL[t.wa!], c.setting.allowed),
-      hints: hintsFor(chosen.map((t) => t.wa!)),
+      // the Proben of all Wortarten to choose from: the Wortarten of the asked words alone would give the answers away
+      hints: hintsFor(c.setting.allowed),
       errorMap: [],
       asked: chosen.map((t) => t.wa!),
     };
@@ -455,9 +456,8 @@ function markiert(c: Ctx): Made | null {
     if (!asks.length) continue;
     const t = c.lv >= 2 ? [...asks].sort((a, b) => b.level - a.level)[0] : pick(c.rng, asks);
     const right = single ? (t.wa === c.focus ? WORTART_LABEL[c.focus] : keinLabel(c.focus)) : WORTART_LABEL[t.wa!];
-    const others = single
-      ? [t.wa === c.focus ? keinLabel(c.focus) : WORTART_LABEL[c.focus]]
-      : [...CONFUSE[t.wa!].filter((w) => c.setting.allowed.includes(w)), ...shuffle(c.rng, c.setting.allowed.filter((w) => w !== t.wa && !CONFUSE[t.wa!].includes(w)))].slice(0, 3).map((w) => WORTART_LABEL[w]);
+    const otherWs = single ? [] : [...CONFUSE[t.wa!].filter((w) => c.setting.allowed.includes(w)), ...shuffle(c.rng, c.setting.allowed.filter((w) => w !== t.wa && !CONFUSE[t.wa!].includes(w)))].slice(0, 3);
+    const others = single ? [t.wa === c.focus ? keinLabel(c.focus) : WORTART_LABEL[c.focus]] : otherWs.map((w) => WORTART_LABEL[w]);
     if (!others.length) continue;
     const options = shuffle(c.rng, [right, ...others]);
     const marked = s.toks.map((x) => (x === t ? `[${x.w}]` : x.w) + x.punct).join(" ");
@@ -468,7 +468,8 @@ function markiert(c: Ctx): Made | null {
       data: { options },
       answer: { correct: options.indexOf(right) },
       solution: [`${t.w} = ${right}`, single && t.wa !== c.focus ? null : reason(t, s)].filter(Boolean).join("\n"),
-      hints: hintsFor(single ? [c.focus] : [t.wa!, ...CONFUSE[t.wa!].filter((w) => c.setting.allowed.includes(w))]),
+      // the Proben of all offered Wortarten, so the hint does not point to the right one
+      hints: hintsFor(single ? [c.focus] : [t.wa!, ...otherWs]),
       errorMap: single ? [] : options.flatMap((o, i) => (o === right ? [] : [{ answer: String(i), label: `${right} und ${o} verwechselt` }])),
       asked: [single ? c.focus : t.wa!],
     };

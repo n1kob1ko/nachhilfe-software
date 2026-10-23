@@ -5,6 +5,7 @@ import { entferneVorschlagAction, vorbereitenAction, vorschlagZeigenAction } fro
 import { PaketAuswahl } from "@/components/cockpit/Cockpit";
 import { KeinPaket, VorschlagWarum } from "@/components/cockpit/Vorbereitung";
 import { StatusPill } from "@/components/LernpaketStatus";
+import { SchuelerWorteKarte } from "@/components/SchuelerNotiz";
 import { PageHeader } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { vorbereitung } from "@/lib/cockpit";
@@ -13,6 +14,7 @@ import { kostenSchaetzung } from "@/lib/lernpaket-ki";
 import { getLernpaket } from "@/lib/lernpakete";
 import { datumLabel, tagAddieren, wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
+import { schuelerWorte } from "@/lib/schueler-notiz";
 import { runningUnitForStudent } from "@/lib/units";
 import { autoWahl, kiVorgabe, kommendeTermine, ohnePaketMarkiert, schuelerBasis, VORAUS_TAGE } from "@/lib/vorbereitung-auto";
 
@@ -45,6 +47,8 @@ export default async function VorbereitenPage({ params, searchParams }: { params
   const laeuft = datum === heute ? runningUnitForStudent(student.id) : null;
   const wahl = paketWahl(student.id);
   const tagFeld = <input type="hidden" name="datum" value={datum} />;
+  // was der Schüler für die nächste Einheit geschrieben hat (lib/schueler-notiz.ts); passt es zu einem Paket, steht es bei „Warum heute“
+  const worte = laeuft ? null : schuelerWorte(student.id, null);
   return (
     <>
       <PageHeader title={`Einheit vorbereiten: ${student.name}`} back={{ href: "/", label: "Heute" }} subtitle={`Das Lernpaket für ${tag}. Beim Start der Einheit steht es im Cockpit bereit.`} />
@@ -76,6 +80,7 @@ export default async function VorbereitenPage({ params, searchParams }: { params
             </form>
           </div>
         )}
+        {worte && <SchuelerWorteKarte worte={worte} name={student.name.split(" ")[0]} />}
         {auto?.art === "paket" && (
           <section className="panel grid gap-2 px-5 py-4" aria-label="Vorschlag der App" data-testid="vorschlag">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">

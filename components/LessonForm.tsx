@@ -1,4 +1,5 @@
 import { deleteLessonAction, saveLessonAction } from "@/app/actions";
+import { EinzelterminPruefung } from "@/components/EinzelterminPruefung";
 import { FachFeld } from "@/components/FachFeld";
 import { SkillPicker } from "@/components/SkillPicker";
 import { practiceOnDay } from "@/lib/autodoc";
@@ -14,7 +15,7 @@ function localNow() {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:00`;
 }
 
-export async function LessonForm({ student, lesson }: { student: repo.Student; lesson?: repo.Lesson }) {
+export async function LessonForm({ student, lesson, fehler }: { student: repo.Student; lesson?: repo.Lesson; fehler?: string }) {
   const subjects = student.subjects.length ? student.subjects : ["Mathematik"];
   const skills = repo.listSkills().filter((s) => subjects.includes(s.subject));
   const previous = repo.listLessons(student.id).find((l) => l.kind === "stunde" && l.status === "abgeschlossen" && l.id !== lesson?.id && l.next_steps);
@@ -71,6 +72,10 @@ export async function LessonForm({ student, lesson }: { student: repo.Student; l
             </select>
           </label>
         </div>
+        <label className="-mt-2 flex min-h-[44px] cursor-pointer items-center gap-2 text-[14px] text-ink-2">
+          <input type="checkbox" name="gleichzeitig" value="1" className="h-4 w-4 accent-[var(--accent)]" />
+          Gleichzeitig mit einem anderen Schüler (nur bei „geplant“: der Lehrer hat zu dieser Zeit zwei Schüler)
+        </label>
         {practice.length > 0 && (
           <p className="-mt-2 rounded-lg bg-accent-wash px-3 py-2 text-[13px] text-accent">
             {student.name.split(" ")[0]} hat selbstständig geübt. Inhalte und Fehler sind schon eingetragen.
@@ -114,6 +119,8 @@ export async function LessonForm({ student, lesson }: { student: repo.Student; l
           <span className="label">Was soll beim nächsten Mal gemacht werden?</span>
           <textarea className="input" name="next_steps" defaultValue={lesson?.next_steps} />
         </label>
+        {/* geplante Einheiten werden auf Überschneidung geprüft (Plan 3.3); die Absage steht beim Knopf */}
+        <EinzelterminPruefung fehler={fehler} />
         <div className="flex flex-wrap gap-2">
           <button className="btn btn-primary">Speichern</button>
         </div>

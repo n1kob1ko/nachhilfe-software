@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, BookOpen, CalendarClock, CalendarDays, ChevronRight, Clock3, Coins, DoorOpen, Download, FileText, FileUp, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, MessageSquarePlus, MonitorPlay, Package, ShieldCheck, Sparkles, TabletSmartphone } from "lucide-react";
+import { BarChart3, BookMarked, BookOpen, CalendarClock, CalendarDays, ChevronRight, Clock3, Coins, DoorOpen, Download, FileText, FileUp, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, MessageSquarePlus, MonitorPlay, Package, ShieldCheck, Sparkles, TabletSmartphone } from "lucide-react";
 import { logoutAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
 import { PageHeader } from "@/components/ui";
@@ -33,6 +33,7 @@ export default async function MorePage() {
         { href: "/mehr/lernpakete", label: "Lernpakete", hint: "Vorbereitete Einheiten je Thema: Ablauf, Fragen, Aufgaben; anlegen, importieren, exportieren", icon: Package },
         { href: "/mehr/praesentationen", label: "Präsentationen", hint: "Folien mit Animationen und Vortragstext; hochladen, vortragen, am Schülergerät zeigen", icon: MonitorPlay },
         { href: "/mehr/material", label: "Material", hint: "Fotos und PDFs hochladen, einordnen, Aufgaben übernehmen", icon: FolderUp },
+        { href: "/mehr/referenzen", label: "Referenzsammlung", hint: "Aufgaben mit Quelle als Vorbild für die KI; nur für Lehrer", icon: BookMarked },
         { href: "/mehr/geraete", label: "Schülergeräte", hint: "Schüler-Tablet verbinden oder trennen", icon: TabletSmartphone },
         { href: "/faehigkeiten", label: "Themen und Fähigkeiten", hint: "Woran der Lernstand gemessen wird; eigene Fähigkeiten anlegen", icon: GitBranch },
         { href: "/mehr/lehrplan", label: "Curriculum / Lehrplan", hint: "Österreich, VS/MS/AHS/HTL/HAK, Quellen, Importe, Lizenzen", icon: Landmark },

@@ -14,9 +14,12 @@ import {
 } from "@/app/cockpit-actions";
 import { AnpassenKnopf, CockpitSenden, SchrittNotiz } from "@/components/cockpit/CockpitClient";
 import { KeinPaket, VorschlagWarum } from "@/components/cockpit/Vorbereitung";
+import { AufgabeBewertung } from "@/components/AufgabeBewertung";
+import { bewertungInfos } from "@/lib/bewertungen";
 import { TabletSend } from "@/components/device/TabletSend";
 import { Info } from "@/components/Info";
 import { StatusPill } from "@/components/LernpaketStatus";
+import { SchuelerWorteKarte } from "@/components/SchuelerNotiz";
 import { TaskBody } from "@/components/TaskPreview";
 import { Pill, Reveal, SectionTitle } from "@/components/ui";
 import { grenzeHinweis, schuelerStand } from "@/lib/ai/schueler-kosten";
@@ -28,6 +31,7 @@ import { kostenSchaetzung } from "@/lib/lernpaket-ki";
 import { getLernpaket, SCHRITT_ARTEN, ungeprueft, type Lernpaket, type LernpaketSchritt } from "@/lib/lernpakete";
 import { RULE_LABEL, RULE_TONE } from "@/lib/recommend";
 import * as repo from "@/lib/repo";
+import { schuelerWorte } from "@/lib/schueler-notiz";
 import { klassenLabel } from "@/lib/school";
 import { platzFuerEinheit, type UnitView } from "@/lib/units";
 import { autoFuerEinheit, kiVorgabe, type Signal } from "@/lib/vorbereitung-auto";
@@ -51,7 +55,7 @@ const stufeVon = (p: Pick<Lernpaket, "schulart" | "klasse">) => (p.klasse ? klas
  * Schritte (am Handy als Leiste, ab Tablet quer links) und rechts der Schritt auf dem Schirm mit dem, was der
  * Lehrer sagt und fragt. Ohne Lernpaket steht da, was es zur Fähigkeit schon gibt. Nur für den Lehrer.
  */
-export function CockpitBereich({ unit, student, fehler }: { unit: UnitView; student: repo.Student; fehler?: string }) {
+export function CockpitBereich({ unit, student, fehler, teacherId = null }: { unit: UnitView; student: repo.Student; fehler?: string; teacherId?: number | null }) {
   const c = cockpit(unit.id);
   const wahl = paketWahl(student.id, { fach: unit.subject, ausser: unit.id });
   const name = first(student.name);
@@ -63,6 +67,8 @@ export function CockpitBereich({ unit, student, fehler }: { unit: UnitView; stud
   const fehlt: Signal | null = c.stand.automatisch?.luecke ?? (auto?.art === "kein_paket" ? auto.signal : null);
   const ki = fehlt ? kiVorgabe(fehlt, student, { fach: unit.subject, dauer: platzFuerEinheit(unit)?.geplante_dauer ?? 50, gibtSkill: (id) => Boolean(repo.getSkill(id)) }) : null;
   const kosten = ki ? kostenSchaetzung().text : "";
+  // was der Schüler vor dieser Einheit geschrieben hat: seine Worte, nur zum Lesen (lib/schueler-notiz.ts)
+  const worte = schuelerWorte(student.id, unit.id);
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-8" data-testid="cockpit">
       {fehler && (
@@ -71,6 +77,7 @@ export function CockpitBereich({ unit, student, fehler }: { unit: UnitView; stud
         </p>
       )}
       <KiGrenzeHinweis studentId={student.id} name={name} />
+      {worte && <SchuelerWorteKarte worte={worte} name={name} />}
       {c.paket ? (
         <>
           <PaketKopf c={c} paket={c.paket} warum={vorschlag?.warum ?? null} entfernen={c.stand.automatisch ? waehlePaketAction.bind(null, unit.id) : null}>
@@ -84,7 +91,7 @@ export function CockpitBereich({ unit, student, fehler }: { unit: UnitView; stud
           <AnpassenBereich c={c} unitId={unit.id} studentId={student.id} name={name} liste={liste} />
           <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,290px)_minmax(0,1fr)] lg:items-start lg:gap-6">
             <SchrittListe c={c} unitId={unit.id} />
-            {c.aktuell ? <SchrittPanel c={c} s={c.aktuell} unitId={unit.id} name={name} paket={c.paket} angepasst={liste.filter((a) => a.status === "uebernommen" && a.schritt_id === c.aktuell!.id)} /> : <AllesDurch c={c} />}
+            {c.aktuell ? <SchrittPanel c={c} s={c.aktuell} unitId={unit.id} name={name} paket={c.paket} teacherId={teacherId} angepasst={liste.filter((a) => a.status === "uebernommen" && a.schritt_id === c.aktuell!.id)} /> : <AllesDurch c={c} />}
           </div>
         </>
       ) : (
@@ -292,7 +299,9 @@ function SchrittListe({ c, unitId }: { c: CockpitDaten; unitId: number }) {
 }
 
 /** The step on screen: what to say, ask, expect and do on a mistake; send its tasks; done, skip, move. */
-function SchrittPanel({ c, s, unitId, name, paket, angepasst }: { c: CockpitDaten; s: LernpaketSchritt; unitId: number; name: string; paket: Lernpaket; angepasst: Anpassung[] }) {
+function SchrittPanel({ c, s, unitId, name, paket, angepasst, teacherId }: { c: CockpitDaten; s: LernpaketSchritt; unitId: number; name: string; paket: Lernpaket; angepasst: Anpassung[]; teacherId: number | null }) {
+  // Aufgaben bewerten (lib/bewertungen.ts): die Aufgaben des Schritts, nie die Antworten des Schülers
+  const bewertungen = bewertungInfos(s.aufgaben, teacherId);
   const i = c.schritte.findIndex((x) => x.id === s.id);
   const st = statusVon(c, s.id);
   const ab = c.ab.get(s.id) ?? 0;
@@ -375,6 +384,9 @@ function SchrittPanel({ c, s, unitId, name, paket, angepasst }: { c: CockpitDate
                     </p>
                   ))}
                   <TaskBody task={a} showSolution skillName={a.skillId ? skillName(a.skillId) : undefined} subject={paket.fach} />
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <AufgabeBewertung key={bewertungen[j].schluessel} ziel={{ art: "schritt", id: s.id, index: j }} info={bewertungen[j]} className="-ml-3" />
+                  </div>
                 </li>
               ))}
             </ol>

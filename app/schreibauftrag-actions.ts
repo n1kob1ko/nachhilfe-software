@@ -28,7 +28,14 @@ const fields = (f: FormData) => ({
   situation: f.get("situation"),
   prompt: f.get("prompt"),
   sourceNote: f.get("sourceNote"),
+  beilageZiel: f.get("beilageZiel"),
+  testId: f.get("testId"),
 });
+
+/** Eine Prüfung gehört nur zum Auftrag, wenn sie eine Prüfung dieses Schülers ist. */
+function eigenePruefung(testId: number | null | undefined, studentId: number): number | null {
+  return testId && repo.getTest(testId)?.student_id === studentId ? testId : null;
+}
 
 /**
  * A new Schreibauftrag (Textinterpretation, Leserbrief, Erörterung …): in a running unit, or for a student from the
@@ -54,7 +61,9 @@ export async function createAuftragAction(sorte: SorteKey, where: { unitId: numb
   }
   const out = cleanAuftragSettings(sorte, fields(f));
   if ("error" in out) return { error: out.error };
+  out.settings.testId = eigenePruefung(out.settings.testId, studentId);
   const text = createAuftrag({ studentId, teacherId: t.id, unitId: unit?.id ?? null, settings: out.settings });
+  if (out.settings.testId) revalidatePath(`/schueler/${studentId}/pruefung/${out.settings.testId}`);
   noteActivity(studentId);
   const tablet = Boolean(unit) && f.get("tablet") === "1" && studentDevice(unit!) !== null;
   if (unit) {
@@ -74,7 +83,9 @@ export async function updateAuftragAction(textId: number, _prev: AuftragFormStat
   if (!text || !auftrag) redirect("/");
   const out = cleanAuftragSettings(auftrag.sorte, fields(f));
   if ("error" in out) return { error: out.error };
+  out.settings.testId = eigenePruefung(out.settings.testId, text.student_id);
   updateAuftrag(textId, out.settings);
+  revalidatePath(`/schueler/${text.student_id}`, "layout");
   // the student's device shows the new text and task at once
   publish(textChannel(textId), { type: "info" });
   const unit = runningUnitForStudent(text.student_id);

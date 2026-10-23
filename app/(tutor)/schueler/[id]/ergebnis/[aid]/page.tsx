@@ -12,6 +12,9 @@ import { ErgebnisGesehen } from "@/components/ErgebnisGesehen";
 import { FixCompare } from "@/components/FixMarks";
 import { closestVersion } from "@/lib/fix-text";
 import { ReviewButtons } from "@/components/ReviewButtons";
+import { AufgabeBewertung } from "@/components/AufgabeBewertung";
+import { requireTeacher } from "@/lib/auth";
+import { bewertungenJeAufgabe } from "@/lib/bewertungen";
 import { PageHeader, formatDate, formatDuration } from "@/components/ui";
 import { maturaAntwortText } from "@/lib/matura-formate";
 import { englischFormat, ENGLISCH_TEIL, wortRahmen } from "@/lib/englisch-matura-formate";
@@ -76,6 +79,8 @@ export default async function ResultPage({ params, searchParams }: { params: Pro
   const archivedAt = assignment.archived_at ?? w.archived_at ?? null;
   const here = `/schueler/${student.id}/ergebnis/${assignment.id}`;
   const tasks = repo.listTasks(w.id);
+  // Aufgaben bewerten (lib/bewertungen.ts): die Aufgabe, nie die Antwort des Schülers
+  const bewertungen = bewertungenJeAufgabe(tasks, (await requireTeacher()).id);
   const attempts = repo.listAttemptsForAssignment(assignment.id);
   const finals = attempts.filter((a) => a.final);
   const hintUses = repo.hintUsesForAssignment(assignment.id);
@@ -294,6 +299,9 @@ export default async function ResultPage({ params, searchParams }: { params: Pro
                     <ReviewButtons attemptId={fin.id} review={fin.review ?? null} />
                   </div>
                 )}
+                <div className="no-print mt-2 flex flex-wrap items-center gap-1.5">
+                  <AufgabeBewertung ziel={{ art: "aufgabe", id: t.id }} info={bewertungen[t.id]} className="-ml-3" />
+                </div>
               </div>
               <div className="space-y-1 text-[13px] md:text-right">
                 <p className={`inline-flex items-center gap-1.5 font-semibold ${status.cls}`}>

@@ -5,6 +5,7 @@ import { deliverIfRunning, pushLive, showOnTablet } from "@/lib/live";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/lib/auth";
+import { ohneAusgeblendete } from "@/lib/bewertungen";
 import {
   blankTask,
   checkTask,
@@ -89,7 +90,8 @@ export async function saveTaskAction(taskId: number, draft: TaskDraft): Promise<
   // ein Bild, das nicht stimmt, wird nicht still weggelassen: die Lehrkraft bekommt den Grund
   const bild = data.figure !== undefined ? figurFehler(data.figure) : null;
   if (bild) return { error: `Das Bild stimmt nicht: ${bild}` };
-  const t = normalizeTask({ ...draft, data, prompt: String(draft.prompt ?? "").slice(0, 4000) });
+  // die Quellenangabe (Referenzsammlung) bleibt, wie sie gespeichert ist: Bearbeiten nimmt sie nicht weg
+  const t = normalizeTask({ ...draft, data, prompt: String(draft.prompt ?? "").slice(0, 4000), quelle: e.task.quelle ?? null });
   repo.updateTask(taskId, t);
   titleFromTask(e.task.worksheet_id);
   refresh(e.task.worksheet_id);
@@ -171,8 +173,9 @@ export async function searchTasksAction(worksheetId: number, text: string) {
   await requireTeacher();
   const w = repo.getWorksheet(worksheetId);
   if (!w) return [];
-  return repo
-    .searchTasks({ skillIds: w.skill_ids, subject: w.subject, text, excludeWorksheetId: worksheetId, limit: 12 })
+  // schlecht bewertete Aufgaben (lib/bewertungen.ts) schlägt die Suche nicht vor
+  return ohneAusgeblendete(repo.searchTasks({ skillIds: w.skill_ids, subject: w.subject, text, excludeWorksheetId: worksheetId, limit: 30 }))
+    .slice(0, 12)
     .map((t) => ({ id: t.id, prompt: t.prompt, type: t.type, difficulty: t.difficulty, skillId: t.skillId, worksheetTitle: t.worksheet_title, library: t.worksheet_kind === "bibliothek" }));
 }
 
