@@ -313,6 +313,19 @@ Lehrkraft sie bestätigt; ein Vorschlag der KI ist nur ein Vorschlag. Geht nicht
 (`text_bewertungen`).
 _Avoid_: Korrektur (das ist die Textkorrektur), Benotung, Punkte
 
+**Aufgabe erfüllt?**:
+Der zweite Teil der Korrektur einer Textarbeit, neben „Sprache“: je **Arbeitsauftrag** ein Urteil (erfüllt,
+teilweise, fehlt, nicht beurteilbar) mit Begründung und geprüften Belegen. Die Aufträge liest die App aus der
+Aufgabenstellung, die KI beurteilt nur diese. Die erweiterte **Bewertung**, für jede Textarbeit; ein Klick auf
+„Korrigieren“ startet beide Teile. Nur für die Lehrkraft, nicht im Lernstand
+([docs/textkorrektur.md](docs/textkorrektur.md)).
+_Avoid_: Inhaltskorrektur, zweite Korrektur, Note
+
+**Angabe** (einer Textarbeit):
+Was die Lehrkraft zur Aufgabe einfügt, etwa die Stellenanzeige zur Bewerbung oder die Notizen eines Arbeitsblatts.
+Nur für die Lehrkraft und **Aufgabe erfüllt?** (`text_angaben`). Beim **Schreibauftrag** ist es die **Textbeilage**.
+_Avoid_: Textbeilage (die hat Zeilen und gehört zum Schreibauftrag), Material, Anhang
+
 **Zitatprüfung**:
 Die App sucht jedes Zitat und jede Zeilenangabe, die die KI über einen Text schreibt, selbst in der **Textbeilage**
 oder im Schülertext. Was sie nicht findet, fällt heraus und wird gezählt (`lib/zitatpruefung.ts`).

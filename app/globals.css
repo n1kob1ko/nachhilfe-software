@@ -1183,10 +1183,16 @@ textarea.input {
   font-weight: 600;
   color: var(--ink-2);
 }
-.kx-tab[aria-selected="true"] {
+.kx-tab[aria-selected="true"],
+.kx-tab[aria-current="page"] {
   background: var(--surface);
   color: var(--ink);
   box-shadow: var(--shadow-card);
+}
+@media (max-width: 440px) {
+  .kx-tab {
+    padding: 0 12px;
+  }
 }
 
 /* Bildgeschichte (components/text/story): the pictures stay in view while writing */

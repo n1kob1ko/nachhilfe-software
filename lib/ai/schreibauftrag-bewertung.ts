@@ -7,12 +7,33 @@
  * Bewertung der Erwartungshorizont und der Schülertext. Namen von Schüler, Lehrkräften und weitere gefundene Namen
  * ersetzt der Aufrufer vorher durch [Name] (lib/schreibauftrag-bewertung.ts).
  *
+ * Dieselbe Funktion `bewertung` prüft für „Aufgabe erfüllt?“ (jede Textarbeit) je Arbeitsauftrag, ob er erfüllt ist. Die
+ * Liste der Aufträge kommt von der App (lib/bewertung-kriterien.ts arbeitsauftraege), nie von der KI: sie antwortet für
+ * genau diese Nummern, ein Eintrag zu einer anderen Nummer fällt heraus. Beim Schreibauftrag kommen die Urteile in
+ * derselben Anfrage wie die vier Kriterien, bei einer anderen Textarbeit allein (kiAufgaben).
+ *
  * Was zurückkommt, prüft die App (lib/zitatpruefung.ts): jedes Zitat und jede Zeilenangabe wird im Text gesucht,
  * was nicht gefunden wird, fällt heraus und wird gezählt. Alles bleibt ein Vorschlag: der Erwartungshorizont ist
  * „Ungeprüft“, bis die Lehrkraft ihn speichert; eine Bewertung zählt erst, wenn die Lehrkraft sie bestätigt.
  */
 import { z } from "zod";
-import { cleanErwartung, isKriterium, KRITERIEN, KRITERIUM_KEYS, kriteriumName, leereErwartung, MAX_PUNKT, STUFEN, stufeOf, type Erwartung, type KriteriumKey, type Stufe } from "../bewertung-kriterien";
+import {
+  AUFTRAG_STATUS_KEYS,
+  cleanErwartung,
+  isAuftragStatus,
+  isKriterium,
+  KRITERIEN,
+  KRITERIUM_KEYS,
+  kriteriumName,
+  leereErwartung,
+  MAX_PUNKT,
+  STUFEN,
+  stufeOf,
+  type AuftragStatus,
+  type Erwartung,
+  type KriteriumKey,
+  type Stufe,
+} from "../bewertung-kriterien";
 import { planFor, SORTEN, type AuftragView } from "../schreibauftrag";
 import { numberedLines, wordRange } from "../textinterpretation";
 import { pruefeBeleg, pruefeStelle, pruefeText, type GefundenerBeleg, type Pruefgrundlage } from "../zitatpruefung";
@@ -107,6 +128,143 @@ export async function kiErwartung(d: AuftragDaten, g: Pruefgrundlage, meta: AIMe
   return { ok: true, ...geprueft, callId: out.callId };
 }
 
+// ---------- „Aufgabe erfüllt?“: je Arbeitsauftrag ein Urteil, bei jeder Textarbeit ----------
+
+const BelegSchema = z.object({
+  zitat: z.string().describe("wörtlich und buchstabengenau kopiert, ohne Anführungszeichen, meist 3–12 Wörter"),
+  quelle: z.enum(["schuelertext", "textbeilage"]),
+  zeile: z.string().nullable().describe("nur bei quelle textbeilage: die Zeile aus der Liste, z. B. „12“ oder „12f.“; sonst null"),
+});
+
+const AuftraegeSchema = z
+  .array(
+    z.object({
+      nr: z.number().int().describe("die Nummer des Arbeitsauftrags aus der Liste"),
+      status: z.string().describe(`Eines von: ${AUFTRAG_STATUS_KEYS.join(", ")}`),
+      begruendung: z.string().describe("1–2 kurze Sätze, warum"),
+      belege: z.array(BelegSchema).describe("0–2 Belege"),
+    }),
+  )
+  .describe("Genau ein Eintrag je nummeriertem Arbeitsauftrag, in derselben Reihenfolge, keine weiteren");
+
+/** Für eine Textarbeit ohne Schreibauftrag: nur die Arbeitsaufträge, keine Kriterien der SRDP. */
+export const AufgabenSchema = z.object({ auftraege: AuftraegeSchema });
+export type AufgabenKi = z.infer<typeof AufgabenSchema>;
+
+const AUFTRAEGE_REGELN = [
+  "Prüfe jeden nummerierten Arbeitsauftrag für sich: erfuellt (ganz bearbeitet), teilweise (angesprochen, aber unvollständig oder nur behauptet), fehlt (nicht bearbeitet) oder nicht_beurteilbar (ohne fehlende Angaben, etwa die Textvorlage, nicht zu sagen).",
+  "Antworte für genau diese Nummern, in dieser Reihenfolge. Erfinde keine weiteren Aufträge oder Anforderungen; was nicht in der Aufgabenstellung steht, wird nicht verlangt.",
+  "Hier zählt nur der Inhalt: ob der Auftrag bearbeitet ist und ob Aussagen über die Vorlage stimmen und begründet sind. Rechtschreibung, Grammatik und Zeichensetzung gehören nicht hierher.",
+  "Eine andere Deutung oder Meinung ist nicht falsch, wenn sie am Text begründet ist. Begründe jedes Urteil in 1–2 kurzen Sätzen, höchstens zwei Belege.",
+].join("\n");
+
+const nummeriert = (punkte: string[]) => punkte.map((p, i) => `${i + 1}. ${p}`);
+
+/** Ein Arbeitsauftrag, wie die App ihn zeigt: das Urteil der KI mit geprüfter Begründung und geprüften Belegen. */
+export type AuftragErgebnis = {
+  nr: number;
+  /** der Auftrag, wie die App ihn aus der Aufgabenstellung gelesen hat */
+  text: string;
+  status: AuftragStatus;
+  begruendung: string;
+  belege: GefundenerBeleg[];
+  /** so viele Sätze oder Belege fielen hier weg, weil ihr Zitat oder ihre Zeile nicht im Text steht */
+  weggelassen: number;
+  /** die KI hat zu diesem Auftrag nichts geliefert */
+  ohneAntwort: boolean;
+};
+
+/**
+ * Die Urteile der KI, wie die App sie übernimmt: je Auftrag der Liste genau eines. Ein Eintrag zu einer Nummer, die es
+ * nicht gibt (ein erfundener Auftrag), oder ein zweiter zur selben Nummer fällt heraus und wird gezählt; ein Satz der
+ * Begründung oder ein Beleg mit Zitat oder Zeile, die nicht im Text stehen, ebenso. Fehlt ein Auftrag, ist er
+ * „nicht beurteilbar“ und so markiert.
+ */
+export function pruefeAuftraege(raw: AufgabenKi["auftraege"], punkte: string[], g: Pruefgrundlage): { auftraege: AuftragErgebnis[]; verworfen: number } {
+  let verworfen = 0;
+  const gesehen = new Map<number, AufgabenKi["auftraege"][number]>();
+  for (const e of raw ?? []) {
+    const nr = Number(e.nr);
+    if (!Number.isInteger(nr) || nr < 1 || nr > punkte.length || gesehen.has(nr) || !isAuftragStatus(e.status)) verworfen++;
+    else gesehen.set(nr, e);
+  }
+  const auftraege = punkte.map((text, i): AuftragErgebnis => {
+    const e = gesehen.get(i + 1);
+    if (!e) return { nr: i + 1, text, status: "nicht_beurteilbar", begruendung: "", belege: [], weggelassen: 0, ohneAntwort: true };
+    const b = pruefeText(String(e.begruendung ?? "").slice(0, 1200), g);
+    let weg = b.verworfen;
+    const belege: GefundenerBeleg[] = [];
+    for (const x of (e.belege ?? []).slice(0, 4)) {
+      const ok = pruefeBeleg({ zitat: String(x.zitat ?? "").slice(0, MAX_PUNKT), quelle: x.quelle, zeile: x.zeile }, g);
+      if (ok && belege.length < 2 && !belege.some((y) => y.zitat === ok.zitat)) belege.push(ok);
+      else if (!ok) weg++;
+    }
+    verworfen += weg;
+    return { nr: i + 1, text, status: isAuftragStatus(e.status) ? e.status : "nicht_beurteilbar", begruendung: b.text, belege, weggelassen: weg, ohneAntwort: false };
+  });
+  return { auftraege, verworfen };
+}
+
+/** Eine Textarbeit ohne Schreibauftrag, wie die KI sie für „Aufgabe erfüllt?“ bekommt; alles schon ohne Namen. */
+export type AufgabenDaten = {
+  fach: string;
+  textsorte: string;
+  stufe: string;
+  /** die Zeilen der Aufgabenstellung, die zu keinem Auftrag gehören */
+  rahmen: string[];
+  punkte: string[];
+  /** Angabe oder Textvorlage (bei einer Bildgeschichte die Bildbeschreibungen); '' = keine */
+  vorlage: string;
+  /** der Schülertext Absatz für Absatz */
+  absaetze: string[];
+  woerter: number;
+};
+
+const SYSTEM_AUFGABEN = [
+  "Du prüfst für eine Lehrkraft in Österreich, ob ein Schülertext die Aufgabe erfüllt: je Arbeitsauftrag ein Urteil. Du bewertest nicht die Sprache und vergibst keine Note.",
+  AUFTRAEGE_REGELN,
+  "Fehlt die Angabe oder Textvorlage, beurteile den Bezug auf sie und Zitate daraus nicht; dann ist ein Auftrag, der nur damit zu prüfen ist, nicht_beurteilbar.",
+  "Belege: wörtliche Stellen aus dem Schülertext oder der Angabe (quelle textbeilage).",
+  ZITIEREN,
+  "Schreib ohne Anrede. Nenne keine Namen; „[Name]“ steht für einen ersetzten Namen und bleibt so. Stütze dich nur auf den Text, keine Vermutungen über die Person. Die Lehrkraft entscheidet.",
+].join("\n");
+
+export function aufgabenAnfrage(d: AufgabenDaten): { system: string; prompt: string } {
+  const z: string[] = [];
+  z.push(`Fach: ${d.fach || "Deutsch"}`);
+  if (d.textsorte.trim()) z.push(`Textsorte: ${d.textsorte.trim()}`);
+  z.push(`Schüler/in: ${d.stufe}`);
+  if (d.rahmen.length) z.push("", "Aufgabenstellung (Rahmen):", ...d.rahmen);
+  z.push("", "Arbeitsaufträge (von der App nummeriert; beurteile genau diese):", ...nummeriert(d.punkte));
+  if (d.vorlage.trim()) z.push("", "Angabe / Textvorlage:", "Zeilennummer | Zeile", beilageMitZeilen({ text: d.vorlage, countBlank: false }));
+  else z.push("", "Angabe / Textvorlage: keine. Bezug auf eine Vorlage und Zitate daraus lassen sich nicht prüfen.");
+  z.push("", `Schülertext (${d.woerter} Wörter, Absätze A1, A2 …):`);
+  d.absaetze.forEach((p, i) => z.push(`A${i + 1}: ${p}`));
+  return { system: SYSTEM_AUFGABEN, prompt: z.join("\n") };
+}
+
+export type KiAufgaben = { ok: true; auftraege: AuftragErgebnis[]; verworfen: number; callId: number | null } | { ok: false; error: string };
+
+/** „Aufgabe erfüllt?“ für eine Textarbeit ohne Schreibauftrag: dieselbe KI-Funktion wie die Bewertung, ohne Kriterien. */
+export async function kiAufgaben(d: AufgabenDaten, g: Pruefgrundlage, meta: AIMeta): Promise<KiAufgaben> {
+  if (!d.punkte.length) return { ok: false, error: "Es gibt keine Aufgabenstellung." };
+  const { system, prompt } = aufgabenAnfrage(d);
+  const out = await runAI("bewertung", AufgabenSchema, system, prompt, { meta });
+  if (!out.ok) return { ok: false, error: out.message };
+  const geprueft = pruefeAuftraege(out.data.auftraege, d.punkte, g);
+  if (geprueft.auftraege.every((a) => a.ohneAntwort)) return { ok: false, error: "Die KI hat zu keinem Arbeitsauftrag etwas Brauchbares geliefert." };
+  return { ok: true, ...geprueft, callId: out.callId };
+}
+
+/**
+ * Ungefähr, was „Aufgabe erfüllt?“ kostet, in Tokens: Anweisungen, Vorlage und Text gehen hinaus, je Auftrag ein kurzes
+ * Urteil zurück, beim Schreibauftrag dazu die vier Kriterien und der Erwartungshorizont. Mit Denkzeit (Aufwand niedrig).
+ */
+export function estimateTokensBewertung(o: { woerter: number; vorlageWoerter: number; auftraege: number; srdp: boolean }) {
+  const text = Math.round((o.woerter + o.vorlageWoerter) * 1.7);
+  return { input: 1_100 + text + o.auftraege * 40 + (o.srdp ? 700 : 0), output: 500 + o.auftraege * 160 + (o.srdp ? 900 : 0) };
+}
+
 // ---------- Bewertung ----------
 
 export const BewertungSchema = z.object({
@@ -128,6 +286,7 @@ export const BewertungSchema = z.object({
       }),
     )
     .describe("Genau vier Einträge, einer je Kriterium"),
+  auftraege: AuftraegeSchema.default([]),
 });
 export type BewertungKi = z.infer<typeof BewertungSchema>;
 
@@ -138,6 +297,8 @@ export type BewertungDaten = AuftragDaten & {
   /** der Schülertext Absatz für Absatz, Namen ersetzt */
   absaetze: string[];
   woerter: number;
+  /** die Arbeitsaufträge, wie die App sie aus dem Arbeitsauftrag liest (lib/bewertung-kriterien.ts arbeitsauftraege) */
+  punkte: string[];
 };
 
 const SYSTEM_BEWERTUNG = [
@@ -148,12 +309,15 @@ const SYSTEM_BEWERTUNG = [
   "Begründe jede Stufe in 1–3 kurzen, sachlichen Sätzen (was gelingt, was fehlt). Stütze dich nur auf den Text, keine Vermutungen über die Person.",
   "Der Erwartungshorizont nennt Richtungen, keine einzige Lösung: Eine andere Deutung oder Meinung ist nicht falsch, wenn sie am Text begründet ist.",
   "Belege: wörtliche Stellen aus dem Schülertext oder der Textbeilage; höchstens drei je Kriterium.",
+  "Dazu unter auftraege, getrennt von den Kriterien:",
+  AUFTRAEGE_REGELN,
   ZITIEREN,
   "Schreib ohne Anrede. Nenne keine Namen; „[Name]“ steht für einen ersetzten Namen und bleibt so. Die Lehrkraft entscheidet über jede Stufe.",
 ].join("\n");
 
 export function bewertungAnfrage(d: BewertungDaten): { system: string; prompt: string } {
   const z: string[] = auftragsTeil(d);
+  if (d.punkte.length) z.push("", "Arbeitsaufträge (von der App nummeriert; beurteile genau diese unter auftraege):", ...nummeriert(d.punkte));
   z.push("", d.erwartungGespeichert ? "Erwartungshorizont der Lehrkraft:" : "Erwartungshorizont (Vorlage aus der Textsorte, noch nicht von der Lehrkraft angepasst):");
   for (const k of KRITERIEN) {
     z.push(`${k.name}:`);
@@ -197,13 +361,16 @@ export function pruefeBewertung(raw: BewertungKi, g: Pruefgrundlage): { kriterie
   return { kriterien, verworfen };
 }
 
-export type KiBewertung = { ok: true; kriterien: KriteriumVorschlag[]; verworfen: number; callId: number | null } | { ok: false; error: string };
+/** verworfen: bei den Kriterien; auftraegeVerworfen: bei den Arbeitsaufträgen (erfundene Aufträge, Sätze, Belege). */
+export type KiBewertung = { ok: true; kriterien: KriteriumVorschlag[]; auftraege: AuftragErgebnis[]; verworfen: number; auftraegeVerworfen: number; callId: number | null } | { ok: false; error: string };
 
+/** Die Bewertung eines Schreibauftrags: die vier Kriterien und, in derselben Anfrage, das Urteil je Arbeitsauftrag. */
 export async function kiBewertung(d: BewertungDaten, g: Pruefgrundlage, meta: AIMeta): Promise<KiBewertung> {
   const { system, prompt } = bewertungAnfrage(d);
   const out = await runAI("bewertung", BewertungSchema, system, prompt, { meta });
   if (!out.ok) return { ok: false, error: out.message };
   const geprueft = pruefeBewertung(out.data, g);
   if ("fehler" in geprueft) return { ok: false, error: geprueft.fehler };
-  return { ok: true, ...geprueft, callId: out.callId };
+  const a = pruefeAuftraege(out.data.auftraege, d.punkte, g);
+  return { ok: true, kriterien: geprueft.kriterien, auftraege: a.auftraege, verworfen: geprueft.verworfen, auftraegeVerworfen: a.verworfen, callId: out.callId };
 }

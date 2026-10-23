@@ -7,13 +7,16 @@ import { pushLive } from "@/lib/live";
 import { auftragFor } from "@/lib/schreibauftrag-store";
 import {
   bestaetigeBewertung,
-  bewertungVorschlagen,
   erwartungVorschlagen,
+  retryAufgabenPruefung,
   setzeFreigabe,
+  speichereAngabe,
   speichereErwartung,
+  startAufgabenPruefung,
   verwirfBewertungVorschlag,
   verwirfErwartungVorschlag,
 } from "@/lib/schreibauftrag-bewertung";
+import { correctionsOfText, maskedNames } from "@/lib/text-correction";
 import { textChannel } from "@/lib/text-routes";
 import { getText } from "@/lib/texts";
 import { runningUnitForStudent } from "@/lib/units";
@@ -23,8 +26,9 @@ export type BewertungState = { ok: boolean; meldung: string } | null;
 
 const verworfenText = (n: number) => (n ? ` ${n === 1 ? "Eine Stelle" : `${n} Stellen`} mit Zitat oder Zeilenangabe ${n === 1 ? "stand" : "standen"} nicht im Text und ${n === 1 ? "wurde" : "wurden"} weggelassen.` : "");
 
+// Erwartungshorizont und Bewertung stehen in „Aufgabe erfüllt?“ der Korrekturseite (/texte/<id>/bewertung leitet dorthin)
 function neuLaden(textId: number) {
-  revalidatePath(`/texte/${textId}/bewertung`);
+  revalidatePath(`/texte/${textId}/korrektur`);
   revalidatePath(`/texte/${textId}`);
 }
 
@@ -62,11 +66,39 @@ export async function verwirfErwartungVorschlagAction(textId: number) {
   neuLaden(textId);
 }
 
-export async function bewertungVorschlagenAction(textId: number, _prev: BewertungState, f: FormData): Promise<BewertungState> {
+/** Die Namen, die die Lehrkraft in der Freigabe der Korrektur dieser Fassung verbergen ließ; null: alle, die die App findet. */
+function namenDerKorrektur(textId: number): string[] | undefined {
+  const text = getText(textId);
+  const c = text ? correctionsOfText(textId).find((x) => x.version === text.version) : null;
+  return maskedNames(c?.masked_names) ?? undefined;
+}
+
+/**
+ * „Aufgabe prüfen“ allein, mit dem Haken der Lehrkraft (wenn die Sprache schon korrigiert ist oder die Aufgabe neu geprüft
+ * werden soll). Beim Schreibauftrag füllt dieselbe Prüfung die Stufen der Bewertung vor. Läuft im Hintergrund.
+ */
+export async function aufgabePruefenAction(textId: number, _prev: BewertungState, f: FormData): Promise<BewertungState> {
   const t = await requireTeacher();
-  const out = await bewertungVorschlagen(textId, t.id, { zustimmung: f.get("zustimmung") === "1" });
+  const out = await startAufgabenPruefung(textId, t.id, { consent: f.get("zustimmung") === "1", names: namenDerKorrektur(textId), neu: true });
   neuLaden(textId);
-  return out.ok ? { ok: true, meldung: `Vorschlag ist da. Prüf jede Stufe und bestätige die Bewertung.${verworfenText(out.verworfen)}` } : { ok: false, meldung: out.error };
+  return out.ok ? { ok: true, meldung: out.reused ? "Die Prüfung läuft schon." : "Die Prüfung läuft. Das Ergebnis erscheint hier." } : { ok: false, meldung: out.error };
+}
+
+/** „Erneut versuchen“ nach einer fehlgeschlagenen Prüfung, nur auf Klick, mit der Zustimmung von vorhin. */
+export async function aufgabeErneutAction(textId: number): Promise<{ error?: string } | null> {
+  const t = await requireTeacher();
+  const out = await retryAufgabenPruefung(textId, t.id);
+  neuLaden(textId);
+  return out.ok ? null : { error: out.error };
+}
+
+/** Angabe / Textvorlage einer Textarbeit (nur für die Lehrkraft und „Aufgabe erfüllt?“). */
+export async function speichereAngabeAction(textId: number, _prev: BewertungState, f: FormData): Promise<BewertungState> {
+  const t = await requireTeacher();
+  if (!getText(textId) || auftragFor(textId)) return { ok: false, meldung: "Für diesen Text gibt es hier keine Angabe." };
+  speichereAngabe(textId, String(f.get("angabe") ?? ""), t.id);
+  neuLaden(textId);
+  return { ok: true, meldung: "Angabe gespeichert." };
 }
 
 /** Die Lehrkraft bestätigt Stufen und Begründungen: nur das gilt als Bewertung. */

@@ -1,17 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BookOpenText, Camera, CheckCircle2, ClipboardCheck, FileText, History, Images, Laptop, ListChecks, Printer, RotateCcw, SpellCheck, Tablet } from "lucide-react";
+import { BookOpenText, Camera, CheckCircle2, FileText, History, Images, Laptop, ListChecks, Printer, RotateCcw, SpellCheck, Tablet } from "lucide-react";
 import { restoreRevisionAction, setTextStatusAction, showTextOnTabletAction, updateTextInfoAction } from "@/app/text-actions";
 import { auftragExercisesAction } from "@/app/schreibauftrag-actions";
 import { archiveTextAction, restoreTextAction } from "@/app/archiv-actions";
 import { ArchivBanner, ArchivKnopf, ArchivMeldung } from "@/components/Archiv";
+import { AngabeFeld } from "@/components/text/bewertung/Angabe";
 import { TextEditor } from "@/components/text/TextEditor";
 import { TextLive } from "@/components/text/TextLive";
 import { Pill, Reveal, formatDate, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { fachNamen } from "@/lib/faecher";
 import { storyForEditor } from "@/lib/picture-story";
-import { bewertungInfo, freigegebeneErwartung } from "@/lib/schreibauftrag-bewertung";
+import { angabeOf, bewertungInfo, freigegebeneErwartung } from "@/lib/schreibauftrag-bewertung";
 import { auftragFor, pruefungDesAuftrags } from "@/lib/schreibauftrag-store";
 import { getText, listRevisions, textDoc, TEXT_KINDS, unitsOfText, wordsLabel } from "@/lib/texts";
 import { studentDevice } from "@/lib/live";
@@ -65,13 +66,10 @@ export default async function TextPage({ params, searchParams }: { params: Promi
           <BookOpenText size={16} aria-hidden /> Text und Auftrag
         </Link>
       )}
-      {auftrag && (
-        <Link href={`/texte/${text.id}/bewertung`} className="btn btn-secondary" data-testid="bewertung-link">
-          <ClipboardCheck size={16} aria-hidden /> {bewertung ? `Bewertung${bewertung.note ? ` · Note ${bewertung.note}` : " · bestätigt"}` : "Bewertung"}
-        </Link>
-      )}
+      {/* one entry for both parts (niko, 2026-10-23): „Sprache“ and „Aufgabe erfüllt?“ with the Bewertung of a Schreibauftrag */}
       <Link href={`/texte/${text.id}/korrektur`} className="btn btn-secondary" data-testid="korrigieren">
         <SpellCheck size={16} aria-hidden /> {correction ? `Korrektur${correction.open ? ` (${correction.open} offen)` : ""}` : "Korrigieren"}
+        {bewertung?.note ? ` · Note ${bewertung.note}` : ""}
       </Link>
       <Link href={`/arbeitsblatt/text/${text.id}`} className="btn btn-secondary" target="_blank">
         <Printer size={16} aria-hidden /> PDF / Drucken
@@ -191,7 +189,7 @@ export default async function TextPage({ params, searchParams }: { params: Promi
           </p>
         )}
         {!story && !auftrag && (
-        <Reveal label="Titel und Aufgabe ändern">
+        <Reveal label="Titel, Aufgabe und Angabe ändern">
           <form action={updateTextInfoAction.bind(null, text.id)} className="grid gap-4 pt-1">
             <label className="field">
               <span className="label">Titel</span>
@@ -221,6 +219,7 @@ export default async function TextPage({ params, searchParams }: { params: Promi
               <span className="label">Aufgabenstellung</span>
               <textarea className="input" name="prompt" rows={3} maxLength={4000} defaultValue={text.prompt} />
             </label>
+            <AngabeFeld defaultValue={angabeOf(text.id)} />
             <div>
               <button className="btn btn-primary">Speichern</button>
             </div>

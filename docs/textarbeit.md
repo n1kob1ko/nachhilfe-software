@@ -4,6 +4,7 @@
 
 1. **Starten.** In einer laufenden Einheit unter „Übungen für Max“ auf „Textarbeit starten“ tippen.
    - Eingaben: Titel, Fach, Textsorte und Aufgabenstellung. Die Textsorten zur Auswahl sind Vorschläge (darunter Bewerbungsschreiben und Lebenslauf), freie Eingabe geht auch.
+   - Wahlweise, aufklappbar: **„Angabe / Textvorlage“**, etwa die Stellenanzeige und die Notizen vom Arbeitsblatt, eingefügt oder mit „Aus PDF übernehmen“ (`lib/pdf-text.ts`, ohne KI; die Datei wird nicht gespeichert). Nur die Lehrkraft sieht sie; „Aufgabe erfüllt?“ prüft damit Bezug und Zitate ([textkorrektur.md](textkorrektur.md)). Schreibaufträge haben stattdessen ihre Textbeilage, Bildgeschichten ihre Bildbeschreibungen.
    - „Wo schreibt Max?“: **Am Gerät** (Standard) oder **Auf Papier**. Auf Papier öffnet sich nach dem Start gleich „Vom Foto übernehmen“ (siehe unten), am Tablet öffnet sich nichts.
    - „Gleich am Tablet von Max öffnen“ ist an, wenn ein Schüler-Tablet verbunden ist.
    - Ohne Tablet öffnet sich der Text am Lehrergerät (`/texte/<id>`).
@@ -14,7 +15,7 @@
 3. **Mitlesen.** Der Live-Status der Einheit zeigt Titel, Wörter und die letzte Speicherung.
    - „Mitlesen“ öffnet den Text am Laptop.
    - Was Max schreibt, erscheint dort ohne Neuladen.
-   - Der Lehrer kann dort auch selbst schreiben, „Titel und Aufgabe ändern“ und frühere Fassungen zurückholen.
+   - Der Lehrer kann dort auch selbst schreiben, „Titel, Aufgabe und Angabe ändern“ und frühere Fassungen zurückholen.
 4. **Einheit beenden.** Der Abschluss-Bildschirm zeigt „Dokumente dieser Einheit“, zum Beispiel „Erlebniserzählung: Mein aufregender Ausflug – 246 Wörter“, mit Öffnen und PDF / Drucken.
    - Die Dokumentation erwähnt die Textarbeit: Titel, Textsorte und Wörter, nie den Text selbst.
 5. **Später weiterschreiben.** In der nächsten Einheit stehen unfertige Texte unter „Textarbeiten“ mit „Am Tablet öffnen“.
@@ -34,7 +35,7 @@ Für Texte, die der Schüler mit der Hand auf Papier schreibt, etwa ein Bewerbun
 2. **Haken setzen.** „Auf den Fotos steht kein echter Name, auch nicht oben im Kopf des Blatts.“ Ohne Haken geht nichts hinaus.
 3. **Mit KI lesen.** Neben dem Knopf steht die Schätzung, etwa „ca. 1 Cent je Seite“. Die KI schreibt den Text **wortgetreu** ab: jeder Rechtschreib-, Grammatik- und Beistrichfehler bleibt stehen, nichts wird verbessert. Absätze bleiben Absätze; eigene Zeilen (Absender, Datum, Anrede, Grußformel) stehen in eigenen Zeilen, Tabellenspalten (Lebenslauf) getrennt mit „ | “. Durchgestrichenes fällt weg, Unlesbares steht als `[?]` da. Gedruckte Aufgaben, der Kopf des Blatts und Korrekturzeichen einer Lehrkraft werden nicht abgeschrieben.
 4. **Vergleichen.** Die Abschrift steht in einem Textfeld neben dem Foto (am Handy darunter). Der Lehrer verbessert nur, was die KI falsch gelesen hat, und ergänzt `[?]`. Die Seite zählt die noch offenen `[?]`.
-5. **Übernehmen.** Erst „Als Text übernehmen“ speichert: als neue Fassung des Textes (`saveFromPaper` in `lib/texts.ts`). Was vorher da war, bleibt unter „Frühere Fassungen“. „Text als fertig markieren“ ist dabei vorausgewählt. Danach gehen Korrektur, Bewertung, Lernverlauf, Druck und Dokumentation wie bei jedem Text. Oben steht klein „von Papier übernommen“, nur für Lehrer.
+5. **Übernehmen.** Erst „Als Text übernehmen“ speichert: als neue Fassung des Textes (`saveFromPaper` in `lib/texts.ts`). Was vorher da war, bleibt unter „Frühere Fassungen“. „Text als fertig markieren“ ist dabei vorausgewählt. Danach gehen Korrektur (mit „Aufgabe erfüllt?“), Lernverlauf, Druck und Dokumentation wie bei jedem Text. Oben steht klein „von Papier übernommen“, nur für Lehrer.
 
 **Ohne KI** (kein Schlüssel, manueller Modus, Budget oder Grenze je Schüler erreicht) steht statt des Knopfs der Grund, und der Lehrer tippt den Text in dasselbe Feld ab, mit den Fotos daneben.
 
@@ -46,6 +47,7 @@ Für Texte, die der Schüler mit der Hand auf Papier schreibt, etwa ein Bewerbun
 |---|---|
 | `texts` | `student_id`, `teacher_id`, `unit_id` (begonnen in), `subject`, `topic` (Textsorte), `title`, `prompt`, `body`, `words`, `chars`, `version`, `status` (offen/fertig), `created_at`, `updated_at`, `completed_at`, `von_papier` (wann zuletzt von Papier übernommen; null = am Gerät geschrieben) |
 | `text_units` | Jede Einheit, in der am Text gearbeitet wurde: `words_before`, `words_after`, `first_at`, `last_at`. Daraus kommen „Dokumente dieser Einheit“ und die Dokumentation. |
+| `text_angaben` | Angabe / Textvorlage der Lehrkraft (`text`, `updated_at`, `updated_by`), eine Zeile je Text. Eigene Tabelle, damit sie nie mit dem Text an ein Schülergerät geht. |
 | `text_revisions` | Frühere Fassungen: höchstens alle 5 Minuten, immer vor einem großen Löschen (≥ 30 % und ≥ 20 Wörter) und immer, wenn eine woanders geschriebene Fassung überschrieben wird. Die letzten 40 bleiben. |
 
 Der Text wird als JSON gespeichert, nie als HTML (`lib/text-doc.ts`): Absätze und Überschriften, darin Läufe mit fett/kursiv/unterstrichen.

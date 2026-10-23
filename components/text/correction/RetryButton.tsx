@@ -3,13 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { RotateCcw } from "lucide-react";
-import { retryAICorrectionAction } from "@/app/correction-actions";
+import { retryAICorrectionAction, type StartState } from "@/app/correction-actions";
 
 /**
  * „Erneut versuchen“ after a failed KI run: only on a click, never by itself. While it starts the button is off, and a
  * second click sends nothing; the server claims the run once as well (lib/text-correction.ts retryAICorrection).
+ * kind „aufgabe“: „Aufgabe erfüllt?“ again (lib/schreibauftrag-bewertung.ts retryAufgabenPruefung), through `action`.
  */
-export function RetryButton({ correctionId, kind, cents }: { correctionId: number; kind: "pruefung" | "ganz"; cents: number }) {
+export function RetryButton({ correctionId, kind, cents, action }: { correctionId?: number; kind: "pruefung" | "ganz" | "aufgabe"; cents: number; action?: () => Promise<StartState> }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +21,7 @@ export function RetryButton({ correctionId, kind, cents }: { correctionId: numbe
     setError(null);
     start(async () => {
       try {
-        const res = await retryAICorrectionAction(correctionId);
+        const res = action ? await action() : correctionId !== undefined ? await retryAICorrectionAction(correctionId) : null;
         if (res?.error) setError(res.error);
         router.refresh();
       } finally {
@@ -37,6 +38,10 @@ export function RetryButton({ correctionId, kind, cents }: { correctionId: numbe
         {kind === "pruefung" ? (
           <>
             Nur die zweite Prüfung wird wiederholt, etwa <span className="num">{cents}</span> US-Cent. Die erste Prüfung wird nicht noch einmal bezahlt.
+          </>
+        ) : kind === "aufgabe" ? (
+          <>
+            Nur „Aufgabe erfüllt?“ wird noch einmal geprüft, etwa <span className="num">{cents}</span> US-Cent. Die Korrektur der Sprache bleibt, wie sie ist.
           </>
         ) : (
           <>

@@ -143,3 +143,140 @@ export function schnitt(kriterien: { stufe: Stufe | null }[]): number | null {
   const s = kriterien.map((k) => k.stufe).filter((x): x is Stufe => x !== null);
   return s.length ? Math.round((s.reduce((a, b) => a + b, 0) / s.length) * 10) / 10 : null;
 }
+
+// ---------- „Aufgabe erfüllt?“: die Arbeitsaufträge, die die App selbst aus der Aufgabenstellung liest ----------
+
+/** So beurteilt die KI einen Arbeitsauftrag; „nicht_beurteilbar“, wenn ihr dafür etwas fehlt (etwa die Textvorlage). */
+export const AUFTRAG_STATUS = [
+  { key: "erfuellt", name: "erfüllt" },
+  { key: "teilweise", name: "teilweise" },
+  { key: "fehlt", name: "fehlt" },
+  { key: "nicht_beurteilbar", name: "nicht beurteilbar" },
+] as const;
+export type AuftragStatus = (typeof AUFTRAG_STATUS)[number]["key"];
+export const AUFTRAG_STATUS_KEYS = AUFTRAG_STATUS.map((s) => s.key) as AuftragStatus[];
+export const isAuftragStatus = (x: unknown): x is AuftragStatus => typeof x === "string" && (AUFTRAG_STATUS_KEYS as string[]).includes(x);
+export const auftragStatusName = (s: AuftragStatus) => AUFTRAG_STATUS.find((x) => x.key === s)!.name;
+
+/** Höchstens so viele Arbeitsaufträge prüft die KI; mehr stehen selten in einer Aufgabenstellung. */
+export const MAX_AUFTRAEGE = 12;
+
+export type Arbeitsauftraege = {
+  /** die Arbeitsaufträge in der Reihenfolge der Aufgabenstellung, ohne Nummer oder Aufzählungszeichen */
+  punkte: string[];
+  /** Zeilen, die zu keinem Auftrag gehören (Einleitung, „Bearbeite folgende Aufträge:“, Umfang): der Rahmen für die KI */
+  rahmen: string[];
+  /** false: die Aufgabenstellung ließ sich nicht teilen und ist ein einziger Auftrag */
+  geteilt: boolean;
+  /** so viele Aufträge über MAX_AUFTRAEGE fielen weg */
+  weggelassen: number;
+};
+
+/** „1.“, „2)“, „a)“, „Aufgabe 1:“, „Teil 2 –“, „•“, „-“, „–“, „*“ am Anfang einer Zeile, danach ein Leerzeichen. */
+const AUFTRAG_MARKE = /^\s*(?:(?:Aufgabe|Auftrag|Arbeitsauftrag|Teilaufgabe|Teil)\s*\d{1,2}[a-z]?\s*[:.)\-–]?|\d{1,2}[a-z]?\s*[.)]|[a-hA-H]\s*\)|[•\-–*▪●◦·])(?=\s|$)\s*/;
+const satzEnde = (z: string) => /[.!?:;…"“”»«)]$/.test(z.trim());
+const kleinAnfang = (z: string) => /^\s*\p{Ll}/u.test(z);
+const punktText = (z: string) => z.replace(/\s+/g, " ").trim().slice(0, MAX_PUNKT);
+const ungeteilt = (zeilen: string[]): Arbeitsauftraege => {
+  const ganz = punktText(zeilen.join(" "));
+  return { punkte: ganz ? [ganz] : [], rahmen: [], geteilt: false, weggelassen: 0 };
+};
+
+/**
+ * Die Arbeitsaufträge einer Aufgabenstellung, ohne KI und immer gleich. Nummerierte Zeilen, Aufzählungen und „Aufgabe 1:“
+ * sind je ein Auftrag; eine Folgezeile gehört dazu (klein geschrieben, eingerückt oder nach einer Zeile ohne Satzende),
+ * andere Zeilen davor und danach sind der Rahmen. Ohne solche Zeichen ist jede eigene Zeile ein Auftrag (am Zeilenende
+ * getrennte Sätze werden wieder verbunden), eine Zeile mit „:“ am Ende ist Rahmen. Lässt sich nichts teilen, ist die
+ * ganze Aufgabenstellung ein Auftrag. Die KI beurteilt genau diese Aufträge und keine weiteren.
+ */
+export function arbeitsauftraege(prompt: string): Arbeitsauftraege {
+  const zeilen = String(prompt ?? "").replace(/\r\n?/g, "\n").split("\n").map((z) => z.replace(/\s+$/, ""));
+  const punkte: string[] = [];
+  const rahmen: string[] = [];
+  if (zeilen.some((z) => AUFTRAG_MARKE.test(z) && z.replace(AUFTRAG_MARKE, "").trim())) {
+    // offen: der Auftrag, an den eine Folgezeile kommt; nach einer Leerzeile oder einer Rahmenzeile keiner
+    let offen: number | null = null;
+    for (const z of zeilen) {
+      if (!z.trim()) {
+        if (offen !== null && punkte[offen]) offen = null;
+        continue;
+      }
+      const m = z.match(AUFTRAG_MARKE);
+      if (m) {
+        punkte.push(z.slice(m[0].length).trim());
+        offen = punkte.length - 1;
+      } else if (offen !== null && (!punkte[offen] || kleinAnfang(z) || /^\s{2,}/.test(z) || !satzEnde(punkte[offen]))) {
+        punkte[offen] = `${punkte[offen]} ${z.trim()}`.trim();
+      } else {
+        rahmen.push(z.trim());
+        offen = null;
+      }
+    }
+  } else {
+    const verbunden: string[] = [];
+    let neu = true;
+    for (const z of zeilen) {
+      if (!z.trim()) {
+        neu = true;
+        continue;
+      }
+      const vorher = verbunden[verbunden.length - 1];
+      if (!neu && vorher !== undefined && (kleinAnfang(z) || !satzEnde(vorher))) verbunden[verbunden.length - 1] = `${vorher} ${z.trim()}`;
+      else verbunden.push(z.trim());
+      neu = false;
+    }
+    for (const z of verbunden) (/:$/.test(z) ? rahmen : punkte).push(z);
+    if (punkte.length < 2) return ungeteilt(verbunden);
+  }
+  const alle = punkte.map(punktText).filter(Boolean);
+  if (!alle.length) return ungeteilt(zeilen);
+  return { punkte: alle.slice(0, MAX_AUFTRAEGE), rahmen: rahmen.map(punktText).filter(Boolean), geteilt: alle.length > 1, weggelassen: Math.max(0, alle.length - MAX_AUFTRAEGE) };
+}
+
+/** Eine Zeile im Kasten „Was fehlt“; `stopp`: die Aufgabe wird gar nicht geprüft. */
+export type FehltZeile = { ton: "stopp" | "hinweis"; text: string };
+
+export type FehlendeAngaben = { pruefbar: boolean; zeilen: FehltZeile[]; auftraege: Arbeitsauftraege };
+
+/**
+ * Was „Aufgabe erfüllt?“ fehlt, bestimmt von der App, nie von der KI. Ohne Aufgabenstellung (oder bei einem Text, der nicht
+ * abgegeben, zu kurz oder zu lang ist) gibt es keine Prüfung des Inhalts. Ohne Textvorlage, mit der Vorlage statt eines
+ * eigenen Erwartungshorizonts oder mit einer ungeteilten Aufgabenstellung gibt es sie, aber der Kasten sagt, was deshalb
+ * nicht oder nur grob beurteilt werden kann. So sieht eine Prüfung mit fehlenden Angaben nie vollständig aus.
+ */
+export function fehlendeAngaben(o: {
+  prompt: string;
+  art: "schreibauftrag" | "bildgeschichte" | "text";
+  /** die Textbeilage, die Bildbeschreibungen oder die Angabe der Lehrkraft; '' = keine */
+  vorlage: string;
+  /** nur beim Schreibauftrag: ein eigener Erwartungshorizont ist gespeichert */
+  erwartungGespeichert?: boolean;
+  fertig: boolean;
+  woerter: number;
+  minWoerter: number;
+  maxWoerter: number;
+}): FehlendeAngaben {
+  const auftraege = arbeitsauftraege(o.prompt);
+  const zeilen: FehltZeile[] = [];
+  if (!auftraege.punkte.length) {
+    zeilen.push({ ton: "stopp", text: "Es gibt keine Aufgabenstellung. Ohne sie lässt sich nicht beurteilen, ob die Aufgabe erfüllt ist; geprüft wird nur die Sprache." });
+    return { pruefbar: false, zeilen, auftraege };
+  }
+  if (!o.fertig) zeilen.push({ ton: "stopp", text: "Der Text ist noch nicht abgegeben. Ob die Aufgabe erfüllt ist, wird erst geprüft, wenn er als fertig markiert ist." });
+  else if (o.woerter < o.minWoerter) zeilen.push({ ton: "stopp", text: `Der Text ist zu kurz: Für diese Prüfung braucht er mindestens ${o.minWoerter} Wörter.` });
+  else if (o.woerter > o.maxWoerter) zeilen.push({ ton: "stopp", text: `Der Text ist für diese Prüfung zu lang (höchstens ${o.maxWoerter.toLocaleString("de-AT")} Wörter).` });
+  if (!o.vorlage.trim())
+    zeilen.push({
+      ton: "hinweis",
+      text:
+        o.art === "schreibauftrag"
+          ? "Die Textbeilage ist leer. Ob sich der Text richtig auf sie bezieht und ob Zitate stimmen, kann die KI nicht prüfen."
+          : o.art === "bildgeschichte"
+            ? "Die Bilder haben keine Beschreibungen. Ob die Geschichte zu den Bildern passt, kann die KI nicht prüfen."
+            : "Keine Angabe oder Textvorlage hinterlegt. Ob sich der Text richtig auf eine Vorlage bezieht und ob Zitate daraus stimmen, kann die KI nicht prüfen.",
+    });
+  if (o.art === "schreibauftrag" && !o.erwartungGespeichert) zeilen.push({ ton: "hinweis", text: "Der Erwartungshorizont ist nur die Vorlage aus der Textsorte, nicht von dir angepasst. Die vorgeschlagenen Stufen messen an dieser Vorlage." });
+  if (!auftraege.geteilt) zeilen.push({ ton: "hinweis", text: "Die Aufgabenstellung ließ sich nicht in einzelne Arbeitsaufträge teilen. Sie wird als ein Auftrag geprüft." });
+  if (auftraege.weggelassen) zeilen.push({ ton: "hinweis", text: `Die Aufgabenstellung hat mehr als ${MAX_AUFTRAEGE} Arbeitsaufträge; geprüft werden die ersten ${MAX_AUFTRAEGE}.` });
+  return { pruefbar: !zeilen.some((z) => z.ton === "stopp"), zeilen, auftraege };
+}
