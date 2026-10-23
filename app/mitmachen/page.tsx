@@ -19,6 +19,7 @@ import * as repo from "@/lib/repo";
 import { triesFor } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
 import { storyForEditor } from "@/lib/picture-story";
+import { freigegebeneErwartung } from "@/lib/schreibauftrag-bewertung";
 import { auftragFor } from "@/lib/schreibauftrag-store";
 import { textDoc, textsForStudent, textsForUnit, wordsLabel } from "@/lib/texts";
 
@@ -148,6 +149,7 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
           pictures={story?.pictures}
           targetWords={story?.targetWords ?? auftrag?.target}
           auftrag={auftrag ?? undefined}
+          erwartung={auftrag ? (freigegebeneErwartung(text.id) ?? undefined) : undefined}
           handIn={text.status !== "fertig" ? { url: `/mitmachen/text/${text.id}/abgeben`, home: "/mitmachen/ansicht?zu=start" } : undefined}
         />
       </>

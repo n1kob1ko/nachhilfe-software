@@ -16,6 +16,8 @@ import {
   type ActionResult,
 } from "@/app/builder-actions";
 import { saveToLibraryAction } from "@/app/library-actions";
+import { AufgabeBewertung } from "@/components/AufgabeBewertung";
+import type { BewertungInfo } from "@/lib/bewertung-regeln";
 import { setzePunkteAction } from "@/app/probeschularbeit-actions";
 import { AddReadingQuestion, ReadingIssues, ReadingQuestionFields, ReadingTextPanel } from "@/components/ReadingEditor";
 import { TaskBody } from "@/components/TaskPreview";
@@ -60,6 +62,8 @@ type Props = {
   initialEditing?: number | null;
   /** Probeschularbeit (lib/probeschularbeit.ts): Punkte je Aufgabe, im Editor änderbar */
   punkte?: Record<number, number>;
+  /** Aufgaben bewerten (lib/bewertungen.ts): Stand und eigene Bewertung je Aufgabe (task id) */
+  bewertungen?: Record<number, BewertungInfo>;
 };
 
 /** Punkte zur Auswahl: halbe bis 5, dann ganze, und die aktuelle, falls sie nicht dabei ist */
@@ -270,6 +274,7 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
             <ChevronDown size={14} aria-hidden className={`transition-transform ${more ? "rotate-180" : ""}`} /> {more ? "Weniger" : "Mehr"}
           </button>
         )}
+        {p.bewertungen?.[t.id] && <AufgabeBewertung key={p.bewertungen[t.id].schluessel} ziel={{ art: "aufgabe", id: t.id }} info={p.bewertungen[t.id]} className="sm:ml-auto" />}
       </div>
       {panel === "send" && <SendPanel {...p} run={run} pending={pending} />}
       <div className="mt-2 pl-[44px]">

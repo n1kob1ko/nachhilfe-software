@@ -419,6 +419,7 @@ export function StudentTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; p
         {plan.lines > 0 && (
           <Lines count={plan.lines} label={plan.answerLabel} />
         )}
+        {task.quelle && <p className="ab-quelle">Quelle: {task.quelle}</p>}
       </div>
       {punkte !== undefined && <Punkte p={punkte} teacher={false} />}
     </div>
@@ -508,6 +509,7 @@ function TeacherTask({ t, o, punkte }: { t: SheetTask; o: SheetOptions; punkte?:
             ))}
           </ul>
         )}
+        {task.quelle && <p className="ab-quelle">Quelle: {task.quelle}</p>}
         <div className="ab-solution" lang={en ? "de" : undefined}>
           {answer && (
             <p>

@@ -96,6 +96,7 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
       <p className="max-w-[70ch] text-[16px] leading-relaxed whitespace-pre-line">{task.prompt ? withGaps(task.prompt, Boolean(task.data.gapOptions)) : <span className="text-ink-3 italic">Noch keine Aufgabenstellung</span>}</p>
       {/* Aufgabe mit Bild: mit Lösung zeigt das Bild die gesuchten Werte (zum Prüfen, ob Bild und Lösung zusammenpassen) */}
       {task.data.figure ? <FigurBild figure={task.data.figure} loesung={showSolution} className="mb-1" /> : null}
+      {task.quelle && <p className="mt-1 text-[12px] text-ink-3">Quelle: {task.quelle}</p>}
       {task.data.genus && (
         <p className="mt-1.5">
           <GenusBadge genus={task.data.genus} />

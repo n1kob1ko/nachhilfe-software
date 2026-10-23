@@ -1,4 +1,6 @@
-import { db } from "./db";
+import { aufgabeSchluessel, staende } from "./bewertungen";
+import { OHNE_BEWERTUNG, rang, type Stand } from "./bewertung-regeln";
+import { db, json } from "./db";
 import { listSources, sourceById, taskBankAllowed, type ContentSource } from "./lehrplan";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
@@ -49,6 +51,8 @@ export type LibraryEntry = {
   model: { id: number; name: string } | null;
   /** in the library's Archiv since then (lib/archiv.ts); null = in the library */
   archived_at: string | null;
+  /** what the teachers' ratings say (lib/bewertungen.ts); only from searchLibrary */
+  bewertung?: Stand;
 };
 
 export type LibraryFilter = {
@@ -65,7 +69,14 @@ export type LibraryFilter = {
   tag?: string;
   /** Archiv (lib/archiv.ts): true = only archived entries; otherwise archived ones are left out */
   archived?: boolean;
+  /**
+   * Bewertung (lib/bewertungen.ts): gut, unbewertet or ausgeblendet; alle = every entry. Without it the ausgeblendeten
+   * (badly rated) are left out. Well-rated entries come first either way.
+   */
+  bewertung?: LibraryRating;
 };
+export const LIBRARY_RATINGS = { gut: "gut bewertet", unbewertet: "noch nicht bewertet", ausgeblendet: "ausgeblendet (schlecht bewertet)" } as const;
+export type LibraryRating = keyof typeof LIBRARY_RATINGS | "alle";
 
 export const cleanTags = (tags: string[] | string): string[] =>
   [...new Set((Array.isArray(tags) ? tags : tags.split(/[,;]/)).map((t) => t.trim().replace(/^#/, "").slice(0, 40)).filter(Boolean))].slice(0, 12);
@@ -270,7 +281,10 @@ export function deleteLibraryEntry(id: number): boolean {
   return true;
 }
 
-/** Entries matching the filter, newest first. A skill filter also finds tasks of its sub-skills. */
+/**
+ * Entries matching the filter: well-rated first, then newest first. A skill filter also finds tasks of its sub-skills.
+ * Badly rated entries only with the filter bewertung = ausgeblendet or alle; the Archiv shows every entry.
+ */
 export function searchLibrary(f: LibraryFilter = {}, limit = 200): LibraryEntry[] {
   const where = ["w.kind = 'bibliothek'", f.archived ? "w.archived_at IS NOT NULL" : "w.archived_at IS NULL"];
   const params: unknown[] = [];
@@ -290,24 +304,33 @@ export function searchLibrary(f: LibraryFilter = {}, limit = 200): LibraryEntry[
   }
   const rows = db()
     .prepare(
-      `SELECT w.id AS wid, t.id AS tid FROM worksheets w JOIN tasks t ON t.worksheet_id = w.id
-       WHERE ${where.join(" AND ")} ORDER BY w.created_at DESC, w.id DESC LIMIT ?`,
+      `SELECT w.id AS wid, t.id AS tid, t.type, t.prompt, t.data, t.answer FROM worksheets w JOIN tasks t ON t.worksheet_id = w.id
+       WHERE ${where.join(" AND ")} ORDER BY w.created_at DESC, w.id DESC`,
     )
-    .all(...params, limit) as { wid: number; tid: number }[];
-  return rows.flatMap((r) => {
-    const w = repo.getWorksheet(r.wid);
-    const t = repo.getTask(r.tid);
-    return w && t ? [toEntry(w, t)] : [];
-  });
+    .all(...params) as { wid: number; tid: number; type: TaskDraft["type"]; prompt: string; data: string; answer: string }[];
+  const keys = rows.map((r) => aufgabeSchluessel({ type: r.type, prompt: r.prompt, data: json(r.data, {}), answer: json(r.answer, {}) }));
+  const st = staende(keys);
+  const passt = (b: Stand) =>
+    f.archived || f.bewertung === "alle" ? true : f.bewertung === "ausgeblendet" ? b.ausgeblendet : !b.ausgeblendet && (f.bewertung === "gut" ? b.gut : f.bewertung === "unbewertet" ? !b.anzahl : true);
+  return rows
+    .map((r, i) => ({ r, i, b: st.get(keys[i]) ?? OHNE_BEWERTUNG }))
+    .filter(({ b }) => passt(b))
+    .sort((a, b) => rang(b.b) - rang(a.b) || a.i - b.i)
+    .slice(0, limit)
+    .flatMap(({ r, b }) => {
+      const w = repo.getWorksheet(r.wid);
+      const t = repo.getTask(r.tid);
+      return w && t ? [{ ...toEntry(w, t), bewertung: b }] : [];
+    });
 }
 
 /** What the filters can offer: only values that occur in the library. */
 export function libraryFacets(subject?: string) {
-  const entries = searchLibrary(subject ? { subject } : {}, 5000);
+  const entries = searchLibrary({ subject, bewertung: "alle" }, 5000);
   const uniq = <T,>(xs: T[]) => [...new Set(xs)];
   return {
     total: entries.length,
-    subjects: uniq(searchLibrary({}, 5000).map((e) => e.subject)).sort(),
+    subjects: uniq(searchLibrary({ bewertung: "alle" }, 5000).map((e) => e.subject)).sort(),
     levels: uniq(entries.filter((e) => e.school_type).map((e) => `${e.school_type}|${e.klasse ?? ""}`)),
     topics: uniq(entries.map((e) => e.topic).filter(Boolean)).sort(),
     skills: uniq(entries.flatMap((e) => e.task.skillIds ?? [])),

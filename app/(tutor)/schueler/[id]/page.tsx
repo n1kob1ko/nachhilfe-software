@@ -16,6 +16,7 @@ import { FachFeld } from "@/components/FachFeld";
 import { Lernverlauf } from "@/components/Lernverlauf";
 import { UnitControl } from "@/components/UnitControl";
 import { ExamForm } from "@/components/ExamForm";
+import { Pruefliste } from "@/components/Pruefliste";
 import { cancelExamAction, setExamResultAction } from "@/app/curriculum-actions";
 import { SchuelerAppLink } from "@/components/SchuelerAppLink";
 import { ProgressChart } from "@/components/ProgressChart";
@@ -893,6 +894,8 @@ function School({ student }: { student: repo.Student }) {
             </Info>
           </span>
         </SectionTitle>
+        {/* vom Schüler in der App eingetragen, wartet auf Übernehmen oder Verwerfen (lib/pruefliste.ts) */}
+        <Pruefliste student={student} />
         <ul className="mb-5 grid gap-3">
           {upcoming.length === 0 && <li className="text-[14px] text-ink-3">Keine Prüfung geplant.</li>}
           {upcoming.map((t) => {
@@ -909,6 +912,7 @@ function School({ student }: { student: repo.Student }) {
                     {formatDate(t.date, { weekday: "short", day: "numeric", month: "short" })} · {days < 0 ? "vorbei" : days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`}
                   </span>
                   {stage && <Pill tone={STAGE_TONE[stage]}>{STAGE_LABEL[stage]}</Pill>}
+                  {t.quelle === "schueler" && <Pill tone="accent">vom Schüler eingetragen</Pill>}
                 </div>
                 {((t.topics?.length ?? 0) > 0 || t.material_id) && (
                   <p className="mt-1 text-[13.5px] text-ink-2">

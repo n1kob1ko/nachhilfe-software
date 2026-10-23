@@ -3,8 +3,9 @@ import { LessonForm } from "@/components/LessonForm";
 import { PageHeader, formatDate } from "@/components/ui";
 import { getLesson, getStudent } from "@/lib/repo";
 
-export default async function EditLesson({ params }: { params: Promise<{ id: string; lessonId: string }> }) {
+export default async function EditLesson({ params, searchParams }: { params: Promise<{ id: string; lessonId: string }>; searchParams: Promise<{ fehler?: string }> }) {
   const { id, lessonId } = await params;
+  const { fehler } = await searchParams;
   const student = getStudent(Number(id));
   const lesson = getLesson(Number(lessonId));
   if (!student || !lesson || lesson.student_id !== student.id) notFound();
@@ -15,7 +16,7 @@ export default async function EditLesson({ params }: { params: Promise<{ id: str
         subtitle={`${student.name} · ${formatDate(lesson.starts_at, { weekday: "long", day: "numeric", month: "long" })}`}
         back={{ href: `/schueler/${student.id}?tab=lernverlauf`, label: student.name }}
       />
-      <LessonForm student={student} lesson={lesson} />
+      <LessonForm fehler={fehler} student={student} lesson={lesson} />
     </>
   );
 }

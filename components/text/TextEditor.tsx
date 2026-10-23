@@ -30,7 +30,7 @@ import {
 } from "@/lib/text-doc";
 import { planFor, SORTEN, type AuftragView } from "@/lib/schreibauftrag";
 import { beilageKey } from "@/lib/text-ansicht";
-import { ExamplePanel, HintsPanel, WordProgress } from "./interpretation/InterpretationParts";
+import { ErwartungPanel, ExamplePanel, HintsPanel, WordProgress } from "./interpretation/InterpretationParts";
 import { MerkmaleList, NumberedStory, SchreibplanList } from "./interpretation/NumberedStory";
 import { readDom } from "./read-dom";
 import { StoryColumn, StoryStrip, type StoryPictures } from "./story/StoryPictures";
@@ -65,6 +65,8 @@ type Props = {
    * against the target and Hinweise without KI below.
    */
   auftrag?: AuftragView;
+  /** the Erwartungshorizont, only when the teacher saved and released it (lib/schreibauftrag-bewertung.ts) */
+  erwartung?: { name: string; punkte: string[] }[];
 };
 
 type Status =
@@ -153,6 +155,7 @@ export function TextEditor({
   targetWords,
   handIn,
   auftrag,
+  erwartung,
 }: Props) {
   const store = `${backupPrefix}${textId}`;
   const editor = useRef<HTMLDivElement>(null);
@@ -1054,6 +1057,7 @@ export function TextEditor({
             </div>
             {main}
             <div className="mt-4 grid gap-3">
+              {erwartung && erwartung.length > 0 && <ErwartungPanel erwartung={erwartung} />}
               <HintsPanel doc={latest.current} auftrag={auftrag} />
               <ExamplePanel sorte={auftrag.sorte} />
             </div>

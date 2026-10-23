@@ -144,6 +144,8 @@ const AufgabeSchema = z.strictObject({
   teacherNote: z.string().max(GRENZEN.text).optional(),
   altWays: z.array(z.string().max(1000)).max(6).optional(),
   estimatedTimeSec: z.number().int().positive().nullable().optional(),
+  // Quellenangabe einer übernommenen Aufgabe (Referenzsammlung): geht mit der Aufgabe mit
+  quelle: z.string().trim().max(200).nullable().optional(),
 });
 
 const SchrittSchema = z.strictObject({
