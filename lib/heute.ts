@@ -14,13 +14,13 @@ import { bereiteBriefingVor } from "./briefing-auto";
 import { briefingDaten, datumKurz, einfachesBriefing, gespeichertesBriefing, KEINE_SCHWACHSTELLE, type BriefingInhalt, type Fokus } from "./briefing";
 import { leseStand } from "./cockpit";
 import { inTagen } from "./exams";
-import { getLernpaket } from "./lernpakete";
+import { getLernpaket, listLernpakete, type Lernpaket } from "./lernpakete";
 import { heutigeEinheiten } from "./planung/heute";
 import { tagAddieren, wienerDatum, wienerMinuten } from "./planung/zeit";
 import { RULE_LABEL, type NextStep } from "./recommend";
 import * as repo from "./repo";
 import { getUnit, type UnitStatus } from "./units";
-import { fachVon, fokusAus, naechsteEinheiten, schuelerBasis, wahlAm, wuenscheFuer, type Vorbereitet } from "./vorbereitung-auto";
+import { fachVon, fokusAus, naechsteEinheiten, paketeZumWaehlen, schuelerBasis, wahlAm, wuenscheFuer, type Vorbereitet } from "./vorbereitung-auto";
 
 const parseLocal = (s: string) => new Date(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s) && !/Z|[+-]\d{2}:?\d{2}$/.test(s) ? s.replace(" ", "T") : s);
 const minutenVon = (s: string) => {
@@ -146,6 +146,8 @@ export type HeuteKarte = {
   mitKi?: boolean;
   /** die nahe Prüfung hat das Thema gewählt: sie steht im Warum (hervorgehoben), nicht noch einmal darunter */
   warumPruefung?: boolean;
+  /** ohne jedes Signal (neuer Schüler): die geprüften Lernpakete zum Wählen, ein Tippen legt eines für heute fest */
+  pakete?: { id: number; title: string }[];
 };
 
 /** Wie weit eine Prüfung auf der Karte nach vorne schaut. */
@@ -224,6 +226,7 @@ export function heuteKarten(teacherId: number, punkte: HeutePunkt[], now: Date =
   // the package for today: the teacher's choice, else the app's proposal (only for students not started yet)
   const wahl = new Map<number, Vorbereitet>();
   for (const n of naechsteEinheiten(teacherId, now, { tage: 1 })) if (n.heute && !wahl.has(n.studentId)) wahl.set(n.studentId, n.wahl);
+  let pakete: Lernpaket[] | null = null;
   for (const p of punkte) {
     if (out.has(p.studentId)) continue;
     const w = wahl.get(p.studentId) ?? null;
@@ -244,6 +247,13 @@ export function heuteKarten(teacherId: number, punkte: HeutePunkt[], now: Date =
       plan: b.plan,
       kiWoEsHakt: ki?.inhalt.woEsHakt ?? null,
     });
+    // a new student without any signal: the matching checked packages to pick from, instead of only the plan from the data
+    if (!begonnen && offen(p) && w?.art === "ohne_signal") {
+      pakete ??= listLernpakete();
+      const st = d.student;
+      const zurWahl = paketeZumWaehlen({ pakete, fach: p.fach, student: { school_type: st.school_type, grade: st.grade || null, subjects: st.subjects, stufe_status: st.stufe_status } });
+      if (zurWahl.length) karte.pakete = zurWahl.map((x) => ({ id: x.id, title: x.title }));
+    }
     out.set(p.studentId, begonnen ? { ...karte, fach: getUnit(p.einheitId!)?.subject ?? karte.fach } : karte);
     if (o.kiVorbereiten && !ki && offen(p)) bereiteBriefingVor({ studentId: p.studentId, teacherId, platzId: p.platzId, fokus, stand: d.stand });
   }

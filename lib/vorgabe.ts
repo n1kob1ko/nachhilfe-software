@@ -16,7 +16,7 @@
  */
 import { planNeu, hatBegonnen, leseStand } from "./cockpit";
 import { db, json } from "./db";
-import { merkeZuordnung, splitTopics } from "./lehrplan";
+import { merkeZuordnung, splitTopics, stoffVorschlag } from "./lehrplan";
 import {
   GRUPPE_LABEL,
   liesPruefungsstoff,
@@ -31,9 +31,11 @@ import {
   type StoffPunkt,
 } from "./pruefungsstoff";
 import * as repo from "./repo";
+import { SUCHWOERTER } from "./themen";
 import { getUnit } from "./units";
 import { autoFuerEinheit, PRUEFUNG_TAGE } from "./vorbereitung-auto";
 import { daysUntil } from "./exams";
+import { tagAddieren, wochentagVon } from "./planung/zeit";
 
 /** Höchstlänge des getippten Texts. */
 export const VORGABE_MAX = 1500;
@@ -160,6 +162,38 @@ export function regelLesung(text: string): Pick<Lesung, "punkte" | "schwierigkei
   return { punkte: punkte.slice(0, 12), schwierigkeiten: schwierigkeiten.slice(0, 5), termin_text: termin };
 }
 
+/** Wörter, die zwei Lerninhalte in einem Punkt verbinden („Gleichungen mit negativen Zahlen“). „und“ trennt schon `splitTopics`. */
+const VERBINDER = /\s+(?:mit|bei|sowie|samt|plus|inklusive|inkl\.)\s+/i;
+
+/** Die Teile eines Punkts an „mit“, „bei“, „sowie“ …; ein Teil allein, wenn es nur einen gibt. Jeder Teil ist ein Stück des Texts. */
+export function teileVon(text: string): string[] {
+  const teile = text
+    .split(VERBINDER)
+    .map((t) => t.replace(/^[\s,–-]+|[\s,–-]+$/g, "").replace(/\s+/g, " "))
+    .filter((t) => /\p{L}{3}/u.test(t));
+  return teile.length >= 2 ? teile : [text];
+}
+
+/**
+ * Ohne KI: ein Punkt aus zwei Lerninhalten („Gleichungen mit negativen Zahlen“) wird zu einem Punkt je Teil, damit jeder
+ * Teil seine eigenen Fähigkeiten zur Auswahl bekommt. Nicht, wenn der ganze Punkt schon klar zu einer Fähigkeit passt
+ * (genau ihr Name, ein Suchwort, gemerkt oder ein bis zwei sichere Treffer).
+ */
+export function teileRegelPunkte(punkte: RohPunkt[], fach: string, student: Pick<repo.Student, "school_type" | "klasse" | "grade">): RohPunkt[] {
+  if (!fach) return punkte;
+  return punkte
+    .flatMap((p) => {
+      const teile = teileVon(p.original);
+      if (teile.length < 2) return [p];
+      const ganz = stoffVorschlag([p.original], fach, student)[0];
+      const genau = ganz?.skills.some((s) => [s.name, ...(SUCHWOERTER[s.id] ?? [])].some((w) => klein(w) === klein(p.original)));
+      if (ganz && (ganz.gemerkt || genau || (ganz.best.length >= 1 && ganz.best.length <= 2))) return [p];
+      return teile.map((t) => ({ ...p, original: t.slice(0, 200), inhalt: t.slice(0, 120), gruppe: gruppeVon(t) }));
+    })
+    .filter((p, i, alle) => alle.findIndex((x) => klein(x.original) === klein(p.original)) === i)
+    .slice(0, 12);
+}
+
 // ---------- speichern ----------
 
 /** Was heute dran ist: die Punkte der Lehrkraft; ohne Text die Punkte der Blätter, die zur Prüfung gehören. */
@@ -213,6 +247,7 @@ export async function speichereVorgabe(o: VorgabeEingabe): Promise<{ ok: true; v
       // the provider's own words in brackets („503: {"error": …}“) stay in the cost log, not on the teacher's card
       const grund = (e instanceof Error ? e.message : "Lesen ging gerade nicht.").replace(/^(Die KI war nicht erreichbar) \(.*$/s, "$1.");
       lesung = text ? regelLesung(text) : lesung;
+      lesung = { ...lesung, punkte: teileRegelPunkte(lesung.punkte, unit.subject, student) };
       hinweise.push(text ? `${grund} Lernheft hat deinen Text selbst zerlegt${lesen ? "; die Fotos sind angehängt" : ""}.` : `${grund} Die Fotos sind angehängt.`);
     }
   }
@@ -271,19 +306,22 @@ export function wendeVorgabeAn(unitId: number, o: { erzwingen?: boolean } = {}):
 }
 
 /**
- * Die kurze Bestätigung unklarer Punkte der Vorgabe: je Punkt (Index in `punkte`) die gewählte Fähigkeit oder keine.
- * Gemerkt für dieselben Wörter (lib/lehrplan.ts `merkeZuordnung`); danach richtet sich der Ablauf neu, wenn noch nichts getan ist.
+ * Die kurze Bestätigung unklarer Punkte der Vorgabe: je Punkt (Index in `punkte`) die gewählten Fähigkeiten (eine oder
+ * mehrere) oder keine. Mehrere werden je ein Punkt mit derselben Angabe. Gemerkt für dieselben Wörter (lib/lehrplan.ts
+ * `merkeZuordnung`); danach richtet sich der Ablauf neu, wenn noch nichts getan ist.
  */
-export function bestaetigeVorgabe(unitId: number, wahl: Map<number, string | null>, teacherId: number | null): boolean {
+export function bestaetigeVorgabe(unitId: number, wahl: Map<number, string | null | (string | null)[]>, teacherId: number | null): boolean {
   const v = vorgabeDerEinheit(unitId);
   const unit = getUnit(unitId);
   if (!v || !unit) return false;
-  const punkte = v.punkte.map((p, i) => {
-    if (!wahl.has(i) || p.zuordnung !== "unklar") return p;
-    const id = wahl.get(i);
-    const ok = id && p.vorschlaege.includes(id) && repo.getSkill(id) ? id : null;
-    merkeZuordnung(unit.subject, p.inhalt && klein(p.inhalt) !== klein(p.original) ? `${p.inhalt} (${p.original})` : p.original, ok ? [ok] : [], teacherId);
-    return { ...p, skill_id: ok, zuordnung: ok ? ("bestaetigt" as const) : ("keine" as const) };
+  const punkte = v.punkte.flatMap((p, i): StoffPunkt[] => {
+    const roh = wahl.get(i);
+    const liste = Array.isArray(roh) ? roh : [roh ?? null];
+    if (!wahl.has(i) || !liste.length || p.zuordnung !== "unklar") return [p];
+    const ok = [...new Set(liste)].filter((id): id is string => Boolean(id && p.vorschlaege.includes(id) && repo.getSkill(id)));
+    merkeZuordnung(unit.subject, p.inhalt && klein(p.inhalt) !== klein(p.original) ? `${p.inhalt} (${p.original})` : p.original, ok, teacherId);
+    if (!ok.length) return [{ ...p, skill_id: null, zuordnung: "keine" }];
+    return ok.map((id) => ({ ...p, skill_id: id, zuordnung: "bestaetigt" as const, vorschlaege: p.vorschlaege.filter((x) => x !== id) }));
   });
   const skillIds = [...new Set([...v.skillIds, ...skillsAus(punkte.map((p) => ({ ...p, status: "pruefung" as const })))])];
   db().prepare("UPDATE einheit_vorgabe SET punkte = ?, skill_ids = ?, updated_at = datetime('now') WHERE unit_id = ?").run(JSON.stringify(punkte), JSON.stringify(skillIds), unitId);
@@ -376,6 +414,49 @@ export function abweichung(heute: Pick<StoffPunkt, "gruppe" | "inhalt" | "origin
 }
 
 // ---------- Termin ----------
+
+const ZAHLWORT: Record<string, number> = { zwei: 2, drei: 3, vier: 4 };
+/** ISO: Index 1 = Montag … 7 = Sonntag (lib/planung/zeit.ts) */
+const WOCHENTAG = ["", "montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonntag"];
+
+/** Ungefähr wann der Termin im Text ist (YYYY-MM-DD), oder null, wenn der Text kein Datum hergibt. */
+export function terminDatum(text: string, heute: string): string | null {
+  const t = text.toLowerCase();
+  const plus = (tage: number) => tagAddieren(heute, tage);
+  let m = t.match(/(\d{1,2})\.\s?(\d{1,2})\.(\d{2,4})?/);
+  if (m) {
+    const jahr = m[3] ? (m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3])) : Number(heute.slice(0, 4));
+    const d = `${jahr}-${String(Number(m[2])).padStart(2, "0")}-${String(Number(m[1])).padStart(2, "0")}`;
+    if (!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(d)) return null;
+    // „8.11.“ without a year in January: the coming one
+    return !m[3] && d < heute ? `${jahr + 1}${d.slice(4)}` : d;
+  }
+  m = t.match(/in\s+(\d+|zwei|drei|vier)\s+(tagen|wochen)/);
+  if (m) return plus((ZAHLWORT[m[1]] ?? Number(m[1])) * (m[2] === "wochen" ? 7 : 1));
+  if (/übernächste[nr]?\s+woche/.test(t)) return plus(14);
+  if (/(nächste[nr]?|kommende[nr]?)\s+woche/.test(t)) return plus(7);
+  if (/übermorgen/.test(t)) return plus(2);
+  if (/morgen/.test(t)) return plus(1);
+  const tag = WOCHENTAG.findIndex((w) => w && t.includes(w));
+  if (tag > 0) return plus((tag - wochentagVon(heute) + 7) % 7 || 7);
+  return null;
+}
+
+/** Die Art einer Prüfung im Text, wie das Formular sie vorschlägt. */
+export const terminArt = (text: string) => (/schularbeit|\bsa\b/i.test(text) ? "Schularbeit" : /\btest\b|lzk|lernzielkontrolle/i.test(text) ? "Test" : "");
+
+/**
+ * „Prüfung eintragen“ ist nicht nötig, wenn dieselbe Prüfung schon eingetragen ist: im Fach der Einheit, gleiche Art (wenn
+ * der Text sie nennt) und um das Datum im Text (eine Woche davor oder danach), ohne Datum in den nächsten 30 Tagen.
+ */
+export function schonEingetragen<T extends Pick<repo.TestResult, "date" | "subject" | "kind">>(terminText: string, tests: T[], heute: string, fach: string): T | null {
+  if (!terminText.trim()) return null;
+  const datum = terminDatum(terminText, heute);
+  const art = terminArt(terminText);
+  const von = datum ? tagAddieren(datum, -7) : heute;
+  const bis = datum ? tagAddieren(datum, 7) : tagAddieren(heute, 30);
+  return tests.find((t) => t.date >= heute && t.date >= von && t.date <= bis && (!fach || !t.subject || t.subject === fach) && (!art || t.kind === art)) ?? null;
+}
 
 /**
  * „Prüfung eintragen“ aus einer Vorgabe: nur mit einem Datum, das die Lehrkraft bestätigt hat. Der Stoff der Vorgabe
