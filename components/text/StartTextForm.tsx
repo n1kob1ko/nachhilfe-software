@@ -5,17 +5,25 @@ import { Camera, ChevronDown, PenLine } from "lucide-react";
 import { startTextAction, type StartTextState } from "@/app/text-actions";
 import { AngabeFeld } from "@/components/text/bewertung/Angabe";
 
-type Props = { unitId: number; subject: string; subjects: string[]; kinds: string[]; device: "laptop" | "tablet" | null; name: string };
+/** Prefilled from the step of the guided lesson (lib/textarbeit-ablauf.ts `schreibStart`); the teacher can change everything. */
+export type TextVorlage = { titel: string; textsorte: string; aufgabe: string; quelle: string };
+
+type Props = { unitId: number; subject: string; subjects: string[]; kinds: string[]; device: "laptop" | "tablet" | null; name: string; vorlage?: TextVorlage | null };
 
 /** Titel, Fach, Textsorte, Aufgabenstellung and (optional) Angabe of a new Textarbeit; it opens on the tablet by default. */
-export function StartTextForm({ unitId, subject, subjects, kinds, device, name }: Props) {
+export function StartTextForm({ unitId, subject, subjects, kinds, device, name, vorlage = null }: Props) {
   const [state, action, pending] = useActionState<StartTextState, FormData>(startTextAction.bind(null, unitId), null);
   const [wo, setWo] = useState<"geraet" | "papier">("geraet");
   return (
     <form action={action} className="grid gap-5">
+      {vorlage && (
+        <p className="rounded-xl bg-accent-wash px-4 py-3 text-[14px] text-ink" data-testid="text-vorlage">
+          Vorgefüllt aus {vorlage.quelle}. Prüfe Titel und Aufgabenstellung und ändere, was nicht passt.
+        </p>
+      )}
       <label className="field">
         <span className="label">Titel</span>
-        <input className="input" name="title" required maxLength={140} autoFocus placeholder="z. B. Mein aufregender Ausflug" />
+        <input className="input" name="title" required maxLength={140} autoFocus placeholder="z. B. Mein aufregender Ausflug" defaultValue={vorlage?.titel} />
       </label>
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="field">
@@ -29,7 +37,7 @@ export function StartTextForm({ unitId, subject, subjects, kinds, device, name }
         </label>
         <label className="field">
           <span className="label">Textsorte</span>
-          <input className="input" name="topic" list="text-kinds" maxLength={80} placeholder="z. B. Erlebniserzählung" />
+          <input className="input" name="topic" list="text-kinds" maxLength={80} placeholder="z. B. Erlebniserzählung" defaultValue={vorlage?.textsorte} />
           <datalist id="text-kinds">
             {kinds.map((k) => (
               <option key={k} value={k} />
@@ -39,7 +47,7 @@ export function StartTextForm({ unitId, subject, subjects, kinds, device, name }
       </div>
       <label className="field">
         <span className="label">Aufgabenstellung</span>
-        <textarea className="input" name="prompt" rows={4} maxLength={4000} placeholder="z. B. Erzähle von einem Ausflug, bei dem etwas Unerwartetes passiert ist. Achte auf Einleitung, Höhepunkt und Schluss." />
+        <textarea className="input" name="prompt" rows={4} maxLength={4000} placeholder="z. B. Erzähle von einem Ausflug, bei dem etwas Unerwartetes passiert ist. Achte auf Einleitung, Höhepunkt und Schluss." defaultValue={vorlage?.aufgabe} />
       </label>
       {/* teacher only: „Aufgabe erfüllt?“ checks the text against it (lib/schreibauftrag-bewertung.ts) */}
       <details className="reveal">

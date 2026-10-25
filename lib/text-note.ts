@@ -44,6 +44,8 @@ const TEXTSORTE_SKILLS: { fach: "Deutsch" | "Englisch"; muster: RegExp; skills: 
   { fach: "Englisch", muster: /letter|e-?mail/i, skills: ["englisch.writing.email"] },
   { fach: "Englisch", muster: /story/i, skills: ["englisch.writing.story"] },
   { fach: "Englisch", muster: /essay|opinion/i, skills: ["englisch.writing.opinion"] },
+  { fach: "Englisch", muster: /blog|posting/i, skills: ["englisch.writing.blog"] },
+  { fach: "Englisch", muster: /article/i, skills: ["englisch.writing.article"] },
 ];
 
 export type SkillInfo = { id: string; name: string; grade_min: number; grade_max: number };
@@ -86,6 +88,34 @@ export function textNotenFuerLernstand(studentId: number): TextNote[] {
     const note = b ? lernstandNote(b) : null;
     return note === null ? [] : [{ textId: r.text_id, skillId: r.lernstand_skill, note, at: r.completed_at ?? r.bestaetigt_at }];
   });
+}
+
+/** Ab dieser Stufe (Genügend, Nicht genügend) ist ein Kriterium schwach: im Abschluss unter „Noch schwierig“ und für die nächste Vorbereitung. */
+export const SCHWACHE_STUFE = 4;
+
+/** Eine bestätigte Bewertung mit Fähigkeit, für die nächste Vorbereitung (lib/vorbereitung-auto.ts `textSignale`). */
+export type TextErgebnis = { textId: number; titel: string; textsorte: string; skillId: string; skillName: string; fach: string; note: Stufe | null; stufen: Record<KriteriumKey, Stufe>; at: string };
+
+/**
+ * Die bestätigten Bewertungen eines Schülers mit der Fähigkeit, für die sie zählen; neueste zuerst. Nur was die Lehrkraft
+ * übernommen hat: ein Vorschlag der KI kommt hier nie vor.
+ */
+export function bestaetigteTextErgebnisse(studentId: number): TextErgebnis[] {
+  const rows = db()
+    .prepare(
+      `SELECT b.text_id, b.kriterien, b.lernstand_skill, b.bestaetigt_at, x.completed_at, x.title, x.topic, s.name AS skill_name, s.subject
+       FROM text_bewertungen b JOIN texts x ON x.id = b.text_id JOIN skills s ON s.id = b.lernstand_skill
+       WHERE x.student_id = ? AND x.archived_at IS NULL AND b.bestaetigt_at IS NOT NULL AND b.kriterien <> ''`,
+    )
+    .all(studentId) as { text_id: number; kriterien: string; lernstand_skill: string; bestaetigt_at: string; completed_at: string | null; title: string; topic: string; skill_name: string; subject: string }[];
+  return rows
+    .flatMap((r): TextErgebnis[] => {
+      const b = parseBewertung(r.kriterien);
+      if (!b) return [];
+      const stufen = Object.fromEntries(b.kriterien.map((k) => [k.key, k.stufe])) as Record<KriteriumKey, Stufe>;
+      return [{ textId: r.text_id, titel: r.title, textsorte: r.topic, skillId: r.lernstand_skill, skillName: r.skill_name, fach: r.subject, note: b.note, stufen, at: r.completed_at ?? r.bestaetigt_at }];
+    })
+    .sort((a, b) => b.at.localeCompare(a.at) || b.textId - a.textId);
 }
 
 /** Die bestätigten Bewertungen der Texte eines Schülers (für den Lernverlauf): Text → Note und Stufen. */

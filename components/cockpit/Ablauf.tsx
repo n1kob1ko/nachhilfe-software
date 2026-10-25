@@ -61,6 +61,9 @@ import { levelFor } from "@/lib/text-correction-rules";
 import { platzFuerEinheit, type UnitView } from "@/lib/units";
 import { autoFuerEinheit, kiVorgabe, type Signal } from "@/lib/vorbereitung-auto";
 import { vorgabeDerEinheit } from "@/lib/vorgabe";
+import { SchreibauftragStart, TextarbeitZeilen } from "@/components/cockpit/Textarbeit";
+import { schreibArt, schreibStartFuer, schreibStartZurPruefung, textLaeufe, textZumSchritt, type TextLauf } from "@/lib/textarbeit-ablauf";
+import { SCHULARBEIT_SCHRITT } from "@/lib/briefing";
 
 const first = (n: string) => n.split(" ")[0];
 
@@ -90,6 +93,8 @@ export function Unterricht({ unit, student, fehler, teacherId, werkzeugeOffen = 
   const vorschlag = vorschlagDerEinheit(unit.id, c);
   const oben = vorschlag?.ausloeser === "antworten" ? vorschlag : null;
   const imSchritt = vorschlag?.ausloeser === "lehrer" ? vorschlag : null;
+  // Textarbeiten dieser Einheit (lib/textarbeit-ablauf.ts): eine Zeile je Text mit dem nächsten Schritt
+  const laeufe = textLaeufe(unit.id);
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5" data-testid="cockpit">
       {fehler && (
@@ -98,15 +103,16 @@ export function Unterricht({ unit, student, fehler, teacherId, werkzeugeOffen = 
         </p>
       )}
       {oben && <VorschlagKarte a={oben} unitId={unit.id} schrittId={aktuell} />}
+      <TextarbeitZeilen unit={unit} laeufe={laeufe} />
       <KiGrenzeHinweis studentId={student.id} name={name} />
       {worte && <SchuelerWorteKarte worte={worte} name={name} />}
       <VorgabeKarte unit={unit} c={c} />
       <Woher c={c} unitId={unit.id} />
       {ids.length > 1 && <Punkte c={c} ids={ids} aktuell={aktuell} unitId={unit.id} />}
       {c.paket && c.aktuell ? (
-        <SchrittKarte c={c} s={c.aktuell} paket={c.paket} unitId={unit.id} name={name} liste={liste} vorschlag={imSchritt} />
+        <SchrittKarte c={c} s={c.aktuell} paket={c.paket} unit={unit} name={name} liste={liste} vorschlag={imSchritt} laeufe={laeufe} />
       ) : !c.paket && c.planAktuell ? (
-        <PlanKarte c={c} s={c.planAktuell} unit={unit} student={student} vorschlag={imSchritt} />
+        <PlanKarte c={c} s={c.planAktuell} unit={unit} student={student} vorschlag={imSchritt} laeufe={laeufe} />
       ) : ids.length > 0 ? (
         <AllesDurch c={c} unitId={unit.id} />
       ) : (
@@ -305,8 +311,25 @@ function HilfeBlock({ hilfe, unitId, werkzeuge }: { hilfe: Hilfe[]; unitId: numb
   );
 }
 
+/** Übungsschritte, in denen ein ganzer Text geschrieben werden kann. */
+const SCHREIB_ARTEN: readonly LernpaketSchritt["art"][] = ["gefuehrte_uebung", "uebung", "zusatz", "kontrolle"];
+const SCHREIB_TITEL = /schreib|writing|aufsatz|brief|e-?mail|story|geschichte|erzähl|bericht|bewerbung|interpretation/i;
+
+/**
+ * Die Schreibaufgabe eines Schritts im Lernpaket: die Fähigkeit seiner Aufgaben; ohne Aufgaben bei einem Übungsschritt,
+ * dessen Titel nach Schreiben klingt, die eine Schreib-Fähigkeit des Pakets.
+ */
+function schreibSkillDesSchritts(s: LernpaketSchritt, paket: LernpaketMitSchritten): string | null {
+  const auf = s.aufgaben.find((a) => a.skillId)?.skillId ?? null;
+  if (auf) return schreibArt(auf) ? auf : null;
+  if (!SCHREIB_ARTEN.includes(s.art) || !SCHREIB_TITEL.test(s.titel)) return null;
+  const ids = paket.skill_ids.filter((id) => schreibArt(id));
+  return ids.length === 1 ? ids[0] : null;
+}
+
 /** Der Schritt des Lernpakets auf dem Schirm. */
-function SchrittKarte({ c, s, paket, unitId, name, liste, vorschlag }: { c: CockpitDaten; s: LernpaketSchritt; paket: LernpaketMitSchritten; unitId: number; name: string; liste: Anpassung[]; vorschlag: Anzeige | null }) {
+function SchrittKarte({ c, s, paket, unit, name, liste, vorschlag, laeufe }: { c: CockpitDaten; s: LernpaketSchritt; paket: LernpaketMitSchritten; unit: UnitView; name: string; liste: Anpassung[]; vorschlag: Anzeige | null; laeufe: TextLauf[] }) {
+  const unitId = unit.id;
   const ids = c.schritte.map((x) => x.id);
   const gesendet = c.stand.gesendet[s.id]?.length ?? 0;
   const angepasst = liste.filter((a) => a.status === "uebernommen" && a.schritt_id === s.id);
@@ -319,6 +342,9 @@ function SchrittKarte({ c, s, paket, unitId, name, liste, vorschlag }: { c: Cock
   // bei Fragen und Kontrollen: „Richtig / Teilweise / Falsch“, was der Lehrer gehört hat
   const frage = FRAGE_ARTEN.includes(s.art) && Boolean(s.lehrer_fragt.trim() || s.erwartete_antwort.trim());
   const antwort = frage ? <AntwortKnoepfe unitId={unitId} schrittId={s.id} wert={c.stand.antworten[s.id] ?? null} /> : null;
+  // a writing step: „Schreibauftrag starten“ is the main action until a text of that kind runs in this unit
+  const schreiben = schreibStartFuer(unit, schreibSkillDesSchritts(s, paket));
+  const laeuft = schreiben ? textZumSchritt(laeufe, schreiben) : null;
   return (
     <section className="panel px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
       <KartenKopf c={c} id={s.id} titel={s.titel} minuten={s.minuten} ids={ids} art={<Pill tone={s.art === "kontrolle" ? "green" : s.art === "zusatz" ? "amber" : "accent"}>{SCHRITT_ARTEN[s.art]}</Pill>} />
@@ -385,14 +411,16 @@ function SchrittKarte({ c, s, paket, unitId, name, liste, vorschlag }: { c: Cock
         </ul>
       )}
 
+      {schreiben && <SchreibauftragStart start={schreiben} laeuft={laeuft} />}
+
       {s.aufgaben.length > 0 && (
         <div className="mt-5 flex flex-wrap items-start gap-x-4 gap-y-2 border-t border-line pt-4">
-          <CockpitSenden action={sendeSchrittAction.bind(null, unitId, s.id)} unitId={unitId} label={`Übung senden (${s.aufgaben.length} ${s.aufgaben.length === 1 ? "Aufgabe" : "Aufgaben"})`} primary={gesendet === 0} />
+          <CockpitSenden action={sendeSchrittAction.bind(null, unitId, s.id)} unitId={unitId} label={`Übung senden (${s.aufgaben.length} ${s.aufgaben.length === 1 ? "Aufgabe" : "Aufgaben"})`} primary={gesendet === 0 && !schreiben} />
           {gesendet > 0 && <span className="pt-2.5 text-[13px] text-ink-3">schon {gesendet === 1 ? "einmal" : `${gesendet}-mal`} an {name} gesendet</span>}
         </div>
       )}
 
-      <Knoepfe unitId={unitId} id={s.id} weiterHaupt={s.aufgaben.length === 0 || gesendet > 0} />
+      <Knoepfe unitId={unitId} id={s.id} weiterHaupt={schreiben ? Boolean(laeuft) : s.aufgaben.length === 0 || gesendet > 0} />
     </section>
   );
 }
@@ -475,7 +503,7 @@ function SchrittWerkzeuge({ c, id, titel, unitId, ids, children }: { c: CockpitD
  * Ohne Lernpaket: ein Schritt des „Plans für heute“. Übung senden mit einer freigegebenen Übung aus dem Bestand, sonst
  * mit neuen Aufgaben aus den Generatoren zur Fähigkeit des Schritts (ohne KI).
  */
-function PlanKarte({ c, s, unit, student, vorschlag }: { c: CockpitDaten; s: PlanStep; unit: UnitView; student: repo.Student; vorschlag: Anzeige | null }) {
+function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten; s: PlanStep; unit: UnitView; student: repo.Student; vorschlag: Anzeige | null; laeufe: TextLauf[] }) {
   const ids = c.plan.map((x) => x.id);
   const name = first(student.name);
   const nicht = (c.stand.nichtVerstanden[s.id] ?? 0) > 0;
@@ -486,6 +514,12 @@ function PlanKarte({ c, s, unit, student, vorschlag }: { c: CockpitDaten; s: Pla
   const zugewiesen = s.uebung && /^Z\d+$/.test(s.uebung) ? Number(s.uebung.slice(1)) : null;
   const skill = s.skillId ? repo.getSkill(s.skillId) : null;
   const gesendet = c.stand.gesendet[s.id]?.length ?? 0;
+  // a writing skill (lib/textarbeit-ablauf.ts): „Schreibauftrag starten“, prefilled, is the main action of the step;
+  // in the exam step it is the exam's writing task, next to „Übung senden“
+  const eigen = schreibStartFuer(unit, s.skillId);
+  const zurPruefung = !eigen && s.titel === SCHULARBEIT_SCHRITT ? schreibStartZurPruefung(unit) : null;
+  const schreiben = eigen ?? zurPruefung;
+  const laeuft = schreiben ? textZumSchritt(laeufe, schreiben) : null;
   return (
     <section className="panel px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
       <KartenKopf c={c} id={s.id} titel={s.titel} minuten={s.minuten} ids={ids} />
@@ -498,6 +532,7 @@ function PlanKarte({ c, s, unit, student, vorschlag }: { c: CockpitDaten; s: Pla
       )}
       {vorschlag && <VorschlagKarte a={vorschlag} unitId={unit.id} schrittId={s.id} imSchritt />}
       {nicht && <HilfeBlock hilfe={hilfe} unitId={unit.id} werkzeuge={`/einheiten/${unit.id}?bereich=cockpit#werkzeuge`} />}
+      {eigen && <SchreibauftragStart start={eigen} laeuft={laeuft} />}
       {(blatt || zugewiesen || skill) && (
         <div className="mt-5 grid gap-2 border-t border-line pt-4" data-testid="plan-senden">
           {blatt ? (
@@ -515,13 +550,14 @@ function PlanKarte({ c, s, unit, student, vorschlag }: { c: CockpitDaten; s: Pla
             skill && (
               <>
                 <p className="text-[14px] text-ink-2">Neue Aufgaben zu {skill.name}, passend zum Lernstand von {name}.</p>
-                <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, skill.id)} unitId={unit.id} label="Übung senden" primary={gesendet === 0} />
+                <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, skill.id)} unitId={unit.id} label="Übung senden" primary={gesendet === 0 && !eigen} />
               </>
             )
           )}
         </div>
       )}
-      <Knoepfe unitId={unit.id} id={s.id} weiterHaupt={!(blatt || skill)} />
+      {zurPruefung && <SchreibauftragStart start={zurPruefung} laeuft={laeuft} haupt={false} />}
+      <Knoepfe unitId={unit.id} id={s.id} weiterHaupt={eigen ? Boolean(laeuft) : !(blatt || skill)} />
     </section>
   );
 }

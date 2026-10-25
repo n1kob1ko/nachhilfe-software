@@ -26,6 +26,8 @@ import { latestInsight } from "@/lib/ai/insights";
 import { unitBrief } from "@/lib/summary";
 import { ABSCHLUSS_FELDER, abschlussKarte } from "@/lib/abschluss";
 import { ablaufDerEinheit } from "@/lib/cockpit";
+import { bewertungFuerBericht } from "@/lib/text-note";
+import { textLaeufe } from "@/lib/textarbeit-ablauf";
 import { Pill, Reveal, SectionTitle, formatDate, formatTime } from "@/components/ui";
 import { LiveStatus } from "@/components/device/LiveStatus";
 import { liveSnapshot, studentDevice } from "@/lib/live";
@@ -259,7 +261,9 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   // „Was war heute schwer?“, vom Schüler nach dieser Einheit geschrieben (lib/schueler-notiz.ts)
   const notiz = notizZuEinheit(unit.id);
   // der Abschluss (lib/abschluss.ts): vier Felder aus den Daten und dem, was im Unterricht getippt wurde
-  const karte = abschlussKarte(brief, ablaufDerEinheit(unit.id));
+  // Textarbeiten: die übernommene Note, sonst „Bewertung offen“ (lib/text-note.ts), nie ein Vorschlag als Ergebnis
+  const texte = lesson ? textLaeufe(unit.id).map((t) => ({ id: t.id, titel: t.titel, textsorte: t.textsorte, bewertung: bewertungFuerBericht(t.id, unit.id), vorschlag: t.vorschlag })) : [];
+  const karte = abschlussKarte(brief, ablaufDerEinheit(unit.id), texte);
   // „Ändern“ (?aendern=1): das Formular der Dokumentation unter der Karte
   const aendern = sp.aendern && mayManage ? lesson : null;
   return (
@@ -289,6 +293,14 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
                           <li key={i} className={z.von === "lehrer" ? "text-ink-2" : ""}>
                             {z.text}
                             {z.von === "lehrer" && <span className="ml-1.5 text-[12px] text-ink-3">(deine Notiz)</span>}
+                            {z.link && mayManage && (
+                              <>
+                                {" "}
+                                <Link href={z.link.href} className="inline-flex min-h-[44px] items-center font-semibold text-accent underline-offset-2 hover:underline" data-testid="abschluss-text-link">
+                                  {z.link.label}
+                                </Link>
+                              </>
+                            )}
                           </li>
                         ))}
                       </ul>

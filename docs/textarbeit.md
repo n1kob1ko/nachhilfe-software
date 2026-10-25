@@ -3,6 +3,7 @@
 ## Ablauf
 
 1. **Starten.** In einer laufenden Einheit unter „Übungen für Max“ auf „Textarbeit starten“ tippen.
+   - Oder im geführten Unterricht im Schritt mit einer Schreibaufgabe auf „Schreibauftrag starten“: Titel, Textsorte, Fach und Aufgabenstellung (mit Wortzahl) sind dann aus der Vorgabe, dem Prüfungsstoff oder dem Schritt vorgefüllt, mit dem Hinweis, woher (`lib/textarbeit-ablauf.ts`, [Heute · Unterricht · Abschluss](heute-unterricht-abschluss.md#textarbeit-im-ablauf)).
    - Eingaben: Titel, Fach, Textsorte und Aufgabenstellung. Die Textsorten zur Auswahl sind Vorschläge (darunter Bewerbungsschreiben und Lebenslauf), freie Eingabe geht auch.
    - Wahlweise, aufklappbar: **„Angabe / Textvorlage“**, etwa die Stellenanzeige und die Notizen vom Arbeitsblatt, eingefügt oder mit „Aus PDF übernehmen“ (`lib/pdf-text.ts`, ohne KI; die Datei wird nicht gespeichert). Nur die Lehrkraft sieht sie; „Aufgabe und Note“ prüft damit Bezug und Zitate ([textkorrektur.md](textkorrektur.md)). Schreibaufträge haben stattdessen ihre Textbeilage, Bildgeschichten ihre Bildbeschreibungen.
    - „Wo schreibt Max?“: **Am Gerät** (Standard) oder **Auf Papier**. Auf Papier öffnet sich nach dem Start gleich „Vom Foto übernehmen“ (siehe unten), am Tablet öffnet sich nichts.
