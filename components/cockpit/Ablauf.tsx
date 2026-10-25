@@ -36,6 +36,7 @@ import { endUnitAction } from "@/app/session-actions";
 import { AufgabeBewertung } from "@/components/AufgabeBewertung";
 import { AnpassenBereich, AnpassungInhalt, KiGrenzeHinweis, OhnePaketAnsicht, PaketAuswahl, PaketKopf } from "@/components/cockpit/Cockpit";
 import { CockpitSenden, SchrittNotiz } from "@/components/cockpit/CockpitClient";
+import { AntwortKnoepfe, VorschlagKarte } from "@/components/cockpit/Steuerung";
 import { VorgabeKarte } from "@/components/cockpit/Vorgabe";
 import { KeinPaket } from "@/components/cockpit/Vorbereitung";
 import { CopyLink } from "@/components/CopyLink";
@@ -47,7 +48,7 @@ import { CancelUnit } from "@/components/UnitControl";
 import { Pill, Reveal } from "@/components/ui";
 import { anpassungen, type Anpassung } from "@/lib/anpassen";
 import { bewertungInfos } from "@/lib/bewertungen";
-import { cockpit, ergebnis, hilfeBeiFehler, type CockpitDaten, type Hilfe, type PlanStep } from "@/lib/cockpit";
+import { cockpit, ergebnis, FRAGE_ARTEN, hilfeBeiFehler, type CockpitDaten, type Hilfe, type PlanStep } from "@/lib/cockpit";
 import { paketWahl, zurFaehigkeit } from "@/lib/cockpit-vorschlag";
 import { kostenSchaetzung } from "@/lib/lernpaket-ki";
 import { SCHRITT_ARTEN, ungeprueft, type LernpaketMitSchritten, type LernpaketSchritt } from "@/lib/lernpakete";
@@ -55,6 +56,7 @@ import { studentDevice } from "@/lib/live";
 import { letzterStoff, minitestDerEinheit } from "@/lib/minitest";
 import * as repo from "@/lib/repo";
 import { schuelerWorte } from "@/lib/schueler-notiz";
+import { vorschlagDerEinheit, type Anzeige } from "@/lib/steuerung";
 import { levelFor } from "@/lib/text-correction-rules";
 import { platzFuerEinheit, type UnitView } from "@/lib/units";
 import { autoFuerEinheit, kiVorgabe, type Signal } from "@/lib/vorbereitung-auto";
@@ -83,6 +85,11 @@ export function Unterricht({ unit, student, fehler, teacherId, werkzeugeOffen = 
   const worte = schuelerWorte(student.id, unit.id);
   const ids = c.paket ? c.schritte.map((s) => s.id) : c.plan.map((s) => s.id);
   const aktuell = c.paket ? (c.aktuell?.id ?? null) : (c.planAktuell?.id ?? null);
+  // Anpassung im Unterricht (lib/steuerung.ts): aus den Antworten gleich unter der Gerätezeile, nach einem Zeichen des
+  // Lehrers („versteht es nicht“, „Falsch“) in der Karte des Schritts
+  const vorschlag = vorschlagDerEinheit(unit.id, c);
+  const oben = vorschlag?.ausloeser === "antworten" ? vorschlag : null;
+  const imSchritt = vorschlag?.ausloeser === "lehrer" ? vorschlag : null;
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5" data-testid="cockpit">
       {fehler && (
@@ -90,15 +97,16 @@ export function Unterricht({ unit, student, fehler, teacherId, werkzeugeOffen = 
           {fehler}
         </p>
       )}
+      {oben && <VorschlagKarte a={oben} unitId={unit.id} schrittId={aktuell} />}
       <KiGrenzeHinweis studentId={student.id} name={name} />
       {worte && <SchuelerWorteKarte worte={worte} name={name} />}
       <VorgabeKarte unit={unit} c={c} />
       <Woher c={c} unitId={unit.id} />
       {ids.length > 1 && <Punkte c={c} ids={ids} aktuell={aktuell} unitId={unit.id} />}
       {c.paket && c.aktuell ? (
-        <SchrittKarte c={c} s={c.aktuell} paket={c.paket} unitId={unit.id} name={name} liste={liste} />
+        <SchrittKarte c={c} s={c.aktuell} paket={c.paket} unitId={unit.id} name={name} liste={liste} vorschlag={imSchritt} />
       ) : !c.paket && c.planAktuell ? (
-        <PlanKarte c={c} s={c.planAktuell} unit={unit} student={student} />
+        <PlanKarte c={c} s={c.planAktuell} unit={unit} student={student} vorschlag={imSchritt} />
       ) : ids.length > 0 ? (
         <AllesDurch c={c} unitId={unit.id} />
       ) : (
@@ -298,7 +306,7 @@ function HilfeBlock({ hilfe, unitId, werkzeuge }: { hilfe: Hilfe[]; unitId: numb
 }
 
 /** Der Schritt des Lernpakets auf dem Schirm. */
-function SchrittKarte({ c, s, paket, unitId, name, liste }: { c: CockpitDaten; s: LernpaketSchritt; paket: LernpaketMitSchritten; unitId: number; name: string; liste: Anpassung[] }) {
+function SchrittKarte({ c, s, paket, unitId, name, liste, vorschlag }: { c: CockpitDaten; s: LernpaketSchritt; paket: LernpaketMitSchritten; unitId: number; name: string; liste: Anpassung[]; vorschlag: Anzeige | null }) {
   const ids = c.schritte.map((x) => x.id);
   const gesendet = c.stand.gesendet[s.id]?.length ?? 0;
   const angepasst = liste.filter((a) => a.status === "uebernommen" && a.schritt_id === s.id);
@@ -308,6 +316,9 @@ function SchrittKarte({ c, s, paket, unitId, name, liste }: { c: CockpitDaten; s
   const skill = s.aufgaben.find((a) => a.skillId)?.skillId ?? null;
   const hilfe = nicht ? hilfeBeiFehler(s.bei_fehler, angepasst, zurFaehigkeit(skill)) : [];
   const leer = !s.lehrer_sagt.trim() && !s.lehrer_fragt.trim() && !s.erwartete_antwort.trim() && !s.folie;
+  // bei Fragen und Kontrollen: „Richtig / Teilweise / Falsch“, was der Lehrer gehört hat
+  const frage = FRAGE_ARTEN.includes(s.art) && Boolean(s.lehrer_fragt.trim() || s.erwartete_antwort.trim());
+  const antwort = frage ? <AntwortKnoepfe unitId={unitId} schrittId={s.id} wert={c.stand.antworten[s.id] ?? null} /> : null;
   return (
     <section className="panel px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
       <KartenKopf c={c} id={s.id} titel={s.titel} minuten={s.minuten} ids={ids} art={<Pill tone={s.art === "kontrolle" ? "green" : s.art === "zusatz" ? "amber" : "accent"}>{SCHRITT_ARTEN[s.art]}</Pill>} />
@@ -334,17 +345,20 @@ function SchrittKarte({ c, s, paket, unitId, name, liste }: { c: CockpitDaten; s
         {s.lehrer_fragt.trim() && (
           <Block titel="Das fragst du">
             <p className="text-[18px] leading-relaxed whitespace-pre-line">{s.lehrer_fragt}</p>
+            {!s.erwartete_antwort.trim() && antwort}
           </Block>
         )}
         {s.erwartete_antwort.trim() && (
           <Block titel="Erwartete Antwort" ton="green">
             <p className="text-[16px] whitespace-pre-line">{s.erwartete_antwort}</p>
+            {antwort}
           </Block>
         )}
         {leer && <p className="text-[14px] text-ink-3">Zu diesem Schritt steht im Paket nichts zum Sagen oder Fragen.</p>}
         {s.notiz.trim() && <p className="text-[14px] whitespace-pre-line text-ink-2">Notiz im Paket: {s.notiz}</p>}
       </div>
 
+      {vorschlag && <VorschlagKarte a={vorschlag} unitId={unitId} schrittId={s.id} imSchritt />}
       {nicht && <HilfeBlock hilfe={hilfe} unitId={unitId} werkzeuge={`/einheiten/${unitId}?bereich=cockpit#werkzeuge`} />}
 
       {immer.length > 0 && (
@@ -461,7 +475,7 @@ function SchrittWerkzeuge({ c, id, titel, unitId, ids, children }: { c: CockpitD
  * Ohne Lernpaket: ein Schritt des „Plans für heute“. Übung senden mit einer freigegebenen Übung aus dem Bestand, sonst
  * mit neuen Aufgaben aus den Generatoren zur Fähigkeit des Schritts (ohne KI).
  */
-function PlanKarte({ c, s, unit, student }: { c: CockpitDaten; s: PlanStep; unit: UnitView; student: repo.Student }) {
+function PlanKarte({ c, s, unit, student, vorschlag }: { c: CockpitDaten; s: PlanStep; unit: UnitView; student: repo.Student; vorschlag: Anzeige | null }) {
   const ids = c.plan.map((x) => x.id);
   const name = first(student.name);
   const nicht = (c.stand.nichtVerstanden[s.id] ?? 0) > 0;
@@ -482,6 +496,7 @@ function PlanKarte({ c, s, unit, student }: { c: CockpitDaten; s: PlanStep; unit
           </Block>
         </div>
       )}
+      {vorschlag && <VorschlagKarte a={vorschlag} unitId={unit.id} schrittId={s.id} imSchritt />}
       {nicht && <HilfeBlock hilfe={hilfe} unitId={unit.id} werkzeuge={`/einheiten/${unit.id}?bereich=cockpit#werkzeuge`} />}
       {(blatt || zugewiesen || skill) && (
         <div className="mt-5 grid gap-2 border-t border-line pt-4" data-testid="plan-senden">

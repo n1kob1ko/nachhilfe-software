@@ -1406,6 +1406,10 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["einheit_cockpit", "wiederholt", "TEXT NOT NULL DEFAULT '{}'"],
   ["einheit_cockpit", "nicht_verstanden", "TEXT NOT NULL DEFAULT '{}'"],
   ["einheit_cockpit", "plan", "TEXT"],
+  // Anpassung im Unterricht (lib/steuerung.ts, 2026-10-25): „Richtig / Teilweise / Falsch“ bei Fragen und Kontrollen (JSON
+  // {Schritt-Id: Wert}); steuerung = worauf schon reagiert wurde und das Zeichen des Lehrers (JSON; null bei alten Zeilen)
+  ["einheit_cockpit", "antworten", "TEXT NOT NULL DEFAULT '{}'"],
+  ["einheit_cockpit", "steuerung", "TEXT"],
   // Vorbereitung automatisch (lib/briefing.ts, 2026-10-25): ein Briefing gilt je Schüler und Datenstand (`stand`), auch an
   // späteren Tagen; daten = die Fassung aus den Daten und der Schwerpunkt, auf denen die KI-Fassung beruht (JSON; null bei alten Zeilen)
   ["briefings", "daten", "TEXT"],
