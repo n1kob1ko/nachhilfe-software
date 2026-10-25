@@ -8,7 +8,7 @@ export function PageHeader({ title, subtitle, actions, back, info }: { title: Re
   return (
     <header className="mb-7">
       {back && (
-        <Link href={back.href} className="no-print mb-3 inline-flex items-center gap-1 text-[13px] font-medium text-ink-3 hover:text-ink">
+        <Link href={back.href} className="no-print mb-3 inline-flex items-center gap-1 text-[13px] font-medium text-ink-3 hover:text-ink pointer-coarse:min-h-[44px]">
           ← {back.label}
         </Link>
       )}

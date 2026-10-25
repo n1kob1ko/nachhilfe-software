@@ -235,7 +235,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
     </p>
   );
   const back = (
-    <Link href={`/schueler/${student.id}?tab=lernverlauf`} className="no-print mb-3 inline-flex min-h-[36px] items-center gap-1 text-[14px] font-medium text-ink-2 hover:text-ink">
+    <Link href={`/schueler/${student.id}?tab=lernverlauf`} className="no-print mb-3 inline-flex min-h-[36px] items-center gap-1 text-[14px] font-medium text-ink-2 hover:text-ink pointer-coarse:min-h-[44px]">
       ← Lernverlauf von {student.name}
     </Link>
   );

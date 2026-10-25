@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
-import { ArrowRight, CheckCircle2, Send, TabletSmartphone, WifiOff } from "lucide-react";
+import { ArrowRight, CheckCircle2, Printer, Send, TabletSmartphone, WifiOff } from "lucide-react";
 import { createPairCodeAction, resendAction, sendToTabletAction, type SendState } from "@/app/device-actions";
 
 function SendButton({ label, small }: { label: string; small?: boolean }) {
@@ -78,6 +78,12 @@ export function SendResult({ state, unitId, unitLink = true }: { state: SendStat
         </p>
         <p className="mt-1 text-[14px] text-ink-2">Die Übung liegt für {s.student} bereit und erscheint am Lernlink. Mit einem verbundenen Tablet kommt sie sofort an.</p>
         <div className="mt-2 flex flex-wrap gap-2">
+          {/* ohne Gerät auch auf Papier, wie nach einem Vorschlag der Anpassung */}
+          {s.worksheetId && (
+            <Link href={`/arbeitsblatt/${s.worksheetId}`} target="_blank" className="btn btn-secondary btn-sm" data-testid="senden-drucken">
+              <Printer size={14} aria-hidden /> Zum Drucken öffnen
+            </Link>
+          )}
           <ConnectTablet />
           {toUnit}
         </div>

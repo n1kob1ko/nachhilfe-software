@@ -107,7 +107,8 @@ export async function revokeDeviceAction(id: number) {
 
 // ---------- teacher side: sending to the tablet ----------
 
-export type SendState = (Delivery & { assignmentId?: number; unitId?: number; student?: string }) | { status: "fehler"; error: string } | null;
+/** worksheetId: das gesendete Blatt, damit es ohne Schülergerät „Zum Drucken öffnen“ gibt. */
+export type SendState = (Delivery & { assignmentId?: number; worksheetId?: number; unitId?: number; student?: string }) | { status: "fehler"; error: string } | null;
 
 /**
  * "An Anna senden": the exercise goes to the student of a running unit of the teacher, on the tablet
@@ -127,7 +128,7 @@ export async function sendToTabletAction(_prev: SendState, form: FormData): Prom
   noteActivity(unit.student_id);
   const sent = showOnTablet(unit, { kind: "aufgabe", assignmentId: out.assignmentId });
   revalidatePath("/", "layout");
-  return { ...sent, assignmentId: out.assignmentId, unitId: unit.id, student: unit.student_name.split(" ")[0] };
+  return { ...sent, assignmentId: out.assignmentId, worksheetId: repo.getAssignment(out.assignmentId)?.worksheet_id, unitId: unit.id, student: unit.student_name.split(" ")[0] };
 }
 
 /** "Erneut senden" after the tablet was offline: shows the same exercise again, no copy, in the unit it was sent in. */

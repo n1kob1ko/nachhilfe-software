@@ -444,17 +444,19 @@ export function einfachesBriefing(d: BriefingDaten): BriefingInhalt {
   const t = d.schularbeit;
   // the teacher's „Vorgabe für heute“ (lib/vorgabe.ts) replaces the rest: its skills, nothing the data would add
   const vorgabe = d.fokus?.art === "vorgabe" ? d.fokus : null;
-  if (t && t.days <= 14 && !vorgabe) {
+  const name = (id: string) => d.analysis.skills.find((s) => s.skill.id === id)?.skill.name ?? repo.getSkill(id)?.name ?? "";
+  const ids = vorgabe ? vorgabe.skill_ids.filter((id) => name(id)).slice(0, 3) : [];
+  // a Vorgabe without a Fähigkeit yet (a point still to confirm) comes first, but the near exam keeps its step and its
+  // exercise, so there is still something to send
+  if (vorgabe && !ids.length) bloecke.push({ gewicht: 2, titel: `Üben: ${vorgabe.thema || "Vorgabe für heute"}`, beschreibung: clip(vorgabe.beschreibung, 200), uebung: null });
+  if (t && t.days <= 14 && !ids.length) {
     const namen = t.skill_ids.map((id) => d.analysis.skills.find((s) => s.skill.id === id)?.skill.name ?? "").filter(Boolean);
     bloecke.push({ gewicht: 2.5, titel: SCHULARBEIT_SCHRITT, beschreibung: schularbeitText(d)!, uebung: uebungFuer(d, namen, schon), skillId: t.skill_ids[0] ?? null });
   }
   // the topic of the automatic preparation first (the Schularbeit block already covers a near Prüfung)
   const f = d.fokus;
   const fokusIds = new Set(f?.skill_ids ?? []);
-  const name = (id: string) => d.analysis.skills.find((s) => s.skill.id === id)?.skill.name ?? repo.getSkill(id)?.name ?? "";
   if (vorgabe) {
-    const ids = vorgabe.skill_ids.filter((id) => name(id)).slice(0, 3);
-    if (!ids.length) bloecke.push({ gewicht: 2, titel: `Üben: ${vorgabe.thema || "Vorgabe für heute"}`, beschreibung: clip(vorgabe.beschreibung, 200), uebung: null });
     for (const id of ids) bloecke.push({ gewicht: 2, titel: `Üben: ${name(id)}`, beschreibung: clip(vorgabe.beschreibung, 200), uebung: uebungFuer(d, [name(id)], schon), skillId: id });
   } else if (f && !(f.art === "pruefung" && t && t.days <= 14)) {
     const namen = f.skill_ids.map(name).filter(Boolean);
