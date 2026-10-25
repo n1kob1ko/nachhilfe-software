@@ -11,6 +11,9 @@ import type { BriefingInhalt, GespeichertesBriefing, UebungLink } from "@/lib/br
 const usd = (x: number) => `${x.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: x > 0 && x < 0.1 ? 4 : 2 })} $`;
 const zahl = (n: number) => n.toLocaleString("de-AT");
 const uhrzeit = (iso: string) => new Date(iso).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Vienna" });
+const tag = (iso: string) => new Date(iso).toLocaleDateString("de-AT", { day: "numeric", month: "short", timeZone: "Europe/Vienna" });
+/** „14:05“ von heute, sonst „23. Okt., 14:05“: ein Briefing gilt weiter, solange sich die Daten nicht ändern */
+const erstellt = (iso: string) => (tag(iso) === tag(new Date().toISOString()) ? uhrzeit(iso) : `${tag(iso)}, ${uhrzeit(iso)}`);
 
 /**
  * Das Tagesbriefing eines Schülers (lib/briefing.ts). Die Version aus den Daten steht sofort da; die
@@ -88,7 +91,7 @@ export function BriefingAnsicht(props: {
                 <Sparkles size={13} aria-hidden /> KI-Briefing
               </Pill>
               <span className="text-ink-2">
-                von <span className="num">{uhrzeit(briefing.createdAt)}</span>, für {briefing.minuten} min
+                von <span className="num">{erstellt(briefing.createdAt)}</span>, für {briefing.minuten} min
               </span>
             </p>
             {k && (

@@ -5,10 +5,14 @@
  *
  * Es gibt zwei Fassungen:
  * - die **einfache**, nur aus den Daten der App (`einfachesBriefing`), immer da und kostenlos;
- * - die **KI-Fassung** (lib/ai/briefing.ts), nur auf Klick. Sie bekommt die Daten ohne Namen, darf
- *   Übungen nur aus der mitgeschickten Liste wählen, und ihre Minuten werden auf die geplante Dauer
- *   gebracht. Pro Schüler und Tag wird eine KI-Fassung gespeichert (Tabelle `briefings`): ein zweiter
- *   Klick zeigt sie wieder und kostet nichts, neu gefragt wird nur über „Neu erstellen“.
+ * - die **KI-Fassung** (lib/ai/briefing.ts), auf Klick oder im Hintergrund vorbereitet (lib/briefing-auto.ts).
+ *   Sie bekommt die Daten ohne Namen, darf Übungen nur aus der mitgeschickten Liste wählen, und ihre Minuten
+ *   werden auf die geplante Dauer gebracht. Gespeichert wird sie je Schüler und **Datenstand** (Tabelle
+ *   `briefings`, `briefingStand`): solange sich die Daten des Schülers nicht ändern, gilt sie weiter, auch an
+ *   späteren Tagen, und kostet nichts; ändern sie sich, ist sie veraltet und eine neue wird fällig.
+ *
+ * Beide Fassungen setzen den Schwerpunkt der automatischen Vorbereitung (`Fokus`, lib/vorbereitung-auto.ts): das
+ * Thema, das Heute zeigt, steht auch im Plan und im geführten Unterricht vorne.
  *
  * Das Briefing liest nur. Es schreibt nie in Lernstand, Versuche oder Dokumentationen; seine einzige
  * Tabelle ist `briefings`.
@@ -78,6 +82,12 @@ export type BriefingInhalt = {
   hinweis: string | null;
 };
 
+/**
+ * Der Schwerpunkt der automatischen Vorbereitung (lib/vorbereitung-auto.ts `fokusAus`): das Signal, das das Thema
+ * gewählt hat, oder das Paket des Lehrers. `beschreibung` enthält nie die Worte des Schülers.
+ */
+export type Fokus = { art: string; skill_ids: string[]; thema: string; beschreibung: string; paket_id: number | null };
+
 export type BriefingDaten = {
   student: repo.Student;
   /** heute in Europe/Vienna, YYYY-MM-DD */
@@ -98,7 +108,9 @@ export type BriefingDaten = {
   /** offene Hausübungen */
   hausuebungen: repo.Homework[];
   kandidaten: Kandidat[];
-  /** Stand der Daten: ändert er sich, ist ein gespeichertes Briefing nicht mehr aktuell */
+  /** der Schwerpunkt der automatischen Vorbereitung, null ohne */
+  fokus: Fokus | null;
+  /** Stand der Daten (`briefingStand`): ändert er sich, ist ein gespeichertes Briefing nicht mehr aktuell */
   stand: string;
 };
 
@@ -115,8 +127,9 @@ const wann = (days: number) => (days === 0 ? "heute" : days === 1 ? "morgen" : `
 // ---------- the data ----------
 
 /**
- * Der Stand der Daten, aus denen ein Briefing entsteht: Dokumentationen, Schularbeiten und Antworten
- * (der Lernstand kommt aus ihnen). Nur Zählungen und Zeitpunkte, kein Inhalt.
+ * Der Stand der Daten, aus denen ein Briefing entsteht: Dokumentationen, Schularbeiten und Antworten (der Lernstand
+ * kommt aus ihnen), Hausübungen, Übungen, aktueller Stoff, die Themen im Profil und was der Schüler geschrieben hat.
+ * Nur Zählungen, Zeitpunkte und ein Prüfwert, kein Inhalt.
  */
 export function datenStand(studentId: number): string {
   const one = (sql: string) => JSON.stringify(db().prepare(sql).get(studentId));
@@ -124,8 +137,26 @@ export function datenStand(studentId: number): string {
     one("SELECT COUNT(*) AS n, MAX(id) AS id, MAX(COALESCE(reviewed_at, '')) AS r FROM lessons WHERE student_id = ? AND status = 'abgeschlossen'"),
     one("SELECT COUNT(*) AS n, MAX(id) AS id, GROUP_CONCAT(status || date, ',') AS s FROM tests WHERE student_id = ?"),
     one("SELECT COUNT(*) AS n, MAX(id) AS id FROM attempts WHERE student_id = ?"),
+    one("SELECT COUNT(*) AS n, MAX(id) AS id, GROUP_CONCAT(status, '') AS s FROM homework WHERE student_id = ?"),
+    one("SELECT COUNT(*) AS n, MAX(id) AS id, COUNT(completed_at) AS fertig FROM assignments WHERE student_id = ?"),
+    one("SELECT COUNT(*) AS n, MAX(id) AS id, GROUP_CONCAT(COALESCE(ended_at, '') || skill_ids, ',') AS s FROM current_material WHERE student_id = ?"),
+    one("SELECT MAX(updated_at) AS w FROM schueler_wuensche WHERE student_id = ?"),
+    one("SELECT MAX(updated_at) AS n FROM schueler_notizen WHERE student_id = ?"),
+    crypto.createHash("sha1").update(repo.getStudent(studentId)?.current_topics ?? "").digest("hex").slice(0, 8),
   ];
   return crypto.createHash("sha1").update(teile.join("|")).digest("hex").slice(0, 16);
+}
+
+/**
+ * Der Stand, unter dem ein Briefing gespeichert und wiederverwendet wird: der Datenstand, dazu wie nah die nächste
+ * Prüfung ist (mehr als 14 Tage, bis 14, bis 7, bis 3: der Plan ändert sich daran) und der Schwerpunkt der
+ * Vorbereitung. Er hängt nicht am Tag: an einem späteren Tag mit denselben Daten gilt dasselbe Briefing.
+ */
+export function briefingStand(studentId: number, o: { schularbeitTage: number | null; fokus: Fokus | null }): string {
+  const t = o.schularbeitTage;
+  const naehe = t === null || t > 14 ? "-" : t > 7 ? "14" : t > 3 ? "7" : "3";
+  const f = o.fokus ? `${o.fokus.art}:${o.fokus.paket_id ?? ""}:${[...o.fokus.skill_ids].sort().join(",")}:${o.fokus.thema}` : "";
+  return crypto.createHash("sha1").update(`${datenStand(studentId)}|${naehe}|${f}`).digest("hex").slice(0, 16);
 }
 
 /** Die geplante Dauer heute: der Platz im Wochenplan, sonst die von Hand geplante Einheit, sonst die Vorgabe des Schülers. */
@@ -143,9 +174,11 @@ function heute(studentId: number, now: Date, platzId: number | null): { minuten:
  * Die Fähigkeiten, um die es heute gehen sollte, mit Gewicht: die Empfehlungen der App zuerst, dann die
  * Fähigkeiten der nächsten Schularbeit, die schwächsten Fähigkeiten und was zuletzt dran war.
  */
-function fokus(d: Pick<BriefingDaten, "schritte" | "schularbeit" | "analysis" | "doku">): Map<string, number> {
+function fokus(d: Pick<BriefingDaten, "schritte" | "schularbeit" | "analysis" | "doku" | "fokus">): Map<string, number> {
   const w = new Map<string, number>();
   const add = (id: string, g: number) => w.set(id, Math.max(w.get(id) ?? 0, g));
+  // the topic the automatic preparation chose comes first
+  for (const id of d.fokus?.skill_ids ?? []) add(id, 11);
   d.schritte.forEach((s, i) => add(s.skill.id, 10 - i));
   if (d.schularbeit && d.schularbeit.days <= 30) for (const id of d.schularbeit.skill_ids) add(id, 9);
   d.analysis.weaknesses.slice(0, 5).forEach((s, i) => add(s.skill.id, 6 - i));
@@ -275,8 +308,11 @@ export function kandidaten(student: repo.Student, gewicht: Map<string, number>, 
   return out.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id)).slice(0, limit);
 }
 
-/** Alles, was ein Briefing braucht; null, wenn es den Schüler nicht gibt. Liest nur. */
-export function briefingDaten(studentId: number, o: { now?: Date; platzId?: number | null } = {}): BriefingDaten | null {
+/**
+ * Alles, was ein Briefing braucht; null, wenn es den Schüler nicht gibt. Liest nur. `fokus`: der Schwerpunkt der
+ * automatischen Vorbereitung (lib/vorbereitung-auto.ts `fokusAus`), sonst keiner.
+ */
+export function briefingDaten(studentId: number, o: { now?: Date; platzId?: number | null; fokus?: Fokus | null } = {}): BriefingDaten | null {
   const now = o.now ?? new Date();
   const student = repo.getStudent(studentId);
   const analysis = student ? analyzeStudent(studentId, now.getTime()) : null;
@@ -291,7 +327,8 @@ export function briefingDaten(studentId: number, o: { now?: Date; platzId?: numb
       .find((t) => t.days <= 60) ?? null;
   const schritte = nextSteps(studentId, { today: datum, now: now.getTime(), limit: 5 });
   const hausuebungen = (db().prepare("SELECT h.* FROM homework h WHERE h.student_id = ? AND h.status = 'offen' AND NOT EXISTS (SELECT 1 FROM assignments a WHERE a.id = h.assignment_id AND a.completed_at IS NOT NULL) ORDER BY h.due_date IS NULL, h.due_date").all(studentId) as repo.Homework[]).slice(0, 3);
-  const basis = { schritte, schularbeit, analysis, doku };
+  const f = o.fokus ?? null;
+  const basis = { schritte, schularbeit, analysis, doku, fokus: f };
   return {
     student,
     datum,
@@ -303,7 +340,8 @@ export function briefingDaten(studentId: number, o: { now?: Date; platzId?: numb
     schularbeit,
     hausuebungen,
     kandidaten: kandidaten(student, fokus(basis)),
-    stand: datenStand(studentId),
+    fokus: f,
+    stand: briefingStand(studentId, { schularbeitTage: schularbeit?.days ?? null, fokus: f }),
   };
 }
 
@@ -343,9 +381,13 @@ export function verteileMinuten(werte: number[], gesamt: number): number[] {
 
 // ---------- the simple version, from the data alone ----------
 
-/** Die beste Übung aus dem Bestand für diese Fähigkeiten, oder null. */
+/**
+ * Die beste Übung aus dem Bestand für diese Fähigkeiten, oder null: zuerst freigegebene und zugewiesene Übungen,
+ * Bibliothek, Vorlagen und Material, erst dann neue Aufgaben aus einer Aufgabenbank.
+ */
 function uebungFuer(d: BriefingDaten, skillNamen: string[], schon: Set<string>): string | null {
-  const k = d.kandidaten.find((c) => !schon.has(c.id) && c.skills.some((s) => skillNamen.includes(s)));
+  const passt = (c: Kandidat) => !schon.has(c.id) && c.skills.some((s) => skillNamen.includes(s));
+  const k = d.kandidaten.find((c) => c.art !== "bank" && passt(c)) ?? d.kandidaten.find(passt);
   if (!k) return null;
   schon.add(k.id);
   return k.id;
@@ -402,7 +444,16 @@ export function einfachesBriefing(d: BriefingDaten): BriefingInhalt {
     const namen = t.skill_ids.map((id) => d.analysis.skills.find((s) => s.skill.id === id)?.skill.name ?? "").filter(Boolean);
     bloecke.push({ gewicht: 2.5, titel: "Schularbeit vorbereiten", beschreibung: schularbeitText(d)!, uebung: uebungFuer(d, namen, schon), skillId: t.skill_ids[0] ?? null });
   }
-  for (const s of d.schritte.filter((x) => !(t && t.days <= 14 && x.rule === 1)).slice(0, 2)) {
+  // the topic of the automatic preparation first (the Schularbeit block already covers a near Prüfung)
+  const f = d.fokus;
+  const fokusIds = new Set(f?.skill_ids ?? []);
+  const name = (id: string) => d.analysis.skills.find((s) => s.skill.id === id)?.skill.name ?? repo.getSkill(id)?.name ?? "";
+  if (f && !(f.art === "pruefung" && t && t.days <= 14)) {
+    const namen = f.skill_ids.map(name).filter(Boolean);
+    bloecke.push({ gewicht: 2, titel: `Üben: ${f.thema || namen[0] || "Schwerpunkt"}`, beschreibung: clip(f.beschreibung, 200), uebung: namen.length ? uebungFuer(d, namen, schon) : null, skillId: f.skill_ids[0] ?? null });
+  }
+  const weitere = d.schritte.filter((x) => !(t && t.days <= 14 && x.rule === 1) && !fokusIds.has(x.skill.id));
+  for (const s of weitere.slice(0, f && !(f.art === "pruefung" && t && t.days <= 14) ? 1 : 2)) {
     bloecke.push({ gewicht: 2, titel: `Üben: ${s.skill.name}`, beschreibung: `${RULE_LABEL[s.rule]}: ${s.reason}`, uebung: uebungFuer(d, [s.skill.name], schon), skillId: s.skill.id });
   }
   if (bloecke.length === 1) bloecke.push({ gewicht: 2, titel: "Üben", beschreibung: "Weiter am aktuellen Stoff.", uebung: d.kandidaten[0]?.id ?? null });
@@ -465,20 +516,37 @@ function alsBriefing(z: Zeile): GespeichertesBriefing {
   };
 }
 
-/** Das gespeicherte KI-Briefing dieses Schülers für diesen Tag, oder null. */
-export function gespeichertesBriefing(studentId: number, datum: string): GespeichertesBriefing | null {
-  const z = db().prepare("SELECT * FROM briefings WHERE student_id = ? AND datum = ?").get(studentId, datum) as Zeile | undefined;
+/**
+ * Das gespeicherte KI-Briefing dieses Schülers. Mit `stand` das zu genau diesem Datenstand (`briefingStand`): es gilt,
+ * an welchem Tag es auch entstand. Ohne `stand` das neueste, auch ein veraltetes (Hinweis „veraltet“). Null ohne.
+ */
+export function gespeichertesBriefing(studentId: number, o: { stand?: string } = {}): GespeichertesBriefing | null {
+  const z = (
+    o.stand !== undefined
+      ? db().prepare("SELECT * FROM briefings WHERE student_id = ? AND stand = ? ORDER BY created_at DESC, id DESC LIMIT 1").get(studentId, o.stand)
+      : db().prepare("SELECT * FROM briefings WHERE student_id = ? ORDER BY created_at DESC, id DESC LIMIT 1").get(studentId)
+  ) as Zeile | undefined;
   return z ? alsBriefing(z) : null;
 }
 
+/**
+ * Ein gespeichertes KI-Briefing für heute: die Schularbeit mit dem Abstand von heute (das Datum kommt immer aus der
+ * App), und an einem Tag mit anderer geplanter Dauer die Minuten des Plans anteilig darauf gebracht.
+ */
+export function fuerHeute(b: GespeichertesBriefing, d: Pick<BriefingDaten, "minuten" | "schularbeit">): BriefingInhalt {
+  const plan = b.inhalt.plan;
+  const minuten = b.minuten === d.minuten || !plan.length ? plan.map((p) => p.minuten) : verteileMinuten(plan.map((p) => p.minuten), d.minuten);
+  return { ...b.inhalt, schularbeit: schularbeitText(d), plan: plan.map((p, i) => ({ ...p, minuten: minuten[i] })) };
+}
+
 function speichern(d: BriefingDaten, teacherId: number | null, inhalt: BriefingInhalt, verworfen: number, callId: number | null, now: Date): GespeichertesBriefing {
-  // one per student and day: a new one replaces the old
+  // at most one per student and day: a newer one replaces today's (its data state is older); earlier days stay
   db()
     .prepare(
-      `INSERT INTO briefings (student_id, teacher_id, datum, platz_id, minuten, stand, inhalt, verworfen, call_id, created_at)
-       VALUES (@student_id, @teacher_id, @datum, @platz_id, @minuten, @stand, @inhalt, @verworfen, @call_id, @created_at)
+      `INSERT INTO briefings (student_id, teacher_id, datum, platz_id, minuten, stand, inhalt, daten, verworfen, call_id, created_at)
+       VALUES (@student_id, @teacher_id, @datum, @platz_id, @minuten, @stand, @inhalt, @daten, @verworfen, @call_id, @created_at)
        ON CONFLICT(student_id, datum) DO UPDATE SET teacher_id = excluded.teacher_id, platz_id = excluded.platz_id, minuten = excluded.minuten, stand = excluded.stand,
-         inhalt = excluded.inhalt, verworfen = excluded.verworfen, call_id = excluded.call_id, created_at = excluded.created_at`,
+         inhalt = excluded.inhalt, daten = excluded.daten, verworfen = excluded.verworfen, call_id = excluded.call_id, created_at = excluded.created_at`,
     )
     .run({
       student_id: d.student.id,
@@ -488,40 +556,49 @@ function speichern(d: BriefingDaten, teacherId: number | null, inhalt: BriefingI
       minuten: d.minuten,
       stand: d.stand,
       inhalt: JSON.stringify({ inhalt, links: uebungLinks(d.kandidaten.filter((k) => inhalt.uebungen.some((u) => u.id === k.id) || inhalt.plan.some((p) => p.uebung === k.id))) }),
+      // the data version and the focus the KI version was made from
+      daten: JSON.stringify({ einfach: einfachesBriefing(d), fokus: d.fokus }),
       verworfen,
       call_id: callId,
       created_at: now.toISOString(),
     });
-  return gespeichertesBriefing(d.student.id, d.datum)!;
+  return gespeichertesBriefing(d.student.id, { stand: d.stand })!;
 }
 
 // ---------- asking the KI ----------
 
 export type BriefingErgebnis = { ok: true; briefing: GespeichertesBriefing; neu: boolean } | { ok: false; error: string };
 
-/** One request per student and day at a time: a double click waits for the running one instead of paying twice. */
+/**
+ * One request per student at a time: a double click, or the click while the briefing is prepared in the background,
+ * waits for the running one instead of paying twice.
+ */
 const laufend = ((globalThis as unknown as { __briefingLaufend?: Map<string, Promise<BriefingErgebnis>> }).__briefingLaufend ??= new Map());
 
+/** Läuft für diesen Schüler gerade eine Anfrage? */
+export const briefingLaeuft = (studentId: number) => laufend.has(String(studentId));
+
 /**
- * Das KI-Briefing: das gespeicherte von heute, wenn es eins gibt (kostet nichts), sonst eine neue
- * Anfrage. `neu` fragt auch dann neu („Neu erstellen“). Läuft für diesen Schüler schon eine Anfrage,
- * wird auf sie gewartet. Ohne KI, mit leerem Budget oder bei einem Fehler kommt eine Meldung zurück;
- * die einfache Fassung bleibt dann stehen.
+ * Das KI-Briefing: das gespeicherte zum jetzigen Datenstand, wenn es eins gibt (kostet nichts, auch von einem
+ * früheren Tag), sonst eine neue Anfrage. `neu` fragt auch dann neu („Neu erstellen“). Läuft für diesen Schüler
+ * schon eine Anfrage, wird auf sie gewartet. Ohne KI, mit leerem Budget oder bei einem Fehler kommt eine Meldung
+ * zurück; die einfache Fassung bleibt dann stehen. `fokus`: der Schwerpunkt der Vorbereitung; ohne Angabe der von
+ * heute (lib/heute.ts `fokusHeute`).
  */
-export async function erstelleBriefing(studentId: number, teacherId: number | null, o: { neu?: boolean; platzId?: number | null; now?: Date } = {}): Promise<BriefingErgebnis> {
+export async function erstelleBriefing(studentId: number, teacherId: number | null, o: { neu?: boolean; platzId?: number | null; now?: Date; fokus?: Fokus | null } = {}): Promise<BriefingErgebnis> {
   const now = o.now ?? new Date();
-  const datum = wienerDatum(now);
-  const key = `${studentId}:${datum}`;
+  const key = String(studentId);
   const running = laufend.get(key);
   if (running) return running;
-  if (!o.neu) {
-    const da = gespeichertesBriefing(studentId, datum);
-    if (da) return { ok: true, briefing: da, neu: false };
-  }
   const job = (async (): Promise<BriefingErgebnis> => {
     try {
-      const d = briefingDaten(studentId, { now, platzId: o.platzId });
+      const fokus = o.fokus !== undefined ? o.fokus : (await import("./heute")).fokusHeute(studentId, teacherId, now);
+      const d = briefingDaten(studentId, { now, platzId: o.platzId, fokus });
       if (!d) return { ok: false, error: "Schüler nicht gefunden." };
+      if (!o.neu) {
+        const da = gespeichertesBriefing(studentId, { stand: d.stand });
+        if (da) return { ok: true, briefing: da, neu: false };
+      }
       const { kiBriefing } = await import("./ai/briefing");
       const meta: AIMeta = { teacherId, studentId, trigger: "briefing" };
       const out = await kiBriefing(d, meta);

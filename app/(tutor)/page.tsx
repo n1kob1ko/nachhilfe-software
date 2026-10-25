@@ -23,9 +23,11 @@ const firstName = (n: string) => n.split(" ")[0];
 
 /**
  * **Heute** (niko, 25.10.2026: „Eine Ansicht. Eine aktuelle Aufgabe. Eine wichtigste Aktion.“): die heutigen Schüler,
- * jeder auf einer kurzen Karte mit Thema, Schwierigkeiten, Prüfung und Empfehlung aus den Daten (lib/heute.ts, ohne
- * KI) und einem Knopf „Einheit starten“. Läuft eine Einheit, steht sie oben mit „Zum Unterricht“; die anderen Schüler
- * bleiben darunter, damit ein zweiter gleichzeitig starten kann. Heute leitet nie um (sonst käme man während einer
+ * jeder auf einer kurzen Karte aus der automatischen Vorbereitung (lib/heute.ts: Thema, Warum, was bereitliegt,
+ * Schwierigkeiten, Prüfung; ohne KI gerechnet) und einem Knopf „Einheit starten“. Fehlende KI-Briefings bereitet die
+ * App im Hintergrund vor, wenn es erlaubt ist; die Seite wartet nie darauf. Läuft eine Einheit, steht sie oben mit
+ * „Zum Unterricht“, ihr Schüler unten nur noch als eine Zeile; die anderen Schüler bleiben darunter, damit ein
+ * zweiter gleichzeitig starten kann. Heute leitet nie um (sonst käme man während einer
  * Einheit nie hierher); wohin die Lehrkraft gehört, entscheidet `/jetzt`.
  *
  * Was früher hier stand (Kennzahlen, Zu erledigen, Vorbereitung 7 Tage, Zuletzt verwendet, Meine Woche), steht unter
@@ -68,7 +70,7 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
   const byId = new Map(students.map((s) => [s.id, s]));
   const running = runningUnits(teacher.id);
   const punkte = tagesplan(teacher.id, now);
-  const karten = heuteKarten(teacher.id, punkte, now);
+  const karten = heuteKarten(teacher.id, punkte, now, { kiVorbereiten: true });
   // der nächste Schüler: sein Knopf ist der Hauptknopf, solange keine Einheit läuft
   const naechster = naechsterPunkt(punkte, now);
   const jetzt = wienerMinuten(now);
@@ -136,8 +138,9 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
                 p={p}
                 student={byId.get(p.studentId)}
                 karte={karten.get(p.studentId)}
-                fach={p.fach || expectedSubject(p.studentId)}
+                fach={p.fach || expectedSubject(p.studentId, now.getTime(), karten.get(p.studentId)?.fach)}
                 haupt={running.length === 0 && naechster?.key === p.key}
+                oben={running.some((u) => u.id === p.einheitId)}
                 wann={naechster?.key === p.key && p.startMin > jetzt ? bisBeginnLabel(p.startMin - jetzt) : null}
               />
             ))}

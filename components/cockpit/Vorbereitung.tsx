@@ -13,7 +13,7 @@ const LP = "/mehr/lernpakete";
 export function VorschlagWarum({ warum, unsicher, className = "" }: { warum: string; unsicher?: boolean; className?: string }) {
   return (
     <p className={`flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[14px] ${className}`}>
-      <Pill tone="accent" title="Von der App aus Prüfung, Wunsch des Schülers, Lernstand und letzter Einheit gewählt, ohne KI">
+      <Pill tone="accent" title="Von der App aus Prüfung, Schulstoff, Wunsch des Schülers, Fehlern, offenen Zielen und Wiederholung gewählt, ohne KI">
         Vorschlag
       </Pill>
       <span className="min-w-0">

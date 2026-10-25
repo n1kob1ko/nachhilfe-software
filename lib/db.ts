@@ -653,7 +653,8 @@ CREATE TABLE IF NOT EXISTS geplante_einheiten (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
--- Tagesbriefing (lib/briefing.ts): the KI version, one per student and Vienna day; it never changes the Lernstand
+-- Tagesbriefing (lib/briefing.ts): the KI version, kept per student and data state (column stand, reused on later days while it
+-- is unchanged); at most one row per student and Vienna day. It never changes the Lernstand
 CREATE TABLE IF NOT EXISTS briefings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
@@ -661,7 +662,7 @@ CREATE TABLE IF NOT EXISTS briefings (
   datum TEXT NOT NULL,                      -- YYYY-MM-DD, Europe/Vienna
   platz_id INTEGER,                         -- geplante_einheiten.id of the day, if any
   minuten INTEGER NOT NULL,                 -- planned duration the plan was made for
-  stand TEXT NOT NULL,                      -- data state at creation (lib/briefing.ts datenStand)
+  stand TEXT NOT NULL,                      -- data state at creation (lib/briefing.ts briefingStand); the key with student_id
   inhalt TEXT NOT NULL,                     -- JSON { inhalt: BriefingInhalt, links }
   verworfen INTEGER NOT NULL DEFAULT 0,     -- KI suggestions dropped (exercise not in stock)
   call_id INTEGER,                          -- ai_calls.id: tokens and cost
@@ -1349,6 +1350,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["einheit_cockpit", "wiederholt", "TEXT NOT NULL DEFAULT '{}'"],
   ["einheit_cockpit", "nicht_verstanden", "TEXT NOT NULL DEFAULT '{}'"],
   ["einheit_cockpit", "plan", "TEXT"],
+  // Vorbereitung automatisch (lib/briefing.ts, 2026-10-25): ein Briefing gilt je Schüler und Datenstand (`stand`), auch an
+  // späteren Tagen; daten = die Fassung aus den Daten und der Schwerpunkt, auf denen die KI-Fassung beruht (JSON; null bei alten Zeilen)
+  ["briefings", "daten", "TEXT"],
 ];
 
 /** Teachers to start with; more can be added later. */

@@ -56,7 +56,7 @@ export default async function UnterrichtPage() {
             <div className="min-w-0">
               <p className="text-[20px] leading-tight font-semibold">{student.name}</p>
               <p className="num text-[14px] text-ink-2">
-                {[naechster.zeit, klassenLabel(student.school_type, student.klasse, { short: true }), naechster.fach || expectedSubject(student.id)].filter((x) => x && x !== "–").join(" · ")}
+                {[naechster.zeit, klassenLabel(student.school_type, student.klasse, { short: true }), naechster.fach || expectedSubject(student.id, now.getTime(), karte?.fach)].filter((x) => x && x !== "–").join(" · ")}
               </p>
             </div>
           </div>

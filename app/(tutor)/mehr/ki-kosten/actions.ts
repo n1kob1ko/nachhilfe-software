@@ -8,6 +8,7 @@ import { runSelfTest, type TestStep } from "@/lib/ai/selbsttest";
 import { startTextTest, textTestState } from "@/lib/ai/textkorrektur-test";
 import { testSetOf, type TestSet, type TextTestState } from "@/lib/ai/textkorrektur-test-types";
 import { requireTeacher } from "@/lib/auth";
+import { setzeAutoBriefing } from "@/lib/briefing-auto";
 
 export type SelfTestState = { steps: TestStep[] } | { error: string } | null;
 
@@ -90,4 +91,15 @@ export async function setKiModusAction(modus: KiModus): Promise<ModusAntwort> {
   revalidatePath("/mehr/ki-kosten");
   revalidatePath("/", "layout");
   return { modus: kiModus() };
+}
+
+/**
+ * Mehr › KI-Kosten: „Briefings automatisch mit KI vorbereiten“ ein- oder ausschalten (lib/briefing-auto.ts). Eine
+ * Einstellung der ganzen Anwendung, deshalb nur für die Administration.
+ */
+export async function setAutoBriefingAction(an: boolean): Promise<void> {
+  const teacher = await requireTeacher();
+  if (!teacher.is_admin) return;
+  setzeAutoBriefing(an);
+  revalidatePath("/mehr/ki-kosten");
 }

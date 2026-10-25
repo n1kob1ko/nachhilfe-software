@@ -22,6 +22,7 @@ import {
 import { bestaetigeDoku } from "@/lib/abschluss";
 import { clientIp } from "@/lib/client-ip";
 import { db, usernameFor } from "@/lib/db";
+import { fachHeute } from "@/lib/heute";
 import { endUnit, expectedSubject, sweepIdleUnits } from "@/lib/learning";
 import { INITIAL_PASSWORD, PUBLIC_DEFAULT_PASSWORD, randomStartPassword } from "@/lib/password";
 import * as repo from "@/lib/repo";
@@ -137,7 +138,8 @@ export async function startUnitAction(studentId: number) {
   const t = await requireTeacher();
   if (!repo.getStudent(studentId)) redirect("/schueler");
   sweepIdleUnits();
-  const { unit, created } = startUnit(t.id, studentId, { subject: expectedSubject(studentId) });
+  // in the subject Heute prepared (an exam in the second subject starts the unit in that subject)
+  const { unit, created } = startUnit(t.id, studentId, { subject: expectedSubject(studentId, Date.now(), fachHeute(studentId, t.id)) });
   if (created) {
     ensureBoardForUnit(unit.id);
     // the teacher's tablet switches to this student by itself

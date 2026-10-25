@@ -5,7 +5,7 @@ weg: was nicht in die drei Bereiche gehört, steht unter **Erweitert**.
 
 | Navigation | Adresse | Was dort ist |
 | --- | --- | --- |
-| Heute | `/` | Die Schüler von heute als kurze Karten: Zeit, Name, Klasse, Fach, Thema, Schwierigkeiten, Prüfung (bis 30 Tage), Empfehlung. Ein Hauptknopf „Einheit starten“. Läuft eine Einheit, steht sie oben mit „Zum Unterricht“. |
+| Heute | `/` | Die Schüler von heute als kurze Karten: Zeit, Name, Klasse, Fach, Thema, Warum, Vorbereitet, Schwierigkeiten, Prüfung (bis 30 Tage). Ein Hauptknopf „Einheit starten“. Läuft eine Einheit, steht sie oben mit „Zum Unterricht“; die Karte des Schülers darunter ist dann eine leise Zeile. Siehe [Tagesbriefing](tagesbriefing.md#automatische-vorbereitung). |
 | Unterricht | `/unterricht` | Leitet in die laufende Einheit (bei zwei in die früher gestartete). Läuft keine: „Gerade läuft keine Einheit“ mit dem nächsten Schüler. |
 | Abschluss | `/abschluss` | Leitet zum letzten beendeten, noch nicht bestätigten Abschluss von heute (Wiener Tag). Sonst „Nichts zu bestätigen“ und die offenen der letzten 14 Tage. |
 | Erweitert | `/mehr` | Alles andere, oben die Gruppe „Arbeit“. |
