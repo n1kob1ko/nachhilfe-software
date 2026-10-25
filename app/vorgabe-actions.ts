@@ -35,13 +35,13 @@ export async function entferneVorgabeAction(unitId: number) {
   zurueck(unitId);
 }
 
-/** Unklare Punkte der Vorgabe kurz bestätigen: `zuordnung_<index>` mit der gewählten Fähigkeit, leer für „Keine passt“. */
+/** Unklare Punkte der Vorgabe kurz bestätigen: `zuordnung_<index>` mit den gewählten Fähigkeiten (mehrere möglich), leer für „Keine passt“. */
 export async function bestaetigeVorgabeAction(unitId: number, form: FormData) {
   const { t } = await laufendeEinheit(unitId);
-  const wahl = new Map<number, string | null>();
+  const wahl = new Map<number, (string | null)[]>();
   for (const [k, v] of form.entries()) {
     const m = k.match(/^zuordnung_(\d+)$/);
-    if (m) wahl.set(Number(m[1]), String(v) || null);
+    if (m) wahl.set(Number(m[1]), [...(wahl.get(Number(m[1])) ?? []), String(v) || null]);
   }
   bestaetigeVorgabe(unitId, wahl, t.id);
   zurueck(unitId);

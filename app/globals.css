@@ -347,6 +347,13 @@ textarea.input {
   .btn-sm {
     min-height: 44px;
   }
+  /* select fields too: 39 px in the Schreibauftrag form on the tablet (Abnahme, 25.10.2026) */
+  select.input {
+    min-height: 44px;
+  }
+  select.input.input-sm {
+    height: 44px;
+  }
 }
 
 .panel {

@@ -196,6 +196,18 @@ export function ordneSignale(e: Pick<AutoEingabe, "fach" | "student" | "signale"
     .map(({ s }) => s);
 }
 
+/** Die geprüften Pakete, die für den Schüler in Frage kommen: mit Schritten, im Fach (sonst seinen Fächern), Schulart und Stufe passend. */
+export const geprueftePakete = (e: Pick<AutoEingabe, "pakete" | "fach" | "student">): Lernpaket[] => {
+  const faecher = faecherVon(e);
+  return e.pakete.filter((p) => p.status === "geprueft" && !ungeprueft(p) && p.schritt_zahl > 0 && (!faecher.length || faecher.includes(p.fach)) && stufePasst(p, e.student));
+};
+
+/**
+ * Ein neuer Schüler ohne jedes Signal (`ohne_signal`): die geprüften Pakete zum Wählen auf Heute, höchstens drei, nach
+ * Titel. Gewählt wird nie von selbst; ein Tippen legt das Paket für die Einheit fest (lib/cockpit.ts `bereiteVor`).
+ */
+export const paketeZumWaehlen = (e: Pick<AutoEingabe, "pakete" | "fach" | "student">): Lernpaket[] => geprueftePakete(e).sort((a, b) => a.title.localeCompare(b.title, "de")).slice(0, 3);
+
 /**
  * Das eine Paket für die Einheit, nach den Regeln oben. Nur geprüfte Pakete mit Schritten, im Fach der Einheit
  * und für Schulart und Stufe des Schülers. Bei gleich starkem Signal: Fähigkeit vor Stichwort, dann wie viele
@@ -205,7 +217,7 @@ export function waehleAutomatisch(e: AutoEingabe): AutoWahl {
   const faecher = faecherVon(e);
   const signale = ordneSignale(e);
   const passend = e.pakete.filter((p) => p.status !== "archiviert" && p.schritt_zahl > 0 && (!faecher.length || faecher.includes(p.fach)) && stufePasst(p, e.student));
-  const geprueft = passend.filter((p) => p.status === "geprueft" && !ungeprueft(p));
+  const geprueft = geprueftePakete(e);
   const entwuerfe = passend.filter((p) => !geprueft.includes(p) && signale.some((s) => treffer(p, s, e.verwandt))).sort((a, b) => a.title.localeCompare(b.title, "de"));
   if (!signale.length) return { art: "ohne_signal" };
   // the teacher's word for today: a package for it, otherwise the plan from the data with it in front, never something else

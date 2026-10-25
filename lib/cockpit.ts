@@ -15,6 +15,7 @@
 import { briefingDaten, einfachesBriefing, type PlanSchritt } from "./briefing";
 import { checkTask } from "./builder";
 import { difficultyFor } from "./curriculum";
+import { EXPLAIN } from "./erklaerungen";
 import { db, json } from "./db";
 import { autoFelderVon } from "./einschaetzung";
 import { getLernpaket, getSchritt, type LernpaketMitSchritten, type LernpaketSchritt, type PaketQuelle } from "./lernpakete";
@@ -22,9 +23,11 @@ import { wienerDatum } from "./planung/zeit";
 import { nextSteps } from "./recommend";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
-import { analyzeStudent, buildWorksheet } from "./service";
+import { analyzeStudent, buildWorksheet, generatorAufgaben } from "./service";
 import type { Art } from "./steuerung-regeln";
+import { sorteOfSkill } from "./schreibauftrag";
 import type { TaskDraft } from "./tasks";
+import { EIGENE_VOKABELN } from "./vokabeln";
 import { getUnit, platzFuerEinheit } from "./units";
 import { autoFuerEinheit, fokusAus, vorschlagErlauben, type Passung, type Signal } from "./vorbereitung-auto";
 
@@ -132,6 +135,16 @@ const istOffen = (s: Pick<Stand, "erledigt" | "uebersprungen">, id: number) => !
 export function aktuellerSchritt(order: number[], s: Pick<Stand, "aktuell" | "erledigt" | "uebersprungen">): number | null {
   if (s.aktuell !== null && order.includes(s.aktuell)) return s.aktuell;
   return order.find((id) => istOffen(s, id)) ?? null;
+}
+
+/**
+ * „Zur ersten Übung“: hat der Schritt auf dem Schirm keine Übung und ist in der Einheit noch keine gesendet, der erste
+ * offene Schritt mit Übung, in der Reihenfolge dieser Einheit; sonst null. Der Sprung zeigt ihn nur
+ * (`zeigeSchritt`): nichts wird erledigt oder übersprungen, die Reihenfolge bleibt.
+ */
+export function ersteUebung(order: number[], s: Pick<Stand, "erledigt" | "uebersprungen">, aktuell: number | null, hatUebung: (id: number) => boolean, schonGesendet: boolean): number | null {
+  if (aktuell === null || schonGesendet || hatUebung(aktuell)) return null;
+  return order.find((id) => id !== aktuell && istOffen(s, id) && hatUebung(id)) ?? null;
 }
 
 /** Der nächste offene Schritt nach `id`, sonst der erste offene davor; null, wenn keiner mehr offen ist. */
@@ -756,9 +769,31 @@ export function bereiteVor(studentId: number, datum: string, paketId: number | n
 
 // ---------- without a package: new tasks from the generators ----------
 
+/** Wie viele und wie schwer neue Aufgaben zur Fähigkeit sein sollen: die Empfehlung, sonst der Lernstand. */
+function generatorWahl(studentId: number, skillId: string) {
+  const empfehlung = nextSteps(studentId, { today: wienerDatum(), limit: Infinity }).find((s) => s.skill.id === skillId);
+  const mastery = analyzeStudent(studentId)?.skills.find((s) => s.skill.id === skillId)?.mastery ?? null;
+  return { difficulty: empfehlung?.difficulty ?? difficultyFor(mastery), count: empfehlung?.count ?? 8, kind: empfehlung?.kind ?? ("uebung" as const) };
+}
+
+/** Die letzte Übung dieser Einheit, die die Fähigkeit übt; null, wenn noch keine gesendet ist. */
+function letzteUebungZur(unitId: number, skillId: string): number | null {
+  const r = db()
+    .prepare("SELECT a.worksheet_id FROM assignments a JOIN worksheets w ON w.id = a.worksheet_id WHERE a.unit_id = ? AND EXISTS (SELECT 1 FROM json_each(w.skill_ids) j WHERE j.value = ?) ORDER BY a.id DESC LIMIT 1")
+    .get(unitId, skillId) as { worksheet_id: number } | undefined;
+  return r?.worksheet_id ?? null;
+}
+
+/** Ob in der Einheit schon eine Übung gesendet wurde (aus einem Schritt, einem Vorschlag oder von Hand). */
+export const uebungGesendet = (unitId: number) => Boolean(db().prepare("SELECT 1 FROM assignments WHERE unit_id = ? LIMIT 1").get(unitId));
+
+/** Der Seed der ersten neuen Übung einer Fähigkeit in einer Einheit: Vorschau und gesendete Übung beginnen mit derselben Aufgabe. */
+export const generatorSeed = (unitId: number, skillId: string) => [...`${unitId}:${skillId}`].reduce((h, c) => (Math.imul(h, 31) + c.charCodeAt(0)) >>> 0, 7);
+
 /**
  * Ohne Lernpaket: eine neue Übung zur Fähigkeit aus den eingebauten Generatoren und Aufgabenbanken (nie die
- * KI), an den Schüler dieser Einheit. Wie viele und wie schwer, sagt die Empfehlung, sonst der Lernstand.
+ * KI), an den Schüler dieser Einheit. Wie viele und wie schwer, sagt die Empfehlung, sonst der Lernstand. Die erste
+ * Übung einer Fähigkeit in der Einheit beginnt mit der Aufgabe, die der Schritt als „Das fragst du“ zeigt.
  */
 export async function sendeAusGenerator(unitId: number, skillId: string, teacherId: number | null): Promise<{ worksheetId: number; assignmentId: number } | { fehler: string }> {
   const unit = getUnit(unitId);
@@ -766,8 +801,7 @@ export async function sendeAusGenerator(unitId: number, skillId: string, teacher
   const student = repo.getStudent(unit.student_id);
   const skill = repo.getSkill(skillId);
   if (!student || !skill) return { fehler: "Diese Fähigkeit gibt es nicht." };
-  const empfehlung = nextSteps(student.id, { today: wienerDatum(), limit: Infinity }).find((s) => s.skill.id === skill.id);
-  const mastery = analyzeStudent(student.id)?.skills.find((s) => s.skill.id === skill.id)?.mastery ?? null;
+  const w = generatorWahl(student.id, skill.id);
   let worksheetId = 0;
   try {
     worksheetId = (
@@ -776,14 +810,15 @@ export async function sendeAusGenerator(unitId: number, skillId: string, teacher
         schoolType: student.school_type,
         klasse: student.klasse ?? 1,
         skillIds: [skill.id],
-        difficulty: empfehlung?.difficulty ?? difficultyFor(mastery),
-        count: empfehlung?.count ?? 8,
+        difficulty: w.difficulty,
+        count: w.count,
         taskType: "mixed",
-        kind: empfehlung?.kind ?? "uebung",
+        kind: w.kind,
         title: `${student.name.split(" ")[0]} – ${skill.area} › ${skill.name}`,
         useAI: false,
         teacherId,
         studentId: student.id,
+        seed: letzteUebungZur(unit.id, skill.id) === null ? generatorSeed(unit.id, skill.id) : undefined,
       })
     ).id;
   } catch (e) {
@@ -794,4 +829,76 @@ export async function sendeAusGenerator(unitId: number, skillId: string, teacher
     return { fehler: "Für diese Fähigkeit gibt es keine Aufgaben ohne KI. Bitte im Builder erstellen." };
   }
   return { worksheetId, assignmentId: repo.assignWorksheet(worksheetId, student.id, "", unit.id) };
+}
+
+// ---------- guided like a package step, without a package ----------
+
+/** Was der Lehrer in einem Schritt ohne Lernpaket sagt und fragt; null, wo die Daten nichts hergeben. */
+export type PlanFuehrung = { sagt: string | null; fragt: string | null; antwort: string | null };
+
+const kurz = (s: string, n: number) => {
+  const t = s.trim();
+  return t.length > n ? `${t.slice(0, n - 1).trimEnd()}…` : t;
+};
+
+/** Die Frage einer Aufgabe zum Vorlesen: Text, Rechnung oder fehlerhafter Satz, Antworten zur Auswahl. Ohne Lesetext. */
+export function frageText(t: Pick<TaskDraft, "prompt" | "data">): string {
+  const teile = [t.prompt.trim()];
+  if (t.data.start?.trim() && !t.prompt.includes(t.data.start.trim())) teile.push(t.data.start.trim());
+  if (t.data.faulty?.trim()) teile.push(`„${t.data.faulty.trim()}“`);
+  if (t.data.options?.length) teile.push(t.data.options.map((o, i) => `${String.fromCharCode(65 + i)}) ${o}`).join("   "));
+  return kurz(teile.filter(Boolean).join("\n"), 400);
+}
+
+/** Die erwartete Antwort einer Aufgabe in wenigen Worten (die richtige Auswahl, die erste akzeptierte Antwort …). */
+export function antwortText(t: Pick<TaskDraft, "answer" | "data" | "solution">): string {
+  const a = t.answer;
+  const out =
+    typeof a.correct === "number" && t.data.options?.[a.correct]
+      ? `${String.fromCharCode(65 + a.correct)}) ${t.data.options[a.correct]}`
+      : a.accepted?.length
+        ? a.accepted[0]
+        : a.blanks?.length
+          ? a.blanks.map((b) => b[0] ?? "").join(" · ")
+          : a.steps?.length
+            ? a.steps.join(" → ")
+            : a.sample || t.solution || "";
+  return kurz(String(out), 300);
+}
+
+/**
+ * Ohne Lernpaket (niko, 25.10.2026: „sagen, zeigen, fragen, erwartete Antwort“ auch im Plan aus den Daten): kurze Sätze
+ * aus der Fähigkeit des Schritts, ohne KI. „Das sagst du“ ist ihre Erklärung (lib/erklaerungen.ts), „Das fragst du“ und
+ * „Erwartete Antwort“ die erste Aufgabe der Übung, die der Schritt senden würde: die aus dem Bestand, die schon gesendete,
+ * sonst die erste der neuen Übung aus dem Generator (derselbe Seed wie beim Senden). Nur für den Lehrer; die Lösung
+ * steht nie auf einer Schülerseite.
+ */
+export function planFuehrung(unitId: number, s: Pick<PlanStep, "uebung" | "skillId">): PlanFuehrung {
+  const leer: PlanFuehrung = { sagt: null, fragt: null, antwort: null };
+  const unit = getUnit(unitId);
+  const student = unit ? repo.getStudent(unit.student_id) : null;
+  if (!unit || !student) return leer;
+  // the exercise the step sends: one from the Bestand („U12“), one already assigned („Z5“), else new tasks to the skill
+  const ws = s.uebung && /^U\d+$/.test(s.uebung) ? repo.getWorksheet(Number(s.uebung.slice(1))) : null;
+  const blatt = ws && ws.status === "freigegeben" && !ws.archived_at && ws.kind !== "bibliothek" ? ws : null;
+  const zugewiesen = s.uebung && /^Z\d+$/.test(s.uebung) ? repo.getAssignment(Number(s.uebung.slice(1))) : null;
+  const skillId = s.skillId ?? blatt?.skill_ids[0] ?? (zugewiesen ? (repo.getWorksheet(zugewiesen.worksheet_id)?.skill_ids[0] ?? null) : null);
+  const skill = skillId ? repo.getSkill(skillId) : null;
+  const sagt = skill ? (EXPLAIN[skill.id] ?? (skill.parent_id ? EXPLAIN[skill.parent_id] : undefined) ?? null) : null;
+  let aufgabe: TaskDraft | null = null;
+  if (blatt) aufgabe = repo.listTasks(blatt.id)[0] ?? null;
+  else if (zugewiesen) aufgabe = repo.listTasks(zugewiesen.worksheet_id)[0] ?? null;
+  // Schreibaufträge and the student's own word lists are not built by the generators (lib/service.ts buildWorksheet)
+  else if (skill && !sorteOfSkill(skill.id) && skill.id !== EIGENE_VOKABELN) {
+    const schon = letzteUebungZur(unit.id, skill.id);
+    if (schon !== null) aufgabe = repo.listTasks(schon)[0] ?? null;
+    else {
+      const w = generatorWahl(student.id, skill.id);
+      aufgabe = generatorAufgaben({ subject: skill.subject, schoolType: student.school_type, klasse: student.klasse ?? 1, skillIds: [skill.id], difficulty: w.difficulty, count: w.count, taskType: "mixed", seed: generatorSeed(unit.id, skill.id) }, [skill])[0] ?? null;
+    }
+  }
+  // a reading text or a long free answer is not something to ask aloud
+  const fragbar = aufgabe && !aufgabe.data.passage && aufgabe.type !== "reading";
+  const antwort = fragbar ? antwortText(aufgabe!) : "";
+  return { sagt: sagt ? kurz(sagt, 400) : null, fragt: fragbar ? frageText(aufgabe!) : null, antwort: fragbar && antwort ? antwort : null };
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ArrowDown,
+  ArrowRight,
   ArrowUp,
   BookOpenCheck,
   BookOpenText,
@@ -48,7 +49,7 @@ import { CancelUnit } from "@/components/UnitControl";
 import { Pill, Reveal } from "@/components/ui";
 import { anpassungen, type Anpassung } from "@/lib/anpassen";
 import { bewertungInfos } from "@/lib/bewertungen";
-import { cockpit, ergebnis, FRAGE_ARTEN, hilfeBeiFehler, type CockpitDaten, type Hilfe, type PlanStep } from "@/lib/cockpit";
+import { cockpit, ergebnis, ersteUebung, FRAGE_ARTEN, hilfeBeiFehler, planFuehrung, uebungGesendet, type CockpitDaten, type Hilfe, type PlanStep } from "@/lib/cockpit";
 import { paketWahl, zurFaehigkeit } from "@/lib/cockpit-vorschlag";
 import { kostenSchaetzung } from "@/lib/lernpaket-ki";
 import { SCHRITT_ARTEN, ungeprueft, type LernpaketMitSchritten, type LernpaketSchritt } from "@/lib/lernpakete";
@@ -338,13 +339,19 @@ function SchrittKarte({ c, s, paket, unit, name, liste, vorschlag, laeufe }: { c
   const nicht = (c.stand.nichtVerstanden[s.id] ?? 0) > 0;
   const skill = s.aufgaben.find((a) => a.skillId)?.skillId ?? null;
   const hilfe = nicht ? hilfeBeiFehler(s.bei_fehler, angepasst, zurFaehigkeit(skill)) : [];
-  const leer = !s.lehrer_sagt.trim() && !s.lehrer_fragt.trim() && !s.erwartete_antwort.trim() && !s.folie;
+  // „Folie 7“ means something only with the package's presentation; without one the line stays away (no dead link)
+  const folie = s.folie && paket.praesentation_id ? s.folie : null;
+  const leer = !s.lehrer_sagt.trim() && !s.lehrer_fragt.trim() && !s.erwartete_antwort.trim() && !folie;
   // bei Fragen und Kontrollen: „Richtig / Teilweise / Falsch“, was der Lehrer gehört hat
   const frage = FRAGE_ARTEN.includes(s.art) && Boolean(s.lehrer_fragt.trim() || s.erwartete_antwort.trim());
   const antwort = frage ? <AntwortKnoepfe unitId={unitId} schrittId={s.id} wert={c.stand.antworten[s.id] ?? null} /> : null;
   // a writing step: „Schreibauftrag starten“ is the main action until a text of that kind runs in this unit
   const schreiben = schreibStartFuer(unit, schreibSkillDesSchritts(s, paket));
   const laeuft = schreiben ? textZumSchritt(laeufe, schreiben) : null;
+  // a step without tasks before anything was sent: a quiet jump to the first step with an exercise
+  const mitAufgaben = new Set(c.schritte.filter((x) => x.aufgaben.length > 0).map((x) => x.id));
+  const sprungId = ersteUebung(ids, c.stand, s.id, (id) => mitAufgaben.has(id), uebungGesendet(unitId));
+  const sprung = sprungId === null ? null : (c.schritte.find((x) => x.id === sprungId) ?? null);
   return (
     <section className="panel px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
       <KartenKopf c={c} id={s.id} titel={s.titel} minuten={s.minuten} ids={ids} art={<Pill tone={s.art === "kontrolle" ? "green" : s.art === "zusatz" ? "amber" : "accent"}>{SCHRITT_ARTEN[s.art]}</Pill>} />
@@ -354,17 +361,15 @@ function SchrittKarte({ c, s, paket, unit, name, liste, vorschlag, laeufe }: { c
             <p className="text-[18px] leading-relaxed whitespace-pre-line">{s.lehrer_sagt}</p>
           </Block>
         )}
-        {s.folie && (
+        {folie && (
           <Block titel="Das zeigst du">
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[16px]">
               <span className="inline-flex items-center gap-1.5">
-                <Presentation size={16} className="text-accent" aria-hidden /> Folie {s.folie}
+                <Presentation size={16} className="text-accent" aria-hidden /> Folie {folie}
               </span>
-              {paket.praesentation_id && (
-                <Link href={`/mehr/praesentationen/${paket.praesentation_id}?folie=${s.folie}`} className="inline-flex min-h-[44px] items-center gap-1 font-semibold text-accent hover:underline" data-testid="vortrag-oeffnen">
-                  Vortrag öffnen <ExternalLink size={14} aria-hidden />
-                </Link>
-              )}
+              <Link href={`/mehr/praesentationen/${paket.praesentation_id}?folie=${folie}`} className="inline-flex min-h-[44px] items-center gap-1 font-semibold text-accent hover:underline" data-testid="vortrag-oeffnen">
+                Vortrag öffnen <ExternalLink size={14} aria-hidden />
+              </Link>
             </p>
           </Block>
         )}
@@ -412,6 +417,8 @@ function SchrittKarte({ c, s, paket, unit, name, liste, vorschlag, laeufe }: { c
       )}
 
       {schreiben && <SchreibauftragStart start={schreiben} laeuft={laeuft} />}
+
+      {sprung && <ZurErstenUebung unitId={unitId} id={sprung.id} titel={sprung.titel} nr={ids.indexOf(sprung.id) + 1} />}
 
       {s.aufgaben.length > 0 && (
         <div className="mt-5 flex flex-wrap items-start gap-x-4 gap-y-2 border-t border-line pt-4">
@@ -522,14 +529,36 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
   const laeuft = schreiben ? textZumSchritt(laeufe, schreiben) : null;
   // a step of the Vorgabe whose point still waits for „kurz bestätigen“: say where, so the exercise can follow
   const bestaetigen = !skill && !blatt && !zugewiesen && /^Üben: /.test(s.titel) && (vorgabeDerEinheit(unit.id)?.punkte.some((p) => p.zuordnung === "unklar" && p.vorschlaege.length > 0) ?? false);
+  // say, ask, expected answer from the skill and the step's first task, like a package step (lib/cockpit.ts planFuehrung)
+  const f = planFuehrung(unit.id, s);
+  const mitUebung = new Set(c.plan.filter((x) => x.skillId || x.uebung).map((x) => x.id));
+  const sprungId = ersteUebung(ids, c.stand, s.id, (id) => mitUebung.has(id), uebungGesendet(unit.id));
+  const sprung = sprungId === null ? null : (c.plan.find((x) => x.id === sprungId) ?? null);
   return (
     <section className="panel px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
       <KartenKopf c={c} id={s.id} titel={s.titel} minuten={s.minuten} ids={ids} />
-      {s.beschreibung.trim() && (
-        <div className="mt-4">
-          <Block titel="Das machst du">
-            <p className="text-[18px] leading-relaxed whitespace-pre-line">{s.beschreibung}</p>
-          </Block>
+      {(s.beschreibung.trim() || f.sagt || f.fragt) && (
+        <div className="mt-4 grid gap-4">
+          {s.beschreibung.trim() && (
+            <Block titel="Das machst du">
+              <p className={`${f.sagt || f.fragt ? "text-[16px]" : "text-[18px]"} leading-relaxed whitespace-pre-line`}>{s.beschreibung}</p>
+            </Block>
+          )}
+          {f.sagt && (
+            <Block titel="Das sagst du">
+              <p className="text-[18px] leading-relaxed whitespace-pre-line">{f.sagt}</p>
+            </Block>
+          )}
+          {f.fragt && (
+            <Block titel="Das fragst du">
+              <p className="text-[18px] leading-relaxed whitespace-pre-line">{f.fragt}</p>
+            </Block>
+          )}
+          {f.fragt && f.antwort && (
+            <Block titel="Erwartete Antwort" ton="green">
+              <p className="text-[16px] whitespace-pre-line">{f.antwort}</p>
+            </Block>
+          )}
         </div>
       )}
       {bestaetigen && (
@@ -564,8 +593,23 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
         </div>
       )}
       {zurPruefung && <SchreibauftragStart start={zurPruefung} laeuft={laeuft} haupt={false} />}
+      {sprung && <ZurErstenUebung unitId={unit.id} id={sprung.id} titel={sprung.titel} nr={ids.indexOf(sprung.id) + 1} />}
       <Knoepfe unitId={unit.id} id={s.id} weiterHaupt={eigen ? Boolean(laeuft) : !(blatt || skill)} />
     </section>
+  );
+}
+
+/**
+ * „Zur ersten Übung“: ein ruhiger Sprung zum ersten offenen Schritt mit Übung (lib/cockpit.ts `ersteUebung`). Zeigt ihn
+ * nur; die Schritte davor bleiben offen und kommen danach wieder.
+ */
+function ZurErstenUebung({ unitId, id, titel, nr }: { unitId: number; id: number; titel: string; nr: number }) {
+  return (
+    <form action={zeigeSchrittAction.bind(null, unitId, id)} className="mt-4">
+      <button className="inline-flex min-h-[44px] flex-wrap items-center gap-x-1.5 text-left text-[14.5px] font-semibold text-accent hover:underline" data-testid="zur-ersten-uebung">
+        Zur ersten Übung <span className="font-normal text-ink-2">· Schritt {nr}: {titel}</span> <ArrowRight size={15} aria-hidden />
+      </button>
+    </form>
   );
 }
 

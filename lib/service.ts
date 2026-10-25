@@ -62,7 +62,19 @@ export type BuildRequest = {
   teacherId?: number | null;
   /** Der Schüler, für den die Übung gedacht ist: seine KI-Hinweise kommen in den Systemprompt. */
   studentId?: number | null;
+  /** Generatoren: mit demselben Wert dieselben Aufgaben (für die Vorschau im Unterricht, lib/cockpit.ts) */
+  seed?: number;
 };
+
+/**
+ * Die Aufgaben der eingebauten Generatoren für eine Anfrage, ohne schlecht bewertete (lib/bewertungen.ts); auch wenn es
+ * dann weniger werden. Mit `seed` immer dieselben.
+ */
+export function generatorAufgaben(req: Pick<BuildRequest, "subject" | "schoolType" | "klasse" | "skillIds" | "difficulty" | "count" | "taskType" | "seed">, skills: Pick<repo.Skill, "id" | "name">[]): TaskDraft[] {
+  const grade = schulstufe(req.schoolType, req.klasse);
+  const count = Math.max(1, Math.min(30, req.count));
+  return ohneAusgeblendete(generateBuiltIn({ subject: req.subject, skills: skills.map((s) => ({ id: s.id, name: s.name })), difficulty: req.difficulty, count, taskType: req.taskType, grade, wortarten: wortartenFor(req.skillIds, grade), seed: req.seed }));
+}
 
 export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; source: "ki" | "generator"; aiError?: string }> {
   const all = repo.listSkills();
@@ -110,8 +122,7 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
     }
   }
   if (!tasks || tasks.length === 0) {
-    // schlecht bewertete Aufgaben (lib/bewertungen.ts) bleiben weg, auch wenn es dann weniger werden
-    tasks = ohneAusgeblendete(generateBuiltIn({ subject: req.subject, skills: andere.map((s) => ({ id: s.id, name: s.name })), difficulty: req.difficulty, count, taskType: req.taskType, grade, wortarten }));
+    tasks = generatorAufgaben(req, andere);
   }
   const label = req.kind === "ueberpruefung" ? "Überprüfung" : TASK_TYPES[req.taskType];
   const title = req.title?.trim() || `${skills.length === 1 ? `${skills[0].area}: ${skills[0].name}` : topic} · ${label}`;

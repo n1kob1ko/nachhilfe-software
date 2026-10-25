@@ -1,4 +1,4 @@
-import { CalendarPlus, ChevronDown, ClipboardList, FileText, TriangleAlert } from "lucide-react";
+import { CalendarCheck, CalendarPlus, ChevronDown, ClipboardList, FileText, TriangleAlert } from "lucide-react";
 import { bestaetigeVorgabeAction, entferneVorgabeAction, planAnpassenAction, pruefungAusVorgabeAction } from "@/app/vorgabe-actions";
 import { VorgabeForm } from "@/components/cockpit/VorgabeForm";
 import { Pill } from "@/components/ui";
@@ -8,7 +8,7 @@ import { dayOf } from "@/lib/exams";
 import { tagMonat } from "@/lib/vorbereitung-auto";
 import * as repo from "@/lib/repo";
 import type { UnitView } from "@/lib/units";
-import { abweichung, pruefungZurVorgabe, vorgabeDerEinheit } from "@/lib/vorgabe";
+import { abweichung, pruefungZurVorgabe, schonEingetragen, vorgabeDerEinheit } from "@/lib/vorgabe";
 
 const skillName = (id: string) => {
   const s = repo.getSkill(id);
@@ -51,6 +51,16 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
   const begonnen = hatBegonnen(c.stand);
   const unklar = v.punkte.map((x, i) => ({ x, i })).filter(({ x }) => x.zuordnung === "unklar" && x.vorschlaege.length);
   const test = v.testId ? repo.getTest(v.testId) : null;
+  // the same exam is in already: say so instead of offering it again
+  const eingetragen = v.terminText ? schonEingetragen(v.terminText, repo.upcomingTests(heute, unit.student_id), heute, unit.subject) : null;
+  // one line per point; a point confirmed with several skills stands once, with all of them
+  const zeilen: { x: (typeof v.punkte)[number]; skills: string[] }[] = [];
+  for (const x of v.punkte) {
+    const skill = x.skill_id && (x.zuordnung === "sicher" || x.zuordnung === "bestaetigt") ? x.skill_id : null;
+    const da = zeilen.find((z) => skill && z.skills.length && z.x.inhalt === x.inhalt && z.x.original === x.original);
+    if (da) da.skills.push(skill!);
+    else zeilen.push({ x, skills: skill ? [skill] : [] });
+  }
   return (
     <section className="panel grid gap-3 px-4 py-4 sm:px-5" aria-label="Vorgabe für heute" data-testid="vorgabe">
       <div className="flex flex-wrap items-center gap-2">
@@ -64,14 +74,14 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
           Prüfung: <span className="font-medium">{test.title || `${test.kind} ${test.subject}`}</span> am {tagMonat(test.date)}
         </p>
       )}
-      {v.punkte.length > 0 && (
+      {zeilen.length > 0 && (
         <ul className="grid gap-1.5" data-testid="vorgabe-punkte">
-          {v.punkte.map((x, i) => (
+          {zeilen.map(({ x, skills }, i) => (
             <li key={i} className="flex flex-wrap items-baseline gap-x-2 text-[14.5px]">
               <span className="font-medium">{x.inhalt}</span>
               <span className="text-[13px] text-ink-3">
-                {x.skill_id && (x.zuordnung === "sicher" || x.zuordnung === "bestaetigt")
-                  ? `→ ${skillName(x.skill_id)}`
+                {skills.length
+                  ? `→ ${skills.map(skillName).join(", ")}`
                   : x.zuordnung === "unklar"
                     ? "→ kurz bestätigen"
                     : x.gruppe === "umfang"
@@ -90,18 +100,19 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
       )}
       {unklar.length > 0 && (
         <form action={bestaetigeVorgabeAction.bind(null, unit.id)} className="grid gap-2 rounded-xl bg-panel px-3 py-3" data-testid="vorgabe-bestaetigen">
+          <p className="text-[13px] text-ink-2">Welche Fähigkeiten sind gemeint? Mehrere gehen.</p>
           {unklar.map(({ x, i }) => (
             <fieldset key={i} className="grid gap-1.5">
               <legend className="text-[14px] font-medium">{x.inhalt}</legend>
               <div className="flex flex-wrap gap-1.5">
                 {x.vorschlaege.map((sid) => (
                   <label key={sid} className="flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[13.5px] has-checked:border-accent has-checked:bg-accent-wash">
-                    <input type="radio" name={`zuordnung_${i}`} value={sid} className="shrink-0 accent-[var(--accent)]" />
+                    <input type="checkbox" name={`zuordnung_${i}`} value={sid} className="shrink-0 accent-[var(--accent)]" />
                     <span>{skillName(sid)}</span>
                   </label>
                 ))}
                 <label className="flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[13.5px] has-checked:border-accent has-checked:bg-accent-wash">
-                  <input type="radio" name={`zuordnung_${i}`} value="" className="shrink-0 accent-[var(--accent)]" />
+                  <input type="checkbox" name={`zuordnung_${i}`} value="" className="shrink-0 accent-[var(--accent)]" />
                   <span>Keine passt</span>
                 </label>
               </div>
@@ -133,7 +144,12 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
           ))}
         </p>
       )}
-      {v.terminText && (
+      {v.terminText && eingetragen && (
+        <p className="flex items-center gap-1.5 text-[14px] text-ink-2" data-testid="vorgabe-termin-da">
+          <CalendarCheck size={15} className="shrink-0 text-green" aria-hidden /> Schon eingetragen: {eingetragen.title || eingetragen.kind} am {tagMonat(eingetragen.date)}
+        </p>
+      )}
+      {v.terminText && !eingetragen && (
         <form action={pruefungAusVorgabeAction.bind(null, unit.id)} className="grid gap-2 rounded-xl border border-line px-3 py-3" data-testid="vorgabe-termin">
           <p className="text-[14px]">
             Im Text steht „{v.terminText}“. Als Prüfung eintragen? Das Datum trägst du selbst ein.

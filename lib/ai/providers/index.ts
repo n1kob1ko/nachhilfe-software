@@ -1,5 +1,5 @@
 /** The provider adapters behind the router. Adding a provider: an adapter here and its id in config. */
-import { hasKey, type ProviderId } from "../config";
+import { hasKey, poolOf, PROVIDER_IDS, type BudgetPool, type ProviderId } from "../config";
 import { anthropicTransport } from "./anthropic";
 import { manualTransport } from "./manual";
 import { FLAVORS, openAICompatibleTransport } from "./openai-compatible";
@@ -33,6 +33,17 @@ export const providerTransport: Transport = (req) => (req.provider === "manual" 
 /** Manual needs no key; every other provider is ready when its key (and address) is set. */
 export function providerReady(id: ProviderId) {
   return id === "manual" || hasKey(id);
+}
+
+/**
+ * Der Name eines Budgets auf Mehr › KI-Kosten: „Anthropic“, beim allgemeinen die Anbieter, die es gerade nutzen
+ * („(Anbieter: OpenAI-kompatibel)“); nutzt es keiner, die eingerichteten, sonst OpenRouter.
+ */
+export function budgetName(pool: BudgetPool, genutzt: ProviderId[], bereit: (id: ProviderId) => boolean = providerReady): string {
+  if (pool === "anthropic") return "Anthropic";
+  const imTopf = (ids: readonly ProviderId[]) => [...new Set(ids)].filter((id) => id !== "manual" && poolOf(id) === pool);
+  const namen = imTopf(genutzt).length ? imTopf(genutzt) : imTopf(PROVIDER_IDS.filter((id) => bereit(id)));
+  return `(Anbieter: ${(namen.length ? namen : (["openrouter"] as ProviderId[])).map((id) => PROVIDER_LABEL[id]).join(", ")})`;
 }
 
 /** Why a provider cannot take this prompt (a photo or PDF it cannot read), or null. */

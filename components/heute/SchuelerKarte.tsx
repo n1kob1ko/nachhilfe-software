@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Play, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpenCheck, CheckCircle2, Play, Sparkles } from "lucide-react";
+import { vorbereitenAction } from "@/app/cockpit-actions";
 import { startUnitAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
 import type { HeuteKarte, HeutePunkt } from "@/lib/heute";
@@ -9,7 +10,8 @@ import { klassenLabel } from "@/lib/school";
 /**
  * Ein Schüler von heute auf einer kurzen Karte (lib/heute.ts): Zeit, Name, Klasse, Fach, dann aus der automatischen
  * Vorbereitung Thema, Warum, was bereitliegt (geprüftes Lernpaket oder Plan aus den Daten), Schwierigkeiten und
- * Prüfung. Eine Aktion: „Einheit starten“. `haupt`: der nächste Schüler, sein Knopf ist der Hauptknopf der Seite.
+ * Prüfung. Eine Aktion: „Einheit starten“. Hat ein neuer Schüler noch kein Signal, stehen die passenden geprüften
+ * Lernpakete zum Wählen da; ein Tippen legt eines für heute fest. `haupt`: der nächste Schüler, sein Knopf ist der Hauptknopf der Seite.
  * `oben`: seine Einheit läuft und steht oben mit dem großen Knopf; hier bleibt nur eine Zeile mit einem ruhigen Link.
  */
 export function SchuelerKarte({ p, student, karte, fach, haupt, wann, oben = false }: { p: HeutePunkt; student: repo.Student | undefined; karte: HeuteKarte | undefined; fach: string; haupt: boolean; wann?: string | null; oben?: boolean }) {
@@ -35,6 +37,20 @@ export function SchuelerKarte({ p, student, karte, fach, haupt, wann, oben = fal
       ),
     ]);
   if (karte?.pruefung) zeilen.push(["Prüfung", <span key="p" className="font-semibold text-amber">{karte.pruefung}</span>]);
+  if (karte?.pakete?.length)
+    zeilen.push([
+      "Lernpaket wählen",
+      <div key="l" className="flex flex-wrap gap-1.5" data-testid="lernpaket-waehlen">
+        {karte.pakete.map((x) => (
+          <form key={x.id} action={vorbereitenAction.bind(null, p.studentId)}>
+            <input type="hidden" name="paket_id" value={x.id} />
+            <button className="btn btn-secondary btn-sm">
+              <BookOpenCheck size={15} aria-hidden /> {x.title}
+            </button>
+          </form>
+        ))}
+      </div>,
+    ]);
   const briefing = `/schueler/${p.studentId}/briefing${p.platzId ? `?platz=${p.platzId}` : ""}`;
   return (
     <li className={`panel grid gap-3 px-4 py-4 sm:px-5 ${p.nichtStattgefunden || p.erledigt ? "opacity-80" : ""}`} data-testid="heute-karte">

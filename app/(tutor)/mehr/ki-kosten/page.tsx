@@ -9,7 +9,7 @@ import { AREA_LABEL, FUNCTIONS, aiSwitchedOff, budget, imagePrice, imageRoute, m
 import { budgetState, costByDay, costByFunction, costByMonth, costByStudent, costByTeacher, recentCalls, type Sum } from "@/lib/ai/log";
 import { schuelerGrenze, schuelerStand } from "@/lib/ai/schueler-kosten";
 import { KI_MODUS_LABEL, kiModus } from "@/lib/ai/modus";
-import { PROVIDER_LABEL, providerReady } from "@/lib/ai/providers";
+import { budgetName, PROVIDER_LABEL, providerReady } from "@/lib/ai/providers";
 import { aiEnabled, breakerState } from "@/lib/ai/router";
 import { requireTeacher } from "@/lib/auth";
 import { autoBriefingAn, autoKosten, AUTO_SPERRE_TEXT, BRIEFINGS_IM_MONAT, TYPISCH_TOKENS_AUS, TYPISCH_TOKENS_EIN, type AutoSperre } from "@/lib/briefing-auto";
@@ -22,8 +22,6 @@ const usd = (x: number) => `${x.toLocaleString("de-AT", { minimumFractionDigits:
 const eur = (x: number) => `${x.toLocaleString("de-AT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 const n = (x: number) => Math.round(x).toLocaleString("de-AT");
 const STATUS_LABEL: Record<string, string> = { ok: "ok", cache: "aus Speicher", abgelehnt: "keine Antwort", fehler: "Fehler", timeout: "Zeit überschritten", budget: "Budget", pausiert: "pausiert" };
-
-const POOL_LABEL: Record<BudgetPool, string> = { anthropic: "Anthropic", allgemein: "OpenRouter" };
 
 /**
  * Mehr › KI-Kosten: every request to the KI with provider, model, tokens, duration and cost, per day,
@@ -54,7 +52,9 @@ export default async function AICostPage() {
   // das Budget des aktiven Anbieters zuerst; der manuelle Modus kostet nichts, dort steht Anthropic vorne
   const ersterPool = aktiv === "manual" ? "anthropic" : poolOf(aktiv);
   const pools = [ersterPool, ...(["anthropic", "allgemein"] as BudgetPool[]).filter((p) => p !== ersterPool)];
-  const budgets = pools.map((pool) => ({ pool, state: budgetState(Date.now(), pool), conf: budget(pool) }));
+  // the general budget is named after the providers that use it now, not always OpenRouter
+  const genutzt = [aktiv, ...(Object.keys(FUNCTIONS) as AIFunction[]).map((fn) => routeFor(fn).provider)];
+  const budgets = pools.map((pool) => ({ pool, state: budgetState(Date.now(), pool), conf: budget(pool), name: budgetName(pool, genutzt) }));
   const vorrang = process.env.AI_PROVIDER?.trim()
     ? `AI_PROVIDER=${process.env.AI_PROVIDER.trim()} ist in den Umgebungsvariablen gesetzt und hat Vorrang vor dieser Wahl.`
     : (Object.keys(AREA_LABEL) as Area[]).some((a) => process.env[`AI_${a}_PROVIDER`]?.trim())
@@ -96,12 +96,12 @@ export default async function AICostPage() {
           </span>
         </div>
         <div className="mt-3 grid gap-5 sm:grid-cols-2">
-          {budgets.map(({ pool, state: b, conf }) => {
+          {budgets.map(({ pool, state: b, conf, name }) => {
             const share = Math.min(1, b.share);
             return (
               <div key={pool} data-testid={`budget-${pool}`}>
                 <p className="flex flex-wrap items-center gap-2 text-[13px] font-semibold text-ink-2">
-                  Budget {POOL_LABEL[pool]}
+                  Budget {name}
                   {b.level === "warnung" && <Pill tone="amber">Über {Math.round(conf.warnAt * 100)}&nbsp;%</Pill>}
                   {b.level === "aus" && <Pill tone="red">Erreicht: KI-Aufrufe gestoppt</Pill>}
                 </p>
@@ -117,7 +117,7 @@ export default async function AICostPage() {
                     <span className="num text-[22px] font-semibold">{usd(b.spent)}</span> <span className="text-ink-2">von {usd(b.budget)} in diesem Monat</span>
                   </p>
                 )}
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-panel" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)} aria-label={`Anteil am Monatsbudget ${POOL_LABEL[pool]}`}>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-panel" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(share * 100)} aria-label={`Anteil am Monatsbudget ${name}`}>
                   <div className={`h-full rounded-full ${b.level === "ok" ? "bg-green" : b.level === "warnung" ? "bg-amber" : "bg-red"}`} style={{ width: `${share * 100}%` }} />
                 </div>
               </div>

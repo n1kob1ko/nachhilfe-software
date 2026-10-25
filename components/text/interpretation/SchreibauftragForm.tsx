@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { BookOpenText, RotateCcw, WrapText } from "lucide-react";
 import type { AuftragFormState } from "@/app/schreibauftrag-actions";
+import type { BeilageVorlage } from "@/lib/schreibauftrag-store";
 import { arbeitsauftrag, beispielFor, hasLongLines, kindsOf, planFor, SORTEN, wrapLines, type SorteKey } from "@/lib/schreibauftrag";
 import { cleanTarget, lastLine, MAX_TARGET, MIN_STORY_LINES, MIN_TARGET, numberedLines, wordRange } from "@/lib/textinterpretation";
 import { beilageLaenge, MAX_BEILAGE, MIN_BEILAGE, umfangVorgabe } from "@/lib/schreibauftrag-umfang";
@@ -67,6 +68,8 @@ type Props = {
   pruefungen?: { id: number; label: string }[];
   /** a new Auftrag that belongs to this Prüfung (from the Prüfung's page) */
   pruefung?: number | null;
+  /** a new Auftrag: the Textbeilage found in the Prüfung's material (lib/schreibauftrag-store.ts beilageZurPruefung) */
+  vorlage?: BeilageVorlage | null;
 };
 
 /**
@@ -75,9 +78,10 @@ type Props = {
  * with a whole paragraph in one line, can be broken into lines. The Arbeitsauftrag follows the entries until the
  * teacher writes their own.
  */
-export function SchreibauftragForm({ sorte, action, defaults: saved, device, name, submitLabel, note, kiLiest, studentId, stufe, pruefungen = [], pruefung }: Props) {
+export function SchreibauftragForm({ sorte, action, defaults: saved, device, name, submitLabel, note, kiLiest, studentId, stufe, pruefungen = [], pruefung, vorlage }: Props) {
   const s = SORTEN[sorte];
-  const defaults = saved ?? { ...emptyDefaults(sorte, stufe), testId: pruefung ?? null };
+  const neu = vorlage && !saved ? { title: vorlage.title, author: vorlage.author, year: vorlage.year, medium: vorlage.medium, kind: vorlage.kind, story: vorlage.story } : {};
+  const defaults = saved ?? { ...emptyDefaults(sorte, stufe), testId: pruefung ?? null, ...neu };
   const story = s.beilage === "Geschichte";
   const [state, formAction, pending] = useActionState<AuftragFormState, FormData>(action, null);
   const [title, setTitle] = useState(defaults.title);
@@ -180,6 +184,11 @@ export function SchreibauftragForm({ sorte, action, defaults: saved, device, nam
           </button>
         </div>
         <p className="text-[13px] text-ink-2">Ein eigener Text oder einer vom Blatt: Füge ihn so ein, wie er auf dem Blatt steht, oder übernimm ihn aus einem PDF. Jede Zeile bleibt eine Zeile und bekommt ihre Nummer.</p>
+        {vorlage && !saved && (
+          <p className="text-[13px] font-medium text-accent" data-testid="beilage-vorlage">
+            Übernommen aus {vorlage.quelle}. Du kannst den Text ändern.
+          </p>
+        )}
         <PdfLesen onText={fromPhoto} kiLiest={Boolean(kiLiest)} />
         {kiLiest && <TextFotoLesen studentId={studentId} onText={fromPhoto} />}
         <textarea
