@@ -12,12 +12,12 @@
  * - Ohne KI wird der Zettel nur angehängt; Fach, Termin und Stoff tippt der Lehrer wie bisher.
  * - Der Lernstand ändert sich dadurch nicht.
  */
-import fs from "node:fs";
-import { aiEnabled, aiReadsImages, leseStoffzettel, type StoffzettelGelesen } from "./ai";
+import { aiEnabled, aiReadsImages, type StoffzettelGelesen } from "./ai";
 import { db } from "./db";
 import { daysUntil } from "./exams";
 import { fachNamen } from "./faecher";
-import { getMaterial, hatDatei, materialFile, MAX_ANALYSIS_IMAGE_BYTES, MAX_ANALYSIS_PDF_BYTES, sniffType } from "./materials";
+import { getMaterial, hatDatei } from "./materials";
+import { liesPruefungsstoff, MAX_THEMEN, ordneZu, type Lesung } from "./pruefungsstoff";
 import { PRUEFUNGSARTEN } from "./pruefungsarten";
 import * as repo from "./repo";
 import { fachAus, fachVorschlaege } from "./school";
@@ -75,7 +75,8 @@ const echtesDatum = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && new Date(`${
  * Prüft, was die KI gelesen hat, und macht daraus den Vorschlag fürs Formular. Ein Termin zählt nur, wenn es den
  * Tag gibt und er höchstens 30 Tage zurück und höchstens ein Jahr voraus liegt.
  */
-export function vorschlagAusGelesen(g: StoffzettelGelesen, o: { heute: string; faecher: string[] }): StoffzettelVorschlag {
+export function vorschlagAusGelesen(g: StoffzettelGelesen, o: { heute: string; faecher: string[]; maxThemen?: number }): StoffzettelVorschlag {
+  const max = o.maxThemen ?? THEMEN;
   const hinweise: string[] = [];
   const art = artVomZettel(g.art);
 
@@ -105,45 +106,52 @@ export function vorschlagAusGelesen(g: StoffzettelGelesen, o: { heute: string; f
     gesehen.add(key);
     themen.push(thema);
   }
-  if (themen.length > THEMEN) hinweise.push(`Nur die ersten ${THEMEN} Themen übernommen.`);
+  if (themen.length > max) hinweise.push(`Nur die ersten ${max} Themen übernommen.`);
   if (!themen.length) hinweise.push("Keinen Stoff gefunden. Bitte eintragen.");
 
   for (const u of g.unsicher.slice(0, 4)) {
     const text = eineZeile(u, 140);
     if (text) hinweise.push(`Unsicher: ${text}`);
   }
-  return { art, fach, datum, titel: eineZeile(g.titel ?? "", 120), themen: themen.slice(0, THEMEN), hinweise };
+  return { art, fach, datum, titel: eineZeile(g.titel ?? "", 120), themen: themen.slice(0, max), hinweise };
+}
+
+/** Was „Lesen und ausfüllen“ außer dem Formular zurückgibt: die Lesung und wie viele Punkte wie zugeordnet sind. */
+export type Erkannt = { lesung: number; neu: boolean; punkte: number; sicher: number; unklar: number; keine: number; ausgeschlossen: number; offen: number; dokumente: string[] };
+
+/** Zahlen für die Zeile „Erkannt: …“ im Formular, mit Fach und Stufe des Schülers zugeordnet (ohne KI-Anfrage). */
+export function erkanntAus(l: Lesung, o: { lesungId: number; neu: boolean; fach: string; student: Pick<repo.Student, "school_type" | "klasse" | "grade"> }): Erkannt {
+  const p = ordneZu(l.punkte, { fach: o.fach, student: o.student, ki: true });
+  const n = (f: (x: (typeof p)[number]) => boolean) => p.filter(f).length;
+  const ROLLE = { stoffzettel: "Stoffzettel", inhaltsverzeichnis: "Inhaltsverzeichnis", sonstiges: "weiteres Blatt" } as const;
+  return {
+    lesung: o.lesungId,
+    neu: o.neu,
+    punkte: p.length,
+    sicher: n((x) => x.status === "pruefung" && x.zuordnung === "sicher"),
+    unklar: n((x) => x.status !== "ausgeschlossen" && x.zuordnung === "unklar"),
+    keine: n((x) => x.status === "pruefung" && x.gruppe !== "umfang" && x.zuordnung === "keine"),
+    ausgeschlossen: n((x) => x.status === "ausgeschlossen"),
+    offen: n((x) => x.status === "unklar"),
+    dokumente: l.dokumente.map((d) => ROLLE[d.rolle]),
+  };
 }
 
 /**
- * Liest einen gespeicherten Zettel (Material) mit der KI. Wirft einen Fehler mit einem Satz für den Lehrer; der
- * Zettel bleibt dann gespeichert und angehängt.
+ * Liest gespeicherte Zettel (Material, ein Foto, mehrere Fotos oder PDFs einer Prüfung) mit der KI, alle zusammen in
+ * einer Anfrage (lib/pruefungsstoff.ts). Dieselben Dateien kosten nur beim ersten Mal. Wirft einen Fehler mit einem Satz
+ * für den Lehrer; die Zettel bleiben dann gespeichert und angehängt.
  */
-export async function liesStoffzettel(o: { materialId: number; studentId: number; teacherId: number | null; heute: string }): Promise<StoffzettelVorschlag> {
-  const geht = stoffzettelLesbar();
-  if (!geht.ok) throw new Error(geht.grund);
-  const m = getMaterial(o.materialId);
-  if (!m || !hatDatei(m)) throw new Error("Den Zettel gibt es nicht mehr. Bitte noch einmal hochladen.");
-  let data: Buffer;
-  try {
-    data = fs.readFileSync(materialFile(m));
-  } catch {
-    throw new Error("Die Datei des Zettels fehlt. Bitte noch einmal hochladen.");
-  }
-  const type = sniffType(data);
-  if (!type) throw new Error("Nur Fotos (JPG, PNG, WebP) und PDF-Dateien sind möglich.");
-  const pdf = type.mime === "application/pdf";
-  const max = pdf ? MAX_ANALYSIS_PDF_BYTES : MAX_ANALYSIS_IMAGE_BYTES;
-  if (data.length > max) throw new Error(`${pdf ? "Das PDF" : "Das Foto"} ist zu groß für die KI (höchstens ${max / 1024 / 1024} MB).`);
-  const faecher = repo.getStudent(o.studentId)?.subjects ?? [];
-  const gelesen = await leseStoffzettel(
-    { mime: type.mime as "application/pdf" | "image/jpeg" | "image/png" | "image/webp", base64: data.toString("base64") },
-    { heute: o.heute, faecher },
-    { teacherId: o.teacherId, studentId: o.studentId, trigger: "stoffzettel" },
-  );
-  if (!gelesen) throw new Error("Die KI hat den Zettel nicht gelesen. Trag Fach, Datum und Stoff bitte selbst ein.");
+export async function liesStoffzettel(o: { materialId?: number; materialIds?: number[]; studentId: number; teacherId: number | null; heute: string; fach?: string }): Promise<StoffzettelVorschlag & { erkannt: Erkannt }> {
+  const ids = o.materialIds?.length ? o.materialIds : o.materialId ? [o.materialId] : [];
+  if (!ids.length || ids.some((id) => !getMaterial(id) || !hatDatei(getMaterial(id)!))) throw new Error("Den Zettel gibt es nicht mehr. Bitte noch einmal hochladen.");
+  const student = repo.getStudent(o.studentId);
+  if (!student) throw new Error("Diesen Schüler gibt es nicht.");
+  const r = await liesPruefungsstoff({ materialIds: ids, studentId: o.studentId, teacherId: o.teacherId, heute: o.heute, fach: o.fach, trigger: "stoffzettel" });
   // ein gelesenes Fach zählt, wenn es beim Schüler oder in der Fächerliste steht (Mehr › Fächer)
-  return vorschlagAusGelesen(gelesen, { heute: o.heute, faecher: [...faecher, ...fachNamen()] });
+  const v = vorschlagAusGelesen(r.lesung.kopf, { heute: o.heute, faecher: [...student.subjects, ...fachNamen()], maxThemen: MAX_THEMEN });
+  if (r.lesung.weggelassen) v.hinweise.push(`${r.lesung.weggelassen === 1 ? "Ein Punkt" : `${r.lesung.weggelassen} Punkte`} außerhalb des Umfangs oder doppelt: weggelassen.`);
+  return { ...v, erkannt: erkanntAus(r.lesung, { lesungId: r.id, neu: r.neu, fach: v.fach ?? o.fach ?? "", student }) };
 }
 
 /**

@@ -5,8 +5,9 @@
  * und Fotos oder PDFs vom Stoffzettel ein.
  *
  * - Die Fotos werden Material des Schülers (Titel „Stoffzettel“, wie in lib/stoffzettel.ts). Hat der Schüler bestätigt,
- *   dass kein Name darauf steht, liest die vorhandene Erkennung (liesStoffzettel) sie gleich nach dem Hochladen, jedes
- *   Foto höchstens einmal. Die Kosten zählen für diesen Schüler (Grenze je Schüler, lib/ai/schueler-kosten.ts).
+ *   dass kein Name darauf steht, liest die vorhandene Erkennung (liesStoffzettel) sie gleich nach dem Hochladen, alle
+ *   Fotos zusammen in einer Anfrage (lib/pruefungsstoff.ts), jedes höchstens einmal. Die Kosten zählen für diesen
+ *   Schüler (Grenze je Schüler, lib/ai/schueler-kosten.ts).
  * - Ist danach alles klar (automatischMoeglich: ein sicheres Datum ab heute, nichts widerspricht sich), wird gleich
  *   eine Schularbeit eingetragen (tests.quelle = 'schueler', Stand „automatisch“): sie zählt für Planung und Cockpit
  *   und steht als „vom Schüler eingetragen“ da. Sonst bleibt der Eintrag „eingereicht“ und wartet in der Prüfliste.
@@ -26,10 +27,11 @@ import { tagAddieren } from "./planung/zeit";
 import { PRUEFUNGSARTEN } from "./pruefungsarten";
 import * as repo from "./repo";
 import { fachAus, fachVorschlaege } from "./school";
+import { stoffAusLesung } from "./pruefungsstoff";
 import { liesStoffzettel, stoffzettelFuer, stoffzettelLesbar, STOFFZETTEL_TITEL, type Pruefungsart, type StoffzettelVorschlag } from "./stoffzettel";
 
 /** Höchstens so viele Fotos je Eintrag. */
-export const MAX_FOTOS = 4;
+export const MAX_FOTOS = 8;
 /** So viele Einträge darf ein Schüler offen haben, bevor ein Lehrer sie ansieht, und so viele am Tag eintragen. */
 export const MAX_OFFEN = 10;
 export const MAX_PRO_TAG = 6;
@@ -242,7 +244,8 @@ export function offeneEinreichungen(studentId: number): Einreichung[] {
 export function zusammenfuehren(vorschlaege: (StoffzettelVorschlag | null)[]): StoffzettelVorschlag | null {
   const da = vorschlaege.map((v, i) => ({ v, nr: i + 1 })).filter((x): x is { v: StoffzettelVorschlag; nr: number } => x.v != null);
   if (!da.length) return null;
-  if (vorschlaege.length === 1) return da[0].v;
+  // all photos read together: the suggestion is on the first one
+  if (da.length === 1) return da[0].v;
   const hinweise: string[] = [];
   const einig = (werte: (string | null)[], hinweis: string) => {
     const genannt = [...new Set(werte.filter((x): x is string => Boolean(x)))];
@@ -319,7 +322,8 @@ export type Uebernahme = { art: string; fach: string; datum: string; titel: stri
  * Der Stoff ist der des Schülers und der vom Foto zusammen.
  */
 export function automatischMoeglich(e: Pick<Einreichung, "art" | "fach" | "datum" | "stoff" | "notiz" | "fotos">, heute: string): { ok: true; werte: Uebernahme } | { ok: false; grund: string } {
-  if (e.fotos.some((f) => !f.vorschlag)) return { ok: false, grund: "Nicht jedes Foto wurde gelesen." };
+  // all photos are read together: the suggestion is on the first one, none may have failed
+  if (e.fotos.length && (e.fotos.some((f) => !f.gelesen || f.fehler) || !e.fotos.some((f) => f.vorschlag))) return { ok: false, grund: "Nicht jedes Foto wurde gelesen." };
   const v = zusammenfuehren(e.fotos.map((f) => f.vorschlag));
   const f = formular(e, v);
   if (f.konflikte.length) return { ok: false, grund: "Foto und Angaben passen nicht zusammen." };
@@ -348,14 +352,19 @@ function testWerte(studentId: number, u: Uebernahme): { kind: string; subject: s
   };
 }
 
-/** Legt die Prüfung an, mit dem ersten Foto als Stoffzettel; jedes Foto bekommt Name und Stoff der Prüfung. */
+/**
+ * Legt die Prüfung an, mit dem ersten Foto als Stoffzettel; jedes Foto bekommt Name und Stoff der Prüfung. Wurden die
+ * Fotos gelesen, kommt der Prüfungsstoff dazu (lib/pruefungsstoff.ts): eindeutige Fähigkeiten gleich verknüpft, unklare
+ * kurz zu bestätigen in „Erkannt“.
+ */
 function legeAn(e: Einreichung, w: { kind: string; subject: string; date: string; title: string; topics: string[]; notes: string }, teacherId: number | null): number {
   const t = { student_id: e.studentId, title: w.title, kind: w.kind, subject: w.subject, topics: w.topics };
   const zettel = e.fotos.map((f) => (f.materialId ? stoffzettelFuer(f.materialId, t) : null)).filter((x): x is number => x != null);
-  // Fähigkeiten werden nicht verknüpft: das geht wie bei jedem Stoffzettel in der Vorbereitung
   const testId = repo.addTest({ ...t, date: w.date, topic: w.topics.join(", "), grade: null, points: null, max_points: null, notes: w.notes, skill_ids: [], teacher_id: teacherId, material_id: zettel[0] ?? null });
   db().prepare("UPDATE tests SET quelle = ? WHERE id = ?").run(QUELLE_SCHUELER, testId);
   db().prepare("UPDATE pruefung_einreichungen SET test_id = ? WHERE id = ?").run(testId, e.id);
+  const lesung = db().prepare("SELECT lesung_id FROM pruefung_einreichungen WHERE id = ?").pluck().get(e.id) as number | null;
+  if (lesung) stoffAusLesung(testId, lesung);
   return testId;
 }
 
@@ -381,34 +390,36 @@ export function entscheide(id: number, heute: string): EinreichungStatus | null 
 }
 
 /**
- * Liest die noch nicht gelesenen Fotos eines Eintrags mit der vorhandenen Erkennung (lib/stoffzettel.ts). Jedes Foto
- * höchstens einmal: es gilt als gelesen, bevor die Anfrage losgeht, auch wenn sie scheitert. Ohne KI oder an der
- * Grenze je Schüler wird nichts gelesen und nichts vermerkt. Gibt die Zahl der gelesenen Fotos zurück.
+ * Liest die noch nicht gelesenen Fotos eines Eintrags mit der vorhandenen Erkennung (lib/stoffzettel.ts), alle
+ * zusammen in einer Anfrage: der Stoffzettel legt den Umfang fest, ein Inhaltsverzeichnis ergänzt nur. Jedes Foto
+ * höchstens einmal: es gilt als gelesen, bevor die Anfrage losgeht, auch wenn sie scheitert. Der Vorschlag steht am
+ * ersten Foto, die Lesung am Eintrag. Ohne KI oder an der Grenze je Schüler wird nichts gelesen und nichts vermerkt.
+ * Gibt die Zahl der gelesenen Fotos zurück.
  */
 export async function liesFotos(id: number, o: { teacherId: number | null; heute: string; now?: Date }): Promise<number> {
   const e = getEinreichung(id);
   if (!e || e.status !== "eingereicht") throw new Error("Dieser Eintrag ist schon erledigt.");
   const geht = stoffzettelLesbar();
   if (!geht.ok) throw new Error(geht.grund);
-  let gelesen = 0;
-  for (const f of e.fotos) {
-    if (f.gelesen || !f.materialId) continue;
-    // an der Grenze je Schüler: nichts vermerken, später (nächster Monat, höhere Grenze) geht es noch
-    if (schuelerGestoppt("stoffzettel", e.studentId)) {
-      if (!gelesen) throw new Error(grenzeErreichtText());
-      break;
-    }
-    const mein = db().prepare("UPDATE pruefung_einreichung_fotos SET gelesen_am = ? WHERE id = ? AND gelesen_am IS NULL").run((o.now ?? new Date()).toISOString(), f.id);
-    if (!mein.changes) continue; // ein zweiter Aufruf zur gleichen Zeit
-    try {
-      const v = await liesStoffzettel({ materialId: f.materialId, studentId: e.studentId, teacherId: o.teacherId, heute: o.heute });
-      db().prepare("UPDATE pruefung_einreichung_fotos SET vorschlag = ? WHERE id = ?").run(JSON.stringify(v), f.id);
-      gelesen++;
-    } catch (err) {
-      db().prepare("UPDATE pruefung_einreichung_fotos SET fehler = ? WHERE id = ?").run((err instanceof Error ? err.message : "Das Foto konnte nicht gelesen werden.").slice(0, 300), f.id);
-    }
+  const offen = e.fotos.filter((f) => !f.gelesen && f.materialId);
+  if (!offen.length) return 0;
+  // an der Grenze je Schüler: nichts vermerken, später (nächster Monat, höhere Grenze) geht es noch
+  if (schuelerGestoppt("stoffzettel", e.studentId)) throw new Error(grenzeErreichtText());
+  const markiere = db().prepare("UPDATE pruefung_einreichung_fotos SET gelesen_am = ? WHERE id = ? AND gelesen_am IS NULL");
+  const am = (o.now ?? new Date()).toISOString();
+  const meine = offen.filter((f) => markiere.run(am, f.id).changes > 0); // ein zweiter Aufruf zur gleichen Zeit nimmt keines doppelt
+  if (!meine.length) return 0;
+  try {
+    const v = await liesStoffzettel({ materialIds: meine.map((f) => f.materialId!), studentId: e.studentId, teacherId: o.teacherId, heute: o.heute, fach: e.fach || undefined });
+    db().prepare("UPDATE pruefung_einreichung_fotos SET vorschlag = ? WHERE id = ?").run(JSON.stringify(v), meine[0].id);
+    db().prepare("UPDATE pruefung_einreichungen SET lesung_id = ? WHERE id = ?").run(v.erkannt.lesung, e.id);
+    return meine.length;
+  } catch (err) {
+    const fehler = (err instanceof Error ? err.message : "Die Fotos konnten nicht gelesen werden.").slice(0, 300);
+    const setze = db().prepare("UPDATE pruefung_einreichung_fotos SET fehler = ? WHERE id = ?");
+    for (const f of meine) setze.run(fehler, f.id);
+    return 0;
   }
-  return gelesen;
 }
 
 /**

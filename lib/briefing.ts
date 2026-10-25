@@ -440,7 +440,9 @@ export function einfachesBriefing(d: BriefingDaten): BriefingInhalt {
   // sonst die Hausübung, die in der letzten Dokumentation steht (z. B. aus dem Import der Dokumentation)
   else if (letzte?.homework_note.trim()) bloecke.push({ gewicht: 0.5, titel: "Hausübung kontrollieren", beschreibung: clip(letzte.homework_note, 160), uebung: null });
   const t = d.schularbeit;
-  if (t && t.days <= 14) {
+  // the teacher's „Vorgabe für heute“ (lib/vorgabe.ts) replaces the rest: its skills, nothing the data would add
+  const vorgabe = d.fokus?.art === "vorgabe" ? d.fokus : null;
+  if (t && t.days <= 14 && !vorgabe) {
     const namen = t.skill_ids.map((id) => d.analysis.skills.find((s) => s.skill.id === id)?.skill.name ?? "").filter(Boolean);
     bloecke.push({ gewicht: 2.5, titel: "Schularbeit vorbereiten", beschreibung: schularbeitText(d)!, uebung: uebungFuer(d, namen, schon), skillId: t.skill_ids[0] ?? null });
   }
@@ -448,12 +450,16 @@ export function einfachesBriefing(d: BriefingDaten): BriefingInhalt {
   const f = d.fokus;
   const fokusIds = new Set(f?.skill_ids ?? []);
   const name = (id: string) => d.analysis.skills.find((s) => s.skill.id === id)?.skill.name ?? repo.getSkill(id)?.name ?? "";
-  if (f && !(f.art === "pruefung" && t && t.days <= 14)) {
+  if (vorgabe) {
+    const ids = vorgabe.skill_ids.filter((id) => name(id)).slice(0, 3);
+    if (!ids.length) bloecke.push({ gewicht: 2, titel: `Üben: ${vorgabe.thema || "Vorgabe für heute"}`, beschreibung: clip(vorgabe.beschreibung, 200), uebung: null });
+    for (const id of ids) bloecke.push({ gewicht: 2, titel: `Üben: ${name(id)}`, beschreibung: clip(vorgabe.beschreibung, 200), uebung: uebungFuer(d, [name(id)], schon), skillId: id });
+  } else if (f && !(f.art === "pruefung" && t && t.days <= 14)) {
     const namen = f.skill_ids.map(name).filter(Boolean);
     bloecke.push({ gewicht: 2, titel: `Üben: ${f.thema || namen[0] || "Schwerpunkt"}`, beschreibung: clip(f.beschreibung, 200), uebung: namen.length ? uebungFuer(d, namen, schon) : null, skillId: f.skill_ids[0] ?? null });
   }
   const weitere = d.schritte.filter((x) => !(t && t.days <= 14 && x.rule === 1) && !fokusIds.has(x.skill.id));
-  for (const s of weitere.slice(0, f && !(f.art === "pruefung" && t && t.days <= 14) ? 1 : 2)) {
+  for (const s of vorgabe ? [] : weitere.slice(0, f && !(f.art === "pruefung" && t && t.days <= 14) ? 1 : 2)) {
     bloecke.push({ gewicht: 2, titel: `Üben: ${s.skill.name}`, beschreibung: `${RULE_LABEL[s.rule]}: ${s.reason}`, uebung: uebungFuer(d, [s.skill.name], schon), skillId: s.skill.id });
   }
   if (bloecke.length === 1) bloecke.push({ gewicht: 2, titel: "Üben", beschreibung: "Weiter am aktuellen Stoff.", uebung: d.kandidaten[0]?.id ?? null });

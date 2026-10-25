@@ -33,6 +33,25 @@ Generatoren. Sind alle Schritte durch, kommt „Alles durch“ mit „Einheit be
 
 Die Einheit einer anderen Lehrkraft ist nur zum Lesen da (Übungen und Fortschritt, kein Beenden).
 
+### Was steht heute an?
+
+niko, 25.10.2026: Manchmal sagt der Schüler am Anfang, was heute dran ist, oder zeigt einen Zettel. Gleich unter
+dem Kopf steht darum eine zugeklappte Zeile **Was steht heute an?** (optional, `components/cockpit/Vorgabe.tsx`).
+Ohne Eingabe bleibt alles wie bisher, der Start ist nicht langsamer (eine Abfrage mehr).
+
+- Aufgeklappt: Textfeld („Heute Present Continuous und Fragen, nächste Woche Test“), Fotos oder PDF (bis 8),
+  oder eine eingetragene Prüfung. Namen im Text werden maskiert; Dateien liest die KI nur mit dem Haken „Auf den
+  Blättern steht kein Name“, sonst werden sie nur angehängt. Ohne KI liest die App den Text selbst (`regelLesung`), die Dateien hängen trotzdem an.
+- Gespeichert als **Vorgabe für heute** (`einheit_vorgabe`, `lib/vorgabe.ts`). In der Vorbereitung steht sie
+  über der Prüfung. Ist im Ablauf noch nichts getan, wird der Plan gleich danach neu gemacht („Plan für heute
+  nach deiner Vorgabe“); sonst bleibt er und die Karte bietet **Plan anpassen** an (Notizen bleiben).
+- Die Karte zeigt die Punkte mit ihrer Fähigkeit, unklare als Chips zum kurzen Bestätigen (nichts
+  vorausgewählt), was schwierig war, und eine **Abweichung** zur nächsten Prüfung, z. B. „Laut Stoffzettel
+  auch Past Simple und Writing – heute nicht geplant“.
+- Ein Termin im Text („nächste Woche Test“) wird nie von selbst eingetragen: die Karte fragt, das Datum
+  wählt die Lehrkraft.
+- „Ändern“ und „Entfernen“ gibt es immer. Wählt die Lehrkraft selbst ein Paket oder eine Fähigkeit, gilt das.
+
 ### Wohin es gewandert ist
 
 | Früher | Jetzt |

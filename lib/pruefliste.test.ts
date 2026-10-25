@@ -69,7 +69,7 @@ test("the student's entry is checked: known kinds and subjects, a real date or n
   assert.match(pl.pruefeFoto({ name: "gross.jpg", data: Buffer.concat([jpeg().data, Buffer.alloc(6 * 1024 * 1024)]) }) ?? "", /zu groß/);
   assert.equal(pl.pruefeFoto(pdf()), null);
   assert.throws(() => pl.reicheEin(sid, eingabe({ stoff: "Brüche" }), [{ name: "x.svg", data: Buffer.from("<svg/>") }], o2), /nur Fotos/);
-  assert.throws(() => pl.reicheEin(sid, eingabe({ stoff: "Brüche" }), [jpeg(), jpeg(), jpeg(), jpeg(), jpeg()], o2), /Höchstens 4 Fotos/);
+  assert.throws(() => pl.reicheEin(sid, eingabe({ stoff: "Brüche" }), Array.from({ length: 9 }, jpeg), o2), /Höchstens 8 Fotos/);
 });
 
 const mitNamenOk = { heute: HEUTE, keineNamen: true };
@@ -227,18 +227,38 @@ test("reading: without KI nothing is marked, a refusal is not tried again, the t
   await assert.rejects(pl.liesFotos(r.id, { teacherId: thomas.id, heute: HEUTE }), /nur die KI/);
   assert.equal(pl.getEinreichung(r.id)!.fotos.some((f) => f.gelesen), false);
 
-  const ki = await mitKi((i) => (i === 1 ? GELESEN : null));
+  const ki = await mitKi(null);
   try {
-    assert.equal(await pl.liesFotos(r.id, { teacherId: thomas.id, heute: HEUTE }), 1);
-    assert.equal(ki.gefragt.length, 2, "one request per photo");
+    assert.equal(await pl.liesFotos(r.id, { teacherId: thomas.id, heute: HEUTE }), 0);
+    assert.equal(ki.gefragt.length, 1, "both photos in one request");
+    assert.equal((ki.gefragt[0].content as { type: string }[]).filter((t) => t.type === "image").length, 2);
     const e = pl.getEinreichung(r.id)!;
     assert.deepEqual(e.fotos.map((f) => f.gelesen), [true, true]);
     assert.match(e.fotos[1].fehler, /nicht gelesen/);
     assert.equal(await pl.liesFotos(r.id, { teacherId: thomas.id, heute: HEUTE }), 0);
-    assert.equal(ki.gefragt.length, 2, "a refused photo is not read again");
-    assert.equal(pl.entscheide(r.id, HEUTE), "eingereicht", "one photo unread: the teacher decides");
+    assert.equal(ki.gefragt.length, 1, "refused photos are not read again");
+    assert.equal(pl.entscheide(r.id, HEUTE), "eingereicht", "nothing read: the teacher decides");
   } finally {
     ki.aus();
+  }
+
+  // read together: one request, the suggestion on the first photo, the reading on the entry
+  const zwei = pl.reicheEin(sid, eingabe({ stoff: "" }), [jpeg(), jpeg()], mitNamenOk);
+  const ki2 = await mitKi();
+  try {
+    assert.equal(await pl.liesFotos(zwei.id, { teacherId: thomas.id, heute: HEUTE }), 2);
+    assert.equal(ki2.gefragt.length, 1, "one request for both photos");
+    const e = pl.getEinreichung(zwei.id)!;
+    assert.deepEqual(e.fotos.map((f) => f.gelesen), [true, true]);
+    assert.equal(e.fotos[0].vorschlag?.datum, "2026-11-12");
+    assert.equal(pl.zusammenfuehren(e.fotos.map((f) => f.vorschlag))?.datum, "2026-11-12", "the merged suggestion has no hint per photo");
+    assert.equal(pl.entscheide(zwei.id, HEUTE), "automatisch");
+    const { db } = await import("./db");
+    const testId = pl.getEinreichung(zwei.id)!.testId!;
+    assert.ok((db().prepare("SELECT lesung_id FROM pruefung_einreichungen WHERE id = ?").pluck().get(zwei.id) as number) > 0);
+    assert.ok((db().prepare("SELECT COUNT(*) FROM pruefungsstoff WHERE test_id = ?").pluck().get(testId) as number) > 0, "the Prüfungsstoff comes with the Prüfung");
+  } finally {
+    ki2.aus();
   }
 });
 
@@ -248,10 +268,12 @@ test("at the limit per student nothing is read and nothing is marked", async () 
   process.env.AI_STUDENT_LIMIT_EUR = "0.000001";
   const ki = await mitKi();
   try {
-    assert.equal(await pl.verarbeite(r.id, { heute: HEUTE }), "eingereicht");
-    assert.equal(ki.gefragt.length, 1, "the first photo uses up the limit");
-    assert.deepEqual(pl.getEinreichung(r.id)!.fotos.map((f) => f.gelesen), [true, false], "the second stays unread for later");
-    await assert.rejects(pl.liesFotos(r.id, { teacherId: null, heute: HEUTE }), /KI-Grenze für diesen Schüler/);
+    await pl.verarbeite(r.id, { heute: HEUTE });
+    assert.equal(ki.gefragt.length, 1, "both photos in one request; it uses up the limit");
+    const s2 = pl.reicheEin(sid, eingabe({ stoff: "Prozent" }), [jpeg(), jpeg()], mitNamenOk);
+    assert.equal(await pl.verarbeite(s2.id, { heute: HEUTE }), "eingereicht");
+    assert.deepEqual(pl.getEinreichung(s2.id)!.fotos.map((f) => f.gelesen), [false, false], "unread for later");
+    await assert.rejects(pl.liesFotos(s2.id, { teacherId: null, heute: HEUTE }), /KI-Grenze für diesen Schüler/);
     assert.equal(ki.gefragt.length, 1);
   } finally {
     ki.aus();

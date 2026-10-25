@@ -135,6 +135,8 @@ export type TestResult = {
   material_id?: number | null;
   /** 'schueler' when the student entered it in his app (lib/pruefliste.ts) */
   quelle?: string;
+  /** the reading of all its documents together (lib/pruefungsstoff.ts), when there is one */
+  lesung_id?: number | null;
 };
 
 export type Worksheet = {

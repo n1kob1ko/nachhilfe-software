@@ -45,6 +45,14 @@ Inaktivität automatisch. Ihre **Dauer** ist die echte Zeit von Start bis Ende.
 Abgerechnet werden nur Einheiten, nie das selbstständige Üben.
 _Avoid_: Stunde, Lektion, Sitzung, Termin
 
+**Vorgabe für heute**:
+Was die Lehrkraft im Unterricht unter „Was steht heute an?“ angibt: Text (Namen werden maskiert), Fotos oder PDF,
+oder eine eingetragene Prüfung. Gespeichert je **Einheit** (`einheit_vorgabe`, `lib/vorgabe.ts`), freiwillig und
+zugeklappt. Sie steht in der Vorbereitung über der Prüfung (`SIGNAL_RANG`) und ersetzt den Plan nur, solange im
+Ablauf noch nichts getan ist; sonst bietet sie „Plan anpassen“ an. Ein Termin daraus wird nie von selbst
+eingetragen ([docs/heute-unterricht-abschluss.md](docs/heute-unterricht-abschluss.md)).
+_Avoid_: Tagesziel, Wunsch (das ist der des Schülers), Override
+
 **Einschätzung**:
 Wie der Schüler sich in einer **Einheit** getan hat, beim Beenden aus den Daten
 geschrieben (`lib/einschaetzung.ts`, ohne KI): Gesamteindruck 1–5, Sätze mit
@@ -463,7 +471,16 @@ Das Foto oder PDF, auf dem steht, was zu einer **Schularbeit** kommt: Fach, Term
 **Material** des Schülers und hängt an der Schularbeit (`tests.material_id`). Die KI kann es auf Klick
 lesen und das Formular vorfüllen; gespeichert wird erst, wenn der Lehrer einträgt
 ([docs/stoffzettel.md](docs/stoffzettel.md)). Nicht verwechseln mit **Foto vom Stoff** (daraus wird eine Übung).
+Bis zu 8 Blätter (z. B. Stoffzettel und Inhaltsverzeichnis) werden zusammen gelesen.
 _Avoid_: Stoffangabe, Prüfungsstoff-Upload, Anhang
+
+**Prüfungsstoff**:
+Was aus den Unterlagen einer Prüfung erkannt wurde, je Punkt eine Zeile (`pruefungsstoff`): Gruppe, Wortlaut,
+Lerninhalt, Unit, Quelle, Status (Prüfungsstoff, ausgeschlossen, noch zu klären) und, wenn klar, eine
+**Fähigkeit**. Der **Stoffzettel** legt den Umfang fest, ein Inhaltsverzeichnis ergänzt nur Einzelheiten zu den
+genannten Units. Unit-Überschriften sind nie Fähigkeiten; ein Punkt ohne passende Fähigkeit bleibt trotzdem
+Prüfungsstoff. Zu sehen unter „Erkannt“ in der Vorbereitung ([docs/stoffzettel.md](docs/stoffzettel.md)).
+_Avoid_: Stoffliste, Lesung (das ist der gespeicherte Lesevorgang, `stoff_lesungen`), Themenliste
 
 **Prüfliste**:
 Was ein **Schüler** in seiner App unter „Prüfung eintragen“ eingetragen hat (Art, Fach, Datum, Stoff, Notiz,
@@ -477,7 +494,8 @@ _Avoid_: Einreichungen, Posteingang, Prüfungsvorschläge
 Die Punkte des Stoffs einer **Schularbeit** mit **Fähigkeiten** verknüpfen; erst dann gibt es Plan und
 **Probeschularbeit**. Ohne KI vorgeschlagen (`stoffVorschlag` in `lib/lehrplan.ts`): angehakt ist nur, was
 eindeutig passt, auch über **Suchwörter** und die anderen Punkte derselben Schularbeit. Verknüpft wird erst,
-wenn der Lehrer „Eintragen“ oder „Zuordnen“ tippt. Was er anders wählt, merkt sich die App für dieselben
+wenn der Lehrer „Eintragen“ oder „Zuordnen“ tippt. Beim gelesenen **Prüfungsstoff** wird verknüpft, was KI und
+Wörter gleich sehen; der Rest kommt unter „Erkannt“ zum kurzen Bestätigen. Was er anders wählt, merkt sich die App für dieselben
 Wörter (`stoff_zuordnungen`) ([docs/stoff-zuordnen.md](docs/stoff-zuordnen.md)).
 _Avoid_: Mapping, Verlinken, Auto-Zuordnung
 

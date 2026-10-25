@@ -1,7 +1,8 @@
 import { revalidatePath } from "next/cache";
 import { wienerDatum } from "@/lib/planung/zeit";
 import { foreignRequest } from "@/lib/picture-story-routes";
-import { MAX_FOTOS, MAX_PDF_BYTES, reicheEin, type FotoDatei } from "@/lib/pruefliste";
+import { MAX_FOTOS, reicheEin, type FotoDatei } from "@/lib/pruefliste";
+import { MAX_GESAMT_BYTES } from "@/lib/pruefungsstoff";
 import { getStudentByToken } from "@/lib/repo";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   const student = getStudentByToken((await params).token);
   if (!student) return fail("Diesen Link gibt es nicht mehr.", 404);
   if (foreignRequest(request)) return fail("Nicht erlaubt.", 403);
-  if (Number(request.headers.get("content-length") ?? 0) > MAX_FOTOS * MAX_PDF_BYTES + 1024 * 1024) return fail("Die Fotos sind zusammen zu groß.", 413);
+  if (Number(request.headers.get("content-length") ?? 0) > MAX_GESAMT_BYTES + 1024 * 1024) return fail(`Die Fotos sind zusammen zu groß (höchstens ${MAX_GESAMT_BYTES / 1024 / 1024} MB).`, 413);
   let form: FormData;
   try {
     form = await request.formData();

@@ -9,6 +9,7 @@ import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
 import { alleFachNamen } from "@/lib/faecher";
 import { fachAus } from "@/lib/school";
+import { bestaetigeZuordnung, getLesung, setzeStatus, stoffAusLesung } from "@/lib/pruefungsstoff";
 import { stoffzettelFuer } from "@/lib/stoffzettel";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -59,7 +60,10 @@ export async function addExamAction(formData: FormData) {
   const kind = str(formData, "kind") || "Schularbeit";
   const title = str(formData, "title").slice(0, 120);
   const materialId = stoffzettelFuer(Number(str(formData, "material_id")), { student_id: studentId, title, kind, subject, topics });
-  repo.addTest({
+  // the documents read together (lib/pruefungsstoff.ts): only a reading for this student
+  const lesung = getLesung(Number(str(formData, "lesung_id")) || null);
+  const lesungId = lesung && lesung.studentId === studentId ? lesung.id : null;
+  const testId = repo.addTest({
     student_id: studentId,
     date: str(formData, "date") || wienerDatum(),
     subject,
@@ -78,6 +82,28 @@ export async function addExamAction(formData: FormData) {
   revalidatePath(`/schueler/${studentId}`);
   revalidatePath("/");
   if (materialId) revalidatePath("/mehr/material", "layout");
+  if (lesungId) {
+    // the recognised Stoff goes with the Prüfung; „Erkannt“ shows it and asks only about the unclear points
+    stoffAusLesung(testId, lesungId);
+    redirect(`/schueler/${studentId}/pruefung/${testId}/stoff`);
+  }
+}
+
+/** „Erkannt“: die kurze Bestätigung je unklarer Zuordnung (`zuordnung_<id>`: Fähigkeit oder leer) und „Gehört dazu / nicht dazu“. */
+export async function bestaetigeStoffAction(testId: number, formData: FormData) {
+  const teacher = await requireTeacher();
+  const t = repo.getTest(testId);
+  if (!t) return;
+  for (const [key, value] of formData.entries()) {
+    const m = key.match(/^zuordnung_(\d+)$/);
+    if (m) bestaetigeZuordnung(testId, Number(m[1]), String(value) || null, teacher.id);
+  }
+  const status = str(formData, "status");
+  const zeile = Number(str(formData, "zeile"));
+  if (zeile && (status === "pruefung" || status === "ausgeschlossen")) setzeStatus(testId, zeile, status);
+  revalidatePath(`/schueler/${t.student_id}/pruefung/${testId}`);
+  revalidatePath(`/schueler/${t.student_id}`);
+  redirect(`/schueler/${t.student_id}/pruefung/${testId}/stoff?bestaetigt=1`);
 }
 
 export async function setExamResultAction(testId: number, formData: FormData) {
