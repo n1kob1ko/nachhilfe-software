@@ -1,13 +1,17 @@
 /**
  * **Heute** (niko, 25.10.2026: „Eine Ansicht. Eine aktuelle Aufgabe. Eine wichtigste Aktion.“): die heutigen Schüler
- * der Lehrkraft in der Reihenfolge des Tages, jeder mit einer kurzen Karte aus den Daten der App: Thema,
- * Schwierigkeiten, Prüfung und Empfehlung. Ohne KI und ohne Kosten; die Karte nimmt, was es schon gibt
- * (Tagesbriefing ohne KI `einfachesBriefing`, Empfehlung `nextSteps`, Vorschlag des Lernpakets `naechsteEinheiten`).
+ * der Lehrkraft in der Reihenfolge des Tages, jeder mit einer kurzen Karte aus der **automatischen Vorbereitung**
+ * (lib/vorbereitung-auto.ts): Thema und Warum aus dem stärksten Signal (Prüfung > Schulstoff > vom Schüler gemeldet >
+ * wiederholte Fehler > offene Ziele > Wiederholung), das geprüfte Lernpaket oder der Plan aus den Daten,
+ * Schwierigkeiten und Prüfung. Die Karte rechnet ohne KI; gibt es zum jetzigen Datenstand schon ein KI-Briefing,
+ * kommen die Schwierigkeiten aus ihm. Fehlt es, bereitet die App es im Hintergrund vor (lib/briefing-auto.ts), ohne
+ * dass Heute wartet. Der geführte Unterricht nimmt dieselbe Wahl (`autoFuerEinheit`, Fach aus `fachHeute`).
  *
  * Der Tagesplan selbst ist derselbe wie vorher auf der Startseite (D17): veröffentlichte Plätze des Wochenplans
  * und von Hand geplante Einheiten ohne Platz.
  */
-import { briefingDaten, datumKurz, einfachesBriefing, KEINE_SCHWACHSTELLE } from "./briefing";
+import { bereiteBriefingVor } from "./briefing-auto";
+import { briefingDaten, datumKurz, einfachesBriefing, gespeichertesBriefing, KEINE_SCHWACHSTELLE, type BriefingInhalt, type Fokus } from "./briefing";
 import { leseStand } from "./cockpit";
 import { inTagen } from "./exams";
 import { getLernpaket } from "./lernpakete";
@@ -16,7 +20,7 @@ import { tagAddieren, wienerDatum, wienerMinuten } from "./planung/zeit";
 import { RULE_LABEL, type NextStep } from "./recommend";
 import * as repo from "./repo";
 import { getUnit, type UnitStatus } from "./units";
-import { naechsteEinheiten, type Vorbereitet } from "./vorbereitung-auto";
+import { fachVon, fokusAus, naechsteEinheiten, schuelerBasis, wahlAm, wuenscheFuer, type Vorbereitet } from "./vorbereitung-auto";
 
 const parseLocal = (s: string) => new Date(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s) && !/Z|[+-]\d{2}:?\d{2}$/.test(s) ? s.replace(" ", "T") : s);
 const minutenVon = (s: string) => {
@@ -134,6 +138,14 @@ export type HeuteKarte = {
   pruefung: string | null;
   /** warum heute dieses Thema: das „Warum“ des Pakets, sonst der Grund der Empfehlung */
   empfehlung: string | null;
+  /** was bereitliegt: „Lernpaket „…“ · mit Präsentation“ oder „Plan aus den Daten: 5 Schritte, 2 Übungen bereit“ */
+  vorbereitet?: string | null;
+  /** das Fach der Vorbereitung ('' = keines festgelegt): in ihm startet die Einheit */
+  fach?: string;
+  /** die Schwierigkeiten kommen aus dem KI-Briefing zum jetzigen Datenstand */
+  mitKi?: boolean;
+  /** die nahe Prüfung hat das Thema gewählt: sie steht im Warum (hervorgehoben), nicht noch einmal darunter */
+  warumPruefung?: boolean;
 };
 
 /** Wie weit eine Prüfung auf der Karte nach vorne schaut. */
@@ -149,6 +161,10 @@ export function heuteKarte(e: {
   schritte: Pick<NextStep, "rule" | "skill" | "reason">[];
   woEsHakt: string[];
   pruefung: { titel: string; datum: string; days: number } | null;
+  /** ohne Paket: der Plan aus den Daten (für „Vorbereitet“) */
+  plan?: BriefingInhalt["plan"];
+  /** die Schwierigkeiten aus einem KI-Briefing zum jetzigen Datenstand */
+  kiWoEsHakt?: string[] | null;
 }): HeuteKarte {
   const w = e.wahl;
   const erste = e.schritte[0];
@@ -161,16 +177,48 @@ export function heuteKarte(e: {
     (!e.paketTitel && w?.art === "paket" ? w.warum : !e.paketTitel && w?.art === "kein_paket" ? w.signal.warum : null) ??
     (erste ? `${RULE_LABEL[erste.rule]}: ${erste.skill.name}${erste.reason ? ` – ${erste.reason}` : ""}` : null);
   const p = e.pruefung && e.pruefung.days >= 0 && e.pruefung.days <= PRUEFUNG_TAGE ? e.pruefung : null;
+  const pruefung = p ? `${p.titel} am ${datumKurz(p.datum)} (${inTagen(p.days)})` : null;
+  // the exam itself chose the topic: one line „Schularbeit … (in 5 Tagen) – Stoff“ instead of the same exam twice
+  const signal = !e.paketTitel && (w?.art === "paket" || w?.art === "kein_paket") ? w.signal : null;
+  const dieselbe = Boolean(pruefung && signal?.art === "pruefung" && signal.tage === p!.days);
+  const ki = (e.kiWoEsHakt ?? []).map((x) => kuerze(x, 140)).filter(Boolean);
   return {
     thema,
-    schwierigkeiten: e.woEsHakt.filter((x) => x.trim() && x !== KEINE_SCHWACHSTELLE).slice(0, 2),
-    pruefung: p ? `${p.titel} am ${datumKurz(p.datum)} (${inTagen(p.days)})` : null,
-    empfehlung,
+    schwierigkeiten: ki.length ? ki.slice(0, 2) : e.woEsHakt.filter((x) => x.trim() && x !== KEINE_SCHWACHSTELLE).slice(0, 2),
+    pruefung: dieselbe ? null : pruefung,
+    empfehlung: dieselbe ? `${pruefung}${signal!.stoff.length ? ` – ${signal!.stoff.slice(0, 2).join(", ")}` : ""}` : empfehlung,
+    warumPruefung: dieselbe,
+    vorbereitet: e.paketTitel ? null : vorbereitetText(w, e.plan ?? []),
+    fach: fachVon(w),
+    mitKi: ki.length > 0,
   };
 }
 
-/** Die Karten aller Schüler von heute, je Schüler einmal gerechnet. Liest nur; keine KI. */
-export function heuteKarten(teacherId: number, punkte: HeutePunkt[], now: Date = new Date()): Map<number, HeuteKarte> {
+const kuerze = (s: string, n: number) => {
+  const t = s.replace(/\s+/g, " ").trim();
+  return t.length > n ? `${t.slice(0, n - 1)}…` : t;
+};
+
+/**
+ * Was für die Einheit bereitliegt, in einer Zeile: das geprüfte Lernpaket (mit Präsentation, wenn eine verknüpft ist)
+ * oder der Plan aus den Daten mit den Übungen aus dem Bestand. Null, wenn nichts zu sagen ist.
+ */
+export function vorbereitetText(w: Vorbereitet | null, plan: BriefingInhalt["plan"]): string | null {
+  if (w?.art === "gewaehlt" || w?.art === "paket") {
+    const zusatz = [w.art === "paket" && w.unsicher ? "nur über ein Stichwort gefunden" : "", w.paket.praesentation_id ? "mit Präsentation" : ""].filter(Boolean);
+    return `Lernpaket „${w.paket.title}“${zusatz.length ? ` · ${zusatz.join(" · ")}` : ""}`;
+  }
+  if (!plan.length) return null;
+  const uebungen = plan.filter((p) => p.uebung).length;
+  return `Plan aus den Daten: ${plan.length} Schritte${uebungen ? `, ${uebungen} ${uebungen === 1 ? "Übung" : "Übungen"} bereit` : ""}`;
+}
+
+/**
+ * Die Karten aller Schüler von heute, je Schüler einmal gerechnet. Rechnet ohne KI. `kiVorbereiten` (nur Heute): für
+ * jeden, der noch nicht begonnen hat und zu dessen Datenstand es kein KI-Briefing gibt, eines im Hintergrund
+ * vorbereiten, wenn Schalter, KI, Budget und Grenze es erlauben (lib/briefing-auto.ts); hier wird nie gewartet.
+ */
+export function heuteKarten(teacherId: number, punkte: HeutePunkt[], now: Date = new Date(), o: { kiVorbereiten?: boolean } = {}): Map<number, HeuteKarte> {
   const out = new Map<number, HeuteKarte>();
   if (!punkte.length) return out;
   // the package for today: the teacher's choice, else the app's proposal (only for students not started yet)
@@ -178,21 +226,48 @@ export function heuteKarten(teacherId: number, punkte: HeutePunkt[], now: Date =
   for (const n of naechsteEinheiten(teacherId, now, { tage: 1 })) if (n.heute && !wahl.has(n.studentId)) wahl.set(n.studentId, n.wahl);
   for (const p of punkte) {
     if (out.has(p.studentId)) continue;
-    const d = briefingDaten(p.studentId, { now, platzId: p.platzId });
+    const w = wahl.get(p.studentId) ?? null;
+    const begonnen = p.einheitId !== null && p.einheitStatus !== "abgebrochen";
+    const fokus = begonnen ? null : fokusAus(w);
+    const d = briefingDaten(p.studentId, { now, platzId: p.platzId, fokus });
     if (!d) continue;
     const b = einfachesBriefing(d);
-    const stand = p.einheitId !== null && p.einheitStatus !== "abgebrochen" ? leseStand(p.einheitId) : null;
+    const stand = begonnen ? leseStand(p.einheitId!) : null;
+    const ki = begonnen ? null : gespeichertesBriefing(p.studentId, { stand: d.stand });
     const t = d.schularbeit;
-    out.set(
-      p.studentId,
-      heuteKarte({
-        wahl: wahl.get(p.studentId) ?? null,
-        paketTitel: stand?.paket_id ? (getLernpaket(stand.paket_id)?.title ?? null) : null,
-        schritte: d.schritte,
-        woEsHakt: b.woEsHakt,
-        pruefung: t ? { titel: t.title || `${t.kind} ${t.subject}`, datum: t.date, days: t.days } : null,
-      }),
-    );
+    const karte = heuteKarte({
+      wahl: w,
+      paketTitel: stand?.paket_id ? (getLernpaket(stand.paket_id)?.title ?? null) : null,
+      schritte: d.schritte,
+      woEsHakt: b.woEsHakt,
+      pruefung: t ? { titel: t.title || `${t.kind} ${t.subject}`, datum: t.date, days: t.days } : null,
+      plan: b.plan,
+      kiWoEsHakt: ki?.inhalt.woEsHakt ?? null,
+    });
+    out.set(p.studentId, begonnen ? { ...karte, fach: getUnit(p.einheitId!)?.subject ?? karte.fach } : karte);
+    if (o.kiVorbereiten && !ki && offen(p)) bereiteBriefingVor({ studentId: p.studentId, teacherId, platzId: p.platzId, fokus, stand: d.stand });
   }
   return out;
 }
+
+// ---------- one student today: the same choice as on Heute ----------
+
+/**
+ * Die Wahl für heute, wie Heute sie zeigt: aus der Liste der kommenden Einheiten dieser Lehrkraft, sonst (der Schüler
+ * hat heute keinen Platz bei ihr, oder seine Einheit läuft schon) nach denselben Regeln für heute.
+ */
+export function wahlHeute(studentId: number, teacherId: number | null, now: Date = new Date()): Vorbereitet | null {
+  if (teacherId !== null) {
+    const n = naechsteEinheiten(teacherId, now, { tage: 1, nur: studentId }).find((x) => x.heute);
+    if (n) return n.wahl;
+  }
+  const student = repo.getStudent(studentId);
+  if (!student) return null;
+  return wahlAm(schuelerBasis(student, now), { datum: wienerDatum(now), fach: "", wuensche: wuenscheFuer(studentId, null) });
+}
+
+/** Der Schwerpunkt für das Briefing von heute (lib/briefing.ts). */
+export const fokusHeute = (studentId: number, teacherId: number | null, now: Date = new Date()): Fokus | null => fokusAus(wahlHeute(studentId, teacherId, now));
+
+/** Das Fach der Vorbereitung von heute: in ihm startet die Einheit, wenn keine geplante Einheit ein Fach vorgibt. */
+export const fachHeute = (studentId: number, teacherId: number | null, now: Date = new Date()): string => fachVon(wahlHeute(studentId, teacherId, now));

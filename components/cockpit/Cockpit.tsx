@@ -17,6 +17,7 @@ import { RULE_LABEL, RULE_TONE } from "@/lib/recommend";
 import * as repo from "@/lib/repo";
 import { klassenLabel } from "@/lib/school";
 import type { UnitView } from "@/lib/units";
+import { autoFuerEinheit, fokusAus } from "@/lib/vorbereitung-auto";
 
 const first = (n: string) => n.split(" ")[0];
 const LP = "/mehr/lernpakete";
@@ -279,7 +280,7 @@ export function AnpassenBereich({ c, unitId, studentId, name, liste }: { c: Cock
  * dem üblichen Senden, und aus dem Tagesbriefing der Plan mit Minuten. Geht ohne ein einziges Paket.
  */
 export function OhnePaketAnsicht({ unit, student, skillId }: { unit: UnitView; student: repo.Student; skillId: string | null }) {
-  const d = ohnePaket(student.id, { skillId, fach: unit.subject });
+  const d = ohnePaket(student.id, { skillId, fach: unit.subject, fokus: fokusAus(autoFuerEinheit(unit)) });
   if (!d) return null;
   const name = first(student.name);
   const s = d.skill;

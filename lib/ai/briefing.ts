@@ -5,6 +5,9 @@
  * „Klassenlehrerin“ …), werden vorher durch [Name] ersetzt. Profil-Notizen gehen nicht mit; Ziele,
  * Schulstufe, Fächer und die nächste Schularbeit schon, die KI-Hinweise hängt der Router an.
  *
+ * Der Schwerpunkt der automatischen Vorbereitung geht nur als Fähigkeiten und Art des Signals mit, nie mit den Worten
+ * des Schülers oder den Themen aus dem Profil.
+ *
  * Was zurückkommt, prüft die App: Übungen nur mit einer ID aus der mitgeschickten Liste (alles andere
  * wird verworfen und gezählt), die Minuten werden auf die geplante Dauer gebracht. Die KI ändert nichts;
  * das Ergebnis ist ein Vorschlag, gespeichert in `briefings`.
@@ -15,9 +18,11 @@ import { datumKurz, KANDIDAT_LABEL, schularbeitText, verteileMinuten, type Brief
 import { db } from "../db";
 import { detectNames, namesAfterRelation } from "../name-detection";
 import { RULE_LABEL } from "../recommend";
+import * as repo from "../repo";
 import { klassenLabel } from "../school";
 import { maskText, namePattern } from "../text-correction-core";
 import { masteryStatus } from "../mastery";
+import { SIGNAL_LABEL, type SignalArt } from "../vorbereitung-auto";
 import { runAI, type AIMeta } from "./router";
 
 const BriefingSchema = z.object({
@@ -44,6 +49,7 @@ const SYSTEM = [
   "Schreib kurz und konkret in österreichischem Deutsch, in Stichpunkten ohne Anrede. Nenne keine Namen; „[Name]“ steht für einen ersetzten Namen und bleibt so.",
   "letzter_stand: was zuletzt gemacht wurde und wie es lief. wo_es_hakt: konkret, mit Fähigkeit und typischem Fehler.",
   "plan: 3–6 Schritte für heute (Einstieg, Üben, bei naher Schularbeit deren Vorbereitung, Abschluss). Die Minuten ergeben zusammen genau die geplante Dauer.",
+  "Nennt die Anfrage einen Schwerpunkt der App, steht er im Plan vorne.",
   "uebung_id und uebungen: nur IDs aus der Liste „Übungen im Bestand“. Passt keine, dann null bzw. eine leere Liste.",
   "Du änderst nichts an Lernstand oder Dokumentation; das Briefing ist ein Vorschlag für die Lehrkraft.",
 ].join("\n");
@@ -86,6 +92,9 @@ export function briefingAnfrage(d: BriefingDaten, namen: string[] = namenFuerBri
   zeilen.push(`Schüler/in: ${[klassenLabel(s.school_type, s.klasse), s.grade ? `Schulstufe ${s.grade}` : ""].filter(Boolean).join(", ") || "–"} · Fächer: ${s.subjects.join(", ") || "–"}`);
   if (s.goals.trim()) zeilen.push(`Ziele: ${m(s.goals)}`);
   zeilen.push(`Nächste Schularbeit: ${d.schularbeit ? m(schularbeitText(d)) : "keine eingetragen"}`);
+  // the focus of the automatic preparation: only skill names and the kind of signal (never the student's words)
+  const schwerpunkt = (d.fokus?.skill_ids ?? []).map((id) => repo.getSkill(id)?.name ?? "").filter(Boolean);
+  if (schwerpunkt.length) zeilen.push(`Schwerpunkt der App${d.fokus!.art in SIGNAL_LABEL ? ` (${SIGNAL_LABEL[d.fokus!.art as SignalArt]})` : ""}: ${schwerpunkt.slice(0, 3).join(", ")}`);
 
   const mitDaten = d.analysis.skills.filter((x) => x.mastery !== null).sort((a, b) => (a.mastery ?? 0) - (b.mastery ?? 0));
   zeilen.push("", "Lernstand je Fähigkeit (schwächste zuerst; Wert, Status, Trend):");

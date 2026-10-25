@@ -1,12 +1,20 @@
 /**
  * **Stunden automatisch vorbereiten** (niko, 2026-10-23: „der Lehrer öffnet Lernheft und die nächste Stunde ist
  * schon vorbereitet“). Für jede kommende Einheit sucht die App nach festen Regeln, ohne KI und ohne Kosten, das
- * passende **geprüfte** Lernpaket aus. Die Signale, das stärkste zuerst (`SIGNAL_RANG`):
- *   1. eine Prüfung in den nächsten 30 Tagen in diesem Fach: ihre Fähigkeiten (Stoff zugeordnet) oder ihr Stoff
- *   2. der Wunsch des Schülers: was er in der Schüler-App unter „Für nächstes Mal“ oder „Was war heute schwer?“
+ * passende **geprüfte** Lernpaket aus. Die Signale, das stärkste zuerst (`SIGNAL_RANG`, niko 25.10.2026: „Prüfungen >
+ * Schulstoff > vom Schüler gemeldete Probleme > wiederholte Fehler > offene Ziele > Wiederholung“):
+ *   1. Prüfung: eine Prüfung in den nächsten 30 Tagen in diesem Fach, ihre Fähigkeiten (Stoff zugeordnet) oder ihr
+ *      Stoff; die frühere vor der späteren
+ *   2. Schulstoff: der aktuelle Stoff (lib/recommend.ts „Aktueller Stoff“), dann die aktuellen Themen im Profil
+ *   3. Vom Schüler gemeldet: was er in der Schüler-App unter „Für nächstes Mal“ oder „Was war heute schwer?“
  *      geschrieben hat, soweit die Wörter eine Fähigkeit nennen (lib/schueler-notiz.ts, `wuenscheFuer`)
- *   3. der Lernstand: aktueller Stoff, Schwäche, Fehler zuletzt, Voraussetzung, Wiederholen (lib/recommend.ts)
- *   4. die letzte Einheit: ein begonnenes Paket, sonst ihr Thema
+ *   4. Wiederholte Fehler: derselbe Fehler mindestens zweimal in den letzten 14 Tagen (lib/recommend.ts)
+ *   5. Offene Ziele: ein begonnenes Paket mit nicht erreichten Schritten, „Nächstes Mal“ der letzten Dokumentation,
+ *      eine offene Hausübung (soweit ihre Wörter eine Fähigkeit nennen)
+ *   6. Lernstand: Schwäche oder Voraussetzung ohne wiederholten Fehler (niko nennt sie nicht; sie stehen unter den
+ *      offenen Zielen, weil die Lehrkraft dort selbst geplant hat)
+ *   7. Wiederholung: deutlich gefallen oder lange nicht geübt
+ *   8. die letzte Einheit: ihr Thema
  * Dazu müssen Fach, Schulart und Schulstufe passen. Entwürfe und ungeprüfte Pakete werden nie vorausgewählt,
  * nur als „Entwurf“ genannt. Findet sich keines, sagt die App „Kein Paket für …“ und bietet „Mit KI entwerfen“
  * mit ausgefüllten Angaben an; die KI läuft erst, wenn der Lehrer dort auf „Entwurf erstellen“ tippt.
@@ -15,6 +23,7 @@
  * selbst wählt (`einheit_vorbereitung`, das Cockpit der Einheit), gilt immer vor dem Vorschlag; „Entfernen“
  * merkt sich nur, dass er für diesen Tag kein Paket will (`vorbereitung_ohne_paket`).
  */
+import type { Fokus } from "./briefing";
 import { frueher, stoffPasst, zitat } from "./cockpit-vorschlag";
 import { db } from "./db";
 import { daysUntil } from "./exams";
@@ -23,21 +32,30 @@ import { einheitenFuerTag, istNichtStattgefunden, mitNamen } from "./planung/rep
 import { datumLabel, minutenLabel, tagAddieren, wienerDatum } from "./planung/zeit";
 import { nextSteps, RULE_LABEL, type NextStep } from "./recommend";
 import * as repo from "./repo";
-import { schuelerWorte } from "./schueler-notiz";
+import { faehigkeitenAus, schuelerWorte } from "./schueler-notiz";
 
 /** Wie weit eine Prüfung voraus zählt. */
 export const PRUEFUNG_TAGE = 30;
 /** Wie viele Tage die Liste „Nächste Einheiten“ vorausschaut. */
 export const VORAUS_TAGE = 7;
 
-export type SignalArt = "pruefung" | "lernstand" | "wunsch" | "letzte_einheit";
+export type SignalArt = "pruefung" | "schulstoff" | "wunsch" | "fehler" | "ziel" | "lernstand" | "wiederholung" | "letzte_einheit";
 
 /**
- * Die Stärke der Signale: das höhere gewinnt, bei gleicher Art das frühere in der Liste. Der Wunsch des Schülers
- * steht unter einer nahen Prüfung und über den Empfehlungen der App, wie „Warum heute“ in lib/cockpit-vorschlag.ts.
+ * Die Stärke der Signale: das höhere gewinnt, bei gleicher Art die frühere Prüfung (`tage`), sonst das frühere in der
+ * Liste. Der Wunsch des Schülers steht unter Prüfung und Schulstoff und über allem, was die App aus Antworten liest.
  */
-export const SIGNAL_RANG: Record<SignalArt, number> = { pruefung: 4, wunsch: 3, lernstand: 2, letzte_einheit: 1 };
-export const SIGNAL_LABEL: Record<SignalArt, string> = { pruefung: "Prüfung", lernstand: "Lernstand", wunsch: "Wunsch des Schülers", letzte_einheit: "Letzte Einheit" };
+export const SIGNAL_RANG: Record<SignalArt, number> = { pruefung: 8, schulstoff: 7, wunsch: 6, fehler: 5, ziel: 4, lernstand: 3, wiederholung: 2, letzte_einheit: 1 };
+export const SIGNAL_LABEL: Record<SignalArt, string> = {
+  pruefung: "Prüfung",
+  schulstoff: "Schulstoff",
+  wunsch: "Vom Schüler gemeldet",
+  fehler: "Wiederholte Fehler",
+  ziel: "Offenes Ziel",
+  lernstand: "Lernstand",
+  wiederholung: "Wiederholung",
+  letzte_einheit: "Letzte Einheit",
+};
 
 /** Ein Grund, ein Thema zu nehmen, aus dem, was die App schon weiß. */
 export type Signal = {
@@ -53,7 +71,29 @@ export type Signal = {
   thema: string;
   /** „Warum“ in einer Zeile */
   warum: string;
+  /** bei einer Prüfung: in wie vielen Tagen (die frühere zählt bei gleicher Art mehr) */
+  tage?: number;
 };
+
+/**
+ * Welche Art Signal eine Empfehlung der App ist (lib/recommend.ts). Prüfung (1) kommt aus den Prüfungen selbst,
+ * „Weiter“ (7) ist kein Grund für heute. Eine Schwäche mit wiederholtem Fehler zählt als wiederholter Fehler.
+ */
+export function artVonEmpfehlung(s: Pick<NextStep, "rule" | "repeatedError">): SignalArt | null {
+  switch (s.rule) {
+    case 2:
+      return "schulstoff";
+    case 4:
+      return "fehler";
+    case 3:
+    case 5:
+      return s.repeatedError ? "fehler" : "lernstand";
+    case 6:
+      return "wiederholung";
+    default:
+      return null;
+  }
+}
 
 /**
  * Der **Wunsch des Schülers** für die nächste Einheit: ein Satz aus der Schüler-App („Für nächstes Mal“ oder „Was
@@ -136,13 +176,16 @@ export function treffer(p: Pick<Lernpaket, "id" | "fach" | "skill_ids" | "title"
   return null;
 }
 
-/** Die Signale in der Reihenfolge ihrer Stärke; Signale in einem anderen Fach als dem der Einheit fallen weg. */
+/**
+ * Die Signale in der Reihenfolge ihrer Stärke (`SIGNAL_RANG`), bei gleicher Art die frühere Prüfung, sonst wie sie
+ * kamen. Signale in einem anderen Fach als dem der Einheit fallen weg.
+ */
 export function ordneSignale(e: Pick<AutoEingabe, "fach" | "student" | "signale">): Signal[] {
   const faecher = faecherVon(e);
   return e.signale
     .map((s, i) => ({ s, i }))
     .filter(({ s }) => !s.fach || !faecher.length || faecher.includes(s.fach))
-    .sort((a, b) => SIGNAL_RANG[b.s.art] - SIGNAL_RANG[a.s.art] || a.i - b.i)
+    .sort((a, b) => SIGNAL_RANG[b.s.art] - SIGNAL_RANG[a.s.art] || (a.s.tage ?? Infinity) - (b.s.tage ?? Infinity) || a.i - b.i)
     .map(({ s }) => s);
 }
 
@@ -213,13 +256,18 @@ function verwandtschaft(): AutoEingabe["verwandt"] {
 }
 
 /** Was je Schüler einmal gerechnet wird, auch wenn er mehrere Einheiten in der Woche hat. */
-export type SchuelerBasis = { student: repo.Student; schritte: NextStep[]; lessons: repo.Lesson[] };
+export type SchuelerBasis = { student: repo.Student; schritte: NextStep[]; lessons: repo.Lesson[]; hausuebungen?: Pick<repo.Homework, "subject" | "description">[] };
 
 export function schuelerBasis(student: repo.Student, now: Date): SchuelerBasis {
   return {
     student,
     schritte: nextSteps(student.id, { today: wienerDatum(now), now: now.getTime(), limit: 8 }),
     lessons: repo.listLessons(student.id),
+    hausuebungen: db()
+      .prepare(
+        "SELECT h.subject, h.description FROM homework h WHERE h.student_id = ? AND h.status = 'offen' AND NOT EXISTS (SELECT 1 FROM assignments a WHERE a.id = h.assignment_id AND a.completed_at IS NOT NULL) ORDER BY h.due_date IS NULL, h.due_date LIMIT 3",
+      )
+      .all(student.id) as Pick<repo.Homework, "subject" | "description">[],
   };
 }
 
@@ -233,16 +281,32 @@ export function signaleFuer(b: SchuelerBasis, o: { datum: string; fach: string; 
   const out: Signal[] = [];
 
   for (const t of repo.upcomingTests(o.datum, b.student.id)) {
-    if (!imFach(t.subject) || daysUntil(t.date, o.datum) > PRUEFUNG_TAGE) continue;
+    const tage = daysUntil(t.date, o.datum);
+    if (!imFach(t.subject) || tage > PRUEFUNG_TAGE) continue;
     const stoff = (t.topics?.length ? t.topics : t.topic ? [t.topic] : []).filter(Boolean);
     if (!stoff.length && !t.skill_ids.length) continue;
     const name = t.kind || "Prüfung";
-    out.push({ art: "pruefung", fach: t.subject, skill_ids: t.skill_ids, stoff, thema: stoff[0] || t.title || name, warum: `${name} am ${tagMonat(t.date)}${stoff.length ? ` – ${stoff.slice(0, 2).join(", ")}` : ""}` });
+    out.push({ art: "pruefung", fach: t.subject, skill_ids: t.skill_ids, stoff, thema: stoff[0] || t.title || name, warum: `${name} am ${tagMonat(t.date)}${stoff.length ? ` – ${stoff.slice(0, 2).join(", ")}` : ""}`, tage });
   }
 
+  // the app's recommendations: current material, repeated errors, weak skills and prerequisites, repetition
   for (const s of b.schritte) {
-    if (s.rule === 1 || s.rule === 7 || !imFach(s.skill.subject)) continue;
-    out.push({ art: "lernstand", fach: s.skill.subject, skill_ids: [s.skill.id], stoff: [], thema: s.skill.name, warum: `${RULE_LABEL[s.rule]}: ${s.skill.name}${s.facts[0] ? ` – ${s.facts[0]}` : ""}` });
+    const art = artVonEmpfehlung(s);
+    if (!art || !imFach(s.skill.subject)) continue;
+    const fakt = art === "fehler" && s.rule !== 4 ? s.repeatedError : s.facts[0];
+    out.push({ art, fach: s.skill.subject, skill_ids: [s.skill.id], stoff: [], thema: s.skill.name, warum: `${art === "fehler" ? "Fehler" : RULE_LABEL[s.rule]}: ${s.skill.name}${fakt ? ` – ${fakt}` : ""}` });
+  }
+
+  // the topics the school is doing now, as the teacher wrote them in the profile (only what names a skill or a word)
+  const themen = b.student.current_topics
+    .split(/[\n;,]+/)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+  if (themen.length) {
+    const skills = faehigkeitenAus(themen.join(", "), b.student).filter((k) => imFach(k.subject));
+    const faecher = new Set(skills.map((k) => k.subject));
+    out.push({ art: "schulstoff", fach: faecher.size === 1 ? skills[0].subject : "", skill_ids: skills.map((k) => k.id), stoff: themen, thema: skills[0]?.name ?? themen[0], warum: `Schulstoff laut Profil: ${zitat(themen.join(", "), 80)}` });
   }
 
   for (const w of o.wuensche ?? []) {
@@ -250,17 +314,30 @@ export function signaleFuer(b: SchuelerBasis, o: { datum: string; fach: string; 
     if (s && (!s.fach || imFach(s.fach))) out.push(s);
   }
 
-  // the last unit: a package begun there and not finished, otherwise its topic
+  // open goals: a package begun and not finished (steps not reached), the last „Nächstes Mal“, open homework
   const begonnen = [...frueher(b.student.id, o.ausser ?? null)]
     .filter(([, f]) => f.offen > 0 && f.erledigt > 0 && wienerDatum(new Date(f.datum)) < o.datum)
     .sort((x, y) => y[1].datum.localeCompare(x[1].datum))[0];
   const bp = begonnen ? getLernpaket(begonnen[0]) : null;
   if (begonnen && bp && imFach(bp.fach)) {
     const f = begonnen[1];
-    out.push({ art: "letzte_einheit", fach: bp.fach, skill_ids: [], stoff: [], paket_ids: [bp.id], thema: bp.thema || bp.title, warum: `Am ${tagMonat(wienerDatum(new Date(f.datum)))} begonnen: ${f.erledigt} von ${f.gesamt} Schritten` });
+    out.push({ art: "ziel", fach: bp.fach, skill_ids: [], stoff: [], paket_ids: [bp.id], thema: bp.thema || bp.title, warum: `Am ${tagMonat(wienerDatum(new Date(f.datum)))} begonnen: ${f.erledigt} von ${f.gesamt} Schritten, ${f.offen} nicht erreicht` });
   }
-  const letzte = b.lessons.find((l) => l.kind === "stunde" && l.status === "abgeschlossen" && l.starts_at.slice(0, 10) < o.datum && (!l.subject || imFach(l.subject)) && (l.topic.trim() || l.skill_ids.length));
-  if (letzte) {
+  const letzte = b.lessons.find((l) => l.kind === "stunde" && l.status === "abgeschlossen" && l.starts_at.slice(0, 10) < o.datum && (!l.subject || imFach(l.subject)) && (l.topic.trim() || l.skill_ids.length || l.next_steps.trim()));
+  const ziel = (text: string, warum: (skills: repo.Skill[]) => string) => {
+    const skills = text.trim() ? faehigkeitenAus(text, b.student).filter((k) => imFach(k.subject)) : [];
+    if (!skills.length) return;
+    const faecher = new Set(skills.map((k) => k.subject));
+    out.push({ art: "ziel", fach: faecher.size === 1 ? skills[0].subject : "", skill_ids: skills.map((k) => k.id), stoff: [], thema: skills[0].name, warum: warum(skills) });
+  };
+  if (letzte?.next_steps.trim()) ziel(letzte.next_steps, () => `Nächstes Mal (Einheit am ${tagMonat(letzte.starts_at)}): ${zitat(letzte.next_steps, 80)}`);
+  for (const h of b.hausuebungen ?? []) {
+    if (h.subject && !imFach(h.subject)) continue;
+    ziel(h.description, () => `Hausübung offen: ${zitat(h.description, 80)}`);
+  }
+
+  // the last unit's topic
+  if (letzte && (letzte.topic.trim() || letzte.skill_ids.length)) {
     const thema = letzte.topic.trim();
     out.push({ art: "letzte_einheit", fach: letzte.subject, skill_ids: letzte.skill_ids, stoff: thema ? [thema] : [], thema: thema || (repo.getSkill(letzte.skill_ids[0])?.name ?? ""), warum: `Letzte Einheit am ${tagMonat(letzte.starts_at)}${thema ? `: ${thema}` : ""}` });
   }
@@ -317,6 +394,30 @@ export function autoFuerEinheit(unit: { id: number; student_id: number; subject:
 
 /** Was für eine kommende Einheit gilt: die Wahl des Lehrers, „Entfernt“, oder der Vorschlag. */
 export type Vorbereitet = { art: "gewaehlt"; paket: Lernpaket } | { art: "entfernt" } | AutoWahl;
+
+/** Das Signal einer Wahl als Zeile für den Plan: der Wunsch des Schülers ohne seine Worte (sie bleiben beim Zitat). */
+const planZeile = (s: Signal) => (s.art === "wunsch" ? `${SIGNAL_LABEL.wunsch}: ${s.thema}` : s.warum);
+
+/**
+ * Der Schwerpunkt einer Wahl für Briefing und „Plan für heute“ (lib/briefing.ts): das Signal, das gewählt hat, beim
+ * Paket des Lehrers dessen Fähigkeiten. Null, wenn nichts gewählt ist („Entfernt“ oder kein Signal).
+ */
+export function fokusAus(w: Vorbereitet | null): Fokus | null {
+  if (!w) return null;
+  if (w.art === "gewaehlt") return { art: "gewaehlt", skill_ids: w.paket.skill_ids, thema: w.paket.thema || w.paket.title, beschreibung: `Lernpaket „${w.paket.title}“`, paket_id: w.paket.id };
+  if (w.art === "paket")
+    return { art: w.signal.art, skill_ids: w.signal.skill_ids.length ? w.signal.skill_ids : w.paket.skill_ids, thema: w.signal.thema || w.paket.thema || w.paket.title, beschreibung: planZeile(w.signal), paket_id: w.paket.id };
+  if (w.art === "kein_paket") return { art: w.signal.art, skill_ids: w.signal.skill_ids, thema: w.thema, beschreibung: planZeile(w.signal), paket_id: null };
+  return null;
+}
+
+/** Das Fach, in dem die Wahl liegt: das des Pakets, sonst das des Signals; leer, wenn sie keines festlegt. */
+export function fachVon(w: Vorbereitet | null): string {
+  if (!w) return "";
+  if (w.art === "gewaehlt" || w.art === "paket") return w.paket.fach;
+  if (w.art === "kein_paket") return w.signal.fach;
+  return "";
+}
 
 export type NaechsteEinheit = {
   key: string;
@@ -376,12 +477,21 @@ export function kommendeTermine(teacherId: number, now: Date = new Date(), tage 
     .sort((a, b) => a.datum.localeCompare(b.datum) || a.start_min - b.start_min || a.studentName.localeCompare(b.studentName, "de"));
 }
 
+/** Was für den Schüler an diesem Tag gilt: das Paket, das der Lehrer gewählt hat, „Entfernt“, sonst der Vorschlag. */
+export function wahlAm(b: SchuelerBasis, o: Parameters<typeof autoWahl>[1]): Vorbereitet {
+  const v = db().prepare("SELECT paket_id FROM einheit_vorbereitung WHERE student_id = ? AND datum = ?").get(b.student.id, o.datum) as { paket_id: number } | undefined;
+  const gewaehlt = v ? getLernpaket(v.paket_id) : null;
+  if (gewaehlt) return { art: "gewaehlt", paket: gewaehlt };
+  if (ohnePaketMarkiert(b.student.id, o.datum)) return { art: "entfernt" };
+  return autoWahl(b, o);
+}
+
 /**
  * Für jede kommende Einheit: die Wahl des Lehrers, sonst der Vorschlag. Nur lesen, keine KI. Was der Schüler für
  * nächstes Mal geschrieben hat, zählt nur für seine nächste Einheit (`wuensche`, sonst `wuenscheFuer`).
  */
-export function naechsteEinheiten(teacherId: number, now: Date = new Date(), o: { tage?: number; wuensche?: (studentId: number) => WunschDesSchuelers[] } = {}): NaechsteEinheit[] {
-  const termine = kommendeTermine(teacherId, now, o.tage);
+export function naechsteEinheiten(teacherId: number, now: Date = new Date(), o: { tage?: number; wuensche?: (studentId: number) => WunschDesSchuelers[]; nur?: number } = {}): NaechsteEinheit[] {
+  const termine = kommendeTermine(teacherId, now, o.tage).filter((t) => o.nur === undefined || t.studentId === o.nur);
   if (!termine.length) return [];
   const pakete = listLernpakete();
   const verwandt = verwandtschaft();
@@ -399,13 +509,7 @@ export function naechsteEinheiten(teacherId: number, now: Date = new Date(), o: 
     if (!b) continue;
     const naechste = !schonGeplant.has(t.studentId);
     schonGeplant.add(t.studentId);
-    const v = db().prepare("SELECT paket_id FROM einheit_vorbereitung WHERE student_id = ? AND datum = ?").get(t.studentId, t.datum) as { paket_id: number } | undefined;
-    const gewaehlt = v ? getLernpaket(v.paket_id) : null;
-    const wahl: Vorbereitet = gewaehlt
-      ? { art: "gewaehlt", paket: gewaehlt }
-      : ohnePaketMarkiert(t.studentId, t.datum)
-        ? { art: "entfernt" }
-        : autoWahl(b, { datum: t.datum, fach: t.fach, wuensche: naechste ? wunschVon(t.studentId) : undefined, pakete, verwandt });
+    const wahl = wahlAm(b, { datum: t.datum, fach: t.fach, wuensche: naechste ? wunschVon(t.studentId) : undefined, pakete, verwandt });
     const fehlt = wahl.art === "kein_paket" ? wahl.signal : wahl.art === "paket" ? wahl.luecke : null;
     out.push({
       key: t.key,

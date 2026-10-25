@@ -387,10 +387,14 @@ function plannedLessonFor(unit: Pick<UnitView, "student_id" | "started_at">): re
   return repo.listLessons(unit.student_id).find((l) => l.kind === "stunde" && l.status === "geplant" && !l.unit_id && l.starts_at.slice(0, 10) === day) ?? null;
 }
 
-/** Subject shown for a unit before any exercise was done: today's planned lesson, else the student's first subject. */
-export function expectedSubject(studentId: number, at = Date.now()): string {
+/**
+ * Subject shown for a unit before any exercise was done: today's planned lesson, else the subject of today's automatic
+ * preparation (`vorbereitet`, lib/heute.ts `fachHeute`: the subject of the exam or package Heute showed), else the
+ * student's first subject.
+ */
+export function expectedSubject(studentId: number, at = Date.now(), vorbereitet = ""): string {
   const planned = plannedLessonFor({ student_id: studentId, started_at: new Date(at).toISOString() });
-  return planned?.subject || repo.getStudent(studentId)?.subjects[0] || "";
+  return planned?.subject || vorbereitet || repo.getStudent(studentId)?.subjects[0] || "";
 }
 
 /**

@@ -198,7 +198,7 @@ function VorbereitungListe({ punkte, kosten }: { punkte: NaechsteEinheit[]; kost
                 </>
               )}
               {w.art === "entfernt" && <p className="text-[14px] text-ink-2">Ohne Lernpaket</p>}
-              {w.art === "ohne_signal" && <p className="text-[13px] text-ink-3">Noch kein Thema aus Prüfung, Wunsch, Lernstand oder letzter Einheit.</p>}
+              {w.art === "ohne_signal" && <p className="text-[13px] text-ink-3">Noch kein Thema aus Prüfung, Schulstoff, Wunsch, Fehlern, offenen Zielen oder Wiederholung.</p>}
             </div>
             <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
               {w.art === "paket" && (

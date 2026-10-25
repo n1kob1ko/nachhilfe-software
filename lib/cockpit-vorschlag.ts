@@ -11,7 +11,7 @@
  * Paket, das schon ganz durch ist, rückt nach hinten. Geprüfte Pakete gehen vor; ungeprüfte stehen nur mit
  * dem Hinweis „Ungeprüft“ da. Der Lehrer kann jedes Paket nehmen oder keines.
  */
-import { briefingDaten, einfachesBriefing, kandidaten, type BriefingInhalt, type Kandidat } from "./briefing";
+import { briefingDaten, einfachesBriefing, kandidaten, type BriefingInhalt, type Fokus, type Kandidat } from "./briefing";
 import { ablauf, zusammenfassung } from "./cockpit";
 import { db } from "./db";
 import { daysUntil } from "./exams";
@@ -233,16 +233,20 @@ export function zurFaehigkeit(skillId: string | null): { erklaerung: string | nu
   return { erklaerung: EXPLAIN[skill.id] ?? (skill.parent_id ? EXPLAIN[skill.parent_id] : undefined) ?? null, typischeFehler: typischeFehler(skill.id) };
 }
 
-/** Was es zur Fähigkeit der Einheit schon gibt, wenn kein Lernpaket gewählt ist. Geht auch ohne ein einziges Paket. */
-export function ohnePaket(studentId: number, o: { skillId: string | null; fach?: string; now?: Date }): OhnePaket | null {
-  const d = briefingDaten(studentId, { now: o.now });
+/**
+ * Was es zur Fähigkeit der Einheit schon gibt, wenn kein Lernpaket gewählt ist. Geht auch ohne ein einziges Paket.
+ * `fokus`: der Schwerpunkt der automatischen Vorbereitung; seine Fähigkeit steht dann vorne.
+ */
+export function ohnePaket(studentId: number, o: { skillId: string | null; fach?: string; now?: Date; fokus?: Fokus | null }): OhnePaket | null {
+  const d = briefingDaten(studentId, { now: o.now, fokus: o.fokus });
   if (!d) return null;
   const fach = o.fach ?? "";
   const imFach = d.schritte.filter((s) => !fach || s.skill.subject === fach);
   const empfohlen = [...imFach, ...d.schritte.filter((s) => !imFach.includes(s))];
   const faecher = [...new Set([fach, ...d.student.subjects].filter(Boolean))];
   const waehlbar = (faecher.length ? faecher : [undefined]).flatMap((f) => skillsForStudent(d.student, f));
-  const skill = (o.skillId ? repo.getSkill(o.skillId) : null) ?? empfohlen[0]?.skill ?? null;
+  const vorne = o.fokus?.skill_ids.map((id) => repo.getSkill(id)).find((s) => s && (!fach || s.subject === fach)) ?? null;
+  const skill = (o.skillId ? repo.getSkill(o.skillId) : null) ?? vorne ?? empfohlen[0]?.skill ?? null;
   return {
     briefing: einfachesBriefing(d),
     minuten: d.minuten,

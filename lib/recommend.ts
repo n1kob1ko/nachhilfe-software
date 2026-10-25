@@ -52,6 +52,8 @@ export type NextStep = {
   recentErrors: number;
   /** Most frequent kind of error on this skill recently. */
   errorType?: string;
+  /** The error that came up at least twice on this skill lately, as a fact: "3× Vorzeichenfehler", "2× „Kehrwert vergessen“". */
+  repeatedError?: string;
   testId?: number;
   materialId?: number;
   /** An exercise with this skill is already sent and not finished. */
@@ -219,8 +221,8 @@ export function nextSteps(studentId: number, o: { today: string; now?: number; l
       const facts = d.rule === 3 && d.kind !== "ueberpruefung" ? [`${pct(m(id))} (${lead})`] : [lead, pct(m(id))];
       // wrong answers lately, with their kind (else their label) when it repeats:
       // "3 Fehler zuletzt, 2× Vorzeichenfehler", "4 Fehler zuletzt: „Kehrwert vergessen“"
+      const repeated = t && t[1] >= 2 ? { n: t[1], text: errorTypeLabel(t[0]) } : l && l[1] >= 2 ? { n: l[1], text: `„${l[0]}“` } : null;
       if (r && r.count) {
-        const repeated = t && t[1] >= 2 ? { n: t[1], text: errorTypeLabel(t[0]) } : l && l[1] >= 2 ? { n: l[1], text: `„${l[0]}“` } : null;
         // rule 4 already leads with the repeated error
         if (d.rule !== 4) facts.push(`${r.count} Fehler zuletzt${repeated ? (repeated.n === r.count ? `: ${repeated.text}` : `, ${repeated.n}× ${repeated.text}`) : ""}`);
         else if (!repeated || repeated.n < r.count) facts.push(`${r.count} Fehler zuletzt`);
@@ -238,6 +240,7 @@ export function nextSteps(studentId: number, o: { today: string; now?: number; l
         reason: facts.join(" · "),
         recentErrors: r?.count ?? 0,
         errorType: t?.[0],
+        ...(repeated ? { repeatedError: `${repeated.n}× ${repeated.text}` } : {}),
         openAssignmentId: openFor(id)?.id,
       };
     });

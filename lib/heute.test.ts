@@ -37,7 +37,11 @@ test("the card on Heute: package or recommendation as topic, two difficulties, a
   const luecke = heuteKarte({ wahl: { art: "kein_paket", signal, thema: "Brüche", entwuerfe: [] }, schritte: [], woEsHakt: [], pruefung: null });
   assert.equal(luecke.thema, "Brüche");
   assert.equal(luecke.empfehlung, "Schularbeit am 4.11. – Brüche");
-  assert.deepEqual(heuteKarte({ wahl: null, schritte: [], woEsHakt: [], pruefung: null }), { thema: null, schwierigkeiten: [], pruefung: null, empfehlung: null }, "nothing known: nothing shown");
+  assert.deepEqual(
+    heuteKarte({ wahl: null, schritte: [], woEsHakt: [], pruefung: null }),
+    { thema: null, schwierigkeiten: [], pruefung: null, empfehlung: null, warumPruefung: false, vorbereitet: null, fach: "", mitKi: false },
+    "nothing known: nothing shown",
+  );
 });
 
 test("the next student of today: the first open one whose time is not over", async () => {

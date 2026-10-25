@@ -12,6 +12,8 @@ import { KI_MODUS_LABEL, kiModus } from "@/lib/ai/modus";
 import { PROVIDER_LABEL, providerReady } from "@/lib/ai/providers";
 import { aiEnabled, breakerState } from "@/lib/ai/router";
 import { requireTeacher } from "@/lib/auth";
+import { autoBriefingAn, autoKosten, AUTO_SPERRE_TEXT, BRIEFINGS_IM_MONAT, TYPISCH_TOKENS_AUS, TYPISCH_TOKENS_EIN, type AutoSperre } from "@/lib/briefing-auto";
+import { setAutoBriefingAction } from "./actions";
 
 export const metadata = { title: "KI-Kosten" };
 export const dynamic = "force-dynamic";
@@ -73,6 +75,11 @@ export default async function AICostPage() {
   const students = costByStudent(month, f);
   const grenze = schuelerGrenze();
   const calls = recentCalls(25, f);
+  const autoAn = autoBriefingAn();
+  const autoK = autoKosten();
+  // what keeps it from running for everyone right now (the per-student limit is checked per student)
+  const autoGesperrt: AutoSperre | null = !aiEnabled("briefing") ? "ki_aus" : routeFor("briefing").provider === "manual" ? "manuell" : budgetState(Date.now(), poolOf(routeFor("briefing").provider)).level !== "ok" ? "budget" : null;
+  const cent = (x: number) => `${x.toLocaleString("de-AT", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Cent`;
 
   return (
     <>
@@ -131,6 +138,44 @@ export default async function AICostPage() {
           <KiAnbieterWahl modus={modus} optionen={optionen} vorrang={vorrang} />
         </section>
       )}
+
+      <section className="mb-10" aria-label="Briefings automatisch" data-testid="briefing-auto">
+        <SectionTitle>
+          <span>
+            Briefings automatisch mit KI vorbereiten
+            <Info label="Was passiert dabei?">
+              Öffnet eine Lehrkraft Heute, fragt die App für die heutigen Schüler, die noch nicht begonnen haben, im Hintergrund das KI-Briefing, wenn es zum jetzigen Datenstand noch keines gibt. Heute wartet nie
+              darauf; bis es da ist, gilt die Fassung aus den Daten. Ein Briefing gilt, bis sich die Daten des Schülers ändern (Dokumentation, Antworten, Prüfung, Hausübung, Wunsch). Nicht im manuellen Modus, nicht
+              über der Warnschwelle des Monatsbudgets und nicht ab {eur(grenze.warnEur)} KI-Kosten eines Schülers im Monat; dann nur noch auf Klick. Die KI ändert nichts an Lernstand oder Dokumentation.
+            </Info>
+          </span>
+        </SectionTitle>
+        <div className="panel flex flex-wrap items-center gap-x-5 gap-y-3 px-5 py-4">
+          <div className="min-w-[16rem] flex-1 text-[14px]">
+            <p>
+              <span className="font-semibold">{autoAn ? "An" : "Aus"}</span>
+              {autoAn && autoGesperrt && <span className="text-ink-2"> · gerade nicht: {AUTO_SPERRE_TEXT[autoGesperrt]}</span>}
+            </p>
+            <p className="mt-1 text-ink-2" data-testid="briefing-auto-kosten">
+              {autoK.quelle === "kostenlos" ? (
+                "Kostet nichts mit dem eingestellten Anbieter."
+              ) : (
+                <>
+                  {autoK.quelle === "gemessen" ? "Ø " : "ca. "}
+                  <span className="num">{cent(autoK.cent)}</span> je Briefing
+                  {autoK.quelle === "gemessen" ? ` (gemessen, ${autoK.aufrufe} Aufrufe in 60 Tagen)` : ` (geschätzt: ${autoK.modell}, rund ${n(TYPISCH_TOKENS_EIN)} Tokens ein, ${n(TYPISCH_TOKENS_AUS)} aus)`}; bei 20 Schülern an jedem
+                  Schultag (<span className="num">{n(BRIEFINGS_IM_MONAT)}</span> Briefings) etwa <span className="num">{eur(autoK.monatEuro)}</span> im Monat.
+                </>
+              )}
+            </p>
+          </div>
+          {teacher.is_admin && (
+            <form action={setAutoBriefingAction.bind(null, !autoAn)}>
+              <button className={`btn ${autoAn ? "btn-secondary" : "btn-primary"}`}>{autoAn ? "Ausschalten" : "Einschalten"}</button>
+            </form>
+          )}
+        </div>
+      </section>
 
       {!teacher.is_admin && manuellEingestellt && (
         <section className="mb-10">

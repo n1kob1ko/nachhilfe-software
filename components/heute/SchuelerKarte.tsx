@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Play } from "lucide-react";
+import { ArrowRight, CheckCircle2, Play, Sparkles } from "lucide-react";
 import { startUnitAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
 import type { HeuteKarte, HeutePunkt } from "@/lib/heute";
@@ -7,18 +7,34 @@ import type * as repo from "@/lib/repo";
 import { klassenLabel } from "@/lib/school";
 
 /**
- * Ein Schüler von heute auf einer kurzen Karte (lib/heute.ts): Zeit, Name, Klasse, Fach, dann Thema,
- * Schwierigkeiten, Prüfung und Empfehlung aus den Daten, ohne KI. Eine Aktion: „Einheit starten“ (oder „Zum
- * Unterricht“, wenn sie läuft). `haupt`: der nächste Schüler, sein Knopf ist der Hauptknopf der Seite.
+ * Ein Schüler von heute auf einer kurzen Karte (lib/heute.ts): Zeit, Name, Klasse, Fach, dann aus der automatischen
+ * Vorbereitung Thema, Warum, was bereitliegt (geprüftes Lernpaket oder Plan aus den Daten), Schwierigkeiten und
+ * Prüfung. Eine Aktion: „Einheit starten“. `haupt`: der nächste Schüler, sein Knopf ist der Hauptknopf der Seite.
+ * `oben`: seine Einheit läuft und steht oben mit dem großen Knopf; hier bleibt nur eine Zeile mit einem ruhigen Link.
  */
-export function SchuelerKarte({ p, student, karte, fach, haupt, wann }: { p: HeutePunkt; student: repo.Student | undefined; karte: HeuteKarte | undefined; fach: string; haupt: boolean; wann?: string | null }) {
+export function SchuelerKarte({ p, student, karte, fach, haupt, wann, oben = false }: { p: HeutePunkt; student: repo.Student | undefined; karte: HeuteKarte | undefined; fach: string; haupt: boolean; wann?: string | null; oben?: boolean }) {
   const klasse = student ? klassenLabel(student.school_type, student.klasse, { short: true }) : "";
   const laeuft = p.einheitStatus === "gestartet";
+  if (laeuft && oben) return <KurzeKarte p={p} meta={[klasse, fach, p.ort].filter(Boolean).join(" · ")} />;
   const zeilen: [string, React.ReactNode][] = [];
   if (karte?.thema) zeilen.push(["Thema", karte.thema]);
-  if (karte?.schwierigkeiten.length) zeilen.push(["Schwierigkeiten", karte.schwierigkeiten.join(" · ")]);
+  if (karte?.empfehlung) zeilen.push(["Warum", karte.warumPruefung ? <span key="w" className="font-semibold text-amber">{karte.empfehlung}</span> : karte.empfehlung]);
+  if (karte?.vorbereitet) zeilen.push(["Vorbereitet", karte.vorbereitet]);
+  if (karte?.schwierigkeiten.length)
+    zeilen.push([
+      "Schwierigkeiten",
+      karte.mitKi ? (
+        <span key="s">
+          {karte.schwierigkeiten.join(" · ")}{" "}
+          <span className="inline-flex items-center gap-1 text-[12.5px] whitespace-nowrap text-ink-3">
+            <Sparkles size={12} aria-hidden /> aus dem KI-Briefing
+          </span>
+        </span>
+      ) : (
+        karte.schwierigkeiten.join(" · ")
+      ),
+    ]);
   if (karte?.pruefung) zeilen.push(["Prüfung", <span key="p" className="font-semibold text-amber">{karte.pruefung}</span>]);
-  if (karte?.empfehlung) zeilen.push(["Empfehlung", karte.empfehlung]);
   const briefing = `/schueler/${p.studentId}/briefing${p.platzId ? `?platz=${p.platzId}` : ""}`;
   return (
     <li className={`panel grid gap-3 px-4 py-4 sm:px-5 ${p.nichtStattgefunden || p.erledigt ? "opacity-80" : ""}`} data-testid="heute-karte">
@@ -88,6 +104,31 @@ export function SchuelerKarte({ p, student, karte, fach, haupt, wann }: { p: Heu
             Briefing
           </Link>
         )}
+      </p>
+    </li>
+  );
+}
+
+/** Die Karte eines Schülers, dessen Einheit oben läuft: eine Zeile, „läuft“ und ein ruhiger Link, kein zweiter großer Knopf. */
+function KurzeKarte({ p, meta }: { p: HeutePunkt; meta: string }) {
+  return (
+    <li className="panel flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 sm:px-5" data-testid="heute-karte-laeuft">
+      <span className="num w-[106px] shrink-0 text-[16px] font-semibold">{p.zeit}</span>
+      <Avatar name={p.studentName} size={32} />
+      <div className="min-w-[9rem] flex-1">
+        <p className="truncate text-[16px] leading-tight font-semibold">{p.studentName}</p>
+        {meta && <p className="truncate text-[13px] text-ink-2">{meta}</p>}
+      </div>
+      <p className="flex items-center gap-2 text-[14px]">
+        <span className="inline-flex items-center gap-1.5 font-medium text-accent">
+          <span className="h-2 w-2 rounded-full bg-accent" aria-hidden /> läuft
+        </span>
+        <span className="text-ink-3" aria-hidden>
+          ·
+        </span>
+        <Link href={`/einheiten/${p.einheitId}`} className="inline-flex min-h-[44px] items-center font-medium text-ink-2 hover:text-ink hover:underline">
+          Zum Unterricht
+        </Link>
       </p>
     </li>
   );

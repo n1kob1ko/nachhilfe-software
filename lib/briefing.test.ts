@@ -242,7 +242,7 @@ test("gespeichert pro Schüler und Tag: Doppelklick fragt einmal, Wiederöffnen 
     const wieder = await erstelleBriefing(s.sid, s.niko.id);
     assert.ok(wieder.ok && !wieder.neu, "das gespeicherte kommt zurück");
     assert.equal(ki.gefragt.length, 1, "Wiederöffnen fragt nicht");
-    const g = gespeichertesBriefing(s.sid, s.heute)!;
+    const g = gespeichertesBriefing(s.sid)!;
     assert.ok(g.kosten, "Kosten aus dem Protokoll");
     assert.equal(g.kosten.tokensEin, 3_000);
     assert.equal(g.kosten.tokensAus, 900);
@@ -288,7 +288,7 @@ test("ohne KI: eine Meldung, nichts gespeichert, die einfache Version bleibt", a
   const res = await erstelleBriefing(s.sid, s.niko.id);
   assert.ok(!res.ok);
   assert.match(res.error, /KI ist ausgeschaltet|kein Schlüssel/);
-  assert.equal(gespeichertesBriefing(s.sid, s.heute), null);
+  assert.equal(gespeichertesBriefing(s.sid), null);
   assert.ok(einfachesBriefing(briefingDaten(s.sid)!).plan.length > 0);
 });
 

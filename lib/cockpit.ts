@@ -25,7 +25,7 @@ import { schulstufe } from "./school";
 import { analyzeStudent, buildWorksheet } from "./service";
 import type { TaskDraft } from "./tasks";
 import { getUnit, platzFuerEinheit } from "./units";
-import { autoFuerEinheit, vorschlagErlauben, type Passung, type Signal } from "./vorbereitung-auto";
+import { autoFuerEinheit, fokusAus, vorschlagErlauben, type Passung, type Signal } from "./vorbereitung-auto";
 
 /** Höchstlänge einer Notiz je Schritt. */
 export const NOTIZ_MAX = 2000;
@@ -367,12 +367,12 @@ const minutenAb = (schritte: { id: number; minuten: number }[]) => {
 
 /**
  * Der „Plan für heute“ für eine laufende Einheit ohne Lernpaket: aus dem Briefing ohne KI (lib/briefing.ts), mit
- * der geplanten Dauer des Platzes. Liest nur.
+ * der geplanten Dauer des Platzes und dem Schwerpunkt der automatischen Vorbereitung (derselbe wie auf Heute). Liest nur.
  */
 export function planDerEinheit(unitId: number): PlanStep[] {
   const unit = getUnit(unitId);
   if (!unit || unit.status !== "gestartet") return [];
-  const d = briefingDaten(unit.student_id, { platzId: platzFuerEinheit(unit)?.id ?? null });
+  const d = briefingDaten(unit.student_id, { platzId: platzFuerEinheit(unit)?.id ?? null, fokus: fokusAus(autoFuerEinheit(unit)) });
   return d ? planSchritte(einfachesBriefing(d).plan) : [];
 }
 
