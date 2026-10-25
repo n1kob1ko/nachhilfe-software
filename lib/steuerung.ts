@@ -308,7 +308,8 @@ function zusatzHinweis(unitId: number, assignmentId: number | null): string | nu
 
 // ---------- senden ----------
 
-const TITEL: Partial<Record<Art, string>> = { leichter: "Leichter", voraussetzung: "Grundlage", fehler: "Fehler üben", schwerer: "Schwerer" };
+// Der Schüler sieht den Titel: kein „Leichter“ oder „Schwerer“ darin, nur was geübt wird.
+const TITEL: Partial<Record<Art, string>> = { voraussetzung: "Grundlage" };
 
 /**
  * Eine Aufgabe zum Vorschlag an den Schüler dieser Einheit: aus A, sonst aus B. Danach zählt für den nächsten Vorschlag
