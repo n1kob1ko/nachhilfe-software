@@ -105,7 +105,7 @@ async function aufsGeraet(unitId: number, out: { worksheetId: number; assignment
   const sent = showOnTablet(unit, { kind: "aufgabe", assignmentId: out.assignmentId });
   pushLive(unit.id);
   revalidatePath("/", "layout");
-  return { ...sent, assignmentId: out.assignmentId, unitId: unit.id, student: unit.student_name.split(" ")[0] };
+  return { ...sent, assignmentId: out.assignmentId, worksheetId: out.worksheetId, unitId: unit.id, student: unit.student_name.split(" ")[0] };
 }
 
 /** „Übung senden“: die Aufgaben des Schritts an den Schüler dieser Einheit. */

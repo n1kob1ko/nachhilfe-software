@@ -184,7 +184,7 @@ export function gutVerstanden(b: Pick<AbschlussBelege, "aufgaben" | "beobachtung
 /** Ob „Gut verstanden“ ein sicheres Ergebnis hat (aus den Daten oder von dir geschrieben); sonst „Keine sicheren Ergebnisse“. */
 export const hatSichereErgebnisse = (gut: KartenZeile[]) => gut.some((z) => z.von !== "beobachtung");
 
-/** Die Zeile zur nächsten Prüfung: das eingetragene Datum, der Stoff ohne Antwort in den letzten 30 Tagen, höchstens drei Punkte. */
+/** Die Zeile zur nächsten Prüfung: das eingetragene Datum, der Stoff ohne Antwort (oder heutige Textarbeit) in den letzten 30 Tagen, höchstens drei Punkte. */
 export function pruefungsZeile(p: NonNullable<AbschlussBelege["pruefung"]>): string {
   const mehr = p.offen.length - PRUEFUNG_PUNKTE;
   const offen = p.offen.length ? `: zuletzt nicht geübt: ${p.offen.slice(0, PRUEFUNG_PUNKTE).join(", ")}${mehr > 0 ? ` und ${mehr} ${mehr === 1 ? "weiterer Punkt" : "weitere Punkte"}` : ""}` : "";
@@ -200,7 +200,12 @@ const zeilenAus = (text: string) =>
     .map((z) => z.trim())
     .filter(Boolean);
 
-const textName = (t: Pick<AbschlussText, "titel" | "textsorte">) => (t.textsorte.trim() && t.textsorte.trim() !== t.titel ? `${t.textsorte.trim()} „${t.titel}“` : `Textarbeit „${t.titel}“`);
+const textName = (t: Pick<AbschlussText, "titel" | "textsorte">) => {
+  const sorte = t.textsorte.trim();
+  if (!sorte || sorte === t.titel) return `Textarbeit „${t.titel}“`;
+  // „Textinterpretation zu „Der letzte Bus““ nennt die Textsorte schon: nicht noch einmal davor
+  return t.titel.toLowerCase().startsWith(sorte.toLowerCase()) ? t.titel : `${sorte} „${t.titel}“`;
+};
 
 /** „Heute gemacht“ für eine Textarbeit mit übernommener oder offener Bewertung. */
 function textGemacht(t: AbschlussText & { bewertung: BerichtBewertung }): KartenZeile {
@@ -359,7 +364,8 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
         art: test.kind || "Prüfung",
         fach: test.subject,
         datum: shortDate(test.date),
-        offen: test.skill_ids.filter((id) => repo.getSkill(id) && !geuebtSeit.get(lesson.student_id, id, tagAddieren(tag, -PRUEFUNG_TAGE), bis)).map((id) => skillName(id)),
+        // geübt: eine gezählte Antwort in den 30 Tagen davor, oder heute eine Textarbeit dieser Art (sie hat keine Antworten)
+        offen: test.skill_ids.filter((id) => repo.getSkill(id) && !textSkills.includes(id) && !geuebtSeit.get(lesson.student_id, id, tagAddieren(tag, -PRUEFUNG_TAGE), bis)).map((id) => skillName(id)),
       }
     : null;
 

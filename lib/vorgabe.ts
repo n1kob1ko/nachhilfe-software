@@ -210,7 +210,8 @@ export async function speichereVorgabe(o: VorgabeEingabe): Promise<{ ok: true; v
       ki = true;
       neu = r.neu;
     } catch (e) {
-      const grund = e instanceof Error ? e.message : "Lesen ging gerade nicht.";
+      // the provider's own words in brackets („503: {"error": …}“) stay in the cost log, not on the teacher's card
+      const grund = (e instanceof Error ? e.message : "Lesen ging gerade nicht.").replace(/^(Die KI war nicht erreichbar) \(.*$/s, "$1.");
       lesung = text ? regelLesung(text) : lesung;
       hinweise.push(text ? `${grund} Lernheft hat deinen Text selbst zerlegt${lesen ? "; die Fotos sind angehängt" : ""}.` : `${grund} Die Fotos sind angehängt.`);
     }
@@ -329,6 +330,7 @@ export function pruefungZurVorgabe(v: Vorgabe, fach: string, heute: string): Pru
   return blaetter.length ? { quelle: "Stoffzettel", testId: null, zeilen: blaetter } : null;
 }
 
+const SPRACHFACH = /deutsch|englisch|französisch|franzoesisch|latein|spanisch|italienisch/i;
 const ENGLISCH_GRUPPE: Partial<Record<Gruppe, string>> = { writing: "Writing", reading_listening: "Reading und Listening", wortschatz: "Vokabeln" };
 const liste = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} und ${xs[xs.length - 1]}`);
 const klein = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
@@ -359,7 +361,8 @@ export function abweichung(heute: Pick<StoffPunkt, "gruppe" | "inhalt" | "origin
     .map((z) => z.inhalt)
     .filter((t, i, alle) => alle.indexOf(t) === i);
   const fehlt = grammatik.slice(0, 3);
-  if (grammatik.length > 3) fehlt.push("weitere Grammatik");
+  // the Fähigkeiten of a Mathematik exam stand in this group too: there it is „weitere Themen“, not grammar
+  if (grammatik.length > 3) fehlt.push(SPRACHFACH.test(fach) ? "weitere Grammatik" : "weitere Themen");
   for (const g of ["wortschatz", "writing", "reading_listening"] as Gruppe[]) {
     const zeilen = zaehlt.filter((z) => z.gruppe === g);
     if (zeilen.length && !zeilen.some(gedeckt) && !heute.some((h) => h.gruppe === g)) fehlt.push((/englisch/i.test(fach) && ENGLISCH_GRUPPE[g]) || GRUPPE_LABEL[g]);

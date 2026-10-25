@@ -520,6 +520,8 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
   const zurPruefung = !eigen && s.titel === SCHULARBEIT_SCHRITT ? schreibStartZurPruefung(unit) : null;
   const schreiben = eigen ?? zurPruefung;
   const laeuft = schreiben ? textZumSchritt(laeufe, schreiben) : null;
+  // a step of the Vorgabe whose point still waits for „kurz bestätigen“: say where, so the exercise can follow
+  const bestaetigen = !skill && !blatt && !zugewiesen && /^Üben: /.test(s.titel) && (vorgabeDerEinheit(unit.id)?.punkte.some((p) => p.zuordnung === "unklar" && p.vorschlaege.length > 0) ?? false);
   return (
     <section className="panel px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
       <KartenKopf c={c} id={s.id} titel={s.titel} minuten={s.minuten} ids={ids} />
@@ -529,6 +531,11 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
             <p className="text-[18px] leading-relaxed whitespace-pre-line">{s.beschreibung}</p>
           </Block>
         </div>
+      )}
+      {bestaetigen && (
+        <p className="mt-3 text-[14.5px] text-ink-2" data-testid="vorgabe-erst-bestaetigen">
+          Welche Fähigkeit gemeint ist, bestätigst du oben unter „Vorgabe für heute“. Danach gibt es dazu eine Übung.
+        </p>
       )}
       {vorschlag && <VorschlagKarte a={vorschlag} unitId={unit.id} schrittId={s.id} imSchritt />}
       {nicht && <HilfeBlock hilfe={hilfe} unitId={unit.id} werkzeuge={`/einheiten/${unit.id}?bereich=cockpit#werkzeuge`} />}
