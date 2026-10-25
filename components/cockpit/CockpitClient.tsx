@@ -32,6 +32,27 @@ export function CockpitSenden({ action, unitId, label, primary }: { action: (pre
   );
 }
 
+/**
+ * Ein Knopf der Anpassung im Unterricht (lib/steuerung.ts): die Aktion ist schon an Einheit und Vorschlag gebunden. Nach
+ * dem Senden steht oben „… ist an Max gesendet“ (ohne Gerät mit Lernlink und Drucken), wie bei jeder Übung.
+ */
+export function VorschlagKnopf({ action, label, primary, icon, gesperrt = false, testid, laeuft = "Wird gesendet …" }: { action: () => Promise<void>; label: string; primary?: boolean; icon: React.ReactNode; gesperrt?: boolean; testid?: string; laeuft?: string }) {
+  return (
+    <form action={action}>
+      <KnopfInhalt label={label} primary={primary} icon={icon} gesperrt={gesperrt} testid={testid} laeuft={laeuft} />
+    </form>
+  );
+}
+
+function KnopfInhalt({ label, primary, icon, gesperrt, testid, laeuft }: { label: string; primary?: boolean; icon: React.ReactNode; gesperrt: boolean; testid?: string; laeuft: string }) {
+  const { pending } = useFormStatus();
+  return (
+    <button className={`btn ${primary ? "btn-primary" : "btn-secondary"} w-full sm:w-fit`} disabled={pending || gesperrt} data-testid={testid}>
+      {icon} {pending ? laeuft : label}
+    </button>
+  );
+}
+
 function AnpassenSenden({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (

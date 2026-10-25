@@ -419,8 +419,9 @@ export type NewExercise = { ok: true; assignmentId: number; source: "ki" | "gene
 /**
  * Two new tasks that fit what the KI saw last (skill, difficulty, error pattern), sent to the student
  * right away. Without KI (off, budget, error) the built-in generator makes them.
+ * `ziel`: the Anpassung im Unterricht (lib/steuerung.ts) names skill, level 1–5 and the error to practise itself.
  */
-export async function newExerciseForUnit(unitId: number, teacherId: number): Promise<NewExercise> {
+export async function newExerciseForUnit(unitId: number, teacherId: number, ziel?: { skillId: string; level: number; fokus?: string | null }): Promise<NewExercise> {
   const unit = getUnit(unitId);
   if (!unit || unit.status !== "gestartet") return { ok: false, error: "Diese Einheit läuft nicht mehr." };
   const student = repo.getStudent(unit.student_id);
@@ -429,12 +430,12 @@ export async function newExerciseForUnit(unitId: number, teacherId: number): Pro
   const live = latestInsight(unitId, "echtzeit");
   const block = latestInsight(unitId, "block");
   const ref = [live, block].filter((x) => x !== null).sort((a, b) => b!.id - a!.id)[0] ?? null;
-  const skillId = ref?.data.next_skill ?? task?.skillId ?? null;
+  const skillId = ziel?.skillId ?? ref?.data.next_skill ?? task?.skillId ?? null;
   const skill = skillId ? repo.getSkill(skillId) : null;
   if (!student || !skill) return { ok: false, error: "In dieser Einheit wurde noch keine Aufgabe gelöst." };
-  const level = Math.max(1, Math.min(5, (task?.level ?? levelOf(task?.difficulty)) + (ref?.data.difficulty_adjustment ?? 0)));
+  const level = Math.max(1, Math.min(5, ziel?.level ?? (task?.level ?? levelOf(task?.difficulty)) + (ref?.data.difficulty_adjustment ?? 0)));
   const difficulty = DIFFICULTIES[level - 1];
-  const misconception = live && live.id === ref?.id ? live.data.misconception : null;
+  const misconception = ziel ? (ziel.fokus ?? null) : live && live.id === ref?.id ? live.data.misconception : null;
   const used = db()
     .prepare("SELECT t.prompt FROM tasks t JOIN assignments a ON a.worksheet_id = t.worksheet_id WHERE a.unit_id = ?")
     .all(unitId) as { prompt: string }[];
@@ -475,9 +476,11 @@ export async function newExerciseForUnit(unitId: number, teacherId: number): Pro
     const { generateBuiltIn } = await import("../generators");
     const { schulstufe } = await import("../school");
     const { eigeneVokabelAufgaben } = await import("../vokabellisten");
+    const { ohneAusgeblendete } = await import("../bewertungen");
+    // schlecht bewertete Aufgaben (lib/bewertungen.ts) bleiben auch hier weg
     tasks = eigene
       ? eigeneVokabelAufgaben(student.id, { count: 2, difficulty, taskType: "mixed", avoid: used.map((u) => u.prompt) })
-      : generateBuiltIn({ subject: skill.subject, skills: [{ id: skill.id, name: skill.name }], difficulty, count: 2, taskType: "mixed", grade: schulstufe(student.school_type, student.klasse ?? 1), wortarten });
+      : ohneAusgeblendete(generateBuiltIn({ subject: skill.subject, skills: [{ id: skill.id, name: skill.name }], difficulty, count: 2, taskType: "mixed", grade: schulstufe(student.school_type, student.klasse ?? 1), wortarten }));
     source = "generator";
   }
   if (!tasks.length) return { ok: false, error: "Für diese Fähigkeit konnte keine Aufgabe erstellt werden." };

@@ -27,11 +27,48 @@ Das zeigst du (Folie, „Vortrag öffnen“), Das fragst du, Erwartete Antwort, 
   Fehler“ aus dem Paket, übernommene Anpassungen (Bei Fehler, leichtere Frage, Zusatzbeispiel), Erklärung und typische
   Fehler der Fähigkeit (`hilfeBeiFehler`, ohne KI). Beim Beenden steht der Schritt unter „Schwierigkeiten“.
 
+Bei einer Verständnisfrage oder Kontrolle stehen unter der erwarteten Antwort drei kleine Knöpfe **Richtig /
+Teilweise / Falsch** (`einheit_cockpit.antworten`, noch einmal tippen nimmt es zurück). Das sind Beobachtungen des
+Lehrers, der Lernstand bleibt unberührt; der Abschluss kann sie über `antwortenDerEinheit` (lib/cockpit.ts) lesen.
+
 Ohne Lernpaket kommen die Schritte aus dem „Plan für heute“ des Briefings (beim ersten Tippen festgehalten,
 `einheit_cockpit.plan`); „Übung senden“ nimmt die passende Übung aus dem Bestand oder neue Aufgaben aus den
 Generatoren. Sind alle Schritte durch, kommt „Alles durch“ mit „Einheit beenden“.
 
 Die Einheit einer anderen Lehrkraft ist nur zum Lesen da (Übungen und Fortschritt, kein Beenden).
+
+### Anpassung im Unterricht
+
+niko, 25.10.2026: Lernheft reagiert auf die Antworten des Schülers, zuerst nach festen Regeln, KI nur wenn nötig und
+im Budget, und alles geht auch ohne KI. Unter der Gerätezeile steht dann **ein** Vorschlag: der Grund in einfachen
+Worten („2 Fehler: Kehrwert vergessen · Brüche dividieren“), ein Hauptknopf und zugeklappt **Andere Möglichkeit**
+(die übrigen Wege, „Nicht nötig“ und nur dort neue Aufgaben der KI mit Kosten). Er kommt mit jeder neuen Antwort neu
+(die Gerätezeile lädt die Seite nach) und zählt nur Antworten nach der letzten Reaktion (`einheit_cockpit.steuerung`).
+
+| Regel (lib/steuerung-regeln.ts) | Schwelle | Vorschlag |
+| --- | --- | --- |
+| Fehler | mind. 2 falsche unter den letzten 5 Antworten einer Fähigkeit (Lösung angesehen zählt als falsch) | Aufgabe zu diesem Fehler (wenn ein Generator „Fehler korrigieren“ kann), sonst Leichtere Aufgabe (Stufe −1); auf der leichtesten Stufe eine nicht sichere Voraussetzung (unter 70 %), sonst Einfacher erklären |
+| Zeichen des Lehrers | „Schüler versteht es nicht“ oder „Falsch“ bei der Frage | derselbe leichtere Weg, in der Karte des Schritts |
+| Hilfen | Hilfe bei mehr als der Hälfte von mind. 2 Aufgaben | Gemeinsam an der Tafel (die aktuelle Aufgabe aufs Whiteboard) |
+| Alles richtig | mind. 3 Aufgaben (kürzere Übung: alle) im ersten Versuch ohne Hilfe | schnell (Median bis 60 s): Schwerere Aufgabe, sonst Weiter zum nächsten Schritt |
+| Nichts gesendet oder noch keine Antwort | – | kein Vorschlag |
+
+Es bleibt bei den Fähigkeiten von heute: Vorgabe für heute vor der Fähigkeit des Schritts vor dem Stoff der nächsten
+Prüfung (bis 30 Tage); eine Voraussetzung davon gehört dazu. Die Aufgaben kommen in dieser Reihenfolge (`lib/steuerung.ts`):
+
+1. **A, vorhanden**: Aufgaben der Schritte des Lernpakets, freigegebene Übungen (allgemeine oder die des Schülers) und
+   die Bibliothek, zur Fähigkeit und Stufe.
+2. **B, Generatoren und Banken**: neue Aufgaben ohne KI (bei „Aufgabe zu diesem Fehler“: Fehler korrigieren).
+3. **C, KI**: nur, wenn A und B für keine Möglichkeit etwas haben, nur auf Tippen („Neue passende Aufgabe erstellen ·
+   ca. 2 Cent“), über `newExerciseForUnit` mit denselben Prüfungen (Aufgaben mit „Bitte prüfen“ gehen nicht hinaus).
+   Gesperrt mit Grund bei KI aus, manuellem KI-Modus, aufgebrauchtem Budget und erreichter Grenze des Schülers.
+   Antwortet die KI nicht, kommen die Aufgaben aus dem Generator, und oben steht das in einem Satz. Die Kosten stehen
+   wie immer unter KI-Kosten beim Schüler. Nichts davon läuft im Hintergrund.
+
+Schlecht bewertete Aufgaben und schon gesendete kommen nie in die Auswahl. Ein Tippen schickt drei Aufgaben an den
+Schüler **dieser** Einheit (auch bei zwei zugleich); ohne Gerät liegt die Übung am Lernlink, und oben steht „Zum Drucken
+öffnen“. Die KI-Live-Analyse (KI-Hinweis) bleibt, wie sie ist; gibt es zur aktuellen Übung einen, steht er unter dem
+Vorschlag als **Zusatz-Hinweis**, nie an seiner Stelle.
 
 ### Was steht heute an?
 

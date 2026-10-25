@@ -2,15 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { SendState } from "@/app/device-actions";
+import { currentTaskToBoardAction, type SendState } from "@/app/device-actions";
 import { entscheide, erstelleAnpassungen } from "@/lib/anpassen";
 import { requireTeacher } from "@/lib/auth";
 import {
   bereiteVor,
+  cockpit,
+  isBeobachtung,
   markiereSchritt,
   merkeSchritt,
+  reagiert,
   sendeAusGenerator,
   sendeSchritt,
+  setzeAntwort,
   setzeNotiz,
   verschiebeSchritt,
   waehleFaehigkeit,
@@ -19,10 +23,13 @@ import {
   type Markierung,
   type Merke,
 } from "@/lib/cockpit";
+import { newExerciseForUnit } from "@/lib/ai/realtime";
 import { noteActivity } from "@/lib/learning";
 import { pushLive, showOnTablet } from "@/lib/live";
 import { tagAddieren, wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
+import { kiTor, sendeAngepasst } from "@/lib/steuerung";
+import { MIT_AUFGABE, type Option } from "@/lib/steuerung-regeln";
 import { canManageUnit, getUnit } from "@/lib/units";
 import { entferneVorschlag, VORAUS_TAGE, vorschlagErlauben } from "@/lib/vorbereitung-auto";
 
@@ -176,5 +183,76 @@ export async function anpassenAction(unitId: number, _prev: AnpassenState, _form
 export async function entscheideAnpassungAction(unitId: number, id: number, status: "uebernommen" | "verworfen") {
   await laufendeEinheit(unitId);
   entscheide(unitId, id, status === "uebernommen" ? "uebernommen" : "verworfen");
+  zurueck(unitId);
+}
+
+// ---------- Anpassung im Unterricht (lib/steuerung.ts) ----------
+
+/** Eine Möglichkeit, wie sie aus der Seite kommt: nur bekannte Arten, Stufe 1–5, eine Fähigkeit, die es gibt. */
+function pruefeOption(o: Option): Option | null {
+  if (!o || !MIT_AUFGABE.includes(o.art) || !o.skillId || !repo.getSkill(o.skillId)) return null;
+  const level = Math.round(Number(o.level));
+  if (!(level >= 1 && level <= 5)) return null;
+  return { art: o.art, skillId: o.skillId, level, fokus: typeof o.fokus === "string" ? o.fokus.slice(0, 200) : null };
+}
+
+/** Zurück in den Unterricht: mit „… ist gesendet“ oben, oder mit dem Fehler. */
+function nachVorschlag(unitId: number, o: { gesendet?: number; ersatz?: boolean; fehler?: string }): never {
+  revalidatePath(`/einheiten/${unitId}`);
+  if (o.fehler) redirect(`/einheiten/${unitId}?cockpit=${encodeURIComponent(o.fehler)}`);
+  redirect(`/einheiten/${unitId}?gesendet=${o.gesendet ?? ""}${o.ersatz ? "&ki=ersatz" : ""}`);
+}
+
+/**
+ * „Leichtere Aufgabe senden“, „Schwerere Aufgabe senden“ …: Aufgaben aus dem Bestand (A), sonst aus den Generatoren (B),
+ * an den Schüler dieser Einheit und auf ihr Gerät. Ohne Gerät liegt die Übung am Lernlink und zum Drucken bereit.
+ */
+export async function vorschlagSendenAction(unitId: number, roh: Option) {
+  const { t } = await laufendeEinheit(unitId);
+  const o = pruefeOption(roh);
+  if (!o) nachVorschlag(unitId, { fehler: "Dieser Vorschlag gilt nicht mehr." });
+  const out = sendeAngepasst(unitId, o, t.id, cockpit(unitId));
+  if ("fehler" in out) nachVorschlag(unitId, { fehler: out.fehler });
+  await aufsGeraet(unitId, out);
+  nachVorschlag(unitId, { gesendet: out.worksheetId });
+}
+
+/**
+ * „Neue passende Aufgabe erstellen“ (C): nur auf Tippen, nur wenn die KI darf (lib/steuerung.ts `kiTor`). Die Aufgaben
+ * gehen durch dieselben Prüfungen wie „Passende Aufgabe senden“; antwortet die KI nicht, kommen sie aus dem Generator.
+ */
+export async function vorschlagNeuAction(unitId: number, roh: Option) {
+  const { t, unit } = await laufendeEinheit(unitId);
+  const o = pruefeOption(roh);
+  if (!o) nachVorschlag(unitId, { fehler: "Dieser Vorschlag gilt nicht mehr." });
+  const tor = kiTor(unit.student_id);
+  if (!tor.erlaubt) nachVorschlag(unitId, { fehler: tor.grund });
+  const out = await newExerciseForUnit(unit.id, t.id, { skillId: o.skillId!, level: o.level!, fokus: o.fokus });
+  if (!out.ok) nachVorschlag(unitId, { fehler: out.error });
+  reagiert(unitId);
+  noteActivity(unit.student_id);
+  pushLive(unit.id);
+  nachVorschlag(unitId, { gesendet: repo.getAssignment(out.assignmentId)?.worksheet_id, ersatz: out.source !== "ki" });
+}
+
+/**
+ * Ein Vorschlag ohne neue Aufgabe: Weiter zum nächsten Schritt, gemeinsam an der Tafel (die aktuelle Aufgabe aufs
+ * Whiteboard), Einfacher erklären (wie „Schüler versteht es nicht“) oder „Nicht nötig“. Danach zählen nur neue Antworten.
+ */
+export async function vorschlagReaktionAction(unitId: number, was: "weiter" | "tafel" | "erklaeren" | "nicht_noetig", schrittId: number | null) {
+  await laufendeEinheit(unitId);
+  reagiert(unitId);
+  if (was === "weiter" && schrittId !== null) markiereSchritt(unitId, schrittId, "erledigt");
+  if (was === "erklaeren" && schrittId !== null) merkeSchritt(unitId, schrittId, "nichtVerstanden");
+  if (was === "tafel") await currentTaskToBoardAction(unitId);
+  zurueck(unitId);
+}
+
+/** „Richtig / Teilweise / Falsch“ bei einer Frage oder Kontrolle; noch einmal tippen nimmt es zurück. */
+export async function antwortAction(unitId: number, schrittId: number, wert: string) {
+  await laufendeEinheit(unitId);
+  const s = cockpit(unitId).stand;
+  const neu = isBeobachtung(wert) && s.antworten[schrittId] !== wert ? wert : null;
+  setzeAntwort(unitId, schrittId, neu);
   zurueck(unitId);
 }

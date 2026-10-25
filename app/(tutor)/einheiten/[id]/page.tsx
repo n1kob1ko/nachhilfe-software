@@ -68,7 +68,7 @@ function dauerLabel(geplanteDauer: number | null, minutes: number, estimated: bo
  * ended → **Abschluss**: vier Felder aus den Daten (lib/abschluss.ts) und „Dokumentation bestätigen“; die ganze
  *   Dokumentation, automatisch geschrieben (lib/einschaetzung.ts) und änderbar, unter „Mehr Details“ und „Ändern“.
  */
-export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string }> }) {
+export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; ki?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -90,8 +90,21 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   const notices = (
     <>
       {sent && running && (
-        <div role="status" className="mb-6 flex items-center gap-2 rounded-2xl bg-green-wash px-4 py-3 text-[15px] font-medium text-green">
-          <CheckCircle2 size={18} aria-hidden /> „{sent.title}“ ist an {first(student.name)} gesendet. Die Ergebnisse erscheinen unten, sobald {first(student.name)} arbeitet.
+        <div role="status" className="mb-6 rounded-2xl bg-green-wash px-4 py-3 text-[15px] font-medium text-green" data-testid="gesendet">
+          <p className="flex items-center gap-2">
+            <CheckCircle2 size={18} className="shrink-0" aria-hidden /> „{sent.title}“ ist an {first(student.name)} gesendet. Die Ergebnisse erscheinen unten, sobald {first(student.name)} arbeitet.
+          </p>
+          {/* Anpassung im Unterricht: die KI hat nicht geantwortet, die Aufgaben kamen aus dem Generator */}
+          {sp.ki === "ersatz" && <p className="mt-1 text-[14px] font-normal text-ink-2">Die KI hat gerade nicht geantwortet. Dafür kamen die Aufgaben aus dem Generator, ohne Kosten.</p>}
+          {/* ohne Schülergerät: am Lernlink bereit, und zum Drucken */}
+          {studentDevice(unit) === null && (
+            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] font-normal text-ink-2">
+              Kein Schülergerät verbunden: die Übung liegt am Lernlink bereit.
+              <Link href={`/arbeitsblatt/${sent.id}`} target="_blank" className="inline-flex min-h-[44px] items-center gap-1 font-semibold text-accent hover:underline" data-testid="gesendet-drucken">
+                <Printer size={15} aria-hidden /> Zum Drucken öffnen
+              </Link>
+            </p>
+          )}
         </div>
       )}
       {startedText && running && startedText.student_id === student.id && (

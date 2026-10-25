@@ -51,6 +51,10 @@ export type Stand = {
   nichtVerstanden: Record<string, number>;
   /** ohne Lernpaket: der „Plan für heute“ aus dem Briefing, beim ersten Tippen festgehalten; null = noch nicht */
   plan: PlanStep[] | null;
+  /** „Richtig / Teilweise / Falsch“ bei Fragen und Kontrollen: was der Lehrer gehört hat, je Schritt-Id */
+  antworten: Record<string, Beobachtung>;
+  /** Anpassung im Unterricht (lib/steuerung.ts): worauf schon reagiert wurde und das Zeichen des Lehrers */
+  steuerung: Steuerung;
   /** noch nicht gespeichert, aus „Einheit vorbereiten“ übernommen */
   vorbereitet: boolean;
   /** noch nicht gespeichert: der Vorschlag der App (lib/vorbereitung-auto.ts), nicht die Wahl des Lehrers */
@@ -71,10 +75,24 @@ const leer = (unitId: number): Stand => ({
   wiederholt: {},
   nichtVerstanden: {},
   plan: null,
+  antworten: {},
+  steuerung: { bis: 0, signal: null },
   vorbereitet: false,
   automatisch: null,
   updated_at: null,
 });
+
+/** Was der Lehrer bei einer Frage oder Kontrolle gehört hat. */
+export type Beobachtung = "richtig" | "teilweise" | "falsch";
+export const BEOBACHTUNGEN: readonly Beobachtung[] = ["richtig", "teilweise", "falsch"];
+export const isBeobachtung = (x: unknown): x is Beobachtung => typeof x === "string" && (BEOBACHTUNGEN as readonly string[]).includes(x);
+
+/**
+ * Anpassung im Unterricht: `bis` ist die letzte Antwort (attempts.id), auf die schon reagiert wurde; der Vorschlag zählt
+ * nur, was danach kam. `signal`: „Schüler versteht es nicht“ oder „Falsch“ bei einer Frage, für den Schritt auf dem Schirm,
+ * bis der Lehrer reagiert oder weitergeht.
+ */
+export type Steuerung = { bis: number; signal: { schritt: number; art: "nicht_verstanden" | "falsch" } | null };
 
 /**
  * Ein Schritt aus dem „Plan für heute“ des Briefings (lib/briefing.ts), für eine Einheit ohne Lernpaket. Die Ids
@@ -262,6 +280,8 @@ type Row = {
   wiederholt: string;
   nicht_verstanden: string;
   plan: string | null;
+  antworten: string | null;
+  steuerung: string | null;
   updated_at: string;
 };
 
@@ -278,6 +298,9 @@ const zuStand = (r: Row): Stand => ({
   wiederholt: json<Record<string, number>>(r.wiederholt, {}),
   nichtVerstanden: json<Record<string, number>>(r.nicht_verstanden, {}),
   plan: r.plan ? json<PlanStep[] | null>(r.plan, null) : null,
+  // alte Zeilen (vor der Anpassung im Unterricht) haben beides nicht
+  antworten: Object.fromEntries(Object.entries(json<Record<string, unknown>>(r.antworten ?? "{}", {})).filter((e): e is [string, Beobachtung] => isBeobachtung(e[1]))),
+  steuerung: { bis: 0, signal: null, ...json<Partial<Steuerung>>(r.steuerung ?? "{}", {}) },
   vorbereitet: false,
   automatisch: null,
   updated_at: r.updated_at,
@@ -310,11 +333,12 @@ export function leseStand(unitId: number): Stand {
 function speichere(s: Stand) {
   db()
     .prepare(
-      `INSERT INTO einheit_cockpit (unit_id, paket_id, skill_id, reihenfolge, aktuell, erledigt, uebersprungen, notizen, gesendet, wiederholt, nicht_verstanden, plan, updated_at)
-       VALUES (@unit_id, @paket_id, @skill_id, @reihenfolge, @aktuell, @erledigt, @uebersprungen, @notizen, @gesendet, @wiederholt, @nicht_verstanden, @plan, datetime('now'))
+      `INSERT INTO einheit_cockpit (unit_id, paket_id, skill_id, reihenfolge, aktuell, erledigt, uebersprungen, notizen, gesendet, wiederholt, nicht_verstanden, plan, antworten, steuerung, updated_at)
+       VALUES (@unit_id, @paket_id, @skill_id, @reihenfolge, @aktuell, @erledigt, @uebersprungen, @notizen, @gesendet, @wiederholt, @nicht_verstanden, @plan, @antworten, @steuerung, datetime('now'))
        ON CONFLICT(unit_id) DO UPDATE SET paket_id = excluded.paket_id, skill_id = excluded.skill_id, reihenfolge = excluded.reihenfolge, aktuell = excluded.aktuell,
          erledigt = excluded.erledigt, uebersprungen = excluded.uebersprungen, notizen = excluded.notizen, gesendet = excluded.gesendet,
-         wiederholt = excluded.wiederholt, nicht_verstanden = excluded.nicht_verstanden, plan = excluded.plan, updated_at = excluded.updated_at`,
+         wiederholt = excluded.wiederholt, nicht_verstanden = excluded.nicht_verstanden, plan = excluded.plan, antworten = excluded.antworten,
+         steuerung = excluded.steuerung, updated_at = excluded.updated_at`,
     )
     .run({
       unit_id: s.unit_id,
@@ -329,6 +353,8 @@ function speichere(s: Stand) {
       wiederholt: JSON.stringify(s.wiederholt),
       nicht_verstanden: JSON.stringify(s.nichtVerstanden),
       plan: s.plan ? JSON.stringify(s.plan) : null,
+      antworten: JSON.stringify(s.antworten),
+      steuerung: JSON.stringify(s.steuerung),
     });
 }
 
@@ -469,10 +495,61 @@ function mitSchritt(unitId: number, schrittId: number, f: (s: Stand, order: numb
   return true;
 }
 
-export const markiereSchritt = (unitId: number, schrittId: number, was: Markierung) => mitSchritt(unitId, schrittId, (s, order) => markiere(s, order, schrittId, was));
+/** Weiter, Überspringen, Wieder öffnen; ein Zeichen des Lehrers zum Schritt gilt danach nicht mehr. */
+export const markiereSchritt = (unitId: number, schrittId: number, was: Markierung) =>
+  mitSchritt(unitId, schrittId, (s, order) => ({ ...markiere(s, order, schrittId, was), steuerung: { ...s.steuerung, signal: null } }));
 
-/** „Wiederholen“ oder „Schüler versteht es nicht“ für einen Schritt (Lernpaket oder Plan). */
-export const merkeSchritt = (unitId: number, schrittId: number, was: Merke) => mitSchritt(unitId, schrittId, (s) => merke(s, schrittId, was));
+/**
+ * „Wiederholen“ oder „Schüler versteht es nicht“ für einen Schritt (Lernpaket oder Plan). „Versteht es nicht“ ist auch ein
+ * Zeichen für die Anpassung im Unterricht: sie schlägt den leichteren Weg vor (lib/steuerung.ts).
+ */
+export const merkeSchritt = (unitId: number, schrittId: number, was: Merke) =>
+  mitSchritt(unitId, schrittId, (s) => {
+    const neu = merke(s, schrittId, was);
+    return was === "nichtVerstanden" ? { ...neu, steuerung: { ...s.steuerung, signal: { schritt: schrittId, art: "nicht_verstanden" } } } : neu;
+  });
+
+/** Schritte, bei denen der Lehrer eine Antwort hört: Verständnisfrage und Kontrolle. */
+export const FRAGE_ARTEN: readonly LernpaketSchritt["art"][] = ["frage", "kontrolle"];
+
+/**
+ * „Richtig / Teilweise / Falsch“ bei einer Frage oder Kontrolle des Lernpakets: was der Lehrer gehört hat (null nimmt es
+ * zurück). „Falsch“ ist ein Zeichen für die Anpassung im Unterricht; Richtig und Teilweise nehmen es zurück. Nur
+ * Beobachtungen, der Lernstand bleibt unberührt; der Abschluss kann sie als Beleg lesen (`antwortenDerEinheit`).
+ */
+export function setzeAntwort(unitId: number, schrittId: number, wert: Beobachtung | null): boolean {
+  const s = leseStand(unitId);
+  const p = s.paket_id ? getLernpaket(s.paket_id) : null;
+  const schritt = p?.schritte.find((x) => x.id === schrittId);
+  if (!schritt || !FRAGE_ARTEN.includes(schritt.art)) return false;
+  return mitSchritt(unitId, schrittId, (cur) => {
+    const antworten = { ...cur.antworten };
+    if (wert) antworten[schrittId] = wert;
+    else delete antworten[schrittId];
+    const signal = wert === "falsch" ? { schritt: schrittId, art: "falsch" as const } : cur.steuerung.signal?.schritt === schrittId ? null : cur.steuerung.signal;
+    return { ...cur, antworten, steuerung: { ...cur.steuerung, signal } };
+  });
+}
+
+/**
+ * Der Lehrer hat auf den Vorschlag reagiert (gesendet, weiter, an die Tafel, nicht nötig): was bis jetzt geantwortet
+ * wurde, zählt für den nächsten Vorschlag nicht mehr, und das Zeichen zum Schritt ist erledigt.
+ */
+export function reagiert(unitId: number): void {
+  const max = (db().prepare("SELECT MAX(id) AS id FROM attempts WHERE unit_id = ?").get(unitId) as { id: number | null }).id ?? 0;
+  aendere(unitId, (s) => ({ ...s, steuerung: { bis: Math.max(s.steuerung.bis, max), signal: null } }));
+}
+
+/** Für den Abschluss: was der Lehrer bei Fragen und Kontrollen gehört hat, nur Gespeichertes, in der Reihenfolge der Schritte. */
+export function antwortenDerEinheit(unitId: number): { schrittId: number; titel: string; art: LernpaketSchritt["art"]; antwort: Beobachtung }[] {
+  const s = gespeichert(unitId);
+  if (!s) return [];
+  return Object.entries(s.antworten)
+    .map(([id, antwort]) => ({ schritt: getSchritt(Number(id)), antwort }))
+    .filter((x): x is { schritt: LernpaketSchritt; antwort: Beobachtung } => x.schritt !== null)
+    .sort((a, b) => a.schritt.paket_id - b.schritt.paket_id || a.schritt.position - b.schritt.position)
+    .map(({ schritt, antwort }) => ({ schrittId: schritt.id, titel: schritt.titel, art: schritt.art, antwort }));
+}
 
 export const zeigeSchritt = (unitId: number, schrittId: number) => mitSchritt(unitId, schrittId, (s) => ({ ...s, aktuell: schrittId }));
 
