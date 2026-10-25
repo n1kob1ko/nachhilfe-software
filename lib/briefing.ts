@@ -66,7 +66,8 @@ export type Kandidat = {
 export type UebungLink = { titel: string; href: string; art: string; info: string };
 export const uebungLinks = (ks: Kandidat[]): Record<string, UebungLink> => Object.fromEntries(ks.map((k) => [k.id, { titel: k.titel, href: k.href, art: KANDIDAT_LABEL[k.art], info: k.info }]));
 
-export type PlanSchritt = { minuten: number; titel: string; beschreibung: string; uebung: string | null };
+/** `skillId`: nur in der einfachen Fassung, die Fähigkeit eines Übungsblocks (für „Übung senden“ im geführten Unterricht) */
+export type PlanSchritt = { minuten: number; titel: string; beschreibung: string; uebung: string | null; skillId?: string | null };
 
 export type BriefingInhalt = {
   letzterStand: string[];
@@ -357,6 +358,9 @@ export function schularbeitText(d: Pick<BriefingDaten, "schularbeit">): string |
   return `${t.title || `${t.kind} ${t.subject}`} am ${datumKurz(t.date)} (${wann(t.days)})${stoff ? `, Stoff: ${stoff}` : ""}`;
 }
 
+/** Steht unter „Wo es hakt“, wenn die Daten nichts zeigen. */
+export const KEINE_SCHWACHSTELLE = "In den Daten ist keine Schwachstelle zu sehen.";
+
 /** Das Briefing ohne KI: nur, was in den Daten steht. */
 export function einfachesBriefing(d: BriefingDaten): BriefingInhalt {
   const letzte = d.doku[0];
@@ -379,10 +383,10 @@ export function einfachesBriefing(d: BriefingDaten): BriefingInhalt {
     ...d.analysis.errors.slice(0, 3).map((e) => `Fehler „${e.label}“ ${e.count}×`),
     ...(letzte?.difficulties.trim() ? [`Zuletzt schwierig: ${clip(letzte.difficulties, 200)}`] : []),
   ];
-  if (!woEsHakt.length) woEsHakt.push("In den Daten ist keine Schwachstelle zu sehen.");
+  if (!woEsHakt.length) woEsHakt.push(KEINE_SCHWACHSTELLE);
 
   const schon = new Set<string>();
-  const bloecke: { gewicht: number; titel: string; beschreibung: string; uebung: string | null }[] = [];
+  const bloecke: { gewicht: number; titel: string; beschreibung: string; uebung: string | null; skillId?: string | null }[] = [];
   bloecke.push({
     gewicht: 1,
     titel: "Einstieg und Wiederholung",
@@ -396,10 +400,10 @@ export function einfachesBriefing(d: BriefingDaten): BriefingInhalt {
   const t = d.schularbeit;
   if (t && t.days <= 14) {
     const namen = t.skill_ids.map((id) => d.analysis.skills.find((s) => s.skill.id === id)?.skill.name ?? "").filter(Boolean);
-    bloecke.push({ gewicht: 2.5, titel: "Schularbeit vorbereiten", beschreibung: schularbeitText(d)!, uebung: uebungFuer(d, namen, schon) });
+    bloecke.push({ gewicht: 2.5, titel: "Schularbeit vorbereiten", beschreibung: schularbeitText(d)!, uebung: uebungFuer(d, namen, schon), skillId: t.skill_ids[0] ?? null });
   }
   for (const s of d.schritte.filter((x) => !(t && t.days <= 14 && x.rule === 1)).slice(0, 2)) {
-    bloecke.push({ gewicht: 2, titel: `Üben: ${s.skill.name}`, beschreibung: `${RULE_LABEL[s.rule]}: ${s.reason}`, uebung: uebungFuer(d, [s.skill.name], schon) });
+    bloecke.push({ gewicht: 2, titel: `Üben: ${s.skill.name}`, beschreibung: `${RULE_LABEL[s.rule]}: ${s.reason}`, uebung: uebungFuer(d, [s.skill.name], schon), skillId: s.skill.id });
   }
   if (bloecke.length === 1) bloecke.push({ gewicht: 2, titel: "Üben", beschreibung: "Weiter am aktuellen Stoff.", uebung: d.kandidaten[0]?.id ?? null });
   bloecke.push({ gewicht: 0.5, titel: "Abschluss", beschreibung: "Kurz zusammenfassen, Hausübung festlegen, dokumentieren.", uebung: null });
@@ -412,7 +416,7 @@ export function einfachesBriefing(d: BriefingDaten): BriefingInhalt {
     letzterStand,
     woEsHakt,
     schularbeit: schularbeitText(d),
-    plan: bloecke.map((b, i) => ({ minuten: minuten[i], titel: b.titel, beschreibung: b.beschreibung, uebung: b.uebung })),
+    plan: bloecke.map((b, i) => ({ minuten: minuten[i], titel: b.titel, beschreibung: b.beschreibung, uebung: b.uebung, ...(b.skillId ? { skillId: b.skillId } : {}) })),
     uebungen: d.kandidaten.slice(0, 5).map((k) => ({ id: k.id, warum: `passt zu ${k.skills.join(", ")}` })),
     hinweis: null,
   };

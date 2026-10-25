@@ -1344,6 +1344,11 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["text_bewertungen", "vorschlag_note", "INTEGER"],
   ["text_bewertungen", "vorschlag_ohne_inhalt", "INTEGER NOT NULL DEFAULT 0"],
   ["text_bewertungen", "lernstand_skill", "TEXT NOT NULL DEFAULT ''"],
+  // Geführter Unterricht (lib/cockpit.ts, 2026-10-25): „Wiederholen“ und „Schüler versteht es nicht“ je Schritt (JSON {Schritt-Id: Anzahl});
+  // ohne Lernpaket der „Plan für heute“ aus dem Briefing, beim ersten Tippen festgehalten (JSON, Schritt-Ids negativ; null = noch nicht)
+  ["einheit_cockpit", "wiederholt", "TEXT NOT NULL DEFAULT '{}'"],
+  ["einheit_cockpit", "nicht_verstanden", "TEXT NOT NULL DEFAULT '{}'"],
+  ["einheit_cockpit", "plan", "TEXT"],
 ];
 
 /** Teachers to start with; more can be added later. */

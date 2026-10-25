@@ -33,7 +33,7 @@ export default async function BriefingPage({ params, searchParams }: { params: P
   if (!d) notFound();
   const gespeichert = gespeichertesBriefing(d.student.id, d.datum);
   const kiAus = !aiEnabled("briefing")
-    ? "Die KI ist aus oder für den gewählten Anbieter ist kein Schlüssel hinterlegt (Mehr › KI-Kosten)."
+    ? "Die KI ist aus oder für den gewählten Anbieter ist kein Schlüssel hinterlegt (Erweitert › KI-Kosten)."
     : budgetUsedUp("briefing")
       ? "Das KI-Budget für diesen Monat ist aufgebraucht."
       : schuelerGestoppt("briefing", d.student.id)

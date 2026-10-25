@@ -26,7 +26,8 @@ export function LoginForm({ next }: { next?: string }) {
   const [state, action] = useActionState(loginAction, null);
   return (
     <form action={action} className="grid gap-4">
-      <input type="hidden" name="weiter" value={next ?? "/"} />
+      {/* ohne Ziel: dorthin, wo die Lehrkraft gerade gebraucht wird (/jetzt: Unterricht, Abschluss oder Heute) */}
+      <input type="hidden" name="weiter" value={next ?? "/jetzt"} />
       <label className="field">
         <span className="label">Benutzername</span>
         <input key={state?.values?.username} className="input" name="username" autoComplete="username" autoCapitalize="none" required autoFocus={!state?.values?.username} defaultValue={state?.values?.username} />

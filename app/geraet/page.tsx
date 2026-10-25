@@ -265,7 +265,7 @@ function Pairing() {
     <main className="mx-auto flex min-h-screen max-w-[440px] flex-col justify-center px-6 py-10">
       <BrandMark height={72} />
       <h1 className="mt-6 text-[28px] leading-tight font-semibold tracking-[-0.02em]">Dieses Tablet mit einem Lehrer verbinden</h1>
-      <p className="mt-2 mb-6 text-[15px] text-ink-2">Am Lehrergerät: Mehr › Schülergeräte › „Neues Tablet verbinden“. Den Code hier eingeben.</p>
+      <p className="mt-2 mb-6 text-[15px] text-ink-2">Am Lehrergerät: Erweitert › Schülergeräte › „Neues Tablet verbinden“. Den Code hier eingeben.</p>
       <PairForm />
     </main>
   );

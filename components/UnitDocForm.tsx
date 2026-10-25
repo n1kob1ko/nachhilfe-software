@@ -30,13 +30,15 @@ function Scale({ name, legend, value }: { name: keyof typeof SCALES; legend: str
  * Changing the documentation of a unit. Nothing here is required: at the end of the unit the app has
  * filled the fields from the data (lib/einschaetzung.ts). Fach and Thema first (any subject, e.g. a
  * one-off Biologie unit), then what a teacher most often adds; everything else is folded away (it
- * is still submitted, so nothing written earlier gets lost).
+ * is still submitted, so nothing written earlier gets lost). `weiter` „jetzt“ (im Abschluss): nach dem Speichern
+ * dorthin, wo die Lehrkraft gebraucht wird (/jetzt), sonst wie bisher in den Lernverlauf.
  */
-export function UnitDocForm({ lesson, student }: { lesson: repo.Lesson; student: repo.Student }) {
+export function UnitDocForm({ lesson, student, weiter }: { lesson: repo.Lesson; student: repo.Student; weiter?: "jetzt" }) {
   const subjects = student.subjects.length ? student.subjects : [lesson.subject];
   const skills = repo.listSkills().filter((s) => subjects.includes(s.subject) || lesson.skill_ids.includes(s.id));
   return (
     <form action={saveUnitDocAction.bind(null, lesson.id)} className="grid gap-6">
+      {weiter && <input type="hidden" name="weiter" value={weiter} />}
       <p className="text-[14px] text-ink-2">Die Felder sind aus den Daten der Einheit ausgefüllt. Was du änderst, bleibt so.</p>
       <div className="grid gap-4 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
         <label className="field">

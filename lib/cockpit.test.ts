@@ -312,3 +312,110 @@ test("without any package: the choice is empty and the skill's material is there
   assert.ok(Array.isArray(d.typischeFehler));
   units.finishUnit(unit.id, "abgebrochen");
 });
+
+// ---------- the guided lesson: „Wiederholen“, „Schüler versteht es nicht“, the plan without a package ----------
+
+test("„Wiederholen“ and „Schüler versteht es nicht“ count per step and keep the step open on screen", async () => {
+  const { merke, markiere, ergebnis, dokuTexte } = await import("./cockpit");
+  const order = [1, 2, 3];
+  let s = { aktuell: null as number | null, erledigt: [] as number[], uebersprungen: [] as number[], wiederholt: {} as Record<string, number>, nichtVerstanden: {} as Record<string, number> };
+  s = markiere(s, order, 1, "erledigt");
+  s = merke(s, 2, "wiederholt");
+  s = merke(s, 2, "wiederholt");
+  assert.equal(s.aktuell, 2, "the step stays");
+  assert.deepEqual(s.wiederholt, { 2: 2 });
+  s = merke(s, 1, "nichtVerstanden");
+  assert.equal(s.aktuell, 1, "a done step comes back on screen");
+  assert.deepEqual(s.erledigt, [], "and is open again");
+  s = markiere(s, order, 1, "erledigt");
+  s = markiere(s, order, 2, "erledigt");
+  const schritte = order.map((id) => ({ id, titel: `S${id}` }));
+  const e = ergebnis(schritte, order, s);
+  assert.deepEqual(e.wiederholt.map((x) => [x.titel, x.mal]), [["S2", 2]]);
+  assert.deepEqual(e.nichtVerstanden.map((x) => [x.titel, x.mal]), [["S1", 1]]);
+  const t = dokuTexte("Brüche", e)!;
+  assert.equal(t.wiederholt, "Wiederholt in „Brüche“: S2 (2×)");
+  assert.equal(t.schwierig, "Nicht verstanden in „Brüche“: S1");
+  assert.equal(t.naechstesMal, "Weiter mit „Brüche“: S3");
+  const plan = dokuTexte("Plan für heute", e, "plan")!;
+  assert.ok(plan.gemacht.startsWith("Plan für heute: 2 von 3 Schritten erledigt"), plan.gemacht);
+  assert.equal(plan.schwierig, "Nicht verstanden im Plan für heute: S1");
+  assert.ok(dokuTexte("X", { erledigt: [], uebersprungen: [], nichtErreicht: [{ titel: "A" }], wiederholt: [{ titel: "A", mal: 1 }], nichtVerstanden: [] }), "a repeat alone is a use of the cockpit");
+});
+
+test("ending the unit puts repeated steps under „Wiederholen“ and not understood ones under the difficulties", async () => {
+  const { c, units, repo: r, teacher, schueler, paket } = await setup();
+  const { endUnit } = await import("./learning");
+  const sid = schueler("Rosa Probe");
+  const unit = units.startUnit(teacher.id, sid, { subject: "Deutsch" }).unit;
+  const p = paket();
+  const ids = p.schritte.map((s) => s.id);
+  c.waehlePaket(unit.id, p.id);
+  c.markiereSchritt(unit.id, ids[0], "erledigt");
+  assert.ok(c.merkeSchritt(unit.id, ids[1], "wiederholt"));
+  assert.ok(c.merkeSchritt(unit.id, ids[1], "nichtVerstanden"));
+  assert.equal(c.cockpit(unit.id).aktuell?.id, ids[1], "the step stays on screen");
+  c.markiereSchritt(unit.id, ids[1], "erledigt");
+  assert.ok(!c.merkeSchritt(unit.id, -1, "wiederholt"), "a plan step does not belong to a unit with a package");
+  const l = r.getLesson(endUnit(unit.id)!)!;
+  assert.ok(l.review_topics.includes(`Wiederholt in „${p.title}“: ${p.schritte[1].titel}`), l.review_topics);
+  assert.ok(l.difficulties.includes(`Nicht verstanden in „${p.title}“: ${p.schritte[1].titel}`), l.difficulties);
+  const a = c.ablaufDerEinheit(unit.id)!;
+  assert.equal(a.art, "paket");
+  assert.equal(a.ergebnis.erledigt.length, 2);
+});
+
+test("without a package the steps come from the day's plan, are kept at the first tap and documented", async () => {
+  const { c, units, repo: r, teacher } = await setup();
+  const { endUnit } = await import("./learning");
+  const { db } = await import("./db");
+  db().exec("DELETE FROM einheit_vorbereitung; DELETE FROM lernpaket_schritte; DELETE FROM lernpakete");
+  const sid = r.createStudent({
+    name: "Paul Probe", grade: 5, klasse: 1, teacher_id: teacher.id, school: "", school_type: "Mittelschule", subjects: ["Mathematik"],
+    current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "",
+  });
+  const unit = units.startUnit(teacher.id, sid, { subject: "Mathematik" }).unit;
+  const vorher = c.cockpit(unit.id, { mitPlan: true });
+  assert.equal(vorher.paket, null);
+  assert.ok(vorher.plan.length >= 3, "Einstieg, Üben, Abschluss");
+  assert.deepEqual(vorher.plan.map((s) => s.id).slice(0, 3), [-1, -2, -3]);
+  assert.equal(vorher.stand.plan, null, "not saved before the first tap");
+  assert.equal(vorher.planAktuell?.id, -1);
+  assert.equal(vorher.plan.reduce((n, s) => n + s.minuten, 0), 100, "the planned duration");
+  assert.equal(c.cockpit(unit.id).plan.length, 0, "without `mitPlan` the briefing is not computed");
+
+  assert.ok(c.markiereSchritt(unit.id, -1, "erledigt"));
+  const nach = c.cockpit(unit.id, { mitPlan: true });
+  assert.deepEqual(nach.stand.plan?.map((s) => s.titel), vorher.plan.map((s) => s.titel), "the plan is kept as it was");
+  assert.equal(nach.planAktuell?.id, -2);
+  assert.ok(c.merkeSchritt(unit.id, -2, "nichtVerstanden"));
+  assert.ok(c.verschiebeSchritt(unit.id, -3, -1), "the order can change");
+  assert.ok(!c.markiereSchritt(unit.id, -99, "erledigt"), "a step that is not in the plan");
+  assert.equal(c.cockpit(unit.id).plan.length, vorher.plan.length, "a kept plan is there without `mitPlan`");
+
+  const l = r.getLesson(endUnit(unit.id)!)!;
+  assert.ok(l.activities.includes(`Plan für heute: 1 von ${vorher.plan.length} Schritten erledigt (${vorher.plan[0].titel})`), l.activities);
+  assert.ok(l.difficulties.includes(`Nicht verstanden im Plan für heute: ${vorher.plan[1].titel}`), l.difficulties);
+  assert.equal(c.ablaufDerEinheit(unit.id)?.art, "plan");
+});
+
+test("„Schüler versteht es nicht“: Bei Fehler, übernommene Anpassungen, dann die Fähigkeit; nichts Ungeprüftes", async () => {
+  const c = await import("./cockpit");
+  assert.deepEqual(c.hilfeBeiFehler("  ", []), [], "nichts da: leer");
+  const h = c.hilfeBeiFehler(
+    "Zeig es am Bild.",
+    [
+      { art: "beispiel", titel: "Pizza", text: "3/8 einer Pizza", antwort: "3 Stücke", status: "uebernommen" },
+      { art: "schwerer", titel: "", text: "Schwer", antwort: "", status: "uebernommen" },
+      { art: "leichter", titel: "", text: "Halbe Pizza?", antwort: "1/2", status: "uebernommen" },
+      { art: "bei_fehler", titel: "", text: "Ungeprüft", antwort: "", status: "vorschlag" },
+    ],
+    { erklaerung: "Zähler oben, Nenner unten.", typischeFehler: ["Zähler und Nenner vertauscht"] },
+  );
+  assert.deepEqual(
+    h.map((x) => x.titel),
+    ["Bei Fehler", "Angepasst: Leichtere Frage", "Angepasst: Zusatzbeispiel – Pizza", "Einfach erklärt", "Typische Fehler"],
+  );
+  assert.equal(h[1].antwort, "1/2");
+  assert.equal(h[4].text, "– Zähler und Nenner vertauscht");
+});

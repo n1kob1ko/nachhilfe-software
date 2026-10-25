@@ -2,36 +2,51 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpenCheck, House, Menu, ReceiptText, Users } from "lucide-react";
+import { CalendarDays, ClipboardCheck, GraduationCap, LayoutGrid } from "lucide-react";
 import { BrandMark } from "@/components/Brand";
 
 /**
- * The whole main navigation. Everything rarely needed (skills, unit log, teachers, export) lives under "Mehr".
+ * Die ganze Navigation: drei Bereiche für den Unterricht und „Erweitert“ (niko, 25.10.2026: „Normale Lehrkräfte
+ * bekommen nur Heute, Unterricht und Abschluss. Alles andere kommt nach Erweitert und wird nie gelöscht.“).
  *
- * "Planung" (der Wochenplan) und "Blätter erstellen" (die Druckblätter) stehen bewusst **unter Mehr**:
- * `TabBar` ist auf dem Telefon ein `grid-cols-5` mit genau diesen fünf Einträgen (fünf Daumenziele); ein
- * sechster Eintrag würde die Tab-Leiste umbrechen. `/planung` und `/blaetter` sind deshalb im `match`
- * der Gruppe „Mehr“ enthalten — der Eintrag selbst steht auf der Seite `/mehr`.
+ * - **Heute** (`/`): die heutigen Schüler, je mit „Einheit starten“.
+ * - **Unterricht** (`/unterricht`): führt zur laufenden Einheit; aktiv auf jeder Seite einer laufenden Einheit.
+ * - **Abschluss** (`/abschluss`): führt zur beendeten, noch nicht bestätigten Einheit; aktiv auf jeder beendeten.
+ * - **Erweitert** (`/mehr`): alles Bisherige, also Schüler, Übungen, Abrechnung, Planung, Lernpakete, Verwaltung
+ *   und so weiter; aktiv überall sonst.
+ *
+ * `TabBar` ist auf dem Telefon ein `grid-cols-4` mit genau diesen vier Einträgen (vier Daumenziele); ein fünfter
+ * Eintrag gehört auf die Seite `/mehr`, nicht hierher. Dunkelmodus und Feedback stehen neben dem Konto.
  */
-const ITEMS = [
-  { href: "/", label: "Start", icon: House, match: ["/"] },
-  { href: "/schueler", label: "Schüler", icon: Users, match: ["/schueler", "/einheiten/"] },
-  { href: "/uebungen", label: "Übungen", icon: BookOpenCheck, match: ["/uebungen"] },
-  { href: "/abrechnung", label: "Abrechnung", icon: ReceiptText, match: ["/abrechnung"] },
-  { href: "/mehr", label: "Mehr", icon: Menu, match: ["/mehr", "/faehigkeiten", "/lehrer", "/export", "/planung", "/blaetter"] },
+type Bereich = "heute" | "unterricht" | "abschluss" | "erweitert";
+const ITEMS: { key: Bereich; href: string; label: string; icon: typeof CalendarDays }[] = [
+  { key: "heute", href: "/", label: "Heute", icon: CalendarDays },
+  { key: "unterricht", href: "/unterricht", label: "Unterricht", icon: GraduationCap },
+  { key: "abschluss", href: "/abschluss", label: "Abschluss", icon: ClipboardCheck },
+  { key: "erweitert", href: "/mehr", label: "Erweitert", icon: LayoutGrid },
 ];
 
-const isActive = (path: string, match: string[]) =>
-  match.some((m) => (m === "/" ? path === "/" : m.endsWith("/") ? path.startsWith(m) : path === m || path.startsWith(`${m}/`))) ||
-  (match.includes("/mehr") && path === "/einheiten");
+/**
+ * Welcher Bereich zu einer Seite gehört. Eine Einheit (`/einheiten/12`, auch Foto, Textarbeit …) ist Unterricht,
+ * solange sie läuft (`laufend`: die Ids aller laufenden Einheiten), danach Abschluss.
+ */
+export function bereichVon(path: string, laufend: number[]): Bereich {
+  if (path === "/" || path === "/jetzt") return "heute";
+  if (path === "/unterricht") return "unterricht";
+  if (path === "/abschluss") return "abschluss";
+  const einheit = /^\/einheiten\/(\d+)(\/|$)/.exec(path);
+  if (einheit) return laufend.includes(Number(einheit[1])) ? "unterricht" : "abschluss";
+  return "erweitert";
+}
 
-/** Bottom tab bar on phones and small tablets: five big targets within thumb reach. */
-export function TabBar() {
+/** Bottom tab bar on phones: four big targets within thumb reach. */
+export function TabBar({ laufend = [] }: { laufend?: number[] }) {
   const path = usePathname();
+  const aktiv = bereichVon(path, laufend);
   return (
-    <nav className="no-print fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden" aria-label="Hauptnavigation">
-      {ITEMS.map(({ href, label, icon: Icon, match }) => {
-        const active = isActive(path, match);
+    <nav className="no-print fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden" aria-label="Hauptnavigation">
+      {ITEMS.map(({ key, href, label, icon: Icon }) => {
+        const active = aktiv === key;
         return (
           <Link key={href} href={href} aria-current={active ? "page" : undefined} className={`flex min-h-[60px] flex-col items-center justify-center gap-1 text-[12px] font-medium ${active ? "text-ink" : "text-ink-3"}`}>
             <span className={`flex h-8 w-12 items-center justify-center rounded-full transition-colors ${active ? "bg-accent-bright text-on-bright" : ""}`}>
@@ -45,12 +60,13 @@ export function TabBar() {
   );
 }
 
-export function Nav() {
+export function Nav({ laufend = [] }: { laufend?: number[] }) {
   const path = usePathname();
+  const aktiv = bereichVon(path, laufend);
   return (
     <nav className="flex flex-col gap-1" aria-label="Hauptnavigation">
-      {ITEMS.map(({ href, label, icon: Icon, match }) => {
-        const active = isActive(path, match);
+      {ITEMS.map(({ key, href, label, icon: Icon }) => {
+        const active = aktiv === key;
         return (
           <Link
             key={href}
@@ -75,10 +91,13 @@ export function Nav() {
   );
 }
 
-/** Logo-Zeichen von MC Dream Education, darunter der Name der App und des Instituts. */
+/**
+ * Logo-Zeichen von MC Dream Education, darunter der Name der App und des Instituts. Führt dorthin, wo die Lehrkraft
+ * gerade gebraucht wird (`/jetzt`: laufende Einheit, offener Abschluss oder Heute).
+ */
 export function Brand() {
   return (
-    <Link href="/" className="flex items-center gap-2.5 rounded-2xl">
+    <Link href="/jetzt" className="flex items-center gap-2.5 rounded-2xl">
       <BrandMark height={38} />
       <span className="leading-tight">
         <span className="display block text-[18px] font-semibold tracking-[-0.01em]">Lernheft</span>

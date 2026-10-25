@@ -76,7 +76,7 @@ export default async function RoomsPage({ searchParams }: { searchParams: Promis
               })}
             </ul>
           )}
-          {!darf && <p className="mt-3 text-[13px] text-ink-3">Ändern kann Räume nur die Verwaltung. Für deine Raumwünsche findest du sie unter Mehr › Lehrer &amp; Verfügbarkeit.</p>}
+          {!darf && <p className="mt-3 text-[13px] text-ink-3">Ändern kann Räume nur die Verwaltung. Für deine Raumwünsche findest du sie unter Erweitert › Lehrer &amp; Verfügbarkeit.</p>}
         </section>
 
         {darf && (

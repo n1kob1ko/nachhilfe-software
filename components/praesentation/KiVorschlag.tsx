@@ -167,7 +167,7 @@ export function KiVorschlag({ e, schritte, kosten, ersetzt }: { e: PraesEntwurf;
           })}
         </ul>
         <p className="mt-3 text-[13px] text-ink-3">
-          „Übernehmen“ speichert die Präsentation unter Mehr › Präsentationen (als „Ungeprüft“), verknüpft sie mit diesem Paket{ersetzt ? " statt der jetzigen" : ""} und setzt diese Foliennummern. Sie gilt dann für
+          „Übernehmen“ speichert die Präsentation unter Erweitert › Präsentationen (als „Ungeprüft“), verknüpft sie mit diesem Paket{ersetzt ? " statt der jetzigen" : ""} und setzt diese Foliennummern. Sie gilt dann für
           jeden Schüler, der das Paket bekommt.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">

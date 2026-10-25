@@ -121,7 +121,7 @@ function bekannteNamen(): string[] {
 
 /** Why the button cannot ask the KI now, or null. */
 export function kiAusGrund(): string | null {
-  if (!aiEnabled("lernpaket")) return "Die KI ist aus oder für den gewählten Anbieter ist kein Schlüssel hinterlegt (Mehr › KI-Kosten). Neues Lernpaket und Importieren gehen weiter.";
+  if (!aiEnabled("lernpaket")) return "Die KI ist aus oder für den gewählten Anbieter ist kein Schlüssel hinterlegt (Erweitert › KI-Kosten). Neues Lernpaket und Importieren gehen weiter.";
   if (budgetUsedUp("lernpaket")) return "Das KI-Budget für diesen Monat ist aufgebraucht. Neues Lernpaket und Importieren gehen weiter.";
   return null;
 }

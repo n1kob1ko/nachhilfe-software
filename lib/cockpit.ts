@@ -12,6 +12,7 @@
  * Notizen und Inhalt des Pakets bleiben beim Lehrer. Zum Schüler kommen nur die Aufgaben, die der Lehrer
  * mit „Übung senden“ schickt, ohne die Prüfhinweise des Pakets (`data.pruefen`).
  */
+import { briefingDaten, einfachesBriefing, type PlanSchritt } from "./briefing";
 import { checkTask } from "./builder";
 import { difficultyFor } from "./curriculum";
 import { db, json } from "./db";
@@ -23,7 +24,7 @@ import * as repo from "./repo";
 import { schulstufe } from "./school";
 import { analyzeStudent, buildWorksheet } from "./service";
 import type { TaskDraft } from "./tasks";
-import { getUnit } from "./units";
+import { getUnit, platzFuerEinheit } from "./units";
 import { autoFuerEinheit, vorschlagErlauben, type Passung, type Signal } from "./vorbereitung-auto";
 
 /** Höchstlänge einer Notiz je Schritt. */
@@ -44,6 +45,12 @@ export type Stand = {
   notizen: Record<string, string>;
   /** gesendete Übungen je Schritt-Id */
   gesendet: Record<string, number[]>;
+  /** „Wiederholen“: wie oft ein Schritt wiederholt wurde, je Schritt-Id */
+  wiederholt: Record<string, number>;
+  /** „Schüler versteht es nicht“: wie oft, je Schritt-Id */
+  nichtVerstanden: Record<string, number>;
+  /** ohne Lernpaket: der „Plan für heute“ aus dem Briefing, beim ersten Tippen festgehalten; null = noch nicht */
+  plan: PlanStep[] | null;
   /** noch nicht gespeichert, aus „Einheit vorbereiten“ übernommen */
   vorbereitet: boolean;
   /** noch nicht gespeichert: der Vorschlag der App (lib/vorbereitung-auto.ts), nicht die Wahl des Lehrers */
@@ -51,7 +58,33 @@ export type Stand = {
   updated_at: string | null;
 };
 
-const leer = (unitId: number): Stand => ({ unit_id: unitId, paket_id: null, skill_id: null, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], notizen: {}, gesendet: {}, vorbereitet: false, automatisch: null, updated_at: null });
+const leer = (unitId: number): Stand => ({
+  unit_id: unitId,
+  paket_id: null,
+  skill_id: null,
+  reihenfolge: [],
+  aktuell: null,
+  erledigt: [],
+  uebersprungen: [],
+  notizen: {},
+  gesendet: {},
+  wiederholt: {},
+  nichtVerstanden: {},
+  plan: null,
+  vorbereitet: false,
+  automatisch: null,
+  updated_at: null,
+});
+
+/**
+ * Ein Schritt aus dem „Plan für heute“ des Briefings (lib/briefing.ts), für eine Einheit ohne Lernpaket. Die Ids
+ * sind negativ (-1, -2 …), damit sie nie mit Schritten eines Pakets verwechselt werden. `uebung` ist eine Übung aus
+ * dem Bestand („U12“ …), `skillId` die Fähigkeit für neue Aufgaben aus den Generatoren.
+ */
+export type PlanStep = { id: number; titel: string; minuten: number; beschreibung: string; uebung: string | null; skillId: string | null };
+
+export const planSchritte = (plan: PlanSchritt[]): PlanStep[] =>
+  plan.map((p, i) => ({ id: -(i + 1), titel: p.titel, minuten: p.minuten, beschreibung: p.beschreibung, uebung: p.uebung, skillId: p.skillId ?? null }));
 
 // ---------- the rules, without the database ----------
 
@@ -96,6 +129,17 @@ export function markiere<S extends Pick<Stand, "aktuell" | "erledigt" | "uebersp
   return { ...neu, aktuell: was === "offen" ? id : naechsterOffener(order, neu, id) };
 }
 
+export type Merke = "wiederholt" | "nichtVerstanden";
+
+/**
+ * „Wiederholen“ und „Schüler versteht es nicht“: zählt für den Schritt mit, und der Schritt bleibt (oder kommt
+ * wieder) auf dem Schirm und offen. Beim Beenden kommt das in die Dokumentation (`dokumentiereAblauf`).
+ */
+export function merke<S extends Pick<Stand, "aktuell" | "erledigt" | "uebersprungen" | "wiederholt" | "nichtVerstanden">>(s: S, id: number, was: Merke): S {
+  const zahl = { ...s[was], [id]: (s[was][id] ?? 0) + 1 };
+  return { ...s, [was]: zahl, aktuell: id, erledigt: s.erledigt.filter((x) => x !== id), uebersprungen: s.uebersprungen.filter((x) => x !== id) };
+}
+
 /** Einen Schritt für diese Einheit nach vorne (-1) oder hinten (+1) schieben. */
 export function verschiebe(order: number[], id: number, richtung: -1 | 1): number[] {
   const i = order.indexOf(id);
@@ -119,26 +163,78 @@ export function zusammenfassung<T extends { id: number }>(schritte: T[], order: 
   };
 }
 
-export type DokuTexte = { gemacht: string; wiederholen: string | null; naechstesMal: string | null };
+/** Ein Schritt mit der Zahl, wie oft er wiederholt wurde oder nicht verstanden war. */
+export type MitMal<T> = T & { mal: number };
 
-/** Anfang der Zeilen, die das Cockpit in die Dokumentation schreibt (zum Ersetzen beim zweiten Mal). */
-const ZEILE = { gemacht: "Lernpaket „", wiederholen: "Übersprungen in „", naechstesMal: "Weiter mit „" } as const;
+/** Was in dieser Einheit geschah, mit „Wiederholen“ und „Schüler versteht es nicht“, in der Reihenfolge der Einheit. */
+export type Ergebnis<T> = Zusammenfassung<T> & { wiederholt: MitMal<T>[]; nichtVerstanden: MitMal<T>[] };
+
+export function ergebnis<T extends { id: number }>(schritte: T[], order: number[], s: Pick<Stand, "erledigt" | "uebersprungen" | "wiederholt" | "nichtVerstanden">): Ergebnis<T> {
+  const z = zusammenfassung(schritte, order, s);
+  const byId = new Map(schritte.map((x) => [x.id, x]));
+  const liste = order.map((id) => byId.get(id)).filter((x): x is T => Boolean(x));
+  const mit = (zahl: Record<string, number>) => liste.filter((x) => (zahl[x.id] ?? 0) > 0).map((x) => ({ ...x, mal: zahl[x.id] }));
+  return { ...z, wiederholt: mit(s.wiederholt ?? {}), nichtVerstanden: mit(s.nichtVerstanden ?? {}) };
+}
+
+/** Eine Hilfe bei „Schüler versteht es nicht“: woher sie kommt, Text und, wo es eine gibt, die erwartete Antwort. */
+/** `anpassung`: die Id einer übernommenen Anpassung, damit der Lehrer sie wieder entfernen kann. */
+export type Hilfe = { titel: string; text: string; antwort: string; anpassung?: number };
 
 /**
- * Die Sätze für die Dokumentation, nur aus dem, was der Lehrer getippt hat. Ohne erledigten oder
- * übersprungenen Schritt null: dann wurde das Cockpit nicht benutzt, und „nicht erreicht“ wäre geraten.
+ * „Schüler versteht es nicht“: was es schon gibt, in dieser Reihenfolge, nichts Neues und ohne KI. „Bei Fehler“ aus
+ * dem Paket, dann vom Lehrer übernommene Anpassungen dieses Schritts (Bei Fehler, leichtere Frage, Zusatzbeispiel;
+ * keine schwerere, keine ungeprüften), dann die Erklärung und die typischen Fehler der Fähigkeit. Leer: nichts da.
  */
-export function dokuTexte(titel: string, z: Zusammenfassung<{ titel: string }>): DokuTexte | null {
-  if (!z.erledigt.length && !z.uebersprungen.length) return null;
+export function hilfeBeiFehler(
+  beiFehler: string,
+  angepasst: { id?: number; art: string; titel: string; text: string; antwort: string; status: string }[],
+  faehigkeit: { erklaerung?: string | null; typischeFehler?: string[] } = {},
+): Hilfe[] {
+  const out: Hilfe[] = [];
+  if (beiFehler.trim()) out.push({ titel: "Bei Fehler", text: beiFehler.trim(), antwort: "" });
+  const rang = { bei_fehler: 0, leichter: 1, beispiel: 2 } as Record<string, number>;
+  const genommen = angepasst.filter((a) => a.status === "uebernommen" && a.art in rang && a.text.trim()).sort((a, b) => rang[a.art] - rang[b.art]);
+  const LABEL: Record<string, string> = { bei_fehler: "Angepasst: Bei Fehler", leichter: "Angepasst: Leichtere Frage", beispiel: "Angepasst: Zusatzbeispiel" };
+  for (const a of genommen) out.push({ titel: `${LABEL[a.art]}${a.titel.trim() ? ` – ${a.titel.trim()}` : ""}`, text: a.text.trim(), antwort: a.antwort.trim(), ...(a.id ? { anpassung: a.id } : {}) });
+  if (faehigkeit.erklaerung?.trim()) out.push({ titel: "Einfach erklärt", text: faehigkeit.erklaerung.trim(), antwort: "" });
+  const fehler = (faehigkeit.typischeFehler ?? []).filter((f) => f.trim());
+  if (fehler.length) out.push({ titel: "Typische Fehler", text: fehler.map((f) => `– ${f}`).join("\n"), antwort: "" });
+  return out;
+}
+
+export type DokuTexte = { gemacht: string; wiederholen: string | null; wiederholt: string | null; naechstesMal: string | null; schwierig: string | null };
+
+/** Anfang der Zeilen, die das Cockpit in die Dokumentation schreibt (zum Ersetzen beim zweiten Mal). */
+const ZEILE = { gemacht: ["Lernpaket „", "Plan für heute: "], wiederholen: "Übersprungen ", wiederholt: "Wiederholt ", naechstesMal: "Weiter mit ", schwierig: "Nicht verstanden " } as const;
+
+/**
+ * Die Sätze für die Dokumentation, nur aus dem, was der Lehrer getippt hat. Ohne erledigten, übersprungenen,
+ * wiederholten oder nicht verstandenen Schritt null: dann wurde das Cockpit nicht benutzt, und „nicht erreicht“
+ * wäre geraten. `art` „plan“: die Schritte kamen aus dem „Plan für heute“ des Briefings (ohne Lernpaket).
+ */
+export function dokuTexte(
+  titel: string,
+  z: Zusammenfassung<{ titel: string }> & Partial<Pick<Ergebnis<{ titel: string }>, "wiederholt" | "nichtVerstanden">>,
+  art: "paket" | "plan" = "paket",
+): DokuTexte | null {
+  const wiederholt = z.wiederholt ?? [];
+  const nichtVerstanden = z.nichtVerstanden ?? [];
+  if (!z.erledigt.length && !z.uebersprungen.length && !wiederholt.length && !nichtVerstanden.length) return null;
   const gesamt = z.erledigt.length + z.uebersprungen.length + z.nichtErreicht.length;
   const namen = (xs: { titel: string }[]) => xs.map((x) => x.titel).join(", ");
-  const teile = [`${ZEILE.gemacht}${titel}“: ${z.erledigt.length} von ${gesamt} Schritten erledigt${z.erledigt.length ? ` (${namen(z.erledigt)})` : ""}.`];
+  const mitMal = (xs: { titel: string; mal: number }[]) => xs.map((x) => (x.mal > 1 ? `${x.titel} (${x.mal}×)` : x.titel)).join(", ");
+  const kopf = art === "plan" ? "Plan für heute" : `Lernpaket „${titel}“`;
+  const darin = art === "plan" ? "im Plan für heute" : `in „${titel}“`;
+  const teile = [`${kopf}: ${z.erledigt.length} von ${gesamt} Schritten erledigt${z.erledigt.length ? ` (${namen(z.erledigt)})` : ""}.`];
   if (z.uebersprungen.length) teile.push(`Übersprungen: ${namen(z.uebersprungen)}.`);
   if (z.nichtErreicht.length) teile.push(`Nicht erreicht: ${namen(z.nichtErreicht)}.`);
   return {
     gemacht: teile.join(" "),
-    wiederholen: z.uebersprungen.length ? `${ZEILE.wiederholen}${titel}“: ${namen(z.uebersprungen)}` : null,
-    naechstesMal: z.nichtErreicht.length ? `${ZEILE.naechstesMal}${titel}“: ${namen(z.nichtErreicht)}` : null,
+    wiederholen: z.uebersprungen.length ? `${ZEILE.wiederholen}${darin}: ${namen(z.uebersprungen)}` : null,
+    wiederholt: wiederholt.length ? `${ZEILE.wiederholt}${darin}: ${mitMal(wiederholt)}` : null,
+    naechstesMal: z.nichtErreicht.length ? `${ZEILE.naechstesMal}${art === "plan" ? "dem Plan für heute" : `„${titel}“`}: ${namen(z.nichtErreicht)}` : null,
+    schwierig: nichtVerstanden.length ? `${ZEILE.schwierig}${darin}: ${mitMal(nichtVerstanden)}` : null,
   };
 }
 
@@ -153,7 +249,21 @@ export function mitZeile(text: string, anfang: string, neu: string | null): stri
 
 // ---------- reading and writing ----------
 
-type Row = { unit_id: number; paket_id: number | null; skill_id: string | null; reihenfolge: string; aktuell: number | null; erledigt: string; uebersprungen: string; notizen: string; gesendet: string; updated_at: string };
+type Row = {
+  unit_id: number;
+  paket_id: number | null;
+  skill_id: string | null;
+  reihenfolge: string;
+  aktuell: number | null;
+  erledigt: string;
+  uebersprungen: string;
+  notizen: string;
+  gesendet: string;
+  wiederholt: string;
+  nicht_verstanden: string;
+  plan: string | null;
+  updated_at: string;
+};
 
 const zuStand = (r: Row): Stand => ({
   unit_id: r.unit_id,
@@ -165,6 +275,9 @@ const zuStand = (r: Row): Stand => ({
   uebersprungen: json<number[]>(r.uebersprungen, []),
   notizen: json<Record<string, string>>(r.notizen, {}),
   gesendet: json<Record<string, number[]>>(r.gesendet, {}),
+  wiederholt: json<Record<string, number>>(r.wiederholt, {}),
+  nichtVerstanden: json<Record<string, number>>(r.nicht_verstanden, {}),
+  plan: r.plan ? json<PlanStep[] | null>(r.plan, null) : null,
   vorbereitet: false,
   automatisch: null,
   updated_at: r.updated_at,
@@ -197,10 +310,11 @@ export function leseStand(unitId: number): Stand {
 function speichere(s: Stand) {
   db()
     .prepare(
-      `INSERT INTO einheit_cockpit (unit_id, paket_id, skill_id, reihenfolge, aktuell, erledigt, uebersprungen, notizen, gesendet, updated_at)
-       VALUES (@unit_id, @paket_id, @skill_id, @reihenfolge, @aktuell, @erledigt, @uebersprungen, @notizen, @gesendet, datetime('now'))
+      `INSERT INTO einheit_cockpit (unit_id, paket_id, skill_id, reihenfolge, aktuell, erledigt, uebersprungen, notizen, gesendet, wiederholt, nicht_verstanden, plan, updated_at)
+       VALUES (@unit_id, @paket_id, @skill_id, @reihenfolge, @aktuell, @erledigt, @uebersprungen, @notizen, @gesendet, @wiederholt, @nicht_verstanden, @plan, datetime('now'))
        ON CONFLICT(unit_id) DO UPDATE SET paket_id = excluded.paket_id, skill_id = excluded.skill_id, reihenfolge = excluded.reihenfolge, aktuell = excluded.aktuell,
-         erledigt = excluded.erledigt, uebersprungen = excluded.uebersprungen, notizen = excluded.notizen, gesendet = excluded.gesendet, updated_at = excluded.updated_at`,
+         erledigt = excluded.erledigt, uebersprungen = excluded.uebersprungen, notizen = excluded.notizen, gesendet = excluded.gesendet,
+         wiederholt = excluded.wiederholt, nicht_verstanden = excluded.nicht_verstanden, plan = excluded.plan, updated_at = excluded.updated_at`,
     )
     .run({
       unit_id: s.unit_id,
@@ -212,6 +326,9 @@ function speichere(s: Stand) {
       uebersprungen: JSON.stringify(s.uebersprungen),
       notizen: JSON.stringify(s.notizen),
       gesendet: JSON.stringify(s.gesendet),
+      wiederholt: JSON.stringify(s.wiederholt),
+      nicht_verstanden: JSON.stringify(s.nichtVerstanden),
+      plan: s.plan ? JSON.stringify(s.plan) : null,
     });
 }
 
@@ -235,20 +352,50 @@ export type CockpitDaten = {
   aktuell: LernpaketSchritt | null;
   /** Minute, ab der ein Schritt geplant ist, je Schritt-Id */
   ab: Map<number, number>;
+  /** ohne Lernpaket: der „Plan für heute“ in der Reihenfolge dieser Einheit (der festgehaltene, sonst der von jetzt) */
+  plan: PlanStep[];
+  /** ohne Lernpaket: der Planschritt auf dem Schirm; null = alle durch (oder kein Plan) */
+  planAktuell: PlanStep | null;
 };
 
-/** Alles, was die Seite für das Cockpit braucht. */
-export function cockpit(unitId: number): CockpitDaten {
+/** Minute, ab der jeder Schritt geplant ist. */
+const minutenAb = (schritte: { id: number; minuten: number }[]) => {
+  const ab = new Map<number, number>();
+  schritte.reduce((min, s) => (ab.set(s.id, min), min + s.minuten), 0);
+  return ab;
+};
+
+/**
+ * Der „Plan für heute“ für eine laufende Einheit ohne Lernpaket: aus dem Briefing ohne KI (lib/briefing.ts), mit
+ * der geplanten Dauer des Platzes. Liest nur.
+ */
+export function planDerEinheit(unitId: number): PlanStep[] {
+  const unit = getUnit(unitId);
+  if (!unit || unit.status !== "gestartet") return [];
+  const d = briefingDaten(unit.student_id, { platzId: platzFuerEinheit(unit)?.id ?? null });
+  return d ? planSchritte(einfachesBriefing(d).plan) : [];
+}
+
+/**
+ * Alles, was die Seite für das Cockpit braucht. `mitPlan`: ohne Lernpaket auch den „Plan für heute“ (das Briefing
+ * wird dafür gerechnet, also nur, wo er gezeigt wird).
+ */
+export function cockpit(unitId: number, o: { mitPlan?: boolean } = {}): CockpitDaten {
   const stand = leseStand(unitId);
   const paket = stand.paket_id ? getLernpaket(stand.paket_id) : null;
-  if (!paket) return { stand, paket: null, schritte: [], aktuell: null, ab: new Map() };
+  if (!paket) {
+    const roh = stand.plan ?? (o.mitPlan ? planDerEinheit(unitId) : []);
+    const order = ablauf(roh, stand.reihenfolge);
+    const byId = new Map(roh.map((s) => [s.id, s]));
+    const plan = order.map((id) => byId.get(id)!);
+    const id = aktuellerSchritt(order, stand);
+    return { stand, paket: null, schritte: [], aktuell: null, ab: minutenAb(plan), plan, planAktuell: id === null ? null : byId.get(id)! };
+  }
   const order = ablauf(paket.schritte, stand.reihenfolge);
   const byId = new Map(paket.schritte.map((s) => [s.id, s]));
   const schritte = order.map((id) => byId.get(id)!);
-  const ab = new Map<number, number>();
-  schritte.reduce((min, s) => (ab.set(s.id, min), min + s.minuten), 0);
   const id = aktuellerSchritt(order, stand);
-  return { stand, paket, schritte, aktuell: id === null ? null : byId.get(id)!, ab };
+  return { stand, paket, schritte, aktuell: id === null ? null : byId.get(id)!, ab: minutenAb(schritte), plan: [], planAktuell: null };
 }
 
 /** Ein Lernpaket für die Einheit wählen (null: ohne Lernpaket). Ein anderes Paket fängt von vorne an. */
@@ -256,27 +403,52 @@ export function waehlePaket(unitId: number, paketId: number | null): { ok: true 
   const p = paketId ? getLernpaket(paketId) : null;
   if (paketId && (!p || p.status === "archiviert")) return { fehler: "Dieses Lernpaket gibt es nicht mehr." };
   if (p && !p.schritte.length) return { fehler: "Dieses Lernpaket hat noch keine Schritte." };
-  aendere(unitId, (s) => (s.paket_id === paketId && !s.vorbereitet ? s : { ...s, paket_id: paketId, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [] }));
+  aendere(unitId, (s) =>
+    s.paket_id === paketId && !s.vorbereitet ? s : { ...s, paket_id: paketId, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, plan: null },
+  );
   return { ok: true };
 }
 
-/** Ohne Lernpaket: die Fähigkeit, um die es heute geht. */
+/**
+ * Ohne Lernpaket: die Fähigkeit, um die es heute geht. Kommt die Einheit von einem Paket, fängt der „Plan für heute“
+ * von vorne an; war sie schon ohne Paket, bleibt sein Stand.
+ */
 export function waehleFaehigkeit(unitId: number, skillId: string | null): { ok: true } | { fehler: string } {
   if (skillId && !repo.getSkill(skillId)) return { fehler: "Diese Fähigkeit gibt es nicht." };
-  aendere(unitId, (s) => ({ ...s, paket_id: null, skill_id: skillId, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [] }));
+  aendere(unitId, (s) =>
+    s.paket_id === null && !s.vorbereitet
+      ? { ...s, skill_id: skillId }
+      : { ...s, paket_id: null, skill_id: skillId, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, plan: null },
+  );
   return { ok: true };
 }
 
-/** Prüft, dass der Schritt zum Paket der Einheit gehört, und gibt die Reihenfolge mit. */
+/**
+ * Prüft, dass der Schritt zur Einheit gehört, und gibt die Reihenfolge mit: ein Schritt des Lernpakets, ohne Paket ein
+ * Schritt des „Plans für heute“. Der Plan wird beim ersten Tippen festgehalten, damit er sich während der Einheit
+ * nicht mehr ändert (neue Antworten ändern sonst die Empfehlung und damit den Plan).
+ */
 function mitSchritt(unitId: number, schrittId: number, f: (s: Stand, order: number[]) => Stand): boolean {
   const s = leseStand(unitId);
   const p = s.paket_id ? getLernpaket(s.paket_id) : null;
-  if (!p || !p.schritte.some((x) => x.id === schrittId)) return false;
-  aendere(unitId, (cur) => f(cur, ablauf(p.schritte, cur.reihenfolge)));
+  if (p) {
+    if (!p.schritte.some((x) => x.id === schrittId)) return false;
+    aendere(unitId, (cur) => f(cur, ablauf(p.schritte, cur.reihenfolge)));
+    return true;
+  }
+  const plan = s.plan ?? (schrittId < 0 ? planDerEinheit(unitId) : []);
+  if (!plan.some((x) => x.id === schrittId)) return false;
+  aendere(unitId, (cur) => {
+    const fest = cur.plan ?? plan;
+    return f({ ...cur, plan: fest }, ablauf(fest, cur.reihenfolge));
+  });
   return true;
 }
 
 export const markiereSchritt = (unitId: number, schrittId: number, was: Markierung) => mitSchritt(unitId, schrittId, (s, order) => markiere(s, order, schrittId, was));
+
+/** „Wiederholen“ oder „Schüler versteht es nicht“ für einen Schritt (Lernpaket oder Plan). */
+export const merkeSchritt = (unitId: number, schrittId: number, was: Merke) => mitSchritt(unitId, schrittId, (s) => merke(s, schrittId, was));
 
 export const zeigeSchritt = (unitId: number, schrittId: number) => mitSchritt(unitId, schrittId, (s) => ({ ...s, aktuell: schrittId }));
 
@@ -369,29 +541,52 @@ export function sendeSchritt(unitId: number, schrittId: number, teacherId: numbe
  */
 export function dokumentiereAblauf(lessonId: number, unitId: number): DokuTexte | null {
   const s = gespeichert(unitId);
-  const p = s?.paket_id ? getLernpaket(s.paket_id) : null;
   const lesson = repo.getLesson(lessonId);
-  if (!s || !p || !lesson) return null;
-  const t = dokuTexte(p.title, zusammenfassung(p.schritte, ablauf(p.schritte, s.reihenfolge), s));
+  const a = s ? ablaufVon(s) : null;
+  if (!s || !a || !lesson) return null;
+  const t = dokuTexte(a.titel, a.ergebnis, a.art);
   if (!t) return null;
   const auto = autoFelderVon(lesson);
   const werte = json<Record<string, unknown>>(lesson.auto_felder, {});
-  const neu: Partial<Record<"activities" | "review_topics" | "next_steps", string>> = {};
-  const setze = (feld: "activities" | "review_topics" | "next_steps", anfang: string, zeile: string | null) => {
+  type Feld = "activities" | "review_topics" | "next_steps" | "difficulties";
+  const neu: Partial<Record<Feld, string>> = {};
+  const setze = (feld: Feld, zeilen: [anfang: string, zeile: string | null][]) => {
     const bisher = lesson[feld] ?? "";
     if (bisher.trim() && !auto.has(feld)) return;
-    const wert = mitZeile(bisher, anfang, zeile);
+    const wert = zeilen.reduce((text, [anfang, zeile]) => mitZeile(text, anfang, zeile), bisher);
     neu[feld] = wert;
     if (wert.trim()) werte[feld] = wert;
     else delete werte[feld];
   };
-  setze("activities", ZEILE.gemacht, t.gemacht);
-  setze("review_topics", ZEILE.wiederholen, t.wiederholen);
-  setze("next_steps", ZEILE.naechstesMal, t.naechstesMal);
+  // a line of the other kind (package / plan) goes: only one of them describes this unit
+  const [paketZeile, planZeile] = ZEILE.gemacht;
+  setze("activities", a.art === "plan" ? [[paketZeile, null], [planZeile, t.gemacht]] : [[planZeile, null], [paketZeile, t.gemacht]]);
+  setze("review_topics", [
+    [ZEILE.wiederholen, t.wiederholen],
+    [ZEILE.wiederholt, t.wiederholt],
+  ]);
+  setze("next_steps", [[ZEILE.naechstesMal, t.naechstesMal]]);
+  setze("difficulties", [[ZEILE.schwierig, t.schwierig]]);
   if (!Object.keys(neu).length) return t;
   repo.saveLesson({ ...lesson, ...neu }, lesson.id);
   db().prepare("UPDATE lessons SET auto_felder = ? WHERE id = ?").run(JSON.stringify(werte), lesson.id);
   return t;
+}
+
+export type AblaufDerEinheit = { art: "paket" | "plan"; titel: string; ergebnis: Ergebnis<{ id: number; titel: string }> };
+
+/** Was mit dem Lernpaket oder dem „Plan für heute“ einer Einheit geschah, nach dem gespeicherten Stand. */
+function ablaufVon(s: Stand): AblaufDerEinheit | null {
+  const p = s.paket_id ? getLernpaket(s.paket_id) : null;
+  if (p) return { art: "paket", titel: p.title, ergebnis: ergebnis(p.schritte, ablauf(p.schritte, s.reihenfolge), s) };
+  if (s.plan?.length) return { art: "plan", titel: "Plan für heute", ergebnis: ergebnis(s.plan, ablauf(s.plan, s.reihenfolge), s) };
+  return null;
+}
+
+/** Der Ablauf einer Einheit für den Abschluss: nur, was gespeichert ist (getippt wurde), nie ein bloßer Vorschlag. */
+export function ablaufDerEinheit(unitId: number): AblaufDerEinheit | null {
+  const s = gespeichert(unitId);
+  return s ? ablaufVon(s) : null;
 }
 
 // ---------- „Einheit vorbereiten“ ----------

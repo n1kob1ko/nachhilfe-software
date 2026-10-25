@@ -13,9 +13,9 @@ import { zeitfenster } from "@/lib/planung/heute";
 export const dynamic = "force-dynamic";
 
 /**
- * Der Rahmen der Lehrkraft: links eine ruhige Leiste mit dem Logo und den fünf Einträgen, rechts die
- * Seite. Am Telefon steht das Logo oben und die fünf Einträge unten (TabBar). Die Knöpfe für Feedback
- * und den Dunkelmodus stehen neben dem Konto, nie als sechster Eintrag in der Navigation.
+ * Der Rahmen der Lehrkraft: links eine ruhige Leiste mit dem Logo und den vier Einträgen (Heute, Unterricht,
+ * Abschluss, Erweitert), rechts die Seite. Am Telefon steht das Logo oben und die vier Einträge unten (TabBar).
+ * Die Knöpfe für Feedback und den Dunkelmodus stehen neben dem Konto, nie als Eintrag in der Navigation.
  */
 export default async function TutorLayout({ children }: { children: React.ReactNode }) {
   const teacher = await requireTeacher();
@@ -26,6 +26,8 @@ export default async function TutorLayout({ children }: { children: React.ReactN
     const platz = platzFuerEinheit(u);
     return { ...u, bis: platz ? zeitfenster(platz).bis : null };
   });
+  // welche Einheiten laufen (auch die anderer Lehrkräfte): ihre Seite gehört zu „Unterricht“, eine beendete zu „Abschluss“
+  const laufend = runningUnits().map((u) => u.id);
   // am Telefon nur das Bild: neben Feedback und Dunkelmodus ist für den Namen kein Platz
   const me = (kompakt = false) => (
     <Link href="/mehr" className={`flex items-center gap-2.5 rounded-full text-[14px] transition-colors hover:bg-surface ${kompakt ? "p-1" : "py-1 pr-3 pl-1"}`} title="Konto und Einstellungen">
@@ -49,7 +51,7 @@ export default async function TutorLayout({ children }: { children: React.ReactN
       <aside className="no-print hidden border-r border-line md:sticky md:top-0 md:flex md:h-screen md:flex-col md:px-4 md:py-6">
         <Brand />
         <div className="mt-8">
-          <Nav />
+          <Nav laufend={laufend} />
         </div>
         <div className="mt-auto space-y-2">
           <FeedbackButton variant="zeile" />
@@ -65,7 +67,7 @@ export default async function TutorLayout({ children }: { children: React.ReactN
           {children}
         </div>
       </main>
-      <TabBar />
+      <TabBar laufend={laufend} />
     </div>
   );
 }

@@ -381,7 +381,7 @@ Die Oberfläche dazu:
 | `components/planung/RaumForm.tsx`, `RaumPraeferenzen.tsx`, `RaumAktionen.tsx` | Räume und Raumwünsche (Phase 3, D22) |
 | `components/planung/PlanungFormular.tsx` | der Abschnitt „Planung“ einer Schülerin/eines Schülers (Phase 3) |
 | `app/(tutor)/mehr/raeume/page.tsx`, `app/(tutor)/lehrer/page.tsx`, `app/(tutor)/schueler/[id]/bearbeiten/page.tsx` | die Seiten dazu |
-| `app/(tutor)/page.tsx` (`?tab=woche` = „Meine Woche“), `app/lernen/[token]/page.tsx` | die veröffentlichte Woche des Lehrers und „Deine Termine“ des Schülers (diese und die nächste Woche, `lib/planung/schueler-termine.ts`, [schueler-app.md](schueler-app.md)) |
+| `app/(tutor)/mehr/uebersicht/page.tsx` (`?tab=woche` = „Meine Woche“, unter Erweitert; `/?tab=woche` leitet dorthin), `app/lernen/[token]/page.tsx` | die veröffentlichte Woche des Lehrers und „Deine Termine“ des Schülers (diese und die nächste Woche, `lib/planung/schueler-termine.ts`, [schueler-app.md](schueler-app.md)) |
 
 Und die Verknüpfung mit den echten Einheiten (dieser Teil):
 

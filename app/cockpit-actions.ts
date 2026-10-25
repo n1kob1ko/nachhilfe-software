@@ -5,7 +5,20 @@ import { redirect } from "next/navigation";
 import type { SendState } from "@/app/device-actions";
 import { entscheide, erstelleAnpassungen } from "@/lib/anpassen";
 import { requireTeacher } from "@/lib/auth";
-import { bereiteVor, markiereSchritt, sendeAusGenerator, sendeSchritt, setzeNotiz, verschiebeSchritt, waehleFaehigkeit, waehlePaket, zeigeSchritt, type Markierung } from "@/lib/cockpit";
+import {
+  bereiteVor,
+  markiereSchritt,
+  merkeSchritt,
+  sendeAusGenerator,
+  sendeSchritt,
+  setzeNotiz,
+  verschiebeSchritt,
+  waehleFaehigkeit,
+  waehlePaket,
+  zeigeSchritt,
+  type Markierung,
+  type Merke,
+} from "@/lib/cockpit";
 import { noteActivity } from "@/lib/learning";
 import { pushLive, showOnTablet } from "@/lib/live";
 import { tagAddieren, wienerDatum } from "@/lib/planung/zeit";
@@ -47,6 +60,13 @@ export async function waehleFaehigkeitAction(unitId: number, form: FormData) {
 export async function markiereSchrittAction(unitId: number, schrittId: number, was: Markierung) {
   await laufendeEinheit(unitId);
   markiereSchritt(unitId, schrittId, was);
+  zurueck(unitId);
+}
+
+/** „Wiederholen“ / „Schüler versteht es nicht“: zählt für die Dokumentation mit, der Schritt bleibt auf dem Schirm. */
+export async function merkeSchrittAction(unitId: number, schrittId: number, was: Merke) {
+  await laufendeEinheit(unitId);
+  merkeSchritt(unitId, schrittId, was === "nichtVerstanden" ? "nichtVerstanden" : "wiederholt");
   zurueck(unitId);
 }
 
@@ -127,7 +147,7 @@ export async function entferneVorschlagAction(studentId: number, form: FormData)
   entferneVorschlag(studentId, datum, t.id);
   revalidatePath("/");
   revalidatePath(`/schueler/${studentId}/vorbereiten`);
-  redirect(form.get("ziel") === "start" ? "/#vorbereitung" : vorbereitenSeite(studentId, datum));
+  redirect(form.get("ziel") === "uebersicht" || form.get("ziel") === "start" ? "/mehr/uebersicht#vorbereitung" : vorbereitenSeite(studentId, datum));
 }
 
 /** Nach „Entfernen“: der Vorschlag der App darf für diesen Tag wieder kommen. */
@@ -138,7 +158,7 @@ export async function vorschlagZeigenAction(studentId: number, form: FormData) {
   vorschlagErlauben(studentId, datum);
   revalidatePath("/");
   revalidatePath(`/schueler/${studentId}/vorbereiten`);
-  redirect(form.get("ziel") === "start" ? "/#vorbereitung" : vorbereitenSeite(studentId, datum));
+  redirect(form.get("ziel") === "uebersicht" || form.get("ziel") === "start" ? "/mehr/uebersicht#vorbereitung" : vorbereitenSeite(studentId, datum));
 }
 
 export type AnpassenState = { ok: boolean; meldung: string } | null;
