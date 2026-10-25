@@ -47,6 +47,7 @@ export default async function AbschlussPage() {
                     <span className="num block truncate text-[13px] text-ink-2">
                       {formatDate(o.startedAt, { weekday: "short", day: "numeric", month: "short" })} · {formatTime(o.startedAt)}
                       {o.subject && ` · ${o.subject}`}
+                      {o.endedBy === "automatisch" && " · automatisch beendet"}
                     </span>
                   </span>
                   <ChevronRight size={18} className="shrink-0 text-ink-3" aria-hidden />

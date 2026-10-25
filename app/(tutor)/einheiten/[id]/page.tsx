@@ -24,10 +24,8 @@ import { Info } from "@/components/Info";
 import { aiEnabled } from "@/lib/ai";
 import { latestInsight } from "@/lib/ai/insights";
 import { unitBrief } from "@/lib/summary";
-import { ABSCHLUSS_FELDER, abschlussKarte } from "@/lib/abschluss";
-import { ablaufDerEinheit } from "@/lib/cockpit";
-import { bewertungFuerBericht } from "@/lib/text-note";
-import { textLaeufe } from "@/lib/textarbeit-ablauf";
+import { ABSCHLUSS_FELDER, hatSichereErgebnisse, karteDerEinheit, quelleText } from "@/lib/abschluss";
+import { AbschlussFeld } from "@/components/AbschlussFeld";
 import { Pill, Reveal, SectionTitle, formatDate, formatTime } from "@/components/ui";
 import { LiveStatus } from "@/components/device/LiveStatus";
 import { liveSnapshot, studentDevice } from "@/lib/live";
@@ -260,10 +258,9 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   const mappe = mappeFuerEinheit(unit.id);
   // „Was war heute schwer?“, vom Schüler nach dieser Einheit geschrieben (lib/schueler-notiz.ts)
   const notiz = notizZuEinheit(unit.id);
-  // der Abschluss (lib/abschluss.ts): vier Felder aus den Daten und dem, was im Unterricht getippt wurde
-  // Textarbeiten: die übernommene Note, sonst „Bewertung offen“ (lib/text-note.ts), nie ein Vorschlag als Ergebnis
-  const texte = lesson ? textLaeufe(unit.id).map((t) => ({ id: t.id, titel: t.titel, textsorte: t.textsorte, bewertung: bewertungFuerBericht(t.id, unit.id), vorschlag: t.vorschlag })) : [];
-  const karte = abschlussKarte(brief, ablaufDerEinheit(unit.id), texte);
+  // der Abschluss (lib/abschluss.ts): vier Felder aus den Daten, deinen Beobachtungen und dem, was im Unterricht getippt
+  // wurde, jede Zeile mit ihrer Quelle; Textarbeiten nur mit übernommener Note, nie ein Vorschlag der KI
+  const karte = lesson ? karteDerEinheit(unit.id, lesson, brief) : null;
   // „Ändern“ (?aendern=1): das Formular der Dokumentation unter der Karte
   const aendern = sp.aendern && mayManage ? lesson : null;
   return (
@@ -280,19 +277,36 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         {facts}
       </header>
       <div className="grid max-w-[820px] gap-8">
-        {lesson ? (
+        {lesson && karte ? (
           <section className="panel px-5 py-5 sm:px-6" aria-label="Abschluss" data-testid="abschluss-karte">
             <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
-              {ABSCHLUSS_FELDER.map(([feld, label]) => (
-                <div key={feld}>
-                  <dt className="text-[13px] font-semibold text-ink-2">{label}</dt>
-                  <dd className="mt-1 text-[15.5px]">
-                    {karte[feld].length ? (
-                      <ul className="grid gap-1">
-                        {karte[feld].map((z, i) => (
-                          <li key={i} className={z.von === "lehrer" ? "text-ink-2" : ""}>
+              {ABSCHLUSS_FELDER.map(([feld, label]) => {
+                const zeilen = karte[feld];
+                // „Gut verstanden“ ohne sicheres Ergebnis (lib/abschluss.ts gutVerstanden): das sagt die Karte, deine Beobachtungen darunter
+                const keineSicheren = feld === "gut" && !hatSichereErgebnisse(zeilen);
+                return (
+                  <AbschlussFeld key={feld} lessonId={mayManage ? lesson.id : null} feld={feld} label={label} text={zeilen.map((z) => z.text).join("\n")}>
+                    {keineSicheren && (
+                      <p className="text-ink-2" data-testid="keine-sicheren">
+                        Keine sicheren Ergebnisse –{" "}
+                        {mayManage ? (
+                          <Link href={`/einheiten/${unit.id}?aendern=1#aendern`} className="font-medium text-accent underline-offset-2 hover:underline">
+                            bei Bedarf ergänzen
+                          </Link>
+                        ) : (
+                          "bei Bedarf ergänzen"
+                        )}
+                      </p>
+                    )}
+                    {zeilen.length > 0 ? (
+                      <ul className={`grid gap-1 ${keineSicheren ? "mt-1" : ""}`}>
+                        {zeilen.map((z, i) => (
+                          <li key={i} className={z.von === "lehrer" || z.von === "beobachtung" ? "text-ink-2" : ""}>
                             {z.text}
-                            {z.von === "lehrer" && <span className="ml-1.5 text-[12px] text-ink-3">(deine Notiz)</span>}
+                            {/* woher die Zeile kommt, leise */}
+                            <span className="ml-1.5 text-[12px] whitespace-nowrap text-ink-3" data-testid="quelle">
+                              {quelleText(z)}
+                            </span>
                             {z.link && mayManage && (
                               <>
                                 {" "}
@@ -304,23 +318,12 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
                           </li>
                         ))}
                       </ul>
-                    ) : feld === "gut" ? (
-                      <span className="text-ink-2" data-testid="keine-sicheren">
-                        Keine sicheren Ergebnisse –{" "}
-                        {mayManage ? (
-                          <Link href={`/einheiten/${unit.id}?aendern=1#aendern`} className="font-medium text-accent underline-offset-2 hover:underline">
-                            bei Bedarf ergänzen
-                          </Link>
-                        ) : (
-                          "bei Bedarf ergänzen"
-                        )}
-                      </span>
                     ) : (
-                      <span className="text-ink-3">Nichts erfasst</span>
+                      !keineSicheren && <span className="text-ink-3">Nichts erfasst</span>
                     )}
-                  </dd>
-                </div>
-              ))}
+                  </AbschlussFeld>
+                );
+              })}
             </dl>
             <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-4">
               {lesson.reviewed_at ? (
@@ -452,13 +455,17 @@ function BriefSection({ brief, lesson, mayManage }: { brief: NonNullable<ReturnT
   );
 }
 
-/** The KI's view of the ended unit (written in the background when the unit ended). */
+/**
+ * The KI's view of the ended unit (written in the background when the unit ended): only a suggestion, here under „Mehr
+ * Details“. It never fills the four fields of the Abschluss, the documentation or the Lernstand (lib/abschluss.ts).
+ */
 function UnitAISummary({ unitId }: { unitId: number | null }) {
   const s = unitId ? latestInsight(unitId, "einheit") : null;
   if (!s) return null;
   return (
-    <div className="mt-4 rounded-2xl bg-panel px-4 py-3">
-      <p className="text-[13px] font-semibold text-ink-2">KI-Einschätzung</p>
+    <div className="mt-4 rounded-2xl bg-panel px-4 py-3" data-testid="ki-vorschlag">
+      <p className="text-[13px] font-semibold text-ink-2">Vorschlag der KI</p>
+      <p className="text-[12.5px] text-ink-3">Nicht geprüft. Steht nicht im Abschluss und nicht in der Dokumentation.</p>
       <p className="mt-1 text-[15px]">{s.data.summary}</p>
       {s.data.next_steps.length > 0 && (
         <ul className="mt-2 list-disc pl-5 text-[14px] text-ink-2">

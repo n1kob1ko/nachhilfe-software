@@ -23,6 +23,7 @@ import { nextSteps } from "./recommend";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
 import { analyzeStudent, buildWorksheet } from "./service";
+import type { Art } from "./steuerung-regeln";
 import type { TaskDraft } from "./tasks";
 import { getUnit, platzFuerEinheit } from "./units";
 import { autoFuerEinheit, fokusAus, vorschlagErlauben, type Passung, type Signal } from "./vorbereitung-auto";
@@ -92,7 +93,15 @@ export const isBeobachtung = (x: unknown): x is Beobachtung => typeof x === "str
  * nur, was danach kam. `signal`: „Schüler versteht es nicht“ oder „Falsch“ bei einer Frage, für den Schritt auf dem Schirm,
  * bis der Lehrer reagiert oder weitergeht.
  */
-export type Steuerung = { bis: number; signal: { schritt: number; art: "nicht_verstanden" | "falsch" } | null };
+export type Steuerung = { bis: number; signal: { schritt: number; art: "nicht_verstanden" | "falsch" } | null; reaktionen?: Reaktion[] };
+
+/**
+ * Eine Reaktion auf den Vorschlag, die Aufgaben an den Schüler geschickt hat (leichter, Voraussetzung, zum Fehler, schwerer),
+ * für den Abschluss (lib/abschluss.ts): „Leichtere Aufgabe nötig bei …“, „Schwerere Aufgabe geschafft“ nur mit richtigen Antworten.
+ */
+export type Reaktion = { art: Art; skillId: string | null; assignmentId: number | null; at: string };
+/** So viele Reaktionen merkt sich eine Einheit höchstens. */
+const REAKTIONEN_MAX = 50;
 
 /**
  * Ein Schritt aus dem „Plan für heute“ des Briefings (lib/briefing.ts), für eine Einheit ohne Lernpaket. Die Ids
@@ -533,11 +542,38 @@ export function setzeAntwort(unitId: number, schrittId: number, wert: Beobachtun
 
 /**
  * Der Lehrer hat auf den Vorschlag reagiert (gesendet, weiter, an die Tafel, nicht nötig): was bis jetzt geantwortet
- * wurde, zählt für den nächsten Vorschlag nicht mehr, und das Zeichen zum Schritt ist erledigt.
+ * wurde, zählt für den nächsten Vorschlag nicht mehr, und das Zeichen zum Schritt ist erledigt. `gesendet`: die Aufgaben,
+ * die dabei an den Schüler gingen; sie bleiben für den Abschluss gemerkt.
  */
-export function reagiert(unitId: number): void {
+export function reagiert(unitId: number, gesendet?: Omit<Reaktion, "at">): void {
   const max = (db().prepare("SELECT MAX(id) AS id FROM attempts WHERE unit_id = ?").get(unitId) as { id: number | null }).id ?? 0;
-  aendere(unitId, (s) => ({ ...s, steuerung: { bis: Math.max(s.steuerung.bis, max), signal: null } }));
+  aendere(unitId, (s) => {
+    const bisher = s.steuerung.reaktionen ?? [];
+    const reaktionen = gesendet ? [...bisher, { ...gesendet, at: new Date().toISOString() }].slice(-REAKTIONEN_MAX) : bisher;
+    return { ...s, steuerung: { bis: Math.max(s.steuerung.bis, max), signal: null, ...(reaktionen.length ? { reaktionen } : {}) } };
+  });
+}
+
+/** Für den Abschluss: die gemerkten Reaktionen mit gesendeten Aufgaben, älteste zuerst; nur Gespeichertes. */
+export function reaktionenDerEinheit(unitId: number): Reaktion[] {
+  return gespeichert(unitId)?.steuerung.reaktionen ?? [];
+}
+
+/** Die Fähigkeiten eines Schritts des Lernpakets: aus seinen Aufgaben, sonst die erste des Pakets (wie lib/steuerung.ts). */
+export function skillsDesSchritts(schritt: Pick<LernpaketSchritt, "aufgaben" | "paket_id">): string[] {
+  const ids = [...new Set(schritt.aufgaben.flatMap((a) => [a.skillId, ...(a.skillIds ?? [])]).filter((x): x is string => Boolean(x)))];
+  return ids.length ? ids : (getLernpaket(schritt.paket_id)?.skill_ids.slice(0, 1) ?? []);
+}
+
+/** Für den Abschluss: die Fähigkeiten der Schritte, die der Lehrer als erledigt getippt hat (Lernpaket oder Plan). */
+export function skillsErledigterSchritte(unitId: number): string[] {
+  const s = gespeichert(unitId);
+  if (!s?.erledigt.length) return [];
+  const p = s.paket_id ? getLernpaket(s.paket_id) : null;
+  const ids = p
+    ? p.schritte.filter((x) => s.erledigt.includes(x.id)).flatMap(skillsDesSchritts)
+    : (s.plan ?? []).filter((x) => s.erledigt.includes(x.id) && x.skillId).map((x) => x.skillId!);
+  return [...new Set(ids)];
 }
 
 /** Für den Abschluss: was der Lehrer bei Fragen und Kontrollen gehört hat, nur Gespeichertes, in der Reihenfolge der Schritte. */

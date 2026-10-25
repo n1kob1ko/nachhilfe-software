@@ -1276,6 +1276,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // die automatisch eingetragenen Werte (JSON {feld: wert}); ein Feld mit anderem Wert hat der Lehrer geändert
   ["lessons", "einschaetzung", "TEXT"],
   ["lessons", "auto_felder", "TEXT NOT NULL DEFAULT '{}'"],
+  // Abschluss (lib/abschluss.ts, 2026-10-25): welche der vier Felder die Lehrkraft direkt in der Karte korrigiert hat
+  // (JSON-Liste: gemacht, gut, schwierig, naechstes); der Text selbst steht im Feld der Dokumentation
+  ["lessons", "abschluss_eigen", "TEXT NOT NULL DEFAULT '[]'"],
   // Minitest am Anfang der Einheit (lib/minitest.ts, 2026-10-19): die Einheit, für die die Übung erstellt wurde;
   // auch ein nur gedruckter Minitest gehört so zu seiner Einheit
   ["worksheets", "minitest_unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
