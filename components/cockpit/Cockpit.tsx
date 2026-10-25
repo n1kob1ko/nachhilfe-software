@@ -1,125 +1,40 @@
 import Link from "next/link";
-import { ArrowDown, ArrowUp, BookMarked, CalendarClock, Check, CheckCircle2, CircleDot, ExternalLink, Presentation, ShieldAlert, SkipForward, Undo2 } from "lucide-react";
-import {
-  anpassenAction,
-  entscheideAnpassungAction,
-  markiereSchrittAction,
-  notizAction,
-  sendeGeneratorAction,
-  sendeSchrittAction,
-  verschiebeSchrittAction,
-  waehleFaehigkeitAction,
-  waehlePaketAction,
-  zeigeSchrittAction,
-} from "@/app/cockpit-actions";
-import { AnpassenKnopf, CockpitSenden, SchrittNotiz } from "@/components/cockpit/CockpitClient";
-import { KeinPaket, VorschlagWarum } from "@/components/cockpit/Vorbereitung";
-import { AufgabeBewertung } from "@/components/AufgabeBewertung";
-import { bewertungInfos } from "@/lib/bewertungen";
+import { BookMarked, CalendarClock, Check, CircleDot, ExternalLink, ShieldAlert, SkipForward } from "lucide-react";
+import { anpassenAction, entscheideAnpassungAction, sendeGeneratorAction, waehleFaehigkeitAction } from "@/app/cockpit-actions";
+import { AnpassenKnopf, CockpitSenden } from "@/components/cockpit/CockpitClient";
+import { VorschlagWarum } from "@/components/cockpit/Vorbereitung";
 import { TabletSend } from "@/components/device/TabletSend";
 import { Info } from "@/components/Info";
 import { StatusPill } from "@/components/LernpaketStatus";
-import { SchuelerWorteKarte } from "@/components/SchuelerNotiz";
-import { TaskBody } from "@/components/TaskPreview";
 import { Pill, Reveal, SectionTitle } from "@/components/ui";
 import { grenzeHinweis, schuelerStand } from "@/lib/ai/schueler-kosten";
 import { ANPASSUNG_ARTEN, anpassenStatus, anpassungen, type Anpassung } from "@/lib/anpassen";
 import { KANDIDAT_LABEL } from "@/lib/briefing";
-import { cockpit, zusammenfassung, ablauf, leseStand, type CockpitDaten } from "@/lib/cockpit";
-import { ohnePaket, paketWahl, type PaketWahl } from "@/lib/cockpit-vorschlag";
-import { kostenSchaetzung } from "@/lib/lernpaket-ki";
-import { getLernpaket, SCHRITT_ARTEN, ungeprueft, type Lernpaket, type LernpaketSchritt } from "@/lib/lernpakete";
+import { zusammenfassung, ablauf, leseStand, type CockpitDaten } from "@/lib/cockpit";
+import { ohnePaket, type PaketWahl } from "@/lib/cockpit-vorschlag";
+import { getLernpaket, ungeprueft, type Lernpaket } from "@/lib/lernpakete";
 import { RULE_LABEL, RULE_TONE } from "@/lib/recommend";
 import * as repo from "@/lib/repo";
-import { schuelerWorte } from "@/lib/schueler-notiz";
 import { klassenLabel } from "@/lib/school";
-import { platzFuerEinheit, type UnitView } from "@/lib/units";
-import { autoFuerEinheit, kiVorgabe, type Signal } from "@/lib/vorbereitung-auto";
+import type { UnitView } from "@/lib/units";
 
 const first = (n: string) => n.split(" ")[0];
 const LP = "/mehr/lernpakete";
 
-/** The teacher's script of a step, in the order it is used in the lesson. */
-const SKRIPT = [
-  ["lehrer_sagt", "Lehrer sagt"],
-  ["lehrer_fragt", "Lehrer fragt"],
-  ["erwartete_antwort", "Erwartete Antwort"],
-  ["bei_fehler", "Bei Fehler"],
-  ["notiz", "Notiz im Paket"],
-] as const;
-
 const stufeVon = (p: Pick<Lernpaket, "schulart" | "klasse">) => (p.klasse ? klassenLabel(p.schulart, p.klasse, { short: true }) : p.schulart || "jede Stufe");
 
 /**
- * Das **Cockpit** der laufenden Einheit (lib/cockpit.ts): oben das Lernpaket für heute und warum, dann die
- * Schritte (am Handy als Leiste, ab Tablet quer links) und rechts der Schritt auf dem Schirm mit dem, was der
- * Lehrer sagt und fragt. Ohne Lernpaket steht da, was es zur Fähigkeit schon gibt. Nur für den Lehrer.
+ * Das **Cockpit** der laufenden Einheit (lib/cockpit.ts) in Teilen: der geführte Unterricht
+ * (components/cockpit/Ablauf.tsx) zeigt Schritt für Schritt, was der Lehrer sagt, zeigt und fragt; was hier steht,
+ * liegt dort unter „Weitere Werkzeuge“ (Paket, Anpassen, ohne Paket die Fähigkeit) oder im Abschluss (Rückblick).
+ * Nur für den Lehrer.
  */
-export function CockpitBereich({ unit, student, fehler, teacherId = null }: { unit: UnitView; student: repo.Student; fehler?: string; teacherId?: number | null }) {
-  const c = cockpit(unit.id);
-  const wahl = paketWahl(student.id, { fach: unit.subject, ausser: unit.id });
-  const name = first(student.name);
-  const vorschlag = c.paket ? wahl.vorschlaege.find((v) => v.paket.id === c.paket!.id) : undefined;
-  // „Anpassen“: Vorschläge und Übernommenes gelten für das Paket, das gerade gewählt ist
-  const liste = c.paket ? anpassungen(unit.id).filter((a) => a.paket_id === c.paket!.id) : [];
-  // „Stunden automatisch vorbereiten“ (lib/vorbereitung-auto.ts): fehlt ein geprüftes Paket, „Mit KI entwerfen“ ausgefüllt, nur auf Klick
-  const auto = c.paket ? null : autoFuerEinheit(unit);
-  const fehlt: Signal | null = c.stand.automatisch?.luecke ?? (auto?.art === "kein_paket" ? auto.signal : null);
-  const ki = fehlt ? kiVorgabe(fehlt, student, { fach: unit.subject, dauer: platzFuerEinheit(unit)?.geplante_dauer ?? 50, gibtSkill: (id) => Boolean(repo.getSkill(id)) }) : null;
-  const kosten = ki ? kostenSchaetzung().text : "";
-  // was der Schüler vor dieser Einheit geschrieben hat: seine Worte, nur zum Lesen (lib/schueler-notiz.ts)
-  const worte = schuelerWorte(student.id, unit.id);
-  return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-8" data-testid="cockpit">
-      {fehler && (
-        <p role="alert" className="rounded-2xl bg-red-wash px-4 py-3 text-[15px] text-red">
-          {fehler}
-        </p>
-      )}
-      <KiGrenzeHinweis studentId={student.id} name={name} />
-      {worte && <SchuelerWorteKarte worte={worte} name={name} />}
-      {c.paket ? (
-        <>
-          <PaketKopf c={c} paket={c.paket} warum={vorschlag?.warum ?? null} entfernen={c.stand.automatisch ? waehlePaketAction.bind(null, unit.id) : null}>
-            {c.stand.automatisch?.luecke && ki && <KeinPaket klein thema={c.stand.automatisch.luecke.thema} ki={ki} kosten={kosten} />}
-            <Reveal label={c.stand.automatisch ? "Anderes Paket" : "Anderes Lernpaket oder ohne"}>
-              <div className="pt-2">
-                <PaketAuswahl wahl={wahl} action={waehlePaketAction.bind(null, unit.id)} gewaehlt={c.paket.id} ohne />
-              </div>
-            </Reveal>
-          </PaketKopf>
-          <AnpassenBereich c={c} unitId={unit.id} studentId={student.id} name={name} liste={liste} />
-          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,290px)_minmax(0,1fr)] lg:items-start lg:gap-6">
-            <SchrittListe c={c} unitId={unit.id} />
-            {c.aktuell ? <SchrittPanel c={c} s={c.aktuell} unitId={unit.id} name={name} paket={c.paket} teacherId={teacherId} angepasst={liste.filter((a) => a.status === "uebernommen" && a.schritt_id === c.aktuell!.id)} /> : <AllesDurch c={c} />}
-          </div>
-        </>
-      ) : (
-        <>
-          <section aria-label="Lernpaket für heute">
-            <SectionTitle>
-              <span>Lernpaket für heute</span>
-            </SectionTitle>
-            {auto?.art === "kein_paket" && (
-              <div className="panel mb-4 grid gap-1.5 px-5 py-4">
-                <KeinPaket thema={auto.thema} ki={ki} kosten={kosten} entwuerfe={auto.entwuerfe} />
-                <p className="text-[13px] text-ink-3">Warum dieses Thema: {auto.signal.warum}. Die KI läuft erst, wenn du im Formular „Entwurf erstellen“ tippst.</p>
-              </div>
-            )}
-            <PaketAuswahl wahl={wahl} action={waehlePaketAction.bind(null, unit.id)} gewaehlt={null} unten />
-          </section>
-          <OhnePaketAnsicht unit={unit} student={student} skillId={c.stand.skill_id} />
-        </>
-      )}
-    </div>
-  );
-}
 
 /**
  * Title, status and „Warum heute“ of the chosen package; how far this unit got. A suggestion of the app
  * (`stand.automatisch`) says so and has „Entfernen“; the first tap in the cockpit keeps it.
  */
-function PaketKopf({ c, paket, warum, entfernen, children }: { c: CockpitDaten; paket: Lernpaket; warum: string | null; entfernen: ((f: FormData) => Promise<void>) | null; children: React.ReactNode }) {
+export function PaketKopf({ c, paket, warum, entfernen, children }: { c: CockpitDaten; paket: Lernpaket; warum: string | null; entfernen: ((f: FormData) => Promise<void>) | null; children: React.ReactNode }) {
   const auto = c.stand.automatisch;
   const z = zusammenfassung(c.schritte, c.schritte.map((s) => s.id), c.stand);
   return (
@@ -154,7 +69,7 @@ function PaketKopf({ c, paket, warum, entfernen, children }: { c: CockpitDaten; 
           </p>
         )
       )}
-      {c.stand.vorbereitet && <p className="mt-1 text-[13px] text-ink-3">{auto ? "Von der App vorbereitet. Mit dem ersten Tippen auf einen Schritt bleibt es gewählt." : "Auf der Startseite für heute vorbereitet."}</p>}
+      {c.stand.vorbereitet && <p className="mt-1 text-[13px] text-ink-3">{auto ? "Von der App vorbereitet. Mit dem ersten Tippen auf einen Schritt bleibt es gewählt." : "Für heute vorbereitet."}</p>}
       {ungeprueft(paket) && (
         <p className="mt-3 flex items-start gap-2 rounded-xl bg-amber-wash px-3 py-2 text-[14px] text-amber" role="note">
           <ShieldAlert size={17} className="mt-0.5 shrink-0" aria-hidden />
@@ -180,7 +95,7 @@ export function PaketAuswahl({ wahl, action, gewaehlt, ohne, unten, felder = {} 
       <p className="panel px-5 py-4 text-[14.5px] text-ink-2">
         Noch keine Lernpakete. Unter{" "}
         <Link href={LP} className="font-semibold text-accent underline-offset-2 hover:underline">
-          Mehr › Lernpakete
+          Erweitert › Lernpakete
         </Link>{" "}
         anlegen oder importieren.{unten && " Bis dahin steht unten, was es zur Fähigkeit schon gibt."}
       </p>
@@ -259,184 +174,6 @@ export function PaketAuswahl({ wahl, action, gewaehlt, ohne, unten, felder = {} 
   );
 }
 
-const STATUS_TEXT = { erledigt: "erledigt", uebersprungen: "übersprungen", offen: "offen" } as const;
-const statusVon = (c: CockpitDaten, id: number): keyof typeof STATUS_TEXT => (c.stand.erledigt.includes(id) ? "erledigt" : c.stand.uebersprungen.includes(id) ? "uebersprungen" : "offen");
-
-/** The steps of this unit: a compact bar on the phone, a list on the left from iPad landscape on. */
-function SchrittListe({ c, unitId }: { c: CockpitDaten; unitId: number }) {
-  return (
-    <nav aria-label="Schritte" className="lg:rounded-[18px] lg:border lg:border-line lg:bg-surface lg:px-2 lg:py-2 lg:shadow-[var(--shadow-card)]">
-      <ol className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 lg:mx-0 lg:grid lg:gap-0.5 lg:overflow-visible lg:px-0 lg:pb-0">
-        {c.schritte.map((s, i) => {
-          const st = statusVon(c, s.id);
-          const an = c.aktuell?.id === s.id;
-          return (
-            <li key={s.id} className="shrink-0">
-              <form action={zeigeSchrittAction.bind(null, unitId, s.id)}>
-                <button
-                  aria-current={an ? "step" : undefined}
-                  title={`${s.titel} · ${s.minuten} min · ${STATUS_TEXT[st]}`}
-                  className={`flex min-h-[44px] min-w-[44px] items-center gap-2 rounded-full px-3 text-left text-[14px] transition-colors lg:w-full lg:rounded-xl lg:py-1.5 ${
-                    an ? "bg-accent text-on-fill" : st === "erledigt" ? "bg-green-wash text-green" : st === "uebersprungen" ? "bg-panel text-ink-3" : "bg-surface text-ink shadow-[var(--shadow-card)] hover:bg-panel lg:shadow-none"
-                  }`}
-                >
-                  <span className="num font-semibold">{i + 1}</span>
-                  {st === "erledigt" && <Check size={14} aria-hidden />}
-                  {st === "uebersprungen" && <SkipForward size={14} aria-hidden />}
-                  <span className={`hidden min-w-0 flex-1 truncate lg:block ${st === "uebersprungen" && !an ? "line-through" : ""}`}>{s.titel}</span>
-                  <span className={`num hidden text-[12px] lg:inline ${an ? "" : "text-ink-3"}`}>{s.minuten}′</span>
-                  <span className="sr-only">
-                    {s.titel}, {STATUS_TEXT[st]}
-                  </span>
-                </button>
-              </form>
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
-  );
-}
-
-/** The step on screen: what to say, ask, expect and do on a mistake; send its tasks; done, skip, move. */
-function SchrittPanel({ c, s, unitId, name, paket, angepasst, teacherId }: { c: CockpitDaten; s: LernpaketSchritt; unitId: number; name: string; paket: Lernpaket; angepasst: Anpassung[]; teacherId: number | null }) {
-  // Aufgaben bewerten (lib/bewertungen.ts): die Aufgaben des Schritts, nie die Antworten des Schülers
-  const bewertungen = bewertungInfos(s.aufgaben, teacherId);
-  const i = c.schritte.findIndex((x) => x.id === s.id);
-  const st = statusVon(c, s.id);
-  const ab = c.ab.get(s.id) ?? 0;
-  const gesendet = c.stand.gesendet[s.id]?.length ?? 0;
-  const skillName = (id: string) => repo.getSkill(id)?.name ?? id;
-  return (
-    <section className="panel px-4 py-4 sm:px-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
-      <p className="num flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-ink-3">
-        <span>
-          Schritt {i + 1} von {c.schritte.length}
-        </span>
-        <span>
-          · Minute {ab}–{ab + s.minuten}
-        </span>
-        {s.folie && (
-          <span className="inline-flex items-center gap-1">
-            · <Presentation size={13} className="text-accent" aria-hidden /> Folie {s.folie}
-          </span>
-        )}
-      </p>
-      <h3 className="mt-1 flex flex-wrap items-center gap-2 text-[20px] leading-tight font-semibold">
-        {s.titel}
-        <Pill tone={s.art === "kontrolle" ? "green" : s.art === "zusatz" ? "amber" : "accent"}>{SCHRITT_ARTEN[s.art]}</Pill>
-        <span className="num text-[14px] font-normal text-ink-3">{s.minuten} min</span>
-      </h3>
-      {st !== "offen" && (
-        <p className={`mt-2 inline-flex items-center gap-1.5 text-[14px] font-semibold ${st === "erledigt" ? "text-green" : "text-ink-3"}`}>
-          {st === "erledigt" ? <CheckCircle2 size={16} aria-hidden /> : <SkipForward size={16} aria-hidden />} {st === "erledigt" ? "Erledigt" : "Übersprungen"}
-        </p>
-      )}
-
-      <dl className="mt-4 grid gap-3">
-        {SKRIPT.filter(([k]) => s[k].trim()).map(([k, l]) => (
-          <div key={k} className={k === "bei_fehler" ? "rounded-xl bg-amber-wash px-3 py-2" : k === "erwartete_antwort" ? "rounded-xl bg-green-wash px-3 py-2" : ""}>
-            <dt className={`text-[13px] font-semibold ${k === "bei_fehler" ? "text-amber" : k === "erwartete_antwort" ? "text-green" : "text-ink-2"}`}>{l}</dt>
-            <dd className={`mt-0.5 whitespace-pre-line ${k === "lehrer_sagt" || k === "lehrer_fragt" ? "text-[17px] leading-relaxed" : "text-[15px]"}`}>{s[k]}</dd>
-          </div>
-        ))}
-      </dl>
-      {SKRIPT.every(([k]) => !s[k].trim()) && <p className="mt-3 text-[14px] text-ink-3">Zu diesem Schritt steht im Paket nichts zum Sagen oder Fragen.</p>}
-
-      {angepasst.length > 0 && (
-        <div className="mt-4 grid gap-2" data-testid="angepasst">
-          <p className="text-[13px] font-semibold text-ink-2">Für {name} angepasst, nur in dieser Einheit</p>
-          {angepasst.map((a) => (
-            <div key={a.id} className={`rounded-xl px-3 py-2 ${a.art === "bei_fehler" ? "bg-amber-wash" : "border border-line"}`}>
-              <AnpassungInhalt a={a} />
-              <form action={entscheideAnpassungAction.bind(null, unitId, a.id, "verworfen")} className="mt-1">
-                <button className="btn btn-ghost btn-sm !px-2">Entfernen</button>
-              </form>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {s.pruefen.length > 0 && (
-        <ul className="mt-3 grid gap-1 rounded-xl bg-amber-wash px-3 py-2 text-[13.5px] text-amber">
-          {s.pruefen.map((h, j) => (
-            <li key={j} className="flex items-start gap-1.5">
-              <ShieldAlert size={14} className="mt-0.5 shrink-0" aria-hidden /> Bitte prüfen: {h}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {s.aufgaben.length > 0 && (
-        <div className="mt-5 grid gap-3 border-t border-line pt-4">
-          <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
-            <CockpitSenden action={sendeSchrittAction.bind(null, unitId, s.id)} unitId={unitId} label={`Übung senden (${s.aufgaben.length} ${s.aufgaben.length === 1 ? "Aufgabe" : "Aufgaben"})`} primary={st === "offen"} />
-            {gesendet > 0 && <span className="pt-2.5 text-[13px] text-ink-3">schon {gesendet === 1 ? "einmal" : `${gesendet}-mal`} an {name} gesendet</span>}
-          </div>
-          <Reveal label="Aufgaben mit Lösung ansehen">
-            <ol className="grid gap-3">
-              {s.aufgaben.map((a, j) => (
-                <li key={j} className="rounded-xl border border-line px-3 py-3">
-                  <p className="num mb-1.5 text-[12px] font-semibold text-ink-3">Aufgabe {j + 1}</p>
-                  {a.data.pruefen?.map((h, k) => (
-                    <p key={k} className="mb-1 text-[12.5px] text-amber">
-                      Bitte prüfen: {h}
-                    </p>
-                  ))}
-                  <TaskBody task={a} showSolution skillName={a.skillId ? skillName(a.skillId) : undefined} subject={paket.fach} />
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    <AufgabeBewertung key={bewertungen[j].schluessel} ziel={{ art: "schritt", id: s.id, index: j }} info={bewertungen[j]} className="-ml-3" />
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </Reveal>
-        </div>
-      )}
-
-      <div className="btn-reihe mt-5 grid gap-2 sm:flex sm:flex-wrap sm:items-center">
-        {st === "offen" ? (
-          <>
-            <form action={markiereSchrittAction.bind(null, unitId, s.id, "erledigt")}>
-              <button className="btn btn-primary btn-lg w-full sm:w-auto">
-                <Check size={18} aria-hidden /> Erledigt / Weiter
-              </button>
-            </form>
-            <form action={markiereSchrittAction.bind(null, unitId, s.id, "uebersprungen")}>
-              <button className="btn btn-secondary btn-lg w-full sm:w-auto">
-                <SkipForward size={18} aria-hidden /> Überspringen
-              </button>
-            </form>
-          </>
-        ) : (
-          <form action={markiereSchrittAction.bind(null, unitId, s.id, "offen")}>
-            <button className="btn btn-secondary btn-lg w-full sm:w-auto">
-              <Undo2 size={18} aria-hidden /> Wieder öffnen
-            </button>
-          </form>
-        )}
-        <span className="flex items-center gap-1 sm:ml-auto">
-          <span className="mr-1 text-[13px] text-ink-3">Für heute verschieben</span>
-          <form action={verschiebeSchrittAction.bind(null, unitId, s.id, -1)}>
-            <button className="btn btn-ghost btn-sm min-w-[44px] !px-2" disabled={i === 0} aria-label="Einen Schritt früher" title="Früher">
-              <ArrowUp size={16} aria-hidden />
-            </button>
-          </form>
-          <form action={verschiebeSchrittAction.bind(null, unitId, s.id, 1)}>
-            <button className="btn btn-ghost btn-sm min-w-[44px] !px-2" disabled={i === c.schritte.length - 1} aria-label="Einen Schritt später" title="Später">
-              <ArrowDown size={16} aria-hidden />
-            </button>
-          </form>
-        </span>
-      </div>
-
-      <div className="mt-5 border-t border-line pt-4">
-        <SchrittNotiz key={s.id} speichern={notizAction.bind(null, unitId, s.id)} initial={c.stand.notizen[s.id] ?? ""} />
-      </div>
-    </section>
-  );
-}
-
 /**
  * From the warning level of the limit per student and month on (lib/ai/schueler-kosten.ts): a note for the teacher.
  * Cockpit and student profile; never on student pages.
@@ -453,7 +190,7 @@ export function KiGrenzeHinweis({ studentId, name, className = "" }: { studentId
 }
 
 /** One adaptation: kind and title, the text, the expected answer. */
-function AnpassungInhalt({ a }: { a: Anpassung }) {
+export function AnpassungInhalt({ a }: { a: Anpassung }) {
   return (
     <>
       <p className={`text-[13px] font-semibold ${a.art === "bei_fehler" ? "text-amber" : "text-ink-2"}`}>
@@ -475,7 +212,7 @@ function AnpassungInhalt({ a }: { a: Anpassung }) {
  * student. Each suggestion is „Ungeprüft“ until the teacher takes it (for this unit only) or discards it. Without KI,
  * budget or with the student's limit reached the button says why; the cockpit works as before.
  */
-function AnpassenBereich({ c, unitId, studentId, name, liste }: { c: CockpitDaten; unitId: number; studentId: number; name: string; liste: Anpassung[] }) {
+export function AnpassenBereich({ c, unitId, studentId, name, liste }: { c: CockpitDaten; unitId: number; studentId: number; name: string; liste: Anpassung[] }) {
   const status = anpassenStatus(studentId);
   const offen = liste.filter((a) => a.status === "vorschlag");
   const nr = new Map(c.schritte.map((s, i) => [s.id, i + 1]));
@@ -537,27 +274,11 @@ function AnpassenBereich({ c, unitId, studentId, name, liste }: { c: CockpitDate
   );
 }
 
-/** Every step is done or skipped. */
-function AllesDurch({ c }: { c: CockpitDaten }) {
-  const z = zusammenfassung(c.schritte, c.schritte.map((s) => s.id), c.stand);
-  return (
-    <section className="panel px-5 py-5" aria-label="Alle Schritte durch">
-      <p className="inline-flex items-center gap-2 text-[17px] font-semibold text-green">
-        <CheckCircle2 size={20} aria-hidden /> Alle Schritte durch
-      </p>
-      <p className="mt-2 text-[15px]">
-        {z.erledigt.length} erledigt{z.uebersprungen.length > 0 && `, ${z.uebersprungen.length} übersprungen (${z.uebersprungen.map((s) => s.titel).join(", ")})`}.
-      </p>
-      <p className="mt-1 text-[14px] text-ink-2">Beim Beenden der Einheit kommt das in die Dokumentation. Einen Schritt links antippen, um ihn wieder zu öffnen.</p>
-    </section>
-  );
-}
-
 /**
  * Ohne Lernpaket: die Fähigkeit für heute mit Grund, Erklärung und typischen Fehlern, passende Übungen mit
  * dem üblichen Senden, und aus dem Tagesbriefing der Plan mit Minuten. Geht ohne ein einziges Paket.
  */
-function OhnePaketAnsicht({ unit, student, skillId }: { unit: UnitView; student: repo.Student; skillId: string | null }) {
+export function OhnePaketAnsicht({ unit, student, skillId }: { unit: UnitView; student: repo.Student; skillId: string | null }) {
   const d = ohnePaket(student.id, { skillId, fach: unit.subject });
   if (!d) return null;
   const name = first(student.name);
@@ -730,21 +451,24 @@ function OhnePaketAnsicht({ unit, student, skillId }: { unit: UnitView; student:
 }
 
 /**
- * On the ended unit: what happened with the Lernpaket, with the teacher's notes per step. Teacher-only, like
- * the rest of the documentation.
+ * On the ended unit: what happened with the Lernpaket or, without one, with the „Plan für heute“, with the teacher's
+ * notes per step and how often a step was repeated or not understood. Teacher-only, like the rest of the documentation.
  */
 export function AblaufRueckblick({ unitId }: { unitId: number }) {
   const s = leseStand(unitId);
   const p = s.paket_id && !s.vorbereitet ? getLernpaket(s.paket_id) : null;
-  if (!p) return null;
-  const byId = new Map(p.schritte.map((x) => [x.id, x]));
-  const order = ablauf(p.schritte, s.reihenfolge);
-  const angepasst = anpassungen(unitId, "uebernommen").filter((a) => a.paket_id === p.id);
-  if (!s.erledigt.length && !s.uebersprungen.length && !Object.keys(s.notizen).length && !angepasst.length) return null;
+  const schritte: { id: number; titel: string }[] | null = p ? p.schritte : !s.paket_id && s.plan?.length ? s.plan : null;
+  if (!schritte) return null;
+  const byId = new Map(schritte.map((x) => [x.id, x]));
+  const order = ablauf(schritte, s.reihenfolge);
+  const angepasst = p ? anpassungen(unitId, "uebernommen").filter((a) => a.paket_id === p.id) : [];
+  const gezaehlt = Object.keys(s.wiederholt).length + Object.keys(s.nichtVerstanden).length;
+  if (!s.erledigt.length && !s.uebersprungen.length && !Object.keys(s.notizen).length && !angepasst.length && !gezaehlt) return null;
+  const mal = (n: number) => (n === 1 ? "einmal" : `${n}-mal`);
   return (
-    <section aria-label="Lernpaket">
+    <section aria-label={p ? "Lernpaket" : "Plan für heute"}>
       <SectionTitle>
-        <span>Lernpaket „{p.title}“</span>
+        <span>{p ? `Lernpaket „${p.title}“` : "Plan für heute"}</span>
       </SectionTitle>
       <ol className="panel divide-y divide-line">
         {order.map((id, i) => {
@@ -759,6 +483,11 @@ export function AblaufRueckblick({ unitId }: { unitId: number }) {
                   {st === "erledigt" ? <Check size={12} aria-hidden /> : st === "übersprungen" ? <SkipForward size={12} aria-hidden /> : <CircleDot size={12} aria-hidden />} {st}
                 </Pill>
               </p>
+              {(s.wiederholt[id] > 0 || s.nichtVerstanden[id] > 0) && (
+                <p className="text-[14px] text-ink-2 sm:pl-6">
+                  {[s.wiederholt[id] > 0 && `${mal(s.wiederholt[id])} wiederholt`, s.nichtVerstanden[id] > 0 && `${mal(s.nichtVerstanden[id])} nicht verstanden`].filter(Boolean).join(" · ")}
+                </p>
+              )}
               {s.notizen[id] && <p className="text-[14px] whitespace-pre-line text-ink-2 sm:pl-6">Notiz: {s.notizen[id]}</p>}
               {angepasst
                 .filter((a) => a.schritt_id === id)

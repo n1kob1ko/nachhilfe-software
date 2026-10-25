@@ -128,7 +128,7 @@ export function bildPrompt(plan: BildPlan, szene: number, mitReferenz: boolean):
 /** Why pictures cannot be made now, or null. `studentId`: the student the story is for (KI limit per student). */
 export function bilderAusGrund(studentId: number | null = null): string | null {
   if (!imagesReady()) return BILDER_NICHT_EINGERICHTET;
-  if (!aiEnabled("bildplan")) return "Die KI ist aus oder für den gewählten Anbieter ist kein Schlüssel hinterlegt (Mehr › KI-Kosten).";
+  if (!aiEnabled("bildplan")) return "Die KI ist aus oder für den gewählten Anbieter ist kein Schlüssel hinterlegt (Erweitert › KI-Kosten).";
   if (budgetUsedUp("bildplan") || budgetState(Date.now(), "allgemein").level === "aus") return "Das KI-Budget für diesen Monat ist aufgebraucht.";
   if (studentId != null && schuelerStand(studentId).stufe === "aus") return grenzeErreichtText();
   return null;

@@ -226,6 +226,13 @@ export type OhnePaket = {
   uebungen: Kandidat[];
 };
 
+/** Erklärung und typische Fehler einer Fähigkeit, ohne Briefing (für „Schüler versteht es nicht“). */
+export function zurFaehigkeit(skillId: string | null): { erklaerung: string | null; typischeFehler: string[] } {
+  const skill = skillId ? repo.getSkill(skillId) : null;
+  if (!skill) return { erklaerung: null, typischeFehler: [] };
+  return { erklaerung: EXPLAIN[skill.id] ?? (skill.parent_id ? EXPLAIN[skill.parent_id] : undefined) ?? null, typischeFehler: typischeFehler(skill.id) };
+}
+
 /** Was es zur Fähigkeit der Einheit schon gibt, wenn kein Lernpaket gewählt ist. Geht auch ohne ein einziges Paket. */
 export function ohnePaket(studentId: number, o: { skillId: string | null; fach?: string; now?: Date }): OhnePaket | null {
   const d = briefingDaten(studentId, { now: o.now });

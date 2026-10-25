@@ -181,7 +181,7 @@ export default async function LibraryEntryPage({ params, searchParams }: { param
             <span>
               Herkunft und Lizenz
               <Info label="Info zu Herkunft und Lizenz">
-                Herkunft und Lizenz bleiben bei der Aufgabe gespeichert, auch in jeder Kopie. Als Quelle wählbar sind die Quellen unter Mehr › Curriculum / Lehrplan › Quellen, auch die von hochgeladenem Material. Aus Schulbuch, Verlag oder bei unklarer Lizenz nur in eigenen Worten: dann ist es eine eigene Aufgabe mit der Quelle als Vorlage.
+                Herkunft und Lizenz bleiben bei der Aufgabe gespeichert, auch in jeder Kopie. Als Quelle wählbar sind die Quellen unter Erweitert › Curriculum / Lehrplan › Quellen, auch die von hochgeladenem Material. Aus Schulbuch, Verlag oder bei unklarer Lizenz nur in eigenen Worten: dann ist es eine eigene Aufgabe mit der Quelle als Vorlage.
               </Info>
             </span>
           </SectionTitle>

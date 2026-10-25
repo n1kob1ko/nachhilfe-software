@@ -19,6 +19,7 @@ import {
   requireTeacher,
   setPassword,
 } from "@/lib/auth";
+import { bestaetigeDoku } from "@/lib/abschluss";
 import { clientIp } from "@/lib/client-ip";
 import { db, usernameFor } from "@/lib/db";
 import { endUnit, expectedSubject, sweepIdleUnits } from "@/lib/learning";
@@ -35,9 +36,9 @@ const rating = (f: FormData, k: string) => {
   return v >= 1 && v <= 5 ? Math.round(v) : null;
 };
 
-/** Only same-site paths, so the login cannot be used to send people elsewhere. */
+/** Only same-site paths, so the login cannot be used to send people elsewhere. Without one: /jetzt (the situation). */
 function safeNext(raw: string) {
-  return raw.startsWith("/") && !raw.startsWith("//") && !raw.startsWith("/login") ? raw : "/";
+  return raw.startsWith("/") && !raw.startsWith("//") && !raw.startsWith("/login") ? raw : "/jetzt";
 }
 
 // ---------- login ----------
@@ -91,7 +92,7 @@ export async function changePasswordAction(_prev: FormState, formData: FormData)
   setPassword(t.id, next);
   // other devices that were logged in with the old password are logged out
   db().prepare("DELETE FROM teacher_sessions WHERE teacher_id = ? AND token <> ?").run(t.id, (await cookies()).get(SESSION_COOKIE)?.value ?? "");
-  redirect("/");
+  redirect("/jetzt");
 }
 
 // ---------- teachers (admin) ----------
@@ -172,6 +173,22 @@ export async function cancelUnitAction(unitId: number, formData: FormData) {
   redirect(u ? `/schueler/${u.student_id}?tab=lernverlauf` : "/einheiten");
 }
 
+/**
+ * „Dokumentation bestätigen“ im Abschluss: die automatische Dokumentation gilt als gesehen, kein Feld ändert sich
+ * (lib/abschluss.ts). Danach dorthin, wo die Lehrkraft gebraucht wird: läuft noch ein zweiter Schüler, in seinen
+ * Unterricht, sonst zu Heute (/jetzt).
+ */
+export async function bestaetigeDokuAction(lessonId: number) {
+  const t = await requireTeacher();
+  const lesson = repo.getLesson(lessonId);
+  if (!lesson) redirect("/abschluss");
+  const owner = lesson.unit_id ? getUnit(lesson.unit_id) : null;
+  if (owner && !canManageUnit(t, owner)) redirect(`/einheiten/${owner.id}?fremd=1`);
+  bestaetigeDoku(lessonId);
+  revalidatePath("/", "layout");
+  redirect("/jetzt");
+}
+
 /** The teacher looks over the generated Lern-Dokumentation and completes it. */
 export async function saveUnitDocAction(lessonId: number, formData: FormData) {
   const t = await requireTeacher();
@@ -212,6 +229,8 @@ export async function saveUnitDocAction(lessonId: number, formData: FormData) {
     repo.addHomework({ student_id: lesson.student_id, subject, description: homework, due_date: str(formData, "homework_due") || null, status: "offen", notes: "aus der Einheit" });
   }
   revalidatePath("/", "layout");
+  // aus dem Abschluss: weiter, wo die Lehrkraft gebraucht wird (wie „Dokumentation bestätigen“)
+  if (formData.get("weiter") === "jetzt") redirect("/jetzt");
   const unit = lesson.unit_id ? getUnit(lesson.unit_id) : null;
   redirect(`/schueler/${lesson.student_id}?tab=lernverlauf${unit ? `#einheit-${unit.id}` : ""}`);
 }

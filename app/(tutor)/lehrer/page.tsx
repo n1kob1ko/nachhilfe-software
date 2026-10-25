@@ -159,7 +159,7 @@ export default async function Teachers({ searchParams }: { searchParams: Promise
             <p className="mb-3 text-[13px] text-ink-2">
               Welche Räume am liebsten — der erste zählt am meisten. Räume pflegt die Verwaltung unter{" "}
               <Link href="/mehr/raeume" className="underline underline-offset-2">
-                Mehr › Räume
+                Erweitert › Räume
               </Link>
               .
             </p>

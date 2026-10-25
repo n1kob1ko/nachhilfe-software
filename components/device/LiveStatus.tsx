@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { ArrowDown, ArrowUp, CheckCircle2, CircleDashed, Eye, ListChecks, MonitorPlay, PenLine, Presentation, Printer, RotateCcw, SkipForward, Sparkles, TabletSmartphone, XCircle } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, ChevronDown, CircleDashed, Eye, ListChecks, MonitorPlay, PenLine, Presentation, Printer, RotateCcw, SkipForward, Sparkles, TabletSmartphone, XCircle } from "lucide-react";
 import { assignTabletAction, currentTaskToBoardAction, newExerciseAction, resendAction, retryTaskAction, sendNextTaskAction, showSolutionAction, tabletViewAction } from "@/app/device-actions";
 import { ACTION_LABEL } from "@/lib/ai/labels";
 import type { AILive } from "@/lib/ai/realtime";
@@ -48,9 +48,14 @@ function Writing({ updatedAt }: { updatedAt: string }) {
  * What the student does on the tablet (or their own laptop) right now, live over the same stream hub
  * as the whiteboard. The teacher never chooses a student: the unit knows it, and the device is the
  * confirmed laptop of the unit, else the teacher's tablet.
+ *
+ * `kompakt` (geführter Unterricht): eine Zeile „Tablet verbunden · Übung „…“ · Aufgabe 2 von 4 · 1 Fehler ·
+ * Letzte Antwort falsch“, die sich auf Tippen zu allem Übrigen öffnet. Eine falsche Antwort und „nicht
+ * angekommen“ stehen rot schon in der Zeile.
  */
-export function LiveStatus({ unitId, initial, join }: { unitId: number; initial: LiveSnapshot; join: JoinInfo }) {
+export function LiveStatus({ unitId, initial, join, kompakt = false }: { unitId: number; initial: LiveSnapshot; join: JoinInfo; kompakt?: boolean }) {
   const [s, setS] = useState(initial);
+  const [auf, setAuf] = useState(false);
   const [pending, start] = useTransition();
   const router = useRouter();
   const answers = useRef(initial.answers);
@@ -81,8 +86,8 @@ export function LiveStatus({ unitId, initial, join }: { unitId: number; initial:
   const dev = onLaptop ? "Laptop" : "Tablet";
   const devOnline = onLaptop ? Boolean(s.laptop.active?.online) : tablet === "online";
 
-  return (
-    <section aria-label="Live-Status" className="panel mb-8 px-5 py-4">
+  const inhalt = (
+    <>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         {tablet === "kein" && onLaptop ? null : tablet === "kein" ? (
           <>
@@ -233,6 +238,58 @@ export function LiveStatus({ unitId, initial, join }: { unitId: number; initial:
         <p className="mt-3 text-[15px] text-ink-2">Noch nichts gesendet. Öffne eine Übung und tippe auf „An {s.student} senden“.</p>
       )}
       {s.ai.on && s.running && <AIHint unitId={unitId} ai={s.ai} />}
+    </>
+  );
+  if (!kompakt) {
+    return (
+      <section aria-label="Live-Status" className="panel mb-8 px-5 py-4">
+        {inhalt}
+      </section>
+    );
+  }
+
+  // the one line: device, what is on it, and how the last answer went
+  const geraet =
+    tablet === "kein" && !onLaptop
+      ? { text: "Kein Schülergerät", ton: "text-ink-3", punkt: "bg-ink-3" }
+      : tablet === "anderswo" && !onLaptop
+        ? { text: `Kein Tablet bei ${s.student}`, ton: "text-ink-3", punkt: "bg-ink-3" }
+        : devOnline
+          ? { text: `${dev} verbunden`, ton: "text-green", punkt: "bg-green" }
+          : { text: `${dev} offline`, ton: "text-red", punkt: "bg-red" };
+  const fehler = c && !c.test ? Math.max(0, c.done - c.correct) : 0;
+  const teile: { text: string; ton?: string }[] = [];
+  if (s.text) teile.push({ text: `Textarbeit „${s.text.title}“ · ${s.text.words.toLocaleString("de-AT")} Wörter` });
+  else if (c) {
+    teile.push({ text: `${c.probe ? "Probeschularbeit" : c.test ? "Minitest" : "Übung"} „${c.title}“` });
+    if (c.state === "nicht angekommen") teile.push({ text: "nicht angekommen", ton: "font-semibold text-red" });
+    else if (c.state === "fertig") teile.push({ text: `fertig · ${c.correct} von ${c.total} richtig`, ton: "text-green" });
+    else teile.push({ text: `Aufgabe ${Math.min(c.taskNo, c.total)} von ${c.total}` });
+    if (fehler > 0 && c.state !== "fertig") teile.push({ text: `${fehler} Fehler`, ton: "text-red" });
+    if (c.last && !c.last.pending && c.state !== "fertig") teile.push(c.last.correct ? { text: "Letzte Antwort richtig", ton: "text-green" } : { text: "Letzte Antwort falsch", ton: "font-semibold text-red" });
+    if (c.last?.pending) teile.push({ text: "Antwort wartet auf dich", ton: "text-amber" });
+  } else teile.push({ text: "Noch nichts gesendet" });
+  return (
+    <section aria-label="Live-Status" className="panel mb-5 px-4 py-1.5 sm:px-5" data-testid="live-kompakt">
+      <button type="button" aria-expanded={auf} onClick={() => setAuf((x) => !x)} className="flex min-h-[48px] w-full flex-wrap items-center gap-x-2 gap-y-0.5 text-left text-[14.5px]">
+        <span className={`inline-flex items-center gap-1.5 font-semibold ${geraet.ton}`}>
+          <span className={`h-2 w-2 rounded-full ${geraet.punkt}`} aria-hidden />
+          {geraet.text}
+        </span>
+        {teile.map((t, i) => (
+          <span key={i} className={`min-w-0 ${t.ton ?? "text-ink-2"}`}>
+            <span className="text-ink-3" aria-hidden>
+              ·{" "}
+            </span>
+            {t.text}
+          </span>
+        ))}
+        <span className="ml-auto inline-flex items-center gap-1 pl-2 text-[13px] font-medium text-accent">
+          {auf ? "Weniger" : tablet === "kein" && !onLaptop ? "Gerät verbinden" : "Details"}
+          <ChevronDown size={15} className={`transition-transform ${auf ? "rotate-180" : ""}`} aria-hidden />
+        </span>
+      </button>
+      {auf && <div className="border-t border-line pt-3 pb-3">{inhalt}</div>}
     </section>
   );
 }

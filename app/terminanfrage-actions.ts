@@ -74,7 +74,7 @@ export async function stelleLehrerAnfrageAction(formData: FormData) {
   const me = await requireTeacher();
   const e = ta.stelleAnfrage({ lehrer: me }, eingabe(formData));
   aktualisiere();
-  redirect(mitMeldung(sichererPfad(str(formData, "zurueck"), "/?tab=woche"), e));
+  redirect(mitMeldung(sichererPfad(str(formData, "zurueck"), "/mehr/uebersicht?tab=woche"), e));
 }
 
 /** Zustimmen, ablehnen (mit Grund) oder zurückziehen; `was` kommt vom gedrückten Knopf. */
@@ -84,7 +84,7 @@ export async function antwortLehrerAction(id: number, formData: FormData) {
   const wer = { lehrer: me };
   const e = was === "zustimmen" ? ta.stimmeZu(wer, id) : was === "ablehnen" ? ta.lehneAb(wer, id, str(formData, "grund")) : ta.zieheZurueck(wer, id);
   aktualisiere();
-  redirect(mitMeldung(sichererPfad(str(formData, "zurueck"), "/?tab=woche"), e));
+  redirect(mitMeldung(sichererPfad(str(formData, "zurueck"), "/mehr/uebersicht?tab=woche"), e));
 }
 
 /** Die Verwaltung bestätigt; beim Verschieben optional ein anderer Raum. */

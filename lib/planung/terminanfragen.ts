@@ -517,7 +517,7 @@ export function anfragenZuErledigen(akteur: Akteur): { id: number; aufgabe: "bes
       studentId,
       studentName: s.get(studentId) ?? "",
       beschreibung: z.art === "tauschen" ? `${v.von} ↔ ${v.anderer}` : `${v.von} → ${v.nach}`,
-      href: aufgabe === "bestaetigen" ? `/planung?woche=${v.woche}#terminanfragen` : "/?tab=woche#terminanfragen",
+      href: aufgabe === "bestaetigen" ? `/planung?woche=${v.woche}#terminanfragen` : "/mehr/uebersicht?tab=woche#terminanfragen",
       datum: z.created_at,
     });
   }

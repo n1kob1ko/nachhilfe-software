@@ -105,7 +105,7 @@ export function SpeichernPanel({
           Zuweisen legt eine Kopie für das Kind an; die Vorlage bleibt erhalten. Alles Gespeicherte steht
           auch unter{" "}
           <Link href="/mehr/material" className="link">
-            Mehr › Material
+            Erweitert › Material
           </Link>
           .
         </p>

@@ -890,7 +890,7 @@ function School({ student }: { student: repo.Student }) {
           <span>
             Schularbeiten und Tests
             <Info label="Info zu Prüfungen">
-              Ab {examThresholds()[0]} Tagen vorher erinnert die Startseite an die Vorbereitung, ab {examThresholds()[1]} Tagen mit höherer Priorität, ab {examThresholds()[2]} Tagen als „Prüfung bald“.
+              Ab {examThresholds()[0]} Tagen vorher erinnert die App an die Vorbereitung, ab {examThresholds()[1]} Tagen mit höherer Priorität, ab {examThresholds()[2]} Tagen als „Prüfung bald“.
             </Info>
           </span>
         </SectionTitle>

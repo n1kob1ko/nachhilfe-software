@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Anmelden" };
 
 export default async function Login({ searchParams }: { searchParams: Promise<{ weiter?: string }> }) {
-  if (await currentTeacher()) redirect("/");
+  if (await currentTeacher()) redirect("/jetzt");
   const { weiter } = await searchParams;
   return (
     <main className="relative grid min-h-screen place-items-center bg-paper px-4 py-10">

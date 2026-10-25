@@ -121,7 +121,7 @@ export function WochenplanGitter(props: Props) {
   if (!lehrer.length)
     return (
       <p className="panel px-5 py-6 text-[15px] text-ink-2">
-        Kein Lehrer für diese Woche. Verfügbarkeit pflegt die Verwaltung unter Mehr › Lehrer &amp; Verfügbarkeit.
+        Kein Lehrer für diese Woche. Verfügbarkeit pflegt die Verwaltung unter Erweitert › Lehrer &amp; Verfügbarkeit.
       </p>
     );
 

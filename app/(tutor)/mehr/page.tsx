@@ -1,23 +1,75 @@
 import Link from "next/link";
-import { BarChart3, BookMarked, BookOpen, CalendarClock, CalendarDays, ChevronRight, Clock3, Coins, DoorOpen, Download, FileText, FileUp, FolderUp, GitBranch, KeyRound, Landmark, Library, ListChecks, LogOut, MessageSquarePlus, MonitorPlay, Package, ShieldCheck, Sparkles, TabletSmartphone } from "lucide-react";
+import {
+  BarChart3,
+  BookMarked,
+  BookOpen,
+  BookOpenCheck,
+  CalendarClock,
+  CalendarDays,
+  CalendarRange,
+  ChevronRight,
+  ClipboardList,
+  Clock3,
+  Coins,
+  DoorOpen,
+  Download,
+  FileText,
+  FileUp,
+  FolderUp,
+  GitBranch,
+  KeyRound,
+  Landmark,
+  Library,
+  ListChecks,
+  ListTodo,
+  LogOut,
+  MessageSquarePlus,
+  MonitorPlay,
+  Package,
+  ReceiptText,
+  ShieldCheck,
+  Sparkles,
+  TabletSmartphone,
+  Users,
+} from "lucide-react";
 import { logoutAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
 import { PageHeader } from "@/components/ui";
 import { aiEnabled } from "@/lib/ai";
 import { requireTeacher } from "@/lib/auth";
 import { feedbackZahlen } from "@/lib/feedback";
+import { wienerDatum } from "@/lib/planung/zeit";
+import { VORAUS_TAGE } from "@/lib/vorbereitung-auto";
+import { zuErledigen } from "@/lib/zu-erledigen";
 
-export const metadata = { title: "Mehr" };
+export const metadata = { title: "Erweitert" };
 
-/** Everything a teacher needs only now and then, so the main navigation can stay at five entries. */
+/**
+ * **Erweitert**: alles außer Heute, Unterricht und Abschluss (niko, 25.10.2026: „Alles andere kommt nach Erweitert und
+ * wird nie gelöscht“). Oben „Arbeit“ mit dem, was früher eigene Einträge der Navigation oder Teil der Startseite war:
+ * Schüler, Übungen, Abrechnung, Planung, Meine Woche, Zu erledigen und die Vorbereitung der nächsten Tage (die drei
+ * letzten auf Erweitert › Übersicht, `/mehr/uebersicht`). Darunter wie bisher die Gruppen von „Mehr“.
+ */
 export default async function MorePage() {
   const teacher = await requireTeacher();
   const offenesFeedback = feedbackZahlen(teacher.is_admin ? undefined : teacher.id).offen;
+  const offen = zuErledigen(teacher.id, wienerDatum()).offen.length;
   const groups: { title: string; items: { href: string; label: string; hint: string; icon: typeof Clock3 }[] }[] = [
+    {
+      title: "Arbeit",
+      items: [
+        { href: "/schueler", label: "Schüler", hint: "Profile, Lernstand, Lernverlauf, Prüfungen und Stoff", icon: Users },
+        { href: "/uebungen", label: "Übungen", hint: "Übungen erstellen, prüfen, freigeben und zuweisen", icon: BookOpenCheck },
+        { href: "/abrechnung", label: "Abrechnung", hint: "Stattgefundene Einheiten pro Monat, auch als CSV", icon: ReceiptText },
+        { href: "/planung", label: "Planung", hint: "Wochenplan: generieren, verschieben, sperren, veröffentlichen und drucken", icon: CalendarDays },
+        { href: "/mehr/uebersicht?tab=woche", label: "Meine Woche", hint: "Deine veröffentlichte Woche und Terminanfragen", icon: CalendarRange },
+        { href: "/mehr/uebersicht#offen", label: "Zu erledigen", hint: offen ? `${offen} offen: Prüfungen, Ergebnisse, Hausübungen, Texte` : "Nichts offen. Prüfungen, Ergebnisse, Hausübungen, Texte", icon: ListTodo },
+        { href: "/mehr/uebersicht#vorbereitung", label: `Vorbereitung: nächste ${VORAUS_TAGE} Tage`, hint: "Lernpaket je kommender Einheit: deine Wahl oder der Vorschlag der App", icon: ClipboardList },
+      ],
+    },
     {
       title: "Unterricht",
       items: [
-        { href: "/planung", label: "Planung", hint: "Wochenplan: generieren, verschieben, sperren, veröffentlichen und drucken", icon: CalendarDays },
         { href: "/blaetter", label: "Blätter erstellen", hint: "Lesetabelle, Satzbaukasten und Nachmalblatt einstellen und drucken", icon: FileText },
         { href: "/einheiten", label: "Alle Einheiten", hint: "Wer hat wann mit wem gearbeitet, pro Monat", icon: Clock3 },
         { href: "/lehrer", label: "Lehrer & Verfügbarkeit", hint: "Eigene Verfügbarkeit, Wochenziel und Raumwünsche; als Verwaltung auch Accounts", icon: CalendarClock },
@@ -74,7 +126,7 @@ export default async function MorePage() {
   return (
     <>
       <PageHeader
-        title="Mehr"
+        title="Erweitert"
         actions={
           <form action={logoutAction}>
             <button className="btn btn-secondary">
