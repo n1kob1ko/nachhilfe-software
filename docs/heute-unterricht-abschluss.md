@@ -37,6 +37,19 @@ Generatoren. Sind alle Schritte durch, kommt „Alles durch“ mit „Einheit be
 
 Die Einheit einer anderen Lehrkraft ist nur zum Lesen da (Übungen und Fortschritt, kein Beenden).
 
+### Textarbeit im Ablauf
+
+Ist die Fähigkeit eines Schritts eine Schreibaufgabe (Plan, Lernpaket, Vorgabe oder Prüfungsstoff,
+`lib/textarbeit-ablauf.ts`), ist **„Schreibauftrag starten“** die Hauptaktion, vorgefüllt mit Textsorte, Aufgabe,
+Wortzahl und Quelle („Vorgefüllt aus deiner Vorgabe für heute“). Er führt zum Textformular (`/text?schreiben=…`), bei
+Oberstufe/HTL (Textinterpretation, Erörterung …) zum Schreibauftrag mit Textbeilage und der Prüfung vorgewählt, bei der
+Bildgeschichte zu ihr. Vor dem Start lässt sich alles ändern. Im Schritt „Schularbeit vorbereiten“ steht die
+Schreibaufgabe der Prüfung als zweiter Knopf neben „Übung senden“.
+
+Jede laufende Textarbeit der Einheit hat oben eine Zeile mit Stand und genau einem nächsten Schritt: schreibt (Öffnen
+oder Mitlesen, ohne Gerät auch „Vom Foto“) · abgegeben (Korrigieren) · Bewertung offen (Bewertung übernehmen) ·
+bewertet · Note N (Ansehen). Bei zwei Schülern zugleich nur die Texte dieser Einheit.
+
 ### Anpassung im Unterricht
 
 niko, 25.10.2026: Lernheft reagiert auf die Antworten des Schülers, zuerst nach festen Regeln, KI nur wenn nötig und
@@ -105,6 +118,9 @@ Ohne Eingabe bleibt alles wie bisher, der Start ist nicht langsamer (eine Abfrag
 
 Eine Karte mit vier Feldern aus echten Daten (`lib/abschluss.ts`): Heute gemacht, Gut verstanden, Noch schwierig,
 Nächstes Mal. Ohne Beleg bleibt „Gut verstanden“ leer: „Keine sicheren Ergebnisse – bei Bedarf ergänzen“.
+Eine Textarbeit mit übernommener Bewertung steht unter „Heute gemacht“ mit Textsorte und Note, Kriterien ab Stufe 4
+unter „Noch schwierig“. Ist nur ein Vorschlag da oder fehlt die Bewertung, steht „Bewertung offen“ mit einem Link
+(„Bewertung übernehmen“ oder „Korrigieren“); ein Vorschlag der KI erscheint nie als Ergebnis.
 „Dokumentation bestätigen“ setzt nur `reviewed_at` und führt zu `/jetzt`; danach steht „Bestätigt am …“ da.
 „Ändern“ (`?aendern=1`) öffnet das Formular der Dokumentation. Alles Übrige (Mappe drucken, Einschätzung, Auf einen
 Blick, Notiz für Eltern, Dokumentation, Aufgaben, Lernpaket-Rückblick, Texte, Whiteboard) steht unter „Mehr Details“

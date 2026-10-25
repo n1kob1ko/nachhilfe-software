@@ -54,3 +54,39 @@ test("Abschluss: without evidence „Gut verstanden“ stays empty; a chosen but
   assert.deepEqual(p.naechstes.map((x) => x.text), ["Weiter mit: Üben"]);
   assert.deepEqual(abschlussKarte(brief({ next: [d("A"), d("A")] }), null).naechstes.length, 1, "a line only once");
 });
+
+test("Abschluss: a confirmed text grade under „Heute gemacht“ and its weak criteria under „Noch schwierig“; an open one only with its link", async () => {
+  const { abschlussKarte } = await import("./abschluss");
+  const stufen = { inhalt: 3, textstruktur: 2, stil: 3, sprachrichtigkeit: 4 } as const;
+  const b = brief({
+    done: [d("E-Mail"), d("Textarbeit „My weekend“ (E-Mail, 124 Wörter): 2 von 3 Arbeitsaufträgen erfüllt, Note 3 (Inhalt 3, Aufbau 2, Ausdruck 3, Sprache 4)"), d("Textarbeit „The lost key“ (Story, 90 Wörter): Bewertung offen"), d("Textarbeit „Notizen“ (12 Wörter)"), l("Textarbeit „My weekend“ besprochen")],
+    difficulties: [d("Past Simple: 1 von 3 richtig")],
+  });
+  const k = abschlussKarte(b, null, [
+    { id: 4, titel: "My weekend", textsorte: "E-Mail", bewertung: { stand: "bestaetigt", note: 3, stufen, erfuellt: 2, von: 3 } },
+    { id: 5, titel: "The lost key", textsorte: "Story", bewertung: { stand: "offen" }, vorschlag: true },
+    { id: 6, titel: "Notizen", textsorte: "" },
+  ]);
+  assert.deepEqual(
+    k.gemacht.map((x) => [x.text, x.link?.label ?? null]),
+    [
+      ["Textarbeit „Notizen“ (12 Wörter)", null],
+      ["Textarbeit „My weekend“ besprochen", null],
+      ["E-Mail „My weekend“: Note 3 (2 von 3 Arbeitsaufträgen erfüllt)", null],
+      ["Story „The lost key“: Bewertung offen", "Bewertung übernehmen"],
+    ],
+    "the documentation's line (and its bare topic line) is replaced, the teacher's own words and a text without a grade stay",
+  );
+  assert.equal(k.gemacht[3].link?.href, "/texte/5/korrektur?teil=aufgabe");
+  assert.deepEqual(k.schwierig.map((x) => x.text), ["Past Simple: 1 von 3 richtig", "E-Mail „My weekend“: Sprache 4"], "only the confirmed grade's weak criteria; nothing from the open one");
+  assert.deepEqual(k.gut, [], "a grade is no proof of „Gut verstanden“");
+
+  // open without a proposal: „Korrigieren“; a KI proposal never shows as a number
+  const o = abschlussKarte(null, null, [{ id: 8, titel: "Bewerbung Tischlerei", textsorte: "Bewerbungsschreiben", bewertung: { stand: "offen" }, vorschlag: false }]);
+  assert.deepEqual(o.gemacht.map((x) => [x.text, x.link?.label, x.link?.href]), [["Bewerbungsschreiben „Bewerbung Tischlerei“: Bewertung offen", "Korrigieren", "/texte/8/korrektur"]]);
+  assert.deepEqual(o.schwierig, []);
+  // confirmed without an overall grade: the levels
+  const ohne = abschlussKarte(null, null, [{ id: 9, titel: "Interpretation", textsorte: "Textinterpretation", bewertung: { stand: "bestaetigt", note: null, stufen: { inhalt: 2, textstruktur: 2, stil: 5, sprachrichtigkeit: 3 }, erfuellt: null, von: null } }]);
+  assert.deepEqual(ohne.gemacht.map((x) => x.text), ["Textinterpretation „Interpretation“: bewertet (Inhalt 2, Aufbau 2, Ausdruck 5, Sprache 3)"]);
+  assert.deepEqual(ohne.schwierig.map((x) => x.text), ["Textinterpretation „Interpretation“: Ausdruck 5"]);
+});

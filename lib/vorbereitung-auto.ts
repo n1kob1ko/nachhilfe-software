@@ -10,7 +10,8 @@
  *      geschrieben hat, soweit die Wörter eine Fähigkeit nennen (lib/schueler-notiz.ts, `wuenscheFuer`)
  *   4. Wiederholte Fehler: derselbe Fehler mindestens zweimal in den letzten 14 Tagen (lib/recommend.ts)
  *   5. Offene Ziele: ein begonnenes Paket mit nicht erreichten Schritten, „Nächstes Mal“ der letzten Dokumentation,
- *      eine offene Hausübung (soweit ihre Wörter eine Fähigkeit nennen)
+ *      eine offene Hausübung (soweit ihre Wörter eine Fähigkeit nennen), eine Textarbeit mit übernommener Note und
+ *      schwachem Kriterium (`textSignale`; ein Vorschlag der KI zählt nie)
  *   6. Lernstand: Schwäche oder Voraussetzung ohne wiederholten Fehler (niko nennt sie nicht; sie stehen unter den
  *      offenen Zielen, weil die Lehrkraft dort selbst geplant hat)
  *   7. Wiederholung: deutlich gefallen oder lange nicht geübt
@@ -36,6 +37,8 @@ import { datumLabel, minutenLabel, tagAddieren, wienerDatum } from "./planung/ze
 import { nextSteps, RULE_LABEL, type NextStep } from "./recommend";
 import * as repo from "./repo";
 import { faehigkeitenAus, schuelerWorte } from "./schueler-notiz";
+import { KRITERIUM_KEYS, KRITERIUM_KURZ } from "./bewertung-kriterien";
+import { bestaetigteTextErgebnisse, SCHWACHE_STUFE, type TextErgebnis } from "./text-note";
 
 /** Wie weit eine Prüfung voraus zählt. */
 export const PRUEFUNG_TAGE = 30;
@@ -262,7 +265,7 @@ function verwandtschaft(): AutoEingabe["verwandt"] {
 }
 
 /** Was je Schüler einmal gerechnet wird, auch wenn er mehrere Einheiten in der Woche hat. */
-export type SchuelerBasis = { student: repo.Student; schritte: NextStep[]; lessons: repo.Lesson[]; hausuebungen?: Pick<repo.Homework, "subject" | "description">[] };
+export type SchuelerBasis = { student: repo.Student; schritte: NextStep[]; lessons: repo.Lesson[]; hausuebungen?: Pick<repo.Homework, "subject" | "description">[]; texte?: TextErgebnis[] };
 
 export function schuelerBasis(student: repo.Student, now: Date): SchuelerBasis {
   return {
@@ -274,7 +277,35 @@ export function schuelerBasis(student: repo.Student, now: Date): SchuelerBasis {
         "SELECT h.subject, h.description FROM homework h WHERE h.student_id = ? AND h.status = 'offen' AND NOT EXISTS (SELECT 1 FROM assignments a WHERE a.id = h.assignment_id AND a.completed_at IS NOT NULL) ORDER BY h.due_date IS NULL, h.due_date LIMIT 3",
       )
       .all(student.id) as Pick<repo.Homework, "subject" | "description">[],
+    texte: bestaetigteTextErgebnisse(student.id),
   };
+}
+
+/** Wie lange eine schwache Note einer Textarbeit als offenes Ziel zählt. */
+export const TEXT_ZIEL_TAGE = 30;
+
+/**
+ * Schwächen aus Textarbeiten für die nächste Vorbereitung: je Fähigkeit zählt die zuletzt übernommene Bewertung (neueste
+ * zuerst in `texte`). Ist ihre Note oder ein Kriterium ab Stufe 4 und liegt sie höchstens 30 Tage zurück, ist sie ein
+ * offenes Ziel. Eine spätere gute Note derselben Fähigkeit nimmt es weg. Nur bestätigte Bewertungen kommen herein
+ * (lib/text-note.ts `bestaetigteTextErgebnisse`), nie ein Vorschlag der KI.
+ */
+export function textSignale(texte: TextErgebnis[], datum: string): Signal[] {
+  const out: Signal[] = [];
+  const gesehen = new Set<string>();
+  for (const t of texte) {
+    if (gesehen.has(t.skillId)) continue;
+    gesehen.add(t.skillId);
+    const tag = wienerDatum(new Date(t.at));
+    const alter = daysUntil(datum, tag);
+    if (alter < 0 || alter > TEXT_ZIEL_TAGE) continue;
+    const schwach = KRITERIUM_KEYS.filter((k) => t.stufen[k] >= SCHWACHE_STUFE);
+    if (!schwach.length && !(t.note && t.note >= SCHWACHE_STUFE)) continue;
+    const sorte = t.textsorte.trim() || "Textarbeit";
+    const note = t.note ? `Note ${t.note}` : "bewertet";
+    out.push({ art: "ziel", fach: t.fach, skill_ids: [t.skillId], stoff: [], thema: t.skillName, warum: `${sorte} am ${tagMonat(tag)}: ${note}${schwach.length ? `, schwach: ${schwach.map((k) => KRITERIUM_KURZ[k]).join(", ")}` : ""}` });
+  }
+  return out;
 }
 
 /**
@@ -337,6 +368,8 @@ export function signaleFuer(b: SchuelerBasis, o: { datum: string; fach: string; 
     out.push({ art: "ziel", fach: faecher.size === 1 ? skills[0].subject : "", skill_ids: skills.map((k) => k.id), stoff: [], thema: skills[0].name, warum: warum(skills) });
   };
   if (letzte?.next_steps.trim()) ziel(letzte.next_steps, () => `Nächstes Mal (Einheit am ${tagMonat(letzte.starts_at)}): ${zitat(letzte.next_steps, 80)}`);
+  // a Textarbeit the teacher graded with a weak criterion (only confirmed grades, never a proposal)
+  for (const t of textSignale(b.texte ?? [], o.datum)) if (imFach(t.fach)) out.push(t);
   for (const h of b.hausuebungen ?? []) {
     if (h.subject && !imFach(h.subject)) continue;
     ziel(h.description, () => `Hausübung offen: ${zitat(h.description, 80)}`);

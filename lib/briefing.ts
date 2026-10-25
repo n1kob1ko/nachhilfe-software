@@ -72,6 +72,8 @@ export const uebungLinks = (ks: Kandidat[]): Record<string, UebungLink> => Objec
 
 /** `skillId`: nur in der einfachen Fassung, die Fähigkeit eines Übungsblocks (für „Übung senden“ im geführten Unterricht) */
 export type PlanSchritt = { minuten: number; titel: string; beschreibung: string; uebung: string | null; skillId?: string | null };
+/** Der Schritt des Plans für eine nahe Schularbeit; im Unterricht bietet er auch ihre Schreibaufgabe an (lib/textarbeit-ablauf.ts). */
+export const SCHULARBEIT_SCHRITT = "Schularbeit vorbereiten";
 
 export type BriefingInhalt = {
   letzterStand: string[];
@@ -444,7 +446,7 @@ export function einfachesBriefing(d: BriefingDaten): BriefingInhalt {
   const vorgabe = d.fokus?.art === "vorgabe" ? d.fokus : null;
   if (t && t.days <= 14 && !vorgabe) {
     const namen = t.skill_ids.map((id) => d.analysis.skills.find((s) => s.skill.id === id)?.skill.name ?? "").filter(Boolean);
-    bloecke.push({ gewicht: 2.5, titel: "Schularbeit vorbereiten", beschreibung: schularbeitText(d)!, uebung: uebungFuer(d, namen, schon), skillId: t.skill_ids[0] ?? null });
+    bloecke.push({ gewicht: 2.5, titel: SCHULARBEIT_SCHRITT, beschreibung: schularbeitText(d)!, uebung: uebungFuer(d, namen, schon), skillId: t.skill_ids[0] ?? null });
   }
   // the topic of the automatic preparation first (the Schularbeit block already covers a near Prüfung)
   const f = d.fokus;

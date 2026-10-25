@@ -16,7 +16,7 @@ Seit 25. Oktober 2026 (niko): Vor der Einheit bereitet die App alles selbst vor.
 2. **Schulstoff:** eine Empfehlung „Schulstoff“ und die aktuellen Themen aus dem Profil.
 3. **Vom Schüler gemeldet:** der Wunsch aus der Schüler-App („Was willst du nächstes Mal machen?“).
 4. **Wiederholte Fehler:** eine Fehler-Empfehlung oder eine Schwäche, bei der derselbe Fehler zuletzt mindestens zweimal kam.
-5. **Offenes Ziel:** ein begonnenes Lernpaket mit nicht erreichten Zielen, „Nächstes Mal“ der letzten Dokumentation, eine offene Hausübung.
+5. **Offenes Ziel:** ein begonnenes Lernpaket mit nicht erreichten Zielen, „Nächstes Mal“ der letzten Dokumentation, eine offene Hausübung, eine Textarbeit der letzten 30 Tage mit übernommener Note 4 oder 5 oder einem Kriterium ab Stufe 4 („E-Mail am 25.10.: Note 3, schwach: Sprache“, `textSignale`). Nur übernommene Bewertungen zählen, nie ein Vorschlag.
 6. **Wiederholung:** Lernstand, fällige Wiederholung, Thema der letzten Einheit.
 
 Bei gleichem Rang gewinnt die frühere Prüfung, sonst die Reihenfolge der Daten. Signale aus einem anderen Fach als dem der Einheit fallen weg, wenn das Fach feststeht.
