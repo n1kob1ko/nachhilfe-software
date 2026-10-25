@@ -229,7 +229,7 @@ export async function vorschlagNeuAction(unitId: number, roh: Option) {
   if (!tor.erlaubt) nachVorschlag(unitId, { fehler: tor.grund });
   const out = await newExerciseForUnit(unit.id, t.id, { skillId: o.skillId!, level: o.level!, fokus: o.fokus });
   if (!out.ok) nachVorschlag(unitId, { fehler: out.error });
-  reagiert(unitId);
+  reagiert(unitId, { art: o.art, skillId: o.skillId, assignmentId: out.assignmentId });
   noteActivity(unit.student_id);
   pushLive(unit.id);
   nachVorschlag(unitId, { gesendet: repo.getAssignment(out.assignmentId)?.worksheet_id, ersatz: out.source !== "ki" });

@@ -7,7 +7,7 @@ weg: was nicht in die drei Bereiche gehört, steht unter **Erweitert**.
 | --- | --- | --- |
 | Heute | `/` | Die Schüler von heute als kurze Karten: Zeit, Name, Klasse, Fach, Thema, Warum, Vorbereitet, Schwierigkeiten, Prüfung (bis 30 Tage). Ein Hauptknopf „Einheit starten“. Läuft eine Einheit, steht sie oben mit „Zum Unterricht“; die Karte des Schülers darunter ist dann eine leise Zeile. Siehe [Tagesbriefing](tagesbriefing.md#automatische-vorbereitung). |
 | Unterricht | `/unterricht` | Leitet in die laufende Einheit (bei zwei in die früher gestartete). Läuft keine: „Gerade läuft keine Einheit“ mit dem nächsten Schüler. |
-| Abschluss | `/abschluss` | Leitet zum letzten beendeten, noch nicht bestätigten Abschluss von heute (Wiener Tag). Sonst „Nichts zu bestätigen“ und die offenen der letzten 14 Tage. |
+| Abschluss | `/abschluss` | Leitet zum letzten beendeten, noch nicht bestätigten Abschluss von heute (Wiener Tag). Sonst „Nichts zu bestätigen“ und die offenen der letzten 14 Tage, auch automatisch beendete („automatisch beendet“). Auf Heute steht dazu eine leise Zeile „2 Abschlüsse offen“. |
 | Erweitert | `/mehr` | Alles andere, oben die Gruppe „Arbeit“. |
 
 `/jetzt` leitet dorthin, wo die Lehrkraft gerade gebraucht wird (`lib/situation.ts`): laufende Einheit → Unterricht,
@@ -121,7 +121,53 @@ Nächstes Mal. Ohne Beleg bleibt „Gut verstanden“ leer: „Keine sicheren Er
 Eine Textarbeit mit übernommener Bewertung steht unter „Heute gemacht“ mit Textsorte und Note, Kriterien ab Stufe 4
 unter „Noch schwierig“. Ist nur ein Vorschlag da oder fehlt die Bewertung, steht „Bewertung offen“ mit einem Link
 („Bewertung übernehmen“ oder „Korrigieren“); ein Vorschlag der KI erscheint nie als Ergebnis.
-„Dokumentation bestätigen“ setzt nur `reviewed_at` und führt zu `/jetzt`; danach steht „Bestätigt am …“ da.
 „Ändern“ (`?aendern=1`) öffnet das Formular der Dokumentation. Alles Übrige (Mappe drucken, Einschätzung, Auf einen
 Blick, Notiz für Eltern, Dokumentation, Aufgaben, Lernpaket-Rückblick, Texte, Whiteboard) steht unter „Mehr Details“
 (`?details=1`).
+
+### Automatischer Abschluss
+
+niko, 25.10.2026: „Am Ende der Einheit wird die Dokumentation automatisch vorbereitet, nur aus echten Daten. Die
+Lehrkraft tippt nur ‚Dokumentation bestätigen‘.“ Die KI darf keinen Fortschritt erfinden; unsichere Beobachtungen sind
+nie Fakten. Jede Zeile der Karte sagt leise, woher sie kommt (`QUELLE` in `lib/abschluss.ts`, gesammelt von
+`belegeDerEinheit`):
+
+| Quelle (Hinweis) | Was | Feld |
+| --- | --- | --- |
+| aus Antworten | Aufgaben am Gerät (Bericht der Einheit): Themen, Anzahl, erster Versuch, mit Hilfe; Fehler nach Art, „vermutet“, solange die Lehrkraft die Fehlerart nicht bestätigt hat; Minitest am Anfang | Heute gemacht, Gut verstanden (Regeln), Noch schwierig |
+| deine Beobachtung | Richtig / Teilweise / Falsch bei Fragen und Kontrollen (`antwortenDerEinheit`) | Richtig: Gut verstanden, aber nie allein als sicheres Ergebnis; Teilweise, Falsch: Noch schwierig |
+| Anpassung | gesendete Aufgaben der Anpassung im Unterricht (`einheit_cockpit.steuerung.reaktionen`) | leichter, Grundlage, zum Fehler: Noch schwierig („Leichtere Aufgabe nötig bei Dividieren (danach 3 von 3 richtig)“); schwerer: Gut verstanden nur, wenn alle Antworten darauf richtig waren |
+| Ablauf | erledigt, wiederholt, nicht verstanden, nicht erreicht, übersprungen | Heute gemacht, Noch schwierig, Nächstes Mal |
+| Vorgabe | die bestätigten Fähigkeiten der Vorgabe für heute: geübt (Antworten, erledigter Schritt, Beobachtung, Textarbeit) oder nicht | Heute gemacht („Aus deiner Vorgabe geübt“), Nächstes Mal („Aus deiner Vorgabe noch offen“) |
+| Prüfung | die nächste eingetragene Prüfung (bis 30 Tage, nur ein gespeichertes Datum) und ihr Stoff ohne Antwort in den 30 Tagen davor, höchstens drei Punkte | Nächstes Mal, ganz oben |
+| Text | Textarbeit mit übernommener Note oder „Bewertung offen“ | Heute gemacht, Noch schwierig |
+| Lernstand, Hausübung | Empfehlung (`nextSteps`), offene Hausübung | Nächstes Mal |
+| deine Notiz, von dir | was die Lehrkraft selbst geschrieben oder in der Karte korrigiert hat | im jeweiligen Feld |
+
+**Gut verstanden** hat feste Regeln (`gutVerstanden`), nur aus dieser Einheit:
+
+1. mindestens 3 Aufgaben einer Fähigkeit im ersten Versuch ohne Hilfe richtig und keine falsche Antwort dazu (falsch
+   abgegeben, erst nach einem Fehlversuch richtig oder Lösung angesehen zählt als falsch; ein Hinweis nicht),
+2. oder mindestens 2 richtige Aufgaben ohne falsche Antwort und dein „Richtig“ bei einer Frage dieser Fähigkeit,
+3. oder eine schwerere Aufgabe der Anpassung mit mindestens 2 Aufgaben, alle im ersten Versuch richtig.
+
+Dein „Teilweise“ oder „Falsch“ zu einer Fähigkeit schließt sie aus. Ohne Treffer steht „Keine sicheren Ergebnisse – bei
+Bedarf ergänzen“, deine Beobachtungen darunter. Eine Fähigkeit mit sicherem Ergebnis steht nicht zugleich unter „Noch
+schwierig“. Die KI-Zusammenfassung der Einheit (`onUnitEnd`, im Hintergrund) steht nur unter „Mehr Details“ als
+„Vorschlag der KI“ und kommt nie in die Felder, die Dokumentation oder den Lernstand.
+
+**Schnell korrigieren:** ein Tippen auf ein Feld (oder den Stift daneben) öffnet ein Textfeld mit seinen Zeilen.
+„Speichern“ schreibt nur dieses Feld in die Dokumentation (`korrigiereFeld`, `lessons.abschluss_eigen`) und bestätigt
+nicht; das Feld zeigt dann genau diesen Text („von dir“). Leer gespeichert, kommt es wieder aus den Daten. Das große
+Formular „Ändern“ bleibt.
+
+**Dokumentation bestätigen** (`bestaetigeAbschluss`) schreibt die vier Felder in die Dokumentation, nur wo die Lehrkraft
+nichts selbst geschrieben hat (leer oder noch der automatische Wert): Heute gemacht → `activities`, Gut verstanden →
+`positives`, Noch schwierig → `difficulties`, Nächstes Mal → `next_steps`. Eine Beobachtung steht dort mit
+„(Beobachtung)“. Dann `reviewed_at`, und weiter zu `/jetzt`: läuft ein zweiter Schüler, in seinen Unterricht, wartet
+sein Abschluss von heute, dorthin, sonst Heute. „Nächstes Mal“ liest die nächste Vorbereitung als offenes Ziel
+(„Nächstes Mal (Einheit am …)“, `lib/vorbereitung-auto.ts`). Die Notiz für Eltern oder Schüler (Mehr Details) entsteht
+aus denselben vier Feldern, ohne deine Beobachtungen.
+
+Offene Abschlüsse gehen nicht verloren: auch automatisch beendete Einheiten (`sweepIdleUnits`) stehen unter
+`/abschluss`, und Heute zeigt eine leise Zeile („2 Abschlüsse offen“).

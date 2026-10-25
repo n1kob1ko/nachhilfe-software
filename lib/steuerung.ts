@@ -354,6 +354,6 @@ export function sendeAngepasst(unitId: number, o: Option, teacherId: number | nu
     );
     assignmentId = repo.assignWorksheet(worksheetId, student.id, "", unit.id);
   })();
-  reagiert(unitId);
+  reagiert(unitId, { art: o.art, skillId: o.skillId, assignmentId });
   return { worksheetId, assignmentId, quelle };
 }

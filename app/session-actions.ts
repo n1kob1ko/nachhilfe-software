@@ -19,7 +19,7 @@ import {
   requireTeacher,
   setPassword,
 } from "@/lib/auth";
-import { bestaetigeDoku } from "@/lib/abschluss";
+import { bestaetigeAbschluss, isAbschlussFeld, korrigiereFeld } from "@/lib/abschluss";
 import { clientIp } from "@/lib/client-ip";
 import { db, usernameFor } from "@/lib/db";
 import { fachHeute } from "@/lib/heute";
@@ -176,9 +176,10 @@ export async function cancelUnitAction(unitId: number, formData: FormData) {
 }
 
 /**
- * „Dokumentation bestätigen“ im Abschluss: die automatische Dokumentation gilt als gesehen, kein Feld ändert sich
- * (lib/abschluss.ts). Danach dorthin, wo die Lehrkraft gebraucht wird: läuft noch ein zweiter Schüler, in seinen
- * Unterricht, sonst zu Heute (/jetzt).
+ * „Dokumentation bestätigen“ im Abschluss: die vier Felder kommen in die Dokumentation, nur wo die Lehrkraft nichts
+ * selbst geschrieben hat, und sie gilt als gesehen (lib/abschluss.ts `bestaetigeAbschluss`). Danach dorthin, wo die
+ * Lehrkraft gebraucht wird (/jetzt): läuft noch ein zweiter Schüler, in seinen Unterricht, wartet sein Abschluss, dorthin,
+ * sonst zu Heute.
  */
 export async function bestaetigeDokuAction(lessonId: number) {
   const t = await requireTeacher();
@@ -186,9 +187,24 @@ export async function bestaetigeDokuAction(lessonId: number) {
   if (!lesson) redirect("/abschluss");
   const owner = lesson.unit_id ? getUnit(lesson.unit_id) : null;
   if (owner && !canManageUnit(t, owner)) redirect(`/einheiten/${owner.id}?fremd=1`);
-  bestaetigeDoku(lessonId);
+  bestaetigeAbschluss(lessonId);
   revalidatePath("/", "layout");
   redirect("/jetzt");
+}
+
+/**
+ * Ein Feld des Abschlusses direkt in der Karte korrigieren (ohne das große Formular). Bestätigt nicht: die Karte bleibt
+ * offen, bis „Dokumentation bestätigen“ getippt wird. Leer: das Feld kommt wieder aus den Daten.
+ */
+export async function korrigiereFeldAction(lessonId: number, feld: string, text: string): Promise<{ ok: true } | { fehler: string }> {
+  const t = await requireTeacher();
+  const lesson = repo.getLesson(lessonId);
+  if (!lesson || !isAbschlussFeld(feld)) return { fehler: "Dieses Feld gibt es nicht." };
+  const owner = lesson.unit_id ? getUnit(lesson.unit_id) : null;
+  if (owner && !canManageUnit(t, owner)) return { fehler: `Diese Einheit gehört ${owner.teacher_name}.` };
+  korrigiereFeld(lessonId, feld, text);
+  if (owner) revalidatePath(`/einheiten/${owner.id}`);
+  return { ok: true };
 }
 
 /** The teacher looks over the generated Lern-Dokumentation and completes it. */

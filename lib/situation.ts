@@ -14,7 +14,7 @@ import { runningUnits } from "./units";
 export type Laufend = { id: number; started_at: string };
 
 /** Eine beendete Einheit, deren Dokumentation noch nicht bestätigt ist (`lessons.reviewed_at` leer). */
-export type OffenerAbschluss = { unitId: number; lessonId: number; studentId: number; studentName: string; subject: string; startedAt: string; endedAt: string };
+export type OffenerAbschluss = { unitId: number; lessonId: number; studentId: number; studentName: string; subject: string; startedAt: string; endedAt: string; endedBy?: string | null };
 
 export type Lage = { art: "unterricht"; unitId: number } | { art: "abschluss"; unitId: number } | { art: "heute" };
 
@@ -49,7 +49,7 @@ export function offeneAbschluesse(teacherId: number, o: { tage?: number; now?: D
   const seit = new Date(now.getTime() - (o.tage ?? ABSCHLUSS_TAGE) * 86_400_000).toISOString();
   return db()
     .prepare(
-      `SELECT u.id AS unitId, l.id AS lessonId, u.student_id AS studentId, s.name AS studentName, u.subject, u.started_at AS startedAt, u.ended_at AS endedAt
+      `SELECT u.id AS unitId, l.id AS lessonId, u.student_id AS studentId, s.name AS studentName, u.subject, u.started_at AS startedAt, u.ended_at AS endedAt, u.ended_by AS endedBy
        FROM units u JOIN lessons l ON l.unit_id = u.id JOIN students s ON s.id = u.student_id
        WHERE u.teacher_id = ? AND u.status = 'beendet' AND l.reviewed_at IS NULL AND u.ended_at IS NOT NULL AND u.ended_at >= ?
        ORDER BY u.ended_at DESC`,

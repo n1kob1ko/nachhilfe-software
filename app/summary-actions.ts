@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { aiEnabled, writeFamilyNote } from "@/lib/ai";
 import { requireTeacher } from "@/lib/auth";
 import * as repo from "@/lib/repo";
+import { briefAusKarte, karteDerEinheit } from "@/lib/abschluss";
 import { briefForAI, noteFromFacts, unitBrief } from "@/lib/summary";
 import { canManageUnit, getUnit } from "@/lib/units";
 
@@ -25,12 +26,14 @@ const refresh = (lesson: repo.Lesson) => {
 /**
  * A note for parents or the student: from the facts alone, or formulated by Claude from the data
  * lines of the summary (names removed, no teacher notes). Saved right away; the teacher can edit it.
+ * With a unit the facts are the four fields of the Abschluss (lib/abschluss.ts `briefAusKarte`), the same the teacher confirms.
  */
 export async function generateFamilyNoteAction(lessonId: number, mode: "fakten" | "ki", audience: "eltern" | "schueler"): Promise<NoteState> {
   const lesson = await editableLesson(lessonId);
   if (!lesson) return { error: "Diese Dokumentation kannst du nicht ändern." };
-  const brief = unitBrief(lesson.id);
-  if (!brief) return { error: "Keine Daten zu dieser Einheit." };
+  const roh = unitBrief(lesson.id);
+  if (!roh) return { error: "Keine Daten zu dieser Einheit." };
+  const brief = lesson.unit_id ? briefAusKarte(roh, karteDerEinheit(lesson.unit_id, lesson, roh)) : roh;
   let note = noteFromFacts(brief, audience);
   let source: "fakten" | "ki" = "fakten";
   if (mode === "ki") {

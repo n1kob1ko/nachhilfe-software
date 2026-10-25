@@ -106,6 +106,8 @@ export type Lesson = {
   einschaetzung?: string | null;
   /** JSON {field: value} of what the app filled in automatically (lib/einschaetzung.ts). */
   auto_felder?: string;
+  /** JSON list of the Abschluss fields the teacher corrected in place (lib/abschluss.ts). */
+  abschluss_eigen?: string;
 };
 
 export type Homework = { id: number; student_id: number; subject: string; description: string; due_date: string | null; status: string; notes: string; assignment_id: number | null };

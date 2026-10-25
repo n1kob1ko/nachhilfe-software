@@ -81,7 +81,8 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
 
   // eine ruhige Zeile zu Erweitert: was offen ist, ohne es hier aufzulisten
   const todos = zuErledigen(teacher.id, wienerDatum(now), now).offen.length;
-  const abschluesse = offeneAbschluesse(teacher.id, { tage: 1, now }).filter((o) => wienerDatum(new Date(o.endedAt)) === wienerDatum(now));
+  // offene Abschlüsse der letzten 14 Tage, auch automatisch beendete (lib/situation.ts): eine leise Zeile nach /abschluss
+  const abschluesse = offeneAbschluesse(teacher.id, { now });
 
   return (
     <>
@@ -158,7 +159,7 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
         <p className="mt-6 flex flex-wrap gap-x-5 border-t border-line pt-2 text-[14px] text-ink-2" data-testid="heute-hinweise">
           {abschluesse.length > 0 && (
             <Link href="/abschluss" className="inline-flex min-h-[44px] items-center font-medium text-accent hover:underline">
-              {abschluesse.length === 1 ? `Abschluss mit ${firstName(abschluesse[0].studentName)} noch nicht bestätigt` : `${abschluesse.length} Abschlüsse noch nicht bestätigt`}
+              {abschluesse.length === 1 ? `Abschluss mit ${firstName(abschluesse[0].studentName)} offen` : `${abschluesse.length} Abschlüsse offen`}
             </Link>
           )}
           {todos > 0 && (
