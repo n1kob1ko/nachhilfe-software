@@ -20,6 +20,7 @@ const BEREICHE: Bereich[] = [
         id: "englisch.tenses.presentprogressive",
         name: "Present Progressive",
         stufen: [5, 6],
+        suchwoerter: ["Present Continuous", "Verlaufsform"],
         erklaerung: "Für Handlungen, die gerade jetzt passieren: am, is oder are + Verb mit -ing. Signalwörter: now, at the moment, look, listen. Beispiel: „Look! Tom is running to the bus.“ „We aren't watching TV at the moment.“",
         fehler: [
           "am, is oder are vergessen (He running to the bus.)",
@@ -31,6 +32,7 @@ const BEREICHE: Bereich[] = [
         id: "englisch.tenses.simple-progressive",
         name: "Present Simple oder Present Progressive",
         stufen: [5, 7],
+        suchwoerter: ["Signal Words", "Signalwörter", "Present Simple und Present Continuous"],
         erklaerung: "Present Simple für Gewohnheiten und Dinge, die immer gelten (every day, usually, often), Present Progressive für das, was gerade passiert oder nur vorübergehend so ist (now, at the moment, today, this week). Beispiel: „Anna usually walks to school, but today she is going by bus.“",
         fehler: [
           "Für allgemeine Tatsachen die Verlaufsform verwendet (Water is boiling at 100 degrees. statt Water boils at 100 degrees.)",
@@ -249,6 +251,7 @@ const BEREICHE: Bereich[] = [
         id: "englisch.grammar.wortstellung",
         name: "Satzstellung im Aussagesatz",
         stufen: [5, 7],
+        suchwoerter: ["Word Order", "Wortstellung"],
         erklaerung: "Im englischen Aussagesatz gilt Subjekt, Verb, Objekt, auch nach einer Zeitangabe am Satzanfang und im Nebensatz. Der Ort steht vor der Zeit. Beispiel: „Yesterday we played football in the park.“ „I go to school by bus every day.“ „I'm tired because I went to bed late.“",
         fehler: [
           "Nach einer Zeitangabe das Verb vor das Subjekt gestellt (Yesterday played we football.)",
@@ -260,6 +263,7 @@ const BEREICHE: Bereich[] = [
         id: "englisch.grammar.fragen",
         name: "Fragen mit Fragewörtern",
         stufen: [5, 7],
+        suchwoerter: ["Question Words", "Fragewörter", "Wh-Questions"],
         erklaerung: "Fragewort + Hilfsverb + Subjekt + Verb. Gibt es kein Hilfsverb, nimmt man do, does oder did. Fragt man nach dem Subjekt (Who …? What …?), fällt do weg. Beispiel: „Where do you live?“ „What did she say?“ „How often do you play tennis?“ „Who called you?“",
         fehler: [
           "Deutsche Wortstellung übernommen (What means this word? statt What does this word mean?)",
@@ -600,6 +604,7 @@ const BEREICHE: Bereich[] = [
         id: "englisch.vocab.tagesablauf",
         name: "Wortschatz: Tagesablauf",
         stufen: [5, 6],
+        suchwoerter: ["Daily Routine"],
         erklaerung: "Den Tagesablauf erzählt man im Simple Present, oft mit always, usually, sometimes und never. Diese Wörter stehen vor dem Vollverb. Beispiel: „I usually get up at seven.“ „After school I do my homework.“ „I go to bed at nine.“",
         fehler: [
           "Häufigkeitswort an die falsche Stelle gesetzt (I get usually up at seven.)",
@@ -829,6 +834,7 @@ const BEREICHE: Bereich[] = [
         id: "englisch.writing.email",
         name: "E-Mail an Freunde schreiben",
         stufen: [5, 8],
+        suchwoerter: ["Email", "E-Mail-Antwort"],
         erklaerung: "Anrede (Hi Sam, oder Dear Sam,), in der nächsten Zeile groß weiter. Kurzer Einstieg, dann jeden Punkt der Angabe in einem eigenen Absatz, eine Frage an den Freund und ein Gruß zum Schluss. Beispiel: „Hi Sam, / Thanks for your email! … / Write back soon! / Best wishes, Anna“",
         fehler: [
           "Nach der Anrede wie im Deutschen kleingeschrieben (Dear Sam, thanks for your email.)",
@@ -864,6 +870,7 @@ const BEREICHE: Bereich[] = [
         id: "englisch.writing.story",
         name: "Eine Geschichte schreiben",
         stufen: [6, 9],
+        suchwoerter: ["Picture Story", "Bildergeschichte"],
         erklaerung: "Einleitung (wer, wo, wann), Hauptteil mit Spannung und Höhepunkt, Schluss. Erzählt wird im Past Simple, der Hintergrund im Past Progressive. Wörter wie suddenly, after that und in the end und Gefühle machen die Geschichte lebendig. Beispiel: „It was a cold night. Tom was walking home when suddenly he heard a strange noise.“",
         fehler: [
           "Zwischen Present und Past gewechselt (Tom walked home. Suddenly he hears a noise.)",
@@ -1049,6 +1056,16 @@ const FEHLER_BISHER: Record<string, string[]> = {
   ],
 };
 
+/**
+ * Other names of the English skills that were there before (lib/curriculum.ts), as they stand on a Stoffzettel or in a
+ * book's table of contents („present tense simple“ in MORE!). Only for matching the Stoff.
+ */
+const SUCHWOERTER_BISHER: Record<string, string[]> = {
+  "englisch.tenses.presentsimple": ["Simple Present", "present tense simple"],
+  "englisch.tenses.pastsimple": ["Simple Past", "past tense simple"],
+  "englisch.tenses.presentperfect": ["present perfect tense"],
+};
+
 /** Explanations of English skills that were there before and have none in EXPLAIN (lib/generators.ts). */
 const ERKLAERUNG_BISHER: Record<string, string> = {
   "englisch.translation.sentences": "Erst den Sinn des ganzen Satzes verstehen, dann Subjekt und Verb bestimmen, die passende Zeitform wählen und die englische Satzstellung Subjekt, Verb, Objekt verwenden. Nicht Wort für Wort übersetzen. Beispiel: „Gestern habe ich meine Oma besucht.“ wird zu „Yesterday I visited my grandma.“",
@@ -1096,5 +1113,6 @@ export const ENGLISCH_UNTERSTUFE: Modul = {
   bereiche: BEREICHE,
   fehlerBisher: FEHLER_BISHER,
   erklaerungBisher: ERKLAERUNG_BISHER,
+  suchwoerterBisher: SUCHWOERTER_BISHER,
   voraussetzungen: VORAUSSETZUNGEN,
 };

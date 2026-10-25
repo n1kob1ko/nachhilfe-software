@@ -11,6 +11,7 @@ import { dayOf, examPrep, PLAN_COUNTS, STAGE_LABEL, STAGE_TONE } from "@/lib/exa
 import { aiEnabled } from "@/lib/ai";
 import { matchSkills, skillsForStudent, stoffVorschlag } from "@/lib/lehrplan";
 import { probeschularbeitenZu, punkteText } from "@/lib/probeschularbeit";
+import { stoffDerPruefung } from "@/lib/pruefungsstoff";
 import type { Skill } from "@/lib/repo";
 import { auftraegeZurPruefung } from "@/lib/schreibauftrag-store";
 
@@ -47,6 +48,9 @@ export default async function ExamPrepPage({
   const zugeordnet = sp.zugeordnet !== undefined ? Number(sp.zugeordnet) : null;
   const proben = probeschularbeitenZu(test.id);
   const auftraege = auftraegeZurPruefung(test.id);
+  // read from its documents (lib/pruefungsstoff.ts): the view „Erkannt“ with every point and what is still to confirm
+  const erkannt = stoffDerPruefung(test.id);
+  const zuBestaetigen = erkannt.filter((z) => (z.zuordnung === "unklar" && z.status !== "ausgeschlossen" && z.vorschlaege.length) || z.status === "unklar").length;
   const builder = `/uebungen/neu?schueler=${student.id}&skills=${plan.map((p) => encodeURIComponent(p.skill.id)).join(",")}&anzahl=${Math.min(30, totalTasks)}`;
 
   return (
@@ -63,6 +67,13 @@ export default async function ExamPrepPage({
         }
       />
       <div className="grid max-w-[920px] grid-cols-[minmax(0,1fr)] gap-10">
+        {erkannt.length > 0 && (
+          <Link href={`/schueler/${student.id}/pruefung/${test.id}/stoff`} className="panel flex min-h-[52px] flex-wrap items-center gap-x-2 px-4 py-2" data-testid="zu-erkannt">
+            <FileText size={18} className="text-ink-2" aria-hidden />
+            <span className="text-[15px] font-semibold">Erkannt: {erkannt.length} Punkte aus den Unterlagen</span>
+            {zuBestaetigen > 0 && <Pill tone="amber">{zuBestaetigen} offen</Pill>}
+          </Link>
+        )}
         {((test.topics?.length ?? 0) > 0 || test.material_id) && (
           <p className="flex flex-wrap items-center gap-1.5 text-[15px]">
             {(test.topics?.length ?? 0) > 0 && <span className="font-medium text-ink-2">Stoff:</span>}

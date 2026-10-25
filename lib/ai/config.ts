@@ -152,9 +152,10 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // Stundenplan-Fotos (lib/planung/stundenplan-foto.ts): only on the admin's click, after the tick that first names
   // may go to the KI; the answer holds first names, so it is never kept for reuse
   stundenplan: { label: "Stundenplan-Foto lesen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
-  // Stoffzettel einer Schularbeit (lib/stoffzettel.ts): only on the teacher's click, after the tick „kein Name darauf“;
-  // the answer is Art, Fach, Datum and Stoff, so the same sheet on the same day is not paid for twice
-  stoffzettel: { label: "Stoffzettel lesen", area: "MATERIAL", tier: "standard", maxTokens: 3_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  // Stoffzettel und Prüfungsstoff (lib/stoffzettel.ts, lib/pruefungsstoff.ts): only on the upload of the teacher or the
+  // student, after the tick „kein Name darauf“; all files of one Prüfung in one request, the answer is every point of the
+  // Stoff (about 40 to 60 for a sheet and a table of contents). The result is also kept per set of files (stoff_lesungen)
+  stoffzettel: { label: "Stoffzettel lesen", area: "MATERIAL", tier: "standard", maxTokens: 10_000, timeoutMs: 150_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // Text vom Foto (lib/textinterpretation-foto.ts): only on the teacher's click, after the tick „kein Name darauf“; the
   // printed story of a Textinterpretation, line by line. The answer is the printed text only, so the same page is not paid twice
   // Gelöstes Blatt einlesen (lib/blatt-einlesen.ts): only on the teacher's click, after the tick „kein Name darauf“; the

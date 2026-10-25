@@ -406,6 +406,29 @@ export function waehlePaket(unitId: number, paketId: number | null): { ok: true 
   aendere(unitId, (s) =>
     s.paket_id === paketId && !s.vorbereitet ? s : { ...s, paket_id: paketId, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, plan: null },
   );
+  eigeneWahl(unitId);
+  return { ok: true };
+}
+
+/** Der Lehrer hat selbst ein Paket oder eine Fähigkeit gewählt: der Ablauf folgt nicht mehr der Vorgabe für heute. */
+const eigeneWahl = (unitId: number) => db().prepare("UPDATE einheit_vorgabe SET angewendet = 0 WHERE unit_id = ?").run(unitId);
+
+/**
+ * Hat der Lehrer in dieser Einheit schon etwas getan: einen Schritt erledigt, übersprungen, wiederholt, als nicht
+ * verstanden markiert oder eine Übung gesendet? Dann ändert eine neue „Vorgabe für heute“ den Ablauf nicht von selbst.
+ */
+export const hatBegonnen = (s: Pick<Stand, "erledigt" | "uebersprungen" | "wiederholt" | "nichtVerstanden" | "gesendet">) =>
+  s.erledigt.length > 0 || s.uebersprungen.length > 0 || Object.keys(s.wiederholt).length > 0 || Object.keys(s.nichtVerstanden).length > 0 || Object.keys(s.gesendet).length > 0;
+
+/**
+ * Den Ablauf neu aufsetzen („Plan anpassen“ nach einer Vorgabe für heute): das Lernpaket (null: der Plan aus den
+ * Daten, beim nächsten Tippen neu festgehalten), Fortschritt und Reihenfolge von vorne. Notizen und gesendete
+ * Übungen bleiben.
+ */
+export function planNeu(unitId: number, paketId: number | null): { ok: true } | { fehler: string } {
+  const p = paketId ? getLernpaket(paketId) : null;
+  if (paketId && (!p || p.status === "archiviert" || !p.schritte.length)) return { fehler: "Dieses Lernpaket gibt es nicht mehr." };
+  aendere(unitId, (s) => ({ ...s, paket_id: paketId, skill_id: null, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, plan: null }));
   return { ok: true };
 }
 
@@ -420,6 +443,7 @@ export function waehleFaehigkeit(unitId: number, skillId: string | null): { ok: 
       ? { ...s, skill_id: skillId }
       : { ...s, paket_id: null, skill_id: skillId, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, plan: null },
   );
+  eigeneWahl(unitId);
   return { ok: true };
 }
 

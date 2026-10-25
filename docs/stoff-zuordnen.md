@@ -12,6 +12,8 @@ zugeordnet, also gab es weder Plan noch Probeschularbeit. „Das wird oft der Fa
 | Zeilen und Chips | `components/StoffZuordnung.tsx` |
 | Beim Eintragen der Schularbeit | `components/ExamForm.tsx` |
 | Karte „Stoff zuordnen“ | `app/(tutor)/schueler/[id]/pruefung/[testId]/page.tsx` |
+| Gelesener Prüfungsstoff: KI und Wörter zusammen | `lib/pruefungsstoff.ts` (`ordneZu`, `imBereich`) |
+| Ansicht „Erkannt“, kurz bestätigen | `app/(tutor)/schueler/[id]/pruefung/[testId]/stoff/page.tsx`, `lib/erkannt.ts` |
 
 ## Ablauf
 
@@ -40,8 +42,25 @@ Ohne KI, nur aus den Wörtern (ohne Füllwörter und Endungen):
 - Was ein Lehrer für dieselben Wörter anders gewählt hat (auch „nichts“), gilt beim nächsten Mal, außer die
   Schularbeit ist klar aus einem anderen Thema. Gemerkt wird nur, wo die Wahl vom Vorschlag abweicht.
 
+## Gelesener Prüfungsstoff
+
+niko, 25.10.2026: Werden Stoffzettel und Inhaltsverzeichnis gelesen (siehe [Stoffzettel](stoffzettel.md)),
+schlägt die KI je Punkt eine Fähigkeit aus der Liste der App vor. `ordneZu` vergleicht mit den Wörtern oben:
+
+- Das Gedächtnis der Lehrer gilt zuerst.
+- KI und Wörter nennen dieselbe Fähigkeit → **eindeutig**, gleich verknüpft.
+- Sie widersprechen sich → **kurz bestätigen** unter „Erkannt“, beide als Chips, nichts vorausgewählt,
+  dazu „Keine passt“. Was nicht angetippt wird, bleibt offen.
+- Die KI nennt keine → nur Vorschläge der Wörter aus demselben Bereich (Grammatik bleibt Grammatik,
+  Schreiben bleibt Schreiben, `imBereich`); sonst **keine**. Der Punkt bleibt Prüfungsstoff ohne Fähigkeit.
+- Ohne KI: der genaue Name einer Fähigkeit, ein Suchwort oder ein klarer Treffer der Wörter ist eindeutig,
+  sonst kurz bestätigen (nur Vorschläge aus demselben Bereich).
+- Unit-Überschriften („Unit 2: How embarrassing!“) und die Lektüre bekommen nie von selbst eine Fähigkeit.
+- Neue Suchwörter gibt es nur für bestehende Fähigkeiten.
+
 ## Was es nicht macht
 
-- Nichts wird ohne „Eintragen“ oder „Zuordnen“ verknüpft.
-- Keine KI und keine Namen: es sind nur die Wörter des Stoffs.
+- Nichts wird ohne „Eintragen“, „Zuordnen“ oder eine eindeutige Zuordnung beim Lesen verknüpft.
+- Keine Namen: es sind nur die Wörter des Stoffs. Die KI hilft nur beim gelesenen Prüfungsstoff, nicht in
+  den Zeilen beim Eintragen.
 - Suchwörter sind Kapitelnamen und übliche Bezeichnungen, keine Inhalte aus Büchern.

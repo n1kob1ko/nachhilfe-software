@@ -1094,6 +1094,62 @@ CREATE TABLE IF NOT EXISTS praesentation_entwuerfe (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_praesentation_entwuerfe ON praesentation_entwuerfe(paket_id, status);
+-- Prüfungsstoff lesen (lib/pruefungsstoff.ts, 2026-10-25): was die KI aus allen Dateien einer Prüfung zusammen (und der Angabe
+-- der Lehrkraft) gelesen hat, geprüft. schluessel = Fassung des Prompts + sortierte sha256 der Dateien + Angabe + Fähigkeiten der
+-- Anfrage: dieselben Dateien kosten nie ein zweites Mal. dateien: JSON [{material_id, sha256}] in der Reihenfolge der Anfrage.
+CREATE TABLE IF NOT EXISTS stoff_lesungen (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  schluessel TEXT NOT NULL UNIQUE,
+  student_id INTEGER REFERENCES students(id) ON DELETE SET NULL,
+  dateien TEXT NOT NULL DEFAULT '[]',
+  ergebnis TEXT NOT NULL,
+  call_id INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+-- Der Prüfungsstoff einer Prüfung, je erkanntem Punkt eine Zeile: original wie auf dem Blatt, inhalt der Lerninhalt in
+-- einfachen Worten, einheit das Kapitel des Buchs (nie eine Fähigkeit), quelle stoffzettel | inhaltsverzeichnis | lehrer |
+-- sonstiges, dokument die Nummer der Datei (0 = Angabe der Lehrkraft), status pruefung | ausgeschlossen | unklar,
+-- zuordnung sicher | bestaetigt | unklar | keine, vorschlaege: JSON der Fähigkeiten zur Auswahl bei unklar.
+-- tests.topics und tests.skill_ids werden daraus gefüllt; ohne passende Fähigkeit bleibt der Punkt trotzdem gespeichert.
+CREATE TABLE IF NOT EXISTS pruefungsstoff (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  test_id INTEGER NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
+  pos INTEGER NOT NULL,
+  gruppe TEXT NOT NULL,
+  original TEXT NOT NULL,
+  inhalt TEXT NOT NULL DEFAULT '',
+  einheit TEXT NOT NULL DEFAULT '',
+  quelle TEXT NOT NULL DEFAULT '',
+  dokument INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'pruefung',
+  grund TEXT NOT NULL DEFAULT '',
+  skill_id TEXT,
+  zuordnung TEXT NOT NULL DEFAULT 'keine',
+  vorschlaege TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_pruefungsstoff_test ON pruefungsstoff(test_id, pos);
+-- „Was steht heute an?“ (lib/vorgabe.ts): die Vorgabe der Lehrkraft für eine laufende Einheit. text wie getippt (bleibt in der
+-- App), punkte: JSON der erkannten Lerninhalte mit Fähigkeit, schwierigkeiten: JSON, test_id die gewählte oder erkannte Prüfung,
+-- lesung_id die gelesenen Dateien, termin_text ein genannter Termin („nächste Woche“, nie selbst eingetragen),
+-- angewendet = 1: der Plan der Einheit richtet sich danach.
+CREATE TABLE IF NOT EXISTS einheit_vorgabe (
+  unit_id INTEGER PRIMARY KEY REFERENCES units(id) ON DELETE CASCADE,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  text TEXT NOT NULL DEFAULT '',
+  punkte TEXT NOT NULL DEFAULT '[]',
+  skill_ids TEXT NOT NULL DEFAULT '[]',
+  schwierigkeiten TEXT NOT NULL DEFAULT '[]',
+  test_id INTEGER REFERENCES tests(id) ON DELETE SET NULL,
+  lesung_id INTEGER REFERENCES stoff_lesungen(id) ON DELETE SET NULL,
+  material_ids TEXT NOT NULL DEFAULT '[]',
+  termin_text TEXT NOT NULL DEFAULT '',
+  hinweis TEXT NOT NULL DEFAULT '',
+  angewendet INTEGER NOT NULL DEFAULT 0,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */
@@ -1353,6 +1409,10 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // Vorbereitung automatisch (lib/briefing.ts, 2026-10-25): ein Briefing gilt je Schüler und Datenstand (`stand`), auch an
   // späteren Tagen; daten = die Fassung aus den Daten und der Schwerpunkt, auf denen die KI-Fassung beruht (JSON; null bei alten Zeilen)
   ["briefings", "daten", "TEXT"],
+  // Prüfungsstoff lesen (lib/pruefungsstoff.ts, 2026-10-25): die Lesung, aus der der Prüfungsstoff einer Prüfung oder eines
+  // Eintrags des Schülers stammt (alle Dateien zusammen gelesen)
+  ["tests", "lesung_id", "INTEGER REFERENCES stoff_lesungen(id) ON DELETE SET NULL"],
+  ["pruefung_einreichungen", "lesung_id", "INTEGER REFERENCES stoff_lesungen(id) ON DELETE SET NULL"],
 ];
 
 /** Teachers to start with; more can be added later. */

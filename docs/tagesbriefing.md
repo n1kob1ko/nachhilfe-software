@@ -8,6 +8,10 @@ Seit 25. Oktober 2026 (niko): Vor der Einheit bereitet die App alles selbst vor.
 
 `lib/vorbereitung-auto.ts` sammelt für jeden Schüler Signale und ordnet sie (`ordneSignale`, `SIGNAL_RANG`). Reihenfolge nach niko:
 
+0. **Vorgabe für heute:** was die Lehrkraft in der laufenden Einheit unter „Was steht heute an?“ angegeben hat
+   ([Heute · Unterricht · Abschluss](heute-unterricht-abschluss.md#was-steht-heute-an)). Gibt es sie, zählt nur
+   sie: ein geprüftes Paket zu ihren Fähigkeiten, sonst der Plan aus den Daten mit bis zu drei Blöcken „Üben:
+   <Fähigkeit>“, ohne Schularbeit-Block und ohne weitere Schritte.
 1. **Prüfung:** eine geplante Schularbeit oder ein Test. Bei zwei Prüfungen zählt die frühere.
 2. **Schulstoff:** eine Empfehlung „Schulstoff“ und die aktuellen Themen aus dem Profil.
 3. **Vom Schüler gemeldet:** der Wunsch aus der Schüler-App („Was willst du nächstes Mal machen?“).

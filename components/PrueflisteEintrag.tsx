@@ -34,7 +34,9 @@ export function PrueflisteEintrag({ d, faecher, weitere, kiLiest }: { d: Pruefli
   const busy = liest || speichert || verwirft;
   const fehler = lesen?.fehler ?? stand?.fehler ?? weg?.fehler;
   const eigene = faecher.includes(d.werte.fach) || weitere.includes(d.werte.fach) ? faecher : [...faecher, d.werte.fach];
-  const fotoFehler = d.fotos.map((f, i) => (f.fehler ? `${d.fotos.length > 1 ? `Foto ${i + 1}: ` : ""}${f.fehler}` : "")).filter(Boolean);
+  // the photos are read together: one failed reading is the same sentence on every photo, shown once
+  const gleich = d.fotos.length > 1 && d.fotos.every((f) => f.fehler && f.fehler === d.fotos[0].fehler);
+  const fotoFehler = gleich ? [d.fotos[0].fehler] : d.fotos.map((f, i) => (f.fehler ? `${d.fotos.length > 1 ? `Foto ${i + 1}: ` : ""}${f.fehler}` : "")).filter(Boolean);
 
   return (
     <div className="panel grid gap-3 px-4 py-4" data-testid="pruefliste-eintrag">

@@ -15,6 +15,9 @@
  *      offenen Zielen, weil die Lehrkraft dort selbst geplant hat)
  *   7. Wiederholung: deutlich gefallen oder lange nicht geübt
  *   8. die letzte Einheit: ihr Thema
+ * Über allem steht die **Vorgabe für heute** (niko, 25.10.2026: „Die konkrete Anweisung des Lehrers für heute hat Vorrang
+ * vor allgemeinen Empfehlungen“): was die Lehrkraft nach dem Start der Einheit unter „Was steht heute an?“ angibt
+ * (lib/vorgabe.ts). Gibt es sie, zählt nur sie: ein Paket zu ihr, sonst der Plan aus den Daten mit ihr als Schwerpunkt.
  * Dazu müssen Fach, Schulart und Schulstufe passen. Entwürfe und ungeprüfte Pakete werden nie vorausgewählt,
  * nur als „Entwurf“ genannt. Findet sich keines, sagt die App „Kein Paket für …“ und bietet „Mit KI entwerfen“
  * mit ausgefüllten Angaben an; die KI läuft erst, wenn der Lehrer dort auf „Entwurf erstellen“ tippt.
@@ -25,7 +28,7 @@
  */
 import type { Fokus } from "./briefing";
 import { frueher, stoffPasst, zitat } from "./cockpit-vorschlag";
-import { db } from "./db";
+import { db, json } from "./db";
 import { daysUntil } from "./exams";
 import { ungeprueft, listLernpakete, getLernpaket, type Lernpaket } from "./lernpakete";
 import { einheitenFuerTag, istNichtStattgefunden, mitNamen } from "./planung/repo";
@@ -39,14 +42,15 @@ export const PRUEFUNG_TAGE = 30;
 /** Wie viele Tage die Liste „Nächste Einheiten“ vorausschaut. */
 export const VORAUS_TAGE = 7;
 
-export type SignalArt = "pruefung" | "schulstoff" | "wunsch" | "fehler" | "ziel" | "lernstand" | "wiederholung" | "letzte_einheit";
+export type SignalArt = "vorgabe" | "pruefung" | "schulstoff" | "wunsch" | "fehler" | "ziel" | "lernstand" | "wiederholung" | "letzte_einheit";
 
 /**
  * Die Stärke der Signale: das höhere gewinnt, bei gleicher Art die frühere Prüfung (`tage`), sonst das frühere in der
  * Liste. Der Wunsch des Schülers steht unter Prüfung und Schulstoff und über allem, was die App aus Antworten liest.
  */
-export const SIGNAL_RANG: Record<SignalArt, number> = { pruefung: 8, schulstoff: 7, wunsch: 6, fehler: 5, ziel: 4, lernstand: 3, wiederholung: 2, letzte_einheit: 1 };
+export const SIGNAL_RANG: Record<SignalArt, number> = { vorgabe: 9, pruefung: 8, schulstoff: 7, wunsch: 6, fehler: 5, ziel: 4, lernstand: 3, wiederholung: 2, letzte_einheit: 1 };
 export const SIGNAL_LABEL: Record<SignalArt, string> = {
+  vorgabe: "Vorgabe für heute",
   pruefung: "Prüfung",
   schulstoff: "Schulstoff",
   wunsch: "Vom Schüler gemeldet",
@@ -201,6 +205,8 @@ export function waehleAutomatisch(e: AutoEingabe): AutoWahl {
   const geprueft = passend.filter((p) => p.status === "geprueft" && !ungeprueft(p));
   const entwuerfe = passend.filter((p) => !geprueft.includes(p) && signale.some((s) => treffer(p, s, e.verwandt))).sort((a, b) => a.title.localeCompare(b.title, "de"));
   if (!signale.length) return { art: "ohne_signal" };
+  // the teacher's word for today: a package for it, otherwise the plan from the data with it in front, never something else
+  if (signale[0].art === "vorgabe") signale.splice(1);
   const weitere = (p: Lernpaket) => signale.filter((s) => treffer(p, s, e.verwandt)).length;
   for (const [i, s] of signale.entries()) {
     const kandidaten = geprueft.flatMap((p) => {
@@ -275,10 +281,10 @@ export function schuelerBasis(student: repo.Student, now: Date): SchuelerBasis {
  * Die Signale für eine Einheit am `datum` im `fach` (leer = Fächer im Profil). `ausser` ist die Einheit selbst
  * (sie zählt nicht als „letzte“). `wuensche`: was der Schüler für diese Einheit geschrieben hat (`wuenscheFuer`).
  */
-export function signaleFuer(b: SchuelerBasis, o: { datum: string; fach: string; ausser?: number | null; wuensche?: WunschDesSchuelers[] }): Signal[] {
+export function signaleFuer(b: SchuelerBasis, o: { datum: string; fach: string; ausser?: number | null; wuensche?: WunschDesSchuelers[]; vorgabe?: Signal | null }): Signal[] {
   const faecher = o.fach ? [o.fach] : b.student.subjects;
   const imFach = (f: string) => !faecher.length || faecher.includes(f);
-  const out: Signal[] = [];
+  const out: Signal[] = o.vorgabe ? [o.vorgabe] : [];
 
   for (const t of repo.upcomingTests(o.datum, b.student.id)) {
     const tage = daysUntil(t.date, o.datum);
@@ -345,7 +351,7 @@ export function signaleFuer(b: SchuelerBasis, o: { datum: string; fach: string; 
 }
 
 /** Der Vorschlag für einen Schüler an einem Tag. Liest nur; keine KI. */
-export function autoWahl(b: SchuelerBasis, o: { datum: string; fach: string; ausser?: number | null; wuensche?: WunschDesSchuelers[]; pakete?: Lernpaket[]; verwandt?: AutoEingabe["verwandt"] }): AutoWahl {
+export function autoWahl(b: SchuelerBasis, o: { datum: string; fach: string; ausser?: number | null; wuensche?: WunschDesSchuelers[]; vorgabe?: Signal | null; pakete?: Lernpaket[]; verwandt?: AutoEingabe["verwandt"] }): AutoWahl {
   return waehleAutomatisch({
     pakete: o.pakete ?? listLernpakete(),
     student: { school_type: b.student.school_type, grade: b.student.grade || null, subjects: b.student.subjects, stufe_status: b.student.stufe_status },
@@ -384,10 +390,35 @@ export function vorschlagErlauben(studentId: number, datum: string) {
 export function autoFuerEinheit(unit: { id: number; student_id: number; subject: string; status: string; started_at: string }, now: Date = new Date()): AutoWahl | null {
   if (unit.status !== "gestartet") return null;
   const datum = wienerDatum(new Date(unit.started_at));
-  if (ohnePaketMarkiert(unit.student_id, datum)) return null;
+  const vorgabe = vorgabeSignal(unit.id, unit.subject ?? "");
+  // „Entfernen“ means no package from the suggestion; the teacher's own word for today still counts
+  if (!vorgabe && ohnePaketMarkiert(unit.student_id, datum)) return null;
   const student = repo.getStudent(unit.student_id);
   if (!student) return null;
-  return autoWahl(schuelerBasis(student, now), { datum, fach: unit.subject ?? "", ausser: unit.id, wuensche: wuenscheFuer(student.id, unit.id) });
+  return autoWahl(schuelerBasis(student, now), { datum, fach: unit.subject ?? "", ausser: unit.id, wuensche: wuenscheFuer(student.id, unit.id), vorgabe });
+}
+
+/**
+ * Die **Vorgabe für heute** einer laufenden Einheit als Signal (lib/vorgabe.ts speichert sie): ihre Fähigkeiten und
+ * Lerninhalte. Null ohne Vorgabe oder wenn sie weder eine Fähigkeit noch einen Lerninhalt nennt. „Warum“ nennt nur die
+ * Lerninhalte, nie den getippten Text.
+ */
+export function vorgabeSignal(unitId: number, fach: string): Signal | null {
+  const r = db().prepare("SELECT skill_ids, punkte FROM einheit_vorgabe WHERE unit_id = ?").get(unitId) as { skill_ids: string; punkte: string } | undefined;
+  if (!r) return null;
+  const skillIds = json<string[]>(r.skill_ids, []).filter((id) => repo.getSkill(id));
+  const punkte = json<{ inhalt: string; status: string; gruppe: string }[]>(r.punkte, []).filter((p) => p.status !== "ausgeschlossen" && p.gruppe !== "umfang");
+  const stoff = [...new Set(punkte.map((p) => p.inhalt).filter(Boolean))].slice(0, 6);
+  if (!skillIds.length && !stoff.length) return null;
+  const fachDerSkills = new Set(skillIds.map((id) => repo.getSkill(id)!.subject));
+  return {
+    art: "vorgabe",
+    fach: fach || (fachDerSkills.size === 1 ? [...fachDerSkills][0] : ""),
+    skill_ids: skillIds,
+    stoff,
+    thema: stoff[0] ?? repo.getSkill(skillIds[0])?.name ?? "",
+    warum: `Deine Vorgabe für heute: ${zitat(stoff.join(", ") || skillIds.map((id) => repo.getSkill(id)?.name ?? "").join(", "), 100)}`,
+  };
 }
 
 // ---------- the coming units (start page) ----------

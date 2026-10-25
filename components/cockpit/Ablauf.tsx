@@ -36,6 +36,7 @@ import { endUnitAction } from "@/app/session-actions";
 import { AufgabeBewertung } from "@/components/AufgabeBewertung";
 import { AnpassenBereich, AnpassungInhalt, KiGrenzeHinweis, OhnePaketAnsicht, PaketAuswahl, PaketKopf } from "@/components/cockpit/Cockpit";
 import { CockpitSenden, SchrittNotiz } from "@/components/cockpit/CockpitClient";
+import { VorgabeKarte } from "@/components/cockpit/Vorgabe";
 import { KeinPaket } from "@/components/cockpit/Vorbereitung";
 import { CopyLink } from "@/components/CopyLink";
 import { TabletSend } from "@/components/device/TabletSend";
@@ -57,6 +58,7 @@ import { schuelerWorte } from "@/lib/schueler-notiz";
 import { levelFor } from "@/lib/text-correction-rules";
 import { platzFuerEinheit, type UnitView } from "@/lib/units";
 import { autoFuerEinheit, kiVorgabe, type Signal } from "@/lib/vorbereitung-auto";
+import { vorgabeDerEinheit } from "@/lib/vorgabe";
 
 const first = (n: string) => n.split(" ")[0];
 
@@ -90,6 +92,7 @@ export function Unterricht({ unit, student, fehler, teacherId, werkzeugeOffen = 
       )}
       <KiGrenzeHinweis studentId={student.id} name={name} />
       {worte && <SchuelerWorteKarte worte={worte} name={name} />}
+      <VorgabeKarte unit={unit} c={c} />
       <Woher c={c} unitId={unit.id} />
       {ids.length > 1 && <Punkte c={c} ids={ids} aktuell={aktuell} unitId={unit.id} />}
       {c.paket && c.aktuell ? (
@@ -124,6 +127,7 @@ export function Unterricht({ unit, student, fehler, teacherId, werkzeugeOffen = 
 function Woher({ c, unitId }: { c: CockpitDaten; unitId: number }) {
   const werkzeuge = `/einheiten/${unitId}?bereich=cockpit#werkzeuge`;
   if (!c.paket && !c.plan.length) return null;
+  const nachVorgabe = vorgabeDerEinheit(unitId)?.angewendet ?? false;
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-ink-2">
       {c.paket ? (
@@ -132,12 +136,17 @@ function Woher({ c, unitId }: { c: CockpitDaten; unitId: number }) {
             Lernpaket <span className="font-semibold text-ink">„{c.paket.title}“</span>
           </span>
           {c.stand.automatisch && <Pill tone="accent">Vorschlag der App</Pill>}
+          {!c.stand.automatisch && nachVorgabe && <Pill tone="accent">Nach deiner Vorgabe</Pill>}
           {ungeprueft(c.paket) && (
             <span className="inline-flex items-center gap-1 font-medium text-amber">
               <ShieldAlert size={14} aria-hidden /> Ungeprüft: vor dem Verwenden durchlesen
             </span>
           )}
         </>
+      ) : nachVorgabe ? (
+        <span>
+          <span className="font-semibold text-ink">Plan für heute</span> nach deiner Vorgabe, ohne Lernpaket
+        </span>
       ) : (
         <span>
           <span className="font-semibold text-ink">Plan für heute</span> aus dem Briefing, ohne Lernpaket

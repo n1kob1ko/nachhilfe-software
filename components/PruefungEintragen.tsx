@@ -8,7 +8,7 @@ import { shrinkImage } from "@/components/shrink-image";
 import { PRUEFUNGSARTEN } from "@/lib/pruefungsarten";
 
 /** Mirrors lib/pruefliste.ts (kept here so the browser does not load server code). */
-const MAX_FOTOS = 4;
+const MAX_FOTOS = 8;
 const MAX_FOTO_BYTES = 5 * 1024 * 1024;
 const MAX_PDF_BYTES = 10 * 1024 * 1024;
 const TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -176,7 +176,7 @@ export function PruefungEintragen({ token, faecher, weitere }: { token: string; 
           <button type="button" className="btn btn-secondary" onClick={() => fileInput.current?.click()} disabled={busy !== null || fotos.length >= MAX_FOTOS} data-testid="eintragen-foto-waehlen">
             <Camera size={17} aria-hidden /> {busy === "vorbereiten" ? "Wird vorbereitet …" : fotos.length ? "Noch ein Foto" : "Stoffzettel fotografieren"}
           </button>
-          <span className="text-[13px] text-ink-3">Foto oder PDF, bis zu {MAX_FOTOS}.</span>
+          <span className="text-[13px] text-ink-3">Foto oder PDF, bis zu {MAX_FOTOS}, z. B. Stoffzettel und Inhaltsverzeichnis.</span>
         </div>
         {fotos.length > 0 && (
           <ul className="flex flex-wrap gap-2">
