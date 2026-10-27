@@ -11,3 +11,9 @@ export async function aufPraesentationsAdresse(): Promise<boolean> {
   const h = await headers();
   return aufDeckHost({ host: h.get("host"), forwardedHost: h.get("x-forwarded-host") });
 }
+
+/** The app's own address of this request (host and protocol), to ask lib/praesentation-host.ts whether a deck can play here. */
+export async function appAdresse(): Promise<{ host: string | null; proto: string }> {
+  const h = await headers();
+  return { host: h.get("x-forwarded-host") ?? h.get("host"), proto: h.get("x-forwarded-proto") ?? (process.env.NODE_ENV === "production" ? "https" : "http") };
+}

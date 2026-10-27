@@ -19,7 +19,7 @@ import { shortNames } from "@/lib/vornamen";
 
 export const metadata = { title: "Präsentation" };
 
-type Params = { ansicht?: string; bearbeiten?: string; fehler?: string; neu?: string; gespeichert?: string; archiviert?: string; wiederhergestellt?: string; notizen?: string; folie?: string; geprueft?: string };
+type Params = { ansicht?: string; bearbeiten?: string; fehler?: string; neu?: string; gespeichert?: string; archiviert?: string; wiederhergestellt?: string; notizen?: string; folie?: string; geprueft?: string; einheit?: string };
 const PR = "/mehr/praesentationen";
 const mb = (b: number) => `${(b / 1024 / 1024).toLocaleString("de-AT", { maximumFractionDigits: 1 })} MB`;
 
@@ -85,7 +85,7 @@ export default async function PraesentationPage({ params, searchParams }: { para
   return (
     <>
       <PageHeader
-        back={{ href: archiviert ? `${PR}?status=archiviert` : PR, label: "Präsentationen" }}
+        back={Number(sp.einheit) > 0 ? { href: `/einheiten/${Number(sp.einheit)}#praesentation-schritt`, label: "Unterricht" } : { href: archiviert ? `${PR}?status=archiviert` : PR, label: "Präsentationen" }}
         title={p.title}
         subtitle={
           <span className="flex flex-wrap items-center gap-1.5">

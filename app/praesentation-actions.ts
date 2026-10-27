@@ -16,6 +16,8 @@ import {
   verknuepfeLernpaket,
 } from "@/lib/praesentationen";
 import { erstellePraesEntwurf, getPraesEntwurf, uebernimmPraesEntwurf, verwirfPraesEntwurf, type PraesKiErgebnis } from "@/lib/praesentation-ki";
+import { appAdresse } from "@/lib/praesentation-anfrage";
+import { erstelleSchrittEntwurf, merkePraesentation, schrittDerEinheit, uebernimmSchrittEntwurf, verwirfSchrittEntwurf, wiedergabe } from "@/lib/praesentation-unterricht";
 import { canManageUnit, getUnit } from "@/lib/units";
 
 const PR = "/mehr/praesentationen";
@@ -158,4 +160,69 @@ export async function nimmVomGeraetAction(praesId: number, unitId: number): Prom
   const v = parseView(unit.device_view);
   if (v.kind === "praesentation" && v.id === praesId) showOnTablet(unit, { kind: "start" });
   revalidatePath(`/einheiten/${unit.id}`);
+}
+
+// ---------- im Unterricht (lib/praesentation-unterricht.ts) ----------
+
+const zumSchritt = (unitId: number, fehler?: string) => `/einheiten/${unitId}${fehler ? `?cockpit=${encodeURIComponent(fehler)}` : ""}#praesentation-schritt`;
+
+/** The running unit of this teacher, or back to the unit's page. */
+async function imUnterricht(unitId: number) {
+  const t = await requireTeacher();
+  const unit = getUnit(unitId);
+  if (!unit || unit.status !== "gestartet" || !canManageUnit(t, unit)) redirect(`/einheiten/${unitId}`);
+  return { t, unit };
+}
+
+/**
+ * „Vortrag öffnen“ / „Folien ansehen“ am Schritt: vermerkt die Präsentation bei diesem Schritt der Einheit (für den Abschluss) und
+ * öffnet sie: zum Abspielen nur, wenn die Präsentations-Adresse eingerichtet ist und die Dateien da sind, sonst die Folien als Text
+ * im Schritt. Nie eine Seite, die nur sagt, dass Abspielen nicht geht.
+ */
+export async function zeigePraesImSchrittAction(unitId: number, schrittId: number, praesId: number, folie: number | null) {
+  const { t } = await imUnterricht(unitId);
+  const p = getPraesentation(praesId);
+  if (!p || p.status !== "aktiv" || !schrittDerEinheit(unitId, schrittId)) redirect(zumSchritt(unitId, "Diese Präsentation gibt es nicht mehr."));
+  const f = Number.isInteger(folie) && folie! >= 1 ? folie : null;
+  merkePraesentation(unitId, schrittId, p.id, f, t.id);
+  const a = await appAdresse();
+  revalidatePath(`/einheiten/${unitId}`);
+  redirect(wiedergabe(p, a.host, a.proto).abspielen ? `${PR}/${p.id}?folie=${f ?? 1}&einheit=${unitId}` : `/einheiten/${unitId}?folien=${schrittId}#praesentation-schritt`);
+}
+
+/** „Entwurf erstellen“ am Schritt: eine Anfrage, das Ergebnis als Vorschlag. Gibt zurück statt umzuleiten (Fortschritt, Fehler). */
+export async function praesImUnterrichtAction(unitId: number, schrittId: number): Promise<PraesKiErgebnis> {
+  const t = await requireTeacher();
+  const unit = getUnit(Number(unitId));
+  if (!unit || unit.status !== "gestartet" || !canManageUnit(t, unit)) return { ok: false, error: "Die Einheit läuft nicht mehr." };
+  const res = await erstelleSchrittEntwurf(unit.id, Number(schrittId), t.id);
+  if (res.ok) revalidatePath(`/einheiten/${unit.id}`);
+  return res;
+}
+
+/** Die Einheit eines Vorschlags im Unterricht, wenn dieser Lehrer sie führt. */
+async function entwurfDerEinheit(entwurfId: number) {
+  const t = await requireTeacher();
+  const e = getPraesEntwurf(entwurfId);
+  const unit = e?.unit_id ? getUnit(e.unit_id) : null;
+  if (!e || !unit || !canManageUnit(t, unit)) redirect("/einheiten");
+  return { t, unit };
+}
+
+/** „Übernehmen“ im Unterricht: gespeichert als Präsentation („Ungeprüft“), bei diesem Schritt der Einheit vermerkt. */
+export async function uebernimmPraesImUnterrichtAction(entwurfId: number) {
+  const { t, unit } = await entwurfDerEinheit(entwurfId);
+  const out = uebernimmSchrittEntwurf(entwurfId, t.id);
+  revalidatePath(`/einheiten/${unit.id}`);
+  if ("fehler" in out) redirect(zumSchritt(unit.id, out.fehler));
+  revalidatePath(PR, "layout");
+  redirect(zumSchritt(unit.id));
+}
+
+/** „Verwerfen“ im Unterricht: der Vorschlag wird gelöscht. */
+export async function verwirfPraesImUnterrichtAction(entwurfId: number) {
+  const { unit } = await entwurfDerEinheit(entwurfId);
+  verwirfSchrittEntwurf(entwurfId);
+  revalidatePath(`/einheiten/${unit.id}`);
+  redirect(zumSchritt(unit.id));
 }

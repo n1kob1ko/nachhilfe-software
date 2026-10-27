@@ -1107,9 +1107,11 @@ CREATE INDEX IF NOT EXISTS idx_bildfolge_bilder ON bildfolge_bilder(bildfolge_id
 -- Präsentation aus einem Lernpaket (lib/praesentation-ki.ts, Plan 5.1): der Vorschlag der KI, bevor der Lehrer ihn übernimmt.
 -- inhalt: JSON, der Inhalt der Folien (lib/ai/praesentation.ts Deck), nie HTML; die App baut die Präsentation erst beim Übernehmen.
 -- status = vorschlag | uebernommen | verworfen; praesentation_id: die gespeicherte Präsentation nach dem Übernehmen.
+-- Seit „Präsentation im Unterricht“ (lib/praesentation-unterricht.ts) auch zu einem Schritt einer Einheit: dann ist paket_id leer,
+-- unit_id und schritt_id nennen den Schritt, auftrag (JSON) die Angaben aus dem Schritt (Spalten in COLUMNS, Umbau in migrate).
 CREATE TABLE IF NOT EXISTS praesentation_entwuerfe (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  paket_id INTEGER NOT NULL REFERENCES lernpakete(id) ON DELETE CASCADE,
+  paket_id INTEGER REFERENCES lernpakete(id) ON DELETE CASCADE,
   inhalt TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'vorschlag',
   praesentation_id INTEGER REFERENCES praesentationen(id) ON DELETE SET NULL,
@@ -1174,6 +1176,19 @@ CREATE TABLE IF NOT EXISTS einheit_vorgabe (
   teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+-- Präsentation im Unterricht (lib/praesentation-unterricht.ts, 2026-10-27): welche Präsentation bei welchem Schritt einer Einheit
+-- gezeigt wurde (schritt_id wie in einheit_cockpit: Paketschritt oder negativer Planschritt), ab welcher Folie, und ob sie dafür
+-- erstellt wurde. Für den Abschluss („Präsentation … verwendet“); die Präsentation selbst bleibt unter Erweitert › Präsentationen.
+CREATE TABLE IF NOT EXISTS einheit_praesentationen (
+  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  schritt_id INTEGER NOT NULL,
+  praesentation_id INTEGER NOT NULL REFERENCES praesentationen(id) ON DELETE CASCADE,
+  folie INTEGER,
+  erstellt INTEGER NOT NULL DEFAULT 0,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (unit_id, schritt_id)
 );
 `;
 
@@ -1454,6 +1469,11 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["stoff_lesungen", "antwort", "TEXT"],
   ["materials", "rolle", "TEXT NOT NULL DEFAULT ''"],
   ["materials", "rolle_geprueft", "INTEGER NOT NULL DEFAULT 0"],
+  // Präsentation im Unterricht (lib/praesentation-unterricht.ts, 2026-10-27): ein Vorschlag zu einem Schritt einer Einheit statt zu
+  // einem Lernpaket: die Einheit, der Schritt und die Angaben aus dem Schritt (JSON), aus denen er erstellt wurde
+  ["praesentation_entwuerfe", "unit_id", "INTEGER REFERENCES units(id) ON DELETE CASCADE"],
+  ["praesentation_entwuerfe", "schritt_id", "INTEGER"],
+  ["praesentation_entwuerfe", "auftrag", "TEXT"],
 ];
 
 /** Teachers to start with; more can be added later. */
@@ -1605,6 +1625,31 @@ function migrate(conn: Database.Database) {
     for (const [i, name] of SCHULFAECHER.entries()) insertFach.run(name, i);
     // every task is linked to its main skill in task_skills as well
     conn.exec("INSERT OR IGNORE INTO task_skills (task_id, skill_id) SELECT id, skill_id FROM tasks WHERE skill_id IS NOT NULL");
+    // Präsentation im Unterricht (2026-10-27): ein Vorschlag darf ohne Lernpaket sein. SQLite nimmt NOT NULL nur weg, indem die
+    // Tabelle neu angelegt wird; nur einmal, beim Upgrade einer alten Datenbank
+    const entwurf = conn.prepare("PRAGMA table_info(praesentation_entwuerfe)").all() as { name: string; notnull: number }[];
+    if (entwurf.find((c) => c.name === "paket_id")?.notnull) {
+      const spalten = entwurf.map((c) => c.name).join(", ");
+      conn.exec(`CREATE TABLE praesentation_entwuerfe_neu (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        paket_id INTEGER REFERENCES lernpakete(id) ON DELETE CASCADE,
+        inhalt TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'vorschlag',
+        praesentation_id INTEGER REFERENCES praesentationen(id) ON DELETE SET NULL,
+        call_id INTEGER REFERENCES ai_calls(id) ON DELETE SET NULL,
+        teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        unit_id INTEGER REFERENCES units(id) ON DELETE CASCADE,
+        schritt_id INTEGER,
+        auftrag TEXT
+      )`);
+      conn.exec(`INSERT INTO praesentation_entwuerfe_neu (${spalten}) SELECT ${spalten} FROM praesentation_entwuerfe`);
+      conn.exec("DROP TABLE praesentation_entwuerfe");
+      conn.exec("ALTER TABLE praesentation_entwuerfe_neu RENAME TO praesentation_entwuerfe");
+      conn.exec("CREATE INDEX IF NOT EXISTS idx_praesentation_entwuerfe ON praesentation_entwuerfe(paket_id, status)");
+    }
+    conn.exec("CREATE INDEX IF NOT EXISTS idx_praesentation_entwuerfe_unit ON praesentation_entwuerfe(unit_id, schritt_id, status)");
   });
   tx();
 }
