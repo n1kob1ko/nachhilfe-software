@@ -31,9 +31,29 @@ Bei einer Verständnisfrage oder Kontrolle stehen unter der erwarteten Antwort d
 Teilweise / Falsch** (`einheit_cockpit.antworten`, noch einmal tippen nimmt es zurück). Das sind Beobachtungen des
 Lehrers, der Lernstand bleibt unberührt; der Abschluss kann sie über `antwortenDerEinheit` (lib/cockpit.ts) lesen.
 
-Ohne Lernpaket kommen die Schritte aus dem „Plan für heute“ des Briefings (beim ersten Tippen festgehalten,
-`einheit_cockpit.plan`); „Übung senden“ nimmt die passende Übung aus dem Bestand oder neue Aufgaben aus den
-Generatoren. Sind alle Schritte durch, kommt „Alles durch“ mit „Einheit beenden“.
+Ohne eigens gewähltes Lernpaket kommen die Schritte aus dem **Plan für die ganze Einheit** (`lib/stundenplan.ts`,
+niko 27.10.2026; ohne KI, mit der KI aus derselbe Plan):
+
+- **Themen:** zuerst die Vorgabe für heute (je Fähigkeit ein Thema, die mit einer nahen Prüfung vorne), dann die
+  Signale der automatischen Vorbereitung in ihrer Reihenfolge. Was dieselbe Fähigkeit meint, ist ein Thema. Höchstens
+  3 Themen, bis 60 Minuten 2, bis 40 Minuten 1, jedes mindestens 20 Minuten. Die Dauer kommt vom Platz im Wochenplan,
+  sonst von der von Hand geplanten Einheit, sonst vom Schüler, sonst 100 Minuten.
+- **Grundlagen zuerst:** ist eine direkte Voraussetzung laut Lernstand nicht sicher (unter 70 %; ohne Daten zählt sie
+  nicht als schwach), steht vor dem Thema ein kurzer Block „Grundlage: …“ aus seinen Minuten. Ist die Voraussetzung
+  selbst ein Thema von heute, kommt dieses Thema zuerst.
+- **Je Thema:** Erklären → Üben (Bestand, sonst Generator) → **Lernkontrolle** (3 Aufgaben, ein Versuch, ohne Hilfen;
+  danach Richtig / Teilweise / Falsch). Dazu ein kurzer Einstieg (mit der offenen Hausübung) und der Abschluss. Die
+  Minuten der Themen nach Rang (4 : 3 : 2), zusammen genau die Dauer.
+- **Geprüfte Lernpakete zuerst:** passt ein geprüftes Paket zum Thema (Fach, Schulart, Stufe, Fähigkeit), sind seine
+  Schritte der Block des Themas, die Minuten auf die des Themas gebracht (50 Minuten Paket in 35 Minuten). Jeder Schritt
+  kennt seine Quelle (Paketschritt oder Fähigkeit) und sein Thema; Senden, Lösungen, Folien und Richtig/Teilweise/Falsch
+  gehen wie im Paket. Ungeprüfte Pakete nimmt der Plan nie.
+
+Der Plan wird gelesen, bis zum ersten Weiter, Wiederholen oder Senden; dann ist er festgehalten
+(`einheit_cockpit.plan`). Eine neue Vorgabe davor macht ihn neu. Wählt die Lehrkraft selbst ein Paket (im Unterricht
+oder mit „Einheit vorbereiten“), gilt wie bisher genau dieses Paket. Über der Karte steht eine Zeile mit den Themen
+und Minuten („Past Simple 35 · E-Mail 30 · Tagesablauf 20“); antippen öffnet die Schritte. In der Karte steht das
+Thema über dem Titel. Sind alle Schritte durch, kommt „Alles durch“ mit „Einheit beenden“.
 
 Die Einheit einer anderen Lehrkraft ist nur zum Lesen da (Übungen und Fortschritt, kein Beenden).
 
@@ -43,8 +63,9 @@ Ist die Fähigkeit eines Schritts eine Schreibaufgabe (Plan, Lernpaket, Vorgabe 
 `lib/textarbeit-ablauf.ts`), ist **„Schreibauftrag starten“** die Hauptaktion, vorgefüllt mit Textsorte, Aufgabe,
 Wortzahl und Quelle („Vorgefüllt aus deiner Vorgabe für heute“). Er führt zum Textformular (`/text?schreiben=…`), bei
 Oberstufe/HTL (Textinterpretation, Erörterung …) zum Schreibauftrag mit Textbeilage und der Prüfung vorgewählt, bei der
-Bildgeschichte zu ihr. Vor dem Start lässt sich alles ändern. Im Schritt „Schularbeit vorbereiten“ steht die
-Schreibaufgabe der Prüfung als zweiter Knopf neben „Übung senden“.
+Bildgeschichte zu ihr. Vor dem Start lässt sich alles ändern. Im Schritt „Schularbeit vorbereiten“ (im Plan für die
+ganze Einheit: Üben zu einem Thema der nahen Prüfung) steht die Schreibaufgabe der Prüfung als zweiter Knopf neben
+„Übung senden“.
 
 Jede laufende Textarbeit der Einheit hat oben eine Zeile mit Stand und genau einem nächsten Schritt: schreibt (Öffnen
 oder Mitlesen, ohne Gerät auch „Vom Foto“) · abgegeben (Korrigieren) · Bewertung offen (Bewertung übernehmen) ·
@@ -93,8 +114,8 @@ Ohne Eingabe bleibt alles wie bisher, der Start ist nicht langsamer (eine Abfrag
   oder eine eingetragene Prüfung. Namen im Text werden maskiert; Dateien liest die KI nur mit dem Haken „Auf den
   Blättern steht kein Name“, sonst werden sie nur angehängt. Ohne KI liest die App den Text selbst (`regelLesung`), die Dateien hängen trotzdem an.
 - Gespeichert als **Vorgabe für heute** (`einheit_vorgabe`, `lib/vorgabe.ts`). In der Vorbereitung steht sie
-  über der Prüfung. Ist im Ablauf noch nichts getan, wird der Plan gleich danach neu gemacht („Plan für heute
-  nach deiner Vorgabe“); sonst bleibt er und die Karte bietet **Plan anpassen** an (Notizen bleiben).
+  über der Prüfung. Ist im Ablauf noch nichts getan, wird der Plan gleich danach neu gemacht (ihre Themen zuerst,
+  „Nach deiner Vorgabe“); sonst bleibt er und die Karte bietet **Plan anpassen** an (Notizen bleiben).
 - Die Karte zeigt die Punkte mit ihrer Fähigkeit, unklare als Chips zum kurzen Bestätigen (nichts
   vorausgewählt), was schwierig war, und eine **Abweichung** zur nächsten Prüfung, z. B. „Laut Stoffzettel
   auch Past Simple und Writing – heute nicht geplant“.

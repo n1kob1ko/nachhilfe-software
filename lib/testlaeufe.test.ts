@@ -59,7 +59,8 @@ test("a Vorgabe point still to confirm comes first, the near Schularbeit keeps i
   const plan = cockpit.planDerEinheit(unit.id);
   const titel = plan.map((s) => s.titel);
   const vorgabeSchritt = titel.findIndex((t) => t.startsWith("Üben: "));
-  const sa = titel.findIndex((t) => /Schularbeit vorbereiten/.test(t));
+  // the plan for the whole unit (lib/stundenplan.ts): the Schularbeit is a topic of its own, its practice step in the exam format
+  const sa = plan.findIndex((s) => s.art === "ueben" && s.pruefung === true);
   assert.ok(vorgabeSchritt >= 0 && sa > vorgabeSchritt, `the Vorgabe first, then the Schularbeit: ${titel.join(" | ")}`);
   assert.ok(MATHE_SA.includes(plan[sa].skillId ?? ""), "something to send without confirming: an exercise for the exam's skill");
 
@@ -67,7 +68,9 @@ test("a Vorgabe point still to confirm comes first, the near Schularbeit keeps i
   assert.ok(vg.bestaetigeVorgabe(unit.id, new Map([[i, wahl]]), teacher.id));
   const danach = cockpit.planDerEinheit(unit.id);
   assert.ok(danach.some((s) => s.skillId === wahl && s.titel.startsWith("Üben: ")), "confirmed: an exercise for the chosen skill");
-  assert.equal(danach.some((s) => /Schularbeit vorbereiten/.test(s.titel)), false, "the Vorgabe replaces the Schularbeit step again");
+  const erst = danach.findIndex((s) => s.skillId === wahl);
+  const pruefung = danach.findIndex((s) => s.pruefung === true && s.skillId !== wahl);
+  assert.ok(erst >= 0 && (pruefung < 0 || erst < pruefung), "the Vorgabe leads, the Schularbeit after it");
 });
 
 test("the KI not reachable: the hint says so in plain words, without the provider's code or JSON", async () => {

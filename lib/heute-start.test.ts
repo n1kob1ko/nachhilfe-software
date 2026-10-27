@@ -150,7 +150,8 @@ test("Übung senden aus dem Plan: der Plan wird beim ersten Senden festgehalten 
   const { unit, teacher } = await mathe();
   const cockpit = await import("./cockpit");
   const plan = cockpit.planDerEinheit(unit.id);
-  const sa = plan.find((s) => s.skillId && MATHE_SA.includes(s.skillId))!;
+  // the practice step of the Schularbeit's skill (since the plan for the whole unit its explanation comes first and sends nothing)
+  const sa = plan.find((s) => s.skillId && MATHE_SA.includes(s.skillId) && s.art === "ueben")!;
   assert.ok(sa, plan.map((s) => s.titel).join(" | "));
   assert.equal(cockpit.leseStand(unit.id).plan, null, "vorher ist nichts festgehalten");
 

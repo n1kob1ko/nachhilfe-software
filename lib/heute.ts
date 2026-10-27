@@ -19,6 +19,7 @@ import { heutigeEinheiten } from "./planung/heute";
 import { tagAddieren, wienerDatum, wienerMinuten } from "./planung/zeit";
 import { RULE_LABEL, type NextStep } from "./recommend";
 import * as repo from "./repo";
+import { stundenplanFuer, themenDesPlans } from "./stundenplan";
 import { getUnit, type UnitStatus } from "./units";
 import { fachVon, fokusAus, naechsteEinheiten, paketeZumWaehlen, schuelerBasis, wahlAm, wuenscheFuer, type Vorbereitet } from "./vorbereitung-auto";
 
@@ -172,6 +173,8 @@ export function heuteKarte(e: {
   pruefung: { titel: string; datum: string; days: number } | null;
   /** ohne Paket: der Plan aus den Daten (für „Vorbereitet“) */
   plan?: BriefingInhalt["plan"];
+  /** der Plan für die ganze Einheit (lib/stundenplan.ts): seine Themen mit Minuten, für „Vorbereitet“ */
+  themen?: PlanThema[];
   /** die Schwierigkeiten aus einem KI-Briefing zum jetzigen Datenstand */
   kiWoEsHakt?: string[] | null;
   /** die Länge der Einheit in Minuten (Platz, sonst die geplante Dauer des Briefings) */
@@ -202,7 +205,7 @@ export function heuteKarte(e: {
     dauerMin: e.dauerMin && e.dauerMin > 0 ? e.dauerMin : null,
     empfehlung: dieselbe ? `${pruefung}${signal!.stoff.length ? ` – ${signal!.stoff.slice(0, 2).join(", ")}` : ""}` : empfehlung,
     warumPruefung: dieselbe,
-    vorbereitet: e.paketTitel ? null : vorbereitetText(w, e.plan ?? []),
+    vorbereitet: e.paketTitel ? null : vorbereitetText(w, e.plan ?? [], e.themen ?? []),
     fach: fachVon(w),
     mitKi: ki.length > 0,
   };
@@ -213,11 +216,21 @@ const kuerze = (s: string, n: number) => {
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 };
 
+/** Ein Thema des Plans für die ganze Einheit, kurz: Name, Minuten, das geprüfte Lernpaket, wenn es seine Schritte gibt. */
+export type PlanThema = { name: string; minuten: number; paket: string | null };
+
 /**
- * Was für die Einheit bereitliegt, in einer Zeile: das geprüfte Lernpaket (mit Präsentation, wenn eine verknüpft ist)
- * oder der Plan aus den Daten mit den Übungen aus dem Bestand. Null, wenn nichts zu sagen ist.
+ * Was für die Einheit bereitliegt, in einer Zeile: das Lernpaket, das die Lehrkraft für den Tag gewählt hat (mit
+ * Präsentation, wenn eine verknüpft ist), sonst die Themen des Plans für die ganze Einheit („3 Themen: Past Simple 35 ·
+ * E-Mail 30 · Wortstellung 20“, mit den geprüften Lernpaketen darin), sonst der Plan aus den Daten mit den Übungen aus dem
+ * Bestand. Null, wenn nichts zu sagen ist.
  */
-export function vorbereitetText(w: Vorbereitet | null, plan: BriefingInhalt["plan"]): string | null {
+export function vorbereitetText(w: Vorbereitet | null, plan: BriefingInhalt["plan"], themen: PlanThema[] = []): string | null {
+  if (w?.art !== "gewaehlt" && themen.length) {
+    const pakete = [...new Set(themen.map((t) => t.paket).filter((x): x is string => Boolean(x)))];
+    const kopf = `${themen.length} ${themen.length === 1 ? "Thema" : "Themen"}: ${themen.map((t) => `${t.name} ${t.minuten}`).join(" · ")}`;
+    return pakete.length ? `${kopf} · ${pakete.length === 1 ? "Lernpaket" : "Lernpakete"} ${pakete.map((p) => `„${p}“`).join(", ")}` : kopf;
+  }
   if (w?.art === "gewaehlt" || w?.art === "paket") {
     const zusatz = [w.art === "paket" && w.unsicher ? "nur über ein Stichwort gefunden" : "", w.paket.praesentation_id ? "mit Präsentation" : ""].filter(Boolean);
     return `Lernpaket „${w.paket.title}“${zusatz.length ? ` · ${zusatz.join(" · ")}` : ""}`;
@@ -248,6 +261,12 @@ export function heuteKarten(teacherId: number, punkte: HeutePunkt[], now: Date =
     if (!d) continue;
     const b = einfachesBriefing(d);
     const stand = begonnen ? leseStand(p.einheitId!) : null;
+    // the plan for the whole unit (lib/stundenplan.ts): the one a started unit holds, otherwise what the unit gets when it
+    // starts now; a package the teacher chose for the day stays the one package
+    pakete ??= listLernpakete();
+    const alle = pakete;
+    const plan = stand ? (stand.paket_id ? [] : (stand.plan ?? [])) : w?.art === "gewaehlt" ? [] : stundenplanFuer(p.studentId, { now, fach: p.fach || fachVon(w), platzId: p.platzId, pakete: alle, daten: d });
+    const themen = themenDesPlans(plan).map((t) => ({ name: t.name, minuten: t.minuten, paket: t.paketId ? ((alle.find((x) => x.id === t.paketId) ?? getLernpaket(t.paketId))?.title ?? null) : null }));
     const ki = begonnen ? null : gespeichertesBriefing(p.studentId, { stand: d.stand });
     // the next exam, however far away (the briefing only looks 60 days ahead)
     const t = repo.upcomingTests(d.datum, p.studentId)[0];
@@ -258,13 +277,13 @@ export function heuteKarten(teacherId: number, punkte: HeutePunkt[], now: Date =
       woEsHakt: b.woEsHakt,
       pruefung: t ? { titel: pruefungName(t), datum: t.date, days: daysUntil(t.date, d.datum) } : null,
       plan: b.plan,
+      themen,
       kiWoEsHakt: ki?.inhalt.woEsHakt ?? null,
       // the Platz of this row, else the planned duration the unit's plan uses (lib/briefing.ts `heute`)
       dauerMin: p.platzId !== null ? p.endeMin - p.startMin : d.minuten,
     });
     // a new student without any signal: the matching checked packages to pick from, instead of only the plan from the data
     if (!begonnen && offen(p) && w?.art === "ohne_signal") {
-      pakete ??= listLernpakete();
       const st = d.student;
       const zurWahl = paketeZumWaehlen({ pakete, fach: p.fach, student: { school_type: st.school_type, grade: st.grade || null, subjects: st.subjects, stufe_status: st.stufe_status } });
       if (zurWahl.length) karte.pakete = zurWahl.map((x) => ({ id: x.id, title: x.title }));

@@ -18,7 +18,8 @@
  *   8. die letzte Einheit: ihr Thema
  * Über allem steht die **Vorgabe für heute** (niko, 25.10.2026: „Die konkrete Anweisung des Lehrers für heute hat Vorrang
  * vor allgemeinen Empfehlungen“): was die Lehrkraft nach dem Start der Einheit unter „Was steht heute an?“ angibt
- * (lib/vorgabe.ts). Gibt es sie, zählt nur sie: ein Paket zu ihr, sonst der Plan aus den Daten mit ihr als Schwerpunkt.
+ * (lib/vorgabe.ts). Für die Wahl eines Pakets auf Heute zählt dann nur sie; der Plan für die ganze Einheit
+ * (lib/stundenplan.ts) nimmt ihre Themen zuerst und füllt die restliche Zeit mit den übrigen Signalen.
  * Dazu müssen Fach, Schulart und Schulstufe passen. Entwürfe und ungeprüfte Pakete werden nie vorausgewählt,
  * nur als „Entwurf“ genannt. Findet sich keines, sagt die App „Kein Paket für …“ und bietet „Mit KI entwerfen“
  * mit ausgefüllten Angaben an; die KI läuft erst, wenn der Lehrer dort auf „Entwurf erstellen“ tippt.
@@ -133,7 +134,7 @@ export function wuenscheFuer(studentId: number, unitId: number | null): WunschDe
 
 /** Wie ein Paket zum Signal passt: über die Fähigkeit, als genau dieses Paket, oder nur über ein Stichwort (unsicher). */
 export type Passung = "faehigkeit" | "paket" | "stichwort";
-const GUETE: Record<Passung, number> = { paket: 3, faehigkeit: 2, stichwort: 1 };
+export const GUETE: Record<Passung, number> = { paket: 3, faehigkeit: 2, stichwort: 1 };
 
 export type SchuelerStufe = { school_type: string; grade: number | null; subjects: string[]; stufe_status?: "eindeutig" | "unklar" };
 
@@ -271,7 +272,7 @@ export function kiHref(v: KiVorgabe): string {
 export const tagMonat = (d: string) => `${Number(d.slice(8, 10))}.${Number(d.slice(5, 7))}.`;
 
 /** Fähigkeiten verwandt: gleich, oder die eine ist Teilfähigkeit der anderen. */
-function verwandtschaft(): AutoEingabe["verwandt"] {
+export function verwandtschaft(): AutoEingabe["verwandt"] {
   const skills = new Map(repo.listSkills().map((s) => [s.id, s]));
   return (a, b) => a === b || skills.get(a)?.parent_id === b || skills.get(b)?.parent_id === a;
 }
