@@ -113,7 +113,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         title={w.title}
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
-            {draft ? <Pill tone="amber">Entwurf</Pill> : <Pill tone="green">gesendet</Pill>}
+            {draft ? <Pill tone="amber">Entwurf</Pill> : assignments.length ? <Pill tone="green">gesendet</Pill> : <Pill>freigegeben</Pill>}
             {w.kind === "diagnose" && <Pill tone="accent">Diagnose</Pill>}
             {probe && (
               <Pill tone="accent">
@@ -180,7 +180,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         // Eigene Probeschularbeit (lib/probe-extern.ts), eben übernommen
         <p className="no-print mb-6 rounded-2xl bg-green-wash px-4 py-3 text-[14px] text-green" data-testid="hinweis-eigene">
           Übernommen: {tasks.length} {tasks.length === 1 ? "Teilaufgabe" : "Teilaufgaben"} mit {punkteText(gesamt)} Punkten. Am Gerät läuft sie wie eine Schularbeit, ohne Tipps und ohne
-          Lösung. Auf Papier gibst du deine Angabe aus und bewertest danach im Unterricht mit „Arbeit fotografieren“.
+          Lösung. Auf Papier gibst du deine Angabe aus und bewertest danach mit „Arbeit fotografieren“, im Unterricht oder auf der Prüfungskarte.
         </p>
       )}
       {sp.hinweis === "lesenweniger" && (
@@ -276,7 +276,8 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
               <input type="hidden" name="worksheet_id" value={w.id} />
               <label className="field min-w-[220px]">
                 <span className="label">An wen senden?</span>
-                <select className="input" name="student_id" required defaultValue="">
+                {/* the sheet's own student is preselected when no running unit offers a device */}
+                <select className="input" name="student_id" required defaultValue={!targets.length && forStudent ? String(forStudent.id) : ""}>
                   <option value="" disabled>
                     Schüler wählen
                   </option>

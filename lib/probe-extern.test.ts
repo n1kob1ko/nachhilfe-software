@@ -15,7 +15,7 @@ import path from "node:path";
 import test from "node:test";
 import type { BlattMitAufgabenGelesen, ProbeAngabeGelesen, ProbeLoesungGelesen } from "./ai";
 import type { AIRequest } from "./ai/providers";
-import { liesLoesungMitNummern, liesTextMitNummern, zeilenAusLesung, type ProbeZeile } from "./probe-extern-regeln";
+import { eindeutigeFaehigkeit, liesLoesungMitNummern, liesTextMitNummern, loesungenEinfuegen, ohneProbeWort, zeilenAusLesung, type ProbeZeile } from "./probe-extern-regeln";
 
 process.env.DATABASE_PATH = ":memory:";
 process.env.UPLOADS_PATH = fs.mkdtempSync(path.join(os.tmpdir(), "probe-extern-"));
@@ -168,6 +168,48 @@ test("rules: a numbered text becomes tasks with parts and points; the solution m
   assert.match(lose.aufgaben[0].teile[0].text, /12\. März/);
 });
 
+test("rules: only the Musterlösung pasted fills the rows already there by number; a word match only when clearly ahead; no doubled title", () => {
+  // the Angabe read from the PDF, the Musterlösung pasted (no KI): the solutions go in by number, the teacher's rows stay
+  const ohne = zeilenAusLesung(liesTextMitNummern(ANGABE_TEXT), null, { erlaubt: new Set([BR]) });
+  const zeilen = ohne.zeilen.map((z, k) => ({ ...z, k, punkte: z.aufgabe === "3" ? 4 : z.punkte, skillId: z.aufgabe === "1" ? BR : null }));
+  const v = loesungenEinfuegen(zeilen, liesLoesungMitNummern(LOESUNG_TEXT));
+  assert.deepEqual(
+    v.zeilen.map((z) => [z.k, `${z.aufgabe}${z.teil}`, z.loesung, z.punkte, z.skillId, z.unsicher]),
+    [
+      [0, "1a", L["1a"], 2, BR, false],
+      [1, "1b", L["1b"], 1, BR, false],
+      [2, "2", L["2"], 3, null, false],
+      [3, "3", "", 4, null, false],
+    ],
+  );
+  assert.ok(v.hinweise.some((h) => h.includes("Bei einer Teilaufgabe fehlt die Lösung")), "a missing solution is named, never invented");
+  assert.equal(zeilen[0].loesung, "", "the rows passed in are not changed");
+  // the solution to 2 missing: „3)“ after „1b)“ is still task 3 when the Angabe has a 3, not the text of 1b
+  const luecke = loesungenEinfuegen(zeilen, liesLoesungMitNummern(["1a) 7/8", "1b) 3/4", "3) Beide sind die Hälfte."], new Set([1, 2, 3])));
+  assert.deepEqual(luecke.zeilen.map((z) => [`${z.aufgabe}${z.teil}`, z.loesung, z.unsicher]), [["1a", "7/8", false], ["1b", "3/4", false], ["2", "", false], ["3", "Beide sind die Hälfte.", false]]);
+  assert.deepEqual(liesLoesungMitNummern(["1a) 7/8", "1b) 3/4", "3) Beide sind die Hälfte."]).loesungen.map((x) => `${x.nr}${x.teil}`), ["1a", "1b"], "without the Angabe's numbers a jump stays text");
+  assert.equal(liesTextMitNummern(["1. Rechne:", "12. März ist ein Datum."], new Set([1, 2])).aufgaben.length, 1, "a number the Angabe does not have stays text");
+  const ganz = loesungenEinfuegen(zeilen, { loesungen: [{ nr: "1", teil: "", loesung: "a) 7/8 b) 3/4", unsicher: false }, { nr: "7", teil: "", loesung: "x", unsicher: false }], unsicher: [] });
+  assert.deepEqual(ganz.zeilen.slice(0, 2).map((z) => [`${z.aufgabe}${z.teil}`, z.unsicher]), [["1a", true], ["1b", true]], "a solution only for the whole task: unsure and first");
+  assert.ok(ganz.hinweise.some((h) => h.includes("7")), "a solution without a task is named");
+
+  // a word suggestion only when it is ahead of every other skill: a tie („berechnen“ in Prozentwert and Prozentsatz) gives none
+  const P = "mathe.prozent.prozentwert";
+  assert.equal(eindeutigeFaehigkeit([{ id: P, score: 1.1, via: "faehigkeit" }, { id: "mathe.prozent.prozentsatz", score: 1.1, via: "faehigkeit" }], new Set([P, BR])), null);
+  assert.equal(eindeutigeFaehigkeit([{ id: "mathe.prozent.prozentsatz", score: 1.4, via: "faehigkeit" }, { id: P, score: 1.1, via: "faehigkeit" }], new Set([P])), null, "another skill is ahead");
+  assert.equal(eindeutigeFaehigkeit([{ id: "mathe.brueche", score: 3, via: "thema" }, { id: BR, score: 2.2, via: "faehigkeit" }, { id: P, score: 1.1, via: "faehigkeit" }], new Set([P, BR])), BR);
+  assert.equal(eindeutigeFaehigkeit([{ id: BR, score: 2.2, via: "thema" }], new Set([BR])), null, "only the Thema matched: no skill");
+  assert.equal(eindeutigeFaehigkeit([], new Set([BR])), null);
+
+  // the title of the sheet already says Probeschularbeit: not twice in „Mira – Probeschularbeit: …“
+  assert.equal(ohneProbeWort("Probeschularbeit Brüche"), "Brüche");
+  assert.equal(ohneProbeWort("Probeschularbeit: Brüche und Prozent"), "Brüche und Prozent");
+  assert.equal(ohneProbeWort("probe-schularbeit – Gleichungen"), "Gleichungen");
+  assert.equal(ohneProbeWort("Brüche"), "Brüche");
+  assert.equal(ohneProbeWort("Probeschularbeit"), "");
+  assert.equal(ohneProbeWort("Probeschularbeiten im Mai"), "Probeschularbeiten im Mai");
+});
+
 // ---------- reading ----------
 
 test("a PDF with text is read by the app itself: rows filled, no KI call, nothing saved", async () => {
@@ -247,7 +289,8 @@ test("„Übernehmen“: unsure rows and missing points block; then one task per
   const angabe = s.datei("probe_brueche.pdf", pdf(ANGABE_TEXT));
   const loesung = s.datei("loesung_brueche.pdf", pdf(LOESUNG_TEXT));
   const l = await s.p.liesProbe({ studentId: s.sid, testId: s.testId, teacherId: s.teacher.id, angabeIds: [angabe], loesungIds: [loesung], ki: false });
-  const basis = { studentId: s.sid, testId: s.testId, teacherId: s.teacher.id, titel: "Brüche", angabeIds: [angabe], loesungIds: [loesung], gelesen: "text" as const };
+  // the sheet's own title already says Probeschularbeit: not twice in the exercise title
+  const basis = { studentId: s.sid, testId: s.testId, teacherId: s.teacher.id, titel: "Probeschularbeit Brüche", angabeIds: [angabe], loesungIds: [loesung], gelesen: "text" as const };
 
   const vorher = s.zaehle();
   const unsicher = s.p.uebernimmProbe({ ...basis, zeilen: l.zeilen.map((z, i) => ({ ...z, unsicher: i === 0 })) });

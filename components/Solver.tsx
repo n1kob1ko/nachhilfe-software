@@ -7,7 +7,7 @@ import { submitAnswerAction } from "@/app/actions";
 import { recordHintAction } from "@/app/builder-actions";
 import { deviceRecordHintAction, deviceSubmitAnswerAction } from "@/app/device-actions";
 import { laptopRecordHintAction, laptopSubmitAnswerAction } from "@/app/laptop-actions";
-import { buchstabe, hintLabel, isReview, kreisZahl, REVIEWS } from "@/lib/tasks";
+import { buchstabe, hintLabel, isReview, kreisZahl, REVIEWS, testErgebnis } from "@/lib/tasks";
 import type { MathAnswer as MathDraft } from "@/lib/math-check";
 import type { MathView } from "@/lib/math-task";
 import { clozeParts } from "@/lib/math-format";
@@ -210,9 +210,7 @@ export function Solver({
       <div className="py-6 text-center" data-testid="minitest-ende">
         <p className="text-[15px] font-medium text-ink-2">{title}</p>
         <h1 className="mt-2 text-[34px] font-semibold tracking-[-0.02em]">{probe ? "Probeschularbeit geschafft" : kontrolle ? "Lernkontrolle geschafft" : "Minitest geschafft"}</h1>
-        <p className="num mt-2 text-[20px]">
-          {correct} von {tasks.length} richtig
-        </p>
+        <p className="num mt-2 text-[20px]">{testErgebnis(correct, tasks.length, waiting, done)}</p>
         {waiting > 0 && (
           <p className="num mt-1 text-[16px] text-ink-2">
             {waiting === 1 ? "1 Antwort wird" : `${waiting} Antworten werden`} noch von deiner Lehrerin bzw. deinem Lehrer bewertet.
