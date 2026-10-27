@@ -217,8 +217,13 @@ test("Präsentation erstellen im Schritt: Angaben aus dem Schritt, Kosten vorher
   assert.ok(s.praes.praesUngeprueft(p));
   assert.equal(p.notizen[2], "Frage stellen und warten.\nErwartete Antwort: played", "the Vortragstext in the database, never in the deck");
   const angebot = s.pu.angebotFuer(s.pu.schrittDerEinheit(unit.id, erklaeren.id)!)!;
-  assert.deepEqual([angebot.p.id, angebot.grund, angebot.folie], [p.id, "einheit", 1]);
+  assert.deepEqual([angebot.p.id, angebot.grund, angebot.folie], [p.id, "erstellt", 1]);
   assert.equal(s.pu.offenerSchrittEntwurf(unit.id, erklaeren.id), null);
+  // Phase-B-Testlauf: übernommen ist noch nicht gezeigt; erst das Öffnen beim Schritt kommt in den Abschluss
+  assert.deepEqual(s.pu.praesentationenDerEinheit(unit.id), [], "nur übernommen, nie geöffnet");
+  s.pu.merkePraesentation(unit.id, erklaeren.id, p.id, 1, s.teacher.id);
+  assert.deepEqual(s.pu.praesentationImSchritt(unit.id, erklaeren.id), { praesId: p.id, folie: 1, erstellt: true, gezeigt: true });
+  assert.equal(s.pu.angebotFuer(s.pu.schrittDerEinheit(unit.id, erklaeren.id)!)!.grund, "einheit");
   assert.deepEqual(s.pu.praesentationenDerEinheit(unit.id), [{ id: p.id, title: "Past Simple" }]);
   // the text preview is exactly the approved slides with their Vortragstext
   const text = s.pu.folienText(p);
@@ -264,7 +269,7 @@ test("ohne KI: kein Erstellen (mit dem kurzen Grund), keine Anfrage; vorhandene 
   const t = s.pu.angebotFuer(z)!;
   assert.deepEqual([t.p.id, t.grund], [id, "faehigkeit"]);
   s.pu.merkePraesentation(unit.id, erklaeren.id, id, 2, s.teacher.id);
-  assert.deepEqual(s.pu.praesentationImSchritt(unit.id, erklaeren.id), { praesId: id, folie: 2, erstellt: false });
+  assert.deepEqual(s.pu.praesentationImSchritt(unit.id, erklaeren.id), { praesId: id, folie: 2, erstellt: false, gezeigt: true });
   assert.deepEqual(s.pu.praesentationenDerEinheit(unit.id), [{ id, title: "Erklärt" }]);
 
   // the per-student limit: the KI is on, but this student's month is used up
@@ -309,5 +314,26 @@ test("Upgrade: ein alter Vorschlag (paket_id NOT NULL) bleibt, danach darf paket
   // a deleted package still takes its proposals along
   conn.prepare("DELETE FROM lernpakete WHERE id = ?").run(paket);
   assert.equal((conn.prepare("SELECT COUNT(*) AS n FROM praesentation_entwuerfe").get() as { n: number }).n, 1);
+  conn.close();
+});
+
+test("Upgrade: eine geöffnete Präsentation von vor gezeigt_at bleibt im Abschluss, eine nur übernommene nicht", async () => {
+  const { openDatabase } = await import("./db");
+  const file = path.join(process.env.UPLOADS_PATH!, "alt-gezeigt.db");
+  let conn = openDatabase(file);
+  conn.pragma("foreign_keys = OFF");
+  conn.exec(`DROP TABLE einheit_praesentationen;
+    CREATE TABLE einheit_praesentationen (
+      unit_id INTEGER NOT NULL, schritt_id INTEGER NOT NULL, praesentation_id INTEGER NOT NULL, folie INTEGER,
+      erstellt INTEGER NOT NULL DEFAULT 0, teacher_id INTEGER, created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (unit_id, schritt_id)
+    );
+    INSERT INTO einheit_praesentationen (unit_id, schritt_id, praesentation_id, folie, erstellt, created_at) VALUES (1, -2, 1, 1, 0, '2026-10-20 10:00:00'), (1, -3, 2, 1, 1, '2026-10-20 10:05:00');`);
+  conn.close();
+  conn = openDatabase(file);
+  assert.deepEqual(conn.prepare("SELECT schritt_id, gezeigt_at FROM einheit_praesentationen ORDER BY schritt_id DESC").all(), [
+    { schritt_id: -2, gezeigt_at: "2026-10-20 10:00:00" },
+    { schritt_id: -3, gezeigt_at: null },
+  ]);
   conn.close();
 });

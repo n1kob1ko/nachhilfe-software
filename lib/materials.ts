@@ -152,7 +152,13 @@ export function saveUpload(
   const type = sniffType(file.data);
   if (!type) throw new Error("Nur Fotos (JPG, PNG, WebP) und PDF-Dateien sind möglich.");
   const sha256 = crypto.createHash("sha256").update(file.data).digest("hex");
-  const same = db().prepare("SELECT id FROM materials WHERE sha256 = ? ORDER BY id LIMIT 1").get(sha256) as { id: number } | undefined;
+  // the same file again: the material that has it; for a student only one of his own (the same Merkblatt for two students is
+  // two materials with one file, so neither sees, reads or changes the other's)
+  const same = (
+    m.studentId
+      ? db().prepare("SELECT id FROM materials WHERE sha256 = ? AND student_id = ? ORDER BY id LIMIT 1").get(sha256, m.studentId)
+      : db().prepare("SELECT id FROM materials WHERE sha256 = ? ORDER BY id LIMIT 1").get(sha256)
+  ) as { id: number } | undefined;
   if (same) return { id: same.id, existing: true };
   const stored = `${sha256}.${type.ext}`;
   fs.mkdirSync(/*turbopackIgnore: true*/ uploadsDir(), { recursive: true });

@@ -16,7 +16,8 @@
  *   (praesentation_entwuerfe ohne Paket); erst „Übernehmen“ speichert ihn als Präsentation („Ungeprüft“) und verknüpft ihn mit
  *   diesem Schritt. „Verwerfen“ löscht ihn.
  *
- * Welche Präsentation bei welchem Schritt lief, steht in `einheit_praesentationen`; der Abschluss sagt „Präsentation … verwendet“.
+ * Welche Präsentation bei welchem Schritt lief, steht in `einheit_praesentationen`; der Abschluss sagt „Präsentation … verwendet“, aber
+ * nur, wenn sie dort geöffnet wurde (`gezeigt_at`), nicht schon nach „Übernehmen“.
  * Nur Lehrerseiten; der Schüler sieht eine Präsentation nur, wenn der Lehrer sie am Gerät zeigt (ohne Vortragstext).
  */
 import fs from "node:fs";
@@ -144,7 +145,7 @@ export function schrittDerEinheit(unitId: number, schrittId: number, c: CockpitD
 // ---------- passende Präsentationen ----------
 
 export type Suche = { skillId: string | null; fach: string; schulstufe: number | null; thema: string };
-export type Treffer = { p: Praesentation; grund: "einheit" | "paket" | "faehigkeit" | "thema"; folie: number | null };
+export type Treffer = { p: Praesentation; grund: "einheit" | "erstellt" | "paket" | "faehigkeit" | "thema"; folie: number | null };
 
 const norm = (s: string) =>
   s
@@ -189,12 +190,12 @@ export function passendePraesentationen(q: Suche, alle: Praesentation[] = listPr
   return treffer.sort((a, b) => a.rang - b.rang || Number(praesUngeprueft(a.p)) - Number(praesUngeprueft(b.p)) || stufe(a.p) - stufe(b.p)).map(({ p, grund, folie }) => ({ p, grund, folie }));
 }
 
-/** Die Präsentation, die in dieser Einheit bei diesem Schritt schon lief (oder für ihn erstellt wurde), oder null. */
-export function praesentationImSchritt(unitId: number, schrittId: number): { praesId: number; folie: number | null; erstellt: boolean } | null {
-  const r = db().prepare("SELECT praesentation_id, folie, erstellt FROM einheit_praesentationen WHERE unit_id = ? AND schritt_id = ?").get(unitId, schrittId) as
-    | { praesentation_id: number; folie: number | null; erstellt: number }
+/** Die Präsentation, die in dieser Einheit bei diesem Schritt schon lief (`gezeigt`) oder für ihn erstellt wurde, oder null. */
+export function praesentationImSchritt(unitId: number, schrittId: number): { praesId: number; folie: number | null; erstellt: boolean; gezeigt: boolean } | null {
+  const r = db().prepare("SELECT praesentation_id, folie, erstellt, gezeigt_at FROM einheit_praesentationen WHERE unit_id = ? AND schritt_id = ?").get(unitId, schrittId) as
+    | { praesentation_id: number; folie: number | null; erstellt: number; gezeigt_at: string | null }
     | undefined;
-  return r ? { praesId: r.praesentation_id, folie: r.folie, erstellt: r.erstellt === 1 } : null;
+  return r ? { praesId: r.praesentation_id, folie: r.folie, erstellt: r.erstellt === 1, gezeigt: r.gezeigt_at !== null } : null;
 }
 
 /**
@@ -204,7 +205,7 @@ export function praesentationImSchritt(unitId: number, schrittId: number): { pra
 export function angebotFuer(z: ZeigeSchritt, alle?: Praesentation[]): Treffer | null {
   const schon = praesentationImSchritt(z.unitId, z.schrittId);
   const da = schon ? getPraesentation(schon.praesId) : null;
-  if (da && da.status === "aktiv") return { p: da, grund: "einheit", folie: schon!.folie };
+  if (da && da.status === "aktiv") return { p: da, grund: schon!.gezeigt ? "einheit" : "erstellt", folie: schon!.folie };
   const pf = z.paketFolie ? getPraesentation(z.paketFolie.praesId) : null;
   if (pf && pf.status === "aktiv") return { p: pf, grund: "paket", folie: z.paketFolie!.folie };
   if (!z.erklaert) return null;
@@ -223,24 +224,31 @@ export function wiedergabe(p: Pick<Praesentation, "token" | "start_pfad">, appHo
   return { abspielen: true };
 }
 
-/** Merkt sich, welche Präsentation bei diesem Schritt der Einheit gezeigt wird (ein Schritt, eine Präsentation). */
+/**
+ * Merkt sich, welche Präsentation bei diesem Schritt der Einheit gezeigt wird (ein Schritt, eine Präsentation). `erstellt`: von
+ * „Übernehmen“, dann nur verknüpft; sonst hat die Lehrkraft sie geöffnet (`gezeigt_at`, das erste Mal bleibt).
+ */
 export function merkePraesentation(unitId: number, schrittId: number, praesId: number, folie: number | null, teacherId: number | null, erstellt = false): void {
   db()
     .prepare(
-      `INSERT INTO einheit_praesentationen (unit_id, schritt_id, praesentation_id, folie, erstellt, teacher_id) VALUES (?, ?, ?, ?, ?, ?)
+      `INSERT INTO einheit_praesentationen (unit_id, schritt_id, praesentation_id, folie, erstellt, teacher_id, gezeigt_at) VALUES (?, ?, ?, ?, ?, ?, CASE WHEN ? THEN NULL ELSE datetime('now') END)
        ON CONFLICT(unit_id, schritt_id) DO UPDATE SET praesentation_id = excluded.praesentation_id, folie = excluded.folie,
          erstellt = CASE WHEN excluded.praesentation_id = einheit_praesentationen.praesentation_id THEN MAX(einheit_praesentationen.erstellt, excluded.erstellt) ELSE excluded.erstellt END,
+         gezeigt_at = CASE WHEN excluded.praesentation_id = einheit_praesentationen.praesentation_id THEN COALESCE(einheit_praesentationen.gezeigt_at, excluded.gezeigt_at) ELSE excluded.gezeigt_at END,
          teacher_id = excluded.teacher_id`,
     )
-    .run(unitId, schrittId, praesId, folie, erstellt ? 1 : 0, teacherId);
+    .run(unitId, schrittId, praesId, folie, erstellt ? 1 : 0, teacherId, erstellt ? 1 : 0);
 }
 
-/** Die Präsentationen, die in einer Einheit gezeigt wurden, in der Reihenfolge der ersten Verwendung (für den Abschluss). */
+/**
+ * Die Präsentationen, die in einer Einheit bei einem Schritt geöffnet wurden, in der Reihenfolge des ersten Öffnens (für den
+ * Abschluss). Eine nur übernommene, nie geöffnete zählt nicht: kein erfundener Fortschritt.
+ */
 export function praesentationenDerEinheit(unitId: number): { id: number; title: string }[] {
   return db()
     .prepare(
       `SELECT p.id, p.title FROM einheit_praesentationen e JOIN praesentationen p ON p.id = e.praesentation_id
-       WHERE e.unit_id = ? GROUP BY p.id ORDER BY MIN(e.created_at), MIN(e.rowid)`,
+       WHERE e.unit_id = ? AND e.gezeigt_at IS NOT NULL GROUP BY p.id ORDER BY MIN(e.gezeigt_at), MIN(e.rowid)`,
     )
     .all(unitId) as { id: number; title: string }[];
 }

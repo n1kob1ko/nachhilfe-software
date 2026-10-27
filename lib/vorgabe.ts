@@ -36,6 +36,7 @@ import {
   MAX_DATEIEN,
   nurFuerHeute,
   MAX_THEMEN,
+  nrInLesung,
   ordneZu,
   pruefungsstoffLesbar,
   setzeRolle,
@@ -404,7 +405,7 @@ export function rolleOhneKi(materialId: number): Rolle | null {
 export function dateienDerVorgabe(v: Pick<Vorgabe, "materialIds" | "lesungId">): VorgabeDatei[] {
   const l = getLesung(v.lesungId);
   return v.materialIds.map((id) => {
-    const nr = (l?.dateien.findIndex((d) => d.material_id === id) ?? -1) + 1;
+    const nr = l ? nrInLesung(l, id) : 0;
     const gelesen = nr > 0 ? (l!.lesung.dokumente.find((d) => d.nr === nr)?.rolle ?? null) : null;
     return { materialId: id, art: getMaterial(id)?.mime === "application/pdf" ? "PDF" : "Foto", gelesen: nr > 0, rolle: gewaehlteRolle(id) ?? gelesen ?? rolleOhneKi(id) };
   });
@@ -420,7 +421,7 @@ export function aendereRolle(unitId: number, materialId: number, rolle: Rolle): 
   const student = unit ? repo.getStudent(unit.student_id) : null;
   if (!v || !unit || !student || !v.materialIds.includes(materialId) || !setzeRolle(materialId, rolle)) return false;
   const l = getLesung(v.lesungId);
-  if (!l || !l.dateien.some((d) => d.material_id === materialId)) return true;
+  if (!l || !nrInLesung(l, materialId)) return true;
   const blatt = ordneZu(l.lesung.punkte.filter((p) => p.quelle !== "lehrer"), { fach: unit.subject, student, ki: true });
   const test = v.testId ? repo.getTest(v.testId) : null;
   const { heute, skillIds } = fuerHeute([...v.punkte.filter((p) => p.quelle === "lehrer"), ...blatt], test, v.text);
