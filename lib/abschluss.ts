@@ -18,6 +18,7 @@
  * hat (`bestaetigeAbschluss`); „Nächstes Mal“ liest dann die nächste Vorbereitung (lib/vorbereitung-auto.ts).
  */
 import { KRITERIUM_KEYS, KRITERIUM_KURZ } from "./bewertung-kriterien";
+import { papierZeile, type PapierErgebnis } from "./blatt-regeln";
 import { ablaufDerEinheit, antwortenDerEinheit, reaktionenDerEinheit, skillsErledigterSchritte, type AblaufDerEinheit, type Beobachtung } from "./cockpit";
 import { db, json } from "./db";
 import { autoFelderVon } from "./einschaetzung";
@@ -25,6 +26,7 @@ import { errorTypeLabel } from "./error-types";
 import { daysUntil } from "./exams";
 import { readReport, type TaskLine } from "./learning";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
+import { papierDerEinheit } from "./papier-einheit";
 import { praesentationenDerEinheit } from "./praesentation-unterricht";
 import { unterlagenDerEinheit } from "./unterlagen-unterricht";
 import { LERNKONTROLLE } from "./quick-round";
@@ -41,7 +43,7 @@ import { vorgabeDerEinheit } from "./vorgabe";
  * Woher eine Zeile kommt; die Karte zeigt es leise hinter der Zeile (`QUELLE`). „daten“: aus der Dokumentation ohne
  * genauere Quelle (Aufrufe ohne `belege`), „eigen“: von der Lehrkraft direkt in der Karte korrigiert.
  */
-export type Quelle = "daten" | "lehrer" | "eigen" | "ablauf" | "antworten" | "beobachtung" | "anpassung" | "vorgabe" | "pruefung" | "hausuebung" | "lernstand" | "text";
+export type Quelle = "daten" | "lehrer" | "eigen" | "ablauf" | "antworten" | "beobachtung" | "anpassung" | "vorgabe" | "pruefung" | "hausuebung" | "lernstand" | "text" | "papier";
 export const QUELLE: Record<Quelle, string> = {
   daten: "aus den Daten",
   lehrer: "deine Notiz",
@@ -55,6 +57,7 @@ export const QUELLE: Record<Quelle, string> = {
   hausuebung: "Hausübung",
   lernstand: "Lernstand",
   text: "Text",
+  papier: "von dir geprüft",
 };
 
 /**
@@ -99,6 +102,8 @@ export type AufgabeBeleg = Pick<TaskLine, "assignmentId" | "skillId" | "skill" |
  * - `eigene`: Felder, die die Lehrkraft direkt in der Karte korrigiert hat, mit ihrem Text
  * - `praesentationen`: die Präsentationen, die im Unterricht bei einem Schritt gezeigt wurden (lib/praesentation-unterricht.ts)
  * - `unterlagen`: mitgebrachte Unterlagen, die im Unterricht bei einem Schritt geöffnet wurden (lib/unterlagen-unterricht.ts)
+ * - `papier`: auf Papier gelöste Übungen, fotografiert und von der Lehrkraft übernommen (lib/papier-einheit.ts); ihre Antworten
+ *   stehen auch unter `aufgaben` wie am Gerät
  */
 export type AbschlussBelege = {
   aufgaben: AufgabeBeleg[];
@@ -113,6 +118,7 @@ export type AbschlussBelege = {
   eigene: Partial<Record<AbschlussFeld, string>>;
   praesentationen?: string[];
   unterlagen?: string[];
+  papier?: PapierErgebnis[];
 };
 
 /** „Gut verstanden“, Regel 1: so viele Aufgaben einer Fähigkeit im ersten Versuch ohne Hilfe richtig, keine falsche Antwort. */
@@ -262,6 +268,8 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   for (const t of belege?.praesentationen ?? []) gemacht.push(a(`Präsentation „${t}“ verwendet`));
   // only what the teacher opened at a step, never what was merely offered
   for (const t of belege?.unterlagen ?? []) gemacht.push(a(`Unterlage gezeigt: ${t}`));
+  // paper work only after the teacher took it over, with how many unsure rows she checked
+  for (const p of belege?.papier ?? []) gemacht.push({ text: papierZeile(p), von: "papier" });
 
   // only what the rules show as secure (`gutVerstanden`), or what the teacher wrote; a step marked „Weiter“ proves nothing
   const regeln = belege ? gutVerstanden(belege) : null;
@@ -396,7 +404,8 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
 
   const praesentationen = praesentationenDerEinheit(unitId).map((p) => p.title);
   const unterlagen = unterlagenDerEinheit(unitId).map((u) => u.titel);
-  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen };
+  const papier = papierDerEinheit(unitId);
+  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier };
 }
 
 /** Die Karte einer beendeten Einheit mit allen Belegen, wie der Abschluss sie zeigt und „Bestätigen“ sie schreibt. */

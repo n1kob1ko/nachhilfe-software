@@ -31,7 +31,7 @@ export * from "./blatt-regeln";
 
 /** Titel eines frisch hochgeladenen Blatts; beim Übernehmen bekommt es den Namen des Tests. */
 export const BLATT_TITEL = "Gelöstes Blatt";
-const PAPIER_ANTWORT = "Auf Papier gelöst";
+export const PAPIER_ANTWORT = "Auf Papier gelöst";
 
 /** Ob ein Blatt jetzt gelesen werden kann; sonst der Grund, in Worten für den Lehrer. */
 export function blattLesbar(): { ok: true } | { ok: false; grund: string } {
@@ -80,6 +80,8 @@ export function vorschlagAusGelesen(g: BlattGelesen, o: { erlaubt: Set<string>; 
       skillId,
       fehler: a.bewertung === "richtig" ? "" : eineZeile(a.fehler, 200),
       pruefen: a.unsicher || geraten || !skillId,
+      // for the Abschluss of a unit („2 unsicher geprüft“, lib/papier-einheit.ts): the KI itself was not sure
+      warUnsicher: a.unsicher,
     });
   }
   if (g.aufgaben.length > MAX_ZEILEN) hinweise.push(`Nur die ersten ${MAX_ZEILEN} Aufgaben übernommen.`);
@@ -105,15 +107,27 @@ export function faehigkeitenFuer(student: Pick<repo.Student, "school_type" | "kl
  * Liest gespeicherte Seiten (Material) mit der KI. Wirft einen Fehler mit einem Satz für den Lehrer; die Seiten
  * bleiben dann gespeichert.
  */
-export async function liesBlatt(o: { materialIds: number[]; studentId: number; teacherId: number; fach: string }): Promise<BlattVorschlag> {
+export async function liesBlatt(o: { materialIds: number[]; studentId: number; teacherId: number; fach: string; unitId?: number | null }): Promise<BlattVorschlag> {
   const geht = blattLesbar();
   if (!geht.ok) throw new Error(geht.grund);
   const student = repo.getStudent(o.studentId);
   if (!student) throw new Error("Diesen Schüler gibt es nicht.");
-  if (!o.materialIds.length) throw new Error("Bitte zuerst die Seiten fotografieren.");
-  const seiten = o.materialIds.slice(0, MAX_SEITEN).map((id) => {
+  const seiten = seitenFuerKi(o.materialIds, student.id);
+  const skills = faehigkeitenFuer(student, o.fach);
+  const gelesen = await leseGeloestesBlatt(seiten, { fach: o.fach, skills }, { teacherId: o.teacherId, studentId: student.id, unitId: o.unitId ?? null, trigger: "blatt" });
+  if (!gelesen) throw new Error("Die KI hat das Blatt nicht gelesen. Trag die Aufgaben bitte selbst ein.");
+  return vorschlagAusGelesen(gelesen, { erlaubt: new Set(skills.map((s) => s.id)), fach: o.fach, student });
+}
+
+/**
+ * Die gespeicherten Seiten (Material des Schülers) für die KI, höchstens `MAX_SEITEN`. Wirft einen Fehler mit einem Satz für
+ * den Lehrer; auch „Arbeit fotografieren“ (lib/papier-einheit.ts) liest so.
+ */
+export function seitenFuerKi(materialIds: number[], studentId: number) {
+  if (!materialIds.length) throw new Error("Bitte zuerst die Seiten fotografieren.");
+  return materialIds.slice(0, MAX_SEITEN).map((id) => {
     const m = getMaterial(id);
-    if (!m || !hatDatei(m) || (m.student_id != null && m.student_id !== student.id)) throw new Error("Eine Seite gibt es nicht mehr. Bitte noch einmal fotografieren.");
+    if (!m || !hatDatei(m) || (m.student_id != null && m.student_id !== studentId)) throw new Error("Eine Seite gibt es nicht mehr. Bitte noch einmal fotografieren.");
     let data: Buffer;
     try {
       data = fs.readFileSync(materialFile(m));
@@ -127,10 +141,6 @@ export async function liesBlatt(o: { materialIds: number[]; studentId: number; t
     if (data.length > max) throw new Error(`${pdf ? "Ein PDF" : "Ein Foto"} ist zu groß für die KI (höchstens ${max / 1024 / 1024} MB).`);
     return { mime: type.mime as "application/pdf" | "image/jpeg" | "image/png" | "image/webp", base64: data.toString("base64") };
   });
-  const skills = faehigkeitenFuer(student, o.fach);
-  const gelesen = await leseGeloestesBlatt(seiten, { fach: o.fach, skills }, { teacherId: o.teacherId, studentId: student.id, trigger: "blatt" });
-  if (!gelesen) throw new Error("Die KI hat das Blatt nicht gelesen. Trag die Aufgaben bitte selbst ein.");
-  return vorschlagAusGelesen(gelesen, { erlaubt: new Set(skills.map((s) => s.id)), fach: o.fach, student });
 }
 
 // ---------- Übernehmen ----------
@@ -153,6 +163,11 @@ export type BlattEingabe = {
   gesamtMax: number | null;
   zeilen: BlattZeile[];
   materialIds: number[];
+  /**
+   * Arbeit fotografieren (lib/papier-einheit.ts): ein Blatt, das nicht aus der laufenden Einheit stammt, aber in ihr gelöst
+   * wurde. Zuweisung und Antworten bekommen dann diese Einheit (unit_id), damit Abschluss und Dokumentation sie sehen.
+   */
+  unitId?: number | null;
 };
 
 const echtesDatum = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && new Date(`${s}T12:00:00Z`).toISOString().slice(0, 10) === s;
@@ -190,7 +205,8 @@ export function speichereBlatt(e: BlattEingabe): { worksheetId: number; assignme
   };
   const titel = eineZeile(e.titel, 100) || (e.art === "probe" ? "Probeschularbeit" : (test?.title || `${e.pruefungsart || "Schularbeit"} ${fach}`));
   const first = student.name.split(" ")[0];
-  const am = `${e.datum} 10:00:00`;
+  // in einer laufenden Einheit: jetzt (dann stehen die Antworten in der richtigen Reihenfolge im Bericht der Einheit)
+  const am = e.unitId ? new Date().toISOString().slice(0, 19).replace("T", " ") : `${e.datum} 10:00:00`;
   const skillIds = [...new Set(zeilen.map((z) => skill(z.skillId)).filter((x): x is string => Boolean(x)))];
   const materialIds = e.materialIds.filter((id) => {
     const m = getMaterial(id);
@@ -241,7 +257,8 @@ export function speichereBlatt(e: BlattEingabe): { worksheetId: number; assignme
       .prepare("UPDATE worksheets SET settings = ?, probe_test_id = ? WHERE id = ?")
       .run(JSON.stringify({ papier: { datum: e.datum, materialIds, erreicht } }), e.art === "probe" && test ? test.id : null, worksheetId);
 
-    const assignmentId = repo.assignWorksheet(worksheetId, student.id, PAPIER_ANTWORT, null, "test");
+    // in einer Einheit kein Test-Modus: der Bericht der Einheit hielte das Blatt sonst für den Minitest
+    const assignmentId = repo.assignWorksheet(worksheetId, student.id, PAPIER_ANTWORT, e.unitId ?? null, e.unitId ? "normal" : "test");
     tasks.forEach((t, i) => {
       const z = zeilen[i];
       const review = z.bewertung === "leer" ? "falsch" : z.bewertung;
@@ -262,8 +279,9 @@ export function speichereBlatt(e: BlattEingabe): { worksheetId: number; assignme
         teacher_id: e.teacherId,
         level: levelOf("mittel"),
         created_at: am,
+        unit_id: e.unitId ?? null,
       });
-      repo.setAttemptReview(attemptId, review, e.teacherId, new Date(`${e.datum}T10:00:00Z`));
+      repo.setAttemptReview(attemptId, review, e.teacherId, e.unitId ? new Date() : new Date(`${e.datum}T10:00:00Z`));
     });
     // gelöst am Tag des Blatts, nicht heute; schon „angekommen“, damit es nie am Gerät auftaucht
     db().prepare("UPDATE assignments SET assigned_at = ?, started_at = ?, completed_at = ?, delivered_at = ? WHERE id = ?").run(am, am, am, am, assignmentId);

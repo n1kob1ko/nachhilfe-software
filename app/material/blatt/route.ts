@@ -2,8 +2,10 @@ import { revalidatePath } from "next/cache";
 import { currentTeacher } from "@/lib/auth";
 import { BLATT_TITEL, blattLesbar, liesBlatt, MAX_SEITEN } from "@/lib/blatt-einlesen";
 import { getMaterial, hatDatei, MAX_UPLOAD_BYTES, saveUpload, sniffType } from "@/lib/materials";
+import { ANDERES_BLATT, liesPapier, papierTor } from "@/lib/papier-einheit";
 import { foreignRequest, notAllowed } from "@/lib/picture-story-routes";
 import * as repo from "@/lib/repo";
+import { canManageUnit, getUnit } from "@/lib/units";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +17,10 @@ const fail = (error: string, status = 400, materials?: number[]) => Response.jso
  * Nothing goes into the profile here: the teacher takes it over after checking the preview. A route handler, not a
  * server action, because photos can be larger than an action's body limit; outside the proxy for the same reason,
  * so it checks the session itself.
+ *
+ * Arbeit fotografieren (lib/papier-einheit.ts): with `einheit` (a running unit of this teacher) and `blatt` (a sheet of
+ * that unit), the KI reads the pages against the sheet's original tasks; with `blatt` = „anders“ as above. The student is
+ * always the unit's student, and the same limits apply (KI on, budget, the limit per student).
  */
 export async function POST(request: Request) {
   const teacher = await currentTeacher();
@@ -27,13 +33,19 @@ export async function POST(request: Request) {
   } catch {
     return fail("Die Fotos kamen nicht vollständig an. Bitte noch einmal versuchen.");
   }
-  const student = repo.getStudent(Number(form.get("schueler")));
+  // in a running unit: only its teacher (or the administration), only its student
+  const unit = form.get("einheit") ? getUnit(Number(form.get("einheit"))) : null;
+  if (form.get("einheit") && (!unit || unit.status !== "gestartet")) return fail("Die Einheit läuft nicht mehr.", 404);
+  if (unit && !canManageUnit(teacher, unit)) return notAllowed();
+  const student = repo.getStudent(unit ? unit.student_id : Number(form.get("schueler")));
   if (!student) return fail("Diesen Schüler gibt es nicht.", 404);
-  const fach = String(form.get("fach") ?? "").trim();
-  if (!fach) return fail("Bitte das Fach wählen.");
+  if (unit && Number(form.get("schueler")) !== student.id) return fail("Dieser Schüler gehört nicht zu dieser Einheit.");
+  const blatt = unit ? String(form.get("blatt") ?? "") : "";
+  const fach = String(form.get("fach") ?? "").trim() || (unit?.subject ?? "");
+  if (!fach && (!unit || blatt === ANDERES_BLATT)) return fail("Bitte das Fach wählen.");
   if (form.get("keine_namen") !== "1") return fail("Bitte bestätigen, dass auf den Seiten kein Name steht.");
-  const geht = blattLesbar();
-  if (!geht.ok) return fail(geht.grund);
+  const geht = unit ? papierTor(student.id) : blattLesbar();
+  if ("grund" in geht) return fail(geht.grund);
 
   // schon gespeicherte Seiten (zweiter Versuch), dann neue
   const materials = String(form.get("materialien") ?? "")
@@ -58,7 +70,10 @@ export async function POST(request: Request) {
   if (!materials.length) return fail("Bitte die Seiten fotografieren oder auswählen.");
 
   try {
-    const vorschlag = await liesBlatt({ materialIds: materials, studentId: student.id, teacherId: teacher.id, fach });
+    const vorschlag =
+      unit && blatt !== ANDERES_BLATT
+        ? await liesPapier({ unitId: unit.id, blattKey: blatt, materialIds: materials, teacherId: teacher.id })
+        : await liesBlatt({ materialIds: materials, studentId: student.id, teacherId: teacher.id, fach, unitId: unit?.id ?? null });
     return Response.json({ materials, vorschlag });
   } catch (e) {
     return fail(e instanceof Error ? e.message : "Die KI konnte das Blatt nicht lesen.", 400, materials);

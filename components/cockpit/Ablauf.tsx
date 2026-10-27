@@ -19,6 +19,7 @@ import {
   Plus,
   Presentation,
   RotateCcw,
+  ScanLine,
   ShieldAlert,
   SkipForward,
   Square,
@@ -201,7 +202,7 @@ export function Unterricht({
         <Link href={`/einheiten/${unit.id}?bereich=cockpit#werkzeuge`} className="panel flex min-h-[52px] flex-wrap items-center gap-x-2 px-4 py-2 sm:px-5" data-testid="werkzeuge-link">
           <Wrench size={18} className="text-ink-2" aria-hidden />
           <span className="text-[16px] font-semibold">Weitere Werkzeuge</span>
-          <span className="text-[13.5px] text-ink-3">Übungen, Whiteboard, Foto vom Stoff, Paket, Überspringen, Notiz …</span>
+          <span className="text-[13.5px] text-ink-3">Übungen, Whiteboard, Foto vom Stoff, Arbeit fotografieren, Paket, Überspringen, Notiz …</span>
         </Link>
       )}
     </div>
@@ -710,6 +711,7 @@ function SchrittKarte({
         <div className="mt-5 flex flex-wrap items-start gap-x-4 gap-y-2 border-t border-line pt-4">
           <CockpitSenden action={sendeSchrittAction.bind(null, unitId, s.id)} unitId={unitId} label={`Passende Übungen senden (${s.aufgaben.length} ${s.aufgaben.length === 1 ? "Aufgabe" : "Aufgaben"})`} primary={gesendet === 0 && !schreiben} />
           {gesendet > 0 && <span className="pt-2.5 text-[13px] text-ink-3">schon {gesendet === 1 ? "einmal" : `${gesendet}-mal`} an {name} gesendet</span>}
+          {gesendet > 0 && <PapierLink unitId={unitId} worksheetId={c.stand.gesendet[s.id]?.at(-1) ?? null} />}
         </div>
       )}
 
@@ -954,6 +956,7 @@ function PlanKarte({
               <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
                 <CockpitSenden action={sendeBestandAction.bind(null, unit.id, s.id)} unitId={unit.id} label="Passende Übungen senden" primary={gesendet === 0 && !eigen} />
                 {gesendet > 0 && <span className="pt-2.5 text-[13px] text-ink-3">schon {gesendet === 1 ? "einmal" : `${gesendet}-mal`} an {name} gesendet</span>}
+                {gesendet > 0 && <PapierLink unitId={unit.id} worksheetId={schon.at(-1) ?? null} />}
               </div>
             </>
           ) : zugewiesen ? (
@@ -969,6 +972,7 @@ function PlanKarte({
                 <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
                   <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, skill.id, s.id)} unitId={unit.id} label={kontrolle ? kontrolleLabel : "Passende Übungen senden"} primary={gesendet === 0 && !eigen} />
                   {gesendet > 0 && <span className="pt-2.5 text-[13px] text-ink-3">schon {gesendet === 1 ? "einmal" : `${gesendet}-mal`} an {name} gesendet</span>}
+                  {gesendet > 0 && <PapierLink unitId={unit.id} worksheetId={schon.at(-1) ?? null} />}
                 </div>
               </>
             )
@@ -994,6 +998,18 @@ function ZurErstenUebung({ unitId, id, titel, nr }: { unitId: number; id: number
         Zur ersten Übung <span className="font-normal text-ink-2">· Schritt {nr}: {titel}</span> <ArrowRight size={15} aria-hidden />
       </button>
     </form>
+  );
+}
+
+/**
+ * „Arbeit fotografieren“ (lib/papier-einheit.ts) neben einer gesendeten Übung: hat der Schüler sie auf Papier gelöst, die Seiten
+ * fotografieren und wie am Gerät bewerten; die eben gesendete Übung ist vorgewählt.
+ */
+function PapierLink({ unitId, worksheetId }: { unitId: number; worksheetId: number | null }) {
+  return (
+    <Link href={`/einheiten/${unitId}/papier${worksheetId ? `?uebung=${worksheetId}` : ""}`} className="inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-medium text-accent hover:underline" data-testid="arbeit-fotografieren">
+      <ScanLine size={16} aria-hidden /> Arbeit fotografieren
+    </Link>
   );
 }
 
@@ -1079,6 +1095,8 @@ function Werkzeuge({ c, unit, student, liste, teacherId, ids, aktuell }: { c: Co
           <Kachel href={`${basis}?bereich=fortschritt`} icon={icon(ChartNoAxesColumn)} label="Fortschritt" />
           <Kachel href={`/uebungen/neu?schueler=${student.id}`} icon={icon(Plus)} label="Neue Übung erstellen" />
           <Kachel href={`${basis}/foto`} icon={icon(Camera)} label="Foto vom Stoff" testid="foto-vom-stoff" />
+          {/* auf Papier gelöst, gesendet oder gedruckt: fotografieren und wie am Gerät bewerten (lib/papier-einheit.ts) */}
+          <Kachel href={`${basis}/papier`} icon={icon(ScanLine)} label="Arbeit fotografieren" testid="werkzeug-papier" />
           <Kachel href={`${basis}/text`} icon={icon(PenLine)} label="Textarbeit starten" />
           <Kachel href={`${basis}/bildgeschichte`} icon={icon(Images)} label="Bildgeschichte erstellen" testid="bildgeschichte-erstellen" />
           {/* Oberstufe: a Schreibauftrag of the SRDP on a whole Textbeilage with line numbers */}
