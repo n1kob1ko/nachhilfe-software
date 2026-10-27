@@ -45,6 +45,8 @@ import { einheitenFuerWoche, istNichtStattgefunden, mitNamen, slotDatum } from "
 import { datumLabel, minutenLabel, wienerDatum, wienerWochenstart, wochenLabel } from "@/lib/planung/zeit";
 import { listenVon } from "@/lib/vokabellisten";
 import { textsForStudent, wordsLabel } from "@/lib/texts";
+import { ZuBewertenListe } from "@/components/ZuBewerten";
+import { zuBewerten, zuBewertenTitel } from "@/lib/zu-bewerten";
 
 /** Vier Bereiche statt sechs: Stoff und Prüfungen teilen sich einen Tab, Übungen und Lernverlauf auch. */
 const TABS = [
@@ -360,8 +362,19 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
     ],
     ["Nächstes Lernziel", lastDone?.next_steps || student.goals || <span className="text-ink-3">noch nicht festgelegt</span>],
   );
+  // Gemeinsame Bewertung (lib/zu-bewerten.ts): alles, was bei diesem Schüler auf dich wartet; „Zu erledigen“ führt hierher
+  const offen = zuBewerten({ studentId: student.id });
   return (
     <div className="grid max-w-[860px] gap-8">
+      {offen.length > 0 && (
+        <section id="zu-bewerten" aria-labelledby="zu-bewerten-titel" className="scroll-mt-6" data-testid="profil-zu-bewerten">
+          <SectionTitle>
+            <span id="zu-bewerten-titel">Zu bewerten</span>
+          </SectionTitle>
+          <p className="mb-3 text-[14px] text-ink-2">{zuBewertenTitel(offen)}. Erst deine Bewertung zählt für Lernstand und Ergebnis.</p>
+          <ZuBewertenListe zeilen={offen} />
+        </section>
+      )}
       <dl className="panel grid gap-x-6 gap-y-4 px-5 py-5 text-[15px] sm:grid-cols-[170px_minmax(0,1fr)]">
         {rows.map(([k, v]) => (
           <div key={k} className="contents">

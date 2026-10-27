@@ -44,6 +44,8 @@ import { zeitfenster } from "@/lib/planung/heute";
 import { dayOf, pruefungsHinweise } from "@/lib/exams";
 import { papierZeile } from "@/lib/blatt-regeln";
 import { papierArbeit } from "@/lib/papier-einheit";
+import { ZuBewertenListe } from "@/components/ZuBewerten";
+import { zuBewerten, zuBewertenTitel } from "@/lib/zu-bewerten";
 
 /** Textfarbe je Erinnerungsstufe (lib/exams.ts STAGE_TONE) */
 const TON_TEXT = { neutral: "text-ink", amber: "text-amber", red: "text-red" } as const;
@@ -273,6 +275,8 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   const karte = lesson ? karteDerEinheit(unit.id, lesson, brief) : null;
   // „Ändern“ (?aendern=1): das Formular der Dokumentation unter der Karte
   const aendern = sp.aendern && mayManage ? lesson : null;
+  // Gemeinsame Bewertung (lib/zu-bewerten.ts): was noch auf dich wartet, gleich über „Dokumentation bestätigen“
+  const offen = lesson ? zuBewerten({ unitId: unit.id }) : [];
   return (
     <>
       {notices}
@@ -335,6 +339,17 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
                 );
               })}
             </dl>
+            {offen.length > 0 && (
+              <div id="zu-bewerten" className="mt-6 grid scroll-mt-24 gap-3 border-t border-line pt-4" data-testid="abschluss-zu-bewerten">
+                <div className="grid gap-1">
+                  <h2 className="text-[17px] font-semibold">{zuBewertenTitel(offen)}</h2>
+                  <p className="text-[14px] text-ink-2">
+                    Sie zählen erst nach deiner Bewertung: nicht für „Gut verstanden“, nicht für „Noch schwierig“, nicht für den Lernstand. Bestätigen geht trotzdem; die Dokumentation sagt dann „Bewertung offen“.
+                  </p>
+                </div>
+                <ZuBewertenListe zeilen={offen} bewerten={mayManage} />
+              </div>
+            )}
             <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-4">
               {lesson.reviewed_at ? (
                 <>

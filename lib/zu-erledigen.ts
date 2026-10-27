@@ -9,7 +9,8 @@
  * Die Punkte:
  * - Prüfung: eine geplante Schularbeit in der Erinnerungsstufe (lib/exams.ts), immer Offen.
  * - Ergebnis: eine fertige Übung. Wartet auf Lehrerbewertung, solange Antworten auf die Bewertung des
- *   Lehrers warten (attempts.review = 'offen'), dann Offen bis der Lehrer das Ergebnis öffnet oder abhakt.
+ *   Lehrers warten (attempts.review = 'offen'), dann Offen bis der Lehrer das Ergebnis öffnet oder abhakt. Solange es
+ *   wartet, führt es in „Zu bewerten“ des Schülers (lib/zu-bewerten.ts), sonst zum Ergebnis.
  * - Hausübung: Offen bis zum Fälligkeitstag, danach Überfällig. Erledigt mit dem Häkchen oder sobald die
  *   verknüpfte Übung fertig ist (homework.assignment_id).
  * - Text: eine abgegebene Textarbeit. Wartet auf Lehrerbewertung, bis es eine Korrektur dieser Fassung
@@ -79,6 +80,9 @@ export function textZustand(t: { status: string; abgegebenAm: string | null; kor
   return t.korrigiert || gesehenNach(t.gesehenAm, t.abgegebenAm) ? "erledigt" : "wartet";
 }
 
+/** „Zu bewerten“ eines Schülers (lib/zu-bewerten.ts), im Profil oben. */
+export const zuBewertenHref = (studentId: number) => `/schueler/${studentId}#zu-bewerten`;
+
 const RANG: Record<Zustand, number> = { ueberfaellig: 0, wartet: 1, offen: 2, erledigt: 3 };
 
 // ---------- gesehen ----------
@@ -126,7 +130,8 @@ export function zuErledigen(teacherId: number, heute: string, now = new Date()):
   for (const r of ergebnisse) {
     const zustand = ergebnisZustand({ fertigAm: r.completed_at, zuBewerten: r.zu_bewerten, gesehenAm: r.seen_at });
     punkte.push({
-      key: `a${r.id}`, art: "ergebnis", zustand, studentId: r.student_id, studentName: r.student_name, href: `/schueler/${r.student_id}/ergebnis/${r.id}`, datum: r.completed_at,
+      // waiting for the grade: into „Zu bewerten“ of the student (lib/zu-bewerten.ts), the one list of open decisions
+      key: `a${r.id}`, art: "ergebnis", zustand, studentId: r.student_id, studentName: r.student_name, href: r.zu_bewerten > 0 ? zuBewertenHref(r.student_id) : `/schueler/${r.student_id}/ergebnis/${r.id}`, datum: r.completed_at,
       // was auf die Bewertung wartet, wird bewertet, nicht abgehakt
       abhaken: zustand === "offen" ? { art: "ergebnis", id: r.id, studentId: r.student_id } : null,
       titel: r.title, richtig: r.richtig, aufgaben: r.aufgaben, zuBewerten: r.zu_bewerten,

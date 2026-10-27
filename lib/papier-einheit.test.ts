@@ -127,7 +127,7 @@ test("a sheet sent in the unit is read against its original tasks: one row per t
   }
 });
 
-test("„Übernehmen“: yellow rows block; checked, the answers go to the SAME assignment with the unit, teilweise is half the points, and the Abschluss says it", async () => {
+test("„Übernehmen“: checked, the answers go to the SAME assignment with the unit, teilweise is half the points, and the Abschluss says it", async () => {
   const s = await setup();
   const ws = s.blatt(s.sid);
   s.db().prepare("UPDATE tasks SET points = 2 WHERE worksheet_id = ?").run(ws);
@@ -142,8 +142,9 @@ test("„Übernehmen“: yellow rows block; checked, the answers go to the SAME 
     ki.aus();
   }
   const eingabe = { unitId: s.unit.id, teacherId: s.teacher.id, blatt: `z${asg}`, materialIds: [m], gelesen: "ki" as const };
-  assert.deepEqual(s.p.speicherePapier({ ...eingabe, zeilen: v.zeilen }), { error: "Bitte zuerst die gelb markierten Zeilen prüfen." });
-  assert.equal(s.repo.listAttemptsForAssignment(asg).length, 0, "an unsure reading is never stored as a result");
+  // Gemeinsame Bewertung (C3): yellow rows no longer block „Übernehmen“; undecided they are saved as answers waiting for the
+  // teacher („Zu bewerten“), never as a result. That path is tested in lib/zu-bewerten.test.ts; here the teacher decides all.
+  assert.equal(s.repo.listAttemptsForAssignment(asg).length, 0, "reading stores no answer");
 
   // the teacher: 15 % is wrong, the cross is fine („Passt so“), the equation only partly
   const geprueft = v.zeilen.map((z) =>

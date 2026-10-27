@@ -16,6 +16,15 @@
  *   Gerät: Lernstand, Abschluss („Auf Papier: Übung „…“ 7 von 10, 2 unsicher geprüft“) und Dokumentation sehen sie.
  * - Ohne KI (aus, Budget, Grenze je Schüler, manueller Modus) dieselbe Vorschau zum Antippen. Die Kosten stehen vor dem Lesen
  *   neben dem Knopf; gelesen wird nur auf Tippen, nur mit „kein Name darauf“, und kein Name aus der App geht mit.
+ *
+ * Gemeinsame Bewertung (C3, lib/zu-bewerten.ts):
+ * - Die Lesung wird auf dem Server gespeichert (`papier_lesungen`). „Übernehmen“ rechnet daraus und aus der eigenen Prüfung der
+ *   App neu, welche Zeilen unsicher waren; was der Browser dazu schickt (gelb, unsicher, gelesen), zählt nicht.
+ * - Eine unsichere Zeile, die die Lehrkraft noch nicht entschieden hat, sperrt „Übernehmen“ nicht mehr: sie wird als Antwort
+ *   gespeichert, die auf die Lehrkraft wartet (`review = 'offen'`, zählt nirgends), mit dem Grund, und steht in „Zu bewerten“.
+ *   Eine Zeile ohne Grund dafür muss bewertet sein.
+ * - Eine Probeschularbeit auf Papier geht auch ohne laufende Einheit, von der Prüfungskarte aus (`unitId` null): dann ohne
+ *   unit_id, das Ergebnis steht auf der Prüfungskarte und offene Antworten in „Zu bewerten“ des Schülers.
  */
 import { leseBlattMitAufgaben, type BlattMitAufgabenGelesen } from "./ai";
 import { budget, costOf, FUNCTIONS, isLocalModel, routeFor } from "./ai/config";
@@ -23,10 +32,10 @@ import { breakerState, budgetUsedUp, schuelerGestoppt } from "./ai/router";
 import { grenzeErreichtText } from "./ai/schueler-kosten";
 import { documentAssignment } from "./autodoc";
 import { BLATT_TITEL, blattLesbar, PAPIER_ANTWORT, seitenFuerKi, speichereBlatt } from "./blatt-einlesen";
-import { istBewertung, MAX_SEITEN, papierErgebnis, unsichereZuerst, zusammenfuehren, type AppUrteil, type BlattVorschlag, type BlattZeile, type PapierAufgabe, type PapierErgebnis } from "./blatt-regeln";
+import { istBewertung, MAX_SEITEN, papierErgebnis, unsichereZuerst, zusammenfuehren, type AppUrteil, type Bewertung, type BlattVorschlag, type BlattZeile, type LesungUrteil, type PapierAufgabe, type PapierErgebnis } from "./blatt-regeln";
 import { frageText, loesungText } from "./cockpit";
 import { levelOf } from "./curriculum";
-import { db } from "./db";
+import { db, json } from "./db";
 import { dayOf } from "./exams";
 import { getMaterial, hatDatei } from "./materials";
 import { gradeMathTask } from "./math-task";
@@ -125,8 +134,19 @@ export function blaetterDerEinheit(unitId: number): PapierBlatt[] {
     if (b) gesehen.add(r.id);
     if (b) out.push(b);
   }
-  // a Probeschularbeit of this student (made in the app or uploaded, lib/probe-extern.ts) is often written on paper at any time:
-  // with its assignment when it was sent (the open tasks go on there), else printed
+  out.push(...probenDes(student, gesehen));
+  // newest first over both kinds (assigned_at and created_at are both UTC „YYYY-MM-DD HH:MM:SS“)
+  return out.sort(neuesteZuerst);
+}
+
+const neuesteZuerst = (x: PapierBlatt, y: PapierBlatt) => (x.am < y.am ? 1 : x.am > y.am ? -1 : 0);
+
+/**
+ * A Probeschularbeit of this student (made in the app or uploaded, lib/probe-extern.ts) is often written on paper at any time:
+ * with its assignment when it was sent (the open tasks go on there), else printed.
+ */
+function probenDes(student: repo.Student, gesehen = new Set<number>()): PapierBlatt[] {
+  const out: PapierBlatt[] = [];
   const proben = db()
     .prepare("SELECT id, created_at FROM worksheets WHERE probe_test_id IS NOT NULL AND student_id = ? AND archived_at IS NULL ORDER BY created_at DESC, id DESC LIMIT 10")
     .all(student.id) as { id: number; created_at: string }[];
@@ -137,8 +157,16 @@ export function blaetterDerEinheit(unitId: number): PapierBlatt[] {
     const b = w ? blattAus(w, student, "probe", r.created_at, a?.id ?? null) : null;
     if (b) out.push(b);
   }
-  // newest first over both kinds (assigned_at and created_at are both UTC „YYYY-MM-DD HH:MM:SS“)
-  return out.sort((x, y) => (x.am < y.am ? 1 : x.am > y.am ? -1 : 0));
+  return out;
+}
+
+/**
+ * Ohne laufende Einheit (Gemeinsame Bewertung, C3): die Probeschularbeiten dieses Schülers mit offenen Aufgaben, die neueste
+ * zuerst. Von der Prüfungskarte aus „Arbeit fotografieren“; nie ein anderes Blatt, nie das eines anderen Schülers.
+ */
+export function blaetterOhneEinheit(studentId: number): PapierBlatt[] {
+  const student = repo.getStudent(studentId);
+  return student ? probenDes(student).sort(neuesteZuerst) : [];
 }
 
 /** Das Blatt der Einheit zu einer Übung (z. B. der eben gesendeten): das neueste mit dieser Übung, sonst null. */
@@ -229,22 +257,46 @@ export function appUrteil(task: Pick<TaskDraft, "type" | "data" | "answer" | "er
  */
 export function vorschlagMitAufgaben(g: BlattMitAufgabenGelesen, blatt: Pick<PapierBlatt, "titel" | "aufgaben">, tasks: Map<number, Pick<TaskDraft, "type" | "data" | "answer" | "errorMap">>): BlattVorschlag {
   const hinweise: string[] = [];
+  const gelesen = lesungZeilen(g, blatt);
   const zeilen: BlattZeile[] = blatt.aufgaben.map((a, i) => {
-    const k = g.aufgaben.find((x) => Math.round(x.nr) === i + 1);
     const basis = { nr: a.nr, aufgabe: a.aufgabe, punkte: null, max: a.max, skillId: a.skillId, taskId: a.taskId, loesung: a.loesung };
-    if (!k) return { ...basis, antwort: "", bewertung: "falsch" as const, fehler: "", pruefen: true, offen: true, warUnsicher: true, grund: "Nicht gelesen" };
-    const antwort = eineZeile(k.antwort, 200);
-    const weg = (k.rechenweg ?? []).map((z) => eineZeile(z, 200)).filter(Boolean).slice(0, 20);
-    const task = tasks.get(a.taskId);
-    const app = k.bewertung === "nicht_lesbar" || k.bewertung === "leer" || !task ? null : appUrteil(task, antwort, weg);
-    const z = zusammenfuehren({ bewertung: k.bewertung, unsicher: k.unsicher || g.anderes_blatt, grund: k.grund }, app);
-    return { ...basis, antwort, bewertung: z.bewertung, pruefen: z.pruefen, offen: z.offen, warUnsicher: z.warUnsicher, grund: z.pruefen ? z.grund : "", fehler: !z.pruefen && z.bewertung !== "richtig" ? (z.grund ?? "") : "" };
+    const z = urteilAusLesung(gelesen[i], tasks.get(a.taskId), g.anderes_blatt);
+    return { ...basis, antwort: z.antwort, bewertung: z.bewertung, pruefen: z.pruefen, offen: z.offen, warUnsicher: z.warUnsicher, grund: z.pruefen ? z.grund : "", fehler: !z.pruefen && z.bewertung !== "richtig" ? (z.grund ?? "") : "" };
   });
   if (g.anderes_blatt) hinweise.push("Die Fotos zeigen vielleicht ein anderes Blatt. Bitte jede Zeile prüfen.");
   if (g.aufgaben.some((x) => !(Math.round(x.nr) >= 1 && Math.round(x.nr) <= blatt.aufgaben.length))) hinweise.push("Die Lesung nannte Aufgaben, die nicht auf diesem Blatt stehen. Sie sind weggelassen.");
   const gelb = zeilen.filter((z) => z.pruefen).length;
   if (gelb) hinweise.push(gelb === 1 ? "Eine Zeile ist unsicher und steht oben. Bitte prüfen, dann zählt sie." : `${gelb} Zeilen sind unsicher und stehen oben. Bitte prüfen, dann zählen sie.`);
   return { titel: blatt.titel, zeilen: unsichereZuerst(zeilen), gesamt: null, gesamtMax: null, note: null, hinweise };
+}
+
+/** Was die Lesung zu einer Aufgabe des Blatts sagt, so wie es auf dem Server gespeichert wird; `fehlt`: nicht gelesen. */
+export type LesungZeile = { taskId: number; fehlt?: boolean; antwort: string; weg: string[]; bewertung: LesungUrteil; unsicher: boolean; grund: string };
+
+/** Die Lesung je Aufgabe des Blatts, in seiner Reihenfolge (Nummer i + 1 der Anfrage); eine Nummer, die nicht auf dem Blatt steht, fällt weg. */
+function lesungZeilen(g: BlattMitAufgabenGelesen, blatt: Pick<PapierBlatt, "aufgaben">): LesungZeile[] {
+  return blatt.aufgaben.map((a, i) => {
+    const k = g.aufgaben.find((x) => Math.round(x.nr) === i + 1);
+    if (!k) return { taskId: a.taskId, fehlt: true, antwort: "", weg: [], bewertung: "nicht_lesbar", unsicher: true, grund: "" };
+    const weg = (k.rechenweg ?? []).map((z) => eineZeile(z, 200)).filter(Boolean).slice(0, 20);
+    return { taskId: a.taskId, antwort: eineZeile(k.antwort, 200), weg, bewertung: k.bewertung, unsicher: k.unsicher, grund: eineZeile(k.grund, 200) };
+  });
+}
+
+/** Warum eine Zeile unsicher ist: die Lesung (unsicher, nicht lesbar, nicht gelesen) oder die App prüft anders. */
+export type UnsicherArt = "ki" | "app";
+
+/**
+ * Lesung und eigene Prüfung der App zu einer Aufgabe, aus der gespeicherten Lesung neu gerechnet (beim Lesen für die Vorschau
+ * und auf dem Server bei „Übernehmen“, mit denselben Regeln): Vorschlag, gelb, ohne Vorwahl, Grund und woher die Unsicherheit kommt.
+ */
+export function urteilAusLesung(l: LesungZeile | undefined, task: Pick<TaskDraft, "type" | "data" | "answer" | "errorMap"> | undefined, anderesBlatt: boolean) {
+  if (!l || l.fehlt) return { antwort: "", bewertung: "falsch" as Bewertung, pruefen: true, offen: true, warUnsicher: true, grund: "Nicht gelesen", art: "ki" as UnsicherArt };
+  const app = l.bewertung === "nicht_lesbar" || l.bewertung === "leer" || !task ? null : appUrteil(task, l.antwort, l.weg);
+  const z = zusammenfuehren({ bewertung: l.bewertung, unsicher: l.unsicher || anderesBlatt, grund: l.grund }, app);
+  // the app checks differently than the reading (the reading was neither unreadable nor marked unsure): the app's doubt
+  const art: UnsicherArt | null = !z.pruefen ? null : app && l.bewertung !== "nicht_lesbar" && l.bewertung !== "leer" && app !== l.bewertung ? "app" : "ki";
+  return { antwort: l.antwort, ...z, art };
 }
 
 /** Die laufende Einheit und ihr Schüler, oder ein Satz für die Lehrkraft. */
@@ -258,36 +310,75 @@ function laufend(unitId: number): { unit: UnitView; student: repo.Student } | { 
 }
 
 /**
- * Liest die gespeicherten Seiten gegen die Aufgaben eines Blatts der Einheit (`blattKey`). Wirft einen Fehler mit einem Satz
- * für die Lehrkraft; die Seiten bleiben dann gespeichert. Speichert nichts außer dem Protokoll der KI.
+ * Wohin die Papierarbeit gehört: die laufende Einheit (ihre Blätter), oder ohne Einheit der Schüler (nur seine
+ * Probeschularbeiten, von der Prüfungskarte aus). Ein Satz für die Lehrkraft, wenn es nicht passt.
  */
-export async function liesPapier(o: { unitId: number; blattKey: string; materialIds: number[]; teacherId: number }): Promise<BlattVorschlag> {
-  const l = laufend(o.unitId);
-  if ("error" in l) throw new Error(l.error);
-  const blatt = blaetterDerEinheit(l.unit.id).find((b) => b.key === o.blattKey);
-  if (!blatt) throw new Error("Dieses Blatt gehört nicht zu dieser Einheit.");
-  const tor = papierTor(l.student.id);
+function rahmen(o: { unitId: number | null; studentId?: number }): { unit: UnitView | null; student: repo.Student; blaetter: PapierBlatt[] } | { error: string } {
+  if (o.unitId) {
+    const l = laufend(o.unitId);
+    if ("error" in l) return l;
+    if (o.studentId && o.studentId !== l.student.id) return { error: "Dieser Schüler gehört nicht zu dieser Einheit." };
+    return { ...l, blaetter: blaetterDerEinheit(l.unit.id) };
+  }
+  const student = o.studentId ? repo.getStudent(o.studentId) : null;
+  if (!student) return { error: "Diesen Schüler gibt es nicht." };
+  return { unit: null, student, blaetter: blaetterOhneEinheit(student.id) };
+}
+
+/**
+ * Liest die gespeicherten Seiten gegen die Aufgaben eines Blatts der Einheit (`blattKey`), ohne Einheit gegen eine
+ * Probeschularbeit des Schülers. Wirft einen Fehler mit einem Satz für die Lehrkraft; die Seiten bleiben dann gespeichert.
+ * Speichert außer dem Protokoll der KI nur die Lesung selbst (`papier_lesungen`), nie ein Ergebnis.
+ */
+export async function liesPapier(o: { unitId: number | null; studentId?: number; blattKey: string; materialIds: number[]; teacherId: number }): Promise<BlattVorschlag> {
+  const r = rahmen(o);
+  if ("error" in r) throw new Error(r.error);
+  const blatt = r.blaetter.find((b) => b.key === o.blattKey);
+  if (!blatt) throw new Error(r.unit ? "Dieses Blatt gehört nicht zu dieser Einheit." : "Diese Probeschularbeit gehört nicht zu diesem Schüler, oder sie ist schon ganz bewertet.");
+  const tor = papierTor(r.student.id);
   if (!tor.erlaubt) throw new Error(tor.grund);
-  const seiten = seitenFuerKi(o.materialIds, l.student.id);
+  const seiten = seitenFuerKi(o.materialIds, r.student.id);
   const tasks = new Map(repo.listTasks(blatt.worksheetId).map((t) => [t.id, t] as const));
   const w = repo.getWorksheet(blatt.worksheetId)!;
-  const aufgaben = blatt.aufgaben.map((a) => ({ angabe: ohneNamen(a.aufgabe, l.student.name), loesung: ohneNamen(a.loesung, l.student.name), punkte: a.max, nummer: a.nr }));
-  touchUnit(l.unit.id);
-  const gelesen = await leseBlattMitAufgaben(seiten, { fach: l.unit.subject || w.subject, aufgaben }, { teacherId: o.teacherId, studentId: l.student.id, unitId: l.unit.id, trigger: "papier" });
+  const aufgaben = blatt.aufgaben.map((a) => ({ angabe: ohneNamen(a.aufgabe, r.student.name), loesung: ohneNamen(a.loesung, r.student.name), punkte: a.max, nummer: a.nr }));
+  if (r.unit) touchUnit(r.unit.id);
+  const gelesen = await leseBlattMitAufgaben(seiten, { fach: r.unit?.subject || w.subject, aufgaben }, { teacherId: o.teacherId, studentId: r.student.id, unitId: r.unit?.id, trigger: "papier" });
   if (!gelesen) throw new Error("Die KI hat das Blatt nicht gelesen. Trag die Bewertung bitte selbst ein.");
-  return vorschlagMitAufgaben(gelesen, blatt, tasks);
+  // what the reading said stays on the server: „Übernehmen“ counts the unsure rows from it, never from the browser
+  const lesungId = Number(
+    db()
+      .prepare("INSERT INTO papier_lesungen (student_id, unit_id, worksheet_id, material_ids, anderes_blatt, zeilen, teacher_id) VALUES (?, ?, ?, ?, ?, ?, ?)")
+      .run(r.student.id, r.unit?.id ?? null, blatt.worksheetId, JSON.stringify(nurEigene(o.materialIds, r.student.id)), gelesen.anderes_blatt ? 1 : 0, JSON.stringify(lesungZeilen(gelesen, blatt)), o.teacherId).lastInsertRowid,
+  );
+  return { ...vorschlagMitAufgaben(gelesen, blatt, tasks), lesungId };
+}
+
+/**
+ * Die gespeicherte Lesung zu diesem Blatt, die noch nicht übernommen ist: die neueste dieser Einheit (seit ihrem Start), ohne
+ * Einheit die neueste der letzten 24 Stunden. Der Browser kann sie weder wählen noch weglassen.
+ */
+function gespeicherteLesung(studentId: number, worksheetId: number, unit: UnitView | null): { id: number; anderes: boolean; zeilen: LesungZeile[] } | null {
+  const r = db()
+    .prepare(
+      `SELECT id, anderes_blatt, zeilen FROM papier_lesungen WHERE student_id = ? AND worksheet_id = ? AND unit_id IS ? AND uebernommen_at IS NULL
+         AND datetime(created_at) >= datetime(?) ORDER BY id DESC LIMIT 1`,
+    )
+    .get(studentId, worksheetId, unit?.id ?? null, unit ? unit.started_at : new Date(Date.now() - 86_400_000).toISOString()) as { id: number; anderes_blatt: number; zeilen: string } | undefined;
+  return r ? { id: r.id, anderes: Boolean(r.anderes_blatt), zeilen: json<LesungZeile[]>(r.zeilen, []) } : null;
 }
 
 // ---------- Übernehmen ----------
 
 export type PapierEingabe = {
-  unitId: number;
+  /** die laufende Einheit; null: eine Probeschularbeit ohne Einheit (dann `studentId`) */
+  unitId: number | null;
+  studentId?: number;
   teacherId: number;
   /** `PapierBlatt.key` oder `ANDERES_BLATT` */
   blatt: string;
   zeilen: BlattZeile[];
   materialIds: number[];
-  /** ki: aus der Lesung; hand: selbst eingetragen */
+  /** nur bei „Ein anderes Blatt“: ki = aus der Lesung, hand = selbst eingetragen. Bei einem bekannten Blatt weiß es der Server selbst. */
   gelesen: "ki" | "hand";
   /** nur bei „Ein anderes Blatt“: Fach und Titel wie bei „Gelöstes Blatt einlesen“ */
   fach?: string;
@@ -300,62 +391,107 @@ const nurEigene = (ids: number[], studentId: number) =>
     return m && hatDatei(m) && m.student_id === studentId;
   });
 
-function merke(unit: UnitView, assignmentId: number, e: PapierEingabe, bekannt: boolean, ergebnis: PapierErgebnis, materialIds: number[]): number {
+function merke(
+  o: { unit: UnitView | null; studentId: number; assignmentId: number; teacherId: number; bekannt: boolean; gelesen: "ki" | "hand"; taskIds: number[]; lesungId: number | null },
+  ergebnis: PapierErgebnis,
+  materialIds: number[],
+): number {
   const r = db()
     .prepare(
-      `INSERT INTO papier_arbeiten (unit_id, assignment_id, student_id, titel, bekannt, gelesen, material_ids, von, richtig, teilweise, punkte, max_punkte, unsicher, teacher_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO papier_arbeiten (unit_id, assignment_id, student_id, titel, bekannt, gelesen, material_ids, von, richtig, teilweise, punkte, max_punkte, unsicher, teacher_id, task_ids, lesung_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(unit.id, assignmentId, unit.student_id, ergebnis.titel, bekannt ? 1 : 0, e.gelesen === "ki" ? "ki" : "hand", JSON.stringify(materialIds), ergebnis.von, ergebnis.richtig, ergebnis.teilweise, ergebnis.punkte, ergebnis.max, ergebnis.unsicher, e.teacherId);
+    .run(
+      o.unit?.id ?? null, o.assignmentId, o.studentId, ergebnis.titel, o.bekannt ? 1 : 0, o.gelesen, JSON.stringify(materialIds), ergebnis.von, ergebnis.richtig, ergebnis.teilweise, ergebnis.punkte, ergebnis.max, ergebnis.unsicher, o.teacherId,
+      JSON.stringify(o.taskIds), o.lesungId,
+    );
   for (const id of materialIds) db().prepare("UPDATE materials SET title = ? WHERE id = ? AND title = ?").run(`${BLATT_TITEL}: ${ergebnis.titel}`.slice(0, 120), id, BLATT_TITEL);
   return Number(r.lastInsertRowid);
 }
 
+/** Warum eine Antwort auf die Lehrkraft wartet (attempts.offen_info, lib/zu-bewerten.ts): „ki“ unsicher gelesen, „app“ prüft anders. */
+export type OffenInfo = { grund: UnsicherArt; text: string; vorschlag: Bewertung | null };
+
 /**
- * „Übernehmen“: die geprüften Zeilen als Antworten an derselben Zuweisung der Einheit (ein nicht gesendetes Blatt bekommt jetzt
- * eine, schon „angekommen“ und erledigt), mit der Bewertung der Lehrkraft (teilweise = halbe Punkte), dazu die Zeile für den
- * Abschluss. Eine gelbe Zeile oder eine ohne Bewertung wird nie gespeichert. Alles oder nichts.
+ * „Übernehmen“: die geprüften Zeilen als Antworten an derselben Zuweisung (in der Einheit mit ihrer unit_id; ein nicht gesendetes
+ * Blatt bekommt jetzt eine, schon „angekommen“ und erledigt), mit der Bewertung der Lehrkraft (teilweise = halbe Punkte), dazu die
+ * Zeile für den Abschluss. Welche Zeilen unsicher waren, rechnet der Server aus der gespeicherten Lesung und der eigenen Prüfung der
+ * App neu. Eine unsichere Zeile ohne Entscheidung wird als offene Antwort gespeichert (zählt nirgends, steht in „Zu bewerten“); eine
+ * Zeile ohne solchen Grund muss bewertet sein. Alles oder nichts.
  */
 export function speicherePapier(e: PapierEingabe): { assignmentId: number; papierId: number } | { error: string } {
-  const l = laufend(e.unitId);
-  if ("error" in l) return l;
-  const { unit, student } = l;
-  if (e.zeilen.some((z) => z.pruefen)) return { error: "Bitte zuerst die gelb markierten Zeilen prüfen." };
-  if (e.zeilen.some((z) => z.offen)) return { error: "Bitte jede Aufgabe bewerten." };
+  const r = rahmen(e);
+  if ("error" in r) return r;
+  const { unit, student } = r;
   if (e.zeilen.some((z) => !istBewertung(z.bewertung))) return { error: "Unbekannte Bewertung." };
   const materialIds = nurEigene(e.materialIds, student.id);
 
-  // ein Blatt, das die App nicht kennt: wie „Gelöstes Blatt einlesen“, aber in dieser Einheit
+  // ein Blatt, das die App nicht kennt: wie „Gelöstes Blatt einlesen“, aber in dieser Einheit (ohne Einheit gibt es das hier nicht)
   if (e.blatt === ANDERES_BLATT) {
+    if (!unit) return { error: "Ohne laufende Einheit geht das über „Gelöstes Blatt einlesen“ im Profil." };
+    if (e.zeilen.some((z) => z.pruefen)) return { error: "Bitte zuerst die gelb markierten Zeilen prüfen." };
+    if (e.zeilen.some((z) => z.offen)) return { error: "Bitte jede Aufgabe bewerten." };
     const fach = eineZeile(e.fach || unit.subject, 60);
     const titel = eineZeile(e.titel, 100) || "Blatt auf Papier";
     const zeilen = e.zeilen.map((z) => ({ ...z, taskId: undefined }));
     const out = speichereBlatt({ studentId: student.id, teacherId: e.teacherId, fach, datum: dayOf(new Date()), titel, art: "probe", testId: null, note: null, gesamt: null, gesamtMax: null, zeilen, materialIds, unitId: unit.id });
     if ("error" in out) return out;
-    const papierId = merke(unit, out.assignmentId, e, false, papierErgebnis(titel, zeilen.filter((z) => z.aufgabe.trim())), materialIds);
+    const taskIds = repo.listTasks(out.worksheetId).map((t) => t.id);
+    const papierId = merke(
+      { unit, studentId: student.id, assignmentId: out.assignmentId, teacherId: e.teacherId, bekannt: false, gelesen: e.gelesen === "ki" ? "ki" : "hand", taskIds, lesungId: null },
+      papierErgebnis(titel, zeilen.filter((z) => z.aufgabe.trim())),
+      materialIds,
+    );
     touchUnit(unit.id);
     return { assignmentId: out.assignmentId, papierId };
   }
 
-  const blatt = blaetterDerEinheit(unit.id).find((b) => b.key === e.blatt);
-  if (!blatt) return { error: "Dieses Blatt gehört nicht zu dieser Einheit, oder es ist schon ganz bewertet." };
+  const blatt = r.blaetter.find((b) => b.key === e.blatt);
+  if (!blatt) return { error: unit ? "Dieses Blatt gehört nicht zu dieser Einheit, oder es ist schon ganz bewertet." : "Diese Probeschularbeit gehört nicht zu diesem Schüler, oder sie ist schon ganz bewertet." };
   const offen = new Map(blatt.aufgaben.map((a) => [a.taskId, a]));
   const zeilen = e.zeilen.filter((z) => z.taskId != null);
   if (zeilen.length !== e.zeilen.length || zeilen.some((z) => !offen.has(z.taskId!)) || new Set(zeilen.map((z) => z.taskId)).size !== zeilen.length || zeilen.length !== offen.size)
     return { error: "Die Zeilen passen nicht mehr zum Blatt. Bitte die Seite neu laden." };
+  const tasks = new Map(repo.listTasks(blatt.worksheetId).map((t) => [t.id, t] as const));
+  const w = repo.getWorksheet(blatt.worksheetId)!;
+  // what the reading said, from the server; the browser's yellow and unsure marks do not count
+  const lesung = gespeicherteLesung(student.id, blatt.worksheetId, unit);
   // die Aufgabe und die Höchstpunkte kommen vom Blatt, nie aus dem Browser; teilweise = halbe Punkte
   const geprueft = blatt.aufgaben.map((a) => {
     const z = zeilen.find((x) => x.taskId === a.taskId)!;
-    return { ...z, nr: a.nr, aufgabe: a.aufgabe, max: a.max, punkte: null, antwort: eineZeile(z.antwort, 200), fehler: z.bewertung === "richtig" ? "" : eineZeile(z.fehler, 200) };
+    const task = tasks.get(a.taskId)!;
+    const antwort = eineZeile(z.antwort, 200);
+    const gelesen = lesung ? lesung.zeilen.find((l) => l.taskId === a.taskId) : undefined;
+    const server = lesung ? urteilAusLesung(gelesen, task, lesung.anderes) : null;
+    const entschieden = !z.offen && !z.pruefen;
+    // an answer that is not the one read (typed or changed by the teacher): the app checks it again, and a grade that contradicts
+    // the app's check counts as unsure; a Rechenweg typed without its lines is not checked again
+    const neu = antwort !== (gelesen?.antwort ?? null);
+    const ohneWeg = task.type === "rechenweg" || task.type === "sachaufgabe";
+    const app = entschieden && neu && z.bewertung !== "leer" && !ohneWeg ? appUrteil(task, antwort) : null;
+    const widerspruch = app !== null && app !== z.bewertung;
+    const info: OffenInfo | null = !entschieden && server?.pruefen ? { grund: server.art ?? "ki", text: server.grund ?? "", vorschlag: server.offen ? null : server.bewertung } : null;
+    return {
+      ...z,
+      nr: a.nr,
+      aufgabe: a.aufgabe,
+      max: a.max,
+      punkte: null,
+      antwort,
+      fehler: z.bewertung === "richtig" ? "" : eineZeile(z.fehler, 200),
+      entschieden,
+      info,
+      offen: !entschieden,
+      warUnsicher: Boolean(server?.pruefen) || widerspruch,
+    };
   });
-  const tasks = new Map(repo.listTasks(blatt.worksheetId).map((t) => [t.id, t] as const));
-  const w = repo.getWorksheet(blatt.worksheetId)!;
+  if (geprueft.some((z) => !z.entschieden && !z.info)) return { error: "Bitte jede Aufgabe bewerten." };
 
   const out = db().transaction(() => {
     let assignmentId = blatt.assignmentId;
     if (assignmentId === null) {
-      // printed, not sent: now an assignment of this unit, already „arrived“, so it never pops up on the device
-      assignmentId = repo.assignWorksheet(w.id, student.id, PAPIER_ANTWORT, unit.id, blatt.art === "minitest" ? "test" : "normal");
+      // printed, not sent: now an assignment (of this unit), already „arrived“, so it never pops up on the device
+      assignmentId = repo.assignWorksheet(w.id, student.id, PAPIER_ANTWORT, unit?.id ?? null, blatt.art === "minitest" ? "test" : "normal");
       db().prepare("UPDATE assignments SET delivered_at = datetime('now') WHERE id = ?").run(assignmentId);
     }
     repo.markAssignmentStarted(assignmentId);
@@ -369,46 +505,68 @@ export function speicherePapier(e: PapierEingabe): { assignmentId: number; papie
         student_id: student.id,
         skill_id: t.skillId,
         attempt_no: vorher.filter((a) => a.task_id === t.id).length + 1,
-        answer: z.bewertung === "leer" ? "(nicht bearbeitet)" : z.antwort || PAPIER_ANTWORT,
-        correct: review === "richtig" ? 1 : 0,
+        answer: z.entschieden && z.bewertung === "leer" ? "(nicht bearbeitet)" : z.antwort || PAPIER_ANTWORT,
+        correct: z.entschieden && review === "richtig" ? 1 : 0,
         final: 1,
         time_ms: 0,
         hints_used: 0,
         solution_viewed: 0,
         error_label: null,
-        feedback: z.fehler,
+        feedback: z.entschieden ? z.fehler : "",
         teacher_id: e.teacherId,
         level: t.level ?? levelOf(t.difficulty),
-        unit_id: unit.id,
+        unit_id: unit?.id ?? null,
+        // unsure and not decided: waits for the teacher and counts nowhere until then (lib/zu-bewerten.ts)
+        review: z.entschieden ? null : "offen",
       });
-      repo.setAttemptReview(attemptId, review, e.teacherId);
+      if (z.entschieden) repo.setAttemptReview(attemptId, review, e.teacherId);
+      else db().prepare("UPDATE attempts SET offen_info = ? WHERE id = ?").run(JSON.stringify(z.info), attemptId);
     }
     repo.completeAssignmentIfDone(assignmentId);
-    const papierId = merke(unit, assignmentId, e, true, papierErgebnis(blatt.titel, geprueft), materialIds);
+    if (lesung) db().prepare("UPDATE papier_lesungen SET uebernommen_at = datetime('now') WHERE id = ?").run(lesung.id);
+    const papierId = merke(
+      { unit, studentId: student.id, assignmentId, teacherId: e.teacherId, bekannt: true, gelesen: lesung ? "ki" : "hand", taskIds: geprueft.map((z) => z.taskId!), lesungId: lesung?.id ?? null },
+      papierErgebnis(blatt.titel, geprueft),
+      materialIds,
+    );
     return { assignmentId, papierId };
   })();
-  touchUnit(unit.id);
+  if (unit) touchUnit(unit.id);
   documentAssignment(out.assignmentId);
   return out;
 }
 
 // ---------- Abschluss ----------
 
+type PapierRow = { id: number; assignment_id: number; titel: string; von: number; richtig: number; teilweise: number; punkte: number | null; max_punkte: number | null; unsicher: number; task_ids: string | null };
+
+/**
+ * Was eine übernommene Papierarbeit jetzt ergibt: aus den Antworten ihrer Aufgaben (eine später bewertete offene Antwort zählt
+ * dann mit); „unsicher geprüft“ bleibt, wie der Server es beim Übernehmen gezählt hat. Ältere Zeilen ohne Aufgaben: wie gespeichert.
+ */
+function ergebnisVon(r: PapierRow): PapierErgebnis {
+  const ids = json<number[]>(r.task_ids ?? "", []);
+  if (!ids.length) return { titel: r.titel, von: r.von, richtig: r.richtig, teilweise: r.teilweise, punkte: r.punkte, max: r.max_punkte, unsicher: r.unsicher, assignmentId: r.assignment_id };
+  const a = repo.getAssignment(r.assignment_id);
+  const w = a ? repo.getWorksheet(a.worksheet_id) : null;
+  const punkte = w ? punkteVon(w, repo.listTasks(w.id)) : new Map<number, number | null>();
+  const finals = repo.listAttemptsForAssignment(r.assignment_id).filter((x) => x.final);
+  const zeilen = ids.map((id) => {
+    const f = [...finals].reverse().find((x) => x.task_id === id);
+    const bewertung: Bewertung = f?.review === "teilweise" ? "teilweise" : f && f.review !== "offen" && f.correct ? "richtig" : "falsch";
+    return { bewertung, punkte: null, max: punkte.get(id) ?? null, offen: !f || f.review === "offen" };
+  });
+  return { ...papierErgebnis(r.titel, zeilen), unsicher: r.unsicher, assignmentId: r.assignment_id };
+}
+
+const PAPIER_SPALTEN = "id, assignment_id, titel, von, richtig, teilweise, punkte, max_punkte, unsicher, task_ids";
+
 /** Die auf Papier gelösten Übungen einer Einheit, wie der Abschluss sie nennt (nur übernommene). */
 export function papierDerEinheit(unitId: number, nurId?: number): PapierErgebnis[] {
   const rows = db()
-    .prepare(`SELECT assignment_id, titel, von, richtig, teilweise, punkte, max_punkte, unsicher FROM papier_arbeiten WHERE unit_id = ?${nurId ? " AND id = ?" : ""} ORDER BY id`)
-    .all(...(nurId ? [unitId, nurId] : [unitId])) as {
-    assignment_id: number;
-    titel: string;
-    von: number;
-    richtig: number;
-    teilweise: number;
-    punkte: number | null;
-    max_punkte: number | null;
-    unsicher: number;
-  }[];
-  return rows.map((r) => ({ titel: r.titel, von: r.von, richtig: r.richtig, teilweise: r.teilweise, punkte: r.punkte, max: r.max_punkte, unsicher: r.unsicher, assignmentId: r.assignment_id }));
+    .prepare(`SELECT ${PAPIER_SPALTEN} FROM papier_arbeiten WHERE unit_id = ?${nurId ? " AND id = ?" : ""} ORDER BY id`)
+    .all(...(nurId ? [unitId, nurId] : [unitId])) as PapierRow[];
+  return rows.map(ergebnisVon);
 }
 
 /** Eine übernommene Papierarbeit dieser Einheit (für die Meldung nach „Übernehmen“). */
@@ -416,3 +574,8 @@ export function papierArbeit(id: number, unitId: number): PapierErgebnis | null 
   return papierDerEinheit(unitId, id)[0] ?? null;
 }
 
+/** Eine übernommene Papierarbeit ohne Einheit (Probeschularbeit von der Prüfungskarte), nur dieses Schülers. */
+export function papierArbeitOhneEinheit(id: number, studentId: number): PapierErgebnis | null {
+  const r = db().prepare(`SELECT ${PAPIER_SPALTEN} FROM papier_arbeiten WHERE id = ? AND student_id = ? AND unit_id IS NULL`).get(id, studentId) as PapierRow | undefined;
+  return r ? ergebnisVon(r) : null;
+}

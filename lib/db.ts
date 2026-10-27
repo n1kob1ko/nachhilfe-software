@@ -1223,9 +1223,12 @@ CREATE TABLE IF NOT EXISTS einheit_beispiele (
 -- Die Antworten stehen als attempts an der Zuweisung (unit_id gesetzt) wie am Gerät; hier nur, was der Abschluss sagt: welches
 -- Blatt, ob es eine Übung der Einheit war (bekannt) oder ein anderes Blatt, wie gelesen wurde (ki oder hand), die Seiten, richtig
 -- und teilweise von wie vielen, Punkte (nur wenn jede Aufgabe Punkte hat) und wie viele Zeilen unsicher waren und geprüft wurden.
+-- Gemeinsame Bewertung (C3): unit_id leer = eine Probeschularbeit auf Papier, außerhalb einer Einheit von der Prüfungskarte aus
+-- fotografiert; task_ids: die Aufgaben dieser Papierarbeit (ihr Stand kommt live aus attempts, auch nach späterem Bewerten);
+-- lesung_id: die gespeicherte Lesung (papier_lesungen), aus der „unsicher geprüft“ gezählt wurde.
 CREATE TABLE IF NOT EXISTS papier_arbeiten (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  unit_id INTEGER REFERENCES units(id) ON DELETE CASCADE,
   assignment_id INTEGER NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
   student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
   titel TEXT NOT NULL DEFAULT '',
@@ -1242,6 +1245,23 @@ CREATE TABLE IF NOT EXISTS papier_arbeiten (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_papier_unit ON papier_arbeiten(unit_id);
+
+-- Gemeinsame Bewertung (C3): was die KI beim Lesen eines bekannten Blatts gesagt hat, auf dem Server gespeichert (lib/papier-einheit.ts).
+-- „Übernehmen“ rechnet daraus und aus der eigenen Prüfung der App, welche Zeilen unsicher waren; was der Browser dazu schickt, zählt
+-- nicht. zeilen: JSON [{taskId, antwort, weg, bewertung, unsicher, grund}] je Aufgabe des Blatts; uebernommen_at: schon verwendet.
+CREATE TABLE IF NOT EXISTS papier_lesungen (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  unit_id INTEGER REFERENCES units(id) ON DELETE CASCADE,
+  worksheet_id INTEGER NOT NULL REFERENCES worksheets(id) ON DELETE CASCADE,
+  material_ids TEXT NOT NULL DEFAULT '[]',
+  anderes_blatt INTEGER NOT NULL DEFAULT 0,
+  zeilen TEXT NOT NULL DEFAULT '[]',
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  uebernommen_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_papier_lesungen ON papier_lesungen(student_id, worksheet_id);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */
@@ -1529,6 +1549,11 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // Phase-B-Testlauf (2026-10-27): wann die Präsentation bei diesem Schritt geöffnet wurde. Nur dann sagt der Abschluss „verwendet“;
   // „Übernehmen“ allein verknüpft sie nur mit dem Schritt
   ["einheit_praesentationen", "gezeigt_at", "TEXT"],
+  // Gemeinsame Bewertung (C3, lib/zu-bewerten.ts): warum eine Antwort auf die Lehrkraft wartet, wo die App es weiß (JSON
+  // {grund, text, vorschlag}; heute nur bei Papier: unsicher gelesen, nicht lesbar, die App prüft anders)
+  ["attempts", "offen_info", "TEXT"],
+  ["papier_arbeiten", "task_ids", "TEXT"],
+  ["papier_arbeiten", "lesung_id", "INTEGER"],
 ];
 
 /** Teachers to start with; more can be added later. */
@@ -1707,6 +1732,36 @@ function migrate(conn: Database.Database) {
       conn.exec("CREATE INDEX IF NOT EXISTS idx_praesentation_entwuerfe ON praesentation_entwuerfe(paket_id, status)");
     }
     conn.exec("CREATE INDEX IF NOT EXISTS idx_praesentation_entwuerfe_unit ON praesentation_entwuerfe(unit_id, schritt_id, status)");
+    // Gemeinsame Bewertung (C3, 2026-10-27): eine Papierarbeit auch ohne Einheit (Probeschularbeit von der Prüfungskarte). Wie oben:
+    // NOT NULL geht nur mit einer neuen Tabelle weg; nur einmal, beim Upgrade einer alten Datenbank
+    const papier = conn.prepare("PRAGMA table_info(papier_arbeiten)").all() as { name: string; notnull: number }[];
+    if (papier.find((c) => c.name === "unit_id")?.notnull) {
+      const spalten = papier.map((c) => c.name).join(", ");
+      conn.exec(`CREATE TABLE papier_arbeiten_neu (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        unit_id INTEGER REFERENCES units(id) ON DELETE CASCADE,
+        assignment_id INTEGER NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
+        student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+        titel TEXT NOT NULL DEFAULT '',
+        bekannt INTEGER NOT NULL DEFAULT 1,
+        gelesen TEXT NOT NULL DEFAULT 'hand',
+        material_ids TEXT NOT NULL DEFAULT '[]',
+        von INTEGER NOT NULL DEFAULT 0,
+        richtig INTEGER NOT NULL DEFAULT 0,
+        teilweise INTEGER NOT NULL DEFAULT 0,
+        punkte REAL,
+        max_punkte REAL,
+        unsicher INTEGER NOT NULL DEFAULT 0,
+        teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        task_ids TEXT,
+        lesung_id INTEGER
+      )`);
+      conn.exec(`INSERT INTO papier_arbeiten_neu (${spalten}) SELECT ${spalten} FROM papier_arbeiten`);
+      conn.exec("DROP TABLE papier_arbeiten");
+      conn.exec("ALTER TABLE papier_arbeiten_neu RENAME TO papier_arbeiten");
+      conn.exec("CREATE INDEX IF NOT EXISTS idx_papier_unit ON papier_arbeiten(unit_id)");
+    }
   });
   tx();
 }

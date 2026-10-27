@@ -16,6 +16,11 @@
  * „Gut verstanden“ folgt festen Regeln (`gutVerstanden`). Text der KI steht in keinem der vier Felder.
  * „Dokumentation bestätigen“ schreibt die Felder in die Dokumentation, nur wo die Lehrkraft nichts selbst geschrieben
  * hat (`bestaetigeAbschluss`); „Nächstes Mal“ liest dann die nächste Vorbereitung (lib/vorbereitung-auto.ts).
+ *
+ * Gemeinsame Bewertung (C3): Antworten, die noch auf die Lehrkraft warten (lib/zu-bewerten.ts), zählen weder für „Gut
+ * verstanden“ noch für „Noch schwierig“ noch für den Lernstand. „Heute gemacht“ sagt dann „Bewertung offen: 3 Antworten“, und so
+ * steht es auch in der Dokumentation, wenn sie trotzdem bestätigt wird. Wird später bewertet, rechnet `bewertungInDoku` Bericht
+ * und Karte neu.
  */
 import { KRITERIUM_KEYS, KRITERIUM_KURZ } from "./bewertung-kriterien";
 import { papierZeile, type PapierErgebnis } from "./blatt-regeln";
@@ -24,7 +29,7 @@ import { db, json } from "./db";
 import { autoFelderVon } from "./einschaetzung";
 import { errorTypeLabel } from "./error-types";
 import { daysUntil } from "./exams";
-import { readReport, type TaskLine } from "./learning";
+import { berichtNachBewertung, readReport, type TaskLine } from "./learning";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
 import { papierDerEinheit } from "./papier-einheit";
 import { praesentationenDerEinheit } from "./praesentation-unterricht";
@@ -39,6 +44,7 @@ import { textLaeufe } from "./textarbeit-ablauf";
 import { bewertungFuerBericht, SCHWACHE_STUFE, skillFuerText, type BerichtBewertung } from "./text-note";
 import { getUnit } from "./units";
 import { vorgabeDerEinheit } from "./vorgabe";
+import { antwortenText, offeneAntwortenZahl, zuBewerten } from "./zu-bewerten";
 
 /**
  * Woher eine Zeile kommt; die Karte zeigt es leise hinter der Zeile (`QUELLE`). „daten“: aus der Dokumentation ohne
@@ -107,6 +113,7 @@ export type AufgabeBeleg = Pick<TaskLine, "assignmentId" | "skillId" | "skill" |
  *   stehen auch unter `aufgaben` wie am Gerät
  * - `proben`: Probeschularbeiten, die in der Einheit geschrieben wurden, am Gerät oder auf Papier (lib/probeschularbeit.ts
  *   `ergebnis`): Punkte und, wenn alles bewertet ist, die Note nach dem Notenschlüssel; sie ersetzen dort die Papier-Zeile
+ * - `offen`: so viele Antworten der Einheit warten noch auf die Lehrkraft (lib/zu-bewerten.ts); sie stehen in keinem Ergebnis
  */
 export type AbschlussBelege = {
   aufgaben: AufgabeBeleg[];
@@ -123,15 +130,22 @@ export type AbschlussBelege = {
   unterlagen?: string[];
   papier?: PapierErgebnis[];
   proben?: ProbeZeile[];
+  offen?: number;
 };
 
 /** Eine Probeschularbeit der Einheit: Punkte, Note erst wenn alles bewertet ist, sonst wie viel noch offen ist. */
 export type ProbeZeile = { titel: string; erreicht: number; gesamt: number; note: string | null; offen: number; bearbeitet: number; aufgaben: number; papier: boolean };
 
+/** Die Note einer Probeschularbeit gibt es erst, wenn keine Antwort mehr offen ist: „Note folgt: 2 Antworten zu bewerten“. */
+export const noteFolgt = (offen: number) => `Note folgt: ${antwortenText(offen)} zu bewerten`;
+
+/** „Bewertung offen: 3 Antworten“ in „Heute gemacht“ und so in der Dokumentation (nie ein erfundenes Ergebnis). */
+export const bewertungOffenZeile = (offen: number) => `Bewertung offen: ${antwortenText(offen)}`;
+
 const punkteZahl = (p: number) => (Number.isInteger(p) ? String(p) : p.toFixed(1).replace(".", ","));
-/** „Probeschularbeit „Brüche“ auf Papier: 18 von 24 Punkten, Note 2 (Gut)“ */
+/** „Probeschularbeit „Brüche“ auf Papier: 18 von 24 Punkten, Note 2 (Gut)“; offen: „…, Note folgt: 2 Antworten zu bewerten“ */
 export function probeZeile(p: ProbeZeile): string {
-  const rest = p.note ? `, Note ${p.note}` : p.offen ? `, noch ${p.offen} zu bewerten` : p.bearbeitet < p.aufgaben ? ` (${p.bearbeitet} von ${p.aufgaben} Aufgaben)` : "";
+  const rest = p.note ? `, Note ${p.note}` : p.offen ? `, ${noteFolgt(p.offen)}` : p.bearbeitet < p.aufgaben ? ` (${p.bearbeitet} von ${p.aufgaben} Aufgaben)` : "";
   return `Probeschularbeit „${p.titel}“${p.papier ? " auf Papier" : ""}: ${punkteZahl(p.erreicht)} von ${punkteZahl(p.gesamt)} Punkten${rest}`;
 }
 
@@ -286,6 +300,8 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   for (const p of belege?.papier ?? []) gemacht.push({ text: papierZeile(p), von: "papier" });
   // a Probeschularbeit with its points and, only when everything is graded, its grade
   for (const p of belege?.proben ?? []) gemacht.push({ text: probeZeile(p), von: p.papier ? "papier" : "antworten" });
+  // answers still waiting for the teacher: said once, with the way to the list; they are in no result above or below
+  if (belege?.offen) gemacht.push({ text: bewertungOffenZeile(belege.offen), von: "antworten", link: { href: "#zu-bewerten", label: "Jetzt bewerten" } });
 
   // only what the rules show as secure (`gutVerstanden`), or what the teacher wrote; a step marked „Weiter“ proves nothing
   const regeln = belege ? gutVerstanden(belege) : null;
@@ -440,7 +456,9 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
   });
   const mitProbe = new Set(probeIds.map((r) => r.id));
   const papier = papierDerEinheit(unitId).filter((p) => !p.assignmentId || !mitProbe.has(p.assignmentId));
-  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier, proben };
+  // the same list as „Zu bewerten“ (lib/zu-bewerten.ts): only answers, a text has its own line
+  const offen = offeneAntwortenZahl(zuBewerten({ unitId }));
+  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier, proben, offen };
 }
 
 /** Die Karte einer beendeten Einheit mit allen Belegen, wie der Abschluss sie zeigt und „Bestätigen“ sie schreibt. */
@@ -508,6 +526,19 @@ export function bestaetigeAbschluss(lessonId: number, at: Date = new Date()): bo
   const unit = lesson.unit_id ? getUnit(lesson.unit_id) : null;
   if (unit?.status === "beendet") schreibeAbschluss(lesson.id, karteDerEinheit(unit.id, lesson));
   return bestaetigeDoku(lesson.id, at);
+}
+
+/**
+ * Nach einer späteren Bewertung einer Antwort dieser Einheit (lib/bewerten.ts): der Bericht neu (`berichtNachBewertung`), damit
+ * die Zeilen des Abschlusses die jetzt gezählten Antworten nennen; ist die Dokumentation schon bestätigt, kommt die neue Karte in
+ * die Felder, die noch automatisch sind (`schreibeAbschluss`), etwa statt „Bewertung offen: 3 Antworten“. Was die Lehrkraft
+ * geschrieben hat, bleibt.
+ */
+export function bewertungInDoku(unitId: number) {
+  if (getUnit(unitId)?.status !== "beendet") return;
+  berichtNachBewertung(unitId);
+  const lesson = repo.getLessonForUnit(unitId);
+  if (lesson?.reviewed_at) schreibeAbschluss(lesson.id, karteDerEinheit(unitId, lesson));
 }
 
 /**

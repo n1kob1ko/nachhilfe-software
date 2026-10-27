@@ -21,6 +21,9 @@ const fail = (error: string, status = 400, materials?: number[]) => Response.jso
  * Arbeit fotografieren (lib/papier-einheit.ts): with `einheit` (a running unit of this teacher) and `blatt` (a sheet of
  * that unit), the KI reads the pages against the sheet's original tasks; with `blatt` = „anders“ as above. The student is
  * always the unit's student, and the same limits apply (KI on, budget, the limit per student).
+ *
+ * Without a unit (Gemeinsame Bewertung, C3): with `probe` = 1 and `blatt` (a Probeschularbeit of `schueler` with open tasks)
+ * the same reading against its tasks and the Musterlösung, from the exam card.
  */
 export async function POST(request: Request) {
   const teacher = await currentTeacher();
@@ -40,11 +43,14 @@ export async function POST(request: Request) {
   const student = repo.getStudent(unit ? unit.student_id : Number(form.get("schueler")));
   if (!student) return fail("Diesen Schüler gibt es nicht.", 404);
   if (unit && Number(form.get("schueler")) !== student.id) return fail("Dieser Schüler gehört nicht zu dieser Einheit.");
-  const blatt = unit ? String(form.get("blatt") ?? "") : "";
+  // a Probeschularbeit on paper outside a unit: a sheet of this student, never „another sheet“
+  const probe = !unit && form.get("probe") === "1";
+  const blatt = unit || probe ? String(form.get("blatt") ?? "") : "";
+  if (probe && (!blatt || blatt === ANDERES_BLATT)) return fail("Bitte die Probeschularbeit wählen.");
   const fach = String(form.get("fach") ?? "").trim() || (unit?.subject ?? "");
-  if (!fach && (!unit || blatt === ANDERES_BLATT)) return fail("Bitte das Fach wählen.");
+  if (!fach && !probe && (!unit || blatt === ANDERES_BLATT)) return fail("Bitte das Fach wählen.");
   if (form.get("keine_namen") !== "1") return fail("Bitte bestätigen, dass auf den Seiten kein Name steht.");
-  const geht = unit ? papierTor(student.id) : blattLesbar();
+  const geht = unit || probe ? papierTor(student.id) : blattLesbar();
   if ("grund" in geht) return fail(geht.grund);
 
   // schon gespeicherte Seiten (zweiter Versuch), dann neue
@@ -71,8 +77,8 @@ export async function POST(request: Request) {
 
   try {
     const vorschlag =
-      unit && blatt !== ANDERES_BLATT
-        ? await liesPapier({ unitId: unit.id, blattKey: blatt, materialIds: materials, teacherId: teacher.id })
+      (unit || probe) && blatt !== ANDERES_BLATT
+        ? await liesPapier({ unitId: unit?.id ?? null, studentId: student.id, blattKey: blatt, materialIds: materials, teacherId: teacher.id })
         : await liesBlatt({ materialIds: materials, studentId: student.id, teacherId: teacher.id, fach, unitId: unit?.id ?? null });
     return Response.json({ materials, vorschlag });
   } catch (e) {

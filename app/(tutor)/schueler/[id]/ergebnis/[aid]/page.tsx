@@ -16,8 +16,9 @@ import { AufgabeBewertung } from "@/components/AufgabeBewertung";
 import { requireTeacher } from "@/lib/auth";
 import { bewertungenJeAufgabe } from "@/lib/bewertungen";
 import { PageHeader, formatDate, formatDuration } from "@/components/ui";
-import { maturaAntwortText } from "@/lib/matura-formate";
-import { englischFormat, ENGLISCH_TEIL, wortRahmen } from "@/lib/englisch-matura-formate";
+import { englischFormat, ENGLISCH_TEIL } from "@/lib/englisch-matura-formate";
+import { antwortAnzeige as shownAnswer } from "@/lib/antwort-text";
+import { noteFolgt } from "@/lib/abschluss";
 import { ergebnis, punkteText } from "@/lib/probeschularbeit";
 import * as repo from "@/lib/repo";
 import { buchstabe, GAP, HINT_LABELS, REVIEWS, TEACHER_GRADED, isReview, kreisZahl } from "@/lib/tasks";
@@ -30,43 +31,6 @@ import { ASPECT_SHORT, isAspect, OPEN_ASPECTS, readingSet, wordCount, severalNot
 import { ReadingTextView } from "@/components/ReadingText";
 
 const isMath = (t: repo.Task) => t.type === "rechenweg" || t.type === "sachaufgabe";
-
-function shownAnswer(t: repo.Task, raw: string) {
-  if (isMath(t)) {
-    // the short form per try; the full working of the last try is shown below
-    const a = readMathAnswer(raw);
-    if (t.type === "sachaufgabe") return (t.data.parts ?? []).map((p, i) => `${p.label || `${String.fromCharCode(97 + i)})`} ${(p.kind === "text" ? a.parts?.[i]?.text : a.parts?.[i]?.result) || "–"}`).join("  ·  ");
-    const steps = a.steps?.filter((l) => l.trim()).length ?? 0;
-    return `${a.result?.trim() || "kein Ergebnis"}${steps ? ` (${steps} ${steps === 1 ? "Zeile" : "Zeilen"} Rechenweg)` : a.board ? " (Rechenweg am Whiteboard)" : ""}`;
-  }
-  // Englisch-Matura, Writing: der Text mit seiner Wortanzahl und dem verlangten Rahmen (±10 %)
-  if (t.data.schreibauftrag && raw.trim()) {
-    const { min, max } = wortRahmen(t.data.schreibauftrag.woerter);
-    return `${raw.trim()}\n\n${wordCount(raw)} Wörter, verlangt ${min} bis ${max}`;
-  }
-  // Matura-Formate: die angekreuzten Antworten („b) … · d) …“), die Buchstaben der Zuordnung, ① ② des Lückentexts
-  const matura = maturaAntwortText(t, raw);
-  if (matura !== null) return matura;
-  if (t.data.options) {
-    const i = Number(raw);
-    return Number.isInteger(i) && t.data.options[i] !== undefined ? `${String.fromCharCode(97 + i)}) ${t.data.options[i]}` : raw;
-  }
-  if (t.data.steps) {
-    try {
-      return (JSON.parse(raw) as number[]).map((i, n) => `${n + 1}. ${t.data.steps![i]}`).join("  ");
-    } catch {
-      return raw;
-    }
-  }
-  if (t.answer.blanks) {
-    try {
-      return (JSON.parse(raw) as string[]).join(" · ");
-    } catch {
-      return raw;
-    }
-  }
-  return raw;
-}
 
 export default async function ResultPage({ params, searchParams }: { params: Promise<{ id: string; aid: string }>; searchParams: Promise<{ archiv?: string; fehler?: string }> }) {
   const { id, aid } = await params;
@@ -97,7 +61,7 @@ export default async function ResultPage({ params, searchParams }: { params: Pro
     ...(pe
       ? ([
           ["Punkte", `${punkteText(pe.erreicht)} von ${punkteText(pe.gesamt)}`],
-          ["Note", pe.note ? `${pe.note.note} · ${pe.note.label}` : "noch offen"],
+          ["Note", pe.note ? `${pe.note.note} · ${pe.note.label}` : pe.offen ? noteFolgt(pe.offen) : "noch offen"],
         ] as [string, string][])
       : []),
     ["Richtig", `${correct} von ${tasks.length}`],
