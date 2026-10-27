@@ -1205,6 +1205,30 @@ CREATE TABLE IF NOT EXISTS einheit_unterlagen (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (unit_id, material_id)
 );
+
+-- Arbeit fotografieren (lib/papier-einheit.ts): eine auf Papier gelöste Übung, in der laufenden Einheit geprüft und übernommen.
+-- Die Antworten stehen als attempts an der Zuweisung (unit_id gesetzt) wie am Gerät; hier nur, was der Abschluss sagt: welches
+-- Blatt, ob es eine Übung der Einheit war (bekannt) oder ein anderes Blatt, wie gelesen wurde (ki oder hand), die Seiten, richtig
+-- und teilweise von wie vielen, Punkte (nur wenn jede Aufgabe Punkte hat) und wie viele Zeilen unsicher waren und geprüft wurden.
+CREATE TABLE IF NOT EXISTS papier_arbeiten (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  assignment_id INTEGER NOT NULL REFERENCES assignments(id) ON DELETE CASCADE,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  titel TEXT NOT NULL DEFAULT '',
+  bekannt INTEGER NOT NULL DEFAULT 1,
+  gelesen TEXT NOT NULL DEFAULT 'hand',
+  material_ids TEXT NOT NULL DEFAULT '[]',
+  von INTEGER NOT NULL DEFAULT 0,
+  richtig INTEGER NOT NULL DEFAULT 0,
+  teilweise INTEGER NOT NULL DEFAULT 0,
+  punkte REAL,
+  max_punkte REAL,
+  unsicher INTEGER NOT NULL DEFAULT 0,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_papier_unit ON papier_arbeiten(unit_id);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
-import { BookOpenText, CalendarClock, Camera, CheckCircle2, ExternalLink, Images, PenLine, Plus, Printer, Square } from "lucide-react";
+import { BookOpenText, CalendarClock, Camera, CheckCircle2, ExternalLink, Images, PenLine, Plus, Printer, ScanLine, Square } from "lucide-react";
 import { levelFor } from "@/lib/text-correction-rules";
 import { bestaetigeDokuAction, endUnitAction } from "@/app/session-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
@@ -42,6 +42,8 @@ import * as repo from "@/lib/repo";
 import { requireTeacher } from "@/lib/auth";
 import { zeitfenster } from "@/lib/planung/heute";
 import { dayOf, pruefungsHinweise } from "@/lib/exams";
+import { papierZeile } from "@/lib/blatt-regeln";
+import { papierArbeit } from "@/lib/papier-einheit";
 
 /** Textfarbe je Erinnerungsstufe (lib/exams.ts STAGE_TONE) */
 const TON_TEXT = { neutral: "text-ink", amber: "text-amber", red: "text-red" } as const;
@@ -69,7 +71,7 @@ function dauerLabel(geplanteDauer: number | null, minutes: number, estimated: bo
  * ended → **Abschluss**: vier Felder aus den Daten (lib/abschluss.ts) und „Dokumentation bestätigen“; die ganze
  *   Dokumentation, automatisch geschrieben (lib/einschaetzung.ts) und änderbar, unter „Mehr Details“ und „Ändern“.
  */
-export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; ki?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string }> }) {
+export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; ki?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -88,6 +90,8 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
 
   const sent = sp.gesendet ? repo.getWorksheet(Number(sp.gesendet)) : null;
   const startedText = sp.text ? getText(Number(sp.text)) : null;
+  // nach „Arbeit fotografieren“ › „Übernehmen“ (lib/papier-einheit.ts): was übernommen wurde, in einer Zeile
+  const papier = sp.papier && running ? papierArbeit(Number(sp.papier), unit.id) : null;
   const notices = (
     <>
       {sent && running && (
@@ -107,6 +111,11 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
             </p>
           )}
         </div>
+      )}
+      {papier && (
+        <p role="status" className="mb-6 flex items-center gap-2 rounded-2xl bg-green-wash px-4 py-3 text-[15px] font-medium text-green" data-testid="papier-uebernommen">
+          <CheckCircle2 size={18} className="shrink-0" aria-hidden /> Übernommen. {papierZeile(papier)}.
+        </p>
       )}
       {startedText && running && startedText.student_id === student.id && (
         <div role="status" className="mb-6 flex flex-wrap items-center gap-2 rounded-2xl bg-green-wash px-4 py-3 text-[15px] font-medium text-green">
@@ -509,6 +518,10 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
               </Link>
               <Link href={`/einheiten/${unit.id}/foto`} className="btn btn-secondary btn-lg" data-testid="foto-vom-stoff">
                 <Camera size={18} aria-hidden /> Foto vom Stoff
+              </Link>
+              {/* auf Papier gelöst: fotografieren und wie am Gerät bewerten (lib/papier-einheit.ts) */}
+              <Link href={`/einheiten/${unit.id}/papier`} className="btn btn-secondary btn-lg" data-testid="arbeit-fotografieren-uebungen">
+                <ScanLine size={18} aria-hidden /> Arbeit fotografieren
               </Link>
               <Link href={`/einheiten/${unit.id}/text`} className="btn btn-secondary btn-lg">
                 <PenLine size={18} aria-hidden /> Textarbeit starten
