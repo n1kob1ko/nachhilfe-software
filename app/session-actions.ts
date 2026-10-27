@@ -133,13 +133,14 @@ export async function setTeacherActiveAction(teacherId: number, active: boolean)
 /**
  * Starts a unit. If one is already running for this student (another tab, a double click, a
  * colleague) nothing new is created; the teacher lands on that unit and can open or end it.
+ * `platzId`: the Platz of the card on Heute; the unit takes that one (else today's open Platz as before).
  */
-export async function startUnitAction(studentId: number) {
+export async function startUnitAction(studentId: number, platzId: number | null = null) {
   const t = await requireTeacher();
   if (!repo.getStudent(studentId)) redirect("/schueler");
   sweepIdleUnits();
   // in the subject Heute prepared (an exam in the second subject starts the unit in that subject)
-  const { unit, created } = startUnit(t.id, studentId, { subject: expectedSubject(studentId, Date.now(), fachHeute(studentId, t.id)) });
+  const { unit, created } = startUnit(t.id, studentId, { subject: expectedSubject(studentId, Date.now(), fachHeute(studentId, t.id)), platzId: Number.isInteger(platzId) ? platzId : null });
   if (created) {
     ensureBoardForUnit(unit.id);
     // the teacher's tablet switches to this student by itself

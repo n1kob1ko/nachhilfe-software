@@ -372,7 +372,7 @@ export function OhnePaketAnsicht({ unit, student, skillId }: { unit: UnitView; s
             <div className="panel grid gap-3 px-5 py-4">
               <p className="text-[14px] text-ink-2">Neue Aufgaben aus den Generatoren und Aufgabenbanken der App, passend zum Lernstand von {name}.</p>
               <div className="flex flex-wrap items-start gap-2">
-                <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, s.id)} unitId={unit.id} label={`Neue Übung an ${name} senden`} primary />
+                <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, s.id, null)} unitId={unit.id} label={`Neue Übung an ${name} senden`} primary />
                 <Link href={`/uebungen/neu?schueler=${student.id}&skill=${encodeURIComponent(s.id)}`} className="btn btn-secondary">
                   Im Builder anpassen
                 </Link>

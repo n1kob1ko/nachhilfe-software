@@ -586,7 +586,10 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
             skill && (
               <>
                 <p className="text-[14px] text-ink-2">Neue Aufgaben zu {skill.name}, passend zum Lernstand von {name}.</p>
-                <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, skill.id)} unitId={unit.id} label="Übung senden" primary={gesendet === 0 && !eigen} />
+                <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
+                  <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, skill.id, s.id)} unitId={unit.id} label="Übung senden" primary={gesendet === 0 && !eigen} />
+                  {gesendet > 0 && <span className="pt-2.5 text-[13px] text-ink-3">schon {gesendet === 1 ? "einmal" : `${gesendet}-mal`} an {name} gesendet</span>}
+                </div>
               </>
             )
           )}
@@ -594,7 +597,7 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
       )}
       {zurPruefung && <SchreibauftragStart start={zurPruefung} laeuft={laeuft} haupt={false} />}
       {sprung && <ZurErstenUebung unitId={unit.id} id={sprung.id} titel={sprung.titel} nr={ids.indexOf(sprung.id) + 1} />}
-      <Knoepfe unitId={unit.id} id={s.id} weiterHaupt={eigen ? Boolean(laeuft) : !(blatt || skill)} />
+      <Knoepfe unitId={unit.id} id={s.id} weiterHaupt={eigen ? Boolean(laeuft) : !(blatt || skill) || gesendet > 0} />
     </section>
   );
 }

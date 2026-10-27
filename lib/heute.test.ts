@@ -10,7 +10,7 @@ const skill = (name: string) => ({ id: name.toLowerCase(), name }) as repo.Skill
 const paket = (title: string) => ({ id: 1, title }) as Lernpaket;
 const signal = { art: "pruefung" as const, fach: "Mathematik", skill_ids: [], stoff: ["Brüche"], thema: "Brüche", warum: "Schularbeit am 4.11. – Brüche" };
 
-test("the card on Heute: package or recommendation as topic, two difficulties, an exam within 30 days, why", async () => {
+test("the card on Heute: package or recommendation as topic, two difficulties, the next exam, why", async () => {
   const { heuteKarte } = await import("./heute");
   const { KEINE_SCHWACHSTELLE } = await import("./briefing");
   const schritte = [{ rule: 3 as const, skill: skill("Brüche kürzen"), reason: "Lernstand 40 %" }];
@@ -23,13 +23,15 @@ test("the card on Heute: package or recommendation as topic, two difficulties, a
   assert.equal(k.thema, "Brüche dividieren");
   assert.equal(k.empfehlung, "Schularbeit am 4.11. – Brüche");
   assert.deepEqual(k.schwierigkeiten, ["Brüche kürzen: 40 % (üben)", "Fehler „Kehrwert vergessen“ 3×"], "at most two");
-  assert.equal(k.pruefung, "Schularbeit Mathematik am 4. Nov. (in 10 Tagen)");
+  assert.equal(k.pruefung, "Schularbeit Mathematik in 10 Tagen");
+  assert.equal(k.pruefungNah, true);
 
   const ohne = heuteKarte({ wahl: { art: "ohne_signal" }, schritte, woEsHakt: [KEINE_SCHWACHSTELLE], pruefung: { titel: "Test", datum: "2026-12-20", days: 56 } });
   assert.equal(ohne.thema, "Brüche kürzen", "without a package: the top recommendation");
   assert.equal(ohne.empfehlung, "Schwäche: Brüche kürzen – Lernstand 40 %");
   assert.deepEqual(ohne.schwierigkeiten, [], "„nothing to see“ is no difficulty");
-  assert.equal(ohne.pruefung, null, "an exam in 56 days is not on the card");
+  assert.equal(ohne.pruefung, "Test in 56 Tagen", "the next exam is always on the card");
+  assert.equal(ohne.pruefungNah, false, "but not highlighted");
 
   const laeuft = heuteKarte({ wahl: { art: "gewaehlt", paket: paket("Gewählt") }, paketTitel: "Im Cockpit", schritte, woEsHakt: [], pruefung: null });
   assert.equal(laeuft.thema, "Im Cockpit", "a started unit's package goes first");
@@ -39,7 +41,7 @@ test("the card on Heute: package or recommendation as topic, two difficulties, a
   assert.equal(luecke.empfehlung, "Schularbeit am 4.11. – Brüche");
   assert.deepEqual(
     heuteKarte({ wahl: null, schritte: [], woEsHakt: [], pruefung: null }),
-    { thema: null, schwierigkeiten: [], pruefung: null, empfehlung: null, warumPruefung: false, vorbereitet: null, fach: "", mitKi: false },
+    { thema: null, schwierigkeiten: [], pruefung: null, pruefungNah: false, dauerMin: null, empfehlung: null, warumPruefung: false, vorbereitet: null, fach: "", mitKi: false },
     "nothing known: nothing shown",
   );
 });

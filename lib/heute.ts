@@ -13,7 +13,7 @@
 import { bereiteBriefingVor } from "./briefing-auto";
 import { briefingDaten, datumKurz, einfachesBriefing, gespeichertesBriefing, KEINE_SCHWACHSTELLE, type BriefingInhalt, type Fokus } from "./briefing";
 import { leseStand } from "./cockpit";
-import { inTagen } from "./exams";
+import { daysUntil, inTagen } from "./exams";
 import { getLernpaket, listLernpakete, type Lernpaket } from "./lernpakete";
 import { heutigeEinheiten } from "./planung/heute";
 import { tagAddieren, wienerDatum, wienerMinuten } from "./planung/zeit";
@@ -134,8 +134,12 @@ export type HeuteKarte = {
   thema: string | null;
   /** die ein, zwei größten Schwierigkeiten aus „Wo es hakt“ */
   schwierigkeiten: string[];
-  /** die nächste Prüfung in den nächsten 30 Tagen, mit Datum */
+  /** die nächste Prüfung, kurz: „Englisch-Schularbeit in 6 Tagen“ */
   pruefung: string | null;
+  /** die Prüfung ist nah (bis PRUEFUNG_TAGE): hervorgehoben; weiter weg steht sie ruhig da */
+  pruefungNah?: boolean;
+  /** die Länge der Einheit in Minuten: der Platz, sonst die geplante Dauer, mit der auch der Plan rechnet; null = unbekannt */
+  dauerMin?: number | null;
   /** warum heute dieses Thema: das „Warum“ des Pakets, sonst der Grund der Empfehlung */
   empfehlung: string | null;
   /** was bereitliegt: „Lernpaket „…“ · mit Präsentation“ oder „Plan aus den Daten: 5 Schritte, 2 Übungen bereit“ */
@@ -150,8 +154,11 @@ export type HeuteKarte = {
   pakete?: { id: number; title: string }[];
 };
 
-/** Wie weit eine Prüfung auf der Karte nach vorne schaut. */
+/** Bis so viele Tage vorher ist eine Prüfung auf der Karte nah (hervorgehoben); weiter weg steht sie ruhig da. */
 export const PRUEFUNG_TAGE = 30;
+
+/** Der kurze Name einer Prüfung: ihr Titel, sonst „Englisch-Schularbeit“. */
+export const pruefungName = (t: { title?: string; kind: string; subject: string }) => t.title?.trim() || (t.subject ? `${t.subject}-${t.kind}` : t.kind);
 
 /**
  * Die Karte aus den Daten, ohne Datenbank. `paketTitel`: das Paket einer schon gestarteten Einheit (geht vor dem
@@ -167,6 +174,8 @@ export function heuteKarte(e: {
   plan?: BriefingInhalt["plan"];
   /** die Schwierigkeiten aus einem KI-Briefing zum jetzigen Datenstand */
   kiWoEsHakt?: string[] | null;
+  /** die Länge der Einheit in Minuten (Platz, sonst die geplante Dauer des Briefings) */
+  dauerMin?: number | null;
 }): HeuteKarte {
   const w = e.wahl;
   const erste = e.schritte[0];
@@ -178,7 +187,8 @@ export function heuteKarte(e: {
   const empfehlung =
     (!e.paketTitel && w?.art === "paket" ? w.warum : !e.paketTitel && w?.art === "kein_paket" ? w.signal.warum : null) ??
     (erste ? `${RULE_LABEL[erste.rule]}: ${erste.skill.name}${erste.reason ? ` – ${erste.reason}` : ""}` : null);
-  const p = e.pruefung && e.pruefung.days >= 0 && e.pruefung.days <= PRUEFUNG_TAGE ? e.pruefung : null;
+  // the next exam is always on the card, however far away
+  const p = e.pruefung && e.pruefung.days >= 0 ? e.pruefung : null;
   const pruefung = p ? `${p.titel} am ${datumKurz(p.datum)} (${inTagen(p.days)})` : null;
   // the exam itself chose the topic: one line „Schularbeit … (in 5 Tagen) – Stoff“ instead of the same exam twice
   const signal = !e.paketTitel && (w?.art === "paket" || w?.art === "kein_paket") ? w.signal : null;
@@ -187,7 +197,9 @@ export function heuteKarte(e: {
   return {
     thema,
     schwierigkeiten: ki.length ? ki.slice(0, 2) : e.woEsHakt.filter((x) => x.trim() && x !== KEINE_SCHWACHSTELLE).slice(0, 2),
-    pruefung: dieselbe ? null : pruefung,
+    pruefung: dieselbe || !p ? null : `${p.titel} ${inTagen(p.days)}`,
+    pruefungNah: Boolean(p && p.days <= PRUEFUNG_TAGE),
+    dauerMin: e.dauerMin && e.dauerMin > 0 ? e.dauerMin : null,
     empfehlung: dieselbe ? `${pruefung}${signal!.stoff.length ? ` – ${signal!.stoff.slice(0, 2).join(", ")}` : ""}` : empfehlung,
     warumPruefung: dieselbe,
     vorbereitet: e.paketTitel ? null : vorbereitetText(w, e.plan ?? []),
@@ -237,15 +249,18 @@ export function heuteKarten(teacherId: number, punkte: HeutePunkt[], now: Date =
     const b = einfachesBriefing(d);
     const stand = begonnen ? leseStand(p.einheitId!) : null;
     const ki = begonnen ? null : gespeichertesBriefing(p.studentId, { stand: d.stand });
-    const t = d.schularbeit;
+    // the next exam, however far away (the briefing only looks 60 days ahead)
+    const t = repo.upcomingTests(d.datum, p.studentId)[0];
     const karte = heuteKarte({
       wahl: w,
       paketTitel: stand?.paket_id ? (getLernpaket(stand.paket_id)?.title ?? null) : null,
       schritte: d.schritte,
       woEsHakt: b.woEsHakt,
-      pruefung: t ? { titel: t.title || `${t.kind} ${t.subject}`, datum: t.date, days: t.days } : null,
+      pruefung: t ? { titel: pruefungName(t), datum: t.date, days: daysUntil(t.date, d.datum) } : null,
       plan: b.plan,
       kiWoEsHakt: ki?.inhalt.woEsHakt ?? null,
+      // the Platz of this row, else the planned duration the unit's plan uses (lib/briefing.ts `heute`)
+      dauerMin: p.platzId !== null ? p.endeMin - p.startMin : d.minuten,
     });
     // a new student without any signal: the matching checked packages to pick from, instead of only the plan from the data
     if (!begonnen && offen(p) && w?.art === "ohne_signal") {

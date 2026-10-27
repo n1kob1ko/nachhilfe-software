@@ -114,10 +114,10 @@ export async function sendeSchrittAction(unitId: number, schrittId: number, _pre
   return aufsGeraet(unitId, sendeSchritt(unitId, schrittId, t.id));
 }
 
-/** Ohne Lernpaket: eine neue Übung zur Fähigkeit aus den Generatoren, ohne KI. */
-export async function sendeGeneratorAction(unitId: number, skillId: string, _prev: SendState, _form?: FormData): Promise<SendState> {
+/** Ohne Lernpaket: eine neue Übung zur Fähigkeit aus den Generatoren, ohne KI. `schrittId`: der Planschritt, aus dem gesendet wird. */
+export async function sendeGeneratorAction(unitId: number, skillId: string, schrittId: number | null, _prev: SendState, _form?: FormData): Promise<SendState> {
   const { t } = await laufendeEinheit(unitId);
-  return aufsGeraet(unitId, await sendeAusGenerator(unitId, skillId, t.id));
+  return aufsGeraet(unitId, await sendeAusGenerator(unitId, skillId, t.id, Number.isInteger(schrittId) ? schrittId : null));
 }
 
 /** Der Tag einer Vorbereitung aus dem Formular: heute bis in sieben Tagen, sonst heute. */
