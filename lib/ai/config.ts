@@ -103,6 +103,7 @@ export type AIFunction =
   | "erwartung"
   | "bewertung"
   | "referenz"
+  | "probe"
   | "bildplan"
   | "bild"
   | "verbindungstest";
@@ -202,6 +203,9 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // Referenzsammlung (lib/referenz.ts): only on the teacher's click, a PDF of tasks the teacher downloaded by hand; the
   // answer is what stands on the pages (no student data), so the same file is not paid for twice
   referenz: { label: "Referenzsammlung lesen", area: "MATERIAL", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  // Eigene Probeschularbeit (lib/probe-extern.ts): only on the teacher's click, after the tick „kein Name darauf“; one request
+  // for the Angabe, one for the Musterlösung, each copied word for word with its numbers. The same files are not paid for twice
+  probe: { label: "Eigene Probeschularbeit lesen", area: "MATERIAL", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // Bildgeschichte erstellen (lib/bildfolge.ts): only on the teacher's click, from the teacher's short description (never a
   // name or a photo). First this plan: the scenes and a fixed description of the figures, so every picture shows the same ones
   bildplan: { label: "Bildgeschichte planen", area: "MATERIAL", tier: "standard", maxTokens: 4_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },

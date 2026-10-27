@@ -176,6 +176,13 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
           ) : null}
         </p>
       )}
+      {sp.hinweis === "eigene" && probe && (
+        // Eigene Probeschularbeit (lib/probe-extern.ts), eben übernommen
+        <p className="no-print mb-6 rounded-2xl bg-green-wash px-4 py-3 text-[14px] text-green" data-testid="hinweis-eigene">
+          Übernommen: {tasks.length} {tasks.length === 1 ? "Teilaufgabe" : "Teilaufgaben"} mit {punkteText(gesamt)} Punkten. Am Gerät läuft sie wie eine Schularbeit, ohne Tipps und ohne
+          Lösung. Auf Papier gibst du deine Angabe aus und bewertest danach im Unterricht mit „Arbeit fotografieren“.
+        </p>
+      )}
       {sp.hinweis === "lesenweniger" && (
         <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">
           Nur {Number(sp.anzahl) || "einige"} Fragen passten sicher zum Text. Weitere Fragen kannst du unten beim Text ergänzen.

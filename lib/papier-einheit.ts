@@ -41,8 +41,11 @@ export type PapierBlatt = {
   worksheetId: number;
   assignmentId: number | null;
   titel: string;
-  /** gesendet: an den Schüler gesendet; minitest: der gedruckte Minitest; erstellt: in der Einheit erstellt, nicht gesendet */
-  art: "gesendet" | "minitest" | "erstellt";
+  /**
+   * gesendet: an den Schüler gesendet; minitest: der gedruckte Minitest; erstellt: in der Einheit erstellt, nicht gesendet;
+   * probe: eine Probeschularbeit dieses Schülers mit offenen Aufgaben (auch eine eigene, lib/probe-extern.ts), von wann auch immer
+   */
+  art: "gesendet" | "minitest" | "erstellt" | "probe";
   /** wann gesendet oder erstellt (wie gespeichert) */
   am: string;
   /** die Aufgaben ohne fertige Antwort, in der Reihenfolge des Blatts */
@@ -80,7 +83,8 @@ function blattAus(w: repo.Worksheet, student: repo.Student, art: PapierBlatt["ar
   const aufgaben = tasks
     .map((t, i) => ({ t, nr: String(i + 1) }))
     .filter(({ t }) => !fertig.has(t.id))
-    .map(({ t, nr }) => ({ taskId: t.id, nr, aufgabe: frageText(t), loesung: loesungText(t), max: punkte.get(t.id) ?? null, skillId: t.skillId }));
+    // an own Probeschularbeit keeps the numbers of its sheet („1a“), so the reading finds them on the photo
+    .map(({ t, nr }) => ({ taskId: t.id, nr: t.data.nummer?.trim() || nr, aufgabe: frageText(t), loesung: loesungText(t), max: punkte.get(t.id) ?? null, skillId: t.skillId }));
   if (!aufgaben.length) return null;
   return { key: assignmentId ? `z${assignmentId}` : `u${w.id}`, worksheetId: w.id, assignmentId, titel: blattTitel(w, student), art, am, aufgaben, schonFertig: fertig.size };
 }
@@ -117,7 +121,20 @@ export function blaetterDerEinheit(unitId: number): PapierBlatt[] {
   for (const r of gedruckt) {
     if (gesehen.has(r.id)) continue;
     const w = repo.getWorksheet(r.id);
-    const b = w && w.kind !== "bibliothek" ? blattAus(w, student, r.minitest ? "minitest" : "erstellt", r.created_at, null) : null;
+    const b = w && w.kind !== "bibliothek" ? blattAus(w, student, r.minitest ? "minitest" : w.probe_test_id ? "probe" : "erstellt", r.created_at, null) : null;
+    if (b) gesehen.add(r.id);
+    if (b) out.push(b);
+  }
+  // a Probeschularbeit of this student (made in the app or uploaded, lib/probe-extern.ts) is often written on paper at any time:
+  // with its assignment when it was sent (the open tasks go on there), else printed
+  const proben = db()
+    .prepare("SELECT id, created_at FROM worksheets WHERE probe_test_id IS NOT NULL AND student_id = ? AND archived_at IS NULL ORDER BY created_at DESC, id DESC LIMIT 10")
+    .all(student.id) as { id: number; created_at: string }[];
+  for (const r of proben) {
+    if (gesehen.has(r.id)) continue;
+    const w = repo.getWorksheet(r.id);
+    const a = db().prepare("SELECT id FROM assignments WHERE worksheet_id = ? AND student_id = ? AND archived_at IS NULL ORDER BY id DESC LIMIT 1").get(r.id, student.id) as { id: number } | undefined;
+    const b = w ? blattAus(w, student, "probe", r.created_at, a?.id ?? null) : null;
     if (b) out.push(b);
   }
   // newest first over both kinds (assigned_at and created_at are both UTC „YYYY-MM-DD HH:MM:SS“)
@@ -254,7 +271,7 @@ export async function liesPapier(o: { unitId: number; blattKey: string; material
   const seiten = seitenFuerKi(o.materialIds, l.student.id);
   const tasks = new Map(repo.listTasks(blatt.worksheetId).map((t) => [t.id, t] as const));
   const w = repo.getWorksheet(blatt.worksheetId)!;
-  const aufgaben = blatt.aufgaben.map((a) => ({ angabe: ohneNamen(a.aufgabe, l.student.name), loesung: ohneNamen(a.loesung, l.student.name), punkte: a.max }));
+  const aufgaben = blatt.aufgaben.map((a) => ({ angabe: ohneNamen(a.aufgabe, l.student.name), loesung: ohneNamen(a.loesung, l.student.name), punkte: a.max, nummer: a.nr }));
   touchUnit(l.unit.id);
   const gelesen = await leseBlattMitAufgaben(seiten, { fach: l.unit.subject || w.subject, aufgaben }, { teacherId: o.teacherId, studentId: l.student.id, unitId: l.unit.id, trigger: "papier" });
   if (!gelesen) throw new Error("Die KI hat das Blatt nicht gelesen. Trag die Bewertung bitte selbst ein.");
@@ -380,8 +397,9 @@ export function speicherePapier(e: PapierEingabe): { assignmentId: number; papie
 /** Die auf Papier gelösten Übungen einer Einheit, wie der Abschluss sie nennt (nur übernommene). */
 export function papierDerEinheit(unitId: number, nurId?: number): PapierErgebnis[] {
   const rows = db()
-    .prepare(`SELECT titel, von, richtig, teilweise, punkte, max_punkte, unsicher FROM papier_arbeiten WHERE unit_id = ?${nurId ? " AND id = ?" : ""} ORDER BY id`)
+    .prepare(`SELECT assignment_id, titel, von, richtig, teilweise, punkte, max_punkte, unsicher FROM papier_arbeiten WHERE unit_id = ?${nurId ? " AND id = ?" : ""} ORDER BY id`)
     .all(...(nurId ? [unitId, nurId] : [unitId])) as {
+    assignment_id: number;
     titel: string;
     von: number;
     richtig: number;
@@ -390,7 +408,7 @@ export function papierDerEinheit(unitId: number, nurId?: number): PapierErgebnis
     max_punkte: number | null;
     unsicher: number;
   }[];
-  return rows.map((r) => ({ titel: r.titel, von: r.von, richtig: r.richtig, teilweise: r.teilweise, punkte: r.punkte, max: r.max_punkte, unsicher: r.unsicher }));
+  return rows.map((r) => ({ titel: r.titel, von: r.von, richtig: r.richtig, teilweise: r.teilweise, punkte: r.punkte, max: r.max_punkte, unsicher: r.unsicher, assignmentId: r.assignment_id }));
 }
 
 /** Eine übernommene Papierarbeit dieser Einheit (für die Meldung nach „Übernehmen“). */

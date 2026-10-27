@@ -223,6 +223,11 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
     throw new Error("Aufgabe nicht gefunden.");
   }
   const reveal = (r: SubmitResult): SubmitResult => {
+    // Minitest und Probeschularbeit: keine Lösung und keine Musterantwort ans Gerät, auch nicht nach dem Abgeben (lib/solver-tasks.ts)
+    if (isMinitest(assignment.mode)) {
+      const { solution: _s, sample: _m, ...ohne } = r;
+      return (task.type === "rechenweg" || task.type === "sachaufgabe") && !input.giveUp ? { ...ohne, math: gradeMathTask(task, input.answer).view } : ohne;
+    }
     // English: a right text with a contraction written out (does not for doesn't) is itself the right version
     if (task.type === "fix" && r.final) return { ...r, expected: r.correct && task.answer.contractions ? input.answer : (closestVersion(task.answer.accepted ?? [], input.answer, task.answer.mode !== "text") ?? task.answer.accepted?.[0]) };
     // the marks on the student's lines and parts: worked out again from the answer sent, the same on a repeat

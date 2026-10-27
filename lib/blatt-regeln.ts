@@ -74,7 +74,7 @@ export function zusammenfuehren(lesung: { bewertung: LesungUrteil; unsicher: boo
 export const unsichereZuerst = <T extends Pick<BlattZeile, "pruefen">>(zeilen: T[]): T[] => [...zeilen.filter((z) => z.pruefen), ...zeilen.filter((z) => !z.pruefen)];
 
 /** Was eine auf Papier gelöste Übung ergibt: richtig, teilweise, von wie vielen, Punkte (nur wenn jede Aufgabe Punkte hat). */
-export type PapierErgebnis = { titel: string; von: number; richtig: number; teilweise: number; punkte: number | null; max: number | null; unsicher: number };
+export type PapierErgebnis = { titel: string; von: number; richtig: number; teilweise: number; punkte: number | null; max: number | null; unsicher: number; assignmentId?: number };
 
 export function papierErgebnis(titel: string, zeilen: Pick<BlattZeile, "bewertung" | "punkte" | "max" | "warUnsicher">[]): PapierErgebnis {
   const mitPunkten = zeilen.length > 0 && zeilen.every((z) => z.max != null);

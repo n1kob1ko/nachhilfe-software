@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarClock, Check, FileText, Plus, Printer } from "lucide-react";
+import { CalendarClock, Camera, Check, FileText, FileUp, Plus, Printer } from "lucide-react";
 import { setExamSkillsAction } from "@/app/curriculum-actions";
 import { probeschularbeitAction } from "@/app/probeschularbeit-actions";
 import { Info } from "@/components/Info";
@@ -10,10 +10,12 @@ import { PageHeader, Pill, Reveal, SectionTitle, StatusChip, formatDate } from "
 import { dayOf, examPrep, PLAN_COUNTS, STAGE_LABEL, STAGE_TONE } from "@/lib/exams";
 import { aiEnabled } from "@/lib/ai";
 import { matchSkills, skillsForStudent, stoffVorschlag } from "@/lib/lehrplan";
+import { externDaten } from "@/lib/probe-extern";
 import { probeschularbeitenZu, punkteText } from "@/lib/probeschularbeit";
 import { stoffDerPruefung } from "@/lib/pruefungsstoff";
 import type { Skill } from "@/lib/repo";
 import { auftraegeZurPruefung } from "@/lib/schreibauftrag-store";
+import { runningUnitForStudent } from "@/lib/units";
 
 export const metadata = { title: "Vorbereitung" };
 
@@ -47,6 +49,8 @@ export default async function ExamPrepPage({
   const offered = zuordnen ? [] : [...new Map([...skills.map((s) => s.skill), ...topics.flatMap((t) => matchSkills(t, test.subject, { student, limit: 6 }).map((m) => m.skill))].map((s) => [s.id, s])).values()];
   const zugeordnet = sp.zugeordnet !== undefined ? Number(sp.zugeordnet) : null;
   const proben = probeschularbeitenZu(test.id);
+  // a running unit of this student: a Probeschularbeit solved on paper is photographed there (Arbeit fotografieren)
+  const laufend = runningUnitForStudent(student.id);
   const auftraege = auftraegeZurPruefung(test.id);
   // read from its documents (lib/pruefungsstoff.ts): the view „Erkannt“ with every point and what is still to confirm
   const erkannt = stoffDerPruefung(test.id);
@@ -186,7 +190,7 @@ export default async function ExamPrepPage({
                 <li key={w.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
                   <span className="min-w-0 flex-1">
                     <Link href={`/uebungen/${w.id}`} className="block font-medium hover:underline">
-                      Probeschularbeit vom {formatDate(w.created_at, { day: "numeric", month: "short" })}
+                      {externDaten(w) ? "Eigene Probeschularbeit" : "Probeschularbeit"} vom {formatDate(w.created_at, { day: "numeric", month: "short" })}
                     </Link>
                     <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[13px] text-ink-2">
                       {w.status === "entwurf" ? <Pill tone="amber">Entwurf</Pill> : a ? <Pill tone="green">gesendet</Pill> : <Pill>freigegeben</Pill>}
@@ -204,9 +208,21 @@ export default async function ExamPrepPage({
                       Ergebnis
                     </Link>
                   )}
-                  <Link href={`/arbeitsblatt/${w.id}`} className="btn btn-secondary btn-sm">
-                    <Printer size={15} aria-hidden /> Drucken
-                  </Link>
+                  {/* on paper in a running unit: graded against its tasks and the Musterlösung (lib/papier-einheit.ts) */}
+                  {laufend && (!e || e.bearbeitet < e.aufgaben) && (
+                    <Link href={`/einheiten/${laufend.id}/papier?uebung=${w.id}`} className="btn btn-ghost btn-sm" data-testid="probe-papier">
+                      <Camera size={15} aria-hidden /> Auf Papier gelöst
+                    </Link>
+                  )}
+                  {externDaten(w)?.angabe.length ? (
+                    <a href={`/material/${externDaten(w)!.angabe[0]}/datei`} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm" data-testid="probe-angabe">
+                      <FileText size={15} aria-hidden /> Angabe
+                    </a>
+                  ) : (
+                    <Link href={`/arbeitsblatt/${w.id}`} className="btn btn-secondary btn-sm">
+                      <Printer size={15} aria-hidden /> Drucken
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -223,6 +239,12 @@ export default async function ExamPrepPage({
               <ProbeschularbeitForm action={probeschularbeitAction.bind(null, test.id)} ai={aiEnabled()} again={proben.length > 0} />
             </div>
           )}
+          {/* one made outside the app: Angabe and Musterlösung (lib/probe-extern.ts); needs no linked skills */}
+          <Link href={`/schueler/${student.id}/pruefung/${test.id}/eigene`} className="panel mt-3 flex min-h-[52px] flex-wrap items-center gap-x-2 gap-y-0.5 px-4 py-2 hover:border-line-hover" data-testid="probe-eigene">
+            <FileUp size={18} className="text-ink-2" aria-hidden />
+            <span className="text-[15px] font-semibold">Eigene Probeschularbeit hochladen</span>
+            <span className="text-[13.5px] text-ink-2">Angabe und Musterlösung als PDF oder Fotos</span>
+          </Link>
         </section>
 
         {(auftraege.length > 0 || /deutsch/i.test(test.subject)) && (
