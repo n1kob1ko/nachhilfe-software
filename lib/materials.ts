@@ -96,6 +96,10 @@ export type Material = {
   analysis_source: string;
   analyzed_at: string | null;
   notes: string;
+  /** Art der Unterlage (lib/pruefungsstoff.ts `Rolle`), z. B. aufgaben; '' = unbekannt. */
+  rolle: string;
+  /** 1: die Lehrkraft hat die Rolle gewählt */
+  rolle_geprueft: number;
   created_at: string;
 };
 type Row = Record<string, unknown>;

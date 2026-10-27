@@ -47,7 +47,7 @@ export type ErkanntAnsicht = {
   fehlt: SkillStand[];
 };
 
-const ROLLE: Record<string, string> = { stoffzettel: "Stoffzettel", inhaltsverzeichnis: "Inhaltsverzeichnis", sonstiges: "Weiteres Blatt" };
+const ROLLE: Record<string, string> = { stoffzettel: "Stoffzettel", inhaltsverzeichnis: "Inhaltsverzeichnis", erklaerung: "Erklärung", aufgaben: "Blatt mit Aufgaben", sonstiges: "Weiteres Blatt" };
 const LUECKE: MasteryStatus[] = ["kritisch", "üben", "nicht getestet"];
 const ORDNUNG: MasteryStatus[] = ["kritisch", "üben", "nicht getestet", "gut", "sicher"];
 

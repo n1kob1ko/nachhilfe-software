@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { currentTeacher } from "@/lib/auth";
 import { dayOf } from "@/lib/exams";
-import { saveUpload, sniffType } from "@/lib/materials";
+import { getMaterial, hatDatei, saveUpload, sniffType } from "@/lib/materials";
 import { foreignRequest, notAllowed } from "@/lib/picture-story-routes";
 import { MAX_DATEIEN, MAX_GESAMT_BYTES } from "@/lib/pruefungsstoff";
 import { canManageUnit, getUnit } from "@/lib/units";
@@ -13,9 +13,10 @@ const fail = (error: string, status = 400) => Response.json({ error }, { status 
 
 /**
  * „Was steht heute an?“ (lib/vorgabe.ts) für eine laufende Einheit: der getippte Text (`text`), Fotos oder PDFs
- * (`datei`, bis MAX_DATEIEN, gespeichert als Material des Schülers), eine gewählte Prüfung (`pruefung`) und ob auf den
- * Fotos kein Name steht (`keine_namen`). Ein Route Handler, kein Server Action, weil Fotos größer sein können als das
- * Limit einer Action; außerhalb des Proxys aus demselben Grund, daher prüft er die Sitzung selbst.
+ * (`datei`, gespeichert als Material des Schülers), vorhandenes Material des Schülers (`material`, zusammen bis MAX_DATEIEN),
+ * eine gewählte Prüfung (`pruefung`) und ob auf den Fotos kein Name steht (`keine_namen`). Ein Route Handler, kein Server
+ * Action, weil Fotos größer sein können als das Limit einer Action; außerhalb des Proxys aus demselben Grund, daher prüft er
+ * die Sitzung selbst.
  */
 export async function POST(request: Request) {
   const teacher = await currentTeacher();
@@ -34,8 +35,13 @@ export async function POST(request: Request) {
   if (unit.status !== "gestartet") return fail("Diese Einheit läuft nicht mehr.");
 
   const files = form.getAll("datei").filter((f): f is File => f instanceof File && f.size > 0);
-  if (files.length > MAX_DATEIEN) return fail(`Höchstens ${MAX_DATEIEN} Fotos oder PDFs auf einmal.`);
-  const materialIds: number[] = [];
+  // material of this student chosen instead of a new upload: read the same way, a file read before costs nothing
+  const vorhanden = [...new Set(form.getAll("material").map(Number))].filter((id) => {
+    const m = Number.isInteger(id) && id > 0 ? getMaterial(id) : null;
+    return m && m.student_id === unit.student_id && hatDatei(m);
+  });
+  if (files.length + vorhanden.length > MAX_DATEIEN) return fail(`Höchstens ${MAX_DATEIEN} Fotos oder PDFs auf einmal.`);
+  const materialIds: number[] = [...vorhanden];
   for (const file of files) {
     const data = Buffer.from(await file.arrayBuffer());
     if (!sniffType(data)) return fail("Bitte Fotos (JPG, PNG, WebP) oder PDFs wählen.");

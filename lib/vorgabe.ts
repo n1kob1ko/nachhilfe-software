@@ -13,21 +13,38 @@
  * sonst bietet die Karte „Plan anpassen“ an. Ein Datum („nächste Woche Test“) wird nie von selbst eingetragen, nur
  * zum Bestätigen angeboten (`pruefungAusVorgabe`). Weicht die Vorgabe von der nächsten Prüfung ab, sagt die Karte das
  * in einem Satz (`abweichung`).
+ *
+ * Art der Unterlagen (niko, 27.10.2026: „Das Fotografieren einer beliebigen Schulübung ist nicht automatisch dasselbe wie
+ * das Erfassen des gesamten Schularbeitsstoffs“): je Datei eine Rolle (lib/pruefungsstoff.ts). Eine Erklärung oder ein Blatt
+ * mit Aufgaben gibt die Themen für heute, nie den Prüfungsstoff; nur der Stoffzettel (mit den Einzelheiten des
+ * Inhaltsverzeichnisses) zählt für die Abweichung und „Prüfung eintragen“. Die Lehrkraft ändert eine Rolle mit einem
+ * Tippen (`aendereRolle`), ohne neue Anfrage. Vorhandenes Material des Schülers kann sie statt eines neuen Fotos wählen;
+ * was schon gelesen ist, kostet nichts mehr (`gespeicherteLesung`).
  */
 import { planNeu, hatBegonnen, leseStand } from "./cockpit";
 import { db, json } from "./db";
 import { merkeZuordnung, splitTopics, stoffVorschlag } from "./lehrplan";
+import { getMaterial, hatDatei, listMaterials } from "./materials";
 import {
+  fuerPruefung,
+  gespeicherteLesung,
+  getLesung,
+  gewaehlteRolle,
   GRUPPE_LABEL,
+  istRolle,
   liesPruefungsstoff,
   MAX_DATEIEN,
+  nurFuerHeute,
   ordneZu,
+  pruefungsstoffLesbar,
+  setzeRolle,
   skillsAus,
   speichereStoff,
   stoffDerPruefung,
   type Gruppe,
   type Lesung,
   type RohPunkt,
+  type Rolle,
   type StoffPunkt,
 } from "./pruefungsstoff";
 import * as repo from "./repo";
@@ -196,10 +213,27 @@ export function teileRegelPunkte(punkte: RohPunkt[], fach: string, student: Pick
 
 // ---------- speichern ----------
 
-/** Was heute dran ist: die Punkte der Lehrkraft; ohne Text die Punkte der Blätter, die zur Prüfung gehören. */
+/**
+ * Was heute dran ist: die Punkte der Lehrkraft und was eine Erklärung oder ein Blatt mit Aufgaben übt (ohne Kapitel); ohne
+ * beides die Punkte der Blätter, die zur Prüfung gehören. Derselbe Lerninhalt steht einmal da.
+ */
 export function heutePunkte(punkte: StoffPunkt[]): StoffPunkt[] {
-  const lehrer = punkte.filter((p) => p.quelle === "lehrer" && p.status !== "ausgeschlossen");
-  return lehrer.length ? lehrer : punkte.filter((p) => p.status === "pruefung" && p.gruppe !== "umfang" && p.quelle !== "inhaltsverzeichnis");
+  const heute = punkte.filter((p) => p.status !== "ausgeschlossen" && (p.quelle === "lehrer" || (nurFuerHeute(p.quelle) && p.gruppe !== "umfang")));
+  const out = heute.length ? heute : punkte.filter((p) => p.status === "pruefung" && p.gruppe !== "umfang" && p.quelle !== "inhaltsverzeichnis");
+  return out.filter((p, i) => p.quelle === "lehrer" || out.findIndex((x) => klein(x.inhalt) === klein(p.inhalt)) === i);
+}
+
+/** Die Punkte und Fähigkeiten für heute aus den Punkten der Lehrkraft und der Blätter; mit einer gewählten Prüfung ohne Text ihr Stoff. */
+function fuerHeute(punkte: StoffPunkt[], test: repo.TestResult | null, text: string): { heute: StoffPunkt[]; skillIds: string[] } {
+  let heute = heutePunkte(punkte);
+  let skillIds = skillsAus(heute.map((p) => ({ ...p, status: "pruefung" as const })));
+  if (test && !text) {
+    // „heute: diese Prüfung“: ihr Stoff und ihre Fähigkeiten
+    const zeilen = stoffDerPruefung(test.id).filter((z) => z.status === "pruefung" && z.gruppe !== "umfang");
+    if (!heute.length) heute = zeilen;
+    skillIds = [...new Set([...skillIds, ...skillsAus(zeilen), ...test.skill_ids])];
+  }
+  return { heute, skillIds: skillIds.filter((id) => repo.getSkill(id)) };
 }
 
 export type VorgabeEingabe = {
@@ -230,38 +264,47 @@ export async function speichereVorgabe(o: VorgabeEingabe): Promise<{ ok: true; v
   if (!text && !ids.length && !test) return { fehler: "Bitte kurz schreiben, was heute dran ist, Fotos wählen oder eine Prüfung auswählen." };
 
   const hinweise: string[] = [];
-  const lesen = ids.length > 0 && o.keinName;
-  if (ids.length && !o.keinName) hinweise.push("Die Fotos sind angehängt, aber nicht gelesen: dafür bestätigen, dass kein Name darauf steht.");
-  let lesung: Pick<Lesung, "punkte" | "schwierigkeiten" | "termin_text"> = { punkte: [], schwierigkeiten: [], termin_text: null };
-  let lesungId: number | null = null;
-  let ki = false;
+  const zuordnen = { fach: unit.subject, student };
+  // files read before (also as the Stoffzettel of a Prüfung): the stored reading, no new request and no KI needed
+  const schon = ids.length ? gespeicherteLesung({ materialIds: ids, studentId: student.id, fach: unit.subject || undefined }) : null;
+  // without KI the files are stored and the teacher is told plainly that only the KI reads them
+  const lesbar = ids.length && !schon ? pruefungsstoffLesbar({ dateien: ids.length, studentId: student.id }) : ({ ok: true } as const);
+  const lesen = ids.length > 0 && o.keinName && !schon && lesbar.ok;
+  const gespeichert = (grund: string) => `${grund} Die Fotos und PDFs sind gespeichert${/^Lesen kann nur die KI|keine Fotos lesen/.test(grund) ? "" : "; lesen kann sie nur die KI"}.`;
+  if (!lesbar.ok) hinweise.push(gespeichert(lesbar.grund));
+  else if (ids.length && !schon && !o.keinName) hinweise.push("Die Fotos sind angehängt, aber nicht gelesen: dafür bestätigen, dass kein Name darauf steht.");
+  let blatt: StoffPunkt[] = schon ? ordneZu(schon.lesung.punkte.filter((p) => p.quelle !== "lehrer"), { ...zuordnen, ki: true }) : [];
+  let lehrer: StoffPunkt[] = [];
+  let schwierigkeiten: string[] = [];
+  let terminGelesen: string | null = null;
+  let lesungId: number | null = schon?.id ?? null;
   let neu = false;
   if (lesen || text) {
     try {
       const r = await liesPruefungsstoff({ materialIds: lesen ? ids : [], angabe: text, studentId: student.id, teacherId: o.teacherId, heute: o.heute, fach: unit.subject || undefined, trigger: "vorgabe" });
-      lesung = r.lesung;
-      lesungId = r.id;
-      ki = true;
+      const alle = ordneZu(r.lesung.punkte, { ...zuordnen, ki: true });
+      lehrer = alle.filter((p) => p.quelle === "lehrer");
+      if (!schon) blatt = alle.filter((p) => p.quelle !== "lehrer");
+      schwierigkeiten = r.lesung.schwierigkeiten;
+      terminGelesen = r.lesung.termin_text;
+      // the files' reading stays the one to compare and to change roles in; a text alone has none to show
+      if (!schon) lesungId = r.id;
       neu = r.neu;
     } catch (e) {
       // the provider's own words in brackets („503: {"error": …}“) stay in the cost log, not on the teacher's card
       const grund = (e instanceof Error ? e.message : "Lesen ging gerade nicht.").replace(/^(Die KI war nicht erreichbar) \(.*$/s, "$1.");
-      lesung = text ? regelLesung(text) : lesung;
-      lesung = { ...lesung, punkte: teileRegelPunkte(lesung.punkte, unit.subject, student) };
-      hinweise.push(text ? `${grund} Lernheft hat deinen Text selbst zerlegt${lesen ? "; die Fotos sind angehängt" : ""}.` : `${grund} Die Fotos sind angehängt.`);
+      const regel = text ? regelLesung(text) : { punkte: [], schwierigkeiten: [], termin_text: null };
+      lehrer = ordneZu(teileRegelPunkte(regel.punkte, unit.subject, student), { ...zuordnen, ki: false });
+      schwierigkeiten = regel.schwierigkeiten;
+      terminGelesen = regel.termin_text;
+      const gesagt = !lesbar.ok && lesbar.grund === grund;
+      if (lesen) hinweise.push(gespeichert(grund));
+      else if (!gesagt) hinweise.push(grund);
+      if (text) hinweise.push("Lernheft hat deinen Text selbst zerlegt.");
     }
   }
-  const alle = ordneZu(lesung.punkte, { fach: unit.subject, student, ki });
-  let heute = heutePunkte(alle);
-  let skillIds = skillsAus(heute.map((p) => ({ ...p, status: "pruefung" as const })));
-  if (test && !text) {
-    // „heute: diese Prüfung“: ihr Stoff und ihre Fähigkeiten
-    const zeilen = stoffDerPruefung(test.id).filter((z) => z.status === "pruefung" && z.gruppe !== "umfang");
-    if (!heute.length) heute = zeilen;
-    skillIds = [...new Set([...skillIds, ...skillsAus(zeilen), ...test.skill_ids])];
-  }
-  skillIds = skillIds.filter((id) => repo.getSkill(id));
-  const terminText = test ? "" : (lesung.termin_text ?? "");
+  const { heute, skillIds } = fuerHeute([...lehrer, ...blatt], test, text);
+  const terminText = test ? "" : (terminGelesen ?? "");
 
   db()
     .prepare(
@@ -277,7 +320,7 @@ export async function speichereVorgabe(o: VorgabeEingabe): Promise<{ ok: true; v
       text,
       punkte: JSON.stringify(heute),
       skill_ids: JSON.stringify(skillIds),
-      schwierigkeiten: JSON.stringify(lesung.schwierigkeiten),
+      schwierigkeiten: JSON.stringify(schwierigkeiten),
       test_id: test?.id ?? null,
       lesung_id: lesungId,
       material_ids: JSON.stringify(ids),
@@ -329,6 +372,64 @@ export function bestaetigeVorgabe(unitId: number, wahl: Map<number, string | nul
   return true;
 }
 
+// ---------- Art der Unterlagen ----------
+
+export type VorgabeDatei = { materialId: number; art: "Foto" | "PDF"; gelesen: boolean; rolle: Rolle | null };
+
+/**
+ * Die Rolle einer Datei, die nicht gelesen wurde, nach einfachen Regeln ohne KI: die an der Datei gespeicherte, sonst
+ * „legt den Prüfungsstoff fest“ für den Stoffzettel einer eingetragenen Prüfung; sonst unbekannt.
+ */
+export function rolleOhneKi(materialId: number): Rolle | null {
+  const m = getMaterial(materialId);
+  if (!m) return null;
+  if (istRolle(m.rolle)) return m.rolle;
+  const anPruefung = db().prepare("SELECT 1 FROM tests WHERE material_id = ? LIMIT 1").get(materialId);
+  return anPruefung || /^stoffzettel\b/i.test(m.title) ? "stoffzettel" : null;
+}
+
+/** Die Dateien der Vorgabe mit ihrer Rolle: gelesen aus der Lesung (mit der Wahl der Lehrkraft), sonst nach den Regeln. */
+export function dateienDerVorgabe(v: Pick<Vorgabe, "materialIds" | "lesungId">): VorgabeDatei[] {
+  const l = getLesung(v.lesungId);
+  return v.materialIds.map((id) => {
+    const nr = (l?.dateien.findIndex((d) => d.material_id === id) ?? -1) + 1;
+    const gelesen = nr > 0 ? (l!.lesung.dokumente.find((d) => d.nr === nr)?.rolle ?? null) : null;
+    return { materialId: id, art: getMaterial(id)?.mime === "application/pdf" ? "PDF" : "Foto", gelesen: nr > 0, rolle: gewaehlteRolle(id) ?? gelesen ?? rolleOhneKi(id) };
+  });
+}
+
+/**
+ * Die Lehrkraft ändert die Rolle einer Datei der Vorgabe (ein Tippen): an der Datei gespeichert, dann wird die Vorgabe aus
+ * der gespeicherten Lesung neu gemacht, ohne KI-Anfrage. Die Punkte der Lehrkraft bleiben, wie sie sind (auch bestätigte).
+ */
+export function aendereRolle(unitId: number, materialId: number, rolle: Rolle): boolean {
+  const v = vorgabeDerEinheit(unitId);
+  const unit = getUnit(unitId);
+  const student = unit ? repo.getStudent(unit.student_id) : null;
+  if (!v || !unit || !student || !v.materialIds.includes(materialId) || !setzeRolle(materialId, rolle)) return false;
+  const l = getLesung(v.lesungId);
+  if (!l || !l.dateien.some((d) => d.material_id === materialId)) return true;
+  const blatt = ordneZu(l.lesung.punkte.filter((p) => p.quelle !== "lehrer"), { fach: unit.subject, student, ki: true });
+  const test = v.testId ? repo.getTest(v.testId) : null;
+  const { heute, skillIds } = fuerHeute([...v.punkte.filter((p) => p.quelle === "lehrer"), ...blatt], test, v.text);
+  // the same points: the plan stays as it is
+  if (JSON.stringify(heute) === JSON.stringify(v.punkte) && JSON.stringify(skillIds) === JSON.stringify(v.skillIds)) return true;
+  db().prepare("UPDATE einheit_vorgabe SET punkte = ?, skill_ids = ?, angewendet = 0, updated_at = datetime('now') WHERE unit_id = ?").run(JSON.stringify(heute), JSON.stringify(skillIds), unitId);
+  wendeVorgabeAn(unitId);
+  return true;
+}
+
+/**
+ * Vorhandenes Material des Schülers für „Was steht heute an?“: hochgeladene Fotos und PDFs (keine Druckblätter), das neueste
+ * zuerst. Mit der Rolle, wenn sie bekannt ist.
+ */
+export function materialZurWahl(studentId: number, max = 24): { id: number; titel: string; art: "Foto" | "PDF"; datum: string; rolle: Rolle | null }[] {
+  return listMaterials({ studentId })
+    .filter(hatDatei)
+    .slice(0, max)
+    .map((m) => ({ id: m.id, titel: m.title, art: m.mime === "application/pdf" ? "PDF" : "Foto", datum: m.created_at.slice(0, 10), rolle: istRolle(m.rolle) ? m.rolle : null }));
+}
+
 /** Die Vorgabe entfernen. Hat die Lehrkraft noch nichts getan, gilt wieder der Ablauf ohne sie. */
 export function entferneVorgabe(unitId: number) {
   const v = vorgabeDerEinheit(unitId);
@@ -363,8 +464,8 @@ export function pruefungZurVorgabe(v: Vorgabe, fach: string, heute: string): Pru
   }
   const naechste = repo.upcomingTests(heute, v.studentId).find((t) => (!fach || t.subject === fach) && daysUntil(t.date, heute) <= PRUEFUNG_TAGE && (t.skill_ids.length || stoffDerPruefung(t.id).length));
   if (naechste) return aus(naechste);
-  const l = v.lesungId ? (db().prepare("SELECT ergebnis FROM stoff_lesungen WHERE id = ?").get(v.lesungId) as { ergebnis: string } | undefined) : undefined;
-  const blaetter = l ? json<Lesung | null>(l.ergebnis, null)?.punkte.filter((p) => p.quelle === "stoffzettel") ?? [] : [];
+  // with the roles the teacher chose: a worksheet never stands in for the Stoffzettel
+  const blaetter = getLesung(v.lesungId)?.lesung.punkte.filter((p) => p.quelle === "stoffzettel") ?? [];
   return blaetter.length ? { quelle: "Stoffzettel", testId: null, zeilen: blaetter } : null;
 }
 
@@ -391,7 +492,7 @@ export function abweichung(heute: Pick<StoffPunkt, "gruppe" | "inhalt" | "origin
     // contained in each other and of similar length: „Present Simple“ covers „Present Simple (Wiederholung)“, „Fragen“ no long sentence
     return t.some((a) => texte.some((b) => (a.includes(b) || b.includes(a)) && Math.min(a.length, b.length) / Math.max(a.length, b.length) >= 0.4));
   };
-  const zaehlt = p.zeilen.filter((z) => z.status === "pruefung" && z.quelle !== "inhaltsverzeichnis");
+  const zaehlt = p.zeilen.filter((z) => z.status === "pruefung" && z.quelle !== "inhaltsverzeichnis" && !nurFuerHeute(z.quelle));
   // grammar one by one, those with a skill first, at most three; the other groups as a whole
   const grammatik = zaehlt
     .filter((z) => z.gruppe === "grammatik" && !gedeckt(z))
@@ -468,11 +569,15 @@ export function pruefungAusVorgabe(unitId: number, o: { datum: string; art: stri
   if (!v || !unit) return { fehler: "Diese Vorgabe gibt es nicht mehr." };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(o.datum) || o.datum < o.heute) return { fehler: "Bitte ein Datum ab heute wählen." };
   const art = ["Schularbeit", "Test", "Prüfung"].includes(o.art) ? o.art : "Test";
-  const l = v.lesungId ? (db().prepare("SELECT ergebnis FROM stoff_lesungen WHERE id = ?").get(v.lesungId) as { ergebnis: string } | undefined) : undefined;
-  const blaetter = l ? (json<Lesung | null>(l.ergebnis, null)?.punkte.filter((p) => p.quelle !== "lehrer") ?? []) : [];
+  const blaetter = getLesung(v.lesungId)?.lesung.punkte.filter((p) => p.quelle !== "lehrer") ?? [];
   const student = repo.getStudent(v.studentId);
-  const stoff = [...v.punkte, ...(student && blaetter.length ? ordneZu(blaetter, { fach: unit.subject, student, ki: true }) : [])];
+  // the teacher's points and what the sheets say; what only a worksheet or an explanation says is still to clarify
+  const gelesen = student && blaetter.length ? ordneZu(blaetter, { fach: unit.subject, student, ki: true }) : [];
+  const stoff = fuerPruefung([...v.punkte.filter((p) => p.quelle === "lehrer" || !gelesen.length), ...gelesen]);
   const topics = [...new Set(stoff.filter((p) => p.status === "pruefung" && p.gruppe !== "umfang").map((p) => p.inhalt))].slice(0, 24);
+  // the Stoffzettel goes with the Prüfung, never a worksheet
+  const dateien = dateienDerVorgabe(v);
+  const zettel = dateien.find((d) => d.rolle === "stoffzettel") ?? dateien.find((d) => !d.rolle || d.rolle === "sonstiges");
   const testId = repo.addTest({
     student_id: v.studentId,
     date: o.datum,
@@ -483,12 +588,12 @@ export function pruefungAusVorgabe(unitId: number, o: { datum: string; art: stri
     points: null,
     max_points: null,
     notes: "",
-    skill_ids: v.skillIds,
+    skill_ids: skillsAus(stoff),
     title: "",
     topics,
     status: "geplant",
     teacher_id: o.teacherId,
-    material_id: v.materialIds[0] ?? null,
+    material_id: zettel?.materialId ?? null,
   });
   if (stoff.length) speichereStoff(testId, stoff, { lesungId: v.lesungId });
   db().prepare("UPDATE einheit_vorgabe SET termin_text = '', test_id = ? WHERE unit_id = ?").run(testId, unitId);

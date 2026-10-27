@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/lib/auth";
 import { dayOf } from "@/lib/exams";
+import { istRolle } from "@/lib/pruefungsstoff";
 import { canManageUnit, getUnit } from "@/lib/units";
-import { bestaetigeVorgabe, entferneVorgabe, pruefungAusVorgabe, wendeVorgabeAn } from "@/lib/vorgabe";
+import { aendereRolle, bestaetigeVorgabe, entferneVorgabe, pruefungAusVorgabe, wendeVorgabeAn } from "@/lib/vorgabe";
 
 /** „Was steht heute an?“ (lib/vorgabe.ts): die Knöpfe der Karte im Unterricht. Gespeichert wird über app/material/vorgabe. */
 async function laufendeEinheit(unitId: number) {
@@ -53,5 +54,13 @@ export async function pruefungAusVorgabeAction(unitId: number, form: FormData) {
   const out = pruefungAusVorgabe(unitId, { datum: String(form.get("datum") ?? ""), art: String(form.get("art") ?? ""), teacherId: t.id, heute: dayOf(new Date()) });
   if ("fehler" in out) return zurueck(unitId, out.fehler);
   revalidatePath(`/schueler/${unit.student_id}`);
+  zurueck(unitId);
+}
+
+/** „Foto 2: erklärt ein Thema“ geändert (`rolle`): an der Datei gespeichert, die Vorgabe ohne KI-Anfrage neu gemacht. */
+export async function rolleAendernAction(unitId: number, materialId: number, form: FormData) {
+  await laufendeEinheit(unitId);
+  const rolle = String(form.get("rolle") ?? "");
+  if (!istRolle(rolle) || !aendereRolle(unitId, materialId, rolle)) return zurueck(unitId, "Die Art des Blatts ließ sich nicht ändern.");
   zurueck(unitId);
 }

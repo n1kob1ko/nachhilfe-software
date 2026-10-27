@@ -480,7 +480,15 @@ Lerninhalt, Unit, Quelle, Status (Prüfungsstoff, ausgeschlossen, noch zu kläre
 **Fähigkeit**. Der **Stoffzettel** legt den Umfang fest, ein Inhaltsverzeichnis ergänzt nur Einzelheiten zu den
 genannten Units. Unit-Überschriften sind nie Fähigkeiten; ein Punkt ohne passende Fähigkeit bleibt trotzdem
 Prüfungsstoff. Zu sehen unter „Erkannt“ in der Vorbereitung ([docs/stoffzettel.md](docs/stoffzettel.md)).
+Eine Erklärung oder ein Blatt mit Aufgaben (**Art der Unterlagen**) legt ihn nie fest.
 _Avoid_: Stoffliste, Lesung (das ist der gespeicherte Lesevorgang, `stoff_lesungen`), Themenliste
+
+**Art der Unterlagen**:
+Was eine gelesene Datei ist (`materials.rolle`, `lib/pruefungsstoff.ts` `Rolle`): legt den Prüfungsstoff fest
+(`stoffzettel`), Inhaltsverzeichnis, erklärt ein Thema (`erklaerung`), enthält Aufgaben (`aufgaben`) oder etwas
+anderes. Die KI schlägt sie vor, die Lehrkraft ändert sie mit einem Tippen. Nur der **Stoffzettel** zählt für den
+**Prüfungsstoff**; Erklärung und Aufgaben geben die Themen der **Vorgabe für heute**.
+_Avoid_: Dokumenttyp, Kategorie
 
 **Prüfliste**:
 Was ein **Schüler** in seiner App unter „Prüfung eintragen“ eingetragen hat (Art, Fach, Datum, Stoff, Notiz,

@@ -17,7 +17,7 @@ import { db } from "./db";
 import { daysUntil } from "./exams";
 import { fachNamen } from "./faecher";
 import { getMaterial, hatDatei } from "./materials";
-import { liesPruefungsstoff, MAX_THEMEN, ordneZu, type Lesung } from "./pruefungsstoff";
+import { fuerPruefung, liesPruefungsstoff, MAX_THEMEN, ordneZu, type Lesung } from "./pruefungsstoff";
 import { PRUEFUNGSARTEN } from "./pruefungsarten";
 import * as repo from "./repo";
 import { fachAus, fachVorschlaege } from "./school";
@@ -121,9 +121,9 @@ export type Erkannt = { lesung: number; neu: boolean; punkte: number; sicher: nu
 
 /** Zahlen für die Zeile „Erkannt: …“ im Formular, mit Fach und Stufe des Schülers zugeordnet (ohne KI-Anfrage). */
 export function erkanntAus(l: Lesung, o: { lesungId: number; neu: boolean; fach: string; student: Pick<repo.Student, "school_type" | "klasse" | "grade"> }): Erkannt {
-  const p = ordneZu(l.punkte, { fach: o.fach, student: o.student, ki: true });
+  const p = ordneZu(fuerPruefung(l.punkte), { fach: o.fach, student: o.student, ki: true });
   const n = (f: (x: (typeof p)[number]) => boolean) => p.filter(f).length;
-  const ROLLE = { stoffzettel: "Stoffzettel", inhaltsverzeichnis: "Inhaltsverzeichnis", sonstiges: "weiteres Blatt" } as const;
+  const ROLLE = { stoffzettel: "Stoffzettel", inhaltsverzeichnis: "Inhaltsverzeichnis", erklaerung: "Erklärung", aufgaben: "Blatt mit Aufgaben", sonstiges: "weiteres Blatt" } as const;
   return {
     lesung: o.lesungId,
     neu: o.neu,

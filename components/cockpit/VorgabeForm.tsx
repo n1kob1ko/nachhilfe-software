@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, FileText, X } from "lucide-react";
+import { Camera, Check, FileText, X } from "lucide-react";
 import { shrinkImage } from "@/components/shrink-image";
 
 /** Mirrors lib/pruefungsstoff.ts and lib/vorgabe.ts (kept here so the browser does not load server code). */
@@ -12,16 +12,38 @@ const TEXT_MAX = 1500;
 const TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 
 type Datei = { key: string; file: File; url: string | null };
+/** Vorhandenes Material des Schülers (lib/vorgabe.ts `materialZurWahl`); `rolle` schon als Text, leer wenn unbekannt. */
+export type MaterialWahl = { id: number; titel: string; art: "Foto" | "PDF"; datum: string; rolle: string };
+/** So viele vorhandene Blätter stehen da, der Rest hinter „mehr“. */
+const SICHTBAR = 6;
 
 /**
  * Das Formular von „Was steht heute an?“ (lib/vorgabe.ts): ein Text, Fotos oder PDFs, eine Prüfung. Sendet an
  * app/material/vorgabe und lädt die Seite neu; der Unterricht richtet sich danach, solange noch nichts getan ist.
+ * Statt neu zu fotografieren lässt sich vorhandenes Material des Schülers wählen (`material`, das neueste zuerst); es wird
+ * gleich gelesen, was schon gelesen ist, kostet nichts mehr.
  * `kiLiest`: ob Fotos gelesen werden können (sonst werden sie nur angehängt, der Text wird ohne KI zerlegt).
  */
-export function VorgabeForm({ unitId, tests, text: anfang = "", kiLiest, abbrechen }: { unitId: number; tests: { id: number; label: string }[]; text?: string; kiLiest: boolean; abbrechen?: boolean }) {
+export function VorgabeForm({
+  unitId,
+  tests,
+  material = [],
+  text: anfang = "",
+  kiLiest,
+  abbrechen,
+}: {
+  unitId: number;
+  tests: { id: number; label: string }[];
+  material?: MaterialWahl[];
+  text?: string;
+  kiLiest: boolean;
+  abbrechen?: boolean;
+}) {
   const router = useRouter();
   const [text, setText] = useState(anfang);
   const [dateien, setDateien] = useState<Datei[]>([]);
+  const [gewaehlt, setGewaehlt] = useState<number[]>([]);
+  const [alle, setAlle] = useState(false);
   const [pruefung, setPruefung] = useState("");
   const [keinName, setKeinName] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -30,7 +52,7 @@ export function VorgabeForm({ unitId, tests, text: anfang = "", kiLiest, abbrech
 
   async function waehle(files: File[]) {
     setFehler(null);
-    const platz = MAX_DATEIEN - dateien.length;
+    const platz = MAX_DATEIEN - dateien.length - gewaehlt.length;
     if (files.length > platz) setFehler(`Höchstens ${MAX_DATEIEN} Fotos oder PDFs zusammen.`);
     const neu: Datei[] = [];
     for (const file of files.slice(0, Math.max(0, platz))) {
@@ -61,7 +83,7 @@ export function VorgabeForm({ unitId, tests, text: anfang = "", kiLiest, abbrech
 
   async function senden() {
     if (busy) return;
-    if (!text.trim() && !dateien.length && !pruefung) {
+    if (!text.trim() && !dateien.length && !gewaehlt.length && !pruefung) {
       setFehler("Bitte kurz schreiben, was heute dran ist, Fotos wählen oder eine Prüfung auswählen.");
       return;
     }
@@ -73,6 +95,7 @@ export function VorgabeForm({ unitId, tests, text: anfang = "", kiLiest, abbrech
     if (pruefung) fd.set("pruefung", pruefung);
     fd.set("keine_namen", keinName ? "1" : "0");
     for (const d of dateien) fd.append("datei", d.file, d.file.name);
+    for (const id of gewaehlt) fd.append("material", String(id));
     try {
       const res = await fetch("/material/vorgabe", { method: "POST", body: fd });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -83,6 +106,7 @@ export function VorgabeForm({ unitId, tests, text: anfang = "", kiLiest, abbrech
       }
       for (const d of dateien) if (d.url) URL.revokeObjectURL(d.url);
       setDateien([]);
+      setGewaehlt([]);
       setBusy(false);
       router.refresh();
     } catch {
@@ -105,9 +129,9 @@ export function VorgabeForm({ unitId, tests, text: anfang = "", kiLiest, abbrech
           data-testid="vorgabe-text"
         />
       </label>
-      <div className="grid gap-2">
+      <div className="grid min-w-0 gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" className="btn btn-secondary btn-sm" onClick={() => input.current?.click()} disabled={busy || dateien.length >= MAX_DATEIEN}>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => input.current?.click()} disabled={busy || dateien.length + gewaehlt.length >= MAX_DATEIEN}>
             <Camera size={15} aria-hidden /> {dateien.length ? "Weiteres Blatt" : "Foto oder PDF"}
           </button>
           <input
@@ -154,13 +178,58 @@ export function VorgabeForm({ unitId, tests, text: anfang = "", kiLiest, abbrech
             ))}
           </ul>
         )}
-        {dateien.length > 0 && kiLiest && (
+        {material.length > 0 && (
+          <div className="grid min-w-0 gap-1.5" data-testid="vorgabe-material">
+            <span className="text-[13px] text-ink-2">Oder schon vorhandenes Material:</span>
+            <ul className="flex min-w-0 flex-wrap gap-1.5">
+              {(alle ? material : material.slice(0, SICHTBAR)).map((m) => {
+                const an = gewaehlt.includes(m.id);
+                return (
+                  <li key={m.id} className="min-w-0 max-w-full">
+                    <label className="flex min-h-[44px] max-w-full cursor-pointer items-center gap-2 rounded-full border border-line bg-surface py-1 pl-1.5 pr-3 text-[13.5px] has-checked:border-accent has-checked:bg-accent-wash has-focus-visible:outline-2 has-focus-visible:outline-accent has-disabled:cursor-default has-disabled:opacity-60">
+                      <input
+                        type="checkbox"
+                        checked={an}
+                        disabled={busy || (!an && dateien.length + gewaehlt.length >= MAX_DATEIEN)}
+                        onChange={() => setGewaehlt(an ? gewaehlt.filter((x) => x !== m.id) : [...gewaehlt, m.id])}
+                        className="sr-only"
+                      />
+                      {m.art === "Foto" ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={`/material/${m.id}/datei`} alt="" loading="lazy" className="h-8 w-8 shrink-0 rounded-full border border-line object-cover" />
+                      ) : (
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line bg-panel text-ink-2">
+                          <FileText size={15} aria-hidden />
+                        </span>
+                      )}
+                      <span className="min-w-0 truncate">
+                        {m.titel}
+                        <span className="text-ink-3">
+                          {m.rolle ? ` · ${m.rolle}` : ""} · {Number(m.datum.slice(8, 10))}.{Number(m.datum.slice(5, 7))}.
+                        </span>
+                      </span>
+                      {an && <Check size={15} className="shrink-0 text-accent" aria-hidden />}
+                    </label>
+                  </li>
+                );
+              })}
+              {!alle && material.length > SICHTBAR && (
+                <li>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAlle(true)}>
+                    mehr ({material.length - SICHTBAR})
+                  </button>
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
+        {dateien.length + gewaehlt.length > 0 && kiLiest && (
           <label className="flex min-h-[44px] items-start gap-2 text-[13.5px]">
             <input type="checkbox" checked={keinName} onChange={(e) => setKeinName(e.target.checked)} className="mt-0.5 h-[18px] w-[18px] shrink-0 accent-[var(--accent)]" data-testid="vorgabe-keine-namen" />
             <span>Auf den Blättern steht kein Name (oder er ist abgedeckt). Sonst werden sie nur angehängt.</span>
           </label>
         )}
-        {dateien.length > 0 && !kiLiest && <p className="text-[12.5px] text-ink-3">Die Blätter werden angehängt.</p>}
+        {dateien.length + gewaehlt.length > 0 && !kiLiest && <p className="text-[12.5px] text-ink-3">Die Blätter werden gespeichert. Neue Blätter liest nur die KI, und die geht gerade nicht.</p>}
       </div>
       {fehler && (
         <p role="alert" className="text-[13.5px] text-red">
