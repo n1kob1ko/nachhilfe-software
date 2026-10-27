@@ -466,22 +466,24 @@ function sicht(z: Zeile, wer: Wer | "verwaltung", namenSchueler: Map<number, str
 }
 
 /** unentschieden oder in den letzten ERLEDIGT_TAGE Tagen entschieden */
-const aktuell = (a = "") => `(${a}status IN ('wartet', 'offen') OR datetime(${a}entschieden_at) >= datetime('now', '-${ERLEDIGT_TAGE} days'))`;
+// mit der Uhr des Aufrufers (wie stelleAnfrage und bestaetige), nicht mit der Uhr der Datenbank
+const aktuell = (now: Date, a = "") =>
+  `(${a}status IN ('wartet', 'offen') OR datetime(${a}entschieden_at) >= datetime('${new Date(now).toISOString()}', '-${ERLEDIGT_TAGE} days'))`;
 
 /** Für die Schüler-App: eigene Anfragen und Tauschanfragen an ihn, ohne Namen und ohne fremde Notizen. */
-export function anfragenFuerSchueler(studentId: number): AnfrageSicht[] {
+export function anfragenFuerSchueler(studentId: number, now: Date = new Date()): AnfrageSicht[] {
   const zeilen = db()
-    .prepare(`SELECT * FROM terminanfragen WHERE (student_id = ? OR partner_student_id = ?) AND ${aktuell()} ORDER BY id DESC`)
+    .prepare(`SELECT * FROM terminanfragen WHERE (student_id = ? OR partner_student_id = ?) AND ${aktuell(now)} ORDER BY id DESC`)
     .all(studentId, studentId) as Zeile[];
   return zeilen.map((z) => sicht(z, { schuelerId: studentId }, null, null)).filter((s): s is AnfrageSicht => s !== null);
 }
 
 /** Für „Meine Woche“: Anfragen zu den eigenen Plätzen, an den Lehrer als andere Seite und die eigenen. */
-export function anfragenFuerLehrer(akteur: Akteur): AnfrageSicht[] {
+export function anfragenFuerLehrer(akteur: Akteur, now: Date = new Date()): AnfrageSicht[] {
   const zeilen = db()
     .prepare(
       `SELECT a.* FROM terminanfragen a JOIN geplante_einheiten p ON p.id = a.platz_id LEFT JOIN geplante_einheiten q ON q.id = a.partner_platz_id
-       WHERE (p.teacher_id = @me OR q.teacher_id = @me OR a.von_teacher_id = @me) AND ${aktuell("a.")} ORDER BY a.id DESC`,
+       WHERE (p.teacher_id = @me OR q.teacher_id = @me OR a.von_teacher_id = @me) AND ${aktuell(now, "a.")} ORDER BY a.id DESC`,
     )
     .all({ me: akteur.id }) as Zeile[];
   const s = namen("students");
@@ -490,8 +492,8 @@ export function anfragenFuerLehrer(akteur: Akteur): AnfrageSicht[] {
 }
 
 /** Für die Verwaltung (Planung): alle unentschiedenen und die zuletzt entschiedenen. */
-export function anfragenFuerVerwaltung(): AnfrageSicht[] {
-  const zeilen = db().prepare(`SELECT * FROM terminanfragen WHERE ${aktuell()} ORDER BY CASE status WHEN 'offen' THEN 0 WHEN 'wartet' THEN 1 ELSE 2 END, id DESC`).all() as Zeile[];
+export function anfragenFuerVerwaltung(now: Date = new Date()): AnfrageSicht[] {
+  const zeilen = db().prepare(`SELECT * FROM terminanfragen WHERE ${aktuell(now)} ORDER BY CASE status WHEN 'offen' THEN 0 WHEN 'wartet' THEN 1 ELSE 2 END, id DESC`).all() as Zeile[];
   const s = namen("students");
   const t = namen("teachers");
   return zeilen.map((z) => sicht(z, "verwaltung", s, t)).filter((x): x is AnfrageSicht => x !== null);
