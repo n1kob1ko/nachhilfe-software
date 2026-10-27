@@ -1489,6 +1489,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["praesentation_entwuerfe", "unit_id", "INTEGER REFERENCES units(id) ON DELETE CASCADE"],
   ["praesentation_entwuerfe", "schritt_id", "INTEGER"],
   ["praesentation_entwuerfe", "auftrag", "TEXT"],
+  // Phase-B-Testlauf (2026-10-27): wann die Präsentation bei diesem Schritt geöffnet wurde. Nur dann sagt der Abschluss „verwendet“;
+  // „Übernehmen“ allein verknüpft sie nur mit dem Schritt
+  ["einheit_praesentationen", "gezeigt_at", "TEXT"],
 ];
 
 /** Teachers to start with; more can be added later. */
@@ -1569,6 +1572,8 @@ function migrate(conn: Database.Database) {
       conn.exec("UPDATE attempts SET error_type_suggested_source = 'vorschlag' WHERE error_type_suggested IS NOT NULL");
       conn.exec("UPDATE attempts SET error_type_suggested = error_type, error_type_suggested_source = 'ki' WHERE error_type_source = 'ki' AND error_type IS NOT NULL AND error_type_suggested IS NULL");
     }
+    // a row from before gezeigt_at that was not made by „Übernehmen“ came from opening the presentation at the step
+    if (added.has("einheit_praesentationen.gezeigt_at")) conn.exec("UPDATE einheit_praesentationen SET gezeigt_at = created_at WHERE erstellt = 0");
     // KI calls from before ai_calls.provider: the model name says who answered (an OpenRouter id has a
     // vendor prefix, the Anthropic API's has none); until then only OpenRouter ran with a key in production
     if (added.has("ai_calls.provider")) {

@@ -5,6 +5,7 @@ import { getMaterial, hatDatei, saveUpload, sniffType } from "@/lib/materials";
 import { foreignRequest, notAllowed } from "@/lib/picture-story-routes";
 import { MAX_DATEIEN, MAX_GESAMT_BYTES } from "@/lib/pruefungsstoff";
 import { canManageUnit, getUnit } from "@/lib/units";
+import { VORGABE_TITEL } from "@/lib/unterlagen-unterricht";
 import { speichereVorgabe } from "@/lib/vorgabe";
 
 export const dynamic = "force-dynamic";
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
     const data = Buffer.from(await file.arrayBuffer());
     if (!sniffType(data)) return fail("Bitte Fotos (JPG, PNG, WebP) oder PDFs wählen.");
     try {
-      const id = saveUpload({ name: file.name, data }, { title: "Für heute", subject: unit.subject, studentId: unit.student_id, teacherId: teacher.id }).id;
+      const id = saveUpload({ name: file.name, data }, { title: VORGABE_TITEL, subject: unit.subject, studentId: unit.student_id, teacherId: teacher.id }).id;
       if (!materialIds.includes(id)) materialIds.push(id);
     } catch (e) {
       return fail(e instanceof Error ? e.message : "Die Datei konnte nicht gespeichert werden.");

@@ -449,6 +449,17 @@ export function getLesung(id: number | null | undefined): LesungGespeichert | nu
   return r ? alsLesung(r) : null;
 }
 
+/**
+ * Die Nummer (ab 1) einer Datei in einer Lesung, 0 ohne. Eine schon bezahlte Lesung derselben Datei (gleiche sha256) kann von einem
+ * anderen Material sein (dieselbe Datei bei einem anderen Schüler, lib/materials.ts `saveUpload`); sie gilt dann auch für dieses.
+ */
+export function nrInLesung(l: Pick<LesungGespeichert, "dateien">, materialId: number): number {
+  const i = l.dateien.findIndex((d) => d.material_id === materialId);
+  if (i >= 0) return i + 1;
+  const sha = getMaterial(materialId)?.sha256;
+  return sha ? l.dateien.findIndex((d) => d.sha256 === sha) + 1 : 0;
+}
+
 /** Der Schlüssel einer Lesung: Fassung des Prompts, die sortierten Dateien, die Angabe (ohne Namen), die Fähigkeiten der Anfrage. */
 export function lesungsSchluessel(o: { hashes: string[]; angabe: string; kandidaten: string[] }): string {
   return crypto

@@ -21,12 +21,14 @@
 import { cockpit, paketQuelle, type CockpitDaten } from "./cockpit";
 import { db } from "./db";
 import { ZEIG_ARTEN_PAKET } from "./praesentation-unterricht";
-import { getLesung, istRolle, ordneZu, type RohPunkt, type Rolle } from "./pruefungsstoff";
+import { getLesung, istRolle, nrInLesung, ordneZu, type RohPunkt, type Rolle } from "./pruefungsstoff";
 import { getMaterial, hatDatei, listMaterials } from "./materials";
 import * as repo from "./repo";
 import { getUnit } from "./units";
 import { dateienDerVorgabe, vorgabeDerEinheit } from "./vorgabe";
 
+/** Der Titel der Dateien aus „Für heute“ (Vorgabe); ungelesen heißen sie im Schritt wie in der Vorgabe („Foto 2“). */
+export const VORGABE_TITEL = "Für heute";
 /** Höchstens so viele Unterlagen je Schritt. */
 export const MAX_UNTERLAGEN = 3;
 /** So viele frühere Unterlagen des Schülers werden angesehen (die neuesten, wie bei „Vorhandenes Material“). */
@@ -119,14 +121,16 @@ export function kandidatenDerEinheit(unitId: number, c: CockpitDaten = cockpit(u
   const out: UnterlageKandidat[] = [];
   const v = vorgabeDerEinheit(unitId);
   const l = v ? getLesung(v.lesungId) : null;
-  for (const d of v ? dateienDerVorgabe(v) : []) {
+  const dateien = v ? dateienDerVorgabe(v) : [];
+  for (const [i, d] of dateien.entries()) {
     const m = getMaterial(d.materialId);
     if (!m || !hatDatei(m) || m.student_id !== student.id) continue;
     // the reading of today's Vorgabe, else the newest earlier one with this file (read before, today not again)
-    const nrHeute = (l?.dateien.findIndex((x) => x.material_id === m.id) ?? -1) + 1;
+    const nrHeute = l ? nrInLesung(l, m.id) : 0;
     const x = l && nrHeute > 0 ? { l, nr: nrHeute } : d.gelesen ? null : lesungDerDatei(m.id, student.id);
     const gelesen = x ? ausLesung(x.l.lesung.punkte, x.nr, unit.subject, student) : { skillIds: [], themen: [] };
-    const titel = (x ? x.l.lesung.dokumente.find((y) => y.nr === x.nr)?.titel : "") || m.title;
+    const name = m.title === VORGABE_TITEL ? `${d.art} ${dateien.slice(0, i + 1).filter((y) => y.art === d.art).length}` : m.title;
+    const titel = (x ? x.l.lesung.dokumente.find((y) => y.nr === x.nr)?.titel : "") || name;
     out.push({ materialId: m.id, titel, art: d.art, datum: m.created_at.slice(0, 10), heute: true, rolle: d.rolle, ...gelesen, schrittId: gewaehlt.get(m.id) ?? null });
   }
   // earlier explanations of this student: only through a saved reading that links them to a skill

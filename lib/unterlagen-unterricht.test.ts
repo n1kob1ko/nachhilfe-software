@@ -185,6 +185,32 @@ test("frühere Erklärungen desselben Schülers kommen nach denen von heute, hö
   assert.deepEqual(s.u.unterlagenImSchritt(unit.id, erklaeren.id).map((x) => x.materialId), [ids[0]]);
 });
 
+test("dieselben Dateien für einen zweiten Schüler: sein eigenes Material, die gespeicherte Lesung gilt, die Erklärung steht im Schritt", async () => {
+  const s = await setup();
+  const { saveUpload } = await import("./materials");
+  const a = s.schueler("Mira Beispiel");
+  const b = s.schueler("Paula Erfunden");
+  const daten = [jpeg(), jpeg(), jpeg(), jpeg()];
+  const lies = async (sid: number) => {
+    const unit = (await import("./units")).startUnit(s.teacher.id, sid, { subject: "Englisch" }).unit;
+    const ids = daten.map((data) => saveUpload({ name: "blatt.jpg", data }, { title: "Für heute", studentId: sid, teacherId: s.teacher.id }).id);
+    const out = await s.vg.speichereVorgabe({ unitId: unit.id, teacherId: s.teacher.id, text: "", materialIds: ids, testId: null, keinName: true, heute: (await import("./planung/zeit")).wienerDatum() });
+    assert.ok("ok" in out, JSON.stringify(out));
+    return { unit, ids };
+  };
+  const ea = await lies(a);
+  const eb = await lies(b);
+  const { getMaterial } = await import("./materials");
+  assert.ok(eb.ids.every((id, i) => id !== ea.ids[i] && getMaterial(id)!.student_id === b && getMaterial(id)!.sha256 === getMaterial(ea.ids[i])!.sha256), "eigenes Material, dieselbe Datei");
+  assert.equal(s.db().prepare("SELECT COUNT(*) FROM stoff_lesungen").pluck().get(), 1, "die Lesung wird nicht noch einmal bezahlt");
+  const erklaeren = s.schritt(eb.unit.id, "erklaeren");
+  const im = s.u.unterlagenImSchritt(eb.unit.id, erklaeren.id);
+  assert.deepEqual(im.map((x) => [x.materialId, x.titel]), [[eb.ids[0], "Past Simple – Merkblatt"]]);
+  // a role set for the second student does not change the first one's file
+  assert.ok(s.vg.aendereRolle(eb.unit.id, eb.ids[0], "aufgaben"));
+  assert.deepEqual(s.u.unterlagenImSchritt(ea.unit.id, s.schritt(ea.unit.id, "erklaeren").id).map((x) => x.materialId), [ea.ids[0]]);
+});
+
 test("die gewählte Rolle geht vor: „enthält Aufgaben“ statt Erklärung nimmt die Unterlage aus dem Schritt", async () => {
   const s = await setup();
   const sid = s.schueler("Mira Beispiel");
@@ -231,7 +257,7 @@ test("ohne KI: nichts gelesen, nichts von selbst im Schritt; mit Rolle und Wahl 
   assert.ok(s.u.waehleSchritt(unit.id, ids[2], ziel.id, s.teacher.id));
   const im = s.u.unterlagenImSchritt(unit.id, ziel.id);
   assert.deepEqual(im.map((x) => x.materialId), [ids[2]]);
-  assert.equal(im[0].titel, "Für heute", "ohne Lesung der Titel des Materials");
+  assert.equal(im[0].titel, "Foto 3", "ohne Lesung heißt sie wie in der Vorgabe");
 });
 
 test("Abschluss: „Unterlage gezeigt“ nur nach Öffnen, nur eine Unterlage, die der Schritt zeigt", async () => {

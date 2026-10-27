@@ -89,6 +89,7 @@ export async function PraesentationSchritt({
 
 const GRUND: Record<Treffer["grund"], string> = {
   einheit: "In dieser Einheit schon gezeigt",
+  erstellt: "Für diesen Schritt erstellt",
   paket: "Aus dem Lernpaket",
   faehigkeit: "Passt zur Fähigkeit",
   thema: "Gleiches Thema und gleiche Schulstufe",
@@ -175,9 +176,19 @@ function FolienAlsText({ folien, folie, unitId }: { folien: TextFolie[]; folie: 
   );
 }
 
-/** Nichts passt: „Präsentation erstellen“, zugeklappt, mit den Angaben aus dem Schritt (nichts davon muss neu eingegeben werden). */
+/**
+ * Nichts passt: „Präsentation erstellen“, zugeklappt, mit den Angaben aus dem Schritt (nichts davon muss neu eingegeben werden).
+ * Geht es gerade nicht (KI aus, Budget, Grenze je Schüler), steht nur der kurze Grund da, nichts zum Aufklappen.
+ */
 function Erstellen({ z }: { z: ZeigeSchritt }) {
   const tor = erstellenTor(z);
+  if (!tor.erlaubt)
+    return (
+      <div className="grid gap-1" data-testid="praesentation-erstellen-aus">
+        <p className="text-[14.5px] text-ink-2">Keine passende Präsentation{z.skillName ? ` zu ${z.skillName}` : ""}.</p>
+        <p className="text-[13px] text-ink-3">Präsentation erstellen geht gerade nicht: {tor.grund}</p>
+      </div>
+    );
   const angaben: [string, string][] = [
     ["Fach", z.fach],
     ["Schulstufe", z.schulstufe ? `${z.schulstufe}.` : ""],
@@ -211,7 +222,7 @@ function Erstellen({ z }: { z: ZeigeSchritt }) {
             Die KI macht daraus Folien mit Beispielen für dieses Alter, Vortragstext, Verständnisfragen und erwarteten Antworten. Du siehst zuerst den Entwurf; verwendet wird er erst, wenn du ihn
             übernimmst.
           </p>
-          <PraesentationSchrittKnopf unitId={z.unitId} schrittId={z.schrittId} kosten={kostenFuerSchritt(z)} kiAus={tor.erlaubt ? null : tor.grund} />
+          <PraesentationSchrittKnopf unitId={z.unitId} schrittId={z.schrittId} kosten={kostenFuerSchritt(z)} kiAus={null} />
         </div>
       </details>
     </div>
