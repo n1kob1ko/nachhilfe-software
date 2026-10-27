@@ -23,11 +23,12 @@
  * Nur lesen: festgehalten wird der Plan erst beim ersten Tippen in der Einheit (lib/cockpit.ts `mitSchritt`). Wählt die
  * Lehrkraft selbst ein Paket für die Einheit, gilt wie bisher genau dieses Paket.
  */
-import { briefingDaten, einfachesBriefing, fokusGewichte, kandidaten, uebungFuer, verteileMinuten, type BriefingDaten } from "./briefing";
+import { briefingDaten, einfachesBriefing, fokusGewichte, kandidaten, uebungFuer, verteileMinuten, type BriefingDaten, type Kandidat as BestandKandidat } from "./briefing";
 import type { PlanStep } from "./cockpit";
 import { prerequisitesOf } from "./lehrplan";
 import { getLernpaket, listLernpakete, type Lernpaket, type LernpaketSchritt } from "./lernpakete";
 import { STATUS_THRESHOLDS } from "./mastery";
+import { bestandZur } from "./material-passt";
 import * as repo from "./repo";
 import {
   geprueftePakete,
@@ -73,6 +74,11 @@ export type Thema = {
   /** eine nicht sichere Voraussetzung, die vorher kurz drankommt */
   grundlage: string | null;
   minuten: number;
+  /**
+   * ein Punkt der Vorgabe, dessen Fähigkeit noch zu bestätigen ist (seine Wörter, „Past Simple“): ein vorläufiger Block ohne
+   * Übung, der nach „Bestätigen“ der Block der Fähigkeit wird und bei „Keine passt“ wegfällt
+   */
+  vorlaeufig?: string;
 };
 
 export type PlanEingabe = {
@@ -122,7 +128,28 @@ export function themenMinuten(n: number, gesamt: number): number[] {
 
 // ---------- the topics ----------
 
-type Kandidat = { skillId: string | null; signal: Signal };
+type Kandidat = { skillId: string | null; signal: Signal; vorlaeufig?: NonNullable<Signal["vorlaeufig"]>[number] };
+
+/** Name eines vorläufigen Blocks: die Wörter des Punkts und was noch fehlt. */
+export const vorlaeufigName = (inhalt: string) => `${inhalt} · noch bestätigen`;
+const klein = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+
+/**
+ * Die Kandidaten eines Signals: je Fähigkeit einer. Die Vorgabe hat dazu ihre Punkte, die noch zu bestätigen sind, an ihrer
+ * Stelle unter den Punkten (nicht, wenn ihre vorgewählte Fähigkeit schon ein sicherer Punkt ist). Ein Signal ohne Fähigkeit nur
+ * über ein Paket (oder die Vorgabe, deren Punkte ohne Vorschlag sind).
+ */
+function kandidatenVon(s: Signal, verwandt: PlanEingabe["verwandt"]): Kandidat[] {
+  const offen = (s.vorlaeufig ?? []).filter((v) => !v.skillId || !s.skill_ids.some((x) => verwandt(x, v.skillId!)));
+  if (!s.skill_ids.length && !offen.length) return s.stoff.length || s.paket_ids?.length ? [{ skillId: null, signal: s }] : [];
+  const out: Kandidat[] = [];
+  let j = 0;
+  s.skill_ids.forEach((id, i) => {
+    while (j < offen.length && offen[j].nach <= i) out.push({ skillId: null, signal: s, vorlaeufig: offen[j++] });
+    out.push({ skillId: id, signal: s });
+  });
+  return [...out, ...offen.slice(j).map((v) => ({ skillId: null, signal: s, vorlaeufig: v }))];
+}
 
 /**
  * Die Themen der Einheit in ihrer Reihenfolge, mit Minuten, Paket und Grundlage. Nur aus den Signalen, ohne Datenbank.
@@ -130,12 +157,12 @@ type Kandidat = { skillId: string | null; signal: Signal };
 export function waehleThemen(e: PlanEingabe): Thema[] {
   const n = themenZahl(e.minuten);
   // one candidate per skill of a signal; a signal without a skill only through a package (or the Vorgabe still to confirm)
-  const alle = e.signale.flatMap((s): Kandidat[] => (s.skill_ids.length ? s.skill_ids.map((id) => ({ skillId: id, signal: s })) : s.stoff.length || s.paket_ids?.length ? [{ skillId: null, signal: s }] : []));
+  const alle = e.signale.flatMap((s) => kandidatenVon(s, e.verwandt));
   // the Vorgabe first; among its skills those another signal also names (the Prüfung …) in front, otherwise in its order
   const stuetze = (id: string | null) => Math.max(0, ...e.signale.filter((s) => s.art !== "vorgabe" && id !== null && s.skill_ids.some((x) => e.verwandt(x, id))).map((s) => SIGNAL_RANG[s.art]));
   const vorgabe = alle
     .filter((k) => k.signal.art === "vorgabe")
-    .map((k, i) => ({ k, i, g: stuetze(k.skillId) }))
+    .map((k, i) => ({ k, i, g: stuetze(k.skillId ?? k.vorlaeufig?.skillId ?? null) }))
     .sort((a, b) => b.g - a.g || a.i - b.i)
     .map((x) => x.k);
   const kandidaten = [...vorgabe, ...alle.filter((k) => k.signal.art !== "vorgabe")];
@@ -145,6 +172,13 @@ export function waehleThemen(e: PlanEingabe): Thema[] {
   const deckt = (id: string) => themen.some((t) => t.skillIds.some((x) => e.verwandt(x, id)));
   for (const k of kandidaten) {
     if (themen.length >= n) break;
+    // a point of the Vorgabe still to confirm: a provisional block named by its words, no package, no exercise (nothing counts yet)
+    if (k.vorlaeufig) {
+      const v = k.vorlaeufig;
+      if ((v.skillId && deckt(v.skillId)) || themen.some((t) => t.vorlaeufig && klein(t.vorlaeufig) === klein(v.inhalt))) continue;
+      themen.push({ name: vorlaeufigName(v.inhalt), skillId: null, skillIds: [], art: "vorgabe", warum: `Deine Vorgabe für heute: ${v.inhalt}`, pruefung: false, paket: null, grundlage: null, minuten: 0, vorlaeufig: v.inhalt });
+      continue;
+    }
     if (k.skillId && (!e.name(k.skillId) || deckt(k.skillId))) continue;
     // the best checked package for it: the same rule as the automatic choice (exactly this package, skill, keyword)
     const signal: Signal = { ...k.signal, skill_ids: k.skillId ? [k.skillId] : [], stoff: k.skillId ? [] : k.signal.stoff };
@@ -288,6 +322,14 @@ function themaSchritte(t: Thema, h: PlanHilfen): Roh[] {
       ]);
     }
   }
+  // a point of the Vorgabe still to confirm: one provisional step without an exercise; it becomes the skill's block on „Bestätigen“
+  if (t.vorlaeufig)
+    return mit([
+      {
+        w: 1,
+        s: { titel: t.name, minuten: 0, beschreibung: "Erklären und besprechen geht schon. Bis zum Bestätigen zählt nichts davon für Lernstand und Dokumentation.", uebung: null, skillId: null, art: "ueben", thema: t.name, quelle: null, vorlaeufig: t.vorlaeufig },
+      },
+    ]);
   // a point of the Vorgabe without a skill yet: one step, the exercise follows once it is confirmed
   if (!t.skillId) return mit([{ w: 1, s: { titel: `Üben: ${t.name}`, minuten: 0, beschreibung: t.warum, uebung: null, skillId: null, art: "ueben", thema: t.name, quelle: null } }]);
   const q = { skillId: t.skillId };
@@ -303,6 +345,16 @@ function themaSchritte(t: Thema, h: PlanHilfen): Roh[] {
     },
     { w: teil(10), s: kontrolleSchritt(t) },
   ]);
+}
+
+/**
+ * Die Schritte eines bestätigten vorläufigen Blocks (lib/cockpit.ts `ersetzeVorlaeufige`): Erklären, Üben (neue Aufgaben aus den
+ * Generatoren) und Lernkontrolle der Fähigkeit, zusammen genau die Minuten des Blocks. Ohne Ids.
+ */
+export function schritteZurFaehigkeit(skillId: string, minuten: number): Omit<PlanStep, "id">[] {
+  const name = repo.getSkill(skillId)?.name ?? skillId;
+  const t: Thema = { name, skillId, skillIds: [skillId], art: "vorgabe", warum: `Deine Vorgabe für heute: ${name}`, pruefung: false, paket: null, grundlage: null, minuten };
+  return themaSchritte(t, { uebung: () => null, schritte: () => [], einstieg: { beschreibung: "", hausuebung: null }, name: (id) => repo.getSkill(id)?.name ?? null, lernstand: () => null });
 }
 
 /** Der ganze Plan: Einstieg, die Themen, Abschluss; Ids negativ (-1, -2 …) wie jeder Plan ohne Lernpaket. */
@@ -504,8 +556,11 @@ export function stundenplanFuer(
   if (!themen.length)
     return einfachesBriefing({ ...d, kandidaten: k }).plan.map((p, i) => ({ id: -(i + 1), titel: p.titel, minuten: p.minuten, beschreibung: p.beschreibung, uebung: p.uebung, skillId: p.skillId ?? null }));
   const schon = new Set<string>();
+  // an exercise from the Bestand only when it goes out with tasks of the step's skill and is not another student's sheet
+  // (lib/material-passt.ts); otherwise the next one, or new tasks from the generators
+  const nutzbar = (id: string) => (c: BestandKandidat) => !/^U\d+$/.test(c.id) || bestandZur(repo.getWorksheet(Number(c.id.slice(1))), id, studentId) !== null;
   return bauePlan(themen, d.minuten, {
-    uebung: (id) => uebungFuer({ kandidaten: k }, [name(id) ?? id], schon),
+    uebung: (id) => uebungFuer({ kandidaten: k }, [name(id) ?? id], schon, nutzbar(id)),
     schritte: (id) => getLernpaket(id)?.schritte ?? [],
     einstieg: einstiegAus(d),
     name,

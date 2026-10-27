@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { CalendarCheck, CalendarPlus, ChevronDown, ClipboardList, FileText, TriangleAlert } from "lucide-react";
-import { bestaetigeVorgabeAction, entferneVorgabeAction, planAnpassenAction, pruefungAusVorgabeAction, rolleAendernAction } from "@/app/vorgabe-actions";
+import { bestaetigeVorgabeAction, entferneVorgabeAction, planAnpassenAction, pruefungAusVorgabeAction, rolleAendernAction, stoffZurPruefungAction } from "@/app/vorgabe-actions";
 import { RolleWahl } from "@/components/cockpit/RolleWahl";
 import { VorgabeForm } from "@/components/cockpit/VorgabeForm";
 import { Pill } from "@/components/ui";
@@ -10,7 +11,7 @@ import { ROLLE_SATZ } from "@/lib/pruefungsstoff";
 import { tagMonat } from "@/lib/vorbereitung-auto";
 import * as repo from "@/lib/repo";
 import type { UnitView } from "@/lib/units";
-import { abweichung, dateienDerVorgabe, materialZurWahl, pruefungZurVorgabe, schonEingetragen, vorgabeDerEinheit } from "@/lib/vorgabe";
+import { abweichung, dateienDerVorgabe, materialZurWahl, pruefungZurVorgabe, schonEingetragen, stoffKnopfText, stoffzettelZurPruefung, vorgabeDerEinheit } from "@/lib/vorgabe";
 
 const skillName = (id: string) => {
   const s = repo.getSkill(id);
@@ -66,6 +67,9 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
   const test = v.testId ? repo.getTest(v.testId) : null;
   // „Foto 1“, „Foto 2“, „PDF 1“: numbered per kind, as the teacher took them
   const dateien = dateienDerVorgabe(v).map((d, i, alle) => ({ ...d, name: `${d.art} ${alle.slice(0, i + 1).filter((x) => x.art === d.art).length}` }));
+  // a Stoffzettel read today and an entered exam it belongs to: one tap takes its Stoff over (lib/vorgabe.ts stoffZurPruefung)
+  const zuPruefung = stoffzettelZurPruefung(v, unit.subject, heute);
+  const angebot = zuPruefung && !zuPruefung.uebernommen ? zuPruefung.test : null;
   // the same exam is in already: say so instead of offering it again
   const eingetragen = v.terminText ? schonEingetragen(v.terminText, repo.upcomingTests(heute, unit.student_id), heute, unit.subject) : null;
   // one line per point; a point confirmed with several skills stands once, with all of them
@@ -77,7 +81,7 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
     else zeilen.push({ x, skills: skill ? [skill] : [] });
   }
   // open while there is something to confirm or read before the lesson goes on; afterwards one line
-  const offen = !begonnen && (unklar.length > 0 || Boolean(v.hinweis));
+  const offen = !begonnen && (unklar.length > 0 || Boolean(v.hinweis) || Boolean(angebot));
   const fotos = dateien.filter((d) => d.art === "Foto").length;
   const pdfs = dateien.length - fotos;
   const kurz = [
@@ -85,6 +89,7 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
     pdfs ? mehrzahl(pdfs, "PDF", "PDFs") : "",
     zeilen.length ? mehrzahl(zeilen.length, "Thema", "Themen") : "",
     unklar.length ? `${unklar.length} zum Bestätigen` : "",
+    angebot ? "Stoffzettel noch nicht bei der Prüfung" : "",
     !v.angewendet && begonnen ? "Plan noch nicht angepasst" : "",
   ].filter(Boolean);
   const punkte = (
@@ -153,14 +158,16 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
         )}
         {unklar.length > 0 && (
           <form action={bestaetigeVorgabeAction.bind(null, unit.id)} className="grid gap-2 rounded-xl bg-panel px-3 py-3" data-testid="vorgabe-bestaetigen">
-            <p className="text-[13px] text-ink-2">Welche Fähigkeiten sind gemeint? Mehrere gehen.</p>
+            <p className="text-[13px] text-ink-2">
+              Welche Fähigkeiten sind gemeint? Mehrere gehen.{unklar.some(({ x }) => x.vorauswahl) ? " Angehakt ist, was die Wörter und das Lesen nahelegen; es zählt erst nach „Bestätigen“." : ""}
+            </p>
             {unklar.map(({ x, i }) => (
               <fieldset key={i} className="grid gap-1.5">
                 <legend className="text-[14px] font-medium">{x.inhalt}</legend>
                 <div className="flex flex-wrap gap-1.5">
                   {x.vorschlaege.map((sid) => (
                     <label key={sid} className="flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[13.5px] has-checked:border-accent has-checked:bg-accent-wash">
-                      <input type="checkbox" name={`zuordnung_${i}`} value={sid} className="shrink-0 accent-[var(--accent)]" />
+                      <input type="checkbox" name={`zuordnung_${i}`} value={sid} defaultChecked={x.vorauswahl === sid} className="shrink-0 accent-[var(--accent)]" />
                       <span>{skillName(sid)}</span>
                     </label>
                   ))}
@@ -175,6 +182,27 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
               <button className="btn btn-secondary btn-sm">Bestätigen</button>
             </div>
           </form>
+        )}
+        {angebot && (
+          <form action={stoffZurPruefungAction.bind(null, unit.id, angebot.id)} className="grid gap-1.5 rounded-xl border border-line px-3 py-3" data-testid="vorgabe-stoff-zur-pruefung">
+            <p className="text-[14px]">
+              Der Stoffzettel gehört zu{angebot.title ? ` „${angebot.title}“` : ""}: {angebot.kind || "Prüfung"} am {tagMonat(angebot.date)}
+            </p>
+            <div>
+              <button className="btn btn-primary btn-sm">
+                <CalendarCheck size={15} aria-hidden /> {stoffKnopfText(angebot)}
+              </button>
+            </div>
+            <p className="text-[12.5px] text-ink-3">Was dort schon steht, bleibt. Unklare Punkte bestätigst du bei der Prüfung.</p>
+          </form>
+        )}
+        {zuPruefung?.uebernommen && (
+          <p className="flex flex-wrap items-center gap-x-1.5 text-[14px] text-ink-2" data-testid="vorgabe-stoff-uebernommen">
+            <CalendarCheck size={15} className="shrink-0 text-green" aria-hidden /> Stoff übernommen: {zuPruefung.test.kind || "Prüfung"} am {tagMonat(zuPruefung.test.date)}
+            <Link href={`/schueler/${unit.student_id}/pruefung/${zuPruefung.test.id}/stoff`} className="inline-flex min-h-[44px] items-center font-semibold text-accent hover:underline">
+              Ansehen
+            </Link>
+          </p>
         )}
         {abw.length > 0 && (
           <div className="flex gap-2 rounded-xl bg-amber-wash px-3 py-2.5 text-[14px] text-ink" data-testid="vorgabe-abweichung">

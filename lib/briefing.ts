@@ -387,10 +387,11 @@ export function verteileMinuten(werte: number[], gesamt: number): number[] {
 
 /**
  * Die beste Übung aus dem Bestand für diese Fähigkeiten, oder null: zuerst freigegebene und zugewiesene Übungen,
- * Bibliothek, Vorlagen und Material, erst dann neue Aufgaben aus einer Aufgabenbank.
+ * Bibliothek, Vorlagen und Material, erst dann neue Aufgaben aus einer Aufgabenbank. `nutzbar`: nur Kandidaten, die
+ * so auch hinausgehen dürfen (im Plan der Einheit: lib/material-passt.ts).
  */
-export function uebungFuer(d: Pick<BriefingDaten, "kandidaten">, skillNamen: string[], schon: Set<string>): string | null {
-  const passt = (c: Kandidat) => !schon.has(c.id) && c.skills.some((s) => skillNamen.includes(s));
+export function uebungFuer(d: Pick<BriefingDaten, "kandidaten">, skillNamen: string[], schon: Set<string>, nutzbar: (c: Kandidat) => boolean = () => true): string | null {
+  const passt = (c: Kandidat) => !schon.has(c.id) && c.skills.some((s) => skillNamen.includes(s)) && nutzbar(c);
   const k = d.kandidaten.find((c) => c.art !== "bank" && passt(c)) ?? d.kandidaten.find(passt);
   if (!k) return null;
   schon.add(k.id);

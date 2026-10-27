@@ -81,6 +81,11 @@ export type Signal = {
   warum: string;
   /** bei einer Prüfung: in wie vielen Tagen (die frühere zählt bei gleicher Art mehr) */
   tage?: number;
+  /**
+   * nur die Vorgabe: ihre Punkte, deren Fähigkeit noch zu bestätigen ist (Wörter des Punkts, die vorgewählte Fähigkeit, wie viele
+   * sichere Fähigkeiten davor stehen); der Plan hat für sie einen vorläufigen Block (lib/stundenplan.ts)
+   */
+  vorlaeufig?: { inhalt: string; skillId: string | null; nach: number }[];
 };
 
 /**
@@ -453,14 +458,30 @@ export function vorgabeSignal(unitId: number, fach: string): Signal | null {
   const r = db().prepare("SELECT skill_ids, punkte FROM einheit_vorgabe WHERE unit_id = ?").get(unitId) as { skill_ids: string; punkte: string } | undefined;
   if (!r) return null;
   const skillIds = json<string[]>(r.skill_ids, []).filter((id) => repo.getSkill(id));
-  const punkte = json<{ inhalt: string; status: string; gruppe: string }[]>(r.punkte, []).filter((p) => p.status !== "ausgeschlossen" && p.gruppe !== "umfang");
+  type Punkt = { inhalt: string; status: string; gruppe: string; quelle?: string; zuordnung?: string; skill_id?: string | null; vorschlaege?: string[]; vorauswahl?: string; keinePasst?: boolean };
+  // a topic for today: the teacher's words, a worksheet or an explanation; a Stoffzettel lists the whole exam, not today's blocks
+  const fuerHeute = (p: Punkt) => p.quelle === "lehrer" || p.quelle === "aufgaben" || p.quelle === "erklaerung";
+  // „Keine passt“: the teacher said no skill fits; that point plans nothing
+  const punkte = json<Punkt[]>(r.punkte, []).filter((p) => p.status !== "ausgeschlossen" && p.gruppe !== "umfang" && !p.keinePasst);
   const stoff = [...new Set(punkte.map((p) => p.inhalt).filter(Boolean))].slice(0, 6);
   if (!skillIds.length && !stoff.length) return null;
   const fachDerSkills = new Set(skillIds.map((id) => repo.getSkill(id)!.subject));
+  // the points still to confirm, where they stand among the sure ones (a provisional block each in the plan)
+  const vorlaeufig: NonNullable<Signal["vorlaeufig"]> = [];
+  const davor = new Set<string>();
+  for (const p of punkte) {
+    if (p.skill_id && skillIds.includes(p.skill_id)) davor.add(p.skill_id);
+    const name = p.inhalt?.trim();
+    if (p.zuordnung !== "unklar" || !fuerHeute(p) || !p.vorschlaege?.length || !name || vorlaeufig.some((v) => v.inhalt.toLowerCase() === name.toLowerCase())) continue;
+    const skillId = p.vorauswahl && repo.getSkill(p.vorauswahl) ? p.vorauswahl : null;
+    if (skillId && vorlaeufig.some((v) => v.skillId === skillId)) continue;
+    vorlaeufig.push({ inhalt: name, skillId, nach: davor.size });
+  }
   return {
     art: "vorgabe",
     fach: fach || (fachDerSkills.size === 1 ? [...fachDerSkills][0] : ""),
     skill_ids: skillIds,
+    ...(vorlaeufig.length ? { vorlaeufig: vorlaeufig.slice(0, 3) } : {}),
     stoff,
     thema: stoff[0] ?? repo.getSkill(skillIds[0])?.name ?? "",
     warum: `Deine Vorgabe für heute: ${zitat(stoff.join(", ") || skillIds.map((id) => repo.getSkill(id)?.name ?? "").join(", "), 100)}`,

@@ -6,7 +6,7 @@ import { requireTeacher } from "@/lib/auth";
 import { dayOf } from "@/lib/exams";
 import { istRolle } from "@/lib/pruefungsstoff";
 import { canManageUnit, getUnit } from "@/lib/units";
-import { aendereRolle, bestaetigeVorgabe, entferneVorgabe, pruefungAusVorgabe, wendeVorgabeAn } from "@/lib/vorgabe";
+import { aendereRolle, bestaetigeVorgabe, entferneVorgabe, pruefungAusVorgabe, stoffZurPruefung, wendeVorgabeAn } from "@/lib/vorgabe";
 
 /** „Was steht heute an?“ (lib/vorgabe.ts): die Knöpfe der Karte im Unterricht. Gespeichert wird über app/material/vorgabe. */
 async function laufendeEinheit(unitId: number) {
@@ -54,6 +54,16 @@ export async function pruefungAusVorgabeAction(unitId: number, form: FormData) {
   const out = pruefungAusVorgabe(unitId, { datum: String(form.get("datum") ?? ""), art: String(form.get("art") ?? ""), teacherId: t.id, heute: dayOf(new Date()) });
   if ("fehler" in out) return zurueck(unitId, out.fehler);
   revalidatePath(`/schueler/${unit.student_id}`);
+  zurueck(unitId);
+}
+
+/** „Stoff zur Schularbeit am … übernehmen“: der gelesene Stoffzettel an die eingetragene Prüfung (lib/vorgabe.ts `stoffZurPruefung`). */
+export async function stoffZurPruefungAction(unitId: number, testId: number) {
+  const { unit } = await laufendeEinheit(unitId);
+  const out = stoffZurPruefung(unitId, testId, dayOf(new Date()));
+  if ("fehler" in out) return zurueck(unitId, out.fehler);
+  revalidatePath(`/schueler/${unit.student_id}`);
+  revalidatePath(`/schueler/${unit.student_id}/pruefung/${testId}`);
   zurueck(unitId);
 }
 

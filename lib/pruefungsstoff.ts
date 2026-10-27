@@ -91,8 +91,12 @@ export const STATUS_LABEL: Record<StoffStatus, string> = { pruefung: "Prüfungss
 
 /** Ein Punkt, wie ihn die App aus der Antwort übernimmt; `skill_id` ist der Vorschlag der KI (noch nicht geprüft). */
 export type RohPunkt = { gruppe: Gruppe; original: string; inhalt: string; einheit: string; dokument: number; quelle: Quelle; status: StoffStatus; grund: string; skill_id: string | null };
-/** Ein Punkt nach dem Zuordnen: `skill_id` nur bei sicher oder bestätigt; `vorschlaege` die Fähigkeiten zur Auswahl bei unklar. */
-export type StoffPunkt = Omit<RohPunkt, "skill_id"> & { skill_id: string | null; zuordnung: Zuordnung; vorschlaege: string[] };
+/**
+ * Ein Punkt nach dem Zuordnen: `skill_id` nur bei sicher oder bestätigt; `vorschlaege` die Fähigkeiten zur Auswahl bei unklar.
+ * `vorauswahl`: bei unklar die Fähigkeit, die die KI nennt und für die auch die Wörter sprechen (in der Bestätigung schon
+ * angehakt, zählt aber erst nach „Bestätigen“). `keinePasst`: die Lehrkraft hat „Keine passt“ gewählt.
+ */
+export type StoffPunkt = Omit<RohPunkt, "skill_id"> & { skill_id: string | null; zuordnung: Zuordnung; vorschlaege: string[]; vorauswahl?: string; keinePasst?: boolean };
 export type StoffZeile = StoffPunkt & { id: number; test_id: number; pos: number };
 
 export type Lesung = {
@@ -290,6 +294,26 @@ const imBereich = (id: string, gruppe: Gruppe) => {
 
 const vergleichstext = (p: Pick<RohPunkt, "inhalt" | "original">) => (p.inhalt && p.inhalt.toLowerCase() !== p.original.toLowerCase() ? `${p.inhalt} (${p.original})` : p.original);
 
+/** Ein Punkt übers Schreiben („Writing“, „Schreibaufgabe“, eine Textsorte). */
+const SCHREIBEN = /writing|schreibaufgabe|schreibauftrag|textsorte|aufsatz/i;
+export const istSchreibPunkt = (p: Pick<RohPunkt, "gruppe" | "inhalt" | "original">) => p.gruppe === "writing" || SCHREIBEN.test(`${p.inhalt} ${p.original}`);
+/** Rechtschreibung und Schreibweise (Groß- und Kleinschreibung …), keine Textsorte; eine Beschreibung ist eine. */
+const RECHTSCHREIBUNG = /(?<!be)schreibung|rechtschreib|spelling|zeichensetzung|beistrich|wörter und kurze sätze|zeilenende|fremdwörter richtig|gleich klingende/i;
+/** Was beim Schreiben hilft, aber keine Textsorte ist (Linking Words, Register, Absätze, Überarbeiten). */
+const SCHREIBHILFE = /linking|register|absätze|überarbeiten/i;
+
+/**
+ * Die Vorschläge zu einem Punkt übers Schreiben: Textsorten (E-Mail, Beschreibung, Geschichte …) zuerst, dann was beim Schreiben
+ * hilft, Rechtschreibung zuletzt (Abnahme Phase A: „Writing“ bot zuerst „Groß- und Kleinschreibung“). Sonst wie sie kommen.
+ */
+export function schreibenZuerst(ids: string[]): string[] {
+  const rang = (id: string) => {
+    const name = repo.getSkill(id)?.name ?? "";
+    return RECHTSCHREIBUNG.test(name) || /\.(?:capitals|spelling|recht)\b/.test(id) ? 2 : SCHREIBHILFE.test(name) ? 1 : 0;
+  };
+  return ids.map((id, i) => ({ id, i, r: rang(id) })).sort((a, b) => a.r - b.r || a.i - b.i).map((x) => x.id);
+}
+
 /**
  * Ordnet jedem Punkt eine Fähigkeit zu, ohne KI-Anfrage: den Vorschlag der KI (`skill_id`, nur aus Fach und Stufe des
  * Schülers) und den Vorschlag aus den Wörtern (`stoffVorschlag`, mit dem Gedächtnis der Lehrer).
@@ -314,25 +338,33 @@ export function ordneZu(punkte: RohPunkt[], o: { fach: string; student: Pick<rep
     const v = nachIndex.get(i);
     if (!v) return basis;
     const sicher = (id: string, rest: string[] = []): StoffPunkt => ({ ...basis, skill_id: id, zuordnung: "sicher", vorschlaege: uniq(rest).filter((x) => x !== id).slice(0, 3) });
-    const unklar = (ids: string[]): StoffPunkt => (uniq(ids).length ? { ...basis, zuordnung: "unklar", vorschlaege: uniq(ids).slice(0, 4) } : basis);
-    const best = uniq(v.best);
-    const kandidaten = uniq(v.skills.map((s) => s.id));
+    const unklar = (ids: string[], vorauswahl: string | null = null): StoffPunkt => {
+      const vorschlaege = uniq(ids).slice(0, 4);
+      return vorschlaege.length ? { ...basis, zuordnung: "unklar", vorschlaege, ...(vorauswahl && vorschlaege.includes(vorauswahl) ? { vorauswahl } : {}) } : basis;
+    };
+    // a point about writing: the kinds of text before spelling
+    const ordnen = istSchreibPunkt(p) ? schreibenZuerst : (ids: string[]) => ids;
+    const best = ordnen(uniq(v.best));
+    const kandidaten = ordnen(uniq(v.skills.map((s) => s.id)));
     const ki = o.ki && p.skill_id && pool.has(p.skill_id) ? p.skill_id : null;
     if (v.gemerkt) return best.length ? sicher(best[0], best.slice(1)) : basis;
     if (p.gruppe === "lektuere") return ki ? unklar([ki]) : basis;
     // without KI: a point that is exactly the name of a skill or one of its other names („Present Simple“) is clear
     const genau = kandidaten.find((id) => [repo.getSkill(id)?.name ?? "", ...(SUCHWOERTER[id] ?? [])].some((w) => [p.inhalt, p.original].some((t) => t.trim().toLowerCase() === w.trim().toLowerCase())));
     if (!o.ki && genau) return sicher(genau, best);
-    if (!o.ki) return best.length && best.length <= 2 ? sicher(best[0], best.slice(1)) : unklar([...best, ...kandidaten].filter((id) => imBereich(id, p.gruppe)).slice(0, 3));
+    // a writing point keeps a fourth choice, so spelling stays at the end instead of falling off
+    const wahl = istSchreibPunkt(p) ? 4 : 3;
+    if (!o.ki) return best.length && best.length <= 2 ? sicher(best[0], best.slice(1)) : unklar(ordnen([...best, ...kandidaten].filter((id) => imBereich(id, p.gruppe))).slice(0, wahl));
     if (ki) {
       if (best.includes(ki) || (!best.length && kandidaten[0] === ki)) return sicher(ki, best);
-      return unklar([ki, ...best, ...kandidaten]);
+      // the words also speak for the KI's skill: ticked already in the short confirmation, still to confirm
+      return unklar(ordnen(uniq([ki, ...best, ...kandidaten])), kandidaten.includes(ki) ? ki : null);
     }
     // the KI saw the list and named none: only words of the same area are worth a question
     const passend = best.filter((id) => imBereich(id, p.gruppe));
     if (passend.length && best.length <= 2) return unklar(passend);
     // what the teacher typed („Writing“) is today's topic even when it is a whole one: the same choice as without KI
-    return p.quelle === "lehrer" ? unklar([...best, ...kandidaten].filter((id) => imBereich(id, p.gruppe)).slice(0, 3)) : basis;
+    return p.quelle === "lehrer" ? unklar(ordnen([...best, ...kandidaten].filter((id) => imBereich(id, p.gruppe))).slice(0, wahl)) : basis;
   });
 }
 
@@ -548,7 +580,23 @@ export function speichereStoff(testId: number, punkte: StoffPunkt[], o: { lesung
       `INSERT INTO pruefungsstoff (test_id, pos, gruppe, original, inhalt, einheit, quelle, dokument, status, grund, skill_id, zuordnung, vorschlaege)
        VALUES (@test_id, @pos, @gruppe, @original, @inhalt, @einheit, @quelle, @dokument, @status, @grund, @skill_id, @zuordnung, @vorschlaege)`,
     );
-    punkte.forEach((p, pos) => add.run({ ...p, test_id: testId, pos, vorschlaege: JSON.stringify(p.vorschlaege) }));
+    punkte.forEach((p, pos) =>
+      add.run({
+        test_id: testId,
+        pos,
+        gruppe: p.gruppe,
+        original: p.original,
+        inhalt: p.inhalt,
+        einheit: p.einheit,
+        quelle: p.quelle,
+        dokument: p.dokument,
+        status: p.status,
+        grund: p.grund,
+        skill_id: p.skill_id,
+        zuordnung: p.zuordnung,
+        vorschlaege: JSON.stringify(p.vorschlaege),
+      }),
+    );
     if (o.lesungId !== undefined) conn.prepare("UPDATE tests SET lesung_id = ? WHERE id = ?").run(o.lesungId, testId);
     aktualisiereSkills(testId);
   })();
@@ -557,13 +605,25 @@ export function speichereStoff(testId: number, punkte: StoffPunkt[], o: { lesung
 /**
  * Der Prüfungsstoff aus einer Lesung an die Prüfung: zuordnen mit Fach und Stufe des Schülers, speichern. Was nur von einer
  * Erklärung oder einem Blatt mit Aufgaben stammt, ist noch zu klären.
+ *
+ * `ergaenzen` (der Stoffzettel aus „Was steht heute an?“, lib/vorgabe.ts `stoffZurPruefung`): was die Prüfung schon hat, bleibt
+ * mit der Entscheidung der Lehrkraft (bestätigt, ausgeschlossen); nur neue Punkte kommen dazu, ohne den Text, den die Lehrkraft
+ * für heute getippt hat. So geht kein Prüfungsstoff verloren.
  */
-export function stoffAusLesung(testId: number, lesungId: number): StoffZeile[] {
+export function stoffAusLesung(testId: number, lesungId: number, o: { ergaenzen?: boolean } = {}): StoffZeile[] {
   const t = repo.getTest(testId);
   const l = getLesung(lesungId);
   const student = t ? repo.getStudent(t.student_id) : null;
   if (!t || !l || !student) return [];
-  speichereStoff(testId, ordneZu(fuerPruefung(l.lesung.punkte), { fach: t.subject, student, ki: true }), { lesungId });
+  const neu = ordneZu(fuerPruefung(o.ergaenzen ? l.lesung.punkte.filter((p) => p.quelle !== "lehrer") : l.lesung.punkte), { fach: t.subject, student, ki: true });
+  const alt: StoffPunkt[] = (o.ergaenzen ? stoffDerPruefung(testId) : []).map((zeile) => {
+    const { id: _i, test_id: _t, pos: _p, ...z } = zeile;
+    void _i, void _t, void _p;
+    return z;
+  });
+  const klein = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+  const schon = new Set(alt.map((z) => `${z.gruppe}|${klein(z.original)}|${klein(z.einheit)}`));
+  speichereStoff(testId, [...alt, ...neu.filter((p) => !schon.has(`${p.gruppe}|${klein(p.original)}|${klein(p.einheit)}`))], { lesungId });
   return stoffDerPruefung(testId);
 }
 
