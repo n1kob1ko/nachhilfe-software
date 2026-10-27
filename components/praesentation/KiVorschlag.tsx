@@ -5,7 +5,7 @@ import type { KiKosten } from "@/lib/lernpaket-ki";
 import type { PraesEntwurf } from "@/lib/praesentation-ki";
 
 /** **fett** as <strong>; everything else stays text (React escapes it). */
-function Fett({ text }: { text: string }) {
+export function Fett({ text }: { text: string }) {
   const teile = text.split(/\*\*([^*\n]+?)\*\*/);
   return (
     <>
@@ -15,7 +15,7 @@ function Fett({ text }: { text: string }) {
 }
 
 /** Marks a part that appears only on the next click. */
-const Klick = () => <span className="mr-1.5 inline-block rounded bg-[#e3eefc] px-1 align-[1px] text-[10px] font-semibold uppercase tracking-wide text-[#1d4f9c]">Klick</span>;
+export const Klick = () => <span className="mr-1.5 inline-block rounded bg-[#e3eefc] px-1 align-[1px] text-[10px] font-semibold uppercase tracking-wide text-[#1d4f9c]">Klick</span>;
 
 function BlockVorschau({ b }: { b: Block }) {
   switch (b.art) {
@@ -65,7 +65,7 @@ function BlockVorschau({ b }: { b: Block }) {
 }
 
 /** One slide as the student will see it (white, like the deck), small. */
-function FolieVorschau({ f, nr }: { f: Folie; nr: number }) {
+export function FolieVorschau({ f, nr }: { f: Folie; nr: number }) {
   return (
     <div className="grid content-start gap-2 rounded-xl border border-line bg-white px-4 py-3 text-[14px] leading-snug text-[#1b2430] shadow-sm" aria-label={`Folie ${nr}`}>
       <p className="font-display text-[18px] font-semibold leading-tight text-[#10233f]">

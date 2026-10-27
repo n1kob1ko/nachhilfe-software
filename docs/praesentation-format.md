@@ -156,6 +156,27 @@ gespeichert und wiederverwendet.“ Hier geht es um den zweiten Teil, das Erstel
 5. Ohne KI (ausgeschaltet, kein Schlüssel, Budget aufgebraucht) sagt der Bereich das, der Knopf bleibt aus,
    und es geht keine Anfrage hinaus. Hochladen geht weiter.
 
+## Im Unterricht
+
+niko, 2026-10-27: „Wenn der Lehrer eine Präsentation verwenden möchte, soll er direkt im geführten Unterricht auswählen
+können: Präsentation erstellen. […] Bereits vorhandene passende Präsentationen sollen bevorzugt angeboten werden.“ Code:
+`lib/praesentation-unterricht.ts`, `components/cockpit/PraesentationSchritt.tsx`, Test `lib/praesentation-unterricht.test.ts`.
+
+1. Im Schritt unter **Das zeigst du**: die Präsentation, die in dieser Einheit hier schon lief, sonst die Folie des
+   Lernpakets, sonst bei Erklären und Grundlage die beste vorhandene: gleiche Fähigkeit, sonst gleiches Thema in Fach und
+   Schulstufe; geprüfte vor ungeprüften, gleiche Schulstufe vor anderen.
+2. **Vortrag öffnen** gibt es nur, wenn `PRESENTATION_ORIGIN` eingerichtet ist und die Dateien da sind. Sonst heißt der
+   Knopf **Folien ansehen** und zeigt die Folien als Text im Schritt (Titel, Punkte, Fragen, Vortragstext; aus dem HTML
+   gelesen, nichts ausgeführt), mit einer Zeile, dass Abspielen die eigene Adresse braucht.
+3. Passt nichts: **Präsentation erstellen** (zugeklappt) mit Fach, Schulstufe, Thema, Fähigkeit, Lernziel und dem, was der
+   Schritt sagt und fragt, und den geschätzten Kosten. Dieselbe Anfrage wie aus einem Lernpaket, für einen Schritt; sie nennt
+   die Einheit (Protokoll, Grenze je Schüler), nie den Schüler. Das Ergebnis ist ein **Entwurf** (`praesentation_entwuerfe`
+   ohne Paket): Folien mit Vortragstext, Verständnisfragen mit erwarteter Antwort. **Übernehmen** speichert ihn wie einen
+   Upload („Ungeprüft“), mit Fach, Schulstufe, Thema und Fähigkeit des Schritts, und vermerkt ihn beim Schritt; beim nächsten
+   Schüler zur selben Fähigkeit wird er angeboten. **Verwerfen** löscht den Entwurf. Ohne KI bleibt der Knopf aus, mit Grund.
+4. Welche Präsentation bei welchem Schritt lief, steht in `einheit_praesentationen`; der Abschluss schreibt unter „Heute
+   gemacht“: „Präsentation „…“ verwendet“.
+
 ## Sicherheit und Einrichtung
 
 Hochgeladene Präsentationen enthalten fremde Skripte. Sie sind deshalb vollständig von den

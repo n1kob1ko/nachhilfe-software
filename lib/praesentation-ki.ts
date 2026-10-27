@@ -28,7 +28,10 @@ export { kiKosten };
 export type PraesEntwurfStatus = "vorschlag" | "uebernommen" | "verworfen";
 export type PraesEntwurf = {
   id: number;
-  paket_id: number;
+  /** null: a proposal for one step of a unit (lib/praesentation-unterricht.ts, `unit_id`, `schritt_id`) */
+  paket_id: number | null;
+  unit_id: number | null;
+  schritt_id: number | null;
   deck: Deck;
   status: PraesEntwurfStatus;
   praesentation_id: number | null;
@@ -38,7 +41,7 @@ export type PraesEntwurf = {
 };
 
 type Row = Omit<PraesEntwurf, "deck"> & { inhalt: string };
-const toEntwurf = (r: Row): PraesEntwurf => {
+export const toEntwurf = (r: Row): PraesEntwurf => {
   const { inhalt, ...rest } = r;
   return { ...rest, deck: json<Deck>(inhalt, { titel: "", folien: [] }) };
 };
@@ -80,7 +83,7 @@ export function auftragAus(p: LernpaketMitSchritten): PraesAuftrag & { schritte:
 }
 
 /** Names that never leave the app: every teacher and every student. */
-function bekannteNamen(): string[] {
+export function bekannteNamen(): string[] {
   return (db().prepare("SELECT name FROM teachers UNION SELECT name FROM students").all() as { name: string }[]).map((r) => r.name);
 }
 
@@ -101,10 +104,15 @@ export const PRAES_AUSGABE = { von: 12_000, bis: 28_000 } as const;
  * characters per token) in, 12 000 to 28 000 tokens of answer with thinking out. Plan: 30 to 60 Cent per topic.
  */
 export function praesKostenSchaetzung(p?: LernpaketMitSchritten | null): { text: string; usdVon: number; usdBis: number } {
+  return praesKostenFuer(p ? auftragAus(p) : null);
+}
+
+/** The same estimate for any request, e.g. one step of a unit (lib/praesentation-unterricht.ts). */
+export function praesKostenFuer(a: PraesAuftrag | null): { text: string; usdVon: number; usdBis: number } {
   const route = routeFor("praesentation");
   if (route.provider === "manual") return { text: "kostet nichts (manueller Modus)", usdVon: 0, usdBis: 0 };
   if (isLocalModel(route.provider)) return { text: "kostet nichts (lokales Modell)", usdVon: 0, usdBis: 0 };
-  const anfrage = p ? praesentationAnfrage(auftragAus(p)).prompt.length : 6_000;
+  const anfrage = a ? praesentationAnfrage(a).prompt.length : 6_000;
   const input = Math.round((PRAESENTATION_SYSTEM.length + JSON.stringify(jsonSchemaOf(PraesentationKiSchema)).length + anfrage) / 3.2);
   const usd = (output: number) => costOf(route.model, "standard", { input, output, cacheWrite: 0, cacheRead: 0 });
   const [von, bis] = [usd(PRAES_AUSGABE.von), usd(PRAES_AUSGABE.bis)];
@@ -163,7 +171,7 @@ export function praesZip(d: Deck): { html: string; zip: Buffer } {
   return { html, zip: zipDatei([{ pfad: "index.html", daten: Buffer.from(html, "utf8") }, { pfad: NOTIZEN_DATEI, daten: Buffer.from(notizen, "utf8") }]) };
 }
 
-const dateiName = (titel: string) =>
+export const dateiName = (titel: string) =>
   `praesentation-${
     titel
       .toLowerCase()
@@ -182,7 +190,7 @@ const dateiName = (titel: string) =>
  */
 export function uebernimmPraesEntwurf(entwurfId: number, teacherId: number | null): { ok: true; praesId: number; paketId: number } | { fehler: string } {
   const e = getPraesEntwurf(entwurfId);
-  if (!e || e.status !== "vorschlag") return { fehler: "Diesen Vorschlag gibt es nicht mehr." };
+  if (!e || e.status !== "vorschlag" || e.paket_id === null) return { fehler: "Diesen Vorschlag gibt es nicht mehr." };
   const p = getLernpaket(e.paket_id);
   if (!p || p.status === "archiviert") return { fehler: "Das Lernpaket ist archiviert. Erst wiederherstellen." };
   const { html, zip } = praesZip(e.deck);
@@ -209,7 +217,7 @@ export function uebernimmPraesEntwurf(entwurfId: number, teacherId: number | nul
 /** „Verwerfen“: the proposal is set aside; nothing else changes. */
 export function verwirfPraesEntwurf(entwurfId: number): { paketId: number } | null {
   const e = getPraesEntwurf(entwurfId);
-  if (!e) return null;
+  if (!e || e.paket_id === null) return null;
   db().prepare("UPDATE praesentation_entwuerfe SET status = 'verworfen', updated_at = datetime('now') WHERE id = ? AND status = 'vorschlag'").run(e.id);
   return { paketId: e.paket_id };
 }

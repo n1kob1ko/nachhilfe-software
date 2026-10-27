@@ -55,6 +55,8 @@ export const PRAESENTATION_SYSTEM = [
   "Die Folien sieht auch der Schüler. Auf eine Folie gehören nie: die erwartete Antwort auf eine Frage der Lehrkraft, Lösungen von Übungen, Hinweise für die Lehrkraft. Das gehört in „notiz“.",
   "„notiz“ ist der Vortragstext der Lehrkraft zu dieser Folie: wann sie klickt, was sie fragt und welche Antwort sie erwartet, worauf sie achtet. Er ergänzt „Lehrer sagt“ des Pakets und wiederholt es nicht wörtlich.",
   "„schritte“: die Nummern der Schritte des Pakets, zu denen die Folie gehört. Die Folien folgen der Reihenfolge der Schritte; jeder Schritt, bei dem etwas gezeigt wird, bekommt mindestens eine Folie. Übungsschritte, bei denen der Schüler allein arbeitet, brauchen höchstens eine Folie mit dem Auftrag.",
+  "Jede Erklärung bekommt ein Beispiel, das zum Alter der Schulstufe passt (Alltag von Kindern und Jugendlichen in diesem Alter), und mindestens eine Verständnisfrage als Block „frage“; die erwartete Antwort steht in „notiz“ als „Erwartete Antwort: …“, nie auf der Folie.",
+  "Geht es um einen einzelnen Unterrichtsschritt statt um ein ganzes Paket, gelten dieselben Regeln: wenige Folien (meist 3 bis 6) nur zu diesem Schritt, „schritte“ ist dann immer [1].",
   "Richtigkeit geht vor Menge. Halte dich an das, was im Paket steht, und an den österreichischen Lehrplan der Schulstufe. Erfinde keine Zitate, Seitenzahlen, Schulbücher, Quellen oder Studien. Personen in Beispielen haben erfundene Vornamen.",
   "Bist du dir bei etwas nicht ganz sicher (eine Regel, eine Ausnahme, ein Beispiel), schreib es als kurzen Punkt in „pruefen“ dieser Folie, statt es als sicher hinzustellen.",
   "Schreib in österreichischem Deutsch mit den Begriffen der österreichischen Schule. Bei Englisch stehen Beispiele auf Englisch.",
@@ -64,8 +66,11 @@ export const PRAESENTATION_SYSTEM = [
 /** One step of the package as the KI sees it (nr = its position from 1). */
 export type PraesSchritt = { nr: number; art: string; titel: string; minuten: number; lehrer_sagt: string; lehrer_fragt: string; erwartete_antwort: string; bei_fehler: string; folie: number | null };
 
-/** What the KI is asked to build: the package's data, never a student's. */
-export type PraesAuftrag = { titel: string; fach: string; stufe: string; thema: string; ziel: string; dauer: number; schritte: PraesSchritt[] };
+/**
+ * What the KI is asked to build: the package's data, never a student's. `schritt`: one step of a unit (lib/praesentation-unterricht.ts),
+ * not a whole package.
+ */
+export type PraesAuftrag = { titel: string; fach: string; stufe: string; thema: string; ziel: string; dauer: number; schritte: PraesSchritt[]; schritt?: boolean };
 
 const einzeilig = (s: string, n: number) => {
   const t = s.replace(/\s+/g, " ").trim();
@@ -77,14 +82,14 @@ export function praesentationAnfrage(a: PraesAuftrag, namen: string[] = []): { s
   const pattern = namePattern(namen);
   const m = (s: string, n = 600) => einzeilig(maskText(s, pattern).masked, n);
   const z: string[] = [];
-  z.push("Gestalte die Präsentation zu diesem Lernpaket.");
+  z.push(a.schritt ? "Gestalte die Präsentation zu diesem einen Unterrichtsschritt." : "Gestalte die Präsentation zu diesem Lernpaket.");
   z.push(`Titel: ${m(a.titel, 120)}`);
   z.push(`Fach: ${a.fach}`);
   z.push(`Schulart und Klasse: ${a.stufe || "für jede Schulart"}`);
   if (a.thema) z.push(`Thema: ${m(a.thema, 120)}`);
   if (a.ziel) z.push(`Ziel: ${m(a.ziel, 1000)}`);
   z.push(`Dauer: ${a.dauer} Minuten`);
-  z.push("", "Schritte des Pakets:");
+  z.push("", a.schritt ? "Der Schritt:" : "Schritte des Pakets:");
   for (const s of a.schritte) {
     z.push("", `Schritt ${s.nr} · ${s.art} · ${s.minuten} min · ${m(s.titel, 120)}${s.folie ? ` (zeigt bisher Folie ${s.folie})` : ""}`);
     if (s.lehrer_sagt.trim()) z.push(`  Lehrer sagt: ${m(s.lehrer_sagt)}`);

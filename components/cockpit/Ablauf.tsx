@@ -47,6 +47,7 @@ import { KeinPaket } from "@/components/cockpit/Vorbereitung";
 import { CopyLink } from "@/components/CopyLink";
 import { TabletSend } from "@/components/device/TabletSend";
 import { MinitestKarte } from "@/components/MinitestKarte";
+import { PraesentationSchritt } from "@/components/cockpit/PraesentationSchritt";
 import { SchuelerWorteKarte } from "@/components/SchuelerNotiz";
 import { TaskBody } from "@/components/TaskPreview";
 import { CancelUnit } from "@/components/UnitControl";
@@ -118,6 +119,7 @@ export function Unterricht({
   teacherId,
   werkzeugeOffen = false,
   ausfuehrlich = null,
+  folien = null,
 }: {
   unit: UnitView;
   student: repo.Student;
@@ -126,6 +128,8 @@ export function Unterricht({
   werkzeugeOffen?: boolean;
   /** nach „Ausführlicher erklären“: der Schritt, dessen Erklärung offen steht */
   ausfuehrlich?: number | null;
+  /** nach „Folien ansehen“ (lib/praesentation-unterricht.ts): der Schritt, dessen Präsentation als Text offen steht */
+  folien?: number | null;
 }) {
   const c = cockpit(unit.id, { mitPlan: true });
   // die nächste Übung bereit (lib/cockpit.ts haltBereit): nach dem Antworten, ohne KI, nie beim Schüler
@@ -172,11 +176,11 @@ export function Unterricht({
       )}
       {ids.length > 1 && <Punkte c={c} ids={ids} aktuell={aktuell} unitId={unit.id} />}
       {c.paket && c.aktuell ? (
-        <SchrittKarte c={c} s={c.aktuell} paket={c.paket} unit={unit} name={name} liste={liste} vorschlag={imSchritt} laeufe={laeufe} />
+        <SchrittKarte c={c} s={c.aktuell} paket={c.paket} unit={unit} name={name} liste={liste} vorschlag={imSchritt} laeufe={laeufe} folienOffen={folien === c.aktuell.id} />
       ) : c.planAktuell && quelle ? (
-        <SchrittKarte c={c} s={{ ...quelle.schritt, id: c.planAktuell.id, minuten: c.minuten.get(c.planAktuell.id) ?? c.planAktuell.minuten }} echteId={quelle.schritt.id} thema={c.planAktuell.thema} paket={quelle.paket} unit={unit} name={name} liste={liste} vorschlag={imSchritt} laeufe={laeufe} />
+        <SchrittKarte c={c} s={{ ...quelle.schritt, id: c.planAktuell.id, minuten: c.minuten.get(c.planAktuell.id) ?? c.planAktuell.minuten }} echteId={quelle.schritt.id} thema={c.planAktuell.thema} paket={quelle.paket} unit={unit} name={name} liste={liste} vorschlag={imSchritt} laeufe={laeufe} folienOffen={folien === c.planAktuell.id} />
       ) : !c.paket && c.planAktuell ? (
-        <PlanKarte c={c} s={c.planAktuell} unit={unit} student={student} vorschlag={imSchritt} laeufe={laeufe} ausfuehrlichOffen={ausfuehrlich === c.planAktuell.id} />
+        <PlanKarte c={c} s={c.planAktuell} unit={unit} student={student} vorschlag={imSchritt} laeufe={laeufe} ausfuehrlichOffen={ausfuehrlich === c.planAktuell.id} folienOffen={folien === c.planAktuell.id} />
       ) : ids.length > 0 ? (
         <AllesDurch c={c} unitId={unit.id} naechstesMal={naechstesMal} />
       ) : (
@@ -603,6 +607,7 @@ function SchrittKarte({
   laeufe,
   echteId = s.id,
   thema = null,
+  folienOffen = false,
 }: {
   c: CockpitDaten;
   s: LernpaketSchritt;
@@ -614,6 +619,7 @@ function SchrittKarte({
   laeufe: TextLauf[];
   echteId?: number;
   thema?: string | null;
+  folienOffen?: boolean;
 }) {
   const unitId = unit.id;
   const ids = c.paket ? c.schritte.map((x) => x.id) : c.plan.map((x) => x.id);
@@ -648,18 +654,8 @@ function SchrittKarte({
             <LangText text={s.lehrer_sagt} />
           </Block>
         )}
-        {folie && (
-          <Block titel="Das zeigst du">
-            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[16px]">
-              <span className="inline-flex items-center gap-1.5">
-                <Presentation size={16} className="text-accent" aria-hidden /> Folie {folie}
-              </span>
-              <Link href={`/mehr/praesentationen/${paket.praesentation_id}?folie=${folie}`} className="inline-flex min-h-[44px] items-center gap-1 font-semibold text-accent hover:underline" data-testid="vortrag-oeffnen">
-                Vortrag öffnen <ExternalLink size={14} aria-hidden />
-              </Link>
-            </p>
-          </Block>
-        )}
+        {/* „Das zeigst du“: die Folie des Pakets, eine passende Präsentation oder „Präsentation erstellen“ (lib/praesentation-unterricht.ts) */}
+        <PraesentationSchritt c={c} unitId={unitId} schrittId={s.id} folienOffen={folienOffen} />
         {s.lehrer_fragt.trim() && (
           <Block titel="Das fragst du">
             <p className="text-[18px] leading-relaxed whitespace-pre-line">{s.lehrer_fragt}</p>
@@ -807,6 +803,7 @@ function PlanKarte({
   vorschlag,
   laeufe,
   ausfuehrlichOffen,
+  folienOffen,
 }: {
   c: CockpitDaten;
   s: PlanStep;
@@ -815,6 +812,7 @@ function PlanKarte({
   vorschlag: Anzeige | null;
   laeufe: TextLauf[];
   ausfuehrlichOffen: boolean;
+  folienOffen: boolean;
 }) {
   const ids = c.plan.map((x) => x.id);
   const name = first(student.name);
@@ -907,6 +905,8 @@ function PlanKarte({
               </p>
             </Block>
           )}
+          {/* Erklären und Grundlage: eine passende Präsentation oder „Präsentation erstellen“ (lib/praesentation-unterricht.ts) */}
+          <PraesentationSchritt c={c} unitId={unit.id} schrittId={s.id} folienOffen={folienOffen} titel={f.zeigt ? "Mit Präsentation zeigen" : "Das zeigst du"} />
           {f.fragt && (
             <Block titel="Das fragst du">
               <p className="text-[18px] leading-relaxed whitespace-pre-line">{f.fragt}</p>
