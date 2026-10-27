@@ -4,6 +4,7 @@ import { uebernimmPraesImUnterrichtAction, verwirfPraesImUnterrichtAction, zeige
 import { VorschlagKnopf } from "@/components/cockpit/CockpitClient";
 import { Fett, FolieVorschau } from "@/components/praesentation/KiVorschlag";
 import { PraesentationSchrittKnopf } from "@/components/praesentation/PraesentationSchrittKnopf";
+import { UnterlagenListe } from "@/components/cockpit/UnterlagenSchritt";
 import { Pill } from "@/components/ui";
 import type { CockpitDaten } from "@/lib/cockpit";
 import { kiKosten } from "@/lib/lernpaket-ki";
@@ -23,6 +24,7 @@ import {
   type ZeigeSchritt,
 } from "@/lib/praesentation-unterricht";
 import { praesUngeprueft } from "@/lib/praesentationen";
+import { unterlagenImSchritt, type Unterlage } from "@/lib/unterlagen-unterricht";
 
 const kurz = (s: string, n: number) => {
   const t = s.replace(/\s+/g, " ").trim();
@@ -33,27 +35,54 @@ const kurz = (s: string, n: number) => {
  * „Das zeigst du“ mit Präsentation (lib/praesentation-unterricht.ts), im Schritt des Lernpakets wie des Plans: die passende vorhandene
  * Präsentation zuerst; abspielen nur mit eingerichteter Präsentations-Adresse, sonst die Folien als Text. Passt nichts, bei Erklären
  * und Grundlage „Präsentation erstellen“ (zugeklappt, mit allem, was die App aus dem Schritt schon weiß, und den geschätzten Kosten),
- * danach der Entwurf mit „Übernehmen“ und „Verwerfen“. Nur für den Lehrer der Einheit.
+ * danach der Entwurf mit „Übernehmen“ und „Verwerfen“. Darunter, im selben Block, mitgebrachte Unterlagen, die das Thema erklären
+ * (lib/unterlagen-unterricht.ts). Nur für den Lehrer der Einheit.
  */
-export async function PraesentationSchritt({ c, unitId, schrittId, folienOffen, titel = "Das zeigst du" }: { c: CockpitDaten; unitId: number; schrittId: number; folienOffen: boolean; titel?: string }) {
+export async function PraesentationSchritt({
+  c,
+  unitId,
+  schrittId,
+  folienOffen,
+  titel = "Das zeigst du",
+  unterlagen = unterlagenImSchritt(unitId, schrittId, c),
+}: {
+  c: CockpitDaten;
+  unitId: number;
+  schrittId: number;
+  folienOffen: boolean;
+  titel?: string;
+  /** schon geholt (der Planschritt braucht sie für seinen Block) */
+  unterlagen?: Unterlage[];
+}) {
   const z = schrittDerEinheit(unitId, schrittId, c);
   if (!z) return null;
   const entwurf = offenerSchrittEntwurf(unitId, schrittId);
   const angebot = entwurf ? null : angebotFuer(z);
-  if (!entwurf && !angebot && !z.erklaert) return null;
+  const praes = Boolean(entwurf || angebot || z.erklaert);
+  if (!praes && !unterlagen.length) return null;
   const a = await appAdresse();
+  // only documents: under „Das zeigst du“, or below a worked example („Mit Präsentation zeigen“ then says too much)
+  const kopf = praes || titel === "Das zeigst du" ? titel : "Mitgebrachte Unterlagen";
   return (
-    <section id="praesentation-schritt" className="scroll-mt-24" aria-label="Präsentation" data-testid="praesentation-schritt">
-      <p className="text-[13px] font-semibold text-ink-2">{titel}</p>
-      <div className="mt-1">
-        {entwurf ? (
-          <Entwurf e={entwurf} />
-        ) : angebot ? (
-          <Angebot t={angebot} z={z} offen={folienOffen} w={wiedergabe(angebot.p, a.host, a.proto)} />
-        ) : (
-          <Erstellen z={z} />
-        )}
-      </div>
+    <section id="praesentation-schritt" className="scroll-mt-24" aria-label={praes ? "Präsentation" : "Unterlagen"} data-testid="praesentation-schritt">
+      <p className="text-[13px] font-semibold text-ink-2">{kopf}</p>
+      {praes && (
+        <div className="mt-1">
+          {entwurf ? (
+            <Entwurf e={entwurf} />
+          ) : angebot ? (
+            <Angebot t={angebot} z={z} offen={folienOffen} w={wiedergabe(angebot.p, a.host, a.proto)} />
+          ) : (
+            <Erstellen z={z} />
+          )}
+        </div>
+      )}
+      {unterlagen.length > 0 && (
+        <div className={praes ? "mt-3" : "mt-1"}>
+          {praes && <p className="mb-1 text-[13px] font-semibold text-ink-2">Mitgebrachte Unterlagen</p>}
+          <UnterlagenListe unitId={unitId} schrittId={schrittId} unterlagen={unterlagen} />
+        </div>
+      )}
     </section>
   );
 }

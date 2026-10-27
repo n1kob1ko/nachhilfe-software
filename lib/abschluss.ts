@@ -26,6 +26,7 @@ import { daysUntil } from "./exams";
 import { readReport, type TaskLine } from "./learning";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
 import { praesentationenDerEinheit } from "./praesentation-unterricht";
+import { unterlagenDerEinheit } from "./unterlagen-unterricht";
 import { LERNKONTROLLE } from "./quick-round";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
@@ -97,6 +98,7 @@ export type AufgabeBeleg = Pick<TaskLine, "assignmentId" | "skillId" | "skill" |
  * - `pruefung`: die nächste eingetragene Prüfung (bis 30 Tage) und ihr Stoff ohne Antwort in den 30 Tagen davor
  * - `eigene`: Felder, die die Lehrkraft direkt in der Karte korrigiert hat, mit ihrem Text
  * - `praesentationen`: die Präsentationen, die im Unterricht bei einem Schritt gezeigt wurden (lib/praesentation-unterricht.ts)
+ * - `unterlagen`: mitgebrachte Unterlagen, die im Unterricht bei einem Schritt geöffnet wurden (lib/unterlagen-unterricht.ts)
  */
 export type AbschlussBelege = {
   aufgaben: AufgabeBeleg[];
@@ -110,6 +112,7 @@ export type AbschlussBelege = {
   pruefung: { art: string; fach: string; datum: string; offen: string[] } | null;
   eigene: Partial<Record<AbschlussFeld, string>>;
   praesentationen?: string[];
+  unterlagen?: string[];
 };
 
 /** „Gut verstanden“, Regel 1: so viele Aufgaben einer Fähigkeit im ersten Versuch ohne Hilfe richtig, keine falsche Antwort. */
@@ -257,6 +260,8 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   const vorgabeOffen = (belege?.vorgabe ?? []).filter((v) => !belege!.geuebt.includes(v.id));
   if (vorgabeGeuebt.length) gemacht.push({ text: `Aus deiner Vorgabe geübt: ${vorgabeGeuebt.map((v) => v.name).join(", ")}`, von: "vorgabe" });
   for (const t of belege?.praesentationen ?? []) gemacht.push(a(`Präsentation „${t}“ verwendet`));
+  // only what the teacher opened at a step, never what was merely offered
+  for (const t of belege?.unterlagen ?? []) gemacht.push(a(`Unterlage gezeigt: ${t}`));
 
   // only what the rules show as secure (`gutVerstanden`), or what the teacher wrote; a step marked „Weiter“ proves nothing
   const regeln = belege ? gutVerstanden(belege) : null;
@@ -390,7 +395,8 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
   for (const feld of eigen) if ((lesson[DOKU_FELD[feld]] ?? "").trim()) eigene[feld] = lesson[DOKU_FELD[feld]];
 
   const praesentationen = praesentationenDerEinheit(unitId).map((p) => p.title);
-  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen };
+  const unterlagen = unterlagenDerEinheit(unitId).map((u) => u.titel);
+  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen };
 }
 
 /** Die Karte einer beendeten Einheit mit allen Belegen, wie der Abschluss sie zeigt und „Bestätigen“ sie schreibt. */

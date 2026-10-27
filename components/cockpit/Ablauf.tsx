@@ -93,6 +93,7 @@ import { levelFor } from "@/lib/text-correction-rules";
 import { platzFuerEinheit, type UnitView } from "@/lib/units";
 import { autoFuerEinheit, kiVorgabe, type Signal } from "@/lib/vorbereitung-auto";
 import { vorgabeDerEinheit } from "@/lib/vorgabe";
+import { unterlagenImSchritt } from "@/lib/unterlagen-unterricht";
 import { SchreibauftragStart, TextarbeitZeilen } from "@/components/cockpit/Textarbeit";
 import { schreibArt, schreibStartFuer, schreibStartZurPruefung, textLaeufe, textZumSchritt, type TextLauf } from "@/lib/textarbeit-ablauf";
 import { SCHULARBEIT_SCHRITT } from "@/lib/briefing";
@@ -655,7 +656,7 @@ function SchrittKarte({
             <LangText text={s.lehrer_sagt} />
           </Block>
         )}
-        {/* „Das zeigst du“: die Folie des Pakets, eine passende Präsentation oder „Präsentation erstellen“ (lib/praesentation-unterricht.ts) */}
+        {/* „Das zeigst du“: die Folie des Pakets, eine passende Präsentation oder „Präsentation erstellen“ (lib/praesentation-unterricht.ts), darunter mitgebrachte Unterlagen */}
         <PraesentationSchritt c={c} unitId={unitId} schrittId={s.id} folienOffen={folienOffen} />
         {s.lehrer_fragt.trim() && (
           <Block titel="Das fragst du">
@@ -865,10 +866,12 @@ function PlanKarte({
   // the Lernkontrolle: three new tasks, one try, no hints (lib/cockpit.ts sendeAusGenerator); the student's own word
   // lists make another count
   const kontrolleLabel = skill?.id === EIGENE_VOKABELN ? "Lernkontrolle senden" : `Lernkontrolle senden (${KONTROLLE_ANZAHL} Aufgaben)`;
+  // „Das zeigst du“ also holds the documents the teacher brought that explain this topic (lib/unterlagen-unterricht.ts)
+  const unterlagen = unterlagenImSchritt(unit.id, s.id, c);
   return (
     <section className="panel px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
       <KartenKopf c={c} id={s.id} titel={s.titel} minuten={c.minuten.get(s.id) ?? s.minuten} ids={ids} thema={s.thema} />
-      {(s.beschreibung.trim() || f.sagt || f.zeigt || f.fragt || ausGespeichert || ausKnopf) && (
+      {(s.beschreibung.trim() || f.sagt || f.zeigt || f.fragt || ausGespeichert || ausKnopf || unterlagen.length > 0) && (
         <div className="mt-4 grid gap-4">
           {s.beschreibung.trim() && (
             <Block titel="Das machst du">
@@ -908,7 +911,7 @@ function PlanKarte({
             </Block>
           )}
           {/* Erklären und Grundlage: eine passende Präsentation oder „Präsentation erstellen“ (lib/praesentation-unterricht.ts) */}
-          <PraesentationSchritt c={c} unitId={unit.id} schrittId={s.id} folienOffen={folienOffen} titel={f.zeigt ? "Mit Präsentation zeigen" : "Das zeigst du"} />
+          <PraesentationSchritt c={c} unitId={unit.id} schrittId={s.id} folienOffen={folienOffen} titel={f.zeigt ? "Mit Präsentation zeigen" : "Das zeigst du"} unterlagen={unterlagen} />
           {f.fragt && (
             <Block titel="Das fragst du">
               <p className="text-[18px] leading-relaxed whitespace-pre-line">{f.fragt}</p>

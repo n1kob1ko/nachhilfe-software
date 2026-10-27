@@ -28,7 +28,7 @@ import { MathText } from "@/components/MathText";
 
 export const metadata = { title: "Material" };
 
-type Params = { fehler?: string; gespeichert?: string; vorhanden?: string; erkannt?: string; uebernommen?: string; vorschlag?: string };
+type Params = { fehler?: string; gespeichert?: string; vorhanden?: string; erkannt?: string; uebernommen?: string; vorschlag?: string; einheit?: string };
 const chip = "flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[13.5px] has-checked:border-accent has-checked:bg-accent-wash has-checked:text-accent";
 const statusTone = { hochgeladen: "amber", vorschlag: "accent", geprueft: "green" } as const;
 const mb = (n: number) => (n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1).replace(".", ",")} MB`);
@@ -78,7 +78,7 @@ export default async function MaterialPage({ params, searchParams }: { params: P
   return (
     <>
       <PageHeader
-        back={{ href: "/mehr/material", label: "Material" }}
+        back={Number(sp.einheit) > 0 ? { href: `/einheiten/${Number(sp.einheit)}#praesentation-schritt`, label: "Unterricht" } : { href: "/mehr/material", label: "Material" }}
         title={m.title}
         subtitle={
           <span className="flex flex-wrap items-center gap-1.5">

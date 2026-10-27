@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CalendarCheck, CalendarPlus, ChevronDown, ClipboardList, FileText, TriangleAlert } from "lucide-react";
+import { unterlageSchrittAction } from "@/app/unterlagen-actions";
 import { bestaetigeVorgabeAction, entferneVorgabeAction, planAnpassenAction, pruefungAusVorgabeAction, rolleAendernAction, stoffZurPruefungAction } from "@/app/vorgabe-actions";
 import { RolleWahl } from "@/components/cockpit/RolleWahl";
 import { VorgabeForm } from "@/components/cockpit/VorgabeForm";
@@ -11,6 +12,7 @@ import { ROLLE_SATZ } from "@/lib/pruefungsstoff";
 import { tagMonat } from "@/lib/vorbereitung-auto";
 import * as repo from "@/lib/repo";
 import type { UnitView } from "@/lib/units";
+import { schritteFuerUnterlagen, zumZuordnen } from "@/lib/unterlagen-unterricht";
 import { abweichung, dateienDerVorgabe, materialZurWahl, pruefungZurVorgabe, schonEingetragen, stoffKnopfText, stoffzettelZurPruefung, vorgabeDerEinheit } from "@/lib/vorgabe";
 
 const skillName = (id: string) => {
@@ -28,7 +30,8 @@ const mehrzahl = (n: number, eins: string, viele: string) => `${n} ${n === 1 ? e
  * (der Start bleibt so schnell wie bisher), mit Vorgabe eine kurze Zusammenfassung: was heute dran ist und zu welcher
  * Fähigkeit, was kurz zu bestätigen ist, wo sie von der nächsten Prüfung abweicht, ein Termin zum Bestätigen und
  * „Plan anpassen“, wenn der Ablauf schon begonnen hat. Je Datei steht ihre Art in einer Zeile („Foto 2: erklärt ein Thema“)
- * und lässt sich mit einem Tippen ändern. Nur für die Lehrkraft.
+ * und lässt sich mit einem Tippen ändern. Eine Erklärung, die zu keinem Schritt von selbst passt, bekommt darunter „Passt zu welchem
+ * Schritt?“ (lib/unterlagen-unterricht.ts); erst nach der Wahl steht sie im Schritt unter „Das zeigst du“. Nur für die Lehrkraft.
  *
  * Die Vorgabe steht über dem Schritt, solange die Lehrkraft etwas bestätigen oder lesen muss; danach (alles bestätigt, oder der
  * Ablauf hat begonnen) ist sie eine Zeile („Vorgabe für heute · 2 Fotos · 17 Themen · 9 zum Bestätigen“), der Rest hinter
@@ -67,6 +70,12 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
   const test = v.testId ? repo.getTest(v.testId) : null;
   // „Foto 1“, „Foto 2“, „PDF 1“: numbered per kind, as the teacher took them
   const dateien = dateienDerVorgabe(v).map((d, i, alle) => ({ ...d, name: `${d.art} ${alle.slice(0, i + 1).filter((x) => x.art === d.art).length}` }));
+  // an explanation no step takes by itself: the teacher picks the step (never guessed)
+  const zuordnen = new Map(zumZuordnen(unit.id, c).map((z) => [z.materialId, z.schrittId]));
+  // numbered like the step dots; a provisional block (still to confirm) is no choice
+  const nummer = new Map((c.paket ? c.schritte : c.plan).map((x, i) => [x.id, i + 1]));
+  const schritte = schritteFuerUnterlagen(c).map((x) => ({ wert: String(x.id), text: `${nummer.get(x.id)}. ${x.titel}` }));
+  const ohneSchritt = [...zuordnen.values()].filter((x) => x === null).length;
   // a Stoffzettel read today and an entered exam it belongs to: one tap takes its Stoff over (lib/vorgabe.ts stoffZurPruefung)
   const zuPruefung = stoffzettelZurPruefung(v, unit.subject, heute);
   const angebot = zuPruefung && !zuPruefung.uebernommen ? zuPruefung.test : null;
@@ -89,6 +98,7 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
     pdfs ? mehrzahl(pdfs, "PDF", "PDFs") : "",
     zeilen.length ? mehrzahl(zeilen.length, "Thema", "Themen") : "",
     unklar.length ? `${unklar.length} zum Bestätigen` : "",
+    ohneSchritt ? `${mehrzahl(ohneSchritt, "Erklärung", "Erklärungen")} ohne Schritt` : "",
     angebot ? "Stoffzettel noch nicht bei der Prüfung" : "",
     !v.angewendet && begonnen ? "Plan noch nicht angepasst" : "",
   ].filter(Boolean);
@@ -130,6 +140,20 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
                 </a>
                 <RolleWahl action={rolleAendernAction.bind(null, unit.id, d.materialId)} rolle={d.rolle ?? ""} optionen={ROLLEN} label={`Art von ${d.name}`} />
                 {!d.gelesen && <span className="text-[12.5px] text-ink-3">nicht gelesen</span>}
+                {zuordnen.has(d.materialId) && schritte.length > 0 && (
+                  <span className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 pb-1" data-testid="unterlage-zuordnen">
+                    <span className="text-[13.5px] text-ink-2">Passt zu welchem Schritt?</span>
+                    <RolleWahl
+                      action={unterlageSchrittAction.bind(null, unit.id, d.materialId)}
+                      rolle={String(zuordnen.get(d.materialId) ?? "")}
+                      optionen={schritte}
+                      label={`Schritt für ${d.name}`}
+                      name="schritt"
+                      testid="unterlage-schritt"
+                      leer="Zu keinem"
+                    />
+                  </span>
+                )}
               </li>
             ))}
           </ul>
