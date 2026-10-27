@@ -66,8 +66,8 @@ test("verschieben: der Schüler fragt, nichts bewegt sich, die Verwaltung bestä
   assert.equal(r.ok, true, r.ok ? "" : r.fehler);
   const id = r.ok ? r.id! : 0;
   assert.equal(planung.getGeplanteEinheit(p)!.weekday, 2, "vor dem Bestätigen bleibt der Platz");
-  assert.equal(ta.anfragenFuerSchueler(anna)[0].status, "offen");
-  assert.equal(ta.anfragenFuerSchueler(anna)[0].nach, "Mi, 14. Okt. 15:00–16:40");
+  assert.equal(ta.anfragenFuerSchueler(anna, JETZT)[0].status, "offen");
+  assert.equal(ta.anfragenFuerSchueler(anna, JETZT)[0].nach, "Mi, 14. Okt. 15:00–16:40");
 
   // eine zweite Anfrage zum selben Termin geht nicht, und nur die Verwaltung bestätigt
   assert.equal(ta.stelleAnfrage({ schuelerId: anna }, { art: "verschieben", platzId: p, datum: "2026-10-15", startMin: 900 }, JETZT).ok, false);
@@ -77,7 +77,7 @@ test("verschieben: der Schüler fragt, nichts bewegt sich, die Verwaltung bestä
   assert.equal(ok.ok, true, ok.ok ? "" : ok.fehler);
   const neu = planung.getGeplanteEinheit(p)!;
   assert.deepEqual([neu.weekday, neu.start_min, neu.status], [3, 900, "veroeffentlicht"]);
-  assert.equal(ta.anfragenFuerSchueler(anna)[0].status, "bestaetigt");
+  assert.equal(ta.anfragenFuerSchueler(anna, JETZT)[0].status, "bestaetigt");
   assert.equal(ta.bestaetige(niko, id, {}, JETZT).ok, false, "zweimal bestätigen geht nicht");
 });
 
@@ -95,11 +95,11 @@ test("bestätigen prüft in dem Moment: belegt = nichts ändert sich, der Grund 
   assert.equal(nein.ok, false);
   assert.match(nein.ok ? "" : nein.fehler, /^Nicht bestätigt: Lehrer Niko ist am Mittwoch 15:00–16:40 schon verplant/);
   assert.equal(planung.getGeplanteEinheit(p)!.weekday, 2, "nichts bewegt");
-  assert.equal(ta.anfragenFuerVerwaltung()[0].status, "offen");
+  assert.equal(ta.anfragenFuerVerwaltung(JETZT)[0].status, "offen");
 
   assert.equal(ta.lehneAb({ lehrer: niko }, id, "  ", JETZT).ok, false, "ohne Grund nicht");
   assert.equal(ta.lehneAb({ lehrer: niko }, id, "Niko ist da schon verplant.", JETZT).ok, true);
-  const s = ta.anfragenFuerSchueler(anna)[0];
+  const s = ta.anfragenFuerSchueler(anna, JETZT)[0];
   assert.equal(s.status, "abgelehnt");
   assert.equal(s.grund, "Niko ist da schon verplant.");
 });
@@ -129,10 +129,10 @@ test("tauschen: wartet auf die andere Seite, der andere Schüler sieht nur Zeite
   const r = ta.stelleAnfrage({ schuelerId: anna }, { art: "tauschen", platzId: pa, partnerPlatzId: pb, notiz: "Anna hat Schularbeit" }, JETZT);
   assert.ok(r.ok, r.ok ? "" : r.fehler);
   const id = r.ok ? r.id! : 0;
-  assert.equal(ta.anfragenFuerSchueler(anna)[0].status, "wartet");
+  assert.equal(ta.anfragenFuerSchueler(anna, JETZT)[0].status, "wartet");
   assert.match(ta.bestaetige(niko, id, {}, JETZT).ok ? "" : "noch nicht", /noch nicht/);
 
-  const fuerBen = ta.anfragenFuerSchueler(ben);
+  const fuerBen = ta.anfragenFuerSchueler(ben, JETZT);
   assert.equal(fuerBen.length, 1);
   assert.equal(fuerBen[0].rolle, "partner");
   assert.equal(fuerBen[0].kannZustimmen, true);
@@ -166,19 +166,19 @@ test("tauschen: der Schüler lehnt ohne eigenen Text ab; der Lehrer der anderen 
   assert.equal(todo.length, 1);
   assert.equal(zuErledigen(niko.id, "2026-10-12", JETZT).offen.filter((p) => p.art === "terminanfrage").length, 0, "wartet: noch nichts zu bestätigen");
   assert.equal(ta.lehneAb({ schuelerId: dora }, id, "Ich will nicht", JETZT).ok, true);
-  assert.equal(ta.anfragenFuerSchueler(carla)[0].grund, "Der andere Termin passt nicht.");
+  assert.equal(ta.anfragenFuerSchueler(carla, JETZT)[0].grund, "Der andere Termin passt nicht.");
 
   // stellt Thomas den Tausch selbst, gilt seine Zustimmung gleich; dann ist es bei der Verwaltung
   const t = ta.stelleAnfrage({ lehrer: thomas }, { art: "tauschen", platzId: pc, partnerPlatzId: pd }, JETZT);
   assert.ok(t.ok);
-  assert.equal(ta.anfragenFuerLehrer(thomas)[0].status, "offen");
+  assert.equal(ta.anfragenFuerLehrer(thomas, JETZT)[0].status, "offen");
   assert.equal(zuErledigen(niko.id, "2026-10-12", JETZT).offen.filter((p) => p.art === "terminanfrage").length, 1);
   // ein Lehrer fragt nicht für fremde Plätze; zurückziehen geht nur bei der eigenen Anfrage
   const pn = platz(schueler("Emil Fiktiv"), 5, 600, { room: null });
   assert.equal(ta.stelleAnfrage({ lehrer: thomas }, { art: "verschieben", platzId: pn, datum: "2026-10-16", startMin: 800 }, JETZT).ok, false);
   assert.equal(ta.zieheZurueck({ schuelerId: carla }, t.ok ? t.id! : 0).ok, false);
   assert.equal(ta.zieheZurueck({ lehrer: thomas }, t.ok ? t.id! : 0).ok, true);
-  assert.equal(ta.anfragenFuerLehrer(thomas).filter((a) => a.status === "offen").length, 0);
+  assert.equal(ta.anfragenFuerLehrer(thomas, JETZT).filter((a) => a.status === "offen").length, 0);
 });
 
 test("im Wochenplan inzwischen geändert: bestätigen ändert nichts", async () => {
