@@ -19,6 +19,7 @@ import { DIFFICULTIES, levelOf } from "./curriculum";
 import { db } from "./db";
 import { correctionTask, generateBuiltIn, hasBuiltInGenerator } from "./generators";
 import { prerequisitesOf } from "./lehrplan";
+import { alsEntwurf, NUTZBAR_SQL } from "./material-passt";
 import { wienerDatum } from "./planung/zeit";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
@@ -146,8 +147,9 @@ function schonGesendet(unitId: number): Set<string> {
 
 /**
  * A: vorhandene Aufgaben zur Fähigkeit und Stufe, höchstens `ANZAHL`: zuerst aus den Schritten des Lernpakets der Einheit,
- * dann aus freigegebenen Übungen (allgemeine oder die des Schülers) und der Bibliothek. Nicht, was in dieser Einheit schon
- * gesendet wurde, nichts schlecht Bewertetes, nichts mit „Bitte prüfen“.
+ * dann aus freigegebenen Übungen (allgemeine oder die des Schülers, nie das Blatt eines anderen Schülers: lib/material-passt.ts)
+ * und der Bibliothek, je Aufgabe genau dieser Fähigkeit. Nicht, was in dieser Einheit schon gesendet wurde, nichts schlecht
+ * Bewertetes, nichts mit „Bitte prüfen“.
  */
 export function bestand(unitId: number, o: Pick<Option, "skillId" | "level">, c?: Partial<Pick<CockpitDaten, "paket" | "planAktuell" | "planQuellen">>): TaskDraft[] {
   const unit = getUnit(unitId);
@@ -169,17 +171,14 @@ export function bestand(unitId: number, o: Pick<Option, "skillId" | "level">, c?
     .prepare(
       `SELECT t.id FROM tasks t JOIN worksheets w ON w.id = t.worksheet_id
        WHERE w.archived_at IS NULL AND (w.status = 'freigegeben' OR w.kind = 'bibliothek') AND w.kind IN ('uebung', 'ueberpruefung', 'bibliothek')
-         AND w.probe_test_id IS NULL AND (w.student_id IS NULL OR w.student_id = ?)
-         AND COALESCE(t.level, 3) = ? AND EXISTS (SELECT 1 FROM task_skills ts WHERE ts.task_id = t.id AND ts.skill_id = ?)
+         AND w.probe_test_id IS NULL AND ${NUTZBAR_SQL}
+         AND COALESCE(t.level, 3) = ? AND (t.skill_id = ? OR EXISTS (SELECT 1 FROM task_skills ts WHERE ts.task_id = t.id AND ts.skill_id = ?))
        ORDER BY w.kind = 'bibliothek' DESC, t.id DESC LIMIT 60`,
     )
-    .all(unit.student_id, o.level, o.skillId) as { id: number }[];
+    .all(unit.student_id, unit.student_id, o.level, o.skillId, o.skillId) as { id: number }[];
   for (const { id } of ids) {
     const t = repo.getTask(id);
-    if (!t) continue;
-    const { id: _i, worksheet_id: _w, position: _p, level: _l, ...draft } = t;
-    void _i, void _w, void _p, void _l;
-    nimm(draft);
+    if (t) nimm(alsEntwurf(t));
   }
   return out;
 }

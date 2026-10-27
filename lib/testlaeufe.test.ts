@@ -58,7 +58,9 @@ test("a Vorgabe point still to confirm comes first, the near Schularbeit keeps i
 
   const plan = cockpit.planDerEinheit(unit.id);
   const titel = plan.map((s) => s.titel);
-  const vorgabeSchritt = titel.findIndex((t) => t.startsWith("Üben: "));
+  // the point still to confirm is a provisional block named by its words (B0: the plan is useful meanwhile)
+  const vorgabeSchritt = plan.findIndex((s) => Boolean(s.vorlaeufig));
+  assert.ok(vorgabeSchritt >= 0 && plan[vorgabeSchritt].titel.endsWith(" · noch bestätigen") && !plan[vorgabeSchritt].skillId, titel.join(" | "));
   // the plan for the whole unit (lib/stundenplan.ts): the Schularbeit is a topic of its own, its practice step in the exam format
   const sa = plan.findIndex((s) => s.art === "ueben" && s.pruefung === true);
   assert.ok(vorgabeSchritt >= 0 && sa > vorgabeSchritt, `the Vorgabe first, then the Schularbeit: ${titel.join(" | ")}`);
@@ -68,6 +70,7 @@ test("a Vorgabe point still to confirm comes first, the near Schularbeit keeps i
   assert.ok(vg.bestaetigeVorgabe(unit.id, new Map([[i, wahl]]), teacher.id));
   const danach = cockpit.planDerEinheit(unit.id);
   assert.ok(danach.some((s) => s.skillId === wahl && s.titel.startsWith("Üben: ")), "confirmed: an exercise for the chosen skill");
+  assert.ok(!danach.some((s) => s.vorlaeufig === v.punkte[i].inhalt), "its provisional block became the skill's block");
   const erst = danach.findIndex((s) => s.skillId === wahl);
   const pruefung = danach.findIndex((s) => s.pruefung === true && s.skillId !== wahl);
   assert.ok(erst >= 0 && (pruefung < 0 || erst < pruefung), "the Vorgabe leads, the Schularbeit after it");

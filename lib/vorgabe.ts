@@ -21,7 +21,7 @@
  * Tippen (`aendereRolle`), ohne neue Anfrage. Vorhandenes Material des Schülers kann sie statt eines neuen Fotos wählen;
  * was schon gelesen ist, kostet nichts mehr (`gespeicherteLesung`).
  */
-import { planNeu, hatBegonnen, leseStand } from "./cockpit";
+import { ersetzeVorlaeufige, planNeu, hatBegonnen, leseStand } from "./cockpit";
 import { db, json } from "./db";
 import { merkeZuordnung, splitTopics, stoffVorschlag } from "./lehrplan";
 import { getMaterial, hatDatei, listMaterials } from "./materials";
@@ -35,11 +35,13 @@ import {
   liesPruefungsstoff,
   MAX_DATEIEN,
   nurFuerHeute,
+  MAX_THEMEN,
   ordneZu,
   pruefungsstoffLesbar,
   setzeRolle,
   skillsAus,
   speichereStoff,
+  stoffAusLesung,
   stoffDerPruefung,
   type Gruppe,
   type Lesung,
@@ -48,9 +50,10 @@ import {
   type StoffPunkt,
 } from "./pruefungsstoff";
 import * as repo from "./repo";
+import { stoffzettelFuer } from "./stoffzettel";
 import { SUCHWOERTER } from "./themen";
 import { getUnit } from "./units";
-import { PRUEFUNG_TAGE } from "./vorbereitung-auto";
+import { PRUEFUNG_TAGE, tagMonat } from "./vorbereitung-auto";
 import { daysUntil } from "./exams";
 import { tagAddieren, wochentagVon } from "./planung/zeit";
 
@@ -351,24 +354,33 @@ export function wendeVorgabeAn(unitId: number, o: { erzwingen?: boolean } = {}):
 /**
  * Die kurze Bestätigung unklarer Punkte der Vorgabe: je Punkt (Index in `punkte`) die gewählten Fähigkeiten (eine oder
  * mehrere) oder keine. Mehrere werden je ein Punkt mit derselben Angabe. Gemerkt für dieselben Wörter (lib/lehrplan.ts
- * `merkeZuordnung`); danach richtet sich der Ablauf neu, wenn noch nichts getan ist.
+ * `merkeZuordnung`); danach richtet sich der Ablauf neu, wenn noch nichts getan ist. Hat die Einheit schon begonnen, wird nur
+ * der vorläufige Block des Punkts der Block der Fähigkeit, oder er fällt bei „Keine passt“ weg (lib/cockpit.ts `ersetzeVorlaeufige`).
  */
 export function bestaetigeVorgabe(unitId: number, wahl: Map<number, string | null | (string | null)[]>, teacherId: number | null): boolean {
   const v = vorgabeDerEinheit(unitId);
   const unit = getUnit(unitId);
   if (!v || !unit) return false;
+  const entschieden = new Map<string, string[]>();
   const punkte = v.punkte.flatMap((p, i): StoffPunkt[] => {
     const roh = wahl.get(i);
     const liste = Array.isArray(roh) ? roh : [roh ?? null];
     if (!wahl.has(i) || !liste.length || p.zuordnung !== "unklar") return [p];
     const ok = [...new Set(liste)].filter((id): id is string => Boolean(id && p.vorschlaege.includes(id) && repo.getSkill(id)));
     merkeZuordnung(unit.subject, p.inhalt && klein(p.inhalt) !== klein(p.original) ? `${p.inhalt} (${p.original})` : p.original, ok, teacherId);
-    if (!ok.length) return [{ ...p, skill_id: null, zuordnung: "keine" }];
-    return ok.map((id) => ({ ...p, skill_id: id, zuordnung: "bestaetigt" as const, vorschlaege: p.vorschlaege.filter((x) => x !== id) }));
+    entschieden.set(klein(p.inhalt), [...(entschieden.get(klein(p.inhalt)) ?? []), ...ok]);
+    // the preselection was only a suggestion; what counts now is the teacher's choice
+    const { vorauswahl: _v, ...q } = p;
+    void _v;
+    if (!ok.length) return [{ ...q, skill_id: null, zuordnung: "keine", keinePasst: true }];
+    return ok.map((id) => ({ ...q, skill_id: id, zuordnung: "bestaetigt" as const, vorschlaege: p.vorschlaege.filter((x) => x !== id) }));
   });
-  const skillIds = [...new Set([...v.skillIds, ...skillsAus(punkte.map((p) => ({ ...p, status: "pruefung" as const })))])];
+  // in the order of the points (the sheet's order), so a confirmed topic keeps the place of its provisional block
+  const skillIds = [...new Set([...skillsAus(punkte.map((p) => ({ ...p, status: "pruefung" as const }))), ...v.skillIds])];
   db().prepare("UPDATE einheit_vorgabe SET punkte = ?, skill_ids = ?, updated_at = datetime('now') WHERE unit_id = ?").run(JSON.stringify(punkte), JSON.stringify(skillIds), unitId);
-  wendeVorgabeAn(unitId);
+  // a point still to confirm with the same words keeps its block
+  for (const p of punkte) if (p.zuordnung === "unklar") entschieden.delete(klein(p.inhalt));
+  if (!wendeVorgabeAn(unitId).angewendet) ersetzeVorlaeufige(unitId, entschieden);
   return true;
 }
 
@@ -594,5 +606,64 @@ export function pruefungAusVorgabe(unitId: number, o: { datum: string; art: stri
   });
   if (stoff.length) speichereStoff(testId, stoff, { lesungId: v.lesungId });
   db().prepare("UPDATE einheit_vorgabe SET termin_text = '', test_id = ? WHERE unit_id = ?").run(testId, unitId);
+  return { ok: true, testId };
+}
+
+// ---------- Stoffzettel zur eingetragenen Prüfung ----------
+
+/**
+ * Die eingetragene Prüfung, zu der der gelesene Stoffzettel der Vorgabe gehört (Phase A, offener Punkt 2): die gewählte Prüfung,
+ * sonst eine im Fach der Einheit in den nächsten PRUEFUNG_TAGE Tagen, bei mehreren die mit dem Datum, das dem auf dem Zettel am
+ * nächsten ist. Null ohne gelesenen Stoffzettel oder ohne eingetragene Prüfung (dann bleibt „Prüfung eintragen“ über den Termin im
+ * Text). `uebernommen`: der Stoff dieser Lesung steht schon an der Prüfung.
+ */
+export function stoffzettelZurPruefung(v: Pick<Vorgabe, "studentId" | "testId" | "lesungId" | "materialIds">, fach: string, heute: string): { test: repo.TestResult; uebernommen: boolean } | null {
+  const l = getLesung(v.lesungId);
+  const gelesen = dateienDerVorgabe(v).some((d) => d.gelesen && d.rolle === "stoffzettel");
+  if (!l || !gelesen || !l.lesung.punkte.some((p) => p.quelle === "stoffzettel")) return null;
+  const offen = (t: repo.TestResult) => t.student_id === v.studentId && t.date >= heute && (t.status ?? "geplant") === "geplant";
+  const gewaehlt = v.testId ? repo.getTest(v.testId) : null;
+  const datum = /^\d{4}-\d{2}-\d{2}$/.test(l.lesung.kopf.datum ?? "") ? Date.parse(l.lesung.kopf.datum!) : null;
+  const abstand = (t: repo.TestResult) => (datum === null ? 0 : Math.abs(Date.parse(t.date) - datum));
+  const test =
+    gewaehlt && offen(gewaehlt)
+      ? gewaehlt
+      : (repo
+          .upcomingTests(heute, v.studentId)
+          .filter((t) => (!fach || !t.subject || t.subject === fach) && daysUntil(t.date, heute) <= PRUEFUNG_TAGE)
+          .sort((a, b) => abstand(a) - abstand(b) || a.date.localeCompare(b.date))[0] ?? null);
+  return test ? { test, uebernommen: test.lesung_id === l.id } : null;
+}
+
+/** Der Knopf: „Stoff zur Schularbeit am 6.11. übernehmen“, „Stoff zum Test am …“. */
+export const stoffKnopfText = (t: Pick<repo.TestResult, "kind" | "date">) =>
+  `Stoff ${t.kind === "Schularbeit" ? "zur Schularbeit" : /^\p{L}*test$/iu.test(t.kind) ? `zum ${t.kind}` : "zur Prüfung"} am ${tagMonat(t.date)} übernehmen`;
+
+/**
+ * „Stoff zur Schularbeit am 6.11. übernehmen“ (ein Tippen): der Stoffzettel aus „Was steht heute an?“ kommt an die eingetragene
+ * Prüfung wie beim Stoffzettel im Profil (lib/pruefungsstoff.ts `stoffAusLesung`): Wortlaut, Lerninhalt und Fähigkeit,
+ * Ausgeschlossenes und „noch zu klären“ bleiben so. Was die Prüfung schon hatte, bleibt; Neues kommt dazu, auch bei den Themen.
+ * Legt nie eine Prüfung oder ein Datum an.
+ */
+export function stoffZurPruefung(unitId: number, testId: number, heute: string): { ok: true; testId: number } | { fehler: string } {
+  const v = vorgabeDerEinheit(unitId);
+  const unit = getUnit(unitId);
+  if (!v || !unit || !v.lesungId) return { fehler: "Diese Vorgabe gibt es nicht mehr." };
+  const z = stoffzettelZurPruefung(v, unit.subject, heute);
+  if (!z || z.test.id !== testId) return { fehler: "Diese Prüfung passt nicht zum Stoffzettel." };
+  if (z.uebernommen) return { ok: true, testId };
+  const l = getLesung(v.lesungId)!;
+  db().transaction(() => {
+    stoffAusLesung(testId, l.id, { ergaenzen: true });
+    const t = repo.getTest(testId)!;
+    const topics = [...(t.topics ?? []), ...l.lesung.kopf.themen].filter((x, i, alle) => alle.findIndex((y) => klein(y) === klein(x)) === i).slice(0, MAX_THEMEN);
+    db().prepare("UPDATE tests SET topics = ? WHERE id = ?").run(JSON.stringify(topics), testId);
+    // the Stoffzettel as the exam's file, if it has none yet
+    const zettel = dateienDerVorgabe(v).find((d) => d.gelesen && d.rolle === "stoffzettel");
+    if (!t.material_id && zettel) {
+      db().prepare("UPDATE tests SET material_id = ? WHERE id = ?").run(zettel.materialId, testId);
+      stoffzettelFuer(zettel.materialId, { student_id: t.student_id, title: t.title ?? "", kind: t.kind, subject: t.subject, topics });
+    }
+  })();
   return { ok: true, testId };
 }
