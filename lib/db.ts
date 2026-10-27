@@ -1206,6 +1206,19 @@ CREATE TABLE IF NOT EXISTS einheit_unterlagen (
   PRIMARY KEY (unit_id, material_id)
 );
 
+-- „Das zeigst du“ im Plan (lib/cockpit.ts beispielDerEinheit, Phase C): das durchgerechnete Beispiel je Einheit und Fähigkeit,
+-- festgehalten, sobald der erklärende Schritt auf dem Schirm war. Die Übungen und „Das fragst du“ der Schritte dieser Fähigkeit
+-- nehmen es danach nie, auch wenn sich Stufe oder Plan ändern. schritt_id: der Schritt, der es zuerst zeigte (wie in einheit_cockpit;
+-- ein Üben-Schritt zeigt es nicht noch einmal). aufgabe: JSON der Aufgabe (nur für den Lehrer).
+CREATE TABLE IF NOT EXISTS einheit_beispiele (
+  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  skill_id TEXT NOT NULL,
+  schritt_id INTEGER,
+  aufgabe TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (unit_id, skill_id)
+);
+
 -- Arbeit fotografieren (lib/papier-einheit.ts): eine auf Papier gelöste Übung, in der laufenden Einheit geprüft und übernommen.
 -- Die Antworten stehen als attempts an der Zuweisung (unit_id gesetzt) wie am Gerät; hier nur, was der Abschluss sagt: welches
 -- Blatt, ob es eine Übung der Einheit war (bekannt) oder ein anderes Blatt, wie gelesen wurde (ki oder hand), die Seiten, richtig

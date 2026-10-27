@@ -354,8 +354,9 @@ export function wendeVorgabeAn(unitId: number, o: { erzwingen?: boolean } = {}):
 
 /**
  * Die kurze Bestätigung unklarer Punkte der Vorgabe: je Punkt (Index in `punkte`) die gewählten Fähigkeiten (eine oder
- * mehrere) oder keine. Mehrere werden je ein Punkt mit derselben Angabe. Gemerkt für dieselben Wörter (lib/lehrplan.ts
- * `merkeZuordnung`); danach richtet sich der Ablauf neu, wenn noch nichts getan ist. Hat die Einheit schon begonnen, wird nur
+ * mehrere) oder keine. Mehrere werden je ein Punkt mit derselben Angabe. „Keine passt“ (null) geht vor: auch neben einer
+ * angehakten Fähigkeit heißt es keine (Phase C: eine Vorauswahl muss man dafür nicht erst abhaken). Gemerkt für dieselben
+ * Wörter (lib/lehrplan.ts `merkeZuordnung`); danach richtet sich der Ablauf neu, wenn noch nichts getan ist. Hat die Einheit schon begonnen, wird nur
  * der vorläufige Block des Punkts der Block der Fähigkeit, oder er fällt bei „Keine passt“ weg (lib/cockpit.ts `ersetzeVorlaeufige`).
  */
 export function bestaetigeVorgabe(unitId: number, wahl: Map<number, string | null | (string | null)[]>, teacherId: number | null): boolean {
@@ -367,7 +368,8 @@ export function bestaetigeVorgabe(unitId: number, wahl: Map<number, string | nul
     const roh = wahl.get(i);
     const liste = Array.isArray(roh) ? roh : [roh ?? null];
     if (!wahl.has(i) || !liste.length || p.zuordnung !== "unklar") return [p];
-    const ok = [...new Set(liste)].filter((id): id is string => Boolean(id && p.vorschlaege.includes(id) && repo.getSkill(id)));
+    // „Keine passt“ wins over a ticked skill (a preselection the teacher left ticked): it means no skill for this point
+    const ok = liste.some((id) => !id) ? [] : [...new Set(liste)].filter((id): id is string => Boolean(id && p.vorschlaege.includes(id) && repo.getSkill(id)));
     merkeZuordnung(unit.subject, p.inhalt && klein(p.inhalt) !== klein(p.original) ? `${p.inhalt} (${p.original})` : p.original, ok, teacherId);
     entschieden.set(klein(p.inhalt), [...(entschieden.get(klein(p.inhalt)) ?? []), ...ok]);
     // the preselection was only a suggestion; what counts now is the teacher's choice

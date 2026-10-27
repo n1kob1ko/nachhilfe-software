@@ -68,6 +68,7 @@ import {
   hilfeBeiFehler,
   hintergrundZu,
   loesungText,
+  merkeBeispiel,
   planFuehrung,
   planHatUebung,
   skillsDesSchritts,
@@ -849,6 +850,8 @@ function PlanKarte({
   const andere = kontrolle || !s.skillId ? [] : c.plan.filter((x) => x.id !== s.id && x.skillId === s.skillId && (x.art === "ueben" || x.art === "grundlage" || x.art === "kontrolle" || !x.art));
   const ausser = andere.flatMap((x) => aufgabenImSchritt(unit.id, x, c.stand.gesendet[x.id] ?? []));
   const f = kontrolle ? { sagt: null, zeigt: null, fragt: null, antwort: null } : planFuehrung(unit.id, s, schon, ausser);
+  // the example shown stays the same and goes into no exercise of the skill, nor into a later question (lib/cockpit.ts merkeBeispiel)
+  if (f.zeigt) after(() => merkeBeispiel(unit.id, s, schon, ausser));
   // „Lösung · typische Fehler · Hintergrund“: the tasks sent from this step or the ones it would send
   const skillId = s.skillId ?? blatt?.skill_ids[0] ?? null;
   const aufgaben = aufgabenImSchritt(unit.id, { ...s, skillId }, schon);
