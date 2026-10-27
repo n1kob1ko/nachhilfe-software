@@ -91,6 +91,29 @@ test("the documentation names only what the teacher tapped, and replaces its own
   assert.equal(mitZeile(einmal, "Weiter mit „", null), "Brüche kürzen");
 });
 
+test("Abnahme Phase A: the plan's „Weiter mit“ names no Einstieg or Abschluss, counts a sent Lernkontrolle as done, and a whole topic once", async () => {
+  const { ablaufDesPlans, dokuTexte } = await import("./cockpit");
+  const NAME = { einstieg: "Einstieg", erklaeren: "Erklären", ueben: "Üben", kontrolle: "Lernkontrolle", abschluss: "Abschluss" } as const;
+  const p = (id: number, art: keyof typeof NAME, thema: string | null) => ({ id, titel: thema ? `${NAME[art]}: ${thema}` : NAME[art], minuten: 10, beschreibung: "", uebung: null, skillId: null, art, thema, quelle: null });
+  const plan = [p(-1, "einstieg", null), p(-2, "erklaeren", "Past Simple"), p(-3, "ueben", "Past Simple"), p(-4, "kontrolle", "Past Simple"), p(-5, "erklaeren", "E-Mail"), p(-6, "ueben", "E-Mail"), p(-7, "kontrolle", "E-Mail"), p(-8, "abschluss", null)];
+  // the teacher tapped „Weiter“ up to Üben, sent the Lernkontrolle, then ended the unit
+  const a = ablaufDesPlans({ plan, reihenfolge: [], erledigt: [-1, -2, -3], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, gesendet: { "-4": [7] }, antworten: {} })!;
+  assert.deepEqual(a.ergebnis.erledigt.map((x) => x.id), [-1, -2, -3, -4], "the sent Lernkontrolle was done");
+  assert.deepEqual(a.ergebnis.nichtErreicht.map((x) => x.titel), ["E-Mail"], "a topic not begun is one name, the Abschluss is no goal");
+  assert.deepEqual(a.themen, ["Past Simple"]);
+  const t = dokuTexte(a.titel, a.ergebnis, a.art, a.schritte)!;
+  assert.equal(t.naechstesMal, "Weiter mit dem Plan für heute: E-Mail");
+  assert.match(t.gemacht, /^Plan für heute: 4 von 7 Schritten erledigt /, "the steps still count one by one");
+  // a topic begun: its open steps by name; a heard answer counts as done too
+  const b = ablaufDesPlans({ plan, reihenfolge: [], erledigt: [-1, -2, -3, -4, -5], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, gesendet: {}, antworten: { "-6": "richtig" } })!;
+  assert.deepEqual(b.ergebnis.nichtErreicht.map((x) => x.titel), ["Lernkontrolle: E-Mail"]);
+  // a skipped step stays skipped even with exercises sent
+  const c = ablaufDesPlans({ plan, reihenfolge: [], erledigt: [-1], uebersprungen: [-3], wiederholt: {}, nichtVerstanden: {}, gesendet: { "-3": [5] }, antworten: {} })!;
+  assert.deepEqual(c.ergebnis.uebersprungen.map((x) => x.id), [-3]);
+  assert.ok(!c.ergebnis.erledigt.some((x) => x.id === -3));
+  assert.equal(ablaufDesPlans({ plan: null, reihenfolge: [], erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, gesendet: {}, antworten: {} }), null);
+});
+
 // ---------- the suggestion rules ----------
 
 const paketFix = (o: Partial<Lernpaket> & { id: number }): Lernpaket => ({

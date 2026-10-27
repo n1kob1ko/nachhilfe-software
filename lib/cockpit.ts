@@ -298,17 +298,19 @@ const ZEILE = { gemacht: ["Lernpaket „", "Plan für heute: "], wiederholen: "�
 /**
  * Die Sätze für die Dokumentation, nur aus dem, was der Lehrer getippt hat. Ohne erledigten, übersprungenen,
  * wiederholten oder nicht verstandenen Schritt null: dann wurde das Cockpit nicht benutzt, und „nicht erreicht“
- * wäre geraten. `art` „plan“: die Schritte kamen aus dem „Plan für heute“ des Briefings (ohne Lernpaket).
+ * wäre geraten. `art` „plan“: die Schritte kamen aus dem „Plan für heute“ des Briefings (ohne Lernpaket). `schritte`: so
+ * viele Schritte zählen, wenn „nicht erreicht“ ein ganzes Thema als einen Namen hat (`ablaufDesPlans`).
  */
 export function dokuTexte(
   titel: string,
   z: Zusammenfassung<{ titel: string }> & Partial<Pick<Ergebnis<{ titel: string }>, "wiederholt" | "nichtVerstanden">>,
   art: "paket" | "plan" = "paket",
+  schritte?: number,
 ): DokuTexte | null {
   const wiederholt = z.wiederholt ?? [];
   const nichtVerstanden = z.nichtVerstanden ?? [];
   if (!z.erledigt.length && !z.uebersprungen.length && !wiederholt.length && !nichtVerstanden.length) return null;
-  const gesamt = z.erledigt.length + z.uebersprungen.length + z.nichtErreicht.length;
+  const gesamt = schritte ?? z.erledigt.length + z.uebersprungen.length + z.nichtErreicht.length;
   const namen = (xs: { titel: string }[]) => xs.map((x) => x.titel).join(", ");
   const mitMal = (xs: { titel: string; mal: number }[]) => xs.map((x) => (x.mal > 1 ? `${x.titel} (${x.mal}×)` : x.titel)).join(", ");
   const kopf = art === "plan" ? "Plan für heute" : `Lernpaket „${titel}“`;
@@ -829,7 +831,7 @@ export function dokumentiereAblauf(lessonId: number, unitId: number): DokuTexte 
   const lesson = repo.getLesson(lessonId);
   const a = s ? ablaufVon(s) : null;
   if (!s || !a || !lesson) return null;
-  const t = dokuTexte(a.titel, a.ergebnis, a.art);
+  const t = dokuTexte(a.titel, a.ergebnis, a.art, a.schritte);
   if (!t) return null;
   const auto = autoFelderVon(lesson);
   const werte = json<Record<string, unknown>>(lesson.auto_felder, {});
@@ -858,20 +860,44 @@ export function dokumentiereAblauf(lessonId: number, unitId: number): DokuTexte 
   return t;
 }
 
-/** `themen`: im Plan für die ganze Einheit die Themen mit mindestens einem erledigten Schritt, in der Reihenfolge des Plans. */
-export type AblaufDerEinheit = { art: "paket" | "plan"; titel: string; ergebnis: Ergebnis<{ id: number; titel: string }>; themen?: string[] };
+/**
+ * `themen`: im Plan für die ganze Einheit die Themen mit mindestens einem erledigten Schritt, in der Reihenfolge des Plans.
+ * `schritte`: im Plan die Zahl der Schritte (ohne nicht erreichten Einstieg und Abschluss), weil „nicht erreicht“ ein ganzes
+ * Thema als einen Namen haben kann.
+ */
+export type AblaufDerEinheit = { art: "paket" | "plan"; titel: string; ergebnis: Ergebnis<{ id: number; titel: string }>; themen?: string[]; schritte?: number };
 
 /** Was mit dem Lernpaket oder dem „Plan für heute“ einer Einheit geschah, nach dem gespeicherten Stand. */
 function ablaufVon(s: Stand): AblaufDerEinheit | null {
   const p = s.paket_id ? getLernpaket(s.paket_id) : null;
   if (p) return { art: "paket", titel: p.title, ergebnis: ergebnis(p.schritte, ablauf(p.schritte, s.reihenfolge), s) };
-  if (s.plan?.length) {
-    const themen = themenDesPlans(s.plan)
-      .filter((t) => t.ids.some((id) => s.erledigt.includes(id)))
-      .map((t) => t.name);
-    return { art: "plan", titel: "Plan für heute", ergebnis: ergebnis(s.plan, ablauf(s.plan, s.reihenfolge), s), ...(themen.length ? { themen } : {}) };
+  return ablaufDesPlans(s);
+}
+
+/**
+ * Der „Plan für die ganze Einheit“ nach dem gespeicherten Stand. Ein Schritt, in dem Übungen gesendet wurden oder für den
+ * eine Antwort getippt ist, wurde gemacht, auch ohne „Weiter“ (etwa die Lernkontrolle vor „Einheit beenden“). Einstieg und
+ * Abschluss rahmen die Einheit und sind nie „Weiter mit“; ein Thema, von dem nichts erreicht wurde, steht dort als ein Name.
+ */
+export function ablaufDesPlans(s: Pick<Stand, "plan" | "reihenfolge" | "erledigt" | "uebersprungen" | "wiederholt" | "nichtVerstanden" | "gesendet" | "antworten">): AblaufDerEinheit | null {
+  if (!s.plan?.length) return null;
+  const getan = s.plan.filter((x) => !s.uebersprungen.includes(x.id) && (s.gesendet[x.id]?.length || s.antworten[x.id])).map((x) => x.id);
+  const st = { ...s, erledigt: [...new Set([...s.erledigt, ...getan])] };
+  const e = ergebnis(s.plan, ablauf(s.plan, s.reihenfolge), st);
+  const rahmen = new Set(s.plan.filter((x) => x.art === "einstieg" || x.art === "abschluss").map((x) => x.id));
+  const offen = new Set(e.nichtErreicht.map((x) => x.id));
+  const alle = themenDesPlans(s.plan);
+  const ganz = alle.filter((t) => t.ids.every((id) => offen.has(id)));
+  const nichtErreicht: { id: number; titel: string }[] = [];
+  for (const x of e.nichtErreicht) {
+    if (rahmen.has(x.id)) continue;
+    const t = ganz.find((t) => t.ids.includes(x.id));
+    if (!t) nichtErreicht.push(x);
+    else if (t.ids[0] === x.id) nichtErreicht.push({ id: x.id, titel: t.name });
   }
-  return null;
+  const themen = alle.filter((t) => t.ids.some((id) => st.erledigt.includes(id))).map((t) => t.name);
+  const schritte = e.erledigt.length + e.uebersprungen.length + e.nichtErreicht.filter((x) => !rahmen.has(x.id)).length;
+  return { art: "plan", titel: "Plan für heute", ergebnis: { ...e, nichtErreicht }, schritte, ...(themen.length ? { themen } : {}) };
 }
 
 /** Der Ablauf einer Einheit für den Abschluss: nur, was gespeichert ist (getippt wurde), nie ein bloßer Vorschlag. */
@@ -1202,14 +1228,45 @@ export function aufgabenImSchritt(unitId: number, s: Pick<PlanStep, "id" | "uebu
   return bereitFuer(unit.id, s.id, schluesselVon(s.id, a)) ?? generatorAufgabenVon(a);
 }
 
+/** Übt die Aufgabe die Fähigkeit (oder ihre Ober- oder eine Teilfähigkeit)? Eine Aufgabe ohne Fähigkeit zählt dazu. */
+function uebtFaehigkeit(t: Pick<TaskDraft, "skillId" | "skillIds">, skillId: string): boolean {
+  const ids = [t.skillId, ...(t.skillIds ?? [])].filter((x): x is string => Boolean(x));
+  const oben = repo.getSkill(skillId)?.parent_id ?? null;
+  return !ids.length || ids.some((id) => id === skillId || id === oben || repo.getSkill(id)?.parent_id === skillId);
+}
+
+/** Eine Aufgabe zum Vorlesen: kein Lesetext, keine lange freie Antwort. */
+const fragbar = (t: TaskDraft | undefined): t is TaskDraft => Boolean(t && !t.data.passage && t.type !== "reading");
+
+/** Woran zwei Aufgaben als dieselbe erkannt werden: ihre Frage, ohne Leerzeichen und Groß/klein. */
+const gleicheFrage = (t: Pick<TaskDraft, "prompt" | "data">) => frageText(t).replace(/\s+/g, " ").trim().toLowerCase();
+
+/**
+ * Das durchgerechnete Beispiel zu einer Fähigkeit („Das zeigst du“, Abnahme Phase A): eine Aufgabe genau dieser Fähigkeit aus den
+ * Generatoren, mit eigenem Seed, die der Schüler nicht bekommt — keine der Aufgaben in `ausser` (was der Schritt und die anderen
+ * Schritte des Themas senden). Ohne Generator oder ohne passende Aufgabe null: dann lieber kein Beispiel als eine Aufgabe, die der
+ * Schüler danach schon gelöst sieht.
+ */
+export function beispielZur(unitId: number, skillId: string, ausser: Pick<TaskDraft, "prompt" | "data">[]): TaskDraft | null {
+  const unit = getUnit(unitId);
+  const student = unit ? repo.getStudent(unit.student_id) : null;
+  const skill = repo.getSkill(skillId);
+  if (!student || !skill || !ausDemGenerator(skill.id)) return null;
+  const a = auftragFuer(unitId, student, skill, false);
+  const schon = new Set(ausser.map(gleicheFrage));
+  const kandidaten = generatorAufgabenVon({ ...a, count: 8, seed: generatorSeed(unitId, `${skill.id}:beispiel`) });
+  return kandidaten.find((t) => fragbar(t) && uebtFaehigkeit(t, skill.id) && !schon.has(gleicheFrage(t)) && loesungText(t).trim()) ?? null;
+}
+
 /**
  * Ohne Lernpaket (niko, 25.10.2026: „sagen, zeigen, fragen, erwartete Antwort“ auch im Plan aus den Daten; 27.10.2026:
  * „Lehrerskripte sollen ausreichend ausführlich sein“): ohne KI, aus der Fähigkeit und den Aufgaben des Schritts. „Das sagst du“
- * ist ihre ganze Erklärung (lib/erklaerungen.ts), „Das fragst du“ und „Erwartete Antwort“ die erste Aufgabe der Übung, die der
- * Schritt senden würde, „Das zeigst du“ die zweite mit ihrer Lösung (ein durchgerechnetes Beispiel). Nur für den Lehrer; die
- * Lösung steht nie auf einer Schülerseite.
+ * ist ihre ganze Erklärung (lib/erklaerungen.ts), „Das fragst du“ und „Erwartete Antwort“ die erste Aufgabe der Fähigkeit in der
+ * Übung, die der Schritt senden würde, „Das zeigst du“ ein Beispiel derselben Fähigkeit mit seiner Lösung, das der Schüler nicht
+ * bekommt (`beispielZur`; `ausser`: die Aufgaben der anderen Schritte des Themas). Nur für den Lehrer; die Lösung steht nie auf
+ * einer Schülerseite.
  */
-export function planFuehrung(unitId: number, s: Pick<PlanStep, "id" | "uebung" | "skillId" | "art">, gesendet: number[] = []): PlanFuehrung {
+export function planFuehrung(unitId: number, s: Pick<PlanStep, "id" | "uebung" | "skillId" | "art">, gesendet: number[] = [], ausser: TaskDraft[] = []): PlanFuehrung {
   const leer: PlanFuehrung = { sagt: null, zeigt: null, fragt: null, antwort: null };
   const unit = getUnit(unitId);
   if (!unit || !repo.getStudent(unit.student_id)) return leer;
@@ -1218,9 +1275,11 @@ export function planFuehrung(unitId: number, s: Pick<PlanStep, "id" | "uebung" |
   const skillId = s.skillId ?? blatt?.skill_ids[0] ?? (zugewiesen ? (repo.getWorksheet(zugewiesen.worksheet_id)?.skill_ids[0] ?? null) : null);
   const sagt = erklaerungZu(skillId);
   const aufgaben = aufgabenImSchritt(unitId, { ...s, skillId }, gesendet);
-  // a reading text or a long free answer is not something to ask aloud
-  const fragbar = (t: TaskDraft | undefined): t is TaskDraft => Boolean(t && !t.data.passage && t.type !== "reading");
-  const [erste, zweite] = aufgaben;
+  // a reading text or a long free answer is not something to ask aloud; a task of another skill (an exercise from the
+  // Bestand may mix skills) does not fit the step; only when none fits, the first task as before
+  const passend = aufgaben.filter((t) => !skillId || uebtFaehigkeit(t, skillId));
+  const erste = passend.find(fragbar) ?? (fragbar(aufgaben[0]) ? aufgaben[0] : undefined);
+  const zweite = skillId ? (beispielZur(unitId, skillId, [...aufgaben, ...ausser]) ?? undefined) : undefined;
   const antwort = fragbar(erste) ? antwortText(erste) : "";
   const loesung = fragbar(zweite) ? loesungText(zweite) : "";
   // a sample solution that only repeats the explanation (a writing task) shows nothing new

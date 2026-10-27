@@ -25,6 +25,7 @@ import { errorTypeLabel } from "./error-types";
 import { daysUntil } from "./exams";
 import { readReport, type TaskLine } from "./learning";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
+import { LERNKONTROLLE } from "./quick-round";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
 import type { Art } from "./steuerung-regeln";
@@ -89,7 +90,7 @@ export type AufgabeBeleg = Pick<TaskLine, "assignmentId" | "skillId" | "skill" |
  *   Fehlerart nur ein Vorschlag ist
  * - `beobachtungen`: Richtig / Teilweise / Falsch der Lehrkraft bei Fragen und Kontrollen, mit den Fähigkeiten des Schritts
  * - `reaktionen`: Aufgaben, die die Anpassung im Unterricht geschickt hat (leichter, Voraussetzung, zum Fehler, schwerer)
- * - `minitest`: der Minitest am Anfang, wenn einer lief
+ * - `minitest`: der Minitest am Anfang, wenn einer lief; `lernkontrollen`: die Lernkontrollen des Plans (Notiz `LERNKONTROLLE`)
  * - `vorgabe`: die bestätigten Fähigkeiten der Vorgabe für heute; `geuebt`: was heute nachweislich dran war (Antworten,
  *   erledigte Schritte, deine Beobachtungen, Textarbeit)
  * - `pruefung`: die nächste eingetragene Prüfung (bis 30 Tage) und ihr Stoff ohne Antwort in den 30 Tagen davor
@@ -101,6 +102,7 @@ export type AbschlussBelege = {
   beobachtungen: { titel: string; art: string; antwort: Beobachtung; skillIds: string[] }[];
   reaktionen: { art: Art; skillId: string | null; skill: string; assignmentId: number | null }[];
   minitest: { von: number; erledigt: number; richtig: number; falsch: string[] } | null;
+  lernkontrollen?: { skill: string; von: number; erledigt: number; richtig: number }[];
   vorgabe: { id: string; name: string }[];
   geuebt: string[];
   pruefung: { art: string; fach: string; datum: string; offen: string[] } | null;
@@ -231,7 +233,7 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   const a = (text: string): KartenZeile => ({ text, von: "ablauf" });
   const e = ablauf?.ergebnis;
   const wo = ablauf ? (ablauf.art === "plan" ? "Plan für heute" : `Lernpaket „${ablauf.titel}“`) : "";
-  const gesamt = e ? e.erledigt.length + e.uebersprungen.length + e.nichtErreicht.length : 0;
+  const gesamt = ablauf?.schritte ?? (e ? e.erledigt.length + e.uebersprungen.length + e.nichtErreicht.length : 0);
 
   // a text with a grade (confirmed or open) gets its own line instead of the documentation's
   const mitBewertung = texte.filter((t): t is AbschlussText & { bewertung: BerichtBewertung } => Boolean(t.bewertung));
@@ -240,6 +242,9 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   const gemacht = (brief?.done ?? []).filter((l) => !ersetzt(l)).map((l) => zeile(l, (t) => (t.startsWith("Textarbeit „") ? "text" : amGeraet ? "antworten" : "daten")));
   const mt = belege?.minitest;
   if (mt?.erledigt) gemacht.push({ text: `Minitest am Anfang: ${mt.richtig} von ${mt.von} richtig${mt.erledigt < mt.von ? ` (${mt.erledigt} abgegeben)` : ""}`, von: "antworten" });
+  // the measured result of each Lernkontrolle, not only what the teacher heard
+  for (const k of belege?.lernkontrollen ?? [])
+    if (k.erledigt) gemacht.push({ text: `Lernkontrolle${k.skill ? ` ${k.skill}` : ""}: ${k.richtig} von ${k.von} richtig${k.erledigt < k.von ? ` (${k.erledigt} abgegeben)` : ""}`, von: "antworten" });
   gemacht.push(...mitBewertung.map(textGemacht));
   // the plan for the whole unit: the topics worked on today, then the steps
   if (ablauf?.themen?.length) gemacht.push(a(`${ablauf.themen.length === 1 ? "Thema" : "Themen"}: ${ablauf.themen.join(", ")}`));
@@ -368,11 +373,19 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
       }
     : null;
 
+  // the Lernkontrollen of the plan: run like a Minitest, but not „am Anfang“ (lib/learning.ts leaves them out there)
+  const kontrollen = db().prepare("SELECT id, worksheet_id FROM assignments WHERE unit_id = ? AND note = ? ORDER BY id").all(unitId, LERNKONTROLLE) as { id: number; worksheet_id: number }[];
+  const lernkontrollen = kontrollen.map((k) => {
+    const ts = aufgaben.filter((t) => t.assignmentId === k.id);
+    const fertig = ts.filter((t) => t.finished);
+    return { skill: [...new Set(ts.map((t) => t.skill).filter(Boolean))].join(", "), von: repo.listTasks(k.worksheet_id).length, erledigt: fertig.length, richtig: fertig.filter((t) => t.correct).length };
+  });
+
   const eigen = new Set(json<string[]>(lesson.abschluss_eigen ?? "[]", []).filter(isAbschlussFeld));
   const eigene: AbschlussBelege["eigene"] = {};
   for (const feld of eigen) if ((lesson[DOKU_FELD[feld]] ?? "").trim()) eigene[feld] = lesson[DOKU_FELD[feld]];
 
-  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, vorgabe, geuebt, pruefung, eigene };
+  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene };
 }
 
 /** Die Karte einer beendeten Einheit mit allen Belegen, wie der Abschluss sie zeigt und „Bestätigen“ sie schreibt. */

@@ -297,7 +297,8 @@ const vergleichstext = (p: Pick<RohPunkt, "inhalt" | "original">) => (p.inhalt &
  * - Beide gleich, oder die KI nennt die erste Fähigkeit, für die die Wörter sprechen: sicher.
  * - Die KI nennt eine, die Wörter eine andere oder keine: unklar, beide zur Auswahl.
  * - Die KI nennt keine, die Wörter sind sicher (eine oder zwei) und im Bereich der Gruppe (Grammatik, Wortschatz,
- *   Schreiben, Lesen und Hören): unklar. Ein ganzes Thema (mehr als zwei) oder ein anderer Bereich: keine.
+ *   Schreiben, Lesen und Hören): unklar. Ein ganzes Thema (mehr als zwei) oder ein anderer Bereich: keine. Ein Punkt aus
+ *   dem Text der Lehrkraft („Writing“) ist auch als ganzes Thema unklar, mit denselben Vorschlägen wie ohne KI.
  * - Ohne KI-Antwort (`ki` false): die Wörter allein; sicher, wenn der Punkt genau so heißt wie eine Fähigkeit (oder eine
  *   ihrer anderen Bezeichnungen) oder die Wörter eine oder zwei Fähigkeiten sicher nennen, sonst unklar mit den Vorschlägen.
  * Umfang und Ausgeschlossenes bekommen nie eine Fähigkeit, eine Lektüre nur über die Bestätigung.
@@ -329,7 +330,9 @@ export function ordneZu(punkte: RohPunkt[], o: { fach: string; student: Pick<rep
     }
     // the KI saw the list and named none: only words of the same area are worth a question
     const passend = best.filter((id) => imBereich(id, p.gruppe));
-    return passend.length && best.length <= 2 ? unklar(passend) : basis;
+    if (passend.length && best.length <= 2) return unklar(passend);
+    // what the teacher typed („Writing“) is today's topic even when it is a whole one: the same choice as without KI
+    return p.quelle === "lehrer" ? unklar([...best, ...kandidaten].filter((id) => imBereich(id, p.gruppe)).slice(0, 3)) : basis;
   });
 }
 

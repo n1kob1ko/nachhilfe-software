@@ -365,6 +365,9 @@ test("the Lernkontrolle: three tasks, one try without hints, not counted as Mini
   const tasks = s.repo.listTasks(out.worksheetId);
   assert.equal(tasks.length, 3);
   assert.match(s.repo.getWorksheet(out.worksheetId)!.title, /^Mira – Lernkontrolle: Past Simple$/);
+  // the teacher's live line names it „Lernkontrolle“, not „Minitest“ (Abnahme Phase A)
+  const { liveSnapshot } = await import("./live");
+  assert.equal(liveSnapshot(unit.id)!.current?.kontrolle, true);
   const d = s.c.cockpit(unit.id);
   assert.deepEqual(d.stand.plan, plan, "held by the send");
   assert.deepEqual(d.stand.gesendet[k.id], [out.worksheetId]);
@@ -403,5 +406,12 @@ test("the Lernkontrolle: three tasks, one try without hints, not counted as Mini
   assert.equal(gut.length, 1, JSON.stringify(gut));
   assert.match(gut[0].text, /„Erklären: Past Simple“/);
   assert.equal(gut[0].von, "beobachtung");
+
+  // Abnahme Phase A: the Abschluss shows the measured result of the Lernkontrolle, not only what the teacher heard
+  const { endUnit } = await import("./learning");
+  const lesson = s.repo.getLesson(endUnit(unit.id, { byTeacherId: s.teacher.id })!)!;
+  const belege = ab.belegeDerEinheit(unit.id, lesson);
+  assert.deepEqual(belege.lernkontrollen, [{ skill: "Past Simple", von: 3, erledigt: 1, richtig: 1 }]);
+  assert.ok(ab.abschlussKarte(null, ablauf, [], belege).gemacht.some((z) => z.text === "Lernkontrolle Past Simple: 1 von 3 richtig (1 abgegeben)" && z.von === "antworten"));
   s.router.setTransport(null);
 });

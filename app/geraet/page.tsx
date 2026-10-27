@@ -13,7 +13,7 @@ import { deviceContext } from "@/lib/device-context";
 import { touchDevice } from "@/lib/devices";
 import { activeLaptop } from "@/lib/laptop";
 import { markDelivered, parseView, pushLive, unitAssignments, unitText } from "@/lib/live";
-import { isMinitest, showsQuickRound } from "@/lib/quick-round";
+import { isMinitest, LERNKONTROLLE, showsQuickRound } from "@/lib/quick-round";
 import * as repo from "@/lib/repo";
 import { activeMaterial, materialLabel } from "@/lib/current-material";
 import { triesFor } from "@/lib/service";
@@ -166,6 +166,7 @@ export default async function DevicePage() {
         maxTries={triesFor(current.mode)}
         test={isMinitest(current.mode)}
         probe={Boolean(repo.getWorksheet(current.worksheet_id)?.probe_test_id)}
+        kontrolle={current.note === LERNKONTROLLE}
       />
     );
   } else {
