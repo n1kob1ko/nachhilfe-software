@@ -99,14 +99,16 @@ niko, 25.10.2026: „Mehrere Fotos gemeinsam auswerten“, „Ich möchte das ta
 zugeordneten Fähigkeiten sehen und mit den Originalen vergleichen“. Begriff: **Prüfungsstoff** (CONTEXT.md).
 
 - **Eine Anfrage für alle Dateien** (höchstens 8). Die KI bestimmt je Datei die Rolle (Stoffzettel,
-  Inhaltsverzeichnis, sonstiges) und liefert je Punkt: Gruppe (Umfang, Grammatik, Wortschatz, Schreiben, Lesen
+  Inhaltsverzeichnis, Erklärung, Aufgaben, sonstiges; seit 27.10.2026, Fassung `pruefungsstoff-2`) und liefert je Punkt: Gruppe (Umfang, Grammatik, Wortschatz, Schreiben, Lesen
   und Hören, Lektüre, Weiteres), Wortlaut, Lerninhalt, Unit, Quelle, Status (Prüfungsstoff, ausgeschlossen,
   noch zu klären) und eine Fähigkeit aus der Liste der App.
 - **Die App prüft** (`lesungAusAntwort`): Der Stoffzettel legt den Umfang fest („More Units 1–3“): ein Punkt
   des Inhaltsverzeichnisses aus Unit 4 fällt weg. Was der Stoffzettel ausschließt („videos (Stones, Twins
   etc.), songs“), ist auch im Inhaltsverzeichnis ausgeschlossen („A song 4 U“, „The Twins 1“). Eine
   Überschrift („Unit 2: How embarrassing!“) ist Umfang und nie eine Fähigkeit. Doppeltes fällt weg, erfunden
-  wird nichts.
+  wird nichts. Eine Erklärung oder ein Blatt mit Aufgaben legt nie den Umfang fest: an der Prüfung sind ihre
+  Punkte „noch zu klären“ (`fuerPruefung`), im Feld „Stoff“ stehen sie nicht. Die Rolle steht an der Datei
+  (`materials.rolle`); ändert die Lehrkraft sie im Unterricht, gilt das ohne neue Anfrage auch hier.
 - **Zuordnen** (`ordneZu`): KI und Wörter (`stoffVorschlag`, mit dem Gedächtnis der Lehrer) nennen dieselbe
   Fähigkeit → eindeutig, gleich verknüpft. Sie widersprechen sich oder nur die Wörter sprechen für eine im
   selben Bereich → kurz bestätigen. Sonst keine: der Punkt bleibt Prüfungsstoff ohne Fähigkeit. Die

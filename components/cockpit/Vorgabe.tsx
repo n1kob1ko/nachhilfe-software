@@ -1,26 +1,30 @@
 import { CalendarCheck, CalendarPlus, ChevronDown, ClipboardList, FileText, TriangleAlert } from "lucide-react";
-import { bestaetigeVorgabeAction, entferneVorgabeAction, planAnpassenAction, pruefungAusVorgabeAction } from "@/app/vorgabe-actions";
+import { bestaetigeVorgabeAction, entferneVorgabeAction, planAnpassenAction, pruefungAusVorgabeAction, rolleAendernAction } from "@/app/vorgabe-actions";
+import { RolleWahl } from "@/components/cockpit/RolleWahl";
 import { VorgabeForm } from "@/components/cockpit/VorgabeForm";
 import { Pill } from "@/components/ui";
 import { aiEnabled, aiReadsImages } from "@/lib/ai";
 import { hatBegonnen, type CockpitDaten } from "@/lib/cockpit";
 import { dayOf } from "@/lib/exams";
+import { ROLLE_SATZ } from "@/lib/pruefungsstoff";
 import { tagMonat } from "@/lib/vorbereitung-auto";
 import * as repo from "@/lib/repo";
 import type { UnitView } from "@/lib/units";
-import { abweichung, pruefungZurVorgabe, schonEingetragen, vorgabeDerEinheit } from "@/lib/vorgabe";
+import { abweichung, dateienDerVorgabe, materialZurWahl, pruefungZurVorgabe, schonEingetragen, vorgabeDerEinheit } from "@/lib/vorgabe";
 
 const skillName = (id: string) => {
   const s = repo.getSkill(id);
   if (!s) return id;
   return s.parent_id ? `${repo.getSkill(s.parent_id)?.name ?? ""} › ${s.name}` : s.name;
 };
+const ROLLEN = Object.entries(ROLLE_SATZ).map(([wert, text]) => ({ wert, text }));
 
 /**
  * **Was steht heute an?** (lib/vorgabe.ts) im Unterricht, gleich nach dem Start: ohne Vorgabe eine zugeklappte Zeile
  * (der Start bleibt so schnell wie bisher), mit Vorgabe eine kurze Zusammenfassung: was heute dran ist und zu welcher
  * Fähigkeit, was kurz zu bestätigen ist, wo sie von der nächsten Prüfung abweicht, ein Termin zum Bestätigen und
- * „Plan anpassen“, wenn der Ablauf schon begonnen hat. Nur für die Lehrkraft.
+ * „Plan anpassen“, wenn der Ablauf schon begonnen hat. Je Datei steht ihre Art in einer Zeile („Foto 2: erklärt ein Thema“)
+ * und lässt sich mit einem Tippen ändern. Nur für die Lehrkraft.
  */
 export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
   const v = vorgabeDerEinheit(unit.id);
@@ -30,6 +34,7 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
     .slice(0, 6)
     .map((t) => ({ id: t.id, label: `${t.title || `${t.kind} ${t.subject}`} am ${tagMonat(t.date)}` }));
   const kiLiest = aiEnabled("stoffzettel") && aiReadsImages("stoffzettel");
+  const material = materialZurWahl(unit.student_id).map((m) => ({ ...m, rolle: m.rolle ? ROLLE_SATZ[m.rolle] : "" }));
 
   if (!v)
     return (
@@ -41,7 +46,7 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
           <ChevronDown size={16} className="ml-auto text-ink-3 transition-transform group-open:rotate-180" aria-hidden />
         </summary>
         <div className="pb-4">
-          <VorgabeForm unitId={unit.id} tests={tests} kiLiest={kiLiest} />
+          <VorgabeForm unitId={unit.id} tests={tests} material={material} kiLiest={kiLiest} />
         </div>
       </details>
     );
@@ -51,6 +56,8 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
   const begonnen = hatBegonnen(c.stand);
   const unklar = v.punkte.map((x, i) => ({ x, i })).filter(({ x }) => x.zuordnung === "unklar" && x.vorschlaege.length);
   const test = v.testId ? repo.getTest(v.testId) : null;
+  // „Foto 1“, „Foto 2“, „PDF 1“: numbered per kind, as the teacher took them
+  const dateien = dateienDerVorgabe(v).map((d, i, alle) => ({ ...d, name: `${d.art} ${alle.slice(0, i + 1).filter((x) => x.art === d.art).length}` }));
   // the same exam is in already: say so instead of offering it again
   const eingetragen = v.terminText ? schonEingetragen(v.terminText, repo.upcomingTests(heute, unit.student_id), heute, unit.subject) : null;
   // one line per point; a point confirmed with several skills stands once, with all of them
@@ -69,6 +76,19 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
         {v.angewendet && <Pill tone="green">Plan danach</Pill>}
       </div>
       {v.text && <p className="text-[14px] text-ink-2">„{v.text}“</p>}
+      {dateien.length > 0 && (
+        <ul className="grid gap-1" data-testid="vorgabe-dateien">
+          {dateien.map((d) => (
+            <li key={d.materialId} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px]">
+              <a href={`/material/${d.materialId}/datei`} target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] min-w-[4.5rem] items-center gap-1 font-semibold text-accent hover:underline">
+                <FileText size={14} aria-hidden /> {d.name}:
+              </a>
+              <RolleWahl action={rolleAendernAction.bind(null, unit.id, d.materialId)} rolle={d.rolle ?? ""} optionen={ROLLEN} label={`Art von ${d.name}`} />
+              {!d.gelesen && <span className="text-[12.5px] text-ink-3">nicht gelesen</span>}
+            </li>
+          ))}
+        </ul>
+      )}
       {test && (
         <p className="text-[14px]">
           Prüfung: <span className="font-medium">{test.title || `${test.kind} ${test.subject}`}</span> am {tagMonat(test.date)}
@@ -135,15 +155,6 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
         </div>
       )}
       {v.hinweis && <p className="text-[13px] text-ink-2">{v.hinweis}</p>}
-      {v.materialIds.length > 0 && (
-        <p className="flex flex-wrap gap-x-3 text-[13.5px]">
-          {v.materialIds.map((id, i) => (
-            <a key={id} href={`/material/${id}/datei`} target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] items-center gap-1 font-semibold text-accent hover:underline">
-              <FileText size={14} aria-hidden /> Blatt {i + 1}
-            </a>
-          ))}
-        </p>
-      )}
       {v.terminText && eingetragen && (
         <p className="flex items-center gap-1.5 text-[14px] text-ink-2" data-testid="vorgabe-termin-da">
           <CalendarCheck size={15} className="shrink-0 text-green" aria-hidden /> Schon eingetragen: {eingetragen.title || eingetragen.kind} am {tagMonat(eingetragen.date)}
@@ -178,7 +189,7 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
         <details className="group">
           <summary className="btn btn-ghost btn-sm cursor-pointer list-none [&::-webkit-details-marker]:hidden">Ändern</summary>
           <div className="mt-2 w-[min(36rem,calc(100vw-4rem))]">
-            <VorgabeForm unitId={unit.id} tests={tests} text={v.text} kiLiest={kiLiest} abbrechen />
+            <VorgabeForm unitId={unit.id} tests={tests} material={material} text={v.text} kiLiest={kiLiest} abbrechen />
           </div>
         </details>
         <form action={entferneVorgabeAction.bind(null, unit.id)}>

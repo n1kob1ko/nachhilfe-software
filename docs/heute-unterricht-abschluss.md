@@ -101,6 +101,19 @@ Ohne Eingabe bleibt alles wie bisher, der Start ist nicht langsamer (eine Abfrag
 - Ein Termin im Text („nächste Woche Test“) wird nie von selbst eingetragen: die Karte fragt, das Datum
   wählt die Lehrkraft.
 - „Ändern“ und „Entfernen“ gibt es immer. Wählt die Lehrkraft selbst ein Paket oder eine Fähigkeit, gilt das.
+- **Art der Unterlagen** (niko, 27.10.2026: „Lernheft muss unterscheiden, ob das Dokument ein Thema erklärt, eine
+  Aufgabe enthält oder den Prüfungsumfang festlegt“): je Datei eine Zeile „Foto 2: erklärt ein Thema“ mit einer kleinen
+  Auswahl (legt den Prüfungsstoff fest, ist ein Inhaltsverzeichnis, erklärt ein Thema, enthält Aufgaben, etwas anderes).
+  Ein Tippen ändert sie (an der Datei gespeichert, `materials.rolle`); die Vorgabe wird aus der gespeicherten Lesung neu
+  gemacht, ohne KI-Anfrage. Erklärung und Aufgaben geben die Themen für heute, nie den Prüfungsstoff: keine
+  Abweichung, nichts davon in „Prüfung eintragen“, an einer Prüfung nur „noch zu klären“. Ein Blatt mit Aufgaben ist
+  an der Datei vermerkt (`rolle = 'aufgaben'`); die Aufgaben selbst werden noch nicht übernommen.
+- **Vorhandenes Material**: unter dem Foto-Knopf die Fotos und PDFs des Schülers, das neueste zuerst (6, dann
+  „mehr“), zum Antippen zusammen mit neuen Fotos. Sie gehen denselben Weg; was schon gelesen ist (dieselben Dateien,
+  dieselbe Fassung), kostet nichts mehr und braucht auch keinen Haken und keine KI. Kommt ein neuer Text dazu, wird
+  nur der Text gelesen.
+- Ohne KI zerlegt die App den Text selbst; Fotos und PDFs werden gespeichert, und die Karte sagt, dass nur die KI sie
+  liest. Eine Datei, die schon als Stoffzettel an einer Prüfung hängt, gilt ohne Lesen als „legt den Prüfungsstoff fest“.
 
 ### Wohin es gewandert ist
 

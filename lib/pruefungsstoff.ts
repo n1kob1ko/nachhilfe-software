@@ -3,14 +3,19 @@
  * laden für eine Prüfung mehrere Fotos oder ein PDF mit mehreren Seiten hoch: den Stoffzettel, dazu etwa das
  * Inhaltsverzeichnis des Buchs. Alle Seiten gehen in **einer** Anfrage an die KI (Funktion `stoffzettel`), zusammen mit
  * den Fähigkeiten der App für Fach und Schulstufe. Die KI sagt je Datei, was sie ist (Stoffzettel, Inhaltsverzeichnis,
- * sonstiges), und je Punkt: Gruppe, Wortlaut, Lerninhalt, Unit, Quelle, ob er zur Prüfung gehört (pruefung,
- * ausgeschlossen, unklar) und eine passende Fähigkeit.
+ * Erklärung, Aufgaben, sonstiges; niko, 27.10.2026: „Lernheft muss unterscheiden, ob das Dokument ein Thema erklärt, eine
+ * Aufgabe enthält oder den Prüfungsumfang festlegt“), und je Punkt: Gruppe, Wortlaut, Lerninhalt, Unit, Quelle, ob er zur
+ * Prüfung gehört (pruefung, ausgeschlossen, unklar) und eine passende Fähigkeit.
  *
  * Die App prüft die Antwort (`lesungAusAntwort`):
  * - der Stoffzettel legt den Umfang fest: nennt er Units 1–3, fällt ein Punkt des Inhaltsverzeichnisses aus Unit 4 weg;
  * - was der Stoffzettel ausschließt („Nicht Stoff sind videos (Stones, Twins), songs“), ist auch im Inhaltsverzeichnis
  *   ausgeschlossen („A song 4 U“, „The Twins 1“);
- * - eine Überschrift einer Unit („How embarrassing!“) ist Umfang und nie eine Fähigkeit.
+ * - eine Überschrift einer Unit („How embarrassing!“) ist Umfang und nie eine Fähigkeit;
+ * - eine Erklärung oder ein Blatt mit Aufgaben legt nie den Umfang fest: ihre Punkte sind Themen für heute (lib/vorgabe.ts),
+ *   an einer Prüfung nur „noch zu klären“ (`fuerPruefung`).
+ * Die Rolle einer Datei kann die Lehrkraft ändern (`setzeRolle`, an der Datei gespeichert); die Lesung wird dann ohne neue
+ * Anfrage aus der gespeicherten Antwort neu gemacht.
  *
  * Dann ordnet sie zu (`ordneZu`): Fähigkeit der KI und der Vorschlag aus den Wörtern (lib/lehrplan.ts `stoffVorschlag`)
  * stimmen überein → **sicher**, sie wird gleich verknüpft; widersprechen sie sich oder ist nur einer unsicher dafür →
@@ -40,7 +45,7 @@ export const MAX_DATEIEN = 8;
 /** Höchstens so viel zusammen in einer Anfrage ans Hochladen (Fotos werden im Browser verkleinert). */
 export const MAX_GESAMT_BYTES = 40 * 1024 * 1024;
 /** Fassung des Prompts: ändert sie sich, wird eine Datei neu gelesen (das alte Ergebnis passt nicht mehr). */
-export const PROMPT_FASSUNG = "pruefungsstoff-1";
+export const PROMPT_FASSUNG = "pruefungsstoff-2";
 /** Höchstens so viele Punkte je Lesung. */
 export const MAX_PUNKTE = 80;
 /** Höchstens so viele Themen für `tests.topics`. */
@@ -49,7 +54,7 @@ export const MAX_THEMEN = 24;
 export type Gruppe = (typeof STOFF_GRUPPEN)[number];
 export type Rolle = (typeof STOFF_ROLLEN)[number];
 export type StoffStatus = (typeof STOFF_STATUS)[number];
-export type Quelle = "stoffzettel" | "inhaltsverzeichnis" | "lehrer" | "sonstiges";
+export type Quelle = "stoffzettel" | "inhaltsverzeichnis" | "erklaerung" | "aufgaben" | "lehrer" | "sonstiges";
 /** sicher: gleich verknüpft; bestaetigt: vom Lehrer gewählt; unklar: kurz bestätigen; keine: es passt keine Fähigkeit. */
 export type Zuordnung = "sicher" | "bestaetigt" | "unklar" | "keine";
 
@@ -62,7 +67,26 @@ export const GRUPPE_LABEL: Record<Gruppe, string> = {
   lektuere: "Lektüre",
   sonstiges: "Weiteres",
 };
-export const QUELLE_LABEL: Record<Quelle, string> = { stoffzettel: "Stoffzettel", inhaltsverzeichnis: "Inhaltsverzeichnis", lehrer: "Deine Angabe", sonstiges: "Weiteres Blatt" };
+export const QUELLE_LABEL: Record<Quelle, string> = {
+  stoffzettel: "Stoffzettel",
+  inhaltsverzeichnis: "Inhaltsverzeichnis",
+  erklaerung: "Erklärung",
+  aufgaben: "Blatt mit Aufgaben",
+  lehrer: "Deine Angabe",
+  sonstiges: "Weiteres Blatt",
+};
+/** Die Rolle einer Datei in wenigen Worten („Foto 2: erklärt ein Thema“), auch für die Auswahl. */
+export const ROLLE_SATZ: Record<Rolle, string> = {
+  stoffzettel: "legt den Prüfungsstoff fest",
+  inhaltsverzeichnis: "ist ein Inhaltsverzeichnis",
+  erklaerung: "erklärt ein Thema",
+  aufgaben: "enthält Aufgaben",
+  sonstiges: "etwas anderes",
+};
+/** Erklärung und Aufgaben: Themen für heute, nie Prüfungsumfang. */
+export const nurFuerHeute = (q: Quelle) => q === "erklaerung" || q === "aufgaben";
+/** Was den Umfang festlegen oder etwas ausschließen darf: Stoffzettel, Angabe der Lehrkraft, ein weiteres Blatt. */
+const legtUmfangFest = (q: Quelle) => q !== "inhaltsverzeichnis" && !nurFuerHeute(q);
 export const STATUS_LABEL: Record<StoffStatus, string> = { pruefung: "Prüfungsstoff", ausgeschlossen: "ausgeschlossen", unklar: "noch zu klären" };
 
 /** Ein Punkt, wie ihn die App aus der Antwort übernimmt; `skill_id` ist der Vorschlag der KI (noch nicht geprüft). */
@@ -87,7 +111,7 @@ const eineZeile = (s: unknown, max: number) =>
     .trim()
     .slice(0, max);
 const istGruppe = (x: unknown): x is Gruppe => (STOFF_GRUPPEN as readonly unknown[]).includes(x);
-const istRolle = (x: unknown): x is Rolle => (STOFF_ROLLEN as readonly unknown[]).includes(x);
+export const istRolle = (x: unknown): x is Rolle => (STOFF_ROLLEN as readonly unknown[]).includes(x);
 const istStatus = (x: unknown): x is StoffStatus => (STOFF_STATUS as readonly unknown[]).includes(x);
 
 /** Eine Überschrift eines Kapitels: „Unit 2: How embarrassing!“, „Kapitel 4“. */
@@ -123,12 +147,14 @@ const woerter = (s: string) =>
 
 /**
  * Prüft die Antwort der KI und macht daraus die Lesung. Nimmt auch die frühere Antwort (nur Themen) an. Was nicht passt,
- * wird verbessert oder fällt weg; erfunden wird nichts. `dateien`: wie viele Dateien gelesen wurden.
+ * wird verbessert oder fällt weg; erfunden wird nichts. `dateien`: wie viele Dateien gelesen wurden; `rollen`: Rollen, die
+ * die Lehrkraft gewählt hat (Nummer der Datei → Rolle), gehen der KI vor.
  */
-export function lesungAusAntwort(g: PruefungsstoffGelesen | StoffzettelGelesen, o: { dateien: number }): Lesung {
+export function lesungAusAntwort(g: PruefungsstoffGelesen | StoffzettelGelesen, o: { dateien: number; rollen?: Map<number, Rolle> }): Lesung {
   const voll = "punkte" in g && Array.isArray(g.punkte);
   const dokumente = new Map<number, Rolle>();
   if (voll) for (const d of (g as PruefungsstoffGelesen).dokumente ?? []) if (Number.isInteger(d?.nr) && d.nr >= 1 && d.nr <= o.dateien && istRolle(d.rolle)) dokumente.set(d.nr, d.rolle);
+  for (const [nr, rolle] of o.rollen ?? []) if (nr >= 1 && nr <= o.dateien) dokumente.set(nr, rolle);
   // a single file without a role is the Stoffzettel
   if (o.dateien === 1 && !dokumente.size) dokumente.set(1, "stoffzettel");
   const quelleVon = (nr: number): Quelle => (nr === 0 ? "lehrer" : (dokumente.get(nr) ?? "sonstiges"));
@@ -171,10 +197,11 @@ export function lesungAusAntwort(g: PruefungsstoffGelesen | StoffzettelGelesen, 
     punkte.push(p);
   }
 
-  // the Stoffzettel sets the scope: a point of the table of contents from another unit is no Prüfungsstoff
-  const umfang = unitsImUmfang(punkte.filter((p) => p.gruppe === "umfang" && p.status === "pruefung" && p.quelle !== "inhaltsverzeichnis").map((p) => `${p.original} ${p.inhalt}`));
+  // the Stoffzettel sets the scope: a point of the table of contents from another unit is no Prüfungsstoff; the „Unit 4“
+  // of a worksheet sets nothing
+  const umfang = unitsImUmfang(punkte.filter((p) => p.gruppe === "umfang" && p.status === "pruefung" && legtUmfangFest(p.quelle)).map((p) => `${p.original} ${p.inhalt}`));
   // what the Stoffzettel excludes is excluded in the table of contents too („videos (Stones, Twins)“ → „The Twins 1“)
-  const aus = punkte.filter((p) => p.status === "ausgeschlossen" && p.quelle !== "inhaltsverzeichnis").map((p) => ({ p, w: new Set(woerter(p.original)) }));
+  const aus = punkte.filter((p) => p.status === "ausgeschlossen" && legtUmfangFest(p.quelle)).map((p) => ({ p, w: new Set(woerter(p.original)) }));
   const gefiltert: RohPunkt[] = [];
   for (const p of punkte) {
     if (p.quelle === "inhaltsverzeichnis" && umfang.size) {
@@ -217,9 +244,10 @@ export function lesungAusAntwort(g: PruefungsstoffGelesen | StoffzettelGelesen, 
 /**
  * Die Themen für das Feld „Stoff“ einer Prüfung (`tests.topics`): die Lerninhalte, die zur Prüfung gehören, ohne
  * Umfang; zuerst die vom Stoffzettel und der Angabe der Lehrkraft (das Inhaltsverzeichnis ergänzt nur), ohne Doppelte.
+ * Eine Erklärung oder ein Blatt mit Aufgaben gibt keine Themen der Prüfung.
  */
 export function themenAus(punkte: Pick<RohPunkt, "gruppe" | "status" | "quelle" | "inhalt" | "original">[]): string[] {
-  const zaehlt = punkte.filter((p) => p.status === "pruefung" && p.gruppe !== "umfang");
+  const zaehlt = punkte.filter((p) => p.status === "pruefung" && p.gruppe !== "umfang" && !nurFuerHeute(p.quelle));
   const vorne = zaehlt.filter((p) => p.quelle !== "inhaltsverzeichnis");
   const out: string[] = [];
   for (const p of vorne.length ? vorne : zaehlt) {
@@ -227,6 +255,16 @@ export function themenAus(punkte: Pick<RohPunkt, "gruppe" | "status" | "quelle" 
     if (t && !out.some((x) => x.toLowerCase() === t.toLowerCase())) out.push(t);
   }
   return out.slice(0, MAX_THEMEN);
+}
+
+/**
+ * Die Punkte für den Prüfungsstoff einer Prüfung: was nur von einer Erklärung oder einem Blatt mit Aufgaben stammt, legt
+ * den Umfang nicht fest. Es geht nicht verloren, sondern ist „noch zu klären“ (zählt erst nach „Gehört dazu“).
+ */
+export function fuerPruefung<T extends Pick<RohPunkt, "quelle" | "status" | "grund">>(punkte: T[]): T[] {
+  return punkte.map((p) =>
+    nurFuerHeute(p.quelle) && p.status === "pruefung" ? { ...p, status: "unklar" as const, grund: `Nur auf ${p.quelle === "aufgaben" ? "einem Blatt mit Aufgaben" : "einer Erklärung"}, nicht auf dem Stoffzettel` } : p,
+  );
 }
 
 // ---------- zuordnen ----------
@@ -330,8 +368,45 @@ export function angabeOhneNamen(text: string, studentName: string): string {
 type Mime = "application/pdf" | "image/jpeg" | "image/png" | "image/webp";
 export type LesungGespeichert = { id: number; studentId: number | null; dateien: { material_id: number; sha256: string }[]; lesung: Lesung; callId: number | null; createdAt: string };
 
-type LesungRow = { id: number; schluessel: string; student_id: number | null; dateien: string; ergebnis: string; call_id: number | null; created_at: string };
-const alsLesung = (r: LesungRow): LesungGespeichert => ({ id: r.id, studentId: r.student_id, dateien: json(r.dateien, []), lesung: json<Lesung>(r.ergebnis, { kopf: { art: null, fach: null, datum: null, titel: null, themen: [], unsicher: [] }, dokumente: [], punkte: [], schwierigkeiten: [], termin_text: null, weggelassen: 0 }), callId: r.call_id, createdAt: r.created_at });
+type LesungRow = { id: number; schluessel: string; student_id: number | null; dateien: string; ergebnis: string; antwort: string | null; call_id: number | null; created_at: string };
+const LEER: Lesung = { kopf: { art: null, fach: null, datum: null, titel: null, themen: [], unsicher: [] }, dokumente: [], punkte: [], schwierigkeiten: [], termin_text: null, weggelassen: 0 };
+
+/** Die Rolle, die die Lehrkraft einer Datei gegeben hat; null, wenn sie keine gewählt hat. */
+export function gewaehlteRolle(materialId: number): Rolle | null {
+  const r = db().prepare("SELECT rolle FROM materials WHERE id = ? AND rolle_geprueft = 1").pluck().get(materialId);
+  return istRolle(r) ? r : null;
+}
+
+/**
+ * Die Lesung mit den Rollen, die die Lehrkraft gewählt hat: aus der gespeicherten Antwort der KI neu gemacht, ohne Anfrage.
+ * Eine ältere Lesung ohne Antwort bekommt nur die neue Quelle je Punkt.
+ */
+function mitRollen(r: LesungRow): Lesung {
+  const lesung = json<Lesung>(r.ergebnis, LEER);
+  const dateien = json<{ material_id: number }[]>(r.dateien, []);
+  const rollen = new Map<number, Rolle>();
+  dateien.forEach((d, i) => {
+    const rolle = gewaehlteRolle(d.material_id);
+    if (rolle && lesung.dokumente.find((x) => x.nr === i + 1)?.rolle !== rolle) rollen.set(i + 1, rolle);
+  });
+  if (!rollen.size) return lesung;
+  const antwort = r.antwort ? json<PruefungsstoffGelesen | null>(r.antwort, null) : null;
+  if (antwort) return lesungAusAntwort(antwort, { dateien: dateien.length, rollen });
+  const dokumente = dateien.map((_, i) => ({ nr: i + 1, rolle: rollen.get(i + 1) ?? lesung.dokumente.find((x) => x.nr === i + 1)?.rolle ?? "sonstiges", titel: lesung.dokumente.find((x) => x.nr === i + 1)?.titel ?? "" }));
+  const punkte = lesung.punkte.map((p) => (p.dokument >= 1 && rollen.has(p.dokument) ? { ...p, quelle: rollen.get(p.dokument)! } : p));
+  return { ...lesung, dokumente, punkte, kopf: { ...lesung.kopf, themen: themenAus(punkte) } };
+}
+const alsLesung = (r: LesungRow): LesungGespeichert => ({ id: r.id, studentId: r.student_id, dateien: json(r.dateien, []), lesung: mitRollen(r), callId: r.call_id, createdAt: r.created_at });
+
+/**
+ * Die Lehrkraft ändert die Rolle einer Datei („enthält Aufgaben“ statt „legt den Prüfungsstoff fest“). Gespeichert an der
+ * Datei (Material), damit sie überall gilt und ein Blatt mit Aufgaben später gefunden wird; jede Lesung mit ihr folgt ohne
+ * neue Anfrage.
+ */
+export function setzeRolle(materialId: number, rolle: Rolle): boolean {
+  if (!istRolle(rolle)) return false;
+  return db().prepare("UPDATE materials SET rolle = ?, rolle_geprueft = 1 WHERE id = ?").run(rolle, materialId).changes > 0;
+}
 
 export function getLesung(id: number | null | undefined): LesungGespeichert | null {
   if (!id) return null;
@@ -359,22 +434,7 @@ export async function liesPruefungsstoff(o: { materialIds: number[]; angabe?: st
   if (ids.length > MAX_DATEIEN) throw new Error(`Höchstens ${MAX_DATEIEN} Fotos oder PDFs auf einmal.`);
   const angabe = o.angabe?.trim() ? angabeOhneNamen(o.angabe.slice(0, 1500), student.name) : "";
   if (!ids.length && !angabe) throw new Error("Bitte Fotos wählen oder kurz schreiben, was heute dran ist.");
-  const dateien = ids.map((id) => {
-    const m = getMaterial(id);
-    if (!m || !hatDatei(m)) throw new Error("Eine Datei gibt es nicht mehr. Bitte noch einmal hochladen.");
-    let data: Buffer;
-    try {
-      data = fs.readFileSync(materialFile(m));
-    } catch {
-      throw new Error("Eine Datei fehlt. Bitte noch einmal hochladen.");
-    }
-    const type = sniffType(data);
-    if (!type) throw new Error("Nur Fotos (JPG, PNG, WebP) und PDF-Dateien sind möglich.");
-    const pdf = type.mime === "application/pdf";
-    const max = pdf ? MAX_ANALYSIS_PDF_BYTES : MAX_ANALYSIS_IMAGE_BYTES;
-    if (data.length > max) throw new Error(`${pdf ? "Ein PDF" : "Ein Foto"} ist zu groß für die KI (höchstens ${max / 1024 / 1024} MB).`);
-    return { material_id: m.id, sha256: m.sha256 || crypto.createHash("sha256").update(data).digest("hex"), mime: type.mime as Mime, data };
-  });
+  const dateien = dateienFuer(ids);
   const kandidaten = kandidatenFuer(student, o.fach);
   const schluessel = lesungsSchluessel({ hashes: dateien.map((d) => d.sha256), angabe, kandidaten: kandidaten.map((k) => k.id) });
   const schon = db().prepare("SELECT * FROM stoff_lesungen WHERE schluessel = ?").get(schluessel) as LesungRow | undefined;
@@ -394,11 +454,63 @@ export async function liesPruefungsstoff(o: { materialIds: number[]; angabe?: st
   const call = db().prepare("SELECT id FROM ai_calls WHERE id > ? AND fn = 'stoffzettel' ORDER BY id DESC LIMIT 1").get(vorher) as { id: number } | undefined;
   const id = Number(
     db()
-      .prepare("INSERT INTO stoff_lesungen (schluessel, student_id, dateien, ergebnis, call_id) VALUES (?, ?, ?, ?, ?) ON CONFLICT(schluessel) DO UPDATE SET ergebnis = excluded.ergebnis RETURNING id")
+      .prepare("INSERT INTO stoff_lesungen (schluessel, student_id, dateien, ergebnis, antwort, call_id) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(schluessel) DO UPDATE SET ergebnis = excluded.ergebnis, antwort = excluded.antwort RETURNING id")
       .pluck()
-      .get(schluessel, student.id, JSON.stringify(dateien.map((d) => ({ material_id: d.material_id, sha256: d.sha256 }))), JSON.stringify(lesung), call?.id ?? null),
+      .get(schluessel, student.id, JSON.stringify(dateien.map((d) => ({ material_id: d.material_id, sha256: d.sha256 }))), JSON.stringify(lesung), JSON.stringify(gelesen), call?.id ?? null),
   );
-  return { id, lesung, neu: true };
+  // the role on the file, so a worksheet can be found later; a role the teacher chose stays
+  const rolle = db().prepare("UPDATE materials SET rolle = ? WHERE id = ? AND rolle_geprueft = 0");
+  for (const d of lesung.dokumente) if (dateien[d.nr - 1]) rolle.run(d.rolle, dateien[d.nr - 1].material_id);
+  // a role chosen earlier for one of these files counts at once
+  return { id, lesung: getLesung(id)!.lesung, neu: true };
+}
+
+/**
+ * Eine schon bezahlte Lesung genau dieser Dateien, ohne Anfrage und ohne KI; null, wenn es keine gibt. Zuerst die ohne
+ * Angabe, sonst die neueste dieser Fassung mit denselben Dateien für diesen Schüler (gleiche sha256, auch zusammen mit einem
+ * Text der Lehrkraft gelesen: dessen Punkte haben Dokument 0 und gehören nicht dazu). So kostet vorhandenes Material, das
+ * schon gelesen wurde, nichts mehr, auch wenn heute ein anderer Text dazukommt.
+ */
+export function gespeicherteLesung(o: { materialIds: number[]; studentId: number; fach?: string }): { id: number; lesung: Lesung } | null {
+  const student = repo.getStudent(o.studentId);
+  const ids = [...new Set(o.materialIds)];
+  if (!student || !ids.length || ids.length > MAX_DATEIEN) return null;
+  let dateien: ReturnType<typeof dateienFuer>;
+  try {
+    dateien = dateienFuer(ids, { ohneDaten: true });
+  } catch {
+    return null;
+  }
+  const schluessel = lesungsSchluessel({ hashes: dateien.map((d) => d.sha256), angabe: "", kandidaten: kandidatenFuer(student, o.fach).map((k) => k.id) });
+  const genau = db().prepare("SELECT * FROM stoff_lesungen WHERE schluessel = ?").get(schluessel) as LesungRow | undefined;
+  // only readings with the stored answer are of this version of the prompt (older ones know fewer roles)
+  const gleich = (r: LesungRow) => JSON.stringify(json<{ sha256: string }[]>(r.dateien, []).map((d) => d.sha256).sort()) === JSON.stringify(dateien.map((d) => d.sha256).sort());
+  const r = genau ?? (db().prepare("SELECT * FROM stoff_lesungen WHERE student_id = ? AND antwort IS NOT NULL AND dateien != '[]' ORDER BY id DESC").all(student.id) as LesungRow[]).find(gleich);
+  return r ? { id: r.id, lesung: alsLesung(r).lesung } : null;
+}
+
+/**
+ * Die Dateien einer Lesung mit Prüfsumme und Inhalt; `ohneDaten`: nur die Prüfsumme, wenn sie am Material steht. Wirft mit
+ * einem Satz für den Lehrer.
+ */
+function dateienFuer(ids: number[], o: { ohneDaten?: boolean } = {}): { material_id: number; sha256: string; mime: Mime; data: Buffer }[] {
+  return ids.map((id) => {
+    const m = getMaterial(id);
+    if (!m || !hatDatei(m)) throw new Error("Eine Datei gibt es nicht mehr. Bitte noch einmal hochladen.");
+    if (o.ohneDaten && m.sha256) return { material_id: m.id, sha256: m.sha256, mime: m.mime as Mime, data: Buffer.alloc(0) };
+    let data: Buffer;
+    try {
+      data = fs.readFileSync(materialFile(m));
+    } catch {
+      throw new Error("Eine Datei fehlt. Bitte noch einmal hochladen.");
+    }
+    const type = sniffType(data);
+    if (!type) throw new Error("Nur Fotos (JPG, PNG, WebP) und PDF-Dateien sind möglich.");
+    const pdf = type.mime === "application/pdf";
+    const max = pdf ? MAX_ANALYSIS_PDF_BYTES : MAX_ANALYSIS_IMAGE_BYTES;
+    if (data.length > max) throw new Error(`${pdf ? "Ein PDF" : "Ein Foto"} ist zu groß für die KI (höchstens ${max / 1024 / 1024} MB).`);
+    return { material_id: m.id, sha256: m.sha256 || crypto.createHash("sha256").update(data).digest("hex"), mime: type.mime as Mime, data };
+  });
 }
 
 // ---------- gespeichert an der Prüfung ----------
@@ -439,13 +551,16 @@ export function speichereStoff(testId: number, punkte: StoffPunkt[], o: { lesung
   })();
 }
 
-/** Der Prüfungsstoff aus einer Lesung an die Prüfung: zuordnen mit Fach und Stufe des Schülers, speichern. */
+/**
+ * Der Prüfungsstoff aus einer Lesung an die Prüfung: zuordnen mit Fach und Stufe des Schülers, speichern. Was nur von einer
+ * Erklärung oder einem Blatt mit Aufgaben stammt, ist noch zu klären.
+ */
 export function stoffAusLesung(testId: number, lesungId: number): StoffZeile[] {
   const t = repo.getTest(testId);
   const l = getLesung(lesungId);
   const student = t ? repo.getStudent(t.student_id) : null;
   if (!t || !l || !student) return [];
-  speichereStoff(testId, ordneZu(l.lesung.punkte, { fach: t.subject, student, ki: true }), { lesungId });
+  speichereStoff(testId, ordneZu(fuerPruefung(l.lesung.punkte), { fach: t.subject, student, ki: true }), { lesungId });
   return stoffDerPruefung(testId);
 }
 

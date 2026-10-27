@@ -1420,6 +1420,12 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // Eintrags des Schülers stammt (alle Dateien zusammen gelesen)
   ["tests", "lesung_id", "INTEGER REFERENCES stoff_lesungen(id) ON DELETE SET NULL"],
   ["pruefung_einreichungen", "lesung_id", "INTEGER REFERENCES stoff_lesungen(id) ON DELETE SET NULL"],
+  // Art der Unterlagen (lib/pruefungsstoff.ts, 2026-10-27): die Antwort der KI wie gelesen (JSON), damit eine geänderte Rolle ohne
+  // neue Anfrage neu ausgewertet wird; je Datei die Rolle stoffzettel | inhaltsverzeichnis | erklaerung | aufgaben | sonstiges
+  // ('' = unbekannt), rolle_geprueft = 1: von der Lehrkraft gewählt (die KI ändert sie dann nicht mehr)
+  ["stoff_lesungen", "antwort", "TEXT"],
+  ["materials", "rolle", "TEXT NOT NULL DEFAULT ''"],
+  ["materials", "rolle_geprueft", "INTEGER NOT NULL DEFAULT 0"],
 ];
 
 /** Teachers to start with; more can be added later. */

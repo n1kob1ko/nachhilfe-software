@@ -692,7 +692,9 @@ export async function leseStundenplanFoto(file: { mime: "image/jpeg" | "image/pn
 export type StoffzettelGelesen = { art: string | null; fach: string | null; datum: string | null; titel: string | null; themen: string[]; unsicher: string[] };
 
 export const STOFF_GRUPPEN = ["umfang", "grammatik", "wortschatz", "writing", "reading_listening", "lektuere", "sonstiges"] as const;
-export const STOFF_ROLLEN = ["stoffzettel", "inhaltsverzeichnis", "sonstiges"] as const;
+/** Art einer Datei: stoffzettel legt den Prüfungsumfang fest, inhaltsverzeichnis ergänzt nur, erklaerung erklärt ein Thema,
+ * aufgaben enthält Aufgaben (lib/pruefungsstoff.ts). */
+export const STOFF_ROLLEN = ["stoffzettel", "inhaltsverzeichnis", "erklaerung", "aufgaben", "sonstiges"] as const;
 export const STOFF_STATUS = ["pruefung", "ausgeschlossen", "unklar"] as const;
 
 const StoffPunktSchema = z.object({
@@ -715,7 +717,9 @@ const PruefungsstoffSchema = z.object({
   titel: z.string().nullable().describe("Die Bezeichnung wie auf dem Blatt, z. B. 1st test; ohne Namen von Personen und ohne Klasse; null, wenn keine dasteht"),
   dokumente: z
     .array(z.object({ nr: z.number().int(), rolle: z.enum(STOFF_ROLLEN), titel: z.string().nullable() }))
-    .describe("Jede Datei mit ihrer Rolle: stoffzettel = sagt, was zur Prüfung kommt; inhaltsverzeichnis = Inhalt eines Buchs; sonstiges"),
+    .describe(
+      "Jede Datei mit ihrer Rolle: stoffzettel = legt fest, was zur Prüfung kommt; inhaltsverzeichnis = Inhalt eines Buchs; erklaerung = Buchseite, Merkblatt oder Hefteintrag, der ein Thema erklärt; aufgaben = Arbeitsblatt, Schulübung oder Hausübung mit Aufgaben; sonstiges",
+    ),
   punkte: z.array(StoffPunktSchema).describe("Jeder Lerninhalt einzeln, in der Reihenfolge der Blätter"),
   schwierigkeiten: z.array(z.string()).describe("Nur bei einer Angabe der Lehrkraft: was der Schüler laut Angabe noch nicht versteht, kurz; sonst leer"),
   termin_text: z.string().nullable().describe("Ein genannter Termin ohne Datum, wörtlich (z. B. nächste Woche); sonst null"),
@@ -725,7 +729,9 @@ export type PruefungsstoffGelesen = z.infer<typeof PruefungsstoffSchema>;
 
 export const PRUEFUNGSSTOFF_SYSTEM = [
   "Du liest die Unterlagen zu einer Schularbeit oder einem Test ab: Fotos oder PDF-Seiten, die ein Schüler von der Schule mitgebracht hat, alle zusammen, und manchmal eine kurze Angabe der Lehrkraft.",
-  "Bestimme zuerst die Rolle jeder Datei: stoffzettel (sagt, was zur Prüfung kommt), inhaltsverzeichnis (Inhalt eines Schulbuchs) oder sonstiges.",
+  "Bestimme zuerst die Rolle jeder Datei: stoffzettel (legt fest, was zur Prüfung kommt), inhaltsverzeichnis (Inhalt eines Schulbuchs), erklaerung (Buchseite, Merkblatt oder Hefteintrag, der ein Thema erklärt), aufgaben (Arbeitsblatt, Schulübung oder Hausübung mit Aufgaben) oder sonstiges.",
+  "Nur ein stoffzettel legt den Prüfungsumfang fest. Eine Übung oder eine Erklärung ist kein Stoffzettel, auch wenn sie zum Thema der Prüfung passt.",
+  "Bei erklaerung und aufgaben ist jedes Thema, das das Blatt erklärt oder übt, ein Punkt mit status pruefung; schreib nicht jede einzelne Aufgabe ab.",
   "Der Stoffzettel legt den Umfang fest. Ein Inhaltsverzeichnis ergänzt nur Einzelheiten zu den Units oder Kapiteln, die der Stoffzettel nennt; was aus anderen Units stammt, lässt du weg. Ohne Stoffzettel gilt nur, was ausdrücklich als Stoff dasteht.",
   "Was der Stoffzettel ausschließt („nicht Stoff“), bekommt status ausgeschlossen, auch passende Einträge im Inhaltsverzeichnis (etwa Videos oder Lieder, die er nennt).",
   "Steht ein Punkt nur im Inhaltsverzeichnis und der Stoffzettel deckt ihn nur indirekt (etwa über Grammatikkästen oder Arbeitsblätter), bekommt er status unklar mit kurzem grund. Steht etwas auf dem Stoffzettel, aber nicht im Inhaltsverzeichnis, gehört es trotzdem zur Prüfung.",
