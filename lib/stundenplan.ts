@@ -341,6 +341,120 @@ export function themenDesPlans(plan: Pick<PlanStep, "id" | "minuten" | "thema" |
   return out;
 }
 
+// ---------- re-timing during the unit ----------
+
+/** Eine Lernkontrolle behält beim Kürzen mindestens so viele Minuten. */
+export const KONTROLLE_MIN = 5;
+/** Ein Thema, das beim Kürzen darunter fiele, kommt auf „Nächstes Mal“, statt gequetscht zu werden (die Hälfte von THEMA_MIN). */
+export const THEMA_REST_MIN = THEMA_MIN / 2;
+
+/**
+ * Der neu getaktete Plan einer laufenden Einheit: Minuten und Beginn (Minute der Einheit) je Schritt-Id; `verschoben`: die
+ * Schritte der Themen, die heute nicht mehr Platz haben und auf „Nächstes Mal“ kommen.
+ */
+export type Takt = { minuten: Record<string, number>; ab: Record<string, number>; verschoben: number[] };
+
+/** Ein Schritt, wie das Neu-Takten ihn sieht: geplante Minuten, Thema (null bei Einstieg und Abschluss), Lernkontrolle oder nicht. */
+export type TaktSchritt = { id: number; minuten: number; thema?: string | null; kontrolle: boolean };
+
+/** `gesamt` Minuten auf die Schritte eines Themas: eine Lernkontrolle behält ihre 5 Minuten, der Rest nach den geplanten Minuten. */
+function imThema(schritte: TaktSchritt[], gesamt: number): number[] {
+  const reserve = schritte.map((s) => (s.kontrolle ? Math.min(s.minuten, KONTROLLE_MIN) : 0));
+  const frei = gesamt - reserve.reduce((a, b) => a + b, 0);
+  if (frei < 0)
+    return verteileMinuten(
+      schritte.map((s) => s.minuten),
+      gesamt,
+    );
+  const idx = schritte.map((_, i) => i).filter((i) => schritte[i].minuten - reserve[i] > 0);
+  const out = [...reserve];
+  if (!idx.length) {
+    if (out.length) out[out.length - 1] += frei;
+    return out;
+  }
+  const teile = verteileMinuten(
+    idx.map((i) => schritte[i].minuten - reserve[i]),
+    frei,
+  );
+  idx.forEach((i, k) => (out[i] += teile[k]));
+  return out;
+}
+
+/**
+ * Den Rest der Einheit neu takten (niko, 27.10.2026: „Die Zeitaufteilung darf flexibel sein, wenn der Schüler länger für ein
+ * Thema benötigt.“), immer wenn der Lehrer weitergeht. `schritte` in der Reihenfolge der Einheit mit den geplanten Minuten,
+ * `jetzt` die Minute der Einheit, `rest` die Minuten, die noch bleiben (nie mehr als der Plan selbst hat).
+ *
+ * - Erledigte und übersprungene Schritte bleiben, wie sie waren.
+ * - Das Thema auf dem Schirm, Einstieg und Abschluss behalten ihre Minuten (ein schon gekürztes Thema bleibt so kurz); die
+ *   späteren Themen werden im Verhältnis kürzer, wenn die Zeit nicht reicht (nie länger als geplant). Eine Lernkontrolle
+ *   behält dabei mindestens 5 Minuten.
+ * - Fiele ein Thema unter etwa 10 Minuten, kommt das letzte auf „Nächstes Mal“ (`verschoben`), statt gequetscht zu werden;
+ *   es bleibt dort, bis der Lehrer einen seiner Schritte selbst öffnet.
+ * - Die offenen Schritte beginnen ab jetzt: der Schritt auf dem Schirm bei `jetzt`, die übrigen danach. Offene Schritte vor
+ *   ihm (übersprungen beim Springen) kommen zuletzt und zählen für die Zeit nicht.
+ */
+export function neuTakten(schritte: TaktSchritt[], o: { fertig: number[]; aktuell: number | null; jetzt: number; rest: number; vorher?: Takt | null }): Takt {
+  const vorher = o.vorher ?? null;
+  const fertig = new Set(o.fertig);
+  const minuten: Record<string, number> = {};
+  const ab: Record<string, number> = {};
+  let geplant = 0;
+  for (const s of schritte) {
+    if (fertig.has(s.id)) {
+      minuten[s.id] = vorher?.minuten[s.id] ?? s.minuten;
+      ab[s.id] = vorher?.ab[s.id] ?? geplant;
+    }
+    geplant += s.minuten;
+  }
+  const offen = schritte.filter((s) => !fertig.has(s.id));
+  const frueher = new Set(vorher?.verschoben ?? []);
+  const aktuell = offen.find((s) => s.id === o.aktuell) ?? offen.find((s) => !frueher.has(s.id)) ?? null;
+  if (!aktuell) return { minuten: { ...minuten, ...Object.fromEntries(offen.map((s) => [s.id, vorher?.minuten[s.id] ?? s.minuten])) }, ab, verschoben: offen.filter((s) => frueher.has(s.id)).map((s) => s.id) };
+  const thema = aktuell.thema ?? null;
+  // a topic moved to next time stays there, unless its step is on screen now
+  const verschoben = new Set(offen.filter((s) => frueher.has(s.id) && !(thema !== null && s.thema === thema)).map((s) => s.id));
+  const i = offen.indexOf(aktuell);
+  const danach = offen.slice(i).filter((s) => !verschoben.has(s.id));
+  const davor = offen.slice(0, i).filter((s) => !verschoben.has(s.id));
+  const fest = danach.filter((s) => s === aktuell || !s.thema || s.thema === thema);
+  const gruppen: TaktSchritt[][] = [];
+  for (const s of danach.filter((x) => !fest.includes(x))) {
+    const g = gruppen.find((x) => x[0].thema === s.thema);
+    if (g) g.push(s);
+    else gruppen.push([s]);
+  }
+  const summe = (xs: TaktSchritt[]) => xs.reduce((a, s) => a + s.minuten, 0);
+  // a topic already shortened keeps its shorter minutes when it comes on screen (never longer than planned)
+  const basis = (s: TaktSchritt) => {
+    const m = vorher?.minuten[s.id];
+    return m && m > 0 ? Math.min(m, s.minuten) : s.minuten;
+  };
+  const budget = Math.floor(o.rest) - fest.reduce((a, s) => a + basis(s), 0);
+  const neu = new Map<number, number>();
+  while (gruppen.length && summe(gruppen.flat()) > budget) {
+    const anteile = verteileMinuten(
+      gruppen.map(summe),
+      Math.max(0, budget),
+    );
+    if (anteile.every((a) => a >= THEMA_REST_MIN)) {
+      gruppen.forEach((g, k) => imThema(g, anteile[k]).forEach((m, j) => neu.set(g[j].id, m)));
+      break;
+    }
+    // the last topic goes to next time instead of being squeezed
+    for (const s of gruppen.pop()!) verschoben.add(s.id);
+  }
+  let t = Math.max(0, Math.round(o.jetzt));
+  for (const s of [...danach.filter((x) => !verschoben.has(x.id)), ...davor]) {
+    // later topics come back to their planned minutes when the time allows again
+    minuten[s.id] = neu.get(s.id) ?? (fest.includes(s) || davor.includes(s) ? basis(s) : s.minuten);
+    ab[s.id] = t;
+    t += minuten[s.id];
+  }
+  for (const id of verschoben) minuten[id] = 0;
+  return { minuten, ab, verschoben: offen.filter((s) => verschoben.has(s.id)).map((s) => s.id) };
+}
+
 // ---------- from the database ----------
 
 const kurz = (s: string, n: number) => {

@@ -15,7 +15,7 @@
  */
 import type { PlanSchritt } from "./briefing";
 import { checkTask } from "./builder";
-import { difficultyFor } from "./curriculum";
+import { difficultyFor, type Difficulty } from "./curriculum";
 import { EXPLAIN } from "./erklaerungen";
 import { db, json } from "./db";
 import { autoFelderVon } from "./einschaetzung";
@@ -25,13 +25,14 @@ import { LERNKONTROLLE } from "./quick-round";
 import { nextSteps } from "./recommend";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
-import { analyzeStudent, buildWorksheet, generatorAufgaben } from "./service";
+import { analyzeStudent, buildWorksheet, generatorAufgaben, type BuildRequest } from "./service";
 import type { Art } from "./steuerung-regeln";
 import { sorteOfSkill } from "./schreibauftrag";
 import type { TaskDraft } from "./tasks";
 import { EIGENE_VOKABELN } from "./vokabeln";
 import { getUnit, platzFuerEinheit } from "./units";
-import { KONTROLLE_ANZAHL, stundenplanFuer, themenDesPlans, type PlanArt, type SchrittQuelle } from "./stundenplan";
+import { zeitfenster } from "./planung/heute";
+import { KONTROLLE_ANZAHL, neuTakten, stundenplanFuer, themenDesPlans, type PlanArt, type SchrittQuelle, type Takt } from "./stundenplan";
 import { vorschlagErlauben, type Passung, type Signal } from "./vorbereitung-auto";
 
 /** Höchstlänge einer Notiz je Schritt. */
@@ -62,6 +63,8 @@ export type Stand = {
   antworten: Record<string, Beobachtung>;
   /** Anpassung im Unterricht (lib/steuerung.ts): worauf schon reagiert wurde und das Zeichen des Lehrers */
   steuerung: Steuerung;
+  /** im Plan: der Rest der Einheit nach der echten Zeit neu getaktet (lib/stundenplan.ts `neuTakten`); null = wie geplant */
+  takt: Takt | null;
   /** noch nicht gespeichert, aus „Einheit vorbereiten“ übernommen */
   vorbereitet: boolean;
   /** noch nicht gespeichert: der Vorschlag der App (lib/vorbereitung-auto.ts), nicht die Wahl des Lehrers */
@@ -84,6 +87,7 @@ const leer = (unitId: number): Stand => ({
   plan: null,
   antworten: {},
   steuerung: { bis: 0, signal: null },
+  takt: null,
   vorbereitet: false,
   automatisch: null,
   updated_at: null,
@@ -168,10 +172,13 @@ export function ablauf(schritte: Pick<LernpaketSchritt, "id">[], reihenfolge: nu
   return [...vorne, ...schritte.map((s) => s.id).filter((id) => !gesetzt.has(id))];
 }
 
-const istOffen = (s: Pick<Stand, "erledigt" | "uebersprungen">, id: number) => !s.erledigt.includes(id) && !s.uebersprungen.includes(id);
+/** Weder erledigt noch übersprungen. */
+const nichtFertig = (s: Pick<Stand, "erledigt" | "uebersprungen">, id: number) => !s.erledigt.includes(id) && !s.uebersprungen.includes(id);
+/** Offen und dran: nicht fertig und nicht auf „Nächstes Mal“ verschoben (`takt.verschoben`). */
+const istOffen = (s: Pick<Stand, "erledigt" | "uebersprungen"> & { takt?: Takt | null }, id: number) => nichtFertig(s, id) && !s.takt?.verschoben.includes(id);
 
 /** Der Schritt auf dem Schirm: der gewählte, sonst der erste offene; null, wenn alle durch sind. */
-export function aktuellerSchritt(order: number[], s: Pick<Stand, "aktuell" | "erledigt" | "uebersprungen">): number | null {
+export function aktuellerSchritt(order: number[], s: Pick<Stand, "aktuell" | "erledigt" | "uebersprungen"> & { takt?: Takt | null }): number | null {
   if (s.aktuell !== null && order.includes(s.aktuell)) return s.aktuell;
   return order.find((id) => istOffen(s, id)) ?? null;
 }
@@ -181,13 +188,13 @@ export function aktuellerSchritt(order: number[], s: Pick<Stand, "aktuell" | "er
  * offene Schritt mit Übung, in der Reihenfolge dieser Einheit; sonst null. Der Sprung zeigt ihn nur
  * (`zeigeSchritt`): nichts wird erledigt oder übersprungen, die Reihenfolge bleibt.
  */
-export function ersteUebung(order: number[], s: Pick<Stand, "erledigt" | "uebersprungen">, aktuell: number | null, hatUebung: (id: number) => boolean, schonGesendet: boolean): number | null {
+export function ersteUebung(order: number[], s: Pick<Stand, "erledigt" | "uebersprungen"> & { takt?: Takt | null }, aktuell: number | null, hatUebung: (id: number) => boolean, schonGesendet: boolean): number | null {
   if (aktuell === null || schonGesendet || hatUebung(aktuell)) return null;
   return order.find((id) => id !== aktuell && istOffen(s, id) && hatUebung(id)) ?? null;
 }
 
 /** Der nächste offene Schritt nach `id`, sonst der erste offene davor; null, wenn keiner mehr offen ist. */
-function naechsterOffener(order: number[], s: Pick<Stand, "erledigt" | "uebersprungen">, id: number): number | null {
+function naechsterOffener(order: number[], s: Pick<Stand, "erledigt" | "uebersprungen"> & { takt?: Takt | null }, id: number): number | null {
   const i = order.indexOf(id);
   const danach = [...order.slice(i + 1), ...order.slice(0, Math.max(0, i))];
   return danach.find((x) => istOffen(s, x)) ?? null;
@@ -199,7 +206,7 @@ export type Markierung = "erledigt" | "uebersprungen" | "offen";
  * „Erledigt / Weiter“ und „Überspringen“: der Schritt wird markiert und der nächste offene kommt auf den
  * Schirm. „offen“ nimmt die Markierung zurück und zeigt den Schritt wieder.
  */
-export function markiere<S extends Pick<Stand, "aktuell" | "erledigt" | "uebersprungen">>(s: S, order: number[], id: number, was: Markierung): S {
+export function markiere<S extends Pick<Stand, "aktuell" | "erledigt" | "uebersprungen"> & { takt?: Takt | null }>(s: S, order: number[], id: number, was: Markierung): S {
   const erledigt = s.erledigt.filter((x) => x !== id);
   const uebersprungen = s.uebersprungen.filter((x) => x !== id);
   if (was === "erledigt") erledigt.push(id);
@@ -238,7 +245,8 @@ export function zusammenfassung<T extends { id: number }>(schritte: T[], order: 
   return {
     erledigt: liste.filter((x) => s.erledigt.includes(x.id)),
     uebersprungen: liste.filter((x) => s.uebersprungen.includes(x.id)),
-    nichtErreicht: liste.filter((x) => istOffen(s, x.id)),
+    // auf „Nächstes Mal“ verschoben ist auch nicht erreicht
+    nichtErreicht: liste.filter((x) => nichtFertig(s, x.id)),
   };
 }
 
@@ -343,6 +351,7 @@ type Row = {
   plan: string | null;
   antworten: string | null;
   steuerung: string | null;
+  takt: string | null;
   updated_at: string;
 };
 
@@ -362,6 +371,7 @@ const zuStand = (r: Row): Stand => ({
   // alte Zeilen (vor der Anpassung im Unterricht) haben beides nicht
   antworten: Object.fromEntries(Object.entries(json<Record<string, unknown>>(r.antworten ?? "{}", {})).filter((e): e is [string, Beobachtung] => isBeobachtung(e[1]))),
   steuerung: { bis: 0, signal: null, ...json<Partial<Steuerung>>(r.steuerung ?? "{}", {}) },
+  takt: r.takt ? json<Takt | null>(r.takt, null) : null,
   vorbereitet: false,
   automatisch: null,
   updated_at: r.updated_at,
@@ -392,12 +402,12 @@ export function leseStand(unitId: number): Stand {
 function speichere(s: Stand) {
   db()
     .prepare(
-      `INSERT INTO einheit_cockpit (unit_id, paket_id, skill_id, reihenfolge, aktuell, erledigt, uebersprungen, notizen, gesendet, wiederholt, nicht_verstanden, plan, antworten, steuerung, updated_at)
-       VALUES (@unit_id, @paket_id, @skill_id, @reihenfolge, @aktuell, @erledigt, @uebersprungen, @notizen, @gesendet, @wiederholt, @nicht_verstanden, @plan, @antworten, @steuerung, datetime('now'))
+      `INSERT INTO einheit_cockpit (unit_id, paket_id, skill_id, reihenfolge, aktuell, erledigt, uebersprungen, notizen, gesendet, wiederholt, nicht_verstanden, plan, antworten, steuerung, takt, updated_at)
+       VALUES (@unit_id, @paket_id, @skill_id, @reihenfolge, @aktuell, @erledigt, @uebersprungen, @notizen, @gesendet, @wiederholt, @nicht_verstanden, @plan, @antworten, @steuerung, @takt, datetime('now'))
        ON CONFLICT(unit_id) DO UPDATE SET paket_id = excluded.paket_id, skill_id = excluded.skill_id, reihenfolge = excluded.reihenfolge, aktuell = excluded.aktuell,
          erledigt = excluded.erledigt, uebersprungen = excluded.uebersprungen, notizen = excluded.notizen, gesendet = excluded.gesendet,
          wiederholt = excluded.wiederholt, nicht_verstanden = excluded.nicht_verstanden, plan = excluded.plan, antworten = excluded.antworten,
-         steuerung = excluded.steuerung, updated_at = excluded.updated_at`,
+         steuerung = excluded.steuerung, takt = excluded.takt, updated_at = excluded.updated_at`,
     )
     .run({
       unit_id: s.unit_id,
@@ -414,6 +424,7 @@ function speichere(s: Stand) {
       plan: s.plan ? JSON.stringify(s.plan) : null,
       antworten: JSON.stringify(s.antworten),
       steuerung: JSON.stringify(s.steuerung),
+      takt: s.takt ? JSON.stringify(s.takt) : null,
     });
 }
 
@@ -446,6 +457,10 @@ export type CockpitDaten = {
   planAktuell: PlanStep | null;
   /** ohne Lernpaket: die Planschritte, die aus einem Lernpaket kommen, je Schritt-Id */
   planQuellen: Map<number, PlanQuelle>;
+  /** Minuten je Schritt-Id, im Plan nach der echten Zeit neu getaktet (`takt`), sonst wie geplant */
+  minuten: Map<number, number>;
+  /** im Plan: offene Schritte, die auf „Nächstes Mal“ verschoben sind (zu wenig Zeit heute) */
+  verschoben: Set<number>;
 };
 
 /** Die Pakete und Schritte, auf die Planschritte zeigen (je Paket eine Abfrage). */
@@ -500,13 +515,19 @@ export function cockpit(unitId: number, o: { mitPlan?: boolean } = {}): CockpitD
     const byId = new Map(roh.map((s) => [s.id, s]));
     const plan = order.map((id) => byId.get(id)!);
     const id = aktuellerSchritt(order, stand);
-    return { stand, paket: null, schritte: [], aktuell: null, ab: minutenAb(plan), plan, planAktuell: id === null ? null : byId.get(id)!, planQuellen: quellenVon(plan) };
+    // re-timed while the unit runs (lib/stundenplan.ts neuTakten): its minutes and start, else as planned
+    const takt = stand.plan ? stand.takt : null;
+    const geplantAb = minutenAb(plan);
+    const ab = new Map(plan.map((s) => [s.id, takt?.ab[s.id] ?? geplantAb.get(s.id)!] as const).filter((e) => !takt?.verschoben.includes(e[0])));
+    const minuten = new Map(plan.map((s) => [s.id, takt?.minuten[s.id] ?? s.minuten]));
+    const verschoben = new Set((takt?.verschoben ?? []).filter((x) => nichtFertig(stand, x)));
+    return { stand, paket: null, schritte: [], aktuell: null, ab, plan, planAktuell: id === null ? null : byId.get(id)!, planQuellen: quellenVon(plan), minuten, verschoben };
   }
   const order = ablauf(paket.schritte, stand.reihenfolge);
   const byId = new Map(paket.schritte.map((s) => [s.id, s]));
   const schritte = order.map((id) => byId.get(id)!);
   const id = aktuellerSchritt(order, stand);
-  return { stand, paket, schritte, aktuell: id === null ? null : byId.get(id)!, ab: minutenAb(schritte), plan: [], planAktuell: null, planQuellen: new Map() };
+  return { stand, paket, schritte, aktuell: id === null ? null : byId.get(id)!, ab: minutenAb(schritte), plan: [], planAktuell: null, planQuellen: new Map(), minuten: new Map(schritte.map((s) => [s.id, s.minuten])), verschoben: new Set() };
 }
 
 /** Ein Lernpaket für die Einheit wählen (null: ohne Lernpaket). Ein anderes Paket fängt von vorne an. */
@@ -515,7 +536,7 @@ export function waehlePaket(unitId: number, paketId: number | null): { ok: true 
   if (paketId && (!p || p.status === "archiviert")) return { fehler: "Dieses Lernpaket gibt es nicht mehr." };
   if (p && !p.schritte.length) return { fehler: "Dieses Lernpaket hat noch keine Schritte." };
   aendere(unitId, (s) =>
-    s.paket_id === paketId && !s.vorbereitet ? s : { ...s, paket_id: paketId, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, plan: null },
+    s.paket_id === paketId && !s.vorbereitet ? s : { ...s, paket_id: paketId, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, plan: null, takt: null },
   );
   eigeneWahl(unitId);
   return { ok: true };
@@ -539,7 +560,7 @@ export const hatBegonnen = (s: Pick<Stand, "erledigt" | "uebersprungen" | "wiede
 export function planNeu(unitId: number, paketId: number | null): { ok: true } | { fehler: string } {
   const p = paketId ? getLernpaket(paketId) : null;
   if (paketId && (!p || p.status === "archiviert" || !p.schritte.length)) return { fehler: "Dieses Lernpaket gibt es nicht mehr." };
-  aendere(unitId, (s) => ({ ...s, paket_id: paketId, skill_id: null, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, plan: null }));
+  aendere(unitId, (s) => ({ ...s, paket_id: paketId, skill_id: null, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, plan: null, takt: null }));
   return { ok: true };
 }
 
@@ -552,7 +573,7 @@ export function waehleFaehigkeit(unitId: number, skillId: string | null): { ok: 
   aendere(unitId, (s) =>
     s.paket_id === null && !s.vorbereitet
       ? { ...s, skill_id: skillId }
-      : { ...s, paket_id: null, skill_id: skillId, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, plan: null },
+      : { ...s, paket_id: null, skill_id: skillId, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, plan: null, takt: null },
   );
   eigeneWahl(unitId);
   return { ok: true };
@@ -580,9 +601,36 @@ function mitSchritt(unitId: number, schrittId: number, f: (s: Stand, order: numb
   return true;
 }
 
-/** Weiter, Überspringen, Wieder öffnen; ein Zeichen des Lehrers zum Schritt gilt danach nicht mehr. */
+// ---------- the time adapts ----------
+
+/**
+ * Wo die Einheit in der Zeit steht: `jetzt` die Minute seit dem Start, `rest` die Minuten, die bleiben. Nie mehr als der Plan
+ * selbst hat (eine Einheit, die 20 Minuten vor ihrem Platz beginnt, bekommt nicht 120 statt 100 Minuten), und nie über das Ende
+ * des Platzes hinaus: rest = min(bis zum Ende des Platzes, geplante Minuten − jetzt).
+ */
+export function zeitDerEinheit(unit: { id: number; started_at: string }, geplant: number, now = new Date()): { jetzt: number; rest: number } {
+  const jetzt = Math.max(0, Math.floor((now.getTime() - Date.parse(unit.started_at)) / 60_000));
+  const platz = platzFuerEinheit(unit);
+  const bisEnde = platz ? zeitfenster(platz, now).restMinuten : null;
+  return { jetzt, rest: Math.max(0, Math.min(geplant - jetzt, bisEnde ?? Infinity)) };
+}
+
+/**
+ * Beim Weitergehen im Plan (Weiter, Überspringen, ein Schritt angetippt, verschoben): den Rest nach der echten Zeit neu takten
+ * (lib/stundenplan.ts `neuTakten`). Nur im Plan für die ganze Einheit; ein gewähltes Lernpaket behält seine Minuten.
+ */
+function mitTakt(unit: { id: number; started_at: string } | null, s: Stand, order: number[], now = new Date()): Stand {
+  if (s.paket_id || !s.plan?.length || !unit) return s;
+  const byId = new Map(s.plan.map((x) => [x.id, x]));
+  const schritte = order.map((id) => byId.get(id)!).map((x) => ({ id: x.id, minuten: x.minuten, thema: x.thema ?? null, kontrolle: frageArtVon(x) === "kontrolle" }));
+  const { jetzt, rest } = zeitDerEinheit(unit, s.plan.reduce((a, x) => a + x.minuten, 0), now);
+  const takt = neuTakten(schritte, { fertig: [...s.erledigt, ...s.uebersprungen], aktuell: aktuellerSchritt(order, s), jetzt, rest, vorher: s.takt });
+  return { ...s, takt };
+}
+
+/** Weiter, Überspringen, Wieder öffnen; ein Zeichen des Lehrers zum Schritt gilt danach nicht mehr. Der Rest wird neu getaktet. */
 export const markiereSchritt = (unitId: number, schrittId: number, was: Markierung) =>
-  mitSchritt(unitId, schrittId, (s, order) => ({ ...markiere(s, order, schrittId, was), steuerung: { ...s.steuerung, signal: null } }));
+  mitSchritt(unitId, schrittId, (s, order) => mitTakt(getUnit(unitId), { ...markiere(s, order, schrittId, was), steuerung: { ...s.steuerung, signal: null } }, order));
 
 /**
  * „Wiederholen“ oder „Schüler versteht es nicht“ für einen Schritt (Lernpaket oder Plan). „Versteht es nicht“ ist auch ein
@@ -680,10 +728,13 @@ export function antwortenDerEinheit(unitId: number): { schrittId: number; titel:
   return [...imPlan.sort((a, b) => a.rang - b.rang).map(({ schrittId, titel, art, antwort, skillIds }) => ({ schrittId, titel, art, antwort, skillIds })), ...imPaket];
 }
 
-export const zeigeSchritt = (unitId: number, schrittId: number) => mitSchritt(unitId, schrittId, (s) => ({ ...s, aktuell: schrittId }));
+export const zeigeSchritt = (unitId: number, schrittId: number) => mitSchritt(unitId, schrittId, (s, order) => mitTakt(getUnit(unitId), { ...s, aktuell: schrittId }, order));
 
 export const verschiebeSchritt = (unitId: number, schrittId: number, richtung: -1 | 1) =>
-  mitSchritt(unitId, schrittId, (s, order) => ({ ...s, reihenfolge: verschiebe(order, schrittId, richtung) }));
+  mitSchritt(unitId, schrittId, (s, order) => {
+    const reihenfolge = verschiebe(order, schrittId, richtung);
+    return mitTakt(getUnit(unitId), { ...s, reihenfolge }, reihenfolge);
+  });
 
 export function setzeNotiz(unitId: number, schrittId: number, text: string): boolean {
   const t = text.replace(/\r\n/g, "\n").trim().slice(0, NOTIZ_MAX);
@@ -866,13 +917,17 @@ function generatorWahl(studentId: number, skillId: string) {
   return { difficulty: empfehlung?.difficulty ?? difficultyFor(mastery), count: empfehlung?.count ?? 8, kind: empfehlung?.kind ?? ("uebung" as const) };
 }
 
-/** Die letzte Übung dieser Einheit, die die Fähigkeit übt; null, wenn noch keine gesendet ist. */
-function letzteUebungZur(unitId: number, skillId: string): number | null {
-  const r = db()
-    .prepare("SELECT a.worksheet_id FROM assignments a JOIN worksheets w ON w.id = a.worksheet_id WHERE a.unit_id = ? AND EXISTS (SELECT 1 FROM json_each(w.skill_ids) j WHERE j.value = ?) ORDER BY a.id DESC LIMIT 1")
-    .get(unitId, skillId) as { worksheet_id: number } | undefined;
-  return r?.worksheet_id ?? null;
+/** Die Übungen dieser Einheit, die die Fähigkeit üben, die neueste zuerst. */
+function uebungenZur(unitId: number, skillId: string): number[] {
+  return (
+    db()
+      .prepare("SELECT a.worksheet_id FROM assignments a JOIN worksheets w ON w.id = a.worksheet_id WHERE a.unit_id = ? AND EXISTS (SELECT 1 FROM json_each(w.skill_ids) j WHERE j.value = ?) ORDER BY a.id DESC")
+      .all(unitId, skillId) as { worksheet_id: number }[]
+  ).map((r) => r.worksheet_id);
 }
+
+/** Die letzte Übung dieser Einheit, die die Fähigkeit übt; null, wenn noch keine gesendet ist. */
+const letzteUebungZur = (unitId: number, skillId: string): number | null => uebungenZur(unitId, skillId)[0] ?? null;
 
 /** Ob in der Einheit schon eine Übung gesendet wurde (aus einem Schritt, einem Vorschlag oder von Hand). */
 export const uebungGesendet = (unitId: number) => Boolean(db().prepare("SELECT 1 FROM assignments WHERE unit_id = ? LIMIT 1").get(unitId));
@@ -880,10 +935,113 @@ export const uebungGesendet = (unitId: number) => Boolean(db().prepare("SELECT 1
 /** Der Seed der ersten neuen Übung einer Fähigkeit in einer Einheit: Vorschau und gesendete Übung beginnen mit derselben Aufgabe. */
 export const generatorSeed = (unitId: number, skillId: string) => [...`${unitId}:${skillId}`].reduce((h, c) => (Math.imul(h, 31) + c.charCodeAt(0)) >>> 0, 7);
 
+/** Bauen die Generatoren die Übung zur Fähigkeit? Schreibaufträge und die eigenen Wortlisten des Schülers nicht (lib/service.ts buildWorksheet). */
+const ausDemGenerator = (skillId: string) => !sorteOfSkill(skillId) && skillId !== EIGENE_VOKABELN;
+
+/**
+ * Woraus die neue Übung eines Schritts gebaut wird, ohne KI: dieselbe Rechnung beim Vorbereiten, Zeigen und Senden. Die erste
+ * Übung einer Fähigkeit beginnt mit der Aufgabe, die der Schritt als „Das fragst du“ zeigt; jede weitere hat ihren eigenen
+ * Seed (Vorschau und gesendete Übung sind dieselben). Die Lernkontrolle: drei Aufgaben als Überprüfung.
+ */
+type Auftrag = { skill: repo.Skill; student: repo.Student; kontrolle: boolean; difficulty: Difficulty; count: number; kind: BuildRequest["kind"]; seed: number; title: string };
+
+function auftragFuer(unitId: number, student: repo.Student, skill: repo.Skill, kontrolle: boolean): Auftrag {
+  const w = generatorWahl(student.id, skill.id);
+  const schon = uebungenZur(unitId, skill.id).length;
+  return {
+    skill,
+    student,
+    kontrolle,
+    difficulty: w.difficulty,
+    count: kontrolle ? KONTROLLE_ANZAHL : Math.max(1, Math.min(30, w.count)),
+    kind: kontrolle ? "ueberpruefung" : w.kind,
+    seed: kontrolle ? generatorSeed(unitId, `${skill.id}:${LERNKONTROLLE}`) : generatorSeed(unitId, schon ? `${skill.id}:${schon}` : skill.id),
+    title: `${student.name.split(" ")[0]} – ${kontrolle ? `${LERNKONTROLLE}: ${skill.name}` : `${skill.area} › ${skill.name}`}`,
+  };
+}
+
+/** Die Aufgaben eines Auftrags aus den Generatoren, wie buildWorksheet sie ohne KI baut. */
+const generatorAufgabenVon = (a: Auftrag) =>
+  generatorAufgaben({ subject: a.skill.subject, schoolType: a.student.school_type, klasse: a.student.klasse ?? 1, skillIds: [a.skill.id], difficulty: a.difficulty, count: a.count, taskType: "mixed", seed: a.seed }, [a.skill]);
+
+/** Woraus eine bereite Übung gebaut ist; ändert sich etwas davon (Plan, Stufe, Anzahl), passt sie nicht mehr. */
+const schluesselVon = (schrittId: number, a: Auftrag) => JSON.stringify([schrittId, a.skill.id, a.kontrolle, a.difficulty, a.count, a.kind, a.seed]);
+
+/** Die bereite Übung eines Schritts (`haltBereit`), wenn sie zum Auftrag passt; sonst null. */
+function bereitFuer(unitId: number, schrittId: number, schluessel: string): TaskDraft[] | null {
+  const r = db().prepare("SELECT aufgaben FROM einheit_bereit WHERE unit_id = ? AND schritt_id = ? AND schluessel = ?").get(unitId, schrittId, schluessel) as { aufgaben: string } | undefined;
+  const aufgaben = r ? json<TaskDraft[]>(r.aufgaben, []) : [];
+  return aufgaben.length ? aufgaben : null;
+}
+
+/** Eine freigegebene Übung aus dem Bestand („U12“), die ein Planschritt sendet, wenn es sie noch gibt; sonst null. */
+export function bestandsUebung(s: Pick<PlanStep, "uebung">): repo.Worksheet | null {
+  const ws = s.uebung && /^U\d+$/.test(s.uebung) ? repo.getWorksheet(Number(s.uebung.slice(1))) : null;
+  return ws && ws.status === "freigegeben" && !ws.archived_at && ws.kind !== "bibliothek" ? ws : null;
+}
+
+/** Kann die Übung des Planschritts vorher gebaut werden? Mit Fähigkeit aus den Generatoren, ohne Paket und ohne Übung aus dem Bestand. */
+function vorherBaubar(s: PlanStep, quellen: Map<number, PlanQuelle>): boolean {
+  if (!s.skillId || paketQuelle(s) || bestandsUebung(s) || (s.uebung && /^Z\d+$/.test(s.uebung))) return false;
+  return planHatUebung(s, quellen) && ausDemGenerator(s.skillId) && Boolean(repo.getSkill(s.skillId));
+}
+
+/**
+ * **Die nächste Übung bereit** (niko, 27.10.2026: „den gesamten Ablauf planen, die erste Erklärung und die ersten Übungen
+ * bereitstellen, weitere Inhalte rechtzeitig vorbereiten“): beim Zeigen eines Schritts im Plan wird die Übung des nächsten
+ * offenen Übungs- oder Kontrollschritts schon gebaut (Generator, ohne KI), dazu die des Schritts auf dem Schirm, solange aus
+ * ihm noch nichts gesendet ist. So geht „Passende Übungen senden“ sofort. Nie weiter voraus als einen Schritt.
+ *
+ * Die Aufgaben liegen nur in `einheit_bereit`, nie als Übung: der Schüler sieht sie erst, wenn der Lehrer sendet. Passt eine
+ * bereite Übung nicht mehr (neuer Plan, andere Stufe), wird sie neu gebaut; was nicht mehr dran ist, wird gelöscht. Ein Schritt
+ * aus dem Bestand oder einem Paket hat seine Aufgaben schon. Gibt die Schritte mit bereiter Übung zurück.
+ */
+export function haltBereit(unitId: number): number[] {
+  const unit = getUnit(unitId);
+  const student = unit ? repo.getStudent(unit.student_id) : null;
+  const c = unit && unit.status === "gestartet" ? cockpit(unitId, { mitPlan: true }) : null;
+  const ziele: { id: number; a: Auftrag }[] = [];
+  if (c && student && !c.paket && c.planAktuell) {
+    const auftrag = (s: PlanStep) => auftragFuer(unitId, student, repo.getSkill(s.skillId!)!, s.art === "kontrolle");
+    const jetzt = c.planAktuell;
+    if (vorherBaubar(jetzt, c.planQuellen) && !c.stand.gesendet[jetzt.id]?.length) ziele.push({ id: jetzt.id, a: auftrag(jetzt) });
+    const naechster = c.plan.slice(c.plan.indexOf(jetzt) + 1).find((s) => nichtFertig(c.stand, s.id) && !c.verschoben.has(s.id) && vorherBaubar(s, c.planQuellen));
+    if (naechster) ziele.push({ id: naechster.id, a: auftrag(naechster) });
+  }
+  const conn = db();
+  const da: number[] = [];
+  conn.transaction(() => {
+    const ids = ziele.map((z) => z.id);
+    if (ids.length) conn.prepare(`DELETE FROM einheit_bereit WHERE unit_id = ? AND schritt_id NOT IN (${ids.map(() => "?").join(", ")})`).run(unitId, ...ids);
+    else conn.prepare("DELETE FROM einheit_bereit WHERE unit_id = ?").run(unitId);
+    for (const z of ziele) {
+      const schluessel = schluesselVon(z.id, z.a);
+      if (bereitFuer(unitId, z.id, schluessel)) {
+        da.push(z.id);
+        continue;
+      }
+      const aufgaben = generatorAufgabenVon(z.a);
+      if (!aufgaben.length) {
+        conn.prepare("DELETE FROM einheit_bereit WHERE unit_id = ? AND schritt_id = ?").run(unitId, z.id);
+        continue;
+      }
+      conn
+        .prepare(
+          `INSERT INTO einheit_bereit (unit_id, schritt_id, schluessel, aufgaben) VALUES (?, ?, ?, ?)
+           ON CONFLICT(unit_id, schritt_id) DO UPDATE SET schluessel = excluded.schluessel, aufgaben = excluded.aufgaben, created_at = datetime('now')`,
+        )
+        .run(unitId, z.id, schluessel, JSON.stringify(aufgaben));
+      da.push(z.id);
+    }
+  })();
+  return da;
+}
+
 /**
  * Ohne Lernpaket: eine neue Übung zur Fähigkeit aus den eingebauten Generatoren und Aufgabenbanken (nie die
  * KI), an den Schüler dieser Einheit. Wie viele und wie schwer, sagt die Empfehlung, sonst der Lernstand. Die erste
- * Übung einer Fähigkeit in der Einheit beginnt mit der Aufgabe, die der Schritt als „Das fragst du“ zeigt.
+ * Übung einer Fähigkeit in der Einheit beginnt mit der Aufgabe, die der Schritt als „Das fragst du“ zeigt. Liegt die Übung des
+ * Schritts schon bereit (`haltBereit`) und passt sie noch, geht genau sie hinaus, ohne neu zu bauen.
  *
  * Wie beim Senden eines Paketschritts hält das erste Senden den „Plan für heute“ fest (den von vor dem Senden: die neue
  * Übung und die ersten Antworten ändern sonst Empfehlung und Plan) und merkt die Übung beim Schritt (`gesendet`).
@@ -909,26 +1067,45 @@ export async function sendeAusGenerator(
   const schritt = plan?.find((x) => x.id === schrittId) ?? plan?.find((x) => x.skillId === skill.id && (!x.art || x.art === "ueben")) ?? plan?.find((x) => x.skillId === skill.id) ?? null;
   // the short Lernkontrolle of a topic: three tasks, one try, no hints (mode 'test', like the Minitest)
   const kontrolle = schritt !== null && schritt.id === schrittId && schritt.art === "kontrolle";
-  const w = generatorWahl(student.id, skill.id);
+  const a = auftragFuer(unit.id, student, skill, kontrolle);
+  // prepared before (haltBereit): exactly these tasks, without building again
+  const bereit = schritt && schritt.id === schrittId && ausDemGenerator(skill.id) ? bereitFuer(unit.id, schritt.id, schluesselVon(schritt.id, a)) : null;
   let worksheetId = 0;
   try {
-    worksheetId = (
-      await buildWorksheet({
-        subject: skill.subject,
-        schoolType: student.school_type,
-        klasse: student.klasse ?? 1,
-        skillIds: [skill.id],
-        difficulty: w.difficulty,
-        count: kontrolle ? KONTROLLE_ANZAHL : w.count,
-        taskType: "mixed",
-        kind: kontrolle ? "ueberpruefung" : w.kind,
-        title: `${student.name.split(" ")[0]} – ${kontrolle ? `${LERNKONTROLLE}: ${skill.name}` : `${skill.area} › ${skill.name}`}`,
-        useAI: false,
-        teacherId,
-        studentId: student.id,
-        seed: kontrolle ? generatorSeed(unit.id, `${skill.id}:${LERNKONTROLLE}`) : letzteUebungZur(unit.id, skill.id) === null ? generatorSeed(unit.id, skill.id) : undefined,
-      })
-    ).id;
+    worksheetId = bereit
+      ? repo.createWorksheet(
+          {
+            title: a.title,
+            subject: skill.subject,
+            grade: schulstufe(student.school_type, student.klasse ?? 1),
+            school_type: student.school_type,
+            klasse: student.klasse ?? 1,
+            topic: skill.area,
+            difficulty: a.difficulty,
+            task_type: "mixed",
+            kind: a.kind ?? "uebung",
+            source: "generator",
+            skill_ids: [skill.id],
+          },
+          bereit,
+        )
+      : (
+          await buildWorksheet({
+            subject: skill.subject,
+            schoolType: student.school_type,
+            klasse: student.klasse ?? 1,
+            skillIds: [skill.id],
+            difficulty: a.difficulty,
+            count: a.count,
+            taskType: "mixed",
+            kind: a.kind,
+            title: a.title,
+            useAI: false,
+            teacherId,
+            studentId: student.id,
+            seed: a.seed,
+          })
+        ).id;
   } catch (e) {
     return { fehler: e instanceof Error ? e.message : "Die Übung konnte nicht erstellt werden." };
   }
@@ -936,6 +1113,7 @@ export async function sendeAusGenerator(
     repo.deleteWorksheet(worksheetId);
     return { fehler: "Für diese Fähigkeit gibt es keine Aufgaben ohne KI. Bitte im Builder erstellen." };
   }
+  if (schritt) db().prepare("DELETE FROM einheit_bereit WHERE unit_id = ? AND schritt_id = ?").run(unit.id, schritt.id);
   const assignmentId = kontrolle ? repo.assignWorksheet(worksheetId, student.id, LERNKONTROLLE, unit.id, "test") : repo.assignWorksheet(worksheetId, student.id, "", unit.id);
   if (plan?.length) {
     aendere(unitId, (cur) => {
@@ -949,8 +1127,11 @@ export async function sendeAusGenerator(
 
 // ---------- guided like a package step, without a package ----------
 
-/** Was der Lehrer in einem Schritt ohne Lernpaket sagt und fragt; null, wo die Daten nichts hergeben. */
-export type PlanFuehrung = { sagt: string | null; fragt: string | null; antwort: string | null };
+/**
+ * Was der Lehrer in einem Schritt ohne Lernpaket sagt, zeigt und fragt; null, wo die Daten nichts hergeben. `zeigt`: ein
+ * durchgerechnetes Beispiel aus einer echten Aufgabe des Schritts (Aufgabe und ihre Lösung).
+ */
+export type PlanFuehrung = { sagt: string | null; zeigt: { aufgabe: string; loesung: string } | null; fragt: string | null; antwort: string | null };
 
 const kurz = (s: string, n: number) => {
   const t = s.trim();
@@ -982,39 +1163,112 @@ export function antwortText(t: Pick<TaskDraft, "answer" | "data" | "solution">):
   return kurz(String(out), 300);
 }
 
+/** Die Lösung einer Aufgabe zum Vorzeigen: der Lösungsweg Zeile für Zeile, sonst die Lösung, sonst die erwartete Antwort. */
+export function loesungText(t: Pick<TaskDraft, "answer" | "data" | "solution" | "solutionSteps">): string {
+  const weg = (t.solutionSteps ?? []).map((x) => x.trim()).filter(Boolean);
+  if (weg.length) return kurz(weg.join("\n"), 500);
+  return kurz(t.solution?.trim() || antwortText(t), 500);
+}
+
+/** Die Erklärung einer Fähigkeit (lib/erklaerungen.ts), ganz; eine Teilfähigkeit ohne eigene hat die ihrer Fähigkeit. */
+export function erklaerungZu(skillId: string | null): string | null {
+  const skill = skillId ? repo.getSkill(skillId) : null;
+  return skill ? (EXPLAIN[skill.id] ?? (skill.parent_id ? EXPLAIN[skill.parent_id] : undefined) ?? null) : null;
+}
+
 /**
- * Ohne Lernpaket (niko, 25.10.2026: „sagen, zeigen, fragen, erwartete Antwort“ auch im Plan aus den Daten): kurze Sätze
- * aus der Fähigkeit des Schritts, ohne KI. „Das sagst du“ ist ihre Erklärung (lib/erklaerungen.ts), „Das fragst du“ und
- * „Erwartete Antwort“ die erste Aufgabe der Übung, die der Schritt senden würde: die aus dem Bestand, die schon gesendete,
- * sonst die erste der neuen Übung aus dem Generator (derselbe Seed wie beim Senden). Nur für den Lehrer; die Lösung
- * steht nie auf einer Schülerseite.
+ * Die Aufgaben, um die es in einem Planschritt geht (für „Das fragst du“, „Das zeigst du“ und die Lösungen am Schritt): die
+ * zuletzt aus dem Schritt gesendete Übung, die aus dem Bestand („U12“), die schon zugewiesene („Z5“), sonst die zuletzt gesendete
+ * zur Fähigkeit, sonst die, die der Schritt senden würde (bereit oder aus dem Generator mit demselben Seed). Nur für den Lehrer.
  */
-export function planFuehrung(unitId: number, s: Pick<PlanStep, "uebung" | "skillId">): PlanFuehrung {
-  const leer: PlanFuehrung = { sagt: null, fragt: null, antwort: null };
+export function aufgabenImSchritt(unitId: number, s: Pick<PlanStep, "id" | "uebung" | "skillId" | "art">, gesendet: number[] = []): TaskDraft[] {
   const unit = getUnit(unitId);
   const student = unit ? repo.getStudent(unit.student_id) : null;
-  if (!unit || !student) return leer;
-  // the exercise the step sends: one from the Bestand („U12“), one already assigned („Z5“), else new tasks to the skill
-  const ws = s.uebung && /^U\d+$/.test(s.uebung) ? repo.getWorksheet(Number(s.uebung.slice(1))) : null;
-  const blatt = ws && ws.status === "freigegeben" && !ws.archived_at && ws.kind !== "bibliothek" ? ws : null;
+  if (!unit || !student) return [];
+  const zuletzt = gesendet.at(-1);
+  const schon = zuletzt ? repo.listTasks(zuletzt) : [];
+  if (schon.length) return schon;
+  const blatt = bestandsUebung(s);
+  if (blatt) return repo.listTasks(blatt.id);
+  const zugewiesen = s.uebung && /^Z\d+$/.test(s.uebung) ? repo.getAssignment(Number(s.uebung.slice(1))) : null;
+  if (zugewiesen) return repo.listTasks(zugewiesen.worksheet_id);
+  const skill = s.skillId ? repo.getSkill(s.skillId) : null;
+  if (!skill || !ausDemGenerator(skill.id)) return [];
+  const kontrolle = s.art === "kontrolle";
+  // Erklären and Üben: the exercise already sent for the skill; the Lernkontrolle has its own tasks
+  const letzte = kontrolle ? null : letzteUebungZur(unit.id, skill.id);
+  if (letzte !== null) return repo.listTasks(letzte);
+  const a = auftragFuer(unit.id, student, skill, kontrolle);
+  return bereitFuer(unit.id, s.id, schluesselVon(s.id, a)) ?? generatorAufgabenVon(a);
+}
+
+/**
+ * Ohne Lernpaket (niko, 25.10.2026: „sagen, zeigen, fragen, erwartete Antwort“ auch im Plan aus den Daten; 27.10.2026:
+ * „Lehrerskripte sollen ausreichend ausführlich sein“): ohne KI, aus der Fähigkeit und den Aufgaben des Schritts. „Das sagst du“
+ * ist ihre ganze Erklärung (lib/erklaerungen.ts), „Das fragst du“ und „Erwartete Antwort“ die erste Aufgabe der Übung, die der
+ * Schritt senden würde, „Das zeigst du“ die zweite mit ihrer Lösung (ein durchgerechnetes Beispiel). Nur für den Lehrer; die
+ * Lösung steht nie auf einer Schülerseite.
+ */
+export function planFuehrung(unitId: number, s: Pick<PlanStep, "id" | "uebung" | "skillId" | "art">, gesendet: number[] = []): PlanFuehrung {
+  const leer: PlanFuehrung = { sagt: null, zeigt: null, fragt: null, antwort: null };
+  const unit = getUnit(unitId);
+  if (!unit || !repo.getStudent(unit.student_id)) return leer;
+  const blatt = bestandsUebung(s);
   const zugewiesen = s.uebung && /^Z\d+$/.test(s.uebung) ? repo.getAssignment(Number(s.uebung.slice(1))) : null;
   const skillId = s.skillId ?? blatt?.skill_ids[0] ?? (zugewiesen ? (repo.getWorksheet(zugewiesen.worksheet_id)?.skill_ids[0] ?? null) : null);
-  const skill = skillId ? repo.getSkill(skillId) : null;
-  const sagt = skill ? (EXPLAIN[skill.id] ?? (skill.parent_id ? EXPLAIN[skill.parent_id] : undefined) ?? null) : null;
-  let aufgabe: TaskDraft | null = null;
-  if (blatt) aufgabe = repo.listTasks(blatt.id)[0] ?? null;
-  else if (zugewiesen) aufgabe = repo.listTasks(zugewiesen.worksheet_id)[0] ?? null;
-  // Schreibaufträge and the student's own word lists are not built by the generators (lib/service.ts buildWorksheet)
-  else if (skill && !sorteOfSkill(skill.id) && skill.id !== EIGENE_VOKABELN) {
-    const schon = letzteUebungZur(unit.id, skill.id);
-    if (schon !== null) aufgabe = repo.listTasks(schon)[0] ?? null;
-    else {
-      const w = generatorWahl(student.id, skill.id);
-      aufgabe = generatorAufgaben({ subject: skill.subject, schoolType: student.school_type, klasse: student.klasse ?? 1, skillIds: [skill.id], difficulty: w.difficulty, count: w.count, taskType: "mixed", seed: generatorSeed(unit.id, skill.id) }, [skill])[0] ?? null;
-    }
-  }
+  const sagt = erklaerungZu(skillId);
+  const aufgaben = aufgabenImSchritt(unitId, { ...s, skillId }, gesendet);
   // a reading text or a long free answer is not something to ask aloud
-  const fragbar = aufgabe && !aufgabe.data.passage && aufgabe.type !== "reading";
-  const antwort = fragbar ? antwortText(aufgabe!) : "";
-  return { sagt: sagt ? kurz(sagt, 400) : null, fragt: fragbar ? frageText(aufgabe!) : null, antwort: fragbar && antwort ? antwort : null };
+  const fragbar = (t: TaskDraft | undefined): t is TaskDraft => Boolean(t && !t.data.passage && t.type !== "reading");
+  const [erste, zweite] = aufgaben;
+  const antwort = fragbar(erste) ? antwortText(erste) : "";
+  const loesung = fragbar(zweite) ? loesungText(zweite) : "";
+  // a sample solution that only repeats the explanation (a writing task) shows nothing new
+  const norm = (x: string) => x.replace(/\s+/g, " ").trim().toLowerCase();
+  const wiederholt = Boolean(sagt && loesung && norm(sagt).startsWith(norm(loesung).slice(0, 80)));
+  return {
+    sagt,
+    zeigt: fragbar(zweite) && loesung && !wiederholt ? { aufgabe: frageText(zweite), loesung } : null,
+    fragt: fragbar(erste) ? frageText(erste) : null,
+    antwort: fragbar(erste) && antwort ? antwort : null,
+  };
+}
+
+/** Endet ein Text mit einer Abkürzung („z. B.“, „bzw.“, ein einzelner Buchstabe mit Punkt), endet dort kein Satz. */
+const ABKUERZUNG = /(?:\b(?:bzw|usw|ca|vgl|Nr|etc|bspw|evtl|ggf|inkl|max|min|Mio|Mrd)\.|(?:^|[\s(])\p{L}\.)$/u;
+
+/**
+ * Ein langer Lehrertext lesbar (niko, 27.10.2026): die ersten drei Sätze sichtbar, zwei, wenn sie schon lang sind (`lang`
+ * Zeichen); der Rest für „Mehr“. Ist der Rest kurz, bleibt alles sichtbar. Ein Zeilenumbruch beendet einen Satz auch.
+ */
+export function ersteSaetze(text: string, o: { saetze?: number; lang?: number } = {}): { kurz: string; rest: string } {
+  const t = text.trim();
+  const grenzen: number[] = [];
+  for (const m of t.matchAll(/([.!?…])(\s+)(?=[\p{Lu}„"(\d])|\n+/gu)) {
+    if (m[1] && ABKUERZUNG.test(t.slice(0, m.index + 1))) continue;
+    grenzen.push(m.index + m[0].length);
+  }
+  const n = o.saetze ?? 3;
+  const zwei = grenzen[1];
+  const schnitt = zwei !== undefined && zwei >= (o.lang ?? 180) ? zwei : grenzen[n - 1];
+  if (schnitt === undefined) return { kurz: t, rest: "" };
+  const rest = t.slice(schnitt).trim();
+  return rest.length < 40 ? { kurz: t, rest: "" } : { kurz: t.slice(0, schnitt).trim(), rest };
+}
+
+/**
+ * Kurzer Hintergrund zu einem Schritt, höchstens zwei Zeilen: was der Lehrer selbst dazu hat (`eigene`: Ziel des Pakets,
+ * Lehrerhinweis einer Aufgabe), dann das Lernziel der Fähigkeit aus dem Lehrplan, sonst wo sie im Lehrplan steht.
+ */
+export function hintergrundZu(skillId: string | null, eigene: (string | null | undefined)[] = []): string[] {
+  const skill = skillId ? repo.getSkill(skillId) : null;
+  const zeilen = eigene
+    .map((x) => (x ?? "").replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .map((x) => kurz(x, 240));
+  if (skill) {
+    const ziel = (skill.learning_objective || skill.description || "").replace(/\s+/g, " ").trim();
+    zeilen.push(ziel ? `Lernziel: ${kurz(ziel, 240)}` : `Lehrplan: ${skill.subject} · ${skill.area} › ${skill.name}, Schulstufe ${skill.grade_min}–${skill.grade_max}`);
+  }
+  return [...new Set(zeilen)].slice(0, 2);
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { after } from "next/server";
 import {
   ArrowDown,
   ArrowRight,
@@ -25,6 +26,7 @@ import {
   Wrench,
 } from "lucide-react";
 import {
+  ausfuehrlichAction,
   entscheideAnpassungAction,
   markiereSchrittAction,
   merkeSchrittAction,
@@ -38,7 +40,7 @@ import {
 import { endUnitAction } from "@/app/session-actions";
 import { AufgabeBewertung } from "@/components/AufgabeBewertung";
 import { AnpassenBereich, AnpassungInhalt, KiGrenzeHinweis, OhnePaketAnsicht, PaketAuswahl, PaketKopf } from "@/components/cockpit/Cockpit";
-import { CockpitSenden, SchrittNotiz } from "@/components/cockpit/CockpitClient";
+import { CockpitSenden, SchrittNotiz, VorschlagKnopf } from "@/components/cockpit/CockpitClient";
 import { AntwortKnoepfe, VorschlagKarte } from "@/components/cockpit/Steuerung";
 import { VorgabeKarte } from "@/components/cockpit/Vorgabe";
 import { KeinPaket } from "@/components/cockpit/Vorbereitung";
@@ -51,7 +53,29 @@ import { CancelUnit } from "@/components/UnitControl";
 import { Pill, Reveal } from "@/components/ui";
 import { anpassungen, type Anpassung } from "@/lib/anpassen";
 import { bewertungInfos } from "@/lib/bewertungen";
-import { cockpit, ergebnis, ersteUebung, FRAGE_ARTEN, hilfeBeiFehler, planFuehrung, planHatUebung, uebungGesendet, type CockpitDaten, type Hilfe, type PlanQuelle, type PlanStep } from "@/lib/cockpit";
+import {
+  aufgabenImSchritt,
+  cockpit,
+  ergebnis,
+  ersteSaetze,
+  ersteUebung,
+  FRAGE_ARTEN,
+  frageText,
+  haltBereit,
+  hilfeBeiFehler,
+  hintergrundZu,
+  loesungText,
+  planFuehrung,
+  planHatUebung,
+  skillsDesSchritts,
+  uebungGesendet,
+  type CockpitDaten,
+  type Hilfe,
+  type PlanQuelle,
+  type PlanStep,
+} from "@/lib/cockpit";
+import { ausfuehrlichTor, gespeicherteErklaerung, istDuenn, schulstufeVon, type Ausfuehrlich } from "@/lib/ausfuehrlich";
+import type { TaskDraft } from "@/lib/tasks";
 import { paketWahl, zurFaehigkeit } from "@/lib/cockpit-vorschlag";
 import { kostenSchaetzung } from "@/lib/lernpaket-ki";
 import { SCHRITT_ARTEN, ungeprueft, type LernpaketMitSchritten, type LernpaketSchritt } from "@/lib/lernpakete";
@@ -75,7 +99,7 @@ const first = (n: string) => n.split(" ")[0];
 
 /**
  * Der **geführte Unterricht** (niko, 25.10.2026: „Unterricht zeigt nur den aktuellen Schritt“): eine Karte mit dem
- * Schritt auf dem Schirm, darin was der Lehrer sagt, zeigt und fragt und was er als Antwort erwartet, „Übung senden“
+ * Schritt auf dem Schirm, darin was der Lehrer sagt, zeigt und fragt und was er als Antwort erwartet, „Passende Übungen senden“
  * und drei Knöpfe: **Weiter**, **Wiederholen** und **Schüler versteht es nicht**. Darüber die Schritte als Punkte zum
  * Antippen. Alles andere des früheren Cockpits und der Bereiche Übungen und Fortschritt liegt unter „Weitere Werkzeuge“
  * und bleibt dort vollständig.
@@ -87,16 +111,36 @@ const first = (n: string) => n.split(" ")[0];
  * `.nicht_verstanden`); beim Beenden steht das in der Dokumentation (Wiederholen bzw. Schwierigkeiten). Nur für den
  * Lehrer der Einheit; nichts davon kommt auf eine Schülerseite, außer den Aufgaben, die er sendet.
  */
-export function Unterricht({ unit, student, fehler, teacherId, werkzeugeOffen = false }: { unit: UnitView; student: repo.Student; fehler?: string; teacherId: number | null; werkzeugeOffen?: boolean }) {
+export function Unterricht({
+  unit,
+  student,
+  fehler,
+  teacherId,
+  werkzeugeOffen = false,
+  ausfuehrlich = null,
+}: {
+  unit: UnitView;
+  student: repo.Student;
+  fehler?: string;
+  teacherId: number | null;
+  werkzeugeOffen?: boolean;
+  /** nach „Ausführlicher erklären“: der Schritt, dessen Erklärung offen steht */
+  ausfuehrlich?: number | null;
+}) {
   const c = cockpit(unit.id, { mitPlan: true });
+  // die nächste Übung bereit (lib/cockpit.ts haltBereit): nach dem Antworten, ohne KI, nie beim Schüler
+  if (!c.paket && c.planAktuell) after(() => haltBereit(unit.id));
   const name = first(student.name);
   // im Plan: ein Schritt aus einem geprüften Lernpaket wird wie ein Schritt des Pakets gezeigt (lib/stundenplan.ts)
   const quelle = !c.paket && c.planAktuell ? (c.planQuellen.get(c.planAktuell.id) ?? null) : null;
   // „Anpassen“: Vorschläge und Übernommenes gelten für das Paket, das gerade gewählt ist (im Plan: das des Schritts)
   const paketDa = c.paket ?? quelle?.paket ?? null;
   const liste = paketDa ? anpassungen(unit.id).filter((a) => a.paket_id === paketDa.id) : [];
-  // die Themen des Plans (ein früher festgehaltener Plan hat keine): eine Zeile über der Karte
-  const themen = c.paket ? [] : themenDesPlans(c.plan);
+  // die Themen des Plans (ein früher festgehaltener Plan hat keine): eine Zeile über der Karte, mit den neu getakteten Minuten;
+  // ein Thema, das heute keinen Platz mehr hat, steht als „Nächstes Mal“ darunter
+  const alleThemen = c.paket ? [] : themenDesPlans(c.plan.map((s) => ({ ...s, minuten: c.minuten.get(s.id) ?? s.minuten })));
+  const themen = alleThemen.filter((t) => !t.ids.every((id) => c.verschoben.has(id)));
+  const naechstesMal = alleThemen.filter((t) => !themen.includes(t)).map((t) => t.name);
   // was der Schüler vor dieser Einheit geschrieben hat: seine Worte, nur zum Lesen (lib/schueler-notiz.ts)
   const worte = schuelerWorte(student.id, unit.id);
   const ids = c.paket ? c.schritte.map((s) => s.id) : c.plan.map((s) => s.id);
@@ -121,15 +165,20 @@ export function Unterricht({ unit, student, fehler, teacherId, werkzeugeOffen = 
       {worte && <SchuelerWorteKarte worte={worte} name={name} />}
       <VorgabeKarte unit={unit} c={c} />
       {themen.length ? <ThemenZeile c={c} themen={themen} unitId={unit.id} aktuell={aktuell} /> : <Woher c={c} unitId={unit.id} />}
+      {naechstesMal.length > 0 && aktuell !== null && (
+        <p className="-mt-3 text-[14px] text-ink-2" data-testid="naechstes-mal">
+          <span className="font-semibold text-ink">Nächstes Mal:</span> {naechstesMal.join(", ")}. Heute reicht die Zeit nicht mehr; im Abschluss steht es unter „Weiter mit“.
+        </p>
+      )}
       {ids.length > 1 && <Punkte c={c} ids={ids} aktuell={aktuell} unitId={unit.id} />}
       {c.paket && c.aktuell ? (
         <SchrittKarte c={c} s={c.aktuell} paket={c.paket} unit={unit} name={name} liste={liste} vorschlag={imSchritt} laeufe={laeufe} />
       ) : c.planAktuell && quelle ? (
-        <SchrittKarte c={c} s={{ ...quelle.schritt, id: c.planAktuell.id, minuten: c.planAktuell.minuten }} echteId={quelle.schritt.id} thema={c.planAktuell.thema} paket={quelle.paket} unit={unit} name={name} liste={liste} vorschlag={imSchritt} laeufe={laeufe} />
+        <SchrittKarte c={c} s={{ ...quelle.schritt, id: c.planAktuell.id, minuten: c.minuten.get(c.planAktuell.id) ?? c.planAktuell.minuten }} echteId={quelle.schritt.id} thema={c.planAktuell.thema} paket={quelle.paket} unit={unit} name={name} liste={liste} vorschlag={imSchritt} laeufe={laeufe} />
       ) : !c.paket && c.planAktuell ? (
-        <PlanKarte c={c} s={c.planAktuell} unit={unit} student={student} vorschlag={imSchritt} laeufe={laeufe} />
+        <PlanKarte c={c} s={c.planAktuell} unit={unit} student={student} vorschlag={imSchritt} laeufe={laeufe} ausfuehrlichOffen={ausfuehrlich === c.planAktuell.id} />
       ) : ids.length > 0 ? (
-        <AllesDurch c={c} unitId={unit.id} />
+        <AllesDurch c={c} unitId={unit.id} naechstesMal={naechstesMal} />
       ) : (
         <p className="panel px-5 py-4 text-[15px] text-ink-2">
           Für heute gibt es keinen Plan aus den Daten. Unter{" "}
@@ -235,8 +284,8 @@ function ThemenZeile({ c, themen, unitId, aktuell }: { c: CockpitDaten; themen: 
                     className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2 text-left text-[15px] hover:bg-panel ${s.id === aktuell ? "bg-accent-wash font-semibold" : ""}`}
                   >
                     <span className="num w-6 shrink-0 text-[13px] text-ink-3">{st === "erledigt" ? <Check size={15} className="text-green" aria-label="erledigt" /> : i + 1}</span>
-                    <span className={`min-w-0 flex-1 ${st === "uebersprungen" ? "text-ink-3 line-through" : ""}`}>{s.titel}</span>
-                    <span className="num shrink-0 text-[13px] text-ink-3">{s.minuten} Min.</span>
+                    <span className={`min-w-0 flex-1 ${st === "uebersprungen" ? "text-ink-3 line-through" : c.verschoben.has(s.id) ? "text-ink-3" : ""}`}>{s.titel}</span>
+                    <span className="num shrink-0 text-[13px] text-ink-3">{c.verschoben.has(s.id) ? "Nächstes Mal" : `${c.minuten.get(s.id) ?? s.minuten} Min.`}</span>
                   </button>
                 </form>
               </li>
@@ -266,20 +315,23 @@ function Punkte({ c, ids, aktuell, unitId }: { c: CockpitDaten; ids: number[]; a
         {ids.map((id, i) => {
           const st = offenVon(c, id);
           const an = id === aktuell;
+          // open, but its topic moved to next time: grey like a skipped one
+          const spaeter = st === "offen" && c.verschoben.has(id);
+          const status = spaeter ? "nächstes Mal" : STATUS[st];
           return (
             <li key={id}>
               <form action={zeigeSchrittAction.bind(null, unitId, id)}>
                 <button
                   aria-current={an ? "step" : undefined}
-                  title={`${titel.get(id)} · ${STATUS[st]}`}
+                  title={`${titel.get(id)} · ${status}`}
                   className={`num inline-flex h-11 min-w-11 items-center justify-center gap-1 rounded-full px-2 text-[14px] font-semibold transition-colors ${
-                    an ? "bg-accent text-on-fill" : st === "erledigt" ? "bg-green-wash text-green" : st === "uebersprungen" ? "bg-panel text-ink-3" : "bg-surface text-ink shadow-[var(--shadow-card)] hover:bg-panel"
+                    an ? "bg-accent text-on-fill" : st === "erledigt" ? "bg-green-wash text-green" : st === "uebersprungen" || spaeter ? "bg-panel text-ink-3" : "bg-surface text-ink shadow-[var(--shadow-card)] hover:bg-panel"
                   }`}
                 >
                   {st === "erledigt" && !an ? <Check size={15} aria-hidden /> : i + 1}
                   <span className="sr-only">
                     {" "}
-                    {titel.get(id)}, {STATUS[st]}
+                    {titel.get(id)}, {status}
                   </span>
                 </button>
               </form>
@@ -303,9 +355,131 @@ function Block({ titel, ton = "", children }: { titel: string; ton?: "" | "green
   );
 }
 
+/** Ein langer Lehrertext: die ersten Sätze groß, der Rest unter „Mehr“ (lib/cockpit.ts `ersteSaetze`). */
+function LangText({ text }: { text: string }) {
+  const { kurz, rest } = ersteSaetze(text);
+  return (
+    <>
+      <p className="text-[18px] leading-relaxed whitespace-pre-line">{kurz}</p>
+      {rest && (
+        <details className="reveal" data-testid="sagt-mehr">
+          <summary>
+            <ChevronDown size={15} aria-hidden className="reveal-chevron" />
+            Mehr
+          </summary>
+          <p className="pt-1 text-[18px] leading-relaxed whitespace-pre-line">{rest}</p>
+        </details>
+      )}
+    </>
+  );
+}
+
+/**
+ * An jedem Schritt, zugeklappt: die Lösungen der Aufgaben (gesendet oder die, die der Schritt senden würde), die typischen
+ * Fehler der Fähigkeit und ein, zwei Zeilen Hintergrund. Nur für den Lehrer.
+ */
+function LoesungReveal({ aufgaben, fehler, hintergrund }: { aufgaben: TaskDraft[]; fehler: string[]; hintergrund: string[] }) {
+  if (!aufgaben.length && !fehler.length && !hintergrund.length) return null;
+  return (
+    <div className="mt-4" data-testid="loesung-am-schritt">
+      <Reveal label="Lösung · typische Fehler · Hintergrund">
+        <div className="grid gap-3">
+          {aufgaben.length > 0 && (
+            <div>
+              <p className="text-[13px] font-semibold text-ink-2">Lösungen</p>
+              <ol className="mt-1 grid gap-1.5">
+                {aufgaben.map((a, j) => (
+                  <li key={j} className="grid grid-cols-[1.5rem_minmax(0,1fr)] text-[15px] leading-snug">
+                    <span className="num text-ink-3">{j + 1}.</span>
+                    <span>
+                      <span className="line-clamp-2 text-ink-2">{frageText(a)}</span>
+                      <span className="block font-medium whitespace-pre-line text-green">{loesungText(a)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+          {fehler.length > 0 && (
+            <div>
+              <p className="text-[13px] font-semibold text-amber">Typische Fehler</p>
+              <ul className="mt-1 grid list-disc gap-1 pl-5 text-[15px]">
+                {fehler.slice(0, 4).map((x, j) => (
+                  <li key={j}>{x}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {hintergrund.length > 0 && (
+            <div>
+              <p className="text-[13px] font-semibold text-ink-2">Hintergrund</p>
+              {hintergrund.map((x, j) => (
+                <p key={j} className="mt-0.5 text-[14.5px] text-ink-2">
+                  {x}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      </Reveal>
+    </div>
+  );
+}
+
+/** Die gespeicherte ausführlichere Erklärung (lib/ausfuehrlich.ts): nach dem Tippen offen, sonst zugeklappt. */
+function AusfuehrlichBlock({ a, offen, mathe, stufe }: { a: Ausfuehrlich; offen: boolean; mathe: boolean; stufe: number }) {
+  return (
+    <details className="reveal" open={offen} data-testid="ausfuehrlich">
+      <summary>
+        <ChevronDown size={15} aria-hidden className="reveal-chevron" />
+        Ausführlicher erklärt
+      </summary>
+      <div className="mt-2 grid gap-3 rounded-xl border border-line px-3 py-3">
+        {a.sagt && (
+          <Block titel="Das sagst du">
+            <p className="text-[17px] leading-relaxed whitespace-pre-line">{a.sagt}</p>
+          </Block>
+        )}
+        {a.beispiel && (
+          <Block titel="Beispiel">
+            <p className="text-[16px] leading-relaxed whitespace-pre-line">{a.beispiel.aufgabe}</p>
+            {a.beispiel.rechnung.length > 0 && <p className="num mt-1 text-[16px] whitespace-pre-line">{a.beispiel.rechnung.join("\n")}</p>}
+            {a.beispiel.loesung && <p className="mt-1 text-[15px] whitespace-pre-line text-ink-2">{a.beispiel.loesung}</p>}
+          </Block>
+        )}
+        {a.frage && (
+          <Block titel="Das fragst du">
+            <p className="text-[16px] leading-relaxed whitespace-pre-line">{a.frage}</p>
+            {a.antwort && (
+              <p className="mt-1 text-[15px] whitespace-pre-line">
+                <span className="font-semibold text-green">Erwartete Antwort: </span>
+                {a.antwort}
+              </p>
+            )}
+          </Block>
+        )}
+        {a.fehler.length > 0 && (
+          <Block titel="Typische Fehler">
+            <ul className="grid list-disc gap-1 pl-5 text-[15px]">
+              {a.fehler.map((x, j) => (
+                <li key={j}>{x}</li>
+              ))}
+            </ul>
+          </Block>
+        )}
+        <p className="text-[12.5px] text-ink-3">
+          Von der KI geschrieben{mathe ? ", Rechnungen von der App geprüft" : ""}. Gespeichert für diese Fähigkeit und die {stufe}. Schulstufe.
+        </p>
+      </div>
+    </details>
+  );
+}
+
 /** Kopf der Karte: „Past Simple · Schritt 2 von 6 · Minute 5–15“ (das Thema nur im Plan), Titel, Stand und wie oft wiederholt. */
 function KartenKopf({ c, id, titel, minuten, art, ids, thema }: { c: CockpitDaten; id: number; titel: string; minuten: number; art?: React.ReactNode; ids: number[]; thema?: string | null }) {
   const ab = c.ab.get(id) ?? 0;
+  // a step whose topic no longer fits today (lib/stundenplan.ts neuTakten) has no minutes
+  const spaeter = c.verschoben.has(id);
   const st = offenVon(c, id);
   const w = c.stand.wiederholt[id] ?? 0;
   const n = c.stand.nichtVerstanden[id] ?? 0;
@@ -320,7 +494,7 @@ function KartenKopf({ c, id, titel, minuten, art, ids, thema }: { c: CockpitDate
             ·{" "}
           </>
         )}
-        Schritt {ids.indexOf(id) + 1} von {ids.length} · Minute {ab}–{ab + minuten}
+        Schritt {ids.indexOf(id) + 1} von {ids.length} · {spaeter ? "Nächstes Mal" : `Minute ${ab}–${ab + minuten}`}
       </p>
       <h2 className="mt-1 flex flex-wrap items-center gap-2 text-[21px] leading-tight font-semibold">
         {titel}
@@ -453,6 +627,8 @@ function SchrittKarte({
   const nicht = (c.stand.nichtVerstanden[s.id] ?? 0) > 0;
   const skill = s.aufgaben.find((a) => a.skillId)?.skillId ?? null;
   const hilfe = nicht ? hilfeBeiFehler(s.bei_fehler, angepasst, zurFaehigkeit(skill)) : [];
+  // for „Lösung · typische Fehler · Hintergrund“: the skill of the tasks, else the package's first
+  const loesungSkill = skill ?? skillsDesSchritts(s)[0] ?? null;
   // „Folie 7“ means something only with the package's presentation; without one the line stays away (no dead link)
   const folie = s.folie && paket.praesentation_id ? s.folie : null;
   const leer = !s.lehrer_sagt.trim() && !s.lehrer_fragt.trim() && !s.erwartete_antwort.trim() && !folie;
@@ -472,7 +648,7 @@ function SchrittKarte({
       <div className="mt-4 grid gap-4">
         {s.lehrer_sagt.trim() && (
           <Block titel="Das sagst du">
-            <p className="text-[18px] leading-relaxed whitespace-pre-line">{s.lehrer_sagt}</p>
+            <LangText text={s.lehrer_sagt} />
           </Block>
         )}
         {folie && (
@@ -536,10 +712,12 @@ function SchrittKarte({
 
       {s.aufgaben.length > 0 && (
         <div className="mt-5 flex flex-wrap items-start gap-x-4 gap-y-2 border-t border-line pt-4">
-          <CockpitSenden action={sendeSchrittAction.bind(null, unitId, s.id)} unitId={unitId} label={`Übung senden (${s.aufgaben.length} ${s.aufgaben.length === 1 ? "Aufgabe" : "Aufgaben"})`} primary={gesendet === 0 && !schreiben} />
+          <CockpitSenden action={sendeSchrittAction.bind(null, unitId, s.id)} unitId={unitId} label={`Passende Übungen senden (${s.aufgaben.length} ${s.aufgaben.length === 1 ? "Aufgabe" : "Aufgaben"})`} primary={gesendet === 0 && !schreiben} />
           {gesendet > 0 && <span className="pt-2.5 text-[13px] text-ink-3">schon {gesendet === 1 ? "einmal" : `${gesendet}-mal`} an {name} gesendet</span>}
         </div>
       )}
+
+      <LoesungReveal aufgaben={s.aufgaben} fehler={loesungSkill ? zurFaehigkeit(loesungSkill).typischeFehler : []} hintergrund={hintergrundZu(loesungSkill, [paket.ziel, s.aufgaben.find((a) => a.teacherNote?.trim())?.teacherNote])} />
 
       <Knoepfe unitId={unitId} id={s.id} weiterHaupt={schreiben ? Boolean(laeuft) : s.aufgaben.length === 0 || gesendet > 0} />
     </section>
@@ -621,10 +799,26 @@ function SchrittWerkzeuge({ c, id, titel, unitId, ids, children }: { c: CockpitD
 }
 
 /**
- * Ohne Lernpaket: ein Schritt des „Plans für heute“. Übung senden mit einer freigegebenen Übung aus dem Bestand, sonst
+ * Ohne Lernpaket: ein Schritt des „Plans für heute“. „Passende Übungen senden“ mit einer freigegebenen Übung aus dem Bestand, sonst
  * mit neuen Aufgaben aus den Generatoren zur Fähigkeit des Schritts (ohne KI).
  */
-function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten; s: PlanStep; unit: UnitView; student: repo.Student; vorschlag: Anzeige | null; laeufe: TextLauf[] }) {
+function PlanKarte({
+  c,
+  s,
+  unit,
+  student,
+  vorschlag,
+  laeufe,
+  ausfuehrlichOffen,
+}: {
+  c: CockpitDaten;
+  s: PlanStep;
+  unit: UnitView;
+  student: repo.Student;
+  vorschlag: Anzeige | null;
+  laeufe: TextLauf[];
+  ausfuehrlichOffen: boolean;
+}) {
   const ids = c.plan.map((x) => x.id);
   const name = first(student.name);
   const nicht = (c.stand.nichtVerstanden[s.id] ?? 0) > 0;
@@ -639,16 +833,29 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
   const skill = s.skillId && planHatUebung(s, c.planQuellen) && !(kontrolle && sorteOfSkill(s.skillId)) ? repo.getSkill(s.skillId) : null;
   const gesendet = c.stand.gesendet[s.id]?.length ?? 0;
   // a writing skill (lib/textarbeit-ablauf.ts): „Schreibauftrag starten“, prefilled, is the main action of the practice
-  // step; in the exam step it is the exam's writing task, next to „Übung senden“
-  const eigen = !s.art || s.art === "ueben" ? schreibStartFuer(unit, s.skillId) : null;
+  // step and of its Lernkontrolle (which sends nothing; once the text runs, its line above is the way on); in the exam
+  // step it is the exam's writing task, next to „Passende Übungen senden“
+  const schreibKontrolle = kontrolle && Boolean(s.skillId && sorteOfSkill(s.skillId));
+  const eigen = !s.art || s.art === "ueben" || schreibKontrolle ? schreibStartFuer(unit, s.skillId) : null;
   const zurPruefung = !eigen && (s.titel === SCHULARBEIT_SCHRITT || (s.pruefung && s.art === "ueben")) ? schreibStartZurPruefung(unit) : null;
   const schreiben = eigen ?? zurPruefung;
   const laeuft = schreiben ? textZumSchritt(laeufe, schreiben) : null;
   // a step of the Vorgabe whose point still waits for „kurz bestätigen“: say where, so the exercise can follow
   const bestaetigen = !skill && !blatt && !zugewiesen && /^Üben: /.test(s.titel) && (vorgabeDerEinheit(unit.id)?.punkte.some((p) => p.zuordnung === "unklar" && p.vorschlaege.length > 0) ?? false);
-  // say, ask, expected answer from the skill and the step's first task, like a package step (lib/cockpit.ts planFuehrung);
+  // say, show, ask, expected answer from the skill and the step's tasks, like a package step (lib/cockpit.ts planFuehrung);
   // not in the Lernkontrolle: its tasks are not asked aloud first
-  const f = kontrolle ? { sagt: null, fragt: null, antwort: null } : planFuehrung(unit.id, s);
+  const schon = c.stand.gesendet[s.id] ?? [];
+  const f = kontrolle ? { sagt: null, zeigt: null, fragt: null, antwort: null } : planFuehrung(unit.id, s, schon);
+  // „Lösung · typische Fehler · Hintergrund“: the tasks sent from this step or the ones it would send
+  const skillId = s.skillId ?? blatt?.skill_ids[0] ?? null;
+  const aufgaben = aufgabenImSchritt(unit.id, { ...s, skillId }, schon);
+  // „Ausführlicher erklären“ (lib/ausfuehrlich.ts): to a skill whose text is thin; saved once per skill and Schulstufe
+  const ausSkill = !kontrolle && s.art !== "einstieg" && s.art !== "abschluss" && s.skillId ? repo.getSkill(s.skillId) : null;
+  const stufe = schulstufeVon(student);
+  const ausGespeichert = ausSkill ? gespeicherteErklaerung(ausSkill.id, stufe) : null;
+  const ausTor = ausSkill && !ausGespeichert && istDuenn(f.sagt) ? ausfuehrlichTor() : null;
+  // with the KI off the button stays away; otherwise it says why it is not possible now
+  const ausKnopf = ausTor && (ausTor.erlaubt || ausTor.grund !== "Die KI ist aus.") ? ausTor : null;
   // Erklären, Grundlage, Lernkontrolle: „Richtig / Teilweise / Falsch“, what the teacher heard
   const frage = s.art === "erklaeren" || s.art === "grundlage" || kontrolle;
   const antwort = frage ? <AntwortKnoepfe unitId={unit.id} schrittId={s.id} wert={c.stand.antworten[s.id] ?? null} /> : null;
@@ -660,8 +867,8 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
   const kontrolleLabel = skill?.id === EIGENE_VOKABELN ? "Lernkontrolle senden" : `Lernkontrolle senden (${KONTROLLE_ANZAHL} Aufgaben)`;
   return (
     <section className="panel px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
-      <KartenKopf c={c} id={s.id} titel={s.titel} minuten={s.minuten} ids={ids} thema={s.thema} />
-      {(s.beschreibung.trim() || f.sagt || f.fragt) && (
+      <KartenKopf c={c} id={s.id} titel={s.titel} minuten={c.minuten.get(s.id) ?? s.minuten} ids={ids} thema={s.thema} />
+      {(s.beschreibung.trim() || f.sagt || f.zeigt || f.fragt || ausGespeichert || ausKnopf) && (
         <div className="mt-4 grid gap-4">
           {s.beschreibung.trim() && (
             <Block titel="Das machst du">
@@ -670,7 +877,33 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
           )}
           {f.sagt && (
             <Block titel="Das sagst du">
-              <p className="text-[18px] leading-relaxed whitespace-pre-line">{f.sagt}</p>
+              <LangText text={f.sagt} />
+            </Block>
+          )}
+          {ausGespeichert && ausSkill ? (
+            <AusfuehrlichBlock a={ausGespeichert} offen={ausfuehrlichOffen} mathe={ausSkill.subject === "Mathematik"} stufe={stufe} />
+          ) : (
+            ausKnopf && (
+              <div className="grid gap-1" data-testid="ausfuehrlich-knopf">
+                <VorschlagKnopf
+                  action={ausfuehrlichAction.bind(null, unit.id, s.id)}
+                  label={ausKnopf.erlaubt ? `Ausführlicher erklären · ${ausKnopf.kosten}` : "Ausführlicher erklären"}
+                  icon={<BookOpenText size={16} aria-hidden />}
+                  gesperrt={!ausKnopf.erlaubt}
+                  laeuft="Wird geschrieben …"
+                />
+                <p className="text-[13px] text-ink-3">{ausKnopf.erlaubt ? "Einmal für diese Fähigkeit und Schulstufe; danach für jeden Schüler ohne Kosten." : ausKnopf.grund}</p>
+              </div>
+            )
+          )}
+          {f.zeigt && (
+            <Block titel="Das zeigst du">
+              <p className="text-[13px] text-ink-3">Ein Beispiel aus der Übung, vorgerechnet</p>
+              <p className="mt-0.5 text-[17px] leading-relaxed whitespace-pre-line">{f.zeigt.aufgabe}</p>
+              <p className="mt-1 text-[16px] leading-relaxed whitespace-pre-line">
+                <span className="font-semibold text-green">Lösung: </span>
+                {f.zeigt.loesung}
+              </p>
             </Block>
           )}
           {f.fragt && (
@@ -708,7 +941,7 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
               <p className="text-[14px] text-ink-2">
                 Übung <span className="font-semibold text-ink">„{blatt.title}“</span> aus dem Bestand
               </p>
-              <TabletSend targets={[{ unitId: unit.id, student: name }]} worksheetId={blatt.id} />
+              <TabletSend targets={[{ unitId: unit.id, student: name }]} worksheetId={blatt.id} label="Passende Übungen senden" />
             </>
           ) : zugewiesen ? (
             <Link href={`/schueler/${student.id}/ergebnis/${zugewiesen}`} className="btn btn-secondary w-fit">
@@ -721,7 +954,7 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
                   {kontrolle ? `Neue Aufgaben zu ${skill.name}: ein Versuch, ohne Hilfen.` : `Neue Aufgaben zu ${skill.name}, passend zum Lernstand von ${name}.`}
                 </p>
                 <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
-                  <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, skill.id, s.id)} unitId={unit.id} label={kontrolle ? kontrolleLabel : "Übung senden"} primary={gesendet === 0 && !eigen} />
+                  <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, skill.id, s.id)} unitId={unit.id} label={kontrolle ? kontrolleLabel : "Passende Übungen senden"} primary={gesendet === 0 && !eigen} />
                   {gesendet > 0 && <span className="pt-2.5 text-[13px] text-ink-3">schon {gesendet === 1 ? "einmal" : `${gesendet}-mal`} an {name} gesendet</span>}
                 </div>
               </>
@@ -731,6 +964,7 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
       )}
       {zurPruefung && <SchreibauftragStart start={zurPruefung} laeuft={laeuft} haupt={false} />}
       {sprung && <ZurErstenUebung unitId={unit.id} id={sprung.id} titel={sprung.titel} nr={ids.indexOf(sprung.id) + 1} />}
+      <LoesungReveal aufgaben={aufgaben} fehler={skillId ? zurFaehigkeit(skillId).typischeFehler : []} hintergrund={hintergrundZu(skillId, [aufgaben.find((a) => a.teacherNote?.trim())?.teacherNote])} />
       <Knoepfe unitId={unit.id} id={s.id} weiterHaupt={eigen ? Boolean(laeuft) : !(blatt || skill) || gesendet > 0} />
     </section>
   );
@@ -751,7 +985,7 @@ function ZurErstenUebung({ unitId, id, titel, nr }: { unitId: number; id: number
 }
 
 /** Alle Schritte erledigt oder übersprungen: jetzt die Einheit beenden. */
-function AllesDurch({ c, unitId }: { c: CockpitDaten; unitId: number }) {
+function AllesDurch({ c, unitId, naechstesMal }: { c: CockpitDaten; unitId: number; naechstesMal: string[] }) {
   const liste: { id: number; titel: string }[] = c.paket ? c.schritte : c.plan;
   const e = ergebnis(liste, liste.map((s) => s.id), c.stand);
   return (
@@ -764,6 +998,11 @@ function AllesDurch({ c, unitId }: { c: CockpitDaten; unitId: number }) {
         {e.uebersprungen.length > 0 && `, ${e.uebersprungen.length} übersprungen (${e.uebersprungen.map((s) => s.titel).join(", ")})`}
         {e.nichtVerstanden.length > 0 && `. Nicht verstanden: ${e.nichtVerstanden.map((s) => s.titel).join(", ")}`}.
       </p>
+      {naechstesMal.length > 0 && (
+        <p className="mt-1 text-[15px]" data-testid="naechstes-mal">
+          <span className="font-semibold">Nächstes Mal:</span> {naechstesMal.join(", ")}. Heute hat die Zeit nicht mehr gereicht.
+        </p>
+      )}
       <p className="mt-1 text-[14px] text-ink-2">Das kommt beim Beenden in die Dokumentation. Einen Punkt oben antippen, um einen Schritt wieder zu öffnen.</p>
       <form action={endUnitAction.bind(null, unitId)} className="mt-4">
         <button className="btn btn-primary btn-lg w-full sm:w-auto">

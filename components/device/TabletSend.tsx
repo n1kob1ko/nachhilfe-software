@@ -21,9 +21,9 @@ export type SendTarget = { unitId: number; student: string };
  * "An Max senden": one button per running unit it can go to. The exercise (or one task) goes to the
  * student of that unit, on the tablet of that unit. Usually that is one button: the unit of the
  * exercise's student. Two only when two units run (D26) and the exercise belongs to neither student.
- * Shows honestly whether it arrived.
+ * Shows honestly whether it arrived. `label`: another text for a single button (the step in Unterricht).
  */
-export function TabletSend({ targets, worksheetId, taskId, small }: { targets: SendTarget[]; worksheetId?: number; taskId?: number; small?: boolean }) {
+export function TabletSend({ targets, worksheetId, taskId, small, label }: { targets: SendTarget[]; worksheetId?: number; taskId?: number; small?: boolean; label?: string }) {
   const [state, action] = useActionState<SendState, FormData>(sendToTabletAction, null);
   const sentTo = (state && "unitId" in state && state.unitId) || targets[0]?.unitId || 0;
   return (
@@ -34,7 +34,7 @@ export function TabletSend({ targets, worksheetId, taskId, small }: { targets: S
             <input type="hidden" name="unit_id" value={t.unitId} />
             {worksheetId ? <input type="hidden" name="worksheet_id" value={worksheetId} /> : null}
             {taskId ? <input type="hidden" name="task_id" value={taskId} /> : null}
-            <SendButton label={`An ${t.student} senden`} small={small} />
+            <SendButton label={label && targets.length === 1 ? label : `An ${t.student} senden`} small={small} />
           </form>
         ))}
       </div>
