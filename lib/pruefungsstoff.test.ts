@@ -172,6 +172,20 @@ test("mapping: clear ones linked, unclear ones to confirm, a unit title or the c
   }
 });
 
+test("Abnahme Phase A: the teacher's „Writing“ is a question with choices also when the KI named no skill, as without KI", async () => {
+  const { repo, sid } = await setup();
+  const ps = await import("./pruefungsstoff");
+  const student = repo.getStudent(sid)!;
+  const punkt = (quelle: "lehrer" | "stoffzettel") => ({ gruppe: "writing" as const, original: "Writing", inhalt: "Writing", einheit: "", dokument: quelle === "lehrer" ? 0 : 1, quelle, status: "pruefung" as const, grund: "", skill_id: null });
+  const [mitKi] = ps.ordneZu([punkt("lehrer")], { fach: "Englisch", student, ki: true });
+  const [ohneKi] = ps.ordneZu([punkt("lehrer")], { fach: "Englisch", student, ki: false });
+  assert.equal(mitKi.zuordnung, "unklar");
+  assert.ok(mitKi.vorschlaege.length > 0 && mitKi.vorschlaege.every((id) => id.startsWith("englisch.writing.")), mitKi.vorschlaege.join(", "));
+  assert.deepEqual(mitKi.vorschlaege, ohneKi.vorschlaege, "the same choice as without KI");
+  // a whole topic on a Stoffzettel the KI found no skill for stays without one (unchanged)
+  assert.equal(ps.ordneZu([punkt("stoffzettel")], { fach: "Englisch", student, ki: true })[0].zuordnung, "keine");
+});
+
 test("the scope: a point of the table of contents from Unit 4 is left out when the Stoffzettel names Units 1–3", async () => {
   const ps = await import("./pruefungsstoff");
   const mit4 = { ...STOFF_ENGLISCH_MORE, punkte: [...STOFF_ENGLISCH_MORE.punkte, { gruppe: "grammatik" as const, original: "Present perfect", inhalt: "Present Perfect", einheit: "Unit 4", dokument: 2, status: "pruefung" as const, grund: null, skill_id: "englisch.tenses.presentperfect" }] };

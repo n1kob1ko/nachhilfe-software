@@ -355,14 +355,14 @@ function Block({ titel, ton = "", children }: { titel: string; ton?: "" | "green
   );
 }
 
-/** Ein langer Lehrertext: die ersten Sätze groß, der Rest unter „Mehr“ (lib/cockpit.ts `ersteSaetze`). */
-function LangText({ text }: { text: string }) {
+/** Ein langer Lehrertext: die ersten Sätze groß, der Rest unter „Mehr“ (lib/cockpit.ts `ersteSaetze`); `offen`: gleich ganz. */
+function LangText({ text, offen = false }: { text: string; offen?: boolean }) {
   const { kurz, rest } = ersteSaetze(text);
   return (
     <>
       <p className="text-[18px] leading-relaxed whitespace-pre-line">{kurz}</p>
       {rest && (
-        <details className="reveal" data-testid="sagt-mehr">
+        <details className="reveal" open={offen} data-testid="sagt-mehr">
           <summary>
             <ChevronDown size={15} aria-hidden className="reveal-chevron" />
             Mehr
@@ -426,20 +426,19 @@ function LoesungReveal({ aufgaben, fehler, hintergrund }: { aufgaben: TaskDraft[
   );
 }
 
-/** Die gespeicherte ausführlichere Erklärung (lib/ausfuehrlich.ts): nach dem Tippen offen, sonst zugeklappt. */
-function AusfuehrlichBlock({ a, offen, mathe, stufe }: { a: Ausfuehrlich; offen: boolean; mathe: boolean; stufe: number }) {
+/**
+ * Der Rest der gespeicherten ausführlicheren Erklärung (lib/ausfuehrlich.ts): ihr Text steht schon unter „Das sagst du“ (ein
+ * Lehrertext, nicht zwei), hier Beispiel, Frage und typische Fehler; nach dem Tippen offen, sonst zugeklappt.
+ */
+function AusfuehrlichBlock({ a, offen, mathe }: { a: Ausfuehrlich; offen: boolean; mathe: boolean }) {
+  if (!a.beispiel && !a.frage && !a.fehler.length) return null;
   return (
     <details className="reveal" open={offen} data-testid="ausfuehrlich">
       <summary>
         <ChevronDown size={15} aria-hidden className="reveal-chevron" />
-        Ausführlicher erklärt
+        Beispiel, Frage und typische Fehler (ausführlich)
       </summary>
       <div className="mt-2 grid gap-3 rounded-xl border border-line px-3 py-3">
-        {a.sagt && (
-          <Block titel="Das sagst du">
-            <p className="text-[17px] leading-relaxed whitespace-pre-line">{a.sagt}</p>
-          </Block>
-        )}
         {a.beispiel && (
           <Block titel="Beispiel">
             <p className="text-[16px] leading-relaxed whitespace-pre-line">{a.beispiel.aufgabe}</p>
@@ -448,7 +447,7 @@ function AusfuehrlichBlock({ a, offen, mathe, stufe }: { a: Ausfuehrlich; offen:
           </Block>
         )}
         {a.frage && (
-          <Block titel="Das fragst du">
+          <Block titel="Frage">
             <p className="text-[16px] leading-relaxed whitespace-pre-line">{a.frage}</p>
             {a.antwort && (
               <p className="mt-1 text-[15px] whitespace-pre-line">
@@ -467,9 +466,7 @@ function AusfuehrlichBlock({ a, offen, mathe, stufe }: { a: Ausfuehrlich; offen:
             </ul>
           </Block>
         )}
-        <p className="text-[12.5px] text-ink-3">
-          Von der KI geschrieben{mathe ? ", Rechnungen von der App geprüft" : ""}. Gespeichert für diese Fähigkeit und die {stufe}. Schulstufe.
-        </p>
+        <p className="text-[12.5px] text-ink-3">Von der KI geschrieben{mathe ? ", Rechnungen von der App geprüft" : ""}.</p>
       </div>
     </details>
   );
@@ -845,7 +842,10 @@ function PlanKarte({
   // say, show, ask, expected answer from the skill and the step's tasks, like a package step (lib/cockpit.ts planFuehrung);
   // not in the Lernkontrolle: its tasks are not asked aloud first
   const schon = c.stand.gesendet[s.id] ?? [];
-  const f = kontrolle ? { sagt: null, zeigt: null, fragt: null, antwort: null } : planFuehrung(unit.id, s, schon);
+  // the worked example is none of the tasks the topic's practice, Grundlage and Lernkontrolle send
+  const andere = kontrolle || !s.skillId ? [] : c.plan.filter((x) => x.id !== s.id && x.skillId === s.skillId && (x.art === "ueben" || x.art === "grundlage" || x.art === "kontrolle" || !x.art));
+  const ausser = andere.flatMap((x) => aufgabenImSchritt(unit.id, x, c.stand.gesendet[x.id] ?? []));
+  const f = kontrolle ? { sagt: null, zeigt: null, fragt: null, antwort: null } : planFuehrung(unit.id, s, schon, ausser);
   // „Lösung · typische Fehler · Hintergrund“: the tasks sent from this step or the ones it would send
   const skillId = s.skillId ?? blatt?.skill_ids[0] ?? null;
   const aufgaben = aufgabenImSchritt(unit.id, { ...s, skillId }, schon);
@@ -875,13 +875,14 @@ function PlanKarte({
               <p className={`${f.sagt || f.fragt ? "text-[16px]" : "text-[18px]"} leading-relaxed whitespace-pre-line`}>{s.beschreibung}</p>
             </Block>
           )}
-          {f.sagt && (
+          {(ausGespeichert?.sagt || f.sagt) && (
             <Block titel="Das sagst du">
-              <LangText text={f.sagt} />
+              <LangText text={ausGespeichert?.sagt || f.sagt!} offen={ausfuehrlichOffen} />
+              {ausGespeichert?.sagt && <p className="mt-1 text-[12.5px] text-ink-3">Ausführlich erklärt, von der KI geschrieben. Gespeichert für diese Fähigkeit und die {stufe}. Schulstufe.</p>}
             </Block>
           )}
           {ausGespeichert && ausSkill ? (
-            <AusfuehrlichBlock a={ausGespeichert} offen={ausfuehrlichOffen} mathe={ausSkill.subject === "Mathematik"} stufe={stufe} />
+            <AusfuehrlichBlock a={ausGespeichert} offen={ausfuehrlichOffen} mathe={ausSkill.subject === "Mathematik"} />
           ) : (
             ausKnopf && (
               <div className="grid gap-1" data-testid="ausfuehrlich-knopf">
@@ -898,7 +899,7 @@ function PlanKarte({
           )}
           {f.zeigt && (
             <Block titel="Das zeigst du">
-              <p className="text-[13px] text-ink-3">Ein Beispiel aus der Übung, vorgerechnet</p>
+              <p className="text-[13px] text-ink-3">Ein Beispiel zum Vorrechnen, nicht aus der Übung</p>
               <p className="mt-0.5 text-[17px] leading-relaxed whitespace-pre-line">{f.zeigt.aufgabe}</p>
               <p className="mt-1 text-[16px] leading-relaxed whitespace-pre-line">
                 <span className="font-semibold text-green">Lösung: </span>

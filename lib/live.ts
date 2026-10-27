@@ -14,7 +14,7 @@ import { aiLiveState, type AILive } from "./ai/realtime";
 import { db } from "./db";
 import { chooseDeviceUnit, deviceUnit, devicesOfUnit, getDevice, hasDevice, listDevices } from "./devices";
 import { activeLaptop, endLaptopsOfUnit, laptopChannel, openLaptopCode, pendingLaptop } from "./laptop";
-import { isMinitest } from "./quick-round";
+import { isMinitest, LERNKONTROLLE } from "./quick-round";
 import * as repo from "./repo";
 import { MAX_FOLIE } from "./praesentation-protokoll";
 import { getText, noteTextInUnit } from "./texts";
@@ -232,6 +232,8 @@ export type LiveSnapshot = {
     test: boolean;
     /** a Probeschularbeit (lib/probeschularbeit.ts): runs like a Minitest, named as such */
     probe?: boolean;
+    /** a Lernkontrolle of the plan (lib/cockpit.ts): runs like a Minitest, named as such */
+    kontrolle?: boolean;
     taskNo: number;
     total: number;
     /** "bereit": sent while no tablet is paired (the student uses the link) */
@@ -290,6 +292,7 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
       single: a.source_task_id !== null,
       test: isMinitest(a.mode),
       probe: Boolean(repo.getWorksheet(a.worksheet_id)?.probe_test_id),
+      kontrolle: a.note === LERNKONTROLLE,
       taskNo,
       total: tasks.length,
       state: a.completed_at ? "fertig" : a.delivered_at || attempts.length ? "arbeitet" : device ? "nicht angekommen" : "bereit",

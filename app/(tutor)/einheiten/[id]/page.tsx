@@ -34,6 +34,7 @@ import { autoFelderVon, leseEinschaetzung } from "@/lib/einschaetzung";
 import { buildUnitReport, readReport } from "@/lib/learning";
 import { mappeFuerEinheit, mappeHatInhalt } from "@/lib/mappe";
 import { letzterStoff, minitestDerEinheit } from "@/lib/minitest";
+import { LERNKONTROLLE } from "@/lib/quick-round";
 import { MinitestKarte } from "@/components/MinitestKarte";
 import { SchuelerNotizAnzeige } from "@/components/SchuelerNotiz";
 import { hatInhalt, notizZuEinheit } from "@/lib/schueler-notiz";
@@ -537,7 +538,7 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
                       {a.title}
                       {a.mode === "test" && (
                         <span className="ml-2 align-middle">
-                          <Pill tone="accent">{a.probe_test_id ? "Probeschularbeit" : "Minitest"}</Pill>
+                          <Pill tone="accent">{a.probe_test_id ? "Probeschularbeit" : a.note === LERNKONTROLLE ? "Lernkontrolle" : "Minitest"}</Pill>
                         </span>
                       )}
                     </span>

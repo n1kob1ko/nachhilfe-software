@@ -265,8 +265,26 @@ test("teacher script without a package: the whole explanation, a worked example 
   assert.equal(f.sagt, EXPLAIN["englisch.tenses.pastsimple"]);
   const aufgaben = s.c.aufgabenImSchritt(unit.id, past);
   assert.ok(aufgaben.length >= 2);
-  assert.deepEqual(f.zeigt, { aufgabe: s.c.frageText(aufgaben[1]), loesung: s.c.loesungText(aufgaben[1]) });
   assert.equal(f.fragt, s.c.frageText(aufgaben[0]));
+  // Abnahme Phase A: the worked example is a task of the same skill that the student does not get
+  const bsp = s.c.beispielZur(unit.id, past.skillId!, aufgaben)!;
+  assert.ok(bsp && [bsp.skillId, ...(bsp.skillIds ?? [])].includes(past.skillId));
+  assert.deepEqual(f.zeigt, { aufgabe: s.c.frageText(bsp), loesung: s.c.loesungText(bsp) });
+  const ueben = plan.find((x) => x.art === "ueben" && x.skillId === past.skillId)!;
+  const kontrolle = plan.find((x) => x.art === "kontrolle" && x.skillId === past.skillId)!;
+  const andere = [...s.c.aufgabenImSchritt(unit.id, ueben), ...s.c.aufgabenImSchritt(unit.id, kontrolle)];
+  const gesendet = new Set([...aufgaben, ...andere].map(s.c.frageText));
+  assert.ok(!gesendet.has(s.c.planFuehrung(unit.id, past, [], andere).zeigt!.aufgabe), "none of the tasks the topic sends");
+
+  // an exercise from the Bestand that mixes skills: the question is of the step's skill, the example of none of its tasks
+  const aufgabe = (skillId: string, prompt: string, loesung: string) => ({ type: "grammar" as const, skillId, difficulty: "mittel" as const, prompt, data: {}, answer: { accepted: [loesung], mode: "text" as const }, solution: loesung, hints: [], errorMap: [] });
+  const gemischt = s.repo.createWorksheet(
+    { title: "Verbs revision", subject: "Englisch", grade: 6, school_type: "Gymnasium", klasse: 2, topic: "Past Simple", difficulty: "mittel", task_type: "grammar", kind: "uebung", source: "manuell", skill_ids: ["englisch.tenses.pastsimple", "englisch.vocab.irregular"] },
+    [aufgabe("englisch.vocab.irregular", "Write the 3rd form (past participle): go", "gone"), aufgabe("englisch.tenses.pastsimple", "Yesterday we ___ (watch) a film.", "watched"), aufgabe("englisch.tenses.pastsimple", "Last week she ___ (visit) her aunt.", "visited")],
+  );
+  const g = s.c.planFuehrung(unit.id, { ...ueben, art: "erklaeren", uebung: `U${gemischt}` });
+  assert.equal(g.fragt, "Yesterday we ___ (watch) a film.", "the task of another skill is not asked");
+  assert.ok(g.zeigt && !/3rd form|Yesterday we|Last week she/.test(g.zeigt.aufgabe), `example from the exercise: ${g.zeigt?.aufgabe}`);
 
   // long texts stay readable: the first sentences, the rest under „Mehr“
   const lang = "Erster Satz mit z. B. einer Abkürzung. Zweiter Satz ist auch da. Dritter Satz kommt hier. Vierter Satz und noch viel mehr Text, damit es sich lohnt.";

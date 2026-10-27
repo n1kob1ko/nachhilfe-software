@@ -157,7 +157,7 @@ export function LiveStatus({ unitId, initial, join, kompakt = false }: { unitId:
       ) : c ? (
         <div className="mt-4">
           <p className="text-[13px] text-ink-3">
-            {s.student} · {c.probe ? "Probeschularbeit" : c.test ? "Minitest" : c.single ? "Einzelaufgabe" : "Übung"}
+            {s.student} · {c.probe ? "Probeschularbeit" : c.kontrolle ? "Lernkontrolle" : c.test ? "Minitest" : c.single ? "Einzelaufgabe" : "Übung"}
             {onLaptop ? " · am eigenen Laptop" : ""}
           </p>
           <p className="truncate text-[17px] font-semibold" title={c.title}>
@@ -261,7 +261,7 @@ export function LiveStatus({ unitId, initial, join, kompakt = false }: { unitId:
   const teile: { text: string; ton?: string }[] = [];
   if (s.text) teile.push({ text: `Textarbeit „${s.text.title}“ · ${s.text.words.toLocaleString("de-AT")} Wörter` });
   else if (c) {
-    teile.push({ text: `${c.probe ? "Probeschularbeit" : c.test ? "Minitest" : "Übung"} „${c.title}“` });
+    teile.push({ text: `${c.probe ? "Probeschularbeit" : c.kontrolle ? "Lernkontrolle" : c.test ? "Minitest" : "Übung"} „${c.title}“` });
     if (c.state === "nicht angekommen") teile.push({ text: "nicht angekommen", ton: "font-semibold text-red" });
     else if (c.state === "fertig") teile.push({ text: `fertig · ${c.correct} von ${c.total} richtig`, ton: "text-green" });
     else teile.push({ text: `Aufgabe ${Math.min(c.taskNo, c.total)} von ${c.total}` });
