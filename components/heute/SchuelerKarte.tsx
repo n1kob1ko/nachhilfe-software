@@ -8,7 +8,7 @@ import type * as repo from "@/lib/repo";
 import { klassenLabel } from "@/lib/school";
 
 /**
- * Ein Schüler von heute auf einer kurzen Karte (lib/heute.ts): Zeit, Name, Klasse, Fach, dann aus der automatischen
+ * Ein Schüler von heute auf einer kurzen Karte (lib/heute.ts): Zeit, Name, Klasse, Fach, Dauer, dann aus der automatischen
  * Vorbereitung Thema, Warum, was bereitliegt (geprüftes Lernpaket oder Plan aus den Daten), Schwierigkeiten und
  * Prüfung. Eine Aktion: „Einheit starten“. Hat ein neuer Schüler noch kein Signal, stehen die passenden geprüften
  * Lernpakete zum Wählen da; ein Tippen legt eines für heute fest. `haupt`: der nächste Schüler, sein Knopf ist der Hauptknopf der Seite.
@@ -36,7 +36,8 @@ export function SchuelerKarte({ p, student, karte, fach, haupt, wann, oben = fal
         karte.schwierigkeiten.join(" · ")
       ),
     ]);
-  if (karte?.pruefung) zeilen.push(["Prüfung", <span key="p" className="font-semibold text-amber">{karte.pruefung}</span>]);
+  // the next exam is always there; only a near one stands out
+  if (karte?.pruefung) zeilen.push(["Prüfung", karte.pruefungNah ? <span key="p" className="font-semibold text-amber">{karte.pruefung}</span> : karte.pruefung]);
   if (karte?.pakete?.length)
     zeilen.push([
       "Lernpaket wählen",
@@ -52,8 +53,9 @@ export function SchuelerKarte({ p, student, karte, fach, haupt, wann, oben = fal
       </div>,
     ]);
   const briefing = `/schueler/${p.studentId}/briefing${p.platzId ? `?platz=${p.platzId}` : ""}`;
+  const dauer = karte?.dauerMin ? `${karte.dauerMin} Min.` : "";
   return (
-    <li className={`panel grid gap-3 px-4 py-4 sm:px-5 ${p.nichtStattgefunden || p.erledigt ? "opacity-80" : ""}`} data-testid="heute-karte">
+    <li className={`panel grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 px-4 py-4 sm:px-5 ${p.nichtStattgefunden || p.erledigt ? "opacity-80" : ""}`} data-testid="heute-karte">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <span className="num w-[106px] shrink-0 text-[16px] font-semibold">
           {p.zeit}
@@ -62,7 +64,7 @@ export function SchuelerKarte({ p, student, karte, fach, haupt, wann, oben = fal
         <Avatar name={p.studentName} size={38} />
         <div className="min-w-[9rem] flex-1">
           <p className="truncate text-[17px] leading-tight font-semibold">{p.studentName}</p>
-          <p className="truncate text-[13.5px] text-ink-2">{[klasse, fach, p.ort].filter(Boolean).join(" · ")}</p>
+          <p className="truncate text-[13.5px] text-ink-2">{[dauer, klasse, fach, p.ort].filter(Boolean).join(" · ")}</p>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto sm:justify-end">
           {laeuft && p.einheitLehrer ? (
@@ -92,7 +94,8 @@ export function SchuelerKarte({ p, student, karte, fach, haupt, wann, oben = fal
           ) : (
             <>
               {p.nichtStattgefunden && <span className="text-[13px] text-ink-3">nicht stattgefunden</span>}
-              <form action={startUnitAction.bind(null, p.studentId)} className="w-full sm:w-auto">
+              {/* the unit starts for the Platz of this card (two students at the same time each get their own) */}
+              <form action={startUnitAction.bind(null, p.studentId, p.platzId)} className="w-full sm:w-auto">
                 <button className={`btn w-full sm:w-auto ${haupt ? "btn-primary" : "btn-secondary"}`}>
                   <Play size={17} aria-hidden /> Einheit starten
                 </button>
@@ -128,7 +131,7 @@ export function SchuelerKarte({ p, student, karte, fach, haupt, wann, oben = fal
 /** Die Karte eines Schülers, dessen Einheit oben läuft: eine Zeile, „läuft“ und ein ruhiger Link, kein zweiter großer Knopf. */
 function KurzeKarte({ p, meta }: { p: HeutePunkt; meta: string }) {
   return (
-    <li className="panel flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 sm:px-5" data-testid="heute-karte-laeuft">
+    <li className="panel flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 sm:px-5" data-testid="heute-karte-laeuft">
       <span className="num w-[106px] shrink-0 text-[16px] font-semibold">{p.zeit}</span>
       <Avatar name={p.studentName} size={32} />
       <div className="min-w-[9rem] flex-1">

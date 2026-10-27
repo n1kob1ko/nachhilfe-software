@@ -794,13 +794,25 @@ export const generatorSeed = (unitId: number, skillId: string) => [...`${unitId}
  * Ohne Lernpaket: eine neue Übung zur Fähigkeit aus den eingebauten Generatoren und Aufgabenbanken (nie die
  * KI), an den Schüler dieser Einheit. Wie viele und wie schwer, sagt die Empfehlung, sonst der Lernstand. Die erste
  * Übung einer Fähigkeit in der Einheit beginnt mit der Aufgabe, die der Schritt als „Das fragst du“ zeigt.
+ *
+ * Wie beim Senden eines Paketschritts hält das erste Senden den „Plan für heute“ fest (den von vor dem Senden: die neue
+ * Übung und die ersten Antworten ändern sonst Empfehlung und Plan) und merkt die Übung beim Schritt (`gesendet`).
+ * `schrittId`: der Planschritt, aus dem gesendet wurde; ohne ihn der Schritt mit dieser Fähigkeit, wenn es einen gibt.
  */
-export async function sendeAusGenerator(unitId: number, skillId: string, teacherId: number | null): Promise<{ worksheetId: number; assignmentId: number } | { fehler: string }> {
+export async function sendeAusGenerator(
+  unitId: number,
+  skillId: string,
+  teacherId: number | null,
+  schrittId: number | null = null,
+): Promise<{ worksheetId: number; assignmentId: number } | { fehler: string }> {
   const unit = getUnit(unitId);
   if (!unit || unit.status !== "gestartet") return { fehler: "Diese Einheit läuft nicht mehr." };
   const student = repo.getStudent(unit.student_id);
   const skill = repo.getSkill(skillId);
   if (!student || !skill) return { fehler: "Diese Fähigkeit gibt es nicht." };
+  // without a package: the plan as it is now, before this exercise changes the data
+  const vorher = leseStand(unitId);
+  const plan = vorher.paket_id ? null : (vorher.plan ?? planDerEinheit(unitId));
   const w = generatorWahl(student.id, skill.id);
   let worksheetId = 0;
   try {
@@ -828,7 +840,16 @@ export async function sendeAusGenerator(unitId: number, skillId: string, teacher
     repo.deleteWorksheet(worksheetId);
     return { fehler: "Für diese Fähigkeit gibt es keine Aufgaben ohne KI. Bitte im Builder erstellen." };
   }
-  return { worksheetId, assignmentId: repo.assignWorksheet(worksheetId, student.id, "", unit.id) };
+  const assignmentId = repo.assignWorksheet(worksheetId, student.id, "", unit.id);
+  if (plan?.length) {
+    const schritt = plan.find((x) => x.id === schrittId) ?? plan.find((x) => x.skillId === skill.id) ?? null;
+    aendere(unitId, (cur) => {
+      if (cur.paket_id) return cur;
+      const neu = { ...cur, plan: cur.plan ?? plan };
+      return schritt ? { ...neu, gesendet: { ...cur.gesendet, [schritt.id]: [...(cur.gesendet[schritt.id] ?? []), worksheetId] } } : neu;
+    });
+  }
+  return { worksheetId, assignmentId };
 }
 
 // ---------- guided like a package step, without a package ----------

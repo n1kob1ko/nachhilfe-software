@@ -106,11 +106,15 @@ export type StartResult = { unit: UnitView; created: boolean };
  * Ein Platz wird **einmal** vergeben: sobald `unit_id` gesetzt ist, bietet `offenePlaetzeHeute` ihn
  * nicht mehr an, ein zweiter Start verknüpft ihn also nie erneut.
  *
+ * `platzId`: der Platz der Karte, auf der „Einheit starten“ getippt wurde (Heute). Ist er ein offener Platz dieses
+ * Schülers von heute, gilt genau er; sonst die Regel oben.
+ *
  * @returns die Id des verknüpften Platzes oder null, wenn keiner passte.
  */
-export function verknuepfeMitHeutigemPlatz(unit: Pick<Unit, "id" | "student_id" | "teacher_id">, at = Date.now()): number | null {
+export function verknuepfeMitHeutigemPlatz(unit: Pick<Unit, "id" | "student_id" | "teacher_id">, at = Date.now(), platzId: number | null = null): number | null {
   const now = new Date(at);
-  const eigener = offenePlaetzeHeute(unit.student_id, { teacherId: unit.teacher_id, now })[0];
+  const gewaehlt = platzId === null ? undefined : offenePlaetzeHeute(unit.student_id, { now }).find((p) => p.id === platzId);
+  const eigener = gewaehlt ?? offenePlaetzeHeute(unit.student_id, { teacherId: unit.teacher_id, now })[0];
   const platz = eigener ?? offenePlaetzeHeute(unit.student_id, { now })[0];
   if (!platz) return null;
   return verknuepfePlatz(platz.id, unit.id).ok ? platz.id : null;
@@ -132,7 +136,7 @@ export function platzFuerEinheit(unit: Pick<Unit, "id" | "started_at">): Geplant
  * never take a second planned slot (D17). The partial unique index idx_units_running guarantees
  * this even for two requests arriving at the same time.
  */
-export function startUnit(teacherId: number, studentId: number, opts: { at?: number; subject?: string } = {}): StartResult {
+export function startUnit(teacherId: number, studentId: number, opts: { at?: number; subject?: string; platzId?: number | null } = {}): StartResult {
   const at = opts.at ?? Date.now();
   const running = runningUnitForStudent(studentId);
   if (running) return { unit: running, created: false };
@@ -141,8 +145,8 @@ export function startUnit(teacherId: number, studentId: number, opts: { at?: num
       .prepare("INSERT INTO units (teacher_id, student_id, subject, status, started_at, last_activity_at) VALUES (?, ?, ?, 'gestartet', ?, ?)")
       .run(teacherId, studentId, opts.subject ?? "", iso(at), iso(at));
     const unit = getUnit(Number(res.lastInsertRowid))!;
-    // D17: die Einheit nimmt sich ihren heutigen Platz im Wochenplan, wenn es einen gibt
-    verknuepfeMitHeutigemPlatz(unit, at);
+    // D17: die Einheit nimmt sich ihren heutigen Platz im Wochenplan, wenn es einen gibt (den der Karte, wenn genannt)
+    verknuepfeMitHeutigemPlatz(unit, at, opts.platzId ?? null);
     return { unit, created: true };
   } catch (e) {
     const again = (e as { code?: string }).code === "SQLITE_CONSTRAINT_UNIQUE" ? runningUnitForStudent(studentId) : null;

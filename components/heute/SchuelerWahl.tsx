@@ -14,7 +14,7 @@ export function SchuelerWahl({ students, offen, label = "Anderen Schüler starte
     <ul className="mt-3 grid gap-2 sm:grid-cols-2">
       {students.slice(0, 8).map((s) => (
         <li key={s.id}>
-          <form action={startUnitAction.bind(null, s.id)}>
+          <form action={startUnitAction.bind(null, s.id, null)}>
             <button className="panel flex min-h-[60px] w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:border-line-strong" aria-label={`Einheit mit ${s.name} starten`}>
               <Avatar name={s.name} size={40} />
               <span className="min-w-0 flex-1">
