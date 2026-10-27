@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { currentTaskToBoardAction, type SendState } from "@/app/device-actions";
 import { entscheide, erstelleAnpassungen } from "@/lib/anpassen";
+import { erklaereAusfuehrlich, schulstufeVon } from "@/lib/ausfuehrlich";
 import { requireTeacher } from "@/lib/auth";
 import {
   bereiteVor,
@@ -118,6 +119,19 @@ export async function sendeSchrittAction(unitId: number, schrittId: number, _pre
 export async function sendeGeneratorAction(unitId: number, skillId: string, schrittId: number | null, _prev: SendState, _form?: FormData): Promise<SendState> {
   const { t } = await laufendeEinheit(unitId);
   return aufsGeraet(unitId, await sendeAusGenerator(unitId, skillId, t.id, Number.isInteger(schrittId) ? schrittId : null));
+}
+
+/**
+ * „Ausführlicher erklären“ (lib/ausfuehrlich.ts): der längere Lehrertext zur Fähigkeit des Planschritts, gespeichert oder auf
+ * diesen Tipp von der KI. Danach zeigt der Unterricht ihn offen; geht es nicht, steht der Grund oben.
+ */
+export async function ausfuehrlichAction(unitId: number, schrittId: number) {
+  const { t, unit } = await laufendeEinheit(unitId);
+  const schritt = cockpit(unitId, { mitPlan: true }).plan.find((s) => s.id === schrittId);
+  const student = repo.getStudent(unit.student_id);
+  const out = schritt?.skillId && student ? await erklaereAusfuehrlich(schritt.skillId, schulstufeVon(student), t.id) : { ok: false as const, error: "Zu diesem Schritt gibt es keine Fähigkeit." };
+  revalidatePath(`/einheiten/${unitId}`);
+  redirect(out.ok ? `/einheiten/${unitId}?ausfuehrlich=${schrittId}` : `/einheiten/${unitId}?cockpit=${encodeURIComponent(out.error)}`);
 }
 
 /** Der Tag einer Vorbereitung aus dem Formular: heute bis in sieben Tagen, sonst heute. */

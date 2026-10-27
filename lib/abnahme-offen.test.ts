@@ -103,7 +103,7 @@ test("a plan step without a package says the skill's explanation and asks the fi
   assert.deepEqual(cockpit.planFuehrung(unit.id, sa), f);
   // a step without skill or exercise (Einstieg) has nothing to ask
   const einstieg = plan.find((s) => !s.skillId && !s.uebung)!;
-  assert.deepEqual(cockpit.planFuehrung(unit.id, einstieg), { sagt: null, fragt: null, antwort: null });
+  assert.deepEqual(cockpit.planFuehrung(unit.id, einstieg), { sagt: null, zeigt: null, fragt: null, antwort: null });
 });
 
 test("frageText and antwortText: choices with letters, the start of a calculation, the accepted answer", async () => {

@@ -832,6 +832,31 @@ CREATE TABLE IF NOT EXISTS einheit_anpassungen (
   decided_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_einheit_anpassungen ON einheit_anpassungen(unit_id, status);
+-- Die nächste Übung bereit (lib/cockpit.ts haltBereit, 2026-10-27): die Aufgaben, die ein Schritt des Plans senden wird, schon
+-- vorher gebaut (Generator, ohne KI), damit „Passende Übungen senden“ sofort geht. Höchstens für den Schritt auf dem Schirm und den
+-- nächsten mit Übung. Nie beim Schüler: erst das Senden macht daraus eine Übung. schluessel = woraus sie gebaut ist (Schritt,
+-- Fähigkeit, Stufe, Anzahl, Seed); passt er nicht mehr (der Plan hat sich geändert), wird neu gebaut. aufgaben: JSON der Aufgaben.
+CREATE TABLE IF NOT EXISTS einheit_bereit (
+  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  schritt_id INTEGER NOT NULL,
+  schluessel TEXT NOT NULL,
+  aufgaben TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (unit_id, schritt_id)
+);
+-- „Ausführlicher erklären“ im Unterricht (lib/ausfuehrlich.ts, 2026-10-27): der längere Lehrertext der KI zu einer Fähigkeit und
+-- Schulstufe, ohne Daten eines Schülers; gilt für jeden Schüler, bis sich die Fassung des Prompts ändert. inhalt: JSON (sagt,
+-- beispiel, frage, antwort, fehler), schon von der App geprüft.
+CREATE TABLE IF NOT EXISTS ki_erklaerungen (
+  skill_id TEXT NOT NULL,
+  schulstufe INTEGER NOT NULL,
+  fassung TEXT NOT NULL,
+  inhalt TEXT NOT NULL,
+  call_id INTEGER REFERENCES ai_calls(id) ON DELETE SET NULL,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (skill_id, schulstufe, fassung)
+);
 -- Gespeicherte Antworten der KI (lib/ai/speicher.ts): dieselbe Anfrage (Funktion, Anbieter, Modell, vollständiger
 -- Prompt, Schüler) wird bis expires_at aus der Datenbank beantwortet, auch nach einem Neustart. key = sha256 davon.
 -- created_at, expires_at: Millisekunden. Ein gelöschter Schüler nimmt seine gespeicherten Antworten mit.
@@ -1413,6 +1438,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // {Schritt-Id: Wert}); steuerung = worauf schon reagiert wurde und das Zeichen des Lehrers (JSON; null bei alten Zeilen)
   ["einheit_cockpit", "antworten", "TEXT NOT NULL DEFAULT '{}'"],
   ["einheit_cockpit", "steuerung", "TEXT"],
+  // Zeit passt sich an (lib/stundenplan.ts neuTakten, 2026-10-27): der Rest des Plans nach der echten Zeit neu getaktet, beim
+  // Weitergehen (JSON {minuten, ab, verschoben}; null = wie geplant)
+  ["einheit_cockpit", "takt", "TEXT"],
   // Vorbereitung automatisch (lib/briefing.ts, 2026-10-25): ein Briefing gilt je Schüler und Datenstand (`stand`), auch an
   // späteren Tagen; daten = die Fassung aus den Daten und der Schwerpunkt, auf denen die KI-Fassung beruht (JSON; null bei alten Zeilen)
   ["briefings", "daten", "TEXT"],

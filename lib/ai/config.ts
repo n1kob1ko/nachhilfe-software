@@ -84,6 +84,7 @@ export type AIFunction =
   | "tiefenanalyse"
   | "notiz"
   | "anpassen"
+  | "ausfuehrlich"
   | "material"
   | "stundenplan"
   | "stoffzettel"
@@ -148,6 +149,10 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   notiz: { label: "Notiz für Eltern/Schüler", area: "ANALYSIS", tier: "standard", maxTokens: 1_000, timeoutMs: 30_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   // „Anpassen“ im Cockpit (lib/anpassen.ts): only on the teacher's click, about 3 cents; suggestions for this unit only
   anpassen: { label: "Anpassen im Cockpit", area: "EXERCISE", tier: "standard", maxTokens: 3_000, timeoutMs: 60_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 60 * MIN, cache: "aus" },
+  // „Ausführlicher erklären“ im Unterricht (lib/ausfuehrlich.ts): only on the teacher's click, about 1 cent; a longer teacher script
+  // for a skill and Schulstufe, never with student data. The app keeps the answer per skill, Schulstufe and prompt version for every
+  // student, so the router keeps nothing
+  ausfuehrlich: { label: "Ausführlicher erklären", area: "EXERCISE", tier: "standard", maxTokens: 1_800, timeoutMs: 45_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   material: { label: "Material erkennen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // Stundenplan-Fotos (lib/planung/stundenplan-foto.ts): only on the admin's click, after the tick that first names
   // may go to the KI; the answer holds first names, so it is never kept for reuse

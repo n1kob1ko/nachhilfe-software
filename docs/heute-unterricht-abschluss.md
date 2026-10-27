@@ -19,7 +19,8 @@ bestätigen“. Die Navigation markiert auf einer laufenden Einheit „Unterrich
 Der geführte Unterricht (`components/cockpit/Ablauf.tsx`): Kopf mit Name, Fach, Restzeit, „Einheit beenden“ und bei
 zwei Schülern zugleich einem Umschalter. Darunter eine Gerätezeile (falsche Antworten rot, auf Tippen alle Details und
 „Gerät verbinden“), die Schritte als Punkte und eine Karte mit dem Schritt: „Schritt x von n · Minute a–b“, Das sagst du,
-Das zeigst du (Folie, „Vortrag öffnen“), Das fragst du, Erwartete Antwort, „Übung senden“ und drei Knöpfe:
+Das zeigst du (Folie, „Vortrag öffnen“), Das fragst du, Erwartete Antwort, „Passende Übungen senden“, zugeklappt
+„Lösung · typische Fehler · Hintergrund“ und drei Knöpfe:
 
 - **Weiter**: Schritt erledigt, der nächste offene kommt.
 - **Wiederholen**: zählt mit (`einheit_cockpit.wiederholt`), der Schritt bleibt. Beim Beenden steht er unter „Wiederholen“.
@@ -42,7 +43,7 @@ niko 27.10.2026; ohne KI, mit der KI aus derselbe Plan):
   nicht als schwach), steht vor dem Thema ein kurzer Block „Grundlage: …“ aus seinen Minuten. Ist die Voraussetzung
   selbst ein Thema von heute, kommt dieses Thema zuerst.
 - **Je Thema:** Erklären → Üben (Bestand, sonst Generator) → **Lernkontrolle** (3 Aufgaben, ein Versuch, ohne Hilfen;
-  danach Richtig / Teilweise / Falsch). Dazu ein kurzer Einstieg (mit der offenen Hausübung) und der Abschluss. Die
+  danach Richtig / Teilweise / Falsch; bei einer Schreibaufgabe „Schreibauftrag starten“ bzw. der laufende Text). Dazu ein kurzer Einstieg (mit der offenen Hausübung) und der Abschluss. Die
   Minuten der Themen nach Rang (4 : 3 : 2), zusammen genau die Dauer.
 - **Geprüfte Lernpakete zuerst:** passt ein geprüftes Paket zum Thema (Fach, Schulart, Stufe, Fähigkeit), sind seine
   Schritte der Block des Themas, die Minuten auf die des Themas gebracht (50 Minuten Paket in 35 Minuten). Jeder Schritt
@@ -55,6 +56,28 @@ oder mit „Einheit vorbereiten“), gilt wie bisher genau dieses Paket. Über d
 und Minuten („Past Simple 35 · E-Mail 30 · Tagesablauf 20“); antippen öffnet die Schritte. In der Karte steht das
 Thema über dem Titel. Sind alle Schritte durch, kommt „Alles durch“ mit „Einheit beenden“.
 
+**Lehrertext ohne Paket** (niko 27.10.2026, ohne KI): „Das sagst du“ ist die ganze Erklärung der Fähigkeit; die ersten
+zwei, drei Sätze stehen da, der Rest unter „Mehr“. „Das zeigst du“ ist ein durchgerechnetes Beispiel aus einer echten
+Aufgabe des Schritts (Aufgabe und Lösung), „Das fragst du“ und „Erwartete Antwort“ eine andere. Ist der Text dünn,
+gibt es **„Ausführlicher erklären · ca. 1 Cent“** (nur Lehrer, `lib/ausfuehrlich.ts`): eine Anfrage an die KI mit
+Fähigkeit, Fach, Schulstufe und typischen Fehlern, ohne Schülerdaten. Die Antwort (längerer Text, Beispiel, Frage mit
+Antwort, zwei typische Fehler) wird geprüft (in Mathematik jede Rechenzeile; was falsch ist, fällt weg) und je
+Fähigkeit, Schulstufe und Fassung des Prompts gespeichert (`ki_erklaerungen`): jeder weitere Schüler dieser Stufe
+kostet nichts. Ohne KI fehlt der Knopf, bei aufgebrauchtem Budget sagt er warum.
+
+**Die nächste Übung bereit:** beim Zeigen eines Schritts baut die App die Übung des nächsten Übungs- oder
+Kontrollschritts schon aus den Generatoren (ohne KI, `haltBereit`), nie weiter voraus. Sie liegt nur in
+`einheit_bereit`, nie als Übung; der Schüler sieht sie erst nach dem Senden, dann geht genau sie hinaus. Ändert sich
+der Plan oder die Stufe, wird sie neu gebaut.
+
+**Die Zeit passt sich an:** bei jedem Weiter, Überspringen oder Springen taktet die App den Rest neu
+(`neuTakten`): Rest = weniger von „bis zum Ende des Platzes“ und „geplante Minuten − vergangen“, nie mehr als der Plan.
+Erledigte Schritte bleiben, das Thema auf dem Schirm behält seine Minuten, spätere Themen werden im Verhältnis kürzer
+(in 5-Minuten-Schritten), eine Lernkontrolle behält mindestens 5 Minuten. Fiele ein Thema unter 10 Minuten, kommt es
+auf **„Nächstes Mal“** (eine Zeile unter den Themen); seine Schritte gelten als nicht erreicht und stehen im Abschluss
+unter „Weiter mit“. Öffnet die Lehrkraft einen seiner Schritte, kommt es zurück. „Minute a–b“ folgt dem neuen Takt.
+Ein selbst gewähltes Lernpaket behält seine Minuten.
+
 Die Einheit einer anderen Lehrkraft ist nur zum Lesen da (Übungen und Fortschritt, kein Beenden).
 
 ### Textarbeit im Ablauf
@@ -65,7 +88,7 @@ Wortzahl und Quelle („Vorgefüllt aus deiner Vorgabe für heute“). Er führt
 Oberstufe/HTL (Textinterpretation, Erörterung …) zum Schreibauftrag mit Textbeilage und der Prüfung vorgewählt, bei der
 Bildgeschichte zu ihr. Vor dem Start lässt sich alles ändern. Im Schritt „Schularbeit vorbereiten“ (im Plan für die
 ganze Einheit: Üben zu einem Thema der nahen Prüfung) steht die Schreibaufgabe der Prüfung als zweiter Knopf neben
-„Übung senden“.
+„Passende Übungen senden“.
 
 Jede laufende Textarbeit der Einheit hat oben eine Zeile mit Stand und genau einem nächsten Schritt: schreibt (Öffnen
 oder Mitlesen, ohne Gerät auch „Vom Foto“) · abgegeben (Korrigieren) · Bewertung offen (Bewertung übernehmen) ·
