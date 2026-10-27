@@ -325,7 +325,8 @@ export function TaskBody({ task, showSolution, skillName, subject, passageShown 
             </div>
           )}
           {task.type === "rechenweg" && (task.answer.accepted?.length ?? 0) > 1 && <p className="text-[13px] text-ink-2">Auch richtig: {task.answer.accepted!.slice(1).join(" · ")}</p>}
-          {task.solution && <p className="mt-1 whitespace-pre-line text-ink-2"><MathText text={task.solution} /></p>}
+          {/* an own Probeschularbeit keeps its Musterlösung as both: shown once */}
+          {task.solution && !(task.answer.sample && !answerText(task) && task.solution.trim() === task.answer.sample.trim()) && <p className="mt-1 whitespace-pre-line text-ink-2"><MathText text={task.solution} /></p>}
           <LehrerDaten task={task} teil="weg" />
           {task.hints.length > 0 && (
             <ul className="mt-2 space-y-0.5 text-[13px] text-ink-2">

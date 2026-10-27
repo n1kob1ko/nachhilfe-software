@@ -159,7 +159,7 @@ test("„Übernehmen“: yellow rows block; checked, the answers go to the SAME 
   assert.deepEqual(tasks.map((t) => attempts.find((a) => a.task_id === t.id)!.review), ["richtig", "teilweise", "falsch", "richtig"]);
   assert.ok(s.repo.getAssignment(asg)!.completed_at, "done: it leaves the student's device");
   const [p] = s.p.papierDerEinheit(s.unit.id);
-  assert.deepEqual(p, { titel: "Brüche und Gleichungen", von: 4, richtig: 2, teilweise: 1, punkte: 5, max: 8, unsicher: 2 });
+  assert.deepEqual(p, { titel: "Brüche und Gleichungen", von: 4, richtig: 2, teilweise: 1, punkte: 5, max: 8, unsicher: 2, assignmentId: asg });
   const { papierZeile } = await import("./blatt-regeln");
   assert.equal(papierZeile(p), "Auf Papier: Übung „Brüche und Gleichungen“ 5 von 8 Punkten, 2 unsicher geprüft");
   assert.match((await import("./materials")).getMaterial(m)!.title, /Brüche und Gleichungen/, "the page is named after the sheet");

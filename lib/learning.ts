@@ -141,8 +141,9 @@ export function buildUnitReport(unit: UnitView, now = Date.now()): UnitReport {
     const assignment = repo.getAssignment(first.assignment_id);
     if (!task || !assignment) continue;
     if (!worksheets.has(assignment.worksheet_id)) worksheets.set(assignment.worksheet_id, repo.getWorksheet(assignment.worksheet_id)!);
-    // the short Lernkontrolle of a topic runs like a Minitest but is none (lib/cockpit.ts `sendeAusGenerator`)
-    if (isMinitest(assignment.mode) && assignment.note !== LERNKONTROLLE) tests.set(assignment.id, assignment.worksheet_id);
+    // the short Lernkontrolle of a topic runs like a Minitest but is none (lib/cockpit.ts `sendeAusGenerator`); neither is a
+    // Probeschularbeit written in the unit (its own line in the Abschluss, lib/abschluss.ts)
+    if (isMinitest(assignment.mode) && assignment.note !== LERNKONTROLLE && !worksheets.get(assignment.worksheet_id)?.probe_test_id) tests.set(assignment.id, assignment.worksheet_id);
     const ws = worksheets.get(assignment.worksheet_id)!;
     const final = list.find((a) => a.final) ?? null;
     const hints = Math.max(...list.map((a) => a.hints_used));

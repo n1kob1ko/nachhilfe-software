@@ -122,6 +122,8 @@ export type TaskDraft = {
     /** Artikel-Aufgaben: das Genus des Nomens (m = maskulin, f = feminin, n = neutral), damit die Oberfläche
      *  es färben kann (D10, components/genus.ts). Die Farbe ist nie das einzige Signal. */
     genus?: "m" | "f" | "n";
+    /** Eigene Probeschularbeit (lib/probe-extern.ts): die Nummer wie auf dem Blatt („1a“), für „Arbeit fotografieren“. */
+    nummer?: string;
     /** Vokabeltrainer: a key of the asked word that does not show it (lib/vokabeln.ts wortSchluessel); one word once on a sheet. */
     wort?: string;
     /** Aufgabe mit Bild: Zahlenstrahl, Koordinatensystem oder Figur (lib/figur.ts). Die Antwort steht

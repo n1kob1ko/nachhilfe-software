@@ -13,7 +13,8 @@ import { canManageUnit, getUnit } from "@/lib/units";
 export const metadata = { title: "Arbeit fotografieren" };
 
 const uhr = (s: string) => new Date(parseTime(s)).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Vienna" });
-const WANN: Record<PapierBlatt["art"], string> = { gesendet: "gesendet um", minitest: "Minitest, erstellt um", erstellt: "erstellt um" };
+const WANN: Record<PapierBlatt["art"], string> = { gesendet: "gesendet um", minitest: "Minitest, erstellt um", erstellt: "erstellt um", probe: "Probeschularbeit vom" };
+const tag = (s: string) => new Date(parseTime(s)).toLocaleDateString("de-AT", { day: "numeric", month: "short", timeZone: "Europe/Vienna" });
 
 /**
  * Arbeit fotografieren (lib/papier-einheit.ts) in a running unit: the sheet the student solved on paper (one of the unit,
@@ -55,7 +56,7 @@ export default async function PapierPage({ params, searchParams }: { params: Pro
         kiGrund={tor.erlaubt ? null : tor.grund}
         einheit={{
           unitId: unit.id,
-          blaetter: blaetter.map((b) => ({ key: b.key, titel: b.titel, wann: `${WANN[b.art]} ${uhr(b.am)}`, aufgaben: b.aufgaben, schonFertig: b.schonFertig })),
+          blaetter: blaetter.map((b) => ({ key: b.key, titel: b.titel, wann: `${WANN[b.art]} ${b.art === "probe" ? tag(b.am) : uhr(b.am)}`, aufgaben: b.aufgaben, schonFertig: b.schonFertig })),
           vorwahl: vor?.key ?? ANDERES_BLATT,
           kosten: tor.erlaubt ? tor.kosten : null,
           fach,

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarCheck, CalendarPlus, ChevronDown, ClipboardList, FileText, TriangleAlert } from "lucide-react";
+import { CalendarCheck, CalendarPlus, ChevronDown, ClipboardList, FileText, FileUp, TriangleAlert } from "lucide-react";
 import { unterlageSchrittAction } from "@/app/unterlagen-actions";
 import { bestaetigeVorgabeAction, entferneVorgabeAction, planAnpassenAction, pruefungAusVorgabeAction, rolleAendernAction, stoffZurPruefungAction } from "@/app/vorgabe-actions";
 import { RolleWahl } from "@/components/cockpit/RolleWahl";
@@ -58,8 +58,9 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
           <span className="text-[13.5px] text-ink-3">optional</span>
           <ChevronDown size={16} className="ml-auto text-ink-3 transition-transform group-open:rotate-180" aria-hidden />
         </summary>
-        <div className="pb-4">
+        <div className="grid gap-3 pb-4">
           <VorgabeForm unitId={unit.id} tests={tests} material={material} kiLiest={kiLiest} />
+          <EigeneProbe unit={unit} heute={heute} />
         </div>
       </details>
     );
@@ -272,7 +273,37 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
           </form>
         </div>
         {!v.angewendet && begonnen && <p className="text-[12.5px] text-ink-3">Du hast schon begonnen, darum ist der Ablauf noch der alte. „Plan anpassen“ fängt nach der Vorgabe von vorne an; Notizen bleiben.</p>}
+        <EigeneProbe unit={unit} heute={heute} />
       </div>
     </details>
+  );
+}
+
+/**
+ * „Eigene Probeschularbeit hochladen“ (lib/probe-extern.ts): Angabe und Musterlösung zu einer eingetragenen Schularbeit des
+ * Schülers, im Fach der Einheit zuerst. Ohne eingetragene Schularbeit nur der Hinweis; eine Prüfung entsteht hier nie von selbst.
+ */
+function EigeneProbe({ unit, heute }: { unit: UnitView; heute: string }) {
+  const alle = repo.upcomingTests(heute, unit.student_id);
+  const tests = [...alle.filter((t) => !unit.subject || t.subject === unit.subject), ...alle.filter((t) => unit.subject && t.subject !== unit.subject)].slice(0, 3);
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-line pt-3 text-[14px]" data-testid="vorgabe-eigene-probe">
+      <FileUp size={16} className="shrink-0 text-ink-2" aria-hidden />
+      <span className="font-medium">Eigene Probeschularbeit hochladen</span>
+      {tests.length ? (
+        tests.map((t) => (
+          <Link key={t.id} href={`/schueler/${unit.student_id}/pruefung/${t.id}/eigene?einheit=${unit.id}`} className="inline-flex min-h-[44px] items-center font-semibold text-accent hover:underline">
+            zu {t.title || `${t.kind} ${t.subject}`} am {tagMonat(t.date)}
+          </Link>
+        ))
+      ) : (
+        <span className="text-ink-3">
+          gehört zu einer Schularbeit.{" "}
+          <Link href={`/schueler/${unit.student_id}?tab=schule`} className="inline-flex min-h-[44px] items-center font-semibold text-accent hover:underline">
+            Zuerst im Profil eintragen
+          </Link>
+        </span>
+      )}
+    </div>
   );
 }

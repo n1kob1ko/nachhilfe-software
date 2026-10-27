@@ -28,6 +28,7 @@ import { readReport, type TaskLine } from "./learning";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
 import { papierDerEinheit } from "./papier-einheit";
 import { praesentationenDerEinheit } from "./praesentation-unterricht";
+import { ergebnis } from "./probeschularbeit";
 import { unterlagenDerEinheit } from "./unterlagen-unterricht";
 import { LERNKONTROLLE } from "./quick-round";
 import * as repo from "./repo";
@@ -104,6 +105,8 @@ export type AufgabeBeleg = Pick<TaskLine, "assignmentId" | "skillId" | "skill" |
  * - `unterlagen`: mitgebrachte Unterlagen, die im Unterricht bei einem Schritt geöffnet wurden (lib/unterlagen-unterricht.ts)
  * - `papier`: auf Papier gelöste Übungen, fotografiert und von der Lehrkraft übernommen (lib/papier-einheit.ts); ihre Antworten
  *   stehen auch unter `aufgaben` wie am Gerät
+ * - `proben`: Probeschularbeiten, die in der Einheit geschrieben wurden, am Gerät oder auf Papier (lib/probeschularbeit.ts
+ *   `ergebnis`): Punkte und, wenn alles bewertet ist, die Note nach dem Notenschlüssel; sie ersetzen dort die Papier-Zeile
  */
 export type AbschlussBelege = {
   aufgaben: AufgabeBeleg[];
@@ -119,7 +122,18 @@ export type AbschlussBelege = {
   praesentationen?: string[];
   unterlagen?: string[];
   papier?: PapierErgebnis[];
+  proben?: ProbeZeile[];
 };
+
+/** Eine Probeschularbeit der Einheit: Punkte, Note erst wenn alles bewertet ist, sonst wie viel noch offen ist. */
+export type ProbeZeile = { titel: string; erreicht: number; gesamt: number; note: string | null; offen: number; bearbeitet: number; aufgaben: number; papier: boolean };
+
+const punkteZahl = (p: number) => (Number.isInteger(p) ? String(p) : p.toFixed(1).replace(".", ","));
+/** „Probeschularbeit „Brüche“ auf Papier: 18 von 24 Punkten, Note 2 (Gut)“ */
+export function probeZeile(p: ProbeZeile): string {
+  const rest = p.note ? `, Note ${p.note}` : p.offen ? `, noch ${p.offen} zu bewerten` : p.bearbeitet < p.aufgaben ? ` (${p.bearbeitet} von ${p.aufgaben} Aufgaben)` : "";
+  return `Probeschularbeit „${p.titel}“${p.papier ? " auf Papier" : ""}: ${punkteZahl(p.erreicht)} von ${punkteZahl(p.gesamt)} Punkten${rest}`;
+}
 
 /** „Gut verstanden“, Regel 1: so viele Aufgaben einer Fähigkeit im ersten Versuch ohne Hilfe richtig, keine falsche Antwort. */
 export const GUT_ERSTER_VERSUCH = 3;
@@ -270,6 +284,8 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   for (const t of belege?.unterlagen ?? []) gemacht.push(a(`Unterlage gezeigt: ${t}`));
   // paper work only after the teacher took it over, with how many unsure rows she checked
   for (const p of belege?.papier ?? []) gemacht.push({ text: papierZeile(p), von: "papier" });
+  // a Probeschularbeit with its points and, only when everything is graded, its grade
+  for (const p of belege?.proben ?? []) gemacht.push({ text: probeZeile(p), von: p.papier ? "papier" : "antworten" });
 
   // only what the rules show as secure (`gutVerstanden`), or what the teacher wrote; a step marked „Weiter“ proves nothing
   const regeln = belege ? gutVerstanden(belege) : null;
@@ -404,8 +420,27 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
 
   const praesentationen = praesentationenDerEinheit(unitId).map((p) => p.title);
   const unterlagen = unterlagenDerEinheit(unitId).map((u) => u.titel);
-  const papier = papierDerEinheit(unitId);
-  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier };
+  // Probeschularbeiten written in the unit, on the device or on paper: one line with points and grade instead of the paper line
+  const probeIds = db()
+    .prepare(
+      `SELECT a.id, w.title, EXISTS (SELECT 1 FROM papier_arbeiten p WHERE p.assignment_id = a.id AND p.unit_id = ?) AS papier
+       FROM assignments a JOIN worksheets w ON w.id = a.worksheet_id
+       WHERE w.probe_test_id IS NOT NULL AND (a.unit_id = ? OR a.id IN (SELECT assignment_id FROM papier_arbeiten WHERE unit_id = ?)) ORDER BY a.id`,
+    )
+    .all(unitId, unitId, unitId) as { id: number; title: string; papier: number }[];
+  const first = student?.name.split(" ")[0] ?? "";
+  const proben = probeIds.flatMap((r): ProbeZeile[] => {
+    const e = ergebnis(r.id);
+    if (!e || !e.bearbeitet) return [];
+    const titel = (first && r.title.startsWith(`${first} – `) ? r.title.slice(first.length + 3) : r.title).replace(
+      /^Probeschularbeit: /,
+      "",
+    );
+    return [{ titel, erreicht: e.erreicht, gesamt: e.gesamt, note: e.note ? `${e.note.note} (${e.note.label})` : null, offen: e.offen, bearbeitet: e.bearbeitet, aufgaben: e.aufgaben, papier: Boolean(r.papier) }];
+  });
+  const mitProbe = new Set(probeIds.map((r) => r.id));
+  const papier = papierDerEinheit(unitId).filter((p) => !p.assignmentId || !mitProbe.has(p.assignmentId));
+  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier, proben };
 }
 
 /** Die Karte einer beendeten Einheit mit allen Belegen, wie der Abschluss sie zeigt und „Bestätigen“ sie schreibt. */
