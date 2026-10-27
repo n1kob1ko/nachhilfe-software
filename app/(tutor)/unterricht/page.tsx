@@ -66,7 +66,7 @@ export default async function UnterrichtPage() {
               {karte.thema}
             </p>
           )}
-          <form action={startUnitAction.bind(null, student.id)}>
+          <form action={startUnitAction.bind(null, student.id, null)}>
             <button className="btn btn-primary btn-lg w-full sm:w-auto">
               <Play size={18} aria-hidden /> Einheit starten
             </button>

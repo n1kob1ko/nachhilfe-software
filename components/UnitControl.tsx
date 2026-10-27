@@ -13,7 +13,7 @@ export async function UnitControl({ student, size = "lg" }: { student: Student; 
   const cls = size === "lg" ? "btn-lg" : "";
   if (!unit) {
     return (
-      <form action={startUnitAction.bind(null, student.id)}>
+      <form action={startUnitAction.bind(null, student.id, null)}>
         <button className={`btn btn-primary ${cls}`}>
           <Play size={size === "lg" ? 18 : 15} aria-hidden /> Einheit starten
         </button>
