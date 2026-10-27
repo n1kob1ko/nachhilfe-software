@@ -4,6 +4,7 @@ import { unterlageSchrittAction } from "@/app/unterlagen-actions";
 import { bestaetigeVorgabeAction, entferneVorgabeAction, planAnpassenAction, pruefungAusVorgabeAction, rolleAendernAction, stoffZurPruefungAction } from "@/app/vorgabe-actions";
 import { RolleWahl } from "@/components/cockpit/RolleWahl";
 import { VorgabeForm } from "@/components/cockpit/VorgabeForm";
+import { ZuordnungWahl } from "@/components/cockpit/ZuordnungWahl";
 import { Pill } from "@/components/ui";
 import { aiEnabled, aiReadsImages } from "@/lib/ai";
 import { hatBegonnen, type CockpitDaten } from "@/lib/cockpit";
@@ -188,18 +189,7 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
             {unklar.map(({ x, i }) => (
               <fieldset key={i} className="grid gap-1.5">
                 <legend className="text-[14px] font-medium">{x.inhalt}</legend>
-                <div className="flex flex-wrap gap-1.5">
-                  {x.vorschlaege.map((sid) => (
-                    <label key={sid} className="flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[13.5px] has-checked:border-accent has-checked:bg-accent-wash">
-                      <input type="checkbox" name={`zuordnung_${i}`} value={sid} defaultChecked={x.vorauswahl === sid} className="shrink-0 accent-[var(--accent)]" />
-                      <span>{skillName(sid)}</span>
-                    </label>
-                  ))}
-                  <label className="flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[13.5px] has-checked:border-accent has-checked:bg-accent-wash">
-                    <input type="checkbox" name={`zuordnung_${i}`} value="" className="shrink-0 accent-[var(--accent)]" />
-                    <span>Keine passt</span>
-                  </label>
-                </div>
+                <ZuordnungWahl name={`zuordnung_${i}`} vorschlaege={x.vorschlaege.map((sid) => ({ id: sid, name: skillName(sid) }))} vorauswahl={x.vorauswahl} />
               </fieldset>
             ))}
             <div>

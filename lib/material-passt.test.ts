@@ -332,6 +332,30 @@ test("3: confirmed before the lesson began, the topic keeps the sheet's place in
   s.aus();
 });
 
+test("3: „Keine passt“ beside a preselected suggestion wins: no skill, the block goes (two points: 3 taps, not 5)", async () => {
+  const s = await mitBlatt();
+  const v = s.vg.vorgabeDerEinheit(s.unit.id)!;
+  const unklar = v.punkte.flatMap((p, i) => (p.zuordnung === "unklar" ? [i] : []));
+  assert.ok(unklar.length >= 1);
+  assert.equal(v.punkte[unklar[0]].vorauswahl, PAST, "Past Simple is ticked already");
+  // what the form sends when the teacher only ticks „Keine passt“ at each point and taps „Bestätigen“: the preselection
+  // stays ticked beside it (without JavaScript the box is not unticked); one tap per point plus „Bestätigen“
+  const wahl = new Map(unklar.map((i) => [i, [...(v.punkte[i].vorauswahl ? [v.punkte[i].vorauswahl!] : []), null]]));
+  assert.ok(s.vg.bestaetigeVorgabe(s.unit.id, wahl, s.teacher.id));
+  const danach = s.vg.vorgabeDerEinheit(s.unit.id)!;
+  for (const i of unklar) assert.equal(danach.punkte.find((p) => p.original === v.punkte[i].original)?.keinePasst, true, v.punkte[i].inhalt);
+  assert.ok(!danach.skillIds.includes(PAST), "no Past Simple from the preselection");
+  const plan = s.c.planDerEinheit(s.unit.id);
+  assert.equal(plan.some((x) => x.vorlaeufig || x.skillId === PAST), false, plan.map((x) => x.titel).join(" | "));
+  // a skill alone still counts
+  const t = await mitBlatt();
+  const j = t.vg.vorgabeDerEinheit(t.unit.id)!.punkte.findIndex((p) => p.inhalt === "Past Simple");
+  assert.ok(t.vg.bestaetigeVorgabe(t.unit.id, new Map([[j, [PAST]]]), t.teacher.id));
+  assert.ok(t.vg.vorgabeDerEinheit(t.unit.id)!.skillIds.includes(PAST));
+  s.aus();
+  t.aus();
+});
+
 // ---------- 4 writing before spelling ----------
 
 test("4: for „Writing“ the kinds of text come before spelling, with and without KI", async () => {

@@ -59,8 +59,8 @@ test("without KI „Gleichungen mit negativen Zahlen“ offers candidates for ea
   assert.ok(gl.vorschlaege.every((id) => id.startsWith("mathe.gleichungen.")), gl.vorschlaege.join(", "));
   assert.ok(neg.vorschlaege.includes("mathe.negativ.addieren"), `negative Zahlen: ${neg.vorschlaege.join(", ")}`);
 
-  // two for „Gleichungen“, one for „negativen Zahlen“
-  assert.ok(vg.bestaetigeVorgabe(unit.id, new Map([[0, ["mathe.gleichungen.einfach", "mathe.gleichungen.text"]], [1, ["mathe.negativ.addieren", null]]]), teacher.id));
+  // two for „Gleichungen“, one for „negativen Zahlen“ (with „Keine passt“ beside it, it would be none: see the next test)
+  assert.ok(vg.bestaetigeVorgabe(unit.id, new Map([[0, ["mathe.gleichungen.einfach", "mathe.gleichungen.text"]], [1, ["mathe.negativ.addieren"]]]), teacher.id));
   const danach = vg.vorgabeDerEinheit(unit.id)!;
   assert.deepEqual([...danach.skillIds].sort(), ["mathe.gleichungen.einfach", "mathe.gleichungen.text", "mathe.negativ.addieren"]);
   assert.equal(danach.punkte.filter((p) => p.inhalt === "Gleichungen").length, 2, "one point per chosen skill, same words");

@@ -295,8 +295,8 @@ function kontrolleSchritt(t: Thema): Roh {
   };
 }
 
-/** Die Schritte eines Themas, ihre Minuten zusammen genau die des Themas. */
-function themaSchritte(t: Thema, h: PlanHilfen): Roh[] {
+/** Die Schritte eines Themas, ihre Minuten zusammen genau die des Themas. `allein`: das einzige Thema der Einheit (`uebenRunden`). */
+function themaSchritte(t: Thema, h: PlanHilfen, allein = false): Roh[] {
   const mit = (teile: { w: number; s: Roh }[]) => {
     const min = verteileMinuten(
       teile.map((x) => x.w),
@@ -336,25 +336,52 @@ function themaSchritte(t: Thema, h: PlanHilfen): Roh[] {
   // a quarter each for Grundlage, Erklären and Lernkontrolle, at most 15, 15 and 10 minutes; the rest is practice
   const teil = (max: number) => Math.min(t.minuten / 4, max);
   const g = grundlage ? teil(15) : 0;
+  const k = teil(10);
+  const { erklaeren, ueben, runden } = uebenRunden(t.minuten - g, teil(15), k, allein);
+  const zweite = (r: number): { w: number; s: Roh }[] => [
+    { w: ueben, s: { titel: `Üben, ${r}. Runde: ${t.name}`, minuten: 0, beschreibung: "Neue Aufgaben. Wie schwer, richtet sich nach der Runde davor.", uebung: null, skillId: t.skillId, art: "ueben", thema: t.name, quelle: q } },
+    { w: k, s: { ...kontrolleSchritt(t), titel: `Lernkontrolle, ${r}. Runde: ${t.name}` } },
+  ];
   return mit([
     ...(grundlage ? [{ w: g, s: grundlage }] : []),
-    { w: teil(15), s: { titel: `Erklären: ${t.name}`, minuten: 0, beschreibung: t.warum, uebung: null, skillId: t.skillId, art: "erklaeren", thema: t.name, quelle: q } },
+    { w: erklaeren, s: { titel: `Erklären: ${t.name}`, minuten: 0, beschreibung: t.warum, uebung: null, skillId: t.skillId, art: "erklaeren", thema: t.name, quelle: q } },
     {
-      w: t.minuten - g - teil(15) - teil(10),
+      w: ueben,
       s: { titel: `Üben: ${t.name}`, minuten: 0, beschreibung: "Übung aus dem Bestand, sonst neue Aufgaben passend zum Lernstand.", uebung: h.uebung(t.skillId), skillId: t.skillId, art: "ueben", thema: t.name, quelle: q, ...(t.pruefung ? { pruefung: true } : {}) },
     },
-    { w: teil(10), s: kontrolleSchritt(t) },
+    { w: k, s: kontrolleSchritt(t) },
+    ...Array.from({ length: runden - 1 }, (_, i) => zweite(i + 2)).flat(),
   ]);
+}
+
+/** So lang ist ein Übungsschritt höchstens, wenn die Einheit nur ein Thema hat (Phase C: nicht 60 Minuten am Stück üben). */
+export const UEBEN_MAX = 25;
+
+/**
+ * Die Minuten von Erklären und Üben (je Runde) eines Themas mit `zeit` Minuten (ohne Grundlage), dazu die Zahl der Runden aus
+ * Üben und Lernkontrolle (`kontrolle` Minuten je Runde). Wie bisher eine Runde; nur bei einem einzigen Thema (`allein`) wird
+ * kein Üben länger als 25 Minuten: ein wenig mehr bekommt das Erklären (bis 15 Minuten), sonst kommt nach der Lernkontrolle
+ * eine weitere Runde Üben und Lernkontrolle. Zusammen immer genau `zeit`.
+ */
+export function uebenRunden(zeit: number, erklaeren: number, kontrolle: number, allein: boolean): { erklaeren: number; ueben: number; runden: number } {
+  const ueben = zeit - erklaeren - kontrolle;
+  if (!allein || ueben <= UEBEN_MAX) return { erklaeren, ueben, runden: 1 };
+  const mehr = ueben - UEBEN_MAX;
+  if (erklaeren + mehr <= 15) return { erklaeren: erklaeren + mehr, ueben: UEBEN_MAX, runden: 1 };
+  const frei = zeit - erklaeren;
+  const runden = Math.max(2, Math.ceil(frei / (UEBEN_MAX + kontrolle)));
+  return { erklaeren, ueben: (frei - runden * kontrolle) / runden, runden };
 }
 
 /**
  * Die Schritte eines bestätigten vorläufigen Blocks (lib/cockpit.ts `ersetzeVorlaeufige`): Erklären, Üben (neue Aufgaben aus den
- * Generatoren) und Lernkontrolle der Fähigkeit, zusammen genau die Minuten des Blocks. Ohne Ids.
+ * Generatoren) und Lernkontrolle der Fähigkeit, zusammen genau die Minuten des Blocks. Ohne Ids. `allein`: der Block ist das
+ * einzige Thema der Einheit (kein Üben länger als 25 Minuten, `uebenRunden`).
  */
-export function schritteZurFaehigkeit(skillId: string, minuten: number): Omit<PlanStep, "id">[] {
+export function schritteZurFaehigkeit(skillId: string, minuten: number, allein = false): Omit<PlanStep, "id">[] {
   const name = repo.getSkill(skillId)?.name ?? skillId;
   const t: Thema = { name, skillId, skillIds: [skillId], art: "vorgabe", warum: `Deine Vorgabe für heute: ${name}`, pruefung: false, paket: null, grundlage: null, minuten };
-  return themaSchritte(t, { uebung: () => null, schritte: () => [], einstieg: { beschreibung: "", hausuebung: null }, name: (id) => repo.getSkill(id)?.name ?? null, lernstand: () => null });
+  return themaSchritte(t, { uebung: () => null, schritte: () => [], einstieg: { beschreibung: "", hausuebung: null }, name: (id) => repo.getSkill(id)?.name ?? null, lernstand: () => null }, allein);
 }
 
 /** Der ganze Plan: Einstieg, die Themen, Abschluss; Ids negativ (-1, -2 …) wie jeder Plan ohne Lernpaket. */
@@ -373,7 +400,7 @@ export function bauePlan(themen: Thema[], minuten: number, h: PlanHilfen): PlanS
       thema: null,
       quelle: null,
     },
-    ...themen.flatMap((t) => themaSchritte(t, h)),
+    ...themen.flatMap((t) => themaSchritte(t, h, themen.length === 1)),
     { titel: "Abschluss", minuten: r.abschluss, beschreibung: "Kurz zusammenfassen, Hausübung festlegen, dokumentieren.", uebung: null, skillId: null, art: "abschluss", thema: null, quelle: null },
   ];
   return schritte.map((s, i) => ({ ...s, id: -(i + 1) }));

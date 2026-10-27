@@ -6,7 +6,7 @@ const tagMonat = (d: string) => `${Number(d.slice(8, 10))}.${Number(d.slice(5, 7
 
 /**
  * Mitgebrachte Unterlagen unter „Das zeigst du“ (lib/unterlagen-unterricht.ts): je Unterlage ein kleines Bild (Foto) oder „PDF“, der
- * Titel und „Öffnen“ zur Ansicht des Materials (nur für Lehrer). Öffnen wird vermerkt, damit der Abschluss es nennen kann.
+ * Titel und „Öffnen“ zur ruhigen Ansicht im Unterricht (nur lesen, nur für Lehrer). Öffnen wird vermerkt, damit der Abschluss es nennen kann.
  */
 export function UnterlagenListe({ unitId, schrittId, unterlagen }: { unitId: number; schrittId: number; unterlagen: Unterlage[] }) {
   return (
