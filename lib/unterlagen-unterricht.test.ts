@@ -137,6 +137,18 @@ test("unterlagenFuer: höchstens drei, die von heute zuerst, dann die neueste", 
   assert.deepEqual(unterlagenFuer(alle, ziel()).map((k) => k.materialId), [3, 4, 2]);
 });
 
+test("ein vorläufiger Block (Punkt der Vorgabe, noch zu bestätigen) bekommt keine Unterlagen und ist keine Wahl", async () => {
+  const { schrittZiel, schritteFuerUnterlagen } = await import("./unterlagen-unterricht");
+  const plan = [
+    { id: -2, titel: "Erklären: Past Simple", minuten: 15, beschreibung: "", uebung: null, skillId: PAST, art: "erklaeren", thema: "Past Simple", quelle: null },
+    { id: -3, titel: "Ausflug in den Zoo · noch bestätigen", minuten: 15, beschreibung: "", uebung: null, skillId: null, art: "ueben", thema: "Ausflug in den Zoo · noch bestätigen", quelle: null, vorlaeufig: "Ausflug in den Zoo" },
+  ];
+  const c = { paket: null, schritte: [], plan, planQuellen: new Map() } as unknown as import("./cockpit").CockpitDaten;
+  assert.deepEqual(schrittZiel(c, -2), { id: -2, skillId: PAST, thema: "Past Simple", zeigt: true });
+  assert.equal(schrittZiel(c, -3), null);
+  assert.deepEqual(schritteFuerUnterlagen(c).map((s) => s.id), [-2]);
+});
+
 // ---------- in der Einheit ----------
 
 test("im Unterricht: die Erklärung von heute steht bei „Erklären“, nicht beim Üben; Aufgabenblatt und Inhaltsverzeichnis nie", async () => {

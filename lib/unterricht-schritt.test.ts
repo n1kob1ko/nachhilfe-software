@@ -280,11 +280,16 @@ test("teacher script without a package: the whole explanation, a worked example 
   const aufgabe = (skillId: string, prompt: string, loesung: string) => ({ type: "grammar" as const, skillId, difficulty: "mittel" as const, prompt, data: {}, answer: { accepted: [loesung], mode: "text" as const }, solution: loesung, hints: [], errorMap: [] });
   const gemischt = s.repo.createWorksheet(
     { title: "Verbs revision", subject: "Englisch", grade: 6, school_type: "Gymnasium", klasse: 2, topic: "Past Simple", difficulty: "mittel", task_type: "grammar", kind: "uebung", source: "manuell", skill_ids: ["englisch.tenses.pastsimple", "englisch.vocab.irregular"] },
-    [aufgabe("englisch.vocab.irregular", "Write the 3rd form (past participle): go", "gone"), aufgabe("englisch.tenses.pastsimple", "Yesterday we ___ (watch) a film.", "watched"), aufgabe("englisch.tenses.pastsimple", "Last week she ___ (visit) her aunt.", "visited")],
+    [
+      aufgabe("englisch.vocab.irregular", "Write the 3rd form (past participle): go", "gone"),
+      aufgabe("englisch.tenses.pastsimple", "Yesterday we ___ (watch) a film.", "watched"),
+      aufgabe("englisch.tenses.pastsimple", "Last week she ___ (visit) her aunt.", "visited"),
+      aufgabe("englisch.tenses.pastsimple", "Two days ago they ___ (play) chess.", "played"),
+    ],
   );
   const g = s.c.planFuehrung(unit.id, { ...ueben, art: "erklaeren", uebung: `U${gemischt}` });
   assert.equal(g.fragt, "Yesterday we ___ (watch) a film.", "the task of another skill is not asked");
-  assert.ok(g.zeigt && !/3rd form|Yesterday we|Last week she/.test(g.zeigt.aufgabe), `example from the exercise: ${g.zeigt?.aufgabe}`);
+  assert.ok(g.zeigt && !/3rd form|Yesterday we|Last week she|Two days ago/.test(g.zeigt.aufgabe), `example from the exercise: ${g.zeigt?.aufgabe}`);
 
   // long texts stay readable: the first sentences, the rest under „Mehr“
   const lang = "Erster Satz mit z. B. einer Abkürzung. Zweiter Satz ist auch da. Dritter Satz kommt hier. Vierter Satz und noch viel mehr Text, damit es sich lohnt.";

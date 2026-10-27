@@ -313,7 +313,7 @@ test("the Vorgabe ranks above the Prüfung, switches the plan only before the fi
   assert.equal(vg.vorgabeDerEinheit(unit.id)!.angewendet, true, "nothing done yet: the plan follows at once");
   const plan = cockpit.planDerEinheit(unit.id);
   const ueben = (p: typeof plan) => p.filter((s) => s.art === "ueben").map((s) => s.titel);
-  assert.deepEqual(ueben(plan), ["Üben: Present Progressive", "Üben: Past Simple"], "the exact name of a skill is clear without KI; the Vorgabe first, then the Prüfung");
+  assert.deepEqual(ueben(plan), ["Üben: Present Progressive", "Fragen · noch bestätigen", "Üben: Past Simple"], "the exact name of a skill is clear without KI; the Vorgabe first (the point to confirm as a provisional block), then the Prüfung");
   const [klar, offen] = vg.vorgabeDerEinheit(unit.id)!.punkte;
   assert.equal(klar.zuordnung, "sicher");
   assert.equal(offen.zuordnung, "unklar", "„Fragen“ is not forced onto a skill: to confirm on the card");

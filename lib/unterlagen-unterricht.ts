@@ -67,7 +67,8 @@ export function schrittZiel(c: CockpitDaten, id: number): SchrittZiel | null {
     return { id, skillId: s.aufgaben.find((a) => a.skillId)?.skillId ?? c.paket.skill_ids[0] ?? null, thema: c.paket.thema || null, zeigt: ZEIG_ARTEN_PAKET.includes(s.art) };
   }
   const s = c.plan.find((x) => x.id === id);
-  if (!s) return null;
+  // a provisional block (a point of the Vorgabe still to confirm) gets no documents, like no presentation
+  if (!s || s.vorlaeufig) return null;
   const q = paketQuelle(s) ? c.planQuellen.get(s.id) : null;
   if (q) return { id, skillId: s.skillId ?? q.schritt.aufgaben.find((a) => a.skillId)?.skillId ?? q.paket.skill_ids[0] ?? null, thema: s.thema ?? null, zeigt: ZEIG_ARTEN_PAKET.includes(q.schritt.art) };
   // Erklären and Grundlage explain; a topic without a skill has only „Üben“; an older plan (no art) at its skill
@@ -75,8 +76,9 @@ export function schrittZiel(c: CockpitDaten, id: number): SchrittZiel | null {
   return { id, skillId: s.skillId, thema: s.thema ?? null, zeigt };
 }
 
-/** Die Schritte der Einheit, so wie die Punkte sie zählen. */
-const schrittIds = (c: CockpitDaten) => (c.paket ? c.schritte.map((s) => s.id) : c.plan.map((s) => s.id));
+/** Die Schritte der Einheit, denen eine Unterlage gehören kann: ohne vorläufige Blöcke (noch zu bestätigen). */
+export const schritteFuerUnterlagen = (c: CockpitDaten): { id: number; titel: string }[] => (c.paket ? c.schritte : c.plan.filter((s) => !s.vorlaeufig));
+const schrittIds = (c: CockpitDaten) => schritteFuerUnterlagen(c).map((s) => s.id);
 
 /** Was die Lesung über eine ihrer Dateien sagt: die sicher zugeordneten Fähigkeiten und die Lerninhalte. Ohne Anfrage. */
 function ausLesung(punkte: RohPunkt[], nr: number, fach: string, student: repo.Student): { skillIds: string[]; themen: string[] } {

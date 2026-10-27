@@ -31,6 +31,7 @@ import {
   markiereSchrittAction,
   merkeSchrittAction,
   notizAction,
+  sendeBestandAction,
   sendeGeneratorAction,
   sendeSchrittAction,
   verschiebeSchrittAction,
@@ -45,7 +46,6 @@ import { AntwortKnoepfe, VorschlagKarte } from "@/components/cockpit/Steuerung";
 import { VorgabeKarte } from "@/components/cockpit/Vorgabe";
 import { KeinPaket } from "@/components/cockpit/Vorbereitung";
 import { CopyLink } from "@/components/CopyLink";
-import { TabletSend } from "@/components/device/TabletSend";
 import { MinitestKarte } from "@/components/MinitestKarte";
 import { PraesentationSchritt } from "@/components/cockpit/PraesentationSchritt";
 import { SchuelerWorteKarte } from "@/components/SchuelerNotiz";
@@ -56,6 +56,7 @@ import { anpassungen, type Anpassung } from "@/lib/anpassen";
 import { bewertungInfos } from "@/lib/bewertungen";
 import {
   aufgabenImSchritt,
+  bestandsUebung,
   cockpit,
   ergebnis,
   ersteSaetze,
@@ -819,9 +820,10 @@ function PlanKarte({
   const name = first(student.name);
   const nicht = (c.stand.nichtVerstanden[s.id] ?? 0) > 0;
   const hilfe = nicht ? hilfeBeiFehler("", [], zurFaehigkeit(s.skillId)) : [];
-  // eine Übung aus dem Bestand („U12“), wenn es sie freigegeben noch gibt; „Z5“ ist schon zugewiesen
-  const ws = s.uebung && /^U\d+$/.test(s.uebung) ? repo.getWorksheet(Number(s.uebung.slice(1))) : null;
-  const blatt = ws && ws.status === "freigegeben" && !ws.archived_at && ws.kind !== "bibliothek" ? ws : null;
+  // eine Übung aus dem Bestand („U12“), wenn es sie freigegeben noch gibt und sie zur Fähigkeit passt (nur ihre Aufgaben,
+  // nie das Blatt eines anderen Schülers; lib/material-passt.ts); „Z5“ ist schon zugewiesen
+  const bestand = bestandsUebung(s, student.id);
+  const blatt = bestand?.blatt ?? null;
   const zugewiesen = s.uebung && /^Z\d+$/.test(s.uebung) ? Number(s.uebung.slice(1)) : null;
   // Erklären sends nothing (the exercise is the next step); Einstieg and Abschluss neither; the generators build no
   // Lernkontrolle of a Schreibauftrag (the practice step starts the writing task)
@@ -837,7 +839,7 @@ function PlanKarte({
   const schreiben = eigen ?? zurPruefung;
   const laeuft = schreiben ? textZumSchritt(laeufe, schreiben) : null;
   // a step of the Vorgabe whose point still waits for „kurz bestätigen“: say where, so the exercise can follow
-  const bestaetigen = !skill && !blatt && !zugewiesen && /^Üben: /.test(s.titel) && (vorgabeDerEinheit(unit.id)?.punkte.some((p) => p.zuordnung === "unklar" && p.vorschlaege.length > 0) ?? false);
+  const bestaetigen = !skill && !blatt && !zugewiesen && (Boolean(s.vorlaeufig) || /^Üben: /.test(s.titel)) && (vorgabeDerEinheit(unit.id)?.punkte.some((p) => p.zuordnung === "unklar" && p.vorschlaege.length > 0) ?? false);
   // say, show, ask, expected answer from the skill and the step's tasks, like a package step (lib/cockpit.ts planFuehrung);
   // not in the Lernkontrolle: its tasks are not asked aloud first
   const schon = c.stand.gesendet[s.id] ?? [];
@@ -942,10 +944,14 @@ function PlanKarte({
         <div className="mt-5 grid gap-2 border-t border-line pt-4" data-testid="plan-senden">
           {blatt ? (
             <>
-              <p className="text-[14px] text-ink-2">
+              <p className="text-[14px] text-ink-2" data-testid="plan-bestand">
                 Übung <span className="font-semibold text-ink">„{blatt.title}“</span> aus dem Bestand
+                {bestand?.gekuerzt && s.skillId ? `, nur die ${bestand.aufgaben.length} Aufgaben zu ${repo.getSkill(s.skillId)?.name ?? "diesem Thema"}` : ""}
               </p>
-              <TabletSend targets={[{ unitId: unit.id, student: name }]} worksheetId={blatt.id} label="Passende Übungen senden" />
+              <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
+                <CockpitSenden action={sendeBestandAction.bind(null, unit.id, s.id)} unitId={unit.id} label="Passende Übungen senden" primary={gesendet === 0 && !eigen} />
+                {gesendet > 0 && <span className="pt-2.5 text-[13px] text-ink-3">schon {gesendet === 1 ? "einmal" : `${gesendet}-mal`} an {name} gesendet</span>}
+              </div>
             </>
           ) : zugewiesen ? (
             <Link href={`/schueler/${student.id}/ergebnis/${zugewiesen}`} className="btn btn-secondary w-fit">

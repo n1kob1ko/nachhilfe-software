@@ -112,7 +112,8 @@ export function schrittDerEinheit(unitId: number, schrittId: number, c: CockpitD
     return s ? ausPaketSchritt(unitId, s.id, c.paket, s, s.minuten, null, stufe) : null;
   }
   const s = c.plan.find((x) => x.id === schrittId);
-  if (!s) return null;
+  // a provisional block („… · noch bestätigen“) has no skill yet: nothing to show or make, nothing for the documentation
+  if (!s || s.vorlaeufig) return null;
   const minuten = c.minuten.get(s.id) ?? s.minuten;
   const q = paketQuelle(s) ? c.planQuellen.get(s.id) : null;
   if (q) return ausPaketSchritt(unitId, s.id, q.paket, q.schritt, minuten, s.thema ?? null, stufe);

@@ -14,6 +14,7 @@ import {
   merkeSchritt,
   reagiert,
   sendeAusGenerator,
+  sendeBestand,
   sendeSchritt,
   setzeAntwort,
   setzeNotiz,
@@ -119,6 +120,12 @@ export async function sendeSchrittAction(unitId: number, schrittId: number, _pre
 export async function sendeGeneratorAction(unitId: number, skillId: string, schrittId: number | null, _prev: SendState, _form?: FormData): Promise<SendState> {
   const { t } = await laufendeEinheit(unitId);
   return aufsGeraet(unitId, await sendeAusGenerator(unitId, skillId, t.id, Number.isInteger(schrittId) ? schrittId : null));
+}
+
+/** Ohne Lernpaket: die Übung aus dem Bestand eines Planschritts, nur mit den Aufgaben seiner Fähigkeit (lib/material-passt.ts). */
+export async function sendeBestandAction(unitId: number, schrittId: number, _prev: SendState, _form?: FormData): Promise<SendState> {
+  const { t } = await laufendeEinheit(unitId);
+  return aufsGeraet(unitId, await sendeBestand(unitId, schrittId, t.id));
 }
 
 /**
