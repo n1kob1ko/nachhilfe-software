@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarClock, Camera, Check, FileText, FileUp, Plus, Printer } from "lucide-react";
+import { CalendarClock, Camera, Check, CheckCircle2, FileText, FileUp, Plus, Printer } from "lucide-react";
 import { setExamSkillsAction } from "@/app/curriculum-actions";
 import { probeschularbeitAction } from "@/app/probeschularbeit-actions";
 import { Info } from "@/components/Info";
@@ -16,6 +16,10 @@ import { stoffDerPruefung } from "@/lib/pruefungsstoff";
 import type { Skill } from "@/lib/repo";
 import { auftraegeZurPruefung } from "@/lib/schreibauftrag-store";
 import { runningUnitForStudent } from "@/lib/units";
+import { noteFolgt } from "@/lib/abschluss";
+import { papierZeile } from "@/lib/blatt-regeln";
+import { papierArbeitOhneEinheit } from "@/lib/papier-einheit";
+import { zuBewertenHref } from "@/lib/zu-erledigen";
 
 export const metadata = { title: "Vorbereitung" };
 
@@ -25,7 +29,7 @@ export default async function ExamPrepPage({
   searchParams,
 }: {
   params: Promise<{ id: string; testId: string }>;
-  searchParams: Promise<{ fehler?: string; ziel?: string; zugeordnet?: string }>;
+  searchParams: Promise<{ fehler?: string; ziel?: string; zugeordnet?: string; papier?: string }>;
 }) {
   const { id, testId } = await params;
   const sp = await searchParams;
@@ -49,8 +53,11 @@ export default async function ExamPrepPage({
   const offered = zuordnen ? [] : [...new Map([...skills.map((s) => s.skill), ...topics.flatMap((t) => matchSkills(t, test.subject, { student, limit: 6 }).map((m) => m.skill))].map((s) => [s.id, s])).values()];
   const zugeordnet = sp.zugeordnet !== undefined ? Number(sp.zugeordnet) : null;
   const proben = probeschularbeitenZu(test.id);
-  // a running unit of this student: a Probeschularbeit solved on paper is photographed there (Arbeit fotografieren)
+  // a running unit of this student: a Probeschularbeit solved on paper is photographed there (Arbeit fotografieren); without
+  // one the same way from here, without a unit (lib/papier-einheit.ts)
   const laufend = runningUnitForStudent(student.id);
+  // nach „Übernehmen“ ohne Einheit: was übernommen wurde, in einer Zeile
+  const papier = sp.papier ? papierArbeitOhneEinheit(Number(sp.papier), student.id) : null;
   const auftraege = auftraegeZurPruefung(test.id);
   // read from its documents (lib/pruefungsstoff.ts): the view „Erkannt“ with every point and what is still to confirm
   const erkannt = stoffDerPruefung(test.id);
@@ -184,6 +191,11 @@ export default async function ExamPrepPage({
               {sp.fehler}
             </p>
           )}
+          {papier && (
+            <p role="status" className="mb-3 flex items-start gap-2 rounded-lg bg-green-wash px-3 py-2 text-[14px] font-medium text-green" data-testid="papier-uebernommen">
+              <CheckCircle2 size={16} className="mt-0.5 shrink-0" aria-hidden /> Übernommen. {papierZeile(papier)}.
+            </p>
+          )}
           {proben.length > 0 && (
             <ul className="panel mb-4 divide-y divide-line">
               {proben.map(({ worksheet: w, punkte, assignment: a, ergebnis: e }) => (
@@ -198,8 +210,14 @@ export default async function ExamPrepPage({
                       {e && e.bearbeitet > 0 && (
                         <span className="num">
                           · {punkteText(e.erreicht)} von {punkteText(e.gesamt)} Punkten
-                          {e.note ? ` · Note ${e.note.note} (${e.note.label})` : e.offen ? ` · noch ${e.offen} zu bewerten` : e.bearbeitet < e.aufgaben ? ` · ${e.bearbeitet} von ${e.aufgaben} Aufgaben` : ""}
+                          {/* die Note erst, wenn keine Antwort mehr offen ist (lib/zu-bewerten.ts) */}
+                          {e.note ? ` · Note ${e.note.note} (${e.note.label})` : e.offen ? ` · ${noteFolgt(e.offen)}` : e.bearbeitet < e.aufgaben ? ` · ${e.bearbeitet} von ${e.aufgaben} Aufgaben` : ""}
                         </span>
+                      )}
+                      {e && e.offen > 0 && (
+                        <Link href={zuBewertenHref(student.id)} className="font-semibold text-accent hover:underline" data-testid="probe-bewerten">
+                          Bewerten
+                        </Link>
                       )}
                     </span>
                   </span>
@@ -208,10 +226,10 @@ export default async function ExamPrepPage({
                       Ergebnis
                     </Link>
                   )}
-                  {/* on paper in a running unit: graded against its tasks and the Musterlösung (lib/papier-einheit.ts) */}
-                  {laufend && (!e || e.bearbeitet < e.aufgaben) && (
-                    <Link href={`/einheiten/${laufend.id}/papier?uebung=${w.id}`} className="btn btn-ghost btn-sm" data-testid="probe-papier">
-                      <Camera size={15} aria-hidden /> Auf Papier gelöst
+                  {/* on paper: graded against its tasks and the Musterlösung (lib/papier-einheit.ts), in the running unit or without one */}
+                  {(!e || e.bearbeitet < e.aufgaben) && (
+                    <Link href={laufend ? `/einheiten/${laufend.id}/papier?uebung=${w.id}` : `/schueler/${student.id}/pruefung/${test.id}/papier?uebung=${w.id}`} className="btn btn-ghost btn-sm" data-testid="probe-papier">
+                      <Camera size={15} aria-hidden /> Arbeit fotografieren
                     </Link>
                   )}
                   {externDaten(w)?.angabe.length ? (

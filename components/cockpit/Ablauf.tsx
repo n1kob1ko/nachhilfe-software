@@ -51,6 +51,7 @@ import { MinitestKarte } from "@/components/MinitestKarte";
 import { PraesentationSchritt } from "@/components/cockpit/PraesentationSchritt";
 import { SchuelerWorteKarte } from "@/components/SchuelerNotiz";
 import { TaskBody } from "@/components/TaskPreview";
+import { ZuBewertenChip } from "@/components/ZuBewerten";
 import { CancelUnit } from "@/components/UnitControl";
 import { Pill, Reveal } from "@/components/ui";
 import { anpassungen, type Anpassung } from "@/lib/anpassen";
@@ -96,6 +97,7 @@ import { platzFuerEinheit, type UnitView } from "@/lib/units";
 import { autoFuerEinheit, kiVorgabe, type Signal } from "@/lib/vorbereitung-auto";
 import { vorgabeDerEinheit } from "@/lib/vorgabe";
 import { unterlagenImSchritt } from "@/lib/unterlagen-unterricht";
+import { zuBewerten } from "@/lib/zu-bewerten";
 import { SchreibauftragStart, TextarbeitZeilen } from "@/components/cockpit/Textarbeit";
 import { schreibArt, schreibStartFuer, schreibStartZurPruefung, textLaeufe, textZumSchritt, type TextLauf } from "@/lib/textarbeit-ablauf";
 import { SCHULARBEIT_SCHRITT } from "@/lib/briefing";
@@ -179,6 +181,8 @@ export function Unterricht({
         </p>
       )}
       {ids.length > 1 && <Punkte c={c} ids={ids} aktuell={aktuell} unitId={unit.id} />}
+      {/* Gemeinsame Bewertung (lib/zu-bewerten.ts): was in dieser Einheit auf dich wartet, als kleiner Chip, der die Liste öffnet */}
+      <ZuBewertenChip zeilen={zuBewerten({ unitId: unit.id })} />
       {c.paket && c.aktuell ? (
         <SchrittKarte c={c} s={c.aktuell} paket={c.paket} unit={unit} name={name} liste={liste} vorschlag={imSchritt} laeufe={laeufe} folienOffen={folien === c.aktuell.id} />
       ) : c.planAktuell && quelle ? (

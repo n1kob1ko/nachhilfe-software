@@ -487,6 +487,31 @@ export function textBewertungInDoku(textId: number) {
   }
 }
 
+/**
+ * Gemeinsame Bewertung (C3): nach einer späteren Lehrerbewertung einer Antwort dieser beendeten Einheit (lib/bewerten.ts) der
+ * gespeicherte Bericht neu aus den Antworten, die jetzt zählen; eine offene Antwort zählte darin nie. Die Zusammenfassung und
+ * „Was wurde gemacht“ nur, wenn sie noch genau so lauten, wie die App sie geschrieben hat. Die Einschätzung und der Lernstand je
+ * Einheit (skill_snapshots) bleiben der Stand beim Beenden; der Lernstand jetzt rechnet die Bewertung ohnehin mit.
+ */
+export function berichtNachBewertung(unitId: number): boolean {
+  const unit = getUnit(unitId);
+  const lesson = unit?.status === "beendet" ? repo.getLessonForUnit(unitId) : null;
+  const r = lesson ? readReport(lesson) : null;
+  if (!unit || !lesson || !r) return false;
+  const neu = buildUnitReport(unit);
+  if (JSON.stringify(neu.tasks) === JSON.stringify(r.tasks)) return false;
+  const name = repo.getStudent(lesson.student_id)?.name ?? "";
+  const summary = lesson.summary === summarize(r, name) ? summarize(neu, name) : lesson.summary;
+  const autoActivities = autoFelderVon(lesson).has("activities") || lesson.activities === activitiesText(r);
+  const activities = autoActivities ? activitiesText(neu) : lesson.activities;
+  repo.saveLesson({ ...lesson, summary, activities, skill_ids: [...new Set([...lesson.skill_ids, ...neu.skills.map((s) => s.skillId)])], report: JSON.stringify(neu) }, lesson.id);
+  if (autoActivities) {
+    const auto = json<Record<string, unknown>>(lesson.auto_felder, {});
+    db().prepare("UPDATE lessons SET auto_felder = ? WHERE id = ?").run(JSON.stringify({ ...auto, activities }), lesson.id);
+  }
+  return true;
+}
+
 export function readReport(lesson: Pick<repo.Lesson, "report">): UnitReport | null {
   if (!lesson.report) return null;
   try {

@@ -38,7 +38,8 @@ export type BlattZeile = {
   warUnsicher?: boolean;
 };
 
-export type BlattVorschlag = { titel: string; zeilen: BlattZeile[]; gesamt: number | null; gesamtMax: number | null; note: number | null; hinweise: string[] };
+/** `lesungId`: bei „Arbeit fotografieren“ die auf dem Server gespeicherte Lesung (nur zur Anzeige; der Server sucht sie selbst). */
+export type BlattVorschlag = { titel: string; zeilen: BlattZeile[]; gesamt: number | null; gesamtMax: number | null; note: number | null; hinweise: string[]; lesungId?: number };
 
 /** Die erreichten Punkte einer Zeile: vom Blatt, sonst aus der Bewertung (teilweise = die Hälfte), sonst null. */
 export function erreichtVon(z: Pick<BlattZeile, "punkte" | "max" | "bewertung">): number | null {
@@ -73,19 +74,26 @@ export function zusammenfuehren(lesung: { bewertung: LesungUrteil; unsicher: boo
 /** Unsichere Zeilen zuerst, sonst in der Reihenfolge des Blatts (für die Vorschau; beim Antippen springt nichts). */
 export const unsichereZuerst = <T extends Pick<BlattZeile, "pruefen">>(zeilen: T[]): T[] => [...zeilen.filter((z) => z.pruefen), ...zeilen.filter((z) => !z.pruefen)];
 
-/** Was eine auf Papier gelöste Übung ergibt: richtig, teilweise, von wie vielen, Punkte (nur wenn jede Aufgabe Punkte hat). */
-export type PapierErgebnis = { titel: string; von: number; richtig: number; teilweise: number; punkte: number | null; max: number | null; unsicher: number; assignmentId?: number };
+/**
+ * Was eine auf Papier gelöste Übung ergibt: richtig, teilweise, von wie vielen, Punkte (nur wenn jede Aufgabe Punkte hat und keine
+ * mehr offen ist). `offen` (Gemeinsame Bewertung, lib/zu-bewerten.ts): so viele Antworten warten noch auf die Lehrkraft; sie zählen
+ * weder als richtig noch als falsch.
+ */
+export type PapierErgebnis = { titel: string; von: number; richtig: number; teilweise: number; punkte: number | null; max: number | null; unsicher: number; offen?: number; assignmentId?: number };
 
-export function papierErgebnis(titel: string, zeilen: Pick<BlattZeile, "bewertung" | "punkte" | "max" | "warUnsicher">[]): PapierErgebnis {
-  const mitPunkten = zeilen.length > 0 && zeilen.every((z) => z.max != null);
+export function papierErgebnis(titel: string, zeilen: (Pick<BlattZeile, "bewertung" | "punkte" | "max" | "warUnsicher"> & { offen?: boolean })[]): PapierErgebnis {
+  const gezaehlt = zeilen.filter((z) => !z.offen);
+  const offen = zeilen.length - gezaehlt.length;
+  const mitPunkten = zeilen.length > 0 && !offen && zeilen.every((z) => z.max != null);
   return {
     titel,
     von: zeilen.length,
-    richtig: zeilen.filter((z) => z.bewertung === "richtig").length,
-    teilweise: zeilen.filter((z) => z.bewertung === "teilweise").length,
+    richtig: gezaehlt.filter((z) => z.bewertung === "richtig").length,
+    teilweise: gezaehlt.filter((z) => z.bewertung === "teilweise").length,
     punkte: mitPunkten ? zeilen.reduce((s, z) => s + (erreichtVon(z) ?? 0), 0) : null,
     max: mitPunkten ? zeilen.reduce((s, z) => s + (z.max ?? 0), 0) : null,
     unsicher: zeilen.filter((z) => z.warUnsicher).length,
+    ...(offen ? { offen } : {}),
   };
 }
 
@@ -98,8 +106,11 @@ export type PapierAufgabe = { taskId: number; nr: string; aufgabe: string; loesu
 export const zeilenOhneLesung = (aufgaben: PapierAufgabe[]): BlattZeile[] =>
   aufgaben.map((a) => ({ nr: a.nr, aufgabe: a.aufgabe, antwort: "", bewertung: "richtig", punkte: null, max: a.max, skillId: a.skillId, fehler: "", pruefen: false, taskId: a.taskId, loesung: a.loesung, grund: "", offen: true, warUnsicher: false }));
 
-/** Die Zeile im Abschluss: „Auf Papier: Übung „Brüche“ 7 von 10 Punkten, 2 unsicher geprüft“. */
+/**
+ * Die Zeile im Abschluss: „Auf Papier: Übung „Brüche“ 7 von 10 Punkten, 2 unsicher geprüft“; solange Antworten offen sind ohne
+ * Punkte und mit „1 noch zu bewerten“ (die offenen zählen weder als richtig noch als falsch).
+ */
 export function papierZeile(p: PapierErgebnis): string {
-  const wie = p.punkte != null && p.max ? `${zahlText(p.punkte)} von ${zahlText(p.max)} Punkten` : `${p.richtig} von ${p.von} richtig${p.teilweise ? `, ${p.teilweise} teilweise` : ""}`;
-  return `Auf Papier: Übung „${p.titel}“ ${wie}${p.unsicher ? `, ${p.unsicher} unsicher geprüft` : ""}`;
+  const wie = p.punkte != null && p.max && !p.offen ? `${zahlText(p.punkte)} von ${zahlText(p.max)} Punkten` : `${p.richtig} von ${p.von} richtig${p.teilweise ? `, ${p.teilweise} teilweise` : ""}`;
+  return `Auf Papier: Übung „${p.titel}“ ${wie}${p.unsicher ? `, ${p.unsicher} unsicher geprüft` : ""}${p.offen ? `, ${p.offen} noch zu bewerten` : ""}`;
 }

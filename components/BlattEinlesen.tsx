@@ -28,8 +28,11 @@ type Test = { id: number; subject: string; date: string; label: string; geplant:
 type PapierWahl = { key: string; titel: string; wann: string; aufgaben: PapierAufgabe[]; schonFertig: number };
 /** „Ein anderes Blatt“: nicht aus der Einheit, wie „Gelöstes Blatt einlesen“ (Mirror of ANDERES_BLATT in lib/papier-einheit.ts) */
 const ANDERES = "anders";
-/** in der laufenden Einheit: welche Blätter, welches vorgewählt, was das Lesen etwa kostet (null: ohne KI) */
-type Einheit = { unitId: number; blaetter: PapierWahl[]; vorwahl: string; kosten: string | null; fach: string };
+/**
+ * in der laufenden Einheit: welche Blätter, welches vorgewählt, was das Lesen etwa kostet (null: ohne KI). `unitId` null: eine
+ * Probeschularbeit ohne Einheit, von der Prüfungskarte (Gemeinsame Bewertung, C3); dann gibt es „Ein anderes Blatt“ nicht.
+ */
+type Einheit = { unitId: number | null; blaetter: PapierWahl[]; vorwahl: string; kosten: string | null; fach: string };
 type Skill = { id: string; name: string; area: string };
 type Seite = { file: File; url: string | null };
 /** a row of the preview; pText/mText keep what is typed („2,“) until it is a number */
@@ -53,8 +56,9 @@ const zahl = (s: string): number | null => {
  *
  * With `einheit` it is **Arbeit fotografieren** in the running unit (lib/papier-einheit.ts): instead of „Was ist es?“ the
  * teacher picks the sheet of the unit (the latest is preselected) or „Ein anderes Blatt“. On a known sheet each row is one
- * original task with its solution, the read answer and the proposal; unsure rows come first and must be checked, and a row
- * without a grade must be tapped, before the one „Übernehmen“ saves anything.
+ * original task with its solution, the read answer and the proposal; unsure rows come first. Gemeinsame Bewertung (C3): an unsure
+ * row the teacher does not decide here is saved as waiting for her and goes to „Zu bewerten“; a row without a reason to be unsure
+ * must be tapped. Nothing counts before the one „Übernehmen“.
  */
 export function BlattEinlesen({
   studentId,
@@ -194,7 +198,9 @@ export function BlattEinlesen({
     fd.set("keine_namen", keinName ? "1" : "");
     fd.set("materialien", gespeichert.join(","));
     if (einheit) {
-      fd.set("einheit", String(einheit.unitId));
+      // without a unit: a Probeschularbeit of this student (the server checks it is his)
+      if (einheit.unitId) fd.set("einheit", String(einheit.unitId));
+      else fd.set("probe", "1");
       fd.set("blatt", blattWahl);
     }
     for (const s of seiten) fd.append("seite", s.file, s.file.name);
@@ -244,6 +250,9 @@ export function BlattEinlesen({
   const offen = zeilen?.filter((z) => z.pruefen).length ?? 0;
   // in the unit: a row without a grade (not readable, read and app disagree, without KI) counts only after a tap
   const ohneBewertung = zeilen?.filter((z) => z.offen).length ?? 0;
+  // a known sheet (C3): an unsure row may stay undecided (it goes to „Zu bewerten“); one without a reason to be unsure may not
+  const ohneGrund = zeilen?.filter((z) => z.offen && !z.pruefen).length ?? 0;
+  const sperrt = bekannt ? ohneGrund > 0 : offen > 0 || ohneBewertung > 0;
   const papierPunkte = bekannt && zeilen?.length && !ohneBewertung && zeilen.every((z) => z.max != null) ? { erreicht: zeilen.reduce((a, z) => a + (erreichtVon(z) ?? 0), 0), max: zeilen.reduce((a, z) => a + (z.max ?? 0), 0) } : null;
 
   function uebernehmen() {
@@ -255,6 +264,7 @@ export function BlattEinlesen({
       startSpeichern(async () => {
         const out = await speicherePapierAction({
           unitId: einheit.unitId,
+          studentId,
           blatt: blattWahl,
           zeilen: zeilen.map(({ k: _k, pText: _p, mText: _m, ...z }) => z),
           materialIds: gespeichert,
@@ -297,9 +307,14 @@ export function BlattEinlesen({
           <h2 id="papier-welches" className="text-[17px] font-semibold">
             Welches Blatt?
           </h2>
-          {einheit.blaetter.length === 0 && <p className="text-[14px] text-ink-2">In dieser Einheit ist noch keine Übung gesendet oder gedruckt worden, die offen ist.</p>}
+          {einheit.blaetter.length === 0 && (
+            <p className="text-[14px] text-ink-2">{einheit.unitId ? "In dieser Einheit ist noch keine Übung gesendet oder gedruckt worden, die offen ist." : "Keine Probeschularbeit mit offenen Aufgaben."}</p>
+          )}
           <fieldset className="grid gap-2" aria-label="Blatt">
-            {[...einheit.blaetter.map((b) => ({ key: b.key, label: b.titel, text: `${b.wann} · ${b.aufgaben.length} ${b.aufgaben.length === 1 ? "Aufgabe" : "Aufgaben"}${b.schonFertig ? `, ${b.schonFertig} schon am Gerät gelöst` : ""}` })), { key: ANDERES, label: "Ein anderes Blatt", text: "Nicht aus dieser Einheit. Die Aufgaben werden vom Foto abgelesen." }].map((o) => (
+            {[
+              ...einheit.blaetter.map((b) => ({ key: b.key, label: b.titel, text: `${b.wann} · ${b.aufgaben.length} ${b.aufgaben.length === 1 ? "Aufgabe" : "Aufgaben"}${b.schonFertig ? `, ${b.schonFertig} schon am Gerät gelöst` : ""}` })),
+              ...(einheit.unitId ? [{ key: ANDERES, label: "Ein anderes Blatt", text: "Nicht aus dieser Einheit. Die Aufgaben werden vom Foto abgelesen." }] : []),
+            ].map((o) => (
               <label
                 key={o.key}
                 className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-surface px-4 py-3 transition-colors hover:border-line-hover has-[:checked]:border-accent has-[:checked]:bg-accent-wash has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent"
@@ -312,7 +327,7 @@ export function BlattEinlesen({
               </label>
             ))}
           </fieldset>
-          {!bekannt && (
+          {!bekannt && blattWahl === ANDERES && (
             <div className="grid gap-3 sm:grid-cols-2">
               {subjects.length > 1 && (
                 <label className="grid gap-1.5">
@@ -702,16 +717,20 @@ export function BlattEinlesen({
           )}
           {einheit ? (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              {/* in the unit nothing unsure is stored as a result: every yellow row checked, every row graded */}
-              <button type="button" className="btn btn-primary btn-lg" onClick={uebernehmen} disabled={speichern || offen > 0 || ohneBewertung > 0 || !zeilen.some((z) => z.aufgabe.trim())} data-testid="blatt-uebernehmen">
+              {/* nothing unsure is stored as a result: a yellow row not decided here waits for the teacher in „Zu bewerten“ */}
+              <button type="button" className="btn btn-primary btn-lg" onClick={uebernehmen} disabled={speichern || sperrt || !zeilen.some((z) => z.aufgabe.trim())} data-testid="blatt-uebernehmen">
                 <Check size={18} aria-hidden /> {speichern ? "Wird gespeichert …" : "Übernehmen"}
               </button>
               <p className="text-[13px] text-ink-3" data-testid="papier-offen">
-                {offen
-                  ? `${offen} gelb markierte ${offen === 1 ? "Zeile" : "Zeilen"} noch prüfen.`
-                  : ohneBewertung
-                    ? `${ohneBewertung} ${ohneBewertung === 1 ? "Aufgabe" : "Aufgaben"} noch bewerten.`
-                    : `Zählt dann wie am Gerät: Lernstand, Abschluss und Dokumentation.`}
+                {bekannt && ohneGrund
+                  ? `${ohneGrund} ${ohneGrund === 1 ? "Aufgabe" : "Aufgaben"} noch bewerten.`
+                  : bekannt && offen
+                    ? `${offen} unsichere ${offen === 1 ? "Zeile kommt" : "Zeilen kommen"} in „Zu bewerten“, wenn du sie nicht hier entscheidest. Sie zählen erst nach deiner Bewertung.`
+                    : offen
+                      ? `${offen} gelb markierte ${offen === 1 ? "Zeile" : "Zeilen"} noch prüfen.`
+                      : ohneBewertung
+                        ? `${ohneBewertung} ${ohneBewertung === 1 ? "Aufgabe" : "Aufgaben"} noch bewerten.`
+                        : `Zählt dann wie am Gerät: Lernstand, Abschluss und Dokumentation.`}
               </p>
             </div>
           ) : (
