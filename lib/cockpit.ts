@@ -1,8 +1,9 @@
 /**
  * Das **Cockpit** einer laufenden Einheit (niko, 2026-10-22: „die KI bereitet vor und dokumentiert, der Lehrer
  * unterrichtet“): welches Lernpaket heute dran ist, der Schritt auf dem Schirm, was erledigt und was
- * übersprungen ist und die Notizen des Lehrers je Schritt. Ohne Lernpaket steht dort die Fähigkeit der
- * Einheit. Alles hier ohne KI.
+ * übersprungen ist und die Notizen des Lehrers je Schritt. Ohne eigens gewähltes Lernpaket läuft der Plan für die
+ * ganze Einheit (lib/stundenplan.ts): mehrere Themen, Schritte geprüfter Pakete darin (`quelle`), beim ersten Tippen
+ * oder Senden festgehalten. Alles hier ohne KI.
  *
  * Das Paket selbst ändert sich nie: Reihenfolge, Erledigt und Übersprungen gelten nur für diese Einheit
  * (Tabelle `einheit_cockpit`, eine Zeile je Einheit). So zeigt ein zweites Gerät oder ein Neuladen denselben
@@ -12,7 +13,7 @@
  * Notizen und Inhalt des Pakets bleiben beim Lehrer. Zum Schüler kommen nur die Aufgaben, die der Lehrer
  * mit „Übung senden“ schickt, ohne die Prüfhinweise des Pakets (`data.pruefen`).
  */
-import { briefingDaten, einfachesBriefing, type PlanSchritt } from "./briefing";
+import type { PlanSchritt } from "./briefing";
 import { checkTask } from "./builder";
 import { difficultyFor } from "./curriculum";
 import { EXPLAIN } from "./erklaerungen";
@@ -20,6 +21,7 @@ import { db, json } from "./db";
 import { autoFelderVon } from "./einschaetzung";
 import { getLernpaket, getSchritt, type LernpaketMitSchritten, type LernpaketSchritt, type PaketQuelle } from "./lernpakete";
 import { wienerDatum } from "./planung/zeit";
+import { LERNKONTROLLE } from "./quick-round";
 import { nextSteps } from "./recommend";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
@@ -29,7 +31,8 @@ import { sorteOfSkill } from "./schreibauftrag";
 import type { TaskDraft } from "./tasks";
 import { EIGENE_VOKABELN } from "./vokabeln";
 import { getUnit, platzFuerEinheit } from "./units";
-import { autoFuerEinheit, fokusAus, vorschlagErlauben, type Passung, type Signal } from "./vorbereitung-auto";
+import { KONTROLLE_ANZAHL, stundenplanFuer, themenDesPlans, type PlanArt, type SchrittQuelle } from "./stundenplan";
+import { vorschlagErlauben, type Passung, type Signal } from "./vorbereitung-auto";
 
 /** Höchstlänge einer Notiz je Schritt. */
 export const NOTIZ_MAX = 2000;
@@ -107,11 +110,47 @@ export type Reaktion = { art: Art; skillId: string | null; assignmentId: number 
 const REAKTIONEN_MAX = 50;
 
 /**
- * Ein Schritt aus dem „Plan für heute“ des Briefings (lib/briefing.ts), für eine Einheit ohne Lernpaket. Die Ids
+ * Ein Schritt aus dem „Plan für heute“ (lib/stundenplan.ts), für eine Einheit ohne eigens gewähltes Lernpaket. Die Ids
  * sind negativ (-1, -2 …), damit sie nie mit Schritten eines Pakets verwechselt werden. `uebung` ist eine Übung aus
  * dem Bestand („U12“ …), `skillId` die Fähigkeit für neue Aufgaben aus den Generatoren.
+ *
+ * Seit dem Plan für die ganze Einheit (niko, 27.10.2026) auch: `art` (Einstieg, Grundlage, Erklären, Üben, Lernkontrolle,
+ * Abschluss oder ein Schritt eines Pakets), `thema` (das Thema, zu dem er gehört; null bei Einstieg und Abschluss),
+ * `quelle` (der Schritt eines geprüften Pakets oder die Fähigkeit) und `pruefung` (Üben zum Thema der nahen Prüfung). Ein
+ * früher festgehaltener Plan hat sie nicht und läuft wie bisher.
  */
-export type PlanStep = { id: number; titel: string; minuten: number; beschreibung: string; uebung: string | null; skillId: string | null };
+export type PlanStep = {
+  id: number;
+  titel: string;
+  minuten: number;
+  beschreibung: string;
+  uebung: string | null;
+  skillId: string | null;
+  art?: PlanArt;
+  thema?: string | null;
+  quelle?: SchrittQuelle | null;
+  pruefung?: boolean;
+};
+
+/** Der Schritt eines Pakets, auf den ein Planschritt zeigt, oder null. */
+export const paketQuelle = (s: Pick<PlanStep, "quelle"> | null | undefined): { paketId: number; schrittId: number } | null => (s?.quelle && "paketId" in s.quelle ? s.quelle : null);
+
+/**
+ * Hat ein Planschritt eine Übung zum Senden? Ein Schritt eines Pakets mit Aufgaben; Grundlage, Üben und Lernkontrolle mit
+ * Fähigkeit oder Übung aus dem Bestand; Erklären, Einstieg und Abschluss nicht. Ein alter Plan wie bisher.
+ */
+export function planHatUebung(s: PlanStep, quellen: Map<number, PlanQuelle>): boolean {
+  if (paketQuelle(s)) return (quellen.get(s.id)?.schritt.aufgaben.length ?? 0) > 0;
+  if (s.art && !["grundlage", "ueben", "kontrolle"].includes(s.art)) return false;
+  return Boolean(s.skillId || s.uebung);
+}
+
+/** Die Art eines Planschritts für „Richtig / Teilweise / Falsch“: Erklären und Grundlage fragen, die Lernkontrolle prüft. */
+function frageArtVon(s: PlanStep): LernpaketSchritt["art"] | null {
+  const q = paketQuelle(s);
+  if (q) return getSchritt(q.schrittId)?.art ?? null;
+  return s.art === "kontrolle" ? "kontrolle" : s.art === "erklaeren" || s.art === "grundlage" ? "frage" : null;
+}
 
 export const planSchritte = (plan: PlanSchritt[]): PlanStep[] =>
   plan.map((p, i) => ({ id: -(i + 1), titel: p.titel, minuten: p.minuten, beschreibung: p.beschreibung, uebung: p.uebung, skillId: p.skillId ?? null }));
@@ -338,8 +377,8 @@ const tagDerEinheit = (startedAt: string) => wienerDatum(new Date(startedAt));
 
 /**
  * Der Stand des Cockpits einer Einheit. Ist noch nichts gespeichert, gilt das Lernpaket aus „Einheit
- * vorbereiten“ für diesen Schüler und Tag (noch ungespeichert, `vorbereitet`); hat der Lehrer keines gewählt,
- * der Vorschlag der App für die laufende Einheit (`automatisch`, lib/vorbereitung-auto.ts, ohne KI).
+ * vorbereiten“ für diesen Schüler und Tag (noch ungespeichert, `vorbereitet`); hat der Lehrer keines gewählt, der Plan
+ * für die ganze Einheit (lib/stundenplan.ts): er nimmt die passenden geprüften Pakete selbst auf, je Thema eines.
  */
 export function leseStand(unitId: number): Stand {
   const s = gespeichert(unitId);
@@ -347,8 +386,6 @@ export function leseStand(unitId: number): Stand {
   const unit = getUnit(unitId);
   const v = unit ? vorbereitung(unit.student_id, tagDerEinheit(unit.started_at)) : null;
   if (v && getLernpaket(v.paket_id)) return { ...leer(unitId), paket_id: v.paket_id, vorbereitet: true };
-  const a = unit ? autoFuerEinheit(unit) : null;
-  if (a?.art === "paket") return { ...leer(unitId), paket_id: a.paket.id, vorbereitet: true, automatisch: { warum: a.warum, passung: a.passung, luecke: a.luecke } };
   return leer(unitId);
 }
 
@@ -391,6 +428,9 @@ function aendere(unitId: number, f: (s: Stand) => Stand): Stand {
   return neu;
 }
 
+/** Ein Planschritt aus einem Lernpaket: das Paket und sein Schritt (Texte, Folie, Aufgaben). */
+export type PlanQuelle = { paket: LernpaketMitSchritten; schritt: LernpaketSchritt };
+
 export type CockpitDaten = {
   stand: Stand;
   paket: LernpaketMitSchritten | null;
@@ -404,7 +444,30 @@ export type CockpitDaten = {
   plan: PlanStep[];
   /** ohne Lernpaket: der Planschritt auf dem Schirm; null = alle durch (oder kein Plan) */
   planAktuell: PlanStep | null;
+  /** ohne Lernpaket: die Planschritte, die aus einem Lernpaket kommen, je Schritt-Id */
+  planQuellen: Map<number, PlanQuelle>;
 };
+
+/** Die Pakete und Schritte, auf die Planschritte zeigen (je Paket eine Abfrage). */
+function quellenVon(plan: PlanStep[]): Map<number, PlanQuelle> {
+  const out = new Map<number, PlanQuelle>();
+  const pakete = new Map<number, LernpaketMitSchritten | null>();
+  for (const s of plan) {
+    const q = paketQuelle(s);
+    if (!q) continue;
+    if (!pakete.has(q.paketId)) pakete.set(q.paketId, getLernpaket(q.paketId));
+    const p = pakete.get(q.paketId);
+    const schritt = p?.schritte.find((x) => x.id === q.schrittId);
+    if (p && schritt) out.set(s.id, { paket: p, schritt });
+  }
+  return out;
+}
+
+/** Das Lernpaket des Schritts auf dem Schirm: das der Einheit, sonst das, aus dem der Planschritt kommt. */
+export function paketImSchritt(c: Partial<Pick<CockpitDaten, "paket" | "planAktuell" | "planQuellen">>): LernpaketMitSchritten | null {
+  if (c.paket) return c.paket;
+  return c.planAktuell ? (c.planQuellen?.get(c.planAktuell.id)?.paket ?? null) : null;
+}
 
 /** Minute, ab der jeder Schritt geplant ist. */
 const minutenAb = (schritte: { id: number; minuten: number }[]) => {
@@ -414,14 +477,14 @@ const minutenAb = (schritte: { id: number; minuten: number }[]) => {
 };
 
 /**
- * Der „Plan für heute“ für eine laufende Einheit ohne Lernpaket: aus dem Briefing ohne KI (lib/briefing.ts), mit
- * der geplanten Dauer des Platzes und dem Schwerpunkt der automatischen Vorbereitung (derselbe wie auf Heute). Liest nur.
+ * Der „Plan für heute“ für eine laufende Einheit ohne eigens gewähltes Lernpaket: der Plan für die ganze Einheit
+ * (lib/stundenplan.ts, ohne KI), mit der geplanten Dauer des Platzes, der Vorgabe für heute und den Signalen der
+ * automatischen Vorbereitung (dieselben wie auf Heute). Liest nur.
  */
 export function planDerEinheit(unitId: number): PlanStep[] {
   const unit = getUnit(unitId);
   if (!unit || unit.status !== "gestartet") return [];
-  const d = briefingDaten(unit.student_id, { platzId: platzFuerEinheit(unit)?.id ?? null, fokus: fokusAus(autoFuerEinheit(unit)) });
-  return d ? planSchritte(einfachesBriefing(d).plan) : [];
+  return stundenplanFuer(unit.student_id, { datum: tagDerEinheit(unit.started_at), fach: unit.subject ?? "", platzId: platzFuerEinheit(unit)?.id ?? null, unitId: unit.id });
 }
 
 /**
@@ -437,13 +500,13 @@ export function cockpit(unitId: number, o: { mitPlan?: boolean } = {}): CockpitD
     const byId = new Map(roh.map((s) => [s.id, s]));
     const plan = order.map((id) => byId.get(id)!);
     const id = aktuellerSchritt(order, stand);
-    return { stand, paket: null, schritte: [], aktuell: null, ab: minutenAb(plan), plan, planAktuell: id === null ? null : byId.get(id)! };
+    return { stand, paket: null, schritte: [], aktuell: null, ab: minutenAb(plan), plan, planAktuell: id === null ? null : byId.get(id)!, planQuellen: quellenVon(plan) };
   }
   const order = ablauf(paket.schritte, stand.reihenfolge);
   const byId = new Map(paket.schritte.map((s) => [s.id, s]));
   const schritte = order.map((id) => byId.get(id)!);
   const id = aktuellerSchritt(order, stand);
-  return { stand, paket, schritte, aktuell: id === null ? null : byId.get(id)!, ab: minutenAb(schritte), plan: [], planAktuell: null };
+  return { stand, paket, schritte, aktuell: id === null ? null : byId.get(id)!, ab: minutenAb(schritte), plan: [], planAktuell: null, planQuellen: new Map() };
 }
 
 /** Ein Lernpaket für die Einheit wählen (null: ohne Lernpaket). Ein anderes Paket fängt von vorne an. */
@@ -535,15 +598,17 @@ export const merkeSchritt = (unitId: number, schrittId: number, was: Merke) =>
 export const FRAGE_ARTEN: readonly LernpaketSchritt["art"][] = ["frage", "kontrolle"];
 
 /**
- * „Richtig / Teilweise / Falsch“ bei einer Frage oder Kontrolle des Lernpakets: was der Lehrer gehört hat (null nimmt es
- * zurück). „Falsch“ ist ein Zeichen für die Anpassung im Unterricht; Richtig und Teilweise nehmen es zurück. Nur
- * Beobachtungen, der Lernstand bleibt unberührt; der Abschluss kann sie als Beleg lesen (`antwortenDerEinheit`).
+ * „Richtig / Teilweise / Falsch“ bei einer Frage oder Kontrolle des Lernpakets, im Plan auch bei Erklären, Grundlage und
+ * Lernkontrolle: was der Lehrer gehört hat (null nimmt es zurück). „Falsch“ ist ein Zeichen für die Anpassung im
+ * Unterricht; Richtig und Teilweise nehmen es zurück. Nur Beobachtungen, der Lernstand bleibt unberührt; der Abschluss
+ * kann sie als Beleg lesen (`antwortenDerEinheit`).
  */
 export function setzeAntwort(unitId: number, schrittId: number, wert: Beobachtung | null): boolean {
   const s = leseStand(unitId);
   const p = s.paket_id ? getLernpaket(s.paket_id) : null;
-  const schritt = p?.schritte.find((x) => x.id === schrittId);
-  if (!schritt || !FRAGE_ARTEN.includes(schritt.art)) return false;
+  const ps = p ? null : (s.plan ?? (schrittId < 0 ? planDerEinheit(unitId) : [])).find((x) => x.id === schrittId);
+  const art = p ? (p.schritte.find((x) => x.id === schrittId)?.art ?? null) : ps ? frageArtVon(ps) : null;
+  if (!art || !FRAGE_ARTEN.includes(art)) return false;
   return mitSchritt(unitId, schrittId, (cur) => {
     const antworten = { ...cur.antworten };
     if (wert) antworten[schrittId] = wert;
@@ -589,15 +654,30 @@ export function skillsErledigterSchritte(unitId: number): string[] {
   return [...new Set(ids)];
 }
 
-/** Für den Abschluss: was der Lehrer bei Fragen und Kontrollen gehört hat, nur Gespeichertes, in der Reihenfolge der Schritte. */
-export function antwortenDerEinheit(unitId: number): { schrittId: number; titel: string; art: LernpaketSchritt["art"]; antwort: Beobachtung }[] {
+/**
+ * Für den Abschluss: was der Lehrer bei Fragen und Kontrollen gehört hat, nur Gespeichertes, in der Reihenfolge der
+ * Schritte, mit den Fähigkeiten des Schritts. Im Plan zählen auch Schritte aus Paketen, Erklären, Grundlage und die
+ * Lernkontrolle eines Themas.
+ */
+export function antwortenDerEinheit(unitId: number): { schrittId: number; titel: string; art: LernpaketSchritt["art"]; antwort: Beobachtung; skillIds: string[] }[] {
   const s = gespeichert(unitId);
   if (!s) return [];
-  return Object.entries(s.antworten)
-    .map(([id, antwort]) => ({ schritt: getSchritt(Number(id)), antwort }))
+  const plan = s.plan ?? [];
+  const order = ablauf(plan, s.reihenfolge);
+  const imPlan = Object.entries(s.antworten).flatMap(([id, antwort]) => {
+    const ps = Number(id) < 0 ? plan.find((x) => x.id === Number(id)) : undefined;
+    const q = paketQuelle(ps);
+    const schritt = q ? getSchritt(q.schrittId) : null;
+    if (!ps || (q && !schritt)) return [];
+    const art = schritt?.art ?? frageArtVon(ps) ?? "frage";
+    return [{ schrittId: ps.id, titel: schritt?.titel ?? ps.titel, art, antwort, skillIds: schritt ? skillsDesSchritts(schritt) : ps.skillId ? [ps.skillId] : [], rang: order.indexOf(ps.id) }];
+  });
+  const imPaket = Object.entries(s.antworten)
+    .map(([id, antwort]) => ({ schritt: Number(id) > 0 ? getSchritt(Number(id)) : null, antwort }))
     .filter((x): x is { schritt: LernpaketSchritt; antwort: Beobachtung } => x.schritt !== null)
     .sort((a, b) => a.schritt.paket_id - b.schritt.paket_id || a.schritt.position - b.schritt.position)
-    .map(({ schritt, antwort }) => ({ schrittId: schritt.id, titel: schritt.titel, art: schritt.art, antwort }));
+    .map(({ schritt, antwort }) => ({ schrittId: schritt.id, titel: schritt.titel, art: schritt.art, antwort, skillIds: skillsDesSchritts(schritt) }));
+  return [...imPlan.sort((a, b) => a.rang - b.rang).map(({ schrittId, titel, art, antwort, skillIds }) => ({ schrittId, titel, art, antwort, skillIds })), ...imPaket];
 }
 
 export const zeigeSchritt = (unitId: number, schrittId: number) => mitSchritt(unitId, schrittId, (s) => ({ ...s, aktuell: schrittId }));
@@ -635,14 +715,18 @@ export function aufgabeFuerSchueler(a: TaskDraft, quelle: PaketQuelle): TaskDraf
 /**
  * „Übung senden“: die Aufgaben eines Schritts als Übung an den Schüler **dieser** Einheit, auch wenn der
  * Lehrer zwei Einheiten zugleich hat. Gibt Übung und Zuweisung zurück; aufs Gerät bringt sie die Aktion.
+ * Im Plan für heute (`schrittId` negativ): der Paketschritt, auf den der Planschritt zeigt; das erste Senden hält den Plan
+ * fest wie jedes Tippen (`mitSchritt`).
  */
 export function sendeSchritt(unitId: number, schrittId: number, teacherId: number | null): { worksheetId: number; assignmentId: number } | { fehler: string } {
   const unit = getUnit(unitId);
   if (!unit || unit.status !== "gestartet") return { fehler: "Diese Einheit läuft nicht mehr." };
   const s = leseStand(unitId);
-  const schritt = getSchritt(schrittId);
-  const p = s.paket_id ? getLernpaket(s.paket_id) : null;
-  if (!p || !schritt || schritt.paket_id !== p.id) return { fehler: "Dieser Schritt gehört nicht zum Lernpaket der Einheit." };
+  const plan = s.paket_id ? null : (s.plan ?? (schrittId < 0 ? planDerEinheit(unitId) : []));
+  const q = plan ? paketQuelle(plan.find((x) => x.id === schrittId)) : null;
+  const schritt = getSchritt(q ? q.schrittId : schrittId);
+  const p = s.paket_id ? getLernpaket(s.paket_id) : q ? getLernpaket(q.paketId) : null;
+  if (!p || !schritt || schritt.paket_id !== p.id) return { fehler: plan ? "Dieser Schritt gehört nicht zum Plan der Einheit." : "Dieser Schritt gehört nicht zum Lernpaket der Einheit." };
   if (!schritt.aufgaben.length) return { fehler: "Dieser Schritt hat keine Aufgaben." };
   const tasks = schritt.aufgaben.map((a) => aufgabeFuerSchueler(a, p.quelle));
   for (const [i, t] of tasks.entries()) {
@@ -677,7 +761,7 @@ export function sendeSchritt(unitId: number, schrittId: number, teacherId: numbe
     );
     assignmentId = repo.assignWorksheet(worksheetId, student.id, "", unit.id);
   })();
-  aendere(unitId, (cur) => ({ ...cur, gesendet: { ...cur.gesendet, [schrittId]: [...(cur.gesendet[schrittId] ?? []), worksheetId] } }));
+  aendere(unitId, (cur) => ({ ...cur, ...(plan && !cur.paket_id ? { plan: cur.plan ?? plan } : {}), gesendet: { ...cur.gesendet, [schrittId]: [...(cur.gesendet[schrittId] ?? []), worksheetId] } }));
   return { worksheetId, assignmentId };
 }
 
@@ -723,13 +807,19 @@ export function dokumentiereAblauf(lessonId: number, unitId: number): DokuTexte 
   return t;
 }
 
-export type AblaufDerEinheit = { art: "paket" | "plan"; titel: string; ergebnis: Ergebnis<{ id: number; titel: string }> };
+/** `themen`: im Plan für die ganze Einheit die Themen mit mindestens einem erledigten Schritt, in der Reihenfolge des Plans. */
+export type AblaufDerEinheit = { art: "paket" | "plan"; titel: string; ergebnis: Ergebnis<{ id: number; titel: string }>; themen?: string[] };
 
 /** Was mit dem Lernpaket oder dem „Plan für heute“ einer Einheit geschah, nach dem gespeicherten Stand. */
 function ablaufVon(s: Stand): AblaufDerEinheit | null {
   const p = s.paket_id ? getLernpaket(s.paket_id) : null;
   if (p) return { art: "paket", titel: p.title, ergebnis: ergebnis(p.schritte, ablauf(p.schritte, s.reihenfolge), s) };
-  if (s.plan?.length) return { art: "plan", titel: "Plan für heute", ergebnis: ergebnis(s.plan, ablauf(s.plan, s.reihenfolge), s) };
+  if (s.plan?.length) {
+    const themen = themenDesPlans(s.plan)
+      .filter((t) => t.ids.some((id) => s.erledigt.includes(id)))
+      .map((t) => t.name);
+    return { art: "plan", titel: "Plan für heute", ergebnis: ergebnis(s.plan, ablauf(s.plan, s.reihenfolge), s), ...(themen.length ? { themen } : {}) };
+  }
   return null;
 }
 
@@ -797,7 +887,9 @@ export const generatorSeed = (unitId: number, skillId: string) => [...`${unitId}
  *
  * Wie beim Senden eines Paketschritts hält das erste Senden den „Plan für heute“ fest (den von vor dem Senden: die neue
  * Übung und die ersten Antworten ändern sonst Empfehlung und Plan) und merkt die Übung beim Schritt (`gesendet`).
- * `schrittId`: der Planschritt, aus dem gesendet wurde; ohne ihn der Schritt mit dieser Fähigkeit, wenn es einen gibt.
+ * `schrittId`: der Planschritt, aus dem gesendet wurde; ohne ihn der Übungsschritt mit dieser Fähigkeit, wenn es einen gibt.
+ * Aus der Lernkontrolle eines Themas: drei Aufgaben als Überprüfung, ein Versuch, ohne Hilfen (Modus 'test', Notiz
+ * „Lernkontrolle“, damit der Abschluss sie nicht für den Minitest am Anfang hält).
  */
 export async function sendeAusGenerator(
   unitId: number,
@@ -813,6 +905,10 @@ export async function sendeAusGenerator(
   // without a package: the plan as it is now, before this exercise changes the data
   const vorher = leseStand(unitId);
   const plan = vorher.paket_id ? null : (vorher.plan ?? planDerEinheit(unitId));
+  // without a step from the tools: the practice step of the skill first, not its explanation or check
+  const schritt = plan?.find((x) => x.id === schrittId) ?? plan?.find((x) => x.skillId === skill.id && (!x.art || x.art === "ueben")) ?? plan?.find((x) => x.skillId === skill.id) ?? null;
+  // the short Lernkontrolle of a topic: three tasks, one try, no hints (mode 'test', like the Minitest)
+  const kontrolle = schritt !== null && schritt.id === schrittId && schritt.art === "kontrolle";
   const w = generatorWahl(student.id, skill.id);
   let worksheetId = 0;
   try {
@@ -823,14 +919,14 @@ export async function sendeAusGenerator(
         klasse: student.klasse ?? 1,
         skillIds: [skill.id],
         difficulty: w.difficulty,
-        count: w.count,
+        count: kontrolle ? KONTROLLE_ANZAHL : w.count,
         taskType: "mixed",
-        kind: w.kind,
-        title: `${student.name.split(" ")[0]} – ${skill.area} › ${skill.name}`,
+        kind: kontrolle ? "ueberpruefung" : w.kind,
+        title: `${student.name.split(" ")[0]} – ${kontrolle ? `${LERNKONTROLLE}: ${skill.name}` : `${skill.area} › ${skill.name}`}`,
         useAI: false,
         teacherId,
         studentId: student.id,
-        seed: letzteUebungZur(unit.id, skill.id) === null ? generatorSeed(unit.id, skill.id) : undefined,
+        seed: kontrolle ? generatorSeed(unit.id, `${skill.id}:${LERNKONTROLLE}`) : letzteUebungZur(unit.id, skill.id) === null ? generatorSeed(unit.id, skill.id) : undefined,
       })
     ).id;
   } catch (e) {
@@ -840,9 +936,8 @@ export async function sendeAusGenerator(
     repo.deleteWorksheet(worksheetId);
     return { fehler: "Für diese Fähigkeit gibt es keine Aufgaben ohne KI. Bitte im Builder erstellen." };
   }
-  const assignmentId = repo.assignWorksheet(worksheetId, student.id, "", unit.id);
+  const assignmentId = kontrolle ? repo.assignWorksheet(worksheetId, student.id, LERNKONTROLLE, unit.id, "test") : repo.assignWorksheet(worksheetId, student.id, "", unit.id);
   if (plan?.length) {
-    const schritt = plan.find((x) => x.id === schrittId) ?? plan.find((x) => x.skillId === skill.id) ?? null;
     aendere(unitId, (cur) => {
       if (cur.paket_id) return cur;
       const neu = { ...cur, plan: cur.plan ?? plan };

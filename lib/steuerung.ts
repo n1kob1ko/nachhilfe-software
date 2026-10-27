@@ -13,7 +13,7 @@ import { ACTION_LABEL } from "./ai/labels";
 import { aiEnabled, budgetUsedUp, schuelerGestoppt } from "./ai/router";
 import { grenzeErreichtText } from "./ai/schueler-kosten";
 import { aufgabeSchluessel, ausgeblendet } from "./bewertungen";
-import { aufgabeFuerSchueler, reagiert, type CockpitDaten } from "./cockpit";
+import { aufgabeFuerSchueler, paketImSchritt, reagiert, type CockpitDaten } from "./cockpit";
 import { zurFaehigkeit } from "./cockpit-vorschlag";
 import { DIFFICULTIES, levelOf } from "./curriculum";
 import { db } from "./db";
@@ -66,9 +66,12 @@ export function lageDerEinheit(unitId: number, c: CockpitDaten): (Lage & { uebun
   const unit = getUnit(unitId);
   if (!unit || unit.status !== "gestartet") return null;
   const st = c.stand.steuerung;
-  const schritt = c.paket ? c.aktuell : null;
-  const plan = c.paket ? null : c.planAktuell;
-  const schrittId = schritt?.id ?? plan?.id ?? null;
+  // a step of the plan that comes from a package counts like that package's step (its tasks, its „Bei Fehler“)
+  const quelle = !c.paket && c.planAktuell ? (c.planQuellen.get(c.planAktuell.id) ?? null) : null;
+  const paket = c.paket ?? quelle?.paket ?? null;
+  const schritt = c.paket ? c.aktuell : (quelle?.schritt ?? null);
+  const plan = c.paket || quelle ? null : c.planAktuell;
+  const schrittId = c.paket ? (c.aktuell?.id ?? null) : (c.planAktuell?.id ?? null);
   const lehrer = st.signal && st.signal.schritt === schrittId ? st.signal.art : null;
   const uebung = aktuelleUebung(unitId);
   const versuche = uebung
@@ -97,14 +100,14 @@ export function lageDerEinheit(unitId: number, c: CockpitDaten): (Lage & { uebun
       : c.stand.skill_id
         ? [c.stand.skill_id]
         : [];
-  if (schritt && !schrittSkills.length) schrittSkills.push(...c.paket!.skill_ids.slice(0, 1));
+  if (schritt && !schrittSkills.length) schrittSkills.push(...(paket?.skill_ids.slice(0, 1) ?? []));
 
   // die Stufe je Fähigkeit: aus den Aufgaben der Übung, für den Schritt sonst aus dem Paket
   const stufen: Record<string, number> = {};
   const jeSkill = new Map<string, number[]>();
   for (const t of tasks) for (const id of uniq([t.skillId, ...(t.skillIds ?? [])].filter((x): x is string => Boolean(x)))) jeSkill.set(id, [...(jeSkill.get(id) ?? []), stufeVon(t)]);
   for (const [id, xs] of jeSkill) stufen[id] = mitte(xs);
-  if (c.paket) for (const id of schrittSkills) stufen[id] ??= levelOf(c.paket.schwierigkeit);
+  if (paket) for (const id of schrittSkills) stufen[id] ??= levelOf(paket.schwierigkeit);
 
   const heute = wienerDatum();
   const vorgabe = vorgabeDerEinheit(unitId)?.skillIds ?? [];
@@ -146,7 +149,7 @@ function schonGesendet(unitId: number): Set<string> {
  * dann aus freigegebenen Übungen (allgemeine oder die des Schülers) und der Bibliothek. Nicht, was in dieser Einheit schon
  * gesendet wurde, nichts schlecht Bewertetes, nichts mit „Bitte prüfen“.
  */
-export function bestand(unitId: number, o: Pick<Option, "skillId" | "level">, c?: Pick<CockpitDaten, "paket">): TaskDraft[] {
+export function bestand(unitId: number, o: Pick<Option, "skillId" | "level">, c?: Partial<Pick<CockpitDaten, "paket" | "planAktuell" | "planQuellen">>): TaskDraft[] {
   const unit = getUnit(unitId);
   if (!unit || !o.skillId || !o.level) return [];
   const weg = new Set([...schonGesendet(unitId), ...ausgeblendet()]);
@@ -157,7 +160,7 @@ export function bestand(unitId: number, o: Pick<Option, "skillId" | "level">, c?
     weg.add(k);
     out.push(t);
   };
-  const paket = c?.paket ?? null;
+  const paket = c ? paketImSchritt(c) : null;
   if (paket)
     for (const s of paket.schritte)
       for (const a of s.aufgaben) if ((a.skillId === o.skillId || a.skillIds?.includes(o.skillId)) && levelOf(a.difficulty ?? paket.schwierigkeit) === o.level) nimm(aufgabeFuerSchueler(a, paket.quelle));
@@ -315,15 +318,14 @@ const TITEL: Partial<Record<Art, string>> = { voraussetzung: "Grundlage" };
  * Eine Aufgabe zum Vorschlag an den Schüler dieser Einheit: aus A, sonst aus B. Danach zählt für den nächsten Vorschlag
  * nur, was der Schüler ab jetzt antwortet (`reagiert`).
  */
-export function sendeAngepasst(unitId: number, o: Option, teacherId: number | null, c?: Pick<CockpitDaten, "paket">): { worksheetId: number; assignmentId: number; quelle: "A" | "B" } | { fehler: string } {
+export function sendeAngepasst(unitId: number, o: Option, teacherId: number | null, c?: Partial<Pick<CockpitDaten, "paket" | "planAktuell" | "planQuellen">>): { worksheetId: number; assignmentId: number; quelle: "A" | "B" } | { fehler: string } {
   const unit = getUnit(unitId);
   if (!unit || unit.status !== "gestartet") return { fehler: "Diese Einheit läuft nicht mehr." };
   const student = repo.getStudent(unit.student_id);
   const skill = o.skillId ? repo.getSkill(o.skillId) : null;
   if (!student || !skill || !MIT_AUFGABE.includes(o.art) || !o.level || o.level < 1 || o.level > 5) return { fehler: "Diese Fähigkeit gibt es nicht." };
-  const paket = c?.paket ?? null;
   let quelle: "A" | "B" = "A";
-  let tasks = bestand(unitId, o, { paket });
+  let tasks = bestand(unitId, o, c);
   if (!tasks.length) {
     quelle = "B";
     tasks = generatorKann(o) ? ausGenerator(unitId, o) : [];

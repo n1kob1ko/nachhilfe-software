@@ -174,23 +174,28 @@ async function setup() {
   return { db, repo, units, lp, c, auto, zeit, router, teacher, schueler, paket, heute, schularbeit, platz, kiAufrufe };
 }
 
-test("cockpit: a running unit gets the checked package for the coming Schularbeit, marked as a suggestion; the first tap keeps it", async () => {
+test("cockpit: the checked package for the coming Schularbeit is the topic's block in the plan for the whole unit; the first tap holds the plan", async () => {
   const s = await setup();
   const sid = s.schueler("Ilka Probe");
   const p = s.paket({ titel: "Die vier Fälle" });
   s.paket({ titel: "Artikel", skills: ["deutsch.grammatik.artikel"] });
   s.schularbeit(sid, 12, ["Die vier Fälle"], ["deutsch.grammatik.faelle"]);
   const unit = s.units.startUnit(s.teacher.id, sid, { subject: "Deutsch" }).unit;
-  let d = s.c.cockpit(unit.id);
-  assert.equal(d.paket?.id, p.id);
-  assert.equal(d.stand.automatisch?.warum, `Schularbeit am ${s.auto.tagMonat(s.zeit.tagAddieren(s.heute, 12))} – Die vier Fälle`);
-  assert.equal(d.stand.automatisch?.passung, "faehigkeit");
-  assert.equal((s.db().prepare("SELECT COUNT(*) AS n FROM einheit_cockpit").get() as { n: number }).n, 0, "nothing stored while it is only a suggestion");
-  s.c.markiereSchritt(unit.id, p.schritte[0].id, "erledigt");
-  d = s.c.cockpit(unit.id);
-  assert.equal(d.stand.automatisch, null, "used: now it is the unit's own state");
-  assert.equal(d.paket?.id, p.id);
-  // „Entfernen“ in the cockpit: without a package, and the suggestion does not come back
+  // since the plan for the whole unit (lib/stundenplan.ts) a suggested package no longer is the whole unit
+  let d = s.c.cockpit(unit.id, { mitPlan: true });
+  assert.equal(d.paket, null);
+  assert.equal(d.stand.automatisch, null);
+  const plan = d.plan;
+  const block = plan.filter((x) => x.quelle && "paketId" in x.quelle && x.quelle.paketId === p.id);
+  assert.deepEqual(block.map((x) => x.titel), p.schritte.map((x) => x.titel), "the package's steps are the topic's block");
+  assert.equal((s.db().prepare("SELECT COUNT(*) AS n FROM einheit_cockpit").get() as { n: number }).n, 0, "nothing stored while it is only read");
+  s.c.markiereSchritt(unit.id, block[0].id, "erledigt");
+  d = s.c.cockpit(unit.id, { mitPlan: true });
+  assert.deepEqual(d.stand.plan, plan, "used: now it is the unit's own state");
+  assert.equal(d.paket, null);
+  // the package chosen by hand: exactly this package, as before; „Ohne“ again without it
+  s.c.waehlePaket(unit.id, p.id);
+  assert.equal(s.c.cockpit(unit.id).paket?.id, p.id);
   s.c.waehlePaket(unit.id, null);
   assert.equal(s.c.cockpit(unit.id).paket, null);
   s.units.finishUnit(unit.id, "abgebrochen");
@@ -217,11 +222,13 @@ test("the teacher's choice wins: chosen by hand, saved without a package, or rem
   assert.equal(s.c.vorbereitung(sid, s.heute), null, "the choice by hand is gone too");
   unit = s.units.startUnit(s.teacher.id, sid, { subject: "Deutsch" }).unit;
   assert.equal(s.c.cockpit(unit.id).paket, null);
+  const mitPaket = (id: number) => s.c.cockpit(unit.id, { mitPlan: true }).plan.some((x) => x.quelle && "paketId" in x.quelle && x.quelle.paketId === id);
+  assert.equal(mitPaket(passt.id), false, "removed for the day: the plan takes no package either");
   // choosing by hand again lifts „Entfernen“
   assert.ok("ok" in s.c.bereiteVor(sid, s.heute, passt.id, s.teacher.id));
   assert.equal(s.auto.ohnePaketMarkiert(sid, s.heute), false);
   assert.ok("ok" in s.c.bereiteVor(sid, s.heute, null, s.teacher.id));
-  assert.equal(s.c.cockpit(unit.id).stand.automatisch?.warum.startsWith("Schularbeit am"), true, "„Zurücknehmen“: the suggestion comes back");
+  assert.equal(mitPaket(passt.id), true, "„Zurücknehmen“: the checked package comes back into the plan");
   // saved without a package in the cockpit
   s.c.waehlePaket(unit.id, null);
   assert.equal(s.c.cockpit(unit.id).paket, null);
@@ -355,9 +362,10 @@ test("„Für nächstes Mal“ from the student app: preselected above Lernstand
 
   // in the cockpit: the wish written before the unit
   const unit = s.units.startUnit(s.teacher.id, sid, { subject: "Deutsch", at: Date.now() + 1000 }).unit;
-  const d = s.c.cockpit(unit.id);
-  assert.equal(d.paket?.id, faelle.id);
-  assert.equal(d.stand.automatisch?.warum, `Lena schreibt: „${satz}“`);
+  const { themenDesPlans } = await import("./stundenplan");
+  const plan = s.c.cockpit(unit.id, { mitPlan: true }).plan;
+  assert.equal(themenDesPlans(plan)[0]?.paketId, faelle.id, "the wish's package is the first topic of the plan");
+  assert.ok(!JSON.stringify(plan).includes("verstehe"), "the student's words stay in his quote, never in the plan");
   s.units.finishUnit(unit.id, "abgebrochen");
 
   // no package for the wish: „Kein Paket“ names the skill; the KI form gets the skill, never the student's words

@@ -288,7 +288,9 @@ test("the Vorgabe ranks above the Prüfung, switches the plan only before the fi
   // without a Vorgabe: as before
   assert.equal(auto.vorgabeSignal(unit.id, "Englisch"), null);
   const vorher = cockpit.planDerEinheit(unit.id);
-  assert.ok(vorher.some((s) => /Schularbeit vorbereiten/.test(s.titel)), "the near Prüfung leads without a Vorgabe");
+  // the plan for the whole unit (lib/stundenplan.ts): the near Prüfung is the topic, its practice step also in the exam format
+  assert.equal(vorher.find((s) => s.art === "ueben")?.skillId, "englisch.tenses.pastsimple", "the near Prüfung leads without a Vorgabe");
+  assert.equal(vorher.find((s) => s.art === "ueben")?.pruefung, true);
 
   await vg.speichereVorgabe({ unitId: unit.id, teacherId: teacher.id, text: "Heute Present Continuous und Fragen", materialIds: [], testId: null, keinName: false, heute: HEUTE });
   assert.equal(auto.SIGNAL_RANG.vorgabe > auto.SIGNAL_RANG.pruefung, true);
@@ -296,15 +298,16 @@ test("the Vorgabe ranks above the Prüfung, switches the plan only before the fi
   assert.ok(w && w.art !== "ohne_signal" && w.signal.art === "vorgabe");
   assert.equal(vg.vorgabeDerEinheit(unit.id)!.angewendet, true, "nothing done yet: the plan follows at once");
   const plan = cockpit.planDerEinheit(unit.id);
-  assert.deepEqual(plan.slice(1, -1).map((s) => s.titel), ["Üben: Present Progressive"], "the exact name of a skill is clear without KI");
+  const ueben = (p: typeof plan) => p.filter((s) => s.art === "ueben").map((s) => s.titel);
+  assert.deepEqual(ueben(plan), ["Üben: Present Progressive", "Üben: Past Simple"], "the exact name of a skill is clear without KI; the Vorgabe first, then the Prüfung");
   const [klar, offen] = vg.vorgabeDerEinheit(unit.id)!.punkte;
   assert.equal(klar.zuordnung, "sicher");
   assert.equal(offen.zuordnung, "unklar", "„Fragen“ is not forced onto a skill: to confirm on the card");
   assert.ok(offen.vorschlaege.includes("englisch.tenses.presentsimple.fragen"));
   assert.ok(vg.bestaetigeVorgabe(unit.id, new Map([[1, "englisch.tenses.presentsimple.fragen"]]), teacher.id));
   assert.deepEqual(vg.vorgabeDerEinheit(unit.id)!.skillIds, ["englisch.tenses.presentprogressive", "englisch.tenses.presentsimple.fragen"]);
-  assert.equal(cockpit.planDerEinheit(unit.id).filter((s) => s.titel.startsWith("Üben")).length, 2, "confirmed: the plan follows, nothing done yet");
-  assert.equal(plan.some((s) => /Schularbeit vorbereiten/.test(s.titel)), false);
+  const bestaetigt = cockpit.planDerEinheit(unit.id).filter((s) => s.art === "ueben").map((s) => s.skillId);
+  assert.deepEqual(bestaetigt, ["englisch.tenses.presentprogressive", "englisch.tenses.presentsimple.fragen", "englisch.tenses.pastsimple"], "confirmed: the plan follows, nothing done yet");
 
   // a step done: a new Vorgabe does not change the running plan by itself
   const erster = cockpit.cockpit(unit.id, { mitPlan: true }).plan[0];

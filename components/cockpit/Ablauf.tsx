@@ -9,9 +9,11 @@ import {
   ChartNoAxesColumn,
   Check,
   CheckCircle2,
+  ChevronDown,
   ExternalLink,
   HelpCircle,
   Images,
+  ListOrdered,
   PenLine,
   Plus,
   Presentation,
@@ -49,7 +51,7 @@ import { CancelUnit } from "@/components/UnitControl";
 import { Pill, Reveal } from "@/components/ui";
 import { anpassungen, type Anpassung } from "@/lib/anpassen";
 import { bewertungInfos } from "@/lib/bewertungen";
-import { cockpit, ergebnis, ersteUebung, FRAGE_ARTEN, hilfeBeiFehler, planFuehrung, uebungGesendet, type CockpitDaten, type Hilfe, type PlanStep } from "@/lib/cockpit";
+import { cockpit, ergebnis, ersteUebung, FRAGE_ARTEN, hilfeBeiFehler, planFuehrung, planHatUebung, uebungGesendet, type CockpitDaten, type Hilfe, type PlanQuelle, type PlanStep } from "@/lib/cockpit";
 import { paketWahl, zurFaehigkeit } from "@/lib/cockpit-vorschlag";
 import { kostenSchaetzung } from "@/lib/lernpaket-ki";
 import { SCHRITT_ARTEN, ungeprueft, type LernpaketMitSchritten, type LernpaketSchritt } from "@/lib/lernpakete";
@@ -57,6 +59,9 @@ import { studentDevice } from "@/lib/live";
 import { letzterStoff, minitestDerEinheit } from "@/lib/minitest";
 import * as repo from "@/lib/repo";
 import { schuelerWorte } from "@/lib/schueler-notiz";
+import { sorteOfSkill } from "@/lib/schreibauftrag";
+import { KONTROLLE_ANZAHL, themenDesPlans } from "@/lib/stundenplan";
+import { EIGENE_VOKABELN } from "@/lib/vokabeln";
 import { vorschlagDerEinheit, type Anzeige } from "@/lib/steuerung";
 import { levelFor } from "@/lib/text-correction-rules";
 import { platzFuerEinheit, type UnitView } from "@/lib/units";
@@ -75,16 +80,23 @@ const first = (n: string) => n.split(" ")[0];
  * Antippen. Alles andere des früheren Cockpits und der Bereiche Übungen und Fortschritt liegt unter „Weitere Werkzeuge“
  * und bleibt dort vollständig.
  *
- * Mit Lernpaket kommen die Schritte aus dem Paket, ohne Paket aus dem „Plan für heute“ des Briefings (lib/cockpit.ts,
- * Ids negativ). „Wiederholen“ und „Schüler versteht es nicht“ zählen je Schritt mit (`einheit_cockpit.wiederholt` und
+ * Mit Lernpaket kommen die Schritte aus dem Paket, ohne Paket aus dem Plan für die ganze Einheit (lib/stundenplan.ts, Ids
+ * negativ): mehrere Themen, je Thema Erklären, Üben und Lernkontrolle oder die Schritte eines geprüften Pakets. Darüber
+ * eine Zeile mit den Themen und Minuten, die die Liste der Schritte öffnet. „Wiederholen“ und „Schüler versteht es
+ * nicht“ zählen je Schritt mit (`einheit_cockpit.wiederholt` und
  * `.nicht_verstanden`); beim Beenden steht das in der Dokumentation (Wiederholen bzw. Schwierigkeiten). Nur für den
  * Lehrer der Einheit; nichts davon kommt auf eine Schülerseite, außer den Aufgaben, die er sendet.
  */
 export function Unterricht({ unit, student, fehler, teacherId, werkzeugeOffen = false }: { unit: UnitView; student: repo.Student; fehler?: string; teacherId: number | null; werkzeugeOffen?: boolean }) {
   const c = cockpit(unit.id, { mitPlan: true });
   const name = first(student.name);
-  // „Anpassen“: Vorschläge und Übernommenes gelten für das Paket, das gerade gewählt ist
-  const liste = c.paket ? anpassungen(unit.id).filter((a) => a.paket_id === c.paket!.id) : [];
+  // im Plan: ein Schritt aus einem geprüften Lernpaket wird wie ein Schritt des Pakets gezeigt (lib/stundenplan.ts)
+  const quelle = !c.paket && c.planAktuell ? (c.planQuellen.get(c.planAktuell.id) ?? null) : null;
+  // „Anpassen“: Vorschläge und Übernommenes gelten für das Paket, das gerade gewählt ist (im Plan: das des Schritts)
+  const paketDa = c.paket ?? quelle?.paket ?? null;
+  const liste = paketDa ? anpassungen(unit.id).filter((a) => a.paket_id === paketDa.id) : [];
+  // die Themen des Plans (ein früher festgehaltener Plan hat keine): eine Zeile über der Karte
+  const themen = c.paket ? [] : themenDesPlans(c.plan);
   // was der Schüler vor dieser Einheit geschrieben hat: seine Worte, nur zum Lesen (lib/schueler-notiz.ts)
   const worte = schuelerWorte(student.id, unit.id);
   const ids = c.paket ? c.schritte.map((s) => s.id) : c.plan.map((s) => s.id);
@@ -108,10 +120,12 @@ export function Unterricht({ unit, student, fehler, teacherId, werkzeugeOffen = 
       <KiGrenzeHinweis studentId={student.id} name={name} />
       {worte && <SchuelerWorteKarte worte={worte} name={name} />}
       <VorgabeKarte unit={unit} c={c} />
-      <Woher c={c} unitId={unit.id} />
+      {themen.length ? <ThemenZeile c={c} themen={themen} unitId={unit.id} aktuell={aktuell} /> : <Woher c={c} unitId={unit.id} />}
       {ids.length > 1 && <Punkte c={c} ids={ids} aktuell={aktuell} unitId={unit.id} />}
       {c.paket && c.aktuell ? (
         <SchrittKarte c={c} s={c.aktuell} paket={c.paket} unit={unit} name={name} liste={liste} vorschlag={imSchritt} laeufe={laeufe} />
+      ) : c.planAktuell && quelle ? (
+        <SchrittKarte c={c} s={{ ...quelle.schritt, id: c.planAktuell.id, minuten: c.planAktuell.minuten }} echteId={quelle.schritt.id} thema={c.planAktuell.thema} paket={quelle.paket} unit={unit} name={name} liste={liste} vorschlag={imSchritt} laeufe={laeufe} />
       ) : !c.paket && c.planAktuell ? (
         <PlanKarte c={c} s={c.planAktuell} unit={unit} student={student} vorschlag={imSchritt} laeufe={laeufe} />
       ) : ids.length > 0 ? (
@@ -174,6 +188,72 @@ function Woher({ c, unitId }: { c: CockpitDaten; unitId: number }) {
   );
 }
 
+/**
+ * Im Plan für die ganze Einheit: eine kurze Zeile mit den Themen und ihren Minuten („Past Simple 35 · E-Mail 30 · …“), das
+ * Thema auf dem Schirm hervorgehoben. Antippen öffnet die Schritte zum Hinspringen; dazu woher der Plan kommt und
+ * „Lernpaket wählen“. Kein neues Menü.
+ */
+function ThemenZeile({ c, themen, unitId, aktuell }: { c: CockpitDaten; themen: ReturnType<typeof themenDesPlans>; unitId: number; aktuell: number | null }) {
+  const nachVorgabe = vorgabeDerEinheit(unitId)?.angewendet ?? false;
+  const jetzt = c.plan.find((s) => s.id === aktuell)?.thema ?? null;
+  const paketTitel = (id: number | null) => (id === null ? null : ([...c.planQuellen.values()].find((q) => q.paket.id === id)?.paket.title ?? null));
+  return (
+    <details className="group text-[14px]">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-lg text-ink-2 hover:text-ink [&::-webkit-details-marker]:hidden">
+        <ListOrdered size={16} className="shrink-0 text-ink-3" aria-hidden />
+        <span className="min-w-0 flex-1 leading-snug" data-testid="plan-themen">
+          <span className="sr-only">Themen heute: </span>
+          {themen.map((t, i) => (
+            <span key={t.name}>
+              {i > 0 && <span aria-hidden> · </span>}
+              <span className={t.name === jetzt ? "font-semibold text-ink" : ""}>
+                {t.name} <span className="num">{t.minuten}</span>
+              </span>
+            </span>
+          ))}
+        </span>
+        <ChevronDown size={16} className="shrink-0 text-accent transition-transform group-open:rotate-180" aria-hidden />
+      </summary>
+      <div className="grid gap-3 pt-1 pb-1" data-testid="plan-schritte">
+        <ol className="grid gap-0.5">
+          {c.plan.map((s, i) => {
+            const vorher = c.plan[i - 1];
+            const neu = s.thema && s.thema !== vorher?.thema;
+            const st = offenVon(c, s.id);
+            const p = neu ? paketTitel(themen.find((t) => t.name === s.thema)?.paketId ?? null) : null;
+            return (
+              <li key={s.id}>
+                {neu && (
+                  <p className="mt-2 text-[13px] font-semibold text-ink-2">
+                    {s.thema}
+                    {p && <span className="font-normal text-ink-3"> · Lernpaket „{p}“</span>}
+                  </p>
+                )}
+                <form action={zeigeSchrittAction.bind(null, unitId, s.id)}>
+                  <button
+                    aria-current={s.id === aktuell ? "step" : undefined}
+                    className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-2 text-left text-[15px] hover:bg-panel ${s.id === aktuell ? "bg-accent-wash font-semibold" : ""}`}
+                  >
+                    <span className="num w-6 shrink-0 text-[13px] text-ink-3">{st === "erledigt" ? <Check size={15} className="text-green" aria-label="erledigt" /> : i + 1}</span>
+                    <span className={`min-w-0 flex-1 ${st === "uebersprungen" ? "text-ink-3 line-through" : ""}`}>{s.titel}</span>
+                    <span className="num shrink-0 text-[13px] text-ink-3">{s.minuten} Min.</span>
+                  </button>
+                </form>
+              </li>
+            );
+          })}
+        </ol>
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13.5px] text-ink-2">
+          {nachVorgabe ? <Pill tone="accent">Nach deiner Vorgabe</Pill> : <span>Plan aus den Daten, ohne KI</span>}
+          <Link href={`/einheiten/${unitId}?bereich=cockpit#werkzeuge`} className="inline-flex min-h-[44px] items-center font-medium text-accent hover:underline">
+            Lernpaket wählen
+          </Link>
+        </p>
+      </div>
+    </details>
+  );
+}
+
 const offenVon = (c: CockpitDaten, id: number) => (c.stand.erledigt.includes(id) ? "erledigt" : c.stand.uebersprungen.includes(id) ? "uebersprungen" : "offen");
 const STATUS = { erledigt: "erledigt", uebersprungen: "übersprungen", offen: "offen" } as const;
 
@@ -223,8 +303,8 @@ function Block({ titel, ton = "", children }: { titel: string; ton?: "" | "green
   );
 }
 
-/** Kopf der Karte: „Schritt 2 von 6 · Minute 5–15“, Titel, Stand und wie oft wiederholt. */
-function KartenKopf({ c, id, titel, minuten, art, ids }: { c: CockpitDaten; id: number; titel: string; minuten: number; art?: React.ReactNode; ids: number[] }) {
+/** Kopf der Karte: „Past Simple · Schritt 2 von 6 · Minute 5–15“ (das Thema nur im Plan), Titel, Stand und wie oft wiederholt. */
+function KartenKopf({ c, id, titel, minuten, art, ids, thema }: { c: CockpitDaten; id: number; titel: string; minuten: number; art?: React.ReactNode; ids: number[]; thema?: string | null }) {
   const ab = c.ab.get(id) ?? 0;
   const st = offenVon(c, id);
   const w = c.stand.wiederholt[id] ?? 0;
@@ -232,6 +312,14 @@ function KartenKopf({ c, id, titel, minuten, art, ids }: { c: CockpitDaten; id: 
   return (
     <>
       <p className="num text-[13px] text-ink-3">
+        {thema && (
+          <>
+            <span className="font-semibold text-ink-2" data-testid="schritt-thema">
+              {thema}
+            </span>{" "}
+            ·{" "}
+          </>
+        )}
         Schritt {ids.indexOf(id) + 1} von {ids.length} · Minute {ab}–{ab + minuten}
       </p>
       <h2 className="mt-1 flex flex-wrap items-center gap-2 text-[21px] leading-tight font-semibold">
@@ -328,12 +416,38 @@ function schreibSkillDesSchritts(s: LernpaketSchritt, paket: LernpaketMitSchritt
   return ids.length === 1 ? ids[0] : null;
 }
 
-/** Der Schritt des Lernpakets auf dem Schirm. */
-function SchrittKarte({ c, s, paket, unit, name, liste, vorschlag, laeufe }: { c: CockpitDaten; s: LernpaketSchritt; paket: LernpaketMitSchritten; unit: UnitView; name: string; liste: Anpassung[]; vorschlag: Anzeige | null; laeufe: TextLauf[] }) {
+/**
+ * Der Schritt des Lernpakets auf dem Schirm. Im Plan für die ganze Einheit auch ein Schritt eines eingebetteten Pakets:
+ * `s` trägt dann die Id und Minuten des Planschritts (Senden, Antworten, Weiter zählen dort), `echteId` ist die des
+ * Paketschritts (für Anpassungen), `thema` steht im Kopf.
+ */
+function SchrittKarte({
+  c,
+  s,
+  paket,
+  unit,
+  name,
+  liste,
+  vorschlag,
+  laeufe,
+  echteId = s.id,
+  thema = null,
+}: {
+  c: CockpitDaten;
+  s: LernpaketSchritt;
+  paket: LernpaketMitSchritten;
+  unit: UnitView;
+  name: string;
+  liste: Anpassung[];
+  vorschlag: Anzeige | null;
+  laeufe: TextLauf[];
+  echteId?: number;
+  thema?: string | null;
+}) {
   const unitId = unit.id;
-  const ids = c.schritte.map((x) => x.id);
+  const ids = c.paket ? c.schritte.map((x) => x.id) : c.plan.map((x) => x.id);
   const gesendet = c.stand.gesendet[s.id]?.length ?? 0;
-  const angepasst = liste.filter((a) => a.status === "uebernommen" && a.schritt_id === s.id);
+  const angepasst = liste.filter((a) => a.status === "uebernommen" && a.schritt_id === echteId);
   // was der Lehrer übernommen hat und kein „leichter“ ist, steht immer da; das Leichtere erst nach „versteht es nicht“
   const immer = angepasst.filter((a) => a.art === "schwerer");
   const nicht = (c.stand.nichtVerstanden[s.id] ?? 0) > 0;
@@ -349,12 +463,12 @@ function SchrittKarte({ c, s, paket, unit, name, liste, vorschlag, laeufe }: { c
   const schreiben = schreibStartFuer(unit, schreibSkillDesSchritts(s, paket));
   const laeuft = schreiben ? textZumSchritt(laeufe, schreiben) : null;
   // a step without tasks before anything was sent: a quiet jump to the first step with an exercise
-  const mitAufgaben = new Set(c.schritte.filter((x) => x.aufgaben.length > 0).map((x) => x.id));
+  const mitAufgaben = new Set(c.paket ? c.schritte.filter((x) => x.aufgaben.length > 0).map((x) => x.id) : c.plan.filter((x) => planHatUebung(x, c.planQuellen)).map((x) => x.id));
   const sprungId = ersteUebung(ids, c.stand, s.id, (id) => mitAufgaben.has(id), uebungGesendet(unitId));
-  const sprung = sprungId === null ? null : (c.schritte.find((x) => x.id === sprungId) ?? null);
+  const sprung = sprungId === null ? null : ([...c.schritte, ...c.plan].find((x) => x.id === sprungId) ?? null);
   return (
     <section className="panel px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
-      <KartenKopf c={c} id={s.id} titel={s.titel} minuten={s.minuten} ids={ids} art={<Pill tone={s.art === "kontrolle" ? "green" : s.art === "zusatz" ? "amber" : "accent"}>{SCHRITT_ARTEN[s.art]}</Pill>} />
+      <KartenKopf c={c} id={s.id} titel={s.titel} minuten={s.minuten} ids={ids} thema={thema} art={<Pill tone={s.art === "kontrolle" ? "green" : s.art === "zusatz" ? "amber" : "accent"}>{SCHRITT_ARTEN[s.art]}</Pill>} />
       <div className="mt-4 grid gap-4">
         {s.lehrer_sagt.trim() && (
           <Block titel="Das sagst du">
@@ -519,24 +633,34 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
   const ws = s.uebung && /^U\d+$/.test(s.uebung) ? repo.getWorksheet(Number(s.uebung.slice(1))) : null;
   const blatt = ws && ws.status === "freigegeben" && !ws.archived_at && ws.kind !== "bibliothek" ? ws : null;
   const zugewiesen = s.uebung && /^Z\d+$/.test(s.uebung) ? Number(s.uebung.slice(1)) : null;
-  const skill = s.skillId ? repo.getSkill(s.skillId) : null;
+  // Erklären sends nothing (the exercise is the next step); Einstieg and Abschluss neither; the generators build no
+  // Lernkontrolle of a Schreibauftrag (the practice step starts the writing task)
+  const kontrolle = s.art === "kontrolle";
+  const skill = s.skillId && planHatUebung(s, c.planQuellen) && !(kontrolle && sorteOfSkill(s.skillId)) ? repo.getSkill(s.skillId) : null;
   const gesendet = c.stand.gesendet[s.id]?.length ?? 0;
-  // a writing skill (lib/textarbeit-ablauf.ts): „Schreibauftrag starten“, prefilled, is the main action of the step;
-  // in the exam step it is the exam's writing task, next to „Übung senden“
-  const eigen = schreibStartFuer(unit, s.skillId);
-  const zurPruefung = !eigen && s.titel === SCHULARBEIT_SCHRITT ? schreibStartZurPruefung(unit) : null;
+  // a writing skill (lib/textarbeit-ablauf.ts): „Schreibauftrag starten“, prefilled, is the main action of the practice
+  // step; in the exam step it is the exam's writing task, next to „Übung senden“
+  const eigen = !s.art || s.art === "ueben" ? schreibStartFuer(unit, s.skillId) : null;
+  const zurPruefung = !eigen && (s.titel === SCHULARBEIT_SCHRITT || (s.pruefung && s.art === "ueben")) ? schreibStartZurPruefung(unit) : null;
   const schreiben = eigen ?? zurPruefung;
   const laeuft = schreiben ? textZumSchritt(laeufe, schreiben) : null;
   // a step of the Vorgabe whose point still waits for „kurz bestätigen“: say where, so the exercise can follow
   const bestaetigen = !skill && !blatt && !zugewiesen && /^Üben: /.test(s.titel) && (vorgabeDerEinheit(unit.id)?.punkte.some((p) => p.zuordnung === "unklar" && p.vorschlaege.length > 0) ?? false);
-  // say, ask, expected answer from the skill and the step's first task, like a package step (lib/cockpit.ts planFuehrung)
-  const f = planFuehrung(unit.id, s);
-  const mitUebung = new Set(c.plan.filter((x) => x.skillId || x.uebung).map((x) => x.id));
+  // say, ask, expected answer from the skill and the step's first task, like a package step (lib/cockpit.ts planFuehrung);
+  // not in the Lernkontrolle: its tasks are not asked aloud first
+  const f = kontrolle ? { sagt: null, fragt: null, antwort: null } : planFuehrung(unit.id, s);
+  // Erklären, Grundlage, Lernkontrolle: „Richtig / Teilweise / Falsch“, what the teacher heard
+  const frage = s.art === "erklaeren" || s.art === "grundlage" || kontrolle;
+  const antwort = frage ? <AntwortKnoepfe unitId={unit.id} schrittId={s.id} wert={c.stand.antworten[s.id] ?? null} /> : null;
+  const mitUebung = new Set(c.plan.filter((x) => planHatUebung(x, c.planQuellen)).map((x) => x.id));
   const sprungId = ersteUebung(ids, c.stand, s.id, (id) => mitUebung.has(id), uebungGesendet(unit.id));
   const sprung = sprungId === null ? null : (c.plan.find((x) => x.id === sprungId) ?? null);
+  // the Lernkontrolle: three new tasks, one try, no hints (lib/cockpit.ts sendeAusGenerator); the student's own word
+  // lists make another count
+  const kontrolleLabel = skill?.id === EIGENE_VOKABELN ? "Lernkontrolle senden" : `Lernkontrolle senden (${KONTROLLE_ANZAHL} Aufgaben)`;
   return (
     <section className="panel px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
-      <KartenKopf c={c} id={s.id} titel={s.titel} minuten={s.minuten} ids={ids} />
+      <KartenKopf c={c} id={s.id} titel={s.titel} minuten={s.minuten} ids={ids} thema={s.thema} />
       {(s.beschreibung.trim() || f.sagt || f.fragt) && (
         <div className="mt-4 grid gap-4">
           {s.beschreibung.trim() && (
@@ -552,13 +676,21 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
           {f.fragt && (
             <Block titel="Das fragst du">
               <p className="text-[18px] leading-relaxed whitespace-pre-line">{f.fragt}</p>
+              {!f.antwort && antwort}
             </Block>
           )}
           {f.fragt && f.antwort && (
             <Block titel="Erwartete Antwort" ton="green">
               <p className="text-[16px] whitespace-pre-line">{f.antwort}</p>
+              {antwort}
             </Block>
           )}
+        </div>
+      )}
+      {antwort && !f.fragt && (
+        <div className="mt-4">
+          <p className="text-[13px] font-semibold text-ink-2">{kontrolle ? "Wie war die Lernkontrolle?" : "Wie war es?"}</p>
+          {antwort}
         </div>
       )}
       {bestaetigen && (
@@ -585,9 +717,11 @@ function PlanKarte({ c, s, unit, student, vorschlag, laeufe }: { c: CockpitDaten
           ) : (
             skill && (
               <>
-                <p className="text-[14px] text-ink-2">Neue Aufgaben zu {skill.name}, passend zum Lernstand von {name}.</p>
+                <p className="text-[14px] text-ink-2">
+                  {kontrolle ? `Neue Aufgaben zu ${skill.name}: ein Versuch, ohne Hilfen.` : `Neue Aufgaben zu ${skill.name}, passend zum Lernstand von ${name}.`}
+                </p>
                 <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
-                  <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, skill.id, s.id)} unitId={unit.id} label="Übung senden" primary={gesendet === 0 && !eigen} />
+                  <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, skill.id, s.id)} unitId={unit.id} label={kontrolle ? kontrolleLabel : "Übung senden"} primary={gesendet === 0 && !eigen} />
                   {gesendet > 0 && <span className="pt-2.5 text-[13px] text-ink-3">schon {gesendet === 1 ? "einmal" : `${gesendet}-mal`} an {name} gesendet</span>}
                 </div>
               </>
@@ -674,6 +808,7 @@ function Werkzeuge({ c, unit, student, liste, teacherId, ids, aktuell }: { c: Co
   const icon = (I: typeof Camera) => <I size={18} className="shrink-0 text-accent" aria-hidden />;
   const schritt = c.paket ? c.aktuell : null;
   const planSchritt = c.paket ? null : c.planAktuell;
+  const quelle: PlanQuelle | null = planSchritt ? (c.planQuellen.get(planSchritt.id) ?? null) : null;
   return (
     <section id="werkzeuge" className="panel scroll-mt-4 px-4 sm:px-5" aria-label="Weitere Werkzeuge" data-testid="werkzeuge">
       <div className="flex min-h-[52px] items-center gap-2">
@@ -703,7 +838,12 @@ function Werkzeuge({ c, unit, student, liste, teacherId, ids, aktuell }: { c: Co
             {schritt.aufgaben.length > 0 && <AufgabenMitLoesung s={schritt} fach={c.paket!.fach} teacherId={teacherId} />}
           </SchrittWerkzeuge>
         )}
-        {planSchritt && <SchrittWerkzeuge c={c} id={planSchritt.id} titel={planSchritt.titel} unitId={unit.id} ids={ids} />}
+        {planSchritt && (
+          <SchrittWerkzeuge c={c} id={planSchritt.id} titel={planSchritt.titel} unitId={unit.id} ids={ids}>
+            {/* a step of an embedded package: its tasks with solutions, like in the package */}
+            {quelle && quelle.schritt.aufgaben.length > 0 && <AufgabenMitLoesung s={quelle.schritt} fach={quelle.paket.fach} teacherId={teacherId} />}
+          </SchrittWerkzeuge>
+        )}
 
         {(stoff || gedruckt) && <MinitestKarte unitId={unit.id} name={name} geraet={geraet} stoff={stoff} gedruckt={gedruckt} />}
 

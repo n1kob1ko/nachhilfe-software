@@ -404,7 +404,7 @@ test("„Richtig / Teilweise / Falsch“ per question step: stored, „Falsch“
   let st = s.c.cockpit(unit.id).stand;
   assert.equal(st.antworten[frage.id], "falsch");
   assert.deepEqual(st.steuerung.signal, { schritt: frage.id, art: "falsch" });
-  assert.deepEqual(s.c.antwortenDerEinheit(unit.id), [{ schrittId: frage.id, titel: frage.titel, art: "frage", antwort: "falsch" }]);
+  assert.deepEqual(s.c.antwortenDerEinheit(unit.id), [{ schrittId: frage.id, titel: frage.titel, art: "frage", antwort: "falsch", skillIds: ["deutsch.grammatik.faelle"] }], "with the skills of the step, for the Abschluss");
   // the step on screen gets the easier way, in its card
   s.c.zeigeSchritt(unit.id, frage.id);
   const v = s.st.vorschlagDerEinheit(unit.id, s.c.cockpit(unit.id))!;

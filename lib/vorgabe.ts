@@ -50,7 +50,7 @@ import {
 import * as repo from "./repo";
 import { SUCHWOERTER } from "./themen";
 import { getUnit } from "./units";
-import { autoFuerEinheit, PRUEFUNG_TAGE } from "./vorbereitung-auto";
+import { PRUEFUNG_TAGE } from "./vorbereitung-auto";
 import { daysUntil } from "./exams";
 import { tagAddieren, wochentagVon } from "./planung/zeit";
 
@@ -333,16 +333,16 @@ export async function speichereVorgabe(o: VorgabeEingabe): Promise<{ ok: true; v
 }
 
 /**
- * Richtet den Ablauf nach der Vorgabe: ein geprüftes Lernpaket zu ihr, sonst der Plan aus den Daten mit ihr vorne.
- * Hat die Lehrkraft schon etwas getan (`hatBegonnen`), nur mit `erzwingen` („Plan anpassen“).
+ * Richtet den Ablauf nach der Vorgabe: der Plan für die ganze Einheit mit ihren Themen vorne (lib/stundenplan.ts; ein
+ * geprüftes Lernpaket zu einem Thema ist dort der Block dieses Themas). Hat die Lehrkraft schon etwas getan
+ * (`hatBegonnen`), nur mit `erzwingen` („Plan anpassen“).
  */
 export function wendeVorgabeAn(unitId: number, o: { erzwingen?: boolean } = {}): { angewendet: boolean } {
   const unit = getUnit(unitId);
   const v = vorgabeDerEinheit(unitId);
   if (!unit || unit.status !== "gestartet" || !v) return { angewendet: false };
   if (!o.erzwingen && hatBegonnen(leseStand(unitId))) return { angewendet: false };
-  const a = autoFuerEinheit(unit);
-  const out = planNeu(unitId, a?.art === "paket" ? a.paket.id : null);
+  const out = planNeu(unitId, null);
   if ("fehler" in out) return { angewendet: false };
   db().prepare("UPDATE einheit_vorgabe SET angewendet = 1 WHERE unit_id = ?").run(unitId);
   return { angewendet: true };
@@ -436,10 +436,7 @@ export function entferneVorgabe(unitId: number) {
   if (!v) return;
   db().prepare("DELETE FROM einheit_vorgabe WHERE unit_id = ?").run(unitId);
   const unit = getUnit(unitId);
-  if (v.angewendet && unit?.status === "gestartet" && !hatBegonnen(leseStand(unitId))) {
-    const a = autoFuerEinheit(unit);
-    planNeu(unitId, a?.art === "paket" ? a.paket.id : null);
-  }
+  if (v.angewendet && unit?.status === "gestartet" && !hatBegonnen(leseStand(unitId))) planNeu(unitId, null);
 }
 
 // ---------- Abweichung von der Prüfung ----------

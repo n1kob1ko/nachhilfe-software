@@ -18,13 +18,12 @@
  * hat (`bestaetigeAbschluss`); „Nächstes Mal“ liest dann die nächste Vorbereitung (lib/vorbereitung-auto.ts).
  */
 import { KRITERIUM_KEYS, KRITERIUM_KURZ } from "./bewertung-kriterien";
-import { ablaufDerEinheit, antwortenDerEinheit, reaktionenDerEinheit, skillsDesSchritts, skillsErledigterSchritte, type AblaufDerEinheit, type Beobachtung } from "./cockpit";
+import { ablaufDerEinheit, antwortenDerEinheit, reaktionenDerEinheit, skillsErledigterSchritte, type AblaufDerEinheit, type Beobachtung } from "./cockpit";
 import { db, json } from "./db";
 import { autoFelderVon } from "./einschaetzung";
 import { errorTypeLabel } from "./error-types";
 import { daysUntil } from "./exams";
 import { readReport, type TaskLine } from "./learning";
-import { getSchritt } from "./lernpakete";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
@@ -242,6 +241,8 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   const mt = belege?.minitest;
   if (mt?.erledigt) gemacht.push({ text: `Minitest am Anfang: ${mt.richtig} von ${mt.von} richtig${mt.erledigt < mt.von ? ` (${mt.erledigt} abgegeben)` : ""}`, von: "antworten" });
   gemacht.push(...mitBewertung.map(textGemacht));
+  // the plan for the whole unit: the topics worked on today, then the steps
+  if (ablauf?.themen?.length) gemacht.push(a(`${ablauf.themen.length === 1 ? "Thema" : "Themen"}: ${ablauf.themen.join(", ")}`));
   if (e?.erledigt.length) gemacht.push(a(`${wo}: ${e.erledigt.length} von ${gesamt} Schritten (${namen(e.erledigt)})`));
   // today's Vorgabe: what was practised, and (under „Nächstes Mal“) what was not
   const vorgabeGeuebt = (belege?.vorgabe ?? []).filter((v) => belege!.geuebt.includes(v.id));
@@ -332,10 +333,8 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
     .slice(0, 5)
     .map(([k, z]) => `${k} (${z.n}×${z.vermutet ? ", vermutet" : ""})`);
 
-  const beobachtungen = antwortenDerEinheit(unitId).map((b) => {
-    const s = getSchritt(b.schrittId);
-    return { titel: b.titel, art: b.art, antwort: b.antwort, skillIds: s ? skillsDesSchritts(s) : [] };
-  });
+  // the skills of the step: of the package step, or in the plan for the whole unit of its topic
+  const beobachtungen = antwortenDerEinheit(unitId).map((b) => ({ titel: b.titel, art: b.art, antwort: b.antwort, skillIds: b.skillIds }));
   const skillName = (id: string | null) => (id ? (repo.getSkill(id)?.name ?? id) : "");
   const reaktionen = reaktionenDerEinheit(unitId).map((r) => ({ art: r.art, skillId: r.skillId, skill: skillName(r.skillId), assignmentId: r.assignmentId }));
 

@@ -9,9 +9,8 @@ Seit 25. Oktober 2026 (niko): Vor der Einheit bereitet die App alles selbst vor.
 `lib/vorbereitung-auto.ts` sammelt für jeden Schüler Signale und ordnet sie (`ordneSignale`, `SIGNAL_RANG`). Reihenfolge nach niko:
 
 0. **Vorgabe für heute:** was die Lehrkraft in der laufenden Einheit unter „Was steht heute an?“ angegeben hat
-   ([Heute · Unterricht · Abschluss](heute-unterricht-abschluss.md#was-steht-heute-an)). Gibt es sie, zählt nur
-   sie: ein geprüftes Paket zu ihren Fähigkeiten, sonst der Plan aus den Daten mit bis zu drei Blöcken „Üben:
-   <Fähigkeit>“, ohne Schularbeit-Block und ohne weitere Schritte.
+   ([Heute · Unterricht · Abschluss](heute-unterricht-abschluss.md#was-steht-heute-an)). Im Plan für die ganze
+   Einheit (`lib/stundenplan.ts`) kommen ihre Themen zuerst, die übrigen Signale füllen die restliche Zeit.
 1. **Prüfung:** eine geplante Schularbeit oder ein Test. Bei zwei Prüfungen zählt die frühere.
 2. **Schulstoff:** eine Empfehlung „Schulstoff“ und die aktuellen Themen aus dem Profil.
 3. **Vom Schüler gemeldet:** der Wunsch aus der Schüler-App („Was willst du nächstes Mal machen?“).
@@ -28,8 +27,9 @@ Zum besten Signal sucht die App:
 
 Das Ergebnis heißt **Fokus** (`fokusAus`): Art, Fähigkeiten, Thema und eine kurze Beschreibung. Bei einem Wunsch steht dort nur „Vom Schüler gemeldet: <Thema>“, nie sein eigener Text. Heute, Unterricht und das Briefing nutzen denselben Fokus:
 
-- Die Karte auf Heute zeigt Thema, Warum, Vorbereitet (Lernpaket oder „Plan aus den Daten: n Schritte, k Übungen bereit“), Schwierigkeiten und eine Prüfung bis 30 Tage.
-- „Einheit starten“ beginnt im Fach der Vorbereitung (`fachHeute`). Das Cockpit nimmt dasselbe Paket (`autoFuerEinheit`) oder denselben Plan.
+- Die Karte auf Heute zeigt Thema, Warum, Vorbereitet („3 Themen: Past Simple 35 · E-Mail 30 · Tagesablauf 20 · Lernpaket „…““, ein selbst gewähltes Lernpaket wie bisher), Schwierigkeiten und eine Prüfung bis 30 Tage.
+- „Einheit starten“ beginnt im Fach der Vorbereitung (`fachHeute`). Der Unterricht nimmt denselben Plan für die ganze Einheit (`lib/stundenplan.ts`): mehrere Themen, geprüfte Pakete als Block eines Themas. Ein selbst gewähltes Paket gilt allein.
+- Das Briefing selbst („Plan für heute“ weiter unten) bleibt wie bisher ein Plan mit einem Schwerpunkt.
 
 ## Wo
 

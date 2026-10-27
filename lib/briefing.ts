@@ -176,7 +176,7 @@ function heute(studentId: number, now: Date, platzId: number | null): { minuten:
  * Die Fähigkeiten, um die es heute gehen sollte, mit Gewicht: die Empfehlungen der App zuerst, dann die
  * Fähigkeiten der nächsten Schularbeit, die schwächsten Fähigkeiten und was zuletzt dran war.
  */
-function fokus(d: Pick<BriefingDaten, "schritte" | "schularbeit" | "analysis" | "doku" | "fokus">): Map<string, number> {
+export function fokusGewichte(d: Pick<BriefingDaten, "schritte" | "schularbeit" | "analysis" | "doku" | "fokus">): Map<string, number> {
   const w = new Map<string, number>();
   const add = (id: string, g: number) => w.set(id, Math.max(w.get(id) ?? 0, g));
   // the topic the automatic preparation chose comes first
@@ -312,9 +312,10 @@ export function kandidaten(student: repo.Student, gewicht: Map<string, number>, 
 
 /**
  * Alles, was ein Briefing braucht; null, wenn es den Schüler nicht gibt. Liest nur. `fokus`: der Schwerpunkt der
- * automatischen Vorbereitung (lib/vorbereitung-auto.ts `fokusAus`), sonst keiner.
+ * automatischen Vorbereitung (lib/vorbereitung-auto.ts `fokusAus`), sonst keiner. `kandidaten: false`: ohne die Übungen
+ * aus dem Bestand (leer).
  */
-export function briefingDaten(studentId: number, o: { now?: Date; platzId?: number | null; fokus?: Fokus | null } = {}): BriefingDaten | null {
+export function briefingDaten(studentId: number, o: { now?: Date; platzId?: number | null; fokus?: Fokus | null; kandidaten?: false } = {}): BriefingDaten | null {
   const now = o.now ?? new Date();
   const student = repo.getStudent(studentId);
   const analysis = student ? analyzeStudent(studentId, now.getTime()) : null;
@@ -341,7 +342,8 @@ export function briefingDaten(studentId: number, o: { now?: Date; platzId?: numb
     verlauf: lessons.slice(0, 8),
     schularbeit,
     hausuebungen,
-    kandidaten: kandidaten(student, fokus(basis)),
+    // the plan for the whole unit (lib/stundenplan.ts) asks for them itself, once its topics are known
+    kandidaten: o.kandidaten === false ? [] : kandidaten(student, fokusGewichte(basis)),
     fokus: f,
     stand: briefingStand(studentId, { schularbeitTage: schularbeit?.days ?? null, fokus: f }),
   };
@@ -387,7 +389,7 @@ export function verteileMinuten(werte: number[], gesamt: number): number[] {
  * Die beste Übung aus dem Bestand für diese Fähigkeiten, oder null: zuerst freigegebene und zugewiesene Übungen,
  * Bibliothek, Vorlagen und Material, erst dann neue Aufgaben aus einer Aufgabenbank.
  */
-function uebungFuer(d: BriefingDaten, skillNamen: string[], schon: Set<string>): string | null {
+export function uebungFuer(d: Pick<BriefingDaten, "kandidaten">, skillNamen: string[], schon: Set<string>): string | null {
   const passt = (c: Kandidat) => !schon.has(c.id) && c.skills.some((s) => skillNamen.includes(s));
   const k = d.kandidaten.find((c) => c.art !== "bank" && passt(c)) ?? d.kandidaten.find(passt);
   if (!k) return null;

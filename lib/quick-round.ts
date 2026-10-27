@@ -24,6 +24,12 @@ export const isAssignmentMode = (x: unknown): x is AssignmentMode => x === "norm
 /** Ein Minitest: ohne Tipps, ohne „Ich komme nicht weiter“ und mit einem Versuch je Aufgabe. */
 export const isMinitest = (mode: string | null | undefined): boolean => mode === "test";
 
+/**
+ * Die Notiz der Zuweisung einer kurzen Lernkontrolle im Plan für heute (lib/cockpit.ts `sendeAusGenerator`): läuft wie ein
+ * Minitest (Modus 'test'), ist aber keiner „am Anfang“ der Einheit.
+ */
+export const LERNKONTROLLE = "Lernkontrolle";
+
 /** Höchstens so viele Antworten hat eine Aufgabe, die in eine Schnellrunde passt. */
 export const QUICK_ROUND_MAX_OPTIONS = 4;
 /** Weniger als zwei Antworten sind keine Auswahl. */
