@@ -280,3 +280,22 @@ test("Abschluss: „Unterlage gezeigt“ nur nach Öffnen, nur eine Unterlage, d
     ["Unterlage gezeigt: Past Simple – Merkblatt"],
   );
 });
+
+test("Phase C: „Öffnen“ zeigt die Unterlage nur zum Lesen: erst nach dem Öffnen, nur in dieser Einheit, ungelesen „Foto 3“, nie „Für heute“", async () => {
+  const s = await setup({ ki: false });
+  const sid = s.schueler("Mira Beispiel");
+  const { unit, ids } = await s.start(sid);
+  assert.ok(s.vg.aendereRolle(unit.id, ids[2], "erklaerung"));
+  const ziel = s.c.cockpit(unit.id, { mitPlan: true }).plan.find((x) => x.art !== "einstieg")!;
+  assert.ok(s.u.waehleSchritt(unit.id, ids[2], ziel.id, s.teacher.id));
+  assert.equal(s.u.gezeigteUnterlage(unit.id, ids[2]), null, "angeboten, noch nicht geöffnet");
+  assert.ok(s.u.merkeGezeigt(unit.id, ziel.id, ids[2], s.teacher.id));
+  assert.deepEqual(s.u.gezeigteUnterlage(unit.id, ids[2]), { materialId: ids[2], titel: "Foto 3", art: "Foto" });
+  // the material itself keeps its name; the view never shows it
+  const { getMaterial } = await import("./materials");
+  assert.equal(getMaterial(ids[2])?.title, "Für heute");
+  // not opened, or another unit: nothing
+  assert.equal(s.u.gezeigteUnterlage(unit.id, ids[0]), null);
+  const zweite = await s.start(s.schueler("Felix Beispiel"));
+  assert.equal(s.u.gezeigteUnterlage(zweite.unit.id, ids[2]), null);
+});

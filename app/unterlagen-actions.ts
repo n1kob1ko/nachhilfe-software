@@ -15,14 +15,14 @@ async function imUnterricht(unitId: number) {
 }
 
 /**
- * „Öffnen“ bei einer Unterlage im Schritt: vermerkt, dass sie gezeigt wurde (für den Abschluss), und öffnet die Ansicht des Materials
- * mit dem Weg zurück in den Unterricht. Nur eine Unterlage, die dieser Schritt gerade zeigt.
+ * „Öffnen“ bei einer Unterlage im Schritt: vermerkt, dass sie gezeigt wurde (für den Abschluss), und öffnet die ruhige Ansicht im
+ * Unterricht (nur lesen, mit „← Unterricht“). Nur eine Unterlage, die dieser Schritt gerade zeigt.
  */
 export async function zeigeUnterlageAction(unitId: number, schrittId: number, materialId: number) {
   const { t } = await imUnterricht(unitId);
   if (!merkeGezeigt(unitId, schrittId, materialId, t.id)) redirect(`/einheiten/${unitId}?cockpit=${encodeURIComponent("Diese Unterlage passt nicht mehr zu diesem Schritt.")}`);
   revalidatePath(`/einheiten/${unitId}`);
-  redirect(`/mehr/material/${materialId}?einheit=${unitId}`);
+  redirect(`/einheiten/${unitId}/unterlage/${materialId}`);
 }
 
 /** „Passt zu welchem Schritt?“ (`schritt`, leer: keinem): eine Erklärung der Vorgabe einem Schritt dieser Einheit zuordnen. */

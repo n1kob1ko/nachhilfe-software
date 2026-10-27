@@ -1205,6 +1205,19 @@ CREATE TABLE IF NOT EXISTS einheit_unterlagen (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (unit_id, material_id)
 );
+
+-- „Das zeigst du“ im Plan (lib/cockpit.ts beispielDerEinheit, Phase C): das durchgerechnete Beispiel je Einheit und Fähigkeit,
+-- festgehalten, sobald der erklärende Schritt auf dem Schirm war. Die Übungen und „Das fragst du“ der Schritte dieser Fähigkeit
+-- nehmen es danach nie, auch wenn sich Stufe oder Plan ändern. schritt_id: der Schritt, der es zuerst zeigte (wie in einheit_cockpit;
+-- ein Üben-Schritt zeigt es nicht noch einmal). aufgabe: JSON der Aufgabe (nur für den Lehrer).
+CREATE TABLE IF NOT EXISTS einheit_beispiele (
+  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  skill_id TEXT NOT NULL,
+  schritt_id INTEGER,
+  aufgabe TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (unit_id, skill_id)
+);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */

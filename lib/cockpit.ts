@@ -647,12 +647,14 @@ export function ersetzeVorlaeufige(unitId: number, entschieden: Map<string, stri
     let neueId = Math.min(...s.plan.map((x) => x.id)) - 1;
     const imPlan = new Set(s.plan.filter((x) => !x.vorlaeufig && x.skillId).map((x) => x.skillId!));
     const ersatz = new Map<number, PlanStep[]>();
+    // the block is the unit's only topic: no practice longer than 25 minutes (lib/stundenplan.ts `uebenRunden`)
+    const allein = new Set(s.plan.map((x) => x.thema).filter(Boolean)).size === 1;
     for (const x of s.plan) {
       const ids = x.vorlaeufig ? entschieden.get(klein(x.vorlaeufig)) : undefined;
       if (!ids) continue;
       const id = ids.find((i) => !imPlan.has(i) && repo.getSkill(i));
       if (id) imPlan.add(id);
-      ersatz.set(x.id, id ? schritteZurFaehigkeit(id, x.minuten).map((r) => ({ ...r, id: neueId-- })) : []);
+      ersatz.set(x.id, id ? schritteZurFaehigkeit(id, x.minuten, allein).map((r) => ({ ...r, id: neueId-- })) : []);
     }
     const plan = s.plan.flatMap((x) => ersatz.get(x.id) ?? [x]);
     const weg = (id: number) => ersatz.has(id);
@@ -1004,14 +1006,17 @@ const ausDemGenerator = (skillId: string) => !sorteOfSkill(skillId) && skillId !
 
 /**
  * Woraus die neue Übung eines Schritts gebaut wird, ohne KI: dieselbe Rechnung beim Vorbereiten, Zeigen und Senden. Die erste
- * Übung einer Fähigkeit beginnt mit der Aufgabe, die der Schritt als „Das fragst du“ zeigt; jede weitere hat ihren eigenen
- * Seed (Vorschau und gesendete Übung sind dieselben). Die Lernkontrolle: drei Aufgaben als Überprüfung.
+ * Übung einer Fähigkeit enthält die Aufgabe, die der Schritt als „Das fragst du“ zeigt (meist ihre erste); jede weitere hat ihren eigenen
+ * Seed (Vorschau und gesendete Übung sind dieselben). Die Lernkontrolle: drei Aufgaben als Überprüfung; eine zweite Lernkontrolle
+ * derselben Fähigkeit (zweite Runde) hat eigene. `ohne`: das Beispiel der Fähigkeit („Das zeigst du“, `beispielDerEinheit`), das
+ * keine Übung der Einheit enthält (als `gleicheFrage`).
  */
-type Auftrag = { skill: repo.Skill; student: repo.Student; kontrolle: boolean; difficulty: Difficulty; count: number; kind: BuildRequest["kind"]; seed: number; title: string };
+type Auftrag = { skill: repo.Skill; student: repo.Student; kontrolle: boolean; difficulty: Difficulty; count: number; kind: BuildRequest["kind"]; seed: number; title: string; ohne: string[] };
 
-function auftragFuer(unitId: number, student: repo.Student, skill: repo.Skill, kontrolle: boolean): Auftrag {
+function auftragFuer(unitId: number, student: repo.Student, skill: repo.Skill, kontrolle: boolean, ohne?: string[]): Auftrag {
   const w = generatorWahl(student.id, skill.id);
   const schon = uebungenZur(unitId, skill.id).length;
+  const lk = kontrolle ? kontrollenZur(unitId, skill.id) : 0;
   return {
     skill,
     student,
@@ -1019,22 +1024,38 @@ function auftragFuer(unitId: number, student: repo.Student, skill: repo.Skill, k
     difficulty: w.difficulty,
     count: kontrolle ? KONTROLLE_ANZAHL : Math.max(1, Math.min(30, w.count)),
     kind: kontrolle ? "ueberpruefung" : w.kind,
-    seed: kontrolle ? generatorSeed(unitId, `${skill.id}:${LERNKONTROLLE}`) : generatorSeed(unitId, schon ? `${skill.id}:${schon}` : skill.id),
+    seed: kontrolle ? generatorSeed(unitId, lk ? `${skill.id}:${LERNKONTROLLE}:${lk}` : `${skill.id}:${LERNKONTROLLE}`) : generatorSeed(unitId, schon ? `${skill.id}:${schon}` : skill.id),
     title: `${student.name.split(" ")[0]} – ${kontrolle ? `${LERNKONTROLLE}: ${skill.name}` : `${skill.area} › ${skill.name}`}`,
+    ohne: ohne ?? beispielFragen(unitId, skill.id),
   };
 }
 
+/** Wie viele Lernkontrollen zur Fähigkeit in dieser Einheit schon gesendet sind. */
+const kontrollenZur = (unitId: number, skillId: string): number =>
+  db()
+    .prepare("SELECT COUNT(*) FROM assignments a JOIN worksheets w ON w.id = a.worksheet_id WHERE a.unit_id = ? AND a.note = ? AND EXISTS (SELECT 1 FROM json_each(w.skill_ids) j WHERE j.value = ?)")
+    .pluck()
+    .get(unitId, LERNKONTROLLE, skillId) as number;
+
 /**
  * Die Aufgaben eines Auftrags aus den Generatoren, wie buildWorksheet sie ohne KI baut; nur Aufgaben der Fähigkeit des Auftrags
- * (lib/material-passt.ts), eine ohne Fähigkeit gehört zu ihr.
+ * (lib/material-passt.ts), eine ohne Fähigkeit gehört zu ihr. Nie das Beispiel der Fähigkeit (`ohne`), außer es bliebe sonst
+ * keine Aufgabe.
  */
-const generatorAufgabenVon = (a: Auftrag) =>
-  generatorAufgaben({ subject: a.skill.subject, schoolType: a.student.school_type, klasse: a.student.klasse ?? 1, skillIds: [a.skill.id], difficulty: a.difficulty, count: a.count, taskType: "mixed", seed: a.seed }, [a.skill])
-    .map((t) => (t.skillId ? t : { ...t, skillId: a.skill.id }))
-    .filter((t) => passtZurFaehigkeit(t, a.skill.id, oberfaehigkeit));
+function generatorAufgabenVon(a: Auftrag): TaskDraft[] {
+  const bauen = (count: number) =>
+    generatorAufgaben({ subject: a.skill.subject, schoolType: a.student.school_type, klasse: a.student.klasse ?? 1, skillIds: [a.skill.id], difficulty: a.difficulty, count, taskType: "mixed", seed: a.seed }, [a.skill])
+      .map((t) => (t.skillId ? t : { ...t, skillId: a.skill.id }))
+      .filter((t) => passtZurFaehigkeit(t, a.skill.id, oberfaehigkeit));
+  if (!a.ohne.length) return bauen(a.count);
+  const alle = bauen(Math.min(30, a.count + a.ohne.length));
+  const ohne = new Set(a.ohne);
+  const rest = alle.filter((t) => !ohne.has(gleicheFrage(t)));
+  return (rest.length ? rest : alle).slice(0, a.count);
+}
 
-/** Woraus eine bereite Übung gebaut ist; ändert sich etwas davon (Plan, Stufe, Anzahl), passt sie nicht mehr. */
-const schluesselVon = (schrittId: number, a: Auftrag) => JSON.stringify([schrittId, a.skill.id, a.kontrolle, a.difficulty, a.count, a.kind, a.seed]);
+/** Woraus eine bereite Übung gebaut ist; ändert sich etwas davon (Plan, Stufe, Anzahl, Beispiel), passt sie nicht mehr. */
+const schluesselVon = (schrittId: number, a: Auftrag) => JSON.stringify([schrittId, a.skill.id, a.kontrolle, a.difficulty, a.count, a.kind, a.seed, ...(a.ohne.length ? [a.ohne] : [])]);
 
 /** Die bereite Übung eines Schritts (`haltBereit`), wenn sie zum Auftrag passt; sonst null. */
 function bereitFuer(unitId: number, schrittId: number, schluessel: string): TaskDraft[] | null {
@@ -1114,7 +1135,7 @@ export function haltBereit(unitId: number): number[] {
 /**
  * Ohne Lernpaket: eine neue Übung zur Fähigkeit aus den eingebauten Generatoren und Aufgabenbanken (nie die
  * KI), an den Schüler dieser Einheit. Wie viele und wie schwer, sagt die Empfehlung, sonst der Lernstand. Die erste
- * Übung einer Fähigkeit in der Einheit beginnt mit der Aufgabe, die der Schritt als „Das fragst du“ zeigt. Liegt die Übung des
+ * Übung einer Fähigkeit in der Einheit enthält die Aufgabe, die der Schritt als „Das fragst du“ zeigt, nie sein Beispiel. Liegt die Übung des
  * Schritts schon bereit (`haltBereit`) und passt sie noch, geht genau sie hinaus, ohne neu zu bauen.
  *
  * Wie beim Senden eines Paketschritts hält das erste Senden den „Plan für heute“ fest (den von vor dem Senden: die neue
@@ -1144,9 +1165,11 @@ export async function sendeAusGenerator(
   const a = auftragFuer(unit.id, student, skill, kontrolle);
   // prepared before (haltBereit): exactly these tasks, without building again
   const bereit = schritt && schritt.id === schrittId && ausDemGenerator(skill.id) ? bereitFuer(unit.id, schritt.id, schluesselVon(schritt.id, a)) : null;
+  // otherwise the same tasks the step shows (never the worked example of the skill); writing tasks and word lists as before
+  const aufgaben = bereit ?? (ausDemGenerator(skill.id) ? generatorAufgabenVon(a) : null);
   let worksheetId = 0;
   try {
-    worksheetId = bereit
+    worksheetId = aufgaben?.length
       ? repo.createWorksheet(
           {
             title: a.title,
@@ -1163,7 +1186,7 @@ export async function sendeAusGenerator(
             student_id: student.id,
             teacher_id: teacherId,
           },
-          bereit,
+          aufgaben,
         )
       : (
           await buildWorksheet({
@@ -1339,20 +1362,94 @@ const fragbar = (t: TaskDraft | undefined): t is TaskDraft => Boolean(t && !t.da
 const gleicheFrage = (t: Pick<TaskDraft, "prompt" | "data">) => frageText(t).replace(/\s+/g, " ").trim().toLowerCase();
 
 /**
- * Das durchgerechnete Beispiel zu einer Fähigkeit („Das zeigst du“, Abnahme Phase A): eine Aufgabe genau dieser Fähigkeit aus den
- * Generatoren, mit eigenem Seed, die der Schüler nicht bekommt — keine der Aufgaben in `ausser` (was der Schritt und die anderen
- * Schritte des Themas senden). Ohne Generator oder ohne passende Aufgabe null: dann lieber kein Beispiel als eine Aufgabe, die der
- * Schüler danach schon gelöst sieht.
+ * Die Aufgaben, aus denen das Beispiel zu einer Fähigkeit kommt: aus den Generatoren mit eigenem Seed, zum Vorlesen, mit Lösung,
+ * keine einer Übung, die in dieser Einheit zur Fähigkeit schon gesendet ist.
  */
-export function beispielZur(unitId: number, skillId: string, ausser: Pick<TaskDraft, "prompt" | "data">[]): TaskDraft | null {
+function beispielKandidaten(unitId: number, skillId: string): TaskDraft[] {
   const unit = getUnit(unitId);
   const student = unit ? repo.getStudent(unit.student_id) : null;
   const skill = repo.getSkill(skillId);
-  if (!student || !skill || !ausDemGenerator(skill.id)) return null;
-  const a = auftragFuer(unitId, student, skill, false);
+  if (!student || !skill || !ausDemGenerator(skill.id)) return [];
+  const a = auftragFuer(unitId, student, skill, false, []);
+  const gesendet = new Set(uebungenZur(unitId, skill.id).flatMap((id) => repo.listTasks(id).map(gleicheFrage)));
+  return generatorAufgabenVon({ ...a, count: 8, seed: generatorSeed(unitId, `${skill.id}:beispiel`) }).filter(
+    (t) => fragbar(t) && uebtFaehigkeit(t, skill.id) && !gesendet.has(gleicheFrage(t)) && loesungText(t).trim(),
+  );
+}
+
+type GezeigtesBeispiel = { aufgabe: TaskDraft; schrittId: number };
+
+/** Das Beispiel, das ein Schritt dieser Einheit zur Fähigkeit schon gezeigt hat (`merkeBeispiel`); null, wenn noch keiner. */
+function gezeigtesBeispiel(unitId: number, skillId: string): GezeigtesBeispiel | null {
+  const r = db().prepare("SELECT aufgabe, schritt_id FROM einheit_beispiele WHERE unit_id = ? AND skill_id = ?").get(unitId, skillId) as { aufgabe: string; schritt_id: number | null } | undefined;
+  const aufgabe = r ? json<TaskDraft | null>(r.aufgabe, null) : null;
+  return r && aufgabe ? { aufgabe, schrittId: r.schritt_id ?? 0 } : null;
+}
+
+/**
+ * **Das Beispiel der Einheit** zu einer Fähigkeit (Phase C: dasselbe Beispiel nicht zweimal): das, das ein Schritt schon gezeigt hat,
+ * sonst das erste der Kandidaten. Keine Übung der Einheit zu dieser Fähigkeit nimmt es (Üben, zweite Runde, Lernkontrolle), also
+ * auch kein „Das fragst du“, das die erste Aufgabe einer Übung ist.
+ */
+export function beispielDerEinheit(unitId: number, skillId: string): TaskDraft | null {
+  return gezeigtesBeispiel(unitId, skillId)?.aufgabe ?? beispielKandidaten(unitId, skillId)[0] ?? null;
+}
+
+/** `beispielDerEinheit` als Frage zum Vergleichen (`gleicheFrage`), leer ohne Beispiel. */
+const beispielFragen = (unitId: number, skillId: string): string[] => {
+  const b = beispielDerEinheit(unitId, skillId);
+  return b ? [gleicheFrage(b)] : [];
+};
+
+/**
+ * Das durchgerechnete Beispiel zu einer Fähigkeit („Das zeigst du“, Abnahme Phase A): eine Aufgabe genau dieser Fähigkeit aus den
+ * Generatoren, mit eigenem Seed, die der Schüler nicht bekommt — das Beispiel der Einheit (`beispielDerEinheit`), außer es ist eine
+ * der Aufgaben in `ausser` (was der Schritt und die anderen Schritte des Themas senden, etwa eine Übung aus dem Bestand); dann das
+ * nächste. Ohne Generator oder ohne passende Aufgabe null: dann lieber kein Beispiel als eine Aufgabe, die der Schüler danach schon
+ * gelöst sieht.
+ */
+export function beispielZur(unitId: number, skillId: string, ausser: Pick<TaskDraft, "prompt" | "data">[]): TaskDraft | null {
   const schon = new Set(ausser.map(gleicheFrage));
-  const kandidaten = generatorAufgabenVon({ ...a, count: 8, seed: generatorSeed(unitId, `${skill.id}:beispiel`) });
-  return kandidaten.find((t) => fragbar(t) && uebtFaehigkeit(t, skill.id) && !schon.has(gleicheFrage(t)) && loesungText(t).trim()) ?? null;
+  const gezeigt = gezeigtesBeispiel(unitId, skillId)?.aufgabe;
+  return [...(gezeigt ? [gezeigt] : []), ...beispielKandidaten(unitId, skillId)].find((t) => !schon.has(gleicheFrage(t))) ?? null;
+}
+
+/** Zeigt dieser Planschritt ein Beispiel? Erklären und Grundlage immer; ein Übungsschritt nur, wenn noch kein anderer Schritt es zeigte. */
+function zeigtBeispiel(unitId: number, s: Pick<PlanStep, "id" | "art">, skillId: string): boolean {
+  if (s.art === "kontrolle") return false;
+  if (s.art !== "ueben") return true;
+  const g = gezeigtesBeispiel(unitId, skillId);
+  return !g || g.schrittId === s.id;
+}
+
+/**
+ * Das Beispiel, das der Schritt unter „Das zeigst du“ zeigt (dieselbe Rechnung wie `planFuehrung`); null, wenn er keines zeigt.
+ */
+export function beispielImSchritt(unitId: number, s: Pick<PlanStep, "id" | "uebung" | "skillId" | "art">, gesendet: number[] = [], ausser: TaskDraft[] = []): TaskDraft | null {
+  const skillId = skillDesSchritts(unitId, s);
+  if (!skillId || !zeigtBeispiel(unitId, s, skillId)) return null;
+  return beispielZur(unitId, skillId, [...aufgabenImSchritt(unitId, { ...s, skillId }, gesendet), ...ausser]);
+}
+
+/** Die Fähigkeit eines Planschritts: seine eigene, sonst die seiner Übung aus dem Bestand oder der schon zugewiesenen. */
+function skillDesSchritts(unitId: number, s: Pick<PlanStep, "uebung" | "skillId">): string | null {
+  if (s.skillId) return s.skillId;
+  const unit = getUnit(unitId);
+  const blatt = unit ? bestandsUebung(s, unit.student_id)?.blatt : null;
+  const zugewiesen = s.uebung && /^Z\d+$/.test(s.uebung) ? repo.getAssignment(Number(s.uebung.slice(1))) : null;
+  return blatt?.skill_ids[0] ?? (zugewiesen ? (repo.getWorksheet(zugewiesen.worksheet_id)?.skill_ids[0] ?? null) : null);
+}
+
+/**
+ * Hält das Beispiel fest, das der Schritt gerade zeigt (nach dem Zeigen, wie `haltBereit`): danach bleibt es dasselbe, und keine
+ * Übung der Fähigkeit in dieser Einheit nimmt es, auch wenn sich Stufe oder Plan ändern. Das erste gezeigte gilt.
+ */
+export function merkeBeispiel(unitId: number, s: Pick<PlanStep, "id" | "uebung" | "skillId" | "art">, gesendet: number[] = [], ausser: TaskDraft[] = []): boolean {
+  const unit = getUnit(unitId);
+  const skillId = skillDesSchritts(unitId, s);
+  const b = unit && unit.status === "gestartet" && skillId ? beispielImSchritt(unitId, s, gesendet, ausser) : null;
+  if (!b || !skillId) return false;
+  return db().prepare("INSERT OR IGNORE INTO einheit_beispiele (unit_id, skill_id, schritt_id, aufgabe) VALUES (?, ?, ?, ?)").run(unitId, skillId, s.id, JSON.stringify(b)).changes > 0;
 }
 
 /**
@@ -1362,21 +1459,30 @@ export function beispielZur(unitId: number, skillId: string, ausser: Pick<TaskDr
  * Übung, die der Schritt senden würde, „Das zeigst du“ ein Beispiel derselben Fähigkeit mit seiner Lösung, das der Schüler nicht
  * bekommt (`beispielZur`; `ausser`: die Aufgaben der anderen Schritte des Themas). Nur für den Lehrer; die Lösung steht nie auf
  * einer Schülerseite.
+ *
+ * Phase C (dasselbe Beispiel nicht zweimal): „Das zeigst du“ und „Das fragst du“ sind nie dieselbe Aufgabe, und ein Beispiel, das
+ * ein Schritt schon gezeigt hat, ist in keinem späteren Schritt der Fähigkeit die Frage und steht im Üben nicht noch einmal
+ * (`beispielDerEinheit`). Bleibt dafür keine andere Aufgabe zum Fragen, fällt die Frage weg, das Beispiel bleibt.
  */
 export function planFuehrung(unitId: number, s: Pick<PlanStep, "id" | "uebung" | "skillId" | "art">, gesendet: number[] = [], ausser: TaskDraft[] = []): PlanFuehrung {
   const leer: PlanFuehrung = { sagt: null, zeigt: null, fragt: null, antwort: null };
   const unit = getUnit(unitId);
   if (!unit || !repo.getStudent(unit.student_id)) return leer;
-  const blatt = bestandsUebung(s, unit.student_id)?.blatt;
-  const zugewiesen = s.uebung && /^Z\d+$/.test(s.uebung) ? repo.getAssignment(Number(s.uebung.slice(1))) : null;
-  const skillId = s.skillId ?? blatt?.skill_ids[0] ?? (zugewiesen ? (repo.getWorksheet(zugewiesen.worksheet_id)?.skill_ids[0] ?? null) : null);
+  const skillId = skillDesSchritts(unitId, s);
   const sagt = erklaerungZu(skillId);
   const aufgaben = aufgabenImSchritt(unitId, { ...s, skillId }, gesendet);
+  const zweite = beispielImSchritt(unitId, { ...s, skillId }, gesendet, ausser) ?? undefined;
+  // never the example of this step, nor one an earlier step showed
+  const gezeigt = skillId ? gezeigtesBeispiel(unitId, skillId)?.aufgabe : undefined;
+  const nicht = new Set([zweite, gezeigt].filter((x): x is TaskDraft => Boolean(x)).map(gleicheFrage));
+  const frei = (t: TaskDraft | undefined): t is TaskDraft => fragbar(t) && !nicht.has(gleicheFrage(t));
   // a reading text or a long free answer is not something to ask aloud; a task of another skill (an exercise from the
   // Bestand may mix skills) does not fit the step; only when none fits, the first task as before
   const passend = aufgaben.filter((t) => !skillId || uebtFaehigkeit(t, skillId));
-  const erste = passend.find(fragbar) ?? (fragbar(aufgaben[0]) ? aufgaben[0] : undefined);
-  const zweite = skillId ? (beispielZur(unitId, skillId, [...aufgaben, ...ausser]) ?? undefined) : undefined;
+  // with the same instruction („Write the 3rd form …“) it looks like the same task: another one first, if there is one
+  const auftrag = (t: TaskDraft) => t.prompt.replace(/\s+/g, " ").trim().toLowerCase();
+  const anders = (t: TaskDraft) => !zweite || auftrag(t) !== auftrag(zweite);
+  const erste = passend.find((t) => frei(t) && anders(t)) ?? passend.find(frei) ?? (frei(aufgaben[0]) ? aufgaben[0] : undefined);
   const antwort = fragbar(erste) ? antwortText(erste) : "";
   const loesung = fragbar(zweite) ? loesungText(zweite) : "";
   // a sample solution that only repeats the explanation (a writing task) shows nothing new

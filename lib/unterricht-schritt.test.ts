@@ -305,6 +305,56 @@ test("teacher script without a package: the whole explanation, a worked example 
   s.router.setTransport(null);
 });
 
+test("Phase C: the same example never twice: not the question of its step, not in any exercise of the topic, not again in Üben", async () => {
+  const s = await setup();
+  const unit = await s.start();
+  const plan = s.c.cockpit(unit.id, { mitPlan: true }).plan;
+  const PAST = "englisch.tenses.pastsimple";
+  const erklaeren = plan.find((x) => x.art === "erklaeren" && x.skillId === PAST)!;
+  const ueben = plan.find((x) => x.art === "ueben" && x.skillId === PAST)!;
+  const kontrolle = plan.find((x) => x.art === "kontrolle" && x.skillId === PAST)!;
+  const frage = (t: { prompt: string; data: Record<string, unknown> }) => s.c.frageText(t as never);
+  const andere = [...s.c.aufgabenImSchritt(unit.id, ueben), ...s.c.aufgabenImSchritt(unit.id, kontrolle)];
+  const f = s.c.planFuehrung(unit.id, erklaeren, [], andere);
+  assert.ok(f.zeigt && f.fragt, JSON.stringify(f));
+  assert.notEqual(f.zeigt!.aufgabe, f.fragt, "„Das zeigst du“ is not „Das fragst du“");
+  const bsp = s.c.beispielDerEinheit(unit.id, PAST)!;
+  assert.equal(frage(bsp), f.zeigt!.aufgabe, "the unit's example is the one shown");
+  // the exercises of the topic never hold it, before and after it is fixed
+  const ohneBeispiel = (schritt: typeof ueben) => s.c.aufgabenImSchritt(unit.id, schritt).every((t) => frage(t) !== f.zeigt!.aufgabe);
+  assert.ok(ohneBeispiel(ueben) && ohneBeispiel(kontrolle));
+  assert.equal(s.c.merkeBeispiel(unit.id, erklaeren, [], andere), true, "fixed once shown");
+  assert.equal(s.c.merkeBeispiel(unit.id, erklaeren, [], andere), false, "the first one stays");
+  assert.ok(ohneBeispiel(ueben) && ohneBeispiel(kontrolle));
+  // Üben does not show it again, and its question is another task
+  const g = s.c.planFuehrung(unit.id, ueben);
+  assert.equal(g.zeigt, null, "not again in Üben");
+  assert.ok(g.fragt && g.fragt !== f.zeigt!.aufgabe);
+  // sent: not in the exercise, not in the Lernkontrolle; the example stays the same
+  const out = await s.c.sendeAusGenerator(unit.id, PAST, s.teacher.id, ueben.id);
+  assert.ok("worksheetId" in out);
+  assert.ok(s.repo.listTasks(out.worksheetId).every((t) => frage(t) !== f.zeigt!.aufgabe));
+  const lk = await s.c.sendeAusGenerator(unit.id, PAST, s.teacher.id, kontrolle.id);
+  assert.ok("worksheetId" in lk);
+  assert.ok(s.repo.listTasks(lk.worksheetId).every((t) => frage(t) !== f.zeigt!.aufgabe));
+  assert.equal(s.c.planFuehrung(unit.id, erklaeren, [], andere).zeigt?.aufgabe, f.zeigt!.aufgabe, "the same example in Erklären");
+  // a second Lernkontrolle of the skill (second round) has its own tasks
+  const zweite = s.c.aufgabenImSchritt(unit.id, { id: -99, uebung: null, skillId: PAST, art: "kontrolle" }).map(frage);
+  assert.ok(zweite.length > 0);
+  assert.notDeepEqual(zweite, s.repo.listTasks(lk.worksheetId).map(frage));
+
+  // too few tasks for another question: an exercise from the Bestand that holds only the example; the question goes, the
+  // example stays
+  const nur = s.repo.createWorksheet(
+    { title: "Nur ein Satz", subject: "Englisch", grade: 6, school_type: "Gymnasium", klasse: 2, topic: "Past Simple", difficulty: "mittel", task_type: "grammar", kind: "uebung", source: "manuell", skill_ids: [PAST] },
+    [{ ...bsp, skillId: PAST }],
+  );
+  const h = s.c.planFuehrung(unit.id, { ...erklaeren, uebung: `U${nur}` });
+  assert.equal(h.fragt, null, "no question that repeats the example");
+  assert.ok(h.zeigt && h.zeigt.aufgabe !== f.zeigt!.aufgabe, "an example the student does not get in this exercise");
+  s.router.setTransport(null);
+});
+
 test("„Ausführlicher erklären“: one paid call, then from the store for every student of that Schulstufe; no student data in the prompt", async () => {
   const s = await setup();
   const a = await import("./ausfuehrlich");

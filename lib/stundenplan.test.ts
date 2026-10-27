@@ -112,6 +112,43 @@ test("prerequisites first: a weak one gets a Grundlage block, a weak one that is
   );
 });
 
+test("Phase C: one topic gets no 60 minutes of practice: no step longer than 25 minutes, a second round instead, the minutes stay", async () => {
+  const sp = await import("./stundenplan");
+  const hilfen = { uebung: () => null, schritte: () => [], einstieg: { beschreibung: "", hausuebung: null }, name: (id: string) => NAMEN[id] ?? null, lernstand: () => null };
+  const plan = (minuten: number) => sp.bauePlan(sp.waehleThemen(eingabe({ minuten, signale: [sig("vorgabe", ["past"])] })), minuten, hilfen);
+  // 100 minutes, only Past Simple: Erklären → Üben → Lernkontrolle → second round → Lernkontrolle
+  const hundert = plan(100);
+  assert.deepEqual(zeilen(hundert), [
+    "Einstieg und Wiederholung 10",
+    "Erklären: Past Simple 15",
+    "Üben: Past Simple 25",
+    "Lernkontrolle: Past Simple 10",
+    "Üben, 2. Runde: Past Simple 25",
+    "Lernkontrolle, 2. Runde: Past Simple 10",
+    "Abschluss 5",
+  ]);
+  assert.deepEqual(
+    hundert.map((s) => s.art),
+    ["einstieg", "erklaeren", "ueben", "kontrolle", "ueben", "kontrolle", "abschluss"],
+  );
+  assert.ok(hundert.every((s) => s.thema === null || s.thema === "Past Simple"));
+  // 50 minutes, one topic: nothing to split, exactly 50
+  const fuenfzig = plan(50);
+  assert.deepEqual(zeilen(fuenfzig), ["Einstieg und Wiederholung 5", "Erklären: Past Simple 10", "Üben: Past Simple 20", "Lernkontrolle: Past Simple 10", "Abschluss 5"]);
+  // a little over: Erklären takes it (at most 15)
+  assert.deepEqual(zeilen(plan(60)).slice(1, 4), ["Erklären: Past Simple 15", "Üben: Past Simple 25", "Lernkontrolle: Past Simple 10"]);
+  for (const m of [40, 45, 50, 55, 60, 75, 90, 100, 120, 150]) {
+    const p = plan(m);
+    assert.equal(summe(p), m, `${m} Minuten: never stretched, never shorter`);
+    assert.ok(p.every((s) => s.art !== "ueben" || s.minuten <= sp.UEBEN_MAX), `${m}: ${zeilen(p).join(" | ")}`);
+  }
+  // several topics stay as they were (one round each)
+  const zwei = sp.bauePlan(sp.waehleThemen(eingabe({ signale: [sig("vorgabe", ["past"]), sig("pruefung", ["email"], { tage: 6 })] })), 100, hilfen);
+  assert.equal(zwei.filter((s) => s.art === "kontrolle").length, 2);
+  assert.equal(summe(zwei), 100);
+  assert.deepEqual(sp.uebenRunden(85, 15, 10, false), { erklaeren: 15, ueben: 60, runden: 1 }, "not alone: as before");
+});
+
 // ---------- with the database ----------
 
 let nr = 0;
@@ -258,6 +295,18 @@ test("a weak prerequisite: Present Simple comes first as a short Grundlage block
   assert.equal(g.thema, "Past Simple", "part of the topic");
   assert.deepEqual(g.quelle, { skillId: "englisch.tenses.presentsimple" });
   assert.match(g.beschreibung, /Present Simple sitzt noch nicht \(\d+ %\)/);
+  s.router.setTransport(null);
+});
+
+test("Phase C: a confirmed block that is the only topic is split the same way", async () => {
+  const s = await setup();
+  const sp = await import("./stundenplan");
+  const allein = sp.schritteZurFaehigkeit("englisch.tenses.pastsimple", 85, true);
+  assert.deepEqual(
+    allein.map((x) => [x.art, x.minuten]),
+    [["erklaeren", 15], ["ueben", 25], ["kontrolle", 10], ["ueben", 25], ["kontrolle", 10]],
+  );
+  assert.deepEqual(sp.schritteZurFaehigkeit("englisch.tenses.pastsimple", 35).map((x) => x.art), ["erklaeren", "ueben", "kontrolle"], "beside other topics: one round");
   s.router.setTransport(null);
 });
 

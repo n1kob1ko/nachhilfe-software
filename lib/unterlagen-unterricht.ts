@@ -15,7 +15,7 @@
  * Höchstens drei je Schritt, die von heute zuerst, dann die neueste. Geraten wird nie: eine Erklärung ohne passenden Schritt
  * steht nur unter der Vorgabe zum Zuordnen.
  *
- * Nur auf Lehrerseiten. „Öffnen“ führt zur Ansicht des Materials (Erweitert › Material) und wird vermerkt
+ * Nur auf Lehrerseiten. „Öffnen“ führt zu einer ruhigen Ansicht nur zum Lesen (`gezeigteUnterlage`) und wird vermerkt
  * (`einheit_unterlagen.gezeigt_at`); nur was wirklich geöffnet wurde, steht im Abschluss als „Unterlage gezeigt: …“.
  */
 import { cockpit, paketQuelle, type CockpitDaten } from "./cockpit";
@@ -198,6 +198,19 @@ export function merkeGezeigt(unitId: number, schrittId: number, materialId: numb
     )
     .run(unitId, materialId, schrittId, u.titel, teacherId);
   return true;
+}
+
+/**
+ * Die ruhige Ansicht einer Unterlage im Unterricht (Phase C, nur lesen, `/einheiten/[id]/unterlage/[materialId]`): nur eine
+ * Unterlage, die in dieser Einheit im Schritt geöffnet wurde (`merkeGezeigt`), mit einer Datei dieses Schülers; der Titel, wie er
+ * im Schritt stand (ungelesen „Foto 1“, nie „Für heute“). Sonst null.
+ */
+export function gezeigteUnterlage(unitId: number, materialId: number): { materialId: number; titel: string; art: "Foto" | "PDF" } | null {
+  const unit = getUnit(unitId);
+  const r = db().prepare("SELECT titel FROM einheit_unterlagen WHERE unit_id = ? AND material_id = ? AND gezeigt_at IS NOT NULL").get(unitId, materialId) as { titel: string } | undefined;
+  const m = r ? getMaterial(materialId) : null;
+  if (!unit || !r || !m || !hatDatei(m) || m.student_id !== unit.student_id) return null;
+  return { materialId, titel: r.titel.trim() && r.titel !== VORGABE_TITEL ? r.titel : "Unterlage", art: m.mime === "application/pdf" ? "PDF" : "Foto" };
 }
 
 /** Die Unterlagen, die in einer Einheit wirklich geöffnet wurden, in der Reihenfolge des ersten Öffnens (für den Abschluss). */
