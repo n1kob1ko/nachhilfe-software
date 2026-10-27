@@ -1190,6 +1190,21 @@ CREATE TABLE IF NOT EXISTS einheit_praesentationen (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (unit_id, schritt_id)
 );
+
+-- Unterlagen bei „Das zeigst du“ (lib/unterlagen-unterricht.ts): je Einheit und Datei der Schritt, den die Lehrkraft unter der
+-- Vorgabe gewählt hat („Passt zu welchem Schritt?“, schritt_id wie in einheit_cockpit), und ob sie die Unterlage im Schritt
+-- geöffnet hat (gezeigt_at, mit dem Titel, wie er dastand). Für den Abschluss („Unterlage gezeigt: …“).
+CREATE TABLE IF NOT EXISTS einheit_unterlagen (
+  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  material_id INTEGER NOT NULL REFERENCES materials(id) ON DELETE CASCADE,
+  schritt_id INTEGER,
+  gezeigt_schritt INTEGER,
+  gezeigt_at TEXT,
+  titel TEXT NOT NULL DEFAULT '',
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (unit_id, material_id)
+);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */
