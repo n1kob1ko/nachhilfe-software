@@ -32,7 +32,6 @@ import { sorteOfSkill } from "./schreibauftrag";
 import type { TaskDraft } from "./tasks";
 import { EIGENE_VOKABELN } from "./vokabeln";
 import { getUnit, platzFuerEinheit } from "./units";
-import { zeitfenster } from "./planung/heute";
 import { KONTROLLE_ANZAHL, neuTakten, schritteZurFaehigkeit, stundenplanFuer, THEMA_REST_MIN, themenDesPlans, type PlanArt, type SchrittQuelle, type Takt } from "./stundenplan";
 import { vorschlagErlauben, type Passung, type Signal } from "./vorbereitung-auto";
 
@@ -162,6 +161,13 @@ function frageArtVon(s: PlanStep): LernpaketSchritt["art"] | null {
   const q = paketQuelle(s);
   if (q) return getSchritt(q.schrittId)?.art ?? null;
   return s.art === "kontrolle" ? "kontrolle" : s.art === "erklaeren" || s.art === "grundlage" ? "frage" : null;
+}
+
+/** Ein Übungsschritt im Plan: Üben eines Themas oder ein Übungsschritt eines Pakets. Er bekommt beim Neu-Takten frei gewordene Minuten. */
+function uebtImPlan(s: PlanStep): boolean {
+  const q = paketQuelle(s);
+  if (q) return ["gefuehrte_uebung", "uebung", "zusatz"].includes(getSchritt(q.schrittId)?.art ?? "");
+  return s.art === "ueben" && !s.vorlaeufig;
 }
 
 export const planSchritte = (plan: PlanSchritt[]): PlanStep[] =>
@@ -473,6 +479,8 @@ export type CockpitDaten = {
   verschoben: Set<number>;
   /** nach „Thema verstanden“ (lib/knoepfe.ts) weggelassene Schritte: übersprungen, aber nicht zum Wiederholen */
   nichtNoetig: Set<number>;
+  /** im Plan: Minuten bis zum Ende der Einheit, die kein Üben mehr nehmen kann (lib/stundenplan.ts `neuTakten`) */
+  frei?: number;
 };
 
 /** Die Pakete und Schritte, auf die Planschritte zeigen (je Paket eine Abfrage). */
@@ -533,7 +541,7 @@ export function cockpit(unitId: number, o: { mitPlan?: boolean } = {}): CockpitD
     const ab = new Map(plan.map((s) => [s.id, takt?.ab[s.id] ?? geplantAb.get(s.id)!] as const).filter((e) => !takt?.verschoben.includes(e[0])));
     const minuten = new Map(plan.map((s) => [s.id, takt?.minuten[s.id] ?? s.minuten]));
     const verschoben = new Set((takt?.verschoben ?? []).filter((x) => nichtFertig(stand, x)));
-    return { stand, paket: null, schritte: [], aktuell: null, ab, plan, planAktuell: id === null ? null : byId.get(id)!, planQuellen: quellenVon(plan), minuten, verschoben, nichtNoetig: nichtNoetigeSchritte(stand) };
+    return { stand, paket: null, schritte: [], aktuell: null, ab, plan, planAktuell: id === null ? null : byId.get(id)!, planQuellen: quellenVon(plan), minuten, verschoben, nichtNoetig: nichtNoetigeSchritte(stand), frei: takt?.frei ?? 0 };
   }
   const order = ablauf(paket.schritte, stand.reihenfolge);
   const byId = new Map(paket.schritte.map((s) => [s.id, s]));
@@ -627,15 +635,15 @@ function mitSchritt(unitId: number, schrittId: number, f: (s: Stand, order: numb
 // ---------- the time adapts ----------
 
 /**
- * Wo die Einheit in der Zeit steht: `jetzt` die Minute seit dem Start, `rest` die Minuten, die bleiben. Nie mehr als der Plan
- * selbst hat (eine Einheit, die 20 Minuten vor ihrem Platz beginnt, bekommt nicht 120 statt 100 Minuten), und nie über das Ende
- * des Platzes hinaus: rest = min(bis zum Ende des Platzes, geplante Minuten − jetzt).
+ * Wo die Einheit in der Zeit steht: `jetzt` die Minute seit dem Start, `rest` die Minuten, die bleiben: die geplante Dauer, gezählt ab
+ * dem Start der Einheit, nie mehr als der Plan selbst hat (eine Einheit, die 20 Minuten vor ihrem Platz beginnt, bekommt nicht 120
+ * statt 100 Minuten). Die Uhrzeit des Platzes zählt nicht mehr (Phase C, F0a): begann die Einheit später als ihr Platz, etwa spät am
+ * Abend, weil ein Platz nicht über Mitternacht gehen kann, kürzte das Ende des Platzes den Plan auf die Restzeit des Tages und schob
+ * Themen auf „Nächstes Mal“. Die geplante Dauer ist die geplante Dauer.
  */
 export function zeitDerEinheit(unit: { id: number; started_at: string }, geplant: number, now = new Date()): { jetzt: number; rest: number } {
   const jetzt = Math.max(0, Math.floor((now.getTime() - Date.parse(unit.started_at)) / 60_000));
-  const platz = platzFuerEinheit(unit);
-  const bisEnde = platz ? zeitfenster(platz, now).restMinuten : null;
-  return { jetzt, rest: Math.max(0, Math.min(geplant - jetzt, bisEnde ?? Infinity)) };
+  return { jetzt, rest: Math.max(0, geplant - jetzt) };
 }
 
 /**
@@ -645,7 +653,7 @@ export function zeitDerEinheit(unit: { id: number; started_at: string }, geplant
 function mitTakt(unit: { id: number; started_at: string } | null, s: Stand, order: number[], now = new Date()): Stand {
   if (s.paket_id || !s.plan?.length || !unit) return s;
   const byId = new Map(s.plan.map((x) => [x.id, x]));
-  const schritte = order.map((id) => byId.get(id)!).map((x) => ({ id: x.id, minuten: x.minuten, thema: x.thema ?? null, kontrolle: frageArtVon(x) === "kontrolle" }));
+  const schritte = order.map((id) => byId.get(id)!).map((x) => ({ id: x.id, minuten: x.minuten, thema: x.thema ?? null, kontrolle: frageArtVon(x) === "kontrolle", ueben: uebtImPlan(x) }));
   // a block put in with „Anderes Thema“ takes the minutes of the topic it replaced: the unit gets no longer
   const { jetzt, rest } = zeitDerEinheit(unit, s.plan.reduce((a, x) => a + (x.zusatz ? 0 : x.minuten), 0), now);
   const takt = neuTakten(schritte, { fertig: [...s.erledigt, ...s.uebersprungen], aktuell: aktuellerSchritt(order, s), jetzt, rest, vorher: s.takt });
@@ -663,7 +671,7 @@ export function ersetzeVorlaeufige(unitId: number, entschieden: Map<string, stri
   if (!vorher || vorher.paket_id || !vorher.plan?.some((x) => x.vorlaeufig && entschieden.has(klein(x.vorlaeufig)))) return false;
   aendere(unitId, (s) => {
     if (s.paket_id || !s.plan) return s;
-    let neueId = Math.min(...s.plan.map((x) => x.id)) - 1;
+    let neueId = Math.min(0, ...s.plan.map((x) => x.id)) - 1;
     const imPlan = new Set(s.plan.filter((x) => !x.vorlaeufig && x.skillId).map((x) => x.skillId!));
     const ersatz = new Map<number, PlanStep[]>();
     // the block is the unit's only topic: no practice longer than 25 minutes (lib/stundenplan.ts `uebenRunden`)
@@ -791,7 +799,8 @@ export function antwortenDerEinheit(unitId: number): { schrittId: number; titel:
   const plan = s.plan ?? [];
   const order = ablauf(plan, s.reihenfolge);
   const imPlan = Object.entries(s.antworten).flatMap(([id, antwort]) => {
-    const ps = Number(id) < 0 ? plan.find((x) => x.id === Number(id)) : undefined;
+    // a plan step (a package chosen for the unit that became a topic keeps its steps' ids, `paketAlsPlan`)
+    const ps = plan.find((x) => x.id === Number(id));
     const q = paketQuelle(ps);
     const schritt = q ? getSchritt(q.schrittId) : null;
     if (!ps || (q && !schritt)) return [];
@@ -799,7 +808,7 @@ export function antwortenDerEinheit(unitId: number): { schrittId: number; titel:
     return [{ schrittId: ps.id, titel: schritt?.titel ?? ps.titel, art, antwort, skillIds: schritt ? skillsDesSchritts(schritt) : ps.skillId ? [ps.skillId] : [], rang: order.indexOf(ps.id) }];
   });
   const imPaket = Object.entries(s.antworten)
-    .map(([id, antwort]) => ({ schritt: Number(id) > 0 ? getSchritt(Number(id)) : null, antwort }))
+    .map(([id, antwort]) => ({ schritt: Number(id) > 0 && !plan.some((x) => x.id === Number(id)) ? getSchritt(Number(id)) : null, antwort }))
     .filter((x): x is { schritt: LernpaketSchritt; antwort: Beobachtung } => x.schritt !== null)
     .sort((a, b) => a.schritt.paket_id - b.schritt.paket_id || a.schritt.position - b.schritt.position)
     .map(({ schritt, antwort }) => ({ schrittId: schritt.id, titel: schritt.titel, art: schritt.art, antwort, skillIds: skillsDesSchritts(schritt) }));
@@ -853,7 +862,7 @@ export function anderesThema(unitId: number, schrittId: number, ziel: ThemaZiel)
     let reihenfolge = s.reihenfolge;
     if ("skillId" in ziel) {
       const frei = weg.reduce((a, id) => a + (plan.find((x) => x.id === id)?.minuten ?? 0), 0);
-      let neueId = Math.min(...plan.map((x) => x.id)) - 1;
+      let neueId = Math.min(0, ...plan.map((x) => x.id)) - 1;
       const block = schritteZurFaehigkeit(ziel.skillId, Math.max(THEMA_REST_MIN, frei)).map((r) => ({ ...r, id: neueId--, zusatz: true }));
       // after the last step of the old topic (or the step on screen), in the plan and in the unit's order
       const letzte = [...order].reverse().find((id) => von !== null && plan.find((x) => x.id === id)?.thema === von) ?? schrittId;
@@ -873,6 +882,63 @@ export function anderesThema(unitId: number, schrittId: number, ziel: ThemaZiel)
   });
   if (!ok) return { fehler: "Dieser Schritt gehört nicht zum Plan der Einheit." };
   return out ? { ok: true, ...(out as { verschoben: number[]; ziel: number; von: string | null }) } : { fehler: "Zu diesem Thema gibt es nichts Offenes." };
+}
+
+/**
+ * „Anderes Thema“ mit einem eigens gewählten Lernpaket (lib/knoepfe.ts): das Paket wird ein Thema im Plan der Einheit, wie ein
+ * eingebettetes Paket im Plan für die ganze Einheit (`quelle`), mit denselben Schritt-Ids, in der Reihenfolge der Einheit und mit
+ * ihrem Stand. So gilt alles, was an den Schritten hängt, weiter (Erledigt, gesendete und gedruckte Übungen, Antworten, Notizen,
+ * Beispiele, Knöpfe), und danach wechselt `anderesThema` wie im Plan. Einstieg und Abschluss des Pakets gehören zu keinem Thema.
+ * Nichts wird gelöscht. Gibt zurück, ob umgestellt wurde.
+ */
+export function paketAlsPlan(unitId: number): boolean {
+  let ok = false;
+  aendere(unitId, (s) => {
+    const p = s.paket_id ? getLernpaket(s.paket_id) : null;
+    if (!p || !p.schritte.length) return s;
+    const order = ablauf(p.schritte, s.reihenfolge);
+    const byId = new Map(p.schritte.map((x) => [x.id, x]));
+    const thema = p.thema.trim() || p.title;
+    const plan: PlanStep[] = order.map((id) => {
+      const x = byId.get(id)!;
+      return { id, titel: x.titel, minuten: x.minuten, beschreibung: "", uebung: null, skillId: skillsDesSchritts(x)[0] ?? null, art: "paket", thema: x.art === "einstieg" || x.art === "abschluss" ? null : thema, quelle: { paketId: p.id, schrittId: id } };
+    });
+    ok = true;
+    return { ...s, paket_id: null, plan, reihenfolge: order, takt: null };
+  });
+  return ok;
+}
+
+/**
+ * Zeit frei am Ende (lib/stundenplan.ts `neuTakten`: kein Üben mehr offen, das sie nehmen kann): eine Fähigkeit kommt als Block mit
+ * Erklären, Üben und Lernkontrolle vor den Abschluss, genau in den freien Minuten (`zusatz`, die Einheit wird nicht länger). Nichts
+ * wird verschoben, der Schritt auf dem Schirm bleibt. Nur im festgehaltenen Plan und mit mindestens 10 freien Minuten.
+ */
+export function themaDazu(unitId: number, ziel: { skillId: string }): { ok: true; ziel: number } | { fehler: string } {
+  let out: number | null = null;
+  aendere(unitId, (s) => {
+    const frei = s.takt?.frei ?? 0;
+    if (s.paket_id || !s.plan || frei < THEMA_REST_MIN || s.plan.some((x) => x.skillId === ziel.skillId && x.art !== "grundlage")) return s;
+    const order = ablauf(s.plan, s.reihenfolge);
+    let neueId = Math.min(0, ...s.plan.map((x) => x.id)) - 1;
+    const block = schritteZurFaehigkeit(ziel.skillId, frei).map((r) => ({ ...r, id: neueId--, zusatz: true }));
+    if (!block.length) return s;
+    // before the Abschluss while it is still to come, else at the end; in the plan and in the unit's order
+    const jetzt = aktuellerSchritt(order, s);
+    // the Abschluss of the plan, or of a package in it (also one made a topic by „Anderes Thema“, `paketAlsPlan`)
+    const istAbschluss = (x: PlanStep | undefined) => {
+      const q = paketQuelle(x);
+      return x?.art === "abschluss" || (!!q && getSchritt(q.schrittId)?.art === "abschluss");
+    };
+    const abschluss = [...order].reverse().find((id) => istAbschluss(s.plan!.find((x) => x.id === id)) && nichtFertig(s, id) && id !== jetzt);
+    const io = abschluss === undefined ? order.length : order.indexOf(abschluss);
+    const ip = abschluss === undefined ? s.plan.length : s.plan.findIndex((x) => x.id === abschluss);
+    const reihenfolge = [...order.slice(0, io), ...block.map((x) => x.id), ...order.slice(io)];
+    const plan = [...s.plan.slice(0, ip), ...block, ...s.plan.slice(ip)];
+    out = block[0].id;
+    return mitTakt(getUnit(unitId), { ...s, plan, reihenfolge }, reihenfolge);
+  });
+  return out === null ? { fehler: "Dafür ist heute keine Zeit mehr frei." } : { ok: true, ziel: out };
 }
 
 export function setzeNotiz(unitId: number, schrittId: number, text: string): boolean {
@@ -963,7 +1029,7 @@ export function sendeSchritt(unitId: number, schrittId: number, teacherId: numbe
 export type Ziel = "senden" | "drucken";
 
 /** Merkt eine eben gebaute Übung als in dieser Einheit aus diesem Schritt gedruckt (`worksheets.gedruckt_unit_id`). */
-function merkeGedruckt(worksheetId: number, unitId: number, schrittId: number) {
+export function merkeGedruckt(worksheetId: number, unitId: number, schrittId: number) {
   db().prepare("UPDATE worksheets SET gedruckt_unit_id = ?, gedruckt_schritt_id = ? WHERE id = ?").run(unitId, schrittId, worksheetId);
 }
 

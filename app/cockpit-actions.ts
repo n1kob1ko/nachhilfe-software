@@ -28,8 +28,21 @@ import {
   type Merke,
 } from "@/lib/cockpit";
 import { betragAus, setzeBudgetDerEinheit } from "@/lib/ai/einheit-budget";
-import { bedarfAusOption, bedarfImSchritt, erstelleNachschub, nachschub, sendeNachschub, verwirfNachschub } from "@/lib/ki-nachschub";
-import { einfacherErklaeren, einfacherMitKi, kontrolleWeglassen, sendeSchwerer, themaVerstanden, wechsleThema, weitereBeispiele } from "@/lib/knoepfe";
+import { bedarfAusOption, bedarfImSchritt, druckeNachschub, erstelleNachschub, nachschub, sendeNachschub, verwirfNachschub } from "@/lib/ki-nachschub";
+import {
+  druckeSchwererKi,
+  einfacherErklaeren,
+  einfacherMitKi,
+  kontrolleWeglassen,
+  schwererBedarf,
+  schwererVorschau,
+  sendeSchwerer,
+  sendeSchwererKi,
+  themaDazu,
+  themaVerstanden,
+  wechsleThema,
+  weitereBeispiele,
+} from "@/lib/knoepfe";
 import { noteActivity } from "@/lib/learning";
 import { pushLive, showOnTablet } from "@/lib/live";
 import { tagAddieren, wienerDatum } from "@/lib/planung/zeit";
@@ -313,6 +326,18 @@ export async function nachschubSendenAction(unitId: number, id: number) {
   nachVorschlag(unitId, { gesendet: out.worksheetId });
 }
 
+/**
+ * „Drucken“ in der Vorschau neuer Aufgaben der KI (lib/ki-nachschub.ts `druckeNachschub`): genau diese als A4-Blatt, nicht an den
+ * Schüler, gemerkt als in dieser Einheit gedruckt; dann die A4-Seite mit „Zur Einheit“ zurück.
+ */
+export async function nachschubDruckenAction(unitId: number, id: number) {
+  const { t } = await laufendeEinheit(unitId);
+  const out = await druckeNachschub(unitId, id, t.id);
+  if ("fehler" in out) nachKnopf(unitId, out.fehler);
+  revalidatePath(`/einheiten/${unitId}`);
+  redirect(`/arbeitsblatt/${out.worksheetId}?einheit=${unitId}`);
+}
+
 /** „Verwerfen“: die Vorschau weg, nichts geht zum Schüler; neue Aufgaben gibt es dann nur auf Tippen. */
 export async function nachschubVerwerfenAction(unitId: number, id: number) {
   await laufendeEinheit(unitId);
@@ -372,6 +397,39 @@ export async function schwererSendenAction(unitId: number, schrittId: number) {
   nachVorschlag(unitId, { gesendet: out.worksheetId });
 }
 
+/**
+ * „Schwerere Aufgaben erstellen“ (lib/knoepfe.ts `schwererBedarf`): wenn Bestand und Generator auf dieser Stufe nichts haben, macht
+ * die KI auf diesen Tipp zwei Aufgaben; sie kommen als Vorschau in „Schwerere Aufgaben“, nicht zum Schüler.
+ */
+export async function schwererKiAction(unitId: number, schrittId: number) {
+  const { t } = await laufendeEinheit(unitId);
+  const v = schwererVorschau(unitId, schrittId);
+  const b = "fehler" in v && v.option ? schwererBedarf(unitId, schrittId, v.option) : null;
+  if (!b) nachKnopf(unitId, "fehler" in v ? v.fehler : "Dafür gibt es schon Aufgaben ohne KI.");
+  const out = await erstelleNachschub(unitId, b, { automatisch: false, teacherId: t.id });
+  const fehler = "fehler" in out ? out.fehler : out.status === "fehler" ? out.problem : undefined;
+  revalidatePath(`/einheiten/${unitId}`);
+  redirect(fehler ? `/einheiten/${unitId}?cockpit=${encodeURIComponent(fehler)}` : `/einheiten/${unitId}?knopf=schwerer#knopf`);
+}
+
+/** „Senden“ in der Vorschau der KI zu „Schwerere Aufgaben“: genau diese an den Schüler dieser Einheit und auf ihr Gerät. */
+export async function schwererKiSendenAction(unitId: number, schrittId: number, id: number) {
+  const { t } = await laufendeEinheit(unitId);
+  const out = await sendeSchwererKi(unitId, schrittId, id, t.id);
+  if ("fehler" in out) nachKnopf(unitId, out.fehler);
+  await aufsGeraet(unitId, out);
+  nachVorschlag(unitId, { gesendet: out.worksheetId });
+}
+
+/** „Drucken“ in derselben Vorschau: genau diese als A4-Blatt, nicht an den Schüler; dann die A4-Seite. */
+export async function schwererKiDruckenAction(unitId: number, schrittId: number, id: number) {
+  const { t } = await laufendeEinheit(unitId);
+  const out = await druckeSchwererKi(unitId, schrittId, id, t.id);
+  if ("fehler" in out) nachKnopf(unitId, out.fehler);
+  revalidatePath(`/einheiten/${unitId}`);
+  redirect(`/arbeitsblatt/${out.worksheetId}?einheit=${unitId}`);
+}
+
 /** „Thema verstanden“: der Rest des Themas fällt weg, die kurze Lernkontrolle bleibt. */
 export async function themaVerstandenAction(unitId: number, schrittId: number) {
   const { t } = await laufendeEinheit(unitId);
@@ -383,6 +441,13 @@ export async function themaVerstandenAction(unitId: number, schrittId: number) {
 export async function kontrolleWeglassenAction(unitId: number, eintragId: number) {
   await laufendeEinheit(unitId);
   const out = kontrolleWeglassen(unitId, eintragId);
+  nachKnopf(unitId, "fehler" in out ? out.fehler : undefined);
+}
+
+/** Zeit frei am Ende: ein Thema aus der Wahl kommt vor den Abschluss, in die freien Minuten (lib/knoepfe.ts `themaDazu`). */
+export async function themaDazuAction(unitId: number, skillId: string) {
+  const { t } = await laufendeEinheit(unitId);
+  const out = themaDazu(unitId, skillId, t.id);
   nachKnopf(unitId, "fehler" in out ? out.fehler : undefined);
 }
 

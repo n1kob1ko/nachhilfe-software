@@ -444,12 +444,31 @@ export const THEMA_REST_MIN = THEMA_MIN / 2;
 
 /**
  * Der neu getaktete Plan einer laufenden Einheit: Minuten und Beginn (Minute der Einheit) je Schritt-Id; `verschoben`: die
- * Schritte der Themen, die heute nicht mehr Platz haben und auf „Nächstes Mal“ kommen.
+ * Schritte der Themen, die heute nicht mehr Platz haben und auf „Nächstes Mal“ kommen; `frei`: Minuten bis zum Ende der Einheit,
+ * die kein Üben mehr nehmen kann (es ist keines mehr offen).
  */
-export type Takt = { minuten: Record<string, number>; ab: Record<string, number>; verschoben: number[] };
+export type Takt = { minuten: Record<string, number>; ab: Record<string, number>; verschoben: number[]; frei?: number };
 
-/** Ein Schritt, wie das Neu-Takten ihn sieht: geplante Minuten, Thema (null bei Einstieg und Abschluss), Lernkontrolle oder nicht. */
-export type TaktSchritt = { id: number; minuten: number; thema?: string | null; kontrolle: boolean };
+/**
+ * Ein Schritt, wie das Neu-Takten ihn sieht: geplante Minuten, Thema (null bei Einstieg und Abschluss), Lernkontrolle oder nicht,
+ * Üben oder nicht (frei gewordene Minuten gehen an das Üben).
+ */
+export type TaktSchritt = { id: number; minuten: number; thema?: string | null; kontrolle: boolean; ueben?: boolean };
+
+/**
+ * Frei gewordene Minuten auf die offenen Übungsschritte, in ihrer Reihenfolge: jeder bis 25 Minuten (`UEBEN_MAX`, wie bei einem
+ * einzigen Thema: nicht 45 Minuten am Stück üben). Gibt je Schritt die neuen Minuten zurück und was keiner mehr nehmen kann (`rest`).
+ */
+export function verteileFrei(ueben: { id: number; minuten: number }[], frei: number): { minuten: Map<number, number>; rest: number } {
+  const minuten = new Map<number, number>();
+  let rest = Math.max(0, frei);
+  for (const s of ueben) {
+    const dazu = Math.min(rest, Math.max(0, UEBEN_MAX - s.minuten));
+    if (dazu > 0) minuten.set(s.id, s.minuten + dazu);
+    rest -= dazu;
+  }
+  return { minuten, rest };
+}
 
 /** `gesamt` Minuten auf die Schritte eines Themas: eine Lernkontrolle behält ihre 5 Minuten, der Rest nach den geplanten Minuten. */
 function imThema(schritte: TaktSchritt[], gesamt: number): number[] {
@@ -485,6 +504,10 @@ function imThema(schritte: TaktSchritt[], gesamt: number): number[] {
  *   behält dabei mindestens 5 Minuten.
  * - Fiele ein Thema unter etwa 10 Minuten, kommt das letzte auf „Nächstes Mal“ (`verschoben`), statt gequetscht zu werden;
  *   es bleibt dort, bis der Lehrer einen seiner Schritte selbst öffnet.
+ * - Bleibt Zeit übrig (ein Schritt ging schneller, „Thema verstanden“ oder „Anderes Thema“ ließ Schritte weg), bekommen sie die
+ *   nächsten offenen Übungsschritte (`verteileFrei`, jeder bis 25 Minuten), so dass der Plan wieder mit der Einheit endet. Eine
+ *   Lernkontrolle wird dabei nie länger, und nichts geht über die Dauer der Einheit. Was kein Üben mehr nehmen kann, steht als
+ *   `frei` da; der Unterricht bietet dafür ein Thema aus den Daten an (lib/knoepfe.ts `themaDazu`).
  * - Die offenen Schritte beginnen ab jetzt: der Schritt auf dem Schirm bei `jetzt`, die übrigen danach. Offene Schritte vor
  *   ihm (übersprungen beim Springen) kommen zuletzt und zählen für die Zeit nicht.
  */
@@ -538,15 +561,25 @@ export function neuTakten(schritte: TaktSchritt[], o: { fertig: number[]; aktuel
     // the last topic goes to next time instead of being squeezed
     for (const s of gruppen.pop()!) verschoben.add(s.id);
   }
+  // later topics come back to their planned minutes when the time allows again
+  const heute = danach.filter((x) => !verschoben.has(x.id));
+  const laenge = (s: TaktSchritt) => neu.get(s.id) ?? (fest.includes(s) ? basis(s) : s.minuten);
+  // minutes left over until the end of the unit (steps done faster, left out or moved): to the next practice steps, never to a
+  // Lernkontrolle; never past the unit's own length
+  const uebrig = Math.floor(o.rest) - heute.reduce((a, s) => a + laenge(s), 0);
+  const ueben = heute.filter((s) => s.ueben && !s.kontrolle);
+  const mehr = verteileFrei(
+    ueben.map((s) => ({ id: s.id, minuten: laenge(s) })),
+    uebrig,
+  );
   let t = Math.max(0, Math.round(o.jetzt));
-  for (const s of [...danach.filter((x) => !verschoben.has(x.id)), ...davor]) {
-    // later topics come back to their planned minutes when the time allows again
-    minuten[s.id] = neu.get(s.id) ?? (fest.includes(s) || davor.includes(s) ? basis(s) : s.minuten);
+  for (const s of [...heute, ...davor]) {
+    minuten[s.id] = mehr.minuten.get(s.id) ?? (davor.includes(s) ? basis(s) : laenge(s));
     ab[s.id] = t;
     t += minuten[s.id];
   }
   for (const id of verschoben) minuten[id] = 0;
-  return { minuten, ab, verschoben: offen.filter((s) => verschoben.has(s.id)).map((s) => s.id) };
+  return { minuten, ab, verschoben: offen.filter((s) => verschoben.has(s.id)).map((s) => s.id), ...(mehr.rest > 0 ? { frei: mehr.rest } : {}) };
 }
 
 // ---------- from the database ----------

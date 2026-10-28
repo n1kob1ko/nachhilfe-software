@@ -1,11 +1,27 @@
 import Link from "next/link";
+import { after } from "next/server";
 import { ArrowUp, Check, ChevronDown, Lightbulb, ListPlus, Repeat, Send, SlidersHorizontal, Sparkles, X } from "lucide-react";
-import { anderesThemaAction, beispieleAction, einfacherAction, einfacherKiAction, kontrolleWeglassenAction, schwererSendenAction, themaVerstandenAction } from "@/app/cockpit-actions";
+import {
+  anderesThemaAction,
+  beispieleAction,
+  einfacherAction,
+  einfacherKiAction,
+  kontrolleWeglassenAction,
+  nachschubVerwerfenAction,
+  schwererKiAction,
+  schwererKiDruckenAction,
+  schwererKiSendenAction,
+  schwererSendenAction,
+  themaVerstandenAction,
+} from "@/app/cockpit-actions";
 import { VorschlagKnopf } from "@/components/cockpit/CockpitClient";
+import { NachschubLaeuft, NachschubVorschau } from "@/components/cockpit/Nachschub";
 import { Reveal } from "@/components/ui";
 import { frageText, loesungText, type CockpitDaten } from "@/lib/cockpit";
+import { erstelleNachschub, nachschubAnzeige, type NachschubAnzeige } from "@/lib/ki-nachschub";
 import { getStudent } from "@/lib/repo";
-import { einfacherKiAngebot, KNOPF_LABEL, schwererVorschau, TEXT_QUELLE, themenZurWahl, type Beispiel, type KnopfEintrag } from "@/lib/knoepfe";
+import { einfacherKiAngebot, KNOPF_LABEL, schwererBedarf, schwererVorschau, TEXT_QUELLE, themenZurWahl, type Beispiel, type KnopfEintrag } from "@/lib/knoepfe";
+import { getUnit } from "@/lib/units";
 
 /** Die Uhrzeit eines Eintrags in Wien („14:32“); gespeichert ist UTC (datetime('now')). */
 const uhrzeit = (at: string) => new Date(`${at.replace(" ", "T")}Z`).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Vienna" });
@@ -186,7 +202,7 @@ export function BeispieleBlock({ eintraege }: { eintraege: KnopfEintrag[] }) {
  */
 export function KnopfPanel({ c, unitId, schrittId, knopf, eintraege, name }: { c: CockpitDaten; unitId: number; schrittId: number; knopf: string | null; eintraege: KnopfEintrag[]; name: string }) {
   const verstanden = eintraege.filter((e) => e.art === "verstanden" && e.inhalt.kontrolle === schrittId).at(-1);
-  const gewechselt = eintraege.filter((e) => e.art === "thema" && e.inhalt.ziel === schrittId).at(-1);
+  const gewechselt = eintraege.filter((e) => e.art === "thema" && !e.inhalt.dazu && e.inhalt.ziel === schrittId).at(-1);
   const zurueck = (
     <Link href={`/einheiten/${unitId}#schritt`} className="inline-flex min-h-[44px] items-center gap-1 text-[14px] font-medium text-ink-2 hover:text-ink">
       <X size={15} aria-hidden /> Abbrechen
@@ -219,15 +235,25 @@ export function KnopfPanel({ c, unitId, schrittId, knopf, eintraege, name }: { c
 
 const QUELLE = { A: "aus dem Bestand", B: "neu aus dem Generator, ohne KI" } as const;
 
-/** „Schwerere Aufgaben“: die Aufgaben eine Stufe höher mit Lösung, erst „Senden“ schickt sie an den Schüler. */
+/**
+ * „Schwerere Aufgaben“: die Aufgaben eine Stufe höher mit Lösung, erst „Senden“ schickt sie an den Schüler. Haben Bestand und
+ * Generator auf dieser Stufe nichts, macht die KI sie (lib/knoepfe.ts `schwererBedarf`): auf Tippen mit Kosten, im KI-Budget der
+ * Einheit von selbst; immer erst als Vorschau „neu erstellt, ungeprüft“ mit „Senden“, „Drucken“ und „Verwerfen“.
+ */
 function SchwererVorschauKarte({ c, unitId, schrittId, name, zurueck }: { c: CockpitDaten; unitId: number; schrittId: number; name: string; zurueck: React.ReactNode }) {
   const v = schwererVorschau(unitId, schrittId, c);
+  const unit = getUnit(unitId);
+  const b = "fehler" in v && v.option ? schwererBedarf(unitId, schrittId, v.option) : null;
+  const ki = b && unit ? nachschubAnzeige(unitId, b, unit.student_id) : null;
+  // within the unit's KI budget: asked without a further tap, after the page is shown (like lib/ki-nachschub.ts nachschubAutomatisch)
+  if (ki?.gleich && b && unit) after(() => erstelleNachschub(unitId, b, { automatisch: true, teacherId: unit.teacher_id }));
   return (
     <section className="mt-4 grid gap-2 rounded-xl border border-accent/30 bg-accent-wash/60 px-3 py-3" aria-label={KNOPF_LABEL.schwerer} data-testid="schwerer-vorschau">
       <p className="text-[15px] font-semibold">{KNOPF_LABEL.schwerer}</p>
       {"fehler" in v ? (
         <>
           <p className="text-[14.5px]">{v.fehler}</p>
+          {ki && <SchwererKi a={ki} unitId={unitId} schrittId={schrittId} name={name} />}
           {zurueck}
         </>
       ) : (
@@ -256,23 +282,54 @@ function SchwererVorschauKarte({ c, unitId, schrittId, name, zurueck }: { c: Coc
   );
 }
 
+/** Die KI zu „Schwerere Aufgaben“: Vorschau, „wird erstellt“ oder „Schwerere Aufgaben erstellen · ca. 4 Cent“ mit dem Grund. */
+function SchwererKi({ a, unitId, schrittId, name }: { a: NachschubAnzeige; unitId: number; schrittId: number; name: string }) {
+  const n = a.eintrag;
+  if (n?.status === "bereit")
+    return (
+      <NachschubVorschau
+        n={n}
+        name={name}
+        aktionen={{ senden: schwererKiSendenAction.bind(null, unitId, schrittId, n.id), verwerfen: nachschubVerwerfenAction.bind(null, unitId, n.id), drucken: schwererKiDruckenAction.bind(null, unitId, schrittId, n.id) }}
+      />
+    );
+  if (n?.status === "laeuft" || a.gleich) return <NachschubLaeuft automatisch={n?.automatisch ?? true} />;
+  // with the KI off: only the line above
+  if (!a.tor.ki.erlaubt && a.tor.ki.grund === "Die KI ist aus.") return null;
+  return (
+    <div className="grid gap-1" data-testid="schwerer-ki">
+      <VorschlagKnopf
+        action={schwererKiAction.bind(null, unitId, schrittId)}
+        label={`Schwerere Aufgaben erstellen${a.kosten ? ` · ${a.kosten}` : ""}`}
+        icon={<Sparkles size={16} aria-hidden />}
+        gesperrt={!a.tor.ki.erlaubt}
+        testid="schwerer-ki-erstellen"
+        laeuft="Wird erstellt …"
+      />
+      <p className="text-[13px] text-ink-3">{a.hinweis ?? "Mit KI. Du siehst sie zuerst als Vorschau mit Lösungen."}</p>
+    </div>
+  );
+}
+
 /** „Anderes Thema“: die Themen zur Wahl; was vom Thema auf dem Schirm offen ist, kommt auf „Nächstes Mal“. */
 function ThemaWahlKarte({ c, unitId, schrittId, zurueck }: { c: CockpitDaten; unitId: number; schrittId: number; zurueck: React.ReactNode }) {
   const wahl = themenZurWahl(unitId, c, schrittId);
-  const jetzt = c.plan.find((x) => x.id === schrittId)?.thema ?? null;
+  // with a chosen package: the package becomes a topic of the plan, its open steps go to „Nächstes Mal“ (lib/cockpit.ts paketAlsPlan)
+  const jetzt = c.paket ? `dem Lernpaket „${c.paket.title}“` : (c.plan.find((x) => x.id === schrittId)?.thema ?? null);
+  const anderesPaket = (
+    <Link href={`/einheiten/${unitId}?bereich=cockpit#werkzeuge`} className="font-semibold text-accent underline-offset-2 hover:underline">
+      Weitere Werkzeuge
+    </Link>
+  );
   return (
     <section className="mt-4 grid gap-2 rounded-xl border border-accent/30 bg-accent-wash/60 px-3 py-3" aria-label={KNOPF_LABEL.thema} data-testid="thema-wahl">
       <p className="text-[15px] font-semibold">{KNOPF_LABEL.thema}</p>
-      {c.paket ? (
-        <p className="text-[14.5px]">
-          Mit einem gewählten Lernpaket wechselst du unter{" "}
-          <Link href={`/einheiten/${unitId}?bereich=cockpit#werkzeuge`} className="font-semibold text-accent underline-offset-2 hover:underline">
-            Weitere Werkzeuge
-          </Link>{" "}
-          das Lernpaket.
-        </p>
-      ) : !wahl.length ? (
-        <p className="text-[14.5px]">Es gibt gerade kein anderes Thema: der Plan hat keines mehr offen, und Prüfung und Empfehlung nennen keines.</p>
+      {!wahl.length ? (
+        c.paket ? (
+          <p className="text-[14.5px]">Prüfung, Empfehlung und Plan nennen gerade kein anderes Thema. Ein anderes Lernpaket wählst du unter {anderesPaket}.</p>
+        ) : (
+          <p className="text-[14.5px]">Es gibt gerade kein anderes Thema: der Plan hat keines mehr offen, und Prüfung und Empfehlung nennen keines.</p>
+        )
       ) : (
         <>
           <p className="text-[14px] text-ink-2">{jetzt ? `Was von ${jetzt} noch offen ist, kommt auf „Nächstes Mal“. Nichts wird gelöscht.` : "Der Plan geht mit dem gewählten Thema weiter."}</p>
@@ -292,6 +349,7 @@ function ThemaWahlKarte({ c, unitId, schrittId, zurueck }: { c: CockpitDaten; un
               </li>
             ))}
           </ul>
+          {c.paket && <p className="text-[13px] text-ink-3">Ein anderes Lernpaket wählst du unter {anderesPaket}; es fängt von vorne an.</p>}
         </>
       )}
       {zurueck}
