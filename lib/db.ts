@@ -1262,6 +1262,24 @@ CREATE TABLE IF NOT EXISTS papier_lesungen (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_papier_lesungen ON papier_lesungen(student_id, worksheet_id);
+
+-- Lehrer-Knöpfe im Schritt (lib/knoepfe.ts, D1): jedes Tippen auf Einfacher erklären, Weitere Beispiele, Schwerere Aufgaben
+-- (gesendet), Thema verstanden oder Anderes Thema, je Einheit, damit Abschluss und Dokumentation „Angepasst: …“ sagen können.
+-- art: einfacher | beispiele | schwerer | verstanden | thema; thema: das Thema des Schritts beim Tippen; inhalt: JSON (der
+-- einfachere Text und seine Quelle, die Beispiele mit Lösung, die Stufe und Übung, die weggelassenen oder verschobenen
+-- Schritte). Nur für den Lehrer; nichts davon geht auf eine Schülerseite.
+CREATE TABLE IF NOT EXISTS einheit_knoepfe (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  schritt_id INTEGER,
+  art TEXT NOT NULL,
+  skill_id TEXT,
+  thema TEXT NOT NULL DEFAULT '',
+  inhalt TEXT NOT NULL DEFAULT '{}',
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_einheit_knoepfe ON einheit_knoepfe(unit_id);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */
