@@ -206,6 +206,14 @@ const SUBMISSION_ID = /^[A-Za-z0-9_-]{16,64}$/;
 const g = globalThis as { __lernheftSubmissions?: Map<string, Promise<SubmitResult>> };
 const grading = (g.__lernheftSubmissions ??= new Map());
 
+/**
+ * lib/learning imports this file, so it is loaded on first use. One shared promise: answers sent at the same
+ * time go on in the order they came. A new import() each time can resolve out of order (tsx loader hooks), and
+ * then a later answer took the earlier one's try (seen as a flaky test in lib/rechenwege.test.ts).
+ */
+let learningModule: Promise<typeof import("./learning")> | null = null;
+const learning = () => (learningModule ??= import("./learning"));
+
 const GAVE_UP = "Hier ist der Lösungsweg. Schau ihn dir in Ruhe an.";
 const PENDING = "Deine Antwort ist gespeichert. Deine Lehrerin bzw. dein Lehrer schaut sie sich an.";
 
@@ -271,7 +279,7 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
   repo.markAssignmentStarted(assignment.id);
   // Practice while a teacher has a unit running for this student belongs to that unit. A unit that
   // has been idle too long is closed first, so later self-practice is not counted as tutoring.
-  const { sweepIdleUnits } = await import("./learning");
+  const { sweepIdleUnits } = await learning();
   sweepIdleUnits();
   const unit = runningUnitForStudent(student.id);
   if (unit) touchUnit(unit.id);

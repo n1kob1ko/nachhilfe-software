@@ -49,9 +49,11 @@ export async function POST(request: Request) {
   if (probe && (!blatt || blatt === ANDERES_BLATT)) return fail("Bitte die Probeschularbeit wählen.");
   const fach = String(form.get("fach") ?? "").trim() || (unit?.subject ?? "");
   if (!fach && !probe && (!unit || blatt === ANDERES_BLATT)) return fail("Bitte das Fach wählen.");
-  if (form.get("keine_namen") !== "1") return fail("Bitte bestätigen, dass auf den Seiten kein Name steht.");
-  const geht = unit || probe ? papierTor(student.id) : blattLesbar();
-  if ("grund" in geht) return fail(geht.grund);
+  // `nur_speichern`: selbst bewertet, ohne KI; die Seiten werden nur beim Schüler gespeichert, niemand liest sie
+  const nurSpeichern = form.get("nur_speichern") === "1";
+  if (!nurSpeichern && form.get("keine_namen") !== "1") return fail("Bitte bestätigen, dass auf den Seiten kein Name steht.");
+  const geht = nurSpeichern ? null : unit || probe ? papierTor(student.id) : blattLesbar();
+  if (geht && "grund" in geht) return fail(geht.grund);
   // a sheet of this unit (or an open Probeschularbeit of this student) before any page is stored: a rejected request keeps nothing
   const fremd = (unit || probe) && blatt !== ANDERES_BLATT ? blattFehler({ unitId: unit?.id ?? null, studentId: student.id, blattKey: blatt }) : null;
   if (fremd) return fail(fremd);
@@ -77,6 +79,7 @@ export async function POST(request: Request) {
   }
   if (files.length) revalidatePath("/mehr/material", "layout");
   if (!materials.length) return fail("Bitte die Seiten fotografieren oder auswählen.");
+  if (nurSpeichern) return Response.json({ materials });
 
   try {
     const vorschlag =

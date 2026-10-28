@@ -114,6 +114,13 @@ test("a worksheet photo marked „enthält Aufgaben“ gives today's topics but 
     assert.deepEqual(v.skillIds, ["englisch.tenses.pastsimple"]);
     assert.ok(cockpit.planDerEinheit(unit.id).some((s) => s.titel === "Üben: Past Simple"), "the plan follows the sheet");
     assert.deepEqual(vg.dateienDerVorgabe(v), [{ materialId: blatt, art: "Foto", gelesen: true, rolle: "aufgaben" }]);
+    // solved on paper: „Arbeit fotografieren“ right under the Vorgabe, until the unit has its first paper work
+    assert.equal(vg.blattMitAufgabenOffen(unit.id), true);
+    const p = await import("./papier-einheit");
+    const zeile = { nr: "1", aufgabe: "Yesterday I ___ (play) football.", antwort: "played", bewertung: "richtig" as const, punkte: null, max: null, skillId: "englisch.tenses.pastsimple", fehler: "", pruefen: false };
+    const papier = p.speicherePapier({ unitId: unit.id, teacherId: teacher.id, blatt: p.ANDERES_BLATT, zeilen: [zeile], materialIds: [], gelesen: "hand", fach: "Englisch", titel: "Worksheet Past Simple" });
+    assert.ok(!("error" in papier), JSON.stringify(papier));
+    assert.equal(vg.blattMitAufgabenOffen(unit.id), false);
     // no exam scope: no comparison, no topics for the field „Stoff“, at a Prüfung only „noch zu klären“
     assert.equal(vg.pruefungZurVorgabe(v, "Englisch", HEUTE), null);
     const l = ps.getLesung(v.lesungId)!;

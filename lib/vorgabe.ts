@@ -415,6 +415,16 @@ export function dateienDerVorgabe(v: Pick<Vorgabe, "materialIds" | "lesungId">):
 }
 
 /**
+ * Ein Blatt mit Aufgaben aus „Was steht heute an?“ (etwa die mitgebrachte Schulübung), zu dem diese Einheit noch keine Papierarbeit
+ * hat: der Unterricht zeigt dafür „Arbeit fotografieren“ gleich unter der Vorgabe, nicht erst unter „Weitere Werkzeuge“ (F2).
+ */
+export function blattMitAufgabenOffen(unitId: number): boolean {
+  const v = vorgabeDerEinheit(unitId);
+  if (!v || !dateienDerVorgabe(v).some((d) => d.rolle === "aufgaben")) return false;
+  return !db().prepare("SELECT 1 FROM papier_arbeiten WHERE unit_id = ? AND homework_id IS NULL LIMIT 1").get(unitId);
+}
+
+/**
  * Die Lehrkraft ändert die Rolle einer Datei der Vorgabe (ein Tippen): an der Datei gespeichert, dann wird die Vorgabe aus
  * der gespeicherten Lesung neu gemacht, ohne KI-Anfrage. Die Punkte der Lehrkraft bleiben, wie sie sind (auch bestätigte).
  */

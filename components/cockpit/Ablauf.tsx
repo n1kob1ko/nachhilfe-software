@@ -103,7 +103,7 @@ import { vorschlagDerEinheit, type Anzeige } from "@/lib/steuerung";
 import { levelFor } from "@/lib/text-correction-rules";
 import { platzFuerEinheit, type UnitView } from "@/lib/units";
 import { autoFuerEinheit, kiVorgabe, type Signal } from "@/lib/vorbereitung-auto";
-import { vorgabeDerEinheit } from "@/lib/vorgabe";
+import { blattMitAufgabenOffen, vorgabeDerEinheit } from "@/lib/vorgabe";
 import { unterlagenImSchritt } from "@/lib/unterlagen-unterricht";
 import { zuBewerten } from "@/lib/zu-bewerten";
 import { SchreibauftragStart, TextarbeitZeilen } from "@/components/cockpit/Textarbeit";
@@ -184,6 +184,8 @@ export function Unterricht({
   const laeufe = textLaeufe(unit.id);
   // die Hausübung von letztem Mal (lib/hausuebung-zurueck.ts): ihr Ergebnis in einer Zeile über dem Plan
   const hausuebung = hausuebungFuerEinheit(student.id, { vor: unit.started_at, fach: unit.subject ?? "", ausser: unit.id });
+  // ein Blatt mit Aufgaben aus „Was steht heute an?“ (etwa die Schulübung), auf Papier gelöst: „Arbeit fotografieren“ gleich hier
+  const blattAusVorgabe = blattMitAufgabenOffen(unit.id);
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5" data-testid="cockpit">
       {fehler && (
@@ -196,6 +198,14 @@ export function Unterricht({
       <KiGrenzeHinweis studentId={student.id} name={name} />
       {worte && <SchuelerWorteKarte worte={worte} name={name} />}
       <VorgabeKarte unit={unit} c={c} />
+      {blattAusVorgabe && (
+        <p className="-mt-3 flex flex-wrap items-center gap-x-2 text-[14px] text-ink-2" data-testid="vorgabe-blatt-papier">
+          Das Blatt aus der Vorgabe auf Papier gelöst?
+          <Link href={`/einheiten/${unit.id}/papier?blatt=anders`} className="inline-flex min-h-[44px] items-center gap-1.5 font-medium text-accent hover:underline" data-testid="arbeit-fotografieren">
+            <ScanLine size={16} aria-hidden /> Arbeit fotografieren
+          </Link>
+        </p>
+      )}
       {schrittNoetig(hausuebung) && <HausuebungZeile e={hausuebung} />}
       {themen.length ? <ThemenZeile c={c} themen={themen} unitId={unit.id} aktuell={aktuell} /> : <Woher c={c} unitId={unit.id} />}
       {naechstesMal.length > 0 && aktuell !== null && (

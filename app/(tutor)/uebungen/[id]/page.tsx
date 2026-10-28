@@ -87,6 +87,8 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
 
   // Probeschularbeit (lib/probeschularbeit.ts): Punkte je Aufgabe, zurück zur Vorbereitung der Schularbeit
   const probe = w.probe_test_id ? repo.getTest(w.probe_test_id) : null;
+  // während einer Einheit dieses Schülers geht es zurück in den Unterricht (so kam die Lehrkraft meist her: „Was steht heute an?“)
+  const probeEinheit = probe ? runningUnitForStudent(probe.student_id) : null;
   const punkte = probe ? punkteDerAufgaben(w.id, tasks) : null;
   const gesamt = punkte ? [...punkte.values()].reduce((s, p) => s + p, 0) : 0;
 
@@ -105,11 +107,13 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
     <>
       <PageHeader
         back={
-          probe
-            ? { href: `/schueler/${probe.student_id}/pruefung/${probe.id}#probeschularbeit`, label: `Vorbereitung: ${probe.title || `${probe.kind} ${probe.subject}`}` }
-            : forStudent
-              ? { href: `/schueler/${forStudent.id}?tab=uebungen`, label: forStudent.name }
-              : { href: "/uebungen", label: "Übungen" }
+          probeEinheit
+            ? { href: `/einheiten/${probeEinheit.id}`, label: "Zurück zum Unterricht" }
+            : probe
+              ? { href: `/schueler/${probe.student_id}/pruefung/${probe.id}#probeschularbeit`, label: `Vorbereitung: ${probe.title || `${probe.kind} ${probe.subject}`}` }
+              : forStudent
+                ? { href: `/schueler/${forStudent.id}?tab=uebungen`, label: forStudent.name }
+                : { href: "/uebungen", label: "Übungen" }
         }
         title={w.title}
         subtitle={
