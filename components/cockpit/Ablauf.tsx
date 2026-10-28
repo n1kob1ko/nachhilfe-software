@@ -45,6 +45,7 @@ import { AufgabeBewertung } from "@/components/AufgabeBewertung";
 import { AnpassenBereich, AnpassungInhalt, KiGrenzeHinweis, OhnePaketAnsicht, PaketAuswahl, PaketKopf } from "@/components/cockpit/Cockpit";
 import { CockpitSenden, SchrittNotiz, VorschlagKnopf } from "@/components/cockpit/CockpitClient";
 import { DruckenKnopf } from "@/components/cockpit/DruckenKnopf";
+import { HausuebungAufgaben, HausuebungZeile } from "@/components/cockpit/HausuebungSchritt";
 import { AnpassenMenue, BeispieleBlock, EinfacherBlock, KnopfPanel } from "@/components/cockpit/Knoepfe";
 import { AntwortKnoepfe, VorschlagKarte } from "@/components/cockpit/Steuerung";
 import { VorgabeKarte } from "@/components/cockpit/Vorgabe";
@@ -58,6 +59,7 @@ import { ZuBewertenChip } from "@/components/ZuBewerten";
 import { CancelUnit } from "@/components/UnitControl";
 import { Pill, Reveal } from "@/components/ui";
 import { anpassungen, type Anpassung } from "@/lib/anpassen";
+import { besprechenSchritt, hausuebungErgebnis, hausuebungFuerEinheit, schrittNoetig } from "@/lib/hausuebung-zurueck";
 import { bewertungInfos } from "@/lib/bewertungen";
 import {
   aufgabenImSchritt,
@@ -179,6 +181,8 @@ export function Unterricht({
   const imSchritt = vorschlag?.ausloeser === "lehrer" ? vorschlag : null;
   // Textarbeiten dieser Einheit (lib/textarbeit-ablauf.ts): eine Zeile je Text mit dem nächsten Schritt
   const laeufe = textLaeufe(unit.id);
+  // die Hausübung von letztem Mal (lib/hausuebung-zurueck.ts): ihr Ergebnis in einer Zeile über dem Plan
+  const hausuebung = hausuebungFuerEinheit(student.id, { vor: unit.started_at, fach: unit.subject ?? "", ausser: unit.id });
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5" data-testid="cockpit">
       {fehler && (
@@ -191,6 +195,7 @@ export function Unterricht({
       <KiGrenzeHinweis studentId={student.id} name={name} />
       {worte && <SchuelerWorteKarte worte={worte} name={name} />}
       <VorgabeKarte unit={unit} c={c} />
+      {schrittNoetig(hausuebung) && <HausuebungZeile e={hausuebung} />}
       {themen.length ? <ThemenZeile c={c} themen={themen} unitId={unit.id} aktuell={aktuell} /> : <Woher c={c} unitId={unit.id} />}
       {naechstesMal.length > 0 && aktuell !== null && (
         <p className="-mt-3 text-[14px] text-ink-2" data-testid="naechstes-mal">
@@ -935,6 +940,10 @@ function PlanKarte({
   // ohne KI weniger als drei passende Aufgaben (lib/ki-nachschub.ts): neue der KI, von selbst im Budget der Einheit oder auf Tippen, immer als Vorschau
   const nachschub = skill && !blatt && !zugewiesen ? nachschubImSchritt(unit.id, c, s, student) : null;
   const ohneKi = !nachschub || nachschub.bedarf.dazu.length > 0;
+  // „Hausübung besprechen“ (lib/hausuebung-zurueck.ts): Titel, Text und Aufgaben aus ihrem Stand jetzt, nicht dem beim Planen
+  const hu = s.art === "hausuebung" && s.hausuebung ? hausuebungErgebnis(s.hausuebung, { zumUnterricht: true }) : null;
+  const huSchritt = hu ? besprechenSchritt(hu) : null;
+  if (huSchritt) s = { ...s, titel: huSchritt.titel, beschreibung: huSchritt.beschreibung };
   return (
     <section id="schritt" className="panel scroll-mt-4 px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
       <KartenKopf c={c} id={s.id} titel={s.titel} minuten={c.minuten.get(s.id) ?? s.minuten} ids={ids} thema={s.thema} />
@@ -995,6 +1004,7 @@ function PlanKarte({
           )}
         </div>
       )}
+      {hu && <HausuebungAufgaben e={hu} unitId={unit.id} />}
       {antwort && !f.fragt && (
         <div className="mt-4">
           <p className="text-[13px] font-semibold text-ink-2">{kontrolle ? "Wie war die Lernkontrolle?" : "Wie war es?"}</p>

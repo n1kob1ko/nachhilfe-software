@@ -53,9 +53,12 @@ export type PapierBlatt = {
   /**
    * gesendet: an den Schüler gesendet; minitest: der gedruckte Minitest; gedruckt: aus einem Schritt gedruckt statt gesendet
    * (lib/cockpit.ts `druckeImSchritt`); erstellt: in der Einheit erstellt, nicht gesendet;
-   * probe: eine Probeschularbeit dieses Schülers mit offenen Aufgaben (auch eine eigene, lib/probe-extern.ts), von wann auch immer
+   * probe: eine Probeschularbeit dieses Schülers mit offenen Aufgaben (auch eine eigene, lib/probe-extern.ts), von wann auch immer;
+   * hausuebung: eine Hausübung mit Übung und offenen Aufgaben (lib/hausuebung-zurueck.ts), auf Papier gemacht
    */
-  art: "gesendet" | "minitest" | "gedruckt" | "erstellt" | "probe";
+  art: "gesendet" | "minitest" | "gedruckt" | "erstellt" | "probe" | "hausuebung";
+  /** nur bei einer Hausübung: ihre Id; ihre Antworten bekommen keine unit_id (Hausübung ist kein Unterricht) */
+  homeworkId?: number;
   /** wann gesendet oder erstellt (wie gespeichert) */
   am: string;
   /** die Aufgaben ohne fertige Antwort, in der Reihenfolge des Blatts */
@@ -137,6 +140,7 @@ export function blaetterDerEinheit(unitId: number): PapierBlatt[] {
     if (b) out.push(b);
   }
   out.push(...probenDes(student, gesehen));
+  out.push(...hausuebungenDes(student, gesehen));
   // newest first over both kinds (assigned_at and created_at are both UTC „YYYY-MM-DD HH:MM:SS“)
   return out.sort(neuesteZuerst);
 }
@@ -162,13 +166,44 @@ function probenDes(student: repo.Student, gesehen = new Set<number>()): PapierBl
   return out;
 }
 
+/** So viele Hausübungen (die neuesten mit offenen Aufgaben) stehen zur Wahl. */
+const HAUSUEBUNGEN = 3;
+
+/**
+ * Hausübung zurück (E2, lib/hausuebung-zurueck.ts): die Hausübungen dieses Schülers mit Übung und noch offenen Aufgaben, die neuesten
+ * zuerst. Auf Papier gemacht, wird das Blatt fotografiert und gegen seine Aufgaben gelesen wie jedes andere.
+ */
+function hausuebungenDes(student: repo.Student, gesehen = new Set<number>()): PapierBlatt[] {
+  const rows = db()
+    .prepare(
+      `SELECT h.id AS homework_id, a.id AS assignment_id, a.worksheet_id, a.assigned_at FROM homework h JOIN assignments a ON a.id = h.assignment_id
+       WHERE h.student_id = ? AND a.student_id = h.student_id AND a.archived_at IS NULL AND a.completed_at IS NULL ORDER BY a.assigned_at DESC, h.id DESC LIMIT 10`,
+    )
+    .all(student.id) as { homework_id: number; assignment_id: number; worksheet_id: number; assigned_at: string }[];
+  const out: PapierBlatt[] = [];
+  for (const r of rows) {
+    if (out.length >= HAUSUEBUNGEN || gesehen.has(r.worksheet_id)) continue;
+    const w = repo.getWorksheet(r.worksheet_id);
+    const b = w ? blattAus(w, student, "hausuebung", r.assigned_at, r.assignment_id) : null;
+    if (!b) continue;
+    gesehen.add(r.worksheet_id);
+    out.push({ ...b, homeworkId: r.homework_id });
+  }
+  return out;
+}
+
 /**
  * Ohne laufende Einheit (Gemeinsame Bewertung, C3): die Probeschularbeiten dieses Schülers mit offenen Aufgaben, die neueste
- * zuerst. Von der Prüfungskarte aus „Arbeit fotografieren“; nie ein anderes Blatt, nie das eines anderen Schülers.
+ * zuerst. Von der Prüfungskarte aus „Arbeit fotografieren“; nie ein anderes Blatt, nie das eines anderen Schülers. Dazu seine
+ * Hausübungen mit offenen Aufgaben (E2, von der Hausübung im Profil aus).
  */
 export function blaetterOhneEinheit(studentId: number): PapierBlatt[] {
   const student = repo.getStudent(studentId);
-  return student ? probenDes(student).sort(neuesteZuerst) : [];
+  if (!student) return [];
+  const gesehen = new Set<number>();
+  const proben = probenDes(student, gesehen);
+  for (const b of proben) gesehen.add(b.worksheetId);
+  return [...proben, ...hausuebungenDes(student, gesehen)].sort(neuesteZuerst);
 }
 
 /** Das Blatt der Einheit zu einer Übung (z. B. der eben gesendeten): das neueste mit dieser Übung, sonst null. */
@@ -407,18 +442,18 @@ const nurEigene = (ids: number[], studentId: number) =>
   });
 
 function merke(
-  o: { unit: UnitView | null; studentId: number; assignmentId: number; teacherId: number; bekannt: boolean; gelesen: "ki" | "hand"; taskIds: number[]; lesungId: number | null },
+  o: { unit: UnitView | null; studentId: number; assignmentId: number; teacherId: number; bekannt: boolean; gelesen: "ki" | "hand"; taskIds: number[]; lesungId: number | null; homeworkId?: number | null },
   ergebnis: PapierErgebnis,
   materialIds: number[],
 ): number {
   const r = db()
     .prepare(
-      `INSERT INTO papier_arbeiten (unit_id, assignment_id, student_id, titel, bekannt, gelesen, material_ids, von, richtig, teilweise, punkte, max_punkte, unsicher, teacher_id, task_ids, lesung_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO papier_arbeiten (unit_id, assignment_id, student_id, titel, bekannt, gelesen, material_ids, von, richtig, teilweise, punkte, max_punkte, unsicher, teacher_id, task_ids, lesung_id, homework_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       o.unit?.id ?? null, o.assignmentId, o.studentId, ergebnis.titel, o.bekannt ? 1 : 0, o.gelesen, JSON.stringify(materialIds), ergebnis.von, ergebnis.richtig, ergebnis.teilweise, ergebnis.punkte, ergebnis.max, ergebnis.unsicher, o.teacherId,
-      JSON.stringify(o.taskIds), o.lesungId,
+      JSON.stringify(o.taskIds), o.lesungId, o.homeworkId ?? null,
     );
   for (const id of materialIds) db().prepare("UPDATE materials SET title = ? WHERE id = ? AND title = ?").run(`${BLATT_TITEL}: ${ergebnis.titel}`.slice(0, 120), id, BLATT_TITEL);
   return Number(r.lastInsertRowid);
@@ -530,7 +565,8 @@ export function speicherePapier(e: PapierEingabe): { assignmentId: number; papie
         feedback: z.entschieden ? z.fehler : "",
         teacher_id: e.teacherId,
         level: t.level ?? levelOf(t.difficulty),
-        unit_id: unit?.id ?? null,
+        // a homework is no lesson: its answers carry no unit, also when photographed in one (lib/hausuebung-zurueck.ts)
+        unit_id: blatt.homeworkId ? null : (unit?.id ?? null),
         // unsure and not decided: waits for the teacher and counts nowhere until then (lib/zu-bewerten.ts)
         review: z.entschieden ? null : "offen",
       });
@@ -540,7 +576,7 @@ export function speicherePapier(e: PapierEingabe): { assignmentId: number; papie
     repo.completeAssignmentIfDone(assignmentId);
     if (lesung) db().prepare("UPDATE papier_lesungen SET uebernommen_at = datetime('now') WHERE id = ?").run(lesung.id);
     const papierId = merke(
-      { unit, studentId: student.id, assignmentId, teacherId: e.teacherId, bekannt: true, gelesen: lesung ? "ki" : "hand", taskIds: geprueft.map((z) => z.taskId!), lesungId: lesung?.id ?? null },
+      { unit, studentId: student.id, assignmentId, teacherId: e.teacherId, bekannt: true, gelesen: lesung ? "ki" : "hand", taskIds: geprueft.map((z) => z.taskId!), lesungId: lesung?.id ?? null, homeworkId: blatt.homeworkId ?? null },
       papierErgebnis(blatt.titel, geprueft),
       materialIds,
     );
@@ -576,10 +612,13 @@ function ergebnisVon(r: PapierRow): PapierErgebnis {
 
 const PAPIER_SPALTEN = "id, assignment_id, titel, von, richtig, teilweise, punkte, max_punkte, unsicher, task_ids";
 
-/** Die auf Papier gelösten Übungen einer Einheit, wie der Abschluss sie nennt (nur übernommene). */
+/**
+ * Die auf Papier gelösten Übungen einer Einheit, wie der Abschluss sie nennt (nur übernommene). Eine Hausübung, die in der Einheit
+ * fotografiert wurde, nicht: sie ist kein Unterricht und steht im Abschluss als „Hausübung vom …“ (lib/hausuebung-zurueck.ts).
+ */
 export function papierDerEinheit(unitId: number, nurId?: number): PapierErgebnis[] {
   const rows = db()
-    .prepare(`SELECT ${PAPIER_SPALTEN} FROM papier_arbeiten WHERE unit_id = ?${nurId ? " AND id = ?" : ""} ORDER BY id`)
+    .prepare(`SELECT ${PAPIER_SPALTEN} FROM papier_arbeiten WHERE unit_id = ?${nurId ? " AND id = ?" : " AND homework_id IS NULL"} ORDER BY id`)
     .all(...(nurId ? [unitId, nurId] : [unitId])) as PapierRow[];
   return rows.map(ergebnisVon);
 }

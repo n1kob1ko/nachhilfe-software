@@ -29,6 +29,7 @@ import { db, json } from "./db";
 import { autoFelderVon } from "./einschaetzung";
 import { errorTypeLabel } from "./error-types";
 import { daysUntil } from "./exams";
+import { abschlussZeilen, einheitenMitHausuebung, hausuebungFuerEinheit, hausuebungZurZuweisung, vorherInEinheit } from "./hausuebung-zurueck";
 import { angepasstZeile, knoepfeDerEinheit, verstandenZeilen, type KnopfEintrag } from "./knoepfe";
 import { berichtNachBewertung, readReport, type TaskLine } from "./learning";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
@@ -45,7 +46,7 @@ import { textLaeufe } from "./textarbeit-ablauf";
 import { bewertungFuerBericht, SCHWACHE_STUFE, skillFuerText, type BerichtBewertung } from "./text-note";
 import { getUnit } from "./units";
 import { vorgabeDerEinheit } from "./vorgabe";
-import { antwortenText, offeneAntwortenZahl, zuBewerten } from "./zu-bewerten";
+import { antwortenText, offeneDerEinheit, zuBewerten } from "./zu-bewerten";
 
 /**
  * Woher eine Zeile kommt; die Karte zeigt es leise hinter der Zeile (`QUELLE`). „daten“: aus der Dokumentation ohne
@@ -119,6 +120,9 @@ export type AufgabeBeleg = Pick<TaskLine, "assignmentId" | "skillId" | "skill" |
  *   „Lehrkraft: Thema verstanden“ als ihre Beobachtung unter „Gut verstanden“ (nie als Ergebnis)
  * - `hausuebung`: die im Abschluss freigegebene Hausübung („Hausübung: 9 Aufgaben …, fällig …“) oder „Heute keine Hausübung“
  *   (lib/hausuebung.ts); `zeile`: wie die Hausübung selbst unter „Nächstes Mal“ stünde, dort fällt sie dann weg
+ * - `hausuebungZurueck`: die Hausübung, die in diese Einheit gehört (E2, lib/hausuebung-zurueck.ts), mit ihrem Ergebnis („Hausübung vom
+ *   28.10.: 6 von 9 richtig (bewertet)“ oder „nicht abgegeben“), den Themen, die dort noch schwierig waren, und „besser“ nur mit einem
+ *   geprüften Ergebnis vorher und nachher; `erledigt`: ist sie bewertet, ihre Zeile unter „Nächstes Mal“ (dort fällt sie dann weg)
  */
 export type AbschlussBelege = {
   aufgaben: AufgabeBeleg[];
@@ -138,6 +142,7 @@ export type AbschlussBelege = {
   offen?: number;
   knoepfe?: Pick<KnopfEintrag, "art" | "thema" | "inhalt">[];
   hausuebung?: { text: string; zeile: string | null };
+  hausuebungZurueck?: { zeile: string; schwierig: string[]; besser: string[]; erledigt?: string | null } | null;
 };
 
 /** Eine Probeschularbeit der Einheit: Punkte, Note erst wenn alles bewertet ist, sonst wie viel noch offen ist. */
@@ -337,6 +342,9 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   // the homework given (or not) in this Abschluss, decided by the teacher
   const hu = belege?.hausuebung;
   if (hu) gemacht.push({ text: hu.text, von: "hausuebung" });
+  // the homework of last time and what came of it (only checked answers; „nicht abgegeben“ is never wrong)
+  const zurueck = belege?.hausuebungZurueck;
+  if (zurueck) gemacht.push({ text: zurueck.zeile, von: "hausuebung" }, ...zurueck.besser.map((text): KartenZeile => ({ text, von: "hausuebung" })));
 
   // only what the rules show as secure (`gutVerstanden`), or what the teacher wrote; a step marked „Weiter“ proves nothing
   const regeln = belege ? gutVerstanden(belege) : null;
@@ -368,6 +376,7 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
     schwierig.push({ text: `${kopf}${danach}`, von: "anpassung" });
   }
   if (e?.nichtVerstanden.length) schwierig.push(a(`Nicht verstanden: ${mitMal(e.nichtVerstanden)}`));
+  for (const text of zurueck?.schwierig ?? []) schwierig.push({ text, von: "hausuebung" });
   // weak criteria of a confirmed grade only; an open grade proves nothing yet
   for (const t of mitBewertung) {
     const b = t.bewertung;
@@ -391,7 +400,9 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   const gleichePruefung = (l: BriefLine) => Boolean(p) && l.from === "daten" && l.text.startsWith(`${p!.art} ${p!.fach}`) && l.text.includes(`(${p!.datum})`);
   // today's homework stands under „Heute gemacht“, also as the documentation's own note
   const heutigeHausuebung = (l: BriefLine) => Boolean(hu) && ((l.from === "daten" && hu!.zeile !== null && l.text.startsWith(hu!.zeile)) || (l.from === "lehrer" && l.text === hu!.text));
-  naechstes.push(...(brief?.dates ?? []).filter((l) => !gleichePruefung(l) && !heutigeHausuebung(l)).map((l) => zeile(l, (t) => (t.startsWith("Hausübung") ? "hausuebung" : "pruefung"))));
+  // the homework of last time, graded and discussed today, is no longer for next time
+  const besprocheneHausuebung = (l: BriefLine) => Boolean(zurueck?.erledigt) && l.from === "daten" && l.text === zurueck!.erledigt;
+  naechstes.push(...(brief?.dates ?? []).filter((l) => !gleichePruefung(l) && !heutigeHausuebung(l) && !besprocheneHausuebung(l)).map((l) => zeile(l, (t) => (t.startsWith("Hausübung") ? "hausuebung" : "pruefung"))));
 
   const einmal = (xs: KartenZeile[]) => xs.filter((x, i) => x.text.trim() && xs.findIndex((y) => y.text === x.text) === i);
   const karte: AbschlussKarte = { gemacht: einmal(gemacht), gut: einmal(gut), schwierig: einmal(schwierig), naechstes: einmal(naechstes) };
@@ -496,13 +507,20 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
   const mitProbe = new Set(probeIds.map((r) => r.id));
   const papier = papierDerEinheit(unitId).filter((p) => !p.assignmentId || !mitProbe.has(p.assignmentId));
   // the same list as „Zu bewerten“ (lib/zu-bewerten.ts): only answers, a text has its own line
-  const offen = offeneAntwortenZahl(zuBewerten({ unitId }));
+  const offen = offeneDerEinheit(zuBewerten({ unitId }));
   const knoepfe = knoepfeDerEinheit(unitId);
   // Hausübung vorbereitet (lib/hausuebung.ts): only what the teacher decided, never the proposal
   const hu = db().prepare("SELECT doku, homework_id FROM einheit_hausuebung WHERE unit_id = ? AND status IN ('freigegeben', 'uebersprungen') AND doku <> ''").get(unitId) as { doku: string; homework_id: number | null } | undefined;
   const hw = hu?.homework_id ? (db().prepare("SELECT subject, description FROM homework WHERE id = ?").get(hu.homework_id) as { subject: string; description: string } | undefined) : undefined;
   const hausuebung = hu ? { text: hu.doku, zeile: hw ? `Hausübung${hw.subject ? ` ${hw.subject}` : ""}: ${hw.description}` : null } : undefined;
-  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier, proben, offen, knoepfe, hausuebung };
+  // Hausübung zurück (lib/hausuebung-zurueck.ts): the homework of last time, as it stands now
+  const zurueck = unit ? hausuebungFuerEinheit(lesson.student_id, { vor: unit.started_at, fach: fach ?? "", ausser: unitId }) : null;
+  const zeilenZurueck = zurueck ? abschlussZeilen(zurueck, vorherInEinheit(zurueck.unitId)) : null;
+  // its line under „Nächstes Mal“ (lib/summary.ts), as long as the homework row is not ticked off
+  const h = zurueck?.status === "bewertet" ? repo.listHomework(lesson.student_id).find((x) => x.id === zurueck.homeworkId) : undefined;
+  const erledigt = h ? `Hausübung${h.subject ? ` ${h.subject}` : ""}: ${h.description}${h.due_date ? `, bis ${shortDate(h.due_date)}` : ""}` : null;
+  const hausuebungZurueck = zeilenZurueck ? { ...zeilenZurueck, erledigt } : null;
+  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier, proben, offen, knoepfe, hausuebung, hausuebungZurueck };
 }
 
 /** Die Karte einer beendeten Einheit mit allen Belegen, wie der Abschluss sie zeigt und „Bestätigen“ sie schreibt. */
@@ -583,6 +601,19 @@ export function bewertungInDoku(unitId: number) {
   berichtNachBewertung(unitId);
   const lesson = repo.getLessonForUnit(unitId);
   if (lesson?.reviewed_at) schreibeAbschluss(lesson.id, karteDerEinheit(unitId, lesson));
+}
+
+/**
+ * Nach einer späteren Bewertung (oder Papier-Übernahme) einer Antwort einer Hausübung (sie hat keine unit_id): die Einheiten, deren
+ * Abschluss diese Hausübung nennt, schreiben ihre bestätigte Dokumentation neu (nur automatische Felder), wie `bewertungInDoku`.
+ */
+export function hausuebungInDoku(assignmentId: number) {
+  const hw = hausuebungZurZuweisung(assignmentId);
+  if (!hw) return;
+  for (const unitId of einheitenMitHausuebung(hw)) {
+    const lesson = repo.getLessonForUnit(unitId);
+    if (lesson?.reviewed_at) schreibeAbschluss(lesson.id, karteDerEinheit(unitId, lesson));
+  }
 }
 
 /**

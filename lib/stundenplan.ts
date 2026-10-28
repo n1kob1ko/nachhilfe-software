@@ -19,17 +19,23 @@
  *    `stufePasst`), sind seine Schritte der Block des Themas, in ihrer Reihenfolge, die Minuten auf die des Themas gebracht.
  *    Jedes Thema kann ein anderes Paket haben. Jeder Schritt kennt seine Quelle (`quelle`: Schritt eines Pakets oder
  *    Fähigkeit) und sein Thema, damit Senden, Lösungen, Folien, Anpassung und Abschluss je Schritt gehen.
+ * 5. **Hausübung** (E2, lib/hausuebung-zurueck.ts): gehört eine abgegebene oder nicht abgegebene Hausübung in die Einheit, kommt
+ *    nach dem Einstieg „Hausübung besprechen“ (5–10 Minuten, aus der Dauer der Einheit, nicht dazu) mit den falsch gelösten Aufgaben,
+ *    bzw. „Hausübung nicht abgegeben“ mit 2–3 Aufgaben zum gemeinsamen Lösen; Themen, die dort noch schwierig waren, sind ein Signal
+ *    wie andere geprüfte Ergebnisse (`hausuebungSignale`).
  *
  * Nur lesen: festgehalten wird der Plan erst beim ersten Tippen in der Einheit (lib/cockpit.ts `mitSchritt`). Wählt die
  * Lehrkraft selbst ein Paket für die Einheit, gilt wie bisher genau dieses Paket.
  */
 import { briefingDaten, einfachesBriefing, fokusGewichte, kandidaten, uebungFuer, verteileMinuten, type BriefingDaten, type Kandidat as BestandKandidat } from "./briefing";
 import type { PlanStep } from "./cockpit";
+import { besprechenMinuten, besprechenSchritt, hausuebungFuerEinheit, hausuebungSignale, schrittNoetig } from "./hausuebung-zurueck";
 import { prerequisitesOf } from "./lehrplan";
 import { getLernpaket, listLernpakete, type Lernpaket, type LernpaketSchritt } from "./lernpakete";
 import { STATUS_THRESHOLDS } from "./mastery";
 import { bestandZur } from "./material-passt";
 import * as repo from "./repo";
+import { getUnit } from "./units";
 import {
   geprueftePakete,
   GUETE,
@@ -48,7 +54,7 @@ import {
 } from "./vorbereitung-auto";
 
 /** Was ein Schritt im Plan ist; `paket`: ein Schritt eines Lernpakets (seine Art steht im Paket). */
-export type PlanArt = "einstieg" | "grundlage" | "erklaeren" | "ueben" | "kontrolle" | "abschluss" | "paket";
+export type PlanArt = "einstieg" | "hausuebung" | "grundlage" | "erklaeren" | "ueben" | "kontrolle" | "abschluss" | "paket";
 export type SchrittQuelle = { paketId: number; schrittId: number } | { skillId: string };
 
 /** So viele Minuten hat ein Thema mindestens. */
@@ -257,6 +263,8 @@ export type PlanHilfen = {
   schritte: (paketId: number) => PaketSchritt[];
   /** der Einstieg: was zuletzt war, und eine offene Hausübung */
   einstieg: { beschreibung: string; hausuebung: string | null };
+  /** „Hausübung besprechen“ nach dem Einstieg (lib/hausuebung-zurueck.ts): die Hausübung, der Schritt und seine Minuten */
+  hausuebung?: { homeworkId: number; titel: string; beschreibung: string; minuten: number } | null;
   name: (skillId: string) => string | null;
   lernstand: (skillId: string) => number | null;
 };
@@ -384,10 +392,14 @@ export function schritteZurFaehigkeit(skillId: string, minuten: number, allein =
   return themaSchritte(t, { uebung: () => null, schritte: () => [], einstieg: { beschreibung: "", hausuebung: null }, name: (id) => repo.getSkill(id)?.name ?? null, lernstand: () => null }, allein);
 }
 
-/** Der ganze Plan: Einstieg, die Themen, Abschluss; Ids negativ (-1, -2 …) wie jeder Plan ohne Lernpaket. */
+/**
+ * Der ganze Plan: Einstieg, „Hausübung besprechen“ (wenn eine gehört), die Themen, Abschluss; Ids negativ (-1, -2 …) wie jeder Plan
+ * ohne Lernpaket. Die Minuten der Hausübung gehen von der Dauer ab: die Themen sind dann mit `minuten - hausuebung.minuten` gewählt.
+ */
 export function bauePlan(themen: Thema[], minuten: number, h: PlanHilfen): PlanStep[] {
   if (!themen.length) return [];
-  const r = rahmen(minuten);
+  const besprechen = h.hausuebung ?? null;
+  const r = rahmen(minuten - (besprechen?.minuten ?? 0));
   const hu = h.einstieg.hausuebung;
   const schritte: Roh[] = [
     {
@@ -400,6 +412,9 @@ export function bauePlan(themen: Thema[], minuten: number, h: PlanHilfen): PlanS
       thema: null,
       quelle: null,
     },
+    ...(besprechen
+      ? [{ titel: besprechen.titel, minuten: besprechen.minuten, beschreibung: besprechen.beschreibung, uebung: null, skillId: null, art: "hausuebung" as const, thema: null, quelle: null, hausuebung: besprechen.homeworkId }]
+      : []),
     ...themen.flatMap((t) => themaSchritte(t, h, themen.length === 1)),
     { titel: "Abschluss", minuten: r.abschluss, beschreibung: "Kurz zusammenfassen, Hausübung festlegen, dokumentieren.", uebung: null, skillId: null, art: "abschluss", thema: null, quelle: null },
   ];
@@ -569,19 +584,34 @@ export function stundenplanFuer(
   const unitId = o.unitId ?? null;
   const vorgabe = unitId ? vorgabeSignal(unitId, o.fach) : null;
   const stufe = { school_type: student.school_type, grade: student.grade || null, subjects: student.subjects, stufe_status: student.stufe_status };
-  const signale = ordneSignale({ fach: o.fach, student: stufe, signale: signaleFuer(schuelerBasis(student, now), { datum, fach: o.fach, ausser: unitId, wuensche: wuenscheFuer(studentId, unitId), vorgabe }) });
+  // the homework that belongs into this unit (lib/hausuebung-zurueck.ts): a step at the start, its difficult topics as a signal
+  const unit = unitId ? getUnit(unitId) : null;
+  const hu = hausuebungFuerEinheit(studentId, { vor: unit?.started_at ?? now.toISOString(), fach: o.fach, ausser: unitId });
+  const besprechen = schrittNoetig(hu) ? { homeworkId: hu.homeworkId, ...besprechenSchritt(hu), minuten: besprechenMinuten(hu, d.minuten) } : null;
+  const signale = ordneSignale({
+    fach: o.fach,
+    student: stufe,
+    signale: [...signaleFuer(schuelerBasis(student, now), { datum, fach: o.fach, ausser: unitId, wuensche: wuenscheFuer(studentId, unitId), vorgabe }), ...hausuebungSignale(hu)],
+  });
   // „Entfernen“ for the day: no package from the suggestion (the teacher's own word for today still counts)
   const ohnePaket = !vorgabe && ohnePaketMarkiert(studentId, datum);
   const pakete = ohnePaket ? [] : geprueftePakete({ pakete: o.pakete ?? listLernpakete(), fach: o.fach, student: stufe });
   const stand = new Map(d.analysis.skills.map((s) => [s.skill.id, s.mastery]));
   const name = (id: string) => repo.getSkill(id)?.name ?? null;
   const lernstand = (id: string) => stand.get(id) ?? null;
-  const themen = waehleThemen({ minuten: d.minuten, signale, pakete, verwandt: verwandtschaft(), name, voraussetzungen: prerequisitesOf, lernstand });
+  const themen = waehleThemen({ minuten: d.minuten - (besprechen?.minuten ?? 0), signale, pakete, verwandt: verwandtschaft(), name, voraussetzungen: prerequisitesOf, lernstand });
   // the exercises from the Bestand, with the skills of today's topics in front
   const skills = themen.flatMap((t) => [t.skillId, t.grundlage]).filter((x): x is string => Boolean(x));
   const k = kandidaten(d.student, fokusGewichte({ ...d, fokus: skills.length ? { art: "plan", skill_ids: skills, thema: "", beschreibung: "", paket_id: null } : d.fokus }));
-  if (!themen.length)
-    return einfachesBriefing({ ...d, kandidaten: k }).plan.map((p, i) => ({ id: -(i + 1), titel: p.titel, minuten: p.minuten, beschreibung: p.beschreibung, uebung: p.uebung, skillId: p.skillId ?? null }));
+  if (!themen.length) {
+    // the plan from the data as before; „Hausübung besprechen“ after its first step, from the same minutes (its homework not twice)
+    const ohne = besprechen ? { hausuebungen: d.hausuebungen.filter((h) => h.id !== besprechen.homeworkId), doku: d.doku.map((l, i) => (i === 0 ? { ...l, homework_note: "" } : l)) } : {};
+    const roh = einfachesBriefing({ ...d, ...ohne, minuten: d.minuten - (besprechen?.minuten ?? 0), kandidaten: k }).plan.map(
+      (p): Omit<PlanStep, "id"> => ({ titel: p.titel, minuten: p.minuten, beschreibung: p.beschreibung, uebung: p.uebung, skillId: p.skillId ?? null }),
+    );
+    if (besprechen) roh.splice(1, 0, { titel: besprechen.titel, minuten: besprechen.minuten, beschreibung: besprechen.beschreibung, uebung: null, skillId: null, art: "hausuebung", thema: null, quelle: null, hausuebung: besprechen.homeworkId });
+    return roh.map((p, i) => ({ ...p, id: -(i + 1) }));
+  }
   const schon = new Set<string>();
   // an exercise from the Bestand only when it goes out with tasks of the step's skill and is not another student's sheet
   // (lib/material-passt.ts); otherwise the next one, or new tasks from the generators
@@ -589,7 +619,9 @@ export function stundenplanFuer(
   return bauePlan(themen, d.minuten, {
     uebung: (id) => uebungFuer({ kandidaten: k }, [name(id) ?? id], schon, nutzbar(id)),
     schritte: (id) => getLernpaket(id)?.schritte ?? [],
-    einstieg: einstiegAus(d),
+    // the same homework is not checked twice: once as its own step
+    einstieg: besprechen && d.hausuebungen[0]?.id === besprechen.homeworkId ? { ...einstiegAus(d), hausuebung: null } : einstiegAus(d),
+    hausuebung: besprechen,
     name,
     lernstand,
   });

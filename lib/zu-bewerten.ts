@@ -9,6 +9,8 @@
  *   und in einer Probeschularbeit (Teilaufgaben mit Musterlösung, lib/probe-extern.ts). Sie zählen nirgends, bis die Lehrkraft
  *   Richtig, Teilweise oder Falsch tippt (lib/bewerten.ts, dieselbe Bewertung wie auf der Ergebnis-Seite).
  * - Textarbeiten mit „Bewertung offen“ (lib/text-note.ts): bewertet wird dort, die Liste verlinkt die Korrektur.
+ * - Antworten einer Hausübung (E2, lib/hausuebung-zurueck.ts), am Gerät oder auf Papier, mit dem Chip „Hausübung“. Sie gehören zu
+ *   keiner Einheit; die Liste einer Einheit zeigt die der Hausübung, die in diese Einheit gehört (`hausuebungFuerEinheit`).
  *
  * Nie die eines anderen Schülers; Musterlösungen stehen nur hier für die Lehrkraft, nie auf einer Schülerseite.
  */
@@ -18,14 +20,15 @@ import { PAPIER_ANTWORT } from "./blatt-einlesen";
 import type { Bewertung } from "./blatt-regeln";
 import { frageText, loesungText } from "./cockpit";
 import { db, json } from "./db";
+import { hausuebungFuerEinheit } from "./hausuebung-zurueck";
 import { punkteDerAufgaben } from "./probeschularbeit";
 import * as repo from "./repo";
 import { bewertungFuerBericht, letzteEinheitDesTexts } from "./text-note";
 import { getUnit } from "./units";
 
 /** Woher die Zeile kommt (der Chip vorne). */
-export type Quelle = "geraet" | "papier" | "probe" | "text";
-export const QUELLE_TEXT: Record<Quelle, string> = { geraet: "Gerät", papier: "Papier", probe: "Probeschularbeit", text: "Text" };
+export type Quelle = "geraet" | "papier" | "probe" | "text" | "hausuebung";
+export const QUELLE_TEXT: Record<Quelle, string> = { geraet: "Gerät", papier: "Papier", probe: "Probeschularbeit", text: "Text", hausuebung: "Hausübung" };
 
 /** Warum sie offen ist. */
 export type Grund = "ki" | "app" | "frei" | "loesung";
@@ -52,7 +55,7 @@ const ohneVorname = (title: string, name: string) => {
   return (first && title.startsWith(`${first} – `) ? title.slice(first.length + 3) : title).replace(/^Probeschularbeit: /, "");
 };
 
-type OffenRow = repo.Attempt & { offen_info: string | null; w_id: number; w_title: string; probe_test_id: number | null };
+type OffenRow = repo.Attempt & { offen_info: string | null; w_id: number; w_title: string; probe_test_id: number | null; hausuebung: number };
 
 /** Warum eine Antwort offen ist: was Papier gespeichert hat, sonst aus der Aufgabe (keine Lösung, Rechenweg, freie Antwort). */
 function grundVon(r: OffenRow, t: repo.Task): { grund: Grund; grundText: string; vorschlag: Bewertung | null; papier: boolean } {
@@ -80,13 +83,16 @@ function gelesenZu(assignmentId: number, taskId: number): { antwort: string; nic
   return { antwort: String(z.antwort ?? "").trim(), nichtLesbar: Boolean(z.fehlt) || z.bewertung === "nicht_lesbar" };
 }
 
-/** Die offenen Antworten (am Gerät, auf Papier, in einer Probeschularbeit) einer Einheit oder eines Schülers, älteste zuerst. */
-function offeneAntworten(o: { unitId: number; studentId: number } | { studentId: number }): OffeneAntwort[] {
+/**
+ * Die offenen Antworten (am Gerät, auf Papier, in einer Probeschularbeit, einer Hausübung) einer Einheit oder eines Schülers, älteste
+ * zuerst. Für eine Einheit auch die der Hausübung, die in sie gehört (`hwAssignment`; ihre Antworten haben keine unit_id).
+ */
+function offeneAntworten(o: { unitId: number; studentId: number; hwAssignment: number } | { studentId: number }): OffeneAntwort[] {
   const rows = db()
     .prepare(
-      `SELECT x.*, w.id AS w_id, w.title AS w_title, w.probe_test_id
+      `SELECT x.*, w.id AS w_id, w.title AS w_title, w.probe_test_id, EXISTS (SELECT 1 FROM homework h WHERE h.assignment_id = a.id) AS hausuebung
        FROM attempts x JOIN assignments a ON a.id = x.assignment_id JOIN worksheets w ON w.id = a.worksheet_id
-       WHERE x.review = 'offen' AND x.final = 1 AND x.student_id = @studentId ${"unitId" in o ? "AND x.unit_id = @unitId" : ""}
+       WHERE x.review = 'offen' AND x.final = 1 AND x.student_id = @studentId ${"unitId" in o ? "AND (x.unit_id = @unitId OR (x.unit_id IS NULL AND x.assignment_id = @hwAssignment))" : ""}
          AND a.student_id = x.student_id AND COALESCE(a.archived_at, w.archived_at) IS NULL
        ORDER BY x.created_at, x.id`,
     )
@@ -119,7 +125,7 @@ function offeneAntworten(o: { unitId: number; studentId: number } | { studentId:
         art: "antwort",
         attemptId: r.id,
         assignmentId: r.assignment_id,
-        quelle: r.probe_test_id ? "probe" : g.papier ? "papier" : "geraet",
+        quelle: r.probe_test_id ? "probe" : r.hausuebung ? "hausuebung" : g.papier ? "papier" : "geraet",
         papier: g.papier,
         grund: g.grund,
         grundText: g.grundText,
@@ -185,13 +191,18 @@ function offeneTexte(o: { unitId: number; studentId: number } | { studentId: num
  */
 export function zuBewerten(o: { unitId: number } | { studentId: number }): ZuBewerten[] {
   const unit = "unitId" in o ? getUnit(o.unitId) : null;
-  const wo = unit ? { unitId: unit.id, studentId: unit.student_id } : "studentId" in o && repo.getStudent(o.studentId) ? { studentId: o.studentId } : null;
+  // the homework that belongs into this unit (lib/hausuebung-zurueck.ts): its open answers are shown here too
+  const hw = unit ? hausuebungFuerEinheit(unit.student_id, { vor: unit.started_at, fach: unit.subject ?? "", ausser: unit.id }) : null;
+  const wo = unit ? { unitId: unit.id, studentId: unit.student_id, hwAssignment: hw?.assignmentId ?? 0 } : "studentId" in o && repo.getStudent(o.studentId) ? { studentId: o.studentId } : null;
   if (!wo) return [];
   return [...offeneAntworten(wo), ...offeneTexte(wo)];
 }
 
 /** Wie viele Antworten offen sind (ohne Texte; die haben im Abschluss ihre eigene Zeile „Bewertung offen“). */
 export const offeneAntwortenZahl = (zeilen: ZuBewerten[]) => zeilen.filter((z) => z.art === "antwort").length;
+
+/** Wie viele Antworten dieser Einheit offen sind, ohne die der Hausübung (die ist kein Unterricht und hat ihre eigene Zeile). */
+export const offeneDerEinheit = (zeilen: ZuBewerten[]) => zeilen.filter((z) => z.art === "antwort" && z.quelle !== "hausuebung").length;
 
 /** „3 Antworten“ / „1 Antwort“ */
 export const antwortenText = (n: number) => `${n} ${n === 1 ? "Antwort" : "Antworten"}`;
