@@ -22,7 +22,7 @@ const tag = (s: string) => tagMonat(parseTime(s));
  * the latest or the one of the step preselected), its pages, then the same preview as „Gelöstes Blatt einlesen“ with the
  * original tasks. Nothing counts before „Übernehmen“.
  */
-export default async function PapierPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ uebung?: string }> }) {
+export default async function PapierPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ uebung?: string; blatt?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -33,8 +33,8 @@ export default async function PapierPage({ params, searchParams }: { params: Pro
   const student = getStudent(unit.student_id)!;
   const name = student.name.split(" ")[0];
   const blaetter = blaetterDerEinheit(unit.id);
-  // the sheet of the step it was opened from, else the latest
-  const vor = blattZurUebung(blaetter, Number(sp.uebung) || null) ?? blaetter[0] ?? null;
+  // the sheet of the step it was opened from, else the latest; `blatt=anders`: a sheet from elsewhere (the one of „Was steht heute an?“)
+  const vor = sp.blatt === ANDERES_BLATT ? null : (blattZurUebung(blaetter, Number(sp.uebung) || null) ?? blaetter[0] ?? null);
   const tor = papierTor(student.id);
   const subjects = student.subjects.length ? student.subjects : ["Mathematik"];
   const fach = unit.subject && subjects.includes(unit.subject) ? unit.subject : subjects[0];
