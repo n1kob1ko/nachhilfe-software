@@ -603,9 +603,11 @@ export function stundenplanFuer(
   // the exercises from the Bestand, with the skills of today's topics in front
   const skills = themen.flatMap((t) => [t.skillId, t.grundlage]).filter((x): x is string => Boolean(x));
   const k = kandidaten(d.student, fokusGewichte({ ...d, fokus: skills.length ? { art: "plan", skill_ids: skills, thema: "", beschreibung: "", paket_id: null } : d.fokus }));
+  // with „Hausübung besprechen“ its homework is not checked a second time in the first step: not as open homework and not as the last
+  // documentation's homework line (once its sheet is done, the open list no longer has it, but the line does)
+  const ohne = besprechen ? { hausuebungen: d.hausuebungen.filter((h) => h.id !== besprechen.homeworkId), doku: d.doku.map((l, i) => (i === 0 ? { ...l, homework_note: "" } : l)) } : {};
   if (!themen.length) {
     // the plan from the data as before; „Hausübung besprechen“ after its first step, from the same minutes (its homework not twice)
-    const ohne = besprechen ? { hausuebungen: d.hausuebungen.filter((h) => h.id !== besprechen.homeworkId), doku: d.doku.map((l, i) => (i === 0 ? { ...l, homework_note: "" } : l)) } : {};
     const roh = einfachesBriefing({ ...d, ...ohne, minuten: d.minuten - (besprechen?.minuten ?? 0), kandidaten: k }).plan.map(
       (p): Omit<PlanStep, "id"> => ({ titel: p.titel, minuten: p.minuten, beschreibung: p.beschreibung, uebung: p.uebung, skillId: p.skillId ?? null }),
     );
@@ -620,7 +622,7 @@ export function stundenplanFuer(
     uebung: (id) => uebungFuer({ kandidaten: k }, [name(id) ?? id], schon, nutzbar(id)),
     schritte: (id) => getLernpaket(id)?.schritte ?? [],
     // the same homework is not checked twice: once as its own step
-    einstieg: besprechen && d.hausuebungen[0]?.id === besprechen.homeworkId ? { ...einstiegAus(d), hausuebung: null } : einstiegAus(d),
+    einstieg: einstiegAus({ ...d, ...ohne }),
     hausuebung: besprechen,
     name,
     lernstand,

@@ -146,7 +146,7 @@ function Vorschlagen({ v, name }: { v: Vorschlag; name: string }) {
         <label className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px]">
           <span className="font-semibold">Fällig am</span>
           <input type="date" name="faellig" defaultValue={v.faellig ?? ""} required className="input num" style={{ width: "11rem", minHeight: 44 }} data-testid="hausuebung-faellig" />
-          <span className="text-[13px] text-ink-3">{v.faelligAusTermin ? "nächste Einheit laut Plan" : v.faellig ? "" : "Kein Termin im Plan: bitte wählen"}</span>
+          <span className="text-[13px] text-ink-3">{v.faelligAusTermin && v.faellig ? `nächste Einheit laut Plan: ${shortDate(v.faellig)}` : v.faellig ? "" : "Kein Termin im Plan: bitte wählen"}</span>
         </label>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <HausuebungKnopf label="Hausübung freigeben" art="primary" gesperrt={Boolean(v.gesperrt)} laeuft="Wird freigegeben …" testid="hausuebung-freigeben" icon={<Send size={17} aria-hidden />} />
