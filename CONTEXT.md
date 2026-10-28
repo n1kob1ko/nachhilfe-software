@@ -586,6 +586,14 @@ ab 1 € sehen Lehrer einen Hinweis im Cockpit und im Schülerprofil, ab 3 € l
 Schüler bis zum Monatsende ab. Gilt zusätzlich zum Monatsbudget; Schülerseiten zeigen davon nichts.
 _Avoid_: Schülerbudget, Kontingent
 
+**KI-Budget je Einheit**:
+Bis zu welchem Betrag die KI in einer Einheit fehlende Aufgaben von selbst erstellt (Erweitert › KI-Kosten, nur die
+Administration; `lib/ai/einheit-budget.ts`, `lib/ki-nachschub.ts`). Standard 0 € = automatisch aus, alles auf Tippen wie
+bisher. Gezählt wird jede KI-Anfrage mit `ai_calls.unit_id` dieser Einheit, auch Briefing und Live-Analyse. Neue Aufgaben
+kommen immer zuerst als Vorschau („neu erstellt, ungeprüft“), an den Schüler erst mit „Senden“. Die Lehrkraft kann den
+Betrag einer Einheit senken, erhöhen nur die Administration. Die KI-Grenze je Schüler und das Monatsbudget gehen vor.
+_Avoid_: Einheitsbudget, Kostendeckel
+
 **manueller KI-Modus**:
 Ein Betrieb ohne Anfrage nach außen: die App zeigt den vollständigen Prompt zum
 Kopieren, der Lehrer fügt die Antwort ein, und die App prüft sie mit derselben

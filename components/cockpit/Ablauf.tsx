@@ -106,6 +106,8 @@ import { zuBewerten } from "@/lib/zu-bewerten";
 import { SchreibauftragStart, TextarbeitZeilen } from "@/components/cockpit/Textarbeit";
 import { schreibArt, schreibStartFuer, schreibStartZurPruefung, textLaeufe, textZumSchritt, type TextLauf } from "@/lib/textarbeit-ablauf";
 import { SCHULARBEIT_SCHRITT } from "@/lib/briefing";
+import { NachschubImSchritt } from "@/components/cockpit/Nachschub";
+import { nachschubAutomatisch, nachschubImSchritt } from "@/lib/ki-nachschub";
 
 const first = (n: string) => n.split(" ")[0];
 
@@ -148,6 +150,8 @@ export function Unterricht({
   const c = cockpit(unit.id, { mitPlan: true });
   // die nächste Übung bereit (lib/cockpit.ts haltBereit): nach dem Antworten, ohne KI, nie beim Schüler
   if (!c.paket && c.planAktuell) after(() => haltBereit(unit.id));
+  // fehlende Aufgaben von selbst, nur im KI-Budget dieser Einheit und nur als Vorschau (lib/ki-nachschub.ts); bei 0 € nichts
+  after(() => nachschubAutomatisch(unit.id));
   const name = first(student.name);
   // im Plan: ein Schritt aus einem geprüften Lernpaket wird wie ein Schritt des Pakets gezeigt (lib/stundenplan.ts)
   const quelle = !c.paket && c.planAktuell ? (c.planQuellen.get(c.planAktuell.id) ?? null) : null;
@@ -928,6 +932,9 @@ function PlanKarte({
   // „Anpassen“ (lib/knoepfe.ts): was zu diesem Schritt getippt wurde
   const einfacher = knoepfe.filter((e) => e.art === "einfacher" && e.schrittId === s.id);
   const beispiele = knoepfe.filter((e) => e.art === "beispiele" && e.schrittId === s.id);
+  // ohne KI weniger als drei passende Aufgaben (lib/ki-nachschub.ts): neue der KI, von selbst im Budget der Einheit oder auf Tippen, immer als Vorschau
+  const nachschub = skill && !blatt && !zugewiesen ? nachschubImSchritt(unit.id, c, s, student) : null;
+  const ohneKi = !nachschub || nachschub.bedarf.dazu.length > 0;
   return (
     <section id="schritt" className="panel scroll-mt-4 px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
       <KartenKopf c={c} id={s.id} titel={s.titel} minuten={c.minuten.get(s.id) ?? s.minuten} ids={ids} thema={s.thema} />
@@ -1029,12 +1036,13 @@ function PlanKarte({
                   {kontrolle ? `Neue Aufgaben zu ${skill.name}: ein Versuch, ohne Hilfen.` : `Neue Aufgaben zu ${skill.name}, passend zum Lernstand von ${name}.`}
                 </p>
                 <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
-                  <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, skill.id, s.id)} unitId={unit.id} label={kontrolle ? kontrolleLabel : "Passende Übungen senden"} primary={gesendet === 0 && !gedruckt && !eigen} />
-                  <DruckenKnopf action={druckeSchrittAction.bind(null, unit.id, s.id)} label={gedruckt ? "Nochmal drucken" : "Drucken"} />
+                  {ohneKi && <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, skill.id, s.id)} unitId={unit.id} label={kontrolle ? kontrolleLabel : "Passende Übungen senden"} primary={gesendet === 0 && !gedruckt && !eigen} />}
+                  {ohneKi && <DruckenKnopf action={druckeSchrittAction.bind(null, unit.id, s.id)} label={gedruckt ? "Nochmal drucken" : "Drucken"} />}
                   {gesendet > 0 && <span className="pt-2.5 text-[13px] text-ink-3">schon {gesendet === 1 ? "einmal" : `${gesendet}-mal`} an {name} gesendet</span>}
                   {gedruckt && <span className="pt-2.5 text-[13px] text-ink-3" data-testid="schritt-gedruckt">für {name} gedruckt</span>}
                   {(gesendet > 0 || gedruckt) && <PapierLink unitId={unit.id} worksheetId={neuere(schon.at(-1), gedruckt)} />}
                 </div>
+                {nachschub && <NachschubImSchritt a={nachschub} unitId={unit.id} schrittId={s.id} name={name} />}
               </>
             )
           )}

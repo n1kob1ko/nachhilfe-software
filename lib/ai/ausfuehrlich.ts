@@ -128,10 +128,10 @@ export type KiAusfuehrlich = { ok: true; inhalt: Ausfuehrlich; weggelassen: numb
  * Eine Anfrage an die KI über den Router (Budget, Protokoll, manueller Modus); ohne Schüler, daher ohne seine KI-Hinweise. `art`
  * „einfach“: „Einfacher erklären“ (eigene Funktion `einfacher` für Kosten und Schalter).
  */
-export async function kiAusfuehrlich(e: AusfuehrlichEingabe, meta: Pick<AIMeta, "teacherId" | "trigger">, art: ErklaerArt = "ausfuehrlich"): Promise<KiAusfuehrlich> {
+export async function kiAusfuehrlich(e: AusfuehrlichEingabe, meta: Pick<AIMeta, "teacherId" | "trigger" | "kostenEinheitId">, art: ErklaerArt = "ausfuehrlich"): Promise<KiAusfuehrlich> {
   const { system, prompt } = ausfuehrlichAnfrage(e, art);
   const fn = art === "einfach" ? "einfacher" : "ausfuehrlich";
-  const out = await runAI(fn, AusfuehrlichSchema, system, prompt, { meta: { teacherId: meta.teacherId ?? null, trigger: meta.trigger ?? fn } });
+  const out = await runAI(fn, AusfuehrlichSchema, system, prompt, { meta: { teacherId: meta.teacherId ?? null, trigger: meta.trigger ?? fn, kostenEinheitId: meta.kostenEinheitId ?? null } });
   if (!out.ok) return { ok: false, error: out.message };
   const geprueft = pruefeAusfuehrlich(out.data, e.fach);
   if ("fehler" in geprueft) return { ok: false, error: geprueft.fehler };

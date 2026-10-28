@@ -19,6 +19,7 @@ import { getUnit } from "../units";
 import { poolOf, realtimeCapPerHour, routeFor } from "./config";
 import { generateWithAI } from "./features";
 import { ACTIONS, hasBlockInsight, latestInsight, saveInsight, type Action, type BlockInsight, type LiveInsight, type UnitInsight } from "./insights";
+import { hintergrundGestoppt } from "./einheit-budget";
 import { budgetState } from "./log";
 import { aiEnabled, breakerState, clockNow, runAI } from "./router";
 
@@ -57,7 +58,7 @@ export async function settle() {
 }
 
 /** Counters for the simulation report: how many events led to how many requests. */
-export const liveStats = { events: 0, triggers: 0, analyses: 0, bundled: 0, skippedSolved: 0, skippedCap: 0, blocks: 0, units: 0, newTasks: 0 };
+export const liveStats = { events: 0, triggers: 0, analyses: 0, bundled: 0, skippedSolved: 0, skippedCap: 0, skippedBudget: 0, blocks: 0, units: 0, newTasks: 0 };
 export function resetLiveStats() {
   for (const k of Object.keys(liveStats) as (keyof typeof liveStats)[]) liveStats[k] = 0;
 }
@@ -273,6 +274,11 @@ async function flush(unitId: number) {
     liveStats.skippedCap++;
     return;
   }
+  // KI-Budget je Einheit (lib/ai/einheit-budget.ts): ist ein Betrag gesetzt und erreicht, fragt die Live-Analyse nicht mehr; bei 0 € wie bisher
+  if (hintergrundGestoppt(unitId)) {
+    liveStats.skippedBudget++;
+    return;
+  }
   // solved in the meantime and nothing urgent: no request
   const solved = repo.listAttemptsForAssignment(focus.assignmentId).some((x) => x.task_id === focus.taskId && x.correct && x.final);
   if (solved && !events.some((e) => e.priority)) {
@@ -367,7 +373,7 @@ export async function blockContext(unitId: number, assignmentId: number): Promis
 }
 
 async function blockAnalysis(unitId: number, teacherId: number, assignmentId: number) {
-  if (hasBlockInsight(assignmentId)) return;
+  if (hasBlockInsight(assignmentId) || hintergrundGestoppt(unitId)) return;
   const ctx = await blockContext(unitId, assignmentId);
   if (!ctx) return;
   liveStats.blocks++;

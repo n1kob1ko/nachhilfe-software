@@ -1,8 +1,11 @@
 import { ArrowDown, ArrowUp, Check, CornerDownLeft, Crosshair, HelpCircle, Lightbulb, Presentation, Sparkles, X } from "lucide-react";
 import { antwortAction, vorschlagNeuAction, vorschlagReaktionAction, vorschlagSendenAction } from "@/app/cockpit-actions";
 import { VorschlagKnopf } from "@/components/cockpit/CockpitClient";
+import { NachschubLaeuft, NachschubVorschau } from "@/components/cockpit/Nachschub";
 import { Reveal } from "@/components/ui";
 import type { Beobachtung } from "@/lib/cockpit";
+import { nachschubImVorschlag } from "@/lib/ki-nachschub";
+import { getUnit } from "@/lib/units";
 import type { Anzeige, Knopf } from "@/lib/steuerung";
 import type { Art } from "@/lib/steuerung-regeln";
 
@@ -19,7 +22,7 @@ const ICON: Record<Art, typeof ArrowDown> = {
 const QUELLE = { A: "aus dem Bestand", B: "neu aus dem Generator, ohne KI", C: "" } as const;
 
 /** Ein Knopf des Vorschlags: senden (A oder B), neu mit KI (C, mit Kosten oder gesperrt mit Grund) oder ohne Aufgabe. */
-function KnopfAktion({ k, unitId, schrittId, primary }: { k: Knopf; unitId: number; schrittId: number | null; primary: boolean }) {
+function KnopfAktion({ k, unitId, schrittId, primary, hinweis = null }: { k: Knopf; unitId: number; schrittId: number | null; primary: boolean; hinweis?: string | null }) {
   const Icon = ICON[k.option.art];
   const icon = <Icon size={17} aria-hidden />;
   if (k.quelle === "C")
@@ -33,7 +36,7 @@ function KnopfAktion({ k, unitId, schrittId, primary }: { k: Knopf; unitId: numb
           testid="vorschlag-neu"
           laeuft="Wird erstellt …"
         />
-        {k.gesperrt && <p className="text-[13px] text-ink-3">{k.gesperrt}</p>}
+        {(k.gesperrt || hinweis) && <p className="text-[13px] text-ink-3">{k.gesperrt || hinweis}</p>}
       </div>
     );
   if (k.quelle)
@@ -63,6 +66,12 @@ function KnopfAktion({ k, unitId, schrittId, primary }: { k: Knopf; unitId: numb
  * Zusatz, nie an Stelle des Vorschlags. Kommt mit jeder neuen Antwort neu (die Gerätezeile lädt die Seite nach).
  */
 export function VorschlagKarte({ a, unitId, schrittId, imSchritt = false }: { a: Anzeige; unitId: number; schrittId: number | null; imSchritt?: boolean }) {
+  // neue Aufgaben der KI zu C (lib/ki-nachschub.ts): von selbst im Budget der Einheit, immer erst als Vorschau; dann ohne den Knopf C
+  const n = nachschubImVorschlag(unitId, schrittId, a);
+  const vorschau = n?.eintrag?.status === "bereit" ? n.eintrag : null;
+  const laeuft = !vorschau && Boolean(n && (n.eintrag?.status === "laeuft" || n.gleich));
+  const ohneC = vorschau || laeuft;
+  const andere = ohneC ? a.andere.filter((k) => k.quelle !== "C") : a.andere;
   return (
     <section
       aria-label="Vorschlag"
@@ -80,14 +89,16 @@ export function VorschlagKarte({ a, unitId, schrittId, imSchritt = false }: { a:
         </p>
         {a.haupt ? (
           <KnopfAktion k={a.haupt} unitId={unitId} schrittId={schrittId} primary />
-        ) : (
+        ) : ohneC ? null : (
           <p className="text-[14px] text-ink-2">Im Bestand und in den Generatoren gibt es dazu nichts.</p>
         )}
       </div>
+      {vorschau && <NachschubVorschau n={vorschau} unitId={unitId} name={(getUnit(unitId)?.student_name ?? "").split(" ")[0]} />}
+      {laeuft && <NachschubLaeuft automatisch={n?.eintrag?.automatisch ?? true} />}
       <Reveal label="Andere Möglichkeit" className="mt-1">
         <div className="grid gap-2 pb-1 sm:flex sm:flex-wrap sm:items-start" data-testid="vorschlag-andere">
-          {a.andere.map((k, i) => (
-            <KnopfAktion key={i} k={k} unitId={unitId} schrittId={schrittId} primary={false} />
+          {andere.map((k, i) => (
+            <KnopfAktion key={i} k={k} unitId={unitId} schrittId={schrittId} primary={false} hinweis={k.quelle === "C" ? (n?.hinweis ?? null) : null} />
           ))}
           <VorschlagKnopf action={vorschlagReaktionAction.bind(null, unitId, "nicht_noetig", schrittId)} label="Nicht nötig" icon={<X size={16} aria-hidden />} testid="vorschlag-nicht-noetig" laeuft="Einen Moment …" />
         </div>

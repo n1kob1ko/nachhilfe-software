@@ -8,6 +8,7 @@
  * des Tages (`verknuepfeMitHeutigemPlatz`); der Platz bleibt die Soll-Seite, die Einheit die
  * Ist-Seite. Eine Einheit ohne Platz läuft wie bisher ungeplant.
  */
+import { ordneBriefingZu } from "./ai/einheit-budget";
 import { db } from "./db";
 import { offenePlaetzeHeute } from "./planung/heute";
 import { einheitenFuerWoche, verknuepfePlatz, type GeplanteEinheitZeile } from "./planung/repo";
@@ -147,6 +148,8 @@ export function startUnit(teacherId: number, studentId: number, opts: { at?: num
     const unit = getUnit(Number(res.lastInsertRowid))!;
     // D17: die Einheit nimmt sich ihren heutigen Platz im Wochenplan, wenn es einen gibt (den der Karte, wenn genannt)
     verknuepfeMitHeutigemPlatz(unit, at, opts.platzId ?? null);
+    // KI-Budget je Einheit: das Briefing, das heute für diesen Schüler lief (meist im Hintergrund auf Heute), zählt zu ihr
+    ordneBriefingZu(unit.id, studentId, at);
     return { unit, created: true };
   } catch (e) {
     const again = (e as { code?: string }).code === "SQLITE_CONSTRAINT_UNIQUE" ? runningUnitForStudent(studentId) : null;
