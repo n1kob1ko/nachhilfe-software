@@ -440,3 +440,31 @@ test("„Richtig / Teilweise / Falsch“ per question step: stored, „Falsch“
   s.units.finishUnit(unit.id, "abgebrochen");
   s.units.finishUnit(u2.id, "abgebrochen");
 });
+
+test("A from the unit's Lernpaket: the practice steps, never the tasks of its „Kontrolle“ step", async () => {
+  const s = await setup();
+  const lp = await import("./lernpakete");
+  const { levelOf } = await import("./curriculum");
+  const fs = await import("node:fs");
+  const path = await import("node:path");
+  const md = fs.readFileSync(path.join(process.cwd(), "docs", "lernpaket-format.md"), "utf8");
+  const d = JSON.parse(md.match(/## Vollständiges Beispiel[\s\S]*?```json\n([\s\S]*?)```/)![1]);
+  d.titel = `Die vier Fälle (Steuerung ${++nr})`;
+  // nur eine Übungsaufgabe vor der Kontrolle: sonst füllen die ersten Schritte schon alle Plätze
+  d.schritte = d.schritte.filter((x: { art: string }) => !["frage", "gefuehrte_uebung"].includes(x.art));
+  const ueb = d.schritte.find((x: { art: string }) => x.art === "uebung");
+  ueb.aufgaben = ueb.aufgaben.slice(0, 1);
+  delete d.dauer_minuten;
+  const imp = lp.importiereLernpaket(JSON.stringify(d), s.teacher.id);
+  assert.ok("id" in imp, JSON.stringify(imp));
+  const p = lp.getLernpaket(imp.id)!;
+  const kontrolle = p.schritte.find((x) => x.art === "kontrolle")!;
+  const uebung = p.schritte.find((x) => x.art === "uebung")!;
+  const unit = s.units.startUnit(s.teacher.id, s.schueler("Tom Kontrolle"), { subject: "Deutsch" }).unit;
+  assert.ok("ok" in s.c.waehlePaket(unit.id, p.id));
+
+  const a = s.st.bestand(unit.id, { skillId: "deutsch.grammatik.faelle", level: levelOf("mittel") }, s.c.cockpit(unit.id)).map((t) => t.prompt);
+  assert.ok(a.some((x) => uebung.aufgaben.some((u) => u.prompt === x)), "tasks of the practice step are offered");
+  assert.ok(!a.some((x) => kontrolle.aufgaben.some((k) => k.prompt === x)), "the check stays fresh");
+  s.units.finishUnit(unit.id, "abgebrochen");
+});

@@ -147,7 +147,7 @@ function schonGesendet(unitId: number): Set<string> {
 
 /**
  * A: vorhandene Aufgaben zur Fähigkeit und Stufe, höchstens `ANZAHL`: zuerst aus den Schritten des Lernpakets der Einheit,
- * dann aus freigegebenen Übungen (allgemeine oder die des Schülers, nie das Blatt eines anderen Schülers: lib/material-passt.ts)
+ * ohne den Kontroll-Schritt, dann aus freigegebenen Übungen (allgemeine oder die des Schülers, nie das Blatt eines anderen Schülers: lib/material-passt.ts)
  * und der Bibliothek, je Aufgabe genau dieser Fähigkeit. Nicht, was in dieser Einheit schon gesendet wurde, nichts schlecht
  * Bewertetes, nichts mit „Bitte prüfen“, kein Beispiel, das die Lehrer-Knöpfe schon gezeigt haben (lib/knoepfe.ts).
  */
@@ -165,8 +165,10 @@ export function bestand(unitId: number, o: Pick<Option, "skillId" | "level">, c?
   };
   const paket = c ? paketImSchritt(c) : null;
   if (paket)
+    // nie aus dem Kontroll-Schritt: diese Aufgaben bleiben für die Lernkontrolle frisch
     for (const s of paket.schritte)
-      for (const a of s.aufgaben) if ((a.skillId === o.skillId || a.skillIds?.includes(o.skillId)) && levelOf(a.difficulty ?? paket.schwierigkeit) === o.level) nimm(aufgabeFuerSchueler(a, paket.quelle));
+      if (s.art !== "kontrolle")
+        for (const a of s.aufgaben) if ((a.skillId === o.skillId || a.skillIds?.includes(o.skillId)) && levelOf(a.difficulty ?? paket.schwierigkeit) === o.level) nimm(aufgabeFuerSchueler(a, paket.quelle));
   if (out.length >= ANZAHL) return out;
   const ids = db()
     .prepare(
