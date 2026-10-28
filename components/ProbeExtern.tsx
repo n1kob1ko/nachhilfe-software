@@ -6,12 +6,14 @@ import { Check, ClipboardPaste, FileText, FileUp, PenLine, Plus, Sparkles, Trash
 import { shrinkImage } from "@/components/shrink-image";
 import { uebernimmProbeAction } from "@/app/probe-extern-actions";
 import {
+  faehigkeitFuerLeere,
   fehlerVorUebernehmen,
   liesLoesungMitNummern,
   liesTextMitNummern,
   loesungenEinfuegen,
   MAX_DATEIEN,
   nummerText,
+  ohneFaehigkeitText,
   punkteVon,
   zeilenAusLesung,
   type ProbeZeile,
@@ -188,6 +190,7 @@ export function ProbeExtern({
   const ohneLoesung = zeilen?.filter((z) => !z.loesung.trim()).length ?? 0;
   const ohnePunkte = zeilen?.filter((z) => punkteVon(z.punkte) == null).length ?? 0;
   const gelb = zeilen?.filter((z) => z.unsicher).length ?? 0;
+  const ohneFaehigkeit = zeilen?.filter((z) => !z.skillId).length ?? 0;
   const hochgeladen = gespeichert.angabe.length > 0;
   const neueDateien = dateien.angabe.length + dateien.loesung.length > 0;
   const kiOffen = lesung && lesung.offen.angabe + lesung.offen.loesung > 0;
@@ -488,6 +491,29 @@ export function ProbeExtern({
                   {ohneLoesung > 0 && ` · ${ohneLoesung} ohne Lösung`}
                   {gelb > 0 && ` · ${gelb} unsicher`}
                 </p>
+                {/* no skill guessed: rows without one count for the grade only; one choice fills every empty row */}
+                {ohneFaehigkeit > 0 && (
+                  <div className="grid gap-2 rounded-xl bg-panel px-4 py-3" data-testid="probe-ohne-faehigkeit">
+                    <p className="text-[14px] font-medium">{ohneFaehigkeitText(ohneFaehigkeit)}</p>
+                    {skills.length > 0 && (
+                      <label className="grid gap-1">
+                        <span className="text-[12.5px] font-semibold text-ink-2">Fähigkeit für alle ohne</span>
+                        <select className="input text-[14px]" value="" onChange={(e) => setZeilen((zs) => zs && faehigkeitFuerLeere(zs, e.target.value || null))} data-testid="probe-faehigkeit-alle">
+                          <option value="">Bitte wählen</option>
+                          {bereiche.map(([area, liste]) => (
+                            <optgroup key={area} label={area}>
+                              {liste.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                  {s.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                  </div>
+                )}
                 {fehlerListe.length > 0 && zeilen.length > 0 && (
                   <p className="text-[14px] text-amber" data-testid="probe-noch">
                     {fehlerListe[0]}

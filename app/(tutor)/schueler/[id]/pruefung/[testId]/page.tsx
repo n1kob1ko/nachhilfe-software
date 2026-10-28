@@ -10,13 +10,13 @@ import { PageHeader, Pill, Reveal, SectionTitle, StatusChip, formatDate } from "
 import { dayOf, examPrep, PLAN_COUNTS, STAGE_LABEL, STAGE_TONE } from "@/lib/exams";
 import { aiEnabled } from "@/lib/ai";
 import { matchSkills, skillsForStudent, stoffVorschlag } from "@/lib/lehrplan";
-import { externDaten } from "@/lib/probe-extern";
+import { externDaten, ohneFaehigkeitText } from "@/lib/probe-extern";
 import { probeschularbeitenZu, punkteText } from "@/lib/probeschularbeit";
 import { stoffDerPruefung } from "@/lib/pruefungsstoff";
 import type { Skill } from "@/lib/repo";
 import { auftraegeZurPruefung } from "@/lib/schreibauftrag-store";
 import { runningUnitForStudent } from "@/lib/units";
-import { noteFolgt } from "@/lib/abschluss";
+import { probeErgebnisText } from "@/lib/abschluss";
 import { PAPIER_ANTWORT } from "@/lib/blatt-einlesen";
 import { papierZeile } from "@/lib/blatt-regeln";
 import { papierArbeitOhneEinheit } from "@/lib/papier-einheit";
@@ -199,7 +199,7 @@ export default async function ExamPrepPage({
           )}
           {proben.length > 0 && (
             <ul className="panel mb-4 divide-y divide-line">
-              {proben.map(({ worksheet: w, punkte, assignment: a, ergebnis: e }) => (
+              {proben.map(({ worksheet: w, punkte, assignment: a, ergebnis: e, ohneFaehigkeit }) => (
                 <li key={w.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
                   <span className="min-w-0 flex-1">
                     <Link href={`/uebungen/${w.id}`} className="block font-medium hover:underline">
@@ -208,19 +208,20 @@ export default async function ExamPrepPage({
                     <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[13px] text-ink-2">
                       {w.status === "entwurf" ? <Pill tone="amber">Entwurf</Pill> : a?.note === PAPIER_ANTWORT ? <Pill tone="green">auf Papier</Pill> : a ? <Pill tone="green">gesendet</Pill> : <Pill>freigegeben</Pill>}
                       <span className="num">{punkteText(punkte)} Punkte</span>
-                      {e && e.bearbeitet > 0 && (
-                        <span className="num">
-                          · {punkteText(e.erreicht)} von {punkteText(e.gesamt)} Punkten
-                          {/* die Note erst, wenn keine Antwort mehr offen ist (lib/zu-bewerten.ts) */}
-                          {e.note ? ` · Note ${e.note.note} (${e.note.label})` : e.offen ? ` · ${noteFolgt(e.offen)}` : e.bearbeitet < e.aufgaben ? ` · ${e.bearbeitet} von ${e.aufgaben} Aufgaben` : ""}
-                        </span>
-                      )}
+                      {/* die Note vor den Punkten, und erst, wenn keine Antwort mehr offen ist (lib/zu-bewerten.ts) */}
+                      {e && e.bearbeitet > 0 && <span className="num" data-testid="probe-ergebnis">· {probeErgebnisText(e)}</span>}
                       {e && e.offen > 0 && (
                         <Link href={zuBewertenHref(student.id)} className="font-semibold text-accent hover:underline" data-testid="probe-bewerten">
                           Bewerten
                         </Link>
                       )}
                     </span>
+                    {/* Teilaufgaben ohne Fähigkeit (eigene Probeschularbeit): zählen für die Note, nicht für den Lernstand */}
+                    {e && e.bearbeitet > 0 && ohneFaehigkeit > 0 && (
+                      <span className="mt-0.5 block text-[13px] text-ink-3" data-testid="probe-ohne-faehigkeit">
+                        {ohneFaehigkeitText(ohneFaehigkeit)}
+                      </span>
+                    )}
                   </span>
                   {a && e && e.bearbeitet > 0 && (
                     <Link href={`/schueler/${student.id}/ergebnis/${a.id}`} className="btn btn-ghost btn-sm">

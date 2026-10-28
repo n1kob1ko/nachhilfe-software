@@ -403,6 +403,22 @@ export function fehlerVorUebernehmen(zeilen: ProbeZeile[], erlaubt?: Set<string>
   return f;
 }
 
+/**
+ * Der Hinweis zu Teilaufgaben ohne Fähigkeit, vor „Übernehmen“ und auf der Prüfungskarte: sie zählen für die Note, nicht für den
+ * Lernstand („3 Teilaufgaben ohne Fähigkeit zählen für die Note, nicht für den Lernstand.“). Leer bei 0.
+ */
+export const ohneFaehigkeitText = (n: number) =>
+  n <= 0 ? "" : n === 1 ? "1 Teilaufgabe ohne Fähigkeit zählt für die Note, nicht für den Lernstand." : `${n} Teilaufgaben ohne Fähigkeit zählen für die Note, nicht für den Lernstand.`;
+
+/**
+ * „Für alle ohne Fähigkeit“: setzt die gewählte Fähigkeit in jeder Zeile ohne Fähigkeit, nur auf Wahl der Lehrkraft (nie geraten).
+ * Zeilen mit Fähigkeit oder Vorschlag bleiben, wie sie sind; eine leere Wahl ändert nichts.
+ */
+export function faehigkeitFuerLeere<Z extends Pick<ProbeZeile, "skillId" | "skillVorschlag">>(zeilen: Z[], skillId: string | null): Z[] {
+  const id = skillId?.trim();
+  return id ? zeilen.map((z) => (z.skillId ? z : { ...z, skillId: id, skillVorschlag: false })) : zeilen;
+}
+
 /** Der Name ohne ein „Probeschularbeit“ am Anfang, das der Titel der Übung schon nennt („Probeschularbeit: Brüche“ → „Brüche“). */
 export const ohneProbeWort = (titel: string) => titel.replace(/^\s*probe-?schularbeit(?![a-zäöüß])\s*[:–-]?\s*/i, "").trim();
 

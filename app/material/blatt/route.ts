@@ -2,7 +2,7 @@ import { revalidatePath } from "next/cache";
 import { currentTeacher } from "@/lib/auth";
 import { BLATT_TITEL, blattLesbar, liesBlatt, MAX_SEITEN } from "@/lib/blatt-einlesen";
 import { getMaterial, hatDatei, MAX_UPLOAD_BYTES, saveUpload, sniffType } from "@/lib/materials";
-import { ANDERES_BLATT, liesPapier, papierTor } from "@/lib/papier-einheit";
+import { ANDERES_BLATT, blattFehler, liesPapier, papierTor } from "@/lib/papier-einheit";
 import { foreignRequest, notAllowed } from "@/lib/picture-story-routes";
 import * as repo from "@/lib/repo";
 import { canManageUnit, getUnit } from "@/lib/units";
@@ -52,6 +52,9 @@ export async function POST(request: Request) {
   if (form.get("keine_namen") !== "1") return fail("Bitte bestätigen, dass auf den Seiten kein Name steht.");
   const geht = unit || probe ? papierTor(student.id) : blattLesbar();
   if ("grund" in geht) return fail(geht.grund);
+  // a sheet of this unit (or an open Probeschularbeit of this student) before any page is stored: a rejected request keeps nothing
+  const fremd = (unit || probe) && blatt !== ANDERES_BLATT ? blattFehler({ unitId: unit?.id ?? null, studentId: student.id, blattKey: blatt }) : null;
+  if (fremd) return fail(fremd);
 
   // schon gespeicherte Seiten (zweiter Versuch), dann neue
   const materials = String(form.get("materialien") ?? "")

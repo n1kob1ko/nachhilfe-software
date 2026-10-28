@@ -9,6 +9,7 @@ import { requireTeacher } from "@/lib/auth";
 import {
   bereiteVor,
   cockpit,
+  druckeImSchritt,
   isBeobachtung,
   markiereSchritt,
   merkeSchritt,
@@ -126,6 +127,18 @@ export async function sendeGeneratorAction(unitId: number, skillId: string, schr
 export async function sendeBestandAction(unitId: number, schrittId: number, _prev: SendState, _form?: FormData): Promise<SendState> {
   const { t } = await laufendeEinheit(unitId);
   return aufsGeraet(unitId, await sendeBestand(unitId, schrittId, t.id));
+}
+
+/**
+ * „Drucken“ neben „Übung senden“ (lib/cockpit.ts `druckeImSchritt`): dieselbe Übung ohne Zuweisung, als gedruckt gemerkt, dann die
+ * A4-Seite mit „Zur Einheit“ zurück. Geht es nicht, steht der Grund oben im Unterricht.
+ */
+export async function druckeSchrittAction(unitId: number, schrittId: number) {
+  const { t } = await laufendeEinheit(unitId);
+  const out = await druckeImSchritt(unitId, schrittId, t.id);
+  if ("fehler" in out) return zurueck(unitId, out.fehler);
+  revalidatePath(`/einheiten/${unitId}`);
+  redirect(`/arbeitsblatt/${out.worksheetId}?einheit=${unitId}`);
 }
 
 /**
