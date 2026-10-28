@@ -117,6 +117,8 @@ export type AufgabeBeleg = Pick<TaskLine, "assignmentId" | "skillId" | "skill" |
  * - `offen`: so viele Antworten der Einheit warten noch auf die Lehrkraft (lib/zu-bewerten.ts); sie stehen in keinem Ergebnis
  * - `knoepfe`: was die Lehrkraft mit den Knöpfen am Schritt getan hat (lib/knoepfe.ts): „Angepasst: …“ unter „Heute gemacht“,
  *   „Lehrkraft: Thema verstanden“ als ihre Beobachtung unter „Gut verstanden“ (nie als Ergebnis)
+ * - `hausuebung`: die im Abschluss freigegebene Hausübung („Hausübung: 9 Aufgaben …, fällig …“) oder „Heute keine Hausübung“
+ *   (lib/hausuebung.ts); `zeile`: wie die Hausübung selbst unter „Nächstes Mal“ stünde, dort fällt sie dann weg
  */
 export type AbschlussBelege = {
   aufgaben: AufgabeBeleg[];
@@ -135,6 +137,7 @@ export type AbschlussBelege = {
   proben?: ProbeZeile[];
   offen?: number;
   knoepfe?: Pick<KnopfEintrag, "art" | "thema" | "inhalt">[];
+  hausuebung?: { text: string; zeile: string | null };
 };
 
 /** Eine Probeschularbeit der Einheit: Punkte, Note erst wenn alles bewertet ist, sonst wie viel noch offen ist. */
@@ -197,6 +200,13 @@ const beobachtungsZeile = (b: AbschlussBelege["beobachtungen"][number]): KartenZ
  * und ist kein sicheres Ergebnis (`hatSichereErgebnisse`).
  */
 export function gutVerstanden(b: Pick<AbschlussBelege, "aufgaben" | "beobachtungen" | "reaktionen">): KartenZeile[] {
+  return gutRegeln(b).zeilen;
+}
+
+/** Die Fähigkeiten mit sicherem Ergebnis nach denselben Regeln (Regel 1 bis 3), für die Hausübung (lib/hausuebung.ts). */
+export const sichereFaehigkeiten = (b: Pick<AbschlussBelege, "aufgaben" | "beobachtungen" | "reaktionen">): Set<string> => gutRegeln(b).skills;
+
+function gutRegeln(b: Pick<AbschlussBelege, "aufgaben" | "beobachtungen" | "reaktionen">): { zeilen: KartenZeile[]; skills: Set<string> } {
   const zeilen: KartenZeile[] = [];
   const skills = new Set<string>();
   const benutzt = new Set<number>();
@@ -238,7 +248,7 @@ export function gutVerstanden(b: Pick<AbschlussBelege, "aufgaben" | "beobachtung
   b.beobachtungen.forEach((o, i) => {
     if (o.antwort === "richtig" && !benutzt.has(i)) zeilen.push(beobachtungsZeile(o));
   });
-  return zeilen;
+  return { zeilen, skills };
 }
 
 /** Ob „Gut verstanden“ ein sicheres Ergebnis hat (aus den Daten oder von dir geschrieben); sonst „Keine sicheren Ergebnisse“. */
@@ -324,6 +334,9 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   // the teacher's buttons at the step: what she adapted, in one line
   const angepasst = angepasstZeile(belege?.knoepfe ?? []);
   if (angepasst) gemacht.push({ text: angepasst, von: "anpassung" });
+  // the homework given (or not) in this Abschluss, decided by the teacher
+  const hu = belege?.hausuebung;
+  if (hu) gemacht.push({ text: hu.text, von: "hausuebung" });
 
   // only what the rules show as secure (`gutVerstanden`), or what the teacher wrote; a step marked „Weiter“ proves nothing
   const regeln = belege ? gutVerstanden(belege) : null;
@@ -376,7 +389,9 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   if (e?.uebersprungen.length) naechstes.push(a(`Übersprungen: ${namen(e.uebersprungen)}`));
   // the documentation's line for the same exam goes: the one above says more
   const gleichePruefung = (l: BriefLine) => Boolean(p) && l.from === "daten" && l.text.startsWith(`${p!.art} ${p!.fach}`) && l.text.includes(`(${p!.datum})`);
-  naechstes.push(...(brief?.dates ?? []).filter((l) => !gleichePruefung(l)).map((l) => zeile(l, (t) => (t.startsWith("Hausübung") ? "hausuebung" : "pruefung"))));
+  // today's homework stands under „Heute gemacht“, also as the documentation's own note
+  const heutigeHausuebung = (l: BriefLine) => Boolean(hu) && ((l.from === "daten" && hu!.zeile !== null && l.text.startsWith(hu!.zeile)) || (l.from === "lehrer" && l.text === hu!.text));
+  naechstes.push(...(brief?.dates ?? []).filter((l) => !gleichePruefung(l) && !heutigeHausuebung(l)).map((l) => zeile(l, (t) => (t.startsWith("Hausübung") ? "hausuebung" : "pruefung"))));
 
   const einmal = (xs: KartenZeile[]) => xs.filter((x, i) => x.text.trim() && xs.findIndex((y) => y.text === x.text) === i);
   const karte: AbschlussKarte = { gemacht: einmal(gemacht), gut: einmal(gut), schwierig: einmal(schwierig), naechstes: einmal(naechstes) };
@@ -483,7 +498,11 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
   // the same list as „Zu bewerten“ (lib/zu-bewerten.ts): only answers, a text has its own line
   const offen = offeneAntwortenZahl(zuBewerten({ unitId }));
   const knoepfe = knoepfeDerEinheit(unitId);
-  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier, proben, offen, knoepfe };
+  // Hausübung vorbereitet (lib/hausuebung.ts): only what the teacher decided, never the proposal
+  const hu = db().prepare("SELECT doku, homework_id FROM einheit_hausuebung WHERE unit_id = ? AND status IN ('freigegeben', 'uebersprungen') AND doku <> ''").get(unitId) as { doku: string; homework_id: number | null } | undefined;
+  const hw = hu?.homework_id ? (db().prepare("SELECT subject, description FROM homework WHERE id = ?").get(hu.homework_id) as { subject: string; description: string } | undefined) : undefined;
+  const hausuebung = hu ? { text: hu.doku, zeile: hw ? `Hausübung${hw.subject ? ` ${hw.subject}` : ""}: ${hw.description}` : null } : undefined;
+  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier, proben, offen, knoepfe, hausuebung };
 }
 
 /** Die Karte einer beendeten Einheit mit allen Belegen, wie der Abschluss sie zeigt und „Bestätigen“ sie schreibt. */

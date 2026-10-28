@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { after } from "next/server";
 import QRCode from "qrcode";
 import { BookOpenText, CalendarClock, Camera, CheckCircle2, ExternalLink, Images, PenLine, Plus, Printer, ScanLine, Square } from "lucide-react";
 import { levelFor } from "@/lib/text-correction-rules";
@@ -27,6 +28,8 @@ import { latestInsight } from "@/lib/ai/insights";
 import { unitBrief } from "@/lib/summary";
 import { ABSCHLUSS_FELDER, hatSichereErgebnisse, karteDerEinheit, quelleText } from "@/lib/abschluss";
 import { AbschlussFeld } from "@/components/AbschlussFeld";
+import { HausuebungKarte } from "@/components/Hausuebung";
+import { hausuebungDerEinheit, kiAutomatisch, vorschlagZeigen } from "@/lib/hausuebung";
 import { Pill, Reveal, SectionTitle, formatDate, formatTime } from "@/components/ui";
 import { LiveStatus } from "@/components/device/LiveStatus";
 import { liveSnapshot, studentDevice } from "@/lib/live";
@@ -74,7 +77,7 @@ function dauerLabel(geplanteDauer: number | null, minutes: number, estimated: bo
  * ended → **Abschluss**: vier Felder aus den Daten (lib/abschluss.ts) und „Dokumentation bestätigen“; die ganze
  *   Dokumentation, automatisch geschrieben (lib/einschaetzung.ts) und änderbar, unter „Mehr Details“ und „Ändern“.
  */
-export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string }> }) {
+export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string; hausuebung?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -281,6 +284,11 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   const aendern = sp.aendern && mayManage ? lesson : null;
   // Gemeinsame Bewertung (lib/zu-bewerten.ts): was noch auf dich wartet, gleich über „Dokumentation bestätigen“
   const offen = lesson ? zuBewerten({ unitId: unit.id }) : [];
+  // Hausübung vorbereitet (lib/hausuebung.ts): der Vorschlag aus den Ergebnissen, nur für die Lehrkraft der Einheit; fehlen Aufgaben und
+  // reicht das KI-Budget der Einheit, erstellt die KI sie nach dem Zeigen (immer erst als Vorschau „ungeprüft“)
+  const hu = lesson && mayManage && unit.status === "beendet" ? hausuebungDerEinheit(unit.id) : null;
+  const huZeigen = hu !== null && vorschlagZeigen(hu, unit.ended_at);
+  if (hu && huZeigen && hu.status === "vorschlag" && hu.ki.erlaubt && hu.ki.automatisch) after(() => kiAutomatisch(unit.id));
   return (
     <>
       {notices}
@@ -355,6 +363,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
                 <ZuBewertenListe zeilen={offen} bewerten={mayManage} />
               </div>
             )}
+            {hu && huZeigen && <HausuebungKarte v={hu} name={first(student.name)} fehler={sp.hausuebung ?? null} />}
             <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-4">
               {lesson.reviewed_at ? (
                 <>
