@@ -36,12 +36,36 @@ export const ANZAHL_VORSCHLAG = 2;
 /** Im Schritt: bis drei; weniger passende Aufgaben ohne KI sind zu wenig (B0). */
 export const ANZAHL_SCHRITT = 3;
 
-/** `art`: „schritt“ im Planschritt, „live“ aus dem KI-Hinweis im Live-Status, sonst die Art des Vorschlags. */
-export type NachschubZiel = { art: Art | "schritt" | "live"; skillId: string; level: number; fokus: string | null; kontrolle: boolean; anzahl: number };
+/**
+ * `art`: „schritt“ im Planschritt, „live“ aus dem KI-Hinweis im Live-Status, „empfehlung“ und „diagnose“ ohne Einheit
+ * (lib/ki-vorschau.ts, dann mit `blatt`), sonst die Art des Vorschlags.
+ */
+export type NachschubZiel = { art: Art | "schritt" | "live" | "empfehlung" | "diagnose"; skillId: string; level: number; fokus: string | null; kontrolle: boolean; anzahl: number; blatt?: VorschauBlatt };
+/**
+ * Ohne Einheit: wie die Übung aussieht, die „Senden“ anlegt (Titel, Art, Notiz der Zuweisung), und in welcher Reihenfolge die Aufgaben
+ * stehen (`reihenfolge`: Stellen in [...dazu, ...aufgaben]; ohne sie erst die ohne KI, dann die neuen).
+ */
+export type VorschauBlatt = {
+  titel: string;
+  subject: string;
+  schoolType: string;
+  klasse: number;
+  topic: string;
+  difficulty: string;
+  taskType: string;
+  kind: repo.Worksheet["kind"];
+  skillIds: string[];
+  notiz: string;
+  /** die Übung gehört dem Schüler (wie eine Diagnose), sonst wie eine Empfehlung bisher */
+  fuerSchueler: boolean;
+  reihenfolge?: number[];
+};
 export type NachschubStatus = "laeuft" | "bereit" | "gesendet" | "verworfen" | "fehler";
 export type Nachschub = {
   id: number;
-  unitId: number;
+  /** null: ohne Einheit (Empfehlung, Diagnose), dann mit `studentId` */
+  unitId: number | null;
+  studentId: number | null;
   schluessel: string;
   schrittId: number | null;
   ziel: NachschubZiel;
@@ -58,11 +82,12 @@ export type Nachschub = {
   createdAt: string;
 };
 
-type Row = { id: number; unit_id: number; schluessel: string; schritt_id: number | null; ziel: string; automatisch: number; status: NachschubStatus; aufgaben: string; dazu: string; fehler: string; call_id: number | null; worksheet_id: number | null; created_at: string };
+type Row = { id: number; unit_id: number | null; student_id: number | null; schluessel: string; schritt_id: number | null; ziel: string; automatisch: number; status: NachschubStatus; aufgaben: string; dazu: string; fehler: string; call_id: number | null; worksheet_id: number | null; created_at: string };
 
 const zeile = (r: Row): Nachschub => ({
   id: r.id,
   unitId: r.unit_id,
+  studentId: r.student_id ?? null,
   schluessel: r.schluessel,
   schrittId: r.schritt_id,
   ziel: json<NachschubZiel>(r.ziel, { art: "schritt", skillId: "", level: 3, fokus: null, kontrolle: false, anzahl: ANZAHL_SCHRITT }),
@@ -96,6 +121,17 @@ export const schluesselSchritt = (schrittId: number, skillId: string, runde: num
 export const schluesselVorschlag = (bis: number, o: Pick<Option, "art" | "skillId" | "level">) => `vorschlag:${bis}:${o.art}:${o.skillId}:${o.level}`;
 /** Aus dem Live-Status einer je Einheit: solange eine Vorschau offen ist, kommt sie wieder, statt neu zu fragen. */
 export const SCHLUESSEL_LIVE = "live";
+
+/**
+ * Die Aufgaben der Vorschau in der Reihenfolge, in der „Senden“ sie schickt; `neu` = von der KI. Im Unterricht erst die ohne KI, dann
+ * die neuen; ohne Einheit wie in `blatt.reihenfolge` (eine Diagnose: leicht zuerst).
+ */
+export function vorschauAufgaben(n: Pick<Nachschub, "dazu" | "aufgaben" | "ziel">): { t: TaskDraft; neu: boolean }[] {
+  const alle = [...n.dazu.map((t) => ({ t, neu: false })), ...n.aufgaben.map((t) => ({ t, neu: true }))];
+  const r = n.ziel.blatt?.reihenfolge;
+  const ganz = r && r.length === alle.length && new Set(r).size === r.length && r.every((i) => Number.isInteger(i) && i >= 0 && i < alle.length);
+  return ganz ? r.map((i) => alle[i]) : alle;
+}
 
 // ---------- Kosten ----------
 
@@ -300,17 +336,19 @@ export async function nachschubAutomatisch(unitId: number): Promise<number> {
  */
 export async function sendeNachschub(unitId: number, id: number, teacherId: number | null): Promise<{ worksheetId: number; assignmentId: number } | { fehler: string }> {
   const n = nachschub(id);
-  if (!n || n.unitId !== unitId) return { fehler: "Diese Aufgaben gehören nicht zu dieser Einheit." };
+  const art = n?.ziel.art;
+  // ohne Einheit (Empfehlung, Diagnose) sendet lib/ki-vorschau.ts
+  if (!n || n.unitId !== unitId || art === "empfehlung" || art === "diagnose" || !art) return { fehler: "Diese Aufgaben gehören nicht zu dieser Einheit." };
   if (n.status !== "bereit") return { fehler: n.status === "gesendet" ? "Diese Aufgaben sind schon gesendet." : "Diese Aufgaben gibt es nicht mehr." };
   // a double tap sends once
   if (!db().prepare("UPDATE einheit_ki_aufgaben SET status = 'gesendet' WHERE id = ? AND status = 'bereit'").run(id).changes) return { fehler: "Diese Aufgaben sind schon gesendet." };
   const aufgaben = [...n.dazu, ...n.aufgaben];
   const out =
-    n.ziel.art === "schritt"
+    art === "schritt"
       ? await sendeAusGenerator(unitId, n.ziel.skillId, teacherId, n.schrittId, "senden", aufgaben)
-      : n.ziel.art === "live"
+      : art === "live"
         ? sendeLive(unitId, n, teacherId)
-        : sendeKiAufgaben(unitId, { art: n.ziel.art, skillId: n.ziel.skillId, level: n.ziel.level, fokus: n.ziel.fokus }, teacherId, aufgaben);
+        : sendeKiAufgaben(unitId, { art, skillId: n.ziel.skillId, level: n.ziel.level, fokus: n.ziel.fokus }, teacherId, aufgaben);
   if ("fehler" in out) {
     db().prepare("UPDATE einheit_ki_aufgaben SET status = 'bereit' WHERE id = ?").run(id);
     return out;

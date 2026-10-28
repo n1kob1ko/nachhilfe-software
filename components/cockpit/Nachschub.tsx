@@ -1,4 +1,5 @@
 import { Send, Sparkles, Trash2 } from "lucide-react";
+import { applyRecommendationAction, vorschauSendenAction, vorschauVerwerfenAction } from "@/app/actions";
 import { einheitBudgetAction, nachschubSchrittAction, nachschubSendenAction, nachschubVerwerfenAction } from "@/app/cockpit-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { VorschlagKnopf } from "@/components/cockpit/CockpitClient";
@@ -7,20 +8,36 @@ import { Pill } from "@/components/ui";
 import { BUDGET_MAX_EUR, einheitBudget, euro, euroKlein, kostenJeFunktion, kostenZeile } from "@/lib/ai/einheit-budget";
 import { aiEnabled } from "@/lib/ai/router";
 import { antwortText, frageText, loesungText } from "@/lib/cockpit";
-import { nachschubImLiveHinweis, type Nachschub, type NachschubAnzeige } from "@/lib/ki-nachschub";
+import { nachschubImLiveHinweis, vorschauAufgaben, type Nachschub, type NachschubAnzeige } from "@/lib/ki-nachschub";
+import { empfehlungWeg, laeuftNoch, schluesselEmpfehlung, vorschauZu } from "@/lib/ki-vorschau";
+import type { NextStep } from "@/lib/recommend";
 import { getSkill } from "@/lib/repo";
 
 /**
  * **Neue Aufgaben der KI mit Vorschau** (lib/ki-nachschub.ts): „neu erstellt, ungeprüft“, jede Aufgabe mit Lösung; erst „Senden“ schickt
- * genau diese an den Schüler. Nur für den Lehrer; der Schüler sieht davon nichts, bis gesendet ist.
+ * genau diese an den Schüler. Nur für den Lehrer; der Schüler sieht davon nichts, bis gesendet ist. Ohne Einheit (Empfehlung, Diagnose;
+ * lib/ki-vorschau.ts) mit eigenen `aktionen`; in einem Blatt mit Aufgaben ohne KI sind die neuen markiert.
  */
-export function NachschubVorschau({ n, unitId, name }: { n: Nachschub; unitId: number; name: string }) {
+export function NachschubVorschau({
+  n,
+  unitId,
+  name,
+  aktionen,
+}: {
+  n: Nachschub;
+  unitId?: number;
+  name: string;
+  aktionen?: { senden: () => Promise<void>; verwerfen: () => Promise<void> };
+}) {
   const skill = getSkill(n.ziel.skillId)?.name ?? "dieser Fähigkeit";
-  const alle = [...n.dazu.map((t) => ({ t, neu: false })), ...n.aufgaben.map((t) => ({ t, neu: true }))];
+  const alle = vorschauAufgaben(n);
+  const gemischt = alle.some((x) => !x.neu);
+  const senden = aktionen?.senden ?? nachschubSendenAction.bind(null, unitId ?? 0, n.id);
+  const verwerfen = aktionen?.verwerfen ?? nachschubVerwerfenAction.bind(null, unitId ?? 0, n.id);
   return (
     <section className="mt-3 grid gap-2 rounded-xl border border-amber/40 bg-amber-wash/50 px-3 py-3" aria-label="Neue Aufgaben, ungeprüft" data-testid="ki-nachschub">
       <p className="flex flex-wrap items-center gap-2 text-[15px] font-semibold">
-        <Sparkles size={16} className="text-amber" aria-hidden /> Neue Aufgaben zu {skill}
+        <Sparkles size={16} className="text-amber" aria-hidden /> {n.ziel.art === "diagnose" && n.ziel.blatt ? `Diagnose: ${n.ziel.blatt.topic}` : `Neue Aufgaben zu ${skill}`}
         <Pill tone="amber">neu erstellt, ungeprüft</Pill>
       </p>
       <p className="text-[14px] text-ink-2">
@@ -37,6 +54,7 @@ export function NachschubVorschau({ n, unitId, name }: { n: Nachschub; unitId: n
               <span className="min-w-0 break-words">
                 <span className="whitespace-pre-line">{frageText(t)}</span>
                 {!neu && <span className="ml-1.5 text-[12px] text-ink-3">ohne KI</span>}
+                {neu && gemischt && <span className="ml-1.5 text-[12px] font-medium text-amber">neu erstellt</span>}
                 <span className="block font-medium whitespace-pre-line text-green">Lösung: {antwort}</span>
                 {weg !== antwort && <span className="block text-[13.5px] whitespace-pre-line text-ink-2">{weg}</span>}
               </span>
@@ -45,8 +63,8 @@ export function NachschubVorschau({ n, unitId, name }: { n: Nachschub; unitId: n
         })}
       </ol>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <VorschlagKnopf action={nachschubSendenAction.bind(null, unitId, n.id)} label={`Senden (${alle.length} ${alle.length === 1 ? "Aufgabe" : "Aufgaben"})`} primary icon={<Send size={16} aria-hidden />} testid="ki-nachschub-senden" />
-        <VorschlagKnopf action={nachschubVerwerfenAction.bind(null, unitId, n.id)} label="Verwerfen" icon={<Trash2 size={16} aria-hidden />} testid="ki-nachschub-verwerfen" laeuft="Einen Moment …" />
+        <VorschlagKnopf action={senden} label={`Senden (${alle.length} ${alle.length === 1 ? "Aufgabe" : "Aufgaben"})`} primary icon={<Send size={16} aria-hidden />} testid="ki-nachschub-senden" />
+        <VorschlagKnopf action={verwerfen} label="Verwerfen" icon={<Trash2 size={16} aria-hidden />} testid="ki-nachschub-verwerfen" laeuft="Einen Moment …" />
       </div>
     </section>
   );
@@ -187,4 +205,64 @@ export function EinheitKiKosten({ unitId }: { unitId: number }) {
       </ul>
     </div>
   );
+}
+
+// ---------- ohne Einheit: Empfehlung und Diagnose (lib/ki-vorschau.ts) ----------
+
+/** Die Vorschau ohne Einheit, mit „Senden“ und „Verwerfen“ für diesen Schüler; danach zurück nach `zurueck`. Läuft sie noch: eine Zeile. */
+export function VorschauOhneEinheit({ n, name, zurueck }: { n: Nachschub; name: string; zurueck: string }) {
+  if (n.status === "laeuft") return laeuftNoch(n) ? <NachschubLaeuft automatisch={false} /> : null;
+  if (n.status !== "bereit" || n.studentId === null) return null;
+  const aktionen = { senden: vorschauSendenAction.bind(null, n.studentId, n.id, zurueck), verwerfen: vorschauVerwerfenAction.bind(null, n.studentId, n.id, zurueck) };
+  return <NachschubVorschau n={n} name={name} aktionen={aktionen} />;
+}
+
+/**
+ * „Direkt an … senden“ bei einer Empfehlung: ohne KI wie bisher (gleich gesendet); mit KI „Aufgaben erstellen · ca. 3 Cent“, die
+ * Aufgaben kommen als Vorschau darunter. Ging die KI nicht: der Grund und „Ohne KI senden“. Nichts, solange eine Vorschau offen ist.
+ */
+export function EmpfehlungKnopf({ studentId, rec, name, diagnosisId }: { studentId: number; rec: NextStep; name: string; diagnosisId: number | null }) {
+  const n = vorschauZu(studentId, schluesselEmpfehlung(rec.key));
+  if (n && (n.status === "bereit" || laeuftNoch(n))) return null;
+  const weg = empfehlungWeg(studentId, rec);
+  const fehler = weg.ki && n?.status === "fehler" ? n.problem : null;
+  const hinweis = fehler ? `Ging gerade nicht: ${fehler} Nichts gesendet.` : weg.ki ? "Du siehst sie zuerst als Vorschau mit Lösungen." : weg.grund ? `Ohne KI: ${weg.grund}` : null;
+  return (
+    <>
+      {weg.ki ? (
+        <VorschlagKnopf
+          action={applyRecommendationAction.bind(null, studentId, rec.key, diagnosisId, false)}
+          label={`Aufgaben erstellen · ${weg.kosten}`}
+          icon={<Sparkles size={15} aria-hidden />}
+          testid="empfehlung-ki"
+          laeuft="Wird erstellt …"
+          klein
+        />
+      ) : (
+        <form action={applyRecommendationAction.bind(null, studentId, rec.key, diagnosisId, false)}>
+          <button className="btn btn-secondary btn-sm" title={`${rec.count} Aufgaben, ${rec.difficulty}, sofort senden`} data-testid="empfehlung-senden">
+            Direkt an {name} senden
+          </button>
+        </form>
+      )}
+      {fehler && (
+        <form action={applyRecommendationAction.bind(null, studentId, rec.key, diagnosisId, true)}>
+          <button className="btn btn-ghost btn-sm" data-testid="empfehlung-ohne-ki">
+            Ohne KI senden
+          </button>
+        </form>
+      )}
+      {hinweis && (
+        <span className="order-last basis-full text-[13px] text-ink-3" data-testid="empfehlung-hinweis">
+          {hinweis}
+        </span>
+      )}
+    </>
+  );
+}
+
+/** Unter einer Empfehlung: ihre Vorschau, solange sie offen ist. */
+export function EmpfehlungVorschau({ studentId, rec, name, zurueck }: { studentId: number; rec: NextStep; name: string; zurueck: string }) {
+  const n = vorschauZu(studentId, schluesselEmpfehlung(rec.key));
+  return n ? <VorschauOhneEinheit n={n} name={name} zurueck={zurueck} /> : null;
 }

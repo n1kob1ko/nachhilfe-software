@@ -36,19 +36,24 @@ export function CockpitSenden({ action, unitId, label, primary }: { action: (pre
  * Ein Knopf der Anpassung im Unterricht (lib/steuerung.ts): die Aktion ist schon an Einheit und Vorschlag gebunden. Nach
  * dem Senden steht oben „… ist an Max gesendet“ (ohne Gerät mit Lernlink und Drucken), wie bei jeder Übung.
  */
-export function VorschlagKnopf({ action, label, primary, icon, gesperrt = false, testid, laeuft = "Wird gesendet …" }: { action: () => Promise<void>; label: string; primary?: boolean; icon: React.ReactNode; gesperrt?: boolean; testid?: string; laeuft?: string }) {
+export function VorschlagKnopf({ action, label, primary, icon, gesperrt = false, testid, laeuft = "Wird gesendet …", klein = false }: { action: () => Promise<void>; label: string; primary?: boolean; icon: React.ReactNode; gesperrt?: boolean; testid?: string; laeuft?: string; klein?: boolean }) {
   return (
     <form action={action}>
-      <KnopfInhalt label={label} primary={primary} icon={icon} gesperrt={gesperrt} testid={testid} laeuft={laeuft} />
+      <KnopfInhalt label={label} primary={primary} icon={icon} gesperrt={gesperrt} testid={testid} laeuft={laeuft} klein={klein} />
     </form>
   );
 }
 
-function KnopfInhalt({ label, primary, icon, gesperrt, testid, laeuft }: { label: string; primary?: boolean; icon: React.ReactNode; gesperrt: boolean; testid?: string; laeuft: string }) {
+function KnopfInhalt({ label, primary, icon, gesperrt, testid, laeuft, klein }: { label: string; primary?: boolean; icon: React.ReactNode; gesperrt: boolean; testid?: string; laeuft: string; klein: boolean }) {
   const { pending } = useFormStatus();
   return (
-    // a long label („Neue passende Aufgabe erstellen · ca. 3 Cent“) wraps on a phone instead of widening the page
-    <button className={`btn ${primary ? "btn-primary" : "btn-secondary"} w-full sm:w-fit`} style={{ whiteSpace: "normal", textAlign: "center", paddingBlock: 8 }} disabled={pending || gesperrt} data-testid={testid}>
+    // a long label („Neue passende Aufgabe erstellen · ca. 3 Cent“) wraps on a phone instead of widening the page; `klein` in a row of small buttons
+    <button
+      className={`btn ${primary ? "btn-primary" : "btn-secondary"} ${klein ? "btn-sm" : "w-full sm:w-fit"}`}
+      style={klein ? { whiteSpace: "normal", textAlign: "center" } : { whiteSpace: "normal", textAlign: "center", paddingBlock: 8 }}
+      disabled={pending || gesperrt}
+      data-testid={testid}
+    >
       {icon} {pending ? laeuft : label}
     </button>
   );

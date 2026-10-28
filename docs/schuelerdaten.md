@@ -105,6 +105,10 @@ Die App stellt 5 bis 10 Aufgaben zusammen, von leicht bis schwer, über die Fäh
 verteilt. Zuerst passen Aufgaben aus der Bibliothek, dann die eingebauten Generatoren; Claude nur auf
 Wunsch und nur für Fähigkeiten ohne Generator. Keine Aufgabe kommt zweimal vor; ohne Claude bekommt
 eine Fähigkeit ohne Generator daher weniger Aufgaben („bis zu“). Ohne Themenauswahl gelten alle Themen.
+Mit Claude heißt der Knopf „Aufgaben erstellen“ (mit den geschätzten Kosten): die ganze Diagnose kommt
+zuerst als Vorschau mit Lösungen, die neuen Aufgaben markiert, und geht erst mit „Senden“ an den
+Schüler; „Verwerfen“ schickt nichts (lib/ki-vorschau.ts). Dasselbe gilt für „Direkt an … senden“ bei
+einer Empfehlung, wenn die KI die Aufgaben schreibt.
 Die Diagnose ist eine normale Übung der Art `diagnose`: die Antworten landen im normalen Tracking und
 sind darüber als Diagnose erkennbar. Kopien und einzeln gesendete Aufgaben daraus sind normale Übungen.
 

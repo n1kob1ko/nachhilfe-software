@@ -7,11 +7,11 @@ import { DIAGNOSE_MAX, planDiagnosis } from "@/lib/diagnose-plan";
 
 export type DiagnoseSkill = { id: string; name: string; area: string; generator: boolean };
 
-function Start({ disabled }: { disabled: boolean }) {
+function Start({ disabled, vorschau }: { disabled: boolean; vorschau: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <button className="btn btn-primary btn-lg" disabled={disabled || pending}>
-      {pending ? "Diagnose wird erstellt …" : "Diagnose starten"}
+    <button className="btn btn-primary btn-lg" disabled={disabled || pending} data-testid="diagnose-starten">
+      {vorschau ? (pending ? "Aufgaben werden erstellt …" : "Aufgaben erstellen") : pending ? "Diagnose wird erstellt …" : "Diagnose starten"}
     </button>
   );
 }
@@ -20,9 +20,27 @@ function Start({ disabled }: { disabled: boolean }) {
  * Last step of the Diagnose-Modus, inside its form: the skills to check, with number and difficulty
  * of the tasks recounted on every tick. At most DIAGNOSE_MAX skills (further boxes are locked, so no
  * tick gets lost on the server); the Claude option only shows when a ticked skill has no built-in
- * generator. "Diagnose starten" is locked while the diagnosis is made, so a double tap sends one.
+ * generator. "Diagnose starten" is locked while the diagnosis is made, so a double tap sends one. With the KI the button says
+ * „Aufgaben erstellen“ with the estimated cost (`kosten[n]` for n new tasks): the whole diagnosis comes as a preview first
+ * (lib/ki-vorschau.ts). `kiGrund`: why the KI may not now (monthly budget, the student's limit).
  */
-export function DiagnoseConfirm({ skills, picked, showArea, ai, note }: { skills: DiagnoseSkill[]; picked: string[]; showArea: boolean; ai: boolean; note: string }) {
+export function DiagnoseConfirm({
+  skills,
+  picked,
+  showArea,
+  ai,
+  note,
+  kosten = [],
+  kiGrund = null,
+}: {
+  skills: DiagnoseSkill[];
+  picked: string[];
+  showArea: boolean;
+  ai: boolean;
+  note: string;
+  kosten?: string[];
+  kiGrund?: string | null;
+}) {
   const [ticked, setTicked] = useState(() => new Set(picked));
   const [useAI, setUseAI] = useState(true);
   const ids = skills.filter((s) => ticked.has(s.id)).map((s) => s.id);
@@ -31,6 +49,9 @@ export function DiagnoseConfirm({ skills, picked, showArea, ai, note }: { skills
   const full = ids.length >= DIAGNOSE_MAX;
   const noGenerator = skills.some((s) => ticked.has(s.id) && !s.generator);
   const needsAI = ai && noGenerator;
+  const ohneGenerator = new Set(skills.filter((s) => !s.generator).map((s) => s.id));
+  const kiAufgaben = plan.filter((p) => ohneGenerator.has(p.skillId)).length;
+  const vorschau = needsAI && useAI;
   // without Claude, a skill without a generator only gets as many tasks as there are different ones
   const maybeFewer = noGenerator && !(needsAI && useAI);
   const toggle = (id: string) =>
@@ -81,12 +102,13 @@ export function DiagnoseConfirm({ skills, picked, showArea, ai, note }: { skills
       {needsAI && (
         <label className="flex min-h-[44px] items-center gap-3 text-[14px]">
           <input type="checkbox" name="use_ai" value="1" checked={useAI} onChange={(e) => setUseAI(e.target.checked)} className="h-5 w-5 accent-[var(--accent)]" />
-          Fehlende Aufgaben mit Claude erstellen (nur Fach, Klasse und Fähigkeiten werden übermittelt)
+          Fehlende Aufgaben mit Claude erstellen (nur Fach, Klasse und Fähigkeiten werden übermittelt){kosten[kiAufgaben] ? ` · ${kosten[kiAufgaben]}` : ""}
         </label>
       )}
+      {!ai && kiGrund && noGenerator && <p className="text-[13.5px] text-ink-2">Ohne KI: {kiGrund}</p>}
       <div className="flex flex-wrap items-center gap-3">
-        <Start disabled={!plan.length} />
-        <span className="text-[13px] text-ink-3">{note}</span>
+        <Start disabled={!plan.length} vorschau={vorschau} />
+        <span className="text-[13px] text-ink-3">{vorschau ? "Du siehst die Diagnose zuerst als Vorschau mit Lösungen. Gesendet wird erst mit „Senden“." : note}</span>
       </div>
     </>
   );

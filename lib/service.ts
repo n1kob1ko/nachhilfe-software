@@ -1,4 +1,5 @@
 import { aiEnabled, generateWithAI } from "./ai";
+import type { AIGenerateRequest } from "./ai/features";
 import { computeAnalysis } from "./analysis";
 import { documentAssignment } from "./autodoc";
 import { db } from "./db";
@@ -76,6 +77,27 @@ export function generatorAufgaben(req: Pick<BuildRequest, "subject" | "schoolTyp
   return ohneAusgeblendete(generateBuiltIn({ subject: req.subject, skills: skills.map((s) => ({ id: s.id, name: s.name })), difficulty: req.difficulty, count, taskType: req.taskType, grade, wortarten: wortartenFor(req.skillIds, grade), seed: req.seed }));
 }
 
+/**
+ * Ob `buildWorksheet` für diese Fähigkeiten die KI fragen würde (wenn sie an ist): nicht bei den eigenen Vokabeln und nicht bei
+ * Schreibaufträgen, die gehen immer ohne KI.
+ */
+export function fragtKi(skillIds: string[]): boolean {
+  return skillIds.some((id) => id !== EIGENE_VOKABELN) && !skillIds.every((id) => sorteOfSkill(id));
+}
+
+/** Die Anfrage an die KI, wie `buildWorksheet` sie stellt (auch für die Vorschau einer Empfehlung, lib/ki-vorschau.ts). */
+export function kiAnfrage(req: BuildRequest, skills: Pick<repo.Skill, "id" | "name" | "area">[]): AIGenerateRequest {
+  return {
+    subject: req.subject,
+    level: klassenLabel(req.schoolType, req.klasse),
+    skills: skills.map((s) => ({ id: s.id, name: s.name, area: s.area, difficulty: req.difficulty })),
+    count: Math.max(1, Math.min(30, req.count)),
+    categories: [],
+    focusNote: [req.taskType !== "mixed" ? `Aufgabenformat: ${TASK_TYPES[req.taskType]}` : "", req.focusNote ?? ""].filter(Boolean).join(". "),
+    wortarten: wortartenFor(req.skillIds, schulstufe(req.schoolType, req.klasse)),
+  };
+}
+
 export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; source: "ki" | "generator"; aiError?: string }> {
   const all = repo.listSkills();
   const skills = req.skillIds.map((id) => all.find((s) => s.id === id)).filter((s): s is repo.Skill => Boolean(s));
@@ -87,8 +109,6 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
   let tasks: TaskDraft[] | null = null;
   let source: "ki" | "generator" = "generator";
   let aiError: string | undefined;
-  const grade = schulstufe(req.schoolType, req.klasse);
-  const wortarten = wortartenFor(req.skillIds, grade);
   // Vokabeln aus eigenen Listen (lib/vokabellisten.ts): nur aus den Listen der Schülerin bzw. des Schülers, nie von der KI
   const andere = skills.filter((s) => s.id !== EIGENE_VOKABELN);
   if (!andere.length) {
@@ -105,15 +125,7 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
     }).slice(0, count);
   } else if ((req.useAI ?? true) && aiEnabled()) {
     try {
-      tasks = await generateWithAI({
-        subject: req.subject,
-        level: klassenLabel(req.schoolType, req.klasse),
-        skills: andere.map((s) => ({ id: s.id, name: s.name, area: s.area, difficulty: req.difficulty })),
-        count,
-        categories: [],
-        focusNote: [req.taskType !== "mixed" ? `Aufgabenformat: ${TASK_TYPES[req.taskType]}` : "", req.focusNote ?? ""].filter(Boolean).join(". "),
-        wortarten,
-      }, { teacherId: req.teacherId ?? null, studentId: req.studentId ?? null, trigger: "empfehlung" });
+      tasks = await generateWithAI(kiAnfrage(req, andere), { teacherId: req.teacherId ?? null, studentId: req.studentId ?? null, trigger: "empfehlung" });
       if (tasks && tasks.length) source = "ki";
       else aiError = "Die KI hat keine Aufgaben geliefert.";
     } catch (e) {
