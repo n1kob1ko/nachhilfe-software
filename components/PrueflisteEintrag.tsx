@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useState } from "react";
 import { FileText, Sparkles } from "lucide-react";
 import { prueflisteLesenAction, prueflisteUebernehmenAction, prueflisteVerwerfenAction, type PrueflisteStand } from "@/app/pruefliste-actions";
+import { tagMonat } from "@/lib/datum";
 import { PRUEFUNGSARTEN } from "@/lib/pruefungsarten";
 
 export type PrueflisteDaten = {
@@ -46,7 +47,7 @@ export function PrueflisteEintrag({ d, faecher, weitere, kiLiest }: { d: Pruefli
         </p>
       )}
       <p className="text-[13px] text-ink-3">
-        Eingetragen am {new Date(d.eingereichtAm).toLocaleDateString("de-AT", { day: "numeric", month: "short" })}
+        Eingetragen am {tagMonat(d.eingereichtAm)}
         {d.fotos.length > 0 && ` · ${d.fotos.length === 1 ? "1 Foto" : `${d.fotos.length} Fotos`}`}
       </p>
 

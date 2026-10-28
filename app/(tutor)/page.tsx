@@ -138,8 +138,8 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
                 key={p.key}
                 p={p}
                 student={byId.get(p.studentId)}
-                karte={karten.get(p.studentId)}
-                fach={p.fach || expectedSubject(p.studentId, now.getTime(), karten.get(p.studentId)?.fach)}
+                karte={karten.get(p.key)}
+                fach={p.fach || expectedSubject(p.studentId, now.getTime(), karten.get(p.key)?.fach)}
                 haupt={running.length === 0 && naechster?.key === p.key}
                 oben={running.some((u) => u.id === p.einheitId)}
                 wann={naechster?.key === p.key && p.startMin > jetzt ? bisBeginnLabel(p.startMin - jetzt) : null}

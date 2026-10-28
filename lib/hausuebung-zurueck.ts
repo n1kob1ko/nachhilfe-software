@@ -7,9 +7,10 @@
  *   Antworten an genau dieser Zuweisung: am Gerät im Schülerportal wie jede Übung, auf Papier über „Arbeit fotografieren“
  *   (lib/papier-einheit.ts, gegen die Original-Aufgaben, `papier_arbeiten.homework_id`). Antworten, die auf die Lehrkraft warten
  *   (`review = 'offen'`), zählen nirgends, bis sie bewertet sind (lib/zu-bewerten.ts, Chip „Hausübung“).
- * - Stand je Hausübung (`hausuebungStatus`): offen, abgegeben (n von m bearbeitet), bewertet (x von y richtig, teilweise halb) oder
- *   nicht abgegeben (nach der Fälligkeit, nichts da). „Nicht abgegeben“ ist nie falsch und kommt nie in den Lernstand: es gibt dann
- *   keine Antwort, also nichts zu zählen.
+ * - Stand je Hausübung (`hausuebungStatus`): offen, fällig heute (am Fälligkeitstag, noch nichts eingegeben: vielleicht auf Papier
+ *   gemacht und nur noch nicht fotografiert), abgegeben (n von m bearbeitet), bewertet (x von y richtig, teilweise halb) oder nicht
+ *   abgegeben (ab dem Tag nach der Fälligkeit, nichts da). „Nicht abgegeben“ ist nie falsch und kommt nie in den Lernstand: es gibt
+ *   dann keine Antwort, also nichts zu zählen.
  * - Für die nächste Einheit (`hausuebungFuerEinheit`): die zuletzt gegebene Hausübung, die noch nicht besprochen ist. Heute-Karte und
  *   Unterricht zeigen sie in einer Zeile (`briefingZeile`), der Plan bekommt vorne „Hausübung besprechen“ (lib/stundenplan.ts), und
  *   Themen, die in der Hausübung noch schwierig waren, kommen wie andere geprüfte Ergebnisse nach vorne (`hausuebungSignale`).
@@ -17,6 +18,7 @@
  *   abgegeben“; „besser“ nur, wenn es für dieselbe Fähigkeit vorher (in der Einheit, in der sie gegeben wurde) und nachher (in der
  *   Hausübung) ein geprüftes Ergebnis gibt.
  */
+import { datumKurz, tagMonat } from "./datum";
 import { db, json } from "./db";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
 import * as repo from "./repo";
@@ -27,8 +29,8 @@ const zeit = (s: string) => (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s) ? D
 
 // ---------- Regeln ----------
 
-export type HuStatus = "offen" | "abgegeben" | "bewertet" | "nicht_abgegeben";
-export const HU_STATUS_LABEL: Record<HuStatus, string> = { offen: "offen", abgegeben: "abgegeben", bewertet: "bewertet", nicht_abgegeben: "nicht abgegeben" };
+export type HuStatus = "offen" | "faellig_heute" | "abgegeben" | "bewertet" | "nicht_abgegeben";
+export const HU_STATUS_LABEL: Record<HuStatus, string> = { offen: "offen", faellig_heute: "fällig heute", abgegeben: "abgegeben", bewertet: "bewertet", nicht_abgegeben: "nicht abgegeben" };
 
 /** Wie eine Aufgabe der Hausübung steht: ohne Antwort, wartet auf die Lehrkraft, oder geprüft. */
 export type HuBewertung = "unbearbeitet" | "offen" | "richtig" | "teilweise" | "falsch";
@@ -64,10 +66,11 @@ export const punkte = (z: Pick<HuZahlen, "richtig" | "teilweise">) => z.richtig 
 export const zahl = (x: number) => (Number.isInteger(x) ? String(x) : x.toFixed(1).replace(".", ","));
 
 /**
- * Der Stand einer Hausübung am Tag `stichtag` (Wiener Datum). `zumUnterricht`: für die Einheit an diesem Tag, dann ist eine heute
- * fällige Hausübung ohne Antwort schon „nicht abgegeben“ (sie war bis zur Stunde zu machen); sonst erst am Tag danach.
- * - nichts bearbeitet: abgegeben, wenn die Lehrkraft sie abgehakt hat (nichts eingelesen); nach der Fälligkeit nicht abgegeben;
- *   sonst offen. Ohne Fälligkeit nie „nicht abgegeben“.
+ * Der Stand einer Hausübung am Tag `stichtag` (Wiener Datum). `zumUnterricht`: für die Einheit an diesem Tag, dann gilt eine heute
+ * fällige, zum Teil bearbeitete Hausübung schon als fertig (sie war bis zur Stunde zu machen).
+ * - nichts bearbeitet: abgegeben, wenn die Lehrkraft sie abgehakt hat (nichts eingelesen); am Fälligkeitstag „fällig heute“ (sie
+ *   kann auf Papier gemacht und nur noch nicht fotografiert sein); erst ab dem Tag danach nicht abgegeben; sonst offen. Ohne
+ *   Fälligkeit nie „nicht abgegeben“.
  * - etwas bearbeitet: bewertet, wenn nichts mehr auf die Lehrkraft wartet und alles bearbeitet ist (oder die Übung fertig, abgehakt
  *   oder die Fälligkeit vorbei ist); sonst abgegeben.
  */
@@ -75,8 +78,10 @@ export function hausuebungStatus(
   z: Pick<HuZahlen, "aufgaben" | "bearbeitet" | "offen">,
   o: { faellig: string | null; stichtag: string; zumUnterricht?: boolean; abgehakt?: boolean; fertig?: boolean },
 ): HuStatus {
-  const vorbei = Boolean(o.faellig) && (o.stichtag > o.faellig! || (Boolean(o.zumUnterricht) && o.stichtag >= o.faellig!));
-  if (!z.bearbeitet) return o.abgehakt ? "abgegeben" : vorbei ? "nicht_abgegeben" : "offen";
+  const heute = Boolean(o.faellig) && o.stichtag === o.faellig;
+  const danach = Boolean(o.faellig) && o.stichtag > o.faellig!;
+  const vorbei = danach || (Boolean(o.zumUnterricht) && heute);
+  if (!z.bearbeitet) return o.abgehakt ? "abgegeben" : danach ? "nicht_abgegeben" : heute ? "faellig_heute" : "offen";
   if (!z.offen && (z.bearbeitet >= z.aufgaben || o.fertig || o.abgehakt || vorbei)) return "bewertet";
   return "abgegeben";
 }
@@ -104,11 +109,10 @@ export function besser(vorher: { punkte: number; von: number } | null, nachher: 
 
 // ---------- Texte ----------
 
-const WT = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
-/** „28.10.“ */
-export const tagKurz = (d: string) => `${Number(d.slice(8, 10))}.${Number(d.slice(5, 7))}.`;
-/** „Di 4.11.“ */
-export const tagMitWochentag = (d: string) => `${WT[new Date(`${d.slice(0, 10)}T12:00:00Z`).getUTCDay()]} ${tagKurz(d)}`;
+/** „28.10.“ (lib/datum.ts) */
+export const tagKurz = (d: string) => tagMonat(d.slice(0, 10));
+/** „Di 4.11.“ (lib/datum.ts) */
+export const tagMitWochentag = (d: string) => datumKurz(d.slice(0, 10));
 const antworten = (n: number) => `${n} ${n === 1 ? "Antwort" : "Antworten"}`;
 
 /** Was zum Stand dazugehört: „fällig Di 4.11.“, „5 von 9 bearbeitet, 2 Antworten zu bewerten“, „6,5 von 9 richtig“; leer, wenn nichts. */
@@ -116,6 +120,8 @@ export function statusDetail(e: Pick<HuErgebnis, "status" | "faellig"> & HuZahle
   switch (e.status) {
     case "offen":
       return e.faellig ? `fällig ${tagMitWochentag(e.faellig)}` : "";
+    case "faellig_heute":
+      return NOCH_NICHT;
     case "nicht_abgegeben":
       return e.faellig ? `war fällig ${tagMitWochentag(e.faellig)}` : "";
     case "abgegeben":
@@ -126,12 +132,15 @@ export function statusDetail(e: Pick<HuErgebnis, "status" | "faellig"> & HuZahle
   }
 }
 
-/** Der Stand in Worten: „offen, fällig Di 4.11.“, „abgegeben (5 von 9 bearbeitet)“, „bewertet (6,5 von 9 richtig)“, „nicht abgegeben“. */
+/** Der Stand in Worten: „offen, fällig Di 4.11.“, „fällig heute, noch nicht eingegeben“, „abgegeben (5 von 9 bearbeitet)“, „nicht abgegeben“. */
 export function statusText(e: Pick<HuErgebnis, "status" | "faellig"> & HuZahlen): string {
   const d = statusDetail(e);
   if (!d || e.status === "nicht_abgegeben") return HU_STATUS_LABEL[e.status];
-  return e.status === "offen" ? `offen, ${d}` : `${HU_STATUS_LABEL[e.status]} (${d})`;
+  return e.status === "offen" || e.status === "faellig_heute" ? `${HU_STATUS_LABEL[e.status]}, ${d}` : `${HU_STATUS_LABEL[e.status]} (${d})`;
 }
+
+/** Am Fälligkeitstag ohne Antwort: nichts ist eingegeben, gemacht kann sie trotzdem sein (auf Papier). */
+const NOCH_NICHT = "noch nicht eingegeben";
 
 const schwierigNamen = (e: Pick<HuErgebnis, "themen">) => e.themen.filter((t) => t.stand === "schwierig").map((t) => t.name);
 
@@ -143,6 +152,7 @@ export function briefingZeile(e: HuErgebnis): string {
   const schwierig = schwierigNamen(e);
   const teile: string[] = [];
   if (e.status === "offen") teile.push(e.faellig ? `noch offen, fällig ${tagMitWochentag(e.faellig)}` : "noch offen");
+  else if (e.status === "faellig_heute") teile.push(`fällig heute, ${NOCH_NICHT}`);
   else if (e.status === "nicht_abgegeben") teile.push(`nicht abgegeben${e.faellig ? ` (fällig ${tagMitWochentag(e.faellig)})` : ""}`);
   else if (!e.bearbeitet) teile.push("abgegeben, noch nicht eingelesen");
   else {
@@ -162,7 +172,7 @@ export function quelleText(e: Pick<HuErgebnis, "gegeben" | "geraet" | "papier">)
 
 /**
  * Die Zeilen für den Abschluss der nächsten Einheit: `zeile` unter „Heute gemacht“ („Hausübung vom 28.10.: 6 von 9 richtig
- * (bewertet)“, „…: nicht abgegeben“), `schwierig` unter „Noch schwierig“, `besser` nur mit geprüftem Ergebnis vorher und nachher.
+ * (bewertet)“, „…: nicht abgegeben“, am Fälligkeitstag „…: noch nicht eingegeben (fällig Mi 28.10.)“), `schwierig` unter „Noch schwierig“, `besser` nur mit geprüftem Ergebnis vorher und nachher.
  * Eine noch offene Hausübung (nicht fällig, nichts da) sagt nichts.
  */
 export function abschlussZeilen(e: HuErgebnis, vorher: Map<string, { punkte: number; von: number }> = new Map()): { zeile: string; schwierig: string[]; besser: string[] } | null {
@@ -171,11 +181,13 @@ export function abschlussZeilen(e: HuErgebnis, vorher: Map<string, { punkte: num
   const text =
     e.status === "nicht_abgegeben"
       ? "nicht abgegeben"
-      : e.status === "bewertet"
-        ? `${zahl(punkte(e))} von ${e.bewertet} richtig (bewertet)`
-        : !e.bearbeitet
-          ? "abgegeben, nicht eingelesen"
-          : `${e.bearbeitet} von ${e.aufgaben} bearbeitet${e.bewertet ? `, bisher ${zahl(punkte(e))} von ${e.bewertet} richtig` : ""}${e.offen ? `, ${antworten(e.offen)} zu bewerten` : ""}`;
+      : e.status === "faellig_heute"
+        ? `${NOCH_NICHT}${e.faellig ? ` (fällig ${tagMitWochentag(e.faellig)})` : ""}`
+        : e.status === "bewertet"
+          ? `${zahl(punkte(e))} von ${e.bewertet} richtig (bewertet)`
+          : !e.bearbeitet
+            ? "abgegeben, nicht eingelesen"
+            : `${e.bearbeitet} von ${e.aufgaben} bearbeitet${e.bewertet ? `, bisher ${zahl(punkte(e))} von ${e.bewertet} richtig` : ""}${e.offen ? `, ${antworten(e.offen)} zu bewerten` : ""}`;
   const schwierig = e.themen.filter((t) => t.stand === "schwierig").map((t) => `${kopf}: ${t.name} ${zahl(t.punkte)} von ${t.von} richtig`);
   const besserZeilen = e.themen.flatMap((t) => {
     const v = vorher.get(t.skillId) ?? null;
@@ -351,21 +363,33 @@ export function hausuebungSignale(e: HuErgebnis | null): Signal[] {
     .map((t) => ({ art: "ziel" as const, fach: e.fach, skill_ids: [t.skillId], stoff: [], thema: t.name, warum: `Hausübung${e.gegeben ? ` vom ${tagKurz(e.gegeben)}` : ""}: ${t.name} ${zahl(t.punkte)} von ${t.von} richtig` }));
 }
 
-/** Die Minuten für „Hausübung besprechen“: 5, bei mehr als zwei falschen Aufgaben (oder nicht abgegeben) 10; in Einheiten bis 50 Minuten 5. */
+/** Die Minuten für „Hausübung besprechen“: 5, bei mehr als zwei falschen Aufgaben (oder nichts eingegeben) 10; in Einheiten bis 50 Minuten 5. */
 export function besprechenMinuten(e: Pick<HuErgebnis, "status" | "aufgabenStand">, einheit: number): number {
   if (einheit <= 50) return 5;
-  if (e.status === "nicht_abgegeben") return 10;
+  if (e.status === "nicht_abgegeben" || e.status === "faellig_heute") return 10;
   return e.aufgabenStand.filter((x) => x.bewertung === "falsch" || x.bewertung === "teilweise").length > 2 ? 10 : 5;
 }
 
 /** Braucht die Hausübung einen Schritt am Anfang? Ja, wenn etwas da ist oder sie nicht abgegeben wurde; eine noch offene nicht. */
 export const schrittNoetig = (e: HuErgebnis | null): e is HuErgebnis => Boolean(e && e.status !== "offen");
 
+/** Nichts eingegeben (fällig heute oder nicht abgegeben): die Aufgaben zum gemeinsamen Lösen, die Lösung erst auf Tippen. */
+export const zusammenLoesen = (e: Pick<HuErgebnis, "status">) => e.status === "nicht_abgegeben" || e.status === "faellig_heute";
+
 /**
  * Der Schritt „Hausübung besprechen“ (oder „Hausübung nicht abgegeben“) am Anfang des Plans, ohne Id und Minuten: was er sagt, und
- * die Aufgaben, um die es geht (falsch oder teilweise gelöste; nicht abgegeben: die ersten `ZUSAMMEN` zum gemeinsamen Lösen).
+ * die Aufgaben, um die es geht (falsch oder teilweise gelöste; nichts eingegeben: die ersten `ZUSAMMEN` zum gemeinsamen Lösen). Am
+ * Fälligkeitstag ohne Antwort fragt er zuerst nach dem Papier („Arbeit fotografieren“ im Schritt, lib/papier-einheit.ts).
  */
 export function besprechenSchritt(e: HuErgebnis): { titel: string; beschreibung: string; taskIds: number[] } {
+  if (e.status === "faellig_heute") {
+    const zusammen = e.aufgabenStand.slice(0, ZUSAMMEN).map((x) => x.taskId);
+    return {
+      titel: "Hausübung besprechen",
+      beschreibung: `Die Hausübung${e.gegeben ? ` vom ${tagKurz(e.gegeben)}` : ""} ist ${NOCH_NICHT} – auf Papier gemacht? Arbeit fotografieren.\nSonst löst ${zusammen.length === 1 ? "eine Aufgabe" : `${zusammen.length} Aufgaben`} daraus gemeinsam. Sie zählt nicht als falsch.`,
+      taskIds: zusammen,
+    };
+  }
   if (e.status === "nicht_abgegeben") {
     const zusammen = e.aufgabenStand.slice(0, ZUSAMMEN).map((x) => x.taskId);
     return {

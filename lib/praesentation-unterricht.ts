@@ -24,6 +24,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Deck, PraesAuftrag, PraesSchritt } from "./ai/praesentation";
 import { deckAusAntwort, folieJeSchritt, praesentationAnfrage, PraesentationKiSchema } from "./ai/praesentation";
+import { kiGrundVonUrsache } from "./ai/grund";
 import { breakerState, runAI, schuelerGestoppt } from "./ai/router";
 import { grenzeErreichtText } from "./ai/schueler-kosten";
 import { gespeicherteErklaerung, schulstufeVon } from "./ausfuehrlich";
@@ -446,7 +447,7 @@ export function erstelleSchrittEntwurf(unitId: number, schrittId: number, teache
       const { system, prompt } = praesentationAnfrage(a, bekannteNamen());
       // the unit names the student for the budget and the protocol; the request itself has no student data
       const out = await runAI("praesentation", PraesentationKiSchema, system, prompt, { meta: { teacherId, unitId, trigger: "praesentation-unterricht" } });
-      if (!out.ok) return { ok: false, error: out.message };
+      if (!out.ok) return { ok: false, error: kiGrundVonUrsache(out.cause) };
       const gezahlt = kiKosten(out.callId);
       const kosten = gezahlt?.usd ? ` Die Anfrage hat ${gezahlt.cent} Cent gekostet.` : "";
       const deck = deckAusAntwort(out.data, a, a.schritte);

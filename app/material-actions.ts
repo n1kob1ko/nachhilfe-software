@@ -91,7 +91,7 @@ export async function analyzeMaterialAction(id: number, f: FormData) {
   const skills = (m.school_type && m.klasse ? skillsForPrompt({ school_type: m.school_type, klasse: m.klasse, grade: stufeOf(m.school_type, m.klasse) }, subject) : repo.listSkills().filter((s) => !subject || s.subject === subject))
     .map(({ id, name, area, subject }) => ({ id, name, area, subject }));
   let a: Awaited<ReturnType<typeof analyzeMaterialWithAI>> = null;
-  let problem = "Claude hat nichts erkannt.";
+  let problem = "Die KI hat nichts erkannt.";
   try {
     a = await analyzeMaterialWithAI({ mime: m.mime ?? "", base64: data.toString("base64") }, { subject, skills }, { teacherId: teacher.id, studentId: m.student_id, trigger: "material" });
   } catch (e) {

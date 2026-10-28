@@ -211,33 +211,53 @@ export const blattZurUebung = (blaetter: PapierBlatt[], worksheetId: number | nu
 
 // ---------- KI: Tor und Kosten ----------
 
-/** Typische Größe einer Lesung mit zwei Seiten: Fotos, Aufgabenliste, Antwort mit Nachdenken. */
+/** Typische Größe einer Lesung: je Seite (Foto oder PDF-Seite), Aufgabenliste, Antwort mit Nachdenken. */
 const TYPISCH_SEITE = 1_700;
 const TYPISCH_TEXT = 2_500;
 const TYPISCH_AUS = 4_000;
 
-/** Was das Lesen eines Blatts etwa kostet („Lesen kostet ca. 3 Cent“): der Schnitt der letzten Lesungen, sonst aus dem Preis des Modells. */
-export function kostenPapier(seiten = 2, now = Date.now()): string {
+/**
+ * Was das Lesen von `seiten` Seiten etwa kostet, in Dollar; null, wenn es nichts kostet (manuell, lokales Modell). F0b: mit der echten
+ * Zahl der gewählten Seiten, nicht mehr immer zwei. Gibt es mindestens drei Lesungen der letzten 60 Tage, zählt ihr Schnitt, umgerechnet
+ * auf diese Seitenzahl (Verhältnis der Schätzungen nach dem Preis des Modells); sonst die Schätzung allein.
+ */
+export function kostenPapierUsd(seiten: number, now = Date.now()): number | null {
+  const route = routeFor("blatt");
+  if (route.provider === "manual" || isLocalModel(route.provider)) return null;
+  const n = Math.max(1, Math.round(seiten));
+  const preis = (input: number, output: number) => costOf(route.model, FUNCTIONS.blatt.tier, { input, output, cacheWrite: 0, cacheRead: 0 });
+  const schaetzung = preis(n * TYPISCH_SEITE + TYPISCH_TEXT, TYPISCH_AUS);
+  const seit = new Date(now - 60 * 86_400_000).toISOString();
+  const m = db()
+    .prepare("SELECT COUNT(*) AS n, AVG(cost_usd) AS usd, AVG(input_tokens + cache_write_tokens + cache_read_tokens) AS ein, AVG(output_tokens) AS aus FROM ai_calls WHERE fn = 'blatt' AND status = 'ok' AND test = 0 AND cost_usd > 0 AND created_at >= ?")
+    .get(seit) as { n: number; usd: number | null; ein: number | null; aus: number | null };
+  const schnitt = m.n >= 3 && m.usd !== null && m.ein ? preis(m.ein, m.aus ?? TYPISCH_AUS) : 0;
+  return schnitt > 0 ? m.usd! * (schaetzung / schnitt) : schaetzung;
+}
+
+/** „Lesen kostet ca. 3 Cent“ für `seiten` Seiten (lib/papier-einheit.ts `kostenPapierUsd`). */
+export function kostenPapier(seiten: number, now = Date.now()): string {
   const route = routeFor("blatt");
   if (route.provider === "manual") return "Lesen kostet nichts (manueller Modus)";
-  if (isLocalModel(route.provider)) return "Lesen kostet nichts (lokales Modell)";
-  const seit = new Date(now - 60 * 86_400_000).toISOString();
-  const m = db().prepare("SELECT COUNT(*) AS n, AVG(cost_usd) AS usd FROM ai_calls WHERE fn = 'blatt' AND status = 'ok' AND test = 0 AND cost_usd > 0 AND created_at >= ?").get(seit) as { n: number; usd: number | null };
-  const usd = m.n >= 3 && m.usd !== null ? m.usd : costOf(route.model, FUNCTIONS.blatt.tier, { input: seiten * TYPISCH_SEITE + TYPISCH_TEXT, output: TYPISCH_AUS, cacheWrite: 0, cacheRead: 0 });
+  const usd = kostenPapierUsd(seiten, now);
+  if (usd === null) return "Lesen kostet nichts (lokales Modell)";
   return `Lesen kostet ca. ${Math.max(1, Math.round((usd / budget().usdPerEur) * 100))} Cent`;
 }
+
+/** Die Kosten für 1 bis `MAX_SEITEN` Seiten, Index = Seitenzahl (0 wie 1): die Seite zeigt sie zur Zahl der gewählten Seiten. */
+export const kostenJeSeiten = (now = Date.now()): string[] => Array.from({ length: MAX_SEITEN + 1 }, (_, i) => kostenPapier(Math.max(1, i), now));
 
 /**
  * Darf die KI dieses Blatt jetzt lesen? Sonst der Grund in einem Satz, und die Lehrkraft trägt die Bewertung selbst ein:
  * KI aus oder ohne Fotos, Monatsbudget aufgebraucht, Grenze je Schüler erreicht, nach Ausfällen pausiert.
  */
-export function papierTor(studentId: number): { erlaubt: true; kosten: string } | { erlaubt: false; grund: string } {
+export function papierTor(studentId: number): { erlaubt: true; kosten: string[] } | { erlaubt: false; grund: string } {
   const geht = blattLesbar();
   if (!geht.ok) return { erlaubt: false, grund: geht.grund.replace("Trag die Aufgaben selbst ein.", "Trag die Bewertung selbst ein.") };
   if (budgetUsedUp("blatt")) return { erlaubt: false, grund: "Das KI-Budget für diesen Monat ist aufgebraucht. Trag die Bewertung selbst ein." };
   if (schuelerGestoppt("blatt", studentId)) return { erlaubt: false, grund: `${grenzeErreichtText()} Trag die Bewertung selbst ein.` };
   if (breakerState().paused) return { erlaubt: false, grund: "Die KI war zuletzt nicht erreichbar und pausiert ein paar Minuten. Trag die Bewertung selbst ein." };
-  return { erlaubt: true, kosten: kostenPapier() };
+  return { erlaubt: true, kosten: kostenJeSeiten() };
 }
 
 // ---------- Lesen ----------

@@ -165,7 +165,7 @@ export async function regenerateTaskAction(taskId: number, difficulty?: Difficul
   const out = await regenerateTask(taskId, { difficulty: d, teacherId: teacher.id });
   refresh(e.task.worksheet_id);
   if (!out.ok) return { error: out.aiError ?? "Für diese Fähigkeit konnte keine neue Aufgabe erstellt werden." };
-  if (out.aiError) return { warning: "Claude war nicht erreichbar, die neue Aufgabe kommt aus dem Generator." };
+  if (out.aiError) return { warning: "Die KI war nicht erreichbar, die neue Aufgabe kommt aus dem Generator." };
   return out.typFehlt ? { warning: "Diesen Aufgabentyp gibt es ohne KI für diese Fähigkeit nicht. Die neue Aufgabe hat einen anderen Typ." } : { ok: "Neue Aufgabe erstellt." };
 }
 

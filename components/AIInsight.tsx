@@ -13,7 +13,7 @@ export function AIInsight({ studentId, enabled }: { studentId: number; enabled: 
       <span className="inline-flex flex-wrap items-center gap-2">
         <button className="btn btn-secondary" disabled={!enabled || pending} onClick={() => start(async () => setState(await aiInsightAction(studentId)))}>
           <Sparkles size={15} className="text-accent" aria-hidden />
-          {pending ? "Claude analysiert …" : "KI-Einschätzung erstellen"}
+          {pending ? "Die KI analysiert …" : "KI-Einschätzung erstellen"}
         </button>
         <button className="btn btn-ghost" disabled={!enabled || pending} onClick={() => start(async () => setState(await aiInsightAction(studentId, true)))}>
           Tiefenanalyse

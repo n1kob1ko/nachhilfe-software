@@ -125,7 +125,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
             {punkte && <span className="num">· {punkteText(gesamt)} Punkte</span>}
             {w.source === "ki" && (
               <Pill tone="accent">
-                <Sparkles size={11} aria-hidden /> mit Claude erstellt
+                <Sparkles size={11} aria-hidden /> mit KI erstellt
               </Pill>
             )}
             {quickWished && <Pill tone="accent">Schnellrunde</Pill>}
@@ -146,7 +146,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         </p>
       )}
       {sp.hinweis === "ki" && (
-        <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Claude war nicht erreichbar. Die Aufgaben stammen aus den eingebauten Generatoren.</p>
+        <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Die KI war nicht erreichbar. Die Aufgaben stammen aus den eingebauten Generatoren.</p>
       )}
       {sp.hinweis === "typ" && (
         <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">

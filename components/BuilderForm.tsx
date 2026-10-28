@@ -412,13 +412,13 @@ export function BuilderForm({
           <label className={`flex items-center gap-2 text-[14px] ${aiEnabled ? "cursor-pointer" : "text-ink-3"}`}>
             <input type="checkbox" name="use_ai" checked={useAI} disabled={!aiEnabled} onChange={(e) => setUseAI(e.target.checked)} className="accent-[var(--accent)]" />
             <Sparkles size={15} className={useAI ? "text-accent" : ""} aria-hidden />
-            Mit Claude erstellen
+            Mit KI erstellen
           </label>
           {!aiEnabled && <p className="-mt-2 text-[12px] text-ink-3">Ohne KI: Aufgaben aus den eingebauten Generatoren.</p>}
           {request && (
             <div className="rounded-lg bg-paper px-3 py-2.5 text-[13px] text-ink-2">
               <p className="text-ink">{request}</p>
-              {useAI && ctx && <p className="mt-1">Dazu bekommt Claude Lernstand, Schwächen, Ziele und häufigste Fehler, ohne Namen.</p>}
+              {useAI && ctx && <p className="mt-1">Dazu bekommt die KI Lernstand, Schwächen, Ziele und häufigste Fehler, ohne Namen.</p>}
             </div>
           )}
           <div className="grid gap-2">
@@ -566,7 +566,7 @@ function Submit({ disabled, ai, count }: { disabled: boolean; ai: boolean; count
   return (
     <button className="btn btn-primary btn-lg w-full !whitespace-normal text-center" name="mode" value="generieren" disabled={disabled || pending}>
       <Sparkles size={17} aria-hidden />
-      {mine ? (ai ? `Claude erstellt ${count} Aufgaben …` : "Wird erstellt …") : "Übung erstellen und Vorschau zeigen"}
+      {mine ? (ai ? `Die KI erstellt ${count} Aufgaben …` : "Wird erstellt …") : "Übung erstellen und Vorschau zeigen"}
     </button>
   );
 }

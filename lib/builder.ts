@@ -16,6 +16,7 @@ import { referenzVorbilder } from "./referenz";
 import * as repo from "./repo";
 import { klassenLabel, schulstufe } from "./school";
 import { activeMaterial, materialLabel, materialSkills, MATERIAL_SOURCES } from "./current-material";
+import { tagMonat } from "./datum";
 import { daysUntil, dayOf } from "./exams";
 import { nextSteps } from "./recommend";
 import { masteryStatus } from "./mastery";
@@ -143,7 +144,7 @@ const CATEGORY_WORDS: [RegExp, string][] = [
   [/übersetz|translation/i, "translation"],
 ];
 
-const formatDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("de-AT", { day: "numeric", month: "short" });
+const formatDay = (d: string) => tagMonat(d);
 
 export function skillLabel(s: repo.Skill, all: repo.Skill[]): string {
   const parent = s.parent_id ? all.find((p) => p.id === s.parent_id) : null;

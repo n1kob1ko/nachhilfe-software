@@ -163,10 +163,9 @@ export function auf10(minuten: number): number {
 
 // ---------- Beschriftungen ----------
 
-/** "Mo, 12. Okt." */
+/** "Mo 12.10." (dieselbe Schreibweise wie lib/datum.ts `datumKurz`) */
 export function datumLabel(datum: string): string {
-  const d = new Date(datumMs(datum));
-  return `${WOCHENTAG_KURZ[wochentagVon(datum)]}, ${d.toLocaleDateString("de-AT", { day: "numeric", month: "short", timeZone: "UTC" })}`;
+  return `${WOCHENTAG_KURZ[wochentagVon(datum)]} ${Number(datum.slice(8, 10))}.${Number(datum.slice(5, 7))}.`;
 }
 
 /** "12. – 18. Oktober 2026" */

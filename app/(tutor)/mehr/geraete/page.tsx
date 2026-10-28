@@ -8,6 +8,7 @@ import { Info } from "@/components/Info";
 import { PageHeader, Pill, Reveal } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { baseUrl } from "@/lib/base-url";
+import { tagMonat } from "@/lib/datum";
 import { canManageDevice, listDevices, openPairCode } from "@/lib/devices";
 import { deviceOnline } from "@/lib/live";
 import { listTeachers } from "@/lib/repo";
@@ -20,7 +21,7 @@ function lastSeen(iso: string | null, now = Date.now()) {
   if (min < 2) return "gerade eben";
   if (min < 60) return `vor ${min} min`;
   if (min < 24 * 60) return `vor ${Math.round(min / 60)} ${Math.round(min / 60) === 1 ? "Stunde" : "Stunden"}`;
-  return new Date(iso).toLocaleDateString("de-AT", { day: "numeric", month: "short" });
+  return tagMonat(iso);
 }
 
 /** One tablet per teacher: it shows whoever the teacher is teaching right now. */

@@ -69,7 +69,7 @@ export default async function Worksheets({ searchParams }: { searchParams: Promi
               {w.kind === "ueberpruefung" && <Pill tone="accent">Überprüfung</Pill>}
               {w.kind === "diagnose" && <Pill tone="accent">Diagnose</Pill>}
               {w.source === "ki" && (
-                <Pill title="Von Claude erstellt">
+                <Pill title="Von der KI erstellt">
                   <Sparkles size={11} aria-label="KI" />
                 </Pill>
               )}

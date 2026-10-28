@@ -96,7 +96,7 @@ test("die Karte: die nahe Prüfung, die das Thema gewählt hat, steht einmal (im
   const pruefung = sig("pruefung", "m.brueche", { fach: "Mathematik", stoff: ["Brüche"], thema: "Brüche", warum: "Schularbeit am 30.10. – Brüche", tage: 5 });
   const k = heuteKarte({ wahl: { art: "kein_paket", signal: pruefung, thema: "Brüche", entwuerfe: [] }, schritte: [], woEsHakt: [], pruefung: { titel: "Schularbeit Mathematik", datum: "2026-10-30", days: 5 } });
   assert.equal(k.pruefung, null);
-  assert.equal(k.empfehlung, "Schularbeit Mathematik am 30. Okt. (in 5 Tagen) – Brüche");
+  assert.equal(k.empfehlung, "Schularbeit Mathematik am Fr 30.10. (in 5 Tagen) – Brüche");
   assert.equal(k.warumPruefung, true);
   assert.equal(k.fach, "Mathematik", "in diesem Fach startet die Einheit");
   const ki = heuteKarte({ wahl: null, schritte: [], woEsHakt: ["Aus den Daten"], pruefung: null, kiWoEsHakt: ["Dativ nach Präpositionen wird verwechselt."] });
@@ -198,7 +198,7 @@ async function setup() {
     db().prepare("INSERT INTO ai_calls (created_at, fn, tier, model, provider, status, cost_usd, test, student_id) VALUES (?, 'briefing', 'standard', 'claude-sonnet-5-5', 'anthropic', 'ok', ?, 0, ?)").run(new Date().toISOString(), usd, sid);
   const karte = (sid: number, o: { kiVorbereiten?: boolean } = {}) => {
     const punkte = heute.tagesplan(teacher.id).filter((p) => p.studentId === sid);
-    return heute.heuteKarten(teacher.id, punkte, new Date(), o).get(sid)!;
+    return heute.heuteKarten(teacher.id, punkte, new Date(), o).get(punkte[0].key)!;
   };
   return { db, repo, units, lp, c, auto, heute, briefing, ba, zeit, router, teacher, schueler, neuesPaket, tag, pruefung, platz, fehler, kosten, karte, ki, gefragt };
 }

@@ -356,7 +356,7 @@ const AI_STATE: Record<AILive["state"], string> = {
   bereit: "",
   denkt: "schaut sich das an …",
   budget: "Budget aufgebraucht, nur Messwerte",
-  pausiert: "Claude nicht erreichbar, pausiert",
+  pausiert: "KI nicht erreichbar, pausiert",
 };
 
 /**

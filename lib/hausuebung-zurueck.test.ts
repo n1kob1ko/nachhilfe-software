@@ -81,9 +81,10 @@ test("states: open, handed in (n of m), graded (x of y right, partial half), not
   const z = (xs: Parameters<typeof zahlen>[0]) => zahlen(xs);
   const nichts = z(["unbearbeitet", "unbearbeitet", "unbearbeitet"]);
   assert.equal(hausuebungStatus(nichts, { faellig: "2026-11-04", stichtag: "2026-11-03" }), "offen");
-  assert.equal(hausuebungStatus(nichts, { faellig: "2026-11-04", stichtag: "2026-11-04" }), "offen", "on the due day itself still open …");
-  assert.equal(hausuebungStatus(nichts, { faellig: "2026-11-04", stichtag: "2026-11-04", zumUnterricht: true }), "nicht_abgegeben", "… but not for the lesson that day");
-  assert.equal(hausuebungStatus(nichts, { faellig: "2026-11-04", stichtag: "2026-11-05" }), "nicht_abgegeben");
+  // F0b: on the due day nothing entered is „fällig heute“ (maybe done on paper, not photographed yet), also for the lesson that day
+  assert.equal(hausuebungStatus(nichts, { faellig: "2026-11-04", stichtag: "2026-11-04" }), "faellig_heute");
+  assert.equal(hausuebungStatus(nichts, { faellig: "2026-11-04", stichtag: "2026-11-04", zumUnterricht: true }), "faellig_heute", "not „nicht abgegeben“ on the due day");
+  assert.equal(hausuebungStatus(nichts, { faellig: "2026-11-04", stichtag: "2026-11-05" }), "nicht_abgegeben", "only from the day after");
   assert.equal(hausuebungStatus(nichts, { faellig: null, stichtag: "2026-12-24" }), "offen", "without a due date never „not handed in“");
   assert.equal(hausuebungStatus(nichts, { faellig: "2026-11-04", stichtag: "2026-11-05", abgehakt: true }), "abgegeben", "ticked off by hand: handed in, nothing read");
 
@@ -102,6 +103,7 @@ test("states: open, handed in (n of m), graded (x of y right, partial half), not
   assert.equal(statusText({ ...halb, status: "bewertet", faellig: null }), "bewertet (1 von 2 richtig, 2 von 4 bearbeitet)");
   assert.equal(statusText({ ...nichts, status: "nicht_abgegeben", faellig: "2026-11-04" }), "nicht abgegeben");
   assert.equal(statusText({ ...nichts, status: "offen", faellig: "2026-11-04" }), "offen, fällig Mi 4.11.");
+  assert.equal(statusText({ ...nichts, status: "faellig_heute", faellig: "2026-11-04" }), "fällig heute, noch nicht eingegeben");
 
   // per topic from checked answers only: difficult under half, good from two all right
   const t = themenAus(
@@ -123,6 +125,36 @@ test("states: open, handed in (n of m), graded (x of y right, partial half), not
   const e = { ...z(["richtig", "richtig", "richtig", "richtig", "richtig", "richtig", "falsch", "falsch", "falsch"]), status: "bewertet" as const, faellig: null, themen: t.filter((x) => x.skillId === "psq"), gegeben: "2026-10-28" };
   assert.equal(briefingZeile(e as never), "Hausübung: 6 von 9 richtig · Past Simple Questions noch schwierig");
   assert.equal(briefingZeile({ ...e, ...nichts, status: "nicht_abgegeben", faellig: "2026-11-04", themen: [] } as never), "Hausübung: nicht abgegeben (fällig Mi 4.11.)");
+  assert.equal(briefingZeile({ ...e, ...nichts, status: "faellig_heute", faellig: "2026-11-04", themen: [] } as never), "Hausübung: fällig heute, noch nicht eingegeben");
+});
+
+test("due today, nothing entered: „fällig heute“ on Heute and in the profile, a step that asks for the paper first; „nicht abgegeben“ only the day after", async () => {
+  const s = await setup();
+  const sid = s.schueler("Nora Faellig");
+  const { hw, ws } = s.hausuebung(sid, { tasks: [s.aufgabe(DIV), s.aufgabe(DIV), s.aufgabe(KUE), s.aufgabe(KUE)], faellig: s.heute, am: Date.now() - 3 * TAG });
+  // profile today and tomorrow
+  assert.equal(s.hz.hausuebungErgebnis(hw)!.status, "faellig_heute");
+  assert.equal(s.hz.hausuebungErgebnis(hw, { stichtag: s.tagAddieren(s.heute, 1) })!.status, "nicht_abgegeben");
+  // the unit on the due day: one line, a step with „Arbeit fotografieren“ and three tasks to solve together, never counted as wrong
+  const unit = s.start(sid, Date.now() - 5 * 60_000);
+  const e = s.hz.hausuebungFuerEinheit(sid, { vor: unit.started_at, fach: "Mathematik", ausser: unit.id })!;
+  assert.equal(e.status, "faellig_heute");
+  assert.equal(s.hz.briefingZeile(e), "Hausübung: fällig heute, noch nicht eingegeben");
+  assert.equal(s.hz.schrittNoetig(e), true);
+  assert.equal(s.hz.zusammenLoesen(e), true);
+  const plan = (await import("./stundenplan")).stundenplanFuer(sid, { fach: "Mathematik", platzId: null, unitId: unit.id });
+  const schritt = plan.find((x) => x.art === "hausuebung")!;
+  assert.equal(schritt.titel, "Hausübung besprechen");
+  assert.match(schritt.beschreibung, /ist noch nicht eingegeben – auf Papier gemacht\? Arbeit fotografieren\./);
+  assert.match(schritt.beschreibung, /Sonst löst 3 Aufgaben daraus gemeinsam\. Sie zählt nicht als falsch\./);
+  assert.equal(schritt.minuten, 10);
+  assert.equal(s.repo.listAttemptsForStudent(sid).length, 0);
+  // „Arbeit fotografieren“ offers this sheet in the unit (C1 path)
+  const p = await import("./papier-einheit");
+  assert.ok(p.blaetterDerEinheit(unit.id).some((b) => b.homeworkId === hw && b.worksheetId === ws));
+  // its Abschluss: not „nicht abgegeben“
+  const z = s.hz.abschlussZeilen(e)!;
+  assert.match(z.zeile, /: noch nicht eingegeben \(fällig \S+ \d+\.\d+\.\)$/);
 });
 
 // ---------- mit Datenbank ----------

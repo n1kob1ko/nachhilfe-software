@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { aiEnabled, writeFamilyNote } from "@/lib/ai";
+import { kiGrund, protokolliere } from "@/lib/ai/grund";
 import { requireTeacher } from "@/lib/auth";
 import * as repo from "@/lib/repo";
 import { briefAusKarte, karteDerEinheit } from "@/lib/abschluss";
@@ -41,11 +42,13 @@ export async function generateFamilyNoteAction(lessonId: number, mode: "fakten" 
     const student = repo.getStudent(lesson.student_id);
     try {
       const text = await writeFamilyNote(briefForAI(brief, student?.name ?? ""), audience, { teacherId: lesson.editorId, unitId: lesson.unit_id ?? null, studentId: lesson.student_id, trigger: "notiz" });
-      if (!text) return { error: "Claude hat keine Notiz geliefert. Die Notiz aus den Fakten bleibt möglich." };
+      if (!text) return { error: "Die KI hat keine Notiz geliefert. Die Notiz aus den Fakten bleibt möglich." };
       note = text;
       source = "ki";
     } catch (e) {
-      return { error: `Claude war nicht erreichbar (${e instanceof Error ? e.message : String(e)}).` };
+      // the provider's own text only in the server log (lib/ai/grund.ts)
+      protokolliere("Notiz für Eltern", e);
+      return { error: `${kiGrund(e)} Die Notiz aus den Fakten bleibt möglich.` };
     }
   }
   repo.setFamilyNote(lesson.id, note, source);

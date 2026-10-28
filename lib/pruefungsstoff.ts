@@ -473,7 +473,7 @@ export function lesungsSchluessel(o: { hashes: string[]; angabe: string; kandida
  * Angabe kosten nur beim ersten Mal (`neu`); danach kommt das gespeicherte Ergebnis, auch ohne KI. Wirft einen Fehler mit
  * einem Satz für den Lehrer; die Dateien bleiben gespeichert. Die Angabe wird vorher ohne Namen geschrieben.
  */
-export async function liesPruefungsstoff(o: { materialIds: number[]; angabe?: string; studentId: number; teacherId: number | null; heute: string; fach?: string; trigger?: string }): Promise<{ id: number; lesung: Lesung; neu: boolean }> {
+export async function liesPruefungsstoff(o: { materialIds: number[]; angabe?: string; studentId: number; teacherId: number | null; heute: string; fach?: string; trigger?: string }): Promise<{ id: number; lesung: Lesung; neu: boolean; hinweise?: string[] }> {
   const student = repo.getStudent(o.studentId);
   if (!student) throw new Error("Diesen Schüler gibt es nicht.");
   const ids = [...new Set(o.materialIds)];
@@ -490,10 +490,13 @@ export async function liesPruefungsstoff(o: { materialIds: number[]; angabe?: st
   if (!geht.ok) throw new Error(geht.grund);
   const level = checkLevel(student.school_type, student.klasse, student.grade);
   const vorher = (db().prepare("SELECT COALESCE(MAX(id), 0) AS n FROM ai_calls").get() as { n: number }).n;
+  // Dateien, die die eingestellte KI übersprungen hat (ein PDF ohne Text), damit die Lehrkraft es liest
+  const hinweise: string[] = [];
   const gelesen = await lesePruefungsstoff(
     dateien.map((d) => ({ mime: d.mime, base64: d.data.toString("base64") })),
     { heute: o.heute, faecher: student.subjects, schulstufe: level.status === "eindeutig" ? level.schulstufe : null, dateien: dateien.length, angabe, kandidaten },
     { teacherId: o.teacherId, studentId: student.id, trigger: o.trigger ?? "pruefungsstoff" },
+    hinweise,
   );
   if (!gelesen) throw new Error("Die KI hat die Unterlagen nicht gelesen.");
   const lesung = lesungAusAntwort(gelesen, { dateien: dateien.length });
@@ -508,7 +511,7 @@ export async function liesPruefungsstoff(o: { materialIds: number[]; angabe?: st
   const rolle = db().prepare("UPDATE materials SET rolle = ? WHERE id = ? AND rolle_geprueft = 0");
   for (const d of lesung.dokumente) if (dateien[d.nr - 1]) rolle.run(d.rolle, dateien[d.nr - 1].material_id);
   // a role chosen earlier for one of these files counts at once
-  return { id, lesung: getLesung(id)!.lesung, neu: true };
+  return { id, lesung: getLesung(id)!.lesung, neu: true, ...(hinweise.length ? { hinweise } : {}) };
 }
 
 /**

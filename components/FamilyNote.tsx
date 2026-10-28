@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Copy, Sparkles } from "lucide-react";
 import { generateFamilyNoteAction, saveFamilyNoteAction, type NoteState } from "@/app/summary-actions";
 
-const SOURCE_LABEL: Record<string, string> = { fakten: "aus den Fakten erstellt", ki: "von Claude formuliert, bitte prüfen", lehrer: "von dir geschrieben" };
+const SOURCE_LABEL: Record<string, string> = { fakten: "aus den Fakten erstellt", ki: "von der KI formuliert, bitte prüfen", lehrer: "von dir geschrieben" };
 
 /**
  * Note for parents or the student after a unit. "Aus den Fakten" works without AI; "Mit Claude
@@ -46,8 +46,8 @@ export function FamilyNote({ lessonId, initial, source, ai }: { lessonId: number
           Aus den Fakten
         </button>
         {ai && (
-          <button type="button" className="btn btn-secondary btn-sm" disabled={pending} onClick={() => run(() => generateFamilyNoteAction(lessonId, "ki", audience))} title="Claude bekommt nur die Fakten ohne Namen und ohne deine Notizen">
-            <Sparkles size={14} aria-hidden /> Mit Claude formulieren
+          <button type="button" className="btn btn-secondary btn-sm" disabled={pending} onClick={() => run(() => generateFamilyNoteAction(lessonId, "ki", audience))} title="Die KI bekommt nur die Fakten ohne Namen und ohne deine Notizen">
+            <Sparkles size={14} aria-hidden /> Mit KI formulieren
           </button>
         )}
       </div>

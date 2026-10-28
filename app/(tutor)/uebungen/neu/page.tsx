@@ -33,7 +33,7 @@ export default async function NewWorksheet({ searchParams }: { searchParams: Pro
     <>
       <PageHeader
         title={ctx ? `Übung für ${ctx.first}` : "Übung erstellen"}
-        info={`${ai ? "Claude erstellt die Aufgaben." : "Die Aufgaben kommen aus den eingebauten Generatoren."} Du siehst sie zuerst in einer Vorschau und sendest sie dann.`}
+        info={`${ai ? "Die KI erstellt die Aufgaben." : "Die Aufgaben kommen aus den eingebauten Generatoren."} Du siehst sie zuerst in einer Vorschau und sendest sie dann.`}
         back={ctx ? { href: `/schueler/${ctx.studentId}`, label: ctx.name } : { href: "/uebungen", label: "Übungen" }}
       />
       <FlowSteps current={1} />

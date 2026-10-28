@@ -50,7 +50,7 @@ export async function startDiagnosisAction(f: FormData) {
   if (vorschau) {
     // nothing is sent yet: the preview waits on the diagnosis page; a failure says why
     if ("fehler" in vorschau) fail(`Es wurde nichts gesendet: ${vorschau.fehler}`);
-    else if (vorschau.vorschau.status === "fehler") fail(`Die KI hat gerade keine Aufgaben erstellt: ${vorschau.vorschau.problem} Es wurde nichts gesendet. Ohne den Haken bei Claude geht es ohne KI.`);
+    else if (vorschau.vorschau.status === "fehler") fail(`Die KI hat gerade keine Aufgaben erstellt: ${vorschau.vorschau.problem} Es wurde nichts gesendet. Ohne den Haken geht es ohne KI.`);
     else redirect(`${back}${back.includes("?") ? "&" : "?"}vorschau=${vorschau.vorschau.id}`);
   }
   noteActivity(studentId);

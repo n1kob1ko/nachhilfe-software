@@ -133,11 +133,24 @@ test("duration: per task type as a range, writing by word count, shown in 5-minu
   assert.deepEqual(minutenFuer(t("free")), [3, 3]);
   assert.deepEqual(minutenFuer(t("free", { schreibauftrag: { textsorte: "E-Mail", woerter: 60 } })), [4, 6]);
   assert.deepEqual(minutenFuer({ type: "calc", data: {}, estimatedTimeSec: 120 }), [2, 3]);
-  // 8 closed tasks and a short writing task: 12–22 min
+  // 8 closed tasks and a short writing task: 12–22 min, middle 17, ±25 % rounded to 5 (F0b: before „ca. 10–25 min“)
   const d = dauer([...Array.from({ length: 8 }, () => t("cloze")), t("free", { schreibauftrag: { textsorte: "E-Mail", woerter: 60 } })]);
-  assert.deepEqual([d.von, d.bis, d.text], [12, 22, "ca. 10–25 min"]);
+  assert.deepEqual([d.von, d.bis, d.minuten, d.text], [12, 22, 17, "ca. 15–20 min"]);
+  // 8 closed tasks: 12 min, „ca. 10–15 min“ (before „ca. 5–20 min“)
+  assert.equal(dauer(Array.from({ length: 8 }, () => t("mc"))).text, "ca. 10–15 min");
+  // 12 mixed tasks: 6 closed (9), 4 calc (10), 2 Rechenweg (7) = 26 min, „ca. 20–35 min“
+  assert.equal(dauer([...Array.from({ length: 6 }, () => t("mc")), ...Array.from({ length: 4 }, () => t("calc")), t("rechenweg"), t("rechenweg")]).text, "ca. 20–35 min");
   assert.equal(dauer([t("mc")]).text, "ca. 5 min");
   assert.equal(dauer([]).text, "");
+});
+
+test("a topic without tasks: „Question Tags: keine passenden Aufgaben“, without KI „…, bitte selbst ergänzen“ (never „0 Aufgaben …“)", async () => {
+  const { themaKopf } = await import("./hausuebung");
+  const thema = (n: number) => ({ name: "Question Tags", aufgaben: Array.from({ length: n }, () => ({}) as never) });
+  assert.equal(themaKopf(thema(4), { selbst: false }), "4 Aufgaben Question Tags");
+  assert.equal(themaKopf(thema(1), { selbst: true }), "1 Aufgabe Question Tags");
+  assert.equal(themaKopf(thema(0), { selbst: true }), "Question Tags: keine passenden Aufgaben, bitte selbst ergänzen");
+  assert.equal(themaKopf(thema(0), { selbst: false }), "Question Tags: keine passenden Aufgaben");
 });
 
 // ---------- mit der Datenbank ----------
@@ -289,7 +302,7 @@ test("KI only when library and generator have nothing: on tap with cost (0 € b
   assert.equal(hw.unit_id, unit.id);
   assert.equal(hw.due_date, faellig);
   assert.equal(hw.student_id, sid);
-  assert.match(hw.description, /^2 Aufgaben \(Runden und Überschlagen 2\), ca\. 5–10 min – Zuerst die Regel im Heft lesen\.$/);
+  assert.match(hw.description, /^2 Aufgaben \(Runden und Überschlagen 2\), ca\. 5 min – Zuerst die Regel im Heft lesen\.$/);
   const asg = s.repo.getAssignment(hw.assignment_id)!;
   assert.equal(asg.worksheet_id, out.worksheetId);
   assert.equal(asg.unit_id, null, "answers at home do not count as this unit");
@@ -305,7 +318,7 @@ test("KI only when library and generator have nothing: on tap with cost (0 € b
   // Abschluss and documentation
   const lesson = s.repo.getLessonForUnit(unit.id)!;
   const zeile = s.ab.karteDerEinheit(unit.id, lesson).gemacht.find((z) => z.von === "hausuebung");
-  assert.match(zeile!.text, /^Hausübung: 2 Aufgaben \(Runden und Überschlagen 2\), ca\. 5–10 min, fällig /);
+  assert.match(zeile!.text, /^Hausübung: 2 Aufgaben \(Runden und Überschlagen 2\), ca\. 5 min, fällig /);
   assert.ok(!s.ab.karteDerEinheit(unit.id, lesson).naechstes.some((z) => z.text.startsWith("Hausübung")), "not twice under „Nächstes Mal“");
   assert.equal(lesson.homework_note, zeile!.text);
   assert.equal(s.hu.hausuebungDerEinheit(unit.id)!.status, "freigegeben");

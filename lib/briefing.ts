@@ -26,6 +26,7 @@ import { aufgabeSchluessel, staende } from "./bewertungen";
 import { schnittText } from "./bewertung-regeln";
 import { parseSettings } from "./builder";
 import type { TaskDraft } from "./tasks";
+import { datumKurz as kurzesDatum } from "./datum";
 import { db, json } from "./db";
 import { daysUntil } from "./exams";
 import { masteryStatus } from "./mastery";
@@ -122,8 +123,8 @@ const clip = (s: string, n = 300) => {
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 };
 const pctText = (m: number | null) => (m === null ? "noch nicht getestet" : `${Math.round(m * 100)} %`);
-/** „15. Okt.“ aus „2026-10-15…“ */
-export const datumKurz = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString("de-AT", { day: "numeric", month: "short", timeZone: "UTC" });
+/** „Do 15.10.“ aus „2026-10-15…“ (lib/datum.ts) */
+export const datumKurz = (d: string) => kurzesDatum(d);
 const wann = (days: number) => (days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`);
 
 // ---------- the data ----------

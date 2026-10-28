@@ -12,6 +12,7 @@
 import { z } from "zod";
 import { detectNames, namesAfterRelation } from "../name-detection";
 import { maskText, namePattern } from "../text-correction-core";
+import { kiGrundVonUrsache } from "./grund";
 import { runAI, type AIMeta } from "./router";
 
 export const ANPASSUNG_ARTEN = { beispiel: "Zusatzbeispiel", leichter: "Leichtere Frage", schwerer: "Schwerere Frage", bei_fehler: "Bei Fehler" } as const;
@@ -138,7 +139,7 @@ export type KiAnpassen = { ok: true; vorschlaege: Vorschlag[]; verworfen: number
 export async function kiAnpassen(d: AnpassenDaten, namen: string[], meta: AIMeta): Promise<KiAnpassen> {
   const { system, prompt } = anpassenAnfrage(d, namen);
   const out = await runAI("anpassen", AnpassenSchema, system, prompt, { meta });
-  if (!out.ok) return { ok: false, error: out.message };
+  if (!out.ok) return { ok: false, error: kiGrundVonUrsache(out.cause) };
   const geprueft = pruefeAnpassen(out.data, d);
   if ("fehler" in geprueft) return { ok: false, error: geprueft.fehler };
   return { ok: true, ...geprueft, callId: out.callId };

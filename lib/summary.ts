@@ -1,3 +1,4 @@
+import { datumKurz } from "./datum";
 import { autoFelderVon } from "./einschaetzung";
 import { errorTypeLabel } from "./error-types";
 import { dayOf, daysUntil } from "./exams";
@@ -37,7 +38,8 @@ export const BRIEF_QUESTIONS: [BriefKey, string][] = [
 const pct = (x: number) => `${Math.round(x * 100)} %`;
 const data = (text: string): BriefLine => ({ text, from: "daten" });
 const teacher = (text: string | null | undefined): BriefLine[] => (text?.trim() ? [{ text: text.trim(), from: "lehrer" }] : []);
-export const shortDate = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00`).toLocaleDateString("de-AT", { weekday: "short", day: "numeric", month: "numeric" });
+/** „Mi 28.10.“ (lib/datum.ts) */
+export const shortDate = (d: string) => datumKurz(d);
 const when = (days: number) => (days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`);
 
 export function unitBrief(lessonId: number, o: { today?: string; now?: number } = {}): UnitBrief | null {

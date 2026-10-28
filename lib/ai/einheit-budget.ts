@@ -124,11 +124,15 @@ export function automatischFrei(unitId: number, schaetzungUsd: number, reservier
 /** Hintergrund-KI dieser Einheit (Live-Analyse) stoppt, wenn ein Betrag gesetzt und erreicht ist. Bei 0 € läuft sie wie bisher. */
 export const hintergrundGestoppt = (unitId: number) => einheitBudget(unitId).erreicht;
 
-/** Die Zeile im Unterricht: „KI heute: 0,07 € von 0,30 €“, „KI heute: 0,07 € · automatisch aus“ oder „… · KI ist aus“. */
+/**
+ * Die Zeile im Unterricht: „KI heute: 0,07 € von 0,30 €“, erreicht (auch auf Tippen darüber) „KI heute: 0,34 € (Budget 0,30 € erreicht)“,
+ * „KI heute: 0,07 € · automatisch aus“ oder „… · KI ist aus“.
+ */
 export function kostenZeile(b: Pick<EinheitBudget, "kostenEur" | "budgetEur" | "automatisch">, kiAn = true): string {
   const heute = `KI heute: ${euroKlein(b.kostenEur)}`;
   if (!kiAn) return `${heute} · KI ist aus`;
-  return b.automatisch ? `${heute} von ${euro(b.budgetEur)}` : `${heute} · automatisch aus`;
+  if (!b.automatisch) return `${heute} · automatisch aus`;
+  return b.kostenEur >= b.budgetEur ? `${heute} (Budget ${euro(b.budgetEur)} erreicht)` : `${heute} von ${euro(b.budgetEur)}`;
 }
 
 /** Die laufende Einheit eines Schülers (höchstens eine, lib/db.ts), oder null. */

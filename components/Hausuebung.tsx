@@ -17,7 +17,8 @@ import { AutoRefresh } from "@/components/AutoRefresh";
 import { HausuebungKnopf } from "@/components/HausuebungKnopf";
 import { Pill, Reveal } from "@/components/ui";
 import { antwortText, frageText, loesungText } from "@/lib/cockpit";
-import { fehlt, HERKUNFT, MAX_JE_THEMA, zusammenfassung, type HuThema, type Vorschlag } from "@/lib/hausuebung";
+import { kiGrundText } from "@/lib/ai/grund";
+import { fehlt, HERKUNFT, MAX_JE_THEMA, themaKopf, zusammenfassung, type HuThema, type Vorschlag } from "@/lib/hausuebung";
 import { antwortenText } from "@/lib/zu-bewerten";
 import { shortDate } from "@/lib/summary";
 
@@ -164,12 +165,12 @@ function Vorschlagen({ v, name }: { v: Vorschlag; name: string }) {
 function ThemaZeile({ t, v }: { t: HuThema; v: Vorschlag }) {
   const n = t.aufgaben.length;
   const f = fehlt(t);
+  // the KI can still fill this topic (on tap or running): otherwise the teacher adds tasks herself (lib/hausuebung.ts themaKopf)
+  const mitKi = f > 0 && Boolean(t.skillId) && t.stand !== "schreiben" && (t.ki?.status === "laeuft" || v.ki.erlaubt);
   return (
     <li className="grid gap-1" data-testid="hausuebung-thema">
       <p className="text-[15.5px]">
-        <span className="font-semibold">
-          {aufgabenText(n)} {t.name}
-        </span>
+        <span className="font-semibold">{themaKopf(t, { selbst: !mitKi })}</span>
         <span className="ml-2 text-[13px] text-ink-3">{t.grund}</span>
       </p>
       {f > 0 && t.skillId && t.stand !== "schreiben" && (
@@ -184,11 +185,11 @@ function ThemaZeile({ t, v }: { t: HuThema; v: Vorschlag }) {
               <form action={huKiAction.bind(null, v.unitId, t.id)}>
                 <HausuebungKnopf label={`Neue Aufgaben erstellen${v.ki.kosten ? ` · ${v.ki.kosten}` : ""}`} klein icon={<Sparkles size={15} aria-hidden />} laeuft="Wird erstellt …" testid="hausuebung-ki" />
               </form>
-              <p className="text-[13px] text-ink-3">{t.ki?.status === "fehler" ? `Ging gerade nicht: ${t.ki.problem}` : "Du siehst sie zuerst mit Lösungen; jede braucht dein „geprüft“."}</p>
+              <p className="text-[13px] text-ink-3">{t.ki?.status === "fehler" ? `Ging gerade nicht: ${kiGrundText(t.ki.problem)}` : "Du siehst sie zuerst mit Lösungen; jede braucht dein „geprüft“."}</p>
             </>
           ) : (
             <p className="text-ink-2" data-testid="hausuebung-selbst">
-              {n ? (f === 1 ? "Eine passende Aufgabe fehlt" : `${f} passende Aufgaben fehlen`) : "Keine passenden Aufgaben"}, bitte selbst ergänzen:{" "}
+              {n ? `${f === 1 ? "Eine passende Aufgabe fehlt" : `${f} passende Aufgaben fehlen`}, bitte selbst ergänzen: ` : ""}
               <Link href={`/einheiten/${v.unitId}?aendern=1#aendern`} className="font-semibold text-accent hover:underline">
                 Hausübung eintragen
               </Link>

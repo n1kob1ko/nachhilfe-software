@@ -49,7 +49,7 @@ test("wann: heute, gestern, sonst der Tag (Wien)", async () => {
   const jetzt = new Date("2026-10-21T20:00:00Z");
   assert.equal(wannLabel("2026-10-21T13:00:00Z", jetzt), "heute");
   assert.equal(wannLabel("2026-10-20T13:00:00Z", jetzt), "gestern");
-  assert.equal(wannLabel("2026-10-19T13:00:00Z", jetzt), "am Montag, 19. Oktober");
+  assert.equal(wannLabel("2026-10-19T13:00:00Z", jetzt), "am Montag, 19.10.");
   assert.equal(wannLabel("2026-10-20T22:30:00Z", jetzt), "heute", "half past midnight in Vienna is already the 21st");
 });
 

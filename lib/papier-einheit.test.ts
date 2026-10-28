@@ -96,7 +96,7 @@ test("a sheet sent in the unit is read against its original tasks: one row per t
   const ki = await mitKi(LESUNG);
   try {
     const tor = s.p.papierTor(s.sid);
-    assert.ok(tor.erlaubt && /^Lesen kostet ca\. \d+ Cent$/.test(tor.kosten), "the cost is shown before reading");
+    assert.ok(tor.erlaubt && tor.kosten.slice(1).every((k) => /^Lesen kostet ca\. \d+ Cent$/.test(k)), "the cost is shown before reading, for 1 to 4 pages");
     assert.equal(ki.gefragt.length, 0, "showing the cost reads nothing");
     const v = await s.p.liesPapier({ unitId: s.unit.id, blattKey: `z${asg}`, materialIds: [s.seite(), s.seite()], teacherId: s.teacher.id });
     assert.equal(ki.gefragt.length, 1, "one call for all pages");
@@ -304,4 +304,23 @@ test("tasks already answered on the device are left out; the unit's printed Mini
   assert.equal(gesendet.schonFertig, 1);
   assert.ok(!gesendet.aufgaben.some((a) => a.taskId === erste.id));
   assert.equal(blaetter.find((b) => b.key === `u${mini}`)?.art, "minitest");
+});
+
+test("F0b: the reading cost follows the pages chosen (1 to 4), not a fixed two; earlier readings scale to the page count", async () => {
+  const s = await setup();
+  const usd = (n: number) => s.p.kostenPapierUsd(n)!;
+  assert.ok(usd(1) > 0, "a price for one page");
+  assert.ok(usd(1) < usd(2) && usd(2) < usd(4), "more pages cost more");
+  const liste = s.p.kostenJeSeiten();
+  assert.equal(liste.length, 5, "index = pages, 0 like 1");
+  assert.equal(liste[0], liste[1]);
+  assert.ok(liste.slice(1).every((k) => /^Lesen kostet ca\. \d+ Cent$/.test(k)));
+  // three earlier readings of two pages each at 3 cents of a dollar: two pages cost that again, four pages more, one page less
+  const zwei = { ein: 2 * 1_700 + 2_500, aus: 4_000 };
+  for (let i = 0; i < 3; i++)
+    s.db()
+      .prepare("INSERT INTO ai_calls (created_at, fn, tier, model, provider, status, cost_usd, input_tokens, output_tokens, test) VALUES (?, 'blatt', 'standard', 'claude-sonnet-5-5', 'anthropic', 'ok', 0.03, ?, ?, 0)")
+      .run(new Date().toISOString(), zwei.ein, zwei.aus);
+  assert.ok(Math.abs(usd(2) - 0.03) < 1e-9, String(usd(2)));
+  assert.ok(usd(4) > 0.03 && usd(1) < 0.03);
 });

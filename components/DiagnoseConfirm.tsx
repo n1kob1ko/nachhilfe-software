@@ -93,7 +93,7 @@ export function DiagnoseConfirm({
             {maybeFewer && "Bis zu "}
             <span className="num font-semibold text-ink">{plan.length}</span> Aufgaben: <span className="num">{count("leicht")}</span> leicht, <span className="num">{count("mittel")}</span> mittel,{" "}
             <span className="num">{count("schwer")}</span> schwer. Aufgaben aus der Bibliothek werden zuerst verwendet.
-            {maybeFewer && " Fähigkeiten ohne eigenen Aufgabengenerator bekommen ohne Claude weniger Aufgaben, damit sich keine wiederholt."}
+            {maybeFewer && " Fähigkeiten ohne eigenen Aufgabengenerator bekommen ohne KI weniger Aufgaben, damit sich keine wiederholt."}
           </>
         ) : (
           "Bitte mindestens eine Fähigkeit wählen."
@@ -102,7 +102,7 @@ export function DiagnoseConfirm({
       {needsAI && (
         <label className="flex min-h-[44px] items-center gap-3 text-[14px]">
           <input type="checkbox" name="use_ai" value="1" checked={useAI} onChange={(e) => setUseAI(e.target.checked)} className="h-5 w-5 accent-[var(--accent)]" />
-          Fehlende Aufgaben mit Claude erstellen (nur Fach, Klasse und Fähigkeiten werden übermittelt){kosten[kiAufgaben] ? ` · ${kosten[kiAufgaben]}` : ""}
+          Fehlende Aufgaben mit der KI erstellen (nur Fach, Klasse und Fähigkeiten werden übermittelt){kosten[kiAufgaben] ? ` · ${kosten[kiAufgaben]}` : ""}
         </label>
       )}
       {!ai && kiGrund && noGenerator && <p className="text-[13.5px] text-ink-2">Ohne KI: {kiGrund}</p>}

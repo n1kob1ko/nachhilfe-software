@@ -13,6 +13,7 @@
  */
 import { briefingDaten, einfachesBriefing, kandidaten, type BriefingInhalt, type Fokus, type Kandidat } from "./briefing";
 import { ablauf, zusammenfassung } from "./cockpit";
+import { tagMonat } from "./datum";
 import { db } from "./db";
 import { daysUntil } from "./exams";
 import { EXPLAIN } from "./generators";
@@ -25,7 +26,7 @@ import { schuelerWorte } from "./schueler-notiz";
 import { typischeFehler } from "./themen";
 
 const wann = (days: number) => (days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`);
-const datumKurz = (d: string) => new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString("de-AT", { day: "numeric", month: "short", timeZone: "UTC" });
+const datumKurz = (d: string) => tagMonat(d.slice(0, 10));
 
 /** Eine Schularbeit, soweit sie für die Wahl zählt. */
 export type Pruefung = { days: number; subject: string; skill_ids: string[]; topics: string[]; label: string };

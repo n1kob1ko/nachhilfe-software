@@ -111,6 +111,10 @@ test("Betrag: Standard 0 € (automatisch aus); die Lehrkraft senkt je Einheit, 
   s.eb.setzeStandardBudget(0.3);
   assert.equal(s.eb.einheitBudget(unit.id).budgetEur, 0.3);
   assert.equal(s.eb.kostenZeile(s.eb.einheitBudget(unit.id)), "KI heute: 0,00 € von 0,30 €");
+  // F0b: over the budget on tap, the line says the budget is reached instead of „0,34 € von 0,30 € erreicht“
+  assert.equal(s.eb.kostenZeile({ kostenEur: 0.34, budgetEur: 0.3, automatisch: true }), "KI heute: 0,34 € (Budget 0,30 € erreicht)");
+  assert.equal(s.eb.kostenZeile({ kostenEur: 0.3, budgetEur: 0.3, automatisch: true }), "KI heute: 0,30 € (Budget 0,30 € erreicht)");
+  assert.equal(s.eb.kostenZeile({ kostenEur: 0.34, budgetEur: 0.3, automatisch: true }, false), "KI heute: 0,34 € · KI ist aus");
   assert.deepEqual(s.eb.setzeBudgetDerEinheit(unit.id, 0.1, { admin: false }), { ok: true }, "lowering is fine");
   assert.deepEqual(s.eb.budgetDerEinheitEur(unit.id), { eur: 0.1, eigen: true });
   assert.ok("fehler" in s.eb.setzeBudgetDerEinheit(unit.id, 0.5, { admin: false }));
@@ -280,7 +284,7 @@ test("over the budget: no request by itself; on tap with the cost and the reason
   assert.equal(s.gefragt.length, 1);
   assert.equal(s.zaehle("assignments"), asg);
   // the line under the unit
-  assert.match(s.eb.kostenZeile(s.eb.einheitBudget(unit.id)), /^KI heute: 0,\d\d € von 0,30 €$/);
+  assert.match(s.eb.kostenZeile(s.eb.einheitBudget(unit.id)), /^KI heute: 0,\d\d € (von 0,30 €|\(Budget 0,30 € erreicht\))$/);
   assert.equal(s.nb.nachschubTor(unit.id, unit.student_id, s.nb.ANZAHL_VORSCHLAG).automatisch.erlaubt, false, "still nothing by itself");
   s.units.finishUnit(unit.id, "abgebrochen");
   s.router.setTransport(null);

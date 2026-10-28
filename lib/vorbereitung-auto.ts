@@ -30,6 +30,7 @@
  */
 import type { Fokus } from "./briefing";
 import { frueher, stoffPasst, zitat } from "./cockpit-vorschlag";
+import { tagMonat } from "./datum";
 import { db, json } from "./db";
 import { daysUntil } from "./exams";
 import { ungeprueft, listLernpakete, getLernpaket, type Lernpaket } from "./lernpakete";
@@ -273,8 +274,8 @@ export function kiHref(v: KiVorgabe): string {
 
 // ---------- the signals from the database ----------
 
-/** „4.11.“ aus „2026-11-04“ */
-export const tagMonat = (d: string) => `${Number(d.slice(8, 10))}.${Number(d.slice(5, 7))}.`;
+/** „4.11.“ aus „2026-11-04“ (lib/datum.ts) */
+export { tagMonat };
 
 /** Fähigkeiten verwandt: gleich, oder die eine ist Teilfähigkeit der anderen. */
 export function verwandtschaft(): AutoEingabe["verwandt"] {
