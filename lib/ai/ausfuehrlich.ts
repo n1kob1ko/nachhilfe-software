@@ -34,15 +34,29 @@ const SYSTEM = [
   "Schreib in österreichischem Deutsch, ohne Anrede und ohne Namen. Bei Englisch: Erklärung auf Deutsch, Beispiele und Frage auf Englisch.",
 ].join("\n");
 
+/**
+ * „Einfacher erklären“ (lib/knoepfe.ts): derselbe Aufbau, aber einfacher als die Erklärung der App, für jemanden, der sie nicht
+ * verstanden hat. Nur, wenn nichts Einfacheres gespeichert ist.
+ */
+const SYSTEM_EINFACH = [
+  "Du schreibst für eine Nachhilfelehrkraft in Österreich eine einfachere Erklärung zu genau einer Fähigkeit, weil die Schülerin oder der Schüler die erste Erklärung nicht verstanden hat. Die Lehrkraft trägt sie im Unterricht frei vor.",
+  "Einfacher heißt: 3–5 sehr kurze Sätze, Alltagswörter statt Fachwörter (ein nötiges Fachwort einmal erklären), ein anderer Zugang als die Erklärung der App, etwa ein Bild aus dem Alltag oder ein ganz kleines Beispiel. Dazu ein leichtes, durchgerechnetes Beispiel, eine kurze Verständnisfrage mit erwarteter Antwort und genau zwei typische Fehler mit einem Hinweis, was hilft.",
+  "Bleib bei der Fähigkeit und ihrem Stoff. Rechne jedes Beispiel und jede Antwort selbst nach; in Mathematik schreibst du den Rechenweg als reine Rechenzeilen, die App prüft jede Zeile.",
+  "Schreib in österreichischem Deutsch, ohne Anrede und ohne Namen. Bei Englisch: Erklärung auf Deutsch, Beispiele und Frage auf Englisch.",
+].join("\n");
+
 export type AusfuehrlichEingabe = { fach: string; bereich: string; name: string; schulstufe: number; erklaerung: string | null; typischeFehler: string[] };
 
+/** Ausführlicher (länger als die App) oder einfacher (für jemanden, der die erste Erklärung nicht verstanden hat). */
+export type ErklaerArt = "ausfuehrlich" | "einfach";
+
 /** Systemprompt und Anfrage. Exportiert für Tests: was die App verlässt, steht hier. */
-export function ausfuehrlichAnfrage(e: AusfuehrlichEingabe): { system: string; prompt: string } {
+export function ausfuehrlichAnfrage(e: AusfuehrlichEingabe, art: ErklaerArt = "ausfuehrlich"): { system: string; prompt: string } {
   const z = [`Fach: ${e.fach}`, `Thema: ${e.bereich}`, `Fähigkeit: ${e.name}`, `Schulstufe: ${e.schulstufe}`];
-  if (e.erklaerung?.trim()) z.push(`Kurze Erklärung der App: ${e.erklaerung.trim()}`);
+  if (e.erklaerung?.trim()) z.push(`${art === "einfach" ? "Erste Erklärung der App (nicht verstanden)" : "Kurze Erklärung der App"}: ${e.erklaerung.trim()}`);
   const fehler = e.typischeFehler.map((f) => f.trim()).filter(Boolean);
   if (fehler.length) z.push("Typische Fehler laut App:", ...fehler.slice(0, 6).map((f) => `- ${f}`));
-  return { system: SYSTEM, prompt: z.join("\n") };
+  return { system: art === "einfach" ? SYSTEM_EINFACH : SYSTEM, prompt: z.join("\n") };
 }
 
 /** Was die App aus der Antwort übernimmt; ein weggelassener Teil ist null (leer). */
@@ -110,10 +124,14 @@ export function pruefeAusfuehrlich(raw: AusfuehrlichKi, fach: string): { inhalt:
 
 export type KiAusfuehrlich = { ok: true; inhalt: Ausfuehrlich; weggelassen: number; callId: number | null } | { ok: false; error: string };
 
-/** Eine Anfrage an die KI über den Router (Budget, Protokoll, manueller Modus); ohne Schüler, daher ohne seine KI-Hinweise. */
-export async function kiAusfuehrlich(e: AusfuehrlichEingabe, meta: Pick<AIMeta, "teacherId" | "trigger">): Promise<KiAusfuehrlich> {
-  const { system, prompt } = ausfuehrlichAnfrage(e);
-  const out = await runAI("ausfuehrlich", AusfuehrlichSchema, system, prompt, { meta: { teacherId: meta.teacherId ?? null, trigger: meta.trigger ?? "ausfuehrlich" } });
+/**
+ * Eine Anfrage an die KI über den Router (Budget, Protokoll, manueller Modus); ohne Schüler, daher ohne seine KI-Hinweise. `art`
+ * „einfach“: „Einfacher erklären“ (eigene Funktion `einfacher` für Kosten und Schalter).
+ */
+export async function kiAusfuehrlich(e: AusfuehrlichEingabe, meta: Pick<AIMeta, "teacherId" | "trigger">, art: ErklaerArt = "ausfuehrlich"): Promise<KiAusfuehrlich> {
+  const { system, prompt } = ausfuehrlichAnfrage(e, art);
+  const fn = art === "einfach" ? "einfacher" : "ausfuehrlich";
+  const out = await runAI(fn, AusfuehrlichSchema, system, prompt, { meta: { teacherId: meta.teacherId ?? null, trigger: meta.trigger ?? fn } });
   if (!out.ok) return { ok: false, error: out.message };
   const geprueft = pruefeAusfuehrlich(out.data, e.fach);
   if ("fehler" in geprueft) return { ok: false, error: geprueft.fehler };

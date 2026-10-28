@@ -29,6 +29,7 @@ import { db, json } from "./db";
 import { autoFelderVon } from "./einschaetzung";
 import { errorTypeLabel } from "./error-types";
 import { daysUntil } from "./exams";
+import { angepasstZeile, knoepfeDerEinheit, verstandenZeilen, type KnopfEintrag } from "./knoepfe";
 import { berichtNachBewertung, readReport, type TaskLine } from "./learning";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
 import { papierDerEinheit } from "./papier-einheit";
@@ -114,6 +115,8 @@ export type AufgabeBeleg = Pick<TaskLine, "assignmentId" | "skillId" | "skill" |
  * - `proben`: Probeschularbeiten, die in der Einheit geschrieben wurden, am Gerät oder auf Papier (lib/probeschularbeit.ts
  *   `ergebnis`): Punkte und, wenn alles bewertet ist, die Note nach dem Notenschlüssel; sie ersetzen dort die Papier-Zeile
  * - `offen`: so viele Antworten der Einheit warten noch auf die Lehrkraft (lib/zu-bewerten.ts); sie stehen in keinem Ergebnis
+ * - `knoepfe`: was die Lehrkraft mit den Knöpfen am Schritt getan hat (lib/knoepfe.ts): „Angepasst: …“ unter „Heute gemacht“,
+ *   „Lehrkraft: Thema verstanden“ als ihre Beobachtung unter „Gut verstanden“ (nie als Ergebnis)
  */
 export type AbschlussBelege = {
   aufgaben: AufgabeBeleg[];
@@ -131,6 +134,7 @@ export type AbschlussBelege = {
   papier?: PapierErgebnis[];
   proben?: ProbeZeile[];
   offen?: number;
+  knoepfe?: Pick<KnopfEintrag, "art" | "thema" | "inhalt">[];
 };
 
 /** Eine Probeschularbeit der Einheit: Punkte, Note erst wenn alles bewertet ist, sonst wie viel noch offen ist. */
@@ -317,10 +321,15 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   for (const p of belege?.proben ?? []) gemacht.push({ text: probeZeile(p), von: p.papier ? "papier" : "antworten" });
   // answers still waiting for the teacher: said once, with the way to the list; they are in no result above or below
   if (belege?.offen) gemacht.push({ text: bewertungOffenZeile(belege.offen), von: "antworten", link: { href: "#zu-bewerten", label: "Jetzt bewerten" } });
+  // the teacher's buttons at the step: what she adapted, in one line
+  const angepasst = angepasstZeile(belege?.knoepfe ?? []);
+  if (angepasst) gemacht.push({ text: angepasst, von: "anpassung" });
 
   // only what the rules show as secure (`gutVerstanden`), or what the teacher wrote; a step marked „Weiter“ proves nothing
   const regeln = belege ? gutVerstanden(belege) : null;
-  const gut = regeln ? [...regeln, ...(brief?.good ?? []).filter((l) => l.from === "lehrer").map((l) => zeile(l))] : (brief?.good ?? []).map((l) => zeile(l));
+  // „Thema verstanden“ is the teacher's decision: shown as her observation, never as a secure result
+  const verstanden = verstandenZeilen(belege?.knoepfe ?? []).map((text): KartenZeile => ({ text, von: "beobachtung" }));
+  const gut = regeln ? [...regeln, ...verstanden, ...(brief?.good ?? []).filter((l) => l.from === "lehrer").map((l) => zeile(l))] : (brief?.good ?? []).map((l) => zeile(l));
 
   // a skill with a secure result is not „noch schwierig“ only because the documentation's score was lower
   const sicherNamen = (regeln ?? []).filter((z) => z.von === "antworten").map((z) => z.text.slice(0, z.text.indexOf(":")));
@@ -473,7 +482,8 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
   const papier = papierDerEinheit(unitId).filter((p) => !p.assignmentId || !mitProbe.has(p.assignmentId));
   // the same list as „Zu bewerten“ (lib/zu-bewerten.ts): only answers, a text has its own line
   const offen = offeneAntwortenZahl(zuBewerten({ unitId }));
-  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier, proben, offen };
+  const knoepfe = knoepfeDerEinheit(unitId);
+  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier, proben, offen, knoepfe };
 }
 
 /** Die Karte einer beendeten Einheit mit allen Belegen, wie der Abschluss sie zeigt und „Bestätigen“ sie schreibt. */

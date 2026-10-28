@@ -27,6 +27,7 @@ import {
   type Merke,
 } from "@/lib/cockpit";
 import { newExerciseForUnit } from "@/lib/ai/realtime";
+import { einfacherErklaeren, einfacherMitKi, kontrolleWeglassen, sendeSchwerer, themaVerstanden, wechsleThema, weitereBeispiele } from "@/lib/knoepfe";
 import { noteActivity } from "@/lib/learning";
 import { pushLive, showOnTablet } from "@/lib/live";
 import { tagAddieren, wienerDatum } from "@/lib/planung/zeit";
@@ -289,4 +290,63 @@ export async function antwortAction(unitId: number, schrittId: number, wert: str
   const neu = isBeobachtung(wert) && s.antworten[schrittId] !== wert ? wert : null;
   setzeAntwort(unitId, schrittId, neu);
   zurueck(unitId);
+}
+
+// ---------- Lehrer-Knöpfe am Schritt (lib/knoepfe.ts) ----------
+
+/** Zurück in den Unterricht, zum Schritt; mit dem Grund oben, wenn es nicht ging. */
+function nachKnopf(unitId: number, fehler?: string): never {
+  revalidatePath(`/einheiten/${unitId}`);
+  redirect(fehler ? `/einheiten/${unitId}?cockpit=${encodeURIComponent(fehler)}` : `/einheiten/${unitId}#schritt`);
+}
+
+/** „Einfacher erklären“: ein einfacherer Text und ein neues Beispiel, ohne KI. */
+export async function einfacherAction(unitId: number, schrittId: number) {
+  const { t } = await laufendeEinheit(unitId);
+  const out = einfacherErklaeren(unitId, schrittId, t.id);
+  nachKnopf(unitId, "fehler" in out ? out.fehler : undefined);
+}
+
+/** Die einfachere Erklärung der KI, nur auf diesen Tipp und nur, wenn die KI für diesen Schüler darf. */
+export async function einfacherKiAction(unitId: number, eintragId: number) {
+  const { t } = await laufendeEinheit(unitId);
+  const out = await einfacherMitKi(unitId, eintragId, t.id);
+  nachKnopf(unitId, "fehler" in out ? out.fehler : undefined);
+}
+
+/** „Weitere Beispiele“: zwei neue durchgerechnete Beispiele, nur für den Lehrer. */
+export async function beispieleAction(unitId: number, schrittId: number) {
+  const { t } = await laufendeEinheit(unitId);
+  const out = weitereBeispiele(unitId, schrittId, t.id);
+  nachKnopf(unitId, "fehler" in out ? out.fehler : undefined);
+}
+
+/** „Senden“ in der Vorschau von „Schwerere Aufgaben“: an den Schüler dieser Einheit und auf ihr Gerät. */
+export async function schwererSendenAction(unitId: number, schrittId: number) {
+  const { t } = await laufendeEinheit(unitId);
+  const out = sendeSchwerer(unitId, schrittId, t.id);
+  if ("fehler" in out) nachKnopf(unitId, out.fehler);
+  await aufsGeraet(unitId, out);
+  nachVorschlag(unitId, { gesendet: out.worksheetId });
+}
+
+/** „Thema verstanden“: der Rest des Themas fällt weg, die kurze Lernkontrolle bleibt. */
+export async function themaVerstandenAction(unitId: number, schrittId: number) {
+  const { t } = await laufendeEinheit(unitId);
+  const out = themaVerstanden(unitId, schrittId, t.id);
+  nachKnopf(unitId, "fehler" in out ? out.fehler : undefined);
+}
+
+/** Nach „Thema verstanden“ auch die Lernkontrolle weglassen. */
+export async function kontrolleWeglassenAction(unitId: number, eintragId: number) {
+  await laufendeEinheit(unitId);
+  const out = kontrolleWeglassen(unitId, eintragId);
+  nachKnopf(unitId, "fehler" in out ? out.fehler : undefined);
+}
+
+/** „Anderes Thema“: ein Thema des Plans (`thema`) oder eine neue Fähigkeit (`skill_id`) aus der Wahl. */
+export async function anderesThemaAction(unitId: number, schrittId: number, form: FormData) {
+  const { t } = await laufendeEinheit(unitId);
+  const out = wechsleThema(unitId, schrittId, { thema: String(form.get("thema") ?? "") || null, skillId: String(form.get("skill_id") ?? "") || null }, t.id);
+  nachKnopf(unitId, "fehler" in out ? out.fehler : undefined);
 }

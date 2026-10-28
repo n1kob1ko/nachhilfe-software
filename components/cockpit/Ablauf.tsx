@@ -45,6 +45,7 @@ import { AufgabeBewertung } from "@/components/AufgabeBewertung";
 import { AnpassenBereich, AnpassungInhalt, KiGrenzeHinweis, OhnePaketAnsicht, PaketAuswahl, PaketKopf } from "@/components/cockpit/Cockpit";
 import { CockpitSenden, SchrittNotiz, VorschlagKnopf } from "@/components/cockpit/CockpitClient";
 import { DruckenKnopf } from "@/components/cockpit/DruckenKnopf";
+import { AnpassenMenue, BeispieleBlock, EinfacherBlock, KnopfPanel } from "@/components/cockpit/Knoepfe";
 import { AntwortKnoepfe, VorschlagKarte } from "@/components/cockpit/Steuerung";
 import { VorgabeKarte } from "@/components/cockpit/Vorgabe";
 import { KeinPaket } from "@/components/cockpit/Vorbereitung";
@@ -85,6 +86,7 @@ import {
 import { ausfuehrlichTor, gespeicherteErklaerung, istDuenn, schulstufeVon, type Ausfuehrlich } from "@/lib/ausfuehrlich";
 import type { TaskDraft } from "@/lib/tasks";
 import { paketWahl, zurFaehigkeit } from "@/lib/cockpit-vorschlag";
+import { knoepfeDerEinheit, type KnopfEintrag } from "@/lib/knoepfe";
 import { kostenSchaetzung } from "@/lib/lernpaket-ki";
 import { SCHRITT_ARTEN, ungeprueft, type LernpaketMitSchritten, type LernpaketSchritt } from "@/lib/lernpakete";
 import { studentDevice } from "@/lib/live";
@@ -129,6 +131,7 @@ export function Unterricht({
   werkzeugeOffen = false,
   ausfuehrlich = null,
   folien = null,
+  knopf = null,
 }: {
   unit: UnitView;
   student: repo.Student;
@@ -139,6 +142,8 @@ export function Unterricht({
   ausfuehrlich?: number | null;
   /** nach „Folien ansehen“ (lib/praesentation-unterricht.ts): der Schritt, dessen Präsentation als Text offen steht */
   folien?: number | null;
+  /** „Anpassen“ am Schritt (lib/knoepfe.ts): „schwerer“ zeigt die Vorschau, „thema“ die Wahl eines anderen Themas */
+  knopf?: string | null;
 }) {
   const c = cockpit(unit.id, { mitPlan: true });
   // die nächste Übung bereit (lib/cockpit.ts haltBereit): nach dem Antworten, ohne KI, nie beim Schüler
@@ -154,6 +159,11 @@ export function Unterricht({
   const alleThemen = c.paket ? [] : themenDesPlans(c.plan.map((s) => ({ ...s, minuten: c.minuten.get(s.id) ?? s.minuten })));
   const themen = alleThemen.filter((t) => !t.ids.every((id) => c.verschoben.has(id)));
   const naechstesMal = alleThemen.filter((t) => !themen.includes(t)).map((t) => t.name);
+  // die Lehrer-Knöpfe am Schritt (lib/knoepfe.ts): was in dieser Einheit getippt wurde; ein Thema, das der Lehrer mit „Anderes
+  // Thema“ verschoben hat, kommt nicht aus Zeitmangel auf „Nächstes Mal“
+  const knoepfe = knoepfeDerEinheit(unit.id);
+  const gewechselt = new Set(knoepfe.flatMap((e) => (e.art === "thema" ? (e.inhalt.verschoben ?? []) : [])));
+  const zeitMangel = alleThemen.filter((t) => naechstesMal.includes(t.name) && !t.ids.every((id) => gewechselt.has(id) || !c.verschoben.has(id))).length > 0;
   // was der Schüler vor dieser Einheit geschrieben hat: seine Worte, nur zum Lesen (lib/schueler-notiz.ts)
   const worte = schuelerWorte(student.id, unit.id);
   const ids = c.paket ? c.schritte.map((s) => s.id) : c.plan.map((s) => s.id);
@@ -180,18 +190,32 @@ export function Unterricht({
       {themen.length ? <ThemenZeile c={c} themen={themen} unitId={unit.id} aktuell={aktuell} /> : <Woher c={c} unitId={unit.id} />}
       {naechstesMal.length > 0 && aktuell !== null && (
         <p className="-mt-3 text-[14px] text-ink-2" data-testid="naechstes-mal">
-          <span className="font-semibold text-ink">Nächstes Mal:</span> {naechstesMal.join(", ")}. Heute reicht die Zeit nicht mehr; im Abschluss steht es unter „Weiter mit“.
+          <span className="font-semibold text-ink">Nächstes Mal:</span> {naechstesMal.join(", ")}. {zeitMangel ? "Heute reicht die Zeit nicht mehr; im" : "Im"} Abschluss steht es unter „Weiter mit“.
         </p>
       )}
       {ids.length > 1 && <Punkte c={c} ids={ids} aktuell={aktuell} unitId={unit.id} />}
       {/* Gemeinsame Bewertung (lib/zu-bewerten.ts): was in dieser Einheit auf dich wartet, als kleiner Chip, der die Liste öffnet */}
       <ZuBewertenChip zeilen={zuBewerten({ unitId: unit.id })} />
       {c.paket && c.aktuell ? (
-        <SchrittKarte c={c} s={c.aktuell} paket={c.paket} unit={unit} name={name} liste={liste} vorschlag={imSchritt} laeufe={laeufe} folienOffen={folien === c.aktuell.id} />
+        <SchrittKarte c={c} s={c.aktuell} paket={c.paket} unit={unit} name={name} liste={liste} vorschlag={imSchritt} laeufe={laeufe} folienOffen={folien === c.aktuell.id} knoepfe={knoepfe} knopf={knopf} />
       ) : c.planAktuell && quelle ? (
-        <SchrittKarte c={c} s={{ ...quelle.schritt, id: c.planAktuell.id, minuten: c.minuten.get(c.planAktuell.id) ?? c.planAktuell.minuten }} echteId={quelle.schritt.id} thema={c.planAktuell.thema} paket={quelle.paket} unit={unit} name={name} liste={liste} vorschlag={imSchritt} laeufe={laeufe} folienOffen={folien === c.planAktuell.id} />
+        <SchrittKarte
+          c={c}
+          s={{ ...quelle.schritt, id: c.planAktuell.id, minuten: c.minuten.get(c.planAktuell.id) ?? c.planAktuell.minuten }}
+          echteId={quelle.schritt.id}
+          thema={c.planAktuell.thema}
+          paket={quelle.paket}
+          unit={unit}
+          name={name}
+          liste={liste}
+          vorschlag={imSchritt}
+          laeufe={laeufe}
+          folienOffen={folien === c.planAktuell.id}
+          knoepfe={knoepfe}
+          knopf={knopf}
+        />
       ) : !c.paket && c.planAktuell ? (
-        <PlanKarte c={c} s={c.planAktuell} unit={unit} student={student} vorschlag={imSchritt} laeufe={laeufe} ausfuehrlichOffen={ausfuehrlich === c.planAktuell.id} folienOffen={folien === c.planAktuell.id} />
+        <PlanKarte c={c} s={c.planAktuell} unit={unit} student={student} vorschlag={imSchritt} laeufe={laeufe} ausfuehrlichOffen={ausfuehrlich === c.planAktuell.id} folienOffen={folien === c.planAktuell.id} knoepfe={knoepfe} knopf={knopf} />
       ) : ids.length > 0 ? (
         <AllesDurch c={c} unitId={unit.id} naechstesMal={naechstesMal} />
       ) : (
@@ -332,7 +356,7 @@ function Punkte({ c, ids, aktuell, unitId }: { c: CockpitDaten; ids: number[]; a
           const an = id === aktuell;
           // open, but its topic moved to next time: grey like a skipped one
           const spaeter = st === "offen" && c.verschoben.has(id);
-          const status = spaeter ? "nächstes Mal" : STATUS[st];
+          const status = spaeter ? "nächstes Mal" : c.nichtNoetig.has(id) ? "nicht nötig, Thema verstanden" : STATUS[st];
           return (
             <li key={id}>
               <form action={zeigeSchrittAction.bind(null, unitId, id)}>
@@ -527,8 +551,8 @@ function KartenKopf({ c, id, titel, minuten, art, ids, thema }: { c: CockpitDate
   );
 }
 
-/** Weiter, Wiederholen, Schüler versteht es nicht: für einen Schritt des Pakets wie des Plans. */
-function Knoepfe({ unitId, id, weiterHaupt }: { unitId: number; id: number; weiterHaupt: boolean }) {
+/** Weiter, Wiederholen, Schüler versteht es nicht: für einen Schritt des Pakets wie des Plans; dahinter „Anpassen“ (`children`). */
+function Knoepfe({ unitId, id, weiterHaupt, children }: { unitId: number; id: number; weiterHaupt: boolean; children?: React.ReactNode }) {
   return (
     <div className="btn-reihe mt-5 grid gap-2 sm:flex sm:flex-wrap sm:items-center" data-testid="schritt-knoepfe">
       <form action={markiereSchrittAction.bind(null, unitId, id, "erledigt")}>
@@ -546,6 +570,7 @@ function Knoepfe({ unitId, id, weiterHaupt }: { unitId: number; id: number; weit
           <HelpCircle size={18} aria-hidden /> Schüler versteht es nicht
         </button>
       </form>
+      {children}
     </div>
   );
 }
@@ -619,6 +644,8 @@ function SchrittKarte({
   echteId = s.id,
   thema = null,
   folienOffen = false,
+  knoepfe = [],
+  knopf = null,
 }: {
   c: CockpitDaten;
   s: LernpaketSchritt;
@@ -631,6 +658,8 @@ function SchrittKarte({
   echteId?: number;
   thema?: string | null;
   folienOffen?: boolean;
+  knoepfe?: KnopfEintrag[];
+  knopf?: string | null;
 }) {
   const unitId = unit.id;
   const ids = c.paket ? c.schritte.map((x) => x.id) : c.plan.map((x) => x.id);
@@ -657,8 +686,11 @@ function SchrittKarte({
   const mitAufgaben = new Set(c.paket ? c.schritte.filter((x) => x.aufgaben.length > 0).map((x) => x.id) : c.plan.filter((x) => planHatUebung(x, c.planQuellen)).map((x) => x.id));
   const sprungId = ersteUebung(ids, c.stand, s.id, (id) => mitAufgaben.has(id), uebungGesendet(unitId));
   const sprung = sprungId === null ? null : ([...c.schritte, ...c.plan].find((x) => x.id === sprungId) ?? null);
+  // „Anpassen“ (lib/knoepfe.ts): was zu diesem Schritt getippt wurde
+  const einfacher = knoepfe.filter((e) => e.art === "einfacher" && e.schrittId === s.id);
+  const beispiele = knoepfe.filter((e) => e.art === "beispiele" && e.schrittId === s.id);
   return (
-    <section className="panel px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
+    <section id="schritt" className="panel scroll-mt-4 px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
       <KartenKopf c={c} id={s.id} titel={s.titel} minuten={s.minuten} ids={ids} thema={thema} art={<Pill tone={s.art === "kontrolle" ? "green" : s.art === "zusatz" ? "amber" : "accent"}>{SCHRITT_ARTEN[s.art]}</Pill>} />
       <div className="mt-4 grid gap-4">
         {s.lehrer_sagt.trim() && (
@@ -666,8 +698,10 @@ function SchrittKarte({
             <LangText text={s.lehrer_sagt} />
           </Block>
         )}
+        <EinfacherBlock eintraege={einfacher} unitId={unitId} studentId={unit.student_id} />
         {/* „Das zeigst du“: die Folie des Pakets, eine passende Präsentation oder „Präsentation erstellen“ (lib/praesentation-unterricht.ts), darunter mitgebrachte Unterlagen */}
         <PraesentationSchritt c={c} unitId={unitId} schrittId={s.id} folienOffen={folienOffen} />
+        <BeispieleBlock eintraege={beispiele} />
         {s.lehrer_fragt.trim() && (
           <Block titel="Das fragst du">
             <p className="text-[18px] leading-relaxed whitespace-pre-line">{s.lehrer_fragt}</p>
@@ -727,7 +761,10 @@ function SchrittKarte({
 
       <LoesungReveal aufgaben={s.aufgaben} fehler={loesungSkill ? zurFaehigkeit(loesungSkill).typischeFehler : []} hintergrund={hintergrundZu(loesungSkill, [paket.ziel, s.aufgaben.find((a) => a.teacherNote?.trim())?.teacherNote])} />
 
-      <Knoepfe unitId={unitId} id={s.id} weiterHaupt={schreiben ? Boolean(laeuft) : s.aufgaben.length === 0 || gesendet > 0 || Boolean(gedruckt)} />
+      <Knoepfe unitId={unitId} id={s.id} weiterHaupt={schreiben ? Boolean(laeuft) : s.aufgaben.length === 0 || gesendet > 0 || Boolean(gedruckt)}>
+        <AnpassenMenue unitId={unitId} schrittId={s.id} skill={Boolean(loesungSkill)} thema={c.paket ? true : Boolean(thema)} />
+      </Knoepfe>
+      <KnopfPanel c={c} unitId={unitId} schrittId={s.id} knopf={knopf} eintraege={knoepfe} name={name} />
     </section>
   );
 }
@@ -819,6 +856,8 @@ function PlanKarte({
   laeufe,
   ausfuehrlichOffen,
   folienOffen,
+  knoepfe = [],
+  knopf = null,
 }: {
   c: CockpitDaten;
   s: PlanStep;
@@ -828,6 +867,8 @@ function PlanKarte({
   laeufe: TextLauf[];
   ausfuehrlichOffen: boolean;
   folienOffen: boolean;
+  knoepfe?: KnopfEintrag[];
+  knopf?: string | null;
 }) {
   const ids = c.plan.map((x) => x.id);
   const name = first(student.name);
@@ -884,10 +925,13 @@ function PlanKarte({
   const kontrolleLabel = skill?.id === EIGENE_VOKABELN ? "Lernkontrolle senden" : `Lernkontrolle senden (${KONTROLLE_ANZAHL} Aufgaben)`;
   // „Das zeigst du“ also holds the documents the teacher brought that explain this topic (lib/unterlagen-unterricht.ts)
   const unterlagen = unterlagenImSchritt(unit.id, s.id, c);
+  // „Anpassen“ (lib/knoepfe.ts): was zu diesem Schritt getippt wurde
+  const einfacher = knoepfe.filter((e) => e.art === "einfacher" && e.schrittId === s.id);
+  const beispiele = knoepfe.filter((e) => e.art === "beispiele" && e.schrittId === s.id);
   return (
-    <section className="panel px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
+    <section id="schritt" className="panel scroll-mt-4 px-4 py-4 sm:px-6 sm:py-5" aria-label="Aktueller Schritt" data-testid="cockpit-schritt">
       <KartenKopf c={c} id={s.id} titel={s.titel} minuten={c.minuten.get(s.id) ?? s.minuten} ids={ids} thema={s.thema} />
-      {(s.beschreibung.trim() || f.sagt || f.zeigt || f.fragt || ausGespeichert || ausKnopf || unterlagen.length > 0) && (
+      {(s.beschreibung.trim() || f.sagt || f.zeigt || f.fragt || ausGespeichert || ausKnopf || unterlagen.length > 0 || einfacher.length > 0 || beispiele.length > 0) && (
         <div className="mt-4 grid gap-4">
           {s.beschreibung.trim() && (
             <Block titel="Das machst du">
@@ -900,6 +944,7 @@ function PlanKarte({
               {ausGespeichert?.sagt && <p className="mt-1 text-[12.5px] text-ink-3">Ausführlich erklärt, von der KI geschrieben. Gespeichert für diese Fähigkeit und die {stufe}. Schulstufe.</p>}
             </Block>
           )}
+          <EinfacherBlock eintraege={einfacher} unitId={unit.id} studentId={student.id} />
           {ausGespeichert && ausSkill ? (
             <AusfuehrlichBlock a={ausGespeichert} offen={ausfuehrlichOffen} mathe={ausSkill.subject === "Mathematik"} />
           ) : (
@@ -928,6 +973,7 @@ function PlanKarte({
           )}
           {/* Erklären und Grundlage: eine passende Präsentation oder „Präsentation erstellen“ (lib/praesentation-unterricht.ts) */}
           <PraesentationSchritt c={c} unitId={unit.id} schrittId={s.id} folienOffen={folienOffen} titel={f.zeigt ? "Mit Präsentation zeigen" : "Das zeigst du"} unterlagen={unterlagen} />
+          <BeispieleBlock eintraege={beispiele} />
           {f.fragt && (
             <Block titel="Das fragst du">
               <p className="text-[18px] leading-relaxed whitespace-pre-line">{f.fragt}</p>
@@ -997,7 +1043,10 @@ function PlanKarte({
       {zurPruefung && <SchreibauftragStart start={zurPruefung} laeuft={laeuft} haupt={false} />}
       {sprung && <ZurErstenUebung unitId={unit.id} id={sprung.id} titel={sprung.titel} nr={ids.indexOf(sprung.id) + 1} />}
       <LoesungReveal aufgaben={aufgaben} fehler={skillId ? zurFaehigkeit(skillId).typischeFehler : []} hintergrund={hintergrundZu(skillId, [aufgaben.find((a) => a.teacherNote?.trim())?.teacherNote])} />
-      <Knoepfe unitId={unit.id} id={s.id} weiterHaupt={eigen ? Boolean(laeuft) : !(blatt || skill) || gesendet > 0 || Boolean(gedruckt)} />
+      <Knoepfe unitId={unit.id} id={s.id} weiterHaupt={eigen ? Boolean(laeuft) : !(blatt || skill) || gesendet > 0 || Boolean(gedruckt)}>
+        <AnpassenMenue unitId={unit.id} schrittId={s.id} skill={Boolean(s.skillId)} thema={Boolean(s.thema || s.skillId)} />
+      </Knoepfe>
+      <KnopfPanel c={c} unitId={unit.id} schrittId={s.id} knopf={knopf} eintraege={knoepfe} name={name} />
     </section>
   );
 }
@@ -1033,7 +1082,8 @@ function PapierLink({ unitId, worksheetId }: { unitId: number; worksheetId: numb
 
 /** Alle Schritte erledigt oder übersprungen: jetzt die Einheit beenden. */
 function AllesDurch({ c, unitId, naechstesMal }: { c: CockpitDaten; unitId: number; naechstesMal: string[] }) {
-  const liste: { id: number; titel: string }[] = c.paket ? c.schritte : c.plan;
+  // what „Thema verstanden“ left out is not „übersprungen“
+  const liste: { id: number; titel: string }[] = (c.paket ? c.schritte : c.plan).filter((s) => !c.nichtNoetig.has(s.id));
   const e = ergebnis(liste, liste.map((s) => s.id), c.stand);
   return (
     <section className="panel px-5 py-5" aria-label="Alles durch" data-testid="alles-durch">

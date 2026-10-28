@@ -13,13 +13,13 @@ import { ACTION_LABEL } from "./ai/labels";
 import { aiEnabled, budgetUsedUp, schuelerGestoppt } from "./ai/router";
 import { grenzeErreichtText } from "./ai/schueler-kosten";
 import { aufgabeSchluessel, ausgeblendet } from "./bewertungen";
-import { aufgabeFuerSchueler, paketImSchritt, reagiert, type CockpitDaten } from "./cockpit";
+import { aufgabeFuerSchueler, gleicheFrage, knopfBeispielFragen, paketImSchritt, reagiert, type CockpitDaten } from "./cockpit";
 import { zurFaehigkeit } from "./cockpit-vorschlag";
 import { DIFFICULTIES, levelOf } from "./curriculum";
 import { db } from "./db";
 import { correctionTask, generateBuiltIn, hasBuiltInGenerator } from "./generators";
 import { prerequisitesOf } from "./lehrplan";
-import { alsEntwurf, NUTZBAR_SQL } from "./material-passt";
+import { alsEntwurf, NUTZBAR_SQL, oberfaehigkeit, passtZurFaehigkeit } from "./material-passt";
 import { wienerDatum } from "./planung/zeit";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
@@ -149,16 +149,17 @@ function schonGesendet(unitId: number): Set<string> {
  * A: vorhandene Aufgaben zur Fähigkeit und Stufe, höchstens `ANZAHL`: zuerst aus den Schritten des Lernpakets der Einheit,
  * dann aus freigegebenen Übungen (allgemeine oder die des Schülers, nie das Blatt eines anderen Schülers: lib/material-passt.ts)
  * und der Bibliothek, je Aufgabe genau dieser Fähigkeit. Nicht, was in dieser Einheit schon gesendet wurde, nichts schlecht
- * Bewertetes, nichts mit „Bitte prüfen“.
+ * Bewertetes, nichts mit „Bitte prüfen“, kein Beispiel, das die Lehrer-Knöpfe schon gezeigt haben (lib/knoepfe.ts).
  */
 export function bestand(unitId: number, o: Pick<Option, "skillId" | "level">, c?: Partial<Pick<CockpitDaten, "paket" | "planAktuell" | "planQuellen">>): TaskDraft[] {
   const unit = getUnit(unitId);
   if (!unit || !o.skillId || !o.level) return [];
   const weg = new Set([...schonGesendet(unitId), ...ausgeblendet()]);
+  const gezeigt = new Set(knopfBeispielFragen(unitId));
   const out: TaskDraft[] = [];
   const nimm = (t: TaskDraft) => {
     const k = aufgabeSchluessel(t);
-    if (out.length >= ANZAHL || weg.has(k) || t.data?.pruefen?.length) return;
+    if (out.length >= ANZAHL || weg.has(k) || t.data?.pruefen?.length || gezeigt.has(gleicheFrage(t))) return;
     weg.add(k);
     out.push(t);
   };
@@ -188,24 +189,30 @@ export function bestand(unitId: number, o: Pick<Option, "skillId" | "level">, c?
 /** Kann ein eingebauter Generator (oder eine Bank) Aufgaben dafür bauen? Für „Aufgabe zu diesem Fehler“: Fehler korrigieren. */
 export const generatorKann = (o: Pick<Option, "art" | "skillId">) => Boolean(o.skillId) && (o.art === "fehler" ? correctionTask(o.skillId!, "mittel") !== null : hasBuiltInGenerator(o.skillId!));
 
-/** B: neue Aufgaben aus den Generatoren, ohne KI; nicht schlecht bewertete und keine, die schon gesendet waren. */
-export function ausGenerator(unitId: number, o: Pick<Option, "art" | "skillId" | "level">): TaskDraft[] {
+/**
+ * B: neue Aufgaben aus den Generatoren, ohne KI; nur Aufgaben genau dieser Fähigkeit (oder einer Teilfähigkeit), nicht schlecht
+ * bewertete, keine, die schon gesendet waren, und kein Beispiel der Lehrer-Knöpfe. `seed`: dieselben Aufgaben in Vorschau und
+ * Senden (lib/knoepfe.ts „Schwerere Aufgaben“).
+ */
+export function ausGenerator(unitId: number, o: Pick<Option, "art" | "skillId" | "level">, seed?: number): TaskDraft[] {
   const unit = getUnit(unitId);
   const student = unit ? repo.getStudent(unit.student_id) : null;
   const skill = o.skillId ? repo.getSkill(o.skillId) : null;
   if (!student || !skill || !o.level) return [];
   const difficulty = DIFFICULTIES[Math.max(1, Math.min(5, o.level)) - 1];
   const weg = new Set([...schonGesendet(unitId), ...ausgeblendet()]);
+  const gezeigt = new Set(knopfBeispielFragen(unitId));
   const roh =
     o.art === "fehler"
       ? Array.from({ length: ANZAHL * 4 }, () => correctionTask(skill.id, difficulty)).filter((t): t is TaskDraft => t !== null)
-      : generateBuiltIn({ subject: skill.subject, skills: [{ id: skill.id, name: skill.name }], difficulty, count: ANZAHL * 2, taskType: "mixed", grade: schulstufe(student.school_type, student.klasse ?? 1) });
+      : generateBuiltIn({ subject: skill.subject, skills: [{ id: skill.id, name: skill.name }], difficulty, count: ANZAHL * 2, taskType: "mixed", grade: schulstufe(student.school_type, student.klasse ?? 1), seed });
   const out: TaskDraft[] = [];
   for (const t of roh) {
     const k = aufgabeSchluessel(t);
-    if (weg.has(k)) continue;
+    const mit = { ...t, skillId: t.skillId ?? skill.id };
+    if (weg.has(k) || gezeigt.has(gleicheFrage(t)) || !passtZurFaehigkeit(mit, skill.id, oberfaehigkeit)) continue;
     weg.add(k);
-    out.push({ ...t, skillId: t.skillId ?? skill.id, difficulty: t.difficulty ?? difficulty });
+    out.push({ ...mit, difficulty: t.difficulty ?? difficulty });
     if (out.length >= ANZAHL) break;
   }
   return out;
@@ -314,10 +321,16 @@ function zusatzHinweis(unitId: number, assignmentId: number | null): string | nu
 const TITEL: Partial<Record<Art, string>> = { voraussetzung: "Grundlage" };
 
 /**
- * Eine Aufgabe zum Vorschlag an den Schüler dieser Einheit: aus A, sonst aus B. Danach zählt für den nächsten Vorschlag
- * nur, was der Schüler ab jetzt antwortet (`reagiert`).
+ * Eine Aufgabe zum Vorschlag an den Schüler dieser Einheit: aus A, sonst aus B (mit `seed` dieselben wie in der Vorschau). Danach
+ * zählt für den nächsten Vorschlag nur, was der Schüler ab jetzt antwortet (`reagiert`).
  */
-export function sendeAngepasst(unitId: number, o: Option, teacherId: number | null, c?: Partial<Pick<CockpitDaten, "paket" | "planAktuell" | "planQuellen">>): { worksheetId: number; assignmentId: number; quelle: "A" | "B" } | { fehler: string } {
+export function sendeAngepasst(
+  unitId: number,
+  o: Option,
+  teacherId: number | null,
+  c?: Partial<Pick<CockpitDaten, "paket" | "planAktuell" | "planQuellen">>,
+  seed?: number,
+): { worksheetId: number; assignmentId: number; quelle: "A" | "B" } | { fehler: string } {
   const unit = getUnit(unitId);
   if (!unit || unit.status !== "gestartet") return { fehler: "Diese Einheit läuft nicht mehr." };
   const student = repo.getStudent(unit.student_id);
@@ -327,7 +340,7 @@ export function sendeAngepasst(unitId: number, o: Option, teacherId: number | nu
   let tasks = bestand(unitId, o, c);
   if (!tasks.length) {
     quelle = "B";
-    tasks = generatorKann(o) ? ausGenerator(unitId, o) : [];
+    tasks = generatorKann(o) ? ausGenerator(unitId, o, seed) : [];
   }
   if (!tasks.length) return { fehler: "Dazu gibt es gerade keine passende Aufgabe ohne KI." };
   const difficulty = DIFFICULTIES[o.level - 1];

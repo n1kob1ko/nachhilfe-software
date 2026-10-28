@@ -33,7 +33,7 @@ import type { TaskDraft } from "./tasks";
 import { EIGENE_VOKABELN } from "./vokabeln";
 import { getUnit, platzFuerEinheit } from "./units";
 import { zeitfenster } from "./planung/heute";
-import { KONTROLLE_ANZAHL, neuTakten, schritteZurFaehigkeit, stundenplanFuer, themenDesPlans, type PlanArt, type SchrittQuelle, type Takt } from "./stundenplan";
+import { KONTROLLE_ANZAHL, neuTakten, schritteZurFaehigkeit, stundenplanFuer, THEMA_REST_MIN, themenDesPlans, type PlanArt, type SchrittQuelle, type Takt } from "./stundenplan";
 import { vorschlagErlauben, type Passung, type Signal } from "./vorbereitung-auto";
 
 /** Höchstlänge einer Notiz je Schritt. */
@@ -123,7 +123,9 @@ const REAKTIONEN_MAX = 50;
  * Abschluss oder ein Schritt eines Pakets), `thema` (das Thema, zu dem er gehört; null bei Einstieg und Abschluss),
  * `quelle` (der Schritt eines geprüften Pakets oder die Fähigkeit) und `pruefung` (Üben zum Thema der nahen Prüfung). Ein
  * früher festgehaltener Plan hat sie nicht und läuft wie bisher. `vorlaeufig`: der Block eines Punkts der Vorgabe, der noch zu
- * bestätigen ist (seine Wörter); ohne Übung, zählt nicht für Lernstand und Dokumentation (`ersetzeVorlaeufige`).
+ * bestätigen ist (seine Wörter); ohne Übung, zählt nicht für Lernstand und Dokumentation (`ersetzeVorlaeufige`). `zusatz`: mit
+ * „Anderes Thema“ während der Einheit eingeschoben (lib/knoepfe.ts); seine Minuten kommen vom verschobenen Thema und machen die
+ * Einheit nicht länger (`mitTakt`).
  */
 export type PlanStep = {
   id: number;
@@ -137,6 +139,7 @@ export type PlanStep = {
   quelle?: SchrittQuelle | null;
   pruefung?: boolean;
   vorlaeufig?: string;
+  zusatz?: boolean;
 };
 
 /** Der Schritt eines Pakets, auf den ein Planschritt zeigt, oder null. */
@@ -466,6 +469,8 @@ export type CockpitDaten = {
   minuten: Map<number, number>;
   /** im Plan: offene Schritte, die auf „Nächstes Mal“ verschoben sind (zu wenig Zeit heute) */
   verschoben: Set<number>;
+  /** nach „Thema verstanden“ (lib/knoepfe.ts) weggelassene Schritte: übersprungen, aber nicht zum Wiederholen */
+  nichtNoetig: Set<number>;
 };
 
 /** Die Pakete und Schritte, auf die Planschritte zeigen (je Paket eine Abfrage). */
@@ -526,13 +531,24 @@ export function cockpit(unitId: number, o: { mitPlan?: boolean } = {}): CockpitD
     const ab = new Map(plan.map((s) => [s.id, takt?.ab[s.id] ?? geplantAb.get(s.id)!] as const).filter((e) => !takt?.verschoben.includes(e[0])));
     const minuten = new Map(plan.map((s) => [s.id, takt?.minuten[s.id] ?? s.minuten]));
     const verschoben = new Set((takt?.verschoben ?? []).filter((x) => nichtFertig(stand, x)));
-    return { stand, paket: null, schritte: [], aktuell: null, ab, plan, planAktuell: id === null ? null : byId.get(id)!, planQuellen: quellenVon(plan), minuten, verschoben };
+    return { stand, paket: null, schritte: [], aktuell: null, ab, plan, planAktuell: id === null ? null : byId.get(id)!, planQuellen: quellenVon(plan), minuten, verschoben, nichtNoetig: nichtNoetigeSchritte(stand) };
   }
   const order = ablauf(paket.schritte, stand.reihenfolge);
   const byId = new Map(paket.schritte.map((s) => [s.id, s]));
   const schritte = order.map((id) => byId.get(id)!);
   const id = aktuellerSchritt(order, stand);
-  return { stand, paket, schritte, aktuell: id === null ? null : byId.get(id)!, ab: minutenAb(schritte), plan: [], planAktuell: null, planQuellen: new Map(), minuten: new Map(schritte.map((s) => [s.id, s.minuten])), verschoben: new Set() };
+  return { stand, paket, schritte, aktuell: id === null ? null : byId.get(id)!, ab: minutenAb(schritte), plan: [], planAktuell: null, planQuellen: new Map(), minuten: new Map(schritte.map((s) => [s.id, s.minuten])), verschoben: new Set(), nichtNoetig: nichtNoetigeSchritte(stand) };
+}
+
+/**
+ * Die Schritte, die „Thema verstanden“ (lib/knoepfe.ts) weggelassen hat und die noch übersprungen sind: sie zählen im Abschluss
+ * weder als übersprungen (zum Wiederholen) noch als nicht erreicht. Öffnet der Lehrer einen wieder, gilt er wieder.
+ */
+export function nichtNoetigeSchritte(s: Pick<Stand, "unit_id" | "uebersprungen">): Set<number> {
+  if (!s.uebersprungen.length) return new Set();
+  const rows = db().prepare("SELECT inhalt FROM einheit_knoepfe WHERE unit_id = ? AND art = 'verstanden'").all(s.unit_id) as { inhalt: string }[];
+  const weg = rows.flatMap((r) => json<{ schritte?: number[] }>(r.inhalt, {}).schritte ?? []);
+  return new Set(weg.filter((id) => s.uebersprungen.includes(id)));
 }
 
 /** Ein Lernpaket für die Einheit wählen (null: ohne Lernpaket). Ein anderes Paket fängt von vorne an. */
@@ -628,7 +644,8 @@ function mitTakt(unit: { id: number; started_at: string } | null, s: Stand, orde
   if (s.paket_id || !s.plan?.length || !unit) return s;
   const byId = new Map(s.plan.map((x) => [x.id, x]));
   const schritte = order.map((id) => byId.get(id)!).map((x) => ({ id: x.id, minuten: x.minuten, thema: x.thema ?? null, kontrolle: frageArtVon(x) === "kontrolle" }));
-  const { jetzt, rest } = zeitDerEinheit(unit, s.plan.reduce((a, x) => a + x.minuten, 0), now);
+  // a block put in with „Anderes Thema“ takes the minutes of the topic it replaced: the unit gets no longer
+  const { jetzt, rest } = zeitDerEinheit(unit, s.plan.reduce((a, x) => a + (x.zusatz ? 0 : x.minuten), 0), now);
   const takt = neuTakten(schritte, { fertig: [...s.erledigt, ...s.uebersprungen], aktuell: aktuellerSchritt(order, s), jetzt, rest, vorher: s.takt });
   return { ...s, takt };
 }
@@ -775,6 +792,67 @@ export const verschiebeSchritt = (unitId: number, schrittId: number, richtung: -
     const reihenfolge = verschiebe(order, schrittId, richtung);
     return mitTakt(getUnit(unitId), { ...s, reihenfolge }, reihenfolge);
   });
+
+/**
+ * „Thema verstanden“ (lib/knoepfe.ts): die Schritte `ids` werden übersprungen (der Rest des Themas, nicht seine kurze
+ * Lernkontrolle), auf dem Schirm steht danach `danach` (sonst der nächste offene Schritt), und der Rest wird neu getaktet: früher
+ * fertig, nie länger als geplant. Ein Zeichen des Lehrers zum Schritt gilt danach nicht mehr.
+ */
+export const ueberspringeSchritte = (unitId: number, schrittId: number, ids: number[], danach: number | null = null) =>
+  mitSchritt(unitId, schrittId, (s, order) => {
+    const weg = ids.filter((id) => order.includes(id));
+    const neu = { ...s, erledigt: s.erledigt.filter((x) => !weg.includes(x)), uebersprungen: [...new Set([...s.uebersprungen, ...weg])], steuerung: { ...s.steuerung, signal: null } };
+    const aktuell = danach !== null && order.includes(danach) && istOffen(neu, danach) ? danach : naechsterOffener(order, neu, schrittId);
+    return mitTakt(getUnit(unitId), { ...neu, aktuell }, order);
+  });
+
+/** Wohin „Anderes Thema“ wechselt: ein anderes Thema des Plans, oder eine neue Fähigkeit als Block mit Erklären, Üben, Lernkontrolle. */
+export type ThemaZiel = { thema: string } | { skillId: string; name: string };
+
+/**
+ * „Anderes Thema“ im Plan (lib/knoepfe.ts): die offenen Schritte des Themas auf dem Schirm kommen auf „Nächstes Mal“
+ * (`takt.verschoben`, nichts wird gelöscht), dann steht der erste offene Schritt des gewählten Themas auf dem Schirm. Eine neue
+ * Fähigkeit wird als Block nach dem alten Thema eingeschoben (`zusatz`), mit den Minuten, die das alte Thema frei macht (mindestens
+ * 10). Der Rest wird neu getaktet, nie länger als geplant. Nur im Plan, nicht mit einem eigens gewählten Lernpaket.
+ */
+export function anderesThema(unitId: number, schrittId: number, ziel: ThemaZiel): { ok: true; verschoben: number[]; ziel: number; von: string | null } | { fehler: string } {
+  const vorher = leseStand(unitId);
+  if (vorher.paket_id) return { fehler: "Mit einem gewählten Lernpaket geht das unter „Weitere Werkzeuge“: anderes Lernpaket wählen." };
+  let out: { verschoben: number[]; ziel: number; von: string | null } | null = null;
+  const ok = mitSchritt(unitId, schrittId, (s, order) => {
+    const plan = s.plan ?? [];
+    const jetzt = plan.find((x) => x.id === schrittId);
+    const von = jetzt?.thema ?? null;
+    const imPlan = (x: PlanStep) => x.thema === ("thema" in ziel ? ziel.thema : null);
+    if ("thema" in ziel && (!plan.some(imPlan) || ziel.thema === von)) return s;
+    if ("skillId" in ziel && plan.some((x) => x.thema === ziel.name || (x.skillId === ziel.skillId && x.art !== "grundlage"))) return s;
+    const weg = von ? order.filter((id) => plan.find((x) => x.id === id)?.thema === von && nichtFertig(s, id)) : [];
+    let neuPlan = plan;
+    let neuOrder = order;
+    let reihenfolge = s.reihenfolge;
+    if ("skillId" in ziel) {
+      const frei = weg.reduce((a, id) => a + (plan.find((x) => x.id === id)?.minuten ?? 0), 0);
+      let neueId = Math.min(...plan.map((x) => x.id)) - 1;
+      const block = schritteZurFaehigkeit(ziel.skillId, Math.max(THEMA_REST_MIN, frei)).map((r) => ({ ...r, id: neueId--, zusatz: true }));
+      // after the last step of the old topic (or the step on screen), in the plan and in the unit's order
+      const letzte = [...order].reverse().find((id) => von !== null && plan.find((x) => x.id === id)?.thema === von) ?? schrittId;
+      const nach = <T>(xs: T[], i: number, neu: T[]) => [...xs.slice(0, i + 1), ...neu, ...xs.slice(i + 1)];
+      neuOrder = nach(order, order.indexOf(letzte), block.map((x) => x.id));
+      neuPlan = nach(plan, plan.findIndex((x) => x.id === letzte), block);
+      reihenfolge = neuOrder;
+    }
+    const zielId = neuOrder.find((id) => {
+      const x = neuPlan.find((p) => p.id === id);
+      return x && nichtFertig(s, id) && ("thema" in ziel ? x.thema === ziel.thema : x.zusatz && x.skillId === ziel.skillId);
+    });
+    if (zielId === undefined) return s;
+    const takt: Takt = { minuten: s.takt?.minuten ?? {}, ab: s.takt?.ab ?? {}, verschoben: [...new Set([...(s.takt?.verschoben ?? []), ...weg])] };
+    out = { verschoben: weg, ziel: zielId, von };
+    return mitTakt(getUnit(unitId), { ...s, plan: neuPlan, reihenfolge, aktuell: zielId, takt, steuerung: { ...s.steuerung, signal: null } }, neuOrder);
+  });
+  if (!ok) return { fehler: "Dieser Schritt gehört nicht zum Plan der Einheit." };
+  return out ? { ok: true, ...(out as { verschoben: number[]; ziel: number; von: string | null }) } : { fehler: "Zu diesem Thema gibt es nichts Offenes." };
+}
 
 export function setzeNotiz(unitId: number, schrittId: number, text: string): boolean {
   const t = text.replace(/\r\n/g, "\n").trim().slice(0, NOTIZ_MAX);
@@ -939,21 +1017,28 @@ export function dokumentiereAblauf(lessonId: number, unitId: number): DokuTexte 
  */
 export type AblaufDerEinheit = { art: "paket" | "plan"; titel: string; ergebnis: Ergebnis<{ id: number; titel: string }>; themen?: string[]; schritte?: number };
 
-/** Was mit dem Lernpaket oder dem „Plan für heute“ einer Einheit geschah, nach dem gespeicherten Stand. */
+/**
+ * Was mit dem Lernpaket oder dem „Plan für heute“ einer Einheit geschah, nach dem gespeicherten Stand. Was „Thema verstanden“
+ * weggelassen hat (`nichtNoetigeSchritte`), zählt nicht: weder übersprungen noch nicht erreicht.
+ */
 function ablaufVon(s: Stand): AblaufDerEinheit | null {
+  const weg = nichtNoetigeSchritte(s);
   const p = s.paket_id ? getLernpaket(s.paket_id) : null;
-  if (p) return { art: "paket", titel: p.title, ergebnis: ergebnis(p.schritte, ablauf(p.schritte, s.reihenfolge), s) };
-  return ablaufDesPlans(s);
+  if (p) {
+    const schritte = p.schritte.filter((x) => !weg.has(x.id));
+    return { art: "paket", titel: p.title, ergebnis: ergebnis(schritte, ablauf(schritte, s.reihenfolge), s) };
+  }
+  return ablaufDesPlans(s, weg);
 }
 
 /**
  * Der „Plan für die ganze Einheit“ nach dem gespeicherten Stand. Ein Schritt, in dem Übungen gesendet wurden oder für den
  * eine Antwort getippt ist, wurde gemacht, auch ohne „Weiter“ (etwa die Lernkontrolle vor „Einheit beenden“). Einstieg und
  * Abschluss rahmen die Einheit und sind nie „Weiter mit“; ein Thema, von dem nichts erreicht wurde, steht dort als ein Name. Ein
- * vorläufiger Block (noch zu bestätigen) zählt nicht.
+ * vorläufiger Block (noch zu bestätigen) zählt nicht, ebenso wenig, was „Thema verstanden“ weggelassen hat (`nichtNoetig`).
  */
-export function ablaufDesPlans(roh: Pick<Stand, "plan" | "reihenfolge" | "erledigt" | "uebersprungen" | "wiederholt" | "nichtVerstanden" | "gesendet" | "antworten">): AblaufDerEinheit | null {
-  const s = { ...roh, plan: roh.plan?.filter((x) => !x.vorlaeufig) ?? null };
+export function ablaufDesPlans(roh: Pick<Stand, "plan" | "reihenfolge" | "erledigt" | "uebersprungen" | "wiederholt" | "nichtVerstanden" | "gesendet" | "antworten">, nichtNoetig: Set<number> = new Set()): AblaufDerEinheit | null {
+  const s = { ...roh, plan: roh.plan?.filter((x) => !x.vorlaeufig && !nichtNoetig.has(x.id)) ?? null };
   if (!s.plan?.length) return null;
   const getan = s.plan.filter((x) => !s.uebersprungen.includes(x.id) && (s.gesendet[x.id]?.length || s.antworten[x.id])).map((x) => x.id);
   const st = { ...s, erledigt: [...new Set([...s.erledigt, ...getan])] };
@@ -1395,30 +1480,31 @@ export function aufgabenImSchritt(unitId: number, s: Pick<PlanStep, "id" | "uebu
 }
 
 /** Übt die Aufgabe die Fähigkeit (oder ihre Ober- oder eine Teilfähigkeit)? Eine Aufgabe ohne Fähigkeit zählt dazu. */
-function uebtFaehigkeit(t: Pick<TaskDraft, "skillId" | "skillIds">, skillId: string): boolean {
+export function uebtFaehigkeit(t: Pick<TaskDraft, "skillId" | "skillIds">, skillId: string): boolean {
   const ids = [t.skillId, ...(t.skillIds ?? [])].filter((x): x is string => Boolean(x));
   const oben = repo.getSkill(skillId)?.parent_id ?? null;
   return !ids.length || ids.some((id) => id === skillId || id === oben || repo.getSkill(id)?.parent_id === skillId);
 }
 
 /** Eine Aufgabe zum Vorlesen: kein Lesetext, keine lange freie Antwort. */
-const fragbar = (t: TaskDraft | undefined): t is TaskDraft => Boolean(t && !t.data.passage && t.type !== "reading");
+export const fragbar = (t: TaskDraft | undefined): t is TaskDraft => Boolean(t && !t.data.passage && t.type !== "reading");
 
 /** Woran zwei Aufgaben als dieselbe erkannt werden: ihre Frage, ohne Leerzeichen und Groß/klein. */
-const gleicheFrage = (t: Pick<TaskDraft, "prompt" | "data">) => frageText(t).replace(/\s+/g, " ").trim().toLowerCase();
+export const gleicheFrage = (t: Pick<TaskDraft, "prompt" | "data">) => frageText(t).replace(/\s+/g, " ").trim().toLowerCase();
 
 /**
  * Die Aufgaben, aus denen das Beispiel zu einer Fähigkeit kommt: aus den Generatoren mit eigenem Seed, zum Vorlesen, mit Lösung,
- * keine einer Übung, die in dieser Einheit zur Fähigkeit schon gesendet ist.
+ * keine einer Übung, die in dieser Einheit zur Fähigkeit schon gesendet ist. `runde` > 0: weitere Kandidaten mit eigenem Seed
+ * (lib/knoepfe.ts, „Weitere Beispiele“ und „Einfacher erklären“).
  */
-function beispielKandidaten(unitId: number, skillId: string): TaskDraft[] {
+export function beispielKandidaten(unitId: number, skillId: string, runde = 0): TaskDraft[] {
   const unit = getUnit(unitId);
   const student = unit ? repo.getStudent(unit.student_id) : null;
   const skill = repo.getSkill(skillId);
   if (!student || !skill || !ausDemGenerator(skill.id)) return [];
   const a = auftragFuer(unitId, student, skill, false, []);
   const gesendet = new Set(uebungenZur(unitId, skill.id).flatMap((id) => repo.listTasks(id).map(gleicheFrage)));
-  return generatorAufgabenVon({ ...a, count: 8, seed: generatorSeed(unitId, `${skill.id}:beispiel`) }).filter(
+  return generatorAufgabenVon({ ...a, count: 8, seed: generatorSeed(unitId, runde ? `${skill.id}:beispiel:${runde}` : `${skill.id}:beispiel`) }).filter(
     (t) => fragbar(t) && uebtFaehigkeit(t, skill.id) && !gesendet.has(gleicheFrage(t)) && loesungText(t).trim(),
   );
 }
@@ -1441,11 +1527,22 @@ export function beispielDerEinheit(unitId: number, skillId: string): TaskDraft |
   return gezeigtesBeispiel(unitId, skillId)?.aufgabe ?? beispielKandidaten(unitId, skillId)[0] ?? null;
 }
 
-/** `beispielDerEinheit` als Frage zum Vergleichen (`gleicheFrage`), leer ohne Beispiel. */
+/**
+ * `beispielDerEinheit` als Frage zum Vergleichen (`gleicheFrage`), leer ohne Beispiel; dazu die Beispiele, die „Weitere Beispiele“
+ * und „Einfacher erklären“ (lib/knoepfe.ts) in dieser Einheit gezeigt haben: keine Übung der Fähigkeit nimmt sie danach.
+ */
 const beispielFragen = (unitId: number, skillId: string): string[] => {
   const b = beispielDerEinheit(unitId, skillId);
-  return b ? [gleicheFrage(b)] : [];
+  return [...new Set([...(b ? [gleicheFrage(b)] : []), ...knopfBeispielFragen(unitId, skillId)])];
 };
+
+/** Die Fragen (`gleicheFrage`) der Beispiele, die die Lehrer-Knöpfe in dieser Einheit gezeigt haben; ohne `skillId` alle. */
+export function knopfBeispielFragen(unitId: number, skillId?: string | null): string[] {
+  const rows = db()
+    .prepare(`SELECT inhalt FROM einheit_knoepfe WHERE unit_id = ? AND art IN ('einfacher', 'beispiele')${skillId ? " AND skill_id = ?" : ""}`)
+    .all(...(skillId ? [unitId, skillId] : [unitId])) as { inhalt: string }[];
+  return rows.flatMap((r) => (json<{ beispiele?: { frage: string }[] }>(r.inhalt, {}).beispiele ?? []).map((b) => b.frage));
+}
 
 /**
  * Das durchgerechnete Beispiel zu einer Fähigkeit („Das zeigst du“, Abnahme Phase A): eine Aufgabe genau dieser Fähigkeit aus den
