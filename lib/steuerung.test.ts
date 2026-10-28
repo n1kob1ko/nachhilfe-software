@@ -337,9 +337,9 @@ test("C only when A and B have nothing, and only if the KI may: off, manual mode
   s.units.finishUnit(unit.id, "abgebrochen");
 });
 
-test("C on the teacher's tap: KI tasks go through the checks; when the KI fails, the generator steps in", async () => {
+test("C on the teacher's tap: KI tasks go through the checks into the preview; when the KI fails, the reason, no silent stand-in", async () => {
   const s = await setup();
-  const live = await import("./ai/realtime");
+  const nb = await import("./ki-nachschub");
   const sid = s.schueler("Eva Neu");
   const unit = s.units.startUnit(s.teacher.id, sid, { subject: "Mathematik" }).unit;
   const asg = s.sende(unit.id, sid);
@@ -356,25 +356,28 @@ test("C on the teacher's tap: KI tasks go through the checks; when the KI fails,
     gefragt.push(typeof req.content === "string" ? req.content : JSON.stringify(req.content));
     return { parsed: { tasks: [kiAufgabe("1 : 1/2 = ?"), kiAufgabe("1/2 : 1/4 = ?")] }, refusal: false, model: req.model, usage: { input: 2_000, output: 1_500, cacheWrite: 0, cacheRead: 0 } };
   });
-  const ok = await live.newExerciseForUnit(unit.id, s.teacher.id, { skillId: DIV, level: 2, fokus: "Kehrwert vergessen" });
-  assert.ok(ok.ok && ok.source === "ki");
+  const b = nb.bedarfAusOption(0, null, { art: "fehler", skillId: DIV, level: 2, fokus: "Kehrwert vergessen" })!;
+  const ok = await nb.erstelleNachschub(unit.id, b, { automatisch: false, teacherId: s.teacher.id });
+  assert.ok(!("fehler" in ok) && ok.status === "bereit", JSON.stringify(ok));
   assert.equal(gefragt.length, 1);
   assert.match(gefragt[0], /Kehrwert vergessen/, "the error to practise goes into the request");
-  const ws = s.repo.getAssignment(ok.ok ? ok.assignmentId : 0)!;
+  const out = await nb.sendeNachschub(unit.id, ok.id, s.teacher.id);
+  assert.ok(!("fehler" in out), JSON.stringify(out));
+  const ws = s.repo.getAssignment(out.assignmentId)!;
   assert.equal(ws.student_id, sid);
   assert.equal(s.repo.getWorksheet(ws.worksheet_id)!.difficulty, "leicht");
   const kosten = s.db().prepare("SELECT COUNT(*) AS n FROM ai_calls WHERE fn = 'neue_aufgabe' AND student_id = ?").get(sid) as { n: number };
   assert.equal(kosten.n, 1, "the cost lands with this student");
 
-  // the KI fails: tasks from the generator, at the level asked for
+  // the KI fails: the reason, nothing goes to the student
   s.router.resetRouter();
   s.router.setTransport(async () => {
     throw new Error("weg");
   });
-  const ersatz = await live.newExerciseForUnit(unit.id, s.teacher.id, { skillId: DIV, level: 2, fokus: null });
-  assert.ok(ersatz.ok && ersatz.source === "generator");
-  const t = s.repo.listTasks(s.repo.getAssignment(ersatz.ok ? ersatz.assignmentId : 0)!.worksheet_id);
-  assert.ok(t.length > 0 && t.every((x) => x.level === 2));
+  const vorher = s.repo.listAssignments(sid).length;
+  const ersatz = await nb.erstelleNachschub(unit.id, nb.bedarfAusOption(1, null, { art: "leichter", skillId: DIV, level: 2, fokus: null })!, { automatisch: false, teacherId: s.teacher.id });
+  assert.ok(!("fehler" in ersatz) && ersatz.status === "fehler" && ersatz.problem.length > 0, JSON.stringify(ersatz));
+  assert.equal(s.repo.listAssignments(sid).length, vorher);
   s.router.setTransport(null);
   s.router.resetRouter();
   s.units.finishUnit(unit.id, "abgebrochen");

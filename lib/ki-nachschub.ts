@@ -3,7 +3,8 @@
  * „Es dürfen keine unkontrollierten Kosten entstehen.“). Wo Bestand und Generator nichts haben, fehlen Aufgaben:
  * - in einem Schritt des Plans, wenn ohne KI weniger als drei passende Aufgaben bleiben (Regel aus B0: nur Aufgaben der Fähigkeit
  *   des Schritts, lib/material-passt.ts);
- * - in der Anpassung im Unterricht (lib/steuerung.ts), wenn nur „Neue passende Aufgabe erstellen“ (C) übrig ist.
+ * - in der Anpassung im Unterricht (lib/steuerung.ts), wenn nur „Neue passende Aufgabe erstellen“ (C) übrig ist;
+ * - im Live-Status unter „KI-Hinweis“ („Passende Aufgaben erstellen“), nur auf Tippen (D3).
  *
  * Ist für die Einheit ein Betrag gesetzt (lib/ai/einheit-budget.ts) und bleiben Kosten, laufende Anfragen und die Schätzung darunter,
  * fragt die App die KI ohne Tippen, über denselben Weg wie „Neue passende Aufgabe erstellen“ (`generateWithAI`, Funktion
@@ -17,13 +18,14 @@
 import { automatischFrei, einheitBudget, type EinheitBudget } from "./ai/einheit-budget";
 import { budget } from "./ai/config";
 import { generateWithAI } from "./ai/features";
+import { latestInsight } from "./ai/insights";
 import { ohneAusgeblendete } from "./bewertungen";
 import { aufgabenOhneKi, cockpit, leseStand, planHatUebung, sendeAusGenerator, type CockpitDaten, type PlanStep } from "./cockpit";
 import { DIFFICULTIES, levelOf } from "./curriculum";
 import { db, json } from "./db";
 import { oberfaehigkeit, passtZurFaehigkeit } from "./material-passt";
 import * as repo from "./repo";
-import { klassenLabel } from "./school";
+import { klassenLabel, schulstufe } from "./school";
 import { kiTor, kostenNeueAufgabeUsd, sendeKiAufgaben, vorschlagDerEinheit, type Anzeige } from "./steuerung";
 import type { Art, KiTor, Option } from "./steuerung-regeln";
 import type { TaskDraft } from "./tasks";
@@ -34,7 +36,8 @@ export const ANZAHL_VORSCHLAG = 2;
 /** Im Schritt: bis drei; weniger passende Aufgaben ohne KI sind zu wenig (B0). */
 export const ANZAHL_SCHRITT = 3;
 
-export type NachschubZiel = { art: Art | "schritt"; skillId: string; level: number; fokus: string | null; kontrolle: boolean; anzahl: number };
+/** `art`: „schritt“ im Planschritt, „live“ aus dem KI-Hinweis im Live-Status, sonst die Art des Vorschlags. */
+export type NachschubZiel = { art: Art | "schritt" | "live"; skillId: string; level: number; fokus: string | null; kontrolle: boolean; anzahl: number };
 export type NachschubStatus = "laeuft" | "bereit" | "gesendet" | "verworfen" | "fehler";
 export type Nachschub = {
   id: number;
@@ -91,6 +94,8 @@ export function nachschubDerEinheit(unitId: number): Nachschub[] {
 /** Wofür: ein Schritt in seiner Runde (wie oft aus ihm schon gesendet wurde), ein Vorschlag seit der letzten Reaktion. */
 export const schluesselSchritt = (schrittId: number, skillId: string, runde: number) => `schritt:${schrittId}:${skillId}:${runde}`;
 export const schluesselVorschlag = (bis: number, o: Pick<Option, "art" | "skillId" | "level">) => `vorschlag:${bis}:${o.art}:${o.skillId}:${o.level}`;
+/** Aus dem Live-Status einer je Einheit: solange eine Vorschau offen ist, kommt sie wieder, statt neu zu fragen. */
+export const SCHLUESSEL_LIVE = "live";
 
 // ---------- Kosten ----------
 
@@ -180,6 +185,26 @@ export function automatischeZiele(unitId: number, c: CockpitDaten, student: repo
     if (b) out.push(b);
   }
   return out;
+}
+
+/**
+ * Im Live-Status (Details › KI-Hinweis, „Passende Aufgaben erstellen“): zwei Aufgaben zu dem, was die KI zuletzt sah (Fähigkeit,
+ * Schwierigkeit, Fehlerbild), sonst zur Fähigkeit und Stufe der letzten Antwort. Wie bisher (lib/ai/realtime.ts), nur jetzt über die
+ * Vorschau statt gleich zum Schüler (niko: nichts von der KI geht ungeprüft an den Schüler).
+ */
+export function bedarfImLiveHinweis(unitId: number): NachschubBedarf | { fehler: string } {
+  const unit = getUnit(unitId);
+  if (!unit || unit.status !== "gestartet") return { fehler: "Diese Einheit läuft nicht mehr." };
+  const last = db().prepare("SELECT task_id FROM attempts WHERE unit_id = ? ORDER BY id DESC LIMIT 1").pluck().get(unitId) as number | undefined;
+  const task = last ? repo.getTask(last) : null;
+  const live = latestInsight(unitId, "echtzeit");
+  const block = latestInsight(unitId, "block");
+  const ref = [live, block].filter((x) => x !== null).sort((a, b) => b!.id - a!.id)[0] ?? null;
+  const skillId = ref?.data.next_skill ?? task?.skillId ?? null;
+  if (!skillId || !repo.getSkill(skillId)) return { fehler: "In dieser Einheit wurde noch keine Aufgabe gelöst." };
+  const level = Math.max(1, Math.min(5, (task?.level ?? levelOf(task?.difficulty)) + (ref?.data.difficulty_adjustment ?? 0)));
+  const fokus = live && live.id === ref?.id ? live.data.misconception : null;
+  return { schluessel: SCHLUESSEL_LIVE, schrittId: null, ziel: { art: "live", skillId, level, fokus, kontrolle: false, anzahl: ANZAHL_VORSCHLAG }, dazu: [] };
 }
 
 // ---------- erstellen ----------
@@ -283,13 +308,49 @@ export async function sendeNachschub(unitId: number, id: number, teacherId: numb
   const out =
     n.ziel.art === "schritt"
       ? await sendeAusGenerator(unitId, n.ziel.skillId, teacherId, n.schrittId, "senden", aufgaben)
-      : sendeKiAufgaben(unitId, { art: n.ziel.art, skillId: n.ziel.skillId, level: n.ziel.level, fokus: n.ziel.fokus }, teacherId, aufgaben);
+      : n.ziel.art === "live"
+        ? sendeLive(unitId, n, teacherId)
+        : sendeKiAufgaben(unitId, { art: n.ziel.art, skillId: n.ziel.skillId, level: n.ziel.level, fokus: n.ziel.fokus }, teacherId, aufgaben);
   if ("fehler" in out) {
     db().prepare("UPDATE einheit_ki_aufgaben SET status = 'bereit' WHERE id = ?").run(id);
     return out;
   }
   db().prepare("UPDATE einheit_ki_aufgaben SET worksheet_id = ? WHERE id = ?").run(out.worksheetId, id);
   return { worksheetId: out.worksheetId, assignmentId: out.assignmentId };
+}
+
+/** Aus dem Live-Status: eine kleine Übung „… · Nachschub“ wie bisher, jetzt erst nach dem Blick der Lehrkraft. */
+function sendeLive(unitId: number, n: Nachschub, teacherId: number | null): { worksheetId: number; assignmentId: number } | { fehler: string } {
+  const unit = getUnit(unitId);
+  if (!unit || unit.status !== "gestartet") return { fehler: "Diese Einheit läuft nicht mehr." };
+  const student = repo.getStudent(unit.student_id);
+  const skill = repo.getSkill(n.ziel.skillId);
+  if (!student || !skill) return { fehler: "Diese Fähigkeit gibt es nicht." };
+  let worksheetId = 0;
+  let assignmentId = 0;
+  db().transaction(() => {
+    worksheetId = repo.createWorksheet(
+      {
+        title: `${skill.area}: ${skill.name} · Nachschub`,
+        subject: skill.subject,
+        grade: schulstufe(student.school_type, student.klasse ?? 1),
+        school_type: student.school_type,
+        klasse: student.klasse,
+        topic: skill.area,
+        difficulty: DIFFICULTIES[n.ziel.level - 1],
+        task_type: "mixed",
+        kind: "uebung",
+        source: "ki",
+        skill_ids: [skill.id],
+        student_id: student.id,
+        teacher_id: teacherId,
+        status: "freigegeben",
+      },
+      n.aufgaben,
+    );
+    assignmentId = repo.assignWorksheet(worksheetId, student.id, "", unit.id);
+  })();
+  return { worksheetId, assignmentId };
 }
 
 /** „Verwerfen“: die Vorschau weg; die App fragt dafür nicht noch einmal von selbst, auf Tippen schon. */
@@ -332,6 +393,18 @@ export function nachschubAnzeige(unitId: number, b: NachschubBedarf, studentId: 
 export function nachschubImSchritt(unitId: number, c: CockpitDaten, s: PlanStep, student: repo.Student): NachschubAnzeige | null {
   const b = bedarfImSchritt(unitId, c, s, student);
   return b ? nachschubAnzeige(unitId, b, student.id, !c.stand.gesendet[s.id]?.length) : null;
+}
+
+/**
+ * Für den KI-Hinweis im Live-Status (components/device/LiveStatus.tsx): Kosten, Vorschau und Grund wie im Schritt; null, solange in der
+ * Einheit nichts gelöst ist. Nur auf Tippen, darum ohne den Satz zum Budget der Einheit.
+ */
+export function nachschubImLiveHinweis(unitId: number): NachschubAnzeige | null {
+  const unit = getUnit(unitId);
+  const b = bedarfImLiveHinweis(unitId);
+  if (!unit || "fehler" in b) return null;
+  const a = nachschubAnzeige(unitId, b, unit.student_id, false);
+  return { ...a, hinweis: !a.tor.ki.erlaubt ? a.tor.ki.grund : a.eintrag?.status === "fehler" ? `Ging gerade nicht: ${a.eintrag.problem}` : null };
 }
 
 /** Für den Vorschlag der Anpassung im Unterricht (components/cockpit/Steuerung.tsx): der Bedarf zu C, wenn es ihn gibt. */

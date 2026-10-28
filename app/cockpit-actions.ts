@@ -28,7 +28,7 @@ import {
   type Merke,
 } from "@/lib/cockpit";
 import { betragAus, setzeBudgetDerEinheit } from "@/lib/ai/einheit-budget";
-import { bedarfAusOption, bedarfImSchritt, erstelleNachschub, sendeNachschub, verwirfNachschub } from "@/lib/ki-nachschub";
+import { bedarfAusOption, bedarfImSchritt, erstelleNachschub, nachschub, sendeNachschub, verwirfNachschub } from "@/lib/ki-nachschub";
 import { einfacherErklaeren, einfacherMitKi, kontrolleWeglassen, sendeSchwerer, themaVerstanden, wechsleThema, weitereBeispiele } from "@/lib/knoepfe";
 import { noteActivity } from "@/lib/learning";
 import { pushLive, showOnTablet } from "@/lib/live";
@@ -317,6 +317,11 @@ export async function nachschubSendenAction(unitId: number, id: number) {
 export async function nachschubVerwerfenAction(unitId: number, id: number) {
   await laufendeEinheit(unitId);
   verwirfNachschub(unitId, id);
+  // aus dem Live-Status: dort bleiben, nicht zum Schritt springen
+  if (nachschub(id)?.ziel.art === "live") {
+    revalidatePath(`/einheiten/${unitId}`);
+    redirect(`/einheiten/${unitId}`);
+  }
   nachKnopf(unitId);
 }
 

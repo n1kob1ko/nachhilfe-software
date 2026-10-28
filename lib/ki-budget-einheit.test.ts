@@ -427,3 +427,86 @@ test("background KI: the live analysis counts to the unit; at 0 € it runs as t
   live.forgetUnit(unit.id);
   s.units.finishUnit(unit.id, "abgebrochen");
 });
+
+test("Live-Status › KI-Hinweis › „Passende Aufgaben erstellen“ (D3): only a preview; to the student only with „Senden“; „Verwerfen“ sends nothing; the cost row carries unit_id", async () => {
+  const s = await setup();
+  s.kiAn();
+  const live = await import("./ai/realtime");
+  const { saveInsight } = await import("./ai/insights");
+  const { sid, unit } = s.nurC("Ida Hinweis");
+  // what the live analysis saw last: the error to practise, one level easier
+  saveInsight({
+    unitId: unit.id,
+    kind: "echtzeit",
+    data: { error_type: "regel", misconception: "Auf die falsche Stelle gerundet", confidence: 0.8, recommended_action: "leichter", difficulty_adjustment: -1, hint: null, next_skill: null, needs_new_exercise: true, teacher_note: "" },
+    callId: null,
+  });
+  const a = s.nb.nachschubImLiveHinweis(unit.id)!;
+  assert.deepEqual(a.bedarf.ziel, { art: "live", skillId: RUNDEN, level: 2, fokus: "Auf die falsche Stelle gerundet", kontrolle: false, anzahl: s.nb.ANZAHL_VORSCHLAG });
+  assert.equal(a.eintrag, null);
+  assert.match(a.kosten ?? "", /^ca\. \d+ Cent$/, "the cost stands on the button before the tap");
+  assert.equal(a.hinweis, null);
+
+  // the tap: one request, a preview, nothing for the student
+  const vorher = { ws: s.zaehle("worksheets"), asg: s.zaehle("assignments") };
+  const out = await live.newExerciseForUnit(unit.id, s.teacher.id);
+  assert.ok(out.ok && "vorschau" in out, JSON.stringify(out));
+  const n = out.vorschau;
+  assert.deepEqual({ status: n.status, automatisch: n.automatisch, aufgaben: n.aufgaben.length }, { status: "bereit", automatisch: false, aufgaben: 2 });
+  assert.equal(s.gefragt.length, 1);
+  assert.match(JSON.stringify(s.gefragt[0].content), /Auf die falsche Stelle gerundet/, "the error goes into the request");
+  assert.deepEqual({ ws: s.zaehle("worksheets"), asg: s.zaehle("assignments") }, vorher, "no sheet and nothing sent before „Senden“");
+  const zeile = s.db().prepare("SELECT fn, unit_id, student_id FROM ai_calls WHERE id = ?").get(n.callId) as { fn: string; unit_id: number; student_id: number };
+  assert.deepEqual(zeile, { fn: "neue_aufgabe", unit_id: unit.id, student_id: sid }, "the cost row carries the unit (and the student's limit)");
+  assert.equal(s.nb.nachschubImLiveHinweis(unit.id)!.eintrag?.id, n.id, "the hint shows this preview");
+
+  // a second tap while the preview is open: the same preview, no new request
+  const nochmal = await live.newExerciseForUnit(unit.id, s.teacher.id);
+  assert.ok(nochmal.ok && "vorschau" in nochmal && nochmal.vorschau.id === n.id);
+  assert.equal(s.gefragt.length, 1);
+
+  // „Verwerfen“: nothing goes out; a new tap makes a new preview
+  assert.equal(s.nb.verwirfNachschub(unit.id, n.id), true);
+  assert.deepEqual({ ws: s.zaehle("worksheets"), asg: s.zaehle("assignments") }, vorher);
+  assert.equal(s.nb.nachschubImLiveHinweis(unit.id)!.eintrag?.status, "verworfen");
+  const neu = await live.newExerciseForUnit(unit.id, s.teacher.id);
+  assert.ok(neu.ok && "vorschau" in neu && neu.vorschau.id !== n.id);
+  assert.equal(s.gefragt.length, 2);
+  assert.equal(s.zaehle("assignments"), vorher.asg);
+
+  // „Senden“: exactly these tasks to this unit's student, once
+  const m = neu.vorschau;
+  const gesendet = await s.nb.sendeNachschub(unit.id, m.id, s.teacher.id);
+  assert.ok(!("fehler" in gesendet), JSON.stringify(gesendet));
+  const asg = s.repo.getAssignment(gesendet.assignmentId)!;
+  assert.deepEqual({ student: asg.student_id, unit: asg.unit_id }, { student: sid, unit: unit.id });
+  assert.deepEqual(s.repo.listTasks(gesendet.worksheetId).map((t) => t.prompt), ["Runde 862 auf Zehner.", "Runde 4 449 auf Hunderter."]);
+  const ws = s.repo.getWorksheet(gesendet.worksheetId)!;
+  assert.deepEqual({ source: ws.source, status: ws.status, difficulty: ws.difficulty }, { source: "ki", status: "freigegeben", difficulty: "leicht" });
+  assert.equal(s.zaehle("assignments"), vorher.asg + 1);
+  assert.ok("fehler" in (await s.nb.sendeNachschub(unit.id, m.id, s.teacher.id)), "a double tap sends once");
+  assert.equal(s.zaehle("assignments"), vorher.asg + 1);
+
+  // the KI fails: the reason under the button, no silent stand-in from the generator
+  s.router.setTransport(async (req) => {
+    s.gefragt.push(req);
+    throw new Error("weg");
+  });
+  const weg = await live.newExerciseForUnit(unit.id, s.teacher.id);
+  assert.ok(!weg.ok && weg.error.length > 0, JSON.stringify(weg));
+  assert.equal(s.zaehle("assignments"), vorher.asg + 1);
+  assert.match(s.nb.nachschubImLiveHinweis(unit.id)!.hinweis ?? "", /^Ging gerade nicht/);
+
+  // the student's limit: the button is grey with the reason, the tap asks nothing
+  s.kiAn();
+  const gefragt = s.gefragt.length;
+  s.db().prepare("INSERT INTO ai_calls (created_at, fn, tier, model, provider, status, cost_usd, test, student_id) VALUES (?, 'aufgaben', 'standard', 'claude-sonnet-5-5', 'anthropic', 'ok', 9, 0, ?)").run(new Date().toISOString(), sid);
+  const grenze = s.nb.nachschubImLiveHinweis(unit.id)!;
+  assert.deepEqual({ erlaubt: grenze.tor.ki.erlaubt, kosten: grenze.kosten }, { erlaubt: false, kosten: null });
+  assert.match(grenze.hinweis ?? "", /KI-Grenze/);
+  const gesperrt = await live.newExerciseForUnit(unit.id, s.teacher.id);
+  assert.ok(!gesperrt.ok && /KI-Grenze/.test(gesperrt.error));
+  assert.equal(s.gefragt.length, gefragt);
+  s.units.finishUnit(unit.id, "abgebrochen");
+  s.router.setTransport(null);
+});
