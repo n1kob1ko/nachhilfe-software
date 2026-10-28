@@ -110,7 +110,7 @@ export type Lesson = {
   abschluss_eigen?: string;
 };
 
-export type Homework = { id: number; student_id: number; subject: string; description: string; due_date: string | null; status: string; notes: string; assignment_id: number | null };
+export type Homework = { id: number; student_id: number; subject: string; description: string; due_date: string | null; status: string; notes: string; assignment_id: number | null; unit_id?: number | null };
 /** A Hausübung with the Übung it belongs to (if any): when that Übung is fertig, the Hausübung counts as erledigt. */
 export type HomeworkView = Homework & { assignment_title: string | null; assignment_completed_at: string | null };
 export type TestResult = {
@@ -499,10 +499,12 @@ export function listHomework(studentId: number): HomeworkView[] {
 }
 /** Still to do: not ticked off by hand and its Übung (if it has one) not fertig yet. */
 export const homeworkOpen = (h: Pick<HomeworkView, "status" | "assignment_completed_at">) => h.status !== "erledigt" && !h.assignment_completed_at;
-export function addHomework(h: Omit<Homework, "id" | "assignment_id"> & { assignment_id?: number | null }) {
-  db()
-    .prepare("INSERT INTO homework (student_id, subject, description, due_date, status, notes, assignment_id) VALUES (@student_id, @subject, @description, @due_date, @status, @notes, @assignment_id)")
-    .run({ ...h, assignment_id: h.assignment_id ?? null });
+/** `unit_id`: die Einheit, in deren Abschluss sie freigegeben wurde (lib/hausuebung.ts); gibt die Id zurück. */
+export function addHomework(h: Omit<Homework, "id" | "assignment_id" | "unit_id"> & { assignment_id?: number | null; unit_id?: number | null }): number {
+  const res = db()
+    .prepare("INSERT INTO homework (student_id, subject, description, due_date, status, notes, assignment_id, unit_id) VALUES (@student_id, @subject, @description, @due_date, @status, @notes, @assignment_id, @unit_id)")
+    .run({ ...h, assignment_id: h.assignment_id ?? null, unit_id: h.unit_id ?? null });
+  return Number(res.lastInsertRowid);
 }
 export function setHomeworkStatus(id: number, status: string) {
   db().prepare("UPDATE homework SET status = ? WHERE id = ?").run(status, id);

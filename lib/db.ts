@@ -1304,6 +1304,22 @@ CREATE TABLE IF NOT EXISTS einheit_ki_aufgaben (
 );
 CREATE INDEX IF NOT EXISTS idx_einheit_ki_aufgaben ON einheit_ki_aufgaben(unit_id, schluessel);
 CREATE INDEX IF NOT EXISTS idx_ai_calls_unit ON ai_calls(unit_id);
+-- Hausübung vorbereitet (lib/hausuebung.ts, E1, 2026-10-28): der Vorschlag im Abschluss einer Einheit, sobald die Lehrkraft daran etwas
+-- ändert (vorher wird er bei jedem Zeigen aus den Ergebnissen gebaut). status: vorschlag | freigegeben | uebersprungen; inhalt: JSON
+-- {themen, ausPlan}; doku: die Zeile für Abschluss und Dokumentation („Hausübung: 9 Aufgaben …“ oder „Heute keine Hausübung“);
+-- erst „Hausübung freigeben“ legt Übung (worksheet_id) und Hausübung (homework_id) an, vorher sieht der Schüler nichts.
+CREATE TABLE IF NOT EXISTS einheit_hausuebung (
+  unit_id INTEGER PRIMARY KEY REFERENCES units(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'vorschlag',
+  inhalt TEXT NOT NULL DEFAULT '{}',
+  notiz TEXT NOT NULL DEFAULT '',
+  faellig TEXT,
+  doku TEXT NOT NULL DEFAULT '',
+  homework_id INTEGER REFERENCES homework(id) ON DELETE SET NULL,
+  worksheet_id INTEGER REFERENCES worksheets(id) ON DELETE SET NULL,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */
@@ -1605,6 +1621,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["units", "ki_budget_eur", "REAL"],
   // Empfehlung und Diagnose nur mit Vorschau (lib/ki-vorschau.ts, 2026-10-28): eine Vorschau ohne Einheit gehört zu diesem Schüler
   ["einheit_ki_aufgaben", "student_id", "INTEGER REFERENCES students(id) ON DELETE CASCADE"],
+  // Hausübung vorbereitet (lib/hausuebung.ts, 2026-10-28): die Einheit, in deren Abschluss die Hausübung freigegeben wurde; null = von Hand
+  ["homework", "unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
 ];
 
 /** Teachers to start with; more can be added later. */

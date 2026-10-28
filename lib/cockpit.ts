@@ -759,6 +759,25 @@ export function skillsErledigterSchritte(unitId: number): string[] {
   return [...new Set(ids)];
 }
 
+/** Für die Hausübung (lib/hausuebung.ts): die Fähigkeiten aller Schritte des gespeicherten Plans oder Lernpakets, in ihrer Reihenfolge. */
+export function skillsDesPlans(unitId: number): string[] {
+  const s = gespeichert(unitId);
+  if (!s) return [];
+  const p = s.paket_id ? getLernpaket(s.paket_id) : null;
+  const ids = p ? p.schritte.flatMap(skillsDesSchritts) : (s.plan ?? []).filter((x) => !x.vorlaeufig && x.skillId).map((x) => x.skillId!);
+  return [...new Set(ids)];
+}
+
+/** Für die Hausübung: die Fähigkeiten der Schritte, bei denen der Lehrer „Schüler versteht es nicht“ getippt hat. */
+export function skillsNichtVerstanden(unitId: number): string[] {
+  const s = gespeichert(unitId);
+  const nv = Object.keys(s?.nichtVerstanden ?? {}).filter((id) => (s!.nichtVerstanden[id] ?? 0) > 0).map(Number);
+  if (!s || !nv.length) return [];
+  const p = s.paket_id ? getLernpaket(s.paket_id) : null;
+  const ids = p ? p.schritte.filter((x) => nv.includes(x.id)).flatMap(skillsDesSchritts) : (s.plan ?? []).filter((x) => nv.includes(x.id) && x.skillId).map((x) => x.skillId!);
+  return [...new Set(ids)];
+}
+
 /**
  * Für den Abschluss: was der Lehrer bei Fragen und Kontrollen gehört hat, nur Gespeichertes, in der Reihenfolge der
  * Schritte, mit den Fähigkeiten des Schritts. Im Plan zählen auch Schritte aus Paketen, Erklären, Grundlage und die
