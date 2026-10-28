@@ -74,7 +74,7 @@ function dauerLabel(geplanteDauer: number | null, minutes: number, estimated: bo
  * ended → **Abschluss**: vier Felder aus den Daten (lib/abschluss.ts) und „Dokumentation bestätigen“; die ganze
  *   Dokumentation, automatisch geschrieben (lib/einschaetzung.ts) und änderbar, unter „Mehr Details“ und „Ändern“.
  */
-export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; ki?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string }> }) {
+export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -102,8 +102,6 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
           <p className="flex items-center gap-2">
             <CheckCircle2 size={18} className="shrink-0" aria-hidden /> „{sent.title}“ ist an {first(student.name)} gesendet. Die Ergebnisse erscheinen unten, sobald {first(student.name)} arbeitet.
           </p>
-          {/* Anpassung im Unterricht: die KI hat nicht geantwortet, die Aufgaben kamen aus dem Generator */}
-          {sp.ki === "ersatz" && <p className="mt-1 text-[14px] font-normal text-ink-2">Die KI hat gerade nicht geantwortet. Dafür kamen die Aufgaben aus dem Generator, ohne Kosten.</p>}
           {/* ohne Schülergerät: am Lernlink bereit, und zum Drucken */}
           {studentDevice(unit) === null && (
             <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] font-normal text-ink-2">

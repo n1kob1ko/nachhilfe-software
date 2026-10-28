@@ -29,7 +29,7 @@ function KnopfAktion({ k, unitId, schrittId, primary, hinweis = null }: { k: Kno
     return (
       <div className="grid gap-1">
         <VorschlagKnopf
-          action={vorschlagNeuAction.bind(null, unitId, k.option)}
+          action={vorschlagNeuAction.bind(null, unitId, k.option, schrittId)}
           label={`${k.label}${k.kosten ? ` · ${k.kosten}` : ""}`}
           icon={<Sparkles size={17} aria-hidden />}
           gesperrt={Boolean(k.gesperrt)}

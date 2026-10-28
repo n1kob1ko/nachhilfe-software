@@ -148,9 +148,16 @@ export function bedarfImSchritt(unitId: number, c: CockpitDaten, s: PlanStep, st
  */
 export function bedarfImVorschlag(bis: number, schrittId: number | null, v: Pick<Anzeige, "andere"> | null): NachschubBedarf | null {
   const k = v?.andere.find((x) => x.quelle === "C");
-  if (!k?.option.skillId || !k.option.level) return null;
-  const o = k.option;
-  return { schluessel: schluesselVorschlag(bis, o), schrittId, ziel: { art: o.art, skillId: o.skillId!, level: o.level!, fokus: o.fokus, kontrolle: false, anzahl: ANZAHL_VORSCHLAG }, dazu: [] };
+  return k ? bedarfAusOption(bis, schrittId, k.option) : null;
+}
+
+/**
+ * Derselbe Bedarf aus einer Möglichkeit, wie sie der Knopf „Neue passende Aufgabe erstellen“ (C) schickt: auf Tippen geht sie
+ * denselben Weg wie von selbst, über die Vorschau (niko: nichts von der KI geht ungeprüft an den Schüler).
+ */
+export function bedarfAusOption(bis: number, schrittId: number | null, o: Option): NachschubBedarf | null {
+  if (!o.skillId || !o.level) return null;
+  return { schluessel: schluesselVorschlag(bis, o), schrittId, ziel: { art: o.art, skillId: o.skillId, level: o.level, fokus: o.fokus, kontrolle: false, anzahl: ANZAHL_VORSCHLAG }, dazu: [] };
 }
 
 /**

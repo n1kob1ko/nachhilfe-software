@@ -286,6 +286,53 @@ test("over the budget: no request by itself; on tap with the cost and the reason
   s.router.setTransport(null);
 });
 
+test("„Neue passende Aufgabe erstellen“ on tap (default 0 €): the same preview as by itself; nothing reaches the student before „Senden“", async () => {
+  const s = await setup();
+  s.kiAn();
+  const { sid, unit, vorschlag } = s.nurC("Lea Tippen");
+  const v = vorschlag();
+  const k = v.andere.find((x) => x.quelle === "C")!;
+  // the button sends the option; the action builds the need from it (app/cockpit-actions.ts vorschlagNeuAction)
+  const b = s.nb.bedarfAusOption(s.c.leseStand(unit.id).steuerung.bis, null, k.option)!;
+  assert.equal(b.schluessel, s.nb.bedarfImVorschlag(s.c.leseStand(unit.id).steuerung.bis, null, v)!.schluessel, "the same need as the card's");
+  const vorher = { ws: s.zaehle("worksheets"), asg: s.zaehle("assignments") };
+  const n = await s.nb.erstelleNachschub(unit.id, b, { automatisch: false, teacherId: s.teacher.id });
+  assert.ok(!("fehler" in n), JSON.stringify(n));
+  assert.deepEqual({ status: n.status, automatisch: n.automatisch }, { status: "bereit", automatisch: false });
+  assert.equal(s.gefragt.length, 1);
+  assert.deepEqual({ ws: s.zaehle("worksheets"), asg: s.zaehle("assignments") }, vorher, "no sheet and nothing sent yet");
+  assert.equal(s.nb.nachschubImVorschlag(unit.id, null, vorschlag())!.eintrag?.id, n.id, "the card shows this preview, without C");
+
+  // „Verwerfen“: nothing goes out; a new tap makes a new preview
+  assert.equal(s.nb.verwirfNachschub(unit.id, n.id), true);
+  assert.deepEqual({ ws: s.zaehle("worksheets"), asg: s.zaehle("assignments") }, vorher);
+  const m = await s.nb.erstelleNachschub(unit.id, b, { automatisch: false, teacherId: s.teacher.id });
+  assert.ok(!("fehler" in m) && m.status === "bereit");
+  assert.equal(s.zaehle("assignments"), vorher.asg);
+
+  // „Senden“: exactly these tasks, once
+  const out = await s.nb.sendeNachschub(unit.id, m.id, s.teacher.id);
+  assert.ok(!("fehler" in out), JSON.stringify(out));
+  assert.equal(s.repo.getAssignment(out.assignmentId)!.student_id, sid);
+  assert.deepEqual(s.repo.listTasks(out.worksheetId).map((t) => t.prompt), ["Runde 862 auf Zehner.", "Runde 4 449 auf Hunderter."]);
+  assert.equal(s.zaehle("assignments"), vorher.asg + 1);
+
+  // KI off: the tap gives the reason, nothing is asked
+  process.env.AI_DISABLED = "1";
+  const { resetKiModusCache } = await import("./ai/modus");
+  resetKiModusCache();
+  try {
+    const aus = await s.nb.erstelleNachschub(unit.id, { ...b, schluessel: `${b.schluessel}:aus` }, { automatisch: false, teacherId: s.teacher.id });
+    assert.ok("fehler" in aus, JSON.stringify(aus));
+    assert.equal(s.gefragt.length, 2);
+  } finally {
+    delete process.env.AI_DISABLED;
+    resetKiModusCache();
+  }
+  s.units.finishUnit(unit.id, "abgebrochen");
+  s.router.setTransport(null);
+});
+
 test("the student's limit wins over the unit's budget; a running request is reserved against the budget", async () => {
   const s = await setup();
   s.kiAn();

@@ -27,6 +27,15 @@ function Aus({ icon, label, grund }: { icon: React.ReactNode; label: string; gru
 export function AnpassenMenue({ unitId, schrittId, skill, thema, offen = false }: { unitId: number; schrittId: number; skill: boolean; thema: boolean; offen?: boolean }) {
   const ohne = "Zu diesem Schritt gibt es keine Fähigkeit.";
   const vorschau = (k: "schwerer" | "thema") => `/einheiten/${unitId}?knopf=${k}#knopf`;
+  // the reason for grey buttons as a line, not only as a tooltip (a tablet shows no tooltip)
+  const grund =
+    !skill && !thema
+      ? "Zu diesem Schritt gibt es keine Fähigkeit und kein Thema. Hier geht nur „Anderes Thema“."
+      : !skill
+        ? "Zu diesem Schritt gibt es keine Fähigkeit. Hier gehen nur „Thema verstanden“ und „Anderes Thema“."
+        : !thema
+          ? "Dieser Schritt gehört zu keinem Thema. Darum geht „Thema verstanden“ hier nicht."
+          : null;
   return (
     <details className="group w-full sm:w-auto sm:open:basis-full" open={offen} data-testid="anpassen-menue">
       <summary className="btn btn-secondary btn-lg w-full list-none sm:w-auto [&::-webkit-details-marker]:hidden">
@@ -60,6 +69,11 @@ export function AnpassenMenue({ unitId, schrittId, skill, thema, offen = false }
           <Repeat size={17} aria-hidden /> {KNOPF_LABEL.thema}
         </Link>
       </div>
+      {grund && (
+        <p className="mt-1.5 px-1 text-[13px] text-ink-3" data-testid="anpassen-grund">
+          {grund}
+        </p>
+      )}
     </details>
   );
 }

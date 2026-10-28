@@ -11,6 +11,7 @@ import {
   cockpit,
   druckeImSchritt,
   isBeobachtung,
+  leseStand,
   markiereSchritt,
   merkeSchritt,
   reagiert,
@@ -27,14 +28,13 @@ import {
   type Merke,
 } from "@/lib/cockpit";
 import { betragAus, setzeBudgetDerEinheit } from "@/lib/ai/einheit-budget";
-import { newExerciseForUnit } from "@/lib/ai/realtime";
-import { bedarfImSchritt, erstelleNachschub, sendeNachschub, verwirfNachschub } from "@/lib/ki-nachschub";
+import { bedarfAusOption, bedarfImSchritt, erstelleNachschub, sendeNachschub, verwirfNachschub } from "@/lib/ki-nachschub";
 import { einfacherErklaeren, einfacherMitKi, kontrolleWeglassen, sendeSchwerer, themaVerstanden, wechsleThema, weitereBeispiele } from "@/lib/knoepfe";
 import { noteActivity } from "@/lib/learning";
 import { pushLive, showOnTablet } from "@/lib/live";
 import { tagAddieren, wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
-import { kiTor, sendeAngepasst } from "@/lib/steuerung";
+import { sendeAngepasst } from "@/lib/steuerung";
 import { MIT_AUFGABE, type Option } from "@/lib/steuerung-regeln";
 import { canManageUnit, getUnit } from "@/lib/units";
 import { entferneVorschlag, VORAUS_TAGE, vorschlagErlauben } from "@/lib/vorbereitung-auto";
@@ -234,10 +234,10 @@ function pruefeOption(o: Option): Option | null {
 }
 
 /** Zurück in den Unterricht: mit „… ist gesendet“ oben, oder mit dem Fehler. */
-function nachVorschlag(unitId: number, o: { gesendet?: number; ersatz?: boolean; fehler?: string }): never {
+function nachVorschlag(unitId: number, o: { gesendet?: number; fehler?: string }): never {
   revalidatePath(`/einheiten/${unitId}`);
   if (o.fehler) redirect(`/einheiten/${unitId}?cockpit=${encodeURIComponent(o.fehler)}`);
-  redirect(`/einheiten/${unitId}?gesendet=${o.gesendet ?? ""}${o.ersatz ? "&ki=ersatz" : ""}`);
+  redirect(`/einheiten/${unitId}?gesendet=${o.gesendet ?? ""}`);
 }
 
 /**
@@ -255,21 +255,17 @@ export async function vorschlagSendenAction(unitId: number, roh: Option) {
 }
 
 /**
- * „Neue passende Aufgabe erstellen“ (C): nur auf Tippen, nur wenn die KI darf (lib/steuerung.ts `kiTor`). Die Aufgaben
- * gehen durch dieselben Prüfungen wie „Passende Aufgabe senden“; antwortet die KI nicht, kommen sie aus dem Generator.
+ * „Neue passende Aufgabe erstellen“ (C): nur auf Tippen, nur wenn die KI darf (lib/steuerung.ts `kiTor`). Wie von selbst im
+ * KI-Budget (lib/ki-nachschub.ts) kommen die Aufgaben zuerst als Vorschau „neu erstellt, ungeprüft“ in den Vorschlag; an den
+ * Schüler gehen sie erst mit „Senden“ (niko: nichts von der KI geht ungeprüft an den Schüler).
  */
-export async function vorschlagNeuAction(unitId: number, roh: Option) {
-  const { t, unit } = await laufendeEinheit(unitId);
+export async function vorschlagNeuAction(unitId: number, roh: Option, schrittId: number | null = null) {
+  const { t } = await laufendeEinheit(unitId);
   const o = pruefeOption(roh);
-  if (!o) nachVorschlag(unitId, { fehler: "Dieser Vorschlag gilt nicht mehr." });
-  const tor = kiTor(unit.student_id);
-  if (!tor.erlaubt) nachVorschlag(unitId, { fehler: tor.grund });
-  const out = await newExerciseForUnit(unit.id, t.id, { skillId: o.skillId!, level: o.level!, fokus: o.fokus });
-  if (!out.ok) nachVorschlag(unitId, { fehler: out.error });
-  reagiert(unitId, { art: o.art, skillId: o.skillId, assignmentId: out.assignmentId });
-  noteActivity(unit.student_id);
-  pushLive(unit.id);
-  nachVorschlag(unitId, { gesendet: repo.getAssignment(out.assignmentId)?.worksheet_id, ersatz: out.source !== "ki" });
+  const b = o ? bedarfAusOption(leseStand(unitId).steuerung.bis, schrittId, o) : null;
+  if (!b) nachVorschlag(unitId, { fehler: "Dieser Vorschlag gilt nicht mehr." });
+  const out = await erstelleNachschub(unitId, b, { automatisch: false, teacherId: t.id });
+  nachKnopf(unitId, "fehler" in out ? out.fehler : out.status === "fehler" ? out.problem : undefined);
 }
 
 /**
