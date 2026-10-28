@@ -16,12 +16,12 @@ export function RunningUnits({ units }: { units: RunningUnit[] }) {
   if (units.length === 0) return null;
   return (
     <HideOn paths={["/", ...units.map((u) => `/einheiten/${u.id}`)]} prefixes={["/texte/"]}>
-      <div className="no-print sticky top-0 z-20 -mx-4 mb-6 grid gap-2 bg-paper/90 px-4 pt-2 pb-1 backdrop-blur md:-mx-8 md:px-8" role="region" aria-label="Aktive Einheiten">
+      <div className="no-print sticky top-0 z-20 -mx-4 mb-6 grid grid-cols-1 gap-2 bg-paper/90 px-4 pt-2 pb-1 backdrop-blur md:-mx-8 md:px-8" role="region" aria-label="Aktive Einheiten">
         {units.map((u) => (
           <Link
             key={u.id}
             href={`/einheiten/${u.id}`}
-            className="flex min-h-[52px] items-center gap-3 rounded-2xl bg-accent px-4 py-2 text-[15px] text-on-fill shadow-[var(--shadow-card)] transition-colors hover:bg-accent-hover"
+            className="flex min-h-[52px] min-w-0 items-center gap-3 rounded-2xl bg-accent px-4 py-2 text-[15px] text-on-fill shadow-[var(--shadow-card)] transition-colors hover:bg-accent-hover"
           >
             <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden>
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-on-fill opacity-60 motion-reduce:hidden" />

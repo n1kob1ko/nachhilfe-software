@@ -270,6 +270,15 @@ export function hausuebungErgebnis(homeworkId: number, o: { stichtag?: string; z
 }
 
 /**
+ * Ist die Hausübung noch offen (Profil)? Nein, wenn abgehakt oder ihre Übung fertig ist (repo.homeworkOpen), und auch nicht, wenn sie
+ * mit Übung schon „bewertet“ ist, etwa auf Papier nur zum Teil gemacht und nach der Fälligkeit geprüft.
+ */
+export function hausuebungOffen(h: Pick<repo.HomeworkView, "id" | "status" | "assignment_id" | "assignment_completed_at">, stichtag = wienerDatum(new Date())): boolean {
+  if (!repo.homeworkOpen(h)) return false;
+  return !h.assignment_id || hausuebungErgebnis(h.id, { stichtag })?.status !== "bewertet";
+}
+
+/**
  * Die Hausübung, die in eine Einheit gehört, die zum Zeitpunkt `vor` (ISO oder wie gespeichert) beginnt: die zuletzt zugewiesene
  * Hausübung mit Übung dieses Schülers (im Fach der Einheit, wenn sie eines hat), höchstens `HU_ALTER_TAGE` alt, die noch nicht
  * besprochen ist. Besprochen ist sie, wenn eine spätere beendete Einheit (nicht `ausser`, nicht die, in der sie gegeben wurde) am oder

@@ -290,11 +290,14 @@ export function schuelerBasis(student: repo.Student, now: Date): SchuelerBasis {
     student,
     schritte: nextSteps(student.id, { today: wienerDatum(now), now: now.getTime(), limit: 8 }),
     lessons: repo.listLessons(student.id),
+    // a homework with its own sheet that has answers or is due counts by its result (lib/hausuebung-zurueck.ts), not as „offen“
     hausuebungen: db()
       .prepare(
-        "SELECT h.subject, h.description FROM homework h WHERE h.student_id = ? AND h.status = 'offen' AND NOT EXISTS (SELECT 1 FROM assignments a WHERE a.id = h.assignment_id AND a.completed_at IS NOT NULL) ORDER BY h.due_date IS NULL, h.due_date LIMIT 3",
+        `SELECT h.subject, h.description FROM homework h WHERE h.student_id = ? AND h.status = 'offen' AND NOT EXISTS (SELECT 1 FROM assignments a WHERE a.id = h.assignment_id AND a.completed_at IS NOT NULL)
+           AND NOT (h.assignment_id IS NOT NULL AND ((COALESCE(h.due_date, '') <> '' AND h.due_date <= ?) OR EXISTS (SELECT 1 FROM attempts x WHERE x.assignment_id = h.assignment_id AND x.final = 1)))
+         ORDER BY h.due_date IS NULL, h.due_date LIMIT 3`,
       )
-      .all(student.id) as Pick<repo.Homework, "subject" | "description">[],
+      .all(student.id, wienerDatum(now)) as Pick<repo.Homework, "subject" | "description">[],
     texte: bestaetigteTextErgebnisse(student.id),
   };
 }

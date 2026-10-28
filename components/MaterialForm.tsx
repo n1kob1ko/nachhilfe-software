@@ -146,9 +146,9 @@ export function MaterialForm({ studentId, subjects, weitere = [], skills, initia
             ))}
           </select>
         </label>
-        <fieldset className="field">
+        <fieldset className="field min-w-0">
           <legend className="label">Priorität</legend>
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {PRIORITIES.map(([p, l]) => (
               <label key={p} className={chip}>
                 <input type="radio" name="priority" value={p} defaultChecked={(initial?.priority ?? 2) === p} className="sr-only" />

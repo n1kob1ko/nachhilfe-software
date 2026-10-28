@@ -288,3 +288,43 @@ test("no homework: no line, no step", async () => {
   assert.equal(s.hz.schrittNoetig(e), false);
   assert.match(s.hz.briefingZeile(e), /^Hausübung: noch offen, fällig /);
 });
+
+test("one homework, one place: not checked again in the Einstieg, no „Hausübung offen“ once due or answered, ticked off once graded", async () => {
+  const s = await setup();
+  const { schuelerBasis } = await import("./vorbereitung-auto");
+  const sid = s.schueler("Lea Probe");
+  const offenListe = () => schuelerBasis(s.repo.getStudent(sid)!, new Date()).hausuebungen?.map((h) => h.description);
+  // the unit a week ago gave the homework, its documentation has the homework line
+  const t0 = Date.now() - 7 * TAG;
+  const u1 = s.start(sid, t0);
+  const l1 = s.ende(u1.id, t0 + 50 * 60_000);
+  const { asg, hw } = s.hausuebung(sid, { tasks: [s.aufgabe(DIV), s.aufgabe(DIV), s.aufgabe(KUE), s.aufgabe(KUE)], faellig: s.heute, am: t0 + 51 * 60_000, unitId: u1.id });
+  s.db().prepare("UPDATE lessons SET homework_note = ? WHERE id = ?").run("Hausübung: 4 Aufgaben (Brüche), ca. 5–10 min", l1);
+  const buch = s.repo.addHomework({ student_id: sid, subject: "Mathematik", description: "Buch S. 12", due_date: s.tagAddieren(s.heute, -1), status: "offen", notes: "" });
+  // due today with its own sheet: it counts by its result, not as „offen“; a homework without sheet stays
+  assert.deepEqual(offenListe(), ["Buch S. 12"]);
+  const spaeter = s.hausuebung(sid, { tasks: [s.aufgabe(DIV)], faellig: s.tagAddieren(s.heute, 5), am: Date.now() - 60_000 });
+  assert.deepEqual(offenListe(), ["Buch S. 12", "8 Aufgaben Brüche"], "not due and not started: still open");
+  s.antworte(spaeter.asg, [true]);
+  assert.deepEqual(offenListe(), ["Buch S. 12"], "answered: counted by its result");
+
+  // done on the device: the plan has „Hausübung besprechen“, and the Einstieg does not check the same homework again
+  s.antworte(asg, [true, false, "teilweise", false]);
+  s.db().prepare("UPDATE assignments SET completed_at = datetime('now') WHERE id = ?").run(asg);
+  const u2 = s.start(sid, Date.now() - 20 * 60_000);
+  const plan = (await import("./stundenplan")).stundenplanFuer(sid, { fach: "Mathematik", platzId: null, unitId: u2.id });
+  assert.deepEqual([plan[1].titel, plan[1].hausuebung], ["Hausübung besprechen", hw]);
+  const kontrolle = plan.flatMap((x) => [x.titel === "Hausübung kontrollieren" ? x.beschreibung : "", ...(x.beschreibung.match(/Hausübung kontrollieren:[^\n]*/g) ?? [])]).filter(Boolean);
+  assert.deepEqual(kontrolle, ["Hausübung kontrollieren: Buch S. 12"], "only the other homework is checked in the Einstieg");
+
+  // profile: graded counts as done even when its sheet is not finished (part done, after the due date)
+  const teil = s.hausuebung(sid, { tasks: [s.aufgabe(DIV), s.aufgabe(DIV)], faellig: s.tagAddieren(s.heute, -1), am: Date.now() - 3 * TAG });
+  s.antworte(teil.asg, [true]);
+  const sicht = (id: number) => s.repo.listHomework(sid).find((h) => h.id === id)!;
+  assert.equal(s.hz.hausuebungErgebnis(teil.hw)!.status, "bewertet");
+  assert.equal(s.hz.hausuebungOffen(sicht(teil.hw)), false);
+  assert.equal(s.hz.hausuebungOffen(sicht(hw)), false);
+  const neu = s.hausuebung(sid, { tasks: [s.aufgabe(DIV)], faellig: s.tagAddieren(s.heute, 3), am: Date.now() - 60_000 });
+  assert.equal(s.hz.hausuebungOffen(sicht(neu.hw)), true);
+  assert.equal(s.hz.hausuebungOffen(sicht(buch)), true, "a homework without sheet stays open until ticked off");
+});

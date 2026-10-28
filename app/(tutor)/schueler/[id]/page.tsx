@@ -48,7 +48,7 @@ import { listenVon } from "@/lib/vokabellisten";
 import { textsForStudent, wordsLabel } from "@/lib/texts";
 import { ZuBewertenListe } from "@/components/ZuBewerten";
 import { zuBewerten, zuBewertenTitel } from "@/lib/zu-bewerten";
-import { hausuebungErgebnis, HU_STATUS_LABEL, statusDetail, type HuStatus } from "@/lib/hausuebung-zurueck";
+import { hausuebungErgebnis, hausuebungOffen, HU_STATUS_LABEL, statusDetail, type HuStatus } from "@/lib/hausuebung-zurueck";
 
 /** Vier Bereiche statt sechs: Stoff und Prüfungen teilen sich einen Tab, Übungen und Lernverlauf auch. */
 const TABS = [
@@ -184,7 +184,7 @@ function Kopfzahlen({ student, a }: { student: repo.Student; a: Analysis }) {
   const exam = repo.upcomingTests(today, student.id)[0];
   const tage = exam ? daysUntil(exam.date, today) : null;
   const einheiten = repo.listLessons(student.id).filter((l) => l.kind === "stunde" && l.status === "abgeschlossen");
-  const offeneHw = repo.listHomework(student.id).filter(repo.homeworkOpen).length;
+  const offeneHw = repo.listHomework(student.id).filter((h) => hausuebungOffen(h, today)).length;
   const mastery = a.overall.mastery;
   const level = masteryLevel(mastery);
   const LevelIcon = level.icon;
@@ -237,7 +237,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
   const lastDone = lessons.find((l) => l.status === "abgeschlossen");
   const next = [...lessons].reverse().find((l) => l.status === "geplant" && l.starts_at >= wienerDatum());
   const tests = repo.listTests(student.id);
-  const hw = repo.listHomework(student.id).filter(repo.homeworkOpen);
+  const hw = repo.listHomework(student.id).filter((h) => hausuebungOffen(h));
   const first = student.name.split(" ")[0];
   const skillList = (list: typeof a.strengths, cls: string, empty: string, note: string) =>
     list.length ? (
@@ -1038,15 +1038,16 @@ function School({ student }: { student: repo.Student }) {
         <ul className="mb-5 divide-y divide-line">
           {homework.length === 0 && <li className="py-2 text-[14px] text-ink-3">Keine Hausübungen eingetragen.</li>}
           {homework.map((h) => {
-            const done = !repo.homeworkOpen(h);
-            const durchUebung = done && h.status !== "erledigt";
             // mit Übung: ihr Stand aus den Antworten (lib/hausuebung-zurueck.ts); „nicht abgegeben“ zählt nie als falsch
             const e = h.assignment_id ? hausuebungErgebnis(h.id, { stichtag: today }) : null;
+            // erledigt: abgehakt, die Übung fertig oder schon bewertet
+            const done = !repo.homeworkOpen(h) || e?.status === "bewertet";
+            const durchUebung = done && h.status !== "erledigt";
             return (
               <li key={h.id} className="flex items-start gap-3 py-2.5">
                 {durchUebung ? (
-                  <span className="mt-0.5 text-green" title="Erledigt: die Übung ist fertig">
-                    <CheckCircle2 size={18} aria-label="Erledigt: die Übung ist fertig" />
+                  <span className="mt-0.5 text-green" title={h.assignment_completed_at ? "Erledigt: die Übung ist fertig" : "Erledigt: bewertet"}>
+                    <CheckCircle2 size={18} aria-label={h.assignment_completed_at ? "Erledigt: die Übung ist fertig" : "Erledigt: bewertet"} />
                   </span>
                 ) : (
                   <form action={setHomeworkStatusAction.bind(null, h.id, student.id, done ? "offen" : "erledigt")}>
