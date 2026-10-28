@@ -132,6 +132,12 @@ export function BlattEinlesen({
     const fremd = (z: Zeile) => z.taskId == null && z.skillId && !ids.has(z.skillId);
     if (zeilen.some(fremd)) setZeilen(zeilen.map((z) => (fremd(z) ? { ...z, skillId: null } : z)));
   }, [skills, zeilen]);
+  // ohne KI gibt es nur das Selbst-Bewerten: die Zeilen stehen gleich da (nach dem Laden, kein Tippen auf „Ohne KI selbst bewerten“)
+  useEffect(() => {
+    if (!kiGrund || zeilen) return;
+    setZeilen(bekannt ? zeilenOhneLesung(bekannt.aufgaben).map((z) => ({ ...z, k: naechster++ })) : [leereZeile(1)]);
+    setGelesenVon("hand");
+  }, [kiGrund, zeilen, bekannt]);
   useEffect(() => () => seiten.forEach((s) => s.url && URL.revokeObjectURL(s.url)), [seiten]);
   useEffect(() => {
     if (busy !== "lesen") return;
@@ -256,6 +262,38 @@ export function BlattEinlesen({
   const sperrt = bekannt ? ohneGrund > 0 : offen > 0 || ohneBewertung > 0;
   const papierPunkte = bekannt && zeilen?.length && !ohneBewertung && zeilen.every((z) => z.max != null) ? { erreicht: zeilen.reduce((a, z) => a + (erreichtVon(z) ?? 0), 0), max: zeilen.reduce((a, z) => a + (z.max ?? 0), 0) } : null;
 
+  /**
+   * Selbst bewertet: die fotografierten Seiten, die noch nicht gespeichert sind, beim Schüler speichern (ohne KI, niemand liest sie),
+   * damit das Foto der Arbeit nicht verloren geht. Gibt alle Ids zurück, oder null mit Fehler (dann wird nichts übernommen).
+   */
+  async function alleSeiten(): Promise<number[] | null> {
+    if (!seiten.length) return gespeichert;
+    const fd = new FormData();
+    fd.set("schueler", String(studentId));
+    fd.set("fach", fach);
+    fd.set("nur_speichern", "1");
+    fd.set("materialien", gespeichert.join(","));
+    if (einheit) {
+      if (einheit.unitId) fd.set("einheit", String(einheit.unitId));
+      else fd.set("probe", "1");
+      fd.set("blatt", blattWahl);
+    }
+    for (const s of seiten) fd.append("seite", s.file, s.file.name);
+    try {
+      const res = await fetch("/material/blatt", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && Array.isArray(data.materials)) {
+        setGespeichert(data.materials);
+        setSeiten([]);
+        return data.materials as number[];
+      }
+      setSpeicherFehler(`Die Fotos sind nicht gespeichert: ${data.error ?? "Das ging nicht."} Bitte noch einmal „Übernehmen“.`);
+    } catch {
+      setSpeicherFehler("Keine Verbindung. Die Fotos sind noch hier, bitte noch einmal „Übernehmen“.");
+    }
+    return null;
+  }
+
   function uebernehmen() {
     if (!zeilen) return;
     setSpeicherFehler(null);
@@ -263,12 +301,14 @@ export function BlattEinlesen({
     if (maxFeld?.trim() && gesamtMax == null) return setSpeicherFehler("Die möglichen Punkte sind keine Zahl.");
     if (einheit) {
       startSpeichern(async () => {
+        const materialIds = await alleSeiten();
+        if (!materialIds) return;
         const out = await speicherePapierAction({
           unitId: einheit.unitId,
           studentId,
           blatt: blattWahl,
           zeilen: zeilen.map(({ k: _k, pText: _p, mText: _m, ...z }) => z),
-          materialIds: gespeichert,
+          materialIds,
           gelesen: gelesenVon,
           fach,
           titel,
@@ -279,6 +319,8 @@ export function BlattEinlesen({
       return;
     }
     startSpeichern(async () => {
+      const materialIds = await alleSeiten();
+      if (!materialIds) return;
       const out = await speichereBlattAction({
         studentId,
         fach,
@@ -291,7 +333,7 @@ export function BlattEinlesen({
         gesamt,
         gesamtMax: gesamtMax || null,
         zeilen: zeilen.map(({ k: _k, pText: _p, mText: _m, ...z }) => z),
-        materialIds: gespeichert,
+        materialIds,
       });
       if ("error" in out) setSpeicherFehler(out.error);
       else router.push(out.href);
