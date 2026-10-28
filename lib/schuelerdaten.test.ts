@@ -595,7 +595,7 @@ test("unit summary: six questions from the data, teacher lines marked, nothing p
   assert.ok(b.good.some((l) => l.from === "daten" && /Kürzen/i.test(l.text)));
   assert.ok(b.good.some((l) => l.from === "lehrer"), "the teacher's note is there, marked as such");
   assert.ok(b.difficulties.some((l) => /Dividieren/i.test(l.text)));
-  assert.ok(b.errors.some((l) => /Vorzeichenfehler \(1×\)/.test(l.text)), "the stored Fehlerart is used");
+  assert.ok(b.errors.some((l) => /Vorzeichenfehler bei 1 Aufgabe/.test(l.text)), "the stored Fehlerart is used");
   assert.match(b.next[0].text, /dividieren \(Prüfung\)$/i, "the central recommendation: the Schularbeit first");
   assert.ok(b.dates.some((l) => /Hausübung Mathematik: Buch S\. 42/.test(l.text)));
   assert.ok(b.dates.some((l) => /Schularbeit Mathematik in 8 Tagen/.test(l.text)));

@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
 import QRCode from "qrcode";
-import { BookOpenText, CalendarClock, Camera, CheckCircle2, ExternalLink, Images, PenLine, Plus, Printer, ScanLine, Square } from "lucide-react";
+import { BookOpenText, CalendarClock, Camera, CheckCircle2, ChevronDown, ExternalLink, Images, PenLine, Plus, Printer, ScanLine, Square } from "lucide-react";
 import { levelFor } from "@/lib/text-correction-rules";
 import { bestaetigeDokuAction, endUnitAction } from "@/app/session-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
@@ -26,7 +26,7 @@ import { Info } from "@/components/Info";
 import { aiEnabled } from "@/lib/ai";
 import { latestInsight } from "@/lib/ai/insights";
 import { unitBrief } from "@/lib/summary";
-import { ABSCHLUSS_FELDER, hatSichereErgebnisse, karteDerEinheit, quelleText } from "@/lib/abschluss";
+import { ABSCHLUSS_FELDER, hatSichereErgebnisse, karteDerEinheit, punkteDerKarte, quelleText } from "@/lib/abschluss";
 import { AbschlussFeld } from "@/components/AbschlussFeld";
 import { HausuebungKarte } from "@/components/Hausuebung";
 import { hausuebungDerEinheit, kiAutomatisch, vorschlagZeigen } from "@/lib/hausuebung";
@@ -74,7 +74,8 @@ function dauerLabel(geplanteDauer: number | null, minutes: number, estimated: bo
  * One page per unit, in two states (niko, 25.10.2026: Heute · Unterricht · Abschluss):
  * running → **Unterricht**: der geführte Unterricht, Schritt für Schritt (components/cockpit/Ablauf.tsx); Übungen,
  *   Fortschritt und alle Werkzeuge darunter unter „Weitere Werkzeuge“ (`?bereich=uebungen|fortschritt|cockpit`);
- * ended → **Abschluss**: vier Felder aus den Daten (lib/abschluss.ts) und „Dokumentation bestätigen“; die ganze
+ * ended → **Abschluss**: die elf Punkte aus den Daten als kurze Liste, darunter die vier Felder der Dokumentation (lib/abschluss.ts)
+ *   und „Dokumentation bestätigen“; die ganze
  *   Dokumentation, automatisch geschrieben (lib/einschaetzung.ts) und änderbar, unter „Mehr Details“ und „Ändern“.
  */
 export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string; hausuebung?: string }> }) {
@@ -280,6 +281,8 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   // der Abschluss (lib/abschluss.ts): vier Felder aus den Daten, deinen Beobachtungen und dem, was im Unterricht getippt
   // wurde, jede Zeile mit ihrer Quelle; Textarbeiten nur mit übernommener Note, nie ein Vorschlag der KI
   const karte = lesson ? karteDerEinheit(unit.id, lesson, brief) : null;
+  // gezeigt als eine Liste der elf Punkte in niko's Reihenfolge (F1), ein leerer Punkt fällt weg
+  const punkte = karte ? punkteDerKarte(karte) : [];
   // „Ändern“ (?aendern=1): das Formular der Dokumentation unter der Karte
   const aendern = sp.aendern && mayManage ? lesson : null;
   // Gemeinsame Bewertung (lib/zu-bewerten.ts): was noch auf dich wartet, gleich über „Dokumentation bestätigen“
@@ -305,53 +308,70 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
       <div className="grid max-w-[820px] gap-8">
         {lesson && karte ? (
           <section className="panel px-5 py-5 sm:px-6" aria-label="Abschluss" data-testid="abschluss-karte">
-            <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
-              {ABSCHLUSS_FELDER.map(([feld, label]) => {
-                const zeilen = karte[feld];
-                // „Gut verstanden“ ohne sicheres Ergebnis (lib/abschluss.ts gutVerstanden): das sagt die Karte, deine Beobachtungen darunter
-                const keineSicheren = feld === "gut" && !hatSichereErgebnisse(zeilen);
-                return (
-                  <AbschlussFeld key={feld} lessonId={mayManage ? lesson.id : null} feld={feld} label={label} text={zeilen.map((z) => z.text).join("\n")}>
-                    {keineSicheren && (
-                      <p className="text-ink-2" data-testid="keine-sicheren">
-                        Keine sicheren Ergebnisse –{" "}
-                        {mayManage ? (
-                          <Link href={`/einheiten/${unit.id}?aendern=1#aendern`} className="font-medium text-accent underline-offset-2 hover:underline">
-                            bei Bedarf ergänzen
-                          </Link>
-                        ) : (
-                          "bei Bedarf ergänzen"
-                        )}
-                      </p>
-                    )}
-                    {zeilen.length > 0 ? (
-                      <ul className={`grid gap-1 ${keineSicheren ? "mt-1" : ""}`}>
-                        {zeilen.map((z, i) => (
-                          <li key={i} className={z.von === "lehrer" || z.von === "beobachtung" ? "text-ink-2" : ""}>
-                            {z.text}
-                            {/* woher die Zeile kommt, leise */}
-                            <span className="ml-1.5 text-[12px] whitespace-nowrap text-ink-3" data-testid="quelle">
-                              {quelleText(z)}
-                            </span>
-                            {z.link && mayManage && (
-                              <>
-                                {" "}
-                                <Link href={z.link.href} className="inline-flex min-h-[44px] items-center font-semibold text-accent underline-offset-2 hover:underline" data-testid="abschluss-text-link">
-                                  {z.link.label}
-                                </Link>
-                              </>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      !keineSicheren && <span className="text-ink-3">Nichts erfasst</span>
-                    )}
-                  </AbschlussFeld>
-                );
-              })}
-            </dl>
+            {/* F1: eine kurze Liste in der Reihenfolge der elf Punkte (lib/abschluss.ts punkteDerKarte), je Punkt eine Zeile, der Rest hinter „mehr“ */}
+            {punkte.length > 0 ? (
+              <ul className="grid divide-y divide-line" data-testid="abschluss-liste">
+                {punkte.map((p) => (
+                  <PunktZeile key={p.punkt} p={p} links={mayManage} />
+                ))}
+              </ul>
+            ) : (
+              <p className="text-[15px] text-ink-3">Nichts erfasst</p>
+            )}
             <EinheitKiKosten unitId={unit.id} />
+            {/* die vier Felder, wie „Dokumentation bestätigen“ sie schreibt, je Feld schnell korrigierbar */}
+            <details className="reveal mt-3 border-t border-line pt-2" data-testid="doku-felder">
+              <summary>
+                <ChevronDown size={15} aria-hidden className="reveal-chevron" />
+                So steht es in der Dokumentation
+              </summary>
+              <dl className="grid gap-x-8 gap-y-5 pt-3 pb-1 sm:grid-cols-2">
+                {ABSCHLUSS_FELDER.map(([feld, label]) => {
+                  const zeilen = karte[feld];
+                  // „Gut verstanden“ ohne sicheres Ergebnis (lib/abschluss.ts gutVerstanden): das sagt die Karte, deine Beobachtungen darunter
+                  const keineSicheren = feld === "gut" && !hatSichereErgebnisse(zeilen);
+                  return (
+                    <AbschlussFeld key={feld} lessonId={mayManage ? lesson.id : null} feld={feld} label={label} text={zeilen.map((z) => z.text).join("\n")}>
+                      {keineSicheren && (
+                        <p className="text-ink-2" data-testid="keine-sicheren">
+                          Keine sicheren Ergebnisse –{" "}
+                          {mayManage ? (
+                            <Link href={`/einheiten/${unit.id}?aendern=1#aendern`} className="font-medium text-accent underline-offset-2 hover:underline">
+                              bei Bedarf ergänzen
+                            </Link>
+                          ) : (
+                            "bei Bedarf ergänzen"
+                          )}
+                        </p>
+                      )}
+                      {zeilen.length > 0 ? (
+                        <ul className={`grid gap-1 ${keineSicheren ? "mt-1" : ""}`}>
+                          {zeilen.map((z, i) => (
+                            <li key={i} className={z.von === "lehrer" || z.von === "beobachtung" ? "text-ink-2" : ""}>
+                              {z.text}
+                              {/* woher die Zeile kommt, leise */}
+                              <span className="ml-1.5 text-[12px] whitespace-nowrap text-ink-3" data-testid="quelle">
+                                {quelleText(z)}
+                              </span>
+                              {z.link && mayManage && (
+                                <>
+                                  {" "}
+                                  <Link href={z.link.href} className="inline-flex min-h-[44px] items-center font-semibold text-accent underline-offset-2 hover:underline" data-testid="abschluss-text-link">
+                                    {z.link.label}
+                                  </Link>
+                                </>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        !keineSicheren && <span className="text-ink-3">Nichts erfasst</span>
+                      )}
+                    </AbschlussFeld>
+                  );
+                })}
+              </dl>
+            </details>
             {offen.length > 0 && (
               <div id="zu-bewerten" className="mt-6 grid scroll-mt-24 gap-3 border-t border-line pt-4" data-testid="abschluss-zu-bewerten">
                 <div className="grid gap-1">
@@ -463,6 +483,60 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         )}
       </div>
     </>
+  );
+}
+
+/** So lang darf ein einzelner Punkt sein, ohne „mehr“: passt mit der Quelle ab 820 in eine Zeile (am Handy bricht er um). */
+const PUNKT_KURZ = 55;
+
+/**
+ * Ein Punkt des Abschlusses (lib/abschluss.ts `PUNKTE`) in einer Zeile: der Name, dann die Zeilen hintereinander, gekürzt; „mehr“
+ * zeigt jede Zeile mit ihrer Quelle. Ein Link der Zeile („Jetzt bewerten“, „Bewertung übernehmen“) bleibt sichtbar, nur für die
+ * Lehrkraft der Einheit.
+ */
+function PunktZeile({ p, links }: { p: ReturnType<typeof punkteDerKarte>[number]; links: boolean }) {
+  const text = p.zeilen.map((z) => z.text).join(" · ");
+  const mitLink = links ? p.zeilen.filter((z) => z.link) : [];
+  const leise = (z: (typeof p.zeilen)[number]) => z.von === "lehrer" || z.von === "beobachtung";
+  return (
+    <li className="grid gap-x-4 py-2 sm:grid-cols-[9.5rem_minmax(0,1fr)]" data-testid={`punkt-${p.punkt}`}>
+      <span className="pt-1 text-[13px] font-semibold text-ink-2">{p.label}</span>
+      <div className="min-w-0 text-[15.5px]">
+        {p.zeilen.length > 1 || text.length > PUNKT_KURZ ? (
+          <details className="group">
+            <summary className="flex min-h-[32px] cursor-pointer list-none items-center gap-2 pointer-coarse:min-h-[44px] [&::-webkit-details-marker]:hidden">
+              <span className="min-w-0 truncate group-open:hidden">{text}</span>
+              <span className="shrink-0 text-[13px] font-semibold text-accent group-open:hidden">mehr</span>
+              <span className="hidden text-[13px] font-semibold text-accent group-open:inline">weniger</span>
+            </summary>
+            <ul className="grid gap-1 pb-1">
+              {p.zeilen.map((z, i) => (
+                <li key={i} className={leise(z) ? "text-ink-2" : ""}>
+                  {z.text}
+                  <span className="ml-1.5 text-[12px] whitespace-nowrap text-ink-3" data-testid="quelle">
+                    {quelleText(z)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : (
+          // on a phone the short line wraps (nothing hidden without „mehr“); from sm on it stays one row
+          <p className={`py-1 sm:flex sm:min-h-[32px] sm:items-center sm:gap-1.5 sm:py-0 ${leise(p.zeilen[0]) ? "text-ink-2" : ""}`}>
+            <span className="sm:min-w-0 sm:truncate">{text}</span>
+            {/* woher die Zeile kommt, leise */}
+            <span className="ml-1.5 text-[12px] whitespace-nowrap text-ink-3 sm:ml-0 sm:shrink-0" data-testid="quelle">
+              {quelleText(p.zeilen[0])}
+            </span>
+          </p>
+        )}
+        {mitLink.map((z, i) => (
+          <Link key={i} href={z.link!.href} className="mr-4 inline-flex min-h-[44px] items-center text-[14px] font-semibold text-accent underline-offset-2 hover:underline" data-testid="abschluss-text-link">
+            {z.link!.label}
+          </Link>
+        ))}
+      </div>
+    </li>
   );
 }
 
