@@ -53,7 +53,7 @@ function Writing({ updatedAt }: { updatedAt: string }) {
  * Letzte Antwort falsch“, die sich auf Tippen zu allem Übrigen öffnet. Eine falsche Antwort und „nicht
  * angekommen“ stehen rot schon in der Zeile.
  */
-export function LiveStatus({ unitId, initial, join, kompakt = false }: { unitId: number; initial: LiveSnapshot; join: JoinInfo; kompakt?: boolean }) {
+export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = null }: { unitId: number; initial: LiveSnapshot; join: JoinInfo; kompakt?: boolean; kiNeu?: KiNeu | null }) {
   const [s, setS] = useState(initial);
   const [auf, setAuf] = useState(false);
   const [pending, start] = useTransition();
@@ -237,7 +237,8 @@ export function LiveStatus({ unitId, initial, join, kompakt = false }: { unitId:
       ) : (
         <p className="mt-3 text-[15px] text-ink-2">Noch nichts gesendet. Öffne eine Übung und tippe auf „An {s.student} senden“.</p>
       )}
-      {s.ai.on && s.running && <AIHint unitId={unitId} ai={s.ai} />}
+      {/* eine offene Vorschau bleibt zum Senden da, auch wenn die KI inzwischen aus ist */}
+      {(s.ai.on || kiNeu?.offen) && s.running && <AIHint unitId={unitId} ai={s.ai} kiNeu={kiNeu} />}
     </>
   );
   if (!kompakt) {
@@ -269,6 +270,7 @@ export function LiveStatus({ unitId, initial, join, kompakt = false }: { unitId:
     if (c.last && !c.last.pending && c.state !== "fertig") teile.push(c.last.correct ? { text: "Letzte Antwort richtig", ton: "text-green" } : { text: "Letzte Antwort falsch", ton: "font-semibold text-red" });
     if (c.last?.pending) teile.push({ text: "Antwort wartet auf dich", ton: "text-amber" });
   } else teile.push({ text: "Noch nichts gesendet" });
+  if (kiNeu?.offen && s.running) teile.push({ text: "Neue Aufgaben zum Durchsehen", ton: "font-semibold text-amber" });
   return (
     <section aria-label="Live-Status" className="panel mb-5 px-4 py-1.5 sm:px-5" data-testid="live-kompakt">
       <button type="button" aria-expanded={auf} onClick={() => setAuf((x) => !x)} className="flex min-h-[48px] w-full flex-wrap items-center gap-x-2 gap-y-0.5 text-left text-[14.5px]">
@@ -357,8 +359,18 @@ const AI_STATE: Record<AILive["state"], string> = {
   pausiert: "Claude nicht erreichbar, pausiert",
 };
 
-/** What the KI noticed last, and the button for a fitting new exercise (only on click, it costs a request). */
-function AIHint({ unitId, ai }: { unitId: number; ai: AILive }) {
+/**
+ * Neue Aufgaben der KI aus dem KI-Hinweis (lib/ki-nachschub.ts `nachschubImLiveHinweis`, vom Server): die Kosten auf dem Knopf,
+ * der Grund darunter, und die Vorschau „neu erstellt, ungeprüft“ mit „Senden“ und „Verwerfen“ (components/cockpit/Nachschub.tsx).
+ * `offen`: eine Vorschau liegt bereit oder wird gerade erstellt.
+ */
+export type KiNeu = { kosten: string | null; gesperrt: boolean; hinweis: string | null; vorschau: React.ReactNode; offen: boolean };
+
+/**
+ * What the KI noticed last, and the button for fitting new tasks (only on click, it costs a request). They come as a preview
+ * right here; nothing goes to the student before „Senden“.
+ */
+function AIHint({ unitId, ai, kiNeu }: { unitId: number; ai: AILive; kiNeu: KiNeu | null }) {
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ ok?: string; error?: string } | null>(null);
   const h = ai.hint;
@@ -387,17 +399,30 @@ function AIHint({ unitId, ai }: { unitId: number; ai: AILive }) {
           <span className="font-semibold">Letzte Übung:</span> {ai.block.summary}
         </p>
       )}
-      {(h || ai.block) && (
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <button
-            className={`btn ${wantsNew ? "btn-primary" : "btn-secondary"}`}
-            disabled={pending}
-            onClick={() => start(async () => setMsg(await newExerciseAction(unitId)))}
-          >
-            <Sparkles size={16} aria-hidden /> {pending ? "Wird erstellt …" : "Passende Aufgabe senden"}
-          </button>
-          {msg && <span className={`text-[13px] ${msg.error ? "text-red" : "text-ink-2"}`}>{msg.error ?? msg.ok}</span>}
-        </div>
+      {kiNeu?.offen ? (
+        kiNeu.vorschau
+      ) : (
+        (h || ai.block) && (
+          <div className="mt-3 grid gap-1" data-testid="live-ki-neu">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                className={`btn ${wantsNew ? "btn-primary" : "btn-secondary"}`}
+                style={{ whiteSpace: "normal", textAlign: "center" }}
+                disabled={pending || Boolean(kiNeu?.gesperrt)}
+                onClick={() => start(async () => setMsg(await newExerciseAction(unitId)))}
+                data-testid="live-ki-erstellen"
+              >
+                <Sparkles size={16} aria-hidden /> {pending ? "Wird erstellt …" : `Passende Aufgaben erstellen${kiNeu?.kosten ? ` · ${kiNeu.kosten}` : ""}`}
+              </button>
+              {msg && (msg.error ?? msg.ok) && (
+                <span role={msg.error ? "alert" : "status"} className={`text-[13px] ${msg.error ? "text-red" : "text-ink-2"}`}>
+                  {msg.error ?? msg.ok}
+                </span>
+              )}
+            </div>
+            {!msg?.error && <p className="text-[13px] text-ink-3">{kiNeu?.hinweis ?? "Du siehst sie zuerst als Vorschau mit Lösungen."}</p>}
+          </div>
+        )
       )}
     </div>
   );

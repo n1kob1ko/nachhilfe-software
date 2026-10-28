@@ -2,11 +2,12 @@ import { Send, Sparkles, Trash2 } from "lucide-react";
 import { einheitBudgetAction, nachschubSchrittAction, nachschubSendenAction, nachschubVerwerfenAction } from "@/app/cockpit-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { VorschlagKnopf } from "@/components/cockpit/CockpitClient";
+import type { KiNeu } from "@/components/device/LiveStatus";
 import { Pill } from "@/components/ui";
 import { BUDGET_MAX_EUR, einheitBudget, euro, euroKlein, kostenJeFunktion, kostenZeile } from "@/lib/ai/einheit-budget";
 import { aiEnabled } from "@/lib/ai/router";
 import { antwortText, frageText, loesungText } from "@/lib/cockpit";
-import type { Nachschub, NachschubAnzeige } from "@/lib/ki-nachschub";
+import { nachschubImLiveHinweis, type Nachschub, type NachschubAnzeige } from "@/lib/ki-nachschub";
 import { getSkill } from "@/lib/repo";
 
 /**
@@ -92,6 +93,18 @@ export function NachschubImSchritt({ a, unitId, schrittId, name }: { a: Nachschu
       {!kiAus && <p className="text-[13px] text-ink-3">{a.hinweis ?? "Du siehst sie zuerst als Vorschau mit Lösungen."}</p>}
     </div>
   );
+}
+
+/**
+ * Für den KI-Hinweis im Live-Status (components/device/LiveStatus.tsx): Kosten und Grund für „Passende Aufgaben erstellen“ und dieselbe
+ * Vorschau wie im Schritt, hier auf dem Server gezeichnet. null, solange in der Einheit nichts gelöst ist.
+ */
+export function kiNeuImLiveHinweis(unitId: number, name: string): KiNeu | null {
+  const a = nachschubImLiveHinweis(unitId);
+  if (!a) return null;
+  const n = a.eintrag;
+  const vorschau = n?.status === "bereit" ? <NachschubVorschau n={n} unitId={unitId} name={name} /> : n?.status === "laeuft" ? <NachschubLaeuft automatisch={false} /> : null;
+  return { kosten: a.kosten, gesperrt: !a.tor.ki.erlaubt, hinweis: a.hinweis, vorschau, offen: vorschau !== null };
 }
 
 /**

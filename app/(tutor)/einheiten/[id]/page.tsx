@@ -9,7 +9,7 @@ import { AutoRefresh } from "@/components/AutoRefresh";
 import { BoardThumbs } from "@/components/BoardThumbs";
 import { Unterricht } from "@/components/cockpit/Ablauf";
 import { AblaufRueckblick } from "@/components/cockpit/Cockpit";
-import { EinheitKiKosten, KiKostenZeile } from "@/components/cockpit/Nachschub";
+import { EinheitKiKosten, KiKostenZeile, kiNeuImLiveHinweis } from "@/components/cockpit/Nachschub";
 import { CopyLink } from "@/components/CopyLink";
 import { Elapsed, Restzeit } from "@/components/Elapsed";
 import { UnitDocForm } from "@/components/UnitDocForm";
@@ -209,7 +209,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         {notices}
         {area === "unterricht" ? (
           <>
-            <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} join={await joinInfo()} kompakt />
+            <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} join={await joinInfo()} kompakt kiNeu={mayManage ? kiNeuImLiveHinweis(unit.id, first(student.name)) : null} />
             <Unterricht unit={unit} student={student} fehler={sp.cockpit} teacherId={teacher.id} werkzeugeOffen={sp.bereich === "cockpit"} ausfuehrlich={sp.ausfuehrlich ? Number(sp.ausfuehrlich) : null} folien={sp.folien ? Number(sp.folien) : null} knopf={sp.knopf ?? null} />
             {mayManage && (
               <div className="mt-4">
@@ -224,7 +224,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
                 ← Zurück zum Unterricht
               </Link>
             )}
-            {mayManage && <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} join={await joinInfo()} />}
+            {mayManage && <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} join={await joinInfo()} kiNeu={kiNeuImLiveHinweis(unit.id, first(student.name))} />}
             {area === "uebungen" ? <UnitExercisesArea unit={unit} student={student} mayManage={mayManage} /> : <UnitProgressArea unit={unit} studentName={student.name} />}
             {mayManage && (
               <div className="mt-14 border-t border-line pt-5">

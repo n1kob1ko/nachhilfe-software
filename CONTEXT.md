@@ -590,7 +590,8 @@ _Avoid_: Schülerbudget, Kontingent
 Bis zu welchem Betrag die KI in einer Einheit fehlende Aufgaben von selbst erstellt (Erweitert › KI-Kosten, nur die
 Administration; `lib/ai/einheit-budget.ts`, `lib/ki-nachschub.ts`). Standard 0 € = automatisch aus, alles auf Tippen wie
 bisher. Gezählt wird jede KI-Anfrage mit `ai_calls.unit_id` dieser Einheit, auch Briefing und Live-Analyse. Neue Aufgaben
-kommen immer zuerst als Vorschau („neu erstellt, ungeprüft“), an den Schüler erst mit „Senden“. Die Lehrkraft kann den
+kommen immer zuerst als Vorschau („neu erstellt, ungeprüft“), an den Schüler erst mit „Senden“; das gilt auch für „Passende
+Aufgaben erstellen“ im KI-Hinweis des Live-Status (nur auf Tippen). Die Lehrkraft kann den
 Betrag einer Einheit senken, erhöhen nur die Administration. Die KI-Grenze je Schüler und das Monatsbudget gehen vor.
 _Avoid_: Einheitsbudget, Kostendeckel
 

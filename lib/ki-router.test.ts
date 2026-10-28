@@ -349,7 +349,7 @@ test("free text: saved for the teacher's grade, with or without the AI, never gr
   r.resetRouter();
 });
 
-test("new exercise on click: from Claude when possible, from the generator when not", async () => {
+test("new exercise on click (Live-Status): a preview from Claude, never straight to the student; when Claude fails, the reason", async () => {
   const r = await import("./ai/router");
   const live = await import("./ai/realtime");
   const s = await setup("Dora Test");
@@ -360,9 +360,10 @@ test("new exercise on click: from Claude when possible, from the generator when 
   r.setTransport(async () => {
     throw new Error("weg");
   });
+  const vorher = s.repo.listAssignments(s.student.id).length;
   const out = await live.newExerciseForUnit(s.unit.id, s.teacher.id);
-  assert.ok(out.ok && out.source === "generator");
-  assert.equal(s.repo.listTasks(s.repo.getAssignment(out.ok ? out.assignmentId : 0)!.worksheet_id).length, 2);
+  assert.ok(!out.ok && out.error.length > 0, JSON.stringify(out));
+  assert.equal(s.repo.listAssignments(s.student.id).length, vorher, "no silent stand-in from the generator");
   r.setTransport(null);
   r.resetRouter();
 });

@@ -42,7 +42,8 @@ export type SimReport = {
   /** what one request per answer and hint would have meant (no filter, no bundling) */
   naive: { calls: number; usd: number };
   toReview: number;
-  generatorFallbacks: number;
+  /** „Passende Aufgaben erstellen“ ohne neue Aufgaben: die KI fiel aus, der Grund stand unter dem Knopf (kein Ersatz ohne Blick) */
+  ohneNeueAufgaben: number;
 };
 
 // ---------- deterministic randomness ----------
@@ -311,7 +312,7 @@ export async function simulateLesson(o: SimOptions = {}): Promise<SimReport> {
   let hints = 0;
   let tasksDone = 0;
   let toReview = 0;
-  let generatorFallbacks = 0;
+  let ohneNeueAufgaben = 0;
   let clicks = 0;
   let lastClick = -Infinity;
 
@@ -351,10 +352,13 @@ export async function simulateLesson(o: SimOptions = {}): Promise<SimReport> {
         lastClick = clockNow();
         const out = await newExerciseForUnit(unit.id, teacher.id);
         await settle();
-        if (out.ok) {
-          if (out.source === "generator") generatorFallbacks++;
-          await work(out.assignmentId, plan);
-        }
+        // the teacher looks through the preview and sends it (lib/ki-nachschub.ts)
+        if (out.ok && "vorschau" in out) {
+          const { sendeNachschub } = await import("../ki-nachschub");
+          const sent = await sendeNachschub(unit.id, out.vorschau.id, teacher.id);
+          if (!("fehler" in sent)) await work(sent.assignmentId, plan);
+        } else if (out.ok) await work(out.assignmentId, plan);
+        else ohneNeueAufgaben++;
       }
     }
   };
@@ -378,7 +382,7 @@ export async function simulateLesson(o: SimOptions = {}): Promise<SimReport> {
   await settle();
   await clock.advanceTo(clockNow() + 60_000);
 
-  const report = summarize(unit.id, { minutes, real: Boolean(o.real), outage: Boolean(o.outage), answers, hints, tasks: tasksDone, exercises: repo.listAssignments(studentId).length, toReview, generatorFallbacks });
+  const report = summarize(unit.id, { minutes, real: Boolean(o.real), outage: Boolean(o.outage), answers, hints, tasks: tasksDone, exercises: repo.listAssignments(studentId).length, toReview, ohneNeueAufgaben });
   setTransport(null);
   setTestRun(false);
   setClock(null);
@@ -491,7 +495,7 @@ export function reportMarkdown(r: SimReport, outage?: SimReport): string {
       "",
       "## Ausfalltest",
       "",
-      `Derselbe Ablauf, jeder KI-Aufruf schlägt fehl. Die Einheit lief bis zum Ende: ${int(outage.answers)} Antworten, ${int(outage.toReview)} freie Antworten zur Lehrerbewertung, ${int(outage.generatorFallbacks)} Mal neue Aufgaben aus dem Generator. ` +
+      `Derselbe Ablauf, jeder KI-Aufruf schlägt fehl. Die Einheit lief bis zum Ende: ${int(outage.answers)} Antworten, ${int(outage.toReview)} freie Antworten zur Lehrerbewertung, ${int(outage.ohneNeueAufgaben)} Mal keine neuen Aufgaben der KI (der Grund stand unter dem Knopf). ` +
         `${int(outage.total.failed)} Aufrufe schlugen fehl, danach pausierte die KI und ${int(outage.total.blocked)} weitere wurden gar nicht erst versucht.`,
     );
   }

@@ -14,10 +14,8 @@ import { ERROR_TYPES, type ErrorType } from "../error-types";
 import * as repo from "../repo";
 import { wienerDatum } from "../planung/zeit";
 import { klassenLabel } from "../school";
-import type { WortartSetting } from "../wortarten";
 import { getUnit } from "../units";
 import { poolOf, realtimeCapPerHour, routeFor } from "./config";
-import { generateWithAI } from "./features";
 import { ACTIONS, hasBlockInsight, latestInsight, saveInsight, type Action, type BlockInsight, type LiveInsight, type UnitInsight } from "./insights";
 import { hintergrundGestoppt } from "./einheit-budget";
 import { budgetState } from "./log";
@@ -420,75 +418,44 @@ async function unitSummary(unitId: number, teacherId: number, lessonId: number) 
 
 // ---------- a new exercise, on the teacher's click ----------
 
-export type NewExercise = { ok: true; assignmentId: number; source: "ki" | "generator"; note?: string } | { ok: false; error: string };
+export type NewExercise =
+  | { ok: true; vorschau: import("../ki-nachschub").Nachschub }
+  | { ok: true; assignmentId: number; source: "liste" }
+  | { ok: false; error: string };
 
 /**
- * Two new tasks that fit what the KI saw last (skill, difficulty, error pattern), sent to the student
- * right away. Without KI (off, budget, error) the built-in generator makes them.
- * `ziel`: the Anpassung im Unterricht (lib/steuerung.ts) names skill, level 1–5 and the error to practise itself.
+ * „Passende Aufgaben erstellen“ im KI-Hinweis: zwei neue Aufgaben zu dem, was die KI zuletzt sah (Fähigkeit, Schwierigkeit,
+ * Fehlerbild; lib/ki-nachschub.ts `bedarfImLiveHinweis`). Sie kommen als Vorschau „neu erstellt, ungeprüft“ (`vorschau`), an den
+ * Schüler erst mit „Senden“, wie im Schritt (niko: nichts von der KI geht ungeprüft an den Schüler). Kosten, KI-Grenze je Schüler und
+ * Monatsbudget gelten wie dort, die Anfrage zählt zur Einheit. Darf die KI nicht oder antwortet sie nicht, kommt der Grund zurück, kein
+ * stiller Ersatz. Vokabeln aus eigenen Listen macht nie die KI: die gehen wie bisher gleich aus den Listen (`source: "liste"`).
  */
-export async function newExerciseForUnit(unitId: number, teacherId: number, ziel?: { skillId: string; level: number; fokus?: string | null }): Promise<NewExercise> {
+export async function newExerciseForUnit(unitId: number, teacherId: number): Promise<NewExercise> {
+  const { bedarfImLiveHinweis, erstelleNachschub } = await import("../ki-nachschub");
+  const b = bedarfImLiveHinweis(unitId);
+  if ("fehler" in b) return { ok: false, error: b.fehler };
+  const { EIGENE_VOKABELN } = await import("../vokabeln");
+  if (b.ziel.skillId === EIGENE_VOKABELN) return eigeneVokabelnSenden(unitId, teacherId, b.ziel.level);
+  liveStats.newTasks++;
+  const out = await erstelleNachschub(unitId, b, { automatisch: false, teacherId });
+  if ("fehler" in out) return { ok: false, error: out.fehler };
+  if (out.status === "fehler") return { ok: false, error: out.problem };
+  return { ok: true, vorschau: out };
+}
+
+/** Vokabeln aus eigenen Listen (lib/vokabellisten.ts): nur aus den Listen der Schülerin bzw. des Schülers, ohne KI, gleich gesendet. */
+async function eigeneVokabelnSenden(unitId: number, teacherId: number, level: number): Promise<NewExercise> {
   const unit = getUnit(unitId);
-  if (!unit || unit.status !== "gestartet") return { ok: false, error: "Diese Einheit läuft nicht mehr." };
-  const student = repo.getStudent(unit.student_id);
-  const last = db().prepare("SELECT task_id FROM attempts WHERE unit_id = ? ORDER BY id DESC LIMIT 1").get(unitId) as { task_id: number } | undefined;
-  const task = last ? repo.getTask(last.task_id) : null;
-  const live = latestInsight(unitId, "echtzeit");
-  const block = latestInsight(unitId, "block");
-  const ref = [live, block].filter((x) => x !== null).sort((a, b) => b!.id - a!.id)[0] ?? null;
-  const skillId = ziel?.skillId ?? ref?.data.next_skill ?? task?.skillId ?? null;
-  const skill = skillId ? repo.getSkill(skillId) : null;
-  if (!student || !skill) return { ok: false, error: "In dieser Einheit wurde noch keine Aufgabe gelöst." };
-  const level = Math.max(1, Math.min(5, ziel?.level ?? (task?.level ?? levelOf(task?.difficulty)) + (ref?.data.difficulty_adjustment ?? 0)));
+  const student = unit ? repo.getStudent(unit.student_id) : null;
+  const { EIGENE_VOKABELN } = await import("../vokabeln");
+  const skill = repo.getSkill(EIGENE_VOKABELN);
+  if (!unit || !student || !skill) return { ok: false, error: "Diese Einheit läuft nicht mehr." };
   const difficulty = DIFFICULTIES[level - 1];
-  const misconception = ziel ? (ziel.fokus ?? null) : live && live.id === ref?.id ? live.data.misconception : null;
   const used = db()
     .prepare("SELECT t.prompt FROM tasks t JOIN assignments a ON a.worksheet_id = t.worksheet_id WHERE a.unit_id = ?")
     .all(unitId) as { prompt: string }[];
-
-  let tasks = null as Awaited<ReturnType<typeof generateWithAI>>;
-  let note: string | undefined;
-  let wortarten: WortartSetting | null = null;
-  // Vokabeln aus eigenen Listen: nur aus den Listen der Schülerin bzw. des Schülers (lib/vokabellisten.ts), nie von der KI
-  const { EIGENE_VOKABELN } = await import("../vokabeln");
-  const eigene = skill.id === EIGENE_VOKABELN;
-  liveStats.newTasks++;
-  try {
-    const { contextForAI, studentContext, wortartenSetting } = await import("../builder");
-    const ctx = studentContext(student.id);
-    wortarten = wortartenSetting([skill.id], student.school_type, student.klasse ?? 1, ctx);
-    tasks = eigene ? null : await generateWithAI(
-      {
-        subject: skill.subject,
-        level: klassenLabel(student.school_type, student.klasse),
-        skills: [{ id: skill.id, name: skill.name, area: skill.area, difficulty }],
-        count: 2,
-        categories: [],
-        studentContext: ctx ? contextForAI(ctx, [skill.id]) : null,
-        focusNote: misconception ? `Gezielt üben: ${misconception}` : undefined,
-        avoid: used.map((u) => u.prompt),
-        wortarten,
-      },
-      { teacherId, unitId, trigger: "neue_aufgabe" },
-      "neue_aufgabe",
-    );
-  } catch (e) {
-    note = e instanceof Error ? e.message : String(e);
-  }
-  // sent right away without the teacher's look: tasks the app flagged for checking are not used
-  tasks = tasks?.filter((t) => !t.data.pruefen?.length) ?? null;
-  let source: "ki" | "generator" = "ki";
-  if (!tasks?.length) {
-    const { generateBuiltIn } = await import("../generators");
-    const { schulstufe } = await import("../school");
-    const { eigeneVokabelAufgaben } = await import("../vokabellisten");
-    const { ohneAusgeblendete } = await import("../bewertungen");
-    // schlecht bewertete Aufgaben (lib/bewertungen.ts) bleiben auch hier weg
-    tasks = eigene
-      ? eigeneVokabelAufgaben(student.id, { count: 2, difficulty, taskType: "mixed", avoid: used.map((u) => u.prompt) })
-      : ohneAusgeblendete(generateBuiltIn({ subject: skill.subject, skills: [{ id: skill.id, name: skill.name }], difficulty, count: 2, taskType: "mixed", grade: schulstufe(student.school_type, student.klasse ?? 1), wortarten }));
-    source = "generator";
-  }
+  const { eigeneVokabelAufgaben } = await import("../vokabellisten");
+  const tasks = eigeneVokabelAufgaben(student.id, { count: 2, difficulty, taskType: "mixed", avoid: used.map((u) => u.prompt) });
   if (!tasks.length) return { ok: false, error: "Für diese Fähigkeit konnte keine Aufgabe erstellt werden." };
   const { schulstufe } = await import("../school");
   const worksheetId = repo.createWorksheet(
@@ -502,7 +469,7 @@ export async function newExerciseForUnit(unitId: number, teacherId: number, ziel
       difficulty,
       task_type: "mixed",
       kind: "uebung",
-      source,
+      source: "generator",
       skill_ids: [skill.id],
       student_id: student.id,
       teacher_id: teacherId,
@@ -512,7 +479,7 @@ export async function newExerciseForUnit(unitId: number, teacherId: number, ziel
   const assignmentId = repo.assignWorksheet(worksheetId, student.id, "", unitId);
   const { showOnTablet } = await import("../live");
   showOnTablet(unit, { kind: "aufgabe", assignmentId });
-  return { ok: true, assignmentId, source, note };
+  return { ok: true, assignmentId, source: "liste" };
 }
 
 // ---------- what the live status shows ----------

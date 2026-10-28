@@ -224,12 +224,16 @@ export async function currentTaskToBoardAction(unitId: number) {
   showOnTablet(unit, { kind: "tafel" });
 }
 
-/** "Passende Aufgabe erstellen": two new tasks for what the KI saw last, sent to the tablet at once. */
+/**
+ * „Passende Aufgaben erstellen“ im KI-Hinweis: zwei neue Aufgaben zu dem, was die KI zuletzt sah. Sie kommen als Vorschau in den
+ * Hinweis (lib/ki-nachschub.ts); an den Schüler gehen sie erst mit „Senden“ dort. Eigene Vokabeln (ohne KI) gehen gleich.
+ */
 export async function newExerciseAction(unitId: number): Promise<{ ok?: string; error?: string }> {
   const { t, unit } = await managedRunningUnit(unitId);
   const out = await newExerciseForUnit(unit.id, t.id);
-  if (!out.ok) return { error: out.error };
-  noteActivity(unit.student_id);
   revalidatePath(`/einheiten/${unit.id}`);
-  return { ok: out.source === "ki" ? "Neue Aufgaben gesendet." : "Neue Aufgaben aus dem Generator gesendet (KI gerade nicht verfügbar)." };
+  if (!out.ok) return { error: out.error };
+  if ("vorschau" in out) return {};
+  noteActivity(unit.student_id);
+  return { ok: "Neue Aufgaben aus den eigenen Vokabeln gesendet." };
 }
