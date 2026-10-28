@@ -182,16 +182,23 @@ export function KiKostenZeile({ unitId, admin }: { unitId: number; admin: boolea
   );
 }
 
-/** Im Abschluss: was die KI in dieser Einheit gekostet hat, eine Zeile je Funktion. Nur für Lehrkräfte; nichts, wenn nichts lief. */
+/**
+ * Im Abschluss: was die KI in dieser Einheit gekostet hat, eine Zeile („KI in dieser Einheit: 0,12 €“), je Funktion erst hinter
+ * „mehr“ (F1). Nur für Lehrkräfte, nie in der Dokumentation; nichts, wenn nichts lief.
+ */
 export function EinheitKiKosten({ unitId }: { unitId: number }) {
   const zeilen = kostenJeFunktion(unitId);
   if (!zeilen.length) return null;
   const summe = zeilen.reduce((s, z) => s + z.eur, 0);
   return (
-    <div className="no-print mt-6 border-t border-line pt-4 text-[14px]" data-testid="abschluss-ki-kosten">
-      <p className="font-semibold">
-        KI in dieser Einheit: <span className="num">{euroKlein(summe)}</span>
-      </p>
+    <details className="group no-print mt-5 border-t border-line pt-3 text-[14px]" data-testid="abschluss-ki-kosten">
+      <summary className="flex min-h-[36px] cursor-pointer list-none flex-wrap items-center gap-x-2 pointer-coarse:min-h-[44px] [&::-webkit-details-marker]:hidden">
+        <span className="font-semibold">
+          KI in dieser Einheit: <span className="num">{euroKlein(summe)}</span>
+        </span>
+        <span className="text-[13px] font-semibold text-accent group-open:hidden">mehr</span>
+        <span className="hidden text-[13px] font-semibold text-accent group-open:inline">weniger</span>
+      </summary>
       <ul className="mt-1 grid max-w-[28rem] gap-0.5 text-ink-2">
         {zeilen.map((z) => (
           <li key={z.fn} className="flex flex-wrap justify-between gap-x-4">
@@ -203,7 +210,7 @@ export function EinheitKiKosten({ unitId }: { unitId: number }) {
           </li>
         ))}
       </ul>
-    </div>
+    </details>
   );
 }
 

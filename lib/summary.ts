@@ -71,14 +71,14 @@ export function unitBrief(lessonId: number, o: { today?: string; now?: number } 
     .map((s) => data(`${s.name}: ${s.correct} von ${s.done} richtig${s.withHelp ? `, ${s.withHelp}× mit Hilfe` : ""}`));
   difficulties.push(...vomLehrer("difficulties"));
 
-  // 4. errors: the stored Fehlerart (also when the teacher changed it later), else the concrete error
+  // 4. errors: the stored Fehlerart (also when the teacher changed it later), else the concrete error; counted by task, not by try
   const wrong = lesson.unit_id ? repo.listAttemptsForUnit(lesson.unit_id).filter((a) => !a.correct && !a.solution_viewed) : [];
-  const counts = new Map<string, number>();
+  const counts = new Map<string, Set<number>>();
   for (const a of wrong) {
     const label = a.error_type && a.error_type !== "unbekannt" ? errorTypeLabel(a.error_type) : a.error_label;
-    if (label) counts.set(label, (counts.get(label) ?? 0) + 1);
+    if (label) counts.set(label, (counts.get(label) ?? new Set<number>()).add(a.task_id));
   }
-  const errors: BriefLine[] = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([label, n]) => data(`${label} (${n}×)`));
+  const errors: BriefLine[] = [...counts].sort((a, b) => b[1].size - a[1].size).slice(0, 5).map(([label, n]) => data(`${label} bei ${n.size} ${n.size === 1 ? "Aufgabe" : "Aufgaben"}`));
   if (!errors.length && r) errors.push(...r.errors.slice(0, 5).map((e) => data(`${e.label} (${e.count}×)`)));
   errors.push(...teacher(lesson.mistakes));
 

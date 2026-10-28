@@ -120,7 +120,7 @@ test("Anpassung and observations from the real paths: „Leichtere Aufgabe nöti
   const lessonId = s.endUnit(unit.id, { byTeacherId: s.teacher.id })!;
   const k = s.ab.karteDerEinheit(unit.id, s.repo.getLesson(lessonId)!);
   assert.ok(k.schwierig.some((z) => z.von === "anpassung" && z.text === "Leichtere Aufgabe nötig bei Dividieren (danach 3 von 3 richtig)"), JSON.stringify(k.schwierig));
-  assert.ok(k.schwierig.some((z) => z.von === "antworten" && /^Fehler: Kehrwert vergessen \(2×\)$/.test(z.text)));
+  assert.ok(k.schwierig.some((z) => z.von === "antworten" && /^Fehler: Kehrwert vergessen bei 2 Aufgaben$/.test(z.text)));
   assert.deepEqual(k.gut, [], "two wrong answers on the skill: nothing secure, even with three right afterwards");
   const pruefung = k.naechstes[0];
   assert.equal(pruefung.von, "pruefung");

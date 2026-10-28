@@ -21,7 +21,15 @@
  * verstanden“ noch für „Noch schwierig“ noch für den Lernstand. „Heute gemacht“ sagt dann „Bewertung offen: 3 Antworten“, und so
  * steht es auch in der Dokumentation, wenn sie trotzdem bestätigt wird. Wird später bewertet, rechnet `bewertungInDoku` Bericht
  * und Karte neu.
+ *
+ * Dokumentation vollständig (F1, niko, Abschnitt 12: „erweitert, nicht ersetzt“, „keine Leistungen oder Fortschritte erfinden“): jede
+ * Zeile gehört zu einem der elf Punkte (`PUNKTE`: Themen, Erklärungen, Übungen, Richtig und falsch, Hilfen, Noch schwierig,
+ * Verbessert, Auf Papier, Textarbeit, Hausübung, Nächstes Mal). Der Abschluss zeigt sie als eine kurze Liste in dieser Reihenfolge
+ * (`punkteDerKarte`), die vier Felder bleiben, was „Dokumentation bestätigen“ schreibt. Ein Punkt ohne Beleg fällt weg. Neu dazu:
+ * das gezeigte Beispiel, „Ausführlicher erklärt“, die Hilfen am Gerät, die Übungen mit Namen und „Verbessert“ nur mit einem
+ * geprüften Ergebnis derselben Fähigkeit vorher und heute (`verbesserungen`).
  */
+import { FASSUNG } from "./ausfuehrlich";
 import { KRITERIUM_KEYS, KRITERIUM_KURZ } from "./bewertung-kriterien";
 import { papierZeile, type PapierErgebnis } from "./blatt-regeln";
 import { ablaufDerEinheit, antwortenDerEinheit, reaktionenDerEinheit, skillsErledigterSchritte, type AblaufDerEinheit, type Beobachtung } from "./cockpit";
@@ -29,7 +37,7 @@ import { db, json } from "./db";
 import { autoFelderVon } from "./einschaetzung";
 import { errorTypeLabel } from "./error-types";
 import { daysUntil } from "./exams";
-import { abschlussZeilen, einheitenMitHausuebung, hausuebungFuerEinheit, hausuebungZurZuweisung, vorherInEinheit } from "./hausuebung-zurueck";
+import { abschlussZeilen, einheitenMitHausuebung, hausuebungFuerEinheit, hausuebungZurZuweisung, tagKurz, vorherInEinheit } from "./hausuebung-zurueck";
 import { angepasstZeile, knoepfeDerEinheit, verstandenZeilen, type KnopfEintrag } from "./knoepfe";
 import { berichtNachBewertung, readReport, type TaskLine } from "./learning";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
@@ -73,8 +81,24 @@ export const QUELLE: Record<Quelle, string> = {
  * `link`: ein Tippen zum nächsten Schritt (etwa „Bewertung übernehmen“), nur für die Lehrkraft der Einheit. `auch`: eine
  * zweite Quelle („aus Antworten · deine Beobachtung“).
  */
-export type KartenZeile = { text: string; von: Quelle; auch?: Quelle; link?: { href: string; label: string } };
+export type KartenZeile = { text: string; von: Quelle; auch?: Quelle; link?: { href: string; label: string }; punkt?: Punkt };
 export const quelleText = (z: Pick<KartenZeile, "von" | "auch">) => (z.auch ? `${QUELLE[z.von]} · ${QUELLE[z.auch]}` : QUELLE[z.von]);
+
+/** Die elf Punkte der Dokumentation (niko, Abschnitt 12), in seiner Reihenfolge. */
+export type Punkt = "themen" | "erklaerungen" | "uebungen" | "ergebnisse" | "hilfen" | "schwierig" | "besser" | "papier" | "texte" | "hausuebung" | "naechstes";
+export const PUNKTE: [Punkt, string][] = [
+  ["themen", "Themen"],
+  ["erklaerungen", "Erklärungen"],
+  ["uebungen", "Übungen"],
+  ["ergebnisse", "Richtig und falsch"],
+  ["hilfen", "Hilfen"],
+  ["schwierig", "Noch schwierig"],
+  ["besser", "Verbessert"],
+  ["papier", "Auf Papier"],
+  ["texte", "Textarbeit"],
+  ["hausuebung", "Hausübung"],
+  ["naechstes", "Nächstes Mal"],
+];
 
 /**
  * Eine Textarbeit der Einheit, wie der Abschluss sie zeigt: `bewertung` wie in der Dokumentation (lib/text-note.ts
@@ -91,6 +115,18 @@ export const ABSCHLUSS_FELDER: [AbschlussFeld, string][] = [
   ["naechstes", "Nächstes Mal"],
 ];
 export const isAbschlussFeld = (x: unknown): x is AbschlussFeld => ABSCHLUSS_FELDER.some(([f]) => f === x);
+
+/** Der Punkt einer Zeile ohne eigenen (deine Notiz, dein korrigiertes Feld): je Feld der naheliegende. */
+const FELD_PUNKT: Record<AbschlussFeld, Punkt> = { gemacht: "themen", gut: "ergebnisse", schwierig: "schwierig", naechstes: "naechstes" };
+
+/**
+ * Die Karte als eine Liste der elf Punkte (`PUNKTE`) in ihrer Reihenfolge, so zeigt sie der Abschluss: je Punkt seine Zeilen aus
+ * allen vier Feldern; ein Punkt ohne Zeile fällt weg (nichts wird aufgefüllt).
+ */
+export function punkteDerKarte(k: AbschlussKarte): { punkt: Punkt; label: string; zeilen: KartenZeile[] }[] {
+  const alle = ABSCHLUSS_FELDER.flatMap(([feld]) => k[feld].map((z) => ({ ...z, punkt: z.punkt ?? FELD_PUNKT[feld] })));
+  return PUNKTE.map(([punkt, label]) => ({ punkt, label, zeilen: alle.filter((z) => z.punkt === punkt) })).filter((p) => p.zeilen.length > 0);
+}
 
 /** Das Feld der Dokumentation (lessons, wie im Formular „Ändern“), in das ein Feld des Abschlusses geschrieben wird. */
 export const DOKU_FELD = { gemacht: "activities", gut: "positives", schwierig: "difficulties", naechstes: "next_steps" } as const satisfies Record<AbschlussFeld, keyof repo.Lesson>;
@@ -123,6 +159,12 @@ export type AufgabeBeleg = Pick<TaskLine, "assignmentId" | "skillId" | "skill" |
  * - `hausuebungZurueck`: die Hausübung, die in diese Einheit gehört (E2, lib/hausuebung-zurueck.ts), mit ihrem Ergebnis („Hausübung vom
  *   28.10.: 6 von 9 richtig (bewertet)“ oder „nicht abgegeben“), den Themen, die dort noch schwierig waren, und „besser“ nur mit einem
  *   geprüften Ergebnis vorher und nachher; `erledigt`: ist sie bewertet, ihre Zeile unter „Nächstes Mal“ (dort fällt sie dann weg)
+ * - `uebungen`: die Namen der Übungen mit Antworten in dieser Einheit (ohne Minitest, Probeschularbeit und Papier, die ihre eigene
+ *   Zeile haben)
+ * - `beispiele`: die Fähigkeiten, zu denen ein durchgerechnetes Beispiel im Schritt stand („Das zeigst du“, `einheit_beispiele`)
+ * - `ausfuehrlich`: die Fähigkeiten, zu denen in dieser Einheit „Ausführlicher erklären“ getippt wurde (`ki_erklaerungen` mit der
+ *   Anfrage dieser Einheit)
+ * - `besser`: „Verbessert“ (`verbesserungen`), nur mit geprüften Antworten derselben Fähigkeit in einer früheren Einheit und heute
  */
 export type AbschlussBelege = {
   aufgaben: AufgabeBeleg[];
@@ -143,6 +185,10 @@ export type AbschlussBelege = {
   knoepfe?: Pick<KnopfEintrag, "art" | "thema" | "inhalt">[];
   hausuebung?: { text: string; zeile: string | null };
   hausuebungZurueck?: { zeile: string; schwierig: string[]; besser: string[]; erledigt?: string | null } | null;
+  uebungen?: string[];
+  beispiele?: string[];
+  ausfuehrlich?: string[];
+  besser?: string[];
 };
 
 /** Eine Probeschularbeit der Einheit: Punkte, Note erst wenn alles bewertet ist, sonst wie viel noch offen ist. */
@@ -256,14 +302,51 @@ function gutRegeln(b: Pick<AbschlussBelege, "aufgaben" | "beobachtungen" | "reak
   return { zeilen, skills };
 }
 
-/** Ob „Gut verstanden“ ein sicheres Ergebnis hat (aus den Daten oder von dir geschrieben); sonst „Keine sicheren Ergebnisse“. */
-export const hatSichereErgebnisse = (gut: KartenZeile[]) => gut.some((z) => z.von !== "beobachtung");
+/**
+ * Ob „Gut verstanden“ ein sicheres Ergebnis hat (aus den Daten oder von dir geschrieben); sonst „Keine sicheren Ergebnisse“. „Verbessert“
+ * allein ist keines: besser als vorher heißt nicht verstanden.
+ */
+export const hatSichereErgebnisse = (gut: KartenZeile[]) => gut.some((z) => z.von !== "beobachtung" && z.punkt !== "besser");
 
 /** Die Zeile zur nächsten Prüfung: das eingetragene Datum, der Stoff ohne Antwort (oder heutige Textarbeit) in den letzten 30 Tagen, höchstens drei Punkte. */
 export function pruefungsZeile(p: NonNullable<AbschlussBelege["pruefung"]>): string {
   const mehr = p.offen.length - PRUEFUNG_PUNKTE;
   const offen = p.offen.length ? `: zuletzt nicht geübt: ${p.offen.slice(0, PRUEFUNG_PUNKTE).join(", ")}${mehr > 0 ? ` und ${mehr} ${mehr === 1 ? "weiterer Punkt" : "weitere Punkte"}` : ""}` : "";
   return `${p.art}${p.fach ? ` ${p.fach}` : ""} am ${p.datum}${offen}`;
+}
+
+const aufgabenText = (n: number) => `${n} ${n === 1 ? "Aufgabe" : "Aufgaben"}`;
+
+/** „Kehrwert vergessen bei 2 Aufgaben (vermutet)“: gezählt werden Aufgaben, nicht Versuche. */
+export const fehlerZeile = (fehler: string, aufgaben: number, vermutet = false) => `${fehler} bei ${aufgabenText(aufgaben)}${vermutet ? " (vermutet)" : ""}`;
+const HILFE: Record<Exclude<AufgabeBeleg["help"], "keine">, string> = { hinweis: "Hinweis", erklaerung: "mehrere Hinweise", loesung: "Lösung angesehen" };
+
+/**
+ * Die Hilfen am Gerät in einer Zeile, nur aus den Antworten: „Hilfe am Gerät bei 3 Aufgaben (Past Simple): Hinweis 2×, Lösung
+ * angesehen 1×“. Ohne Hilfe keine Zeile.
+ */
+export function hilfenZeile(aufgaben: Pick<AufgabeBeleg, "help" | "skill">[]): string | null {
+  const mit = aufgaben.filter((t) => t.help !== "keine");
+  if (!mit.length) return null;
+  const arten = (["hinweis", "erklaerung", "loesung"] as const).flatMap((h) => {
+    const n = mit.filter((t) => t.help === h).length;
+    return n ? [`${HILFE[h]} ${n}×`] : [];
+  });
+  const skills = [...new Set(mit.map((t) => t.skill).filter(Boolean))];
+  return `Hilfe am Gerät bei ${aufgabenText(mit.length)}${skills.length ? ` (${skills.join(", ")})` : ""}: ${arten.join(", ")}`;
+}
+
+/** Ein geprüftes Ergebnis einer Fähigkeit in einer Einheit: so viele Antworten, so viel richtig (teilweise halb). */
+export type FaehigkeitsStand = { punkte: number; von: number };
+
+/**
+ * „Verbessert“ (niko: „Welche Verbesserungen durch Ergebnisse belegt sind“): nur wenn es für dieselbe Fähigkeit ein geprüftes
+ * Ergebnis vorher und heute gibt und heute der Anteil richtig höher ist: „Past Simple: von 2 von 5 auf 4 von 5 richtig (Einheit vom
+ * 21.10.)“. Ein Lernstand allein, ein „Weiter“ oder deine Beobachtung ist keine Verbesserung.
+ */
+export function verbesserungsZeile(name: string, vorher: FaehigkeitsStand | null, heute: FaehigkeitsStand | null, am: string | null): string | null {
+  if (!vorher?.von || !heute?.von || heute.punkte / heute.von <= vorher.punkte / vorher.von) return null;
+  return `${name}: von ${punkteZahl(vorher.punkte)} von ${vorher.von} auf ${punkteZahl(heute.punkte)} von ${heute.von} richtig${am ? ` (Einheit vom ${am})` : ""}`;
 }
 
 const namen = (xs: { titel: string }[]) => xs.map((x) => x.titel).join(", ");
@@ -300,11 +383,12 @@ function textGemacht(t: AbschlussText & { bewertung: BerichtBewertung }): Karten
 export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficulties" | "errors" | "next" | "dates"> | null, ablauf: AblaufDerEinheit | null, texte: AbschlussText[] = [], belege?: AbschlussBelege): AbschlussKarte {
   // with belege each line of the documentation gets its real source; the teacher's own lines stay „deine Notiz“
   const amGeraet = Boolean(belege?.aufgaben.some((t) => t.finished));
-  const zeile = (l: BriefLine, genauer?: Quelle | ((text: string) => Quelle)): KartenZeile => ({
+  const zeile = (l: BriefLine, genauer?: Quelle | ((text: string) => Quelle), punkt?: Punkt): KartenZeile => ({
     text: l.text,
     von: l.from === "lehrer" ? "lehrer" : !belege || !genauer ? "daten" : typeof genauer === "function" ? genauer(l.text) : genauer,
+    ...(punkt && l.from !== "lehrer" ? { punkt } : {}),
   });
-  const a = (text: string): KartenZeile => ({ text, von: "ablauf" });
+  const a = (text: string, punkt: Punkt = "themen"): KartenZeile => ({ text, von: "ablauf", punkt });
   const e = ablauf?.ergebnis;
   const wo = ablauf ? (ablauf.art === "plan" ? "Plan für heute" : `Lernpaket „${ablauf.titel}“`) : "";
   const gesamt = ablauf?.schritte ?? (e ? e.erledigt.length + e.uebersprungen.length + e.nichtErreicht.length : 0);
@@ -313,54 +397,68 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   const mitBewertung = texte.filter((t): t is AbschlussText & { bewertung: BerichtBewertung } => Boolean(t.bewertung));
   // also the bare topic line („E-Mail“) the documentation writes when the unit had no tasks
   const ersetzt = (l: BriefLine) => l.from === "daten" && mitBewertung.some((t) => l.text.startsWith(`Textarbeit „${t.titel}“`) || (t.textsorte !== "" && l.text === t.textsorte));
-  const gemacht = (brief?.done ?? []).filter((l) => !ersetzt(l)).map((l) => zeile(l, (t) => (t.startsWith("Textarbeit „") ? "text" : amGeraet ? "antworten" : "daten")));
+  // the documentation's „Heute gemacht“: topics, „4 Aufgaben bearbeitet, 3 richtig“, a Diagnose, a Textarbeit
+  const punktVonGemacht = (text: string): Punkt => (text.startsWith("Textarbeit „") ? "texte" : /^\d+ Aufgaben? bearbeitet/.test(text) ? "ergebnisse" : text === "Diagnose gemacht" ? "uebungen" : "themen");
+  const gemacht = (brief?.done ?? []).filter((l) => !ersetzt(l)).map((l) => zeile(l, (t) => (t.startsWith("Textarbeit „") ? "text" : amGeraet ? "antworten" : "daten"), punktVonGemacht(l.text)));
+  // the exercises worked on today, by name (Minitest, Probeschularbeit and paper have their own lines)
+  if (belege?.uebungen?.length) gemacht.push({ text: `${belege.uebungen.length === 1 ? "Übung" : "Übungen"}: ${belege.uebungen.map((t) => `„${t}“`).join(", ")}`, von: "antworten", punkt: "uebungen" });
   const mt = belege?.minitest;
-  if (mt?.erledigt) gemacht.push({ text: `Minitest am Anfang: ${mt.richtig} von ${mt.von} richtig${mt.erledigt < mt.von ? ` (${mt.erledigt} abgegeben)` : ""}`, von: "antworten" });
+  if (mt?.erledigt) gemacht.push({ text: `Minitest am Anfang: ${mt.richtig} von ${mt.von} richtig${mt.erledigt < mt.von ? ` (${mt.erledigt} abgegeben)` : ""}`, von: "antworten", punkt: "ergebnisse" });
   // the measured result of each Lernkontrolle, not only what the teacher heard
   for (const k of belege?.lernkontrollen ?? [])
-    if (k.erledigt) gemacht.push({ text: `Lernkontrolle${k.skill ? ` ${k.skill}` : ""}: ${k.richtig} von ${k.von} richtig${k.erledigt < k.von ? ` (${k.erledigt} abgegeben)` : ""}`, von: "antworten" });
-  gemacht.push(...mitBewertung.map(textGemacht));
+    if (k.erledigt) gemacht.push({ text: `Lernkontrolle${k.skill ? ` ${k.skill}` : ""}: ${k.richtig} von ${k.von} richtig${k.erledigt < k.von ? ` (${k.erledigt} abgegeben)` : ""}`, von: "antworten", punkt: "ergebnisse" });
+  gemacht.push(...mitBewertung.map((t): KartenZeile => ({ ...textGemacht(t), punkt: "texte" })));
   // the plan for the whole unit: the topics worked on today, then the steps
   if (ablauf?.themen?.length) gemacht.push(a(`${ablauf.themen.length === 1 ? "Thema" : "Themen"}: ${ablauf.themen.join(", ")}`));
   if (e?.erledigt.length) gemacht.push(a(`${wo}: ${e.erledigt.length} von ${gesamt} Schritten (${namen(e.erledigt)})`));
   // today's Vorgabe: what was practised, and (under „Nächstes Mal“) what was not
   const vorgabeGeuebt = (belege?.vorgabe ?? []).filter((v) => belege!.geuebt.includes(v.id));
   const vorgabeOffen = (belege?.vorgabe ?? []).filter((v) => !belege!.geuebt.includes(v.id));
-  if (vorgabeGeuebt.length) gemacht.push({ text: `Aus deiner Vorgabe geübt: ${vorgabeGeuebt.map((v) => v.name).join(", ")}`, von: "vorgabe" });
-  for (const t of belege?.praesentationen ?? []) gemacht.push(a(`Präsentation „${t}“ verwendet`));
+  if (vorgabeGeuebt.length) gemacht.push({ text: `Aus deiner Vorgabe geübt: ${vorgabeGeuebt.map((v) => v.name).join(", ")}`, von: "vorgabe", punkt: "themen" });
+  for (const t of belege?.praesentationen ?? []) gemacht.push(a(`Präsentation „${t}“ verwendet`, "erklaerungen"));
   // only what the teacher opened at a step, never what was merely offered
-  for (const t of belege?.unterlagen ?? []) gemacht.push(a(`Unterlage gezeigt: ${t}`));
+  for (const t of belege?.unterlagen ?? []) gemacht.push(a(`Unterlage gezeigt: ${t}`, "erklaerungen"));
+  // the worked example of „Das zeigst du“, and the longer explanation the teacher asked for in this unit
+  if (belege?.beispiele?.length) gemacht.push(a(`Beispiel im Schritt gezeigt: ${belege.beispiele.join(", ")}`, "erklaerungen"));
+  if (belege?.ausfuehrlich?.length) gemacht.push({ text: `Ausführlicher erklärt: ${belege.ausfuehrlich.join(", ")}`, von: "anpassung", punkt: "erklaerungen" });
   // paper work only after the teacher took it over, with how many unsure rows she checked
-  for (const p of belege?.papier ?? []) gemacht.push({ text: papierZeile(p), von: "papier" });
+  for (const p of belege?.papier ?? []) gemacht.push({ text: papierZeile(p), von: "papier", punkt: "papier" });
   // a Probeschularbeit with its points and, only when everything is graded, its grade
-  for (const p of belege?.proben ?? []) gemacht.push({ text: probeZeile(p), von: p.papier ? "papier" : "antworten" });
+  for (const p of belege?.proben ?? []) gemacht.push({ text: probeZeile(p), von: p.papier ? "papier" : "antworten", punkt: p.papier ? "papier" : "ergebnisse" });
   // answers still waiting for the teacher: said once, with the way to the list; they are in no result above or below
-  if (belege?.offen) gemacht.push({ text: bewertungOffenZeile(belege.offen), von: "antworten", link: { href: "#zu-bewerten", label: "Jetzt bewerten" } });
+  if (belege?.offen) gemacht.push({ text: bewertungOffenZeile(belege.offen), von: "antworten", link: { href: "#zu-bewerten", label: "Jetzt bewerten" }, punkt: "ergebnisse" });
   // the teacher's buttons at the step: what she adapted, in one line
   const angepasst = angepasstZeile(belege?.knoepfe ?? []);
-  if (angepasst) gemacht.push({ text: angepasst, von: "anpassung" });
+  if (angepasst) gemacht.push({ text: angepasst, von: "anpassung", punkt: "erklaerungen" });
+  // the help the student took on the device (hints, solution), from the answers alone
+  const hilfen = belege ? hilfenZeile(belege.aufgaben) : null;
+  if (hilfen) gemacht.push({ text: hilfen, von: "antworten", punkt: "hilfen" });
   // the homework given (or not) in this Abschluss, decided by the teacher
   const hu = belege?.hausuebung;
-  if (hu) gemacht.push({ text: hu.text, von: "hausuebung" });
+  if (hu) gemacht.push({ text: hu.text, von: "hausuebung", punkt: "hausuebung" });
   // the homework of last time and what came of it (only checked answers; „nicht abgegeben“ is never wrong)
   const zurueck = belege?.hausuebungZurueck;
-  if (zurueck) gemacht.push({ text: zurueck.zeile, von: "hausuebung" }, ...zurueck.besser.map((text): KartenZeile => ({ text, von: "hausuebung" })));
+  if (zurueck) gemacht.push({ text: zurueck.zeile, von: "hausuebung", punkt: "hausuebung" }, ...zurueck.besser.map((text): KartenZeile => ({ text, von: "hausuebung", punkt: "besser" })));
 
   // only what the rules show as secure (`gutVerstanden`), or what the teacher wrote; a step marked „Weiter“ proves nothing
-  const regeln = belege ? gutVerstanden(belege) : null;
+  const regeln = belege ? gutVerstanden(belege).map((z): KartenZeile => ({ ...z, punkt: "ergebnisse" })) : null;
   // „Thema verstanden“ is the teacher's decision: shown as her observation, never as a secure result
-  const verstanden = verstandenZeilen(belege?.knoepfe ?? []).map((text): KartenZeile => ({ text, von: "beobachtung" }));
-  const gut = regeln ? [...regeln, ...verstanden, ...(brief?.good ?? []).filter((l) => l.from === "lehrer").map((l) => zeile(l))] : (brief?.good ?? []).map((l) => zeile(l));
+  const verstanden = verstandenZeilen(belege?.knoepfe ?? []).map((text): KartenZeile => ({ text, von: "beobachtung", punkt: "ergebnisse" }));
+  // proven by checked answers of the same skill before and today (`verbesserungen`); the homework's own line is not said twice
+  const besser = (belege?.besser ?? []).filter((t) => !zurueck?.besser.some((b) => b.startsWith(`${t.slice(0, t.indexOf(":"))} besser`))).map((text): KartenZeile => ({ text, von: "lernstand", punkt: "besser" }));
+  const gut = regeln
+    ? [...regeln, ...verstanden, ...besser, ...(brief?.good ?? []).filter((l) => l.from === "lehrer").map((l) => zeile(l))]
+    : (brief?.good ?? []).map((l) => zeile(l, undefined, "ergebnisse"));
 
   // a skill with a secure result is not „noch schwierig“ only because the documentation's score was lower
   const sicherNamen = (regeln ?? []).filter((z) => z.von === "antworten").map((z) => z.text.slice(0, z.text.indexOf(":")));
   const sicher = (l: BriefLine) => l.from === "daten" && sicherNamen.some((n) => l.text.startsWith(`${n}:`));
   const fehler = belege
-    ? [...belege.fehler.map((f): KartenZeile => ({ text: `Fehler: ${f}`, von: "antworten" })), ...(brief?.errors ?? []).filter((l) => l.from === "lehrer").map((l) => zeile(l))]
-    : (brief?.errors ?? []).map((l) => ({ ...zeile(l), text: l.from === "daten" ? `Fehler: ${l.text}` : l.text }));
-  const schwierig = [...(brief?.difficulties ?? []).filter((l) => !sicher(l)).map((l) => zeile(l, "antworten")), ...fehler];
-  if (mt?.falsch.length) schwierig.push({ text: `Minitest: Fehler bei ${mt.falsch.join(", ")}`, von: "antworten" });
-  for (const o of belege?.beobachtungen ?? []) if (o.antwort !== "richtig") schwierig.push(beobachtungsZeile(o));
+    ? [...belege.fehler.map((f): KartenZeile => ({ text: `Fehler: ${f}`, von: "antworten", punkt: "schwierig" })), ...(brief?.errors ?? []).filter((l) => l.from === "lehrer").map((l) => zeile(l))]
+    : (brief?.errors ?? []).map((l) => ({ ...zeile(l, undefined, "schwierig"), text: l.from === "daten" ? `Fehler: ${l.text}` : l.text }));
+  const schwierig = [...(brief?.difficulties ?? []).filter((l) => !sicher(l)).map((l) => zeile(l, "antworten", "schwierig")), ...fehler];
+  if (mt?.falsch.length) schwierig.push({ text: `Minitest: Fehler bei ${mt.falsch.join(", ")}`, von: "antworten", punkt: "schwierig" });
+  for (const o of belege?.beobachtungen ?? []) if (o.antwort !== "richtig") schwierig.push({ ...beobachtungsZeile(o), punkt: "schwierig" });
   // the Anpassung im Unterricht had to go easier: once per skill, with what came of it
   const leichter = new Map<string, { art: Art; skill: string; ts: AufgabeBeleg[] }>();
   for (const r of belege?.reaktionen ?? []) {
@@ -373,16 +471,17 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   for (const x of leichter.values()) {
     const kopf = x.art === "voraussetzung" ? `Erst die Grundlage geübt: ${x.skill}` : x.art === "fehler" ? `Aufgabe zum Fehler nötig bei ${x.skill}` : `Leichtere Aufgabe nötig bei ${x.skill}`;
     const danach = x.ts.length ? ` (danach ${x.ts.filter((t) => t.correct).length} von ${x.ts.length} richtig)` : "";
-    schwierig.push({ text: `${kopf}${danach}`, von: "anpassung" });
+    schwierig.push({ text: `${kopf}${danach}`, von: "anpassung", punkt: "hilfen" });
   }
-  if (e?.nichtVerstanden.length) schwierig.push(a(`Nicht verstanden: ${mitMal(e.nichtVerstanden)}`));
-  for (const text of zurueck?.schwierig ?? []) schwierig.push({ text, von: "hausuebung" });
+  // „Schüler versteht es nicht“: the teacher had to explain again
+  if (e?.nichtVerstanden.length) schwierig.push(a(`Nicht verstanden: ${mitMal(e.nichtVerstanden)}`, "hilfen"));
+  for (const text of zurueck?.schwierig ?? []) schwierig.push({ text, von: "hausuebung", punkt: "schwierig" });
   // weak criteria of a confirmed grade only; an open grade proves nothing yet
   for (const t of mitBewertung) {
     const b = t.bewertung;
     if (b.stand !== "bestaetigt") continue;
     const schwach = KRITERIUM_KEYS.filter((k) => b.stufen[k] >= SCHWACHE_STUFE);
-    if (schwach.length) schwierig.push({ text: `${textName(t)}: ${schwach.map((k) => `${KRITERIUM_KURZ[k]} ${b.stufen[k]}`).join(", ")}`, von: "text" });
+    if (schwach.length) schwierig.push({ text: `${textName(t)}: ${schwach.map((k) => `${KRITERIUM_KURZ[k]} ${b.stufen[k]}`).join(", ")}`, von: "text", punkt: "schwierig" });
   }
 
   // most urgent first: the next exam with what was not practised lately, then what today's Vorgabe left open
@@ -393,9 +492,9 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   // a recommendation for exam material the exam line already names is not said twice
   const schonGenannt = (l: BriefLine) => Boolean(p) && l.from === "daten" && p!.offen.some((n) => l.text.startsWith(`${n} (`));
   naechstes.push(...(brief?.next ?? []).filter((l) => !schonGenannt(l)).map((l) => zeile(l, "lernstand")));
-  if (e?.nichtErreicht.length && (e.erledigt.length || e.uebersprungen.length || e.wiederholt.length || e.nichtVerstanden.length)) naechstes.push(a(`Weiter mit: ${namen(e.nichtErreicht)}`));
-  if (e?.wiederholt.length) naechstes.push(a(`Wiederholen: ${mitMal(e.wiederholt)}`));
-  if (e?.uebersprungen.length) naechstes.push(a(`Übersprungen: ${namen(e.uebersprungen)}`));
+  if (e?.nichtErreicht.length && (e.erledigt.length || e.uebersprungen.length || e.wiederholt.length || e.nichtVerstanden.length)) naechstes.push(a(`Weiter mit: ${namen(e.nichtErreicht)}`, "naechstes"));
+  if (e?.wiederholt.length) naechstes.push(a(`Wiederholen: ${mitMal(e.wiederholt)}`, "naechstes"));
+  if (e?.uebersprungen.length) naechstes.push(a(`Übersprungen: ${namen(e.uebersprungen)}`, "naechstes"));
   // the documentation's line for the same exam goes: the one above says more
   const gleichePruefung = (l: BriefLine) => Boolean(p) && l.from === "daten" && l.text.startsWith(`${p!.art} ${p!.fach}`) && l.text.includes(`(${p!.datum})`);
   // today's homework stands under „Heute gemacht“, also as the documentation's own note
@@ -422,20 +521,22 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
   const report = readReport(lesson);
   const aufgaben: AufgabeBeleg[] = (report?.tasks ?? []).map((t) => ({ assignmentId: t.assignmentId, skillId: t.skillId, skill: t.skill, correct: t.correct, finished: t.finished, firstTry: t.firstTry, tries: t.tries, help: t.help }));
 
-  // wrong answers by error: the Fehlerart only „vermutet“ until the teacher confirmed it; else the checker's concrete error
-  const zaehler = new Map<string, { n: number; vermutet: boolean }>();
+  // wrong answers by error: the Fehlerart only „vermutet“ until the teacher confirmed it; else the checker's concrete error.
+  // Counted by task, not by try: three wrong tries at one task are one task with this error (Phase-D-Test)
+  const zaehler = new Map<string, { aufgaben: Set<number>; vermutet: boolean }>();
   for (const x of repo.listAttemptsForUnit(unitId)) {
     if (x.correct || x.solution_viewed) continue;
     const typ = x.error_type && x.error_type !== "unbekannt" ? errorTypeLabel(x.error_type) : null;
     const key = typ ?? x.error_label;
     if (!key) continue;
-    const z = zaehler.get(key) ?? { n: 0, vermutet: false };
-    zaehler.set(key, { n: z.n + 1, vermutet: z.vermutet || (typ !== null && x.error_type_source !== "lehrer") });
+    const z = zaehler.get(key) ?? { aufgaben: new Set<number>(), vermutet: false };
+    z.aufgaben.add(x.task_id);
+    zaehler.set(key, { aufgaben: z.aufgaben, vermutet: z.vermutet || (typ !== null && x.error_type_source !== "lehrer") });
   }
   const fehler = [...zaehler]
-    .sort((x, y) => y[1].n - x[1].n)
+    .sort((x, y) => y[1].aufgaben.size - x[1].aufgaben.size)
     .slice(0, 5)
-    .map(([k, z]) => `${k} (${z.n}×${z.vermutet ? ", vermutet" : ""})`);
+    .map(([k, z]) => fehlerZeile(k, z.aufgaben.size, z.vermutet));
 
   // the skills of the step: of the package step, or in the plan for the whole unit of its topic
   const beobachtungen = antwortenDerEinheit(unitId).map((b) => ({ titel: b.titel, art: b.art, antwort: b.antwort, skillIds: b.skillIds }));
@@ -520,7 +621,45 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
   const h = zurueck?.status === "bewertet" ? repo.listHomework(lesson.student_id).find((x) => x.id === zurueck.homeworkId) : undefined;
   const erledigt = h ? `Hausübung${h.subject ? ` ${h.subject}` : ""}: ${h.description}${h.due_date ? `, bis ${shortDate(h.due_date)}` : ""}` : null;
   const hausuebungZurueck = zeilenZurueck ? { ...zeilenZurueck, erledigt } : null;
-  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier, proben, offen, knoepfe, hausuebung, hausuebungZurueck };
+
+  // the exercises with answers, by name; the Minitest, a Probeschularbeit and paper work have their own lines
+  const papierBlaetter = new Set(papier.flatMap((p) => (p.assignmentId ? [repo.getAssignment(p.assignmentId)?.worksheet_id ?? 0] : [])));
+  const eigeneZeile = new Set([...(db().prepare("SELECT id FROM worksheets WHERE minitest_unit_id = ? OR probe_test_id IS NOT NULL").pluck().all(unitId) as number[]), ...kontrollen.map((k) => k.worksheet_id)]);
+  const ohneVorname = (t: string) => (first && t.startsWith(`${first} – `) ? t.slice(first.length + 3) : t);
+  const uebungen = [...new Set((report?.worksheets ?? []).filter((w) => !papierBlaetter.has(w.id) && !eigeneZeile.has(w.id)).map((w) => ohneVorname(w.title)))];
+  // „Das zeigst du“: the worked example per skill, held once the explaining step was on screen (lib/cockpit.ts beispielDerEinheit)
+  const beispiele = (db().prepare("SELECT skill_id FROM einheit_beispiele WHERE unit_id = ? ORDER BY created_at, rowid").pluck().all(unitId) as string[]).map(skillName).filter(Boolean);
+  // „Ausführlicher erklären“ tapped in this unit: the explanation written by the request of this unit (lib/ausfuehrlich.ts)
+  const ausfuehrlich = (
+    db()
+      .prepare("SELECT DISTINCT e.skill_id FROM ki_erklaerungen e JOIN ai_calls c ON c.id = e.call_id WHERE c.unit_id = ? AND e.fassung = ? ORDER BY e.created_at")
+      .pluck()
+      .all(unitId, FASSUNG) as string[]
+  ).map(skillName);
+  const besser = unit ? verbesserungen(unitId, lesson.student_id, unit.started_at) : [];
+  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier, proben, offen, knoepfe, hausuebung, hausuebungZurueck, uebungen, beispiele, ausfuehrlich, besser };
+}
+
+/**
+ * „Verbessert“ (`verbesserungsZeile`) aus dem gespeicherten Lernstand: je Fähigkeit mit geprüften Antworten in dieser Einheit die letzte
+ * frühere Einheit, in der sie geübt wurde (`skill_snapshots.practiced`), und deren geprüfte Antworten (lib/hausuebung-zurueck.ts
+ * `vorherInEinheit`: nur abgeschlossene, keine offenen, teilweise halb). Fehlt eines davon, gibt es keine Zeile.
+ */
+export function verbesserungen(unitId: number, studentId: number, vor: string): string[] {
+  const heute = vorherInEinheit(unitId);
+  const frueher = db().prepare(
+    `SELECT s.unit_id, u.started_at FROM skill_snapshots s JOIN units u ON u.id = s.unit_id
+     WHERE s.student_id = ? AND s.skill_id = ? AND s.practiced = 1 AND s.unit_id <> ? AND u.started_at < ? AND u.status = 'beendet'
+     ORDER BY u.started_at DESC LIMIT 1`,
+  );
+  const out: string[] = [];
+  for (const [skillId, jetzt] of heute) {
+    const f = frueher.get(studentId, skillId, unitId, vor) as { unit_id: number; started_at: string } | undefined;
+    if (!f) continue;
+    const zeile = verbesserungsZeile(repo.getSkill(skillId)?.name ?? skillId, vorherInEinheit(f.unit_id).get(skillId) ?? null, jetzt, tagKurz(wienerDatum(new Date(f.started_at))));
+    if (zeile) out.push(zeile);
+  }
+  return out;
 }
 
 /** Die Karte einer beendeten Einheit mit allen Belegen, wie der Abschluss sie zeigt und „Bestätigen“ sie schreibt. */

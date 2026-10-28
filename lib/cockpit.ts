@@ -1000,7 +1000,7 @@ export async function druckeImSchritt(unitId: number, schrittId: number, teacher
 export function dokumentiereAblauf(lessonId: number, unitId: number): DokuTexte | null {
   const s = gespeichert(unitId);
   const lesson = repo.getLesson(lessonId);
-  const a = s ? ablaufVon(s) : null;
+  const a = s ? ablaufVon(mitPapier(unitId, s)) : null;
   if (!s || !a || !lesson) return null;
   const t = dokuTexte(a.titel, a.ergebnis, a.art, a.schritte);
   if (!t) return null;
@@ -1083,7 +1083,23 @@ export function ablaufDesPlans(roh: Pick<Stand, "plan" | "reihenfolge" | "erledi
 /** Der Ablauf einer Einheit für den Abschluss: nur, was gespeichert ist (getippt wurde), nie ein bloßer Vorschlag. */
 export function ablaufDerEinheit(unitId: number): AblaufDerEinheit | null {
   const s = gespeichert(unitId);
-  return s ? ablaufVon(s) : null;
+  return s ? ablaufVon(mitPapier(unitId, s)) : null;
+}
+
+/**
+ * Eine aus dem Schritt gedruckte Übung, auf Papier gelöst und übernommen (lib/papier-einheit.ts), zählt wie am Gerät: der Schritt
+ * ist gemacht, auch ohne „Weiter“ (Phase-D-Test: „Weiter mit: Kurze Kontrolle“ nach 2 von 2 richtig auf Papier).
+ */
+function mitPapier(unitId: number, s: Stand): Stand {
+  const ids = db()
+    .prepare(
+      `SELECT DISTINCT w.gedruckt_schritt_id FROM papier_arbeiten p JOIN assignments a ON a.id = p.assignment_id JOIN worksheets w ON w.id = a.worksheet_id
+       WHERE p.unit_id = ? AND w.gedruckt_unit_id = ? AND w.gedruckt_schritt_id IS NOT NULL`,
+    )
+    .pluck()
+    .all(unitId, unitId) as number[];
+  const neu = ids.filter((id) => !s.erledigt.includes(id) && !s.uebersprungen.includes(id));
+  return neu.length ? { ...s, erledigt: [...s.erledigt, ...neu] } : s;
 }
 
 // ---------- „Einheit vorbereiten“ ----------

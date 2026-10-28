@@ -193,6 +193,8 @@ function UnitEntry({ unit, lesson, notiz, wunsch, vorname }: { unit: UnitView; l
   const rows: [string, string][] = [
     ["Einschätzung", einschaetzung?.stufe ? `${einschaetzung.titel}. ${einschaetzung.saetze.join(" ")}` : ""],
     ["Zusammenfassung", lesson.summary],
+    // the confirmed Abschluss (lib/abschluss.ts): what was done, explanations, exercises, help, paper, homework, line by line
+    ["Heute gemacht", lesson.reviewed_at ? lesson.activities : ""],
     [
       "Schwierigkeiten",
       // the automatic text already says this from the same data
@@ -202,7 +204,7 @@ function UnitEntry({ unit, lesson, notiz, wunsch, vorname }: { unit: UnitView; l
     ],
     ["Fortschritt", progress],
     ["Beobachtungen", [lesson.tutor_notes, ratings.join(" · "), lesson.positives && `Positiv: ${lesson.positives}`].filter(Boolean).join("\n")],
-    ["Nächste Lernziele", [lesson.next_steps, lesson.review_topics && `Wiederholen: ${lesson.review_topics}`, lesson.homework_note && `Hausübung: ${lesson.homework_note}`].filter(Boolean).join("\n")],
+    ["Nächste Lernziele", [lesson.next_steps, lesson.review_topics && `Wiederholen: ${lesson.review_topics}`, lesson.homework_note && (lesson.homework_note.startsWith("Hausübung") ? lesson.homework_note : `Hausübung: ${lesson.homework_note}`)].filter(Boolean).join("\n")],
   ];
   const fehler = r ? r.tasksDone - r.correct : 0;
   return (
