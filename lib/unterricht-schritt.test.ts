@@ -185,7 +185,7 @@ test("the plan re-times when the teacher moves on: 100-minute Englisch, the firs
   s.router.setTransport(null);
 });
 
-test("the time left: never more than the plan, never past the end of the slot", async () => {
+test("the time left: never more than the plan; the clock of the slot does not shorten it (F0a), also late in the evening", async () => {
   const s = await setup();
   const unit = await s.start();
   const jetzt = new Date("2026-10-27T14:40:00Z"); // 15:40 in Vienna
@@ -199,10 +199,16 @@ test("the time left: never more than the plan, never past the end of the slot", 
        VALUES (?, ?, 900, 60, ?, ?, NULL, 'veroeffentlicht', 0, ?, datetime('now'), datetime('now'))`,
     )
     .run(s.zeit.wochenstartVon(tag), s.zeit.wochentagVon(tag), s.teacher.id, s.sid, unit.id);
-  assert.deepEqual(s.c.zeitDerEinheit(fake, 100, jetzt), { jetzt: 40, rest: 20 });
+  // before F0a the end of the slot (16:00) cut the plan to 20 minutes; the planned length counts from the start of the unit
+  assert.deepEqual(s.c.zeitDerEinheit(fake, 100, jetzt), { jetzt: 40, rest: 60 });
   // a long slot does not stretch the plan
   s.db().prepare("UPDATE geplante_einheiten SET geplante_dauer = 180 WHERE unit_id = ?").run(unit.id);
   assert.deepEqual(s.c.zeitDerEinheit(fake, 100, jetzt), { jetzt: 40, rest: 60 });
+  // Phase C: late in the evening a slot cannot go past midnight (22:00–23:40); the unit started at 23:30 keeps its 100 minutes
+  s.db().prepare("UPDATE geplante_einheiten SET start_min = 1320, geplante_dauer = 100 WHERE unit_id = ?").run(unit.id);
+  const spaet = { id: unit.id, started_at: "2026-10-27T22:30:00.000Z" }; // 23:30 in Vienna
+  assert.deepEqual(s.c.zeitDerEinheit(spaet, 100, new Date("2026-10-27T22:50:00Z")), { jetzt: 20, rest: 80 }, "23:50: not cut to the end of the slot");
+  assert.deepEqual(s.c.zeitDerEinheit(spaet, 100, new Date("2026-10-27T23:20:00Z")), { jetzt: 50, rest: 50 }, "00:20: past midnight the same");
   s.router.setTransport(null);
 });
 

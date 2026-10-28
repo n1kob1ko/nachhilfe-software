@@ -1,8 +1,9 @@
 import { Send, Sparkles, Trash2 } from "lucide-react";
 import { applyRecommendationAction, vorschauSendenAction, vorschauVerwerfenAction } from "@/app/actions";
-import { einheitBudgetAction, nachschubSchrittAction, nachschubSendenAction, nachschubVerwerfenAction } from "@/app/cockpit-actions";
+import { einheitBudgetAction, nachschubDruckenAction, nachschubSchrittAction, nachschubSendenAction, nachschubVerwerfenAction } from "@/app/cockpit-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { VorschlagKnopf } from "@/components/cockpit/CockpitClient";
+import { DruckenKnopf } from "@/components/cockpit/DruckenKnopf";
 import type { KiNeu } from "@/components/device/LiveStatus";
 import { Pill } from "@/components/ui";
 import { BUDGET_MAX_EUR, einheitBudget, euro, euroKlein, kostenJeFunktion, kostenZeile } from "@/lib/ai/einheit-budget";
@@ -15,8 +16,9 @@ import { getSkill } from "@/lib/repo";
 
 /**
  * **Neue Aufgaben der KI mit Vorschau** (lib/ki-nachschub.ts): „neu erstellt, ungeprüft“, jede Aufgabe mit Lösung; erst „Senden“ schickt
- * genau diese an den Schüler. Nur für den Lehrer; der Schüler sieht davon nichts, bis gesendet ist. Ohne Einheit (Empfehlung, Diagnose;
- * lib/ki-vorschau.ts) mit eigenen `aktionen`; in einem Blatt mit Aufgaben ohne KI sind die neuen markiert.
+ * genau diese an den Schüler. In einer Einheit geht statt „Senden“ auch „Drucken“: genau diese Aufgaben als A4-Blatt, gemerkt wie
+ * „Drucken“ am Schritt (`druckeNachschub`). Nur für den Lehrer; der Schüler sieht davon nichts, bis gesendet ist. Ohne Einheit
+ * (Empfehlung, Diagnose; lib/ki-vorschau.ts) mit eigenen `aktionen`; in einem Blatt mit Aufgaben ohne KI sind die neuen markiert.
  */
 export function NachschubVorschau({
   n,
@@ -27,13 +29,15 @@ export function NachschubVorschau({
   n: Nachschub;
   unitId?: number;
   name: string;
-  aktionen?: { senden: () => Promise<void>; verwerfen: () => Promise<void> };
+  aktionen?: { senden: () => Promise<void>; verwerfen: () => Promise<void>; drucken?: () => Promise<void> };
 }) {
   const skill = getSkill(n.ziel.skillId)?.name ?? "dieser Fähigkeit";
   const alle = vorschauAufgaben(n);
   const gemischt = alle.some((x) => !x.neu);
   const senden = aktionen?.senden ?? nachschubSendenAction.bind(null, unitId ?? 0, n.id);
   const verwerfen = aktionen?.verwerfen ?? nachschubVerwerfenAction.bind(null, unitId ?? 0, n.id);
+  // printing belongs to a unit (marked as printed there, for „Arbeit fotografieren“)
+  const drucken = aktionen ? (aktionen.drucken ?? null) : unitId ? nachschubDruckenAction.bind(null, unitId, n.id) : null;
   return (
     <section className="mt-3 grid gap-2 rounded-xl border border-amber/40 bg-amber-wash/50 px-3 py-3" aria-label="Neue Aufgaben, ungeprüft" data-testid="ki-nachschub">
       <p className="flex flex-wrap items-center gap-2 text-[15px] font-semibold">
@@ -41,7 +45,8 @@ export function NachschubVorschau({
         <Pill tone="amber">neu erstellt, ungeprüft</Pill>
       </p>
       <p className="text-[14px] text-ink-2">
-        {n.automatisch ? "Von der KI von selbst erstellt, im KI-Budget dieser Einheit." : "Von der KI auf deinen Tipp erstellt."} Bitte mit den Lösungen durchsehen; {name} bekommt sie erst mit „Senden“.
+        {n.automatisch ? "Von der KI von selbst erstellt, im KI-Budget dieser Einheit." : "Von der KI auf deinen Tipp erstellt."} Bitte mit den Lösungen durchsehen; {name} bekommt sie erst mit „Senden“
+        {drucken ? " oder auf Papier mit „Drucken“." : "."}
       </p>
       <ol className="grid gap-1.5">
         {alle.map(({ t, neu }, j) => {
@@ -64,6 +69,7 @@ export function NachschubVorschau({
       </ol>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <VorschlagKnopf action={senden} label={`Senden (${alle.length} ${alle.length === 1 ? "Aufgabe" : "Aufgaben"})`} primary icon={<Send size={16} aria-hidden />} testid="ki-nachschub-senden" />
+        {drucken && <DruckenKnopf action={drucken} />}
         <VorschlagKnopf action={verwerfen} label="Verwerfen" icon={<Trash2 size={16} aria-hidden />} testid="ki-nachschub-verwerfen" laeuft="Einen Moment …" />
       </div>
     </section>
@@ -91,6 +97,8 @@ export function NachschubImSchritt({ a, unitId, schrittId, name }: { a: Nachschu
   const n = a.eintrag;
   if (n?.status === "bereit") return <NachschubVorschau n={n} unitId={unitId} name={name} />;
   if (n?.status === "laeuft" || a.gleich) return <NachschubLaeuft automatisch={n?.automatisch ?? true} />;
+  // printed from the preview: the step says „für … gedruckt“, with „Arbeit fotografieren“
+  if (n?.status === "gedruckt") return null;
   const ohne = a.bedarf.dazu.length;
   const kiAus = !a.tor.ki.erlaubt && a.tor.ki.grund === "Die KI ist aus.";
   return (

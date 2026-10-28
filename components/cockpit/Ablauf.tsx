@@ -36,6 +36,7 @@ import {
   sendeBestandAction,
   sendeGeneratorAction,
   sendeSchrittAction,
+  themaDazuAction,
   verschiebeSchrittAction,
   waehlePaketAction,
   zeigeSchrittAction,
@@ -88,7 +89,7 @@ import {
 import { ausfuehrlichTor, gespeicherteErklaerung, istDuenn, schulstufeVon, type Ausfuehrlich } from "@/lib/ausfuehrlich";
 import type { TaskDraft } from "@/lib/tasks";
 import { paketWahl, zurFaehigkeit } from "@/lib/cockpit-vorschlag";
-import { knoepfeDerEinheit, type KnopfEintrag } from "@/lib/knoepfe";
+import { knoepfeDerEinheit, themenZurWahl, type KnopfEintrag } from "@/lib/knoepfe";
 import { kostenSchaetzung } from "@/lib/lernpaket-ki";
 import { SCHRITT_ARTEN, ungeprueft, type LernpaketMitSchritten, type LernpaketSchritt } from "@/lib/lernpakete";
 import { studentDevice } from "@/lib/live";
@@ -96,7 +97,7 @@ import { letzterStoff, minitestDerEinheit } from "@/lib/minitest";
 import * as repo from "@/lib/repo";
 import { schuelerWorte } from "@/lib/schueler-notiz";
 import { sorteOfSkill } from "@/lib/schreibauftrag";
-import { KONTROLLE_ANZAHL, themenDesPlans } from "@/lib/stundenplan";
+import { KONTROLLE_ANZAHL, THEMA_REST_MIN, themenDesPlans } from "@/lib/stundenplan";
 import { EIGENE_VOKABELN } from "@/lib/vokabeln";
 import { vorschlagDerEinheit, type Anzeige } from "@/lib/steuerung";
 import { levelFor } from "@/lib/text-correction-rules";
@@ -202,6 +203,8 @@ export function Unterricht({
           <span className="font-semibold text-ink">Nächstes Mal:</span> {naechstesMal.join(", ")}. {zeitMangel ? "Heute reicht die Zeit nicht mehr; im" : "Im"} Abschluss steht es unter „Weiter mit“.
         </p>
       )}
+      {/* Zeit, die kein Üben mehr nehmen kann (lib/stundenplan.ts neuTakten): ein Thema aus den Daten dazunehmen, nichts verschieben */}
+      {(c.frei ?? 0) >= 5 && aktuell !== null && <ZeitFrei c={c} unitId={unit.id} />}
       {ids.length > 1 && <Punkte c={c} ids={ids} aktuell={aktuell} unitId={unit.id} />}
       {/* Gemeinsame Bewertung (lib/zu-bewerten.ts): was in dieser Einheit auf dich wartet, als kleiner Chip, der die Liste öffnet */}
       <ZuBewertenChip zeilen={zuBewerten({ unitId: unit.id })} />
@@ -281,6 +284,37 @@ function Woher({ c, unitId }: { c: CockpitDaten; unitId: number }) {
       <Link href={werkzeuge} className="inline-flex min-h-[44px] items-center font-medium text-accent hover:underline">
         {c.paket ? "Anderes Paket" : "Lernpaket wählen"}
       </Link>
+    </div>
+  );
+}
+
+/**
+ * „Zeit frei“ (lib/stundenplan.ts `neuTakten`): bis zum Ende der Einheit bleiben Minuten, die kein Üben mehr nehmen kann. Bis zu zwei
+ * Themen aus Prüfung und Empfehlung kommen mit einem Tippen vor den Abschluss, genau in diese Minuten (lib/knoepfe.ts `themaDazu`).
+ */
+function ZeitFrei({ c, unitId }: { c: CockpitDaten; unitId: number }) {
+  const frei = c.frei ?? 0;
+  const wahl = frei >= THEMA_REST_MIN ? themenZurWahl(unitId, c, null).filter((w) => w.art === "neu").slice(0, 2) : [];
+  return (
+    <div className="-mt-3 grid gap-1.5 text-[14px] text-ink-2" data-testid="zeit-frei">
+      <p>
+        <span className="font-semibold text-ink">Zeit frei: {frei} Min.</span> {wahl.length ? "Ein Thema dazunehmen:" : "Zum Wiederholen oder für ein Gespräch über den Stoff."}
+      </p>
+      {wahl.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {wahl.map(
+            (w) =>
+              w.art === "neu" && (
+                <form key={w.skillId} action={themaDazuAction.bind(null, unitId, w.skillId)}>
+                  <button className="flex min-h-[44px] flex-col items-start justify-center rounded-xl border border-line bg-surface px-3 py-1 text-left hover:bg-panel" data-testid="thema-dazu">
+                    <span className="text-[14.5px] font-semibold text-ink">{w.name}</span>
+                    <span className="text-[12.5px]">{w.warum}</span>
+                  </button>
+                </form>
+              ),
+          )}
+        </div>
+      )}
     </div>
   );
 }

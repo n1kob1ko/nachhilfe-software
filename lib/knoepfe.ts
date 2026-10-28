@@ -11,12 +11,19 @@
  * 2. **Weitere Beispiele**: zwei durchgerechnete Beispiele (Aufgabe und Lösung), nie eines, das schon gezeigt oder gesendet
  *    wurde; Generator zuerst, dann Bibliothek; nur für den Lehrer.
  * 3. **Schwerere Aufgaben**: eine Übung derselben Fähigkeit eine Stufe höher (lib/steuerung.ts `sendeAngepasst`, A vor B, nur
- *    Aufgaben der Fähigkeit des Schritts), mit Vorschau vor dem Senden; Vorschau und Senden sind dieselben Aufgaben (`seed`).
+ *    Aufgaben der Fähigkeit des Schritts), mit Vorschau vor dem Senden; Vorschau und Senden sind dieselben Aufgaben (`seed`). Haben
+ *    Bestand und Generator dafür nichts, macht die KI sie (lib/ki-nachschub.ts, auf Tippen mit Kosten, im Budget der Einheit von
+ *    selbst), immer erst als Vorschau „neu erstellt, ungeprüft“, mit „Senden“ oder „Drucken“.
  * 4. **Thema verstanden**: die Entscheidung des Lehrers, mit Zeit gespeichert. Der Rest des Themas wird weggelassen, die kurze
  *    Lernkontrolle bleibt, bis der Lehrer auch sie weglässt; der Rest der Einheit wird neu getaktet (nie länger als geplant). Der
  *    Abschluss nennt es als Beobachtung des Lehrers, nie als Ergebnis; der Lernstand ändert sich nur durch bewertete Antworten.
  * 5. **Anderes Thema**: die anderen Themen des Plans, die nächste Prüfung und die Empfehlung aus dem Lernstand. Die offenen
- *    Schritte des Themas auf dem Schirm kommen auf „Nächstes Mal“, nichts wird gelöscht (lib/cockpit.ts `anderesThema`).
+ *    Schritte des Themas auf dem Schirm kommen auf „Nächstes Mal“, nichts wird gelöscht (lib/cockpit.ts `anderesThema`). Mit einem
+ *    eigens gewählten Lernpaket wird das Paket dabei ein Thema im Plan (`paketAlsPlan`), zur Wahl stehen die Themen des Plans für
+ *    die ganze Einheit, Prüfung und Empfehlung.
+ *
+ * Bleibt am Ende Zeit, die kein Üben mehr nehmen kann (lib/stundenplan.ts `neuTakten`), kommt mit `themaDazu` ein Thema aus derselben
+ * Wahl dazu, ohne etwas zu verschieben.
  *
  * Jedes Tippen, das etwas tut, steht in `einheit_knoepfe`; der Abschluss sagt daraus „Angepasst: einfacher erklärt (Past Simple),
  * schwerere Aufgaben (Past Simple)“. Mit der KI aus gehen 2–5 ganz, 1 ohne den KI-Text. Nichts hier kommt auf eine Schülerseite,
@@ -28,6 +35,7 @@ import { aufgabeSchluessel, ausgeblendet } from "./bewertungen";
 import {
   anderesThema,
   aufgabenImSchritt,
+  themaDazu as themaInDieFreieZeit,
   beispielDerEinheit,
   beispielKandidaten,
   cockpit,
@@ -38,7 +46,9 @@ import {
   gleicheFrage,
   knopfBeispielFragen,
   loesungText,
+  paketAlsPlan,
   paketQuelle,
+  planDerEinheit,
   skillsDesSchritts,
   ueberspringeSchritte,
   uebtFaehigkeit,
@@ -48,6 +58,7 @@ import {
 import { difficultyFor, levelOf } from "./curriculum";
 import { db, json } from "./db";
 import type { LernpaketSchritt } from "./lernpakete";
+import { ANZAHL_VORSCHLAG, druckeNachschub, sendeNachschub, nachschub, type NachschubBedarf } from "./ki-nachschub";
 import { alsEntwurf, NUTZBAR_SQL, oberfaehigkeit, passtZurFaehigkeit } from "./material-passt";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
 import { nextSteps } from "./recommend";
@@ -89,10 +100,11 @@ export type KnopfInhalt = {
   quelle?: TextQuelle | null;
   /** einfacher (eines) und beispiele (zwei) */
   beispiele?: Beispiel[];
-  /** schwerer: die Stufe 1–5, die Übung und woher die Aufgaben kamen */
+  /** schwerer: die Stufe 1–5, die Übung und woher die Aufgaben kamen (C: neu von der KI, nach der Vorschau); gedruckt statt gesendet */
   stufe?: number;
   worksheetId?: number;
-  quelleAufgaben?: "A" | "B";
+  quelleAufgaben?: "A" | "B" | "C";
+  gedruckt?: boolean;
   /** verstanden: die weggelassenen Schritte und die Lernkontrolle, die bleibt */
   schritte?: number[];
   kontrolle?: number | null;
@@ -101,6 +113,8 @@ export type KnopfInhalt = {
   nach?: string;
   verschoben?: number[];
   ziel?: number;
+  /** thema: in die freie Zeit dazugenommen, nichts verschoben (`themaDazu`) */
+  dazu?: boolean;
 };
 
 export type KnopfEintrag = { id: number; unitId: number; schrittId: number | null; art: KnopfArt; skillId: string | null; thema: string; inhalt: KnopfInhalt; at: string };
@@ -359,9 +373,10 @@ export type SchwererVorschau = { option: Option; stufe: number; skill: string; a
 
 /**
  * Die Vorschau für „Schwerere Aufgaben“: dieselbe Fähigkeit, eine Stufe höher, aus dem Bestand (A), sonst aus den Generatoren
- * (B, mit festem Seed, damit genau diese Aufgaben gesendet werden). Nur Aufgaben der Fähigkeit des Schritts.
+ * (B, mit festem Seed, damit genau diese Aufgaben gesendet werden). Nur Aufgaben der Fähigkeit des Schritts. Haben beide nichts, kommt
+ * mit dem Grund die `option` zurück: dafür kann die KI Aufgaben machen (`schwererBedarf`).
  */
-export function schwererVorschau(unitId: number, schrittId: number, c: CockpitDaten = cockpit(unitId, { mitPlan: true })): SchwererVorschau | { fehler: string } {
+export function schwererVorschau(unitId: number, schrittId: number, c: CockpitDaten = cockpit(unitId, { mitPlan: true })): SchwererVorschau | { fehler: string; option?: Option } {
   const l = laufend(unitId);
   if ("fehler" in l) return l;
   const lage = schrittLage(c, schrittId);
@@ -375,7 +390,7 @@ export function schwererVorschau(unitId: number, schrittId: number, c: CockpitDa
   const seed = generatorSeed(unitId, `${skill.id}:schwerer:${schon}`);
   const a = bestand(unitId, option, c);
   const aufgaben = a.length ? a : generatorKann(option) ? ausGenerator(unitId, option, seed) : [];
-  if (!aufgaben.length) return { fehler: `Auf Stufe ${jetzt + 1} gibt es zu ${skill.name} gerade keine Aufgaben ohne KI.` };
+  if (!aufgaben.length) return { fehler: `Auf Stufe ${jetzt + 1} gibt es zu ${skill.name} gerade keine Aufgaben ohne KI.`, option };
   return { option, stufe: jetzt + 1, skill: skill.name, aufgaben, quelle: a.length ? "A" : "B", seed };
 }
 
@@ -389,6 +404,46 @@ export function sendeSchwerer(unitId: number, schrittId: number, teacherId: numb
   const lage = schrittLage(c, schrittId);
   merke(unitId, { schrittId, art: "schwerer", skillId: v.option.skillId, thema: lage?.thema ?? v.skill, inhalt: { stufe: v.stufe, worksheetId: out.worksheetId, quelleAufgaben: out.quelle }, teacherId });
   return { worksheetId: out.worksheetId, assignmentId: out.assignmentId };
+}
+
+/**
+ * Wofür die KI bei „Schwerere Aufgaben“ neue Aufgaben macht, wenn Bestand und Generator nichts haben: dieselbe Fähigkeit und Stufe,
+ * zwei Aufgaben (wie „Neue passende Aufgabe erstellen“), als Vorschau im Schritt (lib/ki-nachschub.ts). Je Schritt, Stufe und Runde
+ * (wie oft schon schwerer gesendet) ein Schlüssel: nach dem Senden fragt ein neues Tippen neu.
+ */
+export function schwererBedarf(unitId: number, schrittId: number, o: Option): NachschubBedarf | null {
+  if (o.art !== "schwerer" || !o.skillId || !o.level) return null;
+  const runde = db().prepare("SELECT COUNT(*) FROM einheit_knoepfe WHERE unit_id = ? AND art = 'schwerer' AND skill_id = ?").pluck().get(unitId, o.skillId) as number;
+  return { schluessel: `knopf:schwerer:${schrittId}:${o.skillId}:${o.level}:${runde}`, schrittId, ziel: { art: "schwerer", skillId: o.skillId, level: o.level, fokus: null, kontrolle: false, anzahl: ANZAHL_VORSCHLAG }, dazu: [] };
+}
+
+/** Die neuen Aufgaben der KI zu „Schwerere Aufgaben“ dieses Schritts (`schwererBedarf`), oder null. */
+function schwererKi(unitId: number, schrittId: number, id: number) {
+  const n = nachschub(id);
+  return n && n.unitId === unitId && n.ziel.art === "schwerer" && n.schluessel.startsWith(`knopf:schwerer:${schrittId}:`) ? n : null;
+}
+
+/** „Senden“ in der Vorschau der KI zu „Schwerere Aufgaben“: genau diese an den Schüler (lib/ki-nachschub.ts `sendeNachschub`), dann gemerkt. */
+export async function sendeSchwererKi(unitId: number, schrittId: number, id: number, teacherId: number | null): Promise<{ worksheetId: number; assignmentId: number } | { fehler: string }> {
+  const n = schwererKi(unitId, schrittId, id);
+  if (!n) return { fehler: "Diese Aufgaben gehören nicht zu diesem Schritt." };
+  const thema = schrittLage(cockpit(unitId, { mitPlan: true }), schrittId)?.thema ?? repo.getSkill(n.ziel.skillId)?.name ?? "";
+  const out = await sendeNachschub(unitId, id, teacherId);
+  if ("fehler" in out) return out;
+  merke(unitId, { schrittId, art: "schwerer", skillId: n.ziel.skillId, thema, inhalt: { stufe: n.ziel.level, worksheetId: out.worksheetId, quelleAufgaben: "C" }, teacherId });
+  return out;
+}
+
+/** „Drucken“ in derselben Vorschau: genau diese Aufgaben auf Papier (`druckeNachschub`), gemerkt wie gesendet, mit „gedruckt“. */
+export async function druckeSchwererKi(unitId: number, schrittId: number, id: number, teacherId: number | null): Promise<{ worksheetId: number } | { fehler: string }> {
+  const n = schwererKi(unitId, schrittId, id);
+  if (!n) return { fehler: "Diese Aufgaben gehören nicht zu diesem Schritt." };
+  const schon = n.status === "gedruckt";
+  const thema = schrittLage(cockpit(unitId, { mitPlan: true }), schrittId)?.thema ?? repo.getSkill(n.ziel.skillId)?.name ?? "";
+  const out = await druckeNachschub(unitId, id, teacherId);
+  if ("fehler" in out) return out;
+  if (!schon) merke(unitId, { schrittId, art: "schwerer", skillId: n.ziel.skillId, thema, inhalt: { stufe: n.ziel.level, worksheetId: out.worksheetId, quelleAufgaben: "C", gedruckt: true }, teacherId });
+  return out;
 }
 
 // ---------- 4. Thema verstanden ----------
@@ -444,18 +499,24 @@ export const NEU_MAX = 4;
 
 /**
  * Wohin „Anderes Thema“ wechseln kann: die anderen Themen des Plans mit offenen Schritten, dann der Stoff der nächsten Prüfung
- * im Fach (bis 30 Tage) und die Empfehlung aus dem Lernstand, ohne was schon im Plan steht. Nur im Plan (mit einem eigens
- * gewählten Lernpaket leer).
+ * im Fach (bis 30 Tage) und die Empfehlung aus dem Lernstand, ohne was schon im Plan steht. Mit einem eigens gewählten Lernpaket
+ * zuerst die Themen des Plans für die ganze Einheit (lib/stundenplan.ts) als neue Fähigkeiten, ohne die des Pakets.
  */
 export function themenZurWahl(unitId: number, c: CockpitDaten, schrittId: number | null): ThemaWahl[] {
   const unit = getUnit(unitId);
-  if (!unit || c.paket || !c.plan.length) return [];
-  const jetzt = schrittId === null ? null : (c.plan.find((x) => x.id === schrittId)?.thema ?? null);
-  const plan: ThemaWahl[] = themenDesPlans(c.plan)
-    .filter((t) => t.name !== jetzt && t.ids.some((id) => !fertig(c, id)))
-    .map((t) => ({ art: "plan", name: t.name, minuten: t.ids.reduce((a, id) => a + (fertig(c, id) ? 0 : (c.plan.find((x) => x.id === id)?.minuten ?? 0)), 0), warum: t.ids.every((id) => fertig(c, id) || c.verschoben.has(id)) ? "Nächstes Mal geplant" : "Im Plan für heute" }));
+  if (!unit || (!c.paket && !c.plan.length)) return [];
+  const jetzt = schrittId === null || c.paket ? null : (c.plan.find((x) => x.id === schrittId)?.thema ?? null);
+  const plan: ThemaWahl[] = c.paket
+    ? []
+    : themenDesPlans(c.plan)
+        .filter((t) => t.name !== jetzt && t.ids.some((id) => !fertig(c, id)))
+        .map((t) => ({ art: "plan", name: t.name, minuten: t.ids.reduce((a, id) => a + (fertig(c, id) ? 0 : (c.plan.find((x) => x.id === id)?.minuten ?? 0)), 0), warum: t.ids.every((id) => fertig(c, id) || c.verschoben.has(id)) ? "Nächstes Mal geplant" : "Im Plan für heute" }));
   const fach = unit.subject ?? "";
-  const imPlan = new Set(c.plan.map((x) => x.skillId).filter((x): x is string => Boolean(x)));
+  const imPlan = new Set(c.paket ? [...c.paket.skill_ids, ...c.schritte.flatMap(skillsDesSchritts)] : c.plan.map((x) => x.skillId).filter((x): x is string => Boolean(x)));
+  // with a chosen package: the topics the plan for the whole unit would have had (without the package), in their order
+  const ganz = c.paket
+    ? [...new Set(planDerEinheit(unitId).filter((x) => x.thema && x.skillId && x.art !== "grundlage").map((x) => x.skillId!))].map((id) => ({ id, warum: "Im Plan für die ganze Einheit" }))
+    : [];
   const heute = wienerDatum();
   const bis = tagAddieren(heute, 30);
   const pruefung = repo
@@ -466,7 +527,7 @@ export function themenZurWahl(unitId: number, c: CockpitDaten, schrittId: number
     .filter((s) => !fach || s.skill.subject === fach)
     .map((s) => ({ id: s.skill.id, warum: "Empfehlung aus dem Lernstand" }));
   const neu: ThemaWahl[] = [];
-  for (const k of [...pruefung, ...empfohlen]) {
+  for (const k of [...ganz, ...pruefung, ...empfohlen]) {
     const skill = repo.getSkill(k.id);
     if (!skill || imPlan.has(k.id) || neu.some((n) => n.art === "neu" && n.skillId === k.id) || plan.some((p) => p.name === skill.name)) continue;
     if (neu.length < NEU_MAX) neu.push({ art: "neu", skillId: skill.id, name: skill.name, warum: k.warum });
@@ -476,21 +537,40 @@ export function themenZurWahl(unitId: number, c: CockpitDaten, schrittId: number
 
 /**
  * „Anderes Thema“: wechselt zu einem Thema aus `themenZurWahl` (nichts anderes); die offenen Schritte des Themas auf dem Schirm
- * kommen auf „Nächstes Mal“, nichts wird gelöscht, der Rest wird neu getaktet.
+ * kommen auf „Nächstes Mal“, nichts wird gelöscht, der Rest wird neu getaktet. Mit einem eigens gewählten Lernpaket wird das Paket
+ * zuerst ein Thema im Plan (lib/cockpit.ts `paketAlsPlan`, mit seinem Stand); seine offenen Schritte kommen auf „Nächstes Mal“.
  */
 export function wechsleThema(unitId: number, schrittId: number, wahl: { thema?: string | null; skillId?: string | null }, teacherId: number | null): { ok: true; verschoben: number[]; nach: string } | { fehler: string } {
   const l = laufend(unitId);
   if ("fehler" in l) return l;
   const c = cockpit(unitId, { mitPlan: true });
-  if (c.paket) return { fehler: "Mit einem gewählten Lernpaket geht das unter „Weitere Werkzeuge“: anderes Lernpaket wählen." };
+  if (c.paket && !c.schritte.some((x) => x.id === schrittId)) return { fehler: "Dieser Schritt gehört nicht zur Einheit." };
   const w = themenZurWahl(unitId, c, schrittId).find((x) => (x.art === "plan" ? Boolean(wahl.thema) && x.name === wahl.thema : Boolean(wahl.skillId) && x.skillId === wahl.skillId));
   if (!w) return { fehler: "Dieses Thema steht nicht zur Wahl." };
+  if (c.paket && !paketAlsPlan(unitId)) return { fehler: "Dieses Lernpaket gibt es nicht mehr." };
   const out = anderesThema(unitId, schrittId, w.art === "plan" ? { thema: w.name } : { skillId: w.skillId, name: w.name });
   if ("fehler" in out) return out;
   const nachher = cockpit(unitId, { mitPlan: true });
   const zielSkill = nachher.plan.find((x) => x.id === out.ziel)?.skillId ?? null;
   merke(unitId, { schrittId, art: "thema", skillId: zielSkill, thema: out.von, inhalt: { von: out.von, nach: w.name, verschoben: out.verschoben, ziel: out.ziel }, teacherId });
   return { ok: true, verschoben: out.verschoben, nach: w.name };
+}
+
+/**
+ * Zeit frei am Ende, die kein Üben mehr nehmen kann (lib/stundenplan.ts `neuTakten`): ein Thema aus der Wahl von „Anderes Thema“
+ * (nur neue Fähigkeiten: Prüfung, Empfehlung) kommt vor den Abschluss, in genau diese Minuten; nichts wird verschoben.
+ */
+export function themaDazu(unitId: number, skillId: string, teacherId: number | null): { ok: true; nach: string } | { fehler: string } {
+  const l = laufend(unitId);
+  if ("fehler" in l) return l;
+  const c = cockpit(unitId, { mitPlan: true });
+  if (c.paket) return { fehler: "Dieses Thema steht nicht zur Wahl." };
+  const w = themenZurWahl(unitId, c, null).find((x) => x.art === "neu" && x.skillId === skillId);
+  if (!w || w.art !== "neu") return { fehler: "Dieses Thema steht nicht zur Wahl." };
+  const out = themaInDieFreieZeit(unitId, { skillId: w.skillId });
+  if ("fehler" in out) return out;
+  merke(unitId, { schrittId: out.ziel, art: "thema", skillId: w.skillId, thema: null, inhalt: { von: null, nach: w.name, verschoben: [], ziel: out.ziel, dazu: true }, teacherId });
+  return { ok: true, nach: w.name };
 }
 
 // ---------- for the Abschluss ----------
@@ -507,7 +587,8 @@ export function angepasstZeile(eintraege: Pick<KnopfEintrag, "art" | "thema" | "
     const themen = [...new Set(eintraege.filter((e) => e.art === art).map((e) => e.thema.trim()))];
     if (themen.length) teile.push(`${ART_TEXT[art]}${themen.some(Boolean) ? ` (${themen.filter(Boolean).join(", ")})` : ""}`);
   }
-  for (const e of eintraege.filter((x) => x.art === "thema")) teile.push(`anderes Thema (${e.inhalt.nach ?? ""}${e.inhalt.von ? ` statt ${e.inhalt.von}` : ""})`);
+  for (const e of eintraege.filter((x) => x.art === "thema"))
+    teile.push(e.inhalt.dazu ? `Thema dazu (${e.inhalt.nach ?? ""})` : `anderes Thema (${e.inhalt.nach ?? ""}${e.inhalt.von ? ` statt ${e.inhalt.von}` : ""})`);
   return teile.length ? `Angepasst: ${teile.join(", ")}` : null;
 }
 

@@ -30,8 +30,8 @@ import { db, json } from "./db";
 import { daysUntil } from "./exams";
 import { masteryStatus } from "./mastery";
 import { listMaterials } from "./materials";
-import { heutigeEinheitenFuerSchueler } from "./planung/heute";
-import { getSchuelerPlanung } from "./planung/repo";
+import { heutigeEinheitenFuerSchueler, zeitfenster } from "./planung/heute";
+import { getGeplanteEinheit, getSchuelerPlanung } from "./planung/repo";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
 import { nextSteps, RULE_LABEL, type NextStep } from "./recommend";
 import * as repo from "./repo";
@@ -161,9 +161,14 @@ export function briefingStand(studentId: number, o: { schularbeitTage: number | 
   return crypto.createHash("sha1").update(`${datenStand(studentId)}|${naehe}|${f}`).digest("hex").slice(0, 16);
 }
 
-/** Die geplante Dauer heute: der Platz im Wochenplan, sonst die von Hand geplante Einheit, sonst die Vorgabe des Schülers. */
+/**
+ * Die geplante Dauer heute: der Platz im Wochenplan, sonst die von Hand geplante Einheit, sonst die Vorgabe des Schülers. Ein genannter
+ * Platz gilt auch, wenn er nicht (mehr) heute ist: eine Einheit, die vor Mitternacht begann, behält danach die Dauer ihres Platzes.
+ */
 function heute(studentId: number, now: Date, platzId: number | null): { minuten: number; platzId: number | null; zeit: string | null } {
   const plaetze = heutigeEinheitenFuerSchueler(studentId, now);
+  const eigener = platzId !== null && !plaetze.some((p) => p.id === platzId) ? getGeplanteEinheit(platzId) : null;
+  if (eigener && eigener.student_id === studentId) return { minuten: eigener.geplante_dauer, platzId: eigener.id, zeit: zeitfenster(eigener, now).label };
   const platz = plaetze.find((p) => p.id === platzId) ?? plaetze.find((p) => p.unit_id === null) ?? plaetze[0];
   if (platz) return { minuten: platz.geplante_dauer, platzId: platz.id, zeit: platz.zeit_label };
   const datum = wienerDatum(now);

@@ -20,7 +20,7 @@ import { budget } from "./ai/config";
 import { generateWithAI } from "./ai/features";
 import { latestInsight } from "./ai/insights";
 import { ohneAusgeblendete } from "./bewertungen";
-import { aufgabenOhneKi, cockpit, leseStand, planHatUebung, sendeAusGenerator, type CockpitDaten, type PlanStep } from "./cockpit";
+import { aufgabenOhneKi, cockpit, leseStand, merkeGedruckt, planHatUebung, reagiert, sendeAusGenerator, type CockpitDaten, type PlanStep } from "./cockpit";
 import { DIFFICULTIES, levelOf } from "./curriculum";
 import { db, json } from "./db";
 import { oberfaehigkeit, passtZurFaehigkeit } from "./material-passt";
@@ -60,7 +60,8 @@ export type VorschauBlatt = {
   fuerSchueler: boolean;
   reihenfolge?: number[];
 };
-export type NachschubStatus = "laeuft" | "bereit" | "gesendet" | "verworfen" | "fehler";
+/** „gedruckt“: statt gesendet auf Papier ausgegeben (`druckeNachschub`). */
+export type NachschubStatus = "laeuft" | "bereit" | "gesendet" | "gedruckt" | "verworfen" | "fehler";
 export type Nachschub = {
   id: number;
   /** null: ohne Einheit (Empfehlung, Diagnose), dann mit `studentId` */
@@ -389,6 +390,66 @@ function sendeLive(unitId: number, n: Nachschub, teacherId: number | null): { wo
     assignmentId = repo.assignWorksheet(worksheetId, student.id, "", unit.id);
   })();
   return { worksheetId, assignmentId };
+}
+
+/**
+ * „Drucken“ in der Vorschau (statt „Senden“, wie „Drucken“ am Schritt): genau diese Aufgaben, in der Reihenfolge der Vorschau, als Übung
+ * dieses Schülers ohne Zuweisung, gemerkt als in dieser Einheit gedruckt. Der Schüler sieht sie nirgends; „Arbeit fotografieren“ wählt
+ * sie vor (lib/papier-einheit.ts). Gedruckt heißt: die Lehrkraft hat sie gesehen und auf Papier ausgegeben. Ein zweites Tippen druckt
+ * dieselbe Übung noch einmal. Gibt die Übung für die A4-Seite zurück.
+ */
+export async function druckeNachschub(unitId: number, id: number, teacherId: number | null): Promise<{ worksheetId: number } | { fehler: string }> {
+  const n = nachschub(id);
+  const art = n?.ziel.art;
+  if (!n || n.unitId !== unitId || art === "empfehlung" || art === "diagnose" || !art) return { fehler: "Diese Aufgaben gehören nicht zu dieser Einheit." };
+  if (n.status === "gedruckt" && n.worksheetId) return { worksheetId: n.worksheetId };
+  if (n.status !== "bereit") return { fehler: n.status === "gesendet" ? "Diese Aufgaben sind schon gesendet." : "Diese Aufgaben gibt es nicht mehr." };
+  // a double tap prints once
+  if (!db().prepare("UPDATE einheit_ki_aufgaben SET status = 'gedruckt' WHERE id = ? AND status = 'bereit'").run(id).changes) return { fehler: "Diese Aufgaben gibt es nicht mehr." };
+  const aufgaben = vorschauAufgaben(n).map((x) => x.t);
+  const out = art === "schritt" ? await sendeAusGenerator(unitId, n.ziel.skillId, teacherId, n.schrittId, "drucken", aufgaben) : druckeOhneSchritt(unitId, n, teacherId, aufgaben);
+  if ("fehler" in out) {
+    db().prepare("UPDATE einheit_ki_aufgaben SET status = 'bereit' WHERE id = ?").run(id);
+    return out;
+  }
+  db().prepare("UPDATE einheit_ki_aufgaben SET worksheet_id = ? WHERE id = ?").run(out.worksheetId, id);
+  // from the suggestion: the teacher has reacted, only new answers count for the next one (like sending)
+  if (art !== "schritt" && art !== "live") reagiert(unitId);
+  return { worksheetId: out.worksheetId };
+}
+
+/** Aus dem Vorschlag, „Schwerere Aufgaben“ oder dem Live-Status: eine Übung wie beim Senden, nur ohne Zuweisung, gemerkt als gedruckt. */
+function druckeOhneSchritt(unitId: number, n: Nachschub, teacherId: number | null, aufgaben: TaskDraft[]): { worksheetId: number } | { fehler: string } {
+  const unit = getUnit(unitId);
+  if (!unit || unit.status !== "gestartet") return { fehler: "Diese Einheit läuft nicht mehr." };
+  const student = repo.getStudent(unit.student_id);
+  const skill = repo.getSkill(n.ziel.skillId);
+  if (!student || !skill) return { fehler: "Diese Fähigkeit gibt es nicht." };
+  if (!aufgaben.length) return { fehler: "Dazu gibt es keine neuen Aufgaben." };
+  let worksheetId = 0;
+  db().transaction(() => {
+    worksheetId = repo.createWorksheet(
+      {
+        title: `${student.name.split(" ")[0]} – Üben: ${skill.name}`.slice(0, 160),
+        subject: skill.subject,
+        grade: schulstufe(student.school_type, student.klasse ?? 1),
+        school_type: student.school_type,
+        klasse: student.klasse,
+        topic: skill.area,
+        difficulty: DIFFICULTIES[n.ziel.level - 1],
+        task_type: n.ziel.art === "fehler" ? "fix" : "mixed",
+        kind: "uebung",
+        source: "ki",
+        skill_ids: [skill.id],
+        student_id: student.id,
+        teacher_id: teacherId,
+        status: "freigegeben",
+      },
+      aufgaben,
+    );
+    merkeGedruckt(worksheetId, unit.id, n.schrittId ?? 0);
+  })();
+  return { worksheetId };
 }
 
 /** „Verwerfen“: die Vorschau weg; die App fragt dafür nicht noch einmal von selbst, auf Tippen schon. */

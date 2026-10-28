@@ -283,11 +283,16 @@ test("„Thema verstanden“: the rest of the topic is left out, the short Lernk
   assert.deepEqual([...c.nichtNoetig].sort(), [erklaeren, ueben].sort());
   assert.ok(c.stand.uebersprungen.includes(erklaeren) && c.stand.uebersprungen.includes(ueben));
   assert.ok(!c.stand.uebersprungen.includes(kontrolle));
-  // re-timed from now: the unit is not longer than planned, it ends at minute 100 at the latest
+  // re-timed from now (F0a): the freed minutes go to the next practice step (up to 25 minutes), the Lernkontrolle and the
+  // explanation keep their minutes, and the plan ends with the unit at minute 100, never later
   const ende = Math.max(...c.plan.filter((x) => c.ab.has(x.id)).map((x) => c.ab.get(x.id)! + c.minuten.get(x.id)!));
-  assert.ok(ende <= 100, `ends at ${ende}`);
-  assert.ok((c.minuten.get(kontrolle) ?? 0) <= 10);
-  for (const id of ids("Multiplizieren")) assert.ok((c.minuten.get(id) ?? 0) <= c.plan.find((x) => x.id === id)!.minuten, "no step stretched");
+  assert.equal(ende + (c.frei ?? 0), 100, `ends at ${ende}, ${c.frei ?? 0} minutes free`);
+  assert.equal(c.minuten.get(kontrolle), c.plan.find((x) => x.id === kontrolle)!.minuten, "the Lernkontrolle as planned, not shorter, not longer");
+  for (const x of c.plan.filter((p) => p.thema === "Multiplizieren")) {
+    const m = c.minuten.get(x.id)!;
+    if (x.art === "ueben") assert.ok(m > x.minuten && m <= s.sp.UEBEN_MAX, `Üben ${x.minuten} → ${m}`);
+    else assert.equal(m, x.minuten, `${x.art} keeps its minutes`);
+  }
   // the decision is stored with the time; the Lernstand did not move
   const log = s.k.knoepfeDerEinheit(unit.id).find((e) => e.art === "verstanden")!;
   assert.deepEqual(log.inhalt, { schritte: [erklaeren, ueben], kontrolle });
@@ -428,8 +433,11 @@ test("with a chosen Lernpaket: „Einfacher erklären“ takes the package's „
   assert.equal(r.eintrag.text, erklaerung.bei_fehler.trim());
   assert.equal(r.eintrag.quelle, "paket");
 
-  assert.deepEqual(s.k.themenZurWahl(unit.id, s.c.cockpit(unit.id), einstieg.id), []);
-  assert.match((s.k.wechsleThema(unit.id, einstieg.id, { thema: "Irgendwas" }, s.teacher.id) as { fehler: string }).fehler, /Weitere Werkzeuge/);
+  // „Anderes Thema“ offers only new skills, none of the package's (F0a: the package becomes a topic of the plan, see the test below)
+  const wahl = s.k.themenZurWahl(unit.id, s.c.cockpit(unit.id), einstieg.id);
+  assert.ok(wahl.every((w) => w.art === "neu" && !p.skill_ids.includes(w.skillId)), JSON.stringify(wahl));
+  assert.deepEqual(s.k.wechsleThema(unit.id, einstieg.id, { thema: "Irgendwas" }, s.teacher.id), { fehler: "Dieses Thema steht nicht zur Wahl." });
+  assert.equal(s.c.cockpit(unit.id).paket?.id, p.id, "nothing changed");
 
   s.c.markiereSchritt(unit.id, einstieg.id, "erledigt");
   const v = ok(s.k.themaVerstanden(unit.id, erklaerung.id, s.teacher.id));
