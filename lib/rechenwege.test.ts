@@ -192,6 +192,8 @@ test("review before merge: resending, two devices and a second teacher grade nev
   await Promise.all([answer(tasks[1].id, wrong), answer(tasks[1].id, wrong), answer(tasks[1].id, way(["3x = 15", "x = 5"], "5"))]);
   assert.equal(rows(tasks[1].id).length, 3);
   assert.equal(rows(tasks[1].id).filter((a) => a.final).length, 1);
+  // stored in the order sent: the right answer came last, after the third try had finished the task
+  assert.deepEqual(rows(tasks[1].id).map((a) => [a.attempt_no, a.correct, a.final]), [[1, 0, 0], [2, 0, 0], [3, 0, 1]]);
   // waiting for the teacher: a resend adds nothing, a second grade replaces the first
   await answer(tasks[2].id, way(["3x = 29", "x = 5"], "5"));
   await answer(tasks[2].id, way(["3x = 15", "x = 5"], "5"));
