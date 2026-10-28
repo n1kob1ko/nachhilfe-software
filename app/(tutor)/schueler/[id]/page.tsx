@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Archive, Camera, CheckCircle2, Circle, FileText, History, PenLine, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Archive, Camera, CheckCircle2, Circle, FileText, History, PenLine, Pencil, Plus, ScanLine, Sparkles, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/Art";
 import {
   addHomeworkAction,
@@ -48,6 +48,7 @@ import { listenVon } from "@/lib/vokabellisten";
 import { textsForStudent, wordsLabel } from "@/lib/texts";
 import { ZuBewertenListe } from "@/components/ZuBewerten";
 import { zuBewerten, zuBewertenTitel } from "@/lib/zu-bewerten";
+import { hausuebungErgebnis, HU_STATUS_LABEL, statusDetail, type HuStatus } from "@/lib/hausuebung-zurueck";
 
 /** Vier Bereiche statt sechs: Stoff und Prüfungen teilen sich einen Tab, Übungen und Lernverlauf auch. */
 const TABS = [
@@ -893,6 +894,9 @@ function StoffzettelLink({ id }: { id: number }) {
   );
 }
 
+/** Der Stand einer Hausübung als Farbe: bewertet grün, abgegeben (wartet auf dich) amber, sonst ruhig. */
+const HU_TON: Record<HuStatus, "neutral" | "amber" | "green"> = { offen: "neutral", abgegeben: "amber", bewertet: "green", nicht_abgegeben: "neutral" };
+
 function School({ student }: { student: repo.Student }) {
   const homework = repo.listHomework(student.id);
   // eine Hausübung kann zu einer Übung gehören: ist sie fertig, ist die Hausübung erledigt
@@ -1029,13 +1033,15 @@ function School({ student }: { student: repo.Student }) {
           ))}
         </ul>
       </section>
-      <section>
+      <section id="hausuebungen" className="scroll-mt-20">
         <SectionTitle>Hausübungen</SectionTitle>
         <ul className="mb-5 divide-y divide-line">
           {homework.length === 0 && <li className="py-2 text-[14px] text-ink-3">Keine Hausübungen eingetragen.</li>}
           {homework.map((h) => {
             const done = !repo.homeworkOpen(h);
             const durchUebung = done && h.status !== "erledigt";
+            // mit Übung: ihr Stand aus den Antworten (lib/hausuebung-zurueck.ts); „nicht abgegeben“ zählt nie als falsch
+            const e = h.assignment_id ? hausuebungErgebnis(h.id, { stichtag: today }) : null;
             return (
               <li key={h.id} className="flex items-start gap-3 py-2.5">
                 {durchUebung ? (
@@ -1063,8 +1069,19 @@ function School({ student }: { student: repo.Student }) {
                         {h.assignment_completed_at && " fertig"}
                       </>
                     )}
-                    {!done && h.due_date && h.due_date < today && <span className="font-semibold text-red"> · überfällig</span>}
+                    {!done && !e && h.due_date && h.due_date < today && <span className="font-semibold text-red"> · überfällig</span>}
                   </div>
+                  {e && (
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-ink-2 no-underline" data-testid="hausuebung-stand">
+                      <Pill tone={HU_TON[e.status]}>{HU_STATUS_LABEL[e.status]}</Pill>
+                      {statusDetail(e) && <span>{statusDetail(e)}</span>}
+                      {e.aufgabenStand.some((x) => x.bewertung === "unbearbeitet") && !h.assignment_completed_at && (
+                        <Link href={`/schueler/${student.id}/hausuebung/${h.id}/papier`} className="inline-flex min-h-[44px] items-center gap-1 font-medium text-accent hover:underline" data-testid="hausuebung-papier">
+                          <ScanLine size={14} aria-hidden /> Arbeit fotografieren
+                        </Link>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <form action={deleteHomeworkAction.bind(null, h.id, student.id)}>
                   <button className="btn btn-ghost btn-sm min-w-[44px] !px-2" aria-label="Löschen">

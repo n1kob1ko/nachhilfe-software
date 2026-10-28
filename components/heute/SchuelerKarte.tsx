@@ -9,8 +9,8 @@ import { klassenLabel } from "@/lib/school";
 
 /**
  * Ein Schüler von heute auf einer kurzen Karte (lib/heute.ts): Zeit, Name, Klasse, Fach, Dauer, dann aus der automatischen
- * Vorbereitung Thema, Warum, was bereitliegt (geprüftes Lernpaket oder Plan aus den Daten), Schwierigkeiten und
- * Prüfung. Eine Aktion: „Einheit starten“. Hat ein neuer Schüler noch kein Signal, stehen die passenden geprüften
+ * Vorbereitung Thema, Warum, was bereitliegt (geprüftes Lernpaket oder Plan aus den Daten), Schwierigkeiten, die
+ * Hausübung von letztem Mal und Prüfung. Eine Aktion: „Einheit starten“. Hat ein neuer Schüler noch kein Signal, stehen die passenden geprüften
  * Lernpakete zum Wählen da; ein Tippen legt eines für heute fest. `haupt`: der nächste Schüler, sein Knopf ist der Hauptknopf der Seite.
  * `oben`: seine Einheit läuft und steht oben mit dem großen Knopf; hier bleibt nur eine Zeile mit einem ruhigen Link.
  */
@@ -35,6 +35,14 @@ export function SchuelerKarte({ p, student, karte, fach, haupt, wann, oben = fal
       ) : (
         karte.schwierigkeiten.join(" · ")
       ),
+    ]);
+  // the homework of last time: its result in one line, with where it comes from (lib/hausuebung-zurueck.ts)
+  if (karte?.hausuebung)
+    zeilen.push([
+      "Hausübung",
+      <span key="h" data-testid="heute-hausuebung">
+        {karte.hausuebung.zeile.replace(/^Hausübung: /, "")} <span className="text-[12.5px] whitespace-nowrap text-ink-3">{karte.hausuebung.quelle}</span>
+      </span>,
     ]);
   // the next exam is always there; only a near one stands out
   if (karte?.pruefung) zeilen.push(["Prüfung", karte.pruefungNah ? <span key="p" className="font-semibold text-amber">{karte.pruefung}</span> : karte.pruefung]);

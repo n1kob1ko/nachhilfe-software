@@ -140,6 +140,8 @@ export type PlanStep = {
   pruefung?: boolean;
   vorlaeufig?: string;
   zusatz?: boolean;
+  /** „Hausübung besprechen“ (lib/hausuebung-zurueck.ts): die Hausübung, um die es geht; die Karte liest ihren Stand jedes Mal neu */
+  hausuebung?: number;
 };
 
 /** Der Schritt eines Pakets, auf den ein Planschritt zeigt, oder null. */
@@ -1062,7 +1064,7 @@ export function ablaufDesPlans(roh: Pick<Stand, "plan" | "reihenfolge" | "erledi
   const getan = s.plan.filter((x) => !s.uebersprungen.includes(x.id) && (s.gesendet[x.id]?.length || s.antworten[x.id])).map((x) => x.id);
   const st = { ...s, erledigt: [...new Set([...s.erledigt, ...getan])] };
   const e = ergebnis(s.plan, ablauf(s.plan, s.reihenfolge), st);
-  const rahmen = new Set(s.plan.filter((x) => x.art === "einstieg" || x.art === "abschluss").map((x) => x.id));
+  const rahmen = new Set(s.plan.filter((x) => x.art === "einstieg" || x.art === "hausuebung" || x.art === "abschluss").map((x) => x.id));
   const offen = new Set(e.nichtErreicht.map((x) => x.id));
   const alle = themenDesPlans(s.plan);
   const ganz = alle.filter((t) => t.ids.every((id) => offen.has(id)));

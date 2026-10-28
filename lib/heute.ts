@@ -14,6 +14,7 @@ import { bereiteBriefingVor } from "./briefing-auto";
 import { briefingDaten, datumKurz, einfachesBriefing, gespeichertesBriefing, KEINE_SCHWACHSTELLE, type BriefingInhalt, type Fokus } from "./briefing";
 import { leseStand } from "./cockpit";
 import { daysUntil, inTagen } from "./exams";
+import { briefingZeile, hausuebungFuerEinheit, quelleText } from "./hausuebung-zurueck";
 import { getLernpaket, listLernpakete, type Lernpaket } from "./lernpakete";
 import { heutigeEinheiten } from "./planung/heute";
 import { tagAddieren, wienerDatum, wienerMinuten } from "./planung/zeit";
@@ -153,6 +154,8 @@ export type HeuteKarte = {
   warumPruefung?: boolean;
   /** ohne jedes Signal (neuer Schüler): die geprüften Lernpakete zum Wählen, ein Tippen legt eines für heute fest */
   pakete?: { id: number; title: string }[];
+  /** die Hausübung, die in diese Einheit gehört (lib/hausuebung-zurueck.ts): „Hausübung: 6 von 9 richtig · …“ und woher */
+  hausuebung?: { zeile: string; quelle: string } | null;
 };
 
 /** Bis so viele Tage vorher ist eine Prüfung auf der Karte nah (hervorgehoben); weiter weg steht sie ruhig da. */
@@ -282,6 +285,10 @@ export function heuteKarten(teacherId: number, punkte: HeutePunkt[], now: Date =
       // the Platz of this row, else the planned duration the unit's plan uses (lib/briefing.ts `heute`)
       dauerMin: p.platzId !== null ? p.endeMin - p.startMin : d.minuten,
     });
+    // the homework of last time and what came of it, in one line with its source (lib/hausuebung-zurueck.ts)
+    const unit = begonnen ? getUnit(p.einheitId!) : null;
+    const hu = hausuebungFuerEinheit(p.studentId, { vor: unit?.started_at ?? now.toISOString(), fach: unit?.subject || p.fach || fachVon(w), ausser: unit?.id ?? null });
+    if (hu) karte.hausuebung = { zeile: briefingZeile(hu), quelle: quelleText(hu) };
     // a new student without any signal: the matching checked packages to pick from, instead of only the plan from the data
     if (!begonnen && offen(p) && w?.art === "ohne_signal") {
       const st = d.student;

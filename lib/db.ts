@@ -1623,6 +1623,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["einheit_ki_aufgaben", "student_id", "INTEGER REFERENCES students(id) ON DELETE CASCADE"],
   // Hausübung vorbereitet (lib/hausuebung.ts, 2026-10-28): die Einheit, in deren Abschluss die Hausübung freigegeben wurde; null = von Hand
   ["homework", "unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
+  // Hausübung zurück (lib/hausuebung-zurueck.ts, E2, 2026-10-28): eine auf Papier gelöste Hausübung, fotografiert und übernommen. Ihre
+  // Antworten tragen keine unit_id (Hausübung ist kein Unterricht); papier_arbeiten.unit_id ist nur die Einheit, in der fotografiert wurde
+  ["papier_arbeiten", "homework_id", "INTEGER REFERENCES homework(id) ON DELETE SET NULL"],
 ];
 
 /** Teachers to start with; more can be added later. */
@@ -1824,7 +1827,8 @@ function migrate(conn: Database.Database) {
         teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         task_ids TEXT,
-        lesung_id INTEGER
+        lesung_id INTEGER,
+        homework_id INTEGER REFERENCES homework(id) ON DELETE SET NULL
       )`);
       conn.exec(`INSERT INTO papier_arbeiten_neu (${spalten}) SELECT ${spalten} FROM papier_arbeiten`);
       conn.exec("DROP TABLE papier_arbeiten");

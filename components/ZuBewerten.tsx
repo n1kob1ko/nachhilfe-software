@@ -25,7 +25,7 @@ export function ZuBewertenListe({ zeilen, bewerten = true }: { zeilen: ZuBewerte
 function Kopf({ z, wo }: { z: ZuBewerten; wo: string }) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <Pill tone="accent">{QUELLE_TEXT[z.quelle]}{z.art === "antwort" && z.quelle === "probe" && z.papier ? " · Papier" : ""}</Pill>
+      <Pill tone="accent">{QUELLE_TEXT[z.quelle]}{z.art === "antwort" && (z.quelle === "probe" || z.quelle === "hausuebung") && z.papier ? " · Papier" : ""}</Pill>
       <Pill tone="amber">{GRUND_TEXT[z.grund]}</Pill>
       <Link href={z.href} className="inline-flex min-h-[32px] min-w-0 items-center text-[13px] text-ink-2 hover:text-ink hover:underline pointer-coarse:min-h-[44px]">
         <span className="truncate">{wo}</span>
