@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ClipboardPaste, FileText, FileUp, PenLine, Plus, Sparkles, Trash2, TriangleAlert, X } from "lucide-react";
+import { KeinNameZeile } from "@/components/KeinNameZeile";
 import { shrinkImage } from "@/components/shrink-image";
 import { uebernimmProbeAction } from "@/app/probe-extern-actions";
 import {
@@ -44,6 +45,7 @@ const QUELLE: Record<"text" | "ki", string> = { text: "aus dem Text des PDFs", k
  * Zeile je Teilaufgabe (Aufgabe, Teilaufgabe, Text, Punkte, Musterlösung, Fähigkeit) und den Seiten daneben. Unsichere Zeilen
  * stehen oben und brauchen „Passt so“; erst „Übernehmen“ legt die Übung an. Lesen mit KI nur auf Tippen, mit den Kosten
  * daneben und dem Haken „kein Name“. Ohne KI dieselbe Ansicht, leer oder aus dem Text eines PDFs, zum Eintragen oder Einfügen.
+ * `einheit`: aus dem Unterricht geöffnet; ist „kein Name“ dort schon bestätigt (lib/kein-name.ts), steht statt des Hakens eine Zeile.
  */
 export function ProbeExtern({
   studentId,
@@ -51,17 +53,20 @@ export function ProbeExtern({
   titelVorschlag,
   skills,
   kiGrund: kiGrundAnfang,
+  einheit = null,
 }: {
   studentId: number;
   testId: number;
   titelVorschlag: string;
   skills: Skill[];
   kiGrund: string | null;
+  einheit?: { unitId: number; keinName: boolean } | null;
 }) {
   const router = useRouter();
   const [dateien, setDateien] = useState<Record<Feld, File[]>>({ angabe: [], loesung: [] });
   const [gespeichert, setGespeichert] = useState<Record<Feld, Gespeichert[]>>({ angabe: [], loesung: [] });
   const [keinName, setKeinName] = useState(false);
+  const keinNameOk = keinName || Boolean(einheit?.keinName);
   const [busy, setBusy] = useState<null | "vorbereiten" | "hochladen" | "lesen">(null);
   const [seit, setSeit] = useState(0);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -132,6 +137,7 @@ export function ProbeExtern({
     if (ki) {
       fd.set("ki", "1");
       fd.set("keine_namen", keinName ? "1" : "");
+      if (einheit) fd.set("einheit", String(einheit.unitId));
     }
     for (const feld of ["angabe", "loesung"] as const) for (const f of dateien[feld]) fd.append(feld, f, f.name);
     setBusy(ki ? "lesen" : "hochladen");
@@ -305,12 +311,16 @@ export function ProbeExtern({
             </div>
             {kiOffen && !kiGrund && (
               <div className="grid gap-2 rounded-xl bg-panel px-4 py-3">
-                <label className="flex cursor-pointer items-start gap-3 text-[15px]">
-                  <input type="checkbox" checked={keinName} onChange={(e) => setKeinName(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-[var(--accent)]" data-testid="probe-keine-namen" />
-                  <span>Auf den Seiten steht kein Name, oder er ist abgedeckt.</span>
-                </label>
+                {einheit?.keinName ? (
+                  <KeinNameZeile />
+                ) : (
+                  <label className="flex cursor-pointer items-start gap-3 text-[15px]">
+                    <input type="checkbox" checked={keinName} onChange={(e) => setKeinName(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-[var(--accent)]" data-testid="probe-keine-namen" />
+                    <span>Auf den Seiten steht kein Name, oder er ist abgedeckt.</span>
+                  </label>
+                )}
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <button type="button" className="btn btn-primary" onClick={() => void senden(true)} disabled={busy !== null || !keinName} data-testid="probe-ki-lesen">
+                  <button type="button" className="btn btn-primary" onClick={() => void senden(true)} disabled={busy !== null || !keinNameOk} data-testid="probe-ki-lesen">
                     <Sparkles size={17} aria-hidden /> {busy === "lesen" ? "KI liest …" : "Mit KI lesen"}
                   </button>
                   {kosten && (

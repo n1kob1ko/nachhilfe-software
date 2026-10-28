@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Check, FileText, Sparkles, X } from "lucide-react";
+import { KeinNameZeile } from "@/components/KeinNameZeile";
 import { shrinkImage } from "@/components/shrink-image";
 import { uebernimmVonPapierAction } from "@/app/text-actions";
 import { centText, MAX_HANDSCHRIFT_SEITEN, offeneStellen, UNLESBAR, type HandschriftVorschlag } from "@/lib/handschrift-regeln";
@@ -22,6 +23,7 @@ const woerter = (s: string) => s.split(/\s+/).filter((w) => w && w !== "|").leng
  * The KI writes the text down word for word, with every mistake; the teacher compares it with the photo, fixes what
  * it read wrongly and only then takes it over. Without KI the teacher types it into the same field.
  * Nothing is saved before „Als Text übernehmen“; the photos never leave this page except for the reading.
+ * `einheit`: opened from a running unit; once „kein Name“ is confirmed there (lib/kein-name.ts), a quiet line replaces the tick.
  */
 export function HandschriftEinlesen({
   textId,
@@ -30,6 +32,7 @@ export function HandschriftEinlesen({
   kosten,
   vorhanden,
   fertig: schonFertig,
+  einheit = null,
 }: {
   textId: number;
   name: string;
@@ -37,11 +40,13 @@ export function HandschriftEinlesen({
   kosten: { grundCent: number; seiteCent: number };
   vorhanden: { text: string; words: number };
   fertig: boolean;
+  einheit?: { unitId: number; keinName: boolean } | null;
 }) {
   const router = useRouter();
   const [seiten, setSeiten] = useState<Seite[]>([]);
   const [gezeigt, setGezeigt] = useState(0);
   const [keinName, setKeinName] = useState(false);
+  const keinNameOk = keinName || Boolean(einheit?.keinName);
   const [busy, setBusy] = useState<null | "vorbereiten" | "lesen">(null);
   const [seit, setSeit] = useState(0);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -117,6 +122,7 @@ export function HandschriftEinlesen({
     const fd = new FormData();
     fd.set("text", String(textId));
     fd.set("keine_namen", keinName ? "1" : "");
+    if (einheit) fd.set("einheit", String(einheit.unitId));
     for (const s of seiten) fd.append("seite", s.file, s.file.name);
     setBusy("lesen");
     try {
@@ -244,12 +250,16 @@ export function HandschriftEinlesen({
           </p>
         ) : (
           <>
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-panel px-4 py-3 text-[15px]">
-              <input type="checkbox" checked={keinName} onChange={(e) => setKeinName(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-[var(--accent)]" data-testid="hs-keine-namen" />
-              <span>Auf den Fotos steht kein echter Name, auch nicht oben im Kopf des Blatts (oder er ist abgedeckt).</span>
-            </label>
+            {einheit?.keinName ? (
+              <KeinNameZeile wo="auf den Fotos" />
+            ) : (
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-panel px-4 py-3 text-[15px]">
+                <input type="checkbox" checked={keinName} onChange={(e) => setKeinName(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-[var(--accent)]" data-testid="hs-keine-namen" />
+                <span>Auf den Fotos steht kein echter Name, auch nicht oben im Kopf des Blatts (oder er ist abgedeckt).</span>
+              </label>
+            )}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <button type="button" className="btn btn-primary btn-lg" onClick={() => void lesen()} disabled={busy !== null || !keinName || !seiten.length} data-testid="hs-lesen">
+              <button type="button" className="btn btn-primary btn-lg" onClick={() => void lesen()} disabled={busy !== null || !keinNameOk || !seiten.length} data-testid="hs-lesen">
                 <Sparkles size={18} aria-hidden /> {busy === "lesen" ? "KI liest …" : gelesen ? "Noch einmal lesen" : "Mit KI lesen"}
               </button>
               <span className="num text-[13px] text-ink-3" data-testid="hs-kosten">

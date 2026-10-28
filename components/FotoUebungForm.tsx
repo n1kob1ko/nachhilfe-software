@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Camera, RefreshCw, Sparkles } from "lucide-react";
+import { KeinNameZeile } from "@/components/KeinNameZeile";
 import { shrinkImage } from "@/components/shrink-image";
 
 /** Mirrors lib/foto-uebung.ts and lib/materials.ts (kept here so the browser does not load server code). */
@@ -14,8 +15,9 @@ const TYPES = ["image/jpeg", "image/png", "image/webp"];
  * „Foto vom Stoff“: one photo (camera or gallery, made smaller in the browser), how many tasks, an optional
  * hint and the confirmation that no names are on it. Sends everything in one request and opens the preview.
  * After a failure the stored photo is sent again by its id, so the teacher does not take it again.
+ * `keinName`: already confirmed for this unit (lib/kein-name.ts); a quiet line instead of the tick.
  */
-export function FotoUebungForm({ unitId, name }: { unitId: number; name: string }) {
+export function FotoUebungForm({ unitId, name, keinName = false }: { unitId: number; name: string; keinName?: boolean }) {
   const [foto, setFoto] = useState<{ file: File; url: string } | null>(null);
   const [gespeichert, setGespeichert] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -166,10 +168,14 @@ export function FotoUebungForm({ unitId, name }: { unitId: number; name: string 
         <input name="hinweis" maxLength={300} className="input" placeholder="z. B. nur die Aufgaben rechts, eher leicht" data-testid="foto-hinweis" />
       </label>
 
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-panel px-4 py-3 text-[15px]">
-        <input type="checkbox" name="keine_namen" value="1" required className="mt-1 h-5 w-5 shrink-0 accent-[var(--accent)]" data-testid="foto-keine-namen" />
-        <span>Auf dem Foto stehen keine Namen und keine anderen persönlichen Angaben.</span>
-      </label>
+      {keinName ? (
+        <KeinNameZeile wo="auf dem Foto" />
+      ) : (
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-panel px-4 py-3 text-[15px]">
+          <input type="checkbox" name="keine_namen" value="1" required className="mt-1 h-5 w-5 shrink-0 accent-[var(--accent)]" data-testid="foto-keine-namen" />
+          <span>Auf dem Foto stehen keine Namen und keine anderen persönlichen Angaben.</span>
+        </label>
+      )}
 
       {error && (
         <p role="alert" className="rounded-xl bg-red-wash px-4 py-3 text-[14px] text-red" data-testid="foto-fehler">

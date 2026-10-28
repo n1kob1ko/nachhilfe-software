@@ -32,6 +32,8 @@ export type Unit = {
   end_estimated: number;
   /** what the teacher's student tablet shows: '' overview, 'tafel', 'aufgabe:<assignment id>' */
   device_view: string;
+  /** when the teacher confirmed „kein Name auf den Seiten“ for this unit (lib/kein-name.ts); null = not yet */
+  keine_namen_at: string | null;
 };
 export type UnitView = Unit & { teacher_name: string; student_name: string };
 

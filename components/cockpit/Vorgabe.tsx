@@ -9,6 +9,7 @@ import { Pill } from "@/components/ui";
 import { aiEnabled, aiReadsImages } from "@/lib/ai";
 import { hatBegonnen, type CockpitDaten } from "@/lib/cockpit";
 import { dayOf } from "@/lib/exams";
+import { keinNameBestaetigt } from "@/lib/kein-name";
 import { ROLLE_SATZ } from "@/lib/pruefungsstoff";
 import { tagMonat } from "@/lib/vorbereitung-auto";
 import * as repo from "@/lib/repo";
@@ -59,7 +60,7 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
           <ChevronDown size={16} className="ml-auto text-ink-3 transition-transform group-open:rotate-180" aria-hidden />
         </summary>
         <div className="grid gap-3 pb-4">
-          <VorgabeForm unitId={unit.id} tests={tests} material={material} kiLiest={kiLiest} />
+          <VorgabeForm unitId={unit.id} tests={tests} material={material} kiLiest={kiLiest} keinNameBestaetigt={keinNameBestaetigt(unit)} />
           <EigeneProbe unit={unit} heute={heute} />
         </div>
       </details>
@@ -265,7 +266,7 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
           <details className="group">
             <summary className="btn btn-ghost btn-sm cursor-pointer list-none [&::-webkit-details-marker]:hidden">Ändern</summary>
             <div className="mt-2 w-[min(36rem,calc(100vw-4rem))]">
-              <VorgabeForm unitId={unit.id} tests={tests} material={material} text={v.text} kiLiest={kiLiest} abbrechen />
+              <VorgabeForm unitId={unit.id} tests={tests} material={material} text={v.text} kiLiest={kiLiest} keinNameBestaetigt={keinNameBestaetigt(unit)} abbrechen />
             </div>
           </details>
           <form action={entferneVorgabeAction.bind(null, unit.id)}>
