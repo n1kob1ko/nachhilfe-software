@@ -9,6 +9,7 @@ import {
   fehlerVorUebernehmen,
   liesLoesungMitNummern,
   liesTextMitNummern,
+  loesungenEinfuegen,
   MAX_DATEIEN,
   nummerText,
   punkteVon,
@@ -156,9 +157,17 @@ export function ProbeExtern({
 
   /** Text pasted from a PDF (or typed with numbers): the same rules as the app's own reading of a PDF, without KI. */
   function textUebernehmen() {
+    // only the Musterlösung pasted, the table already there (Angabe read from the PDF): the solutions go in by number
+    if (!einfuegen.angabe.trim() && zeilen?.length) {
+      const v = loesungenEinfuegen(zeilen, liesLoesungMitNummern(einfuegen.loesung.split("\n"), new Set(zeilen.map((z) => Number(z.aufgabe)))));
+      setFehler(null);
+      setZeilen(v.zeilen);
+      setLesung((x) => ({ titel: x?.titel ?? "", hinweise: v.hinweise, quelle: x?.quelle ?? { angabe: null, loesung: null }, offen: x?.offen ?? { angabe: 0, loesung: 0 } }));
+      return;
+    }
     const a = liesTextMitNummern(einfuegen.angabe.split("\n"));
     if (!a.aufgaben.length) return setFehler("Im eingefügten Text der Angabe stehen keine Nummern (1., 2. oder Aufgabe 1, dazu a), b)).");
-    const l = einfuegen.loesung.trim() ? liesLoesungMitNummern(einfuegen.loesung.split("\n")) : null;
+    const l = einfuegen.loesung.trim() ? liesLoesungMitNummern(einfuegen.loesung.split("\n"), new Set(a.aufgaben.map((x) => Number(x.nr)))) : null;
     const v = zeilenAusLesung(a, l, { erlaubt });
     setFehler(null);
     setZeilen(v.zeilen.map((z) => ({ ...z, k: naechster++ })));
@@ -329,7 +338,7 @@ export function ProbeExtern({
                 <ClipboardPaste size={15} aria-hidden /> Text einfügen
               </summary>
               <div className="grid gap-2 pt-2">
-                <p className="text-[13px] text-ink-2">Aus einem PDF kopiert oder abgetippt, mit Nummern wie auf dem Blatt (1., 2. oder Aufgabe 1, dazu a), b)). Füllt die Tabelle neu, ohne KI.</p>
+                <p className="text-[13px] text-ink-2">Aus einem PDF kopiert oder abgetippt, mit Nummern wie auf dem Blatt (1., 2. oder Aufgabe 1, dazu a), b)). Füllt die Tabelle neu, ohne KI. Nur die Musterlösung eingefügt: sie kommt über die Nummer in die Tabelle.</p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {(["angabe", "loesung"] as const).map((feld) => (
                     <label key={feld} className="grid gap-1">
@@ -339,7 +348,7 @@ export function ProbeExtern({
                   ))}
                 </div>
                 <div>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={textUebernehmen} disabled={!einfuegen.angabe.trim()} data-testid="probe-einfuegen-uebernehmen">
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={textUebernehmen} disabled={!einfuegen.angabe.trim() && !(zeilen?.length && einfuegen.loesung.trim())} data-testid="probe-einfuegen-uebernehmen">
                     In die Tabelle
                   </button>
                 </div>

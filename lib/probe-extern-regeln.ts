@@ -162,57 +162,7 @@ export function zeilenAusLesung(
   if (zeilen.length > MAX_TEILAUFGABEN) hinweise.push(`Nur die ersten ${MAX_TEILAUFGABEN} Teilaufgaben übernommen.`);
   const liste = zeilen.slice(0, MAX_TEILAUFGABEN);
 
-  if (loesung) {
-    const loes = new Map<string, { text: string[]; unsicher: boolean }>();
-    const unklar: string[] = [];
-    for (const l of loesung.loesungen) {
-      const n = nummerVon(l.nr, l.teil);
-      const text = absatz(l.loesung, GRENZEN.loesung);
-      if (!text) continue;
-      if (!n) {
-        unklar.push(eineZeile(`${l.nr}${l.teil}`, 12));
-        continue;
-      }
-      const k = schluessel(n.aufgabe, n.teil);
-      const da = loes.get(k);
-      loes.set(k, { text: [...(da?.text ?? []), text], unsicher: Boolean(da) || l.unsicher || (da?.unsicher ?? false) });
-    }
-    const benutzt = new Set<string>();
-    for (const z of liste) {
-      const k = schluessel(z.aufgabe, z.teil);
-      const genau = loes.get(k);
-      if (genau) {
-        benutzt.add(k);
-        z.loesung = genau.text.join("\n").slice(0, GRENZEN.loesung);
-        if (genau.unsicher) markiere(z, genau.text.length > 1 ? `Zur Nummer ${nummerText(z)} stehen mehrere Lösungen.` : "Die Lösung ist nicht sicher lesbar.");
-        continue;
-      }
-      // the solution only for the whole task (the sheet has parts): taken over for each part, but unsure
-      const ganze = z.teil ? loes.get(schluessel(z.aufgabe, "")) : undefined;
-      if (ganze) {
-        benutzt.add(schluessel(z.aufgabe, ""));
-        z.loesung = ganze.text.join("\n").slice(0, GRENZEN.loesung);
-        markiere(z, `Die Musterlösung nennt nur Aufgabe ${z.aufgabe}, nicht die Teilaufgabe ${z.teil}. Bitte aufteilen.`);
-        continue;
-      }
-      // parts in the solution, none in the sheet: together, but unsure
-      const teile = z.teil ? [] : [...loes].filter(([key]) => key.startsWith(`${z.aufgabe}|`) && key !== k);
-      if (teile.length) {
-        for (const [key] of teile) benutzt.add(key);
-        z.loesung = teile.map(([key, v]) => `${key.split("|")[1]}) ${v.text.join("\n")}`).join("\n").slice(0, GRENZEN.loesung);
-        markiere(z, `Die Musterlösung hat Teilaufgaben, die Angabe bei Aufgabe ${z.aufgabe} nicht.`);
-      }
-    }
-    const fremd = [...loes.keys()].filter((k) => !benutzt.has(k)).map((k) => k.replace("|", ""));
-    if (fremd.length) hinweise.push(`In der Musterlösung steht auch ${fremd.slice(0, 6).join(", ")}${fremd.length > 6 ? " …" : ""}, aber dazu gibt es keine Aufgabe. Bitte prüfen.`);
-    if (unklar.length) hinweise.push(`Lösungen ohne klare Nummer: ${unklar.slice(0, 4).join(", ")}. Bitte selbst zuordnen.`);
-    const fehlt = liste.filter((z) => !z.loesung).length;
-    if (fehlt) hinweise.push(fehlt === 1 ? "Bei einer Teilaufgabe fehlt die Lösung. Diese bewertest nur du." : `Bei ${fehlt} Teilaufgaben fehlt die Lösung. Diese bewertest nur du.`);
-    for (const u of loesung.unsicher.slice(0, 3)) {
-      const t = eineZeile(u, 140);
-      if (t) hinweise.push(`Musterlösung unsicher: ${t}`);
-    }
-  }
+  if (loesung) loesungenZuordnen(liste, loesung, hinweise);
   for (const u of angabe.unsicher.slice(0, 3)) {
     const t = eineZeile(u, 140);
     if (t) hinweise.push(`Angabe unsicher: ${t}`);
@@ -223,6 +173,82 @@ export function zeilenAusLesung(
   const gelb = liste.filter((z) => z.unsicher).length;
   if (gelb) hinweise.push(gelb === 1 ? "Eine Zeile ist unsicher und steht oben." : `${gelb} Zeilen sind unsicher und stehen oben.`);
   return { titel: eineZeile(angabe.titel, GRENZEN.titel), zeilen: unsichereZuerst(nachNummer(liste)), hinweise };
+}
+
+/**
+ * Nur die Musterlösung, die Tabelle steht schon (Angabe aus dem PDF gelesen oder eingetragen): die Lösungen kommen über die
+ * Nummer in die Zeilen, wie beim Lesen. Was zu keiner Nummer passt, bleibt wie es war; nichts wird erfunden.
+ */
+export function loesungenEinfuegen<T extends ProbeZeile>(zeilen: T[], loesung: LoesungGelesen): { zeilen: T[]; hinweise: string[] } {
+  const liste = zeilen.map((z) => ({ ...z }));
+  const hinweise: string[] = [];
+  loesungenZuordnen(liste, loesung, hinweise);
+  return { zeilen: unsichereZuerst(liste), hinweise };
+}
+
+/**
+ * Ein Vorschlag nach den Wörtern nur, wenn er eindeutig vorne liegt: die beste Fähigkeit der Schularbeit (`erlaubt`) und keine
+ * andere Fähigkeit mit gleich vielen oder mehr Punkten. „Berechne 3/4 + 1/8“ trifft „berechnen“ bei Prozentwert, Prozentsatz und
+ * Grundwert gleich gut: dann keiner, die Lehrkraft wählt. Ein falscher Vorschlag zählte sonst für den Lernstand.
+ */
+export function eindeutigeFaehigkeit(treffer: { id: string; score: number; via: string }[], erlaubt: Set<string>): string | null {
+  const faehig = treffer.filter((t) => t.via === "faehigkeit");
+  const best = faehig.find((t) => erlaubt.has(t.id));
+  if (!best) return null;
+  return faehig.every((t) => t === best || t.score < best.score) ? best.id : null;
+}
+
+/** Die gelesene Musterlösung je Nummer in die Zeilen (ändert `liste`); was nicht passt, steht in `hinweise`. */
+function loesungenZuordnen(liste: ProbeZeile[], loesung: LoesungGelesen, hinweise: string[]) {
+  const loes = new Map<string, { text: string[]; unsicher: boolean }>();
+  const unklar: string[] = [];
+  for (const l of loesung.loesungen) {
+    const n = nummerVon(l.nr, l.teil);
+    const text = absatz(l.loesung, GRENZEN.loesung);
+    if (!text) continue;
+    if (!n) {
+      unklar.push(eineZeile(`${l.nr}${l.teil}`, 12));
+      continue;
+    }
+    const k = schluessel(n.aufgabe, n.teil);
+    const da = loes.get(k);
+    loes.set(k, { text: [...(da?.text ?? []), text], unsicher: Boolean(da) || l.unsicher || (da?.unsicher ?? false) });
+  }
+  const benutzt = new Set<string>();
+  for (const z of liste) {
+    const k = schluessel(z.aufgabe, z.teil);
+    const genau = loes.get(k);
+    if (genau) {
+      benutzt.add(k);
+      z.loesung = genau.text.join("\n").slice(0, GRENZEN.loesung);
+      if (genau.unsicher) markiere(z, genau.text.length > 1 ? `Zur Nummer ${nummerText(z)} stehen mehrere Lösungen.` : "Die Lösung ist nicht sicher lesbar.");
+      continue;
+    }
+    // the solution only for the whole task (the sheet has parts): taken over for each part, but unsure
+    const ganze = z.teil ? loes.get(schluessel(z.aufgabe, "")) : undefined;
+    if (ganze) {
+      benutzt.add(schluessel(z.aufgabe, ""));
+      z.loesung = ganze.text.join("\n").slice(0, GRENZEN.loesung);
+      markiere(z, `Die Musterlösung nennt nur Aufgabe ${z.aufgabe}, nicht die Teilaufgabe ${z.teil}. Bitte aufteilen.`);
+      continue;
+    }
+    // parts in the solution, none in the sheet: together, but unsure
+    const teile = z.teil ? [] : [...loes].filter(([key]) => key.startsWith(`${z.aufgabe}|`) && key !== k);
+    if (teile.length) {
+      for (const [key] of teile) benutzt.add(key);
+      z.loesung = teile.map(([key, v]) => `${key.split("|")[1]}) ${v.text.join("\n")}`).join("\n").slice(0, GRENZEN.loesung);
+      markiere(z, `Die Musterlösung hat Teilaufgaben, die Angabe bei Aufgabe ${z.aufgabe} nicht.`);
+    }
+  }
+  const fremd = [...loes.keys()].filter((k) => !benutzt.has(k)).map((k) => k.replace("|", ""));
+  if (fremd.length) hinweise.push(`In der Musterlösung steht auch ${fremd.slice(0, 6).join(", ")}${fremd.length > 6 ? " …" : ""}, aber dazu gibt es keine Aufgabe. Bitte prüfen.`);
+  if (unklar.length) hinweise.push(`Lösungen ohne klare Nummer: ${unklar.slice(0, 4).join(", ")}. Bitte selbst zuordnen.`);
+  const fehlt = liste.filter((z) => !z.loesung).length;
+  if (fehlt) hinweise.push(fehlt === 1 ? "Bei einer Teilaufgabe fehlt die Lösung. Diese bewertest nur du." : `Bei ${fehlt} Teilaufgaben fehlt die Lösung. Diese bewertest nur du.`);
+  for (const u of loesung.unsicher.slice(0, 3)) {
+    const t = eineZeile(u, 140);
+    if (t) hinweise.push(`Musterlösung unsicher: ${t}`);
+  }
 }
 
 function markiere(z: ProbeZeile, grund: string) {
@@ -261,9 +287,10 @@ function fuege(alt: string, neu: string): string {
  * Ein Text mit Nummern (aus einem PDF mit Textebene oder eingefügt) → Aufgaben mit Teilaufgaben, ohne KI. Eine Aufgabe beginnt
  * mit „Aufgabe 2“, „2.“ oder „2)“, eine Teilaufgabe mit „a)“ oder „2a)“; Punkte („(3 P)“) werden herausgelesen. Eine Zahl am
  * Zeilenanfang gilt nur als neue Aufgabe, wenn sie die nächste ist; sonst gehört die Zeile zum Text davor. Was vor der ersten
- * Aufgabe steht (Kopf mit Name, Klasse, Datum), fällt weg; die erste Zeile ist der Titel.
+ * Aufgabe steht (Kopf mit Name, Klasse, Datum), fällt weg; die erste Zeile ist der Titel. `bekannt`: die Nummern der Angabe
+ * (für die Musterlösung): eine davon gilt auch nach einer Lücke als neue Aufgabe („1a) … 3) …“, wenn die Lösung zu 2 fehlt).
  */
-export function liesTextMitNummern(zeilen: string[]): AngabeGelesen {
+export function liesTextMitNummern(zeilen: string[], bekannt?: Set<number>): AngabeGelesen {
   type Teil = { teil: string; text: string; punkte: number | null };
   type Aufgabe = { nr: string; einleitung: string; teile: Teil[]; unsicher: boolean; grund: string; punkte: number | null };
   const aufgaben: Aufgabe[] = [];
@@ -300,15 +327,16 @@ export function liesTextMitNummern(zeilen: string[]): AngabeGelesen {
       continue;
     }
     const erwartet = a ? Number(a.nr) + 1 : null;
+    const naechste = (n: number) => erwartet === null || n === erwartet || Boolean(bekannt?.has(n) && n > Number(a!.nr));
     const wort = AUFGABE_WORT.exec(z);
     const mitTeil = AUFGABE_MIT_TEIL.exec(z);
     const zahl = AUFGABE_ZAHL.exec(z);
     const teilM = TEIL.exec(z);
-    if (wort) neueAufgabe(Number(wort[1]), wort[2], erwartet === null || Number(wort[1]) === erwartet);
-    else if (mitTeil && (erwartet === null || Number(mitTeil[1]) === erwartet || Number(mitTeil[1]) === Number(a?.nr))) {
+    if (wort) neueAufgabe(Number(wort[1]), wort[2], naechste(Number(wort[1])));
+    else if (mitTeil && (naechste(Number(mitTeil[1])) || Number(mitTeil[1]) === Number(a?.nr))) {
       if (!a || Number(mitTeil[1]) !== Number(a.nr)) neueAufgabe(Number(mitTeil[1]), "", true);
       neuerTeil(akt!, mitTeil[2], mitTeil[3]);
-    } else if (zahl && (erwartet === null || Number(zahl[1]) === erwartet)) neueAufgabe(Number(zahl[1]), zahl[2], true);
+    } else if (zahl && naechste(Number(zahl[1]))) neueAufgabe(Number(zahl[1]), zahl[2], true);
     else if (teilM && a && naechsterTeil(a.teile, teilM[1])) neuerTeil(a, teilM[1], teilM[2]);
     else if (a) zuText(z);
     else titel ??= z;
@@ -335,8 +363,8 @@ function naechsterTeil(teile: { teil: string }[], t: string): boolean {
 }
 
 /** Die Musterlösung als Text mit Nummern → je Nummer die Lösung (wie die Angabe gelesen, der Text ist die Lösung). */
-export function liesLoesungMitNummern(zeilen: string[]): LoesungGelesen {
-  const g = liesTextMitNummern(zeilen);
+export function liesLoesungMitNummern(zeilen: string[], bekannt?: Set<number>): LoesungGelesen {
+  const g = liesTextMitNummern(zeilen, bekannt);
   const loesungen: LoesungGelesen["loesungen"] = [];
   for (const a of g.aufgaben) {
     const echteTeile = a.teile.filter((t) => t.teil);
@@ -374,6 +402,9 @@ export function fehlerVorUebernehmen(zeilen: ProbeZeile[], erlaubt?: Set<string>
   if (erlaubt && zeilen.some((z) => z.skillId && !erlaubt.has(z.skillId))) f.push("Eine Fähigkeit passt nicht zum Fach.");
   return f;
 }
+
+/** Der Name ohne ein „Probeschularbeit“ am Anfang, das der Titel der Übung schon nennt („Probeschularbeit: Brüche“ → „Brüche“). */
+export const ohneProbeWort = (titel: string) => titel.replace(/^\s*probe-?schularbeit(?![a-zäöüß])\s*[:–-]?\s*/i, "").trim();
 
 /**
  * Der Text der Aufgabe am Gerät: „Aufgabe 1: <Einleitung>“, darunter „a) <Text>“; ohne Teilaufgabe „Aufgabe 2: <Text>“. So

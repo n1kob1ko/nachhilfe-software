@@ -198,6 +198,17 @@ export type CheckResult = {
 export const REVIEWS = { richtig: "richtig", teilweise: "teilweise richtig", falsch: "falsch" } as const;
 export type Review = keyof typeof REVIEWS;
 export const isReview = (x: unknown): x is Review => typeof x === "string" && x in REVIEWS;
+
+/**
+ * The result line at the end of a test (Minitest, Lernkontrolle, Probeschularbeit): only checked answers count. Answers the
+ * teacher still grades are never shown as wrong: all open → „4 von 4 abgegeben“, some open → „Bisher 1 von 2 richtig“.
+ */
+export function testErgebnis(richtig: number, gesamt: number, wartet: number, abgegeben: number = gesamt): string {
+  if (wartet <= 0) return `${richtig} von ${gesamt} richtig`;
+  const geprueft = abgegeben - wartet;
+  if (geprueft <= 0) return `${abgegeben} von ${gesamt} abgegeben`;
+  return `Bisher ${richtig} von ${geprueft} richtig`;
+}
 /** Formats the teacher grades or may grade again after the app's check. */
 export const TEACHER_GRADED = new Set<string>(["free", "fix", "rechenweg", "sachaufgabe"]);
 

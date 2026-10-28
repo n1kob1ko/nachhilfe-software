@@ -17,6 +17,7 @@ import type { Skill } from "@/lib/repo";
 import { auftraegeZurPruefung } from "@/lib/schreibauftrag-store";
 import { runningUnitForStudent } from "@/lib/units";
 import { noteFolgt } from "@/lib/abschluss";
+import { PAPIER_ANTWORT } from "@/lib/blatt-einlesen";
 import { papierZeile } from "@/lib/blatt-regeln";
 import { papierArbeitOhneEinheit } from "@/lib/papier-einheit";
 import { zuBewertenHref } from "@/lib/zu-erledigen";
@@ -205,7 +206,7 @@ export default async function ExamPrepPage({
                       {externDaten(w) ? "Eigene Probeschularbeit" : "Probeschularbeit"} vom {formatDate(w.created_at, { day: "numeric", month: "short" })}
                     </Link>
                     <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[13px] text-ink-2">
-                      {w.status === "entwurf" ? <Pill tone="amber">Entwurf</Pill> : a ? <Pill tone="green">gesendet</Pill> : <Pill>freigegeben</Pill>}
+                      {w.status === "entwurf" ? <Pill tone="amber">Entwurf</Pill> : a?.note === PAPIER_ANTWORT ? <Pill tone="green">auf Papier</Pill> : a ? <Pill tone="green">gesendet</Pill> : <Pill>freigegeben</Pill>}
                       <span className="num">{punkteText(punkte)} Punkte</span>
                       {e && e.bearbeitet > 0 && (
                         <span className="num">

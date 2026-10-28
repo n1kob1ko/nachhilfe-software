@@ -31,6 +31,7 @@ import { liesPdfText } from "./pdf-text";
 import {
   absatz,
   aufgabenText,
+  eindeutigeFaehigkeit,
   fehlerVorUebernehmen,
   GRENZEN,
   liesLoesungMitNummern,
@@ -38,6 +39,7 @@ import {
   MAX_DATEIEN,
   nachNummer,
   nummerText,
+  ohneProbeWort,
   punkteVon,
   quelleText,
   teilVon,
@@ -177,15 +179,20 @@ export async function liesProbe(o: { studentId: number; testId: number; teacherI
   const erlaubt = new Set(skills.map((s) => s.id));
   // a suggestion by the words only among the Schularbeit's own skills: the word match on a task text is often far off
   // („Kürze 6/8“ ranks „Abzählen“ first), a wrong guess would count for the Lernstand, an empty one the teacher picks
+  // and only a match ahead of every other skill („Berechne 3/4 + 1/8“ ties Prozentwert and Prozentsatz on „berechnen“)
+  const eigene = new Set(test.skill_ids.filter((id) => erlaubt.has(id)));
   const skill = (text: string) =>
-    matchSkills(text, test.subject, { student, limit: 8 }).find((m) => m.via === "faehigkeit" && test.skill_ids.includes(m.skill.id) && erlaubt.has(m.skill.id))?.skill.id ?? null;
+    eindeutigeFaehigkeit(
+      matchSkills(text, test.subject, { student, limit: 8 }).map((m) => ({ id: m.skill.id, score: m.score, via: m.via })),
+      eigene,
+    );
 
   // the text stored in the PDFs first: no KI needed when it has numbered tasks
   const angabeText = textDerDateien(angabeIds);
   let angabe: AngabeGelesen | null = angabeText ? liesTextMitNummern(angabeText) : null;
   if (angabe && !angabe.aufgaben.length) angabe = null;
   const loesungText = textDerDateien(loesungIds);
-  let loesung: LoesungGelesen | null = loesungText ? liesLoesungMitNummern(loesungText) : null;
+  let loesung: LoesungGelesen | null = loesungText ? liesLoesungMitNummern(loesungText, angabe ? new Set(angabe.aufgaben.map((x) => Number(x.nr))) : undefined) : null;
   if (loesung && !loesung.loesungen.length) loesung = null;
   const quelle: ProbeLesung["quelle"] = { angabe: angabe ? "text" : null, loesung: loesung ? "text" : null };
 
@@ -273,7 +280,8 @@ export function uebernimmProbe(e: ProbeEingabe): { worksheetId: number } | { err
 
   const datei = getMaterial(angabeIds[0])?.file_name ?? "";
   const quelle = quelleText(datei);
-  const titel = eineZeile(e.titel, GRENZEN.titel) || test.title || `${test.kind} ${test.subject}`;
+  // „Probeschularbeit Brüche“ from the sheet: the title below already says Probeschularbeit
+  const titel = ohneProbeWort(eineZeile(e.titel, GRENZEN.titel)) || ohneProbeWort(test.title ?? "") || `${test.kind} ${test.subject}`;
   const first = student.name.split(" ")[0];
   const skillIds = [...new Set(zeilen.map((z) => z.skillId).filter((x): x is string => Boolean(x)))];
   const drafts: TaskDraft[] = zeilen.map((z) => ({
