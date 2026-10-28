@@ -60,8 +60,9 @@ export default async function ResultPage({ params, searchParams }: { params: Pro
   const metrics: [string, string][] = [
     ...(pe
       ? ([
-          ["Punkte", `${punkteText(pe.erreicht)} von ${punkteText(pe.gesamt)}`],
+          // die Note zuerst; solange etwas offen ist, sind die Punkte ein Zwischenstand
           ["Note", pe.note ? `${pe.note.note} · ${pe.note.label}` : pe.offen ? noteFolgt(pe.offen) : "noch offen"],
+          [pe.note ? "Punkte" : "Punkte bisher", `${punkteText(pe.erreicht)} von ${punkteText(pe.gesamt)}`],
         ] as [string, string][])
       : []),
     ["Richtig", `${correct} von ${tasks.length}`],

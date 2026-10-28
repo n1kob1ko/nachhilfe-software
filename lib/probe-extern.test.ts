@@ -15,7 +15,7 @@ import path from "node:path";
 import test from "node:test";
 import type { BlattMitAufgabenGelesen, ProbeAngabeGelesen, ProbeLoesungGelesen } from "./ai";
 import type { AIRequest } from "./ai/providers";
-import { eindeutigeFaehigkeit, liesLoesungMitNummern, liesTextMitNummern, loesungenEinfuegen, ohneProbeWort, zeilenAusLesung, type ProbeZeile } from "./probe-extern-regeln";
+import { eindeutigeFaehigkeit, faehigkeitFuerLeere, liesLoesungMitNummern, liesTextMitNummern, loesungenEinfuegen, ohneFaehigkeitText, ohneProbeWort, zeilenAusLesung, type ProbeZeile } from "./probe-extern-regeln";
 
 process.env.DATABASE_PATH = ":memory:";
 process.env.UPLOADS_PATH = fs.mkdtempSync(path.join(os.tmpdir(), "probe-extern-"));
@@ -415,7 +415,7 @@ test("on paper: Arbeit fotografieren offers the Probeschularbeit, reads it again
     const b = ab.belegeDerEinheit(unit.id, lesson);
     assert.deepEqual(b.papier, [], "the Probeschularbeit has its own line instead of the paper line");
     assert.equal(b.minitest, null, "a Probeschularbeit is no Minitest");
-    const zeile = "Probeschularbeit „Brüche“ auf Papier: 2,5 von 6 Punkten, Note 5 (Nicht genügend)";
+    const zeile = "Probeschularbeit „Brüche“ auf Papier: Note 5 (Nicht genügend), 2,5 von 6 Punkten";
     assert.deepEqual(b.proben?.map(ab.probeZeile), [zeile]);
     assert.ok(ab.abschlussKarte(null, null, [], b).gemacht.some((z) => z.text === zeile && z.von === "papier"), "the line stands under „Heute gemacht“");
   } finally {
@@ -431,4 +431,25 @@ test("only this student's files and exams; another student's file is never read 
   await assert.rejects(s.p.liesProbe({ studentId: s.sid, testId: s.pruefung(andere), teacherId: s.teacher.id, angabeIds: [s.datei("a.pdf", pdf(ANGABE_TEXT))], loesungIds: [], ki: false }), /anderen Schüler/);
   const out = s.p.uebernimmProbe({ studentId: s.sid, testId: s.testId, teacherId: s.teacher.id, titel: "", zeilen: fertig(zeilenAusLesung(liesTextMitNummern(ANGABE_TEXT), null).zeilen), angabeIds: [fremd], loesungIds: [], gelesen: "hand" });
   assert.ok("error" in out && /Angabe/.test(out.error));
+});
+
+test("rows without a skill: one clear line before „Übernehmen“ and on the exam card, one choice for all empty rows, nothing guessed", async () => {
+  assert.equal(ohneFaehigkeitText(0), "");
+  assert.equal(ohneFaehigkeitText(1), "1 Teilaufgabe ohne Fähigkeit zählt für die Note, nicht für den Lernstand.");
+  assert.equal(ohneFaehigkeitText(3), "3 Teilaufgaben ohne Fähigkeit zählen für die Note, nicht für den Lernstand.");
+  const z = (skillId: string | null, skillVorschlag = false) => ({ aufgabe: "1", teil: "", einleitung: "", text: "x", punkte: 1, loesung: "", skillId, skillVorschlag, unsicher: false, grund: "" });
+  const GL = "mathe.gleichungen.einfach";
+  const zeilen = [z(null), z(BR, true), z(null), z(GL)];
+  assert.deepEqual(faehigkeitFuerLeere(zeilen, BR).map((x) => [x.skillId, x.skillVorschlag]), [[BR, false], [BR, true], [BR, false], [GL, false]], "only empty rows; a chosen or suggested skill stays");
+  assert.equal(faehigkeitFuerLeere(zeilen, ""), zeilen, "an empty choice changes nothing");
+  assert.equal(faehigkeitFuerLeere(zeilen, null), zeilen);
+
+  // taken over with one row without a skill: the exam card counts it once there is a result
+  const s = await setup();
+  const wid = await uebernommen(s);
+  const { probeschularbeitenZu } = await import("./probeschularbeit");
+  const [p] = probeschularbeitenZu(s.testId);
+  assert.equal(p.worksheet.id, wid);
+  assert.equal(p.ohneFaehigkeit, 1);
+  assert.deepEqual(s.repo.getWorksheet(wid)!.skill_ids, [BR], "no skill is made up for the empty row");
 });

@@ -242,6 +242,12 @@ test("never the sheet of another student, neither offered nor read nor saved", a
   const seineUnit = s.units.startUnit(s.teacher.id, andere, { subject: "Mathematik" }).unit;
   const seins = s.repo.assignWorksheet(s.blatt(andere, "Jonas – Gleichungen"), andere, "", seineUnit.id);
   assert.deepEqual(s.p.blaetterDerEinheit(s.unit.id), []);
+  // checked before any page is stored (app/material/blatt): a rejected sheet leaves no material behind
+  for (const key of [`u${fremd}`, `z${seins}`]) assert.equal(s.p.blattFehler({ unitId: s.unit.id, studentId: s.sid, blattKey: key }), "Dieses Blatt gehört nicht zu dieser Einheit.");
+  assert.equal(s.p.blattFehler({ unitId: s.unit.id, studentId: andere, blattKey: `z${seins}` }), "Dieser Schüler gehört nicht zu dieser Einheit.");
+  assert.equal(s.p.blattFehler({ unitId: null, studentId: s.sid, blattKey: `z${seins}` }), "Diese Probeschularbeit gehört nicht zu diesem Schüler, oder sie ist schon ganz bewertet.");
+  const eigenes = s.repo.assignWorksheet(s.blatt(s.sid, "Lena – Eigenes"), s.sid, "", s.unit.id);
+  assert.equal(s.p.blattFehler({ unitId: s.unit.id, studentId: s.sid, blattKey: `z${eigenes}` }), null, "a sheet of the unit passes");
   const ki = await mitKi(LESUNG);
   try {
     for (const key of [`u${fremd}`, `z${seins}`]) {

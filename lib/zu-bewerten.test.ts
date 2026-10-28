@@ -333,7 +333,11 @@ test("a Probeschularbeit on paper without a unit, from the exam card: same readi
   assert.deepEqual([e.erreicht, e.offen, e.note], [2, 2, null]);
   assert.equal(probeschularbeitenZu(pr.testId)[0].ergebnis?.offen, 2);
   assert.equal(ab.noteFolgt(e.offen), "Note folgt: 2 Antworten zu bewerten");
-  assert.equal(ab.probeZeile({ titel: "Brüche", erreicht: 2, gesamt: 6, note: null, offen: 2, bearbeitet: 3, aufgaben: 3, papier: true }), "Probeschularbeit „Brüche“ auf Papier: 2 von 6 Punkten, Note folgt: 2 Antworten zu bewerten");
+  // the grade (or that it follows) before the points, so points so far never read like the result
+  assert.equal(ab.probeZeile({ titel: "Brüche", erreicht: 2, gesamt: 6, note: null, offen: 2, bearbeitet: 3, aufgaben: 3, papier: true }), "Probeschularbeit „Brüche“ auf Papier: Note folgt: 2 Antworten zu bewerten, bisher 2 von 6 Punkten");
+  assert.equal(ab.probeErgebnisText(e), "Note folgt: 2 Antworten zu bewerten · bisher 2 von 6 Punkten");
+  assert.equal(ab.probeErgebnisText({ ...e, offen: 0, erreicht: 5.5, gesamt: 8, note: { note: 3, label: "Befriedigend" } }), "Note 3 (Befriedigend) · 5,5 von 8 Punkten");
+  assert.equal(ab.probeErgebnisText({ ...e, offen: 0, bearbeitet: 2 }), "2 von 6 Punkten · 2 von 3 Aufgaben");
   assert.deepEqual(s.p.papierArbeitOhneEinheit(out.papierId, mara), { titel: "Probeschularbeit: Brüche", von: 3, richtig: 1, teilweise: 0, punkte: null, max: null, unsicher: 2, offen: 2, assignmentId: a.id });
   assert.equal(s.p.papierArbeitOhneEinheit(out.papierId, timo), null);
 
@@ -342,6 +346,16 @@ test("a Probeschularbeit on paper without a unit, from the exam card: same readi
     ["probe", true, "ki", "1b", 1],
     ["probe", true, "ki", "2", 3],
   ]);
+  // the answer as read; an unreadable place says so instead of the placeholder „Auf Papier gelöst“
+  const { PAPIER_ANTWORT } = await import("./blatt-einlesen");
+  assert.deepEqual(liste.map((z) => z.art === "antwort" && [z.antwort, Boolean(z.nichtLesbar)]), [
+    ["3/4", false],
+    [PAPIER_ANTWORT, true],
+  ]);
+  // saved without the text (the teacher cleared it): the list still shows what the reading found
+  const eins = (l: typeof liste) => l.find((z): z is Extract<typeof z, { art: "antwort" }> => z.art === "antwort" && z.nr === "1b")!;
+  s.db().prepare("UPDATE attempts SET answer = ? WHERE id = ?").run(PAPIER_ANTWORT, eins(liste).attemptId);
+  assert.equal(eins(s.zb.zuBewerten({ studentId: mara })).antwort, "3/4");
   assert.deepEqual(s.zb.zuBewerten({ studentId: timo }), []);
 
   // graded one by one: the grade only once nothing is open

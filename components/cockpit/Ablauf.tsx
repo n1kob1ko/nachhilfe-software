@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import {
   ausfuehrlichAction,
+  druckeSchrittAction,
   entscheideAnpassungAction,
   markiereSchrittAction,
   merkeSchrittAction,
@@ -43,6 +44,7 @@ import { endUnitAction } from "@/app/session-actions";
 import { AufgabeBewertung } from "@/components/AufgabeBewertung";
 import { AnpassenBereich, AnpassungInhalt, KiGrenzeHinweis, OhnePaketAnsicht, PaketAuswahl, PaketKopf } from "@/components/cockpit/Cockpit";
 import { CockpitSenden, SchrittNotiz, VorschlagKnopf } from "@/components/cockpit/CockpitClient";
+import { DruckenKnopf } from "@/components/cockpit/DruckenKnopf";
 import { AntwortKnoepfe, VorschlagKarte } from "@/components/cockpit/Steuerung";
 import { VorgabeKarte } from "@/components/cockpit/Vorgabe";
 import { KeinPaket } from "@/components/cockpit/Vorbereitung";
@@ -65,6 +67,7 @@ import {
   ersteUebung,
   FRAGE_ARTEN,
   frageText,
+  gedrucktImSchritt,
   haltBereit,
   hilfeBeiFehler,
   hintergrundZu,
@@ -632,6 +635,7 @@ function SchrittKarte({
   const unitId = unit.id;
   const ids = c.paket ? c.schritte.map((x) => x.id) : c.plan.map((x) => x.id);
   const gesendet = c.stand.gesendet[s.id]?.length ?? 0;
+  const gedruckt = s.aufgaben.length > 0 ? gedrucktImSchritt(unitId, s.id) : null;
   const angepasst = liste.filter((a) => a.status === "uebernommen" && a.schritt_id === echteId);
   // was der Lehrer übernommen hat und kein „leichter“ ist, steht immer da; das Leichtere erst nach „versteht es nicht“
   const immer = angepasst.filter((a) => a.art === "schwerer");
@@ -713,15 +717,17 @@ function SchrittKarte({
 
       {s.aufgaben.length > 0 && (
         <div className="mt-5 flex flex-wrap items-start gap-x-4 gap-y-2 border-t border-line pt-4">
-          <CockpitSenden action={sendeSchrittAction.bind(null, unitId, s.id)} unitId={unitId} label={`Passende Übungen senden (${s.aufgaben.length} ${s.aufgaben.length === 1 ? "Aufgabe" : "Aufgaben"})`} primary={gesendet === 0 && !schreiben} />
+          <CockpitSenden action={sendeSchrittAction.bind(null, unitId, s.id)} unitId={unitId} label={`Passende Übungen senden (${s.aufgaben.length} ${s.aufgaben.length === 1 ? "Aufgabe" : "Aufgaben"})`} primary={gesendet === 0 && !gedruckt && !schreiben} />
+          <DruckenKnopf action={druckeSchrittAction.bind(null, unitId, s.id)} label={gedruckt ? "Nochmal drucken" : "Drucken"} />
           {gesendet > 0 && <span className="pt-2.5 text-[13px] text-ink-3">schon {gesendet === 1 ? "einmal" : `${gesendet}-mal`} an {name} gesendet</span>}
-          {gesendet > 0 && <PapierLink unitId={unitId} worksheetId={c.stand.gesendet[s.id]?.at(-1) ?? null} />}
+          {gedruckt && <span className="pt-2.5 text-[13px] text-ink-3" data-testid="schritt-gedruckt">für {name} gedruckt</span>}
+          {(gesendet > 0 || gedruckt) && <PapierLink unitId={unitId} worksheetId={neuere(c.stand.gesendet[s.id]?.at(-1), gedruckt)} />}
         </div>
       )}
 
       <LoesungReveal aufgaben={s.aufgaben} fehler={loesungSkill ? zurFaehigkeit(loesungSkill).typischeFehler : []} hintergrund={hintergrundZu(loesungSkill, [paket.ziel, s.aufgaben.find((a) => a.teacherNote?.trim())?.teacherNote])} />
 
-      <Knoepfe unitId={unitId} id={s.id} weiterHaupt={schreiben ? Boolean(laeuft) : s.aufgaben.length === 0 || gesendet > 0} />
+      <Knoepfe unitId={unitId} id={s.id} weiterHaupt={schreiben ? Boolean(laeuft) : s.aufgaben.length === 0 || gesendet > 0 || Boolean(gedruckt)} />
     </section>
   );
 }
@@ -837,6 +843,7 @@ function PlanKarte({
   const kontrolle = s.art === "kontrolle";
   const skill = s.skillId && planHatUebung(s, c.planQuellen) && !(kontrolle && sorteOfSkill(s.skillId)) ? repo.getSkill(s.skillId) : null;
   const gesendet = c.stand.gesendet[s.id]?.length ?? 0;
+  const gedruckt = blatt || skill ? gedrucktImSchritt(unit.id, s.id) : null;
   // a writing skill (lib/textarbeit-ablauf.ts): „Schreibauftrag starten“, prefilled, is the main action of the practice
   // step and of its Lernkontrolle (which sends nothing; once the text runs, its line above is the way on); in the exam
   // step it is the exam's writing task, next to „Passende Übungen senden“
@@ -958,9 +965,11 @@ function PlanKarte({
                 {bestand?.gekuerzt && s.skillId ? `, nur die ${bestand.aufgaben.length} Aufgaben zu ${repo.getSkill(s.skillId)?.name ?? "diesem Thema"}` : ""}
               </p>
               <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
-                <CockpitSenden action={sendeBestandAction.bind(null, unit.id, s.id)} unitId={unit.id} label="Passende Übungen senden" primary={gesendet === 0 && !eigen} />
+                <CockpitSenden action={sendeBestandAction.bind(null, unit.id, s.id)} unitId={unit.id} label="Passende Übungen senden" primary={gesendet === 0 && !gedruckt && !eigen} />
+                <DruckenKnopf action={druckeSchrittAction.bind(null, unit.id, s.id)} label={gedruckt ? "Nochmal drucken" : "Drucken"} />
                 {gesendet > 0 && <span className="pt-2.5 text-[13px] text-ink-3">schon {gesendet === 1 ? "einmal" : `${gesendet}-mal`} an {name} gesendet</span>}
-                {gesendet > 0 && <PapierLink unitId={unit.id} worksheetId={schon.at(-1) ?? null} />}
+                {gedruckt && <span className="pt-2.5 text-[13px] text-ink-3" data-testid="schritt-gedruckt">für {name} gedruckt</span>}
+                {(gesendet > 0 || gedruckt) && <PapierLink unitId={unit.id} worksheetId={neuere(schon.at(-1), gedruckt)} />}
               </div>
             </>
           ) : zugewiesen ? (
@@ -974,9 +983,11 @@ function PlanKarte({
                   {kontrolle ? `Neue Aufgaben zu ${skill.name}: ein Versuch, ohne Hilfen.` : `Neue Aufgaben zu ${skill.name}, passend zum Lernstand von ${name}.`}
                 </p>
                 <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
-                  <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, skill.id, s.id)} unitId={unit.id} label={kontrolle ? kontrolleLabel : "Passende Übungen senden"} primary={gesendet === 0 && !eigen} />
+                  <CockpitSenden action={sendeGeneratorAction.bind(null, unit.id, skill.id, s.id)} unitId={unit.id} label={kontrolle ? kontrolleLabel : "Passende Übungen senden"} primary={gesendet === 0 && !gedruckt && !eigen} />
+                  <DruckenKnopf action={druckeSchrittAction.bind(null, unit.id, s.id)} label={gedruckt ? "Nochmal drucken" : "Drucken"} />
                   {gesendet > 0 && <span className="pt-2.5 text-[13px] text-ink-3">schon {gesendet === 1 ? "einmal" : `${gesendet}-mal`} an {name} gesendet</span>}
-                  {gesendet > 0 && <PapierLink unitId={unit.id} worksheetId={schon.at(-1) ?? null} />}
+                  {gedruckt && <span className="pt-2.5 text-[13px] text-ink-3" data-testid="schritt-gedruckt">für {name} gedruckt</span>}
+                  {(gesendet > 0 || gedruckt) && <PapierLink unitId={unit.id} worksheetId={neuere(schon.at(-1), gedruckt)} />}
                 </div>
               </>
             )
@@ -986,7 +997,7 @@ function PlanKarte({
       {zurPruefung && <SchreibauftragStart start={zurPruefung} laeuft={laeuft} haupt={false} />}
       {sprung && <ZurErstenUebung unitId={unit.id} id={sprung.id} titel={sprung.titel} nr={ids.indexOf(sprung.id) + 1} />}
       <LoesungReveal aufgaben={aufgaben} fehler={skillId ? zurFaehigkeit(skillId).typischeFehler : []} hintergrund={hintergrundZu(skillId, [aufgaben.find((a) => a.teacherNote?.trim())?.teacherNote])} />
-      <Knoepfe unitId={unit.id} id={s.id} weiterHaupt={eigen ? Boolean(laeuft) : !(blatt || skill) || gesendet > 0} />
+      <Knoepfe unitId={unit.id} id={s.id} weiterHaupt={eigen ? Boolean(laeuft) : !(blatt || skill) || gesendet > 0 || Boolean(gedruckt)} />
     </section>
   );
 }
@@ -1005,9 +1016,12 @@ function ZurErstenUebung({ unitId, id, titel, nr }: { unitId: number; id: number
   );
 }
 
+/** Die neuere von zuletzt gesendeter und gedruckter Übung eines Schritts (Ids wachsen). */
+const neuere = (gesendet: number | undefined, gedruckt: number | null): number | null => Math.max(gesendet ?? 0, gedruckt ?? 0) || null;
+
 /**
- * „Arbeit fotografieren“ (lib/papier-einheit.ts) neben einer gesendeten Übung: hat der Schüler sie auf Papier gelöst, die Seiten
- * fotografieren und wie am Gerät bewerten; die eben gesendete Übung ist vorgewählt.
+ * „Arbeit fotografieren“ (lib/papier-einheit.ts) neben einer gesendeten oder gedruckten Übung: hat der Schüler sie auf Papier gelöst,
+ * die Seiten fotografieren und wie am Gerät bewerten; die neueste Übung des Schritts ist vorgewählt.
  */
 function PapierLink({ unitId, worksheetId }: { unitId: number; worksheetId: number | null }) {
   return (
