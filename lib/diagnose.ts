@@ -1,17 +1,17 @@
-import { aiEnabled, generateWithAI } from "./ai";
 import { parseTime } from "./analysis";
 import { aufgabeSchluessel, ausgeblendet, nachBewertung } from "./bewertungen";
 import { checkTask } from "./builder";
 import { db } from "./db";
 import { DIAGNOSE_MAX, planDiagnosis, type DiagnosisItem } from "./diagnose-plan";
 import { generateBuiltIn, hasBuiltInGenerator } from "./generators";
+import type { VorschauBlatt } from "./ki-nachschub";
 import { EIGENE_VOKABELN } from "./vokabeln-pruefen";
 import { wortartenFor } from "./wortarten";
 import { browseSkills, prerequisitesOf } from "./lehrplan";
 import { levelWeight, STATUS_THRESHOLDS, taskScore } from "./mastery";
 import { nextSteps, type NextStep } from "./recommend";
 import * as repo from "./repo";
-import { klassenLabel, schulstufe, type SchoolBranch } from "./school";
+import { schulstufe, type SchoolBranch } from "./school";
 import { analyzeStudent, carelessCredit } from "./service";
 import type { TaskDraft } from "./tasks";
 import { runningUnitForStudent } from "./units";
@@ -104,18 +104,20 @@ export type DiagnosisInput = {
   skillIds: string[];
   topics: string[];
   teacherId: number | null;
-  /** new tasks for skills without a built-in generator may come from Claude (default: when available) */
+  /**
+   * new tasks for skills without a built-in generator may come from the KI, but only through the preview
+   * (lib/ki-vorschau.ts diagnoseVorschau); createDiagnosis itself never asks the KI
+   */
   useAI?: boolean;
   /** for tests: makes the generated tasks reproducible */
   seed?: number;
 };
 
 /**
- * Creates the diagnosis and sends it to the student (in a running unit it belongs to the unit).
- * Tasks come from the library first, then from the generators; Claude only writes tasks for skills
- * the generators do not cover, and only when asked.
+ * Everything a diagnosis needs before tasks are made: the plan, the library tasks (null where none fits), the slots the KI
+ * may fill (skills without a built-in generator) and what the exercise is called and where it goes.
  */
-export async function createDiagnosis(input: DiagnosisInput): Promise<{ worksheetId: number; assignmentId: number; fromLibrary: number; aiError?: string }> {
+export function diagnosisDraft(input: DiagnosisInput) {
   const student = repo.getStudent(input.studentId);
   if (!student) throw new Error("Schüler nicht gefunden.");
   const all = new Map(repo.listSkills().map((s) => [s.id, s]));
@@ -127,56 +129,58 @@ export async function createDiagnosis(input: DiagnosisInput): Promise<{ workshee
   );
   const used = new Set<number>();
   const drafts: (TaskDraft | null)[] = plan.map((item) => libraryTask(input.subject, item, used, seen));
-  const fromLibrary = drafts.filter(Boolean).length;
-
-  let source: "ki" | "generator" = "generator";
-  let aiError: string | undefined;
-  const open = plan.map((item, i) => ({ item, i })).filter(({ i }) => !drafts[i]);
-  const forAI = open.filter(({ item }) => !hasBuiltInGenerator(item.skillId));
-  if (forAI.length && (input.useAI ?? true) && aiEnabled()) {
-    try {
-      const out = await generateWithAI({
-        subject: input.subject,
-        level: klassenLabel(input.schoolType, input.klasse),
-        skills: forAI.map(({ item }) => ({ id: item.skillId, name: all.get(item.skillId)!.name, area: all.get(item.skillId)!.area, difficulty: item.difficulty })),
-        count: forAI.length,
-        categories: [],
-        focusNote: "Kurze Diagnose: je Fähigkeit genau eine Aufgabe in der angegebenen Schwierigkeit, eindeutig auswertbar, möglichst kein Freitext.",
-      }, { teacherId: input.teacherId, studentId: student.id, trigger: "diagnose" });
-      // a diagnosis goes to the student right away: tasks the app flagged for checking are not used
-      for (const t of (out ?? []).filter((x) => !x.data.pruefen?.length)) {
-        const slot = forAI.find(({ item, i }) => !drafts[i] && item.skillId === t.skillId);
-        if (slot) drafts[slot.i] = { ...t, difficulty: slot.item.difficulty };
-      }
-      if (out?.length) source = "ki";
-    } catch (e) {
-      aiError = e instanceof Error ? e.message : String(e);
-    }
-  }
-  const tasks = fillFromGenerators(input.subject, plan, drafts, all, input.seed, schulstufe(input.schoolType, input.klasse)).filter((d): d is TaskDraft => Boolean(d));
+  const forAI = plan.map((item, i) => ({ item, i })).filter(({ item, i }) => !drafts[i] && !hasBuiltInGenerator(item.skillId));
   const topics = input.topics.length ? input.topics : [...new Set(skills.map((s) => s.area))];
-  const first = student.name.split(" ")[0];
+  const sheet: VorschauBlatt = {
+    titel: `${student.name.split(" ")[0]} – Diagnose: ${topics.join(", ")}`,
+    subject: input.subject,
+    schoolType: input.schoolType,
+    klasse: input.klasse,
+    topic: topics.join(", "),
+    difficulty: "gemischt",
+    taskType: "mixed",
+    kind: DIAGNOSE_KIND,
+    skillIds: skills.map((s) => s.id),
+    notiz: `${DIAGNOSE_NOTE}: ${topics.join(", ")}`,
+    fuerSchueler: true,
+  };
+  return { student, all, plan, drafts, fromLibrary: drafts.filter(Boolean).length, forAI, sheet };
+}
+
+/** The open slots filled from the generators (fillFromGenerators), empty ones left out: the tasks in plan order. */
+export function completeDiagnosis(input: DiagnosisInput, d: Pick<ReturnType<typeof diagnosisDraft>, "plan" | "all">, drafts: (TaskDraft | null)[]): (TaskDraft | null)[] {
+  return fillFromGenerators(input.subject, d.plan, drafts, d.all, input.seed, schulstufe(input.schoolType, input.klasse));
+}
+
+/**
+ * Creates the diagnosis and sends it to the student (in a running unit it belongs to the unit). Tasks come from the
+ * library first, then from the generators, never from the KI: new tasks of the KI go through the preview first
+ * (lib/ki-vorschau.ts diagnoseVorschau; niko: nothing from the KI reaches the student unchecked).
+ */
+export async function createDiagnosis(input: DiagnosisInput): Promise<{ worksheetId: number; assignmentId: number; fromLibrary: number }> {
+  const d = diagnosisDraft(input);
+  const tasks = completeDiagnosis(input, d, d.drafts).filter((t): t is TaskDraft => Boolean(t));
   const worksheetId = repo.createWorksheet(
     {
-      title: `${first} – Diagnose: ${topics.join(", ")}`,
+      title: d.sheet.titel,
       subject: input.subject,
       grade: schulstufe(input.schoolType, input.klasse),
       school_type: input.schoolType,
       klasse: input.klasse,
-      topic: topics.join(", "),
+      topic: d.sheet.topic,
       difficulty: "gemischt",
       task_type: "mixed",
       kind: DIAGNOSE_KIND,
-      source,
-      skill_ids: skills.map((s) => s.id),
-      student_id: student.id,
+      source: "generator",
+      skill_ids: d.sheet.skillIds,
+      student_id: d.student.id,
       teacher_id: input.teacherId,
       status: "freigegeben",
     },
     tasks,
   );
-  const assignmentId = repo.assignWorksheet(worksheetId, student.id, `${DIAGNOSE_NOTE}: ${topics.join(", ")}`, runningUnitForStudent(student.id)?.id ?? null);
-  return { worksheetId, assignmentId, fromLibrary, aiError };
+  const assignmentId = repo.assignWorksheet(worksheetId, d.student.id, d.sheet.notiz, runningUnitForStudent(d.student.id)?.id ?? null);
+  return { worksheetId, assignmentId, fromLibrary: d.fromLibrary };
 }
 
 // ---------- evaluation ----------

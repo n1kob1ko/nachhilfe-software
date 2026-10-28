@@ -4,10 +4,12 @@ import { startDiagnosisAction } from "@/app/diagnose-actions";
 import { Avatar } from "@/components/Art";
 import { DiagnoseConfirm } from "@/components/DiagnoseConfirm";
 import { Empty, PageHeader, Pill, Reveal, formatDate } from "@/components/ui";
-import { aiEnabled } from "@/lib/ai";
 import { requireTeacher } from "@/lib/auth";
 import { activeMaterial } from "@/lib/current-material";
-import { diagnosisSkills, recentDiagnoses } from "@/lib/diagnose";
+import { VorschauOhneEinheit } from "@/components/cockpit/Nachschub";
+import { DIAGNOSE_MAX, diagnosisSkills, recentDiagnoses } from "@/lib/diagnose";
+import { nachschub } from "@/lib/ki-nachschub";
+import { kiTorOhneEinheit, kostenOhneEinheit, laeuftNoch } from "@/lib/ki-vorschau";
 import { dayOf, daysUntil } from "@/lib/exams";
 import { hasBuiltInGenerator } from "@/lib/generators";
 import { EIGENE_VOKABELN } from "@/lib/vokabeln-pruefen";
@@ -18,7 +20,7 @@ import { runningUnitForStudent } from "@/lib/units";
 
 export const metadata = { title: "Diagnose" };
 
-type Params = { schueler?: string; fach?: string; schulart?: string; klasse?: string; thema?: string | string[]; alle?: string; fehler?: string };
+type Params = { schueler?: string; fach?: string; schulart?: string; klasse?: string; thema?: string | string[]; alle?: string; fehler?: string; vorschau?: string };
 const href = (p: { schueler?: number | string; fach?: string; schulart?: string; klasse?: number | string; thema?: string[] }) => {
   const q = new URLSearchParams();
   for (const [k, v] of Object.entries(p)) {
@@ -54,6 +56,9 @@ export default async function DiagnosePage({ searchParams }: { searchParams: Pro
   const step = !student ? 0 : !subject ? 1 : !klasse ? 2 : !chosen.length ? 3 : 4;
   const base = { schueler: student?.id, fach: subject ?? undefined, schulart: branch?.key, klasse: klasse ?? undefined };
   const first = student?.name.split(" ")[0] ?? "";
+  // „Aufgaben erstellen“ mit KI: die ganze Diagnose als Vorschau (lib/ki-vorschau.ts), an Stelle des Schritts, bis „Senden“ oder „Verwerfen“
+  const n = student && sp.vorschau ? nachschub(Number(sp.vorschau)) : null;
+  const vorschau = n && n.studentId === student?.id && n.unitId === null && n.ziel.art === "diagnose" && (n.status === "bereit" || laeuftNoch(n)) ? n : null;
 
   return (
     <>
@@ -88,8 +93,9 @@ export default async function DiagnosePage({ searchParams }: { searchParams: Pro
         </p>
       )}
 
-      {step === 0 && <ChooseStudent students={students} />}
-      {step === 1 && student && (
+      {vorschau && <VorschauOhneEinheit n={vorschau} name={first} zurueck={href({ ...base, thema: chosen })} />}
+      {!vorschau && step === 0 && <ChooseStudent students={students} />}
+      {!vorschau && step === 1 && student && (
         <Cards
           items={[...student.subjects.filter((s) => subjects.includes(s)), ...subjects.filter((s) => !student.subjects.includes(s))].map((s) => ({
             key: s,
@@ -99,9 +105,9 @@ export default async function DiagnosePage({ searchParams }: { searchParams: Pro
           }))}
         />
       )}
-      {step === 2 && student && subject && <ChooseClass student={student} subject={subject} branches={branches} />}
-      {step === 3 && student && subject && branch && klasse && <ChooseTopics student={student} subject={subject} branch={branch} klasse={klasse} areas={areas} scope={scope} />}
-      {step === 4 && student && subject && branch && klasse && <Confirm student={student} subject={subject} branch={branch} klasse={klasse} topics={chosen} scope={scope} back={href({ ...base, thema: chosen })} />}
+      {!vorschau && step === 2 && student && subject && <ChooseClass student={student} subject={subject} branches={branches} />}
+      {!vorschau && step === 3 && student && subject && branch && klasse && <ChooseTopics student={student} subject={subject} branch={branch} klasse={klasse} areas={areas} scope={scope} />}
+      {!vorschau && step === 4 && student && subject && branch && klasse && <Confirm student={student} subject={subject} branch={branch} klasse={klasse} topics={chosen} scope={scope} back={href({ ...base, thema: chosen })} />}
     </>
   );
 }
@@ -269,6 +275,7 @@ function Confirm({ student, subject, branch, klasse, topics, scope, back }: { st
   const candidates = scope.filter((s) => topics.includes(s.area));
   const unit = runningUnitForStudent(student.id);
   const first = student.name.split(" ")[0];
+  const tor = kiTorOhneEinheit(student.id, 1);
   return (
     <form action={startDiagnosisAction} className="grid max-w-[720px] gap-5">
       <input type="hidden" name="student_id" value={student.id} />
@@ -283,7 +290,9 @@ function Confirm({ student, subject, branch, klasse, topics, scope, back }: { st
         skills={candidates.map((s) => ({ id: s.id, name: s.name, area: s.area, generator: hasBuiltInGenerator(s.id) }))}
         picked={picked.map((s) => s.id)}
         showArea={topics.length > 1}
-        ai={aiEnabled()}
+        ai={tor.erlaubt}
+        kosten={tor.erlaubt ? Array.from({ length: DIAGNOSE_MAX + 1 }, (_, k) => kostenOhneEinheit(Math.max(1, k))) : []}
+        kiGrund={!tor.erlaubt && tor.grund !== "Die KI ist aus." ? tor.grund : null}
         note={unit ? `Geht direkt auf ${first}s Tablet.` : `Wird an ${first} gesendet.`}
       />
     </form>

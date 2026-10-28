@@ -4,7 +4,7 @@ import { deliverIfRunning, pushLive } from "@/lib/live";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { aiEnabled, analyzeWithAI } from "@/lib/ai";
-import { RECOMMENDATION_NOTE, pct } from "@/lib/analysis";
+import { pct } from "@/lib/analysis";
 import { hasData, seedDemo } from "@/lib/demo";
 import { requireTeacher } from "@/lib/auth";
 import { deleteBillingEntry } from "@/lib/billing";
@@ -13,10 +13,10 @@ import * as repo from "@/lib/repo";
 import { dropFilesIfUnused, studentImageFiles } from "@/lib/picture-story";
 import { alleFachNamen } from "@/lib/faecher";
 import { fachAus, klassenLabel, schoolType, schulstufe } from "@/lib/school";
-import { analyzeStudent, buildWorksheet, submitAnswer, type SubmitInput } from "@/lib/service";
+import { analyzeStudent, submitAnswer, type SubmitInput } from "@/lib/service";
 import { runningUnitForStudent } from "@/lib/units";
 import { dayOf } from "@/lib/exams";
-import { findNextStep } from "@/lib/recommend";
+import { empfehlungUebernehmen, sendeVorschau, verwirfVorschau } from "@/lib/ki-vorschau";
 import { pruefeEinzeltermin } from "@/lib/planung/repo";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -228,35 +228,54 @@ export async function deleteAssignmentAction(id: number, studentId: number) {
 }
 
 /**
- * Turns a recommendation (lib/recommend.ts) into a worksheet and assigns it right away. From a
- * diagnosis (diagnosisId) a recommendation that no longer applies is reported back there.
+ * „Direkt an … senden“ bei einer Empfehlung (lib/recommend.ts). Ohne KI wird die Übung gleich zugewiesen, wie bisher; mit KI kommt sie
+ * zuerst als Vorschau an dieselbe Stelle (lib/ki-vorschau.ts) und geht erst mit „Senden“ dort an den Schüler. `ohneKi`: „Ohne KI
+ * senden“, nachdem die KI nicht ging. From a diagnosis (diagnosisId) everything is reported back there.
  */
-export async function applyRecommendationAction(studentId: number, key: string, diagnosisId: number | null = null) {
+export async function applyRecommendationAction(studentId: number, key: string, diagnosisId: number | null = null, ohneKi = false) {
   const teacher = await requireTeacher();
-  const student = repo.getStudent(studentId);
-  const rec = student ? findNextStep(studentId, key, { today: dayOf(new Date()) }) : null;
-  if (!student || !rec) {
-    const back = diagnosisId ? `/diagnose/${diagnosisId}?` : `/schueler/${studentId}?tab=fortschritt&`;
-    redirect(`${back}fehler=${encodeURIComponent("Diese Empfehlung gilt nicht mehr, es wurde nichts gesendet. Die Liste ist jetzt aktuell.")}`);
-  }
-  const result = await buildWorksheet({
-    subject: rec.skill.subject,
-    schoolType: student.school_type,
-    klasse: student.klasse ?? 1,
-    skillIds: [rec.skill.id],
-    difficulty: rec.difficulty,
-    count: rec.count,
-    taskType: "mixed",
-    kind: rec.kind,
-    title: rec.kind === "ueberpruefung" ? `Überprüfung: ${rec.skill.name}` : rec.rule === 6 ? `Wiederholung: ${rec.skill.name}` : `Training: ${rec.skill.area} › ${rec.skill.name}`,
-    focusNote: rec.focusNote,
-    teacherId: teacher.id,
-    studentId,
-  });
-  noteActivity(studentId);
-  repo.assignWorksheet(result.id, studentId, `${RECOMMENDATION_NOTE} (${rec.skill.area} › ${rec.skill.name}): ${rec.reason}`, runningUnitForStudent(studentId)?.id ?? null);
+  const back = diagnosisId ? `/diagnose/${diagnosisId}?` : `/schueler/${studentId}?tab=fortschritt&`;
+  const out = await empfehlungUebernehmen(studentId, key, { teacherId: teacher.id, today: dayOf(new Date()), ohneKi: ohneKi === true });
+  if ("fehler" in out) redirect(`${back}fehler=${encodeURIComponent(out.fehler)}`);
   revalidatePath("/", "layout");
-  redirect(`/schueler/${studentId}?tab=fortschritt&zugewiesen=${result.id}`);
+  if ("vorschau" in out) {
+    const n = out.vorschau;
+    if (n.status === "fehler") redirect(`${back}fehler=${encodeURIComponent(`Die KI hat gerade keine Aufgaben erstellt: ${n.problem} Es wurde nichts gesendet.`)}`);
+    redirect(back.slice(0, -1));
+  }
+  noteActivity(studentId);
+  redirect(`/schueler/${studentId}?tab=fortschritt&zugewiesen=${out.worksheetId}`);
+}
+
+/** Nur Wege innerhalb der App (kein „//andere-seite“). */
+const innen = (zurueck: string, studentId: number) => (zurueck.startsWith("/") && !zurueck.startsWith("//") ? zurueck : `/schueler/${studentId}?tab=fortschritt`);
+
+/**
+ * „Senden“ in der Vorschau ohne Einheit (Empfehlung, Diagnose; lib/ki-vorschau.ts): genau diese Aufgaben an den Schüler. Eine Diagnose
+ * geht in einer laufenden Einheit gleich aufs Gerät und öffnet ihr Ergebnis, wie „Diagnose starten“ bisher.
+ */
+export async function vorschauSendenAction(studentId: number, id: number, zurueck: string) {
+  const teacher = await requireTeacher();
+  const ziel = innen(zurueck, studentId);
+  const out = sendeVorschau(studentId, id, teacher.id);
+  if ("fehler" in out) redirect(`${ziel}${ziel.includes("?") ? "&" : "?"}fehler=${encodeURIComponent(out.fehler)}`);
+  noteActivity(studentId);
+  revalidatePath("/", "layout");
+  if (out.art === "diagnose") {
+    deliverIfRunning(studentId, out.assignmentId);
+    const unit = runningUnitForStudent(studentId);
+    if (unit) pushLive(unit.id);
+    redirect(`/diagnose/${out.assignmentId}`);
+  }
+  redirect(`${ziel}${ziel.includes("?") ? "&" : "?"}zugewiesen=${out.worksheetId}`);
+}
+
+/** „Verwerfen“ in der Vorschau ohne Einheit: nichts geht an den Schüler. */
+export async function vorschauVerwerfenAction(studentId: number, id: number, zurueck: string) {
+  await requireTeacher();
+  verwirfVorschau(studentId, id);
+  revalidatePath("/", "layout");
+  redirect(innen(zurueck, studentId));
 }
 
 // ---------- skills ----------
