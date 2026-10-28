@@ -42,7 +42,7 @@ function AntwortZeile({ z, bewerten }: { z: OffeneAntwort; bewerten: boolean }) 
       <dl className="grid gap-x-4 gap-y-1 text-[14px] sm:grid-cols-[110px_minmax(0,1fr)]">
         <dt className="text-ink-2">Antwort</dt>
         <dd className="font-medium whitespace-pre-line break-words" data-testid="zu-bewerten-antwort">
-          {z.antwort === PAPIER_ANTWORT ? <span className="font-normal text-ink-3">Auf Papier, nicht gelesen</span> : mathe(z.antwort) ? <MathText text={z.antwort} /> : z.antwort}
+          {z.antwort === PAPIER_ANTWORT ? <span className="font-normal text-ink-3">{z.nichtLesbar ? "Auf Papier, nicht lesbar" : "Auf Papier, nicht gelesen"}</span> : mathe(z.antwort) ? <MathText text={z.antwort} /> : z.antwort}
         </dd>
         <dt className="text-ink-2">Lösung</dt>
         <dd className="whitespace-pre-line break-words text-green" data-testid="zu-bewerten-loesung">

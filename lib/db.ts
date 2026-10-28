@@ -1572,6 +1572,10 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["attempts", "offen_info", "TEXT"],
   ["papier_arbeiten", "task_ids", "TEXT"],
   ["papier_arbeiten", "lesung_id", "INTEGER"],
+  // Drucken statt senden (lib/cockpit.ts `druckeImSchritt`, 2026-10-28): die Einheit und der Schritt, aus dem die Übung gedruckt wurde
+  // (ohne Zuweisung); „Arbeit fotografieren“ wählt sie dann vor. null = nicht aus einem Schritt gedruckt
+  ["worksheets", "gedruckt_unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
+  ["worksheets", "gedruckt_schritt_id", "INTEGER"],
 ];
 
 /** Teachers to start with; more can be added later. */

@@ -160,7 +160,8 @@ export function blattDaten(w: repo.Worksheet, tasks: repo.Task[]) {
   return { punkte: liste, gesamt, bereiche: notenBereiche(gesamt, notenschluessel()), dauer: dauerVon(w) };
 }
 
-export type ProbeUebersicht = { worksheet: repo.Worksheet; punkte: number; assignment: (repo.Assignment & { student_name: string; done_count: number; correct_count: number }) | null; ergebnis: ProbeErgebnis | null };
+/** `ohneFaehigkeit`: Teilaufgaben ohne Fähigkeit (eigene Probeschularbeit); sie zählen für die Note, nicht für den Lernstand. */
+export type ProbeUebersicht = { worksheet: repo.Worksheet; punkte: number; assignment: (repo.Assignment & { student_name: string; done_count: number; correct_count: number }) | null; ergebnis: ProbeErgebnis | null; ohneFaehigkeit: number };
 
 /** Die Probeschularbeiten einer Schularbeit, die neueste zuerst, mit Punkten und, wenn geschrieben, dem Ergebnis. */
 export function probeschularbeitenZu(testId: number): ProbeUebersicht[] {
@@ -168,11 +169,13 @@ export function probeschularbeitenZu(testId: number): ProbeUebersicht[] {
   return ids.flatMap(({ id }) => {
     const worksheet = repo.getWorksheet(id);
     if (!worksheet) return [];
-    const punkte = [...punkteDerAufgaben(id).values()].reduce((s, p) => s + p, 0);
+    const tasks = repo.listTasks(id);
+    const punkte = [...punkteDerAufgaben(id, tasks).values()].reduce((s, p) => s + p, 0);
+    const ohneFaehigkeit = tasks.filter((t) => !t.skillId).length;
     // zweimal gesendet: die, in der schon gearbeitet wurde, sonst die neueste
     const seine = repo.listAssignmentsForWorksheet(id).filter((x) => x.student_id === worksheet.student_id);
     const assignment = seine.find((x) => x.done_count > 0) ?? seine[0] ?? null;
-    return [{ worksheet, punkte, assignment, ergebnis: assignment ? ergebnis(assignment.id) : null }];
+    return [{ worksheet, punkte, assignment, ergebnis: assignment ? ergebnis(assignment.id) : null, ohneFaehigkeit }];
   });
 }
 

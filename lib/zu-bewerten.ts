@@ -14,6 +14,7 @@
  */
 import { antwortAnzeige } from "./antwort-text";
 import { arbeitsauftraege } from "./bewertung-kriterien";
+import { PAPIER_ANTWORT } from "./blatt-einlesen";
 import type { Bewertung } from "./blatt-regeln";
 import { frageText, loesungText } from "./cockpit";
 import { db, json } from "./db";
@@ -36,7 +37,7 @@ type Basis = { key: string; quelle: Quelle; grund: Grund; /** der Grund in einem
  * Eine Antwort, die auf die Lehrkraft wartet. `aufgabe` und `antwort` kurz; `loesung`: Musterlösung oder erwartete Antwort, nur für
  * die Lehrkraft; `max`: die Punkte der Aufgabe, wenn sie welche hat (teilweise = die Hälfte); `vorschlag`: was die Lesung vorschlug.
  */
-export type OffeneAntwort = Basis & { art: "antwort"; attemptId: number; assignmentId: number; papier: boolean; nr: string; aufgabe: string; antwort: string; loesung: string; max: number | null; vorschlag: Bewertung | null };
+export type OffeneAntwort = Basis & { art: "antwort"; attemptId: number; assignmentId: number; papier: boolean; nr: string; aufgabe: string; antwort: string; loesung: string; max: number | null; vorschlag: Bewertung | null; /** Papier: die Lesung fand an dieser Stelle nichts Lesbares */ nichtLesbar?: boolean };
 /** Eine Textarbeit mit „Bewertung offen“: bewertet wird in der Korrektur (`href`); `vorschlag`: ein Vorschlag liegt bereit. */
 export type OffenerText = Basis & { art: "text"; textId: number; woerter: number; vorschlag: boolean; linkText: string };
 export type ZuBewerten = OffeneAntwort | OffenerText;
@@ -61,6 +62,22 @@ function grundVon(r: OffenRow, t: repo.Task): { grund: Grund; grundText: string;
   if (t.type === "rechenweg" || t.type === "sachaufgabe") return { grund: "app", grundText: r.error_label || "Den Rechenweg prüft die App nicht sicher.", vorschlag: null, papier: false };
   if (t.answer.vokabel) return { grund: "app", grundText: "Das Wort steht so nicht in der Liste.", vorschlag: null, papier: false };
   return { grund: "frei", grundText: "", vorschlag: null, papier: false };
+}
+
+/**
+ * Auf Papier gespeichert ohne Antworttext („Auf Papier gelöst“): was die gespeicherte Lesung zu dieser Aufgabe gelesen hat
+ * (`papier_arbeiten.lesung_id`, lib/papier-einheit.ts), damit die Liste das Gelesene zeigt statt des Platzhalters. null ohne Lesung.
+ */
+function gelesenZu(assignmentId: number, taskId: number): { antwort: string; nichtLesbar: boolean } | null {
+  const r = db()
+    .prepare(
+      `SELECT l.zeilen FROM papier_arbeiten p JOIN papier_lesungen l ON l.id = p.lesung_id
+       WHERE p.assignment_id = ? AND EXISTS (SELECT 1 FROM json_each(COALESCE(p.task_ids, '[]')) j WHERE j.value = ?) ORDER BY p.id DESC LIMIT 1`,
+    )
+    .get(assignmentId, taskId) as { zeilen: string } | undefined;
+  const z = r ? json<{ taskId: number; fehlt?: boolean; antwort?: string; bewertung?: string }[]>(r.zeilen, []).find((x) => x.taskId === taskId) : undefined;
+  if (!z) return null;
+  return { antwort: String(z.antwort ?? "").trim(), nichtLesbar: Boolean(z.fehlt) || z.bewertung === "nicht_lesbar" };
 }
 
 /** Die offenen Antworten (am Gerät, auf Papier, in einer Probeschularbeit) einer Einheit oder eines Schülers, älteste zuerst. */
@@ -94,6 +111,8 @@ function offeneAntworten(o: { unitId: number; studentId: number } | { studentId:
     const t = b.tasks[i];
     if (!t) return [];
     const g = grundVon(r, t);
+    // „Auf Papier gelöst“ is a placeholder: where a reading exists, the answer it read (or that nothing was legible)
+    const gelesen = r.answer === PAPIER_ANTWORT ? gelesenZu(r.assignment_id, t.id) : null;
     return [
       {
         key: `a${r.id}`,
@@ -110,7 +129,8 @@ function offeneAntworten(o: { unitId: number; studentId: number } | { studentId:
         titel: ohneVorname(r.w_title, student?.name ?? ""),
         nr: t.data.nummer?.trim() || String(i + 1),
         aufgabe: kurz(frageText(t), 240),
-        antwort: kurz(antwortAnzeige(t, r.answer) || "–", 400),
+        antwort: kurz(gelesen?.antwort || antwortAnzeige(t, r.answer) || "–", 400),
+        ...(gelesen && !gelesen.antwort && gelesen.nichtLesbar ? { nichtLesbar: true } : {}),
         loesung: loesungText(t),
         max: b.punkte.get(t.id) ?? null,
         href: `/schueler/${r.student_id}/ergebnis/${r.assignment_id}`,

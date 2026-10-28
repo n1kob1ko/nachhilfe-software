@@ -147,10 +147,25 @@ export const noteFolgt = (offen: number) => `Note folgt: ${antwortenText(offen)}
 export const bewertungOffenZeile = (offen: number) => `Bewertung offen: ${antwortenText(offen)}`;
 
 const punkteZahl = (p: number) => (Number.isInteger(p) ? String(p) : p.toFixed(1).replace(".", ","));
-/** „Probeschularbeit „Brüche“ auf Papier: 18 von 24 Punkten, Note 2 (Gut)“; offen: „…, Note folgt: 2 Antworten zu bewerten“ */
+/**
+ * „Probeschularbeit „Brüche“ auf Papier: Note 2 (Gut), 18 von 24 Punkten“; offen: „…: Note folgt: 2 Antworten zu bewerten, bisher 6 von
+ * 24 Punkten“. Die Note steht vor den Punkten, damit Teilpunkte nicht wie das Ergebnis wirken.
+ */
 export function probeZeile(p: ProbeZeile): string {
-  const rest = p.note ? `, Note ${p.note}` : p.offen ? `, ${noteFolgt(p.offen)}` : p.bearbeitet < p.aufgaben ? ` (${p.bearbeitet} von ${p.aufgaben} Aufgaben)` : "";
-  return `Probeschularbeit „${p.titel}“${p.papier ? " auf Papier" : ""}: ${punkteZahl(p.erreicht)} von ${punkteZahl(p.gesamt)} Punkten${rest}`;
+  const punkte = `${punkteZahl(p.erreicht)} von ${punkteZahl(p.gesamt)} Punkten`;
+  const text = p.note ? `Note ${p.note}, ${punkte}` : p.offen ? `${noteFolgt(p.offen)}, bisher ${punkte}` : p.bearbeitet < p.aufgaben ? `${punkte} (${p.bearbeitet} von ${p.aufgaben} Aufgaben)` : punkte;
+  return `Probeschularbeit „${p.titel}“${p.papier ? " auf Papier" : ""}: ${text}`;
+}
+
+/**
+ * Das Ergebnis einer Probeschularbeit in einer Zeile (Prüfungskarte), die Note vorne: „Note 3 (Befriedigend) · 5,5 von 8 Punkten“;
+ * solange etwas offen ist „Note folgt: 1 Antwort zu bewerten · bisher 4 von 8 Punkten“.
+ */
+export function probeErgebnisText(e: { erreicht: number; gesamt: number; offen: number; bearbeitet: number; aufgaben: number; note: { note: number; label: string } | null }): string {
+  const punkte = `${punkteZahl(e.erreicht)} von ${punkteZahl(e.gesamt)} Punkten`;
+  if (e.note) return `Note ${e.note.note} (${e.note.label}) · ${punkte}`;
+  if (e.offen) return `${noteFolgt(e.offen)} · bisher ${punkte}`;
+  return e.bearbeitet < e.aufgaben ? `${punkte} · ${e.bearbeitet} von ${e.aufgaben} Aufgaben` : punkte;
 }
 
 /** „Gut verstanden“, Regel 1: so viele Aufgaben einer Fähigkeit im ersten Versuch ohne Hilfe richtig, keine falsche Antwort. */

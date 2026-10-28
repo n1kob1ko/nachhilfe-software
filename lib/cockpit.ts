@@ -887,7 +887,7 @@ export function aufgabeFuerSchueler(a: TaskDraft, quelle: PaketQuelle): TaskDraf
  * Im Plan für heute (`schrittId` negativ): der Paketschritt, auf den der Planschritt zeigt; das erste Senden hält den Plan
  * fest wie jedes Tippen (`mitSchritt`).
  */
-export function sendeSchritt(unitId: number, schrittId: number, teacherId: number | null): { worksheetId: number; assignmentId: number } | { fehler: string } {
+export function sendeSchritt(unitId: number, schrittId: number, teacherId: number | null, ziel: Ziel = "senden"): { worksheetId: number; assignmentId: number } | { fehler: string } {
   const unit = getUnit(unitId);
   if (!unit || unit.status !== "gestartet") return { fehler: "Diese Einheit läuft nicht mehr." };
   const s = leseStand(unitId);
@@ -928,10 +928,44 @@ export function sendeSchritt(unitId: number, schrittId: number, teacherId: numbe
       },
       tasks,
     );
-    assignmentId = repo.assignWorksheet(worksheetId, student.id, "", unit.id);
+    if (ziel === "drucken") merkeGedruckt(worksheetId, unit.id, schrittId);
+    else assignmentId = repo.assignWorksheet(worksheetId, student.id, "", unit.id);
   })();
-  aendere(unitId, (cur) => ({ ...cur, ...(plan && !cur.paket_id ? { plan: cur.plan ?? plan } : {}), gesendet: { ...cur.gesendet, [schrittId]: [...(cur.gesendet[schrittId] ?? []), worksheetId] } }));
+  if (ziel === "drucken") aendere(unitId, (cur) => (plan && !cur.paket_id ? { ...cur, plan: cur.plan ?? plan } : cur));
+  else aendere(unitId, (cur) => ({ ...cur, ...(plan && !cur.paket_id ? { plan: cur.plan ?? plan } : {}), gesendet: { ...cur.gesendet, [schrittId]: [...(cur.gesendet[schrittId] ?? []), worksheetId] } }));
   return { worksheetId, assignmentId };
+}
+
+// ---------- „Drucken“ statt senden ----------
+
+/** Senden aufs Gerät oder Drucken: gedruckt wird dieselbe Übung, ohne Zuweisung (der Schüler sieht sie nirgends). */
+export type Ziel = "senden" | "drucken";
+
+/** Merkt eine eben gebaute Übung als in dieser Einheit aus diesem Schritt gedruckt (`worksheets.gedruckt_unit_id`). */
+function merkeGedruckt(worksheetId: number, unitId: number, schrittId: number) {
+  db().prepare("UPDATE worksheets SET gedruckt_unit_id = ?, gedruckt_schritt_id = ? WHERE id = ?").run(unitId, schrittId, worksheetId);
+}
+
+/** Die Übung, die in dieser Einheit aus dem Schritt gedruckt wurde (die neueste), oder null. */
+export const gedrucktImSchritt = (unitId: number, schrittId: number): number | null =>
+  (db().prepare("SELECT id FROM worksheets WHERE gedruckt_unit_id = ? AND gedruckt_schritt_id = ? AND archived_at IS NULL ORDER BY id DESC LIMIT 1").pluck().get(unitId, schrittId) as number | undefined) ?? null;
+
+/**
+ * **Drucken** neben „Übung senden“ (Phase-C-Test: „Drucken statt senden“ brauchte 6 Tippen): genau die Übung, die der Schritt senden
+ * würde (Paketschritt, Übung aus dem Bestand oder neue Aufgaben aus den Generatoren), als Übung dieses Schülers ohne Zuweisung,
+ * gemerkt als in dieser Einheit gedruckt. „Arbeit fotografieren“ wählt sie dann vor (lib/papier-einheit.ts). Ein zweites Tippen
+ * druckt dieselbe Übung noch einmal, statt eine neue zu bauen. Gibt die Übung für die A4-Seite zurück (`/arbeitsblatt/[id]`).
+ */
+export async function druckeImSchritt(unitId: number, schrittId: number, teacherId: number | null): Promise<{ worksheetId: number } | { fehler: string }> {
+  const unit = getUnit(unitId);
+  if (!unit || unit.status !== "gestartet") return { fehler: "Diese Einheit läuft nicht mehr." };
+  const schon = gedrucktImSchritt(unit.id, schrittId);
+  if (schon) return { worksheetId: schon };
+  const s = leseStand(unitId);
+  const plan = s.paket_id ? null : (s.plan ?? planDerEinheit(unitId));
+  // a step of a package (or a plan step pointing to one) prints its tasks; any other plan step its exercise from the Bestand or the generators
+  const out = !plan || paketQuelle(plan.find((x) => x.id === schrittId)) ? sendeSchritt(unitId, schrittId, teacherId, "drucken") : await sendeBestand(unitId, schrittId, teacherId, "drucken");
+  return "fehler" in out ? out : { worksheetId: out.worksheetId };
 }
 
 // ---------- documentation when the unit ends ----------
@@ -1234,6 +1268,7 @@ export async function sendeAusGenerator(
   skillId: string,
   teacherId: number | null,
   schrittId: number | null = null,
+  ziel: Ziel = "senden",
 ): Promise<{ worksheetId: number; assignmentId: number } | { fehler: string }> {
   const unit = getUnit(unitId);
   if (!unit || unit.status !== "gestartet") return { fehler: "Diese Einheit läuft nicht mehr." };
@@ -1297,6 +1332,12 @@ export async function sendeAusGenerator(
     repo.deleteWorksheet(worksheetId);
     return { fehler: "Für diese Fähigkeit gibt es keine Aufgaben ohne KI. Bitte im Builder erstellen." };
   }
+  // printed: no assignment, the student sees it nowhere; the prepared tasks stay for sending
+  if (ziel === "drucken") {
+    merkeGedruckt(worksheetId, unit.id, schritt?.id ?? schrittId ?? 0);
+    if (plan?.length) aendere(unitId, (cur) => (cur.paket_id ? cur : { ...cur, plan: cur.plan ?? plan }));
+    return { worksheetId, assignmentId: 0 };
+  }
   if (schritt) db().prepare("DELETE FROM einheit_bereit WHERE unit_id = ? AND schritt_id = ?").run(unit.id, schritt.id);
   const assignmentId = kontrolle ? repo.assignWorksheet(worksheetId, student.id, LERNKONTROLLE, unit.id, "test") : repo.assignWorksheet(worksheetId, student.id, "", unit.id);
   if (plan?.length) {
@@ -1315,7 +1356,7 @@ export async function sendeAusGenerator(
  * Aufgabe bleibt). Passt sie nicht (mehr), sendet der Schritt aus dem Generator. Wie jedes Senden hält es den Plan fest und
  * merkt die Übung beim Schritt.
  */
-export async function sendeBestand(unitId: number, schrittId: number, teacherId: number | null): Promise<{ worksheetId: number; assignmentId: number } | { fehler: string }> {
+export async function sendeBestand(unitId: number, schrittId: number, teacherId: number | null, ziel: Ziel = "senden"): Promise<{ worksheetId: number; assignmentId: number } | { fehler: string }> {
   const unit = getUnit(unitId);
   if (!unit || unit.status !== "gestartet") return { fehler: "Diese Einheit läuft nicht mehr." };
   const student = repo.getStudent(unit.student_id);
@@ -1324,25 +1365,28 @@ export async function sendeBestand(unitId: number, schrittId: number, teacherId:
   const schritt = plan?.find((x) => x.id === schrittId) ?? null;
   if (!student || !plan || !schritt) return { fehler: "Dieser Schritt gehört nicht zum Plan der Einheit." };
   const b = bestandsUebung(schritt, student.id);
-  if (!b) return schritt.skillId ? sendeAusGenerator(unitId, schritt.skillId, teacherId, schrittId) : { fehler: "Diese Übung passt nicht mehr." };
+  if (!b) return schritt.skillId ? sendeAusGenerator(unitId, schritt.skillId, teacherId, schrittId, ziel) : { fehler: "Diese Übung passt nicht mehr." };
   const skill = schritt.skillId ? repo.getSkill(schritt.skillId) : null;
+  const drucken = ziel === "drucken";
+  const first = student.name.split(" ")[0];
   let worksheetId = b.blatt.id;
   let assignmentId = 0;
   db().transaction(() => {
-    if (b.gekuerzt && skill)
+    // printed: always this student's own copy, so the shared exercise is never marked for one unit
+    if ((b.gekuerzt && skill) || drucken)
       worksheetId = repo.createWorksheet(
         {
-          title: `${student.name.split(" ")[0]} – Üben: ${skill.name}`.slice(0, 160),
+          title: (b.gekuerzt && skill ? `${first} – Üben: ${skill.name}` : b.blatt.title.startsWith(`${first} – `) ? b.blatt.title : `${first} – ${b.blatt.title}`).slice(0, 160),
           subject: b.blatt.subject,
           grade: b.blatt.grade,
           school_type: b.blatt.school_type,
           klasse: b.blatt.klasse,
-          topic: skill.area,
+          topic: skill?.area ?? b.blatt.topic,
           difficulty: b.blatt.difficulty,
           task_type: b.blatt.task_type,
           kind: b.blatt.kind,
           source: b.blatt.source,
-          skill_ids: [skill.id],
+          skill_ids: b.gekuerzt && skill ? [skill.id] : b.blatt.skill_ids,
           student_id: student.id,
           teacher_id: teacherId,
           status: "freigegeben",
@@ -1350,9 +1394,11 @@ export async function sendeBestand(unitId: number, schrittId: number, teacherId:
         },
         b.aufgaben.map(alsEntwurf),
       );
-    assignmentId = repo.assignWorksheet(worksheetId, student.id, "", unit.id);
+    if (drucken) merkeGedruckt(worksheetId, unit.id, schrittId);
+    else assignmentId = repo.assignWorksheet(worksheetId, student.id, "", unit.id);
   })();
-  aendere(unitId, (cur) => (cur.paket_id ? cur : { ...cur, plan: cur.plan ?? plan, gesendet: { ...cur.gesendet, [schrittId]: [...(cur.gesendet[schrittId] ?? []), worksheetId] } }));
+  if (drucken) aendere(unitId, (cur) => (cur.paket_id ? cur : { ...cur, plan: cur.plan ?? plan }));
+  else aendere(unitId, (cur) => (cur.paket_id ? cur : { ...cur, plan: cur.plan ?? plan, gesendet: { ...cur.gesendet, [schrittId]: [...(cur.gesendet[schrittId] ?? []), worksheetId] } }));
   return { worksheetId, assignmentId };
 }
 

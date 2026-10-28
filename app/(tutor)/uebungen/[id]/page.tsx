@@ -22,6 +22,7 @@ import { bewertungenJeAufgabe } from "@/lib/bewertungen";
 import { settingsOf } from "@/lib/builder";
 import { getMaterial } from "@/lib/materials";
 import { punkteDerAufgaben, punkteText } from "@/lib/probeschularbeit";
+import { ohneFaehigkeitText } from "@/lib/probe-extern-regeln";
 import * as repo from "@/lib/repo";
 import { isSorte, SORTEN, type SorteKey } from "@/lib/schreibauftrag";
 import { requireTeacher } from "@/lib/auth";
@@ -181,6 +182,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         <p className="no-print mb-6 rounded-2xl bg-green-wash px-4 py-3 text-[14px] text-green" data-testid="hinweis-eigene">
           Übernommen: {tasks.length} {tasks.length === 1 ? "Teilaufgabe" : "Teilaufgaben"} mit {punkteText(gesamt)} Punkten. Am Gerät läuft sie wie eine Schularbeit, ohne Tipps und ohne
           Lösung. Auf Papier gibst du deine Angabe aus und bewertest danach mit „Arbeit fotografieren“, im Unterricht oder auf der Prüfungskarte.
+          {tasks.some((t) => !t.skillId) && ` ${ohneFaehigkeitText(tasks.filter((t) => !t.skillId).length)}`}
         </p>
       )}
       {sp.hinweis === "lesenweniger" && (

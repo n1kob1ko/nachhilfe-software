@@ -51,10 +51,11 @@ export type PapierBlatt = {
   assignmentId: number | null;
   titel: string;
   /**
-   * gesendet: an den Schüler gesendet; minitest: der gedruckte Minitest; erstellt: in der Einheit erstellt, nicht gesendet;
+   * gesendet: an den Schüler gesendet; minitest: der gedruckte Minitest; gedruckt: aus einem Schritt gedruckt statt gesendet
+   * (lib/cockpit.ts `druckeImSchritt`); erstellt: in der Einheit erstellt, nicht gesendet;
    * probe: eine Probeschularbeit dieses Schülers mit offenen Aufgaben (auch eine eigene, lib/probe-extern.ts), von wann auch immer
    */
-  art: "gesendet" | "minitest" | "erstellt" | "probe";
+  art: "gesendet" | "minitest" | "gedruckt" | "erstellt" | "probe";
   /** wann gesendet oder erstellt (wie gespeichert) */
   am: string;
   /** die Aufgaben ohne fertige Antwort, in der Reihenfolge des Blatts */
@@ -118,19 +119,20 @@ export function blaetterDerEinheit(unitId: number): PapierBlatt[] {
     const b = w ? blattAus(w, student, "gesendet", a.assigned_at, a.id) : null;
     if (b) out.push(b);
   }
-  // printed, never sent: the unit's Minitest, and exercises made for this student during the unit without any assignment
+  // printed, never sent: the unit's Minitest, exercises printed from a step, and exercises made for this student during the unit
+  // without any assignment
   const gedruckt = db()
     .prepare(
-      `SELECT w.id, w.created_at, (w.minitest_unit_id = ?) AS minitest FROM worksheets w
-       WHERE (w.minitest_unit_id = ? OR (w.student_id = ? AND datetime(w.created_at) >= datetime(?)))
+      `SELECT w.id, w.created_at, (w.minitest_unit_id = ?) AS minitest, (w.gedruckt_unit_id = ?) AS gedruckt FROM worksheets w
+       WHERE (w.minitest_unit_id = ? OR w.gedruckt_unit_id = ? OR (w.student_id = ? AND datetime(w.created_at) >= datetime(?)))
          AND NOT EXISTS (SELECT 1 FROM assignments a WHERE a.worksheet_id = w.id AND a.student_id = ?)
        ORDER BY w.created_at DESC, w.id DESC`,
     )
-    .all(unit.id, unit.id, student.id, unit.started_at, student.id) as { id: number; created_at: string; minitest: number }[];
+    .all(unit.id, unit.id, unit.id, unit.id, student.id, unit.started_at, student.id) as { id: number; created_at: string; minitest: number; gedruckt: number }[];
   for (const r of gedruckt) {
     if (gesehen.has(r.id)) continue;
     const w = repo.getWorksheet(r.id);
-    const b = w && w.kind !== "bibliothek" ? blattAus(w, student, r.minitest ? "minitest" : w.probe_test_id ? "probe" : "erstellt", r.created_at, null) : null;
+    const b = w && w.kind !== "bibliothek" ? blattAus(w, student, r.minitest ? "minitest" : w.probe_test_id ? "probe" : r.gedruckt ? "gedruckt" : "erstellt", r.created_at, null) : null;
     if (b) gesehen.add(r.id);
     if (b) out.push(b);
   }
@@ -325,6 +327,19 @@ function rahmen(o: { unitId: number | null; studentId?: number }): { unit: UnitV
   return { unit: null, student, blaetter: blaetterOhneEinheit(student.id) };
 }
 
+const fremdesBlatt = (unit: UnitView | null) => (unit ? "Dieses Blatt gehört nicht zu dieser Einheit." : "Diese Probeschularbeit gehört nicht zu diesem Schüler, oder sie ist schon ganz bewertet.");
+
+/**
+ * Ob das Blatt (`blattKey`) zu dieser Einheit gehört, ohne Einheit zu den offenen Probeschularbeiten des Schülers: null, wenn ja,
+ * sonst der Satz für die Lehrkraft. Die Route prüft das, bevor sie eine Seite speichert; eine abgelehnte Anfrage (ein fremdes Blatt)
+ * legt so nichts als Material des Schülers ab.
+ */
+export function blattFehler(o: { unitId: number | null; studentId?: number; blattKey: string }): string | null {
+  const r = rahmen(o);
+  if ("error" in r) return r.error;
+  return r.blaetter.some((b) => b.key === o.blattKey) ? null : fremdesBlatt(r.unit);
+}
+
 /**
  * Liest die gespeicherten Seiten gegen die Aufgaben eines Blatts der Einheit (`blattKey`), ohne Einheit gegen eine
  * Probeschularbeit des Schülers. Wirft einen Fehler mit einem Satz für die Lehrkraft; die Seiten bleiben dann gespeichert.
@@ -334,7 +349,7 @@ export async function liesPapier(o: { unitId: number | null; studentId?: number;
   const r = rahmen(o);
   if ("error" in r) throw new Error(r.error);
   const blatt = r.blaetter.find((b) => b.key === o.blattKey);
-  if (!blatt) throw new Error(r.unit ? "Dieses Blatt gehört nicht zu dieser Einheit." : "Diese Probeschularbeit gehört nicht zu diesem Schüler, oder sie ist schon ganz bewertet.");
+  if (!blatt) throw new Error(fremdesBlatt(r.unit));
   const tor = papierTor(r.student.id);
   if (!tor.erlaubt) throw new Error(tor.grund);
   const seiten = seitenFuerKi(o.materialIds, r.student.id);
