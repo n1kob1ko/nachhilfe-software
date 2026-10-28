@@ -24,6 +24,7 @@ import { istMaturaKategorie, maturaLeer, pruefeMatura } from "./matura-formate";
 import { englischLeer, istEnglischMatura, pruefeEnglisch } from "./englisch-matura-formate";
 import { englischGleichwertig } from "./englisch-matura";
 import { memorizeCategory, memorizeWords } from "./memorize";
+import { externDaten } from "./probe-extern";
 import { isQuickRound, type AssignmentMode } from "./quick-round";
 import { analyzeStudent } from "./service";
 import { gapCount, GAP, type TaskDraft } from "./tasks";
@@ -676,10 +677,13 @@ export function blankTask(format: TaskType, skillId: string | null, category: st
 }
 
 /** What is missing before a task can be given to a student; null when it is complete. */
+const FREI_OHNE_LOESUNG = "Musterlösung, Erwartung oder Lösungsweg fehlt.";
+const OHNE_FAEHIGKEIT = "Bitte eine Fähigkeit zuordnen.";
+
 export function checkTask(t: TaskDraft): string | null {
   // leer ist auch ein Lückentext, der nur aus Lücken und „…“ besteht
   if (!t.prompt.trim() || t.prompt.split(GAP).every((p) => !p.replace(/…/g, "").trim())) return "Die Aufgabenstellung fehlt.";
-  if (!t.skillId) return "Bitte eine Fähigkeit zuordnen.";
+  if (!t.skillId) return OHNE_FAEHIGKEIT;
   // Matura-Formate: fünf Antworten, zwei richtige bei 2 aus 5, je drei Satzteile, vier Antworten zu zwei Aussagen
   const matura = pruefeMatura(t) ?? pruefeEnglisch(t);
   if (matura) return matura;
@@ -698,7 +702,7 @@ export function checkTask(t: TaskDraft): string | null {
     if (gaps === 0) return `Der Lückentext braucht mindestens eine Lücke (${GAP}).`;
     if (!t.answer.blanks || t.answer.blanks.length !== gaps || t.answer.blanks.some((b) => !b.some((x) => x.trim()))) return `Für jede der ${gaps} Lücken braucht es eine Lösung.`;
   }
-  if (t.type === "free" && !(t.answer.sample?.trim() || t.solution.trim() || t.answer.criteria?.some((c) => c.trim()))) return "Musterlösung, Erwartung oder Lösungsweg fehlt.";
+  if (t.type === "free" && !(t.answer.sample?.trim() || t.solution.trim() || t.answer.criteria?.some((c) => c.trim()))) return FREI_OHNE_LOESUNG;
   if (t.type === "memorize" && !t.data.passage?.trim()) return "Der Text zum Auswendiglernen fehlt.";
   if (t.type === "memorize" && memorizeWords(t.data.passage ?? "").length < 3) return "Der Text zum Auswendiglernen ist zu kurz (mindestens drei Wörter).";
   if (isPlaceholder(t.answer.sample) || isPlaceholder(t.solution)) return "Die Musterlösung ist nur ein Platzhalter. Bitte eine konkrete Lösung eintragen.";
@@ -809,9 +813,14 @@ export function normalizeTask(t: TaskDraft): TaskDraft {
 export function releaseWorksheet(worksheetId: number, studentId: number | null, o: { quickRound?: boolean } = {}): { error?: string; assignmentId?: number; mode?: AssignmentMode } {
   const tasks = repo.listTasks(worksheetId);
   if (!tasks.length) return { error: "Die Übung hat noch keine Aufgaben." };
-  const bad = tasks.map((t, i) => [i + 1, checkTask(t)] as const).filter(([, e]) => e);
-  if (bad.length) return { error: `Aufgabe ${bad[0][0]}: ${bad[0][1]}` };
   const w = repo.getWorksheet(worksheetId);
+  // eine eigene Probeschularbeit (lib/probe-extern.ts) darf Aufgaben ohne Musterlösung („Lösung fehlt“) und ohne Fähigkeit (zählt dann nur
+  // für die Note) haben, wie „Übernehmen“ sie anlegt: die Lehrkraft bewertet sie selbst
+  const eigeneProbe = Boolean(w?.probe_test_id && externDaten(w));
+  const bad = tasks
+    .map((t, i) => [i + 1, checkTask(t)] as const)
+    .filter(([, e]) => e && !(eigeneProbe && (e === FREI_OHNE_LOESUNG || e === OHNE_FAEHIGKEIT)));
+  if (bad.length) return { error: `Aufgabe ${bad[0][0]}: ${bad[0][1]}` };
   const wish = o.quickRound ?? (w ? settingsOf(w).quickRound === true : false);
   // eine Probeschularbeit läuft immer wie ein Minitest (repo.assignWorksheet)
   const mode: AssignmentMode = w?.probe_test_id ? "test" : wish && isQuickRound(tasks) ? "schnell" : "normal";

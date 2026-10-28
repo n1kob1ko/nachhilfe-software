@@ -321,6 +321,17 @@ test("„Übernehmen“: unsure rows and missing points block; then one task per
   assert.deepEqual([...punkteDerAufgaben(w.id).values()], [2, 1, 3, 2]);
   assert.equal(s.repo.getTest(s.testId)!.status, "geplant", "the exam stays as it is; no date or exam is made");
   assert.equal(s.repo.listTests(s.sid).length, 1);
+  // „An … senden“ (sendToTabletAction → releaseWorksheet): „Lösung fehlt“ (3) und keine Fähigkeit blockieren nicht, die Lehrkraft bewertet selbst
+  const { releaseWorksheet } = await import("./builder");
+  const sent = releaseWorksheet(out.worksheetId, s.sid);
+  assert.equal(sent.error, undefined, JSON.stringify(sent));
+  assert.equal(sent.mode, "test");
+  // eine gewöhnliche Übung mit derselben Aufgabe ohne Lösung bleibt blockiert
+  const normal = s.repo.createWorksheet(
+    { title: "Ohne Lösung", subject: "Mathematik", grade: 6, school_type: "Mittelschule", klasse: 2, topic: "", difficulty: "mittel", task_type: "free", kind: "uebung", source: "manuell", skill_ids: [], status: "entwurf" },
+    [{ ...tasks[3], skillId: BR }],
+  );
+  assert.match(releaseWorksheet(normal, s.sid).error ?? "", /Aufgabe 1: Musterlösung, Erwartung oder Lösungsweg fehlt/);
 });
 
 /** A worksheet taken over from the reading above, with the KI's Musterlösung. */
