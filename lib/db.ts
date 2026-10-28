@@ -1288,7 +1288,7 @@ CREATE INDEX IF NOT EXISTS idx_einheit_knoepfe ON einheit_knoepfe(unit_id);
 -- neuen Aufgaben (JSON), dazu: die ohne KI, die mitgehen.
 CREATE TABLE IF NOT EXISTS einheit_ki_aufgaben (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  unit_id INTEGER REFERENCES units(id) ON DELETE CASCADE,
   schluessel TEXT NOT NULL,
   schritt_id INTEGER,
   ziel TEXT NOT NULL DEFAULT '{}',
@@ -1619,6 +1619,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // KI-Budget je Einheit (lib/ai/einheit-budget.ts, 2026-10-28): der Betrag dieser Einheit in Euro, wenn die Lehrkraft ihn gesenkt oder
   // die Administration ihn erhöht hat; null = der Betrag aus Erweitert › KI-Kosten (Standard 0 € = automatisch aus)
   ["units", "ki_budget_eur", "REAL"],
+  // Empfehlung und Diagnose nur mit Vorschau (lib/ki-vorschau.ts, 2026-10-28): eine Vorschau ohne Einheit gehört zu diesem Schüler
+  ["einheit_ki_aufgaben", "student_id", "INTEGER REFERENCES students(id) ON DELETE CASCADE"],
   // Hausübung vorbereitet (lib/hausuebung.ts, 2026-10-28): die Einheit, in deren Abschluss die Hausübung freigegeben wurde; null = von Hand
   ["homework", "unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
 ];
@@ -1829,6 +1831,34 @@ function migrate(conn: Database.Database) {
       conn.exec("ALTER TABLE papier_arbeiten_neu RENAME TO papier_arbeiten");
       conn.exec("CREATE INDEX IF NOT EXISTS idx_papier_unit ON papier_arbeiten(unit_id)");
     }
+    // Empfehlung und Diagnose nur mit Vorschau (E0, 2026-10-28): eine Vorschau neuer KI-Aufgaben auch ohne Einheit. Wie oben: NOT NULL
+    // geht nur mit einer neuen Tabelle weg; nur einmal, beim Upgrade einer alten Datenbank
+    const vorschau = conn.prepare("PRAGMA table_info(einheit_ki_aufgaben)").all() as { name: string; notnull: number }[];
+    if (vorschau.find((c) => c.name === "unit_id")?.notnull) {
+      const spalten = vorschau.map((c) => c.name).join(", ");
+      conn.exec(`CREATE TABLE einheit_ki_aufgaben_neu (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        unit_id INTEGER REFERENCES units(id) ON DELETE CASCADE,
+        schluessel TEXT NOT NULL,
+        schritt_id INTEGER,
+        ziel TEXT NOT NULL DEFAULT '{}',
+        automatisch INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'laeuft',
+        aufgaben TEXT NOT NULL DEFAULT '[]',
+        dazu TEXT NOT NULL DEFAULT '[]',
+        fehler TEXT NOT NULL DEFAULT '',
+        call_id INTEGER REFERENCES ai_calls(id) ON DELETE SET NULL,
+        worksheet_id INTEGER REFERENCES worksheets(id) ON DELETE SET NULL,
+        teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        student_id INTEGER REFERENCES students(id) ON DELETE CASCADE
+      )`);
+      conn.exec(`INSERT INTO einheit_ki_aufgaben_neu (${spalten}) SELECT ${spalten} FROM einheit_ki_aufgaben`);
+      conn.exec("DROP TABLE einheit_ki_aufgaben");
+      conn.exec("ALTER TABLE einheit_ki_aufgaben_neu RENAME TO einheit_ki_aufgaben");
+      conn.exec("CREATE INDEX IF NOT EXISTS idx_einheit_ki_aufgaben ON einheit_ki_aufgaben(unit_id, schluessel)");
+    }
+    conn.exec("CREATE INDEX IF NOT EXISTS idx_einheit_ki_aufgaben_schueler ON einheit_ki_aufgaben(student_id, schluessel) WHERE unit_id IS NULL");
   });
   tx();
 }

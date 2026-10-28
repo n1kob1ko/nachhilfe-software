@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Check, Minus, X } from "lucide-react";
-import { applyRecommendationAction } from "@/app/actions";
+import { EmpfehlungKnopf, EmpfehlungVorschau } from "@/components/cockpit/Nachschub";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, SectionTitle, formatDate } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
@@ -148,12 +148,9 @@ export default async function DiagnosisResultPage({ params, searchParams }: { pa
                   <Link href={builder(student.id, n.skill.id, n.count)} className="btn btn-primary btn-sm">
                     Übung erstellen
                   </Link>
-                  {!n.openAssignmentId && (
-                    <form action={applyRecommendationAction.bind(null, student.id, n.key, r.assignment.id)}>
-                      <button className="btn btn-secondary btn-sm">Direkt an {first} senden</button>
-                    </form>
-                  )}
+                  {!n.openAssignmentId && <EmpfehlungKnopf studentId={student.id} rec={n} name={first} diagnosisId={r.assignment.id} />}
                 </div>
+                <EmpfehlungVorschau studentId={student.id} rec={n} name={first} zurueck={`/diagnose/${r.assignment.id}`} />
               </li>
             ))}
           </ul>
