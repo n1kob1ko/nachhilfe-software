@@ -143,7 +143,7 @@ test("Empfehlung: „Verwerfen“ schickt nichts; die KI geht nicht: Grund, nich
   });
   const kaputt = await s.kv.empfehlungUebernehmen(sid, rec.key, { teacherId: s.teacher.id, today: s.heute });
   assert.ok("vorschau" in kaputt && kaputt.vorschau.status === "fehler", JSON.stringify(kaputt));
-  assert.match(kaputt.vorschau.problem, /Zeitüberschreitung/);
+  assert.equal(kaputt.vorschau.problem, "KI gerade nicht erreichbar.", "a short reason, the provider's own text stays in the log");
   assert.equal(s.zaehle("assignments"), vorher);
   // the KI answers without a task: also a reason
   s.kiAn(() => ({ tasks: [] }));

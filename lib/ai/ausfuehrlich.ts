@@ -9,6 +9,7 @@
  */
 import { z } from "zod";
 import { analyzeWay } from "../math-check";
+import { kiGrundVonUrsache } from "./grund";
 import { runAI, type AIMeta } from "./router";
 
 const AusfuehrlichSchema = z.object({
@@ -132,7 +133,7 @@ export async function kiAusfuehrlich(e: AusfuehrlichEingabe, meta: Pick<AIMeta, 
   const { system, prompt } = ausfuehrlichAnfrage(e, art);
   const fn = art === "einfach" ? "einfacher" : "ausfuehrlich";
   const out = await runAI(fn, AusfuehrlichSchema, system, prompt, { meta: { teacherId: meta.teacherId ?? null, trigger: meta.trigger ?? fn, kostenEinheitId: meta.kostenEinheitId ?? null } });
-  if (!out.ok) return { ok: false, error: out.message };
+  if (!out.ok) return { ok: false, error: kiGrundVonUrsache(out.cause) };
   const geprueft = pruefeAusfuehrlich(out.data, e.fach);
   if ("fehler" in geprueft) return { ok: false, error: geprueft.fehler };
   return { ok: true, ...geprueft, callId: out.callId };

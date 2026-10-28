@@ -30,7 +30,7 @@ export default async function UnterrichtPage() {
   const now = new Date();
   const punkte = tagesplan(teacher.id, now);
   const naechster = naechsterPunkt(punkte, now);
-  const karte = naechster ? heuteKarten(teacher.id, [naechster], now).get(naechster.studentId) : undefined;
+  const karte = naechster ? heuteKarten(teacher.id, [naechster], now).get(naechster.key) : undefined;
   const student = naechster ? repo.getStudent(naechster.studentId) : null;
   const jetzt = wienerMinuten(now);
   const alle = repo.listStudents();

@@ -20,6 +20,7 @@
  */
 import { budget } from "./ai/config";
 import { generateWithAI } from "./ai/features";
+import { kiGrund, protokolliere } from "./ai/grund";
 import { belegeDerEinheit, karteDerEinheit, schreibeAbschluss, sichereFaehigkeiten, type AbschlussBelege } from "./abschluss";
 import { KRITERIUM_KEYS, KRITERIUM_KURZ } from "./bewertung-kriterien";
 import { aufgabeSchluessel, ausgeblendet, ohneAusgeblendete } from "./bewertungen";
@@ -171,13 +172,31 @@ export function minutenFuer(t: Pick<TaskDraft, "type" | "data" | "estimatedTimeS
 // a writing task of the homework names its words in the prompt (Deutsch has no data.schreibauftrag)
 const schreibWoerter = (t: Pick<TaskDraft, "data">): number | null => (t.data as { hausuebungWoerter?: number } | undefined)?.hausuebungWoerter ?? null;
 
-/** Die geschätzte Bearbeitungsdauer als Spanne in Minuten und als Text „ca. 15–20 min“ (auf 5 Minuten). */
-export function dauer(tasks: Pick<TaskDraft, "type" | "data" | "estimatedTimeSec">[]): { von: number; bis: number; text: string } {
+/** So weit reicht die Spanne um die geschätzte Dauer: ±25 %. */
+export const DAUER_SPANNE = 0.25;
+
+/**
+ * Die geschätzte Bearbeitungsdauer als Text „ca. 15–20 min“ (F0b: vorher nach außen gerundet, „ca. 5–20 min“ für 8 Aufgaben): je Aufgabe
+ * die Mitte ihrer Minuten (`minutenFuer`), zusammengezählt, ±25 %, auf 5 Minuten gerundet. `von`/`bis`: die Summen der Spannen.
+ */
+export function dauer(tasks: Pick<TaskDraft, "type" | "data" | "estimatedTimeSec">[]): { von: number; bis: number; minuten: number; text: string } {
   const [von, bis] = tasks.map(minutenFuer).reduce(([a, b], [x, y]) => [a + x, b + y], [0, 0]);
-  if (!tasks.length) return { von: 0, bis: 0, text: "" };
-  const a = Math.max(5, Math.floor(von / 5) * 5);
-  const b = Math.max(a, Math.ceil(bis / 5) * 5);
-  return { von, bis, text: b <= 5 ? "ca. 5 min" : a === b ? `ca. ${a}–${a + 5} min` : `ca. ${a}–${b} min` };
+  if (!tasks.length) return { von: 0, bis: 0, minuten: 0, text: "" };
+  const minuten = (von + bis) / 2;
+  const auf5 = (x: number) => Math.round(x / 5) * 5;
+  const a = Math.max(5, auf5(minuten * (1 - DAUER_SPANNE)));
+  const b = Math.max(a, auf5(minuten * (1 + DAUER_SPANNE)));
+  return { von, bis, minuten, text: b <= 5 ? "ca. 5 min" : a === b ? `ca. ${a} min` : `ca. ${a}–${b} min` };
+}
+
+/**
+ * Der Kopf einer Themenzeile: „4 Aufgaben Present Continuous“; ohne Aufgabe „Question Tags: keine passenden Aufgaben“, und wenn auch die
+ * KI keine macht (`selbst`) „…, bitte selbst ergänzen“ (F0b: vorher „0 Aufgaben Question Tags“).
+ */
+export function themaKopf(t: Pick<HuThema, "name" | "aufgaben">, o: { selbst: boolean }): string {
+  const n = t.aufgaben.length;
+  if (n) return `${n} ${n === 1 ? "Aufgabe" : "Aufgaben"} ${t.name}`;
+  return `${t.name}: keine passenden Aufgaben${o.selbst ? ", bitte selbst ergänzen" : ""}`;
 }
 
 // ---------- Fälligkeit ----------
@@ -703,7 +722,8 @@ export async function kiAufgaben(unitId: number, themaId: string, o: { automatis
       "neue_aufgabe",
     );
   } catch (e) {
-    problem = e instanceof Error ? e.message : String(e);
+    protokolliere("Hausübung: neue Aufgaben", e);
+    problem = kiGrund(e);
   }
   const env = umgebung(unitId, k.student, k.tag);
   const gut = ohneAusgeblendete((tasks ?? []).map((t) => ({ ...t, skillId: t.skillId ?? z.skill.id, sourceType: "ki" }))).filter(

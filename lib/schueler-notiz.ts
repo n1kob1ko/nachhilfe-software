@@ -12,6 +12,7 @@
  * „Warum heute“. Gespeichert wird davon nichts: es sind die Worte des Schülers, keine Beobachtung. Sie zählen
  * nicht für Lernstand, Einschätzung oder Diagnose und gehen nicht an die KI.
  */
+import { datumKurz } from "./datum";
 import { db, json } from "./db";
 import { stoffVorschlag } from "./lehrplan";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
@@ -106,13 +107,13 @@ export function notizFuerSchueler(studentId: number, now = new Date()): { unitId
   return { unitId: u.id, wann: wannLabel(u.started_at, now), notiz: notizZuEinheit(u.id) };
 }
 
-/** „heute“, „gestern“ oder „am Dienstag, 20. Oktober“ (Europe/Vienna). */
+/** „heute“, „gestern“ oder „am Dienstag, 20.10.“ (Europe/Vienna, lib/datum.ts). */
 export function wannLabel(startedAt: string, now = new Date()): string {
   const tag = wienerDatum(new Date(startedAt));
   const heute = wienerDatum(now);
   if (tag === heute) return "heute";
   if (tag === tagAddieren(heute, -1)) return "gestern";
-  return `am ${new Date(startedAt).toLocaleDateString("de-AT", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Vienna" })}`;
+  return `am ${datumKurz(startedAt, { wochentag: "lang" })}`;
 }
 
 /**

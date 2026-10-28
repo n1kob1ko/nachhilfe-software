@@ -122,12 +122,12 @@ export default async function MaterialPage({ params, searchParams }: { params: P
           <SectionTitle>
             <span>
               Einordnung
-              <Info label="Info zur Einordnung">Fach, Thema und Fähigkeiten legst du fest. Vorschläge (aus dem Thema oder von Claude) sind nur angehakt, wenn du sie übernimmst. Mit dem Speichern gilt das Material als geprüft.</Info>
+              <Info label="Info zur Einordnung">Fach, Thema und Fähigkeiten legst du fest. Vorschläge (aus dem Thema oder von der KI) sind nur angehakt, wenn du sie übernimmst. Mit dem Speichern gilt das Material als geprüft.</Info>
             </span>
           </SectionTitle>
           {a && !useSuggestion && (
             <Link href={`/mehr/material/${m.id}?vorschlag=1`} className="btn btn-secondary btn-sm mb-3">
-              <Sparkles size={14} aria-hidden /> Vorschlag von Claude ins Formular
+              <Sparkles size={14} aria-hidden /> Vorschlag der KI ins Formular
             </Link>
           )}
           {useSuggestion && <p className="mb-3 rounded-lg bg-accent-wash px-3 py-2 text-[13px] text-accent">Vorschlag eingesetzt. Bitte prüfen und speichern.</p>}
@@ -313,7 +313,7 @@ export default async function MaterialPage({ params, searchParams }: { params: P
             <span>
               Erkennung
               <Info label="Was passiert bei der Erkennung?">
-                Optional. Claude bekommt die Datei und die Liste der Fähigkeiten, nicht deinen Namen und keine Schülerdaten. Zurück kommen Vorschläge für Fach, Thema, Fähigkeiten und Aufgaben. Gespeichert wird nur, was du selbst übernimmst.
+                Optional. Die KI bekommt die Datei und die Liste der Fähigkeiten, nicht deinen Namen und keine Schülerdaten. Zurück kommen Vorschläge für Fach, Thema, Fähigkeiten und Aufgaben. Gespeichert wird nur, was du selbst übernimmst.
               </Info>
             </span>
           </SectionTitle>
@@ -329,7 +329,7 @@ export default async function MaterialPage({ params, searchParams }: { params: P
               </label>
               <div>
                 <button className="btn btn-secondary">
-                  <Sparkles size={15} aria-hidden /> {a ? "Noch einmal erkennen" : "Mit Claude erkennen"}
+                  <Sparkles size={15} aria-hidden /> {a ? "Noch einmal erkennen" : "Mit KI erkennen"}
                 </button>
               </div>
             </form>

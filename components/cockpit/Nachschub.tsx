@@ -140,7 +140,6 @@ export function KiKostenZeile({ unitId, admin }: { unitId: number; admin: boolea
           <span className="num" data-testid="ki-kosten-zeile">
             {zeile}
           </span>
-          {b.erreicht && <Pill tone="amber">erreicht</Pill>}
           {b.eigen && <span className="text-ink-3">(für diese Einheit geändert)</span>}
           <span className="font-medium text-accent group-open:hidden">Budget ändern</span>
         </summary>

@@ -3,6 +3,7 @@ import { BlattEinlesen } from "@/components/BlattEinlesen";
 import { PageHeader } from "@/components/ui";
 import { parseTime } from "@/lib/analysis";
 import { requireTeacher } from "@/lib/auth";
+import { tagMonat } from "@/lib/datum";
 import { faehigkeitenFuer } from "@/lib/blatt-einlesen";
 import { dayOf } from "@/lib/exams";
 import { ANDERES_BLATT, blaetterDerEinheit, blattZurUebung, papierTor, type PapierBlatt } from "@/lib/papier-einheit";
@@ -14,7 +15,7 @@ export const metadata = { title: "Arbeit fotografieren" };
 
 const uhr = (s: string) => new Date(parseTime(s)).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Vienna" });
 const WANN: Record<PapierBlatt["art"], string> = { gesendet: "gesendet um", minitest: "Minitest, erstellt um", gedruckt: "gedruckt um", erstellt: "erstellt um", probe: "Probeschularbeit vom", hausuebung: "Hausübung vom" };
-const tag = (s: string) => new Date(parseTime(s)).toLocaleDateString("de-AT", { day: "numeric", month: "short", timeZone: "Europe/Vienna" });
+const tag = (s: string) => tagMonat(parseTime(s));
 
 /**
  * Arbeit fotografieren (lib/papier-einheit.ts) in a running unit: the sheet the student solved on paper (one of the unit,

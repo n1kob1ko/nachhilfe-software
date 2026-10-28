@@ -244,21 +244,30 @@ export function vorbereitetText(w: Vorbereitet | null, plan: BriefingInhalt["pla
 }
 
 /**
- * Die Karten aller Schüler von heute, je Schüler einmal gerechnet. Rechnet ohne KI. `kiVorbereiten` (nur Heute): für
- * jeden, der noch nicht begonnen hat und zu dessen Datenstand es kein KI-Briefing gibt, eines im Hintergrund
- * vorbereiten, wenn Schalter, KI, Budget und Grenze es erlauben (lib/briefing-auto.ts); hier wird nie gewartet.
+ * Die Karten aller Punkte von heute, je Platz bzw. Einheit (`HeutePunkt.key`): hat ein Schüler zwei Plätze am selben Tag, hat
+ * jede Karte die Daten ihrer eigenen Einheit (F0b). Rechnet ohne KI. `kiVorbereiten` (nur Heute): für jeden, der noch nicht
+ * begonnen hat und zu dessen Datenstand es kein KI-Briefing gibt, eines im Hintergrund vorbereiten, wenn Schalter, KI, Budget
+ * und Grenze es erlauben (lib/briefing-auto.ts); hier wird nie gewartet.
  */
-export function heuteKarten(teacherId: number, punkte: HeutePunkt[], now: Date = new Date(), o: { kiVorbereiten?: boolean } = {}): Map<number, HeuteKarte> {
-  const out = new Map<number, HeuteKarte>();
+export function heuteKarten(teacherId: number, punkte: HeutePunkt[], now: Date = new Date(), o: { kiVorbereiten?: boolean } = {}): Map<string, HeuteKarte> {
+  const out = new Map<string, HeuteKarte>();
   if (!punkte.length) return out;
-  // the package for today: the teacher's choice, else the app's proposal (only for students not started yet)
-  const wahl = new Map<number, Vorbereitet>();
-  for (const n of naechsteEinheiten(teacherId, now, { tage: 1 })) if (n.heute && !wahl.has(n.studentId)) wahl.set(n.studentId, n.wahl);
+  // the package for today: the teacher's choice, else the app's proposal (only for students not started yet), per Platz
+  // (same keys as HeutePunkt) and else per student
+  const wahl = new Map<string, Vorbereitet>();
+  const wahlSchueler = new Map<number, Vorbereitet>();
+  for (const n of naechsteEinheiten(teacherId, now, { tage: 1 })) {
+    if (!n.heute) continue;
+    wahl.set(n.key, n.wahl);
+    if (!wahlSchueler.has(n.studentId)) wahlSchueler.set(n.studentId, n.wahl);
+  }
+  const briefingFuer = new Set<number>();
   let pakete: Lernpaket[] | null = null;
   for (const p of punkte) {
-    if (out.has(p.studentId)) continue;
-    const w = wahl.get(p.studentId) ?? null;
+    if (out.has(p.key)) continue;
     const begonnen = p.einheitId !== null && p.einheitStatus !== "abgebrochen";
+    // a second Platz of a student whose first unit already started has no entry in the list of coming units: the same rules for today
+    const w = wahl.get(p.key) ?? wahlSchueler.get(p.studentId) ?? (begonnen ? null : wahlHeute(p.studentId, null, now));
     const fokus = begonnen ? null : fokusAus(w);
     const d = briefingDaten(p.studentId, { now, platzId: p.platzId, fokus });
     if (!d) continue;
@@ -295,8 +304,11 @@ export function heuteKarten(teacherId: number, punkte: HeutePunkt[], now: Date =
       const zurWahl = paketeZumWaehlen({ pakete, fach: p.fach, student: { school_type: st.school_type, grade: st.grade || null, subjects: st.subjects, stufe_status: st.stufe_status } });
       if (zurWahl.length) karte.pakete = zurWahl.map((x) => ({ id: x.id, title: x.title }));
     }
-    out.set(p.studentId, begonnen ? { ...karte, fach: getUnit(p.einheitId!)?.subject ?? karte.fach } : karte);
-    if (o.kiVorbereiten && !ki && offen(p)) bereiteBriefingVor({ studentId: p.studentId, teacherId, platzId: p.platzId, fokus, stand: d.stand });
+    out.set(p.key, begonnen ? { ...karte, fach: getUnit(p.einheitId!)?.subject ?? karte.fach } : karte);
+    if (o.kiVorbereiten && !ki && offen(p) && !briefingFuer.has(p.studentId)) {
+      briefingFuer.add(p.studentId);
+      bereiteBriefingVor({ studentId: p.studentId, teacherId, platzId: p.platzId, fokus, stand: d.stand });
+    }
   }
   return out;
 }

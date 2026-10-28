@@ -190,7 +190,7 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
               <>
                 {/* Auswendig schreiben: den Text schreibt die Lehrkraft, „Neu erstellen“ würde ihn leeren */}
                 {t.type !== "memorize" && (
-                  <button type="button" className="btn btn-ghost btn-sm" disabled={pending} onClick={() => run(() => regenerateTaskAction(t.id))} title={p.aiEnabled ? "Claude erstellt eine neue Aufgabe für dieselbe Fähigkeit" : "Der Generator erstellt eine neue Aufgabe für dieselbe Fähigkeit"}>
+                  <button type="button" className="btn btn-ghost btn-sm" disabled={pending} onClick={() => run(() => regenerateTaskAction(t.id))} title={p.aiEnabled ? "Die KI erstellt eine neue Aufgabe für dieselbe Fähigkeit" : "Der Generator erstellt eine neue Aufgabe für dieselbe Fähigkeit"}>
                     <RefreshCw size={14} aria-hidden /> Neu erstellen
                   </button>
                 )}

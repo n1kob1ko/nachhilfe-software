@@ -14,6 +14,7 @@
  */
 import { budget, isLocalModel, routeFor } from "./ai/config";
 import { generateWithAI, type AIGenerateRequest } from "./ai/features";
+import { kiGrund, protokolliere } from "./ai/grund";
 import { aiEnabled, budgetUsedUp, schuelerGestoppt } from "./ai/router";
 import { grenzeErreichtText } from "./ai/schueler-kosten";
 import { RECOMMENDATION_NOTE } from "./analysis";
@@ -105,7 +106,8 @@ export async function erstelleVorschau(studentId: number, a: VorschauAuftrag, te
   try {
     ki = (await generateWithAI(a.anfrage, { teacherId, studentId, trigger: a.trigger })) ?? [];
   } catch (e) {
-    problem = e instanceof Error ? e.message : String(e);
+    protokolliere("Vorschau neuer Aufgaben", e);
+    problem = kiGrund(e);
   }
   const call = db().prepare("SELECT id FROM ai_calls WHERE id > ? AND fn = 'aufgaben' AND student_id = ? ORDER BY id DESC LIMIT 1").pluck().get(vorher, studentId) as number | undefined;
   const gut = ohneAusgeblendete(ki).filter((t) => !t.data.pruefen?.length);

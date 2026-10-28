@@ -67,7 +67,7 @@ test("verschieben: der Schüler fragt, nichts bewegt sich, die Verwaltung bestä
   const id = r.ok ? r.id! : 0;
   assert.equal(planung.getGeplanteEinheit(p)!.weekday, 2, "vor dem Bestätigen bleibt der Platz");
   assert.equal(ta.anfragenFuerSchueler(anna, JETZT)[0].status, "offen");
-  assert.equal(ta.anfragenFuerSchueler(anna, JETZT)[0].nach, "Mi, 14. Okt. 15:00–16:40");
+  assert.equal(ta.anfragenFuerSchueler(anna, JETZT)[0].nach, "Mi 14.10. 15:00–16:40");
 
   // eine zweite Anfrage zum selben Termin geht nicht, und nur die Verwaltung bestätigt
   assert.equal(ta.stelleAnfrage({ schuelerId: anna }, { art: "verschieben", platzId: p, datum: "2026-10-15", startMin: 900 }, JETZT).ok, false);
@@ -136,8 +136,8 @@ test("tauschen: wartet auf die andere Seite, der andere Schüler sieht nur Zeite
   assert.equal(fuerBen.length, 1);
   assert.equal(fuerBen[0].rolle, "partner");
   assert.equal(fuerBen[0].kannZustimmen, true);
-  assert.equal(fuerBen[0].von, "Do, 15. Okt. 10:00–10:50", "Ben sieht seinen eigenen Termin");
-  assert.equal(fuerBen[0].nach, "Di, 13. Okt. 14:00–14:50");
+  assert.equal(fuerBen[0].von, "Do 15.10. 10:00–10:50", "Ben sieht seinen eigenen Termin");
+  assert.equal(fuerBen[0].nach, "Di 13.10. 14:00–14:50");
   assert.doesNotMatch(JSON.stringify(fuerBen), /Anna|Schularbeit/, "kein Name, keine Notiz");
   assert.doesNotMatch(JSON.stringify(ta.anfragbareTermine({ schuelerId: anna }, JETZT)), /Ben/, "Tauschpartner nur als Zeit");
 

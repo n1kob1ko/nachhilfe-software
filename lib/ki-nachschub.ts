@@ -18,6 +18,7 @@
 import { automatischFrei, einheitBudget, type EinheitBudget } from "./ai/einheit-budget";
 import { budget } from "./ai/config";
 import { generateWithAI } from "./ai/features";
+import { kiGrund, kiGrundText, protokolliere } from "./ai/grund";
 import { latestInsight } from "./ai/insights";
 import { ohneAusgeblendete } from "./bewertungen";
 import { aufgabenOhneKi, cockpit, leseStand, planHatUebung, sendeAusGenerator, type CockpitDaten, type PlanStep } from "./cockpit";
@@ -95,7 +96,8 @@ const zeile = (r: Row): Nachschub => ({
   status: r.status,
   aufgaben: json<TaskDraft[]>(r.aufgaben, []),
   dazu: json<TaskDraft[]>(r.dazu, []),
-  problem: r.fehler,
+  // a short reason only (lib/ai/grund.ts), also for rows stored before with the provider's own text
+  problem: r.status === "fehler" ? kiGrundText(r.fehler) : r.fehler,
   callId: r.call_id,
   worksheetId: r.worksheet_id,
   createdAt: r.created_at,
@@ -296,7 +298,8 @@ export async function erstelleNachschub(unitId: number, b: NachschubBedarf, o: {
         "neue_aufgabe",
       );
     } catch (e) {
-      problem = e instanceof Error ? e.message : String(e);
+      protokolliere("Neue Aufgaben im Schritt", e);
+      problem = kiGrund(e);
     }
     const call = db().prepare("SELECT id FROM ai_calls WHERE id > ? AND fn = 'neue_aufgabe' AND unit_id = ? ORDER BY id DESC LIMIT 1").pluck().get(vorher, unitId) as number | undefined;
     const gut = ohneAusgeblendete((tasks ?? []).map((t) => (t.skillId ? t : { ...t, skillId: skill.id }))).filter((t) => !t.data.pruefen?.length && passtZurFaehigkeit(t, skill.id, oberfaehigkeit));

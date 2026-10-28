@@ -46,7 +46,7 @@ export default async function DiagnosisResultPage({ params, searchParams }: { pa
           </span>
         }
       />
-      {sp.hinweis === "ki" && <p className="mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Claude war nicht erreichbar. Fehlende Aufgaben kommen aus den eingebauten Generatoren.</p>}
+      {sp.hinweis === "ki" && <p className="mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Die KI war nicht erreichbar. Fehlende Aufgaben kommen aus den eingebauten Generatoren.</p>}
       {sp.fehler && (
         <p className="mb-6 rounded-lg bg-red-wash px-4 py-2.5 text-[14px] text-red" role="alert">
           {sp.fehler}

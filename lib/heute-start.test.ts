@@ -68,13 +68,40 @@ test("Heute: Dauer aus dem Platz, ohne Platz die geplante Dauer; die Prüfung au
   const punkte = tagesplan(teacher.id, MORGEN);
   assert.deepEqual(punkte.map((p) => p.studentName), ["Lena Probst", "Jonas Feldner"]);
   const karten = heuteKarten(teacher.id, punkte, MORGEN);
-  const l = karten.get(lena)!;
+  const l = karten.get(punkte[0].key)!;
   assert.equal(l.dauerMin, 100);
   assert.equal(l.pruefung, "Englisch-Schularbeit in 75 Tagen", "weiter weg als das Briefing schaut (60 Tage)");
   assert.equal(l.pruefungNah, false);
-  const j = karten.get(jonas)!;
+  const j = karten.get(punkte[1].key)!;
   assert.equal(j.dauerMin, 50, "die von Hand geplante Dauer, mit der auch der Plan rechnet");
   assert.equal(j.pruefung, null);
+});
+
+test("Heute: zwei Plätze eines Schülers am selben Tag, jede Karte hat die Daten ihrer eigenen Einheit (F0b)", async () => {
+  const { planung, units, teacher, schueler, platz } = await setup();
+  const { tagesplan, heuteKarten } = await import("./heute");
+  const lena = schueler("Lena Probst");
+  const frueh = platz(lena, 8 * 60, 50);
+  const spaet = platz(lena, 15 * 60, 100);
+  assert.equal(planung.veroeffentlicheWoche(MONTAG).ok, true);
+  const vorher = tagesplan(teacher.id, MORGEN);
+  assert.deepEqual(vorher.map((p) => p.key), [`platz-${frueh}`, `platz-${spaet}`]);
+  const karten = heuteKarten(teacher.id, vorher, MORGEN);
+  assert.equal(karten.size, 2, "eine Karte je Platz, nicht je Schüler");
+  assert.equal(karten.get(`platz-${frueh}`)!.dauerMin, 50);
+  assert.equal(karten.get(`platz-${spaet}`)!.dauerMin, 100, "die zweite Karte zeigt nicht die Daten der ersten Einheit");
+
+  // the first unit runs in Deutsch: its card has that unit, the second Platz stays its own, still to start
+  units.startUnit(teacher.id, lena, { at: MORGEN.getTime(), platzId: frueh, subject: "Deutsch" });
+  const nachher = tagesplan(teacher.id, MORGEN);
+  const k = heuteKarten(teacher.id, nachher, MORGEN);
+  const erste = nachher.find((p) => p.platzId === frueh)!;
+  const zweite = nachher.find((p) => p.platzId === spaet)!;
+  assert.notEqual(erste.einheitId, null);
+  assert.equal(zweite.einheitId, null);
+  assert.equal(k.get(erste.key)!.fach, "Deutsch", "die Karte der laufenden Einheit");
+  assert.equal(k.get(zweite.key)!.dauerMin, 100);
+  assert.notEqual(k.get(zweite.key), k.get(erste.key));
 });
 
 // ---------- 2. „Einheit starten“ nimmt den Platz der Karte ----------

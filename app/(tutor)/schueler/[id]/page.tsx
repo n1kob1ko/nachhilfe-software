@@ -895,7 +895,7 @@ function StoffzettelLink({ id }: { id: number }) {
 }
 
 /** Der Stand einer Hausübung als Farbe: bewertet grün, abgegeben (wartet auf dich) amber, sonst ruhig. */
-const HU_TON: Record<HuStatus, "neutral" | "amber" | "green"> = { offen: "neutral", abgegeben: "amber", bewertet: "green", nicht_abgegeben: "neutral" };
+const HU_TON: Record<HuStatus, "neutral" | "amber" | "green"> = { offen: "neutral", faellig_heute: "amber", abgegeben: "amber", bewertet: "green", nicht_abgegeben: "neutral" };
 
 function School({ student }: { student: repo.Student }) {
   const homework = repo.listHomework(student.id);
@@ -1060,7 +1060,7 @@ function School({ student }: { student: repo.Student }) {
                   {h.description}
                   <div className="text-[12px] text-ink-3 no-underline">
                     {h.subject}
-                    {h.due_date && ` · fällig ${formatDate(h.due_date, { day: "numeric", month: "short" })}`}
+                    {h.due_date && ` · fällig ${formatDate(h.due_date, { weekday: "short", day: "numeric", month: "numeric" })}`}
                     {h.assignment_id && h.assignment_title && (
                       <>
                         {" · Übung "}

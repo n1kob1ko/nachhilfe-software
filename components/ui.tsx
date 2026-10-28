@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, CheckCircle2, ChevronDown, CircleDashed, Minus } from "lucide-react";
 import { Info } from "@/components/Info";
 import type { Trend } from "@/lib/analysis";
+import { datumWieOptionen } from "@/lib/datum";
 import { masteryStatus, STATUS_THRESHOLDS, statusTone } from "@/lib/mastery";
 
 export function PageHeader({ title, subtitle, actions, back, info }: { title: React.ReactNode; subtitle?: React.ReactNode; actions?: React.ReactNode; back?: { href: string; label: string }; info?: React.ReactNode }) {
@@ -144,9 +145,9 @@ export function Pill({ children, tone = "neutral", title }: { children: React.Re
   );
 }
 
+/** Ein Datum in der einen Schreibweise der App (lib/datum.ts): „28.10.2026“ mit Jahr, sonst „28.10.“, mit Wochentag „Mi 28.10.“. */
 export function formatDate(s: string | number, opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" }) {
-  const d = typeof s === "number" ? new Date(s) : new Date(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s) ? s.replace(" ", "T") + "Z" : s);
-  return d.toLocaleDateString("de-AT", opts);
+  return datumWieOptionen(s, opts);
 }
 export function formatTime(s: string) {
   return new Date(s).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });

@@ -294,6 +294,7 @@ export async function speichereVorgabe(o: VorgabeEingabe): Promise<{ ok: true; v
       // the files' reading stays the one to compare and to change roles in; a text alone has none to show
       if (!schon) lesungId = r.id;
       neu = r.neu;
+      if (r.hinweise) hinweise.push(...r.hinweise);
     } catch (e) {
       // the provider's own words in brackets („503: {"error": …}“) stay in the cost log, not on the teacher's card
       const grund = (e instanceof Error ? e.message : "Lesen ging gerade nicht.").replace(/^(Die KI war nicht erreichbar) \(.*$/s, "$1.");

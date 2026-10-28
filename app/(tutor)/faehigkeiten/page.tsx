@@ -276,7 +276,7 @@ function AddSkill({ all, subjects }: { all: Skill[]; subjects: string[] }) {
         </div>
         <div className="flex items-center gap-2">
           <button className="btn btn-primary">Hinzufügen</button>
-          <Info label="Info zu Aufgaben für neue Fähigkeiten">Für neue Fähigkeiten erstellt Claude passende Aufgaben. Ohne KI gibt es Erklär- und Begründungsaufgaben.</Info>
+          <Info label="Info zu Aufgaben für neue Fähigkeiten">Für neue Fähigkeiten erstellt die KI passende Aufgaben. Ohne KI gibt es Erklär- und Begründungsaufgaben.</Info>
         </div>
       </form>
     </Reveal>

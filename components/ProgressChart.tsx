@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
+import { tagMonat } from "@/lib/datum";
 
 type Series = { label: string; points: { at: number; mastery: number | null }[] };
 
@@ -16,7 +17,7 @@ export function ProgressChart({ series }: { series: Series[] }) {
   const titleId = useId();
   const xs = series[0]?.points.map((p) => p.at) ?? [];
   const n = xs.length;
-  const fmt = (t: number) => new Date(t).toLocaleDateString("de-AT", { day: "numeric", month: "short" });
+  const fmt = (t: number) => tagMonat(t);
   if (n === 0 || series.length === 0) return <p className="text-[14px] text-ink-2">Noch nicht genug Daten für einen Verlauf.</p>;
   return (
     <figure className="m-0">
@@ -101,7 +102,7 @@ function Plot({ series, layout, titleId }: { series: Series[]; layout: keyof typ
     .sort((a, b) => a.y - b.y);
   for (let k = 1; k < ends.length; k++) if (ends[k].y - ends[k - 1].y < 16) ends[k] = { ...ends[k], y: ends[k - 1].y + 16 };
 
-  const fmt = (t: number) => new Date(t).toLocaleDateString("de-AT", { day: "numeric", month: "short" });
+  const fmt = (t: number) => tagMonat(t);
 
   const onMove = (e: React.PointerEvent<SVGRectElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();

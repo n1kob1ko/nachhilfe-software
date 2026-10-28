@@ -150,6 +150,7 @@ export async function liesStoffzettel(o: { materialId?: number; materialIds?: nu
   const r = await liesPruefungsstoff({ materialIds: ids, studentId: o.studentId, teacherId: o.teacherId, heute: o.heute, fach: o.fach, trigger: "stoffzettel" });
   // ein gelesenes Fach zählt, wenn es beim Schüler oder in der Fächerliste steht (Mehr › Fächer)
   const v = vorschlagAusGelesen(r.lesung.kopf, { heute: o.heute, faecher: [...student.subjects, ...fachNamen()], maxThemen: MAX_THEMEN });
+  if (r.hinweise) v.hinweise.push(...r.hinweise);
   if (r.lesung.weggelassen) v.hinweise.push(`${r.lesung.weggelassen === 1 ? "Ein Punkt" : `${r.lesung.weggelassen} Punkte`} außerhalb des Umfangs oder doppelt: weggelassen.`);
   return { ...v, erkannt: erkanntAus(r.lesung, { lesungId: r.id, neu: r.neu, fach: v.fach ?? o.fach ?? "", student }) };
 }

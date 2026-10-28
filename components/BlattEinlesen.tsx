@@ -7,6 +7,7 @@ import { MathText } from "@/components/MathText";
 import { shrinkImage } from "@/components/shrink-image";
 import { speichereBlattAction, speicherePapierAction } from "@/app/blatt-actions";
 import { BEWERTUNGEN, erreichtVon, MAX_SEITEN, MAX_ZEILEN, zeilenOhneLesung, type Bewertung, type BlattVorschlag, type BlattZeile, type PapierAufgabe } from "@/lib/blatt-regeln";
+import { datumKurz } from "@/lib/datum";
 import { NOTEN, noteFuer, punkteText } from "@/lib/probeschularbeit-regeln";
 import { PRUEFUNGSARTEN } from "@/lib/pruefungsarten";
 
@@ -29,10 +30,10 @@ type PapierWahl = { key: string; titel: string; wann: string; aufgaben: PapierAu
 /** „Ein anderes Blatt“: nicht aus der Einheit, wie „Gelöstes Blatt einlesen“ (Mirror of ANDERES_BLATT in lib/papier-einheit.ts) */
 const ANDERES = "anders";
 /**
- * in der laufenden Einheit: welche Blätter, welches vorgewählt, was das Lesen etwa kostet (null: ohne KI). `unitId` null: eine
+ * in der laufenden Einheit: welche Blätter, welches vorgewählt, was das Lesen etwa kostet, je Zahl der Seiten (Index; null: ohne KI). `unitId` null: eine
  * Probeschularbeit ohne Einheit, von der Prüfungskarte (Gemeinsame Bewertung, C3); dann gibt es „Ein anderes Blatt“ nicht.
  */
-type Einheit = { unitId: number | null; blaetter: PapierWahl[]; vorwahl: string; kosten: string | null; fach: string };
+type Einheit = { unitId: number | null; blaetter: PapierWahl[]; vorwahl: string; kosten: string[] | null; fach: string };
 type Skill = { id: string; name: string; area: string };
 type Seite = { file: File; url: string | null };
 /** a row of the preview; pText/mText keep what is typed („2,“) until it is a number */
@@ -396,7 +397,7 @@ export function BlattEinlesen({
                 {art === "probe" ? <option value="">Keine bestimmte</option> : <option value="">Bitte wählen</option>}
                 {passendeTests.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.label}, {new Date(`${t.date}T12:00:00`).toLocaleDateString("de-AT", { day: "numeric", month: "short" })}
+                    {t.label}, {datumKurz(t.date)}
                   </option>
                 ))}
                 {art === "pruefung" && <option value="neu">Neu eintragen</option>}
@@ -520,7 +521,8 @@ export function BlattEinlesen({
           )}
           {!kiGrund && einheit?.kosten && (
             <span className="num text-[14px] text-ink-2" data-testid="papier-kosten">
-              {einheit.kosten}
+              {/* the pages chosen now, not a fixed two (lib/papier-einheit.ts kostenJeSeiten) */}
+              {einheit.kosten[Math.min(einheit.kosten.length - 1, Math.max(1, seitenZahl))]}
             </span>
           )}
           {!zeilen && (

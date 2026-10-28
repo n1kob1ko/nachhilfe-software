@@ -11,8 +11,9 @@ import type { z } from "zod";
 import { FUNCTIONS, MANUAL_TIMEOUT_MS, PROVIDER_IDS, aiSwitchedOff, costOf, fitModel, hasKey, imagePrice, imageRoute, isLocalModel, poolOf, routeFor, type AIFunction, type Usage } from "./config";
 import { schuelerDerAnfrage, systemMitHinweisen } from "./hinweise";
 import { budgetState, logCall, type CallStatus } from "./log";
-import { openRouterImageTransport, providerReady, providerTransport, unsupported, type ImageRequest, type ImageTransport, type Prompt, type Transport } from "./providers";
+import { openRouterImageTransport, pdfAlsText, PROVIDER_LABEL, providerReady, providerTransport, unsupported, type ImageRequest, type ImageTransport, type Prompt, type Transport } from "./providers";
 import { laufendeEinheitVon } from "./einheit-budget";
+import { KiFehler, ohneSchluessel } from "./grund";
 import { grenzeErreichtText, schuelerStand } from "./schueler-kosten";
 import { ladeAntwort, leereSpeicher, speichereAntwort, vergiss } from "./speicher";
 
@@ -161,7 +162,7 @@ function fingerprint(fn: AIFunction, provider: string, model: string, system: st
 export type FailCause = "aus" | "budget" | "schuelergrenze" | "pausiert" | "zeitlimit" | "nicht_erreichbar" | "anbieter" | "unvollstaendig" | "leer" | "json" | "schema" | "verweigert" | "einstellung" | "unbrauchbar";
 
 export type Outcome<T> =
-  | { ok: true; data: T; reused: boolean; callId: number | null }
+  | { ok: true; data: T; reused: boolean; callId: number | null; hinweise?: string[] }
   | { ok: false; status: "aus" | "budget" | "pausiert" | "timeout" | "fehler" | "abgelehnt"; cause: FailCause; code?: number; message: string; callId: number | null };
 
 /** The HTTP status of a provider's error (ProviderHttpError, or the Anthropic SDK's API errors), if it has one. */
@@ -232,6 +233,10 @@ export async function runAI<S extends z.ZodType>(
       ...extra,
     });
 
+  // ein Anbieter ohne PDF bekommt den gespeicherten Text jedes PDFs; ein PDF ohne Text wird übersprungen, die anderen Dateien bleiben (F0b)
+  const alsText = pdfAlsText(provider, prompt);
+  prompt = alsText.content;
+  const mitHinweisen = alsText.hinweise.length ? { hinweise: alsText.hinweise } : {};
   const fp = fingerprint(fn, provider, model, system, prompt, ov ? [ov.tag, thinking, effort] : undefined, studentId);
   // the KI-Qualitätstest compares runs: its answers stay in memory only
   const persist = spec.reuseMs > 0 && !ov;
@@ -240,7 +245,7 @@ export async function runAI<S extends z.ZodType>(
     const stored = ladeAntwort(fp, now() - spec.reuseMs, now());
     if (stored) done.set(fp, (kept = stored));
   }
-  if (kept && kept.at > now() - spec.reuseMs) return { ok: true, data: kept.data as z.infer<S>, reused: true, callId: log("cache") };
+  if (kept && kept.at > now() - spec.reuseMs) return { ok: true, data: kept.data as z.infer<S>, reused: true, callId: log("cache"), ...mitHinweisen };
   const running = inflight.get(fp);
   if (running) {
     const r = await running;
@@ -258,7 +263,7 @@ export async function runAI<S extends z.ZodType>(
     }
   }
   // a photo or PDF the configured provider cannot read: a setting to change, not an outage
-  const cannot = custom ? null : unsupported(provider, prompt);
+  const cannot = alsText.nichtsLesbar ? `${PROVIDER_LABEL[provider]} kann keine PDFs lesen, und darin ist kein Text gespeichert.` : custom ? null : unsupported(provider, prompt);
   if (cannot) return { ok: false, status: "fehler", cause: "einstellung", message: cannot, callId: log("fehler", { error: cannot }) };
 
   const call = (async (): Promise<Outcome<z.infer<S>>> => {
@@ -302,7 +307,7 @@ export async function runAI<S extends z.ZodType>(
         if (done.size > MAX_REMEMBERED) done.delete(done.keys().next().value!);
         if (persist) speichereAntwort({ key: fp, fn, model, studentId, data: res.parsed, at: now(), gueltigMs: spec.reuseMs });
       }
-      return { ok: true, data: res.parsed as z.infer<S>, reused: false, callId };
+      return { ok: true, data: res.parsed as z.infer<S>, reused: false, callId, ...mitHinweisen };
     } catch (e) {
       const timedOut = ctrl.signal.aborted;
       breaker.failures += 1;
@@ -310,7 +315,8 @@ export async function runAI<S extends z.ZodType>(
         breaker.until = now() + BREAK_MS;
         breaker.failures = 0;
       }
-      const message = timedOut ? MESSAGES.timeout : `Die KI war nicht erreichbar (${e instanceof Error ? e.message : String(e)}).`.slice(0, 300);
+      // the provider's own text only for the cost log (ai_calls.error), never with a key; the teacher reads lib/ai/grund.ts
+      const message = timedOut ? MESSAGES.timeout : ohneSchluessel(`Die KI war nicht erreichbar (${e instanceof Error ? e.message : String(e)}).`).slice(0, 300);
       const code = timedOut ? undefined : httpStatusOf(e);
       const cause: FailCause = timedOut ? "zeitlimit" : code ? "anbieter" : "nicht_erreichbar";
       return { ok: false, status: timedOut ? "timeout" : "fehler", cause, ...(code ? { code } : {}), message, callId: log(timedOut ? "timeout" : "fehler", { durationMs: Date.now() - started, error: message }) };
@@ -326,11 +332,11 @@ export async function runAI<S extends z.ZodType>(
   }
 }
 
-/** For callers that want the old behaviour: data, null on a refusal, an Error for everything else. */
+/** For callers that want the old behaviour: data, null on a refusal, an Error for everything else (with its cause, lib/ai/grund.ts). */
 export function unwrap<T>(r: Outcome<T>): T | null {
   if (r.ok) return r.data;
   if (r.status === "abgelehnt") return null;
-  throw new Error(r.message);
+  throw new KiFehler(r.message, r.cause);
 }
 
 // ---------- pictures (Bildgeschichte erstellen, lib/bildfolge.ts) ----------
@@ -384,7 +390,7 @@ export async function runImage(prompt: string, references: ImageRequest["referen
     return { ok: true, data: res.data, callId: log("ok", row) };
   } catch (e) {
     const timedOut = ctrl.signal.aborted;
-    const message = timedOut ? MESSAGES.timeout : `Die KI war nicht erreichbar (${e instanceof Error ? e.message : String(e)}).`.slice(0, 300);
+    const message = timedOut ? MESSAGES.timeout : ohneSchluessel(`Die KI war nicht erreichbar (${e instanceof Error ? e.message : String(e)}).`).slice(0, 300);
     const code = timedOut ? undefined : httpStatusOf(e);
     return { ok: false, status: timedOut ? "timeout" : "fehler", cause: timedOut ? "zeitlimit" : code ? "anbieter" : "nicht_erreichbar", message, callId: log(timedOut ? "timeout" : "fehler", { durationMs: Date.now() - started, error: message }) };
   } finally {

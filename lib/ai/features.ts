@@ -764,14 +764,18 @@ export function pruefungsstoffText(ctx: { heute: string; faecher: string[]; schu
  * Reads all documents of one Prüfung together in one request (lib/pruefungsstoff.ts): the Stoffzettel, a table of
  * contents, more pages, and the teacher's short note if there is one. Only after the tick that no name is on them; no
  * name from the app goes along (the teacher's note is masked by the caller). Returns null when the KI declines.
+ * `hinweise`: files the configured KI skipped (a PDF without stored text where it reads no PDFs, lib/ai/providers `pdfAlsText`).
  */
 export async function lesePruefungsstoff(
   dateien: { mime: "application/pdf" | "image/jpeg" | "image/png" | "image/webp"; base64: string }[],
   ctx: Parameters<typeof pruefungsstoffText>[0],
   meta: AIMeta = {},
+  hinweise: string[] = [],
 ): Promise<PruefungsstoffGelesen | null> {
   const blocks: Part[] = dateien.map((f) => (f.mime === "application/pdf" ? { type: "pdf", base64: f.base64 } : { type: "image", mime: f.mime, base64: f.base64 }));
-  return unwrap(await runAI("stoffzettel", PruefungsstoffSchema, PRUEFUNGSSTOFF_SYSTEM, [...blocks, { type: "text", text: pruefungsstoffText(ctx) }], { meta }));
+  const r = await runAI("stoffzettel", PruefungsstoffSchema, PRUEFUNGSSTOFF_SYSTEM, [...blocks, { type: "text", text: pruefungsstoffText(ctx) }], { meta });
+  if (r.ok && r.hinweise) hinweise.push(...r.hinweise);
+  return unwrap(r);
 }
 
 // ---------- Gelöstes Blatt einlesen (lib/blatt-einlesen.ts) ----------

@@ -3,6 +3,7 @@ import { BlattEinlesen } from "@/components/BlattEinlesen";
 import { PageHeader } from "@/components/ui";
 import { parseTime } from "@/lib/analysis";
 import { requireTeacher } from "@/lib/auth";
+import { tagMonat } from "@/lib/datum";
 import { dayOf } from "@/lib/exams";
 import { blaetterOhneEinheit, papierTor } from "@/lib/papier-einheit";
 import { notenschluessel } from "@/lib/probeschularbeit";
@@ -11,7 +12,7 @@ import { runningUnitForStudent } from "@/lib/units";
 
 export const metadata = { title: "Arbeit fotografieren" };
 
-const tag = (s: string) => new Date(parseTime(s)).toLocaleDateString("de-AT", { day: "numeric", month: "short", timeZone: "Europe/Vienna" });
+const tag = (s: string) => tagMonat(parseTime(s));
 
 /**
  * Arbeit fotografieren für eine Hausübung, die auf Papier gemacht wurde, ohne laufende Einheit (Hausübung zurück, E2): derselbe Weg

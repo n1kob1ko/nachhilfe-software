@@ -173,9 +173,9 @@ test("suggestions: exam first, then the recommendation, then an unfinished packa
   const weiter = schlageVor({ ...e, frueher });
   assert.equal(weiter[0].paket.id, 1);
   const gl = weiter.find((v) => v.paket.id === 4)!;
-  assert.equal(gl.warum, "Am 15. Okt. begonnen: 3 von 5 Schritten erledigt", "begun and not finished");
+  assert.equal(gl.warum, "Am 15.10. begonnen: 3 von 5 Schritten erledigt", "begun and not finished");
   assert.ok(weiter.findIndex((v) => v.paket.id === 2) > weiter.findIndex((v) => v.paket.id === 4), "a package already done moves back");
-  assert.ok(weiter.find((v) => v.paket.id === 2)!.gruende.includes("schon am 8. Okt. durchgenommen"));
+  assert.ok(weiter.find((v) => v.paket.id === 2)!.gruende.includes("schon am 8.10. durchgenommen"));
 });
 
 // ---------- per unit, in the database ----------

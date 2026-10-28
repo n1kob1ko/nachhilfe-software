@@ -3,7 +3,7 @@ import { ClipboardCheck, ScanLine } from "lucide-react";
 import { Reveal } from "@/components/ui";
 import { antwortAnzeige } from "@/lib/antwort-text";
 import { frageText, loesungText } from "@/lib/cockpit";
-import { besprechenSchritt, briefingZeile, quelleText, type HuErgebnis } from "@/lib/hausuebung-zurueck";
+import { besprechenSchritt, briefingZeile, quelleText, zusammenLoesen, type HuErgebnis } from "@/lib/hausuebung-zurueck";
 import * as repo from "@/lib/repo";
 
 const BEWERTUNG: Record<string, string> = { falsch: "falsch", teilweise: "teilweise richtig" };
@@ -22,7 +22,7 @@ export function HausuebungZeile({ e }: { e: HuErgebnis }) {
 
 /**
  * Die Aufgaben im Schritt „Hausübung besprechen“: die falsch oder teilweise gelösten mit der Antwort des Schülers und der Lösung,
- * „nicht abgegeben“: bis zu drei zum gemeinsamen Lösen, die Lösung erst auf Tippen. Dazu „Arbeit fotografieren“, solange Aufgaben
+ * nichts eingegeben (fällig heute, nicht abgegeben): bis zu drei zum gemeinsamen Lösen, die Lösung erst auf Tippen. Dazu „Arbeit fotografieren“, solange Aufgaben
  * offen sind (auf Papier gemacht), und das Ergebnis der Übung. Nur für die Lehrkraft der Einheit; nichts davon geht an den Schüler.
  */
 export function HausuebungAufgaben({ e, unitId }: { e: HuErgebnis; unitId: number }) {
@@ -34,7 +34,7 @@ export function HausuebungAufgaben({ e, unitId }: { e: HuErgebnis; unitId: numbe
     const x = stand.get(id);
     return t && x ? [{ t, x }] : [];
   });
-  const zusammen = e.status === "nicht_abgegeben";
+  const zusammen = zusammenLoesen(e);
   const offeneAufgaben = e.aufgabenStand.some((x) => x.bewertung === "unbearbeitet");
   return (
     <div className="mt-4 grid gap-3" data-testid="hausuebung-aufgaben">
