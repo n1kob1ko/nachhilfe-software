@@ -1280,6 +1280,30 @@ CREATE TABLE IF NOT EXISTS einheit_knoepfe (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_einheit_knoepfe ON einheit_knoepfe(unit_id);
+
+-- Neue Aufgaben der KI in einer Einheit mit Vorschau (lib/ki-nachschub.ts, D2): wenn Bestand und Generator für einen Schritt oder einen
+-- Vorschlag der Anpassung im Unterricht nichts haben, automatisch im KI-Budget der Einheit oder auf Tippen. Der Schüler sieht sie erst,
+-- wenn die Lehrkraft in der Vorschau „Senden“ tippt. schluessel: wofür (Schritt und Runde, oder Vorschlag seit der letzten Reaktion);
+-- ziel: JSON {art, skillId, level, fokus, kontrolle, anzahl}; status: laeuft | bereit | gesendet | verworfen | fehler; aufgaben: die
+-- neuen Aufgaben (JSON), dazu: die ohne KI, die mitgehen.
+CREATE TABLE IF NOT EXISTS einheit_ki_aufgaben (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  schluessel TEXT NOT NULL,
+  schritt_id INTEGER,
+  ziel TEXT NOT NULL DEFAULT '{}',
+  automatisch INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'laeuft',
+  aufgaben TEXT NOT NULL DEFAULT '[]',
+  dazu TEXT NOT NULL DEFAULT '[]',
+  fehler TEXT NOT NULL DEFAULT '',
+  call_id INTEGER REFERENCES ai_calls(id) ON DELETE SET NULL,
+  worksheet_id INTEGER REFERENCES worksheets(id) ON DELETE SET NULL,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_einheit_ki_aufgaben ON einheit_ki_aufgaben(unit_id, schluessel);
+CREATE INDEX IF NOT EXISTS idx_ai_calls_unit ON ai_calls(unit_id);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */
@@ -1576,6 +1600,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // (ohne Zuweisung); „Arbeit fotografieren“ wählt sie dann vor. null = nicht aus einem Schritt gedruckt
   ["worksheets", "gedruckt_unit_id", "INTEGER REFERENCES units(id) ON DELETE SET NULL"],
   ["worksheets", "gedruckt_schritt_id", "INTEGER"],
+  // KI-Budget je Einheit (lib/ai/einheit-budget.ts, 2026-10-28): der Betrag dieser Einheit in Euro, wenn die Lehrkraft ihn gesenkt oder
+  // die Administration ihn erhöht hat; null = der Betrag aus Erweitert › KI-Kosten (Standard 0 € = automatisch aus)
+  ["units", "ki_budget_eur", "REAL"],
 ];
 
 /** Teachers to start with; more can be added later. */

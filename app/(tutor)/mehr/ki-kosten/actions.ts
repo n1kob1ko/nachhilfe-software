@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { aiEnabled } from "@/lib/ai";
+import { betragAus, setzeStandardBudget } from "@/lib/ai/einheit-budget";
 import { KI_MODI, kiModus, setKiModus, type KiModus } from "@/lib/ai/modus";
 import { qualityState, startQualityTest, type RunState } from "@/lib/ai/qualitaetstest";
 import { runSelfTest, type TestStep } from "@/lib/ai/selbsttest";
@@ -102,4 +103,20 @@ export async function setAutoBriefingAction(an: boolean): Promise<void> {
   if (!teacher.is_admin) return;
   setzeAutoBriefing(an);
   revalidatePath("/mehr/ki-kosten");
+}
+
+export type BudgetAntwort = { ok: true; eur: number } | { error: string } | null;
+
+/**
+ * Mehr › KI-Kosten: „Automatisch je Einheit bis … €“ (lib/ai/einheit-budget.ts). 0 € = automatisch aus. Eine Einstellung der ganzen
+ * Anwendung, deshalb nur für die Administration.
+ */
+export async function setEinheitBudgetAction(_prev: BudgetAntwort, form: FormData): Promise<BudgetAntwort> {
+  const teacher = await requireTeacher();
+  if (!teacher.is_admin) return { error: "Nur die Administration kann den Betrag je Einheit ändern." };
+  const eur = betragAus(form.get("eur"));
+  if (eur === null) return { error: "Bitte einen Betrag von 0 bis 5 € eingeben, z. B. 0,30." };
+  setzeStandardBudget(eur);
+  revalidatePath("/mehr/ki-kosten");
+  return { ok: true, eur };
 }

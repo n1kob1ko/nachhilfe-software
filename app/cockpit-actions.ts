@@ -26,7 +26,9 @@ import {
   type Markierung,
   type Merke,
 } from "@/lib/cockpit";
+import { betragAus, setzeBudgetDerEinheit } from "@/lib/ai/einheit-budget";
 import { newExerciseForUnit } from "@/lib/ai/realtime";
+import { bedarfImSchritt, erstelleNachschub, sendeNachschub, verwirfNachschub } from "@/lib/ki-nachschub";
 import { einfacherErklaeren, einfacherMitKi, kontrolleWeglassen, sendeSchwerer, themaVerstanden, wechsleThema, weitereBeispiele } from "@/lib/knoepfe";
 import { noteActivity } from "@/lib/learning";
 import { pushLive, showOnTablet } from "@/lib/live";
@@ -150,7 +152,7 @@ export async function ausfuehrlichAction(unitId: number, schrittId: number) {
   const { t, unit } = await laufendeEinheit(unitId);
   const schritt = cockpit(unitId, { mitPlan: true }).plan.find((s) => s.id === schrittId);
   const student = repo.getStudent(unit.student_id);
-  const out = schritt?.skillId && student ? await erklaereAusfuehrlich(schritt.skillId, schulstufeVon(student), t.id) : { ok: false as const, error: "Zu diesem Schritt gibt es keine Fähigkeit." };
+  const out = schritt?.skillId && student ? await erklaereAusfuehrlich(schritt.skillId, schulstufeVon(student), t.id, "ausfuehrlich", unit.id) : { ok: false as const, error: "Zu diesem Schritt gibt es keine Fähigkeit." };
   revalidatePath(`/einheiten/${unitId}`);
   redirect(out.ok ? `/einheiten/${unitId}?ausfuehrlich=${schrittId}` : `/einheiten/${unitId}?cockpit=${encodeURIComponent(out.error)}`);
 }
@@ -290,6 +292,45 @@ export async function antwortAction(unitId: number, schrittId: number, wert: str
   const neu = isBeobachtung(wert) && s.antworten[schrittId] !== wert ? wert : null;
   setzeAntwort(unitId, schrittId, neu);
   zurueck(unitId);
+}
+
+// ---------- neue Aufgaben der KI mit Vorschau, KI-Budget je Einheit (lib/ki-nachschub.ts, lib/ai/einheit-budget.ts) ----------
+
+/** „Neue Aufgaben erstellen“ im Schritt, auf Tippen: die KI macht die fehlenden Aufgaben, sie kommen als Vorschau, nicht zum Schüler. */
+export async function nachschubSchrittAction(unitId: number, schrittId: number) {
+  const { t, unit } = await laufendeEinheit(unitId);
+  const c = cockpit(unitId, { mitPlan: true });
+  const s = c.plan.find((x) => x.id === schrittId);
+  const student = repo.getStudent(unit.student_id);
+  const b = s && student ? bedarfImSchritt(unitId, c, s, student) : null;
+  if (!b) nachKnopf(unitId, "In diesem Schritt fehlen keine Aufgaben.");
+  const out = await erstelleNachschub(unitId, b, { automatisch: false, teacherId: t.id });
+  nachKnopf(unitId, "fehler" in out ? out.fehler : out.status === "fehler" ? out.problem : undefined);
+}
+
+/** „Senden“ in der Vorschau neuer Aufgaben der KI: genau diese an den Schüler dieser Einheit und auf ihr Gerät. */
+export async function nachschubSendenAction(unitId: number, id: number) {
+  const { t } = await laufendeEinheit(unitId);
+  const out = await sendeNachschub(unitId, id, t.id);
+  if ("fehler" in out) nachKnopf(unitId, out.fehler);
+  await aufsGeraet(unitId, out);
+  nachVorschlag(unitId, { gesendet: out.worksheetId });
+}
+
+/** „Verwerfen“: die Vorschau weg, nichts geht zum Schüler; neue Aufgaben gibt es dann nur auf Tippen. */
+export async function nachschubVerwerfenAction(unitId: number, id: number) {
+  await laufendeEinheit(unitId);
+  verwirfNachschub(unitId, id);
+  nachKnopf(unitId);
+}
+
+/** Das KI-Budget dieser Einheit ändern: die Lehrkraft senkt (bis zum Standard), die Administration darf erhöhen. „standard“: wieder der Standard. */
+export async function einheitBudgetAction(unitId: number, form: FormData) {
+  const { t } = await laufendeEinheit(unitId);
+  const eur = form.get("standard") ? null : betragAus(form.get("eur"));
+  if (eur === null && !form.get("standard")) return zurueck(unitId, "Bitte einen Betrag wie 0,30 eingeben.");
+  const out = setzeBudgetDerEinheit(unitId, eur, { admin: Boolean(t.is_admin) });
+  zurueck(unitId, "fehler" in out ? out.fehler : undefined);
 }
 
 // ---------- Lehrer-Knöpfe am Schritt (lib/knoepfe.ts) ----------

@@ -224,15 +224,24 @@ export function ausGenerator(unitId: number, o: Pick<Option, "art" | "skillId" |
 export const TYPISCH_EIN = 3_000;
 export const TYPISCH_AUS = 3_500;
 
+/**
+ * Was eine Anfrage „Neue Aufgabe in der Einheit“ (zwei Aufgaben) etwa kostet, in US-Dollar: gemessen (Ø der letzten 60 Tage, ab drei
+ * Aufrufen), sonst geschätzt; im manuellen Modus und mit lokalem Modell 0. Für das KI-Budget je Einheit (lib/ki-nachschub.ts).
+ */
+export function kostenNeueAufgabeUsd(now = Date.now()): number {
+  const route = routeFor("neue_aufgabe");
+  if (route.provider === "manual" || isLocalModel(route.provider)) return 0;
+  const seit = new Date(now - 60 * 86_400_000).toISOString();
+  const m = db().prepare("SELECT COUNT(*) AS n, AVG(cost_usd) AS usd FROM ai_calls WHERE fn = 'neue_aufgabe' AND status = 'ok' AND test = 0 AND cost_usd > 0 AND created_at >= ?").get(seit) as { n: number; usd: number | null };
+  return m.n >= 3 && m.usd !== null ? m.usd : costOf(route.model, "standard", { input: TYPISCH_EIN, output: TYPISCH_AUS, cacheWrite: 0, cacheRead: 0 });
+}
+
 /** Was zwei neue Aufgaben der KI etwa kosten: gemessen (Ø der letzten 60 Tage, ab drei Aufrufen), sonst geschätzt. */
 export function kostenNeueAufgabe(now = Date.now()): string {
   const route = routeFor("neue_aufgabe");
   if (route.provider === "manual") return "kostet nichts (manueller Modus)";
   if (isLocalModel(route.provider)) return "kostet nichts (lokales Modell)";
-  const seit = new Date(now - 60 * 86_400_000).toISOString();
-  const m = db().prepare("SELECT COUNT(*) AS n, AVG(cost_usd) AS usd FROM ai_calls WHERE fn = 'neue_aufgabe' AND status = 'ok' AND test = 0 AND cost_usd > 0 AND created_at >= ?").get(seit) as { n: number; usd: number | null };
-  const usd = m.n >= 3 && m.usd !== null ? m.usd : costOf(route.model, "standard", { input: TYPISCH_EIN, output: TYPISCH_AUS, cacheWrite: 0, cacheRead: 0 });
-  return `ca. ${Math.max(1, Math.round((usd / budget().usdPerEur) * 100))} Cent`;
+  return `ca. ${Math.max(1, Math.round((kostenNeueAufgabeUsd(now) / budget().usdPerEur) * 100))} Cent`;
 }
 
 /**
@@ -331,14 +340,32 @@ export function sendeAngepasst(
   c?: Partial<Pick<CockpitDaten, "paket" | "planAktuell" | "planQuellen">>,
   seed?: number,
 ): { worksheetId: number; assignmentId: number; quelle: "A" | "B" } | { fehler: string } {
+  // without tasks of the KI the source is A or B
+  return sende(unitId, o, teacherId, c, seed, null) as { worksheetId: number; assignmentId: number; quelle: "A" | "B" } | { fehler: string };
+}
+
+/** C: die neuen Aufgaben der KI, die der Lehrer in der Vorschau gesehen hat (lib/ki-nachschub.ts), genau diese, wie `sendeAngepasst`. */
+export function sendeKiAufgaben(unitId: number, o: Option, teacherId: number | null, ki: TaskDraft[]): { worksheetId: number; assignmentId: number } | { fehler: string } {
+  return ki.length ? sende(unitId, o, teacherId, undefined, undefined, ki) : { fehler: "Dazu gibt es keine neuen Aufgaben." };
+}
+
+function sende(
+  unitId: number,
+  o: Option,
+  teacherId: number | null,
+  c: Partial<Pick<CockpitDaten, "paket" | "planAktuell" | "planQuellen">> | undefined,
+  seed: number | undefined,
+  ki: TaskDraft[] | null,
+): { worksheetId: number; assignmentId: number; quelle: "A" | "B" | "C" } | { fehler: string } {
   const unit = getUnit(unitId);
   if (!unit || unit.status !== "gestartet") return { fehler: "Diese Einheit läuft nicht mehr." };
   const student = repo.getStudent(unit.student_id);
   const skill = o.skillId ? repo.getSkill(o.skillId) : null;
   if (!student || !skill || !MIT_AUFGABE.includes(o.art) || !o.level || o.level < 1 || o.level > 5) return { fehler: "Diese Fähigkeit gibt es nicht." };
-  let quelle: "A" | "B" = "A";
-  let tasks = bestand(unitId, o, c);
-  if (!tasks.length) {
+  let quelle: "A" | "B" | "C" = "A";
+  let tasks = ki ?? bestand(unitId, o, c);
+  if (ki) quelle = "C";
+  else if (!tasks.length) {
     quelle = "B";
     tasks = generatorKann(o) ? ausGenerator(unitId, o, seed) : [];
   }
@@ -358,7 +385,7 @@ export function sendeAngepasst(
         difficulty,
         task_type: o.art === "fehler" ? "fix" : "mixed",
         kind: "uebung",
-        source: quelle === "B" ? "generator" : "manuell",
+        source: quelle === "B" ? "generator" : quelle === "C" ? "ki" : "manuell",
         skill_ids: [skill.id],
         student_id: student.id,
         teacher_id: teacherId,

@@ -9,6 +9,7 @@ import { AutoRefresh } from "@/components/AutoRefresh";
 import { BoardThumbs } from "@/components/BoardThumbs";
 import { Unterricht } from "@/components/cockpit/Ablauf";
 import { AblaufRueckblick } from "@/components/cockpit/Cockpit";
+import { EinheitKiKosten, KiKostenZeile } from "@/components/cockpit/Nachschub";
 import { CopyLink } from "@/components/CopyLink";
 import { Elapsed, Restzeit } from "@/components/Elapsed";
 import { UnitDocForm } from "@/components/UnitDocForm";
@@ -212,6 +213,11 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
           <>
             <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} join={await joinInfo()} kompakt />
             <Unterricht unit={unit} student={student} fehler={sp.cockpit} teacherId={teacher.id} werkzeugeOffen={sp.bereich === "cockpit"} ausfuehrlich={sp.ausfuehrlich ? Number(sp.ausfuehrlich) : null} folien={sp.folien ? Number(sp.folien) : null} knopf={sp.knopf ?? null} />
+            {mayManage && (
+              <div className="mt-4">
+                <KiKostenZeile unitId={unit.id} admin={Boolean(teacher.is_admin)} />
+              </div>
+            )}
           </>
         ) : (
           <>
@@ -339,6 +345,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
                 );
               })}
             </dl>
+            <EinheitKiKosten unitId={unit.id} />
             {offen.length > 0 && (
               <div id="zu-bewerten" className="mt-6 grid scroll-mt-24 gap-3 border-t border-line pt-4" data-testid="abschluss-zu-bewerten">
                 <div className="grid gap-1">

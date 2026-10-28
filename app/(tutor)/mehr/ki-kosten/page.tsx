@@ -2,10 +2,12 @@ import Link from "next/link";
 import { AIQualityTest } from "@/components/AIQualityTest";
 import { AISelfTest } from "@/components/AISelfTest";
 import { AITextTest } from "@/components/AITextTest";
+import { EinheitBudgetForm } from "@/components/ai/EinheitBudgetForm";
 import { KiAnbieterWahl, type AnbieterOption } from "@/components/ai/KiAnbieterWahl";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, SectionTitle } from "@/components/ui";
 import { AREA_LABEL, FUNCTIONS, aiSwitchedOff, budget, imagePrice, imageRoute, mainProvider, poolOf, priceFor, routeFor, type AIFunction, type Area, type BudgetPool } from "@/lib/ai/config";
+import { BUDGET_MAX_EUR, euro, standardBudgetEur } from "@/lib/ai/einheit-budget";
 import { budgetState, costByDay, costByFunction, costByMonth, costByStudent, costByTeacher, recentCalls, type Sum } from "@/lib/ai/log";
 import { schuelerGrenze, schuelerStand } from "@/lib/ai/schueler-kosten";
 import { KI_MODUS_LABEL, kiModus } from "@/lib/ai/modus";
@@ -13,7 +15,7 @@ import { budgetName, PROVIDER_LABEL, providerReady } from "@/lib/ai/providers";
 import { aiEnabled, breakerState } from "@/lib/ai/router";
 import { requireTeacher } from "@/lib/auth";
 import { autoBriefingAn, autoKosten, AUTO_SPERRE_TEXT, BRIEFINGS_IM_MONAT, TYPISCH_TOKENS_AUS, TYPISCH_TOKENS_EIN, type AutoSperre } from "@/lib/briefing-auto";
-import { setAutoBriefingAction } from "./actions";
+import { setAutoBriefingAction, setEinheitBudgetAction } from "./actions";
 
 export const metadata = { title: "KI-Kosten" };
 export const dynamic = "force-dynamic";
@@ -173,6 +175,29 @@ export default async function AICostPage() {
             <form action={setAutoBriefingAction.bind(null, !autoAn)}>
               <button className={`btn ${autoAn ? "btn-secondary" : "btn-primary"}`}>{autoAn ? "Ausschalten" : "Einschalten"}</button>
             </form>
+          )}
+        </div>
+      </section>
+
+      <section className="mb-10" aria-label="Automatisch je Einheit" data-testid="einheit-budget">
+        <SectionTitle>
+          <span>
+            KI-Budget je Einheit
+            <Info label="Was passiert dabei?">
+              Fehlen in einer laufenden Einheit passende Aufgaben (aus Bestand und Generator weniger als drei), erstellt die KI bis zu diesem Betrag je Einheit von selbst neue. Sie kommen immer zuerst als Vorschau mit
+              Lösungen, „neu erstellt, ungeprüft“; an den Schüler geht erst etwas mit „Senden“. Ist der Betrag erreicht, nur noch auf Tippen, mit Kosten. Briefing und Live-Analyse zählen mit. Die Grenze je Schüler im Monat
+              und das Monatsbudget gelten weiter. In einer Einheit kann die Lehrkraft den Betrag senken, erhöhen nur die Administration.
+            </Info>
+          </span>
+        </SectionTitle>
+        <div className="panel px-5 py-4 text-[14px]">
+          {teacher.is_admin ? (
+            <EinheitBudgetForm action={setEinheitBudgetAction} eur={standardBudgetEur()} max={BUDGET_MAX_EUR} />
+          ) : (
+            <p data-testid="einheit-budget-wert">
+              Automatisch je Einheit bis <span className="num font-semibold">{euro(standardBudgetEur())}</span>
+              {standardBudgetEur() === 0 && <span className="text-ink-2"> · automatisch aus, neue Aufgaben nur auf Tippen</span>}
+            </p>
           )}
         </div>
       </section>

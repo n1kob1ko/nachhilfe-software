@@ -90,8 +90,9 @@ const laufend = ((globalThis as unknown as { __ausfuehrlichLaufend?: Map<string,
 /**
  * Die ausführliche Erklärung zu einer Fähigkeit und Schulstufe: gespeichert, sonst eine Anfrage an die KI, deren geprüfte
  * Antwort gespeichert wird. `neu`: diesmal gefragt (und bezahlt). `art` „einfach“: die einfachere Erklärung (eigene Fassung).
+ * `unitId`: die Einheit, in der getippt wurde; ihr zählen die Kosten (KI-Budget je Einheit), der Schüler bleibt aus der Anfrage.
  */
-export function erklaereAusfuehrlich(skillId: string, schulstufe: number, teacherId: number | null, art: ErklaerArt = "ausfuehrlich"): Promise<AusfuehrlichErgebnis> {
+export function erklaereAusfuehrlich(skillId: string, schulstufe: number, teacherId: number | null, art: ErklaerArt = "ausfuehrlich", unitId: number | null = null): Promise<AusfuehrlichErgebnis> {
   const schon = gespeicherteErklaerung(skillId, schulstufe, art);
   if (schon) return Promise.resolve({ ok: true, inhalt: schon, neu: false });
   const key = `${skillId}|${schulstufe}|${art}`;
@@ -104,7 +105,7 @@ export function erklaereAusfuehrlich(skillId: string, schulstufe: number, teache
     if (!tor.erlaubt) return { ok: false, error: tor.grund };
     const out = await kiAusfuehrlich(
       { fach: skill.subject, bereich: skill.area, name: skill.name, schulstufe, erklaerung: erklaerungZu(skill.id), typischeFehler: typischeFehler(skill.id) },
-      { teacherId, trigger: fnVon(art) },
+      { teacherId, trigger: fnVon(art), kostenEinheitId: unitId },
       art,
     );
     if (!out.ok) return { ok: false, error: out.error };

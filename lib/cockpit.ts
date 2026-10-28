@@ -1201,6 +1201,17 @@ function vorherBaubar(s: PlanStep, quellen: Map<number, PlanQuelle>, studentId: 
 }
 
 /**
+ * Die Aufgaben, die „Passende Übungen senden“ in einem Planschritt ohne KI hinausschicken würde (bereit oder aus dem Generator, wie
+ * `sendeAusGenerator`); null, wenn der Schritt seine Übung nicht aus dem Generator baut (Paket, Bestand, Schreibauftrag, eigene
+ * Wörter, keine Fähigkeit). Für lib/ki-nachschub.ts: bleiben weniger als drei, fehlen Aufgaben.
+ */
+export function aufgabenOhneKi(unitId: number, s: PlanStep, quellen: Map<number, PlanQuelle>, student: repo.Student): { aufgaben: TaskDraft[]; difficulty: Difficulty } | null {
+  if (!vorherBaubar(s, quellen, student.id)) return null;
+  const a = auftragFuer(unitId, student, repo.getSkill(s.skillId!)!, s.art === "kontrolle");
+  return { aufgaben: bereitFuer(unitId, s.id, schluesselVon(s.id, a)) ?? generatorAufgabenVon(a), difficulty: a.difficulty };
+}
+
+/**
  * **Die nächste Übung bereit** (niko, 27.10.2026: „den gesamten Ablauf planen, die erste Erklärung und die ersten Übungen
  * bereitstellen, weitere Inhalte rechtzeitig vorbereiten“): beim Zeigen eines Schritts im Plan wird die Übung des nächsten
  * offenen Übungs- oder Kontrollschritts schon gebaut (Generator, ohne KI), dazu die des Schritts auf dem Schirm, solange aus
@@ -1262,6 +1273,7 @@ export function haltBereit(unitId: number): number[] {
  * `schrittId`: der Planschritt, aus dem gesendet wurde; ohne ihn der Übungsschritt mit dieser Fähigkeit, wenn es einen gibt.
  * Aus der Lernkontrolle eines Themas: drei Aufgaben als Überprüfung, ein Versuch, ohne Hilfen (Modus 'test', Notiz
  * „Lernkontrolle“, damit der Abschluss sie nicht für den Minitest am Anfang hält).
+ * `ki`: nur aus der Vorschau neuer Aufgaben der KI (lib/ki-nachschub.ts, nach dem Tippen auf „Senden“): genau diese Aufgaben.
  */
 export async function sendeAusGenerator(
   unitId: number,
@@ -1269,6 +1281,7 @@ export async function sendeAusGenerator(
   teacherId: number | null,
   schrittId: number | null = null,
   ziel: Ziel = "senden",
+  ki: TaskDraft[] | null = null,
 ): Promise<{ worksheetId: number; assignmentId: number } | { fehler: string }> {
   const unit = getUnit(unitId);
   if (!unit || unit.status !== "gestartet") return { fehler: "Diese Einheit läuft nicht mehr." };
@@ -1284,9 +1297,10 @@ export async function sendeAusGenerator(
   const kontrolle = schritt !== null && schritt.id === schrittId && schritt.art === "kontrolle";
   const a = auftragFuer(unit.id, student, skill, kontrolle);
   // prepared before (haltBereit): exactly these tasks, without building again
-  const bereit = schritt && schritt.id === schrittId && ausDemGenerator(skill.id) ? bereitFuer(unit.id, schritt.id, schluesselVon(schritt.id, a)) : null;
-  // otherwise the same tasks the step shows (never the worked example of the skill); writing tasks and word lists as before
-  const aufgaben = bereit ?? (ausDemGenerator(skill.id) ? generatorAufgabenVon(a) : null);
+  const bereit = !ki && schritt && schritt.id === schrittId && ausDemGenerator(skill.id) ? bereitFuer(unit.id, schritt.id, schluesselVon(schritt.id, a)) : null;
+  // otherwise the same tasks the step shows (never the worked example of the skill); writing tasks and word lists as before;
+  // `ki`: the tasks of the KI the teacher saw in the preview (lib/ki-nachschub.ts), exactly these
+  const aufgaben = ki ?? bereit ?? (ausDemGenerator(skill.id) ? generatorAufgabenVon(a) : null);
   let worksheetId = 0;
   try {
     worksheetId = aufgaben?.length
@@ -1301,7 +1315,7 @@ export async function sendeAusGenerator(
             difficulty: a.difficulty,
             task_type: "mixed",
             kind: a.kind ?? "uebung",
-            source: "generator",
+            source: ki ? "ki" : "generator",
             skill_ids: [skill.id],
             student_id: student.id,
             teacher_id: teacherId,

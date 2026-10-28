@@ -309,7 +309,7 @@ export async function einfacherMitKi(unitId: number, eintragId: number, teacherI
     const tor = einfacherTor(l.student.id);
     if (!tor.erlaubt) return { fehler: tor.grund };
   }
-  const out = await erklaereAusfuehrlich(e.skillId, stufe, teacherId, "einfach");
+  const out = await erklaereAusfuehrlich(e.skillId, stufe, teacherId, "einfach", unitId);
   if (!out.ok) return { fehler: out.error };
   if (!out.inhalt.sagt) return { fehler: "Die KI hat keine brauchbare einfachere Erklärung geliefert." };
   const b = out.inhalt.beispiel;

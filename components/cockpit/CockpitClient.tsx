@@ -47,7 +47,8 @@ export function VorschlagKnopf({ action, label, primary, icon, gesperrt = false,
 function KnopfInhalt({ label, primary, icon, gesperrt, testid, laeuft }: { label: string; primary?: boolean; icon: React.ReactNode; gesperrt: boolean; testid?: string; laeuft: string }) {
   const { pending } = useFormStatus();
   return (
-    <button className={`btn ${primary ? "btn-primary" : "btn-secondary"} w-full sm:w-fit`} disabled={pending || gesperrt} data-testid={testid}>
+    // a long label („Neue passende Aufgabe erstellen · ca. 3 Cent“) wraps on a phone instead of widening the page
+    <button className={`btn ${primary ? "btn-primary" : "btn-secondary"} w-full sm:w-fit`} style={{ whiteSpace: "normal", textAlign: "center", paddingBlock: 8 }} disabled={pending || gesperrt} data-testid={testid}>
       {icon} {pending ? laeuft : label}
     </button>
   );

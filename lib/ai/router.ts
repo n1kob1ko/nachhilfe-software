@@ -12,6 +12,7 @@ import { FUNCTIONS, MANUAL_TIMEOUT_MS, PROVIDER_IDS, aiSwitchedOff, costOf, fitM
 import { schuelerDerAnfrage, systemMitHinweisen } from "./hinweise";
 import { budgetState, logCall, type CallStatus } from "./log";
 import { openRouterImageTransport, providerReady, providerTransport, unsupported, type ImageRequest, type ImageTransport, type Prompt, type Transport } from "./providers";
+import { laufendeEinheitVon } from "./einheit-budget";
 import { grenzeErreichtText, schuelerStand } from "./schueler-kosten";
 import { ladeAntwort, leereSpeicher, speichereAntwort, vergiss } from "./speicher";
 
@@ -21,8 +22,17 @@ export type { AIRequest, AIResult, Part, Prompt, Transport } from "./providers";
  * `studentId`: der Schüler, um den es geht. Dann kommen seine **KI-Hinweise** in den Systemprompt
  * (lib/ai/hinweise.ts). Ohne ihn gilt der Schüler der Einheit (`unitId`); Anfragen ohne beides
  * (Lesetext, Druckblatt, Aufgabenbanken, Verbindungstest) bleiben unverändert.
+ *
+ * `kostenEinheitId`: die Einheit, der die Kosten zählen (KI-Budget je Einheit, lib/ai/einheit-budget.ts), ohne die Anfrage zu
+ * ihrem Schüler zu machen: für Anfragen ohne Schülerdaten wie „Ausführlicher erklären“. Ohne `unitId` und ohne sie zählt eine
+ * Anfrage zu einem Schüler zu seiner laufenden Einheit, wenn er eine hat.
  */
-export type AIMeta = { teacherId?: number | null; unitId?: number | null; studentId?: number | null; trigger?: string };
+export type AIMeta = { teacherId?: number | null; unitId?: number | null; studentId?: number | null; trigger?: string; kostenEinheitId?: number | null };
+
+/** Die Einheit, der eine Anfrage zählt: die genannte, sonst die laufende Einheit ihres Schülers, sonst keine. */
+function einheitDerKosten(meta: AIMeta, studentId: number | null): number | null {
+  return meta.unitId ?? meta.kostenEinheitId ?? (studentId != null ? laufendeEinheitVon(studentId) : null);
+}
 
 // ---------- replaceable parts (tests and the 60-minute simulation) ----------
 let transport: Transport = providerTransport;
@@ -197,6 +207,7 @@ export async function runAI<S extends z.ZodType>(
   system = systemMitHinweisen(system, schueler);
   // der Schüler der Anfrage, wie die Datenbank ihn kennt: für die Grenze je Schüler, das Protokoll und den Speicher
   const studentId = schueler?.id ?? null;
+  const unitId = einheitDerKosten(meta, studentId);
   // ein lokales Modell (Ollama) kostet nichts und läuft auch mit aufgebrauchtem Budget weiter
   const local = isLocalModel(provider);
   const log = (status: CallStatus, extra: Partial<Parameters<typeof logCall>[0]> = {}) =>
@@ -206,7 +217,7 @@ export async function runAI<S extends z.ZodType>(
       provider,
       model,
       teacherId: meta.teacherId ?? null,
-      unitId: meta.unitId ?? null,
+      unitId,
       studentId,
       trigger: meta.trigger ?? "",
       input: 0,
@@ -356,8 +367,9 @@ export async function runImage(prompt: string, references: ImageRequest["referen
   const { provider, model } = imageRoute();
   const meta = o.meta ?? {};
   const studentId = schuelerDerAnfrage(meta)?.id ?? null;
+  const unitId = einheitDerKosten(meta, studentId);
   const log = (status: CallStatus, extra: Partial<Parameters<typeof logCall>[0]> = {}) =>
-    logCall({ fn: "bild", tier: spec.tier, provider, model, teacherId: meta.teacherId ?? null, unitId: meta.unitId ?? null, studentId, trigger: meta.trigger ?? "", input: 0, output: 0, cacheWrite: 0, cacheRead: 0, durationMs: 0, costUsd: 0, status, test: testRun, at: now(), ...extra });
+    logCall({ fn: "bild", tier: spec.tier, provider, model, teacherId: meta.teacherId ?? null, unitId, studentId, trigger: meta.trigger ?? "", input: 0, output: 0, cacheWrite: 0, cacheRead: 0, durationMs: 0, costUsd: 0, status, test: testRun, at: now(), ...extra });
   if (budgetState(now(), poolOf(provider)).level === "aus") return { ok: false, status: "budget", cause: "budget", message: MESSAGES.budget, callId: log("budget") };
   if (studentId != null && schuelerStand(studentId, now()).stufe === "aus") return { ok: false, status: "budget", cause: "schuelergrenze", message: grenzeErreichtText(), callId: log("budget", { error: "Grenze je Schüler" }) };
   const ctrl = new AbortController();
