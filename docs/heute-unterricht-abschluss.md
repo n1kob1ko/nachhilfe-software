@@ -117,10 +117,11 @@ Prüfung (bis 30 Tage); eine Voraussetzung davon gehört dazu. Die Aufgaben komm
    die Bibliothek, zur Fähigkeit und Stufe.
 2. **B, Generatoren und Banken**: neue Aufgaben ohne KI (bei „Aufgabe zu diesem Fehler“: Fehler korrigieren).
 3. **C, KI**: nur, wenn A und B für keine Möglichkeit etwas haben, nur auf Tippen („Neue passende Aufgabe erstellen ·
-   ca. 2 Cent“), über `newExerciseForUnit` mit denselben Prüfungen (Aufgaben mit „Bitte prüfen“ gehen nicht hinaus).
-   Gesperrt mit Grund bei KI aus, manuellem KI-Modus, aufgebrauchtem Budget und erreichter Grenze des Schülers.
-   Antwortet die KI nicht, kommen die Aufgaben aus dem Generator, und oben steht das in einem Satz. Die Kosten stehen
-   wie immer unter KI-Kosten beim Schüler. Nichts davon läuft im Hintergrund.
+   ca. 2 Cent“) oder im KI-Budget der Einheit von selbst (`lib/ki-nachschub.ts`). Die Aufgaben kommen immer zuerst als
+   Vorschau „neu erstellt, ungeprüft“ mit Lösungen in den Vorschlag; an den Schüler erst mit „Senden“, „Verwerfen“
+   schickt nichts. Aufgaben mit „Bitte prüfen“ fallen vorher weg. Gesperrt mit Grund bei KI aus, manuellem KI-Modus,
+   aufgebrauchtem Budget und erreichter Grenze des Schülers. Antwortet die KI nicht, steht der Grund unter dem Knopf.
+   Die Kosten stehen unter KI-Kosten beim Schüler und in der Einheit.
 
 Schlecht bewertete Aufgaben und schon gesendete kommen nie in die Auswahl. Ein Tippen schickt drei Aufgaben an den
 Schüler **dieser** Einheit (auch bei zwei zugleich); ohne Gerät liegt die Übung am Lernlink, und oben steht „Zum Drucken
