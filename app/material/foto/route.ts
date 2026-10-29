@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { currentTeacher } from "@/lib/auth";
 import { fotoMoeglich, uebungAusFoto } from "@/lib/foto-uebung";
+import { keinNameGilt } from "@/lib/kein-name";
 import { getMaterial, MAX_ANALYSIS_IMAGE_BYTES, MAX_UPLOAD_BYTES, saveUpload, sniffType } from "@/lib/materials";
 import { foreignRequest, notAllowed } from "@/lib/picture-story-routes";
 import { canManageUnit, getUnit } from "@/lib/units";
@@ -31,7 +32,8 @@ export async function POST(request: Request) {
   if (!unit) return fail("Diese Einheit gibt es nicht.", 404);
   if (!canManageUnit(teacher, unit)) return fail("Das ist die Einheit eines anderen Lehrers.", 403);
   if (unit.status !== "gestartet") return fail("Diese Einheit ist schon beendet.");
-  if (form.get("keine_namen") !== "1") return fail("Bitte bestätigen, dass auf dem Foto keine Namen stehen.");
+  // „kein Name“ einmal je Einheit (lib/kein-name.ts)
+  if (!keinNameGilt({ unitId: unit.id, studentId: unit.student_id, teacher, haken: form.get("keine_namen") === "1" })) return fail("Bitte bestätigen, dass auf dem Foto keine Namen stehen.");
   const geht = fotoMoeglich();
   if (!geht.ok) return fail(geht.grund);
 

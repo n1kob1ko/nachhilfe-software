@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { currentTeacher } from "@/lib/auth";
+import { keinNameGilt } from "@/lib/kein-name";
 import { MAX_UPLOAD_BYTES, saveUpload, sniffType } from "@/lib/materials";
 import { foreignRequest, notAllowed } from "@/lib/picture-story-routes";
 import { DATEI_TITEL, dateiInfo, eigeneDateien, kostenProbe, liesProbe, MAX_DATEIEN, probeTor } from "@/lib/probe-extern";
@@ -18,7 +19,8 @@ const ids = (v: FormDataEntryValue | null) =>
  * Eigene Probeschularbeit (lib/probe-extern.ts): Angabe and Musterlösung come in (PDF or photos) and are stored as the student's
  * material; the app reads the text of a PDF itself, and with `ki` = 1 (the teacher's tap, after the cost was shown and the tick
  * „kein Name darauf“) the KI reads what the app could not, one request per field. The answer is the rows of the check view;
- * nothing else is created here. A second request sends the stored files' ids instead of the files. A route handler, not a server
+ * nothing else is created here. A second request sends the stored files' ids instead of the files. Opened from a unit (`einheit`),
+ * the tick counts once for that unit. A route handler, not a server
  * action, because PDFs and photos can be larger than an action's body limit; outside the proxy, so it checks the session itself.
  */
 export async function POST(request: Request) {
@@ -37,7 +39,8 @@ export async function POST(request: Request) {
   const test = repo.getTest(Number(form.get("pruefung")));
   if (!test || test.student_id !== student.id) return fail("Diese Schularbeit gehört zu einem anderen Schüler.", 404);
   const ki = form.get("ki") === "1";
-  if (ki && form.get("keine_namen") !== "1") return fail("Bitte bestätigen, dass auf den Seiten kein Name steht.");
+  // „kein Name“: aus dem Unterricht geöffnet (`einheit`) einmal je Einheit (lib/kein-name.ts prüft, dass sie läuft und zu ihm gehört)
+  if (ki && !keinNameGilt({ unitId: Number(form.get("einheit")) || null, studentId: student.id, teacher, haken: form.get("keine_namen") === "1" })) return fail("Bitte bestätigen, dass auf den Seiten kein Name steht.");
 
   // stored files first (a second request), then new ones; only this student's
   const dateien = { angabe: eigeneDateien(ids(form.get("materialien_angabe")), student.id), loesung: eigeneDateien(ids(form.get("materialien_loesung")), student.id) };

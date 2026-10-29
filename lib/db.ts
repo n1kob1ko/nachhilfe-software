@@ -1626,6 +1626,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // Hausübung zurück (lib/hausuebung-zurueck.ts, E2, 2026-10-28): eine auf Papier gelöste Hausübung, fotografiert und übernommen. Ihre
   // Antworten tragen keine unit_id (Hausübung ist kein Unterricht); papier_arbeiten.unit_id ist nur die Einheit, in der fotografiert wurde
   ["papier_arbeiten", "homework_id", "INTEGER REFERENCES homework(id) ON DELETE SET NULL"],
+  // „Kein Name“ einmal je Einheit (lib/kein-name.ts, F3, 2026-10-28): wann die Lehrkraft für diese Einheit bestätigt hat, dass auf den
+  // Seiten kein Name steht; gilt dann für jede weitere KI-Lesung der laufenden Einheit. null = noch nicht
+  ["units", "keine_namen_at", "TEXT"],
 ];
 
 /** Teachers to start with; more can be added later. */

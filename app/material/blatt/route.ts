@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { currentTeacher } from "@/lib/auth";
 import { BLATT_TITEL, blattLesbar, liesBlatt, MAX_SEITEN } from "@/lib/blatt-einlesen";
+import { keinNameGilt } from "@/lib/kein-name";
 import { getMaterial, hatDatei, MAX_UPLOAD_BYTES, saveUpload, sniffType } from "@/lib/materials";
 import { ANDERES_BLATT, blattFehler, liesPapier, papierTor } from "@/lib/papier-einheit";
 import { foreignRequest, notAllowed } from "@/lib/picture-story-routes";
@@ -51,7 +52,8 @@ export async function POST(request: Request) {
   if (!fach && !probe && (!unit || blatt === ANDERES_BLATT)) return fail("Bitte das Fach wählen.");
   // `nur_speichern`: selbst bewertet, ohne KI; die Seiten werden nur beim Schüler gespeichert, niemand liest sie
   const nurSpeichern = form.get("nur_speichern") === "1";
-  if (!nurSpeichern && form.get("keine_namen") !== "1") return fail("Bitte bestätigen, dass auf den Seiten kein Name steht.");
+  // „kein Name“: in der laufenden Einheit einmal je Einheit (lib/kein-name.ts), sonst bei jeder Lesung
+  if (!nurSpeichern && !keinNameGilt({ unitId: unit?.id ?? null, studentId: student.id, teacher, haken: form.get("keine_namen") === "1" })) return fail("Bitte bestätigen, dass auf den Seiten kein Name steht.");
   const geht = nurSpeichern ? null : unit || probe ? papierTor(student.id) : blattLesbar();
   if (geht && "grund" in geht) return fail(geht.grund);
   // a sheet of this unit (or an open Probeschularbeit of this student) before any page is stored: a rejected request keeps nothing

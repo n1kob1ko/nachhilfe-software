@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Check, FileText, X } from "lucide-react";
+import { KeinNameZeile } from "@/components/KeinNameZeile";
 import { shrinkImage } from "@/components/shrink-image";
 
 /** Mirrors lib/pruefungsstoff.ts and lib/vorgabe.ts (kept here so the browser does not load server code). */
@@ -23,6 +24,7 @@ const SICHTBAR = 6;
  * Statt neu zu fotografieren lässt sich vorhandenes Material des Schülers wählen (`material`, das neueste zuerst); es wird
  * gleich gelesen, was schon gelesen ist, kostet nichts mehr.
  * `kiLiest`: ob Fotos gelesen werden können (sonst werden sie nur angehängt, der Text wird ohne KI zerlegt).
+ * `keinNameBestaetigt`: „kein Name“ gilt schon für diese Einheit (lib/kein-name.ts); statt des Häkchens steht eine Zeile.
  */
 export function VorgabeForm({
   unitId,
@@ -30,6 +32,7 @@ export function VorgabeForm({
   material = [],
   text: anfang = "",
   kiLiest,
+  keinNameBestaetigt = false,
   abbrechen,
 }: {
   unitId: number;
@@ -37,6 +40,7 @@ export function VorgabeForm({
   material?: MaterialWahl[];
   text?: string;
   kiLiest: boolean;
+  keinNameBestaetigt?: boolean;
   abbrechen?: boolean;
 }) {
   const router = useRouter();
@@ -223,7 +227,8 @@ export function VorgabeForm({
             </ul>
           </div>
         )}
-        {dateien.length + gewaehlt.length > 0 && kiLiest && (
+        {dateien.length + gewaehlt.length > 0 && kiLiest && keinNameBestaetigt && <KeinNameZeile wo="auf den Blättern" />}
+        {dateien.length + gewaehlt.length > 0 && kiLiest && !keinNameBestaetigt && (
           <label className="flex min-h-[44px] items-start gap-2 text-[13.5px]">
             <input type="checkbox" checked={keinName} onChange={(e) => setKeinName(e.target.checked)} className="mt-0.5 h-[18px] w-[18px] shrink-0 accent-[var(--accent)]" data-testid="vorgabe-keine-namen" />
             <span>Auf den Blättern steht kein Name (oder er ist abgedeckt). Sonst werden sie nur angehängt.</span>

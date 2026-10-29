@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Check, FileText, PenLine, Plus, ShieldAlert, Sparkles, Trash2, X } from "lucide-react";
+import { KeinNameZeile } from "@/components/KeinNameZeile";
 import { MathText } from "@/components/MathText";
 import { shrinkImage } from "@/components/shrink-image";
 import { speichereBlattAction, speicherePapierAction } from "@/app/blatt-actions";
@@ -32,8 +33,9 @@ const ANDERES = "anders";
 /**
  * in der laufenden Einheit: welche Blätter, welches vorgewählt, was das Lesen etwa kostet, je Zahl der Seiten (Index; null: ohne KI). `unitId` null: eine
  * Probeschularbeit ohne Einheit, von der Prüfungskarte (Gemeinsame Bewertung, C3); dann gibt es „Ein anderes Blatt“ nicht.
+ * `keinName`: „kein Name“ ist für diese Einheit schon bestätigt (lib/kein-name.ts); statt des Häkchens steht eine Zeile.
  */
-type Einheit = { unitId: number | null; blaetter: PapierWahl[]; vorwahl: string; kosten: string[] | null; fach: string };
+type Einheit = { unitId: number | null; blaetter: PapierWahl[]; vorwahl: string; kosten: string[] | null; fach: string; keinName?: boolean };
 type Skill = { id: string; name: string; area: string };
 type Seite = { file: File; url: string | null };
 /** a row of the preview; pText/mText keep what is typed („2,“) until it is a number */
@@ -98,6 +100,8 @@ export function BlattEinlesen({
   const [seiten, setSeiten] = useState<Seite[]>([]);
   const [gespeichert, setGespeichert] = useState<number[]>([]);
   const [keinName, setKeinName] = useState(false);
+  // schon für die Einheit bestätigt: der Server weiß es und braucht das Häkchen nicht mehr
+  const keinNameOk = keinName || Boolean(einheit?.unitId && einheit.keinName);
   const [busy, setBusy] = useState<null | "vorbereiten" | "lesen">(null);
   const [seit, setSeit] = useState(0);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -542,6 +546,8 @@ export function BlattEinlesen({
           <p className="rounded-xl bg-amber-wash px-4 py-3 text-[14px] text-amber" role="status" data-testid="blatt-ki-aus">
             {kiGrund}
           </p>
+        ) : einheit?.unitId && einheit.keinName ? (
+          <KeinNameZeile />
         ) : (
           <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-panel px-4 py-3 text-[15px]">
             <input type="checkbox" checked={keinName} onChange={(e) => setKeinName(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-[var(--accent)]" data-testid="blatt-keine-namen" />
@@ -557,7 +563,7 @@ export function BlattEinlesen({
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           {!kiGrund && (
-            <button type="button" className="btn btn-primary btn-lg" onClick={() => void lesen()} disabled={busy !== null || !keinName || !seitenZahl} data-testid="blatt-lesen">
+            <button type="button" className="btn btn-primary btn-lg" onClick={() => void lesen()} disabled={busy !== null || !keinNameOk || !seitenZahl} data-testid="blatt-lesen">
               <Sparkles size={18} aria-hidden /> {busy === "lesen" ? "KI liest …" : zeilen ? "Noch einmal auslesen" : "Mit KI auslesen"}
             </button>
           )}

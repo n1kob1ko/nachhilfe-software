@@ -5,6 +5,7 @@ import { FotoUebungForm } from "@/components/FotoUebungForm";
 import { PageHeader } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { fotoMoeglich } from "@/lib/foto-uebung";
+import { keinNameBestaetigt } from "@/lib/kein-name";
 import { getStudent } from "@/lib/repo";
 import { canManageUnit, getUnit } from "@/lib/units";
 
@@ -29,7 +30,7 @@ export default async function FotoVomStoffPage({ params }: { params: Promise<{ i
         back={{ href: `/einheiten/${unit.id}`, label: "Zurück zur Einheit" }}
       />
       {geht.ok ? (
-        <FotoUebungForm unitId={unit.id} name={name} />
+        <FotoUebungForm unitId={unit.id} name={name} keinName={keinNameBestaetigt(unit)} />
       ) : (
         <section className="panel grid gap-4 px-5 py-5" data-testid="foto-ohne-ki">
           <p className="text-[15px]">{geht.grund}</p>

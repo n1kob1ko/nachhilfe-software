@@ -1,5 +1,6 @@
 import { currentTeacher } from "@/lib/auth";
 import { handschriftLesbar, KEIN_NAME_FEHLT, liesHandschrift, MAX_HANDSCHRIFT_SEITEN } from "@/lib/handschrift";
+import { keinNameGilt } from "@/lib/kein-name";
 import { MAX_UPLOAD_BYTES } from "@/lib/materials";
 import { foreignRequest, notAllowed } from "@/lib/picture-story-routes";
 import { getText } from "@/lib/texts";
@@ -28,7 +29,8 @@ export async function POST(request: Request) {
   }
   const text = getText(Number(form.get("text")));
   if (!text) return fail("Diesen Text gibt es nicht.", 404);
-  const keinName = form.get("keine_namen") === "1";
+  // „kein Name“: aus dem Unterricht geöffnet (`einheit`) einmal je Einheit (lib/kein-name.ts prüft, dass sie läuft und zu ihm gehört)
+  const keinName = keinNameGilt({ unitId: Number(form.get("einheit")) || null, studentId: text.student_id, teacher, haken: form.get("keine_namen") === "1" });
   if (!keinName) return fail(KEIN_NAME_FEHLT);
   const geht = handschriftLesbar(text.student_id);
   if (!geht.ok) return fail(geht.grund);

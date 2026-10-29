@@ -5,6 +5,7 @@ import { parseTime } from "@/lib/analysis";
 import { requireTeacher } from "@/lib/auth";
 import { tagMonat } from "@/lib/datum";
 import { faehigkeitenFuer } from "@/lib/blatt-einlesen";
+import { keinNameBestaetigt } from "@/lib/kein-name";
 import { dayOf } from "@/lib/exams";
 import { ANDERES_BLATT, blaetterDerEinheit, blattZurUebung, papierTor, type PapierBlatt } from "@/lib/papier-einheit";
 import { notenschluessel } from "@/lib/probeschularbeit";
@@ -61,6 +62,7 @@ export default async function PapierPage({ params, searchParams }: { params: Pro
           vorwahl: vor?.key ?? ANDERES_BLATT,
           kosten: tor.erlaubt ? tor.kosten : null,
           fach,
+          keinName: keinNameBestaetigt(unit),
         }}
       />
     </div>

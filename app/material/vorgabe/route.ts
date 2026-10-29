@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { currentTeacher } from "@/lib/auth";
 import { dayOf } from "@/lib/exams";
+import { keinNameGilt } from "@/lib/kein-name";
 import { getMaterial, hatDatei, saveUpload, sniffType } from "@/lib/materials";
 import { foreignRequest, notAllowed } from "@/lib/picture-story-routes";
 import { MAX_DATEIEN, MAX_GESAMT_BYTES } from "@/lib/pruefungsstoff";
@@ -62,7 +63,8 @@ export async function POST(request: Request) {
     text: String(form.get("text") ?? ""),
     materialIds,
     testId: Number.isInteger(pruefung) && pruefung > 0 ? pruefung : null,
-    keinName: form.get("keine_namen") === "1",
+    // „kein Name“ einmal je Einheit (lib/kein-name.ts): nur mit Fotos oder PDFs, sonst gibt es nichts zu bestätigen
+    keinName: materialIds.length > 0 && keinNameGilt({ unitId: unit.id, studentId: unit.student_id, teacher, haken: form.get("keine_namen") === "1" }),
     heute: dayOf(new Date()),
   });
   if ("fehler" in out) return fail(out.fehler);

@@ -36,7 +36,7 @@ export function TextarbeitZeilen({ unit, laeufe }: { unit: UnitView; laeufe: Tex
               <span className={`num block text-[13.5px] font-medium ${TON[z.stand]}`}>{z.text}</span>
             </span>
             {z.stand === "schreibt" && !geraet && (
-              <Link href={`/texte/${t.id}/papier`} className="inline-flex min-h-[44px] items-center gap-1 text-[14px] font-medium text-ink-2 hover:text-ink">
+              <Link href={`/texte/${t.id}/papier?einheit=${unit.id}`} className="inline-flex min-h-[44px] items-center gap-1 text-[14px] font-medium text-ink-2 hover:text-ink">
                 <Camera size={15} aria-hidden /> Vom Foto
               </Link>
             )}
