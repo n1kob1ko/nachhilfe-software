@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { CalendarClock, Target, UserCog } from "lucide-react";
-import { setTeacherActiveAction } from "@/app/session-actions";
+import { CalendarClock, Target, Trash2, UserCog } from "lucide-react";
+import { deleteTeacherAction, setTeacherActiveAction, setTeacherRoleAction } from "@/app/session-actions";
 import { Info } from "@/components/Info";
 import { NewTeacherForm, ResetPasswordForm } from "@/components/AuthForms";
 import { RaumPraeferenzen } from "@/components/planung/RaumPraeferenzen";
@@ -9,10 +9,11 @@ import { WochenAbweichung } from "@/components/planung/WochenAbweichung";
 import { PageHeader, Pill, SectionTitle } from "@/components/ui";
 import { saveTeacherAvailabilityAction, saveTeacherWeeklyTargetAction } from "@/app/planung-actions";
 import { requireTeacher } from "@/lib/auth";
+import { aktiveVerwaltung, getKonto, loeschFehler, loeschVorschau, type LoeschVorschau } from "@/lib/lehrer-konten";
 import { darfLehrerPlanungBearbeiten } from "@/lib/planung/berechtigungen";
 import { getAbweichung, getLehrerPlanung, listRaeume } from "@/lib/planung/repo";
 import { istDatum, wienerWochenstart, wochenLabel, wochenstartVon } from "@/lib/planung/zeit";
-import { listAllTeachers } from "@/lib/repo";
+import { listAllTeachers, type Teacher } from "@/lib/repo";
 
 export const metadata = { title: "Lehrer" };
 
@@ -24,7 +25,7 @@ export const metadata = { title: "Lehrer" };
  * Die Rechteprüfung selbst liegt in `lib/planung/berechtigungen.ts` und wird von jeder Server
  * Action erneut angewandt — was hier nicht angezeigt wird, ist damit auch nicht schreibbar.
  */
-export default async function Teachers({ searchParams }: { searchParams: Promise<{ lehrer?: string; woche?: string; fehler?: string; ok?: string }> }) {
+export default async function Teachers({ searchParams }: { searchParams: Promise<{ lehrer?: string; woche?: string; fehler?: string; ok?: string; loeschen?: string; konto?: string; kontofehler?: string }> }) {
   const me = await requireTeacher();
   const sp = await searchParams;
   const alle = me.is_admin ? listAllTeachers() : [me];
@@ -39,6 +40,10 @@ export default async function Teachers({ searchParams }: { searchParams: Promise
   const extra: Record<string, string> = me.is_admin ? { lehrer: String(ziel.id) } : {};
   const zurueck = `${"/lehrer"}?${new URLSearchParams({ ...extra, woche }).toString()}`;
   const fremdGewuenscht = !me.is_admin && gewaehlt > 0 && gewaehlt !== me.id;
+  // Accounts (nur Verwaltung): Rolle, Deaktivieren, Löschen mit Bestätigungsschritt (?loeschen=id)
+  const verwaltungAktiv = me.is_admin ? aktiveVerwaltung() : 0;
+  const loeschId = me.is_admin ? Number(sp.loeschen) || 0 : 0;
+  const vorschau = loeschId && loeschId !== me.id ? loeschVorschau(loeschId) : null;
 
   return (
     <>
@@ -101,34 +106,68 @@ export default async function Teachers({ searchParams }: { searchParams: Promise
           </div>
 
           {me.is_admin && (
-            <div className="mt-10">
+            <div id="accounts" className="mt-10 scroll-mt-6">
               <SectionTitle>Accounts</SectionTitle>
+              {(sp.konto || sp.kontofehler) && !vorschau && (
+                <p className={`mb-3 rounded-2xl px-4 py-3 text-[14px] ${sp.kontofehler ? "bg-red-wash text-red" : "bg-green-wash text-green"}`} role="status">
+                  {sp.kontofehler ?? sp.konto}
+                </p>
+              )}
               <ul className="panel divide-y divide-line">
-                {listAllTeachers().map((t) => (
-                  <li key={t.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="font-semibold">
-                        {t.name} {t.is_admin ? <Pill tone="accent">Verwaltung</Pill> : null} {!t.active && <Pill>deaktiviert</Pill>}
+                {alle.map((t) => {
+                  const letzteVerwaltung = !!t.is_admin && !!t.active && verwaltungAktiv <= 1;
+                  const bestaetigen = vorschau && vorschau.konto.id === t.id ? vorschau : null;
+                  return (
+                    <li key={t.id} id={`konto-${t.id}`} className="flex scroll-mt-6 flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3">
+                      <div className="min-w-0 grow basis-52">
+                        <div className="font-semibold">
+                          {t.name} {t.is_admin && t.id === me.id ? <Pill tone="accent">Verwaltung</Pill> : null} {!t.active && <Pill>deaktiviert</Pill>}
+                        </div>
+                        <div className="text-[13px] text-ink-2">
+                          Benutzername <span className="font-mono">{t.username}</span>
+                          {t.must_change_password ? " · Startpasswort noch nicht geändert" : ""}
+                        </div>
                       </div>
-                      <div className="text-[13px] text-ink-2">
-                        Benutzername <span className="font-mono">{t.username}</span>
-                        {t.must_change_password ? " · Startpasswort noch nicht geändert" : ""}
-                      </div>
-                    </div>
-                    {t.id !== me.id && (
-                      <>
-                        <ResetPasswordForm teacherId={t.id} />
-                        <form action={setTeacherActiveAction.bind(null, t.id, !t.active)}>
-                          <button className="btn btn-ghost btn-sm">{t.active ? "Deaktivieren" : "Aktivieren"}</button>
-                        </form>
-                      </>
-                    )}
-                  </li>
-                ))}
+                      {t.id !== me.id && (
+                        <>
+                          <form className="inline-flex rounded-full bg-panel p-0.5" aria-label={`Rolle von ${t.name}`}>
+                            {(["lehrer", "verwaltung"] as const).map((rolle) => {
+                              const an = (rolle === "verwaltung") === !!t.is_admin;
+                              return (
+                                <button
+                                  key={rolle}
+                                  type={an ? "button" : "submit"}
+                                  formAction={an ? undefined : setTeacherRoleAction.bind(null, t.id, rolle)}
+                                  aria-pressed={an}
+                                  disabled={!an && rolle === "lehrer" && letzteVerwaltung}
+                                  className={`min-h-[34px] rounded-full px-3 text-[13px] font-semibold disabled:opacity-50 ${an ? "bg-accent text-on-fill" : "text-ink-2 hover:text-ink"}`}
+                                >
+                                  {rolle === "lehrer" ? "Lehrer" : "Verwaltung"}
+                                </button>
+                              );
+                            })}
+                          </form>
+                          <ResetPasswordForm teacherId={t.id} />
+                          <form action={setTeacherActiveAction.bind(null, t.id, !t.active)}>
+                            <button className="btn btn-ghost btn-sm">{t.active ? "Deaktivieren" : "Aktivieren"}</button>
+                          </form>
+                          {!letzteVerwaltung && !bestaetigen && (
+                            <Link href={`/lehrer?loeschen=${t.id}#konto-${t.id}`} className="btn btn-ghost btn-sm text-red">
+                              <Trash2 size={15} aria-hidden /> Löschen
+                            </Link>
+                          )}
+                        </>
+                      )}
+                      {bestaetigen && <LoeschenBestaetigen vorschau={bestaetigen} me={me} alle={alle} fehler={sp.kontofehler} verwaltungAktiv={verwaltungAktiv} />}
+                    </li>
+                  );
+                })}
               </ul>
               <p className="mt-3 flex items-center gap-1 text-[13px] text-ink-3">
-                Startpasswörter
-                <Info label="Info zu Passwörtern">Neue und zurückgesetzte Accounts bekommen ein eigenes Startpasswort. Es wird nur einmal angezeigt und muss beim ersten Login geändert werden. Deaktivierte Lehrer bleiben in der Dokumentation erhalten.</Info>
+                Startpasswörter und Rollen
+                <Info label="Info zu Passwörtern und Rollen">
+                  Neue und zurückgesetzte Accounts bekommen ein eigenes Startpasswort. Es wird nur einmal angezeigt und muss beim ersten Login geändert werden. Die Verwaltung sieht und ändert alles; ein Lehrer seine eigene Planung. Die eigene Rolle ändert eine andere Verwaltung, eine Verwaltung muss es immer geben. Deaktivieren ist vorübergehend, Löschen endgültig. Deaktivierte und gelöschte Lehrer bleiben in Dokumentation und Abrechnung erhalten.
+                </Info>
               </p>
             </div>
           )}
@@ -181,5 +220,68 @@ export default async function Teachers({ searchParams }: { searchParams: Promise
         </aside>
       </div>
     </>
+  );
+}
+
+/**
+ * Der Bestätigungsschritt zu „Löschen“: sagt, was passiert (Anmeldung, Listen, Verlauf, Plätze, Benutzername), fragt,
+ * wer die Schüler übernimmt (vorgewählt: wer löscht), und nennt den Grund, wenn gerade nicht gelöscht werden kann.
+ */
+function LoeschenBestaetigen({ vorschau, me, alle, fehler, verwaltungAktiv }: { vorschau: LoeschVorschau; me: Teacher; alle: Teacher[]; fehler?: string; verwaltungAktiv: number }) {
+  const { konto, schueler, plaetze, laufend, verlauf } = vorschau;
+  const grund = loeschFehler(getKonto(me.id), konto, { aktiveVerwaltung: verwaltungAktiv, laufend, schueler: 0, nachfolger: null });
+  const nachfolger = alle.filter((t) => t.id !== konto.id && t.active);
+  const username = alle.find((t) => t.id === konto.id)?.username;
+  return (
+    <div className="basis-full rounded-2xl border border-red/30 bg-red-wash/40 px-4 py-4">
+      <h3 className="mb-2 font-semibold">{konto.name} löschen?</h3>
+      {fehler && fehler !== grund && (
+        <p className="mb-3 text-[14px] text-red" role="status">
+          {fehler}
+        </p>
+      )}
+      {grund ? (
+        <>
+          <p className="mb-3 text-[14px] text-red">{grund}</p>
+          <Link href="/lehrer#accounts" className="btn btn-secondary btn-sm">
+            Zurück
+          </Link>
+        </>
+      ) : (
+        <>
+          <ul className="mb-3 grid list-disc gap-1 pl-5 text-[14px] text-ink-2">
+            <li>{konto.name} kann sich nicht mehr anmelden und verschwindet aus allen Listen, aus Heute und aus der Planung.</li>
+            {verlauf ? (
+              <li>Einheiten, Dokumentation und Abrechnung behalten den Namen {konto.name}.</li>
+            ) : (
+              <li>{konto.name} hat noch nichts unterrichtet. Das Konto wird ganz entfernt.</li>
+            )}
+            {plaetze > 0 && <li>{plaetze === 1 ? "Ein künftiger Platz fällt" : `${plaetze} künftige Plätze fallen`} aus dem Wochenplan; vergangene bleiben.</li>}
+            {username && <li>Der Benutzername „{username}“ ist danach wieder frei.</li>}
+          </ul>
+          <form action={deleteTeacherAction.bind(null, konto.id)} className="flex flex-wrap items-end gap-3">
+            {schueler.length > 0 && (
+              <label className="field w-full max-w-[320px]">
+                <span className="label">{schueler.length === 1 ? `${schueler[0].name} übernimmt` : `Die ${schueler.length} Schüler übernimmt`}</span>
+                <select className="input" name="nachfolger" defaultValue={String(me.id)} required>
+                  {nachfolger.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <button className="btn btn-danger btn-sm border border-red/30">
+              <Trash2 size={15} aria-hidden /> Endgültig löschen
+            </button>
+            <Link href="/lehrer#accounts" className="btn btn-ghost btn-sm">
+              Abbrechen
+            </Link>
+          </form>
+          <p className="mt-3 text-[13px] text-ink-3">Nur für eine Weile weg? Dann lieber „Deaktivieren“.</p>
+        </>
+      )}
+    </div>
   );
 }

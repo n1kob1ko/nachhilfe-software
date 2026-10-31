@@ -23,6 +23,7 @@ import { bestaetigeAbschluss, isAbschlussFeld, korrigiereFeld } from "@/lib/absc
 import { clientIp } from "@/lib/client-ip";
 import { db, usernameFor } from "@/lib/db";
 import { fachHeute } from "@/lib/heute";
+import { getKonto, loescheLehrer, setzeAktiv, setzeRolle, type Ergebnis } from "@/lib/lehrer-konten";
 import { endUnit, expectedSubject, sweepIdleUnits } from "@/lib/learning";
 import { INITIAL_PASSWORD, PUBLIC_DEFAULT_PASSWORD, randomStartPassword } from "@/lib/password";
 import * as repo from "@/lib/repo";
@@ -102,7 +103,10 @@ export async function createTeacherAction(_prev: FormState, formData: FormData):
   const name = str(formData, "name");
   if (!name) return { error: "Bitte einen Namen eingeben." };
   const username = usernameFor(str(formData, "username") || name);
-  if (db().prepare("SELECT 1 FROM teachers WHERE username = ? OR name = ?").get(username, name)) return { error: "Diesen Lehrer gibt es schon." };
+  const gibtEs = db().prepare("SELECT deleted_at FROM teachers WHERE username = ? OR name = ?").get(username, name) as { deleted_at: string | null } | undefined;
+  // der Name eines gelöschten Kontos bleibt in der Dokumentation stehen, deshalb ist er vergeben
+  if (gibtEs?.deleted_at) return { error: "Diesen Namen trägt ein gelöschtes Konto. Bitte den Namen etwas anders schreiben, z. B. mit Nachnamen." };
+  if (gibtEs) return { error: "Diesen Lehrer gibt es schon." };
   const res = db().prepare("INSERT INTO teachers (name, username) VALUES (?, ?)").run(name, username);
   // every account gets its own one-time start password; it is shown only here and never stored in clear
   const start = randomStartPassword();
@@ -114,6 +118,8 @@ export async function createTeacherAction(_prev: FormState, formData: FormData):
 export async function resetTeacherPasswordAction(teacherId: number, _prev: FormState): Promise<FormState> {
   const me = await requireAdmin();
   if (teacherId === me.id) return { error: "Das eigene Passwort bitte unter „Passwort ändern“ ändern." };
+  const ziel = getKonto(teacherId);
+  if (!ziel || ziel.deleted_at) return { error: "Dieses Konto gibt es nicht mehr." };
   const start = randomStartPassword();
   setPassword(teacherId, start, true);
   db().prepare("DELETE FROM teacher_sessions WHERE teacher_id = ?").run(teacherId);
@@ -124,9 +130,32 @@ export async function resetTeacherPasswordAction(teacherId: number, _prev: FormS
 export async function setTeacherActiveAction(teacherId: number, active: boolean) {
   const me = await requireAdmin();
   if (teacherId === me.id) return;
-  db().prepare("UPDATE teachers SET active = ? WHERE id = ?").run(active ? 1 : 0, teacherId);
-  if (!active) db().prepare("DELETE FROM teacher_sessions WHERE teacher_id = ?").run(teacherId);
+  const ergebnis = setzeAktiv(me.id, teacherId, active);
   revalidatePath("/lehrer");
+  if (!ergebnis.ok) redirect(kontoMeldung(ergebnis));
+}
+
+/** Zurück zu den Accounts, mit der Rückmeldung dort (nicht oben auf der Seite). */
+function kontoMeldung(e: Ergebnis) {
+  return `/lehrer?${e.ok ? `konto=${encodeURIComponent(e.hinweis)}` : `kontofehler=${encodeURIComponent(e.fehler)}`}#accounts`;
+}
+
+/** Rolle Lehrer oder Verwaltung; die Regeln stehen in lib/lehrer-konten.ts und lesen die Rechte aus der Datenbank. */
+export async function setTeacherRoleAction(teacherId: number, rolle: "lehrer" | "verwaltung") {
+  const me = await requireAdmin();
+  const ergebnis = setzeRolle(me.id, teacherId, rolle === "verwaltung");
+  revalidatePath("/", "layout");
+  redirect(kontoMeldung(ergebnis));
+}
+
+/** Konto löschen nach dem Bestätigungsschritt; `nachfolger` übernimmt die Schüler. */
+export async function deleteTeacherAction(teacherId: number, formData: FormData) {
+  const me = await requireAdmin();
+  const nachfolger = Number(formData.get("nachfolger")) || null;
+  const ergebnis = loescheLehrer(me.id, teacherId, nachfolger);
+  revalidatePath("/", "layout");
+  const id = Number(teacherId) || 0;
+  redirect(ergebnis.ok ? kontoMeldung(ergebnis) : `/lehrer?loeschen=${id}&kontofehler=${encodeURIComponent(ergebnis.fehler)}#konto-${id}`);
 }
 
 // ---------- units ----------

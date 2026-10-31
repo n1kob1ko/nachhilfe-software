@@ -288,8 +288,9 @@ const toTask = (r: Row): Task => ({
 export function listTeachers(): Teacher[] {
   return db().prepare(`SELECT ${TEACHER_COLS} FROM teachers WHERE active = 1 ORDER BY name COLLATE NOCASE`).all() as Teacher[];
 }
+/** Alle Konten, auch deaktivierte; gelöschte nicht (lib/lehrer-konten.ts). */
 export function listAllTeachers(): Teacher[] {
-  return db().prepare(`SELECT ${TEACHER_COLS} FROM teachers ORDER BY active DESC, name COLLATE NOCASE`).all() as Teacher[];
+  return db().prepare(`SELECT ${TEACHER_COLS} FROM teachers WHERE deleted_at IS NULL ORDER BY active DESC, name COLLATE NOCASE`).all() as Teacher[];
 }
 export function getTeacher(id: number | null): Teacher | null {
   if (!id) return null;

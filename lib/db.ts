@@ -1629,6 +1629,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // „Kein Name“ einmal je Einheit (lib/kein-name.ts, F3, 2026-10-28): wann die Lehrkraft für diese Einheit bestätigt hat, dass auf den
   // Seiten kein Name steht; gilt dann für jede weitere KI-Lesung der laufenden Einheit. null = noch nicht
   ["units", "keine_namen_at", "TEXT"],
+  // Konto löschen (lib/lehrer-konten.ts, 2026-10-31): wann das Konto eines Lehrers mit Verlauf entfernt wurde. Es bleibt als Name in
+  // Dokumentation und Abrechnung (active = 0, kein Passwort, Benutzername frei); null = Konto besteht
+  ["teachers", "deleted_at", "TEXT"],
 ];
 
 /** Teachers to start with; more can be added later. */
