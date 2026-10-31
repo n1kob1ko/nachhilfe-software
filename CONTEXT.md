@@ -16,7 +16,10 @@ Code. Die Phasen und Entscheidungen stehen in [tommys-merge.md](tommys-merge.md)
 Wer unterrichtet und mit dem Werkzeug arbeitet. **Die Person, nicht ihr Zugang** —
 eine Zeile in `teachers`, mit Anmeldename, Passwort und `is_admin`. Wo es um
 Anmelden, Passwort oder Rechte geht, heißt es Konto; wo es um Unterricht geht,
-Lehrer.
+Lehrer. Ein Konto hat eine von zwei Rollen, **Lehrer** oder **Verwaltung** (`is_admin`);
+die Verwaltung vergibt sie (nie die eigene, eine aktive Verwaltung bleibt immer).
+Ein Konto **löschen** ist endgültig: ohne Verlauf ist die Zeile weg, mit Verlauf bleibt
+nur der Name für Dokumentation und Abrechnung (`deleted_at`, `lib/lehrer-konten.ts`).
 _Avoid_: Lehrkraft, Nutzer, Benutzer, Account, Trainer
 
 **Schüler**:

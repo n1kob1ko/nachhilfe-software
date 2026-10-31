@@ -160,9 +160,9 @@ export function setLehrerRaumPraeferenzen(teacherId: number, raumIds: number[]) 
   db().prepare("UPDATE teachers SET preferred_room_ids = ? WHERE id = ?").run(JSON.stringify(raumIds), teacherId);
 }
 
-/** Alle Lehrer-Ids (auch deaktivierte) — für „erlaubte Lehrer“ einer Schülerplanung. */
+/** Alle Lehrer-Ids (auch deaktivierte, nicht gelöschte) — für „erlaubte Lehrer“ einer Schülerplanung. */
 export function listLehrerIds(): number[] {
-  return (db().prepare("SELECT id FROM teachers ORDER BY id").all() as { id: number }[]).map((r) => r.id);
+  return (db().prepare("SELECT id FROM teachers WHERE deleted_at IS NULL ORDER BY id").all() as { id: number }[]).map((r) => r.id);
 }
 
 // ---------- Schüler ----------
