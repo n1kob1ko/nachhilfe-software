@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-// Outfit for headings and big numbers, Plus Jakarta Sans (tabular figures) for everything else
-const outfit = Outfit({ subsets: ["latin", "latin-ext"], weight: ["500", "600", "700"], variable: "--font-outfit", display: "swap" });
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-jakarta", display: "swap" });
+// Outfit for headings and big numbers, Plus Jakarta Sans (tabular figures) for everything else. Both are in app/fonts
+// (variable TTFs from github.com/google/fonts, OFL): the build must not need fonts.googleapis.com, whose fetch sometimes fails and then stops the whole build
+const outfit = localFont({ src: "./fonts/Outfit.ttf", weight: "100 900", variable: "--font-outfit", display: "swap" });
+const jakarta = localFont({ src: "./fonts/PlusJakartaSans.ttf", weight: "200 800", variable: "--font-jakarta", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "Lernheft", template: "%s · Lernheft" },
