@@ -83,7 +83,7 @@ async function setup() {
   return { db, repo, units, c, router, pu, praes, teacher, schueler, start, hochladen, gefragt, zaehle };
 }
 
-test("Folien als Text: aus dem HTML ohne Skripte, Entitäten aufgelöst, Fragen getrennt; aus Lernheft-Folien genauso", async () => {
+test("Folien als Text: aus dem HTML ohne Skripte, Entitäten aufgelöst, Fragen getrennt; aus DreamStudy-Folien genauso", async () => {
   const pu = await import("./praesentation-unterricht");
   const html = `<html><head><style>h1{color:red}</style></head><body>
     <section><h1>Die vier F&auml;lle</h1><ul><li>Wer: 1. Fall</li><li>Wem &amp; wen</li></ul><p>Wie fragst du nach dem 3. Fall?</p><script>document.write("GEHEIM")</script></section>
@@ -98,7 +98,7 @@ test("Folien als Text: aus dem HTML ohne Skripte, Entitäten aufgelöst, Fragen 
     ],
   );
   assert.ok(!JSON.stringify(f).includes("GEHEIM") && !JSON.stringify(f).includes("color"), "nothing of scripts or styles");
-  // the deck Lernheft builds itself (lib/praesentation-html.ts): one slide per .folie
+  // the deck DreamStudy builds itself (lib/praesentation-html.ts): one slide per .folie
   const { deckHtml } = await import("./praesentation-html");
   const deck = { titel: "T", folien: DECK.folien.map((x) => ({ ...x, schritt_ids: [], pruefen: [] })) } as never;
   const g = pu.folienAusHtml(deckHtml(deck));

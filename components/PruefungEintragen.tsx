@@ -213,7 +213,7 @@ export function PruefungEintragen({ token, faecher, weitere }: { token: string; 
         <p className="flex items-start gap-2 rounded-lg bg-panel px-3 py-2.5 text-[13px] text-ink-2" data-testid="eintragen-datenschutz">
           <ShieldCheck size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
           <span>
-            Deine Fotos sehen nur deine Lehrer. Damit niemand Fach, Datum und Stoff abtippen muss, liest ein Dienst außerhalb von Lernheft die Fotos aus, aber nur, wenn kein Name darauf zu sehen ist. Deck deinen Namen vorher ab.
+            Deine Fotos sehen nur deine Lehrer. Damit niemand Fach, Datum und Stoff abtippen muss, liest ein Dienst außerhalb von DreamStudy die Fotos aus, aber nur, wenn kein Name darauf zu sehen ist. Deck deinen Namen vorher ab.
           </span>
         </p>
         <input

@@ -94,7 +94,7 @@ test("the KI not reachable: the hint says so in plain words, without the provide
     assert.ok("ok" in out);
     assert.ok(gefragt >= 1, "the KI was asked");
     const h = vg.vorgabeDerEinheit(unit.id)!.hinweis;
-    assert.match(h, /^Die KI war nicht erreichbar\. Lernheft hat deinen Text selbst zerlegt\./);
+    assert.match(h, /^Die KI war nicht erreichbar\. DreamStudy hat deinen Text selbst zerlegt\./);
     assert.equal(/503|\{|upstream/.test(h), false, h);
   } finally {
     router.setTransport(null);

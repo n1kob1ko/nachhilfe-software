@@ -147,7 +147,7 @@ test("export: the JSON backup holds every row and restores into an empty databas
   const hash = (other.prepare("SELECT password_hash, must_change_password FROM teachers WHERE username = 'niko'").get() as { password_hash: string; must_change_password: number });
   assert.ok(hash.password_hash.startsWith("scrypt$"), "after a restore the start password applies");
   assert.equal(hash.must_change_password, 1);
-  assert.throws(() => restoreBackup(other, { format: "etwas-anderes" }), /keine Lernheft-Sicherung/);
+  assert.throws(() => restoreBackup(other, { format: "etwas-anderes" }), /keine DreamStudy-Sicherung/);
 });
 
 test("Sicherung: Räume, Verfügbarkeit, Wochenabweichungen und der Wochenplan sind dabei und kommen unverändert zurück", async () => {

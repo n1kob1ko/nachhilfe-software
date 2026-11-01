@@ -1,4 +1,4 @@
-# Bildgeschichten (Lernheft Phase 4)
+# Bildgeschichten (DreamStudy Phase 4)
 
 Der Schüler sieht eine Bilderfolge und schreibt dazu eine Geschichte. Eine Bildgeschichte ist eine normale Textarbeit mit der Textsorte „Bildgeschichte“ und hochgeladenen Bildern. Deshalb gilt alles, was für Texte gilt, auch hier: automatisches Speichern, frühere Fassungen, Mitlesen, Korrektur, Lernverlauf und A4-Druck.
 

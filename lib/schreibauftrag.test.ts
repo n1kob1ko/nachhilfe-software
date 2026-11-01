@@ -459,7 +459,7 @@ test("builder: the student's own Textbeilage, a draft for one Schreibauftrag, an
 
   const forStudent = await builder.generateTasks(settings({ studentId: s.sid, skillIds: ["deutsch.os.matura.kommentar"], count: 2, useAI: false }), builder.studentContext(s.sid));
   assert.ok(forStudent.tasks.every((t) => t.data.passageTitle === "„Ein Hof für alle“ von Erfundener Autor (Erfundene Zeitung, 1. Juni 2026)" && t.data.textsorte === "Bericht"), "the student's latest Kommentar");
-  assert.ok(forStudent.tasks.every((t) => !t.answer.sample), "no model text for a Textbeilage the Lernheft does not know");
+  assert.ok(forStudent.tasks.every((t) => !t.answer.sample), "no model text for a Textbeilage DreamStudy does not know");
   const forTi = await builder.generateTasks(settings({ studentId: s.sid, skillIds: ["deutsch.os.matura.textinterpretation"], count: 1, useAI: false }), builder.studentContext(s.sid));
   assert.equal(forTi.tasks[0].data.passageTitle, "„Sieben Uhr zwölf“ von Ida Brunnhofer (2026)", "no Textinterpretation of the student: the example story");
 

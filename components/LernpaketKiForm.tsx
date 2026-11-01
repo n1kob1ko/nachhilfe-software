@@ -83,7 +83,7 @@ export function LernpaketKiForm(props: {
         </p>
       )}
       <p className="text-[14px] text-ink-2 sm:col-span-2">
-        Die KI schreibt Ablauf, Erklärungen, Fragen und erwartete Antworten zu einem Thema. Aufgaben nimmt sie zuerst aus der Bibliothek und den eingebauten Generatoren; eigene behält Lernheft nur, wenn sie die automatische Prüfung bestehen. Das Paket kommt als Entwurf und bleibt „Ungeprüft“, bis du es geprüft hast. Was die KI unsicher findet, steht bei „Noch zu prüfen“.
+        Die KI schreibt Ablauf, Erklärungen, Fragen und erwartete Antworten zu einem Thema. Aufgaben nimmt sie zuerst aus der Bibliothek und den eingebauten Generatoren; eigene behält DreamStudy nur, wenn sie die automatische Prüfung bestehen. Das Paket kommt als Entwurf und bleibt „Ungeprüft“, bis du es geprüft hast. Was die KI unsicher findet, steht bei „Noch zu prüfen“.
       </p>
       {props.kiAus && (
         <p className="rounded-lg bg-amber-wash px-4 py-3 text-[14px] text-amber sm:col-span-2" role="status">
@@ -162,7 +162,7 @@ export function LernpaketKiForm(props: {
             <Loader2 size={18} className="mt-0.5 shrink-0 animate-spin text-accent" aria-hidden />
             <span>
               Die KI entwirft das Lernpaket … <span className="num font-semibold">{dauerText(seit)}</span>
-              <span className="block text-[13px] text-ink-3">Das dauert meist ein bis drei Minuten. Danach prüft Lernheft jede Aufgabe und speichert den Entwurf.</span>
+              <span className="block text-[13px] text-ink-3">Das dauert meist ein bis drei Minuten. Danach prüft DreamStudy jede Aufgabe und speichert den Entwurf.</span>
             </span>
           </p>
         ) : (

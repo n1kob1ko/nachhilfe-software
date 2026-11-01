@@ -80,7 +80,7 @@ export function ErwartungPanel({ erwartung }: { erwartung: { name: string; punkt
 }
 
 /**
- * „So kann es aussehen“: the Lernheft's model text of this Textsorte about its own example, part by part. A
+ * „So kann es aussehen“: DreamStudy's model text of this Textsorte about its own example, part by part. A
  * Betreff, an Anrede or a Gruß stays on its own line, as in the letter.
  */
 export function ExamplePanel({ sorte }: { sorte: SorteKey }) {
@@ -91,7 +91,7 @@ export function ExamplePanel({ sorte }: { sorte: SorteKey }) {
     <details className="ti-box" data-testid="beispiel">
       <summary className="ti-summary">So kann es aussehen</summary>
       <p className="mt-1 text-[13px] text-ink-2">
-        {story ? "Eine Beispiel-Interpretation zu einer anderen Kurzgeschichte" : `Ein Beispiel für ${s.einen} zu einer anderen Textbeilage`} („{b.beilage.title}“, für das Lernheft geschrieben). {story ? "Sie" : "Es"} zeigt
+        {story ? "Eine Beispiel-Interpretation zu einer anderen Kurzgeschichte" : `Ein Beispiel für ${s.einen} zu einer anderen Textbeilage`} („{b.beilage.title}“, für DreamStudy geschrieben). {story ? "Sie" : "Es"} zeigt
         den Aufbau, nicht die Lösung für deinen Text.
       </p>
       {b.situation && <p className="mt-2 text-[13px] text-ink-2">Schreibsituation: {b.situation}</p>}

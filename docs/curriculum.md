@@ -19,7 +19,7 @@ als zweites System daneben.
 | Wortlaut der Lehrpläne Deutsch, Englisch (Lebende Fremdsprache), Mathematik für VS, MS, AHS (Unter- und Oberstufe), HTL, HAK | **importierbar**: 15 Pakete `curriculum/ris-*.json`, aus den RIS-PDFs von niko (06.10.2026) |
 | Verknüpfung Lehrplan-Eintrag ↔ Fähigkeit (`scripts/lehrplan_mapping.json`) | **eigene didaktische Zuordnung**, nicht Teil des Lehrplans |
 | IQS (Kompetenzmodelle, iKM PLUS, Aufgabenpools) | nur als **Referenz** eingetragen, Inhalte werden nie übernommen |
-| Fähigkeiten Mathematik, Deutsch, Englisch (Schulstufe 3–13) | **eigene Struktur** von Lernheft (Quelle „Lernheft – eigene Inhalte“) |
+| Fähigkeiten Mathematik, Deutsch, Englisch (Schulstufe 3–13) | **eigene Struktur** von DreamStudy (Quelle „DreamStudy – eigene Inhalte“) |
 | Themen Mathematik, Deutsch, Englisch von der Volksschule bis zur Oberstufe (`lib/themen/`): 572 Fähigkeiten mit Erklärung und typischen Fehlern. Mathematik: Volksschule 31 (`mathe-vs.ts`), 5. bis 8. Schulstufe 95 (`mathe-unterstufe.ts`), Oberstufe AHS, HAK, HTL 163 (`mathe-oberstufe.ts`). Deutsch: Volksschule bis 8. Schulstufe 52 (`deutsch-unterstufe.ts`), Oberstufe 85 (`deutsch-oberstufe.ts`). Englisch: Volksschule bis 8. Schulstufe 67 (`englisch-unterstufe.ts`), Oberstufe 79 (`englisch-oberstufe.ts`). Dazu typische Fehler und fehlende Erklärungen für die Fähigkeiten, die es schon gab | **eigene Struktur und eigener Text**; Themen nach den Lehrplänen VS, MS, AHS, HAK, HTL, mit den Inhaltsverzeichnissen gängiger Schulbücher abgeglichen (nur Themennamen, keine Aufgabe übernommen); jedes Modul fachlich gegengeprüft. Fähigkeiten, die es nur in einer Schulart gibt (z. B. Finanzmathematik an der HAK), tragen diese Schulart |
 | Paket „Volksschule Mathematik und Deutsch“ (45 Fähigkeiten) | **eigene Struktur**, nicht der Lehrplantext; „Schriftlich dividieren“ ab der 3. Schulstufe wie im Lehrplan (VS-MAT-3-B2-K2) |
 | Paket „DEMO – Beispiel-Lehrplan“ | **erfundene Demo-Daten**, überall mit „DEMO“ gekennzeichnet, mit einem Klick wieder entfernbar |
@@ -186,7 +186,7 @@ Zusammenführung auf; übernommene Verknüpfungen bleiben sichtbar und entfernba
 - nur Referenz: IQS, Matura, Schulbücher (copy_allowed = 0)
 
 Jede Aufgabe trägt `source_type` und `source_id`; KI-Aufgaben zeigen auf die Quelle „KI-generiert
-(Claude)“, generierte auf „Lernheft – eigene Inhalte“.
+(Claude)“, generierte auf „DreamStudy – eigene Inhalte“.
 
 ## Aufgaben ↔ Fähigkeiten
 

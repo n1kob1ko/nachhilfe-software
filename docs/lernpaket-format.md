@@ -87,7 +87,7 @@ zeigt Tokens und Kosten; dazu `--schulart`, `--klasse`, `--dauer`, `--schwierigk
 | `schulart` | nein | `Volksschule`, `Mittelschule`, `Gymnasium`, `HTL`, `HAK` (auch `VS`, `MS`, `AHS`); leer = jede |
 | `klasse` | nein | Klasse der Schulart (VS 1–4, MS 1–4, Gymnasium 1–8, HTL/HAK 1–5); nur mit `schulart` |
 | `thema` | nein | z. B. „Grammatik“ |
-| `faehigkeiten` | nein | Kennungen von Fähigkeiten in Lernheft, die wichtigste zuerst, z. B. `"deutsch.grammatik.faelle"`. Die Kennung steht in der Adresse der Fähigkeitsseite (`/faehigkeiten/deutsch.grammatik.faelle`). Sie muss zum `fach` gehören. |
+| `faehigkeiten` | nein | Kennungen von Fähigkeiten in DreamStudy, die wichtigste zuerst, z. B. `"deutsch.grammatik.faelle"`. Die Kennung steht in der Adresse der Fähigkeitsseite (`/faehigkeiten/deutsch.grammatik.faelle`). Sie muss zum `fach` gehören. |
 | `schwierigkeit` | nein | `sehr leicht`, `leicht`, `mittel` (Vorgabe), `schwer`, `sehr schwer` |
 | `dauer_minuten` | nein | muss die Summe der `minuten` aller Schritte sein; weglassen = die App rechnet sie |
 | `ziel` | nein | was der Schüler am Ende kann, ein bis zwei Sätze |
@@ -318,4 +318,4 @@ Deutsch, 4. Klasse Volksschule, „Die vier Fälle“, 50 Minuten in 7 Schritten
 ## Versionen
 
 Nur `"version": 1` gibt es. Ändert sich das Format so, dass alte Dateien nicht mehr passen, steigt die
-Nummer; die App sagt dann „Version 2 kennt Lernheft nicht“, statt die Datei falsch zu lesen.
+Nummer; die App sagt dann „Version 2 kennt DreamStudy nicht“, statt die Datei falsch zu lesen.

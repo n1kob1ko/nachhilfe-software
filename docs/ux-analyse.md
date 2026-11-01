@@ -1,4 +1,4 @@
-# Lernheft: UX-Analyse und Umbau (5. Okt. 2026)
+# DreamStudy: UX-Analyse und Umbau (5. Okt. 2026)
 
 ## Was heute im Weg steht
 

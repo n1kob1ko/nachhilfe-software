@@ -54,7 +54,7 @@ und kein Passwort; wer den Link hat, sieht diese Seite (wie bisher).
 | `lib/planung/terminanfragen.ts`, `components/planung/Terminanfragen.tsx`, `app/terminanfrage-actions.ts` | Terminanfragen: freie Zeiten, Anfragen ohne Namen anderer Schüler |
 | `app/lernen/[token]/manifest/route.ts` | das Web-App-Manifest **je Schüler**: `start_url` = `scope` = `id` = `/lernen/[token]`, damit die App genau seinen Link öffnet. Unbekannter Token: 404 |
 | `app/lernen/[token]/layout.tsx` | verweist auf das Manifest, `appleWebApp` für iOS, `noindex`, Farbe der Statusleiste |
-| `components/AppHinweis.tsx` | der Hinweis „Lernheft als App“ mit Install-Knopf, wo der Browser ihn anbietet |
+| `components/AppHinweis.tsx` | der Hinweis „DreamStudy als App“ mit Install-Knopf, wo der Browser ihn anbietet |
 | `components/SchuelerAppLink.tsx` | Link, Öffnen und QR-Code am Schülerprofil |
 | `lib/schuelerportal.ts` | die Übersicht: Prüfungen, Hausübungen, Unterlagen, vergangene Einheiten; nur seine Zeilen, nur freigegebene Felder |
 | `components/lernen/` | die Abschnitte der Übersicht |

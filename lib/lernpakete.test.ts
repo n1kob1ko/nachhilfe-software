@@ -77,7 +77,7 @@ test("invalid files name the step, task and field in German", async () => {
   };
   assert.match(fehler("{ kein json")[0], /kein gültiges JSON/);
   assert.match(fehler({ ...beispiel(), format: "lernheft-curriculum/1" })[0], /keine Lernpaket-Datei/);
-  assert.match(fehler({ ...beispiel(), version: 2 })[0], /Version 2 kennt Lernheft nicht/);
+  assert.match(fehler({ ...beispiel(), version: 2 })[0], /Version 2 kennt DreamStudy nicht/);
 
   const d = beispiel();
   d.schritte[1].minuten = 0;
@@ -99,8 +99,8 @@ test("invalid files name the step, task and field in German", async () => {
   assert.match(fehler(dauer)[0], /„dauer_minuten“: ist 45, die Schritte ergeben zusammen 50 Minuten/);
 
   assert.match(fehler({ ...beispiel(), klasse: 6 })[0], /Volksschule hat die Klassen 1 bis 4/);
-  assert.match(fehler({ ...beispiel(), schulart: "Hauptschule" })[0], /„Hauptschule“ kennt Lernheft nicht/);
-  assert.match(fehler({ ...beispiel(), faehigkeiten: ["deutsch.gibts.nicht"] })[0], /„deutsch\.gibts\.nicht“ gibt es in Lernheft nicht/);
+  assert.match(fehler({ ...beispiel(), schulart: "Hauptschule" })[0], /„Hauptschule“ kennt DreamStudy nicht/);
+  assert.match(fehler({ ...beispiel(), faehigkeiten: ["deutsch.gibts.nicht"] })[0], /„deutsch\.gibts\.nicht“ gibt es in DreamStudy nicht/);
   assert.match(fehler({ ...beispiel(), fach: "Mathematik" }).join("\n"), /gehört zu Deutsch, das Paket ist Mathematik/);
   assert.match(fehler({ ...beispiel(), schritte: [] })[0], /Feld „schritte“: braucht mindestens 1 Eintrag/);
 });
@@ -124,7 +124,7 @@ test("tasks are checked with the builder's rules", async () => {
   const optionen = mitAufgabe({ ...mc, data: { options: "a, b" } });
   assert.match((optionen as { fehler: string[] }).fehler[0], /Aufgabe 1, Feld „data\.options“: muss eine Liste/);
   const fremd = mitAufgabe({ ...mc, skillId: "mathe.bruch.kuerzen" });
-  assert.match((fremd as { fehler: string[] }).fehler[0], /Aufgabe 1: Fähigkeit „mathe\.bruch\.kuerzen“ (gehört zu Mathematik|gibt es in Lernheft nicht)/);
+  assert.match((fremd as { fehler: string[] }).fehler[0], /Aufgabe 1: Fähigkeit „mathe\.bruch\.kuerzen“ (gehört zu Mathematik|gibt es in DreamStudy nicht)/);
 
   // an open point does not stop the import; it stays until a teacher checks the package
   const offen = mitAufgabe({ ...mc, data: { ...mc.data, pruefen: ["Ist „4. Fall“ eindeutig?"] } });

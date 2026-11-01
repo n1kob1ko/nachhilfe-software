@@ -1,4 +1,4 @@
-# KI-Textkorrektur (Lernheft Phase 3)
+# KI-Textkorrektur (DreamStudy Phase 3)
 
 Ein Schüler schreibt eine Erlebniserzählung, einen Bericht, einen Beschwerdebrief oder eine Textinterpretation. Nach der Abgabe korrigiert der Lehrer den Text, wahlweise mit KI-Vorschlägen. Der Originaltext bleibt immer unverändert. Jede Änderung gilt erst, wenn der Lehrer sie übernimmt.
 

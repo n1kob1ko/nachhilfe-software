@@ -1,5 +1,5 @@
 {
- "_hinweis": "Zuordnung Lernheft-Fähigkeit → Lehrplan-Eintrag (eigene didaktische Entscheidung). [Fähigkeit, Code oder Code-Anfang, Wortlaut-Stelle]; leere Stelle = genau dieser Eintrag.",
+ "_hinweis": "Zuordnung DreamStudy-Fähigkeit → Lehrplan-Eintrag (eigene didaktische Entscheidung). [Fähigkeit, Code oder Code-Anfang, Wortlaut-Stelle]; leere Stelle = genau dieser Eintrag.",
  "ms-mathematik": [
   [
    "mathe.brueche.kuerzen",

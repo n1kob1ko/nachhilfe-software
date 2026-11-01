@@ -663,7 +663,7 @@ export function hinweiseFor(doc: TextDoc, v: AuftragView): SchreibHinweis[] {
 
 // ---------- the example of a Textsorte ----------
 
-/** The Lernheft's own example: a Textbeilage (or story) and a model text, part by part. */
+/** The DreamStudy's own example: a Textbeilage (or story) and a model text, part by part. */
 export type Beispiel = { beilage: Omit<AuftragView, "sorte" | "target" | "situation" | "countBlank">; situation: string; teile: { key: string; title: string; text: string }[] };
 
 export function beispielFor(sorte: SorteKey): Beispiel {

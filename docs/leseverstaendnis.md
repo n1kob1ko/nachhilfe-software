@@ -1,4 +1,4 @@
-# Leseverständnis (Lernheft Phase 5C)
+# Leseverständnis (DreamStudy Phase 5C)
 
 Ein längerer Lesetext mit mehreren Fragen dazu, wie ein Arbeitsblatt in der Schule. Es gibt **keine eigene Aufgabenverwaltung**: eine Leseverständnisübung ist eine normale Übung (Entwurf, Vorschau, senden, Tablet, eigener Laptop, Schüler-Link, Ergebnis, Lernverlauf, A4). Jede Frage ist eine normale Aufgabe. Den gemeinsamen Text trägt jede Frage in `data.passage` (Titel in `data.passageTitle`), genau wie die kurzen Textverständnis-Aufgaben vorher. Eine Übung, deren Fragen alle denselben Text haben, ist ein **Lesetext** (`readingSet` in `lib/lesen.ts`). Dann:
 

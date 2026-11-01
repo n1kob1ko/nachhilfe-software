@@ -1642,7 +1642,7 @@ let instance: Database.Database | null = null;
 export function dbPath() {
   // Serverless hosts wipe files on every restart: fail loudly instead of losing data quietly.
   if (process.env.VERCEL && !process.env.DATABASE_PATH)
-    throw new Error("Lernheft braucht einen Server mit dauerhaftem Speicher (siehe docs/betrieb.md). Auf Vercel gehen Datenbank und Uploads verloren.");
+    throw new Error("DreamStudy braucht einen Server mit dauerhaftem Speicher (siehe docs/betrieb.md). Auf Vercel gehen Datenbank und Uploads verloren.");
   return process.env.DATABASE_PATH || path.join(process.cwd(), "data", "nachhilfe.db");
 }
 
@@ -1892,10 +1892,10 @@ export function usernameFor(name: string) {
 const BUILTIN_SOURCES = [
   {
     key: "lernheft",
-    name: "Lernheft – eigene Inhalte",
+    name: "DreamStudy – eigene Inhalte",
     source_type: "eigen",
     url: "",
-    publisher: "Lernheft",
+    publisher: "DreamStudy",
     license: "eigen",
     attribution_text: "",
     commercial_use_allowed: 1,
@@ -2021,6 +2021,8 @@ function seedCurriculum(conn: Database.Database) {
         )
         .run(src);
     }
+    // the app was called Lernheft until 2026-11-01; the built-in source keeps its key, only the visible name follows
+    conn.exec(`UPDATE content_sources SET publisher = 'DreamStudy', name = REPLACE(name, 'Lernheft', 'DreamStudy') WHERE publisher = 'Lernheft'`);
     // skills without an origin are the app's own skill structure; every skill gets its stable code once
     conn.exec(`UPDATE skills SET source_id = (SELECT id FROM content_sources WHERE key = 'lernheft') WHERE source_id IS NULL`);
     // Phase 5C: the reading skill covers all of Leseverständnis, its Teilfähigkeiten name the parts

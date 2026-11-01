@@ -96,7 +96,7 @@ bewertet · Note N (Ansehen). Bei zwei Schülern zugleich nur die Texte dieser E
 
 ### Anpassung im Unterricht
 
-niko, 25.10.2026: Lernheft reagiert auf die Antworten des Schülers, zuerst nach festen Regeln, KI nur wenn nötig und
+niko, 25.10.2026: DreamStudy reagiert auf die Antworten des Schülers, zuerst nach festen Regeln, KI nur wenn nötig und
 im Budget, und alles geht auch ohne KI. Unter der Gerätezeile steht dann **ein** Vorschlag: der Grund in einfachen
 Worten („2 Fehler: Kehrwert vergessen · Brüche dividieren“), ein Hauptknopf und zugeklappt **Andere Möglichkeit**
 (die übrigen Wege, „Nicht nötig“ und nur dort neue Aufgaben der KI mit Kosten). Er kommt mit jeder neuen Antwort neu
@@ -146,7 +146,7 @@ Ohne Eingabe bleibt alles wie bisher, der Start ist nicht langsamer (eine Abfrag
 - Ein Termin im Text („nächste Woche Test“) wird nie von selbst eingetragen: die Karte fragt, das Datum
   wählt die Lehrkraft.
 - „Ändern“ und „Entfernen“ gibt es immer. Wählt die Lehrkraft selbst ein Paket oder eine Fähigkeit, gilt das.
-- **Art der Unterlagen** (niko, 27.10.2026: „Lernheft muss unterscheiden, ob das Dokument ein Thema erklärt, eine
+- **Art der Unterlagen** (niko, 27.10.2026: „DreamStudy muss unterscheiden, ob das Dokument ein Thema erklärt, eine
   Aufgabe enthält oder den Prüfungsumfang festlegt“): je Datei eine Zeile „Foto 2: erklärt ein Thema“ mit einer kleinen
   Auswahl (legt den Prüfungsstoff fest, ist ein Inhaltsverzeichnis, erklärt ein Thema, enthält Aufgaben, etwas anderes).
   Ein Tippen ändert sie (an der Datei gespeichert, `materials.rolle`); die Vorgabe wird aus der gespeicherten Lesung neu

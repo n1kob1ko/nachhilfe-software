@@ -108,7 +108,7 @@ export function teilSourceOf(textId: number): TeilSource | null {
 
 /**
  * The story Teilübungen of the builder are about: the student's latest Textinterpretation, else the
- * Lernheft's own example story (with model answers).
+ * DreamStudy's own example story (with model answers).
  */
 export function teilSourceForStudent(studentId: number | null): TeilSource {
   if (studentId) {

@@ -1,4 +1,4 @@
-# Textarbeit: längere Texte schreiben, speichern, drucken (Lernheft Phase 1)
+# Textarbeit: längere Texte schreiben, speichern, drucken (DreamStudy Phase 1)
 
 ## Ablauf
 

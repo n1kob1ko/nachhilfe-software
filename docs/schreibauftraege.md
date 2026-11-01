@@ -9,7 +9,7 @@ Jede Textsorte hat:
 - drei **Arbeitsaufträge** in eigenen Worten nach der Form der SRDP;
 - ihre **Merkmale** („Achte auf“), beim Schreiben und auf dem Arbeitsblatt;
 - **Hinweise ohne KI**, die nie etwas als falsch markieren;
-- ein **Beispiel**: eine Textbeilage und einen Mustertext, beide für das Lernheft geschrieben;
+- ein **Beispiel**: eine Textbeilage und einen Mustertext, beide für DreamStudy geschrieben;
 - **Teilübungen** im Übungs-Builder statt kurzer Mini-Aufgaben.
 
 ## Ablauf

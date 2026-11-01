@@ -8,7 +8,7 @@ const outfit = localFont({ src: "./fonts/Outfit.ttf", weight: "100 900", variabl
 const jakarta = localFont({ src: "./fonts/PlusJakartaSans.ttf", weight: "200 800", variable: "--font-jakarta", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "Lernheft", template: "%s · Lernheft" },
+  title: { default: "DreamStudy", template: "%s · DreamStudy" },
   description: "Nachhilfe-Software: Schülerprofile, Dokumentation jeder Einheit, Übungen, Fortschritt und Empfehlungen.",
 };
 

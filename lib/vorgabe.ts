@@ -305,7 +305,7 @@ export async function speichereVorgabe(o: VorgabeEingabe): Promise<{ ok: true; v
       const gesagt = !lesbar.ok && lesbar.grund === grund;
       if (lesen) hinweise.push(gespeichert(grund));
       else if (!gesagt) hinweise.push(grund);
-      if (text) hinweise.push("Lernheft hat deinen Text selbst zerlegt.");
+      if (text) hinweise.push("DreamStudy hat deinen Text selbst zerlegt.");
     }
   }
   const { heute, skillIds } = fuerHeute([...lehrer, ...blatt], test, text);

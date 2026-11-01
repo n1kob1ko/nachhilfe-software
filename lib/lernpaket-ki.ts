@@ -36,7 +36,7 @@ const HINWEISE_MAX = 1000;
 export function pruefeEingabe(e: KiEingabe): { auftrag: KiAuftrag } | { fehler: string[] } {
   const skillId = e.skillId?.trim() || null;
   const skill = skillId ? repo.getSkill(skillId) : null;
-  if (skillId && !skill) return { fehler: [`Die Fähigkeit „${skillId}“ gibt es in Lernheft nicht.`] };
+  if (skillId && !skill) return { fehler: [`Die Fähigkeit „${skillId}“ gibt es in DreamStudy nicht.`] };
   const fach = skill?.subject ?? (e.fach ?? "").trim();
   const thema = (e.thema ?? "").replace(/\s+/g, " ").trim() || skill?.area || "";
   if (!fach || !thema) return { fehler: ["Bitte eine Fähigkeit wählen, oder Fach und Thema angeben."] };

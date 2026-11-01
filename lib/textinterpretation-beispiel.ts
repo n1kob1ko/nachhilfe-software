@@ -1,6 +1,6 @@
 /**
  * The example for Textinterpretation: a short story and a model interpretation, both written for the
- * Lernheft. Story, author and year are invented; nothing comes from published literature, school books
+ * DreamStudy. Story, author and year are invented; nothing comes from published literature, school books
  * or Matura material. Used by the tests, the docs, the Teilübungen without a story of the student's own
  * and the "So kann es aussehen" view while writing.
  *

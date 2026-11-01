@@ -1,4 +1,4 @@
-# Lernheft as one long-running server with a persistent volume at /data.
+# DreamStudy as one long-running server with a persistent volume at /data.
 # Database (nachhilfe.db) and uploaded material (uploads/) both live there.
 FROM node:22-bookworm-slim AS build
 WORKDIR /app

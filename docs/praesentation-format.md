@@ -10,9 +10,9 @@ Unter Mehr › Präsentationen; Code in `lib/praesentationen.ts`, `lib/praesenta
 - **eine HTML-Datei** (z. B. eine Präsentation aus claude.ai): wird zu `index.html`.
 - **eine ZIP-Datei** mit einer HTML-Präsentation: reveal.js, iSpring, Articulate und alles, was eine
   `index.html` mitbringt.
-- **PowerPoint** (.pptx) lässt sich im Browser nicht mit Animationen abspielen. Lernheft lehnt die Datei
+- **PowerPoint** (.pptx) lässt sich im Browser nicht mit Animationen abspielen. DreamStudy lehnt die Datei
   mit einem Hinweis ab: als HTML exportieren (iSpring, Web-Export) oder als PDF speichern.
-- **PDF**: kommt ohne Animationen unter Material (dort zeigt Lernheft PDFs schon an).
+- **PDF**: kommt ohne Animationen unter Material (dort zeigt DreamStudy PDFs schon an).
 
 ### Grenzen der ZIP-Datei
 
@@ -33,7 +33,7 @@ Ohne ein Wort weggelassen werden `__MACOSX/`, Dateien, die mit einem Punkt begin
 `desktop.ini`.
 
 **Startseite**: die `index.html` (oder `index.htm`), die am weitesten oben liegt; sonst `story.html`
-(Articulate); sonst die einzige HTML-Datei. Gibt es keine, lehnt Lernheft die Datei ab.
+(Articulate); sonst die einzige HTML-Datei. Gibt es keine, lehnt DreamStudy die Datei ab.
 
 Gespeichert wird unter `uploads/praesentationen/<token>/` neben dem Material (also in `/data` und in den
 Sicherungen). Ausgeliefert werden nur Dateien, die beim Hochladen in der Datenbank verzeichnet wurden.
@@ -91,7 +91,7 @@ Vortragstext zur Folie passt, sprechen Präsentation und App ein kleines Protoko
 `folie` zählt von 1 an durch alle Folien (bei reveal.js auch die senkrechten), `folien` ist die Anzahl
 oder `null`, `schritt` der gezeigte Animationsschritt der Folie ab 0 (reveal.js: Fragment) oder `null`.
 
-- **reveal.js** spricht das Protokoll von selbst: Lernheft fügt jeder ausgelieferten HTML-Seite vor
+- **reveal.js** spricht das Protokoll von selbst: DreamStudy fügt jeder ausgelieferten HTML-Seite vor
   `</body>` ein kleines Skript ein, das ein fertiges globales `Reveal` sucht, Folienwechsel und Fragmente
   meldet und „gehe-zu“, „weiter“, „zurueck“ ausführt.
 - **andere Präsentationen** (iSpring, Articulate, eigene): das Skript tut nichts. Der Lehrer blättert in
@@ -143,7 +143,7 @@ gespeichert und wiederverwendet.“ Hier geht es um den zweiten Teil, das Erstel
    Keine Aufgaben, keine Notizen, kein Schüler (also auch keine Grenze je Schüler); Namen werden ersetzt.
 3. Die KI schreibt **kein HTML**. Sie liefert je Folie einen Titel, wenige Blöcke (Text, Liste, Beispiel,
    Merksatz, kleine Tabelle, Frage; keine Bilder), welche davon erst beim Klicken erscheinen, den
-   Vortragstext und die Nummern der Schritte, zu denen die Folie gehört. Lernheft kürzt zu lange Texte, lässt
+   Vortragstext und die Nummern der Schritte, zu denen die Folie gehört. DreamStudy kürzt zu lange Texte, lässt
    leere Blöcke weg und speichert das als **Vorschlag** (`praesentation_entwuerfe`). Zeigt eine Folie die
    erwartete Antwort einer Frage, steht das bei „Noch zu prüfen“: die Folien sieht auch der Schüler.
 4. Der Vorschlag zeigt jede Folie neben ihrem Vortragstext und welche Folie jeder Schritt danach zeigt.
@@ -197,10 +197,10 @@ Schülerdaten und den Sitzungen getrennt, mehrfach:
    Präsentation (inline erlaubt), `connect-src 'none'`, keine Rahmen, Worker, Formulare oder `base`,
    `frame-ancestors` nur die App (`PUBLIC_URL` bzw. die Railway-Domain; ohne beides `localhost` und
    `127.0.0.1` mit jedem Port), dazu `X-Content-Type-Options: nosniff`. Was eine Präsentation von außen
-   laden will, wird blockiert; beim Hochladen zeigt Lernheft, welche Adressen das sind.
+   laden will, wird blockiert; beim Hochladen zeigt DreamStudy, welche Adressen das sind.
 
 Ohne `PRESENTATION_ORIGIN` gehen Hochladen und Liste trotzdem, abspielen nicht: der Vortrag zeigt der
-Verwaltung, dass die Adresse fehlt. Lernheft liefert Präsentationen **nie** unter der eigenen Adresse aus.
+Verwaltung, dass die Adresse fehlt. DreamStudy liefert Präsentationen **nie** unter der eigenen Adresse aus.
 
 Einrichten:
 

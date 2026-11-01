@@ -244,7 +244,7 @@ test("without KI: the text by rules, photos stored with a plain sentence; a file
   const out = await vg.speichereVorgabe({ unitId: unit.id, teacherId: teacher.id, text: "Heute Present Simple", materialIds: [blatt, zettel], testId: null, keinName: false, heute: HEUTE });
   assert.ok("ok" in out);
   const v = vg.vorgabeDerEinheit(unit.id)!;
-  assert.equal(v.hinweis, "Lesen kann nur die KI, und die ist gerade nicht eingerichtet. Die Fotos und PDFs sind gespeichert. Lernheft hat deinen Text selbst zerlegt.");
+  assert.equal(v.hinweis, "Lesen kann nur die KI, und die ist gerade nicht eingerichtet. Die Fotos und PDFs sind gespeichert. DreamStudy hat deinen Text selbst zerlegt.");
   assert.deepEqual(v.punkte.map((p) => p.inhalt), ["Present Simple"]);
   assert.deepEqual(v.materialIds, [blatt, zettel]);
   assert.deepEqual(

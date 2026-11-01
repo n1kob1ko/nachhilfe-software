@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   const { token } = await params;
   return {
     manifest: `/lernen/${encodeURIComponent(token)}/manifest`,
-    appleWebApp: { capable: true, title: "Lernheft", statusBarStyle: "default" },
+    appleWebApp: { capable: true, title: "DreamStudy", statusBarStyle: "default" },
     robots: { index: false, follow: false },
   };
 }
@@ -29,7 +29,7 @@ export default async function LearnLayout({ children, params }: { children: Reac
         <div className="mx-auto flex max-w-[860px] items-center justify-between px-4 py-3">
           <a href={`/lernen/${token}`} className="display flex items-center gap-2.5 text-[17px] font-semibold">
             <BrandMark height={36} />
-            Lernheft
+            DreamStudy
           </a>
           <span className="flex items-center gap-2">
             <span className="flex items-center gap-2 rounded-full border border-line bg-surface py-1 pr-3 pl-1 text-[14px] font-medium">

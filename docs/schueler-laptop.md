@@ -1,6 +1,6 @@
-# Eigenes Gerät: Schüler arbeiten am eigenen Laptop (Lernheft Phase 2)
+# Eigenes Gerät: Schüler arbeiten am eigenen Laptop (DreamStudy Phase 2)
 
-Der Schüler öffnet das Lernheft im Browser seines eigenen Laptops: ohne App, ohne Konto. Der Zugang gilt nur für die laufende Einheit.
+Der Schüler öffnet DreamStudy im Browser seines eigenen Laptops: ohne App, ohne Konto. Der Zugang gilt nur für die laufende Einheit.
 
 ## Zwei Konzepte, bewusst getrennt
 
