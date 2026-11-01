@@ -430,6 +430,27 @@ textarea.input {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Die erste Kennzahl auf Heute in Blau (wie die Bühne), nur wenn keine Einheit läuft: dann gibt es keine zweite Bühne. */
+.kennzahl.kennzahl-voll {
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(255, 255, 255, 0.22), transparent 55%),
+    linear-gradient(135deg, #3f8ef5, #1f5fd0);
+  border-color: transparent;
+  color: #fff;
+}
+.kennzahl-voll .kennzahl-wort,
+.kennzahl-voll .kennzahl-zusatz {
+  color: #d8e6fb;
+}
+.kennzahl.kennzahl-voll:hover {
+  border-color: transparent;
+  filter: brightness(1.04);
+}
+/* Meine Woche: noch geplante Einheiten schraffiert über den gehaltenen */
+.wochen-geplant {
+  background: repeating-linear-gradient(-45deg, var(--bar) 0 2px, var(--accent-wash) 2px 6px);
+  opacity: 0.85;
+}
 /* kleine Überschrift über einer Gruppe (Mehr, Listen) */
 .gruppe-titel {
   font-size: 12px;

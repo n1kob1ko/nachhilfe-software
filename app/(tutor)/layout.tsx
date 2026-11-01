@@ -13,8 +13,8 @@ import { zeitfenster } from "@/lib/planung/heute";
 export const dynamic = "force-dynamic";
 
 /**
- * Der Rahmen der Lehrkraft: links eine ruhige Leiste mit dem Logo und den vier Einträgen (Heute, Unterricht,
- * Abschluss, Erweitert), rechts die Seite. Am Telefon steht das Logo oben und die vier Einträge unten (TabBar).
+ * Der Rahmen der Lehrkraft: links eine ruhige Leiste mit dem Logo und den fünf Einträgen (Heute, Unterricht,
+ * Abschluss, Schüler, Erweitert), rechts die Seite. Am Telefon steht das Logo oben und die fünf Einträge unten (TabBar).
  * Die Knöpfe für Feedback und den Dunkelmodus stehen neben dem Konto, nie als Eintrag in der Navigation.
  */
 export default async function TutorLayout({ children }: { children: React.ReactNode }) {
