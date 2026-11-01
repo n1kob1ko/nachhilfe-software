@@ -1,4 +1,4 @@
-# Lernheft – Nachhilfe-Software
+# DreamStudy – Nachhilfe-Software
 
 Web-App für Nachhilfeinstitute: Schülerprofile, Dokumentation jeder Einheit, Übungs-Builder mit automatischen Lösungswegen, ein Schüler-Modus zum selbstständigen Üben, Fortschritt pro Fähigkeit, automatische Analyse und Übungsempfehlungen — dazu der Wochenplan des Instituts, Blätter zum Ausdrucken und eingebaute Aufgabenbanken.
 

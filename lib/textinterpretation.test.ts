@@ -415,7 +415,7 @@ test("builder: the student's own story, a draft for one Textinterpretation, and 
   const text = s.store.createInterpretation({ studentId: s.sid, teacherId: s.niko.id, unitId: s.unitId, settings: own.settings });
   const forStudent = await builder.generateTasks(settings({ studentId: s.sid, count: 2, useAI: false }), builder.studentContext(s.sid));
   assert.ok(forStudent.tasks.every((t) => t.data.passageTitle === "„Die Brücke“ von Erfundene Autorin" && t.data.textsorte === "Parabel"), "the student's latest story");
-  assert.ok(forStudent.tasks.every((t) => !t.answer.sample), "no model answer for a story the Lernheft does not know");
+  assert.ok(forStudent.tasks.every((t) => !t.answer.sample), "no model answer for a story DreamStudy does not know");
 
   const draft = await builder.createDraft({ ...settings({ studentId: s.sid, count: 7, useAI: false }), title: "Teilübungen" }, s.niko.id, { auftragTextId: text.id });
   const tasks = repo.listTasks(draft.id);

@@ -1,4 +1,4 @@
-# Abwechslungsreichere Übungen (Lernheft Phase 5A, Auswendig schreiben aus Phase 2)
+# Abwechslungsreichere Übungen (DreamStudy Phase 5A, Auswendig schreiben aus Phase 2)
 
 Aufgabentypen, bei denen der Schüler selbst schreibt: **Lückentext**, **Fehler korrigieren**, **Freie Antwort** und seit dem Merge **Auswendig schreiben**. Sie laufen im bestehenden Übungs-Builder, auf dem Schüler-Tablet, am eigenen Laptop, über den Schüler-Link und im A4-Druck. Es gibt keine eigene Aufgabenarchitektur: alle sind Formate im selben Aufgabenmodell (`lib/tasks.ts`).
 

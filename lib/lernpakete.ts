@@ -243,7 +243,7 @@ function meldung(issue: z.core.$ZodIssue, raw: unknown): string {
       return `${wo}: darf höchstens ${issue.maximum} sein.`;
     case "invalid_value":
       if (issue.path[0] === "format" && issue.path.length === 1) return `Das ist keine Lernpaket-Datei: „format“ muss „${LERNPAKET_FORMAT}“ sein.`;
-      if (issue.path[0] === "version" && issue.path.length === 1) return `Version ${JSON.stringify(wert)} kennt Lernheft nicht. Unterstützt wird Version ${LERNPAKET_VERSION}.`;
+      if (issue.path[0] === "version" && issue.path.length === 1) return `Version ${JSON.stringify(wert)} kennt DreamStudy nicht. Unterstützt wird Version ${LERNPAKET_VERSION}.`;
       return `${wo}: muss eines davon sein: ${issue.values.map((v) => String(v)).join(", ")}.`;
     case "unrecognized_keys":
       return `${wo}: unbekanntes Feld ${issue.keys.map((k) => `„${k}“`).join(", ")}. Tippfehler?`;
@@ -322,7 +322,7 @@ export function pruefeAufgabe(a: TaskDraft, p: { skillIds: string[]; schwierigke
   if (!skillId) return { fehler: "Die Aufgabe braucht eine Fähigkeit („skillId“), oder das Paket „faehigkeiten“." };
   for (const id of [skillId, ...(a.skillIds ?? [])]) {
     const s = repo.getSkill(id);
-    if (!s) return { fehler: `Fähigkeit „${id}“ gibt es in Lernheft nicht.` };
+    if (!s) return { fehler: `Fähigkeit „${id}“ gibt es in DreamStudy nicht.` };
     if (s.subject !== p.fach) return { fehler: `Fähigkeit „${id}“ gehört zu ${s.subject}, das Paket ist ${p.fach}.` };
   }
   const { sourceType: _t, sourceId: _i, ...rest } = a;
@@ -380,14 +380,14 @@ export function pruefeMeta(m: Meta, namen: Partial<Record<keyof Meta, string>> =
   if (!fach) fehler.push(`${feld("fach")}: Bitte das Fach angeben.`);
   // „VS“ or „Volksschule“; empty = for every Schulart
   const art = m.schulart.trim() ? (schoolType(m.schulart.trim()) ?? SCHOOL_TYPES.find((t) => t.short.toLowerCase() === m.schulart.trim().toLowerCase()) ?? null) : null;
-  if (m.schulart.trim() && !art) fehler.push(`${feld("schulart")}: „${m.schulart}“ kennt Lernheft nicht. Möglich: ${SCHOOL_TYPES.map((t) => t.name).join(", ")}.`);
+  if (m.schulart.trim() && !art) fehler.push(`${feld("schulart")}: „${m.schulart}“ kennt DreamStudy nicht. Möglich: ${SCHOOL_TYPES.map((t) => t.name).join(", ")}.`);
   const klasse = m.klasse ?? null;
   if (klasse !== null && art && (klasse < 1 || klasse > art.classes)) fehler.push(`${feld("klasse")}: Die ${art.name} hat die Klassen 1 bis ${art.classes}.`);
   if (klasse !== null && !m.schulart.trim()) fehler.push(`${feld("klasse")}: Eine Klasse geht nur mit Schulart.`);
   const skill_ids = [...new Set(m.skill_ids.map((s) => s.trim()).filter(Boolean))];
   for (const id of skill_ids) {
     const s = repo.getSkill(id);
-    if (!s) fehler.push(`${feld("skill_ids")}: Fähigkeit „${id}“ gibt es in Lernheft nicht (die Kennung steht in der Adresse der Fähigkeitsseite).`);
+    if (!s) fehler.push(`${feld("skill_ids")}: Fähigkeit „${id}“ gibt es in DreamStudy nicht (die Kennung steht in der Adresse der Fähigkeitsseite).`);
     else if (fach && s.subject !== fach) fehler.push(`${feld("skill_ids")}: Fähigkeit „${id}“ gehört zu ${s.subject}, das Paket ist ${fach}.`);
   }
   if (!(DIFFICULTIES as readonly string[]).includes(m.schwierigkeit)) fehler.push(`${feld("schwierigkeit")}: muss eines davon sein: ${DIFFICULTIES.join(", ")}.`);

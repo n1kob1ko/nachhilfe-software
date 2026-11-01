@@ -162,7 +162,7 @@ function verzeichnis(buf: Buffer): { ok: true; eintraege: Eintrag[] } | { ok: fa
     p += 46 + nLen + xLen + kLen;
 
     const problem = pfadProblem(n);
-    if (problem) return { ok: false, fehler: `„${n.slice(0, 80)}“: ${problem}. So eine ZIP-Datei nimmt Lernheft nicht an.` };
+    if (problem) return { ok: false, fehler: `„${n.slice(0, 80)}“: ${problem}. So eine ZIP-Datei nimmt DreamStudy nicht an.` };
     // Unix (3) and macOS (19) keep the file type in the upper 16 bits: no links, devices or pipes
     if (erstelltMit === 3 || erstelltMit === 19) {
       const typ = (extern >>> 16) & S_IFMT;
@@ -261,7 +261,7 @@ export function leseZip(b: Buffer): Ergebnis {
   const fremd = inhalt.filter((e) => !typVon(e.name));
   if (fremd.length)
     return fehler(
-      `Diese Dateiarten nimmt Lernheft nicht an: ${fremd
+      `Diese Dateiarten nimmt DreamStudy nicht an: ${fremd
         .slice(0, 5)
         .map((e) => `„${e.name}“`)
         .join(", ")}${fremd.length > 5 ? ` und ${fremd.length - 5} weitere` : ""}. Erlaubt sind Webseiten, Styles, Skripte, JSON, Bilder, Schriften, Audio und Video.`,

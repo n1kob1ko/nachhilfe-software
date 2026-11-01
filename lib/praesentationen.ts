@@ -190,7 +190,7 @@ export function importierePraesentation(datei: { name: string; data: Buffer }, m
   if (art === "pptx")
     return {
       fehler: [
-        "PowerPoint kann Lernheft nicht mit Animationen abspielen. Entweder als HTML exportieren (z. B. mit iSpring oder als Web-Präsentation) und die ZIP-Datei hochladen, oder als PDF speichern und hier hochladen (dann ohne Animationen, unter Material).",
+        "PowerPoint kann DreamStudy nicht mit Animationen abspielen. Entweder als HTML exportieren (z. B. mit iSpring oder als Web-Präsentation) und die ZIP-Datei hochladen, oder als PDF speichern und hier hochladen (dann ohne Animationen, unter Material).",
       ],
     };
   if (art === "unbekannt") return { fehler: ["Bitte eine .html- oder .zip-Datei wählen (oder ein PDF ohne Animationen)."] };

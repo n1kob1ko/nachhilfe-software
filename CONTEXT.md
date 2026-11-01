@@ -1,4 +1,4 @@
-# Lernheft
+# DreamStudy
 
 Nachhilfe-Software für ein Institut: Schülerprofile, Einheiten dokumentieren,
 Übungen erzeugen und zuweisen, Fortschritt je Fähigkeit, Blätter zum Drucken.

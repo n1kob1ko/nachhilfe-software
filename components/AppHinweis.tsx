@@ -8,7 +8,7 @@ type InstallPrompt = Event & { prompt: () => Promise<void>; userChoice: Promise<
 const KEY = "lernheft-app-hinweis";
 
 /**
- * „Lernheft als App“ auf dem Handy des Schülers: mit Install-Knopf, wo der Browser ihn anbietet
+ * „DreamStudy als App“ auf dem Handy des Schülers: mit Install-Knopf, wo der Browser ihn anbietet
  * (Android, Chrome), sonst ein Satz, wie es geht (iPhone: Teilen › Zum Home-Bildschirm). Nicht in der
  * installierten App und nicht, nachdem der Schüler ihn ausgeblendet hat.
  */
@@ -53,18 +53,18 @@ export function AppHinweis() {
     }
   };
   return (
-    <section className="panel mt-8 flex items-start gap-4 px-5 py-4" aria-label="Lernheft als App" data-testid="app-hinweis">
+    <section className="panel mt-8 flex items-start gap-4 px-5 py-4" aria-label="DreamStudy als App" data-testid="app-hinweis">
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-wash text-accent" aria-hidden>
         <Smartphone size={22} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[16px] font-semibold">Lernheft als App</p>
+        <p className="text-[16px] font-semibold">DreamStudy als App</p>
         <p className="mt-0.5 text-[14px] text-ink-2">
           {art === "iphone"
             ? "Tippe in Safari unten auf Teilen und dann auf „Zum Home-Bildschirm“. Dann siehst du deine Termine und Übungen mit einem Tipp."
             : art === "menue"
               ? "Tippe im Browser-Menü auf „Zum Startbildschirm hinzufügen“. Dann siehst du deine Termine und Übungen mit einem Tipp."
-              : "Leg dir das Lernheft auf den Startbildschirm. Dann siehst du deine Termine und Übungen mit einem Tipp."}
+              : "Leg dir DreamStudy auf den Startbildschirm. Dann siehst du deine Termine und Übungen mit einem Tipp."}
         </p>
         {art === "knopf" && prompt && (
           <button

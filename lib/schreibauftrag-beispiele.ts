@@ -1,6 +1,6 @@
 /**
  * The examples of the Schreibaufträge: five Textbeilagen and a model text for every Textsorte, all written for the
- * Lernheft. Authors, media, places and the people in the texts are invented; nothing comes from a newspaper, a
+ * DreamStudy. Authors, media, places and the people in the texts are invented; nothing comes from a newspaper, a
  * school book, the Aufgabenpool or Matura material. Used by the tests, the docs, the Teilübungen without a
  * Textbeilage of the teacher's own and the "So kann es aussehen" view while writing.
  *

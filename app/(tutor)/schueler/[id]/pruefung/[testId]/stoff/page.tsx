@@ -18,7 +18,7 @@ const skillName = (id: string) => {
 };
 
 /**
- * **Erkannt** (lib/erkannt.ts): was Lernheft aus den Unterlagen einer Prüfung gelesen hat, je Punkt Wortlaut auf dem
+ * **Erkannt** (lib/erkannt.ts): was DreamStudy aus den Unterlagen einer Prüfung gelesen hat, je Punkt Wortlaut auf dem
  * Blatt → Lerninhalt → Fähigkeit mit Lernstand, die Quelle, ausgeschlossen und noch zu klären. Oben nur das, was kurz
  * bestätigt werden muss; darunter, was für den Unterricht bereitliegt und was fehlt.
  */
@@ -66,7 +66,7 @@ export default async function ErkanntPage({ params, searchParams }: { params: Pr
               <span>
                 Kurz bestätigen
                 <Info label="Warum nur diese?">
-                  Was eindeutig passt, ist schon zugeordnet. Hier stehen nur Punkte, bei denen Buchwort und Fähigkeit nicht sicher zusammenpassen. Was du nicht antippst, bleibt offen. Lernheft merkt sich deine Wahl für dieselben Wörter beim nächsten Mal.
+                  Was eindeutig passt, ist schon zugeordnet. Hier stehen nur Punkte, bei denen Buchwort und Fähigkeit nicht sicher zusammenpassen. Was du nicht antippst, bleibt offen. DreamStudy merkt sich deine Wahl für dieselben Wörter beim nächsten Mal.
                 </Info>
               </span>
             </SectionTitle>

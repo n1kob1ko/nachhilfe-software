@@ -60,7 +60,7 @@ export function exportBackup(conn: Database.Database = db(), now = new Date()): 
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exported_at: now.toISOString(),
-    app: "Lernheft",
+    app: "DreamStudy",
     note: "Vollständige Sicherung aller Tabellen. Ohne Passwörter und Anmeldesitzungen: nach einer Wiederherstellung gilt für alle Lehrer das Startpasswort.",
     tables,
   };
@@ -76,7 +76,7 @@ export function backupCounts(b: Backup): Record<string, number> {
  */
 export function restoreBackup(conn: Database.Database, data: unknown): Record<string, number> {
   const b = data as Backup;
-  if (!b || b.format !== BACKUP_FORMAT || typeof b.tables !== "object") throw new Error("Das ist keine Lernheft-Sicherung.");
+  if (!b || b.format !== BACKUP_FORMAT || typeof b.tables !== "object") throw new Error("Das ist keine DreamStudy-Sicherung.");
   if (b.version > BACKUP_VERSION) throw new Error(`Sicherung aus einer neueren Version (${b.version}).`);
   const target = new Set(tableNames(conn));
   const names = Object.keys(b.tables).filter((n) => target.has(n));

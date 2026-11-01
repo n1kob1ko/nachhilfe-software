@@ -100,7 +100,7 @@ export function Brand() {
     <Link href="/jetzt" className="flex items-center gap-2.5 rounded-2xl">
       <BrandMark height={38} />
       <span className="leading-tight">
-        <span className="display block text-[18px] font-semibold tracking-[-0.01em]">Lernheft</span>
+        <span className="display block text-[18px] font-semibold tracking-[-0.01em]">DreamStudy</span>
         <span className="block text-[11.5px] font-medium whitespace-nowrap text-ink-3">MC Dream Education</span>
       </span>
     </Link>

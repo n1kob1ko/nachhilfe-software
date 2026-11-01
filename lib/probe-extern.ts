@@ -1,6 +1,6 @@
 /**
  * **Eigene Probeschularbeit** (niko, Spezifikation Abschnitt 7): Probeschularbeiten entstehen oft außerhalb der App, als PDF mit
- * der Angabe und eines mit der Musterlösung. Lernheft nimmt beide, hält sie zusammen, der Schüler arbeitet am Gerät oder auf
+ * der Angabe und eines mit der Musterlösung. DreamStudy nimmt beide, hält sie zusammen, der Schüler arbeitet am Gerät oder auf
  * Papier, und bewertet wird gegen die Musterlösung. Kein zweites System: es entsteht eine gewöhnliche Probeschularbeit
  * (lib/probeschularbeit.ts: `worksheets.probe_test_id`, Punkte je Aufgabe, Notenschlüssel, am Gerät Modus 'test'); auf Papier
  * bewertet „Arbeit fotografieren“ (lib/papier-einheit.ts) gegen ihre Aufgaben und die Musterlösung.

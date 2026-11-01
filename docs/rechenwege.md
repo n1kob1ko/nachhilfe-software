@@ -1,4 +1,4 @@
-# Mathematik mit Rechenwegen (Lernheft Phase 5B)
+# Mathematik mit Rechenwegen (DreamStudy Phase 5B)
 
 Zwei Mathematik-Formate, bei denen der Schüler zeigt, **wie** er rechnet: **Rechenweg** und **Mehrteilige Sachaufgabe**. Sie sind Formate im bestehenden Aufgabenmodell (`lib/tasks.ts`) und laufen überall, wo Übungen laufen: Übungs-Builder, Aufgabenbibliothek, Schüler-Tablet, eigener Laptop, Schüler-Link, Ergebnisansicht, Lernverlauf und A4-Druck. Es gibt keine zweite Aufgabenarchitektur.
 

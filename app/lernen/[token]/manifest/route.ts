@@ -12,8 +12,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
   const start = `/lernen/${encodeURIComponent(token)}`;
   const manifest = {
     id: start,
-    name: "Lernheft",
-    short_name: "Lernheft",
+    name: "DreamStudy",
+    short_name: "DreamStudy",
     description: "Deine Übungen und Termine bei MC Dream Education.",
     lang: "de",
     start_url: start,

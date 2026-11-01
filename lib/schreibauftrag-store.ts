@@ -194,7 +194,7 @@ export function quelleOf(textId: number): AuftragQuelle | null {
 
 /**
  * The Textbeilage Teilübungen of the builder are about: the student's latest Schreibauftrag of this Textsorte,
- * else the Lernheft's own example (with the model text as sample answers).
+ * else DreamStudy's own example (with the model text as sample answers).
  */
 export function quelleForStudent(studentId: number | null, sorte: SorteKey): AuftragQuelle {
   if (studentId) {

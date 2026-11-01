@@ -20,13 +20,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ dat
     flushBoard(); // whiteboard strokes are written to the database a moment after drawing
     const body = JSON.stringify(exportBackup(), null, 1);
     return new Response(body, {
-      headers: { ...headers, "Content-Type": "application/json; charset=utf-8", "Content-Disposition": `attachment; filename="lernheft-sicherung-${stamp()}.json"` },
+      headers: { ...headers, "Content-Type": "application/json; charset=utf-8", "Content-Disposition": `attachment; filename="dreamstudy-sicherung-${stamp()}.json"` },
     });
   }
   const m = /^([a-z-]+)\.csv$/.exec(datei);
   const csv = m ? datasetCsv(m[1]) : null;
   if (!csv) return new Response("Unbekannter Export.", { status: 404 });
   return new Response(csv.body, {
-    headers: { ...headers, "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="lernheft-${stamp()}-${csv.filename}"` },
+    headers: { ...headers, "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": `attachment; filename="dreamstudy-${stamp()}-${csv.filename}"` },
   });
 }

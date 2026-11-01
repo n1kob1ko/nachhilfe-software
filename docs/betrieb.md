@@ -1,6 +1,6 @@
-# Betrieb: Lernheft dauerhaft online
+# Betrieb: DreamStudy dauerhaft online
 
-Lernheft speichert alles in einer SQLite-Datei und hochgeladenes Material in einem Ordner daneben.
+DreamStudy speichert alles in einer SQLite-Datei und hochgeladenes Material in einem Ordner daneben.
 Whiteboard und Tablet-Livestatus laufen über den Serverprozess selbst. Deshalb braucht die App:
 
 - **einen dauerhaft laufenden Server** (genau eine Instanz, nicht mehrere parallel),

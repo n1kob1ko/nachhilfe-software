@@ -1,6 +1,6 @@
 /**
  * **Präsentation im Unterricht** (niko, 27.10.2026: „Wenn der Lehrer eine Präsentation verwenden möchte, soll er direkt im geführten
- * Unterricht auswählen können: Präsentation erstellen. Lernheft kennt bereits Fach, Schulstufe, Thema, Lernziele, Unterrichtsschritt.
+ * Unterricht auswählen können: Präsentation erstellen. DreamStudy kennt bereits Fach, Schulstufe, Thema, Lernziele, Unterrichtsschritt.
  * […] Bereits vorhandene passende Präsentationen sollen bevorzugt angeboten werden. […] Solange [die sichere Wiedergabedomain] fehlt,
  * darf die Oberfläche keine funktionierende Präsentationswiedergabe vortäuschen.“)
  *
@@ -303,7 +303,7 @@ export const TEXT_GRENZEN = { folien: 60, zeilen: 8, zeichen: 200, datei: 3_000_
 
 /**
  * Die Folien einer hochgeladenen HTML-Präsentation als Text, ohne etwas auszuführen: Skripte, Styles und Kommentare fallen weg, die
- * Folien sind die Elemente mit der Klasse „folie“ (Präsentationen aus Lernheft und dem Skill), sonst die `<section>` (reveal.js),
+ * Folien sind die Elemente mit der Klasse „folie“ (Präsentationen aus DreamStudy und dem Skill), sonst die `<section>` (reveal.js),
  * sonst die ganze Seite. Je Folie die erste Überschrift als Titel und die übrigen Zeilen, Fragen (endet mit „?“) getrennt.
  */
 export function folienAusHtml(html: string): Omit<TextFolie, "notiz">[] {

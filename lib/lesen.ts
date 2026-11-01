@@ -1,5 +1,5 @@
 /**
- * Leseverständnis (Lernheft Phase 5C): a longer reading text with several questions about it.
+ * Leseverständnis (DreamStudy Phase 5C): a longer reading text with several questions about it.
  *
  * There is no separate store for reading texts: each question is an ordinary task whose data.passage holds
  * the text (and data.passageTitle its title), exactly like the short Textverständnis tasks before. A

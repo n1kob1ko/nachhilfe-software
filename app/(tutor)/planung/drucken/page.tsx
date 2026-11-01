@@ -75,7 +75,7 @@ export default async function PlanungDruckenPage({ searchParams }: { searchParam
             <h2 className="text-[17px] font-semibold">Wochenplan · {uebersicht.label}</h2>
             <p className="text-[13px] text-ink-2">
               {uebersicht.status === "veroeffentlicht" ? "Veröffentlichter Plan" : "Stand dieser Woche (Entwurf)"}
-              {nurLehrer ? ` · nur ${lehrer[0]?.name ?? ""}` : ""} · gedruckt aus Lernheft
+              {nurLehrer ? ` · nur ${lehrer[0]?.name ?? ""}` : ""} · gedruckt aus DreamStudy
             </p>
           </div>
           <BrandLogo width={92} className="h-auto shrink-0" />

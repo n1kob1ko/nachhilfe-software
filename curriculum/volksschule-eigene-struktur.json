@@ -1,13 +1,13 @@
 {
  "format": "lernheft-curriculum/1",
  "label": "Volksschule Mathematik und Deutsch – eigene Fähigkeitsstruktur",
- "description": "45 feine Fähigkeiten für die 1.–4. Klasse Volksschule mit Voraussetzungen. Eigene didaktische Gliederung von Lernheft, nicht der Wortlaut des Lehrplans; nach dem Import des offiziellen Lehrplantexts mit dessen Einträgen verknüpfbar.",
+ "description": "45 feine Fähigkeiten für die 1.–4. Klasse Volksschule mit Voraussetzungen. Eigene didaktische Gliederung von DreamStudy, nicht der Wortlaut des Lehrplans; nach dem Import des offiziellen Lehrplantexts mit dessen Einträgen verknüpfbar.",
  "source": {
   "key": "lernheft-vs",
-  "name": "Lernheft – Volksschule (eigene Struktur)",
+  "name": "DreamStudy – Volksschule (eigene Struktur)",
   "source_type": "eigen",
   "license": "eigen",
-  "publisher": "Lernheft",
+  "publisher": "DreamStudy",
   "notes": "Eigene Fähigkeitsstruktur, kein offizieller Lehrplantext."
  },
  "skills": [

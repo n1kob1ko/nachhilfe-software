@@ -1,8 +1,8 @@
 # Design
 
-Welt: „Lernheft Himmel“ (niko wählte sie am 2026-10-20 vor Sonne und Wiese). Eine kühle, fast weiße Fläche, weiße Karten mit Haarlinie, Blauschwarz als Schrift, ein klares Blau für alles, was man tun oder gerade sieht: Hauptknöpfe, aktive Navigation, Links, die Bühne. Das Gold des Logos von MC Dream Education (Doktorhut, goldenes „m“, offenes Buch) bleibt im Logo und als Nebenton (Fach Deutsch, ein Avatar). Zahlen stehen groß auf Kennzahl-Karten, Erklärungen bleiben hinter ⓘ.
+Welt: „DreamStudy Himmel“ (niko wählte sie am 2026-10-20 vor Sonne und Wiese). Eine kühle, fast weiße Fläche, weiße Karten mit Haarlinie, Blauschwarz als Schrift, ein klares Blau für alles, was man tun oder gerade sieht: Hauptknöpfe, aktive Navigation, Links, die Bühne. Das Gold des Logos von MC Dream Education (Doktorhut, goldenes „m“, offenes Buch) bleibt im Logo und als Nebenton (Fach Deutsch, ein Avatar). Zahlen stehen groß auf Kennzahl-Karten, Erklärungen bleiben hinter ⓘ.
 
-- Marke: das Zeichen (`public/brand/mark.png`, Hut + „m“ + Buch; das Buch gehört immer dazu) neben „Lernheft / MC Dream Education“ in der Seitenleiste, auf Schüler-App, Geräte- und Mitmachen-Seite; das ganze Logo (`public/brand/logo.png`) auf der Anmeldung und im Wochenplan-Druck; `components/Brand.tsx`. App-Symbol `app/icon.png`, `app/apple-icon.png`.
+- Marke: das Zeichen (`public/brand/mark.png`, Hut + „m“ + Buch; das Buch gehört immer dazu) neben „DreamStudy / MC Dream Education“ in der Seitenleiste, auf Schüler-App, Geräte- und Mitmachen-Seite; das ganze Logo (`public/brand/logo.png`) auf der Anmeldung und im Wochenplan-Druck; `components/Brand.tsx`. App-Symbol `app/icon.png`, `app/apple-icon.png`.
 - Schrift: Outfit (500–700) für Überschriften und große Zahlen, Plus Jakarta Sans für Text. Zahlen tabellarisch (`.num`). H1 28–32 px mit −0,02 em.
 - Flächen: Seite `#f5f8fc` (kühles Weiß), Karten weiß mit 1 px `#dce5ef` und kaum sichtbarem blauem Schatten, Paneele `#eaf1f9`, kräftige Linien `#c3d2e2`. Verläufe nur auf der Bühne.
 - Tinte `#151f2b`, zweite Ebene `#4b5a6b`, dritte `#5f6e80` (alle ≥ 4,5 : 1 auf der Fläche und auf Weiß).

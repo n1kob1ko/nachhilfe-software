@@ -98,7 +98,7 @@ export default async function ExportPage() {
         <div className="panel grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-start md:p-6">
           <div className="max-w-[70ch] text-[14px] text-ink-2">
             <p>
-              Enthält jede Tabelle mit allen Spalten und Einträgen, so wie sie in der Datenbank stehen. Die Datei ist so aufgebaut, dass sie in eine leere Lernheft-Datenbank wieder eingespielt werden kann.
+              Enthält jede Tabelle mit allen Spalten und Einträgen, so wie sie in der Datenbank stehen. Die Datei ist so aufgebaut, dass sie in eine leere DreamStudy-Datenbank wieder eingespielt werden kann.
             </p>
             <p className="mt-2">
               Nicht enthalten sind Passwörter und Anmeldesitzungen. Nach einer Wiederherstellung aus dieser Datei bekommt jeder Lehrer ein neues Startpasswort (siehe docs/betrieb.md).
