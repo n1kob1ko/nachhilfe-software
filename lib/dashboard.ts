@@ -14,7 +14,8 @@ import { parseTime, type Trend } from "./analysis";
 import { lessonsBetween, listStudents } from "./repo";
 import { listUnits } from "./units";
 import { wochenUebersicht } from "./planung/uebersicht";
-import { WOCHENTAG_KURZ, tagAddieren, wienerDatum, wienerWochenstart, wochentageDerWoche, type Wochentag } from "./planung/zeit";
+import { WOCHENTAG_KURZ, labelMinuten, minutenLabel, tagAddieren, wienerDatum, wienerMinuten, wienerWochenstart, wochentageDerWoche, type Wochentag } from "./planung/zeit";
+import { ortLabel } from "./planung/schueler-termine";
 
 const DAY = 86_400_000;
 
@@ -36,33 +37,96 @@ export function wochenBalken(woche: string, heute: string, einheitenTage: string
   return tage.filter((t) => t.tag <= 5 || t.gehalten + t.geplant > 0);
 }
 
+export type PlanEintrag = {
+  key: string;
+  startMin: number;
+  zeit: string;
+  studentId: number;
+  name: string;
+  ort: string;
+  /** gehalten: Einheit gestartet; ausgefallen: Platz vorbei ohne Einheit; vorbei: von Hand geplant, Zeit vorbei; geplant: kommt noch */
+  stand: "gehalten" | "geplant" | "ausgefallen" | "vorbei";
+};
+export type PlanTag = { tag: Wochentag; datum: string; kurz: string; tagNr: string; heute: boolean; eintraege: PlanEintrag[] };
+
 /**
- * Meine Woche für das Dashboard: die Balken und die Summen. Geplant sind dieselben Termine wie im Tagesplan auf Heute
- * (lib/heute.ts): veröffentlichte Plätze ohne Einheit und nicht ausgefallen, dazu von Hand geplante Stunden eines
- * Schülers, der an dem Tag keinen Platz hat.
+ * Meine Woche für das Dashboard (niko, 01.11.2026: „der Plan für die Woche für den Lehrer, der angemeldet ist“): je Tag
+ * die Termine des Lehrers mit Uhrzeit, Schüler und Raum, dazu die Balken und Summen. Termine sind dieselben wie im
+ * Tagesplan auf Heute (lib/heute.ts): veröffentlichte Plätze, von Hand geplante Stunden eines Schülers, der an dem Tag
+ * keinen Platz hat, und gehaltene Einheiten ohne Platz. Samstag und Sonntag nur, wenn dort etwas ist.
  */
 export function meineWoche(teacherId: number, now = new Date()) {
   const woche = wienerWochenstart(now);
   const heute = wienerDatum(now);
+  const jetztMin = wienerMinuten(now);
   const uebersicht = wochenUebersicht(woche, { status: "veroeffentlicht", nurLehrerId: teacherId, now });
   const tage = wochentageDerWoche(woche);
   const ende = tage[6].datum;
   const datumVon = new Map(tage.map((t) => [t.tag, t.datum]));
-  const einheitenTage = listUnits({ teacherId })
-    .map((u) => wienerDatum(new Date(parseTime(u.started_at))))
-    .filter((d) => d >= woche && d <= ende);
-  const mitPlatz = new Set(uebersicht.plaetze.map((p) => `${datumVon.get(p.weekday)}|${p.studentId}`));
-  const geplantTage = [
-    ...uebersicht.plaetze.filter((p) => p.unitId === null && !p.nichtStattgefunden).map((p) => datumVon.get(p.weekday)!),
-    ...lessonsBetween(`${woche}T00:00`, `${tagAddieren(ende, 1)}T00:00`)
-      .filter((l) => l.status === "geplant" && l.unit_id === null && (!l.teacher_id || l.teacher_id === teacherId))
-      .map((l) => ({ datum: l.starts_at.slice(0, 10), studentId: l.student_id }))
-      .filter((l) => !mitPlatz.has(`${l.datum}|${l.studentId}`))
-      .map((l) => l.datum),
-  ];
-  const balken = wochenBalken(woche, heute, einheitenTage, geplantTage);
+  const einheiten = listUnits({ teacherId })
+    .map((u) => {
+      const at = new Date(parseTime(u.started_at));
+      return { id: u.id, studentId: u.student_id, name: u.student_name, datum: wienerDatum(at), startMin: wienerMinuten(at) };
+    })
+    .filter((u) => u.datum >= woche && u.datum <= ende);
+  const eintraege: (PlanEintrag & { datum: string })[] = [];
+  const mitPlatz = new Set<string>();
+  const einheitMitPlatz = new Set<number>();
+  for (const p of uebersicht.plaetze) {
+    const datum = datumVon.get(p.weekday)!;
+    mitPlatz.add(`${datum}|${p.studentId}`);
+    if (p.unitId !== null) einheitMitPlatz.add(p.unitId);
+    eintraege.push({
+      key: `platz-${p.id}`,
+      datum,
+      startMin: p.startMin,
+      zeit: `${minutenLabel(p.startMin)}–${minutenLabel(p.startMin + p.dauer)}`,
+      studentId: p.studentId,
+      name: p.studentName,
+      ort: ortLabel(p.roomName, p.roomBuilding, p.roomMode === "online"),
+      stand: p.unitId !== null ? "gehalten" : p.nichtStattgefunden ? "ausgefallen" : "geplant",
+    });
+  }
+  for (const l of lessonsBetween(`${woche}T00:00`, `${tagAddieren(ende, 1)}T00:00`)) {
+    if (l.status !== "geplant" || l.unit_id !== null || (l.teacher_id && l.teacher_id !== teacherId)) continue;
+    const datum = l.starts_at.slice(0, 10);
+    if (mitPlatz.has(`${datum}|${l.student_id}`)) continue;
+    const start = labelMinuten(l.starts_at.slice(11, 16));
+    const vorbei = datum < heute || (datum === heute && start !== null && start + l.duration_min <= jetztMin);
+    eintraege.push({
+      key: `stunde-${l.id}`,
+      datum,
+      startMin: start ?? 0,
+      zeit: start === null ? "–" : `${minutenLabel(start)}–${minutenLabel(start + l.duration_min)}`,
+      studentId: l.student_id,
+      name: l.student_name,
+      ort: "",
+      stand: vorbei ? "vorbei" : "geplant",
+    });
+  }
+  for (const u of einheiten) {
+    if (einheitMitPlatz.has(u.id)) continue;
+    eintraege.push({ key: `einheit-${u.id}`, datum: u.datum, startMin: u.startMin, zeit: minutenLabel(u.startMin), studentId: u.studentId, name: u.name, ort: "", stand: "gehalten" });
+  }
+  const plan: PlanTag[] = tage
+    .map(({ tag, datum }) => ({
+      tag,
+      datum,
+      kurz: WOCHENTAG_KURZ[tag],
+      tagNr: `${Number(datum.slice(8, 10))}.${Number(datum.slice(5, 7))}.`,
+      heute: datum === heute,
+      eintraege: eintraege.filter((e) => e.datum === datum).sort((a, b) => a.startMin - b.startMin),
+    }))
+    .filter((t) => t.tag <= 5 || t.eintraege.length > 0);
+  const balken = wochenBalken(
+    woche,
+    heute,
+    einheiten.map((u) => u.datum),
+    eintraege.filter((e) => e.stand === "geplant").map((e) => e.datum),
+  );
   return {
     label: uebersicht.label,
+    plan,
     balken,
     gehalten: balken.reduce((s, t) => s + t.gehalten, 0),
     geplant: balken.reduce((s, t) => s + t.geplant, 0),

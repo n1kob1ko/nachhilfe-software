@@ -10,7 +10,7 @@ import { Avatar } from "@/components/Art";
 import { Restzeit } from "@/components/Elapsed";
 import { Empty, MasteryBar, TrendBadge, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
-import { meineWoche, schuelerFortschritt, type SchuelerFortschritt, type TagBalken } from "@/lib/dashboard";
+import { meineWoche, schuelerFortschritt, type PlanTag, type SchuelerFortschritt } from "@/lib/dashboard";
 import { heuteKarten, naechsterPunkt, tagesplan } from "@/lib/heute";
 import { expectedSubject } from "@/lib/learning";
 import { bisBeginnLabel, zeitfenster } from "@/lib/planung/heute";
@@ -32,7 +32,7 @@ const firstName = (n: string) => n.split(" ")[0];
  * - **Heute**: die heutigen Schüler, jeder auf einer kurzen Karte aus der automatischen Vorbereitung (lib/heute.ts) mit
  *   „Einheit starten“; ohne Plan die Schülerwahl. Fehlende KI-Briefings bereitet die App im Hintergrund vor.
  * - **Zu erledigen** (lib/zu-erledigen.ts): die ersten fünf offenen Punkte mit Abhaken, offene Abschlüsse zuerst.
- * - **Meine Woche** (lib/dashboard.ts): je Tag gehaltene und noch geplante Einheiten als Balken.
+ * - **Meine Woche** (lib/dashboard.ts): der Wochenplan des angemeldeten Lehrers, je Tag die Termine.
  * - **Fortschritt deiner Schüler** (lib/dashboard.ts): Lernstand und Veränderung der letzten vier Wochen.
  *
  * Läuft eine Einheit, steht sie ganz oben auf der Bühne mit „Zum Unterricht“. Heute leitet nie um; wohin die Lehrkraft
@@ -214,19 +214,20 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
         <Karte
           id="woche"
           titel="Meine Woche"
+          className="md:col-span-2 xl:col-span-3"
           action={
             <Link href="/mehr/uebersicht?tab=woche" className="link text-[14px] font-medium">
-              Wochenplan
+              Ganzer Wochenplan
             </Link>
           }
         >
-          <WochenBalken balken={woche.balken} label={woche.label} />
+          <WochenPlan plan={woche.plan} label={woche.label} />
         </Karte>
 
         <Karte
           id="fortschritt"
           titel="Fortschritt deiner Schüler"
-          className="md:col-span-2"
+          className="md:col-span-2 xl:col-span-3"
           action={
             <Link href="/schueler" className="link text-[14px] font-medium">
               Alle Schüler
@@ -275,42 +276,57 @@ function Karte({ id, titel, action, className = "", testid, children }: { id: st
   );
 }
 
+const STAND_TEXT = { gehalten: "gehalten", ausgefallen: "ausgefallen", vorbei: "vorbei", geplant: "" } as const;
+
 /**
- * Meine Woche als Balken: unten voll die gehaltenen Einheiten, darüber schraffiert die noch geplanten; der heutige Tag
- * in Blau. Jede Säule hat eine graue Spur, damit leere Tage sichtbar bleiben.
+ * Meine Woche (niko, 01.11.2026: „der Plan für die Woche für den Lehrer, der angemeldet ist“): je Tag eine Spalte mit
+ * den eigenen Terminen (Uhrzeit, Schüler, Raum), heute blau umrandet. Gehaltene Termine mit Häkchen, ausgefallene
+ * durchgestrichen. Am Handy stehen die Tage untereinander. Ein Termin führt zum Schüler.
  */
-function WochenBalken({ balken, label }: { balken: TagBalken[]; label: string }) {
-  const max = Math.max(3, ...balken.map((t) => t.gehalten + t.geplant));
-  const H = 132;
+function WochenPlan({ plan, label }: { plan: PlanTag[]; label: string }) {
+  const leer = plan.every((t) => t.eintraege.length === 0);
   return (
-    <div data-testid="wochen-balken">
+    <div data-testid="wochen-plan">
       <p className="mb-3 text-[13px] text-ink-3">{label}</p>
-      <ol className="flex items-end justify-between gap-2" aria-label="Einheiten je Tag">
-        {balken.map((t) => {
-          const summe = t.gehalten + t.geplant;
-          const hG = (t.gehalten / max) * H;
-          const hP = (t.geplant / max) * H;
-          return (
-            <li key={t.tag} className="flex min-w-0 flex-1 flex-col items-center gap-1.5" aria-label={`${t.kurz}: ${t.gehalten} gehalten, ${t.geplant} geplant`}>
-              <span className={`num text-[13px] font-semibold ${summe ? (t.heute ? "text-accent" : "text-ink") : "text-ink-3"}`}>{summe}</span>
-              <span className="relative flex w-full max-w-[40px] flex-col justify-end overflow-hidden rounded-full bg-[var(--bar-track)]" style={{ height: H }}>
-                {t.geplant > 0 && <span className="wochen-geplant block w-full" style={{ height: hP }} />}
-                {t.gehalten > 0 && <span className={`block w-full ${t.heute ? "bg-accent" : "bg-[var(--bar)]"}`} style={{ height: hG }} />}
-              </span>
-              <span className={`text-[13px] ${t.heute ? "rounded-full bg-accent px-2 font-semibold text-on-fill" : "text-ink-2"}`}>{t.kurz}</span>
+      {leer ? (
+        <p className="text-[15px] text-ink-2">Für dich ist diese Woche nichts geplant. Sobald die Verwaltung den Plan veröffentlicht, steht er hier.</p>
+      ) : (
+        <ol className="grid gap-2 md:grid-cols-[repeat(var(--tage),minmax(0,1fr))]" style={{ "--tage": plan.length } as React.CSSProperties}>
+          {plan.map((t) => (
+            <li key={t.datum} className={`min-w-0 rounded-2xl border p-2.5 ${t.heute ? "border-accent-bright bg-accent-wash/40" : "border-line bg-paper/60"}`} aria-label={`${t.kurz} ${t.tagNr}`}>
+              <p className="mb-2 flex items-baseline justify-between gap-2 px-0.5">
+                <span className={`text-[14px] font-semibold ${t.heute ? "text-accent" : ""}`}>
+                  {t.kurz} <span className="num font-normal text-ink-2">{t.tagNr}</span>
+                </span>
+                {t.heute ? <span className="rounded-full bg-accent px-2 text-[12px] font-semibold text-on-fill">heute</span> : t.eintraege.length > 0 && <span className="num text-[12.5px] text-ink-3">{t.eintraege.length}</span>}
+              </p>
+              {t.eintraege.length === 0 ? (
+                <p className="px-0.5 pb-1 text-[13px] text-ink-3">frei</p>
+              ) : (
+                <ul className="grid gap-1.5">
+                  {t.eintraege.map((e) => (
+                    <li key={e.key}>
+                      <Link
+                        href={`/schueler/${e.studentId}`}
+                        className={`block rounded-xl border border-line bg-surface px-2.5 py-1.5 transition-colors hover:border-line-strong ${e.stand === "geplant" ? "border-l-[3px] border-l-accent-bright" : ""}`}
+                      >
+                        <span className={`num block text-[12.5px] font-semibold ${e.stand === "geplant" ? "text-ink" : "text-ink-3"}`}>
+                          {e.zeit}
+                          {e.stand === "gehalten" && <CheckCircle2 size={13} className="ml-1 inline align-[-2px] text-green" aria-label="gehalten" />}
+                        </span>
+                        <span className={`block truncate text-[14px] font-medium ${e.stand === "ausgefallen" ? "text-ink-3 line-through" : e.stand === "geplant" ? "" : "text-ink-2"}`}>{e.name}</span>
+                        {(e.ort || e.stand === "ausgefallen" || e.stand === "vorbei") && (
+                          <span className="block truncate text-[12px] text-ink-3">{e.stand === "ausgefallen" || e.stand === "vorbei" ? STAND_TEXT[e.stand] : e.ort}</span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
-          );
-        })}
-      </ol>
-      {balken.every((t) => t.gehalten + t.geplant === 0) && <p className="mt-3 text-[14px] text-ink-2">Diese Woche noch keine Einheit.</p>}
-      <p className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-ink-2">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[var(--bar)]" aria-hidden /> gehalten
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="wochen-geplant h-2.5 w-2.5 rounded-full" aria-hidden /> geplant
-        </span>
-      </p>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }

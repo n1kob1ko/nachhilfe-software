@@ -446,11 +446,6 @@ textarea.input {
   border-color: transparent;
   filter: brightness(1.04);
 }
-/* Meine Woche: noch geplante Einheiten schraffiert über den gehaltenen */
-.wochen-geplant {
-  background: repeating-linear-gradient(-45deg, var(--bar) 0 2px, var(--accent-wash) 2px 6px);
-  opacity: 0.85;
-}
 /* kleine Überschrift über einer Gruppe (Mehr, Listen) */
 .gruppe-titel {
   font-size: 12px;
