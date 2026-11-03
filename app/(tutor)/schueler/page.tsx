@@ -122,7 +122,7 @@ export default async function Students({ searchParams }: { searchParams: Promise
                         <span className="num font-semibold">{termin.jetzt ? "jetzt" : termin.heute ? "heute" : termin.label}</span>
                         {" "}
                         <span className="num">{termin.zeit}</span>
-                        {!termin.raumOffen && <span className="text-ink-2"> · {termin.ort.split(" · ")[0]}</span>}
+                        {!termin.raumOffen && <span className="text-ink-2"> · {termin.ort}</span>}
                       </span>
                     ) : (
                       <span className="text-ink-3">kein Termin im Plan</span>

@@ -11,6 +11,7 @@
  * und von Hand geplante Einheiten ohne Platz.
  */
 import { bereiteBriefingVor } from "./briefing-auto";
+import { ortName } from "./planung/ort";
 import { briefingDaten, datumKurz, einfachesBriefing, gespeichertesBriefing, KEINE_SCHWACHSTELLE, type BriefingInhalt, type Fokus } from "./briefing";
 import { leseStand } from "./cockpit";
 import { daysUntil, inTagen } from "./exams";
@@ -32,15 +33,8 @@ const minutenVon = (s: string) => {
 const zweistellig = (n: number) => String(n).padStart(2, "0");
 const uhrzeit = (min: number) => `${zweistellig(Math.floor(min / 60))}:${zweistellig(min % 60)}`;
 
-/**
- * Der Ort eines Platzes im Tagesplan: Raumname und Gebäude. „Online“ als Gebäudename wäre neben dem Hinweis
- * „online“ nur doppelt und wird weggelassen; ohne Raum steht „Raum noch offen“.
- */
-export const ortLabel = (raum: string | null, gebaeude: string | null, online: boolean): string => {
-  if (!raum) return online ? "online" : "Raum noch offen";
-  const zusatz = gebaeude && gebaeude.toLowerCase() !== (online ? "online" : "vor ort") ? ` · ${gebaeude}` : "";
-  return `${raum}${zusatz}${online ? " · online" : ""}`;
-};
+/** Der Ort eines Platzes im Tagesplan: nur das Gebäude, online „Online“ (`lib/planung/ort.ts`). */
+export const ortLabel = (raum: string | null, gebaeude: string | null, online: boolean): string => ortName(raum, gebaeude, online);
 
 export type HeutePunkt = {
   key: string;

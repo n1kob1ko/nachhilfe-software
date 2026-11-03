@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ortName } from "@/lib/planung/ort";
 import { notFound } from "next/navigation";
 import { Archive, Camera, CheckCircle2, Circle, FileText, History, PenLine, Pencil, Plus, ScanLine, Sparkles, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/Art";
@@ -170,8 +171,7 @@ function terminKennzahl(t: SchuelerTermin | null): { wert: string; zusatz: strin
   if (!t) return { wert: "–", zusatz: "kein Termin im Plan" };
   const [von, bis] = t.zeit.split("–");
   const [tag, datum] = t.label.split(", ");
-  // nur der Raumname: das Gebäude passt nicht auf die Karte
-  const ort = t.raumOffen ? "" : ` · ${t.ort.split(" · ")[0]}`;
+  const ort = t.raumOffen ? "" : ` · ${t.ort}`;
   if (t.jetzt) return { wert: "jetzt", zusatz: `bis ${bis}${ort}` };
   if (t.heute) return { wert: von, zusatz: `heute bis ${bis}${ort}` };
   return { wert: `${tag} ${von}`, zusatz: `${datum} bis ${bis}${ort}` };
@@ -271,8 +271,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
     label: datumLabel(slotDatum(z.week_start, z.weekday)),
     zeit: `${minutenLabel(z.start_min)}–${minutenLabel(z.start_min + z.geplante_dauer)}`,
     dauer: z.geplante_dauer,
-    raum: z.room_name,
-    online: z.room_mode === "online",
+    ort: ortName(z.room_name, z.room_building, z.room_mode === "online"),
     nichtStattgefunden: istNichtStattgefunden(z, jetzt),
   }));
   const versaeumt = termine.filter((t) => t.nichtStattgefunden).length;
@@ -397,8 +396,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
                 <span className="num w-[104px] shrink-0 font-semibold">{t.label}</span>
                 <span className="num">{t.zeit}</span>
                 <span className="min-w-0 flex-1 truncate">
-                  {t.raum ?? (t.online ? "online" : "Raum noch offen")}
-                  {t.raum && t.online ? " · online" : ""}
+                  {t.ort}
                 </span>
                 <span className="num text-[13px] text-ink-3">{t.dauer} min geplant</span>
                 {t.nichtStattgefunden && <Pill tone="red">nicht stattgefunden</Pill>}

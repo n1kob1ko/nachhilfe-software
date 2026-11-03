@@ -10,6 +10,7 @@
  * Tag kommen aus `lib/planung/ansicht.ts`.
  */
 import { useState } from "react";
+import { ortName } from "@/lib/planung/ort";
 import Link from "next/link";
 import { ChevronRight, Lock, Plus, Users } from "lucide-react";
 import { subjectTone } from "@/components/Calendar";
@@ -147,7 +148,7 @@ function PlatzZeile({ platz: p, schueler, interaktiv, onOeffnen }: { platz: Uebe
       <span className="min-w-0 flex-1 leading-snug">
         <span className={`block truncate text-[15px] font-semibold ${aus ? "text-ink-3 line-through" : "text-ink"}`}>{p.studentName}</span>
         <span className="block truncate text-[13px] text-ink-2">
-          {[p.roomName ? `${p.roomName}${p.roomMode === "online" ? " (online)" : ""}` : "kein Raum", `${p.dauer} min`, p.status === "entwurf" ? "Entwurf" : null].filter(Boolean).join(" · ")}
+          {[ortName(p.roomName, p.roomBuilding, p.roomMode === "online"), `${p.dauer} min`, p.status === "entwurf" ? "Entwurf" : null].filter(Boolean).join(" · ")}
         </span>
         {p.zugleichMit.length > 0 && (
           <span className="mt-0.5 flex items-center gap-1 text-[12.5px] text-ink-2">

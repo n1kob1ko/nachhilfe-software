@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ortName } from "@/lib/planung/ort";
 import { BrandLogo } from "@/components/Brand";
 import { PrintButton } from "@/components/PrintButton";
 import { PageHeader, Pill } from "@/components/ui";
@@ -36,7 +37,7 @@ export default async function PlanungDruckenPage({ searchParams }: { searchParam
   const entwuerfe = plaetze.filter((p) => p.status === "entwurf").length;
 
   const zeitraum = (p: UebersichtPlatz) => `${minutenLabel(p.startMin)}–${minutenLabel(p.startMin + p.dauer)}`;
-  const raum = (p: UebersichtPlatz) => (p.roomName ? `${p.roomName}${p.roomMode === "online" ? " (online)" : ""}` : "–");
+  const raum = (p: UebersichtPlatz) => (p.roomName ? ortName(p.roomName, p.roomBuilding, p.roomMode === "online") : "–");
 
   return (
     <>
