@@ -16,8 +16,7 @@ import { getPraesentation } from "@/lib/praesentationen";
 import * as repo from "@/lib/repo";
 import { submitAnswer, type SubmitInput } from "@/lib/service";
 import { canManageUnit, getUnit, unitForSend } from "@/lib/units";
-import { ensureBoardForUnit, queueInsert } from "@/lib/whiteboard";
-import { boardTaskForStudent } from "@/lib/whiteboard-content";
+import { uebungAufsWhiteboard, zeigeUebung } from "@/lib/tafel-senden";
 
 // ---------- tablet side ----------
 
@@ -126,7 +125,7 @@ export async function sendToTabletAction(_prev: SendState, form: FormData): Prom
   const out = taskId ? sendSingleTask(taskId, unit.student_id, t.id) : releaseWorksheet(worksheetId, unit.student_id);
   if (out.error || !out.assignmentId) return { status: "fehler", error: out.error ?? "Senden fehlgeschlagen." };
   noteActivity(unit.student_id);
-  const sent = showOnTablet(unit, { kind: "aufgabe", assignmentId: out.assignmentId });
+  const sent = zeigeUebung(unit, out.assignmentId);
   revalidatePath("/", "layout");
   return { ...sent, assignmentId: out.assignmentId, worksheetId: repo.getAssignment(out.assignmentId)?.worksheet_id, unitId: unit.id, student: unit.student_name.split(" ")[0] };
 }
@@ -168,6 +167,11 @@ export async function tabletViewAction(unitId: number, view: string) {
   if (v.kind === "aufgabe" && !unitAssignment(unit.id, v.assignmentId)) return;
   if (v.kind === "text" && !unitText(unit, v.textId)) return;
   if (v.kind === "praesentation" && !getPraesentation(v.id)) return;
+  // to the whiteboard: the exercise the tablet showed comes along with all its tasks
+  if (v.kind === "tafel") {
+    const a = currentAssignment(unit.id, unit.device_view);
+    if (a && parseView(unit.device_view).kind === "aufgabe") uebungAufsWhiteboard(unit.id, a.id);
+  }
   showOnTablet(unit, v);
 }
 
@@ -185,7 +189,7 @@ export async function sendNextTaskAction(unitId: number) {
   const next = a?.source_task_id ? nextTaskAfter(a.source_task_id) : null;
   if (!next) return;
   const out = sendSingleTask(next.id, unit.student_id, t.id);
-  if (out.assignmentId) showOnTablet(unit, { kind: "aufgabe", assignmentId: out.assignmentId });
+  if (out.assignmentId) zeigeUebung(unit, out.assignmentId);
   revalidatePath(`/einheiten/${unit.id}`);
 }
 
@@ -196,7 +200,7 @@ export async function retryTaskAction(unitId: number) {
   if (!a) return;
   const taskId = a.source_task_id ?? repo.listTasks(a.worksheet_id)[0]?.id;
   const out = taskId ? sendSingleTask(taskId, unit.student_id, t.id) : null;
-  if (out?.assignmentId) showOnTablet(unit, { kind: "aufgabe", assignmentId: out.assignmentId });
+  if (out?.assignmentId) zeigeUebung(unit, out.assignmentId);
   revalidatePath(`/einheiten/${unit.id}`);
 }
 
@@ -210,17 +214,14 @@ export async function showSolutionAction(unitId: number) {
   pushLive(unit.id);
 }
 
-/** "Auf Whiteboard": the current task goes onto the board and the tablet switches to it. */
+/**
+ * "Auf Whiteboard": the current exercise goes onto the board with all its tasks (not only the open one; what is
+ * already there stays once) and the tablet switches to it. The teacher's page then opens the board.
+ */
 export async function currentTaskToBoardAction(unitId: number) {
   const { unit } = await managedRunningUnit(unitId);
   const a = currentAssignment(unit.id, unit.device_view);
-  const board = ensureBoardForUnit(unit.id);
-  if (a && board) {
-    const tasks = repo.listTasks(a.worksheet_id);
-    const attempts = repo.listAttemptsForAssignment(a.id);
-    const open = tasks.find((x) => !attempts.some((y) => y.task_id === x.id && y.final)) ?? tasks.at(-1);
-    if (open) queueInsert(board.id, { kind: "tasks", title: a.title, worksheetId: a.worksheet_id, tasks: [boardTaskForStudent(open)] });
-  }
+  if (a) uebungAufsWhiteboard(unit.id, a.id);
   showOnTablet(unit, { kind: "tafel" });
 }
 

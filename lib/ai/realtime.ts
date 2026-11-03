@@ -477,8 +477,8 @@ async function eigeneVokabelnSenden(unitId: number, teacherId: number, level: nu
     tasks,
   );
   const assignmentId = repo.assignWorksheet(worksheetId, student.id, "", unitId);
-  const { showOnTablet } = await import("../live");
-  showOnTablet(unit, { kind: "aufgabe", assignmentId });
+  const { zeigeUebung } = await import("../tafel-senden");
+  zeigeUebung(unit, assignmentId);
   return { ok: true, assignmentId, source: "liste" };
 }
 

@@ -45,6 +45,7 @@ import {
 } from "@/lib/knoepfe";
 import { noteActivity } from "@/lib/learning";
 import { pushLive, showOnTablet } from "@/lib/live";
+import { zeigeUebung } from "@/lib/tafel-senden";
 import { tagAddieren, wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
 import { sendeAngepasst } from "@/lib/steuerung";
@@ -121,7 +122,7 @@ async function aufsGeraet(unitId: number, out: { worksheetId: number; assignment
   if ("fehler" in out) return { status: "fehler", error: out.fehler };
   const unit = getUnit(unitId)!;
   noteActivity(unit.student_id);
-  const sent = showOnTablet(unit, { kind: "aufgabe", assignmentId: out.assignmentId });
+  const sent = zeigeUebung(unit, out.assignmentId);
   pushLive(unit.id);
   revalidatePath("/", "layout");
   return { ...sent, assignmentId: out.assignmentId, worksheetId: out.worksheetId, unitId: unit.id, student: unit.student_name.split(" ")[0] };
@@ -292,6 +293,8 @@ export async function vorschlagReaktionAction(unitId: number, was: "weiter" | "t
   if (was === "erklaeren" && schrittId !== null) merkeSchritt(unitId, schrittId, "nichtVerstanden");
   if (was === "tafel") await currentTaskToBoardAction(unitId);
   zurueck(unitId);
+  // gemeinsam an der Tafel: der Lehrer sieht das Whiteboard gleich mit
+  if (was === "tafel") redirect(`/tafel/${unitId}`);
 }
 
 /** „Richtig / Teilweise / Falsch“ bei einer Frage oder Kontrolle; noch einmal tippen nimmt es zurück. */

@@ -1,6 +1,7 @@
 "use server";
 
-import { deliverIfRunning, pushLive } from "@/lib/live";
+import { pushLive } from "@/lib/live";
+import { deliverIfRunning } from "@/lib/tafel-senden";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { aiEnabled, analyzeWithAI } from "@/lib/ai";

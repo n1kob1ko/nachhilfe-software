@@ -1,7 +1,8 @@
 "use server";
 
 import { onHint } from "@/lib/ai/realtime";
-import { deliverIfRunning, pushLive, showOnTablet } from "@/lib/live";
+import { pushLive, showOnTablet } from "@/lib/live";
+import { deliverIfRunning } from "@/lib/tafel-senden";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/lib/auth";

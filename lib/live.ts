@@ -171,12 +171,6 @@ export function resendUnit(teacherId: number, assignmentId: number): UnitView | 
   return unit;
 }
 
-/** Something was sent to a student the classic way (student picked): if a unit with them runs, it also goes onto that teacher's tablet. */
-export function deliverIfRunning(studentId: number, assignmentId: number | undefined): Delivery | null {
-  const unit = runningUnitForStudent(studentId);
-  return unit && assignmentId ? showOnTablet(unit, { kind: "aufgabe", assignmentId }) : null;
-}
-
 /**
  * A unit started or ended: the tablet switches to it or back to "Bereit für die nächste Einheit".
  * When it ended, every laptop of the unit loses its access at once and is told so.
