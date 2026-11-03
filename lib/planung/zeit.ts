@@ -168,6 +168,12 @@ export function datumLabel(datum: string): string {
   return `${WOCHENTAG_KURZ[wochentagVon(datum)]} ${Number(datum.slice(8, 10))}.${Number(datum.slice(5, 7))}.`;
 }
 
+/** "Mittwoch, 4. November" (Schüler-App, niko 2026-11-03: Wochentag ausgeschrieben) */
+export function datumLang(datum: string): string {
+  const monat = new Date(datumMs(datum)).toLocaleDateString("de-AT", { month: "long", timeZone: "UTC" });
+  return `${WOCHENTAG_LANG[wochentagVon(datum)]}, ${Number(datum.slice(8, 10))}. ${monat}`;
+}
+
 /** "12. – 18. Oktober 2026" */
 export function wochenLabel(weekStart: string): string {
   const start = wochenstartVon(weekStart);
