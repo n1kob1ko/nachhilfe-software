@@ -9,13 +9,17 @@
  */
 import { ortName } from "./ort";
 import { einheitenFuerWoche, istNichtStattgefunden, mitNamen, slotDatum, type PlatzMitNamen } from "./repo";
-import { datumLabel, minutenLabel, tagAddieren, wienerDatum, wienerMinuten, wienerWochenstart, wochenLabel } from "./zeit";
+import { datumLabel, datumLang, minutenLabel, tagAddieren, wienerDatum, wienerMinuten, wienerWochenstart, wochenLabel } from "./zeit";
 
 export type SchuelerTermin = {
   id: number;
   datum: string;
   /** „Mo, 20.10.“ */
   label: string;
+  /** „Mittwoch, 4. November“ */
+  tagLang: string;
+  /** der Termin ist morgen */
+  morgen: boolean;
   /** „15:30–17:10“ */
   zeit: string;
   ort: string;
@@ -56,6 +60,8 @@ function alsTermin(z: PlatzMitNamen, now: Date): SchuelerTermin {
     id: z.id,
     datum,
     label: datumLabel(datum),
+    tagLang: datumLang(datum),
+    morgen: datum === tagAddieren(heute, 1),
     zeit: `${minutenLabel(z.start_min)}–${minutenLabel(z.start_min + z.geplante_dauer)}`,
     ort: ortLabel(z.room_name, z.room_building, online),
     standort: standortLabel(z.room_name, z.room_building, online),

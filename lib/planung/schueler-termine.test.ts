@@ -50,6 +50,8 @@ test("Schüler-App: Termine dieser Woche, der nächste oben, mit Ort und Lehrer,
   assert.equal(mo.nichtStattgefunden, true, "veröffentlicht, ohne Einheit und vorbei");
   assert.equal(mo.ort, "Hauptgebäude", "nur der Ort, der Raum ist für die Planung (niko, 2026-11-03)");
   assert.equal(mi.zeit, "15:30–17:10");
+  assert.equal(mi.tagLang, "Mittwoch, 5. März", "Wochentag ausgeschrieben (niko, 2026-11-03)");
+  assert.deepEqual([mi.morgen, fr.morgen, wochen[0].termine.some((t) => t.datum === "2031-03-06" && t.morgen)], [false, false, false]);
   assert.equal(mi.ort, "Online");
   assert.equal(mi.online, true);
   assert.equal(mi.heute, true);

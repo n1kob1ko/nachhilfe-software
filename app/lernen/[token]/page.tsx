@@ -88,10 +88,14 @@ export default async function LearnHome({ params, searchParams }: { params: Prom
       {naechster && (
         <section className="panel mt-8 px-5 py-5 md:px-6" aria-label="Nächster Termin" data-testid="naechster-termin">
           <p className="flex items-center gap-2 text-[14px] font-semibold text-accent">
-            <CalendarDays size={17} aria-hidden /> {naechster.jetzt ? "Jetzt" : naechster.heute ? "Heute" : "Nächster Termin"}
+            <CalendarDays size={17} aria-hidden /> {naechster.jetzt ? "Jetzt" : naechster.heute ? "Heute" : naechster.morgen ? "Morgen" : "Nächster Termin"}
           </p>
-          <p className="num mt-2 text-[26px] leading-tight font-semibold tracking-[-0.01em]">
-            {naechster.heute ? naechster.zeit : `${naechster.label}, ${naechster.zeit}`}
+          {/* niko, 2026-11-03: Wochentag ausgeschrieben, darunter groß die Uhrzeit */}
+          <p className="mt-2 text-[18px] font-semibold text-ink-2" data-testid="naechster-tag">
+            {naechster.tagLang}
+          </p>
+          <p className="num mt-0.5 text-[32px] leading-tight font-semibold tracking-[-0.01em]" data-testid="naechster-zeit">
+            {naechster.zeit.replace("–", " – ")}
           </p>
           <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[16px]" data-testid="naechster-ort">
             <MapPin size={17} className="shrink-0 text-ink-3" aria-hidden />
