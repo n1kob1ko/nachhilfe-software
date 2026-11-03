@@ -29,6 +29,8 @@ type Foto = {
   fehler?: string;
   buchstabe: string | null;
   teacherId: number | null;
+  /** Gebäude für alle Termine dieses Fotos; der Raum dort wird beim Eintragen gesucht */
+  ort: string | null;
   rasterVomFoto: boolean;
   unsicher: string[];
   zeilen: Zeile[];
@@ -56,6 +58,8 @@ export function StundenplanImport({
   zuordnung,
   dauer: startDauer,
   kurze,
+  orte,
+  ortZuordnung,
 }: {
   lehrer: Lehrer[];
   schueler: Schueler[];
@@ -63,6 +67,10 @@ export function StundenplanImport({
   startWoche: string;
   zuordnung: Record<string, number>;
   dauer: number;
+  /** die Gebäude der Räume („Ort“) */
+  orte: string[];
+  /** Buchstabe → Ort, vom letzten Mal */
+  ortZuordnung: Record<string, string>;
   /** Plätze von früheren Fotos, die nur 50 Minuten lang sind (ab dieser Woche) */
   kurze: { abWoche: string; anzahl: number };
 }) {
@@ -75,6 +83,8 @@ export function StundenplanImport({
   const [woche, setWoche] = useState(startWoche);
   const [ersetzen, setErsetzen] = useState(false);
   const [buchstaben, setBuchstaben] = useState<Record<string, number>>(zuordnung);
+  const [ortJeBuchstabe, setOrtJeBuchstabe] = useState<Record<string, string>>(ortZuordnung);
+  const [veroeffentlichen, setVeroeffentlichen] = useState(true);
   const [pruefung, setPruefung] = useState<Pruefung | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
   const [liest, setLiest] = useState(false);
@@ -108,13 +118,13 @@ export function StundenplanImport({
     woche,
     ersetzen,
     lehrer: gelesen.map((f) => f.teacherId),
-    zeilen: auswahl.map(({ f, z }) => [schluessel(f, z), f.teacherId, z.studentId, z.tag, z.von, z.bis]),
+    zeilen: auswahl.map(({ f, z }) => [schluessel(f, z), f.teacherId, z.studentId, z.tag, z.von, z.bis, f.ort]),
   });
   useEffect(() => {
     if (!gelesen.length) return;
     let aktuell = true;
     const t = setTimeout(async () => {
-      const zeilen = auswahl.map(({ f, z }) => ({ teacherId: f.teacherId!, studentId: z.studentId!, tag: z.tag, start: z.von, dauer: z.bis - z.von }));
+      const zeilen = auswahl.map(({ f, z }) => ({ teacherId: f.teacherId!, studentId: z.studentId!, tag: z.tag, start: z.von, dauer: z.bis - z.von, ort: f.ort }));
       const lehrerIds = [...new Set(gelesen.map((f) => f.teacherId).filter((id): id is number => id !== null))];
       try {
         const r = await stundenplanPruefenAction({ woche, zeilen, ersetzen, lehrer: lehrerIds });
@@ -150,7 +160,7 @@ export function StundenplanImport({
       }
       const url = URL.createObjectURL(klein);
       urls.current.push(url);
-      neue.push({ id: naechsteId.current++, file: klein, url, zustand: "wartet", buchstabe: null, teacherId: null, rasterVomFoto: false, unsicher: [], zeilen: [] });
+      neue.push({ id: naechsteId.current++, file: klein, url, zustand: "wartet", buchstabe: null, teacherId: null, ort: null, rasterVomFoto: false, unsicher: [], zeilen: [] });
     }
     setFotos((alt) => [...alt, ...neue].slice(0, 12));
   }
@@ -186,11 +196,13 @@ export function StundenplanImport({
         }
         const v = data.vorschlag;
         const teacherId = v.teacherId ?? (v.buchstabe && buchstaben[v.buchstabe] ? buchstaben[v.buchstabe] : null);
+        const ort = v.buchstabe && ortJeBuchstabe[v.buchstabe] && orte.includes(ortJeBuchstabe[v.buchstabe]) ? ortJeBuchstabe[v.buchstabe] : orte.length === 1 ? orte[0] : null;
         aendereFoto(foto.id, (f) => ({
           ...f,
           zustand: "fertig",
           buchstabe: v.buchstabe,
           teacherId,
+          ort,
           rasterVomFoto: v.rasterVomFoto,
           unsicher: v.unsicher,
           zeilen: v.zeilen.map((z) => ({ ...z, an: z.studentId !== null, von: z.start, bis: z.start + (dauer > 0 ? dauer : z.dauerFoto) })),
@@ -209,6 +221,12 @@ export function StundenplanImport({
     setFotos((alt) => alt.map((x) => (x.id === foto.id || (b && id && x.buchstabe === b && x.teacherId === null) ? { ...x, teacherId: id } : x)));
   }
 
+  function waehleOrt(foto: Foto, ort: string | null) {
+    const b = foto.buchstabe;
+    if (b && ort) setOrtJeBuchstabe((alt) => ({ ...alt, [b]: ort }));
+    setFotos((alt) => alt.map((x) => (x.id === foto.id || (b && ort && x.buchstabe === b && x.ort === null) ? { ...x, ort } : x)));
+  }
+
   async function eintragen() {
     if (speichert || !eintragbar) return;
     setFehler(null);
@@ -218,9 +236,11 @@ export function StundenplanImport({
       const r = await stundenplanEintragenAction({
         woche,
         ersetzen: ersetzen && pruefung?.status !== "veroeffentlicht",
-        zeilen: ok.map(({ f, z }) => ({ teacherId: f.teacherId!, studentId: z.studentId!, tag: z.tag, start: z.von, dauer: z.bis - z.von })),
+        zeilen: ok.map(({ f, z }) => ({ teacherId: f.teacherId!, studentId: z.studentId!, tag: z.tag, start: z.von, dauer: z.bis - z.von, ort: f.ort })),
         buchstaben,
         dauer,
+        orte: ortJeBuchstabe,
+        veroeffentlichen: veroeffentlichen && pruefung?.status !== "veroeffentlicht",
       });
       if (r.ok) {
         window.location.assign(r.weiter);
@@ -451,23 +471,40 @@ export function StundenplanImport({
                   </p>
                 </div>
               </div>
-              <label className="flex items-center gap-2 text-[14px]">
-                <span className="font-semibold">Lehrer</span>
-                <select
-                  value={f.teacherId ?? ""}
-                  onChange={(e) => waehleLehrer(f, e.currentTarget.value ? Number(e.currentTarget.value) : null)}
-                  className={`input !w-auto min-w-[160px] ${f.teacherId === null ? "!border-amber" : ""}`}
-                  data-testid="sp-lehrer"
-                >
-                  <option value="">Lehrer wählen</option>
-                  {lehrer.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {/* für den ganzen Plan: Lehrer und Ort gelten für jede Zeile dieses Fotos */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <label className="flex items-center gap-2 text-[14px]">
+                  <span className="font-semibold">Lehrer</span>
+                  <select
+                    value={f.teacherId ?? ""}
+                    onChange={(e) => waehleLehrer(f, e.currentTarget.value ? Number(e.currentTarget.value) : null)}
+                    className={`input !w-auto min-w-[160px] ${f.teacherId === null ? "!border-amber" : ""}`}
+                    data-testid="sp-lehrer"
+                  >
+                    <option value="">Lehrer wählen</option>
+                    {lehrer.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {orte.length > 0 && (
+                  <label className="flex items-center gap-2 text-[14px]">
+                    <span className="font-semibold">Ort</span>
+                    <select value={f.ort ?? ""} onChange={(e) => waehleOrt(f, e.currentTarget.value || null)} className="input !w-auto min-w-[160px]" data-testid="sp-ort">
+                      <option value="">noch offen</option>
+                      {orte.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </div>
             </header>
+            {f.ort && <p className="text-[13px] text-ink-3">Alle Termine dieses Fotos: {f.ort}. Einen freien Raum dort sucht die App selbst.</p>}
 
             {f.teacherId === null && f.buchstabe && (
               <p className="rounded-xl bg-amber-wash px-4 py-2.5 text-[14px] text-amber">Wer ist {f.buchstabe}? Einmal wählen, beim nächsten Mal weiß es die App.</p>
@@ -629,6 +666,18 @@ export function StundenplanImport({
             )}
             {pruefung?.status === "veroeffentlicht" && (
               <p className="text-[14px] text-ink-2">Diese Woche ist veröffentlicht: die neuen Plätze sehen Lehrer und Schüler sofort. Vorhandene Plätze bleiben stehen.</p>
+            )}
+            {pruefung && pruefung.status !== "veroeffentlicht" && (
+              <label className="flex cursor-pointer items-start gap-3 text-[14px]">
+                <input
+                  type="checkbox"
+                  checked={veroeffentlichen}
+                  onChange={(e) => setVeroeffentlichen(e.currentTarget.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--accent)]"
+                  data-testid="sp-veroeffentlichen"
+                />
+                <span>Danach die Woche veröffentlichen, damit die Schüler Uhrzeit, Ort und Lehrer sofort in ihrer App sehen.</span>
+              </label>
             )}
             {pruefung?.allgemein && <p className="text-[14px] text-red">{pruefung.allgemein}</p>}
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">

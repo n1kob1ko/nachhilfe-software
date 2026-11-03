@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, CalendarPlus, CheckCircle2, ChevronRight, DoorOpen, Presentation } from "lucide-react";
+import { CalendarDays, CalendarPlus, CheckCircle2, ChevronRight, MapPin, Presentation, UserRound } from "lucide-react";
 import { notFound } from "next/navigation";
 import { SubjectArt } from "@/components/Art";
 import { MasteryBar, Pill, TrendBadge, formatDate } from "@/components/ui";
@@ -93,10 +93,13 @@ export default async function LearnHome({ params, searchParams }: { params: Prom
           <p className="num mt-2 text-[26px] leading-tight font-semibold tracking-[-0.01em]">
             {naechster.heute ? naechster.zeit : `${naechster.label}, ${naechster.zeit}`}
           </p>
-          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[16px]">
-            <DoorOpen size={17} className="shrink-0 text-ink-3" aria-hidden />
-            <span>{naechster.ort}</span>
-            {!naechster.raumOffen && <Pill tone={naechster.online ? "accent" : "neutral"}>{naechster.online ? "online" : "vor Ort"}</Pill>}
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[16px]" data-testid="naechster-ort">
+            <MapPin size={17} className="shrink-0 text-ink-3" aria-hidden />
+            <span>{naechster.standort}</span>
+          </p>
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[16px]" data-testid="naechster-lehrer">
+            <UserRound size={17} className="shrink-0 text-ink-3" aria-hidden />
+            <span>{naechster.lehrer}</span>
           </p>
         </section>
       )}
@@ -130,9 +133,11 @@ export default async function LearnHome({ params, searchParams }: { params: Prom
                       {mitAnfrage.has(t.id) && <Pill tone="amber">Anfrage offen</Pill>}
                     </span>
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-ink-2">
-                      <DoorOpen size={15} className="shrink-0 text-ink-3" aria-hidden />
-                      <span>{t.ort}</span>
-                      {!t.raumOffen && <Pill tone={t.online ? "accent" : "neutral"}>{t.online ? "online" : "vor Ort"}</Pill>}
+                      <MapPin size={15} className="shrink-0 text-ink-3" aria-hidden />
+                      <span>{t.standort}</span>
+                      <span aria-hidden>·</span>
+                      <UserRound size={15} className="shrink-0 text-ink-3" aria-hidden />
+                      <span>{t.lehrer}</span>
                       {t.nichtStattgefunden && <span className="text-[13px] text-ink-3">nicht stattgefunden</span>}
                     </span>
                     {aenderbar.has(t.id) && <TerminAendern termin={aenderbar.get(t.id)!} aktion={stelleSchuelerAnfrageAction.bind(null, token)} schueler />}

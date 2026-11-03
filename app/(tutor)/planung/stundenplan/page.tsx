@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { darfWochenplanBearbeiten } from "@/lib/planung/berechtigungen";
 import { wochenStatus } from "@/lib/planung/repo";
-import { buchstabenZuordnung, einheitDauer, kurzeFotoPlaetze, stundenplanFotoMoeglich } from "@/lib/planung/stundenplan-foto";
+import { buchstabenOrte, buchstabenZuordnung, einheitDauer, kurzeFotoPlaetze, stundenplanFotoMoeglich, stundenplanOrte } from "@/lib/planung/stundenplan-foto";
 import { istDatum, tagAddieren, wienerWochenstart, wochenLabel, wochenstartVon } from "@/lib/planung/zeit";
 import { listStudents, listTeachers } from "@/lib/repo";
 
@@ -68,6 +68,8 @@ export default async function StundenplanFotosPage({ searchParams }: { searchPar
         startWoche={startWoche}
         zuordnung={buchstabenZuordnung()}
         dauer={einheitDauer()}
+        orte={stundenplanOrte()}
+        ortZuordnung={buchstabenOrte()}
         kurze={{ abWoche: diese, anzahl: kurzeFotoPlaetze(diese).length }}
       />
     </div>

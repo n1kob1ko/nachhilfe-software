@@ -22,12 +22,13 @@ und kein Passwort; wer den Link hat, sieht diese Seite (wie bisher).
 
 ## Was der Schüler sieht
 
-- **Nächster Termin** ganz oben: „Jetzt“, „Heute“ oder „Nächster Termin“, die Zeit, der Raum mit
-  Gebäude und „online“ oder „vor Ort“. Ohne Raum steht „Raum noch offen“ und kein online/vor Ort.
+- **Nächster Termin** ganz oben: „Jetzt“, „Heute“ oder „Nächster Termin“, dann **Uhrzeit, Ort und
+  Lehrer** (niko, 2026-11-03: „Der Raum selbst ist nicht wichtig nur Uhrzeit Ort Lehrer“). Ort ist das
+  Gebäude des Raums, online „Online“; ohne Raum „Ort noch offen“. Dasselbe in jeder Zeile der Termine.
 - **Deine Termine:** diese Woche und, sobald sie veröffentlicht ist, die nächste. Vergangene Termine
   sind grau, ein vergangener ohne Einheit heißt „nicht stattgefunden“.
-- Wie bisher (D17/D23) **nur veröffentlichte Plätze** und **ohne Namen**: kein Lehrer, keine anderen
-  Schüler. Entwürfe sieht der Schüler nie. Beim Veröffentlichen wird weiterhin niemand
+- Wie bisher (D17/D23) **nur veröffentlichte Plätze**, keine anderen Schüler. Der eigene Lehrer steht
+  seit 2026-11-03 dabei (niko). Entwürfe sieht der Schüler nie. Beim Veröffentlichen wird weiterhin niemand
   benachrichtigt (D25).
 - Nach einer Einheit einmal **„Was war heute schwer?“** (Antworten zum Antippen, freier Text,
   „Überspringen“), danach die eigene Notiz zum Ändern; unter dem nächsten Termin **„Für nächstes Mal“**,

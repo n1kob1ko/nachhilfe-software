@@ -17,6 +17,7 @@ import {
   istEinheitDauer,
   leseImportZeilen,
   speichereBuchstaben,
+  speichereOrte,
   speichereEinheitDauer,
   stundenplanEintragen,
   verlaengereFotoPlaetze,
@@ -381,7 +382,7 @@ export async function stundenplanPruefenAction(eingabe: StundenplanEingabe & { l
  * Trägt die bestätigten Zeilen ein und merkt sich, welcher Buchstabe welcher Lehrer ist. Danach geht es zurück
  * in den Wochenplan dieser Woche, mit einer Meldung.
  */
-export async function stundenplanEintragenAction(eingabe: StundenplanEingabe & { buchstaben: unknown; dauer?: unknown }): Promise<{ ok: true; weiter: string } | { ok: false; fehler: string }> {
+export async function stundenplanEintragenAction(eingabe: StundenplanEingabe & { buchstaben: unknown; dauer?: unknown; orte?: unknown; veroeffentlichen?: unknown }): Promise<{ ok: true; weiter: string } | { ok: false; fehler: string }> {
   const me = await requireTeacher();
   const zeilen = leseImportZeilen(eingabe.zeilen);
   if (!zeilen) return { ok: false, fehler: "Die Zeilen sind nicht lesbar. Bitte die Seite neu laden." };
@@ -392,11 +393,18 @@ export async function stundenplanEintragenAction(eingabe: StundenplanEingabe & {
   const buchstaben = eingabe.buchstaben && typeof eingabe.buchstaben === "object" ? (eingabe.buchstaben as Record<string, unknown>) : {};
   speichereBuchstaben(Object.fromEntries(Object.entries(buchstaben).filter(([, id]) => typeof id === "number" && lehrer.has(id))) as Record<string, number>);
   if (istEinheitDauer(eingabe.dauer)) speichereEinheitDauer(eingabe.dauer);
+  const orte = eingabe.orte && typeof eingabe.orte === "object" ? (eingabe.orte as Record<string, unknown>) : {};
+  speichereOrte(Object.fromEntries(Object.entries(orte).filter(([, o]) => typeof o === "string")) as Record<string, string>);
+  // niko, 2026-11-03: die Schüler sollen ihre Termine sofort sehen; veröffentlicht wird nur auf Wunsch (Haken)
+  let veroeffentlicht = false;
+  if (eingabe.veroeffentlichen === true && ergebnis.status !== "veroeffentlicht" && ergebnis.eingetragen > 0)
+    veroeffentlicht = planung.veroeffentlicheWoche(me, wochenstartVon(woche)).ok;
+  aktualisiereWoche();
   aktualisiere("/planung");
   const nicht = ergebnis.zeilen.length - ergebnis.eingetragen;
   const hinweis = `${ergebnis.eingetragen === 1 ? "1 Platz" : `${ergebnis.eingetragen} Plätze`} aus den Fotos eingetragen${
     nicht ? `, ${nicht} nicht (Überschneidung)` : ""
-  }.${ergebnis.status === "veroeffentlicht" ? " Die Woche ist veröffentlicht: die Schüler sehen sie schon." : ""}`;
+  }.${ergebnis.status === "veroeffentlicht" ? " Die Woche ist veröffentlicht: die Schüler sehen sie schon." : veroeffentlicht ? " Die Woche ist jetzt veröffentlicht: die Schüler sehen ihre Termine." : ""}`;
   return { ok: true, weiter: mitMeldung(`/planung?woche=${wochenstartVon(woche)}`, { ok: true, hinweis }) };
 }
 

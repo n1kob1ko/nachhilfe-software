@@ -30,6 +30,10 @@ Stunden gehen, „Neu“ steht für einen neuen Schüler.
      dauert“: 100, 50, 60, 90, 120 Minuten oder „so lang wie das Feld auf dem Foto“), ändert alle Zeilen
      auf einmal und wird beim Eintragen gemerkt (`app_settings.stundenplan_dauer`). Jede Zeile hat Tag,
      Beginn und Ende zum Ändern.
+   - **Ort für den ganzen Plan:** neben dem Lehrer wählt die Verwaltung je Foto einen Ort (die Gebäude aus
+     Mehr › Räume). Er gilt für jede Zeile des Fotos und wird je Buchstabe gemerkt
+     (`app_settings.stundenplan_orte`). Beim Eintragen sucht die App je Termin den ersten freien Raum in
+     diesem Gebäude; ist keiner frei, steht das rot bei der Zeile (niko, 2026-11-03).
    - **Schüler:** gesucht wird der Vorname zuerst unter den Schülern dieses Lehrers, dann unter allen.
      „Anna H.“ passt zu „Anna Huber“. Ein Buchstabe Unterschied (ab vier Buchstaben) ist „ähnlich“ und
      wird nur vorgeschlagen, wenn es genau einen solchen Schüler gibt. Passen mehrere, ist keiner
@@ -39,7 +43,10 @@ Stunden gehen, „Neu“ steht für einen neuen Schüler.
    Überlappungsprüfung wie jeder Platz, in einer Transaktion, die zurückgerollt wird). Überschneidungen
    stehen rot bei der Zeile. Hat ein Lehrer der Fotos in dieser Woche schon Plätze und ist die Woche
    nicht veröffentlicht, kann die Verwaltung sie vorher löschen lassen („damit nur die Fotos gelten“).
-5. **Eintragen.** Die angehakten Zeilen ohne Überschneidung kommen als **gesperrte** Plätze ohne Raum in
+5. **Veröffentlichen.** Der Haken „Danach die Woche veröffentlichen“ ist gesetzt: nach dem Eintragen wird
+   die Woche veröffentlicht, und die Schüler sehen Uhrzeit, Ort und Lehrer sofort in ihrer App. Ohne Haken
+   bleibt es ein Entwurf wie bisher.
+6. **Eintragen.** Die angehakten Zeilen ohne Überschneidung kommen als **gesperrte** Plätze ohne Raum in
    die Woche: in eine leere Woche oder einen Entwurf als Entwurf, in eine veröffentlichte Woche
    veröffentlicht (dann sehen Lehrer und Schüler sie sofort; gelöscht wird dort nichts). Zwei Schüler
    zur selben Zeit beim selben Lehrer bekommen den Haken **gleichzeitig** (D26). Danach geht es zurück

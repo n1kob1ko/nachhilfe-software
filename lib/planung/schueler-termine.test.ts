@@ -27,7 +27,7 @@ async function setup() {
   return { planung, schueler, platz };
 }
 
-test("Schüler-App: Termine dieser Woche, der nächste oben, ohne Entwürfe und ohne andere Schüler", async () => {
+test("Schüler-App: Termine dieser Woche, der nächste oben, mit Ort und Lehrer, ohne Entwürfe und ohne andere Schüler", async () => {
   const { planung, schueler, platz } = await setup();
   const anna = schueler("Anna Probe");
   const berta = schueler("Berta Probe");
@@ -60,7 +60,10 @@ test("Schüler-App: Termine dieser Woche, der nächste oben, ohne Entwürfe und 
   assert.equal(mi.raumOffen, false);
   assert.equal(naechster?.id, mittwoch, "der laufende Termin ist der nächste");
   assert.equal(JSON.stringify(wochen).includes("Probe"), false, "keine Namen in den Terminen");
-  assert.equal(JSON.stringify(wochen).includes("Niko"), false, "auch nicht der Lehrer");
+  // niko, 2026-11-03: Uhrzeit, Ort und Lehrer sofort sehen; der Raum ist nicht wichtig
+  assert.deepEqual([mo.standort, mi.standort, fr.standort], ["Hauptgebäude", "Online", "Ort noch offen"]);
+  assert.ok(mo.lehrer.length > 0 && wochen[0].termine.every((t) => t.lehrer === mo.lehrer), "der Lehrer steht bei jedem Termin");
+  assert.match(mo.lehrer, /niko/i);
 
   assert.equal(planung.veroeffentlicheWoche(NAECHSTER_MONTAG).ok, true);
   const spaeter = termineFuerSchueler(anna, new Date("2031-03-08T20:00:00Z")); // Samstag 21:00

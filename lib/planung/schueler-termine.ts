@@ -2,8 +2,9 @@
  * Die Termine eines Schülers für seine App (`/lernen/[token]`). niko, 2026-10-19: „ich möchte aber
  * auch das schüler die webapp verwenden können damit sie sehen wo und wann sie unterricht haben“.
  *
- * Wie bisher (D17/D23) nur **veröffentlichte** Plätze und bewusst ohne Namen: zu sehen sind Tag, Zeit,
- * Ort und ob die Einheit online oder vor Ort ist. Dazu kommt die nächste Woche, sobald sie
+ * Wie bisher (D17/D23) nur **veröffentlichte** Plätze. Zu sehen sind Tag, Zeit, Ort, Lehrer und ob die
+ * Einheit online oder vor Ort ist; keine anderen Schüler. niko, 2026-11-03: „die Schüler Ansicht soll immer
+ * sofort Uhrzeit und Ort und Lehrer sehen. Der Raum selbst ist nicht wichtig.“ Dazu kommt die nächste Woche, sobald sie
  * veröffentlicht ist, und der nächste Termin ganz oben.
  */
 import { einheitenFuerWoche, istNichtStattgefunden, mitNamen, slotDatum, type PlatzMitNamen } from "./repo";
@@ -17,6 +18,10 @@ export type SchuelerTermin = {
   /** „15:30–17:10“ */
   zeit: string;
   ort: string;
+  /** für die Schüler-App: das Gebäude („Ort“), ohne Raumname; ohne Raum „Ort noch offen“ */
+  standort: string;
+  /** der Lehrer dieses Termins */
+  lehrer: string;
   /** noch kein Raum: dann ist auch „online“ oder „vor Ort“ noch offen */
   raumOffen: boolean;
   online: boolean;
@@ -40,6 +45,13 @@ export function ortLabel(raum: string | null, gebaeude: string | null, online: b
   return `${raum}${zusatz}`;
 }
 
+/** Der Ort für die Schüler-App: nur das Gebäude (der Raum ist nicht wichtig), online „Online“. */
+export function standortLabel(raum: string | null, gebaeude: string | null, online: boolean): string {
+  if (!raum) return "Ort noch offen";
+  if (online) return "Online";
+  return gebaeude?.trim() || raum;
+}
+
 function alsTermin(z: PlatzMitNamen, now: Date): SchuelerTermin {
   const datum = slotDatum(z.week_start, z.weekday);
   const heute = wienerDatum(now);
@@ -52,6 +64,8 @@ function alsTermin(z: PlatzMitNamen, now: Date): SchuelerTermin {
     label: datumLabel(datum),
     zeit: `${minutenLabel(z.start_min)}–${minutenLabel(z.start_min + z.geplante_dauer)}`,
     ort: ortLabel(z.room_name, z.room_building, online),
+    standort: standortLabel(z.room_name, z.room_building, online),
+    lehrer: z.teacher_name,
     raumOffen: !z.room_name,
     online,
     heute: datum === heute,
