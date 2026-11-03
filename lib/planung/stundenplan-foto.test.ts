@@ -217,6 +217,9 @@ test("reading a photo: the photo goes to the KI once, as an image, with the plan
     assert.equal(JSON.stringify(gefragt[0].content).includes("Probe"), false, "no student list goes to the KI");
     assert.equal(v.teacherId, thomas.id, "A is Thomas now");
     assert.equal(v.zeilen.find((z) => z.text === "Anna")!.studentId, ids.anna);
+    // niko, 2026-11-03: jede Einheit dauert 100 Minuten, auch wenn das Feld nur eine Stunde lang ist
+    const lucas = v.zeilen.find((z) => z.text === "Lucas")!;
+    assert.deepEqual([lucas.start, lucas.dauer, lucas.dauerFoto], [730, 100, 50], "Mo Stunde 5: 12:10–13:50, not 13:00");
 
     // the KI answers nothing usable: a sentence for the teacher
     router.setTransport(async (req) => ({ parsed: null, refusal: true, model: req.model, usage: { input: 1_800, output: 10, cacheWrite: 0, cacheRead: 0, reasoning: 0 } }));
@@ -225,4 +228,60 @@ test("reading a photo: the photo goes to the KI once, as an image, with the plan
   } finally {
     router.setTransport(null);
   }
+});
+
+test("one lesson lasts 100 minutes from the start on the photo (niko, 2026-11-03); the length is a setting", async () => {
+  const { alle, thomas, niko } = await setup();
+  const { vorschlagAusGelesen, einheitDauer, speichereEinheitDauer, EINHEIT_DAUER_STANDARD } = await import("./stundenplan-foto");
+  assert.equal(einheitDauer(), EINHEIT_DAUER_STANDARD);
+  assert.equal(EINHEIT_DAUER_STANDARD, 100);
+  const plan = { ...PLAN, bloecke: [{ tag: "Mo" as const, von_stunde: 7, bis_stunde: 7, text: "Anna", namen: ["Anna"], neu: false }] };
+  const o = { schueler: alle, zuordnung: { A: thomas.id }, lehrerIds: [niko.id, thomas.id] };
+  const hundert = vorschlagAusGelesen(plan, { ...o, dauer: 100 }).zeilen[0];
+  assert.deepEqual([hundert.start, hundert.start + hundert.dauer], [13 * 60 + 50, 15 * 60 + 30], "Mo Stunde 7: 13:50–15:30");
+  const wieFoto = vorschlagAusGelesen(plan, { ...o, dauer: 0 }).zeilen[0];
+  assert.equal(wieFoto.dauer, 50, "0 = as long as the field");
+  speichereEinheitDauer(90);
+  assert.equal(einheitDauer(), 90);
+  speichereEinheitDauer(0);
+  assert.equal(einheitDauer(), 0);
+  speichereEinheitDauer(5);
+  assert.equal(einheitDauer(), 0, "nonsense is not saved");
+});
+
+test("slots from earlier photos (locked, no room, 50 minutes) can be lengthened; overlaps stay and are listed", async () => {
+  const { ids, thomas, niko, admin, lehrer } = await setup();
+  const planung = await import("./repo");
+  const { stundenplanEintragen, kurzeFotoPlaetze, verlaengereFotoPlaetze } = await import("./stundenplan-foto");
+  // so hat die erste Fassung eingetragen: je 50 Minuten
+  const r = stundenplanEintragen(admin, WOCHE, [
+    { teacherId: thomas.id, studentId: ids.anna, tag: 1, start: 830, dauer: 50 },
+    { teacherId: thomas.id, studentId: ids.ben, tag: 1, start: 930, dauer: 50 },
+    { teacherId: thomas.id, studentId: ids.clara, tag: 2, start: 830, dauer: 50 },
+    { teacherId: thomas.id, studentId: ids.emil, tag: 2, start: 880, dauer: 50 },
+  ]);
+  assert.equal(r.ok && r.eingetragen, 4);
+  // von Hand, mit Raum oder nicht gesperrt: bleibt
+  const raum = planung.createRaum({ building: "Haus", name: "R1", mode: "vor_ort" });
+  planung.legePlatzAn({ week_start: WOCHE, weekday: 3, start_min: 600, geplante_dauer: 50, teacher_id: niko.id, student_id: ids.lukas, room_id: raum, locked: true });
+  planung.legePlatzAn({ week_start: WOCHE, weekday: 4, start_min: 600, geplante_dauer: 50, teacher_id: niko.id, student_id: ids.lukas, room_id: null });
+  assert.equal(kurzeFotoPlaetze("2031-03-03").length, 4);
+  assert.equal(kurzeFotoPlaetze("2031-03-17").length, 0, "only from this week on");
+  assert.equal(verlaengereFotoPlaetze(lehrer, WOCHE, 100).ok, false);
+  assert.equal(verlaengereFotoPlaetze(admin, WOCHE, 50).ok, false);
+  const v = verlaengereFotoPlaetze(admin, WOCHE, 100);
+  assert.equal(v.ok && v.geaendert, 3);
+  assert.equal(v.ok && v.nicht.length, 1, "Di 13:50 + 100 would overlap Emil at 14:40: stays 50 and is listed");
+  const dauern = planung.einheitenFuerWoche(WOCHE).map((p) => [p.weekday, p.start_min, p.geplante_dauer]);
+  assert.deepEqual(
+    dauern.sort((a, b) => a[0] - b[0] || a[1] - b[1]),
+    [
+      [1, 830, 100],
+      [1, 930, 100],
+      [2, 830, 50],
+      [2, 880, 100],
+      [3, 600, 50],
+      [4, 600, 50],
+    ],
+  );
 });
