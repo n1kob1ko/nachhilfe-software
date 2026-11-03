@@ -148,7 +148,7 @@ export type TagesplanPunkt = {
   zeit: string;
   studentId: number;
   studentName: string;
-  /** Raum · Gebäude, "online" oder "Raum noch offen"; bei einer Zeile ohne Platz das Fach */
+  /** der Ort (Gebäude), "Online" oder "Ort noch offen"; bei einer Zeile ohne Platz das Fach */
   ort: string;
   /** das Thema der Dokumentationszeile; beim Platz leer (die Dauer steht schon in der Zeit) */
   hinweis: string;

@@ -17,6 +17,7 @@
  * wird rot ausgeblendet und nimmt nichts an; ein zulässiges zeigt den Platz als Umriss.
  */
 import { Fragment, useState } from "react";
+import { ortName } from "@/lib/planung/ort";
 import { Lock, LockOpen, Plus, Users } from "lucide-react";
 import { lockSlotAction } from "@/app/planung-actions";
 import { subjectTone } from "@/components/Calendar";
@@ -327,7 +328,7 @@ export function WochenplanGitter(props: Props) {
                                 background: aus ? "var(--paper)" : tone.bg,
                                 borderColor: aus ? "var(--line-strong)" : `color-mix(in srgb, ${tone.fg} 35%, transparent)`,
                               }}
-                              title={`${p.studentName} · ${zeit}${p.roomName ? ` · ${p.roomName}` : ""}${p.locked ? " · gesperrt" : ""}${zugleich}${aus ? " · nicht stattgefunden" : ""}`}
+                              title={`${p.studentName} · ${zeit}${p.roomName ? ` · ${ortName(p.roomName, p.roomBuilding, p.roomMode === "online")} (${p.roomName})` : ""}${p.locked ? " · gesperrt" : ""}${zugleich}${aus ? " · nicht stattgefunden" : ""}`}
                             >
                               <div className="flex items-start gap-1 pr-0.5">
                                 <span className={`min-w-0 flex-1 truncate text-[12.5px] font-semibold ${aus ? "text-ink-3 line-through" : "text-ink"}`}>{p.studentName}</span>
@@ -339,7 +340,7 @@ export function WochenplanGitter(props: Props) {
                                 (aus ? (
                                   <div className="truncate text-[10.5px] font-semibold text-red">nicht stattgefunden</div>
                                 ) : (
-                                  p.roomName && spuren === 1 && <div className="truncate text-[11.5px] text-ink-3">{p.roomName}</div>
+                                  p.roomName && spuren === 1 && <div className="truncate text-[11.5px] text-ink-3">{ortName(p.roomName, p.roomBuilding, p.roomMode === "online")}</div>
                                 ))}
                             </div>
                             {interaktiv && (

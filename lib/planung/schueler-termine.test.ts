@@ -48,14 +48,14 @@ test("Schüler-App: Termine dieser Woche, der nächste oben, mit Ort und Lehrer,
   const [mo, mi, fr] = wochen[0].termine;
   assert.equal(mo.vorbei, true);
   assert.equal(mo.nichtStattgefunden, true, "veröffentlicht, ohne Einheit und vorbei");
-  assert.equal(mo.ort, "Raum B · Hauptgebäude");
+  assert.equal(mo.ort, "Hauptgebäude", "nur der Ort, der Raum ist für die Planung (niko, 2026-11-03)");
   assert.equal(mi.zeit, "15:30–17:10");
-  assert.equal(mi.ort, "Zoom 1", "„Online“ als Gebäude steht nicht doppelt da");
+  assert.equal(mi.ort, "Online");
   assert.equal(mi.online, true);
   assert.equal(mi.heute, true);
   assert.equal(mi.jetzt, true);
   assert.equal(mi.vorbei, false);
-  assert.equal(fr.ort, "Raum noch offen");
+  assert.equal(fr.ort, "Ort noch offen");
   assert.equal(fr.raumOffen, true, "ohne Raum ist auch online oder vor Ort offen");
   assert.equal(mi.raumOffen, false);
   assert.equal(naechster?.id, mittwoch, "der laufende Termin ist der nächste");

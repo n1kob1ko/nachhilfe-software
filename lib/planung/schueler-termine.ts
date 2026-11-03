@@ -7,6 +7,7 @@
  * sofort Uhrzeit und Ort und Lehrer sehen. Der Raum selbst ist nicht wichtig.“ Dazu kommt die nächste Woche, sobald sie
  * veröffentlicht ist, und der nächste Termin ganz oben.
  */
+import { ortName } from "./ort";
 import { einheitenFuerWoche, istNichtStattgefunden, mitNamen, slotDatum, type PlatzMitNamen } from "./repo";
 import { datumLabel, minutenLabel, tagAddieren, wienerDatum, wienerMinuten, wienerWochenstart, wochenLabel } from "./zeit";
 
@@ -35,21 +36,14 @@ export type SchuelerTermin = {
 
 export type TerminWoche = { wochenstart: string; label: string; titel: "Diese Woche" | "Nächste Woche"; termine: SchuelerTermin[] };
 
-/**
- * Der Ort eines Termins: Raumname und Gebäude. „Online“ als Gebäudename wäre neben dem Hinweis
- * „online“ nur doppelt und wird weggelassen. Ohne Raum steht „Raum noch offen“.
- */
+/** Der Ort eines Termins: nur das Gebäude, online „Online“, ohne Raum „Ort noch offen“ (`lib/planung/ort.ts`). */
 export function ortLabel(raum: string | null, gebaeude: string | null, online: boolean): string {
-  if (!raum) return "Raum noch offen";
-  const zusatz = gebaeude && gebaeude.toLowerCase() !== (online ? "online" : "vor ort") ? ` · ${gebaeude}` : "";
-  return `${raum}${zusatz}`;
+  return ortName(raum, gebaeude, online);
 }
 
 /** Der Ort für die Schüler-App: nur das Gebäude (der Raum ist nicht wichtig), online „Online“. */
 export function standortLabel(raum: string | null, gebaeude: string | null, online: boolean): string {
-  if (!raum) return "Ort noch offen";
-  if (online) return "Online";
-  return gebaeude?.trim() || raum;
+  return ortName(raum, gebaeude, online);
 }
 
 function alsTermin(z: PlatzMitNamen, now: Date): SchuelerTermin {
