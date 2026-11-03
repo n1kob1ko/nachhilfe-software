@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, CalendarPlus, Camera, Check, ImagePlus, Loader2, RefreshCw, ScanText, X } from "lucide-react";
 import { Pill } from "@/components/ui";
 import { shrinkImage } from "@/components/shrink-image";
-import { stundenplanEintragenAction, stundenplanPruefenAction } from "@/app/planung-actions";
+import { fotoPlaetzeVerlaengernAction, stundenplanEintragenAction, stundenplanPruefenAction } from "@/app/planung-actions";
 import type { FotoVorschlag, ImportErgebnis, VorschlagZeile } from "@/lib/planung/stundenplan-foto";
 import { minutenLabel } from "@/lib/planung/zeit";
 
@@ -12,6 +12,9 @@ import { minutenLabel } from "@/lib/planung/zeit";
 const MAX_BYTES = 5 * 1024 * 1024;
 const TYPES = ["image/jpeg", "image/png", "image/webp"];
 const TAGE = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+/** wie EINHEIT_DAUERN; 0 = so lang wie das Feld auf dem Foto */
+const DAUERN = [100, 50, 60, 90, 120, 0];
+const dauerText = (d: number) => (d === 0 ? "so lang wie das Feld auf dem Foto" : `${d} Minuten${d === 100 ? " (Standard)" : ""}`);
 
 type Lehrer = { id: number; name: string };
 type Schueler = { id: number; name: string; teacher_id: number | null };
@@ -45,8 +48,29 @@ const vollstaendig = (f: Foto, z: Zeile) => z.an && f.teacherId !== null && z.st
  * lesen lassen (je Foto eine Anfrage, die Fotos bleiben nur im Browser), dann jede Zeile prüfen und eintragen.
  * Jede Änderung wird gegen die Woche geprüft, ohne etwas zu speichern; Überschneidungen stehen bei der Zeile.
  */
-export function StundenplanImport({ lehrer, schueler, wochen, startWoche, zuordnung }: { lehrer: Lehrer[]; schueler: Schueler[]; wochen: Woche[]; startWoche: string; zuordnung: Record<string, number> }) {
+export function StundenplanImport({
+  lehrer,
+  schueler,
+  wochen,
+  startWoche,
+  zuordnung,
+  dauer: startDauer,
+  kurze,
+}: {
+  lehrer: Lehrer[];
+  schueler: Schueler[];
+  wochen: Woche[];
+  startWoche: string;
+  zuordnung: Record<string, number>;
+  dauer: number;
+  /** Plätze von früheren Fotos, die nur 50 Minuten lang sind (ab dieser Woche) */
+  kurze: { abWoche: string; anzahl: number };
+}) {
   const [fotos, setFotos] = useState<Foto[]>([]);
+  const [dauer, setDauer] = useState(DAUERN.includes(startDauer) ? startDauer : 100);
+  const [kurzOffen, setKurzOffen] = useState(kurze.anzahl);
+  const [kurzMeldung, setKurzMeldung] = useState<{ ok: boolean; text: string; nicht: string[] } | null>(null);
+  const [verlaengert, setVerlaengert] = useState(false);
   const [einverstanden, setEinverstanden] = useState(false);
   const [woche, setWoche] = useState(startWoche);
   const [ersetzen, setErsetzen] = useState(false);
@@ -169,7 +193,7 @@ export function StundenplanImport({ lehrer, schueler, wochen, startWoche, zuordn
           teacherId,
           rasterVomFoto: v.rasterVomFoto,
           unsicher: v.unsicher,
-          zeilen: v.zeilen.map((z) => ({ ...z, an: z.studentId !== null, von: z.start, bis: z.start + z.dauer })),
+          zeilen: v.zeilen.map((z) => ({ ...z, an: z.studentId !== null, von: z.start, bis: z.start + (dauer > 0 ? dauer : z.dauerFoto) })),
         }));
       } catch {
         aendereFoto(foto.id, (f) => ({ ...f, zustand: "fehler", fehler: "Keine Verbindung. Das Foto ist noch hier, bitte noch einmal lesen." }));
@@ -196,6 +220,7 @@ export function StundenplanImport({ lehrer, schueler, wochen, startWoche, zuordn
         ersetzen: ersetzen && pruefung?.status !== "veroeffentlicht",
         zeilen: ok.map(({ f, z }) => ({ teacherId: f.teacherId!, studentId: z.studentId!, tag: z.tag, start: z.von, dauer: z.bis - z.von })),
         buchstaben,
+        dauer,
       });
       if (r.ok) {
         window.location.assign(r.weiter);
@@ -206,6 +231,28 @@ export function StundenplanImport({ lehrer, schueler, wochen, startWoche, zuordn
       setFehler("Keine Verbindung. Es wurde nichts eingetragen, bitte noch einmal versuchen.");
     }
     setSpeichert(false);
+  }
+
+  /** Neue Dauer: jedes Ende wird Beginn + Dauer (bei 0 so lang wie das Feld auf dem Foto). */
+  function waehleDauer(neu: number) {
+    setDauer(neu);
+    setFotos((alt) => alt.map((f) => ({ ...f, zeilen: f.zeilen.map((z) => ({ ...z, bis: z.von + (neu > 0 ? neu : z.dauerFoto) })) })));
+  }
+
+  async function verlaengern() {
+    if (verlaengert || dauer <= 50) return;
+    setVerlaengert(true);
+    setKurzMeldung(null);
+    try {
+      const r = await fotoPlaetzeVerlaengernAction({ abWoche: kurze.abWoche, dauer });
+      if (r.ok) {
+        setKurzMeldung({ ok: true, text: r.hinweis, nicht: r.nicht });
+        setKurzOffen(r.nicht.length);
+      } else setKurzMeldung({ ok: false, text: r.fehler, nicht: [] });
+    } catch {
+      setKurzMeldung({ ok: false, text: "Keine Verbindung. Es wurde nichts geändert, bitte noch einmal versuchen.", nicht: [] });
+    }
+    setVerlaengert(false);
   }
 
   const eigeneZuerst = (teacherId: number | null) => {
@@ -297,25 +344,64 @@ export function StundenplanImport({ lehrer, schueler, wochen, startWoche, zuordn
           )}
         </div>
 
-        <label className="grid max-w-[360px] gap-1.5">
-          <span className="text-[14px] font-semibold">Für welche Woche</span>
-          <select
-            value={woche}
-            onChange={(e) => {
-              setWoche(e.currentTarget.value);
-              setErsetzen(false);
-            }}
-            className="input"
-            data-testid="sp-woche"
-          >
-            {wochen.map((w) => (
-              <option key={w.start} value={w.start}>
-                {w.label}
-                {w.status === "veroeffentlicht" ? " (veröffentlicht)" : w.status === "entwurf" ? " (Entwurf)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid max-w-[360px] gap-1.5">
+            <span className="text-[14px] font-semibold">Für welche Woche</span>
+            <select
+              value={woche}
+              onChange={(e) => {
+                setWoche(e.currentTarget.value);
+                setErsetzen(false);
+              }}
+              className="input"
+              data-testid="sp-woche"
+            >
+              {wochen.map((w) => (
+                <option key={w.start} value={w.start}>
+                  {w.label}
+                  {w.status === "veroeffentlicht" ? " (veröffentlicht)" : w.status === "entwurf" ? " (Entwurf)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid max-w-[360px] gap-1.5">
+            <span className="text-[14px] font-semibold">Jede Einheit dauert</span>
+            <select value={dauer} onChange={(e) => waehleDauer(Number(e.currentTarget.value))} className="input" data-testid="sp-dauer">
+              {DAUERN.map((d) => (
+                <option key={d} value={d}>
+                  {dauerText(d)}
+                </option>
+              ))}
+            </select>
+            <span className="text-[13px] text-ink-3">{dauer > 0 ? `Ende = Beginn auf dem Foto + ${dauer} Minuten. Die App merkt es sich.` : "Das Ende steht so, wie das Feld auf dem Foto reicht."}</span>
+          </label>
+        </div>
+
+        {(kurzOffen > 0 || kurzMeldung) && (
+          <div className={`grid gap-2 rounded-xl px-4 py-3 text-[14px] ${kurzMeldung?.ok && !kurzOffen ? "bg-green-wash text-green" : "bg-amber-wash text-amber"}`} data-testid="sp-kurz">
+            {kurzOffen > 0 && !kurzMeldung && (
+              <p>
+                {kurzOffen === 1 ? "1 Platz" : `${kurzOffen} Plätze`} von früheren Fotos {kurzOffen === 1 ? "dauert" : "dauern"} ab dieser Woche nur 50 Minuten (gesperrt, ohne Raum).
+              </p>
+            )}
+            {kurzMeldung && <p role="status">{kurzMeldung.text}</p>}
+            {kurzMeldung?.nicht.length ? (
+              <ul className="list-disc pl-5 text-[13px]">
+                {kurzMeldung.nicht.map((n, i) => (
+                  <li key={i}>{n}</li>
+                ))}
+              </ul>
+            ) : null}
+            {kurzOffen > 0 && !kurzMeldung && (
+              <div>
+                <button type="button" className="btn btn-secondary" onClick={verlaengern} disabled={verlaengert || dauer <= 50} data-testid="sp-verlaengern">
+                  {verlaengert ? <Loader2 size={16} className="animate-spin" aria-hidden /> : <RefreshCw size={16} aria-hidden />}
+                  {dauer > 50 ? `Auf ${dauer} Minuten verlängern` : "Oben eine längere Dauer wählen"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-panel px-4 py-3 text-[15px]">
           <input type="checkbox" checked={einverstanden} onChange={(e) => setEinverstanden(e.currentTarget.checked)} className="mt-1 h-5 w-5 shrink-0 accent-[var(--accent)]" data-testid="sp-vornamen" />
@@ -360,7 +446,8 @@ export function StundenplanImport({ lehrer, schueler, wochen, startWoche, zuordn
                   </h2>
                   <p className="text-[13px] text-ink-2">
                     {f.zeilen.length === 1 ? "1 Platz gelesen" : `${f.zeilen.length} Plätze gelesen`}
-                    {!f.rasterVomFoto && f.zeilen.length > 0 && " · Uhrzeiten nach dem Raster ab 08:50, je 50 Minuten"}
+                    {!f.rasterVomFoto && f.zeilen.length > 0 && " · Beginn nach dem Raster ab 08:50"}
+                    {f.zeilen.length > 0 && (dauer > 0 ? ` · je ${dauer} Minuten` : " · so lang wie die Felder")}
                   </p>
                 </div>
               </div>

@@ -13,7 +13,16 @@ import * as planung from "@/lib/planung/aktionen";
 import type { Ergebnis } from "@/lib/planung/aktionen";
 import type { OwnerTyp, PlatzEingabe } from "@/lib/planung/repo";
 import { istDatum, labelMinuten, wochenstartVon } from "@/lib/planung/zeit";
-import { leseImportZeilen, speichereBuchstaben, stundenplanEintragen, wocheFuerImport, type ImportErgebnis } from "@/lib/planung/stundenplan-foto";
+import {
+  istEinheitDauer,
+  leseImportZeilen,
+  speichereBuchstaben,
+  speichereEinheitDauer,
+  stundenplanEintragen,
+  verlaengereFotoPlaetze,
+  wocheFuerImport,
+  type ImportErgebnis,
+} from "@/lib/planung/stundenplan-foto";
 import { listTeachers } from "@/lib/repo";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -372,7 +381,7 @@ export async function stundenplanPruefenAction(eingabe: StundenplanEingabe & { l
  * Trägt die bestätigten Zeilen ein und merkt sich, welcher Buchstabe welcher Lehrer ist. Danach geht es zurück
  * in den Wochenplan dieser Woche, mit einer Meldung.
  */
-export async function stundenplanEintragenAction(eingabe: StundenplanEingabe & { buchstaben: unknown }): Promise<{ ok: true; weiter: string } | { ok: false; fehler: string }> {
+export async function stundenplanEintragenAction(eingabe: StundenplanEingabe & { buchstaben: unknown; dauer?: unknown }): Promise<{ ok: true; weiter: string } | { ok: false; fehler: string }> {
   const me = await requireTeacher();
   const zeilen = leseImportZeilen(eingabe.zeilen);
   if (!zeilen) return { ok: false, fehler: "Die Zeilen sind nicht lesbar. Bitte die Seite neu laden." };
@@ -382,10 +391,27 @@ export async function stundenplanEintragenAction(eingabe: StundenplanEingabe & {
   const lehrer = new Set(listTeachers().map((t) => t.id));
   const buchstaben = eingabe.buchstaben && typeof eingabe.buchstaben === "object" ? (eingabe.buchstaben as Record<string, unknown>) : {};
   speichereBuchstaben(Object.fromEntries(Object.entries(buchstaben).filter(([, id]) => typeof id === "number" && lehrer.has(id))) as Record<string, number>);
+  if (istEinheitDauer(eingabe.dauer)) speichereEinheitDauer(eingabe.dauer);
   aktualisiere("/planung");
   const nicht = ergebnis.zeilen.length - ergebnis.eingetragen;
   const hinweis = `${ergebnis.eingetragen === 1 ? "1 Platz" : `${ergebnis.eingetragen} Plätze`} aus den Fotos eingetragen${
     nicht ? `, ${nicht} nicht (Überschneidung)` : ""
   }.${ergebnis.status === "veroeffentlicht" ? " Die Woche ist veröffentlicht: die Schüler sehen sie schon." : ""}`;
   return { ok: true, weiter: mitMeldung(`/planung?woche=${wochenstartVon(woche)}`, { ok: true, hinweis }) };
+}
+
+/**
+ * Plätze von früheren Fotos (gesperrt, ohne Raum, genau 50 Minuten, ab dieser Woche) auf eine ganze Einheit
+ * verlängern. niko, 2026-11-03: „Die Schüler haben immer genau 100 Minuten.“
+ */
+export async function fotoPlaetzeVerlaengernAction(eingabe: { abWoche: string; dauer: unknown }): Promise<{ ok: true; hinweis: string; nicht: string[] } | { ok: false; fehler: string }> {
+  const me = await requireTeacher();
+  const dauer = typeof eingabe.dauer === "number" ? eingabe.dauer : Number.NaN;
+  const r = verlaengereFotoPlaetze(me, String(eingabe.abWoche ?? ""), dauer);
+  if (!r.ok) return r;
+  speichereEinheitDauer(dauer);
+  aktualisiereWoche();
+  aktualisiere("/planung/stundenplan");
+  const hinweis = `${r.geaendert === 1 ? "1 Platz" : `${r.geaendert} Plätze`} auf ${dauer} Minuten verlängert${r.nicht.length ? `, ${r.nicht.length} nicht (Überschneidung)` : ""}.`;
+  return { ok: true, hinweis, nicht: r.nicht };
 }

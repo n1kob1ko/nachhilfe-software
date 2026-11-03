@@ -11,7 +11,9 @@
  *    Nur nach dem Haken, dass die Vornamen auf dem Foto an die KI gehen dürfen (niko, 2026-10-19: „Ja, nur
  *    Vornamen“). Das Foto wird **nicht gespeichert**, nur im Speicher gelesen.
  * 2. **Vorschlag** (`vorschlagAusGelesen`): rein und ohne KI. Buchstabe → Lehrer (die gespeicherte Zuordnung),
- *    Stunden → Uhrzeit (das Raster vom Foto, sonst 08:50 + 50 Minuten), Vorname → Schüler. Gesucht wird zuerst
+ *    Stunden → Uhrzeit (das Raster vom Foto, sonst 08:50 + 50 Minuten), Vorname → Schüler. Das Ende ist
+ *    Beginn + Dauer einer Einheit (Standard 100 Minuten, `einheitDauer`): niko, 2026-11-03: „Die Schüler haben
+ *    immer genau 100 Minuten“, auf den Fotos steht aber nur das erste 50-Minuten-Feld. Gesucht wird zuerst
  *    unter den Schülern dieses Lehrers. „Neu“, Unbekanntes und Mehrdeutiges ist nicht ausgewählt.
  * 3. **Prüfen und Eintragen** (`stundenplanEintragen`): nur die Verwaltung (D23). Jede Zeile hat der Lehrer in
  *    der Vorschau gesehen; geprüft wird mit derselben Überlappungsprüfung wie jeder Platz. Eingetragen wird
@@ -22,7 +24,7 @@ import { aiEnabled, aiReadsImages, leseStundenplanFoto, type StundenplanGelesen 
 import { getSetting, setSetting } from "../lehrplan";
 import { db } from "../db";
 import { darfWochenplanBearbeiten, type Akteur } from "./berechtigungen";
-import { einheitenFuerWoche, legePlatzAn, loeschePlatz, wochenStatus } from "./repo";
+import { aenderePlatz, einheitenFuerWoche, legePlatzAn, loeschePlatz, wochenStatus } from "./repo";
 import { istDatum, minutenLabel, wochenstartVon } from "./zeit";
 
 /** Das Raster auf den Fotos: Stunde 1 beginnt um 08:50, jede dauert 50 Minuten, 16 Stunden bis 22:10. */
@@ -31,6 +33,29 @@ export const RASTER_STANDARD = { beginn: 8 * 60 + 50, dauer: 50, stunden: 16 } a
 export const MAX_FOTO_BYTES = 5 * 1024 * 1024;
 const TAGE = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] as const;
 const BUCHSTABEN_SCHLUESSEL = "stundenplan_buchstaben";
+const DAUER_SCHLUESSEL = "stundenplan_dauer";
+
+/** So lange dauert eine Einheit, wenn nichts anderes eingestellt ist (niko, 2026-11-03). */
+export const EINHEIT_DAUER_STANDARD = 100;
+/** Zur Wahl auf der Seite; 0 heißt „so lang wie das Feld auf dem Foto“. */
+export const EINHEIT_DAUERN = [100, 50, 60, 90, 120, 0] as const;
+
+/**
+ * Wie lange eine Einheit vom Foto dauert: das Ende ist Beginn + diese Minuten. 0 = so lang wie das Feld auf dem
+ * Foto (über wie viele Stunden es geht). Gespeichert beim Eintragen; ohne Einstellung 100 Minuten.
+ */
+export function einheitDauer(): number {
+  const n = Number(getSetting(DAUER_SCHLUESSEL, String(EINHEIT_DAUER_STANDARD)));
+  return istEinheitDauer(n) ? n : EINHEIT_DAUER_STANDARD;
+}
+
+export function istEinheitDauer(n: unknown): n is number {
+  return typeof n === "number" && Number.isInteger(n) && (n === 0 || (n >= 10 && n <= 300));
+}
+
+export function speichereEinheitDauer(n: number) {
+  if (istEinheitDauer(n)) setSetting(DAUER_SCHLUESSEL, String(n));
+}
 
 export type RasterZeile = { stunde: number; von: number; bis: number };
 
@@ -161,7 +186,10 @@ export type VorschlagZeile = {
   schluessel: string;
   tag: number;
   start: number;
+  /** Beginn + Dauer einer Einheit, oder so lang wie das Feld (Dauer 0) */
   dauer: number;
+  /** so lang wie das Feld auf dem Foto, damit die Seite bei „wie auf dem Foto“ zurück kann */
+  dauerFoto: number;
   /** „Stunde 3–4“ */
   stunden: string;
   /** der Name, wie er auf dem Foto steht */
@@ -184,7 +212,10 @@ export type FotoVorschlag = {
 };
 
 /** Aus dem, was die KI gelesen hat, die Zeilen der Vorschau. Rein: keine KI, keine Datenbank. */
-export function vorschlagAusGelesen(gelesen: StundenplanGelesen, o: { schueler: SchuelerKurz[]; zuordnung: Record<string, number>; lehrerIds: number[] }): FotoVorschlag {
+export function vorschlagAusGelesen(
+  gelesen: StundenplanGelesen,
+  o: { schueler: SchuelerKurz[]; zuordnung: Record<string, number>; lehrerIds: number[]; /** Minuten je Einheit; 0 oder fehlt = wie das Feld */ dauer?: number },
+): FotoVorschlag {
   const buchstabe = normBuchstabe(gelesen.lehrer_buchstabe);
   const zugeordnet = buchstabe ? o.zuordnung[buchstabe] : undefined;
   const teacherId = zugeordnet && o.lehrerIds.includes(zugeordnet) ? zugeordnet : null;
@@ -201,7 +232,8 @@ export function vorschlagAusGelesen(gelesen: StundenplanGelesen, o: { schueler: 
       return;
     }
     const start = von.von;
-    const dauer = bis.bis - von.von;
+    const dauerFoto = bis.bis - von.von;
+    const dauer = o.dauer && o.dauer > 0 ? o.dauer : dauerFoto;
     const stunden = `Stunde ${b.von_stunde}${b.bis_stunde !== b.von_stunde ? `–${b.bis_stunde}` : ""}`;
     // „Neu“ kann auch im Namen stehen („Neu: Anna“); dann gilt das Feld als neu und der Name bleibt
     const ohneNeu = (n: string) => n.replace(/\(?\bneu\b\)?\s*:?/gi, " ").replace(/\s+/g, " ").trim();
@@ -209,14 +241,14 @@ export function vorschlagAusGelesen(gelesen: StundenplanGelesen, o: { schueler: 
     const namen = b.namen.map(ohneNeu).filter(Boolean);
     if (!namen.length) {
       const text = ohneNeu(b.text) || (neu ? "Neu" : "?");
-      zeilen.push({ schluessel: `${i}`, tag, start, dauer, stunden, text, neu, treffer: neu ? "neu" : "keiner", studentId: null, kandidaten: [] });
+      zeilen.push({ schluessel: `${i}`, tag, start, dauer, dauerFoto, stunden, text, neu, treffer: neu ? "neu" : "keiner", studentId: null, kandidaten: [] });
       return;
     }
     namen.forEach((name, j) => {
       // auch bei „Neu“ wird gesucht: ist der neue Schüler schon angelegt, steht er gleich da
       const f = findeSchueler(name, o.schueler, teacherId);
       const sicher = f.treffer === "genau" || f.treffer === "aehnlich";
-      zeilen.push({ schluessel: `${i}.${j}`, tag, start, dauer, stunden, text: name, neu, treffer: f.treffer, studentId: sicher ? f.ids[0] : null, kandidaten: f.ids });
+      zeilen.push({ schluessel: `${i}.${j}`, tag, start, dauer, dauerFoto, stunden, text: name, neu, treffer: f.treffer, studentId: sicher ? f.ids[0] : null, kandidaten: f.ids });
     });
   });
   zeilen.sort((a, b) => a.tag - b.tag || a.start - b.start);
@@ -249,7 +281,7 @@ export async function liesFoto(
     problem = e instanceof Error ? e.message : String(e);
   }
   if (!gelesen) throw new Error(`Die KI konnte das Foto nicht lesen.${problem ? ` ${problem}` : ""} Versuch es noch einmal oder mit einem schärferen Foto.`);
-  return vorschlagAusGelesen(gelesen, { schueler: o.schueler, zuordnung: buchstabenZuordnung(), lehrerIds: o.lehrerIds });
+  return vorschlagAusGelesen(gelesen, { schueler: o.schueler, zuordnung: buchstabenZuordnung(), lehrerIds: o.lehrerIds, dauer: einheitDauer() });
 }
 
 // ---------- Prüfen und Eintragen ----------
@@ -341,4 +373,42 @@ export function leseImportZeilen(roh: unknown): ImportZeile[] | null {
     zeilen.push({ teacherId: teacherId as number, studentId: studentId as number, tag: tag as number, start: start as number, dauer: dauer as number });
   }
   return zeilen;
+}
+
+// ---------- Frühere Fotos: 50 Minuten → eine ganze Einheit ----------
+
+type KurzerPlatz = { id: number; week_start: string; weekday: number; start_min: number; geplante_dauer: number };
+
+/**
+ * Plätze, die wohl von einem früheren Foto kommen und nur ein Feld lang sind: ab dieser Woche, gesperrt, ohne
+ * Raum, genau 50 Minuten (so trug die erste Fassung jede Einheit ein). niko, 2026-11-03: jede Einheit dauert 100.
+ */
+export function kurzeFotoPlaetze(abWoche: string): KurzerPlatz[] {
+  if (!istDatum(abWoche)) return [];
+  return db()
+    .prepare(
+      `SELECT id, week_start, weekday, start_min, geplante_dauer FROM geplante_einheiten
+       WHERE week_start >= ? AND locked = 1 AND room_id IS NULL AND geplante_dauer = ?
+       ORDER BY week_start, weekday, start_min, id`,
+    )
+    .all(wochenstartVon(abWoche), RASTER_STANDARD.dauer) as KurzerPlatz[];
+}
+
+/**
+ * Verlängert diese Plätze auf `dauer` Minuten, mit derselben Überschneidungsprüfung wie jeder Platz. Was sich
+ * überschneiden würde, bleibt wie es ist und steht in `nicht`.
+ */
+export function verlaengereFotoPlaetze(akteur: Akteur, abWoche: string, dauer: number): { ok: true; geaendert: number; nicht: string[] } | { ok: false; fehler: string } {
+  if (!darfWochenplanBearbeiten(akteur)) return { ok: false, fehler: "Den Wochenplan ändert nur die Verwaltung." };
+  if (!istEinheitDauer(dauer) || dauer <= RASTER_STANDARD.dauer) return { ok: false, fehler: "Bitte eine Dauer über 50 Minuten wählen." };
+  let geaendert = 0;
+  const nicht: string[] = [];
+  db().transaction(() => {
+    for (const p of kurzeFotoPlaetze(abWoche)) {
+      const r = aenderePlatz(p.id, { geplante_dauer: dauer });
+      if (r.ok) geaendert++;
+      else nicht.push(`${zeitLabel({ tag: p.weekday, start: p.start_min, dauer: p.geplante_dauer })} (Woche ab ${p.week_start}): ${r.fehler.replace(/ Sollen beide Schüler zugleich kommen.*$/, "")}`);
+    }
+  })();
+  return { ok: true, geaendert, nicht };
 }

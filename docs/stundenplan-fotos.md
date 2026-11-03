@@ -23,8 +23,13 @@ Stunden gehen, „Neu“ steht für einen neuen Schüler.
    - **Lehrer:** der Buchstabe vom Foto, zugeordnet über die gespeicherte Zuordnung. Beim ersten Mal
      ist sie leer, dann wählt die Verwaltung den Lehrer; beim Eintragen merkt sich die App den
      Buchstaben (`app_settings.stundenplan_buchstaben`).
-   - **Zeit:** aus dem Raster am Rand des Fotos, wenn die KI es stimmig gelesen hat, sonst aus dem
-     Standardraster (08:50, je 50 Minuten). Jede Zeile hat Tag, Beginn und Ende zum Ändern.
+   - **Zeit:** der Beginn kommt aus dem Raster am Rand des Fotos, wenn die KI es stimmig gelesen hat,
+     sonst aus dem Standardraster (08:50, je 50 Minuten). Das **Ende ist Beginn + Dauer einer Einheit**,
+     Standard **100 Minuten** (niko, 2026-11-03: „Die Schüler haben immer genau 100 Minuten“, auf den Fotos
+     ist aber nur das erste 50-Minuten-Feld markiert). Die Dauer steht oben auf der Seite („Jede Einheit
+     dauert“: 100, 50, 60, 90, 120 Minuten oder „so lang wie das Feld auf dem Foto“), ändert alle Zeilen
+     auf einmal und wird beim Eintragen gemerkt (`app_settings.stundenplan_dauer`). Jede Zeile hat Tag,
+     Beginn und Ende zum Ändern.
    - **Schüler:** gesucht wird der Vorname zuerst unter den Schülern dieses Lehrers, dann unter allen.
      „Anna H.“ passt zu „Anna Huber“. Ein Buchstabe Unterschied (ab vier Buchstaben) ist „ähnlich“ und
      wird nur vorgeschlagen, wenn es genau einen solchen Schüler gibt. Passen mehrere, ist keiner
@@ -39,6 +44,11 @@ Stunden gehen, „Neu“ steht für einen neuen Schüler.
    veröffentlicht (dann sehen Lehrer und Schüler sie sofort; gelöscht wird dort nichts). Zwei Schüler
    zur selben Zeit beim selben Lehrer bekommen den Haken **gleichzeitig** (D26). Danach geht es zurück
    in den Wochenplan dieser Woche mit „N Plätze aus den Fotos eingetragen“.
+
+**Frühere Fotos korrigieren.** Bis 2026-11-03 kam jede Einheit mit 50 Minuten in den Plan. Gibt es ab
+dieser Woche noch gesperrte Plätze ohne Raum mit genau 50 Minuten, zeigt die Seite das mit dem Knopf
+„Auf 100 Minuten verlängern“. Jeder Platz wird mit derselben Überschneidungsprüfung verlängert; was sich
+überschneiden würde, bleibt und steht in der Meldung.
 
 Für die Wochen danach gilt wie bisher „Vorwoche übernehmen“; eine automatische Wiederholung gibt es
 nicht (D24).
