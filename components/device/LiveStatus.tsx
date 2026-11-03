@@ -77,6 +77,12 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
   }, [unitId, router]);
 
   const run = (fn: () => Promise<unknown>) => start(async () => void (await fn()));
+  // aufs Whiteboard: der Lehrer sieht es gleich mit (niko: „ich habe keine Möglichkeit, das Whiteboard zu sehen“)
+  const zurTafel = (fn: () => Promise<unknown>) =>
+    start(async () => {
+      await fn();
+      router.push(`/tafel/${unitId}`);
+    });
   const c = s.current;
   // two units at once (D26): no tablet is on this unit yet, the other student has it or it asks „Wer arbeitet …?“
   const parallel = s.parallel.units.length > 1;
@@ -111,11 +117,21 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
             {s.text && <ViewButton on={s.view === "text"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, `text:${s.text!.id}`))} icon={<PenLine size={16} aria-hidden />} label="Text" />}
             <ViewButton on={s.view !== "tafel" && s.view !== "text" && s.view !== "praesentation"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, c ? `aufgabe:${c.assignmentId}` : ""))} icon={<ListChecks size={16} aria-hidden />} label="Aufgaben" />
             {tablet !== "kein" && (
-              <ViewButton on={s.view === "tafel"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, "tafel"))} icon={<Presentation size={16} aria-hidden />} label="Whiteboard" />
+              <ViewButton on={s.view === "tafel"} disabled={pending} onClick={() => zurTafel(() => tabletViewAction(unitId, "tafel"))} icon={<Presentation size={16} aria-hidden />} label="Whiteboard" />
             )}
           </div>
         )}
       </div>
+      {s.view === "tafel" && tablet !== "kein" && !onLaptop && (
+        <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[14px]" data-testid="tafel-offen">
+          <span className="inline-flex items-center gap-2">
+            <Presentation size={16} className="text-accent" aria-hidden /> Das Tablet zeigt das Whiteboard.
+          </span>
+          <Link href={`/tafel/${unitId}`} className="btn btn-primary btn-sm">
+            Whiteboard öffnen
+          </Link>
+        </p>
+      )}
       {s.praesentation && (
         <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px]">
           <MonitorPlay size={16} className="text-accent" aria-hidden />
@@ -228,7 +244,7 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
                   <Eye size={16} aria-hidden /> Lösung zeigen
                 </button>
               )}
-              <button className="btn btn-secondary" disabled={pending} onClick={() => run(() => currentTaskToBoardAction(unitId))}>
+              <button className="btn btn-secondary" disabled={pending} onClick={() => zurTafel(() => currentTaskToBoardAction(unitId))}>
                 <Presentation size={16} aria-hidden /> Auf Whiteboard
               </button>
             </div>
@@ -270,6 +286,7 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
     if (c.last && !c.last.pending && c.state !== "fertig") teile.push(c.last.correct ? { text: "Letzte Antwort richtig", ton: "text-green" } : { text: "Letzte Antwort falsch", ton: "font-semibold text-red" });
     if (c.last?.pending) teile.push({ text: "Antwort wartet auf dich", ton: "text-amber" });
   } else teile.push({ text: "Noch nichts gesendet" });
+  if (s.view === "tafel" && tablet !== "kein" && !onLaptop) teile.push({ text: "am Whiteboard", ton: "font-semibold text-accent" });
   if (kiNeu?.offen && s.running) teile.push({ text: "Neue Aufgaben zum Durchsehen", ton: "font-semibold text-amber" });
   return (
     <section aria-label="Live-Status" className="panel mb-5 px-4 py-1.5 sm:px-5" data-testid="live-kompakt">

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireTeacher } from "@/lib/auth";
 import { noteActivity } from "@/lib/learning";
 import { pushLive, showOnTablet } from "@/lib/live";
+import { zeigeUebung } from "@/lib/tafel-senden";
 import { erstelleMinitest } from "@/lib/minitest";
 import { canManageUnit, getUnit } from "@/lib/units";
 
@@ -28,7 +29,7 @@ export async function minitestAction(f: FormData) {
   }
   if (!out) redirect(`/einheiten/${unitId}?minitest=${encodeURIComponent(fehler)}`);
   noteActivity(unit.student_id);
-  if (ziel === "geraet" && out.assignmentId) showOnTablet(unit, { kind: "aufgabe", assignmentId: out.assignmentId });
+  if (ziel === "geraet" && out.assignmentId) zeigeUebung(unit, out.assignmentId);
   pushLive(unit.id);
   revalidatePath("/", "layout");
   redirect(ziel === "druck" ? `/arbeitsblatt/${out.worksheetId}?einheit=${unit.id}` : `/einheiten/${unit.id}?gesendet=${out.worksheetId}`);
