@@ -285,3 +285,28 @@ test("slots from earlier photos (locked, no room, 50 minutes) can be lengthened;
     ],
   );
 });
+
+test("a whole plan gets a place (building): each slot takes a free room there; the place is remembered per letter (niko, 2026-11-03)", async () => {
+  const { ids, thomas, niko, admin } = await setup();
+  const planung = await import("./repo");
+  const { stundenplanEintragen, buchstabenOrte, speichereOrte, stundenplanOrte, leseImportZeilen } = await import("./stundenplan-foto");
+  const r1 = planung.createRaum({ building: "Zentrum", name: "Raum 1", mode: "vor_ort" });
+  const r2 = planung.createRaum({ building: "Zentrum", name: "Raum 2", mode: "vor_ort" });
+  planung.createRaum({ building: "Filiale", name: "F1", mode: "vor_ort" });
+  assert.deepEqual(stundenplanOrte().sort(), ["Filiale", "Zentrum"]);
+  // Niko sitzt schon in Raum 1, Montag 08:50
+  assert.equal(planung.legePlatzAn({ week_start: WOCHE, weekday: 1, start_min: 530, geplante_dauer: 100, teacher_id: niko.id, student_id: ids.annaAndere, room_id: r1 }).ok, true);
+  const e = stundenplanEintragen(admin, WOCHE, [
+    { teacherId: thomas.id, studentId: ids.anna, tag: 1, start: 530, dauer: 100, ort: "Zentrum" },
+    { teacherId: thomas.id, studentId: ids.ben, tag: 2, start: 530, dauer: 100, ort: "Zentrum" },
+    { teacherId: thomas.id, studentId: ids.clara, tag: 3, start: 530, dauer: 100, ort: "Nirgendwo" },
+  ]);
+  assert.equal(e.ok && e.eingetragen, 2);
+  assert.match(e.ok && !e.zeilen[2].ok ? e.zeilen[2].fehler : "", /keinen Raum/);
+  const thomasPlaetze = planung.einheitenFuerWoche(WOCHE).filter((p) => p.teacher_id === thomas.id).sort((a, b) => a.weekday - b.weekday);
+  assert.deepEqual(thomasPlaetze.map((p) => p.room_id), [r2, r1], "Monday Raum 1 is taken: Raum 2; Tuesday the first room");
+  assert.deepEqual(leseImportZeilen([{ teacherId: 1, studentId: 2, tag: 3, start: 530, dauer: 50, ort: " Zentrum " }]), [{ teacherId: 1, studentId: 2, tag: 3, start: 530, dauer: 50, ort: "Zentrum" }]);
+  assert.equal(leseImportZeilen([{ teacherId: 1, studentId: 2, tag: 3, start: 530, dauer: 50, ort: 5 }]), null);
+  speichereOrte({ a: "Zentrum" });
+  assert.deepEqual(buchstabenOrte(), { A: "Zentrum" });
+});

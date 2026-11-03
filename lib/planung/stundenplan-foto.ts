@@ -24,7 +24,7 @@ import { aiEnabled, aiReadsImages, leseStundenplanFoto, type StundenplanGelesen 
 import { getSetting, setSetting } from "../lehrplan";
 import { db } from "../db";
 import { darfWochenplanBearbeiten, type Akteur } from "./berechtigungen";
-import { aenderePlatz, einheitenFuerWoche, legePlatzAn, loeschePlatz, wochenStatus } from "./repo";
+import { aenderePlatz, einheitenFuerWoche, legePlatzAn, listRaeume, loeschePlatz, pruefeUeberlappung, wochenStatus, type PlatzEingabe, type PlatzErgebnis } from "./repo";
 import { istDatum, minutenLabel, wochenstartVon } from "./zeit";
 
 /** Das Raster auf den Fotos: Stunde 1 beginnt um 08:50, jede dauert 50 Minuten, 16 Stunden bis 22:10. */
@@ -34,6 +34,7 @@ export const MAX_FOTO_BYTES = 5 * 1024 * 1024;
 const TAGE = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"] as const;
 const BUCHSTABEN_SCHLUESSEL = "stundenplan_buchstaben";
 const DAUER_SCHLUESSEL = "stundenplan_dauer";
+const ORTE_SCHLUESSEL = "stundenplan_orte";
 
 /** So lange dauert eine Einheit, wenn nichts anderes eingestellt ist (niko, 2026-11-03). */
 export const EINHEIT_DAUER_STANDARD = 100;
@@ -112,6 +113,52 @@ export function speichereBuchstaben(neu: Record<string, number>) {
     if (buchstabe && Number.isInteger(id) && id > 0) alt[buchstabe] = id;
   }
   setSetting(BUCHSTABEN_SCHLUESSEL, JSON.stringify(alt));
+}
+
+// ---------- Buchstabe → Ort ----------
+
+/**
+ * Wo der Plan eines Buchstabens stattfindet: ein Gebäude aus den Räumen („Ort“). niko, 2026-11-03: „für einen
+ * ganzen Plan beispielsweise Plan A direkt Raum und Lehrer hinzufügen … Der Raum selbst ist nicht wichtig nur
+ * Uhrzeit Ort Lehrer.“ Den Raum in diesem Gebäude sucht die App je Termin selbst (`stundenplanEintragen`).
+ */
+export function buchstabenOrte(): Record<string, string> {
+  try {
+    const roh = JSON.parse(getSetting(ORTE_SCHLUESSEL, "{}")) as Record<string, unknown>;
+    return Object.fromEntries(Object.entries(roh).filter(([b, ort]) => /^[A-Z]$/.test(b) && typeof ort === "string" && ort.trim())) as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+export function speichereOrte(neu: Record<string, string>) {
+  const alt = buchstabenOrte();
+  for (const [b, ort] of Object.entries(neu)) {
+    const buchstabe = normBuchstabe(b);
+    if (buchstabe && typeof ort === "string" && ort.trim()) alt[buchstabe] = ort.trim().slice(0, 80);
+  }
+  setSetting(ORTE_SCHLUESSEL, JSON.stringify(alt));
+}
+
+/** Die Orte zur Wahl: die Gebäude der aktiven Räume, je einmal. */
+export function stundenplanOrte(): string[] {
+  return [...new Set(listRaeume().map((r) => r.building.trim()).filter(Boolean))];
+}
+
+/**
+ * Legt einen Platz an; mit Ort in einem freien Raum dieses Gebäudes (der erste, der passt). Überschneidet sich
+ * etwas anderes als der Raum (Lehrer, Schüler), hilft kein anderer Raum: dann gilt dieser Grund.
+ */
+function legeAnMitOrt(eingabe: PlatzEingabe, ort: string | null | undefined): PlatzErgebnis {
+  if (!ort) return legePlatzAn({ ...eingabe, room_id: null });
+  const raeume = listRaeume().filter((r) => r.building.trim() === ort.trim());
+  if (!raeume.length) return { ok: false, fehler: `Am Ort „${ort}“ gibt es keinen Raum. Lege unter Mehr › Räume einen an.` };
+  for (const raum of raeume) {
+    const probe = pruefeUeberlappung({ ...eingabe, room_id: raum.id });
+    if (probe.ok) return legePlatzAn({ ...eingabe, room_id: raum.id });
+    if (probe.art !== "raum") return { ok: false, fehler: probe.fehler };
+  }
+  return { ok: false, fehler: `Am Ort „${ort}“ ist zu dieser Zeit kein Raum mehr frei.` };
 }
 
 /** „a“, „ A “, „A)“ → „A“; sonst null. */
@@ -286,7 +333,7 @@ export async function liesFoto(
 
 // ---------- Prüfen und Eintragen ----------
 
-export type ImportZeile = { teacherId: number; studentId: number; tag: number; start: number; dauer: number };
+export type ImportZeile = { teacherId: number; studentId: number; tag: number; start: number; dauer: number; /** Gebäude; ohne: kein Raum */ ort?: string | null };
 export type ImportErgebnis =
   | { ok: true; status: "leer" | "entwurf" | "veroeffentlicht"; zeilen: ({ ok: true } | { ok: false; fehler: string })[]; eingetragen: number; geloescht: number }
   | { ok: false; fehler: string };
@@ -325,17 +372,20 @@ export function stundenplanEintragen(akteur: Akteur, weekStart: string, zeilen: 
         for (const p of einheitenFuerWoche(woche, { status: "alle" })) if (lehrer.has(p.teacher_id) && loeschePlatz(p.id).ok) geloescht++;
       }
       const je = zeilen.map((z, i) => {
-        const r = legePlatzAn({
-          week_start: woche,
-          weekday: z.tag,
-          start_min: z.start,
-          geplante_dauer: z.dauer,
-          teacher_id: z.teacherId,
-          student_id: z.studentId,
-          room_id: null,
-          locked: true,
-          gleichzeitig: zugleich[i],
-        });
+        const r = legeAnMitOrt(
+          {
+            week_start: woche,
+            weekday: z.tag,
+            start_min: z.start,
+            geplante_dauer: z.dauer,
+            teacher_id: z.teacherId,
+            student_id: z.studentId,
+            room_id: null,
+            locked: true,
+            gleichzeitig: zugleich[i],
+          },
+          z.ort,
+        );
         // der Rat zum Haken „gleichzeitig“ gilt im Platz-Dialog, nicht hier: zwei Zeilen vom Foto bekommen ihn selbst
         return r.ok ? ({ ok: true } as const) : ({ ok: false, fehler: r.fehler.replace(/ Sollen beide Schüler zugleich kommen.*$/, "") } as const);
       });
@@ -367,10 +417,13 @@ export function leseImportZeilen(roh: unknown): ImportZeile[] | null {
   const zeilen: ImportZeile[] = [];
   for (const z of roh) {
     if (!z || typeof z !== "object") return null;
-    const { teacherId, studentId, tag, start, dauer } = z as Record<string, unknown>;
+    const { teacherId, studentId, tag, start, dauer, ort } = z as Record<string, unknown>;
     const werte = [teacherId, studentId, tag, start, dauer];
     if (!werte.every((w) => typeof w === "number" && Number.isInteger(w))) return null;
-    zeilen.push({ teacherId: teacherId as number, studentId: studentId as number, tag: tag as number, start: start as number, dauer: dauer as number });
+    if (ort !== undefined && ort !== null && (typeof ort !== "string" || ort.length > 80)) return null;
+    const zeile: ImportZeile = { teacherId: teacherId as number, studentId: studentId as number, tag: tag as number, start: start as number, dauer: dauer as number };
+    if (typeof ort === "string" && ort.trim()) zeile.ort = ort.trim();
+    zeilen.push(zeile);
   }
   return zeilen;
 }
