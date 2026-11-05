@@ -691,6 +691,67 @@ textarea.input {
   font-weight: 600;
   line-height: 1;
 }
+.wb-label-short {
+  display: none;
+}
+.wb-header .wb-actions:empty {
+  display: none;
+}
+/* Phone (iPhone 390 px): seven tools in one row, nothing cut off at the edges; the header
+   actions wrap instead of running off the screen (Generalprobe 2026-11-05). */
+@media (max-width: 520px) {
+  .wb-quick {
+    left: 6px;
+    right: 6px;
+    justify-content: safe center;
+  }
+  /* no overflow here: it would clip the "Mehr" pop-up; 7 × 48 px fit into 378 px */
+  .wb-quick-group {
+    gap: 2px;
+    padding: 3px;
+  }
+  .wb-quick-group > .wb-tool,
+  .wb-quick-group > .relative > .wb-tool {
+    width: 48px;
+    height: 52px;
+    flex-shrink: 0;
+  }
+  .wb-quick-group .wb-tool-label {
+    font-size: 10px;
+  }
+  .wb-quick-group > .wb-swatch,
+  .wb-quick-group > .wb-width {
+    flex-shrink: 0;
+  }
+  .wb-label-long {
+    display: none;
+  }
+  .wb-label-short {
+    display: inline;
+  }
+  .wb-more {
+    right: -3px;
+    bottom: 60px;
+  }
+  .wb-header .wb-btn-wide {
+    font-size: 14px;
+    padding: 0 10px;
+  }
+  /* header in two rows: ← name · pages, then the actions */
+  .wb-header .wb-title {
+    flex: 1 1 0;
+  }
+  .wb-header .wb-pages {
+    flex: 0 1 auto;
+    max-width: 45%;
+  }
+  .wb-header .wb-actions {
+    flex-basis: 100%;
+  }
+  .wb-hide-phone {
+    display: none;
+  }
+}
 .wb-ico {
   width: 24px;
   height: 24px;
@@ -1177,12 +1238,14 @@ textarea.input {
   white-space: normal;
 }
 @media (max-width: 640px) {
+  /* am Handy ein Blatt von unten, über der Navigationsleiste (z-40): sonst liegen „Speichern“ und die Pfeile darunter */
   .kx-pop {
     position: fixed;
+    z-index: 50;
     left: 8px !important;
     right: 8px;
     top: auto !important;
-    bottom: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom));
     width: auto;
     max-height: 70vh;
     overflow-y: auto;

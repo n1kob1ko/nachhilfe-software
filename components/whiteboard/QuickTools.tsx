@@ -44,10 +44,18 @@ export function QuickTools({ teacher, tool, onTool, onUndo, onRedo, onFit, penMo
   const pen = (c = color, w = width) => onTool("stift", { color: c, width: w });
   const shape = (t: QuickTool) => onTool(t, { color, width });
 
-  const Btn = ({ id, label, tip, icon, onClick }: { id?: QuickTool; label: string; tip?: string; icon: React.ReactNode; onClick: () => void }) => (
+  /** `short`: shorter label for phones, where seven tools must fit next to each other (390 px). */
+  const Btn = ({ id, label, short, tip, icon, onClick }: { id?: QuickTool; label: string; short?: string; tip?: string; icon: React.ReactNode; onClick: () => void }) => (
     <button type="button" className={`wb-tool ${id && tool === id ? "wb-tool-on" : ""}`} onClick={onClick} aria-label={label} aria-pressed={id ? tool === id : undefined} title={tip ?? label}>
       {icon}
-      <span className="wb-tool-label">{label}</span>
+      {short ? (
+        <span className="wb-tool-label">
+          <span className="wb-label-long">{label}</span>
+          <span className="wb-label-short">{short}</span>
+        </span>
+      ) : (
+        <span className="wb-tool-label">{label}</span>
+      )}
     </button>
   );
 
@@ -58,8 +66,8 @@ export function QuickTools({ teacher, tool, onTool, onUndo, onRedo, onFit, penMo
         <Btn id="marker" label="Marker" tip="Marker: durchsichtig hervorheben" onClick={() => onTool("marker")} icon={<MarkerIcon />} />
         <Btn id="radierer" label="Radierer" tip="Radierer: Striche wegwischen" onClick={() => onTool("radierer")} icon={<EraserIcon />} />
         <Btn id="text" label="Text" tip="Text: tippen statt schreiben" onClick={() => shape("text")} icon={<span className="text-[22px] font-semibold leading-none">T</span>} />
-        <Btn id="hand" label="Verschieben" tip="Verschieben: die Seite mit dem Finger bewegen" onClick={() => onTool("hand")} icon={<HandIcon />} />
-        <Btn label="Rückgängig" tip="Rückgängig: letzten Schritt zurücknehmen" onClick={onUndo} icon={<svg viewBox="0 0 24 24" className="wb-ico"><path d="M9 14 4 9l5-5" /><path d="M4 9h10a6 6 0 0 1 0 12h-3" /></svg>} />
+        <Btn id="hand" label="Verschieben" short="Schieben" tip="Verschieben: die Seite mit dem Finger bewegen" onClick={() => onTool("hand")} icon={<HandIcon />} />
+        <Btn label="Rückgängig" short="Zurück" tip="Rückgängig: letzten Schritt zurücknehmen" onClick={onUndo} icon={<svg viewBox="0 0 24 24" className="wb-ico"><path d="M9 14 4 9l5-5" /><path d="M4 9h10a6 6 0 0 1 0 12h-3" /></svg>} />
         <div className="relative">
           <button
             type="button"

@@ -1,5 +1,6 @@
 "use client";
 
+import { wortzielAusAufgabe } from "@/lib/wortziel";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
@@ -152,11 +153,13 @@ export function TextEditor({
   actions,
   backupPrefix = "lernheft-text-",
   pictures,
-  targetWords,
+  targetWords: zielFeld,
   handIn,
   auftrag,
   erwartung,
 }: Props) {
+  // ohne eigenes Wortziel (Bildgeschichte, Schreibauftrag): die Zahl aus der Aufgabe, z. B. „ca. 120 Wörter“
+  const targetWords = zielFeld ?? wortzielAusAufgabe(prompt);
   const store = `${backupPrefix}${textId}`;
   const editor = useRef<HTMLDivElement>(null);
   const shell = useRef<HTMLDivElement>(null);

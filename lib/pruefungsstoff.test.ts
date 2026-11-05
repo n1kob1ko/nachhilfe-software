@@ -298,7 +298,9 @@ test("the Vorgabe ranks above the Prüfung, switches the plan only before the fi
   const cockpit = await import("./cockpit");
   const vg = await import("./vorgabe");
   const auto = await import("./vorbereitung-auto");
-  repo.addTest({ student_id: sid, date: "2026-11-03", subject: "Englisch", kind: "Test", topic: "", grade: null, points: null, max_points: null, notes: "", skill_ids: ["englisch.tenses.pastsimple"], title: "", topics: ["Past Simple"], status: "geplant", teacher_id: teacher.id, material_id: null });
+  // the plan reads the real clock: the Prüfung must stay a few days ahead (a fixed date broke once it passed)
+  const bald = new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 10);
+  repo.addTest({ student_id: sid, date: bald, subject: "Englisch", kind: "Test", topic: "", grade: null, points: null, max_points: null, notes: "", skill_ids: ["englisch.tenses.pastsimple"], title: "", topics: ["Past Simple"], status: "geplant", teacher_id: teacher.id, material_id: null });
   // without a Vorgabe: as before
   assert.equal(auto.vorgabeSignal(unit.id, "Englisch"), null);
   const vorher = cockpit.planDerEinheit(unit.id);

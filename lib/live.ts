@@ -15,6 +15,7 @@ import { db } from "./db";
 import { chooseDeviceUnit, deviceUnit, devicesOfUnit, getDevice, hasDevice, listDevices } from "./devices";
 import { activeLaptop, endLaptopsOfUnit, laptopChannel, openLaptopCode, pendingLaptop } from "./laptop";
 import { isMinitest, LERNKONTROLLE } from "./quick-round";
+import { antwortAnzeige } from "./antwort-text";
 import * as repo from "./repo";
 import { MAX_FOLIE } from "./praesentation-protokoll";
 import { getText, noteTextInUnit } from "./texts";
@@ -235,8 +236,11 @@ export type LiveSnapshot = {
     since: string | null;
     tries: number;
     hints: number;
-    /** pending: a free answer that waits for the teacher's grade */
-    last: null | { correct: boolean; final: boolean; at: string; pending?: boolean };
+    /**
+     * pending: a free answer that waits for the teacher's grade. answer/label: what a wrong answer said
+     * (readable, lib/antwort-text.ts) and the typical error it matched, so the teacher can react at once.
+     */
+    last: null | { correct: boolean; final: boolean; at: string; pending?: boolean; answer?: string | null; label?: string | null };
     done: number;
     correct: number;
     solutionsVisible: boolean;
@@ -251,6 +255,13 @@ export type LiveSnapshot = {
   /** what the KI noticed last (lib/ai/realtime.ts) */
   ai: AILive;
 };
+
+/** A wrong answer as the teacher reads it in the live status: one line, at most 80 characters. */
+function kurzeAntwort(task: repo.Task, raw: string): string | null {
+  if (!raw?.trim() || raw.trim() === "[]") return null;
+  const t = antwortAnzeige(task, raw).replace(/\s+/g, " ").trim();
+  return t.length > 80 ? `${t.slice(0, 79)}…` : t || null;
+}
 
 /** SQLite's datetime('now') is UTC without a zone; browsers need it marked. */
 const asIso = (t: string) => (t.includes("T") ? t : `${t.replace(" ", "T")}Z`);
@@ -293,7 +304,15 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
       since: live?.since ?? null,
       tries: tries.length,
       hints: task ? new Set(repo.hintUsesForAssignment(a.id).filter((h) => h.task_id === task.id).map((h) => h.hint_index)).size : 0,
-      last: lastTry ? { correct: Boolean(lastTry.correct), final: Boolean(lastTry.final), at: asIso(lastTry.created_at), pending: lastTry.review === "offen" } : null,
+      last: lastTry
+        ? {
+            correct: Boolean(lastTry.correct),
+            final: Boolean(lastTry.final),
+            at: asIso(lastTry.created_at),
+            pending: lastTry.review === "offen",
+            ...(!lastTry.correct && lastTry.review !== "offen" && task ? { answer: kurzeAntwort(task, lastTry.answer), label: lastTry.error_label } : {}),
+          }
+        : null,
       done: a.done_count,
       correct: a.correct_count,
       solutionsVisible: Boolean(a.solutions_visible),

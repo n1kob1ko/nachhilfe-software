@@ -199,13 +199,15 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
             )}
           </dl>
           {c.last && (
-            <p className={`mt-3 inline-flex items-center gap-1.5 text-[14px] font-semibold ${c.last.pending ? "text-ink-2" : c.last.correct ? "text-green" : "text-red"}`} role="status">
+            <p className={`mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[14px] font-semibold ${c.last.pending ? "text-ink-2" : c.last.correct ? "text-green" : "text-red"}`} role="status">
               {c.last.pending ? <CircleDashed size={16} aria-hidden /> : c.last.correct ? <CheckCircle2 size={16} aria-hidden /> : <XCircle size={16} aria-hidden />}
               {c.last.pending ? "Letzte Antwort gespeichert, du bewertest sie" : `Letzte Antwort ${c.last.correct ? "richtig" : "falsch"}`}
+              {!c.last.pending && !c.last.correct && c.last.answer && <span className="font-normal text-ink">: „{c.last.answer}“</span>}
+              {!c.last.pending && !c.last.correct && c.last.label && <span className="font-normal text-ink-2"> ({c.last.label})</span>}
               {!c.last.pending && !c.last.correct && !c.last.final && " – versucht es nochmal"}
               <span className="num font-normal text-ink-3" suppressHydrationWarning>
                 {" "}
-                · {new Date(c.last.at).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Vienna" })}
+                · {new Date(c.last.at).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Vienna" })} Uhr
               </span>
             </p>
           )}
@@ -283,7 +285,7 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
     else if (c.state === "fertig") teile.push({ text: `fertig · ${c.correct} von ${c.total} richtig`, ton: "text-green" });
     else teile.push({ text: `Aufgabe ${Math.min(c.taskNo, c.total)} von ${c.total}` });
     if (fehler > 0 && c.state !== "fertig") teile.push({ text: `${fehler} Fehler`, ton: "text-red" });
-    if (c.last && !c.last.pending && c.state !== "fertig") teile.push(c.last.correct ? { text: "Letzte Antwort richtig", ton: "text-green" } : { text: "Letzte Antwort falsch", ton: "font-semibold text-red" });
+    if (c.last && !c.last.pending && c.state !== "fertig") teile.push(c.last.correct ? { text: "Letzte Antwort richtig", ton: "text-green" } : { text: c.last.answer ? `Letzte Antwort falsch: „${c.last.answer.length > 30 ? `${c.last.answer.slice(0, 29)}…` : c.last.answer}“${c.last.label && c.last.label.length <= 32 ? ` (${c.last.label})` : ""}` : "Letzte Antwort falsch", ton: "font-semibold text-red" });
     if (c.last?.pending) teile.push({ text: "Antwort wartet auf dich", ton: "text-amber" });
   } else teile.push({ text: "Noch nichts gesendet" });
   if (s.view === "tafel" && tablet !== "kein" && !onLaptop) teile.push({ text: "am Whiteboard", ton: "font-semibold text-accent" });

@@ -375,8 +375,9 @@ function checkZuordnung(task: Pick<TaskDraft, "errorMap">, given: string, pairs:
  * get a JSON array of option indices ("[1,4]"; Zuordnung in the order of the statements, null = no letter yet),
  * a Lückentext zum Ankreuzen the chosen phrases like any cloze task.
  */
-export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "errorMap">, given: string): CheckResult {
+export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "errorMap"> & { prompt?: string }, given: string): CheckResult {
   const a = task.answer;
+  const kuerzen = verlangtGekuerzt(task);
   // Auswendig schreiben: der Text steht in data.passage, verglichen wird Wort für Wort (lib/memorize.ts).
   // Die falschen Wörter sind das Fehler-Etikett des Versuchs — die einzige Spur, die der Lehrer sieht.
   if (task.type === "memorize") {
@@ -453,6 +454,7 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
       .map((alts, i) => (alts.some((alt) => same(values[i] ?? "", alt, a.mode ?? "text", a.contractions, a.satzzeichen)) ? -1 : i))
       .filter((i) => i >= 0);
     const correct = wrong.length === 0;
+    if (correct && kuerzen && values.some(nichtGekuerzt)) return NICHT_GEKUERZT;
     return {
       correct,
       wrongGaps: correct ? undefined : wrong.map((i) => i + 1),
@@ -471,6 +473,7 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
   }
   if (a.accepted && a.accepted.length > 0) {
     const correct = a.accepted.some((exp) => sameAnswer(given, exp, a.mode ?? "text", a.contractions, a.satzzeichen));
+    if (correct && kuerzen && nichtGekuerzt(given)) return NICHT_GEKUERZT;
     let feedback = correct ? "Richtig!" : "Leider nicht richtig.";
     if (!correct && a.mode === "value" && parseNumber(given) === null && given.trim()) {
       feedback = "Die Eingabe ist keine Zahl. Schreib z. B. 3/4, 1 1/2 oder 0,75.";
@@ -479,6 +482,36 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
   }
   return { correct: null, errorLabel: null, feedback: "Wird bewertet." };
 }
+
+/**
+ * „Berechne und kürze das Ergebnis“: der Wert allein reicht nicht. Verlangt ist es mit `answer.form = "gekuerzt"` oder, für
+ * schon gespeicherte und von der KI erstellte Aufgaben, wenn die Angabe „kürze“ sagt und nach dem Wert geprüft wird.
+ * „Kürze den Bruch …“ prüft ohnehin genau (mode exact).
+ */
+function verlangtGekuerzt(task: Pick<TaskDraft, "answer"> & { prompt?: string }): boolean {
+  if (task.answer.mode !== "value") return false;
+  return task.answer.form === "gekuerzt" || /\bkürze\b|\bgekürzt/i.test(task.prompt ?? "");
+}
+
+const ggT = (x: number, y: number): number => (y === 0 ? x : ggT(y, x % y));
+
+/** Ein Bruch in der Antwort, der sich noch kürzen lässt: 14/48, 2 3/6. Dezimalzahlen und ganze Zahlen zählen nicht. */
+export function nichtGekuerzt(given: string): boolean {
+  for (const m of given.matchAll(/(\d+)\s*\/\s*(\d+)/g)) {
+    const [z, n] = [Number(m[1]), Number(m[2])];
+    if (n > 1 && ggT(z, n) > 1) return true;
+  }
+  return false;
+}
+
+/** Wert richtig, aber nicht gekürzt: noch ein Versuch; beim letzten Versuch zählt es halb (teilweise). */
+const NICHT_GEKUERZT: CheckResult = {
+  correct: false,
+  errorLabel: "Ergebnis nicht gekürzt",
+  errorType: "bruch",
+  feedback: "Der Wert stimmt. Kürze das Ergebnis noch vollständig.",
+  onFinal: "teilweise",
+};
 
 /** Lückentext zum Ankreuzen: die Lücken heißen ① ② wie auf dem Maturablatt; ein Punkt nur, wenn alle stimmen. */
 function ankreuzFeedback(wrong: number[], values: string[], gaps: number): string {
