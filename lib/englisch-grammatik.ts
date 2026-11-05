@@ -51,6 +51,7 @@ import {
   type WortStufe,
 } from "./englisch-woerter";
 import { closestVersion, expectedFixes } from "./fix-text";
+import { MEHR_FAEHIGKEITEN } from "./englisch-grammatik-mehr";
 import { STUFE, type Rng, type Stufe } from "./schulbuch-zahlen";
 import { GAP, normalizeText, type TaskDraft } from "./tasks";
 
@@ -87,7 +88,7 @@ export type Satz = {
 /** A short answer: an instruction, the sentence or word to work with, the right answers and the typical errors. */
 export type Umformung = { auftrag: string; vorlage: string; richtig: string[]; fehler: Fehler[]; regel: string; hilfe: string; tipp?: string };
 
-type Faehigkeit = {
+export type Faehigkeit = {
   /** instruction of the gap text */
   titel: (st: Stufe) => string;
   /** instruction of the multiple choice */
@@ -2730,6 +2731,8 @@ const FAEHIGKEITEN: Record<string, Faehigkeit> = {
   "englisch.grammar.passive": { titel: T("Fill in the passive (present simple)."), wahl: T("Choose the passive form."), satz: passivSatz, kurz: passivKurz },
   "englisch.grammar.reported": { titel: T("Report what they said. Move the tense one step back."), wahl: T("Report what they said. Move the tense one step back."), satz: reportedSatz, kurz: reportedKurz },
   "englisch.vocab.irregular": { titel: T("Fill in the missing forms."), wahl: T("Choose the right form."), satz: irregularSatz, kurz: irregularKurz, uebersetzen: irregularUebersetzen, standard: "kurz" },
+  // Generalprobe 2026-11-05: weitere häufige Themen (lib/englisch-grammatik-mehr.ts)
+  ...MEHR_FAEHIGKEITEN,
 };
 
 /** How a task is answered: gap text, multiple choice, Fehler korrigieren, short answer, German to English. */
