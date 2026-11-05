@@ -92,3 +92,22 @@ test("live status: the teacher sees what the student typed when it was wrong", a
   const prev = repo.listAttemptsForAssignment(aid).at(-1)!;
   assert.equal(Boolean(prev.correct), true);
 });
+
+test("Abschluss: after 6 of 6 no „Schwäche“, the homework says why it is not sure yet", async () => {
+  const { abschlussKarte } = await import("./abschluss");
+  const { ergebnisThemen } = await import("./hausuebung");
+  const t = (o: { firstTry?: boolean; tries?: number; correct?: boolean } = {}) => ({ assignmentId: 1, skillId: "mathe.brueche.dividieren", skill: "Dividieren", correct: true, finished: true, firstTry: true, tries: 1, help: "keine" as const, ...o });
+  const sechs = [t(), t(), t({ firstTry: false, tries: 2 }), t(), t(), t()];
+  const belege = { aufgaben: sechs, fehler: [], beobachtungen: [], reaktionen: [], minitest: null, vorgabe: [], geuebt: [], pruefung: null, eigene: {} };
+  const d = (text: string) => ({ text, from: "daten" as const });
+  const brief = { done: [], good: [], difficulties: [], errors: [], next: [d("Dividieren (Schwäche)"), d("Addieren (Fehler)")], dates: [] };
+  const k = abschlussKarte(brief, null, [], belege);
+  assert.deepEqual(k.naechstes.map((z) => z.text), ["Dividieren (festigen)", "Addieren (Fehler)"], "Addieren was not practised today");
+  // one wrong today: still a Schwäche
+  const k2 = abschlussKarte(brief, null, [], { ...belege, aufgaben: [...sechs.slice(1), t({ correct: false, firstTry: false })] });
+  assert.equal(k2.naechstes[0].text, "Dividieren (Schwäche)");
+
+  const [th] = ergebnisThemen(belege);
+  assert.equal(th.stand, "teilweise");
+  assert.equal(th.grund, "noch nicht sicher: 6 von 6 richtig, 5 beim ersten Versuch ohne Hilfe");
+});

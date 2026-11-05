@@ -302,6 +302,20 @@ function gutRegeln(b: Pick<AbschlussBelege, "aufgaben" | "beobachtungen" | "reak
   return { zeilen, skills };
 }
 
+/** So viele Aufgaben einer Fähigkeit heute, alle richtig: die Empfehlung heißt dann nicht mehr „Schwäche“. */
+export const FESTIGEN_AB = 3;
+
+/**
+ * „Dividieren (Schwäche)“ unter „Nächstes Mal“, obwohl heute 6 von 6 richtig waren (Generalprobe 2026-11-05): der Lernstand
+ * kennt noch die alten Ergebnisse, die Empfehlung bleibt, heißt aber „festigen“. Nur Zeilen aus den Daten.
+ */
+function festigen(z: KartenZeile, l: BriefLine, belege: AbschlussBelege | undefined): KartenZeile {
+  const m = l.from === "daten" ? /^(.+) \((Schwäche|Fehler)\)$/.exec(l.text) : null;
+  if (!m || !belege) return z;
+  const ts = belege.aufgaben.filter((t) => t.skill === m[1] && t.finished);
+  return ts.length >= FESTIGEN_AB && ts.every((t) => t.correct) ? { ...z, text: `${m[1]} (festigen)` } : z;
+}
+
 /**
  * Ob „Gut verstanden“ ein sicheres Ergebnis hat (aus den Daten oder von dir geschrieben); sonst „Keine sicheren Ergebnisse“. „Verbessert“
  * allein ist keines: besser als vorher heißt nicht verstanden.
@@ -491,7 +505,7 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   if (vorgabeOffen.length) naechstes.push({ text: `Aus deiner Vorgabe noch offen: ${vorgabeOffen.map((v) => v.name).join(", ")}`, von: "vorgabe" });
   // a recommendation for exam material the exam line already names is not said twice
   const schonGenannt = (l: BriefLine) => Boolean(p) && l.from === "daten" && p!.offen.some((n) => l.text.startsWith(`${n} (`));
-  naechstes.push(...(brief?.next ?? []).filter((l) => !schonGenannt(l)).map((l) => zeile(l, "lernstand")));
+  naechstes.push(...(brief?.next ?? []).filter((l) => !schonGenannt(l)).map((l) => festigen(zeile(l, "lernstand"), l, belege)));
   if (e?.nichtErreicht.length && (e.erledigt.length || e.uebersprungen.length || e.wiederholt.length || e.nichtVerstanden.length)) naechstes.push(a(`Weiter mit: ${namen(e.nichtErreicht)}`, "naechstes"));
   if (e?.wiederholt.length) naechstes.push(a(`Wiederholen: ${mitMal(e.wiederholt)}`, "naechstes"));
   if (e?.uebersprungen.length) naechstes.push(a(`Übersprungen: ${namen(e.uebersprungen)}`, "naechstes"));

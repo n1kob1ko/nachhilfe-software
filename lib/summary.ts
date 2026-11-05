@@ -58,7 +58,9 @@ export function unitBrief(lessonId: number, o: { today?: string; now?: number } 
     const byArea = new Map<string, string[]>();
     for (const s of [...r.skills].sort((a, b) => a.area.localeCompare(b.area))) byArea.set(s.area, [...(byArea.get(s.area) ?? []), s.name]);
     for (const [area, names] of byArea) done.push(data(area ? `${area}: ${names.join(", ")}` : names.join(", ")));
-    done.push(data(`${r.tasksDone} ${r.tasksDone === 1 ? "Aufgabe" : "Aufgaben"} bearbeitet, ${r.correct} richtig${r.successRate !== null ? ` (${pct(r.successRate)})` : ""}`));
+    // the first try counts: „6 richtig (100 %)“ alone hid that one needed a second try (Generalprobe 2026-11-05)
+    const ersterVersuch = r.correct > 0 && r.firstTry < r.correct ? `, ${r.firstTry} beim ersten Versuch ohne Hilfe` : "";
+    done.push(data(`${r.tasksDone} ${r.tasksDone === 1 ? "Aufgabe" : "Aufgaben"} bearbeitet, ${r.correct} richtig${r.successRate !== null ? ` (${pct(r.successRate)})` : ""}${ersterVersuch}`));
     if (r.worksheets.some((w) => w.kind === "diagnose")) done.push(data("Diagnose gemacht"));
   } else if (lesson.topic) done.push(data(lesson.topic));
   // Textarbeiten (unless the activities already name them, e.g. the automatic text)

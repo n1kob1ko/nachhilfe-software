@@ -23,6 +23,7 @@ import { sorteOfSkill, SORTEN, type SorteKey } from "./schreibauftrag";
 import { PRUEFUNG_TAGE } from "./vorbereitung-auto";
 import { vorgabeDerEinheit } from "./vorgabe";
 import { wienerDatum } from "./planung/zeit";
+import { wortzielAusAufgabe } from "./wortziel";
 import { PICTURE_STORY_KIND } from "./picture-story";
 
 // ---------- welche Fähigkeit ist eine Schreibaufgabe ----------
@@ -180,6 +181,8 @@ export type TextLauf = {
   textsorte: string;
   status: "offen" | "fertig";
   woerter: number;
+  /** das Wortziel aus der Aufgabe („ca. 120 Wörter“, lib/wortziel.ts); null: keins genannt */
+  ziel?: number | null;
   /** von der Lehrkraft übernommen */
   bestaetigt: boolean;
   /** die übernommene Gesamtnote; nie die eines Vorschlags */
@@ -192,7 +195,8 @@ export type TextLauf = {
 export type TextStand = "schreibt" | "abgegeben" | "wird_korrigiert" | "bewertung_offen" | "bewertet";
 export type TextZeile = { stand: TextStand; text: string; aktion: { label: string; href: string; haupt: boolean } };
 
-const woerterLabel = (n: number) => `${n.toLocaleString("de-AT")} ${n === 1 ? "Wort" : "Wörter"}`;
+const woerterLabel = (n: number, ziel?: number | null) =>
+  ziel ? `${n.toLocaleString("de-AT")} von ca. ${ziel.toLocaleString("de-AT")} Wörtern` : `${n.toLocaleString("de-AT")} ${n === 1 ? "Wort" : "Wörter"}`;
 
 /** Der Stand einer Textarbeit in einer Zeile und der eine nächste Schritt. `amGeraet`: der Text ist am Schülergerät offen. */
 export function textZeile(t: TextLauf, o: { amGeraet: boolean }): TextZeile {
@@ -200,19 +204,19 @@ export function textZeile(t: TextLauf, o: { amGeraet: boolean }): TextZeile {
   if (t.bestaetigt) return { stand: "bewertet", text: t.note ? `bewertet · Note ${t.note}` : "bewertet", aktion: { label: "Ansehen", href: `${korrektur}?teil=aufgabe`, haupt: false } };
   if (t.vorschlag) return { stand: "bewertung_offen", text: "Bewertung offen", aktion: { label: "Bewertung übernehmen", href: `${korrektur}?teil=aufgabe`, haupt: true } };
   if (t.status === "fertig" && t.pruefung === "laeuft") return { stand: "wird_korrigiert", text: "wird korrigiert …", aktion: { label: "Ansehen", href: korrektur, haupt: false } };
-  if (t.status === "fertig") return { stand: "abgegeben", text: `abgegeben · ${woerterLabel(t.woerter)}`, aktion: { label: "Korrigieren", href: korrektur, haupt: true } };
-  return { stand: "schreibt", text: `schreibt · ${woerterLabel(t.woerter)}`, aktion: { label: o.amGeraet ? "Mitlesen" : "Öffnen", href: `/texte/${t.id}`, haupt: false } };
+  if (t.status === "fertig") return { stand: "abgegeben", text: `abgegeben · ${woerterLabel(t.woerter, t.ziel)}`, aktion: { label: "Korrigieren", href: korrektur, haupt: true } };
+  return { stand: "schreibt", text: `schreibt · ${woerterLabel(t.woerter, t.ziel)}`, aktion: { label: o.amGeraet ? "Mitlesen" : "Öffnen", href: `/texte/${t.id}`, haupt: false } };
 }
 
 /** Die Textarbeiten, an denen in dieser Einheit geschrieben wurde (ohne archivierte), mit dem Stand ihrer Bewertung. */
 export function textLaeufe(unitId: number): TextLauf[] {
   const rows = db()
     .prepare(
-      `SELECT x.id, x.title, x.topic, x.status, x.words, b.kriterien, b.bestaetigt_at, b.vorschlag, b.pruefung_status
+      `SELECT x.id, x.title, x.topic, x.prompt, x.status, x.words, b.kriterien, b.bestaetigt_at, b.vorschlag, b.pruefung_status
        FROM text_units tu JOIN texts x ON x.id = tu.text_id LEFT JOIN text_bewertungen b ON b.text_id = x.id
        WHERE tu.unit_id = ? AND x.archived_at IS NULL ORDER BY tu.first_at, x.id`,
     )
-    .all(unitId) as { id: number; title: string; topic: string; status: string; words: number; kriterien: string | null; bestaetigt_at: string | null; vorschlag: string | null; pruefung_status: string | null }[];
+    .all(unitId) as { id: number; title: string; topic: string; prompt: string; status: string; words: number; kriterien: string | null; bestaetigt_at: string | null; vorschlag: string | null; pruefung_status: string | null }[];
   return rows.map((r) => {
     const b = r.bestaetigt_at ? parseBewertung(r.kriterien) : null;
     const p = r.pruefung_status;
@@ -222,6 +226,7 @@ export function textLaeufe(unitId: number): TextLauf[] {
       textsorte: r.topic,
       status: r.status === "fertig" ? "fertig" : "offen",
       woerter: r.words,
+      ziel: wortzielAusAufgabe(r.prompt),
       bestaetigt: Boolean(b),
       note: b?.note ?? null,
       vorschlag: !b && Boolean(r.vorschlag),
