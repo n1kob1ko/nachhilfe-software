@@ -429,7 +429,8 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
   if (task.type === "rechenweg" || task.type === "sachaufgabe") return gradeMathTask(task, given).check;
   if (task.type === "fix" && task.data.faulty !== undefined) {
     const long = (s: string) => (a.contractions ? langform(s) : s);
-    const labels = a.contractions ? a.fixes?.map((f) => ({ ...f, wrong: long(f.wrong), right: long(f.right) })) : a.fixes;
+    // in der Langform, und so wie geschrieben: ein Question Tag („doesn't they“) bleibt im Satz kurz
+    const labels = a.contractions ? a.fixes?.flatMap((f) => [{ ...f, wrong: long(f.wrong), right: long(f.right) }, f]) : a.fixes;
     const r = checkFix(long(task.data.faulty), (a.accepted ?? []).map(long), long(given), { caseSensitive: a.mode !== "text", labels });
     if (r.correct) return { correct: true, errorLabel: null, feedback: r.total === 1 ? "Richtig verbessert!" : `Alle ${r.total} Fehler richtig verbessert!` };
     let first: FixLabel | undefined = r.missed[0];
