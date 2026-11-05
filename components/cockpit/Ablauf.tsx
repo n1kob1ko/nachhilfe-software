@@ -255,7 +255,7 @@ export function Unterricht({
         <Link href={`/einheiten/${unit.id}?bereich=cockpit#werkzeuge`} className="panel flex min-h-[52px] flex-wrap items-center gap-x-2 px-4 py-2 sm:px-5" data-testid="werkzeuge-link">
           <Wrench size={18} className="text-ink-2" aria-hidden />
           <span className="text-[16px] font-semibold">Weitere Werkzeuge</span>
-          <span className="text-[13.5px] text-ink-3">Übungen, Whiteboard, Foto vom Stoff, Arbeit fotografieren, Paket, Überspringen, Notiz …</span>
+          <span className="text-[13.5px] text-ink-3">{schreibFach(unit.subject) ? "Text schreiben, Übungen, Whiteboard, Arbeit fotografieren, Foto vom Stoff, Paket, Notiz …" : "Whiteboard, Übungen, Arbeit fotografieren, Foto vom Stoff, Paket, Überspringen, Notiz …"}</span>
         </Link>
       )}
     </div>
@@ -812,6 +812,12 @@ function SchrittKarte({
         </div>
       )}
 
+      {!schreiben && schreibFach(unit.subject) && (
+        <div>
+          <TextSchreibenLink unitId={unitId} />
+        </div>
+      )}
+
       <LoesungReveal aufgaben={s.aufgaben} fehler={loesungSkill ? zurFaehigkeit(loesungSkill).typischeFehler : []} hintergrund={hintergrundZu(loesungSkill, [paket.ziel, s.aufgaben.find((a) => a.teacherNote?.trim())?.teacherNote])} />
 
       <Knoepfe unitId={unitId} id={s.id} weiterHaupt={schreiben ? Boolean(laeuft) : s.aufgaben.length === 0 || gesendet > 0 || Boolean(gedruckt)}>
@@ -1104,6 +1110,11 @@ function PlanKarte({
       )}
       {zurPruefung && <SchreibauftragStart start={zurPruefung} laeuft={laeuft} haupt={false} />}
       {sprung && <ZurErstenUebung unitId={unit.id} id={sprung.id} titel={sprung.titel} nr={ids.indexOf(sprung.id) + 1} />}
+      {!schreiben && schreibFach(unit.subject) && s.art !== "einstieg" && (
+        <div>
+          <TextSchreibenLink unitId={unit.id} />
+        </div>
+      )}
       <LoesungReveal aufgaben={aufgaben} fehler={skillId ? zurFaehigkeit(skillId).typischeFehler : []} hintergrund={hintergrundZu(skillId, [aufgaben.find((a) => a.teacherNote?.trim())?.teacherNote])} />
       <Knoepfe unitId={unit.id} id={s.id} weiterHaupt={eigen ? Boolean(laeuft) : !(blatt || skill) || gesendet > 0 || Boolean(gedruckt)}>
         <AnpassenMenue unitId={unit.id} schrittId={s.id} skill={Boolean(s.skillId)} thema={Boolean(s.thema || s.skillId)} />
@@ -1172,6 +1183,30 @@ function AllesDurch({ c, unitId, naechstesMal }: { c: CockpitDaten; unitId: numb
   );
 }
 
+type WerkzeugKachel = "text" | "uebungen" | "tafel" | "papier" | "foto" | "neu" | "fortschritt" | "bild" | "schreibauftrag";
+
+/** Sprachfächer: dort wird im Unterricht oft ein Text geschrieben (Generalprobe 2026-11-05). */
+const schreibFach = (fach: string) => fach === "Deutsch" || fach === "Englisch";
+
+/** Die Kacheln unter „Weitere Werkzeuge“, das Häufigste zuerst. Nichts fällt weg, nur die Reihenfolge hängt vom Fach ab. */
+export function werkzeugReihenfolge(fach: string): WerkzeugKachel[] {
+  return schreibFach(fach)
+    ? ["text", "uebungen", "tafel", "papier", "foto", "neu", "schreibauftrag", "bild", "fortschritt"]
+    : ["tafel", "uebungen", "papier", "foto", "neu", "fortschritt", "text", "bild", "schreibauftrag"];
+}
+
+/**
+ * „Text schreiben“ direkt im Schritt (Deutsch, Englisch): ein freier Text in dieser Einheit, ohne den Umweg über
+ * „Weitere Werkzeuge“. Nicht, wo der Schritt schon einen Schreibauftrag startet.
+ */
+function TextSchreibenLink({ unitId }: { unitId: number }) {
+  return (
+    <Link href={`/einheiten/${unitId}/text`} className="mt-3 inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline" data-testid="text-schreiben">
+      <PenLine size={16} aria-hidden /> Text schreiben
+    </Link>
+  );
+}
+
 /** Eine Kachel unter „Weitere Werkzeuge“. */
 function Kachel({ href, icon, label, testid }: { href: string; icon: React.ReactNode; label: string; testid?: string }) {
   return (
@@ -1220,17 +1255,30 @@ function Werkzeuge({ c, unit, student, liste, teacherId, ids, aktuell }: { c: Co
       </div>
       <div className="grid gap-6 pt-2 pb-5">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          <Kachel href={`${basis}?bereich=uebungen`} icon={icon(BookOpenCheck)} label="Übungen und Ergebnisse" testid="werkzeug-uebungen" />
-          <Kachel href={`/tafel/${unit.id}`} icon={icon(Presentation)} label="Whiteboard" />
-          <Kachel href={`${basis}?bereich=fortschritt`} icon={icon(ChartNoAxesColumn)} label="Fortschritt" />
-          <Kachel href={`/uebungen/neu?schueler=${student.id}`} icon={icon(Plus)} label="Neue Übung erstellen" />
-          <Kachel href={`${basis}/foto`} icon={icon(Camera)} label="Foto vom Stoff" testid="foto-vom-stoff" />
-          {/* auf Papier gelöst, gesendet oder gedruckt: fotografieren und wie am Gerät bewerten (lib/papier-einheit.ts) */}
-          <Kachel href={`${basis}/papier`} icon={icon(ScanLine)} label="Arbeit fotografieren" testid="werkzeug-papier" />
-          <Kachel href={`${basis}/text`} icon={icon(PenLine)} label="Textarbeit starten" />
-          <Kachel href={`${basis}/bildgeschichte`} icon={icon(Images)} label="Bildgeschichte erstellen" testid="bildgeschichte-erstellen" />
-          {/* Oberstufe: a Schreibauftrag of the SRDP on a whole Textbeilage with line numbers */}
-          {oberstufe && <Kachel href={`${basis}/schreibauftrag`} icon={icon(BookOpenText)} label="Schreibauftrag" testid="schreibauftrag-erstellen" />}
+          {/* nach Häufigkeit (Generalprobe 2026-11-05): in Deutsch und Englisch zuerst Text schreiben, in Mathe das Whiteboard */}
+          {werkzeugReihenfolge(unit.subject).map((k) =>
+            k === "text" ? (
+              <Kachel key={k} href={`${basis}/text`} icon={icon(PenLine)} label="Text schreiben" testid="werkzeug-text" />
+            ) : k === "uebungen" ? (
+              <Kachel key={k} href={`${basis}?bereich=uebungen`} icon={icon(BookOpenCheck)} label="Übungen und Ergebnisse" testid="werkzeug-uebungen" />
+            ) : k === "tafel" ? (
+              <Kachel key={k} href={`/tafel/${unit.id}`} icon={icon(Presentation)} label="Whiteboard" />
+            ) : k === "papier" ? (
+              // auf Papier gelöst, gesendet oder gedruckt: fotografieren und wie am Gerät bewerten (lib/papier-einheit.ts)
+              <Kachel key={k} href={`${basis}/papier`} icon={icon(ScanLine)} label="Arbeit fotografieren" testid="werkzeug-papier" />
+            ) : k === "foto" ? (
+              <Kachel key={k} href={`${basis}/foto`} icon={icon(Camera)} label="Foto vom Stoff" testid="foto-vom-stoff" />
+            ) : k === "neu" ? (
+              <Kachel key={k} href={`/uebungen/neu?schueler=${student.id}`} icon={icon(Plus)} label="Neue Übung erstellen" />
+            ) : k === "fortschritt" ? (
+              <Kachel key={k} href={`${basis}?bereich=fortschritt`} icon={icon(ChartNoAxesColumn)} label="Fortschritt" />
+            ) : k === "bild" ? (
+              <Kachel key={k} href={`${basis}/bildgeschichte`} icon={icon(Images)} label="Bildgeschichte erstellen" testid="bildgeschichte-erstellen" />
+            ) : (
+              // Oberstufe: a Schreibauftrag of the SRDP on a whole Textbeilage with line numbers
+              oberstufe && <Kachel key={k} href={`${basis}/schreibauftrag`} icon={icon(BookOpenText)} label="Schreibauftrag" testid="schreibauftrag-erstellen" />
+            ),
+          )}
         </div>
 
         {schritt && aktuell === schritt.id && (

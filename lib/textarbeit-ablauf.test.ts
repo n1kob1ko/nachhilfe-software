@@ -102,6 +102,9 @@ test("one line per text: a grade only when confirmed, a proposal is only „Bewe
   assert.deepEqual([offen.text, offen.aktion.label, offen.aktion.href], ["Bewertung offen", "Bewertung übernehmen", "/texte/4/korrektur?teil=aufgabe"]);
   assert.ok(!/Note/.test(offen.text), "never the number of a proposal");
   assert.equal(textZeile({ ...t, status: "fertig", bestaetigt: true, note: 2 }, { amGeraet: false }).text, "bewertet · Note 2");
+  // the word target of the task beside the count (Generalprobe 2026-11-05)
+  assert.equal(textZeile({ ...t, ziel: 120, woerter: 77 }, { amGeraet: true }).text, "schreibt · 77 von ca. 120 Wörtern");
+  assert.equal(textZeile({ ...t, ziel: 120, status: "fertig", woerter: 1 }, { amGeraet: true }).text, "abgegeben · 1 von ca. 120 Wörtern");
 });
 
 test("text lines from the database: per unit, proposal vs confirmed, two students at once do not mix", async () => {

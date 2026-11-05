@@ -100,7 +100,7 @@ test("weighting: difficult first (about 4), partial next, good only as 1–2 rep
   const t = ergebnisThemen(b);
   assert.deepEqual(t.map((x) => [x.skillId, x.stand]), [["psq", "schwierig"], ["pc", "teilweise"], ["ps", "gut"]]);
   assert.equal(t[0].grund, "noch schwierig: 1 von 4 richtig");
-  assert.equal(t[1].grund, "teilweise: 3 von 5 richtig");
+  assert.equal(t[1].grund, "noch nicht sicher: 3 von 5 richtig");
   // two weaker topics: no repetition of the good one
   assert.deepEqual(auswahl(t).map((x) => [x.skillId, x.soll]), [["psq", 4], ["pc", 4]]);
   // one weaker topic: the good one with 2 repetition tasks

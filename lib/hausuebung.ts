@@ -48,7 +48,8 @@ import { vorgabeDerEinheit } from "./vorgabe";
 
 /** Wie es heute lief: aus den geprüften Ergebnissen; „plan“: ein Thema aus dem Plan von heute ohne Ergebnis (von der Lehrkraft gewählt). */
 export type Stand = "schwierig" | "teilweise" | "gut" | "plan";
-export const STAND_LABEL: Record<Stand, string> = { schwierig: "noch schwierig", teilweise: "teilweise", gut: "gut verstanden", plan: "aus dem Plan von heute" };
+// „teilweise“ read like „teilweise richtig“ next to „6 von 6 richtig“ (Generalprobe 2026-11-05)
+export const STAND_LABEL: Record<Stand, string> = { schwierig: "noch schwierig", teilweise: "noch nicht sicher", gut: "gut verstanden", plan: "aus dem Plan von heute" };
 /** So viele Aufgaben je Thema zuerst … */
 export const ANZAHL: Record<Stand, number> = { schwierig: 4, teilweise: 4, gut: 2, plan: 3 };
 /** … und so weit darf gekürzt werden, bevor ein Thema wegfällt. */
@@ -98,7 +99,9 @@ export function ergebnisThemen(b: Pick<AbschlussBelege, "aufgaben" | "beobachtun
     const falsch = beob.find((x) => x.antwort === "falsch");
     const teil = beob.find((x) => x.antwort === "teilweise");
     const name = o.name?.(id) ?? ts[0]?.skill ?? b.reaktionen.find((r) => r.skillId === id)?.skill ?? id;
-    const zahl = `${richtig} von ${ts.length} richtig`;
+    // all right, but not all at the first try: say so, else „noch nicht sicher: 6 von 6 richtig“ reads wrong
+    const erster = ts.filter((t) => t.finished && t.firstTry).length;
+    const zahl = `${richtig} von ${ts.length} richtig${ts.length && richtig === ts.length && erster < richtig ? `, ${erster} beim ersten Versuch ohne Hilfe` : ""}`;
     let stand: Stand;
     let grund: string;
     if (ts.length && quote < SCHWIERIG_UNTER) [stand, grund] = ["schwierig", zahl];
