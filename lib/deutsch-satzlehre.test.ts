@@ -32,6 +32,23 @@ const MIT_FIX: Record<string, boolean> = {
   "deutsch.grammatik.plusquamperfekt": true,
   [PASSIV]: true,
   [RD]: true,
+  "deutsch.vs.sprache.mehrzahl": true,
+  "deutsch.vs.sprache.personalformen": true,
+  "deutsch.vs.recht.silbentrennung": false,
+  "deutsch.recht.woerterbuch": false,
+  "deutsch.recht.gleichklang": true,
+  "deutsch.recht.fremdwoerter": true,
+  "deutsch.wortarten.steigerung": true,
+  "deutsch.wortschatz.zusammensetzung": false,
+  "deutsch.wortschatz.ableitung": true,
+  "deutsch.wortschatz.redewendungen": false,
+  "deutsch.grammatik.imperativ": true,
+  "deutsch.grammatik.konjunktiv2": true,
+  "deutsch.grammatik.indirekte-rede": true,
+  "deutsch.satz.satzreihe-gefuege": false,
+  "deutsch.satz.attribute": false,
+  "deutsch.literatur.sprachbilder": false,
+  "deutsch.os.grammatik.daswas": true,
 };
 
 function mulberry32(seed: number) {

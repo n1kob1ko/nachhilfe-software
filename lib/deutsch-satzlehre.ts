@@ -52,6 +52,7 @@ import {
   type Person,
   type Verb,
 } from "./deutsch-woerter";
+import { MEHR_FAEHIGKEITEN } from "./deutsch-mehr";
 import { closestVersion, expectedFixes, tokenize } from "./fix-text";
 import { STUFE, type Rng, type Stufe } from "./schulbuch-zahlen";
 import { GAP, normalizeText, type TaskDraft } from "./tasks";
@@ -77,7 +78,7 @@ export type Umformung = { auftrag: string; vorlage: string; richtig: string[]; f
 /** Multiple choice: the question, the sentence, the right option and wrong options with what they reveal. */
 export type Wahl = { titel: string; text: string; richtig: string; falsch: Fehler[]; regel: string; hilfe: string; tipp?: string };
 
-type Faehigkeit = {
+export type Faehigkeit = {
   luecke: (rng: Rng, st: Stufe) => Satz;
   wahl: (rng: Rng, st: Stufe) => Wahl | null;
   kurz: (rng: Rng, st: Stufe) => Umformung;
@@ -1887,6 +1888,8 @@ const FAEHIGKEITEN: Record<string, Faehigkeit> = {
     bestimmen: false,
     zeichen: true,
   },
+  // Wortformen, Rechtschreibung, Wortschatz, Grammatik und Satzbau in lib/deutsch-mehr.ts
+  ...MEHR_FAEHIGKEITEN,
 };
 // Zeitformen: "Fehler korrigieren" with one tense per task, named in the instruction
 const ZEIT_FIX_TEMPORA: Tempus[] = ["praeteritum", "perfekt", "futur1"];
@@ -1987,20 +1990,25 @@ function fehlerFinden(skillId: string, difficulty: Difficulty, rng: Rng): TaskDr
   if (!f.bestimmen && hatFix(skillId)) return satzMitFehler(skillId, difficulty, rng, "fehler");
   const mc = deutschAufgabe(skillId, "mc", difficulty, rng);
   if (!mc || !mc.errorMap.length) return mc;
-  const e = pick(rng, mc.errorMap);
-  const name = pick(rng, [...MAEDCHEN.slice(0, 6), ...BUBEN.slice(0, 6)]);
-  const gewaehlt = mc.data.options![Number(e.answer)];
   // the label often names the right answer („Genitiv statt Dativ: Frag „Wem?““): then only the part after
   // it, or the hints of the task when that names it too
   const richtig = mc.data.options![mc.answer.correct!].replace(/\s*\([^)]*\)/g, "").toLowerCase();
   const nennt = (x: string) => x.toLowerCase().includes(richtig);
+  // a wrong choice that holds the right answer („einen grünen Hut“ for the attribute „grünen“) is not quoted
+  const woerter = (x: string) => ` ${x.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim()} `;
+  const enthaelt = (i: string) => woerter(mc.data.options![Number(i)]).includes(woerter(richtig));
+  const ohne = mc.errorMap.filter((x) => !enthaelt(x.answer));
+  const e = pick(rng, ohne.length ? ohne : mc.errorMap);
+  const name = pick(rng, [...MAEDCHEN.slice(0, 6), ...BUBEN.slice(0, 6)]);
+  const gewaehlt = mc.data.options![Number(e.answer)];
+  const frage = enthaelt(e.answer) ? "Warum stimmt das nicht?" : `Warum stimmt „${gewaehlt}“ nicht?`;
   const rest = e.label.replace(/^[^:.]*[:.]\s*/, "");
   const warum = !nennt(e.label) ? e.label : rest !== e.label && !nennt(rest) ? rest : null;
   return {
     ...mc,
     category: "fehler",
     prompt: `${mc.prompt}\n${name} hat „${gewaehlt}“ gewählt. Das stimmt nicht. Was ist richtig?`,
-    hints: warum ? [`Warum stimmt „${gewaehlt}“ nicht? ${warum}.`, ...mc.hints.slice(0, 1)] : mc.hints.slice(0, 2),
+    hints: warum ? [`${frage} ${warum}.`, ...mc.hints.slice(0, 1)] : mc.hints.slice(0, 2),
     errorMap: [{ answer: e.answer, label: `Fehler übernommen: ${e.label}` }, ...mc.errorMap.filter((x) => x !== e)],
   };
 }
