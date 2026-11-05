@@ -55,6 +55,7 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
       englisch: englischClient(t, Boolean(reading)),
       reading: reading && i === 0 ? { ...reading, lang: w.subject === "Englisch" ? "en" : "de" } : null,
       blanks: t.answer.blanks?.length ?? 0,
+      ...(t.answer.blanks?.length && t.answer.mode === "value" ? { zahlen: true } : {}),
       endings: t.answer.endings === true,
       steps: t.type === "order" ? (t.data.steps ?? null) : null,
       hints: zeigtHilfen(freigabe) ? t.hints : [],

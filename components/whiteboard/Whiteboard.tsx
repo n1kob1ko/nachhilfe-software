@@ -98,6 +98,9 @@ export default function Whiteboard(props: WhiteboardProps) {
   const [pageMenu, setPageMenu] = useState(false);
   const [tool, setTool] = useState<QuickTool>("stift");
   const [fullscreen, setFullscreen] = useState(false);
+  // iPhone Safari has no full screen for a page: there the button would do nothing (Generalprobe 2026-11-05).
+  // Upright on any phone it is hidden too (CSS wb-hide-phone), so the header keeps two rows; turned sideways it is back.
+  const [canFullscreen, setCanFullscreen] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [boardTasks, setBoardTasks] = useState<BoardTask[]>([]);
   const [currentTask, setCurrentTask] = useState<string | null>(null);
@@ -653,6 +656,8 @@ export default function Whiteboard(props: WhiteboardProps) {
     else void document.exitFullscreen();
   }, []);
   useEffect(() => {
+    const d = document as Document & { webkitFullscreenEnabled?: boolean };
+    setCanFullscreen(Boolean(d.fullscreenEnabled || d.webkitFullscreenEnabled));
     const on = () => setFullscreen(Boolean(document.fullscreenElement));
     document.addEventListener("fullscreenchange", on);
     return () => document.removeEventListener("fullscreenchange", on);
@@ -757,17 +762,19 @@ export default function Whiteboard(props: WhiteboardProps) {
     <div ref={wrapRef} className={`wb-root fixed inset-0 z-50 flex flex-col bg-white ${teacher ? "wb-teacher" : "wb-student"}`}>
       <header className="wb-header flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line bg-panel px-3 py-2">
         {props.backHref && (
-          <a href={props.backHref} className="wb-btn wb-btn-wide" title={teacher ? "Zurück zur Einheit (das Whiteboard bleibt gespeichert)" : "Zurück zu den Übungen"}>
-            <span aria-hidden>←</span> {teacher ? "Zur Einheit" : "Zurück"}
+          <a href={props.backHref} className="wb-btn wb-btn-wide" aria-label={teacher ? "Zur Einheit" : "Zurück"} title={teacher ? "Zurück zur Einheit (das Whiteboard bleibt gespeichert)" : "Zurück zu den Übungen"}>
+            <span aria-hidden>←</span> <span className="wb-hide-phone">{teacher ? "Zur Einheit" : "Zurück"}</span>
           </a>
         )}
-        <div className="min-w-0">
+        <div className="wb-title min-w-0">
           <div className="truncate text-[15px] font-semibold leading-tight">{teacher ? `Whiteboard · ${props.studentName}` : "Whiteboard"}</div>
           <div className="flex items-center gap-1.5 text-[12px] text-ink-2" role="status" aria-live="polite">
-            <span className={`inline-block h-2 w-2 rounded-full ${status === "live" ? "bg-green" : status === "verbinde" ? "bg-amber" : "bg-red"}`} aria-hidden />
-            {status === "live" ? "verbunden" : status === "verbinde" ? "verbinde …" : "Verbindung unterbrochen, versuche erneut"}
-            {teacher && (student ? ` · ${student.name} ist da${studentPage ? `, Seite ${studentPage}` : ""}` : " · Schüler noch nicht verbunden")}
-            {!teacher && teacherOnline && " · Lehrer ist da"}
+            <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${status === "live" ? "bg-green" : status === "verbinde" ? "bg-amber" : "bg-red"}`} aria-hidden />
+            <span className="min-w-0 truncate">
+              {status === "live" ? "verbunden" : status === "verbinde" ? "verbinde …" : "Verbindung unterbrochen, versuche erneut"}
+              {teacher && (student ? ` · ${student.name} ist da${studentPage ? `, Seite ${studentPage}` : ""}` : " · Schüler noch nicht verbunden")}
+              {!teacher && teacherOnline && " · Lehrer ist da"}
+            </span>
           </div>
         </div>
 
@@ -804,7 +811,7 @@ export default function Whiteboard(props: WhiteboardProps) {
           )}
         </nav>
 
-        <div className="flex items-center gap-1.5">
+        <div className="wb-actions flex flex-wrap items-center gap-1.5">
           {teacher && canWrite && (
             <>
               <button className={`wb-btn wb-btn-wide ${panel ? "wb-btn-on" : ""}`} onClick={() => setPanel((v) => !v)} aria-expanded={panel} title="Aufgaben, Text, Formel, Tabelle oder kariertes Papier einfügen">
@@ -841,9 +848,11 @@ export default function Whiteboard(props: WhiteboardProps) {
             </>
           )}
           {teacher && <FeedbackButton variant="tafel" />}
-          <button className="wb-btn" onClick={toggleFullscreen} aria-label={fullscreen ? "Vollbild beenden" : "Vollbild"} title={fullscreen ? "Vollbild beenden" : "Vollbild: nur das Whiteboard zeigen"}>
-            {fullscreen ? "⤡" : "⤢"}
-          </button>
+          {canFullscreen && (
+            <button className="wb-btn wb-hide-phone" onClick={toggleFullscreen} aria-label={fullscreen ? "Vollbild beenden" : "Vollbild"} title={fullscreen ? "Vollbild beenden" : "Vollbild: nur das Whiteboard zeigen"}>
+              {fullscreen ? "⤡" : "⤢"}
+            </button>
+          )}
           {teacher && props.endUnit && running && canWrite && (
             <button
               className="wb-btn wb-btn-wide wb-btn-primary"

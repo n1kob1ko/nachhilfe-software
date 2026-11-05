@@ -31,6 +31,8 @@ export type ClientTask = {
   /** Leseverständnis: the shared text, on the first question only; every question is about it (lib/lesen.ts). */
   reading?: { title: string; text: string; lang: string; zeilen?: boolean; leerzeilen?: boolean } | null;
   blanks: number;
+  /** Lücken mit Zahlen (nach dem Wert geprüft): statt der Umlaute der Hinweis, wie man Brüche schreibt */
+  zahlen?: boolean;
   /** Cloze: the gaps are word endings; a gap may stay empty (= keine Endung, lib/tasks.ts AnswerSpec.endings). */
   endings?: boolean;
   /** Order tasks: the steps in the (shuffled) order they are shown. */
@@ -844,7 +846,20 @@ function TaskCard({
         {task.figur && !bildKopf && <FigurBild svg={task.figur} groesser={1.2} />}
         {task.quelle && <p className="mt-2 text-[12px] text-ink-3">Quelle: {task.quelle}</p>}
         {/* Umlaute für Lückentexte: eine Tablet-Tastatur gibt ä ö ü ß nicht immer her (components/UmlautBar.tsx) */}
-        {task.blanks > 0 && !task.gapOptions && !final && !en && <UmlautBar target={umlaut} className="mt-3" />}
+        {task.blanks > 0 && !task.gapOptions && !final && !en && !task.zahlen && <UmlautBar target={umlaut} className="mt-3" />}
+        {task.blanks > 0 && !task.gapOptions && !final && task.zahlen && (
+          <p className="mt-3 text-[13px] text-ink-3">
+            {task.prompt.includes("^") ? (
+              <>
+                Hochzahlen schreibst du mit ^: x^5, das wird zu <MathText text="x^5" />.
+              </>
+            ) : (
+              <>
+                Brüche schreibst du so: 3/4, das wird zu <MathText text="3/4" />. Kommazahlen mit Beistrich: 0,75.
+              </>
+            )}
+          </p>
+        )}
         {en?.maxWords && !final && (
           <p className={`mt-3 text-[14px] ${zuLang.length ? "font-semibold text-amber" : "text-ink-3"}`} aria-live="polite">
             {zuLang.length
