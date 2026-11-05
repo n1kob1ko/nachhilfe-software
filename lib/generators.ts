@@ -33,6 +33,7 @@ import { expectedFixes } from "./fix-text";
 import { figurAufgabe, figurFaehigkeit, type FigurFormat } from "./generators-figur";
 import { rechenwegTask, sachaufgabeTask } from "./generators-mathe";
 import { MATHE_MATURA, istMatheMatura, matheMaturaFuerKategorie, matheMaturaFuerTyp } from "./mathe-matura";
+import { MATHE_GRUNDLAGEN } from "./mathe-grundlagen";
 import { MATHE_RECHNUNGEN } from "./mathe-rechnungen";
 import { istMaturaKategorie, pruefeMatura } from "./matura-formate";
 import { textaufgabeTask } from "./textaufgaben";
@@ -59,6 +60,8 @@ type Gen = (rng: Rng, difficulty: Difficulty) => TaskDraft;
 const GEN: Record<string, Gen> = {
   // Mathematik: Rechnungen mit Schulbuch-Zahlen (lib/mathe-rechnungen.ts); Textgleichungen sind Textaufgaben
   ...MATHE_RECHNUNGEN,
+  // Grundlagen ohne KI: Zahlen, Maße, Terme, Körper, Prozent, … (lib/mathe-grundlagen.ts)
+  ...MATHE_GRUNDLAGEN,
   "mathe.gleichungen.text": (rng, diff) => textaufgabeTask("mathe.gleichungen.text", diff, rng)!,
   // Oberstufe: Aufgaben in den Antwortformaten der AHS-Matura (lib/mathe-matura.ts)
   ...MATHE_MATURA,
@@ -850,7 +853,8 @@ function mitBild(t: TaskDraft): Pick<TaskDraft["data"], "figure"> {
 }
 
 function toCloze(t: TaskDraft): TaskDraft {
-  if (t.answer.blanks || !t.answer.accepted) return t;
+  // Terme werden als Polynom verglichen, eine Lücke vergleicht nur den Text
+  if (t.answer.blanks || !t.answer.accepted || t.answer.term) return t;
   return {
     ...t,
     type: "cloze",
