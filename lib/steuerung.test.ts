@@ -290,7 +290,8 @@ test("two units at once: the proposal and the task belong to the unit whose stud
 
 test("C only when A and B have nothing, and only if the KI may: off, manual mode, budget, the student's limit", async () => {
   const s = await setup();
-  const RUNDEN = "mathe.zahlen.runden";
+  // eine Fähigkeit ohne eingebaute Aufgaben (Runden hat seit den Mathe-Grundlagen welche)
+  const RUNDEN = "mathe.zahlen.rechengesetze";
   const sid = s.schueler("Tim Runden");
   const unit = s.units.startUnit(s.teacher.id, sid, { subject: "Mathematik" }).unit;
   s.c.waehleFaehigkeit(unit.id, RUNDEN);

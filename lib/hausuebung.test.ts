@@ -17,7 +17,8 @@ for (const k of [
 
 const DIV = "mathe.brueche.dividieren";
 const KUE = "mathe.brueche.kuerzen";
-const RUNDEN = "mathe.zahlen.runden";
+// eine Fähigkeit ohne eingebaute Aufgaben (Runden hat seit den Mathe-Grundlagen welche)
+const RUNDEN = "mathe.zahlen.rechengesetze";
 const USAGE = { input: 2_000, output: 1_500, cacheWrite: 0, cacheRead: 0, reasoning: 0 };
 let nr = 0;
 
@@ -302,7 +303,7 @@ test("KI only when library and generator have nothing: on tap with cost (0 € b
   assert.equal(hw.unit_id, unit.id);
   assert.equal(hw.due_date, faellig);
   assert.equal(hw.student_id, sid);
-  assert.match(hw.description, /^2 Aufgaben \(Runden und Überschlagen 2\), ca\. 5 min – Zuerst die Regel im Heft lesen\.$/);
+  assert.match(hw.description, /^2 Aufgaben \(Rechengesetze: Vertauschen, Verbinden und Verteilen 2\), ca\. 5 min – Zuerst die Regel im Heft lesen\.$/);
   const asg = s.repo.getAssignment(hw.assignment_id)!;
   assert.equal(asg.worksheet_id, out.worksheetId);
   assert.equal(asg.unit_id, null, "answers at home do not count as this unit");
@@ -318,7 +319,7 @@ test("KI only when library and generator have nothing: on tap with cost (0 € b
   // Abschluss and documentation
   const lesson = s.repo.getLessonForUnit(unit.id)!;
   const zeile = s.ab.karteDerEinheit(unit.id, lesson).gemacht.find((z) => z.von === "hausuebung");
-  assert.match(zeile!.text, /^Hausübung: 2 Aufgaben \(Runden und Überschlagen 2\), ca\. 5 min, fällig /);
+  assert.match(zeile!.text, /^Hausübung: 2 Aufgaben \(Rechengesetze: Vertauschen, Verbinden und Verteilen 2\), ca\. 5 min, fällig /);
   assert.ok(!s.ab.karteDerEinheit(unit.id, lesson).naechstes.some((z) => z.text.startsWith("Hausübung")), "not twice under „Nächstes Mal“");
   assert.equal(lesson.homework_note, zeile!.text);
   assert.equal(s.hu.hausuebungDerEinheit(unit.id)!.status, "freigegeben");

@@ -6,6 +6,7 @@ import { checkMemorize, mistakeLabel } from "./memorize";
 import type { PartSolution, PartView, ResultForm } from "./math-check";
 import { gradeMathTask } from "./math-task";
 import { pruefeVokabel, type VokabelSpec } from "./vokabeln-pruefen";
+import { gleicheSchreibung, pruefeTerm, type TermSpec } from "./term-check";
 import { pruefeEnglischAuswahl, pruefeEnglischLuecken, pruefeRichtigFalsch } from "./englisch-matura-pruefen";
 
 export type AnswerSpec = {
@@ -22,6 +23,11 @@ export type AnswerSpec = {
   accepted?: string[];
   /** value = numerically equal (fractions, decimals); exact = case sensitive; text = case insensitive. */
   mode?: "value" | "exact" | "text";
+  /**
+   * Terme (lib/term-check.ts): gleich als Polynom (2x + 7y = 7y + 2x) und in der verlangten Form; die abgeschriebene
+   * Angabe ist also nicht „zusammengefasst“. Gilt für `accepted`.
+   */
+  term?: TermSpec;
   /** English: a contraction counts the same as its long form (doesn't = does not), lib/englisch-kurzformen.ts. */
   contractions?: boolean;
   /**
@@ -232,6 +238,8 @@ export function parseNumber(raw: string): number | null {
     return Number(frac[1].replace(",", ".")) / den;
   }
   const cleaned = s.replace(/\s/g, "").replace(/%$/, "").replace(/€$/, "");
+  // German thousands as in a school book: 3.000, 12.500, 1.250.000 (like lib/math-expr.ts); 0.125 stays a decimal
+  if (/^-?[1-9]\d{0,2}(?:\.\d{3})+(?:,\d+)?$/.test(cleaned)) return Number(cleaned.replace(/\./g, "").replace(",", "."));
   if (/^-?\d+(?:[.,]\d+)?$/.test(cleaned)) return Number(cleaned.replace(",", "."));
   const eq = s.match(/^[a-z]\s*=\s*(.+)$/i);
   if (eq) return parseNumber(eq[1]);
@@ -471,6 +479,7 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
           : `${wrong.length} von ${a.blanks.length} Lücken sind noch falsch (Lücke ${wrong.map((i) => i + 1).join(", ")}).`,
     };
   }
+  if (a.term && a.accepted?.length) return checkTerm(task, given, a.term);
   if (a.accepted && a.accepted.length > 0) {
     const correct = a.accepted.some((exp) => sameAnswer(given, exp, a.mode ?? "text", a.contractions, a.satzzeichen));
     if (correct && kuerzen && nichtGekuerzt(given)) return NICHT_GEKUERZT;
@@ -494,6 +503,21 @@ function verlangtGekuerzt(task: Pick<TaskDraft, "answer"> & { prompt?: string })
 }
 
 const ggT = (x: number, y: number): number => (y === 0 ? x : ggT(y, x % y));
+
+/** Ein Term als Antwort: gleich und in der Form, die die Aufgabe verlangt; sonst sagt das Feedback, was fehlt. */
+function checkTerm(task: Pick<TaskDraft, "answer" | "errorMap">, given: string, spec: TermSpec): CheckResult {
+  const urteile = (task.answer.accepted ?? []).map((exp) => pruefeTerm(given, exp, spec));
+  if (urteile.some((u) => u.gleich && u.form)) return { correct: true, errorLabel: null, feedback: "Richtig!" };
+  // ein typischer Fehler mit anderem Wert: gleich viel wert; einer mit dem richtigen Wert (nur nicht fertig): gleich geschrieben
+  const richtig = task.answer.accepted?.[0] ?? "";
+  const label = labelFor(task, given, (g, e) => (pruefeTerm(e, richtig, spec).gleich ? gleicheSchreibung(g, e, spec) : pruefeTerm(g, e, spec).gleich || g.trim() === e.trim()));
+  if (urteile.some((u) => u.gleich)) {
+    const was = spec.form === "faktorisiert" ? "Der Term ist gleich viel wert, aber noch nicht fertig herausgehoben: schreib ihn als ein Produkt, und in der Klammer darf kein gemeinsamer Faktor mehr stecken." : "Der Term ist gleich viel wert, aber noch nicht fertig: löse alle Klammern auf und fasse gleichartige Glieder zusammen.";
+    return { correct: false, errorLabel: label ?? "Noch nicht fertig vereinfacht", errorType: "rechenfehler", feedback: was };
+  }
+  if (!urteile.some((u) => u.lesbar) && given.trim()) return { correct: false, errorLabel: label, feedback: `Den Term kann ich nicht lesen. Schreib ihn zum Beispiel so: 3x^2 + 2xy − 5.` };
+  return { correct: false, errorLabel: label, feedback: label ? `Leider nicht richtig: ${label}.` : "Leider nicht richtig." };
+}
 
 /** Ein Bruch in der Antwort, der sich noch kürzen lässt: 14/48, 2 3/6. Dezimalzahlen und ganze Zahlen zählen nicht. */
 export function nichtGekuerzt(given: string): boolean {

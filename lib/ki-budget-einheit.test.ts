@@ -16,7 +16,8 @@ for (const k of [
   delete process.env[k];
 
 const DIV = "mathe.brueche.dividieren";
-const RUNDEN = "mathe.zahlen.runden";
+// eine Fähigkeit ohne eingebaute Aufgaben (Runden hat seit den Mathe-Grundlagen welche)
+const RUNDEN = "mathe.zahlen.rechengesetze";
 const USAGE = { input: 2_000, output: 1_500, cacheWrite: 0, cacheRead: 0, reasoning: 0 };
 
 /** eine Aufgabe, wie die KI sie bei „neue_aufgabe“ liefert */

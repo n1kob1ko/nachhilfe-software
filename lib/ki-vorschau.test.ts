@@ -19,7 +19,8 @@ for (const k of [
   delete process.env[k];
 
 /** ohne eigenen Generator: hier schreibt die KI */
-const RUNDEN = "mathe.zahlen.runden";
+// eine Fähigkeit ohne eingebaute Aufgaben (Runden hat seit den Mathe-Grundlagen welche)
+const RUNDEN = "mathe.zahlen.rechengesetze";
 const ROEMISCH = "mathe.zahlen.roemisch";
 /** mit Generator: hier nie die KI */
 const KUERZEN = "mathe.brueche.kuerzen";
@@ -196,7 +197,7 @@ test("Diagnose mit KI: das ganze Blatt wartet auf die Vorschau (die neuen markie
   const s = await setup();
   s.kiAn((req) => {
     // one task per asked skill, in the asked difficulty
-    const m = [...JSON.stringify(req.content).matchAll(/mathe\.zahlen\.(runden|roemisch)/g)].map((x) => x[0]);
+    const m = [...JSON.stringify(req.content).matchAll(/mathe\.zahlen\.(rechengesetze|roemisch)/g)].map((x) => x[0]);
     return { tasks: [...new Set(m)].map((id, i) => kiAufgabe(`Neue Aufgabe ${i + 1} zu ${id}`, String(i + 1), id)) };
   });
   const sid = s.schueler("Lena Diagnos");
@@ -212,7 +213,7 @@ test("Diagnose mit KI: das ganze Blatt wartet auf die Vorschau (die neuen markie
   const reihe = s.nb.vorschauAufgaben(n);
   const plan = s.d.planDiagnosis(input.skillIds);
   assert.deepEqual(reihe.map((x) => x.t.skillId), plan.map((p) => p.skillId), "in the order of the diagnosis (easy first)");
-  assert.deepEqual(reihe.filter((x) => x.neu).map((x) => x.t.skillId).sort(), [ROEMISCH, RUNDEN]);
+  assert.deepEqual(reihe.filter((x) => x.neu).map((x) => x.t.skillId).sort(), [ROEMISCH, RUNDEN].sort());
   const call = s.db().prepare("SELECT student_id, trigger FROM ai_calls WHERE id = ?").get(n.callId);
   assert.deepEqual(call, { student_id: sid, trigger: "diagnose" });
 

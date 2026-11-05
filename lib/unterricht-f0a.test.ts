@@ -21,7 +21,8 @@ for (const k of [
 const DIV = "mathe.brueche.dividieren";
 const MUL = "mathe.brueche.multiplizieren";
 const KUE = "mathe.brueche.kuerzen";
-const RUNDEN = "mathe.zahlen.runden";
+// eine Fähigkeit ohne eingebaute Aufgaben (Runden hat seit den Mathe-Grundlagen welche)
+const RUNDEN = "mathe.zahlen.rechengesetze";
 const USAGE = { input: 2_000, output: 1_500, cacheWrite: 0, cacheRead: 0, reasoning: 0 };
 
 /** eine Aufgabe, wie die KI sie bei „neue_aufgabe“ liefert */
@@ -348,7 +349,7 @@ test("„Schwerere Aufgaben“ without tasks without KI: „Schwerere Aufgaben e
   assert.equal(log.length, 1);
   assert.equal(log[0].inhalt.quelleAufgaben, "C");
   assert.equal(log[0].inhalt.stufe, b.ziel.level);
-  assert.match(s.k.angepasstZeile(s.k.knoepfeDerEinheit(unit.id))!, /schwerere Aufgaben \(Runden/);
+  assert.match(s.k.angepasstZeile(s.k.knoepfeDerEinheit(unit.id))!, /schwerere Aufgaben \(Rechengesetze/);
   // sent once: a second tap does not send again; a new tap on the button asks anew (a new round)
   assert.ok("fehler" in (await s.k.sendeSchwererKi(unit.id, ueben, n.id, s.teacher.id)));
   const nochmal = s.k.schwererVorschau(unit.id, ueben);
