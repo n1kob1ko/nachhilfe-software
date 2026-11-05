@@ -17,6 +17,7 @@ export function DeckFrame({
   onStelle,
   onBereit,
   senden,
+  nurFolgen = false,
 }: {
   src: string;
   deckOrigin: string | null;
@@ -26,12 +27,21 @@ export function DeckFrame({
   onStelle?: (s: Stelle, folien: number | null) => void;
   onBereit?: (folien: number | null) => void;
   senden?: React.RefObject<((m: object) => void) | null>;
+  /**
+   * The student device: the deck only follows `ziel`. If it moves anywhere else on its own (a tap or key
+   * that got through, an auto-advancing slide), it is sent straight back, so the teacher's laptop stays in charge.
+   */
+  nurFolgen?: boolean;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   // where the deck last said it is: sending that back would only make it jump
   const gemeldet = useRef<Stelle | null>(null);
   const soll = useRef(ziel);
   const cb = useRef({ onStelle, onBereit });
+  const folgen = useRef(nurFolgen);
+  folgen.current = nurFolgen;
+  // when the deck was last sent back: a deck that cannot reach the place must not be sent back in a loop
+  const zurueck = useRef(0);
   useEffect(() => {
     cb.current = { onStelle, onBereit };
   });
@@ -51,6 +61,11 @@ export function DeckFrame({
       } else {
         gemeldet.current = { folie: m.folie, schritt: m.schritt };
         cb.current.onStelle?.({ folie: m.folie, schritt: m.schritt }, m.folien);
+        const z = soll.current;
+        if (folgen.current && (m.folie !== z.folie || (z.schritt !== null && m.schritt !== z.schritt)) && Date.now() - zurueck.current > 400) {
+          zurueck.current = Date.now();
+          post(geheZu(z));
+        }
       }
     };
     window.addEventListener("message", hoer);
@@ -67,5 +82,5 @@ export function DeckFrame({
     frame.current?.contentWindow?.postMessage(geheZu(ziel), "*");
   }, [ziel.folie, ziel.schritt]);
 
-  return <iframe ref={frame} src={src} title={title} sandbox="allow-scripts" referrerPolicy="no-referrer" className="block h-full w-full border-0" />;
+  return <iframe ref={frame} src={src} title={title} sandbox="allow-scripts" referrerPolicy="no-referrer" tabIndex={nurFolgen ? -1 : undefined} className="block h-full w-full border-0" />;
 }
