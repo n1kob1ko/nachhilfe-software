@@ -1,10 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { proxyEntscheidung } from "@/lib/praesentation-host";
+import { umleitungZurApp } from "@/lib/alte-adresse";
 
 // Optimistic check only: the real session check happens in lib/auth.ts.
 // Before it: the presentation address answers only with deck files, the app's address never with them
 // (lib/praesentation-host.ts, docs/praesentation-format.md).
 export function proxy(request: NextRequest) {
+  // the old *.up.railway.app address: on to PUBLIC_URL, there presentations may be shown (lib/alte-adresse.ts)
+  const ziel = umleitungZurApp({ host: request.headers.get("host"), pfad: request.nextUrl.pathname, suche: request.nextUrl.search });
+  if (ziel) return NextResponse.redirect(ziel, 307);
   const e = proxyEntscheidung({
     host: request.headers.get("host"),
     forwardedHost: request.headers.get("x-forwarded-host"),
@@ -28,5 +32,7 @@ export const config = {
     "/((?!login|health|lernen|geraet|mitmachen|material/|feedback/|excalidraw-assets|_next/static|_next/image|favicon.ico|icon|.*\\.(?:png|svg|ico|webmanifest)$).*)",
     // and every request without a teacher session, so the presentation address (where that cookie never is) answers nothing but deck files
     { source: "/(.*)", missing: [{ type: "cookie", key: "lernheft_session" }] },
+    // and everything on the old Railway address, so it can send it on to PUBLIC_URL
+    { source: "/(.*)", has: [{ type: "host", value: ".*\\.up\\.railway\\.app" }] },
   ],
 };
