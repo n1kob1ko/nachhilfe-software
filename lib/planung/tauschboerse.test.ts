@@ -207,3 +207,34 @@ test("die Prüfung des Wochenplans: passt der Tausch nicht, wird er nicht angebo
   assert.equal(r.ok ? "" : r.fehler, "Zu dieser Zeit ist schon ein Termin eingetragen.");
   assert.equal(planung.getGeplanteEinheit(pa)!.weekday, 2, "nichts bewegt");
 });
+
+test("Audit: eine Zeit, in die der Tausch nicht passt, wird gar nicht erst angeboten; der Schüler sieht den Stand, die Verwaltung das Angebot", async () => {
+  const { tb, niko, thomas, schueler, platz } = await setup();
+  const anna = schueler("Anna Beispiel");
+  const ben = schueler("Ben Muster");
+  const cleo = schueler("Cleo Probe");
+  const pa = platz(anna, 2, 840); // Di 14:00–15:40
+  platz(ben, 2, 940, { dauer: 50 }); // Di 15:40–16:30
+  platz(anna, 2, 1000, { teacher: thomas.id, room: null }); // Anna Di 16:40 bei Thomas: ihre 100 Minuten passen nicht in Bens 50-Minuten-Lücke
+  const sichtAnna = tb.boerseFuerSchueler(anna, JETZT);
+  assert.equal(sichtAnna.anbietbar.find((x) => x.platzId === pa), undefined, "kein Tauschpartner → kein „Tauschen“");
+
+  // „jede andere Zeit“ geht trotzdem: das Angebot bleibt, der Stand sagt, dass derzeit niemand tauschen kann
+  assert.ok(tb.bieteAn(anna, { platzId: pa, passende: "alle" }, JETZT).ok);
+  assert.deepEqual(tb.boerseFuerSchueler(anna, JETZT).eigene.map((e) => [e.passende, e.moeglich]), [[null, 0]]);
+  const offene = tb.offeneAngeboteFuerVerwaltung(JETZT);
+  assert.equal(offene.length, 1);
+  assert.equal(offene[0].studentName, "Anna Beispiel");
+  assert.equal(offene[0].lehrerName, niko.name);
+  assert.equal(offene[0].label, "Di 13.10. 14:00–15:40");
+  assert.equal(offene[0].passende, null);
+  assert.equal(offene[0].moeglich, 0);
+  assert.equal(offene[0].seit, new Date().toISOString().slice(0, 10), "Datum des Angebots (echte Uhr)");
+
+  // sobald ein passender Termin dazukommt, zählt er mit
+  platz(cleo, 5, 900); // Fr 15:00
+  assert.equal(tb.boerseFuerSchueler(anna, JETZT).eigene[0].moeglich, 1);
+  assert.equal(tb.offeneAngeboteFuerVerwaltung(JETZT)[0].moeglich, 1);
+  // und Cleo sieht das Angebot nur mit dem Freitag, nicht mit dem Dienstag
+  assert.deepEqual(tb.boerseFuerSchueler(cleo, JETZT).passend.map((p) => p.meins), ["Fr 16.10. 15:00–16:40"]);
+});

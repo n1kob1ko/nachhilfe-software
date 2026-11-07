@@ -83,9 +83,18 @@ function gueltigerPlatz(a: AngebotZeile, now: Date): GeplanteEinheitZeile | null
   return platz;
 }
 
-/** Die anderen Termine desselben Lehrers, die zu einem Platz passen könnten (für die Auswahl beim Anbieten). */
+/** Besteht der Tausch zweier Plätze die Prüfung des Wochenplans (Lehrer, Schüler, Raum, gesperrt), ohne zu schreiben? */
+function tauschMoeglich(platz: GeplanteEinheitZeile, partner: GeplanteEinheitZeile): boolean {
+  return legePlaetzeNeu(neueLagen(platz, lageVon(partner), partner), { nurPruefen: true }).ok;
+}
+
+/**
+ * Die anderen Termine desselben Lehrers, mit denen ein Platz wirklich getauscht werden könnte (für die Auswahl beim
+ * Anbieten). Audit 2026-11-07: vorher stand hier jede Zeit desselben Lehrers, auch eine, bei der der Tausch an der
+ * Prüfung scheitert (90 gegen 100 Minuten überschneiden sich, Raum belegt). Der Schüler bot dann ins Leere an.
+ */
 function kandidaten(platz: GeplanteEinheitZeile, alle: GeplanteEinheitZeile[], now: Date): GeplanteEinheitZeile[] {
-  return alle.filter((p) => tauschPartnerOk(platz, p, now));
+  return alle.filter((p) => tauschPartnerOk(platz, p, now) && tauschMoeglich(platz, p));
 }
 
 // ---------- anbieten, zurückziehen ----------
@@ -187,7 +196,14 @@ export type PassendesAngebot = {
   /** meine neue Zeit (mit meiner Dauer) */
   neu: string;
 };
-export type EigenesAngebot = { id: number; platzId: number; label: string; passende: string[] | null };
+export type EigenesAngebot = {
+  id: number;
+  platzId: number;
+  label: string;
+  passende: string[] | null;
+  /** wie viele Termine im Moment zu diesem Angebot passen würden; 0 = derzeit kann niemand tauschen */
+  moeglich: number;
+};
 export type Anbietbar = { platzId: number; kandidaten: Wahl[] };
 
 export type BoerseSicht = {
@@ -218,12 +234,13 @@ export function boerseFuerSchueler(studentId: number, now: Date = new Date()): B
         platzId: a.platz_id,
         label: lageLabel(angebotPlatz, angebotPlatz.geplante_dauer),
         passende: ids === null ? null : ids.map((id) => getGeplanteEinheit(id)).filter((p): p is GeplanteEinheitZeile => !!p).map((p) => lageLabel(p, angebotPlatz.geplante_dauer)),
+        moeglich: alle.filter((p) => passt(a, angebotPlatz, p, now) && tauschMoeglich(angebotPlatz, p)).length,
       });
       continue;
     }
     for (const mein of meine) {
       if (!passt(a, angebotPlatz, mein, now)) continue;
-      if (!legePlaetzeNeu(neueLagen(angebotPlatz, lageVon(mein), mein), { nurPruefen: true }).ok) continue;
+      if (!tauschMoeglich(angebotPlatz, mein)) continue;
       passend.push({ angebotId: a.id, platzId: mein.id, meins: lageLabel(mein, mein.geplante_dauer), neu: lageLabel(lageVon(angebotPlatz), mein.geplante_dauer) });
     }
   }
@@ -233,4 +250,48 @@ export function boerseFuerSchueler(studentId: number, now: Date = new Date()): B
     .map((z) => ({ platzId: z.id, kandidaten: kandidaten(z, alle, now).map((p) => ({ wert: String(p.id), label: lageLabel(p, z.geplante_dauer) })) }))
     .filter((x) => x.kandidaten.length > 0);
   return { passend, eigene, anbietbar };
+}
+
+// ---------- für die Verwaltung ----------
+
+export type OffenesAngebot = {
+  id: number;
+  studentId: number;
+  studentName: string;
+  lehrerName: string;
+  /** der angebotene Termin */
+  label: string;
+  /** die Zeiten, die dem Schüler stattdessen passen; null = jede andere Zeit desselben Lehrers */
+  passende: string[] | null;
+  /** wie viele Termine im Moment dazu passen würden */
+  moeglich: number;
+  seit: string;
+};
+
+/**
+ * Die offenen Angebote der Tauschbörse, mit Namen, für Planung (nur Verwaltung). Audit 2026-11-07: vorher sah die
+ * Verwaltung ein Angebot erst, wenn getauscht war; ein Angebot, zu dem nie jemand passt, blieb unsichtbar.
+ */
+export function offeneAngeboteFuerVerwaltung(now: Date = new Date()): OffenesAngebot[] {
+  const alle = tauschbarePlaetze(now);
+  const schueler = new Map((db().prepare("SELECT id, name FROM students").all() as { id: number; name: string }[]).map((r) => [r.id, r.name]));
+  const lehrer = new Map((db().prepare("SELECT id, name FROM teachers").all() as { id: number; name: string }[]).map((r) => [r.id, r.name]));
+  const offene = db().prepare("SELECT * FROM tauschangebote WHERE status = 'offen' ORDER BY id").all() as AngebotZeile[];
+  const out: OffenesAngebot[] = [];
+  for (const a of offene) {
+    const platz = gueltigerPlatz(a, now);
+    if (!platz) continue;
+    const ids = passendeIds(a);
+    out.push({
+      id: a.id,
+      studentId: a.student_id,
+      studentName: schueler.get(a.student_id) ?? "Schüler",
+      lehrerName: lehrer.get(platz.teacher_id) ?? "Lehrer",
+      label: lageLabel(platz, platz.geplante_dauer),
+      passende: ids === null ? null : ids.map((id) => getGeplanteEinheit(id)).filter((p): p is GeplanteEinheitZeile => !!p).map((p) => lageLabel(p, platz.geplante_dauer)),
+      moeglich: alle.filter((p) => passt(a, platz, p, now) && tauschMoeglich(platz, p)).length,
+      seit: a.created_at.slice(0, 10),
+    });
+  }
+  return out;
 }
