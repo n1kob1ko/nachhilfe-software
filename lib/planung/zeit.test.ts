@@ -12,6 +12,8 @@ import {
   alsQuellWochentag,
   auf10,
   ausQuellWochentag,
+  datumLabel,
+  datumLabelTeile,
   istDatum,
   labelMinuten,
   minutenLabel,
@@ -97,4 +99,11 @@ test("Datumsangaben werden geprüft, bevor sie in die Datenbank gehen", () => {
   assert.equal(istDatum(20261012), false);
   assert.equal(wochenLabel("2026-10-12"), "12. – 18. Oktober 2026");
   assert.equal(wochenLabel("2026-10-31"), "26. Oktober – 1. November 2026", "Wochen über den Monatswechsel");
+});
+
+test("Datumsbeschriftung „Mo 9.11.“ lässt sich in Wochentag und Datum trennen (Audit 2026-11-07: kein „undefined“ mehr)", () => {
+  assert.equal(datumLabel("2026-11-09"), "Mo 9.11.");
+  assert.deepEqual(datumLabelTeile("Mo 9.11."), ["Mo", "9.11."]);
+  assert.deepEqual(datumLabelTeile("Mo, 9. Nov."), ["Mo", "9. Nov."], "auch die alte Schreibweise");
+  assert.deepEqual(datumLabelTeile(""), ["", ""]);
 });

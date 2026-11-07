@@ -17,7 +17,7 @@ import { subjectTone } from "@/components/Calendar";
 import { startTag, tagesListe } from "@/lib/planung/ansicht";
 import type { UebersichtLehrer, UebersichtLuecke, UebersichtPlatz, UebersichtSchueler, UebersichtTage } from "@/lib/planung/uebersicht";
 import type { Verfuegbarkeit } from "@/lib/planung/verfuegbarkeit";
-import { minutenLabel, type Wochentag } from "@/lib/planung/zeit";
+import { datumLabelTeile, minutenLabel, type Wochentag } from "@/lib/planung/zeit";
 
 const LANGE_TAGE: Record<Wochentag, string> = { 1: "Montag", 2: "Dienstag", 3: "Mittwoch", 4: "Donnerstag", 5: "Freitag", 6: "Samstag", 7: "Sonntag" };
 
@@ -60,7 +60,7 @@ export function WochenplanTage({ tage, heute, lehrer, plaetze, schueler, luecken
       <div className="sticky top-0 z-20 -mx-4 bg-paper/95 px-4 py-2 backdrop-blur md:-mx-8 md:px-8" role="tablist" aria-label="Tag wählen">
         <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${tage.length}, minmax(0, 1fr))` }}>
           {tage.map((t) => {
-            const [kurz, datum] = t.label.split(", ");
+            const [kurz, datum] = datumLabelTeile(t.label);
             const anzahl = plaetze.filter((p) => p.weekday === t.tag).length;
             const aktiv = t.tag === tag;
             const istHeute = t.tag === heute;

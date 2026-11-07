@@ -14,7 +14,7 @@ import { datumLabel, datumLang, minutenLabel, tagAddieren, wienerDatum, wienerMi
 export type SchuelerTermin = {
   id: number;
   datum: string;
-  /** „Mo, 20.10.“ */
+  /** „Mo 20.10.“ (`datumLabel`; Teile mit `datumLabelTeile`) */
   label: string;
   /** „Mittwoch, 4. November“ */
   tagLang: string;

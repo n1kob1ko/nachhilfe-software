@@ -24,7 +24,7 @@ import { subjectTone } from "@/components/Calendar";
 import { anzeigeBereich } from "@/lib/planung/ansicht";
 import type { UebersichtLehrer, UebersichtLuecke, UebersichtPlatz, UebersichtSchueler, UebersichtTage } from "@/lib/planung/uebersicht";
 import type { Verfuegbarkeit } from "@/lib/planung/verfuegbarkeit";
-import { auf10, minutenLabel, type Wochentag } from "@/lib/planung/zeit";
+import { auf10, datumLabelTeile, minutenLabel, type Wochentag } from "@/lib/planung/zeit";
 
 /** Pixel je Minute — 0,8 px macht aus 100 Minuten 80 px Höhe. */
 export const MINUTEN_HOEHE = 0.8;
@@ -132,7 +132,7 @@ export function WochenplanGitter(props: Props) {
       <div className="grid" style={{ gridTemplateColumns: `${SPALTE_ZEIT}px repeat(${tage.length}, minmax(0, 1fr))` }}>
         <div className="sticky top-0 z-30 border-b border-line bg-surface" aria-hidden />
         {tage.map((t) => {
-          const [kurz, datum] = t.label.split(", ");
+          const [kurz, datum] = datumLabelTeile(t.label);
           const istHeute = t.tag === heute;
           return (
             <div key={t.tag} className={`sticky top-0 z-30 border-b border-l border-line px-2 py-2.5 text-center ${istHeute ? "bg-accent-wash" : "bg-surface"}`}>
