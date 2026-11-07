@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Images,
   ListOrdered,
+  NotebookPen,
   PenLine,
   Plus,
   Presentation,
@@ -51,6 +52,7 @@ import { AnpassenMenue, BeispieleBlock, EinfacherBlock, KnopfPanel } from "@/com
 import { AntwortKnoepfe, VorschlagKarte } from "@/components/cockpit/Steuerung";
 import { VorgabeKarte } from "@/components/cockpit/Vorgabe";
 import { KeinPaket } from "@/components/cockpit/Vorbereitung";
+import { aiEnabled } from "@/lib/ai/router";
 import { CopyLink } from "@/components/CopyLink";
 import { MinitestKarte } from "@/components/MinitestKarte";
 import { PraesentationSchritt } from "@/components/cockpit/PraesentationSchritt";
@@ -134,6 +136,7 @@ export function Unterricht({
   fehler,
   teacherId,
   werkzeugeOffen = false,
+  werkzeugeMehr = false,
   ausfuehrlich = null,
   folien = null,
   knopf = null,
@@ -143,6 +146,8 @@ export function Unterricht({
   fehler?: string;
   teacherId: number | null;
   werkzeugeOffen?: boolean;
+  /** „Mehr“ in den Werkzeugen steht offen (`&mehr=1`, z. B. von „Lernpaket wählen“) */
+  werkzeugeMehr?: boolean;
   /** nach „Ausführlicher erklären“: der Schritt, dessen Erklärung offen steht */
   ausfuehrlich?: number | null;
   /** nach „Folien ansehen“ (lib/praesentation-unterricht.ts): der Schritt, dessen Präsentation als Text offen steht */
@@ -250,12 +255,12 @@ export function Unterricht({
         </p>
       )}
       {werkzeugeOffen || ids.length === 0 ? (
-        <Werkzeuge c={c} unit={unit} student={student} liste={liste} teacherId={teacherId} ids={ids} aktuell={aktuell} />
+        <Werkzeuge c={c} unit={unit} student={student} liste={liste} teacherId={teacherId} ids={ids} aktuell={aktuell} mehrOffen={werkzeugeMehr || ids.length === 0} />
       ) : (
         <Link href={`/einheiten/${unit.id}?bereich=cockpit#werkzeuge`} className="panel flex min-h-[52px] flex-wrap items-center gap-x-2 px-4 py-2 sm:px-5" data-testid="werkzeuge-link">
           <Wrench size={18} className="text-ink-2" aria-hidden />
           <span className="text-[16px] font-semibold">Weitere Werkzeuge</span>
-          <span className="text-[13.5px] text-ink-3">{schreibFach(unit.subject) ? "Text schreiben, Übungen, Whiteboard, Arbeit fotografieren, Foto vom Stoff, Paket, Notiz …" : "Whiteboard, Übungen, Arbeit fotografieren, Foto vom Stoff, Paket, Überspringen, Notiz …"}</span>
+          <span className="text-[13.5px] text-ink-3">Whiteboard, Übungen, Arbeit fotografieren, Notiz und mehr</span>
         </Link>
       )}
     </div>
@@ -264,7 +269,7 @@ export function Unterricht({
 
 /** Eine Zeile: woher die Schritte kommen (Lernpaket oder Plan für heute), und ob das Paket noch ungeprüft ist. */
 function Woher({ c, unitId }: { c: CockpitDaten; unitId: number }) {
-  const werkzeuge = `/einheiten/${unitId}?bereich=cockpit#werkzeuge`;
+  const werkzeuge = `/einheiten/${unitId}?bereich=cockpit&mehr=1#lernpaket`;
   if (!c.paket && !c.plan.length) return null;
   const nachVorgabe = vorgabeDerEinheit(unitId)?.angewendet ?? false;
   return (
@@ -386,7 +391,7 @@ function ThemenZeile({ c, themen, unitId, aktuell }: { c: CockpitDaten; themen: 
         </ol>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13.5px] text-ink-2">
           {nachVorgabe ? <Pill tone="accent">Nach deiner Vorgabe</Pill> : <span>Plan aus den Daten, ohne KI</span>}
-          <Link href={`/einheiten/${unitId}?bereich=cockpit#werkzeuge`} className="inline-flex min-h-[44px] items-center font-medium text-accent hover:underline">
+          <Link href={`/einheiten/${unitId}?bereich=cockpit&mehr=1#lernpaket`} className="inline-flex min-h-[44px] items-center font-medium text-accent hover:underline">
             Lernpaket wählen
           </Link>
         </p>
@@ -772,7 +777,7 @@ function SchrittKarte({
       </div>
 
       {vorschlag && <VorschlagKarte a={vorschlag} unitId={unitId} schrittId={s.id} imSchritt />}
-      {nicht && <HilfeBlock hilfe={hilfe} unitId={unitId} werkzeuge={`/einheiten/${unitId}?bereich=cockpit#werkzeuge`} />}
+      {nicht && <HilfeBlock hilfe={hilfe} unitId={unitId} werkzeuge={`/einheiten/${unitId}?bereich=cockpit&mehr=1#werkzeuge`} />}
 
       {immer.length > 0 && (
         <div className="mt-4 grid gap-2" data-testid="angepasst">
@@ -855,8 +860,8 @@ function AufgabenMitLoesung({ s, fach, teacherId }: { s: LernpaketSchritt; fach:
 }
 
 /**
- * Was zum Schritt auf dem Schirm seltener gebraucht wird, unter „Weitere Werkzeuge“: Überspringen, wieder öffnen,
- * früher oder später, Aufgaben mit Lösung, die eigene Notiz.
+ * Was zum Schritt auf dem Schirm seltener gebraucht wird, unter „Weitere Werkzeuge › Mehr“: Überspringen, wieder
+ * öffnen, früher oder später, Aufgaben mit Lösung. Die eigene Notiz steht als große Kachel „Notiz“ (Audit 2026-11-07).
  */
 function SchrittWerkzeuge({ c, id, titel, unitId, ids, children }: { c: CockpitDaten; id: number; titel: string; unitId: number; ids: number[]; children?: React.ReactNode }) {
   const st = offenVon(c, id);
@@ -896,7 +901,6 @@ function SchrittWerkzeuge({ c, id, titel, unitId, ids, children }: { c: CockpitD
           </span>
         </div>
         {children}
-        <SchrittNotiz key={id} speichern={notizAction.bind(null, unitId, id)} initial={c.stand.notizen[id] ?? ""} />
       </div>
     </section>
   );
@@ -1067,7 +1071,7 @@ function PlanKarte({
         </p>
       )}
       {vorschlag && <VorschlagKarte a={vorschlag} unitId={unit.id} schrittId={s.id} imSchritt />}
-      {nicht && <HilfeBlock hilfe={hilfe} unitId={unit.id} werkzeuge={`/einheiten/${unit.id}?bereich=cockpit#werkzeuge`} />}
+      {nicht && <HilfeBlock hilfe={hilfe} unitId={unit.id} werkzeuge={`/einheiten/${unit.id}?bereich=cockpit&mehr=1#werkzeuge`} />}
       {eigen && <SchreibauftragStart start={eigen} laeuft={laeuft} />}
       {(blatt || zugewiesen || skill) && (
         <div className="mt-5 grid gap-2 border-t border-line pt-4" data-testid="plan-senden">
@@ -1219,18 +1223,20 @@ function Kachel({ href, icon, label, testid }: { href: string; icon: React.React
 
 /**
  * „Weitere Werkzeuge“ (`?bereich=cockpit`): alles, was früher im Cockpit und in den Bereichen Übungen und Fortschritt
- * neben dem Schritt stand. Nichts davon ist weg (niko, 25.10.2026: „Kein Feature wird entfernt“). Erst auf Tippen
- * gerechnet und gezeigt, damit der Unterricht schlank bleibt.
+ * neben dem Schritt stand. Nichts davon ist weg (niko, 25.10.2026: „Kein Feature wird entfernt“). Audit 2026-11-07:
+ * vier große Kacheln für das Häufigste (Whiteboard, Übungen und Ergebnisse, Arbeit fotografieren, Notiz zum Schritt;
+ * ohne Schritt statt der Notiz Foto vom Stoff), alles andere zugeklappt unter „Mehr“ (`&mehr=1` öffnet es, ohne Schritte
+ * steht es offen). Erst auf Tippen gerechnet und gezeigt, damit der Unterricht schlank bleibt.
  */
-function Werkzeuge({ c, unit, student, liste, teacherId, ids, aktuell }: { c: CockpitDaten; unit: UnitView; student: repo.Student; liste: Anpassung[]; teacherId: number | null; ids: number[]; aktuell: number | null }) {
+function Werkzeuge({ c, unit, student, liste, teacherId, ids, aktuell, mehrOffen }: { c: CockpitDaten; unit: UnitView; student: repo.Student; liste: Anpassung[]; teacherId: number | null; ids: number[]; aktuell: number | null; mehrOffen: boolean }) {
   const name = first(student.name);
   const basis = `/einheiten/${unit.id}`;
   const wahl = paketWahl(student.id, { fach: unit.subject, ausser: unit.id });
   const vorschlag = c.paket ? wahl.vorschlaege.find((v) => v.paket.id === c.paket!.id) : undefined;
-  // „Stunden automatisch vorbereiten“ (lib/vorbereitung-auto.ts): fehlt ein geprüftes Paket, „Mit KI entwerfen“ ausgefüllt, nur auf Klick
+  // „Stunden automatisch vorbereiten“ (lib/vorbereitung-auto.ts): fehlt ein geprüftes Paket, „Mit KI entwerfen“ ausgefüllt, nur auf Klick; mit KI aus kein Knopf
   const auto = c.paket ? null : autoFuerEinheit(unit);
   const fehlt: Signal | null = c.stand.automatisch?.luecke ?? (auto?.art === "kein_paket" ? auto.signal : null);
-  const ki = fehlt ? kiVorgabe(fehlt, student, { fach: unit.subject, dauer: platzFuerEinheit(unit)?.geplante_dauer ?? 50, gibtSkill: (id) => Boolean(repo.getSkill(id)) }) : null;
+  const ki = fehlt && aiEnabled() ? kiVorgabe(fehlt, student, { fach: unit.subject, dauer: platzFuerEinheit(unit)?.geplante_dauer ?? 50, gibtSkill: (id) => Boolean(repo.getSkill(id)) }) : null;
   const kosten = ki ? kostenSchaetzung().text : "";
   // Minitest zum Start (lib/minitest.ts), wie im Bereich Übungen: solange noch nichts beantwortet ist
   const geraet = studentDevice(unit);
@@ -1242,6 +1248,15 @@ function Werkzeuge({ c, unit, student, liste, teacherId, ids, aktuell }: { c: Co
   const schritt = c.paket ? c.aktuell : null;
   const planSchritt = c.paket ? null : c.planAktuell;
   const quelle: PlanQuelle | null = planSchritt ? (c.planQuellen.get(planSchritt.id) ?? null) : null;
+  // der Schritt, zu dem die Notiz gehört: der Schritt auf dem Schirm
+  const notizSchritt = schritt && aktuell === schritt.id ? schritt : planSchritt;
+  const gross = (href: string, I: typeof Camera, label: string, testid?: string) => (
+    <Link href={href} className="flex min-h-[64px] items-center gap-2.5 rounded-xl border border-line bg-surface px-3 text-[15px] font-semibold hover:bg-panel" data-testid={testid}>
+      <I size={20} className="shrink-0 text-accent" aria-hidden /> {label}
+    </Link>
+  );
+  // unter „Mehr“ die übrigen Kacheln in der Reihenfolge des Fachs; was oben groß steht, nicht noch einmal
+  const obenGross = new Set<WerkzeugKachel>(["tafel", "uebungen", "papier", ...(notizSchritt ? [] : (["foto"] as WerkzeugKachel[]))]);
   return (
     <section id="werkzeuge" className="panel scroll-mt-4 px-4 sm:px-5" aria-label="Weitere Werkzeuge" data-testid="werkzeuge">
       <div className="flex min-h-[52px] items-center gap-2">
@@ -1253,93 +1268,121 @@ function Werkzeuge({ c, unit, student, liste, teacherId, ids, aktuell }: { c: Co
           </Link>
         )}
       </div>
-      <div className="grid gap-6 pt-2 pb-5">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {/* nach Häufigkeit (Generalprobe 2026-11-05): in Deutsch und Englisch zuerst Text schreiben, in Mathe das Whiteboard */}
-          {werkzeugReihenfolge(unit.subject).map((k) =>
-            k === "text" ? (
-              <Kachel key={k} href={`${basis}/text`} icon={icon(PenLine)} label="Text schreiben" testid="werkzeug-text" />
-            ) : k === "uebungen" ? (
-              <Kachel key={k} href={`${basis}?bereich=uebungen`} icon={icon(BookOpenCheck)} label="Übungen und Ergebnisse" testid="werkzeug-uebungen" />
-            ) : k === "tafel" ? (
-              <Kachel key={k} href={`/tafel/${unit.id}`} icon={icon(Presentation)} label="Whiteboard" />
-            ) : k === "papier" ? (
-              // auf Papier gelöst, gesendet oder gedruckt: fotografieren und wie am Gerät bewerten (lib/papier-einheit.ts)
-              <Kachel key={k} href={`${basis}/papier`} icon={icon(ScanLine)} label="Arbeit fotografieren" testid="werkzeug-papier" />
-            ) : k === "foto" ? (
-              <Kachel key={k} href={`${basis}/foto`} icon={icon(Camera)} label="Foto vom Stoff" testid="foto-vom-stoff" />
-            ) : k === "neu" ? (
-              <Kachel key={k} href={`/uebungen/neu?schueler=${student.id}`} icon={icon(Plus)} label="Neue Übung erstellen" />
-            ) : k === "fortschritt" ? (
-              <Kachel key={k} href={`${basis}?bereich=fortschritt`} icon={icon(ChartNoAxesColumn)} label="Fortschritt" />
-            ) : k === "bild" ? (
-              <Kachel key={k} href={`${basis}/bildgeschichte`} icon={icon(Images)} label="Bildgeschichte erstellen" testid="bildgeschichte-erstellen" />
-            ) : (
-              // Oberstufe: a Schreibauftrag of the SRDP on a whole Textbeilage with line numbers
-              oberstufe && <Kachel key={k} href={`${basis}/schreibauftrag`} icon={icon(BookOpenText)} label="Schreibauftrag" testid="schreibauftrag-erstellen" />
-            ),
+      <div className="grid gap-4 pt-2 pb-5">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4" data-testid="werkzeuge-gross">
+          {gross(`/tafel/${unit.id}`, Presentation, "Whiteboard", "werkzeug-tafel")}
+          {gross(`${basis}?bereich=uebungen`, BookOpenCheck, "Übungen und Ergebnisse", "werkzeug-uebungen")}
+          {/* auf Papier gelöst, gesendet oder gedruckt: fotografieren und wie am Gerät bewerten (lib/papier-einheit.ts) */}
+          {gross(`${basis}/papier`, ScanLine, "Arbeit fotografieren", "werkzeug-papier")}
+          {notizSchritt ? (
+            <details className="group/notiz open:col-span-full" data-testid="werkzeug-notiz">
+              <summary className="flex min-h-[64px] cursor-pointer list-none items-center gap-2.5 rounded-xl border border-line bg-surface px-3 text-[15px] font-semibold hover:bg-panel [&::-webkit-details-marker]:hidden">
+                <NotebookPen size={20} className="shrink-0 text-accent" aria-hidden /> Notiz
+                {c.stand.notizen[notizSchritt.id] && <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full bg-accent" role="img" aria-label="Notiz vorhanden" />}
+              </summary>
+              <div className="pt-2">
+                <SchrittNotiz key={notizSchritt.id} speichern={notizAction.bind(null, unit.id, notizSchritt.id)} initial={c.stand.notizen[notizSchritt.id] ?? ""} />
+              </div>
+            </details>
+          ) : (
+            gross(`${basis}/foto`, Camera, "Foto vom Stoff", "foto-vom-stoff")
           )}
         </div>
 
-        {schritt && aktuell === schritt.id && (
-          <SchrittWerkzeuge c={c} id={schritt.id} titel={schritt.titel} unitId={unit.id} ids={ids}>
-            {schritt.aufgaben.length > 0 && <AufgabenMitLoesung s={schritt} fach={c.paket!.fach} teacherId={teacherId} />}
-          </SchrittWerkzeuge>
-        )}
-        {planSchritt && (
-          <SchrittWerkzeuge c={c} id={planSchritt.id} titel={planSchritt.titel} unitId={unit.id} ids={ids}>
-            {/* a step of an embedded package: its tasks with solutions, like in the package */}
-            {quelle && quelle.schritt.aufgaben.length > 0 && <AufgabenMitLoesung s={quelle.schritt} fach={quelle.paket.fach} teacherId={teacherId} />}
-          </SchrittWerkzeuge>
-        )}
+        <details className="group" open={mehrOffen} data-testid="werkzeuge-mehr">
+          <summary className="inline-flex min-h-[44px] cursor-pointer list-none flex-wrap items-center gap-x-2 text-[15px] font-semibold text-accent [&::-webkit-details-marker]:hidden">
+            Mehr <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden />
+            <span className="text-[13.5px] font-normal text-ink-3 group-open:hidden">
+              {[notizSchritt ? "Foto vom Stoff" : null, "Neue Übung", "Fortschritt", "Text schreiben", notizSchritt ? "Schritt überspringen" : null, stoff || gedruckt ? "Minitest" : null, "Lernpaket", "Einheit abbrechen"].filter(Boolean).join(", ")} …
+            </span>
+          </summary>
+          <div className="grid gap-6 pt-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {/* nach Häufigkeit (Generalprobe 2026-11-05): in Deutsch und Englisch zuerst Text schreiben */}
+              {werkzeugReihenfolge(unit.subject)
+                .filter((k) => !obenGross.has(k))
+                .map((k) =>
+                  k === "text" ? (
+                    <Kachel key={k} href={`${basis}/text`} icon={icon(PenLine)} label="Text schreiben" testid="werkzeug-text" />
+                  ) : k === "foto" ? (
+                    <Kachel key={k} href={`${basis}/foto`} icon={icon(Camera)} label="Foto vom Stoff" testid="foto-vom-stoff" />
+                  ) : k === "neu" ? (
+                    <Kachel key={k} href={`/uebungen/neu?schueler=${student.id}`} icon={icon(Plus)} label="Neue Übung erstellen" />
+                  ) : k === "fortschritt" ? (
+                    <Kachel key={k} href={`${basis}?bereich=fortschritt`} icon={icon(ChartNoAxesColumn)} label="Fortschritt" />
+                  ) : k === "bild" ? (
+                    <Kachel key={k} href={`${basis}/bildgeschichte`} icon={icon(Images)} label="Bildgeschichte erstellen" testid="bildgeschichte-erstellen" />
+                  ) : k === "schreibauftrag" ? (
+                    // Oberstufe: a Schreibauftrag of the SRDP on a whole Textbeilage with line numbers
+                    oberstufe && <Kachel key={k} href={`${basis}/schreibauftrag`} icon={icon(BookOpenText)} label="Schreibauftrag" testid="schreibauftrag-erstellen" />
+                  ) : null,
+                )}
+            </div>
 
-        {(stoff || gedruckt) && <MinitestKarte unitId={unit.id} name={name} geraet={geraet} stoff={stoff} gedruckt={gedruckt} />}
-
-        {c.paket ? (
-          <>
-            <PaketKopf c={c} paket={c.paket} warum={vorschlag?.warum ?? null} entfernen={c.stand.automatisch ? waehlePaketAction.bind(null, unit.id) : null}>
-              {c.stand.automatisch?.luecke && ki && <KeinPaket klein thema={c.stand.automatisch.luecke.thema} ki={ki} kosten={kosten} />}
-              <Reveal label={c.stand.automatisch ? "Anderes Paket" : "Anderes Lernpaket oder ohne"}>
-                <div className="pt-2">
-                  <PaketAuswahl wahl={wahl} action={waehlePaketAction.bind(null, unit.id)} gewaehlt={c.paket.id} ohne />
-                </div>
-              </Reveal>
-            </PaketKopf>
-            <AnpassenBereich c={c} unitId={unit.id} studentId={student.id} name={name} liste={liste} />
-          </>
-        ) : (
-          <section aria-label="Lernpaket wählen" className="grid gap-3">
-            <h3 className="text-[16px] font-semibold">Lernpaket wählen</h3>
-            {auto?.art === "kein_paket" && (
-              <div className="panel grid gap-1.5 px-5 py-4">
-                <KeinPaket thema={auto.thema} ki={ki} kosten={kosten} entwuerfe={auto.entwuerfe} />
-                <p className="text-[13px] text-ink-3">Warum dieses Thema: {auto.signal.warum}. Die KI läuft erst, wenn du im Formular „Entwurf erstellen“ tippst.</p>
-              </div>
+            {schritt && aktuell === schritt.id && (
+              <SchrittWerkzeuge c={c} id={schritt.id} titel={schritt.titel} unitId={unit.id} ids={ids}>
+                {schritt.aufgaben.length > 0 && <AufgabenMitLoesung s={schritt} fach={c.paket!.fach} teacherId={teacherId} />}
+              </SchrittWerkzeuge>
             )}
-            <PaketAuswahl wahl={wahl} action={waehlePaketAction.bind(null, unit.id)} gewaehlt={null} />
-            <Reveal label="Ohne Lernpaket: Fähigkeit, Übungen und Briefing">
-              <div className="pt-3">
-                <OhnePaketAnsicht unit={unit} student={student} skillId={c.stand.skill_id} />
+            {planSchritt && (
+              <SchrittWerkzeuge c={c} id={planSchritt.id} titel={planSchritt.titel} unitId={unit.id} ids={ids}>
+                {/* a step of an embedded package: its tasks with solutions, like in the package */}
+                {quelle && quelle.schritt.aufgaben.length > 0 && <AufgabenMitLoesung s={quelle.schritt} fach={quelle.paket.fach} teacherId={teacherId} />}
+              </SchrittWerkzeuge>
+            )}
+
+            {(stoff || gedruckt) && <MinitestKarte unitId={unit.id} name={name} geraet={geraet} stoff={stoff} gedruckt={gedruckt} />}
+
+            {c.paket ? (
+              <div id="lernpaket" className="grid gap-6 scroll-mt-4">
+                <PaketKopf c={c} paket={c.paket} warum={vorschlag?.warum ?? null} entfernen={c.stand.automatisch ? waehlePaketAction.bind(null, unit.id) : null}>
+                  {c.stand.automatisch?.luecke && ki && <KeinPaket klein thema={c.stand.automatisch.luecke.thema} ki={ki} kosten={kosten} />}
+                  <Reveal label={c.stand.automatisch ? "Anderes Paket" : "Anderes Lernpaket oder ohne"}>
+                    <div className="pt-2">
+                      <PaketAuswahl wahl={wahl} action={waehlePaketAction.bind(null, unit.id)} gewaehlt={c.paket.id} ohne />
+                    </div>
+                  </Reveal>
+                </PaketKopf>
+                <AnpassenBereich c={c} unitId={unit.id} studentId={student.id} name={name} liste={liste} />
+              </div>
+            ) : (
+              <section id="lernpaket" aria-label="Lernpaket wählen" className="grid gap-3 scroll-mt-4">
+                <h3 className="text-[16px] font-semibold">Lernpaket wählen</h3>
+                {/* ohne ein einziges Lernpaket und ohne KI nur die eine Zeile aus PaketAuswahl, kein leerer Block (Audit 2026-11-07) */}
+                {auto?.art === "kein_paket" && (ki || wahl.gesamt > 0) && (
+                  <div className="panel grid gap-1.5 px-5 py-4">
+                    <KeinPaket thema={auto.thema} ki={ki} kosten={kosten} entwuerfe={auto.entwuerfe} />
+                    <p className="text-[13px] text-ink-3">
+                      Warum dieses Thema: {auto.signal.warum}.{ki && " Die KI läuft erst, wenn du im Formular „Entwurf erstellen“ tippst."}
+                    </p>
+                  </div>
+                )}
+                <PaketAuswahl wahl={wahl} action={waehlePaketAction.bind(null, unit.id)} gewaehlt={null} />
+                <Reveal label="Ohne Lernpaket: Fähigkeit, Übungen und Briefing">
+                  <div className="pt-3">
+                    <OhnePaketAnsicht unit={unit} student={student} skillId={c.stand.skill_id} />
+                  </div>
+                </Reveal>
+              </section>
+            )}
+
+            <Reveal label={`Ohne Tablet: Link für das Gerät von ${name}`}>
+              <p className="mb-2 text-[14px] text-ink-2">Nur nötig, wenn {name} nicht am Schüler-Tablet arbeitet. Auf dem Link sieht {name} die gesendeten Übungen. Ein Tablet verbindest du oben in der Gerätezeile.</p>
+              <div className="flex max-w-[620px] flex-wrap items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <CopyLink path={`/lernen/${student.access_token}`} />
+                </div>
+                <a href={`/lernen/${student.access_token}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">
+                  <ExternalLink size={14} aria-hidden /> Ansicht öffnen
+                </a>
               </div>
             </Reveal>
-          </section>
-        )}
 
-        <Reveal label={`Ohne Tablet: Link für das Gerät von ${name}`}>
-          <p className="mb-2 text-[14px] text-ink-2">Nur nötig, wenn {name} nicht am Schüler-Tablet arbeitet. Auf dem Link sieht {name} die gesendeten Übungen. Ein Tablet verbindest du oben in der Gerätezeile.</p>
-          <div className="flex max-w-[620px] flex-wrap items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <CopyLink path={`/lernen/${student.access_token}`} />
+            <div className="border-t border-line pt-3">
+              <CancelUnit unitId={unit.id} />
             </div>
-            <a href={`/lernen/${student.access_token}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm">
-              <ExternalLink size={14} aria-hidden /> Ansicht öffnen
-            </a>
           </div>
-        </Reveal>
-
-        <div className="border-t border-line pt-3">
-          <CancelUnit unitId={unit.id} />
-        </div>
+        </details>
       </div>
     </section>
   );

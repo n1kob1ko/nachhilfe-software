@@ -139,6 +139,8 @@ export function kiNeuImLiveHinweis(unitId: number, name: string): KiNeu | null {
  */
 export function KiKostenZeile({ unitId, admin }: { unitId: number; admin: boolean }) {
   const b = einheitBudget(unitId);
+  // Audit 2026-11-07: mit KI aus und ohne Kosten sagt die Zeile nichts; sie bleibt weg
+  if (!aiEnabled() && b.kostenEur === 0) return null;
   const max = admin ? BUDGET_MAX_EUR : b.standardEur;
   const zeile = kostenZeile(b, aiEnabled());
   return (
