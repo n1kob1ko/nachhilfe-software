@@ -22,33 +22,34 @@ und kein Passwort; wer den Link hat, sieht diese Seite (wie bisher).
 
 ## Was der Schüler sieht
 
-- **Nächster Termin** ganz oben: „Jetzt“, „Heute“ oder „Nächster Termin“, dann **Uhrzeit, Ort und
-  Lehrer** (niko, 2026-11-03: „Der Raum selbst ist nicht wichtig nur Uhrzeit Ort Lehrer“). Ort ist das
-  Gebäude des Raums, online „Online“; ohne Raum „Ort noch offen“. Dasselbe in jeder Zeile der Termine.
-- **Deine Termine:** diese Woche und, sobald sie veröffentlicht ist, die nächste. Vergangene Termine
-  sind grau; ein vergangener ohne Einheit bekommt keinen Vermerk (Audit 2026-11-07: Eltern lesen mit, die App weiß nicht, warum).
-- Wie bisher (D17/D23) **nur veröffentlichte Plätze**, keine anderen Schüler. Der eigene Lehrer steht
-  seit 2026-11-03 dabei (niko). Entwürfe sieht der Schüler nie. Beim Veröffentlichen wird weiterhin niemand
-  benachrichtigt (D25).
-- Nach einer Einheit einmal **„Was war heute schwer?“** (Antworten zum Antippen, freier Text,
-  „Überspringen“), danach die eigene Notiz zum Ändern; unter dem nächsten Termin **„Für nächstes Mal“**,
-  jederzeit. Beides bis zur nächsten Einheit änderbar, nur die eigenen Worte (`lib/schueler-notiz.ts`).
-- **Kommende Prüfungen** (nach dem nächsten Termin): nur geplante ab heute, die nächste zuerst, mit Art, Fach
-  und dem Stoff kurz. Vergangene und abgesagte nicht.
-- **Hausübungen:** die offenen zuerst (überfällig, heute, morgen markiert), mit Übung führt die Zeile zu ihr;
-  erledigte (abgehakt oder Übung fertig) unter „Erledigt“. Ohne Hausübung kein Abschnitt.
-- **Tauschen** unter jedem kommenden Termin (Tauschbörse, [planung.md](planung.md#tauschbörse-niko-2026-11-07)): passende Zeiten
-  anhaken, „Zum Tauschen anbieten“. Passt ein Angebot eines anderen Schülers, steht oben „Jemand möchte mit dir
-  tauschen“ mit „Ja, tauschen“; getauscht wird sofort.
-- **Andere Zeit anfragen** (früher „Verschieben oder tauschen“; für Schüler nur noch Verschieben) unter jedem kommenden Termin (Plan 3.3, [planung.md](planung.md#terminanfragen-plan-33)):
-  freie Zeiten zur Auswahl (oder eine eigene Zeit), dazu eine Notiz; oder ein anderer Termin desselben Lehrers zum
-  Tausch, **nur als Zeit**. Darunter „Deine Anfragen“ mit Zustand; eine Tauschanfrage an ihn kann er zustimmen oder
-  ablehnen. Bewegt wird erst, wenn die Verwaltung bestätigt.
-- Darunter wie bisher die offenen Übungen.
-- **Deine Unterlagen:** die Präsentationen aus seinen Einheiten (Lernpaket im Cockpit), abgespielt wie in der
-  Schüleransicht, ohne Vortragstext; und die Übungen mit freigegebener Lösung („Hilfen und Lösung“ oder „Alles“).
-- **Vergangene Einheiten:** Datum, Fach, Thema, geübte Fähigkeiten, gelöste Aufgaben. Keine Notizen des Lehrers.
-- Dann wie bisher der Fortschritt und „Erledigt“.
+Reihenfolge seit dem Audit 2026-11-07 (vorher 4300 px lang, die Start-Knöpfe ganz unten): zuerst, was zu tun ist, dann
+wann und wo, der Rest zugeklappt unter **Mehr**.
+
+1. **Offene Übungen** mit „Starten“ / „Weitermachen“ und **Hausübungen** (die offenen zuerst, überfällig, heute, morgen
+   markiert; mit Übung führt die Zeile zu ihr; erledigte unter „Erledigt“; ohne Hausübung kein Abschnitt).
+2. **Nächster Termin**: „Jetzt“, „Heute“, „Morgen“ oder „Nächster Termin“, dann **Wochentag, Uhrzeit, Ort und Lehrer**
+   (niko, 2026-11-03: „Der Raum selbst ist nicht wichtig nur Uhrzeit Ort Lehrer“). Ort ist das Gebäude des Raums, online
+   „Online“; ohne Raum „Ort noch offen“. Darunter der Link „Alle Termine und Termin ändern“ (öffnet „Mehr“).
+   Passt ein **Tauschangebot** eines anderen Schülers, steht hier „Jemand möchte mit dir tauschen“ mit „Ja, tauschen“.
+3. **„Was war heute schwer?“** nur am Tag der Einheit und am Tag danach (Antworten zum Antippen, freier Text,
+   „Überspringen“); danach steht die eigene Notiz unter „Mehr“ und bleibt bis zur nächsten Einheit änderbar.
+4. **Kommende Prüfungen**: nur geplante ab heute, die nächste zuerst, mit Art, Fach und dem Stoff kurz.
+5. **Für nächstes Mal**: was drankommen soll, jederzeit, änderbar bis zur nächsten Einheit (`lib/schueler-notiz.ts`).
+6. **Mehr** (zugeklappt; offen nach einer Terminanfrage oder einem Tausch, `?mehr=1`):
+   - **Deine Termine:** diese Woche und, sobald sie veröffentlicht ist, die nächste. Vergangene Termine sind grau; ein
+     vergangener ohne Einheit bekommt keinen Vermerk (Eltern lesen mit, die App weiß nicht, warum). Nur veröffentlichte
+     Plätze (D17/D23), keine anderen Schüler, der eigene Lehrer dabei. Unter jedem kommenden Termin **ein** Eingang
+     **„Termin ändern“** mit zwei Wegen: **Tauschen** (Tauschbörse, [planung.md](planung.md#tauschbörse-niko-2026-11-07):
+     passende Zeiten anhaken, „Zum Tauschen anbieten“, getauscht wird sofort) und **Andere Zeit anfragen** (freie Zeiten
+     oder eine eigene Zeit, Notiz; die Verwaltung bestätigt, [planung.md](planung.md#terminanfragen-plan-33)). Ist ein
+     Termin angeboten, steht das dort mit „Zurücknehmen“. Darunter „Deine Anfragen“ mit Zustand.
+   - **Von dir eingetragen** mit „Prüfung eintragen“ (Foto vom Stoffzettel).
+   - **Deine Unterlagen:** Präsentationen aus seinen Einheiten, ohne Vortragstext, und Übungen mit freigegebener Lösung.
+   - **Vergangene Einheiten:** Datum, Fach, Thema, geübte Fähigkeiten, gelöste Aufgaben. Keine Notizen des Lehrers.
+   - **Dein Fortschritt** und **Erledigt**.
+
+Läuft gerade eine Einheit, steht ganz oben „Whiteboard öffnen“. Beim Veröffentlichen wird weiterhin niemand
+benachrichtigt (D25).
 
 ## Technik
 

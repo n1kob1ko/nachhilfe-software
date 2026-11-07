@@ -24,13 +24,10 @@ export function AnfrageMeldung({ ok, fehler }: { ok?: string; fehler?: string })
  * Zu einem Termin: verschieben (eine der freien Zeiten oder eine eigene) oder mit einem anderen Termin desselben
  * Lehrers tauschen. Ohne JavaScript: zwei kleine Formulare in einem aufklappbaren Abschnitt.
  */
-export function TerminAendern({ termin, aktion, zurueck, schueler = false }: { termin: AnfragbarerTermin; aktion: Aktion; zurueck?: string; schueler?: boolean }) {
-  return (
-    <details className="group mt-1" data-testid="termin-aendern">
-      <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-medium text-accent">
-        <CalendarSync size={16} aria-hidden /> {schueler ? "Andere Zeit anfragen" : "Verschieben oder tauschen"}
-      </summary>
-      <div className={`mt-2 grid gap-4 rounded-2xl bg-panel/60 p-4 ${schueler ? "" : "md:grid-cols-2"}`}>
+export function TerminAendern({ termin, aktion, zurueck, schueler = false, inline = false }: { termin: AnfragbarerTermin; aktion: Aktion; zurueck?: string; schueler?: boolean; /** ohne eigenes Aufklappen, als Teil von „Termin ändern“ in der Schüler-App (Audit 2026-11-07) */ inline?: boolean }) {
+  const inhalt = (
+    <>
+      <div className={`mt-2 grid gap-4 rounded-2xl bg-panel/60 p-4 ${schueler ? "" : "md:grid-cols-2"}`} data-testid="termin-aendern">
         <form action={aktion} className="grid content-start gap-3">
           <input type="hidden" name="art" value="verschieben" />
           <input type="hidden" name="platz_id" value={termin.id} />
@@ -91,6 +88,23 @@ export function TerminAendern({ termin, aktion, zurueck, schueler = false }: { t
         )}
       </div>
       <p className="mt-2 text-[13px] text-ink-2">{schueler ? "Wir melden uns, ob die neue Zeit geht. Bis dahin bleibt der Termin, wie er ist." : "Die Verwaltung bestätigt jede Änderung. Bis dahin bleibt der Termin, wie er ist."}</p>
+    </>
+  );
+  if (inline)
+    return (
+      <div>
+        <p className="inline-flex items-center gap-1.5 text-[15px] font-semibold">
+          <CalendarSync size={16} className="text-accent" aria-hidden /> {schueler ? "Andere Zeit anfragen" : "Verschieben oder tauschen"}
+        </p>
+        {inhalt}
+      </div>
+    );
+  return (
+    <details className="group mt-1">
+      <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-medium text-accent">
+        <CalendarSync size={16} aria-hidden /> {schueler ? "Andere Zeit anfragen" : "Verschieben oder tauschen"}
+      </summary>
+      {inhalt}
     </details>
   );
 }
