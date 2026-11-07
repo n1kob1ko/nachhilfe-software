@@ -797,8 +797,9 @@ export function zuruecknehmen(unitId: number): Ergebnis {
 }
 
 /**
- * „Hausübung freigeben“: genau eine Übung für den Schüler (die Herkunft jeder Aufgabe bleibt, ohne Zuweisung zur Einheit, damit ihre
- * Antworten nicht als Unterricht zählen) und eine Hausübung dazu mit `unit_id`, Übung und Fälligkeit. Gesperrt, solange eine Aufgabe der
+ * Freigeben (im Abschluss über „Bestätigen“ mit dem Häkchen „Hausübung mitschicken“, bei schon bestätigter Dokumentation über
+ * „Hausübung freigeben“ in der Karte): genau eine Übung für den Schüler (die Herkunft jeder Aufgabe bleibt, ohne Zuweisung zur Einheit,
+ * damit ihre Antworten nicht als Unterricht zählen) und eine Hausübung dazu mit `unit_id`, Übung und Fälligkeit. Gesperrt, solange eine Aufgabe der
  * KI ungeprüft ist, neue Aufgaben noch entstehen oder die Fälligkeit fehlt. Die Zeile kommt in Abschluss und Dokumentation.
  */
 export function freigeben(unitId: number, o: { faellig: string; teacherId: number | null }): { ok: true; worksheetId: number; homeworkId: number } | { fehler: string } {
