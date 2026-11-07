@@ -28,9 +28,9 @@ export function TerminAendern({ termin, aktion, zurueck, schueler = false }: { t
   return (
     <details className="group mt-1" data-testid="termin-aendern">
       <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-medium text-accent">
-        <CalendarSync size={16} aria-hidden /> Verschieben oder tauschen
+        <CalendarSync size={16} aria-hidden /> {schueler ? "Andere Zeit anfragen" : "Verschieben oder tauschen"}
       </summary>
-      <div className="mt-2 grid gap-4 rounded-2xl bg-panel/60 p-4 md:grid-cols-2">
+      <div className={`mt-2 grid gap-4 rounded-2xl bg-panel/60 p-4 ${schueler ? "" : "md:grid-cols-2"}`}>
         <form action={aktion} className="grid content-start gap-3">
           <input type="hidden" name="art" value="verschieben" />
           <input type="hidden" name="platz_id" value={termin.id} />
@@ -65,7 +65,8 @@ export function TerminAendern({ termin, aktion, zurueck, schueler = false }: { t
           </label>
           <button className="btn btn-primary btn-sm justify-self-start">Verschieben anfragen</button>
         </form>
-        {termin.tausch.length > 0 && (
+        {/* Schüler tauschen über die Tauschbörse (components/planung/Tauschboerse.tsx), nicht mit einer Anfrage */}
+        {!schueler && termin.tausch.length > 0 && (
           <form action={aktion} className="grid content-start gap-3">
             <input type="hidden" name="art" value="tauschen" />
             <input type="hidden" name="platz_id" value={termin.id} />
@@ -89,7 +90,7 @@ export function TerminAendern({ termin, aktion, zurueck, schueler = false }: { t
           </form>
         )}
       </div>
-      <p className="mt-2 text-[13px] text-ink-2">Die Verwaltung bestätigt jede Änderung. Bis dahin bleibt der Termin, wie er ist.</p>
+      <p className="mt-2 text-[13px] text-ink-2">{schueler ? "Wir melden uns, ob die neue Zeit geht. Bis dahin bleibt der Termin, wie er ist." : "Die Verwaltung bestätigt jede Änderung. Bis dahin bleibt der Termin, wie er ist."}</p>
     </details>
   );
 }
@@ -107,6 +108,7 @@ export function AnfragenListe({
   zurueck,
   schueler = false,
   raeume = [],
+  boerse,
 }: {
   anfragen: AnfrageSicht[];
   /** Schüler: (id, was) gebunden; Lehrer: (id) gebunden, `was` kommt vom Knopf */
@@ -115,12 +117,22 @@ export function AnfragenListe({
   zurueck?: string;
   schueler?: boolean;
   raeume?: { id: number; name: string; building: string }[];
+  /** nur Verwaltung: ein Tausch aus der Tauschbörse ist angesehen („Passt“) oder wird zurückgetauscht */
+  boerse?: { gesehen: (a: AnfrageSicht) => Aktion; zurueck: (a: AnfrageSicht) => Aktion };
 }) {
   return (
     <ul className="panel divide-y divide-line" data-testid="anfragen">
       {anfragen.map((a) => {
         const partnerSicht = a.rolle === "partner";
-        const titel = partnerSicht ? (schueler ? "Tauschanfrage an dich" : "Tausch angefragt, du bist die andere Seite") : ART_TITEL[a.art];
+        const titel = a.boerse
+          ? schueler
+            ? "Getauscht über die Tauschbörse"
+            : "Tausch aus der Tauschbörse"
+          : partnerSicht
+            ? schueler
+              ? "Tauschanfrage an dich"
+              : "Tausch angefragt, du bist die andere Seite"
+            : ART_TITEL[a.art];
         const namen = !schueler && a.schueler ? (a.art === "tauschen" ? `${a.schueler} ↔ ${a.partnerSchueler ?? ""}` : a.schueler) : null;
         return (
           <li key={a.id} className="grid gap-1.5 px-4 py-3 text-[14px]">
@@ -128,22 +140,34 @@ export function AnfragenListe({
               {a.art === "tauschen" ? <ArrowLeftRight size={16} className="shrink-0 text-accent" aria-hidden /> : <CalendarSync size={16} className="shrink-0 text-accent" aria-hidden />}
               <span className="font-semibold">{titel}</span>
               {namen && <span className="text-ink-2">· {namen}{a.lehrer ? ` · bei ${a.lehrer}` : ""}</span>}
-              <Pill tone={STATUS_TONE[a.status]}>{STATUS_LABEL[a.status]}</Pill>
+              <Pill tone={STATUS_TONE[a.status]}>{a.boerse && a.status === "bestaetigt" ? "Getauscht" : STATUS_LABEL[a.status]}</Pill>
             </span>
-            {a.art === "tauschen" && !(schueler && partnerSicht) ? (
+            {a.art === "tauschen" && !(schueler && (partnerSicht || a.boerse)) ? (
               <span className="num flex flex-wrap items-center gap-x-2">
                 {a.von} <ArrowLeftRight size={14} className="text-ink-3" aria-label="getauscht mit" /> {a.anderer}
               </span>
             ) : (
               <span className="num flex flex-wrap items-center gap-x-2">
-                {partnerSicht && schueler && <span className="text-ink-2">Dein Termin</span>}
+                {(partnerSicht || a.boerse) && schueler && <span className="text-ink-2">Dein Termin</span>}
                 {a.von} <ArrowRight size={14} className="text-ink-3" aria-label="neu" /> {a.nach}
               </span>
             )}
             {a.notiz && <span className="text-ink-2">Notiz: {a.notiz}</span>}
             {a.status === "abgelehnt" && a.grund && <span className="text-red">Grund: {a.grund}</span>}
-            {(a.kannZustimmen || a.kannAblehnen || a.kannZurueckziehen || a.kannBestaetigen) && (
+            {(a.kannZustimmen || a.kannAblehnen || a.kannZurueckziehen || a.kannBestaetigen || (boerse && (a.kannGesehen || a.kannZuruecktauschen))) && (
               <span className="mt-1 flex flex-wrap items-start gap-2">
+                {boerse && a.kannGesehen && (
+                  <form action={boerse.gesehen(a)}>
+                    {zurueck && <input type="hidden" name="zurueck" value={zurueck} />}
+                    <button className="btn btn-primary btn-sm">Passt</button>
+                  </form>
+                )}
+                {boerse && a.kannZuruecktauschen && (
+                  <form action={boerse.zurueck(a)}>
+                    {zurueck && <input type="hidden" name="zurueck" value={zurueck} />}
+                    <button className="btn btn-secondary btn-sm">Zurücktauschen</button>
+                  </form>
+                )}
                 {a.kannBestaetigen && bestaetigen && (
                   <form action={bestaetigen(a)} className="flex flex-wrap items-center gap-2">
                     {zurueck && <input type="hidden" name="zurueck" value={zurueck} />}

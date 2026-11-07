@@ -980,7 +980,7 @@ CREATE INDEX IF NOT EXISTS idx_aufgabe_bewertungen_skill ON aufgabe_bewertungen(
 CREATE TABLE IF NOT EXISTS terminanfragen (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   art TEXT NOT NULL,                        -- verschieben | tauschen
-  status TEXT NOT NULL,                     -- wartet (auf Zustimmung) | offen (bei der Verwaltung) | bestaetigt | abgelehnt
+  status TEXT NOT NULL,                     -- wartet (auf Zustimmung) | offen (bei der Verwaltung) | bestaetigt | abgelehnt | zurueckgetauscht (Tauschbörse)
   platz_id INTEGER NOT NULL REFERENCES geplante_einheiten(id) ON DELETE CASCADE,
   student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
   vorher TEXT NOT NULL,                     -- JSON { week_start, weekday, start_min }
@@ -1002,6 +1002,23 @@ CREATE TABLE IF NOT EXISTS terminanfragen (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_terminanfragen_status ON terminanfragen(status, created_at);
+-- Tauschbörse (lib/planung/tauschboerse.ts, niko 2026-11-07): ein Schüler stellt einen veröffentlichten Termin in die Börse und
+-- sagt, welche anderen Termine desselben Lehrers ihm stattdessen passen (passende: '' = alle, sonst JSON-Liste von Platz-IDs).
+-- Nimmt ein anderer Schüler an, wird sofort getauscht (beide haben zugestimmt, dieselbe Prüfung wie im Wochenplan) und eine
+-- bestätigte Terminanfrage mit quelle = 'boerse' hält es fest; die Verwaltung sieht sie in „Zu erledigen“ und kann zurücktauschen.
+-- vorher: wo der Termin beim Anbieten lag; liegt er nicht mehr dort, gilt das Angebot nicht mehr.
+CREATE TABLE IF NOT EXISTS tauschangebote (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  platz_id INTEGER NOT NULL REFERENCES geplante_einheiten(id) ON DELETE CASCADE,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  vorher TEXT NOT NULL,                     -- JSON { week_start, weekday, start_min }
+  passende TEXT NOT NULL DEFAULT '',        -- '' = jeder andere Termin desselben Lehrers, sonst JSON [platz_id, …]
+  status TEXT NOT NULL DEFAULT 'offen',     -- offen | getauscht | zurueckgezogen
+  anfrage_id INTEGER REFERENCES terminanfragen(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_tauschangebote_status ON tauschangebote(status, platz_id);
 -- Prüfungen, die ein Schüler in seiner App einträgt (lib/pruefliste.ts, Plan 3.1). Ist alles klar (vor allem ein sicheres
 -- Datum), wird gleich eine Schularbeit (tests, quelle = 'schueler'); sonst prüft ein Lehrer in der Prüfliste.
 -- status = eingereicht (zu prüfen) | automatisch (eingetragen, Lehrer hat noch nicht bestätigt) | uebernommen | verworfen.
@@ -1632,6 +1649,10 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // Konto löschen (lib/lehrer-konten.ts, 2026-10-31): wann das Konto eines Lehrers mit Verlauf entfernt wurde. Es bleibt als Name in
   // Dokumentation und Abrechnung (active = 0, kein Passwort, Benutzername frei); null = Konto besteht
   ["teachers", "deleted_at", "TEXT"],
+  // Tauschbörse (lib/planung/tauschboerse.ts, 2026-11-07): quelle = 'boerse' für einen Tausch aus der Börse (sofort getauscht);
+  // gesehen_at: wann die Verwaltung ihn angesehen hat (bis dahin steht er in „Zu erledigen“)
+  ["terminanfragen", "quelle", "TEXT NOT NULL DEFAULT ''"],
+  ["terminanfragen", "gesehen_at", "TEXT"],
 ];
 
 /** Teachers to start with; more can be added later. */

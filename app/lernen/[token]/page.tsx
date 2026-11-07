@@ -13,6 +13,9 @@ import { termineFuerSchueler } from "@/lib/planung/schueler-termine";
 import { anfragbareTermine, anfragenFuerSchueler } from "@/lib/planung/terminanfragen";
 import { antwortSchuelerAction, stelleSchuelerAnfrageAction } from "@/app/terminanfrage-actions";
 import { AnfrageMeldung, AnfragenListe, TerminAendern } from "@/components/planung/Terminanfragen";
+import { TauschAngebote, TerminTauschen } from "@/components/planung/Tauschboerse";
+import { boerseFuerSchueler } from "@/lib/planung/tauschboerse";
+import { bieteAnAction, nimmAngebotAction, zieheAngebotZurueckAction } from "@/app/tauschboerse-actions";
 import { eintraegeFuerSchueler, STATUS_LABEL } from "@/lib/pruefliste";
 import * as repo from "@/lib/repo";
 import { activeMaterial, materialLabel } from "@/lib/current-material";
@@ -45,6 +48,10 @@ export default async function LearnHome({ params, searchParams }: { params: Prom
   // Terminanfragen: verschieben oder tauschen; ein anderer Schüler erscheint nur als Zeit (lib/planung/terminanfragen.ts)
   const aenderbar = new Map(anfragbareTermine({ schuelerId: student.id }).map((t) => [t.id, t]));
   const anfragen = anfragenFuerSchueler(student.id);
+  // Tauschbörse: Angebote anderer, die zu meinen Terminen passen, und meine eigenen; nur Zeiten (lib/planung/tauschboerse.ts)
+  const boerse = boerseFuerSchueler(student.id);
+  const anbietbar = new Map(boerse.anbietbar.map((x) => [x.platzId, x]));
+  const angeboten = new Map(boerse.eigene.map((x) => [x.platzId, x]));
   const mitAnfrage = new Set(anfragen.filter((x) => x.status === "wartet" || x.status === "offen").flatMap((x) => x.platzIds));
   // eingetragene Prüfungen: nur die eigenen Angaben und der Stand (lib/pruefliste.ts)
   const pruefungen = eintraegeFuerSchueler(student.id);
@@ -108,6 +115,8 @@ export default async function LearnHome({ params, searchParams }: { params: Prom
         </section>
       )}
 
+      <TauschAngebote passend={boerse.passend} nehmen={(p) => nimmAngebotAction.bind(null, token, p.angebotId, p.platzId)} />
+
       <NaechstesMal token={token} text={offenerWunsch(student.id)?.text ?? null} />
 
       {/* Übersicht (lib/schuelerportal.ts): Prüfungen und Hausübungen gleich nach dem nächsten Termin */}
@@ -144,7 +153,13 @@ export default async function LearnHome({ params, searchParams }: { params: Prom
                       <span>{t.lehrer}</span>
                       {t.nichtStattgefunden && <span className="text-[13px] text-ink-3">nicht stattgefunden</span>}
                     </span>
-                    {aenderbar.has(t.id) && <TerminAendern termin={aenderbar.get(t.id)!} aktion={stelleSchuelerAnfrageAction.bind(null, token)} schueler />}
+                    <TerminTauschen
+                      anbietbar={anbietbar.get(t.id)}
+                      eigenes={angeboten.get(t.id)}
+                      anbieten={bieteAnAction.bind(null, token, t.id)}
+                      zuruecknehmen={zieheAngebotZurueckAction.bind(null, token, angeboten.get(t.id)?.id ?? 0)}
+                    />
+                    {aenderbar.has(t.id) && !angeboten.has(t.id) && <TerminAendern termin={aenderbar.get(t.id)!} aktion={stelleSchuelerAnfrageAction.bind(null, token)} schueler />}
                   </li>
                 ))}
               </ul>

@@ -20,7 +20,8 @@
  *   übernimmt; solange ein Vorschlag der KI da ist, auch nach FENSTER_TAGE. Steht nicht da, solange der Text selbst noch
  *   auf die Korrektur wartet (dann genügt ein Punkt).
  * - Terminanfrage (lib/planung/terminanfragen.ts): für die Verwaltung jede offene Anfrage, für einen Lehrer ein
- *   Tausch, der auf seine Zustimmung wartet. Offen, bis sie entschieden ist.
+ *   Tausch, der auf seine Zustimmung wartet. Offen, bis sie entschieden ist. Dazu für die Verwaltung jeder Tausch aus der
+ *   Tauschbörse (lib/planung/tauschboerse.ts), bis sie ihn angesehen oder zurückgetauscht hat.
  * - Eingetragene Prüfung: was ein Schüler in seiner App eingetragen hat (lib/pruefliste.ts), zu prüfen oder schon
  *   als Prüfung eingetragen. Wartet auf Lehrerbewertung (zu prüfen) oder Offen (schon eingetragen), bis ein Lehrer
  *   sie in der Prüfliste übernimmt, bestätigt oder verwirft.
@@ -53,7 +54,7 @@ export type Punkt =
   | (Basis & { art: "hausuebung"; beschreibung: string; uebung: string | null })
   | (Basis & { art: "text"; titel: string })
   | (Basis & { art: "bewertung"; titel: string; vorschlag: boolean })
-  | (Basis & { art: "terminanfrage"; aufgabe: "bestaetigen" | "zustimmen"; beschreibung: string })
+  | (Basis & { art: "terminanfrage"; aufgabe: "bestaetigen" | "zustimmen" | "ansehen"; beschreibung: string })
   | (Basis & { art: "einreichung"; titel: string; pruefungsDatum: string | null; zuPruefen: boolean; uebernommen: boolean });
 
 // ---------- der Zustand, rein aus den Daten ----------

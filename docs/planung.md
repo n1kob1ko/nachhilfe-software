@@ -434,6 +434,30 @@ und keine Einheit haben; je Platz eine offene Anfrage. Tabelle `terminanfragen`,
 - Benachrichtigt wird niemand (wie D25): die Anfrage steht in der Schüler-App, in „Meine Woche“, unter Planung und in
   „Zu erledigen“ (Verwaltung: bestätigen; Lehrer: einem Tausch zustimmen).
 
+### Tauschbörse (niko, 2026-11-07)
+
+Schüler tauschen Termine untereinander, ohne den Partner selbst zu suchen. Logik in `lib/planung/tauschboerse.ts`,
+Oberfläche in `components/planung/Tauschboerse.tsx`, Aktionen in `app/tauschboerse-actions.ts`, Tabelle `tauschangebote`.
+Vorgabe von niko: so einfach, dass Schüler **und Eltern** es ohne Erklärung bedienen.
+
+- **Anbieten:** unter jedem Termin der Schüler-App ein Knopf „Tauschen“. Er zeigt die anderen Termine **desselben
+  Lehrers** (nur als Zeit, mit der eigenen Dauer), alle angehakt; „Zum Tauschen anbieten“ stellt den Termin in die
+  Börse. Alle angehakt = jede Zeit (`passende = ''`), auch eine, die später dazukommt. „Zurücknehmen“ nimmt ihn heraus.
+  Für Schüler gibt es keine Tausch-*Anfrage* mehr (das Formular „Andere Zeit anfragen“ ist nur noch Verschieben);
+  Lehrer behalten sie in „Meine Woche“.
+- **Annehmen:** passt ein Angebot zu einem eigenen Termin (gleicher Lehrer, auf der Liste, Prüfung besteht), steht oben
+  in der App die Karte „Jemand möchte mit dir tauschen“: alter Termin durchgestrichen, neuer groß, Knopf „Ja, tauschen“.
+- **Sofort getauscht** (Entscheidung niko: „Automatisch, Verwaltung informiert“): `nimmAngebot` tauscht über
+  `legePlaetzeNeu` (beide Plätze wechseln Zeit und Raum, Dauer bleibt) und legt eine **bestätigte Terminanfrage** mit
+  `quelle = 'boerse'` an. Ein eigenes Angebot des Annehmenden zu diesem Termin erledigt sich.
+- **Verwaltung informiert:** „Zu erledigen“ zeigt „Tauschbörse: … hat getauscht“, bis die Verwaltung unter Planung
+  „Passt“ drückt (`gesehen_at`) oder „Zurücktauschen“ (`tauscheZurueck`, Zustand `zurueckgetauscht`). Zurücktauschen
+  geht, solange beide Plätze noch so liegen und nicht begonnen haben.
+- **Frist:** beide Termine müssen noch mindestens 24 Stunden entfernt sein (`FRIST_STUNDEN`). Ein Angebot gilt nicht
+  mehr, sobald der Termin anders liegt, eine Einheit hat oder eine offene Terminanfrage; es verschwindet dann einfach.
+- **Namen:** wie bei den Terminanfragen nur Zeiten, nie Namen anderer Schüler oder Räume.
+- Benachrichtigt wird niemand per Push; das Angebot steht beim nächsten Öffnen der App oben.
+
 ### Von Hand geplante Einheiten (Plan 3.3)
 
 Eine Einheit, die ein Lehrer über „Einheit nachtragen oder planen“ mit Status „geplant“ einträgt

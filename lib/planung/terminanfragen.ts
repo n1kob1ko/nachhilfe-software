@@ -21,9 +21,9 @@ import { einheitenFuerWoche, getGeplanteEinheit, getLehrerPlanung, getRaum, lege
 import { MINUTEN_PRO_TAG, auf10, datumLabel, istDatum, minutenLabel, tagAddieren, wienerDatum, wienerMinuten, wienerWochenstart, wochenstartVon, wochentagVon, wochentageDerWoche } from "./zeit";
 
 export type AnfrageArt = "verschieben" | "tauschen";
-export type AnfrageStatus = "wartet" | "offen" | "bestaetigt" | "abgelehnt";
-export const STATUS_LABEL: Record<AnfrageStatus, string> = { wartet: "Wartet auf Zustimmung", offen: "Offen", bestaetigt: "Bestätigt", abgelehnt: "Abgelehnt" };
-export const STATUS_TONE: Record<AnfrageStatus, "amber" | "neutral" | "green" | "red"> = { wartet: "amber", offen: "neutral", bestaetigt: "green", abgelehnt: "red" };
+export type AnfrageStatus = "wartet" | "offen" | "bestaetigt" | "abgelehnt" | "zurueckgetauscht";
+export const STATUS_LABEL: Record<AnfrageStatus, string> = { wartet: "Wartet auf Zustimmung", offen: "Offen", bestaetigt: "Bestätigt", abgelehnt: "Abgelehnt", zurueckgetauscht: "Zurückgetauscht" };
+export const STATUS_TONE: Record<AnfrageStatus, "amber" | "neutral" | "green" | "red"> = { wartet: "amber", offen: "neutral", bestaetigt: "green", abgelehnt: "red", zurueckgetauscht: "neutral" };
 
 /** Wer etwas tut: ein Schüler über seinen geheimen Link oder ein angemeldeter Lehrer. */
 export type Wer = { schuelerId: number } | { lehrer: Akteur };
@@ -58,13 +58,16 @@ type Zeile = {
   entschieden_von: string;
   entschieden_at: string | null;
   created_at: string;
+  /** 'boerse' = Tausch aus der Tauschbörse, sofort getauscht (lib/planung/tauschboerse.ts) */
+  quelle: string;
+  gesehen_at: string | null;
 };
 
 const nein = (fehler: string): Ergebnis => ({ ok: false, fehler });
 const istSchueler = (wer: Wer): wer is { schuelerId: number } => "schuelerId" in wer;
-const lageVon = (z: Lage): Lage => ({ week_start: z.week_start, weekday: z.weekday, start_min: z.start_min });
-const gleicheLage = (a: Lage, b: Lage) => a.week_start === b.week_start && a.weekday === b.weekday && a.start_min === b.start_min;
-const vorherVon = (z: Zeile): Lage => {
+export const lageVon = (z: Lage): Lage => ({ week_start: z.week_start, weekday: z.weekday, start_min: z.start_min });
+export const gleicheLage = (a: Lage, b: Lage) => a.week_start === b.week_start && a.weekday === b.weekday && a.start_min === b.start_min;
+export const vorherVon = (z: { vorher: string }): Lage => {
   const v = json<Partial<Lage>>(z.vorher, {});
   return { week_start: String(v.week_start ?? ""), weekday: Number(v.weekday), start_min: Number(v.start_min) };
 };
@@ -87,7 +90,7 @@ export function anfragbar(z: GeplanteEinheitZeile, now: Date = new Date()): bool
   return z.status === "veroeffentlicht" && z.unit_id === null && istKuenftig(z, now);
 }
 
-function offeneAnfrageZu(platzId: number): boolean {
+export function offeneAnfrageZu(platzId: number): boolean {
   return !!db().prepare("SELECT 1 FROM terminanfragen WHERE status IN ('wartet', 'offen') AND (platz_id = ? OR partner_platz_id = ?)").get(platzId, platzId);
 }
 
@@ -97,12 +100,12 @@ function darfPlatzAnfragen(wer: Wer, z: GeplanteEinheitZeile): boolean {
 }
 
 /** Getauscht wird mit einem anderen Schüler desselben Lehrers; beide Plätze müssen noch frei zu ändern sein. */
-function tauschPartnerOk(platz: GeplanteEinheitZeile, partner: GeplanteEinheitZeile, now: Date): boolean {
+export function tauschPartnerOk(platz: GeplanteEinheitZeile, partner: GeplanteEinheitZeile, now: Date): boolean {
   return partner.id !== platz.id && partner.teacher_id === platz.teacher_id && partner.student_id !== platz.student_id && anfragbar(partner, now);
 }
 
 /** Die neuen Lagen beim Bestätigen: verschieben = ein Platz, tauschen = beide Plätze samt Raum. */
-function neueLagen(platz: GeplanteEinheitZeile, ziel: Lage, partner: GeplanteEinheitZeile | null, roomId?: number | null): NeueLage[] {
+export function neueLagen(platz: GeplanteEinheitZeile, ziel: Lage, partner: GeplanteEinheitZeile | null, roomId?: number | null): NeueLage[] {
   if (!partner) return [{ id: platz.id, ...ziel, ...(roomId === undefined ? {} : { room_id: roomId }) }];
   return [
     { id: platz.id, ...lageVon(partner), room_id: partner.room_id },
@@ -111,7 +114,7 @@ function neueLagen(platz: GeplanteEinheitZeile, ziel: Lage, partner: GeplanteEin
 }
 
 /** Die Absage für einen Schüler: ohne Namen von Lehrern, anderen Schülern oder Räumen. */
-function fuerSchueler(p: PruefErgebnis): string {
+export function fuerSchueler(p: PruefErgebnis): string {
   if (p.ok) return "";
   if (p.art === "lehrer") return "Zu dieser Zeit ist dein Lehrer schon verplant.";
   if (p.art === "schueler") return "Zu dieser Zeit ist schon ein Termin eingetragen.";
@@ -294,6 +297,47 @@ export function bestaetige(akteur: Akteur, id: number, opts: { roomId?: number |
   return { ok: true, hinweis: `Bestätigt: ${z.art === "tauschen" ? "die Termine sind getauscht" : "der Termin ist verschoben"}.${r.hinweis ? ` ${r.hinweis}` : ""}` };
 }
 
+// ---------- Tauschbörse: angesehen, zurücktauschen ----------
+
+/** Liegen die beiden Plätze eines Tauschs noch so, wie der Tausch sie hingelegt hat, und lassen sie sich noch ändern? */
+function nochGetauscht(z: Zeile, now: Date): { platz: GeplanteEinheitZeile; partner: GeplanteEinheitZeile } | null {
+  if (z.art !== "tauschen" || z.status !== "bestaetigt" || z.partner_platz_id === null) return null;
+  const platz = getGeplanteEinheit(z.platz_id);
+  const partner = getGeplanteEinheit(z.partner_platz_id);
+  if (!platz || !partner) return null;
+  if (!gleicheLage(platz, zielVon(z)) || !gleicheLage(partner, vorherVon(z))) return null;
+  if (!anfragbar(platz, now) || !anfragbar(partner, now)) return null;
+  return { platz, partner };
+}
+
+/** Die Verwaltung hat einen Tausch aus der Tauschbörse angesehen: er verschwindet aus „Zu erledigen“. */
+export function markiereGesehen(akteur: Akteur, id: number, now: Date = new Date()): Ergebnis {
+  if (!istAdmin(akteur)) return nein("Dafür fehlt die Berechtigung.");
+  const z = getZeile(id);
+  if (!z || z.quelle !== "boerse") return nein("Tausch nicht gefunden.");
+  db().prepare("UPDATE terminanfragen SET gesehen_at = COALESCE(gesehen_at, ?) WHERE id = ?").run(new Date(now).toISOString(), id);
+  return { ok: true, hinweis: "Erledigt." };
+}
+
+/**
+ * Die Verwaltung macht einen Tausch aus der Tauschbörse rückgängig: beide Plätze kommen samt Raum zurück, mit der
+ * Prüfung des Wochenplans in diesem Moment. Wurde inzwischen etwas geändert oder hat ein Termin begonnen, geht es nicht.
+ */
+export function tauscheZurueck(akteur: Akteur, id: number, now: Date = new Date()): Ergebnis {
+  if (!istAdmin(akteur)) return nein("Dafür fehlt die Berechtigung.");
+  const z = getZeile(id);
+  if (!z || z.quelle !== "boerse") return nein("Tausch nicht gefunden.");
+  const lage = nochGetauscht(z, now);
+  if (!lage) return nein("Das geht nicht mehr: ein Termin wurde inzwischen geändert oder hat schon begonnen. Bitte im Wochenplan ändern.");
+  const r = legePlaetzeNeu(neueLagen(lage.platz, lageVon(lage.partner), lage.partner));
+  if (!r.ok) return nein(`Nicht zurückgetauscht: ${r.fehler}`);
+  const jetzt = new Date(now).toISOString();
+  db()
+    .prepare("UPDATE terminanfragen SET status = 'zurueckgetauscht', entschieden_von = 'verwaltung', entschieden_teacher_id = ?, entschieden_at = ?, gesehen_at = COALESCE(gesehen_at, ?) WHERE id = ?")
+    .run(akteur.id, jetzt, jetzt, id);
+  return { ok: true, hinweis: "Zurückgetauscht: beide Termine sind wieder wie vorher." };
+}
+
 // ---------- für die Formulare ----------
 
 export type Wahl = { wert: string; label: string };
@@ -424,9 +468,14 @@ export type AnfrageSicht = {
   kannAblehnen: boolean;
   kannZurueckziehen: boolean;
   kannBestaetigen: boolean;
+  /** Tausch aus der Tauschbörse: sofort getauscht, ohne Bestätigung */
+  boerse: boolean;
+  /** nur Verwaltung, nur Tauschbörse: noch nicht angesehen / lässt sich noch zurücktauschen */
+  kannGesehen: boolean;
+  kannZuruecktauschen: boolean;
 };
 
-function sicht(z: Zeile, wer: Wer | "verwaltung", namenSchueler: Map<number, string> | null, namenLehrer: Map<number, string> | null): AnfrageSicht | null {
+function sicht(z: Zeile, wer: Wer | "verwaltung", namenSchueler: Map<number, string> | null, namenLehrer: Map<number, string> | null, now: Date = new Date()): AnfrageSicht | null {
   const platz = getGeplanteEinheit(z.platz_id);
   if (!platz) return null;
   const partner = z.partner_platz_id === null ? null : getGeplanteEinheit(z.partner_platz_id);
@@ -462,6 +511,9 @@ function sicht(z: Zeile, wer: Wer | "verwaltung", namenSchueler: Map<number, str
     kannAblehnen: offen && (wer === "verwaltung" || (z.status === "wartet" && alsPartner)),
     kannZurueckziehen: offen && eigene,
     kannBestaetigen: wer === "verwaltung" && z.status === "offen",
+    boerse: z.quelle === "boerse",
+    kannGesehen: wer === "verwaltung" && z.quelle === "boerse" && z.status === "bestaetigt" && !z.gesehen_at,
+    kannZuruecktauschen: wer === "verwaltung" && z.quelle === "boerse" && nochGetauscht(z, now) !== null,
   };
 }
 
@@ -475,7 +527,7 @@ export function anfragenFuerSchueler(studentId: number, now: Date = new Date()):
   const zeilen = db()
     .prepare(`SELECT * FROM terminanfragen WHERE (student_id = ? OR partner_student_id = ?) AND ${aktuell(now)} ORDER BY id DESC`)
     .all(studentId, studentId) as Zeile[];
-  return zeilen.map((z) => sicht(z, { schuelerId: studentId }, null, null)).filter((s): s is AnfrageSicht => s !== null);
+  return zeilen.map((z) => sicht(z, { schuelerId: studentId }, null, null, now)).filter((s): s is AnfrageSicht => s !== null);
 }
 
 /** Für „Meine Woche“: Anfragen zu den eigenen Plätzen, an den Lehrer als andere Seite und die eigenen. */
@@ -488,7 +540,7 @@ export function anfragenFuerLehrer(akteur: Akteur, now: Date = new Date()): Anfr
     .all({ me: akteur.id }) as Zeile[];
   const s = namen("students");
   const t = namen("teachers");
-  return zeilen.map((z) => sicht(z, { lehrer: akteur }, s, t)).filter((x): x is AnfrageSicht => x !== null);
+  return zeilen.map((z) => sicht(z, { lehrer: akteur }, s, t, now)).filter((x): x is AnfrageSicht => x !== null);
 }
 
 /** Für die Verwaltung (Planung): alle unentschiedenen und die zuletzt entschiedenen. */
@@ -496,19 +548,30 @@ export function anfragenFuerVerwaltung(now: Date = new Date()): AnfrageSicht[] {
   const zeilen = db().prepare(`SELECT * FROM terminanfragen WHERE ${aktuell(now)} ORDER BY CASE status WHEN 'offen' THEN 0 WHEN 'wartet' THEN 1 ELSE 2 END, id DESC`).all() as Zeile[];
   const s = namen("students");
   const t = namen("teachers");
-  return zeilen.map((z) => sicht(z, "verwaltung", s, t)).filter((x): x is AnfrageSicht => x !== null);
+  return zeilen.map((z) => sicht(z, "verwaltung", s, t, now)).filter((x): x is AnfrageSicht => x !== null);
 }
 
 /**
  * Was in „Zu erledigen“ steht: für die Verwaltung jede offene Anfrage (bestätigen oder ablehnen), für einen
  * Lehrer jeder Tausch, der auf seine Zustimmung als andere Seite wartet.
  */
-export function anfragenZuErledigen(akteur: Akteur): { id: number; aufgabe: "bestaetigen" | "zustimmen"; studentId: number; studentName: string; beschreibung: string; href: string; datum: string }[] {
+export function anfragenZuErledigen(akteur: Akteur): { id: number; aufgabe: "bestaetigen" | "zustimmen" | "ansehen"; studentId: number; studentName: string; beschreibung: string; href: string; datum: string }[] {
   const out: ReturnType<typeof anfragenZuErledigen> = [];
-  const zeilen = db().prepare("SELECT * FROM terminanfragen WHERE status IN ('wartet', 'offen') ORDER BY id").all() as Zeile[];
+  const zeilen = db()
+    .prepare("SELECT * FROM terminanfragen WHERE status IN ('wartet', 'offen') OR (quelle = 'boerse' AND status = 'bestaetigt' AND gesehen_at IS NULL) ORDER BY id")
+    .all() as Zeile[];
   const s = namen("students");
   for (const z of zeilen) {
-    const aufgabe = z.status === "offen" && istAdmin(akteur) ? "bestaetigen" : z.status === "wartet" && istPartner({ lehrer: akteur }, z) && z.von_teacher_id !== akteur.id ? "zustimmen" : null;
+    const aufgabe =
+      z.status === "bestaetigt"
+        ? istAdmin(akteur)
+          ? "ansehen"
+          : null
+        : z.status === "offen" && istAdmin(akteur)
+          ? "bestaetigen"
+          : z.status === "wartet" && istPartner({ lehrer: akteur }, z) && z.von_teacher_id !== akteur.id
+            ? "zustimmen"
+            : null;
     if (!aufgabe) continue;
     const v = sicht(z, "verwaltung", s, null);
     if (!v) continue;
@@ -518,8 +581,13 @@ export function anfragenZuErledigen(akteur: Akteur): { id: number; aufgabe: "bes
       aufgabe,
       studentId,
       studentName: s.get(studentId) ?? "",
-      beschreibung: z.art === "tauschen" ? `${v.von} ↔ ${v.anderer}` : `${v.von} → ${v.nach}`,
-      href: aufgabe === "bestaetigen" ? `/planung?woche=${v.woche}#terminanfragen` : "/mehr/uebersicht?tab=woche#terminanfragen",
+      beschreibung:
+        z.art !== "tauschen"
+          ? `${v.von} → ${v.nach}`
+          : aufgabe === "ansehen"
+            ? `${v.von} ↔ ${v.anderer}${v.partnerSchueler ? ` (mit ${v.partnerSchueler})` : ""}`
+            : `${v.von} ↔ ${v.anderer}`,
+      href: aufgabe !== "zustimmen" ? `/planung?woche=${v.woche}#terminanfragen` : "/mehr/uebersicht?tab=woche#terminanfragen",
       datum: z.created_at,
     });
   }
