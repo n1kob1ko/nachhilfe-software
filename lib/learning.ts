@@ -421,6 +421,9 @@ export function writeLearningDoc(unit: UnitView, at = Date.now()): number {
   const r = buildUnitReport(unit, at);
   const existing = repo.getLessonForUnit(unit.id) ?? plannedLessonFor(unit);
   const autoActivities = activitiesText(r);
+  // nach „Einheit fortsetzen“ (lib/units.ts resumeUnit) gibt es die Dokumentation schon: was die App selbst geschrieben
+  // hat, schreibt sie neu; was die Lehrkraft (oder der Plan) eingetragen hat, bleibt
+  const activities = existing?.activities && !autoFelderVon(existing).has("activities") ? existing.activities : autoActivities;
   const lessonId = repo.saveLesson(
     {
       student_id: unit.student_id,
@@ -433,7 +436,7 @@ export function writeLearningDoc(unit: UnitView, at = Date.now()): number {
       subject: r.subjects[0] ?? r.texts?.find((t) => t.subject)?.subject ?? existing?.subject ?? student.subjects[0] ?? "",
       topic: existing?.topic || r.topics.join(", ") || [...new Set((r.texts ?? []).map((t) => t.topic).filter(Boolean))].join(", "),
       status: "abgeschlossen",
-      activities: existing?.activities || autoActivities,
+      activities,
       mistakes: existing?.mistakes ?? "",
       understanding: existing?.understanding ?? null,
       tutor_notes: existing?.tutor_notes ?? "",
@@ -446,7 +449,7 @@ export function writeLearningDoc(unit: UnitView, at = Date.now()): number {
   );
   snapshotSkills(unit, r, at);
   // the teacher does not have to fill anything in: scales, Positives, Schwierigkeiten and the next goal from the data
-  dokumentiereAutomatisch(lessonId, r, at, existing?.activities ? {} : { activities: autoActivities });
+  dokumentiereAutomatisch(lessonId, r, at, activities === autoActivities ? { activities: autoActivities } : {});
   const subject = repo.getLesson(lessonId)?.subject;
   if (subject) db().prepare("UPDATE units SET subject = ? WHERE id = ?").run(subject, unit.id);
   return lessonId;

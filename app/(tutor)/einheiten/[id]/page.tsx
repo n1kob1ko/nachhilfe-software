@@ -3,9 +3,10 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
 import QRCode from "qrcode";
-import { BookOpenText, CalendarClock, Camera, CheckCircle2, ChevronDown, ExternalLink, Images, PenLine, Plus, Printer, ScanLine, Square } from "lucide-react";
+import { BookOpenText, CalendarClock, Camera, CheckCircle2, ChevronDown, ExternalLink, Images, PenLine, Play, Plus, Printer, ScanLine } from "lucide-react";
 import { levelFor } from "@/lib/text-correction-rules";
-import { bestaetigeDokuAction, endUnitAction } from "@/app/session-actions";
+import { bestaetigeDokuAction, endUnitAction, resumeUnitAction } from "@/app/session-actions";
+import { EinheitBeenden } from "@/components/EinheitBeenden";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { BoardThumbs } from "@/components/BoardThumbs";
 import { Unterricht } from "@/components/cockpit/Ablauf";
@@ -53,7 +54,7 @@ import { zuBewerten, zuBewertenTitel } from "@/lib/zu-bewerten";
 
 /** Textfarbe je Erinnerungsstufe (lib/exams.ts STAGE_TONE) */
 const TON_TEXT = { neutral: "text-ink", amber: "text-amber", red: "text-red" } as const;
-import { canManageUnit, getUnit, platzFuerEinheit, runningUnits, unitDurationMs, type UnitView } from "@/lib/units";
+import { FORTSETZEN_MINUTEN, canManageUnit, fortsetzbar, getUnit, platzFuerEinheit, runningUnits, unitDurationMs, type UnitView } from "@/lib/units";
 
 export const metadata = { title: "Einheit" };
 
@@ -78,7 +79,7 @@ function dauerLabel(geplanteDauer: number | null, minutes: number, estimated: bo
  *   und „Dokumentation bestätigen“; die ganze
  *   Dokumentation, automatisch geschrieben (lib/einschaetzung.ts) und änderbar, unter „Mehr Details“ und „Ändern“.
  */
-export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string; hausuebung?: string }> }) {
+export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string; hausuebung?: string; fortsetzen?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -201,11 +202,9 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
               </Link>
             )}
             {mayManage && (
-              <form action={endUnitAction.bind(null, unit.id)} className="ml-auto">
-                <button className="flex min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-ink px-4 text-[15px] font-semibold text-surface transition-colors hover:bg-ink-2">
-                  <Square size={17} aria-hidden /> Einheit beenden
-                </button>
-              </form>
+              <div className="ml-auto">
+                <EinheitBeenden action={endUnitAction.bind(null, unit.id)} name={first(student.name)} className="flex min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-ink px-4 text-[15px] font-semibold text-surface transition-colors hover:bg-ink-2" />
+              </div>
             )}
           </div>
           {!mayManage && <p className="mt-2 text-[14px] text-ink-2">Diese Einheit gehört {unit.teacher_name}. Du kannst mitlesen, aber nicht beenden.</p>}
@@ -292,6 +291,8 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   const hu = lesson && mayManage && unit.status === "beendet" ? hausuebungDerEinheit(unit.id) : null;
   const huZeigen = hu !== null && vorschlagZeigen(hu, unit.ended_at);
   if (hu && huZeigen && hu.status === "vorschlag" && hu.ki.erlaubt && hu.ki.automatisch) after(() => kiAutomatisch(unit.id));
+  // Audit 2026-11-07: zu früh auf „Einheit beenden“ getippt? Bis FORTSETZEN_MINUTEN danach läuft die Einheit weiter (lib/units.ts)
+  const weiter = mayManage ? fortsetzbar(unit) : { ok: false, restMinuten: 0 };
   return (
     <>
       {notices}
@@ -304,6 +305,21 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         )}
         <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">Abschluss mit {student.name}</h1>
         {facts}
+        {weiter.ok && (
+          <form action={resumeUnitAction.bind(null, unit.id)} className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="einheit-fortsetzen">
+            <button className="btn btn-secondary">
+              <Play size={16} aria-hidden /> Einheit fortsetzen
+            </button>
+            <span className="text-[14px] text-ink-2">
+              Zu früh beendet? Noch {weiter.restMinuten === 1 ? "1 Minute" : `${weiter.restMinuten} Minuten`} möglich. Die Dokumentation schreibt sich beim nächsten Beenden neu.
+            </span>
+          </form>
+        )}
+        {sp.fortsetzen === "nein" && (
+          <p role="status" className="mt-3 text-[14px] text-ink-2">
+            Fortsetzen geht nicht mehr: die Einheit ist länger als {FORTSETZEN_MINUTEN} Minuten beendet oder es läuft schon eine andere Einheit mit {first(student.name)}.
+          </p>
+        )}
       </header>
       <div className="grid max-w-[820px] gap-8">
         {lesson && karte ? (
