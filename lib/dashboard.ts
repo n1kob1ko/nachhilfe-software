@@ -44,7 +44,7 @@ export type PlanEintrag = {
   studentId: number;
   name: string;
   ort: string;
-  /** gehalten: Einheit gestartet; ausgefallen: Platz vorbei ohne Einheit; vorbei: von Hand geplant, Zeit vorbei; geplant: kommt noch */
+  /** gehalten: Einheit gestartet oder nachgetragen; ausgefallen: Platz vorbei ohne Einheit (Anzeige „keine Einheit“); vorbei: von Hand geplant, Zeit vorbei; geplant: kommt noch */
   stand: "gehalten" | "geplant" | "ausgefallen" | "vorbei";
 };
 export type PlanTag = { tag: Wochentag; datum: string; kurz: string; tagNr: string; heute: boolean; eintraege: PlanEintrag[] };
@@ -84,7 +84,8 @@ export function meineWoche(teacherId: number, now = new Date()) {
       studentId: p.studentId,
       name: p.studentName,
       ort: ortLabel(p.roomName, p.roomBuilding, p.roomMode === "online"),
-      stand: p.unitId !== null ? "gehalten" : p.nichtStattgefunden ? "ausgefallen" : "geplant",
+      // vorbei, aber nicht „keine Einheit“: von Hand nachgetragen (lib/planung/repo.ts nachgetragenAm)
+      stand: p.unitId !== null ? "gehalten" : p.nichtStattgefunden ? "ausgefallen" : datum < heute || (datum === heute && p.startMin + p.dauer <= jetztMin) ? "gehalten" : "geplant",
     });
   }
   for (const l of lessonsBetween(`${woche}T00:00`, `${tagAddieren(ende, 1)}T00:00`)) {

@@ -108,7 +108,7 @@ export default async function PlanungDruckenPage({ searchParams }: { searchParam
                     {p.status === "entwurf" ? "Entwurf" : "veröffentlicht"}
                     {p.locked ? " · gesperrt" : ""}
                     {p.zugleichMit.length ? ` · gleichzeitig mit ${p.zugleichMit.join(", ")}` : ""}
-                    {p.nichtStattgefunden ? " · nicht stattgefunden" : ""}
+                    {p.nichtStattgefunden ? " · keine Einheit" : ""}
                   </td>
                 </tr>
               ))}

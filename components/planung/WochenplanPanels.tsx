@@ -135,8 +135,8 @@ export function WochenKennzahlen({ uebersicht, onOffen }: { uebersicht: WochenUe
       )}
       {summen.lueckenMinuten > 0 && <span className="num font-medium text-amber">Lücken {summen.lueckenMinuten} min</span>}
       {summen.nichtStattgefunden > 0 && (
-        <span className="font-medium text-red">
-          <strong className="num">{summen.nichtStattgefunden}</strong> nicht stattgefunden
+        <span className="font-medium text-amber" title="Vergangene Plätze ohne Einheit in der App und ohne nachgetragene Einheit">
+          <strong className="num">{summen.nichtStattgefunden}</strong> ohne Einheit
         </span>
       )}
       {offen.length > 0 ? (

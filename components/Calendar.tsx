@@ -157,7 +157,7 @@ export type TagesplanPunkt = {
   /** die Einheit, die diesen Platz schon hat — dann führt die Zeile dorthin statt zu starten */
   einheitId: number | null;
   einheitStatus: "gestartet" | "beendet" | "abgebrochen" | null;
-  /** vergangener veröffentlichter Platz ohne Einheit (D17) */
+  /** vergangener veröffentlichter Platz ohne Einheit (D17), Anzeige „keine Einheit“ */
   nichtStattgefunden: boolean;
   /** von Hand geplant, ohne Platz im Wochenplan */
   ohnePlatz: boolean;
@@ -199,7 +199,7 @@ export function Tagesplan({ punkte, starten }: { punkte: TagesplanPunkt[]; start
             {p.pruefung && <span className={`block text-[13px] leading-snug font-semibold ${TON_TEXT[p.pruefung.tone]}`}>{p.pruefung.text}</span>}
           </Link>
           <div className="ml-auto flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
-            {p.nichtStattgefunden && <span className="text-[13px] text-ink-3">nicht stattgefunden</span>}
+            {p.nichtStattgefunden && <span className="text-[13px] text-ink-3">keine Einheit</span>}
             {p.ohnePlatz && !p.nichtStattgefunden && <span className="text-[13px] text-ink-3">ohne Wochenplan-Platz</span>}
             {p.erledigt && (
               <span className="inline-flex items-center gap-1 text-[13px] font-medium text-green">

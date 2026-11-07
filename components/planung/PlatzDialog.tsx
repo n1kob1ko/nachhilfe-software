@@ -209,7 +209,7 @@ export function PlatzDialog({
             <span>{platz.status === "veroeffentlicht" ? "veröffentlicht" : "Entwurf"}</span>
             <span>·</span>
             <span>{platz.unitId ? `mit Einheit #${platz.unitId} verknüpft` : "noch ohne Einheit"}</span>
-            {platz.nichtStattgefunden && <span className="font-semibold text-red">nicht stattgefunden</span>}
+            {platz.nichtStattgefunden && <span className="font-semibold text-amber">vorbei, keine Einheit eingetragen</span>}
             <span>·</span>
             <span>
               {platz.studentName} bei {platz.teacherName}

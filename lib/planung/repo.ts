@@ -539,20 +539,33 @@ export function slotDatum(weekStart: string, weekday: number): string {
 }
 
 /**
- * „Nicht stattgefunden“ (D17): der Platz ist **veröffentlicht**, hat keine Einheit (`unit_id IS NULL`)
- * und liegt hinter uns. Eine Einheit, die gerade läuft, ist nicht gemeint — erst wenn die geplante
- * Zeit vorbei ist, gilt der Platz als ausgefallen. Keine Abrechnungsfolge.
+ * Eine von Hand dokumentierte Einheit des Schülers an diesem Tag (Formular „Einheit nachtragen“, ohne App-Einheit):
+ * dann hat der Platz stattgefunden, nur nicht in der App. Die Dokumentations-ID, sonst null.
+ */
+export function nachgetragenAm(studentId: number, datum: string): number | null {
+  const r = db()
+    .prepare("SELECT id FROM lessons WHERE student_id = ? AND kind = 'stunde' AND status = 'abgeschlossen' AND unit_id IS NULL AND starts_at >= ? AND starts_at < ? ORDER BY id LIMIT 1")
+    .get(studentId, `${datum}T00:00`, `${tagAddieren(datum, 1)}T00:00`) as { id: number } | undefined;
+  return r?.id ?? null;
+}
+
+/**
+ * „Keine Einheit“ (D17, in der Oberfläche seit dem Audit 2026-11-07 so genannt, vorher „nicht stattgefunden“): der
+ * Platz ist **veröffentlicht**, hat keine Einheit (`unit_id IS NULL`), liegt hinter uns, und an dem Tag ist auch keine
+ * Einheit von Hand nachgetragen (`nachgetragenAm`). Eine Einheit, die gerade läuft, ist nicht gemeint — erst wenn die
+ * geplante Zeit vorbei ist. Keine Abrechnungsfolge. Die App weiß nicht, ob die Stunde ausgefallen ist oder nur nicht
+ * dokumentiert wurde; deshalb kein „ausgefallen“.
  */
 export function istNichtStattgefunden(zeile: GeplanteEinheitZeile, now: Date = new Date()): boolean {
   if (zeile.status !== "veroeffentlicht" || zeile.unit_id !== null) return false;
   const datum = slotDatum(zeile.week_start, zeile.weekday);
   const heute = wienerDatum(now);
-  if (heute > datum) return true;
   if (heute < datum) return false;
-  return zeile.start_min + zeile.geplante_dauer <= wienerMinuten(now);
+  if (heute === datum && zeile.start_min + zeile.geplante_dauer > wienerMinuten(now)) return false;
+  return nachgetragenAm(zeile.student_id, datum) === null;
 }
 
-/** Alle ausgefallenen Plätze einer Woche, älteste zuerst. */
+/** Alle Plätze einer Woche ohne Einheit, älteste zuerst. */
 export function nichtStattgefunden(weekStart: string, now: Date = new Date()): GeplanteEinheitZeile[] {
   return einheitenFuerWoche(weekStart, { status: "veroeffentlicht" }).filter((z) => istNichtStattgefunden(z, now));
 }

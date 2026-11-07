@@ -151,7 +151,6 @@ export default async function LearnHome({ params, searchParams }: { params: Prom
                       <span aria-hidden>·</span>
                       <UserRound size={15} className="shrink-0 text-ink-3" aria-hidden />
                       <span>{t.lehrer}</span>
-                      {t.nichtStattgefunden && <span className="text-[13px] text-ink-3">nicht stattgefunden</span>}
                     </span>
                     <TerminTauschen
                       anbietbar={anbietbar.get(t.id)}

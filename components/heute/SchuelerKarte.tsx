@@ -3,7 +3,8 @@ import { ArrowRight, BookOpenCheck, CheckCircle2, Play, Sparkles } from "lucide-
 import { vorbereitenAction } from "@/app/cockpit-actions";
 import { startUnitAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
-import type { HeuteKarte, HeutePunkt } from "@/lib/heute";
+import { nachtragenHref, type HeuteKarte, type HeutePunkt } from "@/lib/heute";
+import { wienerDatum } from "@/lib/planung/zeit";
 import type * as repo from "@/lib/repo";
 import { klassenLabel } from "@/lib/school";
 
@@ -101,7 +102,15 @@ export function SchuelerKarte({ p, student, karte, fach, haupt, wann, oben = fal
             <span className="text-[14px] text-ink-3">abgebrochen</span>
           ) : (
             <>
-              {p.nichtStattgefunden && <span className="text-[13px] text-ink-3">nicht stattgefunden</span>}
+              {p.nichtStattgefunden && (
+                // Audit 2026-11-07: neutral „keine Einheit“ statt „nicht stattgefunden“, und gleich der Weg zum Nachtragen
+                <span className="flex items-center gap-2 text-[13px] text-ink-3" data-testid="keine-einheit">
+                  keine Einheit
+                  <Link href={nachtragenHref(p.studentId, wienerDatum(new Date()), p.startMin, p.endeMin - p.startMin)} className="inline-flex min-h-[44px] items-center font-semibold text-accent hover:underline">
+                    Nachtragen
+                  </Link>
+                </span>
+              )}
               {/* the unit starts for the Platz of this card (two students at the same time each get their own) */}
               <form action={startUnitAction.bind(null, p.studentId, p.platzId)} className="w-full sm:w-auto">
                 <button className={`btn w-full sm:w-auto ${haupt ? "btn-primary" : "btn-secondary"}`}>
