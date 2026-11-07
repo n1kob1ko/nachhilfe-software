@@ -29,10 +29,12 @@ const firstName = (n: string) => n.split(" ")[0];
  * sich die Schüler verbessert haben und den Dingen zu erledigen; die Farben bleiben). Oben vier Kennzahlen (heute, diese
  * Woche, zu erledigen, verbessert), darunter Karten:
  *
- * - **Heute**: die heutigen Schüler, jeder auf einer kurzen Karte aus der automatischen Vorbereitung (lib/heute.ts) mit
- *   „Einheit starten“; ohne Plan die Schülerwahl. Fehlende KI-Briefings bereitet die App im Hintergrund vor.
+ * - **Heute**: die heutigen Schüler, jeder auf einer kurzen Karte aus der automatischen Vorbereitung (lib/heute.ts):
+ *   Zeit, Name, Fach, Thema, nahe Prüfung und „Einheit starten“, der Rest zugeklappt unter „Mehr“; erledigte Einheiten
+ *   nur als Zeile. Ohne Plan die Schülerwahl. Fehlende KI-Briefings bereitet die App im Hintergrund vor.
  * - **Zu erledigen** (lib/zu-erledigen.ts): die ersten fünf offenen Punkte mit Abhaken, offene Abschlüsse zuerst.
- * - **Meine Woche** (lib/dashboard.ts): der Wochenplan des angemeldeten Lehrers, je Tag die Termine.
+ * - **Meine Woche** (lib/dashboard.ts): der Wochenplan des angemeldeten Lehrers, je Tag die Termine. Die Kennzahl
+ *   „Diese Woche“ zählt genau diese Termine (gehalten, geplant, ohne Einheit).
  * - **Fortschritt deiner Schüler** (lib/dashboard.ts): Lernstand und Veränderung der letzten vier Wochen.
  *
  * Läuft eine Einheit, steht sie ganz oben auf der Bühne mit „Zum Unterricht“. Heute leitet nie um; wohin die Lehrkraft
@@ -140,7 +142,15 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
           zusatz={naechster ? `als Nächstes ${naechster.zeit.split("–")[0]} ${firstName(naechster.studentName)}` : punkte.length > 0 ? (punkte.length === 1 ? "Einheit" : "Einheiten") : "niemand eingeplant"}
           href="#heute"
         />
-        <Kennzahl wort="Diese Woche" wert={String(woche.gehalten + woche.geplant)} zusatz={`${woche.gehalten} gehalten · ${woche.geplant} geplant`} href="#woche" />
+        <Kennzahl
+          wort="Diese Woche"
+          wert={String(woche.termine)}
+          zusatz={
+            [woche.gehalten > 0 && `${woche.gehalten} gehalten`, woche.geplant > 0 && `${woche.geplant} geplant`, woche.ohneEinheit > 0 && `${woche.ohneEinheit} ohne Einheit`].filter(Boolean).join(" · ") ||
+            "nichts geplant"
+          }
+          href="#woche"
+        />
         <Kennzahl
           wort="Zu erledigen"
           wert={String(offen.length + abschluesse.length)}

@@ -40,7 +40,10 @@ test("Platz ohne Einheit: „keine Einheit“ überall, nach dem Nachtragen geha
   assert.equal(punkt.nichtStattgefunden, true);
   assert.equal(punkt.erledigt, false);
   assert.equal(heute.offen(punkt), false, "vorbei: nicht mehr „Einheit starten“");
-  assert.equal(meineWoche(niko.id, MONTAG_NACHMITTAG).plan[0].eintraege[0].stand, "ausgefallen", "Anzeige „keine Einheit“");
+  const woche1 = meineWoche(niko.id, MONTAG_NACHMITTAG);
+  assert.equal(woche1.plan[0].eintraege[0].stand, "ausgefallen", "Anzeige „keine Einheit“");
+  // die Kennzahl „Diese Woche“ zählt dieselben Termine wie der Plan (Audit 2026-11-07)
+  assert.deepEqual({ termine: woche1.termine, gehalten: woche1.gehalten, geplant: woche1.geplant, ohneEinheit: woche1.ohneEinheit }, { termine: 1, gehalten: 0, geplant: 0, ohneEinheit: 1 });
   assert.equal(termineFuerSchueler(anna, MONTAG_NACHMITTAG).wochen[0].termine[0].nichtStattgefunden, true);
   assert.equal(heute.nachtragenHref(anna, MONTAG, 480, 100), `/schueler/${anna}/stunden/neu?datum=2026-10-12&start=480&dauer=100`);
 
@@ -54,7 +57,9 @@ test("Platz ohne Einheit: „keine Einheit“ überall, nach dem Nachtragen geha
   assert.equal(danach.nichtStattgefunden, false);
   assert.equal(danach.erledigt, true, "auf Heute: erledigt");
   assert.equal(heute.offen(danach), false);
-  assert.equal(meineWoche(niko.id, MONTAG_NACHMITTAG).plan[0].eintraege[0].stand, "gehalten");
+  const woche2 = meineWoche(niko.id, MONTAG_NACHMITTAG);
+  assert.equal(woche2.plan[0].eintraege[0].stand, "gehalten");
+  assert.deepEqual({ termine: woche2.termine, gehalten: woche2.gehalten, ohneEinheit: woche2.ohneEinheit }, { termine: 1, gehalten: 1, ohneEinheit: 0 });
   assert.equal(termineFuerSchueler(anna, MONTAG_NACHMITTAG).wochen[0].termine[0].nichtStattgefunden, false);
 
   // eine geplante oder abgesagte Zeile zählt nicht als nachgetragen

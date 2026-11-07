@@ -27,7 +27,7 @@ Zum besten Signal sucht die App:
 
 Das Ergebnis heißt **Fokus** (`fokusAus`): Art, Fähigkeiten, Thema und eine kurze Beschreibung. Bei einem Wunsch steht dort nur „Vom Schüler gemeldet: <Thema>“, nie sein eigener Text. Heute, Unterricht und das Briefing nutzen denselben Fokus:
 
-- Die Karte auf Heute zeigt Thema, Warum, Vorbereitet („3 Themen: Past Simple 35 · E-Mail 30 · Tagesablauf 20 · Lernpaket „…““, ein selbst gewähltes Lernpaket wie bisher), Schwierigkeiten und eine Prüfung bis 30 Tage.
+- Die Karte auf Heute zeigt Thema und eine nahe Prüfung (bis 30 Tage); Warum, Vorbereitet („3 Themen: Past Simple 35 · E-Mail 30 · Tagesablauf 20 · Lernpaket „…““, ein selbst gewähltes Lernpaket wie bisher), Schwierigkeiten und die Hausübung von letztem Mal stehen zugeklappt unter „Mehr“ (Audit 2026-11-07).
 - „Einheit starten“ beginnt im Fach der Vorbereitung (`fachHeute`). Der Unterricht nimmt denselben Plan für die ganze Einheit (`lib/stundenplan.ts`): mehrere Themen, geprüfte Pakete als Block eines Themas. Ein selbst gewähltes Paket gilt allein.
 - Das Briefing selbst („Plan für heute“ weiter unten) bleibt wie bisher ein Plan mit einem Schwerpunkt.
 
