@@ -5,6 +5,8 @@
  *
  * - `wochenBalken`: je Tag der laufenden Woche, wie viele Einheiten der Lehrer schon gehalten hat (gestartete Einheiten)
  *   und wie viele noch geplant sind (veröffentlichte Plätze ab heute ohne Einheit, nicht ausgefallen).
+ * - `meineWoche`: der Wochenplan des Lehrers und die Summen der Kennzahl „Diese Woche“ (Termine, gehalten, geplant,
+ *   ohne Einheit), aus denselben Einträgen wie der Plan.
  * - `schuelerFortschritt`: je Schüler der Lernstand jetzt und die Veränderung der letzten vier Wochen (lib/analysis.ts,
  *   `trendOf`), dazu die Fähigkeit, in der er sich am meisten verbessert hat. Keine erfundenen Fortschritte: ohne genug
  *   Daten steht „noch zu wenig Daten“.
@@ -125,12 +127,18 @@ export function meineWoche(teacherId: number, now = new Date()) {
     einheiten.map((u) => u.datum),
     eintraege.filter((e) => e.stand === "geplant").map((e) => e.datum),
   );
+  // Audit 2026-11-07: die Kennzahl „Diese Woche“ zählt genau die Termine, die der Plan darunter zeigt
+  const zaehle = (...stand: PlanEintrag["stand"][]) => eintraege.filter((e) => stand.includes(e.stand)).length;
   return {
     label: uebersicht.label,
     plan,
     balken,
-    gehalten: balken.reduce((s, t) => s + t.gehalten, 0),
-    geplant: balken.reduce((s, t) => s + t.geplant, 0),
+    /** alle Termine der Woche, wie sie im Plan stehen */
+    termine: eintraege.length,
+    gehalten: zaehle("gehalten"),
+    geplant: zaehle("geplant"),
+    /** vorbei ohne Einheit (Anzeige „keine Einheit“ bzw. „vorbei“) */
+    ohneEinheit: zaehle("ausgefallen", "vorbei"),
   };
 }
 
