@@ -1,12 +1,14 @@
 import { Wochenplan, type PlanungFilterWerte, type Vorgabe } from "@/components/planung/Wochenplan";
 import { antwortLehrerAction, bestaetigeAnfrageAction } from "@/app/terminanfrage-actions";
 import { AnfrageMeldung, AnfragenListe } from "@/components/planung/Terminanfragen";
+import { OffeneAngebote } from "@/components/planung/Tauschboerse";
 import { PageHeader, SectionTitle } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
 import { darfWocheSehen, darfWochenplanBearbeiten } from "@/lib/planung/berechtigungen";
 import { leseRegeln, pruefeRegeln, regelnJson } from "@/lib/planung/regeln";
 import { listRaeume } from "@/lib/planung/repo";
 import { anfragenFuerVerwaltung } from "@/lib/planung/terminanfragen";
+import { offeneAngeboteFuerVerwaltung } from "@/lib/planung/tauschboerse";
 import { tauschGesehenAction, tauscheZurueckAction } from "@/app/tauschboerse-actions";
 import { wochenUebersicht } from "@/lib/planung/uebersicht";
 import { istDatum, wochenstartVon, wienerWochenstart, type Wochentag } from "@/lib/planung/zeit";
@@ -61,6 +63,8 @@ export default async function PlanungPage({
 
   // Terminanfragen (lib/planung/terminanfragen.ts): hier bestätigt oder lehnt die Verwaltung ab
   const anfragen = darfBearbeiten ? anfragenFuerVerwaltung() : [];
+  // offene Angebote der Tauschbörse (lib/planung/tauschboerse.ts): wer wartet, und ob überhaupt jemand tauschen könnte
+  const angebote = darfBearbeiten ? offeneAngeboteFuerVerwaltung() : [];
   // ein Tausch aus der Tauschbörse bleibt oben, bis die Verwaltung „Passt“ oder „Zurücktauschen“ gedrückt hat
   const istOffen = (a: (typeof anfragen)[number]) => a.status === "offen" || a.status === "wartet" || a.kannGesehen;
   const offeneAnfragen = anfragen.filter(istOffen);
@@ -91,10 +95,11 @@ export default async function PlanungPage({
         </p>
       )}
 
-      {darfBearbeiten && (anfragen.length > 0 || sp.anfrage_ok || sp.anfrage_fehler) && (
+      {darfBearbeiten && (anfragen.length > 0 || angebote.length > 0 || sp.anfrage_ok || sp.anfrage_fehler) && (
         <section id="terminanfragen" className="mb-8 scroll-mt-4" aria-label="Terminanfragen">
           <SectionTitle>{offeneAnfragen.length ? `Terminanfragen: ${offeneAnfragen.length} offen` : "Terminanfragen"}</SectionTitle>
           <AnfrageMeldung ok={sp.anfrage_ok} fehler={sp.anfrage_fehler} />
+          <OffeneAngebote angebote={angebote} />
           {offeneAnfragen.length > 0 && (
             <div className="mt-3">
               <AnfragenListe

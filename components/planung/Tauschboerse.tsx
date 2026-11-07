@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowLeftRight, Repeat } from "lucide-react";
 import { Pill } from "@/components/ui";
-import { FRIST_STUNDEN, type Anbietbar, type EigenesAngebot, type PassendesAngebot } from "@/lib/planung/tauschboerse";
+import { FRIST_STUNDEN, type Anbietbar, type EigenesAngebot, type OffenesAngebot, type PassendesAngebot } from "@/lib/planung/tauschboerse";
 
 /**
  * Tauschbörse in der Schüler-App (lib/planung/tauschboerse.ts). niko, 2026-11-07: so einfach, dass Schüler und Eltern
@@ -44,11 +44,17 @@ export function TauschAngebote({ passend, nehmen }: { passend: PassendesAngebot[
 export function TerminTauschen({ anbietbar, eigenes, anbieten, zuruecknehmen }: { anbietbar?: Anbietbar; eigenes?: EigenesAngebot; anbieten: Aktion; zuruecknehmen: Aktion }) {
   if (eigenes) {
     return (
-      <div className="mt-1 flex flex-wrap items-center gap-2" data-testid="termin-angeboten">
-        <Pill tone="amber">Zum Tauschen angeboten</Pill>
-        <form action={zuruecknehmen}>
-          <button className="btn btn-ghost btn-sm">Zurücknehmen</button>
-        </form>
+      <div className="mt-1 grid gap-1" data-testid="termin-angeboten">
+        <div className="flex flex-wrap items-center gap-2">
+          <Pill tone="amber">Zum Tauschen angeboten</Pill>
+          <form action={zuruecknehmen}>
+            <button className="btn btn-ghost btn-sm">Zurücknehmen</button>
+          </form>
+        </div>
+        {/* Audit 2026-11-07: der Schüler soll sehen, ob überhaupt jemand tauschen könnte, statt still zu warten */}
+        <p className="text-[13px] text-ink-2" data-testid="angebot-stand">
+          {eigenes.moeglich === 0 ? "Zurzeit gibt es keinen Termin, mit dem getauscht werden kann. Das Angebot bleibt, falls sich etwas ändert." : "Bisher hat niemand getauscht. Sobald es passiert, siehst du es hier."}
+        </p>
       </div>
     );
   }
@@ -70,9 +76,32 @@ export function TerminTauschen({ anbietbar, eigenes, anbieten, zuruecknehmen }: 
         </fieldset>
         <button className="btn btn-primary justify-self-start">Zum Tauschen anbieten</button>
         <p className="text-[13px] text-ink-2">
-          Möchte jemand mit einer dieser Zeiten tauschen, wird sofort getauscht und du siehst es hier. Bis {FRIST_STUNDEN} Stunden vor dem Termin.
+          Nur Zeiten, mit denen der Tausch wirklich geht. Möchte jemand mit einer dieser Zeiten tauschen, wird sofort getauscht und du siehst es hier. Bis {FRIST_STUNDEN} Stunden vor dem Termin.
         </p>
       </form>
     </details>
+  );
+}
+
+/** Planung, nur Verwaltung: wer gerade einen Termin in der Tauschbörse hat und ob überhaupt jemand tauschen könnte. */
+export function OffeneAngebote({ angebote }: { angebote: OffenesAngebot[] }) {
+  if (angebote.length === 0) return null;
+  return (
+    <div className="panel mt-3 px-4 py-3" data-testid="offene-angebote">
+      <p className="flex items-center gap-2 text-[14px] font-semibold">
+        <ArrowLeftRight size={16} className="text-accent" aria-hidden /> In der Tauschbörse: {angebote.length === 1 ? "1 Angebot" : `${angebote.length} Angebote`}
+      </p>
+      <ul className="mt-2 grid gap-2 text-[14px]">
+        {angebote.map((a) => (
+          <li key={a.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="font-semibold">{a.studentName}</span>
+            <span className="text-ink-2">bei {a.lehrerName}</span>
+            <span className="num">{a.label}</span>
+            <span className="text-ink-2">→ {a.passende === null ? "jede andere Zeit" : a.passende.join(", ")}</span>
+            {a.moeglich === 0 ? <Pill tone="red">derzeit kein Tauschpartner</Pill> : <Pill tone="amber">wartet</Pill>}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
