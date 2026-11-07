@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Printer, RefreshCw, Send, Sparkles, Trash2 } from "lucide-react";
+import { CheckCircle2, PenLine, Printer, RefreshCw, Send, Sparkles, Trash2 } from "lucide-react";
 import {
   huAnzahlAction,
   huEntfernenAction,
@@ -20,15 +20,18 @@ import { antwortText, frageText, loesungText } from "@/lib/cockpit";
 import { kiGrundText } from "@/lib/ai/grund";
 import { fehlt, HERKUNFT, MAX_JE_THEMA, themaKopf, zusammenfassung, type HuThema, type Vorschlag } from "@/lib/hausuebung";
 import { antwortenText } from "@/lib/zu-bewerten";
+import { datumLabel } from "@/lib/planung/zeit";
 import { shortDate } from "@/lib/summary";
 
 const aufgabenText = (n: number) => `${n} ${n === 1 ? "Aufgabe" : "Aufgaben"}`;
 
 /**
  * **Hausübung vorbereitet** im Abschluss (lib/hausuebung.ts): je Thema eine Zeile mit dem Grund, die Vorschau aller Aufgaben mit Lösung
- * (nur für die Lehrkraft), Ändern, Fälligkeit und „Hausübung freigeben“. Nichts davon sieht der Schüler, bevor freigegeben ist.
+ * (nur für die Lehrkraft) und „Hausübung ändern“. Nichts davon sieht der Schüler, bevor freigegeben ist. Freigegeben wird sie mit
+ * „Bestätigen“ (Häkchen „Hausübung mitschicken“, `HausuebungMitschicken`, Audit 2026-11-07); nur bei schon bestätigter
+ * Dokumentation hat die Karte ihren eigenen Knopf (`eigenerKnopf`).
  */
-export function HausuebungKarte({ v, name, fehler }: { v: Vorschlag; name: string; fehler: string | null }) {
+export function HausuebungKarte({ v, name, fehler, eigenerKnopf = false }: { v: Vorschlag; name: string; fehler: string | null; eigenerKnopf?: boolean }) {
   const unitId = v.unitId;
   return (
     <div id="hausuebung" className="mt-6 grid scroll-mt-24 gap-3 border-t border-line pt-4" data-testid="hausuebung">
@@ -45,7 +48,7 @@ export function HausuebungKarte({ v, name, fehler }: { v: Vorschlag; name: strin
           </form>
         </div>
       ) : (
-        <Vorschlagen v={v} name={name} />
+        <Vorschlagen v={v} name={name} eigenerKnopf={eigenerKnopf} />
       )}
       {fehler && (
         <p role="alert" className="text-[14px] text-red" data-testid="hausuebung-fehler">
@@ -82,7 +85,7 @@ function Freigegeben({ v, name }: { v: Vorschlag; name: string }) {
   );
 }
 
-function Vorschlagen({ v, name }: { v: Vorschlag; name: string }) {
+function Vorschlagen({ v, name, eigenerKnopf }: { v: Vorschlag; name: string; eigenerKnopf: boolean }) {
   const unitId = v.unitId;
   const laeuft = v.themen.some((t) => t.ki?.status === "laeuft");
   const keine = (
@@ -140,24 +143,91 @@ function Vorschlagen({ v, name }: { v: Vorschlag; name: string }) {
           <Vorschau v={v} />
         </Reveal>
       )}
-      <Reveal label="Ändern">
+      <Reveal
+        label={
+          <span className="inline-flex items-center gap-1.5">
+            <PenLine size={15} aria-hidden /> Hausübung ändern
+          </span>
+        }
+      >
         <Aendern v={v} />
       </Reveal>
-      <form action={huFreigebenAction.bind(null, unitId)} className="grid gap-2 border-t border-line pt-3">
-        <label className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px]">
-          <span className="font-semibold">Fällig am</span>
-          <input type="date" name="faellig" defaultValue={v.faellig ?? ""} required className="input num" style={{ width: "11rem", minHeight: 44 }} data-testid="hausuebung-faellig" />
-          <span className="text-[13px] text-ink-3">{v.faelligAusTermin && v.faellig ? `nächste Einheit laut Plan: ${shortDate(v.faellig)}` : v.faellig ? "" : "Kein Termin im Plan: bitte wählen"}</span>
-        </label>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <HausuebungKnopf label="Hausübung freigeben" art="primary" gesperrt={Boolean(v.gesperrt)} laeuft="Wird freigegeben …" testid="hausuebung-freigeben" icon={<Send size={17} aria-hidden />} />
-        </div>
-        <p className="text-[13.5px] text-ink-2" data-testid="hausuebung-grund">
-          {v.gesperrt ?? `${name} sieht sie erst danach im Schülerportal, ohne Lösungen.`}
-        </p>
-      </form>
+      {eigenerKnopf ? (
+        <form action={huFreigebenAction.bind(null, unitId)} className="grid gap-2 border-t border-line pt-3">
+          <Faellig v={v} />
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <HausuebungKnopf label="Hausübung freigeben" art="primary" gesperrt={Boolean(v.gesperrt)} laeuft="Wird freigegeben …" testid="hausuebung-freigeben" icon={<Send size={17} aria-hidden />} />
+          </div>
+          <p className="text-[13.5px] text-ink-2" data-testid="hausuebung-grund">
+            {v.gesperrt ?? `${name} sieht sie erst danach in der Schüler-App, ohne Lösungen.`}
+          </p>
+        </form>
+      ) : (
+        v.gesperrt && (
+          <p className="text-[13.5px] text-amber" data-testid="hausuebung-grund">
+            {v.gesperrt}
+          </p>
+        )
+      )}
       <div className="-mt-1">{keine}</div>
     </div>
+  );
+}
+
+/**
+ * Das Häkchen im Knopf „Bestätigen“ (Audit 2026-11-07): „Hausübung mitschicken“ mit der Zusammenfassung und der Fälligkeit, im
+ * selben Formular. Gesperrt (ungeprüfte oder noch entstehende Aufgaben): ohne Häkchen, mit dem Grund; der Abschluss lässt sich
+ * trotzdem bestätigen, die Hausübung bekommt dann ihren eigenen Knopf in der Karte.
+ */
+export function HausuebungMitschicken({ v, name }: { v: Vorschlag; name: string }) {
+  const themen = v.themen.filter((t) => t.aufgaben.length);
+  const gesperrt = Boolean(v.gesperrt);
+  return (
+    <div className="grid gap-1" data-testid="hausuebung-mitschicken">
+      <label className="flex min-h-[44px] items-start gap-2.5 text-[15px]">
+        <input type="checkbox" name="hausuebung" value="1" defaultChecked={!gesperrt} disabled={gesperrt} className="mt-[3px] h-5 w-5 shrink-0 accent-[var(--accent)]" data-testid="hausuebung-haken" />
+        <span className="min-w-0">
+          <span className="font-semibold">Hausübung mitschicken</span>
+          {themen.length > 0 && <span className="text-ink-2"> · {zusammenfassung(themen)}</span>}
+          <span className="block text-[13.5px] text-ink-2">{v.gesperrt ?? `${name} sieht sie danach in der Schüler-App, ohne Lösungen.`}</span>
+        </span>
+      </label>
+      {!gesperrt && (
+        <div className="pl-[30px]">
+          <Faellig v={v} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Die Fälligkeit als Satz („Fällig bis zur nächsten Einheit (Mo 9.11.)“) mit „ändern“, das Datumsfeld erst dann; ohne Termin im
+ * Plan gleich das Feld. Das Feld gehört zum umgebenden Formular (`faellig`).
+ */
+function Faellig({ v }: { v: Vorschlag }) {
+  const feld = <input type="date" name="faellig" defaultValue={v.faellig ?? ""} required className="input num" style={{ width: "11rem", minHeight: 44 }} data-testid="hausuebung-faellig" />;
+  if (!v.faellig)
+    return (
+      <label className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px]">
+        <span className="font-semibold">Fällig am</span>
+        {feld}
+        <span className="text-[13px] text-ink-3">Kein Termin im Plan: bitte wählen</span>
+      </label>
+    );
+  return (
+    <details className="group text-[14.5px]" data-testid="hausuebung-faellig-text">
+      <summary className="inline-flex min-h-[44px] cursor-pointer list-none flex-wrap items-center gap-x-2 [&::-webkit-details-marker]:hidden">
+        <span>
+          Fällig {v.faelligAusTermin ? "bis zur nächsten Einheit" : "am"} <span className="num">{v.faelligAusTermin ? `(${datumLabel(v.faellig)})` : datumLabel(v.faellig)}</span>
+        </span>
+        <span className="font-semibold text-accent group-open:hidden">ändern</span>
+      </summary>
+      <label className="flex flex-wrap items-center gap-x-3 gap-y-1 pb-1 text-[15px]">
+        <span className="font-semibold">Fällig am</span>
+        {feld}
+      </label>
+    </details>
   );
 }
 

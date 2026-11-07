@@ -29,7 +29,7 @@ import { latestInsight } from "@/lib/ai/insights";
 import { unitBrief } from "@/lib/summary";
 import { ABSCHLUSS_FELDER, hatSichereErgebnisse, karteDerEinheit, punkteDerKarte, quelleText } from "@/lib/abschluss";
 import { AbschlussFeld } from "@/components/AbschlussFeld";
-import { HausuebungKarte } from "@/components/Hausuebung";
+import { HausuebungKarte, HausuebungMitschicken } from "@/components/Hausuebung";
 import { hausuebungDerEinheit, kiAutomatisch, vorschlagZeigen } from "@/lib/hausuebung";
 import { Pill, Reveal, SectionTitle, formatDate, formatTime } from "@/components/ui";
 import { LiveStatus } from "@/components/device/LiveStatus";
@@ -399,30 +399,39 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
                 <ZuBewertenListe zeilen={offen} bewerten={mayManage} />
               </div>
             )}
-            {hu && huZeigen && <HausuebungKarte v={hu} name={first(student.name)} fehler={sp.hausuebung ?? null} />}
-            <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-4">
+            {hu && huZeigen && <HausuebungKarte v={hu} name={first(student.name)} fehler={sp.hausuebung ?? null} eigenerKnopf={Boolean(lesson.reviewed_at)} />}
+            {/* Audit 2026-11-07: ein Hauptknopf. „Bestätigen“ schickt mit dem Häkchen auch die vorbereitete Hausübung mit */}
+            <div className="mt-6 grid gap-3 border-t border-line pt-4">
               {lesson.reviewed_at ? (
-                <>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                   <p className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-green" data-testid="bestaetigt">
                     <CheckCircle2 size={17} aria-hidden /> Bestätigt am {formatDate(lesson.reviewed_at, { day: "numeric", month: "long" })}
                   </p>
                   <Link href="/" className="btn btn-secondary">
                     Zurück zu Heute
                   </Link>
-                </>
+                  {mayManage && !aendern && (
+                    <Link href={`/einheiten/${unit.id}?aendern=1#aendern`} className="btn btn-ghost" data-testid="doku-aendern">
+                      <PenLine size={16} aria-hidden /> Dokumentation ändern
+                    </Link>
+                  )}
+                </div>
               ) : mayManage ? (
-                <form action={bestaetigeDokuAction.bind(null, lesson.id)}>
-                  <button className="btn btn-primary btn-lg" data-testid="doku-bestaetigen">
-                    <CheckCircle2 size={18} aria-hidden /> Dokumentation bestätigen
-                  </button>
+                <form action={bestaetigeDokuAction.bind(null, lesson.id)} className="grid gap-3" data-testid="bestaetigen-form">
+                  {hu && huZeigen && hu.status === "vorschlag" && hu.aufgaben.length > 0 && <HausuebungMitschicken v={hu} name={first(student.name)} />}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <button className="btn btn-primary btn-lg" data-testid="doku-bestaetigen">
+                      <CheckCircle2 size={18} aria-hidden /> Bestätigen
+                    </button>
+                    {!aendern && (
+                      <Link href={`/einheiten/${unit.id}?aendern=1#aendern`} className="btn btn-ghost" data-testid="doku-aendern">
+                        <PenLine size={16} aria-hidden /> Dokumentation ändern
+                      </Link>
+                    )}
+                  </div>
                 </form>
               ) : (
                 <p className="text-[14px] text-ink-2">Noch nicht bestätigt. Das macht {unit.teacher_name}.</p>
-              )}
-              {mayManage && !aendern && (
-                <Link href={`/einheiten/${unit.id}?aendern=1#aendern`} className="btn btn-ghost" data-testid="doku-aendern">
-                  <PenLine size={16} aria-hidden /> Ändern
-                </Link>
               )}
             </div>
           </section>
@@ -518,7 +527,17 @@ function PunktZeile({ p, links }: { p: ReturnType<typeof punkteDerKarte>[number]
     <li className="grid gap-x-4 py-2 sm:grid-cols-[9.5rem_minmax(0,1fr)]" data-testid={`punkt-${p.punkt}`}>
       <span className="pt-1 text-[13px] font-semibold text-ink-2">{p.label}</span>
       <div className="min-w-0 text-[15.5px]">
-        {p.zeilen.length > 1 || text.length > PUNKT_KURZ ? (
+        {p.punkt === "themen" ? (
+          // Audit 2026-11-07: das Wichtigste steht ganz da und bricht um, statt hinter „mehr“ zu enden
+          <p className="py-1 leading-snug">
+            {p.zeilen.map((z, i) => (
+              <span key={i} className={leise(z) ? "text-ink-2" : ""}>
+                {i > 0 && <span className="text-ink-3"> · </span>}
+                {z.text}
+              </span>
+            ))}
+          </p>
+        ) : p.zeilen.length > 1 || text.length > PUNKT_KURZ ? (
           <details className="group">
             <summary className="flex min-h-[32px] cursor-pointer list-none items-center gap-2 pointer-coarse:min-h-[44px] [&::-webkit-details-marker]:hidden">
               <span className="min-w-0 truncate group-open:hidden">{text}</span>

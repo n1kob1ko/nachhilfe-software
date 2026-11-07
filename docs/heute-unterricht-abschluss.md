@@ -219,8 +219,10 @@ schwierig“. Die KI-Zusammenfassung der Einheit (`onUnitEnd`, im Hintergrund) s
 nicht; das Feld zeigt dann genau diesen Text („von dir“). Leer gespeichert, kommt es wieder aus den Daten. Das große
 Formular „Ändern“ bleibt.
 
-**Dokumentation bestätigen** (`bestaetigeAbschluss`) schreibt die vier Felder in die Dokumentation, nur wo die Lehrkraft
-nichts selbst geschrieben hat (leer oder noch der automatische Wert): Heute gemacht → `activities`, Gut verstanden →
+**Bestätigen** (`bestaetigeAbschluss`; Audit 2026-11-07: der eine Hauptknopf, mit dem Häkchen „Hausübung mitschicken“ gibt
+er auch die vorbereitete Hausübung frei, `lib/hausuebung.ts freigeben`; die Fälligkeit steht als Satz „bis zur nächsten
+Einheit (Mo 9.11.)“ mit „ändern“; geht das Freigeben nicht, bleibt der Abschluss offen und der Grund steht in der
+Hausübungskarte) schreibt die vier Felder in die Dokumentation, nur wo die Lehrkraft nichts selbst geschrieben hat (leer oder noch der automatische Wert): Heute gemacht → `activities`, Gut verstanden →
 `positives`, Noch schwierig → `difficulties`, Nächstes Mal → `next_steps`. Eine Beobachtung steht dort mit
 „(Beobachtung)“. Dann `reviewed_at`, und weiter zu `/jetzt`: läuft ein zweiter Schüler, in seinen Unterricht, wartet
 sein Abschluss von heute, dorthin, sonst Heute. „Nächstes Mal“ liest die nächste Vorbereitung als offenes Ziel

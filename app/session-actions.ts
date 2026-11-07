@@ -20,6 +20,7 @@ import {
   setPassword,
 } from "@/lib/auth";
 import { bestaetigeAbschluss, isAbschlussFeld, korrigiereFeld } from "@/lib/abschluss";
+import { freigeben } from "@/lib/hausuebung";
 import { clientIp } from "@/lib/client-ip";
 import { db, usernameFor } from "@/lib/db";
 import { fachHeute } from "@/lib/heute";
@@ -223,12 +224,22 @@ export async function cancelUnitAction(unitId: number, formData: FormData) {
  * Lehrkraft gebraucht wird (/jetzt): läuft noch ein zweiter Schüler, in seinen Unterricht, wartet sein Abschluss, dorthin,
  * sonst zu Heute.
  */
-export async function bestaetigeDokuAction(lessonId: number) {
+export async function bestaetigeDokuAction(lessonId: number, form?: FormData) {
   const t = await requireTeacher();
   const lesson = repo.getLesson(lessonId);
   if (!lesson) redirect("/abschluss");
   const owner = lesson.unit_id ? getUnit(lesson.unit_id) : null;
   if (owner && !canManageUnit(t, owner)) redirect(`/einheiten/${owner.id}?fremd=1`);
+  // Audit 2026-11-07: ein Knopf. Mit dem Häkchen „Hausübung mitschicken“ gibt „Bestätigen“ die vorbereitete Hausübung frei
+  // (lib/hausuebung.ts freigeben); geht das nicht, bleibt der Abschluss offen und der Grund steht in der Hausübungskarte
+  if (owner && form?.get("hausuebung") === "1") {
+    const out = freigeben(owner.id, { faellig: String(form.get("faellig") ?? ""), teacherId: t.id });
+    if ("fehler" in out) {
+      revalidatePath(`/einheiten/${owner.id}`);
+      redirect(`/einheiten/${owner.id}?hausuebung=${encodeURIComponent(out.fehler)}#hausuebung`);
+    }
+    revalidatePath(`/schueler/${owner.student_id}`);
+  }
   bestaetigeAbschluss(lessonId);
   revalidatePath("/", "layout");
   redirect("/jetzt");
