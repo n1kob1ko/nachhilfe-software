@@ -2,7 +2,9 @@
  * **Anpassung im Unterricht** (niko, 25.10.2026: „Lernheft reagiert auf die Antworten des Schülers, zuerst nach
  * Regeln, KI nur wenn nötig“): die festen Regeln, ohne Datenbank und ohne KI. Aus den letzten Antworten auf die
  * gerade gesendete Übung (richtig oder falsch, Hilfen, Zeit, Fehlerart), dem Lernstand und den Fähigkeiten von heute
- * wird höchstens **ein Vorschlag** mit Grund, z. B. „2 Fehler: Kehrwert vergessen“ → Leichtere Aufgabe senden.
+ * wird höchstens **ein Vorschlag** mit Grund, z. B. „2 falsche Antworten: Kehrwert vergessen“ → Leichtere Aufgabe senden.
+ * (Audit 2026-11-07: „falsche Antworten“, denn gezählt werden Antworten, auch mehrere zu einer Aufgabe; der Live-Status
+ * zählt falsche Aufgaben und sagt das auch so. Eine Fehlerart steht in Worten, nie als Schlüssel wie „regel“.)
  *
  * Schwellen (bewusst einfach, docs/heute-unterricht-abschluss.md › Anpassung im Unterricht):
  * - **Leichter**: mindestens `FEHLER_AB` (2) falsche unter den letzten `FENSTER` (5) Antworten einer Fähigkeit. Dieselbe
@@ -19,6 +21,7 @@
  * (`heute`). Eine Voraussetzung einer Fähigkeit von heute gehört dazu.
  */
 import { difficultyFor, levelOf } from "./curriculum";
+import { errorTypeLabel } from "./error-types";
 
 /** So viele letzte Antworten je Fähigkeit zählen. */
 export const FENSTER = 5;
@@ -105,7 +108,7 @@ export const stufeAus = (mastery: number | null | undefined) => levelOf(difficul
 
 const falsch = (a: Antwort) => !a.correct || a.solutionViewed;
 
-/** Der Fehler, der mindestens zweimal kam: sein Etikett („Kehrwert vergessen“), sonst die Fehlerart. */
+/** Der Fehler, der mindestens zweimal kam: sein Etikett („Kehrwert vergessen“), sonst die Fehlerart in Worten („Regel nicht verstanden“). */
 export function wiederholterFehler(xs: Antwort[]): { text: string; typ: string | null } | null {
   const zaehle = (key: (a: Antwort) => string | null) => {
     const m = new Map<string, number>();
@@ -118,7 +121,7 @@ export function wiederholterFehler(xs: Antwort[]): { text: string; typ: string |
   const label = zaehle((a) => a.errorLabel);
   if (label) return { text: label, typ: xs.find((a) => a.errorLabel?.trim() === label)?.errorType ?? null };
   const typ = zaehle((a) => a.errorType);
-  return typ ? { text: typ, typ } : null;
+  return typ ? { text: errorTypeLabel(typ), typ } : null;
 }
 
 /**
@@ -169,7 +172,7 @@ export function schlageVor(l: Lage): Vorschlag | null {
     const level = levelVon(skill);
     const weg = leichtererWeg(l, skill, level, fehler, { erklaeren: true });
     const leichteste = level <= 1 && !weg.some((o) => o.art === "fehler") ? ", schon die leichteste Stufe" : "";
-    const v = vorschlag(`${schlimmste.falsch} Fehler${fehler ? `: ${fehler.text}` : ""}${leichteste}`, "antworten", weg);
+    const v = vorschlag(`${schlimmste.falsch} falsche ${schlimmste.falsch === 1 ? "Antwort" : "Antworten"}${fehler ? `: ${fehler.text}` : ""}${leichteste}`, "antworten", weg);
     if (v) return v;
   }
 

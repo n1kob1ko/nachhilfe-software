@@ -49,8 +49,8 @@ function Writing({ updatedAt }: { updatedAt: string }) {
  * as the whiteboard. The teacher never chooses a student: the unit knows it, and the device is the
  * confirmed laptop of the unit, else the teacher's tablet.
  *
- * `kompakt` (geführter Unterricht): eine Zeile „Tablet verbunden · Übung „…“ · Aufgabe 2 von 4 · 1 Fehler ·
- * Letzte Antwort falsch“, die sich auf Tippen zu allem Übrigen öffnet. Eine falsche Antwort und „nicht
+ * `kompakt` (geführter Unterricht): eine Zeile „Tablet verbunden · Übung „…“ · Aufgabe 2 von 4 · 1 Aufgabe falsch ·
+ * Letzte Antwort falsch“ (Audit 2026-11-07: Aufgaben, nicht Antworten, damit es nicht wie die Vorschlagskarte klingt), die sich auf Tippen zu allem Übrigen öffnet. Eine falsche Antwort und „nicht
  * angekommen“ stehen rot schon in der Zeile.
  */
 export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = null }: { unitId: number; initial: LiveSnapshot; join: JoinInfo; kompakt?: boolean; kiNeu?: KiNeu | null }) {
@@ -284,7 +284,7 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
     if (c.state === "nicht angekommen") teile.push({ text: "nicht angekommen", ton: "font-semibold text-red" });
     else if (c.state === "fertig") teile.push({ text: `fertig · ${c.correct} von ${c.total} richtig`, ton: "text-green" });
     else teile.push({ text: `Aufgabe ${Math.min(c.taskNo, c.total)} von ${c.total}` });
-    if (fehler > 0 && c.state !== "fertig") teile.push({ text: `${fehler} Fehler`, ton: "text-red" });
+    if (fehler > 0 && c.state !== "fertig") teile.push({ text: fehler === 1 ? "1 Aufgabe falsch" : `${fehler} Aufgaben falsch`, ton: "text-red" });
     if (c.last && !c.last.pending && c.state !== "fertig") teile.push(c.last.correct ? { text: "Letzte Antwort richtig", ton: "text-green" } : { text: c.last.answer ? `Letzte Antwort falsch: „${c.last.answer.length > 30 ? `${c.last.answer.slice(0, 29)}…` : c.last.answer}“${c.last.label && c.last.label.length <= 32 ? ` (${c.last.label})` : ""}` : "Letzte Antwort falsch", ton: "font-semibold text-red" });
     if (c.last?.pending) teile.push({ text: "Antwort wartet auf dich", ton: "text-amber" });
   } else teile.push({ text: "Noch nichts gesendet" });
