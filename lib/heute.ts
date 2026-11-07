@@ -18,6 +18,7 @@ import { daysUntil, inTagen } from "./exams";
 import { briefingZeile, hausuebungFuerEinheit, quelleText } from "./hausuebung-zurueck";
 import { getLernpaket, listLernpakete, type Lernpaket } from "./lernpakete";
 import { heutigeEinheiten } from "./planung/heute";
+import { nachgetragenAm } from "./planung/repo";
 import { tagAddieren, wienerDatum, wienerMinuten } from "./planung/zeit";
 import { RULE_LABEL, type NextStep } from "./recommend";
 import * as repo from "./repo";
@@ -83,7 +84,8 @@ export function tagesplan(teacherId: number, now: Date = new Date()): HeutePunkt
         einheitLehrer: fremd(unit),
         nichtStattgefunden: p.nicht_stattgefunden,
         ohnePlatz: false,
-        erledigt: unit?.status === "beendet",
+        // von Hand nachgetragen (Formular „Einheit nachtragen“): erledigt, auch ohne App-Einheit
+        erledigt: unit?.status === "beendet" || (p.unit_id === null && nachgetragenAm(p.student_id, today) !== null),
       };
     }),
     ...todays
@@ -112,6 +114,14 @@ export function tagesplan(teacherId: number, now: Date = new Date()): HeutePunkt
       }),
   ];
   return punkte.sort((a, b) => a.startMin - b.startMin);
+}
+
+/**
+ * „Nachtragen“ zu einem vergangenen Platz ohne Einheit (Audit 2026-11-07): das Formular „Einheit nachtragen“ mit Datum,
+ * Uhrzeit und Dauer des Platzes vorausgefüllt. Danach gilt der Platz als gehalten (lib/planung/repo.ts nachgetragenAm).
+ */
+export function nachtragenHref(studentId: number, datum: string, startMin: number, dauer: number): string {
+  return `/schueler/${studentId}/stunden/neu?datum=${datum}&start=${startMin}&dauer=${dauer}`;
 }
 
 /** Noch zu starten: ohne Einheit, nicht vorbei und nicht schon dokumentiert. */

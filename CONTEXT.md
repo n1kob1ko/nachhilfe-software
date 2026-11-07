@@ -100,7 +100,7 @@ _Avoid_: Scan, OCR
 Ein Platz im Wochenplan: wer (Lehrer, Schüler), wo (Raum), an welchem Wochentag,
 zu welcher Startzeit und mit welcher **geplanten Dauer**. Sie wird erst wirklich,
 wenn eine Einheit sich mit ihr verknüpft (`unit_id`); ein vergangener Platz ohne
-Einheit heißt „nicht stattgefunden“ und hat keine Abrechnungsfolge.
+Einheit (auch keine nachgetragene) heißt in der Oberfläche „keine Einheit“ (intern `nichtStattgefunden`) und hat keine Abrechnungsfolge; „Nachtragen“ führt zum Formular. Die App sagt nie „ausgefallen“, denn sie weiß nicht, ob die Stunde ausfiel oder nur nicht dokumentiert wurde.
 _Avoid_: Termin, Slot, geplante Stunde, Lesson
 
 **geplante Dauer**:

@@ -15,7 +15,8 @@ function localNow() {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:00`;
 }
 
-export async function LessonForm({ student, lesson, fehler }: { student: repo.Student; lesson?: repo.Lesson; fehler?: string }) {
+/** `vorgabe`: Datum, Uhrzeit und Dauer eines Wochenplan-Platzes beim Nachtragen (app/(tutor)/schueler/[id]/stunden/neu) */
+export async function LessonForm({ student, lesson, fehler, vorgabe }: { student: repo.Student; lesson?: repo.Lesson; fehler?: string; vorgabe?: { starts_at: string; duration_min: number } }) {
   const subjects = student.subjects.length ? student.subjects : ["Mathematik"];
   const skills = repo.listSkills().filter((s) => subjects.includes(s.subject));
   const previous = repo.listLessons(student.id).find((l) => l.kind === "stunde" && l.status === "abgeschlossen" && l.id !== lesson?.id && l.next_steps);
@@ -23,7 +24,7 @@ export async function LessonForm({ student, lesson, fehler }: { student: repo.St
   const teachers = repo.listTeachers();
   const me = await currentTeacher();
   // what the student practised on their own that day goes straight into the documentation
-  const day = (lesson?.starts_at ?? localNow()).slice(0, 10);
+  const day = (lesson?.starts_at ?? vorgabe?.starts_at ?? localNow()).slice(0, 10);
   const practice = documenting ? practiceOnDay(student.id, day) : [];
   const prefill = (pick: (l: repo.Lesson) => string) => practice.map(pick).filter(Boolean).join("\n");
   const activities = lesson?.activities || prefill((l) => l.activities);
@@ -36,11 +37,11 @@ export async function LessonForm({ student, lesson, fehler }: { student: repo.St
         <div className="grid gap-4 sm:grid-cols-[1fr_120px_1fr]">
           <label className="field">
             <span className="label">Datum und Uhrzeit</span>
-            <input className="input num" type="datetime-local" name="starts_at" required defaultValue={lesson?.starts_at ?? localNow()} />
+            <input className="input num" type="datetime-local" name="starts_at" required defaultValue={lesson?.starts_at ?? vorgabe?.starts_at ?? localNow()} />
           </label>
           <label className="field">
             <span className="label">Dauer (min)</span>
-            <input className="input num" type="number" name="duration_min" min={15} step={5} defaultValue={lesson?.duration_min || 60} />
+            <input className="input num" type="number" name="duration_min" min={15} step={5} defaultValue={lesson?.duration_min || vorgabe?.duration_min || 60} />
           </label>
           <label className="field">
             <span className="label">Fach</span>

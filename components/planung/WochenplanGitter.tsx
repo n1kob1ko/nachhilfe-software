@@ -328,7 +328,7 @@ export function WochenplanGitter(props: Props) {
                                 background: aus ? "var(--paper)" : tone.bg,
                                 borderColor: aus ? "var(--line-strong)" : `color-mix(in srgb, ${tone.fg} 35%, transparent)`,
                               }}
-                              title={`${p.studentName} · ${zeit}${p.roomName ? ` · ${ortName(p.roomName, p.roomBuilding, p.roomMode === "online")} (${p.roomName})` : ""}${p.locked ? " · gesperrt" : ""}${zugleich}${aus ? " · nicht stattgefunden" : ""}`}
+                              title={`${p.studentName} · ${zeit}${p.roomName ? ` · ${ortName(p.roomName, p.roomBuilding, p.roomMode === "online")} (${p.roomName})` : ""}${p.locked ? " · gesperrt" : ""}${zugleich}${aus ? " · keine Einheit" : ""}`}
                             >
                               <div className="flex items-start gap-1 pr-0.5">
                                 <span className={`min-w-0 flex-1 truncate text-[12.5px] font-semibold ${aus ? "text-ink-3 line-through" : "text-ink"}`}>{p.studentName}</span>
@@ -338,7 +338,7 @@ export function WochenplanGitter(props: Props) {
                               {zeilen >= 2 && <div className="num truncate text-[11.5px] text-ink-2">{spuren > 1 ? minutenLabel(p.startMin) : zeit}</div>}
                               {zeilen >= 3 &&
                                 (aus ? (
-                                  <div className="truncate text-[10.5px] font-semibold text-red">nicht stattgefunden</div>
+                                  <div className="truncate text-[10.5px] font-semibold text-amber">keine Einheit</div>
                                 ) : (
                                   p.roomName && spuren === 1 && <div className="truncate text-[11.5px] text-ink-3">{ortName(p.roomName, p.roomBuilding, p.roomMode === "online")}</div>
                                 ))}

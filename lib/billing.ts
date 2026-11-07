@@ -32,7 +32,7 @@ export type DeleteRefusal = "weg" | "fremd" | "laeuft";
 /**
  * Deletes an Einheit from the billing for good: its documentation and, if it was started in the app,
  * the unit with its whiteboard, laptop codes and progress snapshots. Solved tasks stay in the
- * Lernstand (their unit_id becomes NULL), and a past Wochenplan slot turns „nicht stattgefunden“.
+ * Lernstand (their unit_id becomes NULL), and a past Wochenplan slot turns „keine Einheit“.
  * Teachers may delete only their own Einheiten, the Verwaltung any.
  */
 export function deleteBillingEntry(lessonId: number, viewer: { id: number; is_admin: number | boolean }): { ok: true } | { ok: false; error: DeleteRefusal } {

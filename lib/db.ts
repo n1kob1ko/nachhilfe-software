@@ -633,7 +633,8 @@ CREATE INDEX IF NOT EXISTS idx_availability_overrides_owner ON availability_over
 -- ---------- Planung (Phase 4 des Merges): Wochenplan ----------
 -- Ein Platz im Wochenplan (Glossar: **geplante Einheit**): wer, wo, an welchem Wochentag, zu welcher
 -- Startzeit und mit welcher geplanten Dauer. Der Platz wird erst wirklich, wenn eine Einheit sich mit
--- ihm verknüpft (unit_id); ein vergangener veröffentlichter Platz ohne Einheit heißt „nicht stattgefunden“.
+-- ihm verknüpft (unit_id); ein vergangener veröffentlichter Platz ohne Einheit (auch keine nachgetragene) heißt
+-- „keine Einheit“ (lib/planung/repo.ts istNichtStattgefunden; bis zum Audit 2026-11-07 „nicht stattgefunden“).
 -- Zeiten sind lokales Datum + Minuten ab Mitternacht (Europe/Vienna), nie UTC-Zeitstempel (§6);
 -- week_start ist immer ein Montag, weekday ISO 1 = Montag … 7 = Sonntag.
 -- Keine Eindeutigkeit auf Überlappungen: die geplante Dauer ist je Schüler verschieden, deshalb prüft

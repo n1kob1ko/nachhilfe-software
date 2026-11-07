@@ -266,7 +266,7 @@ Suche ab und gibt den **bis dahin besten Stand** zurück; das Ergebnis meldet
   laufende Fall schreibt gar nichts (`created = false`), der zweite nimmt den nächsten offenen
   Platz oder bleibt ungeplant.
 - `verknuepfePlatz(id, null)` löst eine Verknüpfung wieder.
-- Ein **vergangener veröffentlichter Platz** ohne `unit_id` gilt als **„nicht stattgefunden“**
+- Ein **vergangener veröffentlichter Platz** ohne `unit_id` und ohne nachgetragene Einheit an dem Tag gilt als **„keine Einheit“** (intern `nichtStattgefunden`; bis zum Audit 2026-11-07 hieß es „nicht stattgefunden“)
   (`repo.istNichtStattgefunden` / `repo.nichtStattgefunden(weekStart, now)`): erst wenn die
   geplante Zeit vorbei ist, nicht schon während sie läuft. Sie steht so auf dem Schülerprofil
   (`app/(tutor)/schueler/[id]/page.tsx`), im Wochenplan (`components/planung/WochenplanGitter.tsx`,
@@ -303,7 +303,7 @@ Schüler, Raum (bzw. „online“ oder „Raum noch offen“) und „*n* min gep
   Platz (siehe oben); der große Knopf oben bietet dafür den nächsten **offenen** Platz von heute an,
   sonst die nächste von Hand geplante Einheit;
 - **„Zur Einheit“** mit Zustand, wenn der Platz schon eine (laufende oder beendete) Einheit hat;
-- bei einem vergangenen Platz ohne Einheit den Vermerk **„nicht stattgefunden“** — startet der
+- bei einem vergangenen Platz ohne Einheit den Vermerk **„keine Einheit“** mit **„Nachtragen“** — startet der
   Lehrer doch noch, nimmt die Einheit den nächstgelegenen offenen Platz des Tages (ist der
   vergangene der einzige offene, genau diesen), und der Vermerk fällt weg.
 
@@ -390,7 +390,7 @@ Und die Verknüpfung mit den echten Einheiten (dieser Teil):
 | `lib/units.ts` | `startUnit` verknüpft beim Start (`verknuepfeMitHeutigemPlatz`, `platzFuerEinheit`) |
 | `app/(tutor)/page.tsx`, `components/Calendar.tsx` | der Tagesplan (`Tagesplan`) aus den veröffentlichten Plätzen, jede Zeile mit „Einheit starten“ |
 | `app/(tutor)/einheiten/[id]/page.tsx` | „geplant 100 min · tatsächlich 85 min“ (D16) |
-| `app/(tutor)/schueler/[id]/page.tsx` | „Wochenplan-Termine“ dieser Woche, vergangene ohne Einheit als „nicht stattgefunden“ |
+| `app/(tutor)/schueler/[id]/page.tsx` | „Wochenplan-Termine“ dieser Woche, vergangene ohne Einheit als „keine Einheit“ mit „Nachtragen“ |
 | `lib/billing.ts`, `lib/repo.ts` (`billingEntries`) | **unverändert**: Abrechnung nur aus abgeschlossenen Einheiten |
 
 Die Tests dazu: `lib/planung/generator.test.ts` (Port von `ScheduleGenerator.test.ts` des

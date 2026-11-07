@@ -276,12 +276,13 @@ function Karte({ id, titel, action, className = "", testid, children }: { id: st
   );
 }
 
-const STAND_TEXT = { gehalten: "gehalten", ausgefallen: "ausgefallen", vorbei: "vorbei", geplant: "" } as const;
+// Audit 2026-11-07: „keine Einheit“ statt „ausgefallen“, denn die App weiß nicht, ob die Stunde ausfiel oder nur nicht dokumentiert ist
+const STAND_TEXT = { gehalten: "gehalten", ausgefallen: "keine Einheit", vorbei: "vorbei", geplant: "" } as const;
 
 /**
  * Meine Woche (niko, 01.11.2026: „der Plan für die Woche für den Lehrer, der angemeldet ist“): je Tag eine Spalte mit
- * den eigenen Terminen (Uhrzeit, Schüler, Raum), heute blau umrandet. Gehaltene Termine mit Häkchen, ausgefallene
- * durchgestrichen. Am Handy stehen die Tage untereinander. Ein Termin führt zum Schüler.
+ * den eigenen Terminen (Uhrzeit, Schüler, Raum), heute blau umrandet. Gehaltene Termine mit Häkchen, vergangene ohne
+ * Einheit grau mit „keine Einheit“. Am Handy stehen die Tage untereinander. Ein Termin führt zum Schüler.
  */
 function WochenPlan({ plan, label }: { plan: PlanTag[]; label: string }) {
   const leer = plan.every((t) => t.eintraege.length === 0);
@@ -314,7 +315,7 @@ function WochenPlan({ plan, label }: { plan: PlanTag[]; label: string }) {
                           {e.zeit}
                           {e.stand === "gehalten" && <CheckCircle2 size={13} className="ml-1 inline align-[-2px] text-green" aria-label="gehalten" />}
                         </span>
-                        <span className={`block truncate text-[14px] font-medium ${e.stand === "ausgefallen" ? "text-ink-3 line-through" : e.stand === "geplant" ? "" : "text-ink-2"}`}>{e.name}</span>
+                        <span className={`block truncate text-[14px] font-medium ${e.stand === "ausgefallen" ? "text-ink-3" : e.stand === "geplant" ? "" : "text-ink-2"}`}>{e.name}</span>
                         {(e.ort || e.stand === "ausgefallen" || e.stand === "vorbei") && (
                           <span className="block truncate text-[12px] text-ink-3">{e.stand === "ausgefallen" || e.stand === "vorbei" ? STAND_TEXT[e.stand] : e.ort}</span>
                         )}

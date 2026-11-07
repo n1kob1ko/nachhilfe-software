@@ -146,7 +146,7 @@ function PlatzZeile({ platz: p, schueler, interaktiv, onOeffnen }: { platz: Uebe
         <span className="block text-[12.5px] text-ink-2">{minutenLabel(p.startMin + p.dauer)}</span>
       </span>
       <span className="min-w-0 flex-1 leading-snug">
-        <span className={`block truncate text-[15px] font-semibold ${aus ? "text-ink-3 line-through" : "text-ink"}`}>{p.studentName}</span>
+        <span className={`block truncate text-[15px] font-semibold ${aus ? "text-ink-3" : "text-ink"}`}>{p.studentName}</span>
         <span className="block truncate text-[13px] text-ink-2">
           {[ortName(p.roomName, p.roomBuilding, p.roomMode === "online"), `${p.dauer} min`, p.status === "entwurf" ? "Entwurf" : null].filter(Boolean).join(" · ")}
         </span>
@@ -155,7 +155,7 @@ function PlatzZeile({ platz: p, schueler, interaktiv, onOeffnen }: { platz: Uebe
             <Users size={13} aria-hidden /> gleichzeitig mit {p.zugleichMit.join(", ")}
           </span>
         )}
-        {aus && <span className="mt-0.5 block text-[12.5px] font-semibold text-red">nicht stattgefunden</span>}
+        {aus && <span className="mt-0.5 block text-[12.5px] font-semibold text-amber">keine Einheit</span>}
       </span>
       <span className="flex shrink-0 items-center gap-1.5 self-center text-ink-2">
         {p.locked && <Lock size={15} aria-label="gesperrt" />}

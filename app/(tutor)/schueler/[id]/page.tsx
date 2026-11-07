@@ -45,6 +45,7 @@ import { checkLevel } from "@/lib/school";
 import { stoffzettelLesbar } from "@/lib/stoffzettel";
 import { einheitenFuerWoche, istNichtStattgefunden, mitNamen, slotDatum } from "@/lib/planung/repo";
 import { datumLabel, datumLabelTeile, minutenLabel, wienerDatum, wienerWochenstart, wochenLabel } from "@/lib/planung/zeit";
+import { nachtragenHref } from "@/lib/heute";
 import { listenVon } from "@/lib/vokabellisten";
 import { textsForStudent, wordsLabel } from "@/lib/texts";
 import { ZuBewertenListe } from "@/components/ZuBewerten";
@@ -259,8 +260,9 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
 
   /**
    * Die Termine dieser Woche aus dem **veröffentlichten** Wochenplan (D17). Ein vergangener Platz
-   * ohne Einheit heißt „nicht stattgefunden“ und hat **keine** Abrechnungsfolge: die Abrechnung liest
-   * nur die Dokumentation abgeschlossener Einheiten (`lib/billing.ts`, unverändert).
+   * ohne Einheit heißt „keine Einheit“ (Audit 2026-11-07, vorher „nicht stattgefunden“) und hat **keine**
+   * Abrechnungsfolge: die Abrechnung liest nur die Dokumentation abgeschlossener Einheiten (`lib/billing.ts`).
+   * „Nachtragen“ führt zum Formular; danach gilt der Platz als gehalten.
    */
   const jetzt = new Date();
   const wochenstart = wienerWochenstart(jetzt);
@@ -270,6 +272,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
     datum: slotDatum(z.week_start, z.weekday),
     label: datumLabel(slotDatum(z.week_start, z.weekday)),
     zeit: `${minutenLabel(z.start_min)}–${minutenLabel(z.start_min + z.geplante_dauer)}`,
+    startMin: z.start_min,
     dauer: z.geplante_dauer,
     ort: ortName(z.room_name, z.room_building, z.room_mode === "online"),
     nichtStattgefunden: istNichtStattgefunden(z, jetzt),
@@ -387,7 +390,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
 
       {termine.length > 0 && (
         <section aria-label="Termine aus dem Wochenplan">
-          <SectionTitle action={versaeumt > 0 ? <Pill tone="red">{versaeumt} nicht stattgefunden</Pill> : <span className="text-[13px] text-ink-3">{wochenLabel(wochenstart)}</span>}>
+          <SectionTitle action={versaeumt > 0 ? <Pill tone="amber">{versaeumt === 1 ? "1 Termin ohne Einheit" : `${versaeumt} Termine ohne Einheit`}</Pill> : <span className="text-[13px] text-ink-3">{wochenLabel(wochenstart)}</span>}>
             Wochenplan-Termine
           </SectionTitle>
           <ul className="panel divide-y divide-line">
@@ -399,7 +402,14 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
                   {t.ort}
                 </span>
                 <span className="num text-[13px] text-ink-3">{t.dauer} min geplant</span>
-                {t.nichtStattgefunden && <Pill tone="red">nicht stattgefunden</Pill>}
+                {t.nichtStattgefunden && (
+                  <span className="flex items-center gap-2" data-testid="keine-einheit">
+                    <Pill tone="amber">keine Einheit</Pill>
+                    <Link href={nachtragenHref(student.id, t.datum, t.startMin, t.dauer)} className="inline-flex min-h-[44px] items-center text-[14px] font-semibold text-accent hover:underline">
+                      Nachtragen
+                    </Link>
+                  </span>
+                )}
               </li>
             ))}
           </ul>
