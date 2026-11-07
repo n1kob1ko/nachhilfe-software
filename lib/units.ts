@@ -188,6 +188,45 @@ export function finishUnit(id: number, status: "beendet" | "abgebrochen", o: Fin
   return getUnit(id);
 }
 
+/** So lange nach „Einheit beenden“ darf die Lehrkraft die Einheit noch fortsetzen (Audit 2026-11-07). */
+export const FORTSETZEN_MINUTEN = 10;
+
+/**
+ * Darf eine beendete Einheit noch fortgesetzt werden? Nur, wenn die Lehrkraft sie selbst beendet hat (nicht automatisch),
+ * höchstens FORTSETZEN_MINUTEN her, und der Schüler hat keine andere laufende Einheit. `restMinuten` = wie lange noch.
+ */
+export function fortsetzbar(u: Pick<Unit, "id" | "status" | "ended_at" | "ended_by" | "student_id">, now = Date.now()): { ok: boolean; restMinuten: number } {
+  if (u.status !== "beendet" || u.ended_by !== "lehrer" || !u.ended_at) return { ok: false, restMinuten: 0 };
+  const rest = FORTSETZEN_MINUTEN - (now - Date.parse(u.ended_at)) / 60_000;
+  if (rest <= 0) return { ok: false, restMinuten: 0 };
+  const andere = runningUnitForStudent(u.student_id);
+  if (andere && andere.id !== u.id) return { ok: false, restMinuten: 0 };
+  return { ok: true, restMinuten: Math.ceil(rest) };
+}
+
+/**
+ * „Einheit fortsetzen“ (Audit 2026-11-07: ein Tipp zu viel auf „Einheit beenden“ war endgültig). Die Einheit läuft
+ * wieder, als wäre sie nie beendet worden; die automatisch geschriebene Dokumentation bleibt und wird beim nächsten
+ * Beenden neu geschrieben (lib/learning.ts `writeLearningDoc`). Null, wenn das nicht mehr geht.
+ */
+export function resumeUnit(id: number, now = Date.now()): UnitView | null {
+  const u = getUnit(id);
+  if (!u || !fortsetzbar(u, now).ok) return null;
+  try {
+    db()
+      .prepare(
+        `UPDATE units SET status = 'gestartet', ended_at = NULL, end_reason = '', ended_by = '', ended_by_teacher_id = NULL, end_estimated = 0, last_activity_at = ?
+         WHERE id = ? AND status = 'beendet'`,
+      )
+      .run(iso(now), id);
+  } catch (e) {
+    // inzwischen läuft für den Schüler eine andere Einheit (idx_units_running)
+    if ((e as { code?: string }).code === "SQLITE_CONSTRAINT_UNIQUE") return null;
+    throw e;
+  }
+  return getUnit(id);
+}
+
 /** Only the teacher of a unit and admins may end or change it. */
 export function canManageUnit(teacher: { id: number; is_admin: number | boolean }, unit: Pick<Unit, "teacher_id">) {
   return unit.teacher_id === teacher.id || Boolean(teacher.is_admin);

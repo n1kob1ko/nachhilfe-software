@@ -102,6 +102,8 @@ export default function Whiteboard(props: WhiteboardProps) {
   // Upright on any phone it is hidden too (CSS wb-hide-phone), so the header keeps two rows; turned sideways it is back.
   const [canFullscreen, setCanFullscreen] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
+  /** „Einheit beenden“ getippt: erst die Rückfrage (Audit 2026-11-07) */
+  const [endeFrage, setEndeFrage] = useState(false);
   const [boardTasks, setBoardTasks] = useState<BoardTask[]>([]);
   const [currentTask, setCurrentTask] = useState<string | null>(null);
   const [grades, setGrades] = useState<Record<number, BoardGrade>>({});
@@ -854,20 +856,35 @@ export default function Whiteboard(props: WhiteboardProps) {
             </button>
           )}
           {teacher && props.endUnit && running && canWrite && (
-            <button
-              className="wb-btn wb-btn-wide wb-btn-primary"
-              title="Einheit beenden, die Dokumentation schreibt sich selbst"
-              onClick={async () => {
-                await flush();
-                await uploadPreview();
-                await props.endUnit!();
-              }}
-            >
+            // Audit 2026-11-07: nicht mehr der einzige blaue Knopf am Handy, und erst eine Rückfrage statt sofort beenden
+            <button className="wb-btn wb-btn-wide" title="Einheit beenden, die Dokumentation schreibt sich selbst" onClick={() => setEndeFrage(true)} data-testid="wb-einheit-beenden">
               Einheit beenden
             </button>
           )}
         </div>
       </header>
+
+      {endeFrage && running && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber/40 bg-amber-wash px-4 py-2 text-[15px]" role="group" aria-label="Einheit beenden?" data-testid="wb-einheit-beenden-frage">
+          <span className="font-semibold">Einheit mit {props.studentName.split(" ")[0]} beenden?</span>
+          <span className="flex gap-2">
+            <button
+              className="wb-btn wb-btn-wide wb-btn-primary"
+              onClick={async () => {
+                setEndeFrage(false);
+                await flush();
+                await uploadPreview();
+                await props.endUnit!();
+              }}
+            >
+              Ja, beenden
+            </button>
+            <button className="wb-btn wb-btn-wide" onClick={() => setEndeFrage(false)} autoFocus>
+              Noch nicht
+            </button>
+          </span>
+        </div>
+      )}
 
       {notice && (
         <div className="flex items-center justify-between gap-3 border-b border-amber/40 bg-amber-wash px-4 py-2 text-[14px]" role="alert">

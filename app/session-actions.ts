@@ -30,7 +30,7 @@ import * as repo from "@/lib/repo";
 import { ensureBoardForUnit, notifyUnitClosed } from "@/lib/whiteboard";
 import { alleFachNamen } from "@/lib/faecher";
 import { fachAus } from "@/lib/school";
-import { canManageUnit, finishUnit, getUnit, runningUnits, setUnitSubject, startUnit } from "@/lib/units";
+import { canManageUnit, finishUnit, getUnit, resumeUnit, runningUnits, setUnitSubject, startUnit } from "@/lib/units";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const rating = (f: FormData, k: string) => {
@@ -194,6 +194,18 @@ export async function endUnitAction(unitId: number) {
   endUnit(unitId, { byTeacherId: t.id });
   revalidatePath("/", "layout");
   redirect(`/einheiten/${unitId}`);
+}
+
+/**
+ * „Einheit fortsetzen“ auf dem Abschluss (Audit 2026-11-07): bis FORTSETZEN_MINUTEN nach „Einheit beenden“ läuft die
+ * Einheit wieder; Tablets und Live-Ansicht erfahren es wie bei einem Start. Geht es nicht mehr, bleibt der Abschluss.
+ */
+export async function resumeUnitAction(unitId: number) {
+  await manageableUnit(unitId);
+  const u = resumeUnit(unitId);
+  if (u) unitChanged(u.teacher_id, u.id);
+  revalidatePath("/", "layout");
+  redirect(`/einheiten/${unitId}${u ? "" : "?fortsetzen=nein"}`);
 }
 
 export async function cancelUnitAction(unitId: number, formData: FormData) {
