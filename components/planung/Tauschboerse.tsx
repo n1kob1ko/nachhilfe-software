@@ -41,7 +41,7 @@ export function TauschAngebote({ passend, nehmen }: { passend: PassendesAngebot[
  * Unter einem Termin: „Tauschen“ klappt die Zeiten auf, die stattdessen passen würden (alle angehakt), und ein Knopf
  * stellt den Termin in die Tauschbörse. Ist er schon drin: „Wird angeboten“ und „Zurücknehmen“.
  */
-export function TerminTauschen({ anbietbar, eigenes, anbieten, zuruecknehmen }: { anbietbar?: Anbietbar; eigenes?: EigenesAngebot; anbieten: Aktion; zuruecknehmen: Aktion }) {
+export function TerminTauschen({ anbietbar, eigenes, anbieten, zuruecknehmen, inline = false }: { anbietbar?: Anbietbar; eigenes?: EigenesAngebot; anbieten: Aktion; zuruecknehmen: Aktion; /** ohne eigenes Aufklappen, als Teil von „Termin ändern“ (Audit 2026-11-07) */ inline?: boolean }) {
   if (eigenes) {
     return (
       <div className="mt-1 grid gap-1" data-testid="termin-angeboten">
@@ -59,12 +59,8 @@ export function TerminTauschen({ anbietbar, eigenes, anbieten, zuruecknehmen }: 
     );
   }
   if (!anbietbar) return null;
-  return (
-    <details className="group mt-1" data-testid="termin-tauschen">
-      <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[15px] font-semibold text-accent">
-        <Repeat size={17} aria-hidden /> Tauschen
-      </summary>
-      <form action={anbieten} className="mt-2 grid gap-3 rounded-2xl bg-panel/60 p-4">
+  const formular = (
+      <form action={anbieten} className="mt-2 grid gap-3 rounded-2xl bg-panel/60 p-4" data-testid="termin-tauschen">
         <fieldset className="grid gap-1">
           <legend className="mb-1 text-[15px] font-semibold">Welche Zeit würde dir stattdessen passen?</legend>
           {anbietbar.kandidaten.map((k) => (
@@ -79,6 +75,22 @@ export function TerminTauschen({ anbietbar, eigenes, anbieten, zuruecknehmen }: 
           Nur Zeiten, mit denen der Tausch wirklich geht. Möchte jemand mit einer dieser Zeiten tauschen, wird sofort getauscht und du siehst es hier. Bis {FRIST_STUNDEN} Stunden vor dem Termin.
         </p>
       </form>
+  );
+  if (inline)
+    return (
+      <div>
+        <p className="inline-flex items-center gap-1.5 text-[15px] font-semibold">
+          <Repeat size={16} className="text-accent" aria-hidden /> Tauschen
+        </p>
+        {formular}
+      </div>
+    );
+  return (
+    <details className="group mt-1">
+      <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[15px] font-semibold text-accent">
+        <Repeat size={17} aria-hidden /> Tauschen
+      </summary>
+      {formular}
     </details>
   );
 }
