@@ -168,6 +168,15 @@ export function datumLabel(datum: string): string {
   return `${WOCHENTAG_KURZ[wochentagVon(datum)]} ${Number(datum.slice(8, 10))}.${Number(datum.slice(5, 7))}.`;
 }
 
+/**
+ * "Mo 12.10." → ["Mo", "12.10."], für Anzeigen, die Wochentag und Datum getrennt setzen. Audit 2026-11-07: drei Stellen
+ * trennten selbst an ", " (die alte Schreibweise „Mo, 12. Okt.“) und zeigten seit dem Wechsel „undefined“ oder nichts.
+ */
+export function datumLabelTeile(label: string): [string, string] {
+  const [tag, ...rest] = label.split(/,?\s+/);
+  return [tag ?? "", rest.join(" ")];
+}
+
 /** "Mittwoch, 4. November" (Schüler-App, niko 2026-11-03: Wochentag ausgeschrieben) */
 export function datumLang(datum: string): string {
   const monat = new Date(datumMs(datum)).toLocaleDateString("de-AT", { month: "long", timeZone: "UTC" });

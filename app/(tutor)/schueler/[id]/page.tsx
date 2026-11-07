@@ -44,7 +44,7 @@ import { endMaterialAction } from "@/app/learning-actions";
 import { checkLevel } from "@/lib/school";
 import { stoffzettelLesbar } from "@/lib/stoffzettel";
 import { einheitenFuerWoche, istNichtStattgefunden, mitNamen, slotDatum } from "@/lib/planung/repo";
-import { datumLabel, minutenLabel, wienerDatum, wienerWochenstart, wochenLabel } from "@/lib/planung/zeit";
+import { datumLabel, datumLabelTeile, minutenLabel, wienerDatum, wienerWochenstart, wochenLabel } from "@/lib/planung/zeit";
 import { listenVon } from "@/lib/vokabellisten";
 import { textsForStudent, wordsLabel } from "@/lib/texts";
 import { ZuBewertenListe } from "@/components/ZuBewerten";
@@ -170,7 +170,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
 function terminKennzahl(t: SchuelerTermin | null): { wert: string; zusatz: string } {
   if (!t) return { wert: "–", zusatz: "kein Termin im Plan" };
   const [von, bis] = t.zeit.split("–");
-  const [tag, datum] = t.label.split(", ");
+  const [tag, datum] = datumLabelTeile(t.label);
   const ort = t.raumOffen ? "" : ` · ${t.ort}`;
   if (t.jetzt) return { wert: "jetzt", zusatz: `bis ${bis}${ort}` };
   if (t.heute) return { wert: von, zusatz: `heute bis ${bis}${ort}` };
