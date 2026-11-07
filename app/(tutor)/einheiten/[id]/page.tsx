@@ -79,7 +79,7 @@ function dauerLabel(geplanteDauer: number | null, minutes: number, estimated: bo
  *   und „Dokumentation bestätigen“; die ganze
  *   Dokumentation, automatisch geschrieben (lib/einschaetzung.ts) und änderbar, unter „Mehr Details“ und „Ändern“.
  */
-export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string; hausuebung?: string; fortsetzen?: string }> }) {
+export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string; hausuebung?: string; fortsetzen?: string; mehr?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -213,7 +213,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         {area === "unterricht" ? (
           <>
             <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} join={await joinInfo()} kompakt kiNeu={mayManage ? kiNeuImLiveHinweis(unit.id, first(student.name)) : null} />
-            <Unterricht unit={unit} student={student} fehler={sp.cockpit} teacherId={teacher.id} werkzeugeOffen={sp.bereich === "cockpit"} ausfuehrlich={sp.ausfuehrlich ? Number(sp.ausfuehrlich) : null} folien={sp.folien ? Number(sp.folien) : null} knopf={sp.knopf ?? null} />
+            <Unterricht unit={unit} student={student} fehler={sp.cockpit} teacherId={teacher.id} werkzeugeOffen={sp.bereich === "cockpit"} werkzeugeMehr={sp.mehr === "1"} ausfuehrlich={sp.ausfuehrlich ? Number(sp.ausfuehrlich) : null} folien={sp.folien ? Number(sp.folien) : null} knopf={sp.knopf ?? null} />
             {mayManage && (
               <div className="mt-4">
                 <KiKostenZeile unitId={unit.id} admin={Boolean(teacher.is_admin)} />

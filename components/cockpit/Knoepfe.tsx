@@ -317,7 +317,7 @@ function ThemaWahlKarte({ c, unitId, schrittId, zurueck }: { c: CockpitDaten; un
   // with a chosen package: the package becomes a topic of the plan, its open steps go to „Nächstes Mal“ (lib/cockpit.ts paketAlsPlan)
   const jetzt = c.paket ? `dem Lernpaket „${c.paket.title}“` : (c.plan.find((x) => x.id === schrittId)?.thema ?? null);
   const anderesPaket = (
-    <Link href={`/einheiten/${unitId}?bereich=cockpit#werkzeuge`} className="font-semibold text-accent underline-offset-2 hover:underline">
+    <Link href={`/einheiten/${unitId}?bereich=cockpit&mehr=1#lernpaket`} className="font-semibold text-accent underline-offset-2 hover:underline">
       Weitere Werkzeuge
     </Link>
   );

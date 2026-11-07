@@ -169,7 +169,7 @@ Ohne Eingabe bleibt alles wie bisher, der Start ist nicht langsamer (eine Abfrag
 | Navigation: Schüler, Übungen, Abrechnung; Mehr › Planung | Erweitert › Arbeit |
 | Einheit: Bereich „Übungen“ (Foto vom Stoff, Textarbeit, Bildgeschichte, Schreibauftrag, Minitest, Link fürs Gerät) | Weitere Werkzeuge; die ganze Ansicht unter `?bereich=uebungen` |
 | Einheit: Bereich „Fortschritt“ | Weitere Werkzeuge › Fortschritt (`?bereich=fortschritt`) |
-| Einheit: Cockpit (Paket wählen, Anpassen, Überspringen, Verschieben, Notiz, Aufgaben mit Lösung, ohne Paket) | Unterricht; das Übrige unter Weitere Werkzeuge (`?bereich=cockpit`) |
+| Einheit: Cockpit (Paket wählen, Anpassen, Überspringen, Verschieben, Notiz, Aufgaben mit Lösung, ohne Paket) | Unterricht; das Übrige unter Weitere Werkzeuge (`?bereich=cockpit`): vier große Kacheln (Whiteboard, Übungen und Ergebnisse, Arbeit fotografieren, Notiz), alles andere zugeklappt unter „Mehr“ (`&mehr=1` öffnet es; Audit 2026-11-07) |
 | Einheit abbrechen | Weitere Werkzeuge (und unten in Übungen und Fortschritt) |
 
 ## Abschluss (beendete Einheit, `/einheiten/[id]`)
