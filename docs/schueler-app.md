@@ -37,7 +37,10 @@ und kein Passwort; wer den Link hat, sieht diese Seite (wie bisher).
   und dem Stoff kurz. Vergangene und abgesagte nicht.
 - **Hausübungen:** die offenen zuerst (überfällig, heute, morgen markiert), mit Übung führt die Zeile zu ihr;
   erledigte (abgehakt oder Übung fertig) unter „Erledigt“. Ohne Hausübung kein Abschnitt.
-- **Verschieben oder tauschen** unter jedem kommenden Termin (Plan 3.3, [planung.md](planung.md#terminanfragen-plan-33)):
+- **Tauschen** unter jedem kommenden Termin (Tauschbörse, [planung.md](planung.md#tauschbörse-niko-2026-11-07)): passende Zeiten
+  anhaken, „Zum Tauschen anbieten“. Passt ein Angebot eines anderen Schülers, steht oben „Jemand möchte mit dir
+  tauschen“ mit „Ja, tauschen“; getauscht wird sofort.
+- **Andere Zeit anfragen** (früher „Verschieben oder tauschen“; für Schüler nur noch Verschieben) unter jedem kommenden Termin (Plan 3.3, [planung.md](planung.md#terminanfragen-plan-33)):
   freie Zeiten zur Auswahl (oder eine eigene Zeit), dazu eine Notiz; oder ein anderer Termin desselben Lehrers zum
   Tausch, **nur als Zeit**. Darunter „Deine Anfragen“ mit Zustand; eine Tauschanfrage an ihn kann er zustimmen oder
   ablehnen. Bewegt wird erst, wenn die Verwaltung bestätigt.

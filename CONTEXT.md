@@ -164,6 +164,12 @@ bestätigt oder lehnt die Verwaltung ab; bewegt wird erst beim Bestätigen, mit 
 ([docs/planung.md](docs/planung.md#terminanfragen-plan-33)).
 _Avoid_: Umbuchung, Änderungswunsch, Terminwunsch
 
+**Tauschbörse**:
+Wo ein **Schüler** einen veröffentlichten Termin zum Tauschen anbietet. Ein anderer Schüler desselben Lehrers, dessen
+Termin passt, tauscht mit einem Tipp; getauscht wird sofort mit der Prüfung des **Wochenplans**, die Verwaltung wird
+informiert und kann zurücktauschen ([docs/planung.md](docs/planung.md#tauschbörse-niko-2026-11-07)).
+_Avoid_: Marktplatz, Börse für Stunden
+
 **Raum**:
 Wo eine **geplante Einheit** stattfindet: Gebäude, Name, und ob vor Ort oder
 online. Ein Raum wird deaktiviert, nie gelöscht, sobald Plätze auf ihn zeigen.

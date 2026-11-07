@@ -55,7 +55,7 @@ function todoText(p: Punkt): React.ReactNode {
     case "terminanfrage":
       return (
         <>
-          {p.aufgabe === "bestaetigen" ? <>Terminanfrage für {name} bestätigen</> : <>Tausch für {name} zustimmen</>}: {p.beschreibung}
+          {p.aufgabe === "bestaetigen" ? <>Terminanfrage für {name} bestätigen</> : p.aufgabe === "ansehen" ? <>Tauschbörse: {name} hat getauscht</> : <>Tausch für {name} zustimmen</>}: {p.beschreibung}
         </>
       );
     case "einreichung":

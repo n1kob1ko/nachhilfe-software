@@ -7,6 +7,7 @@ import { darfWocheSehen, darfWochenplanBearbeiten } from "@/lib/planung/berechti
 import { leseRegeln, pruefeRegeln, regelnJson } from "@/lib/planung/regeln";
 import { listRaeume } from "@/lib/planung/repo";
 import { anfragenFuerVerwaltung } from "@/lib/planung/terminanfragen";
+import { tauschGesehenAction, tauscheZurueckAction } from "@/app/tauschboerse-actions";
 import { wochenUebersicht } from "@/lib/planung/uebersicht";
 import { istDatum, wochenstartVon, wienerWochenstart, type Wochentag } from "@/lib/planung/zeit";
 
@@ -60,8 +61,11 @@ export default async function PlanungPage({
 
   // Terminanfragen (lib/planung/terminanfragen.ts): hier bestätigt oder lehnt die Verwaltung ab
   const anfragen = darfBearbeiten ? anfragenFuerVerwaltung() : [];
-  const offeneAnfragen = anfragen.filter((a) => a.status === "offen" || a.status === "wartet");
-  const erledigteAnfragen = anfragen.filter((a) => a.status !== "offen" && a.status !== "wartet");
+  // ein Tausch aus der Tauschbörse bleibt oben, bis die Verwaltung „Passt“ oder „Zurücktauschen“ gedrückt hat
+  const istOffen = (a: (typeof anfragen)[number]) => a.status === "offen" || a.status === "wartet" || a.kannGesehen;
+  const offeneAnfragen = anfragen.filter(istOffen);
+  const erledigteAnfragen = anfragen.filter((a) => !istOffen(a));
+  const boerse = { gesehen: (a: (typeof anfragen)[number]) => tauschGesehenAction.bind(null, a.id), zurueck: (a: (typeof anfragen)[number]) => tauscheZurueckAction.bind(null, a.id) };
 
   const regelnRoh = regelnJson();
   const regelnGebrochen = !!regelnRoh && !pruefeRegeln(regelnRoh).ok;
@@ -99,6 +103,7 @@ export default async function PlanungPage({
                 bestaetigen={(a) => bestaetigeAnfrageAction.bind(null, a.id)}
                 zurueck={zurueck}
                 raeume={listRaeume()}
+                boerse={boerse}
               />
             </div>
           )}
@@ -107,7 +112,7 @@ export default async function PlanungPage({
               <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center text-[14px] font-medium text-ink-2 hover:text-ink">
                 Entschieden <span className="num ml-1">({erledigteAnfragen.length})</span>
               </summary>
-              <AnfragenListe anfragen={erledigteAnfragen} antwort={(a) => antwortLehrerAction.bind(null, a.id)} />
+              <AnfragenListe anfragen={erledigteAnfragen} antwort={(a) => antwortLehrerAction.bind(null, a.id)} zurueck={zurueck} boerse={boerse} />
             </details>
           )}
         </section>
