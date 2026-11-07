@@ -98,7 +98,7 @@ bewertet · Note N (Ansehen). Bei zwei Schülern zugleich nur die Texte dieser E
 
 niko, 25.10.2026: DreamStudy reagiert auf die Antworten des Schülers, zuerst nach festen Regeln, KI nur wenn nötig und
 im Budget, und alles geht auch ohne KI. Unter der Gerätezeile steht dann **ein** Vorschlag: der Grund in einfachen
-Worten („2 Fehler: Kehrwert vergessen · Brüche dividieren“), ein Hauptknopf und zugeklappt **Andere Möglichkeit**
+Worten („2 falsche Antworten: Kehrwert vergessen · Brüche dividieren“), ein Hauptknopf und zugeklappt **Andere Möglichkeit**
 (die übrigen Wege, „Nicht nötig“ und nur dort neue Aufgaben der KI mit Kosten). Er kommt mit jeder neuen Antwort neu
 (die Gerätezeile lädt die Seite nach) und zählt nur Antworten nach der letzten Reaktion (`einheit_cockpit.steuerung`).
 

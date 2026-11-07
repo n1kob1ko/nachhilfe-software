@@ -52,13 +52,15 @@ test("2 wrong answers: an easier task of the same skill, with the repeated error
   assert.equal(FEHLER_AB, 2);
   const t = nr + 1;
   const v = schlageVor(lage({ antworten: [falsch({ taskId: t }), falsch({ taskId: t })] }))!;
-  assert.equal(v.grund, "2 Fehler: Kehrwert vergessen");
+  assert.equal(v.grund, "2 falsche Antworten: Kehrwert vergessen");
   assert.equal(v.ausloeser, "antworten");
   assert.deepEqual(v.haupt, { art: "leichter", skillId: DIV, level: 2, fokus: "Kehrwert vergessen" });
   assert.deepEqual(v.andere.map((o) => o.art), ["voraussetzung", "erklaeren"], "the other ways under „Andere Möglichkeit“");
   assert.equal(v.andere[0].skillId, MUL);
   // different labels: no error named
-  assert.equal(schlageVor(lage({ antworten: [falsch({ errorLabel: "a" }), falsch({ errorLabel: "b", errorType: "rechenfehler" })] }))!.grund, "2 Fehler");
+  assert.equal(schlageVor(lage({ antworten: [falsch({ errorLabel: "a" }), falsch({ errorLabel: "b", errorType: "rechenfehler" })] }))!.grund, "2 falsche Antworten");
+  // no label, the same Fehlerart twice: in plain words, never the key „regel“ (Audit 2026-11-07)
+  assert.equal(schlageVor(lage({ antworten: [falsch({ errorLabel: null }), falsch({ errorLabel: "" }), falsch({ errorLabel: null })] }))!.grund, "3 falsche Antworten: Regel nicht verstanden");
   // only the last FENSTER answers count: two old errors and five right ones after them
   const alt = [falsch(), falsch(), ...Array.from({ length: FENSTER }, () => a())];
   assert.notEqual(schlageVor(lage({ antworten: alt }))?.haupt.art, "leichter");
@@ -213,7 +215,7 @@ test("2 wrong answers in the unit: „Leichtere Aufgabe senden“ from the gener
   const asg = s.sende(unit.id, sid);
   s.antworte(unit.id, asg, [false, false]);
   const v = s.st.vorschlagDerEinheit(unit.id, s.c.cockpit(unit.id, { mitPlan: true }))!;
-  assert.equal(v.grund, "2 Fehler: Kehrwert vergessen");
+  assert.equal(v.grund, "2 falsche Antworten: Kehrwert vergessen");
   assert.equal(v.haupt?.label, "Leichtere Aufgabe senden");
   assert.equal(v.haupt?.quelle, "B", "nothing in stock at level 2: the generator");
   assert.equal(v.zusatz, null, "no KI hint without KI");

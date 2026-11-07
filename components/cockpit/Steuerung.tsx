@@ -60,8 +60,8 @@ function KnopfAktion({ k, unitId, schrittId, primary, hinweis = null }: { k: Kno
 }
 
 /**
- * **Anpassung im Unterricht** (lib/steuerung.ts): eine kompakte Karte mit dem Grund in einfachen Worten („2 Fehler:
- * Kehrwert vergessen · Brüche dividieren“), einem Hauptknopf und unter „Andere Möglichkeit“ dem Rest: die übrigen Wege,
+ * **Anpassung im Unterricht** (lib/steuerung.ts): eine kompakte Karte mit dem Grund in einfachen Worten („2 falsche
+ * Antworten: Kehrwert vergessen · Brüche dividieren“), einem Hauptknopf und unter „Andere Möglichkeit“ dem Rest: die übrigen Wege,
  * neue Aufgaben der KI nur dort und mit Kosten, und „Nicht nötig“. Der KI-Hinweis der Live-Analyse steht darunter als
  * Zusatz, nie an Stelle des Vorschlags. Kommt mit jeder neuen Antwort neu (die Gerätezeile lädt die Seite nach).
  */
