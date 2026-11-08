@@ -7,6 +7,7 @@ import { KeinPaket, VorschlagWarum } from "@/components/cockpit/Vorbereitung";
 import { StatusPill } from "@/components/LernpaketStatus";
 import { SchuelerWorteKarte } from "@/components/SchuelerNotiz";
 import { PageHeader } from "@/components/ui";
+import { aiEnabled } from "@/lib/ai/router";
 import { requireTeacher } from "@/lib/auth";
 import { vorbereitung } from "@/lib/cockpit";
 import { paketWahl } from "@/lib/cockpit-vorschlag";
@@ -45,7 +46,8 @@ export default async function VorbereitenPage({ params, searchParams }: { params
   const naechste = !termine.length || termine[0].datum === datum;
   const auto = p || entfernt ? null : autoWahl(schuelerBasis(student, new Date()), { datum, fach: termin?.fach ?? "", wuensche: naechste ? wuenscheFuer(student.id, null) : undefined });
   const fehlt = auto?.art === "kein_paket" ? auto.signal : auto?.art === "paket" ? auto.luecke : null;
-  const ki = fehlt ? kiVorgabe(fehlt, student, { fach: termin?.fach ?? "", dauer: termin?.dauer || 50, gibtSkill: (x) => Boolean(repo.getSkill(x)) }) : null;
+  // ohne KI kein Knopf „Mit KI entwerfen“ (Audit 2026-11-07)
+  const ki = fehlt && aiEnabled() ? kiVorgabe(fehlt, student, { fach: termin?.fach ?? "", dauer: termin?.dauer || 50, gibtSkill: (x) => Boolean(repo.getSkill(x)) }) : null;
   const kosten = ki ? kostenSchaetzung().text : "";
   const laeuft = datum === heute ? runningUnitForStudent(student.id) : null;
   const wahl = paketWahl(student.id);
@@ -111,7 +113,7 @@ export default async function VorbereitenPage({ params, searchParams }: { params
         {auto?.art === "kein_paket" && (
           <section className="panel grid gap-1.5 px-5 py-4" aria-label="Kein Paket">
             <KeinPaket thema={auto.thema} ki={ki} kosten={kosten} entwuerfe={auto.entwuerfe} />
-            <p className="text-[13px] text-ink-3">Warum dieses Thema: {auto.signal.warum}. Die KI läuft erst, wenn du im Formular „Entwurf erstellen“ tippst.</p>
+            <p className="text-[13px] text-ink-3">Warum dieses Thema: {auto.signal.warum}.{ki ? " Die KI läuft erst, wenn du im Formular „Entwurf erstellen“ tippst." : " KI ist aus; ein Paket legst du unter Erweitert › Lernpakete selbst an."}</p>
           </section>
         )}
         {entfernt && (

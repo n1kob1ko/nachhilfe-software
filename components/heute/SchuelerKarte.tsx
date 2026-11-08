@@ -41,7 +41,7 @@ export function SchuelerKarte({ p, student, karte, fach, haupt, wann, oben = fal
   if (laeuft)
     return (
       <Zeile p={p} meta={meta} testid="heute-karte-laeuft">
-        <span className="text-ink-2">läuft bei {p.einheitLehrer ?? "einer anderen Lehrkraft"}</span>
+        <span className="text-ink-2">läuft bei {p.einheitLehrer ?? "einem anderen Lehrer"}</span>
         <Punkt />
         <Link href={`/einheiten/${p.einheitId}`} className="inline-flex min-h-[44px] items-center font-medium text-ink-2 hover:text-ink hover:underline">
           Ansehen

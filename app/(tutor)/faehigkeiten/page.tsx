@@ -49,7 +49,7 @@ export default async function SkillsPage({ searchParams }: { searchParams: Promi
     <>
       <PageHeader
         title={crumbs[crumbs.length - 1].label === "Fächer" ? "Fähigkeiten" : crumbs[crumbs.length - 1].label}
-        back={back ? { href: back.href, label: back.label } : { href: "/mehr", label: "Mehr" }}
+        back={back ? { href: back.href, label: back.label } : { href: "/mehr", label: "Erweitert" }}
         info="Der Lernstand wird pro Fähigkeit gemessen. Wähle Fach, Schulart und Klasse, um nur die passenden Themen zu sehen. Tippe auf eine Fähigkeit, um dazu eine Übung zu erstellen. „So geht’s“ zeigt die Erklärung und die typischen Fehler."
       />
 

@@ -152,7 +152,7 @@ export function stundenplanOrte(): string[] {
 function legeAnMitOrt(eingabe: PlatzEingabe, ort: string | null | undefined): PlatzErgebnis {
   if (!ort) return legePlatzAn({ ...eingabe, room_id: null });
   const raeume = listRaeume().filter((r) => r.building.trim() === ort.trim());
-  if (!raeume.length) return { ok: false, fehler: `Am Ort „${ort}“ gibt es keinen Raum. Lege unter Mehr › Räume einen an.` };
+  if (!raeume.length) return { ok: false, fehler: `Am Ort „${ort}“ gibt es keinen Raum. Lege unter Erweitert › Räume einen an.` };
   for (const raum of raeume) {
     const probe = pruefeUeberlappung({ ...eingabe, room_id: raum.id });
     if (probe.ok) return legePlatzAn({ ...eingabe, room_id: raum.id });

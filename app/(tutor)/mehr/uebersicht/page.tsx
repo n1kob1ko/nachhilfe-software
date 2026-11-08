@@ -8,6 +8,7 @@ import { AnfrageMeldung, AnfragenListe, TerminAendern } from "@/components/planu
 import { Avatar } from "@/components/Art";
 import { Wochenplan } from "@/components/planung/Wochenplan";
 import { SectionTitle } from "@/components/ui";
+import { aiEnabled } from "@/lib/ai/router";
 import { requireTeacher } from "@/lib/auth";
 import * as repo from "@/lib/repo";
 import { naechsterPunkt, tagesplan } from "@/lib/heute";
@@ -64,7 +65,10 @@ export default async function UebersichtPage({ searchParams }: { searchParams: P
 
   // „Stunden automatisch vorbereiten“ (lib/vorbereitung-auto.ts): die nächsten 7 Tage, ohne KI; nur Vorschläge
   const naechste = naechsteEinheiten(teacher.id, now);
-  const kiKosten = naechste.some((n) => n.ki) ? kostenSchaetzung().text : "";
+  // ohne KI keinen Knopf „Mit KI entwerfen“ je Zeile, sondern einmal die Zeile „KI ist aus“ (Audit 2026-11-07)
+  const kiAn = aiEnabled();
+  const kiFehlt = naechste.some((n) => n.ki);
+  const kiKosten = kiAn && kiFehlt ? kostenSchaetzung().text : "";
 
   return (
     <>
@@ -117,13 +121,22 @@ export default async function UebersichtPage({ searchParams }: { searchParams: P
             <p className="text-[15px] text-ink-2">In den nächsten {VORAUS_TAGE} Tagen ist keine Einheit geplant, die noch vorzubereiten wäre.</p>
           ) : (
             <>
-              <VorbereitungListe punkte={naechste.slice(0, 6)} kosten={kiKosten} />
+              {kiFehlt && !kiAn && (
+                <p className="mb-3 text-[14px] text-ink-2" data-testid="ki-aus">
+                  KI ist aus. Ein fehlendes Lernpaket legst du unter{" "}
+                  <Link href="/mehr/lernpakete" className="link">
+                    Erweitert › Lernpakete
+                  </Link>{" "}
+                  selbst an.
+                </p>
+              )}
+              <VorbereitungListe punkte={naechste.slice(0, 6)} kosten={kiKosten} kiAn={kiAn} />
               {naechste.length > 6 && (
                 <details className="group mt-3">
                   <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-medium text-accent">
                     Noch {naechste.length - 6} weitere <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden />
                   </summary>
-                  <VorbereitungListe punkte={naechste.slice(6)} kosten={kiKosten} />
+                  <VorbereitungListe punkte={naechste.slice(6)} kosten={kiKosten} kiAn={kiAn} />
                 </details>
               )}
             </>
@@ -158,9 +171,9 @@ export default async function UebersichtPage({ searchParams }: { searchParams: P
 
 /**
  * Je kommende Einheit eine Zeile: das Paket, das der Lehrer gewählt hat, sonst der Vorschlag der App mit „Warum“
- * und „Entfernen“, oder „Kein Paket für …“ mit „Mit KI entwerfen“ (kostet erst nach dem Klick im Formular).
+ * und „Entfernen“, oder „Kein Paket für …“ mit „Mit KI entwerfen“ (kostet erst nach dem Klick im Formular; ohne KI fehlt der Knopf).
  */
-function VorbereitungListe({ punkte, kosten }: { punkte: NaechsteEinheit[]; kosten: string }) {
+function VorbereitungListe({ punkte, kosten, kiAn }: { punkte: NaechsteEinheit[]; kosten: string; kiAn: boolean }) {
   return (
     <ul className="panel divide-y divide-line" data-testid="vorbereitung">
       {punkte.map((n) => {
@@ -187,12 +200,12 @@ function VorbereitungListe({ punkte, kosten }: { punkte: NaechsteEinheit[]; kost
                     <BookMarked size={15} className="shrink-0 text-accent" aria-hidden /> {w.paket.title}
                   </p>
                   <VorschlagWarum warum={w.warum} unsicher={w.unsicher} />
-                  {w.luecke && n.ki && <KeinPaket klein thema={w.luecke.thema} ki={n.ki} kosten={kosten} />}
+                  {w.luecke && kiAn && n.ki && <KeinPaket klein thema={w.luecke.thema} ki={n.ki} kosten={kosten} />}
                 </>
               )}
               {w.art === "kein_paket" && (
                 <>
-                  <KeinPaket klein thema={w.thema} ki={n.ki} kosten={kosten} entwuerfe={w.entwuerfe} />
+                  <KeinPaket klein thema={w.thema} ki={kiAn ? n.ki : null} kosten={kosten} entwuerfe={w.entwuerfe} />
                   <p className="text-[13px] text-ink-3">Warum dieses Thema: {w.signal.warum}</p>
                 </>
               )}

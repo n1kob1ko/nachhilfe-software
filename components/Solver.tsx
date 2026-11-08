@@ -845,7 +845,7 @@ function TaskCard({
         {/* Aufgabe mit Bild: das Bild unter der Frage (bei Lücken ohne eigene Fragezeile darüber) */}
         {task.figur && !bildKopf && <FigurBild svg={task.figur} groesser={1.2} />}
         {task.quelle && <p className="mt-2 text-[12px] text-ink-3">Quelle: {task.quelle}</p>}
-        {/* Umlaute für Lückentexte: eine Tablet-Tastatur gibt ä ö ü ß nicht immer her (components/UmlautBar.tsx) */}
+        {/* Umlaute für Lückentexte am Laptop; auf Tablet und Handy ausgeblendet (components/UmlautBar.tsx) */}
         {task.blanks > 0 && !task.gapOptions && !final && !en && !task.zahlen && <UmlautBar target={umlaut} className="mt-3" />}
         {task.blanks > 0 && !task.gapOptions && !final && task.zahlen && (
           <p className="mt-3 text-[13px] text-ink-3">

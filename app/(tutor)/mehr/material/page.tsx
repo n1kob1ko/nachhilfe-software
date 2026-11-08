@@ -33,7 +33,7 @@ export default async function MaterialsPage({ searchParams }: { searchParams: Pr
     <>
       <PageHeader
         title="Material"
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         info="Fotos und PDFs von Arbeitsblättern, Schulbuchseiten oder Tests. Die Datei bleibt privat auf diesem Server. Aufgaben daraus kommen erst in die Aufgabenbibliothek, wenn du sie geprüft hast, und fremde Aufgaben nur in eigenen Worten."
       />
       {sp.fehler && (

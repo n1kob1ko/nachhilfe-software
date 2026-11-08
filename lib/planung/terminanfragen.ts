@@ -297,7 +297,7 @@ export function bestaetige(akteur: Akteur, id: number, opts: { roomId?: number |
   return { ok: true, hinweis: `Bestätigt: ${z.art === "tauschen" ? "die Termine sind getauscht" : "der Termin ist verschoben"}.${r.hinweis ? ` ${r.hinweis}` : ""}` };
 }
 
-// ---------- Tauschbörse: angesehen, zurücktauschen ----------
+// ---------- Tauschbörse: zurücktauschen ----------
 
 /** Liegen die beiden Plätze eines Tauschs noch so, wie der Tausch sie hingelegt hat, und lassen sie sich noch ändern? */
 function nochGetauscht(z: Zeile, now: Date): { platz: GeplanteEinheitZeile; partner: GeplanteEinheitZeile } | null {
@@ -308,15 +308,6 @@ function nochGetauscht(z: Zeile, now: Date): { platz: GeplanteEinheitZeile; part
   if (!gleicheLage(platz, zielVon(z)) || !gleicheLage(partner, vorherVon(z))) return null;
   if (!anfragbar(platz, now) || !anfragbar(partner, now)) return null;
   return { platz, partner };
-}
-
-/** Die Verwaltung hat einen Tausch aus der Tauschbörse angesehen: er verschwindet aus „Zu erledigen“. */
-export function markiereGesehen(akteur: Akteur, id: number, now: Date = new Date()): Ergebnis {
-  if (!istAdmin(akteur)) return nein("Dafür fehlt die Berechtigung.");
-  const z = getZeile(id);
-  if (!z || z.quelle !== "boerse") return nein("Tausch nicht gefunden.");
-  db().prepare("UPDATE terminanfragen SET gesehen_at = COALESCE(gesehen_at, ?) WHERE id = ?").run(new Date(now).toISOString(), id);
-  return { ok: true, hinweis: "Erledigt." };
 }
 
 /**
@@ -470,8 +461,10 @@ export type AnfrageSicht = {
   kannBestaetigen: boolean;
   /** Tausch aus der Tauschbörse: sofort getauscht, ohne Bestätigung */
   boerse: boolean;
-  /** nur Verwaltung, nur Tauschbörse: noch nicht angesehen / lässt sich noch zurücktauschen */
-  kannGesehen: boolean;
+  /**
+   * nur Verwaltung, nur Tauschbörse: lässt sich noch zurücktauschen. Ein Tausch ist nur Information, keine Aufgabe
+   * (Audit 2026-11-07: kein „Passt“ mehr, nichts in „Zu erledigen“); `gesehen_at` bleibt als Altlast in der Tabelle.
+   */
   kannZuruecktauschen: boolean;
 };
 
@@ -512,7 +505,6 @@ function sicht(z: Zeile, wer: Wer | "verwaltung", namenSchueler: Map<number, str
     kannZurueckziehen: offen && eigene,
     kannBestaetigen: wer === "verwaltung" && z.status === "offen",
     boerse: z.quelle === "boerse",
-    kannGesehen: wer === "verwaltung" && z.quelle === "boerse" && z.status === "bestaetigt" && !z.gesehen_at,
     kannZuruecktauschen: wer === "verwaltung" && z.quelle === "boerse" && nochGetauscht(z, now) !== null,
   };
 }
@@ -553,25 +545,20 @@ export function anfragenFuerVerwaltung(now: Date = new Date()): AnfrageSicht[] {
 
 /**
  * Was in „Zu erledigen“ steht: für die Verwaltung jede offene Anfrage (bestätigen oder ablehnen), für einen
- * Lehrer jeder Tausch, der auf seine Zustimmung als andere Seite wartet.
+ * Lehrer jeder Tausch, der auf seine Zustimmung als andere Seite wartet. Ein fertiger Tausch aus der Tauschbörse
+ * steht hier nicht: er ist schon getauscht und nur unter Planung zu sehen (mit „Zurücktauschen“, solange das geht).
  */
-export function anfragenZuErledigen(akteur: Akteur): { id: number; aufgabe: "bestaetigen" | "zustimmen" | "ansehen"; studentId: number; studentName: string; beschreibung: string; href: string; datum: string }[] {
+export function anfragenZuErledigen(akteur: Akteur): { id: number; aufgabe: "bestaetigen" | "zustimmen"; studentId: number; studentName: string; beschreibung: string; href: string; datum: string }[] {
   const out: ReturnType<typeof anfragenZuErledigen> = [];
-  const zeilen = db()
-    .prepare("SELECT * FROM terminanfragen WHERE status IN ('wartet', 'offen') OR (quelle = 'boerse' AND status = 'bestaetigt' AND gesehen_at IS NULL) ORDER BY id")
-    .all() as Zeile[];
+  const zeilen = db().prepare("SELECT * FROM terminanfragen WHERE status IN ('wartet', 'offen') ORDER BY id").all() as Zeile[];
   const s = namen("students");
   for (const z of zeilen) {
     const aufgabe =
-      z.status === "bestaetigt"
-        ? istAdmin(akteur)
-          ? "ansehen"
-          : null
-        : z.status === "offen" && istAdmin(akteur)
-          ? "bestaetigen"
-          : z.status === "wartet" && istPartner({ lehrer: akteur }, z) && z.von_teacher_id !== akteur.id
-            ? "zustimmen"
-            : null;
+      z.status === "offen" && istAdmin(akteur)
+        ? "bestaetigen"
+        : z.status === "wartet" && istPartner({ lehrer: akteur }, z) && z.von_teacher_id !== akteur.id
+          ? "zustimmen"
+          : null;
     if (!aufgabe) continue;
     const v = sicht(z, "verwaltung", s, null);
     if (!v) continue;
@@ -581,13 +568,8 @@ export function anfragenZuErledigen(akteur: Akteur): { id: number; aufgabe: "bes
       aufgabe,
       studentId,
       studentName: s.get(studentId) ?? "",
-      beschreibung:
-        z.art !== "tauschen"
-          ? `${v.von} → ${v.nach}`
-          : aufgabe === "ansehen"
-            ? `${v.von} ↔ ${v.anderer}${v.partnerSchueler ? ` (mit ${v.partnerSchueler})` : ""}`
-            : `${v.von} ↔ ${v.anderer}`,
-      href: aufgabe !== "zustimmen" ? `/planung?woche=${v.woche}#terminanfragen` : "/mehr/uebersicht?tab=woche#terminanfragen",
+      beschreibung: z.art !== "tauschen" ? `${v.von} → ${v.nach}` : `${v.von} ↔ ${v.anderer}`,
+      href: aufgabe === "bestaetigen" ? `/planung?woche=${v.woche}#terminanfragen` : "/mehr/uebersicht?tab=woche#terminanfragen",
       datum: z.created_at,
     });
   }

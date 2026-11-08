@@ -48,7 +48,7 @@ export default async function StatisticsPage({ searchParams }: { searchParams: P
     <>
       <PageHeader
         title="Statistik"
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         info="Nur Summen über alle Schüler, keine Namen. Hilft, Aufgaben und Nachhilfe zu verbessern."
         subtitle={
           <span className="num text-[14px]">

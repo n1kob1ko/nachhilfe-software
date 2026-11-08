@@ -131,8 +131,8 @@ export function AnfragenListe({
   zurueck?: string;
   schueler?: boolean;
   raeume?: { id: number; name: string; building: string }[];
-  /** nur Verwaltung: ein Tausch aus der Tauschbörse ist angesehen („Passt“) oder wird zurückgetauscht */
-  boerse?: { gesehen: (a: AnfrageSicht) => Aktion; zurueck: (a: AnfrageSicht) => Aktion };
+  /** nur Verwaltung: ein Tausch aus der Tauschbörse wird zurückgetauscht (sonst ist er nur Information) */
+  boerse?: { zurueck: (a: AnfrageSicht) => Aktion };
 }) {
   return (
     <ul className="panel divide-y divide-line" data-testid="anfragen">
@@ -168,14 +168,8 @@ export function AnfragenListe({
             )}
             {a.notiz && <span className="text-ink-2">Notiz: {a.notiz}</span>}
             {a.status === "abgelehnt" && a.grund && <span className="text-red">Grund: {a.grund}</span>}
-            {(a.kannZustimmen || a.kannAblehnen || a.kannZurueckziehen || a.kannBestaetigen || (boerse && (a.kannGesehen || a.kannZuruecktauschen))) && (
+            {(a.kannZustimmen || a.kannAblehnen || a.kannZurueckziehen || a.kannBestaetigen || (boerse && a.kannZuruecktauschen)) && (
               <span className="mt-1 flex flex-wrap items-start gap-2">
-                {boerse && a.kannGesehen && (
-                  <form action={boerse.gesehen(a)}>
-                    {zurueck && <input type="hidden" name="zurueck" value={zurueck} />}
-                    <button className="btn btn-primary btn-sm">Passt</button>
-                  </form>
-                )}
                 {boerse && a.kannZuruecktauschen && (
                   <form action={boerse.zurueck(a)}>
                     {zurueck && <input type="hidden" name="zurueck" value={zurueck} />}

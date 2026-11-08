@@ -45,7 +45,7 @@ export default async function PraesentationenPage({ searchParams }: { searchPara
   return (
     <>
       <PageHeader
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         title="Präsentationen"
         info="Präsentationen mit Animationen und Vortragstext je Folie. Du siehst Folie und Text, der Schüler nur die Folien. Hochladen als HTML-Datei oder ZIP-Datei (z. B. aus claude.ai, reveal.js, iSpring oder Articulate). PowerPoint geht als PDF unter Material, dann ohne Animationen."
         actions={

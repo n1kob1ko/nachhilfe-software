@@ -38,7 +38,7 @@ export default async function ReferenzenPage({ searchParams }: { searchParams: P
     <>
       <PageHeader
         title="Referenzsammlung"
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         info="Aufgaben als Vorbild, nur für Lehrer. Mathematik: Aufgabe mit Quelle, Grundkompetenz, Format und Lösungserwartung. Sprachen: nur Aufbau, Format und Bewertungsraster, keine fremden Texte. Erst geprüfte Einträge gehen beim Erstellen ähnlicher Aufgaben als Beispiele an die KI. Die App lädt nichts von Webseiten herunter: einzelne PDFs lädst du selbst herunter und hier hoch."
       />
       {sp.fehler && (

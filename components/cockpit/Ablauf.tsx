@@ -633,8 +633,11 @@ function Knoepfe({ unitId, id, weiterHaupt, children }: { unitId: number; id: nu
   );
 }
 
-/** Nach „Schüler versteht es nicht“: was es dazu schon gibt (lib/cockpit.ts `hilfeBeiFehler`). */
-function HilfeBlock({ hilfe, unitId, werkzeuge }: { hilfe: Hilfe[]; unitId: number; werkzeuge: string }) {
+/**
+ * Nach „Schüler versteht es nicht“: was es dazu schon gibt (lib/cockpit.ts `hilfeBeiFehler`), und darunter als `children`
+ * der Vorschlag der App („Leichtere Aufgabe senden“): eine Karte, Erklärtext oben, Knopf unten (Audit 2026-11-07).
+ */
+function HilfeBlock({ hilfe, unitId, werkzeuge, children }: { hilfe: Hilfe[]; unitId: number; werkzeuge: string; children?: React.ReactNode }) {
   return (
     <section className="mt-4 grid gap-2 rounded-xl bg-amber-wash px-3 py-3" aria-label="Hilfe" data-testid="hilfe-bei-fehler">
       <p className="text-[14px] font-semibold text-amber">Einfacher erklären</p>
@@ -665,6 +668,7 @@ function HilfeBlock({ hilfe, unitId, werkzeuge }: { hilfe: Hilfe[]; unitId: numb
           kannst du anpassen oder einen Schritt zurück gehen.
         </p>
       )}
+      {children}
     </section>
   );
 }
@@ -776,8 +780,13 @@ function SchrittKarte({
         {s.notiz.trim() && <p className="text-[14px] whitespace-pre-line text-ink-2">Notiz im Paket: {s.notiz}</p>}
       </div>
 
-      {vorschlag && <VorschlagKarte a={vorschlag} unitId={unitId} schrittId={s.id} imSchritt />}
-      {nicht && <HilfeBlock hilfe={hilfe} unitId={unitId} werkzeuge={`/einheiten/${unitId}?bereich=cockpit&mehr=1#werkzeuge`} />}
+      {nicht ? (
+        <HilfeBlock hilfe={hilfe} unitId={unitId} werkzeuge={`/einheiten/${unitId}?bereich=cockpit&mehr=1#werkzeuge`}>
+          {vorschlag && <VorschlagKarte a={vorschlag} unitId={unitId} schrittId={s.id} imSchritt="eingebettet" />}
+        </HilfeBlock>
+      ) : (
+        vorschlag && <VorschlagKarte a={vorschlag} unitId={unitId} schrittId={s.id} imSchritt />
+      )}
 
       {immer.length > 0 && (
         <div className="mt-4 grid gap-2" data-testid="angepasst">
@@ -1070,8 +1079,13 @@ function PlanKarte({
           Welche Fähigkeit gemeint ist, bestätigst du oben unter „Vorgabe für heute“. Danach gibt es dazu eine Übung.
         </p>
       )}
-      {vorschlag && <VorschlagKarte a={vorschlag} unitId={unit.id} schrittId={s.id} imSchritt />}
-      {nicht && <HilfeBlock hilfe={hilfe} unitId={unit.id} werkzeuge={`/einheiten/${unit.id}?bereich=cockpit&mehr=1#werkzeuge`} />}
+      {nicht ? (
+        <HilfeBlock hilfe={hilfe} unitId={unit.id} werkzeuge={`/einheiten/${unit.id}?bereich=cockpit&mehr=1#werkzeuge`}>
+          {vorschlag && <VorschlagKarte a={vorschlag} unitId={unit.id} schrittId={s.id} imSchritt="eingebettet" />}
+        </HilfeBlock>
+      ) : (
+        vorschlag && <VorschlagKarte a={vorschlag} unitId={unit.id} schrittId={s.id} imSchritt />
+      )}
       {eigen && <SchreibauftragStart start={eigen} laeuft={laeuft} />}
       {(blatt || zugewiesen || skill) && (
         <div className="mt-5 grid gap-2 border-t border-line pt-4" data-testid="plan-senden">

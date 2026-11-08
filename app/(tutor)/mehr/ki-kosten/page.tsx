@@ -87,7 +87,7 @@ export default async function AICostPage() {
     <>
       <PageHeader
         title="KI-Kosten"
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         info="Jeder KI-Aufruf mit Anbieter, Modell, Tokens, Dauer und Kosten, ohne Namen und ohne Inhalte der Anfragen. Die Tokens meldet der Anbieter bei jedem Aufruf. Die Kosten sind bei Anthropic diese Tokens mal Preisliste (so rechnet Anthropic ab), bei OpenRouter der Preis, den OpenRouter meldet."
       />
 
@@ -146,7 +146,7 @@ export default async function AICostPage() {
           <span>
             Briefings automatisch mit KI vorbereiten
             <Info label="Was passiert dabei?">
-              Öffnet eine Lehrkraft Heute, fragt die App für die heutigen Schüler, die noch nicht begonnen haben, im Hintergrund das KI-Briefing, wenn es zum jetzigen Datenstand noch keines gibt. Heute wartet nie
+              Öffnet ein Lehrer Heute, fragt die App für die heutigen Schüler, die noch nicht begonnen haben, im Hintergrund das KI-Briefing, wenn es zum jetzigen Datenstand noch keines gibt. Heute wartet nie
               darauf; bis es da ist, gilt die Fassung aus den Daten. Ein Briefing gilt, bis sich die Daten des Schülers ändern (Dokumentation, Antworten, Prüfung, Hausübung, Wunsch). Nicht im manuellen Modus, nicht
               über der Warnschwelle des Monatsbudgets und nicht ab {eur(grenze.warnEur)} KI-Kosten eines Schülers im Monat; dann nur noch auf Klick. Die KI ändert nichts an Lernstand oder Dokumentation.
             </Info>
@@ -186,7 +186,7 @@ export default async function AICostPage() {
             <Info label="Was passiert dabei?">
               Fehlen in einer laufenden Einheit passende Aufgaben (aus Bestand und Generator weniger als drei), erstellt die KI bis zu diesem Betrag je Einheit von selbst neue. Sie kommen immer zuerst als Vorschau mit
               Lösungen, „neu erstellt, ungeprüft“; an den Schüler geht erst etwas mit „Senden“. Ist der Betrag erreicht, nur noch auf Tippen, mit Kosten. Briefing und Live-Analyse zählen mit. Die Grenze je Schüler im Monat
-              und das Monatsbudget gelten weiter. In einer Einheit kann die Lehrkraft den Betrag senken, erhöhen nur die Administration.
+              und das Monatsbudget gelten weiter. In einer Einheit kann der Lehrer den Betrag senken, erhöhen nur die Administration.
             </Info>
           </span>
         </SectionTitle>

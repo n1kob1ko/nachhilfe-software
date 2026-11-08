@@ -450,9 +450,11 @@ Vorgabe von niko: so einfach, dass Schüler **und Eltern** es ohne Erklärung be
 - **Sofort getauscht** (Entscheidung niko: „Automatisch, Verwaltung informiert“): `nimmAngebot` tauscht über
   `legePlaetzeNeu` (beide Plätze wechseln Zeit und Raum, Dauer bleibt) und legt eine **bestätigte Terminanfrage** mit
   `quelle = 'boerse'` an. Ein eigenes Angebot des Annehmenden zu diesem Termin erledigt sich.
-- **Verwaltung informiert:** „Zu erledigen“ zeigt „Tauschbörse: … hat getauscht“, bis die Verwaltung unter Planung
-  „Passt“ drückt (`gesehen_at`) oder „Zurücktauschen“ (`tauscheZurueck`, Zustand `zurueckgetauscht`). Zurücktauschen
-  geht, solange beide Plätze noch so liegen und nicht begonnen haben.
+- **Verwaltung informiert, nicht beschäftigt** (Audit 2026-11-07): ein fertiger Tausch ist keine Aufgabe. Er steht
+  unter Planung bei den Terminanfragen als „Über die Tauschbörse getauscht, nichts zu tun“ mit „Zurücktauschen“
+  (`tauscheZurueck`, Zustand `zurueckgetauscht`), solange beide Plätze noch so liegen und nicht begonnen haben;
+  danach unter „Entschieden“. Er zählt nie als offene Anfrage und steht nicht in „Zu erledigen“ (das frühere
+  „Passt“ und `gesehen_at` sind weg; die Spalte bleibt leer stehen).
 - **Frist:** beide Termine müssen noch mindestens 24 Stunden entfernt sein (`FRIST_STUNDEN`). Ein Angebot gilt nicht
   mehr, sobald der Termin anders liegt, eine Einheit hat oder eine offene Terminanfrage; es verschwindet dann einfach.
 - **Namen:** wie bei den Terminanfragen nur Zeiten, nie Namen anderer Schüler oder Räume.

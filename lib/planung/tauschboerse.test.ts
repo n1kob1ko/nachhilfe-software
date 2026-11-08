@@ -105,17 +105,14 @@ test("anbieten → nur der passende Schüler sieht es, ohne Namen → ein Tipp t
   assert.deepEqual([fuerBen[0].status, fuerBen[0].boerse, fuerBen[0].schueler, fuerBen[0].kannZuruecktauschen], ["bestaetigt", true, null, false]);
   assert.equal(ta.anfragenFuerSchueler(anna, JETZT)[0].status, "bestaetigt");
 
-  // die Verwaltung ist informiert, ein anderer Lehrer nicht
-  const todo = zuErledigen(niko.id, MONTAG, JETZT).offen.filter((p) => p.art === "terminanfrage");
-  assert.equal(todo.length, 1);
-  assert.equal(todo[0].art === "terminanfrage" && todo[0].aufgabe, "ansehen");
-  assert.match(todo[0].art === "terminanfrage" ? todo[0].beschreibung : "", /\(mit Ben Muster\)$/);
+  // die Verwaltung sieht den Tausch unter Planung, aber nicht als Aufgabe (Audit 2026-11-07: kein „Passt“ mehr)
+  assert.equal(zuErledigen(niko.id, MONTAG, JETZT).offen.filter((p) => p.art === "terminanfrage").length, 0);
   assert.equal(zuErledigen(thomas.id, MONTAG, JETZT).offen.filter((p) => p.art === "terminanfrage").length, 0);
   const v = ta.anfragenFuerVerwaltung(JETZT)[0];
-  assert.deepEqual([v.kannGesehen, v.kannZuruecktauschen, v.kannBestaetigen], [true, true, false]);
+  assert.deepEqual([v.boerse, v.status, v.kannZuruecktauschen, v.kannBestaetigen], [true, "bestaetigt", true, false]);
 });
 
-test("zurücktauschen und gesehen: nur die Verwaltung, danach ist alles wie vorher", async () => {
+test("zurücktauschen: nur die Verwaltung, danach ist alles wie vorher", async () => {
   const { planung, ta, tb, zuErledigen, niko, thomas, schueler, platz, r1, r2 } = await setup();
   const anna = schueler("Anna Beispiel");
   const ben = schueler("Ben Muster");
@@ -127,7 +124,6 @@ test("zurücktauschen und gesehen: nur die Verwaltung, danach ist alles wie vorh
   const id = ta.anfragenFuerVerwaltung(JETZT)[0].id;
 
   assert.equal(ta.tauscheZurueck(thomas, id, JETZT).ok, false);
-  assert.equal(ta.markiereGesehen(thomas, id, JETZT).ok, false);
   const r = ta.tauscheZurueck(niko, id, JETZT);
   assert.equal(r.ok, true, r.ok ? "" : r.fehler);
   const a = planung.getGeplanteEinheit(pa)!;
@@ -138,14 +134,13 @@ test("zurücktauschen und gesehen: nur die Verwaltung, danach ist alles wie vorh
   assert.equal(ta.tauscheZurueck(niko, id, JETZT).ok, false, "nur einmal");
   assert.equal(zuErledigen(niko.id, MONTAG, JETZT).offen.filter((p) => p.art === "terminanfrage").length, 0, "zurückgetauscht = erledigt");
 
-  // ein zweiter Tausch, nur angesehen
+  // ein zweiter Tausch: wieder nur Information, zurücktauschen geht
   assert.ok(tb.bieteAn(anna, { platzId: pa, passende: "alle" }, JETZT).ok);
   assert.ok(tb.nimmAngebot(ben, tb.boerseFuerSchueler(ben, JETZT).passend[0].angebotId, pb, JETZT).ok);
   const id2 = ta.anfragenFuerVerwaltung(JETZT).find((x) => x.status === "bestaetigt")!.id;
-  assert.equal(ta.markiereGesehen(niko, id2, JETZT).ok, true);
   assert.equal(zuErledigen(niko.id, MONTAG, JETZT).offen.filter((p) => p.art === "terminanfrage").length, 0);
   const v = ta.anfragenFuerVerwaltung(JETZT).find((x) => x.id === id2)!;
-  assert.deepEqual([v.kannGesehen, v.kannZuruecktauschen], [false, true], "zurücktauschen geht auch nach dem Ansehen");
+  assert.equal(v.kannZuruecktauschen, true);
 
   // im Wochenplan geändert → zurücktauschen geht nicht mehr
   assert.ok(planung.legePlaetzeNeu([{ id: pa, week_start: MONTAG, weekday: 5, start_min: 600 }]).ok);

@@ -592,7 +592,7 @@ export function angepasstZeile(eintraege: Pick<KnopfEintrag, "art" | "thema" | "
   return teile.length ? `Angepasst: ${teile.join(", ")}` : null;
 }
 
-/** „Lehrkraft: Thema verstanden (Past Simple)“ je Thema: die Beobachtung des Lehrers, nie ein gemessenes Ergebnis. */
+/** „Lehrer: Thema verstanden (Past Simple)“ je Thema: die Beobachtung des Lehrers, nie ein gemessenes Ergebnis. */
 export function verstandenZeilen(eintraege: Pick<KnopfEintrag, "art" | "thema">[]): string[] {
-  return [...new Set(eintraege.filter((e) => e.art === "verstanden").map((e) => e.thema.trim()))].map((t) => `Lehrkraft: Thema verstanden${t ? ` (${t})` : ""}`);
+  return [...new Set(eintraege.filter((e) => e.art === "verstanden").map((e) => e.thema.trim()))].map((t) => `Lehrer: Thema verstanden${t ? ` (${t})` : ""}`);
 }

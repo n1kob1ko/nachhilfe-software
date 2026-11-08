@@ -34,7 +34,7 @@ export default async function TutorLayout({ children }: { children: React.ReactN
       <Avatar name={teacher.name} size={32} />
       <span className={kompakt ? "sr-only" : "min-w-0"}>
         <span className="block truncate font-semibold">{teacher.name}</span>
-        <span className="block truncate text-[12px] text-ink-3">{teacher.is_admin ? "Verwaltung" : "Lehrkraft"}</span>
+        <span className="block truncate text-[12px] text-ink-3">{teacher.is_admin ? "Verwaltung" : "Lehrer"}</span>
       </span>
     </Link>
   );

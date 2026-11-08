@@ -376,7 +376,7 @@ test("„Anderes Thema“: the skill of the next exam comes in as a block with t
   s.units.finishUnit(unit.id, "abgebrochen");
 });
 
-test("the Abschluss: „Angepasst: …“ under what was done, „Lehrkraft: Thema verstanden“ as the teacher's observation, never as a result", async () => {
+test("the Abschluss: „Angepasst: …“ under what was done, „Lehrer: Thema verstanden“ as the teacher's observation, never as a result", async () => {
   const s = await setup();
   const ab = await import("./abschluss");
   const { endUnit } = await import("./learning");
@@ -392,7 +392,7 @@ test("the Abschluss: „Angepasst: …“ under what was done, „Lehrkraft: The
 
   const eintraege = s.k.knoepfeDerEinheit(unit.id);
   assert.equal(s.k.angepasstZeile(eintraege), "Angepasst: einfacher erklärt (Dividieren), weitere Beispiele (Dividieren), schwerere Aufgaben (Dividieren), anderes Thema (Multiplizieren statt Dividieren)");
-  assert.deepEqual(s.k.verstandenZeilen(eintraege), ["Lehrkraft: Thema verstanden (Dividieren)"]);
+  assert.deepEqual(s.k.verstandenZeilen(eintraege), ["Lehrer: Thema verstanden (Dividieren)"]);
   assert.equal(s.k.angepasstZeile([{ art: "thema", thema: "Dividieren", inhalt: { von: "Dividieren", nach: "Kürzen" } }]), "Angepasst: anderes Thema (Kürzen statt Dividieren)");
   assert.equal(s.k.angepasstZeile([]), null);
 
@@ -403,11 +403,11 @@ test("the Abschluss: „Angepasst: …“ under what was done, „Lehrkraft: The
   assert.equal(angepasst.von, "anpassung");
   assert.match(angepasst.text, /einfacher erklärt \(Dividieren\)/);
   assert.match(angepasst.text, /schwerere Aufgaben \(Dividieren\)/);
-  const verstanden = k.gut.find((z) => z.text === "Lehrkraft: Thema verstanden (Dividieren)");
+  const verstanden = k.gut.find((z) => z.text === "Lehrer: Thema verstanden (Dividieren)");
   assert.ok(verstanden, k.gut.map((z) => z.text).join("\n"));
   assert.equal(verstanden.von, "beobachtung");
   assert.equal(ab.hatSichereErgebnisse(k.gut), false, "no answer was graded: nothing secure");
-  assert.match(ab.dokuText(k.gut), /Lehrkraft: Thema verstanden \(Dividieren\) \(Beobachtung\)/);
+  assert.match(ab.dokuText(k.gut), /Lehrer: Thema verstanden \(Dividieren\) \(Beobachtung\)/);
 });
 
 test("with a chosen Lernpaket: „Einfacher erklären“ takes the package's „Bei Fehler“, „Thema verstanden“ keeps its Lernkontrolle, „Anderes Thema“ points elsewhere", async () => {

@@ -153,7 +153,7 @@ export type AufgabeBeleg = Pick<TaskLine, "assignmentId" | "skillId" | "skill" |
  *   `ergebnis`): Punkte und, wenn alles bewertet ist, die Note nach dem Notenschlüssel; sie ersetzen dort die Papier-Zeile
  * - `offen`: so viele Antworten der Einheit warten noch auf die Lehrkraft (lib/zu-bewerten.ts); sie stehen in keinem Ergebnis
  * - `knoepfe`: was die Lehrkraft mit den Knöpfen am Schritt getan hat (lib/knoepfe.ts): „Angepasst: …“ unter „Heute gemacht“,
- *   „Lehrkraft: Thema verstanden“ als ihre Beobachtung unter „Gut verstanden“ (nie als Ergebnis)
+ *   „Lehrer: Thema verstanden“ als seine Beobachtung unter „Gut verstanden“ (nie als Ergebnis)
  * - `hausuebung`: die im Abschluss freigegebene Hausübung („Hausübung: 9 Aufgaben …, fällig …“) oder „Heute keine Hausübung“
  *   (lib/hausuebung.ts); `zeile`: wie die Hausübung selbst unter „Nächstes Mal“ stünde, dort fällt sie dann weg
  * - `hausuebungZurueck`: die Hausübung, die in diese Einheit gehört (E2, lib/hausuebung-zurueck.ts), mit ihrem Ergebnis („Hausübung vom

@@ -33,7 +33,7 @@ export default async function BlaetterPage({ searchParams }: { searchParams: Pro
       <PageHeader
         title="Blätter erstellen"
         subtitle="Lesetabelle, Satzbaukasten und Nachmalblatt — einstellen, ansehen, drucken"
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         info={
           <>
             Ein Blatt entsteht hier aus Einstellungen; gedruckt wird es über den Browser. Die Vorschau

@@ -29,7 +29,7 @@ export default async function RoomsPage({ searchParams }: { searchParams: Promis
     <>
       <PageHeader
         title="Räume"
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         info="Ein Raum ist der Ort einer geplanten Einheit: Gebäude, Name und ob vor Ort oder online. Sobald Plätze auf einen Raum zeigen, wird er deaktiviert statt gelöscht — so bleibt die Dokumentation vollständig."
       />
 

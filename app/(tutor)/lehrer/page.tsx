@@ -74,7 +74,7 @@ export default async function Teachers({ searchParams }: { searchParams: Promise
       {me.is_admin ? (
         <form method="get" action="/lehrer" className="mb-8 flex flex-wrap items-end gap-3">
           <label className="field max-w-[280px]">
-            <span className="label">Lehrkraft</span>
+            <span className="label">Lehrer</span>
             <select className="input" name="lehrer" defaultValue={String(ziel.id)}>
               {alle.map((t) => (
                 <option key={t.id} value={t.id}>

@@ -9,7 +9,7 @@ import { leseRegeln, pruefeRegeln, regelnJson } from "@/lib/planung/regeln";
 import { listRaeume } from "@/lib/planung/repo";
 import { anfragenFuerVerwaltung } from "@/lib/planung/terminanfragen";
 import { offeneAngeboteFuerVerwaltung } from "@/lib/planung/tauschboerse";
-import { tauschGesehenAction, tauscheZurueckAction } from "@/app/tauschboerse-actions";
+import { tauscheZurueckAction } from "@/app/tauschboerse-actions";
 import { wochenUebersicht } from "@/lib/planung/uebersicht";
 import { istDatum, wochenstartVon, wienerWochenstart, type Wochentag } from "@/lib/planung/zeit";
 
@@ -65,11 +65,13 @@ export default async function PlanungPage({
   const anfragen = darfBearbeiten ? anfragenFuerVerwaltung() : [];
   // offene Angebote der Tauschbörse (lib/planung/tauschboerse.ts): wer wartet, und ob überhaupt jemand tauschen könnte
   const angebote = darfBearbeiten ? offeneAngeboteFuerVerwaltung() : [];
-  // ein Tausch aus der Tauschbörse bleibt oben, bis die Verwaltung „Passt“ oder „Zurücktauschen“ gedrückt hat
-  const istOffen = (a: (typeof anfragen)[number]) => a.status === "offen" || a.status === "wartet" || a.kannGesehen;
+  // ein Tausch aus der Tauschbörse ist schon getauscht: keine offene Anfrage, nur Information mit „Zurücktauschen“,
+  // solange beide Termine noch so liegen und nicht begonnen haben (Audit 2026-11-07)
+  const istOffen = (a: (typeof anfragen)[number]) => a.status === "offen" || a.status === "wartet";
   const offeneAnfragen = anfragen.filter(istOffen);
-  const erledigteAnfragen = anfragen.filter((a) => !istOffen(a));
-  const boerse = { gesehen: (a: (typeof anfragen)[number]) => tauschGesehenAction.bind(null, a.id), zurueck: (a: (typeof anfragen)[number]) => tauscheZurueckAction.bind(null, a.id) };
+  const getauschte = anfragen.filter((a) => a.boerse && a.kannZuruecktauschen);
+  const erledigteAnfragen = anfragen.filter((a) => !istOffen(a) && !getauschte.includes(a));
+  const boerse = { zurueck: (a: (typeof anfragen)[number]) => tauscheZurueckAction.bind(null, a.id) };
 
   const regelnRoh = regelnJson();
   const regelnGebrochen = !!regelnRoh && !pruefeRegeln(regelnRoh).ok;
@@ -79,7 +81,7 @@ export default async function PlanungPage({
       <PageHeader
         title="Planung"
         subtitle={darfBearbeiten ? "Wochenplan aller Lehrer" : "Deine veröffentlichte Woche"}
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         info={
           <>
             Eine Woche ist entweder <b>Entwurf</b> oder <b>veröffentlicht</b>. Die Verwaltung generiert, verschiebt und veröffentlicht; ein Lehrer sieht nur seine eigene veröffentlichte Woche.
@@ -110,6 +112,12 @@ export default async function PlanungPage({
                 raeume={listRaeume()}
                 boerse={boerse}
               />
+            </div>
+          )}
+          {getauschte.length > 0 && (
+            <div className="mt-3" data-testid="getauscht">
+              <p className="mb-1.5 text-[14px] font-medium text-ink-2">Über die Tauschbörse getauscht, nichts zu tun</p>
+              <AnfragenListe anfragen={getauschte} antwort={(a) => antwortLehrerAction.bind(null, a.id)} zurueck={zurueck} boerse={boerse} />
             </div>
           )}
           {erledigteAnfragen.length > 0 && (

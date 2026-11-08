@@ -42,7 +42,7 @@ export default async function DevicesPage({ searchParams }: { searchParams: Prom
     <>
       <PageHeader
         title="Schülergeräte"
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         info="Jeder Lehrer hat ein festes Schüler-Tablet. Es zeigt automatisch den Schüler der laufenden Einheit dieses Lehrers und danach wieder „Bereit für die nächste Einheit“."
       />
 
