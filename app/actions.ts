@@ -299,7 +299,7 @@ export async function createSkillAction(formData: FormData) {
 // ---------- student mode ----------
 export async function submitAnswerAction(input: SubmitInput) {
   const res = await submitAnswer(input);
-  revalidatePath(`/lernen/${input.token}`);
+  revalidatePath(`/lernen/${input.token}`, "layout");
   const student = repo.getStudentByToken(input.token);
   const unit = student ? runningUnitForStudent(student.id) : null;
   if (unit) pushLive(unit.id);

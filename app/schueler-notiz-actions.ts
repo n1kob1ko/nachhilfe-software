@@ -11,7 +11,7 @@ import { speichereNotiz, speichereWunsch, ueberspringeNotiz, type Speichern } fr
 export type NotizState = Speichern | null;
 
 function nachSpeichern(token: string, studentId: number, unitId?: number) {
-  revalidatePath(`/lernen/${token}`);
+  revalidatePath(`/lernen/${token}`, "layout");
   revalidatePath(`/schueler/${studentId}`, "layout");
   if (unitId) revalidatePath(`/einheiten/${unitId}`);
 }

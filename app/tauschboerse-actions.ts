@@ -26,7 +26,7 @@ function schuelerAus(token: string): number {
   return s.id;
 }
 
-const app = (token: string) => `/lernen/${encodeURIComponent(token)}`;
+const app = (token: string) => `/lernen/${encodeURIComponent(token)}/termine`;
 
 // ---------- Schüler (geheimer Link) ----------
 

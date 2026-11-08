@@ -29,8 +29,9 @@ _Avoid_: Kind, Klient, Teilnehmer, Schüleraccount, Nutzer
 
 **Schüler-App**:
 Der geheime Link `/lernen/[token]` eines **Schülers**, am Handy auf den Home-Bildschirm gelegt.
-Zeigt seine Übungen und seine veröffentlichten **Termine**, ohne Namen. Kein eigenes Programm, kein
-Konto ([docs/schueler-app.md](docs/schueler-app.md)).
+Vier Seiten mit Leiste unten: **Start** (Übungen, Hausübungen, nächster Termin), **Termine**, **Prüfungen**,
+**Fortschritt**; veröffentlichte **Termine** ohne Namen. Kein eigenes Programm, kein Konto
+([docs/schueler-app.md](docs/schueler-app.md)).
 _Avoid_: Schüler-Account, Schülerportal
 
 **Klasse fehlt**:

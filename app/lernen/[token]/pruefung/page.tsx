@@ -12,7 +12,7 @@ export default async function PruefungEintragenSeite({ params }: { params: Promi
   const faecher = student.subjects.length ? student.subjects : ["Mathematik"];
   return (
     <>
-      <Link href={`/lernen/${token}`} className="mb-3 inline-flex min-h-[36px] items-center gap-1 text-[15px] font-medium text-ink-2 hover:text-ink">
+      <Link href={`/lernen/${token}/pruefungen`} className="mb-3 inline-flex min-h-[36px] items-center gap-1 text-[15px] font-medium text-ink-2 hover:text-ink">
         ← Zurück
       </Link>
       <h1 className="text-[28px] font-semibold tracking-[-0.02em]">Prüfung eintragen</h1>
