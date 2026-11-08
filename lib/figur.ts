@@ -49,6 +49,8 @@ export type Koordinaten = {
   punkte: { name: string; x: number; y: number }[];
   /** Geraden y = k · x + d */
   geraden: { name: string; k: Bruch; d: number }[];
+  /** ein Vieleck durch Punkte, in dieser Reihenfolge (ihre Namen), leicht getönt; fehlt = keines */
+  vieleck?: string[];
 };
 
 export type FlaechenForm = "rechteck" | "quadrat" | "dreieck" | "rechtwinklig" | "l-form" | "gleichschenklig";
@@ -269,7 +271,10 @@ function pruefe(raw: unknown): Figur | string {
       const k = bruch(q?.k);
       return k && endlich(q.d, 1e6) ? [{ name: kurz(q.name, 3) ?? "", k, d: q.d }] : [];
     });
-    return { art: "koordinaten", x, y, einheit: f.einheit as number, zahlenAlle: ganz(f.zahlenAlle, 1, 10) ? f.zahlenAlle : 1, punkte, geraden };
+    // ein Vieleck nur durch Punkte, die es gibt, jeder einmal
+    const namen = Array.isArray(f.vieleck) ? f.vieleck.map((n) => kurz(n, 3)) : [];
+    const vieleck = namen.length >= 3 && namen.length <= 12 && new Set(namen).size === namen.length && namen.every((n) => n !== null && punkte.some((p) => p.name === n)) ? (namen as string[]) : null;
+    return { art: "koordinaten", x, y, einheit: f.einheit as number, zahlenAlle: ganz(f.zahlenAlle, 1, 10) ? f.zahlenAlle : 1, punkte, geraden, ...(vieleck ? { vieleck } : {}) };
   }
   if (f.art === "figur") {
     const FORMEN: FlaechenForm[] = ["rechteck", "quadrat", "dreieck", "rechtwinklig", "l-form", "gleichschenklig"];
@@ -422,6 +427,7 @@ export function figurBeschreibung(raw: unknown): string | null {
       ...(f.geraden.length ? [f.geraden.length === 1 ? `die Gerade ${f.geraden[0].name}`.trim() : `die Geraden ${aufzaehlen(f.geraden.map((g) => g.name))}`] : []),
     ];
     if (dinge.length) teile.push(`Eingezeichnet ${f.punkte.length + f.geraden.length > 1 ? "sind" : "ist"} ${aufzaehlen(dinge)}.`);
+    if (f.vieleck) teile.push(`Die Punkte bilden das Vieleck ${f.vieleck.join("")}.`);
     return teile.join(" ");
   }
   if (f.art === "kreis") {
@@ -649,6 +655,14 @@ function koordinatenSzene(f: Koordinaten, loesung: boolean): Teil[] {
     geraden.push({ g, a, b });
   }
   const punkte = f.punkte.map((p) => ({ p, x: px(p.x / e), y: py(p.y / e) }));
+  if (f.vieleck) {
+    const ecken = f.vieleck.flatMap((n) => punkte.filter((q) => q.p.name === n).map((q): Punkt2 => [q.x, q.y]));
+    if (ecken.length >= 3) {
+      // unter den Punkten, damit sie gut sichtbar bleiben; die Seiten halten die Namen fern wie Geraden
+      teile.push({ t: "weg", p: ecken, zu: true, w: 2.2, fuellung: "flaeche" });
+      ecken.forEach((a, i) => strecken.push([a, ecken[(i + 1) % ecken.length]]));
+    }
+  }
   for (const { x, y } of punkte) {
     teile.push({ t: "punkt", x, y, r: 4.5 });
     belegt.push([x - 5, y - 5, x + 5, y + 5]);

@@ -644,6 +644,121 @@ function koordinatenAufgabe(skillId: string, diff: Difficulty, format: FigurForm
   });
 }
 
+// ---------- Vielecke im Koordinatensystem ----------
+
+/**
+ * Ein Vieleck mit Ecken auf dem Rand eines Rechtecks (Gitterpunkte), gegen den Uhrzeigersinn: jede Seite des
+ * Rechtecks hat mindestens eine Ecke, also schneidet jede Seite des Vielecks höchstens eine Ecke des Rechtecks ab,
+ * ein rechtwinkeliges Dreieck. So geht das Ergänzen zum Rechteck immer auf; der Flächeninhalt wird zur Probe
+ * noch mit der Gaußschen Formel gerechnet.
+ */
+export type VieleckPlan = { ecken: [number, number][]; x0: number; y0: number; b: number; h: number; dreiecke: { a: number; b: number }[]; flaeche: number };
+export function vieleckPlan(lv: number, rng: Rng): VieleckPlan {
+  const n = [4, 4, 5, 6][Math.max(0, Math.min(3, lv))];
+  for (;;) {
+    const b = rint(rng, lv === 0 ? 4 : 5, lv === 0 ? 7 : 9);
+    const h = rint(rng, lv === 0 ? 3 : 4, lv === 0 ? 6 : 8);
+    // ab der zweiten Stufe liegt das Rechteck über allen vier Quadranten
+    const x0 = lv === 0 ? rint(rng, 1, 7 - b + 1) : -rint(rng, 1, b - 1);
+    const y0 = lv === 0 ? rint(rng, 1, 6 - h + 1) : -rint(rng, 1, h - 1);
+    const [x1, y1] = [x0 + b, y0 + h];
+    // die Gitterpunkte auf dem Rand, gegen den Uhrzeigersinn ab der linken unteren Ecke
+    const rand: [number, number][] = [];
+    for (let x = x0; x < x1; x++) rand.push([x, y0]);
+    for (let y = y0; y < y1; y++) rand.push([x1, y]);
+    for (let x = x1; x > x0; x--) rand.push([x, y1]);
+    for (let y = y1; y > y0; y--) rand.push([x0, y]);
+    const wahl = new Set<number>();
+    while (wahl.size < n) wahl.add(rint(rng, 0, rand.length - 1));
+    const ecken = [...wahl].sort((a, c) => a - c).map((i) => rand[i]);
+    const seiten = [(p: [number, number]) => p[1] === y0, (p: [number, number]) => p[0] === x1, (p: [number, number]) => p[1] === y1, (p: [number, number]) => p[0] === x0];
+    // jede Seite eine oder zwei Ecken (drei auf einer Seite: die mittlere wäre keine Ecke)
+    if (seiten.some((auf) => !ecken.some(auf) || ecken.filter(auf).length > 2)) continue;
+    // nicht der Ursprung (sein Name stünde auf den Achsen) und mindestens zwei abgeschnittene Dreiecke
+    if (ecken.some(([x, y]) => x === 0 && y === 0)) continue;
+    const dreiecke: { a: number; b: number }[] = [];
+    ecken.forEach((p, i) => {
+      const q = ecken[(i + 1) % n];
+      if (!seiten.some((auf) => auf(p) && auf(q))) dreiecke.push({ a: Math.abs(q[0] - p[0]), b: Math.abs(q[1] - p[1]) });
+    });
+    if (dreiecke.length < 2) continue;
+    const flaeche = b * h - dreiecke.reduce((sum, d) => sum + (d.a * d.b) / 2, 0);
+    const gauss = Math.abs(ecken.reduce((sum, p, i) => sum + p[0] * ecken[(i + 1) % n][1] - ecken[(i + 1) % n][0] * p[1], 0)) / 2;
+    if (Math.abs(gauss - flaeche) > 1e-9 || flaeche < 4) continue;
+    return { ecken, x0, y0, b, h, dreiecke, flaeche };
+  }
+}
+
+function vieleckAufgabe(skillId: string, diff: Difficulty, format: FigurFormat, rng: Rng): TaskDraft | null {
+  if (format !== "calc" && format !== "cloze" && format !== "rechenweg") return null;
+  const lv = LEVEL[diff];
+  const p = vieleckPlan(lv, rng);
+  const namen = "ABCDEF".slice(0, p.ecken.length).split("");
+  const name = namen.join("");
+  const fig: Koordinaten = {
+    art: "koordinaten",
+    x: [Math.min(0, p.x0 - 1), Math.max(1, p.x0 + p.b + 1)],
+    y: [Math.min(0, p.y0 - 1), Math.max(1, p.y0 + p.h + 1)],
+    einheit: 1,
+    zahlenAlle: 1,
+    punkte: p.ecken.map(([x, y], i) => ({ name: namen[i], x, y })),
+    geraden: [],
+    vieleck: namen,
+  };
+  const rechteck = p.b * p.h;
+  const weg = p.dreiecke.reduce((sum, d) => sum + (d.a * d.b) / 2, 0);
+  const e = "cm²";
+  const solution = [
+    `Ergänze das Vieleck zu einem Rechteck: x von ${zahl(p.x0)} bis ${zahl(p.x0 + p.b)}, y von ${zahl(p.y0)} bis ${zahl(p.y0 + p.h)}.`,
+    `Rechteck: ${p.b} · ${p.h} = ${zahl(rechteck)} ${e}`,
+    `Abgeschnittene rechtwinkelige Dreiecke: ${p.dreiecke.map((d) => `${d.a} · ${d.b} : 2 = ${zahl((d.a * d.b) / 2)}`).join("; ")}, zusammen ${zahl(weg)} ${e}`,
+    `A = ${zahl(rechteck)} − ${zahl(weg)} = ${zahl(p.flaeche)} ${e}`,
+  ].join("\n");
+  const hints = [
+    "Zeichne ein Rechteck rund um das Vieleck, dessen Seiten auf den Gitterlinien liegen.",
+    "Die Ecken, die zum Rechteck fehlen, sind rechtwinkelige Dreiecke: A = a · b : 2.",
+    "Flächeninhalt des Vielecks = Rechteck minus alle abgeschnittenen Dreiecke.",
+  ];
+  const prompt = `Die Punkte ${namen.map((n, i) => `${n}${pt(p.ecken[i][0], p.ecken[i][1])}`).join(", ")} bilden das Vieleck ${name}. Eine Einheit im Koordinatensystem ist 1 cm.`;
+  if (format === "rechenweg") {
+    const dreiecke = p.dreiecke.map((d) => `${d.a} · ${d.b} : 2`).join(" + ");
+    // eine Zeile als Kette, wie bei den anderen Figuren: so prüft die App jeden Schritt sicher
+    const steps = [`A = ${p.b} · ${p.h} − (${dreiecke}) = ${roh(rechteck)} − ${roh(weg)} = ${roh(p.flaeche)}`];
+    return aufgabe(skillId, diff, "rechenweg", {
+      prompt: `${prompt} Berechne den Flächeninhalt des Vielecks: Ergänze es zu einem Rechteck und ziehe die Dreiecke ab. ${WEG}`,
+      figur: fig,
+      answer: { accepted: [`${zahl(p.flaeche)} ${e}`], unit: e, form: null, needWay: true },
+      solution,
+      steps,
+      hints,
+      errorMap: fehlerOhne(roh(p.flaeche), [{ answer: roh(rechteck), label: "Nur das Rechteck rundherum berechnet" }]).map((f) => ({ ...f, answer: `${f.answer} ${e}` })),
+      zeit: 300,
+    });
+  }
+  if (format === "cloze") {
+    return aufgabe(skillId, diff, "cloze", {
+      prompt: `${prompt}\nErgänze das Vieleck zu einem Rechteck und berechne seinen Flächeninhalt.\nRechteck: ___ ${e}\nabgeschnittene Dreiecke zusammen: ___ ${e}\nVieleck ${name}: ___ ${e}`,
+      figur: fig,
+      answer: { blanks: [[zahl(rechteck)], [zahl(weg)], [zahl(p.flaeche)]], mode: "value" },
+      solution,
+      hints,
+      zeit: 240,
+    });
+  }
+  return aufgabe(skillId, diff, "calc", {
+    prompt: `${prompt} Berechne den Flächeninhalt des Vielecks in ${e}.`,
+    figur: fig,
+    answer: { accepted: mitEinheit(zahl(p.flaeche), e), mode: "value" },
+    solution,
+    hints,
+    errorMap: fehlerOhne(zahl(p.flaeche), [
+      { answer: zahl(rechteck), label: "Nur das Rechteck rundherum berechnet" },
+      rechteck - 2 * weg > 0 ? { answer: zahl(rechteck - 2 * weg), label: "Bei den Dreiecken nicht durch 2 dividiert" } : null,
+    ]),
+    zeit: 240,
+  });
+}
+
 // ---------- Geraden ----------
 
 const FENSTER_G: Fenster = { x: [-6, 6], y: [-6, 6], einheit: 1, zahlenAlle: 1 };
@@ -2463,6 +2578,7 @@ export const FIGUR_FAEHIGKEITEN: Record<string, { bau: Bau; formate: FigurFormat
   "mathe.flaechen.zusammengesetzt": { bau: (s, d, f, r) => zusammengesetztAufgabe(s, d, f, r, false), formate: ["calc", "mc", "cloze", "rechenweg", "sachaufgabe"], bild: "Figur" },
   "mathe.vs.geometrie.zusammengesetzt": { bau: (s, d, f, r) => zusammengesetztAufgabe(s, d, f, r, true), formate: ["calc", "mc", "cloze", "rechenweg"], bild: "Figur" },
   "mathe.flaechen.umkehr": { bau: umkehrAufgabe, formate: ["calc", "mc", "cloze", "rechenweg"], bild: "Figur" },
+  "mathe.flaechen.vielecke": { bau: vieleckAufgabe, formate: ["calc", "cloze", "rechenweg"], bild: "Koordinatensystem" },
   "mathe.pythagoras.seite": { bau: pythagorasSeite, formate: ["calc", "mc", "cloze", "rechenweg"], bild: "Figur" },
   "mathe.pythagoras.figuren": { bau: pythagorasFiguren, formate: ["calc", "mc", "cloze", "rechenweg"], bild: "Figur" },
   "mathe.geometrie.kreis": { bau: kreisGrundAufgabe, formate: ["calc", "mc", "cloze"], bild: "Kreis" },

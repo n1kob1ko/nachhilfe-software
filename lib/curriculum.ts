@@ -187,6 +187,8 @@ const MIX_BY_SKILL: [RegExp, string[]][] = [
     /^mathe\.os\.(funktionen\.(quadratisch|scheitel|verschieben)|wachstum\.(exponentiell|halbwertszeit)|log\.(begriff|regeln)|folgen\.(arithmetisch|geometrisch)|diff\.(aenderungsrate|potenzregel|monotonie)|wahrscheinlichkeit\.(binomial-bereiche|mehrstufig)|integral\.stammfunktion)(\.|$)/,
     ["matura-1aus5", "matura-2aus5", "matura-lueckentext", "matura-zuordnung"],
   ],
+  // gleichartige Potenzen (lib/mathe-grundlagen.ts): ein Term als Antwort, eine Lücke dafür wäre nur eine Erklärung
+  [/^mathe\.potenzen\.addieren(\.|$)/, ["rechnung", "mc", "fehler"]],
   [/^mathe\./, ["rechenweg", "rechnung", "lueckentext", "mc"]],
 ];
 const MIX_BY_SUBJECT: Record<string, string[]> = {
@@ -232,7 +234,7 @@ const BASE: CurriculumSkill[] = [
     ["mathe.gleichungen.klammern", "Gleichungen mit Klammern"],
     ["mathe.gleichungen.text", "Textaufgaben"],
   ]),
-  ...s("Mathematik", "Potenzen", 8, 11, [["mathe.potenzen.regeln", "Potenzregeln"]]),
+  ...s("Mathematik", "Potenzen", 7, 11, [["mathe.potenzen.regeln", "Potenzregeln"]]),
   ...s("Deutsch", "Beistrichsetzung", 5, 10, [
     ["deutsch.beistrich.aufzaehlung", "Aufzählungen"],
     ["deutsch.beistrich.nebensatz", "Haupt- und Nebensatz"],

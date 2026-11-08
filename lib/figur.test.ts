@@ -278,6 +278,16 @@ function ausDemBild(t: TaskDraft, wo: string): void {
   }
 
   if (f.art === "koordinaten") {
+    if (f.vieleck) {
+      // Vieleck: der Flächeninhalt aus den gezeichneten Ecken (Gaußsche Formel); beim Lückentext dazu das Rechteck rundherum
+      const e = f.vieleck.map((n) => punkt(f, n));
+      const A = Math.abs(e.reduce((s, p, i) => s + p.x * e[(i + 1) % e.length].y - e[(i + 1) % e.length].x * p.y, 0)) / 2;
+      const R = (Math.max(...e.map((p) => p.x)) - Math.min(...e.map((p) => p.x))) * (Math.max(...e.map((p) => p.y)) - Math.min(...e.map((p) => p.y)));
+      if (t.type === "cloze") gleich([R, R - A, A]);
+      else gleich([A]);
+      for (const n of f.vieleck) assert.ok(t.prompt.includes(`${n}(${zahl(punkt(f, n).x)} | ${zahl(punkt(f, n).y)})`), `${wo}: ${n} im Text wie im Bild`);
+      return;
+    }
     if (f.geraden.length === 2) {
       const [g, h] = f.geraden;
       const x = (h.d - g.d) / (bruchWert(g.k) - bruchWert(h.k));

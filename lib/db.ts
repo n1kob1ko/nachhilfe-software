@@ -2049,6 +2049,8 @@ function seedCurriculum(conn: Database.Database) {
     conn.exec(`UPDATE skills SET source_id = (SELECT id FROM content_sources WHERE key = 'lernheft') WHERE source_id IS NULL`);
     // Phase 5C: the reading skill covers all of Leseverständnis, its Teilfähigkeiten name the parts
     conn.exec(`UPDATE skills SET name = 'Leseverständnis' WHERE id = 'deutsch.text.verstehen' AND name = 'Informationen entnehmen'`);
+    // the Potenzregeln are Stoff of the 3. Klasse (7. Schulstufe), not only from the 4. on (niko's Stoffzettel 2026-11-08)
+    conn.exec(`UPDATE skills SET grade_min = 7 WHERE id = 'mathe.potenzen.regeln' AND grade_min = 8`);
     const rows = conn.prepare("SELECT s.id, s.subject, s.area, s.name, s.grade_min, p.name AS parent_name FROM skills s LEFT JOIN skills p ON p.id = s.parent_id WHERE s.code IS NULL").all() as {
       id: string; subject: string; area: string; name: string; grade_min: number; parent_name: string | null;
     }[];

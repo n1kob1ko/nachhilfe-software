@@ -810,6 +810,16 @@
    "mathe.wahrscheinlichkeit.zweistufig",
    "MS-MAT-4-B4-K2",
    "zweistufigen Zufallsexperimenten"
+  ],
+  [
+   "mathe.potenzen.addieren",
+   "MS-MAT-3-B2-K2",
+   "Potenzdarstellung"
+  ],
+  [
+   "mathe.negativ.verbinden",
+   "MS-MAT-3-B1-K1",
+   "Rechenoperationen durchführen"
   ]
  ],
  "ms-deutsch": [
@@ -3581,6 +3591,16 @@
    "mathe.os.komplex.gleichungen",
    "AHS-MAT-7-S2-T4-K1",
    "Erweiterung der reellen Zahlen"
+  ],
+  [
+   "mathe.potenzen.addieren",
+   "AHS-MAT-3-B2-K2",
+   "Potenzdarstellung"
+  ],
+  [
+   "mathe.negativ.verbinden",
+   "AHS-MAT-3-B1-K1",
+   "Rechenoperationen durchführen"
   ]
  ],
  "ahs-deutsch": [

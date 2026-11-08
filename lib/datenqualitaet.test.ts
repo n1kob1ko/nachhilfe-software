@@ -66,25 +66,26 @@ test("Einordnung: an override changes what listSkills, getSkill and the student 
   const { schoolBranch } = await import("./school");
   const me = await niko();
   const id = "mathe.potenzen.regeln";
-  const third = { school_type: "Mittelschule", klasse: 3, grade: 7 };
-  assert.ok(!skillsForStudent(third, "Mathematik").some((s) => s.id === id), "Potenzen start in Schulstufe 8");
+  // the Potenzregeln start in the 3. Klasse (7. Schulstufe); a teacher moves them a year earlier
+  const third = { school_type: "Mittelschule", klasse: 2, grade: 6 };
+  assert.ok(!skillsForStudent(third, "Mathematik").some((s) => s.id === id), "Potenzregeln start in Schulstufe 7");
 
   const n0 = await korrekturen();
-  const res = dq.setSkillOverride(id, { area: "Potenzen und Wurzeln", subtopic: "Rechenregeln", grade_min: 7, grade_max: 11, practice_shift: "frueher", note: " kommt  oft schon in der 3. " }, me.id);
+  const res = dq.setSkillOverride(id, { area: "Potenzen und Wurzeln", subtopic: "Rechenregeln", grade_min: 6, grade_max: 11, practice_shift: "frueher", note: " kommt  oft schon in der 2. " }, me.id);
   assert.deepEqual(res, { ok: true, changed: true });
   assert.equal(await korrekturen(), n0 + 1, "one log entry per correction");
   const s = repo.getSkill(id)!;
-  assert.deepEqual([s.area, s.subtopic, s.grade_min, s.grade_max, s.practice_shift], ["Potenzen und Wurzeln", "Rechenregeln", 7, 11, "frueher"]);
+  assert.deepEqual([s.area, s.subtopic, s.grade_min, s.grade_max, s.practice_shift], ["Potenzen und Wurzeln", "Rechenregeln", 6, 11, "frueher"]);
   assert.equal(repo.listSkills().find((x) => x.id === id)!.area, "Potenzen und Wurzeln");
   assert.ok(skillsForStudent(third, "Mathematik").some((x) => x.id === id), "the own Schulstufe counts for the student lists (activeSkills)");
   assert.ok(browseSkills({ subject: "Mathematik", branch: schoolBranch("mittelschule"), klasse: 3 }).some((x) => x.id === id));
   const row = dq.skillOverride(id)!;
   assert.equal(row.grade_max, null, "a value equal to the original is not stored");
-  assert.equal(row.note, "kommt oft schon in der 3.");
+  assert.equal(row.note, "kommt oft schon in der 2.");
   assert.equal(row.teacher_id, me.id);
 
   // the same values again: nothing written, nothing logged
-  assert.deepEqual(dq.setSkillOverride(id, { area: "Potenzen und Wurzeln", grade_min: 7 }, me.id), { ok: true, changed: false });
+  assert.deepEqual(dq.setSkillOverride(id, { area: "Potenzen und Wurzeln", grade_min: 6 }, me.id), { ok: true, changed: false });
   assert.equal(await korrekturen(), n0 + 1);
   // invalid input changes nothing
   for (const bad of [{ grade_min: 0 }, { grade_max: 14 }, { grade_min: 12 }, { grade_min: 6.5 }, { practice_shift: "bald" }, { area: "   " }]) {
@@ -92,7 +93,7 @@ test("Einordnung: an override changes what listSkills, getSkill and the student 
   }
   assert.ok("error" in dq.setSkillOverride("gibt.es.nicht", { area: "X" }, me.id));
   assert.equal(await korrekturen(), n0 + 1);
-  assert.equal(repo.getSkill(id)!.grade_min, 7);
+  assert.equal(repo.getSkill(id)!.grade_min, 6);
 
   // the original value again → back to NULL; the subtopic can be emptied on purpose
   dq.setSkillOverride(id, { area: "Potenzen" }, me.id);
@@ -103,7 +104,7 @@ test("Einordnung: an override changes what listSkills, getSkill and the student 
   assert.deepEqual(dq.resetSkillOverride(id, me.id), { ok: true });
   assert.equal(dq.skillOverride(id), null, "nothing left: the override row is deleted");
   const back = repo.getSkill(id)!;
-  assert.deepEqual([back.area, back.subtopic, back.grade_min, back.grade_max, back.practice_shift], ["Potenzen", "", 8, 11, ""]);
+  assert.deepEqual([back.area, back.subtopic, back.grade_min, back.grade_max, back.practice_shift], ["Potenzen", "", 7, 11, ""]);
   assert.ok(!skillsForStudent(third, "Mathematik").some((x) => x.id === id));
   const n1 = await korrekturen();
   assert.deepEqual(dq.resetSkillOverride(id, me.id), { ok: true });
@@ -378,9 +379,9 @@ test("every correction is logged in skill_history as 'korrektur' with the previo
   const first = entries.find((e) => e.skill === "mathe.potenzen.regeln")!;
   assert.equal(first.previous, null, "before the first correction there was no override");
   assert.match(first.detail, /Thema: Potenzen → Potenzen und Wurzeln/);
-  assert.match(first.detail, /Schulstufe 8–11 → 7–11/);
+  assert.match(first.detail, /Schulstufe 7–11 → 6–11/);
   const reset = entries.find((e) => e.skill === "mathe.potenzen.regeln" && e.action === "zuruecksetzen")!;
-  assert.equal((reset.previous as { grade_min: number }).grade_min, 7, "the previous override is kept");
+  assert.equal((reset.previous as { grade_min: number }).grade_min, 6, "the previous override is kept");
   const merge = entries.find((e) => e.action === "zusammenfuehren")!;
   assert.match(merge.detail, /zusammengeführt mit „Kürzen“ · 2 Voraussetzungen übernommen · 1 Lehrplan-Verknüpfung übernommen/);
   const unlinked = entries.find((e) => e.action === "lehrplan_entfernt")!;

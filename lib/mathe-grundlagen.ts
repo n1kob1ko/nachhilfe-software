@@ -8,7 +8,7 @@
  */
 import type { Difficulty } from "./curriculum";
 import { kurzaufgabe as kurzaufgabeRoh, type Fehler } from "./mathe-rechnungen";
-import { STUFE, antwort, gcd, geld, kuerze, pick, rint, zahl, type Rng } from "./schulbuch-zahlen";
+import { STUFE, antwort, gcd, geld, klammer, kuerze, pick, rint, zahl, type Rng } from "./schulbuch-zahlen";
 import { GAP, type TaskDraft } from "./tasks";
 import { termPoly, type Poly, type TermForm } from "./term-check";
 
@@ -717,6 +717,121 @@ function zusammenfassen(rng: Rng, diff: Difficulty): TaskDraft {
       errors,
     });
   }
+}
+
+// ---------- gleichartige Potenzen addieren und subtrahieren (3. Klasse) ----------
+function potenzenAddieren(rng: Rng, diff: Difficulty): TaskDraft {
+  const lv = STUFE[diff];
+  for (;;) {
+    const v = pick(rng, ["x", "a", "b", "y", "n"]);
+    const e1 = rint(rng, 2, lv >= 2 ? 4 : 5);
+    const e2 = e1 + rint(rng, 1, 2);
+    const [m1, m2] = [`${v}^${e1}`, `${v}^${e2}`];
+    const k = () => rint(rng, 1, 9) * (rng() < (lv === 0 ? 0.25 : 0.4) ? -1 : 1);
+    let gl: [number, string][];
+    if (lv === 0) gl = [[rint(rng, 2, 9), m1], [k(), m1]];
+    else if (lv === 1) gl = [[rint(rng, 2, 9), m1], [k(), m1], [k(), m1]];
+    else if (lv === 2) gl = [[rint(rng, 2, 9), m1], [k(), m2], [k(), m1], [k(), m2]];
+    else gl = [[rint(rng, 2, 9), m2], [k(), m1], [k(), v], [k(), m2], [k(), m1], [k(), v]];
+    const vars = [v];
+    const angabe = glieder(gl);
+    const res = poly(angabe, vars);
+    if (res.size < (lv <= 1 ? 1 : 2) || [...res.values()].some((c) => Math.abs(c) < 1e-9)) continue;
+    const ergebnis = termText(res);
+    if (ergebnis === angabe) continue;
+    const errors: Fehler[] = [];
+    // die Hochzahlen der gleichartigen Glieder addiert (3x^2 + 5x^2 = 8x^4)
+    if (lv <= 1) {
+      const summe = gl.reduce((s, [c]) => s + c, 0);
+      if (summe !== 0) errors.push(fehler(glieder([[summe, `${v}^${e1 * gl.length}`]]), "Hochzahlen addiert statt gleich gelassen"));
+    } else {
+      const alle = gl.filter(([, m]) => m !== v).reduce((s, [c]) => s + c, 0);
+      if (alle !== 0) errors.push(fehler(glieder([[alle, m2]]), "Potenzen mit verschiedenen Hochzahlen zusammengefasst"));
+    }
+    errors.push(fehler(termText(poly(glieder(gl.map(([c, m]) => [Math.abs(c), m])), vars)), "Minuszeichen übersehen"));
+    const gruppen = [...new Set(gl.map(([, m]) => m))].map((m) => glieder(gl.filter(([, x]) => x === m)));
+    return termAufgabe("mathe.potenzen.addieren", diff, {
+      prompt: `Fasse zusammen: ${angabe}`,
+      ergebnis,
+      vars,
+      solution: `Nur gleichartige Potenzen (gleiche Basis, gleiche Hochzahl) zusammenfassen: die Zahlen davor rechnen, die Hochzahl bleibt.\n${gruppen.map((g) => `(${g})`).join(" + ")}\n= ${ergebnis}`,
+      hints: ["Gleichartig heißt: gleiche Basis und gleiche Hochzahl.", "Die Hochzahl ändert sich beim Addieren nicht: 2x^3 + 4x^3 = 6x^3.", "Das Vorzeichen gehört zum Glied dahinter."],
+      errors,
+    });
+  }
+}
+
+// ---------- Verbindung der vier Grundrechnungsarten mit rationalen Zahlen (3. Klasse) ----------
+const strich = (a: number, op: "+" | "−", b: number) => (op === "+" ? a + b : a - b);
+/** Eine Rechnung mit allen vier Grundrechnungsarten und ganzen Zahlen mit Vorzeichen, mit den Zeilen des Rechenwegs. */
+export type Verbindung = { text: string; weg: string[]; res: number; lr: number | null };
+/** Exportiert für den Rechenweg (lib/generators-mathe.ts). `lv` 0 bis 3 (STUFE). */
+export function verbindungRechnung(rng: Rng, lv: number): Verbindung {
+  /** eine ganze Zahl ungleich 0, negativ mit der Wahrscheinlichkeit `neg` */
+  const z = (min: number, max: number, neg = 0.5) => rint(rng, min, max) * (rng() < neg ? -1 : 1);
+  const op = () => pick(rng, ["+", "−"] as const);
+  for (;;) {
+    let text: string;
+    let weg: string[];
+    let res: number;
+    /** von links nach rechts gerechnet, ohne Punkt vor Strich (nur wenn es eine ganze Zahl ist) */
+    let lr: number = Number.NaN;
+    if (lv <= 0) {
+      const [a, b, c, o] = [z(2, 12), z(2, 9), z(2, 9), op()];
+      const p = b * c;
+      res = strich(a, o, p);
+      text = `${zahl(a)} ${o} ${klammer(b)} · ${klammer(c)}`;
+      weg = [`${zahl(a)} ${o} ${klammer(p)}`, zahl(res)];
+      lr = strich(a, o, b) * c;
+    } else if (lv === 1) {
+      const [b, q, c, d, o] = [z(2, 9), z(2, 9), z(2, 9), z(2, 6), op()];
+      const a = b * q;
+      const p = c * d;
+      res = strich(q, o, p);
+      text = `${zahl(a)} : ${klammer(b)} ${o} ${klammer(c)} · ${klammer(d)}`;
+      weg = [`${zahl(q)} ${o} ${klammer(p)}`, zahl(res)];
+      lr = strich(q, o, c) * d;
+    } else if (lv === 2) {
+      const [a, b, c, e, q, o1, o2] = [z(2, 12), z(2, 12), z(2, 6), z(2, 6), z(2, 9), op(), op()];
+      const s1 = strich(a, o1, b);
+      if (s1 === 0) continue;
+      const d = e * q;
+      const p = s1 * c;
+      res = strich(p, o2, q);
+      text = `(${zahl(a)} ${o1} ${klammer(b)}) · ${klammer(c)} ${o2} ${klammer(d)} : ${klammer(e)}`;
+      weg = [`${klammer(s1)} · ${klammer(c)} ${o2} ${klammer(q)}`, `${zahl(p)} ${o2} ${klammer(q)}`, zahl(res)];
+      const l = strich(p, o2, d);
+      if (l % e === 0) lr = l / e;
+    } else {
+      const [a, b, c, f, q, o1, o2, o3] = [z(2, 6), z(2, 9), z(2, 9), z(2, 6), z(2, 6), op(), op(), op()];
+      const s1 = strich(b, o1, c);
+      if (s1 === 0) continue;
+      // (d o3 e) = f · q: e wird dazu passend gewählt
+      const d = z(2, 15);
+      const e = o3 === "+" ? f * q - d : d - f * q;
+      if (e === 0 || Math.abs(e) > 20) continue;
+      const p = a * s1;
+      res = strich(p, o2, q);
+      text = `${zahl(a)} · (${zahl(b)} ${o1} ${klammer(c)}) ${o2} (${zahl(d)} ${o3} ${klammer(e)}) : ${klammer(f)}`;
+      weg = [`${zahl(a)} · ${klammer(s1)} ${o2} ${klammer(f * q)} : ${klammer(f)}`, `${zahl(p)} ${o2} ${klammer(q)}`, zahl(res)];
+      const l = strich(p, o2, f * q);
+      if (l % f === 0) lr = l / f;
+    }
+    if (res === 0 || Math.abs(res) > [40, 60, 100, 150][Math.max(0, Math.min(3, lv))] || !/−/.test(text)) continue;
+    return { text, weg, res, lr: Number.isInteger(lr) && lr !== res ? lr : null };
+  }
+}
+export const VERBINDEN_HILFEN = ["Gibt es eine Klammer? Die rechnest du zuerst.", "Punktrechnung (· und :) kommt vor Strichrechnung (+ und −).", "Gleiche Vorzeichen ergeben beim Multiplizieren und Dividieren Plus, verschiedene Minus."];
+function rationalVerbinden(rng: Rng, diff: Difficulty): TaskDraft {
+  const v = verbindungRechnung(rng, STUFE[diff]);
+  const errors: Fehler[] = [...(v.lr !== null ? [fehler(v.lr, "Von links nach rechts gerechnet statt Punkt vor Strich")] : []), fehler(-v.res, "Vorzeichenfehler")];
+  return aufgabe("mathe.negativ.verbinden", diff, {
+    prompt: `Berechne: ${v.text}`,
+    accepted: [antwort(v.res)],
+    solution: `Klammern zuerst, dann Punkt vor Strich, dazu die Vorzeichenregeln.\n${v.text} = ${v.weg.join(" = ")}`,
+    hints: VERBINDEN_HILFEN,
+    errors,
+  });
 }
 
 function klammernAufloesen(rng: Rng, diff: Difficulty): TaskDraft {
@@ -1543,6 +1658,8 @@ export const MATHE_GRUNDLAGEN: Record<string, Gen> = {
   "mathe.prozent.aenderung": prozentAenderung,
   "mathe.prozent.promille": promille,
   "mathe.potenzen.schreibweise": potenzSchreibweise,
+  "mathe.potenzen.addieren": potenzenAddieren,
+  "mathe.negativ.verbinden": rationalVerbinden,
   "mathe.os.potenzen.negativ": negativeHochzahl,
   "mathe.wurzeln.quadratwurzel": quadratwurzel,
   "mathe.winkel.beziehungen": winkelBeziehungen,
