@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Erkenntnisse } from "@/components/Erkenntnisse";
 import { ortName } from "@/lib/planung/ort";
 import { notFound } from "next/navigation";
 import { Archive, Camera, CheckCircle2, Circle, FileText, History, PenLine, Pencil, Plus, ScanLine, Sparkles, Trash2 } from "lucide-react";
@@ -129,6 +130,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
       {tab === "ueberblick" && <Overview student={student} a={a} />}
       {tab === "fortschritt" && (
         <div className="space-y-14">
+          <Erkenntnisse studentId={student.id} />
           <Progress a={a} />
           <AnalysisTab student={student} a={a} assignedId={sp.zugewiesen} error={sp.fehler} />
         </div>

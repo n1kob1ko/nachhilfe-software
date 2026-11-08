@@ -171,7 +171,7 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // printed story of a Textinterpretation, line by line. The answer is the printed text only, so the same page is not paid twice
   // Gelöstes Blatt einlesen (lib/blatt-einlesen.ts): only on the teacher's click, after the tick „kein Name darauf“; the
   // pages of a printed test the student solved on paper. Thinking on: the KI checks the maths of every answer itself
-  blatt: { label: "Gelöstes Blatt lesen", area: "MATERIAL", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  blatt: { label: "Gelöstes Blatt lesen", area: "MATERIAL", tier: "standard", maxTokens: 24_000, timeoutMs: 300_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   textfoto: { label: "Text vom Foto lesen", area: "MATERIAL", tier: "standard", maxTokens: 8_000, timeoutMs: 120_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // Handgeschriebenen Text einlesen (lib/handschrift.ts): only on the teacher's click, after the tick „kein Name darauf“; a
   // student's text written on paper, word for word with every mistake. The answer is the student's own writing, so it is

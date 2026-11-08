@@ -25,7 +25,9 @@ import { matchSkills, skillsForPrompt } from "./lehrplan";
 import { getMaterial, hatDatei, materialFile, MAX_ANALYSIS_IMAGE_BYTES, MAX_ANALYSIS_PDF_BYTES, sniffType } from "./materials";
 import { PRUEFUNGSARTEN } from "./pruefungsarten";
 import * as repo from "./repo";
-import { erreichtVon, istBewertung, MAX_SEITEN, MAX_ZEILEN, type Bewertung, type BlattVorschlag, type BlattZeile } from "./blatt-regeln";
+import { erreichtVon, istBewertung, MAX_ERKENNTNISSE, MAX_SEITEN, MAX_ZEILEN, type BlattErkenntnis, type Bewertung, type BlattVorschlag, type BlattZeile } from "./blatt-regeln";
+import { ERROR_TYPES } from "./error-types";
+import { speichereErkenntnisse } from "./erkenntnisse";
 
 export * from "./blatt-regeln";
 
@@ -95,7 +97,31 @@ export function vorschlagAusGelesen(g: BlattGelesen, o: { erlaubt: Set<string>; 
   const gesamtMax = punkt(g.gesamt_max);
   let gesamt = punkt(g.gesamt_punkte);
   if (gesamt != null && gesamtMax != null && gesamt > gesamtMax) gesamt = null;
-  return { titel: eineZeile(g.titel, 120), zeilen, gesamt, gesamtMax, note: noteVon(g.note), hinweise };
+  return { titel: eineZeile(g.titel, 120), zeilen, gesamt, gesamtMax, note: noteVon(g.note), hinweise, erkenntnisse: erkenntnisseAusGelesen(g, o.erlaubt) };
+}
+
+/** Die Fehlermuster und Stärken des ganzen Blatts: nur bekannte Fähigkeiten und Fehlerarten, ohne Doppelte, die Aufgaben dazu. */
+export function erkenntnisseAusGelesen(g: Pick<BlattGelesen, "muster" | "staerken">, erlaubt: Set<string>): BlattErkenntnis[] {
+  const out: BlattErkenntnis[] = [];
+  const gesehen = new Set<string>();
+  const dazu = (e: BlattErkenntnis, roh = e.text) => {
+    const key = roh.toLowerCase().replace(/\s*\(.*\)\s*$/, "");
+    if (!e.text || gesehen.has(key)) return;
+    gesehen.add(key);
+    out.push(e);
+  };
+  for (const m of g.muster ?? []) {
+    const nrs = (m.aufgaben ?? []).map((n) => eineZeile(n, 8)).filter(Boolean).slice(0, 8);
+    const text = eineZeile(m.text, 220);
+    dazu({
+      art: "fehler",
+      text: text && nrs.length && !/\bAufgabe/.test(text) ? `${text} – Aufgabe ${nrs.join(", ")}` : text,
+      skillId: m.faehigkeit && erlaubt.has(m.faehigkeit) ? m.faehigkeit : null,
+      fehlerart: ERROR_TYPES.some((t) => t.key === m.fehlerart) ? m.fehlerart : null,
+    }, text);
+  }
+  for (const s of (g.staerken ?? []).slice(0, 3)) dazu({ art: "staerke", text: eineZeile(s, 200), skillId: null, fehlerart: null });
+  return out.slice(0, MAX_ERKENNTNISSE);
 }
 
 /** Die Fähigkeiten, aus denen die KI und die Vorschau wählen: die des Schülers in diesem Fach. */
@@ -168,6 +194,8 @@ export type BlattEingabe = {
    * wurde. Zuweisung und Antworten bekommen dann diese Einheit (unit_id), damit Abschluss und Dokumentation sie sehen.
    */
   unitId?: number | null;
+  /** die geprüften Erkenntnisse des Blatts (Fehlermuster und Stärken); werden mit Blatt und Prüfung gespeichert */
+  erkenntnisse?: BlattErkenntnis[];
 };
 
 const echtesDatum = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && new Date(`${s}T12:00:00Z`).toISOString().slice(0, 10) === s;
@@ -302,6 +330,20 @@ export function speichereBlatt(e: BlattEingabe): { worksheetId: number; assignme
     for (const id of materialIds) {
       db().prepare("UPDATE materials SET title = ?, subject = ? WHERE id = ? AND title = ?").run(`${BLATT_TITEL}: ${titel}`.slice(0, 120), fach, id, BLATT_TITEL);
     }
+    speichereErkenntnisse({
+      studentId: student.id,
+      subject: fach,
+      teacherId: e.teacherId,
+      quelle: "blatt",
+      worksheetId,
+      testId,
+      zeilen: (e.erkenntnisse ?? []).slice(0, MAX_ERKENNTNISSE).map((k) => ({
+        art: k.art === "staerke" ? "staerke" : "fehler",
+        text: k.text,
+        skillId: skill(k.skillId),
+        fehlerart: ERROR_TYPES.find((t) => t.key === k.fehlerart)?.key ?? null,
+      })),
+    });
     return { worksheetId, assignmentId, testId };
   })();
   documentAssignment(out.assignmentId);

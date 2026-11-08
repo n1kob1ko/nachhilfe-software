@@ -306,13 +306,13 @@ test("tasks already answered on the device are left out; the unit's printed Mini
   assert.equal(blaetter.find((b) => b.key === `u${mini}`)?.art, "minitest");
 });
 
-test("F0b: the reading cost follows the pages chosen (1 to 4), not a fixed two; earlier readings scale to the page count", async () => {
+test("F0b: the reading cost follows the pages chosen (1 to 10), not a fixed two; earlier readings scale to the page count", async () => {
   const s = await setup();
   const usd = (n: number) => s.p.kostenPapierUsd(n)!;
   assert.ok(usd(1) > 0, "a price for one page");
   assert.ok(usd(1) < usd(2) && usd(2) < usd(4), "more pages cost more");
   const liste = s.p.kostenJeSeiten();
-  assert.equal(liste.length, 5, "index = pages, 0 like 1");
+  assert.equal(liste.length, 11, "index = pages up to 10, 0 like 1");
   assert.equal(liste[0], liste[1]);
   assert.ok(liste.slice(1).every((k) => /^Lesen kostet ca\. \d+ Cent$/.test(k)));
   // three earlier readings of two pages each at 3 cents of a dollar: two pages cost that again, four pages more, one page less

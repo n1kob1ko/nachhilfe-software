@@ -47,6 +47,12 @@ const gelesen = (skillId: string): BlattGelesen => ({
   note: 7,
   titel: "Probeschularbeit Potenzen",
   unsicher: ["Aufgabe 2b schwer lesbar"],
+  muster: [
+    { text: "Kürzt nicht ganz (12/18 → 6/9)", faehigkeit: skillId, fehlerart: "bruch", aufgaben: ["2a"] },
+    { text: "Kürzt nicht ganz", faehigkeit: "gibt-es-nicht", fehlerart: null, aufgaben: [] },
+    { text: "  ", faehigkeit: null, fehlerart: null, aufgaben: [] },
+  ],
+  staerken: ["Potenzregeln sicher"],
 });
 
 /** Ein Anbieter-Ersatz: schreibt jede Anfrage mit und antwortet mit `antwort`. */
@@ -80,6 +86,12 @@ test("the reading is checked: known skills only, sensible points, a grade 1 to 5
   assert.equal(v.gesamtMax, 7);
   assert.equal(v.titel, "Probeschularbeit Potenzen");
   assert.ok(v.hinweise.some((h) => h.includes("2b schwer lesbar")));
+
+  // Schularbeit mit Fehlermustern (niko, 08.11.2026): was hinter den Fehlern steckt, nicht nur welche Aufgabe falsch ist
+  assert.deepEqual(v.erkenntnisse, [
+    { art: "fehler", text: "Kürzt nicht ganz (12/18 → 6/9) – Aufgabe 2a", skillId: skills[0].id, fehlerart: "bruch" },
+    { art: "staerke", text: "Potenzregeln sicher", skillId: null, fehlerart: null },
+  ], "the same pattern twice, an empty one and an unknown skill do not get through");
 });
 
 test("pages go to the KI with the skill list and no name; without the KI nothing is read", async () => {
@@ -163,6 +175,22 @@ test("a real Schularbeit gets its grade and points; wrong input is refused", asy
   const alt = speichereBlatt({ ...basis, testId: geplant, note: 3, gesamt: 17, gesamtMax: 24, zeilen });
   assert.ok(!("error" in alt));
   assert.deepEqual([repo.getTest(geplant)!.grade, repo.getTest(geplant)!.status], [3, "geschrieben"]);
+
+  // die geprüften Erkenntnisse kommen mit Blatt und Prüfung; eine Fähigkeit eines anderen Fachs zählt nicht
+  const deutsch = repo.listSkills().find((x) => x.subject === "Deutsch")!;
+  const mit = speichereBlatt({ ...basis, testId: null, note: 3, gesamt: 17, gesamtMax: 24, zeilen, erkenntnisse: [
+    { art: "fehler", text: "Vergisst den Hauptnenner", skillId: skills[0].id, fehlerart: "bruch" },
+    { art: "fehler", text: "Liest die Angabe nicht genau", skillId: deutsch.id, fehlerart: "quatsch" },
+    { art: "staerke", text: "Rechnet sauber", skillId: null, fehlerart: null },
+  ] });
+  assert.ok(!("error" in mit));
+  const { listErkenntnisse } = await import("./erkenntnisse");
+  const ek = listErkenntnisse(sid).reverse();
+  assert.deepEqual(ek.map((x) => [x.art, x.text, x.skill_id, x.error_type, x.quelle, x.test_id, x.worksheet_id]), [
+    ["fehler", "Vergisst den Hauptnenner", skills[0].id, "bruch", "blatt", mit.testId, mit.worksheetId],
+    ["fehler", "Liest die Angabe nicht genau", null, null, "blatt", mit.testId, mit.worksheetId],
+    ["staerke", "Rechnet sauber", null, null, "blatt", mit.testId, mit.worksheetId],
+  ]);
 
   const fehler = (e: Partial<Parameters<typeof speichereBlatt>[0]>) => {
     const out = speichereBlatt({ ...basis, testId: null, note: null, gesamt: null, gesamtMax: null, zeilen, ...e });

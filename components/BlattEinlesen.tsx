@@ -7,7 +7,8 @@ import { KeinNameZeile } from "@/components/KeinNameZeile";
 import { MathText } from "@/components/MathText";
 import { shrinkImage } from "@/components/shrink-image";
 import { speichereBlattAction, speicherePapierAction } from "@/app/blatt-actions";
-import { BEWERTUNGEN, erreichtVon, MAX_SEITEN, MAX_ZEILEN, zeilenOhneLesung, type Bewertung, type BlattVorschlag, type BlattZeile, type PapierAufgabe } from "@/lib/blatt-regeln";
+import { BEWERTUNGEN, erreichtVon, MAX_ERKENNTNISSE, MAX_SEITEN, MAX_ZEILEN, zeilenOhneLesung, type Bewertung, type BlattErkenntnis, type BlattVorschlag, type BlattZeile, type PapierAufgabe } from "@/lib/blatt-regeln";
+import { ERROR_TYPES } from "@/lib/error-types";
 import { datumKurz } from "@/lib/datum";
 import { NOTEN, noteFuer, punkteText } from "@/lib/probeschularbeit-regeln";
 import { PRUEFUNGSARTEN } from "@/lib/pruefungsarten";
@@ -109,6 +110,8 @@ export function BlattEinlesen({
 
   const [zeilen, setZeilen] = useState<Zeile[] | null>(null);
   const [hinweise, setHinweise] = useState<string[]>([]);
+  // Erkenntnisse (lib/erkenntnisse.ts): Fehlermuster und Stärken des ganzen Blatts, nur beim fremden Blatt
+  const [erkenntnisse, setErkenntnisse] = useState<(BlattErkenntnis & { k: number })[]>([]);
   const [gesamtFeld, setGesamtFeld] = useState<string | null>(null);
   const [maxFeld, setMaxFeld] = useState<string | null>(null);
   const [noteFeld, setNoteFeld] = useState<string | null>(null);
@@ -189,6 +192,7 @@ export function BlattEinlesen({
   function uebernimmVorschlag(v: BlattVorschlag) {
     setZeilen(v.zeilen.map((z) => ({ ...z, k: naechster++ })));
     setHinweise(v.hinweise);
+    setErkenntnisse((v.erkenntnisse ?? []).map((e) => ({ ...e, k: naechster++ })));
     setGesamtFeld(v.gesamt != null ? punkteText(v.gesamt) : null);
     setMaxFeld(v.gesamtMax != null ? punkteText(v.gesamtMax) : null);
     setNoteFeld(v.note != null ? String(v.note) : null);
@@ -338,6 +342,7 @@ export function BlattEinlesen({
         gesamtMax: gesamtMax || null,
         zeilen: zeilen.map(({ k: _k, pText: _p, mText: _m, ...z }) => z),
         materialIds,
+        erkenntnisse: erkenntnisse.filter((e) => e.text.trim()).map(({ k: _k, ...e }) => e),
       });
       if ("error" in out) setSpeicherFehler(out.error);
       else router.push(out.href);
@@ -761,6 +766,14 @@ export function BlattEinlesen({
             </div>
           )}
 
+          {!einheit && (
+            <ErkenntnisListe
+              liste={erkenntnisse}
+              skills={faehigkeiten[fach] ?? []}
+              setze={setErkenntnisse}
+            />
+          )}
+
           {speicherFehler && (
             <p role="alert" className="rounded-xl bg-red-wash px-4 py-3 text-[14px] text-red" data-testid="blatt-speicherfehler">
               {speicherFehler}
@@ -867,5 +880,66 @@ function PapierZeile({ z, aendere }: { z: Zeile; aendere: (k: number, teil: Part
         </button>
       )}
     </li>
+  );
+}
+
+/**
+ * Erkenntnisse eines fremden Blatts (z. B. einer Schularbeit): was hinter den Fehlern steckt, je Zeile mit Fähigkeit und
+ * Fehlerart, dazu Stärken. Die Lehrkraft ändert, löscht oder ergänzt; gespeichert wird mit „Ins Profil übernehmen“. Offene
+ * Fehler sind der Schwerpunkt des nächsten Übungspakets.
+ */
+function ErkenntnisListe({ liste, skills, setze }: { liste: (BlattErkenntnis & { k: number })[]; skills: Skill[]; setze: (f: (l: (BlattErkenntnis & { k: number })[]) => (BlattErkenntnis & { k: number })[]) => void }) {
+  const aendere = (k: number, teil: Partial<BlattErkenntnis>) => setze((l) => l.map((e) => (e.k === k ? { ...e, ...teil } : e)));
+  const bereiche = [...new Set(skills.map((s) => s.area))];
+  return (
+    <section className="grid gap-2" data-testid="blatt-erkenntnisse">
+      <div>
+        <h3 className="text-[15px] font-semibold">Erkenntnisse</h3>
+        <p className="text-[13px] text-ink-3">Was hinter den Fehlern steckt. Offene Fehler sind der Schwerpunkt des nächsten Übungspakets.</p>
+      </div>
+      {liste.map((e) => (
+        <div key={e.k} className={`grid grid-cols-[minmax(0,1fr)_auto] gap-1.5 rounded-lg border p-2 sm:grid-cols-[110px_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-center ${e.art === "staerke" ? "border-green/30 bg-green-wash/40" : "border-line bg-surface"}`} data-testid="blatt-erkenntnis">
+          <select className="input sm:col-start-1 sm:row-start-1" value={e.art} onChange={(x) => aendere(e.k, { art: x.target.value === "staerke" ? "staerke" : "fehler" })} aria-label="Art">
+            <option value="fehler">Fehler</option>
+            <option value="staerke">Stärke</option>
+          </select>
+          <button type="button" className="btn btn-ghost btn-sm justify-self-end sm:col-start-4 sm:row-start-1" aria-label="Erkenntnis entfernen" onClick={() => setze((l) => l.filter((x) => x.k !== e.k))}>
+            <X size={16} aria-hidden />
+          </button>
+          <input className="input col-span-2 sm:col-span-2 sm:col-start-2 sm:row-start-1" value={e.text} onChange={(x) => aendere(e.k, { text: x.target.value })} maxLength={300} aria-label="Erkenntnis" placeholder="z. B. Bestimmt den Fall über den Begleiter statt über die Frage" />
+          {e.art === "fehler" ? (
+            <>
+              <select className="input col-span-2 sm:col-span-1 sm:col-start-2 sm:row-start-2" value={e.skillId ?? ""} onChange={(x) => aendere(e.k, { skillId: x.target.value || null })} aria-label="Fähigkeit">
+                <option value="">Fähigkeit: keine</option>
+                {bereiche.map((b) => (
+                  <optgroup key={b} label={b}>
+                    {skills
+                      .filter((s) => s.area === b)
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                ))}
+              </select>
+              <select className="input col-span-2 sm:col-span-1 sm:col-start-3 sm:row-start-2" value={e.fehlerart ?? ""} onChange={(x) => aendere(e.k, { fehlerart: x.target.value || null })} aria-label="Fehlerart">
+                <option value="">Fehlerart: offen</option>
+                {ERROR_TYPES.filter((t) => t.key !== "unbekannt").map((t) => (
+                  <option key={t.key} value={t.key}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : null}
+        </div>
+      ))}
+      {liste.length < MAX_ERKENNTNISSE && (
+        <button type="button" className="btn btn-ghost btn-sm justify-self-start" onClick={() => setze((l) => [...l, { art: "fehler", text: "", skillId: null, fehlerart: null, k: naechster++ }])}>
+          <Plus size={16} aria-hidden /> Erkenntnis dazu
+        </button>
+      )}
+    </section>
   );
 }
