@@ -19,6 +19,8 @@ import { runningUnitForStudent } from "@/lib/units";
 import { dayOf } from "@/lib/exams";
 import { empfehlungUebernehmen, sendeVorschau, verwirfVorschau } from "@/lib/ki-vorschau";
 import { pruefeEinzeltermin } from "@/lib/planung/repo";
+import { nachDemSpeichern, type EntwurfFehler } from "@/lib/einheit-aus-text";
+import { ERROR_TYPES, type ErrorType } from "@/lib/error-types";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const int = (f: FormData, k: string) => {
@@ -123,7 +125,34 @@ export async function saveLessonAction(formData: FormData) {
     next_steps: str(formData, "next_steps"),
     skill_ids: formData.getAll("skill_ids").map(String),
   };
-  repo.saveLesson(lesson, id || undefined);
+  // Einheit aus Text übernehmen (lib/einheit-aus-text.ts): die Fehler kommen Zeile für Zeile mit Fähigkeit und Fehlerart
+  const entwurfId = id ? 0 : int(formData, "entwurf_id");
+  const ausText = entwurfId ? fehlerAusFormular(formData, lesson.mistakes) : null;
+  if (ausText) {
+    lesson.mistakes = ausText.mistakes;
+    if (ausText.gut.length) lesson.tutor_notes = [lesson.tutor_notes, `Gut lief: ${ausText.gut.join("; ")}`].filter(Boolean).join("\n");
+  }
+  const lessonId = repo.saveLesson(lesson, id || undefined);
+  if (ausText) {
+    const num = (k: string) => {
+      const v = str(formData, k).replace(",", ".");
+      return v === "" || !Number.isFinite(Number(v)) ? null : Number(v);
+    };
+    const note = num("pr_note");
+    const pruefung =
+      str(formData, "pr_an") === "1"
+        ? {
+            art: str(formData, "pr_art") || "Schularbeit",
+            punkte: num("pr_punkte"),
+            max: num("pr_max"),
+            note: note != null && Number.isInteger(note) && note >= 1 && note <= 5 ? note : null,
+            teile: str(formData, "pr_teile").split("\n").map((t) => t.trim()).filter(Boolean),
+            testId: str(formData, "pr_test") === "neu" ? null : int(formData, "pr_test") || null,
+            datum: str(formData, "pr_datum"),
+          }
+        : null;
+    nachDemSpeichern({ entwurfId, studentId, lessonId, teacherId: lesson.teacher_id ?? null, subject: lesson.subject, fehler: ausText.fehler, gut: ausText.gut, pruefung });
+  }
   revalidatePath("/", "layout");
   redirect(`/schueler/${studentId}?tab=lernverlauf`);
 }
@@ -332,4 +361,16 @@ export async function aiInsightAction(studentId: number, deep = false): Promise<
   } catch (e) {
     return { error: e instanceof Error ? e.message : "KI-Anfrage fehlgeschlagen." };
   }
+}
+
+/** Die Fehlerzeilen aus „Aus Text übernehmen“ (components/FehlerZeilen.tsx): Text, Fähigkeit, Fehlerart je Zeile. */
+function fehlerAusFormular(formData: FormData, vorher: string): { mistakes: string; fehler: EntwurfFehler[]; gut: string[] } {
+  const texte = formData.getAll("ek_text").map(String);
+  const skills = formData.getAll("ek_skill").map(String);
+  const arten = formData.getAll("ek_art").map(String);
+  const fehler: EntwurfFehler[] = texte
+    .map((t, i) => ({ text: t.replace(/\s+/g, " ").trim(), skillId: skills[i] && repo.getSkill(skills[i]) ? skills[i] : null, fehlerart: ERROR_TYPES.some((e) => e.key === arten[i]) ? (arten[i] as ErrorType) : null }))
+    .filter((f) => f.text);
+  const gut = str(formData, "ek_gut").split("\n").map((t) => t.trim()).filter(Boolean);
+  return { mistakes: [vorher, ...fehler.map((f) => f.text)].filter(Boolean).join("\n"), fehler, gut };
 }
