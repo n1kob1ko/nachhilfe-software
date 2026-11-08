@@ -48,7 +48,8 @@ export function Lernverlauf({ student, filter }: { student: repo.Student; filter
   const notizen = notizenFuerSchueler(student.id);
   const wuensche = wuenscheFuerSchueler(student.id);
   const vorname = student.name.split(" ")[0];
-  const VISIBLE = 8;
+  // Audit 2026-11-07: fünf Einträge, ältere hinter „Ältere Einträge“
+  const VISIBLE = 5;
   const item = (e: Entry) =>
     e.kind === "unit" ? (
       <li key={`u${e.unit.id}`} id={`einheit-${e.unit.id}`} className="scroll-mt-6">
