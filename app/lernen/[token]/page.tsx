@@ -48,6 +48,9 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
         <SubjectArt subject={student.subjects[0]} topic={bildThema(student.id)} seed={student.id} className="pointer-events-none absolute -right-4 -bottom-6 hidden h-[190px] w-[190px] sm:block" />
       </section>
 
+      {/* wann und wo ist das Wichtigste für den Schüler: gleich unter der Begrüßung (niko 2026-11-08) */}
+      {naechster && <NaechsterTermin naechster={naechster} token={token} alleLink />}
+
       {unit && (
         <Link href={`/lernen/${token}/tafel`} className="panel mt-8 flex items-center gap-4 border-accent-bright/60 bg-accent-wash px-5 py-5 transition-colors hover:border-accent-bright">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-on-fill">
@@ -88,8 +91,6 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
       )}
 
       <Hausuebungen studentId={student.id} token={token} />
-
-      {naechster && <NaechsterTermin naechster={naechster} token={token} alleLink />}
 
       {notizFrisch && (
         <SchuelerNotizFrage
