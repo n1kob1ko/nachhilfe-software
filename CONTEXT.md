@@ -97,6 +97,19 @@ Fehlern; der Lehrer vergleicht und übernimmt den Text als neue Fassung. Ohne KI
 Fotos werden nicht gespeichert. Danach ist es eine Textarbeit wie jede andere.
 _Avoid_: Scan, OCR
 
+**Einheit aus Text übernehmen**:
+Unter „Einheit nachtragen“ eine Zusammenfassung einfügen (z. B. aus einem Claude-Chat); die KI füllt das Formular aus:
+was gemacht wurde, jeder Fehler einzeln mit Fähigkeit und Fehlerart, was gut lief, geübte Fähigkeiten, nächstes Mal und
+ein besprochenes Prüfungsergebnis (`lib/einheit-aus-text.ts`). Namen gehen nicht an die KI; gespeichert wird erst beim
+„Speichern“. Ohne KI steht der Text Zeile für Zeile unter „Was wurde gemacht?“.
+_Avoid_: Import, Chat-Import
+
+**Erkenntnis**:
+Was die Lehrkraft über einen **Schüler** herausgefunden hat, je Fehlermuster oder Stärke eine Zeile („Bestimmt den Fall
+über den Begleiter statt über die Frage“), mit Fähigkeit und Fehlerart, offen oder erledigt (`erkenntnisse`,
+`lib/erkenntnisse.ts`). Offene Fehler-Erkenntnisse sind der Schwerpunkt des nächsten Übungspakets.
+_Avoid_: Notiz, Beobachtung (das ist das freie Feld der Dokumentation), Insight
+
 **geplante Einheit**:
 Ein Platz im Wochenplan: wer (Lehrer, Schüler), wo (Raum), an welchem Wochentag,
 zu welcher Startzeit und mit welcher **geplanten Dauer**. Sie wird erst wirklich,

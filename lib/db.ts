@@ -1338,6 +1338,40 @@ CREATE TABLE IF NOT EXISTS einheit_hausuebung (
   teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+-- Einheit aus Text übernehmen (lib/einheit-aus-text.ts, 2026-11-08): eine eingefügte Zusammenfassung und was die KI (oder ohne KI
+-- die App) daraus für das Formular „Einheit nachtragen“ gemacht hat. text = der Text ohne Namen; entwurf: JSON EinheitEntwurf.
+-- Nur ein Vorschlag: erst „Speichern“ im Formular schreibt die Einheit (lessons) und ihre Erkenntnisse.
+CREATE TABLE IF NOT EXISTS einheit_text_entwuerfe (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  text TEXT NOT NULL,
+  entwurf TEXT NOT NULL,
+  lesson_id INTEGER REFERENCES lessons(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+-- Erkenntnisse (lib/erkenntnisse.ts, 2026-11-08): was die Lehrkraft über einen Schüler herausgefunden hat, je Fehlermuster
+-- oder Stärke eine Zeile („Bestimmt den Fall über den Begleiter statt über die Frage“). art fehler | staerke; skill_id und
+-- error_type, wenn bekannt; quelle einheit (aus „Einheit aus Text übernehmen“) | blatt (Schularbeit oder Blatt eingelesen)
+-- | paket; status offen | erledigt. Offene Fehler-Erkenntnisse sind der Schwerpunkt des nächsten Übungspakets.
+CREATE TABLE IF NOT EXISTS erkenntnisse (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  subject TEXT NOT NULL DEFAULT '',
+  art TEXT NOT NULL DEFAULT 'fehler',
+  text TEXT NOT NULL,
+  skill_id TEXT,
+  error_type TEXT,
+  quelle TEXT NOT NULL DEFAULT 'einheit',
+  lesson_id INTEGER REFERENCES lessons(id) ON DELETE CASCADE,
+  worksheet_id INTEGER REFERENCES worksheets(id) ON DELETE SET NULL,
+  test_id INTEGER REFERENCES tests(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'offen',
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  erledigt_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_erkenntnisse_student ON erkenntnisse(student_id, status);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */

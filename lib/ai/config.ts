@@ -91,6 +91,7 @@ export type AIFunction =
   | "stoffzettel"
   | "textfoto"
   | "handschrift"
+  | "einheit_text"
   | "blatt"
   | "whiteboard"
   | "druckblatt"
@@ -176,6 +177,9 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // student's text written on paper, word for word with every mistake. The answer is the student's own writing, so it is
   // kept for reuse one hour only (a reload does not pay twice), not a whole day
   handschrift: { label: "Handschrift lesen", area: "MATERIAL", tier: "standard", maxTokens: 12_000, timeoutMs: 150_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 60 * MIN, cache: "aus" },
+  // Einheit aus Text übernehmen (lib/einheit-aus-text.ts): only on the teacher's click; the pasted summary goes without
+  // names (the student's, every teacher and student of the app), with the student's skill list; the answer fills the form
+  einheit_text: { label: "Einheit aus Text übernehmen", area: "ANALYSIS", tier: "standard", maxTokens: 6_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // KI prüfen am Whiteboard (lib/whiteboard-check.ts): only on the teacher's click; the picture of one task with the
   // handwriting under it and the task's solution; the answer is a suggestion the teacher confirms. Thinking on, because
   // reading handwritten maths wrongly would mark a right answer wrong; the same picture is not paid for twice
