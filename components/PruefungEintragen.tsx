@@ -114,7 +114,7 @@ export function PruefungEintragen({ token, faecher, weitere }: { token: string; 
         </p>
         {!phase.eingetragen && <p className="text-[15px] text-ink-2">Ein paar Angaben prüft dein Lehrer noch, zum Beispiel das Datum.</p>}
         <div className="flex flex-wrap gap-2">
-          <Link href={`/lernen/${token}#pruefungen`} className="btn btn-primary">
+          <Link href={`/lernen/${token}/pruefungen`} className="btn btn-primary">
             Zur Übersicht
           </Link>
           <button type="button" className="btn btn-secondary" onClick={() => (setFotos([]), setKeinName(false), setPhase("formular"))}>

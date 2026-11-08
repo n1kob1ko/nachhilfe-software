@@ -58,14 +58,14 @@ export async function stelleSchuelerAnfrageAction(token: string, formData: FormD
   const wer = schuelerAus(token);
   const e = ta.stelleAnfrage(wer, eingabe(formData));
   aktualisiere();
-  redirect(mitMeldung(`/lernen/${encodeURIComponent(token)}`, e));
+  redirect(mitMeldung(`/lernen/${encodeURIComponent(token)}/termine`, e));
 }
 
 export async function antwortSchuelerAction(token: string, id: number, was: "zustimmen" | "ablehnen" | "zurueckziehen") {
   const wer = schuelerAus(token);
   const e = was === "zustimmen" ? ta.stimmeZu(wer, id) : was === "ablehnen" ? ta.lehneAb(wer, id, "") : ta.zieheZurueck(wer, id);
   aktualisiere();
-  redirect(mitMeldung(`/lernen/${encodeURIComponent(token)}`, e));
+  redirect(mitMeldung(`/lernen/${encodeURIComponent(token)}/termine`, e));
 }
 
 // ---------- Lehrer und Verwaltung ----------

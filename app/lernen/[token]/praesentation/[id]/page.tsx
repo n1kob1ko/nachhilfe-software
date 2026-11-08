@@ -26,7 +26,7 @@ export default async function SchuelerPraesentation({ params }: { params: Promis
   const src = !problem && dateienDa(p) ? deckUrl(p.token, p.start_pfad) : null;
   return (
     <>
-      <Link href={`/lernen/${token}`} className="inline-flex min-h-[44px] items-center gap-1 text-[15px] font-medium text-accent">
+      <Link href={`/lernen/${token}/pruefungen`} className="inline-flex min-h-[44px] items-center gap-1 text-[15px] font-medium text-accent">
         <ChevronLeft size={18} aria-hidden /> Zurück
       </Link>
       <h1 className="mt-2 flex items-center gap-2 text-[24px] font-semibold tracking-[-0.01em]">

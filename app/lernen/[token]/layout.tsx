@@ -4,6 +4,7 @@ import { getStudentByToken } from "@/lib/repo";
 import { Avatar } from "@/components/Art";
 import { BrandMark } from "@/components/Brand";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SchuelerNav } from "@/components/lernen/SchuelerNav";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,11 @@ export default async function LearnLayout({ children, params }: { children: Reac
           </span>
         </div>
       </header>
-      <main className="mx-auto max-w-[860px] px-4 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] has-[.lesen-breit]:max-w-[1320px] md:py-10">{children}</main>
+      {/* vier Seiten (Start, Termine, Prüfungen, Fortschritt): am Handy Leiste unten, darum unten Platz dafür */}
+      <main className="mx-auto max-w-[860px] px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] has-[.lesen-breit]:max-w-[1320px] md:py-10">
+        <SchuelerNav token={token} />
+        {children}
+      </main>
     </div>
   );
 }
