@@ -27,14 +27,14 @@ mit der Leiste unten (Start · Termine · Prüfungen · Fortschritt, `components
 der Reihe unter dem Kopf. Unterseiten (eine Übung, Prüfung eintragen, eine Präsentation) behalten die Leiste.
 
 1. **Start** (`/lernen/[token]`): nur, was jetzt zu tun ist.
-   - **Offene Übungen** mit „Starten“ / „Weitermachen“ und **Hausübungen** (die offenen zuerst, überfällig, heute,
-     morgen markiert; mit Übung führt die Zeile zu ihr; erledigte unter „Erledigt“; ohne Hausübung kein Abschnitt).
-   - **Nächster Termin**: „Jetzt“, „Heute“, „Morgen“ oder „Nächster Termin“, dann **Wochentag, Uhrzeit, Ort und
+   - **Nächster Termin** gleich unter der Begrüßung (niko, 2026-11-08: die Zeit ist für den Schüler das Wichtigste): „Jetzt“, „Heute“, „Morgen“ oder „Nächster Termin“, dann **Wochentag, Uhrzeit, Ort und
      Lehrer** (niko, 2026-11-03: „Der Raum selbst ist nicht wichtig nur Uhrzeit Ort Lehrer“). Ort ist das Gebäude des
      Raums, online „Online“; ohne Raum „Ort noch offen“. Darunter „Alle Termine und Termin ändern“ (Seite Termine).
+   - **Offene Übungen** mit „Starten“ / „Weitermachen“ und **Hausübungen** (die offenen zuerst, überfällig, heute,
+     morgen markiert; mit Übung führt die Zeile zu ihr; erledigte unter „Erledigt“; ohne Hausübung kein Abschnitt).
    - **„Was war heute schwer?“** nur am Tag der Einheit und am Tag danach (Antworten zum Antippen, freier Text,
      „Überspringen“); danach steht die Notiz unter Fortschritt und bleibt bis zur nächsten Einheit änderbar.
-   - Läuft gerade eine Einheit, steht ganz oben „Whiteboard öffnen“. Unten der Hinweis „DreamStudy als App“.
+   - Läuft gerade eine Einheit, steht „Whiteboard öffnen“ direkt unter dem Termin. Unten der Hinweis „DreamStudy als App“.
 2. **Termine** (`/termine`): der nächste Termin groß; passt ein **Tauschangebot** eines anderen Schülers, steht hier
    „Jemand möchte mit dir tauschen“ mit „Ja, tauschen“. Dann **Alle Termine**: diese Woche und, sobald sie
    veröffentlicht ist, die nächste. Vergangene Termine sind grau; ein vergangener ohne Einheit bekommt keinen Vermerk
