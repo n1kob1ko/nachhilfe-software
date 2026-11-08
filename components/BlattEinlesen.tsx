@@ -422,7 +422,8 @@ export function BlattEinlesen({
               </label>
             ))}
           </fieldset>
-          <div className="grid grid-cols-2 gap-3">
+          {/* am Handy untereinander: das Datumsfeld hat eine feste Mindestbreite und machte die Seite sonst breiter */}
+          <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1.5">
               <span className="text-[14px] font-semibold">Fach</span>
               <select className="input" value={fach} onChange={(e) => setFach(e.target.value)} data-testid="blatt-fach">
@@ -644,7 +645,7 @@ export function BlattEinlesen({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-                    <span className="flex rounded-full bg-panel p-1" role="radiogroup" aria-label={`Bewertung Aufgabe ${i + 1}`}>
+                    <span className="flex flex-wrap rounded-full bg-panel p-1" role="radiogroup" aria-label={`Bewertung Aufgabe ${i + 1}`}>
                       {BEWERTUNGEN.map((b) => (
                         <label
                           key={b}

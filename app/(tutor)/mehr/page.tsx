@@ -107,14 +107,18 @@ export default async function MorePage() {
           {aiEnabled() ? "KI ist eingerichtet." : "Ohne KI-Schlüssel: eingebaute Generatoren."}
         </p>
       </div>
-      <div className="grid gap-8">
+      {/* min-w-0 auf jeder Gruppe: ein Kind darf das Raster nie breiter machen als die Seite (Handy-Fehler 2026-11-08) */}
+      <div className="grid gap-8 [&>*]:min-w-0">
         {groups.map((g) =>
           g.zu ? (
             <details key={g.title} className="group" data-testid="erweitert-zu">
-              <summary className="flex min-h-[44px] cursor-pointer list-none items-center gap-2">
-                <ChevronDown size={16} className="shrink-0 text-ink-3 transition-transform group-open:rotate-180" aria-hidden />
-                <span className="gruppe-titel">{g.title}</span>
-                <span className="min-w-0 truncate text-[13px] text-ink-3 group-open:hidden">{g.items.map((i) => i.label).join(" · ")}</span>
+              <summary className="flex min-h-[44px] cursor-pointer list-none items-start gap-2 py-1 [&::-webkit-details-marker]:hidden">
+                <ChevronDown size={16} className="mt-0.5 shrink-0 text-ink-3 transition-transform group-open:rotate-180" aria-hidden />
+                <span className="min-w-0">
+                  <span className="gruppe-titel block">{g.title}</span>
+                  {/* umbrechend und auf zwei Zeilen begrenzt, nie nowrap */}
+                  <span className="mt-0.5 line-clamp-2 text-[13px] text-ink-3 group-open:hidden">{g.items.map((i) => i.label).join(" · ")}</span>
+                </span>
               </summary>
               <div className="mt-3">{kacheln(g.items)}</div>
             </details>

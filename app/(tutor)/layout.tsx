@@ -61,7 +61,7 @@ export default async function TutorLayout({ children }: { children: React.ReactN
           </div>
         </div>
       </aside>
-      <main className="min-w-0 px-4 pt-5 pb-28 md:px-8 md:py-8 lg:px-10">
+      <main className="min-w-0 px-4 pt-5 pb-[calc(7rem+env(safe-area-inset-bottom))] md:px-8 md:py-8 lg:px-10">
         <div className="mx-auto max-w-[1120px]">
           <RunningUnits units={running} />
           {children}

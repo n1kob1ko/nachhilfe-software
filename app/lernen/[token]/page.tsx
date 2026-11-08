@@ -161,10 +161,13 @@ export default async function LearnHome({ params, searchParams }: { params: Prom
       <NaechstesMal token={token} text={offenerWunsch(student.id)?.text ?? null} />
 
       <details id="mehr" className="group mt-10 scroll-mt-4" open={mehrOffen} data-testid="mehr">
-        <summary className="flex min-h-[52px] cursor-pointer list-none items-center gap-2 rounded-2xl border border-line bg-surface px-5 text-[17px] font-semibold">
+        <summary className="flex min-h-[52px] cursor-pointer list-none items-center gap-2 rounded-2xl border border-line bg-surface px-5 py-2 text-[17px] font-semibold [&::-webkit-details-marker]:hidden">
           <ChevronDown size={18} className="shrink-0 text-ink-3 transition-transform group-open:rotate-180" aria-hidden />
-          Mehr
-          <span className="min-w-0 truncate text-[14px] font-normal text-ink-2">Alle Termine, Prüfungen eintragen, Unterlagen, Fortschritt</span>
+          <span className="min-w-0">
+            Mehr
+            {/* umbrechend statt abgeschnitten: am Handy stand nur „…Unter“ */}
+            <span className="block text-[14px] font-normal leading-snug text-ink-2">Alle Termine, Prüfungen eintragen, Unterlagen, Fortschritt</span>
+          </span>
         </summary>
 
         <section id="terminanfragen" className="panel mt-4 scroll-mt-4 px-5 py-5" aria-label="Deine Termine" data-testid="termine">
