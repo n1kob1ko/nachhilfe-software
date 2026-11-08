@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpenText, Lightbulb, ListPlus, Search, Sparkles, Wand2, Zap, ChevronDown } from "lucide-react";
+import { BookOpenText, ChevronDown, Lightbulb, ListPlus, Search, SlidersHorizontal, Sparkles, Wand2, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useMemo, useState } from "react";
@@ -130,8 +130,15 @@ export function BuilderForm({
     ? `Erstelle ${count} Übungen${ctx ? ` für ${ctx.first}` : ""}, ${levelText}, ${subject}: ${chosen.map(labelOf).join(", ")}.`
     : null;
 
+  // Audit 2026-11-07: der schnelle Weg (Schüler → Vorschlag → Anzahl → Erstellen) steht offen; Fach, Thema und Fähigkeit,
+  // Schwierigkeit, Aufgabentyp, Schulstufe und die Felder für die KI liegen unter „Mehr Einstellungen“. Ohne Schüler oder
+  // ohne Vorschlag steht „Mehr Einstellungen“ offen, denn dann muss das Thema dort gewählt werden.
+  const schnell = Boolean(preset?.skillIds?.length) || Boolean(ctx && ctx.suggestions.length > 0);
+  const [mehr, setMehr] = useState(!schnell);
+  const summary = [subject, difficulty === AUTO ? "Schwierigkeit automatisch" : `Schwierigkeit ${difficulty}`, cats.length ? categories.filter((c) => cats.includes(c.key)).map((c) => c.label).join(", ") : "gemischte Aufgaben", levelText].join(" · ");
+
   return (
-    <form action={action} className="grid min-w-0 gap-x-8 gap-y-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+    <form action={action} className="grid min-w-0 max-w-[820px] gap-y-8">
       <input type="hidden" name="subject" value={subject} />
       <input type="hidden" name="count" value={count} />
       {selected.map((id) => (
@@ -144,166 +151,62 @@ export function BuilderForm({
       <ol className="grid gap-8">
         {/* 1 · Schüler */}
         <Step n={1} title="Schüler">
-          <div className="grid min-w-0 gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <label className="field min-w-0">
-              <span className="label">Schüler</span>
-              <select
-                className="input min-w-0 max-w-full"
-                name="student_id"
-                value={ctx?.studentId ?? ""}
-                onChange={(e) => router.replace(e.target.value ? `/uebungen/neu?schueler=${e.target.value}` : "/uebungen/neu")}
-              >
-                <option value="">Ohne Schüler (allgemeine Übung)</option>
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <SchoolClassFields key={String(ctx?.studentId)} type={level.type} klasse={level.klasse} onChange={(type, klasse) => setLevel({ type, klasse })} />
-            </div>
-          </div>
-          {ctx && <ContextCard ctx={ctx} />}
+          <label className="field min-w-0 max-w-[420px]">
+            <span className="label">Schüler</span>
+            <select
+              className="input min-w-0 max-w-full"
+              name="student_id"
+              value={ctx?.studentId ?? ""}
+              onChange={(e) => router.replace(e.target.value ? `/uebungen/neu?schueler=${e.target.value}` : "/uebungen/neu")}
+            >
+              <option value="">Ohne Schüler (allgemeine Übung)</option>
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </Step>
+
+        {/* 2 · Was üben: der Vorschlag, sonst die Wahl unter „Mehr Einstellungen“ */}
+        <Step n={2} title="Was üben" note={ctx && ctx.suggestions.length > 0 ? `Vorschläge aus dem Lernverlauf von ${ctx.first}; ein Tippen wählt Thema, Format und Schwierigkeit.` : undefined}>
           {ctx && ctx.suggestions.length > 0 && (
-            <div className="mt-4">
-              <p className="label mb-2 flex items-center gap-1.5">
-                <Lightbulb size={14} aria-hidden /> Vorschläge für {ctx.first}
-              </p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {ctx.suggestions.map((sg) => (
-                  <button
-                    key={sg.key}
-                    type="button"
-                    onClick={() => apply(sg)}
-                    aria-pressed={applied === sg.key}
-                    className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${applied === sg.key ? "border-accent bg-accent-wash" : "border-line bg-surface hover:border-ink-3"}`}
-                  >
-                    <span className="block text-[14px] font-semibold">{sg.title}</span>
-                    <span className="mt-0.5 block text-[12.5px] text-ink-2">{sg.reason}</span>
-                  </button>
-                ))}
-              </div>
+            <div className="grid gap-2 sm:grid-cols-2" data-testid="vorschlaege">
+              {ctx.suggestions.map((sg) => (
+                <button
+                  key={sg.key}
+                  type="button"
+                  onClick={() => apply(sg)}
+                  aria-pressed={applied === sg.key}
+                  className={`rounded-lg border px-3 py-2.5 text-left transition-colors ${applied === sg.key ? "border-accent bg-accent-wash" : "border-line bg-surface hover:border-ink-3"}`}
+                >
+                  <span className="flex items-start gap-1.5 text-[14px] font-semibold">
+                    <Lightbulb size={15} className="mt-0.5 shrink-0 text-accent" aria-hidden /> {sg.title}
+                  </span>
+                  <span className="mt-0.5 block text-[12.5px] text-ink-2">{sg.reason}</span>
+                </button>
+              ))}
             </div>
           )}
+          <p className={`${ctx && ctx.suggestions.length > 0 ? "mt-3" : ""} flex flex-wrap items-center gap-x-3 gap-y-1 text-[13.5px] text-ink-2`} data-testid="gewaehlt">
+            {chosen.length > 0 ? (
+              <span>
+                Gewählt: <span className="font-semibold text-ink">{chosen.map(labelOf).join(" · ")}</span> · {summary}
+              </span>
+            ) : (
+              <span>Noch kein Thema gewählt.</span>
+            )}
+            {!mehr && (
+              <button type="button" onClick={() => setMehr(true)} className="inline-flex min-h-[44px] items-center font-semibold text-accent hover:underline">
+                {chosen.length > 0 ? "Anderes Thema oder Einstellungen" : "Thema wählen"}
+              </button>
+            )}
+          </p>
         </Step>
 
-        {/* 2 · Fach */}
-        <Step n={2} title="Fach">
-          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Fach">
-            {subjects.map((s) => (
-              <label key={s} className={chip}>
-                <input type="radio" name="_subject" value={s} checked={subject === s} onChange={() => changeSubject(s)} className="sr-only" />
-                {s}
-                {ctx && !ctx.subjects.includes(s) && <span className="ml-1 text-[12px] text-ink-3">(nicht im Profil)</span>}
-              </label>
-            ))}
-          </div>
-        </Step>
-
-        {/* 3 · Thema und Fähigkeit */}
-        <Step n={3} title="Thema und Fähigkeit" note="Jede Aufgabe gehört zu einer genauen Fähigkeit. Teilfähigkeiten zählen auch für die übergeordnete Fähigkeit.">
-          {subject === "Englisch" && ctx && <EigeneListen first={ctx.first} studentId={ctx.studentId} listen={vokabelListen} chosen={listen} onToggle={toggleListe} />}
-          <div className="relative mb-3 max-w-[360px]">
-            <Search size={15} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-3" aria-hidden />
-            <input className="input" style={{ paddingLeft: 36 }} type="search" placeholder="Thema oder Fähigkeit suchen" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Fähigkeit suchen" />
-          </div>
-          {chosen.length > 0 && (
-            <p className="mb-3 text-[13px] text-ink-2">
-              Gewählt: <span className="font-semibold text-ink">{chosen.map(labelOf).join(" · ")}</span>
-            </p>
-          )}
-          {(() => {
-            const fitsArea = (list: { skill: Skill }[]) => list.some(({ skill }) => grade >= skill.grade_min && grade <= skill.grade_max);
-            const card = ([area, list]: (typeof areas)[number], fits: boolean) => {
-              const open = query.trim() !== "" || list.some(({ skill, subs }) => [skill, ...subs].some((x) => selected.includes(x.id)));
-              return (
-                <details key={area} open={open} className="panel group px-4 py-3">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-semibold">
-                    <span>
-                      {area}
-                      {!fits && <span className="ml-2 text-[12px] font-normal text-ink-3">andere Schulstufe</span>}
-                    </span>
-                    <span className="text-[12px] font-normal text-ink-3 group-open:hidden">{list.length} Fähigkeiten</span>
-                  </summary>
-                  <ul className="mt-2 grid gap-1">
-                    {list.map(({ skill, subs }) => (
-                      <li key={skill.id}>
-                        <SkillRow skill={skill} checked={selected.includes(skill.id)} onToggle={toggle} mastery={mastery(skill.id)} hasCtx={Boolean(ctx)} />
-                        {subs.length > 0 && (
-                          <ul className="ml-6 grid gap-1 border-l border-line pl-2">
-                            {subs.map((s) => (
-                              <li key={s.id}>
-                                <SkillRow skill={s} checked={selected.includes(s.id)} onToggle={toggle} mastery={ctx?.mastery[s.id] ?? null} hasCtx={Boolean(ctx)} small />
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              );
-            };
-            // Themen der Schulstufe zuerst; die anderen Schulstufen bleiben eingeklappt, bei einer Suche oder einer
-            // dort gewählten Fähigkeit sind sie offen
-            const searching = query.trim() !== "";
-            const own = areas.filter(([, list]) => fitsArea(list));
-            const other = areas.filter(([, list]) => !fitsArea(list));
-            const otherOpen = searching || other.some(([, list]) => list.some(({ skill, subs }) => [skill, ...subs].some((x) => selected.includes(x.id))));
-            return (
-              <>
-                <div className="grid items-start gap-3 md:grid-cols-2">
-                  {own.map((a) => card(a, true))}
-                  {areas.length === 0 && <p className="text-[14px] text-ink-3">Keine Fähigkeit passt zur Suche.</p>}
-                  {own.length === 0 && areas.length > 0 && !otherOpen && <p className="text-[14px] text-ink-3">Für {levelText} gibt es hier noch keine Themen.</p>}
-                </div>
-                {other.length > 0 && (
-                  <details open={otherOpen} className="group mt-3">
-                    <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-semibold text-accent">
-                      <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden />
-                      {other.length} Themen anderer Schulstufen
-                    </summary>
-                    <div className="mt-3 grid items-start gap-3 md:grid-cols-2">{other.map((a) => card(a, false))}</div>
-                  </details>
-                )}
-              </>
-            );
-          })()}
-          <WortartenChoice selected={selected} setSelected={setSelected} known={new Set(skills.map((x) => x.id))} grade={grade} ctx={ctx} />
-          <SchreibauftragHinweis sorten={[...new Set(selected.map(sorteOfSkill).filter((k): k is SorteKey => k !== null))]} ctx={ctx} />
-        </Step>
-
-        {/* 4 · Schwierigkeit */}
-        <Step n={4} title="Schwierigkeit">
-          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Schwierigkeit">
-            {[...DIFFICULTIES, AUTO].map((d) => (
-              <label key={d} className={chip}>
-                <input type="radio" name="difficulty" value={d} checked={difficulty === d} onChange={() => setDifficulty(d)} className="sr-only" />
-                {d === AUTO ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Wand2 size={14} aria-hidden /> automatisch an Schüler anpassen
-                  </span>
-                ) : (
-                  d
-                )}
-              </label>
-            ))}
-          </div>
-          {difficulty === AUTO && (
-            <p className="mt-2 text-[13px] text-ink-2">
-              {!ctx
-                ? "Ohne Schüler gibt es keinen Lernstand; es wird „leicht“ verwendet."
-                : chosen.length
-                  ? chosen.map((s) => `${labelOf(s)}: ${difficultyFor(mastery(s.id))}${pct(mastery(s.id)) ? ` (Lernstand ${pct(mastery(s.id))})` : " (noch keine Daten)"}`).join(" · ")
-                  : "Richtet sich nach dem Lernstand in jeder gewählten Fähigkeit."}
-            </p>
-          )}
-        </Step>
-
-        {/* 5 · Anzahl */}
-        <Step n={5} title="Anzahl">
+        {/* 3 · Anzahl */}
+        <Step n={3} title="Anzahl">
           <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label="Anzahl">
             {COUNTS.map((n) => (
               <label key={n} className={`${chip} num min-w-12 text-center`}>
@@ -322,7 +225,7 @@ export function BuilderForm({
             ))}
             <label className={chip}>
               <input type="radio" name="_count" checked={customCount} onChange={() => setCustomCount(true)} className="sr-only" />
-              benutzerdefiniert
+              andere Zahl
             </label>
             {customCount && (
               <input
@@ -338,102 +241,244 @@ export function BuilderForm({
             )}
           </div>
         </Step>
-
-        {/* 6 · Aufgabentyp */}
-        <Step n={6} title="Aufgabentyp" note="Mehrere möglich. Jede Aufgabe kommt genau in diesem Format.">
-          <div className="flex flex-wrap gap-1.5">
-            <label className={chip} title="Die App wählt für jede Fähigkeit passende Formate, wenig Multiple Choice.">
-              <input type="checkbox" checked={cats.length === 0} onChange={() => setCats([])} className="sr-only" data-testid="gemischt" />
-              Gemischte Aufgaben
-            </label>
-            {[...categories].sort((x, y) => PREFERRED.indexOf(y.key) - PREFERRED.indexOf(x.key)).map((c) => (
-              <label key={c.key} className={chip} title={c.hint}>
-                <input
-                  type="checkbox"
-                  name="categories"
-                  value={c.key}
-                  checked={cats.includes(c.key)}
-                  onChange={() => setCats((cur) => (cur.includes(c.key) ? cur.filter((x) => x !== c.key) : [...cur, c.key]))}
-                  className="sr-only"
-                />
-                {c.label}
-              </label>
-            ))}
-          </div>
-          {cats.length === 0 && <p className="mt-2 text-[13px] text-ink-2">Gemischt: zu jeder Fähigkeit passende Formate, zum Beispiel Lückentext, Fehler korrigieren und freie Antwort.</p>}
-          {cats.length > 0 && (
-            <ul className="mt-2 grid gap-0.5 text-[13px] text-ink-2">
-              {categories
-                .filter((c) => cats.includes(c.key))
-                .map((c) => (
-                  <li key={c.key}>
-                    <span className="font-semibold text-ink">{c.label}:</span> {c.hint}
-                  </li>
-                ))}
-            </ul>
-          )}
-          <div className="mt-3 rounded-lg border border-line bg-surface px-3 py-2.5" data-testid="schnellrunde">
-            <label className={`flex min-h-[44px] items-center gap-2 text-[14px] ${quickOk ? "cursor-pointer" : "text-ink-3"}`}>
-              <input
-                type="checkbox"
-                name="quick_round"
-                checked={quick && quickOk}
-                disabled={!quickOk}
-                onChange={(e) => setQuick(e.target.checked)}
-                className="h-4 w-4 accent-[var(--accent)]"
-              />
-              <Zap size={15} className={quick && quickOk ? "text-accent" : ""} aria-hidden />
-              Als Schnellrunde senden
-            </label>
-            <p className="text-[12.5px] text-ink-3">
-              {quickOk
-                ? "Ein Tipp pro Aufgabe, kurze Rückmeldung, automatisch die nächste. Beim Senden wird geprüft, ob jede Aufgabe Multiple Choice mit höchstens vier Antworten ist; sonst bleibt es der übliche Ablauf. Versuche, Zeit und Hilfen werden genau wie sonst gespeichert."
-                : QUICK_ROUND_CATEGORY_REASON}
-            </p>
-          </div>
-        </Step>
       </ol>
 
-      <aside className="grid min-w-0 content-start gap-4 xl:sticky xl:top-6">
-        <div className="panel grid gap-4 px-4 py-4">
-          <label className="field">
-            <span className="label">Hinweis an die KI (optional)</span>
-            <textarea
-              className="input min-h-[72px]"
-              name="focus"
-              placeholder={ctx?.errors[0] ? `z. B. besonders auf „${ctx.errors[0].label}“ achten` : "z. B. Textaufgaben mit Fußball"}
-              disabled={!useAI}
-            />
-          </label>
-          <label className="field">
-            <span className="label">Titel (optional)</span>
-            <input className="input" name="title" placeholder="Wird sonst automatisch vergeben" />
-          </label>
-          <label className={`flex items-center gap-2 text-[14px] ${aiEnabled ? "cursor-pointer" : "text-ink-3"}`}>
-            <input type="checkbox" name="use_ai" checked={useAI} disabled={!aiEnabled} onChange={(e) => setUseAI(e.target.checked)} className="accent-[var(--accent)]" />
-            <Sparkles size={15} className={useAI ? "text-accent" : ""} aria-hidden />
-            Mit KI erstellen
-          </label>
-          {!aiEnabled && <p className="-mt-2 text-[12px] text-ink-3">Ohne KI: Aufgaben aus den eingebauten Generatoren.</p>}
-          {request && (
-            <div className="rounded-lg bg-paper px-3 py-2.5 text-[13px] text-ink-2">
-              <p className="text-ink">{request}</p>
-              {useAI && ctx && <p className="mt-1">Dazu bekommt die KI Lernstand, Schwächen, Ziele und häufigste Fehler, ohne Namen.</p>}
+      <details className="group panel px-4 py-1 sm:px-5" open={mehr} onToggle={(e) => setMehr(e.currentTarget.open)} data-testid="mehr-einstellungen">
+        <summary className="flex min-h-[52px] cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 [&::-webkit-details-marker]:hidden">
+          <span className="inline-flex items-center gap-1.5 text-[16px] font-semibold">
+            <SlidersHorizontal size={17} className="text-ink-2" aria-hidden /> Mehr Einstellungen
+          </span>
+          <span className="text-[13.5px] text-ink-3 group-open:hidden">Fach, Thema und Fähigkeit, Schwierigkeit, Aufgabentyp, Schulstufe{aiEnabled ? ", Hinweis an die KI" : ""}</span>
+          <ChevronDown size={18} className="ml-auto text-ink-3 transition-transform group-open:rotate-180" aria-hidden />
+        </summary>
+        <div className="grid gap-8 border-t border-line py-5">
+          {ctx && (
+            <details className="group/profil">
+              <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-semibold text-accent [&::-webkit-details-marker]:hidden">
+                <ChevronDown size={15} className="transition-transform group-open/profil:rotate-180" aria-hidden /> Was die App über {ctx.first} weiß
+              </summary>
+              <ContextCard ctx={ctx} />
+            </details>
+          )}
+
+          <Abschnitt title="Fach">
+            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Fach">
+              {subjects.map((s) => (
+                <label key={s} className={chip}>
+                  <input type="radio" name="_subject" value={s} checked={subject === s} onChange={() => changeSubject(s)} className="sr-only" />
+                  {s}
+                  {ctx && !ctx.subjects.includes(s) && <span className="ml-1 text-[12px] text-ink-3">(nicht im Profil)</span>}
+                </label>
+              ))}
             </div>
-          )}
-          <div className="grid gap-2">
-            <Submit disabled={selected.length === 0} ai={useAI && aiEnabled} count={count} />
-            <EmptyButton />
-          </div>
-          <ManuellWaehrendErstellung />
-          {selected.length === 0 && <p className="text-[13px] text-ink-3">Wähle mindestens eine Fähigkeit.</p>}
-          {state?.error && (
-            <p className="text-[14px] text-red" role="alert">
-              {state.error}
-            </p>
-          )}
+          </Abschnitt>
+
+          <Abschnitt title="Thema und Fähigkeit" note="Jede Aufgabe gehört zu einer genauen Fähigkeit. Teilfähigkeiten zählen auch für die übergeordnete Fähigkeit.">
+            {subject === "Englisch" && ctx && <EigeneListen first={ctx.first} studentId={ctx.studentId} listen={vokabelListen} chosen={listen} onToggle={toggleListe} />}
+            <div className="relative mb-3 max-w-[360px]">
+              <Search size={15} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-3" aria-hidden />
+              <input className="input" style={{ paddingLeft: 36 }} type="search" placeholder="Thema oder Fähigkeit suchen" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Fähigkeit suchen" />
+            </div>
+            {chosen.length > 0 && (
+              <p className="mb-3 text-[13px] text-ink-2">
+                Gewählt: <span className="font-semibold text-ink">{chosen.map(labelOf).join(" · ")}</span>
+              </p>
+            )}
+            {(() => {
+              const fitsArea = (list: { skill: Skill }[]) => list.some(({ skill }) => grade >= skill.grade_min && grade <= skill.grade_max);
+              const card = ([area, list]: (typeof areas)[number], fits: boolean) => {
+                const open = query.trim() !== "" || list.some(({ skill, subs }) => [skill, ...subs].some((x) => selected.includes(x.id)));
+                return (
+                  <details key={area} open={open} className="panel group px-4 py-3">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-semibold">
+                      <span>
+                        {area}
+                        {!fits && <span className="ml-2 text-[12px] font-normal text-ink-3">andere Schulstufe</span>}
+                      </span>
+                      <span className="text-[12px] font-normal text-ink-3 group-open:hidden">{list.length} Fähigkeiten</span>
+                    </summary>
+                    <ul className="mt-2 grid gap-1">
+                      {list.map(({ skill, subs }) => (
+                        <li key={skill.id}>
+                          <SkillRow skill={skill} checked={selected.includes(skill.id)} onToggle={toggle} mastery={mastery(skill.id)} hasCtx={Boolean(ctx)} />
+                          {subs.length > 0 && (
+                            <ul className="ml-6 grid gap-1 border-l border-line pl-2">
+                              {subs.map((s) => (
+                                <li key={s.id}>
+                                  <SkillRow skill={s} checked={selected.includes(s.id)} onToggle={toggle} mastery={ctx?.mastery[s.id] ?? null} hasCtx={Boolean(ctx)} small />
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                );
+              };
+              // Themen der Schulstufe zuerst; die anderen Schulstufen bleiben eingeklappt, bei einer Suche oder einer
+              // dort gewählten Fähigkeit sind sie offen
+              const searching = query.trim() !== "";
+              const own = areas.filter(([, list]) => fitsArea(list));
+              const other = areas.filter(([, list]) => !fitsArea(list));
+              const otherOpen = searching || other.some(([, list]) => list.some(({ skill, subs }) => [skill, ...subs].some((x) => selected.includes(x.id))));
+              return (
+                <>
+                  <div className="grid items-start gap-3 md:grid-cols-2">
+                    {own.map((a) => card(a, true))}
+                    {areas.length === 0 && <p className="text-[14px] text-ink-3">Keine Fähigkeit passt zur Suche.</p>}
+                    {own.length === 0 && areas.length > 0 && !otherOpen && <p className="text-[14px] text-ink-3">Für {levelText} gibt es hier noch keine Themen.</p>}
+                  </div>
+                  {other.length > 0 && (
+                    <details open={otherOpen} className="group/andere mt-3">
+                      <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-semibold text-accent">
+                        <ChevronDown size={16} className="transition-transform group-open/andere:rotate-180" aria-hidden />
+                        {other.length} Themen anderer Schulstufen
+                      </summary>
+                      <div className="mt-3 grid items-start gap-3 md:grid-cols-2">{other.map((a) => card(a, false))}</div>
+                    </details>
+                  )}
+                </>
+              );
+            })()}
+            <WortartenChoice selected={selected} setSelected={setSelected} known={new Set(skills.map((x) => x.id))} grade={grade} ctx={ctx} />
+            <SchreibauftragHinweis sorten={[...new Set(selected.map(sorteOfSkill).filter((k): k is SorteKey => k !== null))]} ctx={ctx} />
+          </Abschnitt>
+
+          <Abschnitt title="Schwierigkeit">
+            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Schwierigkeit">
+              {[...DIFFICULTIES, AUTO].map((d) => (
+                <label key={d} className={chip}>
+                  <input type="radio" name="difficulty" value={d} checked={difficulty === d} onChange={() => setDifficulty(d)} className="sr-only" />
+                  {d === AUTO ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Wand2 size={14} aria-hidden /> automatisch an Schüler anpassen
+                    </span>
+                  ) : (
+                    d
+                  )}
+                </label>
+              ))}
+            </div>
+            {difficulty === AUTO && (
+              <p className="mt-2 text-[13px] text-ink-2">
+                {!ctx
+                  ? "Ohne Schüler gibt es keinen Lernstand; es wird „leicht“ verwendet."
+                  : chosen.length
+                    ? chosen.map((s) => `${labelOf(s)}: ${difficultyFor(mastery(s.id))}${pct(mastery(s.id)) ? ` (Lernstand ${pct(mastery(s.id))})` : " (noch keine Daten)"}`).join(" · ")
+                    : "Richtet sich nach dem Lernstand in jeder gewählten Fähigkeit."}
+              </p>
+            )}
+          </Abschnitt>
+
+          <Abschnitt title="Aufgabentyp" note="Mehrere möglich. Jede Aufgabe kommt genau in diesem Format.">
+            <div className="flex flex-wrap gap-1.5">
+              <label className={chip} title="Die App wählt für jede Fähigkeit passende Formate, wenig Multiple Choice.">
+                <input type="checkbox" checked={cats.length === 0} onChange={() => setCats([])} className="sr-only" data-testid="gemischt" />
+                Gemischte Aufgaben
+              </label>
+              {[...categories].sort((x, y) => PREFERRED.indexOf(y.key) - PREFERRED.indexOf(x.key)).map((c) => (
+                <label key={c.key} className={chip} title={c.hint}>
+                  <input
+                    type="checkbox"
+                    name="categories"
+                    value={c.key}
+                    checked={cats.includes(c.key)}
+                    onChange={() => setCats((cur) => (cur.includes(c.key) ? cur.filter((x) => x !== c.key) : [...cur, c.key]))}
+                    className="sr-only"
+                  />
+                  {c.label}
+                </label>
+              ))}
+            </div>
+            {cats.length === 0 && <p className="mt-2 text-[13px] text-ink-2">Gemischt: zu jeder Fähigkeit passende Formate, zum Beispiel Lückentext, Fehler korrigieren und freie Antwort.</p>}
+            {cats.length > 0 && (
+              <ul className="mt-2 grid gap-0.5 text-[13px] text-ink-2">
+                {categories
+                  .filter((c) => cats.includes(c.key))
+                  .map((c) => (
+                    <li key={c.key}>
+                      <span className="font-semibold text-ink">{c.label}:</span> {c.hint}
+                    </li>
+                  ))}
+              </ul>
+            )}
+            <div className="mt-3 rounded-lg border border-line bg-surface px-3 py-2.5" data-testid="schnellrunde">
+              <label className={`flex min-h-[44px] items-center gap-2 text-[14px] ${quickOk ? "cursor-pointer" : "text-ink-3"}`}>
+                <input
+                  type="checkbox"
+                  name="quick_round"
+                  checked={quick && quickOk}
+                  disabled={!quickOk}
+                  onChange={(e) => setQuick(e.target.checked)}
+                  className="h-4 w-4 accent-[var(--accent)]"
+                />
+                <Zap size={15} className={quick && quickOk ? "text-accent" : ""} aria-hidden />
+                Als Schnellrunde senden
+              </label>
+              <p className="text-[12.5px] text-ink-3">
+                {quickOk
+                  ? "Ein Tipp pro Aufgabe, kurze Rückmeldung, automatisch die nächste. Beim Senden wird geprüft, ob jede Aufgabe Multiple Choice mit höchstens vier Antworten ist; sonst bleibt es der übliche Ablauf. Versuche, Zeit und Hilfen werden genau wie sonst gespeichert."
+                  : QUICK_ROUND_CATEGORY_REASON}
+              </p>
+            </div>
+          </Abschnitt>
+
+          <Abschnitt title="Schulstufe" note={ctx ? `Aus dem Profil von ${ctx.first}; hier nur für diese Übung anders.` : undefined}>
+            <div className="grid max-w-[420px] grid-cols-2 gap-3">
+              <SchoolClassFields key={String(ctx?.studentId)} type={level.type} klasse={level.klasse} onChange={(type, klasse) => setLevel({ type, klasse })} />
+            </div>
+          </Abschnitt>
+
+          <Abschnitt title={aiEnabled ? "KI und Titel" : "Titel"}>
+            <div className="grid max-w-[560px] gap-4">
+              {aiEnabled && (
+                <>
+                  <label className="flex cursor-pointer items-center gap-2 text-[14px]">
+                    <input type="checkbox" name="use_ai" checked={useAI} onChange={(e) => setUseAI(e.target.checked)} className="accent-[var(--accent)]" />
+                    <Sparkles size={15} className={useAI ? "text-accent" : ""} aria-hidden />
+                    Mit KI erstellen
+                  </label>
+                  <label className="field">
+                    <span className="label">Hinweis an die KI (optional)</span>
+                    <textarea
+                      className="input min-h-[72px]"
+                      name="focus"
+                      placeholder={ctx?.errors[0] ? `z. B. besonders auf „${ctx.errors[0].label}“ achten` : "z. B. Textaufgaben mit Fußball"}
+                      disabled={!useAI}
+                    />
+                  </label>
+                </>
+              )}
+              <label className="field">
+                <span className="label">Titel (optional)</span>
+                <input className="input" name="title" placeholder="Wird sonst automatisch vergeben" />
+              </label>
+            </div>
+          </Abschnitt>
         </div>
-      </aside>
+      </details>
+
+      <div className="panel grid gap-3 px-4 py-4 sm:px-5" data-testid="erstellen">
+        {request && (
+          <div className="rounded-lg bg-paper px-3 py-2.5 text-[13px] text-ink-2">
+            <p className="text-ink">{request}</p>
+            {useAI && ctx && <p className="mt-1">Dazu bekommt die KI Lernstand, Schwächen, Ziele und häufigste Fehler, ohne Namen.</p>}
+            {!aiEnabled && <p className="mt-1">Ohne KI: Aufgaben aus den eingebauten Generatoren.</p>}
+          </div>
+        )}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Submit disabled={selected.length === 0} ai={useAI && aiEnabled} count={count} />
+          <EmptyButton />
+        </div>
+        <ManuellWaehrendErstellung />
+        {selected.length === 0 && <p className="text-[13px] text-ink-3">Wähle zuerst, was geübt werden soll.</p>}
+        {state?.error && (
+          <p className="text-[14px] text-red" role="alert">
+            {state.error}
+          </p>
+        )}
+      </div>
     </form>
   );
 }
@@ -512,6 +557,17 @@ function EigeneListen({ first, studentId, listen, chosen, onToggle }: { first: s
   );
 }
 
+/** Ein Abschnitt unter „Mehr Einstellungen“: Titel, Hinweis, Inhalt, ohne Nummer. */
+function Abschnitt({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
+  return (
+    <section aria-label={title}>
+      <h3 className="text-[16px] font-semibold tracking-[-0.01em]">{title}</h3>
+      {note && <p className="mt-0.5 text-[13px] text-ink-3">{note}</p>}
+      <div className="mt-3">{children}</div>
+    </section>
+  );
+}
+
 function Step({ n, title, note, children }: { n: number; title: string; note?: string; children: React.ReactNode }) {
   return (
     <li className="grid grid-cols-[28px_minmax(0,1fr)] gap-x-3">
@@ -549,7 +605,7 @@ function ContextCard({ ctx }: { ctx: StudentContext }) {
   if (ctx.errors.length) rows.push(["Häufige Fehler", ctx.errors.slice(0, 4).map((e) => `${e.label} (${e.count}×)`).join(" · ")]);
   if (ctx.strongSkills.length) rows.push(["Kann schon gut", ctx.strongSkills.slice(0, 3).map((s) => s.label).join(" · ")]);
   return (
-    <dl className="mt-4 grid gap-x-4 gap-y-1.5 rounded-lg border border-line bg-surface px-4 py-3 text-[13.5px] sm:grid-cols-[150px_minmax(0,1fr)]">
+    <dl className="mt-2 grid gap-x-4 gap-y-1.5 rounded-lg border border-line bg-surface px-4 py-3 text-[13.5px] sm:grid-cols-[150px_minmax(0,1fr)]">
       {rows.map(([k, v]) => (
         <div key={k} className="contents">
           <dt className="text-ink-3">{k}</dt>
@@ -564,7 +620,7 @@ function Submit({ disabled, ai, count }: { disabled: boolean; ai: boolean; count
   const { pending, data } = useFormStatus();
   const mine = pending && data?.get("mode") !== "leer";
   return (
-    <button className="btn btn-primary btn-lg w-full !whitespace-normal text-center" name="mode" value="generieren" disabled={disabled || pending}>
+    <button className="btn btn-primary btn-lg !whitespace-normal text-center" name="mode" value="generieren" disabled={disabled || pending}>
       <Sparkles size={17} aria-hidden />
       {mine ? (ai ? `Die KI erstellt ${count} Aufgaben …` : "Wird erstellt …") : "Übung erstellen und Vorschau zeigen"}
     </button>
