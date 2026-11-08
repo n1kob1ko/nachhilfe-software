@@ -100,7 +100,7 @@ export default async function MorePage() {
         <Avatar name={teacher.name} size={52} />
         <div className="min-w-0 flex-1">
           <div className="text-[17px] font-semibold">{teacher.name}</div>
-          <div className="text-[14px] text-ink-2">{teacher.is_admin ? "Verwaltung" : "Lehrkraft"}</div>
+          <div className="text-[14px] text-ink-2">{teacher.is_admin ? "Verwaltung" : "Lehrer"}</div>
         </div>
         <p className="flex items-center gap-2 text-[13px] text-ink-2">
           <Sparkles size={15} className="shrink-0 text-accent" aria-hidden />

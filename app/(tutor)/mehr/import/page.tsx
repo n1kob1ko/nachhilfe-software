@@ -21,7 +21,7 @@ export default async function ImportPage() {
     <>
       <PageHeader
         title="Import"
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         info="Dokumentation, Schüler und Lehrer aus einer CSV-Datei übernehmen. Zuerst wird geprüft und angezeigt, was passieren würde; geschrieben wird erst nach dem Bestätigen — und nur, wenn keine Zeile einen Fehler hat."
       />
 

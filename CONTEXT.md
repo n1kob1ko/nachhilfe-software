@@ -29,7 +29,7 @@ _Avoid_: Kind, Klient, Teilnehmer, Schüleraccount, Nutzer
 
 **Schüler-App**:
 Der geheime Link `/lernen/[token]` eines **Schülers**, am Handy auf den Home-Bildschirm gelegt.
-Zeigt seine Übungen und seine veröffentlichten Termine, ohne Namen. Kein eigenes Programm, kein
+Zeigt seine Übungen und seine veröffentlichten **Termine**, ohne Namen. Kein eigenes Programm, kein
 Konto ([docs/schueler-app.md](docs/schueler-app.md)).
 _Avoid_: Schüler-Account, Schülerportal
 
@@ -101,7 +101,13 @@ Ein Platz im Wochenplan: wer (Lehrer, Schüler), wo (Raum), an welchem Wochentag
 zu welcher Startzeit und mit welcher **geplanten Dauer**. Sie wird erst wirklich,
 wenn eine Einheit sich mit ihr verknüpft (`unit_id`); ein vergangener Platz ohne
 Einheit (auch keine nachgetragene) heißt in der Oberfläche „keine Einheit“ (intern `nichtStattgefunden`) und hat keine Abrechnungsfolge; „Nachtragen“ führt zum Formular. Die App sagt nie „ausgefallen“, denn sie weiß nicht, ob die Stunde ausfiel oder nur nicht dokumentiert wurde.
-_Avoid_: Termin, Slot, geplante Stunde, Lesson
+_Avoid_: Slot, geplante Stunde, Lesson; „Termin“ nur gegenüber Schülern (siehe *Termin*); „Platz“ ist das Wort der Planung, nie das der Schüler
+
+**Termin**:
+Eine **geplante Einheit** aus Sicht des Schülers und seiner Eltern: in der **Schüler-App** („Deine Termine“),
+in **Terminanfrage** und **Tauschbörse**. Lehrer-Seiten sagen Einheit oder geplante Einheit, die Planung sagt
+Platz; die drei Wörter meinen dieselbe Zeile in `geplante_einheiten`.
+_Avoid_: Stunde, Slot, Session
 
 **geplante Dauer**:
 Wie lange eine **geplante Einheit** dauern soll — je Schüler eingestellt,
@@ -441,7 +447,7 @@ frei: jedes Schulfach, auch einmalig, z. B. Biologie vor einem Test, ohne dass
 sich das Profil ändert. Lehrplan, Übungen und Lernstand je Fähigkeit gibt es nur
 für Mathematik, Deutsch und Englisch; eine Einheit in einem anderen Fach wird
 dokumentiert, aber nicht ausgewertet. Alle Fach-Felder wählen aus der
-**Fächerliste** (Mehr › Fächer, Tabelle `faecher`): die Verwaltung legt Fächer an
+**Fächerliste** (Erweitert › Fächer, Tabelle `faecher`): die Verwaltung legt Fächer an
 und deaktiviert sie, umbenannt wird nie; ein altes, frei eingetipptes Fach bleibt
 gültig.
 _Avoid_: Gegenstand, Unterrichtsgegenstand, Kurs
@@ -471,7 +477,7 @@ _Avoid_: Probetest, Übungsschularbeit, Testsimulation
 
 **Notenschlüssel**:
 Ab wie viel Prozent der Punkte es Sehr gut, Gut, Befriedigend und Genügend gibt. Einer für alle
-Probeschularbeiten, unter Mehr › Curriculum / Lehrplan › Einstellungen; der Vorschlag ist 87,5 / 75 / 62,5 /
+Probeschularbeiten, unter Erweitert › Curriculum / Lehrplan › Einstellungen; der Vorschlag ist 87,5 / 75 / 62,5 /
 50 %. Auf dem Blatt steht er als Punkte von–bis je Note.
 _Avoid_: Notenskala, Bewertungsschlüssel, Punkteschlüssel
 
@@ -610,6 +616,14 @@ Kopieren, der Lehrer fügt die Antwort ein, und die App prüft sie mit derselben
 Reparatur und Validierung wie eine Antwort über die API. Es entstehen keine
 Kosten.
 _Avoid_: Offline-Modus, ChatGPT-Modus, Copy-Paste-KI, Trockenlauf
+
+## Oberfläche
+
+**Erweitert**:
+Der fünfte Reiter der Lehrer-Oberfläche (Pfad `/mehr`): alles, was nicht Heute, Unterricht, Abschluss oder
+Schüler ist, nach Rolle geordnet (`lib/erweitert.ts`). Jeder Rücklink von dort heißt „← Erweitert“, jede
+Wegbeschreibung „Erweitert › …“. Der Pfad bleibt `/mehr`, das Wort nicht.
+_Avoid_: Mehr, Einstellungen, Menü, Verwaltung (das ist die Rolle)
 
 ## Regel: „Stunde“ ist eine Uhrzeit
 

@@ -56,7 +56,7 @@ export default async function DataQualityPage({ searchParams }: { searchParams: 
     <>
       <PageHeader
         title="Datenqualität"
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         info="Offizielle Lehrplandaten bleiben unverändert. Eigene Korrekturen werden getrennt gespeichert und lassen sich jederzeit zurücksetzen. Thema, Klassen, Voraussetzungen und Lehrplan-Verknüpfungen einer Fähigkeit korrigierst du auf ihrer Seite."
       />
       {sp.fehler && (

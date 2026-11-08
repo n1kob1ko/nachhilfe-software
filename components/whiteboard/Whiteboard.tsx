@@ -96,6 +96,10 @@ export default function Whiteboard(props: WhiteboardProps) {
   const [people, setPeople] = useState<Person[]>([]);
   const [panel, setPanel] = useState(false);
   const [pageMenu, setPageMenu] = useState(false);
+  // Handy (Audit 2026-11-07): eine Kopfzeile ← · Name · Seite ▾ · Feedback · Menü ▾ (nicht „Mehr“, das heißt schon der
+  // letzte Knopf der Werkzeugleiste); Seiten, Einfügen, Vollbild und
+  // Einheit beenden stecken dort in den zwei Menüs (CSS wb-only-phone / wb-hide-phone)
+  const [moreMenu, setMoreMenu] = useState(false);
   const [tool, setTool] = useState<QuickTool>("stift");
   const [fullscreen, setFullscreen] = useState(false);
   // iPhone Safari has no full screen for a page: there the button would do nothing (Generalprobe 2026-11-05).
@@ -769,7 +773,16 @@ export default function Whiteboard(props: WhiteboardProps) {
           </a>
         )}
         <div className="wb-title min-w-0">
-          <div className="truncate text-[15px] font-semibold leading-tight">{teacher ? `Whiteboard · ${props.studentName}` : "Whiteboard"}</div>
+          <div className="truncate text-[15px] font-semibold leading-tight">
+            {teacher ? (
+              <>
+                <span className="wb-hide-phone">Whiteboard · </span>
+                {props.studentName}
+              </>
+            ) : (
+              "Whiteboard"
+            )}
+          </div>
           <div className="flex items-center gap-1.5 text-[12px] text-ink-2" role="status" aria-live="polite">
             <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${status === "live" ? "bg-green" : status === "verbinde" ? "bg-amber" : "bg-red"}`} aria-hidden />
             <span className="min-w-0 truncate">
@@ -780,7 +793,7 @@ export default function Whiteboard(props: WhiteboardProps) {
           </div>
         </div>
 
-        <nav className="wb-pages flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" aria-label="Seiten">
+        <nav className={`wb-pages flex min-w-0 flex-1 items-center gap-1 overflow-x-auto ${teacher ? "wb-hide-phone" : ""}`} aria-label="Seiten">
           {teacher ? (
             <>
               {pages.map((p, i) => (
@@ -816,7 +829,7 @@ export default function Whiteboard(props: WhiteboardProps) {
         <div className="wb-actions flex flex-wrap items-center gap-1.5">
           {teacher && canWrite && (
             <>
-              <button className={`wb-btn wb-btn-wide ${panel ? "wb-btn-on" : ""}`} onClick={() => setPanel((v) => !v)} aria-expanded={panel} title="Aufgaben, Text, Formel, Tabelle oder kariertes Papier einfügen">
+              <button className={`wb-btn wb-btn-wide wb-hide-phone ${panel ? "wb-btn-on" : ""}`} onClick={() => setPanel((v) => !v)} aria-expanded={panel} title="Aufgaben, Text, Formel, Tabelle oder kariertes Papier einfügen">
                 <span aria-hidden>+</span> Einfügen
               </button>
               <div className="relative">
@@ -825,6 +838,17 @@ export default function Whiteboard(props: WhiteboardProps) {
                 </button>
                 {pageMenu && (
                   <div className="wb-menu" role="menu" onClick={() => setPageMenu(false)}>
+                    <div className="wb-only-phone wb-menu-group" role="group" aria-label="Seite wechseln">
+                      {pages.map((p, i) => (
+                        <button key={p.id} role="menuitem" className={p.id === viewPageId ? "wb-menu-on" : ""} aria-current={p.id === viewPageId ? "page" : undefined} onClick={() => showPage(p.id)}>
+                          <span className="num">{i + 1}</span> {p.title}
+                          {p.id === currentPageId && p.id !== viewPageId ? " (Schüler)" : ""}
+                        </button>
+                      ))}
+                      <button role="menuitem" onClick={() => void newPageWith("leer", `Seite ${pages.length + 1}`)}>
+                        + Neue Seite
+                      </button>
+                    </div>
                     <button role="menuitem" onClick={() => void pageOp("page.duplicate", { pageId: viewRef.current })}>
                       Seite duplizieren
                     </button>
@@ -850,6 +874,30 @@ export default function Whiteboard(props: WhiteboardProps) {
             </>
           )}
           {teacher && <FeedbackButton variant="tafel" />}
+          {teacher && canWrite && (
+            <div className="wb-only-phone relative">
+              <button className={`wb-btn wb-btn-wide ${moreMenu ? "wb-btn-on" : ""}`} onClick={() => setMoreMenu((v) => !v)} aria-expanded={moreMenu} title="Einfügen, Vollbild, Einheit beenden">
+                Menü <span aria-hidden>▾</span>
+              </button>
+              {moreMenu && (
+                <div className="wb-menu" role="menu" onClick={() => setMoreMenu(false)}>
+                  <button role="menuitem" onClick={() => setPanel((v) => !v)}>
+                    {panel ? "Einfügen schließen" : "Einfügen …"}
+                  </button>
+                  {canFullscreen && (
+                    <button role="menuitem" onClick={toggleFullscreen}>
+                      {fullscreen ? "Vollbild beenden" : "Vollbild"}
+                    </button>
+                  )}
+                  {props.endUnit && running && (
+                    <button role="menuitem" onClick={() => setEndeFrage(true)} data-testid="wb-einheit-beenden-handy">
+                      Einheit beenden …
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {canFullscreen && (
             <button className="wb-btn wb-hide-phone" onClick={toggleFullscreen} aria-label={fullscreen ? "Vollbild beenden" : "Vollbild"} title={fullscreen ? "Vollbild beenden" : "Vollbild: nur das Whiteboard zeigen"}>
               {fullscreen ? "⤡" : "⤢"}
@@ -857,7 +905,7 @@ export default function Whiteboard(props: WhiteboardProps) {
           )}
           {teacher && props.endUnit && running && canWrite && (
             // Audit 2026-11-07: nicht mehr der einzige blaue Knopf am Handy, und erst eine Rückfrage statt sofort beenden
-            <button className="wb-btn wb-btn-wide" title="Einheit beenden, die Dokumentation schreibt sich selbst" onClick={() => setEndeFrage(true)} data-testid="wb-einheit-beenden">
+            <button className="wb-btn wb-btn-wide wb-hide-phone" title="Einheit beenden, die Dokumentation schreibt sich selbst" onClick={() => setEndeFrage(true)} data-testid="wb-einheit-beenden">
               Einheit beenden
             </button>
           )}

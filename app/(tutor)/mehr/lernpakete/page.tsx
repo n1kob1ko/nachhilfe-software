@@ -70,7 +70,7 @@ export default async function LernpaketePage({ searchParams }: { searchParams: P
   return (
     <>
       <PageHeader
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         title="Lernpakete"
         info="Eine vorbereitete Einheit zu einem Thema, für viele Schüler: Ablauf mit Minuten, was du sagst und fragst, erwartete Antworten, was bei Fehlern hilft, Aufgaben mit Lösungen. Importierte und von der KI entworfene Pakete sind ungeprüft, bis du sie durchgehst und „Geprüft“ tippst."
         actions={

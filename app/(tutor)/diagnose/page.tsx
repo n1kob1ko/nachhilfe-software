@@ -63,7 +63,7 @@ export default async function DiagnosePage({ searchParams }: { searchParams: Pro
   return (
     <>
       <PageHeader
-        back={student ? { href: `/schueler/${student.id}?tab=fortschritt`, label: student.name } : { href: "/mehr", label: "Mehr" }}
+        back={student ? { href: `/schueler/${student.id}?tab=fortschritt`, label: student.name } : { href: "/mehr", label: "Erweitert" }}
         title={student ? `Diagnose für ${first}` : "Diagnose"}
         info="Ein kurzer Test mit 5 bis 10 Aufgaben, wenn du den Stand noch nicht kennst. Leichte, mittlere und schwere Aufgaben zu den gewählten Themen. Die Antworten zählen normal zum Lernstand und sind als Diagnose markiert."
       />

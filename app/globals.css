@@ -631,6 +631,21 @@ textarea.input {
 .wb-menu button:disabled {
   opacity: 0.4;
 }
+.wb-menu button.wb-menu-on {
+  background: var(--accent-wash);
+  font-weight: 600;
+}
+/* phone only (Audit 2026-11-07): the page list inside „Seite ▾“ and the „Mehr ▾“ menu */
+.wb-only-phone {
+  display: none;
+}
+.wb-menu-group {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 6px;
+}
 .wb-quick {
   position: absolute;
   bottom: max(12px, env(safe-area-inset-bottom));
@@ -737,7 +752,12 @@ textarea.input {
     font-size: 14px;
     padding: 0 10px;
   }
-  /* header in two rows: ← name · pages, then the actions */
+  /* header in one row (Audit 2026-11-07): ← · name · Seite ▾ · Feedback · Menü ▾; the teacher's page tabs,
+     Einfügen, Vollbild and Einheit beenden move into the two menus */
+  .wb-header {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
   .wb-header .wb-title {
     flex: 1 1 0;
   }
@@ -746,10 +766,16 @@ textarea.input {
     max-width: 45%;
   }
   .wb-header .wb-actions {
-    flex-basis: 100%;
+    flex: 0 0 auto;
   }
   .wb-hide-phone {
     display: none;
+  }
+  .wb-only-phone {
+    display: block;
+  }
+  .wb-menu .wb-only-phone {
+    display: grid;
   }
 }
 .wb-ico {
@@ -972,6 +998,10 @@ textarea.input {
   display: none !important;
 }
 .wb-root .excalidraw .HintViewer {
+  display: none !important;
+}
+/* phone: the drawing library's own floating lock and hand tools only double our „Schieben“ (Audit 2026-11-07) */
+.wb-root .excalidraw .mobile-misc-tools-container {
   display: none !important;
 }
 

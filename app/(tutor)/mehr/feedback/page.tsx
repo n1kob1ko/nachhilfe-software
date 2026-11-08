@@ -31,7 +31,7 @@ export default async function FeedbackPage({ searchParams }: { searchParams: Pro
     <>
       <PageHeader
         title="Feedback"
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         info={
           admin
             ? "Alles, was Lehrkräfte mit dem Feedback-Knopf geschickt haben. Seite, Bildschirm und Fehler im Browser kommen von selbst mit. „Offene kopieren“ gibt alle offenen Punkte als einen Text, zum Weitergeben."
@@ -75,7 +75,7 @@ function Punkt({ f, admin }: { f: Feedback; admin: boolean }) {
     <li className="rounded-[18px] border border-line bg-surface p-4 shadow-[var(--shadow-card)] sm:p-5">
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13.5px]">
         <Pill tone={ART_TON[f.art]}>{FEEDBACK_ARTEN[f.art]}</Pill>
-        {admin && <span className="font-semibold">{f.teacher_name || "Lehrkraft"}</span>}
+        {admin && <span className="font-semibold">{f.teacher_name || "Lehrer"}</span>}
         <span className="num text-ink-3">{wann(f.created_at)}</span>
         {f.status === "erledigt" && f.erledigt_at && <Pill tone="green">erledigt {formatDate(f.erledigt_at, { day: "numeric", month: "short" })}</Pill>}
       </div>

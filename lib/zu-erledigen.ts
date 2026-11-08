@@ -54,7 +54,7 @@ export type Punkt =
   | (Basis & { art: "hausuebung"; beschreibung: string; uebung: string | null })
   | (Basis & { art: "text"; titel: string })
   | (Basis & { art: "bewertung"; titel: string; vorschlag: boolean })
-  | (Basis & { art: "terminanfrage"; aufgabe: "bestaetigen" | "zustimmen" | "ansehen"; beschreibung: string })
+  | (Basis & { art: "terminanfrage"; aufgabe: "bestaetigen" | "zustimmen"; beschreibung: string })
   | (Basis & { art: "einreichung"; titel: string; pruefungsDatum: string | null; zuPruefen: boolean; uebernommen: boolean });
 
 // ---------- der Zustand, rein aus den Daten ----------

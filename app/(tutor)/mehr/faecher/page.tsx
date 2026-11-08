@@ -40,7 +40,7 @@ export default async function FaecherPage({ searchParams }: { searchParams: Prom
     <>
       <PageHeader
         title="Fächer"
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         info="Aus dieser Liste wählen alle Fach-Felder: Profil, Einheit, Hausübung, Schularbeit, aktueller Stoff, Material und Texte. Übungen, Lehrplan und Lernstand gibt es für Mathematik, Deutsch und Englisch; jedes andere Fach wird dokumentiert und geplant."
       />
 

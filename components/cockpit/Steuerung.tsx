@@ -64,8 +64,10 @@ function KnopfAktion({ k, unitId, schrittId, primary, hinweis = null }: { k: Kno
  * Antworten: Kehrwert vergessen · Brüche dividieren“), einem Hauptknopf und unter „Andere Möglichkeit“ dem Rest: die übrigen Wege,
  * neue Aufgaben der KI nur dort und mit Kosten, und „Nicht nötig“. Der KI-Hinweis der Live-Analyse steht darunter als
  * Zusatz, nie an Stelle des Vorschlags. Kommt mit jeder neuen Antwort neu (die Gerätezeile lädt die Seite nach).
+ * `imSchritt`: in der Schrittkarte; „eingebettet“: als unterer Teil der Hilfe nach „Schüler versteht es nicht“ (Audit
+ * 2026-11-07: eine Karte statt zwei Boxen übereinander).
  */
-export function VorschlagKarte({ a, unitId, schrittId, imSchritt = false }: { a: Anzeige; unitId: number; schrittId: number | null; imSchritt?: boolean }) {
+export function VorschlagKarte({ a, unitId, schrittId, imSchritt = false }: { a: Anzeige; unitId: number; schrittId: number | null; imSchritt?: boolean | "eingebettet" }) {
   // neue Aufgaben der KI zu C (lib/ki-nachschub.ts): von selbst im Budget der Einheit, immer erst als Vorschau; dann ohne den Knopf C
   const n = nachschubImVorschlag(unitId, schrittId, a);
   const vorschau = n?.eintrag?.status === "bereit" ? n.eintrag : null;
@@ -77,7 +79,13 @@ export function VorschlagKarte({ a, unitId, schrittId, imSchritt = false }: { a:
       aria-label="Vorschlag"
       data-testid="vorschlag"
       data-ausloeser={a.ausloeser}
-      className={imSchritt ? "mt-4 rounded-xl border border-accent/30 bg-accent-wash/60 px-3 py-3" : "panel border-l-4 border-l-accent px-4 py-3 sm:px-5"}
+      className={
+        imSchritt === "eingebettet"
+          ? "mt-1 rounded-lg border border-accent/30 bg-surface/80 px-3 py-2.5"
+          : imSchritt
+            ? "mt-4 rounded-xl border border-accent/30 bg-accent-wash/60 px-3 py-3"
+            : "panel border-l-4 border-l-accent px-4 py-3 sm:px-5"
+      }
     >
       <div className="grid gap-2.5 sm:flex sm:flex-wrap sm:items-center sm:gap-x-4">
         <p className="min-w-0 text-[15.5px] sm:flex-1">

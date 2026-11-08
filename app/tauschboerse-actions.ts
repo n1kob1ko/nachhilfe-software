@@ -1,8 +1,8 @@
 "use server";
 
 /**
- * Server Actions der Tauschbörse (lib/planung/tauschboerse.ts) und der Verwaltung dazu (markiereGesehen,
- * tauscheZurueck in lib/planung/terminanfragen.ts). Dünne Hüllen: wer handelt, weitergeben, mit Rückmeldung zurück.
+ * Server Actions der Tauschbörse (lib/planung/tauschboerse.ts) und der Verwaltung dazu (tauscheZurueck in
+ * lib/planung/terminanfragen.ts). Dünne Hüllen: wer handelt, weitergeben, mit Rückmeldung zurück.
  */
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -55,13 +55,6 @@ export async function nimmAngebotAction(token: string, angebotId: number, platzI
 
 function sichererPfad(raw: string, fallback: string): string {
   return raw.startsWith("/") && !raw.startsWith("//") ? raw : fallback;
-}
-
-export async function tauschGesehenAction(id: number, formData: FormData) {
-  const me = await requireTeacher();
-  const e = ta.markiereGesehen(me, id);
-  revalidatePath("/", "layout");
-  redirect(zurueckZu(sichererPfad(String(formData.get("zurueck") ?? ""), "/planung"), e, "terminanfragen"));
 }
 
 export async function tauscheZurueckAction(id: number, formData: FormData) {

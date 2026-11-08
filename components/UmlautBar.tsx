@@ -4,8 +4,9 @@ import { flushSync } from "react-dom";
 import type { RefObject } from "react";
 
 /**
- * Umlautleiste für Textantworten: ä ö ü ß Ä Ö Ü. Eine Tablet-Tastatur gibt sie oft nicht her, und ohne
- * sie lässt sich ein deutscher Text nicht schreiben (Idee aus Artikel Trainers `keyboard_logic.js`).
+ * Umlautleiste für Textantworten: ä ö ü ß Ä Ö Ü, für eine Laptop-Tastatur ohne Umlaute (Idee aus Artikel
+ * Trainers `keyboard_logic.js`). Audit 2026-11-07: auf Tablet und Handy ist sie ausgeblendet (`pointer-coarse:hidden`),
+ * die Bildschirmtastatur hat die Umlaute selbst (langes Drücken auf a, o, u, s) und die Reihe nahm nur Platz weg.
  *
  * Dieselbe Bauart wie die Zeichenleiste für Rechenaufgaben (`components/MathAnswer.tsx`, SignBar): der
  * Knopf schreibt an der Schreibmarke in das Feld, das zuletzt den Fokus hatte, und lässt den Fokus dort
@@ -34,7 +35,7 @@ export function UmlautBar({ target, className = "" }: { target: RefObject<TextTa
     t.el.setSelectionRange(caret, caret);
   };
   return (
-    <div className={`flex flex-wrap gap-1.5 ${className}`} role="toolbar" aria-label="Umlaute">
+    <div className={`flex flex-wrap gap-1.5 pointer-coarse:hidden ${className}`} role="toolbar" aria-label="Umlaute">
       {UMLAUTS.map((u) => (
         <button
           key={u}

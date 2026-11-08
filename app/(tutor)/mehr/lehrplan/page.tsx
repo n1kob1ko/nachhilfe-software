@@ -32,7 +32,7 @@ export default async function CurriculumPage({ searchParams }: { searchParams: P
     <>
       <PageHeader
         title="Lehrplan"
-        back={{ href: "/mehr", label: "Mehr" }}
+        back={{ href: "/mehr", label: "Erweitert" }}
         info="Österreichische Lehrpläne, Quellen und Lizenzen. Fähigkeiten und Lernstand bauen darauf auf. Lehrplandaten kommen nur aus geprüften Quellen und werden mit Vorschau importiert."
       />
       <nav className="no-print mb-8 flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-panel p-1" aria-label="Bereiche">

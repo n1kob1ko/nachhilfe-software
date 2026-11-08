@@ -26,22 +26,13 @@ import { getUnit } from "@/lib/units";
 /** Die Uhrzeit eines Eintrags in Wien („14:32“); gespeichert ist UTC (datetime('now')). */
 const uhrzeit = (at: string) => new Date(`${at.replace(" ", "T")}Z`).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Vienna" });
 
-/** Ein Knopf, der (noch) nicht geht: grau, mit dem Grund als Titel. */
-function Aus({ icon, label, grund }: { icon: React.ReactNode; label: string; grund: string }) {
-  return (
-    <button type="button" className="btn btn-secondary w-full sm:w-fit" disabled title={grund}>
-      {icon} {label}
-    </button>
-  );
-}
-
 /**
  * **Anpassen** am Schritt (lib/knoepfe.ts): ein Knopf in der Reihe von Weiter, Wiederholen und „versteht es nicht“, der die fünf
  * Lehrer-Knöpfe aufklappt. Zugeklappt eine Zeile; aufgeklappt nimmt er auf dem Laptop die ganze Breite. Alles ohne KI; nur
- * „Einfacher erklären“ bietet danach die KI an, wenn nichts Einfacheres gespeichert ist, mit Kosten.
+ * „Einfacher erklären“ bietet danach die KI an, wenn nichts Einfacheres gespeichert ist, mit Kosten. Ein Knopf, der an
+ * diesem Schritt nicht geht, fehlt (Audit 2026-11-07: nicht mehr ausgegraut); der Grund steht als Zeile darunter.
  */
 export function AnpassenMenue({ unitId, schrittId, skill, thema, offen = false }: { unitId: number; schrittId: number; skill: boolean; thema: boolean; offen?: boolean }) {
-  const ohne = "Zu diesem Schritt gibt es keine Fähigkeit.";
   const vorschau = (k: "schwerer" | "thema") => `/einheiten/${unitId}?knopf=${k}#knopf`;
   // the reason for grey buttons as a line, not only as a tooltip (a tablet shows no tooltip)
   const grund =
@@ -59,28 +50,14 @@ export function AnpassenMenue({ unitId, schrittId, skill, thema, offen = false }
         <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden />
       </summary>
       <div className="mt-2 grid gap-2 rounded-xl border border-line p-2 sm:flex sm:flex-wrap" data-testid="anpassen-knoepfe">
-        {skill ? (
-          <VorschlagKnopf action={einfacherAction.bind(null, unitId, schrittId)} label={KNOPF_LABEL.einfacher} icon={<Lightbulb size={17} aria-hidden />} testid="knopf-einfacher" laeuft="Einen Moment …" />
-        ) : (
-          <Aus icon={<Lightbulb size={17} aria-hidden />} label={KNOPF_LABEL.einfacher} grund={ohne} />
-        )}
-        {skill ? (
-          <VorschlagKnopf action={beispieleAction.bind(null, unitId, schrittId)} label={KNOPF_LABEL.beispiele} icon={<ListPlus size={17} aria-hidden />} testid="knopf-beispiele" laeuft="Einen Moment …" />
-        ) : (
-          <Aus icon={<ListPlus size={17} aria-hidden />} label={KNOPF_LABEL.beispiele} grund={ohne} />
-        )}
-        {skill ? (
+        {skill && <VorschlagKnopf action={einfacherAction.bind(null, unitId, schrittId)} label={KNOPF_LABEL.einfacher} icon={<Lightbulb size={17} aria-hidden />} testid="knopf-einfacher" laeuft="Einen Moment …" />}
+        {skill && <VorschlagKnopf action={beispieleAction.bind(null, unitId, schrittId)} label={KNOPF_LABEL.beispiele} icon={<ListPlus size={17} aria-hidden />} testid="knopf-beispiele" laeuft="Einen Moment …" />}
+        {skill && (
           <Link href={vorschau("schwerer")} className="btn btn-secondary w-full sm:w-fit" data-testid="knopf-schwerer">
             <ArrowUp size={17} aria-hidden /> {KNOPF_LABEL.schwerer}
           </Link>
-        ) : (
-          <Aus icon={<ArrowUp size={17} aria-hidden />} label={KNOPF_LABEL.schwerer} grund={ohne} />
         )}
-        {thema ? (
-          <VorschlagKnopf action={themaVerstandenAction.bind(null, unitId, schrittId)} label={KNOPF_LABEL.verstanden} icon={<Check size={17} aria-hidden />} testid="knopf-verstanden" laeuft="Einen Moment …" />
-        ) : (
-          <Aus icon={<Check size={17} aria-hidden />} label={KNOPF_LABEL.verstanden} grund="Dieser Schritt gehört zu keinem Thema." />
-        )}
+        {thema && <VorschlagKnopf action={themaVerstandenAction.bind(null, unitId, schrittId)} label={KNOPF_LABEL.verstanden} icon={<Check size={17} aria-hidden />} testid="knopf-verstanden" laeuft="Einen Moment …" />}
         <Link href={vorschau("thema")} className="btn btn-secondary w-full sm:w-fit" data-testid="knopf-thema">
           <Repeat size={17} aria-hidden /> {KNOPF_LABEL.thema}
         </Link>

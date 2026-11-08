@@ -70,7 +70,7 @@ function Freigegeben({ v, name }: { v: Vorschlag; name: string }) {
         {zusammenfassung(themen)}
         {v.faellig && <span className="num">, fällig {shortDate(v.faellig)}</span>}
       </p>
-      <p className="text-[14px] text-ink-2">Steht im Schülerportal von {name}. Erledigt zählt, sobald die Übung fertig ist.</p>
+      <p className="text-[14px] text-ink-2">Steht in der Schüler-App von {name}. Erledigt zählt, sobald die Übung fertig ist.</p>
       {v.worksheetId && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <Link href={`/arbeitsblatt/${v.worksheetId}`} target="_blank" className="btn btn-secondary btn-sm" data-testid="hausuebung-drucken">
