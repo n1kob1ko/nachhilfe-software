@@ -186,7 +186,7 @@ export function ReadingBuilderForm({ students, studentId, aiEnabled }: { student
         </Step>
       </ol>
 
-      <aside className="grid content-start gap-4 xl:sticky xl:top-6">
+      <aside className="grid min-w-0 content-start gap-4 xl:sticky xl:top-6">
         <div className="panel grid gap-3 px-4 py-4">
           <p className="flex items-center gap-2 font-semibold">
             <BookOpenText size={17} className="text-accent" aria-hidden /> So geht es weiter
@@ -213,7 +213,7 @@ function Submit({ ai }: { ai: boolean }) {
   return (
     <button className="btn btn-primary btn-lg" disabled={pending}>
       <Sparkles size={17} aria-hidden />
-      {pending ? (ai ? "Die KI schreibt …" : "Wird erstellt …") : "Übung erstellen und Vorschau zeigen"}
+      {pending ? (ai ? "Die KI schreibt …" : "Wird erstellt …") : "Übung erstellen"}
     </button>
   );
 }

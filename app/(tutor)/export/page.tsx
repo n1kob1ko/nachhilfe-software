@@ -106,7 +106,7 @@ export default async function ExportPage() {
             <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 text-[13px] sm:grid-cols-3">
               {Object.entries(counts).map(([t, c]) => (
                 <div key={t} className="flex justify-between gap-3 border-b border-line py-1">
-                  <dt>{TABLE_LABEL[t] ?? t}</dt>
+                  <dt className="min-w-0 [overflow-wrap:anywhere]">{TABLE_LABEL[t] ?? t}</dt>
                   <dd className="num font-semibold text-ink">{c}</dd>
                 </div>
               ))}

@@ -12,7 +12,9 @@ export const metadata: Metadata = {
   description: "Nachhilfe-Software: Schülerprofile, Dokumentation jeder Einheit, Übungen, Fortschritt und Empfehlungen.",
 };
 
-export const viewport: Viewport = { themeColor: "#f5f8fc" };
+// viewport-fit=cover: nur damit liefert das iPhone env(safe-area-inset-*), sodass die Leiste unten über dem Home-Balken sitzt
+// (components/Nav.tsx) und nichts unter dem Rand oder neben der Kerbe liegt (app/globals.css, body).
+export const viewport: Viewport = { themeColor: "#f5f8fc", viewportFit: "cover" };
 
 // Dunkelmodus: die gemerkte Wahl kommt vor dem ersten Bild ans <html>, sonst blitzt die Seite kurz hell auf.
 // Der Knopf dazu ist components/ThemeToggle.tsx; ohne Wahl bleibt es hell.

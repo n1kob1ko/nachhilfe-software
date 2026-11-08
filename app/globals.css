@@ -183,6 +183,11 @@ html {
 }
 body {
   background: var(--paper);
+  /* iPhone (viewport-fit=cover in app/layout.tsx): nichts unter der Statusleiste oder neben der Kerbe; unten
+     sorgen die Leiste (components/Nav.tsx) und die Seiten selbst für den Abstand zum Home-Balken */
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 h1,
 h2,
@@ -426,9 +431,12 @@ textarea.input {
 .kennzahl-zusatz {
   font-size: 13px;
   color: var(--ink-2);
+  /* umbrechen statt abschneiden, höchstens zwei Zeilen: am Handy stand „7 gehalten · 4 ohne Ei…“ */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 /* Die erste Kennzahl auf Heute in Blau (wie die Bühne), nur wenn keine Einheit läuft: dann gibt es keine zweite Bühne. */
 .kennzahl.kennzahl-voll {
@@ -445,6 +453,11 @@ textarea.input {
 .kennzahl.kennzahl-voll:hover {
   border-color: transparent;
   filter: brightness(1.04);
+}
+/* Breite Tabellen scrollen in ihrem Kasten. Ohne contain zählt Chrome am Handy den verdeckten Teil trotzdem zur
+   Seitenbreite und zieht die ganze Ansicht auseinander (Schüler › Übungen & Verlauf wurde 590 px breit). */
+.overflow-x-auto {
+  contain: paint;
 }
 /* kleine Überschrift über einer Gruppe (Mehr, Listen) */
 .gruppe-titel {
@@ -547,6 +560,10 @@ textarea.input {
 
 /* ---------- Whiteboard ---------- */
 .wb-root {
+  /* liegt über dem body, darum eigene Ränder für Kerbe und Statusleiste */
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
   touch-action: none;
   -webkit-user-select: none;
   user-select: none;

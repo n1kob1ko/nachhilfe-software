@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   };
 }
 
-export const viewport: Viewport = { themeColor: "#f5f8fc" };
+export const viewport: Viewport = { themeColor: "#f5f8fc", viewportFit: "cover" };
 
 export default async function LearnLayout({ children, params }: { children: React.ReactNode; params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -40,7 +40,7 @@ export default async function LearnLayout({ children, params }: { children: Reac
           </span>
         </div>
       </header>
-      <main className="mx-auto max-w-[860px] px-4 py-6 has-[.lesen-breit]:max-w-[1320px] md:py-10">{children}</main>
+      <main className="mx-auto max-w-[860px] px-4 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] has-[.lesen-breit]:max-w-[1320px] md:py-10">{children}</main>
     </div>
   );
 }
