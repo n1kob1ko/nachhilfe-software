@@ -5,7 +5,8 @@
  * Tutoring-Plattform): Tage Mo–So als Spalten, Zeit in Schritten von 15 Minuten. Ziehen markiert
  * mehrere Felder auf einmal. Gespeichert wird das JSON aus `lib/planung/verfuegbarkeit.ts`
  * (ISO 1 = Montag … 7 = Sonntag, Minuten ab Mitternacht) — die Umrechnung der Wochentage passiert
- * ausschließlich in `lib/planung/zeit.ts`.
+ * ausschließlich in `lib/planung/zeit.ts`. Audit 2026-11-07: die Felder sind auf Touch-Geräten höher (28 px),
+ * damit man sie mit dem Finger trifft.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Eraser, MousePointerClick } from "lucide-react";
@@ -224,7 +225,7 @@ export function VerfuegbarkeitEditor({
                           if (readOnly || ziehen === null) return;
                           if (rasterRef.current[schluessel].has(feld) !== ziehen) setzen(schluessel, feld, ziehen);
                         }}
-                        className={`block h-4 w-full rounded-[4px] border transition-colors ${
+                        className={`block h-5 w-full rounded-[4px] border transition-colors pointer-coarse:h-7 ${
                           belegt ? "border-accent bg-accent-bright" : "border-line bg-paper hover:bg-accent-wash"
                         } ${readOnly ? "cursor-default" : "cursor-pointer"}`}
                       />
