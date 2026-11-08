@@ -171,6 +171,24 @@ export function Reveal({ label, children, className = "" }: { label: React.React
   );
 }
 
+/**
+ * Ein Formular hinter einem Knopf (Einfachheits-Audit 2026-11-07: Formulare stehen zu, bis man sie braucht). Der Knopf
+ * sieht aus wie ein Zweitknopf, offen steht das Formular darunter. `open` klappt es von Anfang an auf, etwa wenn die
+ * Seite sonst leer wäre.
+ */
+export function Aufklappen({ label, icon, open, id, testid, className = "", children }: { label: React.ReactNode; icon?: React.ReactNode; open?: boolean; id?: string; testid?: string; className?: string; children: React.ReactNode }) {
+  return (
+    <details className={`group/auf ${className}`} open={open} id={id} data-testid={testid}>
+      <summary className="btn btn-secondary cursor-pointer list-none group-open/auf:mb-3 [&::-webkit-details-marker]:hidden">
+        {icon}
+        {label}
+        <ChevronDown size={15} aria-hidden className="transition-transform group-open/auf:rotate-180" />
+      </summary>
+      {children}
+    </details>
+  );
+}
+
 /** Shows the first `limit` items; the rest sit behind "+n mehr". */
 export function More({ items, limit = 3, empty = "–", className = "space-y-1" }: { items: React.ReactNode[]; limit?: number; empty?: React.ReactNode; className?: string }) {
   if (!items.length) return <p className="text-[14px] text-ink-3">{empty}</p>;

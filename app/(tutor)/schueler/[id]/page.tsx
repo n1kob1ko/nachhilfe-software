@@ -20,7 +20,7 @@ import { Pruefliste } from "@/components/Pruefliste";
 import { cancelExamAction, setExamResultAction } from "@/app/curriculum-actions";
 import { SchuelerAppLink } from "@/components/SchuelerAppLink";
 import { ProgressChart } from "@/components/ProgressChart";
-import { Empty, LevelTag, MasteryBar, More, Pill, Reveal, SectionTitle, StatusChip, TrendBadge, formatDate, formatDuration, formatTime, masteryLevel } from "@/components/ui";
+import { Aufklappen, Empty, LevelTag, MasteryBar, More, Pill, Reveal, SectionTitle, StatusChip, TrendBadge, formatDate, formatDuration, formatTime, masteryLevel } from "@/components/ui";
 import { Info } from "@/components/Info";
 import { aiEnabled } from "@/lib/ai";
 import { type Analysis, pct } from "@/lib/analysis";
@@ -799,6 +799,17 @@ function CurrentMaterialTab({ student, edit }: { student: repo.Student; edit: nu
   // topic is another topic, not the Unterthema, and the full text stays visible above the form
   const pTopic = profileTopic(student.current_topics);
   const fromProfile = active.length === 0 && pTopic ? { subject: open[0] ?? subjects[0], topic: pTopic, subtopic: "", skill_ids: [], since: today, priority: 2, note: "", source: "unterricht" } : undefined;
+  const formular = (
+    <MaterialForm
+      key={editing?.id ?? "neu"}
+      studentId={student.id}
+      subjects={editing ? [editing.subject] : [...open, ...subjects.filter((x) => !open.includes(x))]}
+      weitere={editing ? [] : weitereFaecher(subjects)}
+      skills={skills}
+      today={today}
+      initial={editing ? { ...editing } : fromProfile}
+    />
+  );
   return (
     <div className="grid max-w-[920px] gap-10">
       <section aria-label="Aktueller Stoff">
@@ -853,36 +864,38 @@ function CurrentMaterialTab({ student, edit }: { student: repo.Student; edit: nu
         </ul>
       </section>
 
+      {/* Audit 2026-11-07: das Formular steht hinter einem Knopf; offen nur beim Bearbeiten und solange noch kein Stoff da ist */}
       <section aria-label={editing ? "Stoff bearbeiten" : "Neuer Stoff"}>
-        <SectionTitle>{editing ? `${editing.subject}: Stoff bearbeiten` : active.length ? "Neuer Stoff" : "Stoff festlegen"}</SectionTitle>
-        {!editing && active.length > 0 && <p className="-mt-1 mb-3 text-[13.5px] text-ink-2">Ein neuer Stoff im selben Fach ersetzt den bisherigen; der kommt in den Verlauf.</p>}
-        <MaterialForm
-          key={editing?.id ?? "neu"}
-          studentId={student.id}
-          subjects={editing ? [editing.subject] : [...open, ...subjects.filter((x) => !open.includes(x))]}
-          weitere={editing ? [] : weitereFaecher(subjects)}
-          skills={skills}
-          today={today}
-          initial={editing ? { ...editing } : fromProfile}
-        />
+        {editing ? (
+          <>
+            <SectionTitle>{`${editing.subject}: Stoff bearbeiten`}</SectionTitle>
+            {formular}
+          </>
+        ) : (
+          <Aufklappen label={active.length ? "Neuen Stoff eintragen" : "Stoff festlegen"} icon={<Plus size={15} aria-hidden />} open={active.length === 0} testid="stoff-formular">
+            {active.length > 0 && <p className="mb-3 text-[13.5px] text-ink-2">Ein neuer Stoff im selben Fach ersetzt den bisherigen; der kommt in den Verlauf.</p>}
+            {formular}
+          </Aufklappen>
+        )}
       </section>
 
       {history.length > 0 && (
         <section aria-label="Verlauf">
-          <SectionTitle>Verlauf</SectionTitle>
-          <ul className="panel divide-y divide-line">
-            {history.map((h) => (
-              <li key={h.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-2.5 text-[14px]">
-                <span>
-                  <span className="text-ink-2">{h.subject}:</span> <span className="font-medium">{materialLabel(h)}</span>
-                  {h.subtopic && <span className="text-ink-3"> ({h.topic})</span>}
-                </span>
-                <span className="num text-[13px] text-ink-3">
-                  {formatDate(h.since, { day: "numeric", month: "short" })} – {formatDate(h.ended_at!, { day: "numeric", month: "short" })}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <Reveal label={`Früherer Stoff (${history.length})`}>
+            <ul className="panel divide-y divide-line">
+              {history.map((h) => (
+                <li key={h.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-2.5 text-[14px]">
+                  <span>
+                    <span className="text-ink-2">{h.subject}:</span> <span className="font-medium">{materialLabel(h)}</span>
+                    {h.subtopic && <span className="text-ink-3"> ({h.topic})</span>}
+                  </span>
+                  <span className="num text-[13px] text-ink-3">
+                    {formatDate(h.since, { day: "numeric", month: "short" })} – {formatDate(h.ended_at!, { day: "numeric", month: "short" })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Reveal>
         </section>
       )}
     </div>
@@ -1000,7 +1013,10 @@ function School({ student }: { student: repo.Student }) {
             <span className="text-[13.5px] text-ink-2">Probeschularbeit oder Test auf Papier fotografieren. Die KI liest es aus, du prüfst und übernimmst.</span>
           </span>
         </Link>
-        <ExamForm studentId={student.id} subjects={subjects} weitere={weitereFaecher(subjects)} today={today} kiLiest={stoffzettelLesbar().ok} />
+        {/* Audit 2026-11-07: das Formular steht hinter einem Knopf, die Liste darüber bleibt kurz */}
+        <Aufklappen label="Prüfung eintragen" icon={<Plus size={15} aria-hidden />} testid="pruefung-formular">
+          <ExamForm studentId={student.id} subjects={subjects} weitere={weitereFaecher(subjects)} today={today} kiLiest={stoffzettelLesbar().ok} />
+        </Aufklappen>
         <h3 className="mt-8 mb-1 text-[15px] font-semibold">Ergebnisse</h3>
         <ul className="divide-y divide-line">
           {written.length === 0 && <li className="py-2 text-[14px] text-ink-3">Noch keine Ergebnisse eingetragen.</li>}
@@ -1101,31 +1117,33 @@ function School({ student }: { student: repo.Student }) {
             );
           })}
         </ul>
-        <form action={addHomeworkAction} className="panel grid gap-3 px-4 py-4">
-          <input type="hidden" name="student_id" value={student.id} />
-          <label className="field">
-            <span className="label">Neue Hausübung</span>
-            <input className="input" name="description" required placeholder="z. B. Buch S. 84, Nr. 3–7" />
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <FachFeld id="hausuebung" eigene={subjects} wert={subjects[0]} ariaLabel="Fach" />
-            <input className="input" type="date" name="due_date" aria-label="Fällig am" />
-          </div>
-          {offeneUebungen.length > 0 && (
+        <Aufklappen label="Hausübung eintragen" icon={<Plus size={15} aria-hidden />} testid="hausuebung-formular">
+          <form action={addHomeworkAction} className="panel grid gap-3 px-4 py-4">
+            <input type="hidden" name="student_id" value={student.id} />
             <label className="field">
-              <span className="label">Gehört zur Übung (optional)</span>
-              <select className="input" name="assignment_id" defaultValue="">
-                <option value="">keine</option>
-                {offeneUebungen.map((x) => (
-                  <option key={x.id} value={x.id}>
-                    {x.title}
-                  </option>
-                ))}
-              </select>
+              <span className="label">Neue Hausübung</span>
+              <input className="input" name="description" required placeholder="z. B. Buch S. 84, Nr. 3–7" />
             </label>
-          )}
-          <button className="btn btn-secondary justify-self-start">Hinzufügen</button>
-        </form>
+            <div className="grid grid-cols-2 gap-3">
+              <FachFeld id="hausuebung" eigene={subjects} wert={subjects[0]} ariaLabel="Fach" />
+              <input className="input" type="date" name="due_date" aria-label="Fällig am" />
+            </div>
+            {offeneUebungen.length > 0 && (
+              <label className="field">
+                <span className="label">Gehört zur Übung (optional)</span>
+                <select className="input" name="assignment_id" defaultValue="">
+                  <option value="">keine</option>
+                  {offeneUebungen.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <button className="btn btn-secondary justify-self-start">Hinzufügen</button>
+          </form>
+        </Aufklappen>
       </section>
     </div>
   );
@@ -1163,9 +1181,64 @@ function Vokabellisten({ student, first }: { student: repo.Student; first: strin
   );
 }
 
+/** Audit 2026-11-07: die letzten fünf Übungen, ältere hinter „Ältere Übungen“. */
+const UEBUNGEN_SICHTBAR = 5;
+
 function Exercises({ student }: { student: repo.Student }) {
   const list = repo.listAssignments(student.id);
   const first = student.name.split(" ")[0];
+  const tabelle = (rows: typeof list) => (
+    <div className="panel overflow-x-auto">
+      <table className="w-full min-w-[620px] text-left text-[14px]">
+        <thead>
+          <tr className="border-b border-line text-[12px] text-ink-3">
+            <th className="px-5 py-3 font-semibold">Übung</th>
+            <th className="px-3 py-3 font-semibold">Zugewiesen</th>
+            <th className="px-3 py-3 font-semibold">Status</th>
+            <th className="px-5 py-3 text-right font-semibold">Ergebnis</th>
+            <th className="py-3 pr-3">
+              <span className="sr-only">Archivieren</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {rows.map((x) => (
+            <tr key={x.id}>
+              <td className="px-5 py-3">
+                <Link href={`/schueler/${student.id}/ergebnis/${x.id}`} className="font-medium hover:text-accent">
+                  {x.title}
+                </Link>
+                <div className="text-[12px] text-ink-3">
+                  {x.task_count} Aufgaben · {x.difficulty}
+                  {x.kind === "ueberpruefung" && " · Überprüfung"}
+                  {x.kind === "diagnose" && (
+                    <>
+                      {" · "}
+                      <Link href={`/diagnose/${x.id}`} className="font-semibold text-accent hover:underline">
+                        Diagnose-Auswertung
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </td>
+              <td className="num px-3 py-3 text-ink-2">{formatDate(x.assigned_at, { day: "numeric", month: "short" })}</td>
+              <td className="px-3 py-3">
+                {x.completed_at ? <Pill tone="green">erledigt</Pill> : x.done_count > 0 ? <Pill tone="amber">{x.done_count}/{x.task_count} bearbeitet</Pill> : <Pill>offen</Pill>}
+              </td>
+              <td className="num px-5 py-3 text-right font-semibold">{x.done_count > 0 ? `${x.correct_count}/${x.done_count} richtig` : "–"}</td>
+              <td className="py-3 pr-3 text-right">
+                <form action={archiveAssignmentAction.bind(null, x.id, `/schueler/${student.id}?tab=lernverlauf`)}>
+                  <button className="btn btn-ghost btn-sm !px-2.5" aria-label={`${x.title} archivieren`} title="Archivieren: nicht mehr offen, Antworten und Lernstand bleiben">
+                    <Archive size={15} aria-hidden />
+                  </button>
+                </form>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
   return (
     <div className="space-y-8">
       <div className="panel px-5 py-4">
@@ -1202,56 +1275,14 @@ function Exercises({ student }: { student: repo.Student }) {
           Oder übernimm eine Empfehlung unter Fortschritt.
         </Empty>
       ) : (
-        <div className="panel overflow-x-auto">
-          <table className="w-full min-w-[620px] text-left text-[14px]">
-            <thead>
-              <tr className="border-b border-line text-[12px] text-ink-3">
-                <th className="px-5 py-3 font-semibold">Übung</th>
-                <th className="px-3 py-3 font-semibold">Zugewiesen</th>
-                <th className="px-3 py-3 font-semibold">Status</th>
-                <th className="px-5 py-3 text-right font-semibold">Ergebnis</th>
-                <th className="py-3 pr-3">
-                  <span className="sr-only">Archivieren</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {list.map((x) => (
-                <tr key={x.id}>
-                  <td className="px-5 py-3">
-                    <Link href={`/schueler/${student.id}/ergebnis/${x.id}`} className="font-medium hover:text-accent">
-                      {x.title}
-                    </Link>
-                    <div className="text-[12px] text-ink-3">
-                      {x.task_count} Aufgaben · {x.difficulty}
-                      {x.kind === "ueberpruefung" && " · Überprüfung"}
-                      {x.kind === "diagnose" && (
-                        <>
-                          {" · "}
-                          <Link href={`/diagnose/${x.id}`} className="font-semibold text-accent hover:underline">
-                            Diagnose-Auswertung
-                          </Link>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                  <td className="num px-3 py-3 text-ink-2">{formatDate(x.assigned_at, { day: "numeric", month: "short" })}</td>
-                  <td className="px-3 py-3">
-                    {x.completed_at ? <Pill tone="green">erledigt</Pill> : x.done_count > 0 ? <Pill tone="amber">{x.done_count}/{x.task_count} bearbeitet</Pill> : <Pill>offen</Pill>}
-                  </td>
-                  <td className="num px-5 py-3 text-right font-semibold">{x.done_count > 0 ? `${x.correct_count}/${x.done_count} richtig` : "–"}</td>
-                  <td className="py-3 pr-3 text-right">
-                    <form action={archiveAssignmentAction.bind(null, x.id, `/schueler/${student.id}?tab=lernverlauf`)}>
-                      <button className="btn btn-ghost btn-sm !px-2.5" aria-label={`${x.title} archivieren`} title="Archivieren: nicht mehr offen, Antworten und Lernstand bleiben">
-                        <Archive size={15} aria-hidden />
-                      </button>
-                    </form>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {tabelle(list.slice(0, UEBUNGEN_SICHTBAR))}
+          {list.length > UEBUNGEN_SICHTBAR && (
+            <Reveal label={`Ältere Übungen (${list.length - UEBUNGEN_SICHTBAR})`} className="!mt-3">
+              {tabelle(list.slice(UEBUNGEN_SICHTBAR))}
+            </Reveal>
+          )}
+        </>
       )}
     </div>
   );
