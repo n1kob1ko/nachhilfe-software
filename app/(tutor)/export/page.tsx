@@ -6,7 +6,7 @@ import { PageHeader, Reveal, SectionTitle } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import { backupCounts, exportBackup } from "@/lib/backup";
 import { DATASETS } from "@/lib/exports";
-import { backupKeep, listBackups, pendingRestore } from "@/lib/sicherungen";
+import { backupKeep, freeBytes, listBackups, pendingRestore } from "@/lib/sicherungen";
 import { appBackupPaths } from "@/lib/sicherungen-app";
 import { flushBoard } from "@/lib/whiteboard";
 
@@ -42,6 +42,7 @@ export default async function ExportPage() {
   const paths = appBackupPaths();
   const backups = listBackups(paths.backupDir);
   const pending = pendingRestore(paths.dbFile);
+  const free = freeBytes(paths.backupDir);
   return (
     <>
       <PageHeader title="Datenexport" subtitle="Sicherung und Tabellen" info="Sicherung und Tabellen zum Weiterverarbeiten. Nur für die Verwaltung sichtbar." />
@@ -51,7 +52,7 @@ export default async function ExportPage() {
           <span>
             Automatische Sicherungen
             <Info label="Info zu Sicherungen">
-              Einmal am Tag werden Datenbank und Material auf dem Server gesichert, die letzten {backupKeep()} bleiben. Sie liegen auf demselben Speicher wie die Daten und helfen bei Fehlern, nicht bei einem Ausfall des Speichers. Dafür die Volume-Backups von Railway einschalten und ab und zu die JSON-Sicherung herunterladen.
+              Einmal am Tag werden Datenbank und Material auf dem Server gesichert, komprimiert, die letzten {backupKeep()} bleiben. Wird der Speicher knapp, fallen die ältesten zuerst weg (die letzten 3 bleiben immer). Sie liegen auf demselben Speicher wie die Daten und helfen bei Fehlern, nicht bei einem Ausfall des Speichers. Dafür die Volume-Backups von Railway einschalten und ab und zu die JSON-Sicherung herunterladen.
             </Info>
           </span>
         </SectionTitle>
@@ -68,6 +69,9 @@ export default async function ExportPage() {
         )}
         <div className="panel p-5 md:p-6">
           <BackupNowForm />
+          {Number.isFinite(free) && (
+            <p className={`mt-2 text-[13px] ${free < 100 * 1024 * 1024 ? "font-semibold text-red" : "text-ink-2"}`}>Freier Speicher auf dem Server: {size(free)}</p>
+          )}
           {backups.length ? (
             <ul className="mt-4 divide-y divide-line border-t border-line">
               {backups.map((b) => (
