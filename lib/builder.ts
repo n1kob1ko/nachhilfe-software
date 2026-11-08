@@ -66,6 +66,8 @@ export type BuilderSettings = {
   examples?: string[];
   /** Eigene Vokabellisten (lib/vokabellisten.ts) of the student for the skill EIGENE_VOKABELN; none = all of them. */
   vokabelListen?: number[];
+  /** Übungspaket aus Erkenntnissen (lib/uebungspaket.ts): Nummer, Fach, die Erkenntnisse, was nicht mehr kommt, die Auswertung. */
+  paket?: import("./uebungspaket").PaketInfo;
 };
 
 export function settingsFromForm(f: FormData): BuilderSettings {

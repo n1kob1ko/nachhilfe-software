@@ -1,20 +1,23 @@
-import { Check, RotateCcw } from "lucide-react";
+import Link from "next/link";
+import { Check, Package, RotateCcw } from "lucide-react";
 import { erkenntnisStatusAction } from "@/app/erkenntnis-actions";
 import { datumKurz } from "@/lib/datum";
 import { errorTypeLabel } from "@/lib/error-types";
 import { listErkenntnisse, type Erkenntnis } from "@/lib/erkenntnisse";
 import * as repo from "@/lib/repo";
+import { paketErgebnis, paketeVon } from "@/lib/uebungspaket";
 
 const QUELLE: Record<Erkenntnis["quelle"], string> = { einheit: "Einheit", blatt: "Blatt", paket: "Übungspaket" };
 
 /**
  * Die **Erkenntnisse** eines Schülers im Profil (Fortschritt): offene Fehlermuster mit Fähigkeit, Fehlerart und Herkunft,
  * die Stärken und, zugeklappt, was schon erledigt ist. Ein Tippen setzt einen Fehler auf erledigt oder wieder offen.
- * `aktion`: ein Knopf darüber, z. B. „Übungspaket erstellen“.
+ * Darunter die Übungspakete (lib/uebungspaket.ts) mit Ergebnis und „Auswerten“, darüber „Übungspaket erstellen“.
  */
-export function Erkenntnisse({ studentId, aktion }: { studentId: number; aktion?: React.ReactNode }) {
+export function Erkenntnisse({ studentId }: { studentId: number }) {
   const alle = listErkenntnisse(studentId);
-  if (!alle.length) return null;
+  const pakete = paketeVon(studentId).slice(0, 5);
+  if (!alle.length && !pakete.length) return null;
   const offen = alle.filter((e) => e.art === "fehler" && e.status === "offen");
   const staerken = alle.filter((e) => e.art === "staerke").slice(0, 6);
   const erledigt = alle.filter((e) => e.art === "fehler" && e.status === "erledigt");
@@ -25,7 +28,11 @@ export function Erkenntnisse({ studentId, aktion }: { studentId: number; aktion?
         <h2 id="erkenntnisse-titel" className="gruppe-titel">
           Erkenntnisse
         </h2>
-        {aktion}
+        {offen.length > 0 && (
+          <Link href={`/schueler/${studentId}/paket`} className="btn btn-primary btn-sm" data-testid="paket-neu">
+            <Package size={16} aria-hidden /> Übungspaket erstellen
+          </Link>
+        )}
       </div>
       {offen.length ? (
         <ul className="grid gap-2">
@@ -41,6 +48,33 @@ export function Erkenntnisse({ studentId, aktion }: { studentId: number; aktion?
           <span className="font-semibold text-green">Gut: </span>
           {staerken.map((e) => e.text).join(" · ")}
         </p>
+      )}
+      {pakete.length > 0 && (
+        <ul className="mt-4 grid gap-1.5" data-testid="pakete">
+          {pakete.map((p) => {
+            const e = paketErgebnis(p.id);
+            const stand = p.paket.ausgewertetAm ? "ausgewertet" : e.beantwortet ? "auswerten" : p.status === "entwurf" ? "Entwurf" : "noch nicht gelöst";
+            return (
+              <li key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px]">
+                <Package size={15} className="text-ink-3" aria-hidden />
+                <Link href={`/schueler/${studentId}/paket/${p.id}`} className="underline">
+                  Übungspaket {p.paket.nr}
+                </Link>
+                <span className="text-ink-3">
+                  {p.paket.fach}
+                  {e.beantwortet ? ` · ${e.richtig} von ${e.aufgaben.length} richtig` : ""}
+                </span>
+                {stand === "auswerten" ? (
+                  <Link href={`/schueler/${studentId}/paket/${p.id}`} className="btn btn-ghost btn-sm" data-testid="paket-auswerten-link">
+                    Auswerten
+                  </Link>
+                ) : (
+                  <span className="text-[12px] text-ink-3">{stand}</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       )}
       {erledigt.length > 0 && (
         <details className="mt-3">
