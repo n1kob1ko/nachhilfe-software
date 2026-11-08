@@ -386,7 +386,7 @@ const BEREICHE: Bereich[] = [
   },
   {
     area: "Negative Zahlen",
-    suchwoerter: ["ganze Zahlen"],
+    suchwoerter: ["ganze Zahlen", "rationale Zahlen", "positive und negative Zahlen"],
     themen: [
       {
         id: "mathe.negativ.zahlengerade",
@@ -403,7 +403,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.negativ.rational",
         name: "Rationale Zahlen: Brüche und Dezimalzahlen mit Vorzeichen",
-        suchwoerter: ["rationale Zahlen", "Vorzeichenregeln"],
+        suchwoerter: ["rationale Zahlen", "Vorzeichenregeln", "rationale Zahlen darstellen, vergleichen und ordnen"],
         stufen: [7, 8],
         erklaerung: "Mit negativen Brüchen und Dezimalzahlen rechnet man nach denselben Vorzeichenregeln wie mit ganzen Zahlen. Beispiel: −1/2 + 3/4 = −2/4 + 3/4 = 1/4; (−0,5) · (−4) = 2.",
         fehler: [
@@ -611,7 +611,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.potenzen.schreibweise",
         name: "Potenzen und Zehnerpotenzen",
-        suchwoerter: ["Hochzahl", "Exponent", "Gleitkommadarstellung", "wissenschaftliche Schreibweise", "Quadratzahlen", "Kubikzahlen"],
+        suchwoerter: ["Hochzahl", "Exponent", "Gleitkommadarstellung", "wissenschaftliche Schreibweise", "Quadratzahlen", "Kubikzahlen", "Produkte als Potenzen schreiben"],
         stufen: [7, 8],
         erklaerung: "Eine Potenz ist eine kurze Schreibweise für wiederholtes Multiplizieren: 2^5 = 2 · 2 · 2 · 2 · 2 = 32. Große Zahlen schreibt man mit Zehnerpotenzen: 4 500 000 = 4,5 · 10^6.",
         fehler: [
@@ -814,7 +814,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.geometrie.koordinaten",
         name: "Koordinatensystem: Punkte eintragen und ablesen",
-        suchwoerter: ["Koordinaten"],
+        suchwoerter: ["Koordinaten", "kartesisches Koordinatensystem", "vier Quadranten"],
         stufen: [6, 7],
         erklaerung: "Ein Punkt P(x | y): zuerst x waagrecht, dann y senkrecht. Negative Werte gehen nach links oder nach unten. Beispiel: A(3 | −2) liegt 3 nach rechts und 2 nach unten.",
         fehler: [
@@ -984,7 +984,7 @@ const BEREICHE: Bereich[] = [
       {
         id: "mathe.flaechen.vielecke",
         name: "Flächeninhalt von Vielecken",
-        suchwoerter: ["regelmäßige Vielecke", "Sechseck", "Achteck"],
+        suchwoerter: ["regelmäßige Vielecke", "Sechseck", "Achteck", "Vielecke durch Zerlegen oder Ergänzen", "Vielecke im Koordinatensystem"],
         stufen: [6, 8],
         erklaerung: "Ein Vieleck zerlegt man in Dreiecke und Vierecke, berechnet jede Teilfläche und addiert. Ein regelmäßiges Sechseck besteht aus 6 gleichseitigen Dreiecken. Im Koordinatensystem hilft ein umschließendes Rechteck, von dem man Dreiecke abzieht.",
         fehler: [
@@ -1429,8 +1429,10 @@ const SUCHWOERTER_BISHER: Record<string, string[]> = {
   "mathe.brueche.subtrahieren": ["Brüche subtrahieren", "Subtraktion von Brüchen"],
   "mathe.brueche.multiplizieren": ["Brüche multiplizieren", "Multiplikation von Brüchen"],
   "mathe.brueche.dividieren": ["Brüche dividieren", "Division von Brüchen"],
-  "mathe.negativ.addieren": ["Addition und Subtraktion ganzer Zahlen"],
-  "mathe.negativ.multiplizieren": ["Multiplikation und Division ganzer Zahlen"],
+  "mathe.negativ.addieren": ["Addition und Subtraktion ganzer Zahlen", "positive und negative Zahlen addieren und subtrahieren", "rationale Zahlen addieren und subtrahieren"],
+  "mathe.negativ.multiplizieren": ["Multiplikation und Division ganzer Zahlen", "positive und negative Zahlen multiplizieren und dividieren", "rationale Zahlen multiplizieren und dividieren"],
+  // the Potenzregeln: a Stoffzettel names them by what is done (3. Klasse, niko 2026-11-08)
+  "mathe.potenzen.regeln": ["Potenzen multiplizieren und dividieren", "Potenzen mit gleicher Basis", "Potenzen potenzieren", "Produkte und Quotienten potenzieren", "Rechenregeln für Potenzen"],
 };
 
 export const MATHE_UNTERSTUFE: Modul = { fach: "Mathematik", bereiche: BEREICHE, fehlerBisher: FEHLER_BISHER, suchwoerterBisher: SUCHWOERTER_BISHER, voraussetzungen: VORAUSSETZUNGEN };

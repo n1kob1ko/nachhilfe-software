@@ -4,6 +4,7 @@ import { DEUTSCH_OBERSTUFE } from "./deutsch-oberstufe";
 import { DEUTSCH_UNTERSTUFE } from "./deutsch-unterstufe";
 import { ENGLISCH_OBERSTUFE } from "./englisch-oberstufe";
 import { ENGLISCH_UNTERSTUFE } from "./englisch-unterstufe";
+import { MATHE_ERGAENZUNG } from "./mathe-ergaenzung";
 import { MATHE_OBERSTUFE } from "./mathe-oberstufe";
 import { MATHE_UNTERSTUFE } from "./mathe-unterstufe";
 import { MATHE_VS } from "./mathe-vs";
@@ -17,7 +18,7 @@ import { MATHE_VS } from "./mathe-vs";
  * lib/generators.ts), the KI exercise prompt (lib/ai/features.ts), the skill page and matching the
  * Stoff of a Schularbeit to skills (SUCHWOERTER in lib/lehrplan.ts).
  */
-export const MODULE: Modul[] = [MATHE_UNTERSTUFE, MATHE_VS, MATHE_OBERSTUFE, DEUTSCH_UNTERSTUFE, DEUTSCH_OBERSTUFE, ENGLISCH_UNTERSTUFE, ENGLISCH_OBERSTUFE];
+export const MODULE: Modul[] = [MATHE_UNTERSTUFE, MATHE_VS, MATHE_OBERSTUFE, DEUTSCH_UNTERSTUFE, DEUTSCH_OBERSTUFE, ENGLISCH_UNTERSTUFE, ENGLISCH_OBERSTUFE, MATHE_ERGAENZUNG];
 
 export const THEMEN: CurriculumSkill[] = MODULE.flatMap(faehigkeitenAus);
 export const ERKLAERUNG: Record<string, string> = Object.assign({}, ...MODULE.map(erklaerungenAus));

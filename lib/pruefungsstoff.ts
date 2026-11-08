@@ -45,7 +45,7 @@ export const MAX_DATEIEN = 8;
 /** Höchstens so viel zusammen in einer Anfrage ans Hochladen (Fotos werden im Browser verkleinert). */
 export const MAX_GESAMT_BYTES = 40 * 1024 * 1024;
 /** Fassung des Prompts: ändert sie sich, wird eine Datei neu gelesen (das alte Ergebnis passt nicht mehr). */
-export const PROMPT_FASSUNG = "pruefungsstoff-2";
+export const PROMPT_FASSUNG = "pruefungsstoff-3";
 /** Höchstens so viele Punkte je Lesung. */
 export const MAX_PUNKTE = 80;
 /** Höchstens so viele Themen für `tests.topics`. */
@@ -120,6 +120,24 @@ const istStatus = (x: unknown): x is StoffStatus => (STOFF_STATUS as readonly un
 
 /** Eine Überschrift eines Kapitels: „Unit 2: How embarrassing!“, „Kapitel 4“. */
 const UEBERSCHRIFT = /^\s*(?:unit|units|kapitel|chapter|lektion|lesson|module|modul)\s*\d+\b/i;
+/** Eine nummerierte Überschrift in Großbuchstaben, wie auf einem Mathe-Stoffzettel („1. ZAHLEN“, „3. FLÄCHENINHALTE“). */
+const GROSSE_UEBERSCHRIFT = /^\s*\d{1,2}[.)]\s+[A-ZÄÖÜ][A-ZÄÖÜẞ\s,&-]{2,}$/;
+/**
+ * Ein Teil des Buchs ohne eigenen Lerninhalt („Teste Dein Vorwissen (S. 10-11)“, „Vermischte Aufgaben“, „Übungsbuch
+ * (S. 5-18)“): er gehört zum Umfang, aber zu keiner Fähigkeit, sonst stünde er als „ohne passende Fähigkeit“ da.
+ */
+const BUCHTEIL =
+  /^(?:teste dein(?:e)? (?:vor)?wissen|teste dich|vermischte aufgaben|vermischtes|sprache der mathematik|übungsbuch|übungsheft|arbeitsheft|arbeitsbuch|wiederholung|zusammenfassung|das kann ich|kompetenzcheck|selbstcheck|selbstkontrolle|test yourself|check yourself|self-check)$/i;
+/** Der Wortlaut ohne Seiten und Nummern in Klammern: „Vermischte Aufgaben (S. 64-65 inkl. Bsp. 323)“ → „Vermischte Aufgaben“. */
+const ohneSeiten = (s: string) =>
+  s
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\b(?:S|Seiten?|p|pp|Bsp|Nr)\.?\s*\d+(?:\s*[-–]\s*\d+)?/gi, " ")
+    .replace(/\s+/g, " ")
+    .replace(/[\s.,:;–-]+$/, "")
+    .trim();
+/** Überschrift oder Buchteil: Umfang, nie ein Lerninhalt. Exportiert für Tests. */
+export const istUmfangZeile = (original: string) => UEBERSCHRIFT.test(original) || GROSSE_UEBERSCHRIFT.test(original) || BUCHTEIL.test(ohneSeiten(original));
 
 /** Die Nummern der Units, die der Stoffzettel nennt („More Units 1-3“, „Unit 1, 2 und 3“); leer, wenn keine. */
 export function unitsImUmfang(texte: string[]): Set<number> {
@@ -167,7 +185,7 @@ export function lesungAusAntwort(g: PruefungsstoffGelesen | StoffzettelGelesen, 
     ? (g as PruefungsstoffGelesen).punkte.map((p) => {
         const original = eineZeile(p?.original, 200);
         const nr = Number.isInteger(p?.dokument) && p.dokument >= 0 && p.dokument <= o.dateien ? p.dokument : o.dateien ? 1 : 0;
-        const gruppe: Gruppe = UEBERSCHRIFT.test(original) ? "umfang" : istGruppe(p?.gruppe) ? p.gruppe : "sonstiges";
+        const gruppe: Gruppe = istUmfangZeile(original) ? "umfang" : istGruppe(p?.gruppe) ? p.gruppe : "sonstiges";
         const status: StoffStatus = istStatus(p?.status) ? p.status : "pruefung";
         return {
           gruppe,

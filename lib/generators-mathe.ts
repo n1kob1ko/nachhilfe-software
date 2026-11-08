@@ -9,6 +9,7 @@
  */
 import type { Difficulty } from "./curriculum";
 import type { PartSolution, PartView } from "./math-check";
+import { VERBINDEN_HILFEN, verbindungRechnung } from "./mathe-grundlagen";
 import { bruchWeg, ersterSchritt } from "./mathe-rechnungen";
 import {
   STUFE,
@@ -229,6 +230,19 @@ export function rechenwegTask(skillId: string, difficulty: Difficulty, rng: Rng 
           errors: [{ answer: `${-res}`, label: "Vorzeichenregel nicht angewendet" }],
         });
       }
+    }
+    case "mathe.negativ.verbinden": {
+      const v = verbindungRechnung(rng, lv);
+      return rechenweg(skillId, difficulty, {
+        prompt: `Berechne. ${WRITE}`,
+        start: v.text,
+        accepted: [String(v.res)],
+        steps: v.weg,
+        solution: `${v.text} = ${v.weg.join(" = ")}`,
+        hints: [...VERBINDEN_HILFEN.slice(0, 2), `${v.text} = ${v.weg[0]}`],
+        errors: [...(v.lr !== null ? [{ answer: String(v.lr), label: "Von links nach rechts gerechnet statt Punkt vor Strich" }] : []), { answer: String(-v.res), label: "Vorzeichenfehler" }],
+        time: lv >= 2 ? 200 : 150,
+      });
     }
     case "mathe.potenzen.regeln": {
       const p = potenzAufgabe(rng, lv);
