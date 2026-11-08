@@ -473,7 +473,8 @@ Ein ganzer Übungstest zu einer geplanten **Schularbeit**, aus ihrem Stoff: leic
 am Ende, jede mit Punkten, darunter der **Notenschlüssel**. Entsteht auf der Vorbereitung der Schularbeit als
 Entwurf einer **Übung** (`worksheets.probe_test_id`, `lib/probeschularbeit.ts`), der Lehrer prüft ihn und
 druckt ihn oder sendet ihn. Am Gerät läuft sie wie ein **Minitest**; am Ende stehen Punkte und Note
-([docs/probeschularbeit.md](docs/probeschularbeit.md)).
+([docs/probeschularbeit.md](docs/probeschularbeit.md)). **Vom Stoffzettel** schreibt die KI alle Aufgaben aus den
+gelesenen Zeilen, jede Zeile kommt dran, auch ohne passende Fähigkeit.
 _Avoid_: Probetest, Übungsschularbeit, Testsimulation
 
 **Notenschlüssel**:

@@ -38,6 +38,77 @@ export function planeProbeschularbeit(skillIds: string[], n: number): PlanPlatz[
   return schwierigkeiten(n).map((difficulty, i) => ({ skillId: ids[i % ids.length], difficulty }));
 }
 
+// ---------- vom Stoffzettel ----------
+
+/** Eine Zeile vom Stoffzettel für die Probeschularbeit vom Stoff: ihr Wortlaut, ihre Fähigkeit (oder keine), ihr Kapitel. */
+export type StoffFuerProbe = { text: string; skillId: string | null; einheit: string };
+/** Ein Platz der Probeschularbeit vom Stoff: die Zeilen, die die Aufgabe abdeckt, deren Fähigkeiten und die Schwierigkeit. */
+export type StoffPlatz = { stoff: string[]; skillIds: string[]; einheit: string; difficulty: Difficulty };
+type Gruppe = Omit<StoffPlatz, "difficulty">;
+
+/**
+ * Welche Zeilen bei welcher Aufgabe drankommen (niko, 2026-11-08: „jede Zeile vom Stoffzettel kommt dran“).
+ * Jede Zeile bekommt eine eigene Aufgabe. Gibt es mehr Zeilen als Aufgaben, teilen sich Zeilen eine Aufgabe: zuerst
+ * Zeilen mit derselben Fähigkeit, dann Nachbarn im selben Kapitel, die kürzesten zuerst; solche Aufgaben stehen auf
+ * den schweren Plätzen. Gibt es weniger, kommen die Zeilen reihum noch einmal. Die Kapitel wechseln sich ab, damit
+ * jedes leichte und schwere Aufgaben bekommt; leichte zuerst wie in `schwierigkeiten`.
+ */
+export function planeVomStoff(zeilen: StoffFuerProbe[], n: number): StoffPlatz[] {
+  if (n <= 0) return [];
+  const gesehen = new Set<string>();
+  const gruppen: Gruppe[] = zeilen.flatMap((z) => {
+    const text = z.text.replace(/\s+/g, " ").trim();
+    if (!text || gesehen.has(text.toLowerCase())) return [];
+    gesehen.add(text.toLowerCase());
+    return [{ stoff: [text], skillIds: z.skillId ? [z.skillId] : [], einheit: z.einheit.replace(/\s+/g, " ").trim() }];
+  });
+  if (!gruppen.length) return [];
+  while (gruppen.length > n) {
+    const [i, j] = zusammenlegen(gruppen);
+    gruppen[i] = { stoff: [...gruppen[i].stoff, ...gruppen[j].stoff], skillIds: [...new Set([...gruppen[i].skillIds, ...gruppen[j].skillIds])], einheit: gruppen[i].einheit };
+    gruppen.splice(j, 1);
+  }
+  const reihe = abwechselnd(gruppen);
+  const erste = [...reihe.filter((g) => g.stoff.length === 1), ...reihe.filter((g) => g.stoff.length > 1)];
+  return schwierigkeiten(n).map((difficulty, k) => ({ ...erste[k % erste.length], difficulty }));
+}
+
+/**
+ * Der Hinweis über einer neuen Probeschularbeit vom Stoffzettel: dass jede Zeile dabei ist, und was die App statt der KI
+ * gemacht hat. `ersetzt`: Aufgaben aus der App, `erklaeren`: davon nur Erklär-Aufgaben, `ki`: die KI hat geantwortet.
+ */
+export function stoffHinweis(o: { zeilen: number; aufgaben: number; ersetzt: number; erklaeren: number; ki: boolean }): { text: string; gut: boolean } {
+  const saetze = [`${o.zeilen === 1 ? "Die Zeile vom Stoffzettel ist" : `Alle ${o.zeilen} Zeilen vom Stoffzettel sind`} dabei, in ${o.aufgaben} ${o.aufgaben === 1 ? "Aufgabe" : "Aufgaben"}.`];
+  if (!o.ki) saetze.push("Die KI war nicht erreichbar, deshalb stammen die Aufgaben aus der App.");
+  else if (o.ersetzt > 0) saetze.push(`Für ${o.ersetzt === 1 ? "eine Aufgabe" : `${o.ersetzt} Aufgaben`} kam von der KI nichts Passendes, ${o.ersetzt === 1 ? "sie stammt" : "sie stammen"} aus der App.`);
+  if (o.erklaeren > 0) saetze.push(`${o.erklaeren === 1 ? "Eine davon ist" : `${o.erklaeren} davon sind`} nur eine Erklär-Aufgabe. Ändere sie unten mit „Bearbeiten“.`);
+  return { text: saetze.join(" "), gut: o.ki && o.ersetzt === 0 };
+}
+
+/** Die zwei Gruppen, die sich am besten eine Aufgabe teilen: dieselbe Fähigkeit, sonst Nachbarn im selben Kapitel, sonst Nachbarn. */
+function zusammenlegen(g: Gruppe[]): [number, number] {
+  let best: [number, number] = [g.length - 2, g.length - 1];
+  let wert = Infinity;
+  for (let i = 0; i < g.length; i++)
+    for (let j = i + 1; j < g.length; j++) {
+      const gleich = g[i].skillIds.some((s) => g[j].skillIds.includes(s));
+      if (!gleich && j !== i + 1) continue;
+      const w = g[i].stoff.length + g[j].stoff.length + (gleich ? 0 : g[i].einheit === g[j].einheit ? 0.5 : 1000);
+      if (w < wert) [best, wert] = [[i, j], w];
+    }
+  return best;
+}
+
+/** Die Gruppen so, dass die Kapitel sich abwechseln, in jedem Kapitel in der Reihenfolge des Zettels. */
+function abwechselnd(g: Gruppe[]): Gruppe[] {
+  const kapitel = new Map<string, Gruppe[]>();
+  for (const x of g) kapitel.set(x.einheit, [...(kapitel.get(x.einheit) ?? []), x]);
+  const listen = [...kapitel.values()];
+  const out: Gruppe[] = [];
+  for (let k = 0; out.length < g.length; k++) for (const l of listen) if (l[k]) out.push(l[k]);
+  return out;
+}
+
 // ---------- Punkte und Notenschlüssel ----------
 
 /** Punkte nach Schwierigkeit, solange der Lehrer nichts anderes einträgt. */
