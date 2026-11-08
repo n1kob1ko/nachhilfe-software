@@ -12,14 +12,18 @@
  * Die Aufgaben kommen wie bei der Diagnose (lib/diagnose.ts): zuerst ungesehene aus der Aufgabenbibliothek,
  * dann aus den Generatoren, und nur für Fähigkeiten ohne Generator von der KI, in einer Anfrage und nur,
  * wenn der Lehrer es will. Ohne KI bekommen diese Fähigkeiten Erklär-Aufgaben.
+ *
+ * **Vom Stoffzettel** (niko, 2026-11-08): die KI schreibt alle Aufgaben aus den Zeilen des gelesenen Stoffs, jede Zeile
+ * kommt dran, auch eine ohne passende Fähigkeit (`erstelleVomStoff`, docs/probeschularbeit.md).
  */
-import { aiEnabled, generateWithAI } from "./ai";
+import { aiEnabled, generatePlanWithAI, generateWithAI } from "./ai";
 import { categoriesFor, mixFor, type Difficulty } from "./curriculum";
 import { db } from "./db";
 import { libraryTask, taskKey } from "./diagnose";
 import { examPrep, dayOf } from "./exams";
 import { generateForSlot, hasBuiltInGenerator } from "./generators";
-import { getSetting, setSetting } from "./lehrplan";
+import { getSetting, matchSkills, setSetting } from "./lehrplan";
+import { istUmfangZeile, nurFuerHeute, stoffDerPruefung } from "./pruefungsstoff";
 import * as repo from "./repo";
 import { klassenLabel, schulstufe } from "./school";
 import type { TaskDraft } from "./tasks";
@@ -34,12 +38,15 @@ import {
   notenBereiche,
   papierPunkte,
   planeProbeschularbeit,
+  planeVomStoff,
   PUNKTE_MAX,
   SCHLUESSEL_STANDARD,
   schluesselTabelle as tabelle,
   standardPunkte,
   type Dauer,
   type Note,
+  type StoffFuerProbe,
+  type StoffPlatz,
 } from "./probeschularbeit-regeln";
 
 export * from "./probeschularbeit-regeln";
@@ -187,7 +194,15 @@ export type ProbeInput = {
   useAI?: boolean;
   /** für Tests: macht die Generator-Aufgaben wiederholbar */
   seed?: number;
+  /**
+   * Vom Stoffzettel (niko, 2026-11-08): die KI schreibt alle Aufgaben aus den Zeilen des Stoffs, jede Zeile kommt
+   * dran, auch eine ohne passende Fähigkeit. Braucht keine verknüpften Fähigkeiten.
+   */
+  vomStoff?: boolean;
 };
+
+/** Was beim Erstellen herauskam; `stoff` nur vom Stoffzettel: wie viele Zeilen und wie viele Aufgaben die App statt der KI machte. */
+export type ProbeErstellt = { worksheetId: number; aiError?: string; ohneKi: number; stoff?: { zeilen: number; aufgaben: number; ersetzt: number } };
 
 /** Aufgabentypen mit mehreren Schritten oder eigenem Text: die passen auf die schweren Plätze. */
 const AUFWENDIG = new Set(["sachaufgabe", "rechenweg", "textaufgabe", "offen", "korrigieren", "schreiben", "satz", "writing", "translation", "reading", "textverstaendnis"]);
@@ -222,9 +237,10 @@ function zufall(seed: number): () => number {
  * Erstellt die Probeschularbeit als Entwurf für den Schüler der Schularbeit. Wirft, wenn der Stoff noch
  * keinen Fähigkeiten zugeordnet ist.
  */
-export async function erstelleProbeschularbeit(input: ProbeInput): Promise<{ worksheetId: number; aiError?: string; ohneKi: number }> {
+export async function erstelleProbeschularbeit(input: ProbeInput): Promise<ProbeErstellt> {
   const prep = examPrep(input.testId, dayOf(new Date()));
   if (!prep) throw new Error("Schularbeit nicht gefunden.");
+  if (input.vomStoff) return erstelleVomStoff(input, prep.test, prep.student);
   const { test, student } = prep;
   const all = new Map(repo.listSkills().map((s) => [s.id, s]));
   // die schwächsten zuerst (wie im Plan), dann die übrigen verknüpften
@@ -235,9 +251,7 @@ export async function erstelleProbeschularbeit(input: ProbeInput): Promise<{ wor
   const klasse = student.klasse ?? 1;
   const grade = student.klasse ? schulstufe(student.school_type, student.klasse) : student.grade;
 
-  const gesehen = new Set(
-    (db().prepare("SELECT DISTINCT t.prompt FROM attempts a JOIN tasks t ON t.id = a.task_id WHERE a.student_id = ?").all(student.id) as { prompt: string }[]).map((r) => r.prompt),
-  );
+  const gesehen = schonGesehen(student.id);
   const benutzt = new Set<number>();
   const drafts: (TaskDraft | null)[] = plan.map((p) => libraryTask(test.subject, p, benutzt, gesehen));
   // Vokabeln aus den eigenen Listen des Schülers, nie von der KI
@@ -309,7 +323,30 @@ export async function erstelleProbeschularbeit(input: ProbeInput): Promise<{ wor
     drafts[i] = { ...t!, sourceType: "eigen" };
   });
 
-  const tasks = drafts.filter((d): d is TaskDraft => Boolean(d));
+  const worksheetId = speichere(test, student, grade, {
+    tasks: drafts.filter((d): d is TaskDraft => Boolean(d)),
+    topic: [...new Set(ids.map((id) => all.get(id)!.area))].join(", "),
+    source,
+    skillIds: ids,
+    teacherId: input.teacherId,
+    // dauer: für den Kopf des gedruckten Blatts („Arbeitszeit: 50 Minuten“)
+    settings: { useAI: input.useAI ?? true, focus: FOKUS, dauer },
+  });
+  return { worksheetId, aiError, ohneKi };
+}
+
+/** Die Aufgabentexte, die der Schüler schon bearbeitet hat: eine neue Probeschularbeit nimmt andere. */
+function schonGesehen(studentId: number): Set<string> {
+  return new Set((db().prepare("SELECT DISTINCT t.prompt FROM attempts a JOIN tasks t ON t.id = a.task_id WHERE a.student_id = ?").all(studentId) as { prompt: string }[]).map((r) => r.prompt));
+}
+
+/** Speichert die Probeschularbeit als Entwurf zur Schularbeit. */
+function speichere(
+  test: repo.TestResult,
+  student: repo.Student,
+  grade: number,
+  o: { tasks: TaskDraft[]; topic: string; source: repo.Worksheet["source"]; skillIds: string[]; teacherId: number | null; settings: Record<string, unknown> },
+): number {
   const name = test.title || `${test.kind} ${test.subject}`;
   const first = student.name.split(" ")[0];
   const worksheetId = repo.createWorksheet(
@@ -319,20 +356,158 @@ export async function erstelleProbeschularbeit(input: ProbeInput): Promise<{ wor
       grade,
       school_type: student.school_type,
       klasse: student.klasse,
-      topic: [...new Set(ids.map((id) => all.get(id)!.area))].join(", "),
+      topic: o.topic.slice(0, 200),
       difficulty: "gemischt",
       task_type: "mixed",
       kind: "ueberpruefung",
-      source,
-      skill_ids: ids,
+      source: o.source,
+      skill_ids: o.skillIds,
       student_id: student.id,
-      teacher_id: input.teacherId,
+      teacher_id: o.teacherId,
       status: "entwurf",
-      // dauer: für den Kopf des gedruckten Blatts („Arbeitszeit: 50 Minuten“)
-      settings: JSON.stringify({ useAI: input.useAI ?? true, focus: FOKUS, dauer }),
+      settings: JSON.stringify(o.settings),
     },
-    tasks,
+    o.tasks,
   );
   db().prepare("UPDATE worksheets SET probe_test_id = ? WHERE id = ?").run(test.id, worksheetId);
-  return { worksheetId, aiError, ohneKi };
+  return worksheetId;
+}
+
+// ---------- vom Stoffzettel ----------
+
+const FOKUS_STOFF =
+  "Probeschularbeit vom Stoffzettel: Die Aufgaben sollen wie in einer echten Schularbeit sein. Klar formuliert, ohne Tipps im Aufgabentext, gut mit Punkten zu bewerten. Jede Aufgabe prüft genau den Stoff, der bei ihr im Aufgabenplan steht, in der Schwierigkeit, die dort steht. Seitenangaben aus dem Schulbuch nur als Hinweis auf das Thema, keine Aufgabe aus dem Buch abschreiben.";
+
+/**
+ * Die Zeilen des Stoffs für die Probeschularbeit vom Stoffzettel: was die gelesenen Unterlagen als Prüfungsstoff nennen,
+ * ohne Umfang (Überschriften, „Teste dein Wissen“, Übungsbuch) und ohne, was nur für heute ist. Die Fähigkeit einer Zeile,
+ * wenn sie sicher oder von der Lehrkraft gewählt ist, sonst keine. Ohne gelesene Unterlagen die Themen der Prüfung. Dazu
+ * jede Fähigkeit, die die Lehrkraft selbst verknüpft hat und die keine Zeile nennt.
+ */
+export function stoffFuerProbe(testId: number): StoffFuerProbe[] {
+  const t = repo.getTest(testId);
+  const student = t ? repo.getStudent(t.student_id) : null;
+  if (!t || !student) return [];
+  const verknuepft = new Set(t.skill_ids);
+  const gibt = (id: string | null | undefined): id is string => Boolean(id && repo.getSkill(id));
+  const zeilen = stoffDerPruefung(testId).filter((z) => z.status === "pruefung" && z.gruppe !== "umfang" && !nurFuerHeute(z.quelle) && !istUmfangZeile(z.original));
+  const out: StoffFuerProbe[] = zeilen.length
+    ? zeilen.map((z) => ({
+        text: z.inhalt || z.original,
+        skillId: ((z.zuordnung === "sicher" || z.zuordnung === "bestaetigt") && gibt(z.skill_id) ? z.skill_id : [z.vorauswahl, ...z.vorschlaege].find((id) => gibt(id) && verknuepft.has(id))) ?? null,
+        einheit: z.einheit,
+      }))
+    : (t.topics?.length ? t.topics : [t.topic])
+        .filter((x): x is string => Boolean(x?.trim()))
+        .map((text) => ({ text, skillId: matchSkills(text, t.subject, { student, limit: 6 }).map((m) => m.skill.id).find((id) => verknuepft.has(id)) ?? null, einheit: "" }));
+  const genannt = new Set(out.map((z) => z.skillId));
+  for (const id of t.skill_ids) {
+    const s = repo.getSkill(id);
+    if (s && s.subject === t.subject && !genannt.has(id)) out.push({ text: s.name, skillId: id, einheit: s.area });
+  }
+  return out;
+}
+
+/** Wie viele verschiedene Zeilen der Stoff für die Probeschularbeit vom Stoffzettel hat. */
+export const stoffZeilenAnzahl = (zeilen: StoffFuerProbe[]) => new Set(zeilen.map((z) => z.text.replace(/\s+/g, " ").trim().toLowerCase()).filter(Boolean)).size;
+
+/**
+ * Die Probeschularbeit vom Stoffzettel: `planeVomStoff` legt fest, welche Zeilen bei welcher Aufgabe drankommen, die KI
+ * schreibt alle Aufgaben in einer Anfrage, jede an ihren Platz. Was die KI nicht passend liefert (oder ohne KI), macht die
+ * App: mit Fähigkeit aus den eingebauten Aufgaben, ohne eine Erklär-Aufgabe zum Wortlaut der Zeile. Eine Aufgabe zu einer
+ * Zeile ohne Fähigkeit hat keine Fähigkeit: sie zählt für die Note, nicht für den Lernstand.
+ */
+async function erstelleVomStoff(input: ProbeInput, test: repo.TestResult, student: repo.Student): Promise<ProbeErstellt> {
+  const zeilen = stoffFuerProbe(test.id);
+  if (!zeilen.length) throw new Error("Zu dieser Schularbeit ist noch kein Stoff eingetragen. Lies zuerst den Stoffzettel ein.");
+  const dauer = isDauer(input.dauer ?? 0) ? (input.dauer as Dauer) : DAUER_STANDARD;
+  const plaetze = planeVomStoff(zeilen, ANZAHL[dauer]);
+  const all = new Map(repo.listSkills().map((s) => [s.id, s]));
+  const klasse = student.klasse ?? 1;
+  const grade = student.klasse ? schulstufe(student.school_type, student.klasse) : student.grade;
+  const typen = new Set(categoriesFor(test.subject).map((c) => c.key));
+  const skillIds = [...new Set(plaetze.flatMap((p) => p.skillIds))].filter((id) => all.has(id));
+  const wortarten = wortartenFor(skillIds, grade);
+  const kategorien = plaetze.map((p, i) => kategorieFuer(test.subject, p, typen, plaetze.slice(0, i).filter((x) => x.stoff[0] === p.stoff[0]).length));
+
+  const drafts: (TaskDraft | null)[] = plaetze.map(() => null);
+  let aiError: string | undefined;
+  if ((input.useAI ?? true) && aiEnabled()) {
+    try {
+      const out = await generatePlanWithAI(
+        {
+          subject: test.subject,
+          level: klassenLabel(student.school_type, klasse),
+          skills: skillIds.map((id) => ({ id, name: all.get(id)!.name, area: all.get(id)!.area, difficulty: "mittel" as const })),
+          count: plaetze.length,
+          categories: [],
+          focusNote: FOKUS_STOFF,
+          plan: plaetze.map((p, i) => ({ skillId: p.skillIds[0] ?? "", category: kategorien[i], difficulty: p.difficulty, stoff: p.stoff })),
+          wortarten,
+        },
+        { teacherId: input.teacherId, studentId: student.id, trigger: "probeschularbeit" },
+      );
+      // jede Aufgabe mit der Fähigkeit und Schwierigkeit ihres Platzes (eine Zeile ohne Fähigkeit: keine)
+      (out ?? []).forEach((d, i) => {
+        if (d) drafts[i] = { ...d, skillId: plaetze[i].skillIds[0] ?? null, skillIds: plaetze[i].skillIds, difficulty: plaetze[i].difficulty };
+      });
+      if (!drafts.some(Boolean)) aiError = "Die KI hat keine passenden Aufgaben geliefert.";
+    } catch (e) {
+      aiError = e instanceof Error ? e.message : String(e);
+    }
+  } else aiError = "Die KI ist nicht eingeschaltet.";
+
+  // was fehlt: aus den eingebauten Aufgaben, eine Zeile ohne Fähigkeit als Erklär-Aufgabe zu ihrem Wortlaut
+  const rng = input.seed === undefined ? Math.random : zufall(input.seed);
+  const gesehen = schonGesehen(student.id);
+  const keys = new Set(drafts.filter((d): d is TaskDraft => Boolean(d)).map(taskKey));
+  let ersetzt = 0;
+  let ohneKi = 0;
+  plaetze.forEach((p, i) => {
+    if (drafts[i]) return;
+    ersetzt++;
+    const skillId = p.skillIds.find((id) => all.has(id)) ?? null;
+    let t: TaskDraft | null = null;
+    for (let k = 0; k < 8; k++) {
+      const c = generateForSlot(
+        { skillId: skillId ?? "", skillName: skillId ? all.get(skillId)!.name : p.stoff.join(" und "), difficulty: p.difficulty, category: skillId ? kategorien[i] : "offen", subject: test.subject, wortarten, grade },
+        rng,
+        k,
+      );
+      if (!keys.has(taskKey(c)) && !gesehen.has(c.prompt)) {
+        t = c;
+        break;
+      }
+      t ??= c;
+    }
+    if (!skillId || !hasBuiltInGenerator(skillId)) ohneKi++;
+    keys.add(taskKey(t!));
+    drafts[i] = { ...t!, skillId, skillIds: skillId ? p.skillIds.filter((id) => all.has(id)) : [], sourceType: "eigen" };
+  });
+
+  const einheiten = [...new Set(plaetze.map((p) => p.einheit).filter(Boolean))];
+  const worksheetId = speichere(test, student, grade, {
+    tasks: drafts.filter((d): d is TaskDraft => Boolean(d)),
+    topic: (einheiten.length ? einheiten : [...new Set(skillIds.map((id) => all.get(id)!.area))]).join(", "),
+    source: ersetzt < plaetze.length ? "ki" : "generator",
+    skillIds,
+    teacherId: input.teacherId,
+    // stoff: die Zeilen jeder Aufgabe, in ihrer Reihenfolge
+    settings: { useAI: true, focus: FOKUS_STOFF, dauer, vomStoff: true, stoff: plaetze.map((p) => p.stoff) },
+  });
+  return { worksheetId, aiError, ohneKi, stoff: { zeilen: stoffZeilenAnzahl(zeilen), aufgaben: plaetze.length, ersetzt } };
+}
+
+/**
+ * Der Aufgabentyp eines Platzes vom Stoffzettel: wie bei der Fähigkeit (leichte Plätze kurz, schwere aufwendig). Mehrere
+ * Zeilen derselben Fähigkeit bekommen ihren aufwendigen Typ (etwa einen Rechenweg), Zeilen verschiedener Themen in
+ * Mathematik eine Sachaufgabe mit Teilfragen. Kommt dieselbe Zeile noch einmal, ein anderer Typ.
+ */
+function kategorieFuer(subject: string, p: StoffPlatz, typen: Set<string>, runde: number): string {
+  if (p.stoff.length > 1 && p.skillIds.length !== 1 && typen.has("sachaufgabe")) return "sachaufgabe";
+  const mix = typenFuerPlatz(
+    mixFor(subject, p.skillIds[0] ?? null).filter((k) => typen.has(k)),
+    p.stoff.length > 1 ? "schwer" : p.difficulty,
+  );
+  return mix[runde % mix.length] ?? "offen";
 }
