@@ -9,7 +9,7 @@ import type { FormState } from "./session-actions";
 export async function backupNowAction(_prev: FormState): Promise<FormState> {
   await requireAdmin();
   try {
-    const b = backupNow();
+    const b = await backupNow();
     revalidatePath("/export");
     return { ok: `Gesichert: ${b.counts.students ?? 0} Schüler, ${b.files} ${b.files === 1 ? "Datei" : "Dateien"}.` };
   } catch {

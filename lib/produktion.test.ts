@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -79,12 +80,16 @@ test("backup, rotation and restore with test data", async () => {
     fs.mkdirSync(p.uploadsDir);
     fs.writeFileSync(path.join(p.uploadsDir, "blatt.pdf"), "%PDF-1.4 testmaterial");
 
-    const b = s.createBackup(conn, p, new Date("2026-10-06T10:00:00Z"));
+    const b = await s.createBackup(conn, p, new Date("2026-10-06T10:00:00Z"));
     assert.equal(b.name, "sicherung-2026-10-06T10-00-00Z");
     assert.equal(b.counts.students, 1);
     assert.equal(b.files, 1);
     assert.ok(!s.backupDue(p.backupDir, 24, Date.parse("2026-10-06T20:00:00Z")));
     assert.ok(s.backupDue(p.backupDir, 24, Date.parse("2026-10-07T10:00:00Z")));
+    // the copy is stored compressed, the restore still sees the full database
+    assert.ok(fs.existsSync(path.join(p.backupDir, b.name, "nachhilfe.db.gz")));
+    assert.ok(!fs.existsSync(path.join(p.backupDir, b.name, "nachhilfe.db")));
+
 
     // after the backup: the student is deleted, the file is gone, a new one came in
     conn.prepare("DELETE FROM students").run();
@@ -120,11 +125,21 @@ test("backup, rotation and restore with test data", async () => {
     assert.ok(fs.readdirSync(dir).some((n) => n.startsWith("restore-fehlgeschlagen-")));
 
     // a damaged backup is refused
-    fs.appendFileSync(path.join(p.backupDir, b.name, "nachhilfe.db"), "x");
+    fs.appendFileSync(path.join(p.backupDir, b.name, "nachhilfe.db.gz"), "x");
     assert.ok("error" in s.stageRestore(b.name, p));
 
+    // a backup folder copied by hand into restore-pending (compressed) is unpacked at the start
+    const good = (await s.createBackup(conn, p, new Date("2026-10-06T10:30:00Z"))).name;
+    fs.cpSync(path.join(p.backupDir, good), pending, { recursive: true });
+    fs.writeFileSync(path.join(pending, "quelle.txt"), good);
+    conn.close();
+    assert.equal(s.applyPendingRestore(dbFile, p.uploadsDir, new Date("2026-10-06T12:30:00Z")), good);
+    conn = openDatabase(dbFile);
+    assert.equal((conn.prepare("SELECT COUNT(*) AS n FROM students").get() as { n: number }).n, 1);
+    fs.rmSync(path.join(p.backupDir, good), { recursive: true });
+
     // rotation keeps the newest
-    for (let h = 11; h < 16; h++) s.createBackup(conn, p, new Date(`2026-10-06T${h}:00:00Z`));
+    for (let h = 11; h < 16; h++) await s.createBackup(conn, p, new Date(`2026-10-06T${h}:00:00Z`));
     s.rotateBackups(p.backupDir, 3);
     assert.deepEqual(
       s.listBackups(p.backupDir).map((x) => x.name),
@@ -137,6 +152,42 @@ test("backup, rotation and restore with test data", async () => {
     if (conn.open) conn.close();
     const { closeDatabase } = await import("./db");
     closeDatabase();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("full volume: old uncompressed backups are compressed, then the oldest make room", async () => {
+  const s = await import("./sicherungen");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lernheft-platz-"));
+  try {
+    // three backups the way they were written before compression (raw nachhilfe.db)
+    const data = Buffer.alloc(200_000, "lernheft ");
+    for (const d of ["01", "02", "03"]) {
+      const b = path.join(dir, `sicherung-2026-11-${d}T06-00-00Z`);
+      fs.mkdirSync(b);
+      fs.writeFileSync(path.join(b, "nachhilfe.db"), data);
+      fs.writeFileSync(path.join(b, "manifest.json"), JSON.stringify({ name: path.basename(b), createdAt: `2026-11-${d}T06:00:00Z`, dbBytes: data.length, files: 0, uploadBytes: 0, counts: {}, dbSha256: crypto.createHash("sha256").update(data).digest("hex") }));
+    }
+    const out = await s.compressOldBackups(dir);
+    assert.equal(out.count, 3);
+    assert.ok(out.freed > 3 * 150_000);
+    for (const n of fs.readdirSync(dir)) {
+      assert.ok(fs.existsSync(path.join(dir, n, "nachhilfe.db.gz")));
+      assert.ok(!fs.existsSync(path.join(dir, n, "nachhilfe.db")));
+    }
+    // a compressed old backup still restores (checksum of the uncompressed database)
+    const dbFile = path.join(dir, "live", "nachhilfe.db");
+    assert.deepEqual(s.stageRestore("sicherung-2026-11-01T06-00-00Z", { dbFile, uploadsDir: path.join(dir, "live", "uploads"), backupDir: dir }), { ok: true });
+    assert.deepEqual(fs.readFileSync(path.join(dir, "live", "restore-pending", "nachhilfe.db")), data);
+
+    // not enough free space: the oldest go first, but the newest `minKeep` always stay
+    let free = 0;
+    const removed = s.makeRoom(dir, 1_000, () => free, 2);
+    assert.deepEqual(removed, ["sicherung-2026-11-01T06-00-00Z"]);
+    assert.deepEqual(s.listBackups(dir).map((b) => b.name), ["sicherung-2026-11-03T06-00-00Z", "sicherung-2026-11-02T06-00-00Z"]);
+    free = Infinity;
+    assert.deepEqual(s.makeRoom(dir, 1_000, () => free, 1), [], "enough space: nothing is removed");
+  } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });

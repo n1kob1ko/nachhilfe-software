@@ -117,8 +117,11 @@ Drei Ebenen, alle drei nutzen:
    Backups weg.
 2. **App-Sicherungen** (gegen versehentlich gelöschte Daten): die App sichert einmal am Tag
    Datenbank und Material nach `/data/backups/sicherung-<Zeit>/` (konsistente Kopie per
-   `VACUUM INTO`, Material als Hardlinks, `manifest.json` mit Prüfsumme und Anzahlen). Die letzten 14
-   bleiben (`BACKUP_KEEP`). Mehr › Datenexport zeigt die Liste und hat „Jetzt sichern“.
+   `VACUUM INTO`, gzip-komprimiert als `nachhilfe.db.gz`, Material als Hardlinks, `manifest.json` mit
+   Prüfsumme und Anzahlen). Die letzten 14 bleiben (`BACKUP_KEEP`). Vor jeder Sicherung werden alte,
+   unkomprimierte Sicherungen komprimiert; ist danach weniger frei als zweimal die Datenbank plus
+   100 MB (`BACKUP_RESERVE_MB`), fallen die ältesten weg, die neuesten 3 (`BACKUP_MIN_KEEP`) bleiben
+   immer. Mehr › Datenexport zeigt die Liste, den freien Speicher und hat „Jetzt sichern“.
 3. **Kopie außerhalb von Railway**: ab und zu unter Mehr › Datenexport die JSON-Sicherung
    herunterladen (alle Daten ohne Passwörter, ohne Material-Dateien).
 
@@ -172,5 +175,7 @@ Ohne Admin-Zugang geht Schritt 1 auch per `railway ssh`:
 | `ALLOW_DEFAULT_PASSWORD` | `1` erlaubt `lernheft` auch mit `NODE_ENV=production` (nur lokale Tests) |
 | `BACKUP_PATH` | Ordner der App-Sicherungen, sonst `backups/` neben der Datenbank |
 | `BACKUP_KEEP` | Anzahl App-Sicherungen, die bleiben, Standard 14 |
+| `BACKUP_MIN_KEEP` | so viele neueste Sicherungen bleiben auch bei vollem Speicher, Standard 3 |
+| `BACKUP_RESERVE_MB` | so viel bleibt nach einer Sicherung mindestens frei (zusätzlich zu Platz für eine Datenbank-Kopie), Standard 100 |
 | `BACKUP_INTERVAL_HOURS` | Abstand der App-Sicherungen, Standard 24 |
 | `BACKUP_DISABLED` | `1` schaltet die automatische App-Sicherung ab |
