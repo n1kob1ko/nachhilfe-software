@@ -4,7 +4,7 @@
  */
 
 /** So viele Seiten liest die KI auf einmal. */
-export const MAX_SEITEN = 4;
+export const MAX_SEITEN = 10;
 /** So viele Aufgaben hat ein Blatt höchstens. */
 export const MAX_ZEILEN = 40;
 
@@ -38,8 +38,19 @@ export type BlattZeile = {
   warUnsicher?: boolean;
 };
 
-/** `lesungId`: bei „Arbeit fotografieren“ die auf dem Server gespeicherte Lesung (nur zur Anzeige; der Server sucht sie selbst). */
-export type BlattVorschlag = { titel: string; zeilen: BlattZeile[]; gesamt: number | null; gesamtMax: number | null; note: number | null; hinweise: string[]; lesungId?: number };
+/**
+ * Eine **Erkenntnis** aus einem gelesenen Blatt (lib/erkenntnisse.ts): ein Fehlermuster über mehrere Aufgaben („Bestimmt den
+ * Fall über den Begleiter statt über die Frage“) oder eine Stärke. Die Lehrkraft prüft sie in der Vorschau.
+ */
+export type BlattErkenntnis = { art: "fehler" | "staerke"; text: string; skillId: string | null; fehlerart: string | null };
+/** So viele Erkenntnisse übernimmt ein Blatt höchstens. */
+export const MAX_ERKENNTNISSE = 10;
+
+/**
+ * `lesungId`: bei „Arbeit fotografieren“ die auf dem Server gespeicherte Lesung (nur zur Anzeige; der Server sucht sie selbst).
+ * `erkenntnisse`: was die KI über das ganze Blatt herausgefunden hat (nur beim Einlesen eines fremden Blatts).
+ */
+export type BlattVorschlag = { titel: string; zeilen: BlattZeile[]; gesamt: number | null; gesamtMax: number | null; note: number | null; hinweise: string[]; lesungId?: number; erkenntnisse?: BlattErkenntnis[] };
 
 /** Die erreichten Punkte einer Zeile: vom Blatt, sonst aus der Bewertung (teilweise = die Hälfte), sonst null. */
 export function erreichtVon(z: Pick<BlattZeile, "punkte" | "max" | "bewertung">): number | null {
