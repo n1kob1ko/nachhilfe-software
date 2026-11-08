@@ -21,7 +21,7 @@ import { aiEnabled } from "@/lib/ai";
 import { bewertungenJeAufgabe } from "@/lib/bewertungen";
 import { settingsOf } from "@/lib/builder";
 import { getMaterial } from "@/lib/materials";
-import { punkteDerAufgaben, punkteText } from "@/lib/probeschularbeit";
+import { punkteDerAufgaben, punkteText, stoffHinweis } from "@/lib/probeschularbeit";
 import { ohneFaehigkeitText } from "@/lib/probe-extern-regeln";
 import * as repo from "@/lib/repo";
 import { isSorte, SORTEN, type SorteKey } from "@/lib/schreibauftrag";
@@ -32,7 +32,7 @@ import { wordRange } from "@/lib/textinterpretation";
 import { shortNames } from "@/lib/vornamen";
 import { ownBoardFor, runningBoardsFor } from "@/lib/whiteboard";
 
-export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string; gesendet?: string; ausgelassen?: string; anzahl?: string; archiv?: string; fehler?: string }> }) {
+export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string; gesendet?: string; ausgelassen?: string; anzahl?: string; archiv?: string; fehler?: string; zeilen?: string; aufgaben?: string; ersetzt?: string; ki?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -152,6 +152,16 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
       {sp.hinweis === "ki" && (
         <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Die KI war nicht erreichbar. Die Aufgaben stammen aus den eingebauten Generatoren.</p>
       )}
+      {sp.hinweis === "stoff" &&
+        (() => {
+          // Probeschularbeit vom Stoffzettel (lib/probeschularbeit.ts): jede Zeile ist dabei, und was die App statt der KI machte
+          const h = stoffHinweis({ zeilen: Number(sp.zeilen) || 0, aufgaben: Number(sp.aufgaben) || 0, ersetzt: Number(sp.ersetzt) || 0, erklaeren: Number(sp.anzahl) || 0, ki: sp.ki !== "0" });
+          return (
+            <p className={`no-print mb-6 rounded-2xl px-4 py-3 text-[14px] ${h.gut ? "bg-green-wash text-green" : "bg-amber-wash text-amber"}`} data-testid="hinweis-stoff">
+              {h.text}
+            </p>
+          );
+        })()}
       {sp.hinweis === "typ" && (
         <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">
           {Number(sp.anzahl) === 1 ? "Eine Aufgabe hat" : `${Number(sp.anzahl) || "Einige"} Aufgaben haben`} einen anderen Typ, weil es den gewählten Typ ohne KI für diese Fähigkeit nicht gibt. Ändere sie unten mit „Bearbeiten“.

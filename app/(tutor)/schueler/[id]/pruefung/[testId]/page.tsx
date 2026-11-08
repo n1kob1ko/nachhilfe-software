@@ -11,7 +11,7 @@ import { dayOf, examPrep, PLAN_COUNTS, STAGE_LABEL, STAGE_TONE } from "@/lib/exa
 import { aiEnabled } from "@/lib/ai";
 import { matchSkills, skillsForStudent, stoffVorschlag } from "@/lib/lehrplan";
 import { externDaten, ohneFaehigkeitText } from "@/lib/probe-extern";
-import { probeschularbeitenZu, punkteText } from "@/lib/probeschularbeit";
+import { probeschularbeitenZu, punkteText, stoffFuerProbe, stoffZeilenAnzahl } from "@/lib/probeschularbeit";
 import { stoffDerPruefung } from "@/lib/pruefungsstoff";
 import type { Skill } from "@/lib/repo";
 import { auftraegeZurPruefung } from "@/lib/schreibauftrag-store";
@@ -63,6 +63,9 @@ export default async function ExamPrepPage({
   // read from its documents (lib/pruefungsstoff.ts): the view „Erkannt“ with every point and what is still to confirm
   const erkannt = stoffDerPruefung(test.id);
   const zuBestaetigen = erkannt.filter((z) => (z.zuordnung === "unklar" && z.status !== "ausgeschlossen" && z.vorschlaege.length) || z.status === "unklar").length;
+  // Probeschularbeit vom Stoffzettel: so viele Zeilen hat der Stoff (geht auch, bevor er Fähigkeiten zugeordnet ist)
+  const ki = aiEnabled();
+  const stoffZeilen = ki ? stoffZeilenAnzahl(stoffFuerProbe(test.id)) : 0;
   const builder = `/uebungen/neu?schueler=${student.id}&skills=${plan.map((p) => encodeURIComponent(p.skill.id)).join(",")}&anzahl=${Math.min(30, totalTasks)}`;
 
   return (
@@ -247,7 +250,7 @@ export default async function ExamPrepPage({
               ))}
             </ul>
           )}
-          {zuordnen ? (
+          {zuordnen && stoffZeilen === 0 ? (
             <p className="text-[14px] text-ink-3">
               Ordne zuerst den Stoff Fähigkeiten zu, dann kannst du eine Probeschularbeit erstellen.{" "}
               <a href="#stoff-zuordnen" className="font-semibold text-accent hover:underline">
@@ -256,7 +259,7 @@ export default async function ExamPrepPage({
             </p>
           ) : (
             <div className="panel px-4 py-4">
-              <ProbeschularbeitForm action={probeschularbeitAction.bind(null, test.id)} ai={aiEnabled()} again={proben.length > 0} />
+              <ProbeschularbeitForm action={probeschularbeitAction.bind(null, test.id)} ai={ki} again={proben.length > 0} stoff={stoffZeilen} nurStoff={zuordnen} />
             </div>
           )}
           {/* one made outside the app: Angabe and Musterlösung (lib/probe-extern.ts); needs no linked skills */}

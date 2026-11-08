@@ -18,13 +18,21 @@ export async function probeschularbeitAction(testId: number, f: FormData) {
   let out: Awaited<ReturnType<typeof erstelleProbeschularbeit>> | null = null;
   let fehler = "";
   try {
-    out = await erstelleProbeschularbeit({ testId, teacherId: teacher.id, dauer: Number(f.get("dauer")), useAI: f.get("ki") === "1" });
+    // vom Stoffzettel: die KI schreibt alle Aufgaben, jede Zeile des Stoffs kommt dran
+    const vomStoff = f.get("aufgaben") === "stoff";
+    out = await erstelleProbeschularbeit({ testId, teacherId: teacher.id, dauer: Number(f.get("dauer")), useAI: vomStoff || f.get("ki") === "1", vomStoff });
   } catch (e) {
     fehler = e instanceof Error ? e.message : "Die Probeschularbeit konnte nicht erstellt werden.";
   }
   if (!out) redirect(`${back}?fehler=${encodeURIComponent(fehler)}#probeschularbeit`);
   revalidatePath(back);
-  const hinweis = out.aiError ? "?hinweis=ki" : out.ohneKi ? `?hinweis=erklaeren&anzahl=${out.ohneKi}` : "";
+  const hinweis = out.stoff
+    ? `?hinweis=stoff&zeilen=${out.stoff.zeilen}&aufgaben=${out.stoff.aufgaben}&ersetzt=${out.stoff.ersetzt}&anzahl=${out.ohneKi}${out.aiError ? "&ki=0" : ""}`
+    : out.aiError
+      ? "?hinweis=ki"
+      : out.ohneKi
+        ? `?hinweis=erklaeren&anzahl=${out.ohneKi}`
+        : "";
   redirect(`/uebungen/${out.worksheetId}${hinweis}`);
 }
 
