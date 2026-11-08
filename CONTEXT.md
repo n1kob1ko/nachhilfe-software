@@ -110,6 +110,13 @@ Was die Lehrkraft über einen **Schüler** herausgefunden hat, je Fehlermuster o
 `lib/erkenntnisse.ts`). Offene Fehler-Erkenntnisse sind der Schwerpunkt des nächsten Übungspakets.
 _Avoid_: Notiz, Beobachtung (das ist das freie Feld der Dokumentation), Insight
 
+**Übungspaket**:
+Eine **Übung** gegen die offenen Fehler-**Erkenntnisse** eines Schülers (`lib/uebungspaket.ts`, Profil › Lernstand ›
+„Übungspaket erstellen“): die Lehrkraft hakt die Fehler an und schreibt, was nicht mehr kommt; die KI bekommt die
+Fehlermuster wörtlich. Danach wie jede Übung: Vorschau, drucken oder aufs Tablet. Ist es gelöst, sagt „Auswerten“ je
+Fehler behoben, besser oder offen und nennt neue; übernommen werden behobene Fehler erledigt. Dann das nächste Paket.
+_Avoid_: Lernpaket (das ist ein Thema mit Erklärung und Präsentation), Arbeitsblatt
+
 **geplante Einheit**:
 Ein Platz im Wochenplan: wer (Lehrer, Schüler), wo (Raum), an welchem Wochentag,
 zu welcher Startzeit und mit welcher **geplanten Dauer**. Sie wird erst wirklich,
