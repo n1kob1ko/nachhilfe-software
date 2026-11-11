@@ -15,7 +15,7 @@
  */
 import { parseTime } from "./analysis";
 import { db, json } from "./db";
-import { beendeRunde, starteRundeMitKarten } from "./lernspiele";
+import { beendeRunde, duellVokabeln, starteRundeMitKarten } from "./lernspiele";
 import { stufenFuer, waehleKarten } from "./lernspiele-karten";
 import { istSpielArt, type SpielArt, type SpielKarte } from "./lernspiele-typen";
 import * as repo from "./repo";
@@ -70,7 +70,10 @@ function neuerCode(rng: () => number = Math.random): string {
 export const normCode = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/O/g, "0").replace(/[IL]/g, "1");
 
 function karten(art: SpielArt, a: repo.Student, b: repo.Student, rng?: () => number): SpielKarte[] {
-  return waehleKarten(art, { stufen: stufenFuer(art, Math.min(a.grade, b.grade), null), rng });
+  const stufe = Math.min(a.grade, b.grade);
+  // Vokabel-Paare: eine Themenliste, für beide dieselbe (eigene Listen hat nur einer von beiden)
+  if (art === "vokabeln") return duellVokabeln(stufe, stufe <= 4, rng);
+  return waehleKarten(art, { stufen: stufenFuer(art, stufe, null), rng });
 }
 
 // ---------- Duell per Code ----------

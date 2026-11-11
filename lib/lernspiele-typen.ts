@@ -7,9 +7,12 @@
 /**
  * Die Deutsch-Spiele. Zuerst Artikel, Präpositionen und Deklination (niko 2026-11-11: „oft ein Problem“), dann
  * die übrigen („mach alle Deutsch-Spiele zuerst“): die vier Fälle, das/dass, Hauptsatz/Gliedsatz, Perfekt und
- * Präteritum. Alle teilen eine Mechanik: eine Karte in die richtige Kiste.
+ * Präteritum. Sie teilen eine Mechanik: eine Karte in die richtige Kiste.
+ *
+ * Dazu „Vokabel-Paare“ für Englisch (niko: „das Englischspiel, das Vokabelspiel“) mit eigener Mechanik: englische
+ * und deutsche Wörter stehen sich gegenüber, je zwei gehören zusammen (`form: "paar"`).
  */
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "vokabeln"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -23,6 +26,7 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   satzteile: "Hauptsatz oder Gliedsatz",
   perfekt: "Perfekt: haben oder sein",
   praeteritum: "Präteritum",
+  vokabeln: "Vokabel-Paare",
 };
 
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
@@ -35,6 +39,7 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch"> = {
   satzteile: "Deutsch",
   perfekt: "Deutsch",
   praeteritum: "Deutsch",
+  vokabeln: "Englisch",
 };
 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
@@ -47,6 +52,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   satzteile: "Welcher Teil kann allein stehen?",
   perfekt: "ist gegangen oder hat gegangen?",
   praeteritum: "ging, gehte oder geht?",
+  vokabeln: "Englisch und Deutsch: was gehört zusammen?",
 };
 
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
@@ -59,6 +65,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   satzteile: ["weil", "dass", "wenn"],
   perfekt: ["hat", "ist", "sind"],
   praeteritum: ["ging", "kam", "sah"],
+  vokabeln: ["dog", "house", "school"],
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -71,14 +78,25 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   satzteile: "Ist der markierte Teil Hauptsatz oder Gliedsatz?",
   perfekt: "haben oder sein?",
   praeteritum: "Welche Form passt im Präteritum?",
+  vokabeln: "Welche zwei Wörter gehören zusammen?",
 };
+
+/** So spielt sich ein Spiel: Karten in Kisten (ohne Angabe) oder Paare finden. */
+export type SpielForm = "paar";
+export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = { vokabeln: "paar" };
 
 /**
  * Eine Karte des Spiels. `vor` und `nach` stehen um die Lücke (bei „der, die, das“ ist `wort` die Karte, ohne
  * Satz). `faecher` sind die Fächer unten in fester Reihenfolge, damit die Hand sich die Plätze merkt.
+ *
+ * Bei Paaren (`form: "paar"`) ist `wort` das englische Wort und `richtig` das deutsche; `faecher` ist leer, die
+ * Auswahl sind die deutschen Wörter der anderen Karten auf dem Brett.
  */
 export type SpielKarte = {
   key: string;
+  form?: SpielForm;
+  /** Die Fähigkeit dieser Karte, wenn sie nicht am Spiel hängt (Vokabeln: das Thema oder die eigenen Listen) */
+  skill?: string;
   /** Nur bei „der, die, das“: das Nomen */
   wort?: string;
   /** Bei zwei Bedeutungen: die gemeinte („Nadelbaum“) */
@@ -132,3 +150,47 @@ export const sterneFuer = (richtig: number, karten: number): 1 | 2 | 3 => {
   const anteil = karten ? richtig / karten : 0;
   return anteil >= 0.9 ? 3 : anteil >= 0.7 ? 2 : 1;
 };
+
+// ---------- Paare: Bretter (auch im Browser gebraucht, components/lernen/PaarFeld.tsx) ----------
+
+/** So viele Paare stehen höchstens auf einem Brett (sechs Zeilen passen auf jedes Handy). */
+export const PAARE_JE_BRETT = 6;
+
+function mischen<T>(xs: T[], rng: () => number): T[] {
+  const a = [...xs];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+/** Die deutschen Wörter eines Bretts in anderer Reihenfolge als die englischen. */
+export const gemischt = mischen;
+
+/** Teilt die Karten einer Runde auf Bretter mit höchstens sechs Paaren auf, möglichst gleich groß (12 → 6 + 6, 8 → 4 + 4). */
+export function bretter<T>(karten: T[], jeBrett = PAARE_JE_BRETT): T[][] {
+  if (!karten.length) return [];
+  const zahl = Math.ceil(karten.length / jeBrett);
+  const out: T[][] = [];
+  let von = 0;
+  for (let i = 0; i < zahl; i++) {
+    const groesse = Math.ceil((karten.length - von) / (zahl - i));
+    out.push(karten.slice(von, von + groesse));
+    von += groesse;
+  }
+  return out;
+}
+
+/**
+ * Das Brett zum Schluss mit den Wörtern, die in der Runde zuerst falsch waren: sie stehen noch einmal da, aufgefüllt
+ * mit richtigen auf mindestens vier Paare, damit das letzte Paar nicht von selbst feststeht. Leer ohne Fehler.
+ */
+export function nochmalBrett<T extends { key: string }>(karten: T[], falsch: Set<string>, rng: () => number = Math.random): T[] {
+  const schwer = karten.filter((k) => falsch.has(k.key)).slice(0, PAARE_JE_BRETT);
+  if (!schwer.length) return [];
+  const fuell = mischen(
+    karten.filter((k) => !falsch.has(k.key)),
+    rng,
+  ).slice(0, Math.max(0, Math.min(4, karten.length) - schwer.length));
+  return mischen([...schwer, ...fuell], rng);
+}

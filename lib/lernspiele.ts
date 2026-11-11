@@ -3,9 +3,11 @@
  *
  * - **Welches Spiel**: die App wählt es nach dem Stoff des Schülers (`spielVorschlaege`), in dieser Reihenfolge:
  *   eine Prüfung in den nächsten 21 Tagen mit passender Fähigkeit, der aktuelle Stoff im Profil, die letzte
- *   Einheit (14 Tage), eine unsichere Fähigkeit im Lernstand, sonst Deutsch als Fach. Ohne Deutsch kein Spiel.
+ *   Einheit (14 Tage), eine unsichere Fähigkeit im Lernstand, sonst das Fach (Deutsch-Spiele mit Deutsch, Vokabel-Paare mit Englisch
+ *   oder einer eigenen Vokabelliste).
  * - **Welche Karten**: aus den geprüften Aufgabenbanken (lib/lernspiele-karten.ts), Stufe nach Schulstufe und
- *   Lernstand, Fehler der letzten Runden kommen wieder.
+ *   Lernstand, Fehler der letzten Runden kommen wieder. „Vokabel-Paare“ (Englisch) nimmt die eigenen Vokabellisten
+ *   des Schülers, sonst eine Themenliste (`vokabelPlan`, lib/lernspiele-vokabeln.ts).
  * - **Was zählt**: die erste Wahl je Karte. Der Server prüft sie an den Karten, die er beim Start gespeichert hat.
  *   Eine beendete Runde ist ein Beleg für den Lernstand mit Gewicht 1,5 (`SOURCE_WEIGHT.spiel`), so viel wie eine
  *   dokumentierte Stunde und viel weniger als die Aufgaben einer Übung. Abgebrochene Runden zählen nicht.
@@ -14,9 +16,15 @@ import { parseTime } from "./analysis";
 import { materialSkills, activeMaterial } from "./current-material";
 import { db, json } from "./db";
 import { stufenFuer, waehleKarten } from "./lernspiele-karten";
-import { istSpielArt, sterneFuer, type SpielAntwort, type SpielArt, type SpielKarte, type SpielVorschlag } from "./lernspiele-typen";
+import { istSpielArt, SPIEL_FACH, sterneFuer, type SpielAntwort, type SpielArt, type SpielKarte, type SpielVorschlag } from "./lernspiele-typen";
+import { PAARE_MIN, vokabelKandidaten, vokabelKey, vokabelStufen, waehleVokabeln, type VokabelKandidat } from "./lernspiele-vokabeln";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
 import * as repo from "./repo";
+import { THEMEN } from "./themen";
+import { leseListe } from "./vokabeln";
+import { EIGENE_VOKABELN } from "./vokabeln-pruefen";
+import { listenVon, vokabelQuelle } from "./vokabellisten";
+import { VOKABEL_THEMEN } from "./vokabeln-themen";
 
 /** Die Fähigkeit, die ein Spiel übt, und welche Fähigkeiten im Stoff zu ihm führen. */
 export const SPIEL_SKILL: Record<SpielArt, string> = {
@@ -28,9 +36,11 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   satzteile: "deutsch.satz.hauptsatz-gliedsatz",
   perfekt: "deutsch.grammatik.perfekt",
   praeteritum: "deutsch.grammatik.praeteritum",
+  // Vokabel-Paare: die eigenen Listen; spielt jemand eine Themenliste, hängt die Fähigkeit an der Runde (vokabelPlan)
+  vokabeln: EIGENE_VOKABELN,
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, vokabeln: 3 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -45,6 +55,8 @@ const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.zeiten": ["perfekt", "praeteritum"],
   "deutsch.grammatik.perfekt": ["perfekt"],
   "deutsch.grammatik.praeteritum": ["praeteritum"],
+  // jede Themenliste des Vokabeltrainers und die eigenen Listen
+  ...Object.fromEntries([...Object.keys(VOKABEL_THEMEN), EIGENE_VOKABELN].map((id) => [id, ["vokabeln"] as SpielArt[]])),
 };
 
 export const spieleZuSkills = (ids: string[]): SpielArt[] => [
@@ -65,32 +77,16 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
     for (const art of arten) if (!out.some((v) => v.art === art)) out.push({ art, grund, quelle });
   };
 
-  const bis = tagAddieren(o.heute, PRUEFUNG_TAGE);
-  const pruefungen = repo
-    .listTests(student.id)
-    .filter((t) => (t.status ?? "geplant") === "geplant" && t.date >= o.heute && t.date <= bis)
-    .sort((a, b) => a.date.localeCompare(b.date));
-  for (const t of pruefungen) {
-    const tage = Math.round((Date.parse(t.date) - Date.parse(o.heute)) / 86_400_000);
-    const wann = tage === 0 ? "heute" : tage === 1 ? "morgen" : `in ${tage} Tagen`;
-    add(spieleZuSkills(t.skill_ids), `${t.title || t.kind || "Prüfung"} ${wann}`, "pruefung");
-  }
-
-  for (const m of activeMaterial(student.id)) add(spieleZuSkills(materialSkills(m, student).ids), "Dein aktueller Stoff", "stoff");
-
-  const seit = tagAddieren(o.heute, -EINHEIT_TAGE);
-  const letzte = repo
-    .listLessons(student.id)
-    .filter((l) => l.kind === "stunde" && l.starts_at.slice(0, 10) >= seit)
-    .sort((a, b) => b.starts_at.localeCompare(a.starts_at))[0];
-  if (letzte) add(spieleZuSkills(letzte.skill_ids), "Aus deiner letzten Einheit", "einheit");
+  for (const q of stoffQuellen(student, o.heute)) add(spieleZuSkills(q.ids), q.grund, q.quelle);
+  // eine eigene Vokabelliste ist aktueller Stoff: die Lehrkraft hat sie für genau diese Wörter angelegt
+  if (eigeneVokabeln(student.id).length >= PAARE_MIN) add(["vokabeln"], "Deine Vokabelliste", "stoff");
 
   for (const [art, skill] of Object.entries(SPIEL_SKILL) as [SpielArt, string][]) {
     const m = o.lernstand?.get(skill);
     if (m != null && m < UNSICHER) add([art], "Da bist du noch unsicher", "lernstand");
   }
 
-  if (out.length || student.subjects.includes("Deutsch")) {
+  if (student.subjects.includes("Deutsch") || out.some((v) => SPIEL_FACH[v.art] === "Deutsch")) {
     // die übrigen zum Weiterüben; Artikel für die Kleinen zuerst, Endungen erst ab der Unterstufe
     const reihe: SpielArt[] = student.grade <= 4 ? ["artikel", "praepositionen", "perfekt", "praeteritum"] : ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "artikel"];
     add(
@@ -99,7 +95,111 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
       "fach",
     );
   }
+  if (student.subjects.includes("Englisch") && student.grade >= SPIEL_AB.vokabeln) add(["vokabeln"], "Zum Üben", "fach");
   return out;
+}
+
+/**
+ * Der Stoff des Schülers als Fähigkeiten, das Dringendste zuerst: Prüfungen der nächsten 21 Tage, der aktuelle Stoff
+ * im Profil, die letzte Einheit (14 Tage).
+ */
+function stoffQuellen(student: repo.Student, heute: string): { ids: string[]; grund: string; quelle: SpielVorschlag["quelle"] }[] {
+  const out: { ids: string[]; grund: string; quelle: SpielVorschlag["quelle"] }[] = [];
+  const bis = tagAddieren(heute, PRUEFUNG_TAGE);
+  const pruefungen = repo
+    .listTests(student.id)
+    .filter((t) => (t.status ?? "geplant") === "geplant" && t.date >= heute && t.date <= bis)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  for (const t of pruefungen) {
+    const tage = Math.round((Date.parse(t.date) - Date.parse(heute)) / 86_400_000);
+    const wann = tage === 0 ? "heute" : tage === 1 ? "morgen" : `in ${tage} Tagen`;
+    out.push({ ids: t.skill_ids, grund: `${t.title || t.kind || "Prüfung"} ${wann}`, quelle: "pruefung" });
+  }
+  for (const m of activeMaterial(student.id)) out.push({ ids: materialSkills(m, student).ids, grund: "Dein aktueller Stoff", quelle: "stoff" });
+  const seit = tagAddieren(heute, -EINHEIT_TAGE);
+  const letzte = repo
+    .listLessons(student.id)
+    .filter((l) => l.kind === "stunde" && l.starts_at.slice(0, 10) >= seit)
+    .sort((a, b) => b.starts_at.localeCompare(a.starts_at))[0];
+  if (letzte) out.push({ ids: letzte.skill_ids, grund: "Aus deiner letzten Einheit", quelle: "einheit" });
+  return out;
+}
+
+// ---------- Vokabel-Paare: welche Wörter ----------
+
+/** Die spielbaren Wörter der eigenen Listen (alle Listen, jedes Paar einmal). */
+const eigeneVokabeln = (studentId: number): VokabelKandidat[] => vokabelKandidaten(vokabelQuelle(studentId).eintraege, EIGENE_VOKABELN);
+
+const istVolksschule = (student: Pick<repo.Student, "grade" | "school_type">) => student.school_type === "Volksschule" || student.grade <= 4;
+/** Die Themenlisten für die Schulart, in der Reihenfolge des Vokabeltrainers. */
+export const vokabelThemen = (volksschule: boolean): string[] => Object.keys(VOKABEL_THEMEN).filter((id) => id.includes(".vs.") === volksschule);
+/** „Wortschatz: Familie“ → „Familie“ */
+export const themaName = (skillId: string) => (THEMEN.find((t) => t.id === skillId)?.name ?? "Vokabeln").replace(/^Wortschatz:\s*/, "");
+
+/** So gut muss eine Runde sein, damit sie für „Thema geschafft“ zählt, und so viele solche Runden braucht es. */
+const THEMA_ANTEIL = 0.8;
+const THEMA_RUNDEN = 2;
+
+export type VokabelPlan = {
+  /** die Fähigkeit der Runde: die eigenen Listen oder das Thema */
+  skillId: string;
+  eigene: boolean;
+  /** für den Schüler: „Deine Liste „Unit 3““ oder „Thema: Familie“ */
+  titel: string;
+  pool: VokabelKandidat[];
+  /** eigene Listen: die Wörter der neuesten Liste kommen zuerst */
+  vorrang?: Set<string>;
+};
+
+/**
+ * Welche Wörter die nächste Runde „Vokabel-Paare“ hat. Hat der Schüler eigene Listen (mindestens vier Wörter), spielt
+ * er sie; die neueste zuerst. Sonst eine Themenliste: ein Thema aus seinem Stoff, sonst das erste Thema seiner
+ * Schulart, das er noch nicht geschafft hat (zwei Runden mit mindestens 80 %). Sind alle geschafft, das Thema, das am
+ * längsten her ist.
+ */
+export function vokabelPlan(student: repo.Student, heute: string): VokabelPlan {
+  const eigene = eigeneVokabeln(student.id);
+  if (eigene.length >= PAARE_MIN) {
+    const listen = listenVon(student.id);
+    const neueste = listen[0];
+    return {
+      skillId: EIGENE_VOKABELN,
+      eigene: true,
+      titel: listen.length === 1 ? `Deine Liste „${neueste.title}“` : "Deine Vokabellisten",
+      pool: eigene,
+      vorrang: listen.length > 1 ? new Set(leseListe(neueste.text).eintraege.map(vokabelKey)) : undefined,
+    };
+  }
+  const ausStoff = stoffQuellen(student, heute)
+    .flatMap((q) => q.ids)
+    .map((id) => Object.keys(VOKABEL_THEMEN).find((thema) => id === thema || id.startsWith(`${thema}.`)))
+    .find((id): id is string => Boolean(id));
+  const skillId = ausStoff ?? naechstesThema(student);
+  return { skillId, eigene: false, titel: `Thema: ${themaName(skillId)}`, pool: vokabelKandidaten(VOKABEL_THEMEN[skillId], skillId) };
+}
+
+function naechstesThema(student: repo.Student): string {
+  const themen = vokabelThemen(istVolksschule(student));
+  const runden = db()
+    .prepare("SELECT id, skill_id, richtig, anzahl FROM spielrunden WHERE student_id = ? AND art = 'vokabeln' AND beendet_at IS NOT NULL AND anzahl > 0")
+    .all(student.id) as { id: number; skill_id: string; richtig: number; anzahl: number }[];
+  const gut = (thema: string) => runden.filter((r) => r.skill_id === thema && r.richtig / r.anzahl >= THEMA_ANTEIL).length;
+  const offen = themen.find((thema) => gut(thema) < THEMA_RUNDEN);
+  if (offen) return offen;
+  const zuletzt = (thema: string) => Math.max(0, ...runden.filter((r) => r.skill_id === thema).map((r) => r.id));
+  return [...themen].sort((a, b) => zuletzt(a) - zuletzt(b))[0];
+}
+
+/** Die Fähigkeit, an der die nächste Runde eines Spiels hängt (für den Stand auf der Kachel und im Spiel). */
+export function skillFuerSpiel(student: repo.Student, art: SpielArt, heute: string): string {
+  return art === "vokabeln" ? vokabelPlan(student, heute).skillId : SPIEL_SKILL[art];
+}
+
+/** Karten für ein Duell „Vokabel-Paare“: eine Themenliste für die jüngere Schulstufe, für beide dieselbe. */
+export function duellVokabeln(schulstufe: number, volksschule: boolean, rng: () => number = Math.random): SpielKarte[] {
+  const themen = vokabelThemen(volksschule);
+  const thema = themen[Math.floor(rng() * themen.length)];
+  return waehleVokabeln(vokabelKandidaten(VOKABEL_THEMEN[thema], thema), { stufen: vokabelStufen(schulstufe, volksschule, null), rng });
 }
 
 // ---------- Runden ----------
@@ -143,18 +243,31 @@ function zuletztGespielt(studentId: number, art: SpielArt): string[] {
 }
 
 /** Startet eine Runde: wählt die Karten und merkt sie sich, damit das Ergebnis nur gegen sie geprüft wird. */
-export function starteRunde(student: repo.Student, art: SpielArt, o: { grund?: SpielVorschlag["quelle"]; lernstand?: number | null; rng?: () => number } = {}): { rundeId: number; karten: SpielKarte[] } {
+export function starteRunde(student: repo.Student, art: SpielArt, o: { grund?: SpielVorschlag["quelle"]; lernstand?: number | null; rng?: () => number; heute?: string } = {}): { rundeId: number; karten: SpielKarte[] } {
   // nicht beendete Runden von gestern und früher räumen sich selbst weg
   db().prepare("DELETE FROM spielrunden WHERE student_id = ? AND beendet_at IS NULL AND duell_id IS NULL AND created_at < datetime('now', '-1 day')").run(student.id);
-  const karten = waehleKarten(art, {
-    stufen: stufenFuer(art, student.grade, o.lernstand ?? null),
-    wiederholen: offeneFehler(student.id, art),
-    zuletzt: zuletztGespielt(student.id, art),
-    rng: o.rng,
-  });
+  let karten: SpielKarte[];
+  if (art === "vokabeln") {
+    const plan = vokabelPlan(student, o.heute ?? wienerDatum());
+    karten = waehleVokabeln(plan.pool, {
+      // eigene Listen haben keine Stufen: alle Wörter sind Stoff
+      stufen: plan.eigene ? undefined : vokabelStufen(student.grade, istVolksschule(student), o.lernstand ?? null),
+      wiederholen: offeneFehler(student.id, art),
+      zuletzt: zuletztGespielt(student.id, art),
+      vorrang: plan.vorrang,
+      rng: o.rng,
+    });
+  } else {
+    karten = waehleKarten(art, {
+      stufen: stufenFuer(art, student.grade, o.lernstand ?? null),
+      wiederholen: offeneFehler(student.id, art),
+      zuletzt: zuletztGespielt(student.id, art),
+      rng: o.rng,
+    });
+  }
   const r = db()
     .prepare("INSERT INTO spielrunden (student_id, art, skill_id, grund, karten, anzahl) VALUES (?, ?, ?, ?, ?, ?)")
-    .run(student.id, art, SPIEL_SKILL[art], o.grund ?? "fach", JSON.stringify(karten), karten.length);
+    .run(student.id, art, karten[0]?.skill ?? SPIEL_SKILL[art], o.grund ?? "fach", JSON.stringify(karten), karten.length);
   return { rundeId: Number(r.lastInsertRowid), karten };
 }
 
@@ -165,7 +278,7 @@ export function starteRunde(student: repo.Student, art: SpielArt, o: { grund?: S
 export function starteRundeMitKarten(studentId: number, art: SpielArt, karten: SpielKarte[], duellId: number): number {
   const r = db()
     .prepare("INSERT INTO spielrunden (student_id, art, skill_id, grund, karten, anzahl, duell_id) VALUES (?, ?, ?, 'duell', ?, ?, ?)")
-    .run(studentId, art, SPIEL_SKILL[art], JSON.stringify(karten), karten.length, duellId);
+    .run(studentId, art, karten[0]?.skill ?? SPIEL_SKILL[art], JSON.stringify(karten), karten.length, duellId);
   return Number(r.lastInsertRowid);
 }
 
