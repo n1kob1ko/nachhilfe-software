@@ -18,7 +18,7 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
 export const SPIEL_AUFGABE: Record<SpielArt, string> = {
-  artikel: "Wirf jedes Wort in das Fach mit seinem Artikel.",
+  artikel: "Wirf jedes Wort in die Kiste mit seinem Artikel.",
   praepositionen: "Welcher Artikel passt nach der Präposition?",
   deklination: "Welche Endung braucht das Adjektiv?",
 };
