@@ -3,8 +3,23 @@
  * den Übungen, ohne KI. Hier steht nur Reines (Karte bauen, Regel finden, Runde zusammenstellen), damit es sich
  * ohne Datenbank testen lässt; wer spielt und was gespeichert wird, steht in lib/lernspiele.ts.
  */
-import { eintragFehler, bankStufe, WECHSEL_PRAEPOSITION, type Stufe } from "./banken-regeln";
-import { adjektivdeklinationItems, artikelItems, praepositionenItems, type AdjektivdeklinationItem, type ArtikelItem, type PraepositionenItem } from "./banks";
+import { eintragFehler, bankStufe, grundformVon, satzVon, WECHSEL_PRAEPOSITION, type Stufe } from "./banken-regeln";
+import {
+  adjektivdeklinationItems,
+  artikelItems,
+  dasDassItems,
+  hauptsatzGliedsatzItems,
+  perfektItems,
+  praepositionenItems,
+  praeteritumItems,
+  type AdjektivdeklinationItem,
+  type ArtikelItem,
+  type ClozeItem,
+  type DasDassItem,
+  type HauptsatzGliedsatzItem,
+  type PraepositionenItem,
+} from "./banks";
+import { wahlFuerSpiel } from "./deutsch-satzlehre";
 import type { SpielArt, SpielKarte } from "./lernspiele-typen";
 
 type Rng = () => number;
@@ -161,10 +176,203 @@ export function deklinationKarte(item: AdjektivdeklinationItem): SpielKarte {
   };
 }
 
+// ---------- Die vier Fälle ----------
+
+export const FALL_FAECHER = ["Nominativ", "Genitiv", "Dativ", "Akkusativ"];
+const FAELLE_SKILL = "deutsch.grammatik.faelle";
+/** So viele Sätze werden einmal erzeugt; doppelte fallen weg. */
+const FAELLE_VERSUCHE = 900;
+
+/** Fester Zufall: dieselben Karten nach jedem Neustart, damit Fehler aus früheren Runden wiederkommen können. */
+function festerZufall(seed: number): Rng {
+  let x = seed;
+  return () => {
+    x = (x * 16807) % 2147483647;
+    return (x - 1) / 2147483646;
+  };
+}
+
+/** Wo `teil` im Satz steht, wenn er genau einmal vorkommt (am Satzanfang auch groß geschrieben). */
+function teile(satz: string, teil: string): { vor: string; mitte: string; nach: string } | null {
+  const klein = satz.toLowerCase();
+  const i = klein.indexOf(teil.toLowerCase());
+  if (i < 0 || klein.indexOf(teil.toLowerCase(), i + 1) >= 0) return null;
+  // nur ganze Wörter: „der“ soll nicht in „wieder“ gefunden werden
+  const davor = satz[i - 1];
+  const danach = satz[i + teil.length];
+  if ((davor && /[\p{L}]/u.test(davor)) || (danach && /[\p{L}]/u.test(danach))) return null;
+  return { vor: satz.slice(0, i), mitte: satz.slice(i, i + teil.length), nach: satz.slice(i + teil.length) };
+}
+
+/**
+ * Sätze aus dem Satzlehre-Generator (lib/deutsch-satzlehre.ts „Fälle bestimmen“), dieselben wie in den Übungen:
+ * ein markierter Teil, vier Kisten. Die Regel ist die des Generators (Frageprobe oder „mit verlangt den Dativ“).
+ */
+function faelleKandidaten(): Kandidat[] {
+  const rng = festerZufall(20261111);
+  const out = new Map<string, Kandidat>();
+  for (let i = 0; i < FAELLE_VERSUCHE; i++) {
+    const stufe = ((i % 3) + 1) as Stufe;
+    const w = wahlFuerSpiel(FAELLE_SKILL, stufe, rng);
+    const ziel = w?.titel.match(/„(.+?)“/)?.[1];
+    const richtig = FALL_FAECHER.find((f) => w?.richtig.startsWith(f));
+    if (!w || !ziel || !richtig || w.text.includes("\n")) continue;
+    const t = teile(w.text, ziel);
+    if (!t) continue;
+    const key = `faelle:${w.text}|${t.mitte}`;
+    if (out.has(key)) continue;
+    out.set(key, {
+      karte: { key, ...t, faecher: FALL_FAECHER, richtig, loesung: `„${t.mitte}“: ${richtig}`, regel: w.regel, kurz: t.mitte },
+      stufe,
+    });
+  }
+  return [...out.values()];
+}
+
+// ---------- das oder dass ----------
+
+const DASDASS_FAECHER = ["das", "dass"];
+const LUECKE = "___";
+
+/** Je Lücke eine Karte; die anderen Lücken des Satzes sind schon gefüllt. */
+export function dasDassKarten(item: DasDassItem): SpielKarte[] {
+  const satz = satzVon(item.q);
+  const stuecke = satz.split(LUECKE);
+  if (stuecke.length !== item.blanks.length + 1) return [];
+  const worte = item.blanks.map((b) => b[0]);
+  if (!worte.every((w) => DASDASS_FAECHER.includes(w.toLowerCase())) || item.blanks.some((b) => b.length !== 1)) return [];
+  const ganz = stuecke.reduce((a, st, i) => a + st + (worte[i] ?? ""), "");
+  return worte.map((wort, n) => {
+    const vor = stuecke.slice(0, n + 1).reduce((a, st, i) => a + st + (i < n ? worte[i] : ""), "");
+    const nach = stuecke.slice(n + 1).reduce((a, st, i) => a + (i > 0 ? worte[n + i] : "") + st, "");
+    const richtig = wort.toLowerCase();
+    return {
+      key: `dasdass:${ganz}${worte.length > 1 ? `#${n}` : ""}`,
+      vor,
+      nach: nach.trimStart(),
+      faecher: DASDASS_FAECHER,
+      richtig,
+      einsatz: wort,
+      loesung: ganz,
+      regel:
+        richtig === "das"
+          ? "Probe: „dieses“ oder „welches“ passt hier. Dann schreibt man „das“ mit einem s."
+          : "Probe: „dieses“ oder „welches“ passt hier nicht. Dann schreibt man „dass“ mit zwei s.",
+      kurz: `${wort} ${nach.trim().split(/[\s,.!?]/)[0] ?? ""}`.trim(),
+    };
+  });
+}
+
+// ---------- Hauptsatz oder Gliedsatz ----------
+
+const SATZTEIL_FAECHER = ["Hauptsatz", "Gliedsatz"];
+const kleinerAnfang = (s: string) => s.replace(/[,.!?]+$/, "");
+
+/** Beide Teile eines Satzes als Karten: der ganze Satz steht da, ein Teil ist markiert. */
+export function satzteilKarten(item: HauptsatzGliedsatzItem): SpielKarte[] {
+  const [a, b] = item.parts;
+  const gs = item.parts.find((p) => p.type === "GS")!;
+  const einleiter = gs.text.trim().split(/\s+/)[0].replace(/[^\p{L}]/gu, "").toLowerCase();
+  const satz = `${a.text} ${b.text}`;
+  return item.parts.map((teil, n) => {
+    const richtig = teil.type === "HS" ? "Hauptsatz" : "Gliedsatz";
+    return {
+      key: `satzteile:${satz}#${n}`,
+      vor: n === 0 ? "" : `${a.text} `,
+      // Komma und Punkt gehören nicht zur Markierung
+      mitte: kleinerAnfang(teil.text),
+      nach: teil.text.slice(kleinerAnfang(teil.text).length) + (n === 0 ? ` ${b.text}` : ""),
+      faecher: SATZTEIL_FAECHER,
+      richtig,
+      loesung: `„${kleinerAnfang(teil.text)}“: ${richtig}`,
+      regel:
+        teil.type === "GS"
+          ? `Der Gliedsatz beginnt mit „${einleiter}“ und kann nicht allein stehen.`
+          : `Der Hauptsatz kann allein stehen. Der Gliedsatz ist der Teil mit „${einleiter}“.`,
+      kurz: kleinerAnfang(teil.text),
+    };
+  });
+}
+
+// ---------- Perfekt: haben oder sein ----------
+
+const PERFEKT_FAECHER = ["haben", "sein"];
+const HABEN_FORM = new Set(["habe", "hast", "hat", "haben", "habt"]);
+const SEIN_FORM = new Set(["bin", "bist", "ist", "sind", "seid"]);
+
+/** Der Satz mit dem Partizip, die Lücke ist das Hilfsverb. Nur Einträge, in denen das Hilfsverb zuerst steht. */
+export function perfektKarte(item: ClozeItem): SpielKarte | null {
+  const stuecke = satzVon(item.q).split(LUECKE);
+  const grundform = grundformVon(item.q);
+  if (stuecke.length !== 3 || item.blanks.length !== 2 || item.blanks.some((b) => b.length !== 1) || !grundform) return null;
+  const [hilfsverb, partizip] = [item.blanks[0][0], item.blanks[1][0]];
+  const richtig = HABEN_FORM.has(hilfsverb.toLowerCase()) ? "haben" : SEIN_FORM.has(hilfsverb.toLowerCase()) ? "sein" : null;
+  if (!richtig) return null;
+  const nach = (stuecke[1] + partizip + stuecke[2]).trimStart();
+  const ganz = stuecke[0] + hilfsverb + stuecke[1] + partizip + stuecke[2];
+  return {
+    key: `perfekt:${ganz}`,
+    vor: stuecke[0],
+    nach,
+    faecher: PERFEKT_FAECHER,
+    richtig,
+    einsatz: hilfsverb,
+    hinweis: `(${grundform})`,
+    loesung: ganz,
+    regel: `„${grundform}“ bildet das Perfekt mit „${richtig}“: ${hilfsverb.toLowerCase()} … ${partizip}.`,
+    kurz: `${hilfsverb.toLowerCase()} ${partizip}`,
+  };
+}
+
+// ---------- Präteritum ----------
+
+/** Eine Zahl aus einem Text, damit die Kisten einer Karte immer gleich stehen. */
+function zahlAus(text: string): number {
+  let h = 7;
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) % 2147483647;
+  return h;
+}
+
+/** Falsche Formen, die im Satz doch stimmen könnten: „wurde krank“ statt „war krank“, „schloß“ in alter Schreibung. */
+const PRAETERITUM_AUCH_MOEGLICH = new Set(["wurde", "wurdest", "wurden", "wurdet"]);
+const passtAuch = (falsch: string, richtig: string) => PRAETERITUM_AUCH_MOEGLICH.has(falsch.toLowerCase()) || falsch.replace(/ß/g, "ss") === richtig.replace(/ß/g, "ss");
+
+/**
+ * Drei Formen, eine stimmt: die richtige aus der Bank und zwei falsche aus ihrer Fehlerliste (typische Fehler wie
+ * „fahrte“ oder die Gegenwartsform). Die Kisten heißen wie die Formen und stehen je Karte immer gleich.
+ */
+export function praeteritumKarte(item: ClozeItem): SpielKarte | null {
+  const stuecke = satzVon(item.q).split(LUECKE);
+  const grundform = grundformVon(item.q);
+  if (stuecke.length !== 2 || item.blanks.length !== 1 || item.blanks[0].length !== 1 || !grundform) return null;
+  const richtig = item.blanks[0][0];
+  const falsch = Object.keys(item.errors ?? {}).filter((f) => f.toLowerCase() !== richtig.toLowerCase() && !/\s/.test(f) && !passtAuch(f, richtig));
+  if (falsch.length < 2) return null;
+  const ganz = stuecke[0] + richtig + stuecke[1];
+  const h = zahlAus(ganz);
+  const zwei = [falsch[h % falsch.length], falsch[(h + 1) % falsch.length]];
+  const faecher = [...zwei];
+  faecher.splice(h % 3, 0, richtig);
+  return {
+    key: `praeteritum:${ganz}`,
+    vor: stuecke[0],
+    nach: stuecke[1].trimStart(),
+    faecher,
+    richtig,
+    hinweis: `(${grundform})`,
+    loesung: ganz,
+    regel: `Präteritum von „${grundform}“: ${richtig}.`,
+    kurz: richtig,
+  };
+}
+
 // ---------- Auswahl ----------
 
-/** Ein Eintrag, der im Spiel taugt: nur eine richtige Antwort, keine Beanstandung der Regeln. */
-type Kandidat = { karte: SpielKarte; stufe: Stufe };
+/**
+ * Ein Eintrag, der im Spiel taugt: nur eine richtige Antwort, keine Beanstandung der Regeln. Karten mit derselben
+ * `gruppe` (die zwei Teile eines Satzes) kommen nicht zusammen in eine Runde.
+ */
+type Kandidat = { karte: SpielKarte; stufe: Stufe; gruppe?: string };
 
 const cache = new Map<SpielArt, Kandidat[]>();
 
@@ -180,10 +388,34 @@ export function kandidaten(art: SpielArt): Kandidat[] {
     out = praepositionenItems()
       .filter((i) => i.kasus && eintragFehler("praepositionen", i).length === 0 && i.options.includes(i.correct))
       .map((i) => ({ karte: praepositionKarte(i), stufe: bankStufe("praepositionen", i) ?? 2 }));
-  } else {
+  } else if (art === "deklination") {
     out = adjektivdeklinationItems()
       .filter((i) => deklinationStimmt(i) && eintragFehler("adjektivdeklination", i).length === 0 && i.options1.includes(i.correct1))
       .map((i) => ({ karte: deklinationKarte(i), stufe: bankStufe("adjektivdeklination", i) ?? 2 }));
+  } else if (art === "faelle") {
+    out = faelleKandidaten();
+  } else if (art === "dasdass") {
+    out = dasDassItems()
+      .filter((i) => eintragFehler("das-dass", i).length === 0)
+      .flatMap((i) => dasDassKarten(i).map((karte) => ({ karte, stufe: (i.blanks.length > 1 ? 2 : 1) as Stufe, gruppe: karte.loesung })));
+  } else if (art === "satzteile") {
+    out = hauptsatzGliedsatzItems()
+      .filter((i) => eintragFehler("hauptsatz-gliedsatz", i).length === 0)
+      .flatMap((i) => satzteilKarten(i).map((karte) => ({ karte, stufe: bankStufe("hauptsatz-gliedsatz", i) ?? 2, gruppe: karte.key.split("#")[0] })));
+  } else if (art === "perfekt") {
+    out = perfektItems()
+      .filter((i) => eintragFehler("perfekt", i).length === 0)
+      .flatMap((i) => {
+        const karte = perfektKarte(i);
+        return karte ? [{ karte, stufe: bankStufe("perfekt", i) ?? 2 }] : [];
+      });
+  } else {
+    out = praeteritumItems()
+      .filter((i) => eintragFehler("praeteritum", i).length === 0)
+      .flatMap((i) => {
+        const karte = praeteritumKarte(i);
+        return karte ? [{ karte, stufe: bankStufe("praeteritum", i) ?? 2 }] : [];
+      });
   }
   cache.set(art, out);
   return out;
@@ -204,7 +436,12 @@ export function stufenFuer(art: SpielArt, schulstufe: number, lernstand: number 
     return lernstand < 0.5 ? [0, 1] : lernstand < 0.75 ? [1, 2] : [2, 3];
   }
   if (art === "praepositionen") return lernstand !== null && lernstand < 0.5 ? [1] : [1, 2];
-  return lernstand !== null && lernstand < 0.5 ? [1, 2] : lernstand !== null && lernstand >= 0.75 ? [2, 3] : [1, 2, 3];
+  if (art === "deklination") return lernstand !== null && lernstand < 0.5 ? [1, 2] : lernstand !== null && lernstand >= 0.75 ? [2, 3] : [1, 2, 3];
+  // Perfekt: Stufe 1 hat nur „haben“ (regelmäßige Verben), darum ist Stufe 2 immer dabei
+  if (art === "perfekt") return lernstand !== null && lernstand >= 0.75 ? [1, 2, 3] : [1, 2];
+  // die übrigen Spiele: unsicher die leichten, sicher auch die schweren
+  if (lernstand !== null && lernstand < 0.5) return [0, 1];
+  return lernstand !== null && lernstand >= 0.75 ? [1, 2, 3] : [0, 1, 2];
 }
 
 function mischen<T>(xs: T[], rng: Rng): T[] {
@@ -229,16 +466,20 @@ export function waehleKarten(art: SpielArt, o: { stufen: Stufe[]; wiederholen?: 
   const gewaehlt: SpielKarte[] = [];
   const genommen = new Set<string>();
   const proAntwort = new Map<string, number>();
-  const grenze = Math.ceil(anzahl / 2);
-  const nimm = (k: SpielKarte) => {
-    gewaehlt.push(k);
-    genommen.add(k.key);
-    proAntwort.set(k.richtig, (proAntwort.get(k.richtig) ?? 0) + 1);
+  const gruppen = new Set<string>();
+  // bei nur zwei Kisten wären genau sechs und sechs zu durchschaubar: bis zu sieben von einer
+  const zweiKisten = alle.length > 0 && alle.every((k) => k.karte.faecher.length === 2);
+  const grenze = zweiKisten ? Math.ceil(anzahl * 0.58) : Math.ceil(anzahl / 2);
+  const nimm = (k: Kandidat) => {
+    gewaehlt.push(k.karte);
+    genommen.add(k.karte.key);
+    if (k.gruppe) gruppen.add(k.gruppe);
+    proAntwort.set(k.karte.richtig, (proAntwort.get(k.karte.richtig) ?? 0) + 1);
   };
 
   for (const key of o.wiederholen ?? []) {
     const k = byKey.get(key);
-    if (k && !genommen.has(key) && gewaehlt.length < Math.min(WIEDERHOLUNGEN_MAX, anzahl)) nimm(k.karte);
+    if (k && !genommen.has(key) && !(k.gruppe && gruppen.has(k.gruppe)) && gewaehlt.length < Math.min(WIEDERHOLUNGEN_MAX, anzahl)) nimm(k);
   }
 
   const zuletzt = new Set(o.zuletzt ?? []);
@@ -252,7 +493,8 @@ export function waehleKarten(art: SpielArt, o: { stufen: Stufe[]; wiederholen?: 
       for (const k of pool) {
         if (gewaehlt.length >= anzahl) break;
         if ((proAntwort.get(k.karte.richtig) ?? 0) >= grenze) continue;
-        nimm(k.karte);
+        if (k.gruppe && gruppen.has(k.gruppe)) continue;
+        nimm(k);
       }
       if (gewaehlt.length >= anzahl) break;
     }

@@ -43,6 +43,86 @@ test("Karten: jede Karte hat ihre Antwort unter den Fächern, Fächer in fester 
   }
 });
 
+test("Neue Deutsch-Spiele: Karten aus Generator und Banken, je Karte eine eindeutige Antwort", async () => {
+  const k = await import("./lernspiele-karten");
+  const zahl = { faelle: 400, dasdass: 300, satzteile: 400, perfekt: 100, praeteritum: 90 } as const;
+  for (const art of ["faelle", "dasdass", "satzteile", "perfekt", "praeteritum"] as const) {
+    const alle = k.kandidaten(art);
+    assert.ok(alle.length >= zahl[art], `${art}: genug Karten (${alle.length})`);
+    assert.equal(new Set(alle.map((c) => c.karte.key)).size, alle.length, `${art}: keine Karte doppelt`);
+    for (const { karte } of alle) {
+      assert.ok(karte.faecher.includes(karte.richtig), `${karte.key}: Antwort unter den Kisten`);
+      assert.equal(new Set(karte.faecher).size, karte.faecher.length, `${karte.key}: keine Kiste doppelt`);
+      assert.ok(karte.regel.length > 10 && karte.loesung.length > 3 && (karte.kurz ?? "").length > 0, karte.key);
+      assert.ok(!/___|\s{2,}/.test(karte.vor + (karte.mitte ?? "") + karte.nach), `${karte.key}: keine offene Lücke im Satz`);
+    }
+  }
+  // Fälle: vier feste Kisten, der markierte Teil steht genau so im Satz, alle vier Fälle kommen vor
+  const faelle = k.kandidaten("faelle");
+  for (const { karte } of faelle) {
+    assert.deepEqual(karte.faecher, ["Nominativ", "Genitiv", "Dativ", "Akkusativ"]);
+    assert.ok(karte.mitte && karte.key.endsWith(`${karte.vor}${karte.mitte}${karte.nach}|${karte.mitte}`));
+  }
+  assert.equal(new Set(faelle.map((c) => c.karte.richtig)).size, 4);
+  assert.deepEqual(k.kandidaten("faelle").map((c) => c.karte.key), faelle.map((c) => c.karte.key), "dieselben Karten bei jedem Aufruf");
+
+  // das/dass: je Lücke eine Karte, die andere Lücke ist gefüllt, Großschreibung am Satzanfang bleibt
+  const zwei = k.dasDassKarten({ q: "Setze „das“ oder „dass“ ein: ___ Kind, ___ dort spielt, weiß, ___ es regnet.", blanks: [["Das"], ["das"], ["dass"]], solution: "Das Kind, das dort spielt, weiß, dass es regnet.", hint: "Ersatzprobe", explanation: "", errors: {} });
+  assert.deepEqual(zwei.map((c) => [c.vor, c.nach, c.richtig, c.einsatz]), [
+    ["", "Kind, das dort spielt, weiß, dass es regnet.", "das", "Das"],
+    ["Das Kind, ", "dort spielt, weiß, dass es regnet.", "das", "das"],
+    ["Das Kind, das dort spielt, weiß, ", "es regnet.", "dass", "dass"],
+  ]);
+  assert.match(zwei[2].regel, /passt hier nicht.*zwei s/);
+  assert.equal(new Set(zwei.map((c) => c.key)).size, 3);
+
+  // Hauptsatz oder Gliedsatz: beide Teile als Karte, das Satzzeichen ist nicht markiert, die Regel nennt das Einleitewort
+  const [gs, hs] = k.satzteilKarten({ parts: [{ text: "Weil es regnet,", type: "GS" }, { text: "bleiben wir daheim.", type: "HS" }] } as Parameters<typeof k.satzteilKarten>[0]);
+  assert.deepEqual([gs.vor, gs.mitte, gs.nach, gs.richtig], ["", "Weil es regnet", ", bleiben wir daheim.", "Gliedsatz"]);
+  assert.deepEqual([hs.vor, hs.mitte, hs.nach, hs.richtig], ["Weil es regnet, ", "bleiben wir daheim", ".", "Hauptsatz"]);
+  assert.match(gs.regel, /beginnt mit „weil“/);
+  assert.match(hs.regel, /kann allein stehen/);
+
+  // Perfekt: die Lücke ist das Hilfsverb, das Partizip steht schon da; die Kiste heißt „sein“, eingesetzt wird „bin“
+  const pf = k.perfektKarte({ q: "Setze das Verb im Perfekt ein: Ich ___ gestern früh ins Bett ___. (gehen)", blanks: [["bin"], ["gegangen"]], solution: "Ich bin gestern früh ins Bett gegangen.", hint: "h", errors: {} })!;
+  assert.deepEqual([pf.vor, pf.nach, pf.richtig, pf.einsatz, pf.hinweis], ["Ich ", "gestern früh ins Bett gegangen.", "sein", "bin", "(gehen)"]);
+  assert.match(pf.regel, /„gehen“ bildet das Perfekt mit „sein“: bin … gegangen/);
+  const perfekt = k.kandidaten("perfekt");
+  const mitSein = perfekt.filter((c) => c.karte.richtig === "sein").length;
+  assert.ok(mitSein >= 50 && perfekt.length - mitSein >= 45, `haben und sein etwa gleich oft (${mitSein} von ${perfekt.length})`);
+  // Verben, die in Österreich mit „sein“ und in Deutschland mit „haben“ stehen, sind nicht im Spiel
+  for (const { karte } of perfekt) assert.doesNotMatch(karte.hinweis ?? "", /\((sitzen|liegen|stehen|schwimmen|hängen)\)/);
+
+  // Präteritum: die richtige Form und zwei falsche aus der Fehlerliste; was im Satz auch stimmen könnte, ist keine Kiste
+  const pr = k.praeteritumKarte({ q: "Setze das Verb im Präteritum ein: Er ___ letzte Woche leider krank. (sein)", blanks: [["war"]], solution: "Er war letzte Woche leider krank.", hint: "h", errors: { wurde: "x", ware: "x", ist: "x" } })!;
+  assert.equal(pr.faecher.length, 3);
+  assert.ok(pr.faecher.includes("war") && !pr.faecher.includes("wurde"));
+  assert.equal(k.praeteritumKarte({ q: "Setze das Verb im Präteritum ein: Ich ___ das Fenster. (schließen)", blanks: [["schloss"]], solution: "Ich schloss das Fenster.", hint: "h", errors: { schloß: "x", schließte: "x" } }), null, "nur eine falsche Form übrig: keine Karte");
+  for (const { karte } of k.kandidaten("praeteritum")) assert.equal(karte.faecher.length, 3);
+});
+
+test("Neue Deutsch-Spiele: Runden sind gemischt, Teile desselben Satzes kommen nicht zusammen", async () => {
+  const k = await import("./lernspiele-karten");
+  for (const art of ["faelle", "dasdass", "satzteile", "perfekt", "praeteritum"] as const) {
+    for (const lernstand of [null, 0.3, 0.9]) {
+      const r = k.waehleKarten(art, { stufen: k.stufenFuer(art, 6, lernstand), rng: rng(11) });
+      assert.equal(r.length, 12, art);
+      assert.equal(new Set(r.map((c) => c.key)).size, 12);
+      const je = new Map<string, number>();
+      for (const c of r) je.set(c.richtig, (je.get(c.richtig) ?? 0) + 1);
+      if (art !== "praeteritum") {
+        const zweiKisten = r[0].faecher.length === 2;
+        assert.ok(Math.max(...je.values()) <= (zweiKisten ? 7 : 6), `${art}: ${JSON.stringify([...je])}`);
+        if (zweiKisten) assert.ok(Math.min(...je.values()) >= 5 && je.size === 2, `${art}: beide Kisten kommen oft vor ${JSON.stringify([...je])}`);
+      }
+      if (art === "satzteile") assert.equal(new Set(r.map((c) => c.key.split("#")[0])).size, 12, "nie beide Teile eines Satzes");
+      if (art === "dasdass") assert.equal(new Set(r.map((c) => c.loesung)).size, 12, "nie zwei Lücken desselben Satzes");
+    }
+  }
+  // wer beim Perfekt unsicher ist, bekommt trotzdem Karten mit „sein“
+  assert.deepEqual(k.stufenFuer("perfekt", 5, 0.2), [1, 2]);
+});
+
 test("Regeln: nur, was für die Karte stimmt", async () => {
   const k = await import("./lernspiele-karten");
   const bank = [
@@ -88,12 +168,24 @@ test("Vorschlag: Prüfung vor Stoff vor Lernstand; ohne Deutsch kein Spiel", asy
   const heute = "2026-11-11";
   let v = sp.spielVorschlaege(student, { heute });
   assert.equal(v[0].quelle, "fach", "ohne Stoff: Deutsch als Fach");
-  assert.equal(v.length, 3);
+  assert.deepEqual(v.map((x) => x.art), ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "artikel"]);
 
   repo.addTest({ student_id: student.id, date: "2026-11-20", subject: "Deutsch", kind: "Schularbeit", topic: "Fälle", grade: null, points: null, max_points: null, notes: "", skill_ids: ["deutsch.grammatik.faelle"], title: "2. Deutsch-Schularbeit", status: "geplant" });
   v = sp.spielVorschlaege(student, { heute, lernstand: new Map([["deutsch.grammatik.artikel", 0.4]]) });
-  assert.deepEqual(v.slice(0, 2).map((x) => [x.art, x.quelle]), [["praepositionen", "pruefung"], ["artikel", "lernstand"]]);
+  // „Die vier Fälle“ auf dem Stoffzettel: zuerst Fälle bestimmen, dann der Fall nach der Präposition
+  assert.deepEqual(v.slice(0, 3).map((x) => [x.art, x.quelle]), [["faelle", "pruefung"], ["praepositionen", "pruefung"], ["artikel", "lernstand"]]);
+  assert.equal(v.length, 8, "jedes Spiel nur einmal");
   assert.equal(v[0].grund, "2. Deutsch-Schularbeit in 9 Tagen");
+
+  // Stoff führt zu den passenden Spielen, auch über eine Unterfähigkeit
+  assert.deepEqual(sp.spieleZuSkills(["deutsch.grammatik.zeiten"]), ["perfekt", "praeteritum"]);
+  assert.deepEqual(sp.spieleZuSkills(["deutsch.recht.dasdass.ersatzprobe", "deutsch.satz.satzreihe-gefuege"]), ["dasdass", "satzteile"]);
+  assert.deepEqual(sp.spieleZuSkills(["mathe.brueche.kuerzen"]), []);
+  // Volksschule: keine Fälle, kein das/dass, keine Satzlehre zum Weiterüben
+  const klein = await setup({ grade: 4 });
+  assert.deepEqual(klein.sp.spielVorschlaege(klein.student, { heute }).map((x) => x.art), ["artikel", "praepositionen", "perfekt", "praeteritum"]);
+  const erste = await setup({ grade: 2 });
+  assert.deepEqual(erste.sp.spielVorschlaege(erste.student, { heute }).map((x) => x.art), ["artikel"]);
 
   // eine Prüfung in mehr als drei Wochen zählt noch nicht
   const ohne = await setup({ subjects: ["Mathematik"] });

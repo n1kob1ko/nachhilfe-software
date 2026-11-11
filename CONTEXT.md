@@ -232,8 +232,9 @@ _Avoid_: Kompetenz, Lernziel, Skill, Fertigkeit
 
 **Lernspiel**:
 Ein kurzes Spiel in der Schüler-App (`/lernen/[token]/spiel`, `lib/lernspiele.ts`): zwölf Karten aus den
-Aufgabenbanken in Fächer werfen oder antippen. Drei Deutsch-Spiele: „der, die, das“, „Präposition und Fall“,
-„Adjektiv-Endungen“. Die App wählt das Spiel nach dem Stoff (nahe Prüfung, aktueller Stoff, letzte Einheit,
+Aufgabenbanken in Kisten werfen oder antippen. Acht Deutsch-Spiele: „der, die, das“, „Präposition und Fall“,
+„Adjektiv-Endungen“, „Die vier Fälle“, „das oder dass“, „Hauptsatz oder Gliedsatz“, „Perfekt: haben oder sein“,
+„Präteritum“ (docs/lernspiele.md). Die App wählt das Spiel nach dem Stoff (nahe Prüfung, aktueller Stoff, letzte Einheit,
 unsicherer Lernstand). Eine **Runde** zählt mit der ersten Wahl je Karte, schwächer als eine Übung.
 _Avoid_: Quiz, Minispiel, Game
 

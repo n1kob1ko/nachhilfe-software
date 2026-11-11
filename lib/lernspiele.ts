@@ -23,17 +23,33 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   artikel: "deutsch.grammatik.artikel",
   praepositionen: "deutsch.grammatik.praepositionen",
   deklination: "deutsch.grammatik.adjektivdeklination",
+  faelle: "deutsch.grammatik.faelle",
+  dasdass: "deutsch.recht.dasdass",
+  satzteile: "deutsch.satz.hauptsatz-gliedsatz",
+  perfekt: "deutsch.grammatik.perfekt",
+  praeteritum: "deutsch.grammatik.praeteritum",
 };
-const FUEHRT_ZU: Record<string, SpielArt> = {
-  "deutsch.grammatik.artikel": "artikel",
-  "deutsch.wortarten.nomen": "artikel",
-  "deutsch.grammatik.praepositionen": "praepositionen",
-  // „Die vier Fälle“: der Fall nach der Präposition ist der Teil, den man spielen kann
-  "deutsch.grammatik.faelle": "praepositionen",
-  "deutsch.grammatik.adjektivdeklination": "deklination",
+/** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4 };
+/** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
+const FUEHRT_ZU: Record<string, SpielArt[]> = {
+  "deutsch.grammatik.artikel": ["artikel"],
+  "deutsch.wortarten.nomen": ["artikel"],
+  "deutsch.grammatik.praepositionen": ["praepositionen"],
+  // „Die vier Fälle“: Fälle bestimmen und der Fall nach der Präposition
+  "deutsch.grammatik.faelle": ["faelle", "praepositionen"],
+  "deutsch.grammatik.adjektivdeklination": ["deklination"],
+  "deutsch.recht.dasdass": ["dasdass"],
+  "deutsch.satz.hauptsatz-gliedsatz": ["satzteile"],
+  "deutsch.satz.satzreihe-gefuege": ["satzteile"],
+  "deutsch.grammatik.zeiten": ["perfekt", "praeteritum"],
+  "deutsch.grammatik.perfekt": ["perfekt"],
+  "deutsch.grammatik.praeteritum": ["praeteritum"],
 };
 
-export const spieleZuSkills = (ids: string[]): SpielArt[] => [...new Set(ids.map((id) => FUEHRT_ZU[id]).filter(Boolean))];
+export const spieleZuSkills = (ids: string[]): SpielArt[] => [
+  ...new Set(ids.flatMap((id) => Object.entries(FUEHRT_ZU).flatMap(([skill, arten]) => (id === skill || id.startsWith(`${skill}.`) ? arten : [])))),
+];
 
 const PRUEFUNG_TAGE = 21;
 const EINHEIT_TAGE = 14;
@@ -76,8 +92,12 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
 
   if (out.length || student.subjects.includes("Deutsch")) {
     // die übrigen zum Weiterüben; Artikel für die Kleinen zuerst, Endungen erst ab der Unterstufe
-    const rest: SpielArt[] = student.grade <= 4 ? ["artikel", "praepositionen"] : ["praepositionen", "deklination", "artikel"];
-    add(rest, "Zum Üben", "fach");
+    const reihe: SpielArt[] = student.grade <= 4 ? ["artikel", "praepositionen", "perfekt", "praeteritum"] : ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "artikel"];
+    add(
+      reihe.filter((art) => student.grade >= SPIEL_AB[art]),
+      "Zum Üben",
+      "fach",
+    );
   }
   return out;
 }
