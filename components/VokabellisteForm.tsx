@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { saveVokabellisteAction, type VokabelState } from "@/app/vokabel-actions";
+import { VokabelFotoLesen } from "@/components/VokabelFotoLesen";
+import { mitGelesen, offeneStellen, UNLESBAR } from "@/lib/vokabel-foto-regeln";
 import { fundstelle, leseListe, sauberSatz, type GeleseneListe, type Vokabel } from "@/lib/vokabeln";
 
 const BEISPIEL = `dog = der Hund | My dog loves long walks.
@@ -14,7 +16,18 @@ to look after = auf jemanden aufpassen | I look after my little sister.`;
  * Eine eigene Vokabelliste schreiben oder ändern: links der Text (eintippen oder aus Word, Excel oder dem
  * Heft-Abschreiben einfügen), rechts gleich die Vorschau, so wie die App die Zeilen liest.
  */
-export function VokabellisteForm({ studentId, liste, zurueck }: { studentId: number; liste?: { id: number; title: string; text: string }; zurueck: string }) {
+export function VokabellisteForm({
+  studentId,
+  liste,
+  zurueck,
+  foto,
+}: {
+  studentId: number;
+  liste?: { id: number; title: string; text: string };
+  zurueck: string;
+  /** Vom Foto lesen (lib/vokabel-foto.ts): why the KI cannot read now (or null), the estimate, open from the start */
+  foto?: { kiGrund: string | null; kosten: { grundCent: number; seiteCent: number }; offen: boolean };
+}) {
   const [state, action] = useActionState<VokabelState, FormData>(saveVokabellisteAction, null);
   // both fields keep their text after a failed save (React resets a form after its action)
   const [title, setTitle] = useState(liste?.title ?? "");
@@ -23,10 +36,25 @@ export function VokabellisteForm({ studentId, liste, zurueck }: { studentId: num
   const [gesendet, setGesendet] = useState("");
   const zeigeFehler = Boolean(state?.fehler.length) && gesendet === `${title}\n${text}`;
   const gelesen = useMemo(() => leseListe(text), [text]);
+  const offen = offeneStellen(text);
   return (
     <form action={action} onSubmit={() => setGesendet(`${title}\n${text}`)} className="grid items-start gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <input type="hidden" name="student_id" value={studentId} />
       {liste && <input type="hidden" name="id" value={liste.id} />}
+      {foto && (
+        <VokabelFotoLesen
+          studentId={studentId}
+          kiGrund={foto.kiGrund}
+          kosten={foto.kosten}
+          offen={foto.offen}
+          onGelesen={(v) => {
+            const neu = mitGelesen(text, v.text);
+            setText(neu.text);
+            if (!title.trim() && v.titel) setTitle(v.titel);
+            return neu.dazu;
+          }}
+        />
+      )}
       <div className="grid min-w-0 gap-4">
         <label className="field">
           <span className="label">Name der Liste</span>
@@ -47,6 +75,11 @@ export function VokabellisteForm({ studentId, liste, zurueck }: { studentId: num
             data-testid="vokabel-text"
           />
         </label>
+        {offen > 0 && (
+          <p className="rounded-lg bg-amber-wash px-4 py-3 text-[14px] text-amber" data-testid="vokabel-unlesbar">
+            {offen === 1 ? `Noch 1 Stelle mit ${UNLESBAR}` : `Noch ${offen} Stellen mit ${UNLESBAR}`} (nicht lesbar). Bitte mit dem Foto vergleichen und ergänzen, sonst lässt sich die Liste nicht speichern.
+          </p>
+        )}
         <Hilfe />
         {zeigeFehler && state && (
           <ul className="grid gap-1 rounded-lg bg-red-wash px-4 py-3 text-[14px] text-red" role="alert">

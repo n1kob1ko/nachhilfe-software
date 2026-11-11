@@ -91,6 +91,7 @@ export type AIFunction =
   | "stoffzettel"
   | "textfoto"
   | "handschrift"
+  | "vokabelfoto"
   | "einheit_text"
   | "paket_auswertung"
   | "blatt"
@@ -178,6 +179,9 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // student's text written on paper, word for word with every mistake. The answer is the student's own writing, so it is
   // kept for reuse one hour only (a reload does not pay twice), not a whole day
   handschrift: { label: "Handschrift lesen", area: "MATERIAL", tier: "standard", maxTokens: 12_000, timeoutMs: 150_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 60 * MIN, cache: "aus" },
+  // Vokabeln vom Foto (lib/vokabel-foto.ts): only on the teacher's click, after the tick „kein Name darauf“; a vocabulary
+  // page of the school book or the vocab notebook, English and German as printed. The teacher checks the list before saving
+  vokabelfoto: { label: "Vokabeln vom Foto lesen", area: "MATERIAL", tier: "standard", maxTokens: 16_000, timeoutMs: 180_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
   // Einheit aus Text übernehmen (lib/einheit-aus-text.ts): only on the teacher's click; the pasted summary goes without
   // names (the student's, every teacher and student of the app), with the student's skill list; the answer fills the form
   einheit_text: { label: "Einheit aus Text übernehmen", area: "ANALYSIS", tier: "standard", maxTokens: 6_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },

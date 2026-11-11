@@ -8,6 +8,7 @@ import { ArenaTeaser } from "@/components/lernen/ArenaTeaser";
 import { LernspielTeaser } from "@/components/lernen/LernspielTeaser";
 import { LiveDuellRuf } from "@/components/lernen/LiveDuellRuf";
 import { NaechsterTermin } from "@/components/lernen/NaechsterTermin";
+import { VokabelTeaser } from "@/components/lernen/VokabelTeaser";
 import { SchuelerNotizFrage } from "@/components/SchuelerNotizFrage";
 import { termineFuerSchueler } from "@/lib/planung/schueler-termine";
 import * as repo from "@/lib/repo";
@@ -102,6 +103,9 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
       {/* Lernspiel zum aktuellen Stoff (lib/lernspiele.ts): nach dem, was offen ist */}
       <LernspielTeaser student={student} token={token} />
       <ArenaTeaser student={student} token={token} />
+
+      {/* eigene Vokabellisten selbst üben (lib/vokabel-training.ts) */}
+      <VokabelTeaser studentId={student.id} token={token} />
 
       {notizFrisch && (
         <SchuelerNotizFrage
