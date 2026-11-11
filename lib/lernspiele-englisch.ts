@@ -4,15 +4,13 @@
  * Kisten sind die richtige Form und zwei typische falsche („went“, „goed“, „gone“).
  *
  * „Tenses“ und „Grammar“ spielen je Runde **ein Thema** (eine Fähigkeit): das aus dem Stoff des Schülers, sonst das
- * nächste, das er noch nicht geschafft hat (`themenPlan` in lib/lernspiele.ts). Hier steht nur Reines.
+ * nächste, das er noch nicht geschafft hat (`themenPlan` in lib/lernspiele.ts; die Themenlisten aller Spiele stehen in
+ * lib/lernspiele-themen.ts). Hier steht nur Reines.
  */
 import type { Stufe } from "./banken-regeln";
 import { englischWahlFuerSpiel, type EnglischWahl } from "./englisch-grammatik";
 import type { Kandidat } from "./lernspiele-karten";
-import type { SpielArt, SpielKarte } from "./lernspiele-typen";
-
-/** Ein Thema eines Spiels: die Fähigkeit, ein kurzer Name für den Schüler und die Schulstufe, ab der es dran ist. */
-export type SpielThema = { skill: string; name: string; ab: number; /** andere Fähigkeiten im Stoff, die zu diesem Thema führen */ auch?: string[] };
+import { festerZufall, zahlAus, type SpielKarte, type SpielThema } from "./lernspiele-typen";
 
 export const IRREGULAR_SKILL = "englisch.vocab.irregular";
 
@@ -62,12 +60,6 @@ export const GRAMMATIK_THEMEN: SpielThema[] = [
   { skill: "englisch.grammar.reported", name: "Reported Speech", ab: 8 },
 ];
 
-/** Die Spiele mit Themen und ihre Themenlisten. */
-export const SPIEL_THEMEN: Partial<Record<SpielArt, SpielThema[]>> = { zeiten: ZEITEN_THEMEN, grammatik: GRAMMATIK_THEMEN };
-
-/** Ob eine Fähigkeit aus dem Stoff zu einem Thema gehört (auch ihre Unterfähigkeiten). */
-export const themaPasst = (t: SpielThema, skillId: string) => [t.skill, ...(t.auch ?? [])].some((s) => skillId === s || skillId.startsWith(`${s}.`));
-
 // ---------- Karten ----------
 
 /** So viele Sätze werden je Stufe einmal erzeugt; doppelte fallen weg. */
@@ -77,23 +69,6 @@ const KISTE_MAX = 24;
 const SATZ_MAX = 120;
 /** Von Sätzen, die sich nur im Namen unterscheiden („Paul …“, „Lena …“), bleiben so viele. */
 const JE_VORLAGE = 2;
-/** Ein Thema ist erst mit so vielen Karten spielbar. */
-export const THEMA_KARTEN_MIN = 8;
-
-/** Fester Zufall: dieselben Karten nach jedem Neustart, damit Fehler aus früheren Runden wiederkommen können. */
-function festerZufall(seed: number): () => number {
-  let x = seed;
-  return () => {
-    x = (x * 16807) % 2147483647;
-    return (x - 1) / 2147483646;
-  };
-}
-function zahlAus(text: string): number {
-  let h = 7;
-  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) % 2147483647;
-  return h;
-}
-
 const ZEIT_NAMEN = ["present perfect progressive", "present perfect", "past perfect", "present progressive", "past progressive", "present simple", "past simple", "going to", "used to", "will"];
 /**
  * Die Zeit, die die Regel nennt („Past Simple“): steht nach der richtigen Antwort als Schild auf der Karte. Nennt die
@@ -166,15 +141,4 @@ export function englischKandidaten(skill: string): Kandidat[] {
   const liste = [...out.values()];
   cache.set(skill, liste);
   return liste;
-}
-
-/** Die Themen eines Spiels, die genug Karten haben. */
-export const spielbareThemen = (art: SpielArt): SpielThema[] => (SPIEL_THEMEN[art] ?? []).filter((t) => englischKandidaten(t.skill).length >= THEMA_KARTEN_MIN);
-
-/** Die Themen, die für eine Schulstufe schon dran waren; das Neueste zuerst (wer in der 4. Klasse ist, übt nicht zuerst „am, is, are“). */
-export function themenFuerStufe(art: SpielArt, schulstufe: number): SpielThema[] {
-  const alle = spielbareThemen(art);
-  const dran = alle.filter((t) => t.ab <= schulstufe);
-  if (!dran.length) return alle.slice(0, 1);
-  return dran.map((t, i) => ({ t, i })).sort((a, b) => b.t.ab - a.t.ab || a.i - b.i).map((x) => x.t);
 }

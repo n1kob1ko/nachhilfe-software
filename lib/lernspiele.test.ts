@@ -163,7 +163,7 @@ test("Runde: zwölf verschiedene Karten, keine Antwort öfter als in der Hälfte
   assert.deepEqual(k.stufenFuer("praepositionen", 7, 0.3), [1]);
 });
 
-test("Vorschlag: Prüfung vor Stoff vor Lernstand; ohne Deutsch kein Spiel", async () => {
+test("Vorschlag: Prüfung vor Stoff vor Lernstand; ohne passendes Fach kein Spiel", async () => {
   const { repo, sp, student } = await setup();
   const heute = "2026-11-11";
   let v = sp.spielVorschlaege(student, { heute });
@@ -181,7 +181,8 @@ test("Vorschlag: Prüfung vor Stoff vor Lernstand; ohne Deutsch kein Spiel", asy
   assert.deepEqual(sp.spieleZuSkills(["deutsch.grammatik.zeiten"]), ["perfekt", "praeteritum"]);
   assert.deepEqual(sp.spieleZuSkills(["deutsch.recht.dasdass.ersatzprobe", "deutsch.satz.satzreihe-gefuege"]), ["dasdass", "satzteile", "satzbau"]);
   assert.deepEqual(sp.spieleZuSkills(["deutsch.vs.sprache.satzglieder"]), ["satzbau"]);
-  assert.deepEqual(sp.spieleZuSkills(["mathe.brueche.kuerzen"]), []);
+  assert.deepEqual(sp.spieleZuSkills(["mathe.brueche.kuerzen"]), ["rechnen"]);
+  assert.deepEqual(sp.spieleZuSkills(["mathe.geometrie.dreieck"]), []);
   // Volksschule: keine Fälle, kein das/dass, keine Satzlehre zum Weiterüben
   const klein = await setup({ grade: 4 });
   assert.deepEqual(klein.sp.spielVorschlaege(klein.student, { heute }).map((x) => x.art), ["artikel", "satzbau", "praepositionen", "perfekt", "praeteritum"]);
@@ -189,9 +190,12 @@ test("Vorschlag: Prüfung vor Stoff vor Lernstand; ohne Deutsch kein Spiel", asy
   assert.deepEqual(erste.sp.spielVorschlaege(erste.student, { heute }).map((x) => x.art), ["artikel"]);
 
   // eine Prüfung in mehr als drei Wochen zählt noch nicht
-  const ohne = await setup({ subjects: ["Mathematik"] });
+  const ohne = await setup({ subjects: ["Biologie"] });
   ohne.repo.addTest({ student_id: ohne.student.id, date: "2026-12-30", subject: "Deutsch", kind: "Schularbeit", topic: "", grade: null, points: null, max_points: null, notes: "", skill_ids: ["deutsch.grammatik.artikel"], status: "geplant" });
-  assert.deepEqual(ohne.sp.spielVorschlaege(ohne.student, { heute }), [], "nur Mathe und keine nahe Deutsch-Prüfung: kein Spiel");
+  assert.deepEqual(ohne.sp.spielVorschlaege(ohne.student, { heute }), [], "nur Biologie und keine nahe Deutsch-Prüfung: kein Spiel");
+  // mit Mathematik gibt es Kopfrechnen zum Üben
+  const mathe = await setup({ subjects: ["Mathematik"] });
+  assert.deepEqual(mathe.sp.spielVorschlaege(mathe.student, { heute }).map((x) => [x.art, x.quelle]), [["rechnen", "fach"]]);
 });
 
 test("Runde zählt nur die erste Wahl, nur einmal, und geht schwach in den Lernstand", async () => {

@@ -3,13 +3,14 @@
  *
  * - **Welches Spiel**: die App wählt es nach dem Stoff des Schülers (`spielVorschlaege`), in dieser Reihenfolge:
  *   eine Prüfung in den nächsten 21 Tagen mit passender Fähigkeit, der aktuelle Stoff im Profil, die letzte
- *   Einheit (14 Tage), eine unsichere Fähigkeit im Lernstand, sonst das Fach (Deutsch-Spiele mit Deutsch, Vokabel-Paare mit Englisch
- *   oder einer eigenen Vokabelliste).
+ *   Einheit (14 Tage), eine unsichere Fähigkeit im Lernstand, sonst das Fach (Deutsch-Spiele mit Deutsch, die
+ *   Englisch-Spiele mit Englisch oder einer eigenen Vokabelliste, „Kopfrechnen“ mit Mathematik).
  * - **Welche Karten**: aus den geprüften Aufgabenbanken (lib/lernspiele-karten.ts), Stufe nach Schulstufe und
  *   Lernstand, Fehler der letzten Runden kommen wieder. „Vokabel-Paare“ (Englisch) nimmt die eigenen Vokabellisten
  *   des Schülers, sonst eine Themenliste (`vokabelPlan`, lib/lernspiele-vokabeln.ts). Die Englisch-Spiele mit Kisten
  *   nehmen die Sätze der Englisch-Generatoren; „English Tenses“ und „English Grammar“ spielen je Runde ein Thema
- *   (`themenPlan`, lib/lernspiele-englisch.ts).
+ *   (`themenPlan`, lib/lernspiele-themen.ts). „Kopfrechnen“ (Mathe) ebenso, mit den Aufgaben der Mathe-Generatoren
+ *   und eigenen Karten für die Volksschule (lib/lernspiele-mathe.ts).
  * - **Was zählt**: die erste Wahl je Karte. Der Server prüft sie an den Karten, die er beim Start gespeichert hat.
  *   Eine beendete Runde ist ein Beleg für den Lernstand mit Gewicht 1,5 (`SOURCE_WEIGHT.spiel`), so viel wie eine
  *   dokumentierte Stunde und viel weniger als die Aufgaben einer Übung. Abgebrochene Runden zählen nicht.
@@ -17,9 +18,10 @@
 import { parseTime } from "./analysis";
 import { materialSkills, activeMaterial } from "./current-material";
 import { db, json } from "./db";
-import { englischKandidaten, GRAMMATIK_THEMEN, IRREGULAR_SKILL, SPIEL_THEMEN, themaPasst, themenFuerStufe, spielbareThemen, ZEITEN_THEMEN, type SpielThema } from "./lernspiele-englisch";
+import { IRREGULAR_SKILL } from "./lernspiele-englisch";
 import { stufenFuer, waehleKarten } from "./lernspiele-karten";
-import { istSpielArt, SPIEL_FACH, sterneFuer, type SpielAntwort, type SpielArt, type SpielKarte, type SpielVorschlag } from "./lernspiele-typen";
+import { SPIEL_THEMEN, spielbareThemen, themaPasst, themenFuerStufe, themenKandidaten } from "./lernspiele-themen";
+import { istSpielArt, SPIEL_FACH, sterneFuer, type SpielAntwort, type SpielArt, type SpielKarte, type SpielThema, type SpielVorschlag } from "./lernspiele-typen";
 import { PAARE_MIN, vokabelKandidaten, vokabelKey, vokabelStufen, waehleVokabeln, type VokabelKandidat } from "./lernspiele-vokabeln";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
 import * as repo from "./repo";
@@ -47,9 +49,10 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   // Themenspiele: die Fähigkeit hängt an der Runde (themenPlan); hier steht nur, was ohne Runde gilt
   zeiten: "englisch.tenses.mixed",
   grammatik: "englisch.grammar",
+  rechnen: "mathe.kopfrechnen",
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -68,11 +71,11 @@ const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.praeteritum": ["praeteritum"],
   // jede Themenliste des Vokabeltrainers und die eigenen Listen
   ...Object.fromEntries([...Object.keys(VOKABEL_THEMEN), EIGENE_VOKABELN].map((id) => [id, ["vokabeln"] as SpielArt[]])),
-  // Englisch: die unregelmäßigen Verben zuerst, dann jede Zeit und jedes Grammatik-Thema mit eigenen Sätzen
+  // Englisch: die unregelmäßigen Verben
   [IRREGULAR_SKILL]: ["irregular"],
   "englisch.tenses.pastsimple.irregular": ["irregular"],
-  ...Object.fromEntries(ZEITEN_THEMEN.flatMap((t) => [t.skill, ...(t.auch ?? [])]).map((id) => [id, ["zeiten"] as SpielArt[]])),
-  ...Object.fromEntries(GRAMMATIK_THEMEN.flatMap((t) => [t.skill, ...(t.auch ?? [])]).map((id) => [id, ["grammatik"] as SpielArt[]])),
+  // die Themenspiele: jede Zeit, jedes Grammatik-Thema, jedes Thema von „Kopfrechnen“
+  ...Object.fromEntries((Object.entries(SPIEL_THEMEN) as [SpielArt, SpielThema[]][]).flatMap(([art, themen]) => themen.flatMap((t) => [t.skill, ...(t.auch ?? [])]).map((id) => [id, [art]]))),
 };
 
 export const spieleZuSkills = (ids: string[]): SpielArt[] => [
@@ -117,6 +120,7 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
       "Zum Üben",
       "fach",
     );
+  if (student.subjects.includes("Mathematik")) add(["rechnen"], "Zum Üben", "fach");
   return out;
 }
 
@@ -216,7 +220,7 @@ function naechstesOffene(studentId: number, art: SpielArt, themen: string[]): st
   return [...themen].sort((a, b) => zuletzt(a) - zuletzt(b))[0];
 }
 
-// ---------- Themenspiele (English Tenses, English Grammar): welches Thema ----------
+// ---------- Themenspiele (English Tenses, English Grammar, Kopfrechnen): welches Thema ----------
 
 export type ThemenPlan = { skillId: string; /** für den Schüler: „Thema: Past Simple“ */ titel: string };
 
@@ -249,7 +253,7 @@ export function spielVorschau(student: repo.Student, art: SpielArt, heute: strin
   if (!plan) return undefined;
   // von den ersten Karten die mit den kürzesten Aufschriften: drei kleine Kisten in einer Zeile
   const laenge = (f: string[]) => f.join("").length;
-  return englischKandidaten(plan.skillId)
+  return themenKandidaten(plan.skillId)
     .slice(0, 24)
     .map((k) => k.karte.faecher)
     .sort((x, y) => laenge(x) - laenge(y))[0];
@@ -276,7 +280,7 @@ export function duellVokabeln(schulstufe: number, volksschule: boolean, rng: () 
 export function duellThema(art: SpielArt, schulstufe: number, rng: () => number = Math.random): SpielKarte[] {
   const themen = themenFuerStufe(art, schulstufe);
   const thema = themen[Math.floor(rng() * themen.length)];
-  return waehleKarten(art, { pool: englischKandidaten(thema.skill), stufen: stufenFuer(art, schulstufe, null), rng });
+  return waehleKarten(art, { pool: themenKandidaten(thema.skill), stufen: stufenFuer(art, schulstufe, null), rng });
 }
 
 // ---------- Runden ----------
@@ -337,7 +341,7 @@ export function starteRunde(student: repo.Student, art: SpielArt, o: { grund?: S
   } else {
     const plan = themenPlan(student, art, o.heute ?? wienerDatum());
     karten = waehleKarten(art, {
-      pool: plan ? englischKandidaten(plan.skillId) : undefined,
+      pool: plan ? themenKandidaten(plan.skillId) : undefined,
       stufen: stufenFuer(art, student.grade, o.lernstand ?? null),
       wiederholen: offeneFehler(student.id, art),
       zuletzt: zuletztGespielt(student.id, art),

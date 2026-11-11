@@ -9,6 +9,7 @@ import { spielBeendenAction, spielStartenAction } from "@/app/lernspiel-actions"
 import { REIHE_TRENNER, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import { PaarFeld } from "./PaarFeld";
 import { SatzbauFeld } from "./SatzbauFeld";
+import { MathText } from "@/components/MathText";
 import { Funken, vibriere } from "./SpielTeile";
 
 /**
@@ -526,7 +527,7 @@ export function Lernspiel({
             <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
               {(vorschau ?? VORSCHAU[art]).map((f, i) => (
                 <span key={f} className="ls-kiste-mini" data-k={f} data-i={i} style={{ rotate: `${i % 2 ? 2.5 : -2.5}deg` }}>
-                  {f}
+                  {SPIEL_FACH[art] === "Mathematik" ? <MathText text={f} /> : f}
                 </span>
               ))}
             </div>
@@ -724,7 +725,7 @@ export function Lernspiel({
         {zuletztZeile}
         {jubelZeile}
 
-        <div className="ls-stapel" data-falsch={falsch ? "" : undefined}>
+        <div className="ls-stapel" data-falsch={falsch ? "" : undefined} data-mathe={aktuell?.mathe ? "" : undefined}>
           {sichtbar
             .map((e, i) => ({ e, i, idx: pos + i }))
             .reverse()
@@ -746,14 +747,20 @@ export function Lernspiel({
             ))}
 
           {falsch && aktuell && (
-            <div className="ls-regel" role="status">
+            <div className="ls-regel" role="status" data-mathe={aktuell.mathe ? "" : undefined}>
               <p className="ls-regel-kopf">
                 <Lightbulb size={16} aria-hidden /> Fast! Richtig ist
               </p>
               <p className="ls-regel-loesung">
-                {aktuell.wort ? <Loesung karte={aktuell} art={art} ohneMarke /> : <b className="ls-richtig">{aktuell.einsatz && aktuell.einsatz.toLowerCase() !== aktuell.richtig ? `${aktuell.richtig} (${aktuell.einsatz})` : aktuell.richtig}</b>}
+                {aktuell.wort ? (
+                  <Loesung karte={aktuell} art={art} ohneMarke />
+                ) : (
+                  <b className="ls-richtig">{aktuell.einsatz && aktuell.einsatz.toLowerCase() !== aktuell.richtig ? `${aktuell.richtig} (${aktuell.einsatz})` : gesetzt(aktuell, aktuell.richtig)}</b>
+                )}
               </p>
-              <p className="ls-regel-text">{aktuell.regel}</p>
+              <p className="ls-regel-text" data-mathe={aktuell.mathe ? "" : undefined}>
+                {gesetzt(aktuell, aktuell.regel)}
+              </p>
             </div>
           )}
         </div>
@@ -764,7 +771,8 @@ export function Lernspiel({
             role="group"
             aria-label="Kisten"
             data-viele={aktuell.faecher.length > 3 ? "" : undefined}
-            style={{ "--z": Math.max(3, ...aktuell.faecher.flatMap((f) => kistenZeilen(f).map((z) => z.length))) } as CSSProperties}
+            data-mathe={aktuell.mathe ? "" : undefined}
+            style={{ "--z": Math.max(3, ...aktuell.faecher.flatMap((f) => kistenZeilen(f, aktuell.mathe).map((z) => (aktuell.mathe ? sichtLaenge(z) : z.length)))) } as CSSProperties}
           >
             {aktuell.faecher.map((f, i) => (
               <button
@@ -786,13 +794,13 @@ export function Lernspiel({
                 <span className="ls-drin" aria-hidden>
                   {(inKiste[f] ?? []).map((w, j) => (
                     <span key={`${j}-${w}`} style={{ "--j": j } as CSSProperties}>
-                      {w}
+                      {aktuell.mathe ? flach(w) : w}
                     </span>
                   ))}
                 </span>
                 <span className="ls-kiste">
-                  {kistenZeilen(f).map((z, n) => (
-                    <span key={n}>{z}</span>
+                  {kistenZeilen(f, aktuell.mathe).map((z, n) => (
+                    <span key={n}>{gesetzt(aktuell, z)}</span>
                   ))}
                   {KISTEN_FRAGE[f] && <small>{KISTEN_FRAGE[f]}</small>}
                 </span>
@@ -821,9 +829,29 @@ const VORSCHAU: Record<SpielArt, string[]> = {
   irregular: ["went", "goed", "gone"],
   zeiten: ["plays", "is playing", "played"],
   grammatik: ["some", "any", "much"],
+  rechnen: ["54", "56", "63"],
 };
-/** Lange Aufschriften aus mehreren Wörtern („is going to watch“) stehen in zwei Zeilen, nahe der Mitte geteilt. */
-function kistenZeilen(f: string): string[] {
+/** Mathe-Karten (`mathe`) werden gesetzt wie in den Übungen: Bruchstrich, Hochzahl, Wurzel. */
+const gesetzt = (karte: Pick<SpielKarte, "mathe">, text: string): ReactNode => (karte.mathe ? <MathText text={text} /> : text);
+/** Für den kleinen Zettel, der aus der Kiste schaut: Hochzahlen hochgestellt, Brüche bleiben mit Schrägstrich. */
+const HOCH = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+const flach = (text: string) => text.replace(/\^(\d+)/g, (_, z: string) => [...z].map((c) => HOCH[Number(c)]).join(""));
+/** Wie breit ein Mathe-Text gesetzt ist: ein Bruch zählt so breit wie sein längerer Teil, das Hochzeichen zählt nicht. */
+const sichtLaenge = (text: string) => text.replace(/(\d+)\/(\d+)/g, (_, z: string, n: string) => (z.length >= n.length ? z : n)).replace(/\^/g, "").length;
+/**
+ * Lange Aufschriften aus mehreren Wörtern („is going to watch“) stehen in zwei Zeilen, nahe der Mitte geteilt. Ein
+ * langer Term („m² − 12m + 36“) bricht vor einem Rechenzeichen.
+ */
+function kistenZeilen(f: string, mathe?: boolean): string[] {
+  if (mathe) {
+    // eine lange Zahl mit Einheit („4 945 000 m“): die Einheit steht darunter
+    const einheit = /^(.*\d)\u00a0(\D+)$/.exec(f);
+    if (einheit && sichtLaenge(f) > 7) return [einheit[1], einheit[2]];
+    if (sichtLaenge(f) <= 9) return [f];
+    let best = -1;
+    for (const m of f.matchAll(/ (?=[+−] )/g)) if (best < 0 || Math.abs(m.index - f.length / 2) < Math.abs(best - f.length / 2)) best = m.index;
+    return best > 0 ? [f.slice(0, best), f.slice(best + 1)] : [f];
+  }
   if (f.length <= 8 || !f.includes(" ")) return [f];
   let best = -1;
   for (let i = f.indexOf(" "); i >= 0; i = f.indexOf(" ", i + 1)) if (best < 0 || Math.abs(i - f.length / 2) < Math.abs(best - f.length / 2)) best = i;
@@ -949,7 +977,7 @@ function KartenInhalt({ karte, stand }: { karte: SpielKarte; art: SpielArt; stan
   const h = haengt(karte);
   const luecke = (
     <span className="ls-luecke" data-haengt={h ? "" : undefined} data-stand={stand ? (stand.richtig ? "richtig" : "falsch") : undefined}>
-      {stand ? (stand.richtig ? eingesetzt(karte) : falschEingesetzt(karte, stand.wahl)) : h ? "…" : "\u00a0"}
+      {stand ? gesetzt(karte, stand.richtig ? eingesetzt(karte) : falschEingesetzt(karte, stand.wahl)) : h ? "…" : "\u00a0"}
     </span>
   );
   // eine Endung hängt am Wort: Wort und Lücke brechen nie auseinander
@@ -957,8 +985,8 @@ function KartenInhalt({ karte, stand }: { karte: SpielKarte; art: SpielArt; stan
   const trenn = h ? vor.lastIndexOf(" ") + 1 : vor.length;
   return (
     <>
-      <p className="ls-satz">
-        {vor.slice(0, trenn)}
+      <p className="ls-satz" data-mathe={karte.mathe ? "" : undefined}>
+        {gesetzt(karte, vor.slice(0, trenn))}
         {h ? (
           <span className="whitespace-nowrap">
             {vor.slice(trenn)}
@@ -970,7 +998,7 @@ function KartenInhalt({ karte, stand }: { karte: SpielKarte; art: SpielArt; stan
             {luecke}
           </>
         )}
-        {hinterLuecke(karte)}
+        {gesetzt(karte, hinterLuecke(karte))}
       </p>
       {karte.hinweis && <p className="ls-bedeutung">{karte.hinweis}</p>}
       {stand?.richtig && karte.marke && <span className="ls-marke">{karte.marke}</span>}
@@ -1001,19 +1029,22 @@ function Loesung({ karte, ohneMarke, knapp }: { karte: SpielKarte; art: SpielArt
         {karte.wort}
       </>
     );
+  // Mathe mit markiertem Teil („Ist 2925 durch 5 teilbar?“): der gelöste Satz
+  if (karte.mathe && karte.mitte !== undefined) return <>{karte.loesung}</>;
   if (karte.mitte !== undefined)
     return (
       <>
         <b className="ls-richtig">{karte.richtig}</b>: „{karte.mitte.replace(/[,.!?]+$/, "")}“
       </>
     );
-  const vor = knapp ? knappDavor(karte.vor.trimEnd()) : karte.vor.trimEnd();
+  // eine Rechnung bleibt ganz; steht sie in zwei Zeilen („3x + 7 = 22“, darunter „x =“), hier in einer
+  const vor = karte.mathe ? karte.vor.trimEnd().replace(/\.\n/g, ". ").replace(/\n/g, ", ") : knapp ? knappDavor(karte.vor.trimEnd()) : karte.vor.trimEnd();
   return (
     <>
-      {vor}
+      {gesetzt(karte, vor)}
       {vor && !haengt(karte) ? " " : ""}
-      <b className="ls-richtig">{eingesetzt(karte)}</b>
-      {hinterLuecke(karte)}
+      <b className="ls-richtig">{gesetzt(karte, eingesetzt(karte))}</b>
+      {gesetzt(karte, hinterLuecke(karte))}
       {karte.marke && !ohneMarke ? <span className="ls-marke-klein">{karte.marke}</span> : null}
     </>
   );
