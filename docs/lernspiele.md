@@ -15,7 +15,7 @@ Deutsch, weil Artikel, Präpositionen und Deklination oft ein Problem sind.
   („2. Deutsch-Schularbeit in 9 Tagen“, „Dein aktueller Stoff“) und der Serie (Tage am Stück); dazu „Duelle“, solange
   ein Duell auf den Schüler wartet.
 - **Spiel** (`/lernen/[token]/spiel?art=…`): liegt über der ganzen Seite, auf der blauen Bühne. Anfang mit Stand
-  und Serie und „Los geht’s“; das Kreuz führt zurück zum Tab „Spiele“ (vom Start aus zurück zum Start). Dann zwölf Karten: in eine Kiste ziehen und werfen oder eine
+  und Serie und „Los geht’s“; das Kreuz führt zurück zum Tab „Spiele“ (vom Start aus zurück zum Start). Bei den Kisten-Spielen dann zwölf Karten (Satzbau und Vokabel-Paare haben ein eigenes Spielfeld, siehe unten): in eine Kiste ziehen und werfen oder eine
   Kiste antippen (am Laptop Tasten 1–5).
   - richtig: die Karte fliegt in die Kiste, die Kiste leuchtet, Funken und „+1“, das Wort schaut danach oben aus
     der Kiste; oben steht kurz der ganze richtige Satz mit der Antwort hervorgehoben (bei Präpositionen auch Dativ
@@ -37,9 +37,9 @@ Ein markierter Satzteil ist gelb angestrichen. Auf dem Anfang steht „Los geht�
 weiße Blätter. Bei „weniger Bewegung“ entfallen Funken, Konfetti, „in Folge!“ und das Wackeln. Am Regelwerk und an
 der Wertung hat der neue Look nichts geändert.
 
-## Die acht Spiele
+## Die acht Kisten-Spiele
 
-niko 2026-11-11: „mach alle deutsch spiele zuerst“. Alle Spiele haben dieselbe Mechanik (eine Karte, zwei bis fünf
+niko 2026-11-11: „mach alle deutsch spiele zuerst“. Diese acht Spiele haben dieselbe Mechanik (eine Karte, zwei bis fünf
 Kisten); neu ist nur, was auf der Karte steht und wie die Kisten heißen.
 
 | Spiel | Fähigkeit | Quelle | Karte | Kisten |
@@ -81,9 +81,39 @@ auf -en“. Sonst steht die richtige Lösung da. Bei den Fällen ist es die Frag
 Dativ (3. Fall).“), bei das/dass die Ersatzprobe mit „dieses“ oder „welches“, beim Gliedsatz das Einleitewort
 („beginnt mit weil und kann nicht allein stehen“), beim Perfekt „gehen bildet das Perfekt mit sein: bin … gegangen“.
 
+## Satzbau (Deutsch)
+
+niko 2026-11-11: „mach mal alle Spiele, außer Mathe … und die ganzen Deutschsachen“. Das neunte Deutsch-Spiel übt,
+**wo das Verb steht**, mit eigener Mechanik (`form: "reihe"`, `components/lernen/SatzbauFeld.tsx`).
+
+- **Spielfeld**: oben ein Blatt mit dem Satz. Der Anfang steht schon da („Heute“, „Ich bleibe zu Hause, weil“), die
+  übrigen drei oder vier Teile liegen unten gemischt. Ein Teil antippen setzt es an die nächste freie Stelle, ein
+  gesetztes Teil antippen holt es zurück (am Laptop auch die Rücktaste). Über dem Satz steht die Satzart („Perfekt“,
+  „Gliedsatz“, „Frage“).
+- **Prüfen**: sobald das letzte Teil liegt. Richtig: das Blatt leuchtet, die nächste Karte kommt. Falsch: ab der ersten
+  falschen Stelle werden die Teile rot und wandern zurück, in der Mitte erscheinen der richtige Satz und die Regel;
+  weiter geht es, wenn der Satz richtig gebaut ist. Die Karte kommt drei Karten später noch einmal.
+- **Gezählt** wird der erste geprüfte Satz je Karte. Fähigkeit: `deutsch.satz.satzglieder` (Volksschule:
+  `deutsch.vs.sprache.satzglieder`).
+- **Sätze**: 172 eigene Alltagssätze in `lib/satzbau-saetze.ts`, von Hand geschrieben, in drei Stufen:
+
+  | Stufe | Was | Beispiel |
+  | --- | --- | --- |
+  | 1 | Subjekt vorne mit Satzklammer (trennbares Verb, Perfekt, Modalverb); etwas anderes vorne, Verb an zweiter Stelle | Ich · stehe · um sieben Uhr · auf. / Heute · gehen · wir · ins Kino. |
+  | 2 | etwas anderes vorne und Satzklammer, Futur, Gliedsatz (Verb am Ende), W-Frage | Gestern · hat · er · seine Hausübung · vergessen. / …, weil · ich · krank · bin. |
+  | 3 | Gliedsatz mit zweiteiligem Prädikat, Gliedsatz vorne | …, weil · er · den Bus · verpasst · hat. / Weil es regnet, · bleiben · wir · zu Hause. |
+
+  Volksschule spielt Stufe 1 (sicher: 1 und 2), ab der 5. Schulstufe 1 bis 3 (unsicher 1 und 2, sicher 2 und 3).
+- **Genau eine richtige Reihenfolge.** Deutsch lässt vieles zu, darum sind die Sätze so gebaut, dass nach dem festen
+  Anfang nur eine Reihenfolge stimmt: höchstens ein freies Satzglied neben Subjekt und Verb; wo zwei Nomen die Plätze
+  tauschen könnten, ist das Subjekt ein Pronomen; keine Ja/Nein-Fragen (sie gingen auch als Aussage mit
+  Fragezeichen) und keine Sätze, in denen Zeit und Ort tauschen könnten. Wer Sätze ergänzt, hält sich daran
+  (Kopf von `lib/satzbau-saetze.ts`); `lib/satzbau.test.ts` prüft die Form, nicht die Grammatik.
+- Die Teile einer Karte liegen immer gleich da (fester Zufall), nie schon in der richtigen Reihenfolge.
+
 ## Vokabel-Paare (Englisch)
 
-niko 2026-11-11: „mach mal alle Spiele, außer Mathe: das Englischspiel, das Vokabelspiel“. Das neunte Spiel hat eine
+niko 2026-11-11: „mach mal alle Spiele, außer Mathe: das Englischspiel, das Vokabelspiel“. Das Englisch-Spiel hat eine
 eigene Mechanik (`form: "paar"`, `components/lernen/PaarFeld.tsx`); Anfang, Ende, Zählen, Lernstand, Liga und Duelle
 sind dieselben wie bei den Kisten-Spielen.
 
@@ -120,7 +150,7 @@ sind dieselben wie bei den Kisten-Spielen.
 
 1. eine geplante Prüfung in den nächsten 21 Tagen mit passender Fähigkeit (`FUEHRT_ZU`: Die vier Fälle → „Die vier
    Fälle“ und „Präposition und Fall“, Zeiten → Perfekt und Präteritum, Satzreihe und Satzgefüge → Hauptsatz oder
-   Gliedsatz; Unterfähigkeiten zählen mit),
+   Gliedsatz und Satzbau, Satzglieder → Satzbau; Unterfähigkeiten zählen mit),
 2. der aktuelle Stoff im Profil,
 3. die letzte Einheit der letzten 14 Tage,
 4. eine Spiel-Fähigkeit mit Lernstand unter 60 %,

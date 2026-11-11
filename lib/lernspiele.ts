@@ -36,11 +36,13 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   satzteile: "deutsch.satz.hauptsatz-gliedsatz",
   perfekt: "deutsch.grammatik.perfekt",
   praeteritum: "deutsch.grammatik.praeteritum",
+  // Satzbau übt, wo das Verb steht: die Umstellprobe der Satzglieder (Volksschule: satzbauSkill)
+  satzbau: "deutsch.satz.satzglieder",
   // Vokabel-Paare: die eigenen Listen; spielt jemand eine Themenliste, hängt die Fähigkeit an der Runde (vokabelPlan)
   vokabeln: EIGENE_VOKABELN,
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, vokabeln: 3 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, vokabeln: 3 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -50,8 +52,10 @@ const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.faelle": ["faelle", "praepositionen"],
   "deutsch.grammatik.adjektivdeklination": ["deklination"],
   "deutsch.recht.dasdass": ["dasdass"],
-  "deutsch.satz.hauptsatz-gliedsatz": ["satzteile"],
-  "deutsch.satz.satzreihe-gefuege": ["satzteile"],
+  "deutsch.satz.hauptsatz-gliedsatz": ["satzteile", "satzbau"],
+  "deutsch.satz.satzreihe-gefuege": ["satzteile", "satzbau"],
+  "deutsch.satz.satzglieder": ["satzbau"],
+  "deutsch.vs.sprache.satzglieder": ["satzbau"],
   "deutsch.grammatik.zeiten": ["perfekt", "praeteritum"],
   "deutsch.grammatik.perfekt": ["perfekt"],
   "deutsch.grammatik.praeteritum": ["praeteritum"],
@@ -81,14 +85,14 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
   // eine eigene Vokabelliste ist aktueller Stoff: die Lehrkraft hat sie für genau diese Wörter angelegt
   if (eigeneVokabeln(student.id).length >= PAARE_MIN) add(["vokabeln"], "Deine Vokabelliste", "stoff");
 
-  for (const [art, skill] of Object.entries(SPIEL_SKILL) as [SpielArt, string][]) {
-    const m = o.lernstand?.get(skill);
+  for (const art of Object.keys(SPIEL_SKILL) as SpielArt[]) {
+    const m = o.lernstand?.get(art === "satzbau" ? satzbauSkill(student) : SPIEL_SKILL[art]);
     if (m != null && m < UNSICHER) add([art], "Da bist du noch unsicher", "lernstand");
   }
 
   if (student.subjects.includes("Deutsch") || out.some((v) => SPIEL_FACH[v.art] === "Deutsch")) {
     // die übrigen zum Weiterüben; Artikel für die Kleinen zuerst, Endungen erst ab der Unterstufe
-    const reihe: SpielArt[] = student.grade <= 4 ? ["artikel", "praepositionen", "perfekt", "praeteritum"] : ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "artikel"];
+    const reihe: SpielArt[] = student.grade <= 4 ? ["artikel", "satzbau", "praepositionen", "perfekt", "praeteritum"] : ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "satzbau", "perfekt", "praeteritum", "artikel"];
     add(
       reihe.filter((art) => student.grade >= SPIEL_AB[art]),
       "Zum Üben",
@@ -190,9 +194,14 @@ function naechstesThema(student: repo.Student): string {
   return [...themen].sort((a, b) => zuletzt(a) - zuletzt(b))[0];
 }
 
+/** Satzbau in der Volksschule hängt an der Fähigkeit der Volksschule, sonst an der Umstellprobe der Unterstufe. */
+const satzbauSkill = (student: Pick<repo.Student, "grade" | "school_type">) => (istVolksschule(student) ? "deutsch.vs.sprache.satzglieder" : SPIEL_SKILL.satzbau);
+
 /** Die Fähigkeit, an der die nächste Runde eines Spiels hängt (für den Stand auf der Kachel und im Spiel). */
 export function skillFuerSpiel(student: repo.Student, art: SpielArt, heute: string): string {
-  return art === "vokabeln" ? vokabelPlan(student, heute).skillId : SPIEL_SKILL[art];
+  if (art === "vokabeln") return vokabelPlan(student, heute).skillId;
+  if (art === "satzbau") return satzbauSkill(student);
+  return SPIEL_SKILL[art];
 }
 
 /** Karten für ein Duell „Vokabel-Paare“: eine Themenliste für die jüngere Schulstufe, für beide dieselbe. */
@@ -267,7 +276,7 @@ export function starteRunde(student: repo.Student, art: SpielArt, o: { grund?: S
   }
   const r = db()
     .prepare("INSERT INTO spielrunden (student_id, art, skill_id, grund, karten, anzahl) VALUES (?, ?, ?, ?, ?, ?)")
-    .run(student.id, art, karten[0]?.skill ?? SPIEL_SKILL[art], o.grund ?? "fach", JSON.stringify(karten), karten.length);
+    .run(student.id, art, karten[0]?.skill ?? (art === "satzbau" ? satzbauSkill(student) : SPIEL_SKILL[art]), o.grund ?? "fach", JSON.stringify(karten), karten.length);
   return { rundeId: Number(r.lastInsertRowid), karten };
 }
 

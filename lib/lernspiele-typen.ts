@@ -10,9 +10,10 @@
  * Präteritum. Sie teilen eine Mechanik: eine Karte in die richtige Kiste.
  *
  * Dazu „Vokabel-Paare“ für Englisch (niko: „das Englischspiel, das Vokabelspiel“) mit eigener Mechanik: englische
- * und deutsche Wörter stehen sich gegenüber, je zwei gehören zusammen (`form: "paar"`).
+ * und deutsche Wörter stehen sich gegenüber, je zwei gehören zusammen (`form: "paar"`). Und „Satzbau“ für Deutsch:
+ * die Teile eines Satzes in die richtige Reihenfolge bringen (`form: "reihe"`).
  */
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "vokabeln"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "vokabeln"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -26,6 +27,7 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   satzteile: "Hauptsatz oder Gliedsatz",
   perfekt: "Perfekt: haben oder sein",
   praeteritum: "Präteritum",
+  satzbau: "Satzbau",
   vokabeln: "Vokabel-Paare",
 };
 
@@ -39,6 +41,7 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch"> = {
   satzteile: "Deutsch",
   perfekt: "Deutsch",
   praeteritum: "Deutsch",
+  satzbau: "Deutsch",
   vokabeln: "Englisch",
 };
 
@@ -52,6 +55,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   satzteile: "Welcher Teil kann allein stehen?",
   perfekt: "ist gegangen oder hat gegangen?",
   praeteritum: "ging, gehte oder geht?",
+  satzbau: "Wo steht das Verb?",
   vokabeln: "Englisch und Deutsch: was gehört zusammen?",
 };
 
@@ -65,6 +69,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   satzteile: ["weil", "dass", "wenn"],
   perfekt: ["hat", "ist", "sind"],
   praeteritum: ["ging", "kam", "sah"],
+  satzbau: ["gehen", "wir", "heute"],
   vokabeln: ["dog", "house", "school"],
 };
 
@@ -78,12 +83,16 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   satzteile: "Ist der markierte Teil Hauptsatz oder Gliedsatz?",
   perfekt: "haben oder sein?",
   praeteritum: "Welche Form passt im Präteritum?",
+  satzbau: "Bring die Teile in die richtige Reihenfolge.",
   vokabeln: "Welche zwei Wörter gehören zusammen?",
 };
 
-/** So spielt sich ein Spiel: Karten in Kisten (ohne Angabe) oder Paare finden. */
-export type SpielForm = "paar";
-export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = { vokabeln: "paar" };
+/** So spielt sich ein Spiel: Karten in Kisten (ohne Angabe), Paare finden oder Teile in eine Reihe bringen. */
+export type SpielForm = "paar" | "reihe";
+export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = { vokabeln: "paar", satzbau: "reihe" };
+
+/** Trennt die Teile in der Antwort einer Reihe („gehen | wir | ins Kino“). */
+export const REIHE_TRENNER = " | ";
 
 /**
  * Eine Karte des Spiels. `vor` und `nach` stehen um die Lücke (bei „der, die, das“ ist `wort` die Karte, ohne
@@ -91,6 +100,9 @@ export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = { vokabeln: "paa
  *
  * Bei Paaren (`form: "paar"`) ist `wort` das englische Wort und `richtig` das deutsche; `faecher` ist leer, die
  * Auswahl sind die deutschen Wörter der anderen Karten auf dem Brett.
+ *
+ * Bei einer Reihe (`form: "reihe"`) ist `vor` der feste Anfang des Satzes, `nach` das Satzzeichen am Ende, `faecher`
+ * sind die Teile in gemischter Reihenfolge und `richtig` die Teile in der richtigen, mit `REIHE_TRENNER` verbunden.
  */
 export type SpielKarte = {
   key: string;
