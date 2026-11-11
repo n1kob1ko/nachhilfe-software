@@ -1,4 +1,4 @@
-import { ListPlus, Pencil, Sparkles } from "lucide-react";
+import { Camera, ListPlus, Pencil, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Empty, PageHeader, formatDate } from "@/components/ui";
@@ -27,9 +27,14 @@ export default async function Vokabellisten({ params, searchParams }: { params: 
         back={{ href: `/schueler/${student.id}?tab=uebungen`, label: student.name }}
         actions={
           listen.length > 0 && (
-            <Link href={neu} className="btn btn-primary">
-              <ListPlus size={16} aria-hidden /> Neue Liste
-            </Link>
+            <>
+              <Link href={`${neu}?foto=1`} className="btn btn-secondary" data-testid="vokabeln-vom-foto">
+                <Camera size={16} aria-hidden /> Vom Foto
+              </Link>
+              <Link href={neu} className="btn btn-primary">
+                <ListPlus size={16} aria-hidden /> Neue Liste
+              </Link>
+            </>
           )
         }
       />
@@ -51,12 +56,17 @@ export default async function Vokabellisten({ params, searchParams }: { params: 
         <Empty
           title={`Noch keine Vokabelliste für ${first}`}
           action={
-            <Link href={neu} className="btn btn-primary">
-              <ListPlus size={16} aria-hidden /> Erste Liste anlegen
-            </Link>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Link href={`${neu}?foto=1`} className="btn btn-primary" data-testid="vokabeln-vom-foto">
+                <Camera size={16} aria-hidden /> Vom Foto lesen
+              </Link>
+              <Link href={neu} className="btn btn-secondary">
+                <ListPlus size={16} aria-hidden /> Eintippen
+              </Link>
+            </div>
           }
         >
-          Tipp die Wörter ein oder füg sie aus einer Tabelle ein. Fertige Themenlisten wie Familie, Tiere oder Freizeit findest du beim Übung erstellen unter Englisch › Vocabulary.
+          Fotografier die Wortliste aus dem Schulbuch oder Vokabelheft, tipp die Wörter ein oder füg sie aus einer Tabelle ein. Fertige Themenlisten wie Familie, Tiere oder Freizeit findest du beim Übung erstellen unter Englisch › Vocabulary.
         </Empty>
       ) : (
         <ul className="grid max-w-[900px] gap-3" data-testid="vokabellisten">
