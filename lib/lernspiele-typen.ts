@@ -25,6 +25,42 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   praeteritum: "Präteritum",
 };
 
+/** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
+export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch"> = {
+  artikel: "Deutsch",
+  praepositionen: "Deutsch",
+  deklination: "Deutsch",
+  faelle: "Deutsch",
+  dasdass: "Deutsch",
+  satzteile: "Deutsch",
+  perfekt: "Deutsch",
+  praeteritum: "Deutsch",
+};
+
+/** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
+export const SPIEL_KURZ: Record<SpielArt, string> = {
+  artikel: "Jedes Nomen zu seinem Artikel",
+  praepositionen: "mit dem, für den: der richtige Fall",
+  deklination: "großer, große, großes: die Endung",
+  faelle: "Wer? Wessen? Wem? Wen?",
+  dasdass: "Ein s oder zwei?",
+  satzteile: "Welcher Teil kann allein stehen?",
+  perfekt: "ist gegangen oder hat gegangen?",
+  praeteritum: "ging, gehte oder geht?",
+};
+
+/** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
+export const SPIEL_DEKO: Record<SpielArt, string[]> = {
+  artikel: ["die", "das", "der"],
+  praepositionen: ["dem", "den", "der"],
+  deklination: ["-en", "-es", "-em"],
+  faelle: ["Wem?", "Wen?", "Wer?"],
+  dasdass: ["das", "dass", "welches"],
+  satzteile: ["weil", "dass", "wenn"],
+  perfekt: ["hat", "ist", "sind"],
+  praeteritum: ["ging", "kam", "sah"],
+};
+
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
 export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   artikel: "Wirf jedes Wort in die Kiste mit seinem Artikel.",

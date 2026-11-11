@@ -15,10 +15,13 @@ Lernspielen (docs/lernspiele.md), alle drei Konzepte: Wochenliga, Duell per Code
 
 ## Was der Schüler sieht
 
-- **Start**: unter dem Lernspiel „Liga und Duelle“ mit Platz und Punkten und wie viele Duelle warten.
-  Startet der Lehrer ein Live-Duell, erscheint oben von selbst „Live-Duell · Ein Duell wartet auf dich“.
-- **`/lernen/[token]/arena`** (über der Seite wie die Spiele): ohne Profil „Mitspielen?“, sonst Wochenliga und Duelle
-  (Code eingeben, „Neues Duell · Code holen“, eigene Duelle). Der Name oben öffnet die Einstellungen.
+- **Tab „Spiele“ › Gegeneinander** (niko 2026-11-11: „Ranking muss jetzt nicht sein, aber diese Duelle“): eine Zeile
+  „Duelle“ mit dem, was wartet, darunter klein die Wochenliga mit Platz und Punkten. Wartet ein Duell, hat der Tab
+  einen roten Punkt und auf dem Start steht die Zeile „Duelle“ ebenfalls.
+  Startet der Lehrer ein Live-Duell, erscheint auf dem Start oben von selbst „Live-Duell · Ein Duell wartet auf dich“.
+- **`/lernen/[token]/arena`** (über der Seite wie die Spiele): ohne Profil „Mitspielen?“, sonst zuerst die Duelle
+  (Code eingeben, „Neues Duell · Code holen“, eigene Duelle), darunter die Wochenliga. Der Name oben öffnet die
+  Einstellungen, das Kreuz führt zurück zum Tab „Spiele“.
 - **`/lernen/[token]/duell/[id]`**: Gegenüber, Spiel (dieselbe Mechanik wie die Lernspiele), Ergebnis mit
   „Beide falsch: das lernt ihr gerade“ und Revanche.
 

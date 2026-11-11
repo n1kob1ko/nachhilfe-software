@@ -101,8 +101,9 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
       <Hausuebungen studentId={student.id} token={token} />
 
       {/* Lernspiel zum aktuellen Stoff (lib/lernspiele.ts): nach dem, was offen ist */}
+      {/* alle Spiele und die Duelle stehen im Tab „Spiele“; hier nur das passende Spiel und ein Duell, das wartet */}
       <LernspielTeaser student={student} token={token} />
-      <ArenaTeaser student={student} token={token} />
+      <ArenaTeaser student={student} token={token} nurWennDran />
 
       {/* eigene Vokabellisten selbst üben (lib/vokabel-training.ts) */}
       <VokabelTeaser studentId={student.id} token={token} />

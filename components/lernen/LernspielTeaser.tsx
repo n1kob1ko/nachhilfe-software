@@ -8,7 +8,7 @@ import { analyzeStudent } from "@/lib/service";
 
 /**
  * Auf dem Start der Schüler-App: das Lernspiel, das gerade zum Stoff passt, mit dem Grund („Schularbeit in 9 Tagen“)
- * und der Serie. Ohne passendes Spiel (kein Deutsch) steht hier nichts.
+ * und der Serie. Alle Spiele und die Duelle stehen im Tab „Spiele“. Ohne passendes Spiel (kein Deutsch) steht hier nichts.
  */
 export function LernspielTeaser({ student, token }: { student: Student; token: string }) {
   const heute = wienerDatum();
@@ -18,7 +18,7 @@ export function LernspielTeaser({ student, token }: { student: Student; token: s
   if (!v) return null;
   const tage = serie(student.id, heute);
   return (
-    <Link href={`/lernen/${token}/spiel?art=${v.art}`} className="panel mt-8 flex items-center gap-4 px-5 py-4 transition-colors hover:border-accent" data-testid="lernspiel-teaser">
+    <Link href={`/lernen/${token}/spiel?art=${v.art}&von=start`} className="panel mt-8 flex items-center gap-4 px-5 py-4 transition-colors hover:border-accent" data-testid="lernspiel-teaser">
       <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--deutsch-soft)] text-[var(--deutsch-fg)]">
         <Shapes size={24} aria-hidden />
       </span>

@@ -39,7 +39,7 @@ export function Arena({
   duelle: DuellSicht[];
   spiele: SpielArt[];
 }) {
-  const zurueck = `/lernen/${token}`;
+  const zurueck = `/lernen/${token}/spiele`;
   useEffect(() => {
     const alt = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -86,11 +86,16 @@ export function Arena({
           <ProfilForm token={token} start={profil ?? { ...vorschlag, liga: true, duelle: true, name: "" }} neu={!profil} />
         ) : (
           <>
-            {liga && <Liga liga={liga} />}
+            {/* Duelle zuerst (niko 2026-11-11: „Ranking muss jetzt nicht sein, aber diese Duelle“), die Liga darunter */}
             {profil.duelle ? (
               <Duelle token={token} duelle={duelle} spiele={spiele} />
             ) : (
-              <p className="ls-text mt-8">Duelle hast du ausgeschaltet. Über deinen Namen oben kannst du sie wieder einschalten.</p>
+              <p className="ls-text">Duelle hast du ausgeschaltet. Über deinen Namen oben kannst du sie wieder einschalten.</p>
+            )}
+            {liga && (
+              <div className="mt-10">
+                <Liga liga={liga} />
+              </div>
             )}
             {!liga && !profil.duelle && (
               <p className="ls-text mt-4">Liga und Duelle sind aus. Über deinen Namen oben schaltest du sie ein.</p>
@@ -288,7 +293,7 @@ function Duelle({ token, duelle, spiele }: { token: string; duelle: DuellSicht[]
   }
 
   async function teilen(c: string) {
-    const text = `Duell in DreamStudy (${SPIEL_TITEL[art]}): gib den Code ${c} unter „Liga und Duelle“ ein.`;
+    const text = `Duell in DreamStudy (${SPIEL_TITEL[art]}): gib den Code ${c} im Tab „Spiele“ unter „Duelle“ ein.`;
     try {
       if (navigator.share) {
         await navigator.share({ text });
@@ -303,7 +308,7 @@ function Duelle({ token, duelle, spiele }: { token: string; duelle: DuellSicht[]
   }
 
   return (
-    <section aria-labelledby="duelle-titel" className="mt-8">
+    <section aria-labelledby="duelle-titel">
       <h2 id="duelle-titel" className="display flex items-center gap-2 text-[26px] font-extrabold" style={{ "--n": 3 } as CSSProperties}>
         <Swords size={24} aria-hidden /> Duelle
       </h2>
