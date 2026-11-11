@@ -20,7 +20,8 @@ import {
   type PraepositionenItem,
 } from "./banks";
 import { wahlFuerSpiel } from "./deutsch-satzlehre";
-import type { SpielArt, SpielKarte } from "./lernspiele-typen";
+import { REIHE_TRENNER, type SpielArt, type SpielKarte } from "./lernspiele-typen";
+import { SATZBAU, SATZBAU_MARKE, SATZBAU_REGEL, type SatzbauGruppe } from "./satzbau-saetze";
 
 type Rng = () => number;
 
@@ -366,6 +367,40 @@ export function praeteritumKarte(item: ClozeItem): SpielKarte | null {
   };
 }
 
+// ---------- Satzbau ----------
+
+/**
+ * Eine Karte aus einem Satz der Liste („Heute | gehen | wir | ins Kino.“): der erste Teil steht fest, die übrigen liegen
+ * gemischt bereit, nie schon in der richtigen Reihenfolge.
+ */
+export function satzbauKarte(satz: string, gruppe: Pick<SatzbauGruppe, "typ">, nr: number): SpielKarte {
+  const roh = satz.split("|").map((t) => t.trim());
+  const zeichen = roh[roh.length - 1].match(/[.?!]$/)?.[0] ?? "";
+  const teile = roh.slice(1).map((t, i, a) => (i === a.length - 1 ? t.slice(0, t.length - zeichen.length) : t));
+  const rng = festerZufall(nr * 7919 + 13);
+  let gemischt = mischen(teile, rng);
+  for (let i = 0; i < 6 && gemischt.every((t, j) => t === teile[j]); i++) gemischt = mischen(teile, rng);
+  if (gemischt.every((t, j) => t === teile[j])) gemischt = [...teile.slice(1), teile[0]];
+  const loesung = `${roh[0]} ${teile.join(" ")}${zeichen}`;
+  return {
+    key: `satzbau:${loesung}`,
+    form: "reihe",
+    vor: roh[0],
+    nach: zeichen,
+    faecher: gemischt,
+    richtig: teile.join(REIHE_TRENNER),
+    loesung,
+    regel: SATZBAU_REGEL[gruppe.typ],
+    marke: SATZBAU_MARKE[gruppe.typ],
+    kurz: teile[0],
+  };
+}
+
+function satzbauKandidaten(): Kandidat[] {
+  let nr = 0;
+  return SATZBAU.flatMap((g) => g.saetze.map((satz) => ({ karte: satzbauKarte(satz, g, ++nr), stufe: g.stufe as Stufe })));
+}
+
 // ---------- Auswahl ----------
 
 /**
@@ -402,6 +437,11 @@ export function kandidaten(art: SpielArt): Kandidat[] {
     out = hauptsatzGliedsatzItems()
       .filter((i) => eintragFehler("hauptsatz-gliedsatz", i).length === 0)
       .flatMap((i) => satzteilKarten(i).map((karte) => ({ karte, stufe: bankStufe("hauptsatz-gliedsatz", i) ?? 2, gruppe: karte.key.split("#")[0] })));
+  } else if (art === "satzbau") {
+    out = satzbauKandidaten();
+  } else if (art === "vokabeln") {
+    // Vokabel-Paare haben keinen festen Vorrat: die Wörter kommen aus den Listen des Schülers (lib/lernspiele.ts)
+    out = [];
   } else if (art === "perfekt") {
     out = perfektItems()
       .filter((i) => eintragFehler("perfekt", i).length === 0)
@@ -436,6 +476,12 @@ export function stufenFuer(art: SpielArt, schulstufe: number, lernstand: number 
     return lernstand < 0.5 ? [0, 1] : lernstand < 0.75 ? [1, 2] : [2, 3];
   }
   if (art === "praepositionen") return lernstand !== null && lernstand < 0.5 ? [1] : [1, 2];
+  // Satzbau: Stufe 1 hat drei Teile, 2 die Satzklammer nach einem anderen Anfang und den Gliedsatz, 3 beides zusammen
+  if (art === "satzbau") {
+    if (schulstufe <= 4) return lernstand !== null && lernstand >= 0.75 ? [1, 2] : [1];
+    if (lernstand !== null && lernstand < 0.5) return [1, 2];
+    return lernstand !== null && lernstand >= 0.75 ? [2, 3] : [1, 2, 3];
+  }
   if (art === "deklination") return lernstand !== null && lernstand < 0.5 ? [1, 2] : lernstand !== null && lernstand >= 0.75 ? [2, 3] : [1, 2, 3];
   // Perfekt: Stufe 1 hat nur „haben“ (regelmäßige Verben), darum ist Stufe 2 immer dabei
   if (art === "perfekt") return lernstand !== null && lernstand >= 0.75 ? [1, 2, 3] : [1, 2];

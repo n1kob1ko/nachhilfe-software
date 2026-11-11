@@ -153,7 +153,7 @@ test("Welche Wörter: eigene Listen vor Themen, das Thema aus dem Stoff, sonst d
   assert.ok((await import("./vokabellisten")).speichereListe({ studentId: beide.student.id, teacherId: beide.teacher.id, title: "Unit 3", text: "bridge = die Brücke\nriver = der Fluss\nvalley = das Tal\nhill = der Hügel" }).ok);
   const v = beide.sp.spielVorschlaege(beide.student, { heute: HEUTE });
   assert.deepEqual([v[0].art, v[0].quelle, v[0].grund], ["vokabeln", "stoff", "Deine Vokabelliste"]);
-  assert.equal(v.length, 9);
+  assert.equal(v.length, 10);
   assert.equal(beide.sp.vokabelPlan(beide.student, HEUTE).titel, "Deine Liste „Unit 3“");
 });
 

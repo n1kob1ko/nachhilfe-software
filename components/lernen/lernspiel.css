@@ -1388,3 +1388,184 @@
     transform: none;
   }
 }
+
+/* ---------- Satzbau (SatzbauFeld.tsx): ein Blatt mit dem Satz, darunter die Teile ---------- */
+.ls-reihe {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 14px;
+}
+.ls-satzblatt {
+  position: relative;
+  display: flex;
+  min-height: 190px;
+  flex-shrink: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 22px 24px;
+  border-radius: 26px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5) inset,
+    0 24px 40px -14px rgba(8, 30, 90, 0.6);
+  transition: box-shadow 200ms ease;
+  animation: ls-blatt-rein 320ms var(--ls-ease-out) backwards;
+}
+@keyframes ls-blatt-rein {
+  from {
+    opacity: 0;
+    transform: translateX(28px) scale(0.97);
+  }
+}
+.ls-satzblatt[data-stand="richtig"] {
+  box-shadow:
+    0 0 0 5px var(--ls-gold),
+    0 24px 40px -14px rgba(8, 30, 90, 0.6);
+}
+.ls-satzblatt[data-stand="falsch"] {
+  box-shadow:
+    0 0 0 5px var(--ls-rot),
+    0 24px 40px -14px rgba(8, 30, 90, 0.6);
+}
+.ls-satzart {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.ls-bau {
+  font-size: clamp(20px, 5.4vw, 24px);
+  line-height: 2.05;
+}
+.ls-fest {
+  font-weight: 600;
+}
+.ls-bau-stelle {
+  white-space: nowrap;
+}
+.ls-platz {
+  display: inline-block;
+  width: 54px;
+  margin: 0 2px;
+  height: 1.5em;
+  vertical-align: -0.35em;
+  border-bottom: 3px dashed var(--line-strong);
+  border-radius: 2px;
+}
+.ls-platz[data-naechster] {
+  border-bottom-color: var(--accent-bright);
+}
+.ls-teil {
+  font-family: var(--font-display);
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  will-change: transform;
+  transition:
+    transform 160ms var(--ls-ease-out),
+    background-color 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease;
+}
+.ls-teil:focus-visible {
+  outline: 3px solid var(--accent-bright);
+  outline-offset: 2px;
+}
+.ls-teil[data-ort="satz"] {
+  display: inline-block;
+  padding: 0 10px;
+  border-radius: 12px;
+  background: var(--accent-wash);
+  color: var(--ink);
+  font-size: 0.95em;
+  line-height: 1.6;
+}
+.ls-teil[data-ort="satz"][data-stand="richtig"] {
+  background: var(--green-wash);
+  color: var(--green);
+}
+.ls-teil[data-ort="satz"][data-stand="falsch"] {
+  background: var(--red-wash);
+  color: var(--red);
+  text-decoration: line-through;
+}
+/* die Mitte nimmt, was übrig ist; passt die Regel auf einem kleinen Handy nicht, rollt sie hier und die Teile bleiben sichtbar */
+.ls-reihe-mitte {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 -8px;
+  padding: 0 8px 8px;
+}
+/* nach einem Fehler rückt das Blatt zusammen, damit Regel und Teile Platz haben */
+.ls-satzblatt[data-knapp] {
+  min-height: 0;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+.ls-regel-frei .ls-regel-loesung {
+  font-size: 19px;
+}
+.ls-regel-frei .ls-regel-text {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+.ls-ablage {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-end;
+  gap: 12px 10px;
+  min-height: 122px;
+  padding-bottom: 12px;
+}
+.ls-teil[data-ort="ablage"] {
+  padding: 11px 18px;
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 20px;
+  line-height: 1.2;
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5) inset,
+    0 5px 0 rgba(8, 30, 90, 0.28),
+    0 14px 22px -10px rgba(8, 30, 90, 0.55);
+  animation: ls-hoch 300ms var(--ls-ease-out) backwards;
+  animation-delay: 120ms;
+}
+.ls-teil[data-ort="ablage"]:active:not(:disabled) {
+  transform: scale(0.96);
+}
+@media (hover: hover) and (pointer: fine) {
+  .ls-teil[data-ort="ablage"]:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+}
+/* gesetzt: der Platz in der Ablage bleibt frei, damit die anderen Teile nicht springen */
+.ls-teil[data-ort="ablage"][data-weg] {
+  opacity: 0;
+  box-shadow: none;
+  pointer-events: none;
+}
+.ls-regel-frei {
+  position: static;
+  width: min(100%, 460px);
+  margin: 0 auto;
+  translate: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ls-teil {
+    transition-property: opacity, background-color, color !important;
+  }
+  .ls-teil[data-ort="ablage"]:active:not(:disabled) {
+    transform: none;
+  }
+}
