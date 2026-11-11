@@ -15,7 +15,7 @@ Deutsch, weil Artikel, Präpositionen und Deklination oft ein Problem sind.
   („2. Deutsch-Schularbeit in 9 Tagen“, „Dein aktueller Stoff“) und der Serie (Tage am Stück); dazu „Duelle“, solange
   ein Duell auf den Schüler wartet.
 - **Spiel** (`/lernen/[token]/spiel?art=…`): liegt über der ganzen Seite, auf der blauen Bühne. Anfang mit Stand
-  und Serie und „Los geht’s“; das Kreuz führt zurück zum Tab „Spiele“ (vom Start aus zurück zum Start). Bei den Kisten-Spielen dann zwölf Karten (Satzbau und Vokabel-Paare haben ein eigenes Spielfeld, siehe unten): in eine Kiste ziehen und werfen oder eine
+  und Serie und „Los geht’s“; das Kreuz führt zurück zum Tab „Spiele“ (vom Start aus zurück zum Start). Bei den Kisten-Spielen dann zwölf Karten (Satzbau, Vokabel-Paare und Zahlenstrahl haben ein eigenes Spielfeld, siehe unten): in eine Kiste ziehen und werfen oder eine
   Kiste antippen (am Laptop Tasten 1–5).
   - richtig: die Karte fliegt in die Kiste, die Kiste leuchtet, Funken und „+1“, das Wort schaut danach oben aus
     der Kiste; oben steht kurz der ganze richtige Satz mit der Antwort hervorgehoben (bei Präpositionen auch Dativ
@@ -203,20 +203,53 @@ niko 2026-11-11: „Dann vielleicht für Mathe … Was Spaß machen könnte.“ 
 - Ein neues Thema: eine Zeile in `RECHNEN_THEMEN` (und in `QUELLEN`, wenn der Generator Besonderheiten hat);
   `lib/lernspiele-mathe.test.ts` verlangt mindestens 24 Karten je Thema und prüft die Volksschul-Rechnungen nach.
 
+## Mathe: Zahlenstrahl
+
+niko 2026-11-11: „überleg dir noch ein paar Spiele, mach ein paar Spiele rein.“ Das zweite Mathe-Spiel hat eine eigene
+Mechanik (`form: "strahl"`, `components/lernen/StrahlFeld.tsx`, Karten aus `lib/lernspiele-strahl.ts`): oben steht
+eine Zahl, darunter ein Zahlenstrahl, und der Schüler schiebt den Zeiger dorthin, wo die Zahl liegt.
+
+- **Spielfeld**: ein Blatt mit „Wo liegt 3,7“ und dem Strahl. Die Zahlen stehen über den Teilstrichen, der Zeiger
+  hängt darunter, damit der Finger nichts verdeckt. Irgendwo auf den Strahl tippen oder ziehen setzt den Zeiger auf den
+  nächsten Teilstrich (am Laptop die Pfeiltasten), „Prüfen“ zählt (Eingabetaste). Welche Zahl unter dem Zeiger liegt,
+  steht vorher nirgends: das abzulesen ist die Aufgabe.
+- **Richtig**: der Zeiger wird grün, über dem Teilstrich erscheint die Zahl als Fähnchen, die nächste Karte kommt.
+  **Falsch**: der Zeiger wird rot, die richtige Stelle bekommt das grüne Fähnchen, darunter steht, welche Zahl
+  getroffen wurde („Fast! Das war 3,6. Um einen Teilstrich verzählt.“) und der Weg („Von 3,5 bis 4 sind es 5
+  Teilstücke, ein Teilstück ist also 0,1 …“). Weiter geht es, wenn der Zeiger an der richtigen Stelle sitzt; die Karte
+  kommt drei Karten später noch einmal.
+- **Gezählt** wird das erste Prüfen je Karte. Die Wahl ist die Nummer des Teilstrichs (`richtig` der Karte), der
+  Server prüft sie wie bei jedem Spiel.
+- **Themenspiel**: acht Themen in `STRAHL_THEMEN`, jedes eine Fähigkeit: Zahlen am Zahlenstrahl (Volksschule), große
+  Zahlen, Dezimalzahlen, Brüche, Brüche erweitern, gemischte Zahlen, negative Zahlen, negative Brüche und
+  Dezimalzahlen. Das Thema kommt aus dem Stoff, sonst ist es das nächste der Schulstufe (`themenPlan`).
+- **Zahlenstrahlen**: dieselben wie in den Aufgaben mit Bild (`strahlFuerSpiel` in lib/generators-figur.ts), ohne KI.
+  Dort liest man eine markierte Zahl ab, hier ist es umgekehrt. Gefragt wird nur nach Teilstrichen ohne Zahl. Bei
+  „Brüche“ steht der Bruch so da, wie man ihn abzählt (4/6), bei „Brüche erweitern“ gekürzt (2/3 auf einem Strahl mit
+  Zwölfteln). Bei den negativen Zahlen wird vor allem nach negativen gefragt.
+- **Stufen** 0 bis 3 sind die des Strahls (feinere Einteilung, weniger Zahlen am Strahl). In der Volksschule sind es
+  die Zahlenräume: 1. Klasse bis 20, 2. Klasse bis 100, 3. Klasse dazu Zehnerschritte, 4. Klasse Hunderter und
+  Fünferschritte (`stufenFuer`).
+- **Typische falsche Stellen** kommen aus denselben Generatoren (`tipps` der Karte): um einen Teilstrich verzählt,
+  Vorzeichen verwechselt, in die falsche Richtung gezählt, von rechts statt von 0 aus gezählt, nur den Zähler abgezählt.
+- In einer Runde wird nach keiner Zahl zweimal gefragt (`gruppe`).
+- **Wann es angeboten wird**: mit einem Thema im Stoff, sonst „zum Üben“, wenn der Schüler Mathematik hat. Duelle
+  spielen ein Thema, das der Jüngere schon hatte.
+
 ## Welches Spiel dran ist
 
 `spielVorschlaege` (lib/lernspiele.ts), das wichtigste zuerst:
 
 1. eine geplante Prüfung in den nächsten 21 Tagen mit passender Fähigkeit (`FUEHRT_ZU`: Die vier Fälle → „Die vier
    Fälle“ und „Präposition und Fall“, Zeiten → Perfekt und Präteritum, Satzreihe und Satzgefüge → Hauptsatz oder
-   Gliedsatz und Satzbau, Satzglieder → Satzbau, jede englische Zeit → English Tenses, jedes englische Grammatik-Thema → English Grammar, jedes Thema von Kopfrechnen → Kopfrechnen;
+   Gliedsatz und Satzbau, Satzglieder → Satzbau, jede englische Zeit → English Tenses, jedes englische Grammatik-Thema → English Grammar, jedes Thema von Kopfrechnen → Kopfrechnen, jedes Thema von Zahlenstrahl → Zahlenstrahl;
    Unterfähigkeiten zählen mit),
 2. der aktuelle Stoff im Profil,
 3. die letzte Einheit der letzten 14 Tage,
 4. eine Spiel-Fähigkeit mit Lernstand unter 60 %,
 5. sonst, wenn der Schüler Deutsch hat, die übrigen Deutsch-Spiele „zum Üben“, und mit Englisch die Vokabel-Paare
    (ab der 3. Schulstufe), English Tenses und English Grammar (ab der 5.) und die Irregular Verbs (ab der 6.), mit
-   Mathematik „Kopfrechnen“.
+   Mathematik „Kopfrechnen“ und „Zahlenstrahl“.
 
 Eine eigene Vokabelliste zählt als aktueller Stoff (Punkt 2). Ohne passendes Fach und ohne passenden Stoff gibt es
 kein Spiel.

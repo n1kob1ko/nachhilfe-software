@@ -440,7 +440,7 @@ export function kandidaten(art: SpielArt): Kandidat[] {
       .flatMap((i) => satzteilKarten(i).map((karte) => ({ karte, stufe: bankStufe("hauptsatz-gliedsatz", i) ?? 2, gruppe: karte.key.split("#")[0] })));
   } else if (art === "satzbau") {
     out = satzbauKandidaten();
-  } else if (art === "vokabeln" || art === "zeiten" || art === "grammatik" || art === "rechnen") {
+  } else if (art === "vokabeln" || art === "zeiten" || art === "grammatik" || art === "rechnen" || art === "strahl") {
     // kein fester Vorrat: Vokabel-Paare nehmen die Listen des Schülers, die Themenspiele die Karten ihres Themas
     // (lib/lernspiele.ts gibt sie als `pool` mit)
     out = [];
@@ -489,6 +489,8 @@ export function stufenFuer(art: SpielArt, schulstufe: number, lernstand: number 
   if (art === "deklination") return lernstand !== null && lernstand < 0.5 ? [1, 2] : lernstand !== null && lernstand >= 0.75 ? [2, 3] : [1, 2, 3];
   // Perfekt: Stufe 1 hat nur „haben“ (regelmäßige Verben), darum ist Stufe 2 immer dabei
   if (art === "perfekt") return lernstand !== null && lernstand >= 0.75 ? [1, 2, 3] : [1, 2];
+  // Zahlenstrahl in der Volksschule: die Stufen sind die Zahlenräume (bis 20, bis 100, Zehner, Hunderter)
+  if (art === "strahl" && schulstufe <= 4) return ([[0], [0, 1], [1, 2], [2, 3]] as Stufe[][])[Math.max(1, schulstufe) - 1];
   // die übrigen Spiele: unsicher die leichten, sicher auch die schweren
   if (lernstand !== null && lernstand < 0.5) return [0, 1];
   return lernstand !== null && lernstand >= 0.75 ? [1, 2, 3] : [0, 1, 2];

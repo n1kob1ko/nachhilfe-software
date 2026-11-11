@@ -2610,3 +2610,71 @@ export function figurAufgabe(skillId: string, difficulty: Difficulty, format: Fi
   const t = f.bau(id, difficulty, format, rng);
   return t ? { ...t, skillId, skillIds: [...new Set([skillId, id])] } : null;
 }
+
+// =====================================================================
+// Lernspiel „Zahlenstrahl“ (lib/lernspiele-strahl.ts)
+// =====================================================================
+
+const STRAHL_PLAENE: Record<string, (lv: number, rng: Rng) => StrahlPlan> = {
+  "mathe.vs.zahlen.zahlenstrahl": planVsZahlenstrahl,
+  "mathe.zahlen.gross": planGrosseZahlen,
+  "mathe.dezimal.vergleichen": planDezimal,
+  "mathe.brueche.anteile": planAnteile,
+  "mathe.brueche.vergleichen": planVergleichen,
+  "mathe.brueche.gemischt": planGemischt,
+  "mathe.negativ.zahlengerade": (lv) => planZahlengerade(lv),
+  "mathe.negativ.rational": (lv) => planRational(lv),
+};
+
+/** Die Fähigkeiten, zu denen es einen Zahlenstrahl für das Lernspiel gibt. */
+export const STRAHL_FAEHIGKEITEN = Object.keys(STRAHL_PLAENE);
+
+/**
+ * Ein Zahlenstrahl für das Lernspiel: `werte` ist die Zahl an jedem Teilstrich (so, wie sie geschrieben wird),
+ * `beschriftet` die Teilstriche mit Zahl, `beide` eine Gerade, die auch nach links weitergeht. `stellen` sind die
+ * Teilstriche, nach denen gefragt werden darf, mit dem Lösungsweg und den Teilstrichen, die man typischerweise
+ * stattdessen nimmt.
+ */
+export type SpielStrahl = {
+  werte: string[];
+  beschriftet: number[];
+  beide: boolean;
+  stellen: { bei: number; weg: string; kurz: string; daneben: { bei: number; label: string }[] }[];
+};
+
+/**
+ * Derselbe Zahlenstrahl wie in den Aufgaben mit Bild, umgekehrt gefragt: nicht „welche Zahl ist markiert?“, sondern
+ * „wo liegt die Zahl?“. Bei „Brüche als Anteile“ steht der Bruch so da, wie man ihn abzählt (4/6, nicht 2/3); bei
+ * „Brüche vergleichen“ gekürzt, dort muss man erweitern (2/3 auf einem Strahl mit Zwölfteln).
+ */
+export function strahlFuerSpiel(skillId: string, lv: number, rng: Rng): SpielStrahl | null {
+  const plan = STRAHL_PLAENE[skillId];
+  if (!plan) return null;
+  const p = planMit(plan, lv, rng, 1);
+  const s = p.strahl;
+  const n = s.schritt.n;
+  const abzaehlen = skillId === "mathe.brueche.anteile";
+  const erweitern = skillId === "mathe.brueche.vergleichen";
+  const text = (i: number) => (abzaehlen && !s.beschriftet.includes(i) ? `${i}/${n}` : antwortBei(p, i));
+  const teil = (k: number) => `${k} ${k === 1 ? "Teilstück" : "Teilstücke"}`;
+  return {
+    werte: Array.from({ length: s.schritte + 1 }, (_, i) => text(i)),
+    beschriftet: [...s.beschriftet],
+    beide: s.start < 0,
+    // ganze Zahlen mit Vorzeichen: vor allem nach den negativen fragen, die positiven kennt man vom Zahlenstrahl
+    stellen: p.frei.filter((i) => skillId !== "mathe.negativ.zahlengerade" || wert(s, i) < 0 || i % 4 === 0).map((i) => {
+      const L = nachbarLabel(s, i);
+      const daneben = new Map<number, string>();
+      for (const d of p.falscheStellen(i)) if (d.bei !== i && d.bei >= 0 && d.bei <= s.schritte && !daneben.has(d.bei)) daneben.set(d.bei, d.label);
+      const zeilen = ablesen(p, i, text(i)).split("\n");
+      let kurz = `${text(i)} liegt ${teil(Math.abs(i - L))} ${i > L ? "rechts" : "links"} von ${zahlBei(s, L)}`;
+      if (abzaehlen) zeilen[zeilen.length - 1] = zeilen[zeilen.length - 1].replace(/ = [^=]*$/, ` = ${text(i)}`);
+      if (erweitern) {
+        const gleich = text(i) === `${i}/${n}` ? text(i) : `${text(i)} = ${i}/${n}`;
+        kurz = `${gleich}: der ${i}. Teilstrich nach 0`;
+        zeilen[zeilen.length - 1] = `${gleich}: das ist der ${i}. Teilstrich nach 0.`;
+      }
+      return { bei: i, weg: zeilen.join("\n"), kurz, daneben: [...daneben].map(([bei, label]) => ({ bei, label })) };
+    }),
+  };
+}

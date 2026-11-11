@@ -4,13 +4,14 @@
  * - **Welches Spiel**: die App wählt es nach dem Stoff des Schülers (`spielVorschlaege`), in dieser Reihenfolge:
  *   eine Prüfung in den nächsten 21 Tagen mit passender Fähigkeit, der aktuelle Stoff im Profil, die letzte
  *   Einheit (14 Tage), eine unsichere Fähigkeit im Lernstand, sonst das Fach (Deutsch-Spiele mit Deutsch, die
- *   Englisch-Spiele mit Englisch oder einer eigenen Vokabelliste, „Kopfrechnen“ mit Mathematik).
+ *   Englisch-Spiele mit Englisch oder einer eigenen Vokabelliste, „Kopfrechnen“ und „Zahlenstrahl“ mit Mathematik).
  * - **Welche Karten**: aus den geprüften Aufgabenbanken (lib/lernspiele-karten.ts), Stufe nach Schulstufe und
  *   Lernstand, Fehler der letzten Runden kommen wieder. „Vokabel-Paare“ (Englisch) nimmt die eigenen Vokabellisten
  *   des Schülers, sonst eine Themenliste (`vokabelPlan`, lib/lernspiele-vokabeln.ts). Die Englisch-Spiele mit Kisten
  *   nehmen die Sätze der Englisch-Generatoren; „English Tenses“ und „English Grammar“ spielen je Runde ein Thema
  *   (`themenPlan`, lib/lernspiele-themen.ts). „Kopfrechnen“ (Mathe) ebenso, mit den Aufgaben der Mathe-Generatoren
- *   und eigenen Karten für die Volksschule (lib/lernspiele-mathe.ts).
+ *   und eigenen Karten für die Volksschule (lib/lernspiele-mathe.ts); „Zahlenstrahl“ mit den Zahlenstrahlen der
+ *   Aufgaben mit Bild (lib/lernspiele-strahl.ts).
  * - **Was zählt**: die erste Wahl je Karte. Der Server prüft sie an den Karten, die er beim Start gespeichert hat.
  *   Eine beendete Runde ist ein Beleg für den Lernstand mit Gewicht 1,5 (`SOURCE_WEIGHT.spiel`), so viel wie eine
  *   dokumentierte Stunde und viel weniger als die Aufgaben einer Übung. Abgebrochene Runden zählen nicht.
@@ -50,9 +51,10 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   zeiten: "englisch.tenses.mixed",
   grammatik: "englisch.grammar",
   rechnen: "mathe.kopfrechnen",
+  strahl: "mathe.zahlenstrahl",
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -74,7 +76,7 @@ const FUEHRT_ZU: Record<string, SpielArt[]> = {
   // Englisch: die unregelmäßigen Verben
   [IRREGULAR_SKILL]: ["irregular"],
   "englisch.tenses.pastsimple.irregular": ["irregular"],
-  // die Themenspiele: jede Zeit, jedes Grammatik-Thema, jedes Thema von „Kopfrechnen“
+  // die Themenspiele: jede Zeit, jedes Grammatik-Thema, jedes Thema von „Kopfrechnen“ und „Zahlenstrahl“
   ...Object.fromEntries((Object.entries(SPIEL_THEMEN) as [SpielArt, SpielThema[]][]).flatMap(([art, themen]) => themen.flatMap((t) => [t.skill, ...(t.auch ?? [])]).map((id) => [id, [art]]))),
 };
 
@@ -120,7 +122,7 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
       "Zum Üben",
       "fach",
     );
-  if (student.subjects.includes("Mathematik")) add(["rechnen"], "Zum Üben", "fach");
+  if (student.subjects.includes("Mathematik")) add(["rechnen", "strahl"], "Zum Üben", "fach");
   return out;
 }
 
@@ -220,7 +222,7 @@ function naechstesOffene(studentId: number, art: SpielArt, themen: string[]): st
   return [...themen].sort((a, b) => zuletzt(a) - zuletzt(b))[0];
 }
 
-// ---------- Themenspiele (English Tenses, English Grammar, Kopfrechnen): welches Thema ----------
+// ---------- Themenspiele (English Tenses, English Grammar, Kopfrechnen, Zahlenstrahl): welches Thema ----------
 
 export type ThemenPlan = { skillId: string; /** für den Schüler: „Thema: Past Simple“ */ titel: string };
 

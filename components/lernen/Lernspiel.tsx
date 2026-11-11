@@ -9,6 +9,7 @@ import { spielBeendenAction, spielStartenAction } from "@/app/lernspiel-actions"
 import { REIHE_TRENNER, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import { PaarFeld } from "./PaarFeld";
 import { SatzbauFeld } from "./SatzbauFeld";
+import { StrahlFeld } from "./StrahlFeld";
 import { MathText } from "@/components/MathText";
 import { Funken, vibriere } from "./SpielTeile";
 
@@ -495,7 +496,7 @@ export function Lernspiel({
           </h1>
           <p className="ls-text mt-2" style={{ "--n": 2 } as CSSProperties}>
             {SPIEL_AUFGABE[art]}
-            {form === "paar" ? " Tipp ein englisches Wort an und dann das deutsche dazu." : form === "reihe" ? " Der Anfang steht schon da. Tipp die anderen Teile der Reihe nach an." : " Zieh die Karte in eine Kiste oder tipp die Kiste an."}
+            {form === "paar" ? " Tipp ein englisches Wort an und dann das deutsche dazu." : form === "reihe" ? " Der Anfang steht schon da. Tipp die anderen Teile der Reihe nach an." : form === "strahl" ? " Schieb den Zeiger auf den richtigen Teilstrich und tipp auf „Prüfen“." : " Zieh die Karte in eine Kiste oder tipp die Kiste an."}
           </p>
           {/* steht schon da, woher die Wörter kommen, braucht es „Deine Vokabelliste“ nicht noch einmal */}
           {vorschlag && vorschlag.quelle !== "fach" && !(woher && vorschlag.quelle === "stoff") && (
@@ -512,7 +513,16 @@ export function Lernspiel({
             </span>
           )}
 
-          {form ? (
+          {form === "strahl" ? (
+            <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
+              <span className="ls-strahl-mini">
+                <b style={{ left: "20px" }}>0</b>
+                <b style={{ left: "50%" }}>5</b>
+                <b style={{ left: "calc(100% - 20px)" }}>10</b>
+                <i />
+              </span>
+            </div>
+          ) : form ? (
             <div className="ls-vorschau ls-vorschau-paar" aria-hidden style={{ "--n": 3 } as CSSProperties}>
               {VORSCHAU[art].map((w, i) => (
                 <Fragment key={w}>
@@ -712,6 +722,20 @@ export function Lernspiel({
     );
   }
 
+  if (form === "strahl") {
+    return (
+      <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${SPIEL_TITEL[art]}`}>
+        <Hintergrund woerter={deko} />
+        {kopf}
+        {duell?.leiste}
+        <div className="ls-feld">
+          {aktuell && <StrahlFeld key={`${rundeId}-${pos}`} karte={aktuell} auftrag={SPIEL_AUFGABE[art]} onPruefe={reihePruefe} onWeiter={reiheWeiter} />}
+          {jubelZeile}
+        </div>
+      </div>
+    );
+  }
+
   const sichtbar = reihe.slice(pos, pos + 3);
   if (aktuell) fachRefs.current.length = aktuell.faecher.length;
   const falsch = !!stand && !stand.richtig;
@@ -830,6 +854,7 @@ const VORSCHAU: Record<SpielArt, string[]> = {
   zeiten: ["plays", "is playing", "played"],
   grammatik: ["some", "any", "much"],
   rechnen: ["54", "56", "63"],
+  strahl: [],
 };
 /** Mathe-Karten (`mathe`) werden gesetzt wie in den Übungen: Bruchstrich, Hochzahl, Wurzel. */
 const gesetzt = (karte: Pick<SpielKarte, "mathe">, text: string): ReactNode => (karte.mathe ? <MathText text={text} /> : text);
@@ -1013,6 +1038,7 @@ function Loesung({ karte, ohneMarke, knapp }: { karte: SpielKarte; art: SpielArt
         <b className="ls-richtig">{karte.wort}</b> = {karte.richtig}
       </>
     );
+  if (karte.form === "strahl") return <MathText text={karte.loesung} />;
   if (karte.form === "reihe")
     return (
       <>

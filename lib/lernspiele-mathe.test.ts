@@ -145,14 +145,14 @@ test("Reihenfolge: das Neueste der Schulstufe zuerst; Themen der Volksschule fal
 
 test("Vorschlag und Thema: aus dem Stoff, sonst der Reihe nach; die Runde hängt am Thema", async () => {
   const { sp, repo, student } = await setup();
-  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => [x.art, x.grund, x.quelle]), [["rechnen", "Zum Üben", "fach"]]);
+  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => [x.art, x.grund, x.quelle]), [["rechnen", "Zum Üben", "fach"], ["strahl", "Zum Üben", "fach"]]);
   assert.deepEqual(sp.themenPlan(student, "rechnen", HEUTE), { skillId: "mathe.teilbarkeit.regeln", titel: "Thema: Teilbar oder nicht?" });
   assert.equal(sp.skillFuerSpiel(student, "rechnen", HEUTE), "mathe.teilbarkeit.regeln");
 
   // eine Schularbeit mit Brüchen: das Thema, auch über eine Unterfähigkeit („Gemeinsamen Nenner finden“)
   repo.addTest({ student_id: student.id, date: "2026-11-20", subject: "Mathematik", kind: "Schularbeit", topic: "", grade: null, points: null, max_points: null, notes: "", skill_ids: ["mathe.brueche.addieren.hauptnenner", "mathe.brueche.kuerzen"], title: "1. Schularbeit", status: "geplant" });
   assert.equal(sp.spielWoher(student, "rechnen", HEUTE), "Thema: Brüche addieren");
-  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => [x.art, x.grund, x.quelle]), [["rechnen", "1. Schularbeit in 9 Tagen", "pruefung"]]);
+  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => [x.art, x.grund, x.quelle]), [["rechnen", "1. Schularbeit in 9 Tagen", "pruefung"], ["strahl", "Zum Üben", "fach"]]);
   assert.equal(sp.spielVorschau(student, "rechnen", HEUTE)!.length, 3);
 
   const { rundeId, karten } = sp.starteRunde(student, "rechnen", { rng: rng(3), heute: HEUTE });
