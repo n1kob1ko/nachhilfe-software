@@ -958,34 +958,6 @@
   --k-unten: #7d5cf0;
   --k-schatten: #5537b8;
 }
-.ls-wahl {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.ls-wahl a {
-  display: inline-flex;
-  min-height: 40px;
-  align-items: center;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: var(--ls-glas);
-  border: 1px solid var(--ls-glas-linie);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ls-on);
-  transition:
-    transform 160ms var(--ls-ease-out),
-    background-color 160ms ease;
-}
-.ls-wahl a:active {
-  transform: scale(0.97);
-}
-.ls-wahl a[aria-current] {
-  background: #fff;
-  color: #1f5fd0;
-  border-color: #fff;
-}
 /* Hauptknopf auf der Bühne: weiß mit blauer Schrift (DESIGN.md), der zweite durchscheinend */
 .ls-knopf {
   display: inline-flex;

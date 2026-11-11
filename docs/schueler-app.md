@@ -22,8 +22,10 @@ und kein Passwort; wer den Link hat, sieht diese Seite (wie bisher).
 
 ## Was der Schüler sieht
 
-Seit 2026-11-08 **vier Seiten** statt einer langen (niko: „ein One-Pager ist zu unübersichtlich“). Am Handy wechselt man
-mit der Leiste unten (Start · Termine · Prüfungen · Fortschritt, `components/lernen/SchuelerNav.tsx`), am Laptop mit
+Seit 2026-11-08 mehrere Seiten statt einer langen (niko: „ein One-Pager ist zu unübersichtlich“), seit 2026-11-11
+**fünf**: „Spiele“ kam dazu (niko: „es sollte übersichtlicher sein, wo Spiele sind, und besser getrennt“; alle
+Lernspiele und die Duelle, docs/lernspiele.md). Am Handy wechselt man mit der Leiste unten
+(Start · Termine · Spiele · Prüfungen · Fortschritt, `components/lernen/SchuelerNav.tsx`), am Laptop mit
 der Reihe unter dem Kopf. Unterseiten (eine Übung, Prüfung eintragen, eine Präsentation) behalten die Leiste.
 
 1. **Start** (`/lernen/[token]`): nur, was jetzt zu tun ist.
@@ -66,7 +68,7 @@ Beim Veröffentlichen wird weiterhin niemand benachrichtigt (D25).
 | `components/AppHinweis.tsx` | der Hinweis „DreamStudy als App“ mit Install-Knopf, wo der Browser ihn anbietet |
 | `components/SchuelerAppLink.tsx` | Link, Öffnen und QR-Code am Schülerprofil |
 | `lib/schuelerportal.ts` | die Übersicht: Prüfungen, Hausübungen, Unterlagen, vergangene Einheiten; nur seine Zeilen, nur freigegebene Felder |
-| `app/lernen/[token]/page.tsx`, `termine/`, `pruefungen/`, `fortschritt/` | die vier Seiten |
+| `app/lernen/[token]/page.tsx`, `termine/`, `spiele/`, `pruefungen/`, `fortschritt/` | die fünf Seiten |
 | `components/lernen/SchuelerNav.tsx` | die Leiste unten (Handy) und die Reihe oben (Laptop) |
 | `components/lernen/` | die Abschnitte der Seiten |
 | `app/lernen/[token]/praesentation/[id]/page.tsx` | eine Präsentation aus „Deine Unterlagen“; jede andere id ist 404 |

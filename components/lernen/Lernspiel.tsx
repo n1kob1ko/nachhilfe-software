@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { CalendarDays, Flame, Lightbulb, Star, TrendingUp, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { spielBeendenAction, spielStartenAction } from "@/app/lernspiel-actions";
-import { SPIEL_AUFGABE, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
 
 /**
  * Ein Lernspiel der Schüler-App (lib/lernspiele.ts): Karten in Fächer werfen oder antippen.
@@ -63,6 +63,7 @@ export function Lernspiel({
   serie: serieAnfang,
   lernstand,
   duell,
+  zurueck: zurueckZiel,
 }: {
   token: string;
   art: SpielArt;
@@ -70,9 +71,11 @@ export function Lernspiel({
   serie: number;
   lernstand: number | null;
   duell?: DuellRahmen;
+  /** wohin das Kreuz führt; ohne Angabe zum Tab „Spiele“ */
+  zurueck?: string;
 }) {
   const router = useRouter();
-  const zurueck = duell?.zurueck ?? `/lernen/${token}`;
+  const zurueck = duell?.zurueck ?? zurueckZiel ?? `/lernen/${token}/spiele`;
   const duellRef = useRef(duell);
   duellRef.current = duell;
   const vorschlag = vorschlaege.find((v) => v.art === art) ?? null;
@@ -381,7 +384,7 @@ export function Lernspiel({
     </div>
   );
 
-  const deko = DEKO[art];
+  const deko = SPIEL_DEKO[art];
 
   if (duell?.sofort && (phase === "start" || phase === "laden")) {
     return (
@@ -444,19 +447,6 @@ export function Lernspiel({
               </p>
             </div>
           </div>
-
-          {vorschlaege.length > 1 && (
-            <div className="mt-6" style={{ "--n": 5 } as CSSProperties}>
-              <p className="ls-klein mb-2">Anderes Spiel</p>
-              <nav className="ls-wahl" aria-label="Spiel wählen">
-                {vorschlaege.map((v) => (
-                  <Link key={v.art} href={`/lernen/${token}/spiel?art=${v.art}`} replace aria-current={v.art === art ? "page" : undefined}>
-                    {SPIEL_TITEL[v.art]}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-          )}
 
           {fehler && (
             <p className="ls-fehler mt-6" role="alert">
@@ -683,17 +673,6 @@ export function Lernspiel({
   );
 }
 
-/** Blasse Wörter im Hintergrund der Bühne, je Spiel andere. */
-const DEKO: Record<SpielArt, string[]> = {
-  artikel: ["die", "das", "der"],
-  praepositionen: ["dem", "den", "der"],
-  deklination: ["-en", "-es", "-em"],
-  faelle: ["Wem?", "Wen?", "Wer?"],
-  dasdass: ["das", "dass", "welches"],
-  satzteile: ["weil", "dass", "wenn"],
-  perfekt: ["hat", "ist", "sind"],
-  praeteritum: ["ging", "kam", "sah"],
-};
 /** Kleine Kisten auf dem Anfang: worum es geht (bei Präteritum heißen die Kisten je Karte anders). */
 const VORSCHAU: Record<SpielArt, string[]> = {
   artikel: ["der", "die", "das"],
