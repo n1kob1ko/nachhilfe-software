@@ -230,6 +230,14 @@ Fähigkeit gerechnet; eine Aufgabe kann mehrere trainieren. Die Fähigkeit träg
 den Namen, unter dem sie im Lehrplan steht.
 _Avoid_: Kompetenz, Lernziel, Skill, Fertigkeit
 
+**Lernspiel**:
+Ein kurzes Spiel in der Schüler-App (`/lernen/[token]/spiel`, `lib/lernspiele.ts`): zwölf Karten aus den
+Aufgabenbanken in Kisten werfen oder antippen. Acht Deutsch-Spiele: „der, die, das“, „Präposition und Fall“,
+„Adjektiv-Endungen“, „Die vier Fälle“, „das oder dass“, „Hauptsatz oder Gliedsatz“, „Perfekt: haben oder sein“,
+„Präteritum“ (docs/lernspiele.md). Die App wählt das Spiel nach dem Stoff (nahe Prüfung, aktueller Stoff, letzte Einheit,
+unsicherer Lernstand). Eine **Runde** zählt mit der ersten Wahl je Karte, schwächer als eine Übung.
+_Avoid_: Quiz, Minispiel, Game
+
 **Typische Fehler**:
 Was bei einer **Fähigkeit** oft falsch gemacht wird, je mit kurzem Beispiel („Zähler und Nenner
 einzeln addiert (1/2 + 1/3 = 2/5)“). Stehen mit einer kurzen Erklärung auf der Fähigkeitsseite unter

@@ -1372,6 +1372,97 @@ CREATE TABLE IF NOT EXISTS erkenntnisse (
   erledigt_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_erkenntnisse_student ON erkenntnisse(student_id, status);
+-- Lernspiele in der Schüler-App (lib/lernspiele.ts): eine Zeile je Runde. art artikel | praepositionen | deklination,
+-- skill_id die Fähigkeit, die die Runde übt, grund warum sie dran war (pruefung | stoff | einheit | lernstand | fach),
+-- karten JSON der Karten mit richtiger Antwort (der Server prüft daran), antworten JSON [{key, wahl, richtig}] der ersten
+-- Wahl je Karte. Erst mit beendet_at zählt die Runde (Lernstand: richtig / anzahl, schwächer als eine Übung).
+CREATE TABLE IF NOT EXISTS spielrunden (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  art TEXT NOT NULL,
+  skill_id TEXT NOT NULL,
+  grund TEXT NOT NULL DEFAULT 'fach',
+  karten TEXT NOT NULL DEFAULT '[]',
+  antworten TEXT NOT NULL DEFAULT '[]',
+  anzahl INTEGER NOT NULL DEFAULT 0,
+  richtig INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  beendet_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_spielrunden_student ON spielrunden(student_id, beendet_at);
+-- Ranking und Duelle (lib/spielprofil.ts, lib/liga.ts, lib/duelle.ts; niko 2026-11-11). Ein Spielprofil je Schüler:
+-- Spitzname aus zwei Wortlisten (nie der echte Name), Bild (Tier), liga/duelle 1 = macht mit. Erlaubt der Lehrer es
+-- nicht (students.wettspiel), zählt das Profil nicht.
+CREATE TABLE IF NOT EXISTS spielprofile (
+  student_id INTEGER PRIMARY KEY REFERENCES students(id) ON DELETE CASCADE,
+  name TEXT NOT NULL UNIQUE,
+  bild TEXT NOT NULL,
+  liga INTEGER NOT NULL DEFAULT 1,
+  duelle INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+-- Wochenliga: wer in welcher Woche (Montag, Wiener Datum) in welcher Stufe (0 Bronze … 3 Diamant) und Gruppe (bis 8) spielt.
+-- Die Punkte stehen an den Runden (spielrunden.punkte) und werden je Woche zusammengezählt.
+CREATE TABLE IF NOT EXISTS spielliga (
+  woche TEXT NOT NULL,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  stufe INTEGER NOT NULL DEFAULT 0,
+  gruppe INTEGER NOT NULL DEFAULT 1,
+  PRIMARY KEY (woche, student_id)
+);
+CREATE INDEX IF NOT EXISTS idx_spielliga_gruppe ON spielliga(woche, stufe, gruppe);
+-- Duelle: zwei Schüler spielen dieselben Karten. live = 0 per Code, jeder wann er will (24 Stunden); live = 1 startet der
+-- Lehrer im Unterricht (zwei Schüler gleichzeitig), 2 Minuten. status offen (Code wartet) | laeuft | fertig | abgelaufen.
+-- zuege_von/zuege_gegen JSON [{key, wahl, richtig}] der ersten Wahl je Karte, sofort beim Tippen gespeichert.
+CREATE TABLE IF NOT EXISTS spielduelle (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT UNIQUE,
+  art TEXT NOT NULL,
+  live INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'offen',
+  von_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  gegen_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+  karten TEXT NOT NULL DEFAULT '[]',
+  von_runde INTEGER,
+  gegen_runde INTEGER,
+  zuege_von TEXT NOT NULL DEFAULT '[]',
+  zuege_gegen TEXT NOT NULL DEFAULT '[]',
+  von_bereit INTEGER NOT NULL DEFAULT 0,
+  gegen_bereit INTEGER NOT NULL DEFAULT 0,
+  revanche_von INTEGER,
+  lehrer_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  angenommen_at TEXT,
+  start_at TEXT,
+  ende_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_spielduelle_von ON spielduelle(von_id, status);
+CREATE INDEX IF NOT EXISTS idx_spielduelle_gegen ON spielduelle(gegen_id, status);
+
+-- Vokabeln üben in der Schüler-App (lib/vokabel-training.ts): Karteikasten je Wort einer eigenen Liste
+CREATE TABLE IF NOT EXISTS vokabel_stand (
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  liste_id INTEGER NOT NULL REFERENCES vokabellisten(id) ON DELETE CASCADE,
+  wort TEXT NOT NULL,
+  fach INTEGER NOT NULL DEFAULT 0,
+  richtig INTEGER NOT NULL DEFAULT 0,
+  falsch INTEGER NOT NULL DEFAULT 0,
+  zuletzt TEXT,
+  zuletzt_falsch INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (student_id, liste_id, wort)
+);
+CREATE TABLE IF NOT EXISTS vokabelrunden (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  liste_id INTEGER NOT NULL REFERENCES vokabellisten(id) ON DELETE CASCADE,
+  karten TEXT NOT NULL DEFAULT '[]',
+  erste TEXT NOT NULL DEFAULT '{}',
+  anzahl INTEGER NOT NULL DEFAULT 0,
+  richtig INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  beendet_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_vokabelrunden_student ON vokabelrunden(student_id, beendet_at);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */
@@ -1688,6 +1779,13 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // gesehen_at: wann die Verwaltung ihn angesehen hat (bis dahin steht er in „Zu erledigen“)
   ["terminanfragen", "quelle", "TEXT NOT NULL DEFAULT ''"],
   ["terminanfragen", "gesehen_at", "TEXT"],
+  // Ranking und Duelle (lib/liga.ts, lib/duelle.ts, 2026-11-11): Ligapunkte einer Runde (0 = zählt nicht) und das Duell,
+  // zu dem sie gehört
+  ["spielrunden", "punkte", "INTEGER NOT NULL DEFAULT 0"],
+  ["spielrunden", "duell_id", "INTEGER"],
+  // ob der Schüler bei Wochenliga und Duellen mitmachen darf (lib/spielprofil.ts): '' = Standard (ab der 9. Schulstufe),
+  // 'ja' = erlaubt (bei Jüngeren: Eltern sind einverstanden), 'nein' = aus
+  ["students", "wettspiel", "TEXT NOT NULL DEFAULT ''"],
 ];
 
 /** Teachers to start with; more can be added later. */

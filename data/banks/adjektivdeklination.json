@@ -5818,5 +5818,2825 @@
     ],
     "correct2": "-",
     "solution": "Er antwortet der freundlichen Lehrerin."
+  },
+  {
+    "prefix": "Der kalt",
+    "middle": " Wind",
+    "suffix": " weht vom Meer.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der kalte Wind weht vom Meer."
+  },
+  {
+    "prefix": "Der neu",
+    "middle": " Lehrer",
+    "suffix": " ist sehr nett.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der neue Lehrer ist sehr nett."
+  },
+  {
+    "prefix": "Der groß",
+    "middle": " Bruder",
+    "suffix": " hilft mir bei der Hausübung.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der große Bruder hilft mir bei der Hausübung."
+  },
+  {
+    "prefix": "Der rot",
+    "middle": " Ball",
+    "suffix": " liegt im Garten.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der rote Ball liegt im Garten."
+  },
+  {
+    "prefix": "Der hungrig",
+    "middle": " Hund",
+    "suffix": " bellt laut.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der hungrige Hund bellt laut."
+  },
+  {
+    "prefix": "Der lang",
+    "middle": " Weg",
+    "suffix": " ist anstrengend.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der lange Weg ist anstrengend."
+  },
+  {
+    "prefix": "Der klein",
+    "middle": " Junge",
+    "suffix": " lacht.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der kleine Junge lacht."
+  },
+  {
+    "prefix": "Der alt",
+    "middle": " Baum",
+    "suffix": " steht im Park.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der alte Baum steht im Park."
+  },
+  {
+    "prefix": "Der schnell",
+    "middle": " Zug",
+    "suffix": " fährt nach Graz.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der schnelle Zug fährt nach Graz."
+  },
+  {
+    "prefix": "Der blau",
+    "middle": " Himmel",
+    "suffix": " ist wolkenlos.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der blaue Himmel ist wolkenlos."
+  },
+  {
+    "prefix": "Der warm",
+    "middle": " Tee",
+    "suffix": " tut gut.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der warme Tee tut gut."
+  },
+  {
+    "prefix": "Der frisch",
+    "middle": " Kuchen",
+    "suffix": " riecht herrlich.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der frische Kuchen riecht herrlich."
+  },
+  {
+    "prefix": "Der lustig",
+    "middle": " Clown",
+    "suffix": " macht Witze.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der lustige Clown macht Witze."
+  },
+  {
+    "prefix": "Der leer",
+    "middle": " Teller",
+    "suffix": " steht auf dem Tisch.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der leere Teller steht auf dem Tisch."
+  },
+  {
+    "prefix": "Der dick",
+    "middle": " Kater",
+    "suffix": " schläft am Fenster.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der dicke Kater schläft am Fenster."
+  },
+  {
+    "prefix": "Das neu",
+    "middle": " Fahrrad",
+    "suffix": " ist rot.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das neue Fahrrad ist rot."
+  },
+  {
+    "prefix": "Das klein",
+    "middle": " Haus",
+    "suffix": " hat einen Garten.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das kleine Haus hat einen Garten."
+  },
+  {
+    "prefix": "Das schön",
+    "middle": " Wetter",
+    "suffix": " lockt uns ins Freie.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das schöne Wetter lockt uns ins Freie."
+  },
+  {
+    "prefix": "Das spannend",
+    "middle": " Buch",
+    "suffix": " lese ich heute fertig.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das spannende Buch lese ich heute fertig."
+  },
+  {
+    "prefix": "Das kalt",
+    "middle": " Wasser",
+    "suffix": " ist erfrischend.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das kalte Wasser ist erfrischend."
+  },
+  {
+    "prefix": "Das laut",
+    "middle": " Telefon",
+    "suffix": " klingelt schon wieder.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das laute Telefon klingelt schon wieder."
+  },
+  {
+    "prefix": "Das süß",
+    "middle": " Baby",
+    "suffix": " schläft.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das süße Baby schläft."
+  },
+  {
+    "prefix": "Das schwer",
+    "middle": " Paket",
+    "suffix": " kommt heute an.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das schwere Paket kommt heute an."
+  },
+  {
+    "prefix": "Das alt",
+    "middle": " Auto",
+    "suffix": " springt nicht an.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das alte Auto springt nicht an."
+  },
+  {
+    "prefix": "Das hell",
+    "middle": " Licht",
+    "suffix": " blendet mich.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das helle Licht blendet mich."
+  },
+  {
+    "prefix": "Wir besuchen das groß",
+    "middle": " Museum",
+    "suffix": " in Wien.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Wir besuchen das große Museum in Wien."
+  },
+  {
+    "prefix": "Ich mag das rot",
+    "middle": " Kleid",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ich mag das rote Kleid."
+  },
+  {
+    "prefix": "Er kauft das teur",
+    "middle": " Handy",
+    "suffix": " nicht.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Er kauft das teure Handy nicht."
+  },
+  {
+    "prefix": "Sie öffnet das schwer",
+    "middle": " Tor",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Sie öffnet das schwere Tor."
+  },
+  {
+    "prefix": "Wir sehen das hoh",
+    "middle": " Gebäude",
+    "suffix": " schon von weitem.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Wir sehen das hohe Gebäude schon von weitem."
+  },
+  {
+    "prefix": "Eine klein",
+    "middle": " Katze",
+    "suffix": " sitzt vor der Tür.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Eine kleine Katze sitzt vor der Tür."
+  },
+  {
+    "prefix": "Eine neu",
+    "middle": " Schülerin",
+    "suffix": " kommt in unsere Klasse.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Eine neue Schülerin kommt in unsere Klasse."
+  },
+  {
+    "prefix": "Eine lang",
+    "middle": " Reise",
+    "suffix": " beginnt.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Eine lange Reise beginnt."
+  },
+  {
+    "prefix": "Eine warm",
+    "middle": " Suppe",
+    "suffix": " schmeckt im Winter.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Eine warme Suppe schmeckt im Winter."
+  },
+  {
+    "prefix": "Ich habe eine gut",
+    "middle": " Idee",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ich habe eine gute Idee."
+  },
+  {
+    "prefix": "Sie trägt eine bunt",
+    "middle": " Mütze",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Sie trägt eine bunte Mütze."
+  },
+  {
+    "prefix": "Wir brauchen eine groß",
+    "middle": " Tasche",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Wir brauchen eine große Tasche."
+  },
+  {
+    "prefix": "Er schreibt eine lang",
+    "middle": " Nachricht",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Er schreibt eine lange Nachricht."
+  },
+  {
+    "prefix": "Ich esse eine reif",
+    "middle": " Banane",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ich esse eine reife Banane."
+  },
+  {
+    "prefix": "Eine freundlich",
+    "middle": " Ärztin",
+    "suffix": " hilft uns.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Eine freundliche Ärztin hilft uns."
+  },
+  {
+    "prefix": "Meine Oma backt eine lecker",
+    "middle": " Torte",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Meine Oma backt eine leckere Torte."
+  },
+  {
+    "prefix": "Wir machen eine kurz",
+    "middle": " Pause",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Wir machen eine kurze Pause."
+  },
+  {
+    "prefix": "Eine laut",
+    "middle": " Glocke",
+    "suffix": " läutet.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Eine laute Glocke läutet."
+  },
+  {
+    "prefix": "Das ist eine schwierig",
+    "middle": " Aufgabe",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das ist eine schwierige Aufgabe."
+  },
+  {
+    "prefix": "Er hat eine klug",
+    "middle": " Frage",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-e",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Er hat eine kluge Frage."
+  },
+  {
+    "prefix": "Ein groß",
+    "middle": " Hund",
+    "suffix": " bellt im Hof.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein großer Hund bellt im Hof."
+  },
+  {
+    "prefix": "Ein klein",
+    "middle": " Vogel",
+    "suffix": " singt im Baum.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein kleiner Vogel singt im Baum."
+  },
+  {
+    "prefix": "Ein alt",
+    "middle": " Mann",
+    "suffix": " sitzt auf der Bank.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein alter Mann sitzt auf der Bank."
+  },
+  {
+    "prefix": "Ein kalt",
+    "middle": " Wind",
+    "suffix": " weht durch die Straßen.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein kalter Wind weht durch die Straßen."
+  },
+  {
+    "prefix": "Ein neu",
+    "middle": " Schüler",
+    "suffix": " ist in unserer Klasse.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein neuer Schüler ist in unserer Klasse."
+  },
+  {
+    "prefix": "Ein lustig",
+    "middle": " Film",
+    "suffix": " läuft im Kino.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein lustiger Film läuft im Kino."
+  },
+  {
+    "prefix": "Ein rot",
+    "middle": " Apfel",
+    "suffix": " liegt auf dem Tisch.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein roter Apfel liegt auf dem Tisch."
+  },
+  {
+    "prefix": "Mein best",
+    "middle": " Freund",
+    "suffix": " heißt Tim.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Mein bester Freund heißt Tim."
+  },
+  {
+    "prefix": "Sein neu",
+    "middle": " Computer",
+    "suffix": " ist sehr schnell.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Sein neuer Computer ist sehr schnell."
+  },
+  {
+    "prefix": "Unser alt",
+    "middle": " Kater",
+    "suffix": " schläft viel.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Unser alter Kater schläft viel."
+  },
+  {
+    "prefix": "Das ist ein schön",
+    "middle": " Tag",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das ist ein schöner Tag."
+  },
+  {
+    "prefix": "Das ist ein spannend",
+    "middle": " Krimi",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das ist ein spannender Krimi."
+  },
+  {
+    "prefix": "Kein einzig",
+    "middle": " Stuhl",
+    "suffix": " ist frei.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Kein einziger Stuhl ist frei."
+  },
+  {
+    "prefix": "Ein heiß",
+    "middle": " Tee",
+    "suffix": " hilft bei Halsweh.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein heißer Tee hilft bei Halsweh."
+  },
+  {
+    "prefix": "Ein dunkl",
+    "middle": " Wald",
+    "suffix": " liegt hinter dem Dorf.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein dunkler Wald liegt hinter dem Dorf."
+  },
+  {
+    "prefix": "Mein klein",
+    "middle": " Bruder",
+    "suffix": " geht in den Kindergarten.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Mein kleiner Bruder geht in den Kindergarten."
+  },
+  {
+    "prefix": "Ein freundlich",
+    "middle": " Polizist",
+    "suffix": " hilft uns.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein freundlicher Polizist hilft uns."
+  },
+  {
+    "prefix": "Ein schwer",
+    "middle": " Koffer",
+    "suffix": " steht im Gang.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein schwerer Koffer steht im Gang."
+  },
+  {
+    "prefix": "Ein gelb",
+    "middle": " Bus",
+    "suffix": " hält vor der Schule.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein gelber Bus hält vor der Schule."
+  },
+  {
+    "prefix": "Ein stark",
+    "middle": " Regen",
+    "suffix": " beginnt.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein starker Regen beginnt."
+  },
+  {
+    "prefix": "Ihr neu",
+    "middle": " Hund",
+    "suffix": " heißt Bello.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ihr neuer Hund heißt Bello."
+  },
+  {
+    "prefix": "Ein leis",
+    "middle": " Ton",
+    "suffix": " ist zu hören.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein leiser Ton ist zu hören."
+  },
+  {
+    "prefix": "Ein riesig",
+    "middle": " Berg",
+    "suffix": " steht vor uns.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein riesiger Berg steht vor uns."
+  },
+  {
+    "prefix": "Dort steht ein hoh",
+    "middle": " Turm",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Dort steht ein hoher Turm."
+  },
+  {
+    "prefix": "Ein wichtig",
+    "middle": " Termin",
+    "suffix": " ist morgen.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein wichtiger Termin ist morgen."
+  },
+  {
+    "prefix": "Das ist ein gut",
+    "middle": " Plan",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das ist ein guter Plan."
+  },
+  {
+    "prefix": "Ein brav",
+    "middle": " Hund",
+    "suffix": " wartet vor dem Geschäft.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein braver Hund wartet vor dem Geschäft."
+  },
+  {
+    "prefix": "Ein voll",
+    "middle": " Bus",
+    "suffix": " fährt vorbei.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein voller Bus fährt vorbei."
+  },
+  {
+    "prefix": "Ein bekannt",
+    "middle": " Sänger",
+    "suffix": " kommt in die Stadt.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein bekannter Sänger kommt in die Stadt."
+  },
+  {
+    "prefix": "Ein weit",
+    "middle": " Weg",
+    "suffix": " liegt vor uns.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein weiter Weg liegt vor uns."
+  },
+  {
+    "prefix": "Ein frech",
+    "middle": " Vogel",
+    "suffix": " holt sich die Brösel.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein frecher Vogel holt sich die Brösel."
+  },
+  {
+    "prefix": "Ein lang",
+    "middle": " Tag",
+    "suffix": " geht zu Ende.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein langer Tag geht zu Ende."
+  },
+  {
+    "prefix": "Ein bunt",
+    "middle": " Drache",
+    "suffix": " fliegt am Himmel.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein bunter Drache fliegt am Himmel."
+  },
+  {
+    "prefix": "Ein müd",
+    "middle": " Löwe",
+    "suffix": " liegt im Schatten.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein müder Löwe liegt im Schatten."
+  },
+  {
+    "prefix": "Ein klug",
+    "middle": " Fuchs",
+    "suffix": " schleicht durch den Wald.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein kluger Fuchs schleicht durch den Wald."
+  },
+  {
+    "prefix": "Ein toll",
+    "middle": " Ausflug",
+    "suffix": " wartet auf uns.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein toller Ausflug wartet auf uns."
+  },
+  {
+    "prefix": "Ein schnell",
+    "middle": " Läufer",
+    "suffix": " gewinnt das Rennen.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein schneller Läufer gewinnt das Rennen."
+  },
+  {
+    "prefix": "Ein schmal",
+    "middle": " Pfad",
+    "suffix": " führt zum See.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein schmaler Pfad führt zum See."
+  },
+  {
+    "prefix": "Ein dick",
+    "middle": " Pullover",
+    "suffix": " hält warm.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-er",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein dicker Pullover hält warm."
+  },
+  {
+    "prefix": "Ein klein",
+    "middle": " Kind",
+    "suffix": " spielt im Sand.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein kleines Kind spielt im Sand."
+  },
+  {
+    "prefix": "Wir haben ein neu",
+    "middle": " Auto",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Wir haben ein neues Auto."
+  },
+  {
+    "prefix": "Ein laut",
+    "middle": " Geräusch",
+    "suffix": " weckt mich.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein lautes Geräusch weckt mich."
+  },
+  {
+    "prefix": "Er isst ein groß",
+    "middle": " Stück",
+    "suffix": " Kuchen.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Er isst ein großes Stück Kuchen."
+  },
+  {
+    "prefix": "Sie hat ein schön",
+    "middle": " Kleid",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Sie hat ein schönes Kleid."
+  },
+  {
+    "prefix": "Ein kalt",
+    "middle": " Getränk",
+    "suffix": " tut gut.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein kaltes Getränk tut gut."
+  },
+  {
+    "prefix": "Mein neu",
+    "middle": " Handy",
+    "suffix": " ist kaputt.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Mein neues Handy ist kaputt."
+  },
+  {
+    "prefix": "Das ist ein schwer",
+    "middle": " Rätsel",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das ist ein schweres Rätsel."
+  },
+  {
+    "prefix": "Wir sehen ein alt",
+    "middle": " Schloss",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Wir sehen ein altes Schloss."
+  },
+  {
+    "prefix": "Ein weiß",
+    "middle": " Pferd",
+    "suffix": " steht auf der Wiese.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein weißes Pferd steht auf der Wiese."
+  },
+  {
+    "prefix": "Ich wünsche mir ein eigen",
+    "middle": " Zimmer",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ich wünsche mir ein eigenes Zimmer."
+  },
+  {
+    "prefix": "Ein rund",
+    "middle": " Fenster",
+    "suffix": " ist im Dach.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein rundes Fenster ist im Dach."
+  },
+  {
+    "prefix": "Er kauft ein billig",
+    "middle": " Ticket",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Er kauft ein billiges Ticket."
+  },
+  {
+    "prefix": "Kein einzig",
+    "middle": " Fenster",
+    "suffix": " ist offen.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Kein einziges Fenster ist offen."
+  },
+  {
+    "prefix": "Ein lustig",
+    "middle": " Spiel",
+    "suffix": " macht allen Spaß.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein lustiges Spiel macht allen Spaß."
+  },
+  {
+    "prefix": "Unser klein",
+    "middle": " Dorf",
+    "suffix": " hat einen See.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Unser kleines Dorf hat einen See."
+  },
+  {
+    "prefix": "Ein leer",
+    "middle": " Glas",
+    "suffix": " steht auf dem Tisch.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein leeres Glas steht auf dem Tisch."
+  },
+  {
+    "prefix": "Sie malt ein bunt",
+    "middle": " Bild",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Sie malt ein buntes Bild."
+  },
+  {
+    "prefix": "Wir suchen ein ruhig",
+    "middle": " Plätzchen",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Wir suchen ein ruhiges Plätzchen."
+  },
+  {
+    "prefix": "Ein gut",
+    "middle": " Frühstück",
+    "suffix": " ist wichtig.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein gutes Frühstück ist wichtig."
+  },
+  {
+    "prefix": "Ich höre ein schön",
+    "middle": " Lied",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ich höre ein schönes Lied."
+  },
+  {
+    "prefix": "Ein hell",
+    "middle": " Licht",
+    "suffix": " leuchtet im Fenster.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein helles Licht leuchtet im Fenster."
+  },
+  {
+    "prefix": "Ihr neu",
+    "middle": " Fahrrad",
+    "suffix": " ist blau.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ihr neues Fahrrad ist blau."
+  },
+  {
+    "prefix": "Ein nass",
+    "middle": " Handtuch",
+    "suffix": " liegt am Boden.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein nasses Handtuch liegt am Boden."
+  },
+  {
+    "prefix": "Das ist ein toll",
+    "middle": " Geschenk",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das ist ein tolles Geschenk."
+  },
+  {
+    "prefix": "Ein warm",
+    "middle": " Bad",
+    "suffix": " entspannt.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein warmes Bad entspannt."
+  },
+  {
+    "prefix": "Ein schmutzig",
+    "middle": " Hemd",
+    "suffix": " liegt im Wäschekorb.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein schmutziges Hemd liegt im Wäschekorb."
+  },
+  {
+    "prefix": "Wir bauen ein groß",
+    "middle": " Zelt",
+    "suffix": " auf.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Wir bauen ein großes Zelt auf."
+  },
+  {
+    "prefix": "Ein frisch",
+    "middle": " Brot",
+    "suffix": " riecht gut.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein frisches Brot riecht gut."
+  },
+  {
+    "prefix": "Das ist ein interessant",
+    "middle": " Thema",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Das ist ein interessantes Thema."
+  },
+  {
+    "prefix": "Sie hat ein süß",
+    "middle": " Kätzchen",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Sie hat ein süßes Kätzchen."
+  },
+  {
+    "prefix": "Er trägt ein weiß",
+    "middle": " Hemd",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Er trägt ein weißes Hemd."
+  },
+  {
+    "prefix": "Ein teur",
+    "middle": " Hotel",
+    "suffix": " steht am See.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein teures Hotel steht am See."
+  },
+  {
+    "prefix": "Ein stark",
+    "middle": " Gewitter",
+    "suffix": " zieht auf.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein starkes Gewitter zieht auf."
+  },
+  {
+    "prefix": "Ein kurz",
+    "middle": " Video",
+    "suffix": " zeigt den Weg.",
+    "options1": [
+      "-e",
+      "-en",
+      "-er",
+      "-es"
+    ],
+    "correct1": "-es",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ein kurzes Video zeigt den Weg."
+  },
+  {
+    "prefix": "Ich wasche mir die Hände mit warm",
+    "middle": " Wasser",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ich wasche mir die Hände mit warmem Wasser."
+  },
+  {
+    "prefix": "Bei schön",
+    "middle": " Wetter",
+    "suffix": " gehen wir baden.",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Bei schönem Wetter gehen wir baden."
+  },
+  {
+    "prefix": "Bei schlecht",
+    "middle": " Wetter",
+    "suffix": " bleiben wir zu Hause.",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Bei schlechtem Wetter bleiben wir zu Hause."
+  },
+  {
+    "prefix": "Mit groß",
+    "middle": " Interesse",
+    "suffix": " hört sie zu.",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Mit großem Interesse hört sie zu."
+  },
+  {
+    "prefix": "Nach lang",
+    "middle": " Warten",
+    "suffix": " kommt endlich der Bus.",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Nach langem Warten kommt endlich der Bus."
+  },
+  {
+    "prefix": "Ich esse Nudeln mit gerieben",
+    "middle": " Käse",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Ich esse Nudeln mit geriebenem Käse."
+  },
+  {
+    "prefix": "Wir backen einen Kuchen mit frisch",
+    "middle": " Obst",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Wir backen einen Kuchen mit frischem Obst."
+  },
+  {
+    "prefix": "Er kämpft mit groß",
+    "middle": " Mut",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Er kämpft mit großem Mut."
+  },
+  {
+    "prefix": "Mit voll",
+    "middle": " Mund",
+    "suffix": " spricht man nicht.",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Mit vollem Mund spricht man nicht."
+  },
+  {
+    "prefix": "Bei stark",
+    "middle": " Regen",
+    "suffix": " fällt das Training aus.",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Bei starkem Regen fällt das Training aus."
+  },
+  {
+    "prefix": "Mit nass",
+    "middle": " Haar",
+    "suffix": " gehe ich nicht hinaus.",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Mit nassem Haar gehe ich nicht hinaus."
+  },
+  {
+    "prefix": "Der Ring ist aus rein",
+    "middle": " Gold",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der Ring ist aus reinem Gold."
+  },
+  {
+    "prefix": "Er schreibt mit rot",
+    "middle": " Stift",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Er schreibt mit rotem Stift."
+  },
+  {
+    "prefix": "Mit leer",
+    "middle": " Magen",
+    "suffix": " kann ich nicht lernen.",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Mit leerem Magen kann ich nicht lernen."
+  },
+  {
+    "prefix": "Bei klar",
+    "middle": " Himmel",
+    "suffix": " sieht man die Sterne.",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Bei klarem Himmel sieht man die Sterne."
+  },
+  {
+    "prefix": "Sie malt mit blau",
+    "middle": " Buntstift",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Sie malt mit blauem Buntstift."
+  },
+  {
+    "prefix": "Nach kurz",
+    "middle": " Nachdenken",
+    "suffix": " antwortet er.",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Nach kurzem Nachdenken antwortet er."
+  },
+  {
+    "prefix": "Bei rot",
+    "middle": " Licht",
+    "suffix": " muss man stehen bleiben.",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Bei rotem Licht muss man stehen bleiben."
+  },
+  {
+    "prefix": "Der Tisch ist aus hell",
+    "middle": " Holz",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Der Tisch ist aus hellem Holz."
+  },
+  {
+    "prefix": "Mit gut",
+    "middle": " Gewissen",
+    "suffix": " kann ich schlafen.",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Mit gutem Gewissen kann ich schlafen."
+  },
+  {
+    "prefix": "Aus alt",
+    "middle": " Papier",
+    "suffix": " wird neues Papier.",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Aus altem Papier wird neues Papier."
+  },
+  {
+    "prefix": "Er trinkt Saft mit kalt",
+    "middle": " Sprudel",
+    "suffix": ".",
+    "options1": [
+      "-e",
+      "-em",
+      "-en",
+      "-er"
+    ],
+    "correct1": "-em",
+    "options2": [
+      "-",
+      "-s",
+      "-es",
+      "-en"
+    ],
+    "correct2": "-",
+    "solution": "Er trinkt Saft mit kaltem Sprudel."
   }
 ]

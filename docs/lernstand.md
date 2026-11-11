@@ -26,6 +26,7 @@ Eine zentrale Funktion: `masteryAt()` in `lib/mastery.ts`. Keine KI.
 2. **Gewicht**
    - Aufgabe nach Schwierigkeit 1–5: 0,6 / 0,8 / 1,0 / 1,25 / 1,5
    - Einheit 1,5, Textarbeit 1,5 (wie eine sehr schwere Aufgabe), Test 2
+   - eine beendete Runde eines Lernspiels 1,5 für die ganze Runde, Wert = Anteil beim ersten Mal richtig (docs/lernspiele.md)
    - das Gewicht halbiert sich alle 45 Tage (Aktualität)
 3. **Lernstand** = gewichteter Schnitt plus eine neutrale „virtuelle Aufgabe“ mit 50 %, damit eine
    einzelne richtige Antwort nicht 100 % zeigt (eine richtige Aufgabe → 75 %).

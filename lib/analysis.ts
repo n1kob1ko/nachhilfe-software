@@ -66,11 +66,13 @@ export function gradeScore(note: number): number | null {
 
 /** A Textarbeit with the grade the teacher confirmed (lib/text-note.ts): one per text, never a KI proposal. */
 export type TextGrade = { skillId: string; note: number; at: string };
+/** A finished Lernspiel round (lib/lernspiele.ts spielBelege): share right at the first pick. */
+export type SpielBeleg = { skillId: string; score: number; at: string };
 
 /** Skills an answer counts for: all skills of its task and their parent skills, if known. */
 export const skillsOf = (a: Pick<Attempt, "skill_id" | "skill_ids">): string[] => (a.skill_ids?.length ? a.skill_ids : a.skill_id ? [a.skill_id] : []);
 
-export function collectEvidence(attempts: Attempt[], lessons: Lesson[], tests: TestResult[], o: { careless?: boolean; texts?: TextGrade[] } = {}): Evidence[] {
+export function collectEvidence(attempts: Attempt[], lessons: Lesson[], tests: TestResult[], o: { careless?: boolean; texts?: TextGrade[]; spiele?: SpielBeleg[] } = {}): Evidence[] {
   const ev: Evidence[] = [];
   for (const a of attempts) {
     if (!a.final) continue;
@@ -91,6 +93,8 @@ export function collectEvidence(attempts: Attempt[], lessons: Lesson[], tests: T
     const score = gradeScore(t.note);
     if (score !== null) ev.push({ skillId: t.skillId, score, weight: SOURCE_WEIGHT.text, at: parseTime(t.at), source: "text" });
   }
+  // eine beendete Runde eines Lernspiels: ein Beleg, so schwer wie eine Stunde (lib/lernspiele.ts)
+  for (const r of o.spiele ?? []) ev.push({ skillId: r.skillId, score: r.score, weight: SOURCE_WEIGHT.spiel, at: parseTime(r.at), source: "spiel" });
   return ev.sort((a, b) => a.at - b.at);
 }
 
@@ -132,9 +136,11 @@ export function computeAnalysis(input: {
   careless?: boolean;
   /** confirmed grades of Textarbeiten (lib/text-note.ts) */
   texts?: TextGrade[];
+  /** finished Lernspiel rounds (lib/lernspiele.ts) */
+  spiele?: SpielBeleg[];
 }): Analysis {
   const now = input.now ?? Date.now();
-  const evidence = collectEvidence(input.attempts, input.lessons, input.tests, { careless: input.careless, texts: input.texts });
+  const evidence = collectEvidence(input.attempts, input.lessons, input.tests, { careless: input.careless, texts: input.texts, spiele: input.spiele });
   const bySkill = new Map<string, Evidence[]>();
   for (const e of evidence) bySkill.set(e.skillId, [...(bySkill.get(e.skillId) ?? []), e]);
 

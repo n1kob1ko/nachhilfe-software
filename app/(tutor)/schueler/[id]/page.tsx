@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { LernspieleProfil } from "@/components/LernspieleProfil";
+import { WettspielProfil } from "@/components/WettspielProfil";
 import { Erkenntnisse } from "@/components/Erkenntnisse";
 import { ortName } from "@/lib/planung/ort";
 import { notFound } from "next/navigation";
@@ -134,6 +136,8 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
         <div className="space-y-14">
           <Erkenntnisse studentId={student.id} />
           <Progress a={a} />
+          <LernspieleProfil studentId={student.id} name={student.name.split(" ")[0]} />
+          <WettspielProfil student={student} />
           <AnalysisTab student={student} a={a} assignedId={sp.zugewiesen} error={sp.fehler} />
         </div>
       )}

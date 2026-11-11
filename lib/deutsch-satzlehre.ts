@@ -1954,6 +1954,14 @@ export function deutschAufgabe(skillId: string, format: DeutschFormat, difficult
   return lueckentext(skillId, difficulty, f.luecke(rng, st), f.zeichen);
 }
 
+/**
+ * Für die Lernspiele (lib/lernspiele-karten.ts): eine Auswahl-Aufgabe in ihren Teilen (Frage, Satz, richtige
+ * Antwort, Regel), bevor sie zu einer Aufgabe mit gemischten Optionen wird.
+ */
+export function wahlFuerSpiel(skillId: string, stufe: Stufe, rng: Rng): Wahl | null {
+  return FAEHIGKEITEN[skillId]?.wahl(rng, stufe) ?? null;
+}
+
 /** One sentence with one error to write correctly (Fehler finden, Satz verbessern); null without such sentences. */
 function satzMitFehler(skillId: string, difficulty: Difficulty, rng: Rng, category: string): TaskDraft | null {
   const f = FAEHIGKEITEN[skillId];

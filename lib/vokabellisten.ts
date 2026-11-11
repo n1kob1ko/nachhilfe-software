@@ -10,6 +10,7 @@ import * as repo from "./repo";
 import type { Rng } from "./schulbuch-zahlen";
 import type { TaskDraft } from "./tasks";
 import { EIGENE_VOKABELN, kategorieFuerTyp, leseListe, vokabelAufgabenFuerPlaetze, type Quelle, type Vokabel } from "./vokabeln";
+import { UNLESBAR } from "./vokabel-foto-regeln";
 import { schluesselEn, teileDe } from "./vokabeln-pruefen";
 import { LEXIKON } from "./vokabeln-themen";
 
@@ -54,6 +55,10 @@ export function speichereListe(input: { id?: number | null; studentId: number; t
   if (title.length > MAX_TITEL) fehler.push(`Der Name hat höchstens ${MAX_TITEL} Zeichen.`);
   const gelesen = leseListe(text);
   fehler.push(...gelesen.fehler.map((m) => m.text));
+  // vom Foto gelesen (lib/vokabel-foto.ts): ein nicht lesbares Wort muss der Lehrer erst ergänzen
+  const unlesbar = text.split("\n").flatMap((z, i) => (z.includes(UNLESBAR) && !z.trim().startsWith("#") ? [i + 1] : []));
+  if (unlesbar.length)
+    fehler.push(`${unlesbar.length === 1 ? `Zeile ${unlesbar[0]}` : `Zeilen ${unlesbar.slice(0, 5).join(", ")}${unlesbar.length > 5 ? " …" : ""}`}: ${UNLESBAR} heißt „nicht lesbar“. Bitte mit dem Foto vergleichen und das Wort ergänzen oder die Zeile löschen.`);
   if (!gelesen.fehler.length && !gelesen.eintraege.length) fehler.push("Schreib mindestens ein Wortpaar in die Liste, zum Beispiel: dog = der Hund");
   if (!repo.getStudent(input.studentId)) fehler.push("Diese Schülerin bzw. diesen Schüler gibt es nicht mehr.");
   if (fehler.length) return { ok: false, fehler };

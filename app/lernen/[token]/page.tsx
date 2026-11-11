@@ -4,13 +4,18 @@ import { notFound } from "next/navigation";
 import { SubjectArt } from "@/components/Art";
 import { AppHinweis } from "@/components/AppHinweis";
 import { Hausuebungen } from "@/components/lernen/Hausuebungen";
+import { ArenaTeaser } from "@/components/lernen/ArenaTeaser";
+import { LernspielTeaser } from "@/components/lernen/LernspielTeaser";
+import { LiveDuellRuf } from "@/components/lernen/LiveDuellRuf";
 import { NaechsterTermin } from "@/components/lernen/NaechsterTermin";
+import { VokabelTeaser } from "@/components/lernen/VokabelTeaser";
 import { SchuelerNotizFrage } from "@/components/SchuelerNotizFrage";
 import { termineFuerSchueler } from "@/lib/planung/schueler-termine";
 import * as repo from "@/lib/repo";
 import { activeMaterial, materialLabel } from "@/lib/current-material";
 import { notizFuerSchueler } from "@/lib/schueler-notiz";
 import { runningUnitForStudent } from "@/lib/units";
+import { wartendesLiveDuell } from "@/lib/duelle";
 
 /** Das Thema zum Bild der Bühne: der aktuelle Stoff des Schülers (Thema und Unterthema). */
 const bildThema = (studentId: number) => {
@@ -47,6 +52,9 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
         </div>
         <SubjectArt subject={student.subjects[0]} topic={bildThema(student.id)} seed={student.id} className="bogen pointer-events-none absolute -right-4 -bottom-6 hidden h-[190px] w-[190px] sm:block" />
       </section>
+
+      {/* der Lehrer hat im Unterricht ein Live-Duell gestartet (lib/duelle.ts): kommt von selbst */}
+      <LiveDuellRuf token={token} anfang={wartendesLiveDuell(student.id)} />
 
       {/* wann und wo ist das Wichtigste für den Schüler: gleich unter der Begrüßung (niko 2026-11-08) */}
       {naechster && <NaechsterTermin naechster={naechster} token={token} alleLink />}
@@ -91,6 +99,13 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
       )}
 
       <Hausuebungen studentId={student.id} token={token} />
+
+      {/* Lernspiel zum aktuellen Stoff (lib/lernspiele.ts): nach dem, was offen ist */}
+      <LernspielTeaser student={student} token={token} />
+      <ArenaTeaser student={student} token={token} />
+
+      {/* eigene Vokabellisten selbst üben (lib/vokabel-training.ts) */}
+      <VokabelTeaser studentId={student.id} token={token} />
 
       {notizFrisch && (
         <SchuelerNotizFrage
