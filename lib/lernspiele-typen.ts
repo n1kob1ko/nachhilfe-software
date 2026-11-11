@@ -86,6 +86,8 @@ export type SpielErgebnis =
       lernstandNachher: number | null;
       /** die Karten, die beim ersten Versuch falsch waren (kommen in der nächsten Runde wieder) */
       nochmal: { loesung: string }[];
+      /** Wochenliga (lib/liga.ts): Punkte dieser Runde oder warum sie nicht zählt; fehlt ohne Liga */
+      liga?: { punkte: number; grund?: string };
     }
   | { fehler: string };
 

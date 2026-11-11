@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { beendeRunde, rundenSkill, serie, SPIEL_SKILL, spielVorschlaege, starteRunde } from "@/lib/lernspiele";
+import { vergibPunkte } from "@/lib/liga";
 import { istSpielArt, type SpielAntwort, type SpielErgebnis, type SpielStart } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
@@ -32,6 +33,8 @@ export async function spielBeendenAction(token: string, rundeId: number, antwort
   const e = beendeRunde(student.id, Number(rundeId), Array.isArray(antworten) ? antworten.slice(0, 100) : []);
   if (!e) return { fehler: "Diese Runde gibt es nicht mehr." };
   const nachher = zeile ? lernstandVon(student.id, zeile) : null;
+  // Wochenliga: Punkte für Einsatz und Besserwerden (nur mit Spielprofil, lib/liga.ts)
+  const liga = vergibPunkte(student, Number(rundeId));
   revalidatePath(`/lernen/${token}`, "layout");
   revalidatePath(`/schueler/${student.id}`, "layout");
   return {
@@ -42,5 +45,6 @@ export async function spielBeendenAction(token: string, rundeId: number, antwort
     lernstandVorher: vorher,
     lernstandNachher: nachher,
     nochmal: e.nochmal.map((k) => ({ loesung: k.loesung })),
+    liga: liga.punkte > 0 || liga.grund ? { punkte: liga.punkte, grund: liga.grund } : undefined,
   };
 }
