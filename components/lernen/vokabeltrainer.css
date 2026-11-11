@@ -1,0 +1,48 @@
+/* Vokabeln üben (components/lernen/VokabelTrainer.tsx): kurz und nur mit Zweck, bei „weniger Bewegung“ alles aus. */
+.vt-rein {
+  animation: vt-rein 240ms var(--ease-out) both;
+}
+@keyframes vt-rein {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.vt-fortschritt {
+  transition: width 320ms var(--ease-out);
+}
+.vt-rueckmeldung {
+  animation: vt-rein 200ms var(--ease-out) both;
+}
+.vt-richtig {
+  animation: vt-pop 260ms var(--ease-out);
+}
+@keyframes vt-pop {
+  40% {
+    transform: scale(1.03);
+  }
+}
+.vt-falsch {
+  animation: vt-wackeln 320ms ease-in-out;
+}
+@keyframes vt-wackeln {
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vt-rein,
+  .vt-rueckmeldung,
+  .vt-richtig,
+  .vt-falsch {
+    animation: none;
+  }
+  .vt-fortschritt {
+    transition: none;
+  }
+}
