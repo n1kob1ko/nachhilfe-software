@@ -15,7 +15,8 @@
  */
 import { parseTime } from "./analysis";
 import { db, json } from "./db";
-import { beendeRunde, duellVokabeln, starteRundeMitKarten } from "./lernspiele";
+import { beendeRunde, duellThema, duellVokabeln, starteRundeMitKarten } from "./lernspiele";
+import { SPIEL_THEMEN } from "./lernspiele-englisch";
 import { stufenFuer, waehleKarten } from "./lernspiele-karten";
 import { istSpielArt, type SpielArt, type SpielKarte } from "./lernspiele-typen";
 import * as repo from "./repo";
@@ -73,6 +74,8 @@ function karten(art: SpielArt, a: repo.Student, b: repo.Student, rng?: () => num
   const stufe = Math.min(a.grade, b.grade);
   // Vokabel-Paare: eine Themenliste, für beide dieselbe (eigene Listen hat nur einer von beiden)
   if (art === "vokabeln") return duellVokabeln(stufe, stufe <= 4, rng);
+  // Themenspiele: ein Thema, das der Jüngere schon hatte
+  if (SPIEL_THEMEN[art]) return duellThema(art, stufe, rng);
   return waehleKarten(art, { stufen: stufenFuer(art, stufe, null), rng });
 }
 

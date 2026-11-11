@@ -12,8 +12,11 @@
  * Dazu „Vokabel-Paare“ für Englisch (niko: „das Englischspiel, das Vokabelspiel“) mit eigener Mechanik: englische
  * und deutsche Wörter stehen sich gegenüber, je zwei gehören zusammen (`form: "paar"`). Und „Satzbau“ für Deutsch:
  * die Teile eines Satzes in die richtige Reihenfolge bringen (`form: "reihe"`).
+ *
+ * Englisch mit Kisten (niko: „die Irregular Verbs, Zeiten in Englisch“): „Irregular Verbs“, „English Tenses“ und
+ * „English Grammar“. Die letzten zwei spielen je Runde ein Thema (lib/lernspiele-englisch.ts).
  */
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "vokabeln"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "vokabeln", "irregular", "zeiten", "grammatik"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -29,6 +32,9 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   praeteritum: "Präteritum",
   satzbau: "Satzbau",
   vokabeln: "Vokabel-Paare",
+  irregular: "Irregular Verbs",
+  zeiten: "English Tenses",
+  grammatik: "English Grammar",
 };
 
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
@@ -43,6 +49,9 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch"> = {
   praeteritum: "Deutsch",
   satzbau: "Deutsch",
   vokabeln: "Englisch",
+  irregular: "Englisch",
+  zeiten: "Englisch",
+  grammatik: "Englisch",
 };
 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
@@ -57,6 +66,9 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   praeteritum: "ging, gehte oder geht?",
   satzbau: "Wo steht das Verb?",
   vokabeln: "Englisch und Deutsch: was gehört zusammen?",
+  irregular: "go, went, gone",
+  zeiten: "plays, is playing oder played?",
+  grammatik: "some oder any? much oder many?",
 };
 
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
@@ -71,6 +83,9 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   praeteritum: ["ging", "kam", "sah"],
   satzbau: ["gehen", "wir", "heute"],
   vokabeln: ["dog", "house", "school"],
+  irregular: ["went", "gone", "saw"],
+  zeiten: ["plays", "played", "will"],
+  grammatik: ["some", "any", "much"],
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -85,6 +100,9 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   praeteritum: "Welche Form passt im Präteritum?",
   satzbau: "Bring die Teile in die richtige Reihenfolge.",
   vokabeln: "Welche zwei Wörter gehören zusammen?",
+  irregular: "Welche Form passt in die Lücke?",
+  zeiten: "Welche Form passt in die Lücke?",
+  grammatik: "Was passt in die Lücke?",
 };
 
 /** So spielt sich ein Spiel: Karten in Kisten (ohne Angabe), Paare finden oder Teile in eine Reihe bringen. */

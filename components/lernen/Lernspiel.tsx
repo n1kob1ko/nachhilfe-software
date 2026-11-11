@@ -62,6 +62,7 @@ export function Lernspiel({
   duell,
   zurueck: zurueckZiel,
   woher,
+  vorschau,
 }: {
   token: string;
   art: SpielArt;
@@ -73,6 +74,8 @@ export function Lernspiel({
   zurueck?: string;
   /** woher die Karten kommen, wenn es mehr als eine Quelle gibt („Thema: Familie“, „Deine Liste „Unit 3““) */
   woher?: string;
+  /** die Kisten auf dem Anfang, wenn sie vom Thema abhängen (English Grammar: „some“, „any“, „no“) */
+  vorschau?: string[];
 }) {
   const router = useRouter();
   const form = SPIEL_FORM[art];
@@ -521,7 +524,7 @@ export function Lernspiel({
             </div>
           ) : (
             <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
-              {VORSCHAU[art].map((f, i) => (
+              {(vorschau ?? VORSCHAU[art]).map((f, i) => (
                 <span key={f} className="ls-kiste-mini" data-k={f} data-i={i} style={{ rotate: `${i % 2 ? 2.5 : -2.5}deg` }}>
                   {f}
                 </span>
@@ -761,7 +764,7 @@ export function Lernspiel({
             role="group"
             aria-label="Kisten"
             data-viele={aktuell.faecher.length > 3 ? "" : undefined}
-            style={{ "--z": Math.max(3, ...aktuell.faecher.map((f) => f.length)) } as CSSProperties}
+            style={{ "--z": Math.max(3, ...aktuell.faecher.flatMap((f) => kistenZeilen(f).map((z) => z.length))) } as CSSProperties}
           >
             {aktuell.faecher.map((f, i) => (
               <button
@@ -788,7 +791,9 @@ export function Lernspiel({
                   ))}
                 </span>
                 <span className="ls-kiste">
-                  {f}
+                  {kistenZeilen(f).map((z, n) => (
+                    <span key={n}>{z}</span>
+                  ))}
                   {KISTEN_FRAGE[f] && <small>{KISTEN_FRAGE[f]}</small>}
                 </span>
                 {treffer?.fach === i && <Funken key={treffer.n} />}
@@ -813,7 +818,17 @@ const VORSCHAU: Record<SpielArt, string[]> = {
   praeteritum: ["ging", "gehte", "geht"],
   satzbau: ["gehen", "Heute", "wir"],
   vokabeln: ["dog", "der Hund"],
+  irregular: ["went", "goed", "gone"],
+  zeiten: ["plays", "is playing", "played"],
+  grammatik: ["some", "any", "much"],
 };
+/** Lange Aufschriften aus mehreren Wörtern („is going to watch“) stehen in zwei Zeilen, nahe der Mitte geteilt. */
+function kistenZeilen(f: string): string[] {
+  if (f.length <= 8 || !f.includes(" ")) return [f];
+  let best = -1;
+  for (let i = f.indexOf(" "); i >= 0; i = f.indexOf(" ", i + 1)) if (best < 0 || Math.abs(i - f.length / 2) < Math.abs(best - f.length / 2)) best = i;
+  return [f.slice(0, best), f.slice(best + 1)];
+}
 /** Die Frage zu jedem Fall steht klein auf der Kiste: so übt man die Frageprobe mit. */
 const KISTEN_FRAGE: Record<string, string> = { Nominativ: "Wer?", Genitiv: "Wessen?", Dativ: "Wem?", Akkusativ: "Wen?" };
 

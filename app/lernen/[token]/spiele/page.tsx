@@ -4,7 +4,7 @@ import { CalendarDays, ChevronRight, Flame, Swords, Trophy } from "lucide-react"
 import { notFound } from "next/navigation";
 import { SeitenKopf } from "@/components/lernen/SeitenKopf";
 import { meineDuelle } from "@/lib/duelle";
-import { serie, skillFuerSpiel, spielVorschlaege, vokabelPlan } from "@/lib/lernspiele";
+import { serie, skillFuerSpiel, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
 import { SPIEL_ARTEN, SPIEL_DEKO, SPIEL_FACH, SPIEL_KURZ, SPIEL_TITEL, type SpielArt, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import { ligaTabelle } from "@/lib/liga";
 import { wienerDatum } from "@/lib/planung/zeit";
@@ -99,7 +99,7 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
                   <Link href={`${base}/spiel?art=${art}`} className="sp-kachel panel" data-fach={fach}>
                     <Kaertchen art={art} />
                     <span className="sp-titel">{SPIEL_TITEL[art]}</span>
-                    <span className="sp-kurz">{art === "vokabeln" ? vokabelPlan(student, heute).titel : SPIEL_KURZ[art]}</span>
+                    <span className="sp-kurz">{spielWoher(student, art, heute) ?? SPIEL_KURZ[art]}</span>
                     <span className="sp-fuss">
                       {schild ? <span className="sp-schild">{schild}</span> : <span />}
                       {stand === null ? (
