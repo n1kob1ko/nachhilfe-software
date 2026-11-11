@@ -4,8 +4,12 @@
  * Lernstand bedeutet, steht in lib/lernspiele.ts und docs/lernspiele.md.
  */
 
-/** Die drei Deutsch-Spiele (niko 2026-11-11: Artikel, Präpositionen und Deklination sind oft ein Problem). */
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination"] as const;
+/**
+ * Die Deutsch-Spiele. Zuerst Artikel, Präpositionen und Deklination (niko 2026-11-11: „oft ein Problem“), dann
+ * die übrigen („mach alle Deutsch-Spiele zuerst“): die vier Fälle, das/dass, Hauptsatz/Gliedsatz, Perfekt und
+ * Präteritum. Alle teilen eine Mechanik: eine Karte in die richtige Kiste.
+ */
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -14,6 +18,11 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   artikel: "der, die, das",
   praepositionen: "Präposition und Fall",
   deklination: "Adjektiv-Endungen",
+  faelle: "Die vier Fälle",
+  dasdass: "das oder dass",
+  satzteile: "Hauptsatz oder Gliedsatz",
+  perfekt: "Perfekt: haben oder sein",
+  praeteritum: "Präteritum",
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -21,6 +30,11 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   artikel: "Wirf jedes Wort in die Kiste mit seinem Artikel.",
   praepositionen: "Welcher Artikel passt nach der Präposition?",
   deklination: "Welche Endung braucht das Adjektiv?",
+  faelle: "In welchem Fall steht der markierte Teil?",
+  dasdass: "das oder dass?",
+  satzteile: "Ist der markierte Teil Hauptsatz oder Gliedsatz?",
+  perfekt: "haben oder sein?",
+  praeteritum: "Welche Form passt im Präteritum?",
 };
 
 /**
@@ -35,6 +49,14 @@ export type SpielKarte = {
   bedeutung?: string;
   vor: string;
   nach: string;
+  /** Statt einer Lücke: der markierte Teil des Satzes zwischen `vor` und `nach` („meinen Bruder“) */
+  mitte?: string;
+  /** Was in der Lücke steht, wenn die Antwort stimmt und die Kiste anders heißt („sind“ in der Kiste „sein“) */
+  einsatz?: string;
+  /** Kleine Zeile unter dem Satz, z. B. die Grundform „(fahren)“ */
+  hinweis?: string;
+  /** Was oben aus der Kiste schaut, wenn die Karte drin liegt */
+  kurz?: string;
   faecher: string[];
   richtig: string;
   /** Der ganze richtige Satz oder „die Haustür“ */

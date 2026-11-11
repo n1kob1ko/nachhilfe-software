@@ -36,7 +36,6 @@ const vibriere = (muster: number | number[]) => {
 };
 
 /** Der Satz mit eingesetzter Antwort; bei Präpositionen steht ein Leerzeichen vor dem Nomen, Endungen hängen am Wort. */
-const verbinder = (art: SpielArt) => (art === "praepositionen" ? " " : "");
 const ohneStrich = (s: string) => s.replace(/^-/, "");
 
 export function Lernspiel({
@@ -214,7 +213,7 @@ export function Lernspiel({
       setGeloest((g) => new Set(g).add(karte.key));
       setZuletzt((z) => ({ karte, n: (z?.n ?? 0) + 1 }));
       await fliege(fach, von, geworfen);
-      setInKiste((k) => ({ ...k, [wahl]: [...(k[wahl] ?? []), kistenWort(karte, art)].slice(-2) }));
+      setInKiste((k) => ({ ...k, [wahl]: [...(k[wahl] ?? []), kistenWort(karte)].slice(-2) }));
       setTreffer((t) => ({ fach, n: (t?.n ?? 0) + 1 }));
       setZiel(null);
       setBlitz(null);
@@ -227,7 +226,7 @@ export function Lernspiel({
       }
       setPos(pos + 1);
     },
-    [reihe, pos, stand, fliege, beenden, rundeId, combo, geloest, art],
+    [reihe, pos, stand, fliege, beenden, rundeId, combo, geloest],
   );
 
   // Tasten 1–5 am Laptop (ohne Bewegung beim Antippen: wiederholte Aktionen sollen sofort wirken)
@@ -348,7 +347,7 @@ export function Lernspiel({
       <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${SPIEL_TITEL[art]}`}>
         <Hintergrund woerter={deko} />
         {kopf}
-        <div className="ls-mitte ls-staffel">
+        <div className="ls-mitte ls-rollt ls-staffel">
           <p className="ls-oberzeile" style={{ "--n": 0 } as CSSProperties}>
             Lernspiel Deutsch
           </p>
@@ -367,7 +366,7 @@ export function Lernspiel({
 
           <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
             {VORSCHAU[art].map((f, i) => (
-              <span key={f} className="ls-kiste-mini" data-k={f} style={{ rotate: `${i % 2 ? 2.5 : -2.5}deg` }}>
+              <span key={f} className="ls-kiste-mini" data-k={f} data-i={i} style={{ rotate: `${i % 2 ? 2.5 : -2.5}deg` }}>
                 {f}
               </span>
             ))}
@@ -405,7 +404,10 @@ export function Lernspiel({
               {fehler}
             </p>
           )}
-          <div className="mt-auto pt-8" style={{ "--n": 6 } as CSSProperties}>
+        </div>
+        {/* der Knopf steht fest unten, der Rest darüber kann rollen (acht Spiele passen nicht auf jedes Handy) */}
+        <div className="ls-fuss ls-staffel">
+          <div style={{ "--n": 6 } as CSSProperties}>
             <button type="button" className="ls-knopf ls-los" onClick={() => void starten()} disabled={phase === "laden"} autoFocus>
               {phase === "laden" ? "Karten werden gemischt …" : "Los geht’s"}
             </button>
@@ -525,7 +527,7 @@ export function Lernspiel({
         <p className="ls-zuletzt" aria-live="polite">
           {zuletzt && (
             <span key={zuletzt.n} className="ls-zeile">
-              <Loesung karte={zuletzt.karte} art={art} />
+              <Loesung karte={zuletzt.karte} art={art} knapp />
             </span>
           )}
         </p>
@@ -563,7 +565,7 @@ export function Lernspiel({
                 <Lightbulb size={16} aria-hidden /> Fast! Richtig ist
               </p>
               <p className="ls-regel-loesung">
-                {art === "artikel" ? <Loesung karte={aktuell} art={art} ohneMarke /> : <b className="ls-richtig">{aktuell.richtig}</b>}
+                {aktuell.wort ? <Loesung karte={aktuell} art={art} ohneMarke /> : <b className="ls-richtig">{aktuell.einsatz && aktuell.einsatz.toLowerCase() !== aktuell.richtig ? `${aktuell.richtig} (${aktuell.einsatz})` : aktuell.richtig}</b>}
               </p>
               <p className="ls-regel-text">{aktuell.regel}</p>
             </div>
@@ -571,7 +573,13 @@ export function Lernspiel({
         </div>
 
         {aktuell && (
-          <div className="ls-faecher" role="group" aria-label="Kisten" data-viele={aktuell.faecher.length > 3 ? "" : undefined}>
+          <div
+            className="ls-faecher"
+            role="group"
+            aria-label="Kisten"
+            data-viele={aktuell.faecher.length > 3 ? "" : undefined}
+            style={{ "--z": Math.max(3, ...aktuell.faecher.map((f) => f.length)) } as CSSProperties}
+          >
             {aktuell.faecher.map((f, i) => (
               <button
                 key={f}
@@ -581,7 +589,7 @@ export function Lernspiel({
                 type="button"
                 className="ls-fach ohne-druck"
                 data-k={f}
-                data-a={art === "artikel" ? f : undefined}
+                data-i={i}
                 data-ziel={ziel === i ? "" : undefined}
                 data-richtig={blitz === i ? "" : undefined}
                 data-zeigen={falsch && f === aktuell.richtig ? "" : undefined}
@@ -596,7 +604,10 @@ export function Lernspiel({
                     </span>
                   ))}
                 </span>
-                <span className="ls-kiste">{f}</span>
+                <span className="ls-kiste">
+                  {f}
+                  {KISTEN_FRAGE[f] && <small>{KISTEN_FRAGE[f]}</small>}
+                </span>
                 {treffer?.fach === i && <Funken key={treffer.n} />}
               </button>
             ))}
@@ -612,17 +623,31 @@ const DEKO: Record<SpielArt, string[]> = {
   artikel: ["die", "das", "der"],
   praepositionen: ["dem", "den", "der"],
   deklination: ["-en", "-es", "-em"],
+  faelle: ["Wem?", "Wen?", "Wer?"],
+  dasdass: ["das", "dass", "welches"],
+  satzteile: ["weil", "dass", "wenn"],
+  perfekt: ["hat", "ist", "sind"],
+  praeteritum: ["ging", "kam", "sah"],
 };
+/** Kleine Kisten auf dem Anfang: worum es geht (bei Präteritum heißen die Kisten je Karte anders). */
 const VORSCHAU: Record<SpielArt, string[]> = {
   artikel: ["der", "die", "das"],
   praepositionen: ["der", "die", "das", "dem", "den"],
   deklination: ["-e", "-en", "-er", "-es", "-em"],
+  faelle: ["Nominativ", "Genitiv", "Dativ", "Akkusativ"],
+  dasdass: ["das", "dass"],
+  satzteile: ["Hauptsatz", "Gliedsatz"],
+  perfekt: ["haben", "sein"],
+  praeteritum: ["ging", "gehte", "geht"],
 };
+/** Die Frage zu jedem Fall steht klein auf der Kiste: so übt man die Frageprobe mit. */
+const KISTEN_FRAGE: Record<string, string> = { Nominativ: "Wer?", Genitiv: "Wessen?", Dativ: "Wem?", Akkusativ: "Wen?" };
 
 /** Was oben aus der Kiste schaut: das Wort, bei Sätzen die eingesetzte Stelle („kalter“, „dem Tisch“). */
-function kistenWort(karte: SpielKarte, art: SpielArt) {
+function kistenWort(karte: SpielKarte) {
+  if (karte.kurz) return karte.kurz;
   if (karte.wort) return karte.wort;
-  if (art === "deklination") return (karte.vor.trimEnd().split(" ").pop() ?? "") + ohneStrich(karte.richtig);
+  if (haengt(karte)) return (karte.vor.trimEnd().split(" ").pop() ?? "") + ohneStrich(karte.richtig);
   return karte.nach.trim().split(/[\s.,!?]/)[0] ?? "";
 }
 
@@ -683,8 +708,34 @@ function Konfetti() {
   );
 }
 
-function KartenInhalt({ karte, art, stand }: { karte: SpielKarte; art: SpielArt; stand: Stand }) {
-  if (art === "artikel") {
+/** Eine Endung („-en“) hängt am Wort davor, alles andere steht als eigenes Wort in der Lücke. */
+const haengt = (karte: SpielKarte) => karte.richtig.startsWith("-");
+/** Der Text hinter der Lücke: mit Leerzeichen davor, außer vor einem Satzzeichen oder wenn schon eines da ist. */
+const hinterLuecke = (karte: SpielKarte) => (haengt(karte) || /^[\s,.;:!?]/.test(karte.nach) || !karte.nach ? karte.nach : ` ${karte.nach}`);
+/** Was in der Lücke steht, wenn die Antwort stimmt („sind“ für die Kiste „sein“, „Das“ am Satzanfang). */
+const eingesetzt = (karte: SpielKarte) => karte.einsatz ?? ohneStrich(karte.richtig);
+/** Was bei einer falschen Wahl in der Lücke steht; beim Perfekt die passende Form („ich bin“ statt „ich sein“). */
+const HILFSVERB_PAARE = [
+  ["habe", "bin"],
+  ["hast", "bist"],
+  ["hat", "ist"],
+  ["haben", "sind"],
+  ["habt", "seid"],
+];
+function falschEingesetzt(karte: SpielKarte, wahl: string) {
+  const paar = karte.einsatz ? HILFSVERB_PAARE.find((p) => p.includes(karte.einsatz!.toLowerCase())) : undefined;
+  if (paar && (wahl === "haben" || wahl === "sein")) return paar[wahl === "haben" ? 0 : 1];
+  return ohneStrich(wahl);
+}
+/** Für die Zeile über der Karte: von einem langen Satz nur das Stück um die Lücke. */
+function knappDavor(vor: string) {
+  if (vor.length <= 22) return vor;
+  const ende = vor.slice(-20);
+  return `… ${ende.slice(ende.indexOf(" ") + 1)}`;
+}
+
+function KartenInhalt({ karte, stand }: { karte: SpielKarte; art: SpielArt; stand: Stand }) {
+  if (karte.wort) {
     return (
       <>
         <p className="ls-wort">
@@ -699,39 +750,59 @@ function KartenInhalt({ karte, art, stand }: { karte: SpielKarte; art: SpielArt;
       </>
     );
   }
+  if (karte.mitte !== undefined) {
+    // ein markierter Teil statt einer Lücke; die Wahl steht danach als Schild unter dem Satz
+    return (
+      <>
+        <p className="ls-satz">
+          {karte.vor}
+          <mark className="ls-markiert" data-stand={stand ? (stand.richtig ? "richtig" : "falsch") : undefined}>
+            {karte.mitte}
+          </mark>
+          {karte.nach}
+        </p>
+        {stand && (
+          <span className="ls-marke" data-falsch={stand.richtig ? undefined : ""}>
+            {stand.wahl}
+          </span>
+        )}
+      </>
+    );
+  }
+  const h = haengt(karte);
   const luecke = (
-    <span className="ls-luecke" data-haengt={art === "deklination" ? "" : undefined} data-stand={stand ? (stand.richtig ? "richtig" : "falsch") : undefined}>
-      {stand ? (art === "deklination" ? ohneStrich(stand.wahl) : stand.wahl) : art === "deklination" ? "…" : "\u00a0"}
+    <span className="ls-luecke" data-haengt={h ? "" : undefined} data-stand={stand ? (stand.richtig ? "richtig" : "falsch") : undefined}>
+      {stand ? (stand.richtig ? eingesetzt(karte) : falschEingesetzt(karte, stand.wahl)) : h ? "…" : "\u00a0"}
     </span>
   );
   // eine Endung hängt am Wort: Wort und Lücke brechen nie auseinander
   const vor = karte.vor.trimEnd();
-  const trenn = art === "deklination" ? vor.lastIndexOf(" ") + 1 : vor.length;
+  const trenn = h ? vor.lastIndexOf(" ") + 1 : vor.length;
   return (
     <>
       <p className="ls-satz">
         {vor.slice(0, trenn)}
-        {art === "deklination" ? (
+        {h ? (
           <span className="whitespace-nowrap">
             {vor.slice(trenn)}
             {luecke}
           </span>
         ) : (
           <>
-            {" "}
+            {vor ? " " : ""}
             {luecke}
           </>
         )}
-        {verbinder(art)}
-        {karte.nach}
+        {hinterLuecke(karte)}
       </p>
+      {karte.hinweis && <p className="ls-bedeutung">{karte.hinweis}</p>}
       {stand?.richtig && karte.marke && <span className="ls-marke">{karte.marke}</span>}
     </>
   );
 }
 
-function Loesung({ karte, art, ohneMarke }: { karte: SpielKarte; art: SpielArt; ohneMarke?: boolean }) {
-  if (art === "artikel")
+function Loesung({ karte, ohneMarke, knapp }: { karte: SpielKarte; art: SpielArt; ohneMarke?: boolean; knapp?: boolean }) {
+  if (karte.wort)
     return (
       <>
         <b data-a={karte.richtig} className="ls-artikel">
@@ -740,13 +811,19 @@ function Loesung({ karte, art, ohneMarke }: { karte: SpielKarte; art: SpielArt; 
         {karte.wort}
       </>
     );
+  if (karte.mitte !== undefined)
+    return (
+      <>
+        <b className="ls-richtig">{karte.richtig}</b>: „{karte.mitte.replace(/[,.!?]+$/, "")}“
+      </>
+    );
+  const vor = knapp ? knappDavor(karte.vor.trimEnd()) : karte.vor.trimEnd();
   return (
     <>
-      {karte.vor.trimEnd()}
-      {art === "praepositionen" ? " " : ""}
-      <b className="ls-richtig">{ohneStrich(karte.richtig)}</b>
-      {art === "praepositionen" ? " " : ""}
-      {karte.nach}
+      {vor}
+      {vor && !haengt(karte) ? " " : ""}
+      <b className="ls-richtig">{eingesetzt(karte)}</b>
+      {hinterLuecke(karte)}
       {karte.marke && !ohneMarke ? <span className="ls-marke-klein">{karte.marke}</span> : null}
     </>
   );

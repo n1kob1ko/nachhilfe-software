@@ -83,7 +83,8 @@ test("die Zahlen der Banken stimmen mit der Quelle überein", () => {
   // past_tense/allgemein.json (100) + die zwei Präteritum-Einträge aus lib/generators.ts
   assert.equal(praeteritum().length, 102);
   // die zwei Perfekt-Einträge aus lib/generators.ts + 16 reparierte aus past_perfect_tense/test.json + 47 eigene Sätze
-  assert.equal(perfekt().length, 65);
+  // 2026-11-11 43 Sätze mit „sein“ dazu: das Spiel „haben oder sein“ braucht beide Seiten etwa gleich oft
+  assert.equal(perfekt().length, 108);
   // das_dass.json (339) + die acht DAS_DASS-Einträge aus lib/generators.ts
   assert.equal(dasDass().length, 347);
   // satzbau/syntax_sentences.json

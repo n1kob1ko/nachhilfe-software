@@ -229,6 +229,10 @@
 .ls-zuletzt {
   margin-top: 6px;
   min-height: 28px;
+  /* immer eine Zeile: ein langer Satz endet mit „…“ und schiebt die Karte nicht weg */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   text-align: center;
   font-size: 16px;
   color: var(--ls-on);
@@ -411,8 +415,8 @@
   vertical-align: baseline;
 }
 :root[data-theme="dark"] .ls-luecke:not([data-stand]) {
-  background: #1f2f49;
-  border-bottom-color: #3f6aa8;
+  background: #2b426b;
+  border-bottom-color: #6a9be8;
   color: #8eb2e6;
 }
 .ls-luecke[data-haengt] {
@@ -537,6 +541,7 @@
   --k-schrift: #fff;
   position: relative;
   display: block;
+  container-type: inline-size;
   height: 118px;
   padding-top: 30px;
   border-radius: 22px;
@@ -546,8 +551,49 @@
     opacity 200ms ease,
     filter 200ms ease;
 }
+/* Farbe nach Platz in der Reihe; bekannte Antworten (der, die, das …) behalten unten ihre feste Farbe */
+.ls-fach[data-i="1"],
+.ls-kiste-mini[data-i="1"] {
+  --k-oben: #ff7d6b;
+  --k-unten: #ef5146;
+  --k-schatten: #b8322b;
+  --k-rand: #ffa699;
+}
+.ls-fach[data-i="2"],
+.ls-kiste-mini[data-i="2"] {
+  --k-oben: #36cf8f;
+  --k-unten: #1aa772;
+  --k-schatten: #11784f;
+  --k-rand: #7ee6b8;
+}
+.ls-fach[data-i="3"],
+.ls-kiste-mini[data-i="3"] {
+  --k-oben: #ffd060;
+  --k-unten: #f2a516;
+  --k-schatten: #b87700;
+  --k-rand: #ffe39a;
+  --k-schrift: #4a2c00;
+}
+.ls-fach[data-i="4"],
+.ls-kiste-mini[data-i="4"] {
+  --k-oben: #b199ff;
+  --k-unten: #7d5cf0;
+  --k-schatten: #5537b8;
+  --k-rand: #cbbcff;
+}
+.ls-fach[data-k="der"],
+.ls-fach[data-k="-en"],
+.ls-kiste-mini[data-k="der"],
+.ls-kiste-mini[data-k="-en"] {
+  --k-oben: #4b95ff;
+  --k-unten: #2b6fe6;
+  --k-schatten: #1b4fb0;
+  --k-rand: #7cb2ff;
+  --k-schrift: #fff;
+}
 .ls-fach[data-k="die"],
 .ls-fach[data-k="-er"] {
+  --k-schrift: #fff;
   --k-oben: #ff7d6b;
   --k-unten: #ef5146;
   --k-schatten: #b8322b;
@@ -555,6 +601,7 @@
 }
 .ls-fach[data-k="das"],
 .ls-fach[data-k="-es"] {
+  --k-schrift: #fff;
   --k-oben: #36cf8f;
   --k-unten: #1aa772;
   --k-schatten: #11784f;
@@ -570,6 +617,7 @@
 }
 .ls-fach[data-k="den"],
 .ls-fach[data-k="-e"] {
+  --k-schrift: #fff;
   --k-oben: #b199ff;
   --k-unten: #7d5cf0;
   --k-schatten: #5537b8;
@@ -587,10 +635,14 @@
   box-shadow:
     0 7px 0 var(--k-schatten),
     0 18px 28px rgba(8, 30, 90, 0.45);
+  flex-direction: column;
+  gap: 1px;
   font-family: var(--font-display);
-  font-size: 32px;
+  /* lange Aufschriften („Nominativ“, „schwimmte“) werden kleiner, damit sie in die Kiste passen */
+  font-size: min(32px, calc(150cqw / var(--z, 3)));
   font-weight: 800;
   letter-spacing: -0.01em;
+  line-height: 1.1;
   color: var(--k-schrift);
   transition:
     box-shadow 200ms ease,
@@ -609,7 +661,15 @@
   z-index: -1;
 }
 .ls-faecher[data-viele] .ls-kiste {
-  font-size: 22px;
+  font-size: min(22px, calc(150cqw / var(--z, 3)));
+}
+/* die Frage zum Fall steht klein unter dem Namen */
+.ls-kiste small {
+  font-family: var(--font-sans, inherit);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  opacity: 0.82;
 }
 /* was schon drin liegt, schaut oben heraus */
 .ls-drin {
@@ -872,12 +932,14 @@
 }
 .ls-kiste-mini[data-k="die"],
 .ls-kiste-mini[data-k="-er"] {
+  --k-schrift: #fff;
   --k-oben: #ff7d6b;
   --k-unten: #ef5146;
   --k-schatten: #b8322b;
 }
 .ls-kiste-mini[data-k="das"],
 .ls-kiste-mini[data-k="-es"] {
+  --k-schrift: #fff;
   --k-oben: #36cf8f;
   --k-unten: #1aa772;
   --k-schatten: #11784f;
@@ -891,6 +953,7 @@
 }
 .ls-kiste-mini[data-k="den"],
 .ls-kiste-mini[data-k="-e"] {
+  --k-schrift: #fff;
   --k-oben: #b199ff;
   --k-unten: #7d5cf0;
   --k-schatten: #5537b8;
@@ -1146,4 +1209,59 @@
 .ls-zuletzt .ls-marke-klein {
   background: rgba(255, 255, 255, 0.16);
   color: var(--ls-on);
+}
+
+/* markierter Satzteil (Fälle, Hauptsatz oder Gliedsatz): statt einer Lücke ist ein Teil angestrichen */
+.ls-markiert {
+  padding: 0.04em 0.22em;
+  border-radius: 8px;
+  background: #ffe9a8;
+  box-shadow: inset 0 -3px 0 #f2b521;
+  color: inherit;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition:
+    background-color 200ms ease,
+    box-shadow 200ms ease;
+}
+:root[data-theme="dark"] .ls-markiert:not([data-stand]) {
+  background: #5a4712;
+  box-shadow: inset 0 -3px 0 #d9a520;
+}
+.ls-markiert[data-stand="richtig"] {
+  background: var(--green-wash);
+  box-shadow: inset 0 -3px 0 var(--green);
+}
+.ls-markiert[data-stand="falsch"] {
+  background: var(--red-wash);
+  box-shadow: inset 0 -3px 0 var(--red);
+}
+.ls-marke[data-falsch] {
+  background: var(--red-wash);
+  color: var(--red);
+  text-decoration: line-through;
+}
+.ls-kiste-mini {
+  white-space: nowrap;
+}
+.ls-vorschau {
+  flex-wrap: wrap;
+}
+
+/* Anfang: der Knopf steht fest unten, darüber rollt der Inhalt */
+.ls-fuss {
+  flex: none;
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 10px 20px 20px;
+}
+.ls-zuletzt .ls-zeile {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ls-rollt {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 22px), transparent);
 }

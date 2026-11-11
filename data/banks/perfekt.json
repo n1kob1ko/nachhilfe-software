@@ -1255,5 +1255,822 @@
       "angefangt": "Falsches Partizip II",
       "angefingen": "Falsches Partizip II"
     }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Meine Tante ___ im Mai nach Paris ___. (reisen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "gereist"
+      ]
+    ],
+    "solution": "Meine Tante ist im Mai nach Paris gereist.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gereisen": "Falsches Partizip II",
+      "gereiset": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Der Bub ___ schnell zum Bus ___. (rennen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "gerannt"
+      ]
+    ],
+    "solution": "Der Bub ist schnell zum Bus gerannt.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gerennt": "Falsches Partizip II",
+      "geronnen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Die Katze ___ auf den Tisch ___. (springen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "gesprungen"
+      ]
+    ],
+    "solution": "Die Katze ist auf den Tisch gesprungen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gespringt": "Falsches Partizip II",
+      "gesprangen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Wir ___ auf den Aussichtsturm ___. (steigen)",
+    "blanks": [
+      [
+        "sind"
+      ],
+      [
+        "gestiegen"
+      ]
+    ],
+    "solution": "Wir sind auf den Aussichtsturm gestiegen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "haben": "Falsches Hilfsverb",
+      "waren": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gesteigt": "Falsches Partizip II",
+      "gestiegt": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Der alte Baum ___ im Winter ___. (sterben)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "gestorben"
+      ]
+    ],
+    "solution": "Der alte Baum ist im Winter gestorben.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gesterbt": "Falsches Partizip II",
+      "gestorbt": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Ich ___ heute sehr früh ___. (aufwachen)",
+    "blanks": [
+      [
+        "bin"
+      ],
+      [
+        "aufgewacht"
+      ]
+    ],
+    "solution": "Ich bin heute sehr früh aufgewacht.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "habe": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "aufgewachen": "Falsches Partizip II",
+      "geaufwacht": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Der Zug ___ pünktlich in Graz ___. (ankommen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "angekommen"
+      ]
+    ],
+    "solution": "Der Zug ist pünktlich in Graz angekommen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "angekommt": "Falsches Partizip II",
+      "geankommen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Der Bus ___ ohne uns ___. (abfahren)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "abgefahren"
+      ]
+    ],
+    "solution": "Der Bus ist ohne uns abgefahren.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "abgefahrt": "Falsches Partizip II",
+      "geabfahren": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Wir ___ am Hauptbahnhof ___. (einsteigen)",
+    "blanks": [
+      [
+        "sind"
+      ],
+      [
+        "eingestiegen"
+      ]
+    ],
+    "solution": "Wir sind am Hauptbahnhof eingestiegen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "haben": "Falsches Hilfsverb",
+      "waren": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "eingesteigt": "Falsches Partizip II",
+      "geeinstiegen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Du ___ eine Station zu früh ___. (aussteigen)",
+    "blanks": [
+      [
+        "bist"
+      ],
+      [
+        "ausgestiegen"
+      ]
+    ],
+    "solution": "Du bist eine Station zu früh ausgestiegen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hast": "Falsches Hilfsverb",
+      "warst": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "ausgesteigt": "Falsches Partizip II",
+      "geausstiegen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Mein Radiergummi ___ spurlos ___. (verschwinden)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "verschwunden"
+      ]
+    ],
+    "solution": "Mein Radiergummi ist spurlos verschwunden.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "verschwindet": "Falsches Partizip II",
+      "geverschwunden": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Der Unfall ___ an der Kreuzung ___. (geschehen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "geschehen"
+      ]
+    ],
+    "solution": "Der Unfall ist an der Kreuzung geschehen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gescheht": "Falsches Partizip II",
+      "gegeschehen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Die Kinder ___ auf den Baum ___. (klettern)",
+    "blanks": [
+      [
+        "sind"
+      ],
+      [
+        "geklettert"
+      ]
+    ],
+    "solution": "Die Kinder sind auf den Baum geklettert.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "haben": "Falsches Hilfsverb",
+      "waren": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gekletteren": "Falsches Partizip II",
+      "geklettern": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Der Radfahrer ___ in der Kurve ___. (stürzen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "gestürzt"
+      ]
+    ],
+    "solution": "Der Radfahrer ist in der Kurve gestürzt.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gestürzen": "Falsches Partizip II",
+      "gesturzt": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Das Flugzeug ___ sicher in Wien ___. (landen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "gelandet"
+      ]
+    ],
+    "solution": "Das Flugzeug ist sicher in Wien gelandet.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gelanden": "Falsches Partizip II",
+      "gelandt": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Der Luftballon ___ mit einem lauten Knall ___. (platzen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "geplatzt"
+      ]
+    ],
+    "solution": "Der Luftballon ist mit einem lauten Knall geplatzt.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "geplatzen": "Falsches Partizip II",
+      "geplatzet": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Im Garten ___ ein kleiner Teich ___. (entstehen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "entstanden"
+      ]
+    ],
+    "solution": "Im Garten ist ein kleiner Teich entstanden.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "entsteht": "Falsches Partizip II",
+      "geentstanden": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Das neue Buch ___ im Herbst ___. (erscheinen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "erschienen"
+      ]
+    ],
+    "solution": "Das neue Buch ist im Herbst erschienen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "erscheint": "Falsches Partizip II",
+      "geerschienen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Papa ___ spät von der Arbeit ___. (zurückkommen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "zurückgekommen"
+      ]
+    ],
+    "solution": "Papa ist spät von der Arbeit zurückgekommen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "zurückgekommt": "Falsches Partizip II",
+      "gezurückkommen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Mein Bruder ___ ins Schwimmbad ___. (mitkommen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "mitgekommen"
+      ]
+    ],
+    "solution": "Mein Bruder ist ins Schwimmbad mitgekommen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "mitgekommt": "Falsches Partizip II",
+      "gemitkommen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Ich ___ auf dem Eis ___. (hinfallen)",
+    "blanks": [
+      [
+        "bin"
+      ],
+      [
+        "hingefallen"
+      ]
+    ],
+    "solution": "Ich bin auf dem Eis hingefallen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "habe": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "hingefallt": "Falsches Partizip II",
+      "gehinfallen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Der Kellner ___ über den Teppich ___. (stolpern)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "gestolpert"
+      ]
+    ],
+    "solution": "Der Kellner ist über den Teppich gestolpert.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gestolperen": "Falsches Partizip II",
+      "gestolpern": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Das Auto ___ auf der nassen Straße ___. (rutschen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "gerutscht"
+      ]
+    ],
+    "solution": "Das Auto ist auf der nassen Straße gerutscht.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gerutschen": "Falsches Partizip II",
+      "gerutschet": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Wir ___ im Park unserer Lehrerin ___. (begegnen)",
+    "blanks": [
+      [
+        "sind"
+      ],
+      [
+        "begegnet"
+      ]
+    ],
+    "solution": "Wir sind im Park unserer Lehrerin begegnet.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "haben": "Falsches Hilfsverb",
+      "waren": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "begegnen": "Falsches Partizip II",
+      "gebegegnet": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Meine Oma ___ in einem kleinen Dorf ___. (aufwachsen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "aufgewachsen"
+      ]
+    ],
+    "solution": "Meine Oma ist in einem kleinen Dorf aufgewachsen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "aufgewachst": "Falsches Partizip II",
+      "geaufwachsen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Wir ___ am Wochenende im Kino ___. (sein)",
+    "blanks": [
+      [
+        "sind"
+      ],
+      [
+        "gewesen"
+      ]
+    ],
+    "solution": "Wir sind am Wochenende im Kino gewesen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "haben": "Falsches Hilfsverb",
+      "waren": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gewest": "Falsches Partizip II",
+      "geseit": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Unsere Nachbarn ___ gestern ___. (wegfahren)",
+    "blanks": [
+      [
+        "sind"
+      ],
+      [
+        "weggefahren"
+      ]
+    ],
+    "solution": "Unsere Nachbarn sind gestern weggefahren.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "haben": "Falsches Hilfsverb",
+      "waren": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "weggefahrt": "Falsches Partizip II",
+      "gewegfahren": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Die Schnecke ___ langsam über den Weg ___. (kriechen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "gekrochen"
+      ]
+    ],
+    "solution": "Die Schnecke ist langsam über den Weg gekrochen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gekriecht": "Falsches Partizip II",
+      "gekriechen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Der Kuchen ___ mir heute gut ___. (gelingen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "gelungen"
+      ]
+    ],
+    "solution": "Der Kuchen ist mir heute gut gelungen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gelingt": "Falsches Partizip II",
+      "gegelungen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Wir ___ am Abend durch die Altstadt ___. (spazieren)",
+    "blanks": [
+      [
+        "sind"
+      ],
+      [
+        "spaziert"
+      ]
+    ],
+    "solution": "Wir sind am Abend durch die Altstadt spaziert.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "haben": "Falsches Hilfsverb",
+      "waren": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gespaziert": "Falsches Partizip II",
+      "spazieren": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Die Maus ___ vor der Katze ___. (fliehen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "geflohen"
+      ]
+    ],
+    "solution": "Die Maus ist vor der Katze geflohen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gefliehen": "Falsches Partizip II",
+      "gefloht": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Das Papierschiff ___ im Teich ___. (sinken)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "gesunken"
+      ]
+    ],
+    "solution": "Das Papierschiff ist im Teich gesunken.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gesinkt": "Falsches Partizip II",
+      "gesanken": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Plötzlich ___ ein Delfin neben dem Boot ___. (auftauchen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "aufgetaucht"
+      ]
+    ],
+    "solution": "Plötzlich ist ein Delfin neben dem Boot aufgetaucht.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "aufgetauchen": "Falsches Partizip II",
+      "geauftaucht": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Wir ___ um sieben Uhr ___. (losgehen)",
+    "blanks": [
+      [
+        "sind"
+      ],
+      [
+        "losgegangen"
+      ]
+    ],
+    "solution": "Wir sind um sieben Uhr losgegangen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "haben": "Falsches Hilfsverb",
+      "waren": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "losgegeht": "Falsches Partizip II",
+      "gelosgangen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Du ___ auf der Bananenschale ___. (ausrutschen)",
+    "blanks": [
+      [
+        "bist"
+      ],
+      [
+        "ausgerutscht"
+      ]
+    ],
+    "solution": "Du bist auf der Bananenschale ausgerutscht.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hast": "Falsches Hilfsverb",
+      "warst": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "ausgerutschen": "Falsches Partizip II",
+      "geausrutscht": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Familie Huber ___ über die Feiertage ___. (verreisen)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "verreist"
+      ]
+    ],
+    "solution": "Familie Huber ist über die Feiertage verreist.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "geverreist": "Falsches Partizip II",
+      "verreisen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Ihr ___ lange auf dem Fest ___. (bleiben)",
+    "blanks": [
+      [
+        "seid"
+      ],
+      [
+        "geblieben"
+      ]
+    ],
+    "solution": "Ihr seid lange auf dem Fest geblieben.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "habt": "Falsches Hilfsverb",
+      "wart": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gebleibt": "Falsches Partizip II",
+      "gebleiben": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Ich ___ zu spät in die Schule ___. (kommen)",
+    "blanks": [
+      [
+        "bin"
+      ],
+      [
+        "gekommen"
+      ]
+    ],
+    "solution": "Ich bin zu spät in die Schule gekommen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "habe": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gekommt": "Falsches Partizip II",
+      "gekamen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Meine Eltern ___ am Abend ins Theater ___. (gehen)",
+    "blanks": [
+      [
+        "sind"
+      ],
+      [
+        "gegangen"
+      ]
+    ],
+    "solution": "Meine Eltern sind am Abend ins Theater gegangen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "haben": "Falsches Hilfsverb",
+      "waren": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gegeht": "Falsches Partizip II",
+      "gegangt": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Du ___ heute sehr schnell nach Hause ___. (laufen)",
+    "blanks": [
+      [
+        "bist"
+      ],
+      [
+        "gelaufen"
+      ]
+    ],
+    "solution": "Du bist heute sehr schnell nach Hause gelaufen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hast": "Falsches Hilfsverb",
+      "warst": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gelauft": "Falsches Partizip II",
+      "geliefen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Wir ___ im Sommer nach Griechenland ___. (fliegen)",
+    "blanks": [
+      [
+        "sind"
+      ],
+      [
+        "geflogen"
+      ]
+    ],
+    "solution": "Wir sind im Sommer nach Griechenland geflogen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "haben": "Falsches Hilfsverb",
+      "waren": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gefliegt": "Falsches Partizip II",
+      "geflogt": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Die Äpfel ___ vom Baum ___. (fallen)",
+    "blanks": [
+      [
+        "sind"
+      ],
+      [
+        "gefallen"
+      ]
+    ],
+    "solution": "Die Äpfel sind vom Baum gefallen.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "haben": "Falsches Hilfsverb",
+      "waren": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gefallt": "Falsches Partizip II",
+      "gefielen": "Falsches Partizip II"
+    }
+  },
+  {
+    "q": "Setze das Verb im Perfekt ein: Mein Bruder ___ gestern zehn Jahre alt ___. (werden)",
+    "blanks": [
+      [
+        "ist"
+      ],
+      [
+        "geworden"
+      ]
+    ],
+    "solution": "Mein Bruder ist gestern zehn Jahre alt geworden.",
+    "hint": "Perfekt = haben oder sein im Präsens + Partizip II.",
+    "errors": {
+      "hat": "Falsches Hilfsverb",
+      "war": "Hilfsverb im Präteritum: das ist Plusquamperfekt",
+      "gewerdet": "Falsches Partizip II",
+      "gewurden": "Falsches Partizip II"
+    }
   }
 ]
