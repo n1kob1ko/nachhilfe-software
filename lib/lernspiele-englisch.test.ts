@@ -30,6 +30,7 @@ const HEUTE = "2026-11-11";
 
 test("Karten: jedes Thema hat genug Karten, drei verschiedene Kisten, die Lücke ergibt den Satz", async () => {
   const en = await import("./lernspiele-englisch");
+  const th = await import("./lernspiele-themen");
   const skills = [en.IRREGULAR_SKILL, ...en.ZEITEN_THEMEN.map((t) => t.skill), ...en.GRAMMATIK_THEMEN.map((t) => t.skill)];
   assert.equal(new Set(skills).size, skills.length, "kein Thema doppelt");
   for (const skill of skills) {
@@ -49,9 +50,9 @@ test("Karten: jedes Thema hat genug Karten, drei verschiedene Kisten, die Lücke
     }
   }
   // Themen: jedes mit Namen und Schulstufe, alle spielbar
-  assert.equal(en.spielbareThemen("zeiten").length, en.ZEITEN_THEMEN.length);
-  assert.equal(en.spielbareThemen("grammatik").length, en.GRAMMATIK_THEMEN.length);
-  assert.deepEqual(en.spielbareThemen("artikel"), []);
+  assert.equal(th.spielbareThemen("zeiten").length, en.ZEITEN_THEMEN.length);
+  assert.equal(th.spielbareThemen("grammatik").length, en.GRAMMATIK_THEMEN.length);
+  assert.deepEqual(th.spielbareThemen("artikel"), []);
 });
 
 test("Karten: der häufigste Fehler ist immer eine Kiste; die Zeit steht als Schild nur, wenn die Regel eine nennt", async () => {
@@ -76,15 +77,16 @@ test("Karten: der häufigste Fehler ist immer eine Kiste; die Zeit steht als Sch
 
 test("Reihenfolge: das Neueste der Schulstufe zuerst; die Erste Klasse beginnt vorne", async () => {
   const en = await import("./lernspiele-englisch");
-  assert.equal(en.themenFuerStufe("zeiten", 5)[0].skill, "englisch.tenses.presentsimple");
-  assert.equal(en.themenFuerStufe("zeiten", 6)[0].skill, "englisch.tenses.pastsimple");
-  assert.equal(en.themenFuerStufe("zeiten", 8)[0].skill, "englisch.tenses.pastperfect");
-  assert.equal(en.themenFuerStufe("zeiten", 8).length, en.ZEITEN_THEMEN.length);
-  assert.ok(en.themenFuerStufe("grammatik", 5).every((t) => t.ab === 5));
+  const th = await import("./lernspiele-themen");
+  assert.equal(th.themenFuerStufe("zeiten", 5)[0].skill, "englisch.tenses.presentsimple");
+  assert.equal(th.themenFuerStufe("zeiten", 6)[0].skill, "englisch.tenses.pastsimple");
+  assert.equal(th.themenFuerStufe("zeiten", 8)[0].skill, "englisch.tenses.pastperfect");
+  assert.equal(th.themenFuerStufe("zeiten", 8).length, en.ZEITEN_THEMEN.length);
+  assert.ok(th.themenFuerStufe("grammatik", 5).every((t) => t.ab === 5));
   // jünger als das erste Thema: trotzdem eines (der Stoff kann das Spiel früher bringen)
-  assert.equal(en.themenFuerStufe("zeiten", 4).length, 1);
-  assert.ok(en.themaPasst(en.ZEITEN_THEMEN[0], "englisch.tenses.presentsimple.s"));
-  assert.ok(!en.themaPasst(en.ZEITEN_THEMEN[0], "englisch.tenses.presentprogressive"));
+  assert.equal(th.themenFuerStufe("zeiten", 4).length, 1);
+  assert.ok(th.themaPasst(en.ZEITEN_THEMEN[0], "englisch.tenses.presentsimple.s"));
+  assert.ok(!th.themaPasst(en.ZEITEN_THEMEN[0], "englisch.tenses.presentprogressive"));
 });
 
 test("Vorschlag und Thema: aus dem Stoff, sonst der Reihe nach; die Runde hängt am Thema", async () => {

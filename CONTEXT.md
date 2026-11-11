@@ -236,7 +236,8 @@ Aufgabenbanken in Kisten werfen oder antippen. Acht Deutsch-Spiele: „der, die,
 „Adjektiv-Endungen“, „Die vier Fälle“, „das oder dass“, „Hauptsatz oder Gliedsatz“, „Perfekt: haben oder sein“,
 „Präteritum“. Dazu „Satzbau“ (die Teile eines Satzes in die richtige Reihenfolge bringen) und für Englisch „Vokabel-Paare“: englische und deutsche Wörter aus den eigenen Vokabellisten oder
 einer Themenliste zu Paaren verbinden, und die Englisch-Spiele mit Kisten „Irregular Verbs“, „English Tenses“ und „English Grammar“
-(je Runde ein Thema aus dem Stoff, Sätze aus den Englisch-Generatoren) (docs/lernspiele.md). Die App wählt das Spiel nach dem Stoff (nahe Prüfung, aktueller Stoff, letzte Einheit,
+(je Runde ein Thema aus dem Stoff, Sätze aus den Englisch-Generatoren). Für Mathematik „Kopfrechnen“: eine Rechnung,
+die Kisten sind das richtige Ergebnis und zwei typische Fehler, je Runde ein Thema aus dem Stoff (docs/lernspiele.md). Die App wählt das Spiel nach dem Stoff (nahe Prüfung, aktueller Stoff, letzte Einheit,
 unsicherer Lernstand). Eine **Runde** zählt mit der ersten Wahl je Karte, schwächer als eine Übung.
 _Avoid_: Quiz, Minispiel, Game
 

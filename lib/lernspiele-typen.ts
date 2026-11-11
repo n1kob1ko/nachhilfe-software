@@ -15,8 +15,11 @@
  *
  * Englisch mit Kisten (niko: „die Irregular Verbs, Zeiten in Englisch“): „Irregular Verbs“, „English Tenses“ und
  * „English Grammar“. Die letzten zwei spielen je Runde ein Thema (lib/lernspiele-englisch.ts).
+ *
+ * Mathe (niko: „für Mathe, was Spaß machen könnte“): „Kopfrechnen“, auch mit Kisten und je Runde ein Thema, vom
+ * Einmaleins bis zu Brüchen, Prozent und Gleichungen (lib/lernspiele-mathe.ts).
  */
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "vokabeln", "irregular", "zeiten", "grammatik"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -35,10 +38,11 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   irregular: "Irregular Verbs",
   zeiten: "English Tenses",
   grammatik: "English Grammar",
+  rechnen: "Kopfrechnen",
 };
 
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
-export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch"> = {
+export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik"> = {
   artikel: "Deutsch",
   praepositionen: "Deutsch",
   deklination: "Deutsch",
@@ -52,6 +56,7 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch"> = {
   irregular: "Englisch",
   zeiten: "Englisch",
   grammatik: "Englisch",
+  rechnen: "Mathematik",
 };
 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
@@ -69,6 +74,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   irregular: "go, went, gone",
   zeiten: "plays, is playing oder played?",
   grammatik: "some oder any? much oder many?",
+  rechnen: "Schnell im Kopf: welches Ergebnis stimmt?",
 };
 
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
@@ -86,6 +92,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   irregular: ["went", "gone", "saw"],
   zeiten: ["plays", "played", "will"],
   grammatik: ["some", "any", "much"],
+  rechnen: ["7 · 8", "56", "+"],
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -103,6 +110,7 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   irregular: "Welche Form passt in die Lücke?",
   zeiten: "Welche Form passt in die Lücke?",
   grammatik: "Was passt in die Lücke?",
+  rechnen: "Welches Ergebnis stimmt?",
 };
 
 /** So spielt sich ein Spiel: Karten in Kisten (ohne Angabe), Paare finden oder Teile in eine Reihe bringen. */
@@ -149,7 +157,30 @@ export type SpielKarte = {
   regel: string;
   /** Ein Wort zur richtigen Antwort, z. B. „Dativ“ */
   marke?: string;
+  /** Mathe: Text, Kisten und Regel werden gesetzt wie in den Übungen (Bruchstrich, Hochzahl, Wurzel) */
+  mathe?: true;
 };
+
+/**
+ * Ein Thema eines Themenspiels („English Tenses“, „Kopfrechnen“): die Fähigkeit, ein kurzer Name für den Schüler und
+ * die Schulstufen, in denen es dran ist (`bis` fehlt: bis zum Schluss).
+ */
+export type SpielThema = { skill: string; name: string; ab: number; bis?: number; /** andere Fähigkeiten im Stoff, die zu diesem Thema führen */ auch?: string[] };
+
+/** Fester Zufall: dieselben Karten nach jedem Neustart, damit Fehler aus früheren Runden wiederkommen können. */
+export function festerZufall(seed: number): () => number {
+  let x = seed % 2147483647 || 1;
+  return () => {
+    x = (x * 16807) % 2147483647;
+    return (x - 1) / 2147483646;
+  };
+}
+/** Eine feste Zahl aus einem Text (für die Plätze der Kisten und den festen Zufall). */
+export function zahlAus(text: string): number {
+  let h = 7;
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) % 2147483647;
+  return h;
+}
 
 /** Was der Schüler je Karte zuerst gewählt hat; der Server prüft es gegen die gespeicherten Karten. */
 export type SpielAntwort = { key: string; wahl: string };

@@ -161,8 +161,8 @@ Spiele haben die Kisten-Mechanik; neu sind die Karten (`lib/lernspiele-englisch.
   `englisch.vocab.irregular`), zum Üben ab der 6. Schulstufe.
 - **English Tenses** und **English Grammar** sind **Themenspiele**: jede Runde hat ein Thema, also eine Fähigkeit
   (13 Zeiten von „Present Simple“ bis „Present Perfect Progressive“, 25 Grammatik-Themen von „am, is, are“ bis
-  „Reported Speech“; Listen `ZEITEN_THEMEN` und `GRAMMATIK_THEMEN` mit Namen und Schulstufe). Welches Thema
-  (`themenPlan`, lib/lernspiele.ts):
+  „Reported Speech“; Listen `ZEITEN_THEMEN` und `GRAMMATIK_THEMEN` mit Namen und Schulstufe; was für alle
+  Themenspiele gilt, steht in lib/lernspiele-themen.ts). Welches Thema (`themenPlan`, lib/lernspiele.ts):
   1. ein Thema aus dem **Stoff** des Schülers (Prüfung, aktueller Stoff, letzte Einheit; Unterfähigkeiten zählen mit),
   2. sonst das erste Thema, das für seine Schulstufe schon dran war und das er noch nicht geschafft hat (zwei Runden
      mit mindestens 80 %), das Neueste zuerst: die 4. Klasse beginnt mit „Past Perfect“, nicht mit „am, is, are“.
@@ -174,19 +174,49 @@ Spiele haben die Kisten-Mechanik; neu sind die Karten (`lib/lernspiele-englisch.
 - Ein neues Thema: eine Zeile in `ZEITEN_THEMEN` oder `GRAMMATIK_THEMEN` mit einer Fähigkeit, die einen Generator
   hat; `lib/lernspiele-englisch.test.ts` verlangt mindestens 15 Karten je Thema.
 
+## Mathe: Kopfrechnen
+
+niko 2026-11-11: „Dann vielleicht für Mathe … Was Spaß machen könnte.“ Das erste Mathe-Spiel hat die Kisten-Mechanik
+(`lib/lernspiele-mathe.ts`): auf der Karte steht eine Rechnung („3/4 + 1/6 =“), die Kisten sind Ergebnisse.
+
+- **Themenspiel** wie English Tenses: jede Runde hat ein Thema, also eine Fähigkeit. 38 Themen in `RECHNEN_THEMEN`,
+  von „Plus und Minus bis 10“ (1. Klasse Volksschule) über Einmaleins, Dezimalzahlen, Maße, Teilbarkeit, Brüche,
+  negative Zahlen, Terme, Gleichungen und Prozent bis zu Potenzen, binomischen Formeln und Wurzeln (4. Klasse
+  Gymnasium). Das Thema kommt aus dem Stoff, sonst ist es das nächste der Schulstufe (`themenPlan`). Themen haben
+  auch ein Ende (`bis`): in der 3. Klasse Gymnasium kommt kein „Plus und Minus bis 20“ mehr.
+- **Karten ab der 5. Schulstufe**: aus den Mathe-Generatoren der Übungen (`MATHE_RECHNUNGEN`, `MATHE_GRUNDLAGEN`),
+  ohne KI. `form` macht aus der Angabe die Rechnung mit Lücke („Berechne 3/4 + 1/6.“ wird „3/4 + 1/6 =“, eine
+  Gleichung steht über „x =“). Die Kisten sind das richtige Ergebnis und zwei **typische Fehler** des Generators
+  (Zähler und Nenner einzeln addiert, Vorzeichen vergessen, Komma falsch gesetzt). Nur wenn ein Generator weniger als
+  zwei Fehler liefert, kommt ein Nachbar dazu (`ersatz`). Aufgaben, die als Rechnung zu lang wären oder kein
+  eindeutiges kurzes Ergebnis haben, bleiben für die Übungen.
+- **Karten der Volksschule**: eigene kleine Generatoren (Plus und Minus bis 10, 20, 100, 1000, Einmaleins, Geteilt,
+  Mal mit Zehnern), die falschen Kisten sind auch hier die üblichen Fehler (Zehner vergessen, Nachbarreihe im
+  Einmaleins, eine Null zu viel oder zu wenig), sonst Ergebnisse knapp daneben.
+- **Regel nach einem Fehler**: der Lösungsweg in höchstens fünf Zeilen („Hauptnenner 12: 9/12 + 2/12 = 11/12“).
+- **Schrift**: Karten, Kisten und Regel werden wie in den Übungen gesetzt (`MathText`: Bruchstrich, Hochzahlen,
+  Wurzeln). Negative Zahlen stehen mit echtem Minus („−5“). Einheiten stehen auf der Kiste in einer zweiten Zeile.
+- **Wann es angeboten wird**: mit einem Thema im Stoff („Schularbeit“, „Dein Stoff“), sonst „zum Üben“, wenn der
+  Schüler Mathematik hat (ab der 1. Schulstufe). Im Duell spielen beide ein Thema, das der Jüngere schon hatte.
+- **Volksschule und Lernstand**: sechs Volksschul-Themen hängen an Fähigkeiten aus dem Lehrplan-Paket „Volksschule“
+  (Mehr › Lehrplan). Ist das Paket nicht eingespielt, lässt sich das Spiel spielen, im Lernstand steht aber nichts.
+- Ein neues Thema: eine Zeile in `RECHNEN_THEMEN` (und in `QUELLEN`, wenn der Generator Besonderheiten hat);
+  `lib/lernspiele-mathe.test.ts` verlangt mindestens 24 Karten je Thema und prüft die Volksschul-Rechnungen nach.
+
 ## Welches Spiel dran ist
 
 `spielVorschlaege` (lib/lernspiele.ts), das wichtigste zuerst:
 
 1. eine geplante Prüfung in den nächsten 21 Tagen mit passender Fähigkeit (`FUEHRT_ZU`: Die vier Fälle → „Die vier
    Fälle“ und „Präposition und Fall“, Zeiten → Perfekt und Präteritum, Satzreihe und Satzgefüge → Hauptsatz oder
-   Gliedsatz und Satzbau, Satzglieder → Satzbau, jede englische Zeit → English Tenses, jedes englische Grammatik-Thema → English Grammar;
+   Gliedsatz und Satzbau, Satzglieder → Satzbau, jede englische Zeit → English Tenses, jedes englische Grammatik-Thema → English Grammar, jedes Thema von Kopfrechnen → Kopfrechnen;
    Unterfähigkeiten zählen mit),
 2. der aktuelle Stoff im Profil,
 3. die letzte Einheit der letzten 14 Tage,
 4. eine Spiel-Fähigkeit mit Lernstand unter 60 %,
 5. sonst, wenn der Schüler Deutsch hat, die übrigen Deutsch-Spiele „zum Üben“, und mit Englisch die Vokabel-Paare
-   (ab der 3. Schulstufe), English Tenses und English Grammar (ab der 5.) und die Irregular Verbs (ab der 6.).
+   (ab der 3. Schulstufe), English Tenses und English Grammar (ab der 5.) und die Irregular Verbs (ab der 6.), mit
+   Mathematik „Kopfrechnen“.
 
 Eine eigene Vokabelliste zählt als aktueller Stoff (Punkt 2). Ohne passendes Fach und ohne passenden Stoff gibt es
 kein Spiel.

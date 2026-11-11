@@ -16,7 +16,7 @@
 import { parseTime } from "./analysis";
 import { db, json } from "./db";
 import { beendeRunde, duellThema, duellVokabeln, starteRundeMitKarten } from "./lernspiele";
-import { SPIEL_THEMEN } from "./lernspiele-englisch";
+import { SPIEL_THEMEN } from "./lernspiele-themen";
 import { stufenFuer, waehleKarten } from "./lernspiele-karten";
 import { istSpielArt, type SpielArt, type SpielKarte } from "./lernspiele-typen";
 import * as repo from "./repo";

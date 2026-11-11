@@ -1569,3 +1569,59 @@
     transform: none;
   }
 }
+
+/* ---------- Mathe („Kopfrechnen“): Rechnungen gesetzt wie in den Übungen (components/MathText.tsx) ---------- */
+/* eine Gleichung steht über „x =“, der Rechenweg hat eine Zeile je Schritt */
+.ls-satz[data-mathe],
+.ls-regel-text[data-mathe] {
+  white-space: pre-line;
+  font-variant-numeric: tabular-nums;
+}
+.ls-satz[data-mathe] {
+  font-size: clamp(23px, 6.4vw, 30px);
+  text-wrap: wrap;
+}
+.ls-regel-text[data-mathe] {
+  flex-basis: 100%;
+  line-height: 1.5;
+}
+/* das Ergebnis steht neben „Richtig ist“: so bleibt die Rechnung auf der Karte auch am kleinen Handy sichtbar */
+.ls-regel[data-mathe] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 10px;
+}
+.ls-regel[data-mathe] .ls-regel-loesung {
+  margin-top: 0;
+}
+/* ein Bruch in der Lücke und auf der Kiste: die Lücke wächst mit, der Bruchstrich bleibt kräftig */
+.ls-satz[data-mathe] .ls-luecke {
+  min-height: 1.5em;
+  align-items: center;
+  vertical-align: middle;
+}
+.ls-faecher[data-mathe] .ls-kiste {
+  font-variant-numeric: tabular-nums;
+}
+.ls-kiste .frac,
+.ls-kiste-mini .frac {
+  font-size: 0.8em;
+  line-height: 1.05;
+}
+.ls-kiste .frac-num,
+.ls-kiste-mini .frac-num {
+  border-bottom-width: max(2px, 0.09em);
+}
+/* die Zeile über der Karte ist eine Zeile hoch: ein Bruch darin etwas kleiner */
+.ls-zuletzt .frac {
+  font-size: 0.68em;
+  line-height: 1;
+}
+/* kleines Handy: nach einem Fehler rückt die Rechnung an den oberen Rand der Karte, darunter liegt der Rechenweg */
+@media (max-height: 640px) {
+  .ls-stapel[data-mathe][data-falsch] .ls-karte[data-tiefe="0"] {
+    justify-content: flex-start;
+    padding-top: 14px;
+  }
+}
