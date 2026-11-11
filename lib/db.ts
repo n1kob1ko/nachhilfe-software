@@ -1372,6 +1372,24 @@ CREATE TABLE IF NOT EXISTS erkenntnisse (
   erledigt_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_erkenntnisse_student ON erkenntnisse(student_id, status);
+-- Lernspiele in der Schüler-App (lib/lernspiele.ts): eine Zeile je Runde. art artikel | praepositionen | deklination,
+-- skill_id die Fähigkeit, die die Runde übt, grund warum sie dran war (pruefung | stoff | einheit | lernstand | fach),
+-- karten JSON der Karten mit richtiger Antwort (der Server prüft daran), antworten JSON [{key, wahl, richtig}] der ersten
+-- Wahl je Karte. Erst mit beendet_at zählt die Runde (Lernstand: richtig / anzahl, schwächer als eine Übung).
+CREATE TABLE IF NOT EXISTS spielrunden (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  art TEXT NOT NULL,
+  skill_id TEXT NOT NULL,
+  grund TEXT NOT NULL DEFAULT 'fach',
+  karten TEXT NOT NULL DEFAULT '[]',
+  antworten TEXT NOT NULL DEFAULT '[]',
+  anzahl INTEGER NOT NULL DEFAULT 0,
+  richtig INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  beendet_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_spielrunden_student ON spielrunden(student_id, beendet_at);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */
