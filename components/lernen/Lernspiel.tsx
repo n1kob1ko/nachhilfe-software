@@ -23,6 +23,8 @@ import { SPIEL_AUFGABE, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebn
 type Eintrag = { karte: SpielKarte; wiederholung: boolean };
 type Stand = { wahl: string; richtig: boolean } | null;
 type Phase = "start" | "laden" | "spiel" | "ende";
+type Wurf = { x: number; y: number; r: number; s?: number };
+const zugGroesse = (dy: number) => 1 - (Math.min(Math.max(dy, 0), 220) / 220) * 0.38;
 
 const pct = (x: number | null) => (x === null ? "–" : `${Math.round(x * 100)} %`);
 const vibriere = (muster: number | number[]) => {
@@ -69,6 +71,13 @@ export function Lernspiel({
   const [ziel, setZiel] = useState<number | null>(null);
   const [blitz, setBlitz] = useState<number | null>(null);
   const [ergebnis, setErgebnis] = useState<SpielErgebnis | null>(null);
+  // je gelöster Karte: beim ersten Mal richtig? (färbt den Fortschritt gold oder rot)
+  const [verlauf, setVerlauf] = useState<boolean[]>([]);
+  // was schon in welcher Kiste liegt (die letzten zwei schauen oben heraus)
+  const [inKiste, setInKiste] = useState<Record<string, string[]>>({});
+  const [jubel, setJubel] = useState<{ n: number; text: string } | null>(null);
+  // die Kiste, in der zuletzt eine Karte gelandet ist (Funken und „+1“ beim Aufkommen, nicht beim Abwurf)
+  const [treffer, setTreffer] = useState<{ fach: number; n: number } | null>(null);
 
   const erste = useRef(new Map<string, string>());
   const beschaeftigt = useRef(false);
@@ -112,6 +121,10 @@ export function Lernspiel({
     setGeloest(new Set());
     setZuletzt(null);
     setErgebnis(null);
+    setVerlauf([]);
+    setInKiste({});
+    setJubel(null);
+    setTreffer(null);
     setPhase("spiel");
   }, [token, art]);
 
@@ -127,7 +140,7 @@ export function Lernspiel({
 
   // ---------- Karte fliegt ins Fach ----------
 
-  const fliege = useCallback((fach: number, von: { x: number; y: number; r: number }, geworfen: boolean) => {
+  const fliege = useCallback((fach: number, von: Wurf, geworfen: boolean) => {
     const el = karteRef.current;
     const bin = fachRefs.current[fach];
     if (!el) return Promise.resolve();
@@ -142,7 +155,7 @@ export function Lernspiel({
     return el
       .animate(
         [
-          { transform: `translate(${von.x}px, ${von.y}px) rotate(${von.r}deg)`, opacity: 1 },
+          { transform: `translate(${von.x}px, ${von.y}px) rotate(${von.r}deg) scale(${von.s ?? 1})`, opacity: 1 },
           { transform: `translate(${von.x + dx}px, ${von.y + dy}px) rotate(${von.r * 0.4}deg) scale(0.22)`, opacity: 0 },
         ],
         // geworfen ist sie schon in Fahrt: ease-out; angetippt bewegt sie sich über den Schirm: ease-in-out
@@ -154,7 +167,7 @@ export function Lernspiel({
   // ---------- Antwort ----------
 
   const waehle = useCallback(
-    async (wahl: string, von: { x: number; y: number; r: number } = { x: 0, y: 0, r: 0 }, geworfen = false) => {
+    async (wahl: string, von: Wurf = { x: 0, y: 0, r: 0 }, geworfen = false) => {
       const karte = reihe[pos]?.karte;
       if (!karte || beschaeftigt.current) return;
       if (!erste.current.has(karte.key)) erste.current.set(karte.key, wahl);
@@ -169,7 +182,8 @@ export function Lernspiel({
         }
         vibriere([28, 40, 28]);
         if (el && !reduziert.current && el.animate)
-          el.animate([{ translate: "0 0" }, { translate: "-7px 0" }, { translate: "6px 0" }, { translate: "-3px 0" }, { translate: "0 0" }], { duration: 320, easing: "cubic-bezier(0.77, 0, 0.175, 1)" });
+          // wackeln über `rotate` (translate schiebt die Karte gerade hoch, transform gehört dem Ziehen)
+          el.animate([{ rotate: "-1.5deg" }, { rotate: "-6deg" }, { rotate: "4deg" }, { rotate: "-3.5deg" }, { rotate: "1deg" }, { rotate: "-1.5deg" }], { duration: 420, easing: "cubic-bezier(0.77, 0, 0.175, 1)" });
         setZiel(null);
         setStand({ wahl, richtig: false });
         setFalschGewaehlt((f) => (f.includes(wahl) ? f : [...f, wahl]));
@@ -191,10 +205,17 @@ export function Lernspiel({
       vibriere(12);
       setStand({ wahl, richtig: true });
       setBlitz(fach);
-      if (ersterVersuch) setCombo((c) => c + 1);
+      if (ersterVersuch) {
+        const neu = combo + 1;
+        setCombo(neu);
+        if (neu === 3 || neu === 5 || (neu >= 10 && neu % 5 === 0)) setJubel((j) => ({ n: (j?.n ?? 0) + 1, text: `${neu} in Folge!` }));
+      }
+      if (!geloest.has(karte.key)) setVerlauf((v) => [...v, ersterVersuch]);
       setGeloest((g) => new Set(g).add(karte.key));
       setZuletzt((z) => ({ karte, n: (z?.n ?? 0) + 1 }));
       await fliege(fach, von, geworfen);
+      setInKiste((k) => ({ ...k, [wahl]: [...(k[wahl] ?? []), kistenWort(karte, art)].slice(-2) }));
+      setTreffer((t) => ({ fach, n: (t?.n ?? 0) + 1 }));
       setZiel(null);
       setBlitz(null);
       setStand(null);
@@ -206,7 +227,7 @@ export function Lernspiel({
       }
       setPos(pos + 1);
     },
-    [reihe, pos, stand, fliege, beenden, rundeId],
+    [reihe, pos, stand, fliege, beenden, rundeId, combo, geloest, art],
   );
 
   // Tasten 1–5 am Laptop (ohne Bewegung beim Antippen: wiederholte Aktionen sollen sofort wirken)
@@ -265,7 +286,8 @@ export function Lernspiel({
     if (dy < 0) dy = -Math.pow(-dy, 0.75);
     const el = e.currentTarget;
     el.dataset.zieht = "";
-    el.style.transform = `translate(${dx}px, ${dy}px) rotate(${reduziert.current ? 0 : dx * 0.05}deg)`;
+    // auf dem Weg nach unten wird die Karte kleiner: sie passt in die Kiste und verdeckt die anderen nicht
+    el.style.transform = `translate(${dx}px, ${dy}px) rotate(${reduziert.current ? 0 : dx * 0.05}deg) scale(${zugGroesse(dy)})`;
     const kandidat = dy > 36 ? naechstesFach(z.cx + dx) : null;
     setZiel((alt) => (alt === kandidat ? alt : kandidat));
   };
@@ -284,7 +306,7 @@ export function Lernspiel({
     if (geworfen && karte) {
       const fach = naechstesFach(z.cx + dx + z.vx * 140);
       if (fach !== null) {
-        void waehle(karte.faecher[fach], { x: dx, y: Math.max(dy, 0), r: reduziert.current ? 0 : dx * 0.05 }, true);
+        void waehle(karte.faecher[fach], { x: dx, y: Math.max(dy, 0), r: reduziert.current ? 0 : dx * 0.05, s: zugGroesse(dy) }, true);
         return;
       }
     }
@@ -303,13 +325,13 @@ export function Lernspiel({
         <>
           <div className="ls-fortschritt" role="progressbar" aria-valuemin={0} aria-valuemax={anzahl} aria-valuenow={geloest.size} aria-label="Fortschritt">
             {Array.from({ length: anzahl }, (_, i) => (
-              <span key={i} data-fertig={i < geloest.size ? "" : undefined} />
+              <span key={i} data-stand={i < verlauf.length ? (verlauf[i] ? "richtig" : "falsch") : i === verlauf.length ? "jetzt" : undefined} />
             ))}
           </div>
-          <span className="ls-combo" data-leer={combo < 3 ? "" : undefined} aria-live="polite">
-            <Flame size={18} aria-hidden />
+          <span className="ls-combo" data-heiss={combo >= 3 ? "" : undefined} aria-label={`${combo} richtig in Folge`}>
+            <Flame size={16} aria-hidden fill="currentColor" strokeWidth={1.5} />
             <b key={combo} data-neu="">
-              {combo}
+              ×{combo}
             </b>
           </span>
         </>
@@ -319,19 +341,22 @@ export function Lernspiel({
     </div>
   );
 
+  const deko = DEKO[art];
+
   if (phase === "start" || phase === "laden") {
     return (
       <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${SPIEL_TITEL[art]}`}>
+        <Hintergrund woerter={deko} />
         {kopf}
         <div className="ls-mitte ls-staffel">
-          <p className="text-[14px] font-semibold tracking-wide text-ink-3 uppercase" style={{ "--n": 0 } as CSSProperties}>
+          <p className="ls-oberzeile" style={{ "--n": 0 } as CSSProperties}>
             Lernspiel Deutsch
           </p>
-          <h1 className="display mt-1 text-[36px] leading-tight font-semibold tracking-[-0.02em]" style={{ "--n": 1 } as CSSProperties}>
+          <h1 className="ls-titel" style={{ "--n": 1 } as CSSProperties}>
             {SPIEL_TITEL[art]}
           </h1>
-          <p className="mt-2 text-[17px] text-ink-2" style={{ "--n": 2 } as CSSProperties}>
-            {SPIEL_AUFGABE[art]} Zieh die Karte nach unten oder tipp auf ein Fach.
+          <p className="ls-text mt-2" style={{ "--n": 2 } as CSSProperties}>
+            {SPIEL_AUFGABE[art]} Zieh die Karte in eine Kiste oder tipp die Kiste an.
           </p>
           {vorschlag && vorschlag.quelle !== "fach" && (
             <span className="ls-grund mt-4" style={{ "--n": 3 } as CSSProperties}>
@@ -340,15 +365,23 @@ export function Lernspiel({
             </span>
           )}
 
-          <div className="panel mt-6 grid grid-cols-2 gap-4 p-4" style={{ "--n": 4 } as CSSProperties}>
+          <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
+            {VORSCHAU[art].map((f, i) => (
+              <span key={f} className="ls-kiste-mini" data-k={f} style={{ rotate: `${i % 2 ? 2.5 : -2.5}deg` }}>
+                {f}
+              </span>
+            ))}
+          </div>
+
+          <div className="ls-glas mt-6 grid grid-cols-2 gap-4 p-4" style={{ "--n": 4 } as CSSProperties}>
             <div>
-              <p className="text-[13px] text-ink-3">Dein Stand</p>
+              <p className="ls-klein">Dein Stand</p>
               <p className="text-[22px] font-semibold tabular-nums">{lernstand === null ? "Noch offen" : pct(lernstand)}</p>
             </div>
             <div>
-              <p className="text-[13px] text-ink-3">Serie</p>
+              <p className="ls-klein">Serie</p>
               <p className="flex items-center gap-1.5 text-[22px] font-semibold tabular-nums">
-                <Flame size={20} className={serieAnfang > 0 ? "text-amber" : "text-ink-3"} aria-hidden />
+                <Flame size={20} className={serieAnfang > 0 ? "ls-flamme" : "opacity-60"} fill={serieAnfang > 0 ? "currentColor" : "none"} aria-hidden />
                 {serieAnfang === 0 ? "Heute starten" : serieAnfang === 1 ? "1 Tag" : `${serieAnfang} Tage`}
               </p>
             </div>
@@ -356,7 +389,7 @@ export function Lernspiel({
 
           {vorschlaege.length > 1 && (
             <div className="mt-6" style={{ "--n": 5 } as CSSProperties}>
-              <p className="mb-2 text-[13px] text-ink-3">Anderes Spiel</p>
+              <p className="ls-klein mb-2">Anderes Spiel</p>
               <nav className="ls-wahl" aria-label="Spiel wählen">
                 {vorschlaege.map((v) => (
                   <Link key={v.art} href={`/lernen/${token}/spiel?art=${v.art}`} replace aria-current={v.art === art ? "page" : undefined}>
@@ -368,12 +401,12 @@ export function Lernspiel({
           )}
 
           {fehler && (
-            <p className="mt-6 text-[15px] text-red" role="alert">
+            <p className="ls-fehler mt-6" role="alert">
               {fehler}
             </p>
           )}
           <div className="mt-auto pt-8" style={{ "--n": 6 } as CSSProperties}>
-            <button type="button" className="btn btn-primary ls-los" onClick={() => void starten()} disabled={phase === "laden"} autoFocus>
+            <button type="button" className="ls-knopf ls-los" onClick={() => void starten()} disabled={phase === "laden"} autoFocus>
               {phase === "laden" ? "Karten werden gemischt …" : "Los geht’s"}
             </button>
           </div>
@@ -386,58 +419,73 @@ export function Lernspiel({
     const e = ergebnis && !("fehler" in ergebnis) ? ergebnis : null;
     const richtig = e?.richtig ?? [...erste.current.entries()].filter(([key, wahl]) => reihe.find((r) => r.karte.key === key)?.karte.richtig === wahl).length;
     const sterne = e?.sterne ?? sterneFuer(richtig, anzahl);
+    const anteil = anzahl ? Math.round((richtig / anzahl) * 100) : 0;
+    const besteSerie = laengsteSerie(verlauf);
     return (
       <div className="ls" role="dialog" aria-modal="true" aria-label="Runde fertig">
+        <Hintergrund woerter={deko} />
+        {sterne >= 2 && <Konfetti />}
         {kopf}
         <div className="ls-mitte ls-staffel text-center">
-          <div className="ls-sterne mt-4" aria-label={`${sterne} von 3 Sternen`} style={{ "--n": 0 } as CSSProperties}>
+          <div className="ls-ring" style={{ "--n": 0 } as CSSProperties}>
+            <svg viewBox="0 0 120 120" aria-hidden>
+              <circle cx="60" cy="60" r="50" pathLength={100} className="ls-ring-spur" />
+              <circle cx="60" cy="60" r="50" pathLength={100} className="ls-ring-wert" style={{ strokeDashoffset: 100 - anteil } as CSSProperties} />
+            </svg>
+            <div className="ls-ring-zahl">
+              <b>{richtig}</b>
+              <span>von {anzahl} richtig</span>
+            </div>
+          </div>
+          <div className="ls-sterne" aria-label={`${sterne} von 3 Sternen`} style={{ "--n": 1 } as CSSProperties}>
             {[0, 1, 2].map((i) => (
-              <Star key={i} size={i === 1 ? 64 : 52} className="ls-stern" data-an={i < sterne ? "" : undefined} fill="currentColor" strokeWidth={1.2} style={{ "--n": i } as CSSProperties} aria-hidden />
+              <Star key={i} size={i === 1 ? 60 : 48} className="ls-stern" data-an={i < sterne ? "" : undefined} fill="currentColor" strokeWidth={0} style={{ "--n": i } as CSSProperties} aria-hidden />
             ))}
           </div>
-          <h1 className="display mt-5 text-[30px] font-semibold tracking-[-0.02em]" style={{ "--n": 1 } as CSSProperties}>
-            {sterne === 3 ? "Stark!" : sterne === 2 ? "Gut gemacht!" : "Weiter so!"}
+          <h1 className="ls-titel mt-3" style={{ "--n": 2 } as CSSProperties}>
+            {sterne === 3 ? "Stark gemacht!" : sterne === 2 ? "Gut gemacht!" : "Weiter so!"}
           </h1>
-          <p className="mt-1 text-[17px] text-ink-2" style={{ "--n": 2 } as CSSProperties}>
-            {richtig} von {anzahl} beim ersten Mal richtig
+          <p className="ls-text mt-1" style={{ "--n": 2 } as CSSProperties}>
+            {besteSerie >= 3 ? `Längste Serie: ${besteSerie} in Folge` : "Gezählt wird der erste Versuch"}
           </p>
 
           {ergebnis && "fehler" in ergebnis && (
-            <p className="mt-4 text-[15px] text-red" role="alert">
+            <p className="ls-fehler mt-4" role="alert">
               {ergebnis.fehler}
             </p>
           )}
 
-          <div className="panel mt-6 p-4 text-left" style={{ "--n": 3 } as CSSProperties}>
-            <div className="flex items-baseline justify-between">
-              <p className="text-[15px] font-semibold">{SPIEL_TITEL[art]}</p>
-              <p className="text-[15px] text-ink-2 tabular-nums">
+          <div className="mt-6 grid grid-cols-2 gap-3 text-left" style={{ "--n": 3 } as CSSProperties}>
+            <div className="ls-glas p-4">
+              <p className="ls-klein">{SPIEL_TITEL[art]}</p>
+              <p className="text-[21px] font-semibold tabular-nums">
                 {e ? (
                   e.lernstandVorher === null ? (
-                    <b className="text-ink">{pct(e.lernstandNachher)}</b>
+                    pct(e.lernstandNachher)
                   ) : (
                     <>
-                      {pct(e.lernstandVorher)} → <b className="text-ink">{pct(e.lernstandNachher)}</b>
+                      {pct(e.lernstandVorher)} → {pct(e.lernstandNachher)}
                     </>
                   )
                 ) : (
                   "…"
                 )}
               </p>
+              <div className="ls-balken mt-2">
+                <span style={{ transform: `scaleX(${e?.lernstandNachher ?? e?.lernstandVorher ?? lernstand ?? 0})` }} />
+              </div>
             </div>
-            <div className="ls-balken mt-2">
-              <span style={{ transform: `scaleX(${e?.lernstandNachher ?? e?.lernstandVorher ?? lernstand ?? 0})` }} />
-            </div>
-            {e && (
-              <p className="mt-3 flex items-center gap-1.5 text-[14px] text-ink-2">
-                <Flame size={16} className="text-amber" aria-hidden />
-                {e.serie === 1 ? "1 Tag Serie" : `${e.serie} Tage Serie`}
+            <div className="ls-glas p-4">
+              <p className="ls-klein">Serie</p>
+              <p className="flex items-center gap-1.5 text-[21px] font-semibold tabular-nums">
+                <Flame size={20} className="ls-flamme" fill="currentColor" aria-hidden />
+                {e ? (e.serie === 1 ? "1 Tag" : `${e.serie} Tage`) : "…"}
               </p>
-            )}
+            </div>
           </div>
 
           {e && e.nochmal.length > 0 && (
-            <div className="panel mt-4 p-4 text-left" style={{ "--n": 4 } as CSSProperties}>
+            <div className="ls-blatt mt-4 p-4 text-left" style={{ "--n": 4 } as CSSProperties}>
               <p className="text-[15px] font-semibold">Kommt nächstes Mal wieder</p>
               <ul className="mt-2 space-y-1.5 text-[16px]">
                 {e.nochmal.slice(0, 5).map((n) => {
@@ -450,10 +498,10 @@ export function Lernspiel({
           )}
 
           <div className="mt-auto grid gap-3 pt-8" style={{ "--n": 5 } as CSSProperties}>
-            <button type="button" className="btn btn-primary ls-los" onClick={() => void starten()} disabled={!ergebnis} autoFocus>
+            <button type="button" className="ls-knopf ls-los" onClick={() => void starten()} disabled={!ergebnis} autoFocus>
               Noch eine Runde
             </button>
-            <Link href={zurueck} className="btn btn-secondary ls-los">
+            <Link href={zurueck} className="ls-knopf ls-los" data-zweit="">
               Fertig
             </Link>
           </div>
@@ -465,14 +513,16 @@ export function Lernspiel({
   // ---------- Spiel ----------
   const sichtbar = reihe.slice(pos, pos + 3);
   if (aktuell) fachRefs.current.length = aktuell.faecher.length;
+  const falsch = !!stand && !stand.richtig;
   return (
     <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${SPIEL_TITEL[art]}`}>
+      <Hintergrund woerter={deko} />
       {kopf}
       <div className="ls-feld">
         <p className="ls-auftrag">{SPIEL_AUFGABE[art]}</p>
 
         {/* der letzte richtige Satz, ganz: so bleibt beim Spielen hängen, wie es heißt */}
-        <p className="mt-2 min-h-[28px] text-center text-[16px] text-ink-2" aria-live="polite">
+        <p className="ls-zuletzt" aria-live="polite">
           {zuletzt && (
             <span key={zuletzt.n} className="ls-zeile">
               <Loesung karte={zuletzt.karte} art={art} />
@@ -480,7 +530,13 @@ export function Lernspiel({
           )}
         </p>
 
-        <div className="ls-stapel">
+        {jubel && (
+          <p key={jubel.n} className="ls-jubel" aria-hidden>
+            {jubel.text}
+          </p>
+        )}
+
+        <div className="ls-stapel" data-falsch={falsch ? "" : undefined}>
           {sichtbar
             .map((e, i) => ({ e, i, idx: pos + i }))
             .reverse()
@@ -500,19 +556,22 @@ export function Lernspiel({
                 <KartenInhalt karte={e.karte} art={art} stand={i === 0 ? stand : null} key={i === 0 ? `w${wackeln}` : "x"} />
               </div>
             ))}
-        </div>
 
-        <div className="min-h-[64px]">
-          {stand && !stand.richtig && aktuell && (
-            <p className="ls-regel" role="status">
-              <Lightbulb size={18} aria-hidden />
-              <span>{aktuell.regel}</span>
-            </p>
+          {falsch && aktuell && (
+            <div className="ls-regel" role="status">
+              <p className="ls-regel-kopf">
+                <Lightbulb size={16} aria-hidden /> Fast! Richtig ist
+              </p>
+              <p className="ls-regel-loesung">
+                {art === "artikel" ? <Loesung karte={aktuell} art={art} ohneMarke /> : <b className="ls-richtig">{aktuell.richtig}</b>}
+              </p>
+              <p className="ls-regel-text">{aktuell.regel}</p>
+            </div>
           )}
         </div>
 
         {aktuell && (
-          <div className="ls-faecher" role="group" aria-label="Fächer">
+          <div className="ls-faecher" role="group" aria-label="Kisten" data-viele={aktuell.faecher.length > 3 ? "" : undefined}>
             {aktuell.faecher.map((f, i) => (
               <button
                 key={f}
@@ -521,20 +580,105 @@ export function Lernspiel({
                 }}
                 type="button"
                 className="ls-fach ohne-druck"
+                data-k={f}
                 data-a={art === "artikel" ? f : undefined}
                 data-ziel={ziel === i ? "" : undefined}
                 data-richtig={blitz === i ? "" : undefined}
-                data-zeigen={stand && !stand.richtig && f === aktuell.richtig ? "" : undefined}
+                data-zeigen={falsch && f === aktuell.richtig ? "" : undefined}
                 data-falsch={falschGewaehlt.includes(f) ? "" : undefined}
                 onClick={() => void waehle(f)}
                 aria-keyshortcuts={String(i + 1)}
               >
-                {f}
+                <span className="ls-drin" aria-hidden>
+                  {(inKiste[f] ?? []).map((w, j) => (
+                    <span key={`${j}-${w}`} style={{ "--j": j } as CSSProperties}>
+                      {w}
+                    </span>
+                  ))}
+                </span>
+                <span className="ls-kiste">{f}</span>
+                {treffer?.fach === i && <Funken key={treffer.n} />}
               </button>
             ))}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Blasse Wörter im Hintergrund der Bühne, je Spiel andere. */
+const DEKO: Record<SpielArt, string[]> = {
+  artikel: ["die", "das", "der"],
+  praepositionen: ["dem", "den", "der"],
+  deklination: ["-en", "-es", "-em"],
+};
+const VORSCHAU: Record<SpielArt, string[]> = {
+  artikel: ["der", "die", "das"],
+  praepositionen: ["der", "die", "das", "dem", "den"],
+  deklination: ["-e", "-en", "-er", "-es", "-em"],
+};
+
+/** Was oben aus der Kiste schaut: das Wort, bei Sätzen die eingesetzte Stelle („kalter“, „dem Tisch“). */
+function kistenWort(karte: SpielKarte, art: SpielArt) {
+  if (karte.wort) return karte.wort;
+  if (art === "deklination") return (karte.vor.trimEnd().split(" ").pop() ?? "") + ohneStrich(karte.richtig);
+  return karte.nach.trim().split(/[\s.,!?]/)[0] ?? "";
+}
+
+function laengsteSerie(v: boolean[]) {
+  let best = 0;
+  let n = 0;
+  for (const r of v) {
+    n = r ? n + 1 : 0;
+    best = Math.max(best, n);
+  }
+  return best;
+}
+
+function Hintergrund({ woerter }: { woerter: string[] }) {
+  return (
+    <div className="ls-hintergrund" aria-hidden>
+      {woerter.map((w, i) => (
+        <span key={w} data-i={i}>
+          {w}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Funken und „+1“ über der Kiste, wenn eine Karte richtig landet (nur Deko, bei weniger Bewegung aus). */
+function Funken() {
+  return (
+    <span className="ls-funken" aria-hidden>
+      <b>+1</b>
+      {Array.from({ length: 8 }, (_, i) => (
+        <i key={i} style={{ "--w": `${i * 45 + (i % 2) * 18}deg`, "--d": `${58 + (i % 3) * 18}px` } as CSSProperties} />
+      ))}
+    </span>
+  );
+}
+
+/** Einmal Konfetti am Ende einer guten Runde. Feste Werte statt Zufall: gleich auf Server und Gerät. */
+function Konfetti() {
+  return (
+    <div className="ls-konfetti" aria-hidden>
+      {Array.from({ length: 34 }, (_, i) => (
+        <i
+          key={i}
+          style={
+            {
+              "--x": `${((i * 61.8) % 100).toFixed(1)}%`,
+              "--v": `${(i * 197) % 700}ms`,
+              "--t": `${2100 + ((i * 311) % 900)}ms`,
+              "--r": `${((i * 171) % 540) - 270}deg`,
+              "--s": `${((i * 29) % 90) - 45}px`,
+            } as CSSProperties
+          }
+          data-f={i % 4}
+        />
+      ))}
     </div>
   );
 }
@@ -586,7 +730,7 @@ function KartenInhalt({ karte, art, stand }: { karte: SpielKarte; art: SpielArt;
   );
 }
 
-function Loesung({ karte, art }: { karte: SpielKarte; art: SpielArt }) {
+function Loesung({ karte, art, ohneMarke }: { karte: SpielKarte; art: SpielArt; ohneMarke?: boolean }) {
   if (art === "artikel")
     return (
       <>
@@ -600,10 +744,10 @@ function Loesung({ karte, art }: { karte: SpielKarte; art: SpielArt }) {
     <>
       {karte.vor.trimEnd()}
       {art === "praepositionen" ? " " : ""}
-      <b className="text-green">{ohneStrich(karte.richtig)}</b>
+      <b className="ls-richtig">{ohneStrich(karte.richtig)}</b>
       {art === "praepositionen" ? " " : ""}
       {karte.nach}
-      {karte.marke ? <span className="ml-2 inline-block rounded-full bg-panel px-2 py-0.5 align-middle text-[12px] font-semibold whitespace-nowrap text-ink-2">{karte.marke}</span> : null}
+      {karte.marke && !ohneMarke ? <span className="ls-marke-klein">{karte.marke}</span> : null}
     </>
   );
 }

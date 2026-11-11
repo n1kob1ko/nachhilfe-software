@@ -7,25 +7,36 @@ Deutsch, weil Artikel, Präpositionen und Deklination oft ein Problem sind.
 
 - **Start** (`/lernen/[token]`): eine Karte „Lernspiel“ mit dem Spiel, das gerade passt, dem Grund
   („2. Deutsch-Schularbeit in 9 Tagen“, „Dein aktueller Stoff“) und der Serie (Tage am Stück).
-- **Spiel** (`/lernen/[token]/spiel?art=…`): liegt über der ganzen Seite. Anfang mit Stand und Serie, Wahl eines
-  anderen Spiels, „Los geht’s“. Dann zwölf Karten: in ein Fach ziehen und werfen oder ein Fach antippen
-  (am Laptop Tasten 1–5).
-  - richtig: die Karte fliegt ins Fach, oben steht kurz der ganze richtige Satz mit der Antwort hervorgehoben
-    (bei Präpositionen auch Dativ oder Akkusativ);
-  - falsch: die Wahl steht durchgestrichen in der Lücke, das richtige Fach leuchtet, eine kurze Regel erscheint,
-    weiter geht es mit der richtigen Antwort; die Karte kommt drei Karten später noch einmal.
-- **Ende**: Sterne (ab 90 % drei, ab 70 % zwei), „x von 12 beim ersten Mal richtig“, der Lernstand der Fähigkeit
-  vorher und nachher, die Serie und was nächstes Mal wiederkommt.
+- **Spiel** (`/lernen/[token]/spiel?art=…`): liegt über der ganzen Seite, auf der blauen Bühne. Anfang mit Stand
+  und Serie, Wahl eines anderen Spiels, „Los geht’s“. Dann zwölf Karten: in eine Kiste ziehen und werfen oder eine
+  Kiste antippen (am Laptop Tasten 1–5).
+  - richtig: die Karte fliegt in die Kiste, die Kiste leuchtet, Funken und „+1“, das Wort schaut danach oben aus
+    der Kiste; oben steht kurz der ganze richtige Satz mit der Antwort hervorgehoben (bei Präpositionen auch Dativ
+    oder Akkusativ). Der Zähler oben rechts zählt richtige Antworten in Folge und wird ab drei gold, bei 3, 5, 10,
+    15 … erscheint kurz „3 in Folge!“;
+  - falsch: die Karte wackelt und rückt hoch, die Wahl steht durchgestrichen darauf, von unten kommt ein Blatt
+    „Fast! Richtig ist …“ mit einer kurzen Regel, die richtige Kiste hat einen weißen Rand; weiter geht es mit der
+    richtigen Antwort, die Karte kommt drei Karten später noch einmal.
+  - Fortschritt oben: ein Strich je Karte, gold = beim ersten Mal richtig, rot = erst danach.
+- **Ende**: Ring „x von 12 richtig“ (gezählt wird der erste Versuch), Sterne (ab 90 % drei, ab 70 % zwei), ab zwei
+  Sternen einmal Konfetti, die längste Serie der Runde, der Lernstand der Fähigkeit vorher und nachher, die
+  Tages-Serie und was nächstes Mal wiederkommt.
+
+**Aussehen** (niko 2026-11-11: „sehen etwas fad aus“): Das Spiel ist die einzige Seite, die ganz Bühne ist
+(Blau-Verlauf mit Lichtfleck, hell und dunkel), mit weißer Schrift, weißem Hauptknopf und kräftig farbigen Kisten
+(blau, rot, grün, gold, violett; je Antwort immer dieselbe Farbe). Karten, Regel-Blatt und die Liste am Ende sind
+weiße Blätter. Bei „weniger Bewegung“ entfallen Funken, Konfetti, „in Folge!“ und das Wackeln. Am Regelwerk und an
+der Wertung hat der neue Look nichts geändert.
 
 ## Die drei Spiele
 
-| Spiel | Fähigkeit | Bank | Fächer |
+| Spiel | Fähigkeit | Bank | Kisten |
 | --- | --- | --- | --- |
 | der, die, das | `deutsch.grammatik.artikel` | `artikel.json` (ohne Wörter mit zwei Artikeln) | der · die · das (blau, rot, grün) |
 | Präposition und Fall | `deutsch.grammatik.praepositionen` | `praepositionen.json` (nur mit sicherem Fall) | der · die · das · dem · den (die vier des Eintrags) |
 | Adjektiv-Endungen | `deutsch.grammatik.adjektivdeklination` | `adjektivdeklination.json` | -e · -en · -er · -es · -em (die vier des Eintrags) |
 
-Die Fächer stehen immer in derselben Reihenfolge, damit die Hand sich die Plätze merkt. Einträge, die die Regeln
+Die Kisten stehen immer in derselben Reihenfolge, damit die Hand sich die Plätze merkt. Einträge, die die Regeln
 der Bank beanstanden (`eintragFehler`), kommen nicht vor.
 
 **Regeln nach einem Fehler** (`lib/lernspiele-karten.ts`) sagen nur, was für die Karte sicher stimmt: das Grundwort

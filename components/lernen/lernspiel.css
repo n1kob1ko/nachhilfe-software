@@ -1,39 +1,49 @@
 /*
- * Lernspiele (components/lernen/Lernspiel.tsx). Bewegung nach DESIGN.md „Bewegung“: dieselben Kurven und Dauern wie
- * in der App (die Token aus app/globals.css, hier mit denselben Werten als Rückfall), nur transform und opacity,
- * Eintritt ease-out, Bewegung auf dem Schirm ease-in-out, Ausgänge kürzer als Eintritte, kein Federn.
- * Bei „weniger Bewegung“ bleiben nur Farbe und Deckkraft.
+ * Lernspiele (components/lernen/Lernspiel.tsx). Das Spiel läuft auf der Bühne (DESIGN.md: Blau-Verlauf mit Lichtfleck),
+ * die Antworten sind farbige Kisten. Bewegung nach DESIGN.md „Bewegung“: dieselben Kurven wie in der App, nur
+ * transform, translate, rotate und opacity, Eintritt ease-out, Bewegung auf dem Schirm ease-in-out, kein Federn.
+ * Bei „weniger Bewegung“ bleiben nur Farbe und Deckkraft; Funken, Konfetti und Jubel fallen weg.
  */
 .ls {
   --ls-ease-out: var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
   --ls-ease-in-out: var(--ease-in-out, cubic-bezier(0.77, 0, 0.175, 1));
+  /* Schrift auf der Bühne */
+  --ls-on: #ffffff;
+  --ls-on-2: #d8e6fb;
+  --ls-gold: #ffd34d;
+  --ls-rot: #ff8a7a;
+  --ls-glas: rgba(255, 255, 255, 0.13);
+  --ls-glas-linie: rgba(255, 255, 255, 0.2);
+  /* Artikel-Farben auf weißem Grund (Karte, Blatt) */
   --ls-der: #2a6fd0;
-  --ls-der-wash: #e3eefc;
-  --ls-die: #c0392b;
-  --ls-die-wash: #fbe8e5;
-  --ls-das: #1f8a4c;
-  --ls-das-wash: #e2f1e5;
+  --ls-die: #d0402f;
+  --ls-das: #13874f;
+  --ls-gruen: #13874f;
   position: fixed;
   inset: 0;
   z-index: 60;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background:
-    radial-gradient(120% 60% at 50% 0%, var(--accent-wash), transparent 70%),
-    var(--paper);
-  color: var(--ink);
+    radial-gradient(110% 60% at 88% -4%, rgba(140, 192, 255, 0.85), rgba(140, 192, 255, 0) 60%),
+    radial-gradient(70% 45% at -10% 62%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(180deg, #3f8ef5 0%, #2468dc 46%, #173f9a 100%);
+  color: var(--ls-on);
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
   animation: ls-rein 280ms var(--ls-ease-out) both;
 }
 :root[data-theme="dark"] .ls {
+  background:
+    radial-gradient(110% 60% at 88% -4%, rgba(91, 156, 242, 0.55), rgba(91, 156, 242, 0) 60%),
+    radial-gradient(70% 45% at -10% 62%, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(180deg, #2b63c4 0%, #1a4597 46%, #0d2357 100%);
   --ls-der: #7ab3ff;
-  --ls-der-wash: #1b2c47;
   --ls-die: #ff8a7a;
-  --ls-die-wash: #3a2024;
   --ls-das: #6fd39a;
-  --ls-das-wash: #18332a;
+  --ls-gruen: #6fd39a;
 }
 @keyframes ls-rein {
   from {
@@ -41,7 +51,46 @@
     transform: scale(0.98);
   }
 }
+.ls > :not(.ls-hintergrund, .ls-konfetti) {
+  position: relative;
+  z-index: 1;
+}
 
+/* blasse große Wörter hinter allem */
+.ls-hintergrund {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.ls-hintergrund span {
+  position: absolute;
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.07);
+  letter-spacing: -0.02em;
+}
+.ls-hintergrund [data-i="0"] {
+  left: -12px;
+  top: 16%;
+  font-size: 76px;
+  rotate: -14deg;
+}
+.ls-hintergrund [data-i="1"] {
+  right: -10px;
+  top: 52%;
+  font-size: 84px;
+  rotate: 12deg;
+}
+.ls-hintergrund [data-i="2"] {
+  left: 30%;
+  top: 66%;
+  font-size: 52px;
+  rotate: -8deg;
+}
+
+/* ---------- Kopf ---------- */
 .ls-kopf {
   display: flex;
   align-items: center;
@@ -53,25 +102,28 @@
 }
 .ls-zu {
   display: inline-flex;
-  height: 44px;
-  width: 44px;
+  height: 40px;
+  width: 40px;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  color: var(--ink-2);
-  transition: transform 160ms var(--ls-ease-out), background-color 160ms ease;
+  background: var(--ls-glas);
+  color: var(--ls-on);
+  transition:
+    transform 160ms var(--ls-ease-out),
+    background-color 160ms ease;
 }
 .ls-zu:active {
   transform: scale(0.94);
 }
 @media (hover: hover) and (pointer: fine) {
   .ls-zu:hover {
-    background: var(--panel);
+    background: rgba(255, 255, 255, 0.22);
   }
 }
 
-/* Fortschritt: ein Strich je Karte, gelöst füllt sich von links */
+/* Fortschritt: ein Strich je Karte; gold = beim ersten Mal richtig, rot = erst danach, weiß = jetzt */
 .ls-fortschritt {
   display: flex;
   flex: 1;
@@ -79,40 +131,69 @@
 }
 .ls-fortschritt span {
   position: relative;
-  height: 6px;
+  height: 8px;
   flex: 1;
   overflow: hidden;
   border-radius: 999px;
-  background: var(--bar-track);
+  background: rgba(255, 255, 255, 0.2);
 }
 .ls-fortschritt span::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--accent-bright);
+  background: var(--ls-on);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 280ms var(--ls-ease-out);
+  transition:
+    transform 280ms var(--ls-ease-out),
+    background-color 200ms ease;
 }
-.ls-fortschritt span[data-fertig]::after {
+.ls-fortschritt span[data-stand]::after {
   transform: scaleX(1);
 }
+.ls-fortschritt span[data-stand="richtig"]::after {
+  background: var(--ls-gold);
+}
+.ls-fortschritt span[data-stand="falsch"]::after {
+  background: var(--ls-rot);
+}
+.ls-fortschritt span[data-stand="jetzt"]::after {
+  background: rgba(255, 255, 255, 0.85);
+}
 
-/* Serie richtiger Antworten oben rechts */
+/* Serie richtiger Antworten: ab drei wird der Chip gold */
 .ls-combo {
   display: inline-flex;
-  min-width: 64px;
+  min-width: 58px;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 4px;
+  padding: 6px 11px 6px 9px;
+  border-radius: 999px;
+  background: var(--ls-glas);
+  color: var(--ls-on-2);
+  font-family: var(--font-display);
   font-weight: 700;
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
-  color: var(--amber);
-  transition: opacity 200ms ease;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    transform 200ms var(--ls-ease-out),
+    box-shadow 200ms ease;
 }
-.ls-combo[data-leer] {
-  opacity: 0;
+.ls-combo[data-heiss] {
+  background: var(--ls-gold);
+  color: #5a3b00;
+  transform: scale(1.08);
+  box-shadow: 0 6px 18px rgba(255, 190, 40, 0.5);
+}
+.ls-combo svg {
+  color: var(--ls-gold);
+}
+.ls-combo[data-heiss] svg {
+  color: #c25e00;
 }
 .ls-combo b {
   display: inline-block;
@@ -130,7 +211,6 @@
 
 /* ---------- Spielfeld ---------- */
 .ls-feld {
-  position: relative;
   display: flex;
   flex: 1;
   min-height: 0;
@@ -138,14 +218,70 @@
   max-width: 640px;
   width: 100%;
   margin: 0 auto;
-  padding: 0 16px 16px;
+  padding: 0 16px 20px;
 }
 .ls-auftrag {
   text-align: center;
   font-size: 15px;
-  color: var(--ink-2);
-  margin: 8px 0 0;
+  color: var(--ls-on-2);
+  margin: 10px 0 0;
 }
+.ls-zuletzt {
+  margin-top: 6px;
+  min-height: 28px;
+  text-align: center;
+  font-size: 16px;
+  color: var(--ls-on);
+  --ls-der: #b5d3ff;
+  --ls-die: #ffc0b6;
+  --ls-das: #9ff0c6;
+  --ls-gruen: #ffe38a;
+}
+.ls-zeile {
+  display: inline-block;
+  animation: ls-einsetzen 220ms var(--ls-ease-out);
+}
+.ls-richtig {
+  color: var(--ls-gruen);
+}
+
+/* „3 in Folge!“: kommt kurz groß, dann weg */
+.ls-jubel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 64px;
+  z-index: 3;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ls-gold);
+  text-shadow: 0 6px 24px rgba(10, 30, 90, 0.5);
+  pointer-events: none;
+  rotate: -4deg;
+  animation: ls-jubel 1300ms var(--ls-ease-out) forwards;
+}
+@keyframes ls-jubel {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.8);
+  }
+  18% {
+    opacity: 1;
+    transform: none;
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.96);
+  }
+}
+
 .ls-stapel {
   position: relative;
   flex: 1;
@@ -155,8 +291,8 @@
 }
 .ls-karte {
   grid-area: 1 / 1;
-  width: min(100%, 460px);
-  min-height: 200px;
+  width: min(100%, 440px);
+  min-height: 210px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -165,31 +301,57 @@
   padding: 28px 24px;
   border-radius: 28px;
   background: var(--surface);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-pop);
+  color: var(--ink);
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5) inset,
+    0 28px 44px -14px rgba(8, 30, 90, 0.6);
   text-align: center;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
   cursor: grab;
   will-change: transform;
+  rotate: -1.5deg;
   transition:
     transform 280ms var(--ls-ease-in-out),
+    translate 280ms var(--ls-ease-in-out),
+    rotate 280ms var(--ls-ease-in-out),
     opacity 200ms ease,
-    border-color 200ms ease;
+    box-shadow 200ms ease;
 }
 .ls-karte[data-zieht] {
   cursor: grabbing;
-  transition: none;
+  transition:
+    translate 280ms var(--ls-ease-in-out),
+    rotate 280ms var(--ls-ease-in-out);
 }
-/* die Karten dahinter: kleiner und tiefer, rücken nach, wenn die vordere geht (alt und neu überlappen) */
+/* die Karten dahinter: als Stapel leicht verdreht, rücken nach, wenn die vordere geht */
 .ls-karte[data-tiefe="1"] {
-  transform: translateY(14px) scale(0.95);
-  opacity: 0.7;
+  transform: translateY(12px) scale(0.96);
+  rotate: 3deg;
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: none;
 }
 .ls-karte[data-tiefe="2"] {
-  transform: translateY(26px) scale(0.9);
-  opacity: 0.35;
+  transform: translateY(22px) scale(0.92);
+  rotate: 6deg;
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+}
+:root[data-theme="dark"] .ls-karte[data-tiefe="0"],
+:root[data-theme="dark"] .ls-regel,
+:root[data-theme="dark"] .ls-blatt {
+  --surface: #1c2b47;
+  background: #1c2b47;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 28px 44px -14px rgba(0, 8, 30, 0.7);
+}
+:root[data-theme="dark"] .ls-karte[data-tiefe="1"] {
+  background: rgba(255, 255, 255, 0.16);
+}
+:root[data-theme="dark"] .ls-karte[data-tiefe="2"] {
+  background: rgba(255, 255, 255, 0.08);
 }
 .ls-karte[data-tiefe="1"],
 .ls-karte[data-tiefe="2"] {
@@ -200,19 +362,28 @@
   visibility: hidden;
 }
 .ls-karte[data-stand="falsch"] {
-  border-color: color-mix(in srgb, var(--red) 45%, var(--line));
+  box-shadow:
+    0 0 0 5px var(--ls-rot),
+    0 28px 44px -14px rgba(8, 30, 90, 0.6);
 }
 .ls-karte[data-stand="richtig"] {
-  border-color: color-mix(in srgb, var(--green) 45%, var(--line));
+  box-shadow:
+    0 0 0 5px var(--ls-gold),
+    0 28px 44px -14px rgba(8, 30, 90, 0.6);
 }
-.ls-zeile {
-  display: inline-block;
-  animation: ls-einsetzen 220ms var(--ls-ease-out);
+/* nach einem Fehler rückt die Karte hoch, darunter kommt die Regel */
+.ls-stapel[data-falsch] .ls-karte[data-tiefe="0"] {
+  translate: 0 -84px;
+}
+.ls-stapel[data-falsch] .ls-karte[data-tiefe="1"],
+.ls-stapel[data-falsch] .ls-karte[data-tiefe="2"] {
+  opacity: 0;
 }
 
 .ls-wort {
-  font-size: clamp(34px, 9vw, 46px);
-  font-weight: 650;
+  font-family: var(--font-display);
+  font-size: clamp(36px, 10vw, 52px);
+  font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.1;
   overflow-wrap: anywhere;
@@ -224,7 +395,7 @@
 .ls-satz {
   font-size: clamp(21px, 5.6vw, 26px);
   line-height: 1.5;
-  font-weight: 500;
+  font-weight: 550;
   text-wrap: balance;
 }
 .ls-luecke {
@@ -234,25 +405,28 @@
   margin: 0 0.12em;
   padding: 0 0.3em;
   border-radius: 10px;
-  border-bottom: 2px dashed var(--line-strong);
-  background: var(--panel);
-  color: var(--ink-3);
+  border-bottom: 3px solid #9cc2f5;
+  background: #e6f0fd;
+  color: #6b8bb8;
   vertical-align: baseline;
 }
-/* eine Endung hängt am Wort: keine Lücke davor */
+:root[data-theme="dark"] .ls-luecke:not([data-stand]) {
+  background: #1f2f49;
+  border-bottom-color: #3f6aa8;
+  color: #8eb2e6;
+}
 .ls-luecke[data-haengt] {
   min-width: 1.9em;
   margin-left: 0;
 }
 .ls-luecke[data-stand] {
-  border-bottom-style: solid;
   animation: ls-einsetzen 200ms var(--ls-ease-out);
 }
 .ls-luecke[data-stand="richtig"] {
   background: var(--green-wash);
   border-bottom-color: var(--green);
   color: var(--green);
-  font-weight: 650;
+  font-weight: 700;
 }
 .ls-luecke[data-stand="falsch"] {
   background: var(--red-wash);
@@ -290,118 +464,303 @@
   color: var(--green);
   font-size: 14px;
   font-weight: 600;
+  white-space: nowrap;
   animation: ls-einsetzen 220ms var(--ls-ease-out) 60ms both;
 }
 
-/* Regel nach einem Fehler: kommt unter der Karte hoch */
+/* Regel nach einem Fehler: ein weißes Blatt kommt unter der Karte hoch */
 .ls-regel {
-  margin: 4px auto 0;
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  z-index: 2;
   width: min(100%, 460px);
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: var(--amber-wash);
+  translate: -50% 0;
+  padding: 14px 16px 16px;
+  border-radius: 22px;
+  background: var(--surface);
   color: var(--ink);
-  font-size: 16px;
-  line-height: 1.4;
-  animation: ls-regel 260ms var(--ls-ease-out);
+  box-shadow: 0 20px 40px -12px rgba(8, 30, 90, 0.55);
+  animation: ls-regel 280ms var(--ls-ease-out);
 }
-.ls-regel svg {
+.ls-regel-kopf {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.ls-regel-kopf svg {
   color: var(--amber);
-  flex-shrink: 0;
+}
+.ls-regel-loesung {
   margin-top: 2px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.ls-regel-text {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--amber-wash);
+  font-size: 15px;
+  line-height: 1.45;
 }
 @keyframes ls-regel {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(24px);
   }
 }
 
-/* ---------- Fächer ---------- */
+/* ---------- Kisten ---------- */
 .ls-faecher {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
   gap: 10px;
-  padding-top: 14px;
+  padding-top: 8px;
   width: min(100%, 520px);
   margin: 0 auto;
 }
+.ls-faecher[data-viele] {
+  gap: 7px;
+}
 .ls-fach {
+  --k-oben: #4b95ff;
+  --k-unten: #2b6fe6;
+  --k-schatten: #1b4fb0;
+  --k-rand: #7cb2ff;
+  --k-schrift: #fff;
   position: relative;
+  display: block;
+  height: 118px;
+  padding-top: 30px;
+  border-radius: 22px;
+  background: none;
+  transition:
+    transform 180ms var(--ls-ease-out),
+    opacity 200ms ease,
+    filter 200ms ease;
+}
+.ls-fach[data-k="die"],
+.ls-fach[data-k="-er"] {
+  --k-oben: #ff7d6b;
+  --k-unten: #ef5146;
+  --k-schatten: #b8322b;
+  --k-rand: #ffa699;
+}
+.ls-fach[data-k="das"],
+.ls-fach[data-k="-es"] {
+  --k-oben: #36cf8f;
+  --k-unten: #1aa772;
+  --k-schatten: #11784f;
+  --k-rand: #7ee6b8;
+}
+.ls-fach[data-k="dem"],
+.ls-fach[data-k="-em"] {
+  --k-oben: #ffd060;
+  --k-unten: #f2a516;
+  --k-schatten: #b87700;
+  --k-rand: #ffe39a;
+  --k-schrift: #4a2c00;
+}
+.ls-fach[data-k="den"],
+.ls-fach[data-k="-e"] {
+  --k-oben: #b199ff;
+  --k-unten: #7d5cf0;
+  --k-schatten: #5537b8;
+  --k-rand: #cbbcff;
+}
+.ls-kiste {
+  position: relative;
+  z-index: 1;
   display: flex;
-  min-height: 84px;
-  flex-direction: column;
+  height: 100%;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  border-radius: 20px;
-  border: 1.5px solid var(--line);
-  background: var(--surface);
-  box-shadow: var(--shadow-card);
-  font-size: 24px;
-  font-weight: 650;
-  color: var(--ink);
+  border-radius: 20px 20px 24px 24px;
+  background: linear-gradient(180deg, var(--k-oben), var(--k-unten));
+  box-shadow:
+    0 7px 0 var(--k-schatten),
+    0 18px 28px rgba(8, 30, 90, 0.45);
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--k-schrift);
   transition:
-    transform 160ms var(--ls-ease-out),
-    background-color 180ms ease,
-    border-color 180ms ease,
-    box-shadow 180ms ease;
+    box-shadow 200ms ease,
+    filter 200ms ease;
 }
-.ls-fach small {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ink-3);
+/* der Rand oben: die Kiste ist offen */
+.ls-kiste::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  right: -3px;
+  top: -6px;
+  height: 18px;
+  border-radius: 10px;
+  background: var(--k-rand);
+  z-index: -1;
+}
+.ls-faecher[data-viele] .ls-kiste {
+  font-size: 22px;
+}
+/* was schon drin liegt, schaut oben heraus */
+.ls-drin {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 40px;
+  pointer-events: none;
+}
+.ls-drin span {
+  position: absolute;
+  top: calc(var(--j) * -6px + 6px);
+  left: calc(50% - 30px + var(--j) * 12px - 6px);
+  width: 60px;
+  height: 40px;
+  padding: 5px 4px 0;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  color: #46546a;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  rotate: calc(var(--j) * 14deg - 7deg);
+  animation: ls-hinein 320ms var(--ls-ease-out) backwards;
+}
+.ls-faecher[data-viele] .ls-drin span {
+  width: 80%;
+  left: calc(10% + var(--j) * 6px - 3px);
+  font-size: 10px;
+  rotate: calc(var(--j) * 10deg - 5deg);
+}
+@keyframes ls-hinein {
+  from {
+    transform: translateY(-18px);
+    opacity: 0;
+  }
 }
 .ls-fach:active {
   transform: scale(0.96);
 }
-.ls-fach[data-a="der"] {
-  color: var(--ls-der);
-  background: var(--ls-der-wash);
-  border-color: color-mix(in srgb, var(--ls-der) 30%, transparent);
-}
-.ls-fach[data-a="die"] {
-  color: var(--ls-die);
-  background: var(--ls-die-wash);
-  border-color: color-mix(in srgb, var(--ls-die) 30%, transparent);
-}
-.ls-fach[data-a="das"] {
-  color: var(--ls-das);
-  background: var(--ls-das-wash);
-  border-color: color-mix(in srgb, var(--ls-das) 30%, transparent);
-}
-/* beim Ziehen: das Fach unter der Karte hebt sich */
+/* beim Ziehen hebt sich die Kiste unter der Karte */
 .ls-fach[data-ziel] {
-  transform: translateY(-6px) scale(1.04);
-  box-shadow: var(--shadow-pop);
-  border-color: currentColor;
+  transform: translateY(-8px) scale(1.04);
+}
+.ls-fach[data-ziel] .ls-kiste,
+.ls-fach[data-richtig] .ls-kiste {
+  filter: brightness(1.1);
+  box-shadow:
+    0 7px 0 var(--k-schatten),
+    0 0 0 5px rgba(255, 255, 255, 0.35),
+    0 0 44px 8px color-mix(in srgb, var(--k-oben) 75%, transparent);
 }
 .ls-fach[data-richtig] {
   animation: ls-puls 420ms var(--ls-ease-in-out);
-  border-color: var(--green);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent);
 }
-.ls-fach[data-zeigen] {
-  border-color: var(--green);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 30%, transparent);
-  animation: ls-hinweis 1400ms var(--ls-ease-in-out) infinite;
+.ls-fach[data-zeigen] .ls-kiste {
+  box-shadow:
+    0 7px 0 var(--k-schatten),
+    0 0 0 4px #fff,
+    0 18px 28px rgba(8, 30, 90, 0.45);
+  animation: ls-hinweis 1300ms var(--ls-ease-in-out) infinite;
 }
 .ls-fach[data-falsch] {
-  border-color: var(--red);
-  opacity: 0.55;
+  opacity: 0.45;
+  filter: saturate(0.4);
 }
 @keyframes ls-puls {
   40% {
-    transform: scale(1.06);
+    transform: scale(1.07);
   }
 }
 @keyframes ls-hinweis {
   50% {
-    box-shadow: 0 0 0 7px color-mix(in srgb, var(--green) 12%, transparent);
+    box-shadow:
+      0 7px 0 var(--k-schatten),
+      0 0 0 9px rgba(255, 255, 255, 0.45),
+      0 18px 28px rgba(8, 30, 90, 0.45);
+  }
+}
+
+/* Funken und +1 */
+.ls-funken {
+  position: absolute;
+  left: 50%;
+  top: 24%;
+  z-index: 2;
+  pointer-events: none;
+}
+.ls-funken b {
+  position: absolute;
+  left: -24px;
+  top: -62px;
+  width: 48px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--ls-gold);
+  text-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  animation: ls-plus 900ms var(--ls-ease-out) forwards;
+}
+.ls-funken i {
+  position: absolute;
+  left: -6px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--ls-gold);
+  rotate: var(--w);
+  animation: ls-funke 700ms var(--ls-ease-out) forwards;
+}
+.ls-funken i:nth-child(odd) {
+  background: #fff;
+  width: 8px;
+  height: 8px;
+}
+@keyframes ls-plus {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.8);
+  }
+  25% {
+    opacity: 1;
+    transform: none;
+  }
+  70% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-26px);
+  }
+}
+@keyframes ls-funke {
+  from {
+    transform: translateX(0) scale(1.2);
+    opacity: 1;
+  }
+  65% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(var(--d)) scale(0.7);
+    opacity: 0;
   }
 }
 
@@ -427,6 +786,38 @@
     transform: translateY(10px);
   }
 }
+.ls-oberzeile {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ls-on-2);
+}
+.ls-titel {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ls-on);
+}
+.ls-text {
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--ls-on-2);
+}
+.ls-klein {
+  font-size: 13px;
+  color: var(--ls-on-2);
+}
+.ls-flamme {
+  color: var(--ls-gold);
+}
+.ls-fehler {
+  color: #ffd0c8;
+  font-size: 15px;
+}
 .ls-grund {
   display: inline-flex;
   width: fit-content;
@@ -434,10 +825,75 @@
   gap: 6px;
   padding: 6px 12px;
   border-radius: 999px;
-  background: var(--deutsch-soft);
-  color: var(--deutsch-fg);
+  background: rgba(255, 211, 77, 0.18);
+  color: #ffe38a;
   font-size: 14px;
   font-weight: 600;
+}
+.ls-glas {
+  border-radius: 20px;
+  background: var(--ls-glas);
+  border: 1px solid var(--ls-glas-linie);
+  color: var(--ls-on);
+}
+.ls-blatt {
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 18px 36px -14px rgba(8, 30, 90, 0.5);
+}
+.ls-blatt .ls-richtig {
+  color: var(--ls-gruen);
+}
+/* drei bis fünf kleine Kisten zeigen, worum es geht */
+.ls-vorschau {
+  display: flex;
+  gap: 8px;
+  margin-top: 22px;
+}
+.ls-kiste-mini {
+  --k-oben: #4b95ff;
+  --k-unten: #2b6fe6;
+  --k-schatten: #1b4fb0;
+  --k-schrift: #fff;
+  display: inline-flex;
+  min-width: 54px;
+  height: 44px;
+  padding: 0 12px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--k-oben), var(--k-unten));
+  box-shadow: 0 4px 0 var(--k-schatten);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--k-schrift);
+}
+.ls-kiste-mini[data-k="die"],
+.ls-kiste-mini[data-k="-er"] {
+  --k-oben: #ff7d6b;
+  --k-unten: #ef5146;
+  --k-schatten: #b8322b;
+}
+.ls-kiste-mini[data-k="das"],
+.ls-kiste-mini[data-k="-es"] {
+  --k-oben: #36cf8f;
+  --k-unten: #1aa772;
+  --k-schatten: #11784f;
+}
+.ls-kiste-mini[data-k="dem"],
+.ls-kiste-mini[data-k="-em"] {
+  --k-oben: #ffd060;
+  --k-unten: #f2a516;
+  --k-schatten: #b87700;
+  --k-schrift: #4a2c00;
+}
+.ls-kiste-mini[data-k="den"],
+.ls-kiste-mini[data-k="-e"] {
+  --k-oben: #b199ff;
+  --k-unten: #7d5cf0;
+  --k-schatten: #5537b8;
 }
 .ls-wahl {
   display: flex;
@@ -450,65 +906,190 @@
   align-items: center;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--surface);
+  background: var(--ls-glas);
+  border: 1px solid var(--ls-glas-linie);
   font-size: 14px;
   font-weight: 600;
-  color: var(--ink-2);
+  color: var(--ls-on);
   transition:
     transform 160ms var(--ls-ease-out),
-    border-color 160ms ease;
+    background-color 160ms ease;
 }
 .ls-wahl a:active {
   transform: scale(0.97);
 }
 .ls-wahl a[aria-current] {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-wash);
+  background: #fff;
+  color: #1f5fd0;
+  border-color: #fff;
+}
+/* Hauptknopf auf der Bühne: weiß mit blauer Schrift (DESIGN.md), der zweite durchscheinend */
+.ls-knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #fff;
+  color: #1f5fd0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  box-shadow: 0 6px 0 #b9cdf0;
+  transition:
+    transform 160ms var(--ls-ease-out),
+    box-shadow 160ms var(--ls-ease-out),
+    opacity 160ms ease;
+}
+.ls-knopf:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #b9cdf0;
+}
+.ls-knopf:disabled {
+  opacity: 0.7;
+}
+.ls-knopf[data-zweit] {
+  background: var(--ls-glas);
+  color: var(--ls-on);
+  box-shadow: none;
 }
 .ls-los {
   width: 100%;
-  min-height: 56px;
-  font-size: 18px;
-  border-radius: 18px;
+  min-height: 58px;
+  font-size: 19px;
+}
+
+/* Ergebnis-Ring */
+.ls-ring {
+  position: relative;
+  width: 164px;
+  height: 164px;
+  margin: 8px auto 0;
+}
+.ls-ring svg {
+  width: 100%;
+  height: 100%;
+  rotate: -90deg;
+}
+.ls-ring circle {
+  fill: none;
+  stroke-width: 12;
+}
+.ls-ring-spur {
+  stroke: rgba(255, 255, 255, 0.18);
+}
+.ls-ring-wert {
+  stroke: var(--ls-gold);
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  animation: ls-ring 900ms var(--ls-ease-in-out) 200ms backwards;
+}
+@keyframes ls-ring {
+  from {
+    stroke-dashoffset: 100;
+  }
+}
+.ls-ring-zahl {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.ls-ring-zahl b {
+  font-family: var(--font-display);
+  font-size: 58px;
+  font-weight: 800;
+  line-height: 1;
+}
+.ls-ring-zahl span {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--ls-on-2);
 }
 .ls-sterne {
   display: flex;
   justify-content: center;
+  align-items: flex-end;
   gap: 10px;
+  margin-top: 14px;
 }
 .ls-stern {
-  color: var(--line-strong);
+  color: rgba(255, 255, 255, 0.22);
   animation: ls-stern 420ms var(--ls-ease-out) backwards;
-  animation-delay: calc(var(--n, 0) * 120ms + 120ms);
+  animation-delay: calc(var(--n, 0) * 140ms + 500ms);
 }
 .ls-stern[data-an] {
-  color: #e9a91b;
+  color: var(--ls-gold);
+  filter: drop-shadow(0 4px 12px rgba(255, 200, 40, 0.65));
 }
-.ls-stern:nth-child(2) {
-  translate: 0 -10px;
+.ls-stern:nth-child(1) {
+  rotate: -10deg;
+}
+.ls-stern:nth-child(3) {
+  rotate: 10deg;
 }
 @keyframes ls-stern {
   from {
     opacity: 0;
-    transform: scale(0.6) rotate(-12deg);
+    transform: scale(0.5);
   }
 }
 .ls-balken {
   position: relative;
-  height: 10px;
+  height: 8px;
   overflow: hidden;
   border-radius: 999px;
-  background: var(--bar-track);
+  background: rgba(255, 255, 255, 0.2);
 }
 .ls-balken span {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--accent-bright);
+  background: var(--ls-gold);
   transform-origin: left;
   transition: transform 700ms var(--ls-ease-in-out) 300ms;
+}
+
+/* Konfetti, einmal */
+.ls-konfetti {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+.ls-konfetti i {
+  position: absolute;
+  top: -24px;
+  left: var(--x);
+  width: 9px;
+  height: 15px;
+  border-radius: 3px;
+  background: var(--ls-gold);
+  animation: ls-konfetti var(--t, 2600ms) cubic-bezier(0.33, 0, 0.67, 1) var(--v) forwards;
+  opacity: 0;
+}
+.ls-konfetti i[data-f="1"] {
+  background: #ff7d6b;
+}
+.ls-konfetti i[data-f="2"] {
+  background: #36cf8f;
+}
+.ls-konfetti i[data-f="3"] {
+  background: #fff;
+}
+@keyframes ls-konfetti {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--s), 105vh) rotate(var(--r));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -519,12 +1100,50 @@
     animation-iteration-count: 1 !important;
     animation-delay: 0ms !important;
   }
+  .ls-funken,
+  .ls-konfetti,
+  .ls-jubel {
+    display: none;
+  }
   .ls-karte,
   .ls-fach,
   .ls-balken span {
     transition-property: opacity, background-color, border-color, color !important;
   }
+  .ls-karte {
+    rotate: none;
+  }
   .ls-fach[data-ziel] {
     transform: none;
   }
+}
+
+/* Dunkel: der Ring nach einer Antwort bleibt sichtbar */
+:root[data-theme="dark"] .ls-karte[data-tiefe="0"][data-stand="falsch"] {
+  box-shadow:
+    0 0 0 5px var(--ls-rot),
+    0 28px 44px -14px rgba(0, 8, 30, 0.7);
+}
+:root[data-theme="dark"] .ls-karte[data-tiefe="0"][data-stand="richtig"] {
+  box-shadow:
+    0 0 0 5px var(--ls-gold),
+    0 28px 44px -14px rgba(0, 8, 30, 0.7);
+}
+
+/* Fall-Kennzeichen hinter dem Satz („Dativ“) */
+.ls-marke-klein {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.ls-zuletzt .ls-marke-klein {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--ls-on);
 }
