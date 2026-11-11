@@ -125,7 +125,7 @@ function zuletztGespielt(studentId: number, art: SpielArt): string[] {
 /** Startet eine Runde: wählt die Karten und merkt sie sich, damit das Ergebnis nur gegen sie geprüft wird. */
 export function starteRunde(student: repo.Student, art: SpielArt, o: { grund?: SpielVorschlag["quelle"]; lernstand?: number | null; rng?: () => number } = {}): { rundeId: number; karten: SpielKarte[] } {
   // nicht beendete Runden von gestern und früher räumen sich selbst weg
-  db().prepare("DELETE FROM spielrunden WHERE student_id = ? AND beendet_at IS NULL AND created_at < datetime('now', '-1 day')").run(student.id);
+  db().prepare("DELETE FROM spielrunden WHERE student_id = ? AND beendet_at IS NULL AND duell_id IS NULL AND created_at < datetime('now', '-1 day')").run(student.id);
   const karten = waehleKarten(art, {
     stufen: stufenFuer(art, student.grade, o.lernstand ?? null),
     wiederholen: offeneFehler(student.id, art),
@@ -136,6 +136,17 @@ export function starteRunde(student: repo.Student, art: SpielArt, o: { grund?: S
     .prepare("INSERT INTO spielrunden (student_id, art, skill_id, grund, karten, anzahl) VALUES (?, ?, ?, ?, ?, ?)")
     .run(student.id, art, SPIEL_SKILL[art], o.grund ?? "fach", JSON.stringify(karten), karten.length);
   return { rundeId: Number(r.lastInsertRowid), karten };
+}
+
+/**
+ * Startet eine Runde mit vorgegebenen Karten (Duell, lib/duelle.ts): beide Spieler bekommen dieselben Karten. Zählt im
+ * Lernstand wie jede andere Runde.
+ */
+export function starteRundeMitKarten(studentId: number, art: SpielArt, karten: SpielKarte[], duellId: number): number {
+  const r = db()
+    .prepare("INSERT INTO spielrunden (student_id, art, skill_id, grund, karten, anzahl, duell_id) VALUES (?, ?, ?, 'duell', ?, ?, ?)")
+    .run(studentId, art, SPIEL_SKILL[art], JSON.stringify(karten), karten.length, duellId);
+  return Number(r.lastInsertRowid);
 }
 
 export type RundenErgebnis = { richtig: number; anzahl: number; sterne: 1 | 2 | 3; nochmal: SpielKarte[] };

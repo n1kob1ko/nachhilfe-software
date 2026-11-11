@@ -4,9 +4,9 @@ import "./lernspiel.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CalendarDays, Flame, Lightbulb, Star, TrendingUp, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { spielBeendenAction, spielStartenAction } from "@/app/lernspiel-actions";
-import { SPIEL_AUFGABE, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielKarte, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { SPIEL_AUFGABE, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
 
 /**
  * Ein Lernspiel der Schüler-App (lib/lernspiele.ts): Karten in Fächer werfen oder antippen.
@@ -19,6 +19,24 @@ import { SPIEL_AUFGABE, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebn
  * Ziehen läuft ohne React-Zustand je Bewegung (nur transform am Element), Fliegen über die Web Animations API.
  * Tasten 1 bis 5 wählen ein Fach am Laptop.
  */
+
+/**
+ * Für Duelle (components/lernen/Duell.tsx, lib/duelle.ts): eigener Start und eigenes Ende mit denselben Karten für beide,
+ * jede erste Wahl geht sofort an den Server, das Ende zeigt das Duell statt der Sterne.
+ */
+export type DuellRahmen = {
+  starten: () => Promise<SpielStart>;
+  beenden: (rundeId: number, antworten: { key: string; wahl: string }[]) => Promise<SpielErgebnis>;
+  ersteWahl?: (key: string, wahl: string) => void;
+  fertig: (e: SpielErgebnis) => void;
+  /** ohne Startseite gleich losspielen */
+  sofort?: boolean;
+  /** unter dem Kopf während des Spiels, z. B. der Gegner */
+  leiste?: ReactNode;
+  /** bis wann gespielt wird (ms); dann endet die Runde von selbst */
+  bis?: number | null;
+  zurueck?: string;
+};
 
 type Eintrag = { karte: SpielKarte; wiederholung: boolean };
 type Stand = { wahl: string; richtig: boolean } | null;
@@ -45,15 +63,19 @@ export function Lernspiel({
   vorschlaege,
   serie: serieAnfang,
   lernstand,
+  duell,
 }: {
   token: string;
   art: SpielArt;
   vorschlaege: SpielVorschlag[];
   serie: number;
   lernstand: number | null;
+  duell?: DuellRahmen;
 }) {
   const router = useRouter();
-  const zurueck = `/lernen/${token}`;
+  const zurueck = duell?.zurueck ?? `/lernen/${token}`;
+  const duellRef = useRef(duell);
+  duellRef.current = duell;
   const vorschlag = vorschlaege.find((v) => v.art === art) ?? null;
 
   const [phase, setPhase] = useState<Phase>("start");
@@ -103,7 +125,7 @@ export function Lernspiel({
   const starten = useCallback(async () => {
     setPhase("laden");
     setFehler(null);
-    const r = await spielStartenAction(token, art);
+    const r = await (duellRef.current ? duellRef.current.starten() : spielStartenAction(token, art));
     if ("fehler" in r) {
       setFehler(r.fehler);
       setPhase("start");
@@ -132,11 +154,27 @@ export function Lernspiel({
     async (id: number) => {
       setPhase("ende");
       const antworten = [...erste.current.entries()].map(([key, wahl]) => ({ key, wahl }));
+      if (duellRef.current) {
+        duellRef.current.fertig(await duellRef.current.beenden(id, antworten));
+        return;
+      }
       setErgebnis(await spielBeendenAction(token, id, antworten));
       router.refresh();
     },
     [token, router],
   );
+
+  // Duell: gleich losspielen; ist die Zeit um, endet die Runde von selbst
+  const sofort = !!duell?.sofort;
+  useEffect(() => {
+    if (sofort) void starten();
+  }, [sofort, starten]);
+  const bis = duell?.bis ?? null;
+  useEffect(() => {
+    if (phase !== "spiel" || !bis || !rundeId) return;
+    const t = setTimeout(() => void beenden(rundeId), Math.max(0, bis - Date.now()));
+    return () => clearTimeout(t);
+  }, [phase, bis, rundeId, beenden]);
 
   // ---------- Karte fliegt ins Fach ----------
 
@@ -170,7 +208,10 @@ export function Lernspiel({
     async (wahl: string, von: Wurf = { x: 0, y: 0, r: 0 }, geworfen = false) => {
       const karte = reihe[pos]?.karte;
       if (!karte || beschaeftigt.current) return;
-      if (!erste.current.has(karte.key)) erste.current.set(karte.key, wahl);
+      if (!erste.current.has(karte.key)) {
+        erste.current.set(karte.key, wahl);
+        duellRef.current?.ersteWahl?.(karte.key, wahl);
+      }
       const fach = karte.faecher.indexOf(wahl);
 
       if (wahl !== karte.richtig) {
@@ -343,6 +384,24 @@ export function Lernspiel({
 
   const deko = DEKO[art];
 
+  if (duell?.sofort && (phase === "start" || phase === "laden")) {
+    return (
+      <div className="ls" role="dialog" aria-modal="true" aria-label={`Duell ${SPIEL_TITEL[art]}`}>
+        <Hintergrund woerter={deko} />
+        {kopf}
+        <div className="ls-mitte text-center">
+          {fehler ? (
+            <p className="ls-fehler mt-10" role="alert">
+              {fehler}
+            </p>
+          ) : (
+            <p className="ls-text mt-10">Karten werden gemischt …</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (phase === "start" || phase === "laden") {
     return (
       <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${SPIEL_TITEL[art]}`}>
@@ -448,6 +507,11 @@ export function Lernspiel({
           <p className="ls-text mt-1" style={{ "--n": 2 } as CSSProperties}>
             {besteSerie >= 3 ? `Längste Serie: ${besteSerie} in Folge` : "Gezählt wird der erste Versuch"}
           </p>
+          {e?.liga && (
+            <p className="ls-text mt-1" style={{ "--n": 2 } as CSSProperties}>
+              {e.liga.punkte > 0 ? <b>+{e.liga.punkte} Ligapunkte</b> : e.liga.grund}
+            </p>
+          )}
 
           {ergebnis && "fehler" in ergebnis && (
             <p className="ls-fehler mt-4" role="alert">
@@ -518,6 +582,7 @@ export function Lernspiel({
     <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${SPIEL_TITEL[art]}`}>
       <Hintergrund woerter={deko} />
       {kopf}
+      {duell?.leiste}
       <div className="ls-feld">
         <p className="ls-auftrag">{SPIEL_AUFGABE[art]}</p>
 

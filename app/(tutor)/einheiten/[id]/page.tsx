@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LiveDuellKnopf } from "@/components/LiveDuellKnopf";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
@@ -175,6 +176,8 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
                   {u.subject && <span className={`text-[13px] font-normal ${u.id === unit.id ? "text-surface/80" : "text-ink-3"}`}>{u.subject}</span>}
                 </Link>
               ))}
+              {/* zwei Schüler zugleich: Live-Duell (lib/duelle.ts) */}
+              {wechsel.length === 2 && <LiveDuellKnopf aId={wechsel[0].student_id} bId={wechsel[1].student_id} />}
             </nav>
           )}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
