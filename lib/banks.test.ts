@@ -74,10 +74,12 @@ test("die Zahlen der Banken stimmen mit der Quelle überein", () => {
   assert.equal(artikel().length, 1914);
   assert.equal(new Set(artikel().map((i) => i.word)).size, 1913);
   // adjectiv_declension: 3 × 100, nach der Prüfung 282 (Doppelungen und Sätze mit zwei richtigen Lösungen
-  // entfernt, eigene Sätze für die leichteren Stufen dazu)
-  assert.equal(adjektivdeklination().length, 282);
+  // entfernt, eigene Sätze für die leichteren Stufen dazu); 2026-11-11 141 eigene Sätze mit -e/-er/-es/-em dazu,
+  // damit nicht vier von fünf Antworten „-en“ sind
+  assert.equal(adjektivdeklination().length, 423);
   // prepositions/test.json (100): 26 Sätze, in denen Dativ und Akkusativ passen, entfernt, 25 eigene dazu
-  assert.equal(praepositionen().length, 99);
+  // 2026-11-11 173 eigene Sätze dazu, alle Formen und beide Fälle gleichmäßiger
+  assert.equal(praepositionen().length, 272);
   // past_tense/allgemein.json (100) + die zwei Präteritum-Einträge aus lib/generators.ts
   assert.equal(praeteritum().length, 102);
   // die zwei Perfekt-Einträge aus lib/generators.ts + 16 reparierte aus past_perfect_tense/test.json + 47 eigene Sätze
@@ -198,7 +200,7 @@ test("praepositionen: Kasus abgeleitet, Genus ohne Farbwert", () => {
     // der Farbwert der Quelle wird nicht mitgeführt
     assert.equal((item as unknown as Record<string, unknown>).noun_color, undefined);
   }
-  assert.deepEqual(kasus, { Dativ: 58, Akkusativ: 41, offen: 0 });
+  assert.deepEqual(kasus, { Dativ: 127, Akkusativ: 145, offen: 0 });
 });
 
 test("hauptsatz-gliedsatz: genau ein Haupt- und ein Gliedsatz", () => {
