@@ -17,9 +17,10 @@
  * „English Grammar“. Die letzten zwei spielen je Runde ein Thema (lib/lernspiele-englisch.ts).
  *
  * Mathe (niko: „für Mathe, was Spaß machen könnte“): „Kopfrechnen“, auch mit Kisten und je Runde ein Thema, vom
- * Einmaleins bis zu Brüchen, Prozent und Gleichungen (lib/lernspiele-mathe.ts).
+ * Einmaleins bis zu Brüchen, Prozent und Gleichungen (lib/lernspiele-mathe.ts). Und „Zahlenstrahl“ mit eigener
+ * Mechanik: eine Zahl an die richtige Stelle schieben (`form: "strahl"`, lib/lernspiele-strahl.ts).
  */
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -39,6 +40,7 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   zeiten: "English Tenses",
   grammatik: "English Grammar",
   rechnen: "Kopfrechnen",
+  strahl: "Zahlenstrahl",
 };
 
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
@@ -57,6 +59,7 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik">
   zeiten: "Englisch",
   grammatik: "Englisch",
   rechnen: "Mathematik",
+  strahl: "Mathematik",
 };
 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
@@ -75,6 +78,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   zeiten: "plays, is playing oder played?",
   grammatik: "some oder any? much oder many?",
   rechnen: "Schnell im Kopf: welches Ergebnis stimmt?",
+  strahl: "Wo liegt die Zahl? Schieb den Zeiger an die richtige Stelle.",
 };
 
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
@@ -93,6 +97,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   zeiten: ["plays", "played", "will"],
   grammatik: ["some", "any", "much"],
   rechnen: ["7 · 8", "56", "+"],
+  strahl: ["0", "0,5", "1"],
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -111,11 +116,12 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   zeiten: "Welche Form passt in die Lücke?",
   grammatik: "Was passt in die Lücke?",
   rechnen: "Welches Ergebnis stimmt?",
+  strahl: "Wo liegt die Zahl am Zahlenstrahl?",
 };
 
-/** So spielt sich ein Spiel: Karten in Kisten (ohne Angabe), Paare finden oder Teile in eine Reihe bringen. */
-export type SpielForm = "paar" | "reihe";
-export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = { vokabeln: "paar", satzbau: "reihe" };
+/** So spielt sich ein Spiel: Karten in Kisten (ohne Angabe), Paare finden, Teile in eine Reihe bringen oder eine Zahl am Zahlenstrahl treffen. */
+export type SpielForm = "paar" | "reihe" | "strahl";
+export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = { vokabeln: "paar", satzbau: "reihe", strahl: "strahl" };
 
 /** Trennt die Teile in der Antwort einer Reihe („gehen | wir | ins Kino“). */
 export const REIHE_TRENNER = " | ";
@@ -129,6 +135,9 @@ export const REIHE_TRENNER = " | ";
  *
  * Bei einer Reihe (`form: "reihe"`) ist `vor` der feste Anfang des Satzes, `nach` das Satzzeichen am Ende, `faecher`
  * sind die Teile in gemischter Reihenfolge und `richtig` die Teile in der richtigen, mit `REIHE_TRENNER` verbunden.
+ *
+ * Am Zahlenstrahl (`form: "strahl"`) ist `wort` die gesuchte Zahl, `strahl` der Zahlenstrahl und `richtig` die Nummer
+ * des Teilstrichs (ab 0), an dem sie liegt; `faecher` ist leer, die Wahl ist die Nummer des getroffenen Teilstrichs.
  */
 export type SpielKarte = {
   key: string;
@@ -159,6 +168,10 @@ export type SpielKarte = {
   marke?: string;
   /** Mathe: Text, Kisten und Regel werden gesetzt wie in den Übungen (Bruchstrich, Hochzahl, Wurzel) */
   mathe?: true;
+  /** Nur am Zahlenstrahl: die Zahl an jedem Teilstrich, welche davon dastehen, und ob die Gerade auch nach links weitergeht */
+  strahl?: { werte: string[]; beschriftet: number[]; beide?: true };
+  /** Nur am Zahlenstrahl: ein Satz zu einer typischen falschen Stelle („Vorzeichen verwechselt“), nach der Nummer des Teilstrichs */
+  tipps?: Record<string, string>;
 };
 
 /**
