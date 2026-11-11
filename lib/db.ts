@@ -1390,6 +1390,31 @@ CREATE TABLE IF NOT EXISTS spielrunden (
   beendet_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_spielrunden_student ON spielrunden(student_id, beendet_at);
+
+-- Vokabeln üben in der Schüler-App (lib/vokabel-training.ts): Karteikasten je Wort einer eigenen Liste
+CREATE TABLE IF NOT EXISTS vokabel_stand (
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  liste_id INTEGER NOT NULL REFERENCES vokabellisten(id) ON DELETE CASCADE,
+  wort TEXT NOT NULL,
+  fach INTEGER NOT NULL DEFAULT 0,
+  richtig INTEGER NOT NULL DEFAULT 0,
+  falsch INTEGER NOT NULL DEFAULT 0,
+  zuletzt TEXT,
+  zuletzt_falsch INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (student_id, liste_id, wort)
+);
+CREATE TABLE IF NOT EXISTS vokabelrunden (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  liste_id INTEGER NOT NULL REFERENCES vokabellisten(id) ON DELETE CASCADE,
+  karten TEXT NOT NULL DEFAULT '[]',
+  erste TEXT NOT NULL DEFAULT '{}',
+  anzahl INTEGER NOT NULL DEFAULT 0,
+  richtig INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  beendet_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_vokabelrunden_student ON vokabelrunden(student_id, beendet_at);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */

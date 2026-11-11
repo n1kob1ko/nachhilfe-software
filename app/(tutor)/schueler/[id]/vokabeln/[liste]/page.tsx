@@ -5,24 +5,29 @@ import { PageHeader } from "@/components/ui";
 import { VokabellisteForm } from "@/components/VokabellisteForm";
 import { requireTeacher } from "@/lib/auth";
 import { getStudent } from "@/lib/repo";
+import { kostenSchaetzung, vokabelFotoLesbar } from "@/lib/vokabel-foto";
 import { getListe } from "@/lib/vokabellisten";
 
 export const metadata = { title: "Vokabelliste" };
 
 /** Eine Vokabelliste anlegen (/vokabeln/neu) oder ändern und löschen (/vokabeln/<id>). */
-export default async function Vokabelliste({ params }: { params: Promise<{ id: string; liste: string }> }) {
+export default async function Vokabelliste({ params, searchParams }: { params: Promise<{ id: string; liste: string }>; searchParams: Promise<{ foto?: string }> }) {
   await requireTeacher();
   const { id, liste: lid } = await params;
+  const { foto } = await searchParams;
   const student = getStudent(Number(id));
   if (!student) notFound();
   const liste = lid === "neu" ? null : getListe(Number(lid));
   if (lid !== "neu" && (!liste || liste.student_id !== student.id)) notFound();
   const first = student.name.split(" ")[0];
   const zurueck = `/schueler/${student.id}/vokabeln`;
+  const lesbar = vokabelFotoLesbar(student.id);
   return (
     <>
       <PageHeader title={liste ? `${liste.title} bearbeiten` : `Neue Vokabelliste für ${first}`} back={{ href: zurueck, label: `Vokabellisten von ${first}` }} />
-      <VokabellisteForm key={liste?.id ?? "neu"} studentId={student.id} liste={liste ? { id: liste.id, title: liste.title, text: liste.text } : undefined} zurueck={zurueck} />
+      <VokabellisteForm key={liste?.id ?? "neu"} studentId={student.id} liste={liste ? { id: liste.id, title: liste.title, text: liste.text } : undefined} zurueck={zurueck}
+        foto={{ kiGrund: lesbar.ok ? null : lesbar.grund, kosten: kostenSchaetzung(), offen: foto === "1" }}
+      />
       {liste && (
         <details className="mt-10 max-w-[900px] border-t border-line pt-6">
           <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-semibold text-red">
