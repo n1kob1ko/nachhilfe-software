@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { beendeRunde, rundenSkill, serie, SPIEL_SKILL, spielVorschlaege, starteRunde } from "@/lib/lernspiele";
+import { beendeRunde, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde } from "@/lib/lernspiele";
 import { vergibPunkte } from "@/lib/liga";
 import { istSpielArt, type SpielAntwort, type SpielErgebnis, type SpielStart } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
@@ -18,9 +18,10 @@ export async function spielStartenAction(token: string, art: string): Promise<Sp
   const student = repo.getStudentByToken(token);
   if (!student) return { fehler: "Dieser Link gilt nicht mehr." };
   if (!istSpielArt(art)) return { fehler: "Dieses Spiel gibt es nicht." };
-  const lernstand = lernstandVon(student.id, SPIEL_SKILL[art]);
-  const grund = spielVorschlaege(student, { heute: wienerDatum() }).find((v) => v.art === art)?.quelle;
-  const runde = starteRunde(student, art, { grund, lernstand });
+  const heute = wienerDatum();
+  const lernstand = lernstandVon(student.id, skillFuerSpiel(student, art, heute));
+  const grund = spielVorschlaege(student, { heute }).find((v) => v.art === art)?.quelle;
+  const runde = starteRunde(student, art, { grund, lernstand, heute });
   if (!runde.karten.length) return { fehler: "Für dieses Spiel gibt es gerade keine Karten." };
   return runde;
 }

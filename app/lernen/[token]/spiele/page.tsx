@@ -4,7 +4,7 @@ import { CalendarDays, ChevronRight, Flame, Swords, Trophy } from "lucide-react"
 import { notFound } from "next/navigation";
 import { SeitenKopf } from "@/components/lernen/SeitenKopf";
 import { meineDuelle } from "@/lib/duelle";
-import { serie, SPIEL_SKILL, spielVorschlaege } from "@/lib/lernspiele";
+import { serie, skillFuerSpiel, spielVorschlaege, vokabelPlan } from "@/lib/lernspiele";
 import { SPIEL_ARTEN, SPIEL_DEKO, SPIEL_FACH, SPIEL_KURZ, SPIEL_TITEL, type SpielArt, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import { ligaTabelle } from "@/lib/liga";
 import { wienerDatum } from "@/lib/planung/zeit";
@@ -92,14 +92,14 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
           </h2>
           <ul className="staffel grid grid-cols-2 gap-3 md:grid-cols-3" data-testid={`spiele-${fach.toLowerCase()}`}>
             {spiele.map((art) => {
-              const stand = lernstand.get(SPIEL_SKILL[art]) ?? null;
+              const stand = lernstand.get(skillFuerSpiel(student, art, heute)) ?? null;
               const schild = SCHILD[grundVon.get(art)!.quelle];
               return (
                 <li key={art}>
                   <Link href={`${base}/spiel?art=${art}`} className="sp-kachel panel" data-fach={fach}>
                     <Kaertchen art={art} />
                     <span className="sp-titel">{SPIEL_TITEL[art]}</span>
-                    <span className="sp-kurz">{SPIEL_KURZ[art]}</span>
+                    <span className="sp-kurz">{art === "vokabeln" ? vokabelPlan(student, heute).titel : SPIEL_KURZ[art]}</span>
                     <span className="sp-fuss">
                       {schild ? <span className="sp-schild">{schild}</span> : <span />}
                       {stand === null ? (

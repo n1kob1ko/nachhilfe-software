@@ -3,13 +3,16 @@
 import "./lernspiel.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Flame, Lightbulb, Star, TrendingUp, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { BookOpen, CalendarDays, Flame, Lightbulb, Star, TrendingUp, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { spielBeendenAction, spielStartenAction } from "@/app/lernspiel-actions";
-import { SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { PaarFeld } from "./PaarFeld";
+import { Funken, vibriere } from "./SpielTeile";
 
 /**
- * Ein Lernspiel der Schüler-App (lib/lernspiele.ts): Karten in Fächer werfen oder antippen.
+ * Ein Lernspiel der Schüler-App (lib/lernspiele.ts): Karten in Fächer werfen oder antippen. „Vokabel-Paare“ hat ein
+ * eigenes Spielfeld (PaarFeld.tsx); Anfang, Ende, Zählen und Speichern sind für alle Spiele dieselben.
  *
  * - Richtig: die Karte fliegt ins Fach, oben steht kurz der ganze richtige Satz (lernen beim Spielen).
  * - Falsch: die Lücke zeigt die Wahl durchgestrichen, das richtige Fach leuchtet, eine kurze Regel erscheint, und
@@ -45,13 +48,6 @@ type Wurf = { x: number; y: number; r: number; s?: number };
 const zugGroesse = (dy: number) => 1 - (Math.min(Math.max(dy, 0), 220) / 220) * 0.38;
 
 const pct = (x: number | null) => (x === null ? "–" : `${Math.round(x * 100)} %`);
-const vibriere = (muster: number | number[]) => {
-  try {
-    navigator.vibrate?.(muster);
-  } catch {
-    /* nicht jedes Gerät kann es */
-  }
-};
 
 /** Der Satz mit eingesetzter Antwort; bei Präpositionen steht ein Leerzeichen vor dem Nomen, Endungen hängen am Wort. */
 const ohneStrich = (s: string) => s.replace(/^-/, "");
@@ -64,6 +60,7 @@ export function Lernspiel({
   lernstand,
   duell,
   zurueck: zurueckZiel,
+  woher,
 }: {
   token: string;
   art: SpielArt;
@@ -73,8 +70,11 @@ export function Lernspiel({
   duell?: DuellRahmen;
   /** wohin das Kreuz führt; ohne Angabe zum Tab „Spiele“ */
   zurueck?: string;
+  /** woher die Karten kommen, wenn es mehr als eine Quelle gibt („Thema: Familie“, „Deine Liste „Unit 3““) */
+  woher?: string;
 }) {
   const router = useRouter();
+  const form = SPIEL_FORM[art];
   const zurueck = duell?.zurueck ?? zurueckZiel ?? `/lernen/${token}/spiele`;
   const duellRef = useRef(duell);
   duellRef.current = duell;
@@ -121,6 +121,8 @@ export function Lernspiel({
   }, []);
 
   const aktuell = reihe[pos]?.karte ?? null;
+  // Paare: alle Karten der Runde auf einmal (das Feld teilt sie selbst auf Bretter auf)
+  const karten = useMemo(() => reihe.map((e) => e.karte), [reihe]);
 
   // ---------- Runde starten und beenden ----------
 
@@ -134,6 +136,8 @@ export function Lernspiel({
       return;
     }
     erste.current = new Map();
+    comboRef.current = 0;
+    paarGeloest.current = new Set();
     beschaeftigt.current = false;
     setRundeId(r.rundeId);
     setAnzahl(r.karten.length);
@@ -177,6 +181,34 @@ export function Lernspiel({
     const t = setTimeout(() => void beenden(rundeId), Math.max(0, bis - Date.now()));
     return () => clearTimeout(t);
   }, [phase, bis, rundeId, beenden]);
+
+  // ---------- Paare (PaarFeld.tsx): das Feld meldet Versuche und gelöste Paare, gezählt wird hier ----------
+
+  const paarVersuch = useCallback((karte: SpielKarte, wahl: string) => {
+    if (erste.current.has(karte.key)) return;
+    erste.current.set(karte.key, wahl);
+    duellRef.current?.ersteWahl?.(karte.key, wahl);
+  }, []);
+  const comboRef = useRef(0);
+  const paarGeloest = useRef(new Set<string>());
+  const paarRichtig = useCallback((karte: SpielKarte, sauber: boolean) => {
+    if (sauber) {
+      const neu = ++comboRef.current;
+      setCombo(neu);
+      if (neu === 3 || neu === 5 || (neu >= 10 && neu % 5 === 0)) setJubel((j) => ({ n: (j?.n ?? 0) + 1, text: `${neu} in Folge!` }));
+    }
+    if (!paarGeloest.current.has(karte.key)) {
+      paarGeloest.current.add(karte.key);
+      setVerlauf((v) => [...v, sauber]);
+      setGeloest(new Set(paarGeloest.current));
+    }
+    setZuletzt((z) => ({ karte, n: (z?.n ?? 0) + 1 }));
+  }, []);
+  const paarFalsch = useCallback(() => {
+    comboRef.current = 0;
+    setCombo(0);
+  }, []);
+  const paarFertig = useCallback(() => void beenden(rundeId), [beenden, rundeId]);
 
   // ---------- Karte fliegt ins Fach ----------
 
@@ -275,7 +307,7 @@ export function Lernspiel({
 
   // Tasten 1–5 am Laptop (ohne Bewegung beim Antippen: wiederholte Aktionen sollen sofort wirken)
   useEffect(() => {
-    if (phase !== "spiel" || !aktuell) return;
+    if (phase !== "spiel" || !aktuell || form) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const n = Number(e.key);
@@ -411,28 +443,49 @@ export function Lernspiel({
         {kopf}
         <div className="ls-mitte ls-rollt ls-staffel">
           <p className="ls-oberzeile" style={{ "--n": 0 } as CSSProperties}>
-            Lernspiel Deutsch
+            Lernspiel {SPIEL_FACH[art]}
           </p>
           <h1 className="ls-titel" style={{ "--n": 1 } as CSSProperties}>
             {SPIEL_TITEL[art]}
           </h1>
           <p className="ls-text mt-2" style={{ "--n": 2 } as CSSProperties}>
-            {SPIEL_AUFGABE[art]} Zieh die Karte in eine Kiste oder tipp die Kiste an.
+            {SPIEL_AUFGABE[art]}
+            {form === "paar" ? " Tipp ein englisches Wort an und dann das deutsche dazu." : " Zieh die Karte in eine Kiste oder tipp die Kiste an."}
           </p>
-          {vorschlag && vorschlag.quelle !== "fach" && (
+          {/* steht schon da, woher die Wörter kommen, braucht es „Deine Vokabelliste“ nicht noch einmal */}
+          {vorschlag && vorschlag.quelle !== "fach" && !(woher && vorschlag.quelle === "stoff") && (
             <span className="ls-grund mt-4" style={{ "--n": 3 } as CSSProperties}>
               {vorschlag.quelle === "pruefung" ? <CalendarDays size={16} aria-hidden /> : <TrendingUp size={16} aria-hidden />}
               {vorschlag.grund}
             </span>
           )}
 
-          <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
-            {VORSCHAU[art].map((f, i) => (
-              <span key={f} className="ls-kiste-mini" data-k={f} data-i={i} style={{ rotate: `${i % 2 ? 2.5 : -2.5}deg` }}>
-                {f}
+          {woher && (
+            <span className="ls-grund mt-4" style={{ "--n": 3 } as CSSProperties} data-testid="spiel-woher">
+              <BookOpen size={16} aria-hidden />
+              {woher}
+            </span>
+          )}
+
+          {form === "paar" ? (
+            <div className="ls-vorschau ls-vorschau-paar" aria-hidden style={{ "--n": 3 } as CSSProperties}>
+              <span className="ls-paar-mini" style={{ rotate: "-2.5deg" }}>
+                {VORSCHAU[art][0]}
               </span>
-            ))}
-          </div>
+              <span className="ls-paar-gleich">=</span>
+              <span className="ls-paar-mini" style={{ rotate: "2deg" }}>
+                {VORSCHAU[art][1]}
+              </span>
+            </div>
+          ) : (
+            <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
+              {VORSCHAU[art].map((f, i) => (
+                <span key={f} className="ls-kiste-mini" data-k={f} data-i={i} style={{ rotate: `${i % 2 ? 2.5 : -2.5}deg` }}>
+                  {f}
+                </span>
+              ))}
+            </div>
+          )}
 
           <div className="ls-glas mt-6 grid grid-cols-2 gap-4 p-4" style={{ "--n": 4 } as CSSProperties}>
             <div>
@@ -567,6 +620,38 @@ export function Lernspiel({
   }
 
   // ---------- Spiel ----------
+  const zuletztZeile = (
+    // der letzte richtige Satz, ganz: so bleibt beim Spielen hängen, wie es heißt
+    <p className="ls-zuletzt" aria-live="polite">
+      {zuletzt && (
+        <span key={zuletzt.n} className="ls-zeile">
+          <Loesung karte={zuletzt.karte} art={art} knapp />
+        </span>
+      )}
+    </p>
+  );
+  const jubelZeile = jubel && (
+    <p key={jubel.n} className="ls-jubel" aria-hidden>
+      {jubel.text}
+    </p>
+  );
+
+  if (form === "paar") {
+    return (
+      <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${SPIEL_TITEL[art]}`}>
+        <Hintergrund woerter={deko} />
+        {kopf}
+        {duell?.leiste}
+        <div className="ls-feld">
+          <PaarFeld key={rundeId} karten={karten} auftrag={SPIEL_AUFGABE[art]} onVersuch={paarVersuch} onRichtig={paarRichtig} onFalsch={paarFalsch} onFertig={paarFertig}>
+            {zuletztZeile}
+            {jubelZeile}
+          </PaarFeld>
+        </div>
+      </div>
+    );
+  }
+
   const sichtbar = reihe.slice(pos, pos + 3);
   if (aktuell) fachRefs.current.length = aktuell.faecher.length;
   const falsch = !!stand && !stand.richtig;
@@ -577,21 +662,8 @@ export function Lernspiel({
       {duell?.leiste}
       <div className="ls-feld">
         <p className="ls-auftrag">{SPIEL_AUFGABE[art]}</p>
-
-        {/* der letzte richtige Satz, ganz: so bleibt beim Spielen hängen, wie es heißt */}
-        <p className="ls-zuletzt" aria-live="polite">
-          {zuletzt && (
-            <span key={zuletzt.n} className="ls-zeile">
-              <Loesung karte={zuletzt.karte} art={art} knapp />
-            </span>
-          )}
-        </p>
-
-        {jubel && (
-          <p key={jubel.n} className="ls-jubel" aria-hidden>
-            {jubel.text}
-          </p>
-        )}
+        {zuletztZeile}
+        {jubelZeile}
 
         <div className="ls-stapel" data-falsch={falsch ? "" : undefined}>
           {sichtbar
@@ -683,6 +755,7 @@ const VORSCHAU: Record<SpielArt, string[]> = {
   satzteile: ["Hauptsatz", "Gliedsatz"],
   perfekt: ["haben", "sein"],
   praeteritum: ["ging", "gehte", "geht"],
+  vokabeln: ["dog", "der Hund"],
 };
 /** Die Frage zu jedem Fall steht klein auf der Kiste: so übt man die Frageprobe mit. */
 const KISTEN_FRAGE: Record<string, string> = { Nominativ: "Wer?", Genitiv: "Wessen?", Dativ: "Wem?", Akkusativ: "Wen?" };
@@ -714,18 +787,6 @@ function Hintergrund({ woerter }: { woerter: string[] }) {
         </span>
       ))}
     </div>
-  );
-}
-
-/** Funken und „+1“ über der Kiste, wenn eine Karte richtig landet (nur Deko, bei weniger Bewegung aus). */
-function Funken() {
-  return (
-    <span className="ls-funken" aria-hidden>
-      <b>+1</b>
-      {Array.from({ length: 8 }, (_, i) => (
-        <i key={i} style={{ "--w": `${i * 45 + (i % 2) * 18}deg`, "--d": `${58 + (i % 3) * 18}px` } as CSSProperties} />
-      ))}
-    </span>
   );
 }
 
@@ -846,6 +907,12 @@ function KartenInhalt({ karte, stand }: { karte: SpielKarte; art: SpielArt; stan
 }
 
 function Loesung({ karte, ohneMarke, knapp }: { karte: SpielKarte; art: SpielArt; ohneMarke?: boolean; knapp?: boolean }) {
+  if (karte.form === "paar")
+    return (
+      <>
+        <b className="ls-richtig">{karte.wort}</b> = {karte.richtig}
+      </>
+    );
   if (karte.wort)
     return (
       <>

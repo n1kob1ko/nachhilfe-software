@@ -81,6 +81,39 @@ auf -en“. Sonst steht die richtige Lösung da. Bei den Fällen ist es die Frag
 Dativ (3. Fall).“), bei das/dass die Ersatzprobe mit „dieses“ oder „welches“, beim Gliedsatz das Einleitewort
 („beginnt mit weil und kann nicht allein stehen“), beim Perfekt „gehen bildet das Perfekt mit sein: bin … gegangen“.
 
+## Vokabel-Paare (Englisch)
+
+niko 2026-11-11: „mach mal alle Spiele, außer Mathe: das Englischspiel, das Vokabelspiel“. Das neunte Spiel hat eine
+eigene Mechanik (`form: "paar"`, `components/lernen/PaarFeld.tsx`); Anfang, Ende, Zählen, Lernstand, Liga und Duelle
+sind dieselben wie bei den Kisten-Spielen.
+
+- **Spielfeld**: links englische Wörter, rechts die deutschen in anderer Reihenfolge. Ein Wort antippen, dann das
+  passende auf der anderen Seite (welche Seite zuerst, ist egal; noch einmal antippen nimmt die Wahl zurück).
+  Richtig: beide Kärtchen leuchten grün und verschwinden, oben steht das Paar („bridge = die Brücke“). Falsch: beide
+  wackeln rot und bleiben stehen; die Lösung wird nicht verraten, das Wort bleibt am Brett.
+- **Runde**: bis zu zwölf Wortpaare auf Brettern mit höchstens sechs Paaren (12 → 6 + 6, 8 → 4 + 4). Waren Wörter
+  zuerst falsch, kommt zum Schluss ein Brett „Noch einmal: diese Wörter waren schwer“ mit ihnen, aufgefüllt auf vier
+  Paare. Dieses Brett übt nur, es zählt nicht mehr.
+- **Gezählt** wird der erste Versuch je englischem Wort (`erste Wahl` = das deutsche Wort, das dazu getippt wurde).
+- **Welche Wörter** (`vokabelPlan`, lib/lernspiele.ts):
+  1. Hat der Schüler **eigene Vokabellisten** mit zusammen mindestens vier spielbaren Wörtern, spielt er sie (auch
+     die vom Foto eingelesenen). Bei mehreren Listen kommen bis zu zwei Drittel der Runde aus der neuesten. Fähigkeit
+     der Runde: `englisch.vocab.eigene`.
+  2. Sonst eine **Themenliste** (lib/vokabeln-themen.ts): ein Vokabelthema aus seinem Stoff (Prüfung, aktueller
+     Stoff, letzte Einheit), sonst das erste Thema seiner Schulart, das er noch nicht geschafft hat. Geschafft heißt:
+     zwei Runden mit mindestens 80 %. Sind alle geschafft, kommt das Thema, das am längsten her ist. Die Fähigkeit der
+     Runde ist das Thema (`englisch.vocab.freizeit`); die Stufen der Wörter gehen nach Schulstufe und Lernstand
+     (`vokabelStufen`).
+  3. Im **Duell** bekommen beide dieselbe Themenliste für die jüngere Schulstufe (`duellVokabeln`).
+- **Nie zwei Wörter, die zueinander passen**: Wörter mit einer gemeinsamen englischen oder deutschen Form („big“ und
+  „large“ = „groß“, „mum“ und „mother“) kommen nicht in dieselbe Runde, sonst gäbe es zwei richtige Paare. Wendungen
+  mit mehr als 32 Zeichen bleiben für die Übungen.
+- **Wann es angeboten wird**: mit einer eigenen Liste immer („Dein Stoff“), mit einem Vokabelthema im Stoff, sonst
+  „zum Üben“, wenn der Schüler Englisch hat (ab der 3. Schulstufe). Auf dem Anfang und auf der Kachel steht, woher die
+  Wörter kommen („Deine Liste „Unit 3““, „Thema: Familie“).
+- Der Karteikasten des Vokabeltrainers (docs/vokabeln.md) bleibt davon unberührt: das Spiel verschiebt keine
+  Wörter zwischen den Fächern.
+
 ## Welches Spiel dran ist
 
 `spielVorschlaege` (lib/lernspiele.ts), das wichtigste zuerst:
@@ -91,9 +124,11 @@ Dativ (3. Fall).“), bei das/dass die Ersatzprobe mit „dieses“ oder „welc
 2. der aktuelle Stoff im Profil,
 3. die letzte Einheit der letzten 14 Tage,
 4. eine Spiel-Fähigkeit mit Lernstand unter 60 %,
-5. sonst, wenn der Schüler Deutsch hat, die übrigen Spiele „zum Üben“.
+5. sonst, wenn der Schüler Deutsch hat, die übrigen Deutsch-Spiele „zum Üben“, und mit Englisch (ab der
+   3. Schulstufe) die Vokabel-Paare.
 
-Ohne Deutsch und ohne passenden Stoff gibt es kein Spiel.
+Eine eigene Vokabelliste zählt als aktueller Stoff (Punkt 2). Ohne passendes Fach und ohne passenden Stoff gibt es
+kein Spiel.
 
 ## Welche Karten
 
