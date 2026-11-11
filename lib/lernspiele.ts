@@ -7,7 +7,9 @@
  *   oder einer eigenen Vokabelliste).
  * - **Welche Karten**: aus den geprüften Aufgabenbanken (lib/lernspiele-karten.ts), Stufe nach Schulstufe und
  *   Lernstand, Fehler der letzten Runden kommen wieder. „Vokabel-Paare“ (Englisch) nimmt die eigenen Vokabellisten
- *   des Schülers, sonst eine Themenliste (`vokabelPlan`, lib/lernspiele-vokabeln.ts).
+ *   des Schülers, sonst eine Themenliste (`vokabelPlan`, lib/lernspiele-vokabeln.ts). Die Englisch-Spiele mit Kisten
+ *   nehmen die Sätze der Englisch-Generatoren; „English Tenses“ und „English Grammar“ spielen je Runde ein Thema
+ *   (`themenPlan`, lib/lernspiele-englisch.ts).
  * - **Was zählt**: die erste Wahl je Karte. Der Server prüft sie an den Karten, die er beim Start gespeichert hat.
  *   Eine beendete Runde ist ein Beleg für den Lernstand mit Gewicht 1,5 (`SOURCE_WEIGHT.spiel`), so viel wie eine
  *   dokumentierte Stunde und viel weniger als die Aufgaben einer Übung. Abgebrochene Runden zählen nicht.
@@ -15,6 +17,7 @@
 import { parseTime } from "./analysis";
 import { materialSkills, activeMaterial } from "./current-material";
 import { db, json } from "./db";
+import { englischKandidaten, GRAMMATIK_THEMEN, IRREGULAR_SKILL, SPIEL_THEMEN, themaPasst, themenFuerStufe, spielbareThemen, ZEITEN_THEMEN, type SpielThema } from "./lernspiele-englisch";
 import { stufenFuer, waehleKarten } from "./lernspiele-karten";
 import { istSpielArt, SPIEL_FACH, sterneFuer, type SpielAntwort, type SpielArt, type SpielKarte, type SpielVorschlag } from "./lernspiele-typen";
 import { PAARE_MIN, vokabelKandidaten, vokabelKey, vokabelStufen, waehleVokabeln, type VokabelKandidat } from "./lernspiele-vokabeln";
@@ -40,9 +43,13 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   satzbau: "deutsch.satz.satzglieder",
   // Vokabel-Paare: die eigenen Listen; spielt jemand eine Themenliste, hängt die Fähigkeit an der Runde (vokabelPlan)
   vokabeln: EIGENE_VOKABELN,
+  irregular: IRREGULAR_SKILL,
+  // Themenspiele: die Fähigkeit hängt an der Runde (themenPlan); hier steht nur, was ohne Runde gilt
+  zeiten: "englisch.tenses.mixed",
+  grammatik: "englisch.grammar",
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, vokabeln: 3 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -61,6 +68,11 @@ const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.praeteritum": ["praeteritum"],
   // jede Themenliste des Vokabeltrainers und die eigenen Listen
   ...Object.fromEntries([...Object.keys(VOKABEL_THEMEN), EIGENE_VOKABELN].map((id) => [id, ["vokabeln"] as SpielArt[]])),
+  // Englisch: die unregelmäßigen Verben zuerst, dann jede Zeit und jedes Grammatik-Thema mit eigenen Sätzen
+  [IRREGULAR_SKILL]: ["irregular"],
+  "englisch.tenses.pastsimple.irregular": ["irregular"],
+  ...Object.fromEntries(ZEITEN_THEMEN.flatMap((t) => [t.skill, ...(t.auch ?? [])]).map((id) => [id, ["zeiten"] as SpielArt[]])),
+  ...Object.fromEntries(GRAMMATIK_THEMEN.flatMap((t) => [t.skill, ...(t.auch ?? [])]).map((id) => [id, ["grammatik"] as SpielArt[]])),
 };
 
 export const spieleZuSkills = (ids: string[]): SpielArt[] => [
@@ -99,7 +111,12 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
       "fach",
     );
   }
-  if (student.subjects.includes("Englisch") && student.grade >= SPIEL_AB.vokabeln) add(["vokabeln"], "Zum Üben", "fach");
+  if (student.subjects.includes("Englisch"))
+    add(
+      (["vokabeln", "irregular", "zeiten", "grammatik"] as SpielArt[]).filter((art) => student.grade >= SPIEL_AB[art]),
+      "Zum Üben",
+      "fach",
+    );
   return out;
 }
 
@@ -182,16 +199,60 @@ export function vokabelPlan(student: repo.Student, heute: string): VokabelPlan {
   return { skillId, eigene: false, titel: `Thema: ${themaName(skillId)}`, pool: vokabelKandidaten(VOKABEL_THEMEN[skillId], skillId) };
 }
 
-function naechstesThema(student: repo.Student): string {
-  const themen = vokabelThemen(istVolksschule(student));
+const naechstesThema = (student: repo.Student): string => naechstesOffene(student.id, "vokabeln", vokabelThemen(istVolksschule(student)));
+
+/**
+ * Das erste Thema der Liste, das noch nicht geschafft ist (zwei Runden mit mindestens 80 %); sind alle geschafft, das
+ * Thema, das am längsten her ist.
+ */
+function naechstesOffene(studentId: number, art: SpielArt, themen: string[]): string {
   const runden = db()
-    .prepare("SELECT id, skill_id, richtig, anzahl FROM spielrunden WHERE student_id = ? AND art = 'vokabeln' AND beendet_at IS NOT NULL AND anzahl > 0")
-    .all(student.id) as { id: number; skill_id: string; richtig: number; anzahl: number }[];
+    .prepare("SELECT id, skill_id, richtig, anzahl FROM spielrunden WHERE student_id = ? AND art = ? AND beendet_at IS NOT NULL AND anzahl > 0")
+    .all(studentId, art) as { id: number; skill_id: string; richtig: number; anzahl: number }[];
   const gut = (thema: string) => runden.filter((r) => r.skill_id === thema && r.richtig / r.anzahl >= THEMA_ANTEIL).length;
   const offen = themen.find((thema) => gut(thema) < THEMA_RUNDEN);
   if (offen) return offen;
   const zuletzt = (thema: string) => Math.max(0, ...runden.filter((r) => r.skill_id === thema).map((r) => r.id));
   return [...themen].sort((a, b) => zuletzt(a) - zuletzt(b))[0];
+}
+
+// ---------- Themenspiele (English Tenses, English Grammar): welches Thema ----------
+
+export type ThemenPlan = { skillId: string; /** für den Schüler: „Thema: Past Simple“ */ titel: string };
+
+/**
+ * Welches Thema die nächste Runde eines Themenspiels hat: ein Thema aus dem Stoff des Schülers (Prüfung, aktueller
+ * Stoff, letzte Einheit), sonst das erste Thema seiner Schulstufe, das er noch nicht geschafft hat (das Neueste zuerst).
+ * null für Spiele ohne Themen.
+ */
+export function themenPlan(student: repo.Student, art: SpielArt, heute: string): ThemenPlan | null {
+  if (!SPIEL_THEMEN[art]) return null;
+  const themen = spielbareThemen(art);
+  const ausStoff = stoffQuellen(student, heute)
+    .flatMap((q) => q.ids)
+    .map((id) => themen.find((t) => themaPasst(t, id)))
+    .find((t): t is SpielThema => Boolean(t));
+  const reihe = themenFuerStufe(art, student.grade);
+  const thema = ausStoff ?? reihe.find((t) => t.skill === naechstesOffene(student.id, art, reihe.map((t) => t.skill))) ?? reihe[0];
+  return { skillId: thema.skill, titel: `Thema: ${thema.name}` };
+}
+
+/** Woher die Karten der nächsten Runde kommen, für den Schüler („Thema: Familie“, „Deine Liste …“); leer bei festen Spielen. */
+export function spielWoher(student: repo.Student, art: SpielArt, heute: string): string | undefined {
+  if (art === "vokabeln") return vokabelPlan(student, heute).titel;
+  return themenPlan(student, art, heute)?.titel;
+}
+
+/** Die Kisten einer Karte des Themas, für den Anfang des Spiels (damit dort nicht „some, any“ steht, wenn es um if-Sätze geht). */
+export function spielVorschau(student: repo.Student, art: SpielArt, heute: string): string[] | undefined {
+  const plan = themenPlan(student, art, heute);
+  if (!plan) return undefined;
+  // von den ersten Karten die mit den kürzesten Aufschriften: drei kleine Kisten in einer Zeile
+  const laenge = (f: string[]) => f.join("").length;
+  return englischKandidaten(plan.skillId)
+    .slice(0, 24)
+    .map((k) => k.karte.faecher)
+    .sort((x, y) => laenge(x) - laenge(y))[0];
 }
 
 /** Satzbau in der Volksschule hängt an der Fähigkeit der Volksschule, sonst an der Umstellprobe der Unterstufe. */
@@ -201,7 +262,7 @@ const satzbauSkill = (student: Pick<repo.Student, "grade" | "school_type">) => (
 export function skillFuerSpiel(student: repo.Student, art: SpielArt, heute: string): string {
   if (art === "vokabeln") return vokabelPlan(student, heute).skillId;
   if (art === "satzbau") return satzbauSkill(student);
-  return SPIEL_SKILL[art];
+  return themenPlan(student, art, heute)?.skillId ?? SPIEL_SKILL[art];
 }
 
 /** Karten für ein Duell „Vokabel-Paare“: eine Themenliste für die jüngere Schulstufe, für beide dieselbe. */
@@ -209,6 +270,13 @@ export function duellVokabeln(schulstufe: number, volksschule: boolean, rng: () 
   const themen = vokabelThemen(volksschule);
   const thema = themen[Math.floor(rng() * themen.length)];
   return waehleVokabeln(vokabelKandidaten(VOKABEL_THEMEN[thema], thema), { stufen: vokabelStufen(schulstufe, volksschule, null), rng });
+}
+
+/** Karten für ein Duell in einem Themenspiel: ein Thema, das für die jüngere Schulstufe schon dran war, für beide dasselbe. */
+export function duellThema(art: SpielArt, schulstufe: number, rng: () => number = Math.random): SpielKarte[] {
+  const themen = themenFuerStufe(art, schulstufe);
+  const thema = themen[Math.floor(rng() * themen.length)];
+  return waehleKarten(art, { pool: englischKandidaten(thema.skill), stufen: stufenFuer(art, schulstufe, null), rng });
 }
 
 // ---------- Runden ----------
@@ -267,7 +335,9 @@ export function starteRunde(student: repo.Student, art: SpielArt, o: { grund?: S
       rng: o.rng,
     });
   } else {
+    const plan = themenPlan(student, art, o.heute ?? wienerDatum());
     karten = waehleKarten(art, {
+      pool: plan ? englischKandidaten(plan.skillId) : undefined,
       stufen: stufenFuer(art, student.grade, o.lernstand ?? null),
       wiederholen: offeneFehler(student.id, art),
       zuletzt: zuletztGespielt(student.id, art),

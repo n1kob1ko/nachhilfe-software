@@ -120,13 +120,13 @@ test("Welche Wörter: eigene Listen vor Themen, das Thema aus dem Stoff, sonst d
   assert.equal(plan.skillId, "englisch.vocab.freizeit");
   assert.equal(plan.titel, "Thema: Freizeit und Hobbys");
   assert.equal(sp.skillFuerSpiel(student, "vokabeln", HEUTE), "englisch.vocab.freizeit");
-  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => [x.art, x.quelle]), [["vokabeln", "fach"]], "nur Englisch: nur das Vokabelspiel");
+  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => [x.art, x.quelle]), [["vokabeln", "fach"], ["irregular", "fach"], ["zeiten", "fach"], ["grammatik", "fach"]], "nur Englisch: nur die Englisch-Spiele, Vokabeln zuerst");
 
   // eine Prüfung mit einem Vokabelthema: dieses Thema
   repo.addTest({ student_id: student.id, date: "2026-11-20", subject: "Englisch", kind: "Schularbeit", topic: "", grade: null, points: null, max_points: null, notes: "", skill_ids: ["englisch.vocab.stadt"], title: "Vocabulary Test", status: "geplant" });
   plan = sp.vokabelPlan(student, HEUTE);
   assert.equal(plan.skillId, "englisch.vocab.stadt");
-  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => [x.art, x.quelle, x.grund]), [["vokabeln", "pruefung", "Vocabulary Test in 9 Tagen"]]);
+  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => [x.art, x.quelle, x.grund])[0], ["vokabeln", "pruefung", "Vocabulary Test in 9 Tagen"]);
 
   // eine eigene Liste mit zu wenigen Wörtern zählt noch nicht, ab vier schon
   assert.ok(speichereListe({ studentId: student.id, teacherId: teacher.id, title: "Unit 1", text: "dog = der Hund\ncat = die Katze" }).ok);

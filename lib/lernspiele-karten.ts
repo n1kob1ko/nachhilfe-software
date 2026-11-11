@@ -20,6 +20,7 @@ import {
   type PraepositionenItem,
 } from "./banks";
 import { wahlFuerSpiel } from "./deutsch-satzlehre";
+import { englischKandidaten, IRREGULAR_SKILL } from "./lernspiele-englisch";
 import { REIHE_TRENNER, type SpielArt, type SpielKarte } from "./lernspiele-typen";
 import { SATZBAU, SATZBAU_MARKE, SATZBAU_REGEL, type SatzbauGruppe } from "./satzbau-saetze";
 
@@ -407,7 +408,7 @@ function satzbauKandidaten(): Kandidat[] {
  * Ein Eintrag, der im Spiel taugt: nur eine richtige Antwort, keine Beanstandung der Regeln. Karten mit derselben
  * `gruppe` (die zwei Teile eines Satzes) kommen nicht zusammen in eine Runde.
  */
-type Kandidat = { karte: SpielKarte; stufe: Stufe; gruppe?: string };
+export type Kandidat = { karte: SpielKarte; stufe: Stufe; gruppe?: string };
 
 const cache = new Map<SpielArt, Kandidat[]>();
 
@@ -439,9 +440,12 @@ export function kandidaten(art: SpielArt): Kandidat[] {
       .flatMap((i) => satzteilKarten(i).map((karte) => ({ karte, stufe: bankStufe("hauptsatz-gliedsatz", i) ?? 2, gruppe: karte.key.split("#")[0] })));
   } else if (art === "satzbau") {
     out = satzbauKandidaten();
-  } else if (art === "vokabeln") {
-    // Vokabel-Paare haben keinen festen Vorrat: die Wörter kommen aus den Listen des Schülers (lib/lernspiele.ts)
+  } else if (art === "vokabeln" || art === "zeiten" || art === "grammatik") {
+    // kein fester Vorrat: Vokabel-Paare nehmen die Listen des Schülers, die Themenspiele die Karten ihres Themas
+    // (lib/lernspiele.ts gibt sie als `pool` mit)
     out = [];
+  } else if (art === "irregular") {
+    out = englischKandidaten(IRREGULAR_SKILL);
   } else if (art === "perfekt") {
     out = perfektItems()
       .filter((i) => eintragFehler("perfekt", i).length === 0)
@@ -504,10 +508,11 @@ function mischen<T>(xs: T[], rng: Rng): T[] {
  * Stufen, ohne die zuletzt gespielten (`zuletzt`). Keine Antwort steht öfter als in der Hälfte der Karten
  * (sonst gewinnt bei den Endungen „-en“ fast immer), und reicht eine Stufe nicht, kommt die nächste dazu.
  */
-export function waehleKarten(art: SpielArt, o: { stufen: Stufe[]; wiederholen?: string[]; zuletzt?: string[]; rng?: Rng; anzahl?: number }): SpielKarte[] {
+export function waehleKarten(art: SpielArt, o: { stufen: Stufe[]; wiederholen?: string[]; zuletzt?: string[]; rng?: Rng; anzahl?: number; pool?: Kandidat[] }): SpielKarte[] {
   const rng = o.rng ?? Math.random;
   const anzahl = o.anzahl ?? KARTEN_JE_RUNDE;
-  const alle = kandidaten(art);
+  // `pool`: die Karten eines Themas (Englisch-Themenspiele) statt des festen Vorrats der Art
+  const alle = o.pool ?? kandidaten(art);
   const byKey = new Map(alle.map((k) => [k.karte.key, k]));
   const gewaehlt: SpielKarte[] = [];
   const genommen = new Set<string>();

@@ -144,18 +144,49 @@ sind dieselben wie bei den Kisten-Spielen.
 - Der Karteikasten des Vokabeltrainers (docs/vokabeln.md) bleibt davon unberührt: das Spiel verschiebt keine
   Wörter zwischen den Fächern.
 
+## Englisch mit Kisten: Irregular Verbs, English Tenses, English Grammar
+
+niko 2026-11-11: „Vielleicht noch die Irregular Verbs. Zeiten in Englisch können wir auch noch reinhauen.“ Die drei
+Spiele haben die Kisten-Mechanik; neu sind die Karten (`lib/lernspiele-englisch.ts`).
+
+- **Karten**: Sätze mit einer Lücke aus den Englisch-Generatoren (`englischWahlFuerSpiel` in
+  lib/englisch-grammatik.ts), dieselben wie in den Übungen, ohne KI. Unter dem Satz steht das Verb in Klammern
+  („(go)“). Die Kisten sind die richtige Form und zwei typische falsche: die erste falsche ist immer der häufigste
+  Fehler (die andere Zeit, die regelmäßig gebildete Form „goed“), die zweite wechselt. Hat ein Satz zwei Lücken, ist
+  eine schon gefüllt. Lange Aufschriften („is going to visit“) stehen in zwei Zeilen.
+- **Regel nach einem Fehler**: die des Generators („Der Satz sagt, wann es war: past simple, went (go, went, gone).“).
+  Bei den Zeiten steht nach der richtigen Antwort die Zeit als Schild auf der Karte („Past Simple“), wenn die Regel
+  genau eine nennt.
+- **Irregular Verbs**: Past Simple und Present Perfect mit unregelmäßigen Verben (Fähigkeit
+  `englisch.vocab.irregular`), zum Üben ab der 6. Schulstufe.
+- **English Tenses** und **English Grammar** sind **Themenspiele**: jede Runde hat ein Thema, also eine Fähigkeit
+  (13 Zeiten von „Present Simple“ bis „Present Perfect Progressive“, 25 Grammatik-Themen von „am, is, are“ bis
+  „Reported Speech“; Listen `ZEITEN_THEMEN` und `GRAMMATIK_THEMEN` mit Namen und Schulstufe). Welches Thema
+  (`themenPlan`, lib/lernspiele.ts):
+  1. ein Thema aus dem **Stoff** des Schülers (Prüfung, aktueller Stoff, letzte Einheit; Unterfähigkeiten zählen mit),
+  2. sonst das erste Thema, das für seine Schulstufe schon dran war und das er noch nicht geschafft hat (zwei Runden
+     mit mindestens 80 %), das Neueste zuerst: die 4. Klasse beginnt mit „Past Perfect“, nicht mit „am, is, are“.
+  Die Runde hängt an der Fähigkeit des Themas, so landet sie im richtigen Lernstand. Auf dem Anfang und auf der Kachel
+  steht das Thema („Thema: will oder going to“), die kleinen Kisten auf dem Anfang sind die einer Karte des Themas.
+- **Vorlagen**: Sätze, die sich nur im Namen unterscheiden („Paul …“, „Lena …“), gibt es höchstens zweimal, und nie
+  beide in einer Runde (`gruppe`).
+- **Duell**: ein Thema, das der Jüngere schon hatte, für beide dieselben Karten (`duellThema`).
+- Ein neues Thema: eine Zeile in `ZEITEN_THEMEN` oder `GRAMMATIK_THEMEN` mit einer Fähigkeit, die einen Generator
+  hat; `lib/lernspiele-englisch.test.ts` verlangt mindestens 15 Karten je Thema.
+
 ## Welches Spiel dran ist
 
 `spielVorschlaege` (lib/lernspiele.ts), das wichtigste zuerst:
 
 1. eine geplante Prüfung in den nächsten 21 Tagen mit passender Fähigkeit (`FUEHRT_ZU`: Die vier Fälle → „Die vier
    Fälle“ und „Präposition und Fall“, Zeiten → Perfekt und Präteritum, Satzreihe und Satzgefüge → Hauptsatz oder
-   Gliedsatz und Satzbau, Satzglieder → Satzbau; Unterfähigkeiten zählen mit),
+   Gliedsatz und Satzbau, Satzglieder → Satzbau, jede englische Zeit → English Tenses, jedes englische Grammatik-Thema → English Grammar;
+   Unterfähigkeiten zählen mit),
 2. der aktuelle Stoff im Profil,
 3. die letzte Einheit der letzten 14 Tage,
 4. eine Spiel-Fähigkeit mit Lernstand unter 60 %,
-5. sonst, wenn der Schüler Deutsch hat, die übrigen Deutsch-Spiele „zum Üben“, und mit Englisch (ab der
-   3. Schulstufe) die Vokabel-Paare.
+5. sonst, wenn der Schüler Deutsch hat, die übrigen Deutsch-Spiele „zum Üben“, und mit Englisch die Vokabel-Paare
+   (ab der 3. Schulstufe), English Tenses und English Grammar (ab der 5.) und die Irregular Verbs (ab der 6.).
 
 Eine eigene Vokabelliste zählt als aktueller Stoff (Punkt 2). Ohne passendes Fach und ohne passenden Stoff gibt es
 kein Spiel.

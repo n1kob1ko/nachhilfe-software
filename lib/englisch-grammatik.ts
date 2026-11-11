@@ -2777,6 +2777,35 @@ export function englischAufgabe(skillId: string, format: EnglischFormat, difficu
   return null;
 }
 
+/**
+ * For the Lernspiele (lib/lernspiele-englisch.ts): one sentence of a skill as the generator builds it, with one gap,
+ * the right form, the typical wrong forms that may be offered and the rule. A sentence with two gaps gives one gap
+ * (chosen by `rng`), the other is filled in. null: the sentence does not fit a game ("no word" as answer, a line of
+ * the verb table, fewer than two wrong forms).
+ */
+export type EnglischWahl = { vor: string; nach: string; cue?: string; richtig: string; falsch: string[]; regel: string; satz: string };
+export function englischWahlFuerSpiel(skillId: string, st: Stufe, rng: Rng): EnglischWahl | null {
+  const f = FAEHIGKEITEN[skillId];
+  if (!f) return null;
+  const s = f.satz(rng, st);
+  const stuecke = s.text.split(GAP);
+  if (s.ohneLuecke || s.tabelle || stuecke.length !== s.luecken.length + 1 || s.luecken.some((l) => l.richtig[0] === KEIN)) return null;
+  const n = s.luecken.length === 1 ? 0 : Math.floor(rng() * s.luecken.length);
+  const l = s.luecken[n];
+  const anfang = (text: string) => /(^|[.!?] +)[“"]?$/.test(text);
+  // the other gaps are filled in, with a capital at the start of a sentence
+  let vor = "";
+  for (let i = 0; i <= n; i++) vor += stuecke[i] + (i < n ? (anfang(vor + stuecke[i]) ? cap(s.luecken[i].richtig[0]) : s.luecken[i].richtig[0]) : "");
+  let nach = "";
+  for (let i = n + 1; i < stuecke.length; i++) nach += stuecke[i] + (i < stuecke.length - 1 ? s.luecken[i].richtig[0] : "");
+  const zeige = (w: string) => (anfang(vor) ? cap(w) : w);
+  const falsch = sauber(l.richtig, l.fehler)
+    .filter((x) => x.mc !== false && x.answer !== KEIN)
+    .map((x) => zeige(x.answer));
+  if (falsch.length < 2) return null;
+  return { vor, nach, cue: l.cue, richtig: zeige(l.richtig[0]), falsch: [...new Set(falsch)], regel: s.regel, satz: fuellen(s, s.luecken.map((x) => x.richtig[0])) };
+}
+
 /** The task a skill gives when no format is asked for (a gap text; irregular verbs: a short answer). */
 export const ENGLISCH_GRAMMATIK: Record<string, (rng: Rng, difficulty: Difficulty) => TaskDraft> = Object.fromEntries(
   Object.entries(FAEHIGKEITEN).map(([id, f]) => [id, (rng: Rng, difficulty: Difficulty) => englischAufgabe(id, f.standard ?? "cloze", difficulty, rng)!]),
