@@ -1,0 +1,530 @@
+/*
+ * Lernspiele (components/lernen/Lernspiel.tsx). Bewegung nach DESIGN.md „Bewegung“: dieselben Kurven und Dauern wie
+ * in der App (die Token aus app/globals.css, hier mit denselben Werten als Rückfall), nur transform und opacity,
+ * Eintritt ease-out, Bewegung auf dem Schirm ease-in-out, Ausgänge kürzer als Eintritte, kein Federn.
+ * Bei „weniger Bewegung“ bleiben nur Farbe und Deckkraft.
+ */
+.ls {
+  --ls-ease-out: var(--ease-out, cubic-bezier(0.23, 1, 0.32, 1));
+  --ls-ease-in-out: var(--ease-in-out, cubic-bezier(0.77, 0, 0.175, 1));
+  --ls-der: #2a6fd0;
+  --ls-der-wash: #e3eefc;
+  --ls-die: #c0392b;
+  --ls-die-wash: #fbe8e5;
+  --ls-das: #1f8a4c;
+  --ls-das-wash: #e2f1e5;
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(120% 60% at 50% 0%, var(--accent-wash), transparent 70%),
+    var(--paper);
+  color: var(--ink);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  animation: ls-rein 280ms var(--ls-ease-out) both;
+}
+:root[data-theme="dark"] .ls {
+  --ls-der: #7ab3ff;
+  --ls-der-wash: #1b2c47;
+  --ls-die: #ff8a7a;
+  --ls-die-wash: #3a2024;
+  --ls-das: #6fd39a;
+  --ls-das-wash: #18332a;
+}
+@keyframes ls-rein {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+.ls-kopf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px 4px;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+}
+.ls-zu {
+  display: inline-flex;
+  height: 44px;
+  width: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--ink-2);
+  transition: transform 160ms var(--ls-ease-out), background-color 160ms ease;
+}
+.ls-zu:active {
+  transform: scale(0.94);
+}
+@media (hover: hover) and (pointer: fine) {
+  .ls-zu:hover {
+    background: var(--panel);
+  }
+}
+
+/* Fortschritt: ein Strich je Karte, gelöst füllt sich von links */
+.ls-fortschritt {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+}
+.ls-fortschritt span {
+  position: relative;
+  height: 6px;
+  flex: 1;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bar-track);
+}
+.ls-fortschritt span::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--accent-bright);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 280ms var(--ls-ease-out);
+}
+.ls-fortschritt span[data-fertig]::after {
+  transform: scaleX(1);
+}
+
+/* Serie richtiger Antworten oben rechts */
+.ls-combo {
+  display: inline-flex;
+  min-width: 64px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--amber);
+  transition: opacity 200ms ease;
+}
+.ls-combo[data-leer] {
+  opacity: 0;
+}
+.ls-combo b {
+  display: inline-block;
+}
+.ls-combo b[data-neu] {
+  animation: ls-zahl 240ms var(--ls-ease-out);
+}
+@keyframes ls-zahl {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.9);
+    filter: blur(2px);
+  }
+}
+
+/* ---------- Spielfeld ---------- */
+.ls-feld {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 16px 16px;
+}
+.ls-auftrag {
+  text-align: center;
+  font-size: 15px;
+  color: var(--ink-2);
+  margin: 8px 0 0;
+}
+.ls-stapel {
+  position: relative;
+  flex: 1;
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+}
+.ls-karte {
+  grid-area: 1 / 1;
+  width: min(100%, 460px);
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px 24px;
+  border-radius: 28px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-pop);
+  text-align: center;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+  will-change: transform;
+  transition:
+    transform 280ms var(--ls-ease-in-out),
+    opacity 200ms ease,
+    border-color 200ms ease;
+}
+.ls-karte[data-zieht] {
+  cursor: grabbing;
+  transition: none;
+}
+/* die Karten dahinter: kleiner und tiefer, rücken nach, wenn die vordere geht (alt und neu überlappen) */
+.ls-karte[data-tiefe="1"] {
+  transform: translateY(14px) scale(0.95);
+  opacity: 0.7;
+}
+.ls-karte[data-tiefe="2"] {
+  transform: translateY(26px) scale(0.9);
+  opacity: 0.35;
+}
+.ls-karte[data-tiefe="1"],
+.ls-karte[data-tiefe="2"] {
+  pointer-events: none;
+}
+.ls-karte[data-tiefe="1"] > *,
+.ls-karte[data-tiefe="2"] > * {
+  visibility: hidden;
+}
+.ls-karte[data-stand="falsch"] {
+  border-color: color-mix(in srgb, var(--red) 45%, var(--line));
+}
+.ls-karte[data-stand="richtig"] {
+  border-color: color-mix(in srgb, var(--green) 45%, var(--line));
+}
+.ls-zeile {
+  display: inline-block;
+  animation: ls-einsetzen 220ms var(--ls-ease-out);
+}
+
+.ls-wort {
+  font-size: clamp(34px, 9vw, 46px);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.ls-bedeutung {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+.ls-satz {
+  font-size: clamp(21px, 5.6vw, 26px);
+  line-height: 1.5;
+  font-weight: 500;
+  text-wrap: balance;
+}
+.ls-luecke {
+  display: inline-flex;
+  min-width: 2.6em;
+  justify-content: center;
+  margin: 0 0.12em;
+  padding: 0 0.3em;
+  border-radius: 10px;
+  border-bottom: 2px dashed var(--line-strong);
+  background: var(--panel);
+  color: var(--ink-3);
+  vertical-align: baseline;
+}
+/* eine Endung hängt am Wort: keine Lücke davor */
+.ls-luecke[data-haengt] {
+  min-width: 1.9em;
+  margin-left: 0;
+}
+.ls-luecke[data-stand] {
+  border-bottom-style: solid;
+  animation: ls-einsetzen 200ms var(--ls-ease-out);
+}
+.ls-luecke[data-stand="richtig"] {
+  background: var(--green-wash);
+  border-bottom-color: var(--green);
+  color: var(--green);
+  font-weight: 650;
+}
+.ls-luecke[data-stand="falsch"] {
+  background: var(--red-wash);
+  border-bottom-color: var(--red);
+  color: var(--red);
+  text-decoration: line-through;
+}
+@keyframes ls-einsetzen {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.92);
+  }
+}
+.ls-artikel {
+  display: inline-block;
+  margin-right: 0.28em;
+  animation: ls-einsetzen 200ms var(--ls-ease-out);
+}
+.ls-artikel[data-a="der"] {
+  color: var(--ls-der);
+}
+.ls-artikel[data-a="die"] {
+  color: var(--ls-die);
+}
+.ls-artikel[data-a="das"] {
+  color: var(--ls-das);
+}
+.ls-marke {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--green-wash);
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 600;
+  animation: ls-einsetzen 220ms var(--ls-ease-out) 60ms both;
+}
+
+/* Regel nach einem Fehler: kommt unter der Karte hoch */
+.ls-regel {
+  margin: 4px auto 0;
+  width: min(100%, 460px);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--amber-wash);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.4;
+  animation: ls-regel 260ms var(--ls-ease-out);
+}
+.ls-regel svg {
+  color: var(--amber);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+@keyframes ls-regel {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* ---------- Fächer ---------- */
+.ls-faecher {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 10px;
+  padding-top: 14px;
+  width: min(100%, 520px);
+  margin: 0 auto;
+}
+.ls-fach {
+  position: relative;
+  display: flex;
+  min-height: 84px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 20px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  font-size: 24px;
+  font-weight: 650;
+  color: var(--ink);
+  transition:
+    transform 160ms var(--ls-ease-out),
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+.ls-fach small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.ls-fach:active {
+  transform: scale(0.96);
+}
+.ls-fach[data-a="der"] {
+  color: var(--ls-der);
+  background: var(--ls-der-wash);
+  border-color: color-mix(in srgb, var(--ls-der) 30%, transparent);
+}
+.ls-fach[data-a="die"] {
+  color: var(--ls-die);
+  background: var(--ls-die-wash);
+  border-color: color-mix(in srgb, var(--ls-die) 30%, transparent);
+}
+.ls-fach[data-a="das"] {
+  color: var(--ls-das);
+  background: var(--ls-das-wash);
+  border-color: color-mix(in srgb, var(--ls-das) 30%, transparent);
+}
+/* beim Ziehen: das Fach unter der Karte hebt sich */
+.ls-fach[data-ziel] {
+  transform: translateY(-6px) scale(1.04);
+  box-shadow: var(--shadow-pop);
+  border-color: currentColor;
+}
+.ls-fach[data-richtig] {
+  animation: ls-puls 420ms var(--ls-ease-in-out);
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent);
+}
+.ls-fach[data-zeigen] {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 30%, transparent);
+  animation: ls-hinweis 1400ms var(--ls-ease-in-out) infinite;
+}
+.ls-fach[data-falsch] {
+  border-color: var(--red);
+  opacity: 0.55;
+}
+@keyframes ls-puls {
+  40% {
+    transform: scale(1.06);
+  }
+}
+@keyframes ls-hinweis {
+  50% {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--green) 12%, transparent);
+  }
+}
+
+/* ---------- Anfang und Ende ---------- */
+.ls-mitte {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 8px 20px 20px;
+  overflow-y: auto;
+}
+.ls-staffel > * {
+  animation: ls-hoch 340ms var(--ls-ease-out) backwards;
+  animation-delay: calc(var(--n, 0) * 40ms + 40ms);
+}
+@keyframes ls-hoch {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.ls-grund {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--deutsch-soft);
+  color: var(--deutsch-fg);
+  font-size: 14px;
+  font-weight: 600;
+}
+.ls-wahl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ls-wahl a {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+  transition:
+    transform 160ms var(--ls-ease-out),
+    border-color 160ms ease;
+}
+.ls-wahl a:active {
+  transform: scale(0.97);
+}
+.ls-wahl a[aria-current] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-wash);
+}
+.ls-los {
+  width: 100%;
+  min-height: 56px;
+  font-size: 18px;
+  border-radius: 18px;
+}
+.ls-sterne {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.ls-stern {
+  color: var(--line-strong);
+  animation: ls-stern 420ms var(--ls-ease-out) backwards;
+  animation-delay: calc(var(--n, 0) * 120ms + 120ms);
+}
+.ls-stern[data-an] {
+  color: #e9a91b;
+}
+.ls-stern:nth-child(2) {
+  translate: 0 -10px;
+}
+@keyframes ls-stern {
+  from {
+    opacity: 0;
+    transform: scale(0.6) rotate(-12deg);
+  }
+}
+.ls-balken {
+  position: relative;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bar-track);
+}
+.ls-balken span {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--accent-bright);
+  transform-origin: left;
+  transition: transform 700ms var(--ls-ease-in-out) 300ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ls,
+  .ls *,
+  .ls *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+  }
+  .ls-karte,
+  .ls-fach,
+  .ls-balken span {
+    transition-property: opacity, background-color, border-color, color !important;
+  }
+  .ls-fach[data-ziel] {
+    transform: none;
+  }
+}

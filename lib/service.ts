@@ -24,6 +24,7 @@ import { quelleForStudent } from "./schreibauftrag-store";
 import { textNotenFuerLernstand } from "./text-note";
 import { EIGENE_VOKABELN } from "./vokabeln";
 import { eigeneVokabelAufgaben, ohneWoerter } from "./vokabellisten";
+import { spielBelege } from "./lernspiele";
 
 // the setting lives with the other settings in lib/lehrplan.ts (lib/autodoc.ts reads it too)
 export { CARELESS_SETTING, carelessCredit } from "./lehrplan";
@@ -45,6 +46,8 @@ export function analyzeStudent(studentId: number, now?: number) {
     careless: carelessCredit(),
     // die bestätigte Note einer Textarbeit zählt wie ein Ergebnis (lib/text-note.ts, docs/lernstand.md)
     texts: textNotenFuerLernstand(studentId).map((t) => ({ ...t, skillId: alias.get(t.skillId) ?? t.skillId })),
+    // beendete Runden der Lernspiele, schwächer als eine Übung (lib/lernspiele.ts)
+    spiele: spielBelege(studentId).map((r) => ({ ...r, skillId: alias.get(r.skillId) ?? r.skillId })),
   });
 }
 

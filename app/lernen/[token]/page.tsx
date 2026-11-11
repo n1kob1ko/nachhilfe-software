@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { SubjectArt } from "@/components/Art";
 import { AppHinweis } from "@/components/AppHinweis";
 import { Hausuebungen } from "@/components/lernen/Hausuebungen";
+import { LernspielTeaser } from "@/components/lernen/LernspielTeaser";
 import { NaechsterTermin } from "@/components/lernen/NaechsterTermin";
 import { SchuelerNotizFrage } from "@/components/SchuelerNotizFrage";
 import { termineFuerSchueler } from "@/lib/planung/schueler-termine";
@@ -91,6 +92,9 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
       )}
 
       <Hausuebungen studentId={student.id} token={token} />
+
+      {/* Lernspiel zum aktuellen Stoff (lib/lernspiele.ts): nach dem, was offen ist */}
+      <LernspielTeaser student={student} token={token} />
 
       {notizFrisch && (
         <SchuelerNotizFrage
