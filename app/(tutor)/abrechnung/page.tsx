@@ -141,7 +141,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
         </Empty>
       ) : (
         <>
-          <ul className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Summen">
+          <ul className="staffel mb-5 grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Summen">
             <li className="kennzahl">
               <span className="kennzahl-wort">Einheiten</span>
               <span className="kennzahl-wert">{b.rows.length}</span>
@@ -174,7 +174,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
                     {rows.length} {rows.length === 1 ? "Einheit" : "Einheiten"}
                   </span>
                 </h2>
-                <ul className="panel divide-y divide-line">
+                <ul className="staffel panel divide-y divide-line">
                   {rows.map((r) => {
                     const z = zeit(r);
                     return (

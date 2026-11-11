@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Info as InfoIcon } from "lucide-react";
+import { useAbgang } from "@/components/Bewegung";
 
 /**
  * Small ⓘ that shows a short explanation on tap or click; works on tablets, where hover tooltips never appear.
@@ -13,6 +14,8 @@ export function Info({ children, label = "Mehr Infos", align = "left" }: { child
   const [seite, setSeite] = useState(align);
   const ref = useRef<HTMLSpanElement>(null);
   const id = useId();
+  // die Notiz wächst vom ⓘ aus und geht dorthin zurück (Bewegung, Regeln 10 bis 12)
+  const { da, geht } = useAbgang(open);
   useEffect(() => {
     if (!open) return;
     const close = (e: Event) => {
@@ -46,11 +49,11 @@ export function Info({ children, label = "Mehr Infos", align = "left" }: { child
       >
         <InfoIcon size={16} aria-hidden />
       </button>
-      {open && (
+      {da && (
         <span
           id={id}
           role="note"
-          className={`absolute top-9 z-30 w-[min(320px,80vw)] rounded-xl border border-line bg-surface px-4 py-3 text-left text-[13px] leading-relaxed font-normal tracking-normal text-ink-2 shadow-[var(--shadow-card)] ${
+          className={`pop ${geht ? "geht" : ""} absolute top-9 z-30 w-[min(320px,80vw)] rounded-xl border border-line bg-surface px-4 py-3 text-left text-[13px] leading-relaxed font-normal tracking-normal text-ink-2 shadow-[var(--shadow-card)] ${
             seite === "right" ? "right-0" : "left-0"
           }`}
         >

@@ -37,7 +37,7 @@ export default async function AbschlussPage() {
       {offen.length > 0 && (
         <section className="mt-10 max-w-[720px]" aria-label="Noch nicht bestätigt">
           <SectionTitle>{`Noch nicht bestätigt (letzte ${ABSCHLUSS_TAGE} Tage)`}</SectionTitle>
-          <ul className="panel divide-y divide-line">
+          <ul className="staffel panel divide-y divide-line">
             {offen.map((o) => (
               <li key={o.unitId}>
                 <Link href={`/einheiten/${o.unitId}`} className="flex min-h-[60px] items-center gap-3 px-4 py-2.5 hover:bg-panel/60">

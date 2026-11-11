@@ -21,6 +21,7 @@ import { ReadingTextView } from "./ReadingText";
 import { MemorizeTextBox } from "./MemorizeText";
 import { UmlautBar, type TextTarget } from "./UmlautBar";
 import { isMemorizeLevel, type MemorizeLevel } from "@/lib/memorize";
+import { Gleiter } from "@/components/Bewegung";
 
 export type ClientTask = {
   id: number;
@@ -369,12 +370,13 @@ export function Solver({
             })}
           </nav>
         </div>
-        <div className="sticky top-0 z-10 -mx-1 mb-4 flex gap-1 rounded-full bg-panel p-1 lg:hidden" role="tablist" aria-label="Ansicht">
+        <Gleiter marke="bg-surface shadow-[var(--shadow-card)]" className="sticky top-0 z-10 -mx-1 mb-4 flex gap-1 rounded-full bg-panel p-1 lg:hidden" role="tablist" aria-label="Ansicht">
           {(["text", "frage"] as const).map((v) => (
             <button
               key={v}
               type="button"
               role="tab"
+              data-gleit-ziel
               aria-selected={view === v}
               onClick={() => setView(v)}
               className={`flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-full text-[15px] font-semibold ${view === v ? "bg-surface shadow-[var(--shadow-card)]" : "text-ink-2"}`}
@@ -383,7 +385,7 @@ export function Solver({
               {v === "text" ? "Text" : `Frage ${index + 1} von ${tasks.length}`}
             </button>
           ))}
-        </div>
+        </Gleiter>
         <div className="lg:grid lg:grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
           <section
             aria-label="Lesetext"
@@ -1269,7 +1271,7 @@ function TaskCard({
             role="status"
             className={`mt-6 flex gap-3 rounded-xl px-4 py-3 text-[16px] ${feedback.correct ? "bg-green-wash text-green" : feedback.partial ? "bg-amber-wash text-amber" : "bg-red-wash text-red"}`}
           >
-            {feedback.correct ? <CheckCircle2 size={20} className="mt-0.5 shrink-0" aria-hidden /> : <XCircle size={20} className="mt-0.5 shrink-0" aria-hidden />}
+            {feedback.correct ? <CheckCircle2 size={20} className="puls mt-0.5 shrink-0 rounded-full" aria-hidden /> : <XCircle size={20} className="mt-0.5 shrink-0" aria-hidden />}
             <span className="font-medium"><MathText text={feedback.text} /></span>
           </div>
         )}

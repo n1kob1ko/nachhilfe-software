@@ -235,7 +235,7 @@ export default async function TextPage({ params, searchParams }: { params: Promi
             }
           >
             <p className="mb-2 text-[14px] text-ink-2">Werden beim Schreiben automatisch aufbewahrt. Beim Zurückholen bleibt die jetzige Fassung ebenfalls erhalten.</p>
-            <ul className="panel divide-y divide-line">
+            <ul className="staffel panel divide-y divide-line">
               {revisions.map((r) => (
                 <li key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-2">
                   <span className="num min-w-0 flex-1 text-[14px]">

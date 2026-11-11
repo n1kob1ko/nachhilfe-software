@@ -225,7 +225,7 @@ export function VerfuegbarkeitEditor({
                           if (readOnly || ziehen === null) return;
                           if (rasterRef.current[schluessel].has(feld) !== ziehen) setzen(schluessel, feld, ziehen);
                         }}
-                        className={`block h-5 w-full rounded-[4px] border transition-colors pointer-coarse:h-7 ${
+                        className={`ohne-druck block h-5 w-full rounded-[4px] border pointer-coarse:h-7 ${
                           belegt ? "border-accent bg-accent-bright" : "border-line bg-paper hover:bg-accent-wash"
                         } ${readOnly ? "cursor-default" : "cursor-pointer"}`}
                       />

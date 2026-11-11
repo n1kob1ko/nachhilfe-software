@@ -162,7 +162,7 @@ export default async function ExamPrepPage({
           {plan.length === 0 ? (
             <p className="text-[14px] text-ink-3">Noch keine Fähigkeiten verknüpft. Oben den Stoff zuordnen, dann entsteht der Plan.</p>
           ) : (
-            <ol className="panel divide-y divide-line">
+            <ol className="staffel panel divide-y divide-line">
               {plan.map((p) => (
                 <li key={p.skill.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
                   <span className="num w-9 shrink-0 text-[17px] font-semibold">{p.count}×</span>
@@ -282,7 +282,7 @@ export default async function ExamPrepPage({
               Schreibaufträge
             </SectionTitle>
             {auftraege.length > 0 ? (
-              <ul className="panel divide-y divide-line">
+              <ul className="staffel panel divide-y divide-line">
                 {auftraege.map((a) => (
                   <li key={a.textId} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
                     <Link href={`/texte/${a.textId}`} className="min-w-0 flex-1 font-medium hover:underline">

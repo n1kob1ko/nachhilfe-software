@@ -35,7 +35,7 @@ export default async function PruefungenPage({ params }: { params: Promise<{ tok
         {pruefungen.length === 0 ? (
           <p className="text-[15px] text-ink-2">Steht eine Schularbeit oder ein Test an? Trag sie hier ein, mit einem Foto vom Stoffzettel.</p>
         ) : (
-          <ul className="panel divide-y divide-line">
+          <ul className="staffel panel divide-y divide-line">
             {pruefungen.map((p) => (
               <li key={p.id} className="flex items-start justify-between gap-3 px-5 py-3">
                 <span className="min-w-0">

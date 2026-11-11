@@ -80,7 +80,7 @@ export default async function DevicesPage({ searchParams }: { searchParams: Prom
             <p className="font-semibold">Noch kein Schüler-Tablet verbunden</p>
           </div>
         ) : (
-          <ul className="panel divide-y divide-line">
+          <ul className="staffel panel divide-y divide-line">
             {devices.map((d) => {
               const online = deviceOnline(d.id);
               const mine = canManageDevice(teacher, d);

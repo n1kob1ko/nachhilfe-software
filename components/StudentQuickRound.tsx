@@ -247,7 +247,7 @@ export function StudentQuickRound({
           </span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-[var(--bar-track)]" role="progressbar" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>
-          <span className="block h-full rounded-full bg-accent transition-[width] duration-300" style={{ width: `${progress * 100}%` }} />
+          <span className="block h-full rounded-full bg-accent transition-[width] duration-[280ms] ease-[cubic-bezier(0.77,0,0.175,1)]" style={{ width: `${progress * 100}%` }} />
         </div>
       </header>
 

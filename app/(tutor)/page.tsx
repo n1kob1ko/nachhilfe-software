@@ -108,7 +108,7 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
             return (
               <section key={u.id} className="buehne px-5 py-5 md:px-7" aria-label="Laufende Einheit" data-testid="laeuft-karte">
                 <div className="relative z-10 flex flex-wrap items-center gap-x-6 gap-y-4">
-                  <div className="min-w-0 flex-1">
+                  <div className="setzen min-w-0 flex-1">
                     <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[13px] font-semibold text-white">
                       <span className="h-2 w-2 rounded-full bg-white" aria-hidden /> läuft
                     </p>
@@ -134,7 +134,7 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
         </div>
       )}
 
-      <ul className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Auf einen Blick" data-testid="kennzahlen">
+      <ul className="staffel mb-6 grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Auf einen Blick" data-testid="kennzahlen">
         <Kennzahl
           voll={running.length === 0}
           wort="Heute"
@@ -160,7 +160,7 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
         <Kennzahl wort="Verbessert" wert={String(fortschritt.besser)} zusatz={`von ${fortschritt.liste.length} Schülern · 4 Wochen`} href="#fortschritt" />
       </ul>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="staffel grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         <Karte id="heute" titel={heute.size > 0 ? `Heute: ${heute.size} Schüler` : "Heute"} className="md:col-span-2">
           {punkte.length === 0 ? (
             <>
@@ -302,7 +302,7 @@ function WochenPlan({ plan, label }: { plan: PlanTag[]; label: string }) {
       {leer ? (
         <p className="text-[15px] text-ink-2">Für dich ist diese Woche nichts geplant. Sobald die Verwaltung den Plan veröffentlicht, steht er hier.</p>
       ) : (
-        <ol className="grid gap-2 md:grid-cols-[repeat(var(--tage),minmax(0,1fr))]" style={{ "--tage": plan.length } as React.CSSProperties}>
+        <ol className="staffel grid gap-2 md:grid-cols-[repeat(var(--tage),minmax(0,1fr))]" style={{ "--tage": plan.length } as React.CSSProperties}>
           {plan.map((t) => (
             <li key={t.datum} className={`min-w-0 rounded-2xl border p-2.5 ${t.heute ? "border-accent-bright bg-accent-wash/40" : "border-line bg-paper/60"}`} aria-label={`${t.kurz} ${t.tagNr}`}>
               <p className="mb-2 flex items-baseline justify-between gap-2 px-0.5">

@@ -52,6 +52,7 @@ import { textsForStudent, wordsLabel } from "@/lib/texts";
 import { ZuBewertenListe } from "@/components/ZuBewerten";
 import { zuBewerten, zuBewertenTitel } from "@/lib/zu-bewerten";
 import { hausuebungErgebnis, hausuebungOffen, HU_STATUS_LABEL, statusDetail, type HuStatus } from "@/lib/hausuebung-zurueck";
+import { Gleiter } from "@/components/Bewegung";
 
 /** Vier Bereiche statt sechs: Stoff und Prüfungen teilen sich einen Tab, Übungen und Lernverlauf auch. */
 const TABS = [
@@ -113,11 +114,12 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
       </div>
       <KiGrenzeHinweis studentId={student.id} name={student.name.split(" ")[0]} className="no-print mb-6" />
       <Kopfzahlen student={student} a={a} />
-      <nav className="no-print mb-8 flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-panel p-1" aria-label="Bereiche">
+      <Gleiter as="nav" marke="bg-surface shadow-[var(--shadow-card)]" className="no-print relative mb-8 flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-panel p-1" aria-label="Bereiche">
         {TABS.map(([key, label]) => (
           <Link
             key={key}
             href={`/schueler/${student.id}?tab=${key}`}
+            data-gleit-ziel
             aria-current={tab === key ? "page" : undefined}
             className={`flex min-h-[44px] items-center rounded-full px-4 text-[14px] font-medium whitespace-nowrap transition-colors ${
               tab === key ? "bg-surface text-ink shadow-[var(--shadow-card)]" : "text-ink-2 hover:text-ink"
@@ -126,7 +128,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
             {label}
           </Link>
         ))}
-      </nav>
+      </Gleiter>
       {tab === "ueberblick" && <Overview student={student} a={a} />}
       {tab === "fortschritt" && (
         <div className="space-y-14">
@@ -395,7 +397,7 @@ function Overview({ student, a }: { student: repo.Student; a: Analysis }) {
           <SectionTitle action={versaeumt > 0 ? <Pill tone="amber">{versaeumt === 1 ? "1 Termin ohne Einheit" : `${versaeumt} Termine ohne Einheit`}</Pill> : <span className="text-[13px] text-ink-3">{wochenLabel(wochenstart)}</span>}>
             Wochenplan-Termine
           </SectionTitle>
-          <ul className="panel divide-y divide-line">
+          <ul className="staffel panel divide-y divide-line">
             {termine.map((t) => (
               <li key={t.id} className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-[15px] ${t.nichtStattgefunden ? "text-ink-3" : ""}`}>
                 <span className="num w-[104px] shrink-0 font-semibold">{t.label}</span>
@@ -619,7 +621,7 @@ function DiagnosisSection({ student, tested }: { student: repo.Student; tested: 
       {list.length === 0 ? (
         <p className="text-[14px] text-ink-2">Zu {first} gibt es noch keinen Lernstand. Eine Diagnose zeigt in wenigen Minuten, was sitzt und wo Lücken sind.</p>
       ) : (
-        <ul className="panel divide-y divide-line">
+        <ul className="staffel panel divide-y divide-line">
           {list.map((d) => (
             <li key={d.id}>
               <Link href={`/diagnose/${d.id}`} className="flex min-h-[52px] items-center gap-3 px-4 py-2 hover:bg-panel/60">
@@ -676,7 +678,7 @@ function AnalysisTab({ student, a, assignedId, error }: { student: repo.Student;
         {steps.length === 0 ? (
           <p className="text-[14px] text-ink-3">Keine Empfehlung offen.</p>
         ) : (
-          <ul className="grid gap-3 md:grid-cols-2">
+          <ul className="staffel grid gap-3 md:grid-cols-2">
             {steps.map((r) => (
               <li key={r.key} className="panel px-5 py-4">
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -884,7 +886,7 @@ function CurrentMaterialTab({ student, edit }: { student: repo.Student; edit: nu
       {history.length > 0 && (
         <section aria-label="Verlauf">
           <Reveal label={`Früherer Stoff (${history.length})`}>
-            <ul className="panel divide-y divide-line">
+            <ul className="staffel panel divide-y divide-line">
               {history.map((h) => (
                 <li key={h.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-2.5 text-[14px]">
                   <span>
@@ -1321,7 +1323,7 @@ function ArchivSection({ student, open }: { student: repo.Student; open: boolean
         Archiv
       </h2>
       <p className="mb-4 max-w-[80ch] text-[14px] text-ink-2">{first} sieht diese Übungen und Texte nicht mehr als offen. Antworten, Dokumentation und Lernstand bleiben.</p>
-      <ul className="panel divide-y divide-line">
+      <ul className="staffel panel divide-y divide-line">
         {uebungen.map((x) => (
           <li key={`a${x.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
             <Archive size={18} className="shrink-0 text-ink-3" aria-hidden />

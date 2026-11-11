@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarDays, GraduationCap, House, TrendingUp } from "lucide-react";
+import { Gleiter } from "@/components/Bewegung";
 
 /**
  * Die vier Seiten der Schüler-App (niko 2026-11-08: eine lange Seite mit allem war zu unübersichtlich): Start,
@@ -36,30 +37,30 @@ export function SchuelerNav({ token }: { token: string }) {
   return (
     <>
       {/* Laptop und Tablet: Reihe unter dem Kopf */}
-      <nav className="no-print mb-8 hidden w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-panel p-1 md:flex" aria-label="Schüler-App">
+      <Gleiter as="nav" marke="bg-surface shadow-[var(--shadow-card)]" className="no-print relative mb-8 hidden w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-panel p-1 md:flex" aria-label="Schüler-App">
         {SEITEN.map(({ key, label, icon: Icon }) => {
           const active = aktiv === key;
           return (
-            <Link key={key} href={href(key)} aria-current={active ? "page" : undefined} className={`inline-flex min-h-[40px] items-center gap-2 rounded-full px-4 text-[15px] font-semibold whitespace-nowrap transition-colors ${active ? "bg-surface text-ink shadow-[var(--shadow-card)]" : "text-ink-2 hover:text-ink"}`}>
+            <Link key={key} href={href(key)} aria-current={active ? "page" : undefined} data-gleit-ziel className={`inline-flex min-h-[40px] items-center gap-2 rounded-full px-4 text-[15px] font-semibold whitespace-nowrap transition-colors ${active ? "bg-surface text-ink shadow-[var(--shadow-card)]" : "text-ink-2 hover:text-ink"}`}>
               <Icon size={17} aria-hidden /> {label}
             </Link>
           );
         })}
-      </nav>
+      </Gleiter>
       {/* Handy: Leiste unten, über dem Home-Balken (viewport-fit=cover in layout.tsx) */}
-      <nav className="no-print fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-line bg-surface/95 pb-[max(8px,env(safe-area-inset-bottom))] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] backdrop-blur md:hidden" aria-label="Schüler-App" data-testid="schueler-leiste">
+      <Gleiter as="nav" marke="bg-accent-bright" className="no-print fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-line bg-surface/95 pb-[max(8px,env(safe-area-inset-bottom))] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] backdrop-blur md:hidden" aria-label="Schüler-App" data-testid="schueler-leiste">
         {SEITEN.map(({ key, label, icon: Icon }) => {
           const active = aktiv === key;
           return (
             <Link key={key} href={href(key)} aria-current={active ? "page" : undefined} className={`flex min-h-[60px] flex-col items-center justify-center gap-1 text-[12px] font-medium ${active ? "text-ink" : "text-ink-3"}`}>
-              <span className={`flex h-8 w-12 items-center justify-center rounded-full transition-colors ${active ? "bg-accent-bright text-on-bright" : ""}`}>
+              <span data-gleit-ziel className={`flex h-8 w-12 items-center justify-center rounded-full transition-colors ${active ? "bg-accent-bright text-on-bright" : ""}`}>
                 <Icon size={20} strokeWidth={active ? 2.2 : 1.9} aria-hidden />
               </span>
               {label}
             </Link>
           );
         })}
-      </nav>
+      </Gleiter>
     </>
   );
 }

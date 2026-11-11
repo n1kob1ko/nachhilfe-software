@@ -28,7 +28,7 @@ export default async function FortschrittPage({ params }: { params: Promise<{ to
       {practiced.length > 0 ? (
         <section className="mt-6">
           <h2 className="mb-3 text-[18px] font-semibold">Deine Fähigkeiten</h2>
-          <ul className="panel divide-y divide-line">
+          <ul className="staffel panel divide-y divide-line">
             {practiced.map((s) => (
               <li key={s.skill.id} className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2 px-5 py-3 sm:grid-cols-[1fr_minmax(120px,220px)_auto]">
                 <span>

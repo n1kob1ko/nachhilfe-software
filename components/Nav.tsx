@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarDays, ClipboardCheck, GraduationCap, LayoutGrid, Users } from "lucide-react";
 import { BrandMark } from "@/components/Brand";
+import { Gleiter } from "@/components/Bewegung";
 
 /**
  * Die ganze Navigation: drei Bereiche für den Unterricht und „Erweitert“ (niko, 25.10.2026: „Normale Lehrkräfte
@@ -48,19 +49,19 @@ export function TabBar({ laufend = [] }: { laufend?: number[] }) {
   const path = usePathname();
   const aktiv = bereichVon(path, laufend);
   return (
-    <nav className="no-print fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-surface/95 pb-[max(8px,env(safe-area-inset-bottom))] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] backdrop-blur md:hidden" aria-label="Hauptnavigation">
+    <Gleiter as="nav" marke="bg-accent-bright" className="no-print fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-surface/95 pb-[max(8px,env(safe-area-inset-bottom))] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] backdrop-blur md:hidden" aria-label="Hauptnavigation">
       {ITEMS.map(({ key, href, label, icon: Icon }) => {
         const active = aktiv === key;
         return (
           <Link key={href} href={href} aria-current={active ? "page" : undefined} className={`flex min-h-[60px] flex-col items-center justify-center gap-1 text-[12px] font-medium ${active ? "text-ink" : "text-ink-3"}`}>
-            <span className={`flex h-8 w-12 items-center justify-center rounded-full transition-colors ${active ? "bg-accent-bright text-on-bright" : ""}`}>
+            <span data-gleit-ziel className={`flex h-8 w-12 items-center justify-center rounded-full transition-colors ${active ? "bg-accent-bright text-on-bright" : ""}`}>
               <Icon size={20} strokeWidth={active ? 2.2 : 1.9} aria-hidden />
             </span>
             {label}
           </Link>
         );
       })}
-    </nav>
+    </Gleiter>
   );
 }
 
@@ -68,7 +69,7 @@ export function Nav({ laufend = [] }: { laufend?: number[] }) {
   const path = usePathname();
   const aktiv = bereichVon(path, laufend);
   return (
-    <nav className="flex flex-col gap-1" aria-label="Hauptnavigation">
+    <Gleiter as="nav" marke="gleit-nav bg-surface shadow-[var(--shadow-card)]" className="relative flex flex-col gap-1" aria-label="Hauptnavigation">
       {ITEMS.map(({ key, href, label, icon: Icon }) => {
         const active = aktiv === key;
         return (
@@ -76,11 +77,13 @@ export function Nav({ laufend = [] }: { laufend?: number[] }) {
             key={href}
             href={href}
             aria-current={active ? "page" : undefined}
+            data-gleit-ziel
             className={`group flex min-h-[46px] shrink-0 items-center gap-3 rounded-full py-1.5 pr-4 pl-1.5 text-[15px] font-medium transition-colors ${
               active ? "bg-surface text-ink shadow-[var(--shadow-card)]" : "text-ink-2 hover:bg-surface/70 hover:text-ink"
             }`}
           >
             <span
+              data-gleit-ziel
               className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
                 active ? "bg-accent-bright text-on-bright" : "text-ink-3 group-hover:text-ink"
               }`}
@@ -91,7 +94,7 @@ export function Nav({ laufend = [] }: { laufend?: number[] }) {
           </Link>
         );
       })}
-    </nav>
+    </Gleiter>
   );
 }
 

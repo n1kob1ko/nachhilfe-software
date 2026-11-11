@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Camera, RefreshCw, Sparkles } from "lucide-react";
 import { KeinNameZeile } from "@/components/KeinNameZeile";
 import { shrinkImage } from "@/components/shrink-image";
+import { Gleiter } from "@/components/Bewegung";
 
 /** Mirrors lib/foto-uebung.ts and lib/materials.ts (kept here so the browser does not load server code). */
 const ANZAHL = [5, 10, 15];
@@ -148,9 +149,10 @@ export function FotoUebungForm({ unitId, name, keinName = false }: { unitId: num
 
       <fieldset className="flex flex-wrap items-center gap-3">
         <legend className="mb-2 text-[14px] font-semibold">Wie viele Aufgaben</legend>
-        <span className="flex rounded-full bg-panel p-1">
+        <Gleiter as="span" marke="bg-surface shadow-[var(--shadow-card)]" className="relative flex rounded-full bg-panel p-1">
           {ANZAHL.map((n) => (
             <label
+                data-gleit-ziel
               key={n}
               className="num flex h-10 min-w-12 cursor-pointer items-center justify-center rounded-full px-3 text-[15px] font-semibold text-ink-2 transition-colors has-[:checked]:bg-surface has-[:checked]:text-ink has-[:checked]:shadow-[var(--shadow-card)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent"
             >
@@ -158,7 +160,7 @@ export function FotoUebungForm({ unitId, name, keinName = false }: { unitId: num
               {n}
             </label>
           ))}
-        </span>
+        </Gleiter>
       </fieldset>
 
       <label className="grid gap-1.5">

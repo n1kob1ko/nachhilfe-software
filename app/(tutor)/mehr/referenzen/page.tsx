@@ -106,7 +106,7 @@ export default async function ReferenzenPage({ searchParams }: { searchParams: P
       {liste.length === 0 ? (
         <Empty title={fach || status ? "Keine Einträge in dieser Auswahl" : "Noch keine Einträge"}>Lies oben ein PDF ein oder leg einen Eintrag von Hand an.</Empty>
       ) : (
-        <ul className="panel max-w-[1040px] divide-y divide-line" data-testid="referenz-liste">
+        <ul className="staffel panel max-w-[1040px] divide-y divide-line" data-testid="referenz-liste">
           {liste.map((e) => {
             const s = e.skill_id ? skills.get(e.skill_id) : null;
             const format = formateFuer(e.fach).find((f) => f.key === e.format)?.label;

@@ -187,7 +187,7 @@ export default async function PraesentationPage({ params, searchParams }: { para
             {notizListe.length === 0 ? (
               <p className="text-[14px] text-ink-3">Noch kein Vortragstext. Im Vortrag oben „Schreiben“ tippen, oder eine Datei „lernheft-notizen.json“ hochladen.</p>
             ) : (
-              <ol className="panel divide-y divide-line">
+              <ol className="staffel panel divide-y divide-line">
                 {notizListe.map(([n, t]) => (
                   <li key={n} className="grid gap-1 px-4 py-3 text-[14px] sm:grid-cols-[80px_1fr]">
                     <span className="num font-semibold text-ink-3">Folie {n}</span>

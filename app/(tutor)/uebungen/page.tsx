@@ -132,7 +132,7 @@ export default async function Worksheets({ searchParams }: { searchParams: Promi
               Archivierte Übungen stehen nicht in der Liste, und Schüler sehen sie nicht mehr als offen. Antworten, Dokumentation und Lernstand bleiben.
             </p>
           )}
-          <ul className="panel divide-y divide-line">
+          <ul className="staffel panel divide-y divide-line">
             {recent.map((w) => row(w))}
             {list.length === 0 && <li className="px-5 py-6 text-[14px] text-ink-3">{inArchiv ? "Das Archiv ist leer." : "Keine Übungen in diesem Filter."}</li>}
           </ul>
@@ -142,7 +142,7 @@ export default async function Worksheets({ searchParams }: { searchParams: Promi
                 <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden />
                 <span className="num">{older.length}</span> ältere Übungen
               </summary>
-              <ul className="panel mt-3 divide-y divide-line">{older.map((w) => row(w))}</ul>
+              <ul className="staffel panel mt-3 divide-y divide-line">{older.map((w) => row(w))}</ul>
             </details>
           )}
         </>

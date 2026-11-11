@@ -10,6 +10,7 @@ import type { AILive } from "@/lib/ai/realtime";
 import type { LiveSnapshot } from "@/lib/live";
 import { LaptopAccess, type JoinInfo } from "./LaptopAccess";
 import { ConnectTablet } from "./TabletSend";
+import { Gleiter } from "@/components/Bewegung";
 
 function clock(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -113,13 +114,13 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
           </span>
         )}
         {(tablet !== "kein" || onLaptop) && (
-          <div className="ml-auto flex gap-1 rounded-full bg-panel p-1" role="group" aria-label={`${dev} zeigt`}>
+          <Gleiter marke="bg-surface shadow-[var(--shadow-card)]" className="relative ml-auto flex gap-1 rounded-full bg-panel p-1" role="group" aria-label={`${dev} zeigt`}>
             {s.text && <ViewButton on={s.view === "text"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, `text:${s.text!.id}`))} icon={<PenLine size={16} aria-hidden />} label="Text" />}
             <ViewButton on={s.view !== "tafel" && s.view !== "text" && s.view !== "praesentation"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, c ? `aufgabe:${c.assignmentId}` : ""))} icon={<ListChecks size={16} aria-hidden />} label="Aufgaben" />
             {tablet !== "kein" && (
               <ViewButton on={s.view === "tafel"} disabled={pending} onClick={() => zurTafel(() => tabletViewAction(unitId, "tafel"))} icon={<Presentation size={16} aria-hidden />} label="Whiteboard" />
             )}
-          </div>
+          </Gleiter>
         )}
       </div>
       {s.view === "tafel" && tablet !== "kein" && !onLaptop && (
@@ -352,6 +353,7 @@ function ViewButton({ on, onClick, icon, label, disabled }: { on: boolean; onCli
     <button
       type="button"
       aria-pressed={on}
+      data-gleit-ziel
       disabled={disabled}
       onClick={onClick}
       className={`flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[14px] font-semibold ${on ? "bg-surface shadow-[var(--shadow-card)]" : "text-ink-2 hover:text-ink"}`}

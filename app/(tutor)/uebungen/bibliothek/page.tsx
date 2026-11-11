@@ -239,7 +239,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
                 </>
               )}
             </p>
-            <ul className="panel divide-y divide-line">
+            <ul className="staffel panel divide-y divide-line">
               {list.map((e) => {
                 const t = subjectTone(e.subject);
                 return (
@@ -312,7 +312,7 @@ function LibraryArchive({ archiv, fehler }: { archiv?: string; fehler?: string }
         info="Archivierte Aufgaben stehen nicht in der Bibliothek und nicht in der Suche. Übungen, die sie schon enthalten, behalten ihre Kopie."
       />
       <ArchivMeldung archiv={archiv} fehler={fehler} archiviert="Aufgabe archiviert." wiederhergestellt="Wiederhergestellt. Die Aufgabe steht wieder in der Bibliothek." />
-      <ul className="panel divide-y divide-line" data-testid="bibliothek-archiv">
+      <ul className="staffel panel divide-y divide-line" data-testid="bibliothek-archiv">
         {list.map((e) => (
           <li key={e.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
             <Link href={`${LIB}/${e.id}`} className="group min-w-0 flex-1 basis-56 py-1">

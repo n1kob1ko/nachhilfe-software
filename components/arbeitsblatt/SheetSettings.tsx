@@ -14,6 +14,7 @@ import {
   type SolutionMode,
   type Space,
 } from "@/lib/arbeitsblatt";
+import { Gleiter } from "@/components/Bewegung";
 
 type Props = {
   options: SheetOptions;
@@ -74,8 +75,9 @@ export function SheetSettings({
       </p>
 
       {o.solutions === "lehrer" && (
-        <div
-          className="mb-3 grid grid-cols-2 gap-1 rounded-xl bg-panel p-1"
+        <Gleiter
+          marke="bg-surface shadow-sm"
+          className="relative mb-3 grid grid-cols-2 gap-1 rounded-xl bg-panel p-1"
           role="group"
           aria-label="Fassung"
         >
@@ -83,6 +85,7 @@ export function SheetSettings({
             <button
               key={f}
               type="button"
+              data-gleit-ziel
               aria-pressed={o.fassung === f}
               onClick={() => set("fassung", f)}
               className={`min-h-[44px] rounded-lg text-[14px] font-semibold ${o.fassung === f ? "bg-surface shadow-sm" : "text-ink-2"}`}
@@ -90,7 +93,7 @@ export function SheetSettings({
               {f === "schueler" ? "Schülerblatt" : "Lehrerfassung"}
             </button>
           ))}
-        </div>
+        </Gleiter>
       )}
       <button
         type="button"

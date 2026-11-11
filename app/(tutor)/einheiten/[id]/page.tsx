@@ -679,7 +679,7 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
         {rows.length === 0 ? (
           <p className="panel px-5 py-5 text-[15px] text-ink-2">Noch keine Übung gesendet.</p>
         ) : (
-          <ul className="panel divide-y divide-line">
+          <ul className="staffel panel divide-y divide-line">
             {rows.map((a) => {
               const done = Boolean(a.completed_at);
               return (

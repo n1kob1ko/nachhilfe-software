@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { IconWechsel } from "@/components/Bewegung";
 import { ArrowLeft, ArrowRight, ChevronDown, GripVertical, ImagePlus, Images, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { bildErstellenAction } from "@/app/bildfolge-actions";
 import { SchoolClassFields } from "@/components/SchoolClassFields";
@@ -289,7 +290,7 @@ export function PictureStoryForm(p: Props) {
                     type="button"
                     aria-label={`Bild ${i + 1} verschieben (ziehen)`}
                     title="Ziehen zum Verschieben"
-                    className="absolute top-1.5 right-1.5 flex h-11 w-11 cursor-grab touch-none items-center justify-center rounded-xl bg-surface/90 text-ink-2 active:cursor-grabbing"
+                    className="ohne-druck absolute top-1.5 right-1.5 flex h-11 w-11 cursor-grab touch-none items-center justify-center rounded-xl bg-surface/90 text-ink-2 active:cursor-grabbing"
                     onPointerDown={(e) => startDrag(e, it.key)}
                     onPointerMove={dragMove}
                     onPointerUp={endDrag}
@@ -336,7 +337,7 @@ export function PictureStoryForm(p: Props) {
                   </div>
                   {it.bildfolgeId && it.szene && p.generator && !p.generator.aus && (
                     <button type="button" className="btn btn-ghost justify-start px-3 text-[14px]" onClick={() => void neuErstellen(it)} disabled={busy !== null} data-testid="bild-neu">
-                      {neuKey === it.key ? <Loader2 size={16} className="animate-spin" aria-hidden /> : <RefreshCw size={16} aria-hidden />}
+                      <IconWechsel an={neuKey === it.key} aus={<RefreshCw size={16} aria-hidden />} ein={<Loader2 size={16} className="animate-spin" aria-hidden />} />
                       {neuKey === it.key ? "Wird neu gezeichnet …" : <>Dieses Bild neu · <span className="num">{centText(p.generator.bildCent)}</span></>}
                     </button>
                   )}

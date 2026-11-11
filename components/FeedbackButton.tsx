@@ -153,7 +153,7 @@ export function FeedbackButton({ variant = "rund" }: { variant?: "rund" | "zeile
       >
         {zustand === "danke" ? (
           <div className="dialog-karte flex flex-col items-center gap-3 px-6 py-10 text-center" role="status">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-green-wash text-green">
+            <span className="puls flex h-12 w-12 items-center justify-center rounded-full bg-green-wash text-green">
               <Check size={24} strokeWidth={2.5} aria-hidden />
             </span>
             <p className="text-[17px] font-semibold">Danke, ist angekommen.</p>

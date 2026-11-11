@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { IconWechsel } from "@/components/Bewegung";
 import { AlertTriangle, CalendarPlus, Camera, Check, ImagePlus, Loader2, RefreshCw, ScanText, X } from "lucide-react";
 import { Pill } from "@/components/ui";
 import { shrinkImage } from "@/components/shrink-image";
@@ -415,7 +416,7 @@ export function StundenplanImport({
             {kurzOffen > 0 && !kurzMeldung && (
               <div>
                 <button type="button" className="btn btn-secondary" onClick={verlaengern} disabled={verlaengert || dauer <= 50} data-testid="sp-verlaengern">
-                  {verlaengert ? <Loader2 size={16} className="animate-spin" aria-hidden /> : <RefreshCw size={16} aria-hidden />}
+                  <IconWechsel an={verlaengert} aus={<RefreshCw size={16} aria-hidden />} ein={<Loader2 size={16} className="animate-spin" aria-hidden />} />
                   {dauer > 50 ? `Auf ${dauer} Minuten verlängern` : "Oben eine längere Dauer wählen"}
                 </button>
               </div>
@@ -692,7 +693,7 @@ export function StundenplanImport({
                   .join(" · ")}
               </p>
               <button type="button" className="btn btn-primary btn-lg" onClick={eintragen} disabled={speichert || eintragbar === 0} data-testid="sp-eintragen">
-                {speichert ? <Loader2 size={18} className="animate-spin" aria-hidden /> : <CalendarPlus size={18} aria-hidden />}
+                <IconWechsel an={speichert} aus={<CalendarPlus size={18} aria-hidden />} ein={<Loader2 size={18} className="animate-spin" aria-hidden />} />
                 {speichert ? "Wird eingetragen …" : "In den Wochenplan eintragen"}
               </button>
             </div>
@@ -701,9 +702,9 @@ export function StundenplanImport({
       )}
 
       {gross && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/70 p-4" role="dialog" aria-modal="true" aria-label="Foto groß" onClick={() => setGross(null)}>
+        <div className="schleier fixed inset-0 z-50 flex items-center justify-center bg-ink/70 p-4" role="dialog" aria-modal="true" aria-label="Foto groß" onClick={() => setGross(null)}>
           {/* eslint-disable-next-line @next/next/no-img-element -- a local preview of the chosen photo */}
-          <img src={gross.url} alt="Stundenplan-Foto" className="max-h-full max-w-full rounded-xl bg-surface object-contain" />
+          <img src={gross.url} alt="Stundenplan-Foto" className="dialog-karte max-h-full max-w-full rounded-xl bg-surface object-contain" />
           <button type="button" onClick={() => setGross(null)} className="absolute top-4 right-4 flex h-11 w-11 items-center justify-center rounded-full bg-surface text-ink" aria-label="Schließen">
             <X size={20} aria-hidden />
           </button>

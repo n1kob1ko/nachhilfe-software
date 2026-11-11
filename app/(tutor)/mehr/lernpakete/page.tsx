@@ -263,7 +263,7 @@ export default async function LernpaketePage({ searchParams }: { searchParams: P
           <p className="mb-2 text-[13px] text-ink-3">
             <span className="num">{list.length}</span> {list.length === 1 ? "Lernpaket" : "Lernpakete"}
           </p>
-          <ul className="panel divide-y divide-line">
+          <ul className="staffel panel divide-y divide-line">
             {list.map((p) => {
               const t = subjectTone(p.fach);
               return (

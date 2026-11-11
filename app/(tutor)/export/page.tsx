@@ -129,7 +129,7 @@ export default async function ExportPage() {
             <Info label="Info zum Format">Mit Semikolon getrennt und mit Umlauten, damit Excel sie direkt richtig öffnet.</Info>
           </span>
         </SectionTitle>
-        <ul className="panel divide-y divide-line">
+        <ul className="staffel panel divide-y divide-line">
           {DATASETS.map((d) => (
             <li key={d.key} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 md:px-5">
               <FileSpreadsheet size={18} className="shrink-0 text-ink-3" aria-hidden />

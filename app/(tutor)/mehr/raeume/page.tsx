@@ -49,7 +49,7 @@ export default async function RoomsPage({ searchParams }: { searchParams: Promis
               {!darf && <p className="text-[14px] text-ink-2">Räume legt die Verwaltung an.</p>}
             </div>
           ) : (
-            <ul className="panel divide-y divide-line">
+            <ul className="staffel panel divide-y divide-line">
               {alle.map((r) => {
                 const verweise = raumVerweise(r.id);
                 return (

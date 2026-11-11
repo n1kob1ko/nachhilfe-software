@@ -171,7 +171,7 @@ function Cards({ items, wide = false }: { items: { key: string; label: string; n
 
 function SkillList({ list, all }: { list: Skill[]; all: Skill[] }) {
   return (
-    <ul className="panel divide-y divide-line">
+    <ul className="staffel panel divide-y divide-line">
       {list.map((s) => {
         const subs = all.filter((x) => x.parent_id === s.id);
         // the name opens „Übung erstellen“; explanation and typical errors live on the details page, so say so

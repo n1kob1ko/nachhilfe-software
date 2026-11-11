@@ -82,7 +82,7 @@ export default async function Students({ searchParams }: { searchParams: Promise
           Ein Schülerprofil sammelt Einheiten, Hausübungen, Tests und Übungsergebnisse und berechnet daraus den Lernstand pro Fähigkeit.
         </Empty>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="staffel grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {students.map((s) => {
             const a = analyzeStudent(s.id)!;
             // wann der Schüler als Nächstes kommt (veröffentlichter Plan, diese und nächste Woche)

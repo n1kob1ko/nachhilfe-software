@@ -457,10 +457,10 @@ function StudentTexts({ studentId }: { studentId: number }) {
           <Info label="Info zu Texten">Textarbeiten aus den Einheiten. Unfertige Texte stehen oben und können in der nächsten Einheit am Tablet weitergeschrieben werden.</Info>
         </span>
       </SectionTitle>
-      <ul className="panel divide-y divide-line">{texts.slice(0, VISIBLE).map(row)}</ul>
+      <ul className="staffel panel divide-y divide-line">{texts.slice(0, VISIBLE).map(row)}</ul>
       {texts.length > VISIBLE && (
         <Reveal label={`Weitere Texte (${texts.length - VISIBLE})`} className="mt-3">
-          <ul className="panel divide-y divide-line">{texts.slice(VISIBLE).map(row)}</ul>
+          <ul className="staffel panel divide-y divide-line">{texts.slice(VISIBLE).map(row)}</ul>
         </Reveal>
       )}
     </section>
