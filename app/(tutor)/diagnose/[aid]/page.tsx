@@ -114,7 +114,7 @@ export default async function DiagnosisResultPage({ params, searchParams }: { pa
               <Info label="Wie entstehen die Wissenslücken?">Voraussetzungen der unsicheren und kritischen Fähigkeiten, die selbst schwach oder noch nie geprüft sind. Die Voraussetzungen pflegst du bei jeder Fähigkeit.</Info>
             </span>
           </SectionTitle>
-          <ul className="panel divide-y divide-line">
+          <ul className="staffel panel divide-y divide-line">
             {r.gaps.map((g) => (
               <li key={g.skill.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
                 <span className="min-w-0 flex-1">
@@ -136,7 +136,7 @@ export default async function DiagnosisResultPage({ params, searchParams }: { pa
       {r.next.length > 0 && r.done > 0 && (
         <section aria-label="Empfohlene nächste Übungen">
           <SectionTitle>Empfohlene nächste Übungen</SectionTitle>
-          <ul className="grid gap-3 md:grid-cols-2">
+          <ul className="staffel grid gap-3 md:grid-cols-2">
             {r.next.map((n) => (
               <li key={n.key} className="panel px-5 py-4">
                 <div className="flex flex-wrap items-center gap-1.5">

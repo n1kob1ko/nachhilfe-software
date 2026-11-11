@@ -58,8 +58,10 @@
   /* Schatten in der Farbe der Fläche, kaum sichtbar */
   --shadow-card: 0 1px 2px rgba(20, 40, 80, 0.04), 0 6px 20px -12px rgba(20, 40, 80, 0.12);
   --shadow-pop: 0 2px 4px rgba(20, 40, 80, 0.06), 0 18px 40px -16px rgba(20, 40, 80, 0.28);
-  /* motion: strong ease-out for feedback, the iOS-like curve for drawers */
+  /* Bewegung: kräftiges ease-out für Eingänge und Rückmeldung, ease-in-out für Wege auf dem Bildschirm,
+     die iOS-artige Kurve für Schubfächer. Keine Kurve schwingt über (kein Federn im Alltag). */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -285,17 +287,9 @@ textarea.input {
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
-  transition: background-color 150ms, border-color 150ms, color 150ms, box-shadow 150ms, transform 160ms var(--ease-out);
   cursor: pointer;
 }
-/* pressing gives way a little, like a real button */
-.btn:active,
-.drueck:active {
-  transform: scale(0.97);
-}
-.drueck {
-  transition: transform 160ms var(--ease-out), filter 150ms, background-color 150ms, border-color 150ms;
-}
+/* Drücken (scale 0,97) und die Übergänge dazu stehen für alle Knöpfe gemeinsam im Abschnitt „Bewegung“ */
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -516,31 +510,366 @@ textarea.input {
   }
 }
 
-/* side drawer (Offen-Schubfach): slides in from the right, the veil fades */
-.schubfach {
-  animation: schubfach-rein 300ms var(--ease-drawer);
+/* ---------- Bewegung ----------
+ * niko, 11.11.2026: 20 Regeln für Bewegung, überall gleich. Wer etwas bewegt, nimmt diese Bausteine
+ * statt eigener Zeiten (Übersicht in DESIGN.md, Abschnitt „Bewegung“; die Teile mit Zustand in components/Bewegung.tsx).
+ *  1 Eingänge mit ease-out            11 Eingang vom Auslöser (transform-origin, <Ursprung/>)
+ *  2 Klappen und Menüs 150–250 ms     12 Ausgang zum Auslöser zurück
+ *  3 Listen versetzt um 30 ms         13 kein Federn im Alltag (keine Kurve schwingt über)
+ *  4 Drücken auf 0,97                 14 nichts gleitet, solange man hält oder zieht
+ *  5 Marke streckt sich 12 %          15 Ausgänge 20 % kürzer als Eingänge
+ *  6 Einzelheiten setzen sich nach    16 Alt und Neu überlappen (Icons, Hell/Dunkel)
+ *  7 Bögen für Objekte                17 Masken für Aufdecken und Farbe (clip-path)
+ *  8 Puls bestätigt Erfolg            18 Icons blenden mit Unschärfe über
+ *  9 ease-in-out für Wege             19 Gummiband am Rand (Scrollen bleibt frei, Panels halten es bei sich)
+ * 10 Popover beginnen bei 0,95        20 dieselbe Marke wandert mit (<Gleiter/>)
+ */
+:root {
+  --t-druck: 160ms;
+  --t-pop: 200ms;
+  --t-pop-raus: 160ms;
+  --t-dialog: 220ms;
+  --t-dialog-raus: 176ms;
+  --t-fach: 300ms;
+  --t-fach-raus: 240ms;
+  --t-zug: 280ms;
+  --versatz: 30ms;
 }
-.schleier {
-  animation: schleier-rein 200ms ease-out;
-}
-@keyframes schubfach-rein {
-  from {
-    transform: translateX(100%);
+
+@media screen {
+  /* 4: alles, was man drücken kann, gibt gleich nach. `scale` statt `transform`, damit es sich mit Eingängen nicht beißt.
+     14: gezogene Plätze (draggable) und Malflächen (.ohne-druck) bleiben starr. */
+  :where(button, summary, [role="button"], a.panel, a.kennzahl, .btn, .drueck, nav a, label.cursor-pointer):where(:not(.ohne-druck, [draggable="true"], :disabled, .excalidraw *)) {
+    transition-property: color, background-color, border-color, box-shadow, opacity, filter, translate, scale;
+    transition-duration: var(--t-druck);
+    transition-timing-function: var(--ease-out);
+  }
+  :where(button, summary, [role="button"], a.panel, a.kennzahl, .btn, .drueck, nav a, label.cursor-pointer):where(:not(.ohne-druck, [draggable="true"], :disabled, .excalidraw *)):active {
+    scale: 0.97;
+  }
+
+  /* 1 + 3: Zeilen und Karten einer Liste kommen nacheinander, je 30 ms später, höchstens zehn Stufen.
+     Nur beim ersten Erscheinen; niemand wartet darauf, alles ist sofort bedienbar. */
+  .staffel > * {
+    animation: rein 320ms var(--ease-out) backwards;
+    animation-delay: calc(var(--n, 0) * var(--versatz));
+  }
+  .staffel > :nth-child(1) { --n: 0; }
+  .staffel > :nth-child(2) { --n: 1; }
+  .staffel > :nth-child(3) { --n: 2; }
+  .staffel > :nth-child(4) { --n: 3; }
+  .staffel > :nth-child(5) { --n: 4; }
+  .staffel > :nth-child(6) { --n: 5; }
+  .staffel > :nth-child(7) { --n: 6; }
+  .staffel > :nth-child(8) { --n: 7; }
+  .staffel > :nth-child(9) { --n: 8; }
+  .staffel > :nth-child(10) { --n: 9; }
+  .staffel > :nth-child(n + 11) { --n: 10; }
+  /* die Seite selbst: ein kurzes Einblenden, ohne Weg */
+  .seite-rein {
+    animation: einblenden 180ms ease-out backwards;
+  }
+
+  /* 6: auf Kennzahl und Bühne setzen sich Wort, Zahl und Zusatz kurz nach der Karte */
+  .kennzahl > *,
+  .setzen > * {
+    animation: rein 360ms var(--ease-out) backwards;
+    animation-delay: calc(var(--n, 0) * var(--versatz) + var(--k, 0) * 45ms + 70ms);
+  }
+  :is(.kennzahl, .setzen) > :nth-child(2) { --k: 1; }
+  :is(.kennzahl, .setzen) > :nth-child(3) { --k: 2; }
+  :is(.kennzahl, .setzen) > :nth-child(4) { --k: 3; }
+  :is(.kennzahl, .setzen) > :nth-child(n + 5) { --k: 4; }
+
+  /* 7: das Bild der Bühne kommt auf einem Bogen: seitwärts gleichmäßig, nach oben schnell und dann ruhig */
+  .bogen {
+    animation:
+      bogen-quer 560ms cubic-bezier(0.45, 0, 0.55, 1) backwards,
+      bogen-hoch 560ms var(--ease-out) backwards,
+      einblenden 260ms ease-out backwards;
+    animation-delay: 90ms;
+  }
+
+  /* 8: ein Puls bestätigt, dass etwas geklappt hat (gespeichert, kopiert, richtig) */
+  .puls {
+    animation:
+      puls 420ms var(--ease-in-out),
+      puls-ring 620ms var(--ease-out);
+  }
+
+  /* jede grüne Meldung („Gespeichert.“, „gesendet“) bestätigt mit ihrem Haken */
+  [role="status"]:is(.text-green, .bg-green-wash) > svg:first-child {
+    animation:
+      puls 420ms var(--ease-in-out) 120ms,
+      puls-ring 620ms var(--ease-out) 120ms;
+    border-radius: 999px;
+  }
+
+  /* 10 + 11 + 12: Popover wachsen ab 0,95 von ihrem Auslöser und gehen dorthin zurück */
+  .pop {
+    animation: pop-rein var(--t-pop) var(--ease-out);
+    transform-origin: top left;
+  }
+  .pop.pop-rechts {
+    transform-origin: top right;
+  }
+  .pop.geht {
+    animation: pop-raus var(--t-pop-raus) var(--ease-out) forwards;
+  }
+
+  /* Dialoge: von Hand gebaute (.dialog-karte im Schleier) und echte <dialog> */
+  .dialog-karte {
+    animation: dialog-rein var(--t-dialog) var(--ease-out);
+  }
+  .dialog-karte.geht {
+    animation: dialog-raus var(--t-dialog-raus) var(--ease-out) forwards;
+  }
+  .schleier {
+    animation: einblenden var(--t-pop) ease-out;
+  }
+  .schleier.geht {
+    animation: ausblenden var(--t-dialog-raus) ease-out forwards;
+  }
+  dialog:where(:not(.excalidraw *)) {
+    transition:
+      opacity var(--t-dialog-raus) var(--ease-out),
+      scale var(--t-dialog-raus) var(--ease-out),
+      display var(--t-dialog-raus) allow-discrete,
+      overlay var(--t-dialog-raus) allow-discrete;
+    overscroll-behavior: contain;
+  }
+  dialog:where(:not([open], .excalidraw *)) {
+    opacity: 0;
+    scale: 0.95;
+  }
+  dialog[open]:where(:not(.excalidraw *)) {
+    animation: dialog-rein var(--t-dialog) var(--ease-out);
+  }
+  /* im <dialog> bewegt sich der Dialog selbst, nicht noch einmal die Karte darin */
+  dialog .dialog-karte {
+    animation: none;
+  }
+  dialog:where(:not(.excalidraw *))::backdrop {
+    opacity: 0;
+    transition:
+      opacity var(--t-dialog-raus) ease-out,
+      display var(--t-dialog-raus) allow-discrete,
+      overlay var(--t-dialog-raus) allow-discrete;
+  }
+  dialog[open]:where(:not(.excalidraw *))::backdrop {
+    opacity: 1;
+    animation: einblenden var(--t-dialog) ease-out;
+  }
+
+  /* Schubfach von rechts (Offene Schüler): 300 ms herein, 240 ms hinaus */
+  .schubfach {
+    animation: schubfach-rein var(--t-fach) var(--ease-drawer);
+    overscroll-behavior: contain;
+  }
+  .schubfach.geht {
+    animation: schubfach-raus var(--t-fach-raus) var(--ease-drawer) forwards;
+  }
+  /* die Menüs der Whiteboard-Leiste und die Korrekturkarte sind Popover; am Handy ist die Karte ein Blatt von unten */
+  .wb-menu {
+    animation: pop-rein var(--t-pop) var(--ease-out);
+    transform-origin: top right;
+  }
+  .wb-menu.geht {
+    animation: pop-raus var(--t-pop-raus) var(--ease-out) forwards;
+    pointer-events: none;
+  }
+  .kx-pop {
+    animation: pop-rein var(--t-pop) var(--ease-out);
+  }
+  @media (max-width: 640px) {
+    .kx-pop {
+      animation: blatt-rein var(--t-fach) var(--ease-drawer);
+    }
+  }
+  /* das große Bild einer Bildgeschichte */
+  .sp-box {
+    animation: einblenden var(--t-pop) ease-out;
+  }
+  .sp-box .sp-box-img {
+    animation: dialog-rein var(--t-dialog) var(--ease-out);
+  }
+  .sp-box.geht {
+    animation: ausblenden var(--t-dialog-raus) ease-out forwards;
+  }
+
+  /* 2 + 12 + 15: alles Aufklappbare (<details>) öffnet in 200 ms und schließt in 160 ms.
+     Die Höhe wächst mit, wo der Browser es kann (interpolate-size); sonst blendet der Inhalt nur ein und aus. */
+  @supports selector(::details-content) {
+    :root {
+      interpolate-size: allow-keywords;
+    }
+    details:where(:not(.excalidraw *))::details-content {
+      block-size: 0;
+      opacity: 0;
+      translate: 0 -4px;
+      transition:
+        block-size var(--t-pop-raus) var(--ease-out),
+        opacity var(--t-pop-raus) var(--ease-out),
+        translate var(--t-pop-raus) var(--ease-out),
+        content-visibility var(--t-pop-raus) allow-discrete;
+    }
+    details[open]:where(:not(.excalidraw *))::details-content {
+      block-size: auto;
+      opacity: 1;
+      translate: 0 0;
+      transition-duration: var(--t-pop);
+    }
+  }
+  @supports not selector(::details-content) {
+    details[open]:where(:not(.excalidraw *)) > :not(summary) {
+      animation: rein var(--t-pop) var(--ease-out);
+    }
+  }
+  /* 9: der Pfeil dreht mit, als Weg auf der Stelle */
+  summary svg,
+  .reveal-chevron {
+    transition: rotate var(--t-pop) var(--ease-in-out), transform var(--t-pop) var(--ease-in-out);
+  }
+
+  /* 18 + 16: zwei Icons an derselben Stelle blenden ineinander, das gehende wird unscharf und kleiner */
+  .icon-wechsel {
+    display: inline-grid;
+    place-items: center;
+  }
+  .icon-wechsel > * {
+    grid-area: 1 / 1;
+    display: inline-flex;
+    transition:
+      opacity var(--t-pop) var(--ease-out),
+      scale var(--t-pop) var(--ease-out),
+      filter var(--t-pop) var(--ease-out);
+  }
+  .icon-wechsel[data-an="true"] > :first-child,
+  .icon-wechsel[data-an="false"] > :last-child {
+    opacity: 0;
+    scale: 0.6;
+    filter: blur(4px);
+  }
+
+  /* 20 + 9 + 5: die Marke des aktiven Eintrags ist ein einziges Element, das zum neuen Eintrag wandert
+     (components/Bewegung.tsx, Gleiter). Solange sie da ist, tragen die Einträge selbst keine Fläche. */
+  .gleiter {
+    isolation: isolate;
+  }
+  .gleit-marke {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    opacity: 0;
+    pointer-events: none;
+    border-radius: 999px;
+  }
+  .gleiter[data-an] > .gleit-marke {
+    opacity: 1;
+  }
+  .gleiter[data-an] [data-gleit-ziel] {
+    background-color: transparent;
+    box-shadow: none;
+  }
+  /* Seitenleiste: die weiße Zeile trägt den blauen Kreis des Icons gleich mit */
+  .gleit-nav::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    width: 32px;
+    height: 32px;
+    margin-top: -16px;
+    border-radius: 999px;
+    background: var(--accent-bright);
+  }
+
+  /* 17 + 16: Hell/Dunkel deckt sich als Kreis vom Knopf aus auf; die alte Ansicht bleibt darunter stehen */
+  html[data-themenwechsel]::view-transition-old(root),
+  html[data-themenwechsel]::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
   }
 }
-@keyframes schleier-rein {
+
+@keyframes rein {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+@keyframes einblenden {
   from {
     opacity: 0;
   }
 }
-/* dialogs open with a short rise, never from nothing */
-.dialog-karte {
-  animation: dialog-rein 200ms var(--ease-out);
+@keyframes ausblenden {
+  to {
+    opacity: 0;
+  }
 }
+@keyframes pop-rein {
+  from {
+    opacity: 0;
+    scale: 0.95;
+  }
+}
+@keyframes pop-raus {
+  to {
+    opacity: 0;
+    scale: 0.95;
+  }
+}
+/* nie aus dem Nichts: ab 0,95 */
 @keyframes dialog-rein {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    scale: 0.95;
+  }
+}
+@keyframes dialog-raus {
+  to {
+    opacity: 0;
+    scale: 0.95;
+  }
+}
+@keyframes schubfach-rein {
+  from {
+    translate: 100% 0;
+  }
+}
+@keyframes schubfach-raus {
+  to {
+    translate: 100% 0;
+  }
+}
+@keyframes blatt-rein {
+  from {
+    translate: 0 100%;
+  }
+}
+@keyframes bogen-quer {
+  from {
+    translate: 38px 0;
+  }
+}
+@keyframes bogen-hoch {
+  from {
+    transform: translateY(30px) rotate(9deg);
+  }
+}
+@keyframes puls {
+  40% {
+    scale: 1.08;
+  }
+}
+@keyframes puls-ring {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 40%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 10px transparent;
   }
 }
 /* horizontal chip rows scroll without a visible bar */
@@ -551,8 +880,13 @@ textarea.input {
   display: none;
 }
 
+/* „Weniger Bewegung“: nichts bewegt sich, alles ist sofort da */
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after,
+  ::backdrop,
+  ::details-content {
     transition: none !important;
     animation: none !important;
   }
@@ -1037,7 +1371,6 @@ textarea.input {
 .reveal > summary::-webkit-details-marker { display: none; }
 .reveal > summary:hover { text-decoration: underline; text-underline-offset: 3px; }
 .reveal[open] > summary .reveal-chevron { transform: rotate(180deg); }
-.reveal-chevron { transition: transform 150ms ease; }
 @media (pointer: coarse) { .reveal > summary { min-height: 44px; } }
 .add-skill > summary::-webkit-details-marker { display: none; }
 
@@ -1672,7 +2005,7 @@ textarea.input {
   left: 0;
   border-radius: 999px;
   background: var(--accent);
-  transition: width 0.2s ease;
+  transition: width var(--t-zug) var(--ease-in-out);
 }
 .ti-progress[data-state="im-ziel"] .ti-progress-fill {
   background: var(--green);

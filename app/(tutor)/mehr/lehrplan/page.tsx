@@ -9,6 +9,7 @@ import { bundledPackages, getImport, listImports, type BundledPackage, type Diff
 import { curriculumOverview, examThresholds, listSources, SOURCE_TYPE_LABEL, taskBankAllowed, type SourceType } from "@/lib/lehrplan";
 import { NOTEN, notenschluessel, punkteText, schluesselTabelle, SCHLUESSEL_STANDARD } from "@/lib/probeschularbeit";
 import { rangeLabel, SCHOOL_TYPES } from "@/lib/school";
+import { Gleiter } from "@/components/Bewegung";
 
 export const metadata = { title: "Lehrplan" };
 
@@ -35,18 +36,19 @@ export default async function CurriculumPage({ searchParams }: { searchParams: P
         back={{ href: "/mehr", label: "Erweitert" }}
         info="Österreichische Lehrpläne, Quellen und Lizenzen. Fähigkeiten und Lernstand bauen darauf auf. Lehrplandaten kommen nur aus geprüften Quellen und werden mit Vorschau importiert."
       />
-      <nav className="no-print mb-8 flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-panel p-1" aria-label="Bereiche">
+      <Gleiter as="nav" marke="bg-surface shadow-[var(--shadow-card)]" className="no-print relative mb-8 flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-panel p-1" aria-label="Bereiche">
         {TABS.map(([key, label]) => (
           <Link
             key={key}
             href={`/mehr/lehrplan?tab=${key}`}
+            data-gleit-ziel
             aria-current={tab === key ? "page" : undefined}
             className={`flex min-h-[44px] items-center rounded-full px-4 text-[14px] font-medium whitespace-nowrap ${tab === key ? "bg-surface text-ink shadow-[var(--shadow-card)]" : "text-ink-2 hover:text-ink"}`}
           >
             {label}
           </Link>
         ))}
-      </nav>
+      </Gleiter>
       {/* Einstellungen zeigt den Fehler beim Notenschlüssel, wo er entstand */}
       {sp.fehler && tab !== "einstellungen" && <p className="mb-6 rounded-lg bg-red-wash px-4 py-3 text-[14px] text-red">{sp.fehler}</p>}
       {tab === "uebersicht" && <Overview />}
@@ -281,7 +283,7 @@ function Imports({ admin, previewIds, importedIds }: { admin: boolean; previewId
             </Info>
           </span>
         </SectionTitle>
-        <ul className="grid gap-3 md:grid-cols-2">
+        <ul className="staffel grid gap-3 md:grid-cols-2">
           {others.map((p) => (
             <li key={p.file} className="panel flex flex-col gap-2 px-4 py-4">
               <div className="flex items-start gap-2">
@@ -340,7 +342,7 @@ function Imports({ admin, previewIds, importedIds }: { admin: boolean; previewId
         {history.length === 0 ? (
           <p className="text-[14px] text-ink-3">Noch nichts importiert.</p>
         ) : (
-          <ul className="panel divide-y divide-line text-[14px]">
+          <ul className="staffel panel divide-y divide-line text-[14px]">
             {history.map((h) => (
               <li key={h.id}>
                 <Link href={`/mehr/lehrplan?tab=importe&vorschau=${h.id}`} className="flex min-h-[52px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 hover:bg-panel/60">
@@ -424,7 +426,7 @@ function OfficialPackages({ admin, packages, extra }: { admin: boolean; packages
           </Info>
         </span>
       </SectionTitle>
-      <ul className="panel divide-y divide-line">
+      <ul className="staffel panel divide-y divide-line">
         {SCHOOL_TYPES.map((t) => {
           const list = packages.filter((p) => p.curriculum!.school_type === t.name);
           return (

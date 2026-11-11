@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
+import { IconWechsel } from "@/components/Bewegung";
 
 /**
  * Der Knopf für den Dunkelmodus (niko, 21.10.2026): Mond heißt „dunkel schalten“, Sonne „hell schalten“.
@@ -30,15 +31,39 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
     document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", LEISTENFARBE[t]));
   }, []);
   const dark = theme === "dark";
-  const wechseln = () => {
+  const wechseln = (e: React.MouseEvent<HTMLButtonElement>) => {
     const next: Theme = dark ? "light" : "dark";
-    anwenden(next);
-    try {
-      localStorage.setItem(SCHLUESSEL, next);
-    } catch {
-      // privates Fenster: dann gilt die Wahl nur bis zum Schließen
+    const umschalten = () => {
+      anwenden(next);
+      try {
+        localStorage.setItem(SCHLUESSEL, next);
+      } catch {
+        // privates Fenster: dann gilt die Wahl nur bis zum Schließen
+      }
+      setTheme(next);
+    };
+    // Die neue Ansicht deckt sich als Kreis vom Knopf aus auf, die alte bleibt darunter stehen (Bewegung, Regeln 16 und 17).
+    // Wo der Browser das nicht kann oder „weniger Bewegung“ gilt, schaltet es wie bisher sofort um.
+    const html = document.documentElement;
+    if (typeof document.startViewTransition !== "function" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      umschalten();
+      return;
     }
-    setTheme(next);
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = r.left + r.width / 2;
+    const y = r.top + r.height / 2;
+    const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    html.dataset.themenwechsel = "";
+    const vt = document.startViewTransition(umschalten);
+    vt.ready
+      .then(() =>
+        html.animate(
+          { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+          { duration: 420, easing: "cubic-bezier(0.23, 1, 0.32, 1)", pseudoElement: "::view-transition-new(root)" },
+        ),
+      )
+      .catch(() => {});
+    vt.finished.finally(() => delete html.dataset.themenwechsel).catch(() => {});
   };
   return (
     <button
@@ -49,7 +74,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       aria-pressed={dark}
       className={`drueck flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-ink-2 transition-colors hover:border-line-strong hover:text-ink ${className}`}
     >
-      {dark ? <Sun size={18} strokeWidth={2} aria-hidden /> : <Moon size={18} strokeWidth={2} aria-hidden />}
+      <IconWechsel an={dark} aus={<Moon size={18} strokeWidth={2} aria-hidden />} ein={<Sun size={18} strokeWidth={2} aria-hidden />} />
     </button>
   );
 }

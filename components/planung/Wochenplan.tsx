@@ -27,6 +27,7 @@ import { SCHRAFFUR, WochenplanGitter, zielSchluessel, type Urteil, type Ziel } f
 import { OffenSchubfach, WochenStatus } from "./WochenplanPanels";
 import { WochenplanTage } from "./WochenplanTage";
 import type { PlanungsRegeln } from "@/lib/planung/regeln";
+import { Gleiter } from "@/components/Bewegung";
 
 export type PlanungFilterWerte = { lehrer: number; raum: number; schueler: number };
 
@@ -242,13 +243,14 @@ export function Wochenplan({ uebersicht, darfBearbeiten, basisPfad, druckHref, a
       <div className="no-print flex flex-col gap-2 lg:flex-row lg:items-center">
         {uebersicht.lehrer.length > 1 && (
           <div className="ohne-leiste -mx-4 overflow-x-auto px-4 md:-mx-8 md:px-8 lg:mx-0 lg:px-0">
-            <div role="group" aria-label="Lehrer" className="inline-flex gap-1 rounded-full bg-panel p-1">
+            <Gleiter marke="bg-surface shadow-[var(--shadow-card)]" role="group" aria-label="Lehrer" className="relative inline-flex gap-1 rounded-full bg-panel p-1">
               {[{ id: 0, name: "Alle Lehrer" }, ...uebersicht.lehrer].map((l) => {
                 const aktiv = filter.lehrer === l.id;
                 return (
                   <button
                     key={l.id}
                     type="button"
+                    data-gleit-ziel
                     aria-pressed={aktiv}
                     onClick={() => filterSetzen({ lehrer: l.id })}
                     className={`drueck min-h-[36px] rounded-full px-3.5 text-[13.5px] font-semibold whitespace-nowrap transition-colors ${aktiv ? "bg-surface text-ink shadow-[var(--shadow-card)]" : "text-ink-2 hover:text-ink"}`}
@@ -257,7 +259,7 @@ export function Wochenplan({ uebersicht, darfBearbeiten, basisPfad, druckHref, a
                   </button>
                 );
               })}
-            </div>
+            </Gleiter>
           </div>
         )}
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center lg:ml-auto">

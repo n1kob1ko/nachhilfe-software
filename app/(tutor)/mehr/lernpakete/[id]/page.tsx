@@ -186,7 +186,7 @@ export default async function LernpaketPage({ params, searchParams }: { params: 
         )
       )}
 
-      <ul className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Auf einen Blick">
+      <ul className="staffel mb-6 grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Auf einen Blick">
         <li className="kennzahl">
           <span className="kennzahl-wort">Dauer</span>
           <span className="kennzahl-wert">{summe} min</span>

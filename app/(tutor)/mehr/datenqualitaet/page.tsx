@@ -144,7 +144,7 @@ export default async function DataQualityPage({ searchParams }: { searchParams: 
           {own.length === 0 ? (
             <p className="text-[14px] text-ink-3">Noch keine eigenen Korrekturen.</p>
           ) : (
-            <ul className="panel divide-y divide-line">
+            <ul className="staffel panel divide-y divide-line">
               {own.map((c) => (
                 <li key={c.skill_id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-1.5">
                   <Link href={skillHref(c.skill_id)} className="flex min-h-[44px] items-center font-medium hover:text-accent">

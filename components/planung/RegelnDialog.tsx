@@ -34,7 +34,7 @@ const SCHALTER: { name: keyof PlanungsRegeln; label: string; hinweis: string }[]
 
 export function RegelnDialog({ regeln, gebrochen, schliessenHref, zurueck, woche }: { regeln: PlanungsRegeln; gebrochen: boolean; schliessenHref: string; zurueck: string; woche: string }) {
   return (
-    <div className="no-print fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/20 px-4 py-8" role="dialog" aria-modal="true" aria-label="Planungsregeln">
+    <div className="schleier no-print fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-ink/20 px-4 py-8" role="dialog" aria-modal="true" aria-label="Planungsregeln">
       <div className="dialog-karte w-full max-w-[720px] rounded-[20px] bg-surface px-5 py-5 shadow-[var(--shadow-pop)]">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>

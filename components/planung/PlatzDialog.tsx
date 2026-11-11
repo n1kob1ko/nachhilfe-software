@@ -64,7 +64,7 @@ export function PlatzDialog({
   const startMinuten = labelMinuten(start) ?? 0;
 
   return (
-    <div className="no-print fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/20 px-4 py-8" role="dialog" aria-modal="true" aria-label={platz ? "Platz bearbeiten" : "Platz anlegen"}>
+    <div className="schleier no-print fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-ink/20 px-4 py-8" role="dialog" aria-modal="true" aria-label={platz ? "Platz bearbeiten" : "Platz anlegen"}>
       <div className="dialog-karte w-full max-w-[520px] rounded-[20px] bg-surface px-5 py-5 shadow-[var(--shadow-pop)]">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>

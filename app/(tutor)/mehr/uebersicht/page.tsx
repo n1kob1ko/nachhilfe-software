@@ -175,7 +175,7 @@ export default async function UebersichtPage({ searchParams }: { searchParams: P
  */
 function VorbereitungListe({ punkte, kosten, kiAn }: { punkte: NaechsteEinheit[]; kosten: string; kiAn: boolean }) {
   return (
-    <ul className="panel divide-y divide-line" data-testid="vorbereitung">
+    <ul className="staffel panel divide-y divide-line" data-testid="vorbereitung">
       {punkte.map((n) => {
         const href = `/schueler/${n.studentId}/vorbereiten${n.heute ? "" : `?datum=${n.datum}`}`;
         const w = n.wahl;
@@ -241,7 +241,7 @@ function VorbereitungListe({ punkte, kosten, kiAn }: { punkte: NaechsteEinheit[]
 /** Vier Zahlen, die den Tag auf einen Blick erklären: heute, als Nächstes, offen, Schüler. */
 function Kennzahlen({ werte }: { werte: { wort: string; wert: string; zusatz: string; href?: string }[] }) {
   return (
-    <ul className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Auf einen Blick">
+    <ul className="staffel mb-8 grid grid-cols-2 gap-3 md:grid-cols-4" aria-label="Auf einen Blick">
       {werte.map((k) => {
         const inner = (
           <>
@@ -316,7 +316,7 @@ async function MeineWoche({ teacherId, name, isAdmin, meldung }: { teacherId: nu
               <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1.5 text-[14px] font-medium text-accent">
                 Einen Termin verschieben oder tauschen <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden />
               </summary>
-              <ul className="panel mt-2 divide-y divide-line">
+              <ul className="staffel panel mt-2 divide-y divide-line">
                 {termine.map((t) => (
                   <li key={t.id} className="px-4 py-3 text-[14px]">
                     <span className="num font-semibold">{t.label}</span> <span className="text-ink-2">· {t.schueler}</span>

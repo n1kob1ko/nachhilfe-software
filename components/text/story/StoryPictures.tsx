@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Lightbulb, X } from "lucide-react";
+import { useSchliessen } from "@/components/Bewegung";
 
 export type StoryPictures = {
   images: { id: number; url: string }[];
@@ -10,8 +11,10 @@ export type StoryPictures = {
 };
 
 /** A picture large, with the next and previous one; Escape or the cross closes it. */
-function Lightbox({ p, at, onClose, onMove }: { p: StoryPictures; at: number; onClose: () => void; onMove: (i: number) => void }) {
+function Lightbox({ p, at, onClose: zu, onMove }: { p: StoryPictures; at: number; onClose: () => void; onMove: (i: number) => void }) {
   const n = p.images.length;
+  // erst ausblenden, dann schließen
+  const [geht, onClose] = useSchliessen(zu);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -23,7 +26,7 @@ function Lightbox({ p, at, onClose, onMove }: { p: StoryPictures; at: number; on
   }, [at, n, onClose, onMove]);
   const img = p.images[at];
   return (
-    <div className="sp-box" role="dialog" aria-modal="true" aria-label={`Bild ${at + 1} von ${n}`} onClick={onClose} data-testid="bild-gross">
+    <div className={`sp-box ${geht ? "geht" : ""}`} role="dialog" aria-modal="true" aria-label={`Bild ${at + 1} von ${n}`} onClick={onClose} data-testid="bild-gross">
       <div className="sp-box-bar" onClick={(e) => e.stopPropagation()}>
         <span className="num text-[15px] font-semibold">
           Bild {at + 1} von {n}

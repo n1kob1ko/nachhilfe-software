@@ -8,10 +8,13 @@
 import { useEffect, useRef } from "react";
 import { AlertTriangle, CalendarCheck2, CalendarPlus, CheckCircle2, DoorOpen, FilePenLine, X } from "lucide-react";
 import type { UebersichtOffen, WochenUebersicht } from "@/lib/planung/uebersicht";
+import { AUSGANG, useAbgang } from "@/components/Bewegung";
 
 /** Das Schubfach der nicht gedeckten Schüler. Die Liste kommt aus der Datenbank, nicht aus dem letzten Lauf. */
 export function OffenSchubfach({ offen, istOffen, onSchliessen }: { offen: UebersichtOffen[]; istOffen: boolean; onSchliessen: () => void }) {
   const schliessenKnopf = useRef<HTMLButtonElement>(null);
+  // das Schubfach fährt auch wieder hinaus (240 ms), statt einfach zu verschwinden
+  const { da, geht } = useAbgang(istOffen, AUSGANG.fach);
   useEffect(() => {
     if (!istOffen) return;
     schliessenKnopf.current?.focus();
@@ -22,12 +25,12 @@ export function OffenSchubfach({ offen, istOffen, onSchliessen }: { offen: Ueber
     return () => window.removeEventListener("keydown", taste);
   }, [istOffen, onSchliessen]);
 
-  if (!istOffen) return null;
+  if (!da) return null;
   const fehlend = offen.reduce((summe, o) => summe + Math.max(0, o.benoetigteMinuten - o.geplanteMinuten), 0);
   return (
     <div className="no-print fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label="Offene Schüler">
-      <button type="button" tabIndex={-1} className="schleier absolute inset-0 bg-ink/20" aria-label="Schließen" onClick={onSchliessen} />
-      <div className="schubfach relative h-full w-full max-w-[420px] overflow-y-auto bg-surface px-5 py-5 pb-[max(20px,env(safe-area-inset-bottom))] shadow-[var(--shadow-pop)]">
+      <button type="button" tabIndex={-1} className={`schleier ohne-druck absolute inset-0 bg-ink/20 ${geht ? "geht" : ""}`} aria-label="Schließen" onClick={onSchliessen} />
+      <div className={`schubfach ${geht ? "geht" : ""} relative h-full w-full max-w-[420px] overflow-y-auto bg-surface px-5 py-5 pb-[max(20px,env(safe-area-inset-bottom))] shadow-[var(--shadow-pop)]`}>
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h2 className="text-[17px] font-semibold">Noch offen</h2>

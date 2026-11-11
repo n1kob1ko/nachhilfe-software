@@ -11,7 +11,7 @@ import { klassenLabel } from "@/lib/school";
  */
 export function SchuelerWahl({ students, offen, label = "Anderen Schüler starten" }: { students: repo.Student[]; offen?: boolean; label?: string }) {
   const liste = (
-    <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+    <ul className="staffel mt-3 grid gap-2 sm:grid-cols-2">
       {students.slice(0, 8).map((s) => (
         <li key={s.id}>
           <form action={startUnitAction.bind(null, s.id, null)}>

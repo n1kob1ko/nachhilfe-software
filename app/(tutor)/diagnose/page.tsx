@@ -114,7 +114,7 @@ export default async function DiagnosePage({ searchParams }: { searchParams: Pro
 
 function Cards({ items }: { items: { key: string; label: string; note?: string; href: string; primary?: boolean }[] }) {
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="staffel grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((i) => (
         <li key={i.key}>
           <Link href={i.href} className={`panel flex min-h-[76px] items-center gap-3 px-5 py-4 transition-colors hover:bg-panel ${i.primary ? "ring-2 ring-accent/40" : ""}`}>
@@ -148,7 +148,7 @@ function ChooseStudent({ students }: { students: repo.Student[] }) {
   }
   return (
     <div className="grid gap-10">
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Schüler wählen">
+      <ul className="staffel grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Schüler wählen">
         {students.map((s) => (
           <li key={s.id}>
             <Link href={href({ schueler: s.id })} className="panel flex min-h-[76px] items-center gap-3 px-4 py-3 transition-colors hover:bg-panel">
@@ -165,7 +165,7 @@ function ChooseStudent({ students }: { students: repo.Student[] }) {
       {recent.length > 0 && (
         <section aria-label="Letzte Diagnosen">
           <h2 className="mb-2 text-[15px] font-semibold text-ink-2">Letzte Diagnosen</h2>
-          <ul className="panel divide-y divide-line">
+          <ul className="staffel panel divide-y divide-line">
             {recent.map((d) => (
               <li key={d.id}>
                 <Link href={`/diagnose/${d.id}`} className="flex min-h-[56px] items-center gap-3 px-4 py-2 hover:bg-panel/60">
@@ -246,7 +246,7 @@ function ChooseTopics({ student, subject, branch, klasse, areas, scope }: { stud
         {areas.length === 0 ? (
           <p className="text-[14px] text-ink-3">Für diese Klasse gibt es noch keine Fähigkeiten.</p>
         ) : (
-          <ul className="panel divide-y divide-line">
+          <ul className="staffel panel divide-y divide-line">
             {areas.map((a) => (
               <li key={a}>
                 <label className="flex min-h-[56px] cursor-pointer items-center gap-3 px-4 py-2 hover:bg-panel/60">

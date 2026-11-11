@@ -118,7 +118,7 @@ export default async function MaterialsPage({ searchParams }: { searchParams: Pr
       {list.length === 0 ? (
         <Empty title="Noch kein Material">Lade oben ein Foto oder PDF hoch.</Empty>
       ) : (
-        <ul className="panel max-w-[920px] divide-y divide-line">
+        <ul className="staffel panel max-w-[920px] divide-y divide-line">
           {list.map((m) => {
             const src = sourceById(m.source_id);
             const taken = libraryTasksOf(m.id).length;

@@ -53,11 +53,11 @@ export default async function FaecherPage({ searchParams }: { searchParams: Prom
       <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
         <section>
           <SectionTitle>{aktiv.length} Fächer in der Auswahl</SectionTitle>
-          <ul className="panel divide-y divide-line">{aktiv.map(zeile)}</ul>
+          <ul className="staffel panel divide-y divide-line">{aktiv.map(zeile)}</ul>
           {inaktiv.length > 0 && (
             <>
               <h2 className="gruppe-titel mt-8 mb-3">Deaktiviert</h2>
-              <ul className="panel divide-y divide-line">{inaktiv.map(zeile)}</ul>
+              <ul className="staffel panel divide-y divide-line">{inaktiv.map(zeile)}</ul>
               <p className="mt-3 text-[13px] text-ink-3">Deaktivierte Fächer stehen in keiner Auswahl mehr. Einheiten und Schularbeiten, die sie schon haben, bleiben, wie sie sind.</p>
             </>
           )}

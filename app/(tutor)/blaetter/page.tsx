@@ -45,7 +45,7 @@ export default async function BlaetterPage({ searchParams }: { searchParams: Pro
 
       <section className="mb-10">
         <h2 className="mb-3 text-[15px] font-semibold text-ink-2">Verfügbar</h2>
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="staffel grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {VERFUEGBAR.map((eintrag) => (
             <li key={eintrag.id}>
               <Link
@@ -86,7 +86,7 @@ export default async function BlaetterPage({ searchParams }: { searchParams: Pro
             „Einem Schüler zuweisen“.
           </p>
         ) : (
-          <ul className="panel max-w-[920px] divide-y divide-line">
+          <ul className="staffel panel max-w-[920px] divide-y divide-line">
             {gespeichert.map((m) => {
               const art = druckblattArt(m);
               const schueler = m.student_id ? studenten.get(m.student_id) : null;
@@ -130,7 +130,7 @@ export default async function BlaetterPage({ searchParams }: { searchParams: Pro
               <h3 className="mb-2 text-[13px] font-semibold tracking-[0.04em] text-ink-3 uppercase">
                 {gruppe.fach}
               </h3>
-              <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <ul className="staffel grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {gruppe.eintraege.map((eintrag) => (
                   <li
                     key={eintrag.id}

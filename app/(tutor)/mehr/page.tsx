@@ -64,7 +64,7 @@ export default async function MorePage() {
   const offen = zuErledigen(teacher.id, wienerDatum()).offen.length;
   const groups = erweitertGruppen(teacher, { offen, offenesFeedback });
   const kacheln = (items: ErweitertEintrag[]) => (
-    <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <ul className="staffel grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {items.map(({ href, label, hint, icon }) => {
         const Icon = ICONS[icon] ?? ChevronRight;
         return (

@@ -107,7 +107,7 @@ export default async function ErkanntPage({ params, searchParams }: { params: Pr
         {a.zuKlaeren.length > 0 && (
           <section aria-label="Noch zu klären" data-testid="erkannt-klaeren">
             <SectionTitle>Noch zu klären</SectionTitle>
-            <ul className="panel divide-y divide-line">
+            <ul className="staffel panel divide-y divide-line">
               {a.zuKlaeren.map((z) => (
                 <li key={z.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
                   <span className="min-w-0 flex-1">
@@ -169,7 +169,7 @@ export default async function ErkanntPage({ params, searchParams }: { params: Pr
             <SectionTitle>
               {g.label} · <span className="num">{g.zeilen.length}</span>
             </SectionTitle>
-            <ul className="panel divide-y divide-line">
+            <ul className="staffel panel divide-y divide-line">
               {g.zeilen.map((z) => (
                 <Zeile key={z.id} z={z} a={a} />
               ))}

@@ -173,7 +173,7 @@ export default async function DevicePage() {
     const open = list.filter((a) => !a.completed_at);
     const texts = textsForUnit(unit.id).filter((t) => t.status !== "fertig" && !t.archived_at);
     content = open.length || texts.length ? (
-      <ul className="space-y-3">
+      <ul className="staffel space-y-3">
         {texts.map((t) => (
           <li key={`t${t.id}`}>
             <a href={`/geraet/ansicht?zu=text:${t.id}`} className="panel flex min-h-[72px] items-center gap-4 px-5 py-4 transition-colors hover:border-accent">
@@ -208,7 +208,7 @@ export default async function DevicePage() {
       </ul>
     ) : (
       <div className="panel relative flex min-h-[320px] flex-col items-center justify-center overflow-hidden px-6 py-12 text-center">
-        <SubjectArt subject={unit.subject} topic={bildThema(unit.student_id)} seed={unit.student_id} className="h-[150px] w-[150px]" />
+        <SubjectArt subject={unit.subject} topic={bildThema(unit.student_id)} seed={unit.student_id} className="bogen h-[150px] w-[150px]" />
         <p className="mt-6 text-[26px] font-semibold tracking-[-0.02em]">Gleich geht&apos;s los</p>
         <p className="mt-1 text-[17px] text-ink-2">{teacherFirst} schickt dir eine Aufgabe.</p>
       </div>

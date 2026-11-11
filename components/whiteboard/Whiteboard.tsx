@@ -13,6 +13,7 @@ import {
 } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAbgang } from "@/components/Bewegung";
 import * as T from "@/lib/whiteboard-templates";
 import type { BoardCheck } from "@/lib/whiteboard-check";
 import type { BoardGrade } from "@/lib/whiteboard-grades";
@@ -100,6 +101,9 @@ export default function Whiteboard(props: WhiteboardProps) {
   // letzte Knopf der Werkzeugleiste); Seiten, Einfügen, Vollbild und
   // Einheit beenden stecken dort in den zwei Menüs (CSS wb-only-phone / wb-hide-phone)
   const [moreMenu, setMoreMenu] = useState(false);
+  // die Menüs der Leiste gehen dorthin zurück, wo sie herkamen, statt einfach zu verschwinden
+  const seitenMenue = useAbgang(pageMenu);
+  const mehrMenue = useAbgang(moreMenu);
   const [tool, setTool] = useState<QuickTool>("stift");
   const [fullscreen, setFullscreen] = useState(false);
   // iPhone Safari has no full screen for a page: there the button would do nothing (Generalprobe 2026-11-05).
@@ -836,8 +840,8 @@ export default function Whiteboard(props: WhiteboardProps) {
                 <button className={`wb-btn wb-btn-wide ${pageMenu ? "wb-btn-on" : ""}`} onClick={() => setPageMenu((v) => !v)} aria-expanded={pageMenu} title="Seite duplizieren, umbenennen, leeren oder löschen">
                   Seite <span aria-hidden>▾</span>
                 </button>
-                {pageMenu && (
-                  <div className="wb-menu" role="menu" onClick={() => setPageMenu(false)}>
+                {seitenMenue.da && (
+                  <div className={`wb-menu ${seitenMenue.geht ? "geht" : ""}`} role="menu" onClick={() => setPageMenu(false)}>
                     <div className="wb-only-phone wb-menu-group" role="group" aria-label="Seite wechseln">
                       {pages.map((p, i) => (
                         <button key={p.id} role="menuitem" className={p.id === viewPageId ? "wb-menu-on" : ""} aria-current={p.id === viewPageId ? "page" : undefined} onClick={() => showPage(p.id)}>
@@ -879,8 +883,8 @@ export default function Whiteboard(props: WhiteboardProps) {
               <button className={`wb-btn wb-btn-wide ${moreMenu ? "wb-btn-on" : ""}`} onClick={() => setMoreMenu((v) => !v)} aria-expanded={moreMenu} title="Einfügen, Vollbild, Einheit beenden">
                 Menü <span aria-hidden>▾</span>
               </button>
-              {moreMenu && (
-                <div className="wb-menu" role="menu" onClick={() => setMoreMenu(false)}>
+              {mehrMenue.da && (
+                <div className={`wb-menu ${mehrMenue.geht ? "geht" : ""}`} role="menu" onClick={() => setMoreMenu(false)}>
                   <button role="menuitem" onClick={() => setPanel((v) => !v)}>
                     {panel ? "Einfügen schließen" : "Einfügen …"}
                   </button>

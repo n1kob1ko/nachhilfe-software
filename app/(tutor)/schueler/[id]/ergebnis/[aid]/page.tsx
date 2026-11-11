@@ -133,7 +133,7 @@ export default async function ResultPage({ params, searchParams }: { params: Pro
           </div>
         </details>
       )}
-      <ol className="panel divide-y divide-line">
+      <ol className="staffel panel divide-y divide-line">
         {tasks.map((t, i) => {
           const tries = attempts.filter((a) => a.task_id === t.id);
           const fin = tries.find((a) => a.final);

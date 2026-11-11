@@ -2,6 +2,7 @@
 
 import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
+import { IconWechsel } from "@/components/Bewegung";
 
 export function CopyLink({ path }: { path: string }) {
   const [url, setUrl] = useState(path);
@@ -19,7 +20,7 @@ export function CopyLink({ path }: { path: string }) {
           setTimeout(() => setCopied(false), 1600);
         }}
       >
-        {copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
+        <IconWechsel an={copied} aus={<Copy size={14} aria-hidden />} ein={<Check size={14} aria-hidden className={copied ? "puls rounded-full text-green" : ""} />} />
         {copied ? "Kopiert" : "Kopieren"}
       </button>
     </div>

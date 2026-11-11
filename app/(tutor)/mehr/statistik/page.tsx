@@ -203,7 +203,7 @@ function TopList({ rows, empty }: { rows: React.ReactNode[]; empty: string }) {
   if (!rows.length) return <p className="text-[14px] text-ink-3">{empty}</p>;
   return (
     <div className="grid gap-2">
-      <ul className="panel divide-y divide-line">
+      <ul className="staffel panel divide-y divide-line">
         {rows.slice(0, TOP).map((r, i) => (
           <li key={i}>{r}</li>
         ))}
@@ -221,7 +221,7 @@ function TopList({ rows, empty }: { rows: React.ReactNode[]; empty: string }) {
 function CappedList({ rows }: { rows: React.ReactNode[] }) {
   return (
     <>
-      <ul className="panel divide-y divide-line">
+      <ul className="staffel panel divide-y divide-line">
         {rows.slice(0, MAX_ROWS).map((r, i) => (
           <li key={i}>{r}</li>
         ))}

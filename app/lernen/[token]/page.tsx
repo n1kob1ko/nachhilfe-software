@@ -44,13 +44,13 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
   return (
     <>
       <section className="buehne px-6 py-7 md:px-8 md:py-9">
-        <div className="relative z-10 sm:pr-[170px]">
+        <div className="setzen relative z-10 sm:pr-[170px]">
           <h1 className="text-[30px] font-semibold tracking-[-0.02em] md:text-[34px]">Hallo {first}!</h1>
           <p className="buehne-meta mt-1 text-[17px]">
             {open.length === 0 ? "Gerade ist nichts offen. Gut gemacht!" : open.length === 1 ? "Eine Übung wartet auf dich." : `${open.length} Übungen warten auf dich.`}
           </p>
         </div>
-        <SubjectArt subject={student.subjects[0]} topic={bildThema(student.id)} seed={student.id} className="pointer-events-none absolute -right-4 -bottom-6 hidden h-[190px] w-[190px] sm:block" />
+        <SubjectArt subject={student.subjects[0]} topic={bildThema(student.id)} seed={student.id} className="bogen pointer-events-none absolute -right-4 -bottom-6 hidden h-[190px] w-[190px] sm:block" />
       </section>
 
       {/* der Lehrer hat im Unterricht ein Live-Duell gestartet (lib/duelle.ts): kommt von selbst */}
@@ -73,7 +73,7 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
       )}
 
       {open.length > 0 && (
-        <ul className="mt-8 space-y-3" data-testid="offene-uebungen">
+        <ul className="staffel mt-8 space-y-3" data-testid="offene-uebungen">
           {open.map((x) => (
             <li key={x.id}>
               <Link href={`/lernen/${token}/${x.id}`} className="panel flex items-center gap-4 px-5 py-4 transition-colors hover:border-accent">

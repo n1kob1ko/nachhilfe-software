@@ -3,6 +3,7 @@ import { ClipboardCheck, Printer, Send } from "lucide-react";
 import { minitestAction } from "@/app/minitest-actions";
 import { MINITEST_ANZAHL, MINITEST_STANDARD, stoffDatum, stoffThemen, type Stoff } from "@/lib/minitest";
 import type * as repo from "@/lib/repo";
+import { Gleiter } from "@/components/Bewegung";
 
 type Geraet = "tablet" | "laptop" | null;
 
@@ -63,9 +64,10 @@ export function MinitestKarte({ unitId, name, geraet, stoff, gedruckt }: { unitI
         <input type="hidden" name="unit_id" value={unitId} />
         <fieldset className="flex items-center gap-2">
           <legend className="sr-only">Wie viele Aufgaben</legend>
-          <span className="flex rounded-full bg-panel p-1">
+          <Gleiter as="span" marke="bg-surface shadow-[var(--shadow-card)]" className="relative flex rounded-full bg-panel p-1">
             {MINITEST_ANZAHL.map((n) => (
               <label
+                data-gleit-ziel
                 key={n}
                 className="num flex h-10 min-w-11 cursor-pointer items-center justify-center rounded-full px-3 text-[15px] font-semibold text-ink-2 transition-colors has-[:checked]:bg-surface has-[:checked]:text-ink has-[:checked]:shadow-[var(--shadow-card)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent"
               >
@@ -73,7 +75,7 @@ export function MinitestKarte({ unitId, name, geraet, stoff, gedruckt }: { unitI
                 {n}
               </label>
             ))}
-          </span>
+          </Gleiter>
           <span className="text-[14px] text-ink-2">Aufgaben</span>
         </fieldset>
         <span className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-1 sm:justify-end">

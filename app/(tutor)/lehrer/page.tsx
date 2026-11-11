@@ -181,7 +181,7 @@ export default async function Teachers({ searchParams }: { searchParams: Promise
                 {sp.kontofehler ?? sp.konto}
               </p>
             )}
-            <ul className="panel divide-y divide-line">
+            <ul className="staffel panel divide-y divide-line">
               {alle.map((t) => {
                 const letzteVerwaltung = !!t.is_admin && !!t.active && verwaltungAktiv <= 1;
                 const bestaetigen = vorschau && vorschau.konto.id === t.id ? vorschau : null;

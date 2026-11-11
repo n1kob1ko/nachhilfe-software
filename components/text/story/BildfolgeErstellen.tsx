@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { IconWechsel } from "@/components/Bewegung";
 import { ChevronDown, Loader2, WandSparkles } from "lucide-react";
 import { bildErstellenAction, bildfolgePlanenAction, type BildfolgeFuer } from "@/app/bildfolge-actions";
 import { ManualAustausch } from "@/components/ai/ManualAustausch";
@@ -152,7 +153,7 @@ export function BildfolgeErstellen(p: BildfolgeGenerator & { leer: boolean; plat
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" className="btn btn-secondary" onClick={() => void los(false)} disabled={laeuft !== null || n < 3} data-testid="bilder-erstellen-los">
-                {laeuft ? <Loader2 size={17} className="animate-spin" aria-hidden /> : <WandSparkles size={17} aria-hidden />} {n} Bilder erstellen · <span className="num">{centText(gesamt)}</span>
+                <IconWechsel an={!!laeuft} aus={<WandSparkles size={17} aria-hidden />} ein={<Loader2 size={17} className="animate-spin" aria-hidden />} /> {n} Bilder erstellen · <span className="num">{centText(gesamt)}</span>
               </button>
               {stand && offen > 0 && !laeuft && (
                 <button type="button" className="btn btn-ghost" onClick={() => void los(true)} data-testid="bilder-erstellen-weiter">
