@@ -10,15 +10,16 @@
  *
  * - `wischen` (das/dass, haben oder sein, Hauptsatz oder Gliedsatz, „Teilbar oder nicht?“): wo es nur zwei Antworten
  *   gibt, wird die Karte nach links oder rechts gewischt.
- * - `rad` (Präposition und Fall, Adjektiv-Endungen, English Tenses, English Grammar): ein Rad mit den Antworten. Beim
- *   Drehen steht die Antwort schon in der Lücke, man liest also den ganzen Satz, bevor man prüft.
+ * - `kacheln` (Präposition und Fall, Adjektiv-Endungen, English Tenses, English Grammar, Wortschatz): die Antworten als
+ *   große Kacheln unter dem Satz, wie in beliebten Lern-Apps (niko 2026-11-12: „das mit dem drehen … gefällt mir
+ *   nicht“, statt des Drehrads). Eine Kachel antippen setzt das Wort in die Lücke, man liest den ganzen Satz und prüft.
  *
  * Bei den Kisten bleiben „der, die, das“, „Die vier Fälle“ und beim Kopfrechnen, was sich nicht tippen lässt (Terme,
  * Bruchrechnen). Gezählt wird wie immer die erste Antwort gegen `karte.richtig`: stimmt das
  * Getippte oder Gelegte, meldet das Spielfeld genau `karte.richtig`.
  *
  * Hier steht nur Reines (keine Datenbank), auch der Browser lädt es (components/lernen/ZiffernFeld.tsx, LegeFeld.tsx).
- * Wischen und Rad brauchen nichts von hier außer der Entscheidung (WischFeld.tsx, RadFeld.tsx).
+ * Wischen und Kacheln brauchen nichts von hier außer der Entscheidung (WischFeld.tsx, KachelFeld.tsx).
  */
 import { festerZufall, zahlAus, type SpielArt, type SpielForm, type SpielKarte } from "./lernspiele-typen";
 
@@ -160,20 +161,20 @@ export function legeAnzeige(wort: string, karte: SpielKarte): string {
   return wort && z[0] !== z[0].toLowerCase() ? wort[0].toUpperCase() + wort.slice(1) : wort;
 }
 
-// ---------- Wischen und Rad ----------
+// ---------- Wischen und Kacheln ----------
 
 /** Spiele mit zwei Antworten: die Karte wird gewischt. */
 const WISCH_SPIELE = new Set<SpielArt>(["dasdass", "perfekt", "satzteile"]);
-/** Spiele mit drei bis fünf Antworten in einer Lücke: das Rad. */
-const RAD_SPIELE = new Set<SpielArt>(["praepositionen", "deklination", "zeiten", "grammatik", "wortschatz"]);
-/** So viele Antworten passen an das Rad. */
-export const RAD_MAX = 6;
+/** Spiele mit drei bis sechs Antworten in einer Lücke: die Kacheln. */
+const KACHEL_SPIELE = new Set<SpielArt>(["praepositionen", "deklination", "zeiten", "grammatik", "wortschatz"]);
+/** So viele Kacheln passen unter den Satz. */
+export const KACHEL_MAX = 6;
 
 /** Lässt sich die Karte wischen? Genau zwei Antworten: die erste liegt links, die zweite rechts. */
 export const wischbar = (karte: SpielKarte) => !karte.wort && karte.faecher.length === 2 && karte.faecher.includes(karte.richtig);
 
-/** Passt die Karte an das Rad? Ein Satz mit Lücke und drei bis sechs Antworten. */
-export const drehbar = (karte: SpielKarte) => !karte.wort && !karte.mathe && karte.mitte === undefined && karte.faecher.length >= 3 && karte.faecher.length <= RAD_MAX && karte.faecher.includes(karte.richtig);
+/** Passt die Karte zu den Kacheln? Ein Satz mit Lücke und drei bis sechs Antworten. */
+export const kachelbar = (karte: SpielKarte) => !karte.wort && !karte.mathe && karte.mitte === undefined && karte.faecher.length >= 3 && karte.faecher.length <= KACHEL_MAX && karte.faecher.includes(karte.richtig);
 
 // ---------- welche Karte wie ----------
 
@@ -183,7 +184,7 @@ export function antwortForm(art: SpielArt, karte: SpielKarte): SpielForm | undef
   if (art === "rechnen") return tippbar(karte) ? "tippen" : wischbar(karte) ? "wischen" : undefined;
   if (art === "irregular" || art === "praeteritum") return legbar(karte) ? "legen" : undefined;
   if (WISCH_SPIELE.has(art)) return wischbar(karte) ? "wischen" : undefined;
-  if (RAD_SPIELE.has(art)) return wischbar(karte) ? "wischen" : drehbar(karte) ? "rad" : undefined;
+  if (KACHEL_SPIELE.has(art)) return wischbar(karte) ? "wischen" : kachelbar(karte) ? "kacheln" : undefined;
   return undefined;
 }
 

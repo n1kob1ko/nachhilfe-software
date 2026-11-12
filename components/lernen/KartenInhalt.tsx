@@ -3,7 +3,7 @@ import { MathText } from "@/components/MathText";
 import type { SpielKarte } from "@/lib/lernspiele-typen";
 
 /**
- * Was auf einer Karte der Lernspiele steht (Lernspiel.tsx, WischFeld.tsx, RadFeld.tsx): ein Nomen, ein Satz mit Lücke
+ * Was auf einer Karte der Lernspiele steht (Lernspiel.tsx, WischFeld.tsx, KachelFeld.tsx): ein Nomen, ein Satz mit Lücke
  * oder ein Satz mit markiertem Teil, dazu nach einer Antwort die Wahl in der Lücke (grün oder rot durchgestrichen).
  */
 
@@ -35,8 +35,8 @@ export function falschEingesetzt(karte: SpielKarte, wahl: string) {
   return ohneStrich(wahl);
 }
 /**
- * Der Inhalt einer Karte. `probe`: eine Wahl, die noch nicht geprüft ist, steht schon in der Lücke (das Drehrad setzt
- * sie beim Drehen ein, damit man den ganzen Satz liest).
+ * Der Inhalt einer Karte. `probe`: eine Wahl, die noch nicht geprüft ist, steht schon in der Lücke (die angetippte
+ * Kachel, damit man den ganzen Satz liest).
  */
 export function KartenInhalt({ karte, stand, probe }: { karte: SpielKarte; stand: Stand; probe?: string }) {
   if (karte.wort) {

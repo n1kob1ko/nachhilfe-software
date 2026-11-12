@@ -27,7 +27,7 @@
  *
  * „Wortschatz“ (niko 2026-11-12: „bei den lernspielen sind es wörter die er für eine gruselgeschichte braucht“): ein
  * Themenspiel mit den Wortfeldern der Schreib-Themen (Gruselgeschichte, Märchen, Krimi …, lib/lernspiele-wortfelder.ts);
- * am Rad das treffende Wort für den Satz.
+ * auf einer Kachel das treffende Wort für den Satz.
  */
 export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
@@ -136,26 +136,26 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
 /**
  * So wird eine Karte beantwortet: Karten in Kisten (ohne Angabe), Paare finden, Teile in eine Reihe bringen, eine Zahl
  * am Zahlenstrahl treffen, das Ergebnis eintippen, ein Wort aus Buchstaben legen, die Karte nach links oder rechts
- * wischen oder an einem Rad drehen, bis der Satz stimmt.
+ * wischen oder die passende Antwort-Kachel in die Lücke tippen.
  */
-export type SpielForm = "paar" | "reihe" | "strahl" | "tippen" | "legen" | "wischen" | "rad";
+export type SpielForm = "paar" | "reihe" | "strahl" | "tippen" | "legen" | "wischen" | "kacheln";
 /**
  * Die Form eines Spiels, wenn alle seine Karten so beantwortet werden. „Kopfrechnen“, „English Tenses“ und „English
  * Grammar“ fehlen: dort hängt es am Thema (Zahlen werden getippt, ja oder nein wird gewischt, drei Formen stehen am
- * Rad; lib/lernspiele-antwort.ts).
+ * Kacheln; lib/lernspiele-antwort.ts).
  */
 export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = {
   vokabeln: "paar",
   satzbau: "reihe",
-  wortschatz: "rad",
+  wortschatz: "kacheln",
   strahl: "strahl",
   irregular: "legen",
   praeteritum: "legen",
   dasdass: "wischen",
   perfekt: "wischen",
   satzteile: "wischen",
-  praepositionen: "rad",
-  deklination: "rad",
+  praepositionen: "kacheln",
+  deklination: "kacheln",
 };
 
 /** Trennt die Teile in der Antwort einer Reihe („gehen | wir | ins Kino“). */
@@ -177,7 +177,7 @@ export const REIHE_TRENNER = " | ";
  * Beim Eintippen (`form: "tippen"`) und beim Legen (`form: "legen"`) ist die Karte dieselbe wie mit Kisten; die Wahl
  * ist `richtig`, wenn das Getippte oder Gelegte stimmt, sonst das, was der Schüler geschrieben hat.
  *
- * Beim Wischen (`form: "wischen"`, zwei Fächer: das erste links, das zweite rechts) und am Rad (`form: "rad"`) ist die
+ * Beim Wischen (`form: "wischen"`, zwei Fächer: das erste links, das zweite rechts) und bei den Kacheln (`form: "kacheln"`) ist die
  * Karte auch dieselbe, und die Wahl ist wie bei den Kisten eines der `faecher`.
  */
 export type SpielKarte = {

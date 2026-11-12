@@ -10,7 +10,7 @@ import { ENDLOS_HERZEN, hatEndlos, REIHE_TRENNER, SPIEL_AUFGABE, SPIEL_DEKO, SPI
 import { eingesetzt, gesetzt, haengt, hinterLuecke, KartenInhalt, ohneStrich, type Stand } from "./KartenInhalt";
 import { LegeFeld } from "./LegeFeld";
 import { PaarFeld } from "./PaarFeld";
-import { RadFeld } from "./RadFeld";
+import { KachelFeld } from "./KachelFeld";
 import { SatzbauFeld } from "./SatzbauFeld";
 import { StrahlFeld } from "./StrahlFeld";
 import { WischFeld } from "./WischFeld";
@@ -21,7 +21,7 @@ import { Funken, vibriere } from "./SpielTeile";
 /**
  * Ein Lernspiel der Schüler-App (lib/lernspiele.ts): Karten in Fächer werfen oder antippen. Wie eine Karte beantwortet
  * wird, steht auf ihr (`form`, lib/lernspiele-antwort.ts); jede andere Art als die Kisten hat ihr eigenes Spielfeld
- * (PaarFeld, SatzbauFeld, StrahlFeld, ZiffernFeld, LegeFeld, WischFeld, RadFeld). Anfang, Ende, Zählen und Speichern
+ * (PaarFeld, SatzbauFeld, StrahlFeld, ZiffernFeld, LegeFeld, WischFeld, KachelFeld). Anfang, Ende, Zählen und Speichern
  * sind für alle Spiele dieselben.
  *
  * - Richtig: die Karte fliegt ins Fach, oben steht kurz der ganze richtige Satz (lernen beim Spielen).
@@ -644,7 +644,7 @@ export function Lernspiel({
           </h1>
           <p className="ls-text mt-2" style={{ "--n": 2 } as CSSProperties}>
             {form === "tippen" ? "" : form === "wischen" && art === "rechnen" ? "Ja oder nein?" : SPIEL_AUFGABE[art]}
-            {form === "paar" ? " Tipp ein englisches Wort an und dann das deutsche dazu." : form === "reihe" ? " Der Anfang steht schon da. Tipp die anderen Teile der Reihe nach an." : form === "strahl" ? " Schieb den Zeiger auf den richtigen Teilstrich und tipp auf „Prüfen“." : form === "tippen" ? "Rechne im Kopf und tipp das Ergebnis ein." : form === "legen" ? " Leg sie aus den Buchstaben und tipp auf „Prüfen“." : form === "wischen" ? " Wisch die Karte nach links oder nach rechts." : form === "rad" ? " Dreh am Rad, bis der Satz stimmt, und tipp auf „Prüfen“." : " Zieh die Karte in eine Kiste oder tipp die Kiste an."}
+            {form === "paar" ? " Tipp ein englisches Wort an und dann das deutsche dazu." : form === "reihe" ? " Der Anfang steht schon da. Tipp die anderen Teile der Reihe nach an." : form === "strahl" ? " Schieb den Zeiger auf den richtigen Teilstrich und tipp auf „Prüfen“." : form === "tippen" ? "Rechne im Kopf und tipp das Ergebnis ein." : form === "legen" ? " Leg sie aus den Buchstaben und tipp auf „Prüfen“." : form === "wischen" ? " Wisch die Karte nach links oder nach rechts." : form === "kacheln" ? " Tipp eine Antwort an, sie springt in die Lücke. Dann tipp auf „Prüfen“." : " Zieh die Karte in eine Kiste oder tipp die Kiste an."}
           </p>
           {/* steht schon da, woher die Wörter kommen, braucht es „Deine Vokabelliste“ nicht noch einmal */}
           {vorschlag && vorschlag.quelle !== "fach" && !(woher && vorschlag.quelle === "stoff") && (
@@ -689,14 +689,15 @@ export function Lernspiel({
                 </span>
               ))}
             </div>
-          ) : form === "rad" ? (
+          ) : form === "kacheln" ? (
             <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
-              <span className="ls-rad-mini">
-                {(vorschau ?? VORSCHAU[art]).slice(0, 3).map((f, i) => (
-                  <b key={f} data-mitte={i === 1 ? "" : undefined}>
-                    {f}
-                  </b>
-                ))}
+              <span className="ls-kachel-mini">
+                <i />
+                <span>
+                  {(vorschau ?? VORSCHAU[art]).slice(0, 2).map((f) => (
+                    <b key={f}>{f}</b>
+                  ))}
+                </span>
               </span>
             </div>
           ) : form ? (
@@ -1017,7 +1018,7 @@ export function Lernspiel({
               {zuletztZeile}
             </WischFeld>
           ) : (
-            <RadFeld {...eigen} auftrag={SPIEL_AUFGABE[art]} />
+            <KachelFeld {...eigen} auftrag={SPIEL_AUFGABE[art]} />
           )}
           {jubelZeile}
         </div>
