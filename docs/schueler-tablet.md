@@ -8,10 +8,14 @@
 4. **An Max senden.** Ein Tipp auf der Übung (oder bei einer einzelnen Aufgabe unter „Einzeln senden“). Es gibt keine Schülerauswahl, weil die Einheit den Schüler kennt.
 5. **Live-Status in der Einheit.** Der Lehrer sieht: Tablet verbunden/offline, Aufgabe n von m, Status, Zeit, Versuche, Hilfen und die letzte Antwort.
    - Aktionen: Nächste Aufgabe senden, Nochmal versuchen, Lösung zeigen, Auf Whiteboard.
-   - Umschalter: Tablet zeigt Aufgaben oder Whiteboard.
+   - Umschalter: Tablet zeigt Aufgaben, Whiteboard oder Spiele.
 6. **Whiteboard.** „Auf Whiteboard“ oder das Öffnen des Whiteboards der Einheit schaltet das eigene Tablet auf das Board dieser Einheit.
 7. **Textarbeit.** „Textarbeit starten“ öffnet am Tablet einen Schreibbereich für längere Texte (Ansicht `text:<id>`). Details in `docs/textarbeit.md`.
-8. **Einheit beenden.** Die Dokumentation wird erstellt und das Tablet springt sofort auf Bereitschaft. Beim nächsten Schüler ist nichts vom vorherigen sichtbar. Seine Daten bleiben auf dem Server.
+8. **Lernspiele** (niko 2026-11-12: „was wenn der schüler in der einheit spielen will“). Oben am Tablet steht neben „Aufgaben“ und „Whiteboard“ ein dritter Knopf „Spiele“. Er zeigt dieselben Spiele wie der Tab „Spiele“ der Schüler-App: oben „Für dich“, darunter alle Spiele nach Fach (`components/lernen/SpieleListe.tsx`). Ein Tipp startet das Spiel am Tablet (Ansichten `spiele` und `spiel:<art>`).
+   - Gezählt wird für den Schüler der Einheit wie in der App: Lernstand, Serie und Rekord. Der Server findet den Schüler über das Tablet (`tabletSpielStartenAction` und `tabletSpielBeendenAction` in app/lernspiel-actions.ts); der geheime Link kommt nie aufs Tablet.
+   - Der Lehrer kann die Spiele auch schicken: Im Live-Status steht beim Umschalter der Knopf „Spiele“. Dort steht dann „Mia spielt „Wortschatz““.
+   - Arbeitet der Schüler am eigenen Laptop, gibt es am Tablet keine Spiele; er spielt dann in der Schüler-App.
+9. **Einheit beenden.** Die Dokumentation wird erstellt und das Tablet springt sofort auf Bereitschaft. Beim nächsten Schüler ist nichts vom vorherigen sichtbar. Seine Daten bleiben auf dem Server.
 
 **Zwei Schüler gleichzeitig (D26, seit 2026-10-20)**
 
@@ -52,7 +56,7 @@ Das Tablet speichert keinen Schüler. Jede Anfrage löst serverseitig auf: Table
 - Trennen wirkt sofort.
 
 **Was das Tablet sehen darf**
-- Es sieht nur eine laufende Einheit seines Lehrers: die Übungen dieser Einheit und das Whiteboard dieser Einheit. Wählen kann es nur unter den laufenden Einheiten seines eigenen Lehrers.
+- Es sieht nur eine laufende Einheit seines Lehrers: die Übungen dieser Einheit, das Whiteboard dieser Einheit und die Lernspiele ihres Schülers. Wählen kann es nur unter den laufenden Einheiten seines eigenen Lehrers.
 - Antworten, Hilfen und Status werden gegen diese Einheit geprüft.
 - Alle Lehrerbereiche bleiben hinter dem Lehrer-Login. Das Tablet-Cookie öffnet sie nicht.
 
