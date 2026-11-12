@@ -212,6 +212,9 @@ export type UnitText = Pick<TextRow, "id" | "title" | "topic" | "subject" | "sta
   words_after: number;
   /** started in this unit (else continued) */
   started_here: number;
+  /** first and last save in this unit (ISO) */
+  first_at: string;
+  last_at: string;
 };
 
 /**
@@ -221,7 +224,7 @@ export type UnitText = Pick<TextRow, "id" | "title" | "topic" | "subject" | "sta
 export function textsForUnit(unitId: number): UnitText[] {
   return db()
     .prepare(
-      `SELECT x.id, x.title, x.topic, x.subject, x.status, x.words, x.updated_at, x.archived_at, tu.words_before, tu.words_after,
+      `SELECT x.id, x.title, x.topic, x.subject, x.status, x.words, x.updated_at, x.archived_at, tu.words_before, tu.words_after, tu.first_at, tu.last_at,
         (x.unit_id IS ? ) AS started_here
        FROM text_units tu JOIN texts x ON x.id = tu.text_id WHERE tu.unit_id = ? ORDER BY tu.first_at, x.id`,
     )
