@@ -12,6 +12,7 @@ import { AutoRefresh } from "@/components/AutoRefresh";
 import { BoardThumbs } from "@/components/BoardThumbs";
 import { Unterricht } from "@/components/cockpit/Ablauf";
 import { AblaufRueckblick } from "@/components/cockpit/Cockpit";
+import { EinheitAktivitaeten } from "@/components/EinheitAktivitaeten";
 import { EinheitKiKosten, KiKostenZeile, kiNeuImLiveHinweis } from "@/components/cockpit/Nachschub";
 import { CopyLink } from "@/components/CopyLink";
 import { Elapsed, Restzeit } from "@/components/Elapsed";
@@ -468,7 +469,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         {!sp.details ? (
           <Link href={`/einheiten/${unit.id}?details=1#details`} className="panel flex min-h-[52px] flex-wrap items-center gap-x-2 px-4 py-2 sm:px-5" data-testid="mehr-details-link">
             <span className="text-[16px] font-semibold">Mehr Details</span>
-            <span className="text-[13.5px] text-ink-3">Mappe drucken, Einschätzung, Dokumentation, Aufgaben, Whiteboard</span>
+            <span className="text-[13.5px] text-ink-3">Was {first(student.name)} gemacht hat (mit Dauer), Mappe drucken, Einschätzung, Aufgaben, Whiteboard</span>
           </Link>
         ) : (
           <section id="details" aria-label="Mehr Details" className="scroll-mt-4" data-testid="mehr-details">
@@ -483,6 +484,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
                 </div>
               )}
               {hatInhalt(notiz) && <SchuelerNotizAnzeige notiz={notiz} name={first(student.name)} />}
+              <EinheitAktivitaeten unitId={unit.id} vorname={first(student.name)} />
               {lesson && <EinschaetzungKarte e={einschaetzung} lesson={lesson} auto={auto} />}
               {brief && lesson && <BriefSection brief={brief} lesson={lesson} mayManage={mayManage} />}
               {lesson && (

@@ -143,7 +143,8 @@ test("„Verbessert“ from the stored Lernstand: only with checked answers of t
   const vorher = tagKurz(wienerDatum(new Date(u1.started_at)));
   assert.deepEqual(k.gut.filter((z) => z.punkt === "besser").map((z) => [z.text, z.von]), [[`Dividieren: von 2 von 5 auf 4 von 5 richtig (Einheit vom ${vorher})`, "lernstand"]]);
   assert.ok(k.gemacht.some((z) => z.text === "Hilfe am Gerät bei 1 Aufgabe (Dividieren): Hinweis 1×"), k.gemacht.map((z) => z.text).join("\n"));
-  assert.ok(k.gemacht.some((z) => z.text === "Übung: „Brüche dividieren“" && z.punkt === "uebungen"));
+  // niko 2026-11-12: each exercise with its result and how long it took (5 × 30 s)
+  assert.ok(k.gemacht.some((z) => z.text === "Übung „Brüche dividieren“: 4 von 5 richtig, 3 min" && z.punkt === "uebungen"), k.gemacht.map((z) => z.text).join("\n"));
   // „Bestätigen“ writes it into the documentation
   s.ab.bestaetigeAbschluss(l2);
   assert.match(s.repo.getLesson(l2)!.positives ?? "", /Dividieren: von 2 von 5 auf 4 von 5 richtig/);

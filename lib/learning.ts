@@ -11,6 +11,7 @@ import { WEAK, STRONG, parseTime } from "./analysis";
 import { localStamp } from "./autodoc";
 import { KRITERIUM_KEYS, KRITERIUM_KURZ } from "./bewertung-kriterien";
 import { dokumentiereAblauf } from "./cockpit";
+import { aktivitaetenDerEinheit, aktivitaetZeile, type Aktivitaet } from "./einheit-aktivitaeten";
 import { db, json } from "./db";
 import { autoFelderVon, dokumentiereAutomatisch } from "./einschaetzung";
 import { isMinitest, LERNKONTROLLE } from "./quick-round";
@@ -103,6 +104,8 @@ export type UnitReport = {
   texts?: ReportText[];
   /** Minitest at the start of the unit (lib/minitest.ts): its tasks, handed in, right; skills with a wrong answer. Missing without one. */
   minitest?: { von: number; erledigt: number; richtig: number; falsch: string[] };
+  /** Everything the student did, in order, with how long it took (lib/einheit-aktivitaeten.ts); missing in reports written before. */
+  aktivitaeten?: Aktivitaet[];
 };
 
 export type ReportText = {
@@ -115,6 +118,8 @@ export type ReportText = {
   startedHere: boolean;
   /** die Note, nur in der letzten Einheit des Texts (lib/text-note.ts): bestätigt mit Zahlen, sonst „offen“; fehlt sonst */
   bewertung?: BerichtBewertung;
+  /** ungefähr so viele Minuten daran geschrieben (erstes bis letztes Speichern in der Einheit); fehlt unter einer Minute */
+  minuten?: number;
 };
 
 const PAUSE_MS = 2 * 60_000;
@@ -291,12 +296,14 @@ export function buildUnitReport(unit: UnitView, now = Date.now()): UnitReport {
     tasks,
     ...(minitest ? { minitest } : {}),
     texts: textsForUnit(unit.id).map((t) => reportText(t, unit.id)),
+    aktivitaeten: aktivitaetenDerEinheit(unit.id, now),
   };
 }
 
 function reportText(t: UnitText, unitId: number): ReportText {
   const bewertung = bewertungFuerBericht(t.id, unitId);
-  return { id: t.id, title: t.title, topic: t.topic, subject: t.subject, words: t.words_after, added: t.words_after - t.words_before, startedHere: Boolean(t.started_here), ...(bewertung ? { bewertung } : {}) };
+  const minuten = t.first_at && t.last_at ? Math.round((parseTime(t.last_at) - parseTime(t.first_at)) / 60_000) : 0;
+  return { id: t.id, title: t.title, topic: t.topic, subject: t.subject, words: t.words_after, added: t.words_after - t.words_before, startedHere: Boolean(t.started_here), ...(bewertung ? { bewertung } : {}), ...(minuten >= 1 ? { minuten } : {}) };
 }
 
 const pctText = (x: number | null) => (x === null ? "–" : `${Math.round(x * 100)} %`);
@@ -318,7 +325,7 @@ export function bewertungText(b: BerichtBewertung | undefined): string {
 /** "Textarbeit „Mein Ausflug“ (Erlebniserzählung, 246 Wörter)", mit Note: "…: 2 von 3 Arbeitsaufträgen erfüllt, Note 3 (…)" */
 export function textLine(t: ReportText) {
   const words = `${t.words} ${t.words === 1 ? "Wort" : "Wörter"}`;
-  const more = t.startedHere ? words : `weitergeschrieben, jetzt ${words}`;
+  const more = `${t.startedHere ? words : `weitergeschrieben, jetzt ${words}`}${t.minuten ? `, ca. ${t.minuten} min` : ""}`;
   const note = bewertungText(t.bewertung);
   return `Textarbeit „${t.title}“ (${t.topic && t.topic !== t.title ? `${t.topic}, ` : ""}${more})${note ? `: ${note}` : ""}`;
 }
@@ -329,8 +336,10 @@ export function summarize(r: UnitReport, studentName: string): string {
   const minutes = Math.max(1, Math.round(r.durationMs / 60_000));
   const texts = r.texts ?? [];
   const textSentence = texts.length ? `${first} schrieb an ${list(texts.map((t) => `der ${textLine(t)}`))}.` : "";
+  const extra = ohneAntworten(r);
+  const extraSentence = extra.length ? `Außerdem: ${extra.map(aktivitaetZeile).join("; ")}.` : "";
   if (r.tasksDone === 0) {
-    if (texts.length) return `Einheit mit ${first} (${minutes} min). ${textSentence}`;
+    if (texts.length || extra.length) return [`Einheit mit ${first} (${minutes} min).`, textSentence, extraSentence].filter(Boolean).join(" ");
     return `Einheit mit ${first} (${minutes} min). Am Gerät wurden keine Übungsaufgaben bearbeitet, die Inhalte stehen in den Beobachtungen des Lehrers.`;
   }
   const out: string[] = [];
@@ -359,14 +368,20 @@ export function summarize(r: UnitReport, studentName: string): string {
   const moved = r.skills.filter((s) => s.before !== null && s.after !== null && Math.abs(s.after - s.before) >= 0.05);
   if (moved.length) out.push(`Fortschritt: ${moved.map((s) => `${s.name} ${pctText(s.before)} → ${pctText(s.after)}`).join(", ")}.`);
   if (textSentence) out.push(textSentence);
+  if (extraSentence) out.push(extraSentence);
   return out.join(" ");
 }
+
+/** Lernspiele, Duelle, Vokabeln und das Whiteboard: was in den Aufgaben und Texten des Berichts nicht vorkommt. */
+const ohneAntworten = (r: UnitReport) => (r.aktivitaeten ?? []).filter((a) => a.art === "spiel" || a.art === "duell" || a.art === "vokabeln" || a.art === "whiteboard");
 
 /** Short text for the lesson's "Was wurde gemacht" when the teacher has not written anything. */
 function activitiesText(r: UnitReport) {
   const out: string[] = [];
   if (r.tasksDone) out.push(`${r.tasksDone} Aufgaben bearbeitet (${list(r.worksheets.map((w) => `„${w.title}“`))}), ${r.correct} richtig.`);
   for (const t of r.texts ?? []) out.push(`${textLine(t)}.`);
+  // what has no answers of its own: games, Vokabeln, the whiteboard (lib/einheit-aktivitaeten.ts), with how long it took
+  for (const a of ohneAntworten(r)) out.push(`${aktivitaetZeile(a)}.`);
   return out.join(" ");
 }
 

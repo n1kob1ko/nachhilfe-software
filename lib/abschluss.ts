@@ -34,6 +34,7 @@ import { KRITERIUM_KEYS, KRITERIUM_KURZ } from "./bewertung-kriterien";
 import { papierZeile, type PapierErgebnis } from "./blatt-regeln";
 import { ablaufDerEinheit, antwortenDerEinheit, reaktionenDerEinheit, skillsErledigterSchritte, type AblaufDerEinheit, type Beobachtung } from "./cockpit";
 import { db, json } from "./db";
+import { aktivitaetDauer, aktivitaetenDerEinheit, aktivitaetZeile, dauerText, gesamtDauer, type Aktivitaet } from "./einheit-aktivitaeten";
 import { autoFelderVon } from "./einschaetzung";
 import { errorTypeLabel } from "./error-types";
 import { daysUntil } from "./exams";
@@ -172,7 +173,7 @@ export type AbschlussBelege = {
   beobachtungen: { titel: string; art: string; antwort: Beobachtung; skillIds: string[] }[];
   reaktionen: { art: Art; skillId: string | null; skill: string; assignmentId: number | null }[];
   minitest: { von: number; erledigt: number; richtig: number; falsch: string[] } | null;
-  lernkontrollen?: { skill: string; von: number; erledigt: number; richtig: number }[];
+  lernkontrollen?: { skill: string; von: number; erledigt: number; richtig: number; dauer?: string }[];
   vorgabe: { id: string; name: string }[];
   geuebt: string[];
   pruefung: { art: string; fach: string; datum: string; offen: string[] } | null;
@@ -189,10 +190,15 @@ export type AbschlussBelege = {
   beispiele?: string[];
   ausfuehrlich?: string[];
   besser?: string[];
+  /**
+   * Alles, was der Schüler gemacht hat, mit Dauer (lib/einheit-aktivitaeten.ts): je Übung, Whiteboard, Lernspiel, Duell und
+   * Vokabelrunde eine Zeile unter „Übungen“ statt nur der Namen (`uebungen`); der Minitest mit seiner Dauer.
+   */
+  aktivitaeten?: Aktivitaet[];
 };
 
 /** Eine Probeschularbeit der Einheit: Punkte, Note erst wenn alles bewertet ist, sonst wie viel noch offen ist. */
-export type ProbeZeile = { titel: string; erreicht: number; gesamt: number; note: string | null; offen: number; bearbeitet: number; aufgaben: number; papier: boolean };
+export type ProbeZeile = { titel: string; erreicht: number; gesamt: number; note: string | null; offen: number; bearbeitet: number; aufgaben: number; papier: boolean; dauer?: string };
 
 /** Die Note einer Probeschularbeit gibt es erst, wenn keine Antwort mehr offen ist: „Note folgt: 2 Antworten zu bewerten“. */
 export const noteFolgt = (offen: number) => `Note folgt: ${antwortenText(offen)} zu bewerten`;
@@ -208,7 +214,7 @@ const punkteZahl = (p: number) => (Number.isInteger(p) ? String(p) : p.toFixed(1
 export function probeZeile(p: ProbeZeile): string {
   const punkte = `${punkteZahl(p.erreicht)} von ${punkteZahl(p.gesamt)} Punkten`;
   const text = p.note ? `Note ${p.note}, ${punkte}` : p.offen ? `${noteFolgt(p.offen)}, bisher ${punkte}` : p.bearbeitet < p.aufgaben ? `${punkte} (${p.bearbeitet} von ${p.aufgaben} Aufgaben)` : punkte;
-  return `Probeschularbeit „${p.titel}“${p.papier ? " auf Papier" : ""}: ${text}`;
+  return `Probeschularbeit „${p.titel}“${p.papier ? " auf Papier" : ""}: ${text}${p.dauer ? `, ${p.dauer}` : ""}`;
 }
 
 /**
@@ -329,6 +335,9 @@ export function pruefungsZeile(p: NonNullable<AbschlussBelege["pruefung"]>): str
   return `${p.art}${p.fach ? ` ${p.fach}` : ""} am ${p.datum}${offen}`;
 }
 
+/** Tätigkeiten mit eigener Zeile unter „Übungen“; Minitest, Lernkontrolle, Probeschularbeit, Papier und Text stehen in ihren Zeilen. */
+const MIT_ZEILE = new Set<Aktivitaet["art"]>(["uebung", "whiteboard", "spiel", "duell", "vokabeln"]);
+
 const aufgabenText = (n: number) => `${n} ${n === 1 ? "Aufgabe" : "Aufgaben"}`;
 
 /** „Kehrwert vergessen bei 2 Aufgaben (vermutet)“: gezählt werden Aufgaben, nicht Versuche. */
@@ -415,12 +424,17 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   const punktVonGemacht = (text: string): Punkt => (text.startsWith("Textarbeit „") ? "texte" : /^\d+ Aufgaben? bearbeitet/.test(text) ? "ergebnisse" : text === "Diagnose gemacht" ? "uebungen" : "themen");
   const gemacht = (brief?.done ?? []).filter((l) => !ersetzt(l)).map((l) => zeile(l, (t) => (t.startsWith("Textarbeit „") ? "text" : amGeraet ? "antworten" : "daten"), punktVonGemacht(l.text)));
   // the exercises worked on today, by name (Minitest, Probeschularbeit and paper have their own lines)
-  if (belege?.uebungen?.length) gemacht.push({ text: `${belege.uebungen.length === 1 ? "Übung" : "Übungen"}: ${belege.uebungen.map((t) => `„${t}“`).join(", ")}`, von: "antworten", punkt: "uebungen" });
+  // niko 2026-11-12: everything the student did, one line each with result and how long it took (lib/einheit-aktivitaeten.ts)
+  const taetig = belege?.aktivitaeten;
+  if (taetig) {
+    for (const x of taetig) if (MIT_ZEILE.has(x.art)) gemacht.push({ text: aktivitaetZeile(x), von: "antworten", punkt: "uebungen" });
+  } else if (belege?.uebungen?.length) gemacht.push({ text: `${belege.uebungen.length === 1 ? "Übung" : "Übungen"}: ${belege.uebungen.map((t) => `„${t}“`).join(", ")}`, von: "antworten", punkt: "uebungen" });
   const mt = belege?.minitest;
-  if (mt?.erledigt) gemacht.push({ text: `Minitest am Anfang: ${mt.richtig} von ${mt.von} richtig${mt.erledigt < mt.von ? ` (${mt.erledigt} abgegeben)` : ""}`, von: "antworten", punkt: "ergebnisse" });
+  const mtDauer = taetig ? gesamtDauer(taetig.filter((x) => x.art === "minitest")) : 0;
+  if (mt?.erledigt) gemacht.push({ text: `Minitest am Anfang: ${mt.richtig} von ${mt.von} richtig${mt.erledigt < mt.von ? ` (${mt.erledigt} abgegeben)` : ""}${mtDauer > 0 ? `, ${dauerText(mtDauer)}` : ""}`, von: "antworten", punkt: "ergebnisse" });
   // the measured result of each Lernkontrolle, not only what the teacher heard
   for (const k of belege?.lernkontrollen ?? [])
-    if (k.erledigt) gemacht.push({ text: `Lernkontrolle${k.skill ? ` ${k.skill}` : ""}: ${k.richtig} von ${k.von} richtig${k.erledigt < k.von ? ` (${k.erledigt} abgegeben)` : ""}`, von: "antworten", punkt: "ergebnisse" });
+    if (k.erledigt) gemacht.push({ text: `Lernkontrolle${k.skill ? ` ${k.skill}` : ""}: ${k.richtig} von ${k.von} richtig${k.erledigt < k.von ? ` (${k.erledigt} abgegeben)` : ""}${k.dauer ? `, ${k.dauer}` : ""}`, von: "antworten", punkt: "ergebnisse" });
   gemacht.push(...mitBewertung.map((t): KartenZeile => ({ ...textGemacht(t), punkt: "texte" })));
   // the plan for the whole unit: the topics worked on today, then the steps
   if (ablauf?.themen?.length) gemacht.push(a(`${ablauf.themen.length === 1 ? "Thema" : "Themen"}: ${ablauf.themen.join(", ")}`));
@@ -589,10 +603,17 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
 
   // the Lernkontrollen of the plan: run like a Minitest, but not „am Anfang“ (lib/learning.ts leaves them out there)
   const kontrollen = db().prepare("SELECT id, worksheet_id FROM assignments WHERE unit_id = ? AND note = ? ORDER BY id").all(unitId, LERNKONTROLLE) as { id: number; worksheet_id: number }[];
+  // everything the student did, with how long it took (lib/einheit-aktivitaeten.ts)
+  const aktivitaeten = aktivitaetenDerEinheit(unitId);
+  const dauerVon = (assignmentId: number) => {
+    const x = aktivitaeten.find((a) => a.assignmentId === assignmentId && a.art !== "whiteboard");
+    return x ? aktivitaetDauer(x) : "";
+  };
   const lernkontrollen = kontrollen.map((k) => {
     const ts = aufgaben.filter((t) => t.assignmentId === k.id);
     const fertig = ts.filter((t) => t.finished);
-    return { skill: [...new Set(ts.map((t) => t.skill).filter(Boolean))].join(", "), von: repo.listTasks(k.worksheet_id).length, erledigt: fertig.length, richtig: fertig.filter((t) => t.correct).length };
+    const dauer = dauerVon(k.id);
+    return { skill: [...new Set(ts.map((t) => t.skill).filter(Boolean))].join(", "), von: repo.listTasks(k.worksheet_id).length, erledigt: fertig.length, richtig: fertig.filter((t) => t.correct).length, ...(dauer ? { dauer } : {}) };
   });
 
   const eigen = new Set(json<string[]>(lesson.abschluss_eigen ?? "[]", []).filter(isAbschlussFeld));
@@ -617,7 +638,8 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
       /^Probeschularbeit: /,
       "",
     );
-    return [{ titel, erreicht: e.erreicht, gesamt: e.gesamt, note: e.note ? `${e.note.note} (${e.note.label})` : null, offen: e.offen, bearbeitet: e.bearbeitet, aufgaben: e.aufgaben, papier: Boolean(r.papier) }];
+    const dauer = r.papier ? "" : dauerVon(r.id);
+    return [{ titel, erreicht: e.erreicht, gesamt: e.gesamt, note: e.note ? `${e.note.note} (${e.note.label})` : null, offen: e.offen, bearbeitet: e.bearbeitet, aufgaben: e.aufgaben, papier: Boolean(r.papier), ...(dauer ? { dauer } : {}) }];
   });
   const mitProbe = new Set(probeIds.map((r) => r.id));
   const papier = papierDerEinheit(unitId).filter((p) => !p.assignmentId || !mitProbe.has(p.assignmentId));
@@ -651,7 +673,7 @@ export function belegeDerEinheit(unitId: number, lesson: repo.Lesson): Abschluss
       .all(unitId, FASSUNG) as string[]
   ).map(skillName);
   const besser = unit ? verbesserungen(unitId, lesson.student_id, unit.started_at) : [];
-  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier, proben, offen, knoepfe, hausuebung, hausuebungZurueck, uebungen, beispiele, ausfuehrlich, besser };
+  return { aufgaben, fehler, beobachtungen, reaktionen, minitest: report?.minitest ?? null, lernkontrollen, vorgabe, geuebt, pruefung, eigene, praesentationen, unterlagen, papier, proben, offen, knoepfe, hausuebung, hausuebungZurueck, uebungen, beispiele, ausfuehrlich, besser, aktivitaeten };
 }
 
 /**
