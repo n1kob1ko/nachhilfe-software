@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { antwortForm, haeufigsteForm, legbar, legeAnzeige, legeKacheln, legeStimmt, mitAntwortForm, tippAnzeige, tippbar, tippFertig, tippStimmt, tippTaste, tippZiel } from "./lernspiele-antwort";
+import { antwortForm, drehbar, haeufigsteForm, legbar, legeAnzeige, legeKacheln, legeStimmt, mitAntwortForm, tippAnzeige, tippbar, tippFertig, tippStimmt, tippTaste, tippZiel, wischbar } from "./lernspiele-antwort";
 import { kandidaten, waehleKarten } from "./lernspiele-karten";
 import { themenKandidaten } from "./lernspiele-themen";
 import { festerZufall, type SpielKarte } from "./lernspiele-typen";
@@ -107,13 +107,19 @@ test("Buchstaben legen: groß und klein zählt nicht, am Satzanfang steht das Wo
   assert.equal(legbar({ ...karte, mitte: "dem Hund" }), false);
 });
 
-test("Welche Karte wie beantwortet wird: Kopfrechnen tippen, Verbformen legen, der Rest bleibt bei den Kisten", () => {
+test("Welche Karte wie beantwortet wird: tippen, legen, wischen, Rad; Artikel und Fälle bleiben bei den Kisten", () => {
   const rng = festerZufall(7);
   for (const k of waehleKarten("irregular", { stufen: [0, 1, 2, 3], rng })) assert.equal(k.form, "legen");
   for (const k of waehleKarten("praeteritum", { stufen: [0, 1, 2, 3], rng })) assert.equal(k.form, "legen");
   for (const k of waehleKarten("rechnen", { pool: themenKandidaten("mathe.vs.muldiv.einmaleins"), stufen: [0, 1, 2], rng })) assert.equal(k.form, "tippen");
   for (const k of waehleKarten("rechnen", { pool: themenKandidaten("mathe.brueche.addieren"), stufen: [0, 1, 2], rng })) assert.equal(k.form, undefined);
-  for (const art of ["artikel", "faelle", "dasdass", "deklination"] as const) for (const k of waehleKarten(art, { stufen: [0, 1, 2, 3], rng })) assert.equal(k.form, undefined, art);
+  for (const art of ["artikel", "faelle"] as const) for (const k of waehleKarten(art, { stufen: [0, 1, 2, 3], rng })) assert.equal(k.form, undefined, art);
+  // zwei Antworten werden gewischt (auch „Teilbar oder nicht?“ beim Kopfrechnen), drei bis fünf stehen am Rad
+  for (const art of ["dasdass", "perfekt", "satzteile"] as const) for (const k of waehleKarten(art, { stufen: [0, 1, 2, 3], rng })) assert.equal(k.form, "wischen", art);
+  for (const k of waehleKarten("rechnen", { pool: themenKandidaten("mathe.teilbarkeit.regeln"), stufen: [0, 1, 2], rng })) assert.equal(k.form, "wischen");
+  for (const art of ["praepositionen", "deklination"] as const) for (const k of waehleKarten(art, { stufen: [0, 1, 2, 3], rng })) assert.equal(k.form, "rad", art);
+  for (const k of waehleKarten("zeiten", { pool: themenKandidaten("englisch.tenses.pastsimple"), stufen: [0, 1, 2, 3], rng })) assert.equal(k.form, "rad");
+  for (const k of waehleKarten("grammatik", { pool: themenKandidaten("englisch.grammar.someany"), stufen: [0, 1, 2, 3], rng })) assert.equal(k.form, "rad");
   // eine Karte mit eigener Form behält sie, und der Vorrat wird nicht verändert
   const satz = waehleKarten("satzbau", { stufen: [0, 1, 2, 3], rng });
   assert.ok(satz.every((k) => k.form === "reihe"));
@@ -121,8 +127,33 @@ test("Welche Karte wie beantwortet wird: Kopfrechnen tippen, Verbformen legen, d
   assert.equal(vorrat.form, undefined);
   assert.equal(mitAntwortForm("irregular", [vorrat])[0].form, "legen");
   assert.equal(vorrat.form, undefined);
-  assert.equal(antwortForm("zeiten", vorrat), undefined);
+  assert.equal(antwortForm("artikel", vorrat), undefined);
   // für den Anfang des Spiels: wie die meisten Karten eines Themas beantwortet werden
   assert.equal(haeufigsteForm("rechnen", karten("mathe.zahlen.vorrang")), "tippen");
   assert.equal(haeufigsteForm("rechnen", karten("mathe.terme.klammern")), undefined);
+  assert.equal(haeufigsteForm("rechnen", karten("mathe.teilbarkeit.regeln")), "wischen");
+  assert.equal(haeufigsteForm("zeiten", karten("englisch.tenses.future")), "rad");
+});
+
+test("Wischen braucht genau zwei Antworten, das Rad drei bis sechs in einem Satz mit Lücke", () => {
+  const karte: SpielKarte = { key: "k", vor: "Ich weiß,", nach: "du kommst.", faecher: ["das", "dass"], richtig: "dass", loesung: "", regel: "" };
+  assert.equal(wischbar(karte), true);
+  assert.equal(drehbar(karte), false);
+  assert.equal(antwortForm("dasdass", karte), "wischen");
+  // ein Spiel für das Rad mit nur zwei Antworten wird gewischt
+  assert.equal(antwortForm("grammatik", karte), "wischen");
+  const drei = { ...karte, faecher: ["das", "dass", "des"] };
+  assert.equal(wischbar(drei), false);
+  assert.equal(drehbar(drei), true);
+  assert.equal(antwortForm("grammatik", drei), "rad");
+  assert.equal(antwortForm("dasdass", drei), undefined);
+  // die richtige Antwort muss dabei sein; ein Artikel-Wort, eine Rechnung oder ein markierter Teil kommen nicht ans Rad
+  assert.equal(wischbar({ ...karte, richtig: "des" }), false);
+  assert.equal(drehbar({ ...drei, richtig: "der" }), false);
+  assert.equal(drehbar({ ...drei, wort: "Haus" }), false);
+  assert.equal(drehbar({ ...drei, mathe: true }), false);
+  assert.equal(drehbar({ ...drei, mitte: "dem Hund" }), false);
+  assert.equal(drehbar({ ...drei, faecher: ["a", "b", "c", "d", "e", "f", "dass"] }), false);
+  // ein markierter Teil mit zwei Antworten wird gewischt (Hauptsatz oder Gliedsatz, teilbar: ja oder nein)
+  assert.equal(wischbar({ ...karte, mitte: "dass du kommst" }), true);
 });

@@ -126,14 +126,27 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
 
 /**
  * So wird eine Karte beantwortet: Karten in Kisten (ohne Angabe), Paare finden, Teile in eine Reihe bringen, eine Zahl
- * am Zahlenstrahl treffen, das Ergebnis eintippen oder ein Wort aus Buchstaben legen.
+ * am Zahlenstrahl treffen, das Ergebnis eintippen, ein Wort aus Buchstaben legen, die Karte nach links oder rechts
+ * wischen oder an einem Rad drehen, bis der Satz stimmt.
  */
-export type SpielForm = "paar" | "reihe" | "strahl" | "tippen" | "legen";
+export type SpielForm = "paar" | "reihe" | "strahl" | "tippen" | "legen" | "wischen" | "rad";
 /**
- * Die Form eines Spiels, wenn alle seine Karten so beantwortet werden. „Kopfrechnen“ fehlt: dort hängt es am Thema
- * (Zahlen werden getippt, Terme und gemischte Zahlen bleiben bei den Kisten; lib/lernspiele-antwort.ts).
+ * Die Form eines Spiels, wenn alle seine Karten so beantwortet werden. „Kopfrechnen“, „English Tenses“ und „English
+ * Grammar“ fehlen: dort hängt es am Thema (Zahlen werden getippt, ja oder nein wird gewischt, drei Formen stehen am
+ * Rad; lib/lernspiele-antwort.ts).
  */
-export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = { vokabeln: "paar", satzbau: "reihe", strahl: "strahl", irregular: "legen", praeteritum: "legen" };
+export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = {
+  vokabeln: "paar",
+  satzbau: "reihe",
+  strahl: "strahl",
+  irregular: "legen",
+  praeteritum: "legen",
+  dasdass: "wischen",
+  perfekt: "wischen",
+  satzteile: "wischen",
+  praepositionen: "rad",
+  deklination: "rad",
+};
 
 /** Trennt die Teile in der Antwort einer Reihe („gehen | wir | ins Kino“). */
 export const REIHE_TRENNER = " | ";
@@ -153,6 +166,9 @@ export const REIHE_TRENNER = " | ";
  *
  * Beim Eintippen (`form: "tippen"`) und beim Legen (`form: "legen"`) ist die Karte dieselbe wie mit Kisten; die Wahl
  * ist `richtig`, wenn das Getippte oder Gelegte stimmt, sonst das, was der Schüler geschrieben hat.
+ *
+ * Beim Wischen (`form: "wischen"`, zwei Fächer: das erste links, das zweite rechts) und am Rad (`form: "rad"`) ist die
+ * Karte auch dieselbe, und die Wahl ist wie bei den Kisten eines der `faecher`.
  */
 export type SpielKarte = {
   key: string;
