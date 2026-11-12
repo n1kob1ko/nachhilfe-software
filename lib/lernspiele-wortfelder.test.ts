@@ -27,7 +27,7 @@ const rng = (seed: number) => () => {
   return (seed - 1) / 2147483646;
 };
 
-test("Wortfelder: jeder Eintrag wird eine Karte, die Antwort steht am Rad, keine Karte doppelt", async () => {
+test("Wortfelder: jeder Eintrag wird eine Karte, die Antwort steht auf einer Kachel, keine Karte doppelt", async () => {
   const w = await import("./lernspiele-wortfelder");
   const { THEMA_KARTEN_MIN } = await import("./lernspiele-themen");
   const { waehleKarten } = await import("./lernspiele-karten");
@@ -51,7 +51,7 @@ test("Wortfelder: jeder Eintrag wird eine Karte, die Antwort steht am Rad, keine
     }
     const runde = waehleKarten("wortschatz", { pool: karten, stufen: [0, 1, 2], rng: rng(3) });
     assert.equal(runde.length, 12);
-    assert.ok(runde.every((k) => k.form === "rad"), `${feld.name}: am Rad`);
+    assert.ok(runde.every((k) => k.form === "kacheln"), `${feld.name}: als Kacheln`);
   }
 });
 
@@ -102,7 +102,7 @@ test("Gruselgeschichte im Stoff: „Wortschatz“ zuerst, „der, die, das“ un
 
   const wort = sp.starteRunde(student, "wortschatz", { heute: HEUTE, rng: rng(1) });
   assert.equal(wort.karten.length, 12);
-  assert.ok(wort.karten.every((k) => k.form === "rad" && k.key.startsWith("wortschatz:")));
+  assert.ok(wort.karten.every((k) => k.form === "kacheln" && k.key.startsWith("wortschatz:")));
   assert.equal((db().prepare("SELECT skill_id FROM spielrunden WHERE id = ?").get(wort.rundeId) as { skill_id: string }).skill_id, grusel.skill);
 
   const nomen = new Set(grusel.nomen.map((n) => w.nomenItem(n)!.word));

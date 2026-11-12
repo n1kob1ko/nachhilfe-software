@@ -45,7 +45,7 @@ niko 2026-11-11: „mach alle deutsch spiele zuerst“. Diese acht Spiele haben 
 Kisten); neu ist nur, was auf der Karte steht und wie die Kisten heißen. Seit 2026-11-12 werden nur noch „der, die,
 das“ und „Die vier Fälle“ mit Kisten beantwortet: bei „Präteritum“ wird die Form aus Buchstaben gelegt, „das oder
 dass“, „Hauptsatz oder Gliedsatz“ und „Perfekt“ werden gewischt, „Präposition und Fall“ und „Adjektiv-Endungen“ haben
-ein Drehrad (siehe „Wie geantwortet wird“). Die Spalte „Kisten“ nennt die Antworten.
+Antwortkacheln (siehe „Wie geantwortet wird“). Die Spalte „Kisten“ nennt die Antworten.
 
 | Spiel | Fähigkeit | Quelle | Karte | Kisten |
 | --- | --- | --- | --- | --- |
@@ -153,7 +153,7 @@ sind dieselben wie bei den Kisten-Spielen.
 
 niko 2026-11-11: „Vielleicht noch die Irregular Verbs. Zeiten in Englisch können wir auch noch reinhauen.“ Die drei
 Spiele haben die Kisten-Mechanik; neu sind die Karten (`lib/lernspiele-englisch.ts`). Seit 2026-11-12 wird bei
-„Irregular Verbs“ die Form aus Buchstaben gelegt, „English Tenses“ und „English Grammar“ haben ein Drehrad (siehe
+„Irregular Verbs“ die Form aus Buchstaben gelegt, „English Tenses“ und „English Grammar“ haben Antwortkacheln (siehe
 „Wie geantwortet wird“); „Kisten“ heißt hier: die Antworten der Karte.
 
 - **Karten**: Sätze mit einer Lücke aus den Englisch-Generatoren (`englischWahlFuerSpiel` in
@@ -256,7 +256,7 @@ gleiche.“ Die Karten bleiben dieselben, aber die Art zu antworten hängt am Sp
 | **Ziffernblock** (`tippen`) | Kopfrechnen, wo das Ergebnis eine Zahl ist | `ZiffernFeld.tsx` |
 | **Buchstaben legen** (`legen`) | Irregular Verbs, Präteritum | `LegeFeld.tsx` |
 | **Wischen** (`wischen`) | das oder dass, Perfekt: haben oder sein, Hauptsatz oder Gliedsatz, bei Kopfrechnen „Teilbar oder nicht?“ (jede Karte mit genau zwei Antworten) | `WischFeld.tsx` |
-| **Drehrad** (`rad`) | Präposition und Fall, Adjektiv-Endungen, English Tenses, English Grammar, Wortschatz (ein Satz mit Lücke und drei bis sechs Antworten) | `RadFeld.tsx` |
+| **Antwortkacheln** (`kacheln`) | Präposition und Fall, Adjektiv-Endungen, English Tenses, English Grammar, Wortschatz (ein Satz mit Lücke und drei bis sechs Antworten) | `KachelFeld.tsx` |
 | Paare, Reihe, Zahlenstrahl | Vokabel-Paare, Satzbau, Zahlenstrahl | siehe die Abschnitte oben |
 | Kisten | der, die, das; Die vier Fälle; bei Kopfrechnen, was sich nicht tippen lässt | `Lernspiel.tsx` |
 
@@ -285,20 +285,24 @@ gleiche.“ Die Karten bleiben dieselben, aber die Art zu antworten hängt am Sp
   außen zeigen (violett links, gold rechts); sie lassen sich auch antippen, am Laptop zählen die Pfeiltasten links
   und rechts. Richtig: die Karte fliegt zu ihrer Seite hinaus, oben steht kurz der ganze richtige Satz. Die Karte ist
   dieselbe wie bei den Kisten (`KartenInhalt.tsx`), auch mit markiertem Teil.
-- **Drehrad**: oben das Blatt mit dem Satz, unten ein Rad mit den Antworten und „Prüfen“. Was in der Mitte des Rades
-  steht, steht schon in der Lücke (`probe`, noch ohne Farbe): man liest den ganzen Satz und hört, ob er stimmt. Am
-  Anfang steht das Rad auf keiner Antwort („Dreh am Rad“), „Prüfen“ geht erst mit einer Antwort. Das Rad ist eine
-  Liste, die der Browser selbst rollt und einrastet (scroll-snap); eine Zeile antippen dreht sie in die Mitte, am
-  Laptop Pfeil hoch und runter oder die Ziffer, die Eingabetaste prüft. Eine Karte mit nur zwei Antworten in diesen
-  Spielen wird gewischt.
+- **Antwortkacheln** (niko 2026-11-12: „das mit dem drehen als antwort bei spielen gefällt mir nicht schau dir mal
+  online einige lernspiele an die beliebt sind und mache es wie die“; bis dahin war hier ein Drehrad): oben das Blatt
+  mit dem Satz, darunter beim Daumen die Antworten als große Kacheln, zu zweit nebeneinander (lange englische Formen
+  untereinander), darunter „Prüfen“. So machen es die verbreiteten Lern-Apps: eine Wortbank unter dem Satz, ein Tipp
+  setzt das Wort ein, ein Knopf prüft, und das Ergebnis kommt als farbiger Streifen unten. Eine Kachel antippen: das
+  Wort fliegt in die Lücke (`probe`, noch ohne Farbe), auf seinem Platz bleibt ein leerer Rahmen; eine andere Kachel
+  tauscht es, die Lücke antippen holt es zurück. Unten kommt nach dem Prüfen der Streifen: grün „Super!“, oder rot
+  „Fast! Richtig ist …“ mit der Regel. Die falsche Kachel ist dann durchgestrichen, um die richtige
+  atmet ein goldener Ring, ein Tipp auf sie schließt die Karte ab. Am Laptop die Ziffern, Eingabetaste, Rücktaste. Eine Karte mit nur
+  zwei Antworten in diesen Spielen wird gewischt.
 - **Nach einem Fehler** bei allen wie bei den Kisten: das Feld wird rot, darunter kommt das Blatt „Fast! Richtig
-  ist …“ mit Rechenweg oder Regel, und weiter geht es erst, wenn das Richtige getippt, gelegt, gewischt oder am Rad
-  eingestellt ist (dann ohne „Prüfen“). Die Karte kommt drei Karten später noch einmal.
+  ist …“ mit Rechenweg oder Regel, und weiter geht es erst, wenn das Richtige getippt, gelegt, gewischt oder als Kachel
+  angetippt ist (dann ohne „Prüfen“). Die Karte kommt drei Karten später noch einmal.
 - **Wertung**: wie immer die erste Antwort gegen `karte.richtig`. Stimmt das Getippte oder Gelegte, meldet das
-  Spielfeld genau `karte.richtig`, sonst das, was der Schüler geschrieben hat; beim Wischen und am Rad ist die Wahl
+  Spielfeld genau `karte.richtig`, sonst das, was der Schüler geschrieben hat; beim Wischen und bei den Kacheln ist die Wahl
   wie bei den Kisten eine der Antworten der Karte. Am Server ändert sich nichts.
 - Der Anfang des Spiels zeigt statt der kleinen Kisten einen kleinen Ziffernblock, vier Buchstaben-Kacheln, zwei
-  Schilder oder ein kleines Rad (`spielAntwort` für die Themenspiele: wie die meisten Karten des Themas beantwortet
+  Schilder oder eine Lücke mit zwei Kacheln (`spielAntwort` für die Themenspiele: wie die meisten Karten des Themas beantwortet
   werden).
 
 ## Wortschatz und Wortfelder (Deutsch)
@@ -317,7 +321,7 @@ braucht“.
   „Krimi“ …), damit „Stoff zuordnen“ ein Thema wie „Gruselgeschichte“ findet. Märchen und Sage kommen auch über
   „Märchen und ihre Merkmale“ und „Sagen und ihre Merkmale“, die Personenbeschreibung über ihre eigene Fähigkeit.
 - **Spiel „Wortschatz“**: ein Themenspiel wie „English Tenses“, das Thema ist das Wortfeld (aus dem Stoff, sonst eines
-  der Schulstufe). Am Rad das treffende Wort für den Satz („Die alte Tür ___ laut“: knarrte, kicherte, tropfte); nach
+  der Schulstufe). Auf Kacheln das treffende Wort für den Satz („Die alte Tür ___ laut“: knarrte, kicherte, tropfte); nach
   einem Fehler steht, was das Wort bedeutet. Der Lernstand geht an das Wortfeld.
 - **„der, die, das“ und „Präteritum“ mit den Wörtern des Themas**: steht ein Schreib-Thema im Stoff (Prüfung,
   aktueller Stoff, letzte Einheit), spielen die beiden Spiele die Nomen und Verben des Wortfelds (`wortfeldPlan`), und

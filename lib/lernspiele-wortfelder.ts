@@ -3,7 +3,7 @@
  * lernspielen sind es wörter die er für eine gruselgeschichte braucht“). Je Thema drei Listen, von Hand geschrieben:
  *
  * - `saetze`: ein Satz mit dem treffenden Wort in eckigen Klammern, zwei Wörter, die dort nicht passen, und was das
- *   Wort bedeutet. Daraus wird das Spiel „Wortschatz“: der Schüler dreht am Rad, bis der Satz stimmt.
+ *   Wort bedeutet. Daraus wird das Spiel „Wortschatz“: der Schüler tippt das treffende Wort in die Lücke.
  * - `nomen`: Nomen des Themas mit Artikel. Steht das Thema im Stoff, spielt „der, die, das“ diese Wörter.
  * - `verben`: ein Satz im Präteritum, das Verb in eckigen Klammern, die Grundform und zwei typische falsche Formen.
  *   Steht das Thema im Stoff, spielt „Präteritum“ diese Sätze. Die Personenbeschreibung hat keine (sie steht im
@@ -289,7 +289,7 @@ export function zerlege(satz: string): { vor: string; wort: string; nach: string
   return m ? { vor: m[1], wort: m[2], nach: m[3] } : null;
 }
 
-/** Eine Karte „Wortschatz“: der Satz mit Lücke, am Rad das treffende Wort und zwei, die nicht passen. */
+/** Eine Karte „Wortschatz“: der Satz mit Lücke, auf Kacheln das treffende Wort und zwei, die nicht passen. */
 export function wortschatzKarte(skill: string, [satz, falsch1, falsch2, bedeutung]: Satz): SpielKarte | null {
   const t = zerlege(satz);
   if (!t) return null;

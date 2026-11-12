@@ -2614,202 +2614,281 @@
   rotate: 2.5deg;
 }
 
-/* ---------- Drehrad (RadFeld.tsx): ein Satz mit Lücke, die Antworten an einem Rad ---------- */
-.ls-radblatt {
+/* ---------- Antwortkacheln (KachelFeld.tsx): ein Satz mit Lücke, die Antworten als Kacheln beim Daumen ---------- */
+.ls-kachelblatt {
   flex: 1 1 auto;
   min-height: 120px;
   max-height: 400px;
   align-items: center;
   text-align: center;
 }
-/* „+1“ steigt zwischen Blatt und Rad auf, nicht über den Antworten */
-.ls-rad .ls-funken {
-  top: 4px;
-}
-.ls-radblatt[data-knapp] {
-  flex: 0 0 auto;
+.ls-kachelblatt[data-knapp] {
+  flex: 0 1 auto;
   min-height: 0;
   padding-top: 14px;
   padding-bottom: 14px;
 }
-.ls-radfeld > .ls-reihe-mitte:empty {
-  flex: 0 0 0;
-  padding: 0;
+.ls-kachel-satz {
+  display: contents;
 }
-/* was das Rad gerade zeigt, steht schon in der Lücke (noch nicht geprüft) */
+/* das gewählte Wort steht schon in der Lücke (noch nicht geprüft); antippen holt es zurück */
 .ls-luecke[data-probe] {
   color: var(--ink);
   font-weight: 650;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px var(--accent-bright);
 }
 :root[data-theme="dark"] .ls-luecke[data-probe]:not([data-stand]) {
   color: #eaf2ff;
 }
-.ls-rad {
-  --h: 52px;
-  position: relative;
+.ls-kacheln {
+  display: grid;
   flex-shrink: 0;
-  width: min(100%, 420px);
-  height: calc(var(--h) * 3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: min(100%, 460px);
   margin: auto auto 0;
-  border-radius: 26px;
-  background: var(--ls-glas);
-  box-shadow: 0 0 0 1px var(--ls-glas-linie) inset;
 }
-/* das helle Band in der Mitte: was hier steht, gilt */
-.ls-rad-band {
-  position: absolute;
-  inset: calc(var(--h) + 2px) 8px auto;
-  height: calc(var(--h) - 4px);
+.ls-kacheln[data-lang] {
+  grid-template-columns: minmax(0, 1fr);
+}
+/* bei drei oder fünf Antworten steht die letzte Kachel mittig unter den anderen */
+.ls-kacheln[data-ungerade]:not([data-lang]) > .ls-kachel:last-child {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: calc(50% - 5px);
+}
+.ls-kachel {
+  position: relative;
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  min-height: 58px;
+  place-items: center;
+  padding: 8px 14px;
   border-radius: 18px;
   background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
   box-shadow:
     0 2px 0 rgba(255, 255, 255, 0.5) inset,
     0 5px 0 rgba(8, 30, 90, 0.28),
     0 14px 22px -10px rgba(8, 30, 90, 0.55);
   transition:
-    box-shadow 200ms ease,
-    opacity 200ms ease;
+    transform 140ms var(--ls-ease-out),
+    box-shadow 140ms var(--ls-ease-out),
+    background-color 160ms ease,
+    opacity 160ms ease;
+  animation: ls-hoch 300ms var(--ls-ease-out) backwards;
 }
-.ls-rad[data-leer] .ls-rad-band {
-  opacity: 0.22;
-  box-shadow: none;
+.ls-kachel:nth-child(2) {
+  animation-delay: 40ms;
 }
-.ls-rad[data-stand="richtig"] .ls-rad-band {
+.ls-kachel:nth-child(3) {
+  animation-delay: 80ms;
+}
+.ls-kachel:nth-child(n + 4) {
+  animation-delay: 120ms;
+}
+.ls-kacheln[data-lang] .ls-kachel {
+  min-height: 52px;
+  font-size: 19px;
+}
+/* drücken: die Kachel sinkt auf ihren Schatten */
+.ls-kachel:active:not(:disabled) {
+  transform: translateY(4px);
   box-shadow:
-    0 0 0 4px var(--ls-gold),
-    0 14px 22px -10px rgba(8, 30, 90, 0.55);
+    0 2px 0 rgba(255, 255, 255, 0.5) inset,
+    0 1px 0 rgba(8, 30, 90, 0.28),
+    0 6px 12px -8px rgba(8, 30, 90, 0.55);
 }
-.ls-rad[data-stand="falsch"] .ls-rad-band {
-  box-shadow:
-    0 0 0 4px var(--ls-rot),
-    0 14px 22px -10px rgba(8, 30, 90, 0.55);
+@media (hover: hover) and (pointer: fine) {
+  .ls-kachel:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
 }
-:root[data-theme="dark"] .ls-rad-band {
+.ls-kachel:focus-visible {
+  outline: 3px solid var(--ls-gold);
+  outline-offset: 3px;
+}
+:root[data-theme="dark"] .ls-kachel {
   background: #1c2b47;
+  color: #fff;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.14) inset,
+    0 5px 0 rgba(0, 8, 30, 0.55),
     0 14px 22px -10px rgba(0, 8, 30, 0.7);
 }
-.ls-rad-rolle {
-  position: relative;
-  height: 100%;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scroll-snap-type: y mandatory;
-  scrollbar-width: none;
-  touch-action: pan-y;
-  border-radius: inherit;
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24%, #000 76%, transparent);
-  mask-image: linear-gradient(to bottom, transparent, #000 24%, #000 76%, transparent);
+/* das Wort ist in der Lücke: hier bleibt ein leerer Rahmen, damit nichts springt */
+.ls-kachel[data-drin] {
+  background: transparent;
+  box-shadow: 0 0 0 2px var(--ls-glas-linie) inset;
+  transform: none;
 }
-.ls-rad-rolle::-webkit-scrollbar {
-  display: none;
+.ls-kachel[data-drin] > span {
+  opacity: 0;
 }
-/* oben und unten je eine Zeile Luft, damit auch die erste und die letzte Antwort in die Mitte passen */
-.ls-rad-rolle::before,
-.ls-rad-rolle::after {
-  content: "";
-  display: block;
-  height: var(--h);
+:root[data-theme="dark"] .ls-kachel[data-drin] {
+  background: transparent;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18) inset;
 }
-.ls-rad-rolle[data-fest] {
-  overflow: hidden;
-  pointer-events: none;
+/* nach einem Fehler: die falsche Kachel ist durchgestrichen, die richtige leuchtet */
+.ls-kachel[data-falsch] {
+  opacity: 0.55;
+  color: var(--red);
+  text-decoration: line-through;
+  box-shadow: none;
 }
-.ls-rad-zeile {
+.ls-kachel[data-zeigen] {
+  box-shadow:
+    0 0 0 4px var(--ls-gold),
+    0 5px 0 rgba(8, 30, 90, 0.28),
+    0 14px 22px -10px rgba(8, 30, 90, 0.55);
+  animation: ls-kachel-ruf 1200ms var(--ls-ease-in-out) 300ms infinite;
+}
+:root[data-theme="dark"] .ls-kachel[data-zeigen] {
+  box-shadow:
+    0 0 0 4px var(--ls-gold),
+    0 5px 0 rgba(0, 8, 30, 0.55),
+    0 14px 22px -10px rgba(0, 8, 30, 0.7);
+}
+:root[data-theme="dark"] .ls-kachel[data-falsch] {
+  box-shadow: none;
+}
+/* der goldene Ring atmet (nur der Schatten bewegt sich, die Kachel bleibt ruhig unter dem Daumen) */
+@keyframes ls-kachel-ruf {
+  50% {
+    box-shadow:
+      0 0 0 8px rgba(255, 211, 77, 0.55),
+      0 5px 0 rgba(8, 30, 90, 0.28),
+      0 14px 22px -10px rgba(8, 30, 90, 0.55);
+  }
+}
+.ls-kachel:disabled {
+  cursor: default;
+}
+/* unten: „Prüfen“ oder der Streifen mit dem Ergebnis, gleich hoch, damit die Kacheln nicht springen */
+.ls-kachel-fuss {
+  flex-shrink: 0;
   display: flex;
-  width: 100%;
-  height: var(--h);
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 64px;
+}
+.ls-kachel-fuss .ls-pruefen {
+  margin-bottom: 6px;
+}
+.ls-bescheid {
+  position: relative;
+  margin: 0 -2px 6px;
+  padding: 12px 16px 14px;
+  border-radius: 22px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 20px 40px -12px rgba(8, 30, 90, 0.55);
+  animation: ls-bescheid 260ms var(--ls-ease-out);
+}
+.ls-bescheid::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 6px;
+  border-radius: 22px 22px 0 0;
+}
+.ls-bescheid[data-art="richtig"]::before {
+  background: var(--green);
+}
+.ls-bescheid[data-art="falsch"]::before {
+  background: var(--red);
+}
+@keyframes ls-bescheid {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+.ls-bescheid-kopf {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 0 20px;
-  scroll-snap-align: center;
+  gap: 4px 8px;
+  min-height: 34px;
   font-family: var(--font-display);
-  font-size: 21px;
-  font-weight: 800;
-  line-height: 1.1;
-  white-space: nowrap;
-  color: var(--ls-on);
-  transition:
-    opacity 160ms ease,
-    scale 160ms var(--ls-ease-out),
-    color 160ms ease;
-}
-.ls-rad-zeile[data-lang] {
   font-size: 18px;
-}
-.ls-rad-zeile[data-ab="0"] {
-  color: var(--ink);
-}
-:root[data-theme="dark"] .ls-rad-zeile[data-ab="0"] {
-  color: #fff;
-}
-.ls-rad-zeile[data-ab="1"] {
-  opacity: 0.8;
-  scale: 0.9;
-}
-.ls-rad-zeile[data-ab="2"] {
-  opacity: 0.4;
-  scale: 0.8;
-}
-.ls-rad-hinweis {
-  font-size: 16px;
   font-weight: 700;
 }
-.ls-rad-hinweis[data-ab="0"] {
-  color: var(--ls-on);
+.ls-bescheid[data-art="richtig"] .ls-bescheid-kopf {
+  color: var(--green);
+  font-size: 20px;
 }
-/* nach einem Fehler: die richtige Antwort am Rad ist markiert */
-.ls-rad-zeile[data-zeigen]:not([data-ab="0"]) {
-  color: var(--ls-gold);
-  opacity: 1;
+.ls-bescheid[data-art="falsch"] .ls-bescheid-kopf svg {
+  color: var(--amber);
 }
-.ls-rad-zeile[data-zeigen][data-ab="0"] {
+.ls-bescheid-kopf b {
   color: var(--green);
 }
-/* Anfang des Spiels: ein kleines Rad mit drei Antworten */
-.ls-rad-mini {
+.ls-bescheid-text {
+  margin-top: 6px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: var(--amber-wash);
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+/* Anfang des Spiels: ein Satz mit Lücke und zwei kleine Kacheln darunter */
+.ls-kachel-mini {
   display: grid;
-  min-width: 132px;
-  margin-inline: auto;
-  padding: 5px;
-  border-radius: 18px;
-  background: var(--ls-glas);
-  box-shadow: 0 0 0 1px var(--ls-glas-linie) inset;
+  justify-items: center;
+  gap: 8px;
   rotate: -2deg;
 }
-.ls-rad-mini b {
+.ls-kachel-mini i {
+  display: block;
+  width: 64px;
+  height: 24px;
+  border-radius: 8px;
+  border-bottom: 3px solid #9cc2f5;
+  background: rgba(255, 255, 255, 0.85);
+}
+.ls-kachel-mini span {
+  display: flex;
+  gap: 6px;
+}
+.ls-kachel-mini b {
   display: grid;
-  height: 28px;
-  padding: 0 16px;
+  height: 32px;
+  padding: 0 12px;
   place-items: center;
+  border-radius: 10px;
+  background: #fff;
+  color: #151f2b;
   font-family: var(--font-display);
   font-size: 15px;
   font-weight: 800;
   white-space: nowrap;
-  color: var(--ls-on);
-  opacity: 0.6;
-}
-.ls-rad-mini b[data-mitte] {
-  height: 36px;
-  border-radius: 12px;
-  background: #fff;
-  color: #151f2b;
-  font-size: 18px;
-  opacity: 1;
   box-shadow: 0 3px 0 rgba(8, 30, 90, 0.35);
 }
-/* kleines Handy: das Rad wird flacher, nach einem Fehler braucht die Regel den Platz */
+/* kleines Handy: die Kacheln werden flacher, nach einem Fehler braucht die Regel den Platz */
 @media (max-height: 640px) {
-  .ls-rad {
-    --h: 44px;
-  }
-  .ls-rad-zeile {
+  .ls-kachel {
+    min-height: 50px;
     font-size: 19px;
   }
-  .ls-rad-zeile[data-lang] {
+  .ls-kacheln[data-lang] .ls-kachel {
+    min-height: 44px;
     font-size: 17px;
+  }
+  .ls-kacheln {
+    gap: 8px;
   }
   .ls-wisch-ziel {
     min-height: 58px;
@@ -2818,8 +2897,8 @@
   .ls-wisch-ziel[data-seite="rechts"] {
     border-radius: 12px 29px 29px 12px;
   }
-  .ls-feld:has(.ls-radblatt[data-knapp]) .ls-auftrag,
-  .ls-radblatt[data-knapp] .ls-bedeutung {
+  .ls-feld:has(.ls-kachelblatt[data-knapp]) .ls-auftrag,
+  .ls-kachelblatt[data-knapp] .ls-bedeutung {
     display: none;
   }
   /* nach einem Fehler brauchen Karte und Regel den Platz: die Karte rückt weniger hoch, die Zeile darüber macht Platz */
@@ -2831,38 +2910,42 @@
   .ls-feld:has(.ls-wisch .ls-stapel[data-falsch]) .ls-zuletzt {
     visibility: hidden;
   }
-  .ls-reihe.ls-radfeld {
+  .ls-reihe.ls-kachelfeld {
     gap: 10px;
     padding-top: 10px;
   }
-  .ls-radblatt[data-knapp] {
+  .ls-kachelblatt[data-knapp] {
     padding-top: 8px;
     padding-bottom: 8px;
   }
-  .ls-radfeld .ls-regel {
+  .ls-bescheid {
     padding: 10px 14px 12px;
   }
-  .ls-radfeld .ls-regel-text {
-    margin-top: 6px;
+  .ls-bescheid-text {
+    margin-top: 4px;
     padding: 6px 10px;
     font-size: 13.5px;
     line-height: 1.4;
   }
-  .ls-radfeld .ls-los {
+  .ls-kachelfeld .ls-los {
     min-height: 50px;
+  }
+  .ls-kachel-fuss {
+    min-height: 56px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .ls-wisch-ziel,
-  .ls-rad-zeile {
+  .ls-kachel {
     transition-property: opacity, background-color, color, box-shadow;
   }
   .ls-wisch-ziel:active,
-  .ls-wisch-ziel[data-ziel] {
+  .ls-wisch-ziel[data-ziel],
+  .ls-kachel:active:not(:disabled) {
     transform: none;
   }
-  .ls-rad-zeile[data-ab] {
-    scale: none;
+  .ls-kachel[data-zeigen] {
+    animation: none;
   }
 }
 

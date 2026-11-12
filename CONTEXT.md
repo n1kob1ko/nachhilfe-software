@@ -242,8 +242,8 @@ den Zeiger dorthin schieben, wo die Zahl liegt (docs/lernspiele.md). Nicht jedes
 das Ergebnis an einem Ziffernblock ein, bei „Irregular Verbs“ und „Präteritum“ legt man die Form aus Buchstaben,
 bei zwei Antworten („das oder dass“, „haben oder sein“, „Hauptsatz oder Gliedsatz“, „Teilbar oder nicht?“) wischt man
 die Karte nach links oder rechts, und bei „Präposition und Fall“, „Adjektiv-Endungen“, „English Tenses“ und „English
-Grammar“ dreht man an einem Rad, bis der Satz stimmt (`lib/lernspiele-antwort.ts`). „Wortschatz“ (Deutsch) spielt das
-**Wortfeld** eines Schreib-Themas (Gruselgeschichte, Märchen, Krimi …): am Rad das treffende Wort für den Satz; steht
+Grammar“ tippt man die passende Antwort-Kachel an, sie springt in die Lücke, dann „Prüfen“ (`lib/lernspiele-antwort.ts`). „Wortschatz“ (Deutsch) spielt das
+**Wortfeld** eines Schreib-Themas (Gruselgeschichte, Märchen, Krimi …): das treffende Wort für den Satz auf Kacheln; steht
 so ein Thema im Stoff, nehmen auch „der, die, das“ und „Präteritum“ seine Wörter. Kisten haben nur noch „der, die,
 das“, „Die vier Fälle“ und Kopfrechnen mit Termen oder Bruchrechnen. Die App wählt das Spiel nach dem Stoff (nahe Prüfung, aktueller Stoff, letzte Einheit,
 unsicherer Lernstand). Gespielt wird in der Schüler-App und in der Einheit am Schüler-Tablet (Knopf „Spiele“). Eine **Runde** zählt mit der ersten Wahl je Karte, schwächer als eine Übung.
