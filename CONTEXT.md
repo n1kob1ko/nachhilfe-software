@@ -246,7 +246,7 @@ Grammar“ dreht man an einem Rad, bis der Satz stimmt (`lib/lernspiele-antwort.
 **Wortfeld** eines Schreib-Themas (Gruselgeschichte, Märchen, Krimi …): am Rad das treffende Wort für den Satz; steht
 so ein Thema im Stoff, nehmen auch „der, die, das“ und „Präteritum“ seine Wörter. Kisten haben nur noch „der, die,
 das“, „Die vier Fälle“ und Kopfrechnen mit Termen oder Bruchrechnen. Die App wählt das Spiel nach dem Stoff (nahe Prüfung, aktueller Stoff, letzte Einheit,
-unsicherer Lernstand). Eine **Runde** zählt mit der ersten Wahl je Karte, schwächer als eine Übung.
+unsicherer Lernstand). Gespielt wird in der Schüler-App und in der Einheit am Schüler-Tablet (Knopf „Spiele“). Eine **Runde** zählt mit der ersten Wahl je Karte, schwächer als eine Übung.
 _Avoid_: Quiz, Minispiel, Game
 
 **Wortfeld**:

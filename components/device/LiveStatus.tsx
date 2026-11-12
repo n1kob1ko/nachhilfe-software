@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { ArrowDown, ArrowUp, CheckCircle2, ChevronDown, CircleDashed, Eye, ListChecks, MonitorPlay, PenLine, Presentation, Printer, RotateCcw, SkipForward, Sparkles, TabletSmartphone, XCircle } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, ChevronDown, CircleDashed, Eye, Gamepad2, ListChecks, MonitorPlay, PenLine, Presentation, Printer, RotateCcw, SkipForward, Sparkles, TabletSmartphone, XCircle } from "lucide-react";
 import { assignTabletAction, currentTaskToBoardAction, newExerciseAction, resendAction, retryTaskAction, sendNextTaskAction, showSolutionAction, tabletViewAction } from "@/app/device-actions";
 import { ACTION_LABEL } from "@/lib/ai/labels";
 import type { AILive } from "@/lib/ai/realtime";
@@ -90,6 +90,7 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
   const noTabletHere = parallel && s.tablet.paired && !s.parallel.tablets.some((t) => t.unitId === unitId);
   const tablet = !s.tablet.paired ? "kein" : noTabletHere ? "anderswo" : s.tablet.online ? "online" : "offline";
   const onLaptop = s.device === "laptop";
+  const spielt = s.view === "spiele" || s.view === "spiel";
   const dev = onLaptop ? "Laptop" : "Tablet";
   const devOnline = onLaptop ? Boolean(s.laptop.active?.online) : tablet === "online";
 
@@ -116,9 +117,13 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
         {(tablet !== "kein" || onLaptop) && (
           <Gleiter marke="bg-surface shadow-[var(--shadow-card)]" className="relative ml-auto flex gap-1 rounded-full bg-panel p-1" role="group" aria-label={`${dev} zeigt`}>
             {s.text && <ViewButton on={s.view === "text"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, `text:${s.text!.id}`))} icon={<PenLine size={16} aria-hidden />} label="Text" />}
-            <ViewButton on={s.view !== "tafel" && s.view !== "text" && s.view !== "praesentation"} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, c ? `aufgabe:${c.assignmentId}` : ""))} icon={<ListChecks size={16} aria-hidden />} label="Aufgaben" />
+            <ViewButton on={s.view !== "tafel" && s.view !== "text" && s.view !== "praesentation" && !spielt} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, c ? `aufgabe:${c.assignmentId}` : ""))} icon={<ListChecks size={16} aria-hidden />} label="Aufgaben" />
             {tablet !== "kein" && (
               <ViewButton on={s.view === "tafel"} disabled={pending} onClick={() => zurTafel(() => tabletViewAction(unitId, "tafel"))} icon={<Presentation size={16} aria-hidden />} label="Whiteboard" />
+            )}
+            {/* Lernspiele am Tablet: der Schüler wählt dort selbst; am eigenen Laptop gibt es sie in der Schüler-App */}
+            {tablet !== "kein" && !onLaptop && (
+              <ViewButton on={spielt} disabled={pending} onClick={() => run(() => tabletViewAction(unitId, "spiele"))} icon={<Gamepad2 size={16} aria-hidden />} label="Spiele" />
             )}
           </Gleiter>
         )}
@@ -131,6 +136,12 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
           <Link href={`/tafel/${unitId}`} className="btn btn-primary btn-sm">
             Whiteboard öffnen
           </Link>
+        </p>
+      )}
+      {spielt && tablet !== "kein" && !onLaptop && (
+        <p className="mt-3 flex flex-wrap items-center gap-2 text-[14px]" data-testid="spiel-am-tablet">
+          <Gamepad2 size={16} className="text-accent" aria-hidden />
+          {s.spiel ? `${s.student} spielt „${s.spiel.titel}“.` : `Das Tablet zeigt die Spiele. ${s.student} wählt selbst.`}
         </p>
       )}
       {s.praesentation && (
@@ -288,8 +299,9 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
     if (fehler > 0 && c.state !== "fertig") teile.push({ text: fehler === 1 ? "1 Aufgabe falsch" : `${fehler} Aufgaben falsch`, ton: "text-red" });
     if (c.last && !c.last.pending && c.state !== "fertig") teile.push(c.last.correct ? { text: "Letzte Antwort richtig", ton: "text-green" } : { text: c.last.answer ? `Letzte Antwort falsch: „${c.last.answer.length > 30 ? `${c.last.answer.slice(0, 29)}…` : c.last.answer}“${c.last.label && c.last.label.length <= 32 ? ` (${c.last.label})` : ""}` : "Letzte Antwort falsch", ton: "font-semibold text-red" });
     if (c.last?.pending) teile.push({ text: "Antwort wartet auf dich", ton: "text-amber" });
-  } else teile.push({ text: "Noch nichts gesendet" });
+  } else if (!spielt) teile.push({ text: "Noch nichts gesendet" });
   if (s.view === "tafel" && tablet !== "kein" && !onLaptop) teile.push({ text: "am Whiteboard", ton: "font-semibold text-accent" });
+  if (spielt && tablet !== "kein" && !onLaptop) teile.push({ text: s.spiel ? `spielt „${s.spiel.titel}“` : "bei den Spielen", ton: "font-semibold text-accent" });
   if (kiNeu?.offen && s.running) teile.push({ text: "Neue Aufgaben zum Durchsehen", ton: "font-semibold text-amber" });
   return (
     <section aria-label="Live-Status" className="panel mb-5 px-4 py-1.5 sm:px-5" data-testid="live-kompakt">

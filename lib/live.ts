@@ -18,6 +18,7 @@ import { isMinitest, LERNKONTROLLE } from "./quick-round";
 import { antwortAnzeige } from "./antwort-text";
 import * as repo from "./repo";
 import { MAX_FOLIE } from "./praesentation-protokoll";
+import { istSpielArt, SPIEL_TITEL, type SpielArt } from "./lernspiele-typen";
 import { getText, noteTextInUnit } from "./texts";
 import { getUnit, runningUnitForStudent, runningUnits, type UnitView } from "./units";
 import { shortNames } from "./vornamen";
@@ -32,10 +33,16 @@ export type View =
   | { kind: "aufgabe"; assignmentId: number }
   | { kind: "text"; textId: number }
   // a presentation (lib/praesentationen.ts) at the teacher's slide; never with the Vortragstext
-  | { kind: "praesentation"; id: number; folie: number };
+  | { kind: "praesentation"; id: number; folie: number }
+  // Lernspiele (lib/lernspiele.ts) am Tablet: die Liste der Spiele des Schülers, oder eines davon im Spiel
+  | { kind: "spiele" }
+  | { kind: "spiel"; art: SpielArt };
 
 export function parseView(raw: string): View {
   if (raw === "tafel") return { kind: "tafel" };
+  if (raw === "spiele") return { kind: "spiele" };
+  const s = /^spiel:([a-z]+)$/.exec(raw);
+  if (s && istSpielArt(s[1])) return { kind: "spiel", art: s[1] };
   const m = /^aufgabe:(\d+)$/.exec(raw);
   if (m) return { kind: "aufgabe", assignmentId: Number(m[1]) };
   const p = /^praesentation:(\d+):(\d+)$/.exec(raw);
@@ -44,7 +51,7 @@ export function parseView(raw: string): View {
   return t ? { kind: "text", textId: Number(t[1]) } : { kind: "start" };
 }
 const viewText = (v: View) =>
-  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : "";
+  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : v.kind === "spiele" ? "spiele" : v.kind === "spiel" ? `spiel:${v.art}` : "";
 
 /** May the tablet of this unit show that text? Only texts of the unit's student, and none that is archived. */
 export function unitText(unit: Pick<UnitView, "student_id">, textId: number) {
@@ -250,6 +257,8 @@ export type LiveSnapshot = {
   text: null | { id: number; title: string; words: number; updatedAt: string; version: number };
   /** the presentation the student device shows, at the teacher's slide */
   praesentation: null | { id: number; title: string; folie: number };
+  /** the Lernspiel the tablet shows („Wortschatz“) */
+  spiel: null | { titel: string };
   /** number of answers in this unit, so the page knows when to reload its result lists */
   answers: number;
   /** what the KI noticed last (lib/ai/realtime.ts) */
@@ -335,6 +344,7 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
     current,
     text: textNow,
     praesentation: view.kind === "praesentation" ? praesentationNow(view.id, view.folie) : null,
+    spiel: view.kind === "spiel" ? { titel: SPIEL_TITEL[view.art] } : null,
     answers,
     ai: aiLiveState(unit.id),
   };

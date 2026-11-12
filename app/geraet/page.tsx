@@ -1,9 +1,11 @@
-import { ArrowLeftRight, Laptop, PenLine, Presentation } from "lucide-react";
+import { ArrowLeftRight, Gamepad2, Laptop, PenLine, Presentation } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import { chooseDeviceUnitAction } from "@/app/device-actions";
 import { SubjectArt } from "@/components/Art";
 import { BrandMark } from "@/components/Brand";
 import { DeviceLive } from "@/components/device/DeviceLive";
+import { Lernspiel } from "@/components/lernen/Lernspiel";
+import { SpieleListe } from "@/components/lernen/SpieleListe";
 import { PairForm } from "@/components/device/PairForm";
 import { PraesentationAmGeraet } from "@/components/praesentation/AmGeraet";
 import { Solver } from "@/components/Solver";
@@ -27,6 +29,9 @@ import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
 import { runningUnits } from "@/lib/units";
 import { shortNames } from "@/lib/vornamen";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
+import { endlosRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
+import { wienerDatum } from "@/lib/planung/zeit";
+import { analyzeStudent } from "@/lib/service";
 
 /**
  * The student tablet. It belongs to a teacher and shows exactly one of four things:
@@ -101,6 +106,7 @@ export default async function DevicePage() {
   // a Textarbeit of this student: written here, saved continuously
   const text = view.kind === "text" && !onLaptop ? unitText(unit, view.textId) : null;
 
+  const aufAufgaben = view.kind !== "tafel" && view.kind !== "praesentation" && view.kind !== "spiele" && view.kind !== "spiel";
   let content: React.ReactNode;
   if (onLaptop) {
     content = (
@@ -136,6 +142,36 @@ export default async function DevicePage() {
         />
       </>
     );
+  } else if (view.kind === "spiele" || view.kind === "spiel") {
+    // Lernspiele in der Einheit (niko 2026-11-12: „was wenn der schüler in der einheit spielen will“): dieselben Spiele
+    // wie in der Schüler-App, gezählt für den Schüler der Einheit; der geheime Link kommt nie aufs Tablet
+    const heute = wienerDatum();
+    const lernstand = new Map((analyzeStudent(student.id)?.skills ?? []).map((s) => [s.skill.id, s.mastery]));
+    const vorschlaege = spielVorschlaege(student, { heute, lernstand });
+    const art = view.kind === "spiel" ? view.art : null;
+    content =
+      art && vorschlaege.length ? (
+        <Lernspiel
+          key={art}
+          token=""
+          amTablet
+          art={art}
+          vorschlaege={vorschlaege}
+          serie={serie(student.id, heute)}
+          lernstand={lernstand.get(skillFuerSpiel(student, art, heute)) ?? null}
+          woher={spielWoher(student, art, heute)}
+          vorschau={spielVorschau(student, art, heute)}
+          antwort={spielAntwort(student, art, heute)}
+          rekord={endlosRekord(student.id, art)}
+          zurueck="/geraet/ansicht?zu=spiele"
+        />
+      ) : vorschlaege.length ? (
+        <div className="geraet-spiele">
+          <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(a) => `/geraet/ansicht?zu=spiel:${a}`} />
+        </div>
+      ) : (
+        <p className="panel px-5 py-5 text-[16px] text-ink-2">Für deine Fächer gibt es noch kein Spiel.</p>
+      );
   } else if (view.kind === "praesentation") {
     content = <PraesentationAmGeraet id={view.id} folie={view.folie} />;
   } else if (view.kind === "tafel") {
@@ -241,11 +277,21 @@ export default async function DevicePage() {
           <nav className="flex gap-1 rounded-full bg-panel p-1" aria-label="Ansicht">
             <a
               href="/geraet/ansicht?zu=start"
-              aria-current={view.kind !== "tafel" && view.kind !== "praesentation" ? "page" : undefined}
-              className={`flex min-h-[48px] items-center rounded-full px-5 text-[15px] font-semibold ${view.kind !== "tafel" && view.kind !== "praesentation" ? "bg-surface shadow-[var(--shadow-card)]" : "text-ink-2"}`}
+              aria-current={aufAufgaben ? "page" : undefined}
+              className={`flex min-h-[48px] items-center rounded-full px-5 text-[15px] font-semibold ${aufAufgaben ? "bg-surface shadow-[var(--shadow-card)]" : "text-ink-2"}`}
             >
               Aufgaben
             </a>
+            {!onLaptop && (
+              <a
+                href="/geraet/ansicht?zu=spiele"
+                aria-current={view.kind === "spiele" || view.kind === "spiel" ? "page" : undefined}
+                className={`flex min-h-[48px] items-center gap-2 rounded-full px-5 text-[15px] font-semibold ${view.kind === "spiele" || view.kind === "spiel" ? "bg-surface shadow-[var(--shadow-card)]" : "text-ink-2"}`}
+                data-testid="geraet-spiele"
+              >
+                <Gamepad2 size={18} aria-hidden /> Spiele
+              </a>
+            )}
             <a href="/geraet/ansicht?zu=tafel" className="flex min-h-[48px] items-center gap-2 rounded-full px-5 text-[15px] font-semibold text-ink-2">
               <Presentation size={18} aria-hidden /> Whiteboard
             </a>

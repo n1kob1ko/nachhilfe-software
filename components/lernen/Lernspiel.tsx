@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Flame, Heart, Infinity as Endlos, Lightbulb, Star, Trophy, TrendingUp, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { spielBeendenAction, spielStartenAction } from "@/app/lernspiel-actions";
+import { spielBeendenAction, spielStartenAction, tabletSpielBeendenAction, tabletSpielStartenAction } from "@/app/lernspiel-actions";
 import { ENDLOS_HERZEN, hatEndlos, REIHE_TRENNER, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielForm, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import { eingesetzt, gesetzt, haengt, hinterLuecke, KartenInhalt, ohneStrich, type Stand } from "./KartenInhalt";
 import { LegeFeld } from "./LegeFeld";
@@ -74,7 +74,9 @@ export function Lernspiel({
   vorschau,
   antwort,
   rekord = 0,
+  amTablet = false,
 }: {
+  /** der geheime Link des Schülers; leer am Tablet */
   token: string;
   art: SpielArt;
   vorschlaege: SpielVorschlag[];
@@ -91,11 +93,22 @@ export function Lernspiel({
   antwort?: SpielForm;
   /** der beste Stand im Endlos-Modus dieses Spiels (0: noch keiner) */
   rekord?: number;
+  /** am Schüler-Tablet in der Einheit (app/geraet/page.tsx): der Server findet den Schüler über das Tablet */
+  amTablet?: boolean;
 }) {
   const router = useRouter();
+  const server = useMemo(
+    () => ({
+      starten: (endlos?: "neu" | number) => (amTablet ? tabletSpielStartenAction(art, endlos) : spielStartenAction(token, art, endlos)),
+      beenden: (id: number, antworten: { key: string; wahl: string }[], o?: { teil?: boolean }) => (amTablet ? tabletSpielBeendenAction(id, antworten, o) : spielBeendenAction(token, id, antworten, o)),
+    }),
+    [amTablet, token, art],
+  );
   // für den Anfang: wie das Spiel beantwortet wird. Im Spiel entscheidet die Karte (`aktuell.form`).
   const form = antwort ?? SPIEL_FORM[art];
   const zurueck = duell?.zurueck ?? zurueckZiel ?? `/lernen/${token}/spiele`;
+  // am Tablet schaltet ein Link die Ansicht am Server um (app/geraet/ansicht): ein gewöhnlicher Link, kein Vorladen
+  const ZuLink = amTablet ? "a" : Link;
   const duellRef = useRef(duell);
   duellRef.current = duell;
   const vorschlag = vorschlaege.find((v) => v.art === art) ?? null;
@@ -168,7 +181,7 @@ export function Lernspiel({
   const starten = useCallback(async (mitEndlos = false) => {
     setPhase("laden");
     setFehler(null);
-    const r = await (duellRef.current ? duellRef.current.starten() : spielStartenAction(token, art, mitEndlos ? "neu" : undefined));
+    const r = await (duellRef.current ? duellRef.current.starten() : server.starten(mitEndlos ? "neu" : undefined));
     if ("fehler" in r) {
       setFehler(r.fehler);
       setPhase("start");
@@ -202,7 +215,7 @@ export function Lernspiel({
     setJubel(null);
     setTreffer(null);
     setPhase("spiel");
-  }, [token, art]);
+  }, [server]);
 
   const beenden = useCallback(
     async (id: number) => {
@@ -212,10 +225,10 @@ export function Lernspiel({
         duellRef.current.fertig(await duellRef.current.beenden(id, antworten));
         return;
       }
-      setErgebnis(await spielBeendenAction(token, id, antworten));
+      setErgebnis(await server.beenden(id, antworten));
       router.refresh();
     },
-    [token, router],
+    [server, router],
   );
 
   /** Die erste Wahl einer Karte merken; im Endlos-Modus zählt sie gleich (richtig: ein Punkt, falsch: ein Herz). */
@@ -238,8 +251,8 @@ export function Lernspiel({
   // Endlos: ist die laufende Runde fast durch, wird die nächste schon geholt
   useEffect(() => {
     if (phase !== "spiel" || !endlos || !lauf.current || vorrat.current || herzenRef.current <= 0) return;
-    if (reihe.length - pos <= 3) vorrat.current = spielStartenAction(token, art, lauf.current);
-  }, [phase, endlos, pos, reihe.length, token, art]);
+    if (reihe.length - pos <= 3) vorrat.current = server.starten(lauf.current);
+  }, [phase, endlos, pos, reihe.length, server]);
 
   /** Endlos: die drei Herzen sind weg. Die laufende Runde zählt mit den Karten, die beantwortet sind. */
   const endlosEnde = useCallback(
@@ -248,33 +261,33 @@ export function Lernspiel({
       const antworten = [...erste.current.entries()].map(([key, wahl]) => ({ key, wahl }));
       // die Runde davor muss gezählt sein, sonst fehlt sie im Stand
       const davor = await abschluss.current?.catch(() => null);
-      let e = await spielBeendenAction(token, id, antworten, { teil: true });
+      let e = await server.beenden(id, antworten, { teil: true });
       const vorher = laufVorher.current !== undefined ? laufVorher.current : davor && !("fehler" in davor) ? davor.lernstandVorher : undefined;
       if (!("fehler" in e) && vorher !== undefined) e = { ...e, lernstandVorher: vorher };
       setErgebnis(e);
       router.refresh();
     },
-    [token, router],
+    [server, router],
   );
 
   /** Endlos: die Runde ist durch. Sie wird im Hintergrund beendet, die nächste schließt nahtlos an. */
   const nachladen = useCallback(
     async (id: number) => {
       const antworten = [...erste.current.entries()].map(([key, wahl]) => ({ key, wahl }));
-      const fertig = spielBeendenAction(token, id, antworten);
+      const fertig = server.beenden(id, antworten);
       abschluss.current = fertig;
       void fertig.then((e) => {
         if (laufVorher.current === undefined && !("fehler" in e)) laufVorher.current = e.lernstandVorher;
       });
       beschaeftigt.current = true;
-      const r = await (vorrat.current ?? spielStartenAction(token, art, lauf.current ?? "neu"));
+      const r = await (vorrat.current ?? server.starten(lauf.current ?? "neu"));
       vorrat.current = null;
       beschaeftigt.current = false;
       if ("fehler" in r) {
         // keine Karten mehr: das Endlos-Spiel endet hier (die Runde ist schon gezählt)
         setPhase("ende");
         await fertig;
-        const e = await spielBeendenAction(token, id, antworten, { teil: true });
+        const e = await server.beenden(id, antworten, { teil: true });
         setErgebnis(!("fehler" in e) && laufVorher.current !== undefined ? { ...e, lernstandVorher: laufVorher.current } : e);
         return;
       }
@@ -288,7 +301,7 @@ export function Lernspiel({
       setStand(null);
       setFalschGewaehlt([]);
     },
-    [token, art],
+    [server],
   );
 
   /** Zur nächsten Karte; am Ende der Runde fertig (oder im Endlos-Modus die nächste Runde), ohne Herzen das Ende. */
@@ -553,9 +566,9 @@ export function Lernspiel({
 
   const kopf = (
     <div className="ls-kopf">
-      <Link href={zurueck} className="ls-zu" aria-label="Spiel schließen">
+      <ZuLink href={zurueck} className="ls-zu" aria-label="Spiel schließen">
         <X size={24} aria-hidden />
-      </Link>
+      </ZuLink>
       {phase === "spiel" && endlos ? (
         <>
           {/* Endlos: drei Herzen statt der Striche, daneben wie viele schon richtig sind */}
@@ -839,9 +852,9 @@ export function Lernspiel({
             <button type="button" className="ls-knopf ls-los" onClick={() => void starten(true)} disabled={!ergebnis} autoFocus data-testid="endlos-nochmal">
               Nochmal endlos
             </button>
-            <Link href={zurueck} className="ls-knopf ls-los" data-zweit="">
+            <ZuLink href={zurueck} className="ls-knopf ls-los" data-zweit="">
               Fertig
-            </Link>
+            </ZuLink>
           </div>
         </div>
       </div>
@@ -939,9 +952,9 @@ export function Lernspiel({
             <button type="button" className="ls-knopf ls-los" onClick={() => void starten()} disabled={!ergebnis} autoFocus>
               Noch eine Runde
             </button>
-            <Link href={zurueck} className="ls-knopf ls-los" data-zweit="">
+            <ZuLink href={zurueck} className="ls-knopf ls-los" data-zweit="">
               Fertig
-            </Link>
+            </ZuLink>
           </div>
         </div>
       </div>

@@ -11,6 +11,8 @@ Deutsch, weil Artikel, Präpositionen und Deklination oft ein Problem sind.
   eigene Stand oder „Neu“, ein Schild wie „Schularbeit“ oder „Dein Stoff“, wenn das Spiel gerade passt). Am Ende
   „Gegeneinander“ mit den Duellen; die Wochenliga steht nur als kleine Zeile da (docs/liga-duelle.md). Wartet ein
   Duell, hat der Tab einen roten Punkt.
+- **Am Schüler-Tablet in der Einheit** (niko 2026-11-12): der Knopf „Spiele“ oben am Tablet zeigt dieselbe Liste; der
+  Lehrer kann sie im Live-Status schicken (docs/schueler-tablet.md).
 - **Start** (`/lernen/[token]`): nur eine Karte „Lernspiel“ mit dem Spiel, das gerade passt, dem Grund
   („2. Deutsch-Schularbeit in 9 Tagen“, „Dein aktueller Stoff“) und der Serie (Tage am Stück); dazu „Duelle“, solange
   ein Duell auf den Schüler wartet.

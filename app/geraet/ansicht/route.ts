@@ -2,7 +2,7 @@ import { deviceContext } from "@/lib/device-context";
 import { activeLaptop } from "@/lib/laptop";
 import { parseView, showOnTablet, unitAssignment, unitText } from "@/lib/live";
 
-/** The student switches between the exercises, a Textarbeit and the whiteboard on the tablet. */
+/** The student switches between the exercises, a Textarbeit, the whiteboard and the Lernspiele on the tablet. */
 export async function GET(request: Request) {
   // a prefetch is no tap: it must not switch the tablet
   if (request.headers.get("next-router-prefetch") || /prefetch/i.test(request.headers.get("sec-purpose") ?? request.headers.get("purpose") ?? "")) {
@@ -11,6 +11,7 @@ export async function GET(request: Request) {
   const ctx = await deviceContext();
   const view = parseView(new URL(request.url).searchParams.get("zu") ?? "");
   // a presentation only ever comes from the teacher (app/praesentation-actions.ts)
+  // Lernspiele: jedes Spiel geht, gespielt wird für den Schüler der Einheit (app/lernspiel-actions.ts)
   const allowed = view.kind === "praesentation" ? false : view.kind === "aufgabe" ? unitAssignment(ctx?.unit?.id ?? 0, view.assignmentId) : view.kind === "text" ? ctx?.unit && unitText(ctx.unit, view.textId) : true;
   // while the student works on a laptop the tablet only opens and leaves the board, it never moves the laptop on
   const laptop = ctx?.unit ? activeLaptop(ctx.unit.id) : null;
