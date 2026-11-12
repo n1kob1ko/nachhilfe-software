@@ -15,7 +15,7 @@ Deutsch, weil Artikel, Präpositionen und Deklination oft ein Problem sind.
   („2. Deutsch-Schularbeit in 9 Tagen“, „Dein aktueller Stoff“) und der Serie (Tage am Stück); dazu „Duelle“, solange
   ein Duell auf den Schüler wartet.
 - **Spiel** (`/lernen/[token]/spiel?art=…`): liegt über der ganzen Seite, auf der blauen Bühne. Anfang mit Stand
-  und Serie und „Los geht’s“; das Kreuz führt zurück zum Tab „Spiele“ (vom Start aus zurück zum Start). Bei den Kisten-Spielen dann zwölf Karten (Satzbau, Vokabel-Paare und Zahlenstrahl haben ein eigenes Spielfeld, siehe unten): in eine Kiste ziehen und werfen oder eine
+  und Serie und „Los geht’s“; das Kreuz führt zurück zum Tab „Spiele“ (vom Start aus zurück zum Start). Bei den Kisten-Spielen dann zwölf Karten (Satzbau, Vokabel-Paare und Zahlenstrahl haben ein eigenes Spielfeld, und nicht jedes Spiel wird mit Kisten beantwortet, siehe „Wie geantwortet wird“): in eine Kiste ziehen und werfen oder eine
   Kiste antippen (am Laptop Tasten 1–5).
   - richtig: die Karte fliegt in die Kiste, die Kiste leuchtet, Funken und „+1“, das Wort schaut danach oben aus
     der Kiste; oben steht kurz der ganze richtige Satz mit der Antwort hervorgehoben (bei Präpositionen auch Dativ
@@ -40,7 +40,8 @@ der Wertung hat der neue Look nichts geändert.
 ## Die acht Kisten-Spiele
 
 niko 2026-11-11: „mach alle deutsch spiele zuerst“. Diese acht Spiele haben dieselbe Mechanik (eine Karte, zwei bis fünf
-Kisten); neu ist nur, was auf der Karte steht und wie die Kisten heißen.
+Kisten); neu ist nur, was auf der Karte steht und wie die Kisten heißen. Seit 2026-11-12 wird „Präteritum“ nicht mehr
+mit Kisten beantwortet: die Form wird aus Buchstaben gelegt (siehe „Wie geantwortet wird“).
 
 | Spiel | Fähigkeit | Quelle | Karte | Kisten |
 | --- | --- | --- | --- | --- |
@@ -147,7 +148,8 @@ sind dieselben wie bei den Kisten-Spielen.
 ## Englisch mit Kisten: Irregular Verbs, English Tenses, English Grammar
 
 niko 2026-11-11: „Vielleicht noch die Irregular Verbs. Zeiten in Englisch können wir auch noch reinhauen.“ Die drei
-Spiele haben die Kisten-Mechanik; neu sind die Karten (`lib/lernspiele-englisch.ts`).
+Spiele haben die Kisten-Mechanik; neu sind die Karten (`lib/lernspiele-englisch.ts`). Seit 2026-11-12 wird bei
+„Irregular Verbs“ die Form aus Buchstaben gelegt (siehe „Wie geantwortet wird“).
 
 - **Karten**: Sätze mit einer Lücke aus den Englisch-Generatoren (`englischWahlFuerSpiel` in
   lib/englisch-grammatik.ts), dieselben wie in den Übungen, ohne KI. Unter dem Satz steht das Verb in Klammern
@@ -177,7 +179,8 @@ Spiele haben die Kisten-Mechanik; neu sind die Karten (`lib/lernspiele-englisch.
 ## Mathe: Kopfrechnen
 
 niko 2026-11-11: „Dann vielleicht für Mathe … Was Spaß machen könnte.“ Das erste Mathe-Spiel hat die Kisten-Mechanik
-(`lib/lernspiele-mathe.ts`): auf der Karte steht eine Rechnung („3/4 + 1/6 =“), die Kisten sind Ergebnisse.
+(`lib/lernspiele-mathe.ts`): auf der Karte steht eine Rechnung („3/4 + 1/6 =“), die Kisten sind Ergebnisse. Seit
+2026-11-12 wird das Ergebnis an einem Ziffernblock eingetippt, wo es eine Zahl ist (siehe „Wie geantwortet wird“).
 
 - **Themenspiel** wie English Tenses: jede Runde hat ein Thema, also eine Fähigkeit. 38 Themen in `RECHNEN_THEMEN`,
   von „Plus und Minus bis 10“ (1. Klasse Volksschule) über Einmaleins, Dezimalzahlen, Maße, Teilbarkeit, Brüche,
@@ -235,6 +238,45 @@ eine Zahl, darunter ein Zahlenstrahl, und der Schüler schiebt den Zeiger dorthi
 - In einer Runde wird nach keiner Zahl zweimal gefragt (`gruppe`).
 - **Wann es angeboten wird**: mit einem Thema im Stoff, sonst „zum Üben“, wenn der Schüler Mathematik hat. Duelle
   spielen ein Thema, das der Jüngere schon hatte.
+
+## Wie geantwortet wird
+
+niko 2026-11-12: „Jedes Spiel hat die gleiche Lösungsart mit diesen 3 Kästchen unten, das ist zu langweilig, immer das
+gleiche.“ Die Karten bleiben dieselben, aber die Art zu antworten hängt am Spiel (`lib/lernspiele-antwort.ts`,
+`antwortForm`; `waehleKarten` schreibt sie als `form` auf jede Karte der Runde, auch im Duell):
+
+| Antwort | Spiele | Spielfeld |
+| --- | --- | --- |
+| **Ziffernblock** (`tippen`) | Kopfrechnen, wo das Ergebnis eine Zahl ist | `ZiffernFeld.tsx` |
+| **Buchstaben legen** (`legen`) | Irregular Verbs, Präteritum | `LegeFeld.tsx` |
+| Paare, Reihe, Zahlenstrahl | Vokabel-Paare, Satzbau, Zahlenstrahl | siehe die Abschnitte oben |
+| Kisten | alle anderen | `Lernspiel.tsx` |
+
+- **Ziffernblock**: oben das Blatt mit der Rechnung und einem Feld, unten beim Daumen die Ziffern wie am Handy, rechts
+  Löschen und ein goldener Haken zum Prüfen (am Laptop Ziffern, Rücktaste, Eingabetaste). Das Ergebnis wird selbst
+  ausgerechnet und eingetippt, statt es unter drei Kisten wiederzuerkennen. Eine Einheit steht fest hinter dem Feld
+  („= ___ dm“), lange Zahlen stehen beim Tippen in Dreiergruppen. Komma, Vorzeichen („+/−“) und Bruchstrich gibt es
+  nur, wenn eine Karte der Runde sie braucht; die Null nimmt sonst ihren Platz. Zahlen zählen nach ihrem Wert („0,50“
+  ist „0,5“), ein Bruch muss genau so dastehen („30/35“ ist beim Kürzen falsch).
+  - Getippt wird (`tippbar`): alle Themen mit einer Zahl als Ergebnis, auch mit Einheit, dazu „Brüche kürzen“,
+    „Brüche erweitern“ und „Wurzeln“ mit einfachen Brüchen.
+  - Bei den Kisten bleiben: Brüche addieren, subtrahieren, multiplizieren, dividieren und „Bruch, Dezimalzahl, Prozent“
+    (gemischte Zahlen, und ein ungekürztes Ergebnis wäre auch richtig), Terme, Potenzregeln, binomische Formeln und
+    „Teilbar oder nicht?“. Bei „Dezimalzahlen“ und „ggT und kgV“ wird nur getippt, was höchstens drei Ziffern hat: für
+    „5,59 · 1,2“ reicht ein Überschlag, dafür sind die drei Kisten da. In so einer Runde wechseln sich Ziffernblock
+    und Kisten ab.
+- **Buchstaben legen**: oben das Blatt mit dem Satz und der Lücke, unten die Buchstaben als Kacheln. Antippen setzt
+  einen Buchstaben in die Lücke, die Rücktaste (oder ein Tipp auf das Wort) holt den letzten zurück, „Prüfen“ zählt
+  (am Laptop tippen, Rücktaste, Eingabetaste). Wie lang das Wort ist, steht nirgends. Zu den Buchstaben der Antwort
+  kommen zwei oder drei aus den falschen Formen der Karte (`legeKacheln`): bei „put“ liegen auch t, e, d da, damit
+  sich „putted“ legen lässt. Die Reihenfolge der Kacheln ist je Karte fest.
+- **Nach einem Fehler** bei beiden wie bei den Kisten: das Feld wird rot, darunter kommt das Blatt „Fast! Richtig
+  ist …“ mit Rechenweg oder Regel, und weiter geht es erst, wenn das Richtige getippt oder gelegt ist (dann ohne
+  „Prüfen“). Die Karte kommt drei Karten später noch einmal.
+- **Wertung**: wie immer die erste Antwort gegen `karte.richtig`. Stimmt das Getippte oder Gelegte, meldet das
+  Spielfeld genau `karte.richtig`, sonst das, was der Schüler geschrieben hat. Am Server ändert sich nichts.
+- Der Anfang des Spiels zeigt statt der kleinen Kisten einen kleinen Ziffernblock oder vier Buchstaben-Kacheln
+  (`spielAntwort` für Kopfrechnen: wie die meisten Karten des Themas beantwortet werden).
 
 ## Welches Spiel dran ist
 

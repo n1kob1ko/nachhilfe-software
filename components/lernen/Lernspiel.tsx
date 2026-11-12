@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation";
 import { BookOpen, CalendarDays, Flame, Lightbulb, Star, TrendingUp, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { spielBeendenAction, spielStartenAction } from "@/app/lernspiel-actions";
-import { REIHE_TRENNER, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { REIHE_TRENNER, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielForm, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { LegeFeld } from "./LegeFeld";
 import { PaarFeld } from "./PaarFeld";
 import { SatzbauFeld } from "./SatzbauFeld";
 import { StrahlFeld } from "./StrahlFeld";
+import { ZiffernFeld } from "./ZiffernFeld";
 import { MathText } from "@/components/MathText";
 import { Funken, vibriere } from "./SpielTeile";
 
@@ -65,6 +67,7 @@ export function Lernspiel({
   zurueck: zurueckZiel,
   woher,
   vorschau,
+  antwort,
 }: {
   token: string;
   art: SpielArt;
@@ -78,9 +81,12 @@ export function Lernspiel({
   woher?: string;
   /** die Kisten auf dem Anfang, wenn sie vom Thema abhängen (English Grammar: „some“, „any“, „no“) */
   vorschau?: string[];
+  /** wie die Karten der nächsten Runde beantwortet werden, wenn es am Thema hängt (Kopfrechnen: Ziffernblock oder Kisten) */
+  antwort?: SpielForm;
 }) {
   const router = useRouter();
-  const form = SPIEL_FORM[art];
+  // für den Anfang: wie das Spiel beantwortet wird. Im Spiel entscheidet die Karte (`aktuell.form`).
+  const form = antwort ?? SPIEL_FORM[art];
   const zurueck = duell?.zurueck ?? zurueckZiel ?? `/lernen/${token}/spiele`;
   const duellRef = useRef(duell);
   duellRef.current = duell;
@@ -129,6 +135,11 @@ export function Lernspiel({
   const aktuell = reihe[pos]?.karte ?? null;
   // Paare: alle Karten der Runde auf einmal (das Feld teilt sie selbst auf Bretter auf)
   const karten = useMemo(() => reihe.map((e) => e.karte), [reihe]);
+  // Ziffernblock: welche Tasten die Runde neben den Ziffern braucht (für alle Karten gleich, damit nichts springt)
+  const tasten = useMemo(() => {
+    const ziele = karten.filter((k) => k.form === "tippen").map((k) => k.richtig);
+    return { komma: ziele.some((z) => z.includes(",")), minus: ziele.some((z) => /^[−-]/.test(z)), bruch: ziele.some((z) => z.includes("/")) };
+  }, [karten]);
 
   // ---------- Runde starten und beenden ----------
 
@@ -353,7 +364,7 @@ export function Lernspiel({
 
   // Tasten 1–5 am Laptop (ohne Bewegung beim Antippen: wiederholte Aktionen sollen sofort wirken)
   useEffect(() => {
-    if (phase !== "spiel" || !aktuell || form) return;
+    if (phase !== "spiel" || !aktuell || aktuell.form) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const n = Number(e.key);
@@ -495,8 +506,8 @@ export function Lernspiel({
             {SPIEL_TITEL[art]}
           </h1>
           <p className="ls-text mt-2" style={{ "--n": 2 } as CSSProperties}>
-            {SPIEL_AUFGABE[art]}
-            {form === "paar" ? " Tipp ein englisches Wort an und dann das deutsche dazu." : form === "reihe" ? " Der Anfang steht schon da. Tipp die anderen Teile der Reihe nach an." : form === "strahl" ? " Schieb den Zeiger auf den richtigen Teilstrich und tipp auf „Prüfen“." : " Zieh die Karte in eine Kiste oder tipp die Kiste an."}
+            {form === "tippen" ? "" : SPIEL_AUFGABE[art]}
+            {form === "paar" ? " Tipp ein englisches Wort an und dann das deutsche dazu." : form === "reihe" ? " Der Anfang steht schon da. Tipp die anderen Teile der Reihe nach an." : form === "strahl" ? " Schieb den Zeiger auf den richtigen Teilstrich und tipp auf „Prüfen“." : form === "tippen" ? "Rechne im Kopf und tipp das Ergebnis ein." : form === "legen" ? " Leg sie aus den Buchstaben und tipp auf „Prüfen“." : " Zieh die Karte in eine Kiste oder tipp die Kiste an."}
           </p>
           {/* steht schon da, woher die Wörter kommen, braucht es „Deine Vokabelliste“ nicht noch einmal */}
           {vorschlag && vorschlag.quelle !== "fach" && !(woher && vorschlag.quelle === "stoff") && (
@@ -522,10 +533,19 @@ export function Lernspiel({
                 <i />
               </span>
             </div>
+          ) : form === "tippen" ? (
+            <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
+              <span className="ls-block-mini">
+                {["1", "2", "3", "4", "5"].map((z) => (
+                  <b key={z}>{z}</b>
+                ))}
+                <b data-ok="">✓</b>
+              </span>
+            </div>
           ) : form ? (
-            <div className="ls-vorschau ls-vorschau-paar" aria-hidden style={{ "--n": 3 } as CSSProperties}>
+            <div className="ls-vorschau ls-vorschau-paar" aria-hidden style={{ "--n": 3 } as CSSProperties} data-form={form}>
               {VORSCHAU[art].map((w, i) => (
-                <Fragment key={w}>
+                <Fragment key={`${i}-${w}`}>
                   {form === "paar" && i > 0 && <span className="ls-paar-gleich">=</span>}
                   <span className="ls-paar-mini" style={{ rotate: `${i % 2 ? 2 : -2.5}deg` }}>
                     {w}
@@ -692,7 +712,9 @@ export function Lernspiel({
     </p>
   );
 
-  if (form === "paar") {
+  // wie die Karte beantwortet wird, steht auf ihr (in einer Runde „Kopfrechnen“ können sich Ziffernblock und Kisten abwechseln)
+  const feld = aktuell?.form;
+  if (feld === "paar") {
     return (
       <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${SPIEL_TITEL[art]}`}>
         <Hintergrund woerter={deko} />
@@ -708,28 +730,23 @@ export function Lernspiel({
     );
   }
 
-  if (form === "reihe") {
+  if (aktuell && feld) {
+    const eigen = { key: `${rundeId}-${pos}`, karte: aktuell, onPruefe: reihePruefe, onWeiter: reiheWeiter };
     return (
       <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${SPIEL_TITEL[art]}`}>
         <Hintergrund woerter={deko} />
         {kopf}
         {duell?.leiste}
         <div className="ls-feld">
-          {aktuell && <SatzbauFeld key={`${rundeId}-${pos}`} karte={aktuell} auftrag={SPIEL_AUFGABE[art]} onPruefe={reihePruefe} onWeiter={reiheWeiter} />}
-          {jubelZeile}
-        </div>
-      </div>
-    );
-  }
-
-  if (form === "strahl") {
-    return (
-      <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${SPIEL_TITEL[art]}`}>
-        <Hintergrund woerter={deko} />
-        {kopf}
-        {duell?.leiste}
-        <div className="ls-feld">
-          {aktuell && <StrahlFeld key={`${rundeId}-${pos}`} karte={aktuell} auftrag={SPIEL_AUFGABE[art]} onPruefe={reihePruefe} onWeiter={reiheWeiter} />}
+          {feld === "reihe" ? (
+            <SatzbauFeld {...eigen} auftrag={SPIEL_AUFGABE[art]} />
+          ) : feld === "strahl" ? (
+            <StrahlFeld {...eigen} auftrag={SPIEL_AUFGABE[art]} />
+          ) : feld === "tippen" ? (
+            <ZiffernFeld {...eigen} auftrag="Tipp das Ergebnis ein." tasten={tasten} />
+          ) : (
+            <LegeFeld {...eigen} auftrag="Leg die Form aus den Buchstaben." />
+          )}
           {jubelZeile}
         </div>
       </div>
@@ -847,10 +864,10 @@ const VORSCHAU: Record<SpielArt, string[]> = {
   dasdass: ["das", "dass"],
   satzteile: ["Hauptsatz", "Gliedsatz"],
   perfekt: ["haben", "sein"],
-  praeteritum: ["ging", "gehte", "geht"],
+  praeteritum: ["g", "i", "n", "g"],
   satzbau: ["gehen", "Heute", "wir"],
   vokabeln: ["dog", "der Hund"],
-  irregular: ["went", "goed", "gone"],
+  irregular: ["w", "e", "n", "t"],
   zeiten: ["plays", "is playing", "played"],
   grammatik: ["some", "any", "much"],
   rechnen: ["54", "56", "63"],

@@ -238,7 +238,9 @@ Aufgabenbanken in Kisten werfen oder antippen. Acht Deutsch-Spiele: „der, die,
 einer Themenliste zu Paaren verbinden, und die Englisch-Spiele mit Kisten „Irregular Verbs“, „English Tenses“ und „English Grammar“
 (je Runde ein Thema aus dem Stoff, Sätze aus den Englisch-Generatoren). Für Mathematik „Kopfrechnen“: eine Rechnung,
 die Kisten sind das richtige Ergebnis und zwei typische Fehler, je Runde ein Thema aus dem Stoff; und „Zahlenstrahl“:
-den Zeiger dorthin schieben, wo die Zahl liegt (docs/lernspiele.md). Die App wählt das Spiel nach dem Stoff (nahe Prüfung, aktueller Stoff, letzte Einheit,
+den Zeiger dorthin schieben, wo die Zahl liegt (docs/lernspiele.md). Nicht jedes Spiel wird mit Kisten beantwortet: bei „Kopfrechnen“ tippt man
+das Ergebnis an einem Ziffernblock ein, bei „Irregular Verbs“ und „Präteritum“ legt man die Form aus Buchstaben
+(`lib/lernspiele-antwort.ts`). Die App wählt das Spiel nach dem Stoff (nahe Prüfung, aktueller Stoff, letzte Einheit,
 unsicherer Lernstand). Eine **Runde** zählt mit der ersten Wahl je Karte, schwächer als eine Übung.
 _Avoid_: Quiz, Minispiel, Game
 
