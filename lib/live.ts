@@ -21,6 +21,7 @@ import { MAX_FOLIE } from "./praesentation-protokoll";
 import { istSpielArt, SPIEL_TITEL, type SpielArt } from "./lernspiele-typen";
 import { getText, noteTextInUnit } from "./texts";
 import { getUnit, runningUnitForStudent, runningUnits, type UnitView } from "./units";
+import { spiegelTablet } from "./spiegel";
 import { shortNames } from "./vornamen";
 import { isOnline, publish } from "./whiteboard-hub";
 
@@ -375,7 +376,10 @@ export function pushLive(unitId: number) {
 
 /** A tablet came, went or changed its unit: every running unit page of that teacher updates its "Tablet verbunden". */
 export function pushTabletPresence(teacherId: number) {
-  for (const u of runningUnits(teacherId)) pushLive(u.id);
+  for (const u of runningUnits(teacherId)) {
+    pushLive(u.id);
+    spiegelTablet(u.id, tabletOnline(u));
+  }
 }
 
 /**

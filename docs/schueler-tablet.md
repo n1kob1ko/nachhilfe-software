@@ -67,6 +67,17 @@ Das Tablet speichert keinen Schüler. Jede Anfrage löst serverseitig auf: Table
 **Nach dem Ende**
 - Es bleiben keine Daten am Gerät: keine lokale Speicherung, die Ansicht wird pro Einheit neu aufgebaut, und das Whiteboard ist pro Einheit getrennt.
 
+## Schüler-Bildschirm in der Einheit (statt scrcpy)
+
+niko, 12.11.2026: „ich verwende immer scrcpy noch extra … ich möchte das in der Software haben“.
+
+- In der laufenden Einheit steht unten rechts ein kleines Fenster „Bildschirm von …“. Es zeigt live, was DreamStudy gerade am Tablet zeigt, auch halb getippte Antworten, Spiele und wohin der Schüler tippt.
+- Das Fenster lässt sich am Kopf verschieben, in drei Größen zeigen und zuklappen. Lage, Größe und offen/zu merkt sich der Browser. Am Telefon ist es zuerst zu.
+- **Eingreifen** (Knopf im Fensterkopf): Tippen und Ziehen ins Bild tippt am Tablet, die Tastatur schreibt ins Feld, das dort den Cursor hat (Esc hört auf), Strg+V fügt Text ein, das Mausrad scrollt. Am Tablet erscheint an jeder Stelle, an der der Lehrer tippt, kurz ein Ring.
+- Nur solange ein Fenster offen ist, nimmt das Tablet seine Seite auf; dann steht am Tablet unten ein Auge („Dein Lehrer sieht deinen Bildschirm“). Zugeklappt oder ohne Einheit wird nichts aufgenommen. Gespeichert wird nichts, die Daten gehen vom Tablet direkt zum offenen Fenster.
+- Technik: `lib/spiegel.ts`, Tablet `components/device/SpiegelAufnahme.tsx` (rrweb nimmt die Seite auf: ein ganzes Bild, dann nur Änderungen, alle 3 Minuten ein neues ganzes Bild), Lehrer `components/device/SchuelerBildschirm.tsx` (rrweb baut sie nach). Routen: `POST /geraet/spiegel` (Tablet), `GET /einheiten/[id]/spiegel` (Strom für den Lehrer), `POST /einheiten/[id]/spiegel/steuern` (Eingreifen). Kanal `spiegel:<Einheit>`.
+- **Grenzen:** nur DreamStudy, nicht das ganze Android-Tablet (andere Apps, Einstellungen, Tastatur am Bildschirm). Das braucht USB/ADB wie scrcpy oder eine eigene Android-App. Das Whiteboard (Zeichenfläche) und Folien (eigener Rahmen) erscheinen im Fenster leer, mit Hinweis; das Whiteboard sieht der Lehrer ohnehin über „Whiteboard öffnen“. Am eigenen Laptop des Schülers (`/mitmachen`) gibt es den Bildschirm noch nicht.
+
 ## Grenzen
 
 - Pro Lehrer ist ein Tablet gedacht, bei zwei Schülern gleichzeitig zwei. Bei einer laufenden Einheit zeigen alle Tablets des Lehrers dasselbe; „online“ zählt die Tablets der Einheit.
