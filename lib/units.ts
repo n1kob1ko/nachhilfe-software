@@ -34,6 +34,8 @@ export type Unit = {
   device_view: string;
   /** when the teacher confirmed „kein Name auf den Seiten“ for this unit (lib/kein-name.ts); null = not yet */
   keine_namen_at: string | null;
+  /** 1 when the teacher chose the subject in the running unit („Fach ändern“); it then wins in the documentation */
+  fach_gewaehlt: number;
 };
 export type UnitView = Unit & { teacher_name: string; student_name: string };
 

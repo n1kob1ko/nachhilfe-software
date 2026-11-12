@@ -23,6 +23,7 @@ import {
   verschiebeSchritt,
   waehleFaehigkeit,
   waehlePaket,
+  wechsleFach,
   zeigeSchritt,
   type Markierung,
   type Merke,
@@ -76,6 +77,17 @@ export async function waehlePaketAction(unitId: number, form: FormData) {
   const id = Number(form.get("paket_id"));
   const out = waehlePaket(unitId, Number.isInteger(id) && id > 0 ? id : null);
   zurueck(unitId, "fehler" in out ? out.fehler : undefined);
+}
+
+/** „Fach ändern“ oben in der laufenden Einheit: ein Tippen auf ein Fach (oder ein eingetipptes), der Plan geht in ihm neu los. */
+export async function wechsleFachAction(unitId: number, form: FormData) {
+  await laufendeEinheit(unitId);
+  const out = wechsleFach(unitId, String(form.get("subject") ?? ""));
+  if ("fehler" in out) redirect(`/einheiten/${unitId}?fach=fehler`);
+  // the live view of this unit shows the new subject
+  pushLive(unitId);
+  revalidatePath("/", "layout");
+  redirect(`/einheiten/${unitId}${out.geaendert ? `?fach=${encodeURIComponent(out.fach)}` : ""}`);
 }
 
 export async function waehleFaehigkeitAction(unitId: number, form: FormData) {
