@@ -1125,6 +1125,7 @@ const VORSCHAU: Record<SpielArt, string[]> = {
   perfekt: ["haben", "sein"],
   praeteritum: ["g", "i", "n", "g"],
   satzbau: ["gehen", "Heute", "wir"],
+  wortschatz: ["kicherte", "knarrte", "tropfte"],
   vokabeln: ["dog", "der Hund"],
   irregular: ["w", "e", "n", "t"],
   zeiten: ["plays", "is playing", "played"],

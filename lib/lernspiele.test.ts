@@ -168,13 +168,13 @@ test("Vorschlag: Prüfung vor Stoff vor Lernstand; ohne passendes Fach kein Spie
   const heute = "2026-11-11";
   let v = sp.spielVorschlaege(student, { heute });
   assert.equal(v[0].quelle, "fach", "ohne Stoff: Deutsch als Fach");
-  assert.deepEqual(v.map((x) => x.art), ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "satzbau", "perfekt", "praeteritum", "artikel"]);
+  assert.deepEqual(v.map((x) => x.art), ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "satzbau", "perfekt", "praeteritum", "wortschatz", "artikel"]);
 
   repo.addTest({ student_id: student.id, date: "2026-11-20", subject: "Deutsch", kind: "Schularbeit", topic: "Fälle", grade: null, points: null, max_points: null, notes: "", skill_ids: ["deutsch.grammatik.faelle"], title: "2. Deutsch-Schularbeit", status: "geplant" });
   v = sp.spielVorschlaege(student, { heute, lernstand: new Map([["deutsch.grammatik.artikel", 0.4]]) });
   // „Die vier Fälle“ auf dem Stoffzettel: zuerst Fälle bestimmen, dann der Fall nach der Präposition
   assert.deepEqual(v.slice(0, 3).map((x) => [x.art, x.quelle]), [["faelle", "pruefung"], ["praepositionen", "pruefung"], ["artikel", "lernstand"]]);
-  assert.equal(v.length, 9, "jedes Spiel nur einmal");
+  assert.equal(v.length, 10, "jedes Spiel nur einmal");
   assert.equal(v[0].grund, "2. Deutsch-Schularbeit in 9 Tagen");
 
   // Stoff führt zu den passenden Spielen, auch über eine Unterfähigkeit
@@ -185,7 +185,7 @@ test("Vorschlag: Prüfung vor Stoff vor Lernstand; ohne passendes Fach kein Spie
   assert.deepEqual(sp.spieleZuSkills(["mathe.geometrie.dreieck"]), []);
   // Volksschule: keine Fälle, kein das/dass, keine Satzlehre zum Weiterüben
   const klein = await setup({ grade: 4 });
-  assert.deepEqual(klein.sp.spielVorschlaege(klein.student, { heute }).map((x) => x.art), ["artikel", "satzbau", "praepositionen", "perfekt", "praeteritum"]);
+  assert.deepEqual(klein.sp.spielVorschlaege(klein.student, { heute }).map((x) => x.art), ["artikel", "satzbau", "praepositionen", "perfekt", "praeteritum", "wortschatz"]);
   const erste = await setup({ grade: 2 });
   assert.deepEqual(erste.sp.spielVorschlaege(erste.student, { heute }).map((x) => x.art), ["artikel"]);
 

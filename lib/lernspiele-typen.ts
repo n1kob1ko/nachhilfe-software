@@ -24,8 +24,12 @@
  * „Kopfrechnen“ tippt man das Ergebnis an einem Ziffernblock ein (`form: "tippen"`), bei „Irregular Verbs“ und
  * „Präteritum“ legt man die Form aus Buchstaben (`form: "legen"`). Welche Karte wie beantwortet wird, steht in
  * lib/lernspiele-antwort.ts.
+ *
+ * „Wortschatz“ (niko 2026-11-12: „bei den lernspielen sind es wörter die er für eine gruselgeschichte braucht“): ein
+ * Themenspiel mit den Wortfeldern der Schreib-Themen (Gruselgeschichte, Märchen, Krimi …, lib/lernspiele-wortfelder.ts);
+ * am Rad das treffende Wort für den Satz.
  */
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -40,6 +44,7 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   perfekt: "Perfekt: haben oder sein",
   praeteritum: "Präteritum",
   satzbau: "Satzbau",
+  wortschatz: "Wortschatz",
   vokabeln: "Vokabel-Paare",
   irregular: "Irregular Verbs",
   zeiten: "English Tenses",
@@ -59,6 +64,7 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik">
   perfekt: "Deutsch",
   praeteritum: "Deutsch",
   satzbau: "Deutsch",
+  wortschatz: "Deutsch",
   vokabeln: "Englisch",
   irregular: "Englisch",
   zeiten: "Englisch",
@@ -78,6 +84,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   perfekt: "ist gegangen oder hat gegangen?",
   praeteritum: "ging, gehte oder geht?",
   satzbau: "Wo steht das Verb?",
+  wortschatz: "Die treffenden Wörter für deine Geschichte",
   vokabeln: "Englisch und Deutsch: was gehört zusammen?",
   irregular: "go, went, gone",
   zeiten: "plays, is playing oder played?",
@@ -97,6 +104,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   perfekt: ["hat", "ist", "sind"],
   praeteritum: ["ging", "kam", "sah"],
   satzbau: ["gehen", "wir", "heute"],
+  wortschatz: ["Spuk", "schlich", "knarrte"],
   vokabeln: ["dog", "house", "school"],
   irregular: ["went", "gone", "saw"],
   zeiten: ["plays", "played", "will"],
@@ -116,6 +124,7 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   perfekt: "haben oder sein?",
   praeteritum: "Welche Form passt im Präteritum?",
   satzbau: "Bring die Teile in die richtige Reihenfolge.",
+  wortschatz: "Welches Wort passt am besten?",
   vokabeln: "Welche zwei Wörter gehören zusammen?",
   irregular: "Welche Form passt in die Lücke?",
   zeiten: "Welche Form passt in die Lücke?",
@@ -138,6 +147,7 @@ export type SpielForm = "paar" | "reihe" | "strahl" | "tippen" | "legen" | "wisc
 export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = {
   vokabeln: "paar",
   satzbau: "reihe",
+  wortschatz: "rad",
   strahl: "strahl",
   irregular: "legen",
   praeteritum: "legen",

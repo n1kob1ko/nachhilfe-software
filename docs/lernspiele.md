@@ -254,7 +254,7 @@ gleiche.“ Die Karten bleiben dieselben, aber die Art zu antworten hängt am Sp
 | **Ziffernblock** (`tippen`) | Kopfrechnen, wo das Ergebnis eine Zahl ist | `ZiffernFeld.tsx` |
 | **Buchstaben legen** (`legen`) | Irregular Verbs, Präteritum | `LegeFeld.tsx` |
 | **Wischen** (`wischen`) | das oder dass, Perfekt: haben oder sein, Hauptsatz oder Gliedsatz, bei Kopfrechnen „Teilbar oder nicht?“ (jede Karte mit genau zwei Antworten) | `WischFeld.tsx` |
-| **Drehrad** (`rad`) | Präposition und Fall, Adjektiv-Endungen, English Tenses, English Grammar (ein Satz mit Lücke und drei bis sechs Antworten) | `RadFeld.tsx` |
+| **Drehrad** (`rad`) | Präposition und Fall, Adjektiv-Endungen, English Tenses, English Grammar, Wortschatz (ein Satz mit Lücke und drei bis sechs Antworten) | `RadFeld.tsx` |
 | Paare, Reihe, Zahlenstrahl | Vokabel-Paare, Satzbau, Zahlenstrahl | siehe die Abschnitte oben |
 | Kisten | der, die, das; Die vier Fälle; bei Kopfrechnen, was sich nicht tippen lässt | `Lernspiel.tsx` |
 
@@ -298,6 +298,31 @@ gleiche.“ Die Karten bleiben dieselben, aber die Art zu antworten hängt am Sp
 - Der Anfang des Spiels zeigt statt der kleinen Kisten einen kleinen Ziffernblock, vier Buchstaben-Kacheln, zwei
   Schilder oder ein kleines Rad (`spielAntwort` für die Themenspiele: wie die meisten Karten des Themas beantwortet
   werden).
+
+## Wortschatz und Wortfelder (Deutsch)
+
+niko 2026-11-12: „die art der wörter die gefragt werden sollten zu einen bestimmten thema passen also wie zum beispiel
+gruselgeschichte muss der schüler lernen und dann bei den lernspielen sind es wörter die er für eine gruselgeschichte
+braucht“.
+
+- **Wortfelder** (`lib/lernspiele-wortfelder.ts`, von Hand geschrieben, ohne KI) für die Schreib-Themen
+  Gruselgeschichte, Abenteuergeschichte, Märchen (ab der 3. Schulstufe), Krimi, Sage und Personenbeschreibung (ab der
+  5.). Je Thema 16 Sätze mit dem treffenden Wort und zwei Wörtern, die dort klar nicht passen, dazu, was das Wort
+  bedeutet; über 20 Nomen mit Artikel; 14 Verben im Präteritum mit zwei typischen falschen Formen (die
+  Personenbeschreibung steht im Präsens und hat keine).
+- **Fähigkeiten**: Gruselgeschichte, Abenteuergeschichte, Märchen schreiben, Krimi und Sage erzählen sind Teile von
+  „Spannend erzählen“ (`deutsch.schreiben.erzaehlung.grusel` …) mit Suchwörtern („Gruselgeschichte“, „Spukgeschichte“,
+  „Krimi“ …), damit „Stoff zuordnen“ ein Thema wie „Gruselgeschichte“ findet. Märchen und Sage kommen auch über
+  „Märchen und ihre Merkmale“ und „Sagen und ihre Merkmale“, die Personenbeschreibung über ihre eigene Fähigkeit.
+- **Spiel „Wortschatz“**: ein Themenspiel wie „English Tenses“, das Thema ist das Wortfeld (aus dem Stoff, sonst eines
+  der Schulstufe). Am Rad das treffende Wort für den Satz („Die alte Tür ___ laut“: knarrte, kicherte, tropfte); nach
+  einem Fehler steht, was das Wort bedeutet. Der Lernstand geht an das Wortfeld.
+- **„der, die, das“ und „Präteritum“ mit den Wörtern des Themas**: steht ein Schreib-Thema im Stoff (Prüfung,
+  aktueller Stoff, letzte Einheit), spielen die beiden Spiele die Nomen und Verben des Wortfelds (`wortfeldPlan`), und
+  am Anfang steht „Wörter für: Gruselgeschichte“. Steht ein Nomen auch in der Artikel-Bank, ist es dieselbe Karte;
+  Wörter mit zwei Artikeln bleiben draußen. Der Lernstand bleibt bei „der, die, das“ und „Präteritum“.
+- **Vorschlag**: ein Schreib-Thema im Stoff bringt „Wortschatz“, „der, die, das“ und „Präteritum“ (in dieser
+  Reihenfolge) nach vorne; „Spannend erzählen“ allein bringt „Wortschatz“.
 
 ## Endlos-Modus
 

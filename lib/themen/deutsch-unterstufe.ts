@@ -528,6 +528,39 @@ const BEREICHE: Bereich[] = [
           "Immer gleiche Satzanfänge verwendet (Dann … Dann … Und dann …)",
           "Zwischen Präteritum und Präsens gewechselt (Ich ging hinein. Plötzlich steht da ein Mann.)",
         ],
+        // je Schreib-Thema ein Wortfeld für das Lernspiel „Wortschatz“ (lib/lernspiele-wortfelder.ts)
+        teile: [
+          {
+            id: "grusel",
+            name: "Gruselgeschichte",
+            suchwoerter: ["Gruselgeschichte", "Spukgeschichte", "Schauergeschichte", "Horrorgeschichte"],
+            erklaerung: "Eine Gruselgeschichte baut Spannung mit Geräuschen, Dunkelheit und Gefühlen auf. Treffende Verben und Adjektive machen sie unheimlich: knarren, rascheln, flackern, schleichen, modrig, gellend. Beispiel: Die alte Tür knarrte. Mit angehaltenem Atem lauschte ich in die Dunkelheit.",
+          },
+          {
+            id: "abenteuer",
+            name: "Abenteuergeschichte",
+            suchwoerter: ["Abenteuergeschichte", "Abenteuererzählung"],
+            erklaerung: "Eine Abenteuergeschichte erzählt von einer gefährlichen Reise oder Suche. Die Hauptfigur muss Hindernisse überwinden; Verben der Bewegung und der Gefahr tragen die Spannung: klettern, schwanken, sich wagen, entdecken. Beispiel: Die Hängebrücke schwankte bei jedem Schritt, doch Mia wagte sich weiter.",
+          },
+          {
+            id: "maerchen",
+            name: "Märchen schreiben",
+            suchwoerter: ["Märchen schreiben", "Märchen erzählen", "eigenes Märchen"],
+            erklaerung: "Ein Märchen beginnt oft mit „Es war einmal …“, spielt an keinem bestimmten Ort und hat Zauberwesen, Gut und Böse und ein gutes Ende. Typische Wörter: verzaubern, erlösen, verwunschen, Fee, Fluch. Beispiel: Die böse Hexe verzauberte den Prinzen in einen Frosch.",
+          },
+          {
+            id: "krimi",
+            name: "Krimi",
+            suchwoerter: ["Krimi", "Kriminalgeschichte", "Detektivgeschichte"],
+            erklaerung: "Ein Krimi erzählt, wie ein Fall gelöst wird: Tat, Spuren, Verdächtige, Verhör und Auflösung. Typische Wörter: Tatort, Alibi, Fingerabdruck, verdächtig, gestehen. Beispiel: Der Verdächtige hatte für die Tatzeit kein Alibi.",
+          },
+          {
+            id: "sage",
+            name: "Sage erzählen",
+            suchwoerter: ["Sage erzählen", "Sage schreiben", "Sage nacherzählen"],
+            erklaerung: "Eine Sage nennt einen bestimmten Ort, oft eine Zeit, und erzählt von Rittern, Riesen, Drachen oder dem Teufel; das Ende ist nicht immer gut. Typische Wörter: hausen, verflucht, schwören, Lindwurm. Beispiel: Der Sage nach hauste in der Höhle ein Drache.",
+          },
+        ],
       },
       {
         id: "deutsch.schreiben.nacherzaehlung",

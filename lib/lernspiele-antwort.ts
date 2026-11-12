@@ -165,7 +165,7 @@ export function legeAnzeige(wort: string, karte: SpielKarte): string {
 /** Spiele mit zwei Antworten: die Karte wird gewischt. */
 const WISCH_SPIELE = new Set<SpielArt>(["dasdass", "perfekt", "satzteile"]);
 /** Spiele mit drei bis fünf Antworten in einer Lücke: das Rad. */
-const RAD_SPIELE = new Set<SpielArt>(["praepositionen", "deklination", "zeiten", "grammatik"]);
+const RAD_SPIELE = new Set<SpielArt>(["praepositionen", "deklination", "zeiten", "grammatik", "wortschatz"]);
 /** So viele Antworten passen an das Rad. */
 export const RAD_MAX = 6;
 
