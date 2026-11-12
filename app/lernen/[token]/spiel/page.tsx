@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { Lernspiel } from "@/components/lernen/Lernspiel";
-import { serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
+import { endlosRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
 import { istSpielArt } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
@@ -33,6 +33,7 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
       woher={spielWoher(student, art, heute)}
       vorschau={spielVorschau(student, art, heute)}
       antwort={spielAntwort(student, art, heute)}
+      rekord={endlosRekord(student.id, art)}
       zurueck={von === "start" ? `/lernen/${token}` : undefined}
     />
   );

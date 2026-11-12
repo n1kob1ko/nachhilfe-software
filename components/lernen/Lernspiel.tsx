@@ -3,10 +3,10 @@
 import "./lernspiel.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, CalendarDays, ChevronLeft, ChevronRight, Flame, Lightbulb, Star, TrendingUp, X } from "lucide-react";
+import { BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Flame, Heart, Infinity as Endlos, Lightbulb, Star, Trophy, TrendingUp, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { spielBeendenAction, spielStartenAction } from "@/app/lernspiel-actions";
-import { REIHE_TRENNER, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielForm, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { ENDLOS_HERZEN, hatEndlos, REIHE_TRENNER, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielForm, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import { eingesetzt, gesetzt, haengt, hinterLuecke, KartenInhalt, ohneStrich, type Stand } from "./KartenInhalt";
 import { LegeFeld } from "./LegeFeld";
 import { PaarFeld } from "./PaarFeld";
@@ -31,6 +31,10 @@ import { Funken, vibriere } from "./SpielTeile";
  *
  * Ziehen läuft ohne React-Zustand je Bewegung (nur transform am Element), Fliegen über die Web Animations API.
  * Tasten 1 bis 5 wählen ein Fach am Laptop.
+ *
+ * Endlos-Modus (niko 2026-11-12): statt zwölf Karten geht es weiter, bis drei Herzen weg sind; jede falsche erste
+ * Antwort kostet eines. Gespielt wird in gewöhnlichen Runden, die nahtlos aufeinander folgen: kurz vor dem Ende einer
+ * Runde holt das Spiel die nächste, am Übergang wird die alte im Hintergrund beendet (lib/lernspiele.ts).
  */
 
 /**
@@ -69,6 +73,7 @@ export function Lernspiel({
   woher,
   vorschau,
   antwort,
+  rekord = 0,
 }: {
   token: string;
   art: SpielArt;
@@ -84,6 +89,8 @@ export function Lernspiel({
   vorschau?: string[];
   /** wie die Karten der nächsten Runde beantwortet werden, wenn es am Thema hängt (Kopfrechnen: Ziffernblock oder Kisten) */
   antwort?: SpielForm;
+  /** der beste Stand im Endlos-Modus dieses Spiels (0: noch keiner) */
+  rekord?: number;
 }) {
   const router = useRouter();
   // für den Anfang: wie das Spiel beantwortet wird. Im Spiel entscheidet die Karte (`aktuell.form`).
@@ -118,6 +125,20 @@ export function Lernspiel({
 
   const erste = useRef(new Map<string, string>());
   const beschaeftigt = useRef(false);
+  // ---------- Endlos-Modus ----------
+  const [endlos, setEndlos] = useState(false);
+  const [herzen, setHerzen] = useState(ENDLOS_HERZEN);
+  const herzenRef = useRef(ENDLOS_HERZEN);
+  // Karten, die beim ersten Versuch richtig waren (über alle Runden des Endlos-Spiels)
+  const [punkte, setPunkte] = useState(0);
+  // die Karten, die beim ersten Versuch falsch waren (für das Ende)
+  const [daneben, setDaneben] = useState<SpielKarte[]>([]);
+  const lauf = useRef<number | null>(null);
+  // die nächste Runde, schon geholt, bevor die laufende zu Ende ist
+  const vorrat = useRef<Promise<SpielStart> | null>(null);
+  // das Beenden der letzten vollen Runde (im Hintergrund) und der Lernstand vor dem Endlos-Spiel
+  const abschluss = useRef<Promise<SpielErgebnis> | null>(null);
+  const laufVorher = useRef<number | null | undefined>(undefined);
   const karteRef = useRef<HTMLDivElement | null>(null);
   const fachRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const zug = useRef<{ id: number; x0: number; y0: number; x: number; y: number; t: number; vx: number; vy: number; cx: number } | null>(null);
@@ -144,15 +165,24 @@ export function Lernspiel({
 
   // ---------- Runde starten und beenden ----------
 
-  const starten = useCallback(async () => {
+  const starten = useCallback(async (mitEndlos = false) => {
     setPhase("laden");
     setFehler(null);
-    const r = await (duellRef.current ? duellRef.current.starten() : spielStartenAction(token, art));
+    const r = await (duellRef.current ? duellRef.current.starten() : spielStartenAction(token, art, mitEndlos ? "neu" : undefined));
     if ("fehler" in r) {
       setFehler(r.fehler);
       setPhase("start");
       return;
     }
+    setEndlos(mitEndlos && !!r.endlos);
+    lauf.current = r.endlos ?? null;
+    herzenRef.current = ENDLOS_HERZEN;
+    setHerzen(ENDLOS_HERZEN);
+    setPunkte(0);
+    setDaneben([]);
+    vorrat.current = null;
+    abschluss.current = null;
+    laufVorher.current = undefined;
     erste.current = new Map();
     comboRef.current = 0;
     paarGeloest.current = new Set();
@@ -187,6 +217,92 @@ export function Lernspiel({
     },
     [token, router],
   );
+
+  /** Die erste Wahl einer Karte merken; im Endlos-Modus zählt sie gleich (richtig: ein Punkt, falsch: ein Herz). */
+  const merke = useCallback(
+    (karte: SpielKarte, wahl: string) => {
+      if (erste.current.has(karte.key)) return;
+      erste.current.set(karte.key, wahl);
+      duellRef.current?.ersteWahl?.(karte.key, wahl);
+      if (!endlos) return;
+      if (wahl === karte.richtig) setPunkte((n) => n + 1);
+      else {
+        herzenRef.current = Math.max(0, herzenRef.current - 1);
+        setHerzen(herzenRef.current);
+        setDaneben((d) => [...d, karte]);
+      }
+    },
+    [endlos],
+  );
+
+  // Endlos: ist die laufende Runde fast durch, wird die nächste schon geholt
+  useEffect(() => {
+    if (phase !== "spiel" || !endlos || !lauf.current || vorrat.current || herzenRef.current <= 0) return;
+    if (reihe.length - pos <= 3) vorrat.current = spielStartenAction(token, art, lauf.current);
+  }, [phase, endlos, pos, reihe.length, token, art]);
+
+  /** Endlos: die drei Herzen sind weg. Die laufende Runde zählt mit den Karten, die beantwortet sind. */
+  const endlosEnde = useCallback(
+    async (id: number) => {
+      setPhase("ende");
+      const antworten = [...erste.current.entries()].map(([key, wahl]) => ({ key, wahl }));
+      // die Runde davor muss gezählt sein, sonst fehlt sie im Stand
+      const davor = await abschluss.current?.catch(() => null);
+      let e = await spielBeendenAction(token, id, antworten, { teil: true });
+      const vorher = laufVorher.current !== undefined ? laufVorher.current : davor && !("fehler" in davor) ? davor.lernstandVorher : undefined;
+      if (!("fehler" in e) && vorher !== undefined) e = { ...e, lernstandVorher: vorher };
+      setErgebnis(e);
+      router.refresh();
+    },
+    [token, router],
+  );
+
+  /** Endlos: die Runde ist durch. Sie wird im Hintergrund beendet, die nächste schließt nahtlos an. */
+  const nachladen = useCallback(
+    async (id: number) => {
+      const antworten = [...erste.current.entries()].map(([key, wahl]) => ({ key, wahl }));
+      const fertig = spielBeendenAction(token, id, antworten);
+      abschluss.current = fertig;
+      void fertig.then((e) => {
+        if (laufVorher.current === undefined && !("fehler" in e)) laufVorher.current = e.lernstandVorher;
+      });
+      beschaeftigt.current = true;
+      const r = await (vorrat.current ?? spielStartenAction(token, art, lauf.current ?? "neu"));
+      vorrat.current = null;
+      beschaeftigt.current = false;
+      if ("fehler" in r) {
+        // keine Karten mehr: das Endlos-Spiel endet hier (die Runde ist schon gezählt)
+        setPhase("ende");
+        await fertig;
+        const e = await spielBeendenAction(token, id, antworten, { teil: true });
+        setErgebnis(!("fehler" in e) && laufVorher.current !== undefined ? { ...e, lernstandVorher: laufVorher.current } : e);
+        return;
+      }
+      erste.current = new Map();
+      paarGeloest.current = new Set();
+      setGeloest(new Set());
+      setRundeId(r.rundeId);
+      setAnzahl(r.karten.length);
+      setReihe(r.karten.map((karte) => ({ karte, wiederholung: false })));
+      setPos(0);
+      setStand(null);
+      setFalschGewaehlt([]);
+    },
+    [token, art],
+  );
+
+  /** Zur nächsten Karte; am Ende der Runde fertig (oder im Endlos-Modus die nächste Runde), ohne Herzen das Ende. */
+  const naechste = useCallback(() => {
+    if (endlos && herzenRef.current <= 0) {
+      void endlosEnde(rundeId);
+      return;
+    }
+    if (pos + 1 >= reihe.length) {
+      void (endlos ? nachladen(rundeId) : beenden(rundeId));
+      return;
+    }
+    setPos(pos + 1);
+  }, [endlos, endlosEnde, nachladen, beenden, rundeId, pos, reihe.length]);
 
   // Duell: gleich losspielen; ist die Zeit um, endet die Runde von selbst
   const sofort = !!duell?.sofort;
@@ -235,10 +351,7 @@ export function Lernspiel({
       const eintrag = reihe[pos];
       if (!eintrag) return false;
       const karte = eintrag.karte;
-      if (!erste.current.has(karte.key)) {
-        erste.current.set(karte.key, wahl);
-        duellRef.current?.ersteWahl?.(karte.key, wahl);
-      }
+      merke(karte, wahl);
       if (wahl === karte.richtig) return true;
       comboRef.current = 0;
       setCombo(0);
@@ -252,20 +365,16 @@ export function Lernspiel({
       }
       return false;
     },
-    [reihe, pos],
+    [reihe, pos, merke],
   );
   const reiheWeiter = useCallback(
     (sauber: boolean) => {
       const karte = reihe[pos]?.karte;
       if (!karte) return;
       paarRichtig(karte, sauber);
-      if (pos + 1 >= reihe.length) {
-        void beenden(rundeId);
-        return;
-      }
-      setPos(pos + 1);
+      naechste();
     },
-    [reihe, pos, paarRichtig, beenden, rundeId],
+    [reihe, pos, paarRichtig, naechste],
   );
 
   // ---------- Karte fliegt ins Fach ----------
@@ -300,10 +409,7 @@ export function Lernspiel({
     async (wahl: string, von: Wurf = { x: 0, y: 0, r: 0 }, geworfen = false) => {
       const karte = reihe[pos]?.karte;
       if (!karte || beschaeftigt.current) return;
-      if (!erste.current.has(karte.key)) {
-        erste.current.set(karte.key, wahl);
-        duellRef.current?.ersteWahl?.(karte.key, wahl);
-      }
+      merke(karte, wahl);
       const fach = karte.faecher.indexOf(wahl);
 
       if (wahl !== karte.richtig) {
@@ -354,13 +460,9 @@ export function Lernspiel({
       setStand(null);
       setFalschGewaehlt([]);
       beschaeftigt.current = false;
-      if (pos + 1 >= reihe.length) {
-        void beenden(rundeId);
-        return;
-      }
-      setPos(pos + 1);
+      naechste();
     },
-    [reihe, pos, stand, fliege, beenden, rundeId, combo, geloest],
+    [reihe, pos, stand, fliege, naechste, combo, geloest, merke],
   );
 
   // Tasten 1–5 am Laptop (ohne Bewegung beim Antippen: wiederholte Aktionen sollen sofort wirken)
@@ -454,7 +556,28 @@ export function Lernspiel({
       <Link href={zurueck} className="ls-zu" aria-label="Spiel schließen">
         <X size={24} aria-hidden />
       </Link>
-      {phase === "spiel" ? (
+      {phase === "spiel" && endlos ? (
+        <>
+          {/* Endlos: drei Herzen statt der Striche, daneben wie viele schon richtig sind */}
+          <div className="ls-herzen" role="img" aria-label={`${herzen} von ${ENDLOS_HERZEN} Herzen`} data-testid="herzen">
+            {Array.from({ length: ENDLOS_HERZEN }, (_, i) => (
+              <Heart key={i} size={24} strokeWidth={2.2} fill="currentColor" data-an={i < herzen ? "" : undefined} aria-hidden />
+            ))}
+          </div>
+          <span className="ls-combo ls-endlos-stand" aria-label={`${punkte} richtig`} data-testid="endlos-stand">
+            <Check size={16} strokeWidth={3} aria-hidden />
+            <b key={punkte} data-neu="">
+              {punkte}
+            </b>
+          </span>
+          <span className="ls-combo" data-heiss={combo >= 3 ? "" : undefined} aria-label={`${combo} richtig in Folge`}>
+            <Flame size={16} aria-hidden fill="currentColor" strokeWidth={1.5} />
+            <b key={combo} data-neu="">
+              ×{combo}
+            </b>
+          </span>
+        </>
+      ) : phase === "spiel" ? (
         <>
           <div className="ls-fortschritt" role="progressbar" aria-valuemin={0} aria-valuemax={anzahl} aria-valuenow={geloest.size} aria-label="Fortschritt">
             {Array.from({ length: anzahl }, (_, i) => (
@@ -606,10 +729,119 @@ export function Lernspiel({
         </div>
         {/* der Knopf steht fest unten, der Rest darüber kann rollen (acht Spiele passen nicht auf jedes Handy) */}
         <div className="ls-fuss ls-staffel">
-          <div style={{ "--n": 6 } as CSSProperties}>
+          <div className="grid gap-3" style={{ "--n": 6 } as CSSProperties}>
             <button type="button" className="ls-knopf ls-los" onClick={() => void starten()} disabled={phase === "laden"} autoFocus>
               {phase === "laden" ? "Karten werden gemischt …" : "Los geht’s"}
             </button>
+            {/* Endlos: weiter, bis drei Herzen weg sind */}
+            {hatEndlos(art) && !duell && (
+              <button type="button" className="ls-knopf ls-endlos-knopf" data-zweit="" onClick={() => void starten(true)} disabled={phase === "laden"} data-testid="endlos-start">
+                <Endlos size={22} strokeWidth={2.4} aria-hidden />
+                <span>Endlos</span>
+                <small>{rekord > 0 ? `Rekord ${rekord}` : `${ENDLOS_HERZEN} Herzen`}</small>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "ende" && endlos) {
+    const e = ergebnis && !("fehler" in ergebnis) ? ergebnis : null;
+    const stand = e?.endlos?.stand ?? punkte;
+    const bisher = e?.endlos?.rekord ?? rekord;
+    const neuerRekord = !!e && stand > 0 && stand > bisher;
+    const besteSerie = laengsteSerie(verlauf);
+    // der Ring: wie nah am Rekord (ein neuer Rekord füllt ihn ganz)
+    const anteil = bisher > 0 ? Math.min(100, Math.round((stand / bisher) * 100)) : stand > 0 ? 100 : 0;
+    const nochmal = daneben.filter((k, i) => daneben.findIndex((x) => x.key === k.key) === i);
+    return (
+      <div className="ls" role="dialog" aria-modal="true" aria-label="Endlos-Spiel vorbei">
+        <Hintergrund woerter={deko} />
+        {neuerRekord && <Konfetti />}
+        {kopf}
+        <div className="ls-mitte ls-staffel text-center">
+          <div className="ls-ring" style={{ "--n": 0 } as CSSProperties} data-testid="endlos-ende">
+            <svg viewBox="0 0 120 120" aria-hidden>
+              <circle cx="60" cy="60" r="50" pathLength={100} className="ls-ring-spur" />
+              <circle cx="60" cy="60" r="50" pathLength={100} className="ls-ring-wert" style={{ strokeDashoffset: 100 - anteil } as CSSProperties} />
+            </svg>
+            <div className="ls-ring-zahl">
+              <b>{stand}</b>
+              <span>{stand === 1 ? "Karte richtig" : "Karten richtig"}</span>
+            </div>
+          </div>
+          {neuerRekord ? (
+            <p className="ls-rekord" style={{ "--n": 1 } as CSSProperties}>
+              <Trophy size={20} strokeWidth={2.4} aria-hidden /> Neuer Rekord
+            </p>
+          ) : (
+            <p className="ls-rekord" data-alt="" style={{ "--n": 1 } as CSSProperties}>
+              <Trophy size={18} strokeWidth={2.4} aria-hidden /> {bisher > 0 ? `Dein Rekord: ${bisher}` : "Dein erster Rekord"}
+            </p>
+          )}
+          <h1 className="ls-titel mt-3" style={{ "--n": 2 } as CSSProperties}>
+            {neuerRekord ? "Stark gemacht!" : stand >= bisher * 0.75 && stand > 0 ? "Knapp dran!" : "Drei Herzen weg"}
+          </h1>
+          <p className="ls-text mt-1" style={{ "--n": 2 } as CSSProperties}>
+            {besteSerie >= 3 ? `Längste Serie: ${besteSerie} in Folge` : "Jede Karte zählt beim ersten Versuch"}
+          </p>
+          {ergebnis && "fehler" in ergebnis && (
+            <p className="ls-fehler mt-4" role="alert">
+              {ergebnis.fehler}
+            </p>
+          )}
+
+          <div className="mt-6 grid grid-cols-2 gap-3 text-left" style={{ "--n": 3 } as CSSProperties}>
+            <div className="ls-glas p-4">
+              <p className="ls-klein">{SPIEL_TITEL[art]}</p>
+              <p className="text-[21px] font-semibold tabular-nums">
+                {e ? (
+                  e.lernstandVorher === null ? (
+                    pct(e.lernstandNachher)
+                  ) : (
+                    <>
+                      {pct(e.lernstandVorher)} → {pct(e.lernstandNachher)}
+                    </>
+                  )
+                ) : (
+                  "…"
+                )}
+              </p>
+              <div className="ls-balken mt-2">
+                <span style={{ transform: `scaleX(${e?.lernstandNachher ?? e?.lernstandVorher ?? lernstand ?? 0})` }} />
+              </div>
+            </div>
+            <div className="ls-glas p-4">
+              <p className="ls-klein">Serie</p>
+              <p className="flex items-center gap-1.5 text-[21px] font-semibold tabular-nums">
+                <Flame size={20} className="ls-flamme" fill="currentColor" aria-hidden />
+                {e ? (e.serie === 1 ? "1 Tag" : `${e.serie} Tage`) : "…"}
+              </p>
+            </div>
+          </div>
+
+          {nochmal.length > 0 && (
+            <div className="ls-blatt mt-4 p-4 text-left" style={{ "--n": 4 } as CSSProperties}>
+              <p className="text-[15px] font-semibold">Kommt nächstes Mal wieder</p>
+              <ul className="mt-2 space-y-1.5 text-[16px]">
+                {nochmal.map((k) => (
+                  <li key={k.key}>
+                    <Loesung karte={k} art={art} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="mt-auto grid gap-3 pt-8" style={{ "--n": 5 } as CSSProperties}>
+            <button type="button" className="ls-knopf ls-los" onClick={() => void starten(true)} disabled={!ergebnis} autoFocus data-testid="endlos-nochmal">
+              Nochmal endlos
+            </button>
+            <Link href={zurueck} className="ls-knopf ls-los" data-zweit="">
+              Fertig
+            </Link>
           </div>
         </div>
       </div>

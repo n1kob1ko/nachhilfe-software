@@ -299,6 +299,21 @@ gleiche.“ Die Karten bleiben dieselben, aber die Art zu antworten hängt am Sp
   Schilder oder ein kleines Rad (`spielAntwort` für die Themenspiele: wie die meisten Karten des Themas beantwortet
   werden).
 
+## Endlos-Modus
+
+Jedes Spiel außer den Vokabel-Paaren hat am Anfang neben „Los geht’s“ den Knopf **Endlos** (darunter der Rekord oder
+„3 Herzen“). Man spielt, bis drei Antworten falsch waren (drei Herzen oben links); jede beim ersten Mal richtige
+Karte ist ein Punkt. Am Ende stehen Punkte gegen Rekord („Neuer Rekord“ mit Konfetti), die Serie, der Lernstand und
+„Kommt nächstes Mal wieder“ mit den falschen Karten.
+
+- Ein Endlos-Lauf besteht aus normalen Runden zu zwölf Karten (`spielrunden`), die nahtlos aneinanderhängen: sind
+  noch drei Karten übrig, holt das Spiel die nächste Runde, am Übergang wird die alte im Hintergrund beendet. Die
+  Spalte `spielrunden.endlos` trägt bei jeder Runde des Laufs die id der ersten (`starteRunde(..., { endlos })`).
+- Die letzte Runde wird mit `teil: true` beendet: es zählen nur die beantworteten Karten; eine Runde ohne Antwort
+  verschwindet. Lernstand, Wochenliga und „falsch gewesen“ gehen also wie bei normalen Runden, jede Karte einmal.
+- Stand = beim ersten Mal richtig über alle Runden des Laufs (`endlosStand`), Rekord = bester Lauf je Spiel
+  (`endlosRekord`).
+
 ## Welches Spiel dran ist
 
 `spielVorschlaege` (lib/lernspiele.ts), das wichtigste zuerst:

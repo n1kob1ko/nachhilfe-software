@@ -246,3 +246,42 @@ test("Serie: Tage am Stück bis heute oder gestern", async () => {
   const u = sp.spielUebersicht(student.id, "2026-11-11");
   assert.equal(u.runden.length, 3);
 });
+
+test("Endlos-Modus: Runden hängen am ersten, die letzte zählt nur beantwortete Karten, der Rekord ist der beste Stand", async () => {
+  const { db, sp, student } = await setup();
+  const heute = "2026-11-12";
+  const a = sp.starteRunde(student, "artikel", { rng: rng(5), heute, endlos: "neu" });
+  assert.equal(a.endlos, a.rundeId, "die erste Runde trägt das Endlos-Spiel");
+  // alle zwölf beantwortet, zehn richtig
+  const e1 = sp.beendeRunde(student.id, a.rundeId, a.karten.map((k, i) => ({ key: k.key, wahl: i < 10 ? k.richtig : "falsch" })))!;
+  assert.equal(e1.richtig, 10);
+  const b = sp.starteRunde(student, "artikel", { rng: rng(6), heute, endlos: a.endlos });
+  assert.equal(b.endlos, a.rundeId, "die nächste Runde gehört zum selben Endlos-Spiel");
+  // drei Herzen weg nach vier Karten: drei richtig, eine falsch; der Rest zählt nicht
+  const e2 = sp.beendeRunde(student.id, b.rundeId, b.karten.slice(0, 4).map((k, i) => ({ key: k.key, wahl: i < 3 ? k.richtig : "falsch" })), { teil: true })!;
+  assert.deepEqual([e2.richtig, e2.anzahl], [3, 4]);
+  const zeile = db().prepare("SELECT anzahl, karten FROM spielrunden WHERE id = ?").get(b.rundeId) as { anzahl: number; karten: string };
+  assert.equal(zeile.anzahl, 4);
+  assert.equal(JSON.parse(zeile.karten).length, 4);
+  assert.equal(sp.endlosStand(student.id, a.rundeId), 13);
+  assert.equal(sp.endlosRekord(student.id, "artikel"), 13);
+  assert.equal(sp.endlosRekord(student.id, "artikel", a.rundeId), 0, "ohne dieses Endlos-Spiel gibt es noch keinen Rekord");
+  assert.equal(sp.endlosRekord(student.id, "dasdass"), 0, "der Rekord gilt je Spiel");
+
+  // ein zweites Endlos-Spiel, schon in der ersten Runde vorbei; eine leere letzte Runde fällt weg
+  const c = sp.starteRunde(student, "artikel", { rng: rng(7), heute, endlos: "neu" });
+  sp.beendeRunde(student.id, c.rundeId, c.karten.slice(0, 2).map((k) => ({ key: k.key, wahl: k.richtig })));
+  const d = sp.starteRunde(student, "artikel", { rng: rng(8), heute, endlos: c.endlos });
+  assert.deepEqual(sp.beendeRunde(student.id, d.rundeId, [], { teil: true }), { richtig: 0, anzahl: 0, sterne: 1, nochmal: [] });
+  assert.equal((db().prepare("SELECT COUNT(*) AS n FROM spielrunden WHERE id = ?").get(d.rundeId) as { n: number }).n, 0);
+  assert.equal(sp.endlosStand(student.id, c.rundeId), 2, "die zwei richtigen der ersten Runde");
+  assert.equal(sp.endlosRekord(student.id, "artikel"), 13);
+
+  // ein fremdes oder anderes Spiel setzt nicht fort; ohne Endlos zählt `teil` nicht
+  const f = sp.starteRunde(student, "dasdass", { rng: rng(9), heute, endlos: a.rundeId });
+  assert.equal(f.endlos, f.rundeId, "ein Endlos-Spiel aus einem anderen Spiel wird nicht fortgesetzt");
+  const g = sp.starteRunde(student, "artikel", { rng: rng(10), heute });
+  assert.equal(g.endlos, undefined);
+  const eg = sp.beendeRunde(student.id, g.rundeId, g.karten.slice(0, 3).map((k) => ({ key: k.key, wahl: k.richtig })), { teil: true })!;
+  assert.equal(eg.anzahl, g.karten.length, "eine gewöhnliche Runde zählt immer alle Karten");
+});
